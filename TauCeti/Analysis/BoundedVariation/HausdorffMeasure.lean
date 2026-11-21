@@ -171,7 +171,7 @@ theorem euclideanHausdorffMeasure_restrict_reducedBoundary_le_map_variationMeasu
     μHE[finrank ℝ E - 1].restrict (reducedBoundary volume Ω s) ≤
       (variationMeasure volume Ω (s.indicator 1)).map ((↑) : Ω → E) := by
   refine Measure.le_iff.2 fun N hN => ?_
-  rw [Measure.restrict_apply hN, Measure.map_apply measurable_subtype_coe hN]
+  rw [Measure.restrict_apply hN, Measure.map_apply measurable_subtypeVal hN]
   exact (euclideanHausdorffMeasure_le_variationMeasure_preimage inter_subset_right).trans
     (measure_mono (preimage_mono inter_subset_left))
 
