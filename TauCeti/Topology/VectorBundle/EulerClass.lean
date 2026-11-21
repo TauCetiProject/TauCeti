@@ -67,6 +67,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 ## Main definitions
 
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
+* `TauCeti.thomPairModelIso`: changing the phantom model-fibre parameter of a Thom pair without
+  changing the total-space topology.
 * `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
   base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
 * `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
@@ -208,6 +210,67 @@ theorem thomPairOverMap_comp_restrictPreimagePairMap {W W' : Set B} (h : W ⊆ W
   TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
     (TopCat.restrictPreimagePairMap_fst_apply _ _ _ _).trans
       (TopCat.restrictPreimagePairMap_fst_apply _ _ _ v).symm)
+
+/-- **Changing the phantom model-fibre parameter of a Thom pair.** If two total-space topologies
+for the same family `E` over `B` (with possibly different model-fibre types `F` and `F'`) make the
+identity map `(b, v) ↦ (b, v)` continuous in both directions, their Thom pairs are isomorphic. -/
+def thomPairModelIso {B : Type w} {F F' : Type*} {E : B → Type w}
+    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
+    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
+    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd) :
+    thomPair F E ≅ thomPair F' E :=
+  TopPair.ofSubsetIso
+    { toFun := fun v ↦ TotalSpace.mk' F' v.proj v.snd
+      invFun := fun v ↦ TotalSpace.mk' F v.proj v.snd
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      continuous_toFun := h₁
+      continuous_invFun := h₂ }
+    fun _ ↦
+      ⟨fun hv ↦ mem_zeroSectionCompl.2 (by exact (mem_zeroSectionCompl (F := F) (E := E)).1 hv),
+       fun hv ↦ mem_zeroSectionCompl.2 (by exact (mem_zeroSectionCompl (F := F') (E := E)).1 hv)⟩
+
+@[simp]
+theorem thomPairModelIso_hom_fst_apply {B : Type w} {F F' : Type*} {E : B → Type w}
+    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
+    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
+    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
+    (v : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairModelIso h₁ h₂).hom v = TotalSpace.mk' F' v.proj v.snd := by
+  rw [thomPairModelIso, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E)) _ _ v
+
+@[simp]
+theorem thomPairModelIso_hom_snd_apply {B : Type w} {F F' : Type*} {E : B → Type w}
+    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
+    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
+    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
+    (v : zeroSectionCompl F E) :
+    (TopPair.Hom.snd (thomPairModelIso h₁ h₂).hom v).val =
+      TotalSpace.mk' F' v.val.proj v.val.snd := by
+  rw [thomPairModelIso, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_snd_apply (X := TopCat.of (TotalSpace F E)) _ _ v
+
+@[simp]
+theorem thomPairModelIso_inv_fst_apply {B : Type w} {F F' : Type*} {E : B → Type w}
+    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
+    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
+    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
+    (v : TotalSpace F' E) :
+    TopPair.Hom.fst (thomPairModelIso h₁ h₂).inv v = TotalSpace.mk' F v.proj v.snd := by
+  rw [thomPairModelIso, TopPair.ofSubsetIso_inv]
+  exact TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E)) _ _ v
+
+@[simp]
+theorem thomPairModelIso_inv_snd_apply {B : Type w} {F F' : Type*} {E : B → Type w}
+    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)] [∀ b, Zero (E b)]
+    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
+    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd)
+    (v : zeroSectionCompl F' E) :
+    (TopPair.Hom.snd (thomPairModelIso h₁ h₂).inv v).val =
+      TotalSpace.mk' F v.val.proj v.val.snd := by
+  rw [thomPairModelIso, TopPair.ofSubsetIso_inv]
+  exact TopPair.ofSubsetMap_snd_apply (X := TopCat.of (TotalSpace F' E)) _ _ v
 
 variable {F E} {X : Type w} [TopologicalSpace X]
 

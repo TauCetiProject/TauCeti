@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 import TauCeti.Topology.Algebra.Module.BilinearForm
-import TauCeti.Topology.VectorBundle.Riemannian.Basic
 import TauCeti.Topology.VectorBundle.Section
 
 /-!

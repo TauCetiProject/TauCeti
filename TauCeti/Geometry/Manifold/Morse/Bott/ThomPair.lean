@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
+public import TauCeti.Geometry.Manifold.Morse.Bott.HessianMetric
 public import TauCeti.Topology.VectorBundle.Attachment
-public import TauCeti.Topology.VectorBundle.Subbundle
 import TauCeti.Topology.VectorBundle.Riemannian.FiniteDimensional
+import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # The negative disc bundle and the Thom pair of the negative normal bundle
@@ -40,6 +41,9 @@ fibre metric such frames exist
   map induces isomorphisms `Hₖ(D_ε, S_ε) ≅ Hₖ(Z, X)` and `Hᵏ(Z, X) ≅ Hᵏ(D_ε, S_ε)`
   (`IsCriticalSubmanifold.isIso_singularHomologyMap_of_attach_negativeDiscBundle` and
   `IsCriticalSubmanifold.isIso_singularCohomologyMap_of_attach_negativeDiscBundle`).
+* With the continuous Hessian fibre metric `-½ Hess` on `ν⁻` (`negativeNormalHessianMetric`),
+  rescaling by `√ε` sends the unit disc bundle `D(ν⁻)` continuously and injectively onto `D_ε`
+  (`IsNondegenerateCriticalSubmanifold.rescale_negativeDiscBundle`).
 
 So whenever the region across a level is such an attachment of the negative disc bundle of a
 critical submanifold, its relative homology is that of the Thom pair of the negative normal bundle,
@@ -464,3 +468,111 @@ theorem isIso_singularCohomologyMap_of_attach_negativeDiscBundle
 end Thom
 
 end TauCeti.SmoothEmbedding.IsCriticalSubmanifold
+
+namespace TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+section Rescale
+
+universe u
+
+variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {E' H' : Type*} {S : Type u} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
+  {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
+  [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+  {k : ℕ∞ω} [IsManifold I (k + 2) M] [IsManifold J (k + 1) S]
+
+/-- Rescaling vectors in the negative normal bundle `ν⁻` by `√ε` sends the unit disc bundle
+`D(ν⁻)` for the Hessian fibre metric continuously and injectively onto the negative disc bundle
+`D_ε`, with `-½ Hess(√ε • v, √ε • v) = ε ‖v‖²`. -/
+theorem rescale_negativeDiscBundle (h : i.IsNondegenerateCriticalSubmanifold f)
+    (hk : k + 1 ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) {ε : ℝ} (hε : 0 < ε) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr
+    letI ν : S → Type u := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s
+    letI : TopologicalSpace (TotalSpace (Fin r → ℝ) ν) :=
+      subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI : FiberBundle (Fin r → ℝ) ν := hV.fiberBundle
+    letI : VectorBundle ℝ (Fin r → ℝ) ν := hV.vectorBundle
+    letI : RiemannianBundle ν :=
+      ⟨(h.negativeNormalHessianMetric hn hk hf hdim g hr).toRiemannianMetric⟩
+    letI : ∀ s, NormedAddCommGroup (ν s) := fun s ↦ inferInstance
+    let scale : TotalSpace (Fin r → ℝ) ν → TotalSpace P (fun s ↦ i.NormalSpace s hn) :=
+      fun v ↦ TotalSpace.mk' P v.proj (Real.sqrt ε • v.snd.val)
+    Continuous scale ∧ Function.Injective scale ∧
+      (∀ v, -(2⁻¹ * h.normalHessian hn (scale v).proj (scale v).snd (scale v).snd) =
+        ε * ‖v.snd‖ ^ 2) ∧
+      scale '' discBundle (Fin r → ℝ) ν = h.negativeDiscBundle hn P g.toRiemannianMetric ε := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr
+  let ν : S → Type u := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  let : RiemannianBundle ν :=
+    ⟨(h.negativeNormalHessianMetric hn hk hf hdim g hr).toRiemannianMetric⟩
+  let : ∀ s, NormedAddCommGroup (ν s) := fun s ↦ inferInstance
+  have hsq : Real.sqrt ε ≠ 0 := Real.sqrt_ne_zero'.mpr hε
+  let scale : TotalSpace (Fin r → ℝ) ν → TotalSpace P (fun s ↦ i.NormalSpace s hn) :=
+    fun v ↦ TotalSpace.mk' P v.proj (Real.sqrt ε • v.snd.val)
+  have hcont : Continuous scale :=
+    (Continuous.smul_totalSpace continuous_const continuous_id).comp
+      (isEmbedding_totalSpace_subbundle P (Fin r → ℝ)
+        (h.negativeNormalSpace hn g.toRiemannianMetric)).continuous
+  have hinj : Function.Injective scale := by
+    intro ⟨s₁, v₁⟩ ⟨s₂, v₂⟩ hEq
+    obtain rfl : s₁ = s₂ := congrArg TotalSpace.proj hEq
+    dsimp only [scale, TotalSpace.mk'] at hEq
+    have h2 : Real.sqrt ε • v₁.val = Real.sqrt ε • v₂.val :=
+      (TotalSpace.mk_inj (E := fun s ↦ i.NormalSpace s hn)).mp hEq
+    exact congrArg (TotalSpace.mk s₁) (Subtype.ext (smul_right_injective _ hsq h2))
+  have hhess (v : TotalSpace (Fin r → ℝ) ν) :
+      -(2⁻¹ * h.normalHessian hn (scale v).proj (scale v).snd (scale v).snd) = ε * ‖v.snd‖ ^ 2 := by
+    have hnorm := h.norm_sq_eq_of_negativeNormalHessianMetric hn hk hf hdim g hr v.proj v.snd
+    simp only [scale, TotalSpace.mk', map_smul, LinearMap.smul_apply, smul_eq_mul]
+    rw [hnorm]
+    have : Real.sqrt ε * (Real.sqrt ε * h.normalHessian hn v.proj v.snd.val v.snd.val) =
+        Real.sqrt ε ^ 2 * h.normalHessian hn v.proj v.snd.val v.snd.val := by ring
+    rw [this, Real.sq_sqrt hε.le]
+    ring
+  refine ⟨hcont, hinj, hhess, Subset.antisymm ?_ ?_⟩
+  · rintro _ ⟨v, hv, rfl⟩
+    refine (IsCriticalSubmanifold.mem_negativeDiscBundle hn).2
+      ⟨Submodule.smul_mem _ _ v.snd.property, ?_⟩
+    rw [hhess v]
+    have hle : ‖v.snd‖ ^ 2 ≤ 1 := by nlinarith [mem_discBundle.1 hv, norm_nonneg v.snd]
+    nlinarith
+  · intro x hx
+    obtain ⟨hxmem, hxle⟩ := (IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 hx
+    let v : TotalSpace (Fin r → ℝ) ν :=
+      ⟨x.proj, ⟨(Real.sqrt ε)⁻¹ • x.snd, Submodule.smul_mem _ _ hxmem⟩⟩
+    have hsv : scale v = x := by
+      cases x
+      simp [scale, v, TotalSpace.mk', smul_inv_smul₀ hsq]
+    refine ⟨v, mem_discBundle.2 ?_, hsv⟩
+    have hsqle : ε * ‖v.snd‖ ^ 2 ≤ ε := by
+      rw [← hhess v, hsv]
+      exact hxle
+    have hle1 : ‖v.snd‖ ^ 2 ≤ 1 := by nlinarith
+    nlinarith [norm_nonneg v.snd]
+
+end Rescale
+
+end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 
 /-!
 # Crossing the level of a Morse–Bott submanifold of index zero
@@ -45,9 +45,9 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 ## The proof
 
 Choose a smooth fibre metric on the normal bundle
-(`TauCeti.nonempty_contMDiffRiemannianMetric`). For small `ε > 0` the inclusion of pairs
-`(M_{c-ε} ∪ Θ(D_ε), M_{c-ε}) ⟶ (M_{c+ε}, M_{c-ε})` induces isomorphisms on relative homology, where
-`D_ε` is the negative disc bundle and `Θ` a Morse–Bott normal form
+(`TauCeti.SmoothEmbedding.nonempty_contMDiffRiemannianMetric_normalSpace`). For small `ε > 0` the
+inclusion of pairs `(M_{c-ε} ∪ Θ(D_ε), M_{c-ε}) ⟶ (M_{c+ε}, M_{c-ε})` induces isomorphisms on
+relative homology, where `D_ε` is the negative disc bundle and `Θ` a Morse–Bott normal form
 (`IsNondegenerateCriticalSubmanifold.exists_isIso_singularHomologyMap_negativeDiscBundle`). The
 negative normal spaces have dimension the Morse index
 (`IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace`), so in index zero `D_ε` is the
@@ -114,7 +114,7 @@ theorem image_negativeDiscBundle_eq_range_of_manifoldMorseIndex_eq_zero {P : Typ
 metric chosen on the normal bundle, the negative disc bundle of
 `exists_isIso_singularHomologyMap_negativeDiscBundle` is the zero section. -/
 private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
-    [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    [SecondCountableTopology M] [J.Boundaryless]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
     (hc : ∀ s, f (i s) = c) (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0) :
     ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
@@ -126,6 +126,32 @@ private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
               {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪ range i)
             (sublevel_mono f (a := c - ε) (b := c + ε) (by linarith))
             (ContinuousMap.inclusion hA) fun _ hx ↦ hx) R n) := by
+  rcases isEmpty_or_nonempty S with hS | hS
+  · refine ⟨1, one_pos, fun ε hε _ hcompact hcrit ↦ ?_⟩
+    have hle : c - ε ≤ c + ε := by linarith
+    have hreg : ∀ x, c - ε ≤ f x → f x ≤ c + ε → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ hx ↦ by
+      obtain ⟨s, -⟩ := hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, h₁, h₂⟩
+      exact isEmptyElim s
+    obtain ⟨rdef, -, ⟨G⟩⟩ := exists_sublevelDeformation hfs hle hcompact hreg
+    have hAeq : {y | f y ≤ c - ε} ∪ range i = {y | f y ≤ c - ε} := by
+      rw [range_eq_empty, union_empty]
+    have hA : {y | f y ≤ c - ε} ∪ range i ⊆ {y | f y ≤ c + ε} := fun y hy ↦ by
+      rcases hy with hy | ⟨s, -⟩
+      · exact sublevel_mono f hle hy
+      · exact isEmptyElim s
+    have hset : {x : {y | f y ≤ c + ε} | (x : M) ∈ {y | f y ≤ c - ε}} =
+        {x : {y | f y ≤ c + ε} | (x : M) ∈ {y | f y ≤ c - ε} ∪ range i} := by
+      rw [hAeq]
+    have hincl : sublevelInclusion f (c - ε) (c + ε) hle =
+        (ContinuousMap.inclusion hA).comp (ContinuousMap.inclusion subset_union_left) := by
+      ext; simp
+    rw [hincl] at G
+    let r' : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c - ε} ∪ range i)) :=
+      (ContinuousMap.inclusion subset_union_left).comp rdef
+    have G' : ((ContinuousMap.inclusion hA).comp r').HomotopyRel (ContinuousMap.id _)
+        {x | (x : M) ∈ {y | f y ≤ c - ε} ∪ range i} := hset ▸ G
+    exact ⟨hA, fun R n ↦ TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel
+      (X := TopCat.of M) subset_union_left hA r' G' R n⟩
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   by_cases hS : CompactSpace S
   swap
@@ -138,11 +164,8 @@ private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
-  let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   have : T2Space S := i.isEmbedding.t2Space
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
-    (E := fun s ↦ i.NormalSpace s hn)
+  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace (m' := ⊤) hn (by simp) hdim
   obtain ⟨Θ, -, hΘi, -, ε₀, hε₀, hmain⟩ :=
     h.exists_isIso_singularHomologyMap_negativeDiscBundle hn hfs hc hdim g
   refine ⟨ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
@@ -153,13 +176,13 @@ private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
 
 /-- **The relative homology across the level of a Morse–Bott submanifold of index zero.** Let
 `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,
-second-countable, finite-dimensional, boundaryless manifold, with `S` nonempty, `f = c` along `i`
-and Morse index `0` at every point of `i`. Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`
-with the band `f⁻¹[c - ε, c + ε]` compact and all its critical points on `i`, the inclusion of
-pairs `(i(S), ∅) ⟶ ({f ≤ c + ε}, {f ≤ c - ε})` induces isomorphisms on relative singular homology,
-in every degree and for every coefficient object of an abelian category with coproducts. -/
+second-countable, finite-dimensional, boundaryless manifold, with `f = c` along `i` and Morse index
+`0` at every point of `i`. Then there is an `ε₀ > 0` such that for `0 < ε < ε₀` with the band
+`f⁻¹[c - ε, c + ε]` compact and all its critical points on `i`, the inclusion of pairs
+`(i(S), ∅) ⟶ ({f ≤ c + ε}, {f ≤ c - ε})` induces isomorphisms on relative singular homology, in
+every degree and for every coefficient object of an abelian category with coproducts. -/
 theorem exists_isIso_singularHomologyMap_range_of_manifoldMorseIndex_eq_zero [T2Space M]
-    [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    [SecondCountableTopology M] [J.Boundaryless]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
     (hc : ∀ s, f (i s) = c) (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0) :
     ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
@@ -197,15 +220,15 @@ theorem exists_isIso_singularHomologyMap_range_of_manifoldMorseIndex_eq_zero [T2
 
 /-- **Crossing the level of a Morse–Bott submanifold of index zero adds a copy of the
 submanifold.** Let `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on
-a Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `S` nonempty,
-`f = c` along `i` and Morse index `0` at every point of `i`. Let `a < c < b` be such that the band
-`f⁻¹[a, b]` is compact and all its critical points lie on `i`.
+a Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `f = c` along `i`
+and Morse index `0` at every point of `i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is
+compact and all its critical points lie on `i`.
 
 Then the inclusion of pairs `(i(S), ∅) ⟶ ({f ≤ b}, {f ≤ a})` induces isomorphisms on relative
 singular homology, in every degree and for every coefficient object of an abelian category with
 coproducts: `Hₙ({f ≤ b}, {f ≤ a})` is the singular homology of the image of `i`. -/
 theorem isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero
-    [T2Space M] [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    [T2Space M] [SecondCountableTopology M] [J.Boundaryless]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
     (hc : ∀ s, f (i s) = c) (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0) (hac : a < c)
     (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
@@ -252,7 +275,7 @@ map from absolute to relative homology of `(i(S), ∅)` and by the inclusion of 
 (`singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero_hom`). -/
 def singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero {S : Type u}
     [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] {i : SmoothEmbedding J I ∞ S M}
-    [T2Space M] [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    [T2Space M] [SecondCountableTopology M] [J.Boundaryless]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
     (hc : ∀ s, f (i s) = c) (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0) (hac : a < c)
     (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
@@ -281,7 +304,7 @@ by the inclusion of pairs `(i(S), ∅) ⟶ ({f ≤ b}, {f ≤ a})`. -/
 @[reassoc]
 theorem singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero_hom {S : Type u}
     [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] {i : SmoothEmbedding J I ∞ S M}
-    [T2Space M] [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    [T2Space M] [SecondCountableTopology M] [J.Boundaryless]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
     (hc : ∀ s, f (i s) = c) (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0) (hac : a < c)
     (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))

@@ -77,6 +77,9 @@ identifies `(T, A)` with the attachment, to which the results above apply.
   fibre gauge along its sphere bundle induces isomorphisms `Hₙ(D_ρ(E), S_ρ(E)) ≅ Hₙ(Z, X)`.
 * `TauCeti.isIso_singularCohomologyMap_of_attach_gaugeDiscBundle`: the same in cohomology,
   `Hⁿ(Z, X) ≅ Hⁿ(D_ρ(E), S_ρ(E))`.
+* `TauCeti.exists_isIso_of_homotopyRel_attach_discBundle`: a space which strong deformation retracts
+  onto a subset with a disc bundle attached has both the relative homology and cohomology of the
+  disc-sphere pair through a single map of pairs.
 * `TauCeti.exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle`: a space which
   strong deformation retracts onto a subset with a disc bundle attached has the relative homology
   of the disc-sphere pair.
@@ -342,7 +345,7 @@ variable (hρ : IsFiberGauge ρ) (hAT : A ⊆ T) (hA : IsClosed A)
 include hρ hA hg hgD hDT hgA G in
 /-- A space which strong deformation retracts onto a subset with a disc bundle attached has the
 relative homology and cohomology of the disc-sphere pair, through a single map of pairs. -/
-private lemma exists_isIso_of_homotopyRel_attach_discBundle :
+theorem exists_isIso_of_homotopyRel_attach_discBundle :
     ∃ ψ : gaugeDiscSpherePair ρ ⟶ TopPair.ofInclusion (X := TopCat.of Y) hAT,
       (∀ v : gaugeDiscBundle ρ, Subtype.val (TopPair.Hom.fst ψ v) = g v) ∧
       (∀ {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ),
