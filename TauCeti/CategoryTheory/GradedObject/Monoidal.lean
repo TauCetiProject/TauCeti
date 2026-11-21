@@ -289,17 +289,16 @@ section Antidiagonal
 variable [MonoidalCategory C] [HasZeroMorphisms C] (X Y : GradedObject ℕ C) [HasTensor X Y]
   (n : ℕ) [HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2]
 
+-- The summands `X i ⊗ Y j` are by definition those of `curriedTensor C`.
+private instance : HasBiproduct fun x : Finset.antidiagonal n ↦
+    ((curriedTensor C).obj (X x.val.1)).obj (Y x.val.2) :=
+  ‹HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2›
+
 /-- For graded objects indexed by `ℕ`, the tensor product in degree `n` is the biproduct of the
 `X i ⊗ Y j` indexed by `Finset.antidiagonal n`. -/
 noncomputable def tensorObjIsoBiproduct :
-    tensorObj X Y n ≅ ⨁ fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2 where
-  hom := tensorObjDesc fun i j h ↦
-    biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2)
-      ⟨(i, j), Finset.mem_antidiagonal.2 h⟩
-  inv := biproduct.desc fun x ↦
-    ιTensorObj X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property)
-  hom_inv_id := tensorObj_ext _ _ fun i j h ↦ by simp
-  inv_hom_id := biproduct.hom_ext' _ _ fun x ↦ by simp
+    tensorObj X Y n ≅ ⨁ fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2 :=
+  mapBifunctorMapObjIsoBiproduct (curriedTensor C) X Y n
 
 /-- `tensorObjIsoBiproduct` sends the summand `X i ⊗ Y j` to the corresponding summand of the
 biproduct. -/
@@ -307,8 +306,8 @@ biproduct. -/
 lemma ι_tensorObjIsoBiproduct_hom (i j : ℕ) (h : i + j = n) :
     ιTensorObj X Y i j n h ≫ (tensorObjIsoBiproduct X Y n).hom =
       biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2)
-        ⟨(i, j), Finset.mem_antidiagonal.2 h⟩ := by
-  simp [tensorObjIsoBiproduct]
+        ⟨(i, j), Finset.mem_antidiagonal.2 h⟩ :=
+  ι_mapBifunctorMapObjIsoBiproduct_hom (curriedTensor C) X Y n i j h
 
 /-- The inverse of `tensorObjIsoBiproduct` sends each summand of the biproduct to the
 corresponding summand of the tensor product. -/
@@ -316,8 +315,8 @@ corresponding summand of the tensor product. -/
 lemma ι_tensorObjIsoBiproduct_inv (x : Finset.antidiagonal n) :
     biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2) x ≫
         (tensorObjIsoBiproduct X Y n).inv =
-      ιTensorObj X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) := by
-  simp [tensorObjIsoBiproduct]
+      ιTensorObj X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) :=
+  ι_mapBifunctorMapObjIsoBiproduct_inv (curriedTensor C) X Y n x
 
 end Antidiagonal
 

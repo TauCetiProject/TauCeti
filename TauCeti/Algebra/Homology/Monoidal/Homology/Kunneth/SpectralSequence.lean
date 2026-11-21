@@ -285,6 +285,12 @@ def kunnethFirstPageXIsoTorSum (p q : ℕ) :
       (kunnethTorSumComplex K L q).X p :=
   kunnethSpectralSequenceFirstPageXIso K L p q ≪≫ kunnethTorSumComplexXIso K L q p
 
+/-- The identification `kunnethFirstPageXIsoTorSum` is the identification of the first page with
+the graded tensor object, followed by `kunnethTorSumComplexXIso`. -/
+lemma kunnethFirstPageXIsoTorSum_eq (p q : ℕ) :
+    kunnethFirstPageXIsoTorSum K L p q =
+      kunnethSpectralSequenceFirstPageXIso K L p q ≪≫ kunnethTorSumComplexXIso K L q p := (rfl)
+
 /-- Under the identifications `HomologicalComplex.kunnethFirstPageXIsoTorSum`, the first
 differential of the Künneth spectral sequence in degree `q` is `(-1)^q` times the differential of
 `kunnethTorSumComplex K L q`. -/
@@ -297,7 +303,7 @@ lemma kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum (p q : ℕ) 
       (kunnethTorSumComplex K L q).d (p + 1) p) := by
   have h := kunnethSpectralSequence_page_two_d K L p q
   rw [Iso.inv_comp_eq] at h
-  simp only [kunnethFirstPageXIsoTorSum, Iso.trans_hom, Category.assoc,
+  simp only [kunnethFirstPageXIsoTorSum_eq, Iso.trans_hom, Category.assoc,
     kunnethTorSumComplexXIso_hom_d]
   rw [reassoc_of% h, Preadditive.zsmul_comp, Preadditive.comp_zsmul]
 
