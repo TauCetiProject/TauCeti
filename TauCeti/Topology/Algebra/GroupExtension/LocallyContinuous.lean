@@ -69,6 +69,12 @@ def IsLocallyContinuous (α : FactorSet G M) : Prop :=
   (∀ᶠ p in 𝓝 1, ContinuousAt α p) ∧
     ∀ g : G, ∀ᶠ h in 𝓝 1, ContinuousAt (fun k => α (g, k) / α (g * k * g⁻¹, g)) h
 
+/-- The two conditions defining `TauCeti.FactorSet.IsLocallyContinuous`, unfolded. -/
+theorem isLocallyContinuous_iff (α : FactorSet G M) :
+    α.IsLocallyContinuous ↔ (∀ᶠ p in 𝓝 1, ContinuousAt α p) ∧
+      ∀ g : G, ∀ᶠ h in 𝓝 1, ContinuousAt (fun k => α (g, k) / α (g * k * g⁻¹, g)) h :=
+  Iff.rfl
+
 variable [IsTopologicalGroup M]
 
 /-- **Local continuity of a factor set is membership of the locally continuous complex.** Read
@@ -77,8 +83,9 @@ additively, a factor set is a locally continuous `2`-cocycle in the sense of
 theorem isLocallyContinuous_iff_ofMul_mem_LCZ2 (α : FactorSet G M) :
     α.IsLocallyContinuous ↔
       (fun p : G × G => Additive.ofMul (α p)) ∈ LCZ2 G (Additive M) := by
-  simp only [mem_LCZ2_iff, mem_LC2_iff', ← ofMul_div, continuousAt_ofMul_iff]
-  exact ⟨fun h => ⟨h, fun g h j => congrArg Additive.ofMul (α.isMulCocycle₂ g h j)⟩, And.left⟩
+  simp only [isLocallyContinuous_iff, mem_LCZ2_iff, mem_LC2_iff', ← ofMul_div,
+    continuousAt_ofMul_iff]
+  exact ⟨fun h => ⟨h, α.isCocycle₂_ofMul⟩, And.left⟩
 
 /-- A locally continuous factor set, read additively, as a locally continuous `2`-cocycle. -/
 def toLCZ2 (α : FactorSet G M) (hα : α.IsLocallyContinuous) : LCZ2 G (Additive M) :=
@@ -102,8 +109,7 @@ theorem isLocallyContinuous_iff_of_preconnected [IsTopologicalGroup G] [Continuo
     [PreconnectedSpace G] (α : FactorSet G M) :
     α.IsLocallyContinuous ↔ ∀ᶠ p in 𝓝 1, ContinuousAt α p := by
   rw [isLocallyContinuous_iff_ofMul_mem_LCZ2, mem_LCZ2_iff_of_preconnected, mem_LC1_iff]
-  simp only [continuousAt_ofMul_iff]
-  exact ⟨And.left, fun h => ⟨h, fun g h j => congrArg Additive.ofMul (α.isMulCocycle₂ g h j)⟩⟩
+  simp only [continuousAt_ofMul_iff, α.isCocycle₂_ofMul, and_true]
 
 variable [IsTopologicalGroup G] [ContinuousSMul G M]
 
@@ -174,10 +180,7 @@ theorem exists_locContCohomologyClass_eq (c : LCH2 G (Additive M)) :
     mem_LCB2_iff.2 ⟨_, C1_le_LC1 G (Additive M) (mem_C1_iff.2 continuous_const), rfl⟩
   have hz' : (z : G × G → Additive M) - b ∈ LCZ2 G (Additive M) :=
     (LCZ2 G (Additive M)).sub_mem z.2 (LCB2_le_LCZ2 G (Additive M) hb)
-  let α : FactorSet G M :=
-    { toFun := fun p => ((z : G × G → Additive M) p - b p).toMul
-      isMulCocycle₂' := fun g h j => congrArg Additive.toMul ((mem_LCZ2_iff.1 hz').2 g h j)
-      map_one_one' := by simp [hb_def, d1_apply] }
+  let α : FactorSet G M := ofIsCocycle₂ (mem_LCZ2_iff.1 hz').2 (by simp [hb_def, d1_apply])
   have hαz : (fun p => Additive.ofMul (α p)) = (z : G × G → Additive M) - b :=
     funext fun p => by simp [α]
   have hα : α.IsLocallyContinuous := (isLocallyContinuous_iff_ofMul_mem_LCZ2 α).2 (hαz ▸ hz')
