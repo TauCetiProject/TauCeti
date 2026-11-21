@@ -140,22 +140,12 @@ private theorem exists_subseq_isLevelGap (hH : ContDiff ℝ 1 (uncurry H)) (hHpe
     (hσσ' : ∀ k, σ k ≤ σ' k) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ IsLevelGap ω H K (u ∘ φ) (σ ∘ φ) (σ' ∘ φ) b b' := by
   by_cases hgap : Tendsto (fun k ↦ σ' k - σ k) atTop atTop
-  · -- The normalizations drift apart: a neck between them converges to an orbit `x`.
-    obtain ⟨φ, hφ, τ, x, hxper, hxd, hxK, hτσ, hσ'τ, hux, hA⟩ :=
-      exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop hH hHper hK hu hper
-        huK hc hJc hJM hfloer hL hgap
-    have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k)
-      (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc k z hz)) (hfloer k)
-    -- The action of `x` is the limit of the actions at `τ`, which lie between `b` and `b'`.
-    have hτA : Tendsto (fun n ↦ ω.hamiltonianAction H (fun t ↦ u (φ n) (τ n, t))) atTop
-        (𝓝 (ω.hamiltonianAction H x)) := by
-      simpa using hA.add_const (ω.hamiltonianAction H x)
-    have hle : b ≤ ω.hamiltonianAction H x := ge_of_tendsto hτA <| by
-      filter_upwards [hτσ.eventually_ge_atTop 0] with n hn
-      exact (hσ (φ n)).symm.trans_le (hmono (φ n) (by linarith))
-    have hge : ω.hamiltonianAction H x ≤ b' := le_of_tendsto hτA <| by
-      filter_upwards [hσ'τ.eventually_ge_atTop 0] with n hn
-      exact (hmono (φ n) (by linarith)).trans_eq (hσ' (φ n))
+  · -- The normalizations drift apart: a neck between them converges to an orbit `x` with action
+    -- in `[b, b']`.
+    obtain ⟨φ, hφ, τ, x, hxper, hxd, hxK, hτσ, hσ'τ, hux, hle, hge⟩ :=
+      exists_subseq_tendstoLocallyUniformly_comp_add_hamiltonianAction_mem_Icc hH hHper hK hu
+        hper huK hc hJc hJM hfloer hL hgap (tendsto_const_nhds.congr fun k ↦ (hσ k).symm)
+        (tendsto_const_nhds.congr fun k ↦ (hσ' k).symm)
     -- Neither endpoint is the action of an orbit.
     have hxΛ : ω.hamiltonianAction H x ∈ ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
         (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K} :=
@@ -166,10 +156,9 @@ private theorem exists_subseq_isLevelGap (hH : ContDiff ℝ 1 (uncurry H)) (hHpe
     -- converges.
     simp only [tendsto_atTop, not_forall, not_eventually, not_le] at hgap
     obtain ⟨N, hN⟩ := hgap
-    obtain ⟨φ₁, hφ₁, hφ₁N⟩ := extraction_of_frequently_atTop hN
-    obtain ⟨δ, -, φ₂, hφ₂, hδ⟩ := (isCompact_Icc (a := 0) (b := N)).tendsto_subseq
-      (x := fun n ↦ σ' (φ₁ n) - σ (φ₁ n)) fun n ↦ ⟨sub_nonneg.2 (hσσ' _), (hφ₁N n).le⟩
-    exact ⟨φ₁ ∘ φ₂, hφ₁.comp hφ₂, Or.inl ⟨δ, hδ⟩⟩
+    obtain ⟨δ, -, φ, hφ, hδ⟩ := (isCompact_Icc (a := 0) (b := N)).tendsto_subseq'
+      (x := fun n ↦ σ' n - σ n) (hN.mono fun n hn ↦ ⟨sub_nonneg.2 (hσσ' n), hn.le⟩)
+    exact ⟨φ, hφ, Or.inl ⟨δ, hδ⟩⟩
 
 /-- **The levels of a breaking sequence of Floer trajectories.** Let `H` be a `C¹` Hamiltonian,
 `1`-periodic in time, and `K` a compact set. Let `u k` be `C²` solutions of the Floer equation
