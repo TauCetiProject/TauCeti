@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -37,7 +38,8 @@ multiplication of local `Lᵖ` functions by continuous factors (with extension b
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
 pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
 decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
-subsets with compact closure inside it.
+subsets with compact closure inside it, and on a disc on the smaller concentric discs
+(`TauCeti.memLpLoc_ball_iff`).
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
 and smooth maps on the whole plane are in every class on every set.
 Conversely, let `U` agree almost everywhere with its interior, as open sets and half-discs do.
@@ -109,6 +111,16 @@ theorem MemLpLoc.memLp_of_forall_notMem_eq_zero (hf : MemLpLoc p U f) {T : Set �
 theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
     MemLpLoc p U f :=
   fun _ hK _ => hf.mono_measure (Measure.restrict_mono hK le_rfl)
+
+/-- Local `Lᵖ` membership on a disc `ball c r` is `Lᵖ` membership on every smaller concentric disc
+`ball c R`, `R < r`. -/
+theorem memLpLoc_ball_iff {c : ℂ} {r : ℝ} :
+    MemLpLoc p (Metric.ball c r) f ↔ ∀ R < r, MemLp f p (volume.restrict (Metric.ball c R)) := by
+  refine ⟨fun hf R hR => hf.memLp_of_closure_subset Metric.isCompact_closure_ball
+    (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hR)),
+    fun hf K hK hKc => ?_⟩
+  obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK
+  exact (hf R hR).mono_measure (Measure.restrict_mono hKR le_rfl)
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
