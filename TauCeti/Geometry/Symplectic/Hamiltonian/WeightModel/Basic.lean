@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Geometry.Convex.Cone.Pointed
@@ -97,6 +98,8 @@ torus.
   (`TauCeti.weightRotation_nsmul`).
 * `TauCeti.weightRotation_product_apply`: rotations commute with the complex structure
   `J(q, p) = (-p, q)`.
+* `TauCeti.complexEuclideanEquivRealProd_symm_weightRotation_apply`: in the complex coordinates
+  `z_i = q_i + i p_i`, the rotation by `θ` multiplies `z_i` by `cos θ_i + i sin θ_i`.
 * `TauCeti.continuous_weightMomentMap`, `TauCeti.weightMomentMap_weightRotation`,
   `TauCeti.weightMomentMap_torusRotation`: `μ` is continuous and invariant under every rotation.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
@@ -214,6 +217,18 @@ theorem weightRotation_apply_fst (θ : ι → ℝ) (x : EuclideanSpace ℝ ι ×
 theorem weightRotation_apply_snd (θ : ι → ℝ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
     (i : ι) : (weightRotation θ x).2 i = sin (θ i) * x.1 i + cos (θ i) * x.2 i :=
   (rfl)
+
+/-- In the complex coordinates `z_i = q_i + i p_i` (`TauCeti.complexEuclideanEquivRealProd`), the
+rotation `weightRotation θ` multiplies `z_i` by `cos θ_i + i sin θ_i`. -/
+theorem complexEuclideanEquivRealProd_symm_weightRotation_apply (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι).symm (weightRotation θ x) i =
+      (cos (θ i) + sin (θ i) * Complex.I) * (complexEuclideanEquivRealProd ι).symm x i := by
+  apply Complex.ext <;>
+    simp only [complexEuclideanEquivRealProd_symm_apply, weightRotation_apply_fst,
+      weightRotation_apply_snd, Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re,
+      Complex.I_im, Complex.ofReal_im, Complex.add_im, Complex.mul_im] <;>
+    ring
 
 /-- The infinitesimal rotation `z_i ↦ i θ_i z_i` of `ℂ^ι`, that is `(q, p) ↦ (-θ p, θ q)`
 coordinatewise: the velocity of `t ↦ weightRotation (t • θ)` at `t = 0`. -/
