@@ -36,8 +36,9 @@ The perturbation is an arbitrary map, not a member of a parametrized family as i
 `TauCeti.IsNondegenerateFixedPt.exists_contMDiffAt_fixedPt_continuation`, and the size of the
 admissible perturbation is uniform on the ball. The fixed points of `g` are the zeros of
 `y ↦ y - g y`, whose derivative `1 - Dg` approximates the invertible operator `1 - Df(x)` on a
-small ball. Its unique zero there comes from the quantitative inverse function theorem
-`ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`.
+small ball. Its unique zero there comes from
+`ContinuousLinearMap.IsInvertible.exists_eq_zero_perturbation`, which rests on the quantitative
+inverse function theorem `ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`.
 
 On a compact set `K` the local statements combine.
 
@@ -85,27 +86,6 @@ namespace Function.IsFixedPt
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → E} {x : E}
 
-/-- If `1 - Dg` stays within `κ` of an invertible operator `L` on a closed ball, with
-`2 ‖L⁻¹‖ κ ≤ 1`, and `g` moves the centre `x` little enough, then `g` has a unique fixed point in
-the ball, within `2 C ‖x - g x‖` of `x`, for any bound `C` on `‖L⁻¹‖`. -/
-private theorem exists_isFixedPt_of_norm_id_sub_fderiv_sub_le [CompleteSpace E] {g : E → E}
-    {L : E ≃L[ℝ] E} {C κ r : ℝ} (hκ : 0 ≤ κ) (hLsymm : ‖(L.symm : E →L[ℝ] E)‖ ≤ C)
-    (hκC : 2 * C * κ ≤ 1) (hg : ∀ y ∈ closedBall x r, DifferentiableAt ℝ g y)
-    (hclose : ∀ y ∈ closedBall x r, ‖(ContinuousLinearMap.id ℝ E - fderiv ℝ g y) - L‖ ≤ κ)
-    (hr : 2 * C * ‖x - g x‖ ≤ r) :
-    ∃ y ∈ closedBall x (2 * C * ‖x - g x‖), IsFixedPt g y ∧
-      ∀ z ∈ closedBall x r, IsFixedPt g z → z = y := by
-  -- The fixed points of `g` are the zeros of the displacement `y ↦ y - g y`, whose derivative
-  -- `1 - Dg` approximates `L` on the ball.
-  have happrox : ApproximatesLinearOn (fun z ↦ z - g z) (L : E →L[ℝ] E) (closedBall x r)
-      ⟨κ, hκ⟩ :=
-    (convex_closedBall x r).approximatesLinearOn_of_nnnorm_fderiv_sub_le
-      (fun y hy ↦ differentiableAt_id.sub (hg y hy)) fun y hy ↦ by
-        rw [fderiv_fun_sub differentiableAt_fun_id (hg y hy), fderiv_fun_id]
-        exact_mod_cast hclose y hy
-  obtain ⟨y, hy, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hr
-  exact ⟨y, hy, (sub_eq_zero.1 hy0).symm, fun z hz hgz ↦ huniq z hz (sub_eq_zero.2 hgz.symm)⟩
-
 /-- **Persistence of a fixed point under small `C¹` perturbations.**
 
 Let `x` be a fixed point of `f`, a map of a Banach space whose derivative is continuous at `x`,
@@ -125,54 +105,23 @@ theorem exists_isFixedPt_perturbation [CompleteSpace E] (hx : IsFixedPt f x)
       ∃ y ∈ closedBall x r, IsFixedPt g y ∧
         (ContinuousLinearMap.id ℝ E - fderiv ℝ g y).IsInvertible ∧
         dist y x ≤ K * ‖g x - f x‖ ∧ ∀ z ∈ closedBall x r, IsFixedPt g z → z = y := by
-  -- On a small ball `1 - Dg` stays close to the invertible operator `L = 1 - Df(x)`.
-  obtain ⟨L, hL⟩ := hinv
-  -- `C` bounds the inverse of `L` and is positive even on the zero space.
-  set C : ℝ := ‖(L.symm : E →L[ℝ] E)‖ + 1
-  have hLsymm : ‖(L.symm : E →L[ℝ] E)‖ ≤ C := le_add_of_nonneg_right zero_le_one
-  obtain ⟨ε₀, hε₀, hinv'⟩ :=
-    Metric.eventually_nhds_iff.1 (ContinuousLinearMap.IsInvertible.eventually_nhds ⟨L, hL⟩)
-  -- `κ` is the admissible distance from `L` on the ball.
-  set κ : ℝ := min (2 * C)⁻¹ (ε₀ / 2)
-  have hκ : 0 < κ := by positivity
-  have hκC : 2 * C * κ ≤ 1 :=
-    calc 2 * C * κ ≤ 2 * C * (2 * C)⁻¹ := by gcongr; exact min_le_left _ _
-      _ = 1 := mul_inv_cancel₀ (by positivity)
-  have hκε₀ : κ < ε₀ := (min_le_right _ _).trans_lt (half_lt_self hε₀)
-  obtain ⟨ρ, hρ, hρf⟩ := Metric.eventually_nhds_iff.1
-    (hf.eventually (Metric.ball_mem_nhds _ (half_pos hκ)))
-  refine ⟨2 * C, ?_⟩
-  filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
-  refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgf hgx ↦ ?_⟩
-  -- On the ball, `1 - Dg` is within `κ` of `L`.
-  have hclose (y : E) (hy : y ∈ closedBall x r) :
-      ‖(ContinuousLinearMap.id ℝ E - fderiv ℝ g y) - L‖ ≤ κ :=
-    calc ‖(ContinuousLinearMap.id ℝ E - fderiv ℝ g y) - L‖
-        = ‖(fderiv ℝ f y - fderiv ℝ g y) + (fderiv ℝ f x - fderiv ℝ f y)‖ := by
-          rw [hL]; congr 1; abel
-      _ ≤ ‖fderiv ℝ f y - fderiv ℝ g y‖ + ‖fderiv ℝ f x - fderiv ℝ f y‖ := norm_add_le _ _
-      _ = ‖fderiv ℝ g y - fderiv ℝ f y‖ + ‖fderiv ℝ f y - fderiv ℝ f x‖ := by
-          rw [norm_sub_rev (fderiv ℝ f y), norm_sub_rev (fderiv ℝ f x)]
-      _ ≤ κ / 2 + κ / 2 := by
-          gcongr
-          · exact (hgf y hy).trans (min_le_left _ _)
-          · have := hρf (lt_of_le_of_lt (mem_closedBall.1 hy) hr.2)
-            rw [dist_eq_norm] at this
-            exact this.le
-      _ = κ := add_halves κ
+  -- The fixed points of `g` are the zeros of the displacement `y ↦ y - g y`, whose derivative
+  -- `1 - Dg` stays close to `1 - Df` on the ball.
+  obtain ⟨K, _, hK⟩ := hinv.exists_eq_zero_perturbation
+    (D := fun y ↦ ContinuousLinearMap.id ℝ E - fderiv ℝ f y) (continuousAt_const.sub hf)
+  refine ⟨K, ?_⟩
+  filter_upwards [hK] with r ⟨δ, hδ, hr⟩
+  refine ⟨δ, hδ, fun g hg hgf hgx ↦ ?_⟩
+  have hD (y : E) (hy : y ∈ closedBall x r) :
+      fderiv ℝ (fun z ↦ z - g z) y = ContinuousLinearMap.id ℝ E - fderiv ℝ g y := by
+    rw [fderiv_fun_sub differentiableAt_fun_id (hg y hy), fderiv_fun_id]
   have hn : ‖x - g x‖ = ‖g x - f x‖ := by rw [norm_sub_rev, hx.eq]
-  have hεr : 2 * C * ‖x - g x‖ ≤ r := by
-    have : ‖g x - f x‖ ≤ r / (2 * C) := hgx.trans (min_le_right _ _)
-    rw [hn]
-    rwa [le_div_iff₀ (by positivity), mul_comm] at this
-  obtain ⟨y, hyε, hgy, huniq⟩ :=
-    exists_isFixedPt_of_norm_id_sub_fderiv_sub_le hκ.le hLsymm hκC hg hclose hεr
-  have hsub : closedBall x (2 * C * ‖x - g x‖) ⊆ closedBall x r := closedBall_subset_closedBall hεr
-  refine ⟨y, hsub hyε, hgy, hinv' ?_, ?_, huniq⟩
-  · rw [dist_eq_norm, ← hL]
-    exact (hclose y (hsub hyε)).trans_lt hκε₀
-  · rw [← hn]
-    exact mem_closedBall.1 hyε
+  obtain ⟨-, y, hy, hy0, hinvy, hdist, huniq⟩ := hr (fun z ↦ z - g z)
+    (fun y hy ↦ differentiableAt_id.sub (hg y hy))
+    (fun y hy ↦ by rw [hD y hy, sub_sub_sub_cancel_left, norm_sub_rev]; exact hgf y hy)
+    (hn ▸ hgx)
+  exact ⟨y, hy, (sub_eq_zero.1 hy0).symm, hD y hy ▸ hinvy, hn ▸ hdist,
+    fun z hz hgz ↦ huniq z hz (sub_eq_zero.2 hgz.symm)⟩
 
 end Function.IsFixedPt
 

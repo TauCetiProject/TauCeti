@@ -28,10 +28,11 @@ parametrised family is involved: the perturbation is an arbitrary function, and 
 admissible perturbation is uniform on the chosen ball. A perturbation that is `C²`-close to `f`
 on the ball satisfies the hypotheses, since the differential of `f` vanishes at `x`.
 
-The existence and uniqueness of the perturbed critical point follow from Mathlib's quantitative
-inverse function theorem: on the ball the differential of `g` approximates the invertible Hessian
-of `f` at `x`, so it is injective there and its image contains an explicit ball around
-`fderiv ℝ g x`. The Morse index is preserved because the negative index of a nondegenerate
+The existence and uniqueness of the perturbed critical point follow from
+`ContinuousLinearMap.IsInvertible.exists_eq_zero_perturbation`, which rests on Mathlib's
+quantitative inverse function theorem: on the ball the differential of `g` approximates the
+invertible Hessian of `f` at `x`, so it is injective there and its image contains an explicit ball
+around `fderiv ℝ g x`. The Morse index is preserved because the negative index of a nondegenerate
 symmetric bilinear form is locally constant.
 
 Nondegeneracy of all critical points on a compact set `K` persists as well: there is
@@ -71,28 +72,6 @@ namespace TauCeti.IsNondegenerateCriticalPoint
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
 
-/-- If the second derivative of `f` is within `κ / 2` of `L` and that of `g` within `κ / 2` of
-that of `f` on a closed ball, then on the ball the second derivative of `g` is within `κ` of `L`
-and `fderiv ℝ g` is `κ`-approximated by `L`. -/
-private theorem approximatesLinearOn_fderiv_closedBall {g : E → ℝ} {L : E →L[ℝ] E →L[ℝ] ℝ}
-    {r κ : ℝ} (hκ : 0 ≤ κ) (hg : ∀ y ∈ closedBall x r, ContDiffAt ℝ 2 g y)
-    (hfy : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ f) y - L‖ < κ / 2)
-    (hgf : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ ≤ κ / 2) :
-    (∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - L‖ ≤ κ) ∧
-      ApproximatesLinearOn (fderiv ℝ g) L (closedBall x r) ⟨κ, hκ⟩ := by
-  have hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ (fderiv ℝ g) y := fun y hy ↦
-    ((hg y hy).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hclose : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - L‖ ≤ κ := fun y hy ↦
-    calc ‖fderiv ℝ (fderiv ℝ g) y - L‖
-        ≤ ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ +
-            ‖fderiv ℝ (fderiv ℝ f) y - L‖ :=
-          norm_sub_le_norm_sub_add_norm_sub (fderiv ℝ (fderiv ℝ g) y)
-            (fderiv ℝ (fderiv ℝ f) y) L
-      _ ≤ κ / 2 + κ / 2 := add_le_add (hgf y hy) (hfy y hy).le
-      _ = κ := add_halves _
-  exact ⟨hclose, fun y hy z hz ↦
-    (convex_closedBall x r).norm_image_sub_le_of_norm_fderiv_le' hdiff hclose hz hy⟩
-
 /-- **Persistence of a nondegenerate critical point under small `C²` perturbations.**
 
 Let `x` be a nondegenerate critical point of `f` on a Banach space. For every sufficiently small
@@ -112,62 +91,32 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
       ∃ y ∈ closedBall x r, IsNondegenerateCriticalPoint g y ∧
         dist y x ≤ K * ‖fderiv ℝ g x‖ ∧ |g y - g x| ≤ K * ‖fderiv ℝ g x‖ ^ 2 ∧
         ∀ z ∈ closedBall x r, fderiv ℝ g z = 0 → z = y := by
-  -- On a small ball, `fderiv ℝ g` approximates the invertible Hessian `L` of `f` at `x`, so it
-  -- has a unique zero there; the remaining estimates are read off on the smaller ball of radius
-  -- `2 * C * ‖fderiv ℝ g x‖` containing that zero.
-  obtain ⟨L, hL⟩ := h.isInvertible
-  -- `C` bounds the inverse of the Hessian `L` and is positive even on the zero space.
-  let C : ℝ := ‖(L.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖ + 1
-  have hC : 0 < C := by positivity
-  have hLsymm : ‖(L.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖ ≤ C := le_add_of_nonneg_right zero_le_one
-  obtain ⟨ε₀, hε₀, hinv⟩ := Metric.eventually_nhds_iff.1 h.isInvertible.eventually_nhds
-  -- `κ` is the admissible distance from the Hessian `L` on the ball.
-  let κ : ℝ := min (2 * C)⁻¹ (ε₀ / 2)
-  have hκ : 0 < κ := by positivity
-  have hκC : 2 * C * κ ≤ 1 :=
-    calc 2 * C * κ ≤ 2 * C * (2 * C)⁻¹ := by gcongr; exact min_le_left _ _
-      _ = 1 := mul_inv_cancel₀ (by positivity)
-  have hκε₀ : κ < ε₀ := (min_le_right _ _).trans_lt (half_lt_self hε₀)
+  -- On a small ball, the second derivative of `g` stays close to the invertible Hessian of `f`,
+  -- so `fderiv ℝ g` has a unique zero there, with controlled location.
   have hcont : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
     (h.contDiffAt.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
-  obtain ⟨ρ, hρ, hρf⟩ := Metric.eventually_nhds_iff.1
-    (hcont.eventually_mem (Metric.ball_mem_nhds (fderiv ℝ (fderiv ℝ f) x) (half_pos hκ)))
-  let K : ℝ := 2 * C + 2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2
-  refine ⟨K, ?_⟩
-  filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
-  refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgx hgf ↦ ?_⟩
-  have hfy : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ < κ / 2 :=
-    fun y hy ↦ by
-      rw [hL]
-      exact (mem_ball_iff_norm (E := E →L[ℝ] E →L[ℝ] ℝ)).1 <|
-        hρf (lt_of_le_of_lt (mem_closedBall.1 hy) hr.2)
-  obtain ⟨hclose, happrox⟩ := approximatesLinearOn_fderiv_closedBall hκ.le hg hfy
-    fun y hy ↦ (hgf y hy).trans (min_le_left _ _)
+  obtain ⟨K₀, c, hK₀⟩ := h.isInvertible.exists_eq_zero_perturbation hcont
+  set A : ℝ := ‖fderiv ℝ (fderiv ℝ f) x‖ + c
+  refine ⟨|K₀| + A / 2 * K₀ ^ 2, ?_⟩
+  filter_upwards [hK₀] with r ⟨δ, hδ, hr⟩
+  refine ⟨δ, hδ, fun g hg hgx hgf ↦ ?_⟩
+  have hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ (fderiv ℝ g) y := fun y hy ↦
+    ((hg y hy).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  obtain ⟨happrox, y, hy, hy0, hinv, hdist, huniq⟩ := hr (fderiv ℝ g) hdiff hgf hgx
   set n := ‖fderiv ℝ g x‖
-  have hεr : 2 * C * n ≤ r := by
-    have : n ≤ r / (2 * C) := hgx.trans (min_le_right _ _)
-    rwa [le_div_iff₀ (by positivity), mul_comm] at this
-  obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hεr
-  have hsub : closedBall x (2 * C * n) ⊆ closedBall x r := closedBall_subset_closedBall hεr
-  have hKC : 2 * C ≤ K := by
-    have : 0 ≤ 2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2 := by positivity
-    linarith
-  refine ⟨y, hsub hyε, ⟨hg y (hsub hyε), hy0, hinv ?_⟩, ?_, ?_, huniq⟩
-  · -- Nondegeneracy: the Hessian of `g` at `y` is within `κ < ε₀` of `L`.
-    rw [← hL]
-    exact (dist_eq_norm (fderiv ℝ (fderiv ℝ g) y) (L : E →L[ℝ] E →L[ℝ] ℝ)).trans_lt
-      ((hclose y (hsub hyε)).trans_lt hκε₀)
-  · calc dist y x ≤ 2 * C * n := mem_closedBall.1 hyε
-      _ ≤ K * n := by gcongr
-  · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
-    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * ‖y - x‖ ^ 2 :=
+  refine ⟨y, hy, ⟨hg y hy, hy0, hinv⟩, ?_, ?_, huniq⟩
+  · calc dist y x ≤ K₀ * n := hdist
+      _ ≤ |K₀| * n := by gcongr; exact le_abs_self K₀
+      _ ≤ (|K₀| + A / 2 * K₀ ^ 2) * n := by gcongr; exact le_add_of_nonneg_right (by positivity)
+  · -- Value: near `y` the differential of `g` is bounded by `A` times the distance to `y`.
+    calc |g y - g x| ≤ A / 2 * ‖y - x‖ ^ 2 :=
         Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero (convex_closedBall x r)
-          (fun w hw ↦ (hg w hw).differentiableAt (by norm_num)) (mem_closedBall_self hr.1.le)
-          (hsub hyε) hy0
-      _ ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * (2 * C * n) ^ 2 := by
-        gcongr; exact mem_closedBall_iff_norm.1 hyε
-      _ = (2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
-      _ ≤ K * n ^ 2 := by gcongr; linarith
+          (fun w hw ↦ (hg w hw).differentiableAt (by norm_num))
+          (mem_closedBall_self (dist_nonneg.trans (mem_closedBall.1 hy))) hy hy0
+      _ ≤ A / 2 * (K₀ * n) ^ 2 := by gcongr; rw [← dist_eq_norm]; exact hdist
+      _ = A / 2 * K₀ ^ 2 * n ^ 2 := by ring
+      _ ≤ (|K₀| + A / 2 * K₀ ^ 2) * n ^ 2 := by
+        gcongr; exact le_add_of_nonneg_left (abs_nonneg K₀)
 
 /-- **The Morse index is stable under small changes of the Hessian.**
 
