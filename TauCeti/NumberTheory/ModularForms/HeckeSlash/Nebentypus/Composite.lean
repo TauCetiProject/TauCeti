@@ -98,10 +98,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime 
     have hnn' : n.minFac ^ n.factorization n.minFac *
         (n / n.minFac ^ n.factorization n.minFac) = n :=
       Nat.ordProj_mul_ordCompl_eq_self n n.minFac
-    have hn'0 : n / n.minFac ^ n.factorization n.minFac ≠ 0 := by
-      intro h
-      rw [h, mul_zero] at hnn'
-      exact hn hnn'.symm
+    have hn'0 : n / n.minFac ^ n.factorization n.minFac ≠ 0 := (Nat.ordCompl_pos n.minFac hn).ne'
     have hn'lt : n / n.minFac ^ n.factorization n.minFac < n :=
       ordCompl_lt_self_iff.2 (minFac_mem_primeFactors_iff.2 hlt)
     have hpm : ¬ n.minFac ∣ m :=
