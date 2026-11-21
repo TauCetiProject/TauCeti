@@ -200,14 +200,14 @@ theorem derivBilinearTensor_apply_eq_smul_swap (c : ℝ) (h : ∀ y (v w : V y),
       MDiffAt (fun y ↦ b y (σ y) (τ y)) x
   · ext v
     have hpair : (fun y ↦ b y (extend F σ₀ y) (extend F τ₀ y)) =
-        (fun _ ↦ c) * fun y ↦ b y (extend F τ₀ y) (extend F σ₀ y) :=
+        fun y ↦ c * b y (extend F τ₀ y) (extend F σ₀ y) :=
       funext fun y ↦ h y _ _
     rw [smul_apply, cov.derivBilinearTensor_apply_eq_extend hb,
       cov.derivBilinearTensor_apply_eq_extend hb, hpair,
-      mvfderiv_mul mdifferentiableAt_const
+      mvfderiv_fun_mul mdifferentiableAt_const
         (hb (mdifferentiableAt_extend I F τ₀) (mdifferentiableAt_extend I F σ₀)),
-      mvfderiv_const, h x σ₀, h x (cov (extend F σ₀) x v)]
-    simp only [add_apply, smul_apply, zero_apply, smul_eq_mul]
+      h x σ₀, h x (cov (extend F σ₀) x v)]
+    simp [mvfderiv_const]
     ring
   · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
 
