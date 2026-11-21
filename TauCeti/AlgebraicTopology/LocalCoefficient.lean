@@ -390,6 +390,15 @@ theorem transport_refl (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
   rw [h]
   exact L.map_id_apply _ a
 
+/-- Transport in a constant system is the identity of its fibre, along any path class. -/
+@[simp]
+theorem transport_constantFunctor (M : ModuleCat.{w} R) {x y : X}
+    (p : Path.Homotopic.Quotient x y) :
+    transport ((constantFunctor X).obj M) p = LinearEquiv.refl R M := by
+  ext a
+  rw [transport_apply, constantFunctor_obj_map]
+  exact ModuleCat.id_apply M a
+
 /-- Transport along a concatenation of paths is the composite of the two transports. -/
 @[simp]
 theorem transport_trans {x y z : X} (L : LocalCoefficientSystem.{u, v, w} R X)
