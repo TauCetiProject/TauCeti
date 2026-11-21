@@ -107,12 +107,9 @@ theorem not_exists_wkp_two_firstOrder_eq_of_forall_integral_gradient_mul_deriv_e
   have hFi : IntegrableOn F (Ioo x₀ x₁) := by
     have h₀ : IntegrableOn F (Ioo x₀ c) :=
       (integrableOn_const measure_Ioo_lt_top.ne).congr_fun_ae (hF₀.mono fun _ ht => ht.symm)
-    have h₁ : IntegrableOn F (Icc c x₁) := (integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2
+    have h₁ : IntegrableOn F (Ico c x₁) := (integrableOn_Ico_iff_integrableOn_Ioo (f := F)).2
       ((integrableOn_const measure_Ioo_lt_top.ne).congr_fun_ae (hF₁.mono fun _ ht => ht.symm))
-    refine (h₀.union h₁).mono_set fun t ht => ?_
-    rcases lt_or_ge t c with htc | htc
-    · exact Or.inl ⟨ht.1, htc⟩
-    · exact Or.inr ⟨htc, ht.2.le⟩
+    exact (h₀.union h₁).mono_set Ioo_subset_Ioo_union_Ico
   -- The first integral of the equation: `u' + F` is almost everywhere a constant `k`.
   obtain ⟨k, hk⟩ := exists_ae_mul_gradient_add_eq_sub_intervalIntegral (a := fun _ => 1)
     (f := 0) (F := F) aestronglyMeasurable_const (M := 1) (by simp) integrableOn_zero hFi
