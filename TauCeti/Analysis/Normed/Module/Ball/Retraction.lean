@@ -228,6 +228,38 @@ theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
   rw [mem_closedBall_zero_iff, norm_radialRetraction hr]
   exact min_le_right _ _
 
+/-- The radial retraction at a nonnegative radius `r` is the radial retraction onto the unit ball
+conjugated by the dilation by `r`. For `r = 0` both sides vanish. -/
+theorem radialRetraction_eq_smul_radialRetraction_one (hr : 0 ≤ r) (x : E) :
+    radialRetraction r x = r • radialRetraction 1 (r⁻¹ • x) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [radialRetraction_def]
+  rw [radialRetraction_def, radialRetraction_def, norm_smul,
+    Real.norm_of_nonneg (inv_nonneg.2 hr.le), smul_smul, smul_smul, one_div, mul_inv, inv_inv,
+    ← div_eq_mul_inv, mul_comm r, mul_div_assoc, div_self hr.ne', mul_one, div_eq_mul_inv]
+
+/-- Two radial retractions at radii `s ≤ r` agree at a vector of norm at most `s`. -/
+theorem radialRetraction_eq_radialRetraction_of_norm_le {s : ℝ} (hs : ‖x‖ ≤ s) (hsr : s ≤ r) :
+    radialRetraction r x = radialRetraction s x := by
+  rcases (norm_nonneg x).eq_or_lt with h | h
+  · rw [radialRetraction_of_norm_eq_zero h.symm, radialRetraction_of_norm_eq_zero h.symm]
+  · rw [radialRetraction_of_norm_pos_of_norm_le h (hs.trans hsr),
+      radialRetraction_of_norm_pos_of_norm_le h hs]
+
+/-- For nonnegative radii `s ≤ r`, the radial retractions of `x` at `r` and at `s` differ by a
+vector of norm at most `min ‖x‖ r`: the difference is the part of `x` between the heights `s`
+and `r`. -/
+theorem norm_radialRetraction_sub_radialRetraction_le {s : ℝ} (hs : 0 ≤ s) (hsr : s ≤ r)
+    (x : E) : ‖radialRetraction r x - radialRetraction s x‖ ≤ min ‖x‖ r := by
+  have h1 : min 1 (s / ‖x‖) ≤ min 1 (r / ‖x‖) :=
+    min_le_min_left _ (div_le_div_of_nonneg_right hsr (norm_nonneg x))
+  have h0 : 0 ≤ min 1 (s / ‖x‖) := le_min zero_le_one (div_nonneg hs (norm_nonneg x))
+  rw [← norm_radialRetraction (hs.trans hsr) x, radialRetraction_def, radialRetraction_def,
+    ← sub_smul, norm_smul, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 h1),
+    Real.norm_of_nonneg (h0.trans h1)]
+  gcongr
+  linarith
+
 /-- The centred radial retraction takes values in its closed ball. -/
 theorem centeredRadialRetraction_mem_closedBall {x₀ : E} (hr : 0 ≤ r) (x : E) :
     centeredRadialRetraction x₀ r x ∈ closedBall x₀ r := by
