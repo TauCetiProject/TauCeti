@@ -73,7 +73,7 @@ private abbrev negChain (K : CochainComplex C ℤ) : ChainComplex C ℤ :=
 
 private lemma surjective_embeddingDownIntUpInt_f :
     Function.Surjective ComplexShape.embeddingDownIntUpInt.f :=
-  neg_involutive.surjective
+  neg_surjective
 
 private lemma negChain_f_sub_one {i j : ℤ} (hij : i + j = 1) :
     ComplexShape.embeddingDownIntUpInt.f (i - 1) = j := by
@@ -107,12 +107,6 @@ private lemma negChain_isSplitMono_iCycles_self (K : CochainComplex C ℤ) (i : 
     IsSplitMono ((negChain K).iCycles i) :=
   K.isSplitMono_restriction_iCycles_of_surjective ComplexShape.embeddingDownIntUpInt
     surjective_embeddingDownIntUpInt_f i (-i) (ComplexShape.embeddingDownIntUpInt_f i)
-
-private lemma restrictionXIso_hom_comp (K : CochainComplex C ℤ) (i : ℤ) {Z : C}
-    (g : K.X (-i) ⟶ Z) :
-    (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
-      (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫ g = g :=
-  Category.id_comp g
 
 /-- Comparison morphism from degree-`(i - 1)` boundaries of `negChain K` to degree-`j` boundaries
 of `K` induced by the cycle and homology comparison isomorphisms along `n ↦ -n`. -/
@@ -194,7 +188,7 @@ lemma homologyπ_cochainKronecker (i : ℤ)
   let ψ := ChainComplex.cocycleOfComp k Y f hf (𝟙 Y)
   have hψ : (X.linearYonedaObj k Y).iCycles i ψ = g := by
     rw [ChainComplex.iCycles_cocycleOfComp, Category.comp_id]
-    exact restrictionXIso_hom_comp K i g
+    exact Category.id_comp _
   rw [cochainKronecker, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
     Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
     linearHomComplexSingle₀HomologyIso_hom_homologyπ K Y i φ ψ hψ,
@@ -300,10 +294,15 @@ theorem isZero_homology_linearHomComplex_of_projective_homology {i j : ℤ} (hij
     [IsSplitMono (K.iCycles j)] [IsSplitMono (K.iCycles (-i))] [Projective (K.homology j)]
     (hi : IsZero (K.homology (-i))) :
     IsZero ((linearHomComplex k K ((singleFunctor C 0).obj Y)).homology i) := by
-  have : Subsingleton (K.homology (-i) ⟶ Y) := ⟨hi.eq_of_src⟩
-  have := (cochainKronecker_bijective_of_projective_homology (k := k) (K := K) (Y := Y)
-    hij).1.subsingleton
-  exact ModuleCat.isZero_of_subsingleton _
+  have := negChain_isSplitMono_iCycles K hij
+  have := negChain_isSplitMono_iCycles_self K i
+  have := negChain_projective_homology K hij
+  have hi' : IsZero ((negChain K).homology i) :=
+    hi.of_iso (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+      surjective_embeddingDownIntUpInt_f i (-i) (ComplexShape.embeddingDownIntUpInt_f i))
+  exact (ChainComplex.isZero_homology_linearYonedaObj_of_projective_homology_of_add_one_eq
+    (k := k) (X := negChain K) (Y := Y) (show i - 1 + 1 = i by omega) hi').of_iso
+    (linearHomComplexSingle₀HomologyIso k K Y i)
 
 private lemma negChain_d_comp_retraction_iCycles_comp_homologyπ (K : CochainComplex C ℤ) (i : ℤ)
     [IsSplitMono (K.iCycles (-i))] :
@@ -350,7 +349,7 @@ lemma cochainKroneckerSection_apply (i : ℤ) [IsSplitMono (K.iCycles (-i))]
       Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
         (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
     rw [ChainComplex.iCycles_cocycleOfComp, Category.assoc, Category.assoc, hφ]
-    exact restrictionXIso_hom_comp K i _
+    exact Category.id_comp _
   rw [cochainKroneckerSection, LinearMap.comp_apply,
     ChainComplex.homologyClassOfComp_eq _ _ g ψ (ChainComplex.iCycles_cocycleOfComp _ _ g)]
   exact linearHomComplexSingle₀HomologyIso_inv_homologyπ K Y i φ ψ hψ
@@ -463,7 +462,7 @@ lemma cochainExtToHomology_extClass_comp_mk₀ {i j : ℤ} (hij : i + j = 1)
         (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
     rw [ChainComplex.iCycles_cocycleOfComp, ← Category.assoc,
       negChain_toBoundaries_comp_boundariesMap K hij, Category.assoc, hφ]
-    exact restrictionXIso_hom_comp K i _
+    exact Category.id_comp _
   -- Transport the extension class to `negChain K`, evaluate `ChainComplex.extToHomology`, and
   -- return to `linearHomComplex` along `linearHomComplexSingle₀HomologyIso`.
   have harg := extLinearEquivOfIso_negChain_extClass_comp_mk₀ (k := k) (K := K) (Y := Y) hij β

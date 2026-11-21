@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.CochainComplexOpposite
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.LinearHomComplex.Single.Basic
 public import TauCeti.Algebra.Homology.LinearYoneda
+import TauCeti.Algebra.Homology.CochainComplex.AlternatingDifferential
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.Algebra.Ring.NegOnePow
 
@@ -64,6 +65,69 @@ variable {C : Type u} [Category.{v} C] [Abelian C] (k : Type*) [Ring k] [Linear 
 private abbrev negChain (K : CochainComplex C ℤ) : ChainComplex C ℤ :=
   K.restriction ComplexShape.embeddingDownIntUpInt
 
+/-- Unsigned identification of `linearHomComplex k K Y[0]` with the alternating-differential
+twist of `(negChain K).linearYonedaObj k Y`. -/
+private def linearHomComplexSingle₀XIso (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).X i ≅
+      (_root_.ChainComplex.linearYonedaObj
+        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).X i :=
+  (Cochain.toSingleLinearEquiv (R := k) (K := K) (X := Y) (neg_add_cancel i)).toModuleIso
+
+private lemma linearHomComplexSingle₀XIso_hom_apply (K : CochainComplex C ℤ) (Y : C) (i : ℤ)
+    (z : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y) i)) :
+    ((linearHomComplexSingle₀XIso k K Y i).hom.hom z : K.X (-i) ⟶ Y) =
+      Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z :=
+  rfl
+
+private def linearHomComplexSingle₀AlternatingIso (K : CochainComplex C ℤ) (Y : C) :
+    linearHomComplex k K ((singleFunctor C 0).obj Y) ≅
+      (_root_.ChainComplex.linearYonedaObj
+        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).alternatingDifferential :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun i ↦
+      linearHomComplexSingle₀XIso k K Y i ≪≫
+        ((_root_.ChainComplex.linearYonedaObj
+          (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).alternatingDifferentialXIso
+          i).symm)
+    (fun i j hij ↦ by
+      obtain rfl : i + 1 = j := by simpa [ComplexShape.up_Rel] using hij
+      dsimp only [Iso.trans_hom, Iso.symm_hom]
+      rw [← cancel_mono ((_root_.ChainComplex.linearYonedaObj
+        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).alternatingDifferentialXIso
+          (i + 1)).hom]
+      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
+        CochainComplex.alternatingDifferential_d, Preadditive.comp_zsmul, Iso.inv_hom_id_assoc]
+      ext (z : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y) i))
+      have hz := toSingleLinearEquiv_linearHomComplex_d_apply (k := k) K Y i z
+      have hlhs :
+          ((_root_.ChainComplex.linearYonedaObj
+            (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).d i (i + 1)).hom
+              ((linearHomComplexSingle₀XIso k K Y i).hom.hom z) =
+            (K.d (-(i + 1)) (-i) ≫ Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z :
+              K.X (-(i + 1)) ⟶ Y) := rfl
+      simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zsmul,
+        LinearMap.smul_apply]
+      rw [hlhs, linearHomComplexSingle₀XIso_hom_apply, hz, Units.smul_def]
+      rfl)
+
+private lemma linearHomComplexSingle₀AlternatingIso_hom_f_comp
+    (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (linearHomComplexSingle₀AlternatingIso k K Y).hom.f i ≫
+        ((_root_.ChainComplex.linearYonedaObj
+          (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).alternatingDifferentialXIso
+          i).hom =
+      (linearHomComplexSingle₀XIso k K Y i).hom := by
+  simp [linearHomComplexSingle₀AlternatingIso, Category.assoc]
+
+private lemma linearHomComplexSingle₀AlternatingIso_comp_inv_f
+    (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    ((_root_.ChainComplex.linearYonedaObj
+          (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).alternatingDifferentialXIso
+          i).inv ≫
+        (linearHomComplexSingle₀AlternatingIso k K Y).inv.f i =
+      (linearHomComplexSingle₀XIso k K Y i).inv := by
+  simp [linearHomComplexSingle₀AlternatingIso]
+
 /-- **Comparison of `linearHomComplex` into a degree-zero object with `linearYonedaObj`.**
 Scaling `Cochain.toSingleLinearEquiv (neg_add_cancel i)` by `(-1)^(i(i + 1) / 2)` in degree `i`
 gives an isomorphism of cochain complexes from `linearHomComplex k K ((singleFunctor C 0).obj Y)` to
@@ -72,31 +136,9 @@ def linearHomComplexSingle₀Iso (K : CochainComplex C ℤ) (Y : C) :
     linearHomComplex k K ((singleFunctor C 0).obj Y) ≅
       _root_.ChainComplex.linearYonedaObj
         (K.restriction ComplexShape.embeddingDownIntUpInt) k Y :=
-  HomologicalComplex.Hom.isoOfComponents
-    (fun i ↦ (i * (i + 1) / 2).negOnePow •
-      (Cochain.toSingleLinearEquiv (R := k) (K := K) (X := Y) (neg_add_cancel i)).toModuleIso)
-    (fun i j hij ↦ by
-      obtain rfl : i + 1 = j := by simpa [ComplexShape.up_Rel] using hij
-      ext (z : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y) i))
-      have h1 : (((linearHomComplex k K ((singleFunctor C 0).obj Y)).d i (i + 1) ≫
-            (((i + 1) * (i + 1 + 1) / 2).negOnePow •
-              (Cochain.toSingleLinearEquiv (R := k) (K := K) (X := Y)
-                (neg_add_cancel (i + 1))).toModuleIso).hom).hom z : K.X (-(i + 1)) ⟶ Y) =
-          (i * (i + 1) / 2).negOnePow •
-            (K.d (-(i + 1)) (-i) ≫ Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z) := by
-        have hz := toSingleLinearEquiv_linearHomComplex_d_apply (k := k) K Y i z
-        calc (((i + 1) * (i + 1 + 1) / 2).negOnePow •
-              Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel (i + 1))
-                (((linearHomComplex k K ((singleFunctor C 0).obj Y)).d i (i + 1)).hom z))
-            = ((i + 1) * (i + 1 + 1) / 2).negOnePow • ((i + 1).negOnePow •
-                (K.d (-(i + 1)) (-i) ≫
-                  Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z)) := by rw [hz]
-          _ = (i * (i + 1) / 2).negOnePow •
-                (K.d (-(i + 1)) (-i) ≫
-                  Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z) := by
-            rw [Int.negOnePow_mul_succ_div_two_succ i, mul_comm (i + 1).negOnePow, smul_smul,
-              mul_assoc, Int.units_mul_self, mul_one]
-      exact (Linear.comp_units_smul _ _ _).trans h1.symm)
+  linearHomComplexSingle₀AlternatingIso k K Y ≪≫
+    (_root_.ChainComplex.linearYonedaObj
+      (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).alternatingDifferentialIso.symm
 
 @[simp]
 lemma linearHomComplexSingle₀Iso_hom_f_apply {k} [Ring k] [Linear k C]
@@ -104,8 +146,12 @@ lemma linearHomComplexSingle₀Iso_hom_f_apply {k} [Ring k] [Linear k C]
     (z : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y) i)) :
     (dsimp% only [linearHomComplex_X]
       ModuleCat.Hom.hom ((linearHomComplexSingle₀Iso k K Y).hom.f i) z) =
-      (i * (i + 1) / 2).negOnePow • Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z :=
-  (rfl)
+      (i * (i + 1) / 2).negOnePow • Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z := by
+  simp only [linearHomComplexSingle₀Iso, Iso.trans_hom, HomologicalComplex.comp_f,
+    Iso.symm_hom, CochainComplex.alternatingDifferentialIso_inv_f, Preadditive.comp_zsmul]
+  rw [linearHomComplexSingle₀AlternatingIso_hom_f_comp, ModuleCat.hom_zsmul,
+    LinearMap.smul_apply, Units.smul_def, linearHomComplexSingle₀XIso_hom_apply]
+  rfl
 
 @[simp]
 lemma linearHomComplexSingle₀Iso_inv_f_apply {k} [Ring k] [Linear k C]
@@ -116,25 +162,11 @@ lemma linearHomComplexSingle₀Iso_inv_f_apply {k} [Ring k] [Linear k C]
       ModuleCat.Hom.hom ((linearHomComplexSingle₀Iso k K Y).inv.f i) f) =
       ((i * (i + 1) / 2).negOnePow • Cochain.toSingleMk f (neg_add_cancel i) :
         ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y) i)) := by
-  apply (Cochain.toSingleLinearEquiv (R := k) (K := K) (X := Y) (neg_add_cancel i)).injective
-  have hinv := congrArg (fun g ↦ g.hom f)
-    (HomologicalComplex.congr_hom (linearHomComplexSingle₀Iso k K Y).inv_hom_id i)
-  simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f, ModuleCat.hom_comp,
-    ModuleCat.hom_id, LinearMap.comp_apply, LinearMap.id_apply] at hinv
-  rw [linearHomComplexSingle₀Iso_hom_f_apply] at hinv
-  have hinv' : (i * (i + 1) / 2).negOnePow •
-      ((i * (i + 1) / 2).negOnePow •
-        Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
-          (((linearHomComplexSingle₀Iso k K Y).inv.f i).hom f)) =
-      (i * (i + 1) / 2).negOnePow • (f : K.X (-i) ⟶ Y) :=
-    congrArg (fun x : K.X (-i) ⟶ Y ↦ (i * (i + 1) / 2).negOnePow • x) hinv
-  rw [smul_smul, Int.units_mul_self, one_smul] at hinv'
-  exact hinv'.trans
-    ((congrArg (fun x : K.X (-i) ⟶ Y ↦ (i * (i + 1) / 2).negOnePow • x)
-        (Cochain.toSingleEquiv_toSingleMk (f : K.X (-i) ⟶ Y)
-          (neg_add_cancel i)).symm).trans
-      (map_zsmul_unit (Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i))
-        (i * (i + 1) / 2).negOnePow _).symm)
+  simp only [linearHomComplexSingle₀Iso, Iso.trans_inv, HomologicalComplex.comp_f,
+    Iso.symm_inv, CochainComplex.alternatingDifferentialIso_hom_f, Preadditive.zsmul_comp]
+  rw [linearHomComplexSingle₀AlternatingIso_comp_inv_f, ModuleCat.hom_zsmul,
+    LinearMap.smul_apply, Units.smul_def]
+  rfl
 
 /-- Precomposition in `K` intertwines `linearHomComplexSingle₀Iso` with `linearYonedaFunctor` on
 the negated chain map. -/
@@ -146,21 +178,44 @@ theorem linearHomComplexPrecomp_linearHomComplexSingle₀Iso_hom
       (linearHomComplexSingle₀Iso k K₂ Y).hom ≫
         (ChainComplex.linearYonedaFunctor k Y).map
           (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op := by
-  ext i (z : ModuleCat.of k (Cochain K₂ ((singleFunctor C 0).obj Y) i))
-  have h1 : (((linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y) ≫
-      (linearHomComplexSingle₀Iso k K₁ Y).hom).f i).hom z : K₁.X (-i) ⟶ Y) =
-      (i * (i + 1) / 2).negOnePow •
-        (φ.f (-i) ≫ Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z) := by
-    rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-      linearHomComplexSingle₀Iso_hom_f_apply, toSingleLinearEquiv_linearHomComplexPrecomp_f_apply]
-  have h2 : ((((linearHomComplexSingle₀Iso k K₂ Y).hom ≫
-      (ChainComplex.linearYonedaFunctor k Y).map
-        (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op).f i).hom z :
-        K₁.X (-i) ⟶ Y) =
-      φ.f (-i) ≫ ((i * (i + 1) / 2).negOnePow •
-        Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z) :=
-    congrArg (φ.f (-i) ≫ ·) (linearHomComplexSingle₀Iso_hom_f_apply K₂ Y i z)
-  exact h1.trans ((Linear.comp_units_smul _ _ _).symm.trans h2.symm)
+  set U₁ := _root_.ChainComplex.linearYonedaObj
+    (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y
+  set U₂ := _root_.ChainComplex.linearYonedaObj
+    (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y
+  let ψ : U₂ ⟶ U₁ :=
+    (ChainComplex.linearYonedaFunctor k Y).map
+      (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op
+  have halt :
+      linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y) ≫
+          (linearHomComplexSingle₀AlternatingIso k K₁ Y).hom =
+        (linearHomComplexSingle₀AlternatingIso k K₂ Y).hom ≫
+          CochainComplex.alternatingDifferentialMap ψ := by
+    apply HomologicalComplex.hom_ext
+    intro i
+    rw [← cancel_mono (U₁.alternatingDifferentialXIso i).hom]
+    simp only [HomologicalComplex.comp_f, CochainComplex.alternatingDifferentialMap_f,
+      Category.assoc, Iso.inv_hom_id, Category.comp_id]
+    rw [linearHomComplexSingle₀AlternatingIso_hom_f_comp, ← Category.assoc,
+      linearHomComplexSingle₀AlternatingIso_hom_f_comp]
+    ext (z : ModuleCat.of k (Cochain K₂ ((singleFunctor C 0).obj Y) i))
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+    rw [linearHomComplexSingle₀XIso_hom_apply, linearHomComplexSingle₀XIso_hom_apply,
+      toSingleLinearEquiv_linearHomComplexPrecomp_f_apply]
+    exact (ChainComplex.linearYonedaFunctor_map_f_hom_apply (k := k) Y
+      (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op i _).symm
+  have hnat :
+      CochainComplex.alternatingDifferentialMap ψ ≫ U₁.alternatingDifferentialIso.inv =
+        U₂.alternatingDifferentialIso.inv ≫ ψ := by
+    apply HomologicalComplex.hom_ext
+    intro i
+    have h := HomologicalComplex.congr_hom
+      (CochainComplex.alternatingDifferentialNatIso.inv.naturality ψ) i
+    simp only [CochainComplex.alternatingDifferentialFunctor_map,
+      CochainComplex.alternatingDifferentialNatIso_inv_app, Functor.id_map] at h
+    exact h
+  rw [linearHomComplexSingle₀Iso, Iso.trans_hom, Iso.symm_hom, ← Category.assoc, halt,
+    Category.assoc, hnat, ← Category.assoc]
+  rfl
 
 /-- Postcomposition with a coefficient morphism `g : Y₁ ⟶ Y₂` intertwines
 `linearHomComplexSingle₀Iso` with `ChainComplex.linearYonedaObjMap`. -/
@@ -172,11 +227,42 @@ theorem linearHomComplexPostcomp_linearHomComplexSingle₀Iso_hom
       (linearHomComplexSingle₀Iso k K Y₁).hom ≫
         _root_.ChainComplex.linearYonedaObjMap k
           (K.restriction ComplexShape.embeddingDownIntUpInt) g := by
-  ext i (z : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y₁) i))
-  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply]
-  rw [linearHomComplexSingle₀Iso_hom_f_apply, linearHomComplexSingle₀Iso_hom_f_apply,
-    toSingleLinearEquiv_linearHomComplexPostcomp_f_apply, ← Linear.units_smul_comp]
-  exact (_root_.ChainComplex.linearYonedaObjMap_f_hom_apply k (negChain K) g i _).symm
+  set U₁ := _root_.ChainComplex.linearYonedaObj
+    (K.restriction ComplexShape.embeddingDownIntUpInt) k Y₁
+  set U₂ := _root_.ChainComplex.linearYonedaObj
+    (K.restriction ComplexShape.embeddingDownIntUpInt) k Y₂
+  let ψ : U₁ ⟶ U₂ := _root_.ChainComplex.linearYonedaObjMap k
+    (K.restriction ComplexShape.embeddingDownIntUpInt) g
+  have halt :
+      linearHomComplexPostcomp k K ((singleFunctor C 0).map g) ≫
+          (linearHomComplexSingle₀AlternatingIso k K Y₂).hom =
+        (linearHomComplexSingle₀AlternatingIso k K Y₁).hom ≫
+          CochainComplex.alternatingDifferentialMap ψ := by
+    apply HomologicalComplex.hom_ext
+    intro i
+    rw [← cancel_mono (U₂.alternatingDifferentialXIso i).hom]
+    simp only [HomologicalComplex.comp_f, CochainComplex.alternatingDifferentialMap_f,
+      Category.assoc, Iso.inv_hom_id, Category.comp_id]
+    rw [linearHomComplexSingle₀AlternatingIso_hom_f_comp, ← Category.assoc,
+      linearHomComplexSingle₀AlternatingIso_hom_f_comp]
+    ext (z : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y₁) i))
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+    rw [linearHomComplexSingle₀XIso_hom_apply, linearHomComplexSingle₀XIso_hom_apply,
+      toSingleLinearEquiv_linearHomComplexPostcomp_f_apply]
+    exact (_root_.ChainComplex.linearYonedaObjMap_f_hom_apply k (negChain K) g i _).symm
+  have hnat :
+      CochainComplex.alternatingDifferentialMap ψ ≫ U₂.alternatingDifferentialIso.inv =
+        U₁.alternatingDifferentialIso.inv ≫ ψ := by
+    apply HomologicalComplex.hom_ext
+    intro i
+    have h := HomologicalComplex.congr_hom
+      (CochainComplex.alternatingDifferentialNatIso.inv.naturality ψ) i
+    simp only [CochainComplex.alternatingDifferentialFunctor_map,
+      CochainComplex.alternatingDifferentialNatIso_inv_app, Functor.id_map] at h
+    exact h
+  rw [linearHomComplexSingle₀Iso, Iso.trans_hom, Iso.symm_hom, ← Category.assoc, halt,
+    Category.assoc, hnat, ← Category.assoc]
+  rfl
 
 /-- **Unsigned cohomology comparison** between `linearHomComplex k K ((singleFunctor C 0).obj Y)`
 and `_root_.ChainComplex.linearYonedaObj (K.restriction ComplexShape.embeddingDownIntUpInt) k Y` in

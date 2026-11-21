@@ -41,9 +41,8 @@ mirror duality on Khovanov cohomology:
 
 * Over any commutative ring `R`, `khovanovMirrorKronecker` evaluates `Khⁱʲ(D.mirror; R)` on
   `Kh⁻ⁱ,⁻ʲ(D; R)`, and is an isomorphism whenever `R` is self-injective
-  (`khovanovHomologyMirrorDualEquivOfInjective`).
-* Over a field `F`, `Khⁱʲ(D.mirror; F) ≃ₗ[F] Dual F (Kh⁻ⁱ,⁻ʲ(D; F))`
-  (`khovanovHomologyMirrorDualEquiv`), giving `finrank_khovanovHomology_mirror`.
+  (`khovanovHomologyMirrorDualEquivOfInjective`), giving `finrank_khovanovHomology_mirror` over
+  any field `F`.
 * Over any hereditary commutative ring `R`, i.e.,
   `[∀ V : ModuleCat R, HasProjectiveDimensionLE V 1]` (in particular any principal ideal domain
   such as `ℤ`, via `ModuleCat.hasProjectiveDimensionLE_one_of_isPrincipalIdealRing`), there is a
@@ -56,8 +55,9 @@ mirror duality on Khovanov cohomology:
 * `TauCeti.OrientedPDCode.khovanovComplexMirrorIso`, `khovanovComplexMirrorIso_hom_f_apply`, and
   `khovanovComplexMirrorIso_inv_f_apply`: chain-level mirror duality isomorphism and formulas.
 * `TauCeti.OrientedPDCode.khovanovHomologyMirrorIso`, `khovanovMirrorKronecker`,
-  `khovanovHomologyMirrorDualEquiv`, `khovanovHomologyMirrorDualIso`, and
-  `finrank_khovanovHomology_mirror`: cohomology isomorphism, Kronecker pairing, and field duality.
+  `khovanovHomologyMirrorDualEquivOfInjective`, `khovanovHomologyMirrorDualIsoOfInjective`, and
+  `finrank_khovanovHomology_mirror`: cohomology isomorphism, Kronecker pairing, and self-injective
+  duality.
 * `TauCeti.OrientedPDCode.khovanovMirrorExtToHomology`, `khovanovMirrorKroneckerSection`,
   `khovanovMirrorUniversalCoefficientEquiv`, `khovanovMirrorUniversalCoefficientShortComplex`, and
   `khovanovMirrorUniversalCoefficientSplitting`: universal coefficient sequence and splitting over
@@ -413,43 +413,13 @@ lemma khovanovHomologyMirrorDualIsoOfInjective_inv (R : Type u) [CommRing R]
       ModuleCat.ofHom
         (D.khovanovHomologyMirrorDualEquivOfInjective hD hD' R i j).symm.toLinearMap := (rfl)
 
-/-- **Mirror Khovanov cohomology over a field**: `Khⁱʲ(D.mirror; F) ≃ₗ[F] Dual_F(Kh⁻ⁱ,⁻ʲ(D; F))`. -/
-def khovanovHomologyMirrorDualEquiv (F : Type u) [Field F] (i j : ℤ) :
-    D.mirror.khovanovHomology hD' F i j ≃ₗ[F]
-      Module.Dual F (D.khovanovHomology hD F (-i) (-j)) :=
-  D.khovanovHomologyMirrorDualEquivOfInjective hD hD' F i j
-
-@[simp]
-lemma khovanovHomologyMirrorDualEquiv_apply (F : Type u) [Field F] (i j : ℤ)
-    (x : D.mirror.khovanovHomology hD' F i j) :
-    D.khovanovHomologyMirrorDualEquiv hD hD' F i j x =
-      D.khovanovMirrorKronecker hD hD' F i j x := by
-  simp [khovanovHomologyMirrorDualEquiv]
-
-/-- Categorical form of `khovanovHomologyMirrorDualEquiv` in `ModuleCat F`. -/
-def khovanovHomologyMirrorDualIso (F : Type u) [Field F] (i j : ℤ) :
-    D.mirror.khovanovHomology hD' F i j ≅
-      ModuleCat.of F (Module.Dual F (D.khovanovHomology hD F (-i) (-j))) :=
-  (D.khovanovHomologyMirrorDualEquiv hD hD' F i j).toModuleIso
-
-@[simp]
-lemma khovanovHomologyMirrorDualIso_hom (F : Type u) [Field F] (i j : ℤ) :
-    (D.khovanovHomologyMirrorDualIso hD hD' F i j).hom =
-      ModuleCat.ofHom (D.khovanovMirrorKronecker hD hD' F i j) := by
-  ext x
-  simp [khovanovHomologyMirrorDualIso]
-
-@[simp]
-lemma khovanovHomologyMirrorDualIso_inv (F : Type u) [Field F] (i j : ℤ) :
-    (D.khovanovHomologyMirrorDualIso hD hD' F i j).inv =
-      ModuleCat.ofHom (D.khovanovHomologyMirrorDualEquiv hD hD' F i j).symm.toLinearMap := (rfl)
-
 /-- **Mirror symmetry of Khovanov Betti numbers**: over any field `F`,
 `finrank F Khⁱʲ(D.mirror; F) = finrank F Kh⁻ⁱ,⁻ʲ(D; F)`. -/
 theorem finrank_khovanovHomology_mirror (F : Type u) [Field F] (i j : ℤ) :
     Module.finrank F (D.mirror.khovanovHomology hD' F i j) =
       Module.finrank F (D.khovanovHomology hD F (-i) (-j)) :=
-  (D.khovanovHomologyMirrorDualEquiv hD hD' F i j).finrank_eq.trans Subspace.dual_finrank_eq
+  (D.khovanovHomologyMirrorDualEquivOfInjective hD hD' F i j).finrank_eq.trans
+    Subspace.dual_finrank_eq
 
 section Hereditary
 
