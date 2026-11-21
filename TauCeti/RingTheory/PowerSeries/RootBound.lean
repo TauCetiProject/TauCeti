@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Unbundled.RootBound
+public import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.Algebra.Polynomial.Splits
 
@@ -35,8 +35,9 @@ finite Newton face for a real additive valuation are
 
 ## Main results
 
-* `TauCeti.PowerSeries.IsDistinguished.norm_le_of_eval_eq_zero`: the roots of a monic polynomial
-  distinguished in its full degree lie in the closed disc.
+* `TauCeti.PowerSeries.IsDistinguished.norm_le_of_eval_eq_zero`: over an ultrametric seminormed
+  ring with power-multiplicative seminorm, the roots of a monic polynomial distinguished in its
+  full degree at a radius `c > 0` lie in the closed disc of radius `c`.
 * `TauCeti.PowerSeries.gaussNorm_X_sub_C`: the Gauss norm of `X - b` at a radius `c` is `max c ‖b‖`.
 * `TauCeti.PowerSeries.IsDistinguished.card_filter_roots_norm_le_le` and
   `TauCeti.PowerSeries.IsDistinguished.card_filter_roots_norm_le_eq`: the distinguished degree
@@ -60,9 +61,10 @@ namespace TauCeti.PowerSeries
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
 
-/-- Every root of a monic polynomial distinguished in its full degree lies in its closed
-disc, for a power-multiplicative seminorm. The coefficient ring need not be complete,
-commutative or a field, and its seminorm need not be multiplicative. -/
+/-- Over an ultrametric seminormed ring with power-multiplicative seminorm, every root of a
+monic polynomial distinguished in its full degree at a radius `c > 0` lies in the closed disc
+`‖x‖ ≤ c`. The coefficient ring need not be complete, commutative or a field, and its seminorm
+need not be multiplicative. -/
 theorem IsDistinguished.norm_le_of_eval_eq_zero (hR : IsPowMul (‖·‖ : R → ℝ)) {P : Polynomial R}
     (hP : IsDistinguished c s (P : PowerSeries R)) (hc : 0 < c)
     (hm : P.IsMonicOfDegree s) {x : R} (hx : P.eval x = 0) : ‖x‖ ≤ c := by
