@@ -779,12 +779,13 @@ include hX hloc
 a time-dependent family of subspaces of the tangent spaces, and let `X` be a jointly `C¹`
 time-dependent vector field whose flow, over short times, maps each subspace `ξ_{u₀}` into `ξ_u`
 and back. Then along every trajectory the differential of the flow from `s` to `t` maps `ξ_s` into
-`ξ_t`: the times of the trajectory form an interval, and the two-time composition law chains the
-short steps. -/
+`ξ_t`. -/
 theorem map_mfderiv_timeDependentFlowOf_le_of_eventually
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     (ξ s x).map (mfderiv I I (timeDependentFlowOf X s t) x).toLinearMap ≤
       ξ t (timeDependentFlowOf X s t x) := by
+  -- The times of the trajectory form an interval, and the two-time composition law chains the
+  -- short steps.
   refine Submodule.map_le_iff_le_comap.2 fun v hv ↦ ?_
   -- Between two times of the trajectory, the flow is defined along it and follows it.
   have hJ (a : ℝ) (ha : ((s, a), x) ∈ timeDependentFlowDomain X) (b : ℝ)

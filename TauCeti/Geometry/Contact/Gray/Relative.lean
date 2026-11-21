@@ -147,8 +147,7 @@ hyperplane `ξ_t` is the same for all times. Then for all times `s` and `t` ther
 diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`, which fixes
 every point of `K` and whose differential carries `ξ_s` onto `ξ_t` at every point of its source.
 Neither `K` nor `M` need be compact, `K` need not be closed, and no global defining form or
-coorientation of `ξ` is needed. The proof takes `φ` to be the flow of the Gray vector field from `s`
-to `t`. -/
+coorientation of `ξ` is needed. -/
 theorem exists_partialDiffeomorph_map_mfderiv_eq {K : Set M} (hK : ∀ x ∈ K, ∀ u, ξ u x = ξ 0 x)
     (s t : ℝ) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
@@ -175,8 +174,7 @@ theorem exists_partialDiffeomorph_map_mfderiv_eq {K : Set M} (hK : ∀ x ∈ K, 
 /-- **Gray's stability theorem for contact structures.** On a compact boundaryless manifold, a
 smooth family of contact structures `ξ_t` is carried along by an isotopy: there are diffeomorphisms
 `φ_{s,t}`, jointly smooth in both times and the point, with `φ_{s,s} = id`, whose differentials
-carry `ξ_s` onto `ξ_t`. No global defining form or coorientation of `ξ` is needed. The proof
-takes `φ` to be the flow of the Gray vector field. -/
+carry `ξ_s` onto `ξ_t`. No global defining form or coorientation of `ξ` is needed. -/
 theorem exists_diffeomorph_map_mfderiv_eq [CompactSpace M] :
     ∃ φ : ℝ → ℝ → M ≃ₘ⟮I, I⟯ M,
       ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I ∞ (fun p : (ℝ × ℝ) × M ↦ φ p.1.1 p.1.2 p.2) ∧
