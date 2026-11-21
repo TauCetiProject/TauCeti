@@ -8,12 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
-public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Algebra.Projectivization
 public import TauCeti.Topology.Sphere.StandardCircle
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Circle
-import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 import TauCeti.Geometry.Manifold.Projectivization.Map
 
 /-!
@@ -244,7 +242,7 @@ theorem projectivePlaneTopChart_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
       (projectivePlaneTopChart_symm_coords_ne_zero u) :=
   (rfl)
 
-/-- The chart sends the maximum `[0 : 0 : 1]` to the origin. -/
+/-- The inverse chart sends the origin to the maximum `[0 : 0 : 1]`. -/
 theorem projectivePlaneTopChart_symm_zero :
     projectivePlaneTopChart.symm 0 = mk ℝ ![0, 0, 1] (by simp) := by
   rw [projectivePlaneTopChart_symm_apply]
@@ -461,12 +459,8 @@ private theorem addLast_apply (w : Fin 2 → ℝ) : addLast w = ![w 0, w 1, 0] :
   · exact (Fin.castSucc_injective 2).extend_apply w 0 1
   · exact Function.extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ (Fin.castSucc_lt_last a).ne ha
 
-private theorem addLast_injective : Function.Injective addLast := fun w w' h ↦ by
-  rw [addLast_apply, addLast_apply] at h
-  ext i
-  fin_cases i
-  · exact congrFun h 0
-  · exact congrFun h 1
+private theorem addLast_injective : Function.Injective addLast :=
+  Function.extend_injective (Fin.castSucc_injective 2) 0
 
 private theorem dropLast_addLast (w : Fin 2 → ℝ) : dropLast (addLast w) = w := by
   rw [addLast_apply, dropLast_apply]
@@ -558,7 +552,7 @@ private theorem continuousOn_linearProjection_flatten :
       (univ ×ˢ linearProjectionDomain dropLast) := by
   rintro ⟨t, y⟩ ⟨-, hy⟩
   refine (continuousAt_linearProjection (G := fun t : I ↦ flatten t)
-    (continuous_flatten.comp (continuous_subtype_val.prodMap continuous_id)) ?_).continuousWithinAt
+    (continuous_flatten.comp (continuous_subtypeVal.prodMap continuous_id)) ?_).continuousWithinAt
   induction y using ind with | h v hv =>
   rw [mk_mem_linearProjectionDomain_iff] at hy ⊢
   exact flatten_ne_zero hy t
@@ -596,9 +590,9 @@ private theorem projectiveMomentFunction_map_addLast_le_one (x : ℙ ℝ (Fin 2 
 /-- The projection `[x : y : z] ↦ [x : y]` of a sublevel below `2` onto the projective line. -/
 private def sublevelToLine (hc : c < 2) :
     C({y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}, ℙ ℝ (Fin 2 → ℝ)) where
-  toFun y := linearProjection dropLast y.1
+  toFun y := linearProjection dropLast y.val
   continuous_toFun := (contMDiffOn_linearProjection dropLast 0).continuousOn.comp_continuous
-    continuous_subtype_val fun y ↦ mem_linearProjectionDomain_of_le hc y.2
+    continuous_subtypeVal fun y ↦ mem_linearProjectionDomain_of_le hc y.property
 
 /-- The inclusion `[x : y] ↦ [x : y : 0]` of the projective line into a sublevel above `1`. -/
 private def lineToSublevel (hc : 1 ≤ c) :
@@ -612,11 +606,12 @@ private def lineToSublevel (hc : 1 ≤ c) :
 private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     ContinuousMap.Homotopy (ContinuousMap.id _) ((lineToSublevel hc₁).comp (sublevelToLine hc₂))
     where
-  toFun p := ⟨linearProjection (flatten p.1) p.2.1,
-    projectiveMomentFunction_linearProjection_flatten_le hc₂ p.2.2 p.1.2.1 p.1.2.2⟩
+  toFun p := ⟨linearProjection (flatten p.1) p.2.val,
+    projectiveMomentFunction_linearProjection_flatten_le hc₂ p.2.property p.1.property.1
+        p.1.property.2⟩
   continuous_toFun := (continuousOn_linearProjection_flatten.comp_continuous
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-    fun p ↦ ⟨mem_univ _, mem_linearProjectionDomain_of_le hc₂ p.2.2⟩).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun p ↦ ⟨mem_univ _, mem_linearProjectionDomain_of_le hc₂ p.2.property⟩).subtype_mk _
   map_zero_left y := by
     obtain ⟨y, hy⟩ := y
     refine Subtype.ext ?_
@@ -635,10 +630,12 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     rw [linearProjection_mk _ _ (flatten_ne_zero hd 1), linearProjection_mk _ _ hd, map_mk]
     exact mk_eq_mk_of_eq (flatten_one v)
 
-/-- **The lower sublevels deformation retract onto the projective line.** For `1 ≤ c < 2` the
+/-- **The lower sublevels are homotopy equivalent to the projective line.** For `1 ≤ c < 2` the
 projection `[x : y : z] ↦ [x : y]` is a homotopy equivalence from the sublevel `{f ≤ c}` onto
 the projective line, with homotopy inverse the inclusion `[x : y] ↦ [x : y : 0]` of the line
-`z = 0`; the homotopy is `[x : y : z] ↦ [x : y : (1 - t) z]`. -/
+`z = 0`. One of the two homotopies is constructed by the flattening
+`[x : y : z] ↦ [x : y : (1 - t) z]`, from the identity of the sublevel to the composite of the
+projection with the inclusion. -/
 def projectivePlaneSublevelHomotopyEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} ≃ₕ ℙ ℝ (Fin 2 → ℝ) where
   toFun := sublevelToLine hc₂
@@ -656,7 +653,7 @@ def projectivePlaneSublevelHomotopyEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
 
 private theorem projectivePlaneSublevelHomotopyEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
     (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
-    projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = linearProjection dropLast y.1 :=
+    projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = linearProjection dropLast y.val :=
   (rfl)
 
 /-- A point `[x : y : z]` below the maximum value `2` has `(x, y) ≠ 0`. -/
@@ -674,8 +671,8 @@ theorem projectivePlaneSublevelHomotopyEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc�
     {y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
     (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
     projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = mk ℝ ![v 0, v 1]
-      (coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.2 hc₂) hy) := by
-  have hd := coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.2 hc₂) hy
+      (coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.property hc₂) hy) := by
+  have hd := coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.property hc₂) hy
   rw [projectivePlaneSublevelHomotopyEquiv_apply]
   refine (congrArg (linearProjection dropLast) hy).trans ?_
   rw [linearProjection_mk _ _ (by rwa [dropLast_apply])]
@@ -700,7 +697,7 @@ variable {c : ℝ}
 
 /-- **The lower sublevels are homotopy equivalent to the circle.** For `1 ≤ c < 2` the map
 `[x : y : z] ↦ (x + i y)² / (x² + y²)` from the sublevel `{f ≤ c}` to the circle is a homotopy
-equivalence: the composite of the deformation retraction onto the line `z = 0`
+equivalence: the composite of the homotopy equivalence of the sublevel with the line `z = 0`
 (`TauCeti.projectivePlaneSublevelHomotopyEquiv`) with the identification of the projective line
 with the circle. -/
 def projectivePlaneSublevelCircleEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
@@ -708,7 +705,7 @@ def projectivePlaneSublevelCircleEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
   (projectivePlaneSublevelHomotopyEquiv hc₁ hc₂).trans lineHomeomorphCircle.toHomotopyEquiv
 
 -- This holds by definition of `ContinuousMap.HomotopyEquiv.trans` and
--- `Homeomorph.toHomotopyEquiv`; Mathlib has no `HomotopyEquiv.trans_apply`.
+-- `Homeomorph.toHomotopyEquiv`.
 private theorem projectivePlaneSublevelCircleEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
     (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
     projectivePlaneSublevelCircleEquiv hc₁ hc₂ y =
@@ -794,7 +791,7 @@ theorem degree_projectivePlaneCoreLoop_map (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     coe_projectivePlaneSublevelCircleEquiv_apply_of_eq hc₁ hc₂ rfl, Circle.coe_exp]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Real.cos_sq_add_sin_sq,
     Complex.ofReal_one, div_one]
-  rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I, ← Complex.exp_nat_mul]
+  rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I, ← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring

@@ -123,9 +123,10 @@ theorem norm_riemannZeta₀_le_one_add_norm_div_re {s : ℂ} (hs : 0 < s.re) :
   rw [riemannZeta₀_eq_one_sub_mul_integral hs]
   have hint_bound : ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤
       1 / s.re :=
-    norm_integral_mul_cpow_le_of_bound (fun t (ht : 1 < t) ↦ by
+    (norm_integral_mul_cpow_le_of_bound one_pos (fun t (ht : 1 < t) ↦ by
       simpa only [norm_real, Real.norm_eq_abs] using
-        Nat.abs_sub_floor_le (zero_lt_one.trans ht).le) hs
+        Nat.abs_sub_floor_le (zero_lt_one.trans ht).le) hs).trans_eq
+      (by rw [Real.one_rpow, one_mul])
   calc ‖1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖
       ≤ ‖(1 : ℂ)‖ + ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ :=
         (norm_sub_le _ _).trans (by rw [norm_mul])
@@ -152,7 +153,7 @@ theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
       have h16 : (16 : ℝ) < Real.exp 4 := by
         calc (16 : ℝ) = 2 ^ 4 := by norm_num
           _ < Real.exp 1 ^ 4 := pow_lt_pow_left₀ h2e (by norm_num) (by norm_num)
-          _ = Real.exp 4 := by rw [← Real.exp_nat_mul]; norm_num
+          _ = Real.exp 4 := by rw [← Real.exp_natCast_mul]; norm_num
       linarith [Real.pi_lt_four]
     rw [hval, norm_real, Real.norm_eq_abs]
     simp only [sub_self, norm_zero, inv_zero, zero_add, norm_one, one_re, div_one]

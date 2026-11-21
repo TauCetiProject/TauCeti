@@ -336,7 +336,7 @@ private theorem iterMatrix_smul (f : gaussReducedForms D) (γ₀ : SL(2, ℤ)) (
 
 /-- Magnitude of the `n`-th Möbius denominator along the reduction orbit of `f`. -/
 private noncomputable def iterDenomAbs (f : gaussReducedForms D) (γ₀ : SL(2, ℤ)) (n : ℕ) : ℝ :=
-  |(iterMatrix f γ₀ n 1 0 : ℝ) * (((reductionPerm D ^ n) f).1).firstRoot + iterMatrix f γ₀ n 1 1|
+  |(iterMatrix f γ₀ n 1 0 : ℝ) * (((reductionPerm D ^ n) f).val).firstRoot + iterMatrix f γ₀ n 1 1|
 
 /-- If `iterMatrix f γ₀ n 1 1` never vanishes, `iterDenomAbs f γ₀ n` stays `< 1` while growing at
 least geometrically relative to `μ = sup |firstRoot|`. -/
@@ -346,33 +346,33 @@ private theorem iterDenomAbs_lt_one_and_le {f g : gaussReducedForms D} {γ₀ : 
     iterDenomAbs f γ₀ n < 1 ∧
       iterDenomAbs f γ₀ 0 ≤
         iterDenomAbs f γ₀ n *
-          (univ.sup' ⟨f, mem_univ f⟩ fun h : gaussReducedForms D ↦ |h.1.firstRoot|) ^ n := by
-  set μ : ℝ := univ.sup' ⟨f, mem_univ f⟩ fun h : gaussReducedForms D ↦ |h.1.firstRoot|
-  obtain ⟨-, hg_red⟩ := mem_gaussReducedForms.mp g.2
+          (univ.sup' ⟨f, mem_univ f⟩ fun h : gaussReducedForms D ↦ |h.val.firstRoot|) ^ n := by
+  set μ : ℝ := univ.sup' ⟨f, mem_univ f⟩ fun h : gaussReducedForms D ↦ |h.val.firstRoot|
+  obtain ⟨-, hg_red⟩ := mem_gaussReducedForms.mp g.property
   induction n with
   | zero => simpa using hlt₀
   | succ n ih =>
     set fn : gaussReducedForms D := (reductionPerm D ^ n) f
-    obtain ⟨hDfn, hfn⟩ := mem_gaussReducedForms.mp fn.2
+    obtain ⟨hDfn, hfn⟩ := mem_gaussReducedForms.mp fn.property
     have hlt_next : iterDenomAbs f γ₀ (n + 1) < 1 := by
       simpa only [iterDenomAbs, iterMatrix, pow_succ', Equiv.Perm.mul_apply,
         coe_reductionPerm_apply] using abs_denom_reductionStep_lt_one hfn hg_red
           (not_isSquare_of_discrim_eq hDfn) ((iterMatrix_smul f γ₀ n).trans hγ₀) ih.1 (hne n)
-    have hmul_step : |fn.1.firstRoot| * iterDenomAbs f γ₀ (n + 1) = iterDenomAbs f γ₀ n := by
+    have hmul_step : |fn.val.firstRoot| * iterDenomAbs f γ₀ (n + 1) = iterDenomAbs f γ₀ n := by
       have h := congrArg abs (firstRoot_mul_denom_reductionStep (iterMatrix f γ₀ n)
         hfn.discrim_pos.le (not_isSquare_of_discrim_eq hDfn))
       rw [abs_mul] at h
       simpa only [iterDenomAbs, iterMatrix, pow_succ', Equiv.Perm.mul_apply,
         coe_reductionPerm_apply, fn] using h
-    have hfn_le_μ : |fn.1.firstRoot| ≤ μ :=
-      Finset.le_sup' (fun h : gaussReducedForms D ↦ |h.1.firstRoot|) (mem_univ fn)
+    have hfn_le_μ : |fn.val.firstRoot| ≤ μ :=
+      Finset.le_sup' (fun h : gaussReducedForms D ↦ |h.val.firstRoot|) (mem_univ fn)
     have hμ_nonneg : 0 ≤ μ ^ n :=
       pow_nonneg ((abs_nonneg _).trans (Finset.le_sup'
-        (fun h : gaussReducedForms D ↦ |h.1.firstRoot|) (mem_univ f))) n
+        (fun h : gaussReducedForms D ↦ |h.val.firstRoot|) (mem_univ f))) n
     refine ⟨hlt_next, ?_⟩
     calc
       iterDenomAbs f γ₀ 0 ≤ iterDenomAbs f γ₀ n * μ ^ n := ih.2
-      _ = (|fn.1.firstRoot| * iterDenomAbs f γ₀ (n + 1)) * μ ^ n := by rw [hmul_step]
+      _ = (|fn.val.firstRoot| * iterDenomAbs f γ₀ (n + 1)) * μ ^ n := by rw [hmul_step]
       _ ≤ (μ * iterDenomAbs f γ₀ (n + 1)) * μ ^ n :=
         mul_le_mul_of_nonneg_right
           (mul_le_mul_of_nonneg_right hfn_le_μ (abs_nonneg _)) hμ_nonneg
@@ -388,19 +388,19 @@ private theorem sameCycle_of_abs_denom_lt_one {f g : gaussReducedForms D} {γ₀
   by_cases hex : ∃ n : ℕ, iterMatrix f γ₀ n 1 1 = 0
   · obtain ⟨n, hn⟩ := hex
     set fn : gaussReducedForms D := (reductionPerm D ^ n) f
-    obtain ⟨hDfn, hfn⟩ := mem_gaussReducedForms.mp fn.2
-    obtain ⟨-, hg_red⟩ := mem_gaussReducedForms.mp g.2
-    have hstep : fn.1.reductionStep = g.1 :=
+    obtain ⟨hDfn, hfn⟩ := mem_gaussReducedForms.mp fn.property
+    obtain ⟨-, hg_red⟩ := mem_gaussReducedForms.mp g.property
+    have hstep : fn.val.reductionStep = g.val :=
       eq_reductionStep_of_smul_eq_of_apply_one_one_eq_zero hfn hg_red
         (not_isSquare_of_discrim_eq hDfn) ((iterMatrix_smul f γ₀ n).trans hγ₀) hn
     have hg_eq : reductionPerm D fn = g := Subtype.ext ((coe_reductionPerm_apply fn).trans hstep)
     exact ⟨(n + 1 : ℕ), by rw [zpow_natCast, pow_succ', Equiv.Perm.mul_apply, hg_eq]⟩
   · push Not at hex
     exfalso
-    set μ : ℝ := univ.sup' ⟨f, mem_univ f⟩ fun h : gaussReducedForms D ↦ |h.1.firstRoot|
+    set μ : ℝ := univ.sup' ⟨f, mem_univ f⟩ fun h : gaussReducedForms D ↦ |h.val.firstRoot|
     have hμ_lt : μ < 1 := (Finset.sup'_lt_iff _).mpr fun h _ ↦
-      (isGaussReduced_iff_roots.mp (mem_gaussReducedForms.mp h.2).2).2.1
-    obtain ⟨hDf, hf_red⟩ := mem_gaussReducedForms.mp f.2
+      (isGaussReduced_iff_roots.mp (mem_gaussReducedForms.mp h.property).2).2.1
+    obtain ⟨hDf, hf_red⟩ := mem_gaussReducedForms.mp f.property
     have hx₀_pos : 0 < iterDenomAbs f γ₀ 0 :=
       abs_pos.mpr (denom_firstRoot_ne_zero hf_red.discrim_pos.le
         (not_isSquare_of_discrim_eq hDf) γ₀)
@@ -409,7 +409,7 @@ private theorem sameCycle_of_abs_denom_lt_one {f g : gaussReducedForms D} {γ₀
       iterDenomAbs_lt_one_and_le hγ₀ (by simpa [iterDenomAbs, iterMatrix] using hlt₀) hex n
     have hμn_nonneg : 0 ≤ μ ^ n :=
       pow_nonneg ((abs_nonneg _).trans (Finset.le_sup'
-        (fun h : gaussReducedForms D ↦ |h.1.firstRoot|) (mem_univ f))) n
+        (fun h : gaussReducedForms D ↦ |h.val.firstRoot|) (mem_univ f))) n
     nlinarith
 
 /-- **Gauss's theorem on reduced cycles**: if two Gauss reduced forms of nonsquare discriminant `D`
@@ -417,11 +417,11 @@ are properly equivalent (`γ • f = g`), then they lie in the same cycle of `re
 theorem sameCycle_reductionPerm_of_smul_eq {f g : gaussReducedForms D} {γ : SL(2, ℤ)}
     (hγ : γ • (f : BinaryQuadraticForm ℤ) = g) :
     (reductionPerm D).SameCycle f g := by
-  obtain ⟨hDf, hf_red⟩ := mem_gaussReducedForms.mp f.2
-  obtain ⟨-, hg_red⟩ := mem_gaussReducedForms.mp g.2
-  have hD : ¬ IsSquare f.1.discrim := not_isSquare_of_discrim_eq hDf
-  set d₁ : ℝ := |(γ 1 0 : ℝ) * f.1.firstRoot + γ 1 1|
-  set d₂ : ℝ := |(γ⁻¹ 1 0 : ℝ) * g.1.firstRoot + γ⁻¹ 1 1|
+  obtain ⟨hDf, hf_red⟩ := mem_gaussReducedForms.mp f.property
+  obtain ⟨-, hg_red⟩ := mem_gaussReducedForms.mp g.property
+  have hD : ¬ IsSquare f.val.discrim := not_isSquare_of_discrim_eq hDf
+  set d₁ : ℝ := |(γ 1 0 : ℝ) * f.val.firstRoot + γ 1 1|
+  set d₂ : ℝ := |(γ⁻¹ 1 0 : ℝ) * g.val.firstRoot + γ⁻¹ 1 1|
   have hprod : d₂ * d₁ = 1 := by
     have h := congrArg abs (denom_inv_mul_denom_firstRoot hf_red.discrim_pos.le hD γ)
     rwa [hγ, abs_mul, abs_one] at h
@@ -432,7 +432,7 @@ theorem sameCycle_reductionPerm_of_smul_eq {f g : gaussReducedForms D} {γ : SL(
     have hfg : f = g := Subtype.ext
       (eq_of_smul_eq_of_apply_one_zero_eq_zero hf_red hg_red hD hγ hr)
     exact hfg.sameCycle _
-  · have hd₂_lt : d₂ < 1 := by nlinarith [abs_nonneg ((γ⁻¹ 1 0 : ℝ) * g.1.firstRoot + γ⁻¹ 1 1)]
+  · have hd₂_lt : d₂ < 1 := by nlinarith [abs_nonneg ((γ⁻¹ 1 0 : ℝ) * g.val.firstRoot + γ⁻¹ 1 1)]
     have hγ_inv : γ⁻¹ • (g : BinaryQuadraticForm ℤ) = f := by rw [← hγ, inv_smul_smul]
     exact (sameCycle_of_abs_denom_lt_one hγ_inv hd₂_lt).symm
 
@@ -455,7 +455,8 @@ noncomputable def cycleToProperClass :
     Quotient (Equiv.Perm.SameCycle.setoid (reductionPerm D)) →
       orbitRel.Quotient SL(2, ℤ) (formsOfDiscrim D) :=
   Quotient.map'
-    (fun f : gaussReducedForms D ↦ ⟨f.1, mem_formsOfDiscrim.mpr (mem_gaussReducedForms.mp f.2).1⟩)
+    (fun f : gaussReducedForms D ↦ ⟨f.val, mem_formsOfDiscrim.mpr
+        (mem_gaussReducedForms.mp f.property).1⟩)
     fun f g h ↦ by
       obtain ⟨γ, hγ⟩ := exists_smul_eq_of_sameCycle h.symm
       exact ⟨γ, Subtype.ext (by simpa only [SubMulAction.val_smul] using hγ)⟩
@@ -463,7 +464,7 @@ noncomputable def cycleToProperClass :
 /-- On a Gauss reduced representative, `cycleToProperClass` gives its `SL(2, ℤ)`-orbit class. -/
 @[simp] theorem cycleToProperClass_mk (f : gaussReducedForms D) :
     cycleToProperClass D (Quotient.mk'' f) =
-      Quotient.mk'' ⟨f.1, mem_formsOfDiscrim.mpr (mem_gaussReducedForms.mp f.2).1⟩ := by
+      Quotient.mk'' ⟨f.val, mem_formsOfDiscrim.mpr (mem_gaussReducedForms.mp f.property).1⟩ := by
   rfl
 
 /-- Distinct cycles of `reductionPerm D` give distinct proper equivalence classes. -/
@@ -479,11 +480,11 @@ theorem cycleToProperClass_injective : Function.Injective (cycleToProperClass D)
 theorem cycleToProperClass_surjective (hpos : 0 < D) :
     Function.Surjective (cycleToProperClass D) := by
   refine Quotient.ind' fun f ↦ ?_
-  have hfD : f.1.discrim = D := mem_formsOfDiscrim.mp f.2
-  obtain ⟨γ, hγ⟩ := exists_smul_mem_gaussReducedForms f.1 (by rwa [hfD])
+  have hfD : f.val.discrim = D := mem_formsOfDiscrim.mp f.property
+  obtain ⟨γ, hγ⟩ := exists_smul_mem_gaussReducedForms f.val (by rwa [hfD])
     (not_isSquare_of_discrim_eq hfD)
   rw [hfD] at hγ
-  refine ⟨Quotient.mk'' ⟨γ • f.1, hγ⟩, ?_⟩
+  refine ⟨Quotient.mk'' ⟨γ • f.val, hγ⟩, ?_⟩
   rw [cycleToProperClass_mk]
   exact Quotient.sound' ⟨γ, Subtype.ext rfl⟩
 
@@ -545,7 +546,7 @@ variable (D : ℤ) [Fact (¬ IsSquare D)]
 /-- Equivalence between primitive elements of `gaussReducedForms D` and
 `primitiveGaussReducedForms D`. -/
 private def primitiveGaussReducedFormsEquiv :
-    {f : gaussReducedForms D // f.1.IsPrimitive} ≃ primitiveGaussReducedForms D :=
+    {f : gaussReducedForms D // f.val.IsPrimitive} ≃ primitiveGaussReducedForms D :=
   (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ gaussReducedForms D) IsPrimitive).trans <|
     Equiv.subtypeEquivRight fun _ ↦ by
       rw [mem_primitiveGaussReducedForms, mem_gaussReducedForms, and_assoc]
@@ -570,8 +571,8 @@ theorem sameCycle_primitiveReductionPerm_iff_sameCycle_reductionPerm
     {f g : primitiveGaussReducedForms D} :
     (primitiveReductionPerm D).SameCycle f g ↔
       (reductionPerm D).SameCycle
-        ⟨f.1, primitiveGaussReducedForms_subset_gaussReducedForms D f.2⟩
-        ⟨g.1, primitiveGaussReducedForms_subset_gaussReducedForms D g.2⟩ := by
+        ⟨f.val, primitiveGaussReducedForms_subset_gaussReducedForms D f.property⟩
+        ⟨g.val, primitiveGaussReducedForms_subset_gaussReducedForms D g.property⟩ := by
   rw [primitiveReductionPerm, Equiv.Perm.sameCycle_permCongr_iff, Equiv.Perm.sameCycle_subtypePerm]
   rfl
 
@@ -592,9 +593,9 @@ noncomputable def primitiveCycleToProperClass :
       orbitRel.Quotient SL(2, ℤ) (primitiveForms D) :=
   Quotient.map'
     (fun f : primitiveGaussReducedForms D ↦
-      ⟨f.1, by
-        obtain ⟨hd, -, hp⟩ := mem_primitiveGaussReducedForms.mp f.2
-        exact (mem_primitiveForms D f.1).mpr ⟨hd, hp⟩⟩)
+      ⟨f.val, by
+        obtain ⟨hd, -, hp⟩ := mem_primitiveGaussReducedForms.mp f.property
+        exact (mem_primitiveForms D f.val).mpr ⟨hd, hp⟩⟩)
     fun f g h ↦ by
       obtain ⟨γ, hγ⟩ := sameCycle_primitiveReductionPerm_iff.mp h.symm
       exact ⟨γ, Subtype.ext (by simpa only [SubMulAction.val_smul] using hγ)⟩
@@ -603,9 +604,9 @@ noncomputable def primitiveCycleToProperClass :
 class in `primitiveForms D`. -/
 @[simp] theorem primitiveCycleToProperClass_mk (f : primitiveGaussReducedForms D) :
     primitiveCycleToProperClass D (Quotient.mk'' f) =
-      Quotient.mk'' ⟨f.1, (mem_primitiveForms D f.1).mpr
-        ⟨(mem_primitiveGaussReducedForms.mp f.2).1,
-          (mem_primitiveGaussReducedForms.mp f.2).2.2⟩⟩ := by
+      Quotient.mk'' ⟨f.val, (mem_primitiveForms D f.val).mpr
+        ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+          (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ := by
   rfl
 
 /-- Distinct cycles of `primitiveReductionPerm D` give distinct proper classes in
@@ -623,11 +624,11 @@ a cycle of `primitiveReductionPerm D`. -/
 theorem primitiveCycleToProperClass_surjective (hpos : 0 < D) :
     Function.Surjective (primitiveCycleToProperClass D) := by
   refine Quotient.ind' fun f ↦ ?_
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D f.1).mp f.2
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D f.val).mp f.property
   obtain ⟨γ, hγ⟩ := exists_smul_mem_primitiveGaussReducedForms (by rwa [hfD])
     (not_isSquare_of_discrim_eq hfD) hfp
   rw [hfD] at hγ
-  refine ⟨Quotient.mk'' ⟨γ • f.1, hγ⟩, ?_⟩
+  refine ⟨Quotient.mk'' ⟨γ • f.val, hγ⟩, ?_⟩
   rw [primitiveCycleToProperClass_mk]
   exact Quotient.sound' ⟨γ, Subtype.ext rfl⟩
 

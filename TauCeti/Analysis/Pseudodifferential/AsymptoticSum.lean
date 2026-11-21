@@ -727,8 +727,9 @@ private theorem exists_corrections_of_exists_add {μ : ℝ} (P : ℕ → Symbol 
   choose d hdQ hd using hsucc
   -- The successive approximations `s N`, with `P N (s N)`, and the corrections between them.
   let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
-    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
-  refine ⟨fun N ↦ d N (s N).1 (s N).2, fun N ↦ hdQ N _ _, fun N ↦ ⟨(s N).1, (s N).2, ?_⟩⟩
+    (fun N b ↦ ⟨b.val + inclusion (by simp) (d N b.val b.property), hd N b.val b.property⟩) N
+  refine ⟨fun N ↦ d N (s N).val (s N).property, fun N ↦ hdQ N _ _, fun N ↦ ⟨(s N).val,
+      (s N).property, ?_⟩⟩
   induction N with
   | zero => simp [s]
   | succ N ih =>

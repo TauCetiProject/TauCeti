@@ -401,7 +401,7 @@ theorem val_nonneg (f : Flow cap s t) : 0 ≤ f.val :=
 nonnegative value. -/
 def equivBoundedFlow : Flow cap s t ≃ {f : BoundedFlow 0 cap s t // 0 ≤ f.val} where
   toFun f := ⟨f.toBoundedFlow, f.val_nonneg⟩
-  invFun f := ⟨f.1, f.2⟩
+  invFun f := ⟨f.val, f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
