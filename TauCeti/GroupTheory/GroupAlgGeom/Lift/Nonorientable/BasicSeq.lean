@@ -20,15 +20,24 @@ For pairwise distinct variables `xᵢ`, `yᵢ` (`i = 1, …, n`), `zⱼ` (`j = 1
 is a square and `S₀` has an atom, by the automorphism linking the last atom of `S₀` with the first
 square (`basicCommSq` if there is a commutator, `basicLinkSq` if there is none), and, if there are
 at least two squares, by the two automorphisms `basicSqMul` and `basicSqConj` of the first two
-squares. For two squares this is the basic sequence `Γ = (γ₁, …, γ_K)` of [IFT], §7.5, with
-`K = m + 2` when `n = 0` and `K = m + 4n + 2` when `n ≥ 1`. [IFT] considers only two squares; for
-one square the sequence has `K = m + 4n` terms: it ends with the linking automorphism when `S₀`
-has an atom, and it is empty for `S₁ = u₁²`.
+squares.
+
+[IFT], §7.5, presents both mixed forms, with one square (113) and with two squares (114), and
+constructs the basic sequence `Γ = (γ₁, …, γ_K)` for (114) only. For two squares `basicMixedWordSeq`
+is that sequence, with `K = m + 2` when `n = 0` and `K = m + 4n + 2` when `n ≥ 1`. For one square
+it is an extension of [IFT]: the same construction without the automorphisms of two squares. It has
+`K = m + 4n` terms, ends with the linking automorphism when `S₀` has an atom, and is empty for
+`S₁ = u₁²`.
 
 For a non-orientable standard quadratic equation `S = 1`, `mixedBasicSeq S` is the basic sequence
 of its mixed form (`TauCeti.GroupAlgGeom.Quadratic.Standard.mixedWord`). Its automorphisms fix the
-coefficients and the left side of the mixed form, so the products `φ_{j,p}` of their powers
-(`TauCeti.GroupAlgGeom.Lift.phi`) do too.
+coefficients and the left side of the mixed form, and so do the products `φ_{j,p}` of their powers
+(`TauCeti.GroupAlgGeom.Lift.phi`) and their inverses. Hence composing a solution of the mixed form
+with any of them gives a solution of the mixed form. They act on the solutions of `S = 1` itself
+after conjugation by a change of coordinates: an elementary `G`-automorphism `f` of `G[X]` carries
+the left side of the mixed form to the left side of `S`
+(`TauCeti.GroupAlgGeom.Quadratic.Standard.exists_mem_elementaryAut_apply_mixedWord`), so the
+conjugates `f γ f⁻¹` fix the left side of `S`.
 
 ## Main definitions
 
@@ -42,13 +51,15 @@ coefficients and the left side of the mixed form, so the products `φ_{j,p}` of 
 * `TauCeti.GroupAlgGeom.Lift.length_basicMixedWordSeq`: the length of the basic sequence.
 * `TauCeti.GroupAlgGeom.Lift.apply_basicMixedWord_of_mem_basicMixedWordSeq`: its automorphisms
   fix `S₁`.
+* `TauCeti.GroupAlgGeom.Lift.apply_inr_of_of_mem_basicMixedWordSeq_of_ne`: they fix the variables
+  that do not occur in `S₁`.
 * `TauCeti.GroupAlgGeom.Lift.apply_mixedWord_of_mem_mixedBasicSeq`,
-  `TauCeti.GroupAlgGeom.Lift.phi_mixedBasicSeq_mixedWord`: the basic sequence of a non-orientable
-  equation and the products `φ_{j,p}` fix the left side of its mixed form.
+  `TauCeti.GroupAlgGeom.Lift.phi_mixedBasicSeq_mixedWord`,
+  `TauCeti.GroupAlgGeom.Lift.phi_mixedBasicSeq_symm_mixedWord`: the basic sequence of a
+  non-orientable equation, the products `φ_{j,p}` and their inverses fix the left side of its mixed
+  form.
 * `TauCeti.GroupAlgGeom.Lift.length_mixedBasicSeq`: `K = m + 2N - 2` for genus `N`, that is
-  `m + 4n + 2` for `2n + 2` squares
-  (`TauCeti.GroupAlgGeom.Lift.length_mixedBasicSeq_nonorientableCoeff_two_mul_add_two`) and `m + 4n`
-  for `2n + 1` squares.
+  `m + 4n + 2` for `2n + 2` squares and `m + 4n` for `2n + 1` squares.
 
 ## References
 
@@ -71,19 +82,26 @@ section Seq
 variable {x y : Fin n → X} {z : Fin m → X} {u : Fin r → X}
   (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective) (c : Fin m → G)
 
-/-- The basic sequence of automorphisms of `G[X]` fixing `S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²`
-([IFT], §7.5): the orientable basic sequence of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`; then, if there
-is a square and `S₀` has an atom, the automorphism of the first square and the last commutator
-(or, if there is no commutator, the last coefficient atom); then, if there are at least two
-squares, the two automorphisms of the first two squares. The mixed form of a standard equation
-has one or two squares; for three or more squares only the first two get automorphisms of their
-own. -/
+/-- The automorphism linking `S₀` with the first square of `S₁`, if there is a square and `S₀`
+has an atom. -/
+private noncomputable def linkSqSeq : List (MulAut (GX G X)) :=
+  if h : 0 < n ∧ 0 < r then [basicCommSq inj ⟨n - 1, by lia⟩ ⟨0, h.2⟩]
+  else if h : 0 < m ∧ 0 < r then [basicLinkSq inj c ⟨m - 1, by lia⟩ ⟨0, h.2⟩] else []
+
+/-- The two automorphisms of the first two squares of `S₁`, if there are at least two squares. -/
+private noncomputable def sqSeq : List (MulAut (GX G X)) :=
+  if h : 1 < r then [basicSqMul inj ⟨0, by lia⟩ ⟨1, h⟩, basicSqConj inj ⟨0, by lia⟩ ⟨1, h⟩] else []
+
+/-- The basic sequence of automorphisms of `G[X]` fixing `S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²`:
+the orientable basic sequence of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`; then, if there is a square and
+`S₀` has an atom, the automorphism of the first square and the last commutator (or, if there is no
+commutator, the last coefficient atom); then, if there are at least two squares, the two
+automorphisms of the first two squares. For two squares this is the basic sequence of [IFT], §7.5,
+for (114). For one square, (113), [IFT] gives no sequence, and this one extends its construction
+by leaving out the automorphisms of two squares. The mixed form of a standard equation has one or
+two squares; for three or more squares only the first two get automorphisms of their own. -/
 noncomputable def basicMixedWordSeq : List (MulAut (GX G X)) :=
-  basicWordSeq (Sum.elim_injective.1 inj).1 c ++
-    (if h : 0 < n ∧ 0 < r then [basicCommSq inj ⟨n - 1, by lia⟩ ⟨0, h.2⟩]
-      else if h : 0 < m ∧ 0 < r then [basicLinkSq inj c ⟨m - 1, by lia⟩ ⟨0, h.2⟩] else []) ++
-    (if h : 1 < r then [basicSqMul inj ⟨0, by lia⟩ ⟨1, h⟩, basicSqConj inj ⟨0, by lia⟩ ⟨1, h⟩]
-      else [])
+  basicWordSeq (Sum.elim_injective.1 inj).1 c ++ linkSqSeq inj c ++ sqSeq inj
 
 theorem basicMixedWordSeq_def :
     basicMixedWordSeq inj c =
@@ -106,6 +124,42 @@ theorem length_basicMixedWordSeq :
   simp only [basicMixedWordSeq_def, List.length_append, length_basicWordSeq]
   split_ifs <;> simp <;> lia
 
+/-- The linking automorphism is that of the last commutator and the first square, or, if there is
+no commutator, that of the last coefficient atom and the first square. -/
+private theorem mem_linkSqSeq_iff {γ : MulAut (GX G X)} :
+    γ ∈ linkSqSeq inj c ↔
+      (∃ (i : Fin n) (k : Fin r), (i : ℕ) + 1 = n ∧ (k : ℕ) = 0 ∧ γ = basicCommSq inj i k) ∨
+        ∃ (j : Fin m) (k : Fin r), n = 0 ∧ (j : ℕ) + 1 = m ∧ (k : ℕ) = 0 ∧
+          γ = basicLinkSq inj c j k := by
+  rw [linkSqSeq]
+  refine ⟨fun hγ ↦ ?_, ?_⟩
+  · split_ifs at hγ with hn hm
+    · exact .inl ⟨_, _, by simp; lia, rfl, List.mem_singleton.1 hγ⟩
+    · exact .inr ⟨_, _, by lia, by simp; lia, rfl, List.mem_singleton.1 hγ⟩
+    · simp at hγ
+  · rintro (⟨i, k, hi, hk, rfl⟩ | ⟨j, k, hn, hj, hk, rfl⟩)
+    · rw [dite_eq_left ⟨by lia, k.pos⟩, List.mem_singleton]
+      exact congrArg₂ (basicCommSq inj) (Fin.ext (by simp; lia)) (Fin.ext hk)
+    · rw [dite_eq_right (by lia), dite_eq_left ⟨by lia, k.pos⟩, List.mem_singleton]
+      exact congrArg₂ (basicLinkSq inj c) (Fin.ext (by simp; lia)) (Fin.ext hk)
+
+/-- The automorphisms of two squares are those of the first and the second square. -/
+private theorem mem_sqSeq_iff {γ : MulAut (GX G X)} :
+    γ ∈ sqSeq inj ↔
+      (∃ k k' : Fin r, (k : ℕ) = 0 ∧ (k' : ℕ) = 1 ∧ γ = basicSqMul inj k k') ∨
+        ∃ k k' : Fin r, (k : ℕ) = 0 ∧ (k' : ℕ) = 1 ∧ γ = basicSqConj inj k k' := by
+  rw [sqSeq]
+  refine ⟨fun hγ ↦ ?_, ?_⟩
+  · split_ifs at hγ
+    · obtain rfl | rfl := List.mem_pair.1 hγ
+      · exact .inl ⟨_, _, rfl, rfl, rfl⟩
+      · exact .inr ⟨_, _, rfl, rfl, rfl⟩
+    · simp at hγ
+  · rintro (⟨k, k', hk, hk', rfl⟩ | ⟨k, k', hk, hk', rfl⟩) <;>
+      rw [dite_eq_left (hk' ▸ k'.isLt : 1 < r)]
+    · exact List.mem_cons.2 (.inl (congrArg₂ (basicSqMul inj) (Fin.ext hk) (Fin.ext hk')))
+    · exact List.mem_pair.2 (.inr (congrArg₂ (basicSqConj inj) (Fin.ext hk) (Fin.ext hk')))
+
 /-- The members of the basic sequence of `S₁`: the members of the orientable basic sequence of
 `S₀`; the automorphism of the last commutator and the first square, if there are a commutator and
 a square; the automorphism of the last coefficient atom and the first square, if there is no
@@ -119,40 +173,18 @@ theorem mem_basicMixedWordSeq_iff {γ : MulAut (GX G X)} :
           γ = basicLinkSq inj c j k) ∨
         (∃ k k' : Fin r, (k : ℕ) = 0 ∧ (k' : ℕ) = 1 ∧ γ = basicSqMul inj k k') ∨
         ∃ k k' : Fin r, (k : ℕ) = 0 ∧ (k' : ℕ) = 1 ∧ γ = basicSqConj inj k k' := by
-  simp only [basicMixedWordSeq_def, List.mem_append]
-  refine ⟨fun hγ ↦ ?_, fun hγ ↦ ?_⟩
-  · obtain (hγ | hγ) | hγ := hγ
-    · exact .inl hγ
-    · split_ifs at hγ with hn hm
-      · exact .inr (.inl ⟨_, _, by simp; lia, rfl, List.mem_singleton.1 hγ⟩)
-      · exact .inr (.inr (.inl ⟨_, _, by lia, by simp; lia, rfl, List.mem_singleton.1 hγ⟩))
-      · simp at hγ
-    · split_ifs at hγ
-      · obtain rfl | rfl := List.mem_pair.1 hγ
-        · exact .inr (.inr (.inr (.inl ⟨_, _, rfl, rfl, rfl⟩)))
-        · exact .inr (.inr (.inr (.inr ⟨_, _, rfl, rfl, rfl⟩)))
-      · simp at hγ
-  · obtain hγ | ⟨i, k, hi, hk, rfl⟩ | ⟨j, k, hn, hj, hk, rfl⟩ | ⟨k, k', hk, hk', rfl⟩ |
-        ⟨k, k', hk, hk', rfl⟩ := hγ
-    · exact .inl (.inl hγ)
-    · rw [dite_eq_left ⟨by lia, k.pos⟩, List.mem_singleton]
-      exact .inl (.inr (congrArg₂ (basicCommSq inj) (Fin.ext (by simp; lia)) (Fin.ext hk)))
-    · rw [dite_eq_right (by lia), dite_eq_left ⟨by lia, k.pos⟩, List.mem_singleton]
-      exact .inl (.inr (congrArg₂ (basicLinkSq inj c) (Fin.ext (by simp; lia)) (Fin.ext hk)))
-    · rw [dite_eq_left (hk' ▸ k'.isLt : 1 < r)]
-      exact .inr (List.mem_cons.2 (.inl (congrArg₂ (basicSqMul inj) (Fin.ext hk) (Fin.ext hk'))))
-    · rw [dite_eq_left (hk' ▸ k'.isLt : 1 < r)]
-      exact .inr (List.mem_pair.2 (.inr (congrArg₂ (basicSqConj inj) (Fin.ext hk) (Fin.ext hk'))))
+  simp only [basicMixedWordSeq, List.mem_append, mem_linkSqSeq_iff, mem_sqSeq_iff, or_assoc]
 
 variable {inj c} {γ : MulAut (GX G X)}
 
 /-- The automorphisms of the orientable basic sequence of `S₀` fix `S₁` when the square variables
 are distinct from the variables of `S₀`: they fix `S₀` and the square variables. -/
-theorem apply_basicMixedWord_of_mem_basicWordSeq {inj : (Sum.elim (Sum.elim x y) z).Injective}
-    (hγ : γ ∈ basicWordSeq inj c) (hu : ∀ a k, Sum.elim (Sum.elim x y) z a ≠ u k) :
+theorem apply_basicMixedWord_of_mem_basicWordSeq_of_ne
+    {inj : (Sum.elim (Sum.elim x y) z).Injective} (hγ : γ ∈ basicWordSeq inj c)
+    (hu : ∀ a k, Sum.elim (Sum.elim x y) z a ≠ u k) :
     γ (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   have hsq (k : Fin r) : γ (sqAtom u k) = sqAtom u k := by
-    rw [sqAtom_def, map_pow, apply_inr_of_of_mem_basicWordSeq _ c hγ fun a ↦ hu a k]
+    rw [sqAtom_def, map_pow, apply_inr_of_of_mem_basicWordSeq_of_ne _ c hγ fun a ↦ hu a k]
   rw [basicMixedWord_def, map_mul, apply_basicWord_of_mem_basicWordSeq _ c hγ,
     List.map_prod_ofFn_of_forall _ _ hsq]
 
@@ -161,7 +193,7 @@ theorem apply_basicMixedWord_of_mem_basicMixedWordSeq (hγ : γ ∈ basicMixedWo
     γ (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   obtain hγ | ⟨i, k, hi, hk, rfl⟩ | ⟨j, k, hn, hj, hk, rfl⟩ | ⟨k, k', hk, hk', rfl⟩ |
       ⟨k, k', hk, hk', rfl⟩ := (mem_basicMixedWordSeq_iff inj c).1 hγ
-  · exact apply_basicMixedWord_of_mem_basicWordSeq hγ (Sum.elim_injective.1 inj).2.2
+  · exact apply_basicMixedWord_of_mem_basicWordSeq_of_ne hγ (Sum.elim_injective.1 inj).2.2
   · exact basicCommSq_basicMixedWord inj c i k hi hk
   · exact basicLinkSq_basicMixedWord inj c j k hn hj hk
   · exact basicSqMul_basicMixedWord inj c k k' (by lia)
@@ -178,6 +210,19 @@ theorem apply_inl_of_mem_basicMixedWordSeq (hγ : γ ∈ basicMixedWordSeq inj c
   · exact basicSqMul_inl inj k k' g
   · exact basicSqConj_inl inj k k' g
 
+/-- Every automorphism of the basic sequence of `S₁` fixes the variables other than the `xᵢ`,
+`yᵢ`, `zⱼ` and `uₖ`. -/
+theorem apply_inr_of_of_mem_basicMixedWordSeq_of_ne (hγ : γ ∈ basicMixedWordSeq inj c) {v : X}
+    (hv : ∀ a, Sum.elim (Sum.elim (Sum.elim x y) z) u a ≠ v) : γ (inr (.of v)) = inr (.of v) := by
+  obtain hγ | ⟨i, k, -, -, rfl⟩ | ⟨j, k, -, -, -, rfl⟩ | ⟨k, k', -, -, rfl⟩ |
+      ⟨k, k', -, -, rfl⟩ := (mem_basicMixedWordSeq_iff inj c).1 hγ
+  · exact apply_inr_of_of_mem_basicWordSeq_of_ne _ c hγ fun a ↦ hv (.inl a)
+  · exact basicCommSq_inr_of_of_ne inj i k (hv (.inl (.inl (.inl i)))).symm
+      (hv (.inl (.inl (.inr i)))).symm (hv (.inr k)).symm
+  · exact basicLinkSq_inr_of_of_ne inj c j k (hv (.inl (.inr j))).symm (hv (.inr k)).symm
+  · exact basicSqMul_inr_of_of_ne inj k k' (hv (.inr k)).symm (hv (.inr k')).symm
+  · exact basicSqConj_inr_of_of_ne inj k k' (hv (.inr k)).symm (hv (.inr k')).symm
+
 end Seq
 
 /-! ### Non-orientable standard quadratic equations -/
@@ -187,7 +232,10 @@ section Standard
 open Quadratic Quadratic.Standard
 
 /-- The basic sequence of automorphisms of `G[X]` of a non-orientable standard quadratic equation
-`S = 1`: the basic sequence of the word `S₁` of its mixed form ([IFT], §7.5, (113), (114)). -/
+`S = 1`: the basic sequence of the word `S₁` of its mixed form. For even genus the mixed form has
+two squares, and this is the basic sequence of [IFT], §7.5, for (114). For odd genus it has one
+square, (113), for which [IFT] gives no sequence, and this is the extension `basicMixedWordSeq`
+of its construction to one square. -/
 noncomputable def mixedBasicSeq : (S : Standard G X) → ¬S.IsOrientable → List (MulAut (GX G X))
   | .orientable _ hn _ _ inj, h => (h (isOrientable_orientable hn inj)).elim
   | .orientableCoeff _ _ hnm _ _ _ inj _ hc _ hd, h =>
@@ -279,9 +327,32 @@ theorem phi_mixedBasicSeq_inl (p : List ℕ) (g : G) :
     phi (mixedBasicSeq S ho) p (inl g) = inl g :=
   phi_apply_of_forall_mem (fun _ hγ ↦ apply_inl_of_mem_mixedBasicSeq ho hγ g) p
 
+/-- The inverses of the automorphisms `φ_{j,p}` of a non-orientable standard quadratic equation fix
+the left side of its mixed form. -/
+@[simp]
+theorem phi_mixedBasicSeq_symm_mixedWord (p : List ℕ) :
+    (phi (mixedBasicSeq S ho) p).symm (S.mixedWord ho) = S.mixedWord ho :=
+  phi_symm_apply_of_forall_mem (fun _ hγ ↦ apply_mixedWord_of_mem_mixedBasicSeq ho hγ) p
+
+/-- The inverses of the automorphisms `φ_{j,p}` of a non-orientable standard quadratic equation fix
+the coefficients. -/
+@[simp]
+theorem phi_mixedBasicSeq_symm_inl (p : List ℕ) (g : G) :
+    (phi (mixedBasicSeq S ho) p).symm (inl g) = inl g :=
+  phi_symm_apply_of_forall_mem (fun _ hγ ↦ apply_inl_of_mem_mixedBasicSeq ho hγ g) p
+
+/-- The basic sequence of the word `S₁` of the mixed variables of genus `N`, with `m` conjugated
+coefficients, has `m + 2N - 2` terms. -/
+private theorem length_basicMixedWordSeq_mixed {x : Fin N → X} (hN : 0 < N)
+    (inj : (Sum.elim (Sum.elim (Sum.elim (mixedFst x) (mixedSnd x)) z) (mixedSq x)).Injective) :
+    (basicMixedWordSeq inj c).length = m + 2 * N - 2 := by
+  rw [length_basicMixedWordSeq]
+  split_ifs <;> lia
+
 /-- **The length of the basic sequence.** The basic sequence of a non-orientable standard quadratic
 equation of genus `N` with `m` conjugated coefficients has `m + 2N - 2` terms: `m + 4n + 2` for
-`N = 2n + 2` (two squares) and `m + 4n` for `N = 2n + 1` (one square). -/
+`N = 2n + 2` (two squares; [IFT], §7.5, `K(m, 0) = m + 2` and `K(m, n) = m + 4n + 2` for `n ≥ 1`)
+and `m + 4n` for `N = 2n + 1` (one square). -/
 @[simp]
 theorem length_mixedBasicSeq : (mixedBasicSeq S ho).length = S.atomicRank + S.genus - 2 := by
   cases S with
@@ -289,23 +360,13 @@ theorem length_mixedBasicSeq : (mixedBasicSeq S ho).length = S.atomicRank + S.ge
   | orientableCoeff n m hnm x y z inj c hc d hd =>
     exact absurd (isOrientable_orientableCoeff hnm inj hc hd) ho
   | nonorientable N hN x inj =>
-    simp only [mixedBasicSeq_nonorientable hN inj, length_basicMixedWordSeq,
+    rw [mixedBasicSeq_nonorientable hN inj, length_basicMixedWordSeq_mixed hN,
       atomicRank_nonorientable, genus_nonorientable]
-    split_ifs <;> lia
+    lia
   | nonorientableCoeff N m hN x z inj c hc d hd =>
-    simp only [mixedBasicSeq_nonorientableCoeff hN inj hc hd, length_basicMixedWordSeq,
+    rw [mixedBasicSeq_nonorientableCoeff hN inj hc hd, length_basicMixedWordSeq_mixed hN,
       atomicRank_nonorientableCoeff, genus_nonorientableCoeff]
-    split_ifs <;> lia
-
-/-- **The length of the basic sequence, two squares** ([IFT], §7.5, where `K(m, 0) = m + 2` and
-`K(m, n) = m + 4n + 2` for `n ≥ 1`). For `x₀² ⋯ x²_{2n+1} ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d = 1`, whose mixed
-form has `n` commutators and two squares, the basic sequence has `m + 4n + 2` terms. -/
-theorem length_mixedBasicSeq_nonorientableCoeff_two_mul_add_two {x : Fin (2 * n + 2) → X}
-    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
-    (mixedBasicSeq (nonorientableCoeff (2 * n + 2) m (by lia) x z inj c hc d hd)
-      (not_isOrientable_nonorientableCoeff _ inj hc hd)).length = m + 4 * n + 2 := by
-  simp [atomicRank_nonorientableCoeff]
-  lia
+    lia
 
 end Standard
 

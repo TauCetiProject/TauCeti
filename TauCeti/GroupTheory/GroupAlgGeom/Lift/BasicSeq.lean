@@ -221,8 +221,9 @@ theorem apply_inl_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basic
 
 /-- Every automorphism of the basic sequence fixes the variables other than the `xᵢ`, `yᵢ` and
 `zⱼ`. -/
-theorem apply_inr_of_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basicWordSeq inj c)
-    {v : X} (hv : ∀ a, Sum.elim (Sum.elim x y) z a ≠ v) : γ (inr (.of v)) = inr (.of v) := by
+theorem apply_inr_of_of_mem_basicWordSeq_of_ne {γ : MulAut (GX G X)}
+    (hγ : γ ∈ basicWordSeq inj c) {v : X} (hv : ∀ a, Sum.elim (Sum.elim x y) z a ≠ v) :
+    γ (inr (.of v)) = inr (.of v) := by
   obtain ⟨j, j', -, rfl⟩ | ⟨j, i, -, -, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, i', -, rfl⟩ :=
     (mem_basicWordSeq_iff inj c).1 hγ
   · exact basicCoeff_inr_of_of_ne inj c j j' (hv (.inr j)).symm (hv (.inr j')).symm
