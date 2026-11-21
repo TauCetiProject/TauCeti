@@ -164,7 +164,7 @@ theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T
 
 /-- For a closed densely defined `T`, the double adjoint `T††` evaluates as `T` on `dom T`. -/
 theorem adjoint_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E))
-    (x : T.domain) : T.adjoint.adjoint ⟨x, (adjoint_adjoint hT hd).symm ▸ x.2⟩ = T x :=
+    (x : T.domain) : T.adjoint.adjoint ⟨x, (adjoint_adjoint hT hd).symm ▸ x.property⟩ = T x :=
   (adjoint_adjoint hT hd).le.2 rfl
 
 end LinearPMap
