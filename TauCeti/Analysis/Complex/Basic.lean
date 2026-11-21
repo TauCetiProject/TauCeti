@@ -49,6 +49,8 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+
+A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 -/
 
 public section
@@ -283,3 +285,8 @@ theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
   (one_le_re_one_add hz).trans (re_le_norm _)
 
 end Complex
+
+/-- A linear isometry from the plane maps `i` to a unit vector. -/
+theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
+    (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
+  (ι.norm_map _).trans Complex.norm_I

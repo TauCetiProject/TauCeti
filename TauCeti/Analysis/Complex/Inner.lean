@@ -8,21 +8,21 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.Complex.Conformal
+import TauCeti.Analysis.InnerProductSpace.Complex
 
 /-!
 # Real inner products with a unit complex number
 
-Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by `‖ζ‖ ^ 2`.
-In particular multiplication by a unit complex number `ζ` is a rotation of the plane, so the real
-inner product of `ζ` with `ζ * w` is the real inner product of `1` with `w`, namely the real part
-of `w`. This lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate
-`w = conj ζ * z`. Conversely, a real-linear map of the plane commuting with multiplication by `i`
-at `1` and preserving the real inner product is a rotation by a unit complex number.
+Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by `‖ζ‖ ^ 2`
+(`TauCeti.RCLike.real_inner_mul_mul`). In particular multiplication by a unit complex number `ζ`
+is a rotation of the plane, so the real inner product of `ζ` with `ζ * w` is the real inner
+product of `1` with `w`, namely the real part of `w`. This lets the level sets `⟪ζ, z⟫_ℝ = t` be
+read in the rotated coordinate `w = conj ζ * z`. Conversely, a real-linear map of the plane
+commuting with multiplication by `i` at `1` and preserving the real inner product is a rotation by
+a unit complex number.
 
 ## Main declarations
 
-* `TauCeti.RCLike.real_inner_mul_mul` -- `⟪ζ * a, ζ * b⟫_ℝ = ‖ζ‖ ^ 2 * ⟪a, b⟫_ℝ` in an `RCLike`
-  field.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
 * `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
@@ -33,24 +33,11 @@ at `1` and preserving the real inner product is a rotation by a unit complex num
   `⟪i x, y⟫_ℝ = -⟪x, i y⟫_ℝ`.
 * `Complex.exists_apply_eq_mul_exp` -- a real-linear map `C` with `C i = i * C 1` and
   preserving `⟪i ·, ·⟫_ℝ` on `(1, i)` is multiplication by `exp (i θ)`.
-* `LinearIsometry.norm_map_I` -- a linear isometry from the plane maps `i` to a unit vector.
 * `Real.inner_ofReal_I_mul_ofReal` -- `⟪x, i y⟫_ℝ = 0` for real `x`, `y`: the real line is
   orthogonal to its rotation by `i`.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by
-`‖ζ‖ ^ 2`. -/
-theorem RCLike.real_inner_mul_mul {K : Type*} [RCLike K] (ζ a b : K) :
-    inner ℝ (ζ * a) (ζ * b) = ‖ζ‖ ^ 2 * inner ℝ a b := by
-  rw [real_inner_eq_re_inner K, real_inner_eq_re_inner K, RCLike.inner_apply, RCLike.inner_apply,
-    map_mul (starRingEnd K), mul_mul_mul_comm, RCLike.mul_conj, ← RCLike.ofReal_pow,
-    RCLike.re_ofReal_mul]
-
-end TauCeti
 
 namespace Complex
 
@@ -99,11 +86,6 @@ theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : C I = I * C 1)
   exact ⟨θ, fun z => by rw [hC z, hθ]⟩
 
 end Complex
-
-/-- A linear isometry from the plane maps `i` to a unit vector. -/
-theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
-    (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
-  (ι.norm_map _).trans Complex.norm_I
 
 /-- The real line is orthogonal to its rotation by `i`: `⟪x, i y⟫_ℝ = 0` for real `x`, `y`. That
 is, `F = ℝ ⊆ ℂ` satisfies the orthogonality `⟪F, J F⟫ = 0` for `J = i`. -/

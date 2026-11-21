@@ -16,7 +16,8 @@ identity on `(E, +, ‖·‖)`, polarization forces `⟪x, y⟫_ℝ = RCLike.re 
 (`TauCeti.inner_real_eq_re_inner`) without any separate compatibility hypothesis. This applies
 simultaneously to `InnerProductSpace.rclikeToReal` (and `InnerProductSpace.complexToReal`) and to
 spaces such as `EuclideanSpace ℂ ι` whose coordinatewise real inner product is only propositionally
-equal to `Re ⟪·, ·⟫_ℂ`.
+equal to `Re ⟪·, ·⟫_ℂ`. On an `RCLike` field itself, multiplication by a scalar `ζ` scales the
+real inner product by `‖ζ‖ ^ 2` (`TauCeti.RCLike.real_inner_mul_mul`).
 
 On any complex inner product space, Hermitian symmetry gives `Im ⟪x, x⟫_ℂ = 0`, so pairwise
 vanishing of `Im ⟪·, ·⟫_ℂ` on a generating set `s` extends by `ℝ`-bilinearity to all pairs in
@@ -29,13 +30,15 @@ ambient real dimension.
 
 * `TauCeti.inner_real_eq_re_inner`: `⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜` whenever a `𝕜`-inner product
   (for `[RCLike 𝕜]`) and a real inner product share the same seminormed group structure.
+* `TauCeti.RCLike.real_inner_mul_mul`: `⟪ζ * a, ζ * b⟫_ℝ = ‖ζ‖ ^ 2 * ⟪a, b⟫_ℝ` in an `RCLike`
+  field.
 * `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ` vanishes for distinct elements of
   `s`, then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
 -/
 
 public section
 
-open scoped InnerProductSpace
+open scoped ComplexConjugate InnerProductSpace
 
 namespace TauCeti
 
@@ -46,6 +49,16 @@ theorem inner_real_eq_re_inner (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [Seminor
     [InnerProductSpace 𝕜 E] [InnerProductSpace ℝ E] (x y : E) :
     ⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜 := by
   linarith [norm_add_sq (𝕜 := 𝕜) x y, norm_add_sq_real x y]
+
+/-- Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by
+`‖ζ‖ ^ 2`. -/
+theorem RCLike.real_inner_mul_mul {K : Type*} [RCLike K] (ζ a b : K) :
+    ⟪ζ * a, ζ * b⟫_ℝ = ‖ζ‖ ^ 2 * ⟪a, b⟫_ℝ := by
+  simp only [real_inner_eq_re_inner K, RCLike.inner_apply, map_mul]
+  calc RCLike.re (ζ * b * (conj ζ * conj a))
+      = RCLike.re ((ζ * conj ζ) * (b * conj a)) := by ac_rfl
+    _ = ‖ζ‖ ^ 2 * RCLike.re (b * conj a) := by
+      rw [RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
 
 end TauCeti
 
