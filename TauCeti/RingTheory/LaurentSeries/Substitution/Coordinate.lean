@@ -48,6 +48,8 @@ of nonzero series of positive order (`TauCeti.LaurentSeries.coe_substAlgEquiv`).
   `TauCeti.FormalCoordinate.substAlgEquiv`.
 * `TauCeti.LaurentSeries.algHom_eq_substAlgEquiv`: it is the only `R`-algebra endomorphism of
   `R⸨X⸩` extending substitution of power series.
+* `TauCeti.LaurentSeries.substAlgEquiv_homothety_single`: the homothety `X ↦ u X` scales a
+  Laurent monomial of degree `n` by the unit power `u ^ n`.
 * `TauCeti.LaurentSeries.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
 * `TauCeti.LaurentSeries.mapRingHom_substAlgEquiv`: naturality in the coefficient ring.
 * `TauCeti.LaurentSeries.derivative_substAlgEquiv`: the chain rule.
@@ -165,6 +167,20 @@ theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧
   have hC : (single n a : R⸨X⸩) = single 0 a * single n 1 := by
     rw [single_mul_single, zero_add, mul_one]
   rw [hC, map_mul, substAlgEquiv_single_zero, hone, mul_assoc]
+
+/-- The homothety `X ↦ u X` scales a Laurent monomial of integer degree `n` by the unit power
+`u ^ n`. -/
+-- Match before the generic variable rule rewrites degree one to the coordinate itself.
+@[simp↓]
+theorem substAlgEquiv_homothety_single (u : Rˣ) (n : ℤ) (c : R) :
+    substAlgEquiv (FormalCoordinate.homothety u) (single n c) =
+      single n (↑(u ^ n) * c) := by
+  rw [substAlgEquiv_single_of_eq_X_mul (v := Units.map PowerSeries.C.toMonoidHom u)
+    (FormalCoordinate.homothety u) (by
+      simp [FormalCoordinate.toPowerSeries_homothety, PowerSeries.smul_eq_C_mul, mul_comm])]
+  rw [← map_zpow, Units.coe_map]
+  change _ * ofPowerSeries ℤ R (PowerSeries.C (↑(u ^ n) : R)) = _
+  rw [ofPowerSeries_C, HahnSeries.C_apply, single_mul_single, add_zero, mul_comm c]
 
 /-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`. -/
 @[simp]
