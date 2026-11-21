@@ -183,36 +183,22 @@ theorem coeFn_lebesgueMap_ae_eq_lebesgueMap {p' q' : ℝ≥0∞} [Fact (1 ≤ p'
   exact (coeFn_lebesgueMap_of_ae_eq_add T₀ T₁ h hθ hp hp_top hq hq_top hf).trans
     (coeFn_lebesgueMap_of_ae_eq_add T₀ T₁ h hθ' hp' hp'_top hq' hq'_top (hfg.symm.trans hf)).symm
 
-omit [CompleteSpace E] [SigmaFinite ν] [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ q₀)]
-  [Fact (1 ≤ q₁)] in
-/-- Two bounded operators `Lᵖ → L^q`, `p < ∞`, that agree on `Lᵖ ∩ Lʳ` are equal, because the
-simple functions of `Lᵖ` lie in `Lʳ` and are dense in `Lᵖ`. -/
-private theorem eq_of_forall_ae_eq (hp_top : p ≠ ∞) {r : ℝ≥0∞}
-    {S S' : Lp E p μ →L[ℂ] Lp F q ν}
-    (hS : ∀ (f : Lp E p μ) (g : Lp E r μ), ⇑f =ᵐ[μ] ⇑g → S f = S' f) : S = S' := by
-  refine ContinuousLinearMap.ext <| congrFun <| (Lp.simpleFunc.denseRange hp_top).equalizer
-    S.continuous S'.continuous (funext fun g => ?_)
-  have hg := Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp_top
-    r g
-  exact hS g (hg.toLp _)
-    ((Lp.simpleFunc.toSimpleFunc_eq_toFun g).symm.trans hg.coeFn_toLp.symm)
-
 /-- **Uniqueness of the Riesz–Thorin operator.** A bounded operator `S : Lᵖ → L^q` that agrees
 with `T₀` on `Lᵖ ∩ L^{p₀}` is the Riesz–Thorin operator. -/
 theorem eq_lebesgueMap_of_fst {S : Lp E p μ →L[ℂ] Lp F q ν}
     (hS : ∀ (f : Lp E p μ) (f₀ : Lp E p₀ μ), ⇑f =ᵐ[μ] ⇑f₀ → ⇑(S f) =ᵐ[ν] ⇑(T₀ f₀)) :
     S = lebesgueMap T₀ T₁ h hθ hp hp_top hq hq_top :=
-  eq_of_forall_ae_eq hp_top fun _ _ hf =>
-    Lp.ext ((hS _ _ hf).trans
-      (coeFn_lebesgueMap_of_ae_eq_fst T₀ T₁ h hθ hp hp_top hq hq_top hf).symm)
+  Lp.continuousLinearMap_ext_of_memLp hp_top fun _ hf =>
+    Lp.ext ((hS _ _ hf.coeFn_toLp.symm).trans
+      (coeFn_lebesgueMap_of_ae_eq_fst T₀ T₁ h hθ hp hp_top hq hq_top hf.coeFn_toLp.symm).symm)
 
 /-- **Uniqueness of the Riesz–Thorin operator.** A bounded operator `S : Lᵖ → L^q` that agrees
 with `T₁` on `Lᵖ ∩ L^{p₁}` is the Riesz–Thorin operator. -/
 theorem eq_lebesgueMap_of_snd {S : Lp E p μ →L[ℂ] Lp F q ν}
     (hS : ∀ (f : Lp E p μ) (f₁ : Lp E p₁ μ), ⇑f =ᵐ[μ] ⇑f₁ → ⇑(S f) =ᵐ[ν] ⇑(T₁ f₁)) :
     S = lebesgueMap T₀ T₁ h hθ hp hp_top hq hq_top :=
-  eq_of_forall_ae_eq hp_top fun _ _ hf =>
-    Lp.ext ((hS _ _ hf).trans
-      (coeFn_lebesgueMap_of_ae_eq_snd T₀ T₁ h hθ hp hp_top hq hq_top hf).symm)
+  Lp.continuousLinearMap_ext_of_memLp hp_top fun _ hf =>
+    Lp.ext ((hS _ _ hf.coeFn_toLp.symm).trans
+      (coeFn_lebesgueMap_of_ae_eq_snd T₀ T₁ h hθ hp hp_top hq hq_top hf.coeFn_toLp.symm).symm)
 
 end TauCeti.CompatibleCouple
