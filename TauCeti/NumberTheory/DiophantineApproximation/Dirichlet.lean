@@ -36,6 +36,8 @@ lower bounds behind exponents of approximation.
   `q ≥ 1` satisfy `q ‖q α‖ ≤ 1`, where `‖x‖ = |x - round x|`.
 * `Real.infinite_setOf_mul_le_one`: for every pair of reals `α`, `β`, infinitely many `q ≥ 1`
   satisfy `q ‖q α‖ ‖q β‖ ≤ 1`.
+* `Real.exists_rat_abs_sub_lt_and_den_le`: for every real `ξ` and real `X ≥ 1` there is a
+  rational `r` with `r.den ≤ X` and `|ξ - r| < 1 / (r.den X)`.
 
 ## Implementation notes
 
@@ -292,5 +294,15 @@ theorem _root_.Real.infinite_setOf_mul_le_one (α β : ℝ) :
   rintro y ⟨hy, hyα⟩
   refine ⟨hy, ?_⟩
   exact (mul_le_of_le_one_right (by positivity) ((abs_sub_round _).trans (by norm_num))).trans hyα
+
+/-- **Dirichlet's approximation theorem with a real bound.** For every real `ξ` and real `X ≥ 1`
+there is a rational `r` with `r.den ≤ X` and `|ξ - r| < 1 / (r.den X)`. -/
+theorem _root_.Real.exists_rat_abs_sub_lt_and_den_le (ξ : ℝ) {X : ℝ} (hX : 1 ≤ X) :
+    ∃ r : ℚ, |ξ - r| < 1 / (r.den * X) ∧ (r.den : ℝ) ≤ X := by
+  obtain ⟨r, hr, hden⟩ := Real.exists_rat_abs_sub_le_and_den_le ξ (Nat.floor_pos.2 hX)
+  refine ⟨r, hr.trans_lt ?_, (Nat.cast_le.2 hden).trans (Nat.floor_le (by linarith))⟩
+  rw [mul_comm (r.den : ℝ)]
+  gcongr
+  exact Nat.lt_floor_add_one X
 
 end TauCeti

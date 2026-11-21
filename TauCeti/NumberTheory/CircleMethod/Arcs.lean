@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-public import Mathlib.NumberTheory.DiophantineApproximation.Basic
+public import TauCeti.NumberTheory.DiophantineApproximation.Dirichlet
 
 /-!
 # Major and minor arcs
@@ -17,10 +17,10 @@ interval and splits that interval into *major arcs*, short intervals around the 
 exponential sums are evaluated asymptotically; on the minor arcs they are bounded using a rational
 approximation `a / q` of `α` whose denominator `q` is neither small nor large.
 
-Following Davenport, we integrate over `[Q/N, 1 + Q/N]` rather than `[0, 1]`, so that every major
-arc `{α : |α - a/q| ≤ Q/N}` with `1 ≤ a ≤ q ≤ Q` and `gcd(a, q) = 1` lies inside the interval
-without wrapping around. The parameters are a natural number `N` and a real `Q`; in applications
-`Q = (log N)^B`.
+Following Davenport, we integrate over `[Q/N, 1 + Q/N]` rather than `[0, 1]`, so that, once
+`2 Q² ≤ N`, every major arc `{α : |α - a/q| ≤ Q/N}` with `1 ≤ a ≤ q ≤ Q` and `gcd(a, q) = 1` lies
+inside the interval without wrapping around. The parameters are a natural number `N` and a real
+`Q`; in applications `Q = (log N)^B`.
 
 ## Main definitions
 
@@ -34,6 +34,8 @@ without wrapping around. The parameters are a natural number `N` and a real `Q`;
 
 * `TauCeti.majorArc_eq_Icc`: when `2 Q² ≤ N`, each major arc is the full interval
   `[a/q - Q/N, a/q + Q/N]`.
+* `TauCeti.one_div_mul_le_abs_div_sub_div`: distinct fractions `a/q ≠ a'/q'` with positive
+  denominators satisfy `1/(q q') ≤ |a/q - a'/q'|`.
 * `TauCeti.pairwiseDisjoint_majorArc`: when `2 Q³ < N`, the major arcs are pairwise disjoint,
   since distinct fractions with denominators at most `Q` differ by at least `Q⁻²`.
 * `TauCeti.exists_abs_sub_div_le_of_mem_minorArcs`: when `1 ≤ Q` and `2 Q² ≤ N`, every `α` on
@@ -161,16 +163,31 @@ theorem majorArc_eq_Icc (hN : 2 * Q ^ 2 ≤ N) {q : ℕ} {a : ℤ} (hp : (q, a) 
   · have : (a : ℝ) / q ≤ 1 := (div_le_one (by linarith)).2 haq'
     linarith
 
+/-- Distinct fractions `a/q ≠ a'/q'` with positive denominators are at distance at least
+`1/(q q')`, since `a q' - q a'` is a nonzero integer. -/
+theorem one_div_mul_le_abs_div_sub_div {a a' q q' : ℤ} (hq : 0 < q) (hq' : 0 < q')
+    (h : (a : ℝ) / q ≠ a' / q') : 1 / ((q : ℝ) * q') ≤ |(a : ℝ) / q - a' / q'| := by
+  have hq0 : (0 : ℝ) < q := by exact_mod_cast hq
+  have hq0' : (0 : ℝ) < q' := by exact_mod_cast hq'
+  have hne : a * q' - q * a' ≠ 0 := by
+    refine fun h' => h ?_
+    rw [div_eq_div_iff hq0.ne' hq0'.ne', mul_comm (a' : ℝ)]
+    exact_mod_cast sub_eq_zero.1 h'
+  have hone : (1 : ℝ) ≤ |((a * q' - q * a' : ℤ) : ℝ)| := by
+    exact_mod_cast Int.one_le_abs hne
+  push_cast at hone
+  rw [div_sub_div _ _ hq0.ne' hq0'.ne', abs_div, abs_of_pos (mul_pos hq0 hq0')]
+  exact div_le_div_of_nonneg_right hone (mul_pos hq0 hq0').le
+
 /-- The fraction `a/q` determines a pair `(q, a)` of `majorArcIndex Q`. -/
 private theorem eq_of_div_eq_div {p p' : ℕ × ℤ} (hp : p ∈ majorArcIndex Q)
     (hp' : p' ∈ majorArcIndex Q) (h : (p.2 : ℝ) / p.1 = p'.2 / p'.1) : p = p' := by
   obtain ⟨hq1, -, -, -, hgcd⟩ := mem_majorArcIndex.1 hp
   obtain ⟨hq1', -, -, -, hgcd'⟩ := mem_majorArcIndex.1 hp'
-  have hcop : Nat.Coprime p.2.natAbs (p.1 : ℤ).natAbs := hgcd
-  have hcop' : Nat.Coprime p'.2.natAbs (p'.1 : ℤ).natAbs := hgcd'
+  rw [Int.gcd_eq_natAbs_gcd_natAbs, ← Nat.coprime_iff_gcd_eq_one] at hgcd hgcd'
   have hQ : ((p.2 : ℚ) / ((p.1 : ℤ) : ℚ)) = (p'.2 : ℚ) / ((p'.1 : ℤ) : ℚ) := by
     exact_mod_cast h
-  obtain ⟨hnum, hden⟩ := Rat.div_int_inj (by omega) (by omega) hcop hcop' hQ
+  obtain ⟨hnum, hden⟩ := Rat.div_int_inj (by omega) (by omega) hgcd hgcd' hQ
   exact Prod.ext (by exact_mod_cast hden) hnum
 
 /-- When `2 Q³ < N`, the major arcs `𝔐(q, a)` are pairwise disjoint: distinct fractions with
@@ -185,18 +202,11 @@ theorem pairwiseDisjoint_majorArc (hN : 2 * Q ^ 3 < N) :
   have hq : (1 : ℝ) ≤ p.1 := by exact_mod_cast hq1
   have hQ : 1 ≤ Q := hq.trans hqQ
   have hN0 : (0 : ℝ) < N := by linarith [pow_pos (by linarith : (0 : ℝ) < Q) 3]
-  have hq0 : (0 : ℝ) < p.1 * p'.1 := by positivity
-  -- Distinct reduced fractions `a/q ≠ a'/q'` satisfy `|a q' - q a'| ≥ 1`.
   have hsep : 1 / ((p.1 : ℝ) * p'.1) ≤ |(p.2 : ℝ) / p.1 - p'.2 / p'.1| := by
-    have hne' : p.2 * p'.1 - p.1 * p'.2 ≠ 0 := by
-      refine fun h => hne (eq_of_div_eq_div hp hp' ?_)
-      rw [div_eq_div_iff (by positivity) (by positivity), mul_comm (p'.2 : ℝ)]
-      exact_mod_cast sub_eq_zero.1 h
-    have hone : (1 : ℝ) ≤ |((p.2 * p'.1 - p.1 * p'.2 : ℤ) : ℝ)| := by
-      exact_mod_cast Int.one_le_abs hne'
-    push_cast at hone
-    rw [div_sub_div _ _ (by positivity) (by positivity), abs_div, abs_of_pos hq0]
-    exact div_le_div_of_nonneg_right hone hq0.le
+    have hne' : (p.2 : ℝ) / ((p.1 : ℤ) : ℝ) ≠ p'.2 / ((p'.1 : ℤ) : ℝ) := by
+      simpa only [Int.cast_natCast] using fun h => hne (eq_of_div_eq_div hp hp' h)
+    simpa only [Int.cast_natCast] using
+      one_div_mul_le_abs_div_sub_div (by omega) (by omega) hne'
   have hclose : |(p.2 : ℝ) / p.1 - p'.2 / p'.1| ≤ 2 * (Q / N) := by
     have h₁' := (mem_majorArc.1 h₁).2
     rw [abs_sub_comm] at h₁'
@@ -209,44 +219,32 @@ theorem pairwiseDisjoint_majorArc (hN : 2 * Q ^ 3 < N) :
     nlinarith
   linarith
 
-/-- Dirichlet's approximation theorem at `n = ⌊N/Q⌋`: for `0 < Q ≤ N`, every `α` has a reduced
-fraction `a/q` with `1 ≤ q ≤ N/Q` and `|α - a/q| < Q/(qN)`. -/
-private theorem exists_abs_sub_div_lt (α : ℝ) (hQ : 0 < Q) (hQN : Q ≤ N) :
-    ∃ (q : ℕ) (a : ℤ), 1 ≤ q ∧ (q : ℝ) ≤ N / Q ∧ Int.gcd a q = 1 ∧
-      |α - a / q| < Q / (q * N) := by
-  have hN0 : (0 : ℝ) < N := hQ.trans_le hQN
-  have hn : 0 < ⌊(N : ℝ) / Q⌋₊ := Nat.floor_pos.2 ((one_le_div hQ).2 hQN)
-  obtain ⟨r, hr, hden⟩ := Real.exists_rat_abs_sub_le_and_den_le α hn
-  have hq : (0 : ℝ) < r.den := by exact_mod_cast r.den_pos
-  have hfl : (N : ℝ) < (⌊(N : ℝ) / Q⌋₊ + 1) * Q :=
-    (div_lt_iff₀ hQ).1 (Nat.lt_floor_add_one _)
-  refine ⟨r.den, r.num, r.den_pos, (Nat.cast_le.2 hden).trans (Nat.floor_le (by positivity)),
-    r.reduced, ?_⟩
-  rw [Rat.cast_def] at hr
-  refine hr.trans_lt ?_
-  rw [div_lt_div_iff₀ (by positivity) (by positivity), one_mul]
-  nlinarith
-
 /-- **Minor arcs.** When `1 ≤ Q` and `2 Q² ≤ N`, every `α` on the minor arcs has a reduced rational
-approximation `|α - a/q| ≤ q⁻²` with `Q < q ≤ N/Q`.
-
-Dirichlet's approximation theorem with `n = ⌊N/Q⌋` gives a reduced fraction `a/q` with
-`q ≤ N/Q` and `|α - a/q| < Q/(qN)`; a denominator `q ≤ Q` would put `α` on the major arc
-`𝔐(q, a)`. -/
+approximation `|α - a/q| ≤ q⁻²` with `Q < q ≤ N/Q`. -/
 theorem exists_abs_sub_div_le_of_mem_minorArcs (hQ : 1 ≤ Q) (hN : 2 * Q ^ 2 ≤ N)
     (hα : α ∈ minorArcs N Q) :
     ∃ (q : ℕ) (a : ℤ), Q < q ∧ (q : ℝ) ≤ N / Q ∧ Int.gcd a q = 1 ∧
       |α - a / q| ≤ 1 / (q : ℝ) ^ 2 := by
+  -- Dirichlet's approximation theorem with bound `N/Q` gives a reduced fraction `a/q` with
+  -- `q ≤ N/Q` and `|α - a/q| < 1/(q N/Q)`; a denominator `q ≤ Q` would put `α` on the major
+  -- arc `𝔐(q, a)`.
   have hQ0 : 0 < Q := by linarith
   have hN0 : (0 : ℝ) < N := by linarith [pow_pos hQ0 2]
-  obtain ⟨q, a, hq1, hqN, hgcd, hlt⟩ :=
-    exists_abs_sub_div_lt α hQ0 (by nlinarith)
+  obtain ⟨q, a, hq1, hgcd, hlt, hqN⟩ : ∃ (q : ℕ) (a : ℤ), 1 ≤ q ∧ Int.gcd a q = 1 ∧
+      |α - a / q| < 1 / (q * (N / Q)) ∧ (q : ℝ) ≤ N / Q := by
+    obtain ⟨r, hr, hden⟩ := Real.exists_rat_abs_sub_lt_and_den_le α
+      ((one_le_div hQ0).2 (by nlinarith))
+    refine ⟨r.den, r.num, r.den_pos, ?_, by rwa [Rat.cast_def] at hr, hden⟩
+    rw [Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast]
+    exact r.reduced.gcd_eq_one
   have hq : (1 : ℝ) ≤ q := by exact_mod_cast hq1
   refine ⟨q, a, ?_, hqN, hgcd, ?_⟩
   · by_contra hqQ
     rw [not_lt] at hqQ
-    have hclose : |α - a / q| < Q / N :=
-      hlt.trans_le (div_le_div_of_nonneg_left hQ0.le hN0 (by nlinarith))
+    have hclose : |α - a / q| < Q / N := by
+      refine hlt.trans_le ?_
+      rw [← one_div_div (N : ℝ) Q]
+      exact one_div_le_one_div_of_le (by positivity) (le_mul_of_one_le_left (by positivity) hq)
     have hαI := (mem_minorArcs.1 hα).1
     rw [mem_arcInterval] at hαI
     obtain ⟨hlo, hhi⟩ := abs_sub_lt_iff.1 hclose
@@ -270,9 +268,8 @@ theorem exists_abs_sub_div_le_of_mem_minorArcs (hQ : 1 ≤ Q) (hN : 2 * Q ^ 2 �
       ⟨(q, a), mem_majorArcIndex.2 ⟨by exact_mod_cast hq, hqQ, ha1, haq, hgcd⟩,
         mem_majorArc.2 ⟨(mem_minorArcs.1 hα).1, hclose.le⟩⟩)
   · refine hlt.le.trans ?_
-    rw [div_le_div_iff₀ (by positivity) (by positivity), one_mul]
-    rw [le_div_iff₀ hQ0] at hqN
-    nlinarith
+    rw [sq]
+    exact one_div_le_one_div_of_le (by positivity) (mul_le_mul_of_nonneg_left hqN (by positivity))
 
 end TauCeti
 
