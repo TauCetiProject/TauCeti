@@ -40,30 +40,30 @@ variable {α β : Type*} [LinearOrder α] [LinearOrder β]
 /-- The identity simplicial map is strictly increasing on every cell. -/
 theorem strictMonoOn_id_realizationCell (K : AbstractSimplicialComplex α) :
     ∀ n (c : RealizationCell K n),
-      StrictMonoOn (SimplicialMap.id K.toPreAbstractSimplicialComplex) (↑c.1.1 : Set α) := by
+      StrictMonoOn (SimplicialMap.id K.toPreAbstractSimplicialComplex) (↑c.val.val : Set α) := by
   intro n c
-  simpa only [coe_id] using (strictMonoOn_id (s := (↑c.1.1 : Set α)))
+  simpa only [coe_id] using (strictMonoOn_id (s := (↑c.val.val : Set α)))
 
 /-- Simplexwise strictly increasing simplicial maps remain so under composition. -/
 theorem strictMonoOn_comp_realizationCell {γ : Type*} [LinearOrder γ]
     {P : AbstractSimplicialComplex γ}
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : ∀ n (c : RealizationCell K n), StrictMonoOn f (↑c.1.1 : Set α))
+    (hf : ∀ n (c : RealizationCell K n), StrictMonoOn f (↑c.val.val : Set α))
     (g : SimplicialMap L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex)
-    (hg : ∀ n (c : RealizationCell L n), StrictMonoOn g (↑c.1.1 : Set β)) :
-    ∀ n (c : RealizationCell K n), StrictMonoOn (g.comp f) (↑c.1.1 : Set α) := by
+    (hg : ∀ n (c : RealizationCell L n), StrictMonoOn g (↑c.val.val : Set β)) :
+    ∀ n (c : RealizationCell K n), StrictMonoOn (g.comp f) (↑c.val.val : Set α) := by
   intro n c
   rw [coe_comp]
   refine (hg n (c.map f (hf n c).injOn)).comp (hf n c) ?_
   simpa only [RealizationCell.coe_map_face] using
-    (mapsTo_image f (↑c.1.1 : Set α))
+    (mapsTo_image f (↑c.val.val : Set α))
 
 /-- On a cell where the vertex map preserves order strictly, realization carries its
 characteristic map to the characteristic map of its image cell. No hypothesis is imposed
 on vertices outside that cell. -/
 theorem realizationMap_characteristicMap
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (c : RealizationCell K n) (hf : StrictMonoOn f (↑c.1.1 : Set α)) (x : Fin n → ℝ) :
+    (c : RealizationCell K n) (hf : StrictMonoOn f (↑c.val.val : Set α)) (x : Fin n → ℝ) :
     f.realizationMap (c.characteristicMap x) = (c.map f hf.injOn).characteristicMap x := by
   rw [c.characteristicMap_def, (c.map f hf.injOn).characteristicMap_def]
   apply Subtype.ext

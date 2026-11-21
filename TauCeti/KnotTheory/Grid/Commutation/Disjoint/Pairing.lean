@@ -50,17 +50,17 @@ chain-map weight identity. -/
 def disjointCommuteEquiv (a s : Fin n) (x z : GridState n) :
     {D : GridRectanglePentagonDecomposition a s x z // D.HasDisjointSides} ≃
     {D : GridPentagonRectangleDecomposition a s x z // D.HasDisjointSides} where
-  toFun D := ⟨D.1.commute D.2, D.1.hasDisjointSides_commute D.2⟩
-  invFun E := ⟨E.1.commute E.2, E.1.hasDisjointSides_commute E.2⟩
-  left_inv D := Subtype.ext (D.1.commute_commute D.2)
-  right_inv E := Subtype.ext (E.1.commute_commute E.2)
+  toFun D := ⟨D.val.commute D.property, D.val.hasDisjointSides_commute D.property⟩
+  invFun E := ⟨E.val.commute E.property, E.val.hasDisjointSides_commute E.property⟩
+  left_inv D := Subtype.ext (D.val.commute_commute D.property)
+  right_inv E := Subtype.ext (E.val.commute_commute E.property)
 
 /-- The forward map of `disjointCommuteEquiv` acts by `commute`. -/
 @[simp]
 theorem disjointCommuteEquiv_apply (a s : Fin n) (x z : GridState n)
     (D : {D : GridRectanglePentagonDecomposition a s x z // D.HasDisjointSides}) :
     (disjointCommuteEquiv a s x z D : GridPentagonRectangleDecomposition a s x z) =
-      D.1.commute D.2 := by
+      D.val.commute D.property := by
   unfold disjointCommuteEquiv
   rfl
 
@@ -70,7 +70,7 @@ theorem disjointCommuteEquiv_symm_apply (a s : Fin n) (x z : GridState n)
     (E : {D : GridPentagonRectangleDecomposition a s x z // D.HasDisjointSides}) :
     ((disjointCommuteEquiv a s x z).symm E :
       GridRectanglePentagonDecomposition a s x z) =
-      E.1.commute E.2 := by
+      E.val.commute E.property := by
   unfold disjointCommuteEquiv
   rfl
 

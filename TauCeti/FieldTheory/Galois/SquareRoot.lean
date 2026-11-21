@@ -130,7 +130,7 @@ theorem card_le_two_pow_of_forall_apply_eq_self (H : Subgroup (L ≃ₐ[F] L))
       · rcases AlgEquiv.apply_eq_or_eq_neg_of_sq_eq (τ : L ≃ₐ[F] L) (hy k) with h2 | h2
         · rw [h.mpr h2, h2]
         · rw [h1, h2]
-    have h1 := h ((τ : L ≃ₐ[F] L)⁻¹ * σ) (mul_mem (inv_mem τ.2) σ.2) fun k => by
+    have h1 := h ((τ : L ≃ₐ[F] L)⁻¹ * σ) (mul_mem (inv_mem τ.property) σ.property) fun k => by
       simp only [AlgEquiv.mul_apply, hk k, AlgEquiv.coe_inv, AlgEquiv.symm_apply_apply]
     exact Subtype.ext (inv_mul_eq_one.mp h1).symm
   simpa using Nat.card_le_card_of_injective f hf

@@ -80,10 +80,10 @@ backtracks. -/
 theorem list_prod_signlessPreprojectiveMk_backtrackElem_mem_signlessPreprojectiveGrade
     {V : Type*} {G : SimpleGraph V} [Fintype V] [DecidableRel G.Adj] {v : V}
     (l : List {w // G.Adj v w}) :
-    (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod ∈
+    (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.property)).prod ∈
       signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length) := by
   simpa [map_list_prod, Function.comp_def, mul_comm] using signlessPreprojectiveMk_mem_grade k _
     (SetLike.list_prod_map_mem_graded l (fun _ => 2) _ fun w _ =>
-      backtrackElem_mem_grade_two k G w.2)
+      backtrackElem_mem_grade_two k G w.property)
 
 end TauCeti

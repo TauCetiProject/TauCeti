@@ -20,7 +20,9 @@ and multiplicative closure properties live in `TauCeti.Analysis.Normed.Monoid.Mu
 A nontrivial normed ring with a multiplicative unit has `‖1‖ = 1`. In a seminormed ring,
 a unit is multiplicative precisely when its inverse has reciprocal norm. Norm-preserving
 monoid homomorphisms between seminormed rings preserve multiplicative units, even when they are
-not onto. In a complete ultrametric norm-one ring, small
+not onto, and along a contractive homomorphism scaling by the image of a multiplicative unit with
+`‖u‖ * c = 1` puts the product in the closed unit ball precisely when the cofactor has norm at
+most `c`. In a complete ultrametric norm-one ring, small
 perturbations of one are multiplicative units. More generally, an element `f` within less than
 `‖u‖` of a multiplicative unit `u` is again a multiplicative unit: it factors as
 `f = u * (1 - x)` with `x = u⁻¹ * (u - f)` of norm less than one, so its inverse is the Neumann
@@ -86,7 +88,40 @@ theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →* S)
   apply (Units.isNormMulUnit_iff_norm_inv (Units.map φ v)).mpr
   exact (hφ _).trans (hv.trans (congrArg (·⁻¹) (hφ _).symm))
 
+/-- If `u : Rˣ` is a multiplicative unit with `‖(u : R)‖ * S₀ = R₀` and `‖a‖ < R₀`, then
+`‖((u⁻¹ : Rˣ) : R) * a‖ < S₀`. -/
+theorem norm_units_inv_mul_lt {u : Rˣ} (hu : IsNormMulUnit (u : R)) {a : R} {S₀ R₀ : ℝ}
+    (ha : ‖a‖ < R₀) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    ‖((u⁻¹ : Rˣ) : R) * a‖ < S₀ := by
+  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+  have hS₀ : 0 < S₀ := pos_of_mul_pos_right (hR₀.trans_eq huS.symm) (norm_nonneg _)
+  have hinv : 0 < ‖((u⁻¹ : Rˣ) : R)‖ :=
+    pos_of_mul_pos_left (hS₀.trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS).symm) hR₀.le
+  exact (norm_mul_le _ _).trans_lt <|
+    (mul_lt_mul_of_pos_left ha hinv).trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS)
+
 end IsNormMulUnit
+
+/-- Along a contractive monoid homomorphism `φ`, scaling `b` by the image of a multiplicative unit
+`u` with `‖u‖ * c = 1` puts `φ u * b` in the closed unit ball precisely when `‖b‖ ≤ c`. -/
+theorem _root_.Units.norm_map_unit_mul_le_one_iff {F : Type*} [FunLike F R S]
+    [MonoidHomClass F R S] (u : Rˣ) (hu : IsNormMulUnit (u : R)) {c : ℝ} (hc : ‖(u : R)‖ * c = 1)
+    {φ : F} (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (b : S) :
+    ‖φ (u : R) * b‖ ≤ 1 ↔ ‖b‖ ≤ c := by
+  have hc_eq : c = ‖(u : R)‖⁻¹ := eq_inv_of_mul_eq_one_right hc
+  constructor
+  · intro h
+    have hb : b = φ (((u⁻¹ : Rˣ) : R)) * (φ (u : R) * b) := by
+      rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
+    calc ‖b‖ = ‖φ (((u⁻¹ : Rˣ) : R)) * (φ (u : R) * b)‖ := congrArg norm hb
+      _ ≤ ‖φ (((u⁻¹ : Rˣ) : R))‖ * ‖φ (u : R) * b‖ := norm_mul_le _ _
+      _ ≤ ‖((u⁻¹ : Rˣ) : R)‖ * 1 :=
+          mul_le_mul (hφ _) h (norm_nonneg _) (norm_nonneg _)
+      _ = c := by rw [mul_one, (Units.isNormMulUnit_iff_norm_inv u).mp hu, hc_eq]
+  · intro h
+    calc ‖φ (u : R) * b‖ ≤ ‖φ (u : R)‖ * ‖b‖ := norm_mul_le _ _
+      _ ≤ ‖(u : R)‖ * c := mul_le_mul (hφ _) h (norm_nonneg _) (norm_nonneg _)
+      _ = 1 := hc
 
 end Units
 
