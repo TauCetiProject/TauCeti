@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
+public import TauCeti.Geometry.Manifold.Morse.Bott.Homology.ThomPair
 
 /-!
 # The first page of the critical-band spectral sequence of a Morse–Bott function
@@ -53,6 +54,13 @@ In the namespace `TauCeti.SmoothEmbedding`:
   band whose critical points lie on finitely many compact Morse–Bott submanifolds on one level, the
   first page of the spectral sequence of the sublevel filtration is the relative homology of the
   lower sublevel with their negative disc bundles attached.
+
+In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
+
+* `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_thomPair` and
+  `isZero_filteredSpaceSpectralSequence_page_two_X_of_lt_index`: across a single compact
+  Morse–Bott submanifold of constant index `r`, the first page is the homology of the Thom pair
+  `(ν⁻, ν⁻₀)` and vanishes below `r`.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
@@ -216,5 +224,77 @@ theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_iUnion_negativeDis
     ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hpq ≪≫ e⟩
 
 end IsMorseBottFamily
+
+namespace SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+section ThomPair
+
+open Module Topology
+
+variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SecondCountableTopology M]
+  {E' H' : Type*} {S : Type u} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [CompactSpace S]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+  {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
+
+/-- **The first page of the sublevel filtration spectral sequence across a Morse–Bott submanifold.**
+Let `a : ℤ → ℝ` be monotone, and suppose the `q`-th band `f⁻¹[a q, a (q + 1)]` is compact,
+contains the critical level `c` strictly between `a q` and `a (q + 1)`, and all its critical points
+lie on the compact Morse–Bott submanifold `i : S → M` of constant index `r`. Then on the first
+page (`page 2` in the cohomological indexing) of `TauCeti.filteredSpaceSpectralSequence`, the
+object at `(p, q)` with `p + q = -n` is isomorphic to `Hₙ(ν⁻, ν⁻₀; R)`. -/
+theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_thomPair
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    {a : ℤ → ℝ} (ha : Monotone a) {c : ℝ} (hc : ∀ s, f (i s) = c)
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
+    (pq : ℤ × ℤ) (m : ℕ) (hdeg : pq.1 + pq.2 = -m)
+    (hac : a pq.2 < c) (hcb : c < a (pq.2 + 1))
+    (hcomp : IsCompact (f ⁻¹' Icc (a pq.2) (a (pq.2 + 1))))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (a pq.2) (a (pq.2 + 1)) ⊆ range i)
+    {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A] (R : A) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of M) R
+        ((sublevel_mono f).comp ha)).page 2).X pq ≅
+      (thomPair (Fin r → ℝ)
+        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)).singularHomology R m) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hdim g hr hac hcb
+    hcomp hcrit R m
+  exact ⟨filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) R
+    ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl m hdeg ≪≫ e⟩
+
+/-- **Vanishing below the index on the first page of the sublevel filtration spectral sequence.**
+Under the hypotheses of `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_thomPair`, if
+`m < r` (with `pq.1 + pq.2 = -m`), the object at `pq` on the first page vanishes. -/
+theorem isZero_filteredSpaceSpectralSequence_page_two_X_of_lt_index
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    {a : ℤ → ℝ} (ha : Monotone a) {c : ℝ} (hc : ∀ s, f (i s) = c)
+    {r : ℕ} (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
+    (pq : ℤ × ℤ) {m : ℕ} (hdeg : pq.1 + pq.2 = -m) (hmr : m < r)
+    (hac : a pq.2 < c) (hcb : c < a (pq.2 + 1))
+    (hcomp : IsCompact (f ⁻¹' Icc (a pq.2) (a (pq.2 + 1))))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (a pq.2) (a (pq.2 + 1)) ⊆ range i)
+    {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A] (R : A) :
+    IsZero (((filteredSpaceSpectralSequence (Y := TopCat.of M) R
+      ((sublevel_mono f).comp ha)).page 2).X pq) :=
+  (h.isZero_singularHomology_sublevelPair_of_lt_index hfs hc hr hac hcb hcomp hcrit R hmr).of_iso
+    (filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) R
+      ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl m hdeg)
+
+end ThomPair
+
+end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
 end TauCeti

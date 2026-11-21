@@ -70,6 +70,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
   of subspaces whose atlas consists of local frame trivializations is a topological vector bundle.
 * `TauCeti.HasLocalSubbundleFrames.vectorBundle`: a family of subspaces with continuous local
   frames of a fixed finite size near every point is a topological vector bundle.
+* `TauCeti.HasLocalSubbundleFrames.comp_equiv`: reindexing local frames along an equivalence of
+  index types preserves `TauCeti.HasLocalSubbundleFrames`.
 * `Bundle.Trivialization.isSubbundleFrameOn_symm_comp`: a continuous family of injective
   operators into the model fibre, read through a linear trivialization, is a local frame of the
   subspaces corresponding to its ranges.
@@ -257,6 +259,24 @@ theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype �
     finrank 𝕜 (V x) = Fintype.card ι := by
   obtain ⟨U, -, hx, X, hX⟩ := hV x
   exact hX.finrank_eq hx
+
+variable {F} in
+/-- Reindexing local subbundle frames along an equivalence of index types preserves
+`HasLocalSubbundleFrames`. -/
+theorem HasLocalSubbundleFrames.comp_equiv {ι' : Type*} (e : ι' ≃ ι)
+    {V : Π x, Submodule 𝕜 (E x)} (hV : HasLocalSubbundleFrames F ι V) :
+    HasLocalSubbundleFrames F ι' V := by
+  rw [hasLocalSubbundleFrames_iff] at hV ⊢
+  intro x
+  obtain ⟨U, hU, hxU, X, hX⟩ := hV x
+  refine ⟨U, hU, hxU, fun j ↦ X (e j),
+    ⟨fun j ↦ hX.continuousOn (e j),
+     fun hy ↦ (hX.linearIndependent hy).comp e e.injective,
+     fun {y} hy ↦ ?_⟩⟩
+  have hrange : (range fun j : ι' ↦ X (e j) y) = range (fun j ↦ X j y) :=
+    e.surjective.range_comp (fun j ↦ X j y)
+  rw [hrange]
+  exact hX.span_eq hy
 
 end Frame
 

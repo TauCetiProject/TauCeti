@@ -28,8 +28,10 @@ vector bundles over `B`, the Euler class of the pulled-back class is the Euler c
 original one (`TauCeti.eulerClass_thomPairMapOfFiberwise_id`).
 
 The pullback map of Thom pairs (`TauCeti.pullbackThomPairMap`) is the case where every `φ b'` is
-the identity of `E_{g b'}`. The oriented statements, for the integral Thom and Euler classes of
-oriented bundles, are in `TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv`.
+the identity of `E_{g b'}`, and changing the phantom model-fibre parameter without changing the
+total-space topology yields `TauCeti.thomPairModelIso`. The oriented statements, for the integral
+Thom and Euler classes of oriented bundles, are in
+`TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv`.
 
 ## References
 
@@ -73,6 +75,41 @@ theorem thomPairMapOfFiberwise_fst_apply
     (v : TotalSpace F' E') :
     TopPair.Hom.fst (thomPairMapOfFiberwise hφ) v = TotalSpace.mk' F (g v.proj) (φ v.proj v.snd) :=
   TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E')) _ _ v
+
+end Map
+
+section ModelIso
+
+/-- **Changing the phantom model-fibre parameter of a Thom pair.** If two total-space topologies
+for the same family `E` over `B` (with possibly different model-fibre types `F` and `F'`) make the
+identity map `(b, v) ↦ (b, v)` continuous in both directions, their Thom pairs are isomorphic. -/
+def thomPairModelIso {B : Type w} {F F' : Type*} {E : B → Type w}
+    [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E)]
+    [∀ b, AddCommMonoid (E b)]
+    (h₁ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj v.snd)
+    (h₂ : Continuous fun v : TotalSpace F' E ↦ TotalSpace.mk' F v.proj v.snd) :
+    thomPair F E ≅ thomPair F' E :=
+  TopPair.ofSubsetIso
+    { toFun := fun v ↦ TotalSpace.mk' F' v.proj v.snd
+      invFun := fun v ↦ TotalSpace.mk' F v.proj v.snd
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      continuous_toFun := h₁
+      continuous_invFun := h₂ }
+    fun _ ↦
+      ⟨fun hv ↦ mem_zeroSectionCompl.2 (by exact (mem_zeroSectionCompl (F := F) (E := E)).1 hv),
+       fun hv ↦ mem_zeroSectionCompl.2 (by exact (mem_zeroSectionCompl (F := F') (E := E)).1 hv)⟩
+
+end ModelIso
+
+section Map
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
+  [∀ b, TopologicalSpace (E b)] {B' : Type w} [TopologicalSpace B'] {F' : Type*}
+  {E' : B' → Type w} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+  [∀ b, Module ℝ (E' b)] [∀ b, TopologicalSpace (E' b)] {g : C(B', B)}
+  {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
 
 variable [TopologicalSpace F] [TopologicalSpace F'] [FiberBundle F E] [FiberBundle F' E']
 
