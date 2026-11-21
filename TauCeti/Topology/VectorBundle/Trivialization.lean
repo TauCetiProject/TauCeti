@@ -37,11 +37,13 @@ exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff
 for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
 with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
 `Bundle.Trivialization.symm_apply_smul`). Near a point whose image under a map continuous there
-lies in the base set, a linear trivialization carries a fibrewise operation on sections along that
-map, such as the sum or difference, to the corresponding operation on their coordinates
-(`Bundle.Trivialization.snd_apply_mk_op_eventuallyEq_and_eq`). Over the base set, its
-fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
-(`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
+lies in the base set, a linear pretrivialization, in particular a linear trivialization, carries a
+fibrewise operation on sections along that map to an operation on their coordinates, provided every
+linear equivalence from a fibre to the model fibre carries the first operation to the second; the
+sum and the difference are examples
+(`Bundle.Pretrivialization.snd_apply_mk_op_eventuallyEq_and_eq`). Over the base set, the
+fibrewise linear inverse `e.symmₗ R b` of a linear trivialization is the inverse of the fibrewise
+linear equivalence (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
 (`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
@@ -78,6 +80,36 @@ noncomputable section
 
 open Bundle
 open scoped Topology
+
+namespace Bundle.Pretrivialization
+
+variable {B : Type*} [TopologicalSpace B] (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F]
+  [AddCommMonoid F] [Module R F] {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)]
+  (e : Pretrivialization F (π F E)) [e.IsLinear R]
+
+/-- Let `e` be a pretrivialization that is linear on the fibres, such as a linear trivialization
+read through `Bundle.Trivialization.toPretrivialization`, and `b` a map continuous at `x₀` within
+`u`, with `b x₀` in the base set of `e`. For a fibrewise operation `op` that every linear
+equivalence `E y ≃ₗ[R] F` carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the
+`e`-coordinates of `s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. Only
+linear equivalences are needed because over the base set `e` is the linear equivalence
+`e.linearEquivAt R`. No topology on the total space is needed. This is the coordinate step in the
+regularity of fibrewise sums and differences of sections along a map. -/
+theorem snd_apply_mk_op_eventuallyEq_and_eq {X : Type*} [TopologicalSpace X] {b : X → B}
+    {s t : ∀ x, E (b x)} {u : Set X} {x₀ : X} {op : ∀ y, E y → E y → E y} {opF : F → F → F}
+    (hop : ∀ y (g : E y ≃ₗ[R] F) v w, g (op y v w) = opF (g v) (g w))
+    (hb : ContinuousWithinAt b u x₀) (hx₀ : b x₀ ∈ e.baseSet) :
+    (fun x ↦ (e ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
+        (fun x ↦ opF (e ⟨b x, s x⟩).2 (e ⟨b x, t x⟩).2) ∧
+      (e ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 = opF (e ⟨b x₀, s x₀⟩).2 (e ⟨b x₀, t x₀⟩).2 := by
+  have key {y : B} (hy : y ∈ e.baseSet) (v w : E y) :
+      (e ⟨y, op y v w⟩).2 = opF (e ⟨y, v⟩).2 (e ⟨y, w⟩).2 := by
+    simpa only [linearEquivAt_apply] using hop y (e.linearEquivAt R y hy) v w
+  refine ⟨?_, key hx₀ _ _⟩
+  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
+  exact key hx _ _
+
+end Bundle.Pretrivialization
 
 namespace Bundle.Trivialization
 
@@ -155,24 +187,6 @@ multiplication. -/
 theorem symm_apply_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (w : F) :
     e.symm b (c • w) = c • e.symm b w := by
   simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_smul c w
-
-/-- Let `e` be a trivialization that is linear on the fibres and `b` a map continuous at `x₀`
-within `u`, with `b x₀` in the base set of `e`. For a fibrewise operation `op` that every linear
-equivalence `E y ≃ₗ[R] F` carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the
-`e`-coordinates of `s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. Only
-linear equivalences are needed because over the base set `e` is the linear equivalence
-`e.linearEquivAt R`. This is the coordinate step in the regularity of fibrewise sums and
-differences of sections along a map. -/
-theorem snd_apply_mk_op_eventuallyEq_and_eq {X : Type*} [TopologicalSpace X] {b : X → B}
-    {s t : ∀ x, E (b x)} {u : Set X} {x₀ : X} {op : ∀ y, E y → E y → E y} {opF : F → F → F}
-    (hop : ∀ y (g : E y ≃ₗ[R] F) v w, g (op y v w) = opF (g v) (g w))
-    (hb : ContinuousWithinAt b u x₀) (hx₀ : b x₀ ∈ e.baseSet) :
-    (fun x ↦ (e ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
-        (fun x ↦ opF (e ⟨b x, s x⟩).2 (e ⟨b x, t x⟩).2) ∧
-      (e ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 = opF (e ⟨b x₀, s x₀⟩).2 (e ⟨b x₀, t x₀⟩).2 := by
-  refine ⟨?_, hop _ (e.linearEquivAt R _ hx₀) _ _⟩
-  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
-  exact hop _ (e.linearEquivAt R _ hx) _ _
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
 its fibrewise linear equivalence. -/

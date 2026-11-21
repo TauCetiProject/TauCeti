@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 
+import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -27,7 +29,8 @@ along a base map: the `add_sectionAlong`, `sub_sectionAlong` and `sum_sectionAlo
 generalize Mathlib's `ContMDiff.add_section`, `ContMDiff.sub_section` and
 `ContMDiff.sum_section` families, and `MDifferentiable*.sub_sectionAlong` generalize
 `mdifferentiableWithinAt_sub_section` and `mdifferentiableAt_sub_section`. The general form
-applies to maps defined on the total space itself, which are sections along the projection.
+also covers fibre-preserving self-maps of the total space, `p ↦ ⟨p.proj, φ p⟩` with
+`φ p ∈ V p.proj`, viewed as sections along the projection `TotalSpace.proj`.
 -/
 
 public section
@@ -57,9 +60,10 @@ theorem ContMDiffWithinAt.add_sectionAlong
     ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) u x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
-  obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ g ↦ g.map_add) hs.1.continuousWithinAt
-    (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
+  obtain ⟨h, h₀⟩ :=
+    (trivializationAt F V (b x₀)).toPretrivialization.snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+      (s := s) (t := t) (fun _ g ↦ g.map_add) hs.1.continuousWithinAt
+      (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
 
 /-- The fibrewise sum of two `C^n` sections along the same map is `C^n` at a point. -/
@@ -143,9 +147,10 @@ theorem ContMDiffWithinAt.sub_sectionAlong
     ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
-  obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ g ↦ g.map_sub) hs.1.continuousWithinAt
-    (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
+  obtain ⟨h, h₀⟩ :=
+    (trivializationAt F V (b x₀)).toPretrivialization.snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+      (s := s) (t := t) (fun _ g ↦ g.map_sub) hs.1.continuousWithinAt
+      (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq h h₀⟩
 
 /-- The fibrewise difference of two `C^n` sections along the same map is `C^n` at a point. -/
@@ -179,9 +184,10 @@ theorem MDifferentiableWithinAt.sub_sectionAlong
     MDifferentiableWithinAt IX (IB.prod 𝓘(𝕜, F))
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
   rw [mdifferentiableWithinAt_totalSpace] at hs ht ⊢
-  obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ g ↦ g.map_sub) hs.1.continuousWithinAt
-    (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
+  obtain ⟨h, h₀⟩ :=
+    (trivializationAt F V (b x₀)).toPretrivialization.snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+      (s := s) (t := t) (fun _ g ↦ g.map_sub) hs.1.continuousWithinAt
+      (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq h h₀⟩
 
 /-- The difference of differentiable sections along the same base map is differentiable at a
