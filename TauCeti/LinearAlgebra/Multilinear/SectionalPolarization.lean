@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # Polarization of curvature-type tensors
@@ -46,8 +47,8 @@ sense, including when `2` or `3` is a zero divisor on the values.
   expressing `24 • T` through eight such values.
 * `LinearMap.eq_of_cyclic_eq_zero`: two curvature-type tensors with the same values
   `T(x, y, y, x)` are equal when multiplication by `6` is injective on the values.
-* `LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent`: `T(x, y, y, x) = 0` on
-  linearly dependent pairs.
+* `LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent`: `T(x, y, z, w) = 0` for
+  linearly dependent `x, y`.
 * `LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent`: two curvature-type tensors agreeing on
   `T(x, y, y, x)` for linearly independent pairs are equal.
 
@@ -156,28 +157,23 @@ section CommRing
 variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N}
 
-/-- A quadrilinear map antisymmetric in its first pair of arguments has `T(x, y, y, x) = 0`
+/-- A quadrilinear map antisymmetric in its first pair of arguments has `T(x, y, z, w) = 0`
 whenever `x` and `y` are linearly dependent, provided the scalars have no zero divisors, the
 values are torsion-free and `2 ≠ 0`. -/
 theorem apply_apply_apply_apply_eq_zero_of_not_linearIndependent [NoZeroDivisors R]
     [Module.IsTorsionFree R N] (h2 : (2 : R) ≠ 0) (h₁ : ∀ x y z w, T x y z w = -T y x z w)
-    {x y : M} (hxy : ¬LinearIndependent R ![x, y]) : T x y y x = 0 := by
-  -- `T(a, a, c, d)` vanishes, since `2 ≠ 0` and the values are torsion-free.
-  have hd (a c d : M) : T a a c d = 0 := by
-    have h := h₁ a a c d
+    {x y : M} (hxy : ¬LinearIndependent R ![x, y]) (z w : M) : T x y z w = 0 := by
+  have : IsDomain R := have : Nontrivial R := ⟨⟨2, 0, h2⟩⟩; NoZeroDivisors.to_isDomain R
+  -- `(a, b) ↦ T(a, b, z, w)` is alternating, since `2 ≠ 0` and the values are torsion-free.
+  have hB : (T.compr₂ ((applyₗ w).comp (applyₗ z))).IsAlt := fun a ↦ by
+    have h := h₁ a a z w
     rw [eq_neg_iff_add_eq_zero, ← two_smul R] at h
-    exact (smul_eq_zero.1 h).resolve_left h2
-  -- A dependence `s x + t y = 0` with `(s, t) ≠ (0, 0)` gives `s • k = 0` and `t • k = 0`.
-  obtain ⟨s, t, hst, hne⟩ : ∃ s t : R, s • x + t • y = 0 ∧ ¬(s = 0 ∧ t = 0) := by
-    simpa [LinearIndependent.pair_iff] using hxy
-  have hx : s • T x y y x = 0 := by
-    simpa only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hd, smul_zero,
-      add_zero, map_zero, LinearMap.zero_apply] using congrArg (fun v ↦ T v y y x) hst
-  have hy : t • T x y y x = 0 := by
-    simpa only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hd, smul_zero,
-      zero_add, map_zero, LinearMap.zero_apply] using congrArg (fun v ↦ T x v y x) hst
-  by_contra hk
-  exact hne ⟨(smul_eq_zero.1 hx).resolve_right hk, (smul_eq_zero.1 hy).resolve_right hk⟩
+    simpa only [compr₂_apply, coe_comp, Function.comp_apply, applyₗ_apply_apply] using
+      (smul_eq_zero.1 h).resolve_left h2
+  -- An alternating map vanishes on linearly dependent arguments.
+  simpa only [IsAlt.toAlternatingMap_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    compr₂_apply, coe_comp, Function.comp_apply, applyₗ_apply_apply] using
+    hB.toAlternatingMap.map_linearDependent ![x, y] hxy
 
 /-- Two quadrilinear maps antisymmetric in their first and in their last pair of arguments and
 satisfying the first Bianchi identity are equal as soon as `T₁(x, y, y, x) = T₂(x, y, y, x)` for
