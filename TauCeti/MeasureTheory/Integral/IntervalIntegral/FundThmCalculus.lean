@@ -25,8 +25,10 @@ integral equation `x(t) - x(0) = ∫₀ᵗ Y` over a single period `[0, T]`, whe
 It also records the slope form of FTC-1 at a point of right continuity: the right integral
 averages `(t - a)⁻¹ • ∫ u in a..t, g u` tend to `g a` as `t → a⁺`.
 
-It also records that along a loop `f` (with `f a = f b`) the integral of `B (f x) (f' x)` for a
-continuous bilinear map `B` is unchanged by subtracting a constant from `f`, because `∫ f' = 0`.
+It also records that the integral of `B (f x) (f' x)` for a continuous bilinear map `B` is
+unchanged by subtracting a constant `m` from `f` when `B m (f a) = B m (f b)`, because
+`∫ B m f' = B m (f b - f a)`. This holds along a loop (`f a = f b`) for every `m`, and along an
+arc with endpoints in a subspace isotropic for `B` for every `m` in that subspace.
 
 Finally, the primitive `u ↦ ∫ t in a..u, f t` of a function continuous on `[a, b]` has derivative
 `f x` at every point `x` of the open interval `(a, b)`.
@@ -104,15 +106,16 @@ end TauCeti
 
 namespace ContinuousLinearMap
 
-/-- Along a loop `f` (that is, `f a = f b`) continuous on `[a, b]` with derivative `f'` in the
-interior, subtracting a constant from the first argument does not change the integral of
-`B (f x) (f' x)`, since `∫ f' = f b - f a = 0`. -/
+/-- For `f` continuous on `[a, b]` with derivative `f'` in the interior, subtracting a constant `m`
+from the first argument does not change the integral of `B (f x) (f' x)` when
+`B m (f a) = B m (f b)`, since `∫ B m f' = B m (f b) - B m (f a)`. This holds for every `m` along
+a loop, `f a = f b`. -/
 theorem intervalIntegral_apply_apply_eq_sub_const {V G : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G] (B : V →L[ℝ] V →L[ℝ] G) {a b : ℝ}
     {f f' : ℝ → V}
     (hfc : ContinuousOn f [[a, b]])
-    (hf : ∀ x ∈ Ioo (min a b) (max a b), HasDerivAt f (f' x) x) (hfab : f a = f b)
-    (hf'ii : IntervalIntegrable f' volume a b) (m : V) :
+    (hf : ∀ x ∈ Ioo (min a b) (max a b), HasDerivAt f (f' x) x) {m : V}
+    (hm : B m (f a) = B m (f b)) (hf'ii : IntervalIntegrable f' volume a b) :
     ∫ x in a..b, B (f x) (f' x) = ∫ x in a..b, B (f x - m) (f' x) := by
   have hBm : IntervalIntegrable (fun x => B m (f' x)) volume a b :=
     ⟨(B m).integrable_comp hf'ii.1, (B m).integrable_comp hf'ii.2⟩
@@ -123,7 +126,7 @@ theorem intervalIntegral_apply_apply_eq_sub_const {V G : Type*} [NormedAddCommGr
   have hmean : ∫ x in a..b, B m (f' x) = 0 := by
     rw [intervalIntegral.integral_eq_sub_of_hasDeriv_right ((B m).continuous.comp_continuousOn hfc)
       (fun x hx => ((B m).hasFDerivAt.comp_hasDerivAt x (hf x hx)).hasDerivWithinAt) hBm]
-    simp [hfab]
+    simp [hm]
   by_cases hint : IntervalIntegrable (fun x => B (f x - m) (f' x)) volume a b
   · rw [← add_zero (∫ x in a..b, B (f x - m) (f' x)), ← hmean,
       ← intervalIntegral.integral_add hint hBm]

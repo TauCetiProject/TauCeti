@@ -19,7 +19,8 @@ invertible continuous linear map to the continuous dual. This identifies covecto
 vectors and allows the contraction equation in Moser's deformation argument to be solved
 using the continuous-linear-map inverse. The symplectic pairing of two continuous maps is
 continuous, and that of two differentiable curves satisfies the product rule. The pairing is
-bounded by the operator norm of the form.
+bounded by the operator norm of the form, and the continuous bilinear map minus its transpose is
+twice the form.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, Section 3.2.
 -/
@@ -62,6 +63,16 @@ theorem abs_apply_le_opNorm_mul_norm_mul_norm (ω : SymplecticForm V) (v w : V) 
     |ω v w| ≤ ‖ω.toBilinForm.toContinuousBilinearMap‖ * ‖v‖ * ‖w‖ := by
   simpa only [LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
     ω.toBilinForm.toContinuousBilinearMap.le_opNorm₂ v w
+
+/-- The continuous bilinear map of a symplectic form minus its transpose is twice the form:
+`ω(x, y) - ω(y, x) = 2 ω(x, y)`. This is the integrand of the Green formulas for symplectic
+area. -/
+theorem toContinuousBilinearMap_sub_swap (ω : SymplecticForm V) (x y : V) :
+    ω.toBilinForm.toContinuousBilinearMap x y - ω.toBilinForm.toContinuousBilinearMap y x =
+      2 * ω x y := by
+  rw [LinearMap.toContinuousBilinearMap_apply, LinearMap.toContinuousBilinearMap_apply,
+    ← ω.isAlt.neg_eq x y]
+  ring
 
 /-- The product rule for the symplectic pairing of two curves. -/
 theorem hasDerivAt_apply_comp (ω : SymplecticForm V) {p q : ℝ → V} {p' q' : V} {t : ℝ}
