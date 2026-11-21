@@ -220,20 +220,12 @@ private theorem eventually_mfderiv_timeDependentFlowOf_mem (t₀ : ℝ) (y : M) 
   -- Between `a` and `b`, `α` is a local defining family of `ξ`, whose kernels on `U` are `ξ`.
   have hαab (u : ℝ) (hu : u ∈ uIcc a b) : IsLocalContactFormFamily ξ U α u :=
     isLocalContactFormFamily_iff.2 (hT u (hball (hord.uIcc_subset ha hb hu)))
-  have hker (u : ℝ) (hu : u ∈ uIcc a b) :=
-    (isLocalContactFormFamily_iff.1 (hαab u hu)).self_of_nhds.2
   -- Read `v` in the tangent space of `U`, where it lies in the kernel of `α_a`.
   obtain ⟨v', rfl⟩ : ∃ v' : TangentSpace I z, tangentSpaceOpenEquiv (I := I) z v' = v :=
     ⟨_, ContinuousLinearEquiv.apply_symm_apply _ v⟩
-  have hva : v' ∈ (SmoothForm.mpullback (Prod.mk a) (contMDiff_const.prodMk contMDiff_id)
-      α).kerDistribution z := by
-    rw [hker a left_mem_uIcc, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
-      mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
-    exact hv
-  have hvb := hξ.mfderiv_timeDependentFlowOf_restrictTimeDependentField_mem_kerDistribution hαab
-    hdom hva
-  rw [hker b right_mem_uIcc, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
-    mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe] at hvb
+  have hvb := (hαab b right_mem_uIcc).mem_iff_mem_kerDistribution.2
+    (hξ.mfderiv_timeDependentFlowOf_restrictTimeDependentField_mem_kerDistribution hαab hdom
+      ((hαab a left_mem_uIcc).mem_iff_mem_kerDistribution.1 hv))
   -- Read the image back in `M`.
   refine mem_of_eq hval ?_ hvb
   exact (tangentSpaceOpenEquiv_apply _ _).trans

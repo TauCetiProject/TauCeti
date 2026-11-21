@@ -98,6 +98,16 @@ namespace IsLocalContactFormFamily
 
 variable {U V : Opens M} {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1} {t₀ : ℝ}
 
+/-- At the time `t₀` of a local defining family `α` of `ξ` on `U`, a tangent vector of `U`, read in
+`M`, lies in `ξ_{t₀}` exactly when it lies in the kernel of the slice `α_{t₀}`. -/
+theorem mem_iff_mem_kerDistribution (hα : IsLocalContactFormFamily ξ U α t₀) {z : U}
+    {v : TangentSpace I z} :
+    Manifold.tangentSpaceOpenEquiv (I := I) z v ∈ ξ t₀ z ↔
+      v ∈ (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id)
+        α).kerDistribution z := by
+  rw [hα.self_of_nhds.2, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
+    Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+
 /-- A local defining family restricts to smaller open sets. -/
 theorem mpullback_inclusion (hα : IsLocalContactFormFamily ξ U α t₀) (h : V ≤ U) :
     IsLocalContactFormFamily ξ V
