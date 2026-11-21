@@ -122,7 +122,7 @@ theorem exists_refining_equipartition_energy_add_lt [Fintype κ]
   have hmono := S.energy_mono_of_refines (inf_le_right : Q ⊓ R ≤ R)
   -- A bad pair has two distinct nonempty cells, so the ordered-pair denominator is positive.
   obtain ⟨AB, hAB⟩ : (S.irregularPairs ε P).Nonempty := by
-    rw [nonempty_iff_ne_empty]
+    rw [← ne_empty_iff_nonempty]
     rintro he
     rw [he, sum_empty] at hbad
     nlinarith [sq_nonneg (n : ℝ)]

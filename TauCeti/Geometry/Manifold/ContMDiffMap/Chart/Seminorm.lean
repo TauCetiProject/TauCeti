@@ -157,6 +157,18 @@ theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :
       (by intro m hm z hz; exact False.elim hz)
   · exact apply_nonneg _ _
 
+/-- A coordinate derivative only sees a map near the represented point: it vanishes at a
+coordinate point near whose inverse image the map is zero. -/
+theorem chartIteratedFDeriv_eq_zero_of_eventuallyEq_zero (x : M) (m : ℕ) (hm : m ≤ n)
+    {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} (z : (extChartAt I x).target)
+    (hf : (f : M → F) =ᶠ[𝓝 ((extChartAt I x).symm z)] 0) :
+    chartIteratedFDeriv f x m hm z = 0 := by
+  have hz : f ∘ (extChartAt I x).symm =ᶠ[𝓝[(extChartAt I x).target] (z : E)] fun _ ↦ 0 :=
+    hf.comp_tendsto (continuousOn_extChartAt_symm x (z : E) z.property)
+  rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq
+      (hz.eq_of_nhdsWithin z.property),
+    iteratedFDerivWithin_fun_zero, Pi.zero_apply]
+
 /-- The compact chart `C^k` seminorm only sees a map near the points represented by its compact
 coordinate set: it vanishes on a map which is zero near each of them. -/
 theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
@@ -166,10 +178,7 @@ theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
     chartCkSeminorm x K k hk f = 0 := by
   refine le_antisymm ((chartCkSeminorm_le_iff x K k hk f le_rfl).mpr fun m hm z hz ↦ ?_)
     (apply_nonneg _ _)
-  have hz : f ∘ (extChartAt I x).symm =ᶠ[𝓝[(extChartAt I x).target] (z : E)] fun _ ↦ 0 :=
-    (hf z hz).comp_tendsto (continuousOn_extChartAt_symm x (z : E) z.2)
-  rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq (hz.eq_of_nhdsWithin z.2),
-    iteratedFDerivWithin_fun_zero, Pi.zero_apply, norm_zero]
+  rw [chartIteratedFDeriv_eq_zero_of_eventuallyEq_zero x m _ z (hf z hz), norm_zero]
 
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate
 derivative through order `k`. -/

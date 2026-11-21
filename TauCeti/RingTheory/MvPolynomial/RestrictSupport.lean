@@ -81,7 +81,7 @@ theorem eq_of_mem_restrictSupport_of_coeff_eq {p q : MvPolynomial σ R}
 /-- Elements of `restrictSupport R s` are determined by their coefficients on `s`. -/
 theorem restrictSupport_ext {p q : restrictSupport R s}
     (h : ∀ μ ∈ s, (p : MvPolynomial σ R).coeff μ = (q : MvPolynomial σ R).coeff μ) : p = q :=
-  Subtype.ext <| eq_of_mem_restrictSupport_of_coeff_eq p.2 q.2 h
+  Subtype.ext <| eq_of_mem_restrictSupport_of_coeff_eq p.property q.property h
 
 variable (R s) in
 /-- The rank of `restrictSupport R s` is the number of exponents in `s` (`0` if `s` is infinite).
@@ -107,7 +107,7 @@ variable (s) in
 `f : R →+* S`, as an `f`-semilinear map. -/
 noncomputable def mapRestrictSupport {S : Type*} [CommSemiring S] (f : R →+* S) :
     restrictSupport R s →ₛₗ[f] restrictSupport S s where
-  toFun p := ⟨map f p, map_mem_restrictSupport f p.2⟩
+  toFun p := ⟨map f p, map_mem_restrictSupport f p.property⟩
   map_add' p q := Subtype.ext (map_add (map f) (p : MvPolynomial σ R) q)
   map_smul' a p := Subtype.ext <| by simp [smul_eq_C_mul]
 

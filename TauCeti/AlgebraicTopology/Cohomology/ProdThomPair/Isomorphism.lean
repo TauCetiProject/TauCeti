@@ -158,7 +158,7 @@ private theorem exists_forall_bijective_pullbackCup_prodThomPair_of_subsingleton
       ∀ (M : ModuleCat.{w} K) (p m : ℕ) (h : p + 0 = m),
         Function.Bijective ((prodThomPair B F).pullbackCup M (prodThomPairProj B F) 0 p m h v) := by
   let P := prodThomPair B F
-  have : IsEmpty P.snd := ⟨fun p ↦ p.2 (Subsingleton.elim p.1.2 0)⟩
+  have : IsEmpty P.snd := ⟨fun p ↦ p.property (Subsingleton.elim p.val.2 0)⟩
   have : IsIso (prodThomPairProj B F) :=
     ⟨ConcreteCategory.ofHom (C := TopCat.{w}) ⟨fun b ↦ (b, (0 : F)), by fun_prop⟩,
       TopCat.ext fun p ↦ Prod.ext (prodThomPairProj_apply F p) (Subsingleton.elim 0 p.2),

@@ -23,11 +23,11 @@ bounded interval `[a, b)` is integrable against a locally finite measure, that t
 many disjoint measurable subsets, that an almost everywhere positive function has positive
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
-ball `B`, and that a continuous
-square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets, and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives
-`m ≤ ∫_a^{a+K} σ`.
+ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
+from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
+`h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
+It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
+and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`.
 
 ## Main statements
 
@@ -45,6 +45,8 @@ unions with disjoint sets, and that a pointwise bound `m ≤ K σ` on `[a, a + K
   `m ≤ ∫_a^{a+K} σ`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
+* `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
+  extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -59,9 +61,9 @@ unions with disjoint sets, and that a pointwise bound `m ≤ K σ` on `[a, a + K
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
-* `MeasureTheory.integrableOn_and_setIntegral_le_of_tendsto`: Fatou's lemma for nonnegative
-  integrable functions converging pointwise on a set: the limit is integrable, and the bound on
-  their integrals passes to it.
+* `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
+  integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
+  measure finite on compact sets.
 * `TendstoUniformlyOn.tendsto_setIntegral`: integrable functions converging uniformly on a set of
   finite measure to an integrable limit have converging integrals over it.
 -/
@@ -251,6 +253,18 @@ theorem setIntegral_sq_le_of_support_subset_closedBall {E : Type*} [PseudoMetric
         rw [measureReal_restrict_apply hmeasB]
         exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
 
+/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
+`x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
+over `s`. -/
+theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSpace X] [Zero E]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure X} {s : Set X}
+    (hs : NullMeasurableSet s μ) {f f₀ : X → E} (Φ : X → E → G) (hΦ : ∀ x, Φ x 0 = 0)
+    (h : f₀ =ᵐ[μ] s.indicator f) :
+    ∫ x, Φ x (f₀ x) ∂μ = ∫ x in s, Φ x (f x) ∂μ := by
+  rw [← integral_indicator₀ hs]
+  refine integral_congr_ae (h.mono fun x hx => ?_)
+  by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
+
 end TauCeti
 
 /-- A continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
@@ -342,42 +356,6 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
 
 open Filter Topology in
-/-- **Fatou's lemma for set integrals.** If integrable functions `e n ≥ 0` converge pointwise on a
-measurable set `T` to `f`, and `∫_T e n ≤ c n` with `c n → c₀`, then `f` is integrable on `T` and
-`∫_T f ≤ c₀`. -/
-theorem integrableOn_and_setIntegral_le_of_tendsto {T : Set α} {e : ℕ → α → ℝ} {f : α → ℝ}
-    {c : ℕ → ℝ} {c₀ : ℝ} (hT : MeasurableSet T) (he : ∀ n, ∀ y ∈ T, 0 ≤ e n y)
-    (hint : ∀ n, IntegrableOn (e n) T μ)
-    (hlim : ∀ y ∈ T, Tendsto (fun n ↦ e n y) atTop (𝓝 (f y)))
-    (hc : ∀ n, ∫ y in T, e n y ∂μ ≤ c n) (hc₀ : Tendsto c atTop (𝓝 c₀)) :
-    IntegrableOn f T μ ∧ ∫ y in T, f y ∂μ ≤ c₀ := by
-  have hf0 : 0 ≤ᵐ[μ.restrict T] f :=
-    ae_restrict_of_forall_mem hT fun y hy ↦ ge_of_tendsto' (hlim y hy) fun n ↦ he n y hy
-  have hc0 : 0 ≤ c₀ := ge_of_tendsto' hc₀ fun n ↦ (setIntegral_nonneg hT (he n)).trans (hc n)
-  have hmeas : AEStronglyMeasurable f (μ.restrict T) :=
-    aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hint n).aestronglyMeasurable)
-      (ae_restrict_of_forall_mem hT hlim)
-  have hlint : ∫⁻ y in T, ENNReal.ofReal (f y) ∂μ ≤ ENNReal.ofReal c₀ :=
-    calc ∫⁻ y in T, ENNReal.ofReal (f y) ∂μ
-        = ∫⁻ y in T, liminf (fun n ↦ ENNReal.ofReal (e n y)) atTop ∂μ :=
-          setLIntegral_congr_fun hT fun y hy ↦
-            ((ENNReal.continuous_ofReal.tendsto _).comp (hlim y hy)).liminf_eq.symm
-      _ ≤ liminf (fun n ↦ ∫⁻ y in T, ENNReal.ofReal (e n y) ∂μ) atTop :=
-          lintegral_liminf_le' fun n ↦ (hint n).aemeasurable.ennreal_ofReal
-      _ = liminf (fun n ↦ ENNReal.ofReal (∫ y in T, e n y ∂μ)) atTop := by
-          congr 1
-          funext n
-          rw [ofReal_integral_eq_lintegral_ofReal (hint n) (ae_restrict_of_forall_mem hT (he n))]
-      _ ≤ liminf (fun n ↦ ENNReal.ofReal (c n)) atTop :=
-          liminf_le_liminf (.of_forall fun n ↦ ENNReal.ofReal_le_ofReal (hc n))
-      _ = ENNReal.ofReal c₀ := ((ENNReal.continuous_ofReal.tendsto _).comp hc₀).liminf_eq
-  refine ⟨⟨hmeas, ?_⟩, ?_⟩
-  · rw [hasFiniteIntegral_iff_ofReal hf0]
-    exact hlint.trans_lt ENNReal.ofReal_lt_top
-  · rw [integral_eq_lintegral_of_nonneg_ae hf0 hmeas]
-    exact ENNReal.toReal_le_of_le_ofReal hc0 hlint
-
-open Filter Topology in
 /-- **Uniform convergence on a set of finite measure.** If `F i → f` uniformly on a set `S` of
 finite measure, where eventually every `F i` and the limit `f` are integrable on `S`, then
 `∫_S F i → ∫_S f`: the difference of the integrals is at most `sup_S ‖F i - f‖ μ(S)`. Mathlib's
@@ -401,3 +379,20 @@ theorem _root_.TendstoUniformlyOn.tendsto_setIntegral {ι : Type*} {l : Filter �
         nlinarith [hS0]
 
 end MeasureTheory
+
+/-- Continuity of `f` on the closed box `Set.Icc a b` gives integrability on every slice `x i = c`
+for `c ∈ Set.Icc (a i) (b i)`, against any measure finite on compact sets. -/
+theorem ContinuousOn.integrableOn_insertNth_Icc {n : ℕ} {α : Fin (n + 1) → Type*}
+    [∀ j, Preorder (α j)] [∀ j, TopologicalSpace (α j)]
+    {E : Type*} [NormedAddCommGroup E]
+    {a b : ∀ j, α j} {f : (∀ j, α j) → E}
+    (hf : ContinuousOn f (Icc a b)) (i : Fin (n + 1))
+    [MeasurableSpace (∀ j, α (i.succAbove j))]
+    [OpensMeasurableSpace (∀ j, α (i.succAbove j))]
+    [CompactIccSpace (∀ j, α (i.succAbove j))] [T2Space (∀ j, α (i.succAbove j))]
+    {μ : Measure (∀ j, α (i.succAbove j))} [IsFiniteMeasureOnCompacts μ]
+    {c : α i} (hc : c ∈ Icc (a i) (b i)) :
+    IntegrableOn (fun x ↦ f (i.insertNth c x))
+      (Icc (fun j ↦ a (i.succAbove j)) (fun j ↦ b (i.succAbove j))) μ :=
+  (hf.comp (continuousOn_const.finInsertNth i continuousOn_id) fun _ hx ↦
+    Fin.insertNth_mem_Icc.mpr ⟨hc, hx⟩).integrableOn_Icc

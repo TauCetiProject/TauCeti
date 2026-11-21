@@ -16,6 +16,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -104,7 +105,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`,
-  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve the
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so that data and maps invariant
+  under a translation have invariant energy density
+  (`SymplecticForm.periodic_floerEnergyDensity`); hence translations preserve the
   energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 * `SymplecticForm.continuousAt_apply_sub_stdComplexLine`: the energy-density pairing
@@ -453,6 +456,16 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
     ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- If the perturbation and the map are invariant under the translation of the domain by `v`, then
+so is the Floer energy density. -/
+theorem periodic_floerEnergyDensity (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {v : ℝ × ℝ} (hKs : Function.Periodic Ks v) (hKt : Function.Periodic Kt v)
+    (hu : Function.Periodic u v) : Function.Periodic (ω.floerEnergyDensity Ks Kt u) v := fun z ↦ by
+  have hKs' : (fun w ↦ Ks (w + v)) = Ks := funext hKs
+  have hKt' : (fun w ↦ Kt (w + v)) = Kt := funext hKt
+  have hu' : (fun w ↦ u (w + v)) = u := funext hu
+  rw [← ω.floerEnergyDensity_comp_add_right, hKs', hKt', hu']
 
 /-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
 `(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
@@ -842,9 +855,16 @@ theorem integrableOn_floerEnergyDensity_and_setIntegral_le_of_tendsto (ω : Symp
     (hu : ∀ z ∈ S, Tendsto (fun n ↦ u n z) atTop (𝓝 (v z)))
     (hdu : ∀ z ∈ S, Tendsto (fun n ↦ fderiv ℝ (u n) z) atTop (𝓝 (fderiv ℝ v z))) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt v) S ∧
-      ∫ z in S, ω.floerEnergyDensity Ks Kt v z ≤ E :=
-  integrableOn_and_setIntegral_le_of_tendsto hS hnn hint
-    (fun z hz ↦ ω.tendsto_floerEnergyDensity (hX z hz) (hu z hz) (hdu z hz)) hE tendsto_const_nhds
+      ∫ z in S, ω.floerEnergyDensity Ks Kt v z ≤ E := by
+  have hint' : ∀ᶠ n in atTop, IntegrableOn (ω.floerEnergyDensity Ks Kt (u n)) S :=
+    .of_forall hint
+  have hnn' : ∀ᶠ n in atTop, 0 ≤ᵐ[volume.restrict S] ω.floerEnergyDensity Ks Kt (u n) :=
+    .of_forall fun n ↦ ae_restrict_of_forall_mem hS (hnn n)
+  have hlim := ae_restrict_of_forall_mem (μ := volume) hS fun z hz ↦
+    ω.tendsto_floerEnergyDensity (hX z hz) (hu z hz) (hdu z hz)
+  have hE' : ∃ᶠ n in atTop, ∫ z in S, ω.floerEnergyDensity Ks Kt (u n) z ≤ E := .of_forall hE
+  exact ⟨TauCeti.integrable_of_tendsto_of_integral_le hint' hnn' hlim hE',
+    TauCeti.integral_le_of_tendsto_of_integral_le hint' hnn' hlim hE'⟩
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/

@@ -172,7 +172,7 @@ private theorem sumElim_eq_sum_single_add_compl {R ι : Type*} [Semiring R] [Dec
         exact fun h ↦ (hx (Subtype.ext (by simpa using h.symm))).elim
     · have hzero : (∑ k : Fin s, if i = (e k : ι) then a (e k) else 0) = 0 :=
         Finset.sum_eq_zero fun k _ ↦ by
-          have hne : i ≠ (e k : ι) := fun h ↦ hi (h ▸ (e k).2)
+          have hne : i ≠ (e k : ι) := fun h ↦ hi (h ▸ (e k).property)
           simp [hne]
       simp [hi, hzero]
   · simp [sumElimComplLinearMap]
@@ -236,14 +236,14 @@ coordinates `{i : ι // i ≠ i₀}`. -/
 theorem HasStableRangeLE.exists_isUnimodular_add_mul_subtype_ne {R ι : Type*} [Ring R] [Fintype ι]
     {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι) {a : ι → R}
     (ha : Module.IsUnimodular R a) (i₀ : ι) :
-    ∃ c : {i : ι // i ≠ i₀} → R, Module.IsUnimodular R (fun i ↦ a i.1 + a i₀ * c i) := by
+    ∃ c : {i : ι // i ≠ i₀} → R, Module.IsUnimodular R (fun i ↦ a i.val + a i₀ * c i) := by
   classical
   have hcard : s ≤ Fintype.card {i : ι // i ≠ i₀} := by
     rw [Fintype.card_subtype_compl, Fintype.card_subtype_eq]
     omega
   have ha' : Module.IsUnimodular R
-      (Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀)) := by
-    have hcomp : Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀) =
+      (Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.val) (fun _ : Unit ↦ a i₀)) := by
+    have hcomp : Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.val) (fun _ : Unit ↦ a i₀) =
         LinearEquiv.funCongrLeft R R (Equiv.subtypeNeSumPUnit.{0} i₀) a := by
       ext (i | ⟨⟩) <;> rfl
     rw [hcomp, LinearEquiv.isUnimodular_apply_iff]

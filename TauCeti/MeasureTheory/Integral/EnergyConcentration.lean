@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.Compact
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.MetricSpace.SeparatedBalls
@@ -412,14 +413,15 @@ private theorem setIntegral_add_sum_le_of_tendsto_setIntegral_ball {e : ℕ → 
     ∫ y in Ω \ ↑Z, f y ∂μ + ∑ z : Z, (A z - ∫ y in ball (z : X) r \ {(z : X)}, f y ∂μ) ≤ E := by
   set V := Ω \ ⋃ z : Z, ball (z : X) r
   have hdisj : Pairwise (Disjoint on fun z : Z ↦ ball (z : X) r) := fun z w hzw ↦
-    ball_disjoint_ball (by linarith [hsep z z.2 w w.2 (Subtype.coe_injective.ne hzw)])
+    ball_disjoint_ball (by linarith [hsep z z.property w w.property (Subtype.coe_injective.ne hzw)])
   have hpunct (z : Z) : ball (z : X) r \ {(z : X)} ⊆ Ω \ ↑Z := fun y hy ↦
-    ⟨hballΩ z z.2 hy.1, fun hyZ ↦
-      hy.2 (eq_of_mem_closedBall_of_lt_dist (hsep y hyZ z z.2) (ball_subset_closedBall hy.1))⟩
+    ⟨hballΩ z z.property hy.1, fun hyZ ↦
+      hy.2 (eq_of_mem_closedBall_of_lt_dist (hsep y hyZ z z.property)
+        (ball_subset_closedBall hy.1))⟩
   have hsplit (n : ℕ) : ∫ y in Ω, e n y ∂μ =
       ∫ y in V, e n y ∂μ + ∑ z : Z, ∫ y in ball (z : X) r, e n y ∂μ :=
     setIntegral_eq_setIntegral_sdiff_iUnion_add_sum (fun _ ↦ measurableSet_ball) hdisj
-      (fun z ↦ hballΩ z z.2) (hint n)
+      (fun z ↦ hballΩ z z.property) (hint n)
   have hV : (Ω \ ↑Z) \ ⋃ z : Z, (ball (z : X) r \ {(z : X)}) = V := by
     ext y
     simp only [V, Set.mem_sdiff, mem_iUnion, mem_singleton_iff, not_exists, not_and, not_not,
@@ -436,13 +438,18 @@ private theorem setIntegral_add_sum_le_of_tendsto_setIntegral_ball {e : ℕ → 
       (fun _ ↦ measurableSet_ball.diff (measurableSet_singleton _))
       (fun z w hzw ↦ (hdisj hzw).mono sdiff_subset sdiff_subset) hpunct hf
   have hVS : V ⊆ Ω \ ↑Z := hV ▸ sdiff_subset
-  have hfV : ∫ y in V, f y ∂μ ≤ E - ∑ z : Z, A z :=
-    (MeasureTheory.integrableOn_and_setIntegral_le_of_tendsto
-      (hΩ.measurableSet.diff (.iUnion fun _ ↦ measurableSet_ball))
-      (fun n y hy ↦ he (ψ n) y (hVS hy).1) (fun n ↦ (hint (ψ n)).mono_set sdiff_subset)
-      (fun y hy ↦ (hlim y (hVS hy)).comp hψ)
-      (fun n ↦ by linarith [hsplit (ψ n), hE (ψ n)])
-      (tendsto_const_nhds.sub (tendsto_finsetSum _ fun z _ ↦ hA z))).2
+  have hVm : MeasurableSet V := hΩ.measurableSet.diff (.iUnion fun _ ↦ measurableSet_ball)
+  have hfV : ∫ y in V, f y ∂μ ≤ E - ∑ z : Z, A z := by
+    refine le_of_forall_gt_imp_ge_of_dense fun D hD ↦
+      TauCeti.integral_le_of_tendsto_of_integral_le
+        (.of_forall fun n ↦ (hint (ψ n)).mono_set sdiff_subset)
+        (.of_forall fun n ↦ ae_restrict_of_forall_mem hVm fun y hy ↦ he (ψ n) y (hVS hy).1)
+        (ae_restrict_of_forall_mem hVm fun y hy ↦ (hlim y (hVS hy)).comp hψ) ?_
+    have hc : Tendsto (fun n ↦ E - ∑ z : Z, ∫ y in ball (z : X) r, e (ψ n) y ∂μ) atTop
+        (𝓝 (E - ∑ z : Z, A z)) :=
+      tendsto_const_nhds.sub (tendsto_finsetSum _ fun z _ ↦ hA z)
+    exact ((hc.eventually (gt_mem_nhds hD)).mono fun n hn ↦ by
+      linarith [hsplit (ψ n), hE (ψ n)]).frequently
   rw [hfsplit, Finset.sum_sub_distrib]
   linarith
 
@@ -533,9 +540,9 @@ theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le
   -- The energies of the balls of radius `r` lie in `[0, E]`; extract a convergent subsequence.
   set a : ℕ → Z → ℝ := fun n z ↦ ∫ y in ball (z : X) r, e n y ∂μ
   have ha (n : ℕ) : a n ∈ Set.pi univ fun _ ↦ Icc 0 E := fun z _ ↦
-    ⟨setIntegral_nonneg measurableSet_ball fun y hy ↦ he n y (hballΩ z z.2 hy),
+    ⟨setIntegral_nonneg measurableSet_ball fun y hy ↦ he n y (hballΩ z z.property hy),
       (setIntegral_mono_set (hint n) (ae_restrict_of_forall_mem hΩ.measurableSet (he n))
-        (hballΩ z z.2).eventuallySubset).trans (hE n)⟩
+        (hballΩ z z.property).eventuallySubset).trans (hE n)⟩
   obtain ⟨A, -, ψ, hψ, hA⟩ := (isCompact_univ_pi fun _ ↦ isCompact_Icc).tendsto_subseq ha
   have hAz (z : Z) : Tendsto (fun n ↦ a (ψ n) z) atTop (𝓝 (A z)) := tendsto_pi_nhds.1 hA z
   set m : X → ℝ := fun z ↦ if hz : z ∈ Z then A ⟨z, hz⟩ - ∫ y in ball z r \ {z}, f y ∂μ else 0
