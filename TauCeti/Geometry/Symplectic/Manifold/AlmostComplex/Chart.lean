@@ -241,7 +241,7 @@ theorem chartPushforward_eq_of_eventuallyEq_comp {E' H' M' : Type*} [NormedAddCo
   -- The two pushforwards agree on the image of the differential `dψ_y`, which is everything:
   -- both are `dψ_y ∘ J_y` there, by the chain rule and the intertwining property of `dΨ_y`.
   refine ContinuousLinearMap.ext fun w ↦ ?_
-  obtain ⟨v, rfl⟩ := ψ.surjective_mfderiv hy hψ hψs w
+  obtain ⟨v, rfl⟩ := ψ.mfderiv_surjective hy hψ hψs w
   have h1 := DFunLike.congr_fun (J.mfderiv_comp_toEndomorphism ψ hy hψ hψs) v
   have h2 := DFunLike.congr_fun (J'.mfderiv_comp_toEndomorphism ψ' hy' hψ' hψs')
     (mfderiv I I' Ψ y v)

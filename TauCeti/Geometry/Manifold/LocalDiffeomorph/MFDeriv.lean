@@ -37,7 +37,7 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
   and its inverse are differentiable, their differentials are mutually inverse.
-* `OpenPartialHomeomorph.surjective_mfderiv`: there, the differential is surjective.
+* `OpenPartialHomeomorph.mfderiv_surjective`: there, the differential is surjective.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
   differential.
@@ -101,7 +101,7 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : OpenPartialHomeomorph M N) {y : N
 it and its inverse are differentiable. Unlike
 `OpenPartialHomeomorph.MDifferentiable.mfderiv_surjective`, this needs differentiability only at
 the two points. -/
-theorem surjective_mfderiv (Φ : OpenPartialHomeomorph M N) {x : M} (hx : x ∈ Φ.source)
+theorem mfderiv_surjective (Φ : OpenPartialHomeomorph M N) {x : M} (hx : x ∈ Φ.source)
     (hΦ : MDifferentiableAt I J Φ x) (hΦs : MDifferentiableAt J I Φ.symm (Φ x)) :
     Function.Surjective (mfderiv I J Φ x) := by
   intro w
