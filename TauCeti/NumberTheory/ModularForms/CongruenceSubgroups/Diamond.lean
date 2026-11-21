@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.Units
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
 
 /-!
 # Diamond actions on congruence-subgroup orbit spaces

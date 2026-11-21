@@ -53,14 +53,11 @@ embedding `μ_{NM} ↪ E[NM]` to `μ_N`, using compatible primitive roots
 
 ## Main definitions
 
-* `UpperHalfPlane.pointedWeierstrassCurve N z`: the curve `E_z` with the point given by `1 / N`.
-* `TauCeti.gamma1QuotientDiamond N`: the diamond action on `Γ₁(N) \ ℍ`, as permutations.
 * `TauCeti.gamma1QuotientEquivExactOrder N`: the bijection from `Γ₁(N) \ ℍ` to the isomorphism
   classes of complex elliptic curves with a point of exact order `N`.
 
 ## Main results
 
-* `UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`: `1 / N` has exact order `N` on `E_z`.
 * `UpperHalfPlane.smul_mk_weierstrassPoint_denom_div`: rescaling by `(c z + d)⁻¹` carries `E_z`
   with the point of `(c z + d) / N` to `(E_{γ z}, P_{γ z})`.
 * `UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq`: every complex elliptic curve with a
@@ -69,10 +66,24 @@ embedding `μ_{NM} ↪ E[NM]` to `μ_N`, using compatible primitive roots
   are isomorphic exactly when `z' ∈ Γ₁(N) z`.
 * `UpperHalfPlane.smul_mk_zsmul_weierstrassPoint_one_div`: for `γ ∈ Γ₀(N)` with lower-right
   entry `d`, rescaling by `(c z + d)⁻¹` carries `(E_z, d • P_z)` to `(E_{γ z}, P_{γ z})`.
+* `TauCeti.gamma1QuotientEquivExactOrder_mk_smul`: for `γ ∈ Γ₀(N)` with lower-right entry `d`, the
+  class of `γ z` corresponds to the class of `d • (E_z, P_z)`.
 * `TauCeti.gamma1QuotientEquivExactOrder_smul`: the moduli bijection carries the diamond
   operator `⟨d⟩` to multiplication of the marked point by `d`.
 * `TauCeti.gamma1QuotientEquivExactOrder_map_of_le`: the moduli bijection carries the map
   `Γ₁(N M) \ ℍ → Γ₁(N) \ ℍ` to multiplication of the marked point by `M`.
+
+## Imported prerequisites
+
+* `UpperHalfPlane.pointedWeierstrassCurve N z`, the curve `E_z` with the point given by `1 / N`,
+  and `UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`, stating that this point has exact
+  order `N`, come from `TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed`.
+* `TauCeti.gamma1QuotientDiamond N`, the diamond action of `(ℤ/Nℤ)ˣ` on `Γ₁(N) \ X` for any
+  `SL(2, ℤ)`-space `X`, comes from `TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond`.
+* The map `PointedWeierstrassCurve.nsmulExactOrder` comes from
+  `TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Basic`, and the action of
+  `(ℤ/Nℤ)ˣ` on marked curves and on their isomorphism classes comes from its siblings
+  `Pointed.Units` and `Pointed.Quotient`.
 
 ## References
 
@@ -227,8 +238,10 @@ theorem smul_mk_zsmul_weierstrassPoint_one_div {γ : SL(2, ℤ)} (hγ : γ ∈ G
   have hD : γ 1 1 • z.periodPair.weierstrassPoint (1 / N) =
       z.periodPair.weierstrassPoint (denom γ z / N) := calc
     _ = z.periodPair.weierstrassPoint (((0 : ℤ) * z + γ 1 1) / N) := by
-      rw [← PeriodPair.weierstrassPointHom_apply, ← map_zsmul, PeriodPair.weierstrassPointHom_apply]
-      simp [zsmul_eq_mul, div_eq_mul_inv]
+      rw [PeriodPair.zsmul_weierstrassPoint]
+      congr 1
+      push_cast
+      ring
     _ = _ := weierstrassPoint_div_eq_weierstrassPoint_denom_div
       (by simpa using Gamma0_mem.mp hγ) rfl
   rw [hD, smul_mk_weierstrassPoint_denom_div]
@@ -277,6 +290,7 @@ theorem gamma1QuotientEquivExactOrder_mk (z : ℍ) :
 lower-right entry `d`, the class of `γ z` corresponds to `(E_z, d • P_z)`. In terms of the
 embeddings `α : μ_N ↪ E[N]`, the diamond operator `⟨d⟩` precomposes `α` with multiplication by
 `d` on `μ_N`. -/
+@[simp↓]
 theorem gamma1QuotientEquivExactOrder_mk_smul (γ : Gamma0 N) (z : ℍ) :
     gamma1QuotientEquivExactOrder N ⟦(γ : SL(2, ℤ)) • z⟧ =
       ⟦(Gamma0Map N).toHomUnits γ •

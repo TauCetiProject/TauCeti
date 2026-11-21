@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.Geometry.Manifold.Algebra.Structures
-public import Mathlib.Data.ZMod.Basic
 
 /-!
 # The period map of a period pair
@@ -37,38 +36,6 @@ noncomputable def periodMap : ℤ × ℤ →ₗ[ℤ] ℂ :=
 
 @[simp] theorem periodMap_apply (x : ℤ × ℤ) : L.periodMap x = x.1 * L.ω₁ + x.2 * L.ω₂ :=
   L.latticeEquiv_symm_apply x
-
-/-- If both integer coordinates vanish modulo `N`, their division point lies in the period
-lattice. At `N = 0` the quotient is zero by Lean's division-by-zero convention. -/
-theorem div_mem_lattice_of_intCast_eq_zero {N : ℕ} {m n : ℤ}
-    (hm : (m : ZMod N) = 0) (hn : (n : ZMod N) = 0) :
-    (m * L.ω₁ + n * L.ω₂) / N ∈ L.lattice := by
-  obtain ⟨k, hk⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hm
-  obtain ⟨l, hl⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hn
-  rcases eq_or_ne (N : ℂ) 0 with hN | hN
-  · rw [hN, div_zero]
-    exact zero_mem _
-  convert add_mem (zsmul_mem L.ω₁_mem_lattice k) (zsmul_mem L.ω₂_mem_lattice l) using 1
-  rw [hk, hl, div_eq_iff hN]
-  push_cast
-  simp only [zsmul_eq_mul]
-  ring
-
-/-- At positive level, a division point `(m ω₁ + n ω₂) / N` lies in the period lattice exactly
-when both integer coordinates vanish modulo `N`. -/
-@[simp]
-theorem div_mem_lattice_iff_intCast_eq_zero {N : ℕ} [NeZero N] {m n : ℤ} :
-    (m * L.ω₁ + n * L.ω₂) / N ∈ L.lattice ↔ (m : ZMod N) = 0 ∧ (n : ZMod N) = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ L.div_mem_lattice_of_intCast_eq_zero h.1 h.2⟩
-  have hN : (N : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne N)
-  have h' : ((m / (N : ℤ) : ℚ) : ℂ) * L.ω₁ + ((n / (N : ℤ) : ℚ) : ℂ) * L.ω₂ ∈ L.lattice := by
-    convert h using 1
-    push_cast
-    ring
-  obtain ⟨hm, hn⟩ := mul_ω₁_add_mul_ω₂_mem_lattice.mp h'
-  rw [Rat.den_div_intCast_eq_one_iff _ _ hN] at hm hn
-  simp only [ZMod.intCast_zmod_eq_zero_iff_dvd]
-  exact ⟨hm, hn⟩
 
 /-- The period map sends `(1, 0)` to the first period. -/
 theorem periodMap_one_zero : L.periodMap (1, 0) = L.ω₁ := by

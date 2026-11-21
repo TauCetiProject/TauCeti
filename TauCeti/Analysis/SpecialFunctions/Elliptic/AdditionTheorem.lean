@@ -474,6 +474,11 @@ lemma nsmul_weierstrassPoint (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by
   rw [← L.weierstrassPointHom_apply, ← map_nsmul, nsmul_eq_mul, L.weierstrassPointHom_apply]
 
+/-- The point map commutes with multiplication by an integer. -/
+lemma zsmul_weierstrassPoint (n : ℤ) (z : ℂ) :
+    n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by
+  rw [← L.weierstrassPointHom_apply, ← map_zsmul, zsmul_eq_mul, L.weierstrassPointHom_apply]
+
 /-- Away from the period lattice, the Weierstrass function identifies exactly the pairs of
 points that differ by a period or whose sum is a period. -/
 theorem weierstrassP_eq_weierstrassP_iff {z w : ℂ} (hz : z ∉ L.lattice)

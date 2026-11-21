@@ -46,15 +46,8 @@ theorem weightedG2_single_apply_eq_iff {a b : Fin 2 → ZMod N} (ha : a ≠ 0) (
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hnot (c : Fin 2 → ZMod N) (hc : c ≠ 0) :
       ((c 0).val * (z : ℂ) + (c 1).val) / N ∉ z.periodPair.lattice := by
-    intro h
-    obtain ⟨h₀, h₁⟩ := (z.periodPair.div_mem_lattice_iff_intCast_eq_zero
-      (m := (c 0).val) (n := (c 1).val)).mp
-        (by simpa only [periodPair_ω₁, periodPair_ω₂, mul_one, Int.cast_natCast] using h)
-    apply hc
-    ext i
-    fin_cases i
-    · simpa using h₀
-    · simpa using h₁
+    simpa only [periodPair_ω₁, periodPair_ω₂, mul_one] using
+      (z.periodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff c).not.mpr hc
   constructor
   · intro h
     rw [weightedG2_single_apply, weightedG2_single_apply,

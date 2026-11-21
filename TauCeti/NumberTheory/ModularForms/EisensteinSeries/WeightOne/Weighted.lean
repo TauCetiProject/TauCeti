@@ -395,14 +395,9 @@ lattice series along rows, the parts `x ∑_n (m z + n)⁻²` of the rows cancel
 private lemma hasSum_zetaValue_lift {a : Fin 2 → ZMod N} (ha : a ≠ 0) (z : ℍ) :
     HasSum (fun m ↦ zetaRow a m z) (zetaValue N (lift a) z) := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hx : ((a 0).val * (z : ℂ) + (a 1).val) / N ∉ z.periodPair.lattice := fun h ↦ ha <| by
-    obtain ⟨h₀, h₁⟩ := (z.periodPair.div_mem_lattice_iff_intCast_eq_zero
-      (m := (a 0).val) (n := (a 1).val)).mp
-        (by simpa only [periodPair_ω₁, periodPair_ω₂, mul_one, Int.cast_natCast] using h)
-    ext i
-    fin_cases i
-    · simpa using h₀
-    · simpa using h₁
+  have hx : ((a 0).val * (z : ℂ) + (a 1).val) / N ∉ z.periodPair.lattice := by
+    simpa only [periodPair_ω₁, periodPair_ω₂, mul_one] using
+      (z.periodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff a).not.mpr ha
   have h₁ := hasSum_weierstrassZeta_periodPair_rows z hx
   have h₂ := hasSum_weierstrassZeta_periodPair_rows z z.periodPair.ω₁_div_two_notMem_lattice
   have h₃ := hasSum_weierstrassZeta_periodPair_rows z z.periodPair.ω₂_div_two_notMem_lattice
