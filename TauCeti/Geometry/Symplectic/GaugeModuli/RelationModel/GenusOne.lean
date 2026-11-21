@@ -115,7 +115,7 @@ theorem relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ 
       (Quotient.mk _ y : relationModuli r ζ 1) = Quotient.mk _ x₀ := by
     rw [quotient_mk_relationModuli_eq_iff]
     obtain ⟨u, huA, huB⟩ := Matrix.exists_specialUnitaryGroup_conj_to_clock_shift hζ hA₀ hB₀
-      (y.1 0).1 (y.1 0).2 (mem_relationSet_one_iff.mp y.2)
+      (y.val 0).1 (y.val 0).2 (mem_relationSet_one_iff.mp y.property)
     refine ⟨u, funext fun j => ?_⟩
     fin_cases j
     exact Prod.ext huA huB
@@ -240,7 +240,7 @@ theorem exists_ne_one_centerTwist_fix_genus_one {r : ℕ} (hr : 2 ≤ r) {ζ : �
   have h0 : z = 1 := congrArg Prod.fst (congrFun h 0)
   have hval := congr_fun₂ (congrArg
     (fun c : Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) =>
-      (c.1 : Matrix (Fin r) (Fin r) ℂ)) h0) ⟨0, by omega⟩ ⟨0, by omega⟩
+      (c.val : Matrix (Fin r) (Fin r) ℂ)) h0) ⟨0, by omega⟩ ⟨0, by omega⟩
   have hζ1 : ζ = 1 := by simpa [z, zSU, Matrix.scalar_apply] using hval
   exact hζ.ne_one (by omega) hζ1
 

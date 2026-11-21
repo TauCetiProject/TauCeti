@@ -241,7 +241,7 @@ theorem ker_toPSL_eq_center :
     · simp [scalar_apply, hab, hdiag hab]
   refine ⟨(A : Matrix n n ℂ) i₀ i₀, ?_, by rw [coe_toSL, hscalar]⟩
   have hdet := congrArg Matrix.det hscalar
-  simpa [scalar_apply, det_diagonal, (mem_specialUnitaryGroup_iff.mp A.2).2] using hdet
+  simpa [scalar_apply, det_diagonal, (mem_specialUnitaryGroup_iff.mp A.property).2] using hdet
 
 /-- **The center of `SU(n, ℂ)`.** A special unitary matrix over `ℂ` is central in `SU(n)` exactly
 when it is a scalar matrix whose scalar is a `card n`-th root of unity. -/
