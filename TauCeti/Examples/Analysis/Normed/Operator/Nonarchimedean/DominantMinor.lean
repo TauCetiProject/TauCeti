@@ -130,7 +130,7 @@ theorem newtonSlopeMultiplicity_diagonalCLM_pow_two_mul_add_one {ϖ : K} (hϖ : 
 
 /-- **Half-integral slopes.** If `v π = 1 / 2`, every `n + 1 / 2` with `n` a natural number is a
 slope of multiplicity one of the Fredholm series of `diag (π ^ (2 * i + 1))`. -/
-theorem newtonSlopeMultiplicity_diagonalCLM_pow_two_mul_add_one_half {π : K}
+theorem newtonSlopeMultiplicity_diagonalCLM_pow_two_mul_add_one_add_half {π : K}
     (hπ : v π = (1 / 2 : ℝ)) (n : ℕ) :
     (diagonalCLM (powEntries π ((v.norm_lt_one_iff hb hv).2 (hπ ▸ WithTop.coe_pos.2 one_half_pos))
       fun i ↦ 2 * i + 1)).matrixCoeff.charPowerSeries.newtonSlopeMultiplicity v
@@ -149,7 +149,7 @@ theorem newtonSlopeMultiplicity_diagonalCLM_pow_two_mul_add_one_half {π : K}
 
 /-- **No integral slopes.** If `v π = 1 / 2`, no natural number is a slope of the Fredholm series
 of `diag (π ^ (2 * i + 1))`: its slopes `i + 1 / 2` are all nonintegral. -/
-theorem newtonSlopeMultiplicity_diagonalCLM_pow_two_mul_add_one_natCast {π : K}
+theorem newtonSlopeMultiplicity_diagonalCLM_pow_two_mul_add_one_natCast_eq_zero {π : K}
     (hπ : v π = (1 / 2 : ℝ)) (n : ℕ) :
     (diagonalCLM (powEntries π ((v.norm_lt_one_iff hb hv).2 (hπ ▸ WithTop.coe_pos.2 one_half_pos))
       fun i ↦ 2 * i + 1)).matrixCoeff.charPowerSeries.newtonSlopeMultiplicity v n = 0 := by
