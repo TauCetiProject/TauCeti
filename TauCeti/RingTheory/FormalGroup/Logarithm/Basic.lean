@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.RingTheory.PowerSeries.Derivative
-import TauCeti.RingTheory.PowerSeries.Primitive
+import TauCeti.RingTheory.PowerSeries.Primitive.Basic
 import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
