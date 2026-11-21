@@ -274,11 +274,13 @@ for every `R > 0`. -/
 theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
     (hr : Tendsto r cofinite atTop) (m : ι → ℕ) :
     ∃ p : ι → ℕ, ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / r i) ^ (p i + 1) := by
-  have hfin (B : ℝ) : {i | r i ≤ B}.Finite := by
-    simpa only [eventually_cofinite, not_lt] using hr.eventually_gt_atTop B
-  have : Countable ι := Set.countable_univ_iff.mp <|
-    (Set.countable_iUnion fun n : ℕ ↦ (hfin n).countable).mono fun i _ ↦
-      Set.mem_iUnion.mpr ⟨⌈r i⌉₊, Nat.le_ceil (r i)⟩
+  have hker : (atTop : Filter ℝ).ker = ∅ := by
+    rw [atTop_basis_Ioi.ker]
+    ext x
+    simp only [Set.mem_iInter, Set.mem_Ioi, Set.mem_empty_iff_false, iff_false, not_forall, not_lt]
+    exact ⟨x, trivial, le_rfl⟩
+  have : Countable ι := Set.countable_univ_iff.mp <| by
+    simpa [hker] using hr.countable_compl_preimage_ker
   obtain ⟨idx, hidx⟩ := Countable.exists_injective_nat ι
   refine ⟨fun i ↦ idx i + m i, fun R hR ↦ ?_⟩
   have hgeom : Summable fun i ↦ (1 / 2 : ℝ) ^ (idx i + 1) :=

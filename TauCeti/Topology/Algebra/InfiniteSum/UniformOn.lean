@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.Topology.Algebra.InfiniteSum.Group
 import TauCeti.Order.Filter.AtTopBot.Finset
-import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Empty-domain, finite-support, Cauchy-vanishing, and regrouping lemmas for `HasProdUniformlyOn`
@@ -154,8 +154,11 @@ theorem HasProdUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*
     {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}
     (h : HasProdUniformlyOn f g s) :
     HasProdUniformlyOn (fun i x ↦ ∏ c, f ⟨i, c⟩ x) g s := by
-  simpa [HasProdUniformlyOn, Function.comp_def, ← UniformOnFun.ofFun_prod, Finset.prod_fn] using
-    HasProd.sigma_of_finite h
+  classical
+  rw [hasProdUniformlyOn_iff_tendstoUniformlyOn] at h ⊢
+  intro u hu
+  filter_upwards [TauCeti.tendsto_finset_sigma_univ_atTop.eventually (h u hu)] with S hS y hy
+  simpa only [Finset.prod_sigma] using hS y hy
 
 /-- **Regrouping a locally uniformly convergent product along finite fibres.** If a family over a
 sigma type with finite fibres has product `g` locally uniformly on `s`, then so does the family of
@@ -191,9 +194,10 @@ private theorem hasProdLocallyUniformlyOn_comp_equiv {ι κ β α : Type*} [Comm
     [UniformSpace α] [TopologicalSpace β] (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β}
     (h : HasProdLocallyUniformlyOn f g s) :
     HasProdLocallyUniformlyOn (f ∘ e) g s := by
-  have hmap : Tendsto (fun S : Finset κ ↦ S.map e.toEmbedding) atTop atTop :=
-    tendsto_atTop_atTop.2 fun T ↦ ⟨T.map e.symm.toEmbedding, fun S hS i hi ↦
-      Finset.mem_map.2 ⟨e.symm i, hS (Finset.mem_map.2 ⟨i, hi, rfl⟩), e.apply_symm_apply i⟩⟩
+  classical
+  have hmap : Tendsto (fun S : Finset κ ↦ S.map e.toEmbedding) atTop atTop := by
+    simpa only [Finset.map_eq_image, Equiv.coe_toEmbedding] using
+      Filter.tendsto_finset_image_atTop_atTop e.apply_symm_apply
   rw [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn] at h ⊢
   intro u hu x hx
   obtain ⟨t, ht, htu⟩ := h u hu x hx

@@ -55,12 +55,12 @@ without any growth hypothesis on `f`.
 * `Complex.analyticOrderAt_tprod_weierstrassFactor_div`,
   `Complex.divisor_tprod_weierstrassFactor_div`: exact zero-order and whole-plane divisor formulas
   in terms of fiber cardinalities `{i | a i = z}.ncard`.
-* `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div_comp_equiv`,
-  `Complex.hasProdUniformlyOn_weierstrassFactor_div_pow`,
+* `Complex.hasProdUniformlyOn_weierstrassFactor_div_pow`,
   `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div_pow`,
   `Complex.analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective`,
-  `Complex.divisor_tprod_weierstrassFactor_div_pow_eq_zero`: invariance under equivalences and
-  grouped finite multiplicity fibers.
+  `Complex.divisor_tprod_weierstrassFactor_div_pow_eq_zero`: grouped finite multiplicity fibers.
+* `Differentiable.analyticOrderAt_pow_mul_tprod_weierstrassFactor_div_pow`: exact analytic-order
+  comparison between a nonzero entire function and its origin-plus-zero-subtype Weierstrass product.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable`:
   exponential factorization of an entire function against any admissible genus assignment `p`.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow`: Weierstrass's entire
@@ -146,14 +146,6 @@ theorem hasProdLocallyUniformlyOn_weierstrassFactor_div
   hasProdLocallyUniformlyOn_of_forall_compact isOpen_univ fun _ _ hK ↦
     hasProdUniformlyOn_weierstrassFactor_div hsum hK
 
-/-- Reindexing by an equivalence preserves locally uniform convergence of the primary product to
-the same limit function on `ℂ`. -/
-theorem hasProdLocallyUniformlyOn_weierstrassFactor_div_comp_equiv {κ : Type*} (e : κ ≃ ι)
-    (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) :
-    HasProdLocallyUniformlyOn (fun k z ↦ weierstrassFactor (p (e k)) (z / a (e k)))
-      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i)) Set.univ :=
-  e.hasProdLocallyUniformlyOn_iff.mpr (hasProdLocallyUniformlyOn_weierstrassFactor_div hsum)
-
 /-- A variable-genus Weierstrass primary product is entire. -/
 @[fun_prop]
 theorem differentiable_tprod_weierstrassFactor_div
@@ -211,14 +203,9 @@ theorem analyticOrderAt_tprod_weierstrassFactor_div (ha : ∀ i, a i ≠ 0)
     rw [analyticOrderAt_weierstrassFactor_div (p i) (ha i) z]
     simp only [eq_comm]
   rw [hcongr, tsum_eq_sum (s := hf.toFinset) fun i hi ↦ ?_]
-  · have hsum_one : (∑ i ∈ hf.toFinset, if a i = z then (1 : ℕ∞) else 0) = hf.toFinset.card := by
-      calc
-        _ = ∑ _i ∈ hf.toFinset, (1 : ℕ∞) :=
-            Finset.sum_congr rfl fun i hi ↦ by
-              have hiz : a i = z := hf.mem_toFinset.mp hi
-              simp [hiz]
-        _ = hf.toFinset.card := by simp
-    rw [hsum_one, ← Set.ncard_eq_toFinset_card _ hf]
+  · rw [Finset.sum_boole,
+      (Finset.filter_eq_self (p := fun i ↦ a i = z)).mpr fun i hi ↦ hf.mem_toFinset.mp hi,
+      ← Set.ncard_eq_toFinset_card _ hf]
   · rw [ite_eq_right]
     intro hiz
     exact hi (hf.mem_toFinset.mpr hiz)
@@ -228,10 +215,7 @@ theorem divisor_tprod_weierstrassFactor_div (ha : ∀ i, a i ≠ 0)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) Set.univ z =
       ({i | a i = z}.ncard : ℤ) := by
-  have hd := differentiable_tprod_weierstrassFactor_div hsum
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) Set.univ :=
-    fun w _ ↦ hd.analyticAt w
-  rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt z) (mem_univ z),
+  rw [(differentiable_tprod_weierstrassFactor_div hsum).divisor_univ_eq_analyticOrderNatAt z,
     analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div ha hsum z, ENat.toNat_natCast]
 
 end Unweighted
@@ -369,12 +353,8 @@ theorem divisor_tprod_weierstrassFactor_div_pow (ha : ∀ j, m j ≠ 0 → a j �
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z =
       ({q : Σ j, Fin (m j) | a q.1 = z}.ncard : ℤ) := by
-  have hd := differentiable_tprod_weierstrassFactor_div_pow hm
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ :=
-    fun w _ ↦ hd.analyticAt w
-  rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt z) (mem_univ z),
-    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm z,
-    ENat.toNat_natCast]
+  rw [(differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_analyticOrderNatAt z,
+    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm z, ENat.toNat_natCast]
 
 /-- When `a` is injective and `a j ≠ 0` whenever `m j ≠ 0`, the whole-plane divisor of the
 weighted primary product at `a i` is the prescribed multiplicity `m i`. -/
@@ -384,10 +364,7 @@ theorem divisor_tprod_weierstrassFactor_div_pow_of_injective
     (hinj : Function.Injective a) (i : ι) :
     MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ (a i) =
       (m i : ℤ) := by
-  have hd := differentiable_tprod_weierstrassFactor_div_pow hm
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ :=
-    fun w _ ↦ hd.analyticAt w
-  rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt (a i)) (mem_univ (a i)),
+  rw [(differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_analyticOrderNatAt (a i),
     analyticOrderNatAt,
     analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective ha hm hinj i,
     ENat.toNat_natCast]
@@ -400,10 +377,7 @@ theorem divisor_tprod_weierstrassFactor_div_pow_eq_zero
     (hz : ∀ j, m j ≠ 0 → a j ≠ z) :
     MeromorphicOn.divisor
       (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z = 0 := by
-  have hd := differentiable_tprod_weierstrassFactor_div_pow hm
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ :=
-    fun w _ ↦ hd.analyticAt w
-  rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt z) (mem_univ z),
+  rw [(differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_analyticOrderNatAt z,
     analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero ha hm hz,
     ENat.toNat_zero, Nat.cast_zero]
 
@@ -412,6 +386,51 @@ end Weighted
 end Complex
 
 namespace Differentiable
+
+/-- For a nonzero entire function `f` and any admissible genus assignment `p`, the zero-subtype
+weighted primary product with its origin factor `w ^ analyticOrderNatAt f 0` has the same
+`analyticOrderAt` as `f` at every complex point `z`. -/
+theorem analyticOrderAt_pow_mul_tprod_weierstrassFactor_div_pow {f : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) {p : {a : ℂ // a ≠ 0 ∧ f a = 0} → ℕ}
+    (hm_sum : ∀ R : ℝ, 0 < R → Summable fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦
+      (analyticOrderNatAt f a : ℝ) * (R / ‖(a : ℂ)‖) ^ (p a + 1)) (z : ℂ) :
+    analyticOrderAt (fun w ↦ w ^ analyticOrderNatAt f 0 *
+      ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
+        weierstrassFactor (p a) (w / a) ^ analyticOrderNatAt f a) z =
+      analyticOrderAt f z := by
+  obtain ⟨z₀, hz₀⟩ := hf0
+  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
+  set m₀ := analyticOrderNatAt f 0
+  let Z := {a : ℂ // a ≠ 0 ∧ f a = 0}
+  let P : ℂ → ℂ := fun w ↦
+    ∏' a : Z, weierstrassFactor (p a) (w / a) ^ analyticOrderNatAt f a
+  have hP_diff : Differentiable ℂ P := differentiable_tprod_weierstrassFactor_div_pow hm_sum
+  have hft_ne_top : analyticOrderAt f z ≠ ⊤ :=
+    hfa.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ (mem_univ z₀) (mem_univ z)
+      (by simp [(hf.analyticAt z₀).analyticOrderAt_eq_zero.mpr hz₀])
+  have hF_split : analyticOrderAt (fun w ↦ w ^ m₀ * P w) z =
+      analyticOrderAt (fun w : ℂ ↦ w ^ m₀) z + analyticOrderAt P z :=
+    analyticOrderAt_mul (analyticAt_id.pow m₀) (hP_diff.analyticAt z)
+  rw [hF_split, ← Nat.cast_analyticOrderNatAt hft_ne_top]
+  by_cases hz : z = 0
+  · subst z
+    have hpow0 : analyticOrderAt (fun w : ℂ ↦ w ^ m₀) 0 = m₀ := by
+      have heq : (fun w : ℂ ↦ w ^ m₀) = (· - (0 : ℂ)) ^ m₀ := by ext w; simp
+      rw [heq]
+      exact analyticOrderAt_centeredMonomial
+    rw [hpow0, (hP_diff.analyticAt 0).analyticOrderAt_eq_zero.mpr (by simp [P]), add_zero]
+  · have hpow_z : analyticOrderAt (fun w : ℂ ↦ w ^ m₀) z = 0 :=
+      (analyticAt_id.pow m₀).analyticOrderAt_eq_zero.mpr (pow_ne_zero m₀ hz)
+    rw [hpow_z, zero_add]
+    by_cases hfz : f z = 0
+    · let a₀ : Z := ⟨z, hz, hfz⟩
+      simpa [P, a₀] using analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective
+        (fun a _ ↦ a.property.1) hm_sum Subtype.val_injective a₀
+    · have hPz : analyticOrderAt P z = 0 :=
+        analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero (fun a _ ↦ a.property.1) hm_sum
+          fun a _ ha ↦ hfz (ha ▸ a.property.2)
+      rw [hPz, analyticOrderNatAt, (hf.analyticAt z).analyticOrderAt_eq_zero.mpr hfz,
+        ENat.toNat_zero, Nat.cast_zero]
 
 /-- Given a nonzero entire function `f` and any admissible genus assignment
 `p : {a : ℂ // a ≠ 0 ∧ f a = 0} → ℕ` whose weighted primary product converges, there exists an
@@ -431,47 +450,17 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable {f
           ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
             weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
         ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
-  obtain ⟨z₀, hz₀⟩ := hf0
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
-  set m₀ := analyticOrderNatAt f 0
-  let Z := {a : ℂ // a ≠ 0 ∧ f a = 0}
-  let P : ℂ → ℂ := fun z ↦
-    ∏' a : Z, weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a
-  have hP_diff : Differentiable ℂ P := differentiable_tprod_weierstrassFactor_div_pow hm_sum
-  let F : ℂ → ℂ := fun z ↦ z ^ m₀ * P z
-  have hF_diff : Differentiable ℂ F := (differentiable_id.pow m₀).mul hP_diff
-  have hft_ne_top (z : ℂ) : analyticOrderAt f z ≠ ⊤ :=
-    hfa.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ (mem_univ z₀) (mem_univ z)
-      (by simp [(hf.analyticAt z₀).analyticOrderAt_eq_zero.mpr hz₀])
-  have hord (z : ℂ) : analyticOrderAt f z = analyticOrderAt F z := by
-    have hF_split : analyticOrderAt F z =
-        analyticOrderAt (fun w : ℂ ↦ w ^ m₀) z + analyticOrderAt P z :=
-      analyticOrderAt_mul (analyticAt_id.pow m₀) (hP_diff.analyticAt z)
-    rw [hF_split, ← Nat.cast_analyticOrderNatAt (hft_ne_top z)]
-    by_cases hz : z = 0
-    · subst z
-      have hpow0 : analyticOrderAt (fun w : ℂ ↦ w ^ m₀) 0 = m₀ := by
-        have heq : (fun w : ℂ ↦ w ^ m₀) = (· - (0 : ℂ)) ^ m₀ := by ext w; simp
-        rw [heq]
-        exact analyticOrderAt_centeredMonomial
-      rw [hpow0, (hP_diff.analyticAt 0).analyticOrderAt_eq_zero.mpr (by simp [P]), add_zero]
-    · have hpow_z : analyticOrderAt (fun w : ℂ ↦ w ^ m₀) z = 0 :=
-        (analyticAt_id.pow m₀).analyticOrderAt_eq_zero.mpr (pow_ne_zero m₀ hz)
-      rw [hpow_z, zero_add]
-      by_cases hfz : f z = 0
-      · let a₀ : Z := ⟨z, hz, hfz⟩
-        simpa [P, a₀] using (analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective
-          (fun a _ ↦ a.property.1) hm_sum Subtype.val_injective a₀).symm
-      · have hPz : analyticOrderAt P z = 0 :=
-          analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero (fun a _ ↦ a.property.1) hm_sum
-            fun a _ ha ↦ hfz (ha ▸ a.property.2)
-        rw [hPz, analyticOrderNatAt, (hf.analyticAt z).analyticOrderAt_eq_zero.mpr hfz,
-          ENat.toNat_zero, Nat.cast_zero]
+  let F : ℂ → ℂ := fun z ↦ z ^ analyticOrderNatAt f 0 *
+    ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
+      weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a
+  have hF_diff : Differentiable ℂ F :=
+    (differentiable_id.pow _).mul (differentiable_tprod_weierstrassFactor_div_pow hm_sum)
   obtain ⟨g, hg, hfg, huniq⟩ :=
-    hf.exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq hF_diff ⟨z₀, hz₀⟩ hord
+    hf.exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq hF_diff hf0
+      fun z ↦ (hf.analyticOrderAt_pow_mul_tprod_weierstrassFactor_div_pow hf0 hm_sum z).symm
   refine ⟨g, hg, fun z ↦ ?_, fun g' hg' hfg' ↦ huniq g' hg' fun z ↦ ?_⟩
-  · simpa only [F, P, m₀, mul_left_comm (Complex.exp (g z)), mul_assoc] using hfg z
-  · simpa only [F, P, m₀, mul_left_comm (Complex.exp (g' z)), mul_assoc] using hfg' z
+  · simpa only [F, mul_left_comm (Complex.exp (g z)), mul_assoc] using hfg z
+  · simpa only [F, mul_left_comm (Complex.exp (g' z)), mul_assoc] using hfg' z
 
 /-- **Weierstrass's entire factorization theorem** (Rudin, Theorem 15.10). Every entire function
 `f : ℂ → ℂ` that is not identically zero admits admissible genera

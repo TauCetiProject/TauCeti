@@ -163,6 +163,14 @@ theorem exists_differentiable_eq_exp_mul_of_divisor_eq {f F : ℂ → ℂ}
   exact hg₁.exists_int_eq_add_mul_two_pi_I_of_exp_mul_eq hg' hF.continuous ⟨z₂, hz₂⟩
     fun z ↦ (hfg₁ z).symm.trans (hfg z)
 
+/-- The whole-plane divisor of an entire function equals its natural-valued analytic order
+`analyticOrderNatAt f z`. -/
+theorem divisor_univ_eq_analyticOrderNatAt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) (z : ℂ) :
+    MeromorphicOn.divisor f Set.univ z = (analyticOrderNatAt f z : ℤ) :=
+  (AnalyticOnNhd.meromorphicOn fun w _ ↦ hf.analyticAt w).divisor_eq_analyticOrderNatAt
+    (hf.analyticAt z) (mem_univ z)
+
 /-- Variant of `Differentiable.exists_differentiable_eq_exp_mul_of_divisor_eq` assuming equal
 `analyticOrderAt` at every complex point rather than equality of `MeromorphicOn.divisor`. -/
 theorem exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq {f F : ℂ → ℂ}
@@ -176,11 +184,8 @@ theorem exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq {f F : ℂ → �
     ⟨z₀, (hF.analyticAt z₀).analyticOrderAt_eq_zero.mp
       ((hord z₀).symm.trans ((hf.analyticAt z₀).analyticOrderAt_eq_zero.mpr hz₀))⟩
   refine hf.exists_differentiable_eq_exp_mul_of_divisor_eq hF ⟨z₀, hz₀⟩ hF0 ?_
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
-  have hFa : AnalyticOnNhd ℂ F Set.univ := fun w _ ↦ hF.analyticAt w
   ext z
-  rw [hfa.meromorphicOn.divisor_eq_analyticOrderNatAt (hf.analyticAt z) (mem_univ z),
-    hFa.meromorphicOn.divisor_eq_analyticOrderNatAt (hF.analyticAt z) (mem_univ z),
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, hF.divisor_univ_eq_analyticOrderNatAt z,
     analyticOrderNatAt, analyticOrderNatAt, hord z]
 
 end Differentiable
