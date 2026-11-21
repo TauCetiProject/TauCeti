@@ -162,9 +162,9 @@ theorem isNondegenerateCriticalSubmanifold_comp_regularFiber (hm : 2 ≤ m)
     hreg
   refine SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp hp (fun z ↦ ?_) (fun z ↦ ?_)
     (fun z ↦ ?_) fun z ↦ ?_ <;> rw [SmoothEmbedding.ofIsSmoothEmbedding_apply]
-  · exact (hπ z.1).of_le hm
-  · exact z.2
-  · exact hreg.isRegularPoint z.2
+  · exact (hπ z.val).of_le hm
+  · exact z.property
+  · exact hreg.isRegularPoint z.property
   · rw [SmoothEmbedding.coe_ofIsSmoothEmbedding, range_mfderiv_coe_regularFiber]
 
 end RegularFiber
@@ -185,28 +185,28 @@ theorem IsMorse.isMorseBottFamily_comp (hf : IsMorse I f) (hπ : ContMDiff I' I 
     (hreg : ∀ z, IsRegularPoint I' I π z)
     (hconn : ∀ p ∈ criticalPoints I f, IsConnected {z | π z = p}) :
     letI (p : criticalPoints I f) := regularFiberChartedSpace (by simp) hπ
-      BoundarylessManifold.isInteriorPoint (isRegularValue_iff.2 fun z _ ↦ hreg z) (c := p.1)
+      BoundarylessManifold.isInteriorPoint (isRegularValue_iff.2 fun z _ ↦ hreg z) (c := p.val)
     IsMorseBottFamily (fun p : criticalPoints I f ↦ SmoothEmbedding.ofIsSmoothEmbedding _
       (isSmoothEmbedding_coe_regularFiber (by simp) hπ
-        BoundarylessManifold.isInteriorPoint (isRegularValue_iff.2 fun z _ ↦ hreg z) (c := p.1)))
+        BoundarylessManifold.isInteriorPoint (isRegularValue_iff.2 fun z _ ↦ hreg z) (c := p.val)))
       (f ∘ π) := by
   have hm : (2 : ℕ∞ω) ≤ ∞ := by simp
   have hreg' (p : B) : IsRegularValue I' I π p := isRegularValue_iff.2 fun z _ ↦ hreg z
   let (p : criticalPoints I f) := regularFiberChartedSpace (one_le_two.trans hm) hπ
-    BoundarylessManifold.isInteriorPoint (hreg' p.1)
-  have (p : criticalPoints I f) : Nonempty {z // π z = p.1} :=
-    (hconn p.1 p.2).nonempty.to_subtype
-  have (p : criticalPoints I f) : PreconnectedSpace {z // π z = p.1} :=
-    isPreconnected_iff_preconnectedSpace.1 (hconn p.1 p.2).isPreconnected
+    BoundarylessManifold.isInteriorPoint (hreg' p.val)
+  have (p : criticalPoints I f) : Nonempty {z // π z = p.val} :=
+    (hconn p.val p.property).nonempty.to_subtype
+  have (p : criticalPoints I f) : PreconnectedSpace {z // π z = p.val} :=
+    isPreconnected_iff_preconnectedSpace.1 (hconn p.val p.property).isPreconnected
   refine .of_pairwise_disjoint hm (hf.contMDiff.comp hπ)
-    (fun p ↦ isNondegenerateCriticalSubmanifold_comp_regularFiber hm hπ (hreg' p.1)
-      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints p.2)) ?_ ?_
+    (fun p ↦ isNondegenerateCriticalSubmanifold_comp_regularFiber hm hπ (hreg' p.val)
+      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints p.property)) ?_ ?_
   · -- Fibres over distinct points are disjoint.
     intro p q hpq
     refine disjoint_left.2 ?_
     rintro _ ⟨z, rfl⟩ ⟨w, hw⟩
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding] at hw
-    exact hpq (Subtype.ext (z.2.symm.trans (hw ▸ w.2)))
+    exact hpq (Subtype.ext (z.property.symm.trans (hw ▸ w.property)))
   · -- A critical point of `f ∘ π` lies over a critical point of `f`.
     intro z hz
     have hπz : π z ∈ criticalPoints I f :=

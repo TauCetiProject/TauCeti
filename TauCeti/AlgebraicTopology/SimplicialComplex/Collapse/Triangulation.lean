@@ -101,7 +101,7 @@ theorem HasCollapsibleTriangulation.contractibleSpace
     (h : HasCollapsibleTriangulation.{v} K) :
     ContractibleSpace
       {x : AbstractSimplicialComplex.Realization (⊤ : AbstractSimplicialComplex ι) //
-        x.1.support ∈ K} := by
+        x.val.support ∈ K} := by
   obtain ⟨κ, L, hPL, hL⟩ := hasCollapsibleTriangulation_iff.mp h
   obtain ⟨e, _⟩ := plHomeomorphic_iff.mp hPL
   let := hL.contractibleSpace (A := ⊤) _root_.le_top

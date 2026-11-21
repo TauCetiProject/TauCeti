@@ -74,7 +74,7 @@ variable {B' : Type w} [TopologicalSpace B'] {F' : Type w} [NormedAddCommGroup F
   [FiberBundle F' E'] [VectorBundle ℝ F' E']
   (o' : VectorBundleOrientation F' E' (Fin (n + 1))) (hF' : finrank ℝ F' = n + 1) {g : C(B', B)}
   {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
-  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
 
 include hφ
 
@@ -160,7 +160,7 @@ variable {F' : Type w} [NormedAddCommGroup F'] [NormedSpace ℝ F'] {E' : B → 
   [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℝ F' E']
   (o' : VectorBundleOrientation F' E' (Fin (n + 1))) (hF' : finrank ℝ F' = n + 1)
   {φ : ∀ b, E' b ≃L[ℝ] E b}
-  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2))
+  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd))
 
 include hφ
 

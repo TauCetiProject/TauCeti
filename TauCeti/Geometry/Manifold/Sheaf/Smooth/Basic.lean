@@ -79,7 +79,7 @@ variable (I 𝕜 V)
 /-- Restriction of smooth functions to a smaller open set. -/
 private def smoothRestrict {U W : Opens M} (i : W ⟶ U) :
     smoothSections I 𝕜 V U →ₗ[𝕜] smoothSections I 𝕜 V W where
-  toFun f := ⟨f.1 ∘ Opens.inclusion i.le, comp_inclusion_mem_smoothSections i.le f.2⟩
+  toFun f := ⟨f.val ∘ Opens.inclusion i.le, comp_inclusion_mem_smoothSections i.le f.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -133,12 +133,12 @@ variable {I 𝕜 V}
 @[simp]
 theorem sectionsEquiv_map {U W : Opens M} (h : W ⟶ U)
     (f : (smoothSheafModule I M 𝕜 V).obj.obj (op U)) :
-    (sectionsEquiv I 𝕜 V W ((smoothSheafModule I M 𝕜 V).obj.map h.op f)).1 =
-      (sectionsEquiv I 𝕜 V U f).1 ∘ Opens.inclusion h.le := (rfl)
+    (sectionsEquiv I 𝕜 V W ((smoothSheafModule I M 𝕜 V).obj.map h.op f)).val =
+      (sectionsEquiv I 𝕜 V U f).val ∘ Opens.inclusion h.le := (rfl)
 
 /-- Two sections of `smoothSheafModule I M 𝕜 V` are equal when they are equal as functions. -/
 theorem ext {U : Opens M} {f g : (smoothSheafModule I M 𝕜 V).obj.obj (op U)}
-    (h : ∀ x, (sectionsEquiv I 𝕜 V U f).1 x = (sectionsEquiv I 𝕜 V U g).1 x) : f = g :=
+    (h : ∀ x, (sectionsEquiv I 𝕜 V U f).val x = (sectionsEquiv I 𝕜 V U g).val x) : f = g :=
   (sectionsEquiv I 𝕜 V U).injective (Subtype.ext (funext h))
 
 end smoothSheafModule

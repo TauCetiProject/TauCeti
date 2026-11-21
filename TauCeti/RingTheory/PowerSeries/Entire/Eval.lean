@@ -167,9 +167,11 @@ series to a complete normed algebra. -/
 noncomputable def IsEntire.evalAtHom (b : A) : IsEntire.subring R →+* A where
   toFun f := (f : R⟦X⟧).evalAt b
   map_one' := evalAt_one b
-  map_mul' f g := (IsEntire.mem_subring.mp f.2).evalAt_mul (IsEntire.mem_subring.mp g.2) b
+  map_mul' f g := (IsEntire.mem_subring.mp f.property).evalAt_mul
+      (IsEntire.mem_subring.mp g.property) b
   map_zero' := evalAt_zero b
-  map_add' f g := (IsEntire.mem_subring.mp f.2).evalAt_add (IsEntire.mem_subring.mp g.2) b
+  map_add' f g := (IsEntire.mem_subring.mp f.property).evalAt_add
+      (IsEntire.mem_subring.mp g.property) b
 
 /-- The evaluation homomorphism at `b` sends an entire series `f` to `f(b)`. -/
 @[simp]

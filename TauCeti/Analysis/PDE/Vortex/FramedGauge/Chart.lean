@@ -36,9 +36,9 @@ an open subgroup of `G_s`.
 exponential is a homomorphism, two charts differ by a translation of the model space on their
 common domain (`TauCeti.Vortex.gaugeChart_symm_trans_eqOn_add`), so `G_s` is a manifold of every
 smoothness class `n` over `ℝ`, analytic included
-(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The smoothness of the group
-operations and of the action of `G_(k+1)` on the field space `A_m^k` in these charts is not
-treated here.
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The group operations are smooth
+in these charts (`TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup`); the action of `G_(k+1)` on
+the field space `A_m^k` is not treated here.
 
 ## References
 
@@ -185,7 +185,7 @@ theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
   have hd := finrank_real_complex_lt_two_mul hs
   have hexp :
       Continuous fun z ↦ (Circle.exp (continuousRep (⟨_, hmem⟩ : realSubmodule ℂ h) z) : ℂ) :=
-    continuous_subtype_val.comp (Circle.exp.continuous.comp (continuous_continuousRep hd _))
+    continuous_subtypeVal.comp (Circle.exp.continuous.comp (continuous_continuousRep hd _))
   have heq := (Continuous.ae_eq_iff_eq volume hexp (continuous_coe_toSubgroup u)).1 <| by
     filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hd (⟨_, hmem⟩ : realSubmodule ℂ h), hA]
       with w hw hw'

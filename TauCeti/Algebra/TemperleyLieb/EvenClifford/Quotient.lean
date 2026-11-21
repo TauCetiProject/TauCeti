@@ -163,7 +163,7 @@ theorem cliffordIncl_mem_even (m : ℕ) {a : CliffordAlgebra (cliffordForm m)}
 noncomputable def evenCliffordIncl (m : ℕ) :
     EvenClifford m →ₐ[ℂ] EvenClifford (m + 1) :=
   ((cliffordIncl m).comp (EvenClifford m).val).codRestrict (EvenClifford (m + 1)) fun x ↦
-    cliffordIncl_mem_even m x.2
+    cliffordIncl_mem_even m x.property
 
 /-- Coercing `evenCliffordIncl` to the ambient Clifford algebra recovers `cliffordIncl`. -/
 @[simp]
@@ -188,9 +188,9 @@ coordinates. -/
 @[simp]
 theorem cliffordIncl_cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
     cliffordIncl m (cliffordProjection m j) =
-      cliffordProjection (m + 1) ⟨j.1, by omega⟩ := by
-  have h0 : (⟨j.1, by omega⟩ : Fin m).castSucc = ⟨j.1, by omega⟩ := Fin.ext (by simp)
-  have h1 : (⟨j.1 + 1, by omega⟩ : Fin m).castSucc = ⟨j.1 + 1, by omega⟩ := Fin.ext (by simp)
+      cliffordProjection (m + 1) ⟨j.val, by omega⟩ := by
+  have h0 : (⟨j.val, by omega⟩ : Fin m).castSucc = ⟨j.val, by omega⟩ := Fin.ext (by simp)
+  have h1 : (⟨j.val + 1, by omega⟩ : Fin m).castSucc = ⟨j.val + 1, by omega⟩ := Fin.ext (by simp)
   simp [cliffordProjection_def, h0, h1]
 
 /-- `cliffordIncl` intertwines `cliffordAdjoint` across adjacent dimensions. -/
@@ -259,7 +259,7 @@ theorem evenCliffordHom_strandIncl (n : ℕ)
     apply TemperleyLieb.hom_ext
     intro i
     apply Subtype.ext
-    have hi : (⟨i.1, by omega⟩ : Fin (n + 1)) = i.castSucc := Fin.ext (by simp)
+    have hi : (⟨i.val, by omega⟩ : Fin (n + 1)) = i.castSucc := Fin.ext (by simp)
     simp only [AlgHom.comp_apply, strandIncl_e, coe_evenCliffordHom_e, coe_evenCliffordIncl,
       map_smul, cliffordIncl_cliffordProjection, hi]
   exact AlgHom.congr_fun hhom x
@@ -280,9 +280,9 @@ theorem scalarTrace_cliffordIncl_mul_cliffordProjection_last (n : ℕ)
     refine Fin.lastCases ?_ (fun k ↦ ?_) k
     · simp
     · simp [(Fin.castSucc_lt_last k).ne]
-  have hcast : (⟨(Fin.last n).1, by omega⟩ : Fin (n + 2)) = (Fin.last n).castSucc :=
+  have hcast : (⟨(Fin.last n).val, by omega⟩ : Fin (n + 2)) = (Fin.last n).castSucc :=
     Fin.ext (by simp)
-  have hlast : (⟨(Fin.last n).1 + 1, by omega⟩ : Fin (n + 2)) = Fin.last (n + 1) :=
+  have hlast : (⟨(Fin.last n).val + 1, by omega⟩ : Fin (n + 2)) = Fin.last (n + 1) :=
     Fin.ext (by simp)
   have hterm : CliffordAlgebra.scalarTrace (cliffordForm (n + 2))
       (cliffordIncl (n + 1) a *

@@ -62,9 +62,9 @@ to the product of the two submodules. -/
 def prodContEquiv (p : Submodule A M) (q : Submodule A N) : p.prod q ≃L[A] p × q where
   __ := p.prodEquiv q
   continuous_toFun :=
-    (continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _)
+    (continuous_subtypeVal.fst.subtype_mk _).prodMk (continuous_subtypeVal.snd.subtype_mk _)
   continuous_invFun :=
-    ((continuous_fst.subtype_val).prodMk (continuous_snd.subtype_val)).subtype_mk _
+    ((continuous_fst.subtypeVal).prodMk (continuous_snd.subtypeVal)).subtype_mk _
 
 /-- The first coordinate of the product-submodule comparison is the original first coordinate. -/
 @[simp]

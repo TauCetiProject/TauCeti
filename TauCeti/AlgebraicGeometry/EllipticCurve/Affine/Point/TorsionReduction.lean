@@ -230,7 +230,7 @@ theorem card_torsionBy_dvd_card_reduction {n : ℕ} (hn : (n : A) ∉ u.asIdeal)
   classical
   exact AddSubgroup.card_dvd_of_injective
     ((reductionHom (u.valuation F)).comp (AddSubgroup.torsionBy W.Point n).subtype)
-    fun P Q hPQ ↦ Subtype.ext (injOn_reductionHom_torsionBy u hn P.2 Q.2 hPQ)
+    fun P Q hPQ ↦ Subtype.ext (injOn_reductionHom_torsionBy u hn P.property Q.property hPQ)
 
 /-- **At good reduction, the kernel of reduction has no `n`-torsion when ramification is small
 relative to the prime factors of `n`** (Silverman AEC VII.3.1 and IV.6.1): a point killed by an
@@ -279,7 +279,7 @@ theorem card_torsion_dvd_card_reduction
   classical
   exact AddSubgroup.card_dvd_of_injective
     ((reductionHom (u.valuation F)).comp (AddCommGroup.torsion W.Point).subtype)
-    fun P Q hPQ ↦ Subtype.ext (injOn_reductionHom_torsion u hu P.2 Q.2 hPQ)
+    fun P Q hPQ ↦ Subtype.ext (injOn_reductionHom_torsion u hu P.property Q.property hPQ)
 
 end GoodReduction
 
@@ -331,14 +331,14 @@ theorem _root_.WeierstrassCurve.nsmul_ker_nonsingularReductionHom_bijective {n :
   have hns (P : C.kerReduction u) :
       (P : (C.baseChange F_u).toAffine.Point) ∈
         (C.baseChange F_u).toAffine.nonsingularReduction Valued.v := by
-    rw [mem_nonsingularReduction_iff, (mem_kerReduction_iff u C).1 P.2,
+    rw [mem_nonsingularReduction_iff, (mem_kerReduction_iff u C).1 P.property,
       Projective.nonsingularLift_iff]
     exact Projective.nonsingular_zero
   let e : ρ.ker ≃+ C.kerReduction u :=
     { toFun := fun P ↦ ⟨P.val.val,
-        (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C P.val).2 P.2⟩
+        (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C P.val).2 P.property⟩
       invFun := fun P ↦ ⟨⟨P, hns P⟩,
-        (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C ⟨P, hns P⟩).1 P.2⟩
+        (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C ⟨P, hns P⟩).1 P.property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       map_add' := fun _ _ ↦ rfl }
@@ -443,7 +443,7 @@ theorem existsUnique_torsion_lift {n : ℕ} (hn : (n : A) ∉ u.asIdeal)
       n • P = 0 ∧ reductionHom Valued.v P = Q := by
   -- at good reduction every point has nonsingular reduction
   obtain ⟨P, hP, huniq⟩ := existsUnique_nonsingularReduction_torsion_lift u C hn Q hQ
-  refine ⟨P, ⟨congrArg Subtype.val hP.1, (reductionHom_apply _ _ P.2).trans hP.2⟩,
+  refine ⟨P, ⟨congrArg Subtype.val hP.1, (reductionHom_apply _ _ P.property).trans hP.2⟩,
     fun S hS ↦ ?_⟩
   have hS₀ : S ∈ (C.baseChange F_u).toAffine.nonsingularReduction Valued.v := by simp
   exact congrArg Subtype.val (huniq ⟨S, hS₀⟩ ⟨Subtype.ext hS.1,
@@ -549,13 +549,13 @@ theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ
   have hρ : Function.Injective ρ := by
     refine (injective_iff_map_eq_zero ρ).2 fun P hP ↦ ?_
     have hP' := eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero u hn hP
-      ((AddSubgroup.torsionBy.nsmul_iff (A := W.Point)).1 P.2.2)
+      ((AddSubgroup.torsionBy.nsmul_iff (A := W.Point)).1 P.property.2)
     have hPval := congrArg
       (fun Q : W.nonsingularReduction (u.valuation F) ↦ (Q : W.Point)) hP'
     exact Subtype.ext hPval
   -- and its image consists of `n`-torsion points of the singular reduced curve
   have hρn (P) : ρ P ∈ AddSubgroup.torsionBy _ n := by
-    have hnP : n • P = 0 := Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.1 P.2.2)
+    have hnP : n • P = 0 := Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.1 P.property.2)
     rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, hnP, _root_.map_zero]
   exact (AddSubgroup.card_dvd_of_injective (ρ.codRestrict _ hρn)
     fun P Q h ↦ hρ (congrArg Subtype.val h)).trans (natCard_torsionBy_dvd_of_Δ_eq_zero hΔk hnk)

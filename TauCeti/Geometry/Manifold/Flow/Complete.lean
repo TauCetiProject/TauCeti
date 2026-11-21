@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Geometry.Manifold.IntegralCurve.BoundedSpeed
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 
 /-!
@@ -240,33 +240,11 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
   have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
-  have hC0 : 0 ≤ C := (abs_nonneg _).trans (hC x)
-  -- The mean value inequality along the maximal integral curve.
-  have hmv (t : ℝ) (ht : t ∈ maximalIntegralCurveInterval v x) :
-      f (maximalIntegralCurve v x t) ∈ Icc (f x - C * |t|) (f x + C * |t|) := by
-    have hγ := isMIntegralCurveOn_maximalIntegralCurve (x := x) hv
-    have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := f ∘ maximalIntegralCurve v x)
-      (fun u hu ↦ TauCeti.Manifold.hasDerivWithinAt_comp_curve (hf _) (hγ u hu))
-      (fun u _ ↦ by rw [Real.norm_eq_abs]; exact hC _)
-      ordConnected_maximalIntegralCurveInterval.convex h0 ht
-    rw [Function.comp_apply, Function.comp_apply, maximalIntegralCurve_zero, Real.norm_eq_abs,
-      Real.norm_eq_abs, sub_zero] at h
-    exact ⟨by linarith [neg_abs_le (f (maximalIntegralCurve v x t) - f x)],
-      by linarith [le_abs_self (f (maximalIntegralCurve v x t) - f x)]⟩
-  -- Up to a finite time `T`, the curve stays in a compact sublevel band of `f`.
-  have hK (T : ℝ) : IsCompact (f ⁻¹' Icc (f x - C * T) (f x + C * T)) :=
-    hfp.isCompact_preimage isCompact_Icc
-  have hband {t T : ℝ} (ht : t ∈ maximalIntegralCurveInterval v x) (htT : |t| ≤ T) :
-      maximalIntegralCurve v x t ∈ f ⁻¹' Icc (f x - C * T) (f x + C * T) := by
-    have h := hmv t ht
-    have hCT := mul_le_mul_of_nonneg_left htT hC0
-    exact ⟨by linarith [h.1], by linarith [h.2]⟩
-  have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun ⟨b, hb⟩ ↦ not_bddAbove_Ici 0
-    (BddAbove.mono (Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo hv (hK b)
-      fun t ⟨ht, ht0⟩ ↦ hband ht (by rw [abs_of_nonneg ht0]; exact hb ht)) ⟨b, hb⟩)
-  have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun ⟨a, ha⟩ ↦ not_bddBelow_Iic 0
-    (BddBelow.mono (Iic_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo hv (hK (-a))
-      fun t ⟨ht, ht0⟩ ↦ hband ht (by rw [abs_of_nonpos ht0]; linarith [ha ht])) ⟨a, ha⟩)
-  exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
+  refine maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo hv fun T ↦ ?_
+  obtain ⟨K, hK, hmem⟩ := (isMIntegralCurveOn_maximalIntegralCurve hv)
+    |>.exists_isCompact_mapsTo_inter_closedBall_of_isProperMap
+      ordConnected_maximalIntegralCurveInterval.convex (fun _ _ ↦ hf _) hfp (fun _ _ ↦ hC _) h0 T
+  rw [Real.closedBall_eq_Icc, zero_sub, zero_add] at hmem
+  exact ⟨K, hK, hmem⟩
 
 end TauCeti
