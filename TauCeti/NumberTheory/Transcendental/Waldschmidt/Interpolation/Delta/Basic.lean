@@ -48,6 +48,7 @@ at most the degree of `τ`.
 
 ## Main results
 
+* `TauCeti.map_waldschmidtDelta`: the delta polynomials are compatible with ring homomorphisms.
 * `TauCeti.eval_waldschmidtDelta_mem_range_intCast`: the delta polynomials are integer-valued at
   the points `x` with all `q xᵢ` integral.
 * `TauCeti.waldschmidtDelta_mem_restrictTotalDegree` and
@@ -99,6 +100,17 @@ theorem eval_waldschmidtDelta (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) (x : Fin (
     eval x (waldschmidtDelta q τ) = ∏ i, (((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ)
       (τ i)).comp (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)).eval (x i) := by
   simp only [waldschmidtDelta_def, map_prod, eval_polynomial_aeval, eval_X]
+
+/-- The delta polynomials are compatible with ring homomorphisms: the image of `∏ᵢ Δ(q zᵢ; τᵢ)`
+over `K` is `∏ᵢ Δ(q zᵢ; τᵢ)` over `L`. -/
+@[simp]
+theorem map_waldschmidtDelta {L : Type*} [Field L] [CharZero L] (f : K →+* L) (q : ℤ)
+    (τ : Fin (n + 1) →₀ ℕ) :
+    (waldschmidtDelta (K := K) q τ).map f = waldschmidtDelta q τ := by
+  rw [waldschmidtDelta_def, waldschmidtDelta_def, map_prod]
+  refine prod_congr rfl fun i _ ↦ ?_
+  rw [Polynomial.map_aeval_eq_aeval_map (φ := f) (RingHom.ext fun _ ↦ (map_C f _).symm), map_X,
+    Polynomial.map_map, RingHom.ext_rat (f.comp (algebraMap ℚ K)) (algebraMap ℚ L)]
 
 /-- **The delta polynomials are integer-valued.** If `q xᵢ` is an integer for every coordinate
 of the point `x`, then `∏ᵢ Δ(q xᵢ; τᵢ)` is an integer. -/
@@ -167,10 +179,7 @@ theorem mul_waldschmidtOperatorEntry_waldschmidtDelta_mem {α b : Fin (n + 1) �
     mem_bot.1 (mul_waldschmidtPoint_mem ⊥ (intCast_mem ⊥ q) (fun i ↦ mem_bot.2 (hb i)) s i)
   have hdeg : (((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ 0)).comp
       (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)).natDegree ≤ τ 0 :=
-    Polynomial.natDegree_map_le.trans (Polynomial.natDegree_comp_le.trans (by
-      rw [TauCeti.natDegree_multichoose_X_add_one]
-      exact (Nat.mul_le_mul_left _ ((Polynomial.natDegree_C_mul_le _ _).trans
-        Polynomial.natDegree_X_le)).trans (by rw [mul_one])))
+    Polynomial.natDegree_map_le.trans (natDegree_multichoose_X_add_one_comp_C_mul_X_le _ _)
   have h := mul_waldschmidtOperatorEntry_prod_aeval_X_mem A (b := b) (d := fun _ ↦ 1)
     (Q := fun i ↦ ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ i)).comp
       (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K))

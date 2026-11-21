@@ -25,6 +25,9 @@ the coarse bound `(d + 1) 2 ^ d max(1, A) ^ d`.
 The sum `∑ₖ m (m - 1) ⋯ (m - k + 1) · A ^ (m - k)` collects the coefficients of the iterated
 derivatives `(d/dX)ᵏ X^m = m (m - 1) ⋯ (m - k + 1) X^(m - k)` evaluated at `A`. Since
 `m (m - 1) ⋯ (m - k + 1) ≤ choose m k · m ^ k`, the binomial theorem bounds it by `(m + A) ^ m`.
+In the same way `k! ≤ choose m k · m ^ k` for `k ≤ m` bounds the factorial-weighted power sum
+`∑_{k ≤ m} k! · A ^ k`, which collects the factors `k!` relating the iterated derivatives of a
+polynomial of degree `m` to its Hasse derivatives, by `(1 + m A) ^ m`.
 
 ## Main results
 
@@ -32,6 +35,8 @@ derivatives `(d/dX)ᵏ X^m = m (m - 1) ⋯ (m - k + 1) X^(m - k)` evaluated at `
   (d + 1) 2 ^ d max(1, A) ^ d` for `0 ≤ A` in a linearly ordered semiring.
 * `Nat.sum_range_descFactorial_mul_pow_le`: `∑_{k < N} m.descFactorial k · A ^ (m - k) ≤
   (m + A) ^ m` for `0 ≤ A` in an ordered commutative semiring.
+* `Nat.sum_range_factorial_mul_pow_le`: `∑_{k ≤ m} k! · A ^ k ≤ (1 + m A) ^ m` for `0 ≤ A` in an
+  ordered commutative semiring.
 -/
 
 public section
@@ -74,4 +79,19 @@ theorem Nat.sum_range_descFactorial_mul_pow_le {α : Type*} [CommSemiring α] [P
   have h : m.descFactorial k ≤ m ^ k * m.choose k :=
     (m.descFactorial_le_pow k).trans
       (Nat.le_mul_of_pos_right _ (Nat.choose_pos (Nat.lt_succ_iff.1 (mem_range.1 hk))))
+  exact (Nat.mono_cast h).trans_eq (by push_cast; ring)
+
+/-- The factorial-weighted power sum `∑_{k ≤ m} k! · A ^ k` is at most `(1 + m A) ^ m` when
+`0 ≤ A`, since `k! ≤ choose m k · m ^ k` for `k ≤ m`. -/
+theorem Nat.sum_range_factorial_mul_pow_le {α : Type*} [CommSemiring α] [PartialOrder α]
+    [IsOrderedRing α] (m : ℕ) {A : α} (hA : 0 ≤ A) :
+    ∑ k ∈ range (m + 1), (k.factorial : α) * A ^ k ≤ (1 + m * A) ^ m := by
+  rw [add_comm (1 : α)]
+  refine (sum_le_sum fun k hk ↦ ?_).trans (add_pow ((m : α) * A) 1 m).ge
+  rw [one_pow, mul_one, mul_pow, mul_right_comm]
+  refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA _)
+  have hc : 0 < m.choose k := Nat.choose_pos (Nat.lt_succ_iff.1 (mem_range.1 hk))
+  have h : k.factorial ≤ m ^ k * m.choose k :=
+    (Nat.factorial_le_pow k).trans ((Nat.pow_le_pow_left
+      (Nat.lt_succ_iff.1 (mem_range.1 hk)) k).trans (Nat.le_mul_of_pos_right _ hc))
   exact (Nat.mono_cast h).trans_eq (by push_cast; ring)
