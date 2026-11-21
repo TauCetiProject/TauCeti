@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TemperedDistribution.ApplyLeft
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -54,6 +58,9 @@ on the Sobolev scale of a vector bundle.
   then `g f ∈ H^s`, for every real `s`.
 * `SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`: multiplication by a matrix-valued `A`
   extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
+* `TemperedDistribution.MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: if `f ∈ H^s`
+  then `A f ∈ H^s`, for every real `s`, with `TemperedDistribution.applyLeftCLM` the multiplication
+  of tempered distributions by `A`.
 
 ## References
 
@@ -179,35 +186,20 @@ growth whose iterated derivatives of order at most `⌈|s|⌉` are bounded. Then
 theorem hasSobolevExtension_bilinLeftCLM_apply (s : ℝ) {A : E → F →L[ℂ] G}
     (hA : A.HasTemperateGrowth) (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) :
     HasSobolevExtension (bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA) s s := by
-  -- Expand `A` in a basis `(Lᵢ)` of `F →L[ℂ] G`, with coordinate functionals `ℓᵢ`.
+  -- Expand `A` in a basis `(bᵢ)` of `F →L[ℂ] G`, with coordinate functionals `ℓᵢ`.
   let b := Module.finBasis ℂ (F →L[ℂ] G)
-  let ℓ : Fin (Module.finrank ℂ (F →L[ℂ] G)) → (F →L[ℂ] G) →L[ℂ] ℂ :=
-    fun i ↦ LinearMap.toContinuousLinearMap (b.coord i)
-  have hℓA (i) : (fun x ↦ ℓ i (A x)).HasTemperateGrowth :=
-    ((ℓ i).restrictScalars ℝ).hasTemperateGrowth.comp hA
-  have hsum : bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA =
-      ∑ i, (postcompCLM (b i)).comp (smulLeftCLM F fun x ↦ ℓ i (A x)) := by
-    ext u x
-    have key (i) : smulLeftCLM F (fun x ↦ ℓ i (A x)) u x = ℓ i (A x) • u x :=
-      smulLeftCLM_apply_apply (hℓA i) u x
-    simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, FunLike.coe_sum,
-      Finset.sum_apply, ContinuousLinearMap.coe_comp, Function.comp_apply, postcompCLM_apply, key,
-      map_smul]
-    simp only [ℓ, LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
-    conv_lhs => rw [← b.sum_repr (A x)]
-    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply]
-  rw [hsum]
+  let ℓ i : (F →L[ℂ] G) →L[ℝ] ℂ := (b.coord i).toContinuousLinearMap.restrictScalars ℝ
+  have hℓA := hA.basis_coord b
+  rw [bilinLeftCLM_apply_eq_sum Finset.univ b (g := fun i x ↦ ℓ i (A x)) (fun i _ ↦ hℓA i) hA
+    fun x ↦ (b.sum_repr (A x)).symm]
   refine Finset.sum_induction _ (fun T ↦ HasSobolevExtension T s s)
     (fun _ _ ↦ HasSobolevExtension.add) (hasSobolevExtension_zero s s) fun i _ ↦ ?_
   refine HasSobolevExtension.comp (hasSobolevExtension_iff.2
     ⟨BesselPotentialSpace.postcomp E s 2 (b i), ?_⟩)
-    (hasSobolevExtension_smulLeftCLM s (hℓA i) fun n hn ↦ ?_)
-  · ext1 u
-    exact (toBesselPotentialSpaceCLM_postcompCLM (b i) u).symm
-  · obtain ⟨C, hC⟩ := hbd n hn
-    exact ⟨‖(ℓ i).restrictScalars ℝ‖ * C, fun x ↦
-      (((ℓ i).restrictScalars ℝ).norm_iteratedFDeriv_comp_left hA.1.contDiffAt
-        (mod_cast le_top)).trans (by gcongr; exact hC x)⟩
+    (hasSobolevExtension_smulLeftCLM s (hℓA i)
+      ((ℓ i).exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top)) hbd))
+  ext1 u
+  exact (toBesselPotentialSpaceCLM_postcompCLM (b i) u).symm
 
 end Matrix
 
@@ -243,5 +235,21 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil {s : ℝ} {g : 
   simp only [MemSobolev.toBesselPotentialSpace_toDistr] at h
   rw [← h]
   exact BesselPotentialSpace.memSobolev_toDistr _
+
+/-- **Matrix multipliers with bounded derivatives preserve `H^s`, for every real `s`.** Let `F`
+and `G` be finite-dimensional and let `A : E → (F →L[ℂ] G)` have temperate growth, with bounded
+iterated derivatives of order at most `⌈|s|⌉`. Then `A f ∈ H^s(E, G)` for every tempered
+distribution `f ∈ H^s(E, F)`. -/
+theorem MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_natCeil [FiniteDimensional ℂ F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] [FiniteDimensional ℂ G]
+    {s : ℝ} {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) {f : 𝓢'(E, F)}
+    (hf : MemSobolev s 2 f) : MemSobolev s 2 (applyLeftCLM A f) :=
+  -- Each scalar function `ℓ ∘ A` inherits the derivative bounds of `A`.
+  MemSobolev.applyLeftCLM_of_forall_smulLeftCLM fun ℓ ↦
+    hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil
+      ((ℓ.restrictScalars ℝ).hasTemperateGrowth.comp hA)
+      ((ℓ.restrictScalars ℝ).exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top))
+        hbd)
 
 end TemperedDistribution

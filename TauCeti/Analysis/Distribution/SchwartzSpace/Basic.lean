@@ -35,6 +35,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.bilinLeftCLM_apply_eq_sum`: multiplication by an operator-valued function
+  `A x = ∑ᵢ gᵢ(x) • Lᵢ` is `u ↦ ∑ᵢ Lᵢ ∘ (gᵢ u)`.
 * `SchwartzMap.integrable_smul_apply`: a Schwartz function times a homogeneous polynomial
   `A (x, …, x)` is integrable.
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
@@ -303,6 +305,26 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
   simp [smulLeftCLM, hg]
 
 end Smul
+
+section BilinLeft
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- **Expansion of multiplication by an operator-valued function on Schwartz functions.** If
+`A x = ∑ᵢ gᵢ(x) • Lᵢ` for finitely many scalar functions `gᵢ` of temperate growth and constant
+maps `Lᵢ`, then `u ↦ (x ↦ A x (u x))` is `u ↦ ∑ᵢ Lᵢ ∘ (gᵢ u)`. -/
+theorem bilinLeftCLM_apply_eq_sum {ι : Type*} (s : Finset ι) (L : ι → F →L[ℂ] G)
+    {g : ι → E → ℂ} (hg : ∀ i ∈ s, (g i).HasTemperateGrowth) {A : E → F →L[ℂ] G}
+    (hA' : A.HasTemperateGrowth) (hA : ∀ x, A x = ∑ i ∈ s, g i x • L i) :
+    bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA' =
+      ∑ i ∈ s, postcompCLM (L i) ∘L smulLeftCLM F (g i) := by
+  ext u x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, hA, sum_apply, smul_apply,
+    ContinuousLinearMap.comp_apply, postcompCLM_apply]
+  exact Finset.sum_congr rfl fun i hi ↦ by rw [smulLeftCLM_apply_apply (hg i hi), map_smul]
+
+end BilinLeft
 
 open scoped ENNReal in
 /-- The closure of the Schwartz functions in `Lᵖ` is the topological closure of the range of the
