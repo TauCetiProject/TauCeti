@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Noetherian
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Regular
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import Mathlib.Algebra.Module.SpanRankOperations
-import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Coordinate parameters of regular holomorphic local rings
@@ -39,6 +38,10 @@ the native complex-smooth sheaf stalks through their canonical comparison with h
 
 ## Main declarations
 
+* `OpenPartialHomeomorph.isRegularLocalRing_holomorphicStalk`,
+  `OpenPartialHomeomorph.ringKrullDim_holomorphicStalk`,
+  `OpenPartialHomeomorph.spanFinrank_maximalIdeal_holomorphicStalk`: chart-local regularity,
+  Krull dimension, and maximal-ideal generator count.
 * `TauCeti.holomorphicStructureSheaf.spanFinrank_maximalIdeal_stalk`,
   `TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_stalk`: the minimal number of
   generators of the maximal ideal and the embedding dimension equal `Module.finrank ℂ E`.
@@ -47,10 +50,6 @@ the native complex-smooth sheaf stalks through their canonical comparison with h
 * `TauCeti.holomorphicStructureSheaf.spanFinrank_maximalIdeal_smoothStalk`,
   `TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_smoothStalk`: the corresponding results
   for Mathlib's complex-smooth structure sheaf.
-* `OpenPartialHomeomorph.isRegularLocalRing_holomorphicStalk`,
-  `OpenPartialHomeomorph.ringKrullDim_holomorphicStalk`,
-  `OpenPartialHomeomorph.spanFinrank_maximalIdeal_holomorphicStalk`: chart-local regularity,
-  Krull dimension, and maximal-ideal generator count.
 * `OpenPartialHomeomorph.isRegular_map_holomorphicLinearCoordinateGerm`,
   `OpenPartialHomeomorph.isRegular_ofFn_holomorphicLinearCoordinateGerm`: any duplicate-free tuple
   of centered coordinate germs of a holomorphic chart along a basis forms a regular sequence on
@@ -66,58 +65,6 @@ public noncomputable section
 
 open IsLocalRing
 open scoped ContDiff Manifold
-
-namespace TauCeti.holomorphicStructureSheaf
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
-  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
-
-/-- The minimal number of generators of the maximal ideal of a holomorphic stalk equals the
-complex dimension of the manifold model. -/
-theorem spanFinrank_maximalIdeal_stalk (x : X) :
-    (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
-      Module.finrank ℂ E := by
-  exact_mod_cast (IsRegularLocalRing.spanFinrank_maximalIdeal
-    (R := (holomorphicStructureSheaf I X).presheaf.stalk x)).trans (ringKrullDim_stalk x)
-
-/-- The embedding dimension of a holomorphic stalk on any finite-dimensional complex manifold
-without boundary equals the complex dimension of its model space. -/
-@[simp]
-theorem finrank_cotangentSpace_stalk (x : X) :
-    Module.finrank (ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))
-        (CotangentSpace ((holomorphicStructureSheaf I X).presheaf.stalk x)) =
-      Module.finrank ℂ E := by
-  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
-  exact spanFinrank_maximalIdeal_stalk x
-
-/-- The kernel of evaluation on a holomorphic stalk needs as many generators as the complex
-model dimension. This is the generator count in the simp normal form of the maximal ideal. -/
-@[simp]
-theorem spanFinrank_ker_eval (x : X) :
-    (RingHom.ker (eval I X x)).spanFinrank = Module.finrank ℂ E := by
-  rw [← maximalIdeal_stalk, spanFinrank_maximalIdeal_stalk]
-
-/-- The maximal ideal of the native complex-smooth stalk needs as many generators as the
-complex model dimension. -/
-@[simp]
-theorem spanFinrank_maximalIdeal_smoothStalk (x : X) :
-    (maximalIdeal ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).spanFinrank =
-      Module.finrank ℂ E := by
-  exact_mod_cast (IsRegularLocalRing.spanFinrank_maximalIdeal
-    (R := (smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).trans (ringKrullDim_smoothStalk x)
-
-/-- The embedding dimension of a stalk of Mathlib's complex-smooth structure sheaf equals the
-complex dimension of its model. -/
-@[simp]
-theorem finrank_cotangentSpace_smoothStalk (x : X) :
-    Module.finrank (ResidueField ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x))
-        (CotangentSpace ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)) =
-      Module.finrank ℂ E := by
-  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
-  exact spanFinrank_maximalIdeal_smoothStalk x
-
-end TauCeti.holomorphicStructureSheaf
 
 namespace OpenPartialHomeomorph
 
@@ -171,20 +118,6 @@ end Boundaryless
 
 section Coordinates
 
-/-- Completes a duplicate-free list over a finite type to a duplicate-free list covering every
-element. -/
-private theorem exists_nodup_append_forall_mem {ι : Type*} [Finite ι]
-    {l : List ι} (hl : l.Nodup) :
-    ∃ l' : List ι, (l ++ l').Nodup ∧ ∀ i : ι, i ∈ l ++ l' := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
-  let all := (Finset.univ : Finset ι).toList
-  have hperm : List.Perm (l ++ all.diff l) all :=
-    List.subperm_append_diff_self_of_count_le (List.subperm_ext_iff.mp
-      (hl.subperm fun i _ ↦ Finset.mem_toList.2 (Finset.mem_univ i)))
-  exact ⟨all.diff l, hperm.nodup_iff.2 (Finset.nodup_toList _),
-    fun i ↦ hperm.mem_iff.2 (Finset.mem_toList.2 (Finset.mem_univ i))⟩
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {X : Type} [TopologicalSpace X] [ChartedSpace E X]
 
@@ -197,26 +130,12 @@ theorem isRegular_map_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
       (l.map fun i ↦ e.holomorphicLinearCoordinateGerm he x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
-  classical
   have := e.isRegularLocalRing_holomorphicStalk he hx
   have := Module.Finite.finite_basis b
-  let : Fintype ι := Fintype.ofFinite ι
-  let z : ι → (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x :=
-    fun i ↦ e.holomorphicLinearCoordinateGerm he x
-      (LinearMap.toContinuousLinearMap (b.coord i)) hx
-  obtain ⟨l', hnodup, hmem⟩ := exists_nodup_append_forall_mem hl
-  have hspan : Ideal.ofList ((l ++ l').map z) =
-      maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) := by
-    rw [maximalIdeal_stalk, e.ker_eval_eq_span_holomorphicLinearCoordinateGerm he b hx]
-    exact Ideal.ofList_map_eq_span_range hmem z
-  have hlen : ((l ++ l').map z).length ≤
-      (maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)).spanFinrank := by
-    rw [List.length_map, e.spanFinrank_maximalIdeal_holomorphicStalk he hx,
-      Module.finrank_eq_card_basis b]
-    exact hnodup.length_le_card
-  have hfull := TauCeti.IsRegularLocalRing.isRegular_of_ofList_eq_maximalIdeal hspan hlen
-  rw [List.map_append] at hfull
-  exact hfull.of_append_left
+  exact TauCeti.IsRegularLocalRing.isRegular_map_of_span_range_eq_maximalIdeal
+    (by rw [maximalIdeal_stalk, e.ker_eval_eq_span_holomorphicLinearCoordinateGerm he b hx])
+    (by rw [e.spanFinrank_maximalIdeal_holomorphicStalk he hx, Module.finrank_eq_nat_card_basis b])
+    hl
 
 /-- Centered coordinates of a holomorphic chart, in any ordered basis, form a regular sequence
 in the holomorphic local ring. In particular each coordinate is a non-zero-divisor after
@@ -233,3 +152,56 @@ theorem isRegular_ofFn_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorp
 end Coordinates
 
 end OpenPartialHomeomorph
+
+namespace TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
+
+/-- The minimal number of generators of the maximal ideal of a holomorphic stalk equals the
+complex dimension of the manifold model. -/
+theorem spanFinrank_maximalIdeal_stalk (x : X) :
+    (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
+      Module.finrank ℂ E := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  exact (chartAt H x).spanFinrank_maximalIdeal_holomorphicStalk
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)
+
+/-- The embedding dimension of a holomorphic stalk on any finite-dimensional complex manifold
+without boundary equals the complex dimension of its model space. -/
+@[simp]
+theorem finrank_cotangentSpace_stalk (x : X) :
+    Module.finrank (ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))
+        (CotangentSpace ((holomorphicStructureSheaf I X).presheaf.stalk x)) =
+      Module.finrank ℂ E := by
+  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
+  exact spanFinrank_maximalIdeal_stalk x
+
+/-- The kernel of evaluation on a holomorphic stalk needs as many generators as the complex
+model dimension. This is the generator count in the simp normal form of the maximal ideal. -/
+@[simp]
+theorem spanFinrank_ker_eval (x : X) :
+    (RingHom.ker (eval I X x)).spanFinrank = Module.finrank ℂ E := by
+  rw [← maximalIdeal_stalk, spanFinrank_maximalIdeal_stalk]
+
+/-- The maximal ideal of the native complex-smooth stalk needs as many generators as the
+complex model dimension. -/
+@[simp]
+theorem spanFinrank_maximalIdeal_smoothStalk (x : X) :
+    (maximalIdeal ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).spanFinrank =
+      Module.finrank ℂ E := by
+  exact_mod_cast (IsRegularLocalRing.spanFinrank_maximalIdeal
+    (R := (smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).trans (ringKrullDim_smoothStalk x)
+
+/-- The embedding dimension of a stalk of Mathlib's complex-smooth structure sheaf equals the
+complex dimension of its model. -/
+@[simp]
+theorem finrank_cotangentSpace_smoothStalk (x : X) :
+    Module.finrank (ResidueField ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x))
+        (CotangentSpace ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)) =
+      Module.finrank ℂ E := by
+  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
+  exact spanFinrank_maximalIdeal_smoothStalk x
+
+end TauCeti.holomorphicStructureSheaf

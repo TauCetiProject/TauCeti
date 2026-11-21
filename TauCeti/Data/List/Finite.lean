@@ -9,16 +9,19 @@ public import Mathlib.Data.Set.Finite.List
 import Mathlib.Basic.Finite.Prod
 
 /-!
-# Finitely many words of bounded degree
+# Finite lists over finite types
 
 A word `l : List (α × ℕ)` over a finite alphabet `α`, whose letters `(a, n)` carry degree `n + 1`,
 has total degree `(l.map fun p => p.2 + 1).sum`. This file shows that there are only finitely many
-words of bounded total degree.
+words of bounded total degree, and that any duplicate-free list over a finite type can be extended
+to a duplicate-free list covering every element.
 
 ## Main results
 
 * `List.finite_setOf_sum_map_snd_add_one_le`: over a finite alphabet, the words of total degree
   at most `K` form a finite set.
+* `List.Nodup.exists_append_forall_mem`: completes a duplicate-free list over a finite type to a
+  duplicate-free list containing every element.
 -/
 
 public section
@@ -44,5 +47,18 @@ theorem finite_setOf_sum_map_snd_add_one_le (α : Type*) [Finite α] (K : ℕ) :
     simp only [map_cons, sum_cons] at hp ⊢
     obtain ⟨l', hlen, hl'⟩ := ih (by omega)
     exact ⟨(p.1, ⟨p.2, by omega⟩) :: l', by rw [length_cons]; omega, by simp [hl']⟩
+
+/-- Completes a duplicate-free list over a finite type to a duplicate-free list covering every
+element. -/
+theorem Nodup.exists_append_forall_mem {ι : Type*} [Finite ι] {l : List ι} (hl : l.Nodup) :
+    ∃ l' : List ι, (l ++ l').Nodup ∧ ∀ i : ι, i ∈ l ++ l' := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let all := (Finset.univ : Finset ι).toList
+  have hperm : List.Perm (l ++ all.diff l) all :=
+    List.subperm_append_diff_self_of_count_le (List.subperm_ext_iff.mp
+      (hl.subperm fun i _ ↦ Finset.mem_toList.2 (Finset.mem_univ i)))
+  exact ⟨all.diff l, hperm.nodup_iff.2 (Finset.nodup_toList _),
+    fun i ↦ hperm.mem_iff.2 (Finset.mem_toList.2 (Finset.mem_univ i))⟩
 
 end List

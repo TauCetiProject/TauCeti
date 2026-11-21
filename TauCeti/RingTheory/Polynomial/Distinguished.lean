@@ -125,7 +125,9 @@ of `X`. -/
 theorem Monic.isDistinguishedAt_iff_map_eq_X_pow {f : R[X]} (hf : f.Monic) :
     f.IsDistinguishedAt I ↔ f.map (Ideal.Quotient.mk I) = X ^ f.natDegree := by
   refine ⟨IsDistinguishedAt.map_eq_X_pow, fun hmap ↦ ⟨⟨fun {n} hn ↦ ?_⟩, hf⟩⟩
-  rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, hmap, coeff_X_pow, ite_eq_right hn.ne]
+  have hcoeff : Ideal.Quotient.mk I (f.coeff n) = 0 := by
+    simpa [coeff_X_pow, hn.ne] using congrArg (fun p : (R ⧸ I)[X] ↦ p.coeff n) hmap
+  exact Ideal.Quotient.eq_zero_iff_mem.mp hcoeff
 
 /-- The constant polynomial `1` is distinguished at every ideal. -/
 theorem isDistinguishedAt_one : (1 : R[X]).IsDistinguishedAt I :=

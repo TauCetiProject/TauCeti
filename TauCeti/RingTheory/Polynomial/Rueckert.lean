@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.RingTheory.Jacobson.Ring
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
 # Rückert's descent along polynomial-like ring maps
@@ -216,8 +217,9 @@ theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [Is
 
 /-- Over a unique factorisation domain `A`, a member of `W` becomes irreducible in a domain `B`
 after applying `φ` if and only if it is irreducible in `A[X]`. -/
-theorem irreducible_apply_iff [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B]
+theorem irreducible_apply_iff [UniqueFactorizationMonoid A] [IsDomain B]
     {w : A[X]} (hw : w ∈ W) : Irreducible (φ w) ↔ Irreducible w := by
+  have : IsDomain A := Function.Injective.isDomain (φ.comp C) (h.injective.comp C_injective)
   have : UniqueFactorizationMonoid B := h.uniqueFactorizationMonoid
   rw [UniqueFactorizationMonoid.irreducible_iff_prime,
     UniqueFactorizationMonoid.irreducible_iff_prime, h.prime_apply_iff hw]

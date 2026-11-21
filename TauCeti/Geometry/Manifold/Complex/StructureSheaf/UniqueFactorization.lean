@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rueckert
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
@@ -29,36 +28,25 @@ chart pullback (`TauCeti.holomorphicStructureSheaf.stalk_induction`) then transf
 arbitrary finite-dimensional complex manifolds without boundary, as well as to Mathlib's native
 complex-smooth structure sheaf via `TauCeti.holomorphicStructureSheaf.smoothStalkIso`.
 
-As an immediate consequence of the Rückert hypotheses and factoriality, any germ admitting a
-Weierstrass factorization `f = evalVertical x₀ w₀ P * u` is irreducible in `𝒪_{E × ℂ, (x₀, w₀)}`
-if and only if `P` is irreducible in `(𝒪_{E, x₀})[X]`
-(`TauCeti.holomorphicStructureSheaf.irreducible_iff_of_weierstrassPreparation`).
-
 ## Main declarations
 
 * `TauCeti.holomorphicStructureSheaf.stalkUniqueFactorizationMonoid`: holomorphic stalks are
   unique factorisation domains.
 * `TauCeti.holomorphicStructureSheaf.smoothStalkUniqueFactorizationMonoid`: so are the stalks of
   Mathlib's complex-smooth structure sheaf.
-* `TauCeti.holomorphicStructureSheaf.irreducible_iff_of_weierstrassPreparation`: irreducibility
-  comparison for any Weierstrass factorization `f = evalVertical x₀ w₀ P * u`.
 
 ## References
 
 * J.-P. Demailly, *Complex Analytic and Differential Geometry*, Chapter II, Theorem (2.10).
 * R. C. Gunning and H. Rossi, *Analytic Functions of Several Complex Variables*, Ch. II, §B.
-* L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, §6.1.
 * S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, §5.2.5 (for Rückert descent).
 -/
 
 public noncomputable section
 
-open Polynomial
 open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf
-
-section Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
@@ -79,26 +67,5 @@ instance smoothStalkUniqueFactorizationMonoid (x : X) :
     UniqueFactorizationMonoid ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x) :=
   (smoothStalkIso I X x).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
     inferInstance
-
-end Manifold
-
-section Irreducibility
-
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-
-/-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, the germ `f` is irreducible in
-`𝒪_{E × ℂ, (x₀, w₀)}` if and only if its distinguished polynomial `P` is irreducible in
-`(𝒪_{E, x₀})[X]`. -/
-theorem irreducible_iff_of_weierstrassPreparation {x₀ : E} {w₀ : ℂ}
-    {f u : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
-    (hu : IsUnit u) (hf : f = evalVertical x₀ w₀ P * u) :
-    Irreducible f ↔ Irreducible P := by
-  rw [hf, irreducible_mul_isUnit hu]
-  exact (isRueckert_evalVertical x₀ w₀).irreducible_apply_iff hP
-
-end Irreducibility
 
 end TauCeti.holomorphicStructureSheaf
