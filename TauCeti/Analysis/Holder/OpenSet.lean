@@ -75,6 +75,9 @@ completeness.
   inclusion can fail: across a slit, the global Hölder seminorm of the `k`-th derivative is not
   controlled by the bound on the next derivative.
 
+* `ContDiffOn.exists_ckHolderSpaceOn_ball`: local `C^{n,α}` data define an element on a positive
+  ball with the original pointwise values, without an extra derivative or compactness assumption.
+
 ## References
 
 D. Gilbarg and N. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
@@ -1046,5 +1049,26 @@ theorem norm_restrictOnL_le_one : ‖restrictOnL (k := k) (α := α) (F := F) Ω
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end CkHolderSpace
+
+open scoped Topology in
+open Metric Filter in
+/-- A function of class `C^{n,α}` on a neighbourhood has a bounded-open Hölder reading on a
+positive ball, agreeing pointwise with the original function. -/
+theorem _root_.ContDiffOn.exists_ckHolderSpaceOn_ball
+    {P : Type uP} {V : Type uV} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {φ : P → V} {s : Set P} {a : P}
+    {n : ℕ} {α C : ℝ≥0} (hf : ContDiffOn ℝ n φ s) (hs : s ∈ 𝓝 a)
+    (hα : α ≤ 1) (hH : HolderOnWith C α (_root_.iteratedFDeriv ℝ n φ) s) :
+    ∃ r > 0, ball a r ⊆ s ∧
+      ∃ g : CkHolderSpaceOn n α ⟨ball a r, isOpen_ball⟩ V, ∀ x, g x = φ x := by
+  obtain ⟨ρ, hρ, hρs, M, _, hb, _⟩ :=
+    hf.exists_ball_bounds_and_holderOnWith_iteratedFDeriv hs hα hH
+  let Ω : Opens P := ⟨ball a ρ, isOpen_ball⟩
+  have hbound : ∀ j ≤ n, ∃ A, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ j φ x‖ ≤ A :=
+    fun j hj ↦ ⟨(M : ℝ), fun x ↦ hb j hj x x.property⟩
+  have hholder : MemHolder α (fun x : Ω ↦ _root_.iteratedFDeriv ℝ n φ x) :=
+    ⟨C, fun x y ↦ hH x (hρs x.property) y (hρs y.property)⟩
+  exact ⟨ρ, hρ, hρs, CkHolderSpaceOn.ofContDiffOn φ (hf.mono hρs) hbound hholder,
+    fun x ↦ CkHolderSpaceOn.ofContDiffOn_apply φ (hf.mono hρs) hbound hholder x⟩
 
 end TauCeti
