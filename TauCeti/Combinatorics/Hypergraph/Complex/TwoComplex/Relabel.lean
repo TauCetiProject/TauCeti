@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Relabelling finite two-complexes
 
 A bijection of vertices transports the edges and triangles of a `TwoComplex`, including
 isolated vertices. Relabelling respects identities and composition and preserves the complete
-complex. The induced equivalences of edge and triangle types, and the corresponding sum
-formulas, allow edge costs and triangle defects to be reindexed without choosing orientations.
+complex. The induced equivalences of edge and triangle types, and the corresponding unoriented and
+positively oriented sum formulas, allow edge costs and triangle defects to be reindexed without
+choosing orientations or requiring vertex bijections to preserve a linear order.
 -/
 
 public section
@@ -156,5 +158,71 @@ theorem adj_relabel (X : TwoComplex V) (e : V ≃ W) (u v : W) :
 @[simp 1100, grind =]
 theorem adj_relabel_apply (X : TwoComplex V) (e : V ≃ W) (u v : V) :
     (X.relabel e).Adj (e u) (e v) ↔ X.Adj u v := by simp
+
+/-- Twice the sum of an edge-symmetric weight over positively oriented edges `p.1 < p.2` of `X`
+equals the orientation-free sum over all ordered pairs of endpoints of edges of `X`. -/
+theorem two_nsmul_sum_filter_lt_edges {A : Type*} [AddCommMonoid A] [Fintype V] [LinearOrder V]
+    (X : TwoComplex V) (f : V → V → A) (hf : ∀ u v, X.Adj u v → f v u = f u v) :
+    2 • (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) =
+      ∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2 := by
+  let F : V × V → A := fun p => if X.Adj p.1 p.2 then f p.1 p.2 else 0
+  have hfold := TauCeti.sum_univ_prod_eq_sum_lt_add_swap F fun a => by simp [F]
+  have hL : (∑ p : V × V, F p) =
+      ∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2 := by
+    simp [F, Finset.sum_filter, X.adj_iff_pair_mem_edges]
+  have hR : (∑ p ∈ {p : V × V | p.1 < p.2}, (F p + F p.swap)) =
+      2 • (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) := by
+    rw [Finset.sum_filter, Finset.sum_filter, two_nsmul, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun p _ => ?_
+    simp only [← X.adj_iff_pair_mem_edges]
+    by_cases hp : p.1 < p.2
+    · by_cases hadj : X.Adj p.1 p.2
+      · simp [F, hp, hadj, hadj.symm, hf p.1 p.2 hadj]
+      · have hadj' : ¬ X.Adj p.2 p.1 := fun h => hadj h.symm
+        simp [F, hp, hadj, hadj']
+    · simp [hp]
+  exact (hL.symm.trans hfold).trans hR |>.symm
+
+/-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` (not required to
+preserve the vertex linear order) preserves the sum of an edge-symmetric weight over positively
+oriented edges. -/
+theorem sum_filter_lt_edges_relabel {A : Type*} [AddCommMonoid A] [Fintype V] [LinearOrder V]
+    [Fintype W] [LinearOrder W] (X : TwoComplex V) (e : V ≃ W) (f : W → W → A)
+    (hf : ∀ u v, (X.relabel e).Adj u v → f v u = f u v) :
+    (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f (e p.1) (e p.2)) =
+      ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges, f q.1 q.2 := by
+  let g : W → W → A := fun u v => if (X.relabel e).Adj u v then f u v else 0
+  have hg : ∀ u v, u ≠ v → g v u = g u v := fun u v _ => by
+    by_cases h : (X.relabel e).Adj u v
+    · simp only [g, h, h.symm, ↓reduceIte, hf u v h]
+    · have h' : ¬ (X.relabel e).Adj v u := fun hv => h hv.symm
+      simp only [g, h, h', ↓reduceIte]
+  have hpull := e.sum_filter_lt_of_symm g hg
+  have hL : (∑ p : V × V with p.1 < p.2, g (e p.1) (e p.2)) =
+      ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f (e p.1) (e p.2) := by
+    simp only [g, X.adj_relabel_apply, X.adj_iff_pair_mem_edges]
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_congr rfl fun p _ => ?_
+    by_cases hp : p.1 < p.2 <;> simp [hp]
+  have hR : (∑ q : W × W with q.1 < q.2, g q.1 q.2) =
+      ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges, f q.1 q.2 := by
+    simp only [g, (X.relabel e).adj_iff_pair_mem_edges]
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_congr rfl fun q _ => ?_
+    by_cases hq : q.1 < q.2 <;> simp [hq]
+  exact (hL.symm.trans hpull).trans hR
+
+/-- The sum of an edge-symmetric weight over positively oriented edges of `X : TwoComplex V` is
+independent of the chosen linear order on `V`. -/
+theorem sum_filter_lt_edges_congr_linearOrder {A : Type*} [AddCommMonoid A] [Fintype V]
+    (X : TwoComplex V) (l₁ l₂ : LinearOrder V) (f : V → V → A)
+    (hf : ∀ u v, X.Adj u v → f v u = f u v) :
+    (letI := l₁
+      ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) =
+    (letI := l₂
+      ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) := by
+  simpa only [relabel_refl, Equiv.refl_apply] using
+    @sum_filter_lt_edges_relabel V V A _ _ l₁ _ l₂ X (Equiv.refl V) f
+      (by simpa only [relabel_refl] using hf)
 
 end TauCeti.TwoComplex

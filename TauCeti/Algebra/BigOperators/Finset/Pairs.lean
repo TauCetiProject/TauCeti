@@ -65,6 +65,8 @@ sign of the permutation.
 * `TauCeti.sum_sum_Ioi_append_of_mul`: the same for a pairing turning products into sums.
 * `TauCeti.prod_prod_Ioi_scale`: scaling all entries of a pair product for a symmetric
   bimultiplicative pairing.
+* `Equiv.prod_filter_lt_of_symm`: pulling back an off-diagonally symmetric function along any
+  bijection between finite linear orders preserves its product over strictly increasing pairs.
 -/
 
 public section
@@ -346,6 +348,40 @@ theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCom
   have hp' : p.1 < p.2 := by simpa using hp
   simp [F, hp'.ne, hp'.ne', hs]
 
+end TauCeti
+
+namespace Equiv
+
+/-- Pulling back an off-diagonally symmetric function along an arbitrary bijection `e : V ≃ W`
+between finite linear orders preserves its product over strictly increasing pairs, even when `e` is
+not order-preserving. -/
+@[to_additive /-- Pulling back an off-diagonally symmetric function along an arbitrary bijection
+`e : V ≃ W` between finite linear orders preserves its sum over strictly increasing pairs, even
+when `e` is not order-preserving. -/]
+theorem prod_filter_lt_of_symm {V W M : Type*} [Fintype V] [LinearOrder V]
+    [Fintype W] [LinearOrder W] [CommMonoid M] (e : V ≃ W) (f : W → W → M)
+    (hf : ∀ u v, u ≠ v → f v u = f u v) :
+    (∏ p : V × V with p.1 < p.2, f (e p.1) (e p.2)) =
+      ∏ q : W × W with q.1 < q.2, f q.1 q.2 := by
+  refine Finset.prod_nbij' (fun p => (min (e p.1) (e p.2), max (e p.1) (e p.2)))
+    (fun q => (min (e.symm q.1) (e.symm q.2), max (e.symm q.1) (e.symm q.2))) ?_ ?_ ?_ ?_ ?_
+  all_goals
+    rintro ⟨a, b⟩ h
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at h ⊢
+  · rcases lt_or_gt_of_ne (e.injective.ne h.ne) with hab | hab <;> simpa [hab.le] using hab
+  · rcases lt_or_gt_of_ne (e.symm.injective.ne h.ne) with hab | hab <;> simpa [hab.le] using hab
+  · rcases le_total (e a) (e b) with hab | hab <;> simp [hab, h.le]
+  · rcases le_total (e.symm a) (e.symm b) with hab | hab <;> simp [hab, h.le]
+  · rcases lt_or_gt_of_ne (e.injective.ne h.ne) with hab | hab
+    · simp [hab.le]
+    · simp [hab.le, hf (e a) (e b) (e.injective.ne h.ne)]
+
+end Equiv
+
+namespace TauCeti
+
+open Finset
+
 /-- **A product over the increasing pairs of a symmetric function is permutation invariant:**
 for symmetric `f`, `∏_{i<j} f (σ i) (σ j) = ∏_{i<j} f i j` for every permutation `σ`. -/
 @[to_additive /-- **A sum over the increasing pairs of a symmetric function is permutation
@@ -354,24 +390,17 @@ invariant:** for symmetric `f`, `∑_{i<j} f (σ i) (σ j) = ∑_{i<j} f i j` fo
 theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
     [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) (σ : Equiv.Perm ι)
     (hf : ∀ i j, f i j = f j i) :
-    ∏ i, ∏ j ∈ Ioi i, f (σ i) (σ j) = ∏ i, ∏ j ∈ Ioi i, f i j := by
-  rw [prod_sigma', prod_sigma']
-  refine prod_nbij' (fun x ↦ ⟨min (σ x.1) (σ x.2), max (σ x.1) (σ x.2)⟩)
-    (fun y ↦ ⟨min (σ.symm y.1) (σ.symm y.2), max (σ.symm y.1) (σ.symm y.2)⟩) ?_ ?_ ?_ ?_ ?_
-  all_goals
-    rintro ⟨a, b⟩ h
-    simp only [mem_sigma, mem_univ, mem_Ioi, true_and] at h ⊢
-  · rcases lt_or_gt_of_ne (σ.injective.ne h.ne) with hab | hab
-    · simpa [hab.le] using hab
-    · simpa [hab.le] using hab
-  · rcases lt_or_gt_of_ne (σ.symm.injective.ne h.ne) with hab | hab
-    · simpa [hab.le] using hab
-    · simpa [hab.le] using hab
-  · rcases le_total (σ a) (σ b) with hab | hab <;> simp [hab, h.le]
-  · rcases le_total (σ.symm a) (σ.symm b) with hab | hab <;> simp [hab, h.le]
-  · rcases le_total (σ a) (σ b) with hab | hab
-    · simp [hab]
-    · simp [hab, hf]
+    ∏ i, ∏ j ∈ Ioi i, f (σ i) (σ j) = ∏ i, ∏ j ∈ Ioi i, f i j :=
+  calc
+    (∏ i, ∏ j ∈ Ioi i, f (σ i) (σ j))
+      = ∏ x ∈ univ.sigma Ioi, f (σ x.1) (σ x.2) := prod_sigma' _ _ _
+    _ = ∏ p : ι × ι with p.1 < p.2, f (σ p.1) (σ p.2) :=
+        prod_equiv (Equiv.sigmaEquivProd ι ι) (fun ⟨_, _⟩ => by simp) fun _ _ => rfl
+    _ = ∏ q : ι × ι with q.1 < q.2, f q.1 q.2 :=
+        σ.prod_filter_lt_of_symm f fun u v _ => hf v u
+    _ = ∏ x ∈ univ.sigma Ioi, f x.1 x.2 :=
+        (prod_equiv (Equiv.sigmaEquivProd ι ι) (fun ⟨_, _⟩ => by simp) fun _ _ => rfl).symm
+    _ = ∏ i, ∏ j ∈ Ioi i, f i j := (prod_sigma' _ _ _).symm
 
 /-- **An off-diagonal pairing against an antisymmetric kernel, folded onto increasing pairs.**
 Summing `u i * ∑ j ∈ univ.erase i, k i j` folds onto strictly increasing pairs `i < j` as
