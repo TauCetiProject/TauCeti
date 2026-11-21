@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Operations
 public import TauCeti.Algebra.Polynomial.LinearFactor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.RingTheory.TensorProduct.Basic
 import TauCeti.RingTheory.TensorProduct.BaseChangeEval
 
 /-!

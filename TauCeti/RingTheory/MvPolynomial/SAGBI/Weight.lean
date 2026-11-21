@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.MvPolynomial.Initial.Algebra
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Rees
-public import TauCeti.RingTheory.MvPolynomial.Subalgebra.Degeneration
+public import TauCeti.RingTheory.MvPolynomial.Subalgebra.WeightFiltration
 import TauCeti.Algebra.Polynomial.AlgHom
 
 /-!
@@ -20,13 +21,14 @@ whole expression, including cancellations, rather than just its substituted valu
 
 Consequently the image of `weightReesAeval c d` is precisely the embedded Rees algebra
 `Subalgebra.weightReesAlgebra` of the induced weight filtration
-(`Subalgebra.map_weightReesAlgebra_eq_range_weightReesAeval`):
-its coefficient of `t^n` belongs to `R[c]` and has ambient weight at most `n`.
-The weight-initial algebra `(Algebra.adjoin R (Set.range c)).weightInitialAlgebra w` is `R[g]`
-(`TauCeti.MvPolynomial.weightInitialAlgebra_adjoin_eq`).
-These results use the same relation certificates as `ker_weightReesAeval_eq_span`,
-so the presentation describes the actual induced filtration, as well as its kernel.
-Zero weights, scalar generators, empty families, and arbitrary commutative rings are allowed.
+(`Subalgebra.map_weightReesAlgebra_eq_range_weightReesAeval`), and when `c` generates `A`, the
+lifted presentation `weightReesAevalLift` surjects onto `A.weightReesAlgebra w`
+(`TauCeti.MvPolynomial.weightReesAevalLift_surjective`). The weight-initial algebra
+`(Algebra.adjoin R (Set.range c)).weightInitialAlgebra w` is `R[g]`
+(`TauCeti.MvPolynomial.weightInitialAlgebra_adjoin_eq`). These results use the same relation
+certificates as `ker_weightReesAeval_eq_span`, so the presentation describes the actual induced
+filtration, as well as its kernel. Zero weights, scalar generators, empty families, and arbitrary
+commutative rings are allowed.
 
 The reduction step is `exists_finsupp_sub_sum_mem_weightFiltrationLT` from
 `TauCeti.RingTheory.MvPolynomial.SAGBI.Rees`: cancel the top block of an expression by
@@ -199,3 +201,36 @@ theorem map_weightReesAlgebra_eq_range_weightReesAeval
     aeval_range, hA]
 
 end Subalgebra
+
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial
+open scoped Polynomial
+
+attribute [local instance] Polynomial.algebra in
+/-- Under bounded relation certificates, `weightReesAevalLift` surjects onto the induced weight
+Rees algebra `A.weightReesAlgebra w` whenever the `c i` generate `A`. -/
+theorem weightReesAevalLift_surjective {σ ι J R : Type*} [CommRing R]
+    {w : σ → ℕ} {c g : ι → MvPolynomial σ R} {d : ι → ℕ}
+    {r Q : J → MvPolynomial ι R} {e : J → ℕ} {A : Subalgebra R (MvPolynomial σ R)}
+    (hcA : ∀ i, c i ∈ A) (hA : A ≤ Algebra.adjoin R (Set.range c))
+    (hc : ∀ i, c i ∈ weightFiltration R w (d i))
+    (hg : ∀ i, weightedHomogeneousComponent w (d i) (c i) = g i)
+    (hJ : RingHom.ker (aeval g) = Ideal.span (Set.range r))
+    (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
+    (hQ : ∀ j, Q j ∈ weightFiltrationLT R d (e j))
+    (hQc : ∀ j, aeval c (Q j) = aeval c (r j)) :
+    Function.Surjective (weightReesAevalLift hcA hc) := by
+  have hAeq : A = Algebra.adjoin R (Set.range c) :=
+    le_antisymm hA (Algebra.adjoin_le (Set.range_subset_iff.mpr hcA))
+  intro y
+  have hy : ((A.weightReesInclusion w y : weightReesAlgebra R w) : (MvPolynomial σ R)[X]) ∈
+      (weightReesAeval c d).range := by
+    rw [← A.map_weightReesAlgebra_eq_range_weightReesAeval w hAeq hc hg hJ hr hQ hQc]
+    exact Subalgebra.mem_map.mpr
+      ⟨y, y.property, by rw [Polynomial.coe_mapAlgHom, A.coe_weightReesInclusion]⟩
+  obtain ⟨f, hf⟩ := (weightReesAeval c d).mem_range.mp hy
+  refine ⟨f, A.weightReesInclusion_injective w (Subtype.ext ?_)⟩
+  rwa [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift]
+
+end TauCeti.MvPolynomial

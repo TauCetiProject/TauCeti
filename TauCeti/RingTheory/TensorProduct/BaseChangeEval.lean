@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Span
-public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.RingTheory.TensorProduct.Basic
 import TauCeti.Algebra.Polynomial.AlgHom
 
 /-!
@@ -33,8 +33,16 @@ variable {R A C : Type*}
 
 section Semiring
 
-variable [CommSemiring R] [Semiring A] [Semiring C]
-  [Algebra R A] [Algebra R[X] A] [IsScalarTower R R[X] A] [Algebra R C]
+variable [CommSemiring R] [Semiring A] [Algebra R[X] A]
+
+private theorem exists_one_tmul_eq (a : R) :
+    letI := Algebra.compHom R (evalRingHom a)
+    ∀ t : R ⊗[R[X]] A, ∃ x : A, 1 ⊗ₜ[R[X]] x = t := by
+  let := Algebra.compHom R (evalRingHom a)
+  exact TensorProduct.mk_surjective (R := R[X]) (S := R) (M := A)
+    fun r ↦ ⟨Polynomial.C r, by simp [Algebra.compHom_algebraMap_apply]⟩
+
+variable [Semiring C] [Algebra R A] [IsScalarTower R R[X] A] [Algebra R C]
   {a : R} (φ : A →ₐ[R] C) (hX : φ (algebraMap R[X] A X) = algebraMap R C a)
 
 /-- The base-change homomorphism `(R ⊗[R[X]] A) →ₐ[R] C` along evaluation `R[X] → R` at `a`
@@ -72,9 +80,8 @@ theorem baseChangeEval_surjective_iff :
   let := Algebra.compHom R (evalRingHom a)
   refine ⟨fun h c ↦ ?_, fun h c ↦ ?_⟩
   · obtain ⟨t, rfl⟩ := h c
-    obtain ⟨x, rfl⟩ := TensorProduct.mk_surjective (R := R[X]) (S := R) (M := A)
-      (fun r ↦ ⟨Polynomial.C r, by simp [Algebra.compHom_algebraMap_apply]⟩) t
-    exact ⟨x, by rw [TensorProduct.mk_apply, baseChangeEval_tmul, one_smul]⟩
+    obtain ⟨x, rfl⟩ := exists_one_tmul_eq (R := R) (A := A) a t
+    exact ⟨x, by rw [baseChangeEval_tmul, one_smul]⟩
   · obtain ⟨x, rfl⟩ := h c
     exact ⟨1 ⊗ₜ[R[X]] x, by rw [baseChangeEval_tmul, one_smul]⟩
 
@@ -96,18 +103,13 @@ theorem baseChangeEval_injective
   let : IsScalarTower R R[X] R := IsScalarTower.of_algebraMap_eq fun r ↦ by
     simp [Algebra.compHom_algebraMap_apply]
   let i := (Algebra.TensorProduct.includeRight : A →ₐ[R[X]] R ⊗[R[X]] A).restrictScalars R
-  have hi : Function.Surjective i :=
-    Algebra.TensorProduct.includeRight_surjective _ fun r ↦
-      ⟨Polynomial.C r, by simp [Algebra.compHom_algebraMap_apply]⟩
-  have hfi (x : A) : φ.baseChangeEval hX (i x) = φ x := by
-    rw [AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
-      baseChangeEval_tmul, one_smul]
   have hix : i (algebraMap R[X] A X) = algebraMap R _ a := by
     simp [i, Algebra.compHom_algebraMap_apply, Algebra.TensorProduct.algebraMap_apply]
   refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
-  obtain ⟨x, rfl⟩ := hi t
-  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.mp
-    (hker (RingHom.mem_ker.mpr ((hfi x).symm.trans ht)))
+  obtain ⟨x, rfl⟩ := exists_one_tmul_eq (R := R) (A := A) a t
+  rw [baseChangeEval_tmul, one_smul] at ht
+  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.mp (hker (RingHom.mem_ker.mpr ht))
+  change i x = 0
   rw [← hq, map_mul, map_sub, hix, AlgHom.commutes, sub_self, mul_zero]
 
 variable (hsurj : Function.Surjective φ)

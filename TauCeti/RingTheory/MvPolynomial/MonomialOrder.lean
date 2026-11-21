@@ -85,7 +85,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
   maximal-weight component in the original order.
 * `MonomialOrder.monicNormalize`: over a field, a polynomial divided by its leading coefficient,
   monic with the same leading exponent when the polynomial is nonzero
-  (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`).
+  (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`), together with
+  leading-term recovery from a weighted component equal to `X^(m.degree f)`
+  (`MonomialOrder.ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq`,
+  `MonomialOrder.weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize`).
 * `MonomialOrder.monic_aeval_monomial_one`, `MonomialOrder.degree_aeval_monomial_one`: for a
   family `c` of monic polynomials, `∏ i, c i ^ w i` is monic with leading exponent
   `A w = ∑ i, w i • m.degree (c i)`.
@@ -616,6 +619,28 @@ theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
     exact SMulMemClass.smul_mem _ h
   · rw [monicNormalize_def, ← smul_eq_C_mul]
     exact SMulMemClass.smul_mem _ h
+
+/-- If the weighted homogeneous component of `m.monicNormalize f` at the weight of `m.degree f`
+equals `monomial (m.degree f) 1`, then `f` is nonzero. -/
+theorem ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq
+    {M : Type*} [AddCommMonoid M] {w : σ → M}
+    (hf : weightedHomogeneousComponent w (Finsupp.weight w (m.degree f))
+      (m.monicNormalize f) = monomial (m.degree f) 1) :
+    f ≠ 0 := by
+  rintro rfl
+  simp at hf
+
+/-- If the weighted homogeneous component of `m.monicNormalize f` at the weight of `m.degree f`
+equals `monomial (m.degree f) 1`, then the corresponding weighted homogeneous component of `f` is
+`m.leadingTerm f`. -/
+theorem weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize
+    {M : Type*} [AddCommMonoid M] {w : σ → M}
+    (hf : weightedHomogeneousComponent w (Finsupp.weight w (m.degree f))
+      (m.monicNormalize f) = monomial (m.degree f) 1) :
+    weightedHomogeneousComponent w (Finsupp.weight w (m.degree f)) f = m.leadingTerm f := by
+  have h := congrArg (weightedHomogeneousComponent w (Finsupp.weight w (m.degree f)))
+    (m.C_leadingCoeff_mul_monicNormalize f)
+  simpa [← smul_eq_C_mul, map_smul, hf, smul_monomial, leadingTerm] using h.symm
 
 end MonicNormalize
 

@@ -5,44 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Initial.Degeneration
+public import TauCeti.RingTheory.MvPolynomial.SAGBI.BoundedPresentation
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Monic
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Weight
 
 /-!
-# Flat weight presentations and nonmonic SAGBI degenerations
+# Nonmonic SAGBI degenerations via diagonal rescaling
 
-Give the variable `X s` of `MvPolynomial σ R` the weight `w s ∈ ℕ` and the presentation variable
-`Y i` of `MvPolynomial ι R` the weight `d i ∈ ℕ`. When each `c i` belongs to a subalgebra `A` and
-has ambient `w`-weight at most `d i`, the Rees presentation map `weightReesAeval c d`
-(`Y i ↦ c i * t ^ d i`, `t ↦ t`) lifts to the `R[t]`-algebra homomorphism
-`TauCeti.MvPolynomial.weightReesAevalLift` into `A.weightReesAlgebra w`
-(`TauCeti.RingTheory.MvPolynomial.Subalgebra.WeightFiltration`), with kernel
-`(RingHom.ker (aeval c)).weightReesIdeal d`
-(`TauCeti.MvPolynomial.ker_weightReesAeval_eq_weightReesIdeal`).
-
-Suppose `c : ι → MvPolynomial σ R` and `d : ι → ℕ` carry *bounded relation certificates*: each
-`c i` has `w`-weight at most `d i` with weight-`d i` homogeneous component `g i`, `d`-homogeneous
-polynomials `r j` of weight `e j` generate `RingHom.ker (aeval g)`, and polynomials `Q j` of
-`d`-weight strictly below `e j` satisfy `aeval c (Q j) = aeval c (r j)`. Combining
-`TauCeti.MvPolynomial.ker_weightReesAeval_eq_weightReesIdeal` with
-`TauCeti.MvPolynomial.ker_weightReesAeval_eq_span` and the ideal degeneration results of
-`TauCeti.RingTheory.MvPolynomial.Initial.Degeneration` yields, over any commutative ring `R`:
-
-* **Weight-initial presentation ideal**: `(RingHom.ker (aeval c)).weightInitialIdeal d =
-  RingHom.ker (aeval g)` (`TauCeti.MvPolynomial.weightInitialIdeal_ker_aeval`), and setting `t = 0`
-  in the homogenized lifted relations recovers `RingHom.ker (aeval g)`.
-* **General-fibre presentation ideal**: the lifted relations `r j - Q j` generate
-  `RingHom.ker (aeval c)` (`TauCeti.MvPolynomial.ker_aeval_eq_span_sub`), recovered by setting
-  `t = 1` in the homogenized lifted relations.
-* **`R[t]`-algebra Rees presentation**: for any subalgebra `A = Algebra.adjoin R (Set.range c)`,
-  `weightReesAevalLift` is surjective (`TauCeti.MvPolynomial.weightReesAevalLift_surjective`), so
-  the quotient of `(MvPolynomial ι R)[t]` by the homogenized lifted relations is isomorphic as an
-  `R[t]`-algebra to `A.weightReesAlgebra w`
-  (`TauCeti.MvPolynomial.quotientSpanWeightHomogenizationEquiv`), and over a field `k` this
-  explicit quotient is flat over `k[t]`
-  (`TauCeti.MvPolynomial.flat_quotient_span_weightHomogenization`).
+This file extends the flat weight presentations of
+`TauCeti.RingTheory.MvPolynomial.SAGBI.BoundedPresentation` to unnormalized (possibly nonmonic)
+families over a field `k`.
 
 For an unnormalized family `b : ι → MvPolynomial σ k` over a field `k` with leading coefficients
 `ℓ i = m.leadingCoeff (b i)` and monic normalizations `c i = m.monicNormalize (b i)` for a
@@ -51,8 +23,9 @@ rescaling `D_ℓ = MvPolynomial.rescale ℓ` in the presentation variables
 (`MonomialOrder.weightReesAeval_monicNormalize_comp_mapAlgHom_rescale`), leaving the image
 unchanged (`MonomialOrder.range_weightReesAeval_monicNormalize`). When every `b i` is nonzero, the
 Rees relations of `b` are obtained from the Rees kernel of `c` by applying
-`D_ℓ⁻¹ = MvPolynomial.rescale ℓ⁻¹` (`MonomialOrder.ker_weightReesAeval_eq_map`). Under *monic toric
-weight certificates*—where each `c i` has `w`-weight at most
+`D_ℓ⁻¹ = MvPolynomial.rescale ℓ⁻¹` (`MonomialOrder.ker_weightReesAeval_eq_map`).
+
+Under *monic toric weight certificates*—where each `c i` has `w`-weight at most
 `d i = Finsupp.weight w (m.degree (b i))` with weight-`d i` component `X^(m.degree (b i))` (forcing
 `b i ≠ 0`), binomials `Y^(u j) - Y^(v j)` generate `toricIdeal k (m.degree ∘ b)`, and polynomials
 `Q j` of `d`-weight strictly below `Finsupp.weight d (u j)` satisfy
@@ -67,19 +40,13 @@ subalgebra `A` over a field, with no monicity or finite-variable hypothesis.
 
 ## Main declarations
 
-* `TauCeti.MvPolynomial.weightReesAevalLift_surjective` and
-  `TauCeti.MvPolynomial.quotientSpanWeightHomogenizationEquiv`: surjectivity of
-  `weightReesAevalLift` and the homogenized `R[t]`-algebra presentation of
-  `A.weightReesAlgebra w` under bounded relation certificates.
-* `TauCeti.MvPolynomial.weightInitialIdeal_ker_aeval`,
-  `TauCeti.MvPolynomial.ker_aeval_eq_span_sub`, and
-  `TauCeti.MvPolynomial.flat_quotient_span_weightHomogenization`: the `t = 0` initial ideal,
-  `t = 1` presentation kernel, and `k[t]`-flatness under bounded relation certificates.
-* `MonomialOrder.range_weightReesAeval_monicNormalize`, `MonomialOrder.ker_weightReesAeval_eq_map`,
+* `MonomialOrder.weightReesAeval_monicNormalize_comp_mapAlgHom_rescale`,
+  `MonomialOrder.range_weightReesAeval_monicNormalize`, `MonomialOrder.ker_weightReesAeval_eq_map`,
   and `MonomialOrder.ker_weightReesAeval_eq_span_rescale`: range invariance under `monicNormalize`
   and `D_ℓ⁻¹` transport of Rees relations for nonzero nonmonic families.
 * `MonomialOrder.weightInitialIdeal_ker_aeval_of_toricIdeal_eq_span`,
   `MonomialOrder.weightInitialAlgebra_adjoin_eq_of_toricIdeal_eq_span`,
+  `MonomialOrder.map_weightReesAlgebra_eq_range_weightReesAeval_of_toricIdeal_eq_span`,
   `MonomialOrder.quotientSpanWeightHomogenizationRescaleEquiv`, and
   `MonomialOrder.flat_quotient_span_weightHomogenization_rescale`: certificate-level nonmonic
   initial ideal, initial algebra, `k[t]`-presentation, and flatness.
@@ -99,143 +66,6 @@ subalgebra `A` over a field, with no monicity or finite-variable hypothesis.
 public section
 
 open scoped Polynomial
-
-namespace TauCeti.MvPolynomial
-
-open _root_.MvPolynomial TauCeti
-
-section Certificates
-
-attribute [local instance] Polynomial.algebra
-
-variable {σ ι J R : Type*} [CommRing R] {w : σ → ℕ} {c g : ι → MvPolynomial σ R} {d : ι → ℕ}
-  {r Q : J → MvPolynomial ι R} {e : J → ℕ}
-
-/-- Under bounded relation certificates, `weightReesAevalLift` surjects onto the induced weight
-Rees algebra `A.weightReesAlgebra w` whenever the `c i` generate `A`. -/
-theorem weightReesAevalLift_surjective {A : Subalgebra R (MvPolynomial σ R)}
-    (hcA : ∀ i, c i ∈ A) (hA : A ≤ Algebra.adjoin R (Set.range c))
-    (hc : ∀ i, c i ∈ weightFiltration R w (d i))
-    (hg : ∀ i, weightedHomogeneousComponent w (d i) (c i) = g i)
-    (hJ : RingHom.ker (aeval g) = Ideal.span (Set.range r))
-    (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
-    (hQ : ∀ j, Q j ∈ weightFiltrationLT R d (e j))
-    (hQc : ∀ j, aeval c (Q j) = aeval c (r j)) :
-    Function.Surjective (weightReesAevalLift hcA hc) := by
-  have hAeq : A = Algebra.adjoin R (Set.range c) :=
-    le_antisymm hA (Algebra.adjoin_le (Set.range_subset_iff.mpr hcA))
-  intro y
-  have hy : ((A.weightReesInclusion w y : weightReesAlgebra R w) : (MvPolynomial σ R)[X]) ∈
-      (weightReesAeval c d).range := by
-    rw [← A.map_weightReesAlgebra_eq_range_weightReesAeval w hAeq hc hg hJ hr hQ hQc]
-    exact Subalgebra.mem_map.mpr
-      ⟨y, y.property, by rw [Polynomial.coe_mapAlgHom, A.coe_weightReesInclusion]⟩
-  obtain ⟨f, hf⟩ := (weightReesAeval c d).mem_range.mp hy
-  refine ⟨f, A.weightReesInclusion_injective w (Subtype.ext ?_)⟩
-  rwa [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift]
-
-section
-
-variable {A : Subalgebra R (MvPolynomial σ R)} (hA : A = Algebra.adjoin R (Set.range c))
-  (hc : ∀ i, c i ∈ weightFiltration R w (d i))
-  (hg : ∀ i, weightedHomogeneousComponent w (d i) (c i) = g i)
-  (hJ : RingHom.ker (aeval g) = Ideal.span (Set.range r))
-  (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
-  (hQ : ∀ j, Q j ∈ weightFiltrationLT R d (e j))
-  (hQc : ∀ j, aeval c (Q j) = aeval c (r j))
-include hc hg hJ hr hQ hQc
-
-/-- Under bounded relation certificates, the weight Rees ideal of `RingHom.ker (aeval c)` is
-generated by the homogenizations in degree `e j` of the lifted relations `r j - Q j`. -/
-theorem weightReesIdeal_ker_aeval_eq_span :
-    (RingHom.ker (aeval (R := R) c)).weightReesIdeal d =
-      Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j)) := by
-  rw [← ker_weightReesAeval_eq_weightReesIdeal, ker_weightReesAeval_eq_span hc hg hJ hr hQ hQc]
-
-/-- **Weight-initial ideal of the presentation kernel.** Under bounded relation certificates, the
-`d`-weight-initial ideal of `RingHom.ker (aeval c)` is the presentation kernel
-`RingHom.ker (aeval g)` of the initial forms. -/
-theorem weightInitialIdeal_ker_aeval :
-    (RingHom.ker (aeval (R := R) c)).weightInitialIdeal d = RingHom.ker (aeval (R := R) g) := by
-  rw [← Ideal.map_constantCoeff_weightReesIdeal (RingHom.ker (aeval (R := R) c)) d,
-    weightReesIdeal_ker_aeval_eq_span hc hg hJ hr hQ hQc,
-    map_constantCoeff_span_weightHomogenization_sub hr hQ, ← hJ]
-
-/-- **Presentation kernel from bounded weight certificates.** Under bounded relation certificates,
-the lifted relations `r j - Q j` generate `RingHom.ker (aeval c)`. -/
-theorem ker_aeval_eq_span_sub :
-    RingHom.ker (aeval (R := R) c) = Ideal.span (Set.range fun j ↦ r j - Q j) := by
-  -- Evaluate the Rees-ideal equality at `t = 1`.
-  rw [← Ideal.map_evalRingHom_one_weightReesIdeal (RingHom.ker (aeval (R := R) c)) d,
-    weightReesIdeal_ker_aeval_eq_span hc hg hJ hr hQ hQc,
-    map_evalRingHom_one_span_weightHomogenization]
-
-/-- **`R[t]`-algebra Rees presentation.** Under bounded relation certificates for a family `c`
-generating `A`, the quotient of `(MvPolynomial ι R)[t]` by the homogenized lifted relations is
-isomorphic as an `R[t]`-algebra to the induced weight Rees algebra `A.weightReesAlgebra w`. -/
-noncomputable def quotientSpanWeightHomogenizationEquiv :
-    ((MvPolynomial ι R)[X] ⧸
-      Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j))) ≃ₐ[R[X]]
-      A.weightReesAlgebra w :=
-  let hcA : ∀ i, c i ∈ A := fun i ↦ hA ▸ Algebra.subset_adjoin (Set.mem_range_self i)
-  have hker : RingHom.ker (weightReesAevalLift hcA hc) =
-      Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j)) :=
-    (ker_weightReesAevalLift hcA hc).trans (ker_weightReesAeval_eq_span hc hg hJ hr hQ hQc)
-  (Ideal.quotientEquivAlgOfEq R[X] hker.symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective
-      (weightReesAevalLift_surjective hcA hA.le hc hg hJ hr hQ hQc))
-
-@[simp]
-theorem quotientSpanWeightHomogenizationEquiv_mk (f : (MvPolynomial ι R)[X]) :
-    quotientSpanWeightHomogenizationEquiv hA hc hg hJ hr hQ hQc (Ideal.Quotient.mk _ f) =
-      weightReesAevalLift (fun i ↦ hA ▸ Algebra.subset_adjoin (Set.mem_range_self i)) hc f := by
-  simp [quotientSpanWeightHomogenizationEquiv]
-
-@[simp]
-theorem quotientSpanWeightHomogenizationEquiv_symm_weightReesAevalLift
-    {hcA : ∀ i, c i ∈ A} (f : (MvPolynomial ι R)[X]) :
-    (quotientSpanWeightHomogenizationEquiv hA hc hg hJ hr hQ hQc).symm
-      (weightReesAevalLift hcA hc f) = Ideal.Quotient.mk _ f := by
-  rw [AlgEquiv.symm_apply_eq, quotientSpanWeightHomogenizationEquiv_mk]
-
-@[simp]
-theorem quotientSpanWeightHomogenizationEquiv_symm_monomial
-    (i : ι) (hcAi : c i ∈ A) (hci : ⟨c i, hcAi⟩ ∈ A.weightFiltration w (d i)) :
-    (quotientSpanWeightHomogenizationEquiv hA hc hg hJ hr hQ hQc).symm
-      (coeffSubalgebra.monomial (A.weightFiltration w) (d i) ⟨c i, hcAi⟩ hci) =
-      Ideal.Quotient.mk _ (Polynomial.C (X i : MvPolynomial ι R)) := by
-  rw [AlgEquiv.symm_apply_eq, quotientSpanWeightHomogenizationEquiv_mk, weightReesAevalLift_C,
-    aeval_X]
-
-@[simp]
-theorem quotientSpanWeightHomogenizationEquiv_symm_X :
-    (quotientSpanWeightHomogenizationEquiv hA hc hg hJ hr hQ hQc).symm
-      (coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w)) =
-      Ideal.Quotient.mk _ Polynomial.X := by
-  rw [AlgEquiv.symm_apply_eq, quotientSpanWeightHomogenizationEquiv_mk, weightReesAevalLift_X]
-
-end
-
-/-- **Flatness of the explicit homogenized presentation over a field.** Under bounded relation
-certificates over a field `k`, the quotient of `(MvPolynomial ι k)[t]` by the homogenized lifted
-relations is flat over `k[t]`. -/
-theorem flat_quotient_span_weightHomogenization {k : Type*} [Field k]
-    {c g : ι → MvPolynomial σ k} {r Q : J → MvPolynomial ι k}
-    (hc : ∀ i, c i ∈ weightFiltration k w (d i))
-    (hg : ∀ i, weightedHomogeneousComponent w (d i) (c i) = g i)
-    (hJ : RingHom.ker (aeval g) = Ideal.span (Set.range r))
-    (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
-    (hQ : ∀ j, Q j ∈ weightFiltrationLT k d (e j))
-    (hQc : ∀ j, aeval c (Q j) = aeval c (r j)) :
-    Module.Flat k[X]
-      ((MvPolynomial ι k)[X] ⧸
-        Ideal.span (Set.range fun j ↦ weightHomogenization k d (e j) (r j - Q j))) := by
-  rw [← weightReesIdeal_ker_aeval_eq_span hc hg hJ hr hQ hQc]
-  exact Ideal.flat_quotient_weightReesIdeal _ _
-
-end Certificates
-
-end TauCeti.MvPolynomial
 
 namespace MonomialOrder
 
@@ -294,54 +124,6 @@ section MonicToric
 
 variable {b : ι → MvPolynomial σ k} {w : σ → ℕ} {u v : J → ι →₀ ℕ} {Q : J → MvPolynomial ι k}
 
-private theorem ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq
-    (ha : ∀ i, weightedHomogeneousComponent w (Finsupp.weight w (m.degree (b i)))
-      (m.monicNormalize (b i)) = monomial (m.degree (b i)) 1) :
-    ∀ i, b i ≠ 0 :=
-  fun i h0 ↦ by simpa [h0] using (ha i).symm
-
-private theorem weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize
-    (ha : ∀ i, weightedHomogeneousComponent w (Finsupp.weight w (m.degree (b i)))
-      (m.monicNormalize (b i)) = monomial (m.degree (b i)) 1) (i : ι) :
-    weightedHomogeneousComponent w (Finsupp.weight w (m.degree (b i))) (b i) =
-      m.leadingTerm (b i) := by
-  nth_rw 2 [← m.C_leadingCoeff_mul_monicNormalize (b i)]
-  rw [← smul_eq_C_mul, map_smul, ha i, smul_monomial, smul_eq_mul, mul_one, leadingTerm]
-
-private theorem ker_aeval_leadingTerm_eq_span_rescale (hb : ∀ i, b i ≠ 0)
-    (hJ : TauCeti.toricIdeal k (fun i ↦ m.degree (b i)) =
-      Ideal.span (Set.range fun j ↦ monomial (u j) (1 : k) - monomial (v j) 1)) :
-    RingHom.ker (aeval (R := k) fun i ↦ m.leadingTerm (b i)) =
-      Ideal.span (Set.range fun j ↦ rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
-        (monomial (u j) (1 : k) - monomial (v j) 1)) := by
-  rw [m.ker_aeval_leadingTerm_eq_map hb, hJ, Ideal.map_span, ← Set.range_comp]
-  simp only [Function.comp_def]
-
-private theorem isWeightedHomogeneous_rescale_of_toricIdeal_eq_span
-    (hJ : TauCeti.toricIdeal k (fun i ↦ m.degree (b i)) =
-      Ideal.span (Set.range fun j ↦ monomial (u j) (1 : k) - monomial (v j) 1)) (j : J) :
-    (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
-      (monomial (u j) (1 : k) - monomial (v j) 1)).IsWeightedHomogeneous
-      (fun i ↦ Finsupp.weight w (m.degree (b i)))
-      (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) (u j)) :=
-  (TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal (deg := Finsupp.weight w)
-    (hJ.symm ▸ Ideal.subset_span (Set.mem_range_self j))).rescale _
-
-private theorem aeval_rescale_eq_of_monicNormalize (hb : ∀ i, b i ≠ 0)
-    (hQc : ∀ j, aeval (fun i ↦ m.monicNormalize (b i)) (Q j) =
-      aeval (fun i ↦ m.monicNormalize (b i)) (monomial (u j) (1 : k) - monomial (v j) 1))
-    (j : J) :
-    aeval b (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹) (Q j)) =
-      aeval b (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
-        (monomial (u j) (1 : k) - monomial (v j) 1)) := by
-  have hscale (P : MvPolynomial ι k) :
-      aeval b (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹) P) =
-        aeval (fun i ↦ m.monicNormalize (b i)) P := by
-    rw [← m.aeval_monicNormalize_comp_rescale b, AlgHom.comp_apply,
-      rescale_rescale_of_mul_eq_one
-        (fun i ↦ inv_mul_cancel₀ (m.leadingCoeff_ne_zero_iff.mpr (hb i)))]
-  rw [hscale, hscale, hQc]
-
 attribute [local instance] Polynomial.algebra
 
 variable {A : Subalgebra k (MvPolynomial σ k)} (hA : A = Algebra.adjoin k (Set.range b))
@@ -356,6 +138,34 @@ variable {A : Subalgebra k (MvPolynomial σ k)} (hA : A = Algebra.adjoin k (Set.
     aeval (fun i ↦ m.monicNormalize (b i)) (monomial (u j) (1 : k) - monomial (v j) 1))
 include hc ha hJ hQ hQc
 
+private theorem nonmonic_certificates :
+    (∀ i, b i ∈ weightFiltration k w (Finsupp.weight w (m.degree (b i)))) ∧
+    (∀ i, weightedHomogeneousComponent w (Finsupp.weight w (m.degree (b i))) (b i) =
+      m.leadingTerm (b i)) ∧
+    RingHom.ker (aeval (R := k) fun i ↦ m.leadingTerm (b i)) =
+      Ideal.span (Set.range fun j ↦ rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
+        (monomial (u j) (1 : k) - monomial (v j) 1)) ∧
+    (∀ j, (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
+        (monomial (u j) (1 : k) - monomial (v j) 1)).IsWeightedHomogeneous
+      (fun i ↦ Finsupp.weight w (m.degree (b i)))
+      (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) (u j))) ∧
+    (∀ j, rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹) (Q j) ∈
+      weightFiltrationLT k (fun i ↦ Finsupp.weight w (m.degree (b i)))
+        (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) (u j))) ∧
+    (∀ j, aeval b (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹) (Q j)) =
+      aeval b (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
+        (monomial (u j) (1 : k) - monomial (v j) 1))) := by
+  have hb : ∀ i, b i ≠ 0 :=
+    fun i ↦ m.ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq (ha i)
+  refine ⟨fun i ↦ m.monicNormalize_mem_iff.mp (hc i),
+    fun i ↦ m.weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize (ha i), ?_,
+    fun j ↦ (TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
+      (deg := Finsupp.weight w) (hJ.symm ▸ Ideal.subset_span (Set.mem_range_self j))).rescale _,
+    fun j ↦ rescale_mem_weightFiltrationLT (hQ j),
+    fun j ↦ by simp only [m.aeval_rescale_leadingCoeff_inv, hQc]⟩
+  rw [m.ker_aeval_leadingTerm_eq_map hb, hJ, Ideal.map_span, ← Set.range_comp]
+  simp only [Function.comp_def]
+
 /-- **Nonmonic Rees presentation via `D_ℓ⁻¹` transport.** If toric binomials `Y^(u j) - Y^(v j)` and
 monic subduction certificates `Q j` satisfy the monic toric weight hypotheses for
 `m.monicNormalize ∘ b`, then the kernel of `weightReesAeval b` is generated by the homogenizations
@@ -368,7 +178,8 @@ theorem ker_weightReesAeval_eq_span_rescale :
           (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) (u j))
           (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
             (monomial (u j) 1 - monomial (v j) 1 - Q j))) := by
-  rw [ker_weightReesAeval_eq_map (ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq ha),
+  rw [ker_weightReesAeval_eq_map
+      (fun i ↦ m.ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq (ha i)),
     ker_weightReesAeval_eq_span_of_toricIdeal_eq_span hc ha hJ hQ hQc, Ideal.map_span,
     ← Set.range_comp]
   apply congrArg Ideal.span
@@ -382,45 +193,27 @@ the actual leading terms `m.leadingTerm ∘ b`. -/
 theorem weightInitialIdeal_ker_aeval_of_toricIdeal_eq_span :
     (RingHom.ker (aeval (R := k) b)).weightInitialIdeal
         (fun i ↦ Finsupp.weight w (m.degree (b i))) =
-      RingHom.ker (aeval (R := k) fun i ↦ m.leadingTerm (b i)) :=
-  have hb := ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq ha
-  weightInitialIdeal_ker_aeval
-    (fun i ↦ m.monicNormalize_mem_iff.mp (hc i))
-    (weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize ha)
-    (ker_aeval_leadingTerm_eq_span_rescale hb hJ)
-    (isWeightedHomogeneous_rescale_of_toricIdeal_eq_span hJ)
-    (fun j ↦ rescale_mem_weightFiltrationLT (hQ j))
-    (aeval_rescale_eq_of_monicNormalize hb hQc)
+      RingHom.ker (aeval (R := k) fun i ↦ m.leadingTerm (b i)) := by
+  obtain ⟨hc', hg', hJ', hr', hQ', hQc'⟩ := nonmonic_certificates hc ha hJ hQ hQc
+  exact weightInitialIdeal_ker_aeval hc' hg' hJ' hr' hQ' hQc'
 
 /-- **Weight-initial algebra for nonmonic generators.** Under monic toric weight certificates, the
 weight-initial algebra of `Algebra.adjoin k (Set.range b)` is the subalgebra generated by the
 leading terms `m.leadingTerm ∘ b`. -/
 theorem weightInitialAlgebra_adjoin_eq_of_toricIdeal_eq_span :
     (Algebra.adjoin k (Set.range b)).weightInitialAlgebra w =
-      Algebra.adjoin k (Set.range fun i ↦ m.leadingTerm (b i)) :=
-  have hb := ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq ha
-  weightInitialAlgebra_adjoin_eq
-    (fun i ↦ m.monicNormalize_mem_iff.mp (hc i))
-    (weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize ha)
-    (ker_aeval_leadingTerm_eq_span_rescale hb hJ)
-    (isWeightedHomogeneous_rescale_of_toricIdeal_eq_span hJ)
-    (fun j ↦ rescale_mem_weightFiltrationLT (hQ j))
-    (aeval_rescale_eq_of_monicNormalize hb hQc)
+      Algebra.adjoin k (Set.range fun i ↦ m.leadingTerm (b i)) := by
+  obtain ⟨hc', hg', hJ', hr', hQ', hQc'⟩ := nonmonic_certificates hc ha hJ hQ hQc
+  exact weightInitialAlgebra_adjoin_eq hc' hg' hJ' hr' hQ' hQc'
 
 include hA in
 /-- Under monic toric weight certificates for a family `b` generating `A`, the image of
 `weightReesAeval b` is the embedded induced weight Rees algebra of `A`. -/
 theorem map_weightReesAlgebra_eq_range_weightReesAeval_of_toricIdeal_eq_span :
     (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) =
-      (weightReesAeval b fun i ↦ Finsupp.weight w (m.degree (b i))).range :=
-  have hb := ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq ha
-  A.map_weightReesAlgebra_eq_range_weightReesAeval w hA
-    (fun i ↦ m.monicNormalize_mem_iff.mp (hc i))
-    (weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize ha)
-    (ker_aeval_leadingTerm_eq_span_rescale hb hJ)
-    (isWeightedHomogeneous_rescale_of_toricIdeal_eq_span hJ)
-    (fun j ↦ rescale_mem_weightFiltrationLT (hQ j))
-    (aeval_rescale_eq_of_monicNormalize hb hQc)
+      (weightReesAeval b fun i ↦ Finsupp.weight w (m.degree (b i))).range := by
+  obtain ⟨hc', hg', hJ', hr', hQ', hQc'⟩ := nonmonic_certificates hc ha hJ hQ hQc
+  exact A.map_weightReesAlgebra_eq_range_weightReesAeval w hA hc' hg' hJ' hr' hQ' hQc'
 
 /-- **`k[t]`-algebra Rees presentation for nonmonic generators.** Under monic toric weight
 certificates for a family `b` generating `A`, quotienting `(MvPolynomial ι k)[t]` by the
@@ -434,7 +227,7 @@ noncomputable def quotientSpanWeightHomogenizationRescaleEquiv :
           (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
             (monomial (u j) 1 - monomial (v j) 1 - Q j)))) ≃ₐ[k[X]]
       A.weightReesAlgebra w :=
-  have hb := ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq ha
+  have hcert := nonmonic_certificates hc ha hJ hQ hQc
   have hspan : Ideal.span (Set.range fun j ↦
         weightHomogenization k (fun i ↦ Finsupp.weight w (m.degree (b i)))
           (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) (u j))
@@ -448,12 +241,7 @@ noncomputable def quotientSpanWeightHomogenizationRescaleEquiv :
     simp only [map_sub]
   (Ideal.quotientEquivAlgOfEq k[X] hspan).trans
     (quotientSpanWeightHomogenizationEquiv hA
-      (fun i ↦ m.monicNormalize_mem_iff.mp (hc i))
-      (weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize ha)
-      (ker_aeval_leadingTerm_eq_span_rescale hb hJ)
-      (isWeightedHomogeneous_rescale_of_toricIdeal_eq_span hJ)
-      (fun j ↦ rescale_mem_weightFiltrationLT (hQ j))
-      (aeval_rescale_eq_of_monicNormalize hb hQc))
+      hcert.1 hcert.2.1 hcert.2.2.1 hcert.2.2.2.1 hcert.2.2.2.2.1 hcert.2.2.2.2.2)
 
 @[simp]
 theorem quotientSpanWeightHomogenizationRescaleEquiv_mk (f : (MvPolynomial ι k)[X]) :
@@ -581,7 +369,7 @@ theorem IsSAGBIBasis.exists_pos_weight_ker_weightReesAeval [Finite ι]
     rfl
   exact ⟨B, Q, w, hw, hJ, hQc, hQ, hQw,
     fun i ↦ ⟨m.monicNormalize_mem_iff.mp (hcw i),
-      weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize hgw i, hgw i⟩,
+      m.weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize (hgw i), hgw i⟩,
     hinit,
     weightInitialIdeal_ker_aeval_of_toricIdeal_eq_span hcw hgw hJ hQw hQc,
     ker_weightReesAeval_eq_span_rescale hcw hgw hJ hQw hQc,
