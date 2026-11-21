@@ -83,12 +83,12 @@ namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- If `F` is continuous at every point `(x, u x)` with `x ∈ s` and `u` is continuous at every
-point of `s`, then `x ↦ F (x, u x)` is continuous on `s`. -/
+/-- If `F` is continuous at every point `(x, u x)` with `x ∈ s` and `u` is continuous on `s`,
+then `x ↦ F (x, u x)` is continuous on `s`. -/
 theorem continuousOn_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z]
     {F : X × Y → Z} {u : X → Y} {s : Set X} (hF : ∀ x ∈ s, ContinuousAt F (x, u x))
-    (hu : ∀ x ∈ s, ContinuousAt u x) : ContinuousOn (fun x ↦ F (x, u x)) s :=
-  fun x hx ↦ ((hF x hx).comp₂ continuousAt_id (hu x hx)).continuousWithinAt
+    (hu : ContinuousOn u s) : ContinuousOn (fun x ↦ F (x, u x)) s :=
+  fun x hx ↦ (hF x hx).comp₂_continuousWithinAt continuousWithinAt_id (hu x hx)
 
 /-- If `F` is continuous at every point `(x, u x)` of the graph of a continuous map `u`, then
 `x ↦ F (x, u x)` is continuous. -/
@@ -96,7 +96,7 @@ theorem continuous_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z] 
     {u : X → Y} (hF : ∀ x, ContinuousAt F (x, u x)) (hu : Continuous u) :
     Continuous fun x ↦ F (x, u x) :=
   continuousOn_univ.1 <|
-    continuousOn_comp_prodMk_of_continuousAt (fun x _ ↦ hF x) fun _ _ ↦ hu.continuousAt
+    continuousOn_comp_prodMk_of_continuousAt (fun x _ ↦ hF x) hu.continuousOn
 
 /-- A subset of a product has empty interior if its vertical fibres over a dense set of base
 points have empty interior. -/
