@@ -27,6 +27,9 @@ A function that strictly decreases along every edge of `r` between distinct poin
 decreases along every chain of edges between distinct points
 (`Relation.ReflTransGen.lt_of_forall_ne`).
 
+Successively applying partial maps `g i : α → Option α` along a word reaches exactly the points
+joined by a chain of single defined steps (`List.exists_foldlM_eq_some_iff_reflTransGen`).
+
 ## Main results
 
 * `Relation.forall_reflTransGen_left_iff`: every point is reachable from `i` exactly when every
@@ -37,6 +40,8 @@ decreases along every chain of edges between distinct points
   equivalence class of one of them generate the same class.
 * `Relation.ReflTransGen.lt_of_forall_ne`: a function strictly decreasing along the edges of `r`
   between distinct points strictly decreases along chains of edges between distinct points.
+* `List.exists_foldlM_eq_some_iff_reflTransGen`: a defined word of partial maps is a chain of
+  single defined steps.
 -/
 
 public section
@@ -106,3 +111,25 @@ theorem ReflTransGen.lt_of_forall_ne {α β : Type*} [Preorder β] {r : α → �
     · exact Or.inr ((hr _ _ hbc hbc').trans ih)
 
 end Relation
+
+/-- **Words of partial maps are chains of single steps.** Folding a word of partial maps
+`g i : α → Option α` from `a` reaches `b` for some word exactly when `b` is joined to `a` by a
+chain of single defined steps. -/
+theorem List.exists_foldlM_eq_some_iff_reflTransGen {ι α : Type*} {g : ι → α → Option α}
+    {a b : α} :
+    (∃ w : List ι, w.foldlM (fun p i ↦ g i p) a = some b) ↔
+      Relation.ReflTransGen (fun p q ↦ ∃ i, g i p = some q) a b := by
+  constructor
+  · rintro ⟨w, hw⟩
+    induction w generalizing a with
+    | nil => exact Option.some.inj hw ▸ .refl
+    | cons i w ih =>
+      obtain ⟨c, hc, hb⟩ := Option.bind_eq_some_iff.mp hw
+      exact .head ⟨i, hc⟩ (ih hb)
+  · intro h
+    induction h with
+    | refl => exact ⟨[], rfl⟩
+    | tail _ hstep ih =>
+      obtain ⟨w, hw⟩ := ih
+      obtain ⟨i, hi⟩ := hstep
+      exact ⟨w ++ [i], by simp [List.foldlM_append, hw, hi]⟩
