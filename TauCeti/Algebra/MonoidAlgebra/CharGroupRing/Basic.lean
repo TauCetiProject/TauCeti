@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Evaluation of a group ring at characters, and character group rings
@@ -41,11 +42,17 @@ character group ring of the set of all characters is `O[G]` itself.
 * `Set.jointEval`: the joint evaluation `O[G] →ₐ[O] (Ψ → O)` at a set of characters.
 * `Set.charGroupRing`: the character group ring `R_Ψ`, the range of `Ψ.jointEval`.
 * `Set.charGroupRing.proj`: the canonical surjection `α_Ψ : O[G] →ₐ[O] R_Ψ`.
+* `Set.charGroupRing.restrictAlgHom`: the canonical surjective transition homomorphism
+  `R_Ψ →ₐ[O] R_{Ψ'}` for `Ψ' ⊆ Ψ`.
+* `Set.charGroupRing.evalAlgHom`: coordinate evaluation `R_Ψ →ₐ[O] O` at `ψ ∈ Ψ`.
+* `Set.charGroupRing.singletonAlgEquiv`: the canonical isomorphism `R_{{ψ}} ≃ₐ[O] O`.
 
 ## Main results
 
 * `MonoidAlgebra.charEval_one_apply` and `MonoidHom.charEval_one`: the trivial character
   evaluates by the augmentation.
+* `MonoidHom.charEval_mapDomain` and `MonoidHom.charEval_mapDomain_subtype`: functoriality of
+  character evaluation under `MonoidAlgebra.mapDomain`.
 * `MonoidHom.charEval_subgroupCharSum_of_le_ker` and
   `MonoidHom.charEval_subgroupCharSum_eq_zero`: the evaluation of a character sum over a finite
   subgroup `H`, which is `#H` or `0` (row orthogonality); the norm element `∑_{h ∈ H} h` is the
@@ -107,6 +114,28 @@ theorem charEval_one :
     ((1 : G →* Oˣ).charEval : MonoidAlgebra O G →+* O) =
       MonoidAlgebra.augmentation O G :=
   RingHom.ext MonoidAlgebra.charEval_one_apply
+
+/-- Evaluating at `ψ : G →* Oˣ` after mapping the group along `f : H →* G` agrees with evaluating
+at the restricted character `ψ.comp f`. -/
+@[simp]
+theorem charEval_mapDomain {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G)
+    (y : MonoidAlgebra O H) :
+    ψ.charEval (MonoidAlgebra.mapDomain f y) = (ψ.comp f).charEval y :=
+  MonoidAlgebra.lift_mapDomain ((Units.coeHom O).comp ψ) f y
+
+/-- Evaluating at `ψ : G →* Oˣ` after embedding `O[H]` along `Subtype.val : H → G` agrees with
+evaluating at the restricted character `ψ.comp H.subtype`. -/
+@[simp]
+theorem charEval_mapDomain_subtype {H : Subgroup G} (ψ : G →* Oˣ) (y : MonoidAlgebra O H) :
+    ψ.charEval (MonoidAlgebra.mapDomain (Subtype.val : H → G) y) = (ψ.comp H.subtype).charEval y :=
+  charEval_mapDomain ψ H.subtype y
+
+/-- Evaluating at `ψ : G →* Oˣ` after pushing `O[H]` forward along `f : H →* G` agrees with
+evaluating at the restricted character `ψ.comp f`. -/
+theorem charEval_mapDomainAlgHom {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G)
+    (y : MonoidAlgebra O H) :
+    ψ.charEval (MonoidAlgebra.mapDomainAlgHom O O f y) = (ψ.comp f).charEval y := by
+  simp
 
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
 `H` is `#H` when `χ ψ` is trivial on `H`. -/
@@ -205,6 +234,151 @@ members of `Ψ`. When `O` is a commutative ring, this gives `R_Ψ ≅ O[G] / ⋂
 theorem ker_proj : RingHom.ker (proj Ψ) = ⨅ ψ ∈ Ψ, RingHom.ker ψ.charEval := by
   ext x
   simp [RingHom.mem_ker, proj_eq_zero_iff]
+
+/-- For `Ψ' ⊆ Ψ`, restricting functions from `Ψ` to `Ψ'` defines the canonical surjective
+`O`-algebra transition homomorphism `R_Ψ →ₐ[O] R_{Ψ'}` through which `α_{Ψ'}` factors. -/
+def restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    Ψ.charGroupRing →ₐ[O] Ψ'.charGroupRing where
+  toFun y := ⟨fun ψ ↦ (y : Ψ → O) ⟨ψ.val, h ψ.property⟩, by
+    obtain ⟨x, hx⟩ := mem_iff.mp y.property
+    exact mem_iff.mpr ⟨x, fun ψ ↦ hx ⟨ψ.val, h ψ.property⟩⟩⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+/-- Coordinatewise formula for `restrictAlgHom`. -/
+@[simp]
+theorem coe_restrictAlgHom_apply {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
+    (y : Ψ.charGroupRing) (ψ : Ψ') :
+    (restrictAlgHom h y : Ψ' → O) ψ = (y : Ψ → O) ⟨ψ.val, h ψ.property⟩ :=
+  (rfl)
+
+/-- Restricting a character group ring to itself is the identity algebra homomorphism. -/
+@[simp]
+theorem restrictAlgHom_self (h : Ψ ⊆ Ψ) :
+    restrictAlgHom h = AlgHom.id O Ψ.charGroupRing := by
+  ext y ψ
+  simp
+
+/-- Iterated restriction along `Ψ'' ⊆ Ψ' ⊆ Ψ` agrees with restriction along `Ψ'' ⊆ Ψ`. -/
+@[simp]
+theorem restrictAlgHom_restrictAlgHom {Ψ'' Ψ' Ψ : Set (G →* Oˣ)}
+    (h₁ : Ψ'' ⊆ Ψ') (h₂ : Ψ' ⊆ Ψ) (y : Ψ.charGroupRing) :
+    restrictAlgHom h₁ (restrictAlgHom h₂ y) = restrictAlgHom (h₁.trans h₂) y := by
+  ext ψ
+  simp
+
+/-- Composition of transition homomorphisms `restrictAlgHom`. -/
+@[simp]
+theorem restrictAlgHom_comp {Ψ'' Ψ' Ψ : Set (G →* Oˣ)}
+    (h₁ : Ψ'' ⊆ Ψ') (h₂ : Ψ' ⊆ Ψ) :
+    (restrictAlgHom h₁).comp (restrictAlgHom h₂) = restrictAlgHom (h₁.trans h₂) :=
+  AlgHom.ext (restrictAlgHom_restrictAlgHom h₁ h₂)
+
+/-- `restrictAlgHom` commutes with the canonical projections `α_Ψ` and `α_{Ψ'}`. -/
+@[simp]
+theorem restrictAlgHom_proj {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) (x : MonoidAlgebra O G) :
+    restrictAlgHom h (proj Ψ x) = proj Ψ' x := by
+  ext ψ
+  simp
+
+/-- Composing `restrictAlgHom` with `proj Ψ` recovers `proj Ψ'`. -/
+@[simp]
+theorem restrictAlgHom_comp_proj {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    (restrictAlgHom h).comp (proj Ψ) = proj Ψ' :=
+  AlgHom.ext (restrictAlgHom_proj h)
+
+/-- `restrictAlgHom` is surjective whenever `Ψ' ⊆ Ψ`. -/
+theorem restrictAlgHom_surjective {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    Function.Surjective (restrictAlgHom h) := fun y ↦ by
+  obtain ⟨x, rfl⟩ := proj_surjective Ψ' y
+  exact ⟨proj Ψ x, restrictAlgHom_proj h x⟩
+
+/-- Evaluation of `R_Ψ` at a member `ψ ∈ Ψ`: the surjective `O`-algebra homomorphism `R_Ψ →ₐ[O] O`
+projecting onto the `ψ`-coordinate. -/
+noncomputable def evalAlgHom {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) : Ψ.charGroupRing →ₐ[O] O :=
+  (Pi.evalAlgHom O (fun _ : Ψ ↦ O) ⟨ψ, hψ⟩).comp Ψ.charGroupRing.val
+
+/-- `evalAlgHom` reads off the `ψ`-coordinate in `Ψ → O`. -/
+@[simp]
+theorem evalAlgHom_apply {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) (y : Ψ.charGroupRing) :
+    evalAlgHom hψ y = (y : Ψ → O) ⟨ψ, hψ⟩ := by
+  simp [evalAlgHom]
+
+/-- Composing `evalAlgHom` with `α_Ψ : O[G] → R_Ψ` recovers `ψ.charEval`. -/
+theorem evalAlgHom_proj {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) (x : MonoidAlgebra O G) :
+    evalAlgHom hψ (proj Ψ x) = ψ.charEval x := by
+  simp
+
+/-- Composing `evalAlgHom` with `proj Ψ` gives `ψ.charEval`. -/
+@[simp]
+theorem evalAlgHom_comp_proj {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
+    (evalAlgHom hψ).comp (proj Ψ) = ψ.charEval :=
+  AlgHom.ext (evalAlgHom_proj hψ)
+
+/-- Composing `evalAlgHom` on `R_{Ψ'}` with `restrictAlgHom` recovers `evalAlgHom` on `R_Ψ`. -/
+@[simp]
+theorem evalAlgHom_comp_restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
+    {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ') :
+    (evalAlgHom hψ).comp (restrictAlgHom h) = evalAlgHom (h hψ) :=
+  AlgHom.ext fun y ↦ by simp
+
+/-- Coordinate evaluation `R_Ψ →ₐ[O] O` at any `ψ ∈ Ψ` is surjective, split by
+`algebraMap O R_Ψ`. -/
+theorem evalAlgHom_surjective {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
+    Function.Surjective (evalAlgHom hψ) :=
+  fun a ↦ ⟨algebraMap O Ψ.charGroupRing a, (evalAlgHom hψ).commutes a⟩
+
+/-- A nontrivial character group ring `R_Ψ` is necessarily indexed by a nonempty set `Ψ`, since
+`∅ → O` is a subsingleton. -/
+theorem nonempty_of_nontrivial [Nontrivial Ψ.charGroupRing] : Ψ.Nonempty := by
+  by_contra h
+  rw [Set.not_nonempty_iff_eq_empty] at h
+  subst h
+  exact zero_ne_one
+    (ext (y := (0 : (∅ : Set (G →* Oˣ)).charGroupRing)) fun ψ ↦ False.elim ψ.property)
+
+/-- When `Ψ` is nonempty, `algebraMap O R_Ψ` is a local homomorphism because it has a left inverse
+`evalAlgHom hψ`. -/
+instance [Nonempty Ψ] : IsLocalHom (algebraMap O Ψ.charGroupRing) := by
+  obtain ⟨ψ, hψ⟩ := ‹Nonempty Ψ›
+  refine ⟨fun a ha ↦ ?_⟩
+  simpa [(evalAlgHom hψ).commutes a] using ha.map (evalAlgHom hψ)
+
+/-- When `R_Ψ` is nontrivial, `Ψ` is nonempty and hence `algebraMap O R_Ψ` is a local
+homomorphism. -/
+instance [Nontrivial Ψ.charGroupRing] : IsLocalHom (algebraMap O Ψ.charGroupRing) := by
+  have := (nonempty_of_nontrivial (Ψ := Ψ)).to_subtype
+  infer_instance
+
+/-- The character group ring of a singleton `{ψ}` is canonically isomorphic to `O`. -/
+noncomputable def singletonAlgEquiv (ψ : G →* Oˣ) : ({ψ} : Set (G →* Oˣ)).charGroupRing ≃ₐ[O] O :=
+  AlgEquiv.ofAlgHom
+    (evalAlgHom (Set.mem_singleton ψ))
+    (Algebra.ofId O _)
+    (AlgHom.ext fun a ↦ (evalAlgHom (Set.mem_singleton ψ)).commutes a)
+    (AlgHom.ext fun y ↦ ext fun ⟨χ, hχ⟩ ↦ by
+      cases Set.mem_singleton_iff.mp hχ
+      simp)
+
+/-- `singletonAlgEquiv` evaluates at `ψ`. -/
+@[simp]
+theorem singletonAlgEquiv_apply (ψ : G →* Oˣ) (y : ({ψ} : Set (G →* Oˣ)).charGroupRing) :
+    singletonAlgEquiv ψ y = (y : ({ψ} : Set (G →* Oˣ)) → O) ⟨ψ, Set.mem_singleton ψ⟩ := by
+  simp [singletonAlgEquiv]
+
+/-- The inverse of `singletonAlgEquiv` is `algebraMap O R_{{ψ}}`. -/
+@[simp]
+theorem singletonAlgEquiv_symm_apply (ψ : G →* Oˣ) (a : O) :
+    (singletonAlgEquiv ψ).symm a = algebraMap O ({ψ} : Set (G →* Oˣ)).charGroupRing a := by
+  simp [singletonAlgEquiv]
+
+/-- `singletonAlgEquiv` sends `α_{{ψ}}(x)` to `ψ(x)`. -/
+theorem singletonAlgEquiv_proj (ψ : G →* Oˣ) (x : MonoidAlgebra O G) :
+    singletonAlgEquiv ψ (proj {ψ} x) = ψ.charEval x := by
+  simp
 
 end charGroupRing
 
