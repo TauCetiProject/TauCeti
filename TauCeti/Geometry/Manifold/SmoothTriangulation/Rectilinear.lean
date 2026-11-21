@@ -22,11 +22,11 @@ for star immersions apply to rectilinear complexes in a vector space.
 Following the comparison map by a map `F : V → M` into a manifold gives an immersion of each
 closed simplex as soon as `F` is `Cⁿ` on that simplex with a derivative injective on the
 directions of its affine span. When moreover `F` restricts to a homeomorphism from `K.space` onto
-`M`, and `K` is locally finite, the composite of `K.realizationHomeomorph` with that homeomorphism
-is a `Cⁿ` triangulation of `M` (`TauCeti.IsSmoothTriangulation`). The derivative is asked to be
-injective only along the simplices, not on all of `V`: the radial projection of the boundary of
-a tetrahedron onto the sphere around an interior point kills the radial direction, which is
-transverse to every face.
+`M`, and the closed simplices of `K` form a locally finite family in `K.space`, the composite of
+`K.realizationHomeomorph` with that homeomorphism is a `Cⁿ` triangulation of `M`
+(`TauCeti.IsSmoothTriangulation`). The derivative is asked to be injective only along the
+simplices, not on all of `V`: the radial projection of the boundary of a tetrahedron onto the
+sphere around an interior point kills the radial direction, which is transverse to every face.
 
 This is how a rectilinear complex in a coordinate chart, such as the complexes produced there by
 subdivision and by triangulating unions of polyhedra, becomes an embedded smooth complex in a
@@ -43,8 +43,8 @@ fits triangulations together.
   following it by a map with injective derivative along a simplex gives an immersion of that
   simplex.
 * `Geometry.SimplicialComplex.isSmoothTriangulation_realizationHomeomorph_trans`: a homeomorphism
-  from a locally finite rectilinear polyhedron onto a manifold, `Cⁿ` with injective derivative
-  along every simplex, is a smooth triangulation.
+  from a rectilinear polyhedron, locally finite in itself, onto a manifold, `Cⁿ` with injective
+  derivative along every simplex, is a smooth triangulation.
 
 ## References
 
@@ -125,13 +125,14 @@ theorem isSimplexImmersion_comp_realizationToSpace_comp_faceInclusion (σ : Face
     (s := Finset.univ) hv hL0 a (Finset.mem_univ a)
 
 /-- **Smooth triangulations from rectilinear polyhedra.** Let `K` be a geometric simplicial
-complex in `V` whose closed simplices form a locally finite family, and let `f : K.space ≃ₜ M` be
-a homeomorphism onto a manifold which is the restriction of a map `F : V → M`. If on every closed
-simplex `F` is `Cⁿ`, with a derivative within the simplex injective on the directions of its
-affine span, then `f` composed with the homeomorphism `|K.vertexScheme| ≃ₜ K.space` is a `Cⁿ`
-triangulation of `M`. -/
+complex in `V` whose closed simplices form a locally finite family in `K.space`, and let
+`f : K.space ≃ₜ M` be a homeomorphism onto a manifold which is the restriction of a map
+`F : V → M`. If on every closed simplex `F` is `Cⁿ`, with a derivative within the simplex
+injective on the directions of its affine span, then `f` composed with the homeomorphism
+`|K.vertexScheme| ≃ₜ K.space` is a `Cⁿ` triangulation of `M`. -/
 theorem isSmoothTriangulation_realizationHomeomorph_trans
-    (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set V)) (f : K.space ≃ₜ M)
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → V) ⁻¹' convexHull ℝ (s : Set V))
+    (f : K.space ≃ₜ M)
     {F : V → M} (hFf : ∀ x : K.space, F x = f x)
     (hF : ∀ s ∈ K.faces, ContMDiffOn 𝓘(ℝ, V) I n F (convexHull ℝ (s : Set V)))
     (hF' : ∀ s ∈ K.faces, ∀ x ∈ convexHull ℝ (s : Set V), ∃ F' : V →L[ℝ] E,
