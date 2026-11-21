@@ -17,6 +17,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
@@ -300,10 +301,7 @@ private theorem exists_hasDerivAt_preciseRepresentative_Ioo (hab : a < b)
     exact h.congr_ae_deriv hk
   obtain ⟨c, hc⟩ := hv.exists_ae_eq_add_intervalIntegral_left hGi
   have hU (x : ℝ) (hx : x ∈ Ioo a b) : HasDerivAt (fun t => c + ∫ s in a..t, G s) (G x) x :=
-    (integral_hasDerivAt_right
-      ((hGc.mono (Icc_subset_Icc_right hx.2.le)).intervalIntegrable_of_Icc hx.1.le)
-      ((hGc.mono Ioo_subset_Icc_self).stronglyMeasurableAtFilter isOpen_Ioo x hx)
-      (hGc.continuousAt (Icc_mem_nhds hx.1 hx.2))).const_add c
+    (hGc.integral_hasDerivAt_of_mem_Ioo hx).const_add c
   -- The precise representative agrees with the continuous function `U` on `(a, b)`.
   have heq : EqOn (preciseRepresentative volume (value 2 u)) (fun t => c + ∫ s in a..t, G s)
       (Ioo a b) :=
