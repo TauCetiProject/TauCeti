@@ -813,19 +813,6 @@ theorem _root_.Derivation.continuous_iff_continuous_compAlgebraMap_laurentSeries
   exact ((continuous_derivation K L).smul continuous_const).congr
     fun x ↦ (apply_eq_derivation_smul δ h x).symm
 
-/-- **Topological universal property of `Ω¹_cont(L/K)`.** When `L` carries the `K⸨X⸩`-module
-topology, a `K`-derivation `δ : L → M` into a Hausdorff `L`-module with continuous `L`-scalar
-multiplication factors through `d` if and only if `δ` is continuous on `L`. -/
-theorem exists_compDer_eq_iff_continuous {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
-    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
-    (δ : Derivation K L M) :
-    (∃ ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ) ↔ Continuous δ := by
-  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
-  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
-  have : IsScalarTower K K⸨X⸩ M := IsScalarTower.to₁₂₄ K K⸨X⸩ L M
-  have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
-  rw [exists_compDer_eq_iff, ← δ.continuous_iff_continuous_compAlgebraMap_laurentSeries]
-
 /-- When `L` carries the `K⸨X⸩`-module topology, every continuous `K`-derivation `δ : L → M` into
 a Hausdorff `L`-module with continuous `L`-scalar multiplication factors uniquely through `d`. -/
 theorem existsUnique_compDer_eq_of_continuous {M : Type*} [AddCommGroup M] [Module L M]
@@ -838,6 +825,16 @@ theorem existsUnique_compDer_eq_of_continuous {M : Type*} [AddCommGroup M] [Modu
   have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
   exact existsUnique_compDer_eq δ
     (δ.continuous_iff_continuous_compAlgebraMap_laurentSeries.mp hδ)
+
+/-- **Topological universal property of `Ω¹_cont(L/K)`.** When `L` carries the `K⸨X⸩`-module
+topology, a `K`-derivation `δ : L → M` into a Hausdorff `L`-module with continuous `L`-scalar
+multiplication factors through `d` if and only if `δ` is continuous on `L`. -/
+theorem exists_compDer_eq_iff_continuous {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
+    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
+    (δ : Derivation K L M) :
+    (∃ ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ) ↔ Continuous δ :=
+  ⟨fun ⟨ℓ, h⟩ ↦ h ▸ continuous_compDer ℓ,
+    fun hδ ↦ (existsUnique_compDer_eq_of_continuous δ hδ).exists⟩
 
 /-- For a finite formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module topology, the `L`-module
 topology on `Ω¹_cont(L/K)` is also its `K⸨X⸩`-module topology. -/

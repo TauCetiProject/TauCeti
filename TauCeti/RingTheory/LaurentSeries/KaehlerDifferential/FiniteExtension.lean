@@ -200,15 +200,6 @@ theorem equivLevelContinuousKaehlerDifferential_symm_D (x : Level K d) :
   (equivLevelContinuousKaehlerDifferential K d).symm_apply_eq.mpr
     (equivLevelContinuousKaehlerDifferential_D x).symm
 
-/-- Under `equivLevelContinuousKaehlerDifferential K d`, the formally étale differential
-`D K (Level K d) x` is the explicit Laurent differential `d(x(u))` in the level variable `u`. -/
-theorem addEquivContinuousKaehlerDifferential_equivLevelContinuousKaehlerDifferential_D
-    (x : Level K d) :
-    Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential K d
-        (equivLevelContinuousKaehlerDifferential K d (D K (Level K d) x)) =
-      TauCeti.ContinuousKaehlerDifferential.D K (Level.ringEquivLaurentSeries K d x) := by
-  simp
-
 /-- `equivLevelContinuousKaehlerDifferential K d` intertwines the intrinsic formally étale
 differential trace with the explicit level differential trace. -/
 @[simp]
@@ -470,14 +461,6 @@ theorem laurentDifferentialEquiv_symm_D (e : L ≃ₐ[K⸨X⸩] Level K d) (x : 
   apply e.laurentDifferentialEquiv.symm_apply_eq.mpr
   simp
 
-/-- Under a level chart `e`, `D K L x` becomes `d((e x)(u))` in the level variable `u`. -/
-theorem addEquivContinuousKaehlerDifferential_laurentDifferentialEquiv_D
-    (e : L ≃ₐ[K⸨X⸩] Level K d) (x : L) :
-    addEquivContinuousKaehlerDifferential K d
-        (e.laurentDifferentialEquiv (Extension.ContinuousKaehlerDifferential.D K L x)) =
-      TauCeti.ContinuousKaehlerDifferential.D K (Level.ringEquivLaurentSeries K d (e x)) := by
-  simp
-
 /-- A level chart intertwines the intrinsic differential trace on `Ω¹_cont(L/K)` with the explicit
 level differential trace. -/
 @[simp]
@@ -542,12 +525,6 @@ theorem laurentDifferentialContinuousEquiv_symm_apply [TopologicalSpace L]
     [IsModuleTopology K⸨X⸩ L] (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Level.ContinuousKaehlerDifferential K d) :
     e.laurentDifferentialContinuousEquiv.symm ω = e.laurentDifferentialEquiv.symm ω := by
-  simp [laurentDifferentialContinuousEquiv]
-
-@[simp]
-theorem toLinearEquiv_laurentDifferentialContinuousEquiv [TopologicalSpace L]
-    [IsModuleTopology K⸨X⸩ L] (e : L ≃ₐ[K⸨X⸩] Level K d) :
-    e.laurentDifferentialContinuousEquiv.toLinearEquiv = e.laurentDifferentialEquiv := by
   simp [laurentDifferentialContinuousEquiv]
 
 end EtaleChart
