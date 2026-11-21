@@ -175,13 +175,10 @@ theorem symmetricCasimir_ne_zero [NeZero (2 : K)] [Nontrivial L] :
   intro h0
   have hdiag (v : L) : killingForm K L v v = 0 := by
     rw [← lift_killingForm_symmetricCasimir K L v, h0, map_zero]
+  have hsym : (killingForm K L).IsSymm := ⟨LieModule.traceForm_comm K L L⟩
   have hbil (u w : L) : killingForm K L u w = 0 := by
-    have hpol : killingForm K L (u + w) (u + w) =
-        killingForm K L u u + 2 * killingForm K L u w + killingForm K L w w := by
-      simp only [map_add, LinearMap.add_apply, LieModule.traceForm_comm K L L w u]
-      ring
-    rw [hdiag, hdiag, hdiag] at hpol
-    exact (mul_eq_zero.1 (by linear_combination -hpol)).resolve_left (NeZero.ne (2 : K))
+    rw [hsym.polarization u w, hdiag, hdiag, hdiag]
+    simp only [sub_self, zero_div]
   obtain ⟨u, hu⟩ := exists_ne (0 : L)
   exact hu ((IsKilling.killingForm_nondegenerate K L).1 u (hbil u))
 
