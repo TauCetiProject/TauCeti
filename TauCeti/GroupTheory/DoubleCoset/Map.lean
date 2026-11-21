@@ -180,16 +180,15 @@ theorem mem_doubleCoset_image_iff {f : F} (hf : Function.Injective f) (a : α) (
   rw [← image_doubleCoset, hf.mem_set_image]
 
 /-- Pushing a double coset of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E` forward
-along `Subtype.val : E → G` recovers the ambient double coset of `H` and `K`, provided `H ≤ E`
-and `K ≤ E`. -/
-theorem image_doubleCoset_subgroupOf {E H K : Subgroup G} (hH : H ≤ E) (hK : K ≤ E) (x : E) :
+along `Subtype.val : E → G` recovers the ambient double coset of `H ⊓ E` and `K ⊓ E`. -/
+theorem image_doubleCoset_subgroupOf {E H K : Subgroup G} (x : E) :
     Subtype.val '' doubleCoset x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E) =
-      doubleCoset (x : G) (H : Set G) (K : Set G) := by
-  have hH' : Subtype.val '' (H.subgroupOf E : Set E) = (H : Set G) := by
-    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.map_subgroupOf_eq_of_le hH]
-  have hK' : Subtype.val '' (K.subgroupOf E : Set E) = (K : Set G) := by
-    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.map_subgroupOf_eq_of_le hK]
-  simpa only [Subgroup.coe_subtype, hH', hK'] using
+      doubleCoset (x : G) ((H ⊓ E : Subgroup G) : Set G) ((K ⊓ E : Subgroup G) : Set G) := by
+  have himg (L : Subgroup G) :
+      Subtype.val '' (L.subgroupOf E : Set E) = ((L ⊓ E : Subgroup G) : Set G) := by
+    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.subgroupOf,
+      Subgroup.map_comap_eq, Subgroup.range_subtype, inf_comm]
+  simpa only [Subgroup.coe_subtype, himg] using
     image_doubleCoset E.subtype x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E)
 
 end DoubleCoset

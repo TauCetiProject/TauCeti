@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 import TauCeti.GroupTheory.DoubleCoset.Map
+import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum
@@ -74,9 +75,8 @@ theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
   subst hn
   rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_weylProjection K n,
     (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, Subgroup.coe_subtype,
-    DoubleCoset.image_doubleCoset_subgroupOf
-      (D.borelSubgroup_le_extendedElementarySubgroup K)
-      (D.borelSubgroup_le_extendedElementarySubgroup K),
+    DoubleCoset.image_doubleCoset_subgroupOf,
+    inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K),
     coe_titsSubgroupNMulEquiv_symm]
 
 /-- The Bruhat cell of `D.weylProjection K n` is the double coset `B n B` in `D.points K`. -/
@@ -307,40 +307,21 @@ theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
         (D.titsSystem K).simpleGenerators.wordLength (D.titsSimpleReflection K i * q) ↔
       (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.titsWeylGroupMulEquiv K q)⁻¹
         (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-  rw [← (D.titsSystem K).bruhatCell_mul_eq_iff_wordLength_lt
-    (D.titsSimpleReflection_mem_simple K i) q]
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  let P := t.simplyConnectedRootDatum ht
+  let b := t.simplyConnectedBase ht
   let w := D.titsWeylGroupMulEquiv K q
-  let s := RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)
-  have hsymm_s : (D.titsWeylGroupMulEquiv K).symm s = D.titsSimpleReflection K i :=
-    D.titsWeylGroupMulEquiv_symm_ofIdx_simpleIndex K i
-  have hsymm_w : (D.titsWeylGroupMulEquiv K).symm w = q :=
-    (D.titsWeylGroupMulEquiv K).symm_apply_apply q
-  have hsymm_sw : (D.titsWeylGroupMulEquiv K).symm (s * w) =
-      D.titsSimpleReflection K i * q := by
-    rw [map_mul, hsymm_s, hsymm_w]
-  have hcell :
-      (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i) * (D.titsSystem K).bruhatCell q =
-          (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) ↔
-        D.bruhatCell K s * D.bruhatCell K w = D.bruhatCell K (s * w) := by
-    rw [bruhatCell, bruhatCell, bruhatCell, hsymm_s, hsymm_w, hsymm_sw, ← Set.image_mul]
-    exact (Set.image_injective.mpr (D.extendedElementarySubgroup K).subtype_injective).eq_iff.symm
-  rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht)
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm w⁻¹ (t.simpleIndex ht i)) with hpos | hneg
-  · exact iff_of_true (hcell.mpr (D.bruhatCell_ofIdx_mul_eq_of_mem_posRoots K i hpos)) hpos
-  · refine iff_of_false ?_ (not_mem_posRoots_iff_mem_negRoots _ _ _ |>.mpr hneg)
-    intro heqT
-    have hunion : D.bruhatCell K s * D.bruhatCell K w =
-        D.bruhatCell K (s * w) ∪ D.bruhatCell K w :=
-      D.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots K i hneg
-    rw [hcell.mp heqT] at hunion
-    have hunionT :
-        (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) =
-          (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) ∪
-            (D.titsSystem K).bruhatCell q := by
-      apply Set.image_injective.mpr (D.extendedElementarySubgroup K).subtype_injective
-      rw [Set.image_union, ← hsymm_sw, ← hsymm_w, ← bruhatCell, ← bruhatCell]
-      exact hunion
-    exact (D.titsSystem K).bruhatCell_mul_ne_union_of_ne_one
-      ((D.titsSystem K).simple_ne_one (D.titsSimpleReflection_mem_simple K i)) q hunionT
+  have hpos : b.IsPos (t.simpleIndex ht i) :=
+    b.isPos_of_mem_support ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
+  conv_lhs =>
+    rhs
+    rw [← (D.titsWeylGroupMulEquiv K).symm_apply_apply (D.titsSimpleReflection K i * q),
+      map_mul, D.titsWeylGroupMulEquiv_titsSimpleReflection K i]
+  conv_lhs =>
+    lhs
+    rw [← (D.titsWeylGroupMulEquiv K).symm_apply_apply q]
+  rw [D.wordLength_titsWeylGroupMulEquiv_symm, D.wordLength_titsWeylGroupMulEquiv_symm,
+    lt_ncard_inversions_ofIdx_mul_iff P b w hpos, mem_inversions, and_iff_right hpos, not_not,
+    t.posRoots_rationalRootSystem ht, mem_posRoots]
 
 end TauCeti.DynkinType.ChevalleyDatum

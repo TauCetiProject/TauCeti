@@ -128,7 +128,8 @@ theorem map_range_rootSubgroupPoints_conj (g : D.weylSubgroup K) (γ : Fin t.num
 
 /-- Conjugating a root subgroup element `x ∈ X_γ(K)` by a Weyl lift `g` lands in the root
 subgroup at the projected root `w(γ)`. -/
-theorem conj_rootSubgroupPoints_mem_range (g : D.weylSubgroup K) {γ : Fin t.numRoots}
+@[grind ←]
+theorem conj_mem_range_rootSubgroupPoints (g : D.weylSubgroup K) {γ : Fin t.numRoots}
     {x : D.points K} (hx : x ∈ (D.rootSubgroupPoints γ K).range) :
     MulAut.conj (g : D.points K) x ∈
       (D.rootSubgroupPoints
