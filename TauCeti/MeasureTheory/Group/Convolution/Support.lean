@@ -173,34 +173,32 @@ theorem integral_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableS
     _ = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂μ := integral_mul_const _ _
 
 omit [Group G] [IsTopologicalGroup G] in
-private theorem ofReal_integral_norm_cc {E : Type*} [SeminormedAddCommGroup E]
+private theorem ofReal_integral_norm {E : Type*} [SeminormedAddCommGroup E]
     [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
-    (w : C_c(G, E)) :
+    {w : G → E} (hw : Continuous w) (hwc : HasCompactSupport w) :
     ENNReal.ofReal (∫ x, ‖w x‖ ∂μ) = ∫⁻ x, ‖w x‖ₑ ∂μ := by
   have hint : Integrable (fun x => ‖w x‖) μ :=
-    w.continuous.norm.integrable_of_hasCompactSupport (w.hasCompactSupport.comp_left norm_zero)
+    hw.norm.integrable_of_hasCompactSupport (hwc.comp_left norm_zero)
   rw [ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ => norm_nonneg _)]
   congr 1 with x
   exact ofReal_norm _
 
 /-- Against any left-invariant measure finite on compact sets (with no σ-finiteness assumption),
-two compactly supported continuous functions `u : C_c(G, E₁)` and `v : C_c(G, E₂)` satisfy
+two compactly supported continuous functions `u : G → E₁` and `v : G → E₂` satisfy
 `∫⁻ s, ∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ ∂μ = (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂μ`. -/
 theorem lintegral_lintegral_eNorm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
     [MeasurableMul G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
-    (u : C_c(G, E₁)) (v : C_c(G, E₂)) :
+    {u : G → E₁} {v : G → E₂} (hu : Continuous u) (huc : HasCompactSupport u)
+    (hv : Continuous v) (hvc : HasCompactSupport v) :
     (∫⁻ s, (∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ) ∂μ) =
       (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂μ := by
-  simp_rw [lintegral_eNorm_mul_inv_mul_eq_ofReal_integral μ (map_continuous u) u.hasCompactSupport
-    (map_continuous v)]
+  simp_rw [lintegral_eNorm_mul_inv_mul_eq_ofReal_integral μ hu huc hv]
   rw [← ofReal_integral_eq_lintegral_ofReal
-      (integrable_integral_norm_mul_inv_mul μ (map_continuous u) u.hasCompactSupport
-        (map_continuous v) v.hasCompactSupport)
+      (integrable_integral_norm_mul_inv_mul μ hu huc hv hvc)
       (.of_forall fun _ => integral_nonneg fun _ => mul_nonneg (norm_nonneg _) (norm_nonneg _)),
-    integral_integral_norm_mul_inv_mul μ (map_continuous u) u.hasCompactSupport
-      (map_continuous v) v.hasCompactSupport,
+    integral_integral_norm_mul_inv_mul μ hu huc hv hvc,
     ENNReal.ofReal_mul (integral_nonneg fun _ => norm_nonneg _),
-    ofReal_integral_norm_cc μ u, ofReal_integral_norm_cc μ v]
+    ofReal_integral_norm μ hu huc, ofReal_integral_norm μ hv hvc]
 
 end Seminormed
 

@@ -21,9 +21,9 @@ the pointwise Bochner twisted convolution and involution formulas in
 adjoint whenever `μ.inv ≪ μ` (in particular for both inner regular and regular Haar measures).
 
 On any topological group, a norm-summable family `f : G → A` yields unconditionally summable
-Hilbert-space terms `s ↦ π(f s)(U_s v)`. On a discrete group with counting measure, the vector
-integral for `integratedOperatorBochnerL1` evaluates to the unconditional series
-`∑' s, π(f s)(U_s v)` without any countability assumption on `G`.
+Hilbert-space terms `s ↦ π(f s)(U_s v)`. On an `R1Space` topological group with measurable
+singletons and counting measure, the vector integral for `integratedOperatorBochnerL1` evaluates
+to the unconditional series `∑' s, π(f s)(U_s v)` without any countability assumption on `G`.
 
 ## Main statements
 
@@ -37,7 +37,7 @@ integral for `integratedOperatorBochnerL1` evaluates to the unconditional series
 * `TauCeti.CStarAction.CovariantRepresentation.integratedOperatorBochnerL1_count_toL1_apply` and
   `TauCeti.CStarAction.CovariantRepresentation.norm_integratedOperatorBochnerL1_count_toL1_le`:
   counting-measure specialization `(π ⋊ U)(f) v = ∑' s, π(f s)(U_s v)` for norm-summable `f` on
-  an arbitrary discrete group.
+  an `R1Space` topological group with measurable singletons.
 
 ## References
 
@@ -91,7 +91,7 @@ theorem integratedOperatorBochnerL1_bochnerInvolution {μ : Measure G}
 
 end BochnerOps
 
-/-! ### Summability and discrete counting-measure series -/
+/-! ### Summability and counting-measure series -/
 
 section Summable
 
@@ -116,15 +116,16 @@ theorem summable_integrand_of_summable_norm {f : G → A}
 
 end Summable
 
-section Discrete
+section Count
 
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-  [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G]
+  [MeasurableSpace G] [BorelSpace G] [MeasurableSingletonClass G] [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
 
-/-- On a discrete group with counting measure, the integrated operator of any norm-summable
-`f : G → A` evaluates as the unconditional series `∑' s, π(f s)(U_s v)`. -/
+/-- With respect to counting measure on an `R1Space` topological group with measurable singletons,
+the integrated operator of any norm-summable `f : G → A` evaluates as the unconditional series
+`∑' s, π(f s)(U_s v)`. -/
 theorem integratedOperatorBochnerL1_count_toL1_apply {f : G → A}
     (hf : Summable fun s => ‖f s‖) (v : H) :
     P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.mpr hf).toL1 f) v =
@@ -133,8 +134,9 @@ theorem integratedOperatorBochnerL1_count_toL1_apply {f : G → A}
   exact integral_count_eq_tsum
     (P.integrable_integrand_of_integrable (integrable_count_iff.mpr hf) v)
 
-/-- On a discrete group with counting measure, the operator norm of the integrated form of a
-norm-summable `f : G → A` is bounded by `∑' s, ‖f s‖`. -/
+/-- With respect to counting measure on an `R1Space` topological group with measurable singletons,
+the operator norm of the integrated form of a norm-summable `f : G → A` is bounded by
+`∑' s, ‖f s‖`. -/
 theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A}
     (hf : Summable fun s => ‖f s‖) :
     ‖P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.mpr hf).toL1 f)‖ ≤
@@ -144,6 +146,6 @@ theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A}
   exact (integral_congr_ae ((integrable_count_iff.mpr hf).coeFn_toL1.fun_comp norm)).trans
     (integral_count_eq_tsum (integrable_count_iff.mpr hf).norm)
 
-end Discrete
+end Count
 
 end TauCeti.CStarAction.CovariantRepresentation

@@ -95,12 +95,11 @@ integrable. Neither separability of `H` or `A` nor σ-finiteness of `μ` is assu
 theorem integrable_integrand_of_integrable {μ : Measure G} [μ.InnerRegularCompactLTTop]
     {f : G → A} (hf : Integrable f μ) (v : H) :
     Integrable (fun g => P.coefficient (f g) (P.group g v)) μ := by
-  let L : H →L[ℂ] A →L[ℂ] H :=
-    ({ toLinearMap := (P.coefficient : A →ₗ[ℂ] H →L[ℂ] H)
-       cont := map_continuous P.coefficient } : A →L[ℂ] H →L[ℂ] H).flip
-  have hmeas : AEStronglyMeasurable (fun g => L (P.group g v) (f g)) μ :=
-    hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
-      (L.continuous.comp (P.continuous_orbit v))
+  let L : A →L[ℂ] H →L[ℂ] H :=
+    { toLinearMap := (P.coefficient : A →ₗ[ℂ] H →L[ℂ] H)
+      cont := map_continuous P.coefficient }
+  have hmeas : AEStronglyMeasurable (fun g => L (f g) (P.group g v)) μ :=
+    L.aestronglyMeasurable_comp₂_continuous hf.aefinStronglyMeasurable (P.continuous_orbit v)
   exact (hf.norm.mul_const ‖v‖).mono' hmeas
     (.of_forall fun g => P.norm_coefficient_group_apply_le _ g v)
 
