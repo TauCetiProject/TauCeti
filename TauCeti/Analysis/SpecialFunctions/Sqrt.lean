@@ -6,6 +6,8 @@ Authors: Claude Fable 5, Claude Opus 4.8, Claude Opus 5
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
 
@@ -23,7 +25,8 @@ modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschi
 to `0` as
 `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
-`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
+`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
+the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
 
 ## Main results
 
@@ -50,9 +53,16 @@ to `0` as
 * `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
   `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)`
   is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
+* `Real.hasDerivAt_div_mul_add_sqrt_sq_add`, `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: the
+  function `y ↦ α / (β y + √(y² + c))` has an explicit derivative where `y² + c` and the
+  denominator do not vanish and, for `β ≠ −1`, tends to `0` at `+∞`.
+* `Real.strictMonoOn_mul_sqrt_sq_add_sub`: for `c > 0`, `y ↦ y (√(y² + c) − y)` is strictly
+  increasing on `[0, ∞)`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 * `Real.tendsto_sqrt_mul_sqrt_add_one_sub_sqrt`: `√x (√(x + 1) - √x) → 1/2` as `x → ∞`.
+* `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
+* `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
 
 ## References
 
@@ -63,6 +73,11 @@ to `0` as
 `Real.image_add_sqrt_sq_add_eq_Ioi` are extracted from, and their proofs adapted from, Jeremy
 Tan's [Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397),
 commit `376352b6e080265bc0380074baaf9aafa0b70a80`.
+
+`Real.hasDerivAt_div_mul_add_sqrt_sq_add`, `Real.tendsto_div_mul_add_sqrt_sq_add_atTop` and
+`Real.strictMonoOn_mul_sqrt_sq_add_sub` are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`.
 -/
 
 public section
@@ -290,6 +305,62 @@ theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
   field_simp
   ring
 
+/-- The derivative of `y ↦ α / (β y + √(y² + c))` at a point where `y² + c` and the denominator
+do not vanish. -/
+theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 2 + c ≠ 0)
+    (hy : β * y + √(y ^ 2 + c) ≠ 0) :
+    HasDerivAt (fun y => α / (β * y + √(y ^ 2 + c)))
+      (-α * (β + y / √(y ^ 2 + c)) / (β * y + √(y ^ 2 + c)) ^ 2) y := by
+  have hs : HasDerivAt (fun y => √(y ^ 2 + c)) (y / √(y ^ 2 + c)) y := by
+    refine (((hasDerivAt_pow 2 y).add_const c).sqrt hyc).congr_deriv ?_
+    norm_num [mul_div_mul_left _ _ (two_ne_zero' ℝ)]
+  have hD : HasDerivAt (fun y => β * y + √(y ^ 2 + c)) (β + y / √(y ^ 2 + c)) y := by
+    have := ((hasDerivAt_id y).const_mul β).add hs
+    exact this.congr_deriv (by simp)
+  have := (hasDerivAt_const y α).div hD hy
+  refine this.congr_deriv ?_
+  ring
+
+/-- For `β ≠ −1`, `α / (β y + √(y² + c))` tends to `0` as `y → +∞`. -/
+theorem tendsto_div_mul_add_sqrt_sq_add_atTop (α : ℝ) {β : ℝ} (hβ : β ≠ -1) (c : ℝ) :
+    Tendsto (fun y => α / (β * y + √(y ^ 2 + c))) atTop (𝓝 0) := by
+  -- For `y > 0` the function is `(α / y) / (β + √(1 + c / y²))`.
+  have hden : Tendsto (fun y : ℝ => β + √(1 + c / y ^ 2)) atTop (𝓝 (β + 1)) := by
+    have : Tendsto (fun y : ℝ => 1 + c / y ^ 2) atTop (𝓝 (1 + 0)) :=
+      tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero))
+    simpa using tendsto_const_nhds.add this.sqrt
+  have h := (tendsto_const_nhds.div_atTop tendsto_id : Tendsto (fun y : ℝ => α / y) atTop (𝓝 0)).div
+    hden fun h => hβ (by linarith)
+  rw [zero_div] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with y hy
+  have hs : √(y ^ 2 + c) = y * √(1 + c / y ^ 2) := by
+    rw [show y ^ 2 + c = y ^ 2 * (1 + c / y ^ 2) by field_simp, sqrt_mul (sq_nonneg y),
+      sqrt_sq hy.le]
+  simp only [Pi.div_apply, hs, div_div]
+  ring
+
+/-- For `c > 0`, `y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. -/
+theorem strictMonoOn_mul_sqrt_sq_add_sub {c : ℝ} (hc : 0 < c) :
+    StrictMonoOn (fun y => y * (√(y ^ 2 + c) - y)) (Set.Ici 0) := by
+  intro y₁ h0 y₂ h2 h12
+  simp only [Set.mem_Ici] at h0 h2
+  have hs : ∀ y : ℝ, √(y ^ 2 + c) ^ 2 = y ^ 2 + c := fun y => sq_sqrt (by positivity)
+  have hp : ∀ y : ℝ, 0 < √(y ^ 2 + c) := fun y => sqrt_pos.mpr (by positivity)
+  -- `√(y² + c) − y = c / (√(y² + c) + y)`
+  have hrw : ∀ y : ℝ, 0 ≤ y → √(y ^ 2 + c) - y = c / (√(y ^ 2 + c) + y) := by
+    intro y hy
+    rw [eq_div_iff (by linarith [hp y])]; nlinarith [hs y]
+  dsimp only
+  rw [hrw y₁ h0, hrw y₂ h2, mul_div_assoc', mul_div_assoc',
+    div_lt_div_iff₀ (by linarith [hp y₁]) (by linarith [hp y₂])]
+  have hkey : y₁ * √(y₂ ^ 2 + c) < y₂ * √(y₁ ^ 2 + c) := by
+    refine lt_of_not_ge fun hcon => ?_
+    have hnn : 0 ≤ y₂ * √(y₁ ^ 2 + c) := mul_nonneg h2 (hp _).le
+    have := mul_self_le_mul_self hnn hcon
+    nlinarith [hs y₁, hs y₂, mul_lt_mul_of_pos_left (mul_self_lt_mul_self h0 h12) hc]
+  nlinarith [mul_lt_mul_of_pos_left hkey hc]
+
 /-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
 theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
   rcases le_or_gt 0 a with ha | ha
@@ -319,6 +390,19 @@ theorem tendsto_sqrt_mul_sqrt_add_one_sub_sqrt :
     field_simp
   rw [hq, div_add_one ha.ne', inv_div, eq_comm, eq_div_iff (by positivity)]
   linear_combination √x * (sq_sqrt (show 0 ≤ x + 1 by linarith) - sq_sqrt hx.le)
+
+/-- The closed sublevel `{x² ≤ a}` of the square, for `0 ≤ a`, is the interval `[-√a, √a]`. -/
+theorem setOf_sq_le_eq_Icc {a : ℝ} (ha : 0 ≤ a) : {x : ℝ | x ^ 2 ≤ a} = Set.Icc (-√a) √a := by
+  ext x
+  simp [sq_le ha]
+
+/-- The closed superlevel `{a ≤ x²}` of the square is the union of the two rays
+`(-∞, -√a]` and `[√a, ∞)`; for `a ≤ 0` they cover the line, since then `√a = 0`. -/
+theorem setOf_le_sq_eq_union (a : ℝ) :
+    {x : ℝ | a ≤ x ^ 2} = Set.Iic (-√a) ∪ Set.Ici √a := by
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici]
+  rw [← sqrt_le_sqrt_iff (sq_nonneg x), sqrt_sq_eq_abs, le_abs']
 
 end Real
 

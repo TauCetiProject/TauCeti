@@ -21,7 +21,10 @@ space, whether or not `E` and `F` are complete. This file develops the operators
 
 * The pure tensors `x ⊗ₜ y` span a dense subspace (`TensorProduct.dense_span_coe_tmul`), so a
   bounded operator out of `E ⊗̂ F` is determined by its values on them
-  (`TensorProduct.completion_ext`).
+  (`TensorProduct.completion_ext`), a vector orthogonal to all of them vanishes
+  (`TensorProduct.eq_zero_of_forall_inner_coe_tmul`), and a bounded operator maps `E ⊗̂ F` into a
+  closed submodule if it maps every pure tensor there
+  (`TensorProduct.apply_mem_of_forall_apply_coe_tmul_mem`).
 * A bounded operator `f : E →L[𝕜] E'` induces the bounded operator `f ⊗ 1` on `E ⊗̂ F`, the
   *amplification* `f.rTensorCompletion F`, which extends `ContinuousLinearMap.rTensor` and sends
   `x ⊗ₜ y` to `f x ⊗ₜ y`. It is the only bounded operator doing so
@@ -113,6 +116,27 @@ theorem completion_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [Topological
     ContinuousLinearMap.coe_inj.1 <| TensorProduct.ext' fun x y ↦ by simpa using h x y
   exact DFunLike.coe_injective <|
     Completion.ext l.continuous l'.continuous fun u ↦ by simpa using congr($h' u)
+
+/-- A vector of the completed tensor product that is orthogonal to every pure tensor vanishes. -/
+theorem eq_zero_of_forall_inner_coe_tmul {w : Completion (E ⊗[𝕜] F)}
+    (h : ∀ x y, ⟪((x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)), w⟫_𝕜 = 0) : w = 0 := by
+  have hw : innerSL 𝕜 w = 0 := completion_ext fun x y ↦ by
+    rw [innerSL_apply_apply, ← inner_conj_symm, h, map_zero, zero_apply]
+  simpa using congr($hw w)
+
+/-- A bounded operator out of the completed tensor product maps into a closed submodule as soon as
+it maps every pure tensor into it. -/
+theorem apply_mem_of_forall_apply_coe_tmul_mem {M : Type*} [AddCommGroup M] [Module 𝕜 M]
+    [TopologicalSpace M] {T : Completion (E ⊗[𝕜] F) →L[𝕜] M} {S : Submodule 𝕜 M}
+    (hS : IsClosed (S : Set M))
+    (h : ∀ x y, T ((x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)) ∈ S)
+    (w : Completion (E ⊗[𝕜] F)) : T w ∈ S := by
+  have hle : Submodule.span 𝕜 (Set.range fun p : E × F ↦
+      ((p.1 ⊗ₜ[𝕜] p.2 : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F))) ≤ S.comap (T : _ →ₗ[𝕜] M) :=
+    Submodule.span_le.2 <| Set.range_subset_iff.2 fun p ↦ h p.1 p.2
+  have htop := Submodule.topologicalClosure_minimal _ hle (hS.preimage T.continuous)
+  rw [dense_span_coe_tmul] at htop
+  exact htop Submodule.mem_top
 
 section Associator
 
@@ -470,6 +494,15 @@ theorem rTensorCompletion_sub (f₁ f₂ : E →L[𝕜] E') :
 theorem rTensorCompletion_zero : (0 : E →L[𝕜] E').rTensorCompletion F = 0 :=
   completion_ext fun _ _ ↦ by simp
 
+/-- The amplifications of the orthogonal projections onto a subspace and onto its orthogonal
+complement add up to the identity: `Π ⊗ 1 + Πᗮ ⊗ 1 = 1`. -/
+theorem rTensorCompletion_starProjection_add_rTensorCompletion_starProjection_orthogonal
+    (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    K.starProjection.rTensorCompletion F + Kᗮ.starProjection.rTensorCompletion F =
+      ContinuousLinearMap.id 𝕜 (Completion (E ⊗[𝕜] F)) := by
+  rw [← rTensorCompletion_add, ← K.id_eq_sum_starProjection_self_orthogonalComplement,
+    rTensorCompletion_id]
+
 /-- Every amplification to the zero space is zero. -/
 theorem rTensorCompletion_of_subsingleton [Subsingleton F] (f : E →L[𝕜] E') :
     f.rTensorCompletion F = 0 :=
@@ -574,6 +607,15 @@ theorem lTensorCompletion_sub (g₁ g₂ : F →L[𝕜] F') :
 @[simp]
 theorem lTensorCompletion_zero : (0 : F →L[𝕜] F').lTensorCompletion E = 0 :=
   completion_ext fun _ _ ↦ by simp
+
+/-- The amplifications of the orthogonal projections onto a subspace and onto its orthogonal
+complement add up to the identity: `1 ⊗ Π + 1 ⊗ Πᗮ = 1`. -/
+theorem lTensorCompletion_starProjection_add_lTensorCompletion_starProjection_orthogonal
+    (K : Submodule 𝕜 F) [K.HasOrthogonalProjection] :
+    K.starProjection.lTensorCompletion E + Kᗮ.starProjection.lTensorCompletion E =
+      ContinuousLinearMap.id 𝕜 (Completion (E ⊗[𝕜] F)) := by
+  rw [← lTensorCompletion_add, ← K.id_eq_sum_starProjection_self_orthogonalComplement,
+    lTensorCompletion_id]
 
 /-- Every amplification from the zero space is zero. -/
 theorem lTensorCompletion_of_subsingleton [Subsingleton E] (g : F →L[𝕜] F') :

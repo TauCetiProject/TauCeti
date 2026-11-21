@@ -125,8 +125,10 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq �
       filter_upwards [hFW] with y hy
       rw [hy]
     have hWΩ' : (W : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hWΩ
-    obtain ⟨U, hU⟩ := (ha.mono_set hWΩ').exists_value_eq_value_restrictL_of_contDiffOn
-      (fun i j => (hsmooth i j).mono hWΩ') (hb.mono hWΩ') (hc.mono hWΩ') m huW
+    obtain ⟨U, hU⟩ := (ha.mono_set hWΩ').exists_value_eq_value_restrictL_of_contDiffOn m
+      (fun i j => ((hsmooth i j).mono hWΩ').of_le (by exact_mod_cast le_top))
+      ((hb.mono hWΩ').of_le (by exact_mod_cast le_top))
+      ((hc.mono hWΩ').of_le (by exact_mod_cast le_top)) huW
       ((isCompact_closedBall x (R / 2)).of_isClosed_subset isClosed_closure hBc) hBW
     refine ⟨Wkp.lowerOrder m (Wkp.lowerOrder (m + 1) U), ?_⟩
     rw [← Wkp.value_succ, ← Wkp.value_succ, hU]
