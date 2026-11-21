@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Real
-public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
+public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.RootOfUnity
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Tactic.FieldSimp
@@ -33,16 +32,12 @@ projection parameter
 
 Building on the pure real family in `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Real`, this file
 establishes the dictionary between these hyperbolic parameters and Wenzl's discrete parameters
-`a_d(Q)` (`TauCeti.wenzlParam`) at `Q = q ^ 2 = exp (-2 * θ)` across all three regimes:
+`a_d(Q)` (`TauCeti.wenzlParam`) at `Q = q ^ 2 = exp (-2 * θ)` across the exceptional regimes:
 
-1. **The positive-real family** (`α, θ ∈ ℝ`, `Q = exp (-2 * θ) > 0`): the closure of the range
-   `α ↦ realHyperbolicProjParam α θ` is characterized by the quadratic inequality
-   `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)`, with equality on the endpoints and Jones parameter
-   `a_(-2)(Q) → 0` as `θ → ±∞`.
-2. **The exceptional discrete lines** (`α = k * θ + π * I / 2`, `k ∈ ℤ \ {0}`): the native
+1. **The exceptional discrete lines** (`α = k * θ + π * I / 2`, `k ∈ ℤ \ {0}`): the native
    projection parameter is `a_(-k)(exp (-2 * θ))` and Wenzl's projection parameter is
    `a_k(exp (-2 * θ))`, with common stabilization constant `-sinh θ / sinh (k * θ)`.
-3. **The root-of-unity exceptional points** (`θ = π * I / l`, `α = (k / l + 1 / 2) * π * I`,
+2. **The root-of-unity exceptional points** (`θ = π * I / l`, `α = (k / l + 1 / 2) * π * I`,
    `l ≥ 3`, `0 < k < l`, `Q = exp (-2 * π * I / l)`): direct evaluation via
    `tanh α = -I * cot (k * π / l)` and `tanh θ = I * tan (π / l)` gives native parameter
    `a_(-k)(Q)` and Wenzl parameter `a_k(Q)`. Replacing `k` by `l - k` exchanges the two projection
@@ -51,15 +46,9 @@ establishes the dictionary between these hyperbolic parameters and Wenzl's discr
 
 ## Main results
 
-* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_hyperbolic_wenzlProjection` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff_wenzl`:
-  Wenzl's projection rule and equal stabilization constants in hyperbolic parameters.
-* `TauCeti.inv_four_mul_cosh_sq_eq_mul_one_sub_iff`,
-  `TauCeti.inv_four_mul_cosh_sq_le_mul_one_sub_iff`,
-  `TauCeti.inv_four_mul_cosh_sq_lt_mul_one_sub_iff`, and
-  `TauCeti.tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop`: the quadratic boundary relation
-  `τ = η * (1 - η)` on the real hyperbolic family and scalar limit of the Jones parameter as
-  `θ → ±∞`.
+* `TauCeti.wenzlParam_neg_two_mul_hyperbolicHeckeParam_add_inv_sq` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_hyperbolic_wenzlProjection`:
+  balanced-projection compatibility and Wenzl's projection rule in hyperbolic parameters.
 * `TauCeti.hyperbolicProjParam_mul_add_pi_mul_I_div_two`,
   `TauCeti.hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two`, and
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_line_eq_iff`: the exceptional
@@ -123,69 +112,7 @@ theorem IsMarkovTrace.map_mul_hyperbolic_wenzlProjection (hτ : IsMarkovTrace z 
   simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam, hq2,
     sub_sub_cancel] using h
 
-/-- **Equal stabilization constants in Wenzl's projection convention.** For `cosh α * cosh θ ≠ 0`
-and Wenzl projection parameter `η_W` (`z = exp (-θ) * (1 - η_W) - exp θ * η_W`),
-`τ (γ n) = τ (γ n⁻¹)` if and only if `η_W = hyperbolicWenzlProjParam α θ`. -/
-theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff_wenzl
-    (hτ : IsMarkovTrace z τ) (hz : z = exp (-θ) * (1 - ηW) - exp θ * ηW) (hα : cosh α ≠ 0)
-    (hθ : cosh θ ≠ 0) (n : ℕ) :
-    τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ ηW = hyperbolicWenzlProjParam α θ := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff (η := 1 - ηW)
-      (by rw [sub_sub_cancel, hz]) hα hθ n, hyperbolicWenzlProjParam_eq_one_sub]
-  constructor <;> intro h <;> linear_combination -h
-
 end InfiniteTypeAHeckeAlgebra
-
-/-! ### Quadratic boundary relation and Jones parameter limits on the real family -/
-
-/-- **Boundary relation `τ = η * (1 - η)`.** For every real `θ` and `η`,
-`(4 * cosh θ ^ 2)⁻¹ = η * (1 - η)` holds if and only if `η` is one of the two interval endpoints
-`1 / (1 + exp (-2 * θ))` or `exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
-theorem inv_four_mul_cosh_sq_eq_mul_one_sub_iff {θ η : ℝ} :
-    (4 * Real.cosh θ ^ 2)⁻¹ = η * (1 - η) ↔
-      η = 1 / (1 + Real.exp (-2 * θ)) ∨ η = Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
-  rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
-    wenzlParam_neg_two_eq_mul_one_sub_iff (by positivity)]
-
-/-- **Closed-interval characterization `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)`.** For every real `θ` and
-`η`, `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)` holds if and only if `η` belongs to the closure of the real
-hyperbolic parameter family `α ↦ realHyperbolicProjParam α θ`. -/
-theorem inv_four_mul_cosh_sq_le_mul_one_sub_iff {θ η : ℝ} :
-    (4 * Real.cosh θ ^ 2)⁻¹ ≤ η * (1 - η) ↔
-      η ∈ closure (Set.range fun α ↦ realHyperbolicProjParam α θ) := by
-  rw [closure_range_realHyperbolicProjParam, ← wenzlParam_neg_two_real_exp_neg_two_mul,
-    wenzlParam_neg_two_le_mul_one_sub_iff (by positivity)]
-
-/-- **Open-interval characterization `(4 * cosh θ ^ 2)⁻¹ < η * (1 - η)`.** For every real `θ` and
-`η`, the strict inequality `(4 * cosh θ ^ 2)⁻¹ < η * (1 - η)` holds if and only if `θ ≠ 0` and
-`η = realHyperbolicProjParam α θ` for some `α : ℝ`. -/
-theorem inv_four_mul_cosh_sq_lt_mul_one_sub_iff {θ η : ℝ} :
-    (4 * Real.cosh θ ^ 2)⁻¹ < η * (1 - η) ↔
-      θ ≠ 0 ∧ η ∈ Set.range fun α ↦ realHyperbolicProjParam α θ := by
-  rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
-    wenzlParam_neg_two_lt_mul_one_sub_iff (by positivity)]
-  rcases eq_or_ne θ 0 with rfl | hθ
-  · simp
-  · simp [hθ, range_realHyperbolicProjParam_of_ne_zero hθ]
-
-/-- **Scalar limit of the Jones parameter as `θ → +∞` (`Q → 0⁺`).** -/
-theorem tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop :
-    Filter.Tendsto (fun θ : ℝ ↦ wenzlParam (-2) (Real.exp (-2 * θ))) Filter.atTop (𝓝 0) := by
-  simp_rw [wenzlParam_neg_two_real_exp_neg_two_mul]
-  exact tendsto_inv_atTop_zero.comp
-    ((Filter.tendsto_const_mul_pow_atTop (by positivity) (by positivity)).comp
-      Real.tendsto_cosh_atTop)
-
-/-- **Scalar limit of the Jones parameter as `θ → -∞` (`Q → +∞`).** -/
-theorem tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atBot :
-    Filter.Tendsto (fun θ : ℝ ↦ wenzlParam (-2) (Real.exp (-2 * θ))) Filter.atBot (𝓝 0) := by
-  have h : (fun θ : ℝ ↦ wenzlParam (-2) (Real.exp (-2 * θ))) =
-      (fun θ : ℝ ↦ wenzlParam (-2) (Real.exp (-2 * (-θ)))) := by
-    ext θ
-    rw [wenzlParam_neg_two_real_exp_neg_two_mul, wenzlParam_neg_two_real_exp_neg_two_mul,
-      Real.cosh_neg]
-  rw [h]
-  exact tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop.comp Filter.tendsto_neg_atBot_atTop
 
 /-! ### Exceptional discrete line states `α = k * θ + π * I / 2` -/
 
@@ -307,14 +234,6 @@ theorem wenzlParam_neg_two_hyperbolicHeckeParam_rootOfUnity_sq (l : ℕ) :
   rw [hq, wenzlParam_neg_two_exp_mul_I, cos_neg, ← ofReal_natCast, ← ofReal_div, ← ofReal_cos]
   norm_cast
 
-private theorem cos_pi_div_natCast_ne_zero {l : ℕ} (hl : 3 ≤ l) : Real.cos (π / l) ≠ 0 := by
-  have hl2 : (2 : ℝ) < l := by exact_mod_cast (by omega : 2 < l)
-  exact (cos_pi_div_pos hl2).ne'
-
-private theorem sin_natCast_mul_pi_div_natCast_ne_zero {l k : ℕ} (hk₀ : 0 < k) (hkl : k < l) :
-    Real.sin (k * π / l) ≠ 0 :=
-  (sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)).ne'
-
 private theorem pi_mul_I_div_natCast_eq (l : ℕ) :
     (π : ℂ) * I / l = ↑(π / (l : ℝ)) * I := by
   rw [ofReal_div, ofReal_natCast, mul_div_right_comm]
@@ -327,12 +246,12 @@ private theorem rootOfUnity_alpha_eq (l k : ℕ) :
 private theorem cosh_pi_mul_I_div_natCast_ne_zero {l : ℕ} (hl : 3 ≤ l) :
     cosh (π * I / l) ≠ 0 := by
   rw [pi_mul_I_div_natCast_eq, cosh_mul_I, ← ofReal_cos]
-  exact_mod_cast cos_pi_div_natCast_ne_zero hl
+  exact_mod_cast (cos_pi_div_natCast_pos (by omega)).ne'
 
 private theorem cosh_rootOfUnity_alpha_ne_zero {l k : ℕ} (hk₀ : 0 < k) (hkl : k < l) :
     cosh (((k : ℂ) / l + 1 / 2) * π * I) ≠ 0 := by
   rw [rootOfUnity_alpha_eq, cosh_mul_I, ← ofReal_cos, Real.cos_add_pi_div_two]
-  exact_mod_cast neg_ne_zero.2 (sin_natCast_mul_pi_div_natCast_ne_zero hk₀ hkl)
+  exact_mod_cast neg_ne_zero.2 (sin_natCast_mul_pi_div_natCast_pos hk₀ hkl).ne'
 
 /-- **Native projection parameter at the root-of-unity exceptional points.** For `l ≥ 3` and
 `0 < k < l`, at `θ = π * I / l` and `α = (k / l + 1 / 2) * π * I`, direct evaluation via
@@ -341,8 +260,8 @@ private theorem cosh_rootOfUnity_alpha_ne_zero {l k : ℕ} (hk₀ : 0 < k) (hkl 
 theorem hyperbolicProjParam_rootOfUnity {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     hyperbolicProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) =
       wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
-  have hcos : Real.cos (π / l) ≠ 0 := cos_pi_div_natCast_ne_zero hl
-  have hsin : Real.sin (k * π / l) ≠ 0 := sin_natCast_mul_pi_div_natCast_ne_zero hk₀ hkl
+  have hcos : Real.cos (π / l) ≠ 0 := (cos_pi_div_natCast_pos (by omega)).ne'
+  have hsin : Real.sin (k * π / l) ≠ 0 := (sin_natCast_mul_pi_div_natCast_pos hk₀ hkl).ne'
   -- Direct evaluations `tanh θ = I * tan (π / l)` and `tanh α = -I * cot (k * π / l)`.
   have hθ_tanh : tanh (π * I / l) = I * ↑(Real.tan (π / l)) := by
     rw [pi_mul_I_div_natCast_eq, tanh_mul_I, ← ofReal_tan, mul_comm]

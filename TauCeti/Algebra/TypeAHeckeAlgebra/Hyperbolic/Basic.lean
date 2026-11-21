@@ -72,8 +72,10 @@ stabilization constants, and assert nothing about positivity.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_hyperbolicGen` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_inv_hyperbolicGen`: the two
   stabilization constants.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff`: **the two
-  stabilization constants agree exactly when `η = hyperbolicProjParam α θ`.**
+* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff_wenzl`: **the
+  two stabilization constants agree exactly when `η = hyperbolicProjParam α θ` (or
+  `η_W = hyperbolicWenzlProjParam α θ`).**
 * `TauCeti.hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh` and
   `TauCeti.hyperbolicStabilization_normalization`:
   the common value and the normalization constants.
@@ -420,6 +422,16 @@ theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff (hτ : IsMarkovTrace z τ
   have h2 := hτ.map_mul_inv_hyperbolicGen (α := α) hz (one_mem (stage ℂ _ (n + 1)))
   rw [one_mul, hτ.map_one, mul_one] at h1 h2
   rw [h1, h2, hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ]
+
+/-- **Equal stabilization constants in Wenzl's projection convention.** For `cosh α * cosh θ ≠ 0`
+and Wenzl projection parameter `η_W` (`z = exp (-θ) * (1 - η_W) - exp θ * η_W`),
+`τ (γ n) = τ (γ n⁻¹)` if and only if `η_W = hyperbolicWenzlProjParam α θ`. -/
+theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff_wenzl {ηW : ℂ} (hτ : IsMarkovTrace z τ)
+    (hz : z = exp (-θ) * (1 - ηW) - exp θ * ηW) (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (n : ℕ) :
+    τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ ηW = hyperbolicWenzlProjParam α θ := by
+  rw [hτ.map_hyperbolicGen_eq_map_inv_iff (η := 1 - ηW)
+      (by rw [sub_sub_cancel, hz]) hα hθ n, hyperbolicWenzlProjParam_eq_one_sub]
+  constructor <;> intro h <;> linear_combination -h
 
 /-- **The complementary eigenprojection.** Precomposing a Markov trace with projection parameter
 `η` with the complement automorphism, which exchanges the eigenprojections of the generators,

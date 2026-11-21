@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
-public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
+public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Basic
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination

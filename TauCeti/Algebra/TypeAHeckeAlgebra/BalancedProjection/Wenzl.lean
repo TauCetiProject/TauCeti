@@ -70,6 +70,34 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] {τ : R} {q : Rˣ}
 
+namespace InfiniteTypeAHeckeAlgebra
+
+private theorem val_inv_mul_eq_add_inv (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) :
+    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
+  rw [Units.val_mul, hu, mul_add, mul_one, sq, ← mul_assoc, q.inv_mul, one_mul, add_comm]
+
+private theorem smul_sub_T_eq_one_sub_smul_T_add {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1)
+    (i : ℕ) :
+    c • (algebraMap R _ (q : R) - T q i) = 1 - c • (T q i + algebraMap R _ ↑q⁻¹) := by
+  simp only [Algebra.algebraMap_eq_smul_one]
+  match_scalars
+  · linear_combination hc
+  · ring
+
+private theorem smul_sub_T_eq_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
+    {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1) (i : ℕ) :
+    c • (algebraMap R _ (q : R) - T q i) =
+      (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
+  have hqu : (u : R) = (q : R) * ((q : R) + ↑q⁻¹) := by
+    rw [← val_inv_mul_eq_add_inv u hu, Units.val_mul, ← mul_assoc, q.mul_inv, one_mul]
+  have hcoeff : c = (q : R) * ↑u⁻¹ := by
+    have hu' : (u : R) * ↑u⁻¹ = 1 := u.mul_inv
+    linear_combination -c * hu' + c * (↑u⁻¹ : R) * hqu + (↑u⁻¹ : R) * (q : R) * hc
+  rw [hcoeff, mul_comm (q : R), ← smul_smul, smul_sub]
+  simp [Algebra.algebraMap_eq_smul_one, smul_smul, sq]
+
+end InfiniteTypeAHeckeAlgebra
+
 namespace BalancedProjectionAlgebra
 
 open InfiniteTypeAHeckeAlgebra (T complementEquiv complementEquiv_T indexCharacter signCharacter)
@@ -109,27 +137,16 @@ theorem wenzlHeckeEquiv_e (i : ℕ) :
 to `1` minus its image under the native eigenprojection isomorphism `heckeEquiv`. -/
 theorem wenzlHeckeEquiv_e_eq_one_sub_heckeEquiv_e (i : ℕ) :
     wenzlHeckeEquiv q hτ (e τ i) = 1 - heckeEquiv q hτ (e τ i) := by
-  have h : τ * ((q : R) + ↑q⁻¹) * ((q : R) + ↑q⁻¹) = 1 := by linear_combination hτ
   rw [wenzlHeckeEquiv_e, heckeEquiv_e]
-  simp only [Algebra.algebraMap_eq_smul_one]
-  match_scalars
-  · linear_combination h
-  · ring
+  exact InfiniteTypeAHeckeAlgebra.smul_sub_T_eq_one_sub_smul_T_add (by linear_combination hτ) i
 
 /-- **Wenzl's formula `e_i^W = (1 + Q)⁻¹ • (Q - g_i)`.** When `u = 1 + q ^ 2` is a unit, Wenzl's
 isomorphism sends `e i` to `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`. -/
 theorem wenzlHeckeEquiv_e_eq_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
     wenzlHeckeEquiv q hτ (e τ i) =
       (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
-  have hqu : (u : R) = (q : R) * ((q : R) + ↑q⁻¹) := by
-    have hq : (q : R) * ↑q⁻¹ = 1 := q.mul_inv
-    linear_combination hu - hq
-  have hcoeff : τ * ((q : R) + ↑q⁻¹) = (q : R) * ↑u⁻¹ := by
-    have hu' : (u : R) * ↑u⁻¹ = 1 := u.mul_inv
-    linear_combination -τ * ((q : R) + ↑q⁻¹) * hu' +
-      τ * ((q : R) + ↑q⁻¹) * (↑u⁻¹ : R) * hqu + (↑u⁻¹ : R) * (q : R) * hτ
-  rw [wenzlHeckeEquiv_e, hcoeff, mul_comm (q : R), ← smul_smul, smul_sub]
-  simp [Algebra.algebraMap_eq_smul_one, smul_smul, sq]
+  rw [wenzlHeckeEquiv_e]
+  exact InfiniteTypeAHeckeAlgebra.smul_sub_T_eq_wenzlProjection u hu (by linear_combination hτ) i
 
 /-- The inverse of Wenzl's isomorphism sends `T i` to `q - (q + q⁻¹) • e i`. -/
 @[simp]
@@ -152,22 +169,6 @@ theorem wenzlHeckeEquiv_symm_smul_T (i : ℕ) :
   · ring
   · linear_combination -hq
 
-/-- Wenzl's isomorphism carries the stage of the first `n` strands onto the corresponding stage of
-the infinite type-A Hecke algebra. -/
-theorem map_stage_wenzlHeckeEquiv (n : ℕ) :
-    (stage R τ n).map (wenzlHeckeEquiv q hτ : BalancedProjectionAlgebra R τ →ₐ[R] _) =
-      InfiniteTypeAHeckeAlgebra.stage R q n := by
-  refine le_antisymm
-    (Subalgebra.map_le.2 fun w hw ↦ ?_)
-    (fun x hx ↦ Subalgebra.mem_map.2
-      ⟨(wenzlHeckeEquiv q hτ).symm x, ?_, (wenzlHeckeEquiv q hτ).apply_symm_apply x⟩)
-  · rw [Subalgebra.mem_comap, AlgEquiv.coe_toAlgHom, wenzlHeckeEquiv_apply,
-      InfiniteTypeAHeckeAlgebra.complementEquiv_mem_stage_iff, heckeEquiv_mem_stage_iff]
-    exact hw
-  · rw [wenzlHeckeEquiv_symm_apply, ← heckeEquiv_mem_stage_iff hτ,
-      AlgEquiv.apply_symm_apply, InfiniteTypeAHeckeAlgebra.complementEquiv_mem_stage_iff]
-    exact hx
-
 /-- An element lies in a stage of the balanced projection algebra exactly when its image under
 Wenzl's isomorphism lies in the corresponding stage of the infinite type-A Hecke algebra. -/
 @[simp]
@@ -175,6 +176,20 @@ theorem wenzlHeckeEquiv_mem_stage_iff {n : ℕ} {w : BalancedProjectionAlgebra R
     wenzlHeckeEquiv q hτ w ∈ InfiniteTypeAHeckeAlgebra.stage R q n ↔ w ∈ stage R τ n := by
   rw [wenzlHeckeEquiv_apply, InfiniteTypeAHeckeAlgebra.complementEquiv_mem_stage_iff,
     heckeEquiv_mem_stage_iff]
+
+/-- Wenzl's isomorphism carries the stage of the first `n` strands onto the corresponding stage of
+the infinite type-A Hecke algebra. -/
+theorem map_stage_wenzlHeckeEquiv (n : ℕ) :
+    (stage R τ n).map (wenzlHeckeEquiv q hτ : BalancedProjectionAlgebra R τ →ₐ[R] _) =
+      InfiniteTypeAHeckeAlgebra.stage R q n := by
+  ext x
+  simp only [Subalgebra.mem_map, AlgEquiv.coe_toAlgHom]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    exact (wenzlHeckeEquiv_mem_stage_iff hτ).2 hw
+  · intro hx
+    refine ⟨(wenzlHeckeEquiv q hτ).symm x, ?_, (wenzlHeckeEquiv q hτ).apply_symm_apply x⟩
+    exact (wenzlHeckeEquiv_mem_stage_iff hτ).1 (by simpa only [AlgEquiv.apply_symm_apply] using hx)
 
 /-! ### Scalar characters in Wenzl's projection convention -/
 
@@ -200,10 +215,6 @@ end BalancedProjectionAlgebra
 
 namespace InfiniteTypeAHeckeAlgebra
 
-private theorem val_inv_mul_eq_add_inv (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) :
-    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
-  rw [Units.val_mul, hu, mul_add, mul_one, sq, ← mul_assoc, q.inv_mul, one_mul, add_comm]
-
 /-- **Comparison of Wenzl's projection with the native eigenprojection.** Let `u = 1 + q ^ 2` be a
 unit, so `q⁻¹ * u = q + q⁻¹`. Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` equals
 `1 - P i`, where `P i = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is the `q`-eigenprojection of `T i`. -/
@@ -211,14 +222,10 @@ theorem wenzlProjection_eq_one_sub_eigenprojection (u : Rˣ) (hu : (u : R) = 1 +
     (i : ℕ) :
     (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
       1 - (↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
-  set s : Rˣ := q⁻¹ * u
-  have hs : (s : R) = (q : R) + ↑q⁻¹ := val_inv_mul_eq_add_inv u hu
-  have hτ : (↑s⁻¹ : R) ^ 2 * ((q : R) + ↑q⁻¹) ^ 2 = 1 := by
-    rw [← hs, ← mul_pow, s.inv_mul, one_pow]
-  have h := (BalancedProjectionAlgebra.wenzlHeckeEquiv_e_eq_wenzlProjection hτ u hu i).symm.trans
-    (BalancedProjectionAlgebra.wenzlHeckeEquiv_e_eq_one_sub_heckeEquiv_e hτ i)
-  rwa [BalancedProjectionAlgebra.heckeEquiv_e, ← hs, sq (↑s⁻¹ : R), mul_assoc, s.inv_mul,
-    mul_one] at h
+  have hs : (↑(q⁻¹ * u)⁻¹ : R) * ((q : R) + ↑q⁻¹) = 1 := by
+    rw [← val_inv_mul_eq_add_inv u hu, Units.inv_mul]
+  exact (smul_sub_T_eq_wenzlProjection u hu hs i).symm.trans
+    (smul_sub_T_eq_one_sub_smul_T_add hs i)
 
 /-- Wenzl's projection is the image of the native eigenprojection under `complementEquiv`. -/
 theorem wenzlProjection_eq_complementEquiv_eigenprojection (u : Rˣ)
