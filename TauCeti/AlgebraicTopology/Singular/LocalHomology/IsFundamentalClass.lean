@@ -53,6 +53,8 @@ map this multiple is the degree of the map with coefficients in `K`, the mod `2`
   coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.
 * `TauCeti.isFundamentalClass_of_subsingleton`: over the zero ring every class is fundamental.
+* `TauCeti.IsFundamentalClass.singularHomologyToLocalHomology_ne_zero`: on an `n`-manifold with
+  nontrivial coefficients, a fundamental class has a nonzero image in every local homology group.
 * `TauCeti.not_isFundamentalClass_zero`: on a nonempty `n`-manifold with nontrivial coefficients,
   the zero class of `Hₙ(M; N)` is not fundamental.
 * `TauCeti.IsFundamentalClass.isFundamentalClass_smul_iff`: on a nonempty `n`-manifold with
@@ -200,22 +202,31 @@ variable {M E : Type w} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace
   [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ} (hn : finrank ℝ E = n)
 
 include hn in
+/-- **A fundamental class has nonzero local images** in the top degree `n` of an `n`-manifold with
+nontrivial coefficients: the local homology `Hₙ(M, M ∖ {x}; N)` at a point is then a nontrivial
+copy of the coefficients, which `0` does not generate. -/
+theorem IsFundamentalClass.singularHomologyToLocalHomology_ne_zero [T1Space M] {R : Type u}
+    [Ring R] {N : ModuleCat.{w} R} [Nontrivial N]
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (hμ : IsFundamentalClass μ) (x : M) : singularHomologyToLocalHomology N x n μ ≠ 0 := by
+  subst hn
+  have : Nontrivial (localHomology N ({x} : Set M) (finrank ℝ E) : ModuleCat.{w} R) :=
+    (singularHomologyComplSingletonFinrankIso N (chartAt E x)
+      (mem_chart_source E x)).toLinearEquiv.toEquiv.nontrivial
+  intro h
+  have hx := (isFundamentalClass_iff μ).1 hμ x
+  rw [h, Submodule.span_singleton_eq_bot.2 rfl] at hx
+  exact bot_ne_top hx
+
+include hn in
 /-- **The zero class is not fundamental** in the top degree `n` of a nonempty `n`-manifold with
 nontrivial coefficients: the local homology `Hₙ(M, M ∖ {x}; N)` at a point is then a nontrivial
 copy of the coefficients, which `0 ∈ Hₙ(M; N)` does not generate. -/
 theorem not_isFundamentalClass_zero [T1Space M] [Nonempty M] {R : Type u} [Ring R]
     (N : ModuleCat.{w} R) [Nontrivial N] :
     ¬ IsFundamentalClass (0 : ((TopCat.toSSet.obj (TopCat.of M)).homology N n :
-      ModuleCat.{w} R)) := by
-  subst hn
-  obtain ⟨x⟩ := ‹Nonempty M›
-  intro h
-  have : Nontrivial (localHomology N ({x} : Set M) (finrank ℝ E) : ModuleCat.{w} R) :=
-    (singularHomologyComplSingletonFinrankIso N (chartAt E x)
-      (mem_chart_source E x)).toLinearEquiv.toEquiv.nontrivial
-  have hx := (isFundamentalClass_iff _).1 h x
-  rw [map_zero, Submodule.span_singleton_eq_bot.2 rfl] at hx
-  exact bot_ne_top hx
+      ModuleCat.{w} R)) := fun h ↦
+  h.singularHomologyToLocalHomology_ne_zero hn (Classical.arbitrary M) (map_zero _)
 
 include hn in
 /-- **Multiples of a fundamental class.** On a nonempty `n`-manifold, with faithful coefficients
@@ -332,10 +343,8 @@ theorem eq_of_span_localHomology_eq_top {x : M}
     {a b : (localHomology (ModuleCat.of K K) ({x} : Set M) n : ModuleCat.{w} K)}
     (ha : Submodule.span K {a} = ⊤) (hb : Submodule.span K {b} = ⊤) : a = b := by
   have : T1Space M := ChartedSpace.t1Space E M
-  let e := localHomologySingletonLinearEquiv (ModuleCat.of K K) hn (LinearEquiv.refl K K) x
-  -- A generator is sent to a unit of `K`, that is to `1`.
-  exact e.injective ((isUnit_iff_eq_one.1 (e.span_singleton_eq_top_iff_isUnit.1 ha)).trans
-    (isUnit_iff_eq_one.1 (e.span_singleton_eq_top_iff_isUnit.1 hb)).symm)
+  exact (localHomologySingletonLinearEquiv (ModuleCat.of K K) hn (LinearEquiv.refl K K)
+    x).eq_of_span_singleton_eq_top ha hb
 
 include hn in
 /-- **Transport preserves the generator of local homology when `1` is the only unit of the

@@ -194,6 +194,19 @@ theorem livesOverFundamentalClass_iff (p : E → M) (b : M) {k : ℕ}
     LivesOverFundamentalClass R p b α ↔ (fiberLocalization R p b k).hom α ≠ 0 :=
   Iff.rfl
 
+/-- For the identity of `M`, the localization at the fibre over `b` is the map
+`Hₖ(M) → Hₖ(M, M ∖ {b})` to the local homology at `b`. -/
+theorem fiberLocalization_id_apply [TopologicalSpace M] (b : M) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R (id : M → M) b k).hom μ = singularHomologyToLocalHomology R b k μ := by
+  rw [fiberLocalization_id]
+  -- After this rewrite the composite lands in `localHomology R {b} k` while the goal expects
+  -- `localHomology R (id ⁻¹' {b}) k`. The two agree only after unfolding `id ⁻¹' {b}`, so the
+  -- goal is not type-correct at reducible transparency and `rw` cannot match `comp_apply` or
+  -- `singularHomologyToLocalHomology_apply`; `erw` matches up to this unfolding.
+  erw [ModuleCat.comp_apply]
+  erw [← singularHomologyToLocalHomology_apply]
+
 /-- Living over the fundamental class only depends on the fibre: for maps `p : E → M` and
 `p' : E → M'` with `p⁻¹(b) = p'⁻¹(b')`, a class lives over the fundamental class at `b` for `p`
 exactly when it does at `b'` for `p'`. -/
@@ -298,21 +311,8 @@ theorem IsFundamentalClass.livesOverFundamentalClass_id [Nontrivial N]
     {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} Λ)}
     (hμ : IsFundamentalClass μ) (b : M) : LivesOverFundamentalClass N id b μ := by
   have : T1Space M := ChartedSpace.t1Space V M
-  have : Nontrivial (localHomology N ({b} : Set M) n : ModuleCat.{w} Λ) := by
-    subst hn
-    exact (singularHomologyComplSingletonFinrankIso N (chartAt V b)
-      (mem_chart_source V b)).toLinearEquiv.toEquiv.nontrivial
-  have hz : singularHomologyToLocalHomology N b n μ ≠ 0 := fun h ↦ by
-    have hb := (isFundamentalClass_iff μ).1 hμ b
-    rw [h, Submodule.span_singleton_eq_bot.2 rfl] at hb
-    exact bot_ne_top hb
-  rw [livesOverFundamentalClass_iff, fiberLocalization_id]
-  -- As in `HomologicalOrientation.fiberLocalization_id_fundamentalClass`, the composite lands in
-  -- the local homology along `id ⁻¹' {b}`, which agrees with that at `b` only after unfolding the
-  -- preimage, so `rw` cannot match `ModuleCat.comp_apply`; `erw` matches up to this unfolding.
-  erw [ModuleCat.comp_apply]
-  erw [← singularHomologyToLocalHomology_apply]
-  exact hz
+  rw [livesOverFundamentalClass_iff, fiberLocalization_id_apply]
+  exact hμ.singularHomologyToLocalHomology_ne_zero hn b
 
 include hn in
 /-- **Classes over a fundamental class live over the fundamental class.** Let `p : E → M` be a map
@@ -521,13 +521,7 @@ local orientation `o b`. -/
 theorem fiberLocalization_id_fundamentalClass (b : M) :
     (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom (o.fundamentalClass hn) =
       (o b).val := by
-  rw [fiberLocalization_id]
-  -- After this rewrite the composite lands in `localHomology R {b} n` while the goal expects
-  -- `localHomology R (id ⁻¹' {b}) n`. The two agree only after unfolding `id ⁻¹' {b}`, so the
-  -- goal is not type-correct at reducible transparency and `rw` cannot match `comp_apply` or
-  -- `singularHomologyToLocalHomology_apply`; `erw` matches up to this unfolding.
-  erw [ModuleCat.comp_apply]
-  erw [← singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_fundamentalClass]
+  rw [fiberLocalization_id_apply, singularHomologyToLocalHomology_fundamentalClass]
 
 include hn in
 /-- **Multiples of the fundamental class.** For the identity of a compact oriented manifold, the
