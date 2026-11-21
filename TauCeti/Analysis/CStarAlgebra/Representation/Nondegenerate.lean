@@ -32,8 +32,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
-* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`:
-  a representation of a unital C⋆-algebra is nondegenerate exactly when it sends `1` to `1`.
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`,
+  `NonUnitalStarAlgHom.isNondegenerate_iff_map_one`, and
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: on a unital C⋆-algebra, nondegeneracy is
+  equivalent to `π 1 = 1` and promotes `π` to a unital `StarAlgHom`.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
@@ -97,6 +99,65 @@ operator. -/
 theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
   hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
+
+/-- A representation of a unital C⋆-algebra is nondegenerate if and only if it maps `1` to `1`. -/
+theorem isNondegenerate_iff_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
+    ρ.IsNondegenerate ↔ ρ 1 = 1 :=
+  ⟨IsNondegenerate.map_one, isNondegenerate_of_map_one⟩
+
+/-- Promote a nondegenerate representation of a unital C⋆-algebra to a unital star-algebra
+homomorphism. -/
+def IsNondegenerate.toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : B →⋆ₐ[ℂ] (H →L[ℂ] H) where
+  toFun := ρ
+  map_one' := hρ.map_one
+  map_mul' := map_mul ρ
+  map_zero' := map_zero ρ
+  map_add' := map_add ρ
+  commutes' r := by
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, hρ.map_one, Algebra.algebraMap_eq_smul_one]
+  map_star' := map_star ρ
+
+/-- Coercing `hρ.toStarAlgHom` to a function gives `ρ`. -/
+@[simp]
+theorem IsNondegenerate.coe_toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : ⇑hρ.toStarAlgHom = ρ :=
+  (rfl)
+
+/-- `hρ.toStarAlgHom` evaluates as `ρ`. -/
+theorem IsNondegenerate.toStarAlgHom_apply {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) (b : B) :
+    hρ.toStarAlgHom b = ρ b :=
+  (rfl)
+
+/-- Forgetting the unit of `hρ.toStarAlgHom` recovers `ρ`. -/
+@[simp]
+theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ :=
+  (rfl)
+
+/-- Two nondegenerate representations of a unital C⋆-algebra promote to the same unital
+`StarAlgHom` if and only if they are equal. -/
+@[simp]
+theorem IsNondegenerate.toStarAlgHom_inj {B : Type*} [CStarAlgebra B]
+    {ρ₁ ρ₂ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (h₁ : ρ₁.IsNondegenerate) (h₂ : ρ₂.IsNondegenerate) :
+    h₁.toStarAlgHom = h₂.toStarAlgHom ↔ ρ₁ = ρ₂ :=
+  ⟨fun h => by simpa using congrArg StarAlgHom.toNonUnitalStarAlgHom h, by rintro rfl; rfl⟩
+
+/-- Every unital `⋆`-representation of a unital C⋆-algebra is nondegenerate when viewed as a
+nonunital representation. -/
+@[simp]
+theorem _root_.StarAlgHom.isNondegenerate_toNonUnitalStarAlgHom {B : Type*} [CStarAlgebra B]
+    (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) : π.toNonUnitalStarAlgHom.IsNondegenerate :=
+  isNondegenerate_of_map_one (by simp)
+
+/-- Promoting a unital `⋆`-representation forgotten to `NonUnitalStarAlgHom` recovers it. -/
+@[simp]
+theorem _root_.StarAlgHom.toStarAlgHom_toNonUnitalStarAlgHom {B : Type*} [CStarAlgebra B]
+    (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) (h : π.toNonUnitalStarAlgHom.IsNondegenerate) :
+    h.toStarAlgHom = π :=
+  StarAlgHom.ext fun _ => by simp
 
 /-- The Banach-module extension, before recording preservation of star. -/
 private def extensionAlgHom (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →ₐ[ℂ] (H →L[ℂ] H) := by
