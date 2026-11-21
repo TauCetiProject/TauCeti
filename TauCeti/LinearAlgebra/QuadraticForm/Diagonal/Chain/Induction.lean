@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
 
 /-!

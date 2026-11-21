@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.Binary
+import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 public import TauCeti.RingTheory.Henselian.BinaryForm
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
@@ -32,8 +32,8 @@ The characteristic-free polar-kernel descent, product, totally isotropic dimensi
 quadratic form `[a, b]` APIs live in `TauCeti.LinearAlgebra.QuadraticForm.Radical`,
 `TauCeti.LinearAlgebra.QuadraticForm.Prod`, `TauCeti.LinearAlgebra.QuadraticForm.Isometry`,
 `TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic`, and
-`TauCeti.LinearAlgebra.QuadraticForm.Binary`. This file builds the characteristic-two structure
-that underpins the Arf invariant:
+`TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic`. This file builds the characteristic-two
+structure that underpins the Arf invariant:
 
 1. **Characteristic-two diagonals and binary forms `[a, b]`.** In characteristic two, the diagonal
    submodule of `M × M` is always `(Q.prod Q)`-totally-isotropic, `Q.polarBilin` is alternating,

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
-import TauCeti.LinearAlgebra.QuadraticForm.Binary
+import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Quadratic
 import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup

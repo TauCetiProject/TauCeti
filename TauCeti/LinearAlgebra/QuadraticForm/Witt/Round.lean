@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.NormForm
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 
 /-!
 # Round one- and two-fold Pfister forms

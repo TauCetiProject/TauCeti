@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
 /-!
