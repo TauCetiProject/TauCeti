@@ -38,6 +38,10 @@ equivalences for rescaling lower volume bounds
 (`MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_iff`,
 `MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_inter_ball_iff`).
 
+Read in the other direction, the linear substitution says that precomposing an integrand with a
+continuous linear automorphism `A` divides its integral by `|det A|`
+(`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`).
+
 `MeasureTheory.Measure.addHaar_preimage_comp_sub_right_ball` gives the corresponding
 translation-and-scaling formula for preimages of balls under linear maps.
 
@@ -141,6 +145,21 @@ theorem integral_eq_abs_det_smul_integral_comp {G : Type*} [NormedAddCommGroup G
   rw [image_univ_of_surjective (he ▸ e.surjective)] at h
   simp only [Measure.restrict_univ] at h
   rw [h, integral_smul]
+
+/-- **Linear change of variables.** Precomposing an integrand with a continuous linear
+automorphism `A` divides its integral against an additive Haar measure by `|det A|`:
+`∫ x, f (A x) ∂μ = |det A|⁻¹ • ∫ x, f x ∂μ`. No integrability or measurability of `f` is needed.
+This is `MeasureTheory.Measure.integral_eq_abs_det_smul_integral_comp` read in the other
+direction. -/
+theorem integral_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (f : F → G) (A : F ≃L[ℝ] F) :
+    ∫ x, f (A x) ∂μ = |LinearMap.det (A : F →ₗ[ℝ] F)|⁻¹ • ∫ x, f x ∂μ := by
+  -- The image of `μ` under `A` is `|det A|⁻¹ • μ`.
+  have hmap : μ.map A = ENNReal.ofReal |(LinearMap.det (A : F →ₗ[ℝ] F))⁻¹| • μ :=
+    map_linearMap_addHaar_eq_smul_addHaar μ A.toLinearEquiv.isUnit_det'.ne_zero
+  have hcov := integral_map_equiv (μ := μ) A.toHomeomorph.toMeasurableEquiv f
+  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at hcov
+  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
 
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/

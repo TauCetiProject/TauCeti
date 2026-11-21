@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Complex
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.NormTrace.Prod
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # The volume scaling of multiplication on the mixed space
@@ -91,19 +92,11 @@ theorem integral_comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   have hu : IsUnit c := TauCeti.NumberField.mixedEmbedding.isUnit_iff_norm_ne_zero.mpr hc
   let e : mixedSpace K ≃L[ℝ] mixedSpace K :=
     (hu.unit.mulLeftLinearEquiv ℝ (mixedSpace K)).toContinuousLinearEquiv
-  have hdet : LinearMap.det (Algebra.lmul ℝ (mixedSpace K) c) ≠ 0 := by
-    rw [← Algebra.norm_apply, ← abs_ne_zero, abs_algebraNorm]
-    exact hc
-  have hmap : Measure.map (c * ·) volume =
-      ENNReal.ofReal (mixedEmbedding.norm c)⁻¹ • (volume : Measure (mixedSpace K)) := by
-    have h := Measure.map_linearMap_addHaar_eq_smul_addHaar volume hdet
-    rwa [abs_inv, ← Algebra.norm_apply, abs_algebraNorm] at h
-  have h := e.toHomeomorph.measurableEmbedding.integral_map (μ := volume) g
-  -- The homeomorphism underlying `e` is multiplication by `c`.
-  have he : ⇑e.toHomeomorph = (c * ·) := rfl
-  rw [he, hmap, integral_smul_measure,
-    ENNReal.toReal_ofReal (inv_nonneg.mpr (mixedEmbedding.norm_nonneg c))] at h
-  exact h.symm
+  -- The equivalence `e` is multiplication by `c`, whose linear map is `Algebra.lmul ℝ _ c`.
+  have he : ⇑e = (c * ·) := rfl
+  have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c := rfl
+  have h := Measure.integral_comp_continuousLinearEquiv volume g e
+  rwa [he, hlin, ← Algebra.norm_apply, abs_algebraNorm] at h
 
 open scoped Classical in
 /-- **The unit action preserves volume.**  With it, `measure_smul` and `measure_preimage_smul`
