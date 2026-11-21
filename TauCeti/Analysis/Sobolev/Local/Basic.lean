@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -40,8 +41,9 @@ decreasing the derivative order. On `σ`-compact sets (in particular on open sub
 finite-dimensional spaces), `MemLpLoc p U f` is equivalent to `AEStronglyMeasurable` on `U`
 together with `MemLpLoc p U (fun x => ‖f x‖)`
 (`TauCeti.memLpLoc_iff_aestronglyMeasurable_and_memLpLoc_norm`). On an open set, local `Lᵖ`
-membership is detected on the open subsets with compact closure inside it, and for continuous maps
-the zeroth-order condition in `MemWkpLoc` is automatic (`ContinuousOn.memWkpLoc_one_iff`).
+membership is detected on the open subsets with compact closure inside it, and on a ball on the
+smaller concentric balls (`TauCeti.memLpLoc_ball_iff`); for continuous maps the zeroth-order
+condition in `MemWkpLoc` is automatic (`ContinuousOn.memWkpLoc_one_iff`).
 
 Everywhere-differentiable maps on an open neighbourhood whose classical derivative lies in
 `MemLpLoc p` for `1 ≤ p` belong to `MemWkpLoc p _ 1` (`DifferentiableOn.memWkpLoc_one`), and `Cᵏ`
@@ -413,6 +415,17 @@ theorem MemLpLoc.integrableOn_smul [T2Space E] [OpensMeasurableSpace E] {S T : S
 end Module
 
 end MemLpLoc
+
+/-- Local `Lᵖ` membership on a ball `ball c r` is `Lᵖ` membership on every smaller concentric ball
+`ball c R`, `R < r`. -/
+theorem memLpLoc_ball_iff {E F : Type*} [MetricSpace E] [ProperSpace E] [MeasureSpace E]
+    [NormedAddCommGroup F] {p : ENNReal} {f : E → F} {c : E} {r : ℝ} :
+    MemLpLoc p (Metric.ball c r) f ↔ ∀ R < r, MemLp f p (volume.restrict (Metric.ball c R)) := by
+  refine ⟨fun hf R hR => hf.memLp_of_closure_subset Metric.isCompact_closure_ball
+    (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hR)),
+    fun hf K hK hKc => ?_⟩
+  obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK
+  exact (hf R hR).mono_measure (Measure.restrict_mono hKR le_rfl)
 
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
