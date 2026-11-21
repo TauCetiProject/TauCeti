@@ -25,8 +25,8 @@ proves **Federer's theorem**: in `Ω` the two differ by an `Hⁿ⁻¹`-null set,
 
 `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`
 
-(`TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary`), where
-`Hⁿ⁻¹ = μHE[n - 1]` is the normalized Euclidean Hausdorff measure. Equivalently,
+(`TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero`),
+where `Hⁿ⁻¹ = μHE[n - 1]` is the normalized Euclidean Hausdorff measure. Equivalently,
 `∂ᵉs ∩ Ω` and `∂*s` agree `Hⁿ⁻¹`-almost everywhere
 (`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`).
 
@@ -54,8 +54,8 @@ is carried by the reduced boundary (`TauCeti.ae_mem_reducedBoundary`).
   boundary, `c r ^ (n - 1) ≤ P(s; ball x r)` for some `c > 0` and arbitrarily small `r > 0`.
 * `TauCeti.exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall`: the perimeter
   measure has positive upper `(n - 1)`-dimensional density at every point of `∂ᵉs ∩ Ω`.
-* `TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary`: **Federer's
-  theorem**, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
+* `TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero`:
+  **Federer's theorem**, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
 * `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`: `∂ᵉs ∩ Ω = ∂*s` up to an `Hⁿ⁻¹`-null
   set.
 
@@ -150,7 +150,7 @@ theorem exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall
 /-- **Federer's theorem.** In dimension `n ≥ 2`, for a set `s` of locally finite perimeter in an
 open set `Ω`, the part of the essential boundary `∂ᵉs` in `Ω` lying off the reduced boundary `∂*s`
 is `Hⁿ⁻¹`-null. -/
-theorem euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary
+theorem euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero
     (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
@@ -159,7 +159,7 @@ theorem euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary
   set d : ℝ := ((n - 1 : ℕ) : ℝ)
   set lam := variationMeasure μ Ω (s.indicator 1)
   -- The points of `Ω` in the essential boundary but not in the reduced boundary.
-  set A : Set Ω := {y | ↑y ∈ essentialBoundary μ s ∧ ↑y ∉ reducedBoundary μ Ω s}
+  set A : Set Ω := (↑) ⁻¹' (essentialBoundary μ s \ reducedBoundary μ Ω s)
   have hA0 : lam A = 0 := measure_mono_null (t := {y : Ω | ↑y ∉ reducedBoundary μ Ω s})
     (fun _ hy => hy.2) (ae_iff.1 ae_mem_reducedBoundary)
   -- Sort the points of `A` by a lower bound `m⁻¹` on the upper density of `|Dχ_s|`.
@@ -177,28 +177,13 @@ theorem euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary
       hn hu hfin y.property hy.1
     obtain ⟨m, hm⟩ := ENNReal.exists_inv_nat_lt
       (ENNReal.ofReal_pos.2 (by positivity : 0 < c / 2 ^ (n - 1))).ne'
-    refine mem_iUnion.2 ⟨m, hy, (hfreq.and_eventually self_mem_nhdsWithin).mono
-      fun r ⟨hr, (hr0 : 0 < r)⟩ => ?_⟩
-    -- Rewrite the bound `c r ^ (n - 1)` in the form `(c / 2 ^ (n - 1)) (2 r) ^ (n - 1)`.
-    have hscale : ENNReal.ofReal (c / 2 ^ (n - 1)) * ENNReal.ofReal (2 * r) ^ d =
-        ENNReal.ofReal (c * r ^ (n - 1)) := by
-      rw [ENNReal.rpow_natCast, ← ENNReal.ofReal_pow (by positivity),
-        ← ENNReal.ofReal_mul (by positivity), mul_pow]
-      congr 1
-      field_simp
-    rw [← Subtype.preimage_closedBall]
-    calc (m : ℝ≥0∞)⁻¹ * ENNReal.ofReal (2 * r) ^ d
-        ≤ ENNReal.ofReal (c / 2 ^ (n - 1)) * ENNReal.ofReal (2 * r) ^ d := by gcongr
-      _ = ENNReal.ofReal (c * r ^ (n - 1)) := hscale
-      _ ≤ lam (((↑) : Ω → E) ⁻¹' closedBall (y : E) r) := hr
+    simp_rw [Subtype.preimage_closedBall] at hfreq
+    exact mem_iUnion.2 ⟨m, hy,
+      (Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall hfreq).mono
+        fun r hr => le_trans (by gcongr) hr⟩
   have hA : μH[d] A = 0 := measure_mono_null hAS (measure_iUnion_null hS)
-  have himg : ((↑) : Ω → E) '' A = (essentialBoundary μ s ∩ Ω) \ reducedBoundary μ Ω s := by
-    ext z
-    constructor
-    · rintro ⟨y, ⟨h₁, h₂⟩, rfl⟩
-      exact ⟨⟨h₁, y.property⟩, h₂⟩
-    · rintro ⟨⟨h₁, hΩ⟩, h₂⟩
-      exact ⟨⟨z, hΩ⟩, ⟨h₁, h₂⟩, rfl⟩
+  have himg : ((↑) : Ω → E) '' A = (essentialBoundary μ s ∩ Ω) \ reducedBoundary μ Ω s :=
+    (Subtype.image_preimage_coe _ _).trans (by rw [← inter_sdiff_assoc, inter_comm])
   rw [Measure.euclideanHausdorffMeasure_eq_zero_iff, ← himg,
     isometry_subtypeVal.hausdorffMeasure_image (Or.inl (Nat.cast_nonneg _))]
   exact hA
@@ -211,8 +196,8 @@ theorem essentialBoundary_inter_ae_eq_reducedBoundary (hn : 2 ≤ finrank ℝ E)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
     (essentialBoundary μ s ∩ Ω : Set E) =ᵐ[μHE[finrank ℝ E - 1]] reducedBoundary μ Ω s := by
-  refine ae_eq_set.2 ⟨euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary
-    hn hu hfin, ?_⟩
+  refine ae_eq_set.2
+    ⟨euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero hn hu hfin, ?_⟩
   rw [sdiff_eq_empty.2 (subset_inter (reducedBoundary_subset_essentialBoundary hn)
     reducedBoundary_subset), measure_empty]
 
