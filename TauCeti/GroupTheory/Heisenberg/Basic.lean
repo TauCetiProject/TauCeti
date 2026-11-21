@@ -109,9 +109,8 @@ accumulates the value of `B` at the two space coordinates. -/
 @[simp]
 theorem bilinearExtension_mul_left :
     (p * q).left = ofAdd (p.left.toAdd + q.left.toAdd + B p.right.toAdd q.right.toAdd) := by
-  rw [FactorSet.Extension.mul_left, TauCeti.trivialMulDistribMulAction_smul,
-    bilinearFactorSet_apply]
-  conv_lhs => rw [← ofAdd_toAdd p.left, ← ofAdd_toAdd q.left, ← ofAdd_add, ← ofAdd_add]
+  simp only [FactorSet.Extension.mul_left, TauCeti.trivialMulDistribMulAction_smul,
+    bilinearFactorSet_apply, ofAdd_add, ofAdd_toAdd]
 
 /-- **The space coordinate of a product** in the Heisenberg group of `B` is the sum of the two
 space coordinates: the projection `(t, w) ↦ w` is a homomorphism
