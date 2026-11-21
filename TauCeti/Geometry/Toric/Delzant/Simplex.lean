@@ -52,6 +52,7 @@ vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
   and the points `a e k*`.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
+* `TauCeti.Toric.surjective_linearCombination_simplexNormal`: the real normals span `ℝ^κ`.
 
 ## References
 
@@ -344,5 +345,17 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
       · cases o with
         | none => simpa [apply_compLeft_one] using hsum.ne
         | some m => simp [hpt, hb.ne']
+
+/-! ### The real normals -/
+
+/-- **The real normals of the standard simplex span `ℝ^κ`**, since the coordinate vectors are among
+them. This is the hypothesis under which the Delzant quotient carries its reduced moment map. -/
+theorem surjective_linearCombination_simplexNormal :
+    Function.Surjective (Fintype.linearCombination ℝ
+      fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) := by
+  intro v
+  refine ⟨fun o ↦ o.elim 0 v, ?_⟩
+  ext l
+  simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply]
 
 end TauCeti.Toric
