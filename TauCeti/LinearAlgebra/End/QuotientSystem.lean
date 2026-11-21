@@ -40,7 +40,8 @@ systems have to respect them.
 * `Module.End.FiniteQuotientSystem.ofIsAdicComplete`: the `I`-adic filtration `I ^ n • ⊤` of an
   `I`-adically complete module with finite quotients, and `ofModuleFinite` for a finite module
   over a ring with `R ⧸ I` finite and `I` finitely generated.
-* `Module.End.FiniteQuotientSystem.ofFinite`: the one-term system `J = ⊥` on a finite module.
+* `Module.End.FiniteQuotientSystem.ofFinite`: the one-term system `J = ⊥` on a module that is
+  finite as a set.
 
 ## Main results
 
@@ -48,9 +49,12 @@ systems have to respect them.
   agree modulo every `J i`.
 * `Module.End.FiniteQuotientSystem.existsUnique_sModEq`: every compatible family of residues has a
   unique limit.
-* `Module.End.FiniteQuotientSystem.nhds_zero_hasBasis`: the submodules `J i` form a basis of
+* `Module.End.FiniteQuotientSystem.hasBasis_nhds_zero`: the submodules `J i` form a basis of
   neighbourhoods of `0` for the inverse-limit topology.
-* `Module.End.FiniteQuotientSystem.compactSpace`: `M` is compact for the inverse-limit topology.
+* `Module.End.FiniteQuotientSystem.isClosedEmbedding_pi`: `M` embeds as a closed subset of the
+  product of its discrete quotients.
+* `Module.End.FiniteQuotientSystem.compactSpace`, `Module.End.FiniteQuotientSystem.t2Space`: `M` is
+  compact and Hausdorff for the inverse-limit topology.
 * `Module.End.FiniteQuotientSystem.continuous`: `U` is continuous for it; more generally a linear
   map respecting two systems is continuous (`continuous_of_forall_exists_le_comap`).
 * `Module.End.FiniteQuotientSystem.isEmpty_of_infinite`: a nonzero module over an infinite
@@ -126,9 +130,8 @@ theorem mapQ_mk (i : ι) (x : M) :
 @[simp]
 theorem mapQ_pow_mk (i : ι) (n : ℕ) (x : M) :
     (h.mapQ i ^ n) (Submodule.Quotient.mk x) = Submodule.Quotient.mk ((U ^ n) x) := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih => rw [pow_succ', mul_apply_eq_comp, ih, mapQ_mk, pow_succ', mul_apply_eq_comp]
+  rw [mapQ, ← Submodule.mapQ_pow]
+  exact mapQ_apply _ _ _ x
 
 /-- The transition map `M ⧸ J i → M ⧸ J j` intertwines the induced endomorphisms. -/
 theorem factor_mapQ {i j : ι} (hij : h.submodule i ≤ h.submodule j) (z : M ⧸ h.submodule i) :
@@ -202,9 +205,32 @@ for which every quotient map `M → M ⧸ J i` is continuous, the quotients bein
 def topology : TopologicalSpace M :=
   ⨅ i, TopologicalSpace.induced (Submodule.Quotient.mk : M → M ⧸ h.submodule i) ⊥
 
+/-- Each quotient map `M → M ⧸ J i` is continuous for the inverse-limit topology, the quotient
+being discrete. -/
+theorem continuous_mk (i : ι) :
+    Continuous[h.topology, ⊥] (Submodule.Quotient.mk : M → M ⧸ h.submodule i) :=
+  continuous_iInf_dom continuous_induced_dom
+
+/-- Each member `J i` of the system is open for the inverse-limit topology. -/
+theorem isOpen_submodule (i : ι) : IsOpen[h.topology] (h.submodule i : Set M) := by
+  have hJ : (h.submodule i : Set M) = Submodule.Quotient.mk ⁻¹' {(0 : M ⧸ h.submodule i)} := by
+    ext x
+    simp [Submodule.Quotient.mk_eq_zero]
+  rw [hJ]
+  exact TopologicalSpace.le_def.1 (iInf_le _ i) _
+    ((isOpen_induced_iff (t := ⊥)).2 ⟨_, trivial, rfl⟩)
+
+/-- The inverse-limit topology is induced by the map `M → Π i, M ⧸ J i` to the product of the
+discrete quotients. -/
+theorem topology_eq_induced_pi :
+    h.topology = TopologicalSpace.induced
+      (fun x i ↦ (Submodule.Quotient.mk x : M ⧸ h.submodule i))
+      (Pi.topologicalSpace (t₂ := fun _ ↦ ⊥)) := by
+  simp only [topology, Pi.topologicalSpace, induced_iInf, induced_compose, Function.comp_def]
+
 /-- The neighbourhoods of `x` for the inverse-limit topology have a basis given by the residue
 classes `x + J i`. -/
-theorem nhds_hasBasis [Nonempty ι] (x : M) :
+theorem hasBasis_nhds [Nonempty ι] (x : M) :
     (@nhds M h.topology x).HasBasis (fun _ ↦ True)
       fun i ↦ {y | y ≡ x [SMOD h.submodule i]} := by
   have hn : @nhds M h.topology x = ⨅ i, 𝓟 {y | y ≡ x [SMOD h.submodule i]} := by
@@ -222,9 +248,9 @@ theorem nhds_hasBasis [Nonempty ι] (x : M) :
 
 /-- The members of a finite quotient system form a basis of neighbourhoods of `0` for the
 inverse-limit topology. -/
-theorem nhds_zero_hasBasis [Nonempty ι] :
+theorem hasBasis_nhds_zero [Nonempty ι] :
     (@nhds M h.topology 0).HasBasis (fun _ ↦ True) fun i ↦ (h.submodule i : Set M) := by
-  convert h.nhds_hasBasis 0 using 2 with i
+  convert h.hasBasis_nhds 0 using 2 with i
   ext y
   exact SModEq.zero.symm
 
@@ -240,27 +266,22 @@ theorem continuous_of_forall_exists_le_comap {N : Type*} [AddCommGroup N] [Modul
   have hfac : (Submodule.Quotient.mk ∘ f : M → N ⧸ h'.submodule k) =
       (h.submodule i).mapQ (h'.submodule k) f hi ∘ Submodule.Quotient.mk :=
     funext fun x ↦ (mapQ_apply _ _ _ x).symm
-  have hq : Continuous[h.topology, ⊥] (Submodule.Quotient.mk : M → M ⧸ h.submodule i) :=
-    continuous_iInf_dom continuous_induced_dom
-  rw [hfac]
-  exact @Continuous.comp _ _ _ h.topology ⊥ ⊥ _ _ continuous_bot hq
+  -- a map factoring through the discrete quotient `M ⧸ J i` is continuous
+  rw [hfac, continuous_iff_le_induced, ← induced_compose]
+  exact (iInf_le _ i).trans (induced_mono bot_le)
 
 /-- The endomorphism `U` is continuous for the inverse-limit topology. -/
 protected theorem continuous : Continuous[h.topology, h.topology] U :=
   h.continuous_of_forall_exists_le_comap h U fun i ↦ ⟨i, h.le_comap i⟩
 
-/-- A module is compact for the inverse-limit topology of a finite quotient system: it embeds as
-the closed subset of compatible families in the compact product of its finite quotients. -/
-theorem compactSpace : @CompactSpace M h.topology := by
+/-- The map `M → Π i, M ⧸ J i` to the product of the discrete quotients is a closed embedding
+for the inverse-limit topology: its image is the closed subset of compatible families. -/
+theorem isClosedEmbedding_pi :
+    @IsClosedEmbedding M (Π i, M ⧸ h.submodule i) h.topology
+      (Pi.topologicalSpace (t₂ := fun _ ↦ ⊥)) fun x _ ↦ Submodule.Quotient.mk x := by
   let _ : ∀ i, TopologicalSpace (M ⧸ h.submodule i) := fun _ ↦ ⊥
   have _ : ∀ i, DiscreteTopology (M ⧸ h.submodule i) := fun _ ↦ ⟨rfl⟩
   let _ := h.topology
-  let F : M → Π i, M ⧸ h.submodule i := fun x i ↦ Submodule.Quotient.mk x
-  have hind : h.topology = TopologicalSpace.induced F inferInstance := by
-    simp only [topology, Pi.topologicalSpace, induced_iInf, induced_compose, Function.comp_def,
-      F]
-    -- the local topology on each quotient is `⊥` by its definition above
-    rfl
   have hclosed : IsClosed (h.limit : Set (Π i, M ⧸ h.submodule i)) := by
     have hset : (h.limit : Set (Π i, M ⧸ h.submodule i)) =
         ⋂ i, ⋂ j, ⋂ hij : h.submodule i ≤ h.submodule j, {z | factor hij (z i) = z j} := by
@@ -269,11 +290,26 @@ theorem compactSpace : @CompactSpace M h.topology := by
     rw [hset]
     exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun hij ↦
       isClosed_eq (continuous_of_discreteTopology.comp (continuous_apply i)) (continuous_apply j)
-  have hF : IsClosedEmbedding F := by
-    refine ⟨⟨⟨hind⟩, fun x y hxy ↦ h.eq_iff_forall_sModEq.2 fun i ↦ congr_fun hxy i⟩, ?_⟩
-    rw [h.range_mk_eq_limit]
-    exact hclosed
-  exact hF.compactSpace
+  refine ⟨⟨⟨h.topology_eq_induced_pi⟩, fun x y hxy ↦
+    h.eq_iff_forall_sModEq.2 fun i ↦ congr_fun hxy i⟩, ?_⟩
+  rw [h.range_mk_eq_limit]
+  exact hclosed
+
+/-- A module is compact for the inverse-limit topology of a finite quotient system: it embeds as
+a closed subset of the compact product of its finite quotients. -/
+theorem compactSpace : @CompactSpace M h.topology := by
+  let _ : ∀ i, TopologicalSpace (M ⧸ h.submodule i) := fun _ ↦ ⊥
+  have _ : ∀ i, DiscreteTopology (M ⧸ h.submodule i) := fun _ ↦ ⟨rfl⟩
+  let _ := h.topology
+  exact h.isClosedEmbedding_pi.compactSpace
+
+/-- A module is Hausdorff for the inverse-limit topology of a finite quotient system: it embeds in
+the Hausdorff product of its discrete quotients. -/
+theorem t2Space : @T2Space M h.topology := by
+  let _ : ∀ i, TopologicalSpace (M ⧸ h.submodule i) := fun _ ↦ ⊥
+  have _ : ∀ i, DiscreteTopology (M ⧸ h.submodule i) := fun _ ↦ ⟨rfl⟩
+  let _ := h.topology
+  exact h.isClosedEmbedding_pi.isEmbedding.t2Space
 
 end Topology
 
