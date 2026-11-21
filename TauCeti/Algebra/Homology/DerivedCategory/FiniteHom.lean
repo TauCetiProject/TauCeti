@@ -27,7 +27,7 @@ requiring perfection or finite projective dimension:
 * `DerivedCategory.moduleFinite_homology_truncLE_obj` and
   `DerivedCategory.moduleFinite_homology_truncGE_obj`: canonical truncations preserve finite
   cohomology.
-* `TauCeti.DerivedCategory.moduleFinite_hom_singleFunctor`: for finitely generated modules `X, Y`
+* `ModuleCat.moduleFinite_hom_singleFunctor`: for finitely generated modules `X, Y`
   over a commutative Noetherian ring `A`, `((singleFunctor _ a).obj X ⟶ (singleFunctor _ b).obj Y)`
   is a finite `A`-module for all integers `a, b`.
 * `DerivedCategory.moduleFinite_hom_of_isLE_of_isGE`: if `M.IsLE b`, `N.IsGE c`, and `H^i(M)` and
@@ -93,7 +93,7 @@ end TruncFinite
 
 end DerivedCategory
 
-namespace TauCeti.DerivedCategory
+namespace ModuleCat
 
 open _root_.DerivedCategory
 
@@ -109,14 +109,15 @@ theorem moduleFinite_hom_singleFunctor (X Y : ModuleCat.{v} A) [Module.Finite A 
   by_cases hba : b ≤ a
   · let n : ℕ := (a - b).toNat
     have hn : a - b = n := by omega
-    exact Module.Finite.equiv (singleFunctorHomLinearEquivExt A X Y a b n hn).symm
+    exact Module.Finite.equiv
+      (TauCeti.DerivedCategory.singleFunctorHomLinearEquivExt A X Y a b n hn).symm
   · have : Subsingleton ((singleFunctor (ModuleCat.{v} A) a).obj X ⟶
         (singleFunctor (ModuleCat.{v} A) b).obj Y) :=
       ⟨fun f g ↦ (TStructure.t.zero f a b (by omega)).trans
         (TStructure.t.zero g a b (by omega)).symm⟩
     infer_instance
 
-end TauCeti.DerivedCategory
+end ModuleCat
 
 namespace DerivedCategory
 
@@ -143,7 +144,7 @@ private theorem moduleFinite_hom_of_isGE_of_isLE_single_single
   have : Module.Finite A Y := Module.Finite.equiv eY.symm.toLinearEquiv
   have : Module.Finite A ((singleFunctor (ModuleCat.{v} A) a).obj X ⟶
       (singleFunctor (ModuleCat.{v} A) c).obj Y) :=
-    TauCeti.DerivedCategory.moduleFinite_hom_singleFunctor X Y a c
+    ModuleCat.moduleFinite_hom_singleFunctor X Y a c
   exact Module.Finite.equiv (Linear.homCongr A eM eN).symm
 
 private theorem moduleFinite_hom_of_isGE_of_isLE_left_single :
