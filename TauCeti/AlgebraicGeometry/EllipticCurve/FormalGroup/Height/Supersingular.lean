@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Order
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 public import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 
@@ -17,15 +17,11 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 # Formal-group height and supersingularity of elliptic curves at every prime
 
 Let `W` be an elliptic curve over a field `K`, with formal group law `Ê = formalGroup W`.
-Identifying the formal power series of the multiplication-by-`n` isogeny `[n]` with `(formalGroup
-W).zsmulSeries n` (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`) and reading its order of
-vanishing off the inseparable degree of `[n]` (`TauCeti.Isogeny.order_formalSeries`) gives
-`ord [n]_Ê = deg_i [n]` for every `n ≠ 0`. Reducing modulo a maximal ideal shows that `[n]_Ê ≠ 0`
-for every `n ≠ 0` and every elliptic curve over a nontrivial commutative ring.
-
-When `K` has prime characteristic `p`, multiplication by `p` has total degree `p²` and factors as
-`[p] = V ∘ F` with `F` purely inseparable of degree `p` and `V` of prime degree `p`. Comparing
-`deg_s [p] * deg_i [p] = p²` with the Verschiebung criteria of
+Using the identification `ord [n]_Ê = deg_i [n]` and nonvanishing `[n]_Ê ≠ 0` from
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Order`, when `K` has prime characteristic `p`,
+multiplication by `p` has total degree `p²` and factors as `[p] = V ∘ F` with `F` purely
+inseparable of degree `p` and `V` of prime degree `p`. Comparing `deg_s [p] * deg_i [p] = p²` with
+the Verschiebung criteria of
 `TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular` yields the
 complete formal-group height stratification at every prime `p` (including `p = 2` and `p = 3`,
 Silverman V.3.1):
@@ -49,12 +45,6 @@ family-level truncation of Landweber height ideals over arbitrary commutative ri
 * `TauCeti.Isogeny.order_nsmulSeries_formalGroup_eq`,
   `TauCeti.Isogeny.order_zsmulSeries_formalGroup_eq`, and `TauCeti.Isogeny.height_formalGroup_eq`:
   isogenous elliptic curves have multiplication series of equal order and equal formal-group height.
-* `WeierstrassCurve.order_zsmulSeries_formalGroup_of_ne_zero` and
-  `WeierstrassCurve.order_nsmulSeries_formalGroup_of_ne_zero`: for `n ≠ 0`, the order of `[n]_Ê` is
-  the inseparable degree of `[n]`.
-* `WeierstrassCurve.zsmulSeries_formalGroup_ne_zero` and
-  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`: for `n ≠ 0`, `[n]_Ê ≠ 0` on any elliptic curve
-  over a nontrivial commutative ring.
 * `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one` and
   `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: an elliptic curve in prime
   characteristic `p` is ordinary iff `height p Ê = 1` and supersingular iff `height p Ê = 2`.
@@ -75,58 +65,9 @@ public section
 
 open TauCeti.Isogeny
 
-/-! ### Order of `[n]_Ê` and formal-group height of elliptic curves over fields -/
+/-! ### Formal-group height of elliptic curves over fields -/
 
 namespace WeierstrassCurve
-
-section Field
-
-variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
-
-/-- **The order of `[n]_Ê` (`n : ℤ`, `n ≠ 0`) is the inseparable degree of `[n]`.** -/
-theorem order_zsmulSeries_formalGroup_of_ne_zero {n : ℤ} (hn : n ≠ 0) :
-    ((formalGroup W).zsmulSeries n).order =
-      (mulByIntIsogenyOfNeZero W.toAffine hn).inseparableDegree := by
-  rw [← (formalSeries_mulByIntIsogeny W _ :
-      (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries = _), order_formalSeries]
-
-/-- **The order of `[n]_Ê` (`n : ℕ`, `n ≠ 0`) is the inseparable degree of `[n]`.** -/
-theorem order_nsmulSeries_formalGroup_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
-    ((formalGroup W).nsmulSeries n).order =
-      (mulByIntIsogenyOfNeZero W.toAffine (n := n) (mod_cast hn)).inseparableDegree := by
-  rw [← formalSeries_mulByIntIsogenyOfNeZero_natCast W hn, order_formalSeries]
-
-private theorem zsmulSeries_formalGroup_ne_zero_of_field {n : ℤ} (hn : n ≠ 0) :
-    (formalGroup W).zsmulSeries n ≠ 0 := by
-  rw [← (formalSeries_mulByIntIsogeny W _ :
-      (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries = _)]
-  exact (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries_ne_zero
-
-end Field
-
-section NontrivialRing
-
-variable {R : Type*} [CommRing R] [Nontrivial R] (W : WeierstrassCurve R) [W.IsElliptic]
-
-/-- **For `n ≠ 0` (`n : ℤ`), multiplication by `n` on the formal group of an elliptic curve over a
-nontrivial commutative ring is nonzero.** -/
-theorem zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
-    (formalGroup W).zsmulSeries n ≠ 0 := by
-  obtain ⟨𝔪, h𝔪⟩ := Ideal.exists_maximal R
-  let _ : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
-  set π := Ideal.Quotient.mk 𝔪
-  intro h0
-  apply zsmulSeries_formalGroup_ne_zero_of_field (W.map π) hn
-  rw [map_formalGroup, ← FormalGroup.map_zsmulSeries, h0, map_zero]
-
-/-- **For `n ≠ 0` (`n : ℕ`), multiplication by `n` on the formal group of an elliptic curve over a
-nontrivial commutative ring is nonzero.** -/
-theorem nsmulSeries_formalGroup_ne_zero {n : ℕ} (hn : n ≠ 0) :
-    (formalGroup W).nsmulSeries n ≠ 0 := by
-  rw [← FormalGroup.zsmulSeries_natCast]
-  exact W.zsmulSeries_formalGroup_ne_zero (mod_cast hn)
-
-end NontrivialRing
 
 section FieldHeight
 

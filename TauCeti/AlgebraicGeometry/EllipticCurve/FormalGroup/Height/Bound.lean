@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Order
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
@@ -77,9 +77,19 @@ namespace WeierstrassCurve
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p n : ℕ}
 
-/-- The coefficients of `[p]_Ê` in degrees below `N` (with `p ≠ 0` and `p² < N`) generate the unit
-ideal exactly when `p`, `c₄`, and `Δ` do. -/
-private theorem span_coeff_nsmulSeries_eq_top_iff {N : ℕ} (hp : p ≠ 0) (hN : p ^ 2 < N) :
+private theorem span_coeff_nsmulSeries_le_ker_iff {S : Type*} [CommRing S] {N : ℕ}
+    (F : FormalGroup R) (φ : R →+* S) :
+    Ideal.span ((fun k ↦ PowerSeries.coeff k (F.nsmulSeries p)) '' Set.Iio N) ≤
+        RingHom.ker φ ↔
+      ((N : ℕ) : ℕ∞) ≤ ((F.map φ).nsmulSeries p).order := by
+  simp only [Ideal.span_le, Set.subset_def, Set.mem_image, Set.mem_Iio,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, SetLike.mem_coe,
+    RingHom.mem_ker, PowerSeries.nat_le_order_iff, FormalGroup.coeff_nsmulSeries_map]
+
+/-- The coefficients of `[p]_Ê` in degrees below `N` (with `p ≠ 0`, and either `p² < N` or
+`W.Δ = 0 ∧ p < N`) generate the unit ideal exactly when `p`, `c₄`, and `Δ` do. -/
+private theorem span_coeff_nsmulSeries_eq_top_iff {N : ℕ} (hp : p ≠ 0)
+    (hN : p ^ 2 < N ∨ W.Δ = 0 ∧ p < N) :
     Ideal.span ((fun k ↦ PowerSeries.coeff k ((formalGroup W).nsmulSeries p)) '' Set.Iio N) = ⊤ ↔
       Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
   constructor
@@ -94,32 +104,38 @@ private theorem span_coeff_nsmulSeries_eq_top_iff {N : ℕ} (hp : p ≠ 0) (hN :
       (W.map (Ideal.Quotient.mk m)).nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero
         (m := p) (by rw [map_Δ]; exact hmem (by simp)) (by rw [map_c₄]; exact hmem (by simp))
         (by rw [← map_natCast (Ideal.Quotient.mk m)]; exact hmem (by simp))
-    refine hm.ne_top (top_unique (htop ▸ Ideal.span_le.mpr ?_))
-    rintro _ ⟨k, -, rfl⟩
-    rw [SetLike.mem_coe, ← Ideal.Quotient.eq_zero_iff_mem, ← FormalGroup.coeff_nsmulSeries_map,
-      ← map_formalGroup, hzero, map_zero]
+    refine hm.ne_top (top_unique (htop ▸ ?_))
+    rw [← Ideal.mk_ker (I := m), span_coeff_nsmulSeries_le_ker_iff, ← map_formalGroup, hzero,
+      PowerSeries.order_zero]
+    exact le_top
   · intro htop
     by_contra hI
     obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hI
     let _ : m.IsMaximal := hm
     let _ := Ideal.Quotient.field m
-    have hcoeff (k : ℕ) (hk : k < N) :
-        PowerSeries.coeff k ((formalGroup (W.map (Ideal.Quotient.mk m))).nsmulSeries p) = 0 := by
-      rw [map_formalGroup, FormalGroup.coeff_nsmulSeries_map, Ideal.Quotient.eq_zero_iff_mem]
-      exact hle (Ideal.subset_span ⟨k, hk, rfl⟩)
-    have h1 : 1 < N := lt_of_le_of_lt (Nat.one_le_pow 2 p (Nat.pos_of_ne_zero hp)) hN
     have hord : ((N : ℕ) : ℕ∞) ≤
-        ((formalGroup (W.map (Ideal.Quotient.mk m))).nsmulSeries p).order :=
-      PowerSeries.nat_le_order _ N hcoeff
+        ((formalGroup (W.map (Ideal.Quotient.mk m))).nsmulSeries p).order := by
+      rw [map_formalGroup, ← span_coeff_nsmulSeries_le_ker_iff, Ideal.mk_ker]
+      exact hle
+    have h1 : 1 < N := hN.elim
+      (lt_of_le_of_lt (Nat.one_le_pow 2 p (Nat.pos_of_ne_zero hp)))
+      (fun h ↦ lt_of_le_of_lt (Nat.pos_of_ne_zero hp) h.2)
+    have hp_mem : Ideal.Quotient.mk m (p : R) = 0 := by
+      simpa [FormalGroup.coeff_one_nsmulSeries] using
+        PowerSeries.coeff_of_lt_order 1 (lt_of_lt_of_le (by exact_mod_cast h1) hord)
     have hzero : (W.map (Ideal.Quotient.mk m)).c₄ = 0 ∧ (W.map (Ideal.Quotient.mk m)).Δ = 0 := by
       by_contra hne
       rw [not_and_or] at hne
-      exact not_lt_of_ge
-        (hord.trans ((W.map (Ideal.Quotient.mk m)).order_nsmulSeries_formalGroup_le_sq hp hne))
-        (by exact_mod_cast hN)
+      rcases hN with hN | ⟨hΔ, hN⟩
+      · exact not_lt_of_ge (hord.trans ((W.map _).order_nsmulSeries_formalGroup_le_sq hp hne))
+          (by exact_mod_cast hN)
+      · have hΔm : (W.map (Ideal.Quotient.mk m)).Δ = 0 := by rw [map_Δ, hΔ, map_zero]
+        exact not_lt_of_ge (hord.trans
+          (order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero _ hp hΔm
+            (hne.resolve_right (not_not.mpr hΔm)))) (by exact_mod_cast hN)
     refine hm.ne_top (top_unique (htop ▸ Ideal.span_le.mpr ?_))
     rintro _ (rfl | rfl | rfl) <;> rw [SetLike.mem_coe, ← Ideal.Quotient.eq_zero_iff_mem]
-    · simpa [FormalGroup.coeff_one_nsmulSeries] using hcoeff 1 h1
+    · exact hp_mem
     · simpa [map_c₄] using hzero.1
     · simpa [map_Δ] using hzero.2
 
@@ -131,7 +147,7 @@ theorem heightIdeal_formalGroup_eq_top_iff (hp : 1 < p) (hn : 3 ≤ n) :
     (formalGroup W).heightIdeal p n = ⊤ ↔ Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
   rw [FormalGroup.heightIdeal_def]
   exact W.span_coeff_nsmulSeries_eq_top_iff (by omega)
-    (Nat.pow_lt_pow_right hp (by omega : 2 < n))
+    (Or.inl (Nat.pow_lt_pow_right hp (by omega : 2 < n)))
 
 /-- **Exact characterization of the height-two unit condition.** For any `p ≠ 0`, the
 `T ^ (p ^ 2)` coefficient of `[p]_Ê` (Landweber's `v₂` when `p` is prime) is a unit modulo
@@ -140,7 +156,7 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup_iff (hp : p ≠ 0) :
     IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
       (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) ↔
       Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
-  have h := W.span_coeff_nsmulSeries_eq_top_iff hp (Nat.lt_succ_self (p ^ 2))
+  have h := W.span_coeff_nsmulSeries_eq_top_iff hp (Or.inl (Nat.lt_succ_self (p ^ 2)))
   have hU : Set.Iio (p ^ 2 + 1) = insert (p ^ 2) (Set.Iio (p ^ 2)) := by
     ext k
     simp [le_iff_eq_or_lt]
@@ -192,39 +208,12 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup [W.IsElliptic] (hp : p ≠ 0) :
 theorem heightIdeal_formalGroup_eq_top_iff_of_Δ_eq_zero (hΔ : W.Δ = 0) (hp : 1 < p)
     (hn : 2 ≤ n) :
     (formalGroup W).heightIdeal p n = ⊤ ↔ Ideal.span {(p : R), W.c₄} = ⊤ := by
-  constructor
-  · intro h
-    have hmax : (formalGroup W).heightIdeal p (max n 3) = ⊤ :=
-      top_unique (h ▸ (formalGroup W).heightIdeal_mono (le_max_left n 3))
-    have hspan := (W.heightIdeal_formalGroup_eq_top_iff hp (le_max_right n 3)).mp hmax
-    rw [hΔ, Ideal.span_insert, Ideal.span_insert, Ideal.span_singleton_zero, sup_bot_eq,
-      ← Ideal.span_insert] at hspan
-    exact hspan
-  · intro htop
-    by_contra hI
-    obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal ((formalGroup W).heightIdeal p n) hI
-    let _ : m.IsMaximal := hm
-    let _ := Ideal.Quotient.field m
-    have hcoeff (k : ℕ) (hk : k < p ^ n) :
-        PowerSeries.coeff k ((formalGroup (W.map (Ideal.Quotient.mk m))).nsmulSeries p) = 0 := by
-      rw [map_formalGroup, FormalGroup.coeff_nsmulSeries_map, Ideal.Quotient.eq_zero_iff_mem]
-      exact hle (FormalGroup.coeff_nsmulSeries_mem_heightIdeal hk)
-    have h1 : 1 < p ^ n := Nat.one_lt_pow (by omega) hp
-    have hpn : p < p ^ n := lt_of_lt_of_le (lt_self_pow₀ hp (by omega : 1 < 2))
-      (Nat.pow_le_pow_right (zero_lt_one.trans hp) hn)
-    have hc₄ : (W.map (Ideal.Quotient.mk m)).c₄ = 0 := by
-      by_contra hne
-      have hord : ((p ^ n : ℕ) : ℕ∞) ≤
-          ((formalGroup (W.map (Ideal.Quotient.mk m))).nsmulSeries p).order :=
-        PowerSeries.nat_le_order _ (p ^ n) hcoeff
-      have hle_p :=
-        (W.map (Ideal.Quotient.mk m)).order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero
-          (m := p) (by omega) (by rw [map_Δ, hΔ, map_zero]) hne
-      exact not_lt_of_ge (hord.trans hle_p) (by exact_mod_cast hpn)
-    refine hm.ne_top (top_unique (htop ▸ Ideal.span_le.mpr ?_))
-    rintro _ (rfl | rfl) <;> rw [SetLike.mem_coe, ← Ideal.Quotient.eq_zero_iff_mem]
-    · simpa [FormalGroup.coeff_one_nsmulSeries] using hcoeff 1 h1
-    · simpa [map_c₄] using hc₄
+  have hpn : p < p ^ n := lt_of_lt_of_le (lt_self_pow₀ hp (by omega : 1 < 2))
+    (Nat.pow_le_pow_right (zero_lt_one.trans hp) hn)
+  rw [FormalGroup.heightIdeal_def,
+    W.span_coeff_nsmulSeries_eq_top_iff (by omega) (Or.inr ⟨hΔ, hpn⟩),
+    hΔ, Ideal.span_insert, Ideal.span_insert, Ideal.span_singleton_zero, sup_bot_eq,
+    ← Ideal.span_insert]
 
 /-- **The Hasse invariant on singular Weierstrass families.** When `Δ = 0`, for every prime `p`
 the Hasse invariant `coeff (p - 1) ω` of the formal group of `W` is a unit modulo `p` if and only
