@@ -57,6 +57,8 @@ valid including at positive integers where both sides vanish.
 * `Complex.ne_neg_natCast_of_re_pos`, `Complex.Gamma_ne_zero_of_im_ne_zero` — parameters with
   positive real part or nonzero imaginary part avoid `−ℕ`, so `Complex.Gamma` does not vanish off
   the real axis.
+* `Complex.add_natCast_ne_neg_natCast` — a parameter off `−ℕ` stays off `−ℕ` after adding a
+  natural number.
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
   `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`, valid at every `s`.
@@ -260,6 +262,10 @@ theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
   have heq := congrArg re h
   simp only [neg_re, natCast_re] at heq
   linarith [n.cast_nonneg (α := ℝ)]
+
+/-- A parameter off `−ℕ` stays off `−ℕ` after adding a natural number. -/
+theorem add_natCast_ne_neg_natCast {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) (n m : ℕ) :
+    a + n ≠ -m := fun h => ha (m + n) (by push_cast; linear_combination h)
 
 /-- `Complex.Gamma` does not vanish off the real axis. -/
 theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=

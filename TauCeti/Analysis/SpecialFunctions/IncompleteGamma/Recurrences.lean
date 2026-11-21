@@ -10,6 +10,8 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Recurrences of the complex incomplete Gamma functions
@@ -41,10 +43,11 @@ recurrence is an integration by parts along that ray, which stays in the slit pl
 DLMF 8.8.4, `γ*(a − 1, z) = z γ*(a, z) + e^{−z} / Γ(a)`, is
 `Complex.tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one` at `a − 1`.
 
-The quotients of Gamma values in DLMF 8.8.7–8.8.10 are written as Pochhammer symbols:
-`Γ(a + n) / Γ(a) = (a)ₙ`, `Γ(a + n) / Γ(a + k + 1) = (a + k + 1)_{n−k−1}`,
-`Γ(a) / Γ(a − n) = (a − n)ₙ` and `Γ(a) / Γ(a − k) = (a − k)ₖ`. In this form the recurrences of
-`Γ(a, z)` hold for every parameter `a`, including the poles of `Γ`.
+The quotients of Gamma values in DLMF 8.8.7–8.8.10 are written as their polynomial extensions,
+the Pochhammer symbols `(a)ₙ`, `(a + k + 1)_{n−k−1}`, `(a − n)ₙ` and `(a − k)ₖ`. Away from the
+poles of `Γ` these equal `Γ(a + n) / Γ(a)`, `Γ(a + n) / Γ(a + k + 1)`, `Γ(a) / Γ(a − n)` and
+`Γ(a) / Γ(a − k)`. In this form the recurrences of `Γ(a, z)` hold for every parameter `a`,
+including the poles of `Γ`, where the quotients are not defined.
 
 ## References
 
@@ -103,26 +106,6 @@ theorem regularizedGammaQ_add_natCast (a : ℂ) {z : ℂ} (hz : z ≠ 0) (n : �
 
 /-! ### The lower function `γ` -/
 
-/-- The finite sum of the iterated recurrences satisfies
-`S_{n+1} = (a + n) Sₙ + zⁿ`, where `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} z^k`. -/
-theorem sum_range_succ_ascPochhammer_mul_pow (a z : ℂ) (n : ℕ) :
-    ∑ k ∈ range (n + 1), (ascPochhammer ℂ (n + 1 - k - 1)).eval (a + k + 1) * z ^ k =
-      (a + n) * ∑ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a + k + 1) * z ^ k +
-        z ^ n := by
-  rw [sum_range_succ, show n + 1 - n - 1 = 0 by omega, ascPochhammer_zero,
-    Polynomial.eval_one, one_mul, mul_sum]
-  congr 1
-  refine sum_congr rfl fun k hk => ?_
-  have hk : k < n := mem_range.mp hk
-  rw [show n + 1 - k - 1 = n - k - 1 + 1 by omega, ascPochhammer_succ_eval,
-    Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
-  push_cast
-  ring
-
-/-- A parameter off `−ℕ` stays off `−ℕ` after adding a natural number. -/
-private theorem add_natCast_ne_neg_natCast {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) (n m : ℕ) :
-    a + n ≠ -m := fun h => ha (m + n) (by push_cast; linear_combination h)
-
 /-- **DLMF 8.8.1**: `γ(a + 1, z) = a γ(a, z) − z^a e^{−z}` for `a ∉ −ℕ` and every `z`. -/
 theorem lowerIncompleteGamma_add_one {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) (z : ℂ) :
     lowerIncompleteGamma (a + 1) z = a * lowerIncompleteGamma a z - z ^ a * cexp (-z) := by
@@ -162,30 +145,8 @@ theorem lowerIncompleteGamma_add_natCast {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) 
   | succ n ih =>
     rw [Nat.cast_succ, ← add_assoc, lowerIncompleteGamma_add_one (add_natCast_ne_neg_natCast ha n),
       ih, cpow_add _ _ hz, cpow_natCast, ascPochhammer_succ_eval,
-      sum_range_succ_ascPochhammer_mul_pow]
+      TauCeti.sum_range_succ_ascPochhammer_mul_pow]
     ring
-
-/-- Reversing the order of summation turns the correction sum of the upward recurrences at
-`a − n` into that of the downward recurrences:
-`z^{a−n} ∑_{k<n} (a − n + k + 1)_{n−k−1} z^k = z^{a−1} ∑_{k<n} (a − k)ₖ / z^k` for `z ≠ 0`. -/
-theorem cpow_sub_natCast_mul_sum_ascPochhammer_mul_pow (a : ℂ) {z : ℂ} (hz : z ≠ 0) (n : ℕ) :
-    z ^ (a - n) * ∑ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) * z ^ k =
-      z ^ (a - 1) * ∑ k ∈ range n, (ascPochhammer ℂ k).eval (a - k) / z ^ k := by
-  rw [mul_sum, mul_sum, ← sum_range_reflect]
-  refine sum_congr rfl fun k hk => ?_
-  have hk : k < n := mem_range.mp hk
-  have hpow : z ^ (a - n) * z ^ (n - 1 - k) * z ^ k = z ^ (a - 1) := by
-    rw [mul_assoc, ← pow_add, show n - 1 - k + k = n - 1 by omega, ← cpow_natCast,
-      ← cpow_add _ _ hz, Nat.cast_sub (by omega)]
-    congr 1
-    push_cast
-    ring
-  rw [show n - (n - 1 - k) - 1 = k by omega, Nat.cast_sub (by omega), Nat.cast_sub (by omega),
-    ← hpow]
-  field_simp
-  congr 2
-  push_cast
-  ring
 
 /-- **DLMF 8.8.8**: for `a − n ∉ −ℕ` and every `z`,
 `γ(a, z) = (a − n)ₙ γ(a − n, z) − z^{a−1} e^{−z} ∑_{k<n} (a − k)ₖ / z^k`, where
@@ -200,10 +161,20 @@ theorem lowerIncompleteGamma_eq_lowerIncompleteGamma_sub_natCast {a : ℂ} {n : 
     · simp
     have ha1 : a - 1 ≠ 0 := fun h => ha n (by push_cast; linear_combination h)
     simp [zero_cpow ha1]
+  -- Write the summand of the upward correction sum at `a − n` as `f (n − 1 − k) z^k`, where
+  -- `f j = (a − j)ⱼ`, so that reversing the sum gives the downward correction sum.
+  have hre : ∀ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) * z ^ k =
+      (ascPochhammer ℂ (n - 1 - k)).eval (a - ((n - 1 - k : ℕ) : ℂ)) * z ^ k := by
+    intro k hk
+    have hk : k < n := mem_range.mp hk
+    have hlen : n - k - 1 = n - 1 - k := by omega
+    rw [hlen, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
+    push_cast
+    ring_nf
   have h := lowerIncompleteGamma_add_natCast ha z n
-  rw [sub_add_cancel] at h
-  rw [h, mul_right_comm _ (cexp (-z)), mul_right_comm _ (cexp (-z)),
-    cpow_sub_natCast_mul_sum_ascPochhammer_mul_pow a hz n]
+  rw [sub_add_cancel, sum_congr rfl hre, mul_right_comm _ (cexp (-z)),
+    cpow_sub_natCast_mul_sum_mul_pow a hz n fun j => (ascPochhammer ℂ j).eval (a - j)] at h
+  rw [h, mul_right_comm _ (cexp (-z))]
 
 /-! ### The upper function `Γ` -/
 
@@ -271,7 +242,7 @@ theorem upperIncompleteGamma_add_natCast {z : ℂ} (hz : z ∈ slitPlane) (a : �
   | succ n ih =>
     rw [Nat.cast_succ, ← add_assoc, upperIncompleteGamma_add_one hz, ih,
       cpow_add _ _ (slitPlane_ne_zero hz), cpow_natCast, ascPochhammer_succ_eval,
-      sum_range_succ_ascPochhammer_mul_pow]
+      TauCeti.sum_range_succ_ascPochhammer_mul_pow]
     ring
 
 /-- **DLMF 8.8.10**: for `z` in the slit plane and every `a`,
@@ -282,9 +253,20 @@ theorem upperIncompleteGamma_eq_upperIncompleteGamma_sub_natCast {z : ℂ} (hz :
     upperIncompleteGamma a z =
       (ascPochhammer ℂ n).eval (a - n) * upperIncompleteGamma (a - n) z +
         z ^ (a - 1) * cexp (-z) * ∑ k ∈ range n, (ascPochhammer ℂ k).eval (a - k) / z ^ k := by
+  -- Write the summand of the upward correction sum at `a − n` as `f (n − 1 − k) z^k`, where
+  -- `f j = (a − j)ⱼ`, so that reversing the sum gives the downward correction sum.
+  have hre : ∀ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) * z ^ k =
+      (ascPochhammer ℂ (n - 1 - k)).eval (a - ((n - 1 - k : ℕ) : ℂ)) * z ^ k := by
+    intro k hk
+    have hk : k < n := mem_range.mp hk
+    have hlen : n - k - 1 = n - 1 - k := by omega
+    rw [hlen, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
+    push_cast
+    ring_nf
   have h := upperIncompleteGamma_add_natCast hz (a - n) n
-  rw [sub_add_cancel] at h
-  rw [h, mul_right_comm _ (cexp (-z)), mul_right_comm _ (cexp (-z)),
-    cpow_sub_natCast_mul_sum_ascPochhammer_mul_pow a (slitPlane_ne_zero hz) n]
+  rw [sub_add_cancel, sum_congr rfl hre, mul_right_comm _ (cexp (-z)),
+    cpow_sub_natCast_mul_sum_mul_pow a (slitPlane_ne_zero hz) n
+      fun j => (ascPochhammer ℂ j).eval (a - j)] at h
+  rw [h, mul_right_comm _ (cexp (-z))]
 
 end Complex

@@ -99,6 +99,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
+* `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
+  `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
@@ -810,6 +812,26 @@ theorem neg_cpow_half_eq_or_eq_neg (w : ℂ) :
     (-w) ^ (1 / 2 : ℂ) = I * w ^ (1 / 2 : ℂ) ∨
       (-w) ^ (1 / 2 : ℂ) = -(I * w ^ (1 / 2 : ℂ)) :=
   sq_eq_sq_iff_eq_or_eq_neg.mp <| by rw [mul_pow, I_sq]; simp [one_div]
+
+/-- Reversing a finite sum of powers: for `z ≠ 0`,
+`z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k`. -/
+theorem cpow_sub_natCast_mul_sum_mul_pow (a : ℂ) {z : ℂ} (hz : z ≠ 0) (n : ℕ) (f : ℕ → ℂ) :
+    z ^ (a - n) * ∑ k ∈ Finset.range n, f (n - 1 - k) * z ^ k =
+      z ^ (a - 1) * ∑ k ∈ Finset.range n, f k / z ^ k := by
+  rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk : k < n := Finset.mem_range.mp hk
+  -- The reflected index `n - 1 - k` and `k` add up to `n - 1`.
+  have hidx : n - 1 - k + k = n - 1 := by omega
+  have hpow : z ^ (a - n) * z ^ (n - 1 - k) * z ^ k = z ^ (a - 1) := by
+    rw [mul_assoc, ← pow_add, hidx, ← cpow_natCast, ← cpow_add _ _ hz, Nat.cast_sub (by omega)]
+    congr 1
+    push_cast
+    ring
+  -- The reflection `n - 1 - (n - 1 - k) = k` returns the original index.
+  have hrefl : n - 1 - (n - 1 - k) = k := by omega
+  rw [hrefl, ← hpow]
+  field_simp
 
 end Complex
 

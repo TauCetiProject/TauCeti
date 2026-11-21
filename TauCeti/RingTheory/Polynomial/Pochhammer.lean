@@ -65,6 +65,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
 * `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
 * `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
+* `TauCeti.sum_range_succ_ascPochhammer_mul_pow`: the sums
+  `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} zᵏ` satisfy `S_{n+1} = (a + n) Sₙ + zⁿ`.
 * `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
   `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`, from Mathlib's `Ring.descPochhammer_smeval_add`.
 * `TauCeti.ascPochhammer_eval_ne_zero`: over a domain, the rising factorial `(c)ₖ` does not
@@ -378,6 +380,23 @@ theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R
   have hk' : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
   have hck : c + (n : R) - 1 - ((n : R) - k) + 1 = c + k := by ring
   rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
+  ring
+
+/-- The sums `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} zᵏ` satisfy `S_{n+1} = (a + n) Sₙ + zⁿ`. -/
+theorem sum_range_succ_ascPochhammer_mul_pow [CommRing R] (a z : R) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (ascPochhammer R (n + 1 - k - 1)).eval (a + k + 1) * z ^ k =
+      (a + n) * ∑ k ∈ Finset.range n, (ascPochhammer R (n - k - 1)).eval (a + k + 1) * z ^ k +
+        z ^ n := by
+  -- The last term `k = n` has the empty Pochhammer symbol.
+  have hlast : n + 1 - n - 1 = 0 := by omega
+  rw [Finset.sum_range_succ, hlast, ascPochhammer_zero, eval_one, one_mul, Finset.mul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk : k < n := Finset.mem_range.mp hk
+  -- For `k < n` the Pochhammer length `n + 1 - k - 1` is one more than `n - k - 1`.
+  have hlen : n + 1 - k - 1 = n - k - 1 + 1 := by omega
+  rw [hlen, ascPochhammer_succ_eval, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
+  push_cast
   ring
 
 end Ascending
