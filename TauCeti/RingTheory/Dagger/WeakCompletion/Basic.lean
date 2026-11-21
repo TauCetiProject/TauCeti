@@ -34,7 +34,7 @@ is the Monsky–Washnitzer cohomology of the reduction `S ⊗_O k` over the resi
 
 The growth condition is invariant under a change of generators. If every `xᵢ` is a polynomial of
 degree at most `D` in other generators `y`, then `Pⱼ(x) = Qⱼ(y)` with `deg Qⱼ ≤ D c (j + 1)`
-(`MvPolynomial.totalDegree_bind₁_le`). Truncated products of such series are the truncations of
+(`MvPolynomial.totalDegree_aeval_le`). Truncated products of such series are the truncations of
 their Cauchy products, so the degree-growth set is closed under multiplication. Hence `S†` is
 an `O`-subalgebra of `S^∧` which does not depend on the chosen generators.
 
@@ -176,7 +176,7 @@ theorem weakCompletionSet_subset_of_forall_mem_adjoin [Finite ι] {κ : Type*} {
   obtain ⟨D, hD⟩ := Finite.exists_le fun i ↦ (Q i).totalDegree
   rintro z ⟨c, P, hP, hz⟩
   refine ⟨c * D, fun j ↦ aeval Q (P j), fun j ↦ ?_, fun k ↦ ?_⟩
-  · refine (totalDegree_bind₁_le hD _).trans ?_
+  · refine (totalDegree_aeval_le hD _).trans ?_
     calc (P j).totalDegree * D ≤ c * (j + 1) * D := Nat.mul_le_mul_right _ (hP j)
       _ = c * D * (j + 1) := by ring
   · have hQ' : (fun i ↦ aeval y (Q i)) = x := funext hQ
