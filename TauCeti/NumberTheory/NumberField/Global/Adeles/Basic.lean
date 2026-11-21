@@ -187,6 +187,24 @@ theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField 
 instance AdeleRing.instT2Space : T2Space (AdeleRing R K) :=
   inferInstanceAs <| T2Space (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
 
+/-- The infinite adele ring is nontrivial whenever `K` has an archimedean place. -/
+instance InfiniteAdeleRing.instNontrivialOfNonempty [Nonempty (InfinitePlace K)] :
+    Nontrivial (InfiniteAdeleRing K) :=
+  let ⟨w⟩ := ‹Nonempty (InfinitePlace K)›
+  Pi.nontrivial_at w
+
+/-- The adele ring is nontrivial when its infinite factor is nontrivial (for instance over any
+number field). -/
+instance AdeleRing.instNontrivialOfInfinite [Nontrivial (InfiniteAdeleRing K)] :
+    Nontrivial (AdeleRing R K) :=
+  inferInstanceAs <| Nontrivial (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
+
+/-- The adele ring is nontrivial when its finite factor is nontrivial (for instance whenever `R`
+is not a field). -/
+instance AdeleRing.instNontrivialOfFinite [Nontrivial (IsDedekindDomain.FiniteAdeleRing R K)] :
+    Nontrivial (AdeleRing R K) :=
+  inferInstanceAs <| Nontrivial (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
+
 attribute [simp] AdeleRing.algebraMap_fst_def AdeleRing.algebraMap_snd_def
 
 variable {R K} in

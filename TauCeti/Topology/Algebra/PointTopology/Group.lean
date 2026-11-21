@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
@@ -50,6 +51,11 @@ is, and an open embedding when `ψ` is and the coordinate algebra is of finite t
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
+* `TauCeti.AlgHom.ofConv_baseChangePointsMulEquiv`,
+  `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv`, and
+  `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv_symm`: agreement of
+  `AlgHom.baseChangePointsMulEquiv` with `baseChangeHomeomorph.symm` and continuity in both
+  directions.
 
 ## References
 
@@ -153,3 +159,42 @@ theorem AlgHom.isOpenEmbedding_mapValue [Algebra.FiniteType k H₁] {ψ : R →�
   exact (isOpenEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isOpenEmbedding
 
 end Functoriality
+
+section BaseChange
+
+open Topology TauCeti.PointTopology
+open scoped TensorProduct
+
+namespace TauCeti.AlgHom
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
+  [Semiring A] [_root_.Bialgebra k A] [CommSemiring R] [Algebra k R] [Algebra K R]
+  [IsScalarTower k K R] [TopologicalSpace R]
+
+/-- Under `WithConv.ofConv`, `AlgHom.baseChangePointsMulEquiv` agrees with
+`(PointTopology.baseChangeHomeomorph k K A R).symm`; both are built from `AlgHom.liftEquiv`. -/
+theorem ofConv_baseChangePointsMulEquiv [IsTopologicalSemiring R]
+    (f : WithConv (A →ₐ[k] R)) :
+    (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f).ofConv =
+      (baseChangeHomeomorph k K A R).symm f.ofConv := by
+  apply Algebra.TensorProduct.ext (by ext)
+  ext a
+  simp [baseChangeHomeomorph_symm_apply_tmul]
+
+/-- Base change of bialgebra points is continuous for the point topology. -/
+@[continuity, fun_prop]
+theorem continuous_baseChangePointsMulEquiv [IsTopologicalSemiring R] :
+    Continuous (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)) :=
+  isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+    ((baseChangeHomeomorph k K A R).symm.continuous.comp isHomeomorph_ofConv.continuous).congr
+      fun f ↦ (ofConv_baseChangePointsMulEquiv f).symm
+
+/-- Restriction of base-changed bialgebra points is continuous for the point topology. -/
+@[continuity, fun_prop]
+theorem continuous_baseChangePointsMulEquiv_symm :
+    Continuous (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm :=
+  continuous_withConv_iff.2 fun a ↦ continuous_eval_ofConv (1 ⊗ₜ[k] a)
+
+end TauCeti.AlgHom
+
+end BaseChange

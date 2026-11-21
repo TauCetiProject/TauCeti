@@ -19,9 +19,10 @@ The canonical generators generate the symmetric algebra (`SymmetricAlgebra.adjoi
 and so do the images of any spanning family
 (`SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top`).
 
-For the symmetric algebra of the base semiring itself, the degree-one element `ι R R 1`
-generates the whole algebra. An algebra morphism whose range contains this element is therefore
-surjective, a criterion used for coordinate morphisms of additive root subgroups.
+For the symmetric algebra of the base semiring itself, every generator `ι R R r` is a scalar
+multiple of the degree-one generator `ι R R 1` (`SymmetricAlgebra.ι_self_eq_smul_ι_one`). An
+algebra morphism whose range contains this element is therefore surjective, a criterion used for
+coordinate morphisms of additive root subgroups.
 
 A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
 generators (`SymmetricAlgebra.ringHom_ext`), even when its target is nonassociative, and an
@@ -143,6 +144,11 @@ theorem coe_liftOfCommute_symm_apply {A : Type*} [Semiring A] [Algebra R A]
     (liftOfCommute.symm F : M →ₗ[R] A) = F.toLinearMap.comp (ι R M) :=
   (rfl)
 
+/-- In the symmetric algebra of the base semiring `R`, every generator `ι R R r` is a scalar
+multiple of `ι R R 1`. -/
+theorem ι_self_eq_smul_ι_one (r : R) : ι R R r = r • ι R R 1 := by
+  rw [← map_smul, smul_eq_mul, mul_one]
+
 end SymmetricAlgebra
 
 namespace AlgHom
@@ -154,6 +160,7 @@ theorem surjective_of_ι_one_mem_range {R A : Type*} [CommSemiring R] [Semiring 
     (hgen : SymmetricAlgebra.ι R R 1 ∈ f.range) : Function.Surjective f := by
   rw [← f.range_eq_top, eq_top_iff, ← SymmetricAlgebra.adjoin_range_ι, Algebra.adjoin_le_iff]
   rintro _ ⟨r, rfl⟩
-  simpa only [SetLike.mem_coe, ← map_smul, smul_eq_mul, mul_one] using f.range.smul_mem hgen r
+  simpa only [SetLike.mem_coe, ← SymmetricAlgebra.ι_self_eq_smul_ι_one] using
+    f.range.smul_mem hgen r
 
 end AlgHom
