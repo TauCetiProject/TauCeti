@@ -122,6 +122,11 @@ instance (A : ArtinLocalAlg Λ k) : IsLocalRing A.obj.left := A.property.isLocal
 def augmentation (A : ArtinLocalAlg Λ k) : A.obj.left →ₐ[Λ] k :=
   A.obj.hom.hom
 
+/-- The augmentation of an object of `C_Λ` is the structure map of its underlying object of
+`Over (CommAlgCat.of Λ k)`. -/
+theorem augmentation_def (A : ArtinLocalAlg Λ k) : A.augmentation = A.obj.hom.hom :=
+  (rfl)
+
 /-- The augmentation of an object of `C_Λ` is surjective. -/
 theorem augmentation_surjective (A : ArtinLocalAlg Λ k) : Function.Surjective A.augmentation :=
   A.property.surjective
