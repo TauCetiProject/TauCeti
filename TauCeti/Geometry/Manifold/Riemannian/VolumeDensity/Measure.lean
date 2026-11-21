@@ -138,18 +138,18 @@ theorem setLIntegral_chartRiemannianVolume
   have hR : MeasurableEmbedding (e.source.domRestrict e) :=
     measurableEmbedding_extChartAt_restrict α
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+    MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
   have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
     Set.image_domRestrict _ _ _
   have hA : MeasurableSet (e '' (s ∩ e.source)) := by
     rw [← himage]
-    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtype_coe)
+    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtypeVal)
   have htarget : e '' (s ∩ e.source) ⊆ e.target :=
     e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
   -- Read `φ` on the chart source through the coordinate map `e`.
   have hφ (μ : Measure e.source) : ∫⁻ z, φ z ∂μ =
       ∫⁻ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
-    lintegral_congr fun z ↦ by simp only [Set.domRestrict_apply, e.left_inv z.2]
+    lintegral_congr fun z ↦ by simp only [Set.domRestrict_apply, e.left_inv z.property]
   rw [chartRiemannianVolume, hval.restrict_map, hval.lintegral_map, hR.restrict_comap, himage, hφ]
   refine (hR.lintegral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
   rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,
@@ -178,19 +178,19 @@ theorem setIntegral_chartRiemannianVolume
   have hR : MeasurableEmbedding (e.source.domRestrict e) :=
     measurableEmbedding_extChartAt_restrict α
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+    MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
   have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
     Set.image_domRestrict _ _ _
   have hA : MeasurableSet (e '' (s ∩ e.source)) := by
     rw [← himage]
-    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtype_coe)
+    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtypeVal)
   have htarget : e '' (s ∩ e.source) ⊆ e.target :=
     e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
   -- Read `φ` on the chart source through the coordinate map `e`.
   have hφ (μ : Measure e.source) : ∫ z, φ z ∂μ =
       ∫ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
     integral_congr_ae (Filter.Eventually.of_forall fun z ↦ by
-      simp only [Set.domRestrict_apply, e.left_inv z.2])
+      simp only [Set.domRestrict_apply, e.left_inv z.property])
   rw [chartRiemannianVolume, hval.restrict_map, hval.integral_map, hR.restrict_comap, himage, hφ]
   refine (hR.integral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
   rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,

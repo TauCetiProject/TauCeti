@@ -555,13 +555,13 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
   obtain ⟨K, hK, hc⟩ :=
     LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
   obtain ⟨d, hd⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-    (hK.image continuous_subtype_val) (by rintro _ ⟨x, -, rfl⟩; exact x.2)
+    (hK.image continuous_subtypeVal) (by rintro _ ⟨x, -, rfl⟩; exact x.property)
   set m := n + d
   let ι : skeletonObj C (m + 1) ⟶ TopCat.of C :=
     TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C ((m + 1 : ℕ) : ℕ∞)).subset_complex)
   have hι : Set.range ι = {x : C | (x : X) ∈ skeletonLT C ((m + 1 : ℕ) : ℕ∞)} := by
     ext x
-    exact ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
   -- So `c` is the pushforward of a chain `c'` of the skeleton.
   obtain ⟨c', hc'⟩ : c ∈ LinearMap.range ((LocalCoefficientSystem.twistedChainComplexMap
       (TopPair.Hom.fst (skeletonBasePairToComplex C m)) L).f k).hom := by

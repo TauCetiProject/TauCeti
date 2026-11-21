@@ -120,7 +120,7 @@ variable (M) in
 /-- The `r`-torsion is the kernel of multiplication by `r`. -/
 theorem exact_subtype_torsionBy :
     Exact (torsionBy R M r).subtype (DistribSMul.toLinearMap R M r) := fun x ↦
-  ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.2⟩
+  ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.property⟩
 
 variable {r}
 
@@ -139,7 +139,7 @@ theorem exact_torsionByMap {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Exact 
     obtain ⟨x, hx⟩ := (hfg y).1 (congrArg Subtype.val hy)
     have hrx : r • x = 0 := hf <| by
       rw [map_smul, hx, map_zero]
-      exact (mem_torsionBy_iff _ _).1 y.2
+      exact (mem_torsionBy_iff _ _).1 y.property
     exact ⟨⟨x, (mem_torsionBy_iff _ _).2 hrx⟩, Subtype.ext hx⟩
   · rintro ⟨x, rfl⟩
     exact Subtype.ext <| hfg.apply_apply_eq_zero x
@@ -280,7 +280,7 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
   obtain ⟨y, hy⟩ := hg x
   obtain ⟨z, hz⟩ := (hfg (r • y)).1 <| by
     rw [map_smul, hy]
-    exact (mem_torsionBy_iff _ _).1 x.2
+    exact (mem_torsionBy_iff _ _).1 x.property
   have hy' : g' (β y) = torsionByMap r γ x := by
     simpa [hy] using (LinearMap.congr_fun hβγ y).symm
   have hz' : f' (α z) = r • β y := by
@@ -350,7 +350,7 @@ theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
   obtain ⟨x, hx, huniq⟩ :=
     (bijective_torsionByMap_of_bijective_ker_smul r f hf hr).existsUnique
       ⟨y, (mem_torsionBy_iff _ _).mpr hy⟩
-  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.2, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
+  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.property, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
   exact congrArg Subtype.val (huniq ⟨z, (mem_torsionBy_iff _ _).mpr hz.1⟩ (Subtype.ext hz.2))
 
 end Lift

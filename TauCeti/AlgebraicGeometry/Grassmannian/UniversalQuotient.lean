@@ -16,6 +16,7 @@ import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # The universal quotient closed subscheme over the Grassmannian
@@ -94,26 +95,9 @@ structure morphism to `Spec R`. -/
 private noncomputable def sectionsAlgebra
     (U : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens) :
     Algebra R Γ(pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H))), U) :=
-  ((Scheme.ΓSpecIso (.of R)).inv ≫ (pullback.fst _ _ ≫ toSpec R H k).appLE ⊤ U
-    fun _ _ ↦ trivial).hom.toAlgebra
+  (pullback.fst _ _ ≫ toSpec R H k).sectionsAlgebra U
 
 attribute [local instance] sectionsAlgebra
-
-private theorem algebraMap_sections
-    (U : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens) :
-    algebraMap R Γ(pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H))), U) =
-      ((Scheme.ΓSpecIso (.of R)).inv ≫ (pullback.fst _ _ ≫ toSpec R H k).appLE ⊤ U
-        fun _ _ ↦ trivial).hom :=
-  rfl
-
-/-- The inclusion of an affine open of `G(k, H) ×_{Spec R} Spec H` lies over `Spec R`. -/
-private theorem fromSpec_fst_toSpec
-    {U : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens}
-    (hU : IsAffineOpen U) :
-    hU.fromSpec ≫ pullback.fst _ _ ≫ toSpec R H k =
-      Spec.map (CommRingCat.ofHom (algebraMap R Γ(pullback (toSpec R H k)
-        (Spec.map (CommRingCat.ofHom (algebraMap R H))), U))) := by
-  rw [IsAffineOpen.fromSpec_comp_eq_SpecMap, algebraMap_sections, CommRingCat.ofHom_hom]
 
 /-- The point of the Grassmannian over the sections of an affine open `U` of
 `G(k, H) ×_{Spec R} Spec H` classifying the first projection on `U`. -/
@@ -123,7 +107,8 @@ private noncomputable def affinePoint
     G(k, Γ(pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H))), U) ⊗[R] H;
       Γ(pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H))), U)) :=
   (schemeHomEquiv R H k _).symm
-    ⟨hU.fromSpec ≫ pullback.fst _ _, by rw [Category.assoc, fromSpec_fst_toSpec]⟩
+    ⟨hU.fromSpec ≫ pullback.fst _ _, by
+      exact (Category.assoc _ _ _).trans ((pullback.fst _ _ ≫ toSpec R H k).fromSpec_toSpec hU)⟩
 
 private theorem toSchemeHom_affinePoint
     {U : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens}
@@ -144,7 +129,7 @@ private noncomputable def affineEval
         Scheme.Hom.appLE (pullback.snd _ _) ⊤ U le_top = CommRingCat.ofHom (algebraMap R _) :=
       Spec.map_injective <| by
         rw [Spec.map_comp, ← IsAffineOpen.fromSpec_comp_eq_SpecMap _ hU, Category.assoc,
-          ← pullback.condition, fromSpec_fst_toSpec]
+          ← pullback.condition, (pullback.fst _ _ ≫ toSpec R H k).fromSpec_toSpec hU]
     exact congr(($h).hom r)
 
 private theorem specMap_affineEval
@@ -155,28 +140,15 @@ private theorem specMap_affineEval
   -- `affineEval hU` is by definition the ring map on the left
   rfl
 
-/-- Restriction of sections of `G(k, H) ×_{Spec R} Spec H`, as a map of `R`-algebras. -/
-private noncomputable def resₐ
-    {U V : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens}
-    (h : V ≤ U) :
-    Γ(pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H))), U) →ₐ[R]
-      Γ(pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H))), V) where
-  toRingHom :=
-    ((pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).presheaf.map
-      (homOfLE h).op).hom
-  commutes' r := by
-    simp only [algebraMap_sections]
-    exact congr(($((pullback.fst _ _ ≫ toSpec R H k).appLE_map (U := ⊤) (fun _ _ ↦ trivial)
-      (homOfLE h).op)).hom ((Scheme.ΓSpecIso (.of R)).inv.hom r))
-
 /-- The points classifying the first projection on nested affine opens are related by
 restriction. -/
 private theorem map_resₐ_affinePoint
     {U V : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens}
     (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
-    map (resₐ h) (affinePoint hU) = affinePoint hV := by
+    map ((pullback.fst _ _ ≫ toSpec R H k).resₐ h) (affinePoint hU) = affinePoint hV := by
   apply toSchemeHom_injective
-  rw [toSchemeHom_map, toSchemeHom_affinePoint, toSchemeHom_affinePoint]
+  rw [toSchemeHom_map, ← AlgHom.toRingHom_eq_coe, Scheme.Hom.resₐ_toRingHom,
+    CommRingCat.ofHom_hom, toSchemeHom_affinePoint, toSchemeHom_affinePoint]
   exact hU.map_fromSpec_assoc hV (homOfLE h).op _
 
 /-- The points of `Spec H` given by the second projection on nested affine opens are related by
@@ -184,9 +156,15 @@ restriction. -/
 private theorem resₐ_comp_affineEval
     {U V : (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).Opens}
     (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
-    (resₐ h).comp (affineEval hU) = affineEval hV :=
-  AlgHom.ext fun y ↦ congr(($(Scheme.Hom.appLE_map (pullback.snd _ _) (U := ⊤) le_top
-    (homOfLE h).op)).hom ((Scheme.ΓSpecIso (.of H)).inv.hom y))
+    ((pullback.fst _ _ ≫ toSpec R H k).resₐ h).comp (affineEval hU) = affineEval hV := by
+  apply AlgHom.ext
+  intro y
+  rw [AlgHom.comp_apply]
+  calc
+    _ = _ := RingHom.congr_fun ((pullback.fst _ _ ≫ toSpec R H k).resₐ_toRingHom h)
+      (affineEval hU y)
+    _ = _ := congr(($(Scheme.Hom.appLE_map (pullback.snd _ _) (U := ⊤) le_top
+      (homOfLE h).op)).hom ((Scheme.ΓSpecIso (.of H)).inv.hom y))
 
 end AffinePoint
 
@@ -202,12 +180,15 @@ cut out by the ideal generated by `N`
 `Module.Grassmannian.evalIdeal` of the point over `Γ(U)` classifying the inclusion of `U`. -/
 noncomputable def schemeUniversalIdeal :
     (pullback (toSpec R H k) (Spec.map (CommRingCat.ofHom (algebraMap R H)))).IdealSheafData where
-  ideal U := (affinePoint U.2).evalIdeal (affineEval U.2)
+  ideal U := (affinePoint U.property).evalIdeal (affineEval U.property)
   map_ideal_basicOpen U f := by
-    rw [← map_resₐ_affinePoint U.2 (Scheme.affineBasicOpen _ f).2 (Scheme.basicOpen_le _ f),
-      ← resₐ_comp_affineEval U.2 (Scheme.affineBasicOpen _ f).2 (Scheme.basicOpen_le _ f),
+    rw [← map_resₐ_affinePoint U.property (Scheme.affineBasicOpen _ f).property
+        (Scheme.basicOpen_le _ f),
+      ← resₐ_comp_affineEval U.property (Scheme.affineBasicOpen _ f).property
+          (Scheme.basicOpen_le _ f),
       ← map_evalIdeal]
-    -- `resₐ` has underlying ring map the restriction to the basic open
+    rw [← Scheme.Hom.resₐ_toRingHom (pullback.fst _ _ ≫ toSpec R H k) (Scheme.basicOpen_le _ f)]
+    -- The ideal image uses the same underlying function for either bundled map.
     rfl
 
 private theorem ideal_schemeUniversalIdeal
@@ -303,8 +284,8 @@ theorem comap_toPullbackHom_schemeUniversalIdeal (N : G(k, A ⊗[R] H; A)) (x : 
   -- compare both sides on the affine opens `V` of `Spec A` mapped into an affine open `U`
   refine ext_of_iSup_eq_top _ (toPullbackHom N x).iSup_affineOpens_le_preimage_eq_top
     fun ⟨V, U, hVU⟩ ↦ ?_
-  have hU : IsAffineOpen U.1 := U.2
-  have hV : IsAffineOpen V.1 := V.2
+  have hU : IsAffineOpen U.val := U.property
+  have hV : IsAffineOpen V.val := V.property
   -- the restriction `A → Γ(V)`, as a map of `R`-algebras
   let ψ₀ : A →+* Γ(Spec (.of A), V) :=
     ((Scheme.ΓSpecIso (.of A)).inv ≫ (Spec (.of A)).presheaf.map (homOfLE le_top).op).hom
@@ -326,8 +307,9 @@ theorem comap_toPullbackHom_schemeUniversalIdeal (N : G(k, A ⊗[R] H; A)) (x : 
         have h : CommRingCat.ofHom (algebraMap R _) ≫ (toPullbackHom N x).appLE U V hVU =
             CommRingCat.ofHom (algebraMap R A) ≫ CommRingCat.ofHom (ψ : A →+* Γ(Spec (.of A), V)) :=
           Spec.map_injective <| by
-            rw [Spec.map_comp, ← fromSpec_fst_toSpec hU, reassoc_of% hφ, toPullbackHom_fst_assoc,
-              toSchemeHom_toSpec, ← CommRingCat.ofHom_comp, AlgHom.comp_algebraMap]
+            rw [Spec.map_comp, ← (pullback.fst _ _ ≫ toSpec R H k).fromSpec_toSpec hU,
+              reassoc_of% hφ, toPullbackHom_fst_assoc, toSchemeHom_toSpec,
+              ← CommRingCat.ofHom_comp, AlgHom.comp_algebraMap]
         exact congr(($h).hom r) }
   calc ((schemeUniversalIdeal R H k).comap (toPullbackHom N x)).ideal V
       _ = ((schemeUniversalIdeal R H k).ideal U).map φ :=

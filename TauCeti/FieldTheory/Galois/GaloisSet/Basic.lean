@@ -524,17 +524,18 @@ theorem natCard_isTransitive_stabilizer_eq
       {ρ : GaloisSet K n // ρ.IsTransitive ∧
         letI := ρ.mulAction
         MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i = H} :=
-    fun e ↦ ⟨ofQuotient H hH e.1, isTransitive_ofQuotient hH e.1, stabilizer_ofQuotient hH e.1 e.2⟩
+    fun e ↦ ⟨ofQuotient H hH e.val, isTransitive_ofQuotient hH e.val, stabilizer_ofQuotient hH e.val
+        e.property⟩
   have hF : Function.Bijective F := by
     constructor
     · -- Both labellings send `i` to the trivial coset, so the coset `σ H` labelled `j` by the
       -- first is `σ • i = j` for the second as well.
       intro e₁ e₂ h
       refine Subtype.ext (Equiv.ext fun j ↦ ?_)
-      obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (e₁.1 j)
-      have h' : e₁.1.symm (σ • e₁.1 i) = e₂.1.symm (σ • e₂.1 i) :=
-        congrArg (fun ρ : {ρ : GaloisSet K n // _} ↦ ρ.1.val σ i) h
-      rw [e₁.2, e₂.2, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one, hσ,
+      obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (e₁.val j)
+      have h' : e₁.val.symm (σ • e₁.val i) = e₂.val.symm (σ • e₂.val i) :=
+        congrArg (fun ρ : {ρ : GaloisSet K n // _} ↦ ρ.val.val σ i) h
+      rw [e₁.property, e₂.property, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one, hσ,
         Equiv.symm_apply_apply, Equiv.eq_symm_apply] at h'
       exact h'.symm
     · -- A transitive action is labelled by the orbit map of `i` on the cosets of its stabilizer.
@@ -588,30 +589,31 @@ times the sum of `g` over the subextensions of `SeparableClosure K` of degree `n
 subextension is the fixed field for exactly `(n - 1)!` of them. -/
 theorem tsum_isTransitive (i : Fin n) (g : IntermediateField K (SeparableClosure K) → ℝ≥0∞) :
     ∑' ρ : {ρ : GaloisSet K n // ρ.IsTransitive},
-        (letI := ρ.1.mulAction
+        (letI := ρ.val.mulAction
         g (IntermediateField.fixedField
           (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i))) =
       ((n - 1).factorial : ℝ≥0∞) *
-        ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n}, g L.1 := by
+        ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n}, g L.val
+            := by
   let Φ : {ρ : GaloisSet K n // ρ.IsTransitive} →
       {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n} := fun ρ ↦
-    letI := ρ.1.mulAction
+    letI := ρ.val.mulAction
     ⟨IntermediateField.fixedField
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i),
-      ρ.1.finrank_fixedField_stabilizer_of_isTransitive ρ.2 i⟩
+      ρ.val.finrank_fixedField_stabilizer_of_isTransitive ρ.property i⟩
   rw [← tsum_fiberwise _ Φ, ← ENNReal.tsum_mul_left]
   refine tsum_congr fun L ↦ ?_
-  have hfib : ∀ ρ : Φ ⁻¹' {L}, (letI := ρ.1.1.mulAction
+  have hfib : ∀ ρ : Φ ⁻¹' {L}, (letI := ρ.val.val.mulAction
       g (IntermediateField.fixedField
-        (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i))) = g L.1 :=
+        (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i))) = g L.val :=
     fun ρ ↦ congrArg (fun L : {L : IntermediateField K (SeparableClosure K) //
-      Module.finrank K L = n} ↦ g L.1) ρ.2
+      Module.finrank K L = n} ↦ g L.val) ρ.property
   rw [tsum_congr hfib, ENNReal.tsum_const]
   have hcard : Nat.card (Φ ⁻¹' {L}) = (n - 1).factorial := by
-    rw [← natCard_isTransitive_fixedField_stabilizer_eq L.1 L.2 i]
+    rw [← natCard_isTransitive_fixedField_stabilizer_eq L.val L.property i]
     exact Nat.card_congr
-      { toFun := fun ρ ↦ ⟨ρ.1.1, ρ.1.2, congrArg Subtype.val ρ.2⟩
-        invFun := fun ρ ↦ ⟨⟨ρ.1, ρ.2.1⟩, Subtype.ext ρ.2.2⟩
+      { toFun := fun ρ ↦ ⟨ρ.val.val, ρ.val.property, congrArg Subtype.val ρ.property⟩
+        invFun := fun ρ ↦ ⟨⟨ρ.val, ρ.property.1⟩, Subtype.ext ρ.property.2⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
   have : Finite (Φ ⁻¹' {L}) := Nat.finite_of_card_ne_zero (hcard ▸ (n - 1).factorial_ne_zero)

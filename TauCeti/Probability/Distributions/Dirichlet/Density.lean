@@ -99,7 +99,7 @@ theorem dirichletChart_apply_self (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) :
 @[simp]
 theorem dirichletChart_apply_coe (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) (j : {i // i ≠ i₀}) :
     dirichletChart i₀ x j = x j := by
-  simp [dirichletChart, j.2]
+  simp [dirichletChart, j.property]
 
 /-- The value of the chart at an index other than `i₀`, indexed by `ι` rather than by the
 subtype. -/
@@ -756,8 +756,9 @@ private theorem map_dirichletUnchart_source {a : ι → ℝ} (ha : ∀ i, 0 < a 
   rw [← Measure.restrict_eq_self_of_ae_mem (ae_mem_dirichletUnchartTarget a i₀),
     prod_gammaMeasure_eq_withDensity,
     restrict_withDensity (measurableSet_dirichletUnchartTarget i₀)]
-  refine Measure.map_withDensity_eq_withDensity (measurable_dirichletUnchart i₀) (by fun_prop)
-    (measurable_gammaSplitPDF a i₀) (map_dirichletUnchart_withDensity i₀) ?_
+  refine Measure.map_withDensity_eq_withDensity (measurable_dirichletUnchart i₀).aemeasurable
+    (by fun_prop) (measurable_gammaSplitPDF a i₀).aemeasurable
+    (map_dirichletUnchart_withDensity i₀) ?_
   filter_upwards [ae_restrict_mem (measurableSet_dirichletUnchartSource i₀)] with z hz
   exact dirichletUnchart_density ha i₀ hz
 

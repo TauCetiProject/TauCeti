@@ -268,8 +268,9 @@ noncomputable def zeroAtInftyEquiv
     (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) :
     CompletedTensor R C₀(I, R) E ≃L[R] C₀(I, E) :=
   letI := Classical.decEq I
-  .equivOfInverse (toZeroAtInfty I hE) (ofZeroAtInfty I) (ofZeroAtInfty_toZeroAtInfty I hE)
-    (toZeroAtInfty_ofZeroAtInfty I hE)
+  .ofContinuousLinearMap (toZeroAtInfty I hE) (ofZeroAtInfty I)
+    (ContinuousLinearMap.ext (toZeroAtInfty_ofZeroAtInfty I hE))
+    (ContinuousLinearMap.ext (ofZeroAtInfty_toZeroAtInfty I hE))
 
 variable (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖)
 
@@ -287,7 +288,7 @@ theorem norm_zeroAtInftyEquiv_sum_le {C : ℝ≥0}
     (hxm : ∀ j ∈ F, C * ‖x j‖ * ‖m j‖ ≤ b) :
     ‖zeroAtInftyEquiv I ⟨C, hC⟩ (∑ j ∈ F, tmul R C₀(I, R) E (x j) (m j))‖ ≤ b := by
   refine (norm_le hb).2 fun i ↦ ?_
-  simp only [map_sum, coe_sum, Finset.sum_apply, zeroAtInftyEquiv_tmul_apply]
+  simp only [map_sum, FunLike.coe_sum, Finset.sum_apply, zeroAtInftyEquiv_tmul_apply]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hb fun j hj ↦ ?_
   calc ‖x j i • m j‖ ≤ C * ‖x j i‖ * ‖m j‖ := hC _ _
     _ ≤ C * ‖x j‖ * ‖m j‖ := by gcongr; exact norm_coe_le_norm _ _
@@ -406,9 +407,11 @@ commutative `R`-algebra `S` with bounded `R`-action `hS`, `S ⊗̂_R C₀(I, R) 
 `s ⊗ x` to `(s * algebraMap R S (x i))ᵢ` (`zeroAtInftyBaseChange_tmul_apply`), with inverse
 `y ↦ ∑' i, y i ⊗ eᵢ` (`hasSum_zeroAtInftyBaseChange_symm`). -/
 noncomputable def zeroAtInftyBaseChange : CompletedTensor R S C₀(I, R) ≃L[S] C₀(I, S) :=
-  .equivOfInverse (zeroAtInftyBaseChangeCLM I hS) (zeroAtInftyBaseChangeInvCLM I hS)
-    (fun _ ↦ by simp [zeroAtInftyBaseChangeCLM, zeroAtInftyBaseChangeInvCLM])
-    (fun _ ↦ by simp [zeroAtInftyBaseChangeCLM, zeroAtInftyBaseChangeInvCLM])
+  .ofContinuousLinearMap (zeroAtInftyBaseChangeCLM I hS) (zeroAtInftyBaseChangeInvCLM I hS)
+    (ContinuousLinearMap.ext fun _ ↦ by
+      simp [zeroAtInftyBaseChangeCLM, zeroAtInftyBaseChangeInvCLM])
+    (ContinuousLinearMap.ext fun _ ↦ by
+      simp [zeroAtInftyBaseChangeCLM, zeroAtInftyBaseChangeInvCLM])
 
 /-- `zeroAtInftyBaseChange` is `comm` followed by `zeroAtInftyEquiv`. -/
 theorem zeroAtInftyBaseChange_apply (z : CompletedTensor R S C₀(I, R)) :
@@ -559,7 +562,7 @@ private theorem apply_finset_sum_le_of_productSeminorm {ι : Type*} (F : Finset 
   let e : Fin F.card ≃ F := F.equivFin.symm
   rw [hπ]
   refine csInf_le ⟨0, fun _ h' ↦ h'.1⟩
-    ⟨hc, F.card, fun k ↦ s (e k), fun k ↦ x (e k), ?_, fun k ↦ h (e k) (e k).2⟩
+    ⟨hc, F.card, fun k ↦ s (e k), fun k ↦ x (e k), ?_, fun k ↦ h (e k) (e k).property⟩
   rw [← F.sum_attach (fun j ↦ s j ⊗ₜ[R] x j)]
   exact (Equiv.sum_comp e (fun j : F ↦ s j ⊗ₜ[R] x j)).symm
 
@@ -657,7 +660,7 @@ private theorem norm_c0AlgForward_le (z : T₀(S, R, I)) :
       z = ∑ i, s i ⊗ₜ[R] x i ∧ ∀ i, ‖s i‖ * ‖x i‖ ≤ c}, ‖c0AlgForward hL hφ z‖ ≤ L * c := by
     rintro c ⟨hc, n, s, x, rfl, h⟩
     refine (norm_le (mul_nonneg hL hc)).2 fun i ↦ ?_
-    simp only [map_sum, coe_sum, Finset.sum_apply, c0AlgForward_tmul_apply]
+    simp only [map_sum, FunLike.coe_sum, Finset.sum_apply, c0AlgForward_tmul_apply]
     refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hL hc) fun j _ ↦ ?_
     refine ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left (hφ _) (norm_nonneg _))).trans ?_
     rw [mul_left_comm]
@@ -700,7 +703,14 @@ noncomputable def c0CompletedBaseChangeEquiv :
   let inv := c0CompletedInverseCLM π hπ hsmul
   have hfwd (u : T₀(S, R, I)) : fwd ↑u = c0AlgForward hL hφ u :=
     c0CompletedForwardCLM_coe hL hφ π hπ hsmul u
-  .equivOfInverse fwd inv (fun z ↦ by
+  .ofContinuousLinearMap fwd inv
+  (ContinuousLinearMap.ext fun y ↦ by
+    have hy := (summable_c0CoordTensor π hπ y).hasSum.mapL fwd
+    have hsingle (i : I) :
+        fwd ((y i ⊗ₜ[R] single i 1 : T₀(S, R, I)) : T̂₀(S, R, I)) = single i (y i) := by
+      ext j; by_cases hij : j = i <;> simp [hfwd, c0AlgForward_tmul_apply, hij]
+    simp only [hsingle] at hy; exact hy.unique (hasSum_single y))
+  (ContinuousLinearMap.ext fun z ↦ by
     suffices (inv.comp fwd) z = ContinuousLinearMap.id S _ z from this
     refine UniformSpace.Completion.induction_on z
       (isClosed_eq (inv.comp fwd).continuous continuous_id) fun u ↦ ?_
@@ -713,12 +723,6 @@ noncomputable def c0CompletedBaseChangeEquiv :
         congr 1; rw [mul_comm, ← Algebra.smul_def, TensorProduct.smul_tmul, smul_single_one]
       simpa [inv, c0CompletedInverseCLM, hterm] using (hasSum_c0Coord_tmul π hπ s x).tsum_eq
     | add u v hu hv => rw [UniformSpace.Completion.coe_add, map_add, map_add, hu, hv])
-  (fun y ↦ by
-    have hy := (summable_c0CoordTensor π hπ y).hasSum.mapL fwd
-    have hsingle (i : I) :
-        fwd ((y i ⊗ₜ[R] single i 1 : T₀(S, R, I)) : T̂₀(S, R, I)) = single i (y i) := by
-      ext j; by_cases hij : j = i <;> simp [hfwd, c0AlgForward_tmul_apply, hij]
-    simp only [hsingle] at hy; exact hy.unique (hasSum_single y))
 
 private theorem c0CompletedBaseChangeEquiv_apply :
     letI := π.toSeminormedAddCommGroup; ∀ z,

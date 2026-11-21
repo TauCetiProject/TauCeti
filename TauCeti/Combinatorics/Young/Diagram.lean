@@ -60,53 +60,39 @@ public section
 
 namespace YoungDiagram
 
-private theorem sum_list_range (f : ℕ → ℕ) (n : ℕ) :
-    ((List.range n).map f).sum = ∑ i ∈ Finset.range n, f i := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [List.range_succ, List.map_append, List.sum_append, ih, Finset.sum_range_succ]
-    simp
-
 /-- A row past the last one of a Young diagram is empty. -/
 theorem rowLen_eq_zero_of_colLen_le {μ : YoungDiagram} {i : ℕ} (hi : μ.colLen 0 ≤ i) :
-    μ.rowLen i = 0 := by
-  by_contra h
-  exact absurd (_root_.YoungDiagram.mem_iff_lt_colLen.mp
-    (_root_.YoungDiagram.mem_iff_lt_rowLen.mpr (Nat.pos_of_ne_zero h))) (Nat.not_lt.mpr hi)
+    μ.rowLen i = 0 :=
+  Nat.eq_zero_of_not_pos fun h => (mem_iff_lt_colLen.mp (mem_iff_lt_rowLen.mpr h)).not_ge hi
 
 /-- The row of a cell is one of the rows of the diagram. -/
 theorem lt_colLen_zero_of_mem {μ : YoungDiagram} {i j : ℕ} (h : (i, j) ∈ μ) :
     i < μ.colLen 0 :=
-  _root_.YoungDiagram.mem_iff_lt_colLen.mp (μ.up_left_mem le_rfl (Nat.zero_le j) h)
+  mem_iff_lt_colLen.mp (μ.up_left_mem le_rfl (Nat.zero_le j) h)
 
 /-- The empty Young diagram has no cells, so every row of it is empty. -/
 @[simp]
-theorem rowLen_bot (i : ℕ) : (⊥ : YoungDiagram).rowLen i = 0 := by
-  simp [_root_.YoungDiagram.rowLen]
+theorem rowLen_bot (i : ℕ) : (⊥ : YoungDiagram).rowLen i = 0 :=
+  Nat.eq_zero_of_not_pos fun h => notMem_bot _ (mem_iff_lt_rowLen.mpr h)
 
 /-- The empty Young diagram has no cells, so every column of it is empty. -/
 @[simp]
 theorem colLen_bot (j : ℕ) : (⊥ : YoungDiagram).colLen j = 0 :=
-  Nat.eq_zero_of_not_pos fun h =>
-    _root_.YoungDiagram.notMem_bot _ (_root_.YoungDiagram.mem_iff_lt_colLen.mpr h)
+  Nat.eq_zero_of_not_pos fun h => notMem_bot _ (mem_iff_lt_colLen.mpr h)
 
 /-- A Young diagram is determined by its row lengths. -/
-theorem rowLen_injective : Function.Injective _root_.YoungDiagram.rowLen := by
+theorem rowLen_injective : Function.Injective rowLen := by
   intro μ ν h
-  ext c
-  obtain ⟨i, j⟩ := c
-  rw [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_cells,
-    _root_.YoungDiagram.mem_iff_lt_rowLen, _root_.YoungDiagram.mem_iff_lt_rowLen, congrFun h i]
+  ext ⟨i, j⟩
+  rw [mem_cells, mem_cells, mem_iff_lt_rowLen, mem_iff_lt_rowLen, congrFun h i]
 
 /-- Reading the length of a row off `YoungDiagram.rowLens`, with `0` for the rows past the last
 one. -/
 theorem getD_rowLens (μ : YoungDiagram) (i : ℕ) : μ.rowLens.getD i 0 = μ.rowLen i := by
   by_cases hi : i < μ.rowLens.length
-  · rw [List.getD_eq_getElem _ _ hi, _root_.YoungDiagram.get_rowLens]
+  · rw [List.getD_eq_getElem _ _ hi, get_rowLens]
   · rw [List.getD_eq_default _ _ (Nat.le_of_not_lt hi),
-      rowLen_eq_zero_of_colLen_le
-        (le_of_eq_of_le _root_.YoungDiagram.length_rowLens.symm (Nat.le_of_not_lt hi))]
+      rowLen_eq_zero_of_colLen_le (le_of_eq_of_le length_rowLens.symm (Nat.le_of_not_lt hi))]
 
 /-- Merge-sorting the row lengths of a Young diagram recovers them: they are already
 decreasing. This is stated for `List.mergeSort` in the shape `simp` produces from
@@ -142,99 +128,72 @@ theorem card_filter_coe_rowLens (μ : YoungDiagram) (p : ℕ → Prop) [Decidabl
     ((μ.rowLens : Multiset ℕ).filter p).card =
       ((Finset.range (μ.colLen 0)).filter fun i => p (μ.rowLen i)).card := by
   rw [coe_rowLens, Multiset.filter_map, Multiset.card_map, ← Finset.filter_val, Finset.card_val]
-  rfl
+  simp only [Function.comp_def]
 
 /-- The first `k` row lengths of a Young diagram count its cells in the first `k` rows. -/
 theorem sum_range_rowLen_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
     ∑ i ∈ Finset.range k, μ.rowLen i = (μ.cells.filter fun c => c.1 < k).card := by
-  symm
-  calc
-    (μ.cells.filter fun c => c.1 < k).card =
-        ∑ i ∈ Finset.range k,
-          ((μ.cells.filter fun c => c.1 < k).filter fun c => c.1 = i).card := by
-      apply Finset.card_eq_sum_card_fiberwise
-      intro c hc
-      simp only [Finset.mem_coe, Finset.mem_filter] at hc
-      exact Finset.mem_range.mpr hc.2
-    _ = ∑ i ∈ Finset.range k, μ.rowLen i := by
-      refine Finset.sum_congr rfl fun i hi => ?_
-      rw [μ.rowLen_eq_card]
-      congr 1
-      ext c
-      have hik : i < k := Finset.mem_range.mp hi
-      simp only [Finset.mem_filter, _root_.YoungDiagram.mem_cells,
-        _root_.YoungDiagram.mem_row_iff]
-      aesop
+  -- fibre the cells of the first `k` rows over their row index
+  rw [Finset.card_eq_sum_card_fiberwise fun c hc =>
+    Finset.mem_range.mpr (Finset.mem_filter.mp hc).2]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  -- for `i < k`, the fibre of `i` is the row `YoungDiagram.row μ i`
+  rw [μ.rowLen_eq_card, row, Finset.filter_filter]
+  refine congrArg Finset.card (Finset.filter_congr fun c _ => ?_)
+  exact (and_iff_right_of_imp fun h => h ▸ Finset.mem_range.mp hi).symm
 
 /-- The cells of a Young diagram, counted over any range of rows that contains all of them.  This
 is `YoungDiagram.sum_rowLens_eq_card` with the range of summation chosen by hand instead of being
 the exact number of rows `μ.colLen 0`. -/
-theorem card_eq_sum_range_rowLen (μ : _root_.YoungDiagram) {N : ℕ} (hN : μ.colLen 0 ≤ N) :
+theorem card_eq_sum_range_rowLen (μ : YoungDiagram) {N : ℕ} (hN : μ.colLen 0 ≤ N) :
     μ.card = ∑ i ∈ Finset.range N, μ.rowLen i := by
   rw [sum_range_rowLen_eq_card_filter_fst]
   refine (congrArg Finset.card (Finset.filter_true_of_mem fun c hc => ?_)).symm
-  exact lt_of_lt_of_le ((_root_.YoungDiagram.mem_iff_lt_colLen.mp hc).trans_le
-    (μ.colLen_anti 0 c.snd c.snd.zero_le)) hN
+  exact (lt_colLen_zero_of_mem hc).trans_le hN
 
 /-- **The cells of a Young diagram carrying a given property, counted row by row.**  The range of
 summation is any range of rows containing all of them, as in
 `YoungDiagram.card_eq_sum_range_rowLen`; a row past the last one contributes nothing, being
 empty. -/
-theorem card_filter_cells (μ : _root_.YoungDiagram) (p : ℕ × ℕ → Prop) [DecidablePred p] {N : ℕ}
+theorem card_filter_cells (μ : YoungDiagram) (p : ℕ × ℕ → Prop) [DecidablePred p] {N : ℕ}
     (hN : μ.colLen 0 ≤ N) :
     (μ.cells.filter p).card
       = ∑ i ∈ Finset.range N, ((Finset.range (μ.rowLen i)).filter fun j => p (i, j)).card := by
-  have hcells : μ.cells.filter p
-      = (Finset.range N).biUnion fun i =>
-          ((Finset.range (μ.rowLen i)).filter fun j => p (i, j)).image fun j => (i, j) := by
-    ext c
-    obtain ⟨i, j⟩ := c
-    simp only [Finset.mem_filter, Finset.mem_biUnion, Finset.mem_range, Finset.mem_image,
-      _root_.YoungDiagram.mem_cells, Prod.mk.injEq]
-    constructor
-    · rintro ⟨hij, hp⟩
-      refine ⟨i, lt_of_lt_of_le (lt_of_lt_of_le (_root_.YoungDiagram.mem_iff_lt_colLen.mp hij)
-        (μ.colLen_anti 0 j j.zero_le)) hN, j, ⟨?_, hp⟩, rfl, rfl⟩
-      exact _root_.YoungDiagram.mem_iff_lt_rowLen.mp hij
-    · rintro ⟨i', -, j', ⟨hj', hp⟩, rfl, rfl⟩
-      exact ⟨_root_.YoungDiagram.mem_iff_lt_rowLen.mpr hj', hp⟩
-  rw [hcells, Finset.card_biUnion]
-  · exact Finset.sum_congr rfl fun i _ =>
-      Finset.card_image_of_injective _ fun _ _ h => congrArg Prod.snd h
-  · intro y _ z _ hyz
-    simp only [Finset.disjoint_left, Finset.mem_image, Finset.mem_filter, Finset.mem_range]
-    rintro c ⟨j, -, rfl⟩ ⟨j', -, hj'⟩
-    exact hyz (congrArg Prod.fst hj').symm
+  -- fibre the cells satisfying `p` over their row index
+  rw [Finset.card_eq_sum_card_fiberwise fun c hc =>
+    Finset.mem_range.mpr ((lt_colLen_zero_of_mem (Finset.mem_filter.mp hc).1).trans_le hN)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  -- the fibre of `i` is the part of the row `YoungDiagram.row μ i` satisfying `p`
+  rw [Finset.filter_comm, ← row, row_eq_prod, Finset.singleton_product, Finset.filter_map,
+    Finset.card_map]
+  simp only [Function.comp_def, Function.Embedding.sectR_apply]
 
 /-- **A product over the cells of a Young diagram, read row by row.**  The cells are fibred over
 their row index by `Prod.fst`, and the fibre of `i` is the row `YoungDiagram.row μ i`, which is
 `{i} ×ˢ Finset.range (μ.rowLen i)`.  The range of rows is any range containing all of them, as in
 `YoungDiagram.card_eq_sum_range_rowLen`; a row past the last one contributes an empty product. -/
-theorem prod_cells_eq_prod_range {M : Type*} [CommMonoid M] (μ : _root_.YoungDiagram) {N : ℕ}
+theorem prod_cells_eq_prod_range {M : Type*} [CommMonoid M] (μ : YoungDiagram) {N : ℕ}
     (hN : μ.colLen 0 ≤ N) (f : ℕ × ℕ → M) :
     ∏ c ∈ μ.cells, f c = ∏ i ∈ Finset.range N, ∏ j ∈ Finset.range (μ.rowLen i), f (i, j) := by
-  have hmaps : ∀ c ∈ μ.cells, c.1 ∈ Finset.range N := by
-    rintro ⟨a, b⟩ hc
-    exact Finset.mem_range.mpr ((_root_.YoungDiagram.mem_iff_lt_colLen.mp hc).trans_le
-      ((μ.colLen_anti 0 b b.zero_le).trans hN))
-  rw [← Finset.prod_fiberwise_of_maps_to hmaps f]
+  rw [← Finset.prod_fiberwise_of_maps_to
+    (fun c hc => Finset.mem_range.mpr ((lt_colLen_zero_of_mem hc).trans_le hN)) f]
   refine Finset.prod_congr rfl fun i _ => ?_
   -- the fibre of `i` is `YoungDiagram.row`, defined as exactly this filter
-  rw [← _root_.YoungDiagram.row, _root_.YoungDiagram.row_eq_prod, Finset.prod_product,
-    Finset.prod_singleton]
+  rw [← row, row_eq_prod, Finset.prod_product, Finset.prod_singleton]
 
 /-- The first `k` entries of `YoungDiagram.rowLens` count the cells in the first `k` rows.  This
 is `YoungDiagram.sum_range_rowLen_eq_card_filter_fst` with the truncation taken on the
 list of row lengths, the form in which partial sums enter the dominance order on partitions. -/
 theorem sum_take_rowLens_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
     (μ.rowLens.take k).sum = (μ.cells.filter fun c => c.1 < k).card := by
-  rw [_root_.YoungDiagram.rowLens, ← List.map_take, List.take_range, sum_list_range,
-    ← sum_range_rowLen_eq_card_filter_fst]
-  have hsub : Finset.range (min k (μ.colLen 0)) ⊆ Finset.range k := fun i hi =>
-    Finset.mem_range.mpr (lt_min_iff.mp (Finset.mem_range.mp hi)).1
-  refine Finset.sum_subset hsub fun i hi hi' => ?_
-  exact rowLen_eq_zero_of_colLen_le
-    (by simpa [lt_min_iff, Finset.mem_range.mp hi] using Finset.mem_range.not.mp hi')
+  rw [← sum_range_rowLen_eq_card_filter_fst, rowLens, ← List.map_take, List.take_range]
+  -- the rows past the last one are empty, so summing up to `k` or to `min k (μ.colLen 0)` agrees
+  rw [← Finset.sum_subset (Finset.range_subset_range.mpr (min_le_left k _)) fun i hi hi' =>
+    rowLen_eq_zero_of_colLen_le
+      (by simpa [lt_min_iff, Finset.mem_range.mp hi] using Finset.mem_range.not.mp hi')]
+  -- a sum over `List.range` is a sum over `Finset.range`, read through `Multiset.range`
+  rw [Finset.sum_eq_multiset_sum, Finset.range_val, ← Multiset.coe_range, Multiset.map_coe,
+    Multiset.sum_coe]
 
 /-- The cells of a Young diagram lying in a fixed column and in one of the first `k` rows are the
 top `min k (colLen j)` cells of that column. -/
@@ -244,15 +203,14 @@ theorem card_filter_fst_lt_filter_snd_eq (lam : YoungDiagram) (k j : ℕ) :
   have himg : (((lam.cells.filter fun c => c.1 < k)).filter fun c => c.2 = j)
       = (Finset.range (min k (lam.colLen j))).image fun i => (i, j) := by
     ext c
-    simp only [Finset.mem_filter, Finset.mem_image, Finset.mem_range, lt_min_iff,
-      _root_.YoungDiagram.mem_cells]
+    simp only [Finset.mem_filter, Finset.mem_image, Finset.mem_range, lt_min_iff, mem_cells]
     constructor
     · rintro ⟨⟨hc, hk⟩, hj⟩
       refine ⟨c.1, ⟨hk, ?_⟩, ?_⟩
-      · exact _root_.YoungDiagram.mem_iff_lt_colLen.mp (hj ▸ hc)
+      · exact mem_iff_lt_colLen.mp (hj ▸ hc)
       · rw [← hj]
     · rintro ⟨i, ⟨hik, hicol⟩, rfl⟩
-      exact ⟨⟨_root_.YoungDiagram.mem_iff_lt_colLen.mpr hicol, hik⟩, rfl⟩
+      exact ⟨⟨mem_iff_lt_colLen.mpr hicol, hik⟩, rfl⟩
   rw [himg, Finset.card_image_of_injective _ fun _ _ h => congrArg Prod.fst h, Finset.card_range]
 
 /-- **The counting core of the dominance lemma.** Let the elements of a finite type `α` be
@@ -273,7 +231,7 @@ theorem card_filter_le_sum_take_rowLens {α : Type*} [Fintype α] (lam : YoungDi
   have hlt : ∀ c ∈ lam.cells, c.2 ∈ Finset.range (lam.rowLen 0) := by
     intro c hc
     refine Finset.mem_range.mpr (lt_of_lt_of_le ?_ (lam.rowLen_anti 0 c.1 c.1.zero_le))
-    exact _root_.YoungDiagram.mem_iff_lt_rowLen.mp ((_root_.YoungDiagram.mem_cells c).mp hc)
+    exact mem_iff_lt_rowLen.mp ((mem_cells c).mp hc)
   -- Split both sides into their columns.
   rw [Finset.card_eq_sum_card_fiberwise (f := fun a => (f a).2)
       (t := Finset.range (lam.rowLen 0)) fun a _ => hlt _ (hmem a),
@@ -293,23 +251,16 @@ theorem card_filter_le_sum_take_rowLens {α : Type*} [Fintype α] (lam : YoungDi
     · exact Finset.mem_range.mpr (hfib a ha).1
     · exact hcol a b hab (((hfib a ha).2).trans (hfib b hb).2.symm)
   · refine Finset.card_le_card_of_injOn f (fun a ha => ?_) hinj.injOn
-    exact _root_.YoungDiagram.mem_col_iff.mpr
-      ⟨(_root_.YoungDiagram.mem_cells _).mp (hmem a), (hfib a ha).2⟩
+    exact mem_col_iff.mpr ⟨(mem_cells _).mp (hmem a), (hfib a ha).2⟩
 
 /-- A row of a sub-diagram is no longer than the corresponding row. -/
-theorem rowLen_le_of_le {μ ν : YoungDiagram} (h : ν ≤ μ) (i : ℕ) : ν.rowLen i ≤ μ.rowLen i := by
-  rcases Nat.eq_zero_or_pos (ν.rowLen i) with h0 | h0
-  · omega
-  · have hmem : ((i, ν.rowLen i - 1) : ℕ × ℕ) ∈ ν :=
-      _root_.YoungDiagram.mem_iff_lt_rowLen.mpr (by omega)
-    have := _root_.YoungDiagram.mem_iff_lt_rowLen.mp (h hmem)
-    omega
+theorem rowLen_le_of_le {μ ν : YoungDiagram} (h : ν ≤ μ) (i : ℕ) : ν.rowLen i ≤ μ.rowLen i :=
+  le_of_forall_lt fun _ hj => mem_iff_lt_rowLen.mp (h (mem_iff_lt_rowLen.mpr hj))
 
 /-- A Young diagram is contained in another as soon as each of its rows is shorter. -/
 theorem le_of_forall_rowLen_le {μ ν : YoungDiagram} (h : ∀ i, ν.rowLen i ≤ μ.rowLen i) : ν ≤ μ := by
   rintro ⟨i, j⟩ hc
-  exact _root_.YoungDiagram.mem_iff_lt_rowLen.mpr
-    ((_root_.YoungDiagram.mem_iff_lt_rowLen.mp hc).trans_le (h i))
+  exact mem_iff_lt_rowLen.mpr ((mem_iff_lt_rowLen.mp hc).trans_le (h i))
 
 /-- Containment of Young diagrams is containment of rows. -/
 theorem le_iff_forall_rowLen_le {μ ν : YoungDiagram} : ν ≤ μ ↔ ∀ i, ν.rowLen i ≤ μ.rowLen i :=
@@ -317,21 +268,18 @@ theorem le_iff_forall_rowLen_le {μ ν : YoungDiagram} : ν ≤ μ ↔ ∀ i, ν
 
 /-- A column of a sub-diagram is no longer than the corresponding column. -/
 theorem colLen_le_of_le {μ ν : YoungDiagram} (h : ν ≤ μ) (j : ℕ) : ν.colLen j ≤ μ.colLen j := by
-  rw [← _root_.YoungDiagram.rowLen_transpose, ← _root_.YoungDiagram.rowLen_transpose]
-  exact rowLen_le_of_le (_root_.YoungDiagram.transpose_mono h) j
+  rw [← rowLen_transpose, ← rowLen_transpose]
+  exact rowLen_le_of_le (YoungDiagram.transpose_mono h) j
 
-/-- A row of a Young diagram is at least as long as any initial segment of cells it contains. -/
-theorem le_rowLen_of_forall_mem {ν : YoungDiagram} {i k : ℕ}
-    (h : ∀ j < k, ((i, j) : ℕ × ℕ) ∈ ν) : k ≤ ν.rowLen i := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact Nat.zero_le _
-  · have := _root_.YoungDiagram.mem_iff_lt_rowLen.mp (h (k - 1) (by omega))
-    omega
+/-- A row of a Young diagram is at least `k` long exactly when it contains its first `k` cells. -/
+theorem le_rowLen_iff_forall_mem {ν : YoungDiagram} {i k : ℕ} :
+    k ≤ ν.rowLen i ↔ ∀ j < k, ((i, j) : ℕ × ℕ) ∈ ν :=
+  ⟨fun h _ hj => mem_iff_lt_rowLen.mpr (hj.trans_le h),
+    fun h => le_of_forall_lt fun j hj => mem_iff_lt_rowLen.mp (h j hj)⟩
 
 /-- A Young diagram has finitely many sub-diagrams, each being determined by its set of cells. -/
 theorem finite_Iic (μ : YoungDiagram) : (Set.Iic μ).Finite := by
-  have hinj : Set.InjOn _root_.YoungDiagram.cells (Set.Iic μ) :=
-    fun _ _ _ _ h => _root_.YoungDiagram.ext h
+  have hinj : Set.InjOn cells (Set.Iic μ) := fun _ _ _ _ h => YoungDiagram.ext h
   refine Set.Finite.of_finite_image ?_ hinj
   refine Set.Finite.subset (μ.cells.powerset : Finset (Finset (ℕ × ℕ))).finite_toSet ?_
   rintro s ⟨ξ, hξ, rfl⟩
@@ -342,40 +290,38 @@ the single cell in column `0`, so a cell is a cell of the first column, and the 
 exactly as far down as that column does. -/
 theorem mem_iff_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) {i j : ℕ} :
     (i, j) ∈ μ ↔ i < μ.colLen 0 ∧ j = 0 := by
-  grind [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_iff_lt_colLen,
-    _root_.YoungDiagram.mem_iff_lt_rowLen, μ.rowLen_anti 0 i (Nat.zero_le _)]
+  grind [mem_cells, mem_iff_lt_colLen, mem_iff_lt_rowLen, μ.rowLen_anti 0 i (Nat.zero_le _)]
 
 /-- The cells of a Young diagram with at most one column are exactly the cells `(i, 0)` with
 `i < μ.colLen 0`: the whole of its first column, and nothing else. -/
 theorem cells_eq_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) :
     μ.cells = Finset.range (μ.colLen 0) ×ˢ {0} := by
   ext ⟨i, j⟩
-  simp [_root_.YoungDiagram.mem_cells, mem_iff_of_rowLen_le_one h, eq_comm]
+  simp [mem_cells, mem_iff_of_rowLen_le_one h, eq_comm]
 
 /-- A Young diagram with at most one column has one cell in each of its `μ.colLen 0` rows. -/
 theorem card_eq_colLen_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) :
     μ.card = μ.colLen 0 := by
-  simp [_root_.YoungDiagram.card, cells_eq_of_rowLen_le_one h]
+  simp [YoungDiagram.card, cells_eq_of_rowLen_le_one h]
 
 /-- **The cells of a Young diagram with at most one row.**  Every column is then either empty or
 the single cell in row `0`, so a cell is a cell of the first row, and the diagram reaches exactly
 as far right as that row does. -/
 theorem mem_iff_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) {i j : ℕ} :
     (i, j) ∈ μ ↔ i = 0 ∧ j < μ.rowLen 0 := by
-  grind [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_iff_lt_colLen,
-    _root_.YoungDiagram.mem_iff_lt_rowLen, μ.colLen_anti 0 j (Nat.zero_le _)]
+  grind [mem_cells, mem_iff_lt_colLen, mem_iff_lt_rowLen, μ.colLen_anti 0 j (Nat.zero_le _)]
 
 /-- The cells of a Young diagram with at most one row are exactly the cells `(0, j)` with
 `j < μ.rowLen 0`: the whole of its first row, and nothing else. -/
 theorem cells_eq_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :
     μ.cells = {0} ×ˢ Finset.range (μ.rowLen 0) := by
   ext ⟨i, j⟩
-  simp [_root_.YoungDiagram.mem_cells, mem_iff_of_colLen_le_one h, eq_comm, and_comm]
+  simp [mem_cells, mem_iff_of_colLen_le_one h, eq_comm, and_comm]
 
 /-- A Young diagram with at most one row has one cell in each of its `μ.rowLen 0` columns. -/
 theorem card_eq_rowLen_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :
     μ.card = μ.rowLen 0 := by
-  simp [_root_.YoungDiagram.card, cells_eq_of_colLen_le_one h]
+  simp [YoungDiagram.card, cells_eq_of_colLen_le_one h]
 
 /-- The **content** of the cell `(i, j)`: its column index minus its row index, `j - i`. -/
 def cellContent (c : ℕ × ℕ) : ℤ := c.2 - c.1
@@ -396,12 +342,12 @@ def transposeCellsEquiv (μ : YoungDiagram) : ↥μ.transpose.cells ≃ ↥μ.ce
 
 @[simp]
 theorem transposeCellsEquiv_apply (μ : YoungDiagram) (c : ↥μ.transpose.cells) :
-    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.2⟩ :=
+    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.property⟩ :=
   (rfl)
 
 @[simp]
 theorem transposeCellsEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
-    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.2⟩ :=
+    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.property⟩ :=
   (rfl)
 
 end YoungDiagram

@@ -45,8 +45,8 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
-* `Distribution.cutoffTempered_add`, `Distribution.cutoffTempered_smul`,
-  `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
+  `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
 * `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
@@ -157,7 +157,7 @@ theorem eq_cutoffTempered_of_forall [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ
 
 /-- **Cutoff independence.** The tempered distribution `φ T` only depends on the germ of `φ` along
 the support of `T`. -/
-theorem cutoffTempered_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
+theorem cutoffTempered_congr (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
     (h : (φ : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] φ') : T.cutoffTempered φ = T.cutoffTempered φ' := by
   ext ψ
   rw [cutoffTempered_def, cutoffTempered_def]
@@ -177,6 +177,12 @@ theorem cutoffTempered_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) 
     (c • T).cutoffTempered φ = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, complexPairing_smul, smul_eq_mul]
+
+/-- The cutoff of the zero distribution is zero. -/
+@[simp]
+theorem cutoffTempered_zero (φ : 𝓓(Ω, ℂ)) : (0 : 𝓓'(Ω, ℂ)).cutoffTempered φ = 0 := by
+  ext ψ
+  simp [cutoffTempered_def, complexPairing_apply]
 
 /-- The tempered distribution `φ T` is additive in `T` over finite sums. -/
 @[simp]
@@ -279,7 +285,7 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ 
     set v := m 0
     set R := ∂^{Fin.tail m} (T.cutoffTempered χ)
     have hfd : (fun x ↦ fderiv ℝ φ x v) = ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) :=
-      funext fun x ↦ (TestFunction.lineDerivOp_apply_eq_fderiv φ v x).symm
+      (TestFunction.coe_lineDerivOp_eq_fderiv φ v).symm
     have hL : TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (∂_{v} R) =
         ∂_{v} (TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) R) -
           TemperedDistribution.smulLeftCLM ℂ ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) R := by

@@ -71,24 +71,25 @@ variable {m : ℕ}
 /-- Composition with the translation `z ↦ z + a`, an endomorphism of the smooth framed gauge
 group. -/
 def translateFramedGauge (a : ℂ) : framedGaugeGroup →* framedGaugeGroup where
-  toFun u := ⟨fun w ↦ u.1 (w + a), comp_add_mem_framedGaugeGroup u.2 a⟩
+  toFun u := ⟨fun w ↦ u.val (w + a), comp_add_mem_framedGaugeGroup u.property a⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
 @[simp]
 theorem coe_translateFramedGauge (a : ℂ) (u : framedGaugeGroup) :
-    (translateFramedGauge a u : ℂ → Circle) = fun w ↦ u.1 (w + a) :=
+    (translateFramedGauge a u : ℂ → Circle) = fun w ↦ u.val (w + a) :=
   (rfl)
 
 /-- Composition with the rotation `z ↦ u z`, an endomorphism of the smooth framed gauge group. -/
 def rotateFramedGauge (u : Circle) : framedGaugeGroup →* framedGaugeGroup where
-  toFun g := ⟨fun w ↦ g.1 (u * w), comp_mul_mem_framedGaugeGroup g.2 (Circle.coe_ne_zero u)⟩
+  toFun g := ⟨fun w ↦ g.val (u * w), comp_mul_mem_framedGaugeGroup g.property
+      (Circle.coe_ne_zero u)⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
 @[simp]
 theorem coe_rotateFramedGauge (u : Circle) (g : framedGaugeGroup) :
-    (rotateFramedGauge u g : ℂ → Circle) = fun w ↦ g.1 (u * w) :=
+    (rotateFramedGauge u g : ℂ → Circle) = fun w ↦ g.val (u * w) :=
   (rfl)
 
 /-! ### Translations of framed vortices -/
@@ -104,7 +105,7 @@ theorem translateField_mem_framedVortexSubMulAction {x : ℂ → EuclideanSpace 
 /-- **Translation of a framed vortex** by `a`: its pullback by `z ↦ z + a`. -/
 def translateFramedVortex (a : ℂ) (x : framedVortexSubMulAction 1 m) :
     framedVortexSubMulAction 1 m :=
-  ⟨translateField a x, translateField_mem_framedVortexSubMulAction x.2 a⟩
+  ⟨translateField a x, translateField_mem_framedVortexSubMulAction x.property a⟩
 
 @[simp]
 theorem coe_translateFramedVortex (a : ℂ) (x : framedVortexSubMulAction 1 m) :
@@ -126,7 +127,7 @@ theorem translateFramedVortex_translateFramedVortex (a b : ℂ) (x : framedVorte
 theorem translateFramedVortex_smul (a : ℂ) (u : framedGaugeGroup)
     (x : framedVortexSubMulAction 1 m) :
     translateFramedVortex a (u • x) = translateFramedGauge a u • translateFramedVortex a x :=
-  Subtype.ext (translateField_gaugeTransform a u.1 x)
+  Subtype.ext (translateField_gaugeTransform a u.val x)
 
 /-- **Translation law for the divisor of a framed vortex.** Translating a framed vortex by `a`
 moves its divisor `D` to `D - a`. -/
@@ -162,7 +163,7 @@ line-frame gauge `u^(-m)` restoring the end framing. -/
 def rotateFramedVortex (u : Circle) (x : framedVortexSubMulAction 1 m) :
     framedVortexSubMulAction 1 m :=
   ⟨gaugeTransform (fun _ ↦ u⁻¹ ^ m) (rotateField u x),
-    gaugeTransform_rotateField_mem_framedVortexSubMulAction x.2 u⟩
+    gaugeTransform_rotateField_mem_framedVortexSubMulAction x.property u⟩
 
 @[simp]
 theorem coe_rotateFramedVortex (u : Circle) (x : framedVortexSubMulAction 1 m) :
@@ -200,8 +201,8 @@ theorem rotateFramedVortex_translateFramedVortex (u : Circle) (a : ℂ)
 theorem rotateFramedVortex_smul (u : Circle) (g : framedGaugeGroup)
     (x : framedVortexSubMulAction 1 m) :
     rotateFramedVortex u (g • x) = rotateFramedGauge u g • rotateFramedVortex u x := by
-  have hg : Differentiable ℝ fun w ↦ (g.1 (u * w) : ℂ) :=
-    ((mem_framedGaugeGroup _).1 (rotateFramedGauge u g).2).1.differentiable (by simp)
+  have hg : Differentiable ℝ fun w ↦ (g.val (u * w) : ℂ) :=
+    ((mem_framedGaugeGroup _).1 (rotateFramedGauge u g).property).1.differentiable (by simp)
   refine Subtype.ext ?_
   simp only [coe_rotateFramedVortex, SubMulAction.val_smul, framedGaugeGroup_smul,
     coe_rotateFramedGauge, rotateField_gaugeTransform]

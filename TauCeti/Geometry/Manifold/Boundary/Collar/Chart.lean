@@ -148,7 +148,7 @@ theorem collarChart_fst (e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1)
 
 Not `@[simp]`, for the reason given at `collarChart_fst`. -/
 theorem collarChart_snd_apply_zero (e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1)))
-    (x : M) : (collarChart e x).2.1 0 = (e x).1 0 := by
+    (x : M) : (collarChart e x).2.val 0 = (e x).val 0 := by
   rw [collarChart_apply, EuclideanHalfSpace.collarDiffeomorph_symm_apply_snd_apply_zero]
 
 section Smooth
@@ -190,7 +190,7 @@ chart `e` and a point of `e.source`, the collar chart isolates the coordinate th
 `Boundary.Charts` tests as a product factor, so the boundary condition is one equation in it. -/
 theorem mem_boundary_iff_collarChart_snd_apply_zero_eq_zero
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))} {x : M} (hx : x ∈ e.source) :
-    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (collarChart e x).2.1 0 = 0 := by
+    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (collarChart e x).2.val 0 = 0 := by
   rw [collarChart_snd_apply_zero]
   exact ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hx
 

@@ -276,13 +276,14 @@ theorem exists_holderWith_Iic_of_edist_dyadicNNRat_succ_le {E : Type*} [EMetricS
   let s : Set (Iic (N : ℝ≥0)) :=
     {x | ∃ q : ℚ≥0, (∃ n k : ℕ, k ≤ N * 2 ^ n ∧ q = dyadicNNRat n k) ∧ (x : ℝ≥0) = q}
   have hs_dense : Dense s := fun x ↦ mem_closure_iff_seq_limit.2
-    ⟨fun n ↦ ⟨(approxDyadicNNRat n x.1 : ℝ≥0), (coe_approxDyadicNNRat_le n x.1).trans x.2⟩,
-      fun n ↦ ⟨approxDyadicNNRat n x.1,
-        ⟨n, ⌊(x.1 : ℝ) * 2 ^ n⌋₊,
+    ⟨fun n ↦ ⟨(approxDyadicNNRat n x.val : ℝ≥0),
+        (coe_approxDyadicNNRat_le n x.val).trans x.property⟩,
+      fun n ↦ ⟨approxDyadicNNRat n x.val,
+        ⟨n, ⌊(x.val : ℝ) * 2 ^ n⌋₊,
           coe_dyadicNNRat_le_natCast_iff.1
-            (approxDyadicNNRat_def n x.1 ▸ (coe_approxDyadicNNRat_le n x.1).trans x.2),
-          approxDyadicNNRat_def n x.1⟩, rfl⟩,
-      tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat x.1)⟩
+            (approxDyadicNNRat_def n x.val ▸ (coe_approxDyadicNNRat_le n x.val).trans x.property),
+          approxDyadicNNRat_def n x.val⟩, rfl⟩,
+      tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat x.val)⟩
   let F : Iic (N : ℝ≥0) → E := fun x ↦ if hx : x ∈ s then f hx.choose else f 0
   have hF_eq {x : Iic (N : ℝ≥0)} {n k : ℕ} (hk : k ≤ N * 2 ^ n)
       (hxq : (x : ℝ≥0) = dyadicNNRat n k) : F x = f (dyadicNNRat n k) := by

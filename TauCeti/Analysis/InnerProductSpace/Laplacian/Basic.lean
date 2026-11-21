@@ -10,7 +10,9 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -55,7 +57,8 @@ The file also records the characterization `laplacian_eq_traceL` of the Laplacia
 the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
-`ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
+`ContDiffAt.laplacian_comp` for a real function of a scalar function and its instance
+`ContDiffAt.laplacian_log` for the logarithm of a nonvanishing function, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, the commutation
 `ContDiffAt.laplacian_fderiv` of the Laplacian with the derivative and its iterate
 `ContDiff.laplacian_iteratedFDeriv`, and the locality
@@ -82,7 +85,9 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
-  differences are bounded by `dim E` times the second derivative and its differences.
+  differences are bounded by `dim E` times the second derivative and its differences;
+  `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
+  iterated derivative.
 * `ContDiffOn.continuousOn_laplacian`: the Laplacian of a `C²` function on an open set is
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
@@ -100,11 +105,14 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
   function `F` of a scalar function `q`.
+* `ContDiffAt.laplacian_log`: `Δ (log s) = Δs / s - ‖∇s‖² / s²` for a nonvanishing scalar
+  function `s`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
+* `TauCeti.laplacian_of_notMem_tsupport`: the Laplacian vanishes off the topological support.
 * `HasCompactSupport.laplacian`: the Laplacian of a compactly supported function is compactly
   supported.
 -/
@@ -133,6 +141,21 @@ theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
   simp [traceL]
 
+/-- Transposing the arguments of a bilinear map preserves its trace. -/
+@[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
+  simp [traceL_apply]
+
+/-- The trace of the real inner product is the dimension of the space. -/
+@[simp] theorem traceL_innerSL :
+    traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
+  rw [traceL_apply]
+  have hterm (i : Fin (Module.finrank ℝ E)) :
+      (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
+    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
+      (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
+  simp_rw [hterm]
+  simp
+
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
@@ -152,6 +175,13 @@ theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
   simpa [laplacian_eq_traceL, traceL_apply] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
     Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+
+/-- The Laplacian is bounded by the dimension times the second iterated Fréchet derivative:
+`‖Δ f x‖ ≤ dim E * ‖iteratedFDeriv ℝ 2 f x‖`. -/
+theorem norm_laplacian_le_norm_iteratedFDeriv_two (f : E → F) (x : E) :
+    ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖iteratedFDeriv ℝ 2 f x‖ := by
+  rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]
+  exact norm_laplacian_le f x
 
 /-- Differences of the Laplacian are bounded by the dimension times the differences of the second
 Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. -/
@@ -585,6 +615,18 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
 open Gradient in
+/-- **The Laplacian of a logarithm.** For a scalar function `s` twice differentiable at `x` with
+`s x ≠ 0`, `Δ (log s) = Δs / s - ‖∇s‖² / s²` at `x`. -/
+theorem _root_.ContDiffAt.laplacian_log {s : E → ℝ} {x : E} (hs : ContDiffAt ℝ 2 s x)
+    (hs0 : s x ≠ 0) :
+    Δ (fun y ↦ Real.log (s y)) x = Δ s x / s x - ‖∇ s x‖ ^ 2 / s x ^ 2 := by
+  have h := (Real.contDiffAt_log.mpr hs0).laplacian_comp hs
+  rw [Real.deriv_log', deriv_inv, Function.comp_def] at h
+  rw [h]
+  field_simp
+  ring
+
+open Gradient in
 /-- **The Leibniz rule for the Laplacian**, vector-valued form.  For a scalar function `f` and a
 vector-valued function `g`, both twice differentiable at `x`,
 `Δ (f • g) = f • Δg + 2 • Dg(∇f) + Δf • g` at `x`. -/
@@ -655,6 +697,11 @@ theorem tsupport_laplacian_subset (f : E → F) : tsupport (Δ f) ⊆ tsupport f
   have h0 : Δ f =ᶠ[𝓝 x] Δ (fun _ : E => (0 : F)) :=
     laplacian_congr_nhds (notMem_tsupport_iff_eventuallyEq.mp hxf)
   exact hx (by simpa using h0.eq_of_nhds)
+
+/-- The Laplacian vanishes off the topological support of the function. -/
+@[simp]
+theorem laplacian_of_notMem_tsupport {f : E → F} {x : E} (h : x ∉ tsupport f) : Δ f x = 0 :=
+  image_eq_zero_of_notMem_tsupport fun h' ↦ h (tsupport_laplacian_subset f h')
 
 /-- The Laplacian of a function with compact support has compact support. -/
 theorem _root_.HasCompactSupport.laplacian {f : E → F} (hf : HasCompactSupport f) :

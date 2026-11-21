@@ -42,15 +42,13 @@ private theorem componentBasis_mul_nontrivial (C : G.ConnectedComponent) [Nontri
     (b c : ZigzagBasisIndex C.toSimpleGraph) :
     zigzagComponentBasis k G C b * zigzagComponentBasis k G C c =
       (zigzagBasisMul C.toSimpleGraph b c).elim 0 (zigzagComponentBasis k G C) := by
-  let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-    SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-      (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
   apply (zigzagComponentAlgebraEquivNonisolated k G C).injective
   rw [map_mul]
-  simp only [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns,
-    zigzagBasis_mul]
+  simp only [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C
+    C.exists_adj_toSimpleGraph, zigzagBasis_mul]
   cases zigzagBasisMul C.toSimpleGraph b c <;>
-    simp [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns]
+    simp [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C
+      C.exists_adj_toSimpleGraph]
 
 /-- The multiplication table on a singleton component is the dual-number
 table, with the volume vector identified with the infinitesimal generator. -/

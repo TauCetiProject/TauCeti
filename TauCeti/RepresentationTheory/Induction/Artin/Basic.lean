@@ -134,7 +134,7 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
       Subgroup.indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
   have hα (C : CyclicSubgroup G) : α C ∈ indVirtualCharacters k G (fun C ↦ IsCyclic C) := by
     exact AddSubgroup.zsmul_mem _ (AddSubgroup.nsmul_mem _
-      (indClassFun_mem_indVirtualCharacters C.2 one_mem_virtualCharacters) _) _
+      (indClassFun_mem_indVirtualCharacters C.property one_mem_virtualCharacters) _) _
   suffices hsum : ∑ C, α C = Nat.card G • (1 : G → k) by
     rw [← hsum]
     exact AddSubgroup.sum_mem _ fun C _ ↦ hα C
