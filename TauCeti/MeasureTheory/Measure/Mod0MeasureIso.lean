@@ -166,8 +166,8 @@ theorem Mod0MeasureIso.exists_measurePreserving_unitInterval
       (∀ᵐ x ∂μ, g (f x) = x) ∧ (∀ᵐ y ∂(volume : Measure I), f (g y) = y) :=
   -- Compose with the inverse of the coercion `I → ℝ`, itself a mod-zero isomorphism.
   let e' : Mod0MeasureIso α I μ volume := e.trans
-    (unitInterval.measurableEmbedding_coe.mod0MeasureIso
-      unitInterval.measurePreserving_coe.map_eq).symm
+    (unitInterval.measurableEmbedding_subtypeVal.mod0MeasureIso
+      unitInterval.measurePreserving_subtypeVal.map_eq).symm
   ⟨e'.toFun, e'.invFun, e'.measurePreserving, e'.measurePreserving_invFun, e'.left_inv_ae,
     e'.right_inv_ae⟩
 

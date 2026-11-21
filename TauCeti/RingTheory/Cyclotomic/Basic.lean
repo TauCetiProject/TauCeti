@@ -48,17 +48,19 @@ namespace TauCeti
 /-- Exact `e`-th cyclotomic integers, represented by the `e.totient` coefficients of the
 canonical polynomial representative in descending order. -/
 @[expose] def Cyclotomic (e : ℕ) : Type _ := {l : List ℤ // l.length = e.totient}
-  deriving DecidableEq
 
 namespace Cyclotomic
 
 variable {e : ℕ}
 
+instance : DecidableEq (Cyclotomic e) :=
+  inferInstanceAs (DecidableEq {l : List ℤ // l.length = e.totient})
+
 /-- The descending list of coefficients representing an exact cyclotomic integer. -/
-@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.1
+@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.val
 
 @[simp]
-theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.2
+theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.property
 
 /-- An exact cyclotomic integer is determined by its coefficient list. -/
 theorem ext_coeffs {x y : Cyclotomic e} (h : x.coeffs = y.coeffs) : x = y := Subtype.ext h
