@@ -7,6 +7,9 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Basic
 
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Tower
+
 /-!
 # Lattice-valued endpoints of Lakshmibai–Seshadri paths
 
@@ -22,6 +25,11 @@ Thus the endpoint differs from the last orbit weight by an actual root-lattice v
 No injectivity or spanning assumption is needed for this existence result; injectivity of a
 chosen realization then gives uniqueness of the lattice weight.
 
+Using the canonical rational realization `M → ℚ ⊗[ℤ] M` (`RootPairing.tensorProduct_mk_injective`),
+this yields the intrinsic lattice-valued weight `TauCeti.LSPath.weight`, characterized by its
+endpoint image in every additive realization (`TauCeti.LSPath.apply_weight`,
+`TauCeti.LSPath.weight_eq_iff_endpoint`, `TauCeti.LSPath.weight_eq_of_forall_endpoint_eq`).
+
 ## References
 
 * P. Littelmann, *A Littlewood–Richardson rule for symmetrizable Kac–Moody algebras*, Invent.
@@ -35,6 +43,8 @@ public section
 namespace TauCeti.LSPath
 
 open RootPairing
+
+section Endpoint
 
 variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
@@ -82,5 +92,78 @@ theorem existsUnique_endpoint_eq (π : LSPath P b lam)
     ∃! μ : M, (π.toPLPath 𝕜 f).endpoint = f μ := by
   obtain ⟨m, -, hm⟩ := π.exists_mem_rootSpan_endpoint_eq_add (𝕜 := 𝕜) hlam f
   exact ⟨_, hm, fun μ hμ ↦ hf (hμ.symm.trans hm)⟩
+
+end Endpoint
+
+/-! ### Canonical lattice-valued weight -/
+
+section Weight
+
+open scoped TensorProduct
+
+universe u w x
+
+variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup N]
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
+
+omit [Finite ι] [P.IsReduced] in
+private theorem injective_mkRatAddHom (P : RootPairing ι ℤ M N) :
+    Function.Injective (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom := by
+  simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ
+
+/-- **The lattice-valued weight of an LS path of dominant shape**, characterized by
+`f (π.weight hlam) = (π.toPLPath 𝕜 f).endpoint` (`TauCeti.LSPath.apply_weight`). -/
+noncomputable def weight (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) : M :=
+  Classical.choose (π.existsUnique_endpoint_eq (𝕜 := ℚ) hlam
+    (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (injective_mkRatAddHom P))
+
+/-- In every realization `(𝕜, V, f)`, `f (π.weight hlam)` is the endpoint of `π.toPLPath 𝕜 f`. -/
+theorem apply_weight (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) (hlam : lam ∈ dominantChamber P b)
+    (π : LSPath P b lam) : f (π.weight hlam) = (π.toPLPath 𝕜 f).endpoint := by
+  have hrat : (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (π.weight hlam) =
+      (π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom).endpoint :=
+    (Classical.choose_spec (π.existsUnique_endpoint_eq (𝕜 := ℚ) hlam
+      (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (injective_mkRatAddHom P))).1.symm
+  have hcomp : (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)).toAddMonoidHom.comp
+      (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom = f := by ext m; simp [TensorProduct.mk_apply]
+  rw [← hcomp, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, hrat,
+    ← PLPath.endpoint_mapSemilinear, mapSemilinear_toPLPath ℚ _ _ (Rat.cast_mono (K := 𝕜)), hcomp]
+
+/-- Characterization of `π.weight hlam` by its endpoint in any injective realization `f : M →+ V`.
+-/
+theorem weight_eq_iff_endpoint {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] {f : M →+ V} (hf : Function.Injective f)
+    (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) {μ : M} :
+    π.weight hlam = μ ↔ (π.toPLPath 𝕜 f).endpoint = f μ := by
+  rw [← apply_weight 𝕜 f hlam π, hf.eq_iff]
+
+/-- `π.weight hlam = μ` if `(π.toPLPath ℚ f).endpoint = f μ` for every rational realization `f`. -/
+theorem weight_eq_of_forall_endpoint_eq (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam)
+    {μ : M} (h : ∀ {V : Type w} [AddCommGroup V] [Module ℚ V] (f : M →+ V),
+      (π.toPLPath ℚ f).endpoint = f μ) :
+    π.weight hlam = μ :=
+  (weight_eq_iff_endpoint (𝕜 := ℚ) (injective_mkRatAddHom P) hlam π).mpr
+    (h (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom)
+
+@[simp]
+theorem weight_straight (hlam : lam ∈ dominantChamber P b) : (straight lam).weight hlam = lam :=
+  weight_eq_of_forall_endpoint_eq hlam (straight lam) fun f ↦ by
+    rw [toPLPath_straight, PLPath.endpoint_straight]
+
+@[simp]
+theorem weight_congr {lam' : M} (h : lam = lam') (hlam' : lam' ∈ dominantChamber P b)
+    (π : LSPath P b lam) : (congr h π).weight hlam' = π.weight (h.symm ▸ hlam') := by
+  subst h; simp
+
+/-- The weight of an LS path differs from its last orbit weight `τ_l • λ` by a root-lattice element.
+-/
+theorem weight_sub_last_mem_rootSpan (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) :
+    π.weight hlam - (π.dir (Fin.last _)).val • lam ∈ P.rootSpan ℤ := by
+  obtain ⟨m, hm, heq⟩ := π.exists_mem_rootSpan_endpoint_eq_add (𝕜 := ℚ) hlam
+    (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom
+  simpa [(weight_eq_iff_endpoint (𝕜 := ℚ) (injective_mkRatAddHom P) hlam π).mpr heq] using hm
+
+end Weight
 
 end TauCeti.LSPath

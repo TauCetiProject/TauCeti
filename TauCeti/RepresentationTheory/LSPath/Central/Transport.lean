@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+public import TauCeti.RepresentationTheory.LSPath.Weight
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
@@ -45,9 +46,13 @@ the transport by `-χ` inverting the transport by `χ`.
 * `TauCeti.LSPath.toPLPath_centralTransport`: **for dominant `λ`, a realization `f` injective on
   `W λ`, and a realized orbit with no two distinct points on a common ray, the transported path is
   the central shift of the original path.**
-* `TauCeti.LSPath.endpoint_toPLPath_centralTransport` and
-  `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint moves by `χ` and the minimum
-  height of a form killing `χ` is unchanged.
+* `TauCeti.LSPath.endpoint_toPLPath_centralTransport`, `TauCeti.LSPath.weight_centralTransport`,
+  and `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint and lattice-valued weight
+  move by `χ` and the minimum height of a form killing `χ` is unchanged.
+* `TauCeti.LSPath.centralTransport_zero`, `TauCeti.LSPath.centralTransport_centralTransport`,
+  `TauCeti.LSPath.centralTransport_symm_apply`, `TauCeti.LSPath.centralTransport_neg`, and
+  `TauCeti.LSPath.centralTransport_congr`: encoding-level identity, composition, inverse, and shape
+  congruence coherence laws.
 * `TauCeti.LSPath.toPLPath_centralTransport_centralTransport`,
   `TauCeti.LSPath.toPLPath_centralTransport_zero` and
   `TauCeti.LSPath.toPLPath_centralTransport_neg`: on realized paths the transports compose
@@ -186,6 +191,40 @@ theorem centralTransport_straight : centralTransport χ hχ (straight lam) = str
     · intro n h₁ h₂
       simp
 
+/-- **Central transport by `0` is the identity** up to `add_zero` on shapes. -/
+theorem centralTransport_zero (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0) :
+    centralTransport (0 : M) h0 π = congr (add_zero lam).symm π :=
+  ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
+
+/-- **Successive central transports compose additively** on encodings, up to `add_assoc`. -/
+theorem centralTransport_centralTransport {ψ : M}
+    (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) :
+    centralTransport ψ hψ (centralTransport χ hχ π) =
+      congr (add_assoc lam χ ψ).symm
+        (centralTransport (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero]) π) :=
+  ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
+
+/-- **The inverse of central transport by `χ` is central transport by `-χ`.** -/
+theorem centralTransport_symm_apply (π : LSPath P b (lam + χ)) :
+    (centralTransport χ hχ).symm π =
+      congr (add_neg_cancel_right lam χ)
+        (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π) :=
+  ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
+
+/-- Central transport by `-χ` agrees with the inverse of central transport by `χ`. -/
+theorem centralTransport_neg (hneg : ∀ i ∈ b.support, P.coroot' i (-χ) = 0)
+    (π : LSPath P b (lam + χ)) :
+    centralTransport (-χ) hneg π =
+      congr (add_neg_cancel_right lam χ).symm ((centralTransport χ hχ).symm π) := by
+  rw [centralTransport_symm_apply χ hχ π, congr_congr]; simp
+
+@[simp]
+theorem centralTransport_congr {lam' : M} (h : lam = lam') :
+    centralTransport χ hχ (congr h π) =
+      congr (congrArg (· + χ) h) (centralTransport χ hχ π) := by subst h; simp
+
+section Realization
+
 variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
 
@@ -262,6 +301,15 @@ theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
   conv_lhs => rw [← (centralTransport χ hχ).apply_symm_apply π]
   rw [toPLPath_centralTransport_centralTransport]
   simp [toPLPath_def, PLPath.shiftTimed_zero]
+
+end Realization
+
+/-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
+theorem weight_centralTransport (hlam : lam ∈ dominantChamber P b)
+    (hlam' : lam + χ ∈ dominantChamber P b) :
+    (centralTransport χ hχ π).weight hlam' = π.weight hlam + χ :=
+  (centralTransport χ hχ π).weight_eq_of_forall_endpoint_eq hlam' fun f ↦ by
+    rw [endpoint_toPLPath_centralTransport, map_add, apply_weight ℚ]
 
 end LSPath
 

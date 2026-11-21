@@ -169,6 +169,16 @@ lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
   ext i
   rw [mem_wallIndices, mem_wallIndices, map_add, hχ i i.property, add_zero]
 
+/-- Every element of the wall parabolic subgroup of a weight fixes that weight. -/
+theorem _root_.RootPairing.parabolic_wallIndices_le_stabilizer (P : _root_.RootPairing ι R M N)
+    (b : P.Base) [CharZero R] [IsDomain R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+    (lam : M) :
+    (weylCoxeterSystem P b).parabolic (P.wallIndices b lam) ≤
+      MulAction.stabilizer P.weylGroup lam :=
+  (CoxeterSystem.parabolic_le_iff _).mpr fun i hi ↦ by
+    rw [MulAction.mem_stabilizer_iff, weylCoxeterSystem_simple]
+    exact ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hi)
+
 variable (P b) [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
   [P.IsReduced] [P.flip.IsReduced] {lam : M}
 
@@ -178,14 +188,12 @@ theorem _root_.RootPairing.parabolic_wallIndices_eq_stabilizer
     (hlam : lam ∈ dominantChamber P b) :
     (weylCoxeterSystem P b).parabolic (P.wallIndices b lam) =
       MulAction.stabilizer P.weylGroup lam := by
-  refine le_antisymm ((CoxeterSystem.parabolic_le_iff _).mpr fun i hi ↦ ?_) ?_
-  · rw [MulAction.mem_stabilizer_iff, weylCoxeterSystem_simple]
-    exact ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hi)
-  · rw [stabilizer_eq_closure_wallReflections P b hlam, Subgroup.closure_le]
-    intro w hw
-    obtain ⟨i, hi, hzero, rfl⟩ := mem_wallReflections.mp hw
-    rw [← weylCoxeterSystem_simple P b ⟨i, hi⟩]
-    exact (weylCoxeterSystem P b).simple_mem_parabolic (mem_wallIndices.mpr hzero)
+  refine le_antisymm (P.parabolic_wallIndices_le_stabilizer b lam) ?_
+  rw [stabilizer_eq_closure_wallReflections P b hlam, Subgroup.closure_le]
+  intro w hw
+  obtain ⟨i, hi, hzero, rfl⟩ := mem_wallReflections.mp hw
+  rw [← weylCoxeterSystem_simple P b ⟨i, hi⟩]
+  exact (weylCoxeterSystem P b).simple_mem_parabolic (mem_wallIndices.mpr hzero)
 
 variable {P b}
 

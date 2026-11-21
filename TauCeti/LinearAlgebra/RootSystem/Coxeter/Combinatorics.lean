@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.Coxeter.LongestElement
 public import TauCeti.GroupTheory.Coxeter.Poincare
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-public import TauCeti.LinearAlgebra.RootSystem.LongestElement
+public import TauCeti.LinearAlgebra.RootSystem.Opposition.Basic
 
 /-!
 # Length and subwords in the Weyl group
@@ -30,6 +30,8 @@ just to a chosen expression.
 * `RootPairing.isLongest_longestElement`: the longest element complements lengths,
   `ℓ (w * w₀) + ℓ w = ℓ w₀`, so it reverses the Bruhat order of the Weyl group and of its
   parabolic quotients (`TauCeti.GroupTheory.Coxeter.LongestElement`).
+* `TauCeti.conj_longestElement_simple`: conjugating a simple reflection by `w₀` applies the
+  opposition involution `TauCeti.oppositionPerm`.
 
 The length and reducedness comparisons come from `TauCeti.length_weylCoxeterSystem_eq` and
 `TauCeti.isReduced_weylCoxeterSystem_iff`. The longest element here is the existing
@@ -100,3 +102,23 @@ theorem isLongest_longestElement :
   exact ncard_inversions_mul_longestElement_add_ncard_inversions P b
 
 end RootPairing
+
+namespace TauCeti
+
+open RootPairing
+
+/-- **Conjugating a simple reflection by `w₀` applies the opposition involution.** -/
+theorem conj_longestElement_simple {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+    {b : P.Base} [Finite ι] [P.IsCrystallographic] [P.IsReduced] (i : b.support) :
+    longestElement P b * (weylCoxeterSystem P b).simple i * longestElement P b =
+      (weylCoxeterSystem P b).simple (oppositionPerm P b i) := by
+  nth_rw 2 [← longestElement_inv P b]
+  rw [weylCoxeterSystem_simple, weylCoxeterSystem_simple, coe_oppositionPerm,
+    ← weylGroup.ofIdx_weylGroupToPerm_eq_conj]
+  refine weylGroup.ext fun x ↦ ?_
+  rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul,
+    reflection_apply, reflection_apply, coroot'_opposition, ← coroot'_smul_longestElement,
+    root_opposition, ← P.weylGroup_apply_root, neg_smul_neg]
+
+end TauCeti

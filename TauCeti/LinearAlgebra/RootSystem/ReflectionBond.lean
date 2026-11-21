@@ -31,6 +31,8 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
   positive reflection is `0`, and `RootPairing.reflectionBond_self` says the bond of a weight with
   itself is `0`.
 * `RootPairing.reflectionBond_reflection`: the bond of `x` and `s_β x` is `-⟨x, β^∨⟩`.
+* `RootPairing.reflectionBond_neg_neg`: negating both weights and reversing their order preserves
+  their bond.
 * `RootPairing.reflectionBond_dvd_sub`: when `y = s_β x` for a positive root `β`, the bond of `x`
   and `y` divides `f x - f y` for every linear form `f`.
 * `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
@@ -102,6 +104,25 @@ theorem reflectionBond_reflection [P.IsReduced] [NoZeroDivisors R] {β : ι} (h�
     rw [hne] at hc
     rw [hne, reflectionBond_self, CharZero.eq_neg_self_iff.mp hc, neg_zero]
   · exact reflectionBond_eq_neg_coroot' hβ rfl hne
+
+/-- **Negating two weights and reversing their order preserves their reflection bond.** -/
+@[simp]
+theorem reflectionBond_neg_neg (x y : M) :
+    P.reflectionBond b (-y) (-x) = P.reflectionBond b x y := by
+  have hpred : (fun β ↦ b.IsPos β ∧ P.reflection β (-y) = -x) =
+      (fun β ↦ b.IsPos β ∧ P.reflection β x = y) := by
+    ext β
+    refine and_congr_right fun _ ↦ ⟨fun h ↦ neg_injective ?_, fun h ↦ ?_⟩
+    · rw [← map_neg, ← h, reflection_same]
+    · rw [map_neg, ← h, reflection_same]
+  have hchoose {p q : ι → Prop} (hpq : p = q) (hp : ∃ β, p β) (hq : ∃ β, q β) :
+      hp.choose = hq.choose := by subst hpq; rfl
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · have h' : ∃ β, b.IsPos β ∧ P.reflection β (-y) = -x := hpred.symm ▸ h
+    rw [reflectionBond, dite_eq_left h', reflectionBond, dite_eq_left h,
+      hchoose hpred h' h, map_neg, ← coroot'_reflection_self, h.choose_spec.2]
+  · rw [reflectionBond_eq_zero_of_not_exists (hpred.symm ▸ h),
+      reflectionBond_eq_zero_of_not_exists h]
 
 /-- **The bond divides the change of every linear form.** If `y = s_β x` for a positive root `β`,
 then `x - y = -⟨y, β^∨⟩ β`, so the bond of `x` and `y` divides `f x - f y` for every linear form
