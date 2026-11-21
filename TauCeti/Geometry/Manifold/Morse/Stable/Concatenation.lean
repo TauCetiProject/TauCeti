@@ -44,18 +44,16 @@ So when `L` has a level between any two critical values, the broken trajectories
 images of the concatenation maps `𝓜(p, q) × 𝓜(q, r) → 𝓜(p, r)`.
 
 Bundled as continuous maps between the spaces of broken trajectories
-(`TauCeti.IsAdaptedPseudoGradient.morseTrajectoryConcat`), with their associativity
-(`TauCeti.IsAdaptedPseudoGradient.morseTrajectoryConcat_assoc`), these are the composition maps
-`ι x z y : 𝓜(x, z) × 𝓜(z, y) → 𝓜(x, y)` of the twisting chain systems of Barraud and Cornea
-(`TauCeti.TwistingChainSystem`), indexed by the critical points of `f` and graded by the Morse
-index, whose twisting sums are cycles by associativity
-(`TauCeti.cubicalChainDifferential_twistingChainSum`). Their representing chain systems are
-fundamental chains of the spaces `𝓜(x, y)` relative to the union of the images of the `ι x z y`.
+(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat`), with their associativity
+(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat_assoc`), they provide the maps from
+which the composition maps `ι x z y : 𝓜(x, z) × 𝓜(z, y) → 𝓜(x, y)` of a twisting chain system of
+Barraud and Cornea (`TauCeti.TwistingChainSystem`) can be built, once the index type is the set of
+critical points of `f` and `L` contains no critical value. This file does not build that family.
 
 ## Main definitions
 
 * `TauCeti.morseRecordConcat`: the concatenation of records at a point `q`.
-* `TauCeti.IsAdaptedPseudoGradient.morseTrajectoryConcat`: the concatenation of broken
+* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat`: the concatenation of broken
   trajectories at a point `q`, as a continuous map.
 
 ## Main results
@@ -64,12 +62,13 @@ fundamental chains of the spaces `𝓜(x, y)` relative to the union of the image
 * `TauCeti.morseRecordConcat_assoc`: concatenation is associative.
 * `TauCeti.IsAdaptedPseudoGradient.morseRecordConcat_mem_morseBrokenTrajectoryRecords`: the
   concatenation of broken trajectories is a broken trajectory.
-* `TauCeti.IsAdaptedPseudoGradient.morseTrajectoryConcat_assoc`: concatenation of broken
+* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat_assoc`: concatenation of broken
   trajectories is associative.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords_eq_union`: a broken trajectory is
   unbroken or a concatenation at its first breaking point.
 * `TauCeti.IsAdaptedPseudoGradient.disjoint_morseTrajectoryRecords_image2_morseRecordConcat`:
-  concatenations are not unbroken.
+  if `q ≠ r` and `L` has a level strictly between `f q` and `f p`, concatenations at `q` are not
+  unbroken.
 
 ## References
 
@@ -117,6 +116,12 @@ theorem morseRecordConcat_apply_of_gt (w₁ : ↥(L ∩ Ioo (f q) (f p)) → M)
     morseRecordConcat f L p q r w₁ w₂ c = w₂ ⟨c, c.property.1, c.property.2.1, h⟩ := by
   simp [morseRecordConcat, h, h.not_gt]
 
+/-- On the level `f q`, when it belongs to `L`, the concatenation at `q` is `q`. -/
+theorem morseRecordConcat_apply_of_eq (w₁ : ↥(L ∩ Ioo (f q) (f p)) → M)
+    (w₂ : ↥(L ∩ Ioo (f r) (f q)) → M) (c : ↥(L ∩ Ioo (f r) (f p))) (h : (c : ℝ) = f q) :
+    morseRecordConcat f L p q r w₁ w₂ c = q := by
+  simp [morseRecordConcat, h]
+
 /-- **Concatenation at the source is trivial.** There is no level strictly between `f p` and itself,
 so concatenating at `p` returns the second family. -/
 @[simp]
@@ -131,28 +136,29 @@ theorem morseRecordConcat_self_right (w₁ : ↥(L ∩ Ioo (f r) (f p)) → M)
     (w₂ : ↥(L ∩ Ioo (f r) (f r)) → M) : morseRecordConcat f L p r r w₁ w₂ = w₁ :=
   funext fun c ↦ morseRecordConcat_apply_of_lt w₁ w₂ c c.property.2.1
 
-/-- **Concatenation is associative.** If `f s ≤ f q` and neither `f q` nor `f s` is a level of
-`L`, concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
-theorem morseRecordConcat_assoc (hq : f q ∉ L) (hs : f s ∉ L) (hsq : f s ≤ f q)
+/-- **Concatenation is associative.** If `f s ≤ f q` and `f q` is not a level of `L`,
+concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
+theorem morseRecordConcat_assoc (hq : f q ∉ L) (hsq : f s ≤ f q)
     (w₁ : ↥(L ∩ Ioo (f q) (f p)) → M) (w₂ : ↥(L ∩ Ioo (f s) (f q)) → M)
     (w₃ : ↥(L ∩ Ioo (f r) (f s)) → M) :
     morseRecordConcat f L p s r (morseRecordConcat f L p q s w₁ w₂) w₃ =
       morseRecordConcat f L p q r w₁ (morseRecordConcat f L q s r w₂ w₃) := by
   funext c
-  -- The level `c` is neither `f q` nor `f s`; compare it with both.
+  -- The level `c` is not `f q`; compare it with `f q` and `f s`. On the level `f s < f q` both
+  -- sides are `s`.
   have hcq : (c : ℝ) ≠ f q := fun h ↦ hq (h ▸ c.property.1)
-  have hcs : (c : ℝ) ≠ f s := fun h ↦ hs (h ▸ c.property.1)
-  rcases lt_or_gt_of_ne hcq with hcq | hcq <;> rcases lt_or_gt_of_ne hcs with hcs | hcs <;>
+  rcases lt_or_gt_of_ne hcq with hcq | hcq <;>
+    rcases lt_trichotomy (c : ℝ) (f s) with hcs | hcs | hcs <;>
     simp only [morseRecordConcat] <;> split_ifs <;> first | rfl | linarith
 
 variable [TopologicalSpace M]
 
-/-- **Concatenation is continuous**, jointly in the two families: each point of the concatenation
-is a point of one of them, or the constant `q`. -/
+/-- **Concatenation is continuous**, jointly in the two families. -/
 @[fun_prop]
 theorem continuous_morseRecordConcat (p q r : M) :
     Continuous fun w : (↥(L ∩ Ioo (f q) (f p)) → M) × (↥(L ∩ Ioo (f r) (f q)) → M) ↦
       morseRecordConcat f L p q r w.1 w.2 := by
+  -- Each point of the concatenation is a point of one of the families, or the constant `q`.
   refine continuous_pi fun c ↦ ?_
   unfold morseRecordConcat
   split_ifs <;> fun_prop
@@ -169,21 +175,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
-
-/-- **The function decreases along a broken trajectory.** If there is a broken trajectory from `p`
-to `r`, recorded on any levels, then `f r ≤ f p`. -/
-theorem le_of_mem_morseBrokenTrajectoryRecords {ι : Type*} {c : ι → ℝ} {w : ι → M}
-    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r ≤ f p := by
-  obtain ⟨k, x, z, rfl, rfl, -, -, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
-  exact hX.antitone_apply_of_chain hz (Fin.zero_le _)
-
-/-- **The function decreases strictly along a broken trajectory between distinct points.** If there
-is a broken trajectory from `p` to `r ≠ p`, recorded on any levels, then `f r < f p`. -/
-theorem lt_of_mem_morseBrokenTrajectoryRecords {ι : Type*} {c : ι → ℝ} {w : ι → M}
-    (hpr : p ≠ r) (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r < f p := by
-  obtain ⟨k, x, z, rfl, rfl, -, hne, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
-  exact hX.strictAnti_apply_of_chain hne hz
-    ((Fin.zero_le _).lt_of_ne fun h ↦ hpr (congrArg x h))
 
 /-- Two chains of critical points joined by trajectories, the first ending where the second starts,
 put end to end: the chain `x₁ 0, …, x₁ k₁ = x₂ 0, …, x₂ k₂`, with the trajectories `z₁` followed by
@@ -265,7 +256,7 @@ theorem morseRecordConcat_mem_morseBrokenTrajectoryRecords (hq : f q ∉ L)
 trajectory from `p` to `q` and one from `q` to `r`, recorded on the levels of `L`, to the broken
 trajectories from `p` to `r`. It needs `f q` not to be a level of `L`, which holds when `q` is a
 critical point and `L` is made of regular values. -/
-noncomputable def morseTrajectoryConcat (hq : f q ∉ L) :
+noncomputable def morseBrokenTrajectoryConcat (hq : f q ∉ L) :
     C(↥(hX.morseBrokenTrajectoryRecords p q (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)) ×
         ↥(hX.morseBrokenTrajectoryRecords q r (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ)),
       ↥(hX.morseBrokenTrajectoryRecords p r (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ))) where
@@ -278,23 +269,23 @@ noncomputable def morseTrajectoryConcat (hq : f q ∉ L) :
 /-- The underlying record of a concatenation of broken trajectories is the concatenation of
 their records. -/
 @[simp]
-theorem coe_morseTrajectoryConcat_apply (hq : f q ∉ L)
+theorem coe_morseBrokenTrajectoryConcat_apply (hq : f q ∉ L)
     (w : ↥(hX.morseBrokenTrajectoryRecords p q (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)) ×
       ↥(hX.morseBrokenTrajectoryRecords q r (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ))) :
-    (hX.morseTrajectoryConcat hq w : ↥(L ∩ Ioo (f r) (f p)) → M) =
+    (hX.morseBrokenTrajectoryConcat hq w : ↥(L ∩ Ioo (f r) (f p)) → M) =
       morseRecordConcat f L p q r w.1 w.2 :=
   (rfl)
 
 /-- **Concatenation of broken trajectories is associative.** If neither `f q` nor `f s` is a level
 of `L`, concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
-theorem morseTrajectoryConcat_assoc (hq : f q ∉ L) (hs : f s ∉ L)
+theorem morseBrokenTrajectoryConcat_assoc (hq : f q ∉ L) (hs : f s ∉ L)
     (a : ↥(hX.morseBrokenTrajectoryRecords p q (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)))
     (b : ↥(hX.morseBrokenTrajectoryRecords q s (Subtype.val : ↥(L ∩ Ioo (f s) (f q)) → ℝ)))
     (c : ↥(hX.morseBrokenTrajectoryRecords s r (Subtype.val : ↥(L ∩ Ioo (f r) (f s)) → ℝ))) :
-    hX.morseTrajectoryConcat hs (hX.morseTrajectoryConcat hq (a, b), c) =
-      hX.morseTrajectoryConcat hq (a, hX.morseTrajectoryConcat hs (b, c)) :=
+    hX.morseBrokenTrajectoryConcat hs (hX.morseBrokenTrajectoryConcat hq (a, b), c) =
+      hX.morseBrokenTrajectoryConcat hq (a, hX.morseBrokenTrajectoryConcat hs (b, c)) :=
   Subtype.ext <|
-    morseRecordConcat_assoc hq hs (hX.le_of_mem_morseBrokenTrajectoryRecords b.property) _ _ _
+    morseRecordConcat_assoc hq (hX.le_of_mem_morseBrokenTrajectoryRecords b.property) _ _ _
 
 /-- **Splitting a broken trajectory at its first breaking point.** Let `L` contain no critical value
 of `f`. A broken trajectory from `p` to `r` with at least two components, through the chain
@@ -328,16 +319,8 @@ private theorem mem_iUnion_image2_morseRecordConcat_of_chain {k : ℕ} {x : Fin 
     fun c ↦ w ⟨c, c.property.1, c.property.2.1, c.property.2.2.trans hfq.2⟩, ?_,
     funext fun c ↦ ?_⟩
   -- Above `f q`, the record is that of the first component.
-  · refine hX.mem_morseTrajectoryRecords.2 ⟨z 0, by simpa [← hx0] using hz 0, fun c ↦ ?_⟩
-    obtain ⟨hwc, j, t, ht⟩ := hw ⟨c, c.property.1, hfq.1.trans c.property.2.1, c.property.2.2⟩
-    refine ⟨hwc, t, ?_⟩
-    induction j using Fin.cases with
-    | zero => exact ht
-    | succ j =>
-      have h := hcomp j.succ t
-      rw [ht, hwc] at h
-      have : f (x j.succ.castSucc) ≤ f q := hanti.antitone (by simp [Fin.le_def])
-      linarith [h.2, c.property.2.1]
+  · exact hX.mem_morseTrajectoryRecords.2 ⟨z 0, by simpa [← hx0] using hz 0, fun c ↦ ⟨(hw _).1,
+      hX.exists_flow_eq_of_mem_Ioo hz hw (j := 0) (by simpa [hx0] using c.property.2)⟩⟩
   -- Below `f q`, it is a broken trajectory along the rest of the chain.
   · refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k + 1, Fin.tail x, Fin.tail z,
       by simp [Fin.tail, hq], by simpa [Fin.tail] using hxk, fun j ↦ hc _, fun j ↦ ?_,
@@ -389,14 +372,15 @@ theorem morseBrokenTrajectoryRecords_eq_union (hpr : p ≠ r)
 
 /-- **Concatenations are not unbroken.** Let `q ≠ r`, and let `L` have a level strictly between
 `f q` and `f p`. Then no concatenation at `q` of a broken trajectory from `p` to `q` and a broken
-trajectory from `q` to `r` is an unbroken trajectory from `p` to `r`: on that level, the
-concatenation lies on a trajectory converging to a critical point `x` with `f q ≤ f x`, while an
-unbroken trajectory from `p` to `r` converges to `r`, and `f r < f q`. -/
+trajectory from `q` to `r` is an unbroken trajectory from `p` to `r`. -/
 theorem disjoint_morseTrajectoryRecords_image2_morseRecordConcat (hqr : q ≠ r)
     (hL : ∃ c ∈ L, c ∈ Ioo (f q) (f p)) :
     Disjoint (hX.morseTrajectoryRecords p r (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ))
       (image2 (morseRecordConcat f L p q r) (hX.morseBrokenTrajectoryRecords p q Subtype.val)
         (hX.morseBrokenTrajectoryRecords q r Subtype.val)) := by
+  -- On a level between `f q` and `f p`, the concatenation lies on a trajectory converging to a
+  -- critical point `x` with `f q ≤ f x`, while an unbroken trajectory from `p` to `r` converges to
+  -- `r`, and `f r < f q`.
   refine disjoint_left.2 ?_
   rintro w hw ⟨w₁, h₁, w₂, h₂, rfl⟩
   obtain ⟨c, hcL, hc⟩ := hL
