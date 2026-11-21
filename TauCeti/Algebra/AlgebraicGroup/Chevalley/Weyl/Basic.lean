@@ -73,6 +73,15 @@ theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) 
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
 
+/-- Every product of pinned simple Weyl representatives belongs to `D.weylSubgroup A`. -/
+theorem list_prod_map_weylElement_mem_weylSubgroup (A : Type v) [CommRing A]
+    (l : List (Fin t.rank)) :
+    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A := by
+  apply Subgroup.list_prod_mem
+  intro x hx
+  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
+  exact D.weylElement_mem_weylSubgroup A i
+
 private theorem map_weylElement_one {A : Type*} {B : Type*} [CommRing A] [CommRing B]
     (f : A →+* B) (i : Fin t.rank) :
     (D.pointsPresentation A).map (D.pointsPresentation B) f
@@ -394,6 +403,49 @@ theorem weylProjection_simpleWeylLift (k : Type v) [Field k] (i : Fin t.rank) :
     D.weylProjection k (D.simpleWeylLift k i) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) :=
   D.weylProjection_weylElement k i
+
+/-- On a product of a Weyl word and an actual torus point, `D.weylProjection k` evaluates to the
+Weyl-group element spelled by the word. -/
+theorem weylProjection_list_prod_mul_torusPoints (k : Type v) [Field k]
+    (l : List (Fin t.rank)) (s : Fin t.rank → kˣ) :
+    D.weylProjection k
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod * D.torusPoints k s,
+        mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup k l)
+          (D.torusPoints_mem_weylSubgroup k s)⟩ =
+      t.geckWeylWordProd ht l := by
+  have hword (m : List (Fin t.rank)) :
+      D.weylProjection k ⟨(m.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+        D.list_prod_map_weylElement_mem_weylSubgroup k m⟩ =
+        t.geckWeylWordProd ht m := by
+    induction m with
+    | nil =>
+      have hone :
+          (⟨([].map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+            D.list_prod_map_weylElement_mem_weylSubgroup k []⟩ : D.weylSubgroup k) = 1 := by
+        ext
+        simp only [List.map_nil, List.prod_nil, Subgroup.coe_one]
+      rw [hone, map_one, geckWeylWordProd_nil]
+    | cons i m ih =>
+      have hsplit : (⟨((i :: m).map fun j => D.weylElement (t.simpleIndex ht j) k 1).prod,
+          D.list_prod_map_weylElement_mem_weylSubgroup k (i :: m)⟩ : D.weylSubgroup k) =
+          ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ *
+            ⟨(m.map fun j => D.weylElement (t.simpleIndex ht j) k 1).prod,
+              D.list_prod_map_weylElement_mem_weylSubgroup k m⟩ := by
+        ext
+        simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul]
+      rw [hsplit, map_mul, D.weylProjection_weylElement k i, ih, geckWeylWordProd_cons]
+  -- Split the `D.weylSubgroup k` subtype into the word product and torus factor by comparing
+  -- their underlying elements in `D.points k`.
+  have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod *
+      D.torusPoints k s,
+      mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup k l)
+        (D.torusPoints_mem_weylSubgroup k s)⟩ : D.weylSubgroup k) =
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+        D.list_prod_map_weylElement_mem_weylSubgroup k l⟩ *
+        ⟨D.torusPoints k s, D.torusPoints_mem_weylSubgroup k s⟩ := by
+    apply Subtype.ext
+    rw [Subgroup.coe_mul]
+  rw [hmul, map_mul, hword l, D.weylProjection_torusPoints k s, mul_one]
 
 private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
     (k : Type v) [Field k] (i : Fin t.rank) :

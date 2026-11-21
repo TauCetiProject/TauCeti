@@ -26,7 +26,9 @@ Consequently `D.weylSubgroup A ⊓ D.borelSubgroup A = (D.torusPoints A).range`
 (`ChevalleyDatum.weylSubgroup_inf_borelSubgroup`) and `D.borelSubgroup A ⊓ D.weylSubgroup A =
 (D.torusPoints A).range` (`ChevalleyDatum.borelSubgroup_inf_weylSubgroup`) hold over every
 commutative ring `A` (including nonreduced rings, finite fields, bad characteristic, and the zero
-ring). Over any field `K`, this also yields `D.positivePoints K ⊓ D.weylSubgroup K = ⊥`.
+ring), making `B(A) ∩ N(A)` normal in `N(A)`
+(`ChevalleyDatum.normal_borelSubgroup_subgroupOf_weylSubgroup`). Over any field `K`, this also
+yields `D.positivePoints K ⊓ D.weylSubgroup K = ⊥`.
 
 ## References
 
@@ -141,6 +143,14 @@ theorem borelSubgroup_inf_weylSubgroup :
     D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range := by
   rw [inf_comm, D.weylSubgroup_inf_borelSubgroup A]
 
+/-- `B ∩ N` is normal in `N`: it is the actual torus, which `N` normalizes. This is the normality
+axiom of a Tits system with these subgroups. -/
+instance normal_borelSubgroup_subgroupOf_weylSubgroup :
+    ((D.borelSubgroup A).subgroupOf (D.weylSubgroup A)).Normal := by
+  rw [← Subgroup.inf_subgroupOf_left, inf_comm,
+    D.borelSubgroup_inf_weylSubgroup A]
+  infer_instance
+
 /-- Over every commutative ring `A`, an element of `D.weylSubgroup A` belongs to
 `D.borelSubgroup A` if and only if it lies in the image of the actual torus. -/
 theorem mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup
@@ -164,49 +174,6 @@ end CommRing
 section Field
 
 variable (K : Type v) [Field K]
-
-/-- On a product of a Weyl word and an actual torus point, `D.weylProjection K` evaluates to the
-Weyl-group element spelled by the word. -/
-theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
-    (s : Fin t.rank → Kˣ) :
-    D.weylProjection K
-      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod * D.torusPoints K s,
-        mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
-          (D.torusPoints_mem_weylSubgroup K s)⟩ =
-      t.geckWeylWordProd ht l := by
-  have hword (m : List (Fin t.rank)) :
-      D.weylProjection K ⟨(m.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
-        D.list_prod_map_weylElement_mem_weylSubgroup K m⟩ =
-        t.geckWeylWordProd ht m := by
-    induction m with
-    | nil =>
-      have hone :
-          (⟨([].map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
-            D.list_prod_map_weylElement_mem_weylSubgroup K []⟩ : D.weylSubgroup K) = 1 := by
-        ext
-        simp only [List.map_nil, List.prod_nil, Subgroup.coe_one]
-      rw [hone, map_one, geckWeylWordProd_nil]
-    | cons i m ih =>
-      have hsplit : (⟨((i :: m).map fun j => D.weylElement (t.simpleIndex ht j) K 1).prod,
-          D.list_prod_map_weylElement_mem_weylSubgroup K (i :: m)⟩ : D.weylSubgroup K) =
-          ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ *
-            ⟨(m.map fun j => D.weylElement (t.simpleIndex ht j) K 1).prod,
-              D.list_prod_map_weylElement_mem_weylSubgroup K m⟩ := by
-        ext
-        simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul]
-      rw [hsplit, map_mul, D.weylProjection_weylElement K i, ih, geckWeylWordProd_cons]
-  -- Split the `D.weylSubgroup K` subtype into the word product and torus factor by comparing
-  -- their underlying elements in `D.points K`.
-  have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod *
-      D.torusPoints K s,
-      mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
-        (D.torusPoints_mem_weylSubgroup K s)⟩ : D.weylSubgroup K) =
-      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
-        D.list_prod_map_weylElement_mem_weylSubgroup K l⟩ *
-        ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := by
-    apply Subtype.ext
-    rw [Subgroup.coe_mul]
-  rw [hmul, map_mul, hword l, D.weylProjection_torusPoints K s, mul_one]
 
 private theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one
     {u : D.points K} (huP : u ∈ D.positivePoints K) (huW : u ∈ D.weylSubgroup K)

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map

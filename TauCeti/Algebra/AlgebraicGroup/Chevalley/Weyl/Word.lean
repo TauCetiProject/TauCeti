@@ -60,15 +60,6 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- Every product of pinned simple Weyl representatives belongs to `D.weylSubgroup A`. -/
-theorem list_prod_map_weylElement_mem_weylSubgroup (A : Type v) [CommRing A]
-    (l : List (Fin t.rank)) :
-    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A := by
-  apply Subgroup.list_prod_mem
-  intro x hx
-  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
-  exact D.weylElement_mem_weylSubgroup A i
-
 /-- Every element of `D.weylSubgroup A` is a positive word in the pinned simple Weyl
 representatives followed by a point of the actual torus, over every commutative ring. -/
 theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints (A : Type v) [CommRing A]
