@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Exp.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.FiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 import TauCeti.NumberTheory.Padics.Basic
@@ -215,9 +216,15 @@ theorem gaussNorm_rescale_exp_sub_one_le {x : K} {c : ℝ} (hc : 0 ≤ c)
   rw [gaussNorm_eq]
   exact ciSup_le (norm_coeff_rescale_exp_sub_one_mul_pow_le hc hxc)
 
-section ExpPolynomial
+end PowerSeries
 
-variable {ι : Type*}
+open PowerSeries
+
+namespace TauCeti
+
+variable {p : ℕ} [Fact p.Prime] {K : Type*}
+  [NormedField K] [Algebra ℚ K] [NormedAlgebra ℚ_[p] K] {ι : Type*}
+
 
 /-- An exponential polynomial `∑ aᵢ exp(xᵢX)` is restricted on every closed disc strictly inside
 the p-adic exponential discs of all its frequencies `xᵢ`. -/
@@ -226,6 +233,19 @@ theorem isRestricted_sum_smul_rescale_exp (s : Finset ι) (a x : ι → K) {c : 
     (∑ i ∈ s, a i • rescale (x i) (exp K)).IsRestricted c :=
   MvPowerSeries.IsRestricted.sum fun i hi ↦ (isRestricted_rescale_exp hc (hxc i hi)).smul (a i)
 
+/-- A common coefficient bound for an exponential polynomial on the closed exponential discs. -/
+private theorem norm_coeff_sum_smul_rescale_exp_mul_pow_le (s : Finset ι) (a x : ι → K)
+    {c A : ℝ} (hc : 0 ≤ c)
+    (hxc : ∀ i ∈ s, ‖x i‖ * c ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (hA : 0 ≤ A)
+    (ha : ∀ i ∈ s, ‖a i‖ ≤ A) (n : ℕ) :
+    ‖coeff n (∑ i ∈ s, a i • rescale (x i) (exp K))‖ * c ^ n ≤ A := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  refine norm_coeff_sum_mul_pow_le s _ hA (fun i hi n ↦ ?_) n
+  simp only [coeff_smul, smul_eq_mul, norm_mul, mul_assoc]
+  exact (mul_le_mul (ha i hi)
+    (PowerSeries.norm_coeff_rescale_exp_mul_pow_le_one hc (hxc i hi) n)
+    (by positivity) hA).trans_eq (mul_one A)
+
 /-- On a closed disc inside the p-adic exponential discs of all its frequencies `xᵢ`, the Gauss
 norm of an exponential polynomial `∑ aᵢ exp(xᵢX)` is at most any common bound `A` for the
 `‖aᵢ‖`. This includes the boundary of the discs. -/
@@ -233,23 +253,17 @@ theorem gaussNorm_sum_smul_rescale_exp_le (s : Finset ι) (a x : ι → K) {c A 
     (hxc : ∀ i ∈ s, ‖x i‖ * c ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (hA : 0 ≤ A)
     (ha : ∀ i ∈ s, ‖a i‖ ≤ A) :
     (∑ i ∈ s, a i • rescale (x i) (exp K)).gaussNorm norm c ≤ A := by
-  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
   rw [gaussNorm_eq]
-  refine ciSup_le fun n ↦ ?_
-  rw [map_sum]
-  rcases s.eq_empty_or_nonempty with rfl | hs
-  · simpa using hA
-  -- the ultrametric inequality bounds the coefficient by that of a single summand
-  obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hs
-    fun i ↦ coeff n (a i • rescale (x i) (exp K))
-  calc
-    _ ≤ ‖coeff n (a i • rescale (x i) (exp K))‖ * c ^ n := by gcongr
-    _ = ‖a i‖ * (‖coeff n (rescale (x i) (exp K))‖ * c ^ n) := by
-      rw [coeff_smul, smul_eq_mul, norm_mul, mul_assoc]
-    _ ≤ A * 1 := mul_le_mul (ha i hi) (norm_coeff_rescale_exp_mul_pow_le_one hc (hxc i hi) n)
-      (by positivity) hA
-    _ = A := mul_one A
+  exact ciSup_le (norm_coeff_sum_smul_rescale_exp_mul_pow_le s a x hc hxc hA ha)
 
-end ExpPolynomial
+/-- An exponential polynomial has bounded weighted coefficients throughout the closed
+exponential discs of its frequencies, including their boundaries. -/
+theorem hasGaussNorm_sum_smul_rescale_exp (s : Finset ι) (a x : ι → K) {c : ℝ} (hc : 0 ≤ c)
+    (hxc : ∀ i ∈ s, ‖x i‖ * c ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
+    (∑ i ∈ s, a i • rescale (x i) (exp K)).HasGaussNorm norm c :=
+  ⟨∑ i ∈ s, ‖a i‖, Set.forall_mem_range.mpr
+    (norm_coeff_sum_smul_rescale_exp_mul_pow_le s a x hc hxc
+      (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+      (fun _ hi ↦ Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) hi))⟩
 
-end PowerSeries
+end TauCeti

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.IntegerGrid
-public import TauCeti.RingTheory.PowerSeries.Exp.Padic
+public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Eval
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 
 /-!
 # Interpolation of p-adic exponential polynomials on integer grids
@@ -36,14 +35,17 @@ Suppose `Φ` vanishes to order `T` on a finite set of `p`-adic integers, that is
 ‖Φ⁽ᵏ⁾(z) / k!‖ ≤ c⁻ᵏ * max ‖aᵢ‖ * (‖∏_{b} (z - b)‖ / c ^ #grid) ^ (T - k).
 ```
 
-On Yu's grid of the integers `0 ≤ j < N` not divisible by an auxiliary integer `q` prime to `p`,
+Here `T - k` is natural-number subtraction, truncated at zero.
+
+On Yu's grid of the integers `0 ≤ j < N` not divisible by an auxiliary positive integer `q`
+prime to `p`,
 the interpolation denominator is at most `‖⌊N / q⌋!‖ ^ (q - 1)`. These are the analytic upper
 bounds that the extrapolation steps of the method compare with Liouville-type lower bounds for
 nonzero algebraic values.
 
 ## Main results
 
-* `PowerSeries.evalAt_hasseDeriv_sum_smul_rescale_exp`: the Hasse derivatives of an exponential
+* `TauCeti.evalAt_hasseDeriv_sum_smul_rescale_exp`: the Hasse derivatives of an exponential
   polynomial, evaluated in the closed disc, are the divided derivatives of `Φ`.
 * `TauCeti.norm_sum_mul_exp_le_mul_norm_prod`: the interpolation bound on a finite set of
   `p`-adic integers.
@@ -63,46 +65,33 @@ open scoped Nat
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K] [Algebra ℚ K]
   [NormedAlgebra ℚ_[p] K] [CompleteSpace K] {ι : Type*} {s : Finset ι} {a x : ι → K} {c : ℝ}
 
-namespace PowerSeries
-
-/-- At a point `y` of the closed disc of radius `c`, the `k`th Hasse derivative of the
-exponential polynomial `∑ᵢ aᵢ exp(xᵢX)`, restricted at `c`, takes the value
-`∑ᵢ aᵢ (xᵢ ^ k / k!) exp(y xᵢ)`. -/
-theorem evalAt_hasseDeriv_sum_smul_rescale_exp (hc : 0 ≤ c)
-    (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (k : ℕ) {y : K} (hy : ‖y‖ ≤ c) :
-    (hasseDeriv k (∑ i ∈ s, a i • rescale (x i) (exp K))).evalAt y =
-      ∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (y * x i) := by
-  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
-  have hD : hasseDeriv k (∑ i ∈ s, a i • rescale (x i) (exp K)) =
-      ∑ i ∈ s, (a i * (x i ^ k / k !)) • rescale (x i) (exp K) := by
-    simp only [map_sum, map_smul, hasseDeriv_rescale_exp, smul_smul, map_inv₀, map_natCast,
-      div_eq_mul_inv, mul_comm (x _ ^ k)]
-  rw [hD, IsRestricted.evalAt_sum _ (fun i hi ↦ (isRestricted_rescale_exp hc (hxc i hi)).smul _) hy]
-  refine sum_congr rfl fun i hi ↦ ?_
-  rw [IsRestricted.evalAt_smul (isRestricted_rescale_exp hc (hxc i hi)) _ hy, evalAt_rescale,
-    evalAt_exp, smul_eq_mul, smul_eq_mul, mul_comm (x i) y]
-
-end PowerSeries
-
 open PowerSeries
 
 namespace TauCeti
 
-/-- If `Φ(z) = ∑ᵢ aᵢ exp(z xᵢ)` has vanishing derivatives `Φ⁽ᵗ⁾(y) = ∑ᵢ aᵢ xᵢ ^ t exp(y xᵢ)` for
-`t < T` at a point `y` of the closed disc of radius `c`, then so do the Hasse derivatives of the
-exponential polynomial `∑ᵢ aᵢ exp(xᵢX)` at `y`. -/
-private theorem evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero (hc : 0 ≤ c)
-    (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {y : K} (hy : ‖y‖ ≤ c) {T : ℕ}
-    (hzero : ∀ t < T, ∑ i ∈ s, a i * x i ^ t * NormedSpace.exp (y * x i) = 0) {t : ℕ}
-    (ht : t < T) :
-    (hasseDeriv t (∑ i ∈ s, a i • rescale (x i) (exp K))).evalAt y = 0 := by
-  rw [evalAt_hasseDeriv_sum_smul_rescale_exp hc hxc t hy]
-  -- the divided derivative is the derivative divided by the nonzero integer `t!`
-  have h : ∑ i ∈ s, a i * (x i ^ t / t !) * NormedSpace.exp (y * x i) =
-      (t ! : K)⁻¹ * ∑ i ∈ s, a i * x i ^ t * NormedSpace.exp (y * x i) := by
-    rw [mul_sum]
-    exact sum_congr rfl fun i _ ↦ by ring
-  rw [h, hzero t ht, mul_zero]
+/-- **Interpolation on a closed disc with pointwise multiplicities.** If the ordinary
+exponential derivative sums vanish to order `T b` at every grid point `b`, the divided
+derivative at any point of the disc satisfies the Schwarz product bound. Each exponent
+`T b - k` uses natural-number subtraction, truncated at zero. -/
+theorem norm_sum_mul_exp_le_mul_prod_pow (hc : 0 < c)
+    (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {A : ℝ} (hA : 0 ≤ A)
+    (ha : ∀ i ∈ s, ‖a i‖ ≤ A) {g : Finset K} {T : K → ℕ}
+    (hg : ∀ b ∈ g, ‖b‖ ≤ c)
+    (hzero : ∀ b ∈ g, ∀ t < T b, ∑ i ∈ s, a i * x i ^ t * NormedSpace.exp (b * x i) = 0)
+    (k : ℕ) {z : K} (hz : ‖z‖ ≤ c) :
+    ‖∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (z * x i)‖ ≤
+      c⁻¹ ^ k * A * ∏ b ∈ g, (‖z - b‖ / c) ^ (T b - k) := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  have hF := isRestricted_sum_smul_rescale_exp s a x hc.le hxc
+  have h := hF.norm_evalAt_hasseDeriv_le_gaussNorm_mul_prod_pow (L := K) hc hg
+    (fun b hb t ht ↦ (evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero_iff hxc t (hg b hb)).mpr
+      (hzero b hb t ht)) k hz
+  rw [evalAt_hasseDeriv_sum_smul_rescale_exp hxc k hz] at h
+  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h
+  exact h.trans (mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left
+      (gaussNorm_sum_smul_rescale_exp_le s a x hc.le (fun i hi ↦ (hxc i hi).le) hA ha)
+      (by positivity)) (prod_nonneg fun _ _ ↦ by positivity))
 
 /-- **Interpolation of a p-adic exponential polynomial on a grid of `p`-adic integers.** Let `K`
 be a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius with `‖xᵢ‖ c < p ^ (-1 / (p - 1))`
@@ -113,7 +102,9 @@ integers, `∑ᵢ aᵢ xᵢ ^ t exp(b xᵢ) = 0` for `t < T`, then for every `k`
 
 ```text
 ‖∑ᵢ aᵢ (xᵢ ^ k / k!) exp(z xᵢ)‖ ≤ c⁻ᵏ * A * (‖∏_{b ∈ g} (z - b)‖ / c ^ #g) ^ (T - k).
-``` -/
+```
+
+Here `T - k` is natural-number subtraction, truncated at zero. -/
 theorem norm_sum_mul_exp_le_mul_norm_prod (hc : 1 ≤ c)
     (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {A : ℝ} (hA : 0 ≤ A)
     (ha : ∀ i ∈ s, ‖a i‖ ≤ A) {g : Finset ℤ_[p]} {T : ℕ}
@@ -122,27 +113,35 @@ theorem norm_sum_mul_exp_le_mul_norm_prod (hc : 1 ≤ c)
     (k : ℕ) (z : ℤ_[p]) :
     ‖∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (algebraMap ℚ_[p] K z * x i)‖ ≤
       c⁻¹ ^ k * A * (‖∏ b ∈ g, (z - b)‖ / c ^ g.card) ^ (T - k) := by
-  have hc0 : 0 ≤ c := zero_le_one.trans hc
-  have hb (b : ℤ_[p]) : ‖algebraMap ℚ_[p] K b‖ ≤ c := (PadicInt.norm_algebraMap_le_one b).trans hc
-  have hF := isRestricted_sum_smul_rescale_exp s a x hc0 hxc
-  have h := hF.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_prod hc (s := g) (T := T)
-    (fun b hb' _ ht ↦
-      evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero hc0 hxc (hb b) (hzero b hb') ht) k z
-  rw [evalAt_hasseDeriv_sum_smul_rescale_exp hc0 hxc k (hb z)] at h
-  refine h.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ (by positivity))
-    (by positivity))
-  exact gaussNorm_sum_smul_rescale_exp_le s a x hc0 (fun i hi ↦ (hxc i hi).le) hA ha
+  classical
+  have hb (b : ℤ_[p]) : ‖algebraMap ℚ_[p] K b‖ ≤ c :=
+    (PadicInt.norm_algebraMap_le_one b).trans hc
+  have hinj : Function.Injective fun b : ℤ_[p] ↦ algebraMap ℚ_[p] K b := fun y z h ↦
+    Subtype.ext ((algebraMap ℚ_[p] K).injective h)
+  have hdist (b : ℤ_[p]) :
+      ‖algebraMap ℚ_[p] K z - algebraMap ℚ_[p] K b‖ = ‖z - b‖ := by
+    rw [← map_sub, ← PadicInt.coe_sub, norm_algebraMap', ← PadicInt.norm_def]
+  have h := norm_sum_mul_exp_le_mul_prod_pow (zero_lt_one.trans_le hc) hxc hA ha
+    (g := g.image fun b : ℤ_[p] ↦ algebraMap ℚ_[p] K b) (T := fun _ ↦ T)
+    (forall_mem_image.mpr fun b _ ↦ hb b) (by simpa using hzero) k (hb z)
+  refine h.trans_eq ?_
+  rw [prod_image hinj.injOn]
+  simp only [hdist]
+  rw [prod_pow, prod_div_distrib, prod_const, ← norm_prod]
 
 /-- **Interpolation of a p-adic exponential polynomial on the integers not divisible by `q`.**
 Let `K` be a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius with
 `‖xᵢ‖ c < p ^ (-1 / (p - 1))` for every frequency `xᵢ`, `A ≥ 0` a bound for the coefficients
-`‖aᵢ‖`, and `q` an integer prime to `p`. If `Φ(z) = ∑ᵢ aᵢ exp(z xᵢ)` vanishes to order `T` at every
+`‖aᵢ‖`, and `q` a positive integer prime to `p`. If `Φ(z) = ∑ᵢ aᵢ exp(z xᵢ)` vanishes to order
+`T` at every
 integer `0 ≤ j < N` not divisible by `q`, a grid of `S` points, then for every `k` and every
 `p`-adic integer `z`
 
 ```text
 ‖∑ᵢ aᵢ (xᵢ ^ k / k!) exp(z xᵢ)‖ ≤ c⁻ᵏ * A * (‖⌊N / q⌋!‖ ^ (q - 1) / c ^ S) ^ (T - k).
-``` -/
+```
+
+Here `T - k` is natural-number subtraction, truncated at zero. -/
 theorem norm_sum_mul_exp_le_mul_norm_factorial_pow (hc : 1 ≤ c)
     (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {A : ℝ} (hA : 0 ≤ A)
     (ha : ∀ i ∈ s, ‖a i‖ ≤ A) {q : ℕ} (hq : p.Coprime q) {N T : ℕ}
@@ -152,17 +151,18 @@ theorem norm_sum_mul_exp_le_mul_norm_factorial_pow (hc : 1 ≤ c)
     ‖∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (algebraMap ℚ_[p] K z * x i)‖ ≤
       c⁻¹ ^ k * A *
         (‖((N / q)! : ℤ_[p])‖ ^ (q - 1) / c ^ ((range N).filter (¬q ∣ ·)).card) ^ (T - k) := by
-  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
-  have hc0 : 0 ≤ c := zero_le_one.trans hc
-  have hF := isRestricted_sum_smul_rescale_exp s a x hc0 hxc
-  have h := hF.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_factorial_pow hc hq (N := N) (T := T)
-    (fun j _ hqj _ ht ↦ evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero hc0 hxc
-      ((IsUltrametricDist.norm_natCast_le_one K j).trans hc) (hzero j ‹_› hqj) ht)
-    k z
-  rw [evalAt_hasseDeriv_sum_smul_rescale_exp hc0 hxc k
-    ((PadicInt.norm_algebraMap_le_one z).trans hc)] at h
-  refine h.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ (by positivity))
-    (by positivity))
-  exact gaussNorm_sum_smul_rescale_exp_le s a x hc0 (fun i hi ↦ (hxc i hi).le) hA ha
+  classical
+  have hinj : Set.InjOn (Nat.cast : ℕ → ℤ_[p]) ((range N).filter (¬q ∣ ·) : Set ℕ) :=
+    Nat.cast_injective.injOn
+  have h := norm_sum_mul_exp_le_mul_norm_prod hc hxc hA ha
+    (g := ((range N).filter (¬q ∣ ·)).image (Nat.cast : ℕ → ℤ_[p])) (T := T)
+    (fun b hb ↦ by
+      obtain ⟨j, hj, rfl⟩ := mem_image.mp hb
+      rw [mem_filter, mem_range] at hj
+      simpa using hzero j hj.1 hj.2) k z
+  rw [prod_image hinj, card_image_of_injOn hinj] at h
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  gcongr
+  exact PadicInt.norm_prod_filter_not_dvd_sub_le z hq N
 
 end TauCeti

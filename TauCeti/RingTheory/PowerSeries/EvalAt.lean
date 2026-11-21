@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Analytic.OfScalars
-public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
@@ -68,8 +67,6 @@ coefficient rings here may have nilpotents.
   together.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
-* `PowerSeries.evalAt_exp`: the value of the formal exponential at `b` is `NormedSpace.exp b`,
-  whether or not its series converges there.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm` and `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm`:
   the Gauss-norm bound in an ultrametric algebra, in particular for restricted series.
@@ -192,20 +189,6 @@ theorem commute_evalAt [IsTopologicalSemiring A] [T2Space A] (f : R⟦X⟧) (b :
   Commute.tsum_right _ fun n ↦ ((Commute.refl b).pow_right n).smul_right _
 
 end Semiring
-
-section Exp
-
-/-- The formal exponential evaluates to `NormedSpace.exp`: both are the sum `∑ bⁿ / n!`. Neither
-side assumes convergence, so the identity also holds for the junk value of a divergent sum. -/
-@[simp]
-theorem evalAt_exp {R A : Type*} [CommRing R] [Algebra ℚ R] [Ring A] [Algebra R A] [Algebra ℚ A]
-    [IsScalarTower ℚ R A] [TopologicalSpace A] [IsTopologicalRing A] (b : A) :
-    (exp R).evalAt b = NormedSpace.exp b := by
-  rw [evalAt_def, NormedSpace.exp_eq_tsum_rat]
-  refine tsum_congr fun n ↦ ?_
-  rw [coeff_exp, algebraMap_smul, one_div]
-
-end Exp
 
 section Ring
 
