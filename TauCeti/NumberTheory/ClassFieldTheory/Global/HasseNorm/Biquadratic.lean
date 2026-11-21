@@ -322,7 +322,7 @@ private theorem notMem_range_algebraMap_adjoin_simple (hs : s ^ 2 = 13) (ht : t 
   rintro ⟨f, hf⟩
   have htop : ℚ⟮s⟯ = ⊤ := by
     rw [eq_top_iff, ← hst, adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨mem_adjoin_simple_self ℚ s, hf ▸ f.2⟩
+    exact ⟨mem_adjoin_simple_self ℚ s, hf ▸ f.property⟩
   have hF := finrank_adjoin_simple_eq_two hs
   rw [htop, IntermediateField.finrank_top', finrank_eq_four hs ht hst] at hF
   omega

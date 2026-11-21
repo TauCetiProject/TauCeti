@@ -76,8 +76,9 @@ theorem isUnit_holomorphyRing_iff {S : Set (Place k F)} {x : holomorphyRing S}
     have hinv : ((u⁻¹ : (holomorphyRing S)ˣ) : F) ≠ 0 := by simp
     have hmul := congrArg (fun y : holomorphyRing S ↦ P.ord (y : F)) u.mul_inv
     simp only [Subalgebra.coe_mul, Subalgebra.coe_one, P.ord_one, P.ord_mul hx hinv] at hmul
-    have h₁ := mem_holomorphyRing_iff_forall_ord_nonneg.mp (u : holomorphyRing S).2 P hP
-    have h₂ := mem_holomorphyRing_iff_forall_ord_nonneg.mp (u⁻¹ : (holomorphyRing S)ˣ).1.2 P hP
+    have h₁ := mem_holomorphyRing_iff_forall_ord_nonneg.mp (u : holomorphyRing S).property P hP
+    have h₂ := mem_holomorphyRing_iff_forall_ord_nonneg.mp (u⁻¹ : (holomorphyRing S)ˣ).val.property
+        P hP
     omega
   · have hmem : (x : F)⁻¹ ∈ holomorphyRing S := mem_holomorphyRing_iff_forall_ord_nonneg.mpr
       fun P hP ↦ by rw [P.ord_inv, h P hP, neg_zero]

@@ -50,6 +50,8 @@ the map sends an orthonormal two-frame to its first vector: for `𝕜 = ℂ` thi
   `k + 1 + d r < d (N + 1)`; `TauCeti.finiteOrthonormalFrame.subsingleton_homotopyGroup_real` and
   `TauCeti.finiteOrthonormalFrame.subsingleton_homotopyGroup_complex` are the cases
   `k + r < N` over `ℝ` and `k ≤ 2 (N - r)` over `ℂ`.
+* `TauCeti.finiteOrthonormalFrame.nontrivial_homotopyGroup_oneFrame`: `π_(N-1)(V_1(ℝ^N))` is
+  nontrivial for `N ≥ 3`.
 * `TauCeti.finiteOrthonormalFrame.pathConnectedSpace`: `V_r(𝕜^N)` is path-connected for `r < N`,
   and `TauCeti.finiteOrthonormalFrame.pathConnectedSpace_complex`: `V_r(ℂ^N)` is path-connected
   for `r ≤ N`.
@@ -183,6 +185,15 @@ theorem subsingleton_homotopyGroup_complex {M : Type*} (h : Nat.card M ≤ 2 * (
     Subsingleton (HomotopyGroup M (finiteOrthonormalFrame ℂ r N) f) := by
   have hr : r ≤ N := nonempty_iff_le.1 ⟨f⟩
   exact subsingleton_homotopyGroup (by simp only [Complex.finrank_real_complex]; omega) f
+
+/-- The `(N - 1)`-th homotopy group of `V₁(ℝ^N) ≅ S^(N-1)` is nontrivial for `N ≥ 3`, modelled on
+any finite index type `M` of `N - 1` cube directions. -/
+theorem nontrivial_homotopyGroup_oneFrame {k : ℕ} {M : Type*} [Finite M] (hM : Nat.card M = k + 2)
+    (b : finiteOrthonormalFrame ℝ 1 (k + 3)) :
+    Nontrivial (HomotopyGroup M (finiteOrthonormalFrame ℝ 1 (k + 3)) b) := by
+  have := nontrivial_homotopyGroup_sphere (n := k) (by simp) (sphereHomeomorph ℝ (k + 3) b)
+  exact ((HomotopyGroup.homeomorphEquiv (sphereHomeomorph ℝ (k + 3)) b).trans
+    (HomotopyGroup.congrEquiv (Finite.equivFinOfCardEq hM))).nontrivial
 
 /-- For `r < N`, the Stiefel manifold `V_r(𝕜^N)` is path-connected. -/
 theorem pathConnectedSpace (h : r < N) : PathConnectedSpace (finiteOrthonormalFrame 𝕜 r N) := by
