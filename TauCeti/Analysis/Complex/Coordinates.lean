@@ -113,6 +113,18 @@ theorem dist_mul_sub_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s - h * I)) (v * s
   have := dist_mul_add_mul_I v s (-h)
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
 
+/-- The real-linear map `z ↦ (z.re : ℂ)` is not `ℂ`-linear, so it is not the restriction of
+scalars of `v ↦ v * w` for any `w : ℂ`. -/
+theorem ofRealCLM_comp_reCLM_ne_toSpanSingleton_restrictScalars (w : ℂ) :
+    ofRealCLM ∘L reCLM ≠ (ContinuousLinearMap.toSpanSingleton ℂ w).restrictScalars ℝ := by
+  intro h
+  have h1 : (1 : ℂ) = w := by
+    simpa using congrArg (fun L : ℂ →L[ℝ] ℂ ↦ L 1) h
+  have hI : (0 : ℂ) = I * w := by
+    simpa using congrArg (fun L : ℂ →L[ℝ] ℂ ↦ L I) h
+  rw [← h1, mul_one] at hI
+  exact I_ne_zero hI.symm
+
 end Complex
 
 namespace TauCeti

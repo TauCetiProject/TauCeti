@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DeRham.PathIntegral
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
@@ -24,8 +25,10 @@ Equivalently, the monodromy of the covering along `γ` translates values by the 
 
 The integral is additive under concatenation (`TauCeti.pathClassIntegral_trans`), linear in the
 form (`TauCeti.pathClassIntegral_smul_add_smul`), equal to the endpoint difference of a primitive
-for exact forms (`TauCeti.pathClassIntegral_mextDeriv_ofFunction`), and equal to the line integral
-`TauCeti.pathIntegral` along `C¹` curves (`TauCeti.pathClassIntegral_mk_eq_pathIntegral`).
+for exact forms (`TauCeti.pathClassIntegral_mextDeriv_ofFunction`), equal to the line integral
+`TauCeti.pathIntegral` along `C¹` curves (`TauCeti.pathClassIntegral_mk_eq_pathIntegral`), and
+equal to the general continuous path integral `TauCeti.continuousPathIntegral` for forms with local
+primitives (`TauCeti.continuousPathIntegral_eq_pathClassIntegral`).
 
 On loops at `x` it is the **period homomorphism** `TauCeti.periodHom φ x` from the fundamental
 group to the coefficients. For smooth real closed forms it only depends on the de Rham class, and on
@@ -45,6 +48,8 @@ is the subgroup of loops lifting to loops, so this decides which covers make a c
 
 * `TauCeti.pathClassIntegral φ γ`: the integral of a closed `C¹` `1`-form along a homotopy class
   of paths.
+* `TauCeti.continuousPathIntegral_eq_pathClassIntegral`: for closed `C¹` `1`-forms,
+  `TauCeti.continuousPathIntegral` agrees with `TauCeti.pathClassIntegral`.
 * `TauCeti.periodHom φ x`: the period homomorphism of `φ` on the fundamental group at `x`.
 * `TauCeti.mem_exactForms_one_iff_periodHom_eq_zero`: a closed smooth real `1`-form on a connected
   manifold is exact exactly when its periods vanish.
@@ -252,6 +257,20 @@ theorem pathClassIntegral_mk_eq_of_apply_eq {x' y' : M} (γ : Path x y) (γ' : P
   obtain rfl : y = y' := by simpa using h 1
   rw [Path.ext (funext h)]
 
+/-- **Agreement with `continuousPathIntegral`.** For a closed `C¹` `1`-form `φ`, the continuous
+path integral along any continuous path `γ` agrees with `pathClassIntegral φ (.mk γ)`. -/
+theorem continuousPathIntegral_eq_pathClassIntegral (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) (γ : Path x y) :
+    continuousPathIntegral φ γ = pathClassIntegral φ (.mk γ) := by
+  have hloc : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U := fun p ↦ by
+    obtain ⟨g, -, U, hpU, hgU⟩ := exists_contMDiff_isPrimitiveOn le_rfl hφ hclosed p
+    exact ⟨g, U, hpU, hgU⟩
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hloc
+  obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts γ.toContinuousMap
+    (PrimitiveSpace.graph φ 0 x) (by simp)
+  rw [continuousPathIntegral_eq_sub_of_lift hloc Γ.continuous (fun t ↦ congrFun hΓγ t),
+    pathClassIntegral_mk_eq_sub hφ hclosed Γ.continuous (fun t ↦ congrFun hΓγ t)]
+
 /-! ### Linearity in the form -/
 
 /-- Integration along path classes is linear in the closed `C¹` form. -/
@@ -368,6 +387,13 @@ theorem periodHom_ofMul_eq_pathIntegral (hφ : IsSmoothForm I 1 φ) (hclosed : m
     {c : ℝ → M} (hc : ContMDiff 𝓘(ℝ, ℝ) I 1 c) {γ : Path x x} (hγ : ∀ t : unitInterval, γ t = c t) :
     periodHom φ x (Additive.ofMul (.of (.mk γ))) = pathIntegral φ c 0 1 :=
   pathClassIntegral_mk_eq_pathIntegral hφ hclosed hc hγ
+
+/-- For a closed `C¹` `1`-form `φ`, the continuous path integral along a continuous loop `γ` at
+`x` equals the period homomorphism evaluated on the homotopy class of `γ`. -/
+theorem continuousPathIntegral_eq_periodHom (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) (γ : Path x x) :
+    continuousPathIntegral φ γ = periodHom φ x (Additive.ofMul (.of (.mk γ))) :=
+  continuousPathIntegral_eq_pathClassIntegral hφ hclosed γ
 
 /-! ### Naturality under pullback -/
 
