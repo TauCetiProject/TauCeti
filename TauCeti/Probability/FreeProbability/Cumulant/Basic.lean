@@ -127,6 +127,18 @@ theorem partitionMoment_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a b 
   refine prod_congr rfl fun B hB => ?_
   rw [List.map_congr_left fun x hx => h (P.le hB ((mem_sort _).1 hx))]
 
+/-- Pulling a functional back along a multiplicative map is equivalent to mapping each letter
+forward. No preservation of the unit is needed, since every block is nonempty. -/
+theorem partitionMoment_comp_mulHom {B F : Type*} [Monoid B] [FunLike F A B] [MulHomClass F A B]
+    (φ : B → R) (f : F) (a : α → A) (P : Finpartition s) :
+    partitionMoment (φ ∘ f) a P = partitionMoment φ (f ∘ a) P := by
+  rw [partitionMoment_def, partitionMoment_def]
+  refine prod_congr rfl fun D hD => ?_
+  rw [Function.comp_apply, ← List.map_map, List.prod_hom_nonempty f]
+  obtain ⟨i, hi⟩ := P.nonempty_of_mem_parts hD
+  have hi' : i ∈ D.sort := (mem_sort _).2 hi
+  simpa using List.ne_nil_of_mem (List.mem_map_of_mem hi' : a i ∈ D.sort.map a)
+
 /-- The block moment of a constant word `(x, …, x)` is the product over the parts `B` of the
 moments `φ (x ^ #B)`. -/
 @[simp]
@@ -165,6 +177,13 @@ theorem partitionCumulant_def (φ : A → R) (a : α → A) (π : NoncrossingPar
     partitionCumulant φ a π = ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.1 := by
   rw [partitionCumulant]
 
+/-- Pulling a functional back along a multiplicative map transports partition cumulants
+by mapping every letter forward. -/
+theorem partitionCumulant_comp_mulHom {B F : Type*} [Monoid B] [FunLike F A B] [MulHomClass F A B]
+    (φ : B → R) (f : F) (a : α → A) (π : NoncrossingPartition s) :
+    partitionCumulant (φ ∘ f) a π = partitionCumulant φ (f ∘ a) π := by
+  simp_rw [partitionCumulant_def, partitionMoment_comp_mulHom]
+
 /-- The *free cumulant* `κ_s(a)` of the word `(a_i)_{i ∈ s}`: the cumulant of the partition of
 `s` into one part. For `s = Finset.univ : Finset (Fin n)` with `n ≥ 1` this is the `n`-th free
 cumulant `κ_n(a₁, …, aₙ)`; for `s = ∅` it is the meaningless value `1`. -/
@@ -185,6 +204,13 @@ theorem partitionCumulant_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a 
 theorem freeCumulant_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a b s) :
     freeCumulant φ a s = freeCumulant φ b s := by
   rw [freeCumulant_def, freeCumulant_def, partitionCumulant_congr φ h]
+
+/-- Pulling a functional back along a multiplicative map is equivalent to mapping every
+argument of the free cumulant forward. -/
+theorem freeCumulant_comp_mulHom {B F : Type*} [Monoid B] [FunLike F A B] [MulHomClass F A B]
+    (φ : B → R) (f : F) (a : α → A) (s : Finset α) :
+    freeCumulant (φ ∘ f) a s = freeCumulant φ (f ∘ a) s := by
+  simp only [freeCumulant_def, partitionCumulant_comp_mulHom]
 
 variable (φ : A → R) (a : α → A)
 
@@ -482,14 +508,6 @@ theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o Noncrossing
   rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
 
 end OrderIso
-
-/-- Pulling a functional back along a monoid homomorphism is equivalent to mapping every
-argument forward. No linearity of the functional is required. -/
-theorem freeCumulant_comp_monoidHom {B : Type*} [Monoid A] [Monoid B] [CommRing R]
-    (φ : B → R) (f : A →* B) (a : α → A) (s : Finset α) :
-    freeCumulant (φ ∘ f) a s = freeCumulant φ (f ∘ a) s := by
-  simp [freeCumulant_def, partitionCumulant_def, partitionMoment_def,
-    Function.comp_def, map_list_prod, List.map_map]
 
 /-- Cumulants agree when their tuples list exactly the same arguments, even when the tuple
 lengths are written differently. -/
