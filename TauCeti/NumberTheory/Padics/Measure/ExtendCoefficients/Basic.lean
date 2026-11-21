@@ -240,11 +240,17 @@ private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (
     exact LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap K)
       (h := LocallyConstant.toContinuousMap_injective) φ
   have hd : DenseRange (locallyConstantTests (X := X) K).subtypeL := by
-    rw [Submodule.coe_subtypeL]
-    exact LocallyConstant.denseRange_toContinuousMapLinearMap_range_subtype K
+    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
+    have hdense : Dense (locallyConstantTests (X := X) K : Set C(X, K)) := by
+      have hcoe : ⇑(LocallyConstant.toContinuousMapLinearMap K) =
+          fun φ : LocallyConstant X K ↦ (φ : C(X, K)) :=
+        funext (LocallyConstant.toContinuousMapLinearMap_apply K)
+      rw [locallyConstantTests, LinearMap.coe_range, hcoe]
+      exact LocallyConstant.denseRange_toContinuousMap
+    exact hdense.isDenseInducing_val.dense
   have he : IsUniformInducing (locallyConstantTests (X := X) K).subtypeL := by
     rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
-    exact ⟨uniformity_subtype.symm⟩
+    exact isUniformInducing_val _
   rw [← hφ, extendCoefficientsCLM, (integralOnLocallyConstantTests j μ hj).extend_eq
     (e := (locallyConstantTests (X := X) K).subtypeL)
     hd he (e φ)]
@@ -333,12 +339,12 @@ supremum norm. -/
 theorem norm_extendCoefficients_apply_le (f : C(X, K)) :
     ‖extendCoefficients j hj μ f‖ ≤ B * ‖f‖ := by
   rw [← coe_toCLMEquiv, toCLMEquiv_extendCoefficients]
-  refine (LocallyConstant.denseRange_toContinuousMapLinearMap K).induction_on
+  refine (LocallyConstant.denseRange_toContinuousMap (X := X) (V := K)).induction_on
     (p := fun g : C(X, K) ↦ ‖extendCoefficientsCLM j μ hj g‖ ≤ B * ‖g‖) f
     (isClosed_le ((extendCoefficientsCLM j μ hj).continuous.norm)
       (continuous_const.mul continuous_norm)) ?_
   intro φ
-  rw [extendCoefficientsCLM_apply_test]
+  rw [← LocallyConstant.toContinuousMapLinearMap_apply K, extendCoefficientsCLM_apply_test]
   exact norm_locallyConstantIntegral_le j μ hj φ
 
 /-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
@@ -419,25 +425,28 @@ omit [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K]
 private theorem exists_apply_comp_eq_of_mem_range (hje : Topology.IsEmbedding j) (ν : D(X, K))
     (hmem : ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j) :
     ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let J : C(O, K) := ⟨j, hje.continuous⟩
-  have hspec (f : C(X, O)) : j (hmem f).choose = ν (J.comp f) := (hmem f).choose_spec
-  let L : C(X, O) →ₗ[O] O :=
-    { toFun f := (hmem f).choose
-      map_add' f g := hje.injective <| (hspec _).trans <| by
-        have hJ : J.comp (f + g) = J.comp f + J.comp g := by
-          ext
-          simp [J]
-        simp [hspec, hJ]
-      map_smul' a f := hje.injective <| (hspec _).trans <| by
-        have hJ : J.comp (a • f) = j a • J.comp f := by
-          ext
-          simp [J]
-        simp [hspec, hJ] }
-  have hLj (f : C(X, O)) : j (L f) = ν (J.comp f) := hspec f
+  let := j.toAlgebra
+  let : ContinuousSMul O K := continuousSMul_of_algebraMap O K hje.continuous
+  let J : O →L[O] K := ⟨Algebra.linearMap O K, hje.continuous⟩
+  let F : C(X, O) →L[O] K :=
+    ((toCLMEquiv ν).restrictScalars O).comp (J.compLeftContinuous O X)
+  have hF (f : C(X, O)) : F f = ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) := by
+    have hcomp : J.compLeftContinuous O X f = (⟨j, hje.continuous⟩ : C(O, K)).comp f :=
+      (ContinuousLinearMap.compLeftContinuous_apply O X J f).trans
+        (AddMonoidHom.compLeftContinuous_apply X J.toLinearMap.toAddMonoidHom J.continuous f)
+    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+      coe_toCLMEquiv, hcomp]
+  have hmem' (f : C(X, O)) : F.toLinearMap f ∈ (Algebra.linearMap O K).range := by
+    rw [ContinuousLinearMap.coe_coe, hF]
+    exact hmem f
+  let L := F.toLinearMap.codRestrictOfInjective (Algebra.linearMap O K) hje.injective hmem'
+  have hLj (f : C(X, O)) : j (L f) = F f :=
+    LinearMap.codRestrictOfInjective_comp_apply F.toLinearMap (Algebra.linearMap O K)
+      hje.injective hmem' f
   have hL : Continuous L := hje.continuous_iff.mpr <| by
-    simpa only [Function.comp_def, hLj] using (map_continuous ν).comp (continuous_postcomp J)
+    simpa only [Function.comp_def, hLj] using F.continuous
   exact ⟨toCLMEquiv.symm ⟨L, hL⟩, fun f ↦ by
-    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj]⟩
+    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj, hF]⟩
 
 /-- Extension of coefficients along an injective `j` is injective. -/
 theorem extendCoefficients_injective [T2Space O] (hinj : Function.Injective j) :

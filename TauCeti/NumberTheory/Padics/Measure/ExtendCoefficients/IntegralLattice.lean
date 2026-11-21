@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Basic
-import Mathlib.Analysis.Normed.Operator.Completeness
+import Mathlib.Analysis.Normed.Module.WeakDual
 
 /-!
 # Integral lattices of measures
@@ -53,15 +53,14 @@ theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedS
       Set.ext fun _ ↦ (mem_range_extendCoefficients_iff hj hje hjr).trans
         mem_closedBall_zero_iff.symm
     rw [hball]
-    apply isClosed_induced_iff'.2
-    intro μ hμ
-    apply ContinuousLinearMap.is_weak_closed_closedBall 0 1
-    have hcoe (ν : D(X, K)) : ⇑(toCLMEquiv ν) = (fun f ↦ ν f) :=
-      funext (coe_toCLMEquiv ν)
-    rw [hcoe]
-    refine closure_mono ?_ hμ
-    rintro _ ⟨ν, hν, rfl⟩
-    exact ⟨toCLMEquiv ν, hν, hcoe ν⟩
+    let : TopologicalSpace D(X, K) := WeakTopology
+    have heval : Continuous (fun μ : D(X, K) ↦ fun f : C(X, K) ↦ μ f) :=
+      continuous_induced_dom
+    exact (WeakDual.isClosed_closedBall (𝕜 := K) (E := C(X, K)) 0 1).preimage
+      (WeakDual.continuous_of_continuous_eval
+        (g := fun μ : D(X, K) ↦ StrongDual.toWeakDual (toCLMEquiv μ)) fun f ↦
+        ((continuous_apply f).comp heval).congr fun μ ↦ by
+          rw [Function.comp_apply, StrongDual.toWeakDual_apply, coe_toCLMEquiv])
 
 variable {p : ℕ} [Fact p.Prime] [T2Space X] [TotallyDisconnectedSpace X]
 
