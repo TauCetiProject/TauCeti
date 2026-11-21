@@ -20,8 +20,8 @@ exponentiation. For a free group `F` it is Lyndon's free `ℤ[t]`-group `F^{ℤ[
 
 ## Main definitions
 
-* `TauCeti.LimitGroup.LyndonCompletion G`: the tensor completion of `G` over `ℤ[t]`, with its
-  exponentiation by `ℤ[t]` as a global instance.
+* `TauCeti.ExponentialGroup.LyndonCompletion G`: the tensor completion of `G` over `ℤ[t]`, with
+  its exponentiation by `ℤ[t]` as a global instance.
 
 ## Implementation notes
 
@@ -31,11 +31,16 @@ API of the tensor completion applies to it at `A = ℤ[t]`:
   `TauCeti.ExponentialGroup.Completion.of (A := ℤ[X])`;
 * the universal property is `TauCeti.ExponentialGroup.Completion.isCompletion_of`;
 * every group embeds in its Lyndon completion:
-  `TauCeti.ExponentialGroup.Completion.of_injective (Polynomial.evalRingHom 1)`;
+  `TauCeti.ExponentialGroup.Completion.of_injective (Polynomial.evalRingHom 1)`; the evaluation
+  `Polynomial.evalRingHom` needs `import Mathlib.Algebra.Polynomial.Eval.Defs`, which this file
+  does not re-export;
 * generation by the image of `G` under exponentiation is
   `TauCeti.ExponentialGroup.Completion.eq_top_of_range_le`;
 * Lyndon's completion of the infinite cyclic group is the additive group of `ℤ[t]`, by the
-  comparison isomorphism `isCompletion_of.mulEquiv (IsExponentialGroup.isCompletion_intCast ℤ[X])`.
+  comparison isomorphism `isCompletion_of.mulEquiv (IsExponentialGroup.isCompletion_intCast ℤ[X])`
+  onto `Multiplicative ℤ[X]`. Its statement uses the exponentiation of `Multiplicative ℤ[X]` by
+  `ℤ[X]`, a scoped instance activated by
+  `open scoped TauCeti.IsExponentialGroup.MultiplicativePow`.
 
 The exponentiation of the tensor completion is a scoped instance, since for the exponents `ℕ` and
 `ℤ` it would compete with the usual powers of a group; the exponents `ℤ[t]` compete with nothing,
@@ -56,12 +61,12 @@ open Polynomial
 
 universe u
 
-namespace TauCeti.LimitGroup
+namespace TauCeti.ExponentialGroup
 
 /-- Lyndon's completion `G^{ℤ[t]}` of a group `G`: its tensor completion over the ring `ℤ[t]` of
 integer polynomials. For a free group it is Lyndon's free `ℤ[t]`-group. -/
 abbrev LyndonCompletion (G : Type u) [Group G] : Type u :=
-  ExponentialGroup.Completion ℤ[X] G
+  Completion ℤ[X] G
 
 namespace LyndonCompletion
 
@@ -69,15 +74,15 @@ variable {G : Type u} [Group G]
 
 /-- The exponentiation of Lyndon's completion by integer polynomials. -/
 noncomputable instance : Pow (LyndonCompletion G) ℤ[X] :=
-  ExponentialGroup.Completion.instPow
+  Completion.instPow
 
 /-- Lyndon's completion is a `ℤ[t]`-group. -/
 instance : IsExponentialGroup ℤ[X] (LyndonCompletion G) :=
-  ExponentialGroup.Completion.instIsExponentialGroup
+  Completion.instIsExponentialGroup
 
 /-! ### Examples: the universal property, the laws of a `ℤ[t]`-group, the infinite cyclic group -/
 
-open ExponentialGroup.Completion
+open Completion
 
 -- A homomorphism from `G` to a `ℤ[t]`-group extends uniquely to a homomorphism from the
 -- completion commuting with exponentiation.
@@ -114,4 +119,4 @@ example (x : LyndonCompletion (Multiplicative ℤ)) (p : ℤ[X]) :
 
 end LyndonCompletion
 
-end TauCeti.LimitGroup
+end TauCeti.ExponentialGroup
