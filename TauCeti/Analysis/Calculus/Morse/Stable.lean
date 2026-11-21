@@ -90,6 +90,13 @@ theorem IsNegativeGradient.value_ge_of_mem_unstableSet (hφ : IsNegativeGradient
     hfp.tendsto.comp (mem_unstableSet.mp hx)
   simpa only [_root_.Flow.map_zero_apply] using (hφ.orbit_antitone x hf).ge_of_tendsto hlim 0
 
+/-- A point in the closure of the unstable set of `p` has value at most `f p`, for a differentiable
+`f`. -/
+theorem IsNegativeGradient.value_ge_of_mem_closure_unstableSet (hφ : IsNegativeGradient φ f)
+    (hf : Differentiable ℝ f) (hx : x ∈ closure (unstableSet φ p)) : f x ≤ f p :=
+  ((isClosed_le hf.continuous continuous_const).closure_subset_iff.2 fun _ hw ↦
+    hφ.value_ge_of_mem_unstableSet hw (fun _ ↦ hf _) hf.continuous.continuousAt) hx
+
 /-- If an orbit converges to `p` in backward time and to `q` in forward time, then `f q ≤ f p`. -/
 theorem IsNegativeGradient.value_le_of_mem_unstableSet_inter_stableSet
     (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))

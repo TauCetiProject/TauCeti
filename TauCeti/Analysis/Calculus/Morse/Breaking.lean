@@ -45,6 +45,10 @@ unstable sets.
   and its time reversal
   `TauCeti.IsNondegenerateCriticalPoint.eventually_exists_mem_closure_unstableSet_inter_stableSet`:
   limits of trajectories break at a nondegenerate critical point.
+* `TauCeti.exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet` and its time
+  reversal `TauCeti.exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet`: when the
+  limiting orbits converge, the break produces a connecting orbit to (resp. from) another
+  nondegenerate critical point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_isChain_of_mem_closure_stableSet_inter_stableSet`
   and its time reversal: finite chains of nonconstant connecting orbits, with length bounded by
   the index drop.
@@ -179,7 +183,7 @@ variable {K : ℝ≥0}
 /-- If the closure of `Wˢ(q)` meets `Wˢ(x)` for `x ≠ q`, and every forward orbit in that
 closure converges to a nondegenerate critical point, then there is a nonconstant connecting orbit
 from `x` to another nondegenerate critical point `a`, with a point in the closure of `Wˢ(q)`. -/
-private theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
+theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) {q y : E} (hqx : q ≠ x)
     (hy : y ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
@@ -209,7 +213,7 @@ private theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSe
 
 /-- Find the preceding critical point after a break in a backward limit. This is the time-reversed
 counterpart of `exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
-private theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
+theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) {p y : E} (hpx : p ≠ x)
     (hy : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
