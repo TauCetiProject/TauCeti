@@ -148,7 +148,7 @@ theorem isTopCompl_map_orthogonal_of_isInvertible_transverseCoprod {T₀ T : E �
     · intro hy
       have hinv := hΦ.self_apply_inverse y
       simp only [transverseCoprod_apply, hy, ZeroMemClass.coe_zero, map_zero, zero_add] at hinv
-      exact hinv ▸ ((T₀.transverseCoprod V T).inverse y).2.2
+      exact hinv ▸ ((T₀.transverseCoprod V T).inverse y).2.property
     · intro hy
       have h := congrArg Prod.fst (hΦ.inverse_apply_self ((0 : V), (⟨y, hy⟩ : Wᗮ)))
       simpa using h
@@ -165,22 +165,22 @@ theorem isClosed_map_of_isInvertible_transverseCoprod {T₀ T : E →L[𝕜] F} 
 noncomputable def restrictTransverseEquiv {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
     (hΦ : (T₀.transverseCoprod V T).IsInvertible) :
     V ≃L[𝕜] V.map (T : E →ₗ[𝕜] F) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (T.restrict (q := V.map (T : E →ₗ[𝕜] F)) fun _ ↦ Submodule.mem_map_of_mem)
     (.fst 𝕜 V (V.map (T₀ : E →ₗ[𝕜] F))ᗮ ∘L (T₀.transverseCoprod V T).inverse ∘L
       (V.map (T : E →ₗ[𝕜] F)).subtypeL)
-    (fun u ↦ by
-      have h := congrArg Prod.fst (hΦ.inverse_apply_self (u, 0))
-      simpa only [comp_apply, subtypeL_apply, coe_restrict_apply, coe_fst',
-        transverseCoprod_apply, ZeroMemClass.coe_zero, add_zero] using h)
-    (fun y ↦ by
-      obtain ⟨v, hv, hTv⟩ := y.2
+    (ContinuousLinearMap.ext fun y ↦ by
+      obtain ⟨v, hv, hTv⟩ := y.property
       rw [ContinuousLinearMap.coe_coe] at hTv
       rw [← Subtype.coe_inj]
       have h := congrArg Prod.fst (hΦ.inverse_apply_self ((⟨v, hv⟩ : V), 0))
       simp only [transverseCoprod_apply, ZeroMemClass.coe_zero, add_zero, hTv] at h
-      simp only [comp_apply, subtypeL_apply, coe_fst', coe_restrict_apply, h]
+      simp only [comp_apply, subtypeL_apply, coe_fst', coe_restrict_apply, id_apply, h]
       exact hTv)
+    (ContinuousLinearMap.ext fun u ↦ by
+      have h := congrArg Prod.fst (hΦ.inverse_apply_self (u, 0))
+      simpa only [comp_apply, subtypeL_apply, coe_restrict_apply, coe_fst',
+        transverseCoprod_apply, ZeroMemClass.coe_zero, add_zero, id_apply] using h)
 
 /-- As a continuous linear map, `restrictTransverseEquiv` is the restriction of `T` to `V`. -/
 theorem toContinuousLinearMap_restrictTransverseEquiv {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
@@ -255,7 +255,7 @@ theorem quotientMapEquivOrthogonal_apply_mk {T₀ T : E →L[𝕜] F} {V : Submo
   have hsub : y - (((T₀.transverseCoprod V T).inverse y).2 : F) =
       T ((T₀.transverseCoprod V T).inverse y).1 := (eq_sub_of_add_eq hinv).symm
   rw [hsub]
-  exact Submodule.mem_map_of_mem ((T₀.transverseCoprod V T).inverse y).1.2
+  exact Submodule.mem_map_of_mem ((T₀.transverseCoprod V T).inverse y).1.property
 
 /-- Kernel dimension bound when `T₀.transverseCoprod V T` is invertible and `V` has finite
 codimension. -/

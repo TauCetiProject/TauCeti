@@ -209,7 +209,7 @@ theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_comp_subtypeL_ker_adjo
     (hT : T.IsFredholm) :
     hT.orthogonalFredholmPackage.quasiInverse ∘L (T†).ker.subtypeL = 0 := by
   ext y
-  exact hT.orthogonalFredholmPackage_quasiInverse_apply_of_mem_ker_adjoint y.2
+  exact hT.orthogonalFredholmPackage_quasiInverse_apply_of_mem_ker_adjoint y.property
 
 /-- Every value of the orthogonal quasi-inverse lies in `(ker T)ᗮ`. -/
 @[simp]

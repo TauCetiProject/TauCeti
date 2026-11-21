@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Basic
-public import TauCeti.RingTheory.MvPolynomial.BlockHomogenize
+public import TauCeti.RingTheory.MvPolynomial.Block.Homogenize
 
 /-!
 # Euclidean coefficient height of block homogenizations

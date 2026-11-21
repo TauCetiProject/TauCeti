@@ -512,7 +512,7 @@ private theorem domTriangularEquiv_symm_apply_ker {T : E →L[𝕜] F}
       pkg.schurComplement T (pkg.decDom.inessentialProj (v : E)) = 0 := by
   let p := (pkg.domTriangularEquiv T).symm (v : E)
   have hp2 : p.2 = pkg.decDom.inessentialProj (v : E) := by simp [p]
-  have hv0 : T (v : E) = 0 := v.2
+  have hv0 : T (v : E) = 0 := v.property
   have hdiag := pkg.codomTriangularEquiv_apply_domTriangularEquiv hA p
   rw [(pkg.domTriangularEquiv T).apply_symm_apply, hv0, map_zero] at hdiag
   have hp1 : p.1 = 0 := hA.injective ((congrArg Prod.fst hdiag).symm.trans (map_zero _).symm)
@@ -531,7 +531,7 @@ private theorem domTriangularEquiv_inr_mem_ker {T : E →L[𝕜] F}
     (hA : (pkg.topLeftBlock T).IsInvertible) (k : (pkg.schurComplement T).ker) :
     ((pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) ∘L
         .inr 𝕜 pkg.decDom.X₁ pkg.decDom.X₀ ∘L (pkg.schurComplement T).ker.subtypeL) k ∈ T.ker := by
-  have hk0 : pkg.schurComplement T (k : pkg.decDom.X₀) = 0 := k.2
+  have hk0 : pkg.schurComplement T (k : pkg.decDom.X₀) = 0 := k.property
   apply LinearMap.mem_ker.mpr
   rw [ContinuousLinearMap.coe_coe]
   simp only [comp_apply, inr_apply, subtypeL_apply, ContinuousLinearEquiv.coe_coe]
@@ -545,24 +545,24 @@ the finite-dimensional Schur complement. -/
 noncomputable def kerEquivSchurComplementKer {T : E →L[𝕜] F}
     (hA : (pkg.topLeftBlock T).IsInvertible) :
     T.ker ≃L[𝕜] (pkg.schurComplement T).ker :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((pkg.decDom.inessentialProj ∘L T.ker.subtypeL).codRestrict (pkg.schurComplement T).ker
       (pkg.inessentialProj_mem_ker_schurComplement hA))
     (((pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) ∘L
         .inr 𝕜 pkg.decDom.X₁ pkg.decDom.X₀ ∘L (pkg.schurComplement T).ker.subtypeL).codRestrict
       T.ker (pkg.domTriangularEquiv_inr_mem_ker hA))
-    (fun v ↦ by
+    (ContinuousLinearMap.ext fun k ↦ by
       rw [← Subtype.coe_inj]
-      simp only [coe_codRestrict_apply, comp_apply, inr_apply, subtypeL_apply,
-        ContinuousLinearEquiv.coe_coe]
-      rw [← (pkg.domTriangularEquiv_symm_apply_ker hA v).1,
-        (pkg.domTriangularEquiv T).apply_symm_apply])
-    (fun k ↦ by
-      rw [← Subtype.coe_inj]
-      simp only [coe_codRestrict_apply, comp_apply, inr_apply, subtypeL_apply,
+      simp only [comp_apply, coe_codRestrict_apply, inr_apply, subtypeL_apply,
         ContinuousLinearEquiv.coe_coe, domTriangularEquiv_apply, map_add,
         FredholmDecomposition.inessentialProj_apply_left, zero_add,
-        FredholmDecomposition.inessentialProj_apply_right])
+        FredholmDecomposition.inessentialProj_apply_right, id_apply])
+    (ContinuousLinearMap.ext fun v ↦ by
+      rw [← Subtype.coe_inj]
+      simp only [comp_apply, coe_codRestrict_apply, inr_apply, subtypeL_apply,
+        ContinuousLinearEquiv.coe_coe, id_apply]
+      rw [← (pkg.domTriangularEquiv_symm_apply_ker hA v).1,
+        (pkg.domTriangularEquiv T).apply_symm_apply])
 
 /-- `kerEquivSchurComplementKer` acts by `pkg.decDom.inessentialProj`. -/
 @[simp]
@@ -597,7 +597,7 @@ from `F ⧸ range T` onto `Y₀ ⧸ range (pkg.schurComplement T)`, with inverse
 noncomputable def cokerEquivSchurComplementCoker {T : E →L[𝕜] F}
     (hA : (pkg.topLeftBlock T).IsInvertible) :
     (F ⧸ T.range) ≃L[𝕜] (pkg.decCodom.X₀ ⧸ (pkg.schurComplement T).range) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (T.range.liftQL
       ((pkg.schurComplement T).range.mkQL ∘L .snd 𝕜 pkg.decCodom.X₁ pkg.decCodom.X₀ ∘L
         (pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀))
@@ -617,11 +617,14 @@ noncomputable def cokerEquivSchurComplementCoker {T : E →L[𝕜] F}
         simp only [comp_apply, subtypeL_apply, mkQL_apply, Submodule.mkQ_apply,
           Submodule.Quotient.mk_eq_zero]
         exact pkg.coe_schurComplement_mem_range hA k))
-    (fun z ↦ by
+    (ContinuousLinearMap.ext fun w ↦ by
+      obtain ⟨y₀, rfl⟩ := (pkg.schurComplement T).range.mkQ_surjective w
+      simp)
+    (ContinuousLinearMap.ext fun z ↦ by
       obtain ⟨y, rfl⟩ := T.range.mkQ_surjective z
-      simp only [liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply,
-        ContinuousLinearMap.coe_coe, comp_apply, ContinuousLinearEquiv.coe_coe, coe_snd',
-        mkQL_apply, subtypeL_apply]
+      simp only [comp_apply, liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply,
+        ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe, coe_snd',
+        mkQL_apply, subtypeL_apply, id_apply]
       symm
       rw [Submodule.Quotient.eq]
       let q := pkg.codomTriangularEquiv T y
@@ -635,9 +638,6 @@ noncomputable def cokerEquivSchurComplementCoker {T : E →L[𝕜] F}
       apply (pkg.codomTriangularEquiv T).injective
       rw [hdiff, pkg.codomTriangularEquiv_apply_domTriangularEquiv hA, hA.self_apply_inverse,
         map_zero])
-    (fun w ↦ by
-      obtain ⟨y₀, rfl⟩ := (pkg.schurComplement T).range.mkQ_surjective w
-      simp)
 
 /-- On a quotient representative `y : F`, `cokerEquivSchurComplementCoker` takes the class of the
 second coordinate of `pkg.codomTriangularEquiv T y`. -/
