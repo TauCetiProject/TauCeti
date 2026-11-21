@@ -150,7 +150,7 @@ bigraded `K[U]`-modules. -/
 theorem bigradedUnblockedHomologyIsomorphic_of_movesTo (hG' : G'.IsKnot) (h : G.MovesTo G') :
     hG.BigradedUnblockedHomologyIsomorphic hG' K :=
   h.induction_on
-    (motive := fun A B ↦ ∀ (hA : A.2.IsKnot) (hB : B.2.IsKnot),
+    (motive := fun A B ↦ ∀ (hA : A.snd.IsKnot) (hB : B.snd.IsKnot),
       hA.BigradedUnblockedHomologyIsomorphic hB K)
     (fun h hA hB ↦ hA.bigradedUnblockedHomologyIsomorphic_of_isMove K hB h)
     (fun _ hA _ ↦ .refl hA K)

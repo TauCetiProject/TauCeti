@@ -66,7 +66,7 @@ variable (R : Type*) [CommSemiring R]
 /-- On the `2 × 2` unknot diagram, every bidegree outside the monomial cone of the two states
 `(0, 0)` and `(-1, -1)` has trivial chain piece. -/
 theorem bigradedChainMinusPiece_twoByTwo_eq_bot {g : ℤ × ℤ}
-    (hg : ¬ ((g.2 ≤ 0 ∧ g.1 = 2 * g.2) ∨ (g.2 < 0 ∧ g.1 = 2 * g.2 + 1))) :
+    (hg : ¬ ((g.snd ≤ 0 ∧ g.fst = 2 * g.snd) ∨ (g.snd < 0 ∧ g.fst = 2 * g.snd + 1))) :
     twoByTwo.bigradedChainMinusPiece R g = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro c hc

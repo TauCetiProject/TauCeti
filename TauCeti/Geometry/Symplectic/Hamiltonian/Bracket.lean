@@ -38,7 +38,10 @@ For a nondegenerate closed form on a finite-dimensional manifold, where the Pois
 `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}` and the **Jacobi identity**
 `{f, {g, k}} + {g, {k, f}} + {k, {f, g}} = 0` for `C²` functions
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket` and
-`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`).
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`). The same identity shows that
+the Hamiltonian vector fields of two functions commute at every point near which the functions
+Poisson-commute
+(`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`).
 
 ## References
 
@@ -53,7 +56,7 @@ public section
 noncomputable section
 
 open Bundle VectorField
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -86,19 +89,19 @@ theorem mvfderiv_eval₂ (hσ : σ.IsClosed) (hX : σ.IsHamiltonianVectorField f
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
   -- Extend `v` to a vector field `W` and evaluate `dσ(X, Y, W) = 0` by the invariant formula.
   -- The terms of `dσ(X, Y, W) = 0` that differentiate `σ` along the fields.
-  have hYW : (fun y ↦ σ.1 y ![Y y, W y]) = fun y ↦ mvfderiv I g y (W y) := by
+  have hYW : (fun y ↦ σ.val y ![Y y, W y]) = fun y ↦ mvfderiv I g y (W y) := by
     funext y; rw [← SmoothBundleForm.eval₂_apply, isHamiltonianVectorField_iff.1 hY y]
-  have hXW : (fun y ↦ σ.1 y ![X y, W y]) = fun y ↦ mvfderiv I f y (W y) := by
+  have hXW : (fun y ↦ σ.val y ![X y, W y]) = fun y ↦ mvfderiv I f y (W y) := by
     funext y; rw [← SmoothBundleForm.eval₂_apply, isHamiltonianVectorField_iff.1 hX y]
   have hgX : (fun y ↦ mvfderiv I g y (X y)) = fun y ↦ -SmoothBundleForm.eval₂ σ y (X y) (Y y) := by
     funext y; rw [← isHamiltonianVectorField_iff.1 hY y, SmoothBundleForm.eval₂_swap]
   have hfY : (fun y ↦ mvfderiv I f y (Y y)) = fun y ↦ SmoothBundleForm.eval₂ σ y (X y) (Y y) := by
     funext y; rw [← isHamiltonianVectorField_iff.1 hX y]
   -- The bracket terms of `dσ(X, Y, W) = 0`.
-  have hXWY : σ.1 x ![mlieBracket I X W x, Y x] = -mvfderiv I g x (mlieBracket I X W x) := by
+  have hXWY : σ.val x ![mlieBracket I X W x, Y x] = -mvfderiv I g x (mlieBracket I X W x) := by
     rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
       isHamiltonianVectorField_iff.1 hY x]
-  have hYWX : σ.1 x ![mlieBracket I Y W x, X x] = -mvfderiv I f x (mlieBracket I Y W x) := by
+  have hYWX : σ.val x ![mlieBracket I Y W x, X x] = -mvfderiv I f x (mlieBracket I Y W x) := by
     rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
       isHamiltonianVectorField_iff.1 hX x]
   have h := SmoothForm.mextDeriv_apply_two (φ := σ) hX' hY' hW
@@ -146,15 +149,15 @@ theorem isHamiltonianVectorField_mlieBracket (hσ : σ.IsClosed)
   -- `L_X σ = 0`, evaluated on `(Y, Z)` by the bracket formula.
   have hL := mlieDerivForm_apply_vectorField (V := X) (X := ![Y, Z]) (σ.mdifferentiableAt x)
     (fun i ↦ by fin_cases i <;> assumption)
-  have hL0 : mlieDerivForm X σ.1 x (fun i ↦ ![⇑Y, Z] i x) = 0 := by
+  have hL0 : mlieDerivForm X σ.val x (fun i ↦ ![⇑Y, Z] i x) = 0 := by
     rw [(mem_symplecticVectorFields_iff_mlieDerivForm_eq_zero hσ).1 hX]
     rfl
   -- `d(ι_Y σ) = 0`, evaluated on `(X, Z)` by the invariant formula.
   have hd := SmoothForm.mextDeriv_apply_one (φ := σ.interiorₗ Y) hXd hZ
-  have hd0 : mextDeriv (σ.interiorₗ Y).1 x ![X x, Z x] = 0 := by
+  have hd0 : mextDeriv (σ.interiorₗ Y).val x ![X x, Z x] = 0 := by
     rw [coe_interiorₗ, mem_symplecticVectorFields_iff.1 hY]
     rfl
-  have hfun : (fun y ↦ σ.1 y fun i ↦ ![⇑Y, Z] i y) = fun y ↦ σ.1 y ![Y y, Z y] := by
+  have hfun : (fun y ↦ σ.val y fun i ↦ ![⇑Y, Z] i y) = fun y ↦ σ.val y ![Y y, Z y] := by
     funext y
     congr 1
     funext i
@@ -191,6 +194,15 @@ theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDif
     (h.isHamiltonianVectorField_hamiltonianVectorField g) (hf x) (hg x)
     (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x),
     Pi.neg_apply, SmoothBundleForm.eval₂_neg_left]
+
+/-- **Locally Poisson-commuting functions have commuting Hamiltonian vector fields.** For a
+nondegenerate closed form on a finite-dimensional manifold and `C²` functions `f` and `g` whose
+Poisson bracket vanishes near `x`, the Lie bracket `[X_f, X_g]` vanishes at `x`. -/
+theorem mlieBracket_hamiltonianVectorField_eq_zero (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (hfg : σ.poissonBracket f g =ᶠ[𝓝 x] fun _ ↦ 0) :
+    mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) x = 0 := by
+  have h0 := hamiltonianVectorField_eq_zero_of_eventuallyEq (σ := σ) hfg
+  rwa [h.hamiltonianVectorField_poissonBracket hσ hf hg, Pi.neg_apply, neg_eq_zero] at h0
 
 /-- For a nondegenerate closed form on a finite-dimensional manifold, the Poisson bracket of `C²`
 functions satisfies `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}`. -/

@@ -46,7 +46,7 @@ instance finite_bigradedUnblockedCyclesPiece (g : ℤ × ℤ) :
   -- `GridChainMinus` with an uninstantiated coefficient-ring metavariable.
   let _ : AddCommGroup (GridChainMinus R n) := inferInstance
   exact Module.Finite.of_injective
-    (((LinearMap.ker (G.1.unblockedDifferential R)).subtype.restrictScalars R).restrict
+    (((LinearMap.ker (G.val.unblockedDifferential R)).subtype.restrictScalars R).restrict
       fun _ hz ↦ (G.mem_bigradedUnblockedCyclesPiece R).mp hz)
     fun _ _ h ↦
       Subtype.ext (Subtype.ext (congrArg (Subtype.val : G.bigradedChainMinusPiece R g → _) h))
@@ -62,7 +62,7 @@ variable [CommRing R] [CharP R 2]
 theorem bigradedUnblockedHomologyPiece_eq_map (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g =
       (G.bigradedUnblockedCyclesPiece R g).map
-        ((G.1.unblockedHomologyClass R).restrictScalars R) := by
+        ((G.val.unblockedHomologyClass R).restrictScalars R) := by
   ext y
   simpa only [Submodule.mem_map, mem_bigradedUnblockedCyclesPiece,
     LinearMap.restrictScalars_apply] using G.mem_bigradedUnblockedHomologyPiece_iff R

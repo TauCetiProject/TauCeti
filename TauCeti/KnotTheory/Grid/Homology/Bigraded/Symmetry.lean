@@ -47,34 +47,34 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [Cha
 /-- The diagonal-reflection equivalence on `GH⁻` identifies every Maslov--Alexander piece. -/
 @[simp]
 theorem unblockedHomologyTransposeEquiv_mem_bigradedPiece_iff
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
-    G.1.unblockedHomologyTransposeEquiv R y ∈
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R} :
+    G.val.unblockedHomologyTransposeEquiv R y ∈
         G.transpose.bigradedUnblockedHomologyPiece R g ↔
       y ∈ G.bigradedUnblockedHomologyPiece R g :=
   G.unblockedHomologyEquiv_mem_bigradedPiece_iff R G.transpose
-    (G.1.transposeRenameEquiv R)
-    (G.1.unblockedDifferential_transpose_transposeRenameEquiv R)
-    (G.1.unblockedHomologyTransposeEquiv R)
-    (G.1.unblockedHomologyTransposeEquiv_unblockedHomologyClass R)
+    (G.val.transposeRenameEquiv R)
+    (G.val.unblockedDifferential_transpose_transposeRenameEquiv R)
+    (G.val.unblockedHomologyTransposeEquiv R)
+    (G.val.unblockedHomologyTransposeEquiv_unblockedHomologyClass R)
     (fun _ _ ↦ G.transposeRenameEquiv_mem_bigradedChainMinusPiece_iff R)
 
 /-- The half-turn equivalence on `GH⁻` identifies every Maslov--Alexander piece. -/
 @[simp]
 theorem unblockedHomologyRotateEquiv_mem_bigradedPiece_iff
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
-    G.1.unblockedHomologyRotateEquiv R y ∈
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R} :
+    G.val.unblockedHomologyRotateEquiv R y ∈
         G.rotate.bigradedUnblockedHomologyPiece R g ↔
       y ∈ G.bigradedUnblockedHomologyPiece R g :=
   G.unblockedHomologyEquiv_mem_bigradedPiece_iff R G.rotate
     (GridChain.halfTurnRenameEquiv R)
-    (G.1.unblockedDifferential_rotate_halfTurnRenameEquiv R)
-    (G.1.unblockedHomologyRotateEquiv R)
-    (G.1.unblockedHomologyRotateEquiv_unblockedHomologyClass R)
+    (G.val.unblockedDifferential_rotate_halfTurnRenameEquiv R)
+    (G.val.unblockedHomologyRotateEquiv R)
+    (G.val.unblockedHomologyRotateEquiv_unblockedHomologyClass R)
     (fun _ _ ↦ G.halfTurnRenameEquiv_mem_bigradedChainMinusPiece_iff R)
 
 private theorem isHomogeneous_unblockedHomologyTransposeEquiv :
     LinearMap.IsHomogeneous
-      ((G.1.unblockedHomologyTransposeEquiv R).restrictScalarsOfCommutes R
+      ((G.val.unblockedHomologyTransposeEquiv R).restrictScalarsOfCommutes R
         fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]).toLinearMap
       (G.bigradedUnblockedHomologyGrading R).piece
       (G.transpose.bigradedUnblockedHomologyGrading R).piece 0 := by
@@ -89,33 +89,33 @@ noncomputable def bigradedUnblockedHomologyTransposeEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
       G.transpose.bigradedUnblockedHomologyPiece R g :=
   ((LinearEquiv.ofEq _ _ (G.bigradedUnblockedHomologyGrading_piece R g).symm).trans
-    ((G.isHomogeneous_unblockedHomologyTransposeEquiv R).pieceLinearEquiv g)).trans
+    ((G.isHomogeneous_unblockedHomologyTransposeEquiv R).pieceEquiv g)).trans
     (LinearEquiv.ofEq _ _ (G.transpose.bigradedUnblockedHomologyGrading_piece R g))
 
 /-- On underlying classes the transpose piece equivalence is `unblockedHomologyTransposeEquiv`. -/
 @[simp]
 theorem coe_bigradedUnblockedHomologyTransposeEquiv (g : ℤ × ℤ)
     (y : G.bigradedUnblockedHomologyPiece R g) :
-    (G.bigradedUnblockedHomologyTransposeEquiv R g y : G.1.transpose.unblockedHomology R) =
-      G.1.unblockedHomologyTransposeEquiv R y := by
+    (G.bigradedUnblockedHomologyTransposeEquiv R g y : G.val.transpose.unblockedHomology R) =
+      G.val.unblockedHomologyTransposeEquiv R y := by
   simp only [bigradedUnblockedHomologyTransposeEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceLinearEquiv_apply]
+    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceEquiv_apply]
   rw [LinearEquiv.restrictScalarsOfCommutes_apply]
 
 /-- The inverse transpose piece equivalence acts as `(unblockedHomologyTransposeEquiv R).symm`. -/
 @[simp]
 theorem coe_bigradedUnblockedHomologyTransposeEquiv_symm (g : ℤ × ℤ)
     (y : G.transpose.bigradedUnblockedHomologyPiece R g) :
-    ((G.bigradedUnblockedHomologyTransposeEquiv R g).symm y : G.1.unblockedHomology R) =
-      (G.1.unblockedHomologyTransposeEquiv R).symm y := by
+    ((G.bigradedUnblockedHomologyTransposeEquiv R g).symm y : G.val.unblockedHomology R) =
+      (G.val.unblockedHomologyTransposeEquiv R).symm y := by
   simp only [bigradedUnblockedHomologyTransposeEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    LinearMap.IsHomogeneous.coe_pieceLinearEquiv_symm_apply]
+    LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply]
   rw [LinearEquiv.restrictScalarsOfCommutes_symm_apply]
 
 private theorem isHomogeneous_unblockedHomologyRotateEquiv :
     LinearMap.IsHomogeneous
-      ((G.1.unblockedHomologyRotateEquiv R).restrictScalarsOfCommutes R
+      ((G.val.unblockedHomologyRotateEquiv R).restrictScalarsOfCommutes R
         fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]).toLinearMap
       (G.bigradedUnblockedHomologyGrading R).piece
       (G.rotate.bigradedUnblockedHomologyGrading R).piece 0 := by
@@ -130,28 +130,28 @@ noncomputable def bigradedUnblockedHomologyRotateEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
       G.rotate.bigradedUnblockedHomologyPiece R g :=
   ((LinearEquiv.ofEq _ _ (G.bigradedUnblockedHomologyGrading_piece R g).symm).trans
-    ((G.isHomogeneous_unblockedHomologyRotateEquiv R).pieceLinearEquiv g)).trans
+    ((G.isHomogeneous_unblockedHomologyRotateEquiv R).pieceEquiv g)).trans
     (LinearEquiv.ofEq _ _ (G.rotate.bigradedUnblockedHomologyGrading_piece R g))
 
 /-- On underlying classes the half-turn piece equivalence is `unblockedHomologyRotateEquiv`. -/
 @[simp]
 theorem coe_bigradedUnblockedHomologyRotateEquiv (g : ℤ × ℤ)
     (y : G.bigradedUnblockedHomologyPiece R g) :
-    (G.bigradedUnblockedHomologyRotateEquiv R g y : G.1.rotate.unblockedHomology R) =
-      G.1.unblockedHomologyRotateEquiv R y := by
+    (G.bigradedUnblockedHomologyRotateEquiv R g y : G.val.rotate.unblockedHomology R) =
+      G.val.unblockedHomologyRotateEquiv R y := by
   simp only [bigradedUnblockedHomologyRotateEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceLinearEquiv_apply]
+    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceEquiv_apply]
   rw [LinearEquiv.restrictScalarsOfCommutes_apply]
 
 /-- The inverse half-turn piece equivalence acts as `(unblockedHomologyRotateEquiv R).symm`. -/
 @[simp]
 theorem coe_bigradedUnblockedHomologyRotateEquiv_symm (g : ℤ × ℤ)
     (y : G.rotate.bigradedUnblockedHomologyPiece R g) :
-    ((G.bigradedUnblockedHomologyRotateEquiv R g).symm y : G.1.unblockedHomology R) =
-      (G.1.unblockedHomologyRotateEquiv R).symm y := by
+    ((G.bigradedUnblockedHomologyRotateEquiv R g).symm y : G.val.unblockedHomology R) =
+      (G.val.unblockedHomologyRotateEquiv R).symm y := by
   simp only [bigradedUnblockedHomologyRotateEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    LinearMap.IsHomogeneous.coe_pieceLinearEquiv_symm_apply]
+    LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply]
   rw [LinearEquiv.restrictScalarsOfCommutes_symm_apply]
 
 end OddComponentGridDiagram

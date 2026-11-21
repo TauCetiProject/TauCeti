@@ -62,14 +62,14 @@ namespace TauCeti
 namespace OddComponentGridDiagram
 
 /-- On a grid diagram with an odd number of link components, the class of the `X`-marking state is
-homogeneous of bidegree `(M_O(G.1.X), A(G.1.X))`. -/
+homogeneous of bidegree `(M_O(G.val.X), A(G.val.X))`. -/
 theorem XMarkingClass_mem_bigradedUnblockedHomologyPiece {n : ℕ}
     (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2] :
-    G.1.XMarkingClass R ∈ G.bigradedUnblockedHomologyPiece R (G.bidegree G.1.X) := by
-  rw [G.1.XMarkingClass_def]
+    G.val.XMarkingClass R ∈ G.bigradedUnblockedHomologyPiece R (G.bidegree G.val.X) := by
+  rw [G.val.XMarkingClass_def]
   refine G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R ?_
-  rw [G.1.coe_XMarkingCycle]
-  exact G.single_one_mem_bigradedChainMinusPiece R G.1.X
+  rw [G.val.coe_XMarkingCycle]
+  exact G.single_one_mem_bigradedChainMinusPiece R G.val.X
 
 /-- On an odd-component grid diagram whose `X`-marking state receives an even number of counted
 rectangles from every grid state, every monomial multiple `V^e • λ⁻` witnesses positive `finrank`
@@ -77,29 +77,29 @@ in bidegree `bidegree X - (2 |e|, |e|)` over any Noetherian commutative ring of 
 two. -/
 theorem finrank_bigradedUnblockedHomologyPiece_pos {n : ℕ} (G : OddComponentGridDiagram n)
     (K : Type*) [CommRing K] [CharP K 2] [IsNoetherianRing K]
-    (hX : ∀ x : GridState n, Even (G.1.unblockedRectangles x G.1.X).card) (e : Fin n →₀ ℕ) :
+    (hX : ∀ x : GridState n, Even (G.val.unblockedRectangles x G.val.X).card) (e : Fin n →₀ ℕ) :
     0 < Module.finrank K
       (G.bigradedUnblockedHomologyPiece K
-        (G.bidegree G.1.X - (2 * (e.degree : ℤ), (e.degree : ℤ)))) := by
+        (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ)))) := by
   have : Nontrivial K := CharP.nontrivial_of_char_ne_one (v := 2) (by decide)
-  have hmem : (monomial e (1 : K)) • G.1.XMarkingClass K ∈
+  have hmem : (monomial e (1 : K)) • G.val.XMarkingClass K ∈
       G.bigradedUnblockedHomologyPiece K
-        (G.bidegree G.1.X - (2 * (e.degree : ℤ), (e.degree : ℤ))) :=
+        (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ))) :=
     G.monomial_smul_mem_bigradedUnblockedHomologyPiece K e 1
       (G.XMarkingClass_mem_bigradedUnblockedHomologyPiece K)
   have hinj : Function.Injective (LinearMap.toSpanSingleton K
       (G.bigradedUnblockedHomologyPiece K
-        (G.bidegree G.1.X - (2 * (e.degree : ℤ), (e.degree : ℤ))))
-      ⟨(monomial e (1 : K)) • G.1.XMarkingClass K, hmem⟩) := by
+        (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ))))
+      ⟨(monomial e (1 : K)) • G.val.XMarkingClass K, hmem⟩) := by
     intro r₁ r₂ hr
-    have hr' : (monomial e (r₁ - r₂) : MvPolynomial (Fin n) K) • G.1.XMarkingClass K = 0 := by
-      have hval : (r₁ - r₂) • ((monomial e (1 : K)) • G.1.XMarkingClass K) = 0 := by
+    have hr' : (monomial e (r₁ - r₂) : MvPolynomial (Fin n) K) • G.val.XMarkingClass K = 0 := by
+      have hval : (r₁ - r₂) • ((monomial e (1 : K)) • G.val.XMarkingClass K) = 0 := by
         have hcoe := congrArg Subtype.val hr
         simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul] at hcoe
         rwa [sub_smul, sub_eq_zero]
       rwa [← algebraMap_smul (MvPolynomial (Fin n) K), smul_smul, algebraMap_eq,
         C_mul_monomial, mul_one] at hval
-    exact sub_eq_zero.mp (G.1.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K hX hr')
+    exact sub_eq_zero.mp (G.val.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K hX hr')
   have hle := LinearMap.finrank_le_finrank_of_injective hinj
   rw [Module.finrank_self] at hle
   exact Nat.lt_of_lt_of_le Nat.zero_lt_one hle
@@ -311,7 +311,7 @@ theorem BigradedUnblockedHomologyIsomorphic.nonempty_piece_linearEquiv
   have := hG.isScalarTower_unblockedHomology (R := R)
   have := hG'.isScalarTower_unblockedHomology (R := R)
   obtain ⟨e, he⟩ := h
-  exact ⟨LinearMap.IsHomogeneous.pieceLinearEquiv (e := e.restrictScalars R)
+  exact ⟨LinearMap.IsHomogeneous.pieceEquiv (e := e.restrictScalars R)
     (he.restrictScalars R) g⟩
 
 /-- Knot grids with isomorphic bigraded `GH⁻` have equal ground-ring `finrank` in every

@@ -163,7 +163,7 @@ itself — not merely some conjugate of it — is an arithmetic Frobenius at som
 above `𝔭`. -/
 theorem exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectrum (𝓞 K)}
     {σ : L ≃ₐ[K] L} (h : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) :
-    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 := by
+    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val := by
   obtain ⟨hur, hC⟩ := mem_frobeniusPrimeSet_iff.mp h
   exact exists_isArithFrobAt_of_artinSymbol_eq_mk 𝔭.asIdeal hur hC
 
@@ -174,9 +174,9 @@ theorem mem_frobeniusPrimeSet_mk_iff_exists_isArithFrobAt {𝔭 : HeightOneSpect
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) Q) (σ : L ≃ₐ[K] L) :
     𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) ↔
-      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 :=
+      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val :=
   ⟨exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk, fun ⟨Q, hσ⟩ ↦
-    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.1 hσ⟩
+    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.val hσ⟩
 
 section IsoOfExtensions
 

@@ -47,11 +47,11 @@ namespace TauCeti
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
-  (C : GridDiagram.ColumnCommutationData G.1)
+  (C : GridDiagram.ColumnCommutationData G.val)
 
 private theorem isHomogeneous_unblockedHomologyCommutationEquiv :
     LinearMap.IsHomogeneous
-      ((G.1.unblockedHomologyCommutationEquiv C R).restrictScalarsOfCommutes R
+      ((G.val.unblockedHomologyCommutationEquiv C R).restrictScalarsOfCommutes R
         fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]).toLinearMap
       (G.bigradedUnblockedHomologyGrading R).piece
       ((G.swapColumns C).bigradedUnblockedHomologyGrading R).piece 0 := by
@@ -65,15 +65,14 @@ private theorem isHomogeneous_unblockedHomologyCommutationEquiv :
 /-- The commutation map on `GH⁻` preserves and reflects every Maslov--Alexander piece. -/
 @[simp]
 theorem unblockedHomologyCommutationMap_mem_bigradedPiece_iff
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
-    G.1.unblockedHomologyCommutationMap R C y ∈
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R} :
+    G.val.unblockedHomologyCommutationMap R C y ∈
         (G.swapColumns C).bigradedUnblockedHomologyPiece R g ↔
       y ∈ G.bigradedUnblockedHomologyPiece R g := by
   simpa only [bigradedUnblockedHomologyGrading_piece,
     LinearEquiv.restrictScalarsOfCommutes_apply,
     GridDiagram.unblockedHomologyCommutationEquiv_apply] using
-    (G.isHomogeneous_unblockedHomologyCommutationEquiv R C).linearEquiv_mem_piece_iff
-      (p := g) (x := y)
+    (G.isHomogeneous_unblockedHomologyCommutationEquiv R C).linearEquiv_mem_piece_iff g y
 
 /-- A validated column commutation gives a ground-ring linear equivalence in each Maslov--Alexander
 bidegree of `GH⁻`. -/
@@ -81,7 +80,7 @@ noncomputable def bigradedUnblockedHomologyCommutationEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
       (G.swapColumns C).bigradedUnblockedHomologyPiece R g :=
   ((LinearEquiv.ofEq _ _ (G.bigradedUnblockedHomologyGrading_piece R g).symm).trans
-    ((G.isHomogeneous_unblockedHomologyCommutationEquiv R C).pieceLinearEquiv g)).trans
+    ((G.isHomogeneous_unblockedHomologyCommutationEquiv R C).pieceEquiv g)).trans
     (LinearEquiv.ofEq _ _ ((G.swapColumns C).bigradedUnblockedHomologyGrading_piece R g))
 
 /-- On underlying classes the piece equivalence acts by `unblockedHomologyCommutationMap`. -/
@@ -89,10 +88,10 @@ noncomputable def bigradedUnblockedHomologyCommutationEquiv (g : ℤ × ℤ) :
 theorem coe_bigradedUnblockedHomologyCommutationEquiv (g : ℤ × ℤ)
     (y : G.bigradedUnblockedHomologyPiece R g) :
     (G.bigradedUnblockedHomologyCommutationEquiv R C g y :
-        (G.1.swapColumns C.column (finRotate n C.column)).unblockedHomology R) =
-      G.1.unblockedHomologyCommutationMap R C y := by
+        (G.val.swapColumns C.column (finRotate n C.column)).unblockedHomology R) =
+      G.val.unblockedHomologyCommutationMap R C y := by
   simp only [bigradedUnblockedHomologyCommutationEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceLinearEquiv_apply]
+    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceEquiv_apply]
   rw [LinearEquiv.restrictScalarsOfCommutes_apply,
     GridDiagram.unblockedHomologyCommutationEquiv_apply]
 
@@ -100,11 +99,11 @@ theorem coe_bigradedUnblockedHomologyCommutationEquiv (g : ℤ × ℤ)
 @[simp]
 theorem coe_bigradedUnblockedHomologyCommutationEquiv_symm (g : ℤ × ℤ)
     (y : (G.swapColumns C).bigradedUnblockedHomologyPiece R g) :
-    ((G.bigradedUnblockedHomologyCommutationEquiv R C g).symm y : G.1.unblockedHomology R) =
-      (G.1.unblockedHomologyCommutationEquiv C R).symm y := by
+    ((G.bigradedUnblockedHomologyCommutationEquiv R C g).symm y : G.val.unblockedHomology R) =
+      (G.val.unblockedHomologyCommutationEquiv C R).symm y := by
   simp only [bigradedUnblockedHomologyCommutationEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    LinearMap.IsHomogeneous.coe_pieceLinearEquiv_symm_apply]
+    LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply]
   rw [LinearEquiv.restrictScalarsOfCommutes_symm_apply]
 
 end OddComponentGridDiagram

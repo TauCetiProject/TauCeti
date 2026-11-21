@@ -41,7 +41,7 @@ theorem bigradedUnblockedHomologyPiece_le_alexanderUnblockedHomologyGrading_piec
   obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
   rw [G.mem_alexanderUnblockedHomologyGrading_piece_iff R, G.mem_alexanderHomologyGrading_piece_iff]
   exact ⟨z, G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R m a hz,
-    (G.1.unblockedHomologyIso_hom_unblockedHomologyClass R z).symm⟩
+    (G.val.unblockedHomologyIso_hom_unblockedHomologyClass R z).symm⟩
 
 /-- Projecting bidegrees to their Alexander coordinate coarsens the internal bigrading of `GH⁻`
 to its internal Alexander grading. -/

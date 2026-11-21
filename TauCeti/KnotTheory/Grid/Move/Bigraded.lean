@@ -55,7 +55,7 @@ It is independent of the representative diagram by
 `GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo`. -/
 noncomputable def unblockedHomologyPieceFinrank (g : ℤ × ℤ) : ℕ :=
   let G := Classical.choose L.exists_gridDiagram
-  let hG := (isKnot_toGridLink G.2).mp ((Classical.choose_spec L.exists_gridDiagram).symm ▸ hL)
+  let hG := (isKnot_toGridLink G.snd).mp ((Classical.choose_spec L.exists_gridDiagram).symm ▸ hL)
   Module.finrank K ((hG.bigradedUnblockedHomologyGrading K).piece g)
 
 /-- Evaluate `unblockedHomologyPieceFinrank` on any knot grid diagram presenting the grid knot. -/
@@ -65,7 +65,7 @@ theorem unblockedHomologyPieceFinrank_eq_of_toGridLink_eq {n : ℕ} {G : GridDia
       Module.finrank K ((hG.bigradedUnblockedHomologyGrading K).piece g) := by
   unfold unblockedHomologyPieceFinrank
   apply GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo
-  exact ((Classical.choose L.exists_gridDiagram).2.toGridLink_eq_iff_movesTo).mp
+  exact ((Classical.choose L.exists_gridDiagram).snd.toGridLink_eq_iff_movesTo).mp
     ((Classical.choose_spec L.exists_gridDiagram).trans h.symm)
 
 /-- On the grid knot presented by a diagram, `unblockedHomologyPieceFinrank` is the `finrank` of
@@ -117,7 +117,7 @@ variable (K : Type*) [CommRing K] [CharP K 2]
 /-- Over any commutative ring of characteristic two, `GH⁻` of the unknot has piece `finrank` zero
 outside the bidegree cone `{(2a, a) | a ≤ 0} ∪ {(2a + 1, a) | a < 0}`. -/
 theorem unblockedHomologyPieceFinrank_unknot_eq_zero {g : ℤ × ℤ}
-    (hg : ¬ ((g.2 ≤ 0 ∧ g.1 = 2 * g.2) ∨ (g.2 < 0 ∧ g.1 = 2 * g.2 + 1))) :
+    (hg : ¬ ((g.snd ≤ 0 ∧ g.fst = 2 * g.snd) ∨ (g.snd < 0 ∧ g.fst = 2 * g.snd + 1))) :
     isKnot_unknot.unblockedHomologyPieceFinrank K g = 0 := by
   have : Nontrivial K := CharP.nontrivial_of_char_ne_one (v := 2) (by decide)
   rw [unblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
@@ -158,10 +158,10 @@ theorem unblockedHomologyPieceFinrank_unknot_zero :
       (GridDiagram.twoByTwo.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K
         even_card_unblockedRectangles_twoByTwo_X hmon)
   · obtain ⟨z, hz, hzw⟩ :=
-      (OddComponentGridDiagram.twoByTwo.mem_bigradedUnblockedHomologyPiece_iff K).mp w.2
+      (OddComponentGridDiagram.twoByTwo.mem_bigradedUnblockedHomologyPiece_iff K).mp w.property
     have hzc :=
       OddComponentGridDiagram.eq_smul_single_twoByTwoSwap_of_mem_bigradedChainMinusPiece_zero K hz
-    let r0 : K := (z.1 GridState.twoByTwoSwap).coeff 0
+    let r0 : K := (z.val GridState.twoByTwoSwap).coeff 0
     refine ⟨r0, Subtype.ext ?_⟩
     simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul]
     have hzX : z = (algebraMap K (MvPolynomial (Fin 2) K) r0) •

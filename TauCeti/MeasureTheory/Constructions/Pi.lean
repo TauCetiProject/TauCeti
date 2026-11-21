@@ -66,6 +66,10 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 `finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
 the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
+**Nonzero products.** A finite product of nonzero σ-finite measures is nonzero, since its total
+mass is the product of the nonzero total masses of the factors. Mathlib has no such `NeZero`
+instance for `Measure.pi`.
+
 **Extensionality from boxes.** A finite measure on a finite product space, which need not be a
 product measure, is determined by its values on measurable boxes `Set.univ.pi s`, because boxes
 form a π-system generating the product σ-algebra and contain the whole space. The same holds on
@@ -100,6 +104,8 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 * `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
   on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
   product measures.
+* `MeasureTheory.Measure.instNeZeroPi` — a finite product of nonzero σ-finite measures is
+  nonzero;
 * `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
   measurable boxes are equal;
 * `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
@@ -179,6 +185,21 @@ theorem measurePreserving_piCurry {ι : Type*} {κ : ι → Type*} [Fintype ι] 
     ← Finset.univ_sigma_univ, Finset.prod_sigma]
   exact Finset.prod_congr rfl fun i _ => Measure.pi_pi _ _
 
+/-- Currying a finite product indexed by pairs preserves the product measure for arbitrary
+sigma-finite coordinate measures. -/
+theorem measurePreserving_curry {ι κ α : Type*} [Fintype ι] [Fintype κ]
+    [MeasurableSpace α] (μ : ι → κ → Measure α) [∀ i j, SigmaFinite (μ i j)] :
+    MeasurePreserving (MeasurableEquiv.curry ι κ α)
+      (Measure.pi fun p : ι × κ ↦ μ p.1 p.2) (Measure.pi fun i ↦ Measure.pi (μ i)) := by
+  convert (measurePreserving_piCurry μ).comp
+    ((measurePreserving_piCongrLeft
+      (fun p : ι × κ ↦ μ p.1 p.2) (Equiv.sigmaEquivProd ι κ)).symm) using 1
+  ext z i j
+  simp only [MeasurableEquiv.coe_curry, MeasurableEquiv.coe_piCurry, Function.comp_apply,
+    Function.curry, Sigma.curry]
+  exact (Equiv.piCongrLeft_symm_apply (fun _ : ι × κ ↦ α)
+    (Equiv.sigmaEquivProd ι κ) z ⟨i, j⟩).symm
+
 /-- Applying a measure-preserving map to each fibre of a finite coordinate map gives the product
 of the fibre laws. The coordinate measures and the fibre laws need only be σ-finite. -/
 theorem measurePreserving_pi_fiberwise {ι κ : Type*} [Fintype ι] [Fintype κ]
@@ -234,7 +255,7 @@ This is Mathlib's `MeasureTheory.measurePreserving_piEquivPiSubtypeProd` for the
 theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i₀ : ι) :
     MeasurePreserving (Equiv.piSplitAt i₀ α)
       (Measure.pi μ) ((μ i₀).prod (Measure.pi fun j : {i // i ≠ i₀} => μ j)) := by
-  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.2⟩
+  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.property⟩
   let _ : Fintype {i : ι // i = i₀} := Subtype.fintype _
   -- Composing the split at `(· = i₀)` with the collapse of its one-element factor evaluates,
   -- coordinate by coordinate, to the pair above.  The application lemmas below reduce both
@@ -433,6 +454,13 @@ end FinArrow
 end TauCeti
 
 namespace MeasureTheory.Measure
+
+/-- A finite product of nonzero σ-finite measures is nonzero: its total mass is the product of the
+total masses of the factors, none of which vanishes. -/
+instance instNeZeroPi {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    {μ : ∀ i, Measure (α i)} [∀ i, SigmaFinite (μ i)] [∀ i, NeZero (μ i)] :
+    NeZero (Measure.pi μ) :=
+  ⟨measure_univ_ne_zero.1 <| by simp [pi_univ, Finset.prod_ne_zero_iff, NeZero.ne]⟩
 
 variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
