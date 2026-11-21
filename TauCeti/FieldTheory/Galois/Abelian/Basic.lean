@@ -23,12 +23,16 @@ family: a compositum of abelian Galois subextensions is abelian Galois.
 For a subgroup `H` of `Gal(L/K)` whose fixed field is abelian over `K`, the restriction of
 `σ ∈ Gal(L/K)` to that fixed field has trivial image in the abelianization exactly when `σ ∈ H`.
 
+Being abelian Galois also transports along any commuting square of field isomorphisms
+(`IsAbelianGalois.of_equiv_equiv`, `IsAbelianGalois.iff_of_equiv_equiv`).
+
 ## Main results
 
 * `TauCeti.commute_of_tower`
 * `TauCeti.algEquiv_commute_of_isAbelianGalois`
 * `TauCeti.abelianization_of_restrictNormalHom_fixedField_eq_one_iff`
 * `IntermediateField.isAbelianGalois_iSup`
+* `IsAbelianGalois.of_equiv_equiv`, `IsAbelianGalois.iff_of_equiv_equiv`
 -/
 
 public section
@@ -116,3 +120,39 @@ instance _root_.IntermediateField.isAbelianGalois_iSup {ι : Type*} (E : ι → 
 end iSup
 
 end TauCeti
+
+namespace IsAbelianGalois
+
+open scoped IsMulCommutative in
+/-- **Being abelian Galois transports along a commuting square of field isomorphisms.** Both
+Galoisness (`IsGalois.of_equiv_equiv`) and commutativity of the Galois group are preserved, the
+latter by conjugating automorphisms through `g`. -/
+theorem of_equiv_equiv {K L M N : Type*} [Field K] [Field L] [Algebra K L]
+    [Field M] [Field N] [Algebra M N] [IsAbelianGalois K L]
+    (f : K ≃+* M) (g : L ≃+* N)
+    (hcomp : (algebraMap M N).comp (f : K →+* M) = (g : L →+* N).comp (algebraMap K L)) :
+    IsAbelianGalois M N := by
+  have hgal : IsGalois M N := IsGalois.of_equiv_equiv hcomp
+  have hcomm (x : K) : g (algebraMap K L x) = algebraMap M N (f x) :=
+    (RingHom.congr_fun hcomp x).symm
+  -- Conjugate an `M`-automorphism of `N` back to a `K`-automorphism of `L` along `g`.
+  let conj (σ : N ≃ₐ[M] N) : L ≃ₐ[K] L :=
+    AlgEquiv.ofRingEquiv (f := (g.trans σ.toRingEquiv).trans g.symm) fun x ↦ by
+      simp [RingEquiv.symm_apply_eq, hcomm]
+  refine { toIsGalois := hgal, is_comm := ⟨fun σ τ ↦ ?_⟩ }
+  have h : conj σ * conj τ = conj τ * conj σ := mul_comm' (conj σ) (conj τ)
+  ext y
+  have hy := AlgEquiv.congr_fun h (g.symm y)
+  simpa [conj] using congrArg g hy
+
+/-- **Being abelian Galois is invariant under a commuting square of field isomorphisms.** -/
+theorem iff_of_equiv_equiv {K L M N : Type*} [Field K] [Field L] [Algebra K L]
+    [Field M] [Field N] [Algebra M N]
+    (f : K ≃+* M) (g : L ≃+* N)
+    (hcomp : (algebraMap M N).comp (f : K →+* M) = (g : L →+* N).comp (algebraMap K L)) :
+    IsAbelianGalois K L ↔ IsAbelianGalois M N :=
+  ⟨fun _ ↦ of_equiv_equiv f g hcomp, fun _ ↦ of_equiv_equiv f.symm g.symm <| by
+    ext x
+    simpa [RingEquiv.eq_symm_apply] using (RingHom.congr_fun hcomp (f.symm x)).symm⟩
+
+end IsAbelianGalois
