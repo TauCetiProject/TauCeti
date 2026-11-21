@@ -56,7 +56,8 @@ The proof replaces a partition of unity on the curve by de Rham theory on `M`.
   supported `β` the form `β - (∫_M β) θ` has integral zero, so it is exact
   (`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`), and so is its pullback.
   Since `T` is closed and compactly supported, its wedge with an exact form is a compactly
-  supported exact form, which integrates to zero by Stokes' theorem. Hence
+  supported exact form, which integrates to zero by Stokes' theorem
+  (`TauCeti.integralTopForm_wedge_eq_zero_of_mem_exactForms`). Hence
   `∫ T ∧ π^*β = (∫_M β) ∫ T ∧ π^*θ = m ∫_M β`
   (`TauCeti.integralTopForm_wedge_mpullback_fst`). The same argument kills `∫ T ∧ dη`.
 
@@ -278,19 +279,6 @@ section global
 
 variable [IsManifold I ∞ M] [I.Boundaryless] [FiniteDimensional ℝ E] [T2Space M]
 
-/-- The integral `∫_{M × ℂ} T ∧ ψ` of a compactly supported closed two-form `T` against an exact
-two-form `ψ` vanishes. -/
-private theorem integralTopForm_wedge_eq_zero_of_mem_exactForms [SigmaCompactSpace M]
-    (o : Manifold.Orientation I M (Fin 2)) {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
-    (hT : T ∈ compactlySupportedClosedForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2)
-    {ψ : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
-    (hψ : ψ ∈ exactForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2) :
-    integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
-        (by simp [Complex.finrank_real_complex]))) (SmoothForm.wedge T ψ).1 = 0 := by
-  rw [SmoothForm.wedge_comm_of_even even_two]
-  exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms _
-    (SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hψ hT)
-
 /-- **The pairing of a closed two-form with a pulled-back base form.** Let `M` be a σ-compact
 preconnected oriented surface and `T` a compactly supported closed two-form on `M × ℂ` whose flux
 through every fibre `{x} × ℂ` is `m`. Then `∫_{M × ℂ} T ∧ π^*β = m ∫_M β` for every compactly
@@ -329,11 +317,12 @@ theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [PreconnectedS
       ((mem_compactlySupportedForms I).mp (Submodule.smul_mem _ c hθc)), Submodule.coe_smul,
       integralTopForm_smul, hθ, mul_one, sub_self]
   -- Its pullback is exact, so it pairs to zero with `T`.
-  have h0 := integralTopForm_wedge_eq_zero_of_mem_exactForms o hT
+  have h0 := integralTopForm_wedge_eq_zero_of_mem_exactForms oP
     (closedForms.mpullback_mem_exactForms (I := I.prod 𝓘(ℝ, ℂ)) (I' := I)
       (Prod.fst : M × ℂ → M) contMDiff_fst 2
-      ⟨_, mem_closedForms_of_finrank_le I (by simp [o.card_eq.symm]) (β - c • θ.1)⟩ hex)
-  rw [closedForms.coe_mpullback, map_sub, map_smul, map_sub, map_smul] at h0
+      ⟨_, mem_closedForms_of_finrank_le I (by simp [o.card_eq.symm]) (β - c • θ.1)⟩ hex) hT
+  rw [SmoothForm.wedge_comm_of_even even_two, closedForms.coe_mpullback, map_sub, map_smul,
+    map_sub, map_smul] at h0
   set X := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)
   set Y := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst θ.1)
   -- The pairing of `T` with `π^*θ` is computed in the chart at `x₀`.
@@ -371,7 +360,8 @@ theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ [SigmaCompactS
       K * m * integralTopForm o β.1 := by
   have hTc := ((mem_compactlySupportedClosedForms _).mp hT).1
   set X := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)
-  set Y := SmoothForm.wedge T (mextDerivₗ (I.prod 𝓘(ℝ, ℂ)) (F := ℝ) 1 η)
+  set Y := SmoothForm.wedge T (mextDerivₗ (I.prod 𝓘(ℝ, ℂ)) (F := ℝ) 1 η) with hY
+  rw [SmoothForm.wedge_comm_of_even even_two] at hY
   rw [map_add, map_smul, Submodule.coe_add, Submodule.coe_smul,
     integralTopForm_add _ ((X.isSmoothForm.smul K).of_le (by simp)) (Y.isSmoothForm.of_le (by simp))
       ((mem_compactlySupportedForms _).mp (Submodule.smul_mem _ K
@@ -379,8 +369,8 @@ theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ [SigmaCompactS
       ((mem_compactlySupportedForms _).mp
         (SmoothForm.wedge_mem_compactlySupportedForms_of_left_mem hTc _)),
     integralTopForm_smul, integralTopForm_wedge_mpullback_fst o hT hm hβ,
-    integralTopForm_wedge_eq_zero_of_mem_exactForms o hT
-      (by rw [exactForms_succ]; exact ⟨η, rfl⟩)]
+    hY, integralTopForm_wedge_eq_zero_of_mem_exactForms _
+      (by rw [exactForms_succ]; exact ⟨η, rfl⟩) hT]
   ring
 
 end global
