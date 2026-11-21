@@ -37,6 +37,8 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
   on a homogeneous summand.
+* `HomologicalComplex.whiskerLeft_zero` and `HomologicalComplex.zero_whiskerRight`: whiskering the
+  zero morphism gives zero, so `tensorLeft X` and `tensorRight X` preserve zero morphisms.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
 * `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
@@ -45,6 +47,9 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
 * `HomologicalComplex.ι_ι_associator_hom` and `HomologicalComplex.ι_ι_associator_inv`: the
   associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
   degrees.
+* `CochainComplex.curriedTensorIsoMap₂CochainComplex`: natural isomorphism between
+  `MonoidalCategory.curriedTensor (CochainComplex C ℤ)` and
+  `(MonoidalCategory.curriedTensor C).map₂CochainComplex`.
 
 The analogous formula for the differential of a tensor product is
 `HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.
@@ -118,6 +123,36 @@ lemma whiskerRight_eq_mapBifunctorMap {X Y : HomologicalComplex C c} (f : X ⟶ 
     (Z : HomologicalComplex C c) :
     f ▷ Z = mapBifunctorMap f (𝟙 Z) (curriedTensor C) c :=
   rfl
+
+/-- Left whiskering of homological complexes by the zero morphism is zero.  Homological complexes
+carry no `MonoidalPreadditive` instance, so `MonoidalPreadditive.whiskerLeft_zero` does not
+apply. -/
+@[simp]
+lemma whiskerLeft_zero (X : HomologicalComplex C c) {Y Z : HomologicalComplex C c} :
+    X ◁ (0 : Y ⟶ Z) = 0 :=
+  tensorHom_zero _
+
+/-- Right whiskering of homological complexes by the zero morphism is zero; the counterpart of
+`HomologicalComplex.whiskerLeft_zero`. -/
+@[simp]
+lemma zero_whiskerRight {X Y : HomologicalComplex C c} (Z : HomologicalComplex C c) :
+    (0 : X ⟶ Y) ▷ Z = 0 :=
+  zero_tensorHom _
+
+section
+
+variable [∀ X₁, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Left tensoring with a homological complex preserves zero morphisms. -/
+instance (X : HomologicalComplex C c) : (tensorLeft X).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ whiskerLeft_zero X⟩
+
+/-- Right tensoring with a homological complex preserves zero morphisms. -/
+instance (X : HomologicalComplex C c) : (tensorRight X).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ zero_whiskerRight X⟩
+
+end
 
 /-- Left whiskering of homological complexes, restricted to a homogeneous summand, is left
 whiskering of the summand. -/
@@ -239,6 +274,8 @@ namespace CochainComplex
 
 open HomologicalComplex
 
+section HasTensor
+
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] [∀ K L : CochainComplex C ℤ, HasTensor K L]
 
@@ -255,5 +292,57 @@ theorem curriedTensor_map₂CochainComplex_obj_map (K : CochainComplex C ℤ)
 theorem curriedTensor_map₂CochainComplex_map_app {K L : CochainComplex C ℤ}
     (f : K ⟶ L) (A : CochainComplex C ℤ) :
     ((curriedTensor C).map₂CochainComplex.map f).app A = tensorHom f (𝟙 A) := rfl
+
+end HasTensor
+
+section Monoidal
+
+variable (C : Type*) [Category* C] [Preadditive C] [MonoidalCategory C]
+  [MonoidalPreadditive C] [HasZeroObject C]
+  [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
+  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ X₁ X₂ X₃ X₄ : GradedObject ℤ C, GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+
+/-- The curried tensor bifunctor of the totalized monoidal structure on `CochainComplex C ℤ` is
+naturally isomorphic to `(curriedTensor C).map₂CochainComplex`. -/
+noncomputable def curriedTensorIsoMap₂CochainComplex :
+    curriedTensor (CochainComplex C ℤ) ≅ (curriedTensor C).map₂CochainComplex where
+  hom :=
+    { app K :=
+        { app L := 𝟙 _
+          naturality _ _ g := by
+            dsimp
+            rw [Category.id_comp, Category.comp_id, whiskerLeft_eq_mapBifunctorMap] }
+      naturality _ _ f := NatTrans.ext <| funext fun L ↦ by
+        dsimp
+        rw [Category.id_comp, Category.comp_id, whiskerRight_eq_mapBifunctorMap] }
+  inv :=
+    { app K :=
+        { app L := 𝟙 _
+          naturality _ _ g := by
+            dsimp
+            rw [Category.id_comp, Category.comp_id, whiskerLeft_eq_mapBifunctorMap] }
+      naturality _ _ f := NatTrans.ext <| funext fun L ↦ by
+        dsimp
+        rw [Category.id_comp, Category.comp_id, whiskerRight_eq_mapBifunctorMap] }
+
+/-- Evaluating the forward direction of `curriedTensorIsoMap₂CochainComplex` on complexes `K` and
+`L` is the identity on `K ⊗ L`. -/
+@[simp]
+lemma curriedTensorIsoMap₂CochainComplex_hom_app_app (K L : CochainComplex C ℤ) :
+    ((curriedTensorIsoMap₂CochainComplex C).hom.app K).app L = 𝟙 (K ⊗ L) := by
+  rfl
+
+/-- Evaluating the inverse direction of `curriedTensorIsoMap₂CochainComplex` on complexes `K` and
+`L` is the identity on `K ⊗ L`. -/
+@[simp]
+lemma curriedTensorIsoMap₂CochainComplex_inv_app_app (K L : CochainComplex C ℤ) :
+    ((curriedTensorIsoMap₂CochainComplex C).inv.app K).app L = 𝟙 (K ⊗ L) := by
+  rfl
+
+end Monoidal
 
 end CochainComplex
