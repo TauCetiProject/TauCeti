@@ -996,8 +996,9 @@ def chartDerivL (i : Fin C.n) :
       (ContinuousLinearMap.proj (R := ℝ)
         (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p 1) i)))
 
-/-- Almost everywhere on the image of chart `i`, `chartDerivL` is the sum over the basis vectors
-`bⱼ` of `F` of the weak gradients of the chart-`i` components, paired with `bⱼ`. -/
+/-- Almost everywhere on the image of chart `i`, evaluating `chartDerivL` at a direction in `E`
+pairs each weak gradient of a chart-`i` component with that input direction. The resulting scalar
+multiplies the corresponding basis vector `bⱼ` of `F`, and these terms are summed. -/
 theorem chartDerivL_apply_ae (i : Fin C.n) (w : C.SobolevData μ p 1) :
     ∀ᵐ y ∂μ.restrict (C.image i), C.chartDerivL μ p i w y =
       ∑ j, (innerSL ℝ (W1p.gradient (w i j) y)).smulRight (finBasis ℝ F j) := by
