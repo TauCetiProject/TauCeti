@@ -79,18 +79,18 @@ theorem scalarTrace_mapDomain_of_eq_one {H : Type*} [Monoid H] {β : H → H →
       have hfg : f g = 1 ↔ g = 1 := ⟨hf₁ g, fun h ↦ h ▸ map_one f⟩
       simp [basis_apply, scalarTrace_of, hfg]) x
 
-end Monoid
-
-section Group
-
-variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFactorSet α]
-
-/-- Pushing forward along an injective group-to-monoid homomorphism preserves `scalarTrace`. -/
+/-- Pushing forward along an injective monoid homomorphism preserves `scalarTrace`. -/
 @[simp] theorem scalarTrace_mapDomain_of_injective {H : Type*} [Monoid H] {β : H → H → kˣ}
     [IsFactorSet β] {f : G →* H} (hf : ∀ g₁ g₂, β (f g₁) (f g₂) = α g₁ g₂)
     (hfinj : Function.Injective f) (x : twistedMonoidAlgebra k G α) :
     scalarTrace k H β (mapDomain f hf x) = scalarTrace k G α x :=
   scalarTrace_mapDomain_of_eq_one hf (fun _ hg ↦ hfinj (hg.trans (map_one f).symm)) x
+
+end Monoid
+
+section Group
+
+variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFactorSet α]
 
 /-- Right-multiplying `x` by `of g` picks out the `g⁻¹`-coordinate weighted by `α g⁻¹ g`. -/
 @[simp] theorem scalarTrace_mul_of (x : twistedMonoidAlgebra k G α) (g : G) :

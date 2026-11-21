@@ -136,6 +136,10 @@ theorem chainForm_single_single (N : ℕ) (i j : Fin N) (c d : ZMod 3) :
 noncomputable def cubeRootOfUnity : ℂˣ :=
   Units.mk0 (Complex.exp (2 * Real.pi / 3 * Complex.I)) (Complex.exp_ne_zero _)
 
+/-- The complex value of `cubeRootOfUnity` is `exp (2 π i / 3)`. -/
+theorem coe_cubeRootOfUnity :
+    (cubeRootOfUnity : ℂ) = Complex.exp (2 * Real.pi / 3 * Complex.I) := (rfl)
+
 /-- `ω ^ x` for an exponent `x : ZMod 3`, read through `ZMod.val`. -/
 noncomputable def cubeRootPow (x : ZMod 3) : ℂˣ :=
   cubeRootOfUnity ^ x.val
@@ -144,7 +148,7 @@ theorem cubeRootPow_def (x : ZMod 3) : cubeRootPow x = cubeRootOfUnity ^ x.val :
 
 @[simp] theorem cubeRootOfUnity_pow_three : cubeRootOfUnity ^ 3 = 1 := by
   ext
-  simp only [Units.val_pow_eq_pow_val, cubeRootOfUnity, Units.val_mk0, Units.val_one]
+  simp only [Units.val_pow_eq_pow_val, coe_cubeRootOfUnity, Units.val_one]
   rw [← Complex.exp_nat_mul]
   convert Complex.exp_two_pi_mul_I using 2
   push_cast; ring
@@ -158,7 +162,7 @@ theorem coe_cubeRootOfUnity_ne_one : (cubeRootOfUnity : ℂ) ≠ 1 := by
   have him : (cubeRootOfUnity : ℂ).im = Real.sin (2 * Real.pi / 3) := by
     have hexp : 2 * Real.pi / 3 * Complex.I = ((2 * Real.pi / 3 : ℝ) : ℂ) * Complex.I := by
       push_cast; ring
-    simp [cubeRootOfUnity, hexp, Complex.exp_ofReal_mul_I_im]
+    simp [coe_cubeRootOfUnity, hexp, Complex.exp_ofReal_mul_I_im]
   have hpos : 0 < Real.sin (2 * Real.pi / 3) :=
     Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])
   exact hpos.ne (by rwa [h, Complex.one_im] at him)
@@ -173,7 +177,7 @@ theorem one_add_cubeRootOfUnity_add_sq :
 
 @[simp] theorem star_coe_cubeRootOfUnity :
     star (cubeRootOfUnity : ℂ) = ((cubeRootOfUnity⁻¹ : ℂˣ) : ℂ) := by
-  simp only [cubeRootOfUnity, Units.val_mk0, Units.val_inv_eq_inv_val, Complex.star_def,
+  simp only [coe_cubeRootOfUnity, Units.val_inv_eq_inv_val, Complex.star_def,
     ← Complex.exp_conj, ← Complex.exp_neg]
   congr 1; simp only [map_mul, map_div₀, map_ofNat, Complex.conj_ofReal, Complex.conj_I]; ring
 
@@ -480,12 +484,12 @@ private theorem siteMonomial_mul_siteMonomial :
     have hpow : u (Fin.last N) ^ (a (Fin.last N)).val * u (Fin.last N) ^ (b (Fin.last N)).val =
         u (Fin.last N) ^ ((a + b) (Fin.last N)).val := by
       rw [← pow_add, Pi.add_apply, ZMod.val_add, ← pow_eq_pow_mod _ (hcube (Fin.last N))]
+    have hinit : Fin.init (a + b) = Fin.init a + Fin.init b := by ext i; simp [Fin.init_def]
     simp only [siteMonomial, mul_assoc]
     rw [← mul_assoc (u (Fin.last N) ^ _), hcomm, smul_mul_assoc, mul_smul_comm,
       ← mul_assoc (siteMonomial _ _), ← mul_assoc (siteMonomial _ _), ih, smul_mul_assoc,
       smul_mul_assoc, mul_assoc, mul_assoc, hpow, smul_smul, ← Units.val_mul, ← cubeRootPow_add,
-      halfChainForm_succ]
-    change _ = _ • (siteMonomial (u ∘ Fin.castSucc) (Fin.init a + Fin.init b) * _)
+      halfChainForm_succ, hinit]
     refine congrArg (fun z ↦ (cubeRootPow z : ℂ) • _) ?_
     simp only [Fin.init]; ring
 
@@ -556,11 +560,8 @@ theorem adjoin_range_cubicSite (N : ℕ) :
 /-- Two `ℂ`-algebra homomorphisms out of `CubicTorus N` agreeing on `cubicSite N` are equal. -/
 theorem algHom_ext_cubicSite {N : ℕ} {A : Type*} [Semiring A] [Algebra ℂ A]
     {F G : CubicTorus N →ₐ[ℂ] A} (h : ∀ j : Fin N, F (cubicSite N j) = G (cubicSite N j)) :
-    F = G := by
-  have heq : AlgHom.equalizer F G = ⊤ := by
-    rw [eq_top_iff, ← adjoin_range_cubicSite N, Algebra.adjoin_le_iff]
-    rintro _ ⟨j, rfl⟩; exact h j
-  exact AlgHom.ext fun x ↦ (AlgHom.mem_equalizer F G x).mp (heq.symm ▸ trivial)
+    F = G :=
+  AlgHom.ext_of_adjoin_eq_top (adjoin_range_cubicSite N) (by rintro _ ⟨j, rfl⟩; exact h j)
 
 /-! ### Group inversion, the fixed subalgebra `C_N`, and its dimension `(3 ^ N + 1) / 2` -/
 
@@ -655,15 +656,18 @@ theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
     have hdiag (a : Multiplicative (Fin N → ZMod 3)) :
         (_root_.LinearMap.toMatrix b b θ) a a = if a = 1 then 1 else 0 := by
       rw [_root_.LinearMap.toMatrix_apply, TwistedMonoidAlgebra.basis_apply]
-      change b.repr (cubicInversion N (weyl N a)) a = _
-      rw [cubicInversion_weyl, weyl_def, TwistedMonoidAlgebra.basis_repr_of, Finsupp.single_apply]
+      dsimp only [θ]
+      rw [AlgHom.toLinearMap_apply, ← weyl_def, cubicInversion_weyl, weyl_def,
+        TwistedMonoidAlgebra.basis_repr_of, Finsupp.single_apply]
       simp only [hinv]
     simp [hdiag]
   have htr1 : _root_.LinearMap.trace ℂ (CubicTorus N) (1 : Module.End ℂ (CubicTorus N)) =
       (3 ^ N : ℂ) := by
     rw [_root_.LinearMap.trace_eq_matrix_trace ℂ b 1]; simp
   have htr := TauCeti.LinearMap.trace_eq_mul_finrank_range (K := ℂ) (M := CubicTorus N) hsq
-  rw [show f = 1 + θ from rfl, map_add, htr1, htrθ, hrange] at htr
+  rw [hrange] at htr
+  dsimp only [f] at htr
+  rw [map_add, htr1, htrθ] at htr
   have hnat : 3 ^ N + 1 = 2 * Module.finrank ℂ (cubicFixed N) := by exact_mod_cast htr
   omega
 

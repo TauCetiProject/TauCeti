@@ -87,22 +87,22 @@ theorem cubicProjection_mem_cubicFixed (N : ℕ) (j : Fin N) :
 /-- `cubicProjection N j` is idempotent: `p_j * p_j = p_j`. -/
 @[simp] theorem cubicProjection_mul_self (N : ℕ) (j : Fin N) :
     cubicProjection N j * cubicProjection N j = cubicProjection N j := by
-  set s := 1 + cubicSite N j + cubicSite N j ^ 2
+  set s := 1 + cubicSite N j + cubicSite N j ^ 2 with hs
   have hsu : s * cubicSite N j = s := one_add_cubicSite_mul_cubicSite N j
   have hsu2 : s * cubicSite N j ^ 2 = s := by rw [sq, ← mul_assoc, hsu, hsu]
   have hsum : s * s = (3 : ℂ) • s := by
-    rw [show s * s = s * (1 + cubicSite N j + cubicSite N j ^ 2) from rfl, mul_add, mul_add,
-      mul_one, hsu, hsu2, show (3 : ℂ) = 1 + 1 + 1 by norm_num, add_smul, add_smul, one_smul]
-  rw [cubicProjection_def, ← show s = 1 + cubicSite N j + cubicSite N j ^ 2 from rfl,
-    smul_mul_smul_comm, hsum, smul_smul]
+    nth_rw 2 [hs]
+    rw [mul_add, mul_add, mul_one, hsu, hsu2, show (3 : ℂ) = 1 + 1 + 1 by norm_num,
+      add_smul, add_smul, one_smul]
+  rw [cubicProjection_def, ← hs, smul_mul_smul_comm, hsum, smul_smul]
   congr 1; norm_num
 
 /-- Sandwiching `W(a)` with `B(e_j, a) ≠ 0` between `cubicProjection N j` gives `0`. -/
 theorem cubicProjection_mul_weyl_mul_cubicProjection_eq_zero {N : ℕ} (j : Fin N)
     {a : Multiplicative (Fin N → ZMod 3)} (hc : chainForm N (Pi.single j 1) a.toAdd ≠ 0) :
     cubicProjection N j * weyl N a * cubicProjection N j = 0 := by
-  set u := cubicSite N j
-  set s := 1 + u + u ^ 2
+  set u := cubicSite N j with hu_def
+  set s := 1 + u + u ^ 2 with hs_def
   set c := chainForm N (Pi.single j 1) a.toAdd
   have hu : u * weyl N a = (cubeRootPow c : ℂ) • (weyl N a * u) := by
     simpa [u, c, cubicSite_def] using weyl_mul_comm N (ofAdd (Pi.single j 1)) a
@@ -120,8 +120,8 @@ theorem cubicProjection_mul_weyl_mul_cubicProjection_eq_zero {N : ℕ} (j : Fin 
       _ = (1 + (cubeRootPow c : ℂ) + (cubeRootPow (2 * c) : ℂ)) • (weyl N a * s) := by
             rw [hus, hu2s, add_smul, add_smul, one_smul]
       _ = 0 := by rw [one_add_cubeRootPow_add_two_mul hc, zero_smul]
-  simp only [cubicProjection_def, ← show s = 1 + cubicSite N j + cubicSite N j ^ 2 from rfl,
-    smul_mul_assoc, mul_smul_comm, hs, smul_zero]
+  rw [cubicProjection_def, ← hu_def, ← hs_def]
+  simp only [smul_mul_assoc, mul_smul_comm, hs, smul_zero]
 
 /-- Adjacent projections satisfy `p_j * p_k * p_j = 3⁻¹ • p_j` when `|j - k| = 1`. -/
 theorem cubicProjection_mul_cubicProjection_mul_cubicProjection {N : ℕ} {j k : Fin N}

@@ -34,10 +34,6 @@ variable {k G H K : Type*} [CommSemiring k] [Monoid G] [Monoid H] [Monoid K]
   {α : G → G → kˣ} {β : H → H → kˣ} {γ : K → K → kˣ}
   [IsFactorSet α] [IsFactorSet β] [IsFactorSet γ]
 
-/-- The basis representation of the basis element `of g` is `Finsupp.single g 1`. -/
-@[simp] theorem basis_repr_of (g : G) : (basis k G α).repr (of g) = Finsupp.single g 1 := by
-  rw [← basis_apply, Module.Basis.repr_self]
-
 /-- **Functoriality of the twisted monoid algebra.** A monoid homomorphism `f : G →* H` pulling the
 factor set `β` back to `α` induces a `k`-algebra homomorphism `k_α[G] →ₐ[k] k_β[H]` sending
 `of g` to `of (f g)`. -/

@@ -201,10 +201,14 @@ theorem isMarkovTrace_cubicTrace : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) cubicTr
       Subalgebra.coe_mul, Subalgebra.coe_mul, TwistedMonoidAlgebra.scalarTrace_mul_comm]
   map_strandIncl n x := by
     rw [cubicTrace_apply, cubicTrace_apply, cubicFixedHom_strandIncl, coe_cubicFixedIncl]
+    -- `n + 2 - 1` and `n + 1 - 1` appear inside dependent types (`CubicTorus`, `cubicFixed`),
+    -- so `rw`/`simp` cannot normalize them without ill-typed intermediate terms.
     change (Real.sqrt 3 : ℂ) ^ (n + 2) *
-        cubicScalarCoefficient (n + 1) (cubicIncl n (cubicFixedHom (n + 1) x).1) =
+        cubicScalarCoefficient (n + 1)
+          (cubicIncl n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1))) =
       (Real.sqrt 3 : ℂ) *
-        ((Real.sqrt 3 : ℂ) ^ (n + 1) * cubicScalarCoefficient n (cubicFixedHom (n + 1) x).1)
+        ((Real.sqrt 3 : ℂ) ^ (n + 1) *
+          cubicScalarCoefficient n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1)))
     rw [cubicScalarCoefficient_cubicIncl, pow_succ']; ring
   map_strandIncl_mul_e_last n x := by
     have hsqrt : (Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ) = 3 := by
@@ -212,16 +216,20 @@ theorem isMarkovTrace_cubicTrace : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) cubicTr
     rw [cubicTrace_apply, cubicTrace_apply, map_mul, Subalgebra.coe_mul,
       cubicFixedHom_strandIncl, coe_cubicFixedIncl, coe_cubicFixedHom_e, mul_smul_comm, map_smul,
       smul_eq_mul]
+    -- `n + 2 - 1` and `n + 1 - 1` appear inside dependent types (`CubicTorus`, `Fin`,
+    -- `cubicFixed`), so `rw`/`simp` cannot normalize them without ill-typed intermediate terms.
     change (Real.sqrt 3 : ℂ) ^ (n + 2) *
         ((Real.sqrt 3 : ℂ) *
           cubicScalarCoefficient (n + 1)
-            (cubicIncl n (cubicFixedHom (n + 1) x).1 * cubicProjection (n + 1) (Fin.last n))) =
-      (Real.sqrt 3 : ℂ) ^ (n + 1) * cubicScalarCoefficient n (cubicFixedHom (n + 1) x).1
+            (cubicIncl n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1)) *
+              cubicProjection (n + 1) (Fin.last n))) =
+      (Real.sqrt 3 : ℂ) ^ (n + 1) *
+        cubicScalarCoefficient n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1))
     rw [cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last, pow_succ]
     have hfac : ((Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ)) * (3 : ℂ)⁻¹ = 1 := by
       rw [hsqrt]; norm_num
     linear_combination ((Real.sqrt 3 : ℂ) ^ (n + 1) *
-      cubicScalarCoefficient n (cubicFixedHom (n + 1) x).1) * hfac
+      cubicScalarCoefficient n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1))) * hfac
 
 namespace IsMarkovTrace
 

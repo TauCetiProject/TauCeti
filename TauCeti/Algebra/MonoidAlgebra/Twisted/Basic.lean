@@ -356,6 +356,17 @@ noncomputable def basis : Basis G k (twistedMonoidAlgebra k G α) :=
 theorem basis_apply (g : G) : basis k G α g = of g :=
   Subtype.ext <| Basis.coe_span_apply _ _
 
+section
+
+variable {k G α}
+
+/-- The basis representation of the basis element `of g` is `Finsupp.single g 1`. -/
+@[simp]
+theorem basis_repr_of (g : G) : (basis k G α).repr (of g) = Finsupp.single g 1 := by
+  rw [← basis_apply, Basis.repr_self]
+
+end
+
 instance : Module.Free k (twistedMonoidAlgebra k G α) :=
   Module.Free.of_basis (basis k G α)
 
