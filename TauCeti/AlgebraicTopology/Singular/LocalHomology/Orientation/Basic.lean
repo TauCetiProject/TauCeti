@@ -20,7 +20,10 @@ are represented by the universe-lifted module `ULift ℤ`. The construction is t
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
 `ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, and
 isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
-(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
+(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites. In the
+dimension of a manifold, every point has exactly two local orientations, which are reversals of
+each other (`TauCeti.LocalOrientation.nat_card_eq_two`, `TauCeti.LocalOrientation.eq_or_eq_neg`,
+`TauCeti.LocalOrientation.neg_ne`).
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -282,5 +285,49 @@ theorem exists_localOrientation_of_zero_dim_chart {M E : Type w} [TopologicalSpa
   haveI : Subsingleton E := Module.finrank_zero_iff.1 hn
   haveI : DiscreteTopology M := ChartedSpace.discreteTopology (H := E) M
   ⟨localOrientationOfZeroDimChart (chartAt E x) (mem_chart_source E x) hn⟩
+
+/-! ### Local orientations of a manifold -/
+
+section Manifold
+
+variable {M E : Type w} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [ChartedSpace E M] {d : ℕ}
+
+namespace LocalOrientation
+
+/-- In the dimension of the manifold, every point has a local orientation. -/
+theorem nonempty (hd : finrank ℝ E = d) (x : M) : Nonempty (LocalOrientation M x d) := by
+  cases d with
+  | zero => exact exists_localOrientation_of_zero_dim_chart x hd
+  | succ d => exact exists_localOrientation_of_chart x hd
+
+/-- In the dimension of the manifold, every point has exactly two local orientations. -/
+theorem nat_card_eq_two (hd : finrank ℝ E = d) (x : M) : Nat.card (LocalOrientation M x d) = 2 := by
+  subst hd
+  exact nat_card_localOrientation
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+
+/-- In the dimension of the manifold, the local orientations at a point form a finite set. -/
+theorem finite (hd : finrank ℝ E = d) (x : M) : Finite (LocalOrientation M x d) :=
+  Nat.finite_of_card_ne_zero (by simp [nat_card_eq_two hd x])
+
+/-- In the dimension of the manifold, two local orientations at a point agree up to reversal. -/
+theorem eq_or_eq_neg (hd : finrank ℝ E = d) {x : M} (z z' : LocalOrientation M x d) :
+    z' = z ∨ z' = -z := by
+  subst hd
+  exact (IsLocalOrientation.eq_or_eq_neg
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+    z.property z'.property).imp Subtype.ext Subtype.ext
+
+/-- In the dimension of the manifold, a local orientation differs from its reversal. -/
+theorem neg_ne (hd : finrank ℝ E = d) {x : M} (z : LocalOrientation M x d) : -z ≠ z := by
+  subst hd
+  exact fun h ↦ IsLocalOrientation.neg_ne
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+    z.property (congrArg Subtype.val h)
+
+end LocalOrientation
+
+end Manifold
 
 end TauCeti
