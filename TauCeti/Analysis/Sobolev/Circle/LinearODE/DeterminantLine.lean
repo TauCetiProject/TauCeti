@@ -73,8 +73,9 @@ and reverses them when `det (1 - P_a) * det (1 - P_b) < 0`
 The operators `∂t - J₀ S(t)` on loops along a closed orbit, which govern the periodic twists of the
 normal operator `∂s + J₀ ∂t + S(t)` of an orbit torus, are of this form, with `P` the linearized
 return map. For them the orientation comparison above is expressed by the sign of `det (1 - P)`,
-and transporting an orientation along a path of such operators changes it by the sign of the
-product of the determinants at the two ends.
+and, along a path of such operators with bijective endpoints, transport carries the orientation
+given by bijectivity at one end to the orientation given by bijectivity at the other when the
+product of the determinants at the two ends is positive, and to its opposite when it is negative.
 
 ## Main definitions
 
