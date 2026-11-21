@@ -23,9 +23,11 @@ wherever the flow is defined
 (`TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`). No compactness is needed.
 The flow fixes the points at which the hyperplane does not move, so near any set `K` of such points
 it gives a partial diffeomorphism fixing `K` and carrying `ξ_s` to `ξ_t`
-(`TauCeti.IsContactDistributionFamily.exists_partialDiffeomorph_map_mfderiv_eq`). On a compact
-manifold the flow is a global isotopy
-(`TauCeti.IsContactDistributionFamily.exists_diffeomorph_map_mfderiv_eq`).
+(`TauCeti.IsContactDistributionFamily.exists_partialDiffeomorph_map_mfderiv_eq`): Gray's partial
+isotopy, the time map of the flow
+(`TauCeti.IsContactDistributionFamily.grayPartialDiffeomorph`). On a compact manifold the flow is a
+global isotopy (`TauCeti.IsContactDistributionFamily.grayDiffeomorph`,
+`TauCeti.IsContactDistributionFamily.exists_diffeomorph_map_mfderiv_eq`).
 
 The proof is local in time and space. Near a time `u₀` and a point `y₀`, the contact structures
 are the kernels of a local defining family `α_t` on an open set `U`, contact for the times of an
@@ -38,12 +40,24 @@ the flow maps `ker α_s` into `ker α_t` for nearby times. The flow on `U` is th
 local statement along a whole trajectory, by connectedness of its interval of times
 (`TauCeti.map_mfderiv_timeDependentFlowOf_eq_of_eventually`).
 
+## Main definitions
+
+* `TauCeti.IsContactDistributionFamily.grayPartialDiffeomorph`: the flow of the Gray vector field
+  from time `s` to time `t`, as a partial diffeomorphism.
+* `TauCeti.IsContactDistributionFamily.grayDiffeomorph`: on a compact manifold, the same flow as a
+  diffeomorphism.
+
 ## Main results
 
 * `TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`: the flow of the Gray
   vector field carries `ξ_s` to `ξ_t`.
+* `TauCeti.IsContactDistributionFamily.map_mfderiv_grayPartialDiffeomorph`: the same on the source
+  of Gray's partial isotopy.
 * `TauCeti.IsContactDistributionFamily.exists_partialDiffeomorph_map_mfderiv_eq`: relative Gray
   stability near a set of points with stationary contact hyperplanes.
+* `TauCeti.IsContactDistributionFamily.map_mfderiv_grayDiffeomorph`,
+  `TauCeti.IsContactDistributionFamily.contMDiff_grayDiffeomorph`: Gray's isotopy on a compact
+  manifold carries `ξ_s` onto `ξ_t` and is jointly smooth in both times and the point.
 * `TauCeti.IsContactDistributionFamily.exists_diffeomorph_map_mfderiv_eq`: Gray's stability
   theorem for contact structures on a compact manifold.
 
@@ -141,6 +155,106 @@ theorem map_mfderiv_timeDependentFlowOf {s t : ℝ} {x : M}
     (hξ.contMDiff_distributionGrayVectorField.of_le (by simp))
     (eventually_mfderiv_timeDependentFlowOf_mem hξ) h
 
+
+/-- **The flow of the Gray vector field preserves the contact structures.** If the flow of the
+Gray vector field of a smooth family of contact structures is defined from `(s, x)` up to time
+`t`, its differential at `x` maps every vector of `ξ_s` at `x` to a vector of `ξ_t` at the image
+point. -/
+theorem mfderiv_timeDependentFlowOf_mem {s t : ℝ} {x : M}
+    (h : ((s, t), x) ∈ timeDependentFlowDomain (distributionGrayVectorField ξ))
+    {v : TangentSpace I x} (hv : v ∈ ξ s x) :
+    mfderiv I I (timeDependentFlowOf (distributionGrayVectorField ξ) s t) x v ∈
+      ξ t (timeDependentFlowOf (distributionGrayVectorField ξ) s t x) := by
+  rw [← hξ.map_mfderiv_timeDependentFlowOf h]
+  exact Submodule.mem_map_of_mem hv
+
+/-! ### Gray's partial isotopy and relative Gray stability -/
+
+/-- **Gray's partial isotopy** of a smooth family of contact structures: the time-dependent flow
+of its Gray vector field from time `s` to time `t`, as a smooth partial diffeomorphism of `M`. It
+carries `ξ_s` to `ξ_t` on its source
+(`TauCeti.IsContactDistributionFamily.map_mfderiv_grayPartialDiffeomorph`), whose points are those
+from which the flow is defined up to time `t`. -/
+def grayPartialDiffeomorph (s t : ℝ) : PartialDiffeomorph I I M M ∞ :=
+  timeDependentFlowPartialDiffeomorph le_top hξ.contMDiff_distributionGrayVectorField s t
+
+/-- Gray's partial isotopy is the time-dependent flow of the Gray vector field. -/
+@[simp]
+theorem grayPartialDiffeomorph_apply (s t : ℝ) (x : M) :
+    hξ.grayPartialDiffeomorph s t x = timeDependentFlowOf (distributionGrayVectorField ξ) s t x :=
+  timeDependentFlowPartialDiffeomorph_apply _ _ s t x
+
+/-- As a function, Gray's partial isotopy is the time-dependent flow of the Gray vector field. -/
+theorem coe_grayPartialDiffeomorph (s t : ℝ) :
+    ⇑(hξ.grayPartialDiffeomorph s t) = timeDependentFlowOf (distributionGrayVectorField ξ) s t :=
+  funext (hξ.grayPartialDiffeomorph_apply s t)
+
+/-- The inverse of Gray's partial isotopy from `s` to `t` is the time-dependent flow of the Gray
+vector field from `t` to `s`. -/
+@[simp]
+theorem grayPartialDiffeomorph_symm_apply (s t : ℝ) (x : M) :
+    (hξ.grayPartialDiffeomorph s t).toPartialEquiv.symm x =
+      timeDependentFlowOf (distributionGrayVectorField ξ) t s x :=
+  timeDependentFlowPartialDiffeomorph_symm_apply _ _ s t x
+
+/-- A point lies in the source of Gray's partial isotopy from `s` to `t` exactly when the flow of
+the Gray vector field from `(s, x)` is defined up to time `t`. -/
+@[simp]
+theorem mem_grayPartialDiffeomorph_source_iff {s t : ℝ} {x : M} :
+    x ∈ (hξ.grayPartialDiffeomorph s t).source ↔
+      ((s, t), x) ∈ timeDependentFlowDomain (distributionGrayVectorField ξ) :=
+  mem_timeDependentFlowPartialDiffeomorph_source_iff _ _
+
+/-- A point lies in the target of Gray's partial isotopy from `s` to `t` exactly when the flow of
+the Gray vector field from `(t, x)` is defined back to time `s`. -/
+@[simp]
+theorem mem_grayPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
+    x ∈ (hξ.grayPartialDiffeomorph s t).target ↔
+      ((t, s), x) ∈ timeDependentFlowDomain (distributionGrayVectorField ξ) :=
+  mem_timeDependentFlowPartialDiffeomorph_target_iff _ _
+
+/-- Gray's partial isotopy depends smoothly on the final time and the point, on the open set of
+pairs `(t, x)` for which the flow from `(s, x)` is defined up to time `t`. -/
+theorem contMDiffOn_grayPartialDiffeomorph (s : ℝ) :
+    ContMDiffOn (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ hξ.grayPartialDiffeomorph s p.1 p.2)
+      {p | ((s, p.1), p.2) ∈ timeDependentFlowDomain (distributionGrayVectorField ξ)} := by
+  simp only [grayPartialDiffeomorph_apply]
+  exact (contMDiffOn_timeDependentFlowOf le_top hξ.contMDiff_distributionGrayVectorField).comp
+    (((contMDiff_const (c := s)).prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffOn
+    fun _ hp ↦ hp
+
+/-- **Gray's stability theorem on the source of the partial isotopy.** Gray's partial isotopy from
+`s` to `t` carries `ξ_s` onto `ξ_t` at every point of its source. -/
+theorem map_mfderiv_grayPartialDiffeomorph {s t : ℝ} {x : M}
+    (hx : x ∈ (hξ.grayPartialDiffeomorph s t).source) :
+    (ξ s x).map (mfderiv I I (hξ.grayPartialDiffeomorph s t) x).toLinearMap =
+      ξ t (hξ.grayPartialDiffeomorph s t x) := by
+  rw [coe_grayPartialDiffeomorph]
+  exact hξ.map_mfderiv_timeDependentFlowOf ((hξ.mem_grayPartialDiffeomorph_source_iff).1 hx)
+
+/-- A point at which the contact hyperplane `ξ_u` is the same for all times lies in the source of
+Gray's partial isotopy between any two times. -/
+theorem mem_grayPartialDiffeomorph_source {x : M} (hx : ∀ u, ξ u x = ξ 0 x) (s t : ℝ) :
+    x ∈ (hξ.grayPartialDiffeomorph s t).source :=
+  (hξ.mem_grayPartialDiffeomorph_source_iff).2 (mem_timeDependentFlowDomain_of_forall_eq_zero
+    (hξ.distributionGrayVectorField_eq_zero_of_forall_eq hx) s t)
+
+/-- A point at which the contact hyperplane `ξ_u` is the same for all times lies in the target of
+Gray's partial isotopy between any two times. -/
+theorem mem_grayPartialDiffeomorph_target {x : M} (hx : ∀ u, ξ u x = ξ 0 x) (s t : ℝ) :
+    x ∈ (hξ.grayPartialDiffeomorph s t).target :=
+  (hξ.mem_grayPartialDiffeomorph_target_iff).2 (mem_timeDependentFlowDomain_of_forall_eq_zero
+    (hξ.distributionGrayVectorField_eq_zero_of_forall_eq hx) t s)
+
+/-- Gray's partial isotopy fixes every point at which the contact hyperplane `ξ_u` is the same for
+all times. -/
+theorem grayPartialDiffeomorph_apply_eq_self {x : M} (hx : ∀ u, ξ u x = ξ 0 x) (s t : ℝ) :
+    hξ.grayPartialDiffeomorph s t x = x := by
+  rw [grayPartialDiffeomorph_apply]
+  exact timeDependentFlowOf_eq_self_of_forall_eq_zero
+    (hξ.contMDiff_distributionGrayVectorField.of_le (by simp))
+    (hξ.distributionGrayVectorField_eq_zero_of_forall_eq hx) s t
+
 /-- **Relative Gray stability for contact structures.** Let `ξ_t` be a smooth family of contact
 structures on a boundaryless manifold, and let `K` be a set of points at each of which the contact
 hyperplane `ξ_t` is the same for all times. Then for all times `s` and `t` there is a smooth partial
@@ -151,47 +265,104 @@ coorientation of `ξ` is needed. -/
 theorem exists_partialDiffeomorph_map_mfderiv_eq {K : Set M} (hK : ∀ x ∈ K, ∀ u, ξ u x = ξ 0 x)
     (s t : ℝ) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
-      ∀ x ∈ φ.source, (ξ s x).map (mfderiv I I φ x).toLinearMap = ξ t (φ x) := by
-  have hY := hξ.contMDiff_distributionGrayVectorField
-  -- The Gray vector field vanishes at the points of `K` at all times.
-  have hzero (x : M) (hx : x ∈ K) (u : ℝ) : distributionGrayVectorField ξ u x = 0 :=
-    hξ.distributionGrayVectorField_eq_zero (.of_forall fun v ↦ (hK x hx v).trans (hK x hx u).symm)
-  have hφ : ⇑(timeDependentFlowPartialDiffeomorph le_top hY s t) =
-      timeDependentFlowOf (distributionGrayVectorField ξ) s t :=
-    funext (timeDependentFlowPartialDiffeomorph_apply _ _ s t)
-  refine ⟨timeDependentFlowPartialDiffeomorph le_top hY s t, fun x hx ↦ ?_, fun x hx ↦ ?_,
-    fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · exact (mem_timeDependentFlowPartialDiffeomorph_source_iff _ _).2
-      (mem_timeDependentFlowDomain_of_forall_eq_zero (hzero x hx) s t)
-  · exact (mem_timeDependentFlowPartialDiffeomorph_target_iff _ _).2
-      (mem_timeDependentFlowDomain_of_forall_eq_zero (hzero x hx) t s)
-  · rw [hφ]
-    exact timeDependentFlowOf_eq_self_of_forall_eq_zero (hY.of_le (by simp)) (hzero x hx) s t
-  · rw [hφ]
-    exact hξ.map_mfderiv_timeDependentFlowOf
-      ((mem_timeDependentFlowPartialDiffeomorph_source_iff _ _).1 hx)
+      ∀ x ∈ φ.source, (ξ s x).map (mfderiv I I φ x).toLinearMap = ξ t (φ x) :=
+  ⟨hξ.grayPartialDiffeomorph s t, fun x hx ↦ hξ.mem_grayPartialDiffeomorph_source (hK x hx) s t,
+    fun x hx ↦ hξ.mem_grayPartialDiffeomorph_target (hK x hx) s t,
+    fun x hx ↦ hξ.grayPartialDiffeomorph_apply_eq_self (hK x hx) s t,
+    fun _ hx ↦ hξ.map_mfderiv_grayPartialDiffeomorph hx⟩
+
+/-! ### Gray's isotopy on a compact manifold -/
+
+variable [CompactSpace M]
+
+/-- On a compact manifold, the Gray vector field of a smooth family of contact structures has a
+complete suspension: its time-dependent flow is defined for all times. -/
+theorem isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField :
+    IsCompleteVectorField (timeDependentSuspensionField (distributionGrayVectorField ξ)) :=
+  isCompleteVectorField_timeDependentSuspensionField
+    (hξ.contMDiff_distributionGrayVectorField.of_le (by simp))
+    isCompact_univ (by simp)
+
+/-- **Gray's isotopy** of a smooth family of contact structures on a compact manifold without
+boundary: the time-dependent flow of its Gray vector field from time `s` to time `t`, as a
+diffeomorphism. It carries `ξ_s` onto `ξ_t`
+(`TauCeti.IsContactDistributionFamily.map_mfderiv_grayDiffeomorph`). -/
+def grayDiffeomorph (s t : ℝ) : M ≃ₘ⟮I, I⟯ M :=
+  timeDependentFlowDiffeomorph
+    hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField le_top
+    hξ.contMDiff_distributionGrayVectorField s t
+
+/-- Gray's isotopy is the time-dependent flow of the Gray vector field. -/
+theorem grayDiffeomorph_apply (s t : ℝ) (x : M) :
+    hξ.grayDiffeomorph s t x = timeDependentFlowOf (distributionGrayVectorField ξ) s t x :=
+  timeDependentFlowDiffeomorph_apply _ _ _ s t x
+
+/-- As a function, Gray's isotopy is the time-dependent flow of the Gray vector field. -/
+theorem coe_grayDiffeomorph (s t : ℝ) :
+    ⇑(hξ.grayDiffeomorph s t) = timeDependentFlowOf (distributionGrayVectorField ξ) s t :=
+  funext (hξ.grayDiffeomorph_apply s t)
+
+/-- The inverse of Gray's isotopy from `s` to `t` is Gray's isotopy from `t` to `s`. -/
+@[simp]
+theorem grayDiffeomorph_symm_apply (s t : ℝ) (x : M) :
+    (hξ.grayDiffeomorph s t).symm x = hξ.grayDiffeomorph t s x :=
+  (timeDependentFlowDiffeomorph_symm_apply _ _ _ s t x).trans (hξ.grayDiffeomorph_apply t s x).symm
+
+/-- Gray's isotopy from a time to itself is the identity. -/
+@[simp]
+theorem grayDiffeomorph_self (s : ℝ) (x : M) : hξ.grayDiffeomorph s s x = x := by
+  rw [grayDiffeomorph_apply, timeDependentFlowOf_self]
+
+/-- Gray's isotopy composes: flowing from `r` to `s` and then from `s` to `t` is flowing from `r`
+to `t`. -/
+@[simp]
+theorem grayDiffeomorph_grayDiffeomorph (r s t : ℝ) (x : M) :
+    hξ.grayDiffeomorph s t (hξ.grayDiffeomorph r s x) = hξ.grayDiffeomorph r t x := by
+  simp only [grayDiffeomorph_apply]
+  exact timeDependentFlowOf_trans
+    hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField
+    (hξ.contMDiff_distributionGrayVectorField.of_le (by simp)) r s t x
+
+/-- Gray's isotopy depends smoothly on the initial time, the final time and the point. -/
+theorem contMDiff_grayDiffeomorph :
+    ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I ∞
+      (fun p : (ℝ × ℝ) × M ↦ hξ.grayDiffeomorph p.1.1 p.1.2 p.2) := by
+  simp only [grayDiffeomorph_apply]
+  exact contMDiff_timeDependentFlowOf
+    hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField le_top
+    hξ.contMDiff_distributionGrayVectorField
+
+/-- **Gray's stability theorem on a compact manifold.** On a compact manifold without boundary,
+Gray's isotopy of a smooth family of contact structures carries `ξ_s` onto `ξ_t` at every point:
+it is a contactomorphism from `ξ_s` to `ξ_t`. -/
+theorem map_mfderiv_grayDiffeomorph (s t : ℝ) (x : M) :
+    (ξ s x).map (mfderiv I I (hξ.grayDiffeomorph s t) x).toLinearMap =
+      ξ t (hξ.grayDiffeomorph s t x) := by
+  rw [coe_grayDiffeomorph]
+  exact hξ.map_mfderiv_timeDependentFlowOf ((timeDependentFlowDomain_eq_univ
+    hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField).symm ▸
+      mem_univ _)
+
+/-- Gray's isotopy fixes every point at which the contact hyperplane `ξ_u` is the same for all
+times. -/
+theorem grayDiffeomorph_apply_eq_self {x : M} (hx : ∀ u, ξ u x = ξ 0 x) (s t : ℝ) :
+    hξ.grayDiffeomorph s t x = x := by
+  rw [grayDiffeomorph_apply]
+  exact timeDependentFlowOf_eq_self_of_forall_eq_zero
+    (hξ.contMDiff_distributionGrayVectorField.of_le (by simp))
+    (hξ.distributionGrayVectorField_eq_zero_of_forall_eq hx) s t
 
 /-- **Gray's stability theorem for contact structures.** On a compact boundaryless manifold, a
 smooth family of contact structures `ξ_t` is carried along by an isotopy: there are diffeomorphisms
 `φ_{s,t}`, jointly smooth in both times and the point, with `φ_{s,s} = id`, whose differentials
 carry `ξ_s` onto `ξ_t`. No global defining form or coorientation of `ξ` is needed. -/
-theorem exists_diffeomorph_map_mfderiv_eq [CompactSpace M] :
+theorem exists_diffeomorph_map_mfderiv_eq :
     ∃ φ : ℝ → ℝ → M ≃ₘ⟮I, I⟯ M,
       ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I ∞ (fun p : (ℝ × ℝ) × M ↦ φ p.1.1 p.1.2 p.2) ∧
         (∀ s x, φ s s x = x) ∧
-        ∀ s t x, (ξ s x).map (mfderiv I I (φ s t) x).toLinearMap = ξ t (φ s t x) := by
-  have hY := hξ.contMDiff_distributionGrayVectorField
-  have hc := isCompleteVectorField_timeDependentSuspensionField (hY.of_le (by simp))
-    isCompact_univ (by simp)
-  have hφ (s t : ℝ) : ⇑(timeDependentFlowDiffeomorph hc le_top hY s t) =
-      timeDependentFlowOf (distributionGrayVectorField ξ) s t :=
-    funext (timeDependentFlowDiffeomorph_apply _ _ _ s t)
-  refine ⟨timeDependentFlowDiffeomorph hc le_top hY, ?_, fun s x ↦ ?_, fun s t x ↦ ?_⟩
-  · simp only [hφ]
-    exact contMDiff_timeDependentFlowOf hc le_top hY
-  · rw [hφ, timeDependentFlowOf_self]
-  · rw [hφ]
-    exact hξ.map_mfderiv_timeDependentFlowOf (timeDependentFlowDomain_eq_univ hc ▸ mem_univ _)
+        ∀ s t x, (ξ s x).map (mfderiv I I (φ s t) x).toLinearMap = ξ t (φ s t x) :=
+  ⟨hξ.grayDiffeomorph, hξ.contMDiff_grayDiffeomorph, hξ.grayDiffeomorph_self,
+    hξ.map_mfderiv_grayDiffeomorph⟩
 
 end IsContactDistributionFamily
 
