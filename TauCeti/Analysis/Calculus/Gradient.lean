@@ -11,8 +11,9 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Topology.MetricSpace.Holder
--- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
--- only inside the proofs below.
+-- Private: the derivative sum and scalar rules, the symmetry of second derivatives and the local
+-- Lipschitz property of `C¹` maps are used only inside the proofs below.
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
@@ -60,8 +61,9 @@ chain rule for the gradient of a real profile composed with a real function.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
-  continuous; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
-  `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
+  continuous; `ContDiff.locallyLipschitz_neg_gradient`: the negative gradient field of a `C²`
+  function is locally Lipschitz; `HasCompactSupport.memLp_gradient`: the gradient of a compactly
+  supported `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
   `ContDiffAt.continuousAt_fderiv_gradient` and
   `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
   continuous at `x`, and its gradient is differentiable near `x`.
@@ -215,6 +217,13 @@ theorem _root_.ContDiff.continuous_gradient {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
     (hn : n ≠ 0) : Continuous (∇ f) :=
   (toDual ℝ E).symm.continuous.comp (hf.continuous_fderiv hn)
+
+/-- Over `ℝ`, the negative gradient field `-∇f` of a `C²` function is `C¹`, hence locally
+Lipschitz. -/
+theorem _root_.ContDiff.locallyLipschitz_neg_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
+    (hn : 2 ≤ n) : LocallyLipschitz (-∇ f) :=
+  (hf.gradient_right (m := 1) (by rwa [one_add_one_eq_two])).neg.locallyLipschitz
 
 /-- Over `ℝ`, the gradient of a compactly supported `C¹` function is in `Lᵖ(μ)` for every
 measure `μ` finite on compact sets, being continuous with compact support. -/
