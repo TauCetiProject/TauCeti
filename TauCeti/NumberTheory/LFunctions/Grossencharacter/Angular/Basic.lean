@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
@@ -316,45 +317,10 @@ private theorem coe_angularIdeleArchChar_apply (k : ℤ) (y : IdeleGroup (𝓞 F
     Units.mapContinuousMulEquiv_apply, Units.coe_map, ContinuousMulEquiv.coe_toMulEquiv,
     MonoidHom.coe_ofClass]
 
-/-- The continuous surjection from the everywhere-unramified ideles
-`ideleCongruenceSubgroup (Modulus.one F)` onto `IdeleClassGroup (𝓞 F) F`. -/
-private def congruenceOneToClassHom :
-    ideleCongruenceSubgroup (Modulus.one F) →ₜ* IdeleClassGroup (𝓞 F) F :=
-  (Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 F) F)).comp
-    (TauCeti.ContinuousMonoidHom.subgroupSubtype (ideleCongruenceSubgroup (Modulus.one F)))
-
-omit [IsCyclotomicExtension {4} ℚ F] in
-private theorem congruenceOneToClassHom_apply
-    (y : ideleCongruenceSubgroup (Modulus.one F)) :
-    congruenceOneToClassHom F y = ((y : IdeleGroup (𝓞 F) F) : IdeleClassGroup (𝓞 F) F) := by
-  simp only [congruenceOneToClassHom, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    Subgroup.quotientMkContinuousMonoidHom_apply, TauCeti.ContinuousMonoidHom.subgroupSubtype_apply]
-
-private theorem congruenceOneToClassHom_surjective :
-    Function.Surjective (congruenceOneToClassHom F) := by
-  intro c
-  have hc : c ∈ raySubgroup (Modulus.one F) := by
-    rw [raySubgroup_one_eq_top_four]
-    trivial
-  obtain ⟨y, hy, rfl⟩ := mem_raySubgroup_iff.mp hc
-  exact ⟨⟨y, hy⟩, by rw [congruenceOneToClassHom_apply]; rfl⟩
-
-private theorem isQuotientMap_congruenceOneToClassHom :
-    Topology.IsQuotientMap (congruenceOneToClassHom F) := by
-  have hfun : (congruenceOneToClassHom F :
-      ideleCongruenceSubgroup (Modulus.one F) → IdeleClassGroup (𝓞 F) F) =
-      QuotientGroup.mk ∘ Subtype.val :=
-    funext fun y ↦ congruenceOneToClassHom_apply F y
-  have hopen : IsOpenMap (congruenceOneToClassHom F) :=
-    hfun ▸ QuotientGroup.isOpenQuotientMap_mk.isOpenMap.comp
-      (isOpen_ideleCongruenceSubgroup (Modulus.one F)).isOpenEmbedding_subtypeVal.isOpenMap
-  exact hopen.isQuotientMap (congruenceOneToClassHom F).continuous
-    (congruenceOneToClassHom_surjective F)
-
 /-- Principal ideles in `ideleCongruenceSubgroup (Modulus.one F)` come from `(𝓞 F)ˣ`, which are
 fourth roots of unity and therefore lie in the kernel of `angularIdeleArchChar F k`. -/
-private theorem congruenceOneToClassHom_ker_le (k : ℤ) :
-    (congruenceOneToClassHom F :
+private theorem ideleCongruenceToClassHom_ker_le (k : ℤ) :
+    (ideleCongruenceToClassHom (Modulus.one F) :
         ideleCongruenceSubgroup (Modulus.one F) →* IdeleClassGroup (𝓞 F) F).ker ≤
       (((angularIdeleArchChar F k).comp
         (TauCeti.ContinuousMonoidHom.subgroupSubtype
@@ -363,7 +329,7 @@ private theorem congruenceOneToClassHom_ker_le (k : ℤ) :
   intro y hy
   rw [MonoidHom.mem_ker] at hy ⊢
   have hmk : QuotientGroup.mk (y : IdeleGroup (𝓞 F) F) = (1 : IdeleClassGroup (𝓞 F) F) := by
-    simpa only [MonoidHom.coe_ofClass, congruenceOneToClassHom_apply] using hy
+    simpa only [MonoidHom.coe_ofClass, ideleCongruenceToClassHom_apply] using hy
   obtain ⟨x, hx⟩ := (QuotientGroup.eq_one_iff (y : IdeleGroup (𝓞 F) F)).mp hmk
   have hxmem : IdeleGroup.unitEmbedding (𝓞 F) F x ∈ ideleCongruenceSubgroup (Modulus.one F) :=
     hx.symm ▸ y.2
@@ -389,17 +355,19 @@ private theorem congruenceOneToClassHom_ker_le (k : ℤ) :
 
 /-- Hecke's `k`-th angular idele class character on `F`. -/
 private def angularHeckeCharacter (k : ℤ) : HeckeCharacter F :=
-  ContinuousMonoidHom.liftOfIsQuotientMap (congruenceOneToClassHom F)
-    (isQuotientMap_congruenceOneToClassHom F)
+  ContinuousMonoidHom.liftOfIsQuotientMap (ideleCongruenceToClassHom (Modulus.one F))
+    ((isQuotientMap_ideleCongruenceToClassHom_iff (Modulus.one F)).mpr
+      (raySubgroup_one_eq_top_four F))
     ((angularIdeleArchChar F k).comp
       (TauCeti.ContinuousMonoidHom.subgroupSubtype (ideleCongruenceSubgroup (Modulus.one F))))
-    (congruenceOneToClassHom_ker_le F k)
+    (ideleCongruenceToClassHom_ker_le F k)
 
 /-- Every value of `angularHeckeCharacter F k` has norm `1`, so its idelic shift vanishes. -/
 private theorem shift_angularHeckeCharacter (k : ℤ) :
     (angularHeckeCharacter F k).shift = 0 := by
   refine (HeckeCharacter.shift_eq_zero_iff _).mpr fun c ↦ ?_
-  obtain ⟨y, rfl⟩ := congruenceOneToClassHom_surjective F c
+  obtain ⟨y, rfl⟩ :=
+    (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top_four F) c
   rw [angularHeckeCharacter, ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply,
     ContinuousMonoidHom.coe_comp, Function.comp_apply,
     TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, coe_angularIdeleArchChar_apply]
@@ -426,7 +394,7 @@ private theorem complexComponent_angularHeckeCharacter (k : ℤ)
       ideleCongruenceSubgroup (Modulus.one F) :=
     mem_ideleCongruenceSubgroup_one_iff.mpr fun v ↦ by simp
   rw [HeckeCharacter.complexComponent_apply, HeckeCharacter.infiniteComponent_apply,
-    IdeleClassGroup.ofCompletion_apply, ← congruenceOneToClassHom_apply F ⟨_, hmem⟩,
+    IdeleClassGroup.ofCompletion_apply, ← ideleCongruenceToClassHom_apply (Modulus.one F) ⟨_, hmem⟩,
     angularHeckeCharacter, ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply,
     ContinuousMonoidHom.coe_comp, Function.comp_apply,
     TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, complexUnitsCharacter_zero_left]
@@ -450,19 +418,6 @@ private theorem infinityType_angularHeckeCharacter (k : ℤ) :
     have hsum : ((-(2 * k) : ℤ) : ℂ) + ((2 * k : ℤ) : ℂ) = 0 := by push_cast; ring
     have hdiff : -(2 * k) - 2 * k = -(4 * k) := by ring
     rw [hsum, hdiff]
-
-/-- For any nonzero `z : ℂ`, `(z⁻¹ / ‖z⁻¹‖) ^ (-(4 * k)) = (z / conj z) ^ (2 * k)`, since
-`z * conj z = ‖z‖ ^ 2`. -/
-private theorem inv_div_norm_inv_zpow_neg_four_mul (k : ℤ) {z : ℂ} (hz : z ≠ 0) :
-    (z⁻¹ / (‖z⁻¹‖ : ℂ)) ^ (-(4 * k)) = (z / starRingEnd ℂ z) ^ (2 * k) := by
-  have hinv_ang : z⁻¹ / (‖z⁻¹‖ : ℂ) = (z / (‖z‖ : ℂ))⁻¹ := by
-    rw [norm_inv, Complex.ofReal_inv, inv_div_inv, inv_div]
-  have hmul : z * starRingEnd ℂ z = (‖z‖ : ℂ) ^ (2 : ℕ) := by
-    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.ofReal_pow]
-  have hsq_ang : (z / (‖z‖ : ℂ)) ^ (2 : ℕ) = z / starRingEnd ℂ z := by
-    rw [div_pow, ← hmul, sq, mul_div_mul_left z (starRingEnd ℂ z) hz]
-  have hexp : (4 * k : ℤ) = (2 : ℕ) * (2 * k) := by ring
-  rw [hinv_ang, inv_zpow, ← zpow_neg, neg_neg, hexp, zpow_mul, zpow_natCast, hsq_ang]
 
 private theorem exists_span_singleton_eq_asIdeal_four (v : HeightOneSpectrum (𝓞 F)) :
     ∃ π : 𝓞 F, π ≠ 0 ∧ Ideal.span {π} = v.asIdeal := by
@@ -490,12 +445,8 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
   have hy_mem : y ∈ ideleCongruenceSubgroup (Modulus.one F) := by
     refine mem_ideleCongruenceSubgroup_one_iff.mpr fun v' ↦ ?_
     have hval_x : Valued.v ((v'.ideleFiniteCoord (IdeleGroup.unitEmbedding (𝓞 F) F x) :
-        (v'.adicCompletion F)ˣ) : v'.adicCompletion F) = v'.intValuation π := by
-      rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map,
-        RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Units.val_mk0,
-        HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-        Algebra.algebraMap_self_apply, v'.valuedAdicCompletion_eq_valuation',
-        v'.valuation_of_algebraMap]
+        (v'.adicCompletion F)ˣ) : v'.adicCompletion F) = v'.intValuation π :=
+      v'.valued_ideleFiniteCoord_unitEmbedding_of_eq_algebraMap rfl
     simp only [y, map_mul, map_inv, Units.val_mul, Units.val_inv_eq_inv_val, map_inv₀, hval_x]
     rcases eq_or_ne v' v with rfl | hne
     · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self, hu,
@@ -503,9 +454,9 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
         mul_inv_cancel₀ WithZero.exp_ne_zero]
     · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne _ hne, Units.val_one,
         map_one, v'.intValuation_eq_one_of_span_singleton_eq_pow hne hspan1, inv_one, mul_one]
-  have hy_class : congruenceOneToClassHom F ⟨y, hy_mem⟩ =
+  have hy_class : ideleCongruenceToClassHom (Modulus.one F) ⟨y, hy_mem⟩ =
       IdeleClassGroup.ofAdicCompletion (𝓞 F) F v u := by
-    rw [congruenceOneToClassHom_apply, IdeleClassGroup.ofAdicCompletion_apply, QuotientGroup.eq]
+    rw [ideleCongruenceToClassHom_apply, IdeleClassGroup.ofAdicCompletion_apply, QuotientGroup.eq]
     exact ⟨x, by simp [y, mul_assoc]⟩
   rw [HeckeCharacter.finiteComponent_apply, ← hy_class, angularHeckeCharacter,
     ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply, ContinuousMonoidHom.coe_comp,
@@ -519,50 +470,14 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
       InfinitePlace.ideleInfiniteCoord_unitEmbedding,
       NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
       continuousMulEquivComplexOfIsComplex_apply]
-  rw [hinf]
-  exact inv_div_norm_inv_zpow_neg_four_mul k ((map_ne_zero _).mpr hπF)
+  rw [hinf, show -(4 * k) = -(2 * (2 * k)) by ring]
+  exact Complex.inv_div_norm_inv_zpow_neg_two_mul _ (2 * k)
 
 end HeckeConstruction
 
 /-! ### Construction of `angularGrossencharacter` -/
 
 section AngularGrossencharacter
-
-/-- Over a fourth cyclotomic field, unramified presentations at `Modulus.one F` are determined by
-their algebraic infinity type: every idele class has a representative in
-`ideleCongruenceSubgroup (Modulus.one F)` whose finite part is killed by `eq_one_of_mem`. -/
-private theorem ext_of_infinityType_one_four {F : Type*} [Field F] [NumberField F]
-    [IsCyclotomicExtension {4} ℚ F] {χ ψ : Grossencharacter F (Modulus.one F)}
-    (h : χ.infinityType = ψ.infinityType) : χ = ψ := by
-  apply Grossencharacter.ext
-  refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
-  obtain ⟨⟨y, hy⟩, rfl⟩ := congruenceOneToClassHom_surjective F c
-  rw [congruenceOneToClassHom_apply, Subtype.coe_mk]
-  have hfin_mem : IdeleGroup.ofFiniteIdele (𝓞 F) F (IdeleGroup.toFiniteIdele (𝓞 F) F y) ∈
-      ideleCongruenceSubgroup (Modulus.one F) := by
-    refine mem_ideleCongruenceSubgroup_one_iff.mpr fun v ↦ ?_
-    have hv : (v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 F) F
-        (IdeleGroup.toFiniteIdele (𝓞 F) F y)) : v.adicCompletion F) =
-        (v.ideleFiniteCoord y : v.adicCompletion F) := by
-      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
-        IdeleGroup.coe_toFiniteIdele]
-    rw [hv]
-    exact (mem_ideleCongruenceSubgroup_one_iff.mp hy) v
-  have hfin_inf (w : InfinitePlace F) :
-      w.ideleInfiniteCoord
-        (IdeleGroup.ofFiniteIdele (𝓞 F) F (IdeleGroup.toFiniteIdele (𝓞 F) F y)) = 1 :=
-    InfinitePlace.ideleInfiniteCoord_ofFiniteIdele w _
-  rw [← IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y, QuotientGroup.mk_mul, map_mul, map_mul,
-    χ.eq_one_of_mem _ hfin_mem hfin_inf, ψ.eq_one_of_mem _ hfin_mem hfin_inf,
-    mul_one, mul_one, QuotientGroup.mk_prod, map_prod, map_prod]
-  simp only [Units.coe_prod]
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  have hw := DFunLike.congr_fun
-    (Grossencharacter.infiniteComponent_eq_of_infinityType_eq_of_isComplex h
-      ((IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex w))
-    (w.ideleInfiniteCoord y)
-  simpa only [HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply] using
-    congrArg Units.val hw
 
 /-- **Hecke's angular Größencharaktere of `ℚ(i)`**: for `[IsCyclotomicExtension {4} ℚ F]` and
 `k : ℤ`, the unramified unitary presentation at `Modulus.one F` sending `(α)` to
@@ -575,7 +490,7 @@ def angularGrossencharacter (F : Type*) [Field F] [NumberField F]
   unitaryWeight := angularUnitaryWeight F k
   infinityType := angularAlgebraicInfinityType F k
   eq_one_of_mem y hy hw := by
-    rw [← congruenceOneToClassHom_apply F ⟨y, hy⟩, angularHeckeCharacter,
+    rw [← ideleCongruenceToClassHom_apply (Modulus.one F) ⟨y, hy⟩, angularHeckeCharacter,
       ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply, ContinuousMonoidHom.coe_comp,
       Function.comp_apply, TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, Subtype.coe_mk,
       Units.ext_iff, coe_angularIdeleArchChar_apply, hw (angularPlace F).1, Units.val_one, map_one]
@@ -745,7 +660,9 @@ character at `Modulus.one F`. -/
 theorem angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] :
     angularGrossencharacter F 0 = Grossencharacter.ofRayClassCharacter 1 := by
-  apply ext_of_infinityType_one_four
+  apply Grossencharacter.ext_of_infinityType_eq
+    (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex
+    (raySubgroup_one_eq_top_four F)
   ext σ
   rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding 0 (angularPlace F)]
@@ -772,7 +689,9 @@ theorem unitaryWeight_angularGrossencharacter_zero (F : Type*) [Field F] [Number
 theorem angularGrossencharacter_neg (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) :
     angularGrossencharacter F (-k) = (angularGrossencharacter F k).inverse := by
-  apply ext_of_infinityType_one_four
+  apply Grossencharacter.ext_of_infinityType_eq
+    (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex
+    (raySubgroup_one_eq_top_four F)
   ext σ
   rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding _ (angularPlace F)]
@@ -798,7 +717,8 @@ theorem toHeckeCharacter_angularGrossencharacter_add (F : Type*) [Field F] [Numb
       (angularGrossencharacter F j).toHeckeCharacter *
         (angularGrossencharacter F k).toHeckeCharacter := by
   refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
-  obtain ⟨y, rfl⟩ := congruenceOneToClassHom_surjective F c
+  obtain ⟨y, rfl⟩ :=
+    (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top_four F) c
   simp only [ContinuousMonoidHom.mul_apply, Units.val_mul,
     toHeckeCharacter_angularGrossencharacter_def, angularHeckeCharacter,
     ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply, ContinuousMonoidHom.coe_comp,

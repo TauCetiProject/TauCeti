@@ -62,6 +62,8 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.infiniteComponent_eq_of_infinityType_eq_of_isComplex`:
   presentations with equal algebraic infinity types agree at every complex place.
+* `TauCeti.LFunctions.Grossencharacter.ext_of_infinityType_eq`: when every infinite place is
+  complex and `raySubgroup 𝔪 = ⊤`, a presentation is determined by its algebraic infinity type.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent` and
   `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`: the finite conductor of
@@ -189,6 +191,47 @@ theorem infiniteComponent_eq_of_infinityType_eq_of_isComplex {𝔪 𝔫 : Modulu
   have hu := DFunLike.congr_fun hc (e u)
   rwa [HeckeCharacter.complexComponent_apply, HeckeCharacter.complexComponent_apply,
     e.symm_apply_apply] at hu
+
+/-- **Uniqueness by infinity type for totally complex fields with `raySubgroup 𝔪 = ⊤`**: if
+every infinite place of `K` is complex and every idele class lies in `raySubgroup 𝔪` (in
+particular, at `Modulus.one K` when `K` has class number `1`), then two presentations at `𝔪` with
+the same algebraic infinity type are equal. -/
+theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hcomplex : ∀ w : InfinitePlace K, w.IsComplex)
+    (hray : raySubgroup 𝔪 = ⊤) {χ ψ : Grossencharacter K 𝔪}
+    (h : χ.infinityType = ψ.infinityType) : χ = ψ := by
+  apply ext
+  refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
+  obtain ⟨⟨y, hy⟩, rfl⟩ := (ideleCongruenceToClassHom_surjective_iff 𝔪).mpr hray c
+  rw [ideleCongruenceToClassHom_apply, Subtype.coe_mk]
+  have hfin_mem : IdeleGroup.ofFiniteIdele (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K y) ∈
+      ideleCongruenceSubgroup 𝔪 := by
+    have hv' (v : HeightOneSpectrum (𝓞 K)) :
+        (v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 K) K
+          (IdeleGroup.toFiniteIdele (𝓞 K) K y)) : v.adicCompletion K) =
+          (v.ideleFiniteCoord y : v.adicCompletion K) := by
+      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+        IdeleGroup.coe_toFiniteIdele]
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w _ ↦ ?_⟩
+    · rw [hv']
+      exact (mem_ideleCongruenceSubgroup_iff.mp hy).1 v hv
+    · rw [hv']
+      exact (mem_ideleCongruenceSubgroup_iff.mp hy).2.1 v hv
+    · rw [InfinitePlace.ideleInfiniteCoord_ofFiniteIdele, Units.val_one, map_one]
+      exact one_pos
+  have hfin_inf (w : InfinitePlace K) :
+      w.ideleInfiniteCoord
+        (IdeleGroup.ofFiniteIdele (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K y)) = 1 :=
+    InfinitePlace.ideleInfiniteCoord_ofFiniteIdele w _
+  rw [← IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y, QuotientGroup.mk_mul, map_mul, map_mul,
+    χ.eq_one_of_mem _ hfin_mem hfin_inf, ψ.eq_one_of_mem _ hfin_mem hfin_inf,
+    mul_one, mul_one, QuotientGroup.mk_prod, map_prod, map_prod]
+  simp only [Units.coe_prod]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  have hw := DFunLike.congr_fun
+    (infiniteComponent_eq_of_infinityType_eq_of_isComplex h (hcomplex w))
+    (w.ideleInfiniteCoord y)
+  simpa only [HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply] using
+    congrArg Units.val hw
 
 /-! ### The finite conductor of a presentation -/
 

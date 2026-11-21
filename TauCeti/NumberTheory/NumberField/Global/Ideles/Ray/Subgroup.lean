@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Ray subgroups of the idele class group
@@ -29,6 +30,8 @@ idele classes to ray classes.
 
 * `TauCeti.GlobalNumberFields.raySubgroup`: the image of an idele congruence subgroup in the
   idele class group.
+* `TauCeti.GlobalNumberFields.ideleCongruenceToClassHom`: the continuous homomorphism from
+  `ideleCongruenceSubgroup 𝔪` into the idele class group.
 
 ## Main results
 
@@ -43,6 +46,10 @@ idele classes to ray classes.
 * `TauCeti.GlobalNumberFields.isOpen_raySubgroup`: every ray subgroup is open.
 * `TauCeti.GlobalNumberFields.ofCompletion_mem_raySubgroup`: an idele class concentrated at an
   infinite place where the modulus imposes no sign condition is a ray class.
+* `TauCeti.GlobalNumberFields.ideleCongruenceToClassHom_surjective_iff`,
+  `TauCeti.GlobalNumberFields.isQuotientMap_ideleCongruenceToClassHom_iff`: the continuous map from
+  `ideleCongruenceSubgroup 𝔪` to the idele class group is open, and is surjective (and hence a
+  quotient map) exactly when `raySubgroup 𝔪 = ⊤`.
 
 ## References
 
@@ -123,5 +130,60 @@ theorem isOpen_raySubgroup (𝔪 : Modulus K) :
     IsOpen (raySubgroup 𝔪 : Set (IdeleClassGroup (𝓞 K) K)) := by
   rw [raySubgroup, Subgroup.coe_map, QuotientGroup.coe_mk']
   exact QuotientGroup.isOpenMap_coe _ (isOpen_ideleCongruenceSubgroup 𝔪)
+
+/-- **The continuous homomorphism from the idele congruence subgroup of `𝔪` to the idele class
+group.** Its range is `raySubgroup 𝔪`, and it is an open map, hence a quotient map onto
+`IdeleClassGroup (𝓞 K) K` whenever `raySubgroup 𝔪 = ⊤`. -/
+def ideleCongruenceToClassHom (𝔪 : Modulus K) :
+    ideleCongruenceSubgroup 𝔪 →ₜ* IdeleClassGroup (𝓞 K) K :=
+  (Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+    (TauCeti.ContinuousMonoidHom.subgroupSubtype (ideleCongruenceSubgroup 𝔪))
+
+/-- Evaluating `ideleCongruenceToClassHom 𝔪` sends `y` to its idele class. -/
+@[simp]
+theorem ideleCongruenceToClassHom_apply (𝔪 : Modulus K) (y : ideleCongruenceSubgroup 𝔪) :
+    ideleCongruenceToClassHom 𝔪 y = ((y : IdeleGroup (𝓞 K) K) : IdeleClassGroup (𝓞 K) K) := by
+  simp only [ideleCongruenceToClassHom, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, TauCeti.ContinuousMonoidHom.subgroupSubtype_apply]
+
+/-- **The range of `ideleCongruenceToClassHom 𝔪` is `raySubgroup 𝔪`.** -/
+theorem range_ideleCongruenceToClassHom (𝔪 : Modulus K) :
+    (ideleCongruenceToClassHom 𝔪 :
+      ideleCongruenceSubgroup 𝔪 →* IdeleClassGroup (𝓞 K) K).range = raySubgroup 𝔪 := by
+  ext c
+  rw [MonoidHom.mem_range, mem_raySubgroup_iff]
+  constructor
+  · rintro ⟨⟨y, hy⟩, rfl⟩
+    exact ⟨y, hy, (ideleCongruenceToClassHom_apply 𝔪 ⟨y, hy⟩).symm⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨⟨y, hy⟩, ideleCongruenceToClassHom_apply 𝔪 ⟨y, hy⟩⟩
+
+/-- **`ideleCongruenceToClassHom 𝔪` is surjective onto the idele class group if and only if
+`raySubgroup 𝔪 = ⊤`.** -/
+theorem ideleCongruenceToClassHom_surjective_iff (𝔪 : Modulus K) :
+    Function.Surjective (ideleCongruenceToClassHom 𝔪) ↔ raySubgroup 𝔪 = ⊤ :=
+  (MonoidHom.range_eq_top (f := (ideleCongruenceToClassHom 𝔪 :
+    ideleCongruenceSubgroup 𝔪 →* IdeleClassGroup (𝓞 K) K))).symm.trans
+    (by rw [range_ideleCongruenceToClassHom])
+
+/-- **`ideleCongruenceToClassHom 𝔪` is an open map**, because `ideleCongruenceSubgroup 𝔪` is open
+in the idele group and the quotient map to the idele class group is open. -/
+theorem isOpenMap_ideleCongruenceToClassHom (𝔪 : Modulus K) :
+    IsOpenMap (ideleCongruenceToClassHom 𝔪) := by
+  have hfun : (ideleCongruenceToClassHom 𝔪 :
+      ideleCongruenceSubgroup 𝔪 → IdeleClassGroup (𝓞 K) K) =
+      QuotientGroup.mk ∘ Subtype.val :=
+    funext fun y ↦ ideleCongruenceToClassHom_apply 𝔪 y
+  exact hfun ▸ QuotientGroup.isOpenQuotientMap_mk.isOpenMap.comp
+    (isOpen_ideleCongruenceSubgroup 𝔪).isOpenEmbedding_subtypeVal.isOpenMap
+
+/-- **`ideleCongruenceToClassHom 𝔪` is a topological quotient map onto `IdeleClassGroup (𝓞 K) K` if
+and only if `raySubgroup 𝔪 = ⊤`.** -/
+theorem isQuotientMap_ideleCongruenceToClassHom_iff (𝔪 : Modulus K) :
+    Topology.IsQuotientMap (ideleCongruenceToClassHom 𝔪) ↔ raySubgroup 𝔪 = ⊤ :=
+  ⟨fun h ↦ (ideleCongruenceToClassHom_surjective_iff 𝔪).mp h.surjective,
+   fun h ↦ (isOpenMap_ideleCongruenceToClassHom 𝔪).isQuotientMap
+     (ideleCongruenceToClassHom 𝔪).continuous
+     ((ideleCongruenceToClassHom_surjective_iff 𝔪).mpr h)⟩
 
 end TauCeti.GlobalNumberFields

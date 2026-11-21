@@ -91,6 +91,25 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     rfl
 
+/-- The `v`-adic valuation of the coordinate at `v` of a principal idele is the `v`-adic
+valuation of the global element. -/
+theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    Valued.v (v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) : v.adicCompletion K) =
+      v.valuation K (x : K) := by
+  rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
+  simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe,
+    HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+    Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
+
+/-- The `v`-adic valuation of the coordinate at `v` of a principal idele coming from an integral
+element `r : R` is `v.intValuation r`. -/
+theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding_of_eq_algebraMap
+    (v : HeightOneSpectrum R) {x : Kˣ} {r : R} (hx : (x : K) = algebraMap R K r) :
+    Valued.v (v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) : v.adicCompletion K) =
+      v.intValuation r := by
+  rw [v.valued_ideleFiniteCoord_unitEmbedding, hx, v.valuation_of_algebraMap]
+
 /-- The distance from one of the coordinate at `v` of a principal idele is measured by the
 `v`-adic valuation of `x - 1`. -/
 theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding_sub_one
