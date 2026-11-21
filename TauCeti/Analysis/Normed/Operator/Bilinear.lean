@@ -45,9 +45,10 @@ invertible map and `X` tends to the identity. On Banach spaces the comparison op
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
 
 On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
-`σ₂₃` and `σ₂₃` surjective, the flip `LinearMap.pairingFlip` of a continuous pairing
-`μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is Mathlib's flip `ContinuousLinearMap.flip`
-(`ContinuousLinearMap.pairingFlip_eq_flip`).
+`σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
+Mathlib's flip: `μ.toLinearMap.pairingFlip hμ = μ.flip`, where `hμ` is a proof of joint continuity
+of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which callers supply
+explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`).
 -/
 
 public section
@@ -244,7 +245,9 @@ variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [Nont
   [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
 
 /-- On normable spaces, when both scalar homomorphisms are isometric and the second is
-surjective, the flip `LinearMap.pairingFlip` of a continuous pairing is Mathlib's flip. The
+surjective, the flip of a continuous pairing `μ` is Mathlib's flip:
+`μ.toLinearMap.pairingFlip hμ = μ.flip`, where the caller supplies `hμ`, a proof of joint
+continuity of `μ` (continuity of the uncurried pairing `Function.uncurry fun x y ↦ μ x y`). The
 topological additive group structures of `F` and `H` used by `LinearMap.pairingFlip`, by
 Mathlib's flip and by the topology of `F →SL[σ₂₃] H` come from their normability
 (`PolynormableSpace.isTopologicalAddGroup`). -/

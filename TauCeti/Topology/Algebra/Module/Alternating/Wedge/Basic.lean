@@ -498,8 +498,9 @@ theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
       (-1 : ℝ) ^ (k * l) • pairedWedge (mu.toLinearMap.pairingFlip hmu)
-        (mu.toLinearMap.pairingFlip_continuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
-  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.toLinearMap.pairingFlip_continuous hmu)
+        (mu.toLinearMap.continuous_uncurry_pairingFlip hmu) psi phi
+        (v ∘ Fin.cast (Nat.add_comm l k)) :=
+  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.toLinearMap.continuous_uncurry_pairingFlip hmu)
     (fun a b ↦ mu.toLinearMap.pairingFlip_apply hmu b a) phi psi v
 
 /-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/

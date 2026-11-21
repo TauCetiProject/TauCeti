@@ -98,7 +98,7 @@ theorem bundleWedgeWith_flip
       (-1 : ℝ) ^ (k * l) •
         bundleWedgeWith
           (fun y ↦ (μ y).toLinearMap.pairingFlip (hμ y))
-          (fun y ↦ (μ y).toLinearMap.pairingFlip_continuous (hμ y))
+          (fun y ↦ (μ y).toLinearMap.continuous_uncurry_pairingFlip (hμ y))
           ψ φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [bundleWedgeWith] using
     ContinuousAlternatingMap.pairedWedge_flip (μ x) (hμ x) (φ x) (ψ x) v
