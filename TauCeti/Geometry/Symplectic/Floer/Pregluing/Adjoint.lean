@@ -32,12 +32,15 @@ instead expresses that `D_u` is onto, which is the regularity of `u`.
   (`TauCeti.SymplecticForm.floerLinearizationAdjoint_eq_neg`). For cylindrical data its
   coefficients at `z = (s, t)` are continuous functions of `t`, `w(z)` and `∂t w(z)`. On the part
   `s ≤ R / 2` of the fundamental domain, `w_R` either agrees with the translate `u(· + R, ·)`
-  near `z`, for `s < -1`, or both are `C¹`-close to the stationary cylinder over `x`, since there
-  `u` is evaluated at `s + R ≥ R - 1` and `v` at `s - R ≤ -R / 2`. Uniform continuity at the
+  near `z`, for `s < -1`, or both are close to the stationary cylinder over `x` together with their
+  `t`-derivatives, since there `u` is evaluated at `s + R ≥ R - 1` and `v` at `s - R ≤ -R / 2`,
+  and no derivative of the cutoff enters the `t`-derivative of `w_R`
+  (`TauCeti.Floer.norm_fderiv_preglue_apply_sub_le`). Uniform continuity at the
   compact curve `t ↦ (t, x(t), x'(t))` then makes the coefficients of `D^*_{w_R}` and of the adjoint
   along `u(· + R, ·)` uniformly close for large `R`, and symmetrically for `s ≥ -R / 2` and
   `v(· - R, ·)` (`TauCeti.SymplecticForm.eventually_forall_norm_sub_le_preglue`). Only uniform
-  `C¹` convergence of `u` and `v` to `x` on `t ∈ [0, 1]` is used, not its exponential rate.
+  convergence of `u` and `v` and of their `t`-derivatives to `x` and `x'` on `t ∈ [0, 1]` is used,
+  not its exponential rate, nor any convergence of the `s`-derivatives.
 * **The uniform estimate.** If `D^*_u` and `D^*_v` satisfy the injectivity estimate with constant
   `C`, then for all large `R` so does `D^*_{w_R}`, with the constant `64 C`
   (`eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_preglue`).
@@ -141,58 +144,41 @@ private theorem exists_pos_forall_norm_adjointCoeff_sub_le (ω : SymplecticForm 
     ((norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add (h t ht q hq) hb))
 
 omit [FiniteDimensional ℝ V] in
-/-- A map within `θ` of `y` at `z`, whose derivative there is within `θ` of `(σ, τ) ↦ τ X`, has
-value and slice velocity within `θ` of `(y, X)`. -/
-private theorem norm_prod_sub_le_of_le {f : ℝ × ℝ → V} {z : ℝ × ℝ} {y X : V} {θ : ℝ}
-    (h₀ : ‖f z - y‖ ≤ θ) (h₁ : ‖fderiv ℝ f z - (snd ℝ ℝ ℝ).smulRight X‖ ≤ θ) :
-    ‖(f z, fderiv ℝ f z stdComplexLineImag) - (y, X)‖ ≤ θ := by
-  refine norm_prod_le_iff.2 ⟨h₀, ?_⟩
-  have hS : (snd ℝ ℝ ℝ).smulRight X stdComplexLineImag = X := by simp [stdComplexLineImag_snd]
-  rw [Prod.snd_sub, ← hS, ← sub_apply]
-  refine (le_opNorm _ _).trans ?_
-  simpa [stdComplexLineImag_eq] using h₁
-
-omit [FiniteDimensional ℝ V] in
-/-- **The pre-glued map in the middle of the neck.** If `u` is within `θ` of the orbit `x` in `C¹`
-at `(s + R, t)`, and `v` at `(s - R, t)`, and the derivative of the cutoff is at most `B`, then the
-value and slice velocity of the pre-glued map at `(s, t)` are within `(2 B + 2) θ` of those of the
-stationary cylinder over `x`. -/
-private theorem norm_preglue_prod_sub_le {x : ℝ → V} {u v : ℝ × ℝ → V} {R B θ s t : ℝ} {X : V}
+/-- **The pre-glued map in the middle of the neck.** If `u` is within `θ` of the orbit `x` at
+`(s + R, t)`, and `v` at `(s - R, t)`, with `t`-derivatives within `θ` of `X = x'(t)`, then the
+value and slice velocity of the pre-glued map at `(s, t)` are within `2 θ` of those of the
+stationary cylinder over `x`. No derivative of the cutoff enters. -/
+private theorem norm_preglue_prod_sub_le {x : ℝ → V} {u v : ℝ × ℝ → V} {R θ s t : ℝ} {X : V}
     (hx : HasDerivAt x X t) (hu : DifferentiableAt ℝ u (s + R, t))
-    (hv : DifferentiableAt ℝ v (s - R, t)) (hB : ∀ s, |deriv pregluingCutoff s| ≤ B)
-    (hu₀ : ‖u (s + R, t) - x t‖ ≤ θ)
-    (hu₁ : ‖fderiv ℝ u (s + R, t) - (snd ℝ ℝ ℝ).smulRight X‖ ≤ θ)
+    (hv : DifferentiableAt ℝ v (s - R, t)) (hu₀ : ‖u (s + R, t) - x t‖ ≤ θ)
+    (hu₁ : ‖fderiv ℝ u (s + R, t) stdComplexLineImag - X‖ ≤ θ)
     (hv₀ : ‖v (s - R, t) - x t‖ ≤ θ)
-    (hv₁ : ‖fderiv ℝ v (s - R, t) - (snd ℝ ℝ ℝ).smulRight X‖ ≤ θ) :
+    (hv₁ : ‖fderiv ℝ v (s - R, t) stdComplexLineImag - X‖ ≤ θ) :
     ‖(preglue x u v R (s, t), fderiv ℝ (preglue x u v R) (s, t) stdComplexLineImag) - (x t, X)‖ ≤
-      (2 * B + 2) * θ := by
+      2 * θ := by
   have hzR : (s, t) + (R, 0) = (s + R, t) := by simp
   have hzR' : (s, t) - (R, 0) = (s - R, t) := by simp
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  have hθ : 0 ≤ θ := (norm_nonneg _).trans hu₀
   have h₀ := norm_preglue_sub_le (x := x) (u := u) (v := v) (R := R) (z := (s, t))
-  have h₁ := norm_fderiv_preglue_sub_le (z := (s, t)) (R := R) hx (by rwa [hzR]) (by rwa [hzR'])
+  have h₁ := norm_fderiv_preglue_apply_sub_le (z := (s, t)) (R := R) hx (by rwa [hzR])
+    (by rwa [hzR'])
   rw [hzR, hzR'] at h₀ h₁
-  refine norm_prod_sub_le_of_le (h₀.trans (by nlinarith)) (h₁.trans ?_)
-  nlinarith [hB s, hB (-s), abs_nonneg (deriv pregluingCutoff s),
-    abs_nonneg (deriv pregluingCutoff (-s)), norm_nonneg (u (s + R, t) - x t),
-    norm_nonneg (v (s - R, t) - x t)]
+  exact norm_prod_le_iff.2 ⟨h₀.trans (by linarith), h₁.trans (by linarith)⟩
 
-/-- **The middle of the neck.** If `u` and `v` converge to the orbit `x` in `C¹`, uniformly in
-`t ∈ [0, 1]`, as `s → +∞` and `s → -∞`, then for every `δ > 0` there is `S` such that, at the points
-`z = (s, t)` with `t ∈ [0, 1]`, `S ≤ s + R` and `s - R ≤ -S`, the value and slice velocity of the
-pre-glued map at `z`, of `u` at `z + (R, 0)` and of `v` at `z - (R, 0)` are all within `δ` of those
-of the stationary cylinder over `x`. -/
+/-- **The middle of the neck.** If `u` and `v` converge to the orbit `x` together with their
+`t`-derivatives, uniformly in `t ∈ [0, 1]`, as `s → +∞` and `s → -∞`, then for every `δ > 0`
+there is `S` such that, at the points `z = (s, t)` with `t ∈ [0, 1]`, `S ≤ s + R` and
+`s - R ≤ -S`, the value and slice velocity of the pre-glued map at `z`, of `u` at `z + (R, 0)` and
+of `v` at `z - (R, 0)` are all within `δ` of those of the stationary cylinder over `x`. -/
 private theorem exists_forall_norm_prod_sub_le_preglue (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     {x : ℝ → V} {u v : ℝ × ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hu : Differentiable ℝ u) (hv : Differentiable ℝ v)
     (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x atTop (Icc 0 1))
-    (hdux : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t))
-      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atTop (Icc 0 1))
+    (hdux : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineImag)
+      (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atTop (Icc 0 1))
     (hvx : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atBot (Icc 0 1))
-    (hdvx : TendstoUniformlyOn (fun s t ↦ fderiv ℝ v (s, t))
-      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atBot (Icc 0 1))
+    (hdvx : TendstoUniformlyOn (fun s t ↦ fderiv ℝ v (s, t) stdComplexLineImag)
+      (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atBot (Icc 0 1))
     {δ : ℝ} (hδ : 0 < δ) :
     ∃ S, ∀ (R : ℝ) (z : ℝ × ℝ), z.2 ∈ Icc (0 : ℝ) 1 → S ≤ z.1 + R → z.1 - R ≤ -S →
       ‖(preglue x u v R z, fderiv ℝ (preglue x u v R) z stdComplexLineImag) -
@@ -201,16 +187,12 @@ private theorem exists_forall_norm_prod_sub_le_preglue (ω : SymplecticForm V) {
           (x z.2, ω.hamiltonianVectorField (H z.2) (x z.2))‖ ≤ δ ∧
         ‖(v (z - (R, 0)), fderiv ℝ v (z - (R, 0)) stdComplexLineImag) -
           (x z.2, ω.hamiltonianVectorField (H z.2) (x z.2))‖ ≤ δ := by
-  -- With `B` bounding the cutoff derivative, `θ`-closeness of `u` and `v` to the stationary
-  -- cylinder in `C¹` gives `δ`-closeness of the pre-glued map, for `(2 B + 2) θ = δ`.
-  obtain ⟨B, hB⟩ := exists_abs_deriv_pregluingCutoff_le
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  set θ := δ / (2 * B + 2)
+  -- `θ`-closeness of `u` and `v` to the stationary cylinder gives `δ`-closeness of the pre-glued
+  -- map, for `2 θ = δ`.
+  set θ := δ / 2
   have hθ : 0 < θ := by positivity
-  have hθδ : (2 * B + 2) * θ = δ := by
-    simp only [θ]
-    field_simp
-  have hθδ' : θ ≤ δ := by nlinarith
+  have hθδ : 2 * θ = δ := by ring
+  have hθδ' : θ ≤ δ := by linarith
   obtain ⟨Su, hSu⟩ := eventually_atTop.1 ((Metric.tendstoUniformlyOn_iff.1 hux θ hθ).and
     (Metric.tendstoUniformlyOn_iff.1 hdux θ hθ))
   obtain ⟨Sv, hSv⟩ := eventually_atBot.1 ((Metric.tendstoUniformlyOn_iff.1 hvx θ hθ).and
@@ -224,15 +206,15 @@ private theorem exists_forall_norm_prod_sub_le_preglue (ω : SymplecticForm V) {
   have hv₁ := (hSv (s - R) hsv).2 t ht
   rw [dist_comm, dist_eq_norm] at hu₀ hu₁ hv₀ hv₁
   rw [show (s, t) + (R, 0) = (s + R, t) by simp, show (s, t) - (R, 0) = (s - R, t) by simp]
-  exact ⟨(norm_preglue_prod_sub_le (hx t) (hu _) (hv _) hB hu₀.le hu₁.le hv₀.le
-    hv₁.le).trans_eq hθδ, (norm_prod_sub_le_of_le hu₀.le hu₁.le).trans hθδ',
-    (norm_prod_sub_le_of_le hv₀.le hv₁.le).trans hθδ'⟩
+  exact ⟨(norm_preglue_prod_sub_le (hx t) (hu _) (hv _) hu₀.le hu₁.le hv₀.le
+    hv₁.le).trans_eq hθδ, (norm_prod_le_iff.2 ⟨hu₀.le, hu₁.le⟩).trans hθδ',
+    (norm_prod_le_iff.2 ⟨hv₀.le, hv₁.le⟩).trans hθδ'⟩
 
 /-- **The coefficients of the formal adjoint along the pre-glued map.** Let `J_t` be `C¹` and
 `H_t` be `C²`, jointly in `t`, let `x` be an orbit of `X_{H_t}`, and let `u` and `v` be
-differentiable maps converging to `x` in `C¹`, uniformly in `t ∈ [0, 1]`, as `s → +∞` and as
-`s → -∞` respectively. Then for every `ε > 0` and all large `R`, at the points `z = (s, t)` with
-`t ∈ [0, 1]`:
+differentiable maps converging to `x` together with their `t`-derivatives, uniformly in
+`t ∈ [0, 1]`, as `s → +∞` and as `s → -∞` respectively. Then for every `ε > 0` and all large
+`R`, at the points `z = (s, t)` with `t ∈ [0, 1]`:
 
 * for `s ≤ R / 2`, the coefficients `J_t(w_R z)` and `A(z) = ∂t J - C` of the formal adjoint along
   the pre-glued map `w_R` are `ε`-close to those along the translate `u(· + R, ·)`;
@@ -247,11 +229,11 @@ theorem eventually_forall_norm_sub_le_preglue (ω : SymplecticForm V) {J : ℝ �
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hu : Differentiable ℝ u) (hv : Differentiable ℝ v)
     (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x atTop (Icc 0 1))
-    (hdux : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t))
-      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atTop (Icc 0 1))
+    (hdux : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineImag)
+      (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atTop (Icc 0 1))
     (hvx : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atBot (Icc 0 1))
-    (hdvx : TendstoUniformlyOn (fun s t ↦ fderiv ℝ v (s, t))
-      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atBot (Icc 0 1))
+    (hdvx : TendstoUniformlyOn (fun s t ↦ fderiv ℝ v (s, t) stdComplexLineImag)
+      (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atBot (Icc 0 1))
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ R in atTop,
       (∀ z : ℝ × ℝ, z.1 ≤ R / 2 → z.2 ∈ Icc (0 : ℝ) 1 →
@@ -300,7 +282,8 @@ theorem eventually_forall_norm_sub_le_preglue (ω : SymplecticForm V) {J : ℝ �
 
 /-- **The uniform estimate for the formal adjoint along the pre-glued map.** Let `J_t` be `C¹` and
 `H_t` be `C²`, jointly in `t`, let `x` be an orbit of `X_{H_t}`, and let `u` and `v` be `C¹` maps
-converging to `x` in `C¹`, uniformly in `t ∈ [0, 1]`, as `s → +∞` and as `s → -∞` respectively.
+converging to `x` together with their `t`-derivatives, uniformly in `t ∈ [0, 1]`, as `s → +∞` and
+as `s → -∞` respectively; no convergence of the `s`-derivatives is needed.
 Suppose that the formal adjoints `D^*_u` and `D^*_v` of the linearized Floer operators along `u`
 and `v`, for the cylindrical datum `K = H_t dt` and the structure `J_t`, satisfy the injectivity
 estimate `‖η‖²_{W^{1,2}} ≤ C ‖D^* η‖²_{L²}` on `C²` covector fields of period one in `t` vanishing
@@ -312,11 +295,11 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjo
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hu : ContDiff ℝ 1 u) (hv : ContDiff ℝ 1 v)
     (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x atTop (Icc 0 1))
-    (hdux : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t))
-      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atTop (Icc 0 1))
+    (hdux : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineImag)
+      (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atTop (Icc 0 1))
     (hvx : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atBot (Icc 0 1))
-    (hdvx : TendstoUniformlyOn (fun s t ↦ fderiv ℝ v (s, t))
-      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atBot (Icc 0 1))
+    (hdvx : TendstoUniformlyOn (fun s t ↦ fderiv ℝ v (s, t) stdComplexLineImag)
+      (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atBot (Icc 0 1))
     {C : ℝ} (hC : 0 ≤ C)
     (hestu : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → (∀ s t, η (s, t + 1) = η (s, t)) →
       ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →

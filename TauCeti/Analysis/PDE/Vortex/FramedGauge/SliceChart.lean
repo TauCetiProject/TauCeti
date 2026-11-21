@@ -163,7 +163,9 @@ theorem continuousRep_realSobolevGaugeAdjoint :
   · rw [coe_realSobolevGaugeAdjoint_apply]
     exact coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq _
       (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
-      (coeFn_inclusionLp_ae_eq_continuousRepField hs v) (contDiff_one_continuousRepField hk v)
+      (coeFn_inclusionLp_ae_eq_continuousRepField hs v)
+      (contDiff_euclidean.1 (contDiff_one_continuousRepField hk v) 0)
+      (contDiff_euclidean.1 (contDiff_one_continuousRepField hk v) 1)
 
 /-- **The real linearized equation is the pointwise one.** The continuous representative of the
 `i`-th row of `realSobolevLinearizedEquation f m hk u v` is the `i`-th row of `d₁ y` at `x`, where

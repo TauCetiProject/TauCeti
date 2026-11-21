@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.EquationMap
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Real
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -195,10 +196,10 @@ theorem realSubRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSu
     realSubRef h (ofRealSubRef (f := f) (m := m) hs u) = u := by
   funext j
   refine Subtype.ext ?_
-  rw [coe_realSubRef, subRef_eq_toBesselPotentialSpace _ j (memSobolev_toLp_inclusion h _) ?_,
-    toBesselPotentialSpace_memSobolev_toLp_inclusion]
+  rw [coe_realSubRef, subRef_eq_toBesselPotentialSpace _ j (memSobolev_inclusionLp h _) ?_,
+    toBesselPotentialSpace_memSobolev_inclusionLp]
   filter_upwards [coeFn_inclusionLp_ae_eq_continuousRepField hs u j] with z hz
-  rw [toLp_inclusion, hz, ofRealSubRef_apply, add_sub_cancel_left, continuousRepField_apply]
+  rw [hz, ofRealSubRef_apply, add_sub_cancel_left, continuousRepField_apply]
 
 @[simp]
 theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpace f m s) :
@@ -344,7 +345,8 @@ theorem sobolevGaugeAdjoint_mem_realSubmodule (hk : 2 ≤ k)
   filter_upwards [coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq (f := f) (m := m)
     (one_le_two.trans hk) (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
     (coeFn_inclusionLp_ae_eq_continuousRepField hs v)
-    (contDiff_continuousRepField (natCast_one_add_one_lt hk) v)] with z hz
+    (contDiff_euclidean.1 (contDiff_continuousRepField (natCast_one_add_one_lt hk) v) 0)
+    (contDiff_euclidean.1 (contDiff_continuousRepField (natCast_one_add_one_lt hk) v) 1)] with z hz
   rw [hz, Complex.ofReal_im]
 
 variable (f m) in
