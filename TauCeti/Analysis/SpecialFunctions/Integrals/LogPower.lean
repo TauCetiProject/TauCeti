@@ -21,21 +21,19 @@ When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent eval
 
 ## Main results
 
-* `TauCeti.integrableOn_Ioo_rpow_mul_neg_log_rpow`,
-  `TauCeti.intervalIntegrable_rpow_mul_neg_log_rpow`, and `TauCeti.intervalIntegrable_neg_log_rpow`:
-  integrability on `(0, 1)` and `[0, 1]` for `r > -1` and `q > -1`.
-* `TauCeti.integral_rpow_mul_neg_log_rpow` and `TauCeti.integral_neg_log_rpow`:
-  `∫ t in 0..1, t ^ r * (-log t) ^ q = Γ(q + 1) / (r + 1) ^ (q + 1)` and `Γ(q + 1)`.
+* `TauCeti.integrableOn_Ioo_rpow_mul_neg_log_rpow` and
+  `TauCeti.intervalIntegrable_rpow_mul_neg_log_rpow`: integrability on `(0, 1)` and `[0, 1]` for
+  `r > -1` and `q > -1`.
+* `TauCeti.integral_rpow_mul_neg_log_rpow`:
+  `∫ t in 0..1, t ^ r * (-log t) ^ q = Γ(q + 1) / (r + 1) ^ (q + 1)`.
 * `TauCeti.intervalIntegrable_rpow_mul_neg_log_pow`, `TauCeti.integral_rpow_mul_neg_log_pow`,
   `TauCeti.intervalIntegrable_rpow_mul_log_pow`, and `TauCeti.integral_rpow_mul_log_pow`:
   interval integrability on any interval `a..b` and unit-interval evaluation for the natural
   logarithmic power cases `(-log t) ^ k` and `(log t) ^ k`.
 * `TauCeti.intervalIntegrable_pow_mul_neg_log_pow`, `TauCeti.integral_pow_mul_neg_log_pow`,
-  `TauCeti.intervalIntegrable_pow_mul_log_pow`, `TauCeti.integral_pow_mul_log_pow`,
-  `TauCeti.integral_neg_log_pow`, and `TauCeti.integral_log_pow`:
+  `TauCeti.intervalIntegrable_pow_mul_log_pow`, and `TauCeti.integral_pow_mul_log_pow`:
   interval integrability on any interval `a..b` and unit-interval evaluation for the natural
-  polynomial-moment specializations `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k` (including
-  `j = 0`).
+  polynomial-moment specializations `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
 -/
 
 public section
@@ -71,11 +69,6 @@ theorem intervalIntegrable_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq :
     integrableOn_Ioc_iff_integrableOn_Ioo]
   exact integrableOn_Ioo_rpow_mul_neg_log_rpow hr hq
 
-/-- For `q > -1`, `t ↦ (-log t) ^ q` is interval integrable on `[0, 1]`. -/
-theorem intervalIntegrable_neg_log_rpow {q : ℝ} (hq : -1 < q) :
-    IntervalIntegrable (fun t : ℝ ↦ (-log t) ^ q) volume 0 1 := by
-  simpa using intervalIntegrable_rpow_mul_neg_log_rpow (r := 0) (by norm_num) hq
-
 /-- For `r > -1` and `q > -1`, the logarithmic moment integral over `[0, 1]` evaluates to
 `Γ(q + 1) / (r + 1) ^ (q + 1)`. -/
 theorem integral_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
@@ -93,11 +86,6 @@ theorem integral_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
     setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ by rw [exp_neg_pullback, rpow_one]
   rw [hcongr, integral_rpow_mul_exp_neg_mul_rpow zero_lt_one hq hb]
   simp [-neg_add_rev, rpow_neg hb.le, inv_mul_eq_div]
-
-/-- For `q > -1`, `∫₀¹ (-log t) ^ q dt = Γ(q + 1)`. -/
-theorem integral_neg_log_rpow {q : ℝ} (hq : -1 < q) :
-    ∫ t in (0 : ℝ)..1, (-log t) ^ q = Gamma (q + 1) := by
-  simpa using integral_rpow_mul_neg_log_rpow (r := 0) (by norm_num) hq
 
 /-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (-log t) ^ k` is interval integrable on every
 interval. -/
@@ -185,15 +173,5 @@ theorem integral_pow_mul_log_pow (j k : ℕ) :
       (-1) ^ k * (k.factorial : ℝ) / (j + 1 : ℝ) ^ (k + 1) := by
   simpa only [rpow_natCast] using
     integral_rpow_mul_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
-
-/-- For `k : ℕ`, `∫₀¹ (-log t) ^ k dt = k!`. -/
-theorem integral_neg_log_pow (k : ℕ) :
-    ∫ t in (0 : ℝ)..1, (-log t) ^ k = k.factorial := by
-  simpa using integral_pow_mul_neg_log_pow 0 k
-
-/-- For `k : ℕ`, `∫₀¹ (log t) ^ k dt = (-1) ^ k * k!`. -/
-theorem integral_log_pow (k : ℕ) :
-    ∫ t in (0 : ℝ)..1, log t ^ k = (-1) ^ k * k.factorial := by
-  simpa using integral_pow_mul_log_pow 0 k
 
 end TauCeti

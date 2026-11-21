@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Integrability of the polylogarithm's radial integrand
@@ -34,6 +38,10 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
   domain, `‖1 - t z‖` is bounded below by a positive constant for `t ∈ [0, 1]`.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
   compact subset of the principal domain.
+* `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`: interval integrability of the
+  differentiated kernel `(-log t) ^ k / (1 - t z)` on `[0, 1]` for `z` in the principal domain.
+* `TauCeti.Polylog.hasDerivAt_integral_radialIntegrand`: parametric complex derivative of the
+  weight-`(k + 2)` radial integral on the principal domain.
 
 ## References
 
@@ -43,7 +51,8 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
 
 public section
 
-open MeasureTheory Set
+open Filter MeasureTheory Metric Set
+open scoped Topology
 
 namespace TauCeti.Polylog
 
@@ -174,5 +183,74 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
       _ ≤ (3 / 2 * R' + M / a) * |Real.log t| ^ k * t := by
           gcongr
           · linarith [le_max_right R 0]
+
+/-- Parametric differentiation of the raw weight-`(k + 2)` radial integral on the principal domain,
+yielding both interval integrability of the differentiated kernel and `HasDerivAt` of the
+integral. -/
+private lemma intervalIntegrable_and_hasDerivAt_radialIntegrand (k : ℕ) {z : ℂ}
+    (hz : 1 - z ∈ Complex.slitPlane) :
+    IntervalIntegrable
+      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 ∧
+    HasDerivAt
+      (fun w : ℂ ↦ ∫ t : ℝ in 0..1,
+        ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * w)) / (t : ℂ))
+      (∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
+  obtain ⟨ε, hε, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
+    (Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds hz)
+  obtain ⟨δ, hδ, hδ_le⟩ := exists_le_norm_one_sub_ofReal_mul (isCompact_closedBall z ε) hball
+  let F : ℂ → ℝ → ℂ := fun w t ↦
+    ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * w)) / (t : ℂ)
+  let F' : ℂ → ℝ → ℂ := fun w t ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * w)
+  let bound : ℝ → ℝ := fun t ↦ δ⁻¹ * |Real.log t| ^ k
+  have hbound : ∀ᵐ t ∂volume, t ∈ uIoc (0 : ℝ) 1 → ∀ w ∈ closedBall z ε, ‖F' w t‖ ≤ bound t := by
+    refine ae_of_all _ fun t ht w hw_mem ↦ ?_
+    rw [uIoc_of_le zero_le_one] at ht
+    have hw : δ ≤ ‖1 - (t : ℂ) * w‖ := hδ_le w hw_mem t (Ioc_subset_Icc_self ht)
+    dsimp only [F', bound]
+    rw [norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_neg, div_eq_inv_mul]
+    gcongr
+  have hbound_int : IntervalIntegrable bound volume 0 1 := by
+    have hlog : IntervalIntegrable (fun t : ℝ ↦ |Real.log t| ^ k) volume 0 1 := by
+      simpa only [Real.norm_eq_abs, abs_pow] using (intervalIntegrable_log_pow k).norm
+    exact hlog.const_mul δ⁻¹
+  have hdiff : ∀ᵐ t ∂volume, t ∈ uIoc (0 : ℝ) 1 →
+      ∀ w ∈ closedBall z ε, HasDerivAt (fun x ↦ F x t) (F' w t) w := by
+    refine ae_of_all _ fun t ht w hw_mem ↦ ?_
+    rw [uIoc_of_le zero_le_one] at ht
+    have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
+    have htwΩ : 1 - (t : ℂ) * w ∈ Complex.slitPlane :=
+      Complex.one_sub_ofReal_mul_mem_slitPlane (hball hw_mem) (Ioc_subset_Icc_self ht)
+    have htw0 : 1 - (t : ℂ) * w ≠ 0 := Complex.slitPlane_ne_zero htwΩ
+    have hin : HasDerivAt (fun x : ℂ ↦ 1 - (t : ℂ) * x) (0 - (t : ℂ) * 1) w :=
+      (hasDerivAt_const w (1 : ℂ)).sub ((hasDerivAt_id w).const_mul (t : ℂ))
+    have hlog := (((Complex.hasDerivAt_log htwΩ).comp w hin).neg.const_mul
+      (((-Real.log t : ℝ) : ℂ) ^ k)).div_const (t : ℂ)
+    refine hlog.congr_deriv ?_
+    dsimp only [F']
+    field_simp [ht0, htw0]
+    ring
+  exact intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (closedBall_mem_nhds z hε)
+    (Eventually.of_forall fun w ↦ (by fun_prop : Measurable (F w)).aestronglyMeasurable)
+    (intervalIntegrable_radialIntegrand k z)
+    (by fun_prop : Measurable (F' z)).aestronglyMeasurable
+    hbound hbound_int hdiff
+
+/-- For every `k : ℕ` and `z` in `{z | 1 - z ∈ Complex.slitPlane}`, the differentiated radial
+kernel `t ↦ (-Real.log t) ^ k / (1 - t * z)` is interval integrable on `[0, 1]`. -/
+theorem intervalIntegrable_neg_log_pow_div_one_sub_mul (k : ℕ) {z : ℂ}
+    (hz : 1 - z ∈ Complex.slitPlane) :
+    IntervalIntegrable
+      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 :=
+  (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).1
+
+/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, the raw weight-`(k + 2)` radial
+integral has complex derivative `∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
+theorem hasDerivAt_integral_radialIntegrand (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    HasDerivAt
+      (fun w : ℂ ↦ ∫ t : ℝ in 0..1,
+        ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * w)) / (t : ℂ))
+      (∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z :=
+  (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).2
 
 end TauCeti.Polylog

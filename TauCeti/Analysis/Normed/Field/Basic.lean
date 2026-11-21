@@ -37,9 +37,8 @@ A normed field whose norm takes every positive real value is densely normed
 (`DenselyNormedField.ofForallExistsNormEq`).
 
 Finally, `NormedField.iSup_eNorm_eq_top` records that the extended norms of a nontrivially normed
-field have supremum `⊤`, `TauCeti.norm_zpow_le_pow_toNat` bounds integer powers of elements of
-norm at least one by `‖w‖ ^ n.toNat`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound
-on the ratio `F / w` near `c⁻¹` into a relative error bound for `F - w / c`.
+field have supremum `⊤`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio
+`F / w` near `c⁻¹` into a relative error bound for `F - w / c`.
 -/
 
 public section
@@ -48,13 +47,6 @@ public section
 theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K]
     {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
   simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
-
-/-- In a normed division ring, an element of norm at least `1` satisfies
-`‖w ^ n‖ ≤ ‖w‖ ^ n.toNat` uniformly across all integer exponents `n : ℤ`. -/
-theorem TauCeti.norm_zpow_le_pow_toNat {K : Type*} [NormedDivisionRing K] {w : K} (hw : 1 ≤ ‖w‖)
-    (n : ℤ) : ‖w ^ n‖ ≤ ‖w‖ ^ n.toNat := by
-  rw [norm_zpow, ← zpow_natCast]
-  exact zpow_le_zpow_right₀ hw (Int.self_le_toNat n)
 
 namespace NormedField
 
