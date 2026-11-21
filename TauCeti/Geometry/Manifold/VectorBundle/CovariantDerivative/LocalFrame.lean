@@ -67,7 +67,7 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
   and for the tangent bundle), with `TauCeti.Manifold.bundleChristoffelMap_apply`,
   `TauCeti.Manifold.christoffelMap_apply`, `TauCeti.Manifold.contMDiffOn_bundleChristoffelMap`,
   `CovariantDerivative.contMDiffOn_bundleChristoffelMap`, and
-  `TauCeti.Manifold.contMDiffOn_christoffelMap`.
+  `TauCeti.Manifold.contMDiffOn_christoffelMap`, and `TauCeti.Manifold.christoffelMap_congr`.
 * `TauCeti.Manifold.covariantDerivative_symm_eq_christoffelForm`,
   `TauCeti.Manifold.covariantDerivative_symm_apply_symm_bundle`, and
   `TauCeti.Manifold.covariantDerivative_symm_apply_symm`: a covariant derivative differentiates a
@@ -800,5 +800,40 @@ theorem covariantDerivative_apply_localFrame_eq_sum [Fintype ι]
   rw [Finset.sum_comm]
 
 end TangentBundle
+
+section Congruence
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+
+/-- Two connections on the tangent bundle that agree on vector fields differentiable at `x` have
+the same model-space Christoffel map at `x` in any trivialization. -/
+theorem christoffelMap_congr
+    {ι : Type*} [Fintype ι] (b : Basis ι 𝕜 E)
+    {e : Trivialization E (TotalSpace.proj : TangentBundle I M → M)} [MemTrivializationAtlas e]
+    {cov₁ cov₂ : (Π x : M, TangentSpace I x) → (Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x)}
+    (hcov₁ : IsCovariantDerivativeOn E cov₁ e.baseSet)
+    (hcov₂ : IsCovariantDerivativeOn E cov₂ e.baseSet) {x : M}
+    (h : x ∈ e.baseSet →
+      ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) x → cov₁ Y x = cov₂ Y x) :
+    christoffelMap b hcov₁ x = christoffelMap b hcov₂ x := by
+  by_cases hx : x ∈ e.baseSet
+  · ext v u
+    have hread : (fun y ↦ (e ⟨y, e.symm y v⟩).2) =ᶠ[𝓝 x] fun _ ↦ v :=
+      Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦ by
+        dsimp only; rw [e.apply_mk_symm hy]
+    have hσ : MDiffAt (T% (fun y ↦ e.symm y v)) x := (e.mdifferentiableAt_section_iff I _ hx).2
+      (mdifferentiableAt_const.congr_of_eventuallyEq hread)
+    simpa only [e.apply_mk_symm hx] using congrArg (fun w ↦ (e ⟨x, w⟩).2)
+      ((covariantDerivative_symm_apply_symm b hcov₁ hx v u).symm.trans <|
+        (DFunLike.congr_fun (h hx hσ) (e.symm x u)).trans
+          (covariantDerivative_symm_apply_symm b hcov₂ hx v u))
+  · rw [christoffelMap_of_notMem b hcov₁ hx, christoffelMap_of_notMem b hcov₂ hx]
+
+end Congruence
 
 end TauCeti.Manifold

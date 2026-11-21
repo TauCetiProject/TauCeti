@@ -78,19 +78,15 @@ theorem isNormalDomain_ball_iff_exists_partialDiffeomorph_eball {p : M} {r : ℝ
           EqOn e (riemannianExp I M p) (Metric.ball 0 r) := by
   refine ⟨fun h ↦ ⟨h.toPartialDiffeomorph, h.toPartialDiffeomorph_source,
     by rw [h.toPartialDiffeomorph_target, h.image_riemannianExp_ball subset_rfl],
-    fun _ _ ↦ congrFun h.coe_toPartialDiffeomorph _⟩, ?_⟩
-  rintro ⟨e, hsrc, -, heq⟩
+    fun _ _ ↦ congrFun h.coe_toPartialDiffeomorph _⟩, fun ⟨e, hsrc, _, heq⟩ ↦ ?_⟩
   have hinj : InjOn (riemannianExp I M p) (Metric.ball 0 r) :=
     (hsrc ▸ e.toOpenPartialHomeomorph.injOn).congr heq
   refine ⟨Metric.isOpen_ball, Metric.mem_ball_self hr,
     (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr), fun v hv ↦ ?_,
     hinj, fun ⟨v, hv⟩ ↦
       isLocalDiffeomorphAt_of_eqOn (Φ := e) (hsrc.symm ▸ hv) (hsrc.symm ▸ heq.symm)⟩
-  -- Outside `expDomain`, `exp_p` takes its junk value `p = exp_p 0`, ruled out by injectivity.
-  by_contra hv'
-  have hv0 : v = 0 := hinj hv (Metric.mem_ball_self hr)
-    (by rw [riemannianExp_of_notMem_expDomain hv', riemannianExp_zero])
-  exact hv' (hv0 ▸ zero_mem_expDomain p)
+  exact by_contra fun hv' ↦ hv' ((hinj hv (Metric.mem_ball_self hr)
+    (by rw [riemannianExp_of_notMem_expDomain hv', riemannianExp_zero])) ▸ zero_mem_expDomain p)
 
 /-- **Metric-ball supremum formula for `injectivityRadiusAt`.** The injectivity radius at `p` is the
 supremum over `r ≥ 0` of the radii for which `exp_p` restricts to a smooth partial diffeomorphism
@@ -103,15 +99,13 @@ theorem injectivityRadiusAt_eq_sSup_eball (p : M) :
             EqOn e (riemannianExp I M p) (Metric.ball 0 r)}) := by
   refine le_antisymm ?_ (sSup_le ?_)
   · rw [injectivityRadiusAt_def]
-    refine iSup₂_le fun r h ↦ ?_
-    have hr : 0 < r := by simpa only [Metric.mem_ball, dist_self] using h.zero_mem
-    exact le_sSup
-      ⟨r, ⟨hr.le, (isNormalDomain_ball_iff_exists_partialDiffeomorph_eball hr).1 h⟩, rfl⟩
+    refine iSup₂_le fun r h ↦ le_sSup ⟨r, ⟨(by simpa only [Metric.mem_ball, dist_self] using
+      h.zero_mem : (0 : ℝ) < r).le, (isNormalDomain_ball_iff_exists_partialDiffeomorph_eball
+        (by simpa only [Metric.mem_ball, dist_self] using h.zero_mem)).1 h⟩, rfl⟩
   · rintro _ ⟨r, ⟨hr, he⟩, rfl⟩
-    rcases hr.eq_or_lt with rfl | hr
-    · simp
-    · exact ((isNormalDomain_ball_iff_exists_partialDiffeomorph_eball hr).2
-        he).ofReal_le_injectivityRadiusAt
+    rcases hr.eq_or_lt with rfl | hr <;> [simp;
+      exact ((isNormalDomain_ball_iff_exists_partialDiffeomorph_eball hr).2
+        he).ofReal_le_injectivityRadiusAt]
 
 /-! ### Radial distance and geodesic ball of radius `inj(p)` -/
 
@@ -119,17 +113,17 @@ theorem injectivityRadiusAt_eq_sSup_eball (p : M) :
 `‖v‖ₑ < injectivityRadiusAt I M p`, the Riemannian distance from `p` to `exp_p v` is `‖v‖ₑ`. -/
 theorem edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt {p : M}
     {v : TangentSpace I p} (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
-    edist p (riemannianExp I M p v) = ‖v‖ₑ := by
-  obtain ⟨_, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
-  exact hball.edist_riemannianExp_eq_of_mem_ball subset_rfl hvr
+    edist p (riemannianExp I M p v) = ‖v‖ₑ :=
+  let ⟨_, _, hvr, _, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
+  hball.edist_riemannianExp_eq_of_mem_ball subset_rfl hvr
 
 /-- **Radial geodesic segments below `inj(p)` are minimizing.** -/
 theorem pathELength_riemannianExp_smul_eq_edist_of_enorm_lt_injectivityRadiusAt {p : M}
     {v : TangentSpace I p} (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
     pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 =
-      edist p (riemannianExp I M p v) := by
-  obtain ⟨_, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
-  exact hball.pathELength_riemannianExp_smul_eq_edist_of_mem_ball subset_rfl hvr
+      edist p (riemannianExp I M p v) :=
+  let ⟨_, _, hvr, _, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
+  hball.pathELength_riemannianExp_smul_eq_edist_of_mem_ball subset_rfl hvr
 
 /-- **The exponential image of the `inj(p)`-ball is the metric `inj(p)`-ball.** No completeness or
 connectedness hypothesis is needed: when `inj(p) = ⊤`, `Metric.eball p ⊤` consists of the points at
@@ -137,21 +131,18 @@ finite Riemannian distance from `p`. -/
 theorem image_riemannianExp_eball_injectivityRadiusAt (p : M) :
     riemannianExp I M p '' Metric.eball 0 (injectivityRadiusAt I M p) =
       Metric.eball p (injectivityRadiusAt I M p) := by
-  ext q
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    simp only [Metric.mem_eball, edist_zero_right] at hv ⊢
+  ext q; constructor
+  · rintro ⟨v, hv, rfl⟩; simp only [Metric.mem_eball, edist_zero_right] at hv ⊢
     rwa [edist_comm, edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv]
-  · intro hq
-    rw [Metric.mem_eball, edist_comm] at hq
+  · intro hq; rw [Metric.mem_eball, edist_comm] at hq
     obtain ⟨r, -, hqr, hr⟩ := ENNReal.lt_iff_exists_real_btwn.1 hq
     have hr₀ : 0 < r := ENNReal.ofReal_pos.1 (zero_le.trans_lt hqr)
-    have hball := isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr
     obtain ⟨v, hv, rfl⟩ : q ∈ riemannianExp I M p '' Metric.ball 0 r := by
-      rwa [hball.image_riemannianExp_ball subset_rfl, Metric.mem_eball']
-    refine ⟨v, ?_, rfl⟩
-    rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
-    exact ((ENNReal.ofReal_lt_ofReal_iff hr₀).2 (mem_ball_zero_iff.1 hv)).trans hr
+      rwa [(isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr).image_riemannianExp_ball
+        subset_rfl, Metric.mem_eball']
+    exact ⟨v, by
+      rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
+      exact ((ENNReal.ofReal_lt_ofReal_iff hr₀).2 (mem_ball_zero_iff.1 hv)).trans hr, rfl⟩
 
 /-! ### Existence and uniqueness of minimizing geodesics below `inj(p)` and `inj(M)` -/
 
@@ -159,8 +150,7 @@ theorem image_riemannianExp_eball_injectivityRadiusAt (p : M) :
 under `exp_p` in `Metric.eball 0 (inj(p))`. -/
 theorem existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt {p q : M}
     (hq : edist p q < injectivityRadiusAt I M p) :
-    ∃! v : TangentSpace I p,
-      ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q := by
+    ∃! v : TangentSpace I p, ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q := by
   obtain ⟨v, hv, rfl⟩ : q ∈ riemannianExp I M p '' Metric.eball 0 (injectivityRadiusAt I M p) := by
     rwa [image_riemannianExp_eball_injectivityRadiusAt, Metric.mem_eball, edist_comm]
   simp only [Metric.mem_eball, edist_zero_right] at hv
@@ -181,17 +171,13 @@ theorem eqOn_riemannianExp_smul_of_isGeodesicCurveOn_of_enorm_lt_injectivityRadi
     EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
   obtain ⟨R, -, hvR, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
   have hnorm : ‖v‖ < R := mem_ball_zero_iff.1 hvR
-  have hrad_len : pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 =
-      edist p (riemannianExp I M p v) :=
-    hball.pathELength_riemannianExp_smul_eq_edist_of_mem_ball subset_rfl hvR
+  have hrad_len := hball.pathELength_riemannianExp_smul_eq_edist_of_mem_ball subset_rfl hvR
   -- Separate `‖v‖` from `R` by `(‖v‖ + R) / 2` so the escape estimate forces `γ` into `B(0, R)`.
-  have hmaps : MapsTo γ (Icc 0 1) (riemannianExp I M p '' Metric.ball 0 R) := by
-    by_contra hnot
-    have hlt := hball.pathELength_riemannianExp_smul_lt_of_not_mapsTo
+  have hmaps : MapsTo γ (Icc 0 1) (riemannianExp I M p '' Metric.ball 0 R) := by_contra fun hnot ↦
+    lt_irrefl _ ((hball.pathELength_riemannianExp_smul_lt_of_not_mapsTo
       (Metric.closedBall_subset_ball (by linarith : (‖v‖ + R) / 2 < R))
       (mem_ball_zero_iff.2 (by linarith : ‖v‖ < (‖v‖ + R) / 2))
-      (hγ.contMDiffOn.of_le (by norm_num)) hγ0 hnot
-    exact lt_irrefl _ (hlt.trans_le (hlen.trans_eq hrad_len.symm))
+      (hγ.contMDiffOn.of_le (by norm_num)) hγ0 hnot).trans_le (hlen.trans_eq hrad_len.symm))
   exact hball.eqOn_riemannianExp_smul_of_geodesic_pathELength_le hvR hγ hmaps hγ0 hγ1
     (hlen.trans_eq hrad_len.symm)
 
@@ -209,16 +195,13 @@ theorem exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadiusAt 
         pathELength I γ 0 1 ≤ edist p q →
         EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
   obtain ⟨v, ⟨hv, rfl⟩, -⟩ := existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt hq
-  have hgeo : IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
-    rw [funext (riemannianExp_smul p v)]
-    exact (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono
-      (uniqueDiffOn_Icc zero_lt_one) (ordConnected_geodesicInterval.out zero_mem_geodesicInterval
-        (mem_expDomain_iff.1 (mem_expDomain_of_enorm_lt_injectivityRadiusAt hv)))
-  exact ⟨v, (edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv).symm, rfl, hgeo,
-    pathELength_riemannianExp_smul_eq_edist_of_enorm_lt_injectivityRadiusAt hv,
-    fun _ hγ hγ0 hγ1 hlen ↦
-      eqOn_riemannianExp_smul_of_isGeodesicCurveOn_of_enorm_lt_injectivityRadiusAt hv hγ hγ0 hγ1
-        hlen⟩
+  exact ⟨v, (edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv).symm, rfl,
+    (funext (riemannianExp_smul p v)).symm ▸
+      (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono
+        (uniqueDiffOn_Icc zero_lt_one) (ordConnected_geodesicInterval.out zero_mem_geodesicInterval
+          (mem_expDomain_iff.1 (mem_expDomain_of_enorm_lt_injectivityRadiusAt hv))),
+    pathELength_riemannianExp_smul_eq_edist_of_enorm_lt_injectivityRadiusAt hv, fun _ ↦
+      eqOn_riemannianExp_smul_of_isGeodesicCurveOn_of_enorm_lt_injectivityRadiusAt hv⟩
 
 /-- **Unique minimizing geodesic below the global injectivity radius `inj(M)`.** Whenever
 `edist p q < injectivityRadius I M`, `p` and `q` are joined by a unique minimizing geodesic on
@@ -291,14 +274,13 @@ theorem exists_isGeodesicSegment_and_unique_of_ofReal_dist_lt_injectivityRadiusA
       IsGeodesicSegment (fun t : ℝ ↦ riemannianExp I M p (t • v)) p q ∧
       ∀ γ : ℝ → M, IsGeodesicSegment γ p q →
         EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
-  obtain ⟨v, ⟨hv, rfl⟩, -⟩ := existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt
-    (show edist p q < injectivityRadiusAt I M p by rwa [edist_dist])
+  obtain ⟨v, ⟨hv, rfl⟩, -⟩ :=
+    existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt (p := p) (q := q)
+      (by rwa [edist_dist])
   obtain ⟨_, -, hvr, -, hball⟩ := exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt hv
-  have hseg : IsGeodesicSegment (fun t : ℝ ↦ riemannianExp I M p (t • v)) p
-      (riemannianExp I M p v) := by
-    rw [funext (riemannianExp_smul p v)]
-    exact isGeodesicSegment_maximalGeodesic_of_enorm_lt_injectivityRadiusAt hv
-  exact ⟨v, (dist_riemannianExp_eq_norm_of_enorm_lt_injectivityRadiusAt hv).symm, rfl, hseg,
+  exact ⟨v, (dist_riemannianExp_eq_norm_of_enorm_lt_injectivityRadiusAt hv).symm, rfl,
+    (funext (riemannianExp_smul p v)).symm ▸
+      isGeodesicSegment_maximalGeodesic_of_enorm_lt_injectivityRadiusAt hv,
     fun _ hγ ↦ hball.eqOn_riemannianExp_smul_of_isGeodesicSegment subset_rfl hvr hγ⟩
 
 /-- **Unique metric geodesic segment below `inj(M)` on a complete Riemannian manifold.** -/
@@ -340,8 +322,7 @@ theorem riemannianEDist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt {
 under `exp_p` of extended norm strictly less than `inj(p)`. -/
 theorem existsUnique_riemannianExp_eq_of_riemannianEDist_lt_injectivityRadiusAt {p q : M}
     (hq : riemannianEDist I p q < injectivityRadiusAt I M p) :
-    ∃! v : TangentSpace I p,
-      ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q := by
+    ∃! v : TangentSpace I p, ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q := by
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
     (V := fun x : M ↦ TangentSpace I x)
   let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M

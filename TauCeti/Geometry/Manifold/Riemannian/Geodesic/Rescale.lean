@@ -19,10 +19,6 @@ geodesics, the geodesic spray, maximal geodesic intervals, maximal geodesics, `e
 
 ## Main results
 
-* `TauCeti.Manifold.christoffelMap_congr`,
-  `CovariantDerivative.alongCurveWithin_congr_covariantDerivative`,
-  `CovariantDerivative.accelerationWithin_congr_covariantDerivative`: dependence on the connection
-  only through vector fields differentiable at the point.
 * `Bundle.ContMDiffRiemannianMetric.isGeodesicCurveOn_rescale_const_iff`,
   `Bundle.ContMDiffRiemannianMetric.geodesicSpray_rescale_const`,
   `Bundle.ContMDiffRiemannianMetric.geodesicInterval_rescale_const`,
@@ -43,84 +39,6 @@ open Bundle CovariantDerivative Module Set TauCeti.Manifold
 open scoped ContDiff Manifold Topology
 
 noncomputable section
-
-section ConnectionCongr
-
-variable
-  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-
-/-- Two connections on the tangent bundle that agree on vector fields differentiable at `x` have
-the same model-space Christoffel map at `x` in any trivialization. -/
-theorem TauCeti.Manifold.christoffelMap_congr
-    {ι : Type*} [Fintype ι] (b : Basis ι 𝕜 E)
-    {e : Trivialization E (TotalSpace.proj : TangentBundle I M → M)} [MemTrivializationAtlas e]
-    {cov₁ cov₂ : (Π x : M, TangentSpace I x) → (Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x)}
-    (hcov₁ : IsCovariantDerivativeOn E cov₁ e.baseSet)
-    (hcov₂ : IsCovariantDerivativeOn E cov₂ e.baseSet) {x : M}
-    (h : x ∈ e.baseSet →
-      ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) x → cov₁ Y x = cov₂ Y x) :
-    christoffelMap b hcov₁ x = christoffelMap b hcov₂ x := by
-  by_cases hx : x ∈ e.baseSet
-  · ext v u
-    have hσ : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
-      (e.mdifferentiableAt_section_iff I _ hx).2 <|
-        mdifferentiableAt_const.congr_of_eventuallyEq <|
-          Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
-            show (e ⟨y, e.symm y v⟩).2 = v from congrArg Prod.snd (e.apply_mk_symm hy v)
-    have heq :
-        e.symm x (christoffelMap b hcov₁ x v u) = e.symm x (christoffelMap b hcov₂ x v u) := by
-      rw [← covariantDerivative_symm_apply_symm b hcov₁ hx,
-        ← covariantDerivative_symm_apply_symm b hcov₂ hx, h hx hσ]
-    simpa only [e.apply_mk_symm hx] using congrArg (fun w ↦ (e ⟨x, w⟩).2) heq
-  · rw [christoffelMap_of_notMem b hcov₁ hx, christoffelMap_of_notMem b hcov₂ hx]
-
-namespace CovariantDerivative
-
-/-- Along-curve covariant differentiation at `t` depends on the connection only through its action
-on vector fields differentiable at `γ t`. -/
-theorem alongCurveWithin_congr_covariantDerivative
-    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set 𝕜} {t : 𝕜}
-    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
-    alongCurveWithin cov₁ γ V s t = alongCurveWithin cov₂ γ V s t := by
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply,
-    alongCurveWithin_apply, alongCurveInChartWithin_apply,
-    christoffelMap_congr (finBasis 𝕜 E) _ _ fun _ _ hY ↦ h hY]
-
-/-- Unrestricted along-curve covariant differentiation at `t` depends on the connection only
-through its action on vector fields differentiable at `γ t`. -/
-theorem alongCurve_congr_covariantDerivative
-    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {t : 𝕜}
-    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
-    alongCurve cov₁ γ V t = alongCurve cov₂ γ V t := by
-  simpa only [← alongCurveWithin_univ] using alongCurveWithin_congr_covariantDerivative h
-
-/-- Covariant acceleration within `s` at `t` depends on the connection only through its action on
-vector fields differentiable at `γ t`. -/
-theorem accelerationWithin_congr_covariantDerivative
-    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-    {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜}
-    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
-    accelerationWithin cov₁ γ s t = accelerationWithin cov₂ γ s t := by
-  simpa only [accelerationWithin_def] using alongCurveWithin_congr_covariantDerivative h
-
-/-- Unrestricted covariant acceleration at `t` depends on the connection only through its action on
-vector fields differentiable at `γ t`. -/
-theorem acceleration_congr_covariantDerivative
-    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-    {γ : 𝕜 → M} {t : 𝕜}
-    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
-    acceleration cov₁ γ t = acceleration cov₂ γ t := by
-  simpa only [← accelerationWithin_univ] using accelerationWithin_congr_covariantDerivative h
-
-end CovariantDerivative
-
-end ConnectionCongr
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -181,11 +99,11 @@ theorem isGeodesicCurveOn_rescale_const_iff (γ : ℝ → M) (s : Set ℝ) :
       IsGeodesicCurveOn I γ s) := by
   have hacc := accelerationWithin_leviCivitaConnection_rescale_const g hn hc γ s
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> obtain ⟨hu, hcγ, ha⟩ := h
-  · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  · let _ : RiemannianBundle _ := ⟨g.toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.of_le hn
     exact ⟨hu, hcγ, fun r hr ↦ (hacc r).symm.trans (ha r hr)⟩
-  · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+  · let _ : RiemannianBundle _ :=
       ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.of_le hn
@@ -202,8 +120,7 @@ theorem isGeodesicCurve_rescale_const_iff (γ : ℝ → M) :
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
       IsGeodesicCurve I γ) := by
-  simp only [← isGeodesicCurveOn_univ]
-  exact isGeodesicCurveOn_rescale_const_iff g hn hc γ univ
+  simp only [← isGeodesicCurveOn_univ, isGeodesicCurveOn_rescale_const_iff g hn hc γ univ]
 
 /-- Multiplying a `C¹` metric by a positive constant does not change geodesics with prescribed
 initial data. -/
@@ -220,11 +137,11 @@ theorem isGeodesicCurveOnFrom_rescale_const_iff
       IsGeodesicCurveOnFrom I γ s p v) := by
   have hgeo := isGeodesicCurveOn_rescale_const_iff g hn hc γ s
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> obtain ⟨hγ, h0, hi⟩ := h
-  · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  · let _ : RiemannianBundle _ := ⟨g.toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.of_le hn
     exact ⟨hgeo.1 hγ, h0, hi⟩
-  · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+  · let _ : RiemannianBundle _ :=
       ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.of_le hn
@@ -242,8 +159,7 @@ theorem geodesicSpray_rescale_const :
         IsContMDiffRiemannianBundle.of_le hn;
       geodesicSpray I M) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
-  funext z
-  simp only [geodesicSpray_apply]
+  funext z; simp only [geodesicSpray_apply]
   exact congrArg (fun Γ : E →L[ℝ] E →L[ℝ] E ↦ (z.2, -Γ z.2 z.2))
     (christoffelMap_congr (finBasis ℝ E) _ _ fun _ _ hY ↦
       leviCivitaConnection_rescale_const_apply g hn hc hY)
@@ -265,8 +181,7 @@ theorem geodesicInterval_rescale_const (p : M) (v : TangentSpace I p) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       geodesicInterval I M p v) := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  ext t
-  simp only [mem_geodesicInterval_iff, isGeodesicCurveOnFrom_rescale_const_iff g (by simp) hc]
+  ext t; simp [mem_geodesicInterval_iff, isGeodesicCurveOnFrom_rescale_const_iff g (by simp) hc]
 
 /-- Multiplying a smooth metric by a positive constant leaves maximal geodesics unchanged. -/
 theorem maximalGeodesic_rescale_const (p : M) (v : TangentSpace I p) (t : ℝ) :
@@ -286,8 +201,7 @@ theorem expDomain_rescale_const (p : M) :
       expDomain I M p) =
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       expDomain I M p) := by
-  ext v
-  simp only [mem_expDomain_iff, geodesicInterval_rescale_const g hc]
+  ext v; simp only [mem_expDomain_iff, geodesicInterval_rescale_const g hc]
 
 /-- Multiplying a smooth metric by a positive constant does not change geodesic completeness at a
 point. -/

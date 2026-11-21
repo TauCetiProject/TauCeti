@@ -59,7 +59,8 @@ ambient covariant derivative.
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
   reparametrization, with
   `CovariantDerivative.alongCurve_congr` and `CovariantDerivative.alongCurve_comp` their
-  unrestricted cases.
+  unrestricted cases, and `CovariantDerivative.alongCurveWithin_congr_covariantDerivative` and
+  `CovariantDerivative.alongCurve_congr_covariantDerivative` for congruence in the connection.
 
 ## References
 
@@ -535,3 +536,40 @@ theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSp
     alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt
 
 end CovariantDerivative
+
+section ConnectionCongr
+
+open TauCeti.Manifold
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+
+namespace CovariantDerivative
+
+/-- Along-curve covariant differentiation at `t` depends on the connection only through its action
+on vector fields differentiable at `γ t`. -/
+theorem alongCurveWithin_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set 𝕜} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    alongCurveWithin cov₁ γ V s t = alongCurveWithin cov₂ γ V s t := by
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    christoffelMap_congr (Module.finBasis 𝕜 E) _ _ fun _ _ hY ↦ h hY]
+
+/-- Unrestricted along-curve covariant differentiation at `t` depends on the connection only
+through its action on vector fields differentiable at `γ t`. -/
+theorem alongCurve_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    alongCurve cov₁ γ V t = alongCurve cov₂ γ V t := by
+  simpa only [← alongCurveWithin_univ] using alongCurveWithin_congr_covariantDerivative h
+
+end CovariantDerivative
+
+end ConnectionCongr

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Immersion
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
@@ -20,10 +21,12 @@ so the Gauss formula makes its intrinsic acceleration zero. Uniqueness identifie
 curves with the Riemannian exponential map, without a completeness assumption or a change
 from the sphere's native manifold structure.
 
-For every tangent vector `v`, including zero, `coe_riemannianExp_sphere` gives
-`exp_p(v) = cos(‖v‖) p + (sin(‖v‖) / ‖v‖) dι_p(v)` in the ambient space.
-The antipodal shift by `π` is recorded as `Function.Antiperiodic`, whose standard API
-also gives period `2π`.
+Consequently every maximal geodesic is defined on all of `ℝ` (`geodesicInterval_sphere`), the
+exponential domain is the whole tangent space (`expDomain_sphere`), and for every tangent vector
+`v`, `coe_riemannianExp_sphere` gives `exp_p(v) = cos(‖v‖) p + (sin(‖v‖) / ‖v‖) dι_p(v)`,
+yielding `inner_coe_riemannianExp_sphere` and antipodal evaluation at norm `π`
+(`riemannianExp_sphere_eq_neg_of_norm_eq_pi`). The antipodal shift by `π` is recorded as
+`Function.Antiperiodic`, whose standard API also gives period `2π`.
 
 ## References
 
@@ -33,8 +36,8 @@ also gives period `2π`.
 
 public section
 
-open Bundle CovariantDerivative Metric Module Set
-open scoped ContDiff Manifold
+open Bundle CovariantDerivative Manifold Metric Module Set
+open scoped ContDiff ENNReal InnerProductSpace Manifold
 
 noncomputable section
 
@@ -215,5 +218,65 @@ theorem antiperiodic_sphereGreatCircle (p q : sphere (0 : E) 1)
   intro t
   ext
   simp [Real.cos_add_pi, Real.sin_add_pi, neg_smul, neg_add_rev, add_comm]
+
+/-- Every maximal geodesic of the round unit sphere is defined on all of `ℝ`. -/
+@[simp] theorem geodesicInterval_sphere (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
+    geodesicInterval (𝓡 n) (sphere (0 : E) 1) p v = univ := by
+  by_cases hv : v = 0
+  · subst v; exact geodesicInterval_zero
+  have ha : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
+  let u : TangentSpace (𝓡 n) p := ‖v‖⁻¹ • v
+  have hu : ‖u‖ = 1 := by
+    dsimp only [u]; rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ ha]
+  let q : sphere (0 : E) 1 := ⟨mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p u,
+    mem_sphere_zero_iff_norm.mpr (by rw [← norm_tangentSpace_sphere, hu])⟩
+  have hgeo := (isGeodesicCurveOnFrom_sphereGreatCircle p q
+    (inner_coe_mvfderiv_subtypeVal_sphere p u) u rfl).comp_mul_left ‖v‖
+    uniqueDiffOn_univ (mapsTo_univ _ _) (mem_univ 0)
+  rw [smul_inv_smul₀ ha v] at hgeo
+  refine eq_univ_of_forall fun t ↦
+    (hgeo.mono (uniqueDiffOn_Ioo (-(|t| + 1)) (|t| + 1)) (subset_univ _)
+      ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩).subset_geodesicInterval
+      ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+
+/-- The exponential map of the round unit sphere is defined on the whole tangent space at every
+point. Stated without requiring callers to synthesize `FiniteDimensional ℝ E` or
+`CompactSpace (sphere (0 : E) 1)` from `[Fact (finrank ℝ E = n + 1)]`. -/
+@[simp] theorem expDomain_sphere (p : sphere (0 : E) 1) :
+    expDomain (𝓡 n) (sphere (0 : E) 1) p = univ := by
+  ext v; simp [mem_expDomain_iff, geodesicInterval_sphere (n := n)]
+
+/-- Every radial curve `t ↦ exp_p (t • v)` on the round unit sphere is a global geodesic on
+`univ`. -/
+theorem isGeodesicCurveOn_riemannianExp_smul_sphere_univ (p : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) p) :
+    IsGeodesicCurveOn (𝓡 n)
+      (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) univ :=
+  (funext (riemannianExp_smul p v)).symm ▸ (geodesicInterval_sphere (n := n) p v ▸
+    (isGeodesicCurveOnFrom_maximalGeodesic (I := 𝓡 n) (M := sphere (0 : E) 1)
+      p v).isGeodesicCurveOn)
+
+/-- Along any radial geodesic `t ↦ exp_p (t • v)` on `Sⁿ`, the Riemannian length on `[0, 1]` is
+`‖v‖ₑ` (for every `v`, including `‖v‖ ≥ π`). -/
+@[simp] theorem pathELength_riemannianExp_smul_sphere_zero_one (p : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) p) :
+    pathELength (𝓡 n) (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) 0 1 =
+      ‖v‖ₑ := by
+  rw [funext (riemannianExp_smul p v), pathELength_maximalGeodesic (by simp) (by simp), sub_zero,
+    ENNReal.ofReal_one, mul_one]
+
+/-- The ambient inner product of `p` with `exp_p v` on the unit sphere is `cos ‖v‖`. -/
+theorem inner_coe_riemannianExp_sphere (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
+    ⟪(p : E), (riemannianExp (𝓡 n) (sphere (0 : E) 1) p v : E)⟫_ℝ = Real.cos ‖v‖ := by
+  rw [coe_riemannianExp_sphere, inner_add_right, real_inner_smul_right, real_inner_smul_right,
+    real_inner_self_eq_norm_sq, mem_sphere_zero_iff_norm.1 p.2,
+    inner_coe_mvfderiv_subtypeVal_sphere, one_pow, mul_one, mul_zero, add_zero]
+
+/-- Every tangent vector of norm `π` at `p : Sⁿ` exponentiates to the antipodal point `-p`. -/
+theorem riemannianExp_sphere_eq_neg_of_norm_eq_pi {p : sphere (0 : E) 1}
+    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ = Real.pi) :
+    riemannianExp (𝓡 n) (sphere (0 : E) 1) p v = -p := by
+  rw [Subtype.ext_iff, coe_riemannianExp_sphere, hv, Real.cos_pi, Real.sin_pi, zero_div,
+    zero_smul, add_zero, neg_one_smul]; rfl
 
 end TauCeti

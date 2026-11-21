@@ -9,9 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Euclidean
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Rescale
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Exponential
 
 /-!
 # Behavior of the injectivity radius under isometries, metric rescaling, and on inner-product spaces
@@ -31,9 +30,10 @@ and `letI` forms). Finally, every finite-dimensional real inner-product space ha
 * `TauCeti.injectivityRadius_eq_injectivityRadiusAt_of_isPretransitive`,
   `TauCeti.injectivityRadius_pos_of_isPretransitive`: constancy and positivity on homogeneous
   Riemannian manifolds.
-* `TauCeti.WithMetric.riemannianIsometry`, `TauCeti.WithMetric.riemannianIsometryOfInnerEq`,
-  `TauCeti.WithMetric.injectivityRadiusAt_congr`, `TauCeti.WithMetric.injectivityRadius_congr`:
-  `WithMetric` transport and congruence.
+* `TauCeti.WithMetric.injectivityRadiusAt_toWithMetric`,
+  `TauCeti.WithMetric.injectivityRadius_eq`,
+  `TauCeti.WithMetric.injectivityRadiusAt_congr`,
+  `TauCeti.WithMetric.injectivityRadius_congr`: `WithMetric` transport and congruence.
 * `TauCeti.WithMetric.isNormalDomain_ball_rescale_const_iff`,
   `TauCeti.WithMetric.injectivityRadiusAt_rescale_const`,
   `TauCeti.WithMetric.injectivityRadius_rescale_const`, and their `letI` counterparts in
@@ -89,8 +89,7 @@ theorem isNormalDomain_mfderiv_image (Φ : RiemannianIsometry I J M N) {p : M}
   · rintro _ ⟨v₁, hv₁, rfl⟩ _ ⟨v₂, hv₂, rfl⟩ heq
     rw [Φ.riemannianExp_mfderiv, Φ.riemannianExp_mfderiv] at heq
     exact congrArg (mfderiv I J Φ p) (h.injOn hv₁ hv₂ (EquivLike.injective Φ heq))
-  · rintro ⟨_, v, hv, rfl⟩
-    rw [hexp]
+  · rintro ⟨_, v, hv, rfl⟩; rw [hexp]
     have hvL : L.symm (mfderiv I J Φ p v) = v := by rw [← hL, L.symm_apply_apply]
     have h1 : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace J (Φ p)) 𝓘(ℝ, TangentSpace I p) ∞ L.symm
         (mfderiv I J Φ p v) := by
@@ -103,16 +102,14 @@ theorem isNormalDomain_mfderiv_image (Φ : RiemannianIsometry I J M N) {p : M}
 domain. -/
 theorem isNormalDomain_ball_iff (Φ : RiemannianIsometry I J M N) (p : M) (r : ℝ) :
     IsNormalDomain J N (Φ p) (Metric.ball 0 r) ↔ IsNormalDomain I M p (Metric.ball 0 r) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have : T2Space N := Φ.toDiffeomorph.toHomeomorph.t2Space
-    have h' := Φ.symm.isNormalDomain_mfderiv_image h
-    rw [Φ.symm.mfderiv_image_ball, map_zero] at h'
-    exact Φ.symm_apply_apply p ▸ h'
-  · simpa only [Φ.mfderiv_image_ball, map_zero] using Φ.isNormalDomain_mfderiv_image h
+  refine ⟨fun h ↦ ?_, fun h ↦
+    by simpa only [Φ.mfderiv_image_ball, map_zero] using Φ.isNormalDomain_mfderiv_image h⟩
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.t2Space
+  have h' := Φ.symm.isNormalDomain_mfderiv_image h
+  rw [Φ.symm.mfderiv_image_ball, map_zero] at h'; exact Φ.symm_apply_apply p ▸ h'
 
 /-- **Isometry invariance of the pointwise injectivity radius.** -/
-@[simp]
-theorem injectivityRadiusAt_apply (Φ : RiemannianIsometry I J M N) (p : M) :
+@[simp] theorem injectivityRadiusAt_apply (Φ : RiemannianIsometry I J M N) (p : M) :
     injectivityRadiusAt J N (Φ p) = injectivityRadiusAt I M p := by
   simp only [injectivityRadiusAt_def, Φ.isNormalDomain_ball_iff]
 
@@ -136,10 +133,8 @@ variable
 /-- An element of a group acting smoothly by Riemannian isometries preserves the pointwise
 injectivity radius. -/
 theorem injectivityRadiusAt_smul {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
-    (a : G)
-    (ha : ∀ (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    (x : M) :
+    (a : G) (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (x : M) :
     injectivityRadiusAt I M (a • x) = injectivityRadiusAt I M x := by
   simpa only [RiemannianIsometry.coe_constSMul] using
     (RiemannianIsometry.constSMul a ha).injectivityRadiusAt_apply x
@@ -148,9 +143,9 @@ theorem injectivityRadiusAt_smul {G : Type*} [Group G] [MulAction G M] [ContMDif
 injectivity radius is independent of the basepoint. -/
 theorem injectivityRadiusAt_eq_of_isPretransitive
     [MulAction.IsPretransitive (Isom I M) M] (p q : M) :
-    injectivityRadiusAt I M p = injectivityRadiusAt I M q := by
-  obtain ⟨Φ, rfl⟩ := MulAction.exists_smul_eq (Isom I M) q p
-  exact Φ.injectivityRadiusAt_apply q
+    injectivityRadiusAt I M p = injectivityRadiusAt I M q :=
+  let ⟨Φ, hΦ⟩ := MulAction.exists_smul_eq (Isom I M) q p
+  hΦ ▸ Φ.injectivityRadiusAt_apply q
 
 /-- On a homogeneous Riemannian manifold, the global injectivity radius equals the pointwise
 injectivity radius at any point. -/
@@ -163,11 +158,10 @@ theorem injectivityRadius_eq_injectivityRadiusAt_of_isPretransitive
 /-- Every nonempty homogeneous Riemannian manifold (compact or noncompact) has strictly positive
 global injectivity radius. -/
 theorem injectivityRadius_pos_of_isPretransitive
-    [MulAction.IsPretransitive (Isom I M) M] [Nonempty M] :
-    0 < injectivityRadius I M := by
-  obtain ⟨p⟩ := ‹Nonempty M›
-  rw [injectivityRadius_eq_injectivityRadiusAt_of_isPretransitive p]
-  exact injectivityRadiusAt_pos p
+    [MulAction.IsPretransitive (Isom I M) M] [Nonempty M] : 0 < injectivityRadius I M :=
+  let ⟨p⟩ := ‹Nonempty M›
+  injectivityRadius_eq_injectivityRadiusAt_of_isPretransitive (I := I) p ▸
+    injectivityRadiusAt_pos p
 
 end TauCeti
 
@@ -188,56 +182,18 @@ variable (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)
 
 include hg
 
-/-- The tautological diffeomorphism `WithMetric g → M` upgraded to a `RiemannianIsometry` whenever
-the ambient `RiemannianBundle` on `M` has inner product `g.inner`. -/
-def riemannianIsometry : RiemannianIsometry I I (WithMetric g) M where
-  toDiffeomorph := WithMetric.diffeomorph g ∞
-  inner_mfderiv' x v w := by rw [WithMetric.coe_diffeomorph, hg, WithMetric.inner_def]
-
-@[simp]
-theorem coe_riemannianIsometry : ⇑(riemannianIsometry g hg) = ofWithMetric :=
-  (RiemannianIsometry.coe_toDiffeomorph _).symm.trans (WithMetric.coe_diffeomorph ∞)
-
-@[simp]
-theorem riemannianIsometry_apply (x : WithMetric g) :
-    riemannianIsometry g hg x = x.ofWithMetric :=
-  congrFun (coe_riemannianIsometry g hg) x
-
-@[simp]
-theorem riemannianIsometry_symm_apply (x : M) :
-    (riemannianIsometry g hg).symm x = toWithMetric g x :=
-  congrFun ((riemannianIsometry g hg).coe_symm.trans (WithMetric.coe_diffeomorph_symm ∞)) x
-
-variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- Membership in `expDomain` on `WithMetric g` reduces to `M` when `M` carries `g`. -/
-theorem mem_expDomain_iff {x : WithMetric g} {v : TangentSpace I x} :
-    v ∈ expDomain I (WithMetric g) x ↔
-      mfderiv I I ofWithMetric x v ∈ expDomain I M x.ofWithMetric := by
-  have h := (riemannianIsometry g hg).mfderiv_mem_expDomain_iff (p := x) (v := v)
-  rw [coe_riemannianIsometry] at h
-  exact h.symm
-
-/-- `ofWithMetric` intertwines `riemannianExp` on `WithMetric g` with `riemannianExp` on `M` when
-`M` carries `g`. -/
-theorem ofWithMetric_riemannianExp [I.Boundaryless] [T2Space M]
-    (x : WithMetric g) (v : TangentSpace I x) :
-    (riemannianExp I (WithMetric g) x v).ofWithMetric =
-      riemannianExp I M x.ofWithMetric (mfderiv I I ofWithMetric x v) := by
-  have h := (riemannianIsometry g hg).riemannianExp_mfderiv x v
-  rw [coe_riemannianIsometry] at h
-  exact h.symm
-
 /-- The pointwise injectivity radius on `WithMetric g` agrees with that on `M` when `M` carries the
 inner product of `g`. -/
-theorem injectivityRadiusAt_toWithMetric [I.Boundaryless] [T2Space M] (p : M) :
+theorem injectivityRadiusAt_toWithMetric [I.Boundaryless] [T2Space M]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] (p : M) :
     injectivityRadiusAt I (WithMetric g) (toWithMetric g p) = injectivityRadiusAt I M p := by
   simpa only [riemannianIsometry_apply, ofWithMetric_toWithMetric] using
     ((riemannianIsometry g hg).injectivityRadiusAt_apply (toWithMetric g p)).symm
 
 /-- The global injectivity radius on `WithMetric g` agrees with that on `M` when `M` carries the
 inner product of `g`. -/
-theorem injectivityRadius_eq [I.Boundaryless] [T2Space M] :
+theorem injectivityRadius_eq [I.Boundaryless] [T2Space M]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
     injectivityRadius I (WithMetric g) = injectivityRadius I M :=
   (riemannianIsometry g hg).injectivityRadius_eq.symm
 
@@ -249,22 +205,6 @@ variable (g₁ g₂ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSp
   (h : ∀ x (v w : TangentSpace I x), g₁.inner x v w = g₂.inner x v w)
 
 include h
-
-/-- Two smooth Riemannian metrics on `M` with pointwise equal inner products have isometric
-`WithMetric` copies via the identity diffeomorphism. -/
-def riemannianIsometryOfInnerEq :
-    RiemannianIsometry I I (WithMetric g₁) (WithMetric g₂) :=
-  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
-  (riemannianIsometry g₁ fun _ _ _ ↦ rfl).trans (riemannianIsometry g₂ h).symm
-
-@[simp]
-theorem riemannianIsometryOfInnerEq_apply (x : WithMetric g₁) :
-    riemannianIsometryOfInnerEq g₁ g₂ h x = toWithMetric g₂ x.ofWithMetric := by
-  dsimp only [riemannianIsometryOfInnerEq]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
-  exact (RiemannianIsometry.trans_apply _ _ x).trans <|
-    (riemannianIsometry_symm_apply g₂ h _).trans
-      (congrArg (toWithMetric g₂) (riemannianIsometry_apply g₁ _ x))
 
 /-- Pointwise equal smooth Riemannian metrics have equal pointwise injectivity radius on their
 `WithMetric` copies. -/
@@ -285,30 +225,7 @@ end InnerEq
 section Rescale
 
 variable (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-
-private theorem mem_expDomain_letI (p : M) (v : TangentSpace I (toWithMetric g p)) :
-    v ∈ expDomain I (WithMetric g) (toWithMetric g p) ↔
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-          Bundle.instIsContMDiffRiemannianBundle g;
-        mfderiv I I ofWithMetric (toWithMetric g p) v ∈ expDomain I M p) := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  let _ : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-    Bundle.instIsContMDiffRiemannianBundle g
-  exact mem_expDomain_iff g fun _ _ _ ↦ rfl
-
-variable [I.Boundaryless] [T2Space M]
-
-private theorem ofWithMetric_riemannianExp_letI (p : M) (v : TangentSpace I (toWithMetric g p)) :
-    (riemannianExp I (WithMetric g) (toWithMetric g p) v).ofWithMetric =
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-          Bundle.instIsContMDiffRiemannianBundle g;
-        riemannianExp I M p (mfderiv I I ofWithMetric (toWithMetric g p) v)) := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  let _ : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-    Bundle.instIsContMDiffRiemannianBundle g
-  exact ofWithMetric_riemannianExp g (fun _ _ _ ↦ rfl) (toWithMetric g p) v
+  [I.Boundaryless] [T2Space M]
 
 /-- Forward implication for normal tangent balls under constant rescaling of `g` by `c > 0`. -/
 private theorem isNormalDomain_ball_rescale_const_of_div {c : ℝ} (hc : 0 < c) {p : M} {r : ℝ}
@@ -319,39 +236,35 @@ private theorem isNormalDomain_ball_rescale_const_of_div {c : ℝ} (hc : 0 < c) 
   set p₀ : WithMetric g := toWithMetric g p
   set p_c : WithMetric g_c := toWithMetric g_c p
   have hsqrt : 0 < √c := Real.sqrt_pos.2 hc
-  have hr : 0 < r := by
-    have hrdiv : 0 < r / √c := by simpa only [Metric.mem_ball, dist_self] using h.zero_mem
-    simpa only [div_mul_cancel₀ _ hsqrt.ne'] using mul_pos hrdiv hsqrt
+  have hr : 0 < r := (mul_pos (by simpa only [Metric.mem_ball, dist_self] using h.zero_mem)
+    hsqrt).trans_eq (div_mul_cancel₀ _ hsqrt.ne')
   let L : TangentSpace I p_c ≃L[ℝ] TangentSpace I p₀ :=
     (diffeomorphWithMetric g_c g ∞).mfderivToContinuousLinearEquiv (by simp) p_c
   have hL_of (v : TangentSpace I p_c) :
       mfderiv I I ofWithMetric p₀ (L v) = mfderiv I I ofWithMetric p_c v := by
     rw [mfderiv_ofWithMetric_apply, mfderiv_ofWithMetric_apply]
-    exact DFunLike.congr_fun
-      ((Diffeomorph.mfderivToContinuousLinearEquiv_coe _ (by simp)).trans
-        (mfderiv_diffeomorphWithMetric g ∞ p_c)) v
-  have hL_mem {v : TangentSpace I p_c} (hv : v ∈ Metric.ball 0 r) :
-      L v ∈ Metric.ball 0 (r / √c) := by
-    have hnorm : ‖v‖ = √c * ‖L v‖ := (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 <| by
-      rw [mul_pow, Real.sq_sqrt hc.le, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq,
-        inner_def, inner_def, hL_of, ContMDiffRiemannianMetric.rescale_inner]
-    rw [mem_ball_zero_iff] at hv ⊢
-    exact (lt_div_iff₀ hsqrt).2 (by linarith)
-  have hexp (v : TangentSpace I p_c) :
-      riemannianExp I (WithMetric g_c) p_c v =
-        diffeomorphWithMetric g g_c ∞ (riemannianExp I (WithMetric g) p₀ (L v)) := by
-    apply ofWithMetric_injective
-    simp only [diffeomorphWithMetric_apply, ofWithMetric_toWithMetric]
-    rw [ofWithMetric_riemannianExp_letI g_c p v, ofWithMetric_riemannianExp_letI g p (L v), hL_of]
-    exact g.riemannianExp_rescale_const hc p _
+    exact DFunLike.congr_fun ((Diffeomorph.mfderivToContinuousLinearEquiv_coe _ (by simp)).trans
+      (mfderiv_diffeomorphWithMetric g ∞ p_c)) v
+  have hL_mem {v : TangentSpace I p_c} (hv : v ∈ Metric.ball 0 r) : L v ∈ Metric.ball 0 (r / √c) :=
+    mem_ball_zero_iff.2 <| (lt_div_iff₀ hsqrt).2 <| by
+      have hnorm : ‖v‖ = √c * ‖L v‖ := (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 <| by
+        rw [mul_pow, Real.sq_sqrt hc.le, ← real_inner_self_eq_norm_sq,
+          ← real_inner_self_eq_norm_sq, inner_def, inner_def, hL_of,
+          ContMDiffRiemannianMetric.rescale_inner]
+      linarith [mem_ball_zero_iff.1 hv]
+  have hexp (v : TangentSpace I p_c) : riemannianExp I (WithMetric g_c) p_c v =
+      diffeomorphWithMetric g g_c ∞ (riemannianExp I (WithMetric g) p₀ (L v)) :=
+    ofWithMetric_injective <| by
+      simp only [diffeomorphWithMetric_apply, ofWithMetric_toWithMetric]
+      rw [ofWithMetric_riemannianExp_toWithMetric g_c p v,
+        ofWithMetric_riemannianExp_toWithMetric g p (L v), hL_of, g.riemannianExp_rescale_const hc]
   refine ⟨Metric.isOpen_ball, Metric.mem_ball_self hr,
     (convex_ball (0 : TangentSpace I p_c) r).starConvex (Metric.mem_ball_self hr), fun v hv ↦ ?_,
     fun v₁ hv₁ v₂ hv₂ heq ↦ ?_, fun ⟨v, hv⟩ ↦ ?_⟩
-  · rw [mem_expDomain_letI g_c, ← hL_of, g.expDomain_rescale_const hc p, ← mem_expDomain_letI g]
-    exact h.subset_expDomain (hL_mem hv)
+  · rw [mem_expDomain_toWithMetric_iff g_c, ← hL_of, g.expDomain_rescale_const hc p,
+      ← mem_expDomain_toWithMetric_iff g]; exact h.subset_expDomain (hL_mem hv)
   · rw [hexp, hexp] at heq
-    exact L.injective (h.injOn (hL_mem hv₁) (hL_mem hv₂)
-      (EquivLike.injective (diffeomorphWithMetric g g_c ∞) heq))
+    exact L.injective (h.injOn (hL_mem hv₁) (hL_mem hv₂) (EquivLike.injective _ heq))
   · rw [funext hexp]
     have h1 : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p_c) 𝓘(ℝ, TangentSpace I p₀) ∞ L v := by
       simpa only [ContinuousLinearEquiv.coe_toDiffeomorph] using
@@ -370,38 +283,32 @@ theorem isNormalDomain_ball_rescale_const_iff {c : ℝ} (hc : 0 < c) (p : M) (r 
   set g' := g_c.rescale (fun _ ↦ c⁻¹) contMDiff_const fun _ ↦ inv_pos.2 hc
   have hr_eq : (r / √c) / √c⁻¹ = r := by
     rw [Real.sqrt_inv, div_inv_eq_mul, div_mul_cancel₀ _ (Real.sqrt_pos.2 hc).ne']
-  have h' := isNormalDomain_ball_rescale_const_of_div g_c (inv_pos.2 hc) (hr_eq.symm ▸ h)
   let Ψ := riemannianIsometryOfInnerEq g' g fun x v w ↦ by simp [g', g_c, inv_mul_cancel₀ hc.ne']
-  have hp : Ψ (toWithMetric g' p) = toWithMetric g p := by
-    simp only [Ψ, riemannianIsometryOfInnerEq_apply]
-  exact hp ▸ (Ψ.isNormalDomain_ball_iff (toWithMetric g' p) (r / √c)).2 h'
+  exact (riemannianIsometryOfInnerEq_apply g' g _ (toWithMetric g' p) : Ψ _ = _) ▸
+    (Ψ.isNormalDomain_ball_iff (toWithMetric g' p) (r / √c)).2
+      (isNormalDomain_ball_rescale_const_of_div g_c (inv_pos.2 hc) (hr_eq.symm ▸ h))
 
 /-- **Scaling of the pointwise injectivity radius (`WithMetric` form).** Multiplying a smooth
 Riemannian metric `g` by a positive constant `c` multiplies `inj(p)` by `ENNReal.ofReal √c`. -/
-@[simp]
-theorem injectivityRadiusAt_rescale_const {c : ℝ} (hc : 0 < c) (p : M) :
+@[simp] theorem injectivityRadiusAt_rescale_const {c : ℝ} (hc : 0 < c) (p : M) :
     injectivityRadiusAt I (WithMetric (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc))
         (toWithMetric _ p) =
       ENNReal.ofReal √c * injectivityRadiusAt I (WithMetric g) (toWithMetric g p) := by
   have hsqrt : 0 < √c := Real.sqrt_pos.2 hc
   refine le_antisymm ?_ ?_
-  · rw [injectivityRadiusAt_def]
-    refine iSup₂_le fun r hr ↦ ?_
-    rw [show ENNReal.ofReal r = ENNReal.ofReal √c * ENNReal.ofReal (r / √c) by
-      rw [← ENNReal.ofReal_mul hsqrt.le, mul_div_cancel₀ _ hsqrt.ne']]
-    exact mul_le_mul_of_nonneg_left
+  · rw [injectivityRadiusAt_def]; refine iSup₂_le fun r hr ↦ ?_
+    have hr_eq : ENNReal.ofReal r = ENNReal.ofReal √c * ENNReal.ofReal (r / √c) := by
+      rw [← ENNReal.ofReal_mul hsqrt.le, mul_div_cancel₀ _ hsqrt.ne']
+    exact hr_eq ▸ mul_le_mul_of_nonneg_left
       ((isNormalDomain_ball_rescale_const_iff g hc p r).1 hr).ofReal_le_injectivityRadiusAt zero_le
-  · rw [injectivityRadiusAt_def, ENNReal.mul_iSup]
-    simp_rw [ENNReal.mul_iSup]
-    refine iSup₂_le fun s hs ↦ ?_
-    rw [← ENNReal.ofReal_mul hsqrt.le]
+  · rw [injectivityRadiusAt_def, ENNReal.mul_iSup]; simp_rw [ENNReal.mul_iSup]
+    refine iSup₂_le fun s hs ↦ ?_; rw [← ENNReal.ofReal_mul hsqrt.le]
     exact ((isNormalDomain_ball_rescale_const_iff g hc p (√c * s)).2
       (by rwa [mul_div_cancel_left₀ s hsqrt.ne'])).ofReal_le_injectivityRadiusAt
 
 /-- **Scaling of the global injectivity radius (`WithMetric` form).** Multiplying a smooth
 Riemannian metric `g` by a positive constant `c` multiplies `inj(M)` by `ENNReal.ofReal √c`. -/
-@[simp]
-theorem injectivityRadius_rescale_const {c : ℝ} (hc : 0 < c) :
+@[simp] theorem injectivityRadius_rescale_const {c : ℝ} (hc : 0 < c) :
     injectivityRadius I (WithMetric (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)) =
       ENNReal.ofReal √c * injectivityRadius I (WithMetric g) := by
   set g_c := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
@@ -437,21 +344,18 @@ theorem injectivityRadiusAt_rescale_const
           Bundle.instIsContMDiffRiemannianBundle g;
         injectivityRadiusAt I M p) := by
   have h (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
-        letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-          Bundle.instIsContMDiffRiemannianBundle g₀;
+      (letI : RiemannianBundle _ := ⟨g₀.toRiemannianMetric⟩;
+        letI : IsContMDiffRiemannianBundle I ∞ E _ := Bundle.instIsContMDiffRiemannianBundle g₀;
         injectivityRadiusAt I M p) =
-      injectivityRadiusAt I (TauCeti.WithMetric g₀) (TauCeti.WithMetric.toWithMetric g₀ p) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-      Bundle.instIsContMDiffRiemannianBundle g₀
-    exact (TauCeti.WithMetric.injectivityRadiusAt_toWithMetric g₀ (fun _ _ _ ↦ rfl) p).symm
+      injectivityRadiusAt I (TauCeti.WithMetric g₀) (TauCeti.WithMetric.toWithMetric g₀ p) :=
+    let _ : RiemannianBundle _ := ⟨g₀.toRiemannianMetric⟩
+    let _ : IsContMDiffRiemannianBundle I ∞ E _ := Bundle.instIsContMDiffRiemannianBundle g₀
+    (TauCeti.WithMetric.injectivityRadiusAt_toWithMetric g₀ (fun _ _ _ ↦ rfl) p).symm
   rw [h _, h g, TauCeti.WithMetric.injectivityRadiusAt_rescale_const g hc p]
 
 /-- **Scaling of the global injectivity radius under constant rescaling (`letI` form).** -/
 theorem injectivityRadius_rescale_const
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {c : ℝ} (hc : 0 < c) :
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
@@ -463,15 +367,12 @@ theorem injectivityRadius_rescale_const
           Bundle.instIsContMDiffRiemannianBundle g;
         injectivityRadius I M) := by
   have h (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
-        letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-          Bundle.instIsContMDiffRiemannianBundle g₀;
-        injectivityRadius I M) =
-      injectivityRadius I (TauCeti.WithMetric g₀) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-      Bundle.instIsContMDiffRiemannianBundle g₀
-    exact (TauCeti.WithMetric.injectivityRadius_eq g₀ fun _ _ _ ↦ rfl).symm
+      (letI : RiemannianBundle _ := ⟨g₀.toRiemannianMetric⟩;
+        letI : IsContMDiffRiemannianBundle I ∞ E _ := Bundle.instIsContMDiffRiemannianBundle g₀;
+        injectivityRadius I M) = injectivityRadius I (TauCeti.WithMetric g₀) :=
+    let _ : RiemannianBundle _ := ⟨g₀.toRiemannianMetric⟩
+    let _ : IsContMDiffRiemannianBundle I ∞ E _ := Bundle.instIsContMDiffRiemannianBundle g₀
+    (TauCeti.WithMetric.injectivityRadius_eq g₀ fun _ _ _ ↦ rfl).symm
   rw [h _, h g, TauCeti.WithMetric.injectivityRadius_rescale_const g hc]
 
 end Bundle.ContMDiffRiemannianMetric
@@ -483,16 +384,12 @@ namespace TauCeti.Manifold
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
 /-- Every point of a finite-dimensional real inner-product space has infinite injectivity radius. -/
-@[simp]
-theorem injectivityRadiusAt_model_space (p : F) :
-    injectivityRadiusAt 𝓘(ℝ, F) F p = ⊤ :=
+@[simp] theorem injectivityRadiusAt_model_space (p : F) : injectivityRadiusAt 𝓘(ℝ, F) F p = ⊤ :=
   injectivityRadiusAt_eq_top_iff_isNormalDomain_univ.2
     (isNormalDomain_model_space p isOpen_univ (mem_univ 0) (starConvex_univ 0))
 
 /-- A finite-dimensional real inner-product space has infinite global injectivity radius. -/
-@[simp]
-theorem injectivityRadius_model_space :
-    injectivityRadius 𝓘(ℝ, F) F = ⊤ := by
+@[simp] theorem injectivityRadius_model_space : injectivityRadius 𝓘(ℝ, F) F = ⊤ := by
   simp [injectivityRadius_def]
 
 end TauCeti.Manifold

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Compact
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate.ConstantCurvature
@@ -56,62 +55,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-! ### Completeness and ambient inner products of `riemannianExp` -/
-
-/-- The exponential map of the round unit sphere is defined on the whole tangent space at every
-point. Stated without requiring callers to synthesize `FiniteDimensional ℝ E` or
-`CompactSpace (sphere (0 : E) 1)` from `[Fact (finrank ℝ E = n + 1)]`. -/
-@[simp]
-theorem expDomain_sphere (p : sphere (0 : E) 1) :
-    expDomain (𝓡 n) (sphere (0 : E) 1) p = univ := by
-  have : FiniteDimensional ℝ E :=
-    Module.finite_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = n + 1)]; positivity)
-  have : CompactSpace (sphere (0 : E) 1) :=
-    isCompact_iff_compactSpace.1 (isCompact_sphere (0 : E) 1)
-  exact expDomain_eq_univ_of_compactSpace p
-
-/-- Every maximal geodesic of the round unit sphere is defined on all of `ℝ`. -/
-@[simp]
-theorem geodesicInterval_sphere (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
-    geodesicInterval (𝓡 n) (sphere (0 : E) 1) p v = univ := by
-  rw [geodesicInterval_eq_preimage_expDomain, expDomain_sphere, preimage_univ]
-
-/-- Every radial curve `t ↦ exp_p (t • v)` on the round unit sphere is a global geodesic on
-`univ`. -/
-theorem isGeodesicCurveOn_riemannianExp_smul_sphere_univ (p : sphere (0 : E) 1)
-    (v : TangentSpace (𝓡 n) p) :
-    IsGeodesicCurveOn (𝓡 n)
-      (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) univ := by
-  simpa only [geodesicInterval_sphere] using
-    (isJacobiFieldOn_mfderiv_riemannianExp (I := 𝓡 n) (M := sphere (0 : E) 1) p v 0
-      ).isGeodesicCurveOn
-
-/-- Along any radial geodesic `t ↦ exp_p (t • v)` on `Sⁿ`, the Riemannian length on `[0, 1]` is
-`‖v‖ₑ` (for every `v`, including `‖v‖ ≥ π`). -/
-@[simp]
-theorem pathELength_riemannianExp_smul_sphere_zero_one (p : sphere (0 : E) 1)
-    (v : TangentSpace (𝓡 n) p) :
-    pathELength (𝓡 n) (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) 0 1 =
-      ‖v‖ₑ := by
-  rw [show (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) =
-      maximalGeodesic (𝓡 n) (sphere (0 : E) 1) p v from funext (riemannianExp_smul p v),
-    pathELength_maximalGeodesic (by simp) (by simp), sub_zero, ENNReal.ofReal_one, mul_one]
-
-/-- The ambient inner product of `p` with `exp_p v` on the unit sphere is `cos ‖v‖`. -/
-theorem inner_coe_riemannianExp_sphere (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
-    ⟪(p : E), (riemannianExp (𝓡 n) (sphere (0 : E) 1) p v : E)⟫_ℝ = Real.cos ‖v‖ := by
-  rw [coe_riemannianExp_sphere, inner_add_right, real_inner_smul_right, real_inner_smul_right,
-    real_inner_self_eq_norm_sq, mem_sphere_zero_iff_norm.1 p.2,
-    inner_coe_mvfderiv_subtypeVal_sphere, one_pow, mul_one, mul_zero, add_zero]
-
-/-- Every tangent vector of norm `π` at `p : Sⁿ` exponentiates to the antipodal point `-p`. -/
-theorem riemannianExp_sphere_eq_neg_of_norm_eq_pi {p : sphere (0 : E) 1}
-    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ = Real.pi) :
-    riemannianExp (𝓡 n) (sphere (0 : E) 1) p v = -p := by
-  rw [Subtype.ext_iff, coe_riemannianExp_sphere, hv, Real.cos_pi, Real.sin_pi, zero_div,
-    zero_smul, add_zero, neg_one_smul]
-  rfl
-
 /-! ### Dimension zero -/
 
 /-- Each point of the zero-dimensional round sphere `S⁰` has infinite injectivity radius. -/
@@ -121,17 +64,14 @@ theorem injectivityRadiusAt_sphere_zero [Fact (finrank ℝ E = 0 + 1)] (p : sphe
 
 /-- The zero-dimensional round sphere `S⁰` has infinite global injectivity radius. -/
 theorem injectivityRadius_sphere_zero [Fact (finrank ℝ E = 0 + 1)] :
-    injectivityRadius (𝓡 0) (sphere (0 : E) 1) = ⊤ :=
-  injectivityRadius_eq_top_of_subsingleton
+    injectivityRadius (𝓡 0) (sphere (0 : E) 1) = ⊤ := injectivityRadius_eq_top_of_subsingleton
 
 /-! ### Normal tangent ball of radius `π` -/
 
 /-- For `‖v‖ < π` on the unit sphere, the model sine `curvatureSine (1 * ‖v‖ ^ 2) 1` is nonzero. -/
 private theorem curvatureSine_norm_sq_ne_zero_of_norm_lt_pi {p : sphere (0 : E) 1}
-    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) :
-    curvatureSine (1 * ‖v‖ ^ 2) 1 ≠ 0 := by
-  rw [one_mul]
-  rcases eq_or_ne v 0 with rfl | hv0
+    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) : curvatureSine (1 * ‖v‖ ^ 2) 1 ≠ 0 := by
+  rw [one_mul]; rcases eq_or_ne v 0 with rfl | hv0
   · simp
   · have hpos : 0 < ‖v‖ := norm_pos_iff.2 hv0
     rw [curvatureSine_of_pos (sq_pos_of_pos hpos), Real.sqrt_sq hpos.le, mul_one]
@@ -140,28 +80,21 @@ private theorem curvatureSine_norm_sq_ne_zero_of_norm_lt_pi {p : sphere (0 : E) 
 /-- The differential of `riemannianExp` at `p : Sⁿ` is injective at every `v` with `‖v‖ < π`. -/
 theorem injective_mfderiv_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 : E) 1}
     {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) :
-    Function.Injective
-      (mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n)
-        (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v) := by
-  let L : TangentSpace (𝓡 n) p →L[ℝ]
-      TangentSpace (𝓡 n) (riemannianExp (𝓡 n) (sphere (0 : E) 1) p v) :=
-    mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n) (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v
-  change Function.Injective L
-  intro w₁ w₂ heq
-  rw [← sub_eq_zero]
-  set w := w₁ - w₂
-  have hLw : L w = 0 := by rw [map_sub, heq, sub_self]
-  have hinner := inner_mfderiv_riemannianExp_of_hasSectionalCurvatureAt
-    (I := 𝓡 n) (M := sphere (0 : E) 1) (p := p) (v := v) (κ := 1) (by simp)
-    (fun _ _ ↦ hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt _) w w
-  change ⟪L w, L w⟫_ℝ = _ at hinner
-  rw [hLw, inner_zero_left, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at hinner
-  have hcS : 0 < curvatureSine (1 * ‖v‖ ^ 2) 1 ^ 2 :=
-    sq_pos_of_ne_zero (curvatureSine_norm_sq_ne_zero_of_norm_lt_pi hv)
-  have hproj : (ℝ ∙ v).starProjection w = 0 := norm_eq_zero.1 <| sq_eq_zero_iff.1 <| by
-    nlinarith [sq_nonneg ‖w - (ℝ ∙ v).starProjection w‖]
-  rw [hproj, norm_zero, zero_pow two_ne_zero, zero_add, sub_zero] at hinner
-  exact norm_eq_zero.1 (sq_eq_zero_iff.1 ((mul_eq_zero.1 hinner.symm).resolve_left hcS.ne'))
+    Function.Injective (mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n)
+      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v) := by
+  have hker (w : TangentSpace (𝓡 n) p) (hLw : mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n)
+      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v w = 0) : w = 0 := by
+    have hinner := inner_mfderiv_riemannianExp_of_hasSectionalCurvatureAt
+      (I := 𝓡 n) (M := sphere (0 : E) 1) (p := p) (v := v) (κ := 1) (by simp)
+      (fun _ _ ↦ hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt _) w w
+    rw [hLw, inner_zero_left, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at hinner
+    have hcS : 0 < curvatureSine (1 * ‖v‖ ^ 2) 1 ^ 2 :=
+      sq_pos_of_ne_zero (curvatureSine_norm_sq_ne_zero_of_norm_lt_pi hv)
+    have hproj : (ℝ ∙ v).starProjection w = 0 := norm_eq_zero.1 <| sq_eq_zero_iff.1 <| by
+      nlinarith [sq_nonneg ‖w - (ℝ ∙ v).starProjection w‖]
+    rw [hproj, norm_zero, zero_pow two_ne_zero, zero_add, sub_zero] at hinner
+    exact norm_eq_zero.1 (sq_eq_zero_iff.1 ((mul_eq_zero.1 hinner.symm).resolve_left hcS.ne'))
+  exact fun w₁ w₂ heq ↦ sub_eq_zero.1 <| hker (w₁ - w₂) (by rw [map_sub, heq, sub_self])
 
 /-- `riemannianExp` at `p : Sⁿ` is a smooth local diffeomorphism at every `v` with `‖v‖ < π`. -/
 theorem isLocalDiffeomorphAt_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 : E) 1}
@@ -176,8 +109,7 @@ theorem isLocalDiffeomorphAt_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 :
 /-- `riemannianExp` at `p : Sⁿ` is injective on the open tangent ball of radius `π`. -/
 theorem injOn_riemannianExp_sphere_ball_pi (p : sphere (0 : E) 1) :
     InjOn (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) (Metric.ball 0 Real.pi) := by
-  intro v hv w hw heq
-  rw [mem_ball_zero_iff] at hv hw
+  intro v hv w hw heq; rw [mem_ball_zero_iff] at hv hw
   have hnorm : ‖v‖ = ‖w‖ := by
     rw [← Real.arccos_cos (norm_nonneg v) hv.le, ← Real.arccos_cos (norm_nonneg w) hw.le,
       ← inner_coe_riemannianExp_sphere p v, ← inner_coe_riemannianExp_sphere p w, heq]
@@ -195,8 +127,8 @@ theorem isNormalDomain_ball_sphere_pi (p : sphere (0 : E) 1) :
     IsNormalDomain (𝓡 n) (sphere (0 : E) 1) p (Metric.ball 0 Real.pi) where
   isOpen := Metric.isOpen_ball
   zero_mem := Metric.mem_ball_self Real.pi_pos
-  starConvex := (convex_ball (0 : TangentSpace (𝓡 n) p) Real.pi).starConvex
-    (Metric.mem_ball_self Real.pi_pos)
+  starConvex :=
+    (convex_ball (0 : TangentSpace (𝓡 n) p) Real.pi).starConvex (Metric.mem_ball_self Real.pi_pos)
   subset_expDomain := by simp
   injOn := injOn_riemannianExp_sphere_ball_pi p
   isLocalDiffeomorphOn := fun ⟨_, hv⟩ ↦
@@ -214,45 +146,36 @@ theorem ofReal_pi_le_injectivityRadiusAt_sphere (p : sphere (0 : E) 1) :
 negation. -/
 private theorem exists_norm_eq_pi_tangentSpace_sphere (hn : 1 ≤ n) (p : sphere (0 : E) 1) :
     ∃ v : TangentSpace (𝓡 n) p, ‖v‖ = Real.pi ∧ v ≠ -v := by
-  have : Nontrivial (TangentSpace (𝓡 n) p) := Module.nontrivial_of_finrank_pos <| by
-    change 0 < finrank ℝ (EuclideanSpace ℝ (Fin n))
-    rw [finrank_euclideanSpace_fin]
-    omega
+  have : Nontrivial (TangentSpace (𝓡 n) p) := Module.nontrivial_of_finrank_pos (R := ℝ) <| by
+    rw [(tangentSpaceCastModel (𝓡 n) p).toLinearEquiv.finrank_eq, finrank_euclideanSpace_fin]; omega
   obtain ⟨v, hv⟩ := exists_norm_eq (TangentSpace (𝓡 n) p) Real.pi_pos.le
   refine ⟨v, hv, fun h ↦ Real.pi_pos.ne ?_⟩
-  have h2 : (2 : ℝ) • v = 0 := by rw [two_smul]; exact add_eq_zero_iff_eq_neg.2 h
-  simpa [(smul_eq_zero.1 h2).resolve_left two_ne_zero] using hv
+  simpa [(smul_eq_zero.1 (two_smul ℝ v ▸ add_eq_zero_iff_eq_neg.2 h)).resolve_left two_ne_zero]
+    using hv
 
 /-- **Pointwise injectivity radius of the round unit `n`-sphere (`1 ≤ n`).** -/
-@[simp]
-theorem injectivityRadiusAt_sphere_of_one_le (hn : 1 ≤ n) (p : sphere (0 : E) 1) :
+@[simp] theorem injectivityRadiusAt_sphere_of_one_le (hn : 1 ≤ n) (p : sphere (0 : E) 1) :
     injectivityRadiusAt (𝓡 n) (sphere (0 : E) 1) p = ENNReal.ofReal Real.pi := by
   refine le_antisymm ?_ (ofReal_pi_le_injectivityRadiusAt_sphere p)
   obtain ⟨v, hv, hne⟩ := exists_norm_eq_pi_tangentSpace_sphere hn p
-  have hle := injectivityRadiusAt_le_of_riemannianExp_eq_of_enorm_le hne
-    (by rw [← ofReal_norm, ← ofReal_norm, norm_neg])
-    (by rw [riemannianExp_sphere_eq_neg_of_norm_eq_pi hv,
-      riemannianExp_sphere_eq_neg_of_norm_eq_pi (by rwa [norm_neg])])
-  rwa [← ofReal_norm, hv] at hle
+  simpa only [← ofReal_norm, hv] using injectivityRadiusAt_le_of_riemannianExp_eq_of_enorm_le hne
+    (by rw [← ofReal_norm, ← ofReal_norm, norm_neg]) (by
+      rw [riemannianExp_sphere_eq_neg_of_norm_eq_pi hv,
+        riemannianExp_sphere_eq_neg_of_norm_eq_pi (by rwa [norm_neg])])
 
 /-- **Global injectivity radius of the round unit `n`-sphere (`1 ≤ n`).** -/
-@[simp]
-theorem injectivityRadius_sphere_of_one_le (hn : 1 ≤ n) :
+@[simp] theorem injectivityRadius_sphere_of_one_le (hn : 1 ≤ n) :
     injectivityRadius (𝓡 n) (sphere (0 : E) 1) = ENNReal.ofReal Real.pi := by
-  have : Nontrivial E :=
-    Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
-  have : Nonempty (sphere (0 : E) 1) :=
-    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
+  have : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   simp [injectivityRadius_def, injectivityRadiusAt_sphere_of_one_le hn]
 
 /-- **Pointwise injectivity radius of the round `n`-sphere of radius `r > 0` (`WithMetric` form,
 `1 ≤ n`).** -/
-@[simp]
-theorem injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ}
+@[simp] theorem injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ}
     (hr : 0 < r) (p : sphere (0 : E) 1) :
     injectivityRadiusAt (𝓡 n) (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr))
-        (WithMetric.toWithMetric _ p) =
-      ENNReal.ofReal (r * Real.pi) := by
+        (WithMetric.toWithMetric _ p) = ENNReal.ofReal (r * Real.pi) := by
   set g₀ := (sphereRoundMetric (E := E) (n := n)).ofLE le_top
   rw [WithMetric.injectivityRadiusAt_congr _
       (g₀.rescale (fun _ ↦ r ^ 2) contMDiff_const fun _ ↦ pow_pos hr 2)
@@ -263,8 +186,8 @@ theorem injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) 
 
 /-- **Global injectivity radius of the round `n`-sphere of radius `r > 0` (`WithMetric` form,
 `1 ≤ n`).** -/
-@[simp]
-theorem injectivityRadius_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ} (hr : 0 < r) :
+@[simp] theorem injectivityRadius_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ}
+    (hr : 0 < r) :
     injectivityRadius (𝓡 n) (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr)) =
       ENNReal.ofReal (r * Real.pi) := by
   set g₀ := (sphereRoundMetric (E := E) (n := n)).ofLE le_top
@@ -284,16 +207,14 @@ theorem injectivityRadiusAt_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ} (
       letI : IsContMDiffRiemannianBundle (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
           (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
         Bundle.instIsContMDiffRiemannianBundle _;
-      injectivityRadiusAt (𝓡 n) (sphere (0 : E) 1) p) =
-    ENNReal.ofReal (r * Real.pi) := by
+      injectivityRadiusAt (𝓡 n) (sphere (0 : E) 1) p) = ENNReal.ofReal (r * Real.pi) := by
   let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
+    ⟨(sphereRoundMetricOfRadius (E := E) (n := n) r hr).toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
       (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    Bundle.instIsContMDiffRiemannianBundle _
+    Bundle.instIsContMDiffRiemannianBundle (sphereRoundMetricOfRadius r hr)
   rw [← WithMetric.injectivityRadiusAt_toWithMetric (sphereRoundMetricOfRadius r hr)
-      (fun _ _ _ ↦ rfl) p,
-    injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius hn hr p]
+      (fun _ _ _ ↦ rfl) p, injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius hn hr p]
 
 /-- **Global injectivity radius of the round `n`-sphere of radius `r > 0` (`letI` form,
 `1 ≤ n`).** -/
@@ -303,13 +224,12 @@ theorem injectivityRadius_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ} (hr
       letI : IsContMDiffRiemannianBundle (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
           (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
         Bundle.instIsContMDiffRiemannianBundle _;
-      injectivityRadius (𝓡 n) (sphere (0 : E) 1)) =
-    ENNReal.ofReal (r * Real.pi) := by
+      injectivityRadius (𝓡 n) (sphere (0 : E) 1)) = ENNReal.ofReal (r * Real.pi) := by
   let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
     ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
       (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    Bundle.instIsContMDiffRiemannianBundle _
+    Bundle.instIsContMDiffRiemannianBundle (sphereRoundMetricOfRadius r hr)
   rw [← WithMetric.injectivityRadius_eq (sphereRoundMetricOfRadius r hr) fun _ _ _ ↦ rfl,
     injectivityRadius_withMetric_sphereRoundMetricOfRadius hn hr]
 
@@ -334,37 +254,27 @@ theorem conjugateMultiplicity_sphere_of_norm_eq_pi {p : sphere (0 : E) 1}
 
 /-- **Antipodal Riemannian distance on `Sⁿ` (`1 ≤ n`).** The Riemannian distance between `p : Sⁿ`
 and its antipode `-p` is `ENNReal.ofReal Real.pi` (equal to `injectivityRadiusAt p`). -/
-@[simp]
-theorem riemannianEDist_sphere_neg_self (hn : 1 ≤ n) (p : sphere (0 : E) 1) :
+@[simp] theorem riemannianEDist_sphere_neg_self (hn : 1 ≤ n) (p : sphere (0 : E) 1) :
     riemannianEDist (𝓡 n) p (-p) = ENNReal.ofReal Real.pi := by
   refine le_antisymm ?_ ?_
   · obtain ⟨v, hv, -⟩ := exists_norm_eq_pi_tangentSpace_sphere hn p
-    calc riemannianEDist (𝓡 n) p (-p)
-        ≤ pathELength (𝓡 n)
-            (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) 0 1 :=
-          riemannianEDist_le_pathELength
-            (((isGeodesicCurveOn_riemannianExp_smul_sphere_univ p v).mono
-              (uniqueDiffOn_Icc zero_lt_one) (subset_univ _)).contMDiffOn.of_le one_le_two)
-            (by simp) (by simpa only [one_smul] using riemannianExp_sphere_eq_neg_of_norm_eq_pi hv)
-            zero_le_one
-      _ = ENNReal.ofReal Real.pi := by
-          rw [pathELength_riemannianExp_smul_sphere_zero_one, ← ofReal_norm, hv]
-  · by_contra! hlt
-    obtain ⟨v, ⟨hv_lt_inj, hv_exp⟩, -⟩ :=
+    refine (riemannianEDist_le_pathELength
+      (((isGeodesicCurveOn_riemannianExp_smul_sphere_univ p v).mono (uniqueDiffOn_Icc zero_lt_one)
+        (subset_univ _)).contMDiffOn.of_le one_le_two) (by simp)
+      (by simpa only [one_smul] using riemannianExp_sphere_eq_neg_of_norm_eq_pi hv)
+      zero_le_one).trans_eq ?_
+    rw [pathELength_riemannianExp_smul_sphere_zero_one, ← ofReal_norm, hv]
+  · by_contra! hlt; obtain ⟨v, ⟨hv_lt_inj, hv_exp⟩, -⟩ :=
       existsUnique_riemannianExp_eq_of_riemannianEDist_lt_injectivityRadiusAt
         (by rwa [injectivityRadiusAt_sphere_of_one_le hn p])
     have hv_lt : ‖v‖ < Real.pi := by
       rwa [← ofReal_norm, injectivityRadiusAt_sphere_of_one_le hn p,
         ENNReal.ofReal_lt_ofReal_iff Real.pi_pos] at hv_lt_inj
-    have hcos : Real.cos ‖v‖ = -1 := by
-      have h := inner_coe_riemannianExp_sphere p v
-      rw [hv_exp, coe_neg_sphere, inner_neg_right, real_inner_self_eq_norm_sq,
-        mem_sphere_zero_iff_norm.1 p.2, one_pow] at h
-      exact h.symm
-    have hgt : -1 < Real.cos ‖v‖ := by
-      rw [← Real.cos_pi]
-      exact Real.strictAntiOn_cos ⟨norm_nonneg v, hv_lt.le⟩ ⟨Real.pi_pos.le, le_rfl⟩ hv_lt
-    linarith
+    have hcos := (inner_coe_riemannianExp_sphere p v).symm
+    rw [hv_exp, coe_neg_sphere, inner_neg_right, real_inner_self_eq_norm_sq,
+      mem_sphere_zero_iff_norm.1 p.2, one_pow] at hcos
+    linarith [Real.cos_pi ▸ Real.strictAntiOn_cos ⟨norm_nonneg v, hv_lt.le⟩
+      ⟨Real.pi_pos.le, le_rfl⟩ hv_lt]
 
 /-- **Sharpness at the injectivity radius on `Sⁿ` (`1 ≤ n`).** At distance `π = inj(p)` from
 `p : Sⁿ`, the antipode `-p` is joined to `p` by two distinct minimizing geodesics on `[0, 1]`
@@ -388,10 +298,9 @@ theorem exists_two_minimizing_geodesics_sphere_antipode (hn : 1 ≤ n) (p : sphe
         riemannianEDist_sphere_neg_self hn p]⟩
   have hball {w : TangentSpace (𝓡 n) p} (hw : ‖w‖ = Real.pi) :
       (1 / 2 : ℝ) • w ∈ Metric.ball 0 Real.pi := by
-    rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (by norm_num), hw]
-    linarith [Real.pi_pos]
-  rcases hseg v hv with ⟨h1a, h1b, h1c, h1d⟩
-  rcases hseg (-v) (by rwa [norm_neg]) with ⟨h2a, h2b, h2c, h2d⟩
+    rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (by norm_num), hw]; linarith [Real.pi_pos]
+  obtain ⟨h1a, h1b, h1c, h1d⟩ := hseg v hv
+  obtain ⟨h2a, h2b, h2c, h2d⟩ := hseg (-v) (by rwa [norm_neg])
   exact ⟨_, _, fun hmid ↦ hne <| smul_right_injective _ (by norm_num : (1 / 2 : ℝ) ≠ 0) <|
     injOn_riemannianExp_sphere_ball_pi p (hball hv) (hball (by rwa [norm_neg])) hmid,
     h1a, h1b, h1c, h1d, h2a, h2b, h2c, h2d⟩
