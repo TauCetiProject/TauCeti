@@ -141,9 +141,9 @@ theorem integral_mextDeriv (σ : SmoothSimplex I M (p + 1))
 
 /-- **Stokes' theorem for bundled smooth forms** over a smooth singular `(p + 1)`-simplex. -/
 theorem integral_mextDerivₗ (σ : SmoothSimplex I M (p + 1)) (φ : SmoothForm I M F p) :
-    σ.integral (mextDerivₗ I p φ).1 =
+    σ.integral (mextDerivₗ I p φ).val =
       ∑ i : Fin (p + 2), (-1 : ℝ) ^ (i : ℕ) •
-        integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ.1 := by
+        integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ.val := by
   rw [mextDerivₗ_apply]
   exact σ.integral_mextDeriv (φ.isSmoothForm.of_le (by exact_mod_cast le_top))
 
@@ -174,7 +174,7 @@ theorem sum_integral_δ_eq_zero_of_mextDeriv_eq_zero (σ : SmoothSimplex I M (p 
 theorem sum_integral_δ_eq_zero_of_mem_closedForms (σ : SmoothSimplex I M (p + 1))
     {φ : SmoothForm I M ℝ p} (hφ : φ ∈ closedForms I M p) :
     ∑ i : Fin (p + 2), (-1 : ℝ) ^ (i : ℕ) •
-        integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ.1 = 0 :=
+        integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ.val = 0 :=
   σ.sum_integral_δ_eq_zero_of_mextDeriv_eq_zero
     (φ.isSmoothForm.of_le (by exact_mod_cast le_top)) ((mem_closedForms I φ).mp hφ)
 
@@ -242,9 +242,9 @@ theorem integral_mextDeriv_ofFunction_of_contMDiffAt (σ : SmoothSimplex I M 1) 
     let y₀ : fullSimplex 0 :=
       ⟨simplexMapAmbient (0 : Fin 1).cycleRange.symm y, mapsTo_simplexMapAmbient _ hy⟩
     have h0 : WithLp.toLp 2 ((0 : Fin 1).insertNth (1 - ∑ k, y k) y.ofLp) =
-        (simplexFace 0 0 y₀).1 :=
+        (simplexFace 0 0 y₀).val :=
       (toLp_insertNth_eq_simplexMapAmbient 0 y).trans (simplexMapAmbient_succAbove_coe 0 y₀)
-    have h1 : WithLp.toLp 2 ((0 : Fin 1).insertNth 0 y.ofLp) = (simplexFace 0 1 ⟨y, hy⟩).1 :=
+    have h1 : WithLp.toLp 2 ((0 : Fin 1).insertNth 0 y.ofLp) = (simplexFace 0 1 ⟨y, hy⟩).val :=
       (simplexMapAmbient_succAbove_succ 0 y).symm.trans (simplexMapAmbient_succAbove_coe 1 ⟨y, hy⟩)
     rw [h0, h1]
     simp only [g, Function.comp_apply, σ.extension_coe]
@@ -281,10 +281,10 @@ theorem integral_eq_zero_of_mem_exactForms_of_eq [IsManifold I 2 M] (σ : Smooth
     {φ : SmoothForm I M ℝ 1} (hφ : φ ∈ exactForms I M 1)
     (hclosed : σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩ =
       σ.toContinuousMap ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩) :
-    σ.integral φ.1 = 0 := by
+    σ.integral φ.val = 0 := by
   rw [exactForms_succ, LinearMap.mem_range] at hφ
   obtain ⟨g, rfl⟩ := hφ
-  have hg : IsSmoothForm I 1 g.1 := g.isSmoothForm.of_le (by exact_mod_cast le_top)
+  have hg : IsSmoothForm I 1 g.val := g.isSmoothForm.of_le (by exact_mod_cast le_top)
   rw [mextDerivₗ_apply, σ.integral_mextDeriv_eq_sub hg, hclosed, sub_self]
 
 end DegreeZero

@@ -162,12 +162,12 @@ private theorem isAdmissible_range (m : ℕ) : IsAdmissible (List.range m) :=
 
 private instance instInfiniteRow : Infinite Row :=
   Infinite.of_injective (fun m : ℕ => (⟨List.range m, isAdmissible_range m⟩ : Row)) fun a b h => by
-    simpa using congrArg (fun r : Row => r.1.length) h
+    simpa using congrArg (fun r : Row => r.val.length) h
 
 /-- Component pure-set fibers of `PrefixModel`: finite of size `τ.getLastD 0 + 1` when
 `τ <+: p.1`, and `ℕ` otherwise. -/
 private abbrev BaseFiber (p : Row) (τ : List ℕ) : Type :=
-  FiberType (decide (τ <+: p.1)) τ
+  FiberType (decide (τ <+: p.val)) τ
 
 /-- The prefix row assembly with label type `List ℕ` and pure-set fibers, having internal Scott
 rank `ω`. -/
@@ -195,31 +195,32 @@ private noncomputable def prefixModelEquivCarrier :
 back-and-forth equivalence at finite depth `p₁.1.length + 2`. -/
 private theorem row_eq_of_bfEquiv {N : ℕ} {a b : Fin N → Carrier Row BaseFiber} {i₀ : Fin N}
     {p₁ p₂ : Row} (ha₀ : a i₀ = .row p₁) (hb₀ : b i₀ = .row p₂)
-    (h : BFEquiv (L := lang (List ℕ) Language.empty) ((p₁.1.length + 2 : ℕ) : Ordinal.{0}) N a b) :
+    (h : BFEquiv (L := lang (List ℕ) Language.empty) ((p₁.val.length + 2 : ℕ) : Ordinal.{0}) N a b)
+        :
     p₁ = p₂ := by
-  have hpref : p₁.1 <+: p₂.1 := by
+  have hpref : p₁.val <+: p₂.val := by
     by_contra hnp
-    have hne : p₁.1 ≠ [] := fun he => hnp (he ▸ List.nil_prefix)
-    have hf := (bfEquiv_fiberType_iff _ _ p₁.1 (p₁.1.length + 2)).mp
-      (bfEquiv_fiber_elim0_of_eq_row h ha₀ hb₀ p₁.1)
-    have hle := getLastD_le_pred_length p₁.2
-    have hpos : 0 < p₁.1.length := List.length_pos_iff.mpr hne
+    have hne : p₁.val ≠ [] := fun he => hnp (he ▸ List.nil_prefix)
+    have hf := (bfEquiv_fiberType_iff _ _ p₁.val (p₁.val.length + 2)).mp
+      (bfEquiv_fiber_elim0_of_eq_row h ha₀ hb₀ p₁.val)
+    have hle := getLastD_le_pred_length p₁.property
+    have hpos : 0 < p₁.val.length := List.length_pos_iff.mpr hne
     rcases hf with hdec | hge
     · simp [hnp] at hdec
     · omega
-  have hlen : p₂.1.length ≤ p₁.1.length := by
+  have hlen : p₂.val.length ≤ p₁.val.length := by
     by_contra hlt
-    have hlt' : p₁.1.length < p₂.1.length := Nat.lt_of_not_ge hlt
-    let l := p₂.1.take (p₁.1.length + 1)
-    have hllen : l.length = p₁.1.length + 1 := by simp [l]; omega
-    have hf := (bfEquiv_fiberType_iff _ _ l (p₁.1.length + 2)).mp
+    have hlt' : p₁.val.length < p₂.val.length := Nat.lt_of_not_ge hlt
+    let l := p₂.val.take (p₁.val.length + 1)
+    have hllen : l.length = p₁.val.length + 1 := by simp [l]; omega
+    have hf := (bfEquiv_fiberType_iff _ _ l (p₁.val.length + 2)).mp
       (bfEquiv_fiber_elim0_of_eq_row h ha₀ hb₀ l)
-    have hnp₁ : ¬ (l <+: p₁.1) := fun hp => by
+    have hnp₁ : ¬ (l <+: p₁.val) := fun hp => by
       have := hp.length_le
       omega
-    have hp₂ : l <+: p₂.1 := List.take_prefix _ _
+    have hp₂ : l <+: p₂.val := List.take_prefix _ _
     have hle : l.getLastD 0 ≤ l.length - 1 :=
-      getLastD_le_pred_length (isAdmissible_take p₂.2 (p₁.1.length + 1))
+      getLastD_le_pred_length (isAdmissible_take p₂.property (p₁.val.length + 1))
     rcases hf with hdec | hge
     · simp [hnp₁, hp₂] at hdec
     · omega
@@ -230,7 +231,7 @@ private theorem internalScottRank_prefixModel_le :
       Ordinal.omega0 := by
   rw [internalScottRank_le_iff]
   intro n a
-  let r : ℕ := Finset.sup Finset.univ fun i : Fin n => (a i).ownerRow.1.length
+  let r : ℕ := Finset.sup Finset.univ fun i : Fin n => (a i).ownerRow.val.length
   let K : ℕ := (r + 2) + n
   refine (orbitRank_le a ?_).trans_lt (Ordinal.natCast_lt_omega0 K)
   rw [mem_orbitStable_iff]
@@ -240,8 +241,8 @@ private theorem internalScottRank_prefixModel_le :
     simpa [K, Nat.cast_add] using hab
   have happ := bfEquiv_append_ownerRow hab'
   have hrow : ∀ i : Fin n, (b i).ownerRow = (a i).ownerRow := fun i => by
-    have hle : (a i).ownerRow.1.length + 2 ≤ r + 2 :=
-      Nat.add_le_add_right (Finset.le_sup (f := fun j : Fin n => (a j).ownerRow.1.length)
+    have hle : (a i).ownerRow.val.length + 2 ≤ r + 2 :=
+      Nat.add_le_add_right (Finset.le_sup (f := fun j : Fin n => (a j).ownerRow.val.length)
         (Finset.mem_univ i)) 2
     exact (row_eq_of_bfEquiv (i₀ := natAdd n i) (by simp only [append_right])
       (by simp only [append_right]) (happ.mono (Nat.cast_le.mpr hle))).symm
@@ -278,16 +279,16 @@ private theorem omega0_le_selfStabilizationOrdinal_prefixModel :
   let p₁ : Row := ⟨List.range (k + 1), isAdmissible_range (k + 1)⟩
   let p₂ : Row := ⟨List.range (k + 1) ++ [k], isAdmissible_range_snoc k⟩
   have hpne : p₁ ≠ p₂ := fun h => by
-    have := congrArg (fun r : Row => r.1.length) h
+    have := congrArg (fun r : Row => r.val.length) h
     simp [p₁, p₂] at this
   let σ : Row ≃ Row := Equiv.swap p₁ p₂
   have hfib : ∀ (r : Row) (τ : List ℕ), BFEquiv (L := Language.empty) ((k + 1 : ℕ) : Ordinal.{0})
       0 (Fin.elim0 : Fin 0 → BaseFiber r τ) (Fin.elim0 : Fin 0 → BaseFiber (σ r) τ) := by
     intro r τ
-    by_cases hτ : τ = p₂.1
+    by_cases hτ : τ = p₂.val
     · have hlast : τ.getLastD 0 = k := by simp [hτ, p₂]
       exact (bfEquiv_fiberType_iff _ _ τ (k + 1)).mpr (Or.inr (by omega))
-    · have hd : decide (τ <+: p₁.1) = decide (τ <+: p₂.1) := by
+    · have hd : decide (τ <+: p₁.val) = decide (τ <+: p₂.val) := by
         simp [p₁, p₂, List.prefix_concat_iff, hτ]
       by_cases hr₁ : r = p₁
       · subst hr₁
@@ -309,7 +310,7 @@ private theorem omega0_le_selfStabilizationOrdinal_prefixModel :
     rw [mem_orbitStable_iff]
     intro hst
     exact hpne (row_eq_of_bfEquiv (i₀ := 0) rfl rfl
-      (hst b hab ((p₁.1.length + 2 : ℕ) : Ordinal.{0})))
+      (hst b hab ((p₁.val.length + 2 : ℕ) : Ordinal.{0})))
   have hlt : ((k + 1 : ℕ) : Ordinal.{0}) < orbitRank (L := lang (List ℕ) Language.empty) a := by
     rwa [← not_le, orbitRank_le_iff]
   exact ((Nat.cast_le.mpr (Nat.le_succ k)).trans hlt.le).trans
@@ -373,11 +374,11 @@ private def pathPrefix (z : ℕ → Bool) (m : ℕ) : Row :=
 
 @[simp]
 private theorem length_pathPrefix (z : ℕ → Bool) (m : ℕ) :
-    (pathPrefix z m).1.length = m := by
+    (pathPrefix z m).val.length = m := by
   simp [pathPrefix]
 
 private theorem prefix_pathPrefix_iff (z : ℕ → Bool) (l : List ℕ) (k : ℕ) :
-    l <+: (pathPrefix z k).1 ↔ l.length ≤ k ∧ l = (pathPrefix z l.length).1 := by
+    l <+: (pathPrefix z k).val ↔ l.length ≤ k ∧ l = (pathPrefix z l.length).val := by
   refine ⟨fun h => ⟨by simpa using h.length_le, ?_⟩, fun ⟨hlen, hl⟩ => ?_⟩
   · simpa [pathPrefix, ← List.map_take, min_eq_left (by simpa using h.length_le : l.length ≤ k)]
       using List.prefix_iff_eq_take.mp h
@@ -388,7 +389,7 @@ private theorem prefix_pathPrefix_iff (z : ℕ → Bool) (l : List ℕ) (k : ℕ
 the prefixes of `pathOf z` on the extra path row `none`. -/
 private abbrev CompanionFiber (z : ℕ → Bool) : Option Row → List ℕ → Type
   | some p, τ => BaseFiber p τ
-  | none, τ => FiberType (decide (τ = (pathPrefix z τ.length).1)) τ
+  | none, τ => FiberType (decide (τ = (pathPrefix z τ.length).val)) τ
 
 private instance instStructureCompanionFiber (z : ℕ → Bool) (r : Option Row) (τ : List ℕ) :
     Language.empty.Structure (CompanionFiber z r τ) := by
@@ -427,7 +428,7 @@ private def hilbertSeq (z : ℕ → Bool) (m k : ℕ) : Row :=
 
 private theorem injective_hilbertSeq (z : ℕ → Bool) (m : ℕ) :
     Function.Injective (hilbertSeq z m) := fun a b h => by
-  have hlen := congrArg (fun r : Row => r.1.length) h
+  have hlen := congrArg (fun r : Row => r.val.length) h
   simp only [hilbertSeq, length_pathPrefix] at hlen
   omega
 
@@ -445,7 +446,7 @@ private theorem hilbertSplit_symm_inr (z : ℕ → Bool) (m k : ℕ) :
 
 private theorem hilbertSplit_symm_inl (z : ℕ → Bool) (m : ℕ)
     (x : ↥(Set.range (hilbertSeq z m))ᶜ) :
-    (hilbertSplit z m).symm (Sum.inl x) = x.1 := by
+    (hilbertSplit z m).symm (Sum.inl x) = x.val := by
   simp [hilbertSplit]
 
 private theorem hilbertSplit_apply_hilbertSeq (z : ℕ → Bool) (m k : ℕ) :
@@ -461,18 +462,18 @@ private noncomputable def hilbertRow (z : ℕ → Bool) (m : ℕ) : Option Row �
   (Equiv.optionEquivSumPUnit.{0} Row).trans
     (((hilbertSplit z m).sumCongr (.refl _)).trans
       ((Equiv.sumAssoc _ _ _).trans
-        ((Equiv.sumCongr (.refl _) Equiv.natSumPUnitEquivNat).trans
+        ((Equiv.sumCongr (.refl _) Equiv.natEquivNatSumPUnit.symm).trans
           (hilbertSplit z m).symm)))
 
 private theorem hilbertRow_none (z : ℕ → Bool) (m : ℕ) :
     hilbertRow z m none = pathPrefix z (2 * m) := by
   simp [hilbertRow, hilbertSplit_symm_inr, hilbertSeq,
-    Equiv.natSumPUnitEquivNat, Equiv.natEquivNatSumPUnit]
+    Equiv.natEquivNatSumPUnit]
 
 private theorem hilbertRow_some_hilbertSeq (z : ℕ → Bool) (m k : ℕ) :
     hilbertRow z m (some (hilbertSeq z m k)) = hilbertSeq z m (k + 1) := by
   simp [hilbertRow, hilbertSplit_apply_hilbertSeq, hilbertSplit_symm_inr,
-    Equiv.natSumPUnitEquivNat, Equiv.natEquivNatSumPUnit]
+    Equiv.natEquivNatSumPUnit]
 
 private theorem hilbertRow_some_of_notMem (z : ℕ → Bool) (m : ℕ) {p : Row}
     (hp : p ∉ Set.range (hilbertSeq z m)) :
@@ -482,7 +483,7 @@ private theorem hilbertRow_some_of_notMem (z : ℕ → Bool) (m : ℕ) {p : Row}
 end HilbertRow
 
 private theorem le_getLastD_of_eq_pathPrefix (z : ℕ → Bool) {m : ℕ} (τ : List ℕ)
-    (hlen : 2 * m < τ.length) (hτ : τ = (pathPrefix z τ.length).1) :
+    (hlen : 2 * m < τ.length) (hτ : τ = (pathPrefix z τ.length).val) :
     m ≤ τ.getLastD 0 + 1 := by
   have hne : τ ≠ [] := List.ne_nil_of_length_pos (by omega)
   have hlast : τ.getLastD 0 = pathOf z (τ.length - 1) := by
@@ -490,7 +491,7 @@ private theorem le_getLastD_of_eq_pathPrefix (z : ℕ → Bool) {m : ℕ} (τ : 
       List.getLast_eq_getElem]
     have hget := congrArg (fun l : List ℕ => l[τ.length - 1]?) hτ
     have hi : τ.length - 1 < τ.length := by omega
-    have hi' : τ.length - 1 < (pathPrefix z τ.length).1.length := by simpa using hi
+    have hi' : τ.length - 1 < (pathPrefix z τ.length).val.length := by simpa using hi
     rw [List.getElem?_eq_getElem hi, List.getElem?_eq_getElem hi'] at hget
     simpa [pathPrefix] using Option.some.inj hget
   have hm : m ≤ pathOf z (τ.length - 1) := by
@@ -504,14 +505,14 @@ private theorem bfEquiv_companionFiber_none_pathPrefix (z : ℕ → Bool) {m k :
       (Fin.elim0 : Fin 0 → CompanionFiber z none τ)
       (Fin.elim0 : Fin 0 → BaseFiber (pathPrefix z k) τ) := by
   apply (bfEquiv_fiberType_iff _ _ τ m).mpr
-  by_cases hτ : τ = (pathPrefix z τ.length).1
+  by_cases hτ : τ = (pathPrefix z τ.length).val
   · by_cases hlen : τ.length ≤ k
     · left
-      have hp : τ <+: (pathPrefix z k).1 := (prefix_pathPrefix_iff z τ k).mpr ⟨hlen, hτ⟩
+      have hp : τ <+: (pathPrefix z k).val := (prefix_pathPrefix_iff z τ k).mpr ⟨hlen, hτ⟩
       rw [decide_eq_true hτ, decide_eq_true hp]
     · exact Or.inr (le_getLastD_of_eq_pathPrefix z τ (by omega) hτ)
   · left
-    have hnp : ¬ (τ <+: (pathPrefix z k).1) := fun hp =>
+    have hnp : ¬ (τ <+: (pathPrefix z k).val) := fun hp =>
       hτ ((prefix_pathPrefix_iff z τ k).mp hp).2
     rw [decide_eq_false hτ, decide_eq_false hnp]
 
@@ -560,8 +561,8 @@ fibers simultaneously, because `pathPrefix z (p.1.length + 1)` has a finite fibe
 infinite fiber over `p`. -/
 private theorem false_of_fiberToEquiv_none (z : ℕ → Bool) (p : Row)
     (f : ∀ τ, CompanionFiber z none τ ≃ BaseFiber p τ) : False := by
-  let τ : List ℕ := (pathPrefix z (p.1.length + 1)).1
-  have heq : decide (τ = (pathPrefix z τ.length).1) = decide (τ <+: p.1) :=
+  let τ : List ℕ := (pathPrefix z (p.val.length + 1)).val
+  have heq : decide (τ = (pathPrefix z τ.length).val) = decide (τ <+: p.val) :=
     eq_of_fiberType_equiv (f τ)
   simp only [τ, length_pathPrefix, decide_true, true_eq_decide_iff] at heq
   have hlen := heq.length_le
@@ -588,9 +589,9 @@ theorem isEmpty_equiv_companionModel_of_ne {z z' : ℕ → Bool} (h : z ≠ z') 
         rw [hr] at hf
         exact hf)
   obtain ⟨n, hn⟩ := Function.ne_iff.mp h
-  let τ : List ℕ := (pathPrefix z (2 * n + 2)).1
-  have heq : decide (τ = (pathPrefix z τ.length).1) =
-      decide (τ = (pathPrefix z' τ.length).1) := by
+  let τ : List ℕ := (pathPrefix z (2 * n + 2)).val
+  have heq : decide (τ = (pathPrefix z τ.length).val) =
+      decide (τ = (pathPrefix z' τ.length).val) := by
     have hf := e'.fiberToEquiv none τ
     rw [hnone] at hf
     exact eq_of_fiberType_equiv hf

@@ -115,7 +115,7 @@ theorem sphereTangentEquiv_symm_eq_sum_mgradient {ι : Type*} [Fintype ι]
     map_sum]
   have hwx : ⟪(w : E), (x : E)⟫_ℝ = 0 := by
     rw [real_inner_comm]
-    exact Submodule.mem_orthogonal_singleton_iff_inner_right.mp w.2
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.mp w.property
   calc
     (w : E) = (∑ j : ι, ⟪b j, (w : E)⟫_ℝ • b j) -
         (∑ j : ι, ⟪(w : E), b j⟫_ℝ * ⟪b j, (x : E)⟫_ℝ) • (x : E) := by
