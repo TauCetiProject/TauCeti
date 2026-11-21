@@ -96,10 +96,10 @@ def cayleyHomeomorph (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     {η : A // η * j = -(j * η) ∧ IsUnit (1 + η)} ≃ₜ {J : A // J * J = -1 ∧ IsUnit (j + J)} where
   toEquiv := cayleyEquiv j h2 hj
   continuous_toFun := continuous_induced_rng.2 <|
-    (continuousOn_cayleyParam.comp_continuous continuous_subtype_val fun η ↦ η.2.2).congr
+    (continuousOn_cayleyParam.comp_continuous continuous_subtypeVal fun η ↦ η.property.2).congr
       fun η ↦ (coe_cayleyEquiv_apply h2 hj η).symm
   continuous_invFun := continuous_induced_rng.2 <|
-    (continuousOn_cayleyCoord.comp_continuous continuous_subtype_val fun J ↦ J.2.2).congr
+    (continuousOn_cayleyCoord.comp_continuous continuous_subtypeVal fun J ↦ J.property.2).congr
       fun J ↦ (coe_cayleyEquiv_symm_apply h2 hj J).symm
 
 /-- The underlying equivalence of `cayleyHomeomorph` is `cayleyEquiv`. -/

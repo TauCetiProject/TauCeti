@@ -122,7 +122,7 @@ private lemma splitBaseChangeEquiv_right_inv (T : Type*) [CommRing T] [Algebra A
       (LinearMap.coprod ((kerIncl hπ hσ hkerπ).baseChange T) (Algebra.linearMap T (T ⊗[A] B))) =
         LinearMap.id := by
   have hσy (y : B') : σ (kerIncl hπ hσ hkerπ y) = 0 :=
-    RingHom.mem_ker.mp (kerEquiv hπ hσ hkerπ y).2
+    RingHom.mem_ker.mp (kerEquiv hπ hσ hkerπ y).property
   have hρφ (y : B') : kerProj hπ hσ hkerπ (kerIncl hπ hσ hkerπ y) = y :=
     (congrArg (kerEquiv hπ hσ hkerπ).symm (Subtype.ext
       (by rw [coe_kerProjSub_apply, hσy y, map_zero, sub_zero, coe_kerIncl_apply]))).trans

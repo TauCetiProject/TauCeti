@@ -54,7 +54,7 @@ theorem IsTriangulable.lift_of_compactSpace {X : Type u} [TopologicalSpace X] [C
   let r := K.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
     (L := L) f.toEmbedding rfl rfl le_rfl
   have hr : {y : AbstractSimplicialComplex.Realization L |
-      y.1.support ∈ L.toPreAbstractSimplicialComplex} = Set.univ :=
+      y.val.support ∈ L.toPreAbstractSimplicialComplex} = Set.univ :=
     Set.eq_univ_of_forall (AbstractSimplicialComplex.support_mem L)
   exact (isTriangulable_iff X).mpr ⟨_, L, ⟨(r.trans
     ((Homeomorph.setCongr hr).trans (Homeomorph.Set.univ _))).symm.trans e⟩⟩

@@ -58,7 +58,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (p : E → Posit
 /-- A `C^n` positive period function is `C^n` as a real-valued function. -/
 private theorem contDiff_coe_period (hp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n p) :
     ContDiff ℝ n (fun x ↦ (p x : ℝ)) :=
-  contMDiff_iff_contDiff.mp (contMDiff_subtype_val.comp hp)
+  contMDiff_iff_contDiff.mp (contMDiff_subtypeVal.comp hp)
 
 /-- The bound `(k!)^2 C^k / ε^(k+1)` of `TauCeti.norm_iteratedFDeriv_inv_comp_le` is at least one
 when `0 < ε ≤ 1` and `1 ≤ C`. -/

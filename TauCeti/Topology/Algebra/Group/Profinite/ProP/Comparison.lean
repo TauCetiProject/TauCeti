@@ -218,7 +218,7 @@ theorem IsProP.exists_continuousMulEquiv_apply_eq_of_forall_exists_surjective {�
         ψ r = w}
   have : ∀ k, Finite (S k) := fun k ↦ by
     have := hfg.finite_quotient_pLowerCentralSeries hp k
-    exact Finite.of_injective (fun s : S k ↦ ⇑s.1)
+    exact Finite.of_injective (fun s : S k ↦ ⇑s.val)
       (DFunLike.coe_injective.comp Subtype.val_injective)
   -- Each level is nonempty: a surjective endomorphism of `G` induces a surjection of `G ⧸ λ_k`.
   have : ∀ k, Nonempty (S k) := fun k ↦ by
@@ -234,25 +234,27 @@ theorem IsProP.exists_continuousMulEquiv_apply_eq_of_forall_exists_surjective {�
     · rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk]
       exact QuotientGroup.eq.mpr hr
   let D : PLowerCentralSeriesComparison p G G S :=
-    { map := fun _ s ↦ s.1
-      map_surjective := fun _ s ↦ s.2.1
-      bond := fun k s ↦ ⟨s.1.pLowerCentralSeriesDesc, s.1.pLowerCentralSeriesDesc_surjective s.2.1,
+    { map := fun _ s ↦ s.val
+      map_surjective := fun _ s ↦ s.property.1
+      bond := fun k s ↦ ⟨s.val.pLowerCentralSeriesDesc, s.val.pLowerCentralSeriesDesc_surjective
+          s.property.1,
         fun i ↦ by
-          obtain ⟨x, hx, hxs⟩ := Subgroup.mem_map.mp (s.2.2.1 i)
+          obtain ⟨x, hx, hxs⟩ := Subgroup.mem_map.mp (s.property.2.1 i)
           refine ⟨x, hx, ?_⟩
           have := congrArg (QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k)) hxs
           rw [QuotientGroup.mk'_apply, QuotientGroup.mapOfLE_mk, map_mul, map_inv,
             QuotientGroup.mapOfLE_mk, ← ContinuousMonoidHom.pLowerCentralSeriesDesc_mk] at this
           exact this,
-        by rw [ContinuousMonoidHom.pLowerCentralSeriesDesc_mk, s.2.2.2, QuotientGroup.mapOfLE_mk]⟩
-      commutes := fun _ s x ↦ (s.1.pLowerCentralSeriesDesc_mapOfLE x).symm }
+        by rw [ContinuousMonoidHom.pLowerCentralSeriesDesc_mk, s.property.2.2,
+            QuotientGroup.mapOfLE_mk]⟩
+      commutes := fun _ s x ↦ (s.val.pLowerCentralSeriesDesc_mapOfLE x).symm }
   obtain ⟨s, e, -, he, hr, -⟩ := D.exists_continuousMulEquiv_preserving hG hfg hp
-    (fun _ : Unit ↦ r) (fun _ ↦ w) (1 : G →ₜ* G) 1 (fun _ s _ ↦ s.2.2.2)
+    (fun _ : Unit ↦ r) (fun _ ↦ w) (1 : G →ₜ* G) 1 (fun _ s _ ↦ s.property.2.2)
     (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
   -- Each constraint holds on every finite quotient, hence in the limit.
   refine ⟨e, fun i ↦ hG.mem_of_forall_mk_mem_map_pLowerCentralSeries hp (hC i) fun k ↦ ?_, hr ()⟩
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, he k]
-  exact (s k).2.2.1 i
+  exact (s k).property.2.1 i
 
 end Limit
 

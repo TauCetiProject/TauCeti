@@ -40,20 +40,20 @@ namespace TypeDDiagramLieIndex
 
 /-- The full-weight spin torus, in the validated index's fundamental-weight coordinates. -/
 def weightTorus (d : TypeDDiagramLieIndex) :
-    (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  TypeDSpinCarrier.weightTorusPoints d.1.rank d.four_le_rank d.1.Closure
+    (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  TypeDSpinCarrier.weightTorusPoints d.val.rank d.four_le_rank d.val.Closure
 
 /-- The indexed torus is the represented spin carrier's weight torus. This equation is not a
 simp rule, so indexed character-map statements retain their torus parametrization. -/
 theorem weightTorus_def (d : TypeDDiagramLieIndex) :
-    d.weightTorus = TypeDSpinCarrier.weightTorusPoints d.1.rank d.four_le_rank d.1.Closure :=
+    d.weightTorus = TypeDSpinCarrier.weightTorusPoints d.val.rank d.four_le_rank d.val.Closure :=
   (rfl)
 
 /-- The indexed Frobenius has the character map of the native root-datum Frobenius. -/
 theorem isCharacterMap_frobenius (d : TypeDDiagramLieIndex) :
-    IsCharacterMap d.weightTorus d.frobenius d.1.datumFrobenius.weightMap := by
+    IsCharacterMap d.weightTorus d.frobenius d.val.datumFrobenius.weightMap := by
   rw [weightTorus_def, frobenius_def, ValidLieTypeIndex.datumFrobenius_weightMap,
-    d.1.fieldOrder_eq_characteristic_pow, ← Module.End.one_eq_id]
+    d.val.fieldOrder_eq_characteristic_pow, ← Module.End.one_eq_id]
   exact TypeDSpinCarrier.isCharacterMap_frobenius _ _ _ _ _
 
 end TypeDDiagramLieIndex
@@ -64,9 +64,9 @@ namespace TypeDLieIndex
 root-datum Steinberg map. -/
 theorem isCharacterMap_steinberg (d : TypeDLieIndex) :
     IsCharacterMap d.toTypeDDiagramLieIndex.weightTorus d.steinberg
-      d.1.datumSteinberg.weightMap := by
+      d.val.datumSteinberg.weightMap := by
   rw [ValidLieTypeIndex.datumSteinberg_of_not_usesHalfFrobenius _
-    d.toTypeDDiagramLieIndex.toGraphTwistedIndex.2]
+    d.toTypeDDiagramLieIndex.toGraphTwistedIndex.property]
   have hgraph : d.toTypeDDiagramLieIndex.toGraphTwistedIndex.datumGraphAut = 1 := by
     rw [GraphTwistedIndex.datumGraphAut_def]
     exact (DynkinType.diagramAut_eq_one_iff _ _).mpr d.diagramPerm_toGraphTwistedIndex
@@ -91,9 +91,10 @@ theorem isCharacterMap_graphAut (d : TypeTwistedDLieIndex) :
 root-datum Steinberg map, with the small-field Frobenius parameter `q`. -/
 theorem isCharacterMap_steinberg (d : TypeTwistedDLieIndex) :
     IsCharacterMap d.toTypeDDiagramLieIndex.weightTorus d.steinberg
-      d.1.datumSteinberg.weightMap := by
+      d.val.datumSteinberg.weightMap := by
   rw [steinberg_def, ValidLieTypeIndex.datumSteinberg_of_not_usesHalfFrobenius _
-    d.toTypeDDiagramLieIndex.toGraphTwistedIndex.2, GraphTwistedIndex.datumSteinberg_weightMap]
+    d.toTypeDDiagramLieIndex.toGraphTwistedIndex.property,
+        GraphTwistedIndex.datumSteinberg_weightMap]
   have h := d.isCharacterMap_graphAut.comp d.toTypeDDiagramLieIndex.isCharacterMap_frobenius
   simpa only [ValidLieTypeIndex.datumFrobenius_weightMap, LinearMap.comp_smul,
     LinearMap.comp_id, Module.End.mul_eq_comp, LinearMap.smul_comp, LinearMap.id_comp] using h

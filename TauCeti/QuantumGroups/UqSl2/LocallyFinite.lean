@@ -92,9 +92,9 @@ theorem exists_linearEquiv_dfinsupp_ladderModule (hq : IsGenericQuantumParameter
   have := isSemisimpleModule_of_isLocallyFiniteModule hq (V := V)
   obtain ⟨s, e, -, hs⟩ := IsSemisimpleModule.exists_linearEquiv_dfinsupp (UqSl2 q) V
   -- Each simple summand is finite-dimensional, hence isomorphic to a signed ladder module.
-  have h (N : s) : ∃ (m : ℕ) (ε : ℤˣ), Nonempty (LadderModule q m ε ≃ₗ[UqSl2 q] N.1) := by
+  have h (N : s) : ∃ (m : ℕ) (ε : ℤˣ), Nonempty (LadderModule q m ε ≃ₗ[UqSl2 q] N.val) := by
     have := hs N
-    have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) N.1
+    have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) N.val
     exact exists_linearEquiv_ladderModule hq
   choose m ε e' using h
   exact ⟨s, m, ε, ⟨e.trans (DFinsupp.mapRange.linearEquiv fun N => (e' N).some.symm)⟩⟩

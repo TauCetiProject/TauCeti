@@ -147,11 +147,8 @@ private theorem pairOfPantsContinuationPerturbation_eventuallyEq {z : ℝ × ℝ
     (hL : L r + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) (v : ℂ) :
     (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x v)
       =ᶠ[𝓝 z] fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v := by
-  have hc : ContinuousAt
-      (fun z : ℝ × ℝ ↦ r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) z :=
-    continuousAt_const.mul ((r.contDiffAt_re_endCoord (n := 0)
-      (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) r)).continuousAt.comp
-        Complex.equivRealProdCLM.symm.continuous.continuousAt)
+  have hc := continuousAt_endSign_mul_re_endCoord r
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) r)
   filter_upwards [hc.eventually (lt_mem_nhds h₂), hc.eventually (lt_mem_nhds hL)] with w hw₂ hwL
   funext x
   rw [pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le hw₂.le hwL.le]

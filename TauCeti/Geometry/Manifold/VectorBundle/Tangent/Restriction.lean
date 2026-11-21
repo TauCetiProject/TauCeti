@@ -87,7 +87,7 @@ theorem eventually_inCoordinates_openTangentSpaceHom_eq {U : Opens M} {V : Opens
     continuousAt_snd.eventually
       ((trivializationAt F (TangentSpace I' : V → Type _) x').open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F (TangentSpace I' : V → Type _) x')),
-    (continuousAt_subtype_val.comp continuousAt_snd).eventually
+    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
       ((trivializationAt F (TangentSpace I' : N → Type _) (x' : N)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F (TangentSpace I' : N → Type _) (x' : N)))]
       with q hs ht hqV hqN
@@ -129,17 +129,17 @@ theorem contMDiff_restrictOpenTangentSpaceHom {n : ℕ∞ω}
             (TangentSpace I')) q) q (restrictOpenTangentSpaceHom A U V q)) := by
   have hinc : ContMDiff (I.prod I') (I.prod I') n
       (fun q : U × V ↦ ((q.1 : M), (q.2 : N))) :=
-    ((contMDiff_subtype_val (I := I) (U := U)).comp contMDiff_fst).prodMk
-      ((contMDiff_subtype_val (I := I') (U := V)).comp contMDiff_snd)
+    ((contMDiff_subtypeVal (I := I) (U := U)).comp contMDiff_fst).prodMk
+      ((contMDiff_subtypeVal (I := I') (U := V)).comp contMDiff_snd)
   intro q
   have ha := (contMDiffAt_hom_bundle _).mp ((hA.comp hinc) q)
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_id, ha.2.congr_of_eventuallyEq ?_⟩
   filter_upwards [eventually_inCoordinates_openTangentSpaceHom_eq (I := I) (I' := I') q.1 q.2,
-    (continuousAt_subtype_val.comp continuousAt_fst).eventually
+    (continuousAt_subtypeVal.comp continuousAt_fst).eventually
       ((trivializationAt E (TangentSpace I : M → Type _) (q.1 : M)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (q.1 : M))),
-    (continuousAt_subtype_val.comp continuousAt_snd).eventually
+    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
       ((trivializationAt F (TangentSpace I' : N → Type _) (q.2 : N)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F (TangentSpace I' : N → Type _) (q.2 : N))),
     continuousAt_fst.eventually
@@ -192,7 +192,7 @@ theorem contMDiff_restrictOpenTangentSpaceEnd {n : ℕ∞ω}
         (restrictOpenTangentSpaceEnd A U q)) := by
   have hinc : ContMDiff (IS.prod I) (IS.prod I) n
       (fun q : S × U ↦ (q.1, (q.2 : M))) :=
-    contMDiff_fst.prodMk ((contMDiff_subtype_val (I := I) (U := U)).comp contMDiff_snd)
+    contMDiff_fst.prodMk ((contMDiff_subtypeVal (I := I) (U := U)).comp contMDiff_snd)
   intro q
   have ha := (contMDiffAt_hom_bundle _).mp ((hA.comp hinc) q)
   rw [contMDiffAt_hom_bundle]
@@ -202,7 +202,7 @@ theorem contMDiff_restrictOpenTangentSpaceEnd {n : ℕ∞ω}
     continuousAt_snd.eventually
       ((trivializationAt E (TangentSpace I : U → Type _) q.2).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) q.2)),
-    (continuousAt_subtype_val.comp continuousAt_snd).eventually
+    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
       ((trivializationAt E (TangentSpace I : M → Type _) (q.2 : M)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (q.2 : M)))]
       with y hs hyU hyM

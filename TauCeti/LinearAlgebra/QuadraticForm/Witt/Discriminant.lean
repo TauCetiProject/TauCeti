@@ -308,8 +308,8 @@ semilinear along the dimension-mod-two map `W(K) → ZMod 2`. Its kernel is `I(K
 noncomputable def signedDiscrHom :
     fundamentalIdeal K →ₛₗ[WittRing.dimMod2 (K := K)] SquareClassGroup K where
   toFun x := WittRing.signedDiscr (x : WittRing K)
-  map_add' x y := WittRing.signedDiscr_add_of_mem_fundamentalIdeal x.2 y
-  map_smul' w x := WittRing.signedDiscr_mul_of_mem_fundamentalIdeal w x.2
+  map_add' x y := WittRing.signedDiscr_add_of_mem_fundamentalIdeal x.property y
+  map_smul' w x := WittRing.signedDiscr_mul_of_mem_fundamentalIdeal w x.property
 
 /-- `signedDiscrHom` evaluates the signed discriminant. -/
 @[simp]
@@ -331,7 +331,7 @@ theorem signedDiscrHom_surjective : Function.Surjective (signedDiscrHom (K := K)
 /-- **The kernel of the signed discriminant on `I(K)` is `I(K)²`.** -/
 theorem signedDiscrHom_eq_zero_iff (x : fundamentalIdeal K) :
     signedDiscrHom x = 0 ↔ (x : WittRing K) ∈ fundamentalIdeal K ^ 2 := by
-  rw [signedDiscrHom_apply, mem_fundamentalIdeal_sq_iff, and_iff_right x.2]
+  rw [signedDiscrHom_apply, mem_fundamentalIdeal_sq_iff, and_iff_right x.property]
 
 /-- The signed discriminant, descended to the cotangent space `I(K)/I(K)²`. -/
 private noncomputable def cotangentSignedDiscr :

@@ -60,7 +60,7 @@ variable (p : ℕ)
 input lists the on-or-below-diagonal entries of `L`, and the output lists those of `L * Lᵀ`, which
 determine that symmetric matrix. -/
 def choleskyReconstructionCoordinates (x : lowerTriangle p → ℝ) : lowerTriangle p → ℝ :=
-  fun ij ↦ (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ) ij.1.1 ij.1.2
+  fun ij ↦ (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ) ij.val.1 ij.val.2
 
 /-- The derivative of `TauCeti.choleskyReconstructionCoordinates` at `x`: writing `L` for the
 lower-triangular matrix of `x`, it sends the lower-triangular matrix `H` of an increment to the
@@ -70,7 +70,7 @@ def fderivCholeskyReconstructionCoordinates (x : lowerTriangle p → ℝ) :
   LinearMap.toContinuousLinearMap
     { toFun := fun h ij ↦
         (lowerTriangleMatrix p x * (lowerTriangleMatrix p h)ᵀ +
-          lowerTriangleMatrix p h * (lowerTriangleMatrix p x)ᵀ) ij.1.1 ij.1.2
+          lowerTriangleMatrix p h * (lowerTriangleMatrix p x)ᵀ) ij.val.1 ij.val.2
       map_add' := fun h₁ h₂ ↦ by
         ext ij
         simp only [map_add, Matrix.transpose_add, Matrix.mul_add, Matrix.add_mul, Matrix.add_apply,
@@ -86,15 +86,15 @@ variable {p}
 theorem choleskyReconstructionCoordinates_apply (x : lowerTriangle p → ℝ)
     (ij : lowerTriangle p) :
     choleskyReconstructionCoordinates p x ij =
-      ∑ k, lowerTriangleMatrix p x ij.1.1 k * lowerTriangleMatrix p x ij.1.2 k :=
+      ∑ k, lowerTriangleMatrix p x ij.val.1 k * lowerTriangleMatrix p x ij.val.2 k :=
   Matrix.mul_apply.trans (by simp [Matrix.transpose_apply])
 
 /-- On the coordinates of a positive-diagonal lower-triangular matrix, the coordinate form of
 Cholesky reconstruction reads off `TauCeti.choleskyReconstruction`. -/
 theorem choleskyReconstructionCoordinates_lowerTriangleCoordinatesHomeomorph
     (L : PosDiagLowerTriangular p) (ij : lowerTriangle p) :
-    choleskyReconstructionCoordinates p (lowerTriangleCoordinatesHomeomorph p L).1 ij =
-      ((choleskyReconstruction L).1 : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+    choleskyReconstructionCoordinates p (lowerTriangleCoordinatesHomeomorph p L).val ij =
+      ((choleskyReconstruction L).val : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
   rw [choleskyReconstructionCoordinates, lowerTriangleMatrix_lowerTriangleCoordinatesHomeomorph,
     choleskyReconstruction_coe]
 
@@ -103,7 +103,7 @@ theorem fderivCholeskyReconstructionCoordinates_apply (x h : lowerTriangle p →
     (ij : lowerTriangle p) :
     fderivCholeskyReconstructionCoordinates p x h ij =
       (lowerTriangleMatrix p x * (lowerTriangleMatrix p h)ᵀ +
-        lowerTriangleMatrix p h * (lowerTriangleMatrix p x)ᵀ) ij.1.1 ij.1.2 :=
+        lowerTriangleMatrix p h * (lowerTriangleMatrix p x)ᵀ) ij.val.1 ij.val.2 :=
   (rfl)
 
 /-- The coordinate functional reading off the `(i, j)` entry of the lower-triangular matrix of a
@@ -135,19 +135,19 @@ theorem hasFDerivAt_choleskyReconstructionCoordinates (x : lowerTriangle p → �
   intro ij
   have hsum : HasFDerivAt
       (fun y : lowerTriangle p → ℝ ↦
-        ∑ k, lowerTriangleMatrix p y ij.1.1 k * lowerTriangleMatrix p y ij.1.2 k)
-      (∑ k, (lowerTriangleMatrix p x ij.1.1 k • lowerTriangleEntryL ij.1.2 k +
-        lowerTriangleMatrix p x ij.1.2 k • lowerTriangleEntryL ij.1.1 k)) x :=
+        ∑ k, lowerTriangleMatrix p y ij.val.1 k * lowerTriangleMatrix p y ij.val.2 k)
+      (∑ k, (lowerTriangleMatrix p x ij.val.1 k • lowerTriangleEntryL ij.val.2 k +
+        lowerTriangleMatrix p x ij.val.2 k • lowerTriangleEntryL ij.val.1 k)) x :=
     HasFDerivAt.fun_sum fun k _ ↦
-      (hasFDerivAt_lowerTriangleMatrix_apply ij.1.1 k x).fun_mul
-        (hasFDerivAt_lowerTriangleMatrix_apply ij.1.2 k x)
+      (hasFDerivAt_lowerTriangleMatrix_apply ij.val.1 k x).fun_mul
+        (hasFDerivAt_lowerTriangleMatrix_apply ij.val.2 k x)
   have hfun : (fun y : lowerTriangle p → ℝ ↦ choleskyReconstructionCoordinates p y ij) =
-      fun y ↦ ∑ k, lowerTriangleMatrix p y ij.1.1 k * lowerTriangleMatrix p y ij.1.2 k :=
+      fun y ↦ ∑ k, lowerTriangleMatrix p y ij.val.1 k * lowerTriangleMatrix p y ij.val.2 k :=
     funext fun y ↦ choleskyReconstructionCoordinates_apply y ij
   have hderiv : (ContinuousLinearMap.proj (R := ℝ) ij).comp
       (fderivCholeskyReconstructionCoordinates p x) =
-      ∑ k, (lowerTriangleMatrix p x ij.1.1 k • lowerTriangleEntryL ij.1.2 k +
-        lowerTriangleMatrix p x ij.1.2 k • lowerTriangleEntryL ij.1.1 k) := by
+      ∑ k, (lowerTriangleMatrix p x ij.val.1 k • lowerTriangleEntryL ij.val.2 k +
+        lowerTriangleMatrix p x ij.val.2 k • lowerTriangleEntryL ij.val.1 k) := by
     ext h
     simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.proj_apply,
       fderivCholeskyReconstructionCoordinates_apply, Matrix.add_apply, Matrix.mul_apply,
@@ -174,7 +174,7 @@ theorem fderiv_choleskyReconstructionCoordinates (x : lowerTriangle p → ℝ) :
 
 /-- The lower-triangular positions ordered by column and then by row: the order that makes the
 derivative of Cholesky reconstruction triangular. -/
-private def lowerTriangleKey (ij : lowerTriangle p) : Fin p ×ₗ Fin p := toLex (ij.1.2, ij.1.1)
+private def lowerTriangleKey (ij : lowerTriangle p) : Fin p ×ₗ Fin p := toLex (ij.val.2, ij.val.1)
 
 private theorem lowerTriangleKey_injective :
     Function.Injective (lowerTriangleKey (p := p)) := by
@@ -183,7 +183,7 @@ private theorem lowerTriangleKey_injective :
   exact Subtype.ext (Prod.ext h.2 h.1)
 
 private theorem lowerTriangleMatrix_pi_single (kl : lowerTriangle p) :
-    lowerTriangleMatrix p (Pi.single kl 1) = Matrix.single kl.1.1 kl.1.2 1 := by
+    lowerTriangleMatrix p (Pi.single kl 1) = Matrix.single kl.val.1 kl.val.2 1 := by
   refine Matrix.ext fun a b ↦ ?_
   by_cases h : b ≤ a
   · rw [lowerTriangleMatrix_apply_of_le _ h, Pi.single_apply, Matrix.single_apply]
@@ -193,20 +193,20 @@ private theorem lowerTriangleMatrix_pi_single (kl : lowerTriangle p) :
       fun hc ↦ Prod.ext hc.1.symm hc.2.symm⟩
   · rw [lowerTriangleMatrix_apply_of_lt _ (not_le.1 h), Matrix.single_apply, ite_eq_right]
     rintro ⟨rfl, rfl⟩
-    exact h kl.2
+    exact h kl.property
 
 /-- The matrix of the derivative in the standard basis of the coordinate space. -/
 private theorem toMatrix_fderivCholeskyReconstructionCoordinates (x : lowerTriangle p → ℝ)
     (ij kl : lowerTriangle p) :
     LinearMap.toMatrix (Pi.basisFun ℝ (lowerTriangle p)) (Pi.basisFun ℝ (lowerTriangle p))
         (fderivCholeskyReconstructionCoordinates p x) ij kl =
-      (if kl.1.1 = ij.1.2 then lowerTriangleMatrix p x ij.1.1 kl.1.2 else 0) +
-        (if kl.1.1 = ij.1.1 then lowerTriangleMatrix p x ij.1.2 kl.1.2 else 0) := by
+      (if kl.val.1 = ij.val.2 then lowerTriangleMatrix p x ij.val.1 kl.val.2 else 0) +
+        (if kl.val.1 = ij.val.1 then lowerTriangleMatrix p x ij.val.2 kl.val.2 else 0) := by
   rw [LinearMap.toMatrix_apply, Pi.basisFun_repr, Pi.basisFun_apply, ContinuousLinearMap.coe_coe,
     fderivCholeskyReconstructionCoordinates_apply, lowerTriangleMatrix_pi_single]
   simp only [Matrix.add_apply, Matrix.mul_apply, Matrix.transpose_apply, Matrix.single_apply,
     mul_ite, mul_one, mul_zero, ite_and]
-  by_cases h1 : kl.1.1 = ij.1.2 <;> by_cases h2 : kl.1.1 = ij.1.1 <;>
+  by_cases h1 : kl.val.1 = ij.val.2 <;> by_cases h2 : kl.val.1 = ij.val.1 <;>
     simp [h1, h2, Finset.sum_ite_eq]
 
 /-- The matrix of the derivative vanishes above the diagonal in the column-then-row order, that
@@ -222,24 +222,25 @@ private theorem blockTriangular_toMatrix_fderiv (x : lowerTriangle p → ℝ) :
   rcases h with hcol | ⟨_, hrow⟩
   · -- The column of `kl` is strictly to the right, so the first indicator cannot fire, and the
     -- surviving entry of the second one lies strictly above the diagonal.
-    have h1 : kl.1.1 ≠ ij.1.2 := fun hk ↦ absurd hcol (not_lt.2 (by rw [← hk]; exact kl.2))
+    have h1 : kl.val.1 ≠ ij.val.2 := fun hk ↦ absurd hcol (not_lt.2
+        (by rw [← hk]; exact kl.property))
     rw [ite_eq_right h1]
-    by_cases h2 : kl.1.1 = ij.1.1
+    by_cases h2 : kl.val.1 = ij.val.1
     · rw [ite_eq_left h2, lowerTriangleMatrix_apply_of_lt _ hcol, add_zero]
     · rw [ite_eq_right h2, add_zero]
   · -- Equal columns with a strictly larger row: neither indicator fires.
-    have h1 : kl.1.1 ≠ ij.1.2 := fun hk ↦ by
-      have hle : kl.1.1 ≤ ij.1.1 := by rw [hk]; exact ij.2
+    have h1 : kl.val.1 ≠ ij.val.2 := fun hk ↦ by
+      have hle : kl.val.1 ≤ ij.val.1 := by rw [hk]; exact ij.property
       exact absurd hrow (not_lt.2 hle)
-    have h2 : kl.1.1 ≠ ij.1.1 := fun hk ↦ by rw [hk] at hrow; exact lt_irrefl _ hrow
+    have h2 : kl.val.1 ≠ ij.val.1 := fun hk ↦ by rw [hk] at hrow; exact lt_irrefl _ hrow
     rw [ite_eq_right h1, ite_eq_right h2, add_zero]
 
 private theorem toMatrix_fderiv_diag (x : lowerTriangle p → ℝ) (ij : lowerTriangle p) :
     LinearMap.toMatrix (Pi.basisFun ℝ (lowerTriangle p)) (Pi.basisFun ℝ (lowerTriangle p))
         (fderivCholeskyReconstructionCoordinates p x) ij ij =
-      (if ij.1.1 = ij.1.2 then (2 : ℝ) else 1) * lowerTriangleMatrix p x ij.1.2 ij.1.2 := by
+      (if ij.val.1 = ij.val.2 then (2 : ℝ) else 1) * lowerTriangleMatrix p x ij.val.2 ij.val.2 := by
   rw [toMatrix_fderivCholeskyReconstructionCoordinates, ite_eq_left rfl]
-  by_cases h : ij.1.1 = ij.1.2
+  by_cases h : ij.val.1 = ij.val.2
   · rw [ite_eq_left h, ite_eq_left h, h]
     ring
   · rw [ite_eq_right h, ite_eq_right h]
@@ -249,7 +250,7 @@ private theorem toMatrix_fderiv_diag (x : lowerTriangle p → ℝ) (ij : lowerTr
 private theorem prod_column_toMatrix_fderiv_diag (x : lowerTriangle p → ℝ) (j : Fin p) :
     ∏ i : Fin p, (if j ≤ i then
         (if i = j then (2 : ℝ) else 1) * lowerTriangleMatrix p x j j else 1) =
-      lowerTriangleMatrix p x j j ^ (p - j.1) * 2 := by
+      lowerTriangleMatrix p x j j ^ (p - j.val) * 2 := by
   have step : ∀ i : Fin p, (if j ≤ i then
       (if i = j then (2 : ℝ) else 1) * lowerTriangleMatrix p x j j else 1) =
       (if j ≤ i then lowerTriangleMatrix p x j j else 1) * (if i = j then (2 : ℝ) else 1) := by
@@ -265,7 +266,7 @@ private theorem prod_column_toMatrix_fderiv_diag (x : lowerTriangle p → ℝ) (
 derivative of `L ↦ L * Lᵀ` has determinant `2 ^ p * ∏ i, (L i i) ^ (p - i)`. -/
 theorem det_fderiv_choleskyReconstructionCoordinates (x : lowerTriangle p → ℝ) :
     (fderiv ℝ (choleskyReconstructionCoordinates p) x).det =
-      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1) := by
+      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val) := by
   -- Read the determinant off the matrix of the derivative in the standard basis; that matrix is
   -- triangular for the column-then-row order, so only its diagonal survives.
   rw [fderiv_choleskyReconstructionCoordinates, ContinuousLinearMap.det,
@@ -289,7 +290,7 @@ density appearing in the change-of-variables formula. -/
 theorem abs_det_fderiv_choleskyReconstructionCoordinates (x : lowerTriangle p → ℝ)
     (hx : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩) :
     |(fderiv ℝ (choleskyReconstructionCoordinates p) x).det| =
-      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1) := by
+      2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.val) := by
   rw [det_fderiv_choleskyReconstructionCoordinates, abs_of_pos]
   exact mul_pos (by positivity) (Finset.prod_pos fun i _ ↦ pow_pos (hx i) _)
 
