@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
 public import TauCeti.Topology.ImplicitAtlas.Boundary
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Topology.UnitInterval
 import Mathlib.Geometry.Manifold.HasGroupoid
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Homeomorph.Lemmas
@@ -32,6 +33,11 @@ for the virtual fundamental class.
   whose boundary is its manifold boundary. Every chart is a half-space chart, in which the
   boundary is the hyperplane `x₀ = 0` (`ModelWithCorners.mem_boundary_euclideanHalfSpace_iff`).
   Its restriction to the boundary is an implicit atlas of virtual dimension `n` on the boundary.
+* **The interval atlas** (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalAtlas`). The interval
+  `[0, 1]` is an implicit atlas with boundary `{0, 1}` of virtual dimension `1` with an empty index
+  set: the manifold atlas with boundary of `[0, 1]`, whose manifold boundary is `{0, 1}`. Its
+  boundary restriction, an atlas of virtual dimension `0` on `{0, 1}`, is regular everywhere
+  (`TauCeti.ImplicitAtlasWithBoundary.regLocus_boundaryAtlas_unitIntervalAtlas`).
 * **Single-chart atlases on a point** (`TauCeti.ImplicitAtlas.pointAtlas`). Let a finite group
   `Γ` act on a Hausdorff topological `n`-manifold `Y` and on a finite-dimensional real
   representation `E`, and let `s : Y → E` be a continuous equivariant map whose only zero is
@@ -75,11 +81,11 @@ The single-chart atlases on a point realize the following test atlases.
 
 * J. Pardon, *An algebraic approach to virtual fundamental cycles on moduli spaces of
   pseudo-holomorphic curves*, Geom. Topol. 20 (2016), 779–1034, Example 2.3.2, §2.3.3 and
-  Definition 3.1.1. The atlas `s(x) = xᵐ` on `ℝ` is Pardon's Example 2.3.2, and `s(z) = zᵐ` on
-  `ℂ` is its complex analogue. The ineffective point, a trivial `ℤ/2` action on a point, is
-  Pardon's example in §2.3.3 (p. 20). The reflection atlas, the point of virtual dimension `-1`
-  and the isotropy theorem are constructed here as implicit atlases in the sense of
-  Definition 3.1.1; they are not taken from a numbered example of Pardon.
+  Definitions 3.1.1 and 3.2.1 (implicit atlases with boundary). The atlas `s(x) = xᵐ` on `ℝ` is
+  Pardon's Example 2.3.2, and `s(z) = zᵐ` on `ℂ` is its complex analogue. The ineffective point, a
+  trivial `ℤ/2` action on a point, is Pardon's example in §2.3.3 (p. 20). The reflection atlas,
+  the point of virtual dimension `-1` and the isotropy theorem are constructed here as implicit
+  atlases in the sense of Definition 3.1.1; they are not taken from a numbered example of Pardon.
 -/
 
 public section
@@ -214,6 +220,55 @@ theorem regLocus_ofChartedSpace (I : Finset A) :
   (rfl)
 
 end ChartedSpace
+
+/-! ### The interval `[0, 1]` -/
+
+section UnitInterval
+
+open scoped Manifold
+
+variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
+  [∀ α, Finite (Γ α)] (E : A → Type*) [∀ α, NormedAddCommGroup (E α)]
+  [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
+  (ρ : ∀ α, Representation ℝ (Γ α) (E α))
+
+/-- **The interval atlas.** The interval `[0, 1]` is an implicit atlas with boundary `{0, 1}` of
+virtual dimension `1` with an empty index set: the only thickening is `X_∅ = [0, 1]`, regular
+everywhere, and its half-space charts are those of the manifold atlas with boundary
+`TauCeti.ImplicitAtlasWithBoundary.ofChartedSpace`, whose manifold boundary is `{0, 1}`. -/
+noncomputable def unitIntervalAtlas :
+    ImplicitAtlasWithBoundary Γ E ρ (fun _ ↦ unitInterval) (fun _ ↦ 1) unitInterval {0, 1} 1 where
+  toCore := ImplicitAtlas.Core.ofIsEmpty Γ E ρ unitInterval
+  boundary _ := {0, 1}
+  isClosed_boundary _ := (toFinite _).isClosed
+  act_mem_boundary _ _ _ h := h
+  boundary_empty := (rfl)
+  footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
+  exists_openPartialHomeomorph _ _ h x hx := by
+    let : ChartedSpace (EuclideanHalfSpace (0 + 1)) unitInterval := instIccChartedSpace 0 1
+    -- The manifold boundary of `[0, 1]` is `{0, 1}`.
+    have hbd : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} := boundary_Icc
+    rcases (ofChartedSpace Γ E ρ 0 unitInterval).exists_openPartialHomeomorph h x hx with
+      ⟨n, hn, e, hxe, hdisj, he⟩ | ⟨n, hn, e, hxe, hbde, he⟩
+    · exact Or.inl ⟨n, by simpa using hn, e, hxe, hbd ▸ hdisj, he⟩
+    · exact Or.inr ⟨n, by simpa using hn, e, hxe, hbd ▸ hbde, he⟩
+
+@[simp]
+theorem regLocus_unitIntervalAtlas (I : Finset A) : (unitIntervalAtlas Γ E ρ).regLocus I = univ :=
+  (rfl)
+
+@[simp]
+theorem boundary_unitIntervalAtlas (I : Finset A) :
+    (unitIntervalAtlas Γ E ρ).boundary I = {0, 1} :=
+  (rfl)
+
+/-- The boundary restriction of the interval atlas, an atlas of virtual dimension `1 - 1` on
+`{0, 1}`, is regular everywhere. -/
+theorem regLocus_boundaryAtlas_unitIntervalAtlas (I : Finset A) :
+    (unitIntervalAtlas Γ E ρ).boundaryAtlas.regLocus I = univ := by
+  simp
+
+end UnitInterval
 
 end TauCeti.ImplicitAtlasWithBoundary
 
