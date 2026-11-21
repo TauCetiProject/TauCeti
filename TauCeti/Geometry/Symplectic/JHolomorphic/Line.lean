@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # The standard complex line as a source for constant-structure `J`-holomorphic maps
@@ -26,6 +30,10 @@ The area estimates show that, under a taming form, the symplectic area of the or
 These pointwise linear-algebra statements supply the local calculus for holomorphic-curve
 energy and elliptic estimates.
 
+Two calculus facts concern the real Cauchy--Riemann operator `P = ∂s + J ∂t + A` with any
+coefficients `J, A : ℝ × ℝ → V →L[ℝ] V`: a cutoff `β(s)` acts as `P (β ξ) = β P ξ + β' ξ`, and `P`
+sends `C¹` maps to continuous maps when `J` and `A` are continuous.
+
 ## Main declarations
 
 * `TauCeti.stdComplexLineReal` and `TauCeti.stdComplexLineImag`: the coordinate vectors
@@ -36,8 +44,10 @@ energy and elliptic estimates.
   `TauCeti.equivRealProdCLM_I`.
 * `TauCeti.fderiv_comp_equivRealProdCLM_one` and `TauCeti.fderiv_comp_equivRealProdCLM_I`: read
   in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
-* `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
-  coordinate vectors.
+* `ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le`: the value of a map
+  `A : ℝ × ℝ →L[ℝ] V` on `(0, 1)` is within `‖A - (σ, τ) ↦ τ X‖` of `X`.
+* `LinearMap.apply_stdComplexLine` and `ContinuousLinearMap.apply_stdComplexLine`: a real-linear
+  map is determined by its values on the coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
   complex line is equivalent to the coordinate Cauchy--Riemann equation
   `F (0, 1) = J (F (1, 0))`.
@@ -45,6 +55,11 @@ energy and elliptic estimates.
   `F : ℝ × ℝ →ₗ[ℝ] V`, `F (0, 1) = J (F (1, 0))`.
 * `TauCeti.IsComplexLinearMap.apply_stdComplexLine`: such an `F` is determined by
   `F (1, 0)`, via `F (s, t) = s • v + t • J v`.
+* `TauCeti.IsComplexLinearMap.apply_stdComplexLineImag_eq` and
+  `TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`: a complex-linear endomorphism of the standard
+  complex line is multiplication by `a + i b`, where `(a, b) = F (1, 0)`; so `F (0, 1) = (-b, a)`
+  and `det F = a² + b²`.
+* `TauCeti.IsComplexLinearMap.det_nonneg`: such an endomorphism preserves orientation.
 * `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
   for Frechet derivatives of constant-structure `J`-holomorphic maps.
@@ -52,6 +67,10 @@ energy and elliptic estimates.
   `ω(F v, F (J v))` for a complex-linear map under tameness.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_*`:
   nonnegativity and positivity of `ω(F ∂s, F ∂t)` under tameness.
+* `TauCeti.cauchyRiemann_smul_fst`: the cutoff rule `P (β ξ) = β P ξ + β' ξ` for
+  `P = ∂s + J ∂t + A`.
+* `TauCeti.continuous_cauchyRiemann`: `P ξ` is continuous for `C¹` maps `ξ` and continuous `J`,
+  `A`.
 
 The Cauchy--Riemann sign convention matches McDuff--Salamon, *J-holomorphic Curves and
 Symplectic Topology*, Section 2.1: `du ∘ j = J ∘ du`.
@@ -133,6 +152,17 @@ lemma fderiv_comp_equivRealProdCLM_I {E : Type*} [NormedAddCommGroup E] [NormedS
   rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, equivRealProdCLM_I]
 
+/-- Applying a map `A : ℝ × ℝ →L[ℝ] V` to `(0, 1)` and subtracting `X` costs at most the distance of
+`A` from `(σ, τ) ↦ τ X`. -/
+theorem _root_.ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (A : ℝ × ℝ →L[ℝ] V) (X : V) :
+    ‖A stdComplexLineImag - X‖ ≤ ‖A - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight X‖ := by
+  have h : A stdComplexLineImag - X =
+      (A - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight X) stdComplexLineImag := by
+    simp [stdComplexLineImag_eq]
+  rw [h]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans_eq (by simp [stdComplexLineImag_eq])
+
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=
   by
@@ -157,6 +187,14 @@ variable {J : AlmostComplexStructure V}
 /-- A real-linear map out of `ℝ × ℝ` is determined by its values on the real and imaginary
 coordinate vectors. -/
 lemma _root_.LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z : ℝ × ℝ) :
+    F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
+  simpa only [map_add, map_smul] using
+    congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
+
+/-- A continuous real-linear map out of `ℝ × ℝ` is determined by its values on the real and
+imaginary coordinate vectors. -/
+lemma _root_.ContinuousLinearMap.apply_stdComplexLine [TopologicalSpace V]
+    (F : (ℝ × ℝ) →L[ℝ] V) (z : ℝ × ℝ) :
     F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
   simpa only [map_add, map_smul] using
     congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
@@ -270,6 +308,38 @@ end IsComplexLinearMap
 
 end Linear
 
+namespace IsComplexLinearMap
+
+variable {L : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ}
+
+/-- A complex-linear endomorphism of the standard complex line is multiplication by the complex
+number `a + i b`, where `(a, b)` is the image of `(1, 0)`, so it sends `(0, 1)` to `(-b, a)`. -/
+lemma apply_stdComplexLineImag_eq
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    L stdComplexLineImag = (-(L stdComplexLineReal).2, (L stdComplexLineReal).1) := by
+  rw [hL.apply_stdComplexLineImag, AlmostComplexStructure.product_apply]
+
+/-- A complex-linear endomorphism of the standard complex line is multiplication by the complex
+number `a + i b`, where `(a, b)` is the image of `(1, 0)`, so its determinant is `a² + b²`. -/
+lemma det_eq_sq_add_sq
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    LinearMap.det L = (L stdComplexLineReal).1 ^ 2 + (L stdComplexLineReal).2 ^ 2 := by
+  rw [LinearMap.det_finTwoProd, ← stdComplexLineReal_eq, ← stdComplexLineImag_eq,
+    hL.apply_stdComplexLineImag_eq]
+  ring
+
+/-- A complex-linear endomorphism of the standard complex line preserves orientation. -/
+theorem det_nonneg
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    0 ≤ LinearMap.det L := by
+  rw [hL.det_eq_sq_add_sq]
+  positivity
+
+end IsComplexLinearMap
+
 namespace IsConstStructureJHolomorphicAt
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
@@ -321,5 +391,39 @@ lemma fderivWithin_stdComplexLine_apply
   exact (hf.fderivWithin_isComplexLinear hs).apply_stdComplexLine z
 
 end IsConstStructureJHolomorphicWithinAt
+
+section CauchyRiemann
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the real Cauchy–Riemann
+operator `P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`: the factor only
+differentiates in the `s` direction, where `P` has the leading term `∂s`. -/
+theorem cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
+    {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
+    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
+        J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =
+      β z.1 • (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
+        A z (ξ z)) + β' • ξ z := by
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
+    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
+  rw [hd.fderiv]
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
+    Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, one_smul, zero_smul, add_zero]
+  module
+
+/-- The real Cauchy–Riemann operator `P = ∂s + J ∂t + A` sends a `C¹` map `ξ` to a continuous map
+when its coefficients `J` and `A` are continuous. -/
+theorem continuous_cauchyRiemann {J A : ℝ × ℝ → V →L[ℝ] V} (hJ : Continuous J)
+    (hA : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    Continuous fun z ↦
+      fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
+  have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
+    (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  exact ((hdξ _).add (hJ.clm_apply (hdξ _))).add (hA.clm_apply hξ.continuous)
+
+end CauchyRiemann
 
 end TauCeti

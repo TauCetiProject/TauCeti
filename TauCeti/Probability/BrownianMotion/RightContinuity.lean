@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import TauCeti.Probability.Process.Filtration.Natural
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
+import TauCeti.MeasureTheory.Function.ConditionalExpectation.Completion
+import TauCeti.Probability.BrownianMotion.UsualFiltration
 import TauCeti.Probability.Independence.CondExp
-import TauCeti.Probability.Independence.Limit
 
 /-!
 # Right continuity of the augmented natural Brownian filtration
@@ -22,6 +24,8 @@ The whole future increment process is independent of the right-continuous natura
 An event in that past is also determined by the original past and the future increments;
 conditioning on the original past therefore recovers its indicator. The conclusion concerns
 null augmentation on the completed ambient space, not right continuity of the raw filtration.
+The usual augmentation therefore has the same `Lᵖ` claims at every time as the natural
+filtration, for every exponent and complete normed target space.
 
 ## References
 
@@ -34,7 +38,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Set
-open scoped NNReal Topology
+open scoped NNReal ENNReal Topology
 
 namespace TauCeti
 
@@ -57,44 +61,9 @@ right-continuous natural past. This is independence of the process, not just of 
 theorem indep_shift_rightCont_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (s : ℝ≥0) :
     Indep (MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance)
-      ((Filtration.natural W hmeas).rightCont s) P := by
-  classical
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let ℱ := Filtration.natural W hmeas
-  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto s
-  have hfinite (I : Finset ℝ≥0) :
-      Indep (MeasurableSpace.comap (fun ω (v : I) => W (s + v) ω - W s ω) inferInstance)
-        (ℱ.rightCont s) P := by
-    apply Indep.symm
-    refine indep_comap_of_ae_tendsto (X := fun n ω (v : I) =>
-        W (u n + v) ω - W (u n) ω) (ℱ.rightCont.le s)
-      (fun n => (I.measurable_restrict.comp
-        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) (u n))).aemeasurable)
-      (I.measurable_restrict.comp
-        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s)).aemeasurable ?_ ?_
-    · intro n
-      have hfull : Indep (MeasurableSpace.comap
-          (fun ω v => W (u n + v) ω - W (u n) ω) inferInstance) (ℱ (u n)) P := by
-        rw [Filtration.natural_eq_comap]
-        exact (IndepFun_iff_Indep ..).1 (hW.indepFun_shift (u n))
-      refine (indep_of_indep_of_le_right
-        (indep_of_indep_of_le_left hfull ?_) (ℱ.rightCont_le_of_lt (hu n))).symm
-      simp only [MeasurableSpace.comap_process_pi]
-      exact iSup_le fun v => le_iSup (fun a : ℝ≥0 =>
-        MeasurableSpace.comap (fun ω => W (u n + a) ω - W (u n) ω) inferInstance) v.val
-    · filter_upwards [hW.cont] with ω hω
-      exact tendsto_pi_nhds.2 fun v =>
-        (hω.continuousAt.tendsto.comp (hlim.add_const v.val)).sub
-          (hω.continuousAt.tendsto.comp hlim)
-  rw [MeasurableSpace.comap_process_pi, iSup_eq_iSup_finset]
-  apply indep_iSup_of_monotone
-  · intro I
-    simpa only [MeasurableSpace.comap_process_pi, iSup_subtype'] using hfinite I
-  · intro I
-    exact iSup₂_le fun v _ =>
-      ((TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).eval (a := v)).comap_le
-  · exact ℱ.rightCont.le s
-  · exact fun I J hIJ => iSup_le_iSup_of_subset hIJ
+      ((Filtration.natural W hmeas).rightCont s) P :=
+  (hW.isFilteredPreBrownianReal_natural hmeas).indep_shift_rightCont
+    (hW.cont.mono fun _ hω => hω.continuousAt.continuousWithinAt)
 
 /-- Every event of the raw right-continuous natural Brownian filtration has a representative
 in the original natural sigma-algebra at the same time. -/
@@ -145,5 +114,17 @@ theorem isRightContinuous_nullAugment_natural (hW : IsBrownianReal W P)
   obtain ⟨C, hC, hBC⟩ := (Filtration.measurableSet_nullAugment_iff _ P s B).mp
     (hW.rightCont_natural_le_nullAugment hmeas s B hB)
   exact ⟨C, hC, hAB.trans hBC⟩
+
+/-- The usual augmentation of the natural filtration of a Brownian motion has the same `Lᵖ`
+claims at every time as the natural filtration itself, for every exponent and complete normed
+target space. -/
+theorem lpMeas_rightCont_nullAugment_natural_eq_lpMeas_natural (hW : IsBrownianReal W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {F 𝕜 : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] (p : ℝ≥0∞) (T : ℝ≥0) :
+    lpMeas F 𝕜 (((Filtration.natural W hmeas).nullAugment P).rightCont T) p P =
+      lpMeas F 𝕜 (Filtration.natural W hmeas T) p P := by
+  have := hW.isRightContinuous_nullAugment_natural hmeas
+  rw [Filtration.IsRightContinuous.eq, Filtration.nullAugment_apply]
+  exact TauCeti.MeasureTheory.lpMeas_eventuallyMeasurableSpace p
 
 end ProbabilityTheory.IsBrownianReal

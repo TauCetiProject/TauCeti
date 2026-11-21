@@ -64,6 +64,9 @@ theorem contDiffOn_rpow (s : ℝ) {n : ℕ∞ω} :
   simpa only [StarAlgEquiv.toStarAlgHom_apply, e.apply_symm_apply] using
     e.toStarAlgHom.map_cfc (R := ℝ≥0)
     (fun x : ℝ≥0 ↦ x ^ s) (e.symm A) (hφ := he.continuous)
+    (hφa := by
+      rw [StarAlgEquiv.toStarAlgHom_apply, e.apply_symm_apply]
+      exact ContinuousLinearMap.nonneg_iff_isPositive.mp (by simpa using hA.nonneg))
     (hf := fun x hx ↦ (NNReal.continuousAt_rpow_const (Or.inl (by
       intro hx0
       exact spectrum.zero_notMem ℝ≥0 (hA.isUnit.map e.symm) (hx0 ▸ hx)))).continuousWithinAt)

@@ -97,7 +97,7 @@ theorem socle_zigzagProjective_eq_comap (i : V) :
   ext x
   rw [mem_zigzagProjectiveRadicalPower_iff, Submodule.mem_comap,
     Submodule.subtype_apply, Submodule.mem_inf]
-  exact (and_iff_right x.2).symm
+  exact (and_iff_right x.property).symm
 
 /-- The volume vector, regarded as an element of the graded socle. -/
 noncomputable def zigzagGradedSocleVolume (i : V) : zigzagGradedProjectiveSocle k G hns i :=
@@ -193,12 +193,12 @@ private theorem headToSocle_ne_zero (i : V) : zigzagGradedHeadToSocle k G hns i 
 private theorem headToSocle_surjective (i : V) :
     Function.Surjective (zigzagGradedHeadToSocle k G hns i).hom := by
   intro x
-  let p : zigzagProjective k G i := ⟨x.1, x.2.1⟩
+  let p : zigzagProjective k G i := ⟨x.val, x.property.1⟩
   have hp : p ∈ zigzagProjectiveRadicalPower k G i 2 :=
-    (mem_zigzagProjectiveRadicalPower_iff k G i 2 p).2 x.2.2
+    (mem_zigzagProjectiveRadicalPower_iff k G i 2 p).2 x.property.2
   obtain ⟨y, hy⟩ := zigzagProjectiveMulVolume_surjective k G hns i ⟨p, hp⟩
   let y' : (Ideal.span {zigzagVertexIdempotent k G i} : Ideal Z) :=
-    ⟨(y.1 : Z), by rw [← zigzagProjective_def]; exact y.1.2⟩
+    ⟨(y.val : Z), by rw [← zigzagProjective_def]; exact y.val.property⟩
   refine ⟨zigzagGradedSimpleMk k G i y', ?_⟩
   apply Subtype.ext
   rw [zigzagGradedHeadToSocle_mk]

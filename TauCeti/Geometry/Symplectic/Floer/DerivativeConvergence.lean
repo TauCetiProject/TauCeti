@@ -132,8 +132,7 @@ private theorem exists_pos_forall_equicontinuousOn_fderiv_of_floer {ι : Type*}
   have hC (A : V →L[ℝ] V) (w : EuclideanSpace ℂ (Fin m)) : C A w = Φ.symm (A (Φ w)) := by
     simp [C]
   have hCy (w : EuclideanSpace ℂ (Fin m)) : C (J (y₀, x₀)) w = I • w := by
-    rw [hC, show J (y₀, x₀) (Φ w) = Φ (I • w) by simpa using congr($hΦ w)]
-    simp
+    rw [hC, Φ.symm_apply_eq_I_smul_symm_of_comp_eq hΦ, Φ.symm_apply_apply]
   obtain ⟨δ, hδ0, hδ⟩ :=
     exists_pos_forall_equicontinuousOn_fderiv (F := EuclideanSpace ℂ (Fin m)) (ι := ι)
   -- A ball of radius `ε` about `(y₀, x₀)`, inside `W`, on which `C (J q)` is `δ`-close to `i`.

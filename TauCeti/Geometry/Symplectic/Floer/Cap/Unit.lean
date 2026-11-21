@@ -23,6 +23,11 @@ generator `D` of the orbit `i` is the finite sum of the counts over the classes 
 `q A = rᵢ - D`, that is, the count of the planes whose cap class is `D`
 (`TauCeti.Floer.coordinates_symm_coefficientComparison_apply`). This file proves:
 
+* **Change of reference caps.** Moving the reference caps to `q gᵢ # rᵢ` changes the class
+  `rᵢ - u` of each counted plane `u` by `gᵢ`. With the generating series multiplied by `q^(gᵢ)`
+  accordingly, the combination of the counts is unchanged
+  (`TauCeti.Floer.coordinates_symm_coefficientComparison_vadd`). This is the Floer form of
+  `TauCeti.NovikovModule.coordinates_symm_vadd_mul_single`, through `q^A ↦ e^(-q A)`.
 * **Degree from the index.** If every counted class satisfies the rigidity condition
   `μ(rᵢ) - 2 c₁(A) = n - k`, the combination has cochain degree `k`
   (`TauCeti.Floer.coordinates_symm_coefficientComparison_mem_cochain_gradeBy`). For the
@@ -58,6 +63,9 @@ spaces are to supply; no moduli space, orientation or count is constructed here.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, for the independence from the choice of reference
+  caps.
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200, on the
   PSS map and the unit of the pair-of-pants product.
@@ -103,6 +111,20 @@ theorem coordinates_symm_coefficientComparison_apply (E : ι₁ → NovikovSerie
   ext A
   simp only [Set.mem_preimage, Set.mem_singleton_iff, AddMonoidHom.neg_apply,
     neg_eq_iff_eq_neg, neg_vsub_eq_vsub_rev]
+
+/-- **The combination of plane counts does not depend on the reference caps.** Moving the
+reference caps to `q gᵢ # rᵢ` changes the class `rᵢ - u` of a counted plane `u` by `gᵢ`, so the
+generating series become `q^(gᵢ) Eᵢ`; the completed combination of the counts on capped generators
+is unchanged. -/
+theorem coordinates_symm_coefficientComparison_vadd (E : ι₁ → NovikovSeries R G ωG) (g : ι₁ → G) :
+    (coordinates hF₁ fun i => q (g i) +ᵥ r₁ i).symm
+        (fun i => coefficientComparison q hq (NovikovSeries.single (g i) 1 * E i)) =
+      (coordinates hF₁ r₁).symm fun i => coefficientComparison q hq (E i) := by
+  refine Eq.trans ?_ (coordinates_symm_vadd_mul_single hF₁ r₁
+    (fun i => coefficientComparison q hq (E i)) fun i => q (g i))
+  congr 1
+  ext i A
+  simp [coeff_single_mul, coeff_mul_single, add_comm]
 
 variable {μ₁ : (Σ i, P₁ i) → ℤ}
   (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
@@ -411,7 +433,7 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype �
     have h :=
       novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right
         r₁ r r q hq hF₁ hF hF Q D E
-        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ b.2
+        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ b.property
     -- The Novikov module structure, for the identity map of the identity matrix.
     let := module (R := R) hF
     rw [coefficientComparison_one_apply, novikovMapOfMatrix_one, LinearMap.id_apply,
@@ -467,7 +489,7 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype �
     have h :=
       novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
         r r₂ r q hq hF hF₂ hF Q D E
-        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ a.2
+        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ a.property
     -- The Novikov module structure, for the identity map of the identity matrix.
     let := module (R := R) hF
     rw [coefficientComparison_one_apply, novikovMapOfMatrix_one, LinearMap.id_apply,
