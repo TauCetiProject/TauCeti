@@ -100,7 +100,8 @@ lemma isSubmonoidTorsion_le_isTorsion {S : Submonoid ℤ} (h0 : (0 : ℤ) ∉ S)
   rw [← natCast_zsmul]
   rcases Int.natAbs_eq s with h | h
   · exact h ▸ hsx
-  · rw [← neg_eq_iff_eq_neg.2 h, neg_smul, show s • x = 0 from hsx, neg_zero]
+  · rw [← neg_eq_iff_eq_neg.2 h, neg_smul, neg_eq_zero]
+    exact hsx
 
 /-- Uniform `d`-power torsion is contained in elementwise `d`-power torsion. -/
 lemma isKilledBySomePower_le_isSubmonoidTorsion (d : ℕ) :

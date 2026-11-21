@@ -28,10 +28,8 @@ injective, surjective, or bijective:
 
 We also record the elementwise characterization of `S`-torsion quotients
 (`Submodule.isTorsion'_quotient_iff`), uniform annihilation for finitely generated `S`-torsion
-modules (`Module.IsTorsion'.exists_isTorsionBy_of_finite`), closure of `S`-torsion under tensor
-products with arbitrary modules (`TauCeti.isTorsion'_tensorProduct_left`), and invertibility of
-element orders of an `S`-torsion abelian group in a localization of `ℤ` at `S`
-(`Submonoid.isUnit_addOrderOf_of_isTorsion'`).
+modules (`Module.IsTorsion'.exists_isTorsionBy_of_finite`), and closure of `S`-torsion under
+tensor products with arbitrary modules (`TauCeti.isTorsion'_tensorProduct_left`).
 -/
 
 public section
@@ -62,16 +60,16 @@ theorem exists_isTorsionBy_of_finite {R M : Type*} [CommSemiring R] [AddCommMono
     ∃ s ∈ S, Module.IsTorsionBy R M s := by
   classical
   obtain ⟨G, hG⟩ := Module.Finite.fg_top (R := R) (M := M)
-  choose s hs using fun g : G ↦ @hM g.1
+  choose s hs using fun g : G ↦ @hM g.val
   let r : R := ∏ g ∈ G.attach, (s g : R)
-  refine ⟨r, S.prod_mem fun g _ ↦ (s g).2, ?_⟩
+  refine ⟨r, S.prod_mem fun g _ ↦ (s g).property, ?_⟩
   rw [Module.isTorsionBy_iff_torsionBy_eq_top, eq_top_iff, ← hG, Submodule.span_le]
   intro x hx
   obtain ⟨c, hc⟩ :=
     Finset.dvd_prod_of_mem (fun g : G ↦ (s g : R)) (Finset.mem_attach G ⟨x, hx⟩)
-  change r • x = 0
-  rw [show r = (s ⟨x, hx⟩ : R) * c from hc, mul_comm, mul_smul,
-    show (s ⟨x, hx⟩ : R) • x = 0 from hs ⟨x, hx⟩, smul_zero]
+  dsimp only [r]
+  rw [SetLike.mem_coe, Submodule.mem_torsionBy_iff, hc, mul_comm, mul_smul,
+    ← Submonoid.smul_def (s ⟨x, hx⟩) x, hs ⟨x, hx⟩, smul_zero]
 
 end Module.IsTorsion'
 
@@ -112,6 +110,7 @@ theorem injective_baseChange_iff_isTorsion'_ker (f : M →ₗ[R] N) (S : Submono
   have hinj : Function.Injective ((LinearMap.ker f).subtype.lTensor A) :=
     Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
   rw [S.isTorsion'_iff_subsingleton_tensorProduct A]
+  -- `f.baseChange A` has underlying `R`-linear map `f.lTensor A` by definition.
   change Function.Injective (f.lTensor A) ↔ Subsingleton (A ⊗[R] LinearMap.ker f)
   rw [← LinearMap.ker_eq_bot, hex.linearMap_ker_eq, LinearMap.range_eq_bot]
   refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun x ↦ hinj ?_,
@@ -129,6 +128,7 @@ theorem surjective_baseChange_iff_isTorsion'_quotient (f : M →ₗ[R] N) (S : S
   have hsurj : Function.Surjective ((LinearMap.range f).mkQ.lTensor A) :=
     LinearMap.lTensor_surjective A (Submodule.mkQ_surjective _)
   rw [S.isTorsion'_iff_subsingleton_tensorProduct A]
+  -- `f.baseChange A` has underlying `R`-linear map `f.lTensor A` by definition.
   change Function.Surjective (f.lTensor A) ↔ Subsingleton (A ⊗[R] (N ⧸ LinearMap.range f))
   rw [← LinearMap.range_eq_top, ← hex.linearMap_ker_eq, LinearMap.ker_eq_top]
   refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun y ↦ ?_,
@@ -146,24 +146,3 @@ theorem bijective_baseChange_iff (f : M →ₗ[R] N) (S : Submonoid R) (A : Type
     (f.surjective_baseChange_iff_isTorsion'_quotient S A)
 
 end LinearMap
-
-namespace Submonoid
-
-/-- If `S` is a submonoid of `ℤ`, `A` is a localization of `ℤ` at `S`, and `G` is an `S`-torsion
-abelian group, then the additive order of every element of `G` is a unit in `A`. -/
-theorem isUnit_addOrderOf_of_isTorsion' (S : Submonoid ℤ) (A : Type*)
-    [CommRing A] [Algebra ℤ A] [IsLocalization S A] {G : Type*} [AddCommGroup G]
-    (hG : Module.IsTorsion' G S) (a : G) : IsUnit (addOrderOf a : A) := by
-  obtain ⟨⟨s, hs⟩, hsa⟩ := @hG a
-  have hnsmul : s.natAbs • a = 0 := by
-    rw [← natCast_zsmul]
-    rcases Int.natAbs_eq s with h | h
-    · exact h ▸ hsa
-    · rw [← neg_eq_iff_eq_neg.2 h, neg_smul, show s • a = 0 from hsa, neg_zero]
-  have hu : IsUnit (algebraMap ℤ A s) := IsLocalization.map_units A ⟨s, hs⟩
-  refine isUnit_of_dvd_unit (Nat.cast_dvd_cast (addOrderOf_dvd_of_nsmul_eq_zero hnsmul)) ?_
-  rcases Int.natAbs_eq s with h | h
-  · simpa [← Int.cast_natCast (R := A), ← h] using hu
-  · simpa [← Int.cast_natCast (R := A), ← neg_eq_iff_eq_neg.2 h] using hu.neg
-
-end Submonoid

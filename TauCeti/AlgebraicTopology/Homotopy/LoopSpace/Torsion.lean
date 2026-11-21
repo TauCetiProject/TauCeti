@@ -8,7 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.ModuloTorsion
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
-import TauCeti.AlgebraicTopology.Singular.Fibration.AcyclicFiber
+import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Acyclic
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 import TauCeti.Topology.Homotopy.Path
 import TauCeti.Topology.PathComponent
@@ -17,13 +18,14 @@ import TauCeti.Topology.PathComponent
 # Detection of non-torsion higher homotopy groups in loop space homology
 
 For any submonoid `S : Submonoid ℤ`, this file applies Serre's Hurewicz theorem modulo `S`-torsion
-(`TauCeti.forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology`) and path-fibration
-acyclicity transfer (`TauCeti.subsingleton_singularHomology_of_loopSpace`) to detect non-`S`-torsion
-higher homotopy groups in the reduced integral homology of single and double loop spaces (fixed-
-interval `Ω²Q`, Moore `ΩᴹΩᴹQ`, and normalized cubical homology when `π₂(Q, q) = 0`), without any
-connectedness hypothesis on `Q`. This provides the homological content of the second part of
-Proposition 5.11 of Barraud--Damian--Humilière--Oancea; the identification of `H~_*(Ω²Q)` with
-`ker i_{Q*}` is not formalized here.
+(`TauCeti.forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology`) and loop-space
+acyclicity transfer (`TauCeti.isZero_singularHomology_of_isIso_loopSpace`) to detect
+non-`S`-torsion higher homotopy groups in the reduced integral homology of single and double loop
+spaces (fixed-interval `Ω²Q`, Moore `ΩᴹΩᴹQ`, and normalized cubical homology when
+`π₂(Q, q) = 0`), without any connectedness hypothesis on `Q`. This provides the homological content
+of the second part of Proposition 5.11 of Barraud--Damian--Humilière--Oancea; the identification of
+`H~_*(Ω²Q)` with `ker i_{Q*}` is in
+`TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ConstantLoopKernel`.
 
 ## Proof outline
 
@@ -99,20 +101,9 @@ theorem exists_injective_loopSpaceReducedHomology₀ {R : Type u} [Ring R] {X : 
 
 end LoopSpaceDegreeZero
 
-/-! ### Private torsion and path-component helpers -/
+/-! ### Private torsion helpers -/
 
 section Helpers
-
-/-- Transport `S`-torsion across an additive group equivalence. -/
-private lemma isTorsion'_of_addEquiv {M N : Type*} [AddCommGroup M] [AddCommGroup N]
-    {S : Submonoid ℤ} (e : M ≃+ N) (hN : Module.IsTorsion' N S) : Module.IsTorsion' M S :=
-  fun m ↦ let ⟨s, hs⟩ := @hN (e m); ⟨s, e.injective (by
-    rw [Submonoid.smul_def, map_zsmul, map_zero]; exact hs)⟩
-
-/-- Transport `S`-torsion across a `ModuleCat ℤ` isomorphism. -/
-private lemma isTorsion'_of_moduleCatIso {M N : ModuleCat.{0} ℤ} {S : Submonoid ℤ} (e : M ≅ N)
-    (hN : Module.IsTorsion' N S) : Module.IsTorsion' M S :=
-  isTorsion'_of_addEquiv e.toLinearEquiv.toAddEquiv hN
 
 /-- If an `S`-torsion `ℤ`-module admits an injective `ℤ`-linear map from `ℤ`, then `0 ∈ S`. -/
 private lemma zero_mem_of_injective_of_isTorsion' {M : ModuleCat.{0} ℤ} {S : Submonoid ℤ}
@@ -122,30 +113,12 @@ private lemma zero_mem_of_injective_of_isTorsion' {M : ModuleCat.{0} ℤ} {S : S
     have hmap : f (s : ℤ) = (s : ℤ) • f 1 := by
       simpa [zsmul_eq_mul] using map_zsmul f.toAddMonoidHom (s : ℤ) 1
     rw [hmap, ← Submonoid.smul_def, hs, map_zero]
-  exact hs0 ▸ s.2
+  exact hs0 ▸ s.property
 
 /-- When `0 ∈ S`, every additive commutative group is `S`-torsion. -/
 private lemma isTorsion'_of_zero_mem {M : Type*} [AddCommGroup M] {S : Submonoid ℤ}
     (h0 : (0 : ℤ) ∈ S) : Module.IsTorsion' M S :=
   fun _ ↦ ⟨⟨0, h0⟩, by rw [Submonoid.smul_def, zero_smul]⟩
-
-/-- Every loop based at `x` stays inside `pathComponent x`, giving a homeomorphism
-`Ω (pathComponent x) ⟨x, _⟩ ≃ₜ Ω X x`. -/
-private def loopSpacePathComponentHomeomorph {X : Type*} [TopologicalSpace X] (x : X) :
-    Ω (pathComponent x) ⟨x, mem_pathComponent_self x⟩ ≃ₜ Ω X x where
-  toFun p := p.map continuous_subtype_val
-  invFun p :=
-    ⟨⟨fun t ↦ ⟨p t, p.mem_pathComponent t⟩, continuous_induced_rng.2 p.continuous⟩,
-      Subtype.ext p.source, Subtype.ext p.target⟩
-  left_inv _ := by ext; rfl
-  right_inv _ := by ext; rfl
-  continuous_toFun := continuous_induced_rng.2
-    ((ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtype_val⟩).comp
-      continuous_induced_dom)
-  continuous_invFun := continuous_induced_rng.2 <| ContinuousMap.continuous_of_continuous_uncurry _
-    (continuous_induced_rng.2 <| (continuous_eval (F := C(I, X))).comp
-      ((continuous_induced_dom (f := Path.toContinuousMap).comp continuous_fst).prodMk
-        continuous_snd))
 
 /-- Contrapositive extraction of a degree `< m + 2` carrying a non-`S`-torsion homology class. -/
 private lemma exists_not_isTorsion'_of_contrapositive {F : ℕ → ModuleCat.{0} ℤ} {G : Type*}
@@ -188,35 +161,47 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology
     (hH : ∀ k ≤ m + 2, Module.IsTorsion'
       ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj (TopCat.of (Ω X x))) S) :
     Module.IsTorsion' (Additive (π_ (m + 2) X x)) S := by
+  have : IsLocalization S (Localization S) := Localization.isLocalization
   by_cases h1 : Subsingleton (π_ 1 X x)
   · let Y := pathComponent x
-    let y₀ : Y := ⟨x, mem_pathComponent_self x⟩
+    let y₀ : Y := pathComponentSelf x
     have : Subsingleton (π_ 1 Y y₀) := (Equiv.ofBijective _
       (HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
         (x := y₀) Set.Subset.rfl rfl)).subsingleton_congr.2 h1
     have : PathConnectedSpace (Ω Y y₀) :=
       (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 y₀).2 inferInstance
     let A := Localization S
-    have hΩA : ∀ q, 1 ≤ q → q ≤ m + 2 →
-        Subsingleton (((singularChains A).obj (TopCat.of (Ω Y y₀))).homology q) := by
-      intro q hq1 hqm
-      obtain ⟨r, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hq1)
-      exact ((TopCat.of (Ω Y y₀)).isTorsion'_singularHomology_int_iff_subsingleton S A (r + 1)).1 <|
-        isTorsion'_of_moduleCatIso
-          ((loopSpacePathComponentHomeomorph x).toHomotopyEquiv.singularHomologyIso
-            (ModuleCat.of ℤ ℤ) (r + 1)) <|
-        isTorsion'_of_moduleCatIso
-          ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) r).app (TopCat.of (Ω X x))).symm
-          (hH (r + 1) hqm)
+    have hΩA : ∀ q, q ≤ m + 2 →
+        IsIso (((singularHomologyFunctor (ModuleCat.{0} A) q).obj (ModuleCat.of A A)).map
+          (TopCat.isTerminalPUnit.from (TopCat.of (Ω Y y₀)))) := by
+      intro q hqm
+      cases q with
+      | zero =>
+        exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε
+          (ModuleCat.of A A) (TopCat.isTerminalPUnit.from (TopCat.of (Ω Y y₀))))
+      | succ r =>
+        have hsub : Subsingleton (((singularChains A).obj (TopCat.of (Ω Y y₀))).homology
+            (r + 1)) :=
+          (isTorsion'_singularChains_int_homology_iff S A (TopCat.of (Ω Y y₀)) (r + 1)).1 <|
+            (((Path.subtypeValHomeomorph (a := y₀) (b := y₀)
+              subset_rfl).toHomotopyEquiv.singularHomologyIso
+              (ModuleCat.of ℤ ℤ) (r + 1)).toLinearEquiv.toAddEquiv.isTorsion'_iff.2 <|
+              ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) r).app
+                (TopCat.of (Ω X x))).symm.toLinearEquiv.toAddEquiv.isTorsion'_iff.2
+                  (hH (r + 1) hqm))
+        exact (ModuleCat.isZero_iff_subsingleton.mpr hsub).isIso
+          (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of A A)
+            (TopCat.of PUnit) r.succ_ne_zero) _
     have hπY : Module.IsTorsion' (Additive (π_ (m + 2) Y y₀)) S :=
       (forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology y₀ S A (m + 1)).2
-        (fun j hj ↦ subsingleton_singularHomology_of_loopSpace y₀ A (j + 1)
-          fun q hq1 hqj ↦ hΩA q hq1 (by omega)) m (Nat.lt_succ_self m)
-    exact isTorsion'_of_addEquiv (MulEquiv.ofBijective
+        (fun j hj ↦ ModuleCat.isZero_iff_subsingleton.mp <|
+          isZero_singularHomology_of_isIso_loopSpace A y₀ (Nat.succ_ne_zero (j + 1))
+            fun q hq ↦ hΩA q (by omega)) m (Nat.lt_succ_self m)
+    exact (MulEquiv.ofBijective
       (HomotopyGroup.mapHom (N := Fin (m + 2)) (x := y₀) (y := x)
-        ⟨Subtype.val, continuous_subtype_val⟩ rfl)
+        ⟨Subtype.val, continuous_subtypeVal⟩ rfl)
       (HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
-        Set.Subset.rfl rfl)).symm.toAdditive hπY
+        Set.Subset.rfl rfl)).toAdditive.isTorsion'_iff.1 hπY
   · have : Nontrivial (π_ 1 X x) := not_subsingleton_iff_nontrivial.1 h1
     obtain ⟨f, hf⟩ := exists_injective_loopSpaceReducedHomology₀ (R := ℤ) x
     exact isTorsion'_of_zero_mem (zero_mem_of_injective_of_isTorsion' f hf (hH 0 (Nat.zero_le _)))
@@ -233,8 +218,8 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_reducedHomology
         (TopCat.of (MooreLoopSpace X x))) S) :
     Module.IsTorsion' (Additive (π_ (m + 2) X x)) S :=
   isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology x S m fun k hk ↦
-    isTorsion'_of_moduleCatIso
-      ((homotopyEquivPath x).reducedSingularHomologyIso (ModuleCat.of ℤ ℤ) k).symm (hH k hk)
+    ((homotopyEquivPath x).reducedSingularHomologyIso
+      (ModuleCat.of ℤ ℤ) k).symm.toLinearEquiv.toAddEquiv.isTorsion'_iff.2 (hH k hk)
 
 end MooreLoopSpace
 
@@ -264,7 +249,7 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomo
       exact isTorsion'_of_zero_mem
         (zero_mem_of_injective_of_isTorsion' f hf (hH 0 (Nat.zero_lt_succ 1)))
   | succ n =>
-    exact isTorsion'_of_addEquiv (pathLoopSpaceMulEquiv (X := Q) (x := q) (n + 1)).symm.toAdditive
+    exact (pathLoopSpaceMulEquiv (X := Q) (x := q) (n + 1)).symm.toAdditive.isTorsion'_iff.2
       (isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology (Path.refl q) S n
         fun k hk ↦ hH k (Nat.lt_succ_of_le hk))
 
@@ -345,7 +330,7 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleReducedHomology
       exact isTorsion'_of_zero_mem
         (zero_mem_of_injective_of_isTorsion' f hf (hH 0 (Nat.zero_lt_succ 1)))
   | succ n =>
-    exact isTorsion'_of_addEquiv (homotopyGroupMulEquiv q (n + 1)).symm.toAdditive
+    exact (homotopyGroupMulEquiv q (n + 1)).symm.toAdditive.isTorsion'_iff.2
       (isTorsion'_homotopyGroup_of_forall_isTorsion'_reducedHomology (1 : MooreLoopSpace Q q) S n
         fun k hk ↦ hH k (Nat.lt_succ_of_le hk))
 

@@ -33,7 +33,8 @@ variable {V : Type*} {G : SimpleGraph V}
 /-- The darts with tail `u` are the neighbours of `u`: a dart is sent to its head. -/
 def dartFstEquivNeighborSet (u : V) :
     {d : G.Dart // d.fst = u} ≃ G.neighborSet u where
-  toFun d := ⟨d.1.snd, (G.mem_neighborSet _ _).2 (Eq.mp (congrArg (G.Adj · d.1.snd) d.2) d.1.adj)⟩
+  toFun d := ⟨d.val.snd, (G.mem_neighborSet _ _).2 (Eq.mp (congrArg (G.Adj · d.val.snd) d.property)
+      d.val.adj)⟩
   invFun w := ⟨G.dartOfNeighborSet u w, rfl⟩
   left_inv d := by
     obtain ⟨⟨⟨a, b⟩, h⟩, rfl⟩ := d
@@ -44,7 +45,7 @@ def dartFstEquivNeighborSet (u : V) :
 @[simp]
 theorem coe_dartFstEquivNeighborSet_apply (u : V)
     (d : {d : G.Dart // d.fst = u}) :
-    (G.dartFstEquivNeighborSet u d : V) = d.1.snd :=
+    (G.dartFstEquivNeighborSet u d : V) = d.val.snd :=
   rfl
 
 /-- The dart attached to a neighbour `w` of `u` is the dart `u → w`. -/

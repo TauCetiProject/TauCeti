@@ -44,14 +44,14 @@ def orderedProdRealizationMap (K : AbstractSimplicialComplex α)
 @[simp]
 theorem orderedProdRealizationMap_fst_val (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) (x : Realization (K.orderedProd L)) :
-    (K.orderedProdRealizationMap L x).1.1 = Finsupp.mapDomain Prod.fst x.1 := by
+    (K.orderedProdRealizationMap L x).1.val = Finsupp.mapDomain Prod.fst x.val := by
   simp [orderedProdRealizationMap]
 
 /-- The second marginal of the barycentric coordinates. -/
 @[simp]
 theorem orderedProdRealizationMap_snd_val (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) (x : Realization (K.orderedProd L)) :
-    (K.orderedProdRealizationMap L x).2.1 = Finsupp.mapDomain Prod.snd x.1 := by
+    (K.orderedProdRealizationMap L x).2.val = Finsupp.mapDomain Prod.snd x.val := by
   simp [orderedProdRealizationMap]
 
 /-- A product vertex projects to its two factor vertices. -/
