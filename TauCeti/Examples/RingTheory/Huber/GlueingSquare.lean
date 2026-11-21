@@ -34,7 +34,7 @@ open TensorProduct Polynomial
 namespace TauCeti.Huber.GlueingSquareChecks
 
 /-- Identity glueing square on `ℚ_[p]`. -/
-theorem glueingSquare_id_padic (p : ℕ) [Fact p.Prime] : GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] ℚ_[p] :=
+example (p : ℕ) [Fact p.Prime] : GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] ℚ_[p] :=
   GlueingSquare.id ℚ_[p]
 
 section Padic
@@ -57,7 +57,7 @@ is canonically isomorphic to the sections of its induced glueing datum. -/
 noncomputable example :
     (ℚ_[p] × ℚ_[p]) ≃ₗ[ℚ_[p]]
       (GlueingDatum.ofModule ℚ_[p] ℚ_[p] ℚ_[p] ℚ_[p] (ℚ_[p] × ℚ_[p])).sections ℚ_[p] :=
-  (glueingSquare_id_padic p).equivSectionsOfModule (ℚ_[p] × ℚ_[p])
+  (GlueingSquare.id ℚ_[p]).equivSectionsOfModule (ℚ_[p] × ℚ_[p])
 
 end Padic
 

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Surjective
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Support
-public import TauCeti.RingTheory.Valuation.Continuous.Completion
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pi
+public import TauCeti.RingTheory.Huber.LocalizationTopology.RationalCompletion
+public import TauCeti.RingTheory.Valuation.Continuous.Completion
 
 /-!
 # Proper ideals on rational localisations
@@ -30,6 +31,8 @@ comparison map to be faithfully flat.
 
 * `TauCeti.ValuationSpectrum.map_supp_toCompletionLoc_ne_top`: a point in `R(T/s)` has proper
   extended support in `A⟨T/s⟩`.
+* `TauCeti.ValuationSpectrum.exists_prime_comap_eq_of_mem_rationalSubset`: maximal support of a
+  point in `R(T/s)` contracts from a prime ideal of any rational-completion model `B`.
 * `TauCeti.ValuationSpectrum.exists_map_toCompletionLoc_ne_top_of_span_eq_top`: every proper ideal
   remains proper on some member of a standard rational cover.
 * `TauCeti.ValuationSpectrum.map_rationalLocalizationPiHom_ne_top_of_span_eq_top`: every proper
@@ -105,6 +108,34 @@ theorem map_supp_toCompletionLoc_ne_top (P : PairOfDefinition A) (Aplus : Subrin
     rw [Ideal.mem_comap, toCompletionLoc_apply]
     exact Ideal.mem_map_of_mem _ (hsuppMap (Ideal.mem_map_of_mem _ ha))
   exact ne_top_of_le_ne_top hwProper hle
+
+/-- If a point `v ∈ R(T/s)` has maximal support `m = v.supp`, then `m` contracts from a prime ideal
+of any model `B` of `A⟨T/s⟩`. -/
+theorem exists_prime_comap_eq_of_mem_rationalSubset {P P₀ : PairOfDefinition A}
+    {Aplus : Subring A} (hP₀ : P₀.ringOfDefinition ≤ Aplus)
+    {T : Finset A} {s : A} {hT : IsOpen (Ideal.span (T : Set A) : Set A)}
+    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+    (hB : IsRationalCompletion P T s hT B) {v : Spv A}
+    (hvb : v ∈ rationalSubset Aplus T s) (hm : v.supp.IsMaximal) :
+    ∃ q : Ideal B, q.IsPrime ∧ q.comap (algebraMap A B) = v.supp := by
+  obtain ⟨e, -, -⟩ := (isRationalCompletion_iff_ratLoc P₀ T s hT B).mp
+    (hB.congr_pairOfDefinition P₀)
+  let hden := P₀.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  have hcomp : e.toRingHom.comp (P₀.toCompletionLoc T s _ hden) = algebraMap A B :=
+    RingHom.ext fun a ↦ by simpa [algebraMap_ratLoc] using e.commutes a
+  set J := Ideal.map (P₀.toCompletionLoc T s _ hden) v.supp
+  have hne : Ideal.map (algebraMap A B) v.supp ≠ ⊤ := by
+    rw [← hcomp, ← Ideal.map_map]
+    intro htop
+    have hcomp_id : e.symm.toRingHom.comp e.toRingHom = RingHom.id _ :=
+      RingHom.ext e.symm_apply_apply
+    have hJtop : J = ⊤ := by
+      have h := congrArg (Ideal.map e.symm.toRingHom) htop
+      rwa [Ideal.map_map, hcomp_id, Ideal.map_id, Ideal.map_top] at h
+    exact map_supp_toCompletionLoc_ne_top P₀ Aplus hP₀ T s _ hden hvb hJtop
+  obtain ⟨M, hMmax, hle⟩ := Ideal.exists_le_maximal _ hne
+  exact ⟨M, hMmax.isPrime,
+    (hm.eq_of_le (hMmax.isPrime.comap _).ne_top (Ideal.map_le_iff_le_comap.mp hle)).symm⟩
 
 end RationalLocalization
 

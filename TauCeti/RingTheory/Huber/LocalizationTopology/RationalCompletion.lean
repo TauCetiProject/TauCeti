@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.RatLoc
-import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
 import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
 import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Laurent.Basic
+import TauCeti.Topology.Algebra.Ring.Basic
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Models of the completed rational localisation `A⟨T/s⟩`
@@ -21,10 +20,8 @@ at denominator `1`, a Tate algebra `A⟨X⟩`, or a limit over presentations) th
 topological `A`-algebras* to `A⟨T/s⟩`.
 
 This file defines `TauCeti.Huber.IsRationalCompletion P T s hT B`, proves its invariance under
-pair-of-definition changes and bicontinuous `A`-algebra equivalences, transfers the structural and
-universal properties of `ratLoc`, and establishes Kedlaya–Liu's surjectivity lemma for the
-difference map on a two-piece simple Laurent cover (`IsRationalCompletion.surjective_sub_laurent`,
-Kedlaya–Liu, Lemma 2.4.22).
+pair-of-definition changes and bicontinuous `A`-algebra equivalences, and transfers the structural
+and universal properties of `ratLoc`.
 
 ## Main definitions
 
@@ -36,6 +33,12 @@ Kedlaya–Liu, Lemma 2.4.22).
 * `TauCeti.Huber.isRationalCompletion_iff_ratLoc`, `TauCeti.Huber.isRationalCompletion_ratLoc`, and
   `TauCeti.Huber.IsRationalCompletion.congr_pairOfDefinition`: comparison with `ratLoc` and
   independence of the pair of definition `P`.
+* `TauCeti.Huber.IsRationalCompletion.isTopologicalRing`,
+  `TauCeti.Huber.IsRationalCompletion.completeSpace`,
+  `TauCeti.Huber.IsRationalCompletion.t2Space`,
+  `TauCeti.Huber.IsRationalCompletion.isHuberRing`, and
+  `TauCeti.Huber.IsRationalCompletion.isTateRing`: topological ring, completeness, separation,
+  Huber, and Tate properties of any model.
 * `TauCeti.Huber.IsRationalCompletion.ringHom_ext_of_continuous`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_of_refines`, and
@@ -44,15 +47,11 @@ Kedlaya–Liu, Lemma 2.4.22).
 * `TauCeti.Huber.isRationalCompletion_self_denom_one` and
   `TauCeti.Huber.IsRationalCompletion.subsingleton_of_denom_zero`: behaviour at denominators `1`
   and `0`.
-* `TauCeti.Huber.IsRationalCompletion.existsUnique_laurentLeftAlgHom`,
-  `TauCeti.Huber.IsRationalCompletion.existsUnique_laurentRightAlgHom`, and
-  `TauCeti.Huber.IsRationalCompletion.surjective_sub_laurent`: transition maps and surjectivity of
-  `(b₁, b₂) ↦ ρ₁ b₁ - ρ₂ b₂` on a simple Laurent cover.
 
 ## References
 
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory: Foundations*, Astérisque 371 (2015),
-  §2.4, Lemma 2.4.22.
+  §2.4.
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], §8.1–8.2.
 -/
 
@@ -165,18 +164,39 @@ theorem IsRationalCompletion.t2Space (h : IsRationalCompletion P T s hT B) : T2S
   obtain ⟨e, -, he'⟩ := h
   exact .of_injective_continuous e.symm.injective he'
 
-/-- Any topological-ring model of `A⟨T/s⟩` is a Huber ring. -/
-theorem IsRationalCompletion.isHuberRing [IsTopologicalRing B]
-    (h : IsRationalCompletion P T s hT B) : IsHuberRing B := by
+/-- Any model of `A⟨T/s⟩` is a topological ring. -/
+theorem IsRationalCompletion.isTopologicalRing (h : IsRationalCompletion P T s hT B) :
+    IsTopologicalRing B := by
+  obtain ⟨e, he, he'⟩ := h
+  exact _root_.Topology.IsInducing.isTopologicalRing e.symm.toRingHom
+    (Homeomorph.mk e.toEquiv he he').symm.isInducing
+
+/-- Any model of `A⟨T/s⟩` is a Huber ring. -/
+theorem IsRationalCompletion.isHuberRing (h : IsRationalCompletion P T s hT B) :
+    @IsHuberRing B _ _ h.isTopologicalRing := by
+  have := h.isTopologicalRing
   obtain ⟨e, he, he'⟩ := h
   exact IsHuberRing.of_isOpenQuotientMap (f := e.toRingHom)
     (Homeomorph.mk e.toEquiv he he').isOpenQuotientMap
 
-/-- Over a Tate ring `A`, any topological-ring model of `A⟨T/s⟩` is a Tate ring. -/
-theorem IsRationalCompletion.isTateRing [IsTateRing A] [IsTopologicalRing B]
-    (h : IsRationalCompletion P T s hT B) : IsTateRing B := by
+/-- Over a Tate ring `A`, any model of `A⟨T/s⟩` is a Tate ring. -/
+theorem IsRationalCompletion.isTateRing [IsTateRing A] (h : IsRationalCompletion P T s hT B) :
+    @IsTateRing B _ _ h.isTopologicalRing := by
+  have := h.isTopologicalRing
   have := h.isHuberRing
   exact IsTateRing.of_continuous h.continuous_algebraMap
+
+/-- Any model of `A⟨T/s⟩` equipped with a compatible `IsUniformAddGroup` uniform structure is
+complete. -/
+theorem IsRationalCompletion.completeSpace {B : Type*} [CommRing B] [UniformSpace B]
+    [IsUniformAddGroup B] [Algebra A B] (h : IsRationalCompletion P T s hT B) :
+    CompleteSpace B := by
+  have := h.isTopologicalRing
+  obtain ⟨e, he, he'⟩ := h
+  let ue : ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ᵤ B :=
+    ⟨e.toEquiv, uniformContinuous_of_continuousAt_zero e.toAddMonoidHom he.continuousAt,
+      uniformContinuous_of_continuousAt_zero e.symm.toAddMonoidHom he'.continuousAt⟩
+  exact ue.completeSpace_iff.mp inferInstance
 
 /-- Two continuous ring homomorphisms out of a model of `A⟨T/s⟩` into a Hausdorff semiring that
 agree after `algebraMap A B` are equal. -/
@@ -343,244 +363,7 @@ theorem isRationalCompletion_self_denom_one [CompleteSpace A] [T0Space A]
     Algebra.algebraMap_self, RingHom.id_apply]
   rw [← P.toCompletionLocEquivDenomOne_apply T hTpb S a, e.symm_apply_apply]
 
-/-! ### Surjectivity of the difference map on a simple Laurent cover -/
-
-section SimpleLaurent
-
-variable [CompleteSpace A] [T0Space A]
-
-section ModelEval
-
-variable (P : PairOfDefinition A) {T : Finset A} {s : A}
-  (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-  {B : Type*} [CommRing B] [Algebra A B]
-  (e : ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ₐ[A] B)
-  {k : ℕ} (t : Fin k → A) (ht : ∀ i, t i ∈ T)
-
-/-- Evaluation `A⟨X₁, …, Xₖ⟩ → B` from the uncompleted restricted power series ring into a model
-`B` of `A⟨T/s⟩`. -/
-private noncomputable def modelEvalHom :
-    letI := P.toNonarchimedeanRing
-    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+* B :=
-  letI := P.toNonarchimedeanRing
-  e.toRingHom.comp ((P.rationalEvalHom T s (Localization.Away s)
-    (P.hasDenominatorPower_of_isOpen_span T s _ hT) t ht).comp
-      (restrictedMvPowerSeriesCompletionEquiv k A).symm.toRingHom)
-
-private theorem continuous_modelEvalHom [TopologicalSpace B] (he : Continuous e) :
-    letI := P.toNonarchimedeanRing; Continuous (modelEvalHom P hT e t ht) :=
-  letI := P.toNonarchimedeanRing
-  he.comp ((P.continuous_rationalEvalHom T s _ _ t ht).comp
-    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous)
-
-private theorem modelEvalHom_apply (x : letI := P.toNonarchimedeanRing
-    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    letI := P.toNonarchimedeanRing
-    modelEvalHom P hT e t ht x = e (P.rationalEvalHom T s (Localization.Away s)
-      (P.hasDenominatorPower_of_isOpen_span T s _ hT) t ht
-      ((restrictedMvPowerSeriesCompletionEquiv k A).symm x)) := by
-  let _ := P.toNonarchimedeanRing
-  simp only [modelEvalHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    AlgEquiv.coe_toRingEquiv]
-
-private theorem modelEvalHom_weightedC (a : A) :
-    letI := P.toNonarchimedeanRing
-    modelEvalHom P hT e t ht (weightedC _ isWeightFamily_one_weight a) = algebraMap A B a := by
-  let _ := P.toNonarchimedeanRing
-  rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedC, ← algebraMap_ratLoc, e.commutes]
-
-private theorem modelEvalHom_X_eq_algebraMap_of_mul (i : Fin k) {a : A} (hti : t i = s * a) :
-    letI := P.toNonarchimedeanRing
-    modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = algebraMap A B a := by
-  let _ := P.toNonarchimedeanRing
-  rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedX, hti, divBy_mul_cancel_left a s, ← P.toCompletionLoc_apply,
-    ← algebraMap_ratLoc, e.commutes]
-
-private theorem modelEvalHom_X_mul_inv (i : Fin k) (hti : t i = 1) :
-    letI := P.toNonarchimedeanRing
-    algebraMap A B s * modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = 1 := by
-  let _ := P.toNonarchimedeanRing
-  let S := Localization.Away s
-  let hden := P.hasDenominatorPower_of_isOpen_span T s S hT
-  let _ := P.locUniformSpace T s S hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s S hden
-  have _ := P.isTopologicalRing_locUniformSpace T s S hden
-  rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedX, ← e.commutes s, ← map_mul, algebraMap_ratLoc,
-    P.toCompletionLoc_apply, ← Completion.coe_mul, hti, divBy_one,
-    IsLocalization.Away.mul_invSelf]
-  exact map_one e
-
-end ModelEval
-
-private theorem comp_modelEvalHom_eq_weightedRename (P : PairOfDefinition A)
-    {T₁ T₂ : Finset A} {s₁ s₂ : A} (hT₁ : IsOpen (Ideal.span (T₁ : Set A) : Set A))
-    (hT₂ : IsOpen (Ideal.span (T₂ : Set A) : Set A))
-    {B B₁₂ : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
-    [CommRing B₁₂] [TopologicalSpace B₁₂] [T2Space B₁₂] [Algebra A B₁₂]
-    (e : ratLoc P T₁ s₁ (P.hasDenominatorPower_of_isOpen_span T₁ s₁ _ hT₁) ≃ₐ[A] B)
-    (he : Continuous e)
-    (e₁₂ : ratLoc P T₂ s₂ (P.hasDenominatorPower_of_isOpen_span T₂ s₂ _ hT₂) ≃ₐ[A] B₁₂)
-    (he₁₂ : Continuous e₁₂) (t : Fin 1 → A) (ht : ∀ i, t i ∈ T₁)
-    (t₁₂ : Fin 2 → A) (ht₁₂ : ∀ i, t₁₂ i ∈ T₂) (ρ : B →ₐ[A] B₁₂) (hc : Continuous ρ)
-    (emb : Fin 1 ↪ Fin 2) (hX : letI := P.toNonarchimedeanRing
-      ρ (modelEvalHom P hT₁ e t ht (weightedX _ isWeightFamily_one_weight 0)) =
-        modelEvalHom P hT₂ e₁₂ t₁₂ ht₁₂ (weightedX _ isWeightFamily_one_weight (emb 0))) :
-    letI := P.toNonarchimedeanRing
-    ρ.toRingHom.comp (modelEvalHom P hT₁ e t ht) =
-      (modelEvalHom P hT₂ e₁₂ t₁₂ ht₁₂).comp (weightedRename emb isWeightFamily_one_weight
-        isWeightFamily_one_weight fun _ ↦ subset_rfl) := by
-  let _ := P.toNonarchimedeanRing
-  refine weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
-    (hc.comp (continuous_modelEvalHom P hT₁ e t ht he))
-    ((continuous_modelEvalHom P hT₂ e₁₂ t₁₂ ht₁₂ he₁₂).comp (continuous_weightedRename emb _ _ _))
-    (fun a ↦ by
-      rw [RingHom.comp_apply, RingHom.comp_apply, weightedRename_weightedC,
-        modelEvalHom_weightedC, modelEvalHom_weightedC, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe, ρ.commutes])
-    (fun i ↦ by
-      rw [Subsingleton.elim i 0, RingHom.comp_apply, RingHom.comp_apply, weightedRename_weightedX,
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hX])
-
-variable [DecidableEq A]
-
-private theorem modelEvalHom_surjective_overlap (P : PairOfDefinition A) (f : A)
-    (hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A))
-    {B₁₂ : Type*} [CommRing B₁₂] [Algebra A B₁₂]
-    (e₁₂ : ratLoc P {f * f, 1} f
-      (P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset A) f _ hT₁₂) ≃ₐ[A] B₁₂) :
-    letI := P.toNonarchimedeanRing
-    Function.Surjective (modelEvalHom P hT₁₂ e₁₂ ![f * f, 1]
-      (Fin.forall_fin_two.mpr ⟨by simp, by simp⟩)) := by
-  let _ := P.toNonarchimedeanRing
-  have _ : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
-  have hspan : Ideal.span (insert f (Set.range (![f * f, 1] : Fin 2 → A))) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _
-      (Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_range.mpr ⟨1, rfl⟩))) isUnit_one
-  have hTt : Set.range (fun y : ↥({f * f, 1} : Finset A) ↦ (divBy (y : A) f : Localization.Away f))
-      ⊆ Set.range fun i : Fin 2 ↦ (divBy (![f * f, 1] i) f : Localization.Away f) := by
-    rintro _ ⟨⟨y, hy⟩, rfl⟩
-    rcases Finset.mem_insert.mp hy with rfl | hy
-    · exact ⟨0, rfl⟩
-    · rcases Finset.mem_singleton.mp hy with rfl; exact ⟨1, rfl⟩
-  exact e₁₂.surjective.comp ((P.rationalEvalHom_surjective {f * f, 1} f _ _ ![f * f, 1] _
-    hspan hTt).comp (restrictedMvPowerSeriesCompletionEquiv 2 A).symm.surjective)
-
-section Surjective
-
-variable {P : PairOfDefinition A} {f : A}
-  {B₁ B₂ B₁₂ : Type*} [CommRing B₁] [CommRing B₂] [CommRing B₁₂]
-  [TopologicalSpace B₁] [TopologicalSpace B₂] [TopologicalSpace B₁₂]
-  [Algebra A B₁] [Algebra A B₂] [Algebra A B₁₂]
-  {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset A) : Set A) : Set A)}
-  {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
-  {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A)}
-
-/-- **Kedlaya–Liu, Lemma 2.4.22.** For a complete Hausdorff Huber ring `A` and any `f : A`,
-given models `B₁`, `B₂`, `B₁₂` of the simple Laurent pieces `A⟨f, 1/1⟩`, `A⟨1/f⟩`, and their
-overlap `A⟨f², 1/f⟩`, together with continuous `A`-algebra maps `ρ₁ : B₁ →ₐ[A] B₁₂` and
-`ρ₂ : B₂ →ₐ[A] B₁₂`, the difference map `(b₁, b₂) ↦ ρ₁ b₁ - ρ₂ b₂` is surjective. -/
-theorem IsRationalCompletion.surjective_sub_laurent
-    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁) (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
-    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂)
-    (ρ₁ : B₁ →ₐ[A] B₁₂) (ρ₂ : B₂ →ₐ[A] B₁₂) (hc₁ : Continuous ρ₁) (hc₂ : Continuous ρ₂) :
-    Function.Surjective fun x : B₁ × B₂ ↦ ρ₁ x.1 - ρ₂ x.2 := by
-  let _ := P.toNonarchimedeanRing
-  have _ : T2Space B₁₂ := h₁₂.t2Space
-  obtain ⟨e₁, he₁, -⟩ := h₁
-  obtain ⟨e₂, he₂, -⟩ := h₂
-  obtain ⟨e₁₂, he₁₂, -⟩ := h₁₂
-  have ht₁ : ∀ i : Fin 1, ![f] i ∈ ({f, 1} : Finset A) := fun i ↦ by fin_cases i; simp
-  have ht₂ : ∀ i : Fin 1, ![1] i ∈ ({1} : Finset A) := fun i ↦ by fin_cases i; simp
-  have ht₁₂ : ∀ i : Fin 2, ![f * f, 1] i ∈ ({f * f, 1} : Finset A) :=
-    Fin.forall_fin_two.mpr ⟨by simp, by simp⟩
-  let π₁ := modelEvalHom P hT₁ e₁ ![f] ht₁
-  let π₂ := modelEvalHom P hT₂ e₂ ![1] ht₂
-  let π₁₂ := modelEvalHom P hT₁₂ e₁₂ ![f * f, 1] ht₁₂
-  have hX₀ : π₁₂ (weightedX _ isWeightFamily_one_weight 0) = algebraMap A B₁₂ f :=
-    modelEvalHom_X_eq_algebraMap_of_mul P hT₁₂ e₁₂ ![f * f, 1] ht₁₂ 0 rfl
-  have hmul₁₂ : algebraMap A B₁₂ f * π₁₂ (weightedX _ isWeightFamily_one_weight 1) = 1 :=
-    modelEvalHom_X_mul_inv P hT₁₂ e₁₂ ![f * f, 1] ht₁₂ 1 rfl
-  have hρ₁ := comp_modelEvalHom_eq_weightedRename P hT₁ hT₁₂ e₁ he₁ e₁₂ he₁₂
-    ![f] ht₁ ![f * f, 1] ht₁₂ ρ₁ hc₁ Fin.castSuccEmb (by
-      rw [Fin.castSuccEmb_apply, Fin.castSucc_zero,
-        modelEvalHom_X_eq_algebraMap_of_mul P hT₁ e₁ ![f] ht₁ 0 (one_mul f).symm, ρ₁.commutes]
-      exact hX₀.symm)
-  have hρ₂ := comp_modelEvalHom_eq_weightedRename P hT₂ hT₁₂ e₂ he₂ e₁₂ he₁₂
-    ![1] ht₂ ![f * f, 1] ht₁₂ ρ₂ hc₂ (Fin.succEmb 1) (by
-      have hmul₂ : algebraMap A B₁₂ f *
-          ρ₂ (π₂ (weightedX _ isWeightFamily_one_weight 0)) = 1 := by
-        rw [← ρ₂.commutes f, ← map_mul,
-          modelEvalHom_X_mul_inv P hT₂ e₂ ![1] ht₂ 0 rfl, map_one]
-      rw [Fin.coe_succEmb, Fin.succ_zero_eq_one']
-      exact left_inv_eq_right_inv (by rw [mul_comm]; exact hmul₂) hmul₁₂)
-  intro y
-  obtain ⟨u, rfl⟩ := modelEvalHom_surjective_overlap P f hT₁₂ e₁₂ y
-  obtain ⟨⟨g, h⟩, hgh⟩ := laurentDiff_surjective A (Ideal.Quotient.mk (laurentIdeal A) u)
-  rw [laurentDiff_apply, Ideal.Quotient.eq, mem_laurentIdeal] at hgh
-  obtain ⟨w, hw⟩ := hgh
-  refine ⟨(π₁ g, π₂ h), ?_⟩
-  have hrel : π₁₂ (1 - weightedX _ isWeightFamily_one_weight 0 *
-      weightedX _ isWeightFamily_one_weight 1) = 0 := by
-    rw [map_sub, map_one, map_mul, hX₀, hmul₁₂, sub_self]
-  have hsub := congrArg π₁₂ hw
-  rw [map_sub, map_sub, map_mul, hrel, zero_mul, sub_eq_zero] at hsub
-  have hρ₁g := RingHom.congr_fun hρ₁ g
-  have hρ₂h := RingHom.congr_fun hρ₂ h
-  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hρ₁g hρ₂h
-  dsimp only [π₁, π₂, π₁₂] at hsub ⊢
-  rwa [hρ₁g, hρ₂h]
-
-/-- Scalar-tower form of `IsRationalCompletion.surjective_sub_laurent`, for `B₁ → B₁₂` and
-`B₂ → B₁₂` given as `[Algebra B₁ B₁₂]` and `[Algebra B₂ B₁₂]`. -/
-theorem IsRationalCompletion.surjective_algebraMap_sub_laurent
-    [Algebra B₁ B₁₂] [Algebra B₂ B₁₂] [IsScalarTower A B₁ B₁₂] [IsScalarTower A B₂ B₁₂]
-    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁) (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
-    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂)
-    (hc₁ : Continuous (algebraMap B₁ B₁₂)) (hc₂ : Continuous (algebraMap B₂ B₁₂)) :
-    Function.Surjective fun x : B₁ × B₂ ↦ algebraMap B₁ B₁₂ x.1 - algebraMap B₂ B₁₂ x.2 :=
-  h₁.surjective_sub_laurent h₂ h₁₂ (IsScalarTower.toAlgHom A B₁ B₁₂)
-    (IsScalarTower.toAlgHom A B₂ B₁₂) hc₁ hc₂
-
-end Surjective
-
-end SimpleLaurent
-
 end Uniform
-
-section LaurentTransition
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [DecidableEq A]
-  {P : PairOfDefinition A} {f : A} {B₁₂ : Type*} [CommRing B₁₂] [TopologicalSpace B₁₂]
-  [Algebra A B₁₂] {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A)}
-
-/-- There is a unique continuous `A`-algebra transition map `B₁ →ₐ[A] B₁₂` from any model `B₁` of
-`A⟨f, 1/1⟩` to any model `B₁₂` of `A⟨f², 1/f⟩`: in `B₁₂`, `f = f² / f` is a distinguished
-fraction and `1 / 1 = 1`. -/
-theorem IsRationalCompletion.existsUnique_laurentLeftAlgHom {B₁ : Type*} [CommRing B₁]
-    [TopologicalSpace B₁] [Algebra A B₁]
-    {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset A) : Set A) : Set A)}
-    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
-    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
-    ∃! ρ₁ : B₁ →ₐ[A] B₁₂, Continuous ρ₁ :=
-  h₁.existsUnique_continuous_algHom_of_refines h₁₂ (one_mul f).symm fun t ht ↦
-    (Finset.mem_insert.mp ht).elim (fun h ↦ Or.inr (by simp [h]))
-      (fun h ↦ Or.inl (Finset.mem_singleton.mp h))
-
-/-- There is a unique continuous `A`-algebra transition map `B₂ →ₐ[A] B₁₂` from any model `B₂` of
-`A⟨1/f⟩` to any model `B₁₂` of `A⟨f², 1/f⟩`. -/
-theorem IsRationalCompletion.existsUnique_laurentRightAlgHom {B₂ : Type*} [CommRing B₂]
-    [TopologicalSpace B₂] [Algebra A B₂]
-    {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
-    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
-    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
-    ∃! ρ₂ : B₂ →ₐ[A] B₁₂, Continuous ρ₂ :=
-  h₂.existsUnique_continuous_algHom_of_refines h₁₂ (mul_one f).symm fun t ht ↦
-    Or.inr (by rw [Finset.mem_singleton.mp ht]; simp)
-
-end LaurentTransition
 
 end TauCeti.Huber
 

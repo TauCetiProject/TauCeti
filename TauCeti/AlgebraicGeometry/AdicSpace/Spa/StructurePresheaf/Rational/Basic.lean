@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PresentationIndependence
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
+public import TauCeti.RingTheory.Huber.LocalizationTopology.RationalCompletion
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
@@ -43,6 +44,9 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   `A⟨T/s⟩ ⟶ A⟨T'/s'⟩` of a containment `R(T'/s') ⊆ R(T/s)`.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso` : the isomorphism
   `presentationLimit Aplus R(T/s) ≅ A⟨T/s⟩` for an admissible presentation `(T, s)`.
+* `TauCeti.ValuationSpectrum.rationalSectionTopIso` and
+  `TauCeti.ValuationSpectrum.rationalSectionRingEquiv` : identification of
+  `presentationLimit Aplus R(T/s)` with any `IsRationalCompletion` model `B`.
 
 ## Main results
 
@@ -317,6 +321,59 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
   rw [presentationLimitRationalIso_hom, presentationLimitMap_comp_πToPresentation,
     reassoc_of% presentationLimitRationalIso_inv_comp_π]
   exact homOfRationalSubsetSubset_comp_eqToHom hAplus (presentationIndexRestrict_obj_pres h _) _ _ _
+
+section RationalSection
+
+variable (P : PairOfDefinition A) {Aplus : Subring A}
+  (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
+  (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+
+/-- Topological ring isomorphism identifying the presentation limit over `spaBasicOpen Aplus T s`
+with the canonical completed rational localisation `ratLoc P T s _`. -/
+noncomputable def rationalSectionTopIso :
+    (TopCommRingCat.isCompleteSeparated.ι.obj
+      (presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))) ≅
+      TopCommRingCat.of
+        (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT)) :=
+  let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
+  (TopCommRingCat.isCompleteSeparated.ι.mapIso (presentationLimitRationalIso Aplus hAplus p hT))
+    ≪≫ eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)
+
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+  (hB : IsRationalCompletion P T s hT B)
+
+/-- Bicontinuous ring isomorphism `presentationLimit Aplus (spaBasicOpen Aplus T s) ≃+* B` for any
+model `B` of `A⟨T/s⟩`. -/
+noncomputable def rationalSectionRingEquiv :
+    presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ≃+* B :=
+  (((forget₂ TopCommRingCat CommRingCat).mapIso
+      (rationalSectionTopIso P hAplus T s hT)).commRingCatIsoToRingEquiv).trans
+    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.toRingEquiv
+
+/-- Explicit evaluation formula for `rationalSectionRingEquiv`. -/
+theorem rationalSectionRingEquiv_apply
+    (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
+    let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
+    rationalSectionRingEquiv P hAplus T s hT hB z =
+      ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose
+        ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z)) := by
+  rw [rationalSectionRingEquiv, rationalSectionTopIso]
+  rfl
+
+/-- `rationalSectionRingEquiv` is continuous. -/
+theorem continuous_rationalSectionRingEquiv :
+    Continuous (rationalSectionRingEquiv P hAplus T s hT hB) :=
+  ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.1.comp
+    (rationalSectionTopIso P hAplus T s hT).hom.property
+
+/-- The inverse of `rationalSectionRingEquiv` is continuous. -/
+theorem continuous_rationalSectionRingEquiv_symm :
+    Continuous (rationalSectionRingEquiv P hAplus T s hT hB).symm :=
+  (rationalSectionTopIso P hAplus T s hT).inv.property.comp
+    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.2
+
+end RationalSection
 
 end TauCeti.ValuationSpectrum
 

@@ -11,107 +11,97 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Strongly
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
-public import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # End-to-end checks for simple Laurent glueing squares
 
-* Canonical existence theorem `exists_simpleLaurent_glueingSquare`: for any complete Hausdorff
-  sheafy Tate ring `R`, pair of definition `P`, and element `f : R`, the canonical `ratLoc`
-  completed rational localisations `R⟨f, 1/1⟩`, `R⟨1/f⟩`, and `R⟨f², 1/f⟩` (with transition maps
-  supplied by `IsRationalCompletion.existsUnique_laurentLeftAlgHom` and
-  `IsRationalCompletion.existsUnique_laurentRightAlgHom`) witness models `R₁`, `R₂`, `R₁₂` forming a
-  `GlueingSquare`.
-* Non-vacuous field check: `ℚ_[p]` at `f = p`.
+* Non-vacuous field check: `ℚ_[p]` at `f = p`, using the canonical `ratLoc` constructor
+  `GlueingSquare.of_simpleLaurent_ratLoc`.
 * Non-vacuous geometric check: the `1`-variable Tate algebra `ℚ_p⟨X⟩` at its coordinate variable
   `X`, glueing the closed unit disc `Spa(ℚ_p⟨X⟩)` across `{|X| ≤ 1}` and `{|X| ≥ 1}` over the unit
-  circle `{|X| = 1}`, together with flat module recovery for `ℚ_p⟨X⟩ × ℚ_p⟨X⟩`.
+  circle `{|X| = 1}` on canonical `ratLoc` carriers, together with flat module recovery for
+  `ℚ_p⟨X⟩ × ℚ_p⟨X⟩`.
 -/
 
 public section
 
 namespace TauCeti.Huber.LaurentGlueingSquareChecks
 
-open Classical in
-/-- For any complete Hausdorff sheafy Tate ring `R`, pair of definition `P`, and `f : R`, there
-exist models `R₁`, `R₂`, `R₁₂` of `R⟨f, 1/1⟩`, `R⟨1/f⟩`, and `R⟨f², 1/f⟩` (constructed from
-`ratLoc` and `existsUnique_laurentLeftAlgHom` / `existsUnique_laurentRightAlgHom`) that form a
-`GlueingSquare`. -/
-theorem exists_simpleLaurent_glueingSquare {R : Type u} [CommRing R] [UniformSpace R]
-    [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
-    (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
-    ∃ (R₁ R₂ R₁₂ : Type u) (_ : CommRing R₁) (_ : CommRing R₂) (_ : CommRing R₁₂)
-      (_ : TopologicalSpace R₁) (_ : TopologicalSpace R₂) (_ : TopologicalSpace R₁₂)
-      (_ : Algebra R R₁) (_ : Algebra R R₂) (_ : Algebra R R₁₂)
-      (_ : Algebra R₁ R₁₂) (_ : Algebra R₂ R₁₂)
-      (_ : IsScalarTower R R₁ R₁₂) (_ : IsScalarTower R R₂ R₁₂),
-      IsRationalCompletion P {f, 1} 1 (isOpen_span_of_one_mem (by simp)) R₁ ∧
-        IsRationalCompletion P {1} f (isOpen_span_of_one_mem (by simp)) R₂ ∧
-        IsRationalCompletion P {f * f, 1} f (isOpen_span_of_one_mem (by simp)) R₁₂ ∧
-        GlueingSquare R R₁ R₂ R₁₂ := by
-  let h₁ := isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp))
-  let h₂ := isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp))
-  let h₁₂ := isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp))
-  obtain ⟨ρ₁, hc₁, -⟩ := h₁.existsUnique_laurentLeftAlgHom h₁₂
-  obtain ⟨ρ₂, hc₂, -⟩ := h₂.existsUnique_laurentRightAlgHom h₁₂
-  let _ := ρ₁.toRingHom.toAlgebra; let _ := ρ₂.toRingHom.toAlgebra
-  have _ := IsScalarTower.of_algebraMap_eq fun r ↦ (ρ₁.commutes r).symm
-  have _ := IsScalarTower.of_algebraMap_eq fun r ↦ (ρ₂.commutes r).symm
-  exact ⟨_, _, _, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, h₁, h₂, h₁₂,
-    GlueingSquare.of_simpleLaurent_of_isSheafyRing hs h₁ h₂ h₁₂ hc₁ hc₂⟩
-
-section ConcreteTateRings
-
 variable (p : ℕ) [Fact p.Prime]
 
 open Classical in
-/-- **Field check**: `ℚ_[p]` admits a simple Laurent `GlueingSquare` at `f = p` with all hypotheses
-discharged unconditionally. -/
+/-- **Field check**: `ℚ_[p]` admits a simple Laurent `GlueingSquare` at `f = p` on the canonical
+`ratLoc` carriers with all hypotheses discharged unconditionally. -/
 example :
     let P := (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some
-    ∃ (R₁ R₂ R₁₂ : Type) (_ : CommRing R₁) (_ : CommRing R₂) (_ : CommRing R₁₂)
-      (_ : TopologicalSpace R₁) (_ : TopologicalSpace R₂) (_ : TopologicalSpace R₁₂)
-      (_ : Algebra ℚ_[p] R₁) (_ : Algebra ℚ_[p] R₂) (_ : Algebra ℚ_[p] R₁₂)
-      (_ : Algebra R₁ R₁₂) (_ : Algebra R₂ R₁₂)
-      (_ : IsScalarTower ℚ_[p] R₁ R₁₂) (_ : IsScalarTower ℚ_[p] R₂ R₁₂),
-      IsRationalCompletion P {(p : ℚ_[p]), 1} 1 (isOpen_span_of_one_mem (by simp)) R₁ ∧
-        IsRationalCompletion P {1} (p : ℚ_[p]) (isOpen_span_of_one_mem (by simp)) R₂ ∧
-        IsRationalCompletion P {(p : ℚ_[p]) * p, 1} (p : ℚ_[p])
-          (isOpen_span_of_one_mem (by simp)) R₁₂ ∧
-        GlueingSquare ℚ_[p] R₁ R₂ R₁₂ :=
-  exists_simpleLaurent_glueingSquare IsStronglySheafy.of_isStronglyNoetherian.isSheafyRing _ _
+    let hden₁ := P.hasDenominatorPower_of_isOpen_span ({(p : ℚ_[p]), 1} : Finset ℚ_[p]) 1
+      (Localization.Away (1 : ℚ_[p])) (isOpen_span_of_one_mem (by simp))
+    let hden₂ := P.hasDenominatorPower_of_isOpen_span ({1} : Finset ℚ_[p]) (p : ℚ_[p])
+      (Localization.Away (p : ℚ_[p])) (isOpen_span_of_one_mem (by simp))
+    let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({(p : ℚ_[p]) * p, 1} : Finset ℚ_[p])
+      (p : ℚ_[p]) (Localization.Away (p : ℚ_[p])) (isOpen_span_of_one_mem (by simp))
+    letI : Algebra (ratLoc P {(p : ℚ_[p]), 1} 1 hden₁)
+        (ratLoc P {(p : ℚ_[p]) * p, 1} (p : ℚ_[p]) hden₁₂) :=
+      (laurentLeftAlgHom P (p : ℚ_[p])).toRingHom.toAlgebra
+    letI : Algebra (ratLoc P {1} (p : ℚ_[p]) hden₂)
+        (ratLoc P {(p : ℚ_[p]) * p, 1} (p : ℚ_[p]) hden₁₂) :=
+      (laurentRightAlgHom P (p : ℚ_[p])).toRingHom.toAlgebra
+    GlueingSquare ℚ_[p] (ratLoc P {(p : ℚ_[p]), 1} 1 hden₁)
+      (ratLoc P {1} (p : ℚ_[p]) hden₂)
+      (ratLoc P {(p : ℚ_[p]) * p, 1} (p : ℚ_[p]) hden₁₂) :=
+  GlueingSquare.of_simpleLaurent_ratLoc IsStronglySheafy.of_isStronglyNoetherian.isSheafyRing
+    (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some (p : ℚ_[p])
 
 open Classical in
 /-- **Tate algebra and module glueing check**: on the `1`-variable Tate algebra `ℚ_p⟨X⟩`, the simple
 Laurent cover by `{|X| ≤ 1}` and `{|X| ≥ 1}` at the coordinate variable `X` forms a `GlueingSquare`
-and recovers the rank-`2` free module `ℚ_p⟨X⟩ × ℚ_p⟨X⟩` from the sections of its induced glueing
-datum, with all hypotheses discharged unconditionally. -/
+on the canonical `ratLoc` carriers and recovers the rank-`2` free module `ℚ_p⟨X⟩ × ℚ_p⟨X⟩` from
+the sections of its induced glueing datum, with all hypotheses discharged unconditionally. -/
 example :
     let A := restrictedMvPowerSeriesCompletion 1 ℚ_[p]
     let X : A := Pair.polydiscVar 1 ℚ_[p] 0
     let P := (IsHuberRing.nonempty_pairOfDefinition (A := A)).some
-    ∃ (R₁ R₂ R₁₂ : Type) (_ : CommRing R₁) (_ : CommRing R₂) (_ : CommRing R₁₂)
-      (_ : TopologicalSpace R₁) (_ : TopologicalSpace R₂) (_ : TopologicalSpace R₁₂)
-      (_ : Algebra A R₁) (_ : Algebra A R₂) (_ : Algebra A R₁₂)
-      (_ : Algebra R₁ R₁₂) (_ : Algebra R₂ R₁₂)
-      (_ : IsScalarTower A R₁ R₁₂) (_ : IsScalarTower A R₂ R₁₂),
-      IsRationalCompletion P {X, 1} 1 (isOpen_span_of_one_mem (by simp)) R₁ ∧
-        IsRationalCompletion P {1} X (isOpen_span_of_one_mem (by simp)) R₂ ∧
-        IsRationalCompletion P {X * X, 1} X (isOpen_span_of_one_mem (by simp)) R₁₂ ∧
-        GlueingSquare A R₁ R₂ R₁₂ ∧
-        Nonempty ((A × A) ≃ₗ[A] (GlueingDatum.ofModule R₁ R₂ R₁₂ A (A × A)).sections A) := by
+    let hden₁ := P.hasDenominatorPower_of_isOpen_span ({X, 1} : Finset A) 1
+      (Localization.Away (1 : A)) (isOpen_span_of_one_mem (by simp))
+    let hden₂ := P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) X
+      (Localization.Away X) (isOpen_span_of_one_mem (by simp))
+    let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({X * X, 1} : Finset A) X
+      (Localization.Away X) (isOpen_span_of_one_mem (by simp))
+    letI : Algebra (ratLoc P {X, 1} 1 hden₁) (ratLoc P {X * X, 1} X hden₁₂) :=
+      (laurentLeftAlgHom P X).toRingHom.toAlgebra
+    letI : Algebra (ratLoc P {1} X hden₂) (ratLoc P {X * X, 1} X hden₁₂) :=
+      (laurentRightAlgHom P X).toRingHom.toAlgebra
+    letI : IsScalarTower A (ratLoc P {X, 1} 1 hden₁) (ratLoc P {X * X, 1} X hden₁₂) :=
+      IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P X).commutes r).symm
+    letI : IsScalarTower A (ratLoc P {1} X hden₂) (ratLoc P {X * X, 1} X hden₁₂) :=
+      IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P X).commutes r).symm
+    GlueingSquare A (ratLoc P {X, 1} 1 hden₁) (ratLoc P {1} X hden₂)
+        (ratLoc P {X * X, 1} X hden₁₂) ∧
+      Nonempty ((A × A) ≃ₗ[A]
+        (GlueingDatum.ofModule (ratLoc P {X, 1} 1 hden₁) (ratLoc P {1} X hden₂)
+          (ratLoc P {X * X, 1} X hden₁₂) A (A × A)).sections A) := by
   let A := restrictedMvPowerSeriesCompletion 1 ℚ_[p]
-  obtain ⟨R₁, R₂, R₁₂, _, _, _, _, _, _, _, _, _, _, _, _, _, h₁, h₂, h₁₂, hsq⟩ :=
-    exists_simpleLaurent_glueingSquare
-      ((IsStronglySheafy.of_isStronglyNoetherian (A := ℚ_[p])).restrictedMvPowerSeriesCompletion
-        1).isSheafyRing
-      (IsHuberRing.nonempty_pairOfDefinition (A := A)).some (Pair.polydiscVar 1 ℚ_[p] 0)
-  exact ⟨R₁, R₂, R₁₂, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›,
-    h₁, h₂, h₁₂, hsq, ⟨hsq.equivSectionsOfModule (A × A)⟩⟩
-
-end ConcreteTateRings
+  let X : A := Pair.polydiscVar 1 ℚ_[p] 0
+  let P := (IsHuberRing.nonempty_pairOfDefinition (A := A)).some
+  let hden₁ := P.hasDenominatorPower_of_isOpen_span ({X, 1} : Finset A) 1
+    (Localization.Away (1 : A)) (isOpen_span_of_one_mem (by simp))
+  let hden₂ := P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) X
+    (Localization.Away X) (isOpen_span_of_one_mem (by simp))
+  let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({X * X, 1} : Finset A) X
+    (Localization.Away X) (isOpen_span_of_one_mem (by simp))
+  let _ : Algebra (ratLoc P {X, 1} 1 hden₁) (ratLoc P {X * X, 1} X hden₁₂) :=
+    (laurentLeftAlgHom P X).toRingHom.toAlgebra
+  let _ : Algebra (ratLoc P {1} X hden₂) (ratLoc P {X * X, 1} X hden₁₂) :=
+    (laurentRightAlgHom P X).toRingHom.toAlgebra
+  have _ : IsScalarTower A (ratLoc P {X, 1} 1 hden₁) (ratLoc P {X * X, 1} X hden₁₂) :=
+    IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P X).commutes r).symm
+  have _ : IsScalarTower A (ratLoc P {1} X hden₂) (ratLoc P {X * X, 1} X hden₁₂) :=
+    IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P X).commutes r).symm
+  have hsq := GlueingSquare.of_simpleLaurent_ratLoc
+    ((IsStronglySheafy.of_isStronglyNoetherian (A := ℚ_[p])).restrictedMvPowerSeriesCompletion
+      1).isSheafyRing
+    P X
+  exact ⟨hsq, ⟨hsq.equivSectionsOfModule (A × A)⟩⟩
 
 end TauCeti.Huber.LaurentGlueingSquareChecks
 
