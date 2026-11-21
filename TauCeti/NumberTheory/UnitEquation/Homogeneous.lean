@@ -45,9 +45,10 @@ is `0`, and in `Γ = ⟨2⟩ ≤ ℚˣ` the equation `x₁ - x₂ = 0` has the i
 
 ## Main results
 
-* `TauCeti.exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions`: for nonzero
-  coefficients, at most `2 ^ n` proper subspaces of the hyperplane `∑ aᵢyᵢ = 0` contain every
-  degenerate solution of `∑ aᵢyᵢ = 0`.
+* `TauCeti.exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions`: over a
+  commutative ring `R` without zero divisors, for nonzero coefficients, at most `2 ^ n` proper
+  submodules of the kernel of `y ↦ ∑ aᵢyᵢ` on `Rⁿ` contain every degenerate solution of
+  `∑ aᵢyᵢ = 0`.
 * `TauCeti.encard_setOf_apply_eq_one_and_isNondegenerateHomogeneousSolution_le`: the
   nondegenerate solutions `y ∈ Γⁿ` of `∑ aᵢyᵢ = 0` with `y_{i₀} = 1` are at most as many as the
   nondegenerate solutions in `Γⁿ⁻¹` of `∑_{i ≠ i₀} (-aᵢ / a_{i₀}) zᵢ = 1`.
@@ -75,11 +76,12 @@ section CommRing
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {a : ι → R}
 
-/-- **Degenerate solutions lie in boundedly many proper subspaces of the hyperplane.** If all `aᵢ`
-are nonzero, there are at most `2 ^ n` proper subspaces of the hyperplane `∑ aᵢyᵢ = 0` in `Rⁿ`,
-`n` the number of unknowns, such that every solution of `∑ aᵢyᵢ = 0` that is not nondegenerate
-lies in one of them. They are the intersections of the hyperplane with the kernels of the linear
-forms `y ↦ ∑ i ∈ I, aᵢyᵢ` for nonempty proper sets `I` of indices. -/
+/-- **Degenerate solutions lie in boundedly many proper submodules of the kernel.** Let `R` be a
+commutative ring without zero divisors. If all `aᵢ` are nonzero, there are at most `2 ^ n` proper
+submodules of the kernel of `y ↦ ∑ aᵢyᵢ` on `Rⁿ`, `n` the number of unknowns, such that every
+solution of `∑ aᵢyᵢ = 0` that is not nondegenerate lies in one of them. They are the
+intersections of that kernel with the kernels of the linear forms `y ↦ ∑ i ∈ I, aᵢyᵢ` for
+nonempty proper sets `I` of indices. -/
 theorem exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions
     (ha : ∀ i, a i ≠ 0) :
     ∃ T : Finset (Submodule R (ι → R)), #T ≤ 2 ^ Fintype.card ι ∧
@@ -91,26 +93,22 @@ theorem exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions
   let f (I : Finset ι) : (ι → R) →ₗ[R] R :=
     Fintype.linearCombination R fun i ↦ if i ∈ I then a i else 0
   have hf : ∀ I y, f I y = ∑ i ∈ I, a i * y i := fun I y ↦ by
-    calc
-      f I y = ∑ i ∈ univ.filter (· ∈ I), a i * y i := by
-        rw [sum_filter]
-        simp only [f, Fintype.linearCombination_apply]
-        exact sum_congr rfl fun i _ ↦ by
-          by_cases hi : i ∈ I <;> simp [hi, mul_comm]
-      _ = ∑ i ∈ I, a i * y i := by rw [filter_mem_eq_inter, univ_inter]
-  let s : Finset (Finset ι) := univ.filter fun I ↦ I.Nonempty ∧ I ≠ univ
+    simp only [f, Fintype.linearCombination_apply, smul_eq_mul, mul_ite, mul_zero]
+    simp_rw [mul_comm (y _)]
+    exact Fintype.sum_extend_by_zero I _
+  let s : Finset (Finset ι) := (univ : Finset ι).ssubsets.erase ∅
   refine ⟨s.image fun I ↦ LinearMap.ker (Fintype.linearCombination R a) ⊓ LinearMap.ker (f I),
     ?_, ?_, ?_⟩
   · calc _ ≤ #s := card_image_le
-      _ ≤ #(univ : Finset (Finset ι)) := card_filter_le _ _
-      _ = 2 ^ Fintype.card ι := by rw [card_univ, Fintype.card_finset]
-  · simp only [s, mem_image, mem_filter, mem_univ, true_and]
-    rintro _ ⟨I, ⟨⟨j, hj⟩, hIu⟩, rfl⟩
-    obtain ⟨k, hk⟩ : ∃ k, k ∉ I := by
-      by_contra! hall
-      exact hIu (eq_univ_of_forall hall)
+      _ ≤ #(univ : Finset ι).ssubsets := card_erase_le
+      _ ≤ #(univ : Finset ι).powerset := card_erase_le
+      _ = 2 ^ Fintype.card ι := by rw [card_powerset, card_univ]
+  · simp only [s, mem_image, mem_erase, mem_ssubsets]
+    rintro _ ⟨I, ⟨hI0, hIu⟩, rfl⟩
+    obtain ⟨j, hj⟩ := ne_empty_iff_nonempty.mp hI0
+    obtain ⟨k, -, hk⟩ := (ssubset_iff_of_subset (subset_univ I)).mp hIu
     refine IsConcreteLE.lt_iff_le_and_exists.mpr
-      ⟨inf_le_left, _, Fintype.single_sub_single_mem_ker_linearCombination j k, fun hmem ↦ ?_⟩
+      ⟨inf_le_left, _, single_sub_single_mem_ker_fintypeLinearCombination j k, fun hmem ↦ ?_⟩
     -- The form `∑ i ∈ I, aᵢ yᵢ` takes the value `aⱼ aₖ ≠ 0` at the witness.
     have h0 := LinearMap.mem_ker.mp (Submodule.mem_inf.mp hmem).2
     simp only [f, map_sub, Fintype.linearCombination_apply_single, ite_eq_left hj, ite_eq_right hk,
@@ -120,7 +118,8 @@ theorem exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions
     obtain ⟨I, hI, hIu, hI0⟩ :
         ∃ I : Finset ι, I.Nonempty ∧ I ≠ univ ∧ ∑ i ∈ I, a i * y i = 0 := by
       simpa [isNondegenerateHomogeneousSolution_iff, h0] using hy
-    refine ⟨_, mem_image_of_mem _ (mem_filter.mpr ⟨mem_univ I, hI, hIu⟩),
+    refine ⟨_, mem_image_of_mem _
+        (mem_erase.mpr ⟨hI.ne_empty, mem_ssubsets.mpr (ssubset_univ_iff.mpr hIu)⟩),
       Submodule.mem_inf.mpr ⟨?_, LinearMap.mem_ker.mpr ((hf I y).trans hI0)⟩⟩
     simpa [Fintype.linearCombination_apply, mul_comm] using h0
 
@@ -162,10 +161,7 @@ theorem encard_setOf_apply_eq_one_and_isNondegenerateHomogeneousSolution_le
       fun J hJ hne ↦ hy.subsum_ne_zero hne hJ.ne
     simpa [hy1, e, Function.comp_def, Equiv.subtypeEquivRight_apply] using hdiv.comp_equiv e
   · rintro y ⟨hy1, -⟩ y' ⟨hy1', -⟩ h
-    funext i
-    by_cases hi : i = i₀
-    · rw [hi, hy1, hy1']
-    · exact congrFun h ⟨i, hi⟩
+    exact (Equiv.funSplitAt i₀ Γ).injective (Prod.ext (hy1.trans hy1'.symm) h)
 
 open scoped Classical in
 /-- **Solutions of a homogeneous unit equation lie in boundedly many proper subspaces.** Let
@@ -199,7 +195,7 @@ theorem exists_set_submodule_lt_ker_cover_homogeneousUnitEquationSolutions (ha :
     -- The line through a normalized nondegenerate solution `y` lies on the hyperplane, and misses
     -- the witness, which vanishes at `l` while `y` does not.
     refine IsConcreteLE.lt_iff_le_and_exists.mpr
-      ⟨?_, _, Fintype.single_sub_single_mem_ker_linearCombination j k, fun hmem ↦ ?_⟩
+      ⟨?_, _, single_sub_single_mem_ker_fintypeLinearCombination j k, fun hmem ↦ ?_⟩
     · rw [Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker]
       simpa [Fintype.linearCombination_apply, mul_comm] using hy.sum_eq_zero
     · obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hmem
