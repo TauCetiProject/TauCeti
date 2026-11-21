@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.TraceWord.Counting
+public import TauCeti.Data.Fin.Sum
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -78,6 +79,21 @@ theorem bipartiteEdge_inr (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
     bipartiteEdge u v (.inr t) = (u (finRotate k t), v t) := by
   simp [bipartiteEdge]
 
+/-- The ordinary edge traversed by an interleaved step is the unordered pair of vertices
+specified by the bipartite edge of that step. -/
+theorem interleaveIndexEquiv_edge_eq_bipartiteEdge (u : Fin k → α) (v : Fin k → β)
+    (a : Fin k ⊕ Fin k) :
+    let e := interleaveIndexEquiv k
+    let w := Sum.map u v ∘ e.symm
+    s(w (e a), w (finRotate (2 * k) (e a))) =
+      s(Sum.inl (bipartiteEdge u v a).1, Sum.inr (bipartiteEdge u v a).2) := by
+  cases a
+  · simp only [Function.comp_apply, finRotate_interleaveIndexEquiv_inl, Equiv.symm_apply_apply,
+      Sum.map_inl, Sum.map_inr, bipartiteEdge_inl]
+  · simp only [Function.comp_apply, finRotate_interleaveIndexEquiv_inr, Equiv.symm_apply_apply,
+      Sum.map_inr, Sum.map_inl, bipartiteEdge_inr]
+    exact Sym2.eq_swap
+
 variable [DecidableEq α] [DecidableEq β]
 
 /-- A bipartite word visits at most one more row and column index than it reads positions.
@@ -89,48 +105,42 @@ theorem card_image_add_card_image_le_card_image_bipartiteEdge_add_one (u : Fin k
   | zero => simp
   | succ m =>
     -- Read the alternating word as an ordinary path, omitting its closing step.
-    let w (i : ℕ) : α ⊕ β := if i % 2 = 0 then
-      .inl (u (Fin.ofNat (m + 1) (i / 2))) else .inr (v (Fin.ofNat (m + 1) (i / 2)))
+    let e := interleaveIndexEquiv (m + 1)
+    let encode (i : ℕ) : Fin (2 * (m + 1)) := Fin.ofNat (2 * (m + 1)) i
+    let w (i : ℕ) : α ⊕ β := Sum.map u v (e.symm (encode i))
     let edge (p : α × β) : Sym2 (α ⊕ β) := s(.inl p.1, .inr p.2)
+    have hread (a : Fin (m + 1) ⊕ Fin (m + 1)) : w (e a).val = Sum.map u v a := by
+      have h : encode (e a).val = e a := by simp [encode]
+      simp only [w, h, Equiv.symm_apply_apply]
     have hvertices : (univ.image u).disjSum (univ.image v) ⊆
         (range (2 * m + 2)).image w := by
       rintro (a | b) hx <;> simp only [inl_mem_disjSum, inr_mem_disjSum] at hx
       · obtain ⟨t, -, rfl⟩ := mem_image.1 hx
-        exact mem_image.2 ⟨2 * t.val, mem_range.2 (by omega), by simp [w]⟩
+        exact mem_image.2 ⟨(e (.inl t)).val, mem_range.2 (e (.inl t)).isLt, hread (.inl t)⟩
       · obtain ⟨t, -, rfl⟩ := mem_image.1 hx
-        refine mem_image.2 ⟨2 * t.val + 1, mem_range.2 (by omega), ?_⟩
-        simp [w, Nat.add_div]
+        exact mem_image.2 ⟨(e (.inr t)).val, mem_range.2 (e (.inr t)).isLt, hread (.inr t)⟩
     have hedges :
         (((range (2 * m + 1)).filter fun i ↦ w i ≠ w (i + 1)).image
           fun i ↦ s(w i, w (i + 1))) ⊆ (univ.image (bipartiteEdge u v)).image edge := by
-      intro e he
-      obtain ⟨i, hi, rfl⟩ := mem_image.1 he
+      intro a ha
+      obtain ⟨i, hi, rfl⟩ := mem_image.1 ha
       have hi' : i < 2 * m + 1 := mem_range.1 (mem_filter.1 hi).1
-      let t : Fin (m + 1) := ⟨i / 2, by omega⟩
-      have hidx : Fin.ofNat (m + 1) (i / 2) = t := by
+      have hencode : (encode i).val = i := Nat.mod_eq_of_lt (by omega)
+      have hne : encode i ≠ Fin.last (2 * m + 1) := by
+        intro h
+        have hval := congrArg Fin.val h
+        rw [hencode, Fin.val_last] at hval
+        omega
+      have hnext : finRotate (2 * (m + 1)) (encode i) = encode (i + 1) := by
         apply Fin.ext
-        exact Nat.mod_eq_of_lt t.isLt
-      by_cases hpar : i % 2 = 0
-      · have hnext : (i + 1) % 2 ≠ 0 := by omega
-        have hdiv : (i + 1) / 2 = i / 2 := by omega
-        refine mem_image.2 ⟨bipartiteEdge u v (.inl t), mem_image_of_mem _ (mem_univ _), ?_⟩
-        simp only [edge, bipartiteEdge_inl, w, hpar, hnext, ↓reduceIte, hdiv, hidx]
-      · have hnext : (i + 1) % 2 = 0 := by omega
-        have hdiv : (i + 1) / 2 = i / 2 + 1 := by omega
-        have ht : t ≠ Fin.last m := by
-          intro h
-          have := congrArg Fin.val h
-          dsimp [t] at this
-          omega
-        have hrot : finRotate (m + 1) t = Fin.ofNat (m + 1) ((i + 1) / 2) := by
-          apply Fin.ext
-          rw [coe_finRotate_of_ne_last ht]
-          simp only [Fin.val_ofNat, t]
-          rw [Nat.mod_eq_of_lt (by omega)]
-          exact hdiv.symm
-        refine mem_image.2 ⟨bipartiteEdge u v (.inr t), mem_image_of_mem _ (mem_univ _), ?_⟩
-        simp only [edge, bipartiteEdge_inr, w, hpar, hnext, ↓reduceIte, hrot, hidx]
-        exact Sym2.eq_swap
+        have hrot : (finRotate (2 * (m + 1)) (encode i)).val = (encode i).val + 1 :=
+          coe_finRotate_of_ne_last hne
+        rw [hrot, hencode]
+        exact (Nat.mod_eq_of_lt (by omega)).symm
+      obtain ⟨a, ha⟩ := e.surjective (encode i)
+      refine mem_image.2 ⟨bipartiteEdge u v a, mem_image_of_mem _ (mem_univ _), ?_⟩
+      simpa only [w, ← ha, ← hnext, Function.comp_apply, edge] using
+        (interleaveIndexEquiv_edge_eq_bipartiteEdge u v a).symm
     have hpath := card_image_range_le_card_nonloop_edges_add_one w (2 * m + 1)
     have hv := card_le_card hvertices
     rw [card_disjSum] at hv

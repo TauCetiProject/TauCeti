@@ -69,17 +69,12 @@ theorem norm_integral_prod_wignerMatrix_apply_le {ι : Type*} [Fintype ι] [None
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ Fintype.card ι ∂P ≤ B) (u v : ι → Fin n) :
     ‖∫ ω, ∏ t, wignerMatrix ξ η n ω (u t) (v t) ∂P‖ ≤
       (Real.sqrt n)⁻¹ ^ Fintype.card ι * B := by
-  have hk : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  calc
-    _ ≤ (Fintype.card ι : ℝ)⁻¹ *
-        ∑ t, ∫ ω, ‖wignerMatrix ξ η n ω (u t) (v t)‖ ^ Fintype.card ι ∂P := by
-      simpa using norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow _ univ_nonempty
-        (fun t _ ↦ (memLp_wignerMatrix_apply hξp hηp (u t) (v t)).integrable_norm_pow (by simp))
-    _ ≤ (Fintype.card ι : ℝ)⁻¹ *
-        ∑ _t : ι, (Real.sqrt n)⁻¹ ^ Fintype.card ι * B := by
-      gcongr with t
-      exact integral_norm_wignerMatrix_apply_pow_le hξ hη (u t) (v t)
-    _ = _ := by simp [hk]
+  exact norm_integral_prod_le_of_integral_norm_pow_le _ univ_nonempty
+    (fun t _ ↦ by
+      simpa only [card_univ] using
+        (memLp_wignerMatrix_apply hξp hηp (u t) (v t)).integrable_norm_pow Fintype.card_ne_zero)
+    (fun t _ ↦ by
+      simpa only [card_univ] using integral_norm_wignerMatrix_apply_pow_le hξ hη (u t) (v t))
 
 /-- Under a uniform `k`th absolute moment bound `B` on the `n × n` corner, the sum over any
 collection of length-`k` cyclic Wigner words visiting at most `r` vertices has norm at most

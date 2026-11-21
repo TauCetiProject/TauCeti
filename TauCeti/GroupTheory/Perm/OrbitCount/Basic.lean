@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.SetTheory.Cardinal.NatCard
+public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
-import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
@@ -110,6 +110,19 @@ noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
 /-- The orbit count is the cardinality of the type of orbits. -/
 theorem orbitCount_def (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
+/-- The number of colours used is at most the number of orbits, with equality exactly when the
+cycle labels are injective. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_and_eq_iff
+    {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    (Finset.univ.image (invariantColouringEquiv π f).val).card ≤ orbitCount π ∧
+      ((Finset.univ.image (invariantColouringEquiv π f).val).card = orbitCount π ↔
+        Function.Injective f) := by
+  rw [card_image_invariantColouringEquiv, orbitCount_def]
+  refine ⟨Nat.card_le_card_of_surjective _ Set.rangeFactorization_surjective, ?_⟩
+  refine ⟨fun h x y hxy ↦ ?_, Nat.card_range_of_injective⟩
+  exact (Set.rangeFactorization_surjective.bijective_of_nat_card_le
+    (f := Set.rangeFactorization f) h.ge).injective (Subtype.ext hxy)
 
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]

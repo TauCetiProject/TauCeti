@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Grad
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 import Mathlib.Algebra.CharP.Reduced
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Fin.Sum
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -189,30 +190,25 @@ private theorem altClass_repr_inr (c : ZMod p) {i j : Fin n} (hij : i < j) :
 /-- The interleaving `Fin n → Fin m ⊕ Fin m` for `n = 2m`: an even index `2a` goes to `inr a` and
 an odd index `2a + 1` to `inl a`, so that the pair `(2a, 2a + 1)` is a hyperbolic pair of the
 standard symplectic matrix with `B (b (2a)) (b (2a + 1)) = 1`. -/
-private def interleave {m : ℕ} (hn : n = 2 * m) (k : Fin n) : Fin m ⊕ Fin m :=
-  if (k : ℕ) % 2 = 0 then Sum.inr ⟨k / 2, by omega⟩ else Sum.inl ⟨k / 2, by omega⟩
-
-private theorem interleave_bijective {m : ℕ} (hn : n = 2 * m) :
-    Function.Bijective (interleave hn) := by
-  refine (Fintype.bijective_iff_injective_and_card _).mpr ⟨fun k l hkl ↦ ?_, by simp; omega⟩
-  unfold interleave at hkl
-  split_ifs at hkl with hk hl hl <;>
-    simp only [Sum.inr.injEq, Sum.inl.injEq, Fin.mk.injEq] at hkl <;> exact Fin.ext (by omega)
+private def interleave {m : ℕ} (hn : n = 2 * m) : Fin n ≃ Fin m ⊕ Fin m :=
+  (finCongr hn).trans ((interleaveIndexEquiv m).symm.trans (Equiv.sumComm _ _))
 
 private theorem J_interleave {m : ℕ} (hn : n = 2 * m) {i j : Fin n} (hij : i < j) :
     Matrix.J (Fin m) (ZMod p) (interleave hn i) (interleave hn j) =
       if (i : ℕ) % 2 = 0 ∧ (j : ℕ) = i + 1 then 1 else 0 := by
-  unfold interleave
+  simp only [interleave, Equiv.trans_apply, interleaveIndexEquiv_symm_apply,
+    finCongr_apply, Fin.val_cast]
   split_ifs with hi hj hj h h h h <;>
     simp [Matrix.J, Matrix.fromBlocks, Matrix.one_apply, Fin.ext_iff] <;> omega
 
 private theorem interleave_eq_inr_zero_iff {m : ℕ} (hn : n = 2 * (m + 1)) (k : Fin n) :
     interleave hn k = Sum.inr 0 ↔ (k : ℕ) = 0 := by
-  unfold interleave
+  simp only [interleave, Equiv.trans_apply, interleaveIndexEquiv_symm_apply,
+    finCongr_apply, Fin.val_cast]
   split_ifs with hk
-  · simp only [Sum.inr.injEq, Fin.ext_iff, Fin.val_zero]
+  · simp only [Equiv.sumComm_apply, Sum.swap_inl, Sum.inr.injEq, Fin.ext_iff, Fin.val_zero]
     omega
-  · simp only [false_iff]
+  · simp only [Equiv.sumComm_apply, Sum.swap_inr, reduceCtorEq, false_iff]
     omega
 
 /-- The column of `Matrix.J` at `inl 0`: the only nonzero entry is `1` in the row `inr 0`. -/
@@ -250,7 +246,7 @@ private noncomputable def interleaveEquiv {m : ℕ} (hn : n = 2 * m)
     (b : Module.Basis (Fin m ⊕ Fin m) (ZMod p) (continuousZModDual p (freeProP p (Fin n)))) :
     continuousZModDual p (freeProP p (Fin n)) ≃ₗ[ZMod p]
       continuousZModDual p (freeProP p (Fin n)) :=
-  (dualBasis p (Fin n)).equiv (b.reindex (Equiv.ofBijective _ (interleave_bijective hn)).symm)
+  (dualBasis p (Fin n)).equiv (b.reindex (interleave hn).symm)
     (Equiv.refl _)
 
 private theorem interleaveEquiv_dualBasis {m : ℕ} (hn : n = 2 * m)
@@ -258,7 +254,6 @@ private theorem interleaveEquiv_dualBasis {m : ℕ} (hn : n = 2 * m)
     (k : Fin n) : interleaveEquiv hn b (dualBasis p (Fin n) k) = b (interleave hn k) := by
   rw [interleaveEquiv, Module.Basis.equiv_apply, Equiv.refl_apply, Module.Basis.reindex_apply,
     Equiv.symm_symm]
-  rfl
 
 /-- **Realizing an interleaved symplectic basis by an automorphism.** Under the hypotheses of
 `gradedMap_eq_altClass_of_basis`, some continuous automorphism of `F` carries `ρ` to

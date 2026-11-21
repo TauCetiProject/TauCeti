@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
-public import TauCeti.Combinatorics.TraceWord.Bipartite
+public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.Independence.Integration
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Trace words of sample covariance matrices
@@ -122,6 +123,48 @@ theorem integrable_prod_apply_mul_star_apply {k : ℕ} (hk : k ≠ 0)
       ENNReal.mul_inv_cancel h2k (ENNReal.mul_ne_top (by simp) (by simp))
   simpa [hexponent, memLp_one_iff_integrable] using
     (MemLp.fun_prod (s := Finset.univ) fun s _ ↦ hfactor s)
+
+/-- For positive `k`, the trace of the `k`th power of a sample covariance is integrable when
+its entries before forming the covariance lie in `L^(2k)`. -/
+theorem integrable_trace_sampleCovariance_pow_of_ne_zero [Fintype p] [DecidableEq p] [Fintype n]
+    {k : ℕ} (hk : k ≠ 0) (hXk : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P) :
+    Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P := by
+  simp_rw [sampleCovariance_def, smul_pow, trace_smul, RCLike.real_smul_eq_coe_mul,
+    trace_mul_conjTranspose_pow_eq_sum_prod _ hk]
+  exact (integrable_finsetSum _ fun u _ ↦ integrable_finsetSum _ fun v _ ↦
+    integrable_prod_apply_mul_star_apply hk hXk u v).const_mul _
+
+/-- On a finite measure space, the trace power is integrable for entries in `L^(2k)`, including
+at `k = 0`, when the trace is constant. -/
+theorem integrable_trace_sampleCovariance_pow [Fintype p] [DecidableEq p] [Fintype n]
+    [IsFiniteMeasure P] {k : ℕ} (hXk : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P) :
+    Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · exact integrable_trace_sampleCovariance_pow_of_ne_zero hk hXk
+
+private theorem norm_readFactor {k : ℕ} (s : Fin k ⊕ Fin k) (z : 𝕜) :
+    ‖readFactor s z‖ = ‖z‖ := by
+  cases s <;> simp [readFactor]
+
+/-- For entries in `L^(2k)` and `k > 0`, a common upper bound on the absolute `2k`th entry
+moments bounds the norm of the expected product along a bipartite word of half-length `k`. -/
+theorem norm_integral_prod_apply_mul_star_apply_le {k : ℕ} (hk : k ≠ 0)
+    (u : Fin k → p) (v : Fin k → n)
+    (hXk : ∀ s, MemLp (fun ω ↦ X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2)
+      (2 * k) P) {B : ℝ}
+    (hB : ∀ s, ∫ ω, ‖X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2‖ ^ (2 * k) ∂P ≤ B) :
+    ‖∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P‖ ≤ B := by
+  have : NeZero k := ⟨hk⟩
+  have hcard : (Finset.univ : Finset (Fin k ⊕ Fin k)).card = 2 * k := by simp [two_mul]
+  simp_rw [prod_mul_star_eq_prod_readFactor]
+  refine norm_integral_prod_le_of_integral_norm_pow_le _ Finset.univ_nonempty ?_ ?_
+  · intro s _
+    simp only [hcard, norm_readFactor]
+    exact MemLp.integrable_norm_pow
+      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk s) (by omega)
+  · intro s _
+    simpa only [hcard, norm_readFactor] using hB s
 
 /-- **Trace-word expansion of sample covariance moments.** Let the entries of a random
 rectangular matrix `X` be independent, centred and in `L²ᵏ`, `k ≠ 0`. Then the expected trace of

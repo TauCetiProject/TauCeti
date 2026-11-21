@@ -271,4 +271,18 @@ theorem norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow {Ω ι 𝕜 : T
   simpa only [integral_finsetSum _ fun i hi ↦ (hf i hi).const_mul _, integral_const_mul,
     Finset.mul_sum] using hbound
 
+/-- A common upper bound on the absolute moments of order `s.card` bounds the norm of the
+expected product over the nonempty set `s`, provided these moments are integrable. -/
+theorem norm_integral_prod_le_of_integral_norm_pow_le {Ω ι 𝕜 : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
+    (f : ι → Ω → 𝕜) {s : Finset ι} (hs : s.Nonempty)
+    (hf : ∀ i ∈ s, Integrable (fun x ↦ ‖f i x‖ ^ s.card) μ)
+    {B : ℝ} (hB : ∀ i ∈ s, ∫ x, ‖f i x‖ ^ s.card ∂μ ≤ B) :
+    ‖∫ x, ∏ i ∈ s, f i x ∂μ‖ ≤ B := by
+  refine (norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow f hs hf).trans ?_
+  calc
+    _ ≤ (s.card : ℝ)⁻¹ * ∑ _i ∈ s, B :=
+      mul_le_mul_of_nonneg_left (Finset.sum_le_sum hB) (by positivity)
+    _ = B := by simp [Nat.cast_ne_zero.mpr hs.card_ne_zero]
+
 end MeasureTheory

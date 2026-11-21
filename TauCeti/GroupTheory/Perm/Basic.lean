@@ -466,6 +466,21 @@ theorem invariantColouringEquiv_apply_coe (π : Perm α)
     (invariantColouringEquiv π g : α → σ) a = g (Quotient.mk _ a) :=
   (rfl)
 
+/-- Passing from cycle labels to a colouring preserves the set of colours used. -/
+@[simp] theorem range_invariantColouringEquiv (π : Perm α) (g : Quotient (SameCycle.setoid π) → σ) :
+    Set.range (invariantColouringEquiv π g : α → σ) = Set.range g := by
+  have h : (invariantColouringEquiv π g : α → σ) = g ∘ Quotient.mk _ :=
+    funext (invariantColouringEquiv_apply_coe π g)
+  rw [h, Quotient.mk_surjective.range_comp]
+
+/-- The colours in the finite image of the induced colouring are exactly the colours used by
+the cycle labels. -/
+theorem card_image_invariantColouringEquiv [Fintype α] [DecidableEq σ]
+    (π : Perm α) (g : Quotient (SameCycle.setoid π) → σ) :
+    (Finset.univ.image (invariantColouringEquiv π g).val).card = Nat.card (Set.range g) := by
+  rw [← range_invariantColouringEquiv π, ← Set.image_univ, ← Finset.coe_univ,
+    ← Finset.coe_image, Nat.card_coe_set_eq, Set.ncard_coe_finset]
+
 /-- The map on cycles corresponding to an invariant colouring evaluates at a cycle by evaluating
 the colouring at any point in that cycle. -/
 @[simp]
