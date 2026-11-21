@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
+public import Mathlib.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
 public import TauCeti.Topology.Category.TopCat.MappingSpace
 import TauCeti.CategoryTheory.Monoidal.Closed.Unit
@@ -23,15 +24,24 @@ object universe `w`.
 * `CompactlyGenerated.isInitialPEmpty`, `CompactlyGenerated.isTerminalPUnit`,
   `CompactlyGenerated.prodBinaryFanIsLimit`: initial object (`PEmpty`) and chosen finite products
   giving `CartesianMonoidalCategory` and `BraidedCategory` with binary product carrier `k(X × Y)`.
-* `CompactlyGenerated.tensorRightLocallyCompactHomeomorph`,
+* `CompactlyGenerated.prodComparison_compactlyGeneratedToTop`,
+  `CompactlyGenerated.isIso_prodComparison_compactlyGeneratedToTop_iff`,
+  `CompactlyGenerated.tensorHomeomorphProd`,
+  `CompactlyGenerated.tensorHomeomorphProdOfLocallyCompactRight`,
+  `CompactlyGenerated.tensorHomeomorphProdOfLocallyCompactLeft`,
+  `CompactlyGenerated.tensorRightLocallyCompactHomeomorph`,
   `CompactlyGenerated.tensorLeftLocallyCompactHomeomorph`,
   `CompactlyGenerated.toCompactlyGeneratedProdRightIso`,
-  `CompactlyGenerated.toCompactlyGeneratedProdLeftIso`: for `u`-small locally compact Hausdorff
-  `L`, `Y ⊗ of L` agrees with `Y × L` and `k(X × L) ≅ kX ⊗ of L` by the identity on points.
+  `CompactlyGenerated.toCompactlyGeneratedProdLeftIso`: the product comparison in `TopCat` is the
+  coreflection counit on `X × Y`, so `X ⊗ Y ≃ₜ X × Y` whenever `X × Y` is `u`-compactly generated
+  (in particular whenever either factor is locally compact, with no separation or smallness needed
+  on the factors; for `u`-small locally compact Hausdorff `L`, `Y ⊗ of L ≃ₜ Y × L` and
+  `k(X × L) ≅ kX ⊗ of L`).
 * `CompactlyGenerated.ihomFunctor`, `CompactlyGenerated.curryEquiv`,
   `CompactlyGenerated.tensorLeftAdjunction`: the `MonoidalClosed` structure on
   `CompactlyGenerated.{u, w}` with internal hom `k(ContinuousMapGeneratedBy CompHaus.{u} Y Z)`.
-* `CompactlyGenerated.ihomHomeomorphToCompactlyGeneratedContinuousMap`,
+* `CompactlyGenerated.compactOpenToIhom`,
+  `CompactlyGenerated.ihomHomeomorphToCompactlyGeneratedContinuousMap`,
   `CompactlyGenerated.ihomIsoToCompactlyGeneratedMappingSpace`,
   `CompactlyGenerated.toCompactlyGeneratedMappingSpaceCurryIso`,
   `CompactlyGenerated.toCompactlyGeneratedMappingSpaceCurryHomeomorph`,
@@ -55,7 +65,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory Topology
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory Topology
 
 universe u w v₁
 
@@ -122,6 +132,8 @@ instance instCartesianMonoidalCategory : CartesianMonoidalCategory CompactlyGene
 instance instBraidedCategory : BraidedCategory CompactlyGenerated.{u, w} :=
   .ofCartesianMonoidalCategory
 
+instance : Subsingleton ↑(𝟙_ CompactlyGenerated.{u, w}) :=
+  inferInstanceAs (Subsingleton PUnit.{w + 1})
 instance (X Y : CompactlyGenerated.{u, w}) [T2Space X] [T2Space Y] : T2Space ↑(X ⊗ Y) :=
   inferInstanceAs (T2Space (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (X × Y))))
 
@@ -266,6 +278,107 @@ theorem toCompactlyGeneratedProdLeftIso_inv_apply (L : Type w) (X : TopCat.{w})
     [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
     (p : ↑((of L : CompactlyGenerated.{u, w}) ⊗ TopCat.toCompactlyGenerated.{u, w}.obj X)) :
     (toCompactlyGeneratedProdLeftIso L X).inv p = p := rfl
+
+section ProdComparison
+
+variable (X Y : CompactlyGenerated.{u, w})
+
+/-- The canonical product comparison `(X ⊗ Y).toTop ⟶ X.toTop ⊗ Y.toTop` in `TopCat` is the
+compact-generation counit on `X × Y`. -/
+theorem prodComparison_compactlyGeneratedToTop :
+    CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y =
+      adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) := by
+  apply CartesianMonoidalCategory.hom_ext
+  · rw [CartesianMonoidalCategory.prodComparison_fst]; rfl
+  · rw [CartesianMonoidalCategory.prodComparison_snd]; rfl
+
+@[simp]
+theorem prodComparison_compactlyGeneratedToTop_apply (p : ↑(X ⊗ Y)) :
+    CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y p =
+      (p : X × Y) := by
+  rw [prodComparison_compactlyGeneratedToTop]; rfl
+
+/-- The convenient product `X ⊗ Y` has the ordinary product topology if and only if `X × Y` is
+`u`-compactly generated. -/
+theorem isIso_prodComparison_compactlyGeneratedToTop_iff :
+    IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) ↔
+      UCompactlyGeneratedSpace.{u} (X × Y) := by
+  rw [prodComparison_compactlyGeneratedToTop]; exact isIso_counit_app_iff (X.toTop ⊗ Y.toTop)
+
+/-- When `X × Y` is `u`-compactly generated, the product comparison in `TopCat` is an
+isomorphism. -/
+instance instIsIsoProdComparisonCompactlyGeneratedToTop [UCompactlyGeneratedSpace.{u} (X × Y)] :
+    IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) :=
+  (isIso_prodComparison_compactlyGeneratedToTop_iff X Y).2 inferInstance
+
+/-- When `X × Y` is `u`-compactly generated, the convenient product `X ⊗ Y` is homeomorphic to the
+ordinary product `X × Y` by the identity on points. -/
+@[expose]
+def tensorHomeomorphProd [UCompactlyGeneratedSpace.{u} (X × Y)] : ↑(X ⊗ Y) ≃ₜ X × Y :=
+  counitHomeomorph.{u, w} (TopCat.of (X × Y))
+
+@[simp]
+theorem tensorHomeomorphProd_apply [UCompactlyGeneratedSpace.{u} (X × Y)] (p : ↑(X ⊗ Y)) :
+    tensorHomeomorphProd X Y p = p := rfl
+
+@[simp]
+theorem tensorHomeomorphProd_symm_apply [UCompactlyGeneratedSpace.{u} (X × Y)] (p : X × Y) :
+    (tensorHomeomorphProd X Y).symm p = p := rfl
+
+/-- When `Y` is locally compact, the product comparison in `TopCat` is an isomorphism, without
+requiring separation or `u`-smallness on `Y`. -/
+instance instIsIsoProdComparisonCompactlyGeneratedToTopOfLocallyCompactRight
+    [LocallyCompactSpace Y] :
+    IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) := by
+  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right.{u} X Y; infer_instance
+
+/-- When `X` is locally compact, the product comparison in `TopCat` is an isomorphism, without
+requiring separation or `u`-smallness on `X`. -/
+instance instIsIsoProdComparisonCompactlyGeneratedToTopOfLocallyCompactLeft
+    [LocallyCompactSpace X] :
+    IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) := by
+  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} X Y; infer_instance
+
+/-- When `Y` is locally compact, the convenient product `X ⊗ Y` is homeomorphic to the ordinary
+product `X × Y` by the identity on points, without separation or `u`-smallness hypotheses. -/
+@[expose]
+def tensorHomeomorphProdOfLocallyCompactRight [LocallyCompactSpace Y] : ↑(X ⊗ Y) ≃ₜ X × Y :=
+  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right.{u} X Y
+  tensorHomeomorphProd X Y
+
+@[simp]
+theorem tensorHomeomorphProdOfLocallyCompactRight_apply [LocallyCompactSpace Y]
+    (p : ↑(X ⊗ Y)) : tensorHomeomorphProdOfLocallyCompactRight X Y p = p := rfl
+
+@[simp]
+theorem tensorHomeomorphProdOfLocallyCompactRight_symm_apply [LocallyCompactSpace Y]
+    (p : X × Y) : (tensorHomeomorphProdOfLocallyCompactRight X Y).symm p = p := rfl
+
+/-- When `X` is locally compact, the convenient product `X ⊗ Y` is homeomorphic to the ordinary
+product `X × Y` by the identity on points, without separation or `u`-smallness hypotheses. -/
+@[expose]
+def tensorHomeomorphProdOfLocallyCompactLeft [LocallyCompactSpace X] : ↑(X ⊗ Y) ≃ₜ X × Y :=
+  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} X Y
+  tensorHomeomorphProd X Y
+
+@[simp]
+theorem tensorHomeomorphProdOfLocallyCompactLeft_apply [LocallyCompactSpace X]
+    (p : ↑(X ⊗ Y)) : tensorHomeomorphProdOfLocallyCompactLeft X Y p = p := rfl
+
+@[simp]
+theorem tensorHomeomorphProdOfLocallyCompactLeft_symm_apply [LocallyCompactSpace X]
+    (p : X × Y) : (tensorHomeomorphProdOfLocallyCompactLeft X Y).symm p = p := rfl
+
+end ProdComparison
+
+/-- Any map into `↑(X ⊗ Y)` from a `u`-compactly generated space that is continuous into the
+ordinary product `X × Y` is continuous into the convenient product `X ⊗ Y`. -/
+theorem continuous_toCompactlyGeneratedProd {A : Type*} [TopologicalSpace A]
+    [UCompactlyGeneratedSpace.{u} A] {X Y : CompactlyGenerated.{u, w}}
+    {g : A → ↑(X ⊗ Y)} (hg : Continuous fun a ↦ ((g a).1, (g a).2)) :
+    Continuous g :=
+  ((⟨fun a ↦ ((g a).1, (g a).2), hg⟩ : C(A, X × Y)).toCompactlyGenerated.{u}.continuous.comp
+    (counitHomeomorph.{u} (TopCat.of A)).symm.continuous).congr fun _ ↦ rfl
 
 /-! ### Cartesian closed structure -/
 
@@ -414,6 +527,36 @@ theorem ihomCurry_apply (Y X Z : CompactlyGenerated.{u, w})
     _ = (ihom.ev (Y ⊗ X)).app Z yx_g := congrArg _ (associator_inv_apply y x g)
     _ = g (y, x) := ihom_ev_app_apply (Y ⊗ X) Z yx_g
 
+@[ext]
+theorem ihom_obj_ext {Y Z : CompactlyGenerated.{u, w}} {f g : ↑((ihom Y).obj Z)}
+    (h : ∀ y, f y = g y) : f = g :=
+  DFunLike.ext f g h
+
+/-- Pointwise formula for internal uncurrying `MonoidalClosed.ihomUncurry` in
+`CompactlyGenerated.{u, w}`. -/
+@[simp]
+theorem ihomUncurry_apply (Y X Z : CompactlyGenerated.{u, w})
+    (g : ↑((ihom X).obj ((ihom Y).obj Z))) (p : ↑(Y ⊗ X)) :
+    (MonoidalClosed.ihomUncurry Y X Z g) p = (g p.2) p.1 := by
+  let p2g : ↑(X ⊗ (ihom X).obj ((ihom Y).obj Z)) := (p.2, g)
+  let p1_p2g : ↑(Y ⊗ (X ⊗ (ihom X).obj ((ihom Y).obj Z))) := (p.1, p2g)
+  let pg : ↑((Y ⊗ X) ⊗ (ihom X).obj ((ihom Y).obj Z)) := ((p.1, p.2), g)
+  calc
+    (MonoidalClosed.ihomUncurry Y X Z g) p
+      = MonoidalClosed.uncurry (MonoidalClosed.ihomUncurry Y X Z) (p, g) :=
+        (uncurry_apply _ (p, g)).symm
+    _ = ((α_ Y X _).hom ≫ Y ◁ (ihom.ev X).app ((ihom Y).obj Z) ≫ (ihom.ev Y).app Z) pg := by
+        rw [MonoidalClosed.uncurry_ihomUncurry]; rfl
+    _ = (ihom.ev Y).app Z ((Y ◁ (ihom.ev X).app ((ihom Y).obj Z)) ((α_ Y X _).hom pg)) := rfl
+    _ = (ihom.ev Y).app Z ((Y ◁ (ihom.ev X).app ((ihom Y).obj Z)) p1_p2g) :=
+        congrArg (fun q ↦ (ihom.ev Y).app Z ((Y ◁ (ihom.ev X).app ((ihom Y).obj Z)) q))
+          (associator_hom_apply p.1 p.2 g)
+    _ = (ihom.ev Y).app Z (p.1, (ihom.ev X).app ((ihom Y).obj Z) p2g) := by
+        rw [whiskerLeft_apply]
+    _ = (g p.2) p.1 := by
+        rw [ihom_ev_app_apply X ((ihom Y).obj Z) p2g]
+        exact ihom_ev_app_apply Y Z (p.1, g p.2)
+
 /-- Evaluation at a point `y : Y` as a morphism `(ihom Y).obj Z ⟶ Z` in
 `CompactlyGenerated.{u, w}`. -/
 @[expose]
@@ -428,6 +571,20 @@ theorem evalAt_apply (Y Z : CompactlyGenerated.{u, w}) (y : Y) (f : ↑((ihom Y)
     evalAt Y Z y f = f y := rfl
 
 /-! ### Compact-open mapping space comparisons and exponential homeomorphism -/
+
+/-- Canonical morphism `k(C(Y, Z)) ⟶ (ihom Y).obj Z` in `CompactlyGenerated.{u, w}` induced by
+viewing continuous maps as `CompHaus.{u}`-continuous maps. -/
+@[expose]
+def compactOpenToIhom (Y Z : CompactlyGenerated.{u, w}) :
+    TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)) ⟶ (ihom Y).obj Z :=
+  TopCat.toCompactlyGeneratedOfContinuousGeneratedBy.{u}
+    ⟨ContinuousMap.toContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K),
+      ContinuousMap.continuous_toContinuousMapGeneratedBy.continuousGeneratedBy⟩
+
+@[simp]
+theorem compactOpenToIhom_apply (Y Z : CompactlyGenerated.{u, w})
+    (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))) (y : Y) :
+    (compactOpenToIhom Y Z f) y = f y := rfl
 
 instance (Y Z : CompactlyGenerated.{u, w}) :
     FunLike ↑((compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
@@ -470,6 +627,11 @@ def ihomIsoToCompactlyGeneratedMappingSpace (Y : CompactlyGenerated.{u, w})
   NatIso.ofComponents
     (fun Z ↦ isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z))
     (fun _ ↦ ConcreteCategory.hom_ext _ _ fun _ ↦ DFunLike.ext _ _ fun _ ↦ rfl)
+
+theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app
+    (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y] :
+    (ihomIsoToCompactlyGeneratedMappingSpace Y).inv.app Z = compactOpenToIhom Y Z :=
+  ConcreteCategory.hom_ext _ _ fun _ ↦ DFunLike.ext _ _ fun _ ↦ rfl
 
 @[simp]
 theorem ihomIsoToCompactlyGeneratedMappingSpace_hom_app_apply

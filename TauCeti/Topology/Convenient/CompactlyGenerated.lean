@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Small.Basic
-public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Instances.Shrink
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
 
@@ -25,8 +25,10 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 * Compact subsets as `CompHaus.{u}` images (`IsCompact.exists_compHaus_range_eq`), giving
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
-* Locally compact Hausdorff product preservation (`UCompactlyGeneratedSpace.prod_right`,
-  `UCompactlyGeneratedSpace.prod_left`).
+* Locally compact product preservation (`UCompactlyGeneratedSpace.prod_right`,
+  `UCompactlyGeneratedSpace.prod_left`,
+  `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right`,
+  `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left`).
 
 ## References
 
@@ -106,6 +108,11 @@ instance (Y : Type v) [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y] :
     IsGeneratedBy (fun K : CompHaus.{u} ↦ K) Y :=
   (isGeneratedBy_compHaus_iff Y).2 inferInstance
 
+/-- The compactly generated refinement of any topological space is `u`-compactly generated. -/
+instance (Y : Type v) [TopologicalSpace Y] :
+    UCompactlyGeneratedSpace.{u} (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) Y) :=
+  (isGeneratedBy_compHaus_iff _).1 inferInstance
+
 end Topology
 
 namespace IsCompact
@@ -141,6 +148,23 @@ instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceO
     exact p.continuous.isClosedMap _ (hs S p)
   rw [← Subtype.preimage_coe_inter_self]
   exact hclosed.preimage continuous_subtypeVal
+
+variable (X : Type v) (Y : Type w) [TopologicalSpace X] [TopologicalSpace Y]
+  [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y]
+
+/-- If `X` and `Y` are `u`-compactly generated and `Y` is locally compact, then the ordinary
+product `X × Y` is `u`-compactly generated. -/
+theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right [LocallyCompactSpace Y] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right X Y)
+
+/-- If `X` and `Y` are `u`-compactly generated and `X` is locally compact, then the ordinary
+product `X × Y` is `u`-compactly generated. -/
+theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompactSpace X] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left X Y)
 
 end TauCeti
 

@@ -263,14 +263,23 @@ instance instCoreflectiveCompactlyGeneratedToTop : Coreflective compactlyGenerat
   R := TopCat.toCompactlyGenerated.{u, w}
   adj := adj.{u, w}
 
-instance instCreatesColimitsCompactlyGeneratedToTop :
-    CreatesColimits compactlyGeneratedToTop.{u, w} := comonadicCreatesColimits _
+instance instCreatesColimitsOfSizeCompactlyGeneratedToTop :
+    CreatesColimitsOfSize.{v', v} compactlyGeneratedToTop.{u, w} :=
+  comonadicCreatesColimits _
 
-instance : HasLimits CompactlyGenerated.{u, w} :=
+instance {J : Type v} [Category.{v'} J] [Small.{w} J] :
+    HasLimitsOfShape J CompactlyGenerated.{u, w} :=
+  hasLimitsOfShape_of_coreflective compactlyGeneratedToTop.{u, w}
+
+instance {J : Type v} [Category.{v'} J] [Small.{w} J] :
+    HasColimitsOfShape J CompactlyGenerated.{u, w} :=
+  hasColimitsOfShape_of_coreflective compactlyGeneratedToTop.{u, w}
+
+instance [UnivLE.{v, w}] : HasLimitsOfSize.{v', v} CompactlyGenerated.{u, w} :=
   hasLimits_of_coreflective compactlyGeneratedToTop.{u, w}
 
-instance : HasColimits CompactlyGenerated.{u, w} :=
-  hasColimits_of_hasColimits_createsColimits compactlyGeneratedToTop.{u, w}
+instance [UnivLE.{v, w}] : HasColimitsOfSize.{v', v} CompactlyGenerated.{u, w} :=
+  hasColimits_of_coreflective compactlyGeneratedToTop.{u, w}
 
 /-- Limits in `CompactlyGenerated.{u, w}` are computed by taking the limit in `TopCat.{w}` and
 applying the coreflector `TopCat.toCompactlyGenerated`. -/
@@ -321,6 +330,10 @@ theorem counitIso_hom (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
 
 instance instIsIsoCounitApp (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
     IsIso (adj.{u, w}.counit.app X) := counitIso_hom.{u, w} X ▸ inferInstance
+
+instance (X : TopCat.{w}) :
+    IsIso (TopCat.toCompactlyGenerated.{u, w}.map (adjCounit.{u, w}.app X)) := by
+  rw [← adj_counit]; infer_instance
 
 /-- The counit `kX ⟶ X` at `X : TopCat.{w}` is an isomorphism in `TopCat` if and only if `X` is
 `u`-compactly generated. -/
