@@ -76,8 +76,7 @@ section SharedNormalization
 private theorem rankOne_ne_zero {D : Type*} [DivisionRing D] [StarRing D] {n : Type*}
     {v w : n → D} (hv : v ≠ 0) (hw : w ≠ 0) :
     Matrix.of (fun i j ↦ v i * star (w j)) ≠ (0 : Matrix n n D) := by
-  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hv
-  obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp hw
+  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hv; obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp hw
   intro h0
   have h := congrFun (congrFun h0 i₀) j₀
   simp only [Matrix.of_apply, Matrix.zero_apply, mul_eq_zero, star_eq_zero] at h
@@ -87,19 +86,9 @@ private theorem rankOne_ne_zero {D : Type*} [DivisionRing D] [StarRing D] {n : T
 private def innerConjAlgEquiv {R : Type*} [Ring R] [Algebra ℝ R] (r : Rˣ) : R ≃ₐ[ℝ] R where
   toFun X := (↑r⁻¹ : R) * X * (r : R)
   invFun Y := (r : R) * Y * (↑r⁻¹ : R)
-  left_inv X := by
-    calc (r : R) * ((↑r⁻¹ : R) * X * (r : R)) * (↑r⁻¹ : R)
-        = ((r : R) * (↑r⁻¹ : R)) * X * ((r : R) * (↑r⁻¹ : R)) := by simp only [mul_assoc]
-      _ = X := by rw [r.mul_inv, one_mul, mul_one]
-  right_inv Y := by
-    calc (↑r⁻¹ : R) * ((r : R) * Y * (↑r⁻¹ : R)) * (r : R)
-        = ((↑r⁻¹ : R) * (r : R)) * Y * ((↑r⁻¹ : R) * (r : R)) := by simp only [mul_assoc]
-      _ = Y := by rw [r.inv_mul, one_mul, mul_one]
-  map_mul' X Y := by
-    calc (↑r⁻¹ : R) * (X * Y) * (r : R)
-        = (↑r⁻¹ : R) * X * 1 * (Y * (r : R)) := by simp only [mul_assoc, mul_one]
-      _ = (↑r⁻¹ : R) * X * ((r : R) * (↑r⁻¹ : R)) * (Y * (r : R)) := by rw [r.mul_inv]
-      _ = ((↑r⁻¹ : R) * X * (r : R)) * ((↑r⁻¹ : R) * Y * (r : R)) := by simp only [mul_assoc]
+  left_inv X := by simp [← mul_assoc]
+  right_inv Y := by simp [mul_assoc]
+  map_mul' X Y := by simp only [mul_assoc, Units.mul_inv_cancel_left]
   map_add' X Y := by simp only [mul_add, add_mul]
   commutes' k := by
     rw [Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one, r.inv_mul]
@@ -115,47 +104,28 @@ private theorem exists_unit_conj_star_of_central (F : Type*) {M : Type*} [Field 
     ∃ (u : Mˣ) (μ : F), (∀ X : M, α X = (u : M) * X * (↑u⁻¹ : M)) ∧
       star (u : M) = μ • (u : M) ∧ star μ * μ = 1 := by
   obtain ⟨u, hu⟩ := exists_unit_conj_of_algEquiv F α
-  have hcomm : ∀ X : M, ((u : M) * star (↑u⁻¹ : M)) * X = X * ((u : M) * star (↑u⁻¹ : M)) := by
-    intro X
-    have hX := hinvol X
-    rw [hu, hu, star_mul, star_mul, star_star] at hX
+  have hcomm (X : M) : ((u : M) * star (↑u⁻¹ : M)) * X = X * ((u : M) * star (↑u⁻¹ : M)) := by
     have h1 : ((u : M) * star (↑u⁻¹ : M)) * X * (star (u : M) * (↑u⁻¹ : M)) = X := by
+      have hX := hinvol X; rw [hu, hu, star_mul, star_mul, star_star] at hX
       simpa only [mul_assoc] using hX
     have hinv : (star (u : M) * (↑u⁻¹ : M)) * ((u : M) * star (↑u⁻¹ : M)) = 1 := by
-      calc (star (u : M) * (↑u⁻¹ : M)) * ((u : M) * star (↑u⁻¹ : M))
-          = star (u : M) * ((↑u⁻¹ : M) * (u : M)) * star (↑u⁻¹ : M) := by simp only [mul_assoc]
-        _ = star (u : M) * star (↑u⁻¹ : M) := by simp
-        _ = star ((↑u⁻¹ : M) * (u : M)) := (star_mul _ _).symm
-        _ = 1 := by simp
-    calc ((u : M) * star (↑u⁻¹ : M)) * X
-        = ((u : M) * star (↑u⁻¹ : M)) * X * 1 := (mul_one _).symm
-      _ = ((u : M) * star (↑u⁻¹ : M)) * X *
-            ((star (u : M) * (↑u⁻¹ : M)) * ((u : M) * star (↑u⁻¹ : M))) := by rw [hinv]
-      _ = X * ((u : M) * star (↑u⁻¹ : M)) := by rw [← mul_assoc, h1]
+      rw [mul_assoc (star (u : M)), ← mul_assoc (↑u⁻¹ : M), u.inv_mul, one_mul, ← star_mul,
+        u.inv_mul, star_one]
+    rw [← mul_one (((u : M) * star (↑u⁻¹ : M)) * X), ← hinv, ← mul_assoc, h1]
   have hmem : (u : M) * star (↑u⁻¹ : M) ∈ Subalgebra.center F M :=
     Subalgebra.mem_center_iff.mpr fun X ↦ (hcomm X).symm
   rw [Algebra.IsCentral.center_eq_bot F M, Algebra.mem_bot] at hmem
   obtain ⟨c, hc⟩ := hmem
   have hcu : c • star (u : M) = (u : M) := by
-    have h := congrArg (· * star (u : M)) hc
-    rw [← Algebra.smul_def, mul_assoc, ← star_mul, Units.mul_inv, star_one, mul_one] at h
-    exact h
-  have hc0 : c ≠ 0 := fun h0 ↦ by
-    rw [h0, zero_smul] at hcu
-    exact one_ne_zero (by simpa [← hcu] using u.mul_inv : (1 : M) = 0)
-  have hsu : star (u : M) = c⁻¹ • (u : M) := by
-    calc star (u : M) = c⁻¹ • (c • star (u : M)) := by rw [inv_smul_smul₀ hc0]
-      _ = c⁻¹ • (u : M) := by rw [hcu]
+    simpa [← Algebra.smul_def, mul_assoc, ← star_mul] using congrArg (· * star (u : M)) hc
+  have hc0 : c ≠ 0 := fun h0 ↦
+    one_ne_zero (by simpa [h0] using congrArg (· * (↑u⁻¹ : M)) hcu.symm : (1 : M) = 0)
+  have hsu : star (u : M) = c⁻¹ • (u : M) := (eq_inv_smul_iff₀ hc0).mpr hcu
   refine ⟨u, c⁻¹, hu, hsu, ?_⟩
   have hss : (star c⁻¹ * c⁻¹) • (u : M) = (u : M) := by
-    have h2 := congrArg star hsu
-    rw [star_star, star_smul, hsu, smul_smul] at h2
-    exact h2.symm
-  have h1 : (star c⁻¹ * c⁻¹) • (1 : M) = (1 : M) := by
-    simpa [smul_mul_assoc] using congrArg (· * (↑u⁻¹ : M)) hss
-  have h2 : algebraMap F M (star c⁻¹ * c⁻¹) = algebraMap F M 1 := by
-    simpa [Algebra.algebraMap_eq_smul_one] using h1
-  exact (algebraMap F M).injective h2
+    have h2 := congrArg star hsu; rwa [star_star, star_smul, hsu, smul_smul, eq_comm] at h2
+  exact (algebraMap F M).injective <| by
+    simpa [Algebra.algebraMap_eq_smul_one, smul_mul_assoc] using congrArg (· * (↑u⁻¹ : M)) hss
 
 /-- A Hermitian unit `u` whose conjugation `X ↦ u * Xᴴ * u⁻¹` is positive for `stdMatrixTrace`
 satisfies `IsRosatiPositive` up to a sign `±u`. -/
@@ -172,39 +142,40 @@ private theorem exists_pos_hermitian_unit {D : Type*} [DivisionRing D] [Algebra 
         (a : Matrix n n D) * Xᴴ * (↑a⁻¹ : Matrix n n D) =
           (u : Matrix n n D) * Xᴴ * (↑u⁻¹ : Matrix n n D) := by
   have huinvH : (↑u⁻¹ : Matrix n n D)ᴴ = ↑u⁻¹ := IsSelfAdjoint.of_mul_eq_one huH u.mul_inv
-  have hre1 : rePart 1 = 1 := by
-    have h1 := hre_sa 1 (IsSelfAdjoint.one D)
-    exact ((algebraMap ℝ D).injective (by simpa using h1)).symm
-  let i₀ : n := Classical.arbitrary n
-  let v₀ : n → D := Pi.single i₀ 1
-  have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h i₀
+  have hre1 : rePart 1 = 1 :=
+    ((algebraMap ℝ D).injective (by simpa using hre_sa 1 (IsSelfAdjoint.one D))).symm
+  let v₀ : n → D := Pi.single (Classical.arbitrary n) 1
+  have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h (Classical.arbitrary n)
   set α : ℝ := rePart (∑ i : n, ∑ m : n, star (v₀ i) * (↑u⁻¹ : Matrix n n D) i m * v₀ m)
-  have hprod : ∀ w : n → D, w ≠ 0 →
+  have hsum_eq (M : Matrix n n D) (v : n → D) :
+      ∑ j : n, ∑ k : n, star (v j) * M j k * v k = star v ⬝ᵥ M *ᵥ v := by
+    simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc, Pi.star_apply]
+  have hprod (w : n → D) (hw : w ≠ 0) :
       0 < α * rePart (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k) := by
-    intro w hw
     have h1 := hpos (Matrix.of fun i j ↦ v₀ i * star (w j)) (rankOne_ne_zero hv₀ hw)
     rw [stdMatrixTrace_rankOne_mul_conj hre_cyclic u v₀ w] at h1
     set q1 := ∑ i : n, ∑ m : n, star (v₀ i) * (↑u⁻¹ : Matrix n n D) i m * v₀ m
     set q2 := ∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k
-    have hq1 : q1 = algebraMap ℝ D (rePart q1) :=
-      hre_sa q1 (isSelfAdjoint_quadForm_of_isHermitian huinvH v₀)
-    have hq2 : q2 = algebraMap ℝ D (rePart q2) :=
-      hre_sa q2 (isSelfAdjoint_quadForm_of_isHermitian huH w)
+    have hq1 : q1 = algebraMap ℝ D (rePart q1) := hre_sa q1 (by
+      dsimp only [q1]; rw [hsum_eq]
+      exact Matrix.IsHermitian.star_dotProduct_mulVec_comm huinvH v₀ v₀)
+    have hq2 : q2 = algebraMap ℝ D (rePart q2) := hre_sa q2 (by
+      dsimp only [q2]; rw [hsum_eq]
+      exact Matrix.IsHermitian.star_dotProduct_mulVec_comm huH w w)
     have hmul : rePart (q1 * q2) = rePart q1 * rePart q2 := by
-      conv_lhs => rw [hq1, hq2]
+      (conv_lhs => rw [hq1, hq2])
       rw [← map_mul, Algebra.algebraMap_eq_smul_one, map_smul, smul_eq_mul, hre1, mul_one]
     rwa [hmul] at h1
-  have hα0 : α ≠ 0 := fun h0 ↦ by
-    have := hprod v₀ hv₀; rw [h0, zero_mul] at this; exact lt_irrefl 0 this
+  have hα0 : α ≠ 0 := fun h0 ↦ lt_irrefl 0 (by simpa [h0] using hprod v₀ hv₀)
   rcases lt_or_gt_of_ne hα0 with hlt | hgt
-  · refine ⟨-u, (isRosatiPositive_stdMatrixTrace_iff hre_cyclic _).mpr ⟨?_, fun w hw ↦ ?_⟩,
-      fun X ↦ by simp⟩
-    · rw [Matrix.IsHermitian, Units.val_neg, Matrix.conjTranspose_neg, huH]
-    · have hp := hprod w hw
-      have hneg : rePart (∑ j : n, ∑ k : n, star (w j) * (-(u : Matrix n n D)) j k * w k) =
-          -rePart (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k) := by
-        simp only [Matrix.neg_apply, mul_neg, neg_mul, Finset.sum_neg_distrib, map_neg]
-      rw [Units.val_neg, hneg]; nlinarith
+  · refine ⟨-u, (isRosatiPositive_stdMatrixTrace_iff hre_cyclic _).mpr ⟨by
+      rw [Matrix.IsHermitian, Units.val_neg, Matrix.conjTranspose_neg, huH], fun w hw ↦ ?_⟩,
+      fun _ ↦ by simp⟩
+    have hp := hprod w hw
+    have hneg : rePart (∑ j : n, ∑ k : n, star (w j) * (-(u : Matrix n n D)) j k * w k) =
+        -rePart (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k) := by
+      simp only [Matrix.neg_apply, mul_neg, neg_mul, Finset.sum_neg_distrib, map_neg]
+    rw [Units.val_neg, hneg]; nlinarith
   · exact ⟨u, (isRosatiPositive_stdMatrixTrace_iff hre_cyclic _).mpr
       ⟨huH, fun w hw ↦ pos_of_mul_pos_right (hprod w hw) hgt.le⟩, fun _ ↦ rfl⟩
 
@@ -227,48 +198,39 @@ private theorem exists_star_algEquiv_matrix_of_hermitian_unit {A D : Type*}
     ∃ e : A ≃ₐ[ℝ] Matrix n n D,
       (∀ x : A, e (star x) = star (e x)) ∧
       ∀ s : A, IsRosatiPositive t s ↔ IsRosatiPositive (stdMatrixTrace rePart) (e s) := by
-  have hMpos : ∀ X : Matrix n n D, X ≠ 0 →
+  have hMpos (X : Matrix n n D) (hX : X ≠ 0) :
       0 < stdMatrixTrace rePart (X * (u : Matrix n n D) * Xᴴ * (↑u⁻¹ : Matrix n n D)) := by
-    intro X hX
-    have hx : φ.symm X ≠ 0 := fun h ↦ hX (by simpa using congrArg φ h)
-    have h1 := hpos (φ.symm X) hx
+    have h1 := hpos (φ.symm X) (fun h ↦ hX (by simpa using congrArg φ h))
     rw [ht, map_mul, hσ, AlgEquiv.apply_symm_apply, ← mul_assoc, ← mul_assoc] at h1
     exact pos_of_mul_pos_right h1 hc.le
   obtain ⟨a, haPos, haConj⟩ := exists_pos_hermitian_unit hre_cyclic hre_sa u huH hMpos
   obtain ⟨_, r, hrPos, hrsq, -, -, -, -⟩ := rosatiPositiveSquareRoot (stdMatrixTrace rePart)
     (stdMatrixTrace_cyclic hre_cyclic) (fun _ hX ↦ stdMatrixTrace_pos hre_pos hX)
     (a : Matrix n n D) haPos
-  set R : Matrix n n D := (r : Matrix n n D)
-  set Rinv : Matrix n n D := (↑r⁻¹ : Matrix n n D)
-  have hRRinv : R * Rinv = 1 := r.mul_inv
-  have hRinvR : Rinv * R = 1 := r.inv_mul
+  set R := (r : Matrix n n D); set Rinv := (↑r⁻¹ : Matrix n n D)
   have hrH : Rᴴ = R := hrPos.isSelfAdjoint
-  have hrInvH : Rinvᴴ = Rinv := IsSelfAdjoint.of_mul_eq_one hrH hRRinv
+  have hrInvH : Rinvᴴ = Rinv := IsSelfAdjoint.of_mul_eq_one hrH r.mul_inv
   have haInv : (↑a⁻¹ : Matrix n n D) = Rinv * Rinv := by
     have hmul : (a : Matrix n n D) * (Rinv * Rinv) = 1 := by
-      rw [← hrsq]; calc (R * R) * (Rinv * Rinv) = R * (R * Rinv) * Rinv := by simp only [mul_assoc]
-        _ = 1 := by rw [hRRinv, mul_one, hRRinv]
+      rw [← hrsq, mul_assoc R R, ← mul_assoc R Rinv, r.mul_inv, one_mul, r.mul_inv]
     simpa [mul_assoc] using (congrArg ((↑a⁻¹ : Matrix n n D) * ·) hmul).symm
   let e : A ≃ₐ[ℝ] Matrix n n D := φ.trans (innerConjAlgEquiv r)
-  have he_apply : ∀ x : A, e x = Rinv * φ x * R := fun _ ↦ rfl
-  have heStar : ∀ x : A, e (star x) = star (e x) := fun x ↦ by
-    rw [he_apply, he_apply, Matrix.star_eq_conjTranspose, hσ, ← haConj, ← hrsq, haInv,
-      Matrix.conjTranspose_mul, Matrix.conjTranspose_mul, hrH, hrInvH]
-    calc Rinv * (R * R * (φ x)ᴴ * (Rinv * Rinv)) * R
-        = (Rinv * R) * R * (φ x)ᴴ * Rinv * (Rinv * R) := by simp only [mul_assoc]
-      _ = R * ((φ x)ᴴ * Rinv) := by rw [hRinvR, one_mul, mul_one, mul_assoc]
+  have heStar (x : A) : e (star x) = star (e x) := by
+    change Rinv * φ (star x) * R = (Rinv * φ x * R)ᴴ
+    rw [hσ, ← haConj, ← hrsq, haInv, Matrix.conjTranspose_mul, Matrix.conjTranspose_mul, hrH,
+      hrInvH]
+    simp only [mul_assoc, R, Rinv, Units.inv_mul_cancel_left, r.inv_mul, mul_one]
   have heTrace : t = (c • stdMatrixTrace rePart).comp e.toLinearMap := by
     ext x
     have htr : stdMatrixTrace rePart (Rinv * φ x * R) = stdMatrixTrace rePart (φ x) := by
-      rw [stdMatrixTrace_cyclic hre_cyclic (Rinv * φ x) R, ← mul_assoc, hRRinv, one_mul]
-    rw [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearMap.smul_apply, smul_eq_mul,
-      he_apply, htr, ht x]
+      rw [stdMatrixTrace_cyclic hre_cyclic (Rinv * φ x) R, ← mul_assoc, r.mul_inv, one_mul]
+    rw [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearMap.smul_apply, smul_eq_mul]
+    exact (ht x).trans (congrArg (c * ·) htr.symm)
   refine ⟨e, heStar, fun s ↦ ?_⟩
   rw [heTrace, isRosatiPositive_iff_of_algEquiv e heStar, isRosatiPositive_iff,
     isRosatiPositive_iff]
-  refine and_congr_right fun _ ↦ forall₂_congr fun X _ ↦ ?_
-  simp only [LinearMap.smul_apply, smul_eq_mul]
-  exact ⟨fun h ↦ pos_of_mul_pos_right h hc.le, fun h ↦ mul_pos hc h⟩
+  exact and_congr_right fun _ ↦ forall₂_congr fun X _ ↦
+    ⟨fun h ↦ pos_of_mul_pos_right h hc.le, fun h ↦ mul_pos hc h⟩
 
 /-- Shared trace-proportionality step for `ℝ`-central division algebras (`ℝ` and `ℍ[ℝ]`): if every
 cyclic functional `τ` on `D` satisfies `τ a = τ 1 * rePart a` with `rePart 1 = 1`, then a cyclic
@@ -285,22 +247,16 @@ private theorem exists_pos_const_stdMatrixTrace_of_cyclic {A D : Type*} [Ring A]
   let tM : Matrix n n D →ₗ[ℝ] ℝ := t.comp φ.symm.toLinearMap
   obtain ⟨τ, hτ_cyc, hτ⟩ := cyclic_linearMap_matrix_eq_trace tM fun X Y ↦ by
     simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, hcyclic]
-  have hcard : 0 < (Fintype.card n : ℝ) := Nat.cast_pos.mpr Fintype.card_pos
   have hc : 0 < τ 1 := by
     have h1 : 0 < t 1 := by
-      have hne : (1 : A) ≠ 0 := fun h0 ↦
-        one_ne_zero (α := Matrix n n D) (by simpa using congrArg φ h0)
-      simpa using hpos 1 hne
-    have h2 : t 1 = (Fintype.card n : ℝ) * τ 1 := by
-      have ht1 := hτ 1
-      simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one,
-        Matrix.trace_one] at ht1
-      rw [ht1, hD_cyc τ hτ_cyc]
-      have hcast : (Fintype.card n : D) = (Fintype.card n : ℝ) • (1 : D) := by
-        rw [Algebra.smul_def, mul_one, map_natCast]
-      rw [hcast, map_smul, smul_eq_mul, hre1, mul_one, mul_comm]
-    rw [h2] at h1
-    exact pos_of_mul_pos_right h1 hcard.le
+      simpa using hpos 1 fun h0 ↦ one_ne_zero (α := Matrix n n D) (by simpa using congrArg φ h0)
+    have ht1 := hτ 1
+    simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one,
+      Matrix.trace_one] at ht1
+    rw [ht1, hD_cyc τ hτ_cyc, show (Fintype.card n : D) = (Fintype.card n : ℝ) • (1 : D) by
+      rw [Algebra.smul_def, mul_one, map_natCast], map_smul, smul_eq_mul, hre1, mul_one,
+      mul_comm] at h1
+    exact pos_of_mul_pos_right h1 (Nat.cast_pos.mpr Fintype.card_pos).le
   refine ⟨τ 1, hc, fun x ↦ ?_⟩
   have h1 := hτ (φ x)
   simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply] at h1
@@ -316,12 +272,9 @@ private theorem exists_unit_conj_real_central {A D : Type*} [Ring A] [Algebra �
       ((u : Matrix n n D)ᴴ = u ∨ (u : Matrix n n D)ᴴ = -u) ∧
       ∀ x : A, φ (star x) = (u : Matrix n n D) * (φ x)ᴴ * (↑u⁻¹ : Matrix n n D) := by
   let α : Matrix n n D ≃ₐ[ℝ] Matrix n n D :=
-    { toFun := fun X ↦ φ (star (φ.symm Xᴴ))
-      invFun := fun Y ↦ (φ (star (φ.symm Y)))ᴴ
-      left_inv := fun X ↦ by simp
-      right_inv := fun Y ↦ by simp
-      map_mul' := fun X Y ↦ by simp [star_mul]
-      map_add' := fun X Y ↦ by simp
+    { toFun := fun X ↦ φ (star (φ.symm Xᴴ)), invFun := fun Y ↦ (φ (star (φ.symm Y)))ᴴ
+      left_inv := fun X ↦ by simp, right_inv := fun Y ↦ by simp
+      map_mul' := fun X Y ↦ by simp [star_mul], map_add' := fun X Y ↦ by simp
       commutes' := fun r ↦ by simp [Algebra.algebraMap_eq_smul_one, star_smul] }
   obtain ⟨u, μ, hu, huμ, hμsq⟩ := exists_unit_conj_star_of_central ℝ α fun X ↦ by
     simp [α, Matrix.star_eq_conjTranspose]
@@ -344,25 +297,32 @@ private theorem not_pos_of_skewSymmetric_real {n : Type*} [Fintype n] [Decidable
       0 < stdMatrixTrace (LinearMap.id : ℝ →ₗ[ℝ] ℝ)
         (X * (u : Matrix n n ℝ) * Xᴴ * (↑u⁻¹ : Matrix n n ℝ))) :
     False := by
-  let i₀ : n := Classical.arbitrary n
-  let v₀ : n → ℝ := Pi.single i₀ 1
-  have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h i₀
+  let v₀ : n → ℝ := Pi.single (Classical.arbitrary n) 1
+  have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h (Classical.arbitrary n)
   have hposX := hpos (Matrix.of fun i j ↦ v₀ i * star (v₀ j)) (rankOne_ne_zero hv₀ hv₀)
   rw [stdMatrixTrace_rankOne_mul_conj (fun a b ↦ mul_comm a b) u v₀ v₀] at hposX
   have hQ0 : ∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℝ) j k * v₀ k = 0 := by
     have hswap : ∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℝ) j k * v₀ k =
         -(∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℝ) j k * v₀ k) := by
       conv_lhs => rw [Finset.sum_comm]
-      conv_rhs => rw [← Finset.sum_neg_distrib]
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      conv_rhs => rw [← Finset.sum_neg_distrib]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      simp_rw [← Finset.sum_neg_distrib]
+      refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
       have hjk : (u : Matrix n n ℝ) k j = -(u : Matrix n n ℝ) j k := by
         simpa [Matrix.conjTranspose_apply] using congrFun (congrFun hskew j) k
       rw [hjk]; simp only [star_trivial]; ring
     linarith
-  rw [hQ0, mul_zero, map_zero] at hposX
-  exact lt_irrefl 0 hposX
+  rw [hQ0, mul_zero, map_zero] at hposX; exact lt_irrefl 0 hposX
+
+/-- Trivial standardization when the matrix index type `n` is empty. -/
+private theorem exists_star_algEquiv_empty {A D : Type*} [Ring A] [Algebra ℝ A] [StarRing A]
+    [Ring D] [Algebra ℝ D] [StarRing D] {n : Type*} [Fintype n] [DecidableEq n] [IsEmpty n]
+    (φ : A ≃ₐ[ℝ] Matrix n n D) (t : A →ₗ[ℝ] ℝ) (P : Matrix n n D → Prop)
+    (hP : ∀ X : Matrix n n D, P X) :
+    ∃ e : A ≃ₐ[ℝ] Matrix n n D,
+      (∀ x : A, e (star x) = star (e x)) ∧ ∀ s : A, IsRosatiPositive t s ↔ P (e s) :=
+  have : Subsingleton A := φ.injective.subsingleton
+  ⟨φ, fun _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨fun _ ↦ hP _, fun _ ↦
+    isRosatiPositive_iff.mpr ⟨Subsingleton.elim _ _, fun x hx ↦ absurd (Subsingleton.elim x 0) hx⟩⟩⟩
 
 /-- Standardization of a positive involution and cyclic positive trace on a real matrix algebra
 `Matrix n n ℝ`. -/
@@ -374,19 +334,16 @@ theorem exists_star_algEquiv_matrix_real {A : Type*} [Ring A] [Algebra ℝ A] [S
       (∀ x : A, e (star x) = star (e x)) ∧
       ∀ s : A, IsRosatiPositive t s ↔ (e s).PosDef := by
   rcases isEmpty_or_nonempty n with hempty | hne
-  · have : Subsingleton A := φ.injective.subsingleton
-    refine ⟨φ, fun _ ↦ Subsingleton.elim _ _, fun s ↦ ?_⟩
-    rw [isRosatiPositive_iff, Matrix.posDef_iff_dotProduct_mulVec]
-    exact ⟨fun _ ↦ ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩,
-      fun _ ↦ ⟨Subsingleton.elim _ _, fun x hx ↦ absurd (Subsingleton.elim x 0) hx⟩⟩
+  · exact exists_star_algEquiv_empty φ t _ fun _ ↦
+      Matrix.posDef_iff_dotProduct_mulVec.mpr
+        ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩
   · have : StarModule ℝ A := starModule_of_trace_mul_star_pos t hpos
     obtain ⟨c, hc, ht⟩ := exists_pos_const_stdMatrixTrace_of_cyclic (LinearMap.id : ℝ →ₗ[ℝ] ℝ) rfl
       (fun τ _ a ↦ by simpa [mul_comm] using τ.map_smul a (1 : ℝ)) φ t hcyclic hpos
     obtain ⟨u, huSign, hσ⟩ := exists_unit_conj_real_central φ
     have huH : (u : Matrix n n ℝ)ᴴ = u := huSign.resolve_right fun hskew ↦
       not_pos_of_skewSymmetric_real u hskew fun X hX ↦ by
-        have hx : φ.symm X ≠ 0 := fun h ↦ hX (by simpa using congrArg φ h)
-        have h1 := hpos (φ.symm X) hx
+        have h1 := hpos (φ.symm X) (fun h ↦ hX (by simpa using congrArg φ h))
         rw [ht, map_mul, hσ, AlgEquiv.apply_symm_apply, ← mul_assoc, ← mul_assoc] at h1
         exact pos_of_mul_pos_right h1 hc.le
     obtain ⟨e, heStar, hePos⟩ := exists_star_algEquiv_matrix_of_hermitian_unit
@@ -412,37 +369,26 @@ private theorem star_I_smul_one_eq_neg {A : Type*} [Ring A] [Algebra ℝ A] [Sta
       AlgEquiv.apply_symm_apply] using congrArg (fun X ↦ φ (star (φ.symm X))) hcomm
   rw [Algebra.IsCentral.center_eq_bot ℂ M, Algebra.mem_bot] at hw_center
   obtain ⟨c, hc⟩ := hw_center
-  have hc_sq : c * c = -1 := by
-    have hww : w * w = -1 := by
-      have hz2 : z * z = -1 := by simp [z, smul_smul, Complex.I_mul_I]
-      calc w * w = φ (star (φ.symm (z * z))) := by simp [w, map_mul, star_mul]
-        _ = -1 := by rw [hz2]; simp
-    exact (algebraMap ℂ M).injective (by rw [map_mul, hc, hww, map_neg, map_one])
-  have hcases : c = Complex.I ∨ c = -Complex.I := by
-    have h0 : (c - Complex.I) * (c + Complex.I) = 0 := by
-      calc (c - Complex.I) * (c + Complex.I) = c * c - Complex.I * Complex.I := by ring
-        _ = -1 - (-1) := by rw [hc_sq, Complex.I_mul_I]
-        _ = 0 := sub_self _
-    exact (mul_eq_zero.mp h0).imp sub_eq_zero.mp eq_neg_of_add_eq_zero_left
-  rcases hcases with rfl | rfl
+  have hc_sq : c * c = -1 := (algebraMap ℂ M).injective <| by
+    rw [map_mul, hc, map_neg, map_one]
+    calc w * w = φ (star (φ.symm (z * z))) := by simp [w, map_mul, star_mul]
+      _ = -1 := by simp [z, smul_smul, Complex.I_mul_I]
+  have h0 : (c - Complex.I) * (c + Complex.I) = 0 := by
+    calc (c - Complex.I) * (c + Complex.I) = c * c - Complex.I * Complex.I := by ring
+      _ = 0 := by rw [hc_sq, Complex.I_mul_I, sub_self]
+  rcases (mul_eq_zero.mp h0).imp sub_eq_zero.mp eq_neg_of_add_eq_zero_left with rfl | rfl
   · exfalso
-    have hz_ne : φ.symm z ≠ 0 := fun h0 ↦ by
-      let i₀ : n := Classical.arbitrary n
-      have h1 : (Complex.I • (1 : Matrix n n ℂ)) i₀ i₀ = (0 : Matrix n n ℂ) i₀ i₀ :=
-        congrFun (congrFun (by simpa using congrArg φ h0 : z = 0) i₀) i₀
-      simp only [Matrix.smul_apply, Matrix.one_apply_eq, Matrix.zero_apply, smul_eq_mul,
-        mul_one] at h1
-      exact Complex.I_ne_zero h1
+    have hz_ne : φ.symm z ≠ 0 := fun h0 ↦ Complex.I_ne_zero <| by
+      simpa [z, M] using congrFun (congrFun (congrArg φ h0)
+        (Classical.arbitrary n)) (Classical.arbitrary n)
     have h1 := hpos (φ.symm z) hz_ne
     have h2 : φ.symm z * star (φ.symm z) = -1 := φ.injective <| by
-      rw [map_mul, AlgEquiv.apply_symm_apply]
-      have hwI : φ (star (φ.symm z)) = Complex.I • (1 : M) := by
-        simpa [w, Algebra.algebraMap_eq_smul_one] using hc.symm
-      rw [hwI]; simp [z, smul_smul, Complex.I_mul_I]
-    rw [h2, map_neg] at h1
+      rw [map_mul, AlgEquiv.apply_symm_apply, show φ (star (φ.symm z)) = Complex.I • (1 : M) by
+        simpa [w, Algebra.algebraMap_eq_smul_one] using hc.symm]
+      simp [z, smul_smul, Complex.I_mul_I]
     have hone : 0 < t 1 := by
-      simpa using hpos 1 fun h0 ↦ one_ne_zero (α := Matrix n n ℂ) (by simpa using congrArg φ h0)
-    linarith
+      simpa using hpos 1 fun h0 ↦ one_ne_zero (α := M) (by simpa using congrArg φ h0)
+    rw [h2, map_neg] at h1; linarith
   · simpa [w, z, Algebra.algebraMap_eq_smul_one, neg_smul] using hc.symm
 
 /-- Any positive real-linear involution on `Matrix n n ℂ` acts as complex conjugation on scalar
@@ -454,20 +400,10 @@ private theorem star_scalar_complex {A : Type*} [Ring A] [Algebra ℝ A] [StarRi
     φ (star (φ.symm (c • (1 : Matrix n n ℂ)))) = (star c) • (1 : Matrix n n ℂ) := by
   have hsm : c • (1 : Matrix n n ℂ) =
       c.re • (1 : Matrix n n ℂ) + c.im • (Complex.I • (1 : Matrix n n ℂ)) := by
-    ext i j
-    simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul,
-      Complex.real_smul]
-    by_cases hij : i = j
-    · subst hij; simp
-    · simp [hij]
+    ext i j; by_cases hij : i = j <;> simp [hij, Complex.real_smul]
   rw [hsm, map_add, map_smul, map_smul, star_add, star_smul, star_smul, star_trivial c.re,
     star_trivial c.im, map_add, map_smul, map_smul, map_one, star_one, map_one, hI, smul_neg]
-  ext i j
-  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.one_apply, Matrix.neg_apply,
-    RCLike.star_def, smul_eq_mul, Complex.real_smul]
-  by_cases hij : i = j
-  · subst hij; apply Complex.ext <;> simp
-  · simp [hij]
+  ext i j; by_cases hij : i = j <;> simp [hij, Complex.real_smul, Complex.ext_iff]
 
 /-- Rescaling a unit `u` with `uᴴ = μ • u` and `star μ * μ = 1` over `ℂ` to a Hermitian unit
 defining the same conjugation. -/
@@ -483,22 +419,18 @@ private theorem exists_hermitian_rescale_complex {n : Type*} [Fintype n] [Decida
   have hζ0 : ζ ≠ 0 := by
     by_cases h : μ = -1
     · simp [ζ, h, Complex.I_ne_zero]
-    · simp only [ζ, h, ↓reduceIte]
-      exact fun h0 ↦ h (eq_neg_of_add_eq_zero_right h0)
-  set U : Matrix n n ℂ := (u : Matrix n n ℂ)
-  set Uinv : Matrix n n ℂ := (↑u⁻¹ : Matrix n n ℂ)
-  let u' : (Matrix n n ℂ)ˣ :=
-    ⟨ζ • U, ζ⁻¹ • Uinv,
-      by simp [U, Uinv, smul_smul, inv_mul_cancel₀ hζ0],
-      by simp [U, Uinv, smul_smul, mul_inv_cancel₀ hζ0]⟩
-  have hu'val : (u' : Matrix n n ℂ) = ζ • U := rfl
-  have hu'inv : (↑u'⁻¹ : Matrix n n ℂ) = ζ⁻¹ • Uinv := rfl
-  refine ⟨u', ?_, fun X ↦ by rw [hu'val, hu'inv]; simp [smul_smul, inv_mul_cancel₀ hζ0]⟩
-  rw [hu'val, Matrix.conjTranspose_smul, huμ, smul_smul]
-  congr 1
+    · simp only [ζ, h, ↓reduceIte]; exact fun h0 ↦ h (eq_neg_of_add_eq_zero_right h0)
+  refine ⟨⟨ζ • (u : Matrix n n ℂ), ζ⁻¹ • (↑u⁻¹ : Matrix n n ℂ),
+      by simp [smul_smul, inv_mul_cancel₀ hζ0], by simp [smul_smul, mul_inv_cancel₀ hζ0]⟩,
+    ?_, fun X ↦ by
+      change (ζ • (u : Matrix n n ℂ)) * X * (ζ⁻¹ • (↑u⁻¹ : Matrix n n ℂ)) = _
+      simp [smul_smul, inv_mul_cancel₀ hζ0]⟩
+  change (ζ • (u : Matrix n n ℂ))ᴴ = ζ • (u : Matrix n n ℂ)
+  rw [Matrix.conjTranspose_smul, huμ, smul_smul]; congr 1
   by_cases h : μ = -1
-  · simp [ζ, h, RCLike.star_def]
-  · simp only [ζ, h, ↓reduceIte, star_add, star_one, add_mul, one_mul, hμsq, add_comm]
+  · simp [ζ, h]
+  · simp only [ζ, h, ↓reduceIte, star_add, star_one, add_mul, one_mul]
+    rw [add_comm 1 μ]; simpa using congrArg (μ + ·) hμsq
 
 /-- A cyclic, star-invariant positive functional on `Matrix n n ℂ` (`n` nonempty) is a positive
 real multiple of `stdMatrixTrace Complex.reLm`. -/
@@ -516,44 +448,30 @@ private theorem trace_eq_mul_stdMatrixTrace_complex {A : Type*} [Ring A] [Algebr
   have hc : 0 < τ 1 := by
     have h1 : 0 < t' 1 := by
       simpa using hpos' 1 fun h0 ↦ one_ne_zero (α := Matrix n n ℂ) (by simpa using congrArg φ h0)
-    have h2 : t' 1 = (Fintype.card n : ℝ) * τ 1 := by
-      have ht1 := hτ 1
-      simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one,
-        Matrix.trace_one] at ht1
-      have hnat : τ (Fintype.card n : ℂ) = (Fintype.card n : ℝ) * τ 1 := by
-        simpa [Complex.real_smul] using τ.map_smul (Fintype.card n : ℝ) (1 : ℂ)
-      rw [ht1, hnat]
-    rw [h2] at h1
+    have ht1 := hτ 1
+    simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one,
+      Matrix.trace_one] at ht1
+    rw [ht1, show (Fintype.card n : ℂ) = (Fintype.card n : ℝ) • (1 : ℂ) by
+      simp [Complex.real_smul], map_smul, smul_eq_mul] at h1
     exact pos_of_mul_pos_right h1 (Nat.cast_nonneg _)
   have hτI : τ Complex.I = 0 := by
     have h1 : tM (Complex.I • (1 : Matrix n n ℂ)) = (Fintype.card n : ℝ) * τ Complex.I := by
-      rw [hτ, Matrix.trace_smul, Matrix.trace_one]
-      have hsm : (Complex.I • (Fintype.card n : ℂ)) = (Fintype.card n : ℝ) • Complex.I := by
-        simp [Complex.real_smul, mul_comm]
-      rw [hsm, map_smul, smul_eq_mul]
+      rw [hτ, Matrix.trace_smul, Matrix.trace_one,
+        show (Complex.I • (Fintype.card n : ℂ)) = (Fintype.card n : ℝ) • Complex.I by
+          simp [Complex.real_smul, mul_comm], map_smul, smul_eq_mul]
     have h2 : tM (Complex.I • (1 : Matrix n n ℂ)) = -tM (Complex.I • (1 : Matrix n n ℂ)) := by
       simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply]
       conv_lhs => rw [← hstar', ← AlgEquiv.symm_apply_apply φ (star _), hI, map_neg, map_neg]
-    have hd : (Fintype.card n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-    exact (mul_eq_zero.mp (by linarith : (Fintype.card n : ℝ) * τ Complex.I = 0)).resolve_left hd
+    exact (mul_eq_zero.mp (by linarith : (Fintype.card n : ℝ) * τ Complex.I = 0)).resolve_left
+      (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   refine ⟨τ 1, hc, fun x ↦ ?_⟩
   have h1 := hτ (φ x)
   simp only [tM, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply] at h1
   rw [h1, stdMatrixTrace_apply]
-  set z := Matrix.trace (φ x)
-  have hz : z = z.re • (1 : ℂ) + z.im • Complex.I := by
-    simp [Complex.real_smul, Complex.re_add_im]
-  conv_lhs => rw [hz]
-  rw [map_add, map_smul, map_smul, hτI, smul_zero, add_zero, smul_eq_mul, mul_comm]
-  rfl
-
-/-- Star-symmetrization `x ↦ (t x + t (star x)) / 2` of an `ℝ`-linear functional. -/
-private noncomputable def symmetrizeTrace {A : Type*} [Ring A] [Algebra ℝ A] [StarRing A]
-    [StarModule ℝ A] (t : A →ₗ[ℝ] ℝ) : A →ₗ[ℝ] ℝ where
-  toFun x := (t x + t (star x)) / 2
-  map_add' x y := by simp only [star_add, map_add]; ring
-  map_smul' c x := by
-    simp only [star_smul, star_trivial, map_smul, smul_eq_mul, RingHom.id_apply]; ring
+  conv_lhs => rw [show Matrix.trace (φ x) =
+    (Matrix.trace (φ x)).re • (1 : ℂ) + (Matrix.trace (φ x)).im • Complex.I by
+    simp [Complex.real_smul, Complex.re_add_im]]
+  rw [map_add, map_smul, map_smul, hτI, smul_zero, add_zero, smul_eq_mul, mul_comm]; rfl
 
 /-- Standardization of a positive involution and cyclic positive trace on a complex matrix algebra
 `Matrix n n ℂ`. -/
@@ -565,18 +483,20 @@ theorem exists_star_algEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A]
       (∀ x : A, e (star x) = star (e x)) ∧
       ∀ s : A, IsRosatiPositive t s ↔ (e s).PosDef := by
   rcases isEmpty_or_nonempty n with hempty | hne
-  · have : Subsingleton A := φ.injective.subsingleton
-    refine ⟨φ, fun _ ↦ Subsingleton.elim _ _, fun s ↦ ?_⟩
-    rw [isRosatiPositive_iff, Matrix.posDef_iff_dotProduct_mulVec]
-    exact ⟨fun _ ↦ ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩,
-      fun _ ↦ ⟨Subsingleton.elim _ _, fun x hx ↦ absurd (Subsingleton.elim x 0) hx⟩⟩
+  · exact exists_star_algEquiv_empty φ t _ fun _ ↦
+      Matrix.posDef_iff_dotProduct_mulVec.mpr
+        ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩
   · have : StarModule ℝ A := starModule_of_trace_mul_star_pos t hpos
-    let t' := symmetrizeTrace t
-    have ht' : ∀ x : A, t' x = (t x + t (star x)) / 2 := fun _ ↦ rfl
-    have hcyc' : ∀ x y : A, t' (x * y) = t' (y * x) := fun x y ↦ by
+    let t' : A →ₗ[ℝ] ℝ :=
+      { toFun := fun x ↦ (t x + t (star x)) / 2
+        map_add' := fun x y ↦ by simp only [star_add, map_add]; ring
+        map_smul' := fun c x ↦ by
+          simp only [star_smul, star_trivial, map_smul, smul_eq_mul, RingHom.id_apply]; ring }
+    have ht' (x : A) : t' x = (t x + t (star x)) / 2 := rfl
+    have hcyc' (x y : A) : t' (x * y) = t' (y * x) := by
       simp only [ht', star_mul, hcyclic x y, hcyclic (star y) (star x)]
-    have hstar' : ∀ x : A, t' (star x) = t' x := fun x ↦ by simp only [ht', star_star, add_comm]
-    have hpos' : ∀ x : A, x ≠ 0 → 0 < t' (x * star x) := fun x hx ↦ by
+    have hstar' (x : A) : t' (star x) = t' x := by simp only [ht', star_star, add_comm]
+    have hpos' (x : A) (hx : x ≠ 0) : 0 < t' (x * star x) := by
       have h := hpos x hx; simp only [ht', star_mul, star_star]; linarith
     have hI := star_I_smul_one_eq_neg φ t' hpos'
     obtain ⟨c, hc, ht⟩ := trace_eq_mul_stdMatrixTrace_complex φ hI t' hcyc' hstar' hpos'
@@ -591,17 +511,14 @@ theorem exists_star_algEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A]
       simp [α, Matrix.star_eq_conjTranspose]
     obtain ⟨u', hu'H, hu'conj⟩ := exists_hermitian_rescale_complex u μ
       (by rw [← Matrix.star_eq_conjTranspose]; exact huμ) hμsq
-    have hσ : ∀ x : A, φ (star x) = (u' : Matrix n n ℂ) * (φ x)ᴴ * (↑u'⁻¹ : Matrix n n ℂ) :=
-      fun x ↦ by rw [hu'conj]; simpa [α] using hu (φ x)ᴴ
+    have hσ (x : A) : φ (star x) = (u' : Matrix n n ℂ) * (φ x)ᴴ * (↑u'⁻¹ : Matrix n n ℂ) := by
+      rw [hu'conj]; simpa [α] using hu (φ x)ᴴ
     obtain ⟨e, heStar, hePos⟩ := exists_star_algEquiv_matrix_of_hermitian_unit
       (rePart := Complex.reLm) (fun a b ↦ by rw [mul_comm])
-      (fun a ha ↦ by
-        have h : Complex.reLm (a * star a) = Complex.normSq a := by simp [Complex.normSq_apply]
-        rw [h]; exact Complex.normSq_pos.mpr ha)
+      (fun a ha ↦ by simpa [Complex.normSq_apply] using Complex.normSq_pos.mpr ha)
       (fun a ha ↦ Complex.ext rfl (by
         have := congrArg Complex.im ha; simp only [RCLike.star_def, Complex.conj_im] at this
-        have him : a.im = 0 := by linarith
-        simp [him]))
+        simp [show a.im = 0 by linarith]))
       φ t' c hc ht hpos' u' hu'H hσ
     exact ⟨e, heStar, fun s ↦ by
       rw [← isRosatiPositive_iff_of_symmetrize ht' hcyclic, hePos,
@@ -618,38 +535,25 @@ private theorem exists_pure_quaternion_neg_conj (r : ℍ[ℝ]) (hr : r.re = 0) :
   by_cases h : r.imI = 0 ∧ r.imJ = 0
   · refine ⟨⟨0, 1, 0, 0⟩, by intro h0; simpa using congrArg QuaternionAlgebra.imI h0, ?_⟩
     ext <;> simp [Quaternion.normSq_def', hr, h.1, h.2]
-  · refine ⟨⟨0, -r.imJ, r.imI, 0⟩, ?_, ?_⟩
-    · intro h0
-      exact h ⟨congrArg QuaternionAlgebra.imJ h0,
-        neg_eq_zero.mp (congrArg QuaternionAlgebra.imI h0)⟩
-    · ext <;> simp [Quaternion.normSq_def', hr] <;> ring
+  · refine ⟨⟨0, -r.imJ, r.imI, 0⟩, fun h0 ↦ h ⟨congrArg QuaternionAlgebra.imJ h0,
+      neg_eq_zero.mp (congrArg QuaternionAlgebra.imI h0)⟩, ?_⟩
+    ext <;> simp [Quaternion.normSq_def', hr] <;> ring
 
 /-- Every cyclic `ℝ`-linear functional on `ℍ[ℝ]` is a scalar multiple of `QuaternionAlgebra.re`. -/
 private theorem cyclic_quaternion_eq_mul_re (τ : ℍ[ℝ] →ₗ[ℝ] ℝ)
     (hcyc : ∀ a b : ℍ[ℝ], τ (a * b) = τ (b * a)) (q : ℍ[ℝ]) :
     τ q = τ 1 * q.re := by
-  let qi : ℍ[ℝ] := ⟨0, 1, 0, 0⟩
-  let qj : ℍ[ℝ] := ⟨0, 0, 1, 0⟩
-  let qk : ℍ[ℝ] := ⟨0, 0, 0, 1⟩
-  have hti : τ qi = 0 := by
-    have h : (2 : ℝ) • qi = qj * qk - qk * qj := by ext <;> norm_num [qi, qj, qk]
-    have h0 : 2 * τ qi = 0 := by
-      simpa [map_smul, smul_eq_mul, map_sub, hcyc qj qk] using congrArg τ h
-    linarith
-  have htj : τ qj = 0 := by
-    have h : (2 : ℝ) • qj = qk * qi - qi * qk := by ext <;> norm_num [qi, qj, qk]
-    have h0 : 2 * τ qj = 0 := by
-      simpa [map_smul, smul_eq_mul, map_sub, hcyc qk qi] using congrArg τ h
-    linarith
-  have htk : τ qk = 0 := by
-    have h : (2 : ℝ) • qk = qi * qj - qj * qi := by ext <;> norm_num [qi, qj, qk]
-    have h0 : 2 * τ qk = 0 := by
-      simpa [map_smul, smul_eq_mul, map_sub, hcyc qi qj] using congrArg τ h
+  let qi : ℍ[ℝ] := ⟨0, 1, 0, 0⟩; let qj : ℍ[ℝ] := ⟨0, 0, 1, 0⟩; let qk : ℍ[ℝ] := ⟨0, 0, 0, 1⟩
+  have hzero (x y z : ℍ[ℝ]) (h : (2 : ℝ) • x = y * z - z * y) : τ x = 0 := by
+    have h0 : 2 * τ x = 0 := by
+      simpa [map_smul, smul_eq_mul, map_sub, hcyc y z] using congrArg τ h
     linarith
   have hdecomp : q = q.re • (1 : ℍ[ℝ]) + q.imI • qi + q.imJ • qj + q.imK • qk := by
     ext <;> simp [qi, qj, qk]
   conv_lhs => rw [hdecomp]
-  simp [hti, htj, htk, mul_comm]
+  simp [hzero qi qj qk (by ext <;> norm_num [qi, qj, qk]),
+    hzero qj qk qi (by ext <;> norm_num [qi, qj, qk]),
+    hzero qk qi qj (by ext <;> norm_num [qi, qj, qk]), mul_comm]
 
 /-- The quadratic form of a skew-Hermitian quaternionic matrix is purely imaginary. -/
 private theorem re_quadForm_eq_zero_of_skewHermitian {n : Type*} [Fintype n]
@@ -657,22 +561,17 @@ private theorem re_quadForm_eq_zero_of_skewHermitian {n : Type*} [Fintype n]
     (∑ i : n, ∑ m : n, star (v i) * M i m * v m).re = 0 := by
   have hskew : star (∑ i : n, ∑ m : n, star (v i) * M i m * v m) =
       -(∑ i : n, ∑ m : n, star (v i) * M i m * v m) := by
-    rw [star_sum]
+    rw [star_sum]; simp_rw [star_sum]
     have hinner (i : n) :
-        star (∑ m : n, star (v i) * M i m * v m) = -(∑ m : n, star (v m) * M m i * v i) := by
-      rw [star_sum, ← Finset.sum_neg_distrib]
+        ∑ m : n, star (star (v i) * M i m * v m) = -(∑ m : n, star (v m) * M m i * v i) := by
+      rw [← Finset.sum_neg_distrib]
       refine Finset.sum_congr rfl fun m _ ↦ ?_
       have him : star (M i m) = -M m i := by
         simpa [Matrix.conjTranspose_apply] using congrFun (congrFun hM m) i
       rw [star_mul, star_mul, star_star, him, neg_mul, mul_neg, mul_assoc]
-    calc ∑ i : n, star (∑ m : n, star (v i) * M i m * v m)
-        = ∑ i : n, -(∑ m : n, star (v m) * M m i * v i) :=
-          Finset.sum_congr rfl fun i _ ↦ hinner i
-      _ = -(∑ i : n, ∑ m : n, star (v m) * M m i * v i) := by simp only [Finset.sum_neg_distrib]
-      _ = -(∑ i : n, ∑ m : n, star (v i) * M i m * v m) := by rw [Finset.sum_comm]
+    simp_rw [hinner, Finset.sum_neg_distrib]; rw [Finset.sum_comm]
   have := congrArg QuaternionAlgebra.re hskew
-  simp only [Quaternion.re_star, QuaternionAlgebra.re_neg] at this
-  linarith
+  simp only [Quaternion.re_star, QuaternionAlgebra.re_neg] at this; linarith
 
 /-- A skew-Hermitian unit `uᴴ = -u` over `ℍ[ℝ]` cannot define a positive involution. -/
 private theorem not_pos_of_skewHermitian_quaternion {n : Type*} [Fintype n] [DecidableEq n]
@@ -681,19 +580,17 @@ private theorem not_pos_of_skewHermitian_quaternion {n : Type*} [Fintype n] [Dec
       0 < stdMatrixTrace (QuaternionAlgebra.reₗ (-1) 0 (-1))
         (X * (u : Matrix n n ℍ[ℝ]) * Xᴴ * (↑u⁻¹ : Matrix n n ℍ[ℝ]))) :
     False := by
-  have hre_cyc : ∀ a b : ℍ[ℝ], (QuaternionAlgebra.reₗ (-1) 0 (-1)) (a * b) =
-      (QuaternionAlgebra.reₗ (-1) 0 (-1)) (b * a) := fun a b ↦ by
+  have hre_cyc (a b : ℍ[ℝ]) : (QuaternionAlgebra.reₗ (-1) 0 (-1)) (a * b) =
+      (QuaternionAlgebra.reₗ (-1) 0 (-1)) (b * a) := by
     simp only [QuaternionAlgebra.reₗ_apply, Quaternion.re_mul]; ring
   set Uinv : Matrix n n ℍ[ℝ] := (↑u⁻¹ : Matrix n n ℍ[ℝ])
   have huinv_skew : Uinvᴴ = -Uinv := by
-    have h1 := congrArg Matrix.conjTranspose u.mul_inv
-    rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_one, hskew, Matrix.mul_neg] at h1
-    have h2 := congrArg (· * Uinv) h1
-    simp only [Matrix.neg_mul, Matrix.mul_assoc, Uinv, u.mul_inv, Matrix.mul_one,
-      Matrix.one_mul] at h2
-    exact neg_eq_iff_eq_neg.mp h2
-  let i₀ : n := Classical.arbitrary n
-  let v₀ : n → ℍ[ℝ] := Pi.single i₀ 1
+    have h1 := congrArg (· * Uinv) (congrArg Matrix.conjTranspose u.mul_inv)
+    rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_one, hskew, Matrix.mul_neg,
+      Matrix.neg_mul, Matrix.mul_assoc, show (u : Matrix n n ℍ[ℝ]) * Uinv = 1 from u.mul_inv,
+      Matrix.mul_one, Matrix.one_mul] at h1
+    exact neg_eq_iff_eq_neg.mp h1
+  let i₀ : n := Classical.arbitrary n; let v₀ : n → ℍ[ℝ] := Pi.single i₀ 1
   have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h i₀
   set r : ℍ[ℝ] := ∑ i : n, ∑ m : n, star (v₀ i) * Uinv i m * v₀ m
   set s : ℍ[ℝ] := ∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℍ[ℝ]) j k * v₀ k
@@ -710,32 +607,16 @@ private theorem not_pos_of_skewHermitian_quaternion {n : Type*} [Fintype n] [Dec
     have hQ1 : ∑ i : n, ∑ m : n, star (v₁ i) * Uinv i m * v₁ m = star q * r * q := by
       simp only [v₁, r, star_mul, Finset.mul_sum, Finset.sum_mul, mul_assoc]
     rwa [hQ1, hqconj] at h
-  have hnq : 0 < Quaternion.normSq q := by
-    have h1 := Quaternion.normSq_def' q
-    have hne : q.re ≠ 0 ∨ q.imI ≠ 0 ∨ q.imJ ≠ 0 ∨ q.imK ≠ 0 := by
-      by_contra hall; push Not at hall; exact hq0 (by ext <;> simp [hall])
-    rcases hne with h | h | h | h <;> nlinarith [sq_nonneg q.re, sq_nonneg q.imI,
-      sq_nonneg q.imJ, sq_nonneg q.imK, sq_pos_of_ne_zero h]
+  have hnq : 0 < Quaternion.normSq q :=
+    lt_of_not_ge fun h ↦ hq0 (Quaternion.normSq_le_zero.mp h)
   simp only [neg_mul, QuaternionAlgebra.re_neg, smul_mul_assoc, QuaternionAlgebra.re_smul,
     smul_eq_mul] at hpos1
   nlinarith
 
 /-- For a nonzero real quaternion `a`, `(a * star a).re > 0`. -/
 private theorem quaternion_re_mul_star_pos {a : ℍ[ℝ]} (ha : a ≠ 0) : 0 < (a * star a).re := by
-  have hmul : (a * star a).re = a.re ^ 2 + a.imI ^ 2 + a.imJ ^ 2 + a.imK ^ 2 := by simp; ring
-  have hne : a.re ≠ 0 ∨ a.imI ≠ 0 ∨ a.imJ ≠ 0 ∨ a.imK ≠ 0 := by
-    by_contra hall; push Not at hall; exact ha (by ext <;> simp [hall])
-  rw [hmul]
-  rcases hne with h | h | h | h <;> nlinarith [sq_nonneg a.re, sq_nonneg a.imI,
-    sq_nonneg a.imJ, sq_nonneg a.imK, sq_pos_of_ne_zero h]
-
-/-- Every self-adjoint real quaternion is a real scalar equal to its real part. -/
-private theorem quaternion_eq_algebraMap_re_of_isSelfAdjoint {a : ℍ[ℝ]} (ha : IsSelfAdjoint a) :
-    a = algebraMap ℝ ℍ[ℝ] a.re := by
-  have hI : a.imI = 0 := by have := congrArg QuaternionAlgebra.imI ha; simp at this; linarith
-  have hJ : a.imJ = 0 := by have := congrArg QuaternionAlgebra.imJ ha; simp at this; linarith
-  have hK : a.imK = 0 := by have := congrArg QuaternionAlgebra.imK ha; simp at this; linarith
-  ext <;> simp [hI, hJ, hK]
+  rw [Quaternion.self_mul_star, Quaternion.re_coe]
+  exact lt_of_not_ge fun h ↦ ha (Quaternion.normSq_le_zero.mp h)
 
 /-- Standardization of a positive involution and cyclic positive trace on a quaternionic matrix
 algebra `Matrix n n ℍ[ℝ]`. -/
@@ -749,27 +630,24 @@ theorem exists_star_algEquiv_matrix_quaternion {A : Type*} [Ring A] [Algebra ℝ
         (e s).IsHermitian ∧ ∀ v : n → ℍ[ℝ], v ≠ 0 →
           0 < (∑ j : n, ∑ k : n, star (v j) * (e s) j k * v k).re := by
   rcases isEmpty_or_nonempty n with hempty | hne
-  · have : Subsingleton A := φ.injective.subsingleton
-    refine ⟨φ, fun _ ↦ Subsingleton.elim _ _, fun s ↦ ?_⟩
-    rw [isRosatiPositive_iff]
-    exact ⟨fun _ ↦ ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩,
-      fun _ ↦ ⟨Subsingleton.elim _ _, fun x hx ↦ absurd (Subsingleton.elim x 0) hx⟩⟩
+  · exact exists_star_algEquiv_empty φ t
+      (fun X ↦ X.IsHermitian ∧ ∀ v : n → ℍ[ℝ], v ≠ 0 →
+        0 < (∑ j : n, ∑ k : n, star (v j) * X j k * v k).re)
+      fun _ ↦ ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩
   · have : StarModule ℝ A := starModule_of_trace_mul_star_pos t hpos
     let reH : ℍ[ℝ] →ₗ[ℝ] ℝ := QuaternionAlgebra.reₗ (-1) 0 (-1)
-    have hre_cyc : ∀ a b : ℍ[ℝ], reH (a * b) = reH (b * a) := fun a b ↦ by
+    have hre_cyc (a b : ℍ[ℝ]) : reH (a * b) = reH (b * a) := by
       simp only [reH, QuaternionAlgebra.reₗ_apply, Quaternion.re_mul]; ring
     obtain ⟨c, hc, ht⟩ := exists_pos_const_stdMatrixTrace_of_cyclic reH rfl
       cyclic_quaternion_eq_mul_re φ t hcyclic hpos
     obtain ⟨u, huSign, hσ⟩ := exists_unit_conj_real_central φ
     have huH : (u : Matrix n n ℍ[ℝ])ᴴ = u := huSign.resolve_right fun hskew ↦
       not_pos_of_skewHermitian_quaternion u hskew fun X hX ↦ by
-        have hx : φ.symm X ≠ 0 := fun h ↦ hX (by simpa using congrArg φ h)
-        have h1 := hpos (φ.symm X) hx
+        have h1 := hpos (φ.symm X) (fun h ↦ hX (by simpa using congrArg φ h))
         rw [ht, map_mul, hσ, AlgEquiv.apply_symm_apply, ← mul_assoc, ← mul_assoc] at h1
         exact pos_of_mul_pos_right h1 hc.le
     obtain ⟨e, heStar, hePos⟩ := exists_star_algEquiv_matrix_of_hermitian_unit hre_cyc
-      (fun _ ha ↦ quaternion_re_mul_star_pos ha)
-      (fun _ ha ↦ quaternion_eq_algebraMap_re_of_isSelfAdjoint ha)
+      (fun _ ha ↦ quaternion_re_mul_star_pos ha) (fun _ ha ↦ Quaternion.star_eq_self.mp ha)
       φ t c hc ht hpos u huH hσ
     exact ⟨e, heStar, fun s ↦ (hePos s).trans (isRosatiPositive_stdMatrixTrace_iff hre_cyc (e s))⟩
 

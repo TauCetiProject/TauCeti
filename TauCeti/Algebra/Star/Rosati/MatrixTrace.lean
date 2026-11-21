@@ -85,22 +85,15 @@ theorem stdMatrixTrace_pos {D : Type*} [NonUnitalNonAssocSemiring D] [Module ℝ
     (hre_pos : ∀ a : D, a ≠ 0 → 0 < rePart (a * star a))
     {X : Matrix n n D} (hX : X ≠ 0) :
     0 < stdMatrixTrace rePart (X * star X) := by
-  have hex : ∃ i j : n, X i j ≠ 0 := by
-    by_contra h
-    push Not at h
-    exact hX (Matrix.ext fun i j ↦ h i j)
-  obtain ⟨i₀, j₀, hX₀⟩ := hex
+  obtain ⟨i₀, j₀, hX₀⟩ : ∃ i j : n, X i j ≠ 0 := by
+    by_contra h; push Not at h; exact hX (Matrix.ext h)
+  have hnn (i j : n) : 0 ≤ rePart (X i j * star (X i j)) := by
+    rcases eq_or_ne (X i j) 0 with h0 | hne <;> [simp [h0]; exact (hre_pos _ hne).le]
   simp only [stdMatrixTrace_apply, Matrix.trace, Matrix.diag_apply, Matrix.mul_apply,
     Matrix.star_eq_conjTranspose, Matrix.conjTranspose_apply, map_sum]
-  refine Finset.sum_pos' (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ ?_)
-    ⟨i₀, Finset.mem_univ i₀, Finset.sum_pos' (fun j _ ↦ ?_)
+  exact Finset.sum_pos' (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hnn i j)
+    ⟨i₀, Finset.mem_univ i₀, Finset.sum_pos' (fun j _ ↦ hnn i₀ j)
       ⟨j₀, Finset.mem_univ j₀, hre_pos _ hX₀⟩⟩
-  · rcases eq_or_ne (X i j) 0 with h0 | hne
-    · simp [h0]
-    · exact (hre_pos _ hne).le
-  · rcases eq_or_ne (X i₀ j) 0 with h0 | hne
-    · simp [h0]
-    · exact (hre_pos _ hne).le
 
 /-- Expansion of `stdMatrixTrace rePart (S * X * Xᴴ)` as a sum of Hermitian quadratic forms over
 the columns of `X`. -/
@@ -114,24 +107,7 @@ private theorem stdMatrixTrace_mul_mul_star_eq_sum {D : Type*} [Semiring D] [Mod
     Matrix.star_eq_conjTranspose, Matrix.conjTranspose_apply, Finset.sum_mul, map_sum]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun m _ ↦ Finset.sum_congr rfl fun j _ ↦
-    Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [hre_cyclic (S j k * X k m) (star (X j m)), mul_assoc]
-
-/-- The Hermitian quadratic form `∑ j, ∑ k, star (v j) * M j k * v k` of a Hermitian matrix is
-self-adjoint. -/
-theorem isSelfAdjoint_quadForm_of_isHermitian {D : Type*} [Semiring D] [StarRing D]
-    {n : Type*} [Fintype n] {M : Matrix n n D} (hM : Mᴴ = M) (v : n → D) :
-    IsSelfAdjoint (∑ j : n, ∑ k : n, star (v j) * M j k * v k) := by
-  rw [IsSelfAdjoint, star_sum]
-  have hinner : ∀ j : n, star (∑ k : n, star (v j) * M j k * v k) =
-      ∑ k : n, star (v k) * M k j * v j := fun j ↦ by
-    rw [star_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    have hjk : star (M j k) = M k j := by
-      simpa [Matrix.conjTranspose_apply] using congrFun (congrFun hM k) j
-    rw [star_mul, star_mul, star_star, hjk, mul_assoc]
-  simp_rw [hinner]
-  exact Finset.sum_comm
+    Finset.sum_congr rfl fun k _ ↦ by rw [hre_cyclic (S j k * X k m) (star (X j m)), mul_assoc]
 
 /-- Characterization of `IsRosatiPositive (stdMatrixTrace rePart)` via Hermitian matrices and
 strict positivity of the quadratic form `v ↦ rePart (∑ j, ∑ k, star (v j) * S j k * v k)`. -/
@@ -145,31 +121,21 @@ theorem isRosatiPositive_stdMatrixTrace_iff {D : Type*} [Semiring D] [Module ℝ
   classical
   rw [isRosatiPositive_iff, Matrix.isHermitian_iff_isSelfAdjoint]
   refine and_congr_right fun _ ↦ ⟨fun h v hv ↦ ?_, fun h X hX ↦ ?_⟩
-  · obtain ⟨i₀, hi₀⟩ : ∃ i, v i ≠ 0 := Function.ne_iff.mp hv
+  · obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hv
     let X : Matrix n n D := Matrix.of fun i m ↦ if m = i₀ then v i else 0
-    have hX : X ≠ 0 := by
-      intro h0
-      have h0' := congrFun (congrFun h0 i₀) i₀
-      simp only [X, Matrix.of_apply, ↓reduceIte, Matrix.zero_apply] at h0'
-      exact hi₀ h0'
-    have hpos := h X hX
-    rw [stdMatrixTrace_mul_mul_star_eq_sum hre_cyclic] at hpos
-    rw [Finset.sum_eq_single i₀] at hpos
-    · simpa [X] using hpos
-    · intro m _ hm0
-      simp [X, hm0]
-    · intro h0; exact absurd (Finset.mem_univ i₀) h0
+    have hpos := h X fun h0 ↦ hi₀ (by simpa [X] using congrFun (congrFun h0 i₀) i₀)
+    rw [stdMatrixTrace_mul_mul_star_eq_sum hre_cyclic,
+      Finset.sum_eq_single i₀ (fun m _ hm0 ↦ by simp [X, hm0])
+        (fun h0 ↦ absurd (Finset.mem_univ i₀) h0)] at hpos
+    simpa [X] using hpos
   · rw [stdMatrixTrace_mul_mul_star_eq_sum hre_cyclic]
-    have hex : ∃ m : n, (fun j ↦ X j m) ≠ 0 := by
-      by_contra hall
-      push Not at hall
+    obtain ⟨m₀, hm₀⟩ : ∃ m : n, (fun j ↦ X j m) ≠ 0 := by
+      by_contra hall; push Not at hall
       exact hX (Matrix.ext fun j m ↦ congrFun (hall m) j)
-    obtain ⟨m₀, hm₀⟩ := hex
-    refine Finset.sum_pos' (fun m _ ↦ ?_) ⟨m₀, Finset.mem_univ m₀, h (fun j ↦ X j m₀) hm₀⟩
+    refine Finset.sum_pos' (fun m _ ↦ ?_) ⟨m₀, Finset.mem_univ m₀, h _ hm₀⟩
     rcases eq_or_ne (fun j ↦ X j m) 0 with h0 | hne
-    · have hj : ∀ j, X j m = 0 := fun j ↦ congrFun h0 j
-      simp [hj]
-    · exact (h (fun j ↦ X j m) hne).le
+    · simp [fun j ↦ congrFun h0 j]
+    · exact (h _ hne).le
 
 /-- Over `ℝ`, `IsRosatiPositive` for the standard matrix trace agrees with `Matrix.PosDef`. -/
 theorem isRosatiPositive_stdMatrixTrace_real_iff {n : Type*} [Fintype n] (S : Matrix n n ℝ) :
@@ -190,11 +156,8 @@ theorem isRosatiPositive_stdMatrixTrace_complex_iff {n : Type*} [Fintype n] (S :
   have hsum : star v ⬝ᵥ (S *ᵥ v) = ∑ j : n, ∑ k : n, star (v j) * S j k * v k := by
     simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc, Pi.star_apply]
   have him : (star v ⬝ᵥ (S *ᵥ v)).im = 0 := by
-    have hconj : star (star v ⬝ᵥ (S *ᵥ v)) = star v ⬝ᵥ (S *ᵥ v) :=
-      hsum ▸ isSelfAdjoint_quadForm_of_isHermitian hS v
-    have h1 := congrArg Complex.im hconj
-    simp only [RCLike.star_def, Complex.conj_im] at h1
-    linarith
+    have h1 := congrArg Complex.im (hS.star_dotProduct_mulVec_comm v v)
+    simp only [RCLike.star_def, Complex.conj_im] at h1; linarith
   rw [Complex.pos_iff, hsum]
   exact ⟨fun h ↦ ⟨h, by simpa [hsum] using him.symm⟩, fun h ↦ h.1⟩
 
@@ -214,43 +177,32 @@ theorem cyclic_linearMap_matrix_eq_trace {R D M : Type*} [CommSemiring R] [Ring 
       ∀ X : Matrix n n D, t X = τ (Matrix.trace X) := by
   classical
   rcases isEmpty_or_nonempty n with hempty | ⟨⟨i₀⟩⟩
-  · refine ⟨0, fun _ _ ↦ rfl, fun X ↦ ?_⟩
-    have hX : X = 0 := Subsingleton.elim X 0
-    simp [hX]
+  · exact ⟨0, fun _ _ ↦ rfl, fun X ↦ by simp [Subsingleton.elim X 0]⟩
   · let e00 : D →ₗ[R] Matrix n n D :=
       { toFun := Matrix.single i₀ i₀
         map_add' := Matrix.single_add i₀ i₀
         map_smul' := fun r a ↦ by ext i j; simp [Matrix.single] }
     let τ : D →ₗ[R] M := t.comp e00
-    have hsingle_ne : ∀ {i j : n}, i ≠ j → ∀ a : D, t (Matrix.single i j a) = 0 := by
-      intro i j hij a
+    have hsingle_ne {i j : n} (hij : i ≠ j) (a : D) : t (Matrix.single i j a) = 0 := by
       have h1 : Matrix.single i j a = Matrix.single i j a * Matrix.single j j (1 : D) := by
         rw [Matrix.single_mul_single_same, mul_one]
-      have h2 : Matrix.single j j (1 : D) * Matrix.single i j a = 0 := by simp [hij.symm]
-      rw [h1, hcyclic, h2, map_zero]
-    have hsingle_diag : ∀ (i : n) (a : D), t (Matrix.single i i a) = τ a := fun i a ↦ by
+      rw [h1, hcyclic]; simp [hij.symm]
+    have hsingle_diag (i : n) (a : D) : t (Matrix.single i i a) = τ a := by
       have h1 : Matrix.single i i a = Matrix.single i i₀ a * Matrix.single i₀ i (1 : D) := by
         rw [Matrix.single_mul_single_same, mul_one]
       have h2 : Matrix.single i₀ i (1 : D) * Matrix.single i i₀ a = Matrix.single i₀ i₀ a := by
         rw [Matrix.single_mul_single_same, one_mul]
-      calc t (Matrix.single i i a)
-          = t (Matrix.single i i₀ a * Matrix.single i₀ i (1 : D)) := by rw [h1]
-        _ = t (Matrix.single i₀ i (1 : D) * Matrix.single i i₀ a) := hcyclic _ _
-        _ = τ a := by rw [h2]; rfl
+      rw [h1, hcyclic, h2]; rfl
     refine ⟨τ, fun a b ↦ ?_, fun X ↦ ?_⟩
-    · have h1 : Matrix.single i₀ i₀ (a * b) =
-          Matrix.single i₀ i₀ a * Matrix.single i₀ i₀ b := by simp
-      have h2 : Matrix.single i₀ i₀ (b * a) =
-          Matrix.single i₀ i₀ b * Matrix.single i₀ i₀ a := by simp
-      have hτ_eq : ∀ c : D, τ c = t (Matrix.single i₀ i₀ c) := fun _ ↦ rfl
-      rw [hτ_eq, hτ_eq, h1, hcyclic, ← h2]
+    · change t (Matrix.single i₀ i₀ (a * b)) = t (Matrix.single i₀ i₀ (b * a))
+      have hmul (x y : D) : Matrix.single i₀ i₀ (x * y) =
+          Matrix.single i₀ i₀ x * Matrix.single i₀ i₀ y := by rw [Matrix.single_mul_single_same]
+      rw [hmul, hmul, hcyclic]
     · conv_lhs => rw [Matrix.matrix_eq_sum_single X]
       simp only [map_sum, Matrix.trace, Matrix.diag_apply]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Finset.sum_eq_single i]
-      · exact hsingle_diag i (X i i)
-      · intro j _ hji; exact hsingle_ne hji.symm (X i j)
-      · intro hi; exact absurd (Finset.mem_univ i) hi
+      rw [Finset.sum_eq_single i (fun j _ hji ↦ hsingle_ne hji.symm (X i j))
+        (fun hi ↦ absurd (Finset.mem_univ i) hi), hsingle_diag]
 
 /-- Rank-one trace identity: for `X i j = v i * star (w j)`,
 `stdMatrixTrace rePart (X * u * Xᴴ * u⁻¹)` equals `rePart (Q_{u⁻¹}(v) * Q_u(w))`. -/
@@ -268,16 +220,11 @@ theorem stdMatrixTrace_rankOne_mul_conj {R D M : Type*} [CommSemiring R] [Ring D
         (w k * star (v i)) * (↑u⁻¹ : Matrix n n D) i m) =
       rePart (star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
         (star (w j) * (u : Matrix n n D) j k * w k)) := by
-    set A := v m
-    set B := star (w j) * (u : Matrix n n D) j k * w k
-    set C := star (v i) * (↑u⁻¹ : Matrix n n D) i m
-    have hL : v m * star (w j) * (u : Matrix n n D) j k * (w k * star (v i)) *
-        (↑u⁻¹ : Matrix n n D) i m = A * (B * C) := by
-      simp only [A, B, C, mul_assoc]
-    have hR : star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
-        (star (w j) * (u : Matrix n n D) j k * w k) = (C * A) * B := by
-      simp only [A, B, C, mul_assoc]
-    rw [hL, hR, hre_cyclic A (B * C), mul_assoc, hre_cyclic B (C * A)]
+    rw [show v m * star (w j) * (u : Matrix n n D) j k * (w k * star (v i)) *
+        (↑u⁻¹ : Matrix n n D) i m =
+        v m * ((star (w j) * (u : Matrix n n D) j k * w k) *
+          (star (v i) * (↑u⁻¹ : Matrix n n D) i m)) by simp only [mul_assoc],
+      hre_cyclic, mul_assoc (star (w j) * (u : Matrix n n D) j k * w k), hre_cyclic]
   have hLHS : stdMatrixTrace rePart (X * (u : Matrix n n D) * Xᴴ * (↑u⁻¹ : Matrix n n D)) =
       ∑ i : n, ∑ m : n, ∑ j : n, ∑ k : n,
         rePart (star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
@@ -285,21 +232,15 @@ theorem stdMatrixTrace_rankOne_mul_conj {R D M : Type*} [CommSemiring R] [Ring D
     simp only [stdMatrixTrace_apply, Matrix.trace, Matrix.diag_apply, Matrix.mul_apply,
       Matrix.conjTranspose_apply, X, Matrix.of_apply, star_mul, star_star,
       Finset.sum_mul, map_sum]
-    simp_rw [hterm]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun m _ ↦ Finset.sum_comm
+    simp_rw [hterm]; rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
   have hRHS : rePart ((∑ i : n, ∑ m : n, star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m) *
       (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k)) =
       ∑ i : n, ∑ m : n, ∑ j : n, ∑ k : n,
         rePart (star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
           (star (w j) * (u : Matrix n n D) j k * w k)) := by
-    rw [Finset.sum_mul, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.sum_mul, map_sum]
-    refine Finset.sum_congr rfl fun m _ ↦ ?_
-    rw [Finset.mul_sum, map_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Finset.mul_sum, map_sum]
+    simp only [Finset.sum_mul]
+    simp only [Finset.mul_sum, map_sum]
   exact hLHS.trans hRHS.symm
 
 end CyclicAndRankOne

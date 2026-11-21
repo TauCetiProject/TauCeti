@@ -108,18 +108,15 @@ theorem IsRosatiPositive.trace_mul_mul_star_pos {E : Type*} [AddCommMonoid E] [M
 /-- The sum of two Rosati-positive elements is Rosati-positive. -/
 theorem IsRosatiPositive.add {E : Type*} [NonUnitalNonAssocSemiring E] [Module ℝ E]
     [StarAddMonoid E] {t : E →ₗ[ℝ] ℝ} {s₁ s₂ : E} (h₁ : IsRosatiPositive t s₁)
-    (h₂ : IsRosatiPositive t s₂) : IsRosatiPositive t (s₁ + s₂) := by
-  refine ⟨h₁.1.add h₂.1, fun x hx ↦ ?_⟩
-  rw [add_mul, add_mul, map_add]
-  exact add_pos (h₁.2 x hx) (h₂.2 x hx)
+    (h₂ : IsRosatiPositive t s₂) : IsRosatiPositive t (s₁ + s₂) :=
+  ⟨h₁.1.add h₂.1, fun x hx ↦ by simpa [add_mul] using add_pos (h₁.2 x hx) (h₂.2 x hx)⟩
 
 /-- A positive real multiple of a Rosati-positive element is Rosati-positive. -/
 theorem IsRosatiPositive.smul {E : Type*} [AddCommMonoid E] [Mul E] [Module ℝ E]
     [IsScalarTower ℝ E E] [Star E] [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ} {c : ℝ} {s : E}
-    (hc : 0 < c) (hs : IsRosatiPositive t s) : IsRosatiPositive t (c • s) := by
-  refine ⟨by rw [IsSelfAdjoint, star_smul, star_trivial, hs.1.star_eq], fun x hx ↦ ?_⟩
-  rw [smul_mul_assoc, smul_mul_assoc, map_smul, smul_eq_mul]
-  exact mul_pos hc (hs.2 x hx)
+    (hc : 0 < c) (hs : IsRosatiPositive t s) : IsRosatiPositive t (c • s) :=
+  ⟨by rw [IsSelfAdjoint, star_smul, star_trivial, hs.1.star_eq], fun x hx ↦ by
+    simpa [smul_mul_assoc, smul_eq_mul] using mul_pos hc (hs.2 x hx)⟩
 
 /-- `1` is Rosati-positive with respect to `t` iff `t (x * star x) > 0` for all `x ≠ 0`. -/
 theorem isRosatiPositive_one_iff {E : Type*} [Semiring E] [Module ℝ E] [StarRing E]
@@ -133,50 +130,34 @@ theorem IsRosatiPositive.conj_unit {E : Type*} [Semiring E] [Module ℝ E] [Star
     {t : E →ₗ[ℝ] ℝ} (hcyclic : ∀ x y : E, t (x * y) = t (y * x))
     (u : Eˣ) {s : E} (hs : IsRosatiPositive t s) :
     IsRosatiPositive t (star (u : E) * s * u) := by
-  refine ⟨?_, fun x hx ↦ ?_⟩
-  · rw [IsSelfAdjoint, star_mul, star_mul, star_star, hs.1.star_eq, mul_assoc]
-  · have hux : (u : E) * x ≠ 0 := by
-      intro h
-      exact hx (by simpa using congrArg ((↑u⁻¹ : E) * ·) h)
-    have hEq : star (u : E) * s * u * x * star x =
-        star (u : E) * (s * ((u : E) * x) * star x) := by
-      simp only [mul_assoc]
-    rw [hEq, hcyclic, mul_assoc, mul_assoc, ← star_mul]
-    simpa only [mul_assoc] using hs.2 ((u : E) * x) hux
+  refine ⟨by rw [IsSelfAdjoint, star_mul, star_mul, star_star, hs.1.star_eq, mul_assoc],
+    fun x hx ↦ ?_⟩
+  have hux : (u : E) * x ≠ 0 := fun h ↦ hx (by simpa using congrArg ((↑u⁻¹ : E) * ·) h)
+  rw [show star (u : E) * s * u * x * star x = star (u : E) * (s * ((u : E) * x) * star x) by
+    simp only [mul_assoc], hcyclic]
+  simpa only [mul_assoc, star_mul] using hs.2 ((u : E) * x) hux
 
 /-- Every Rosati-positive element of a finite-dimensional real algebra with star is a unit. -/
 theorem IsRosatiPositive.isUnit {E : Type*} [Ring E] [Algebra ℝ E] [Star E]
     [Module.Finite ℝ E] {t : E →ₗ[ℝ] ℝ} {s : E} (hs : IsRosatiPositive t s) :
     IsUnit s := by
-  have hinj : Function.Injective (Algebra.lmul ℝ E s) := by
-    rw [injective_iff_map_eq_zero]
-    intro x hx
-    by_contra hx0
-    have hsx : s * x = 0 := hx
-    have h0 : t (s * x * star x) = 0 := by rw [hsx, zero_mul, map_zero]
-    exact (hs.2 x hx0).ne' h0
-  have hsurj : Function.Surjective (Algebra.lmul ℝ E s) :=
-    LinearMap.injective_iff_surjective.mp hinj
-  obtain ⟨y, hy⟩ := hsurj 1
-  have hsy : s * y = 1 := hy
-  have hys : y * s = 1 := hinj (by simp [← mul_assoc, hsy])
-  exact ⟨⟨s, y, hsy, hys⟩, rfl⟩
+  have hinj : Function.Injective (Algebra.lmul ℝ E s) := (injective_iff_map_eq_zero _).mpr
+    fun x hx ↦ by_contra fun hx0 ↦
+      (hs.2 x hx0).ne' (by rw [show s * x = 0 from hx, zero_mul, map_zero])
+  obtain ⟨y, hy⟩ := (LinearMap.injective_iff_surjective.mp hinj) 1
+  exact ⟨⟨s, y, hy, hinj (by simp [← mul_assoc, show s * y = 1 from hy])⟩, rfl⟩
 
 /-- Transport of `IsRosatiPositive` along a star-preserving `ℝ`-algebra isomorphism. -/
 theorem isRosatiPositive_iff_of_algEquiv {E F : Type*} [Semiring E] [Algebra ℝ E] [Star E]
     [Semiring F] [Algebra ℝ F] [Star F] (e : E ≃ₐ[ℝ] F) (he : ∀ x : E, e (star x) = star (e x))
     (tF : F →ₗ[ℝ] ℝ) (s : E) :
-    IsRosatiPositive (tF.comp e.toLinearMap) s ↔ IsRosatiPositive tF (e s) := by
-  constructor
-  · rintro ⟨hs, hpos⟩
-    refine ⟨by rw [IsSelfAdjoint, ← he, hs.star_eq], fun y hy ↦ ?_⟩
-    have hne : e.symm y ≠ 0 := fun h ↦ hy (by simpa using congrArg e h)
-    have h := hpos (e.symm y) hne
-    simpa [LinearMap.comp_apply, map_mul, he] using h
-  · rintro ⟨hs, hpos⟩
-    refine ⟨e.injective (by rw [he, hs.star_eq]), fun x hx ↦ ?_⟩
-    have hne : e x ≠ 0 := fun h ↦ hx (e.injective (by simpa using h))
-    simpa [LinearMap.comp_apply, map_mul, he] using hpos (e x) hne
+    IsRosatiPositive (tF.comp e.toLinearMap) s ↔ IsRosatiPositive tF (e s) :=
+  ⟨fun ⟨hs, hp⟩ ↦ ⟨by rw [IsSelfAdjoint, ← he, hs.star_eq], fun y hy ↦ by
+      simpa [LinearMap.comp_apply, map_mul, he] using
+        hp (e.symm y) fun h ↦ hy (by simpa using congrArg e h)⟩,
+    fun ⟨hs, hp⟩ ↦ ⟨e.injective (by rw [he, hs.star_eq]), fun x hx ↦ by
+      simpa [LinearMap.comp_apply, map_mul, he] using
+        hp (e x) fun h ↦ hx (e.injective (by simpa using h))⟩⟩
 
 /-- For a cyclic linear functional `t`, replacing `t` by its star-symmetrization
 `t' x = (t x + t (star x)) / 2` leaves `IsRosatiPositive` unchanged. -/
@@ -187,8 +168,7 @@ theorem isRosatiPositive_iff_of_symmetrize {E : Type*} [Semiring E] [Module ℝ 
   refine and_congr_right fun hs ↦ forall₂_congr fun x _ ↦ ?_
   have hst : t (star (s * x * star x)) = t (s * x * star x) := by
     rw [star_mul, star_mul, star_star, hs.star_eq, ← mul_assoc, hcyclic, mul_assoc]
-  rw [ht', hst]
-  constructor <;> intro h <;> linarith
+  rw [ht', hst]; constructor <;> intro h <;> linarith
 
 end IsRosatiPositive
 
@@ -199,27 +179,15 @@ section StarModule
 /-- An additive map `ℝ →+ ℝ` sending positive reals to positive reals is linear. -/
 private theorem addMonoidHom_real_eq_mul_one (f : ℝ →+ ℝ) (hf : ∀ r : ℝ, 0 < r → 0 < f r)
     (r : ℝ) : f r = r * f 1 := by
-  have hmono : StrictMono f := fun a b hab ↦ by
-    have h := hf (b - a) (sub_pos.mpr hab)
-    rw [map_sub] at h
-    linarith
-  have hrat : ∀ q : ℚ, f (q : ℝ) = (q : ℝ) * f 1 := fun q ↦ by
-    have h := map_rat_smul f q (1 : ℝ)
-    simpa [Rat.smul_def] using h
+  have hmono : StrictMono f := fun a b hab ↦
+    sub_pos.mp (by rw [← map_sub]; exact hf _ (sub_pos.mpr hab))
+  have hrat (q : ℚ) : f q = (q : ℝ) * f 1 := by simpa [Rat.smul_def] using map_rat_smul f q 1
   have hf1 : 0 < f 1 := hf 1 one_pos
-  apply le_antisymm
-  · by_contra hlt
-    push Not at hlt
-    obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((lt_div_iff₀ hf1).mpr hlt)
-    have h1 : f r < f (q : ℝ) := hmono hq1
-    have h2 : (q : ℝ) * f 1 < f r := (lt_div_iff₀ hf1).mp hq2
-    linarith [hrat q]
-  · by_contra hlt
-    push Not at hlt
-    obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((div_lt_iff₀ hf1).mpr hlt)
-    have h1 : f (q : ℝ) < f r := hmono hq2
-    have h2 : f r < (q : ℝ) * f 1 := (div_lt_iff₀ hf1).mp hq1
-    linarith [hrat q]
+  refine le_antisymm (le_of_not_gt fun hlt ↦ ?_) (le_of_not_gt fun hlt ↦ ?_)
+  · obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((lt_div_iff₀ hf1).mpr hlt)
+    linarith [hmono hq1, (lt_div_iff₀ hf1).mp hq2, hrat q]
+  · obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((div_lt_iff₀ hf1).mpr hlt)
+    linarith [hmono hq2, (div_lt_iff₀ hf1).mp hq1, hrat q]
 
 /-- **Automatic real-linearity of the involution.** If a real star algebra admits a linear
 functional `t : E →ₗ[ℝ] ℝ` with `t (x * star x) > 0` for all `x ≠ 0`, then `star` fixes every real
@@ -230,47 +198,33 @@ theorem starModule_of_trace_mul_star_pos {E : Type*} [Ring E] [Algebra ℝ E] [S
   by_cases hsub : Subsingleton E
   · exact ⟨fun _ _ ↦ Subsingleton.elim _ _⟩
   have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hsub
-  let f : ℝ →+ ℝ :=
-    { toFun := fun a ↦ t (star (algebraMap ℝ E a))
-      map_zero' := by simp
-      map_add' := fun a b ↦ by simp [map_add] }
-  have hf_pos : ∀ a : ℝ, 0 < a → 0 < f a := fun a ha ↦ by
-    have hne : algebraMap ℝ E a ≠ 0 := by
-      simpa using (algebraMap ℝ E).injective.ne ha.ne'
-    have h := hpos (algebraMap ℝ E a) hne
-    rw [← Algebra.smul_def, map_smul, smul_eq_mul] at h
-    exact pos_of_mul_pos_right h ha.le
-  have htf : ∀ a : ℝ, t (star (algebraMap ℝ E a)) = t (algebraMap ℝ E a) := fun a ↦ by
-    have h1 := addMonoidHom_real_eq_mul_one f hf_pos a
-    have h2 : t (algebraMap ℝ E a) = a * t 1 := by
-      rw [Algebra.algebraMap_eq_smul_one, map_smul, smul_eq_mul]
-    simpa [f, h2] using h1
-  have hstar_alg : ∀ r : ℝ, star (algebraMap ℝ E r) = algebraMap ℝ E r := fun r ↦ by
+  let f : ℝ →+ ℝ := ⟨⟨fun a ↦ t (star (algebraMap ℝ E a)), by simp⟩, fun a b ↦ by simp⟩
+  have htf (a : ℝ) : t (star (algebraMap ℝ E a)) = t (algebraMap ℝ E a) := by
+    have h1 := addMonoidHom_real_eq_mul_one f (fun b hb ↦ by
+      have h := hpos (algebraMap ℝ E b) (by simpa using (algebraMap ℝ E).injective.ne hb.ne')
+      rw [← Algebra.smul_def, map_smul, smul_eq_mul] at h
+      exact pos_of_mul_pos_right (by simpa [f] using h) hb.le) a
+    simpa [f, Algebra.algebraMap_eq_smul_one, smul_eq_mul] using h1
+  have hstar_alg (r : ℝ) : star (algebraMap ℝ E r) = algebraMap ℝ E r := by
     set u : E := star (algebraMap ℝ E r) - algebraMap ℝ E r
     have htu : t u = 0 := by simp [u, htf]
-    have hsu : star u = -u := by simp [u]
     have hsq : star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r) =
         (2 * r) • u + u * u := by
-      have hcomm : u * algebraMap ℝ E r = algebraMap ℝ E r * u :=
-        (Algebra.commutes r u).symm
-      have hsum : star (algebraMap ℝ E r) = algebraMap ℝ E r + u := by
-        simp [u]
-      rw [map_mul, star_mul, hsum, add_mul, mul_add, mul_add, hcomm, two_mul, add_smul]
-      simp only [← Algebra.smul_def]
-      abel
+      have hsum : star (algebraMap ℝ E r) = algebraMap ℝ E r + u := by simp [u]
+      rw [map_mul, star_mul, hsum, add_mul, mul_add, mul_add, (Algebra.commutes r u).symm,
+        two_mul, add_smul]
+      simp only [← Algebra.smul_def]; abel
     have htu2 : t (u * u) = 0 := by
       have h0 : t (star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r)) = 0 := by
         rw [map_sub, htf, sub_self]
-      rw [hsq, map_add, map_smul, htu, smul_zero, zero_add] at h0
-      exact h0
-    have hu0 : u = 0 := by
-      by_contra hne
-      have h := hpos u hne
-      rw [hsu, mul_neg, map_neg, htu2, neg_zero] at h
-      exact lt_irrefl 0 h
-    exact sub_eq_zero.mp hu0
-  refine ⟨fun r x ↦ ?_⟩
-  rw [Algebra.smul_def, star_mul, hstar_alg, ← Algebra.commutes, ← Algebra.smul_def, star_trivial r]
+      rwa [hsq, map_add, map_smul, htu, smul_zero, zero_add] at h0
+    refine sub_eq_zero.mp (by_contra fun hne ↦ ?_)
+    have h := hpos u hne
+    rw [show star u = -u by simp [u], mul_neg, map_neg, htu2, neg_zero] at h
+    exact lt_irrefl 0 h
+  exact ⟨fun r x ↦ by
+    rw [Algebra.smul_def, star_mul, hstar_alg, ← Algebra.commutes, ← Algebra.smul_def,
+      star_trivial r]⟩
 
 end StarModule
 
@@ -288,20 +242,12 @@ abbrev rosatiInnerProductCore {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ 
     InnerProductSpace.Core ℝ E where
   inner x y := t (x * star y)
   conj_inner_symm x y := by
-    simp only [starRingEnd_apply, star_trivial]
-    rw [← hstar (x * star y), star_mul, star_star]
+    simp only [starRingEnd_apply, star_trivial]; rw [← hstar (x * star y), star_mul, star_star]
   re_inner_nonneg x := by
-    simp only [RCLike.re_to_real]
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp
-    · exact (hpos x hx).le
-  add_left x y z := by
-    rw [add_mul, map_add]
-  smul_left x y r := by
-    simp only [starRingEnd_apply, star_trivial, smul_mul_assoc, map_smul, smul_eq_mul]
-  definite x hx := by
-    by_contra hne
-    exact (hpos x hne).ne' hx
+    rcases eq_or_ne x 0 with rfl | hx <;> [simp; exact (hpos x hx).le]
+  add_left x y z := by rw [add_mul, map_add]
+  smul_left x y r := by simp [smul_mul_assoc]
+  definite x hx := by_contra fun hne ↦ (hpos x hne).ne' hx
 
 @[simp]
 theorem rosatiInnerProductCore_inner {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E]
@@ -323,9 +269,8 @@ theorem inner_lmul_left (t : E →ₗ[ℝ] ℝ) (hcyclic : ∀ x y : E, t (x * y
     ⟪Algebra.lmul ℝ E s x, y⟫_ℝ = ⟪x, Algebra.lmul ℝ E (star s) y⟫_ℝ := by
   let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
   let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  have hinner (a b : E) : ⟪a, b⟫_ℝ = t (a * star b) := rfl
-  simp only [hinner, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', star_mul, star_star]
-  rw [mul_assoc, hcyclic s (x * star y), mul_assoc]
+  change t ((s * x) * star y) = t (x * star (star s * y))
+  rw [star_mul, star_star, mul_assoc, hcyclic s (x * star y), mul_assoc]
 
 /-- In finite dimension, the Hilbert-space adjoint of `Algebra.lmul ℝ E s` on the trace inner
 product space is `Algebra.lmul ℝ E (star s)`. -/
@@ -350,17 +295,14 @@ theorem isSymmetric_lmul_iff (t : E →ₗ[ℝ] ℝ) (hcyclic : ∀ x y : E, t (
     (Algebra.lmul ℝ E s).IsSymmetric ↔ IsSelfAdjoint s := by
   let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
   let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  constructor
-  · intro hsym
-    have h0 : ∀ y : E, ⟪s - star s, y⟫_ℝ = 0 := fun y ↦ by
-      rw [inner_sub_left, sub_eq_zero]
-      have h1 : ⟪s, y⟫_ℝ = ⟪1, Algebra.lmul ℝ E s y⟫_ℝ := by simpa using hsym 1 y
-      have h2 : ⟪star s, y⟫_ℝ = ⟪1, Algebra.lmul ℝ E s y⟫_ℝ := by
-        simpa [star_star] using inner_lmul_left t hcyclic hstar hpos (star s) 1 y
-      exact h1.trans h2.symm
-    exact (sub_eq_zero.mp (inner_self_eq_zero.mp (h0 (s - star s)))).symm
-  · intro hs x y
-    rw [inner_lmul_left t hcyclic hstar hpos s x y, hs.star_eq]
+  refine ⟨fun hsym ↦ (sub_eq_zero.mp ((inner_self_eq_zero (𝕜 := ℝ)).mp ?_)).symm,
+    fun hs x y ↦ by rw [inner_lmul_left t hcyclic hstar hpos s x y, hs.star_eq]⟩
+  rw [inner_sub_left, sub_eq_zero]
+  have h1 : ⟪s, s - star s⟫_ℝ = ⟪1, Algebra.lmul ℝ E s (s - star s)⟫_ℝ := by
+    simpa using hsym 1 (s - star s)
+  have h2 : ⟪star s, s - star s⟫_ℝ = ⟪1, Algebra.lmul ℝ E s (s - star s)⟫_ℝ := by
+    simpa [star_star] using inner_lmul_left t hcyclic hstar hpos (star s) 1 (s - star s)
+  exact h1.trans h2.symm
 
 /-- A Rosati-positive element acts as a positive operator on the trace inner product space. -/
 theorem isPositive_lmul_of_isRosatiPositive (t : E →ₗ[ℝ] ℝ)
@@ -372,11 +314,8 @@ theorem isPositive_lmul_of_isRosatiPositive (t : E →ₗ[ℝ] ℝ)
   let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
   let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
   refine ⟨(isSymmetric_lmul_iff t hcyclic hstar hpos s).mpr hs.1, fun x ↦ ?_⟩
-  have hre : RCLike.re ⟪Algebra.lmul ℝ E s x, x⟫_ℝ = t (s * x * star x) := rfl
-  rw [hre]
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · exact (hs.2 x hx).le
+  change 0 ≤ t (s * x * star x)
+  rcases eq_or_ne x 0 with rfl | hx <;> [simp; exact (hs.2 x hx).le]
 
 /-- Conversely, a unit whose left-multiplication operator is positive on the trace inner product
 space is Rosati-positive. -/
@@ -392,22 +331,18 @@ theorem isRosatiPositive_of_isPositive_lmul_of_isUnit (t : E →ₗ[ℝ] ℝ)
   let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
   let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
   refine ⟨(isSymmetric_lmul_iff t hcyclic hstar hpos s).mp hsPos.isSymmetric, fun x hx ↦ ?_⟩
-  have hnonneg : 0 ≤ t (s * x * star x) := hsPos.re_inner_nonneg_left x
-  refine lt_of_le_of_ne hnonneg fun hzero ↦ hx ?_
+  refine lt_of_le_of_ne (hsPos.re_inner_nonneg_left x) fun hzero ↦ hx ?_
   set T := Algebra.lmul ℝ E s
   have hTxx : ⟪T x, x⟫_ℝ = 0 := hzero.symm
-  have hTxy : ∀ y : E, ⟪T x, y⟫_ℝ = 0 := fun y ↦ by
-    set a : ℝ := ⟪T y, y⟫_ℝ
-    set b : ℝ := ⟪T x, y⟫_ℝ
-    have ha : 0 ≤ a := hsPos.re_inner_nonneg_left y
-    have hsym : ⟪T y, x⟫_ℝ = b := by rw [hsPos.isSymmetric y x, real_inner_comm]
-    have h := hsPos.re_inner_nonneg_left ((a + 1) • x - b • y)
+  have hTxy (y : E) : ⟪T x, y⟫_ℝ = 0 := by
+    have hsym : ⟪T y, x⟫_ℝ = ⟪T x, y⟫_ℝ := by rw [hsPos.isSymmetric y x, real_inner_comm]
+    have h := hsPos.re_inner_nonneg_left ((⟪T y, y⟫_ℝ + 1) • x - ⟪T x, y⟫_ℝ • y)
     simp only [RCLike.re_to_real, map_sub, map_smul, inner_sub_left, inner_sub_right,
       inner_smul_left, inner_smul_right, starRingEnd_apply, star_trivial, hTxx, hsym] at h
+    have ha : 0 ≤ ⟪T y, y⟫_ℝ := hsPos.re_inner_nonneg_left y
     nlinarith
-  have hTx0 : T x = 0 := inner_self_eq_zero.mp (hTxy (T x))
   obtain ⟨u, rfl⟩ := hu
-  simpa [T] using congrArg ((↑u⁻¹ : E) * ·) hTx0
+  simpa [T] using congrArg ((↑u⁻¹ : E) * ·) (inner_self_eq_zero.mp (hTxy (T x)))
 
 end InnerProduct
 
@@ -420,28 +355,25 @@ real inner product space equals `Polynomial.aeval T p` for a Lagrange interpolat
 private theorem exists_aeval_eq_cfc {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [FiniteDimensional ℝ V] {T : V →ₗ[ℝ] V} (hT : T.IsSymmetric) (f : ℝ → ℝ) :
     ∃ p : ℝ[X], Polynomial.aeval T p = hT.cfc f := by
-  let nodes : Finset ℝ := Finset.univ.image (hT.eigenvalues rfl)
-  refine ⟨Lagrange.interpolate nodes id f, ?_⟩
-  refine (hT.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_
+  refine ⟨Lagrange.interpolate (Finset.univ.image (hT.eigenvalues rfl)) id f,
+    (hT.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_⟩
   rw [OrthonormalBasis.coe_toBasis, hT.cfc_apply_eigenvectorBasis,
     Module.End.aeval_apply_of_mem_apply_eq_smul (hT.apply_eigenvectorBasis rfl i)]
   simp only [RCLike.ofReal_real_eq_id, id_eq]
-  have hev : Polynomial.eval (hT.eigenvalues rfl i) (Lagrange.interpolate nodes id f) =
-      f (hT.eigenvalues rfl i) := by
+  rw [show Polynomial.eval (hT.eigenvalues rfl i)
+      (Lagrange.interpolate (Finset.univ.image (hT.eigenvalues rfl)) id f) =
+      f (hT.eigenvalues rfl i) by
     simpa only [id_eq] using Lagrange.eval_interpolate_at_node (r := f) (v := id)
-      (fun _ _ _ _ h ↦ h) (Finset.mem_image_of_mem _ (Finset.mem_univ i))
-  rw [hev]
+      (fun _ _ _ _ h ↦ h) (Finset.mem_image_of_mem _ (Finset.mem_univ i))]
 
 /-- Every eigenvalue of left multiplication by a Rosati-positive element is strictly positive. -/
 private theorem hasEigenvalue_lmul_pos {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
     (t : E →ₗ[ℝ] ℝ) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {s : E}
     (hs : IsRosatiPositive t s) {μ : ℝ} (hμ : (Algebra.lmul ℝ E s).HasEigenvalue μ) : 0 < μ := by
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
-  have h1 := hs.2 v hv.2
   have hv' : s * v = μ • v := by simpa using Module.End.mem_eigenspace_iff.mp hv.1
-  have h2 : t (s * v * star v) = μ * t (v * star v) := by
-    rw [hv', smul_mul_assoc, map_smul, smul_eq_mul]
-  rw [h2] at h1
+  have h1 := hs.2 v hv.2
+  rw [hv', smul_mul_assoc, map_smul, smul_eq_mul] at h1
   exact pos_of_mul_pos_left h1 (hpos v hv.2).le
 
 /-- Helper for `TauCeti.rosatiPositiveSquareRoot` assuming a star-invariant trace `t`. -/
@@ -464,44 +396,37 @@ private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] 
     (hT.isSymmetric.eq_cfc_iff Real.sqrt).mpr fun _ _ hx ↦ hT.sqrt_apply_of_apply_eq_smul hx
   obtain ⟨p, hp⟩ := exists_aeval_eq_cfc hT.isSymmetric Real.sqrt
   obtain ⟨q, hq⟩ := exists_aeval_eq_cfc hT.isSymmetric (fun μ ↦ (Real.sqrt μ)⁻¹)
-  set r : E := Polynomial.aeval s p
-  set rInv : E := Polynomial.aeval s q
+  set r : E := Polynomial.aeval s p; set rInv : E := Polynomial.aeval s q
   have hlmul_r : Algebra.lmul ℝ E r = hT.sqrt := by
-    rw [hsqrt_cfc, ← hp]
-    exact (Polynomial.aeval_algHom_apply (Algebra.lmul ℝ E) s p).symm
+    rw [hsqrt_cfc, ← hp]; exact (Polynomial.aeval_algHom_apply (Algebra.lmul ℝ E) s p).symm
   have hlmul_rInv : Algebra.lmul ℝ E rInv = hT.isSymmetric.cfc (fun μ ↦ (Real.sqrt μ)⁻¹) := by
-    rw [← hq]
-    exact (Polynomial.aeval_algHom_apply (Algebra.lmul ℝ E) s q).symm
-  have hmul_one_op : hT.sqrt * hT.isSymmetric.cfc (fun μ ↦ (Real.sqrt μ)⁻¹) = 1 := by
-    rw [hsqrt_cfc, ← hT.isSymmetric.cfc_mul, ← hT.isSymmetric.cfc_one]
-    exact hT.isSymmetric.cfc_congr fun μ hμ ↦
-      mul_inv_cancel₀ (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hpos hs hμ))
-  have hmul_one_op' : hT.isSymmetric.cfc (fun μ ↦ (Real.sqrt μ)⁻¹) * hT.sqrt = 1 := by
-    rw [hsqrt_cfc, ← hT.isSymmetric.cfc_mul, ← hT.isSymmetric.cfc_one]
-    exact hT.isSymmetric.cfc_congr fun μ hμ ↦
-      inv_mul_cancel₀ (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hpos hs hμ))
-  have hr_sq : r * r = s := Algebra.lmul_injective (R := ℝ) <| by
-    rw [map_mul, hlmul_r, Module.End.mul_eq_comp, hT.sqrt_sq]
-  have hr_mul : r * rInv = 1 := Algebra.lmul_injective (R := ℝ) <| by
-    rw [map_mul, map_one, hlmul_r, hlmul_rInv, hmul_one_op]
-  have hr_mul' : rInv * r = 1 := Algebra.lmul_injective (R := ℝ) <| by
-    rw [map_mul, map_one, hlmul_r, hlmul_rInv, hmul_one_op']
-  let u : Eˣ := ⟨r, rInv, hr_mul, hr_mul'⟩
+    rw [← hq]; exact (Polynomial.aeval_algHom_apply (Algebra.lmul ℝ E) s q).symm
+  have hcfc_mul {f g : ℝ → ℝ}
+      (hfg : ∀ μ, (Algebra.lmul ℝ E s).HasEigenvalue μ → f μ * g μ = 1) :
+      hT.isSymmetric.cfc f * hT.isSymmetric.cfc g = 1 := by
+    rw [← hT.isSymmetric.cfc_mul, ← hT.isSymmetric.cfc_one]; exact hT.isSymmetric.cfc_congr hfg
+  let u : Eˣ := ⟨r, rInv,
+    Algebra.lmul_injective (R := ℝ) (by
+      rw [map_mul, map_one, hlmul_r, hlmul_rInv, hsqrt_cfc]
+      exact hcfc_mul fun μ hμ ↦
+        mul_inv_cancel₀ (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hpos hs hμ))),
+    Algebra.lmul_injective (R := ℝ) (by
+      rw [map_mul, map_one, hlmul_r, hlmul_rInv, hsqrt_cfc]
+      exact hcfc_mul fun μ hμ ↦
+        inv_mul_cancel₀ (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hpos hs hμ)))⟩
   have hr_mem : r ∈ Algebra.adjoin ℝ ({s} : Set E) := Polynomial.aeval_mem_adjoin_singleton ℝ s
   have hrInv_mem : rInv ∈ Algebra.adjoin ℝ ({s} : Set E) :=
     Polynomial.aeval_mem_adjoin_singleton ℝ s
-  have hr_pos : IsRosatiPositive t r :=
-    isRosatiPositive_of_isPositive_lmul_of_isUnit t hcyclic hstar hpos
-      (hlmul_r ▸ hT.sqrt_isPositive) ⟨u, rfl⟩
-  refine ⟨hs.isUnit, u, hr_pos, hr_sq, hr_mem, hrInv_mem, fun x hx ↦ ?_, fun r' hr' hr'sq ↦ ?_⟩
-  · exact ⟨Algebra.commute_of_mem_adjoin_of_forall_mem_commute hr_mem (by simpa using hx),
-      Algebra.commute_of_mem_adjoin_of_forall_mem_commute hrInv_mem (by simpa using hx)⟩
-  · refine Algebra.lmul_injective (R := ℝ) ?_
-    have hr'_pos := isPositive_lmul_of_isRosatiPositive t hcyclic hstar hpos hr'
-    have hcomp : Algebra.lmul ℝ E r' ∘ₗ Algebra.lmul ℝ E r' = Algebra.lmul ℝ E s := by
-      rw [← Module.End.mul_eq_comp, ← map_mul, hr'sq]
-    rw [hlmul_r]
-    exact hT.sqrt_unique hr'_pos hcomp
+  refine ⟨hs.isUnit, u, isRosatiPositive_of_isPositive_lmul_of_isUnit t hcyclic hstar hpos
+      (hlmul_r ▸ hT.sqrt_isPositive) ⟨u, rfl⟩,
+    Algebra.lmul_injective (R := ℝ) (by rw [map_mul, hlmul_r, Module.End.mul_eq_comp, hT.sqrt_sq]),
+    hr_mem, hrInv_mem, fun x hx ↦
+      ⟨Algebra.commute_of_mem_adjoin_of_forall_mem_commute hr_mem (by simpa using hx),
+       Algebra.commute_of_mem_adjoin_of_forall_mem_commute hrInv_mem (by simpa using hx)⟩,
+    fun r' hr' hr'sq ↦ Algebra.lmul_injective (R := ℝ) <| by
+      rw [hlmul_r]
+      exact hT.sqrt_unique (isPositive_lmul_of_isRosatiPositive t hcyclic hstar hpos hr')
+        (by rw [← Module.End.mul_eq_comp, ← map_mul, hr'sq])⟩
 
 /-- **Internal positive square roots.** In a finite-dimensional real star algebra with a cyclic
 linear functional `t : E →ₗ[ℝ] ℝ` strictly positive on `x * star x`, every element `s` with
@@ -525,20 +450,18 @@ theorem rosatiPositiveSquareRoot {E : Type*} [Ring E] [Algebra ℝ E] [StarRing 
     { toFun := fun x ↦ (t x + t (star x)) / 2
       map_add' := fun x y ↦ by simp only [star_add, map_add]; ring
       map_smul' := fun c x ↦ by
-        simp only [star_smul, star_trivial, map_smul, smul_eq_mul, RingHom.id_apply]; ring }
-  have ht' : ∀ x : E, t' x = (t x + t (star x)) / 2 := fun _ ↦ rfl
-  have hcyclic' : ∀ x y : E, t' (x * y) = t' (y * x) := fun x y ↦ by
-    simp only [ht', star_mul, hcyclic x y, hcyclic (star y) (star x)]
-  have hstar' : ∀ x : E, t' (star x) = t' x := fun x ↦ by
-    simp only [ht', star_star, add_comm]
-  have hpos' : ∀ x : E, x ≠ 0 → 0 < t' (x * star x) := fun x hx ↦ by
-    have h := hpos x hx
-    simp only [ht', star_mul, star_star]
-    linarith
-  have hiff : ∀ a : E, IsRosatiPositive t' a ↔ IsRosatiPositive t a :=
-    fun _ ↦ isRosatiPositive_iff_of_symmetrize ht' hcyclic
+        simp only [star_smul, star_trivial c, map_smul, RingHom.id_apply, smul_eq_mul]; ring }
+  have hiff (a : E) : IsRosatiPositive t' a ↔ IsRosatiPositive t a :=
+    isRosatiPositive_iff_of_symmetrize (fun _ ↦ rfl) hcyclic
   obtain ⟨hsU, r, hrpos, hrsq, hrmem, hrImem, hcomm, huniq⟩ :=
-    rosatiPositiveSquareRoot_of_star_invariant t' hcyclic' hstar' hpos' s ((hiff s).mpr hs)
+    rosatiPositiveSquareRoot_of_star_invariant t'
+      (fun x y ↦ by simp only [t', LinearMap.coe_mk, AddHom.coe_mk, star_mul, hcyclic x y,
+        hcyclic (star y) (star x)])
+      (fun x ↦ by simp only [t', LinearMap.coe_mk, AddHom.coe_mk, star_star, add_comm])
+      (fun x hx ↦ by
+        have := hpos x hx; simp only [t', LinearMap.coe_mk, AddHom.coe_mk, star_mul, star_star]
+        linarith)
+      s ((hiff s).mpr hs)
   exact ⟨hsU, r, (hiff r).mp hrpos, hrsq, hrmem, hrImem, hcomm,
     fun r' hr' hr'sq ↦ huniq r' ((hiff r').mpr hr') hr'sq⟩
 

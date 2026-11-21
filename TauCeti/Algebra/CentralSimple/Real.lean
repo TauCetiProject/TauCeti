@@ -441,12 +441,10 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
     Nonempty (D ≃ₐ[ℝ] ℝ) ∨ Nonempty (D ≃ₐ[ℝ] ℂ) ∨ Nonempty (D ≃ₐ[ℝ] ℍ[ℝ]) := by
   let _ : DivisionRing D := divisionRingOfFiniteDimensional ℝ D
   set Z := Subalgebra.center ℝ D
-  have hZfield : IsField Z := IsField.of_isDomain_of_finite ℝ Z
-  let _ : Field Z := hZfield.toField
+  let _ : Field Z := (IsField.of_isDomain_of_finite ℝ Z).toField
   have _ : Algebra.IsAlgebraic ℝ Z := Algebra.IsAlgebraic.of_finite ℝ Z
   rcases _root_.Real.nonempty_algEquiv_or Z with hZ | hZ
-  · -- The centre is `ℝ`, so `D` is central and reduces to `ℝ` or `ℍ[ℝ]`.
-    obtain ⟨eZ⟩ := hZ
+  · obtain ⟨eZ⟩ := hZ
     have : Algebra.IsCentral ℝ D := ⟨fun x hx ↦ by
       have hz : (⟨x, hx⟩ : Z) = algebraMap ℝ Z (eZ ⟨x, hx⟩) :=
         eZ.injective (by rw [AlgEquiv.commutes, Algebra.algebraMap_self_apply])
@@ -455,27 +453,25 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
     rcases nonempty_algEquiv_real_or_quaternion D with hR | hH
     · exact Or.inl hR
     · exact Or.inr (Or.inr hH)
-  · -- The centre is `ℂ`; viewing `D` as a finite-dimensional `ℂ`-algebra forces `ℂ ≃ₐ[ℝ] D`.
-    obtain ⟨eZ⟩ := hZ
+  · obtain ⟨eZ⟩ := hZ
     right; left
     obtain ⟨s, hs⟩ := ‹FiniteDimensional ℝ D›.fg_top
-    have hrep : ∀ x : D, ∃ c : D → ℝ, ∑ y ∈ s, algebraMap ℝ D (c y) * y = x := fun x ↦ by
-      obtain ⟨c, -, hc⟩ := Submodule.mem_span_finset.mp (hs.symm ▸ Submodule.mem_top)
-      exact ⟨c, by simpa only [Algebra.smul_def] using hc⟩
+    have hrep (x : D) : ∃ c : D → ℝ, ∑ y ∈ s, algebraMap ℝ D (c y) * y = x := by
+      obtain ⟨c, -, rfl⟩ := Submodule.mem_span_finset.mp (hs.symm ▸ Submodule.mem_top : x ∈ _)
+      exact ⟨c, by simp only [Algebra.smul_def]⟩
     let f : ℂ →ₐ[ℝ] D := (Subalgebra.val Z).comp eZ.symm.toAlgHom
-    have hcomm : ∀ c : ℂ, ∀ x : D, f c * x = x * f c := fun c x ↦
+    have hcomm (c : ℂ) (x : D) : f c * x = x * f c :=
       (Subalgebra.mem_center_iff.mp (eZ.symm c).2 x).symm
-    have hbij : Function.Bijective f := by
-      let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
-      have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
-      have _ : Module.Finite ℂ D := ⟨⟨s, eq_top_iff.2 fun x _ ↦ by
-        obtain ⟨c, rfl⟩ := hrep x
-        refine Submodule.sum_mem _ fun y hy ↦ ?_
-        have hsm : (algebraMap ℝ ℂ (c y)) • y = algebraMap ℝ D (c y) * y := by
-          rw [Algebra.smul_def, hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
-        exact hsm ▸ Submodule.smul_mem _ _ (Submodule.subset_span hy)⟩⟩
-      have h := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
-      rwa [hmap] at h
-    exact ⟨(AlgEquiv.ofBijective f hbij).symm⟩
+    let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
+    have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
+    have _ : Module.Finite ℂ D := ⟨⟨s, eq_top_iff.2 fun x _ ↦ by
+      obtain ⟨c, rfl⟩ := hrep x
+      refine Submodule.sum_mem _ fun y hy ↦ ?_
+      have hsm : (algebraMap ℝ ℂ (c y)) • y = algebraMap ℝ D (c y) * y := by
+        rw [Algebra.smul_def, hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
+      exact hsm ▸ Submodule.smul_mem _ _ (Submodule.subset_span hy)⟩⟩
+    have h := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
+    rw [hmap] at h
+    exact ⟨(AlgEquiv.ofBijective f h).symm⟩
 
 end TauCeti
