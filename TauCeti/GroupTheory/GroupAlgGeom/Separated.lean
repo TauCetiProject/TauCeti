@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAlgGeom.CoeffExtension
 public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
 public import TauCeti.GroupTheory.GroupAlgGeom.Irreducible.Basic
 import Mathlib.GroupTheory.Commutator.Basic
@@ -85,8 +86,21 @@ nonabelian `F`, being `F`-discriminated by `F` and being the coordinate group of
 algebraic set over `F` each imply full residual freeness; this example, with `α` finite, shows
 that the converse fails for a specified inclusion of the coefficients.
 
-No hypothesis on the coefficient maps is needed: they are arbitrary homomorphisms, so the results
-also cover systems without solutions, whose coordinate group is trivial.
+Separation in both directions identifies radicals: if `K` is separated by `H` and `H` by `K`, both
+over `G`, a system has the same radical over `H` and over `K`. In particular, if `H` is separated
+by `G` over `G` through an injective `ι : G →* H`, the radical of a system over `G` is its radical
+with solutions in `H`; injectivity is needed only when `H` is trivial. Now let `f : G →* G'` change
+the coefficient group, and let `S ⊆ G[X]` be a system with image `f(S) ⊆ G'[X]`. Its solutions
+still being taken in `G'`, the coordinate group `G[X] ⧸ Rad_{G'}(S)` of `S` maps to the coordinate
+group of `f(S)` over `G'` (`TauCeti.GroupAlgGeom.CoordGroup.mapCoeff`). If `G'` is separated by `G`
+over `G` through `f`, the coordinate group of `f(S)` is separated by that of `S` over it: a
+retraction of `G'` onto `G` over `G` keeping a given element nontrivial induces a retraction of the
+coordinate groups. If moreover `f` is injective, `Rad_{G'}(S)` is the radical of `S` over `G`, by
+the identification above.
+
+Apart from the injectivity in that identification, no hypothesis on the coefficient maps is
+needed: they are arbitrary homomorphisms, so the results also cover systems without solutions,
+whose coordinate group is trivial.
 
 ## Main results
 
@@ -98,6 +112,10 @@ also cover systems without solutions, whose coordinate group is trivial.
   homomorphism `G[X] →* K` over `G` is its own radical.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.V_Rad`: for `K` separated by `H`, a system and its radical
   over `H` have the same solutions in `K`.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.Rad_eq`: for `K` separated by `H` and `H` by `K`, a system
+  has the same radical over `H` and over `K`.
+* `TauCeti.GroupAlgGeom.Rad_eq_of_isSeparatedBy`: for an injective `ι : G →* H` with `H`
+  separated by `G` over `G`, the radical of a system with solutions in `H` is its radical over `G`.
 * `TauCeti.GroupAlgGeom.CoordGroup.evalGHomOfIsSeparatedBy`: evaluation at a solution of `S` in
   such a group `K`, as a `G`-homomorphism `G_{R(S)} → K`.
 * `TauCeti.GroupAlgGeom.CoordGroup.homEquivOfIsSeparatedBy`: for `K` separated by `H`, the
@@ -108,6 +126,9 @@ also cover systems without solutions, whose coordinate group is trivial.
   by `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_of_bijective`: so is every group `G`-isomorphic
   to one.
+* `TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_mapCoeff`: if `G'` is separated by `G` over `G`
+  through `f : G →* G'`, the coordinate group over `G'` of the image `f(S)` of a system is
+  separated, over the coordinate group of `S` with solutions in `G'`, by the latter.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_iff`: `G_S` is separated by `H` if and
   only if `Rad_H(S) = ncl(S)`.
 * `TauCeti.GroupAlgGeom.GX.isSeparatedBy_quotientCoeff_iff_of_subset`: for `S ⊆ Rad_H(N)` and
@@ -254,6 +275,19 @@ theorem IsSeparatedBy.V_Rad (h : IsSeparatedBy κ ι) (S : Set (GX G X)) :
   (V_antitone κ (subset_Rad (ι := ι) S)).antisymm <| by
     simpa only [GroupAlgGeom.V_Rad] using V_antitone κ (SetLike.coe_subset_coe.2 (h.Rad_le S))
 
+/-- If `K` is separated by `H` and `H` by `K`, both over `G`, a system has the same radical over
+`K` and over `H`. -/
+theorem IsSeparatedBy.Rad_eq (h : IsSeparatedBy κ ι) (h' : IsSeparatedBy ι κ)
+    (S : Set (GX G X)) : Rad κ S = Rad ι S :=
+  (h'.Rad_le S).antisymm (h.Rad_le S)
+
+/-- If `H` is separated by `G` over `G` through an injective `ι : G →* H`, the radical of a
+system `S` over `G` is its radical with solutions in `H`. -/
+theorem Rad_eq_of_isSeparatedBy (hι : Function.Injective ι) (hH : IsSeparatedBy ι (.id G))
+    (S : Set (GX G X)) : Rad ι S = Rad (.id G) S :=
+  -- `G` is separated by `H` through the embedding `ι` itself
+  hH.Rad_eq ((IsDiscriminatedBy.self ι).isSeparatedBy.of_injective ⟨ι, fun _ => rfl⟩ hι) S
+
 /-- The `G`-homomorphisms out of the coordinate group `G_{R(S)}` are those out of the quotient
 `G[X] ⧸ Rad_H(S)`, the two coefficient maps being equal. -/
 private def CoordGroup.gHomEquivQuotient (S : Set (GX G X)) :
@@ -390,6 +424,66 @@ theorem CoordGroup.isSeparatedBy_of_bijective {S : Set (GX G X)}
     (φ : GHom (CoordGroup.coeff ι S) κ) (hφ : Function.Bijective φ) : IsSeparatedBy κ ι :=
   (CoordGroup.isSeparatedBy_coeff S).of_injective (φ.symmOfBijective hφ)
     (φ.symmOfBijective_injective hφ)
+
+section CoeffChange
+
+variable {G' : Type*} [Group G'] {f : G →* G'} {S : Set (GX G X)}
+
+/-- Changing the coefficients along a retraction `ψ : G' → G` of `f` over `G` maps the radical of
+`f(S)` over `G'` into the radical of `S` over `G`. -/
+private theorem CoordGroup.Rad_image_map_le_comap (ψ : GHom f (.id G)) :
+    Rad (.id G') (Monoid.Coprod.map f (FreeGroup.map id) '' S) ≤
+      (Rad (.id G) S).comap (Monoid.Coprod.map (ψ : G' →* G) (FreeGroup.map id)) := by
+  intro u hu
+  rw [Subgroup.mem_comap, mem_Rad]
+  intro p hp
+  -- `f ∘ p` solves `f(S)` in `G'`, and `ψ ∘ f ∘ p = p`
+  have hfp : f ∘ p ∈ V (.id G') (Monoid.Coprod.map f (FreeGroup.map id) '' S) := by
+    rw [V_image_map]
+    exact (GHom.mk f fun _ => rfl : GHom (.id G) ((MonoidHom.id G').comp f)).comp_mem_V hp
+  have hψp : ψ ∘ f ∘ p = p := funext fun x => ψ.map_coeff (p x)
+  simpa [hom_eval, hψp] using congrArg ψ (mem_Rad.1 hu _ hfp)
+
+/-- If `G'` is separated by `G` over `G` through `f`, the coordinate group over `G'` of the image
+`f(S)` of a system `S` over `G` is separated, over the coordinate group `G[X] ⧸ Rad_{G'}(S)` of `S`
+with solutions in `G'`, by the latter, through the change of coefficients. When `f` is injective
+(for instance when `G'` is nontrivial), `Rad_{G'}(S)` is the radical of `S` over `G`, by
+`TauCeti.GroupAlgGeom.Rad_eq_of_isSeparatedBy`. -/
+theorem CoordGroup.isSeparatedBy_mapCoeff (hf : IsSeparatedBy f (.id G)) :
+    IsSeparatedBy (mapCoeff f (.id G') S : CoordGroup ((MonoidHom.id G').comp f) S →*
+        CoordGroup (.id G') (Monoid.Coprod.map f (FreeGroup.map id) '' S))
+      (MonoidHom.id (CoordGroup ((MonoidHom.id G').comp f) S)) := by
+  refine (isSeparatedBy_def _ _).2 fun c hc => ?_
+  induction c using QuotientGroup.induction_on with | H w => ?_
+  -- a solution `v` of `f(S)` in `G'` at which `w` survives, and a retraction `ψ : G' → G` over
+  -- `G` keeping `w(v)` nontrivial
+  obtain ⟨v, hv, hwv⟩ : ∃ v ∈ V (.id G') (Monoid.Coprod.map f (FreeGroup.map id) '' S),
+      eval (.id G') v w ≠ 1 := by
+    simpa [QuotientGroup.eq_one_iff, mem_Rad] using hc
+  obtain ⟨ψ, hψ⟩ := (isSeparatedBy_def _ _).1 hf _ hwv
+  have hRad : Rad ((MonoidHom.id G').comp f) S = Rad (.id G) S :=
+    Rad_eq_of_isSeparatedBy (Function.LeftInverse.injective ψ.map_coeff) (by simpa using hf) S
+  -- the retraction of the coordinate groups induced by `ψ`, on the class of a word
+  let ρ := QuotientGroup.map _ _ (Monoid.Coprod.map (ψ : G' →* G) (FreeGroup.map id))
+    (hRad ▸ Rad_image_map_le_comap ψ)
+  have hρ (u : GX G' X) : ρ u = (Monoid.Coprod.map (ψ : G' →* G) (FreeGroup.map id) u :
+      CoordGroup ((MonoidHom.id G').comp f) S) :=
+    QuotientGroup.map_mk _ _ _ _ u
+  have hψf : (Monoid.Coprod.map (ψ : G' →* G) (FreeGroup.map id)).comp
+      (Monoid.Coprod.map f (FreeGroup.map (id : X → X))) = .id _ := by
+    ext <;> simp
+  refine ⟨⟨ρ, fun c => ?_⟩, ?_⟩
+  · induction c using QuotientGroup.induction_on with | H w₀ => ?_
+    simp only [OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass, mapCoeff_mk,
+      hρ, MonoidHom.id_apply]
+    rw [← MonoidHom.comp_apply, hψf, MonoidHom.id_apply]
+  · -- `w` survives at the solution `ψ ∘ v` of `S` over `G`
+    rw [V_image_map, MonoidHom.id_comp] at hv
+    rw [GHom.coe_mk, Ne, hρ, QuotientGroup.eq_one_iff, hRad, mem_Rad]
+    push Not
+    exact ⟨ψ ∘ v, ψ.comp_mem_V hv, by simpa [hom_eval] using hψ⟩
+
+end CoeffChange
 
 /-- If `K` is separated by `H` over `G`, every solution `p` in `K` of a system `S` factors through
 the coordinate group of `S` over `H`: evaluation at `p` induces a `G`-homomorphism
