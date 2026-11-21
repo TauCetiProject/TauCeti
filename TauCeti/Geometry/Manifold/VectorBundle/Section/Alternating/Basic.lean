@@ -81,6 +81,22 @@ section IsEmpty
 
 variable {ι : Type*} [Fintype ι] [IsEmpty ι]
 
+private theorem constOfIsEmptyLIE_symm_trivializationAt_snd (x₀ x : M)
+    (φx : V x [⋀^ι]→L[𝕜] G) :
+    (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G ι).symm
+      (trivializationAt (F [⋀^ι]→L[𝕜] G) (fun y ↦ V y [⋀^ι]→L[𝕜] G) x₀ ⟨x, φx⟩).2 = φx 0 := by
+  rw [ContinuousAlternatingMap.constOfIsEmptyLIE_symm_apply,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  exact congrArg φx (Subsingleton.elim _ _)
+
+private theorem trivializationAt_constOfIsEmpty_snd (x₀ x : M) (g : G) :
+    (trivializationAt (F [⋀^ι]→L[𝕜] G) (fun y ↦ V y [⋀^ι]→L[𝕜] G) x₀
+      ⟨x, ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι g⟩).2 =
+      ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G ι g := by
+  ext v
+  simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd]
+
 variable (I F G n V ι) in
 /-- When the index type `ι` is empty (for instance `ι = Fin 0`), sections of
 `fun x ↦ V x [⋀^ι]→L[𝕜] G` identify `𝕜`-linearly with `C^n` maps `M → G`. -/
@@ -89,23 +105,15 @@ def alternatingIsEmptyLinearEquiv :
   toFun φ :=
     ⟨fun x ↦ φ x 0, fun x₀ ↦ by
       have hφ := (contMDiffAt_section_iff x₀).1 (φ.contMDiff x₀)
-      rw [show (fun x ↦ φ x 0) = fun x ↦ (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G ι).symm
-          (trivializationAt (F [⋀^ι]→L[𝕜] G) (fun y ↦ V y [⋀^ι]→L[𝕜] G) x₀ ⟨x, φ x⟩).2 by
-        ext x
-        rw [ContinuousAlternatingMap.constOfIsEmptyLIE_symm_apply,
-          FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-          ContinuousAlternatingMap.compContinuousLinearMap_apply]
-        exact congrArg (φ x) (Subsingleton.elim _ _)]
-      exact (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
-        ι).symm.toLinearIsometry.toContinuousLinearMap)).clm_apply hφ⟩
+      have hcomp := (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
+        ι).symm.toLinearIsometry.toContinuousLinearMap)).clm_apply hφ
+      exact hcomp.congr_of_eventuallyEq (Eventually.of_forall fun x ↦
+        (constOfIsEmptyLIE_symm_trivializationAt_snd x₀ x (φ x)).symm)⟩
   invFun f :=
     { toFun x := ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι (f x)
       contMDiff_toFun x₀ := by
-        rw [contMDiffAt_section_iff, show (fun x ↦ (trivializationAt (F [⋀^ι]→L[𝕜] G)
-            (fun y ↦ V y [⋀^ι]→L[𝕜] G) x₀
-            ⟨x, ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι (f x)⟩).2) =
-            fun x ↦ ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G ι (f x) by
-          ext x v; simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd]]
+        rw [contMDiffAt_section_iff]
+        simp_rw [trivializationAt_constOfIsEmpty_snd]
         exact (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
           ι).toLinearIsometry.toContinuousLinearMap)).clm_apply (f.contMDiff x₀) }
   left_inv φ := by ext x v; exact congrArg (φ x) (Subsingleton.elim (0 : ι → V x) v)
@@ -407,8 +415,8 @@ theorem alternatingMap_apply_eq_of_eval_eq {ι : Type*} [Finite ι]
     have hzero : Φ (Function.update s'' j (s' j - t j)) x = 0 :=
       alternatingMap_update_apply_eq_zero_of_apply_eq_zero Φ s'' j
         (by simp [hin j (Finset.mem_insert_self j q)])
-    rw [hdiff, Φ.map_update_add, ContMDiffMap.coe_add, Pi.add_apply, hzero, add_zero,
-      show Function.update s'' j (t j) = s'' by simp [s'']]
+    rw [hdiff, Φ.map_update_add, ContMDiffMap.coe_add, Pi.add_apply, hzero, add_zero]
+    simp only [s'', Function.update_idem]
     refine ih s'' (fun i hi ↦ ?_) (fun i hi ↦ ?_)
     · simpa [s'', ne_of_mem_of_not_mem hi hj] using hin i (Finset.mem_insert_of_mem hi)
     · rcases eq_or_ne i j with rfl | hij

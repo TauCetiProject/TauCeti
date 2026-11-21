@@ -601,6 +601,20 @@ def tangentCochainEquivSmoothForm (k : ℕ) :
     (ψ : SmoothForm I M ℝ k) (x : M) : (tangentCochainEquivSmoothForm I M k).symm ψ x = ψ.1 x :=
   SmoothForm.toContMDiffSection_apply ψ x
 
+private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochain (m + 1))
+    (s : Fin (m + 2) → Cₛ^∞⟮I; E, TangentSpace I⟯) (i : Fin (m + 2)) :
+    ⇑(φ.evalSection (i.removeNth s)) = fun y ↦ φ y (i.removeNth (s · y)) :=
+  funext fun y ↦ by
+    rw [ContMDiffSection.evalSection_apply]
+    exact congrArg (φ y) (funext fun r ↦ by simp [Fin.removeNth])
+
+private theorem cochainZeroEquiv_coeFn (φ : (tangent I M).Cochain 0)
+    (v : ∀ y : M, Fin 0 → TangentSpace I y) :
+    ⇑((tangent I M).cochainZeroEquiv φ) = fun y ↦ φ y (v y) :=
+  funext fun y ↦ by
+    rw [cochainZeroEquiv_apply]
+    exact congrArg (φ y) (Subsingleton.elim _ _)
+
 section T2
 
 variable [T2Space M]
@@ -620,10 +634,7 @@ private theorem tangent_extDeriv_succ_evalSection_apply (m : ℕ)
     simp only [Finset.sum_apply, Pi.smul_apply, ContMDiffMap.coeFnLinearMap_apply,
       anchorDeriv_apply, tangent_anchor_apply]
     refine Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℤ) ^ i.val • ·) ?_
-    rw [show ⇑(φ.evalSection (i.removeNth s)) = fun y ↦ φ y (i.removeNth (s · y)) from
-      funext fun y ↦ by
-        rw [ContMDiffSection.evalSection_apply]
-        exact congrArg (φ y) (funext fun r ↦ by simp [Fin.removeNth])]
+    rw [evalSection_removeNth_coeFn]
   · rw [← ContMDiffMap.coeFnLinearMap_apply (𝕜 := ℝ), map_sum, ← Finset.sum_neg_distrib]
     simp_rw [map_sum, map_zsmul, ← Finset.sum_neg_distrib]
     simp only [Finset.sum_apply, Pi.smul_apply, ContMDiffMap.coeFnLinearMap_apply,
@@ -653,10 +664,7 @@ theorem tangent_extDeriv_apply (k : ℕ) (φ : (tangent I M).Cochain k) (x : M) 
     rw [(tangent I M).evalSection_extDeriv_zero, anchorDeriv_apply, tangent_anchor_apply,
       mextDeriv_apply_vectorField_of_mlieBracket_eq_zero hφ hs_diff]
     · rw [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero, val_zero, pow_zero, one_smul,
-        show ⇑((tangent I M).cochainZeroEquiv φ) = fun y ↦ φ y (removeNth 0 (s · y)) from
-          funext fun y ↦ by
-            rw [cochainZeroEquiv_apply]
-            exact congrArg (φ y) (Subsingleton.elim (0 : Fin 0 → TangentSpace I y) _)]
+        cochainZeroEquiv_coeFn φ (fun y ↦ removeNth 0 (s · y))]
     · intro i j; obtain rfl : i = j := (by omega); simp
   | succ m =>
     rw [tangent_extDeriv_succ_evalSection_apply, mextDeriv_apply_vectorField hφ hs_diff]

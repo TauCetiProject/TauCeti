@@ -50,6 +50,18 @@ variable {G₁ G₂ G₃ : Type*}
   [NormedAddCommGroup G₂] [NormedSpace ℝ G₂]
   [NormedAddCommGroup G₃] [NormedSpace ℝ G₃] {k l : ℕ}
 
+private theorem trivializationAt_pairedWedge_snd (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+    (x₀ x : M) (α : V x [⋀^Fin k]→L[ℝ] G₁) (β : V x [⋀^Fin l]→L[ℝ] G₂) :
+    (trivializationAt (F [⋀^Fin (k + l)]→L[ℝ] G₃)
+      (fun y ↦ V y [⋀^Fin (k + l)]→L[ℝ] G₃) x₀
+      ⟨x, ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ α β⟩).2 =
+      ContinuousAlternatingMap.pairedWedgeCLM μ
+        (trivializationAt (F [⋀^Fin k]→L[ℝ] G₁) (fun y ↦ V y [⋀^Fin k]→L[ℝ] G₁) x₀ ⟨x, α⟩).2
+        (trivializationAt (F [⋀^Fin l]→L[ℝ] G₂) (fun y ↦ V y [⋀^Fin l]→L[ℝ] G₂) x₀ ⟨x, β⟩).2 := by
+  ext v
+  simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap]
+
 /-- The fibrewise paired wedge of two `C^n` alternating bundle sections along a continuous bilinear
 pairing `μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃`. -/
 def pairedWedge (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
@@ -58,17 +70,8 @@ def pairedWedge (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
     Cₛ^n⟮I; F [⋀^Fin (k + l)]→L[ℝ] G₃, fun x ↦ V x [⋀^Fin (k + l)]→L[ℝ] G₃⟯ where
   toFun x := ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (φ x) (ψ x)
   contMDiff_toFun x₀ := by
-    rw [contMDiffAt_section_iff, show (fun x ↦ (trivializationAt (F [⋀^Fin (k + l)]→L[ℝ] G₃)
-          (fun y ↦ V y [⋀^Fin (k + l)]→L[ℝ] G₃) x₀
-          ⟨x, ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (φ x) (ψ x)⟩).2) =
-        fun x ↦ ContinuousAlternatingMap.pairedWedgeCLM μ
-          (trivializationAt (F [⋀^Fin k]→L[ℝ] G₁)
-            (fun y ↦ V y [⋀^Fin k]→L[ℝ] G₁) x₀ ⟨x, φ x⟩).2
-          (trivializationAt (F [⋀^Fin l]→L[ℝ] G₂)
-            (fun y ↦ V y [⋀^Fin l]→L[ℝ] G₂) x₀ ⟨x, ψ x⟩).2 by
-      ext x v
-      simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-        ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap]]
+    rw [contMDiffAt_section_iff]
+    simp_rw [trivializationAt_pairedWedge_snd]
     exact ((contMDiffAt_const (c := ContinuousAlternatingMap.pairedWedgeCLM μ)).clm_apply
       ((contMDiffAt_section_iff x₀).1 (φ.contMDiff x₀))).clm_apply
       ((contMDiffAt_section_iff x₀).1 (ψ.contMDiff x₀))
