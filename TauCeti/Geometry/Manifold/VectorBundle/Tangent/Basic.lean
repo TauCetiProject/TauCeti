@@ -51,7 +51,7 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
   at its centre, which covers the whole source
   (`TangentBundle.trivializationAt_chartSource_baseSet`).
-* `TangentBundle.trivializationAt_apply_tangentCoordChange`: the fibre coordinate at `x` of a
+* `TangentBundle.trivializationAt_snd_eq_tangentCoordChange`: the fibre coordinate at `x` of a
   vector at `y` is the tangent coordinate change from the chart at `y` to the chart at `x`, applied
   to that vector, and `TangentBundle.coe_chartAt_snd` is the same statement for the chart of the
   tangent bundle at a vector.
@@ -138,8 +138,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   `TauCeti.Manifold.mfderiv_prod_right_comm_apply` compute that differential as the same exchange
   of the components of a tangent vector.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
-  `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
-  `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
+  `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_left`: the differential of `(x, t) ↦ (x, φ t)`
+  on `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -174,7 +174,7 @@ variable
 /-- The fibre coordinate at `x` of a vector `v` at `y`, read in the canonical tangent-bundle
 trivialization at `x`, is the tangent coordinate change from the chart at `y` to the chart at `x`,
 evaluated at `y` and applied to `v`. -/
-theorem trivializationAt_apply_tangentCoordChange [IsManifold I 1 M] {x y : M}
+theorem trivializationAt_snd_eq_tangentCoordChange [IsManifold I 1 M] {x y : M}
     (v : TangentSpace I y) :
     (trivializationAt E (TangentSpace I) x ⟨y, v⟩).2 =
       tangentCoordChange I y x y v := by
@@ -1266,7 +1266,7 @@ theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 
 
 /-- If `φ' t ≠ 0`, the differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` at `(x, t)` is
 invertible. -/
-theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
+theorem isInvertible_mfderiv_prodMap_id_left {φ : 𝕜 → 𝕜} {p : M × 𝕜}
     (hφ' : deriv φ p.2 ≠ 0) :
     (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible :=
   have hφ := differentiableAt_of_deriv_ne_zero hφ'

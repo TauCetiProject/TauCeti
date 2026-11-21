@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SampleCovariance.Rank
-public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
 import Mathlib.MeasureTheory.Measure.Portmanteau
 
@@ -29,31 +28,6 @@ noncomputable section
 
 open Filter MeasureTheory
 open scoped NNReal Topology
-
-namespace Matrix
-
-/-- At least the positive part of the excess row fraction of a rectangular sample is at zero
-in its sample covariance spectral measure. This includes samples with no columns. -/
-theorem ofReal_sub_div_le_spectralMeasure_sampleCovariance_singleton_zero
-    {p n 𝕜 : Type*} [Fintype p] [DecidableEq p] [Nonempty p] [Fintype n] [RCLike 𝕜]
-    (X : Matrix p n 𝕜) :
-    ENNReal.ofReal (((Fintype.card p : ℝ) - Fintype.card n) / Fintype.card p) ≤
-      ((sampleCovariance X).spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ) {0} := by
-  let μ : Measure ℝ := (sampleCovariance X).spectralMeasure (isHermitian_sampleCovariance _)
-  have hr : X.rank ≤ Fintype.card p := X.rank_le_card_height
-  have hr' : (X.rank : ℝ) ≤ Fintype.card n := by exact_mod_cast X.rank_le_card_width
-  -- Express the mass as a real number before comparing it to the signed dimension bound.
-  have hμ : (μ {0}).toReal = ((Fintype.card p : ℝ) - X.rank) / Fintype.card p := by
-    simp only [μ, spectralMeasure_apply_singleton_zero, rank_sampleCovariance,
-      ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast, Nat.cast_sub hr]
-    rw [div_eq_inv_mul]
-  suffices ENNReal.ofReal (((Fintype.card p : ℝ) - Fintype.card n) / Fintype.card p) ≤ μ {0}
-    from this
-  rw [← ENNReal.ofReal_toReal (measure_ne_top μ {0}), hμ]
-  exact ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
-    (sub_le_sub_left hr' _) (Nat.cast_nonneg _))
-
-end Matrix
 
 namespace TauCeti.Probability
 

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Coordinates
 import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Int.Round
 
 /-!
 # Examples of coordinate pairs and of the image and fibres of the projective `x`-coordinate
@@ -36,7 +37,8 @@ neither `[2]Q` nor `[4]Q` vanishes; the same equivalences hold on arbitrary nonz
 representatives. With giant-step width `w = 6`, `q = 8 = 6 + 2` makes the cross difference of
 `[6]Q = (1, 3)` and `[2]Q = (1, 4)` vanish while `q = 7 = 6 + 1` satisfies `[7]Q = -Q ≠ 0`, and
 the nearest-multiple bound `2 j ≤ w` covers `13 = 2 · 6 + 1`, `17 = 3 · 6 - 1`, and the midpoint
-`15 = 2 · 6 + 3` that a strict inequality `2 j < w` would miss.
+`15 = 2 · 6 + 3` that a strict inequality `2 j < w` would miss, and has `j = 0` only when
+`6 ∣ q`. Over any field, `m = n = 0` compares infinity with itself.
 -/
 
 public section
@@ -254,32 +256,54 @@ example : (⟨3, 2⟩ : Pair (ZMod 7)).cross ⟨2, 3⟩ ≠ 0 ∧
   rw [hsub, hadd]
   exact not_or.mpr ⟨h2ne, h4ne⟩
 
--- `m = n = 0`: both coordinate pairs are `(1, 0)` with cross difference `0`, matching `[0]Q = 0`.
-example : (coordinates 0 1 ((0 : ℤ) • generatorSeven)).cross
-      (coordinates 0 1 ((0 : ℤ) • generatorSeven)) = 0 ∧
-    ((0 : ℤ) - 0) • generatorSeven = 0 ∧ ((0 : ℤ) + 0) • generatorSeven = 0 := by
-  simp
-
--- With step `w = 6`: `q = 7 = 6 + 1` leaves `[7]Q = -Q ≠ 0`, while `q = 8 = 6 + 2` annihilates `Q`
--- and gives vanishing cross difference between `[6]Q = (1, 3)` and `[2]Q = (1, 4)`.
-example : (7 : ℤ) • generatorSeven ≠ 0 ∧ (8 : ℤ) • generatorSeven = 0 ∧
+-- With step `w = 6`: `q = 7 = 6 + 1` leaves `[7]Q = -Q ≠ 0`, so `[6]Q = (1, 3)` and `[1]Q = (3, 3)`
+-- have nonzero cross difference, while `q = 8 = 6 + 2` annihilates `Q` and gives vanishing cross
+-- difference between `[6]Q = (1, 3)` and `[2]Q = (1, 4)`, with
+-- `exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero` producing a witness.
+example : (7 : ℤ) • generatorSeven ≠ 0 ∧
     (coordinates 0 1 ((6 : ℤ) • generatorSeven)).cross
-      (coordinates 0 1 ((2 : ℤ) • generatorSeven)) = 0 := by
+      (coordinates 0 1 ((1 : ℤ) • generatorSeven)) ≠ 0 ∧
+    (8 : ℤ) • generatorSeven = 0 ∧
+    (coordinates 0 1 ((6 : ℤ) • generatorSeven)).cross
+      (coordinates 0 1 ((2 : ℤ) • generatorSeven)) = 0 ∧
+    ∃ i : ℤ, 2 * |(8 : ℤ) - i * 6| ≤ 6 ∧
+      (coordinates 0 1 ((i * 6) • generatorSeven)).cross
+        (coordinates 0 1 (|(8 : ℤ) - i * 6| • generatorSeven)) = 0 := by
   have h8z : (8 : ℤ) • generatorSeven = 0 := by
     have h8 : (8 : ℤ) = (8 : ℕ) := rfl
     rw [h8, natCast_zsmul, eight_genSeven]
-  refine ⟨?_, h8z, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero h8z (.inl (by norm_num))⟩
-  have h7 : (7 : ℤ) = (7 : ℕ) := rfl
-  rw [h7, natCast_zsmul, seven_genSeven, neg_ne_zero, generatorSeven_def]
-  exact Affine.Point.some_ne_zero _
-
--- For `w = 6`, `13 = 2 · 6 + 1`, `17 = 3 · 6 - 1`, and the midpoint `15 = 2 · 6 + 3` has no
--- representation `i · 6 ± j` with `0 ≤ j` and `2 · j < 6`.
-example : (13 : ℤ) = 2 * 6 + 1 ∧ (17 : ℤ) = 3 * 6 - 1 ∧ (15 : ℤ) = 2 * 6 + 3 ∧
-    ¬ ∃ i j : ℤ, 0 ≤ j ∧ 2 * j < 6 ∧ ((15 : ℤ) = i * 6 + j ∨ (15 : ℤ) = i * 6 - j) := by
-  refine ⟨by norm_num, by norm_num, by norm_num, ?_⟩
-  rintro ⟨i, j, hj0, hj6, h | h⟩ <;> omega
+  have h6 : (6 : ℤ) = (6 : ℕ) := rfl
+  refine ⟨?_, ?_, h8z, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero h8z (.inl (by norm_num)),
+    exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero h8z (by norm_num)⟩
+  · have h7 : (7 : ℤ) = (7 : ℕ) := rfl
+    rw [h7, natCast_zsmul, seven_genSeven, neg_ne_zero, generatorSeven_def]
+    exact Affine.Point.some_ne_zero _
+  · rw [h6, natCast_zsmul, six_genSeven, one_zsmul, generatorSeven_def, coordinates_some,
+      coordinates_some, Pair.cross_def]
+    decide
 
 end Seven
+
+-- At `m = n = 0`, both multiples are infinity `(1, 0)` with cross difference `1 · 0 - 1 · 0 = 0`
+-- and `[0]Q = 0`, consistent with both sides of `cross_coordinates_zsmul_eq_zero_iff`.
+example {K : Type*} [Field K] [DecidableEq K] (A B : K)
+    (Q : (model A B).toAffine.Point) :
+    (coordinates A B ((0 : ℤ) • Q)).cross (coordinates A B ((0 : ℤ) • Q)) = 1 * 0 - 1 * 0 ∧
+      ((0 : ℤ) - 0) • Q = 0 ∧ ((0 : ℤ) + 0) • Q = 0 ∧
+      (coordinates A B ((0 : ℤ) • Q)).cross (coordinates A B ((0 : ℤ) • Q)) = 0 :=
+  ⟨by simp, by simp, by simp,
+    cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero (zero_zsmul Q) (.inr rfl)⟩
+
+-- With step `w = 6`, `13 = 2 · 6 + 1` and `17 = 3 · 6 - 1` have strict remainder `2 j < 6`,
+-- whereas `15 = 2 · 6 + 3` requires the non-strict midpoint bound `2 j ≤ 6`, and `j = 0` occurs
+-- within `2 j ≤ 6` exactly when `6 ∣ q`.
+example :
+    (13 : ℤ) = 2 * 6 + 1 ∧ (17 : ℤ) = 3 * 6 - 1 ∧ (15 : ℤ) = 2 * 6 + 3 ∧
+      (¬ ∃ i j : ℤ, ((15 : ℤ) = i * 6 + j ∨ (15 : ℤ) = i * 6 - j) ∧ 0 ≤ j ∧ 2 * j < 6) ∧
+      ∀ q i : ℤ, 2 * |q - i * 6| ≤ 6 → (|q - i * 6| = 0 ↔ 6 ∣ q) := by
+  refine ⟨by norm_num, by norm_num, by norm_num, ?_, fun q i hle ↦
+    Int.abs_sub_mul_eq_zero_iff_dvd_of_two_mul_le (hle.trans (le_abs_self 6))⟩
+  rintro ⟨i, j, h, hj₀, hj₃⟩
+  omega
 
 end TauCeti.Montgomery
