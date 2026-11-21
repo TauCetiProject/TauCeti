@@ -43,7 +43,7 @@ orthogonality theory consumes.
 * `Polynomial.degree_jacobi`: `Pₙ^{(α,β)}` has degree `n` as soon as `(n + α + β + 1)_n ≠ 0`, and
   `Polynomial.degree_jacobi_real`: over `ℝ` this holds for all `n` when `-2 < α + β`, which
   covers the orthogonality range `-1 < α`, `-1 < β`.
-* `Polynomial.jacobi_neg_comp`: the reflection symmetry `Pₙ^{(α,β)}(-X) = (-1)ⁿ Pₙ^{(β,α)}(X)`.
+* `Polynomial.jacobi_comp_neg_X`: the reflection symmetry `Pₙ^{(α,β)}(-X) = (-1)ⁿ Pₙ^{(β,α)}(X)`.
 * `Polynomial.eval_one_jacobi`, `Polynomial.eval_neg_one_jacobi`: the values at `±1`.
 
 ## References
@@ -179,7 +179,11 @@ theorem jacobi_one (α β : R) :
   have h : C (algebraMap ℚ R 2⁻¹) * 2 = (1 : R[X]) := by
     rw [← C_ofNat, ← C_mul, ← map_ofNat (algebraMap ℚ R), ← map_mul, inv_mul_cancel₀ two_ne_zero,
       map_one, C_1]
-  simp [jacobi_def, sum_range_succ]
+  simp only [jacobi_def, pow_one, one_div, Nat.reduceAdd, mul_inv_rev, ascPochhammer_smeval_cast,
+    smul_assoc, sum_range_succ, range_one, sum_singleton, Nat.factorial_zero, Nat.cast_one, inv_one,
+    tsub_zero, Nat.factorial_one, mul_one, ascPochhammer_one, Nat.cast_zero, add_zero, smeval_X,
+    ascPochhammer_zero, smeval_one, pow_zero, one_smul, tsub_self, one_mul, smul_add, map_add,
+    map_one]
   simp only [Algebra.smul_def, algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, C_add,
     C_1, C_ofNat]
   linear_combination (C α + 1) * h
@@ -195,7 +199,7 @@ theorem eval_one_jacobi (α β : R) (n : ℕ) :
     simp only [eval_smul, eval_pow, eval_add, eval_X, eval_one,
       Nat.sub_self, pow_zero, Nat.factorial_zero, Nat.cast_one, one_mul, ascPochhammer_zero,
       smeval_one, one_smul, Nat.cast_zero, add_zero, zero_add, smul_eq_mul, h2]
-    rw [mul_comm, ← Algebra.smul_def, smul_comm, smul_smul]
+    rw [mul_comm _ (algebraMap ℚ R _), ← Algebra.smul_def, smul_smul]
     simp
   · have hk : n - k ≠ 0 := Nat.sub_ne_zero_of_lt (mem_range.1 hk)
     simp [eval_smul, zero_pow hk]
@@ -203,15 +207,15 @@ theorem eval_one_jacobi (α β : R) (n : ℕ) :
 /-- The reflection symmetry of the Jacobi polynomials: `Pₙ^{(α,β)}(-X) = (-1)ⁿ Pₙ^{(β,α)}(X)`
 (DLMF Table 18.6.1). It is the analogue of
 `Polynomial.neg_one_pow_mul_shiftedLegendre_comp_one_sub_X_eq`. -/
-theorem jacobi_neg_comp (α β : R) (n : ℕ) :
+theorem jacobi_comp_neg_X (α β : R) (n : ℕ) :
     (jacobi α β n).comp (-X) = (-1 : R) ^ n • jacobi β α n := by
   rw [jacobi_def, jacobi_def, smul_comp, sum_comp]
-  conv_rhs => rw [smul_comm, smul_sum, ← sum_range_reflect]
+  conv_rhs => rw [smul_comm ((-1 : R) ^ n) ((1 : ℚ) / 2 ^ n), smul_sum, ← sum_range_reflect]
   congr 1
   refine sum_congr rfl fun k hk => ?_
   have hkn : k ≤ n := by simpa [Nat.lt_succ_iff] using hk
-  rw [Nat.add_sub_cancel, Nat.sub_sub_self hkn, smul_comp, smul_comm, mul_comm (k.factorial : ℚ),
-    mul_comm (ascPochhammer R k |>.smeval _)]
+  rw [Nat.add_sub_cancel, Nat.sub_sub_self hkn, smul_comp, smul_comm ((-1 : R) ^ n),
+    mul_comm (k.factorial : ℚ), mul_comm (ascPochhammer R k |>.smeval _)]
   congr 1
   have h3 : (-1 : R[X]) ^ n = (-1) ^ (n - k) * (-1) ^ k := by
     rw [← pow_add, Nat.sub_add_cancel hkn]
@@ -229,6 +233,6 @@ theorem jacobi_neg_comp (α β : R) (n : ℕ) :
 theorem eval_neg_one_jacobi (α β : R) (n : ℕ) :
     (jacobi α β n).eval (-1) =
       (-1) ^ n * ((1 : ℚ) / n.factorial) • (ascPochhammer R n).smeval (β + 1) := by
-  simpa [eval_comp, eval_smul] using congrArg (eval 1) (jacobi_neg_comp α β n)
+  simpa [eval_comp, eval_smul] using congrArg (eval 1) (jacobi_comp_neg_X α β n)
 
 end Polynomial
