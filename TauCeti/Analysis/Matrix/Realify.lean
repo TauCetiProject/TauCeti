@@ -89,6 +89,11 @@ theorem posDef_realify_iff [Finite n] {A : Matrix n n 𝕜} :
     have hR : A.realify.PosSemidef := posSemidef_realify_iff.mpr hA.posSemidef
     exact hR.posDef_iff_isUnit.mpr (isUnit_realify_iff.mpr hA.isUnit)
 
+/-- Realification preserves and reflects nonnegativity in the Loewner order. -/
+@[simp]
+theorem realify_nonneg_iff [Finite n] {A : Matrix n n 𝕜} : 0 ≤ A.realify ↔ 0 ≤ A := by
+  rw [nonneg_iff_posSemidef, nonneg_iff_posSemidef, posSemidef_realify_iff]
+
 /-- The sum of squared entries of `A.realify` is twice the sum of squared norms of `A`. -/
 theorem sum_sq_realify {m : Type*} [Fintype m] [Fintype n] (A : Matrix m n 𝕜) :
     (∑ p, ∑ q, A.realify p q ^ 2) = 2 * ∑ i, ∑ j, ‖A i j‖ ^ 2 := by
@@ -200,8 +205,7 @@ theorem realify_cfc (f : ℝ → ℝ) (A : Matrix ι ι 𝕜) : (cfc f A).realif
     · -- Realification is a star-algebra homomorphism, continuous since it is linear between
       -- finite-dimensional spaces.
       have hc : Continuous (realifyStarAlgHom ι 𝕜) :=
-        (funext fun B ↦ by simp : ⇑(realifyLinearMap ι ι 𝕜) = realifyStarAlgHom ι 𝕜) ▸
-          (realifyLinearMap ι ι 𝕜).continuous_of_finiteDimensional
+        (realifyStarAlgHom ι 𝕜).toAlgHom.toLinearMap.continuous_of_finiteDimensional
       simpa using (realifyStarAlgHom ι 𝕜).map_cfc f A hf hc hA (by simpa using hA)
     · rw [cfc_apply_of_not_continuousOn A hf,
         cfc_apply_of_not_continuousOn _ (by rwa [spectrum_realify]), realify_zero]
@@ -213,13 +217,9 @@ semidefinite. -/
 @[simp]
 theorem realify_rpow (A : Matrix ι ι 𝕜) (y : ℝ) : (A ^ y).realify = A.realify ^ y := by
   by_cases hA : 0 ≤ A
-  · have hR : 0 ≤ A.realify :=
-      nonneg_iff_posSemidef.2 (posSemidef_realify_iff.2 (nonneg_iff_posSemidef.1 hA))
-    rw [CFC.rpow_eq_cfc_real hA, CFC.rpow_eq_cfc_real hR, realify_cfc]
-  · have hR : ¬0 ≤ A.realify := by
-      rwa [nonneg_iff_posSemidef, posSemidef_realify_iff, ← nonneg_iff_posSemidef]
-    rw [CFC.rpow_def, CFC.rpow_def, cfc_apply_of_not_predicate A hA,
-      cfc_apply_of_not_predicate _ hR, realify_zero]
+  · rw [CFC.rpow_eq_cfc_real hA, CFC.rpow_eq_cfc_real (realify_nonneg_iff.2 hA), realify_cfc]
+  · rw [CFC.rpow_def, CFC.rpow_def, cfc_apply_of_not_predicate A hA,
+      cfc_apply_of_not_predicate _ (realify_nonneg_iff.not.2 hA), realify_zero]
 
 end Unital
 

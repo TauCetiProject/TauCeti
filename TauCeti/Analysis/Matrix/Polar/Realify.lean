@@ -83,7 +83,7 @@ theorem coe_polarUnitary_realify (A : GL n 𝕜) :
     realify_mem_orthogonalGroup_iff.2 A.polarUnitary.2
   -- `A_ℝ = P_ℝ U_ℝ` with `P_ℝ` positive and `U_ℝ` orthogonal, so this is its polar decomposition.
   have hP : 0 ≤ (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))).realify :=
-    nonneg_iff_posSemidef.2 (posSemidef_realify_iff.2 (posDef_sqrt_mul_star A).posSemidef)
+    realify_nonneg_iff.2 (posDef_sqrt_mul_star A).posSemidef.nonneg
   have h : (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))).realify *
       ((⟨_, hU⟩ : unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
         (realify n 𝕜 A : Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
