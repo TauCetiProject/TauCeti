@@ -160,7 +160,7 @@ theorem le_vanishingIdeal_iff (S : Subgroup (WithConv (H →ₐ[k] k))) (I : Hop
     apply (mem_vanishingIdeal S x).mpr
     intro g
     exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff
-      (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g.val).mp (h g.2) x hx
+      (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g.val).mp (h g.property) x hx
 
 /-- Evaluating the coordinate commutator at the points `g` and `h` is the same as first
 contracting its left leg against `g` and then evaluating at `h`. -/
@@ -209,7 +209,7 @@ theorem commutator_quotientPointsSubgroup_vanishingIdeal_le
       Algebra.TensorProduct.productMap s.val.ofConv t.val.ofConv (c x) = 0 := by
     rw [← hval]
     exact (mem_vanishingIdeal _ x).mp hx
-      ⟨_, Subgroup.commutator_mem_commutator s.2 t.2⟩
+      ⟨_, Subgroup.commutator_mem_commutator s.property t.property⟩
   -- Fixing the first argument in `S`, vanishing on `T` extends to its closure.
   have hSh (s : S) :
       Algebra.TensorProduct.productMap s.val.ofConv h.ofConv (c x) = 0 := by
@@ -233,7 +233,7 @@ theorem quotientPointsSubgroup_vanishingIdeal_bot :
   have hx : x - algebraMap k H (Coalgebra.counit (R := k) x) ∈
       vanishingIdeal (⊥ : Subgroup (WithConv (H →ₐ[k] k))) := by
     refine (mem_vanishingIdeal _ _).mpr fun s ↦ ?_
-    rw [Subgroup.mem_bot.mp s.2, AlgHom.convOne_apply]
+    rw [Subgroup.mem_bot.mp s.property, AlgHom.convOne_apply]
     simp
   have hzero := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ g).mp hg _ hx
   rw [map_sub, sub_eq_zero] at hzero

@@ -124,7 +124,7 @@ theorem exists_le_chainsMap_subtype_f_eq_of_directed {ι : Type*} {S : ι → Su
   have : Nonempty { i // S i₀ ≤ S i } := ⟨⟨i₀, le_rfl⟩⟩
   obtain ⟨⟨i, hi⟩, y, hy⟩ := exists_chainsMap_subtype_f_eq_of_directed (A := A)
     (S := fun i : { i // S i₀ ≤ S i } ↦ S i)
-    (fun i j ↦ (hS i j).elim fun l hl ↦ ⟨⟨l, i.2.trans hl.1⟩, hl⟩)
+    (fun i j ↦ (hS i j).elim fun l hl ↦ ⟨⟨l, i.property.trans hl.1⟩, hl⟩)
     (eq_top_iff.2 <| hG ▸ iSup_le fun i ↦ by
       obtain ⟨j, hij, hi₀j⟩ := hS i i₀
       exact hij.trans (le_iSup (fun j : { i // S i₀ ≤ S i } ↦ S j) ⟨j, hi₀j⟩)) x
@@ -202,8 +202,10 @@ theorem subsingleton_groupHomology_of_forall_span {R : Type*} [Ring R] {M : Type
       Submodule.subset_span (Finset.mem_coe.2 (Finset.mem_singleton_self _))
   refine ModuleCat.subsingleton_of_isZero (isZero_groupHomology_of_directed hS hG fun s ↦ ?_)
   let e : S s ≃* Multiplicative (Submodule.span R (s : Set M)) :=
-    { toFun x := Multiplicative.ofAdd ⟨x.1.toAdd, (Multiplicative.mem_toSubgroup _ _).1 x.2⟩
-      invFun y := ⟨Multiplicative.ofAdd y.toAdd.1, (Multiplicative.mem_toSubgroup _ _).2 y.toAdd.2⟩
+    { toFun x := Multiplicative.ofAdd ⟨x.val.toAdd, (Multiplicative.mem_toSubgroup _ _).1
+        x.property⟩
+      invFun y := ⟨Multiplicative.ofAdd y.toAdd.val, (Multiplicative.mem_toSubgroup _ _).2
+          y.toAdd.property⟩
       left_inv _ := rfl
       right_inv _ := rfl
       map_mul' _ _ := rfl }

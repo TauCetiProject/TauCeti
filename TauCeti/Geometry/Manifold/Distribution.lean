@@ -176,13 +176,13 @@ theorem contMDiffOn_trivOperator [Fintype ι] [IsManifold I (n + 1) M]
     TangentBundle.contMDiffVectorBundle
   let e := trivializationAt E (TangentSpace I) x
   have heq : IsSubbundleFrameOn.trivOperator 𝕜 E X x = fun y ↦
-      ∑ i, ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+      ∑ i, ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (ι → 𝕜) E
         (ContinuousLinearMap.proj i) (e ⟨y, X i y⟩).2 :=
     funext fun y ↦ IsSubbundleFrameOn.trivOperator_eq_sum (𝕜 := 𝕜) (F := E) (X := X) x y
   rw [heq]
   apply contMDiffOn_finsetSum
   intro i _
-  exact (ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+  exact (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (ι → 𝕜) E
     (ContinuousLinearMap.proj i)).contMDiff.comp_contMDiffOn
       (contMDiff_snd.comp_contMDiffOn
         (e.contMDiffOn.comp ((hX.contMDiffOn i).mono inter_subset_left)

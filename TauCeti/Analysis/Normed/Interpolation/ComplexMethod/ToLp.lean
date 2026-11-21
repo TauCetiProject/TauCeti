@@ -75,7 +75,7 @@ functional on `L¹ + L^∞`. -/
 private def innerSumCLM (G : SimpleFunc α E) (hG : Integrable G μ) : L1AddLinfty ℂ E μ →L[ℂ] ℂ :=
   (l1Linfty ℂ E μ).sumLift ((G.memLp_top μ).innerLpCLM ℂ (q' := 1))
     ((memLp_one_iff_integrable.2 hG).innerLpCLM ℂ (q' := ∞)) fun x => by
-      have hx' := (l1Linfty ℂ E μ).mem_inter_iff.1 x.2
+      have hx' := (l1Linfty ℂ E μ).mem_inter_iff.1 x.property
       rw [l1Linfty_embed₀, l1Linfty_embed₁] at hx'
       have hx := (L1AddLinfty.lpToAmbient_eq_lpToAmbient_iff ℂ).1 hx'
       rw [interFst_apply, interSnd_apply, MemLp.innerLpCLM_apply, MemLp.innerLpCLM_apply]

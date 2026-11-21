@@ -311,7 +311,7 @@ theorem _root_.Continuous.metricChangeBetween
     Continuous fun x ↦ (h x).metricChangeBetween (k x) := by
   have hQ : Continuous fun x ↦
       ((h x).metricChangeCompositionCorrection (k x) (hpos x) (kpos x) : E →L[ℝ] E) :=
-    continuous_subtype_val.comp (hh.metricChangeCompositionCorrection hk hpos kpos)
+    continuous_subtypeVal.comp (hh.metricChangeCompositionCorrection hk hpos kpos)
   have hT := continuousOn_metricChangeTransport.comp_continuous hk kpos
   have hS := continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous hh
     fun x ↦ (hpos x).nonneg

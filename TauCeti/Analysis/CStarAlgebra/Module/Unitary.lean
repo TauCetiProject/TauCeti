@@ -580,7 +580,7 @@ def equivSubtypeAdjointableMap :
     CStarModuleUnitary A E F ≃
       {T : AdjointableMap A E F // T.adjoint.comp T = .id A E ∧ T.comp T.adjoint = .id A F} where
   toFun U := ⟨U.toAdjointableMap, by simp⟩
-  invFun T := ofAdjointableMap T.1 T.2.1 T.2.2
+  invFun T := ofAdjointableMap T.val T.property.1 T.property.2
   left_inv _ := ext fun _ ↦ rfl
   right_inv _ := Subtype.ext (AdjointableMap.ext fun _ ↦ rfl)
 
@@ -591,7 +591,7 @@ theorem coe_equivSubtypeAdjointableMap (U : CStarModuleUnitary A E F) :
 @[simp]
 theorem equivSubtypeAdjointableMap_symm_apply
     (T : {T : AdjointableMap A E F // T.adjoint.comp T = .id A E ∧ T.comp T.adjoint = .id A F}) :
-    equivSubtypeAdjointableMap.symm T = ofAdjointableMap T.1 T.2.1 T.2.2 := (rfl)
+    equivSubtypeAdjointableMap.symm T = ofAdjointableMap T.val T.property.1 T.property.2 := (rfl)
 
 /-! #### Group structure on endomorphism unitaries and comparison with `unitary` -/
 section End

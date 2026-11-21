@@ -48,7 +48,6 @@ vectors, so they hold over any nontrivially normed field.
 
 ## Main declarations
 
-* `TauCeti.zeroSectionComplProj`: the projection `E₀ → B`.
 * `Bundle.Trivialization.zeroSectionCompl`: the chart of `E₀ → B` induced by a linear chart of `E`.
 * `TauCeti.TopCat.mem_serreFibrations_zeroSectionComplProj`: `E₀ → B` is a Serre fibration.
 * `TauCeti.isNConnected_zeroSectionComplProj`, `TauCeti.isNConnected_subtypeVal_zeroSectionCompl`:
@@ -75,27 +74,6 @@ open Bundle CategoryTheory Limits Module Set Topology
 
 universe u w
 
-namespace TauCeti
-
-section Proj
-
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-
-/-- The projection `E₀ → B` of the nonzero vectors of a bundle to the base. -/
-def zeroSectionComplProj : C(zeroSectionCompl F E, B) :=
-  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
-
-@[simp]
-theorem zeroSectionComplProj_apply (v : zeroSectionCompl F E) :
-    zeroSectionComplProj F E v = (v : TotalSpace F E).proj :=
-  (rfl)
-
-end Proj
-
-end TauCeti
-
 namespace Bundle.Trivialization
 
 open TauCeti
@@ -110,7 +88,7 @@ include 𝕜 in
 private theorem nonempty_compl_zero (v : TauCeti.zeroSectionCompl F E) : Nonempty ({0}ᶜ : Set F) :=
   ⟨⟨(trivializationAt F E (v : TotalSpace F E).proj v).2,
     ((trivializationAt F E _).snd_apply_ne_zero_iff 𝕜
-      (FiberBundle.mem_baseSet_trivializationAt' _)).2 (mem_zeroSectionCompl.1 v.2)⟩⟩
+      (FiberBundle.mem_baseSet_trivializationAt' _)).2 (mem_zeroSectionCompl.1 v.property)⟩⟩
 
 include 𝕜 in
 /-- A nonzero vector of the model fibre gives a nonzero vector of the bundle over every point. -/
@@ -118,14 +96,14 @@ private theorem nonempty_zeroSectionCompl (b : B) (w : ({0}ᶜ : Set F)) :
     Nonempty (TauCeti.zeroSectionCompl F E) :=
   ⟨⟨⟨b, (trivializationAt F E b).symm b w⟩, mem_zeroSectionCompl.2
     (((trivializationAt F E b).symm_apply_ne_zero_iff 𝕜
-      (FiberBundle.mem_baseSet_trivializationAt' b)).2 w.2)⟩⟩
+      (FiberBundle.mem_baseSet_trivializationAt' b)).2 w.property)⟩⟩
 
 open scoped Classical in
 /-- The fibre coordinate of the chart of the nonzero vectors: `e` over its base set, and an
 arbitrary nonzero vector elsewhere. -/
 private def zeroSectionComplCoord (v : TauCeti.zeroSectionCompl F E) : ({0}ᶜ : Set F) :=
   if hv : (v : TotalSpace F E).proj ∈ e.baseSet then
-    ⟨(e v).2, (e.snd_apply_ne_zero_iff 𝕜 hv).2 (mem_zeroSectionCompl.1 v.2)⟩
+    ⟨(e v).2, (e.snd_apply_ne_zero_iff 𝕜 hv).2 (mem_zeroSectionCompl.1 v.property)⟩
   else Classical.choice (nonempty_compl_zero 𝕜 v)
 
 private theorem coe_zeroSectionComplCoord {v : TauCeti.zeroSectionCompl F E}
@@ -138,7 +116,7 @@ open scoped Classical in
 arbitrary nonzero vector elsewhere. -/
 private def zeroSectionComplInv (p : B × ({0}ᶜ : Set F)) : TauCeti.zeroSectionCompl F E :=
   if hp : p.1 ∈ e.baseSet then
-    ⟨⟨p.1, e.symm p.1 p.2⟩, mem_zeroSectionCompl.2 ((e.symm_apply_ne_zero_iff 𝕜 hp).2 p.2.2)⟩
+    ⟨⟨p.1, e.symm p.1 p.2⟩, mem_zeroSectionCompl.2 ((e.symm_apply_ne_zero_iff 𝕜 hp).2 p.2.property)⟩
   else Classical.choice (nonempty_zeroSectionCompl 𝕜 p.1 p.2)
 
 private theorem coe_zeroSectionComplInv {p : B × ({0}ᶜ : Set F)} (hp : p.1 ∈ e.baseSet) :
@@ -177,13 +155,13 @@ def zeroSectionCompl :
     rw [(IsInducing.id.prodMap IsInducing.subtypeVal).continuousOn_iff]
     have he : ContinuousOn (fun v : TauCeti.zeroSectionCompl F E ↦ e v)
         (zeroSectionComplProj F E ⁻¹' e.baseSet) :=
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦ e.mem_source.2 hv
+      e.continuousOn.comp continuous_subtypeVal.continuousOn fun v hv ↦ e.mem_source.2 hv
     refine (he.fst.prodMk he.snd).congr fun v hv ↦ ?_
     exact Prod.ext (e.coe_fst (e.mem_source.2 hv)).symm (e.coe_zeroSectionComplCoord 𝕜 hv)
   continuousOn_invFun := by
     -- Read the value in the total space of `E`, where the map is the inverse of `e`.
     rw [IsInducing.subtypeVal.continuousOn_iff]
-    refine (e.continuousOn_symm.comp (continuous_id.prodMap continuous_subtype_val).continuousOn
+    refine (e.continuousOn_symm.comp (continuous_id.prodMap continuous_subtypeVal).continuousOn
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ⟨hp.1, mem_univ _⟩).congr
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
     exact e.coe_zeroSectionComplInv 𝕜 hp.1
