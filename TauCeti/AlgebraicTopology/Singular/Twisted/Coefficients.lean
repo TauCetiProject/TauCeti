@@ -75,7 +75,37 @@ lemma twistedChainComplexFunctor_map {L K : LocalCoefficientSystem.{u, v, max v 
     (twistedChainComplexFunctor R X).map f = twistedChainComplexCoefficientMap f :=
   (rfl)
 
+/-- **Twisted chains are additive in the coefficients**: the coefficient map of a sum of
+morphisms of local systems is the sum of their coefficient maps. -/
+instance twistedChainComplexFunctor_additive : (twistedChainComplexFunctor R X).Additive where
+  map_add {L _ _ _} := HomologicalComplex.hom_ext _ _ fun _ ↦ twistedChainComplex_hom_ext L
+    fun σ ↦ by
+      simp only [HomologicalComplex.add_f_apply, Preadditive.comp_add,
+        ιTwistedChainComplex_twistedChainComplexCoefficientMap_f, NatTrans.app_add,
+        Preadditive.add_comp]
+
 variable {R X}
+
+/-- The map on twisted homology induced by the negative of a morphism of local systems is the
+negative of the induced map. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_neg {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (-η) k = -twistedHomologyCoefficientMap η k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_neg (f := η))).trans
+      (HomologicalComplex.homologyMap_neg _ k)
+
+/-- The map on twisted homology induced by a difference of morphisms of local systems is the
+difference of the induced maps. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_sub {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η θ : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (η - θ) k =
+      twistedHomologyCoefficientMap η k - twistedHomologyCoefficientMap θ k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_sub (f := η) (g := θ))).trans
+      (HomologicalComplex.homologyMap_sub _ _ k)
 
 -- Evaluation in a chain degree is restriction to the initial vertices of singular simplices,
 -- followed by the coproduct functor. The discrete-diagram comparison accounts for the two
