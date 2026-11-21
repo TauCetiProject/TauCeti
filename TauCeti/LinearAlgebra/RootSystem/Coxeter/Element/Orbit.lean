@@ -78,6 +78,8 @@ theorem exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions {w : P.weylGroup}
   have hmod (k : ℕ) : a (k % orderOf w) = a k := by simp only [ha, pow_mod_orderOf]
   have hsucc (k : ℕ) : a (k + 1) = P.weylGroupToPerm w (a k) := by
     simp only [ha, pow_succ', map_mul, Equiv.Perm.mul_apply]
+  have hper (k : ℕ) : a (k + orderOf w) = a k := by
+    simp only [ha, pow_add, pow_orderOf_eq_one, mul_one]
   by_contra! hno
   replace hno : ∀ k < orderOf w, a k ∉ inversions P b w := hno
   -- Positivity propagates along the orbit, since no step goes from positive to negative.
@@ -96,9 +98,11 @@ theorem exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions {w : P.weylGroup}
       | zero => rwa [add_zero, hmod]
       | succ t ih => exact hstep _ ih
     refine (Finset.sum_pos (fun k _ ↦ ?_) (Finset.nonempty_range_iff.mpr hpos.ne')).ne' hsum
+    have hidx : p % orderOf w + (k + orderOf w - p % orderOf w) = k + orderOf w := by
+      have := Nat.mod_lt p hpos
+      omega
     have hk := hall (k + orderOf w - p % orderOf w)
-    rw [Nat.add_sub_cancel' (by have := Nat.mod_lt p hpos; omega), ← hmod,
-      Nat.add_mod_right, hmod] at hk
+    rw [hidx, hper] at hk
     exact one_le_height_of_mem_posRoots P b ((mem_posRoots P b _).2 hk)
   · -- Otherwise every root of the orbit is negative, and the heights add up to a negative number.
     push Not at hex

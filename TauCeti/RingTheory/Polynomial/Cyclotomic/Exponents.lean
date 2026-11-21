@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Exponents of roots of unity in polynomial factorizations
@@ -87,18 +88,14 @@ theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimi
     conv_rhs => rw [← Nat.mod_add_div n h, pow_add, pow_mul, hζ.pow_eq_one, one_pow, mul_one]
     rw [← ZMod.val_natCast]
   have hfneg (n : ℕ) : f (-(n : ZMod h)) = ζ⁻¹ ^ n := by
+    have hdvd : h ∣ (-(n : ZMod h)).val + n := (ZMod.natCast_eq_zero_iff _ _).mp (by simp)
     rw [inv_pow]
-    refine eq_inv_of_mul_eq_one_left ?_
-    rw [← pow_add, hζ.pow_eq_one_iff_dvd,
-      ← ZMod.natCast_eq_zero_iff, Nat.cast_add, ZMod.natCast_zmod_val, neg_add_cancel]
+    exact eq_inv_of_mul_eq_one_left (by rw [← pow_add]; exact (hζ.pow_eq_one_iff_dvd _).mpr hdvd)
   -- Comparing roots, the residues `e i` are stable under negation, with multiplicity.
-  have hroots (g : ι → K) : (∏ i, (X - C (g i))).roots = Finset.univ.val.map g := by
-    rw [Finset.prod_eq_multiset_prod, ← roots_multiset_prod_X_sub_C (Finset.univ.val.map g),
-      Multiset.map_map, Function.comp_def]
   have hs : (Finset.univ.val.map fun i ↦ -(e i : ZMod h)) =
       Finset.univ.val.map fun i ↦ (e i : ZMod h) := by
     refine Multiset.map_injective hf ?_
-    simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, hroots] using
+    simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, roots_prod_X_sub_C_map] using
       (congrArg Polynomial.roots hprod).symm
   have hsum : ∑ i, (-(e i : ZMod h)).val = ∑ i, e i % h := by
     simpa only [Multiset.map_map, Function.comp_def, ZMod.val_natCast,
@@ -106,11 +103,14 @@ theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimi
   -- Each residue `a` is paired with `h - a`.
   have hneg (i : ι) : (-(e i : ZMod h)).val = h - e i % h := by
     rw [ZMod.neg_val, ite_eq_right (by rw [ZMod.natCast_eq_zero_iff]; exact he i), ZMod.val_natCast]
-  rw [two_mul]
-  nth_rw 2 [← hsum]
-  rw [← Finset.sum_add_distrib, Finset.sum_congr rfl fun i _ ↦ by
-    rw [hneg, Nat.add_sub_cancel' (Nat.mod_lt _ (Nat.pos_of_neZero h)).le], Finset.sum_const,
-    Finset.card_univ, smul_eq_mul, mul_comm]
+  calc 2 * ∑ i, e i % h = ∑ i, e i % h + ∑ i, (-(e i : ZMod h)).val := by rw [hsum, two_mul]
+    _ = ∑ _i : ι, h := by
+      rw [← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      have := Nat.mod_lt (e i) (Nat.pos_of_neZero h)
+      rw [hneg]
+      omega
+    _ = h * Fintype.card ι := by simp [mul_comm]
 
 end Field
 

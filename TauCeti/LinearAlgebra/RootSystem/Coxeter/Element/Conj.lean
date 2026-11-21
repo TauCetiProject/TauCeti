@@ -25,6 +25,9 @@ reflection representation depend only on `b`.
 * `RootPairing.isConj_wordProd_of_perm`: for a reduced root system, rearranging a product of
   distinct simple reflections of a base `b` gives a conjugate element of the Weyl group; in
   particular all Coxeter elements of `b` are conjugate.
+* `RootPairing.orderOf_wordProd_eq_of_perm`: all Coxeter elements of `b` have the same order.
+* `RootPairing.orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd`: the bipartite Coxeter element
+  of `b` has the order of every Coxeter element of `b`.
 
 ## References
 
@@ -58,7 +61,21 @@ crystallographic root system, rearranging a word in the simple reflections with 
 does not change the order of the element it spells. -/
 theorem orderOf_wordProd_eq_of_perm [P.IsRootSystem] [P.IsReduced] {l l' : List b.support}
     (hl : l.Nodup) (h : l.Perm l') : orderOf (wordProd P b l) = orderOf (wordProd P b l') := by
-  obtain ⟨u, hu⟩ := isConj_iff.mp (P.isConj_wordProd_of_perm b hl h)
-  rw [← hu, ← MulAut.conj_apply, MulEquiv.orderOf_eq]
+  obtain ⟨u, hu⟩ := P.isConj_wordProd_of_perm b hl h
+  exact hu.orderOf_eq _
+
+/-- **The bipartite Coxeter element has the order of every Coxeter element.** For a base of a
+finite reduced crystallographic root system and any colouring of its Dynkin diagram, the bipartite
+Coxeter element has the same order as the product of all the simple reflections, each exactly once,
+in any order. -/
+theorem orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd [P.IsRootSystem] [P.IsReduced]
+    (c : (coxeterMatrixOfBase P b).graph.Coloring Bool) {l : List b.support} (hl : l.Nodup)
+    (hl' : ∀ i, i ∈ l) :
+    orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) = orderOf (wordProd P b l) := by
+  obtain ⟨l₁, l₂, -, -, hnd, hall, hw⟩ :=
+    (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
+  rw [← hw, weylCoxeterSystem_wordProd]
+  exact P.orderOf_wordProd_eq_of_perm b hnd
+    ((List.perm_ext_iff_of_nodup hnd hl).mpr fun i ↦ iff_of_true (hall i) (hl' i))
 
 end RootPairing

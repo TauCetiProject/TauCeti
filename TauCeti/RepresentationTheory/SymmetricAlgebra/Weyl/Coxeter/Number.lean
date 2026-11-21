@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Conj
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit
-public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.CoxeterElement
+public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.Coxeter.Element
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import TauCeti.LinearAlgebra.RootSystem.Basic
@@ -95,12 +95,18 @@ private theorem exists_isPrimitiveRoot_charpoly_eq_prod_and_prod_eq_prod_inv
   set A := cs.colorClassProd c true
   set B := cs.colorClassProd c false
   have hAB : cs.bipartiteCoxeterElement c = A * B := cs.bipartiteCoxeterElement_def c
-  have hBx : B • x = μ • A • x := by
-    have h := congrArg (A • ·) hgx
-    rwa [hAB, ← mul_smul, ← mul_assoc, cs.colorClassProd_mul_self, one_mul, smul_comm] at h
-  have hy : cs.bipartiteCoxeterElement c • B • x = (↑(Units.mk0 μ hμ0)⁻¹ : K) • B • x := by
-    rw [hAB, mul_smul, ← mul_smul B, cs.colorClassProd_mul_self, one_smul, hBx, smul_smul,
-      Units.val_inv_eq_inv_val, Units.val_mk0, inv_mul_cancel₀ hμ0, one_smul]
+  have hBx : B • x = μ • A • x :=
+    calc B • x = A • (A * B) • x := by
+          rw [← mul_smul, ← mul_assoc, cs.colorClassProd_mul_self, one_mul]
+      _ = A • μ • x := by rw [← hAB, hgx]
+      _ = μ • A • x := smul_comm _ _ _
+  have hμμ : μ⁻¹ * μ = 1 := inv_mul_cancel₀ hμ0
+  have hy : cs.bipartiteCoxeterElement c • B • x = (↑(Units.mk0 μ hμ0)⁻¹ : K) • B • x :=
+    calc cs.bipartiteCoxeterElement c • B • x = A • x := by
+          rw [hAB, ← mul_smul, mul_assoc, cs.colorClassProd_mul_self, mul_one]
+      _ = μ⁻¹ • B • x := by rw [hBx, smul_smul, hμμ, one_smul]
+      _ = (↑(Units.mk0 μ hμ0)⁻¹ : K) • B • x := by
+          simp only [Units.val_inv_eq_inv_val, Units.val_mk0]
   have h₁ := P.charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq b hf hbij
     (c := Units.mk0 μ hμ0) hx hgx
   have h₂ := P.charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq b hf hbij
@@ -157,18 +163,6 @@ private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
     (Finset.mem_univ k)
   rw [← this]
   exact Nat.mod_lt _ (orderOf_pos g)
-
-omit [Algebra ℝ K] [IsAlgClosed K] in
-/-- The bipartite Coxeter element has the order of every Coxeter element. -/
-private theorem orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd (b : P.Base)
-    (c : (coxeterMatrixOfBase P b).graph.Coloring Bool) {l : List b.support} (hl : l.Nodup)
-    (hl' : ∀ i, i ∈ l) :
-    orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) = orderOf (wordProd P b l) := by
-  obtain ⟨l₁, l₂, -, -, hnd, hall, hw⟩ :=
-    (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
-  rw [← hw, weylCoxeterSystem_wordProd]
-  exact P.orderOf_wordProd_eq_of_perm b hnd
-    ((List.perm_ext_iff_of_nodup hnd hl).mpr fun i ↦ iff_of_true (hall i) (hl' i))
 
 /-- **The Coxeter number is the number of roots divided by the rank.** For a base of a finite
 irreducible reduced crystallographic root system over an algebraically closed field containing
