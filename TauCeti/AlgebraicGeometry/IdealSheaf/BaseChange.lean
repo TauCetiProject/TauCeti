@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Pullbacks
+import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
@@ -379,5 +380,44 @@ theorem flat_resLE_subschemeι_iff {I : X.IdealSheafData} {f : X ⟶ S}
     ← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.val _ hUW le_rfl,
     ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc]
   exact RingHom.Flat.respectsIso.cancel_right_isIso _ _
+
+/-- Flatness of an affine section map followed by a quotient is module flatness for the
+induced quotient algebra. The ideal may be arbitrary. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.flat_appLE_comp_ofHom_quotient_mk_iff (f : X ⟶ S)
+    (W : S.Opens) (U : X.affineOpens) (hUW : U.val ≤ f ⁻¹ᵁ W)
+    (J : Ideal Γ(X, U)) :
+    (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk J)).hom.Flat ↔
+      let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+      Module.Flat Γ(S, W) (Γ(X, U) ⧸ J) := by
+  let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+  rw [← RingHom.flat_algebraMap_iff, IsScalarTower.algebraMap_eq Γ(S, W) Γ(X, U),
+    Ideal.Quotient.algebraMap_eq, RingHom.algebraMap_toAlgebra,
+    CommRingCat.hom_comp, CommRingCat.hom_ofHom]
+
+/-- Flatness of a closed subscheme can be checked on affine quotient neighbourhoods of its
+points over each affine base open. No neighbourhoods of points outside the subscheme are needed. -/
+theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.flat_subschemeι_comp_of_forall_exists
+    (I : X.IdealSheafData) (f : X ⟶ S)
+    (hI : ∀ (W : S.affineOpens) (x : I.subscheme), f (I.subschemeι x) ∈ W.val →
+      ∃ (U : X.affineOpens) (hUW : U.val ≤ f ⁻¹ᵁ W.val), I.subschemeι x ∈ U.val ∧
+        let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+        Module.Flat Γ(S, W) (Γ(X, U) ⧸ I.ideal U)) :
+    Flat (I.subschemeι ≫ f) := by
+  let : IsZariskiLocalAtSource (@Flat.{u}) :=
+    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Flat)
+  let : IsZariskiLocalAtTarget (@Flat.{u}) :=
+    HasRingHomProperty.instIsZariskiLocalAtTarget (@Flat.{u}) (Q := @RingHom.Flat)
+  let : MorphismProperty.RespectsRight (@Flat.{u}) (@IsOpenImmersion.{u}) :=
+    MorphismProperty.Respects.toRespectsRight
+  apply (IsZariskiLocalAtSource.iff_exists_resLE (P := @Flat.{u})).mpr
+  intro x
+  obtain ⟨_, ⟨W, hW, rfl⟩, hxW, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
+    (Set.mem_univ (f (I.subschemeι x))) TopologicalSpace.isOpen_univ
+  obtain ⟨U, hUW, hxU, hflat⟩ := hI ⟨W, hW⟩ x hxW
+  refine ⟨W, I.subschemeι ⁻¹ᵁ U.val, hxU,
+    (Scheme.Hom.preimage_mono _ hUW).trans_eq rfl, ?_⟩
+  rw [flat_resLE_subschemeι_iff hW U hUW,
+    Scheme.Hom.flat_appLE_comp_ofHom_quotient_mk_iff f W U hUW]
+  exact hflat
 
 end TauCeti

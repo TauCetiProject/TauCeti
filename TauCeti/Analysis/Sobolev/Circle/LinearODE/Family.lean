@@ -48,23 +48,7 @@ theorem exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le
       (loopOperator T (S p - δ • J p)).IsInvertible ∧
         ‖(loopOperator T (S p - δ • J p)).inverse‖ ≤ C := by
   let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
-  let : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let L : K × ℝ → CircleSobolev 1 E →L[ℝ] CircleSobolev 0 E :=
-    fun z ↦ loopOperator T (S z.1 - z.2 • J z.1)
-  have hL : Continuous L :=
-    (continuous_loopOperator T).comp
-      ((hS.domRestrict.comp continuous_fst).sub
-        (continuous_snd.smul (hJ.domRestrict.comp continuous_fst)))
-  obtain ⟨V, hV, C, hC, hbound⟩ :=
-    isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le L 0
-      (fun _ _ ↦ hL.continuousAt) (by
-        intro p _
-        dsimp only [L]
-        rw [zero_smul ℝ (J p), sub_zero]
-        exact hinv p p.property)
-  obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨r / 2, by positivity, C, hC, fun p hp δ hδ ↦ hbound ⟨p, hp⟩ (mem_univ _) δ (hrV ?_)⟩
-  simpa only [Metric.mem_ball, Real.dist_eq, sub_zero] using
-    hδ.trans_lt (half_lt_self hr)
+  exact hK.exists_pos_isInvertible_map_sub_smul_norm_inverse_le (continuous_loopOperator T)
+    S J hS hJ hinv
 
 end TauCeti.CircleSobolev

@@ -8,7 +8,7 @@ module
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import TauCeti.MeasureTheory.Integral.Bochner.Subtype
 public import TauCeti.MeasureTheory.Integral.ComapSubtype

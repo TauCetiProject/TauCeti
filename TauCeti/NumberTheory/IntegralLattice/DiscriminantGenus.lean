@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Genus
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form

@@ -57,14 +57,18 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.inclusionLp`: the inclusion `H^{s,p}(E, G) →L[ℂ] Lᵖ(E, G)` for `0 ≤ s`,
   characterised by `BesselPotentialSpace.toTemperedDistribution_inclusionLp` and
   `BesselPotentialSpace.inclusionLp_eq_iff`, and injective
-  (`BesselPotentialSpace.inclusionLp_injective`). Its normal forms are
+  (`BesselPotentialSpace.inclusionLp_injective`; a.e. form
+  `BesselPotentialSpace.ext_of_ae_eq_inclusionLp`). Its normal forms are
   `BesselPotentialSpace.toLp_inclusion`, `BesselPotentialSpace.inclusionLp_zero`,
   `BesselPotentialSpace.inclusionLp_inclusion` and
   `BesselPotentialSpace.inclusionLp_toBesselPotentialSpaceCLM`.
 * `BesselPotentialSpace.toLp_inclusion_injective`: an element is determined by the `Lᵖ` function
   of its inclusion, and `BesselPotentialSpace.coeFn_toLp_inclusion_add`,
   `BesselPotentialSpace.coeFn_toLp_inclusion_smul`: that function is additive and homogeneous
-  almost everywhere.
+  almost everywhere; `BesselPotentialSpace.coeFn_inclusionLp_add_ae_eq`,
+  `BesselPotentialSpace.coeFn_inclusionLp_sub_ae_eq` and
+  `BesselPotentialSpace.coeFn_inclusionLp_smul_ae_eq` compute the `Lᵖ` function of a sum,
+  difference or multiple from those of its terms.
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
   `H^{0,p}(E, G) = Lᵖ` exhibits every element of `H^{s,p}(E, G)` as an `Lᵖ` function, which lies
   in `H^{s,p}` (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
@@ -201,6 +205,11 @@ theorem inclusionLp_injective (hs : 0 ≤ s) :
   fun u v huv ↦ ext (by rw [← toTemperedDistribution_inclusionLp hs, huv,
     toTemperedDistribution_inclusionLp])
 
+/-- Two elements of `H^{s,p}` whose `Lᵖ` functions agree almost everywhere are equal. -/
+theorem ext_of_ae_eq_inclusionLp (hs : 0 ≤ s) {u v : H^{s, p}(E, G)}
+    (huv : inclusionLp hs u =ᵐ[volume] inclusionLp hs v) : u = v :=
+  inclusionLp_injective hs (Lp.ext huv)
+
 /-- The `Lᵖ` part of the inclusion of `u` in `H^{0,p}` is the inclusion of `u` into `Lᵖ`. -/
 @[simp]
 theorem toLp_inclusion (hs : 0 ≤ s) (u : H^{s, p}(E, G)) :
@@ -244,6 +253,30 @@ theorem coeFn_toLp_inclusion_smul (h : r ≤ s) (c : ℂ) (u : H^{s, p}(E, G)) :
     ⇑(inclusion h (c • u)).toLp =ᵐ[volume] c • ⇑(inclusion h u).toLp := by
   rw [map_smul, toLp_smul]
   exact Lp.coeFn_smul _ _
+
+/-- If the `Lᵖ` functions of `u` and `v` are almost everywhere `F` and `F'`, then that of `u + v`
+is almost everywhere `F + F'`. -/
+theorem coeFn_inclusionLp_add_ae_eq (hs : 0 ≤ s) {u v : H^{s, p}(E, G)} {F F' : E → G}
+    (hu : ⇑(inclusionLp hs u) =ᵐ[volume] F) (hv : ⇑(inclusionLp hs v) =ᵐ[volume] F') :
+    ⇑(inclusionLp hs (u + v)) =ᵐ[volume] fun z ↦ F z + F' z := by
+  rw [map_add]
+  exact (Lp.coeFn_add _ _).trans (hu.add hv)
+
+/-- If the `Lᵖ` functions of `u` and `v` are almost everywhere `F` and `F'`, then that of `u - v`
+is almost everywhere `F - F'`. -/
+theorem coeFn_inclusionLp_sub_ae_eq (hs : 0 ≤ s) {u v : H^{s, p}(E, G)} {F F' : E → G}
+    (hu : ⇑(inclusionLp hs u) =ᵐ[volume] F) (hv : ⇑(inclusionLp hs v) =ᵐ[volume] F') :
+    ⇑(inclusionLp hs (u - v)) =ᵐ[volume] fun z ↦ F z - F' z := by
+  rw [map_sub]
+  exact (Lp.coeFn_sub _ _).trans (hu.sub hv)
+
+/-- If the `Lᵖ` function of `u` is almost everywhere `F`, then that of `c • u` is almost everywhere
+`c • F`. -/
+theorem coeFn_inclusionLp_smul_ae_eq (hs : 0 ≤ s) (c : ℂ) {u : H^{s, p}(E, G)} {F : E → G}
+    (hu : ⇑(inclusionLp hs u) =ᵐ[volume] F) :
+    ⇑(inclusionLp hs (c • u)) =ᵐ[volume] fun z ↦ c • F z := by
+  rw [map_smul]
+  exact (Lp.coeFn_smul _ _).trans (hu.const_smul c)
 
 /-- **Elements of `H^{s,p}`, `s ≥ 0`, are `Lᵖ` functions.** The `Lᵖ` function underlying the
 inclusion of `u ∈ H^{s,p}(E, G)` into `H^{0,p}(E, G)` has the tempered distribution `u`. -/

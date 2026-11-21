@@ -73,4 +73,27 @@ theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (hc hx)
   exact (hδsmall y hy).le.trans (hbound y x hxy T hT hfix)
 
+/-- Closed orbits meeting a compact set without stationary points have periods uniformly bounded
+away from zero. -/
+theorem exists_pos_period_le_closedOrbit_of_isCompact {K : Set X} (hK : IsCompact K)
+    (hmove : ∀ x ∈ K, ∃ s, ϕ s x ≠ x) :
+    ∃ ε > 0, ∀ γ : ϕ.ClosedOrbit, (γ.support ∩ K).Nonempty → ε ≤ γ.period := by
+  obtain ⟨ε, hε, hbound⟩ := ϕ.exists_pos_period_le_of_isCompact hK hmove
+  refine ⟨ε, hε, fun γ ↦ γ.ind fun c hc ↦ ?_⟩
+  obtain ⟨x, hx, hxK⟩ := hc
+  rw [ClosedOrbit.support_mk, mem_orbit_iff] at hx
+  obtain ⟨s, rfl⟩ := hx
+  rw [ClosedOrbit.period_mk]
+  exact hbound (ϕ s c.point) hxK c.period c.period_pos (s +ᵥ c).apply_period
+
+/-- On a compact space without stationary points, closed orbits of `ϕ` have periods uniformly
+bounded away from zero. -/
+theorem exists_pos_period_le_closedOrbit [CompactSpace X] (hmove : ∀ x, ∃ s, ϕ s x ≠ x) :
+    ∃ ε > 0, ∀ γ : ϕ.ClosedOrbit, ε ≤ γ.period := by
+  obtain ⟨ε, hε, hbound⟩ :=
+    ϕ.exists_pos_period_le_closedOrbit_of_isCompact isCompact_univ fun x _ ↦ hmove x
+  refine ⟨ε, hε, fun γ ↦ hbound γ (γ.ind fun c ↦ ⟨c.point, ?_, mem_univ _⟩)⟩
+  rw [ClosedOrbit.support_mk]
+  exact mem_orbit_self ϕ c.point
+
 end Flow

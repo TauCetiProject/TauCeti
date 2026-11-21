@@ -690,21 +690,32 @@ theorem finrank_orthogonal_span_singleton_add_one (B : LinearMap.BilinForm K V) 
   simpa only [finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx), add_comm] using
     Submodule.finrank_add_eq_of_isCompl (B.isCompl_span_singleton_orthogonal hx)
 
+omit [FiniteDimensional K V] in
 /-- The orthogonal complement of a subspace has at least the complementary dimension:
-`dim V ≤ dim W + dim Wᗮ`. No reflexivity or nondegeneracy is needed; the defect is the dimension
-of `W ∩ ker B` (`LinearMap.BilinForm.finrank_add_finrank_orthogonal'`). -/
+`dim V ≤ dim W + dim Wᗮ`. No reflexivity or nondegeneracy is needed. When `V` is
+finite-dimensional, the defect is the dimension of `W ∩ ker B`
+(`LinearMap.BilinForm.finrank_add_finrank_orthogonal'`); in infinite dimension `finrank K V` is
+`0`, so the inequality holds by the junk value. -/
 theorem finrank_le_finrank_add_finrank_orthogonal (B : LinearMap.BilinForm K V)
     (W : Submodule K V) : finrank K V ≤ finrank K W + finrank K (B.orthogonal W) := by
-  rw [finrank_add_finrank_orthogonal']
-  exact Nat.le_add_right _ _
+  by_cases hV : FiniteDimensional K V
+  · rw [finrank_add_finrank_orthogonal']
+    exact Nat.le_add_right _ _
+  · rw [Module.finrank_of_not_finite hV]
+    exact Nat.zero_le _
 
+omit [FiniteDimensional K V] in
 /-- A subspace containing its orthogonal complement has at least half the dimension of the
-ambient space. No reflexivity or nondegeneracy is needed. -/
+ambient space. No reflexivity or nondegeneracy is needed. In infinite dimension `finrank K V` is
+`0`, so the inequality holds by the junk value. -/
 theorem finrank_le_two_mul_finrank_of_orthogonal_le {W : Submodule K V}
     (h : B.orthogonal W ≤ W) : finrank K V ≤ 2 * finrank K W := by
-  have hle := B.finrank_le_finrank_add_finrank_orthogonal W
-  have hmono := Submodule.finrank_mono h
-  omega
+  by_cases hV : FiniteDimensional K V
+  · have hle := B.finrank_le_finrank_add_finrank_orthogonal W
+    have hmono := Submodule.finrank_mono h
+    omega
+  · rw [Module.finrank_of_not_finite hV]
+    exact Nat.zero_le _
 
 /-- A totally isotropic subspace of a nondegenerate bilinear space, one contained in its
 orthogonal complement, has at most half the dimension of the ambient space. -/

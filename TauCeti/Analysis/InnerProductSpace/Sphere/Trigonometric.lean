@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Analysis.Normed.Group.BallSphere
+public import Mathlib.Topology.ContinuousMap.Algebra
+public import Mathlib.Topology.Homotopy.Basic
 
 /-!
 # Trigonometric combinations of orthogonal unit vectors
@@ -14,6 +17,12 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 For orthogonal unit vectors `p, q` in a real inner product space, the combination
 `cos(t) p + sin(t) q` has norm one. This supplies the unit-sphere membership needed
 to parametrize great circles without any manifold or finite-dimensional assumptions.
+
+Following the half great circles `t ↦ cos (π t) • f x + sin (π t) • v x` from `f x` to `-f x`, a
+map `f` into the unit sphere is homotopic to its antipode `-f` as soon as it has a unit normal
+field `v`, a map into the unit sphere with `v x` orthogonal to `f x` for every `x`
+(`ContinuousMap.homotopic_neg_of_inner_eq_zero`). For `f` the identity of the sphere, `v` is a
+unit tangent vector field; this is the homotopy behind the hairy ball theorem.
 -/
 
 public section
@@ -41,3 +50,24 @@ theorem norm_cos_smul_add_sin_smul (p q : sphere (0 : E) 1)
   nlinarith [norm_nonneg (Real.cos t • (p : E) + Real.sin t • (q : E))]
 
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {X : Type*}
+  [TopologicalSpace X]
+
+/-- **A map into the sphere with a unit normal field is homotopic to its antipode.** If
+`f, v : X → S` are maps into the unit sphere `S` of a real inner product space with `v x`
+orthogonal to `f x` for every `x`, then `f` is homotopic to `-f`, through the half great circles
+`t ↦ cos (π t) • f x + sin (π t) • v x`. -/
+theorem homotopic_neg_of_inner_eq_zero (f v : C(X, sphere (0 : E) 1))
+    (h : ∀ x, inner ℝ (f x : E) (v x : E) = 0) : f.Homotopic (-f) :=
+  ⟨{ toFun p := ⟨Real.cos (Real.pi * p.1) • (f p.2 : E) + Real.sin (Real.pi * p.1) • (v p.2 : E),
+        mem_sphere_zero_iff_norm.2 (norm_cos_smul_add_sin_smul _ _ (h p.2) _)⟩
+     continuous_toFun := by fun_prop
+     map_zero_left x := Subtype.ext (by simp)
+     map_one_left x := Subtype.ext (by simp) }⟩
+
+end ContinuousMap

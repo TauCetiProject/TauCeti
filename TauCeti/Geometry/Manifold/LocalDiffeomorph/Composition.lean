@@ -21,7 +21,9 @@ diffeomorphism, for `m ≤ n`, exactly when its precomposite with `p` is `C^m` a
 surjective local diffeomorphism, such as the orbit projection of a free properly discontinuous
 action, this characterises the `C^m` maps out of its target. The same holds for maps out of a
 product `A × B` whose second factor is the target of `p`, precomposed with `Prod.map id p`; this
-characterises the `C^m` maps `A × B → N`, such as flows on a quotient manifold.
+characterises the `C^m` maps `A × B → N`, such as flows on a quotient manifold. A map out of an
+open subset `U` of the target is `C^m` at `p x ∈ U` when, at each `p y ∈ U`, it agrees with a map
+that is `C^m` at `x`.
 
 Precomposing a `C^n` local diffeomorphism out of a normed space `E` with a continuous linear
 automorphism of `E` gives again a `C^n` local diffeomorphism
@@ -41,6 +43,10 @@ apply to `e ∘ R`.
 * `IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff`, `IsLocalDiffeomorphAt.mfderiv_comp`,
   `IsLocalDiffeomorphAt.isInvertible_mfderiv_comp_iff`: differentiability, chain rule, and
   invertibility of the manifold derivative under precomposition with a local diffeomorphism.
+* `IsLocalDiffeomorphAt.ker_mfderiv_comp`: postcomposing with a local diffeomorphism does not
+  change the kernel of the differential.
+* `IsLocalDiffeomorphAt.contMDiffAt_of_forall_eq`: a sufficient condition for `C^m` maps out of
+  an open subset of the target.
 * `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
   surjective local diffeomorphism.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff`,
@@ -137,6 +143,37 @@ theorem _root_.IsLocalDiffeomorphAt.isInvertible_mfderiv_comp_iff {x : M} {g : B
     (mfderiv I I' (g ∘ p) x).IsInvertible ↔ (mfderiv J I' g (p x)).IsInvertible := by
   rw [hp.mfderiv_comp hn, ← hp.mfderivToContinuousLinearEquiv_coe hn,
     ContinuousLinearMap.isInvertible_comp_equiv]
+
+/-- Postcomposing a map differentiable at `y` with a map that is a `C^n` local diffeomorphism at
+its image, `n ≠ 0`, does not change the kernel of the differential at `y`. -/
+theorem _root_.IsLocalDiffeomorphAt.ker_mfderiv_comp {y : N}
+    (hp : IsLocalDiffeomorphAt I J n p (f y)) (hn : n ≠ 0) (hf : MDifferentiableAt I' I f y) :
+    (mfderiv I' J (p ∘ f) y).ker = (mfderiv I' I f y).ker := by
+  ext v
+  rw [_root_.mfderiv_comp y (hp.mdifferentiableAt hn) hf]
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
+  rw [← hp.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.map_eq_zero_iff]
+
+/-- Let `p` be a `C^n` local diffeomorphism at `x`, `m ≤ n`, and `U` an open neighbourhood of `p x`.
+A map `g` out of `U` is `C^m` at `p x` when `g (p y) = f y` whenever `p y ∈ U`, for a map `f` that
+is `C^m` at `x`: near `p x`, `g` is `f` composed with a local inverse of `p`. This is the analogue
+of `IsLocalDiffeomorphAt.contMDiffAt_comp_iff` for maps defined only on an open subset. -/
+theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_of_forall_eq {m : ℕ∞ω} {x : M}
+    (hp : IsLocalDiffeomorphAt I J n p x) (hm : m ≤ n) (U : TopologicalSpace.Opens B)
+    (hx : p x ∈ U) {f : M → N} (hf : ContMDiffAt I I' m f x) {g : U → N}
+    (hg : ∀ y (hy : p y ∈ U), g ⟨p y, hy⟩ = f y) :
+    ContMDiffAt J I' m g ⟨p x, hx⟩ := by
+  refine ContMDiffAt.congr_of_eventuallyEq (f := fun y : U ↦ f (hp.localInverse y)) ?_ ?_
+  · exact hf.comp_of_eq ((hp.contMDiffAt_localInverse.of_le hm).comp (⟨p x, hx⟩ : U)
+        contMDiff_subtypeVal.contMDiffAt)
+      (hp.localInverse_left_inv hp.localInverse_mem_target)
+  · filter_upwards [hp.localInverse_eventuallyEq_right.comp_tendsto
+      continuous_subtypeVal.continuousAt] with ⟨y, hy⟩ hpy
+    simp only [Function.comp_apply, id_eq] at hpy
+    have hy' : p (hp.localInverse y) ∈ U := by rwa [hpy]
+    rw [← hg _ hy']
+    exact congrArg g (Subtype.ext hpy.symm)
 
 /-- If `p` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a map `g` out of its target is
 `C^m` exactly when `g ∘ p` is `C^m`. -/
