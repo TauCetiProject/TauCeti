@@ -303,7 +303,7 @@ private theorem unitBall_factor_rpow_le_sqrt_pow (K : Type*) [Field K] [NumberFi
           nrComplexPlaces K ≤ (√(k : ℝ) ^ k) ^ finrank ℚ K := by
     refine (mul_le_mul (pow_le_pow_left₀ (by positivity) hreal _)
       (pow_le_pow_left₀ (by positivity) hcomplex _) (by positivity) (by positivity)).trans_eq ?_
-    rw [← pow_mul, ← pow_mul, ← pow_add, hexp, pow_mul]
+    simp only [← pow_mul, ← pow_add, hexp]
   exact (Real.rpow_le_rpow (by positivity) hprod (by positivity)).trans_eq
     (Real.pow_rpow_inv_natCast (by positivity) (Module.finrank_pos (R := ℚ) (M := K)).ne')
 
@@ -334,7 +334,7 @@ private theorem prod_successiveMin_le {ι : Type*} [Fintype ι] [LinearOrder ι]
   have hDk : D * k = r₁ * k + r₂ * k + r₂ * k := by rw [hD]; ring
   have htwo :
       (2 : ℝ) ^ (D * k) * ((2⁻¹ : ℝ) ^ r₂) ^ k = (2 : ℝ) ^ (r₁ * k) * (2 : ℝ) ^ (r₂ * k) := by
-    rw [hDk, pow_add, pow_add, ← pow_mul, inv_pow]
+    simp only [hDk, pow_add, ← pow_mul, inv_pow]
     field_simp
   refine le_of_mul_le_mul_right ?_ hV_pos
   refine (mul_le_mul_of_nonneg_left hV_le
@@ -365,8 +365,7 @@ private theorem prod_successiveMin_rpow_inv_le {ι : Type*} [Fintype ι] [Linear
   have hdiscr :
       (√|(discr K : ℝ)| ^ k) ^ (D : ℝ)⁻¹ = |(discr K : ℝ)| ^ ((k : ℝ) / (2 * D)) := by
     have hexp : (1 / 2 : ℝ) * k * (D : ℝ)⁻¹ = (k : ℝ) / (2 * D) := by ring
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast _ k, ← Real.rpow_mul (abs_nonneg _),
-      ← Real.rpow_mul (abs_nonneg _), hexp]
+    simp only [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg _), hexp]
   have hH : (W.subspaceHeight ^ D) ^ (D : ℝ)⁻¹ = W.subspaceHeight :=
     Real.pow_rpow_inv_natCast (Submodule.subspaceHeight_pos W).le hD_pos.ne'
   refine (Real.rpow_le_rpow (Finset.prod_nonneg fun _ _ ↦ ZLattice.successiveMin_nonneg _ _ _)
@@ -429,10 +428,9 @@ theorem prod_successiveMin_integerLattice_euclideanBallSlice_le {ι : Type*} [Fi
               nrComplexPlaces K) =
         (2 : ℝ) ^ (nrRealPlaces K * finrank K W) *
           (2 : ℝ) ^ (nrComplexPlaces K * finrank K W) := by
-    rw [div_pow, div_pow, ← pow_mul, ← pow_mul]
     have h1 : finrank K W * nrRealPlaces K = nrRealPlaces K * finrank K W := mul_comm _ _
     have h2 : finrank K W * nrComplexPlaces K = nrComplexPlaces K * finrank K W := mul_comm _ _
-    rw [h1, h2]
+    simp only [div_pow, ← pow_mul, h1, h2]
     field_simp [hωk.ne', hω2k.ne']
   exact W.prod_successiveMin_le (fun _ hx ↦ W.neg_mem_euclideanBallSlice.2 hx)
     (by positivity) W.volume_real_euclideanBallSlice.symm.le hcV
@@ -683,7 +681,9 @@ theorem exists_basis_ker_mulVecLin_prod_absHeight_le (A : Matrix m ι K) :
   obtain ⟨x, hx_li, _, hx_ker, hx_le⟩ :=
     A.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le
   obtain ⟨b, hb, hb_int⟩ := Submodule.exists_basis_of_linearIndependent_integerPoints
-    A.finrank_ker_mulVecLin hx_li fun j ↦ mem_integerPoints.mpr (LinearMap.mem_ker.mpr (hx_ker j))
+    A.finrank_ker_mulVecLin hx_li fun j ↦
+      mem_integerPoints.mpr (by
+        simpa only [LinearMap.mem_ker, Matrix.mulVecLin_apply] using hx_ker j)
   exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
 
 open scoped Classical in
@@ -705,7 +705,9 @@ theorem exists_basis_ker_mulVecLin_prod_height2_le (A : Matrix m ι K) :
           (span K (Set.range A.row)).subspaceHeight := by
   obtain ⟨x, hx_li, _, hx_ker, hx_le⟩ := A.exists_linearIndependent_mulVec_eq_zero_prod_height2_le
   obtain ⟨b, hb, hb_int⟩ := Submodule.exists_basis_of_linearIndependent_integerPoints
-    A.finrank_ker_mulVecLin hx_li fun j ↦ mem_integerPoints.mpr (LinearMap.mem_ker.mpr (hx_ker j))
+    A.finrank_ker_mulVecLin hx_li fun j ↦
+      mem_integerPoints.mpr (by
+        simpa only [LinearMap.mem_ker, Matrix.mulVecLin_apply] using hx_ker j)
   exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
 
 end NumberField
