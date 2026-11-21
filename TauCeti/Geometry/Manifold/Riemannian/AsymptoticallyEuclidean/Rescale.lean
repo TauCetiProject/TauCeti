@@ -19,17 +19,20 @@ turns an asymptotically Euclidean end `φ` of order `t` on `(closedBall 0 R)ᶜ`
 asymptotically Euclidean end of the same order `t` on `WithMetric (rescaledMetric I M m hc)` with
 excised radius `√c * R` and parametrization `y ↦ toWithMetric _ (φ ((√c)⁻¹ • y))`.
 
-Rescaling `g` alone multiplies the asymptotic metric limit by `c` (sending `δ_ij` to `c δ_ij`), so
-the compensating coordinate dilation `y ↦ (√c)⁻¹ • y` cancels `c` in the pulled-back metric
-coefficients and restores the Euclidean limit `δ_ij`, yielding
+For arbitrary `t : ℝ`, the compensating coordinate dilation `y ↦ (√c)⁻¹ • y` cancels the factor
+`c` in the pulled-back metric coefficients, yielding the exact identity
 
 `pullbackMetricCoeff I (fun z ↦ toWithMetric _ (φ ((√c)⁻¹ • z))) y =`
 `  pullbackMetricCoeff I φ ((√c)⁻¹ • y)`
 
-for every `y : EuclideanSpace ℝ (Fin n)`. Because an asymptotically Euclidean end already guarantees
-`C²` regularity and second-order decay of `pullbackMetricCoeff I φ` on its exterior domain, and
-smooth linear dilation preserves both properties, `IsAsymptoticallyEuclideanEnd.rescale` requires
-no `2 ≤ m` assumption on the ambient metric.
+for every `y : EuclideanSpace ℝ (Fin n)`, and preserving `IsAsymptoticallyEuclideanEnd` of the same
+order `t`. In particular, when `0 < t` (so that the pulled-back metric coefficients converge to
+`δ_ij`), rescaling `g` alone multiplies the asymptotic metric limit by `c` (sending `δ_ij` to
+`c δ_ij`), and the compensating coordinate dilation restores the Euclidean limit `δ_ij`. Because an
+asymptotically Euclidean end already guarantees `C²` regularity and second-order decay of
+`pullbackMetricCoeff I φ` on its exterior domain, and smooth linear dilation preserves both
+properties, `IsAsymptoticallyEuclideanEnd.rescale` requires no `2 ≤ m` assumption on the ambient
+metric.
 
 ## Main results
 

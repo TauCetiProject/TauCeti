@@ -204,47 +204,33 @@ private theorem radial_segment_norm_bounds {R R₁ : ℝ} {x : EuclideanSpace �
   exact ⟨hxR.trans_le (le_mul_of_one_le_left hx_pos.le hscale),
     (mul_le_mul_of_nonneg_right hscale_ub hx_pos.le).trans_eq (div_mul_cancel₀ _ hx_pos.ne')⟩
 
-/-- Radial distance estimate from `φ x` (`R < ‖x‖ ≤ R'`) to the outer sphere `sphere 0 R₁`
-(`R₁ = max R R' + 1`). -/
-private theorem dist_image_radial_le {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M]
+/-/-- Radial extended-distance estimate from `φ x` (`R < ‖x‖ < R₀ ≤ R₁`) to the outer sphere
+`sphere 0 R₀`. -/
+private theorem edist_image_radial_le {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-    {R R' R₁ C : ℝ} (hR₁ : R₁ = max R R' + 1)
+    {R R₀ R₁ C : ℝ} (hR₀ : R₀ ≤ R₁)
     {φ : EuclideanSpace ℝ (Fin n) → M} (h : IsAsymptoticallyEuclideanEnd I t R φ)
     (hC : ∀ k ≤ 2, ∀ (i j : Fin n), ∀ z ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ,
       ‖iteratedFDeriv ℝ k (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) z‖ ≤ C * ‖z‖ ^ (-t - k))
-    {x : EuclideanSpace ℝ (Fin n)} (hxR : R < ‖x‖) (hxR' : ‖x‖ ≤ R') :
-    dist (φ x) (φ ((R₁ / ‖x‖) • x)) ≤
-      R₁ * (n : ℝ) * Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t))) := by
-  subst hR₁
+    {x : EuclideanSpace ℝ (Fin n)} (hxR : R < ‖x‖) (hxR₀ : ‖x‖ < R₀) :
+    edist (φ x) (φ ((R₀ / ‖x‖) • x)) ≤
+      ENNReal.ofReal ((R₀ - ‖x‖) * (n : ℝ) *
+        Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))) := by
   have hx_pos : 0 < ‖x‖ := h.radius_pos.trans hxR
-  have hx_lt_R₁ : ‖x‖ < max R R' + 1 :=
-    hxR'.trans_lt (lt_of_le_of_lt (le_max_right R R') (lt_add_one _))
-  let y : EuclideanSpace ℝ (Fin n) := ((max R R' + 1) / ‖x‖) • x
-  have hseg : ∀ z ∈ segment ℝ x y, R < ‖z‖ ∧ ‖z‖ ≤ max R R' + 1 := fun z hz ↦
-    radial_segment_norm_bounds hxR hx_pos hx_lt_R₁ hz
+  let y : EuclideanSpace ℝ (Fin n) := (R₀ / ‖x‖) • x
+  have hseg : ∀ z ∈ segment ℝ x y, R < ‖z‖ ∧ ‖z‖ ≤ R₁ := fun z hz ↦
+    let ⟨hz1, hz2⟩ := radial_segment_norm_bounds hxR hx_pos hxR₀ hz
+    ⟨hz1, hz2.trans hR₀⟩
   have hdiff : ∀ z ∈ segment ℝ x y, ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I 1 φ z :=
     fun z hz ↦ (h.contMDiffOn.contMDiffAt
       (isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using (hseg z hz).1))).of_le (by simp)
-  have hnorm_yx : ‖y - x‖ ≤ max R R' + 1 := by
-    have h1 : 1 ≤ (max R R' + 1) / ‖x‖ := (one_le_div hx_pos).2 hx_lt_R₁.le
-    rw [show y - x = ((max R R' + 1) / ‖x‖ - 1) • x by simp [y, sub_smul], norm_smul,
+  have hnorm_yx : ‖y - x‖ = R₀ - ‖x‖ := by
+    have h1 : 1 ≤ R₀ / ‖x‖ := (one_le_div hx_pos).2 hxR₀.le
+    rw [show y - x = (R₀ / ‖x‖ - 1) • x by simp [y, sub_smul], norm_smul,
       Real.norm_of_nonneg (sub_nonneg.2 h1), sub_mul, div_mul_cancel₀ _ hx_pos.ne', one_mul]
-    linarith
-  have hed :
-      edist (φ x) (φ y) ≤
-        ENNReal.ofReal ((max R R' + 1) * (n : ℝ) *
-          Real.sqrt (1 + max C 0 * max (R ^ (-t)) ((max R R' + 1) ^ (-t)))) := by
-    refine IsRiemannianManifold.edist_le_of_norm_mfderiv_le hdiff fun z hz ↦ ?_
-    rw [← NormedSpace.fromTangentSpace_symm_apply z (y - x)]
-    exact (norm_mfderiv_le_of_compl_closedBall h hC (hseg z hz).1 (hseg z hz).2 (y - x)).trans
-      (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hnorm_yx (Nat.cast_nonneg n))
-        (Real.sqrt_nonneg _))
-  rw [dist_edist]
-  have hnonneg : 0 ≤ (max R R' + 1) * (n : ℝ) *
-      Real.sqrt (1 + max C 0 * max (R ^ (-t)) ((max R R' + 1) ^ (-t))) :=
-    mul_nonneg (mul_nonneg (by linarith [h.radius_pos, le_max_left R R']) (Nat.cast_nonneg n))
-      (Real.sqrt_nonneg _)
-  exact ENNReal.toReal_le_of_le_ofReal hnonneg hed
+  refine IsRiemannianManifold.edist_le_of_norm_mfderiv_le hdiff fun z hz ↦ ?_
+  rw [← NormedSpace.fromTangentSpace_symm_apply z (y - x), ← hnorm_yx]
+  exact norm_mfderiv_le_of_compl_closedBall h hC (hseg z hz).1 (hseg z hz).2 (y - x)
 
 /-- On a Riemannian manifold, the image of the collar `(closedBall 0 R)ᶜ ∩ closedBall 0 R'` under
 an asymptotically Euclidean end is bounded, since each point is joined radially to the compact
@@ -276,17 +262,97 @@ private theorem isBounded_image_compl_inter_closedBall {M : Type*} [PseudoMetric
     exact Bornology.isBounded_empty
   · obtain ⟨r₀, hr₀⟩ := (Metric.isBounded_iff_subset_closedBall p₀).1 hsph_bdd
     obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-    let D : ℝ := R₁ * (n : ℝ) * Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))
+    let M₀ : ℝ := (n : ℝ) * Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))
+    let D : ℝ := R₁ * M₀
     refine (Metric.isBounded_iff_subset_closedBall p₀).2 ⟨D + r₀, ?_⟩
     rintro _ ⟨x, ⟨hxR, hxR'⟩, rfl⟩
     have hxR_lt : R < ‖x‖ := by simpa using hxR
     have hx_pos : 0 < ‖x‖ := h.radius_pos.trans hxR_lt
+    have hx_lt_R₁ : ‖x‖ < R₁ :=
+      (by simpa using hxR' : ‖x‖ ≤ R').trans_lt (lt_of_le_of_lt (le_max_right R R') (lt_add_one _))
     have hy_sph : (R₁ / ‖x‖) • x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) R₁ := by
       simp [norm_smul, abs_of_pos hR₁_pos, div_mul_cancel₀ _ hx_pos.ne']
-    have hdist_xy : dist (φ x) (φ ((R₁ / ‖x‖) • x)) ≤ D :=
-      dist_image_radial_le rfl h hC hxR_lt (by simpa using hxR')
+    have hM₀ : 0 ≤ M₀ := mul_nonneg (Nat.cast_nonneg n) (Real.sqrt_nonneg _)
+    have hed : edist (φ x) (φ ((R₁ / ‖x‖) • x)) ≤ ENNReal.ofReal D := by
+      refine (edist_image_radial_le le_rfl h hC hxR_lt hx_lt_R₁).trans (ENNReal.ofReal_le_ofReal ?_)
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_right (sub_le_self R₁ (norm_nonneg x)) hM₀
+    have hdist_xy : dist (φ x) (φ ((R₁ / ‖x‖) • x)) ≤ D := by
+      rw [dist_edist]
+      exact ENNReal.toReal_le_of_le_ofReal (mul_nonneg hR₁_pos.le hM₀) hed
     exact mem_closedBall.2 ((dist_triangle _ _ _).trans
       (add_le_add hdist_xy (mem_closedBall.1 (hr₀ ⟨_, hy_sph, rfl⟩))))
+
+/-- On an extended-metric Riemannian manifold, the image of the collar
+`(closedBall 0 R)ᶜ ∩ closedBall 0 R'` under an asymptotically Euclidean end is totally bounded,
+since it is approximated in `edist` by compact inner truncations using the uniform radial
+derivative bound. -/
+private theorem totallyBounded_image_compl_inter_closedBall {M : Type*} [PseudoEMetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsRiemannianManifold I M] {R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
+    (h : IsAsymptoticallyEuclideanEnd I t R φ) (R' : ℝ) :
+    TotallyBounded (φ '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ ∩ closedBall 0 R')) := by
+  rw [EMetric.totallyBounded_iff]
+  intro ε hε
+  obtain ⟨r, hr0, hr_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 (ENNReal.half_pos hε.ne')
+  have hr0' : (0 : ℝ) < r := NNReal.coe_pos.2 (ENNReal.coe_pos.1 hr0)
+  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
+  set R₁ : ℝ := R + 1
+  let M₁ : ℝ := (n : ℝ) * Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))
+  have hM₁ : 0 ≤ M₁ := mul_nonneg (Nat.cast_nonneg n) (Real.sqrt_nonneg _)
+  set η : ℝ := min 1 ((r : ℝ) / (M₁ + 1))
+  have hη_pos : 0 < η := lt_min zero_lt_one (div_pos hr0' (by linarith))
+  have hη_le1 : η ≤ 1 := min_le_left _ _
+  have hη_mul : ENNReal.ofReal (η * M₁) < ε / 2 := by
+    have hmul : η * M₁ ≤ r := by
+      calc η * M₁ ≤ ((r : ℝ) / (M₁ + 1)) * M₁ :=
+            mul_le_mul_of_nonneg_right (min_le_right _ _) hM₁
+        _ = (r : ℝ) * (M₁ / (M₁ + 1)) := by ring
+        _ ≤ (r : ℝ) * 1 :=
+            mul_le_mul_of_nonneg_left ((div_le_one (by linarith)).2 (by linarith)) hr0'.le
+        _ = r := mul_one _
+    exact (ENNReal.ofReal_le_ofReal hmul).trans_lt (by simpa using hr_lt)
+  let A : Set (EuclideanSpace ℝ (Fin n)) :=
+    ((ball (0 : EuclideanSpace ℝ (Fin n)) (R + η))ᶜ ∩ closedBall 0 R') ∪ sphere 0 (R + η)
+  have hA_comp : IsCompact A :=
+    ((isCompact_closedBall 0 R').of_isClosed_subset
+      (isOpen_ball.isClosed_compl.inter isClosed_closedBall) inter_subset_right).union
+      (isCompact_sphere 0 (R + η))
+  have hA_sub : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
+    rintro z (⟨hz, -⟩ | hz)
+    · simp only [mem_compl_iff, mem_ball_zero_iff, not_lt, mem_closedBall_zero_iff] at hz ⊢
+      linarith
+    · simp only [mem_sphere_zero_iff_norm] at hz
+      simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le, hz]
+      linarith
+  have hφA_tb : TotallyBounded (φ '' A) :=
+    (hA_comp.image_of_continuousOn (h.contMDiffOn.continuousOn.mono hA_sub)).totallyBounded
+  obtain ⟨t₀, ht₀_fin, ht₀_cov⟩ :=
+    EMetric.totallyBounded_iff.1 hφA_tb (ε / 2) (ENNReal.half_pos hε.ne')
+  refine ⟨t₀, ht₀_fin, ?_⟩
+  rintro _ ⟨x, ⟨hxR, hxR'⟩, rfl⟩
+  have hxR_lt : R < ‖x‖ := by simpa using hxR
+  rcases le_or_gt (R + η) ‖x‖ with hx_ge | hx_lt
+  · have hxA : x ∈ A := Or.inl ⟨by simpa [mem_ball_zero_iff] using hx_ge, hxR'⟩
+    obtain ⟨p, hp, hxp⟩ := mem_iUnion₂.1 (ht₀_cov ⟨x, hxA, rfl⟩)
+    exact mem_iUnion₂.2 ⟨p, hp, Metric.eball_subset_eball ENNReal.half_le_self hxp⟩
+  · have hx_pos : 0 < ‖x‖ := h.radius_pos.trans hxR_lt
+    have hRη_pos : 0 < R + η := by linarith [h.radius_pos]
+    let y : EuclideanSpace ℝ (Fin n) := ((R + η) / ‖x‖) • x
+    have hyA : y ∈ A := Or.inr <| by
+      simp [y, norm_smul, abs_of_pos hRη_pos, div_mul_cancel₀ _ hx_pos.ne']
+    obtain ⟨p, hp, hyp⟩ := mem_iUnion₂.1 (ht₀_cov ⟨y, hyA, rfl⟩)
+    have hed : edist (φ x) (φ y) < ε / 2 := by
+      have h1 : edist (φ x) (φ y) ≤ ENNReal.ofReal ((R + η - ‖x‖) * M₁) := by
+        simpa only [mul_assoc] using
+          edist_image_radial_le (R₁ := R₁) (by linarith) h hC hxR_lt hx_lt
+      have h2 : (R + η - ‖x‖) * M₁ ≤ η * M₁ :=
+        mul_le_mul_of_nonneg_right (by linarith) hM₁
+      exact h1.trans_lt ((ENNReal.ofReal_le_ofReal h2).trans_lt hη_mul)
+    refine mem_iUnion₂.2 ⟨p, hp, ?_⟩
+    rw [Metric.mem_eball] at hyp ⊢
+    exact (edist_triangle _ (φ y) _).trans_lt
+      ((ENNReal.add_lt_add hed hyp).trans_eq (ENNReal.add_halves ε))
 
 /-- Cutting the ends of a finite-ended asymptotically Euclidean structure on a proper `C¹`
 Riemannian manifold at larger radii `R' ≥ R` preserves the finite-ended structure. -/
@@ -301,17 +367,20 @@ theorem mono_radius_of_properSpace {M : Type*} [PseudoMetricSpace M] [ChartedSpa
         (R' a)).isCompact_closure,
       subset_closure⟩
 
-/-- Cutting the ends of a finite-ended asymptotically Euclidean structure on a complete Riemannian
-manifold at larger radii `R' ≥ R` preserves the finite-ended structure. -/
-theorem mono_radius_of_completeSpace {M : Type*} [MetricSpace M] [ChartedSpace H M]
-    [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    [IsRiemannianManifold I M] [CompleteSpace M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
+/-- Cutting the ends of a finite-ended asymptotically Euclidean structure on a complete `C¹`
+Riemannian manifold (with extended Riemannian distance) at larger radii `R' ≥ R` preserves the
+finite-ended structure. -/
+theorem mono_radius_of_completeSpace {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+    [CompleteSpace M] [IsManifold I 1 M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
     (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) {R' : ι → ℝ} (hR : ∀ a, R a ≤ R' a) :
-    IsFiniteEndedAsymptoticallyEuclidean I t R' φ := by
-  have : ProperSpace M := Manifold.properSpace_of_completeSpace I
-  exact h.mono_radius_of_properSpace hR
+    IsFiniteEndedAsymptoticallyEuclidean I t R' φ :=
+  h.mono_radius_of_compact_collar hR fun a ↦
+    ⟨closure (φ a '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ ∩ closedBall 0 (R' a))),
+      isCompact_iff_totallyBounded_isComplete.2
+        ⟨(totallyBounded_image_compl_inter_closedBall (h.isAsymptoticallyEuclideanEnd a)
+          (R' a)).closure, isClosed_closure.isComplete⟩,
+      subset_closure⟩
 
 /-- Constant metric rescaling `g ↦ c • g` preserves finite-ended asymptotically Euclidean
 structures, rescaling each excised radius by `√c` and each parametrization by
