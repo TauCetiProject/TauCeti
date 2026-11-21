@@ -136,9 +136,7 @@ private theorem mpullback_extChartAt_prod_symm_wedge_apply
     have hz : y ∈ (extChartAt (I.prod 𝓘(ℝ, ℂ)) (x₀, w₀)).target := by
       rw [extChartAt_prod_target]
       exact ⟨hy, by simp⟩
-    rw [← mfderivWithin_univ, ← (I.prod 𝓘(ℝ, ℂ)).range_eq_univ,
-      mfderivWithin_extChartAt_symm_prod_apply hz, I.range_eq_univ, mfderivWithin_univ,
-      𝓘(ℝ, ℂ).range_eq_univ, mfderivWithin_univ, extChartAt_model_space_eq_id,
+    rw [mfderiv_extChartAt_symm_prod_apply hz, extChartAt_model_space_eq_id,
       PartialEquiv.refl_symm, PartialEquiv.refl_coe, mfderiv_id]
     -- The fibre factor is the identity of `TangentSpace 𝓘(ℝ, ℂ) y.2`, which is `ℂ` only up to
     -- unfolding, so `ContinuousLinearMap.id_apply` does not match syntactically; it holds by `rfl`.
@@ -293,17 +291,6 @@ private theorem integralTopForm_wedge_eq_zero_of_mem_exactForms [SigmaCompactSpa
   exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms _
     (SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hψ hT)
 
-omit [I.Boundaryless] [FiniteDimensional ℝ E] [T2Space M] in
-/-- The wedge of a compactly supported two-form `T` on `M × ℂ` with any two-form has compact
-support. -/
-private theorem isCompact_tsupport_wedge {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
-    (hT : T ∈ compactlySupportedForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2)
-    (ψ : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2) :
-    IsCompact (_root_.tsupport (α := (E × ℂ) [⋀^Fin (2 + 2)]→L[ℝ] ℝ)
-      (SmoothForm.wedge T ψ).1) := by
-  rw [SmoothForm.wedge_comm_of_even even_two]
-  exact (mem_compactlySupportedForms _).mp (SmoothForm.wedge_mem_compactlySupportedForms ψ hT)
-
 /-- **The pairing of a closed two-form with a pulled-back base form.** Let `M` be a σ-compact
 preconnected oriented surface and `T` a compactly supported closed two-form on `M × ℂ` whose flux
 through every fibre `{x} × ℂ` is `m`. Then `∫_{M × ℂ} T ∧ π^*β = m ∫_M β` for every compactly
@@ -356,9 +343,11 @@ theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [PreconnectedS
       (fun x _ ↦ hm x), hθ, mul_one]
   rw [Submodule.coe_sub, integralTopForm_sub oP
     (X.isSmoothForm.of_le (by simp)) ((c • Y).isSmoothForm.of_le (by simp))
-    (isCompact_tsupport_wedge hTc _) ((mem_compactlySupportedForms _).mp
-      (Submodule.smul_mem _ c ((mem_compactlySupportedForms _).mpr
-        (isCompact_tsupport_wedge hTc _)))), Submodule.coe_smul, integralTopForm_smul, hY] at h0
+    ((mem_compactlySupportedForms _).mp
+      (SmoothForm.wedge_mem_compactlySupportedForms_of_left_mem hTc _))
+    ((mem_compactlySupportedForms _).mp (Submodule.smul_mem _ c
+      (SmoothForm.wedge_mem_compactlySupportedForms_of_left_mem hTc _))), Submodule.coe_smul,
+    integralTopForm_smul, hY] at h0
   linarith
 
 /-- **The taming pairing of a closed current of transverse flux `m`.** Let `M` be a σ-compact
@@ -385,8 +374,10 @@ theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ [SigmaCompactS
   set Y := SmoothForm.wedge T (mextDerivₗ (I.prod 𝓘(ℝ, ℂ)) (F := ℝ) 1 η)
   rw [map_add, map_smul, Submodule.coe_add, Submodule.coe_smul,
     integralTopForm_add _ ((X.isSmoothForm.smul K).of_le (by simp)) (Y.isSmoothForm.of_le (by simp))
-      ((isCompact_tsupport_wedge hTc _).of_isClosed_subset (isClosed_tsupport _)
-        (RoughForm.tsupport_smul_subset _ _)) (isCompact_tsupport_wedge hTc _),
+      ((mem_compactlySupportedForms _).mp (Submodule.smul_mem _ K
+        (SmoothForm.wedge_mem_compactlySupportedForms_of_left_mem hTc _)))
+      ((mem_compactlySupportedForms _).mp
+        (SmoothForm.wedge_mem_compactlySupportedForms_of_left_mem hTc _)),
     integralTopForm_smul, integralTopForm_wedge_mpullback_fst o hT hm hβ,
     integralTopForm_wedge_eq_zero_of_mem_exactForms o hT
       (by rw [exactForms_succ]; exact ⟨η, rfl⟩)]
