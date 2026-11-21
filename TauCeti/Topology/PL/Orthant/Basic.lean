@@ -205,11 +205,11 @@ theorem orthantLift_orthantProjection {p : (ι → ℝ) × ℝ}
 this identifies an `(n + 1)`-orthant boundary with `ℝⁿ`, including `n = 0`. -/
 def orthantBoundaryHomeomorph :
     frontier (Ici (0 : (ι → ℝ) × ℝ)) ≃ₜ (ι → ℝ) where
-  toFun p := orthantProjection p.1
+  toFun p := orthantProjection p.val
   invFun y := ⟨orthantLift y, orthantLift_mem_frontier y⟩
-  left_inv p := Subtype.ext (orthantLift_orthantProjection p.2)
+  left_inv p := Subtype.ext (orthantLift_orthantProjection p.property)
   right_inv := orthantProjection_orthantLift
-  continuous_toFun := orthantProjection.continuous.comp continuous_subtype_val
+  continuous_toFun := orthantProjection.continuous.comp continuous_subtypeVal
   continuous_invFun :=
     (continuousOn_univ.mp isPiecewiseAffineOn_orthantLift.continuousOn).subtype_mk _
 
@@ -217,7 +217,7 @@ def orthantBoundaryHomeomorph :
 @[simp]
 theorem orthantBoundaryHomeomorph_apply
     (p : frontier (Ici (0 : (ι → ℝ) × ℝ))) (i : ι) :
-    orthantBoundaryHomeomorph p i = p.1.1 i - p.1.2 := (rfl)
+    orthantBoundaryHomeomorph p i = p.val.1 i - p.val.2 := (rfl)
 
 /-- The inverse homeomorphism is the minimum-subtraction lift. -/
 @[simp]

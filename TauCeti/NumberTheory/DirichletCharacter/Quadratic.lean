@@ -37,6 +37,8 @@ have absolute value one.
   character is quadratic exactly when the original character is quadratic.
 * `DirichletCharacter.isQuadratic_mul`: the common-level product of two quadratic characters is
   quadratic.
+* `DirichletCharacter.isQuadratic_mul_iff_right`: for quadratic `χ` of nonzero level, `χ.mul ψ` is
+  quadratic if and only if `ψ` is quadratic.
 * `MulChar.IsQuadratic.primitiveCharacter`: at a nonzero level, the primitive character of a
   quadratic character is quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
@@ -89,6 +91,22 @@ theorem isQuadratic_mul {R : Type*} [CommRing R] {n m : ℕ} {χ : DirichletChar
     (χ.mul ψ).IsQuadratic := by
   rw [DirichletCharacter.mul]
   exact (hχ.changeLevel _).mul (hψ.changeLevel _)
+
+/-- For a quadratic character `χ` of nonzero level `M`, the common-level product `χ.mul ψ` is
+quadratic if and only if `ψ` is quadratic. -/
+theorem isQuadratic_mul_iff_right {R : Type*} [CommRing R] {M N : ℕ} [NeZero M]
+    {χ : DirichletCharacter R M} {ψ : DirichletCharacter R N} (hχ : χ.IsQuadratic) :
+    (χ.mul ψ).IsQuadratic ↔ ψ.IsQuadratic := by
+  refine ⟨fun hχψ ↦ ?_, isQuadratic_mul hχ⟩
+  rw [DirichletCharacter.mul] at hχψ
+  have hlift : (changeLevel (Nat.dvd_lcm_right M N) ψ).IsQuadratic := by
+    rw [← inv_mul_cancel_left (changeLevel (Nat.dvd_lcm_left M N) χ)
+      (changeLevel (Nat.dvd_lcm_right M N) ψ), (hχ.changeLevel _).inv]
+    exact (hχ.changeLevel _).mul hχψ
+  rcases eq_or_ne N 0 with rfl | hN
+  · simpa [← changeLevel_trans] using hlift.changeLevel (dvd_zero (M.lcm 0))
+  · have : NeZero (M.lcm N) := ⟨Nat.lcm_ne_zero (NeZero.ne M) hN⟩
+    exact (isQuadratic_changeLevel_iff (Nat.dvd_lcm_right M N)).mp hlift
 
 /-- The primitive character of a quadratic Dirichlet character at a nonzero level is quadratic:
 its values at units are values of `χ` at units lifting them. -/

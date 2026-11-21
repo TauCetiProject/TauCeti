@@ -228,7 +228,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   have hS (p : ι × Bool) : (S p).IsSymmetric := by
     rw [isSymmetric_iff_isSelfAdjoint]
     rcases p with ⟨i, _ | _⟩
-    exacts [(ℜ (T i)).2, (ℑ (T i)).2]
+    exacts [(ℜ (T i)).property, (ℑ (T i)).property]
   have hSC : Pairwise (Commute on S) := by
     rintro ⟨i, a⟩ ⟨j, b⟩ -
     have := hT i
@@ -249,8 +249,8 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   let χ : Fin (finrank ℂ E) → J := fun j =>
     hVJ.subordinateOrthonormalBasisIndex rfl j hOJ
   let e : κ ≃ Fin (finrank ℂ E) := Fintype.equivFinOfCardEq hκ
-  refine ⟨b.reindex e.symm, fun i j => (χ (e j)).1 (i, false) +
-    Complex.I * (χ (e j)).1 (i, true), fun i j => ?_⟩
+  refine ⟨b.reindex e.symm, fun i j => (χ (e j)).val (i, false) +
+    Complex.I * (χ (e j)).val (i, true), fun i j => ?_⟩
   have hmem := hVJ.subordinateOrthonormalBasis_subordinate rfl (e j) hOJ
   rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm]
   exact (T i).apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart

@@ -144,7 +144,7 @@ instance isIntegrallyClosed {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrall
   refine (isIntegrallyClosed_iff (FractionRing (AddMonoidAlgebra R G))).mpr
     fun {z} ⟨p, hp, hpz⟩ ↦ ?_
   obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors (AddMonoidAlgebra R G)) z
-  have hs := a.coeff.support.finite_toSet.union b.1.coeff.support.finite_toSet
+  have hs := a.coeff.support.finite_toSet.union b.val.coeff.support.finite_toSet
   obtain ⟨H, hH, hsH, p₀, hp₀⟩ :=
     hs.exists_fg_addSubgroup_subset_exists_map_mapDomainRingHom_eq p
   have : H.FG := hH
@@ -154,10 +154,10 @@ instance isIntegrallyClosed {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrall
   have hp₀_monic : p₀.Monic := Polynomial.monic_of_injective hj (hp₀.symm ▸ hp)
   obtain ⟨a₀, ha₀⟩ : a ∈ Set.range j :=
     (mem_range_mapDomain_iff a).mpr fun g hg ↦ ⟨⟨g, hsH (.inl hg)⟩, rfl⟩
-  obtain ⟨b₀, hb₀⟩ : b.1 ∈ Set.range j :=
-    (mem_range_mapDomain_iff b.1).mpr fun g hg ↦ ⟨⟨g, hsH (.inr hg)⟩, rfl⟩
+  obtain ⟨b₀, hb₀⟩ : b.val ∈ Set.range j :=
+    (mem_range_mapDomain_iff b.val).mpr fun g hg ↦ ⟨⟨g, hsH (.inr hg)⟩, rfl⟩
   have hb₀_nzd : b₀ ∈ nonZeroDivisors (AddMonoidAlgebra R H) :=
-    mem_nonZeroDivisors_of_injective hj (hb₀.symm ▸ b.2)
+    mem_nonZeroDivisors_of_injective hj (hb₀.symm ▸ b.property)
   have hnzd := nonZeroDivisors_le_comap_nonZeroDivisors_of_injective j hj
   let f : FractionRing (AddMonoidAlgebra R H) →+* FractionRing (AddMonoidAlgebra R G) :=
     IsLocalization.map _ j hnzd

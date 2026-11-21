@@ -10,8 +10,6 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
-import Mathlib.Tactic
-
 /-!
 # Verma modules of `U_q(sl₂)`
 
@@ -27,12 +25,14 @@ Writing `v_j = F^j v₀`, the action of the generators is
 * `K v_j = q^(-2j) μ v_j` and `K⁻¹ v_j = q^(2j) μ⁻¹ v_j`,
 * `E v₀ = 0` and `E v_(j + 1) = [j + 1]_q (q^(-j) μ - q^j μ⁻¹) / (q - q⁻¹) v_j`,
 
-where `[r]_q` is the symmetric quantum integer. When `q` and `μ` are nonzero, the vectors `v_j`
-form a basis of `M(μ)`.
+where `[r]_q` is the symmetric quantum integer. At `q = ±1` the quotient by `q - q⁻¹` in the last
+formula is Lean's `x / 0 = 0`; the formula still holds there, because `E` and `F` commute in
+`UqSl2 (±1)`. When `q` and `μ` are nonzero, the vectors `v_j` form a basis of `M(μ)`.
 
-The coefficient of `E` shows where `M(μ)` acquires singular vectors: at a generic parameter,
-`E v_(j + 1) = 0` exactly when `μ² = q^(2j)`, that is, when `μ = ± q^j` is the highest weight of
-one of the signed simple modules `L_j^±`. In that case `v_(j + 1)` is a vector of weight
+The coefficient of `E` shows where `M(μ)` acquires singular vectors: at a generic parameter and
+for nonzero `μ` (for `μ = 0` the module `M(0)` is zero, since `K` is a unit and `K - 0` lies in
+the ideal), `E v_(j + 1) = 0` exactly when `μ² = q^(2j)`, that is, when `μ = ± q^j` is the highest
+weight of one of the signed simple modules `L_j^±`. In that case `v_(j + 1)` is a vector of weight
 `q^(-2(j + 1)) μ` killed by `E` inside `M(μ)`.
 
 ## Main definitions

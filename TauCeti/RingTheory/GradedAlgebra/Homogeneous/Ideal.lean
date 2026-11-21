@@ -143,7 +143,7 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
   refine sum_mem fun p _ ↦ ?_
   by_cases hp : p = 0
   · subst hp
-    exact (decompose 𝒜 (e i) 0).2
+    exact (decompose 𝒜 (e i) 0).property
   · rw [hvanish p hp]
     exact zero_mem _
 
@@ -159,10 +159,10 @@ theorem exists_sub_algebraMap_mem_irrelevant {R A : Type*} [CommSemiring R] [Com
     [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
     (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) (a : A) :
     ∃ c : R, a - algebraMap R A c ∈ irrelevant 𝒜 := by
-  obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ (decompose 𝒜 a 0).2)
+  obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ (decompose 𝒜 a 0).property)
   refine ⟨c, ?_⟩
   rw [mem_irrelevant_iff, map_sub, hc, GradedRing.proj_apply,
-    GradedRing.proj_apply, decompose_of_mem_same 𝒜 (decompose 𝒜 a 0).2, sub_self]
+    GradedRing.proj_apply, decompose_of_mem_same 𝒜 (decompose 𝒜 a 0).property, sub_self]
 
 /-- In a connected graded algebra the scalars map onto `A ⧸ A₊`: every element is its constant
 term modulo `A₊`. -/

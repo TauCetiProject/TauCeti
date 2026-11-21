@@ -56,7 +56,7 @@ theorem _root_.TangentSpace.exists_smooth_initialData (u w : TangentSpace I p) :
       (∀ᶠ q in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent ∞ σ q) ∧
       curveVelocity I (fun q ↦ (σ q).proj) 0 = u ∧
       alongCurve (leviCivitaConnection I M) (fun q ↦ (σ q).proj)
-        (fun q ↦ (σ q).2) 0 = w := by
+        (fun q ↦ (σ q).snd) 0 = w := by
   let γ := maximalGeodesic I M p u
   let S := geodesicInterval I M p u
   have hS : S ∈ 𝓝 0 := isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval
