@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.Dyadic
-public import TauCeti.MeasureTheory.Function.ConditionalExpectation.CondexpLp
+public import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Module.Bases.Basic
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -23,11 +22,11 @@ cell numbered `n` in breadth-first order, and to `0` elsewhere. Writing `n = 2 ^
 cells numbered `2 * n` and `2 * n + 1` (see `TauCeti.unitInterval.dyadicCell`). So the functions
 are ordered by increasing dyadic level, and from left to right within a level.
 
-For real or complex scalars `𝕜` and `1 ≤ p < ∞`, the Haar system is a Schauder basis of `Lᵖ(I; 𝕜)`.
-Its initial projections are the dyadic averaging projections `dyadicProj 𝕜 p N`: for `0 < N` this
-is conditional expectation with respect to `dyadicFiltration N`, the σ-algebra whose atoms are the
-`N` dyadic cells numbered `N, …, 2 * N - 1`, so it replaces a function on each atom by its average
-there. These projections are contractions, compose by
+For `1 ≤ p < ∞` and `𝕜` equal to `ℝ` or `ℂ` (`[RCLike 𝕜]`), the Haar system is a Schauder basis
+of `Lᵖ(I; 𝕜)`. Its initial projections are the dyadic averaging projections `dyadicProj 𝕜 p N`:
+for `0 < N` this is conditional expectation with respect to `dyadicFiltration N`, the σ-algebra
+whose atoms are the `N` dyadic cells numbered `N, …, 2 * N - 1`, so it replaces a function on each
+atom by its average there. These projections are contractions, compose by
 `dyadicProj 𝕜 p n ∘ dyadicProj 𝕜 p m = dyadicProj 𝕜 p (min n m)`, and converge strongly to the
 identity by the martingale convergence theorem. The basis is assembled from them by Mathlib's
 `SchauderBasis.RankOneDecomposition`: `dyadicProj 𝕜 p N` has rank `N`, and `hₙ` spans the range of
@@ -40,17 +39,18 @@ The Haar functions are pairwise orthogonal in `L²(I)` with `∫ hₙ ^ 2 = 2 ^ 
 ## Main definitions
 
 * `TauCeti.unitInterval.haarFun n`: the `n`-th Haar function.
-* `TauCeti.unitInterval.dyadicProj 𝕜 p N`: the dyadic averaging projection of rank `N` on
-  `Lᵖ(I; 𝕜)`.
+* `TauCeti.unitInterval.dyadicProj 𝕜 p N`: the rank-`N` dyadic averaging projection on `Lᵖ(I; 𝕜)`.
 * `TauCeti.unitInterval.haarBasis 𝕜 p hp`: the Haar basis of `Lᵖ(I; 𝕜)`, `1 ≤ p < ∞`.
 
 ## Main results
 
+* `TauCeti.unitInterval.haarFun_eq_of_mem_dyadicCell`: for `k < N`, `hₖ` is constant on the dyadic
+  cell numbered `N`.
+* `TauCeti.unitInterval.integral_haarFun_sq` and
+  `TauCeti.unitInterval.integral_haarFun_mul_of_ne`: `L²` norms and orthogonality of Haar
+  functions on `I`.
 * `TauCeti.unitInterval.condExp_haarFun`: `hₙ` has conditional expectation zero given
   `dyadicFiltration n`, for `0 < n`.
-* `TauCeti.unitInterval.integral_haarFun_sq` and
-  `TauCeti.unitInterval.integral_haarFun_mul_haarFun`: orthogonality and `L²` norms of the Haar
-  functions.
 * `TauCeti.unitInterval.dyadicProj_eq_sum`: the projections average over the dyadic atoms.
 * `TauCeti.unitInterval.dyadicProj_dyadicProj`: the composition law of the projections.
 * `TauCeti.unitInterval.tendsto_dyadicProj`: the projections converge strongly to the identity.
@@ -70,7 +70,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter
+open MeasureTheory Filter TauCeti.MeasureTheory
 
 open scoped ENNReal Topology unitInterval
 
@@ -84,10 +84,13 @@ two halves of the cell numbered `n`, and to `0` elsewhere. -/
 def haarFun (n : ℕ) (x : I) : ℝ :=
   if n = 0 then 1 else (dyadicCell (2 * n)).indicator 1 x - (dyadicCell (2 * n + 1)).indicator 1 x
 
+/-- The zeroth Haar function is the constant function `1`. -/
 @[simp]
 theorem haarFun_zero : haarFun 0 = 1 :=
   funext fun _ => ite_eq_left rfl
 
+/-- For `n ≠ 0`, `haarFun n` is the difference of the indicators of the two halves of
+`dyadicCell n`. -/
 theorem haarFun_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     haarFun n = (dyadicCell (2 * n)).indicator 1 - (dyadicCell (2 * n + 1)).indicator 1 :=
   funext fun _ => ite_eq_right hn
@@ -119,6 +122,26 @@ theorem norm_haarFun_le (n : ℕ) (x : I) : ‖haarFun n x‖ ≤ 1 := by
     simp only [Set.indicator, Pi.one_apply]
     split_ifs <;> norm_num
 
+/-- For `k < N`, the Haar function `hₖ` is constant on the dyadic cell numbered `N`. -/
+theorem haarFun_eq_of_mem_dyadicCell {k N : ℕ} (hk : k < N) {x y : I}
+    (hx : x ∈ dyadicCell N) (hy : y ∈ dyadicCell N) :
+    haarFun k x = haarFun k y := by
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp
+  have hN : N ∈ Set.Ico N (2 * N) := ⟨le_rfl, by omega⟩
+  have hxy : dyadicAtom N x = dyadicAtom N y :=
+    ((dyadicAtom_eq_iff hN).2 hx).trans ((dyadicAtom_eq_iff hN).2 hy).symm
+  have hmem (m : ℕ) (hm : m < 2 * N) : x ∈ dyadicCell m ↔ y ∈ dyadicCell m := by
+    refine ⟨fun h => ?_, fun h => ?_⟩
+    · rw [mem_dyadicCell] at h ⊢
+      rw [dyadicNum_eq_of_dyadicAtom_eq hxy.symm (h.trans_lt hm), h]
+    · rw [mem_dyadicCell] at h ⊢
+      rw [dyadicNum_eq_of_dyadicAtom_eq hxy (h.trans_lt hm), h]
+  classical
+  simp only [haarFun_of_ne_zero hk0, Pi.sub_apply, Set.indicator, Pi.one_apply]
+  exact congrArg₂ _ (if_congr (hmem (2 * k) (by omega)) rfl rfl)
+    (if_congr (hmem (2 * k + 1) (by omega)) rfl rfl)
+
 /-- The Haar function `hₙ` is measurable for the dyadic filtration at step `n + 1`. -/
 theorem measurable_haarFun_dyadicFiltration (n : ℕ) :
     Measurable[dyadicFiltration (n + 1)] (haarFun n) := by
@@ -129,6 +152,7 @@ theorem measurable_haarFun_dyadicFiltration (n : ℕ) :
     exact (measurable_const.indicator (measurableSet_dyadicFiltration_dyadicCell (by omega))).sub
       (measurable_const.indicator (measurableSet_dyadicFiltration_dyadicCell (by omega)))
 
+/-- Each Haar function is measurable on the unit interval. -/
 @[fun_prop]
 theorem measurable_haarFun (n : ℕ) : Measurable (haarFun n) :=
   (measurable_haarFun_dyadicFiltration n).mono (dyadicFiltration.le _) le_rfl
@@ -138,34 +162,12 @@ theorem memLp_haarFun (p : ℝ≥0∞) (n : ℕ) : MemLp (haarFun n) p :=
   MemLp.of_bound (measurable_haarFun n).aestronglyMeasurable 1
     (ae_of_all _ (norm_haarFun_le n))
 
-/-- The scalar-cast Haar functions lie in every `Lᵖ(I; 𝕜)`. -/
+/-- Viewed as a `𝕜`-valued function, each Haar function lies in every `Lᵖ(I; 𝕜)`. -/
 theorem memLp_ofReal_haarFun (𝕜 : Type*) [RCLike 𝕜] (p : ℝ≥0∞) (n : ℕ) :
     MemLp (fun x => (haarFun n x : 𝕜)) p :=
   MemLp.of_bound
     (RCLike.continuous_ofReal.measurable.comp (measurable_haarFun n)).aestronglyMeasurable
-    1 (ae_of_all _ fun x => by simpa [RCLike.norm_ofReal] using norm_haarFun_le n x)
-
-/-- For `n < N`, the Haar function `hₙ` is constant on each atom of `dyadicFiltration N`. -/
-theorem haarFun_eq_of_dyadicAtom_eq {N n : ℕ} (hn : n < N) {x y : I}
-    (h : dyadicAtom N x = dyadicAtom N y) : haarFun n x = haarFun n y := by
-  rcases eq_or_ne n 0 with rfl | hn0
-  · simp
-  · have hmem {m : ℕ} (hm : m < 2 * N) : x ∈ dyadicCell m ↔ y ∈ dyadicCell m := by
-      refine ⟨fun hx => ?_, fun hy => ?_⟩
-      · rw [mem_dyadicCell] at hx ⊢
-        rw [dyadicNum_eq_of_dyadicAtom_eq h.symm (hx.symm ▸ hm), hx]
-      · rw [mem_dyadicCell] at hy ⊢
-        rw [dyadicNum_eq_of_dyadicAtom_eq h (hy.symm ▸ hm), hy]
-    classical
-    have h1 := hmem (m := 2 * n) (by omega)
-    have h2 := hmem (m := 2 * n + 1) (by omega)
-    simp [haarFun_of_ne_zero hn0, Set.indicator, h1, h2]
-
-/-- For `n < N` and `m ∈ [N, 2 * N)`, the Haar function `hₙ` is constant on `dyadicCell m`. -/
-theorem haarFun_eq_of_mem_dyadicCell {N n m : ℕ} (hn : n < N) (hm : m ∈ Set.Ico N (2 * N))
-    {x y : I} (hx : x ∈ dyadicCell m) (hy : y ∈ dyadicCell m) : haarFun n x = haarFun n y :=
-  haarFun_eq_of_dyadicAtom_eq hn
-    (((dyadicAtom_eq_iff hm).2 hx).trans ((dyadicAtom_eq_iff hm).2 hy).symm)
+    1 (ae_of_all _ fun x => by simpa using norm_haarFun_le n x)
 
 /-- For `0 < n`, the square of the Haar function `hₙ` is the indicator of `dyadicCell n`. -/
 theorem haarFun_sq_eq_indicator {n : ℕ} (hn : 0 < n) :
@@ -196,24 +198,27 @@ theorem integral_haarFun_sq (n : ℕ) :
   · rw [haarFun_sq_eq_indicator hn, integral_indicator_one (measurableSet_dyadicCell n),
       measureReal_def, volume_dyadicCell hn, ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
-/-- Distinct Haar functions are orthogonal in `L²(I)`. -/
-theorem integral_haarFun_mul_haarFun {m n : ℕ} (hmn : m ≠ n) :
+/-- Distinct Haar functions are orthogonal on the unit interval. -/
+theorem integral_haarFun_mul_of_ne {m n : ℕ} (hmn : m ≠ n) :
     ∫ x, haarFun m x * haarFun n x = 0 := by
-  -- Reduce by symmetry to `m < n`, where `hₘ` is constant on the support `dyadicCell n` of `hₙ`.
-  suffices ∀ {a b : ℕ}, a < b → ∫ x, haarFun a x * haarFun b x = 0 by
-    rcases lt_or_gt_of_ne hmn with h | h
-    · exact this h
-    · simpa only [mul_comm] using this h
-  intro a b hab
-  have hb : 0 < b := Nat.zero_lt_of_lt hab
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := dyadicCell b) fun x hx => by
-    rw [haarFun_eq_zero hb hx, mul_zero]]
-  rcases (dyadicCell b).eq_empty_or_nonempty with hemp | ⟨x₀, hx₀⟩
-  · simp [hemp]
-  · rw [setIntegral_congr_fun (measurableSet_dyadicCell b) fun x hx => by
-      rw [haarFun_eq_of_mem_dyadicCell hab ⟨le_rfl, by omega⟩ hx hx₀],
-      integral_const_mul, setIntegral_eq_integral_of_forall_compl_eq_zero
-        fun x hx => haarFun_eq_zero hb hx, integral_haarFun hb, mul_zero]
+  have key {a b : ℕ} (hab : a < b) : ∫ x, haarFun a x * haarFun b x = 0 := by
+    have hb : 0 < b := by omega
+    obtain ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero (μ := (volume : Measure I)) (s := dyadicCell b)
+      (by rw [volume_dyadicCell hb]; exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _))
+    calc ∫ x, haarFun a x * haarFun b x
+        = ∫ x in dyadicCell b, haarFun a x * haarFun b x :=
+          (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+            simp [haarFun_eq_zero hb hx]).symm
+      _ = ∫ x in dyadicCell b, haarFun a x₀ * haarFun b x :=
+          setIntegral_congr_fun (measurableSet_dyadicCell b) fun x hx => by
+            rw [haarFun_eq_of_mem_dyadicCell hab hx hx₀]
+      _ = haarFun a x₀ * ∫ x in dyadicCell b, haarFun b x := integral_const_mul _ _
+      _ = haarFun a x₀ * ∫ x, haarFun b x := by
+          rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => haarFun_eq_zero hb hx]
+      _ = 0 := by rw [integral_haarFun hb, mul_zero]
+  rcases hmn.lt_or_gt with h | h
+  · exact key h
+  · simpa only [mul_comm (haarFun m _)] using key h
 
 /-- **The Haar functions are martingale differences.** For `0 < n`, the Haar function `hₙ` has
 conditional expectation zero given the dyadic filtration at step `n`: it is supported in the atom
@@ -222,9 +227,9 @@ theorem condExp_haarFun {n : ℕ} (hn : 0 < n) :
     volume[haarFun n | dyadicFiltration n] =ᵐ[volume] 0 := by
   have hmem : n ∈ Set.Ico n (2 * n) := ⟨le_rfl, by omega⟩
   rw [dyadicFiltration_eq_comap_dyadicAtom]
-  refine (TauCeti.MeasureTheory.ae_eq_condExp_of_forall_setIntegral_fiber_eq
-    (measurable_dyadicAtom n) ((memLp_haarFun 1 n).integrable le_rfl) (integrable_zero _ _ _)
-    aestronglyMeasurable_zero fun j => ?_).symm
+  refine (ae_eq_condExp_of_forall_setIntegral_fiber_eq (measurable_dyadicAtom n)
+    ((memLp_haarFun 1 n).integrable le_rfl) (integrable_zero _ _ _) aestronglyMeasurable_zero
+    fun j => ?_).symm
   rw [Pi.zero_def, integral_zero]
   by_cases hj : j = n
   · subst hj
@@ -233,18 +238,14 @@ theorem condExp_haarFun {n : ℕ} (hn : 0 < n) :
   · exact (setIntegral_eq_zero_of_forall_eq_zero fun x (hx : dyadicAtom n x = j) =>
       haarFun_eq_zero hn fun hc => hj (hx.symm.trans ((dyadicAtom_eq_iff hmem).2 hc))).symm
 
-/-- For `0 < n` and real or complex scalars `𝕜`, the `𝕜`-valued Haar function `hₙ` has conditional
-expectation zero given the dyadic filtration at step `n`. -/
+/-- Viewed as a `𝕜`-valued function, `hₙ` (`0 < n`) has conditional expectation zero given
+`dyadicFiltration n`. -/
 theorem condExp_ofReal_haarFun (𝕜 : Type*) [RCLike 𝕜] {n : ℕ} (hn : 0 < n) :
     volume[fun x => (haarFun n x : 𝕜) | dyadicFiltration n] =ᵐ[volume] 0 := by
-  have hcomm := (RCLike.ofRealCLM (K := 𝕜)).comp_condExp_comm
-    (m := dyadicFiltration n) ((memLp_haarFun 1 n).integrable le_rfl)
-  have hcongr : volume[fun x => (haarFun n x : 𝕜) | dyadicFiltration n] =ᵐ[volume]
-      volume[(RCLike.ofRealCLM (K := 𝕜)) ∘ haarFun n | dyadicFiltration n] :=
-    condExp_congr_ae (ae_of_all _ fun _ => rfl)
-  filter_upwards [hcongr, hcomm, condExp_haarFun hn] with x h1 h2 h0
-  rw [h1, ← h2]
-  simp [Function.comp_apply, RCLike.ofRealCLM_apply, h0]
+  refine ((RCLike.ofRealCLM (K := 𝕜)).comp_condExp_comm
+    ((memLp_haarFun 1 n).integrable le_rfl)).symm.trans ?_
+  filter_upwards [condExp_haarFun hn] with x hx
+  simp [hx]
 
 /-! ### The dyadic averaging projections -/
 
@@ -255,22 +256,27 @@ conditional expectation with respect to `dyadicFiltration N`, which averages a f
 of the `N` dyadic cells numbered `N, …, 2 * N - 1`. These are the initial projections of the Haar
 basis (`haarBasis_proj`). -/
 def dyadicProj (N : ℕ) : Lp 𝕜 p (volume : Measure I) →L[𝕜] Lp 𝕜 p (volume : Measure I) :=
-  if N = 0 then 0 else condExpLpCLM 𝕜 p (dyadicFiltration N) volume
+  if N = 0 then 0 else condExpLp 𝕜 (dyadicFiltration N) p volume
 
+/-- The dyadic averaging projection of rank `0` is `0`. -/
 @[simp]
 theorem dyadicProj_zero : dyadicProj 𝕜 p 0 = 0 :=
   ite_eq_left rfl
 
+/-- For `N ≠ 0`, `dyadicProj 𝕜 p N` is conditional expectation on `Lᵖ` given
+`dyadicFiltration N`. -/
 theorem dyadicProj_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
-    dyadicProj 𝕜 p N = condExpLpCLM 𝕜 p (dyadicFiltration N) volume :=
+    dyadicProj 𝕜 p N = condExpLp 𝕜 (dyadicFiltration N) p volume :=
   ite_eq_right hN
 
 variable {𝕜 p}
 
+/-- For `N ≠ 0`, `dyadicProj 𝕜 p N f` agrees a.e. with the conditional expectation of `f` given
+`dyadicFiltration N`. -/
 theorem dyadicProj_ae_eq {N : ℕ} (hN : N ≠ 0) (f : Lp 𝕜 p (volume : Measure I)) :
     dyadicProj 𝕜 p N f =ᵐ[volume] volume[f | dyadicFiltration N] := by
   rw [dyadicProj_of_ne_zero 𝕜 p hN]
-  exact coeFn_condExpLpCLM f
+  exact condExpLp_ae_eq f
 
 /-- For `N ≠ 0`, the dyadic averaging projection of `f` is a.e. the conditional expectation of any
 a.e. representative `g` of `f`. -/
@@ -285,7 +291,7 @@ theorem norm_dyadicProj_le (N : ℕ) : ‖dyadicProj 𝕜 p N‖ ≤ 1 := by
   rcases eq_or_ne N 0 with rfl | hN
   · simp
   · rw [dyadicProj_of_ne_zero 𝕜 p hN]
-    exact norm_condExpLpCLM_le
+    exact norm_condExpLp_le 𝕜 _ p volume
 
 variable (𝕜 p) in
 /-- **The composition law of the dyadic averaging projections.** -/
@@ -328,19 +334,20 @@ theorem tendsto_dyadicProj (hp : p ≠ ∞) (f : Lp 𝕜 p (volume : Measure I))
 
 /-- The Haar function `hₙ` is fixed by the dyadic averaging projection of rank `n + 1`. -/
 private theorem dyadicProj_succ_haarFun (n : ℕ) :
-    dyadicProj 𝕜 p (n + 1) ((memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜)) =
-      (memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜) := by
-  have hmeas : Measurable[dyadicFiltration (n + 1)] fun x => (haarFun n x : 𝕜) :=
-    RCLike.continuous_ofReal.measurable.comp (measurable_haarFun_dyadicFiltration n)
+    dyadicProj 𝕜 p (n + 1) ((memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜))) =
+      (memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜)) := by
   refine Lp.ext
     ((dyadicProj_ae_eq_of_ae_eq n.succ_ne_zero (memLp_ofReal_haarFun 𝕜 p n).coeFn_toLp).trans ?_)
-  rw [condExp_of_stronglyMeasurable (dyadicFiltration.le _) hmeas.stronglyMeasurable
+  have hmeas : StronglyMeasurable[dyadicFiltration (n + 1)] (fun x => (haarFun n x : 𝕜)) :=
+    RCLike.continuous_ofReal.comp_stronglyMeasurable
+      (measurable_haarFun_dyadicFiltration n).stronglyMeasurable
+  rw [condExp_of_stronglyMeasurable (dyadicFiltration.le _) hmeas
     ((memLp_ofReal_haarFun 𝕜 1 n).integrable le_rfl)]
   exact (memLp_ofReal_haarFun 𝕜 p n).coeFn_toLp.symm
 
 /-- The Haar function `hₙ` is annihilated by the dyadic averaging projection of rank `n`. -/
 private theorem dyadicProj_haarFun_self (n : ℕ) :
-    dyadicProj 𝕜 p n ((memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜)) = 0 := by
+    dyadicProj 𝕜 p n ((memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜))) = 0 := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   exact Lp.ext (((dyadicProj_ae_eq_of_ae_eq hn.ne' (memLp_ofReal_haarFun 𝕜 p n).coeFn_toLp).trans
@@ -349,18 +356,18 @@ private theorem dyadicProj_haarFun_self (n : ℕ) :
 /-- The Haar function `hₙ` is fixed by the dyadic averaging projections of rank above `n`, and
 annihilated by the others. -/
 private theorem dyadicProj_haarFun (N n : ℕ) :
-    dyadicProj 𝕜 p N ((memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜)) =
-      if n < N then (memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜) else 0 := by
+    dyadicProj 𝕜 p N ((memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜))) =
+      if n < N then (memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜)) else 0 := by
   split_ifs with h
   · rw [← dyadicProj_succ_haarFun n, dyadicProj_dyadicProj, min_eq_right (by omega)]
-  · calc dyadicProj 𝕜 p N ((memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜))
+  · calc dyadicProj 𝕜 p N ((memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜)))
         = dyadicProj 𝕜 p (min N n)
-            ((memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜)) := by
+            ((memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜))) := by
           rw [min_eq_left (by omega)]
       _ = 0 := by rw [← dyadicProj_dyadicProj, dyadicProj_haarFun_self, map_zero]
 
 omit [Fact (1 ≤ p)] in
-private theorem ofReal_haarFun_toLp_ne_zero (n : ℕ) :
+private theorem haarFun_toLp_ne_zero (n : ℕ) :
     (memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜)) ≠ 0 := by
   intro h
   have h0 : (fun x => (haarFun n x : 𝕜)) =ᵐ[volume] 0 :=
@@ -374,18 +381,19 @@ private theorem ofReal_haarFun_toLp_ne_zero (n : ℕ) :
     rw [volume_dyadicCell (by omega)] at hnull
     exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _) hnull
 
-private theorem linearIndependent_ofReal_haarFun_toLp (N : ℕ) :
+private theorem linearIndependent_haarFun_toLp (N : ℕ) :
     LinearIndependent 𝕜 fun i : Fin N =>
-      (memLp_ofReal_haarFun 𝕜 p i).toLp fun x => (haarFun i x : 𝕜) := by
+      (memLp_ofReal_haarFun 𝕜 p i).toLp (fun x => (haarFun i x : 𝕜)) := by
   refine linearIndependent_iff'.2 fun s g hg i hi => ?_
   -- Apply `dyadicProj 𝕜 p (i + 1) - dyadicProj 𝕜 p i`, which keeps exactly the `i`-th term.
   have h := congrArg (dyadicProj 𝕜 p (i + 1) - dyadicProj 𝕜 p i) hg
-  simp only [map_sum, map_smul, map_zero, sub_apply, dyadicProj_haarFun] at h
+  simp only [map_sum, map_smul, map_zero, sub_apply, dyadicProj_haarFun]
+    at h
   rw [Finset.sum_eq_single_of_mem i hi fun j _ hji => by
     have := Fin.val_ne_of_ne hji
     split_ifs <;> first | omega | simp] at h
   rw [ite_eq_left (by omega), ite_eq_right (by omega), sub_zero] at h
-  exact (smul_eq_zero.1 h).resolve_right (ofReal_haarFun_toLp_ne_zero i)
+  exact (smul_eq_zero.1 h).resolve_right (haarFun_toLp_ne_zero i)
 
 /-- **The dyadic averaging projections average over the atoms.** For `0 < N`, the projection
 `dyadicProj 𝕜 p N f` is the step function equal on each dyadic cell numbered `N, …, 2 * N - 1` to
@@ -433,33 +441,34 @@ theorem finrank_range_dyadicProj (N : ℕ) :
     ((finrank_span_finset_le_card _).trans
       (Finset.card_image_le.trans (by rw [Nat.card_Ico]; omega)))) ?_
   have hli : LinearIndependent 𝕜 fun i : Fin N =>
-      (⟨(memLp_ofReal_haarFun 𝕜 p i).toLp fun x => (haarFun i x : 𝕜), _, by
-        rw [ContinuousLinearMap.coe_coe, dyadicProj_haarFun, ite_eq_left i.2]⟩ : R) :=
-    LinearIndependent.of_comp R.subtype (linearIndependent_ofReal_haarFun_toLp N)
+      (⟨(memLp_ofReal_haarFun 𝕜 p i).toLp (fun x => (haarFun i x : 𝕜)), _, by
+        rw [ContinuousLinearMap.coe_coe, dyadicProj_haarFun, ite_eq_left i.isLt]⟩ : R) :=
+    LinearIndependent.of_comp R.subtype (linearIndependent_haarFun_toLp N)
   simpa using hli.fintype_card_le_finrank
 
 /-! ### The Haar basis -/
 
 variable (𝕜 p) in
-/-- **The Haar basis of `Lᵖ([0, 1])`**, `1 ≤ p < ∞`: over real or complex scalars `𝕜`, the Haar
-functions `haarFun n`, in their breadth-first order, form a Schauder basis of `Lᵖ(I; 𝕜)` whose
-initial projections are the dyadic averaging projections (`haarBasis_proj`). -/
+/-- **The Haar basis of `Lᵖ([0, 1]; 𝕜)`**, `1 ≤ p < ∞`: the Haar functions `haarFun n`, in their
+breadth-first order, form a Schauder basis of `Lᵖ(I; 𝕜)` whose initial projections are the dyadic
+averaging projections (`haarBasis_proj`). -/
 def haarBasis (hp : p ≠ ∞) : SchauderBasis 𝕜 (Lp 𝕜 p (volume : Measure I)) :=
   SchauderBasis.RankOneDecomposition.basis
     { P := dyadicProj 𝕜 p
-      e n := (memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜)
+      e n := (memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜))
       proj_zero := dyadicProj_zero 𝕜 p
       finrank_range := finrank_range_dyadicProj 𝕜 p
       proj_comp := dyadicProj_dyadicProj 𝕜 p
       proj_tendsto := tendsto_dyadicProj hp
-      e_mem_range n := ⟨(memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜), by
+      e_mem_range n := ⟨(memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜)), by
         rw [ContinuousLinearMap.coe_coe, SchauderBasis.succSub, sub_apply,
           dyadicProj_succ_haarFun, dyadicProj_haarFun_self, sub_zero]⟩
-      e_ne_zero := ofReal_haarFun_toLp_ne_zero }
+      e_ne_zero := haarFun_toLp_ne_zero }
 
+/-- The `n`-th vector of `haarBasis` is the `Lᵖ` class of `haarFun n`. -/
 @[simp]
 theorem haarBasis_apply (hp : p ≠ ∞) (n : ℕ) :
-    haarBasis 𝕜 p hp n = (memLp_ofReal_haarFun 𝕜 p n).toLp fun x => (haarFun n x : 𝕜) :=
+    haarBasis 𝕜 p hp n = (memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜)) :=
   congrFun (SchauderBasis.RankOneDecomposition.basis_coe _) n
 
 /-- The `n`-th vector of the Haar basis is a.e. the Haar function `hₙ`. -/
@@ -518,7 +527,7 @@ theorem haarBasis_coord (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume : Meas
       simp only [Pi.single_eq_same, ← sq, integral_haarFun_sq, RCLike.ofReal_inv,
         RCLike.ofReal_natCast]
       exact (mul_inv_cancel₀ (Nat.cast_ne_zero.2 (Nat.two_pow_pos _).ne')).symm
-    · simp [hnm, integral_haarFun_mul_haarFun hnm]
+    · simp [hnm, integral_haarFun_mul_of_ne hnm]
   exact congrArg (fun φ => φ f) hΛ
 
 end TauCeti.unitInterval

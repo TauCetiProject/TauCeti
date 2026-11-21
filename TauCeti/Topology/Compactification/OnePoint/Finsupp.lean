@@ -88,12 +88,12 @@ noncomputable def finsuppLinearEquivKerEvalInfty :
   toFun g := ⟨continuousMapOfFinsupp g, by simp⟩
   map_add' g₁ g₂ := by ext x; induction x using OnePoint.rec <;> simp
   map_smul' c g := by ext x; induction x using OnePoint.rec <;> simp
-  invFun f := Finsupp.ofSupportFinite (fun s ↦ f.1 s) <| by
-    have h : f.1 ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
-    simpa [h, Function.support] using finite_setOf_apply_coe_ne_apply_infty f.1
+  invFun f := Finsupp.ofSupportFinite (fun s ↦ f.val s) <| by
+    have h : f.val ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
+    simpa [h, Function.support] using finite_setOf_apply_coe_ne_apply_infty f.val
   left_inv g := by ext; simp
   right_inv f := by
-    have h : f.1 ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
+    have h : f.val ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
     ext x
     induction x using OnePoint.rec <;> simp [h]
 

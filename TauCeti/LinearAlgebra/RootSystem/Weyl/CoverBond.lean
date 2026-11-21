@@ -208,7 +208,7 @@ theorem reflectionBond_smul_simple_mul_smul (i : b.support) (x : P.weylGroup) :
     P.reflectionBond b (x • lam) (((weylCoxeterSystem P b).simple i * x) • lam) =
       -P.coroot' i (x • lam) := by
   rw [simple_mul_smul_eq_reflection]
-  exact reflectionBond_reflection (b.isPos_of_mem_support i.2) _
+  exact reflectionBond_reflection (b.isPos_of_mem_support i.property) _
 
 /-- **The bond of `sᵢ λ` and `λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `⟨λ, αᵢ^∨⟩ ≠ 0`
 this is the bond of the cover `1 ⋖ sᵢ` of `W / W_λ`; otherwise `sᵢ λ = λ` and both sides vanish. -/
@@ -252,7 +252,7 @@ theorem reflectionBond_simple_mul_smul_simple_mul_smul (hlam : lam ∈ dominantC
   have hne' : P.reflection i (y • lam) ≠ P.reflection i (x • lam) :=
     fun h' ↦ hxy ((P.reflection i).injective h')
   rw [simple_mul_smul_eq_reflection, simple_mul_smul_eq_reflection,
-    reflectionBond_eq_coroot' (hβ.reflectionPerm i.2 hβi) hγ hne', ← coroot'_reflection,
+    reflectionBond_eq_coroot' (hβ.reflectionPerm i.property hβi) hγ hne', ← coroot'_reflection,
     reflection_same, reflectionBond_eq_coroot' hβ hβx hxy]
 
 end

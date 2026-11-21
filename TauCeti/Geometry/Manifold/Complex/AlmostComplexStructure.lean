@@ -48,6 +48,11 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
+* `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
+  `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
+  pseudoholomorphic.
+* `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
+  commutes with the almost complex structures.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
   valued function is holomorphic at a point exactly when its real differential is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
@@ -195,6 +200,29 @@ theorem isPseudoholomorphic_ofComplexManifold_iff :
       MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, E') f :=
   isPseudoholomorphic_iff.trans (forall_congr' fun _ ↦ isPseudoholomorphicAt_ofComplexManifold_iff)
 
+/-- The inclusion of an open subset of a complex manifold is pseudoholomorphic. -/
+theorem isPseudoholomorphic_ofComplexManifold_subtype_val (U : TopologicalSpace.Opens M) :
+    IsPseudoholomorphic (ofComplexManifold E U) (ofComplexManifold E M) (Subtype.val : U → M) :=
+  isPseudoholomorphic_ofComplexManifold_iff.2
+    ((contMDiff_subtypeVal (n := 1)).mdifferentiable one_ne_zero)
+
+/-- The inclusion of an open subset of a complex manifold into a larger open subset is
+pseudoholomorphic. -/
+theorem isPseudoholomorphic_ofComplexManifold_inclusion {U V : TopologicalSpace.Opens M}
+    (h : U ≤ V) :
+    IsPseudoholomorphic (ofComplexManifold E U) (ofComplexManifold E V)
+      (TopologicalSpace.Opens.inclusion h) :=
+  isPseudoholomorphic_ofComplexManifold_iff.2
+    ((contMDiff_inclusion h (n := 1)).mdifferentiable one_ne_zero)
+
+/-- The real differential of a map between complex manifolds that is holomorphic at a point
+commutes there with their almost complex structures, multiplication by `i`. -/
+theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
+    (hf : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E') f x) (v : TangentSpace 𝓘(ℝ, E) x) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E') f x (ofComplexManifold E M x v) =
+      ofComplexManifold E' N (f x) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E') f x v) :=
+  (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
+
 end Pseudoholomorphic
 
 /-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
@@ -228,8 +256,8 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
   obtain ⟨y, hy, rfl⟩ : ∃ y ∈ (extChartAt 𝓘(ℝ, E) x).source, extChartAt 𝓘(ℝ, E) x y = z :=
     ⟨_, (extChartAt _ x).map_target hz, (extChartAt _ x).right_inv hz⟩
   rw [mpullbackWithin_extChartAt_symm_apply _ hy, mpullbackWithin_extChartAt_symm_apply _ hy,
-    TangentBundle.trivializationAt_apply_tangentCoordChange,
-    TangentBundle.trivializationAt_apply_tangentCoordChange]
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]

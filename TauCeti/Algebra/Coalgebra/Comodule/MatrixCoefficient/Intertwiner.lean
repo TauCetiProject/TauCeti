@@ -12,9 +12,10 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 # Intertwiners and coefficient matrices
 
 A linear map between finite free native comodules is colinear precisely when its scalar
-matrix intertwines the coefficient matrices. This permits matrix arguments about
-corepresentations to produce native comodule morphisms, without replacing coactions by
-matrix-only objects. The source and target bases may have different index types.
+matrix intertwines the coefficient matrices, allowing `TauCeti.Comodule.Hom.ofMatrix` to build
+native comodule morphisms directly from intertwining scalar matrices. This permits matrix
+arguments about corepresentations to produce native comodule morphisms, without replacing
+coactions by matrix-only objects. The source and target bases may have different index types.
 -/
 
 public section
@@ -81,5 +82,29 @@ theorem coefficientMatrix_mul_toMatrix (f : Hom R A M N) (b : Basis ι R M)
       (LinearMap.toMatrix b c f.toLinearMap).map (algebraMap R A) *
         coefficientMatrix (C := A) b :=
   (b.map_coact_iff_coefficientMatrix c f.toLinearMap).mp f.map_coact
+
+/-- Construct a native comodule morphism `M → N` from a scalar matrix intertwining the
+coefficient matrices of finite bases `b` and `c`. -/
+noncomputable def ofMatrix (b : Basis ι R M) (c : Basis κ R N) (X : Matrix κ ι R)
+    (hX : coefficientMatrix (C := A) c * X.map (algebraMap R A) =
+      X.map (algebraMap R A) * coefficientMatrix (C := A) b) :
+    Hom R A M N where
+  toLinearMap := Matrix.toLin b c X
+  map_coact := (b.map_coact_iff_coefficientMatrix c _).mpr (by
+    rwa [LinearMap.toMatrix_toLin])
+
+@[simp]
+theorem toLinearMap_ofMatrix (b : Basis ι R M) (c : Basis κ R N) (X : Matrix κ ι R)
+    (hX : coefficientMatrix (C := A) c * X.map (algebraMap R A) =
+      X.map (algebraMap R A) * coefficientMatrix (C := A) b) :
+    (ofMatrix b c X hX).toLinearMap = Matrix.toLin b c X :=
+  (rfl)
+
+@[simp]
+theorem ofMatrix_apply (b : Basis ι R M) (c : Basis κ R N) (X : Matrix κ ι R)
+    (hX : coefficientMatrix (C := A) c * X.map (algebraMap R A) =
+      X.map (algebraMap R A) * coefficientMatrix (C := A) b) (m : M) :
+    ofMatrix b c X hX m = Matrix.toLin b c X m :=
+  (rfl)
 
 end TauCeti.Comodule.Hom

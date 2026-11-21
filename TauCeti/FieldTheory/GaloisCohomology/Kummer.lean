@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RingTheory.Norm.Units
@@ -450,7 +451,7 @@ def kummerCoeffPow {m : ℕ} (h : m ∣ n) :
     KummerCoeff K n →+[AbsoluteGaloisGroup K] KummerCoeff K m where
   toFun x := Additive.ofMul ⟨(x.toMul : (SeparableClosure K)ˣ) ^ (n / m), by
     rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
-    exact (mem_rootsOfUnity _ _).1 x.toMul.2⟩
+    exact (mem_rootsOfUnity _ _).1 x.toMul.property⟩
   map_zero' := Additive.toMul.injective (Subtype.ext (by simp))
   map_add' x y := Additive.toMul.injective (Subtype.ext (by simp [mul_pow]))
   map_smul' g x := Additive.toMul.injective (Subtype.ext (by simp [smul_pow']))
@@ -517,11 +518,22 @@ theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   -- comparison isomorphism. Not a `rw` chain: each `rw` step re-checks a large motive.
   (rfl)
 
+/-- **The canonical Kummer map is the connecting map of the Kummer sequence.** The class of a unit
+`a` is the image under the degree-zero connecting map `δ⁰` of `kummerShortExact` of `a`, read in
+`H⁰(G_K, (Kˢ)ˣ)` through `baseUnitsEquivInvariants` and `explicitH0IsoContinuousCohomology`. -/
+theorem toAdd_kummerMapCanonical (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      (dsimp% only ((kummerShortExact K n hn).delta 0).hom
+        ((explicitH0IsoContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)).hom
+          (baseUnitsEquivInvariants K (Additive.ofMul a)))) := by
+  rw [ContCohomology.DiscreteShortExact.explicitIso_delta0, explicitIso_kummerMap, kummerMap_apply,
+    toAdd_ofAdd, explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+
 /-! ### Transport to another coefficient model -/
 
 /-- An equivariant equivalence from the Kummer coefficients to a discrete additive module
 transports continuity of the Galois action to that module. -/
-theorem kummerIsoTransportContinuousSMul
+theorem continuousSMul_of_kummerCoeff_equiv
     (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
     [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
     (e : KummerCoeff K n ≃+ μ)
@@ -541,9 +553,9 @@ def kummerIsoTransport (hn : IsUnit (n : K))
     (e : KummerCoeff K n ≃+ μ)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) μ) := by
-  letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+  letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   exact (kummerIso K n hn).trans <| AddEquiv.toMultiplicative <|
     explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
       continuous_of_discreteTopology continuous_of_discreteTopology hequiv
@@ -558,13 +570,13 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x)
     (x : powerClassQuotient Kˣ n) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact kummerIsoTransport K n hn μ e hequiv x =
         Multiplicative.ofAdd
           (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
             continuous_of_discreteTopology continuous_of_discreteTopology hequiv
             (Multiplicative.toAdd (kummerIso K n hn x))) := by
-  let _ := kummerIsoTransportContinuousSMul K n μ e hequiv
+  let _ := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   rw [kummerIsoTransport, MulEquiv.trans_apply, AddEquiv.toMultiplicative_apply_apply]
 
 /-! ### Restriction along a field extension -/

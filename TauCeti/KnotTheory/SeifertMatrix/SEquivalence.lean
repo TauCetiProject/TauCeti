@@ -64,7 +64,7 @@ namespace SEquivalent
 
 /-- S-equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence SEquivalent :=
-  Relation.EqvGen.is_equivalence IsMove
+  Relation.EqvGen.equivalence IsMove
 
 /-- Every integral square matrix is S-equivalent to itself. -/
 @[refl]
@@ -99,7 +99,7 @@ theorem induction {motive : IntegralSquareMatrix → IntegralSquareMatrix → Pr
 /-- S-equivalence preserves size parity, since each enlargement adds two indices. -/
 theorem size_mod_two_eq {V W : IntegralSquareMatrix} (h : SEquivalent V W) :
     V.1 % 2 = W.1 % 2 := by
-  apply Relation.EqvGen.eqvGen_le
+  apply Relation.eqvGen_le
     (r' := Setoid.ker fun X : IntegralSquareMatrix => X.1 % 2) ?_ V W h
   intro X Y hmove
   cases hmove <;> simp

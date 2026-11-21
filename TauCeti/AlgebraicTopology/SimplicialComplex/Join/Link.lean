@@ -43,8 +43,8 @@ private theorem toLeft_mem_link_of_mem_join {ρ : Finset (α ⊕ β)}
     have hleftUnion : ρ.toLeft ∪ s ∈ K := by
       have h := hρstparts.2.1
       rw [Finset.toLeft_union, Finset.toLeft_disjSum] at h
-      exact h.resolve_left <| Finset.nonempty_iff_ne_empty.mp <|
-        (Finset.nonempty_iff_ne_empty.mpr hleft).mono subset_union_left
+      exact h.resolve_left <| Finset.ne_empty_iff_nonempty.mpr <|
+        (Finset.ne_empty_iff_nonempty.mp hleft).mono subset_union_left
     exact mem_link.mpr ⟨hρparts.2.1.resolve_left hleft,
       (Finset.disjoint_disjSum_iff.mp hdis).1, hleftUnion⟩
 
@@ -60,8 +60,8 @@ private theorem toRight_mem_link_of_mem_join {ρ : Finset (α ⊕ β)}
     have hrightUnion : ρ.toRight ∪ t ∈ L := by
       have h := hρstparts.2.2
       rw [Finset.toRight_union, Finset.toRight_disjSum] at h
-      exact h.resolve_left <| Finset.nonempty_iff_ne_empty.mp <|
-        (Finset.nonempty_iff_ne_empty.mpr hright).mono subset_union_left
+      exact h.resolve_left <| Finset.ne_empty_iff_nonempty.mpr <|
+        (Finset.ne_empty_iff_nonempty.mp hright).mono subset_union_left
     exact mem_link.mpr ⟨hρparts.2.2.resolve_left hright,
       (Finset.disjoint_disjSum_iff.mp hdis).2, hrightUnion⟩
 
