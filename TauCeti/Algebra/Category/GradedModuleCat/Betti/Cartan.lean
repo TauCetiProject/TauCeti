@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Betti.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.PowerSeries
+import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Duality
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!

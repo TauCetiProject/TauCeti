@@ -190,8 +190,8 @@ theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 
 
 variable {𝒜} in
 /-- Every `A`-linear map carries the positive-degree action `A₊ M` into `A₊ N`. -/
-theorem map_mem_positive_smul_top {N : Type*} [AddCommMonoid N] [Module k N] [Module A N]
-    [IsScalarTower k A N] (f : M →ₗ[A] N) {x : M}
+theorem _root_.LinearMap.map_mem_positive_smul_top {N : Type*} [AddCommMonoid N] [Module k N]
+    [Module A N] [IsScalarTower k A N] (f : M →ₗ[A] N) {x : M}
     (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
     f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) := by
   refine Submodule.smul_induction_on hx (fun a ha y _ => ?_) (fun x y hx hy => ?_)

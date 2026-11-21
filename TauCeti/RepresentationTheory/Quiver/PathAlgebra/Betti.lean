@@ -271,40 +271,11 @@ theorem laurentK0_gradedArrowSum_eq_sum (j : Q) [Finite ((i : Q) × (j ⟶ i))] 
       (gradedFiniteProjectiveModules_gradedVertexProjective k Q (e m).1) 1⟩
   have _ : HasFiniteBiproducts P.FullSubcategory := hasFiniteBiproducts_of_hasBinaryBiproducts
   have _ : HasBiproduct (fun m => G (e m)) := HasBiproduct.of_hasCoproduct _
+  have _ : HasBiproduct G := HasBiproduct.of_hasCoproduct _
   let e₁ : P.ι.obj (⨁ F) ≅ ⨁ (fun m => G (e m)) := P.ι.mapBiproduct F
-  let e₂ : ⨁ (fun m => G (e m)) ≅ GradedModuleCat.directSumObj (fun m => G (e m)) :=
-    (biproduct.isColimit (fun m => G (e m))).coconePointUniqueUpToIso
-      (GradedModuleCat.coproductCofanIsColimit (fun m => G (e m)))
-  let e₃ : GradedModuleCat.directSumObj (fun m => G (e m)) ≅ GradedModuleCat.directSumObj G :=
-    { hom := GradedModuleCat.coproductDesc (fun m => G (e m))
-        (Cofan.mk (GradedModuleCat.directSumObj G)
-          fun m => (GradedModuleCat.coproductCofan G).inj (e m))
-      inv := GradedModuleCat.coproductDesc G
-        (Cofan.mk (GradedModuleCat.directSumObj (fun m => G (e m)))
-          fun a => (eqToIso (congrArg G (e.apply_symm_apply a).symm)).hom ≫
-            (GradedModuleCat.coproductCofan (fun m => G (e m))).inj (e.symm a))
-      hom_inv_id :=
-        Cofan.IsColimit.hom_ext (GradedModuleCat.coproductCofanIsColimit _) _ _ fun m => by
-          rw [← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
-          change (GradedModuleCat.coproductCofan G).inj (e m) ≫ _ = _
-          rw [GradedModuleCat.coproductCofan_inj_desc, Category.comp_id]
-          have h_eq : ∀ {m'} (h : m = m'),
-              (eqToIso (congrArg (fun x => G (e x)) h)).hom ≫
-                (GradedModuleCat.coproductCofan (fun x => G (e x))).inj m' =
-              (GradedModuleCat.coproductCofan (fun x => G (e x))).inj m := by
-            rintro _ rfl; simp
-          exact h_eq (e.symm_apply_apply m).symm
-      inv_hom_id :=
-        Cofan.IsColimit.hom_ext (GradedModuleCat.coproductCofanIsColimit _) _ _ fun a => by
-          rw [← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
-          change ((eqToIso (congrArg G (e.apply_symm_apply a).symm)).hom ≫
-            (GradedModuleCat.coproductCofan (fun m => G (e m))).inj (e.symm a)) ≫ _ = _
-          rw [Category.assoc, GradedModuleCat.coproductCofan_inj_desc, Category.comp_id]
-          have h_eq : ∀ {a'} (h : a = a'),
-              (eqToIso (congrArg G h)).hom ≫ (GradedModuleCat.coproductCofan G).inj a' =
-              (GradedModuleCat.coproductCofan G).inj a := by
-            rintro _ rfl; simp
-          exact h_eq (e.apply_symm_apply a).symm }
+  let e₂ : ⨁ (fun m => G (e m)) ≅ ⨁ G := biproduct.whiskerEquiv e (fun _ => Iso.refl _)
+  let e₃ : ⨁ G ≅ GradedModuleCat.directSumObj G :=
+    (biproduct.isColimit G).coconePointUniqueUpToIso (GradedModuleCat.coproductCofanIsColimit G)
   let iso : (⨁ F) ≅
       (⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ :
         P.FullSubcategory) :=

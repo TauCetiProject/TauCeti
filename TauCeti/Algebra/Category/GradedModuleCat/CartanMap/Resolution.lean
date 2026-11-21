@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
+public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Polynomial.Laurent.Units
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Resolution
 
@@ -27,6 +28,12 @@ bases indexed by the same finite type, has determinant a unit of `ℤ[q,q⁻¹]`
 degree-zero part of `A`. Neither the sign nor the exponent is determined: changing the bases
 multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
 
+For an explicit `GradedProjectiveResolution` with finitely generated terms,
+`GradedProjectiveResolution.finiteProjectiveTerm` packages each term in the finite graded
+projective subcategory, and `GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`
+computes the alternating-sum formula `[M] = gradedCartanMap 𝒜 (∑_{n < N} (-1)ⁿ [Pₙ])`
+directly when the resolution vanishes from homological degree `N` onward.
+
 ## Main definitions
 
 * `TauCeti.gradedFiniteProjectiveResolutionExactStructure`: the induced graded exact structure
@@ -35,6 +42,8 @@ multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
   subcategory.
 * `TauCeti.gradedCartanEquiv`: the graded Cartan map as a Laurent-linear equivalence when every
   finite graded module has a finite graded-projective resolution.
+* `TauCeti.GradedProjectiveResolution.finiteProjectiveTerm`: the `n`-th finitely generated term
+  of a `GradedProjectiveResolution` in the finite graded projective subcategory.
 
 ## Main results
 
@@ -49,6 +58,8 @@ multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
 * `TauCeti.exists_gradedCartanMatrix_det_eq_T_or_neg_T_of_le_admitsFiniteResolution`: the
   graded Cartan determinant is `qⁿ` or `-qⁿ`, the graded counterpart of
   `TauCeti.cartanMatrix_det_eq_one_or_neg_one`.
+* `TauCeti.GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`: alternating resolution
+  class formula in `G₀^gr(mod A)` for a resolution vanishing from degree `N` onward.
 
 ## References
 
@@ -65,6 +76,8 @@ namespace TauCeti
 open CategoryTheory
 
 universe uk uA
+
+section GradedCartanEquivalence
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
@@ -335,5 +348,133 @@ theorem exists_gradedCartanMatrix_det_eq_T_or_neg_T_of_le_admitsFiniteResolution
     (isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution 𝒜 h bP bM)
 
 end Inverse
+
+end GradedCartanEquivalence
+
+section ConcreteResolution
+
+open CategoryTheory.Limits LaurentPolynomial
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A}
+
+namespace GradedProjectiveResolution
+
+section Terms
+
+variable {M : GradedModuleCat.{uA} 𝒜}
+
+/-- A finitely generated term of a concrete graded projective resolution, as an object of the
+finite graded projective category. -/
+def finiteProjectiveTerm
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
+    [Module.Finite A (r.X n)] : (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
+  ⟨r.termObj n, gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective n⟩⟩
+
+/-- The underlying graded object of the finite projective term is the original resolution term. -/
+@[simp]
+theorem finiteProjectiveTerm_obj
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
+    [Module.Finite A (r.X n)] : (r.finiteProjectiveTerm n).obj = r.termObj n := (rfl)
+
+/-- The `n`-th finite projective term of a shifted resolution is the `d`-shift of the original
+finite projective term. -/
+@[simp]
+theorem finiteProjectiveTerm_shiftObj
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (d : ℤ) (n : ℕ)
+    [Module.Finite A (r.X n)] :
+    (r.shiftObj d).finiteProjectiveTerm n =
+      ⟨(r.finiteProjectiveTerm n).obj.shiftObj d,
+        gradedFiniteProjectiveModules_shiftObj (r.finiteProjectiveTerm n).property d⟩ :=
+  ObjectProperty.FullSubcategory.ext (by simp)
+
+/-- The `n`-th finite projective term of the tail resolution is the `(n + 1)`-st finite projective
+term of `r`. -/
+@[simp]
+theorem finiteProjectiveTerm_tail
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
+    [Module.Finite A (r.X (n + 1))] :
+    r.tail.finiteProjectiveTerm n = r.finiteProjectiveTerm (n + 1) :=
+  ObjectProperty.FullSubcategory.ext (by simp [finiteProjectiveTerm_obj])
+
+end Terms
+
+/-! ### Alternating resolution class in `G₀^gr(mod A)` -/
+
+section FiniteResolution
+
+/-- **Alternating class of a finite graded projective resolution.** If a graded projective
+resolution `r` of `M` has finitely generated terms and vanishes from homological degree `N`
+onward, then `[M]` equals the image under `gradedCartanMap` of the alternating sum
+`∑_{n < N} (-1)ⁿ [Pₙ]`. Neither a direct-sum grading nor a noetherian hypothesis is needed. -/
+theorem laurentK0_eq_gradedCartanMap_sum {M : GradedModuleCat.{uA} 𝒜}
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+    [∀ n, Module.Finite A (r.X n)] (N : ℕ) (hN : ∀ n ≥ N, Subsingleton (r.X n))
+    (hM : gradedFiniteModules 𝒜 M :=
+      gradedFiniteModules_iff.mpr (Module.Finite.of_surjective r.π r.surjective_π)) :
+    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
+      gradedCartanMap 𝒜
+        (∑ n ∈ Finset.range N,
+          (-1 : LaurentPolynomial ℤ) ^ n •
+            LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+              (r.finiteProjectiveTerm n)) := by
+  induction N generalizing M with
+  | zero =>
+    have hsub0 : Subsingleton (r.X 0) := hN 0 (Nat.zero_le 0)
+    have hsubM : Subsingleton M := r.surjective_π.subsingleton
+    have hzeroM : IsZero M :=
+      (IsZero.iff_id_eq_zero _).2 (GradedModuleCat.hom_ext <| LinearMap.ext fun _ => hsubM.elim _ _)
+    have hzero : IsZero (⟨M, hM⟩ : (gradedFiniteModules 𝒜).FullSubcategory) :=
+      IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι _ hzeroM
+    rw [Finset.range_zero, Finset.sum_empty, map_zero, ← LaurentK0.ofExactK0_exactK0_of.{uA},
+      ExactK0.of_eq_zero_of_isZero.{uA} hzero, map_zero]
+  | succ N ih =>
+    -- Split off `0 → ker(π) → P₀ → M → 0` and apply the induction hypothesis to `r.tail`.
+    let K : GradedModuleCat.{uA} 𝒜 := GradedModuleCat.kernelObj r.augmentation
+    have hKfin : gradedFiniteModules 𝒜 K :=
+      gradedFiniteModules_iff.mpr (Module.Finite.of_surjective r.tail.π r.tail.surjective_π)
+    have hK := ih r.tail (fun n hn => hN (n + 1) (Nat.succ_le_succ hn)) hKfin
+    let S : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory :=
+      ShortComplex.mk
+        (⟨GradedModuleCat.kernelι r.augmentation⟩ :
+          (⟨K, hKfin⟩ : (gradedFiniteModules 𝒜).FullSubcategory) ⟶
+            ⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩)
+        (⟨r.augmentation⟩ :
+          (⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩ :
+            (gradedFiniteModules 𝒜).FullSubcategory) ⟶ ⟨M, hM⟩)
+        (ObjectProperty.hom_ext _ (GradedModuleCat.kernelι_comp r.augmentation))
+    have hS : (gradedFiniteModulesExactStructure 𝒜).Conflation S := by
+      rw [gradedFiniteModulesExactStructure_conflation_iff]
+      exact ShortComplex.ShortExact.mk'
+        (GradedModuleCat.exact_iff.mpr (LinearMap.exact_subtype_ker_map r.π))
+        ((GradedModuleCat.mono_iff_injective _).mpr (Submodule.injective_subtype _))
+        ((GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π)
+    have hconf := LaurentK0.of_conflation.{uA} (gradedFiniteModulesExactStructure 𝒜) hS
+    have hterm :
+        gradedCartanMap 𝒜
+            (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+              (r.finiteProjectiveTerm 0)) =
+          LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
+            ⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩ := by
+      rw [gradedCartanMap_of]
+      exact congrArg _ (ObjectProperty.FullSubcategory.ext (r.finiteProjectiveTerm_obj 0))
+    have hM_eq :
+        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
+          gradedCartanMap 𝒜
+              (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+                (r.finiteProjectiveTerm 0)) -
+            LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨K, hKfin⟩ :=
+      hterm ▸ eq_sub_of_add_eq' hconf.symm
+    rw [hM_eq, hK, ← map_sub, Finset.sum_range_succ', pow_zero, one_smul, sub_eq_add_neg,
+      add_comm, ← Finset.sum_neg_distrib]
+    congr 2
+    refine Finset.sum_congr rfl fun n _ => ?_
+    rw [pow_succ, mul_neg_one, neg_smul, finiteProjectiveTerm_tail]
+
+end FiniteResolution
+
+end GradedProjectiveResolution
+
+end ConcreteResolution
 
 end TauCeti

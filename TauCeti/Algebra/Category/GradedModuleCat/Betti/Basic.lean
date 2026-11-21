@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
-public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.ProjectiveCoordinates
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
 
 /-!
@@ -36,14 +35,12 @@ This file develops the basis-generic, Ext-free part of the theory:
    resolutions with finitely generated terms) have the same Betti Poincaré series
    (`GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq` and
    `IsMinimal.bettiPoincareSeries_shiftObj_eq`).
-3. **Finite-resolution Cartan–Betti identity**: when a resolution vanishes from homological degree
-   `N` onward, `[M]` equals the image under `gradedCartanMap` of the alternating sum
-   `∑_{n < N} (-1)ⁿ [Pₙ]` (`GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`). In any
-   module basis `bM` of resolved classes, evaluating the truncated Betti matrix at `t = -1` gives
-   `C(q) · B(q, -1) = I` (`gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one`),
-   and when every finite graded module admits a finite projective resolution it equals the matrix
-   of `gradedCartanInverse`
-   (`eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse`).
+3. **Finite-resolution Cartan–Betti identity**: using the alternating resolution class formula
+   `GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`, in any module basis `bM` of
+   resolved classes, evaluating the truncated Betti matrix at `t = -1` gives `C(q) · B(q, -1) = I`
+   (`gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one`), and when every finite
+   graded module admits a finite projective resolution it equals the matrix of
+   `gradedCartanInverse` (`eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse`).
 
 No field assumption, finite-dimensionality over `k`, or Ext theory is needed here; comparison with
 bigraded Ext, diagonal-support criteria for linearity, and unbounded formal-power-series identities
@@ -65,8 +62,6 @@ live in `TauCeti.Algebra.Category.GradedModuleCat.Betti.Cartan`.
   the choice of minimal resolution.
 * `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_shiftObj_eq`: any minimal
   resolution of `M{d}` has Betti series `qᵈ` times that of any minimal resolution of `M`.
-* `TauCeti.GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`: alternating resolution
-  class formula in `G₀^gr(mod A)` for a resolution vanishing from degree `N` onward.
 * `TauCeti.gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one`: the finite
   Laurent-polynomial Cartan–Betti identity `C(q) · B(q, -1) = I`.
 * `TauCeti.eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse`: identification
@@ -95,31 +90,9 @@ universe uk uA uI uJ v
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A}
 
-/-! ### Finite-projective terms under shift and tail -/
+/-! ### Betti Poincaré series -/
 
 namespace GradedProjectiveResolution
-
-/-- The `n`-th finite projective term of a shifted resolution is the `d`-shift of the original
-finite projective term. -/
-@[simp]
-theorem finiteProjectiveTerm_shiftObj {M : GradedModuleCat.{uA} 𝒜}
-    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (d : ℤ) (n : ℕ)
-    [Module.Finite A (r.X n)] :
-    (r.shiftObj d).finiteProjectiveTerm n =
-      ⟨(r.finiteProjectiveTerm n).obj.shiftObj d,
-        gradedFiniteProjectiveModules_shiftObj (r.finiteProjectiveTerm n).property d⟩ :=
-  ObjectProperty.FullSubcategory.ext (by simp)
-
-/-- The `n`-th finite projective term of the tail resolution is the `(n + 1)`-st finite projective
-term of `r`. -/
-@[simp]
-theorem finiteProjectiveTerm_tail {M : GradedModuleCat.{uA} 𝒜}
-    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
-    [Module.Finite A (r.X (n + 1))] :
-    r.tail.finiteProjectiveTerm n = r.finiteProjectiveTerm (n + 1) :=
-  ObjectProperty.FullSubcategory.ext (by simp [finiteProjectiveTerm_obj])
-
-/-! ### Betti Poincaré series -/
 
 section Series
 
@@ -261,80 +234,6 @@ theorem IsMinimal.bettiPoincareSeries_shiftObj_eq
   rw [hr'.bettiPoincareSeries_eq_of_nonneg bP hmin hneg i, bettiPoincareSeries_shiftObj]
 
 end Uniqueness
-
-/-! ### Alternating resolution class in `G₀^gr(mod A)` -/
-
-section FiniteResolution
-
-/-- **Alternating class of a finite graded projective resolution.** If a graded projective
-resolution `r` of `M` has finitely generated terms and vanishes from homological degree `N`
-onward, then `[M]` equals the image under `gradedCartanMap` of the alternating sum
-`∑_{n < N} (-1)ⁿ [Pₙ]`. Neither a direct-sum grading nor a noetherian hypothesis is needed. -/
-theorem laurentK0_eq_gradedCartanMap_sum {M : GradedModuleCat.{uA} 𝒜}
-    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
-    [∀ n, Module.Finite A (r.X n)] (N : ℕ) (hN : ∀ n ≥ N, Subsingleton (r.X n))
-    (hM : gradedFiniteModules 𝒜 M :=
-      gradedFiniteModules_iff.mpr (Module.Finite.of_surjective r.π r.surjective_π)) :
-    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
-      gradedCartanMap 𝒜
-        (∑ n ∈ Finset.range N,
-          (-1 : LaurentPolynomial ℤ) ^ n •
-            LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-              (r.finiteProjectiveTerm n)) := by
-  induction N generalizing M with
-  | zero =>
-    have hsub0 : Subsingleton (r.X 0) := hN 0 (Nat.zero_le 0)
-    have hsubM : Subsingleton M := r.surjective_π.subsingleton
-    have hzeroM : IsZero M :=
-      (IsZero.iff_id_eq_zero _).2 (GradedModuleCat.hom_ext <| LinearMap.ext fun _ => hsubM.elim _ _)
-    have hzero : IsZero (⟨M, hM⟩ : (gradedFiniteModules 𝒜).FullSubcategory) :=
-      IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι _ hzeroM
-    rw [Finset.range_zero, Finset.sum_empty, map_zero, ← LaurentK0.ofExactK0_exactK0_of.{uA},
-      ExactK0.of_eq_zero_of_isZero.{uA} hzero, map_zero]
-  | succ N ih =>
-    -- Split off `0 → ker(π) → P₀ → M → 0` and apply the induction hypothesis to `r.tail`.
-    let K : GradedModuleCat.{uA} 𝒜 := GradedModuleCat.kernelObj r.augmentation
-    have hKfin : gradedFiniteModules 𝒜 K :=
-      gradedFiniteModules_iff.mpr (Module.Finite.of_surjective r.tail.π r.tail.surjective_π)
-    have hK := ih r.tail (fun n hn => hN (n + 1) (Nat.succ_le_succ hn)) hKfin
-    let S : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory :=
-      ShortComplex.mk
-        (⟨GradedModuleCat.kernelι r.augmentation⟩ :
-          (⟨K, hKfin⟩ : (gradedFiniteModules 𝒜).FullSubcategory) ⟶
-            ⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩)
-        (⟨r.augmentation⟩ :
-          (⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩ :
-            (gradedFiniteModules 𝒜).FullSubcategory) ⟶ ⟨M, hM⟩)
-        (ObjectProperty.hom_ext _ (GradedModuleCat.kernelι_comp r.augmentation))
-    have hS : (gradedFiniteModulesExactStructure 𝒜).Conflation S := by
-      rw [gradedFiniteModulesExactStructure_conflation_iff]
-      exact ShortComplex.ShortExact.mk'
-        (GradedModuleCat.exact_iff.mpr (LinearMap.exact_subtype_ker_map r.π))
-        ((GradedModuleCat.mono_iff_injective _).mpr (Submodule.injective_subtype _))
-        ((GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π)
-    have hconf := LaurentK0.of_conflation.{uA} (gradedFiniteModulesExactStructure 𝒜) hS
-    have hterm :
-        gradedCartanMap 𝒜
-            (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-              (r.finiteProjectiveTerm 0)) =
-          LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-            ⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩ := by
-      rw [gradedCartanMap_of]
-      exact congrArg _ (ObjectProperty.FullSubcategory.ext (r.finiteProjectiveTerm_obj 0))
-    have hM_eq :
-        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
-          gradedCartanMap 𝒜
-              (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-                (r.finiteProjectiveTerm 0)) -
-            LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨K, hKfin⟩ :=
-      hterm ▸ eq_sub_of_add_eq' hconf.symm
-    rw [hM_eq, hK, ← map_sub, Finset.sum_range_succ', pow_zero, one_smul, sub_eq_add_neg,
-      add_comm, ← Finset.sum_neg_distrib]
-    congr 2
-    refine Finset.sum_congr rfl fun n _ => ?_
-    rw [pow_succ, mul_neg_one, neg_smul, finiteProjectiveTerm_tail]
-
-end FiniteResolution
 
 end GradedProjectiveResolution
 
