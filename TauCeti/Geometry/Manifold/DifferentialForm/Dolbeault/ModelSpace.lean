@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifo
 public import TauCeti.Analysis.Complex.Wirtinger.Forms
 import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Data.Finset.Sort
-public import TauCeti.Analysis.Normed.Module.Alternating.Curry
+public import TauCeti.Analysis.Normed.Module.Alternating.Complex
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
 import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
@@ -112,10 +112,9 @@ real derivative of its coefficient field. -/
 private theorem delBar_eq_alternatizeUncurryFin_of_isOfType {p q : ℕ}
     {η : SmoothForm 𝓘(ℝ, E) E F k} (hη : η.IsOfType (ofComplexManifold E E) p q) (z : E) :
     ((ofComplexManifold E E).delBar η).val z =
-      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F) ((2 : ℂ)⁻¹ •
-        (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z +
-          I • (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z) ∘L
-            (I • ContinuousLinearMap.id ℝ E))) := by
+      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F)
+        (ContinuousLinearMap.complexAntilinearPartL
+          (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z)) := by
   let Θ : E → E [⋀^Fin k]→L[ℝ] F := η.val
   let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
   let L : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F := fderiv ℝ Θ z
@@ -137,21 +136,24 @@ private theorem delBar_eq_alternatizeUncurryFin_of_isOfType {p q : ℕ}
       ((mextDerivₗ 𝓘(ℝ, E) k η).val z)) (toEndomorphism_ofComplexManifold (E := E) z)).trans ?_
     rw [hflat]
     exact ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right hJm htype
-  exact hδ
+  refine hδ.trans (congrArg ContinuousAlternatingMap.alternatizeUncurryFin ?_)
+  ext v : 1
+  simp only [L, Θ, Jm, ContinuousLinearMap.complexAntilinearPartL_apply_apply,
+    _root_.smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, ← ofReal_ofNat, ← ofReal_inv, Complex.coe_smul]
 
 /-- **The Dolbeault differential on a complex vector space.** On any smooth form, `∂bar` is
 obtained by alternatizing the conjugate-linear part of the real derivative of its coefficient
 field. No purity-of-type assumption is required. -/
 theorem delBar_eq_alternatizeUncurryFin (η : SmoothForm 𝓘(ℝ, E) E F k) (z : E) :
     ((ofComplexManifold E E).delBar η).val z =
-      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F) ((2 : ℂ)⁻¹ •
-        (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z +
-          I • (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z) ∘L
-            (I • ContinuousLinearMap.id ℝ E))) := by
+      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F)
+        (ContinuousLinearMap.complexAntilinearPartL
+          (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z)) := by
   let field : SmoothForm 𝓘(ℝ, E) E F k → E → E [⋀^Fin k]→L[ℝ] F := fun φ y ↦ φ.val y
   let C (Φ : E → E [⋀^Fin k]→L[ℝ] F) :=
-    ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ •
-      (fderiv ℝ Φ z + I • (fderiv ℝ Φ z) ∘L (I • ContinuousLinearMap.id ℝ E)))
+    ContinuousAlternatingMap.alternatizeUncurryFin
+      (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Φ z))
   let A : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
     { toFun φ := ((ofComplexManifold E E).delBar φ).val z
       -- `∂bar` is additive; the final `rfl` identifies the zero and addition of the fibre at `z`
@@ -162,17 +164,16 @@ theorem delBar_eq_alternatizeUncurryFin (η : SmoothForm 𝓘(ℝ, E) E F k) (z 
     { toFun φ := C (field φ)
       map_zero' := by
         have hzero : field 0 = fun _ ↦ 0 := rfl
-        simp only [hzero, C, fderiv_const_apply, ContinuousLinearMap.zero_comp, smul_zero, add_zero]
-        exact map_zero (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F)
+        simp only [hzero, C, fderiv_const_apply, map_zero,
+          ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply]
       map_add' φ ψ := by
         have hφ : DifferentiableAt ℝ (field φ) z :=
           (isSmoothForm_modelSpace_iff.1 φ.isSmoothForm).differentiable (by simp) z
         have hψ : DifferentiableAt ℝ (field ψ) z :=
           (isSmoothForm_modelSpace_iff.1 ψ.isSmoothForm).differentiable (by simp) z
         have hadd : field (φ + ψ) = field φ + field ψ := rfl
-        simp only [hadd, C, fderiv_add hφ hψ, ContinuousLinearMap.add_comp, smul_add,
-          ContinuousAlternatingMap.alternatizeUncurryFin_add]
-        abel }
+        simp only [hadd, C, fderiv_add hφ hψ, map_add,
+          ContinuousAlternatingMap.alternatizeUncurryFin_add] }
   exact (ofComplexManifold E E).map_eq_of_forall_isOfType (f := A) (g := B)
     (fun _ _ _ _ hφ ↦ delBar_eq_alternatizeUncurryFin_of_isOfType hφ z) η
 
@@ -188,17 +189,17 @@ theorem delBar_apply (η : SmoothForm 𝓘(ℝ, E) E F k) (z : E) (v : Fin (k + 
     (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
   rw [delBar_eq_alternatizeUncurryFin]
   -- Evaluate in the model fibre `E`; the tangent-space synonym prevents rewriting otherwise.
-  change (ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ •
-    (fderiv ℝ Θ z + I • (fderiv ℝ Θ z) ∘L (I • ContinuousLinearMap.id ℝ E))) :
+  change (ContinuousAlternatingMap.alternatizeUncurryFin
+    (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Θ z)) :
       E [⋀^Fin (k + 1)]→L[ℝ] F) v =
     ∑ i : Fin (k + 1), (-1 : ℂ) ^ (i : ℕ) •
       conjWirtingerDeriv (fun y ↦ Θ y (i.removeNth v)) z (v i)
   rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [conjWirtingerDeriv_apply, fderiv_continuousAlternatingMap_apply_const_apply hdz,
-    fderiv_continuousAlternatingMap_apply_const_apply hdz]
-  simp only [smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply]
+  rw [conjWirtingerDeriv_apply_eq_complexAntilinearPartL]
+  simp only [ContinuousLinearMap.complexAntilinearPartL_apply_apply,
+    fderiv_continuousAlternatingMap_apply_const_apply hdz,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
   norm_cast
 
 /-- On a smooth one-form the Dolbeault differential is the alternating conjugate Wirtinger
@@ -383,7 +384,7 @@ theorem exists_isOfType_conjCoeff_eq {u : Finset ι → (ι → ℂ) → F}
 
 end Coefficients
 
-open ContinuousAlternatingMap (holCurry holCurry_apply holCurry_map_smul holCurry_smul)
+open ContinuousAlternatingMap (holCurry holCurry_apply)
 
 section Contraction
 
@@ -404,15 +405,50 @@ def holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
 @[simp]
 theorem holInterior_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : E) :
     (holInterior v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
-  calc
-    _ = (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F).curryLeft v -
-        I • (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F).curryLeft (I • v) := by
-      change RoughForm.interior (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ v) η.val z -
-        I • RoughForm.interior (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ I • v) η.val z = _
-      exact congrArg₂ (fun a b ↦ a - I • b)
-        (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ v) η.val z)
-        (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ I • v) η.val z)
-    _ = _ := (holCurry_apply v _).symm
+  unfold holInterior
+  simp only [sub_eq_add_neg, add_toRoughForm, neg_toRoughForm, smul_toRoughForm,
+    Pi.add_apply, Pi.neg_apply, Pi.smul_apply]
+  exact (congrArg₂ (fun a b : E [⋀^Fin k]→L[ℝ] F ↦ a + -(I • b))
+    (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ v) η.val z)
+    (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ I • v) η.val z)).trans
+      (by simpa only [sub_eq_add_neg] using
+        (holCurry_apply (E := E) (F := F) v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)).symm)
+
+/-- Holomorphic contraction is additive in the form. -/
+@[simp]
+theorem holInterior_add (v : E) (η θ : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    holInterior v (η + θ) = holInterior v η + holInterior v θ := by
+  apply Subtype.ext
+  funext z
+  simp only [add_toRoughForm, Pi.add_apply, holInterior_val]
+  exact map_add (holCurry v) (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) (θ.val z)
+
+/-- Holomorphic contraction is complex-linear in the form. -/
+@[simp]
+theorem holInterior_smul (v : E) (c : ℂ) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    holInterior v (c • η) = c • holInterior v η := by
+  apply Subtype.ext
+  funext z
+  simp only [smul_toRoughForm, Pi.smul_apply, holInterior_val]
+  exact map_smul (holCurry v) c (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)
+
+/-- Holomorphic contraction is additive in the inserted vector. -/
+@[simp]
+theorem holInterior_add_left (v w : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    holInterior (v + w) η = holInterior v η + holInterior w η := by
+  apply Subtype.ext
+  funext z
+  simp only [add_toRoughForm, Pi.add_apply, holInterior_val]
+  exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_add holCurry v w)
+
+/-- Holomorphic contraction is complex-linear in the inserted vector. -/
+@[simp]
+theorem holInterior_smul_left (c : ℂ) (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    holInterior (c • v) η = c • holInterior v η := by
+  apply Subtype.ext
+  funext z
+  simp only [smul_toRoughForm, Pi.smul_apply, holInterior_val]
+  exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_smul holCurry c v)
 
 /-- The `(1,0)`-contraction lowers the holomorphic degree. -/
 theorem isOfType_holInterior {p q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F (k + 1)}
@@ -435,31 +471,24 @@ theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
       -holInterior v ((ofComplexManifold E E).delBar η) := by
   refine Subtype.ext (funext fun z ↦ ?_)
   let Θ : E → E [⋀^Fin (k + 1)]→L[ℝ] F := η.val
-  let C := (holCurry (k := k) (F := F) v).complexOfMapISmul
-    (fun φ ↦ holCurry_map_smul v I φ)
-  let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
-  let D := fderiv ℝ Θ z
-  let L : E →L[ℝ] E [⋀^Fin (k + 1)]→L[ℝ] F := (2 : ℂ)⁻¹ • (D + I • D ∘L Jm)
+  let C := holCurry (k := k) (F := F) v
+  let L := ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Θ z)
   have hdz : DifferentiableAt ℝ Θ z :=
     (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
   have hval : ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) = C ∘ Θ :=
-    funext fun y ↦ by
-      simpa only [C, ContinuousLinearMap.coe_complexOfMapISmul, Function.comp_apply] using
-        holInterior_val v η y
-  have hLw (u : E) : L u = conjWirtingerDeriv Θ z u := by
-    simp [L, Jm, conjWirtingerDeriv_apply, D]
+    funext fun y ↦ holInterior_val v η y
   have hchain := conjWirtingerDeriv_comp C.differentiableAt hdz
-  have hCL : (2 : ℂ)⁻¹ •
-      (fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z +
-        I • (fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z) ∘L Jm) =
-      holCurry v ∘L L := by
+  have hCL : ContinuousLinearMap.complexAntilinearPartL
+      (fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z) =
+      C.restrictScalars ℝ ∘L L := by
     ext u : 1
     have hc : conjWirtingerDeriv
-        ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u = holCurry v (L u) := by
+        ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u = C (L u) := by
       rw [hval, hchain, C.fderiv]
-      simp only [ContinuousLinearMap.comp_apply, C,
-        ContinuousLinearMap.coe_complexOfMapISmul, hLw]
-    exact (TauCeti.conjWirtingerDeriv_apply (V := E) (W := E [⋀^Fin k]→L[ℝ] F)
+      simp only [ContinuousLinearMap.comp_apply,
+        conjWirtingerDeriv_apply_eq_complexAntilinearPartL, L]
+    exact (conjWirtingerDeriv_apply_eq_complexAntilinearPartL
+      (V := E) (W := E [⋀^Fin k]→L[ℝ] F)
       ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u).symm.trans hc
   have hδ : (((ofComplexManifold E E).delBar η).val z : E [⋀^Fin (k + 2)]→L[ℝ] F) =
       ContinuousAlternatingMap.alternatizeUncurryFin L :=
@@ -467,7 +496,8 @@ theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
   rw [neg_toRoughForm, Pi.neg_apply, holInterior_val, hδ,
     delBar_eq_alternatizeUncurryFin, hCL]
   exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp L
-    (fun u ↦ by rw [hLw, hLw, map_smulₛₗ, conj_I]) v
+    (fun u ↦ by
+      simp only [L, ← conjWirtingerDeriv_apply_eq_complexAntilinearPartL, map_smulₛₗ, conj_I]) v
 
 end Contraction
 
@@ -482,6 +512,7 @@ def dz (i : ι) : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) ℂ 1 :=
 
 omit [DecidableEq ι] in
 /-- The value of the holomorphic coordinate one-form is the coordinate covector. -/
+@[simp]
 theorem dz_val (i : ι) (z : ι → ℂ) :
     ((dz i).val z : (ι → ℂ) [⋀^Fin 1]→L[ℝ] ℂ) = ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ)
       ℂ (0 : Fin 1) (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) := by
@@ -504,6 +535,7 @@ theorem isOfType_dz (i : ι) : (dz i).IsOfType (ofComplexManifold (ι → ℂ) (
 
 omit [DecidableEq ι] in
 /-- Holomorphic coordinate one-forms have zero Dolbeault differential. -/
+@[simp]
 theorem delBar_dz (i : ι) : (ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (dz i) = 0 := by
   have hd : mextDerivₗ 𝓘(ℝ, ι → ℂ) 1 (dz i) = 0 := Subtype.ext <| by
     rw [mextDerivₗ_apply, ZeroMemClass.coe_zero]
@@ -527,7 +559,7 @@ theorem sum_wedgeWith_dz_holInterior_apply {k p q : ℕ}
         (I • ContinuousLinearMap.id ℝ (ι → ℂ)) := by
     ext u : 1
     have hu := congrArg (fun w ↦ holCurry (k := k) (F := F) w φ) (pi_eq_sum_univ' u)
-    simp only [map_sum, holCurry_smul, sum_apply] at hu
+    simp only [map_sum, map_smul, sum_apply, _root_.smul_apply] at hu
     simp [← holCurry_apply, hu]
   ext v
   simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply, cast_apply,

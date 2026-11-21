@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
-public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 
 /-!
 # Alternatization and interior products
@@ -36,8 +35,6 @@ be combined with other permutation sums, such as those defining wedge products.
   above.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp`: alternating contractions with
   `A v` gives the algebraic derivation of `A`, over any nontrivially normed field.
-* `ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp`: holomorphic contraction
-  anticommutes with alternation of a conjugate-linear family.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
   commutes with pullback along a continuous linear map.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
@@ -170,33 +167,5 @@ theorem alternatizeUncurryFin_curryLeft_comp (ω : E [⋀^Fin (n + 1)]→L[𝕜]
   rw [toAlternatingMap_alternatizeUncurryFin,
     ← AlternatingMap.alternatizeUncurryFin_curryLeft_comp]
   congr 1
-
-section Holomorphic
-
-open Complex
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
-
-/-- Holomorphic contraction anticommutes with alternation of a conjugate-linear family. -/
-theorem alternatizeUncurryFin_holCurry_comp
-    (L : E →L[ℝ] E [⋀^Fin (k + 1)]→L[ℝ] F)
-    (hL : ∀ v, L (I • v) = -I • L v) (v : E) :
-    alternatizeUncurryFin (holCurry v ∘L L) = -holCurry v (alternatizeUncurryFin L) := by
-  have hsplit : holCurry v ∘L L =
-      (curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-        (n := k)).toContinuousLinearMap.flip v ∘L L -
-      I • (curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-        (n := k)).toContinuousLinearMap.flip (I • v) ∘L L := by
-    ext u : 1
-    simp [holCurry_apply]
-  have hcartan (y : E) := eq_sub_of_add_eq
-    (alternatizeUncurryFin_curryLeft_comp_add_curryLeft L y)
-  rw [hsplit, alternatizeUncurryFin_sub, alternatizeUncurryFin_smul,
-    hcartan, hcartan, hL, holCurry_apply]
-  simp only [smul_sub, smul_smul, mul_neg, I_mul_I, _root_.neg_neg, one_smul]
-  abel
-
-end Holomorphic
 
 end ContinuousAlternatingMap

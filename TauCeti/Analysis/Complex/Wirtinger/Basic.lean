@@ -176,6 +176,15 @@ theorem conjWirtingerDeriv_apply (v : V) :
     ContinuousLinearMap.complexAntilinearPart_apply, ← ofReal_ofNat, ← ofReal_inv,
     Complex.coe_smul]
 
+/-- The conjugate Wirtinger derivative evaluates the bundled real-linear conjugate projection
+of the real derivative. -/
+theorem conjWirtingerDeriv_apply_eq_complexAntilinearPartL (v : V) :
+    conjWirtingerDeriv g x v =
+      ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ g x) v := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart,
+    ContinuousLinearMap.complexAntilinearPart_apply,
+    ContinuousLinearMap.complexAntilinearPartL_apply_apply]
+
 /-- In one variable the operator `D = ∂ₛ + i ∂ₜ` of the Cauchy–Pompeiu formula is twice the
 conjugate Wirtinger derivative. This holds for the totalized derivative, with no differentiability
 assumption. -/

@@ -465,6 +465,14 @@ section Contraction
 
 variable {J : E →L[ℝ] E} {p q : ℕ} {ω : E [⋀^Fin (k + 1)]→L[ℝ] F}
 
+/-- Alternating the contractions with `J v` is the continuous derivation of `J`. -/
+theorem alternatizeUncurryFin_curryLeft_comp_eq_alternatingDerivation
+    (ω : E [⋀^Fin (k + 1)]→L[ℝ] F) (J : E →L[ℝ] E) :
+    alternatizeUncurryFin (ω.curryLeft ∘L J) = J.alternatingDerivation ω := by
+  apply ContinuousAlternatingMap.toAlternatingMap_injective
+  rw [ContinuousLinearMap.toAlternatingMap_alternatingDerivation,
+    alternatizeUncurryFin_curryLeft_comp]
+
 /-- **The Euler identity for the `(1,0)`-contraction.** Alternating the interior products
 `v ↦ ι_v ω - I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 p • ω`. For an almost complex
 structure `J² = -1`, this inserts `2 v^(1,0)` in the complex-multilinear extension to
@@ -472,13 +480,9 @@ the complexification of the underlying real space. In complex coordinates
 `z_j` this is the identity `∑ j, dz_j ∧ ι_(∂/∂z_j) ω = p • ω`. -/
 theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfType J p q) :
     alternatizeUncurryFin (ω.curryLeft - I • ω.curryLeft ∘L J) = (2 * p : ℂ) • ω := by
-  have hcomp : alternatizeUncurryFin (ω.curryLeft ∘L J) = J.alternatingDerivation ω := by
-    ext v
-    simpa only [← ContinuousLinearMap.toAlternatingMap_alternatingDerivation,
-      coe_toAlternatingMap] using
-      DFunLike.congr_fun (alternatizeUncurryFin_curryLeft_comp ω J) v
   rw [alternatizeUncurryFin_sub, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
-    hcomp, h.alternatingDerivation_eq, smul_smul,
+    alternatizeUncurryFin_curryLeft_comp_eq_alternatingDerivation,
+    h.alternatingDerivation_eq, smul_smul,
     ← Nat.cast_smul_eq_nsmul ℂ, ← sub_smul]
   congr 1
   have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
@@ -488,13 +492,9 @@ theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfTyp
 `v ↦ ι_v ω + I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 q • ω`. -/
 theorem IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp (h : ω.IsOfType J p q) :
     alternatizeUncurryFin (ω.curryLeft + I • ω.curryLeft ∘L J) = (2 * q : ℂ) • ω := by
-  have hcomp : alternatizeUncurryFin (ω.curryLeft ∘L J) = J.alternatingDerivation ω := by
-    ext v
-    simpa only [← ContinuousLinearMap.toAlternatingMap_alternatingDerivation,
-      coe_toAlternatingMap] using
-      DFunLike.congr_fun (alternatizeUncurryFin_curryLeft_comp ω J) v
   rw [alternatizeUncurryFin_add, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
-    hcomp, h.alternatingDerivation_eq, smul_smul,
+    alternatizeUncurryFin_curryLeft_comp_eq_alternatingDerivation,
+    h.alternatingDerivation_eq, smul_smul,
     ← Nat.cast_smul_eq_nsmul ℂ, ← add_smul]
   congr 1
   have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
