@@ -104,6 +104,6 @@ theorem measureReal_abs_sub_integral_ge_le_of_bounded_differences (h : iIndepFun
     P.real {ω | t ≤ |f (fun i => X i ω) - ∫ ω', f (fun i => X i ω') ∂P|} ≤
       2 * Real.exp (-2 * t ^ 2 / (∑ i, (c i : ℝ) ^ 2)) := by
   simpa only [exponent_variance_proxy] using
-    (h.hasSubgaussianMGF_of_bounded_differences hX f hf c hbd).measureReal_le_abs_le ht
+    (h.hasSubgaussianMGF_of_bounded_differences hX f hf c hbd).measureReal_abs_ge_le ht
 
 end ProbabilityTheory.iIndepFun

@@ -123,7 +123,7 @@ theorem measureReal_le_abs_card_filter_sub_le [Fintype ι] [MeasurableSpace κ]
     rw [sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul]
     ring
   have hexp : -a ^ 2 / (2 * (#T / 4 : ℝ)) = -2 * a ^ 2 / #T := by ring
-  have htail := hsub.measureReal_le_abs_le ha
+  have htail := hsub.measureReal_abs_ge_le ha
   rw [hmean, hvar, hexp] at htail
   simpa only [hf, sum_boole] using htail
 
@@ -200,10 +200,10 @@ theorem exists_forall_abs_card_filter_sub_mul_card_lt [Fintype κ] {p : κ → �
     rw [card_subtype, filter_true_of_mem fun e he ↦ hU he]
   have hcount : #{e ∈ T i | (if he : e ∈ U then y ⟨e, he⟩ else Classical.arbitrary κ) = c} =
       #{e ∈ (T i).subtype (· ∈ U) | y e = c} := by
-    refine (card_bij (fun e _ ↦ e.1) (fun e he ↦ ?_) (fun _ _ _ _ ↦ Subtype.ext)
+    refine (card_bij (fun e _ ↦ e.val) (fun e he ↦ ?_) (fun _ _ _ _ ↦ Subtype.ext)
       fun e he ↦ ?_).symm
     · obtain ⟨he, hc⟩ := mem_filter.1 he
-      exact mem_filter.2 ⟨mem_subtype.1 he, by simpa [e.2] using hc⟩
+      exact mem_filter.2 ⟨mem_subtype.1 he, by simpa [e.property] using hc⟩
     · obtain ⟨he, hc⟩ := mem_filter.1 he
       exact ⟨⟨e, hU he⟩, mem_filter.2 ⟨mem_subtype.2 he, by simpa [hU he] using hc⟩, rfl⟩
   simpa [hcount, hcard] using hy i c
@@ -233,7 +233,7 @@ theorem two_mul_two_pow_mul_two_pow_add_mul_exp_lt {α β : Type*} [Fintype κ] 
   have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
   have hr_exp : (r + 1 : ℝ) ≤ exp r := add_one_le_exp (r : ℝ)
   have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
-    (pow_le_pow_left₀ (by norm_num) h2 k).trans_eq (by rw [← exp_nat_mul, mul_one])
+    (pow_le_pow_left₀ (by norm_num) h2 k).trans_eq (by rw [← exp_natCast_mul, mul_one])
   have hpow_pos : 0 < 2 ^ #s * 2 ^ #t := Nat.mul_pos (by positivity) (by positivity)
   have hr_le : 2 ^ #s * 2 ^ #t + r ≤ (r + 1) * (2 ^ #s * 2 ^ #t) := by
     rw [add_one_mul, add_comm]

@@ -263,7 +263,7 @@ theorem measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le (hμ : μ
     (hf : ContDiff ℝ 1 f) (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {x | ε ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-2 * ε ^ 2 / (π ^ 2 * v)) := by
   simpa only [TauCeti.Probability.exponent_pi_sq_div_four_proxy] using
-    (hasSubgaussianMGF_sub_integral_of_variance_fderiv_le hμ hf hv).measureReal_le_abs_le hε
+    (hasSubgaussianMGF_sub_integral_of_variance_fderiv_le hμ hf hv).measureReal_abs_ge_le hε
 
 end Gaussian
 
@@ -329,6 +329,6 @@ theorem measureReal_stdGaussian_setOf_le_abs_sub_integral_le (hf : LipschitzWith
     (stdGaussian E).real {x | ε ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤
       2 * exp (-2 * ε ^ 2 / (π ^ 2 * K ^ 2)) := by
   simpa only [TauCeti.Probability.exponent_pi_sq_div_four_proxy, NNReal.coe_pow] using
-    hf.hasSubgaussianMGF_stdGaussian_sub_integral.measureReal_le_abs_le hε
+    hf.hasSubgaussianMGF_stdGaussian_sub_integral.measureReal_abs_ge_le hε
 
 end LipschitzWith

@@ -120,7 +120,7 @@ theorem isLocalization_stalkSpecializes (h : x ⤳ y) :
     refine ⟨algebraMap _ _ (m : Γ(X, U)), r, ?_, by rw [← hrm, mul_comm]⟩
     refine (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) q r).mp ?_
     rw [IsScalarTower.algebraMap_apply Γ(X, U) (X.presheaf.stalk y), ← hrm, map_mul]
-    refine IsUnit.mul ?_ (((IsLocalization.AtPrime.isUnit_to_map_iff _ p m).mpr m.2).map _)
+    refine IsUnit.mul ?_ (((IsLocalization.AtPrime.isUnit_to_map_iff _ p m).mpr m.property).map _)
     simpa [Ideal.primeCompl, mem_maximalIdeal, mem_nonunits_iff, RingHom.algebraMap_toAlgebra]
       using hs
 
@@ -269,7 +269,7 @@ theorem isFractionRing_residueField_of_specializes [Ring.DimensionLEOne (X.presh
   refine IsFractionRing.of_field _ _ fun z ↦ ?_
   obtain ⟨s, rfl⟩ := X.residue_surjective x z
   obtain ⟨⟨a, b⟩, rfl⟩ := IsLocalization.mk'_surjective (nonZeroDivisors (X.presheaf.stalk y)) s
-  refine ⟨a, b, eq_div_of_mul_eq (hres b (nonZeroDivisors.ne_zero b.2)) ?_⟩
+  refine ⟨a, b, eq_div_of_mul_eq (hres b (nonZeroDivisors.ne_zero b.property)) ?_⟩
   rw [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply, RingHom.comp_apply,
     ← map_mul]
   exact congrArg _ (IsLocalization.mk'_spec _ a b)

@@ -231,7 +231,7 @@ private theorem coinLaw_le_abs_rectEdgeCount_sub_le (W : Graphon Ω μ) (y : Fin
   have hσ : ((∑ _ : Fin n × Fin n, (2 : ℝ).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ) = n ^ 2 := by
     simp [Finset.card_univ, Fintype.card_prod, sq]
     ring
-  have htail := hsub.measureReal_le_abs_le hs
+  have htail := hsub.measureReal_abs_ge_le hs
   rw [hσ] at htail
   rw [← ofReal_measureReal (measure_ne_top _ _)]
   exact ENNReal.ofReal_le_ofReal htail

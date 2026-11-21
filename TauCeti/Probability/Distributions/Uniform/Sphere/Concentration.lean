@@ -252,6 +252,6 @@ theorem measureReal_uniformSphereMeasure_setOf_le_abs_sub_integral_le (hf : Lips
     rw [mul_div_assoc', div_div_eq_mul_div]
     ring
   simpa only [hc] using
-    hf.hasSubgaussianMGF_uniformSphereMeasure_sub_integral.measureReal_le_abs_le ht
+    hf.hasSubgaussianMGF_uniformSphereMeasure_sub_integral.measureReal_abs_ge_le ht
 
 end LipschitzWith

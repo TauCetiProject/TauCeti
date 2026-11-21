@@ -285,7 +285,7 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
     intro i _
     rw [NNReal.coe_mul]
     rfl
-  simpa only [hproxy] using hS.measureReal_le_abs_le ht
+  simpa only [hproxy] using hS.measureReal_abs_ge_le ht
 
 /-- The linear-form tail bound when all coordinates have the same variance proxy. -/
 theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const
