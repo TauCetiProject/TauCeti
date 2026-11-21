@@ -24,6 +24,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 * `AffineEquiv.semidirectSubgroup`: for a group `W` of linear automorphisms of a module `V` and a
   `W`-stable additive subgroup `L`, the affine automorphisms with linear part in `W` and
   translation part in `L`, a copy of the semidirect product `L ⋊ W` in the affine group.
+* `AffineEquiv.fixingSubgroup`: the affine automorphisms of an affine space fixing each point of
+  a set.
 * `AffineEquiv.toGL`: the embedding of the affine group of a commutative ring `R` into
   `GL (Fin 2) R` sending `x ↦ a * x + b` to the matrix `!![a, b; 0, 1]`.
 
@@ -85,6 +87,27 @@ theorem mem_semidirectSubgroup_iff {W : Subgroup (V₁ ≃ₗ[k] V₁)} {L : Add
     {hL : ∀ w ∈ W, ∀ v ∈ L, w v ∈ L} {f : V₁ ≃ᵃ[k] V₁} :
     f ∈ semidirectSubgroup W L hL ↔ f.linear ∈ W ∧ f 0 ∈ L :=
   Iff.rfl
+
+section FixingSubgroup
+
+variable {V P : Type*} [AddCommGroup V] [Module k V] [AddTorsor V P]
+
+variable (k) in
+/-- The subgroup of affine automorphisms of `P` fixing each point of `s`. This is the analogue of
+the pointwise fixer `_root_.fixingSubgroup` of a group action; Mathlib does not make the affine
+group act on `P` by a `MulAction` instance, so that construction does not apply. -/
+@[expose] def fixingSubgroup (s : Set P) : Subgroup (P ≃ᵃ[k] P) where
+  carrier := {f | ∀ p ∈ s, f p = p}
+  mul_mem' {f g} hf hg p hp := by simp [hg p hp, hf p hp]
+  one_mem' _ _ := rfl
+  inv_mem' {f} hf p hp := by rw [inv_def, symm_apply_eq, hf p hp]
+
+@[simp]
+theorem mem_fixingSubgroup {s : Set P} {f : P ≃ᵃ[k] P} :
+    f ∈ fixingSubgroup k s ↔ ∀ p ∈ s, f p = p :=
+  Iff.rfl
+
+end FixingSubgroup
 
 section Ring
 
