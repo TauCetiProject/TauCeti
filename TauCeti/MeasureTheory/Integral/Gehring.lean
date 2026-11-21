@@ -290,7 +290,7 @@ private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d
         2 * ENNReal.ofReal (4 ^ d) *
           (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1)) ≤ 2⁻¹ := by
   have _hq0 : 0 < q := one_pos.trans hq
-  have hb : (0 : ℝ) ≤ b := b.2
+  have hb : (0 : ℝ) ≤ b := b.property
   set e : ℝ := (4 * ((b : ℝ) + 1))⁻¹ with he
   have he0 : 0 < e := by positivity
   have he4 : e ≤ 4⁻¹ := inv_anti₀ (by norm_num) (by linarith)

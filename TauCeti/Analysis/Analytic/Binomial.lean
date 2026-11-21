@@ -7,16 +7,15 @@ module
 
 public import Mathlib.Analysis.Analytic.Binomial
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.RingTheory.Binomial
 
 /-!
-# Convergence and coefficient bounds for binomial and multichoose power series
+# Convergence of binomial and multichoose power series
 
-This file bounds the norms of ascending Pochhammer quotients `(a)_n / n!` over `ℝ` or `ℂ` by real
-multichoose majorants `Ring.multichoose A n` and determines the exact unconditional summability
-domain of the power series with generalized multichoose coefficients and positive real parameter.
-The convergence results apply to both real and complex arguments and supply the analytic criterion
-used to determine the exact integrability domain of the negative-binomial probability-generating
-function.
+This file determines the exact unconditional summability domain of the power series with
+generalized multichoose coefficients and positive real parameter.  The result applies to both real
+and complex arguments.  These results supply the analytic criterion used to determine the exact
+integrability domain of the negative-binomial probability-generating function.
 
 It also treats the binomial series `binomialSeries 𝔸 a`, the power series of `(1 + y) ^ a`, with
 values in a normed algebra `𝔸` over `ℝ` or `ℂ` rather than a normed division ring. Its radius is
@@ -29,14 +28,14 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
 
 ## Main declarations
 
-* `TauCeti.norm_ascPochhammer_eval_div_factorial_le_multichoose` — norm majorant
-  `‖(a)_n / n!‖ ≤ Ring.multichoose A n` when `‖a‖ ≤ A`.
 * `TauCeti.hasSum_multichoose_mul_geometric_of_abs_lt_one` — the multichoose binomial
   series on the open unit interval.
 * `TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one` — the complex-valued
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
+  `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
   `1` in every normed algebra over `ℝ` or `ℂ`.
 * `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
@@ -48,26 +47,31 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
 public section
 
 open Filter Set Topology
-open scoped ENNReal NNReal Nat
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-- Over `ℝ` or `ℂ`, the norm of `(a)_n / n!` is bounded by `Ring.multichoose A n` for any real
-upper bound `‖a‖ ≤ A`. -/
-theorem norm_ascPochhammer_eval_div_factorial_le_multichoose {𝕂 : Type*} [RCLike 𝕂]
-    {a : 𝕂} {A : ℝ} (ha : ‖a‖ ≤ A) (n : ℕ) :
-    ‖(ascPochhammer 𝕂 n).eval a / (n ! : 𝕂)‖ ≤ Ring.multichoose A n := by
-  rw [norm_div, RCLike.norm_natCast, div_le_iff₀ (Nat.cast_pos.mpr n.factorial_pos), mul_comm,
-    ← nsmul_eq_mul, Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
-    Polynomial.ascPochhammer_smeval_eq_eval]
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, norm_mul]
-    refine mul_le_mul ih ?_ (norm_nonneg _) ((norm_nonneg _).trans ih)
-    calc ‖a + (n : 𝕂)‖ ≤ ‖a‖ + ‖(n : 𝕂)‖ := norm_add_le _ _
-      _ = ‖a‖ + n := by rw [RCLike.norm_natCast]
-      _ ≤ A + n := by gcongr
+/-- Generalized multichoose norm bound: `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` whenever
+`‖w‖ ≤ r`. -/
+theorem norm_multichoose_le_of_norm_le {𝕂 : Type*} [RCLike 𝕂]
+    {w : 𝕂} {r : ℝ} (hr : ‖w‖ ≤ r) (n : ℕ) :
+    ‖Ring.multichoose w n‖ ≤ Ring.multichoose r n := by
+  have hp : ‖(ascPochhammer 𝕂 n).eval w‖ ≤ (ascPochhammer ℝ n).eval r := by
+    induction n with
+    | zero => simp
+    | succ k ih =>
+      rw [ascPochhammer_succ_right, ascPochhammer_succ_right, Polynomial.eval_mul,
+        Polynomial.eval_mul, norm_mul]
+      have hnonneg : 0 ≤ (ascPochhammer ℝ k).eval r := (norm_nonneg _).trans ih
+      have hstep : ‖(Polynomial.X + (k : Polynomial 𝕂)).eval w‖ ≤
+          (Polynomial.X + (k : Polynomial ℝ)).eval r := by
+        simp only [Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_natCast]
+        exact (norm_add_le w k).trans (by simpa using add_le_add_right hr (k : ℝ))
+      exact mul_le_mul ih hstep (norm_nonneg _) hnonneg
+  rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
+    TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, norm_mul, norm_inv,
+    RCLike.norm_natCast]
+  exact mul_le_mul_of_nonneg_left hp (by positivity)
 
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
 theorem hasSum_multichoose_mul_geometric_of_abs_lt_one {r x : ℝ} (hx : |x| < 1) :

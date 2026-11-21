@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.Binomial
 
@@ -32,7 +33,7 @@ is a nonpositive integer. Meanwhile, the exterior condition `max ‖z₀‖ ‖z
 and keeps `z⁻¹` off `[1, ∞)`.
 
 Building on the terminating-polynomial API in
-`TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric` and
+`TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic` and
 `Complex.eulerIntegral_neg_natCast` in
 `TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral`, this file proves that the
 DLMF 15.15.1 series converges absolutely and defines a holomorphic function throughout
@@ -136,8 +137,12 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
   have hprod : w₁ * (1 - vt) = 1 - z⁻¹ * (t : ℂ) := by rw [hv_eq]; dsimp only [w₁]; field
   rw [← hprod, TauCeti.mul_cpow_of_re_pos hw₁_re hw₂_re (-a), cpow_neg w₁ a,
     ← mul_assoc, mul_inv_cancel₀ hw₁a_ne, one_mul]
-  simpa only [← TauCeti.ascPochhammer_eval_div_factorial_eq_multichoose, one_div, ← cpow_neg]
-    using TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hvt_lt
+  have hbin := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hvt_lt
+  rw [one_div, ← cpow_neg] at hbin
+  refine hbin.congr_fun fun s => ?_
+  rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+  dsimp only [vt]
+  ring
 
 /-- Pointwise norm majorant for the `s`-th Euler integrand term in DLMF 15.15.1. -/
 private theorem norm_eulerKernel_inv_term_le (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
@@ -147,8 +152,9 @@ private theorem norm_eulerKernel_inv_term_le (a b c : ℂ) {z z₀ : ℂ} (hz₀
           (1 - z₀⁻¹ * (t : ℂ)) ^ (-(-(s : ℂ))))‖ ≤
       ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖ *
         (Ring.multichoose ‖a‖ s * (max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖) ^ s) := by
-  have hpoch_norm : ‖(ascPochhammer ℂ s).eval a / (s ! : ℂ)‖ ≤ Ring.multichoose ‖a‖ s :=
-    TauCeti.norm_ascPochhammer_eval_div_factorial_le_multichoose le_rfl s
+  have hpoch_norm : ‖(ascPochhammer ℂ s).eval a / (s ! : ℂ)‖ ≤ Ring.multichoose ‖a‖ s := by
+    rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+    exact TauCeti.norm_multichoose_le_of_norm_le le_rfl s
   let W : ℂ := (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)
   let vt : ℂ := (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹
   have h_rearrange : ((ascPochhammer ℂ s).eval a / s ! * ((1 - z / z₀)⁻¹) ^ s) *
@@ -409,8 +415,9 @@ private theorem le_radius_invExpansionSeries (a b c : ℂ) {z₀ : ℂ} (hz₀ :
   refine (invExpansionSeries a b c z₀).le_radius_of_summable_norm ?_
   refine Summable.of_nonneg_of_le (fun _ => by positivity) (fun s => ?_)
     ((summable_norm_regularizedGaussHGFun_neg_natCast_mul_pow b c hz₀ hr'_pos.le hr'R).mul_left C)
-  have hpoch_norm : ‖(ascPochhammer ℂ s).eval a / (s ! : ℂ)‖ ≤ Ring.multichoose ‖a‖ s :=
-    TauCeti.norm_ascPochhammer_eval_div_factorial_le_multichoose le_rfl s
+  have hpoch_norm : ‖(ascPochhammer ℂ s).eval a / (s ! : ℂ)‖ ≤ Ring.multichoose ‖a‖ s := by
+    rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+    exact TauCeti.norm_multichoose_le_of_norm_le le_rfl s
   have hsC : Ring.multichoose ‖a‖ s * ((r : ℝ) / r') ^ s ≤ C := hC _ ⟨s, rfl⟩
   have hsplit : (r : ℝ) ^ s = ((r : ℝ) / r') ^ s * r' ^ s := by
     rw [← mul_pow, div_mul_cancel₀ _ hr'_pos.ne']
@@ -529,8 +536,9 @@ private theorem norm_doubleSeriesTerm_le (a b c z₀ u : ℂ) (k m : ℕ) :
       ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k))‖ *
         (‖z₀‖⁻¹ * ‖u‖) ^ k * (Ring.multichoose (‖a‖ + k) m * ‖u‖ ^ m) := by
   simp only [doubleSeriesTerm, norm_mul, norm_pow, norm_neg, norm_inv, mul_pow]
-  have hm_le : ‖(ascPochhammer ℂ m).eval (a + k) / (m ! : ℂ)‖ ≤ Ring.multichoose (‖a‖ + k) m :=
-    TauCeti.norm_ascPochhammer_eval_div_factorial_le_multichoose
+  have hm_le : ‖(ascPochhammer ℂ m).eval (a + k) / (m ! : ℂ)‖ ≤ Ring.multichoose (‖a‖ + k) m := by
+    rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+    exact TauCeti.norm_multichoose_le_of_norm_le
       (by simpa [Complex.norm_natCast] using norm_add_le a k) m
   calc ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k))‖ *
           ‖z₀‖⁻¹ ^ k * ‖u‖ ^ k * (‖(ascPochhammer ℂ m).eval (a + k) / (m ! : ℂ)‖ * ‖u‖ ^ m)
@@ -607,8 +615,8 @@ private theorem hasSum_doubleSeriesTerm (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z�
       ((1 - u) ^ (-a) * ((ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
         (k ! * Gamma (c + k)) * (z⁻¹) ^ k)) := by
     have hbin := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a + k) hu_lt
-    simp_rw [← TauCeti.ascPochhammer_eval_div_factorial_eq_multichoose, one_div, ← cpow_neg]
-      at hbin
+    simp_rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, inv_mul_eq_div,
+      one_div, ← cpow_neg] at hbin
     have hzinv : z⁻¹ = -z₀⁻¹ * u * (1 - u)⁻¹ := by rw [h1u_eq, hu_eq]; field
     have hcpow : (1 - u) ^ (-(a + k)) = (1 - u) ^ (-a) * ((1 - u)⁻¹) ^ k := by
       rw [neg_add, cpow_add _ _ h1u_ne, cpow_neg (1 - u) (k : ℂ), cpow_natCast, inv_pow]
@@ -623,6 +631,7 @@ private theorem hasSum_doubleSeriesTerm (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z�
     rw [hw_eq, inv_cpow _ _ (slitPlane_arg_ne_pi (Or.inl h1u_re)), cpow_neg]
   have hgauss := (hasSum_regularizedGaussHGFun a b c
     (by rw [norm_inv]; exact inv_lt_one_of_one_lt₀ hz1)).mul_left ((1 - u) ^ (-a))
+  simp_rw [coeff_regularizedGaussHGFunSeries] at hgauss
   have htsum_eq : (∑' km, doubleSeriesTerm a b c z₀ u km) =
       (1 - z₀ / z) ^ a * regularizedGaussHGFun a b c z⁻¹ := by
     rw [(hH.hasSum.prod_fiberwise hfib_k).unique hgauss, hw_pow]

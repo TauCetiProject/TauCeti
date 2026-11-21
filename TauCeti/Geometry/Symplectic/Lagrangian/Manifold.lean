@@ -267,6 +267,7 @@ theorem IsLagrangianMap.two_mul_finrank (h : hσ.IsLagrangianMap J f) {x : N}
   have := (h x).two_mul_finrank
   rwa [LinearMap.finrank_range_of_inj hx, finrank_tangentSpace, finrank_tangentSpace] at this
 
+omit [FiniteDimensional ℝ E] in
 /-- A coisotropic map from a nonempty manifold, witnessed by a point `x`, comes from a manifold of
 at least half the dimension: `dim M ≤ 2 dim N`. No injectivity of the differential is needed. -/
 theorem IsCoisotropicMap.finrank_le_two_mul_finrank [FiniteDimensional ℝ E']

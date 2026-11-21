@@ -19,8 +19,10 @@ This file records small generic additions to Mathlib's `Setoid` API.
   representative to the same representative in the larger quotient.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
-* `Setoid.preimage_image_quotientMk_eq_relPreimage`: the saturation of a set is its preimage under
-  the graph of the relation.
+* `Setoid.preimage_image_quotientMk_eq_relPreimage` and `Setoid.preimage_image_quotientMk`: the
+  saturation of a set described via `SetRel.preimage` and via the projections of the graph subtype.
+* `Setoid.preimage_image_quotientMk_setOfPred_rel`: every equivalence class `{y | r x y}` is
+  saturated under `Quotient.mk r`.
 -/
 
 public section
@@ -62,5 +64,26 @@ theorem preimage_image_quotientMk_eq_relPreimage {α : Type*} (r : Setoid α) (s
   ext x
   simp only [Set.mem_preimage, Set.mem_image, Quotient.eq, SetRel.mem_preimage, Set.mem_ofPred_eq]
   exact exists_congr fun y ↦ and_congr_right fun _ ↦ ⟨r.symm, r.symm⟩
+
+/-- The saturation `Quotient.mk r ⁻¹' (Quotient.mk r '' s)` of a set `s` is the image under the
+second projection of the inverse image of `s` under the first projection of the graph of `r`. -/
+theorem preimage_image_quotientMk {α : Type*} (r : Setoid α) (s : Set α) :
+    Quotient.mk r ⁻¹' (Quotient.mk r '' s) =
+      (fun q : {q : α × α // r q.1 q.2} ↦ q.val.2) ''
+        ((fun q : {q : α × α // r q.1 q.2} ↦ q.val.1) ⁻¹' s) := by
+  ext x
+  constructor
+  · rintro ⟨y, hys, hyx⟩
+    exact ⟨⟨(y, x), Quotient.exact hyx⟩, hys, rfl⟩
+  · rintro ⟨⟨⟨y, _⟩, hyx⟩, hys, rfl⟩
+    exact ⟨y, hys, Quotient.sound hyx⟩
+
+/-- Every equivalence class `{y : α | r x y}` is saturated under `Quotient.mk r`. -/
+@[simp]
+theorem preimage_image_quotientMk_setOfPred_rel {α : Type*} (r : Setoid α) (x : α) :
+    Quotient.mk r ⁻¹' (Quotient.mk r '' {y : α | r x y}) = {y : α | r x y} := by
+  ext y
+  simp only [Set.mem_preimage, Set.mem_image, Set.mem_ofPred_eq, Quotient.eq]
+  exact ⟨fun ⟨z, hxz, hzy⟩ ↦ r.trans hxz hzy, fun hxy ↦ ⟨y, hxy, r.refl y⟩⟩
 
 end Setoid

@@ -29,8 +29,6 @@ concrete p-adic norm and valuation APIs.
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`; `Padic.toAdd_normalizedValuation_mk0_natCast_pow` computes
   it on `p ^ n`, and `Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq` on units of `ℤ_[p]`.
-* `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
-  the additive-group uniformity, so completeness arguments can use the canonical group structure.
 * `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
   `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
   on `ℚ_[p]` with Mathlib's norm.
@@ -82,15 +80,6 @@ namespace Padic
 @[simp]
 theorem coe_two_integerRing : ((2 : 𝒪[ℚ_[p]]) : ℚ_[p]) = 2 :=
   map_ofNat (Subring.subtype 𝒪[ℚ_[p]]) 2
-
-/-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
-valuation topology. This identifies the uniformity used by the normed-field structure with the
-one used by additive topological-group completeness. -/
-theorem uniformSpace_eq_rightUniformSpace :
-    (inferInstance : UniformSpace ℚ_[p]) =
-      @IsTopologicalAddGroup.rightUniformSpace ℚ_[p] _
-        (Padic.mulValuation (p := p)).subgroups_basis.topology _ :=
-  (Padic.mulValuation (p := p)).toUniformSpace_eq
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
@@ -247,7 +236,7 @@ theorem not_isSquare_intCast_of_not_isSquare_zmod {a : ℤ} {k : ℕ}
   exact h ⟨PadicInt.toZModPow k c, by rw [← map_mul, hc, map_intCast]⟩
 
 /-- If `p ≢ 1 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
-`TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
+`TauCeti.anisotropic_binary_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
 over `ℚ_[p]` for such primes. -/
 theorem not_isSquare_neg_one_of_mod_four_ne_one (hp : p % 4 ≠ 1) :
     ¬ IsSquare (-1 : ℚ_[p]) := by

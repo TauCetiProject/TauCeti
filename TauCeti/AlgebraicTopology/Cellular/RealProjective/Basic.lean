@@ -68,13 +68,13 @@ private def sphereIncl (hi : i + 1 ≤ N) (v : TopCat.diskBoundary.{0} (i + 1)) 
     mem_sphere_zero_iff_norm.2 (norm_hemispherePoint hi (norm_eq_of_mem_sphere v.down).le)⟩
 
 private lemma continuous_sphereIncl (hi : i + 1 ≤ N) : Continuous (sphereIncl hi) :=
-  (continuous_hemispherePoint.comp (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _
+  (continuous_hemispherePoint.comp (continuous_subtypeVal.comp continuous_uliftDown)).subtype_mk _
 
 /-- The attaching map of the `(i + 1)`-cell of `RPᴺ` is the double cover `Sⁱ → RPⁱ ⊆ RPᴺ`. -/
 private lemma cellAttachingMap_apply_eq_mk (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) (v : TopCat.diskBoundary.{0} (i + 1)) :
     (ConcreteCategory.hom (Y := TopCat.of (skeletonLT (univ : Set (RealProjectiveSpace N))
-      (i + 1 : ℕ))) (cellAttachingMap c) v).1 = mk N (sphereIncl hi v) := by
+      (i + 1 : ℕ))) (cellAttachingMap c) v).val = mk N (sphereIncl hi v) := by
   have hv : (EuclideanSpace.equiv (Fin (i + 1)) ℝ).unitBallHomeomorph v.down ∈ closedBall 0 1 :=
     mem_closedBall_zero_iff.2
       ((EuclideanSpace.equiv (Fin (i + 1)) ℝ).norm_unitBallHomeomorph_le_one_iff.2
@@ -154,7 +154,7 @@ private lemma mem_upperHemisphere_iff {v : TopCat.diskBoundary.{0} (i + 1)} :
 
 private lemma isOpen_upperHemisphere (i : ℕ) : IsOpen (upperHemisphere i) :=
   isOpen_lt continuous_const
-    ((PiLp.continuous_apply _ _ _).comp (continuous_subtype_val.comp continuous_uliftDown))
+    ((PiLp.continuous_apply _ _ _).comp (continuous_subtypeVal.comp continuous_uliftDown))
 
 private lemma pole_mem_upperHemisphere (i : ℕ) : pole i ∈ upperHemisphere i := by
   rw [mem_upperHemisphere_iff, coe_pole_down_last]
@@ -175,22 +175,22 @@ private lemma isEmbedding_cellAttachingMap_restrict (hi : i + 1 ≤ N)
   let V : Set (sphere (0 : EuclideanSpace ℝ (Fin (N + 1))) 1) :=
     {y | 0 < (y : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩}
   have hV : IsOpen V :=
-    isOpen_lt continuous_const ((PiLp.continuous_apply _ _ _).comp continuous_subtype_val)
+    isOpen_lt continuous_const ((PiLp.continuous_apply _ _ _).comp continuous_subtypeVal)
   have hmk : IsEmbedding fun y : V ↦ mk N y := by
     refine (IsOpenEmbedding.of_continuous_injective_isOpenMap
-      ((continuous_mk N).comp continuous_subtype_val) (fun y y' h ↦ ?_)
-      ((isOpenMap_mk N).comp hV.isOpenMap_subtype_val)).isEmbedding
+      ((continuous_mk N).comp continuous_subtypeVal) (fun y y' h ↦ ?_)
+      ((isOpenMap_mk N).comp hV.isOpenMap_subtypeVal)).isEmbedding
     rcases (mk_eq_mk_iff N y y').1 h with h | h
     · exact Subtype.ext h
-    · have hy : 0 < (y : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩ := y.2
-      have hy' : 0 < (y' : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩ := y'.2
+    · have hy : 0 < (y : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩ := y.property
+      have hy' : 0 < (y' : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩ := y'.property
       rw [h, coe_neg_sphere, PiLp.neg_apply] at hy
       linarith
   have hincl : IsEmbedding (sphereIncl hi) :=
     ((continuous_sphereIncl hi).isClosedEmbedding fun v w h ↦ ULift.ext (Subtype.ext
       (hemispherePoint_injective (by omega) (congrArg Subtype.val h)))).isEmbedding
   have hV' (u : upperHemisphere i) : sphereIncl hi u ∈ V := by
-    have hu := mem_upperHemisphere_iff.1 u.2
+    have hu := mem_upperHemisphere_iff.1 u.property
     rwa [mem_ofPred_eq, sphereIncl,
       hemispherePoint_apply_of_lt _ (j := ⟨i, by omega⟩) (Nat.lt_succ_self i)]
   convert hmk.comp ((hincl.comp IsEmbedding.subtypeVal).codRestrict V hV') using 1
@@ -249,12 +249,12 @@ private lemma mapsTo_cellAttachingMap_compl_pole (hi : i + 1 ≤ N)
 into the complement of the class of the pole. -/
 private lemma mapsTo_cellAttachingMap_upperHemisphere_compl_pole (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
-    MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
+    MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtypeVal⟩ :
         C(upperHemisphere i, TopCat.diskBoundary.{0} (i + 1))) ≫ cellAttachingMap c)
       (Subtype.val ⁻¹' {pole i}ᶜ : Set (upperHemisphere i))
       {cellAttachingMap c (pole i)}ᶜ := fun u hu h ↦
   (eq_pole_or_eq_of_cellAttachingMap_eq hi c h).elim hu fun h' ↦
-    diskBoundaryNeg_pole_notMem_upperHemisphere i (h' ▸ u.2)
+    diskBoundaryNeg_pole_notMem_upperHemisphere i (h' ▸ u.property)
 
 section Ring
 
