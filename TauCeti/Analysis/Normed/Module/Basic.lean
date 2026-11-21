@@ -169,14 +169,7 @@ theorem norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq_le {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] (a b : ℝ) (X Y : E) :
     ‖a • X + b • Y‖ ^ 2 + ‖(-b) • X + a • Y‖ ^ 2 ≤
       2 * ((a ^ 2 + b ^ 2) * (‖X‖ ^ 2 + ‖Y‖ ^ 2)) := by
-  have h₁ : ‖a • X + b • Y‖ ≤ |a| * ‖X‖ + |b| * ‖Y‖ :=
-    (norm_add_le _ _).trans_eq (by rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs])
-  have h₂ : ‖(-b) • X + a • Y‖ ≤ |b| * ‖X‖ + |a| * ‖Y‖ :=
-    (norm_add_le _ _).trans_eq (by
-      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_neg])
-  have h₁' := pow_le_pow_left₀ (norm_nonneg _) h₁ 2
-  have h₂' := pow_le_pow_left₀ (norm_nonneg _) h₂ 2
-  linarith [add_sq_add_add_sq_le a b ‖X‖ ‖Y‖]
+  linarith [norm_smul_add_smul_sq_le a b X Y, norm_smul_add_smul_sq_le (-b) a X Y, neg_sq b]
 
 /-- Conversely, under the conformal linear map `(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)`, the sum of
 the squared norms of the two partial derivatives of a map, times the conformal factor `a² + b²`, is
