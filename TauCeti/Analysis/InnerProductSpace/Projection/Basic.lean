@@ -125,6 +125,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
 /-- An orthogonal projection is idempotent, evaluated at a vector: `P_U (P_U x) = P_U x`. -/
+@[simp]
 theorem starProjection_starProjection_apply (x : E) :
     U.starProjection (U.starProjection x) = U.starProjection x :=
   starProjection_eq_self_iff.mpr (U.starProjection_apply_mem x)
