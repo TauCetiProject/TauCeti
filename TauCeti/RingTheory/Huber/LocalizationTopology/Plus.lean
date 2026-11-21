@@ -391,7 +391,7 @@ theorem locIdealImage_one_le_adjoin_plus (P : PairOfDefinition A) (Aplus : Subri
       obtain ⟨i, hi, rfl⟩ := hy
       intro c
       rw [MulMemClass.coe_mul, toLocSubring_apply]
-      exact locSubring_mul_idealOfDefinition_mem_adjoin_plus P Aplus hIplus T s S c.2 hi
+      exact locSubring_mul_idealOfDefinition_mem_adjoin_plus P Aplus hIplus T s S c.property hi
     | zero =>
       intro c
       rw [mul_zero, ZeroMemClass.coe_zero]

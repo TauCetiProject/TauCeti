@@ -166,10 +166,10 @@ theorem evalCusp_mapGL_smul_infty (hw : Even w) (g : SL(2, ℤ))
   rcases cuspVector_mapGL_smul_infty g with h | h
   · rw [h]
   · have hv : (fun i ↦ (cuspVector (mapGL ℚ g • ∞) i : R)) =
-        (-1 : R) • fun i ↦ ((g : Matrix (Fin 2) (Fin 2) ℤ) i 0 : R) := by
+        -fun i ↦ ((g : Matrix (Fin 2) (Fin 2) ℤ) i 0 : R) := by
       ext i
       simp [h]
-    rw [hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul, hw.neg_one_pow, one_mul]
+    rw [hv, ((mem_homogeneousSubmodule _ _).1 P.property).eval_neg_of_even hw]
 
 /-- **`SL(2, ℤ)`-invariance of the values at the cusps.** For even `w` and `g ∈ SL(2, ℤ)`,
 `(P ∣ g⁻¹)(v_{gα}) = P(v_α)`. -/
@@ -190,7 +190,7 @@ theorem evalCusp_mapGL_smul (hw : Even w) (g : SL(2, ℤ)) (α : OnePoint ℚ)
     rw [map_mul, map_one, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply] at h2
     exact h2
   simp only [smul_smul, ← map_mul, evalCusp_mapGL_smul_infty hw, binaryFormSLRep_apply,
-    coe_binaryFormRep_apply, eval_linearSubst, Matrix.SpecialLinearGroup.coe_mul, hcol,
+    eval_binaryFormRep_apply, Matrix.SpecialLinearGroup.coe_mul, hcol,
     Matrix.mulVec_mulVec, hinv, Matrix.one_mulVec]
 
 /-! ### The functional on modular symbols -/
@@ -249,7 +249,7 @@ noncomputable def boundaryEval (hw : Even w) : ModularSymbols R Γ w →ₗ[R] R
 @[simp]
 theorem boundaryEval_mk (hw : Even w) (D : degreeZero R) (P : homogeneousSubmodule (Fin 2) R w) :
     boundaryEval Γ hw (Coinvariants.mk _ (D ⊗ₜ[R] P)) =
-      Finsupp.linearCombination R (fun α ↦ evalCusp R w α P) (MonoidAlgebra.coeff D.1) := by
+      Finsupp.linearCombination R (fun α ↦ evalCusp R w α P) (MonoidAlgebra.coeff D.val) := by
   simp [boundaryEval, divisorEval, Finsupp.linearCombination_apply, Finsupp.sum,
     LinearMap.sum_apply]
 

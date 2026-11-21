@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Pinned
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.OperatorCongr
 
 /-!
 # Integral realization of the pinned type-B spin action
@@ -20,9 +21,10 @@ torus. It supplies the integral realization needed when comparing this full-weig
 with other Chevalley models. It does not assert a comparison with the direct sum of fundamental
 modules, or generation of all scheme points by root elements.
 
-The proof uses `TypeBSpinCarrier.pinnedRep_ι_rootGenerator`: the pinned and native actions
-have identical simple-root operators on the same lattice, hence identical integral
-divided-power coactions. The torus uses the same spin weights in fundamental-weight coordinates.
+The pinned and native actions have the same simple-root operators on the spin lattice
+(`TypeBSpinCarrier.pinnedRep_ι_rootGenerator`) and use the same spin weights in fundamental-weight
+coordinates. The identification also matches the signed simple-root matrices over any
+commutative ring, without changing their additive parameters.
 
 ## References
 
@@ -46,7 +48,7 @@ variable (n : ℕ) (ht : (DynkinType.B (n + 1)).Valid)
 
 /-- The pinned signed simple-root coordinate morphism is the native spin coordinate morphism,
 including at the terminal short root. -/
-theorem pinnedRootSubgroupCoordinateMap_eq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+theorem kostantRootSubgroupCoordinateMap_pinnedRep_eq_rep (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     kostantRootSubgroupCoordinateMap
         ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
         ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
@@ -60,42 +62,30 @@ theorem pinnedRootSubgroupCoordinateMap_eq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
 
 /-- The pinned spin toral closure has exactly the integral defining Hopf ideal of the
 represented spin carrier. In particular this retains infinitesimal points in bad characteristic. -/
-theorem pinnedToralDefiningIdeal_eq :
-    kostantToralDefiningIdeal
-        ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
-        ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
-        (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
-        (latticeBasis n) (basisWeight n) = definingIdeal n := by
+theorem definingIdeal_eq_pinned :
+    definingIdeal n = kostantToralDefiningIdeal
+      ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
+      ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
+      (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
+      (latticeBasis n) (basisWeight n) := by
   rw [definingIdeal_def]
-  -- `erw` reduces the Dynkin rank when matching the pinned admissibility proofs.
-  apply le_antisymm <;> erw [le_kostantToralDefiningIdeal_iff]
-  · constructor
-    · intro k
-      rw [← pinnedRootSubgroupCoordinateMap_eq n ht k]
-      exact kostantToralDefiningIdeal_toIdeal_le_root_ker _ _ _ _ _ _ _ _ k
-    · exact kostantToralDefiningIdeal_toIdeal_le_torus_ker _ _ _ _ _ _ _ _
-  · constructor
-    · intro k
-      rw [pinnedRootSubgroupCoordinateMap_eq n ht k]
-      exact kostantToralDefiningIdeal_toIdeal_le_root_ker _ _ _ _ _ _ _ _ k
-    · exact kostantToralDefiningIdeal_toIdeal_le_torus_ker _ _ _ _ _ _ _ _
+  symm
+  exact kostantToralDefiningIdeal_eq_of_operator_eq
+    _ _ _ _ _ _ _ _ _ _ _ _ _ (pinnedRep_ι_rootGenerator n ht)
 
 /-- The integral scheme of the pinned spin action is the represented type-B spin carrier. -/
-theorem pinnedToralGroupScheme_eq :
-    kostantToralGroupScheme
-        ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
-        ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
-        (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
-        (latticeBasis n) (basisWeight n) = groupScheme n := by
-  rw [groupScheme_def]
-  exact congrArg (CommHopfAlgCat.quotientSpec
-    (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n))) (pinnedToralDefiningIdeal_eq n ht)
+theorem groupScheme_eq_pinned :
+    groupScheme n = kostantToralGroupScheme
+      ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
+      ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
+      (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
+      (latticeBasis n) (basisWeight n) := by
+  rw [groupScheme_def, definingIdeal_eq_pinned]
 
 /-- The integral realization preserves the closed immersion into the ambient general linear
 group, so it changes no represented matrix. -/
-@[simp]
-theorem eqToHom_pinnedToralGroupScheme_comp_carrierι :
-    eqToHom (pinnedToralGroupScheme_eq n ht) ≫ carrierι n =
+theorem eqToHom_comp_carrierι_eq_pinned :
+    eqToHom (groupScheme_eq_pinned n ht).symm ≫ carrierι n =
       kostantToralGroupSchemeι
         ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
         ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
@@ -106,49 +96,64 @@ theorem eqToHom_pinnedToralGroupScheme_comp_carrierι :
   simp only [eqToHom_trans_assoc]
   rw [← Category.assoc]
   have hi := CommHopfAlgCat.eqToHom_comp_quotientSpecι _
-    ((pinnedToralDefiningIdeal_eq n ht).trans (definingIdeal_def n))
+    ((definingIdeal_eq_pinned n ht).symm.trans (definingIdeal_def n))
   exact congrArg (fun f => f ≫ eqToHom (GeneralLinear.groupScheme_def ℤ (dimension n)).symm) hi
 
 /-- The integral realization matches the positive and negative numbered simple-root morphisms. -/
-@[simp]
-theorem pinnedRootSubgroupToToral_comp_eqToHom (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+@[reassoc (attr := simp)]
+theorem kostantRootSubgroupToToral_pinnedRep_comp_eqToHom (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     kostantRootSubgroupToToral
         ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
         ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
         (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
-        (latticeBasis n) (basisWeight n) k ≫ eqToHom (pinnedToralGroupScheme_eq n ht) =
+        (latticeBasis n) (basisWeight n) k ≫ eqToHom (groupScheme_eq_pinned n ht).symm =
       rootSubgroup n k := by
   apply (cancel_mono (carrierι n)).1
   -- Reduce the Dynkin rank when matching the pinned generator index.
-  erw [Category.assoc, eqToHom_pinnedToralGroupScheme_comp_carrierι,
-    kostantRootSubgroupToToral_comp_ι, rootSubgroup_comp_carrierι,
-    kostantRootSubgroup_def, kostantRootSubgroup_def, pinnedRootSubgroupCoordinateMap_eq]
+  erw [Category.assoc, eqToHom_comp_carrierι_eq_pinned,
+    kostantRootSubgroupToToral_comp_ι, rootSubgroup_comp_carrierι]
+  exact kostantRootSubgroup_eq_of_operator_eq
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ (pinnedRep_ι_rootGenerator n ht k)
 
 /-- The integral realization matches the full weight torus, with its original coordinates. -/
-@[simp]
-theorem pinnedWeightTorusToToral_comp_eqToHom :
+@[reassoc (attr := simp)]
+theorem kostantWeightTorusToToral_pinnedRep_comp_eqToHom :
     kostantWeightTorusToToral
         ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
         ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
         (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
-        (latticeBasis n) (basisWeight n) ≫ eqToHom (pinnedToralGroupScheme_eq n ht) =
+        (latticeBasis n) (basisWeight n) ≫ eqToHom (groupScheme_eq_pinned n ht).symm =
       weightTorus n := by
   apply (cancel_mono (carrierι n)).1
   -- Reduce the Dynkin rank when matching the pinned torus index.
-  erw [Category.assoc, eqToHom_pinnedToralGroupScheme_comp_carrierι,
+  erw [Category.assoc, eqToHom_comp_carrierι_eq_pinned,
     kostantWeightTorusToToral_comp_ι, weightTorus_comp_carrierι]
   rfl
 
 /-- Over every commutative value ring the pinned and native spin points are the same subgroup
 of the same general linear group, not merely abstractly isomorphic. -/
-theorem pinnedToralPointsSubgroup_eq (A : Type*) [CommRing A] :
-    kostantToralPointsSubgroup
+theorem points_eq_pinned (A : Type*) [CommRing A] :
+    points n A = kostantToralPointsSubgroup
+      ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
+      ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
+      (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
+      (latticeBasis n) (basisWeight n) A := by
+  -- Reduce the Dynkin rank inside the pinned admissibility proofs.
+  erw [kostantToralPointsSubgroup_def, ← definingIdeal_eq_pinned, points_def]
+
+/-- Both signs of the native simple-root points are the pinned exponential matrices over any
+commutative value ring, with the same additive parameter. -/
+theorem coe_rootSubgroupPoints_eq_pinned (k : Fin (n + 1) ⊕ Fin (n + 1))
+    (A : Type*) [CommRing A] (u : Multiplicative A) :
+    (rootSubgroupPoints n k A u : Matrix.GeneralLinearGroup (Fin (dimension n)) A) =
+      kostantRootSubgroupMatrix
         ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator
         ((DynkinType.B (n + 1)).lieBasis ht).h (pinnedRep n ht) (lattice n).toAddSubgroup
-        (pinnedRep_kostantForm_mem_lattice n ht) (isNilpotent_pinnedRep_rootGenerator n ht)
-        (latticeBasis n) (basisWeight n) A = points n A := by
-  -- Reduce the Dynkin rank inside the pinned admissibility proofs.
-  erw [kostantToralPointsSubgroup_def, points_def, pinnedToralDefiningIdeal_eq]
+        (pinnedRep_kostantForm_mem_lattice n ht) k (isNilpotent_pinnedRep_rootGenerator n ht k)
+        (latticeBasis n) ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) := by
+  rw [coe_rootSubgroupPoints]
+  exact kostantRootSubgroupMatrix_eq_of_operator_eq
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ (pinnedRep_ι_rootGenerator n ht k).symm _
 
 end
 
