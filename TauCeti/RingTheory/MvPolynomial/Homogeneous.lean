@@ -489,6 +489,17 @@ theorem MvPolynomial.IsHomogeneous.eval_mem_pow {ι R : Type*} [CommSemiring R] 
   Ideal.pow_right_mono (Ideal.span_le.mpr (Set.range_subset_iff.mpr ha)) ν
     ((Ideal.mem_span_pow_iff_exists_isHomogeneous a _).mpr ⟨F, hF, rfl⟩)
 
+/-- Every monomial in the support of a homogeneous polynomial of degree `ν`, evaluated at a family
+of elements of an ideal `I`, lies in `I ^ ν`. -/
+theorem MvPolynomial.IsHomogeneous.prod_pow_mem_pow {ι R : Type*} [CommSemiring R] [Fintype ι]
+    {I : Ideal R} {t : ι → R} (ht : ∀ i, t i ∈ I) {ν : ℕ} {F : MvPolynomial ι R}
+    (hF : F.IsHomogeneous ν) {e : ι →₀ ℕ} (he : e ∈ F.support) :
+    (∏ j, t j ^ e j) ∈ I ^ ν := by
+  have hdeg : ∑ j, e j = ν := by
+    simpa [Finsupp.weight_apply, Finsupp.sum_fintype] using hF (mem_support_iff.mp he)
+  rw [← hdeg, ← Finset.prod_pow_eq_pow_sum]
+  exact Ideal.prod_mem_prod fun j _ ↦ Ideal.pow_mem_pow (ht j) (e j)
+
 /-- A homogeneous polynomial of degree `ν + 1` in `n + 1` variables is `G + H * X_last`, with `G`
 homogeneous of degree `ν + 1` in the first `n` variables and `H` homogeneous of degree `ν`. -/
 theorem MvPolynomial.IsHomogeneous.exists_eq_rename_castSucc_add_mul_X_last {R : Type*}

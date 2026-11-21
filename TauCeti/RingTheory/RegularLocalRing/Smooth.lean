@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Smooth.Local
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.RingTheory.RegularLocalRing.Quotient
-import Mathlib.RingTheory.Smooth.Locus
 import TauCeti.RingTheory.EssentialFiniteness
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 import TauCeti.RingTheory.Smooth.Field
@@ -50,8 +48,6 @@ is the Jacobian criterion `TauCeti.formallySmooth_of_ker_eq_span_of_sum_mul_mem_
   over `R` when its residue field is.
 * `TauCeti.formallySmooth_of_isRegularLocalRing`: a regular local algebra essentially of finite
   type over a field `k`, with residue field formally smooth over `k`, is formally smooth over `k`.
-* `TauCeti.smooth_of_isRegularRing`: a regular algebra of finite type over a perfect field is
-  smooth.
 
 ## References
 
@@ -134,17 +130,6 @@ theorem formallySmooth_of_isRegularLocalRing [Algebra.EssFiniteType k S] [IsRegu
     IsLocalization.map_surjective_of_surjective _ _ _ hφ
   have : Algebra.FormallySmooth k P := .comp k Q P
   exact formallySmooth_of_isRegularLocalRing_of_surjective hsurj
-
-/-- **A regular algebra of finite type over a perfect field is smooth.** Over a perfect field `k`,
-every regular `k`-algebra of finite type is smooth over `k`. -/
-theorem smooth_of_isRegularRing [PerfectField k] [Algebra.FiniteType k S] [IsRegularRing S] :
-    Algebra.Smooth k S := by
-  have : Algebra.FinitePresentation k S := Algebra.FinitePresentation.of_finiteType.mp inferInstance
-  refine ⟨Algebra.smoothLocus_eq_univ_iff.mp (Set.eq_univ_iff_forall.mpr fun p ↦ ?_), inferInstance⟩
-  have : Algebra.EssFiniteType S (Localization.AtPrime p.asIdeal) :=
-    .of_isLocalization _ p.asIdeal.primeCompl
-  have : Algebra.EssFiniteType k (Localization.AtPrime p.asIdeal) := .comp k S _
-  exact formallySmooth_of_isRegularLocalRing
 
 end Field
 

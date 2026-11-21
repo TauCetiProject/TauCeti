@@ -185,15 +185,14 @@ theorem pow_pow (l : ℕ) [NeZero l] :
 theorem pow_top (d : ℕ) (hd : 0 < d) :
     (⟨⊤, d, hd⟩ : MarkedIdeal R).pow k =
       ⟨⊤, k * d, Nat.mul_pos (Nat.pos_of_ne_zero (NeZero.ne k)) hd⟩ :=
-  MarkedIdeal.ext (by rw [pow_ideal, ← Ideal.one_eq_top, one_pow, Ideal.one_eq_top]) rfl
+  MarkedIdeal.ext (by rw [pow_ideal, Ideal.top_pow]) rfl
 
 /-- Rescaling the zero ideal keeps the zero ideal and scales the mark. -/
 @[simp]
 theorem pow_bot (d : ℕ) (hd : 0 < d) :
     (⟨⊥, d, hd⟩ : MarkedIdeal R).pow k =
       ⟨⊥, k * d, Nat.mul_pos (Nat.pos_of_ne_zero (NeZero.ne k)) hd⟩ :=
-  MarkedIdeal.ext
-    (by rw [pow_ideal, ← Ideal.zero_eq_bot, zero_pow (NeZero.ne k), Ideal.zero_eq_bot]) rfl
+  MarkedIdeal.ext (by rw [pow_ideal, Ideal.bot_pow (NeZero.ne k)]) rfl
 
 /-- Rescaling a principal marked ideal `(⟨f⟩, d)` by `k` gives `(⟨f ^ k⟩, k * d)`. -/
 theorem pow_span_singleton (f : R) (d : ℕ) (hd : 0 < d) :
@@ -251,24 +250,20 @@ theorem sum_comm : P.sum Q = Q.sum P := by
 @[simp]
 theorem sum_top_left (d : ℕ) (hd : 0 < d) :
     (⟨⊤, d, hd⟩ : MarkedIdeal R).sum P = ⟨⊤, d * P.mark, Nat.mul_pos hd P.mark_pos⟩ :=
-  MarkedIdeal.ext
-    (by rw [sum_ideal, ← Ideal.one_eq_top, one_pow, Ideal.one_eq_top, top_sup_eq]) rfl
+  MarkedIdeal.ext (by rw [sum_ideal, Ideal.top_pow, top_sup_eq]) rfl
 
 /-- Adding a unit summand on the right produces the unit ideal with the product mark. -/
 @[simp]
 theorem sum_top_right (d : ℕ) (hd : 0 < d) :
     P.sum ⟨⊤, d, hd⟩ = ⟨⊤, P.mark * d, Nat.mul_pos P.mark_pos hd⟩ :=
-  MarkedIdeal.ext
-    (by rw [sum_ideal, ← Ideal.one_eq_top, one_pow, Ideal.one_eq_top, sup_top_eq]) rfl
+  MarkedIdeal.ext (by rw [sum_ideal, Ideal.top_pow, sup_top_eq]) rfl
 
 /-- Adding a zero summand on the left rescales the other summand by its mark. -/
 @[simp]
 theorem sum_bot_left (d : ℕ) (hd : 0 < d) :
     haveI : NeZero d := ⟨hd.ne'⟩
     (⟨⊥, d, hd⟩ : MarkedIdeal R).sum P = P.pow d :=
-  MarkedIdeal.ext
-    (by rw [sum_ideal, pow_ideal, ← Ideal.zero_eq_bot, zero_pow P.mark_pos.ne',
-      Ideal.zero_eq_bot, bot_sup_eq]) rfl
+  MarkedIdeal.ext (by rw [sum_ideal, pow_ideal, Ideal.bot_pow P.mark_pos.ne', bot_sup_eq]) rfl
 
 /-- Adding a zero summand on the right rescales the other summand by its mark. -/
 @[simp]

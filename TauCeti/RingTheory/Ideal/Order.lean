@@ -218,6 +218,7 @@ theorem localOrder_pow [NoZeroDivisors (maximalIdeal R).AssociatedGraded] (I : I
 
 /-- If `gr_𝔪 R` has no zero divisors, as for a regular local ring, the local order of a finite
 product of ideals is the sum of their local orders. -/
+@[simp]
 theorem localOrder_prod [NoZeroDivisors (maximalIdeal R).AssociatedGraded]
     {ι : Type*} (s : Finset ι) (I : ι → Ideal R) :
     (∏ i ∈ s, I i).localOrder = ∑ i ∈ s, (I i).localOrder := by
@@ -338,14 +339,11 @@ theorem orderAt_pow (I : Ideal R) (n : ℕ) (p : PrimeSpectrum R)
 /-- At a prime whose local ring has an associated graded ring without zero divisors, for instance
 a prime with regular localization, the order of a finite product of ideals is the sum of their
 orders. -/
+@[simp]
 theorem orderAt_prod {ι : Type*} (s : Finset ι) (I : ι → Ideal R) (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     (∏ i ∈ s, I i).orderAt p = ∑ i ∈ s, (I i).orderAt p := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    rw [Finset.prod_insert hi, Finset.sum_insert hi, orderAt_mul, ih]
+  simp only [orderAt_def, ← Ideal.mapHom_apply, map_prod, localOrder_prod]
 
 /-- In a local ring, the order at the closed point agrees with the local order. -/
 @[simp]

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 
 /-!
 # The conormal sequence of a formally smooth quotient
@@ -22,7 +24,10 @@ exact on the left as well. If `S` is moreover formally unramified, then `Ω[S⁄
 conormal module `I/I²` is identified with `S ⊗[P] Ω[P⁄R]`.
 
 For a closed point of a scheme over a field whose residue field is separable over the base, this
-identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the differentials.
+identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the differentials. In
+particular, if `A` is a local `k`-algebra whose residue field `κ` is formally smooth over `k`, the
+differentials `1 ⊗ d t_j` of any minimal generating set of `𝔪_A` are `κ`-linearly independent in
+`κ ⊗[A] Ω[A⁄k]`.
 
 ## Main results
 
@@ -30,6 +35,9 @@ identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the diffe
   `I/I² → S ⊗[P] Ω[P⁄R]` is injective when `S` is formally smooth over `R`.
 * `KaehlerDifferential.kerCotangentToTensor_bijective_of_formallyEtale`: it is bijective when `S`
   is formally étale over `R`.
+* `KaehlerDifferential.linearIndependent_tmul_D`: when the residue field `κ` of a local
+  `k`-algebra `A` is formally smooth over `k`, the differentials `1 ⊗ d t_j` of a minimal
+  generating set of `𝔪_A` are `κ`-linearly independent in `κ ⊗[A] Ω[A⁄k]`.
 
 ## References
 
@@ -43,7 +51,7 @@ public section
 
 noncomputable section
 
-open Function
+open Function IsLocalRing TensorProduct
 
 namespace KaehlerDifferential
 
@@ -78,5 +86,37 @@ theorem kerCotangentToTensor_bijective_of_formallyEtale [Algebra.FormallyEtale R
     Bijective (kerCotangentToTensor R P S) := by
   refine ⟨kerCotangentToTensor_injective_of_formallySmooth hf, fun x ↦ ?_⟩
   exact (exact_kerCotangentToTensor_mapBaseChange R P S hf x).1 (Subsingleton.elim _ _)
+
+/-- For a minimal system of generators `t : Fin r → A` of the maximal ideal of a local ring `A`
+whose residue field `κ` is formally smooth over `k`, the tensors `1 ⊗ d(t j)` are `κ`-linearly
+independent in `κ ⊗[A] Ω[A⁄k]`. -/
+theorem linearIndependent_tmul_D {k A : Type*} [CommRing k] [CommRing A] [Algebra k A]
+    [IsLocalRing A] [Algebra.FormallySmooth k (ResidueField A)]
+    {r : ℕ} {t : Fin r → A} (ht : Ideal.span (Set.range t) = maximalIdeal A)
+    (hr : (maximalIdeal A).spanFinrank = r) :
+    LinearIndependent (ResidueField A)
+      (fun j : Fin r ↦ (1 : ResidueField A) ⊗ₜ[A] KaehlerDifferential.D k A (t j)) := by
+  set κ := ResidueField A
+  have hker : RingHom.ker (algebraMap A κ) = maximalIdeal A := by
+    rw [ResidueField.algebraMap_eq, ker_residue]
+  have hsurj : Function.Surjective (algebraMap A κ) := by
+    rw [ResidueField.algebraMap_eq]
+    exact residue_surjective
+  have hinj := kerCotangentToTensor_injective_of_formallySmooth (R := k) (P := A) (S := κ) hsurj
+  have htker (j : Fin r) : t j ∈ RingHom.ker (algebraMap A κ) :=
+    hker.symm ▸ ht ▸ Ideal.subset_span ⟨j, rfl⟩
+  rw [Fintype.linearIndependent_iff]
+  intro c hc i
+  choose c' hc' using fun j ↦ hsurj (c j)
+  have h0 : kerCotangentToTensor k A κ
+      ((RingHom.ker (algebraMap A κ)).toCotangent (∑ j, c' j • ⟨t j, htker j⟩)) = 0 := by
+    rw [← hc]
+    simp only [map_sum, map_smul, kerCotangentToTensor_toCotangent, ← hc']
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← algebraMap_smul κ (c' j), TensorProduct.smul_tmul']
+  have hmem := (Ideal.toCotangent_eq_zero _ _).mp (hinj (h0.trans (map_zero _).symm))
+  simp only [Submodule.coe_sum, Submodule.coe_smul, smul_eq_mul, hker] at hmem
+  rw [← hc', ← RingHom.mem_ker, hker]
+  exact TauCeti.IsLocalRing.mem_maximalIdeal_of_sum_mul_mem_sq ht hr hmem i
 
 end KaehlerDifferential

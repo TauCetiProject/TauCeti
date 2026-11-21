@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.Derivation
-public import TauCeti.RingTheory.MarkedIdeal
+public import TauCeti.RingTheory.Derivation.Order
+public import TauCeti.RingTheory.MarkedIdeal.Basic
 
 /-!
 # Zariski closedness of marked ideal cosupports
