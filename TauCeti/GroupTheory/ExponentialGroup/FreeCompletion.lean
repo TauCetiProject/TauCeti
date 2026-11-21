@@ -36,9 +36,6 @@ exponents in `A`, modulo the least congruence containing the group laws, the mul
   has a ring homomorphism to `ℤ`, for instance `ℤ[t] → ℤ`, `t ↦ 1`. More generally it is injective
   as soon as `G` embeds in some `A`-group: apply
   `TauCeti.IsExponentialGroup.IsCompletion.injective_of_injective` to `isCompletion_of`.
-* `TauCeti.ExponentialGroup.Completion.of_pow_ne_one`: with a ring homomorphism `f : A →+* ℤ`,
-  the power `g ^ a` in the completion of an element `g` of `G` is not the identity when
-  `g ^ f a ≠ 1` in `G`.
 
 ## Implementation notes
 
@@ -208,35 +205,10 @@ end Lift
 theorem isCompletion_of : IsExponentialGroup.IsCompletion.{w} A (of : G →* Completion A G) :=
   ⟨fun _ _ _ _ φ => ⟨lift φ, rfl, fun _ hψ => exponentialHom_ext hψ⟩⟩
 
-/-- If the semiring `A` has a ring homomorphism `f` to `ℤ`, the completion retracts onto `G` by a
-homomorphism `r` with `r (x ^ a) = r x ^ f a`. -/
-private theorem exists_retraction (f : A →+* ℤ) :
-    ∃ r : Completion A G →* G, (∀ g, r (of g) = g) ∧ ∀ x (a : A), r (x ^ a) = r x ^ f a := by
-  -- `G` is an `A`-group with `g ^ a = g ^ f a`
-  let : Pow G A := ⟨fun g a => g ^ f a⟩
-  have : IsExponentialGroup A G :=
-    { pow_one g := (congrArg (g ^ ·) (map_one f)).trans (zpow_one g)
-      pow_add g a b := (congrArg (g ^ ·) (map_add f a b)).trans (zpow_add g _ _)
-      pow_mul g a b := (congrArg (g ^ ·) (map_mul f a b)).trans (zpow_mul g _ _)
-      conj_pow _ _ _ := conj_zpow
-      mul_pow hc a := hc.mul_zpow (f a) }
-  exact ⟨(isCompletion_of.lift (.id G)).toMonoidHom, isCompletion_of.lift_eq (.id G),
-    (isCompletion_of.lift (.id G)).map_pow⟩
-
 /-- If the semiring `A` has a ring homomorphism to `ℤ`, every group embeds in its tensor
 `A`-completion. For `A = ℤ[t]`, take the evaluation at `1`. -/
-theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Completion A G) := by
-  obtain ⟨r, hr, -⟩ := exists_retraction (G := G) f
-  exact Function.LeftInverse.injective hr
-
-/-- If the semiring `A` has a ring homomorphism `f` to `ℤ`, the power `g ^ a` in the completion of
-an element `g` of `G` is not the identity when `g ^ f a ≠ 1` in `G`. For instance, for `A = ℤ[t]`,
-an element `g` of infinite order and a nonzero polynomial `a`, take for `f` the evaluation at an
-integer that is not a root of `a`. -/
-theorem of_pow_ne_one (f : A →+* ℤ) {g : G} {a : A} (h : g ^ f a ≠ 1) :
-    (of g : Completion A G) ^ a ≠ 1 := by
-  obtain ⟨r, hr, hpow⟩ := exists_retraction (G := G) f
-  exact fun h' => h (by simpa [hpow, hr] using congrArg r h')
+theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Completion A G) :=
+  Function.LeftInverse.injective (isCompletion_of.retraction_apply f)
 
 end Completion
 

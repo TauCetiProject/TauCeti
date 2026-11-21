@@ -151,18 +151,6 @@ theorem map_polynomialPow {T : G → G} {T' : H → H} (φ : H →* G)
   simp [polynomialPow_def, map_list_prod, Function.comp_def,
     Function.Semiconj.iterate_right hφ _ _]
 
-/-- A homomorphism of `ℤ[t]`-groups that commutes with the `t`-th power commutes with every
-exponent. -/
-theorem map_pow_of_map_pow_X [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] [Pow H ℤ[X]]
-    [IsExponentialGroup ℤ[X] H] (ψ : G →* H)
-    (hψ : ∀ g : G, ψ (g ^ (X : ℤ[X])) = ψ g ^ (X : ℤ[X])) (g : G) (p : ℤ[X]) :
-    ψ (g ^ p) = ψ g ^ p := by
-  induction p using Polynomial.induction_on with
-  | C a => simp [eq_intCast C a]
-  | add p q hp hq => simp [IsExponentialGroup.pow_add, hp, hq]
-  | monomial n a ih => rw [pow_succ, ← mul_assoc, IsExponentialGroup.pow_mul g,
-      IsExponentialGroup.pow_mul (ψ g), hψ, ih]
-
 end MonoidHom
 
 namespace TauCeti.IsExponentialGroup
@@ -186,7 +174,8 @@ theorem polynomialPow_eq_aeval (τ : Z →* Z) (z : Z) (p : ℤ[X]) :
     z ^ p = (aeval τ.toAdditive.toIntLinearMap p (.ofMul z)).toMul := by
   have hit (n : ℕ) : (τ.toAdditive.toIntLinearMap ^ n) (.ofMul z) = .ofMul (τ^[n] z) := by
     rw [pow_apply_eq_iterate]
-    exact (Function.Semiconj.iterate_right (f := Additive.ofMul) (ga := τ) (fun _ => rfl) n z).symm
+    exact (Function.Semiconj.iterate_right (f := Additive.ofMul) (ga := τ) (fun _ => by simp) n
+      z).symm
   simp [polynomialPow_eq_prod, aeval_endomorphism, Polynomial.sum_def, hit]
 
 end CommGroup
@@ -201,8 +190,14 @@ private theorem isExponentialGroup_polynomialPow_of_comm {Z : Type*} [Group Z]
     IsExponentialGroup ℤ[X] Z := by
   let : CommGroup Z := { (inferInstance : Group Z) with mul_comm := hZ }
   let : Module ℤ[X] (Additive Z) := .compHom _ (aeval τ.toAdditive.toIntLinearMap).toRingHom
+  -- a polynomial `p` acts on `Additive Z` by the evaluation of `p` at `τ`
+  have hsmul (p : ℤ[X]) (x : Additive Z) : p • x = aeval τ.toAdditive.toIntLinearMap p x := rfl
+  have hpow (z : Z) (p : ℤ[X]) : (letI := polynomialPow τ; z ^ p) =
+      (Multiplicative.ofAdd (Additive.ofMul z) ^ p).toAdd.toMul := by
+    rw [Multiplicative.multiplicativePow_def, toAdd_ofAdd, toAdd_ofAdd, hsmul,
+      polynomialPow_eq_aeval]
   have h : polynomialPow τ = (MultiplicativePow.instPow : Pow (Multiplicative (Additive Z)) ℤ[X]) :=
-    congrArg Pow.mk (funext₂ (polynomialPow_eq_aeval τ))
+    congrArg Pow.mk (funext₂ hpow)
   rw [h]
   exact MultiplicativePow.instIsExponentialGroup (A := ℤ[X]) (M := Additive Z)
 
@@ -263,9 +258,16 @@ theorem eq_polynomialPow [inst : Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] :
   let T (g : G) := g ^ (X : ℤ[X])
   have hT := isExponentialGroup_polynomialPow (T := T) (IsExponentialGroup.conj_pow · · X)
     fun _ _ hc => IsExponentialGroup.mul_pow hc X
-  -- the identity map commutes with the `t`-th powers of the two structures
-  exact congrArg Pow.mk <| funext₂ <| @MonoidHom.map_pow_of_map_pow_X _ _ _ _ inst _
-    (polynomialPow T) hT (.id G) fun g => (polynomialPow_X T g).symm
+  -- both exponentiations agree on constants and respect sums and multiplication by `t`
+  have key (g : G) (p : ℤ[X]) : g ^ p = (letI := polynomialPow T; g ^ p) := by
+    induction p using Polynomial.induction_on with
+    | C a => rw [polynomialPow_C, eq_intCast C a, pow_intCast]
+    | add p q hp hq =>
+      rw [IsExponentialGroup.pow_add, hp, hq, @IsExponentialGroup.pow_add _ _ _ _ _ hT]
+    | monomial n a ih =>
+      rw [pow_succ, ← mul_assoc, IsExponentialGroup.pow_mul g _ X, ih,
+        @IsExponentialGroup.pow_mul _ _ _ _ _ hT g _ X, polynomialPow_X]
+  exact congrArg Pow.mk (funext₂ key)
 
 /-- The exponentiation determined by the `m`-th power map is `g ^ p = g ^ p(m)`. -/
 @[simp]
@@ -284,9 +286,27 @@ theorem polynomialPow_zpow (m : ℤ) (g : G) (p : ℤ[X]) :
 /-- In a `ℤ[t]`-group, a subgroup closed under the `t`-th power is closed under every exponent. -/
 theorem pow_mem_of_pow_X_mem [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] {S : Subgroup G}
     (hS : ∀ g ∈ S, g ^ (X : ℤ[X]) ∈ S) {g : G} (hg : g ∈ S) (p : ℤ[X]) : g ^ p ∈ S := by
-  induction p using Polynomial.induction_on with
-  | C a => simpa [eq_intCast C a] using S.zpow_mem hg a
-  | add p q hp hq => simpa [IsExponentialGroup.pow_add] using S.mul_mem hp hq
-  | monomial n a ih => simpa [pow_succ, ← mul_assoc, IsExponentialGroup.pow_mul] using hS _ ih
+  -- the inclusion of `S` commutes with the exponentiation determined by the restricted `t`-th power
+  have h := S.subtype.map_polynomialPow (T := fun g : G => g ^ (X : ℤ[X]))
+    (T' := fun x : S => ⟨x ^ (X : ℤ[X]), hS x x.property⟩) (fun _ => rfl) ⟨g, hg⟩ p
+  rw [← eq_polynomialPow] at h
+  exact h ▸ Subtype.property _
 
 end TauCeti.IsExponentialGroup
+
+namespace MonoidHom
+
+open TauCeti TauCeti.IsExponentialGroup
+
+variable {G H : Type*} [Group G] [Group H]
+
+/-- A homomorphism of `ℤ[t]`-groups that commutes with the `t`-th power commutes with every
+exponent. -/
+theorem map_pow_of_map_pow_X [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] [Pow H ℤ[X]]
+    [IsExponentialGroup ℤ[X] H] (ψ : G →* H)
+    (hψ : ∀ g : G, ψ (g ^ (X : ℤ[X])) = ψ g ^ (X : ℤ[X])) (g : G) (p : ℤ[X]) :
+    ψ (g ^ p) = ψ g ^ p := by
+  have h := ψ.map_polynomialPow (T := (· ^ (X : ℤ[X]))) (T' := (· ^ (X : ℤ[X]))) hψ g p
+  rwa [← eq_polynomialPow, ← eq_polynomialPow] at h
+
+end MonoidHom
