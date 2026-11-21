@@ -14,6 +14,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Retract
+public import TauCeti.AlgebraicGeometry.ModularCurve.TatePoint
+import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 
 /-!
 # The fine moduli scheme `Y₁(N)` for `N ≥ 4`
@@ -42,6 +45,17 @@ is invertible on `B`, it is a closed subscheme of `B × Spec ℤ[A, B][Δ⁻¹]`
 on the universal Tate normal form, the representing scheme of the naive problem `[Γ₁(N)]`
 (`ModuliProblem.gammaOneNaiveRelRepData`), which is finite étale over the smooth `B`-scheme
 `B × Spec ℤ[A, B][Δ⁻¹]`; the retraction classifies the tautological point.
+
+Smoothness does not fix the dimension of the fibres, and `Y₁(N)` is moreover a relative curve over
+`B` (`EllObj.smoothOfRelativeDimension_one_yOne_structureMap`). The universal Tate normal form
+also represents the moduli problem of Tate points, the sections `P` with `P`, `2P` and `3P`
+nowhere zero (`ModuliProblem.tatePointRepresentableBy`). The scheme `V` of pairs of a Tate point
+and a naive `[Γ₁(N)]`-structure then has two descriptions. Forgetting the `[Γ₁(N)]`-structure,
+`V` is étale over `B × Spec ℤ[A, B][Δ⁻¹]`, which has relative dimension two over `B`. Forgetting
+the Tate point, `V` is the Tate locus of the universal curve over `Y₁(N)`, an open subscheme of an
+elliptic curve, so smooth of relative dimension one and surjective over `Y₁(N)`, as `(0, 0)` is a
+Tate point. Hence `Y₁(N)` has relative dimension one
+(`SmoothOfRelativeDimension.of_comp_surjective`).
 
 The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`, a point `P` with
 `NP = 0` has one of `P`, `2P` and `3P` equal to the zero section. For `N ≤ 2` the automorphism
@@ -74,6 +88,10 @@ The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`
   `EllObj.yOne B N`.
 * `TauCeti.AlgebraicGeometry.EllObj.smooth_yOne_structureMap`: for `N ≥ 4` invertible on `B`,
   `Y₁(N)` is smooth over `B`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.tatePointRepresentableBy`: the moduli problem of Tate
+  points is represented by the universal Tate normal form.
+* `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_structureMap`: for `N ≥ 4`
+  invertible on `B`, `Y₁(N)` is smooth of relative dimension one over `B`.
 
 ## References
 
@@ -610,6 +628,12 @@ private theorem tate_conditions (h4 : 4 ≤ N) {X : EllObj B}
   exact ⟨fun s ↦ by simpa using h 1 one_pos (by omega) s, hn 2 two_pos (by omega),
     hn 3 three_pos (by omega)⟩
 
+-- For `N ≥ 4`, the point `(0, 0)` of the universal elliptic curve over `Y₁(N)` is a Tate point.
+private theorem isTatePoint_yOnePoint (h4 : 4 ≤ N) : (yOne B N).curve.IsTatePoint yOnePoint := by
+  have h := tate_conditions h4 (ModuliProblem.naiveLevelEquiv _ (yOneStructure (B := B))).property
+  rw [yOneStructure, naiveLevelEquiv_structureOfPoint] at h
+  exact EllipticCurveGeom.isTatePoint_iff.mpr h
+
 -- Pulling back the universal naive `[Γ₁(N)]`-structure is a bijection from arrows into `Y₁(N)`.
 private theorem bijective_map_yOneStructure (h4 : 4 ≤ N) (X : EllObj B) :
     Function.Bijective fun k : X ⟶ yOne B N ↦
@@ -687,6 +711,62 @@ theorem naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv_id :
   rw [gammaOneNaiveRepresentableBy, Equiv.ofBijective_apply, op_id, CategoryTheory.Functor.map_id,
     ConcreteCategory.id_apply, EllObj.yOneStructure, EllObj.naiveLevelEquiv_structureOfPoint]
 
+/-! ### Tate points are represented by the universal Tate normal form -/
+
+section TatePoint
+
+variable (B) in
+-- The point `(0, 0)` of the universal Tate normal form over `B`, as a Tate point.
+private noncomputable def universalTateStructure :
+    (tatePoint B).obj (op (EllObj.universalTate B)) :=
+  (tatePointEquiv _).symm ⟨EllObj.universalTatePoint B, by
+    rw [EllObj.universalTatePoint, EllObj.prodCurvePoint_def]
+    exact UniversalTate.isTatePoint_pointHom.pointsPullback _ _⟩
+
+private theorem tatePointEquiv_map_universalTateStructure {X : EllObj B}
+    (k : X ⟶ EllObj.universalTate B) :
+    (tatePointEquiv X ((tatePoint B).map k.op (universalTateStructure B))).val =
+      EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (EllObj.universalTatePoint B) := by
+  rw [tatePointEquiv_map, universalTateStructure, Equiv.apply_symm_apply]
+
+-- Pulling back the point `(0, 0)` is a bijection from arrows into the universal Tate normal form
+-- onto Tate points, by the universal property of the Tate normal form.
+private theorem bijective_map_universalTateStructure (X : EllObj B) :
+    Function.Bijective fun k : X ⟶ EllObj.universalTate B ↦
+      (tatePoint B).map k.op (universalTateStructure B) := by
+  refine ⟨fun k k' h ↦ ?_, fun α ↦ ?_⟩
+  · have hk := congrArg (fun α ↦ (tatePointEquiv X α).val) h
+    simp only [tatePointEquiv_map_universalTateStructure] at hk
+    obtain ⟨h₁, h₂, h₃⟩ := EllipticCurveGeom.isTatePoint_iff.mp
+      (tatePointEquiv X ((tatePoint B).map k.op (universalTateStructure B))).property
+    rw [tatePointEquiv_map_universalTateStructure] at h₁ h₂ h₃
+    exact (EllObj.existsUnique_hom_universalTate _ h₁ h₂ h₃).unique rfl hk.symm
+  · obtain ⟨h₁, h₂, h₃⟩ := EllipticCurveGeom.isTatePoint_iff.mp (tatePointEquiv X α).property
+    obtain ⟨k, hk, -⟩ := EllObj.existsUnique_hom_universalTate _ h₁ h₂ h₃
+    refine ⟨k, (tatePointEquiv X).injective (Subtype.ext ?_)⟩
+    rw [tatePointEquiv_map_universalTateStructure, hk]
+
+variable (B) in
+/-- **The universal Tate normal form represents Tate points.** The moduli problem of Tate points
+over `Ell/B` is represented by the universal Tate normal form over `B × Spec ℤ[A, B][Δ⁻¹]`: the
+Tate points of an object `X` of `Ell/B` correspond to the arrows `X ⟶ EllObj.universalTate B`, by
+pulling back the point `(0, 0)` (`tatePointEquiv_tatePointRepresentableBy_homEquiv`). -/
+noncomputable def tatePointRepresentableBy :
+    (tatePoint B).RepresentableBy (EllObj.universalTate B) where
+  homEquiv := Equiv.ofBijective _ (bijective_map_universalTateStructure _)
+  homEquiv_comp f k := by
+    rw [Equiv.ofBijective_apply, Equiv.ofBijective_apply, op_comp, Functor.map_comp_apply]
+
+/-- The Tate point corresponding to an arrow `k : X ⟶ EllObj.universalTate B` is the base change of
+the point `(0, 0)` along `k`. -/
+theorem tatePointEquiv_tatePointRepresentableBy_homEquiv {X : EllObj B}
+    (k : X ⟶ EllObj.universalTate B) :
+    (tatePointEquiv X ((tatePointRepresentableBy B).homEquiv k)).val =
+      EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (EllObj.universalTatePoint B) :=
+  tatePointEquiv_map_universalTateStructure k
+
+end TatePoint
+
 end ModuliProblem
 
 namespace EllObj
@@ -752,10 +832,17 @@ theorem isOfNaiveExactOrder_naiveExactOrderPoint (X : EllObj B) :
     (ModuliProblem.isFiberwiseInjective_naiveLocusHom (X.curve.torsionPointHom N) (𝟙 _))
 
 variable (B) in
+/-- The base `B × Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form over `B` is smooth of
+relative dimension two over `B`. -/
+instance smoothOfRelativeDimension_universalTate_structureMap :
+    SmoothOfRelativeDimension 2 (universalTate B).structureMap :=
+  MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
+
+variable (B) in
 /-- The base `B × Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form over `B` is smooth over
 `B`. -/
 instance smooth_universalTate_structureMap : Smooth (universalTate B).structureMap :=
-  MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
+  SmoothOfRelativeDimension.smooth 2 _
 
 variable (B N) in
 /-- **`Y₁(N)` is smooth over `B`.** For `N ≥ 4` invertible on `B`, the structure morphism of the
@@ -815,6 +902,47 @@ theorem smooth_yOne_structureMap (hN : ∀ b : B, (N : B.residueField b) ≠ 0) 
   · rw [← hjb]
     exact (comp_base j k).symm.trans ((congrArg Hom.base hjk).trans (id_base _))
   · exact k.base_structureMap.trans (baseChangeFunctor_obj_structureMap _ _)
+
+variable (B N) in
+/-- **`Y₁(N)` is a relative curve.** For `N ≥ 4` invertible on `B`, the structure morphism of the
+fine moduli scheme `Y₁(N)` to `B` is smooth of relative dimension one: every fibre of `Y₁(N)` over
+`B` is a smooth scheme of pure dimension one. For example `Y₁(N)` is a smooth affine curve over
+`ℤ[1/N]`.
+
+This is more than `smooth_yOne_structureMap`, since smoothness alone does not fix the dimension of
+the fibres: the base `B × Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form, in which `Y₁(N)`
+lies, is smooth of relative dimension two over `B`. -/
+theorem smoothOfRelativeDimension_one_yOne_structureMap
+    (hN : ∀ b : B, (N : B.residueField b) ≠ 0) (h4 : 4 ≤ N) :
+    SmoothOfRelativeDimension 1 (yOne B N).structureMap := by
+  -- Let `V` be the scheme of pairs of a Tate point and a naive `[Γ₁(N)]`-structure, represented
+  -- by the universal curve over `Y₁(N)` pulled back to the Tate locus `W` of that curve.
+  let D := ModuliProblem.tatePointRelRepData B
+  let W := D.rep (yOne B N)
+  let S := D.tensorRepresentableBy (ModuliProblem.gammaOneNaiveRepresentableBy (B := B) h4)
+  let V := (yOne B N).baseChangeFunctor.obj W
+  -- Forgetting the `[Γ₁(N)]`-structure, `V` is étale over the universal Tate normal form, of
+  -- relative dimension two over `B`, so `V` has relative dimension two over `B`.
+  let a : V ⟶ universalTate B :=
+    (ModuliProblem.tatePointRepresentableBy B).homEquiv.symm (S.homEquiv (𝟙 V)).1
+  have : Etale a.base :=
+    (ModuliProblem.gammaOneNaiveRelRepData (B := B) (N := N)).mem_base_of_forget_snd
+      (ModuliProblem.tatePointRepresentableBy B) S a (Equiv.apply_symm_apply _ _)
+      ((ModuliProblem.RelRepData.hasProperty_iff _).mp
+        (ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData hN) _)
+  have h2 : SmoothOfRelativeDimension (0 + 2) (a.base ≫ (universalTate B).structureMap) :=
+    inferInstance
+  rw [a.base_structureMap, baseChangeFunctor_obj_structureMap] at h2
+  -- Forgetting the Tate point, `V` is the Tate locus `W`, an open subscheme of the universal curve
+  -- over `Y₁(N)`, so smooth of relative dimension one over it, and surjective onto it because the
+  -- point `(0, 0)` is a Tate point.
+  have : SmoothOfRelativeDimension 1 W.hom := (ModuliProblem.RelRepData.hasProperty_iff _).mp
+    ModuliProblem.hasProperty_smoothOfRelativeDimension_tatePointRelRepData _
+  have : Surjective W.hom :=
+    ModuliProblem.surjective_tatePointRelRepData_rep_hom (isTatePoint_yOnePoint h4)
+  have : Smooth (yOne B N).structureMap := smooth_yOne_structureMap B N hN h4
+  have : SmoothOfRelativeDimension (1 + 1) (W.hom ≫ (yOne B N).structureMap) := h2
+  exact SmoothOfRelativeDimension.of_comp_surjective (m := 1) W.hom (yOne B N).structureMap
 
 end EllObj
 

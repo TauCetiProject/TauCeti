@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.TateNormalForm
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 
 /-!
@@ -29,6 +30,13 @@ is needed; in particular `S` may be nonreduced or non-affine. By the uniqueness 
 morphism, an automorphism of `E` over `S` fixing the zero section and `P` is the identity
 (`EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq`).
 
+The sections to which the Tate normal form applies are the **Tate points**
+(`EllipticCurveGeom.IsTatePoint`): those lying at every point of `S` in the **Tate locus**
+(`EllipticCurveGeom.tateLocus`), the open subset of points `e` of `E` such that none of `e`, `2e`
+and `3e` lies on the zero section. Tate points are stable under base change, and on a base change
+they are read off the Tate locus of the original curve
+(`EllipticCurveGeom.isTatePoint_iff_of_isPullback`).
+
 The coefficient ring `ℤ[A, B][Δ⁻¹]` (`WeierstrassCurve.UniversalTate.Ring`) lies in `Type`. For
 schemes in an arbitrary universe the universal Tate normal form is read over its copy
 `ULift.{u} ℤ[A, B][Δ⁻¹]` (`WeierstrassCurve.UniversalTate.curveULift`).
@@ -40,6 +48,10 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
 * `TauCeti.AlgebraicGeometry.UniversalTate.curveGeom`: the universal Tate normal form as an
   elliptic curve over `Spec ℤ[A, B][Δ⁻¹]`.
 * `TauCeti.AlgebraicGeometry.UniversalTate.pointHom`: its point `(0, 0)`, with values in the base.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.tateLocus`: the open subset of points `e` of `E`
+  such that none of `e`, `2e` and `3e` lies on the zero section.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsTatePoint`: a section of `E` lying in the Tate
+  locus at every point of the base.
 
 ## Main results
 
@@ -53,8 +65,16 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_tateNormalForm_curveGeom`: the same
   universal property, with the universal Tate normal form read as the elliptic curve `curveGeom`.
-* `WeierstrassCurve.UniversalTate.smooth_terminal_from`: the base `Spec ℤ[A, B][Δ⁻¹]` of the
-  universal Tate normal form is smooth over `Spec ℤ`.
+* `WeierstrassCurve.UniversalTate.smoothOfRelativeDimension_terminal_from`: the base
+  `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth of relative dimension two over
+  `Spec ℤ`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isTatePoint_iff`: a Tate point is a section `P`
+  such that none of `P`, `2P` and `3P` meets the zero section.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isTatePoint_iff_of_isPullback` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsTatePoint.pointsPullback`: Tate points of a base
+  change, and their stability under base change.
+* `TauCeti.AlgebraicGeometry.UniversalTate.isTatePoint_pointHom`: the point `(0, 0)` of the
+  universal Tate normal form is a Tate point.
 * `WeierstrassCurve.UniversalTate.point_ne_projModelZero`,
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero` and
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero`: the universal point
@@ -130,19 +150,34 @@ theorem point_projModelMulBy_three_ne_projModelZero (s) :
 
 /-! ### Smoothness of the base -/
 
-/-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth over `Spec ℤ`, the
-terminal scheme. -/
-instance smooth_terminal_from : Smooth (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
+/-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth of relative dimension
+two over `Spec ℤ`, the terminal scheme: it is an open subscheme of the affine plane. -/
+instance smoothOfRelativeDimension_terminal_from :
+    SmoothOfRelativeDimension 2 (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
+  let e₁ : ULift.{u} ℤ ≃+* ℤ := ULift.ringEquiv
+  let e₂ : Ring ≃+* ULift.{u} Ring := ULift.ringEquiv.symm
   let f : ULift.{u} ℤ →+* ULift.{u} Ring :=
-    ULift.ringEquiv.symm.toRingHom.comp ((algebraMap ℤ Ring).comp ULift.ringEquiv.toRingHom)
-  have hf : f.Smooth :=
-    ((RingHom.Smooth.of_bijective ULift.ringEquiv.bijective).comp
-      (RingHom.smooth_algebraMap.mpr inferInstance)).comp
-        (RingHom.Smooth.of_bijective ULift.ringEquiv.symm.bijective)
-  have : Smooth (Spec.map (CommRingCat.ofHom f)) := HasRingHomProperty.Spec_iff.mpr hf
+    (e₂ : Ring →+* ULift.{u} Ring).comp ((algebraMap ℤ Ring).comp (e₁ : ULift.{u} ℤ →+* ℤ))
+  -- `ℤ[A, B][Δ⁻¹]` is a localisation away from one element of the polynomial ring `ℤ[A, B]`
+  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (MvPolynomial (Fin 2) ℤ) Ring :=
+    .localization_away polyCurve.Δ
+  have : Algebra.IsStandardSmoothOfRelativeDimension 2 ℤ Ring :=
+    .trans (n := 2) (m := 0) ℤ (MvPolynomial (Fin 2) ℤ) Ring
+  have hf : f.IsStandardSmoothOfRelativeDimension (0 + (2 + 0)) :=
+    (RingHom.IsStandardSmoothOfRelativeDimension.equiv e₂).comp
+      (((RingHom.isStandardSmoothOfRelativeDimension_algebraMap 2).mpr inferInstance).comp
+        (RingHom.IsStandardSmoothOfRelativeDimension.equiv e₁))
+  have : SmoothOfRelativeDimension 2 (Spec.map (CommRingCat.ofHom f)) := by
+    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension 2)]
+    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hf
   have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
   rw [terminal.hom_ext (terminal.from _) (Spec.map (CommRingCat.ofHom f) ≫ e.hom)]
-  infer_instance
+  exact inferInstanceAs (SmoothOfRelativeDimension (2 + 0) _)
+
+/-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth over `Spec ℤ`, the
+terminal scheme. -/
+instance smooth_terminal_from : Smooth (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.smooth 2 _
 
 end WeierstrassCurve.UniversalTate
 
@@ -656,6 +691,140 @@ theorem exists_tateNormalForm_iff :
 
 end
 
+/-! ### The Tate locus -/
+
+section TateLocus
+
+open MonoidalCategory
+
+variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
+
+/-- **The Tate locus** of an elliptic curve `E` over `S`: the set of points `e` of `E` such that
+none of `e`, `2e` and `3e` lies on the zero section. Its points with values in a scheme over `S`
+are the points of `E` to which the Tate normal form applies (`isTatePoint_iff_of_isPullback`). -/
+def tateLocus : Set E.carrier :=
+  {e | e ≠ E.zero (E.structureMap e) ∧ (E.mulBy 2).left e ≠ E.zero (E.structureMap e) ∧
+    (E.mulBy 3).left e ≠ E.zero (E.structureMap e)}
+
+variable {E} in
+/-- The defining condition of the Tate locus. -/
+@[simp]
+theorem mem_tateLocus_iff {e : E.carrier} :
+    e ∈ E.tateLocus ↔ e ≠ E.zero (E.structureMap e) ∧
+      (E.mulBy 2).left e ≠ E.zero (E.structureMap e) ∧
+        (E.mulBy 3).left e ≠ E.zero (E.structureMap e) :=
+  Iff.rfl
+
+/-- The Tate locus is open: it is the complement of the preimages under `[1]`, `[2]` and `[3]` of
+the closed image of the zero section. -/
+theorem isOpen_tateLocus : IsOpen E.tateLocus := by
+  have h (x : Over.mk E.structureMap ⟶ Over.mk E.structureMap) :
+      IsOpen {e | x.left e ≠ E.zero (E.structureMap e)} := by
+    have hx : {e | x.left e ≠ E.zero (E.structureMap e)} = (x.left ⁻¹' Set.range E.zero)ᶜ := by
+      ext e
+      exact (left_apply_mem_range_zero_iff x e).not.symm
+    rw [hx]
+    exact (E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous).isOpen_compl
+  exact (h (𝟙 _)).inter ((h (E.mulBy 2)).inter (h (E.mulBy 3)))
+
+/-- The Tate locus as an open subscheme of `E`. -/
+def tateLocusOpens : E.carrier.Opens :=
+  ⟨E.tateLocus, E.isOpen_tateLocus⟩
+
+@[simp]
+theorem coe_tateLocusOpens : (E.tateLocusOpens : Set E.carrier) = E.tateLocus :=
+  (rfl)
+
+/-- An `S`-point `P` of `E` is a **Tate point** if it lies in the Tate locus at every point of
+`S`, that is, none of `P`, `2P` and `3P` meets the zero section (`isTatePoint_iff`). These are the
+points to which the Tate normal form applies (`existsUnique_tateNormalForm`). -/
+def IsTatePoint (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) : Prop :=
+  ∀ s : S, P.left s ∈ E.tateLocus
+
+variable {E}
+
+/-- A Tate point lies in the Tate locus at every point of the base. -/
+theorem IsTatePoint.mem_tateLocus {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (h : E.IsTatePoint P) (s : S) : P.left s ∈ E.tateLocus :=
+  h s
+
+/-- A Tate point is a point `P` such that none of `P`, `2P` and `3P` meets the zero section. -/
+theorem isTatePoint_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
+    E.IsTatePoint P ↔ (∀ s : S, P.left s ≠ E.zero s) ∧
+      (∀ s : S, (P.left ≫ (E.mulBy 2).left) s ≠ E.zero s) ∧
+        ∀ s : S, (P.left ≫ (E.mulBy 3).left) s ≠ E.zero s := by
+  have hP (s : S) : E.structureMap (P.left s) = s := by
+    rw [← Scheme.Hom.comp_apply, left_comp_structureMap]
+    rfl
+  refine ⟨fun h ↦ ⟨fun s ↦ ?_, fun s ↦ ?_, fun s ↦ ?_⟩, fun ⟨h₁, h₂, h₃⟩ s ↦ ?_⟩
+  · simpa only [hP] using (h s).1
+  · simpa only [hP, Scheme.Hom.comp_apply] using (h s).2.1
+  · simpa only [hP, Scheme.Hom.comp_apply] using (h s).2.2
+  · rw [mem_tateLocus_iff, hP]
+    simp only [Scheme.Hom.comp_apply] at h₂ h₃
+    exact ⟨h₁ s, h₂ s, h₃ s⟩
+
+section BaseChange
+
+variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
+  {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
+  (h0 : E'.zero ≫ g = f ≫ E.zero)
+
+include hg h0 in
+/-- **Tate points of a base change.** Let `g : E' ⟶ E` lie over `f : S' ⟶ S`, exhibiting `E'` as
+the base change of `E` and carrying the zero section to the zero section. An `S'`-point `P'` of
+`E'` is a Tate point exactly when its image under `g`, a point of `E` with values in `S'`, lies in
+the Tate locus of `E` at every point of `S'`. -/
+theorem isTatePoint_iff_of_isPullback (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
+    E'.IsTatePoint P' ↔ ∀ s' : S', g (P'.left s') ∈ E.tateLocus := by
+  have hP (s' : S') : E.structureMap (g (P'.left s')) = f s' := by
+    rw [← Scheme.Hom.comp_apply, hg.w, Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply P'.left,
+      left_comp_structureMap]
+    rfl
+  -- `g` carries `nP'` to `n` times the image of `P'`
+  have hn (n : ℤ) (s' : S') :
+      ((P'.left ≫ (E'.mulBy n).left) s' = E'.zero s') ↔
+        (E.mulBy n).left (g (P'.left s')) = E.zero (f s') := by
+    rw [← Over.comp_left, left_apply_eq_zero_iff_of_isPullback hg h0, Over.comp_left,
+      ← Scheme.Hom.comp_apply, Category.assoc, mulBy_left_comp_of_isPullback hg h0,
+      ← Category.assoc, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply]
+  rw [isTatePoint_iff]
+  simp only [mem_tateLocus_iff, hP]
+  refine ⟨fun ⟨h₁, h₂, h₃⟩ s' ↦ ⟨?_, (hn 2 s').not.mp (h₂ s'), (hn 3 s').not.mp (h₃ s')⟩,
+    fun h ↦ ⟨fun s' ↦ ?_, fun s' ↦ (hn 2 s').not.mpr (h s').2.1,
+      fun s' ↦ (hn 3 s').not.mpr (h s').2.2⟩⟩
+  · exact (left_apply_eq_zero_iff_of_isPullback hg h0 P' s').not.mp (h₁ s')
+  · exact (left_apply_eq_zero_iff_of_isPullback hg h0 P' s').not.mpr (h s').1
+
+include hg h0 in
+/-- **Tate points are stable under base change.** -/
+theorem IsTatePoint.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (h : E.IsTatePoint P) : E'.IsTatePoint (pointsPullback hg h0 P) := by
+  rw [isTatePoint_iff_of_isPullback hg h0]
+  intro s'
+  rw [← Scheme.Hom.comp_apply, pointsPullback_left_comp, Scheme.Hom.comp_apply]
+  exact h (f s')
+
+end BaseChange
+
+end TateLocus
+
 end EllipticCurveGeom
+
+namespace UniversalTate
+
+open MonoidalCategory
+
+/-- The point `(0, 0)` of the universal Tate normal form is a Tate point: none of `(0, 0)`,
+`2 (0, 0)` and `3 (0, 0)` meets the zero section. -/
+theorem isTatePoint_pointHom : curveGeom.{u}.IsTatePoint pointHom := by
+  have hiso : IsPullback (toEllipticCurveGeomIso curveULift.{u}).hom curveGeom.structureMap
+      curveULift.projModelOver (𝟙 _) :=
+    IsPullback.of_horiz_isIso ⟨by rw [toEllipticCurveGeomIso_hom_projModelOver, Category.comp_id]⟩
+  rw [EllipticCurveGeom.isTatePoint_iff]
+  exact (curveGeom.exists_tateNormalForm_iff (EllipticCurveGeom.left_comp_structureMap pointHom)).mp
+    ⟨𝟙 _, (toEllipticCurveGeomIso curveULift).hom, hiso, by simp, by simp⟩
+
+end UniversalTate
 
 end TauCeti.AlgebraicGeometry
