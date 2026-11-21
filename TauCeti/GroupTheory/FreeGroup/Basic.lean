@@ -103,7 +103,11 @@ conjugation in `G`: every conjugate of `lift f u` is `lift g u` for some `g`. -/
 theorem exists_lift_eq_of_isConj {α G : Type*} [Group G] {u : FreeGroup α} (f : α → G) {a : G}
     (ha : IsConj (lift f u) a) : ∃ g : α → G, lift g u = a := by
   obtain ⟨t, rfl⟩ := isConj_iff.1 ha
-  exact ⟨_, (lift_unique ((MulAut.conj t).toMonoidHom.comp (lift f)) fun _ => rfl).symm⟩
+  refine ⟨fun x => MulAut.conj t (f x), ?_⟩
+  have h : lift (fun x => MulAut.conj t (f x)) = (MulAut.conj t).toMonoidHom.comp (lift f) :=
+    ext_hom _ _ fun x => by
+      rw [lift_apply_of, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, lift_apply_of]
+  rw [h, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
 
 /-- Substituting a word `w b` in `α` for each generator `b` of the second summand of `α ⊕ β`
 is a left inverse of the inclusion of `FreeGroup α`, so it recovers every set of words in `α`. -/
