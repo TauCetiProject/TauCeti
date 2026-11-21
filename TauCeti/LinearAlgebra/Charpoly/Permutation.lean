@@ -144,7 +144,7 @@ theorem charpoly_lmapDomain (π : Perm α) :
     · have hc : ∀ y, (π.subtypePerm h).SameCycle ⟨x, SameCycle.refl π x⟩ y :=
         fun y ↦ sameCycle_subtypePerm.mpr y.property
       rw [charpoly_lmapDomain_of_forall_sameCycle _ hc,
-        (fullCycleType_eq_singleton_card_iff _).mpr ⟨_, hc⟩, Multiset.map_singleton,
+        (fullCycleType_eq_singleton_iff _).mpr ⟨⟨_, hc⟩, rfl⟩, Multiset.map_singleton,
         Multiset.prod_singleton]
     · refine ih _ ?_ _ rfl
       rw [← hn]

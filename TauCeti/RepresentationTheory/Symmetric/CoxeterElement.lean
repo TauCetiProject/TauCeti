@@ -79,9 +79,9 @@ theorem charpoly_ofMulAction_wordProd_permCoxeterSystem (R : Type*) [CommRing R]
       (permCoxeterSystem n).wordProd ω :=
     Equiv.ext fun _ ↦ rfl
   rw [Representation.charpoly_ofMulAction, hperm,
-    (Equiv.Perm.fullCycleType_eq_singleton_card_iff _).mpr
-      ⟨_, sameCycle_wordProd_permCoxeterSystem hω ⟨0, Nat.pos_of_ne_zero hn⟩⟩,
-    Multiset.map_singleton, Multiset.prod_singleton, Fintype.card_fin]
+    (Equiv.Perm.fullCycleType_eq_singleton_iff _).mpr
+      ⟨⟨_, sameCycle_wordProd_permCoxeterSystem hω ⟨0, Nat.pos_of_ne_zero hn⟩⟩, Fintype.card_fin n⟩,
+    Multiset.map_singleton, Multiset.prod_singleton]
 
 /-- **A Coxeter element of `S_n` on the reflection representation.** A product of all the
 adjacent transpositions, each taken once in any order, acts on the trace-zero hyperplane of

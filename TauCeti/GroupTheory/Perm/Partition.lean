@@ -59,11 +59,14 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   for a `σ`-stable predicate and its complement.
 * `Equiv.Perm.fullCycleType_eq_map_univ`: the full cycle type is the multiset of the cycle
   lengths, read through any finite type labelling the cycles.
-* `Equiv.Perm.fullCycleType_eq_singleton_card_iff`: a permutation has full cycle type
-  `{Fintype.card α}` exactly when a single cycle passes through every point.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
   are the nontrivial cycle factors together with the fixed points, via the point-level map
   `Equiv.Perm.cycleFactorOrFixedPoint`.
+* `Equiv.Perm.card_fullCycleType`: the full cycle type has one part for each class of
+  `Equiv.Perm.SameCycle`.
+* `Equiv.Perm.fullCycleType_eq_singleton_iff`: a permutation has full cycle type `{n}` exactly when
+  its action has exactly one orbit, counting a fixed point as a one-element orbit, and the carrier
+  has `n` points.
 * `Equiv.Perm.fullCycleType_eq_map_card_orbit`: the full cycle type is the multiset of the sizes
   of the orbits of `⟨σ⟩` on the carrier, with `Equiv.Perm.sameCycle_iff_mem_orbit_zpowers`,
   `Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers` and `Equiv.Perm.orbit_zpowers_eq_singleton`
@@ -652,35 +655,6 @@ theorem fullCycleType_eq_map_univ {γ : Type*} [Fintype γ] (e : Quotient (SameC
   ext y
   simp [hm, eq_comm]
 
-/-- A permutation has a single part, the cardinality of the carrier, exactly when a single cycle
-passes through every point. -/
-theorem fullCycleType_eq_singleton_card_iff :
-    σ.fullCycleType = {Fintype.card α} ↔ ∃ x, ∀ y, σ.SameCycle x y := by
-  refine ⟨fun h => ?_, fun ⟨x, hx⟩ => ?_⟩
-  · by_cases hα : 2 ≤ Fintype.card α
-    · -- On at least two points, `σ` is a cycle moving every point.
-      have hc : σ.cycleType = {Fintype.card α} := by
-        rw [← filter_fullCycleType_eq_cycleType, h, Multiset.filter_singleton, ite_eq_left hα]
-      obtain ⟨hσ, hcard⟩ := cycleType_eq_singleton_iff.mp hc
-      have hsupp : ∀ y, σ y ≠ y := fun y =>
-        mem_support.mp (Finset.eq_univ_of_card _ hcard ▸ Finset.mem_univ y)
-      obtain ⟨x, hx⟩ := hσ.nonempty_support
-      exact ⟨x, fun y => hσ.sameCycle (mem_support.mp hx) (hsupp y)⟩
-    · -- On at most one point, which exists because the full cycle type is not empty.
-      have : Nonempty α := Fintype.card_pos_iff.mp <| Nat.pos_of_ne_zero fun h0 =>
-        Multiset.singleton_ne_zero _ (h ▸ fullCycleType_eq_zero_iff.mpr h0)
-      have : Subsingleton α := Fintype.card_le_one_iff_subsingleton.mp (by omega)
-      exact ⟨Classical.arbitrary α, fun y => Subsingleton.elim (Classical.arbitrary α) y ▸
-        SameCycle.refl σ _⟩
-  · let e : Quotient (SameCycle.setoid σ) ≃ Unit :=
-      { toFun := fun _ => ()
-        invFun := fun _ => Quotient.mk _ x
-        left_inv := fun q => Quotient.inductionOn q fun y => Quotient.sound (hx y)
-        right_inv := fun _ => rfl }
-    rw [fullCycleType_eq_map_univ σ e (f := fun _ => Fintype.card α) fun y => by
-      rw [minimalPeriod_eq_natCard_of_forall_sameCycle σ hx y, Nat.card_eq_fintype_card]]
-    simp
-
 /-- The fixed points of a permutation are the complement of its support. -/
 theorem card_subtype_apply_eq :
     Fintype.card {x : α // σ x = x} = Fintype.card α - σ.support.card := by
@@ -755,6 +729,33 @@ theorem orbitQuotientEquivCycleFactorsSumFixedPoints_mk (x : α) :
     σ.orbitQuotientEquivCycleFactorsSumFixedPoints (Quotient.mk (SameCycle.setoid σ) x) =
       σ.cycleFactorOrFixedPoint x :=
   (rfl)
+
+/-- The full cycle type has one part for each orbit of `σ`, a fixed point counting as an orbit of
+its own: its number of parts is the number of classes of `Equiv.Perm.SameCycle σ`. -/
+theorem card_fullCycleType :
+    Multiset.card σ.fullCycleType = Nat.card (Quotient (SameCycle.setoid σ)) := by
+  classical
+  rw [Nat.card_eq_fintype_card,
+    Fintype.card_congr σ.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
+    Fintype.card_coe, card_subtype_apply_eq, fullCycleType_def, card_parts_partition,
+    cycleType_def]
+  simp
+
+/-- A permutation has full cycle type `{n}` exactly when its action has exactly one orbit,
+counting a fixed point as a one-element orbit, and the carrier has `n` points. -/
+@[simp]
+theorem fullCycleType_eq_singleton_iff {n : ℕ} :
+    σ.fullCycleType = {n} ↔ (∃ x, ∀ y, σ.SameCycle x y) ∧ Fintype.card α = n := by
+  have hcard : Multiset.card σ.fullCycleType = 1 ↔ ∃ x, ∀ y, σ.SameCycle x y := by
+    rw [card_fullCycleType, Nat.card_eq_one_iff_exists]
+    refine ⟨fun ⟨q, hq⟩ => ?_, fun ⟨x, hx⟩ =>
+      ⟨Quotient.mk _ x, fun q => Quotient.inductionOn q fun y => Quotient.sound (hx y).symm⟩⟩
+    obtain ⟨x, rfl⟩ := Quotient.mk_surjective q
+    exact ⟨x, fun y => SameCycle.symm (Quotient.exact (hq (Quotient.mk _ y)))⟩
+  rw [← hcard, Multiset.card_eq_one]
+  refine ⟨fun h => ⟨⟨n, h⟩, by rw [← sum_fullCycleType, h, Multiset.sum_singleton]⟩, ?_⟩
+  rintro ⟨⟨a, ha⟩, rfl⟩
+  rw [ha, ← sum_fullCycleType σ, ha, Multiset.sum_singleton]
 
 open scoped Classical in
 /-- The full cycle type of `σ` is the multiset of the sizes of the orbits of `⟨σ⟩` on the
