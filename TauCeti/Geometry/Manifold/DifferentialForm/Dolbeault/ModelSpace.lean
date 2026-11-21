@@ -390,9 +390,8 @@ section Contraction
 
 variable {k : ℕ}
 
-/-- The holomorphic contraction of a smooth form by a constant vector: the combination
-`ι_v - I • ι_{I • v}`, with `I` acting on the output. -/
-def holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+/-- The holomorphic contraction of a smooth form by a constant vector, before bundling. -/
+private def holInteriorFun (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
     SmoothForm 𝓘(ℝ, E) E F k := by
   let insert (w : E) : SmoothForm 𝓘(ℝ, E) E F k :=
     ⟨_,
@@ -401,11 +400,9 @@ def holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
           𝓘(ℝ, E) w ∞)).mem_smoothBundleForms⟩
   exact insert v - I • insert (I • v)
 
-/-- The value of a holomorphic contraction is the pointwise contraction. -/
-@[simp]
-theorem holInterior_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : E) :
-    (holInterior v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
-  unfold holInterior
+private theorem holInteriorFun_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : E) :
+    (holInteriorFun v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
+  unfold holInteriorFun
   simp only [sub_eq_add_neg, add_toRoughForm, neg_toRoughForm, smul_toRoughForm,
     Pi.add_apply, Pi.neg_apply, Pi.smul_apply]
   exact (congrArg₂ (fun a b : E [⋀^Fin k]→L[ℝ] F ↦ a + -(I • b))
@@ -414,41 +411,29 @@ theorem holInterior_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : 
       (by simpa only [sub_eq_add_neg] using
         (holCurry_apply (E := E) (F := F) v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)).symm)
 
-/-- Holomorphic contraction is additive in the form. -/
-@[simp]
-theorem holInterior_add (v : E) (η θ : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    holInterior v (η + θ) = holInterior v η + holInterior v θ := by
-  apply Subtype.ext
-  funext z
-  simp only [add_toRoughForm, Pi.add_apply, holInterior_val]
-  exact map_add (holCurry v) (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) (θ.val z)
+/-- The holomorphic contraction of smooth forms by constant vectors: the combination
+`ι_v - I • ι_{I • v}`, with `I` acting on the output, as a complex-bilinear map in the vector and
+the form. -/
+def holInterior : E →ₗ[ℂ] SmoothForm 𝓘(ℝ, E) E F (k + 1) →ₗ[ℂ] SmoothForm 𝓘(ℝ, E) E F k :=
+  LinearMap.mk₂ ℂ holInteriorFun
+    (fun v w η ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [add_toRoughForm, Pi.add_apply, holInteriorFun_val]
+      exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_add holCurry v w))
+    (fun c v η ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [smul_toRoughForm, Pi.smul_apply, holInteriorFun_val]
+      exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_smul holCurry c v))
+    (fun v η θ ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [add_toRoughForm, Pi.add_apply, holInteriorFun_val]
+      exact map_add (holCurry v) (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) (θ.val z))
+    (fun c v η ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [smul_toRoughForm, Pi.smul_apply, holInteriorFun_val]
+      exact map_smul (holCurry v) c (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F))
 
-/-- Holomorphic contraction is complex-linear in the form. -/
+/-- The value of a holomorphic contraction is the pointwise contraction. -/
 @[simp]
-theorem holInterior_smul (v : E) (c : ℂ) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    holInterior v (c • η) = c • holInterior v η := by
-  apply Subtype.ext
-  funext z
-  simp only [smul_toRoughForm, Pi.smul_apply, holInterior_val]
-  exact map_smul (holCurry v) c (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)
-
-/-- Holomorphic contraction is additive in the inserted vector. -/
-@[simp]
-theorem holInterior_add_left (v w : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    holInterior (v + w) η = holInterior v η + holInterior w η := by
-  apply Subtype.ext
-  funext z
-  simp only [add_toRoughForm, Pi.add_apply, holInterior_val]
-  exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_add holCurry v w)
-
-/-- Holomorphic contraction is complex-linear in the inserted vector. -/
-@[simp]
-theorem holInterior_smul_left (c : ℂ) (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    holInterior (c • v) η = c • holInterior v η := by
-  apply Subtype.ext
-  funext z
-  simp only [smul_toRoughForm, Pi.smul_apply, holInterior_val]
-  exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_smul holCurry c v)
+theorem holInterior_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : E) :
+    (holInterior v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) :=
+  holInteriorFun_val v η z
 
 /-- The `(1,0)`-contraction lowers the holomorphic degree. -/
 theorem isOfType_holInterior {p q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F (k + 1)}
@@ -471,33 +456,17 @@ theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
       -holInterior v ((ofComplexManifold E E).delBar η) := by
   refine Subtype.ext (funext fun z ↦ ?_)
   let Θ : E → E [⋀^Fin (k + 1)]→L[ℝ] F := η.val
-  let C := holCurry (k := k) (F := F) v
-  let L := ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Θ z)
+  let C := (holCurry (k := k) (F := F) v).restrictScalars ℝ
   have hdz : DifferentiableAt ℝ Θ z :=
     (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
   have hval : ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) = C ∘ Θ :=
     funext fun y ↦ holInterior_val v η y
-  have hchain := conjWirtingerDeriv_comp C.differentiableAt hdz
-  have hCL : ContinuousLinearMap.complexAntilinearPartL
-      (fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z) =
-      C.restrictScalars ℝ ∘L L := by
-    ext u : 1
-    have hc : conjWirtingerDeriv
-        ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u = C (L u) := by
-      rw [hval, hchain, C.fderiv]
-      simp only [ContinuousLinearMap.comp_apply,
-        conjWirtingerDeriv_apply_eq_complexAntilinearPartL, L]
-    exact (conjWirtingerDeriv_apply_eq_complexAntilinearPartL
-      (V := E) (W := E [⋀^Fin k]→L[ℝ] F)
-      ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u).symm.trans hc
-  have hδ : (((ofComplexManifold E E).delBar η).val z : E [⋀^Fin (k + 2)]→L[ℝ] F) =
-      ContinuousAlternatingMap.alternatizeUncurryFin L :=
-    delBar_eq_alternatizeUncurryFin η z
-  rw [neg_toRoughForm, Pi.neg_apply, holInterior_val, hδ,
-    delBar_eq_alternatizeUncurryFin, hCL]
-  exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp L
-    (fun u ↦ by
-      simp only [L, ← conjWirtingerDeriv_apply_eq_complexAntilinearPartL, map_smulₛₗ, conj_I]) v
+  rw [neg_toRoughForm, Pi.neg_apply, holInterior_val, delBar_eq_alternatizeUncurryFin,
+    delBar_eq_alternatizeUncurryFin, hval, C.fderiv_comp_left hdz,
+    ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
+  exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp _
+    (fun u ↦ (ContinuousLinearMap.complexAntilinearPartL_apply_I_smul _ u).trans
+      (neg_smul I _).symm) v
 
 end Contraction
 
@@ -523,24 +492,18 @@ theorem dz_val (i : ι) (z : ι → ℂ) :
 
 omit [DecidableEq ι] in
 /-- A holomorphic coordinate one-form has type `(1,0)`. -/
-theorem isOfType_dz (i : ι) : (dz i).IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 1 0 := by
-  refine isOfType_iff_forall.2 ⟨rfl, fun z ↦ ?_⟩
-  have h : (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ (0 : Fin 1)
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)).IsOfType
-        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 1 0 :=
-    (ContinuousAlternatingMap.isOfType_one_zero_iff _).2 fun v ↦ by simp
-  rw [toEndomorphism_ofComplexManifold, dz_val]
-  -- The tangent space at `z` is the model space `ι → ℂ`.
-  exact h
+theorem isOfType_dz (i : ι) : (dz i).IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 1 0 :=
+  isOfType_one_zero_iff.2 fun z v ↦ by
+    simp only [toEndomorphism_ofComplexManifold, dz_val]
+    -- The tangent space at `z` is the model space `ι → ℂ`, where `I` acts coordinatewise.
+    rfl
 
 omit [DecidableEq ι] in
 /-- Holomorphic coordinate one-forms have zero Dolbeault differential. -/
 @[simp]
 theorem delBar_dz (i : ι) : (ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (dz i) = 0 := by
-  have hd : mextDerivₗ 𝓘(ℝ, ι → ℂ) 1 (dz i) = 0 := Subtype.ext <| by
-    rw [mextDerivₗ_apply, ZeroMemClass.coe_zero]
-    exact (isClosed_def _).1 (isClosed_const _)
-  rw [(isOfType_dz i).delBar_eq, hd, map_zero]
+  rw [(isOfType_dz i).delBar_eq, (isClosed_iff_mextDerivₗ_eq_zero (dz i)).1 (isClosed_const _),
+    map_zero]
 
 /-- The coordinate wedges of the holomorphic contractions of a form of type `(p,q)`
 sum to `2 p` times the form. -/

@@ -61,8 +61,6 @@ coordinates.
 * `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_left`,
   `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right`: the two components
   for a constant `J`.
-* `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp`: alternating the interior
-  products `v ↦ ι_{A v} ω` gives the derivation of `A` on `ω`.
 * `ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp`,
   `ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp`: the Euler
   real-linear alternation identities with coefficients `2p` and `2q`. For `J² = -1`, their
@@ -465,14 +463,6 @@ section Contraction
 
 variable {J : E →L[ℝ] E} {p q : ℕ} {ω : E [⋀^Fin (k + 1)]→L[ℝ] F}
 
-/-- Alternating the contractions with `J v` is the continuous derivation of `J`. -/
-theorem alternatizeUncurryFin_curryLeft_comp_eq_alternatingDerivation
-    (ω : E [⋀^Fin (k + 1)]→L[ℝ] F) (J : E →L[ℝ] E) :
-    alternatizeUncurryFin (ω.curryLeft ∘L J) = J.alternatingDerivation ω := by
-  apply ContinuousAlternatingMap.toAlternatingMap_injective
-  rw [ContinuousLinearMap.toAlternatingMap_alternatingDerivation,
-    alternatizeUncurryFin_curryLeft_comp]
-
 /-- **The Euler identity for the `(1,0)`-contraction.** Alternating the interior products
 `v ↦ ι_v ω - I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 p • ω`. For an almost complex
 structure `J² = -1`, this inserts `2 v^(1,0)` in the complex-multilinear extension to
@@ -481,7 +471,8 @@ the complexification of the underlying real space. In complex coordinates
 theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfType J p q) :
     alternatizeUncurryFin (ω.curryLeft - I • ω.curryLeft ∘L J) = (2 * p : ℂ) • ω := by
   rw [alternatizeUncurryFin_sub, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
-    alternatizeUncurryFin_curryLeft_comp_eq_alternatingDerivation,
+    alternatizeUncurryFin_curryLeft_comp,
+    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap,
     h.alternatingDerivation_eq, smul_smul,
     ← Nat.cast_smul_eq_nsmul ℂ, ← sub_smul]
   congr 1
@@ -493,7 +484,8 @@ theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfTyp
 theorem IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp (h : ω.IsOfType J p q) :
     alternatizeUncurryFin (ω.curryLeft + I • ω.curryLeft ∘L J) = (2 * q : ℂ) • ω := by
   rw [alternatizeUncurryFin_add, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
-    alternatizeUncurryFin_curryLeft_comp_eq_alternatingDerivation,
+    alternatizeUncurryFin_curryLeft_comp,
+    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap,
     h.alternatingDerivation_eq, smul_smul,
     ← Nat.cast_smul_eq_nsmul ℂ, ← add_smul]
   congr 1

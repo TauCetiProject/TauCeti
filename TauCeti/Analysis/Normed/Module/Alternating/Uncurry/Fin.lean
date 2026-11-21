@@ -34,7 +34,8 @@ be combined with other permutation sums, such as those defining wedge products.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp`: alternating contractions with
-  `A v` gives the algebraic derivation of `A`, over any nontrivially normed field.
+  `A v` gives the derivative at the identity, in the direction `A`, of pullback of alternating
+  maps, over any nontrivially normed field.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
   commutes with pullback along a continuous linear map.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
@@ -159,13 +160,18 @@ theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
   rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
     hS]
 
-/-- Alternating the contractions `v ↦ ι_{A v} ω` gives the algebraic derivation of `A`
-on the underlying alternating map, over any nontrivially normed field. -/
+/-- Alternating the contractions `v ↦ ι_{A v} ω` gives the derivation of `A` on `ω`: the
+derivative at the identity, in the direction `A`, of pullback of alternating maps. -/
 theorem alternatizeUncurryFin_curryLeft_comp (ω : E [⋀^Fin (n + 1)]→L[𝕜] F) (A : E →L[𝕜] E) :
-    (alternatizeUncurryFin (ω.curryLeft ∘L A)).toAlternatingMap =
-      A.toLinearMap.alternatingDerivation ω.toAlternatingMap := by
-  rw [toAlternatingMap_alternatizeUncurryFin,
-    ← AlternatingMap.alternatizeUncurryFin_curryLeft_comp]
-  congr 1
+    alternatizeUncurryFin (ω.curryLeft ∘L A) = ω.fderivCompContinuousLinearMap (.id 𝕜 E) A := by
+  ext v
+  have h := congrArg (fun f ↦ f v) (AlternatingMap.alternatizeUncurryFin_curryLeft_comp
+    ω.toAlternatingMap A.toLinearMap)
+  simp only [AlternatingMap.alternatizeUncurryFin_apply, LinearMap.alternatingDerivation_apply] at h
+  rw [alternatizeUncurryFin_apply, fderivCompContinuousLinearMap_apply]
+  refine h.trans (Finset.sum_congr rfl fun i _ ↦ congrArg ω (funext fun j ↦ ?_))
+  rcases eq_or_ne j i with rfl | hj
+  · simp
+  · simp [Function.update_of_ne hj]
 
 end ContinuousAlternatingMap

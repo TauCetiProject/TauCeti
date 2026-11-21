@@ -123,9 +123,9 @@ private theorem IsOfType.exists_delBar_eventually_eq_of_holInterior {m p q : ℕ
           (SmoothForm.wedgeWith μ (dz i) ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (g i))) := by
     simp only [map_smul, map_sum, delBar_cast, delBar_wedgeWith _ hμ₁ hμ₂, delBar_dz,
       map_zero, LinearMap.zero_apply, zero_add, cast_cast, pow_one]
-    -- The sign `(-1) ^ 1` of the Leibniz rule acts through the coefficient action.
+    -- `simp` does not match `neg_one_smul` against the real action on smooth forms directly.
     have hneg (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (m + 1 + 1)) : (-1 : ℝ) • φ = -φ :=
-      Subtype.ext ((smul_toRoughForm _ φ).trans (neg_one_smul ℝ _))
+      neg_one_smul ℝ φ
     simp only [hneg, Finset.sum_neg_distrib, smul_neg]
     exact (neg_smul c _).symm
   filter_upwards [eventually_all.2 hgη] with z hz

@@ -76,8 +76,9 @@ symplectic map is moved into place by complex-linear automorphisms in
   part.
 * `ContinuousLinearMap.complexAntilinearPartL`: the complex-antilinear part as a continuous
   real-linear operator on real-linear maps, for arbitrary compatible real structures, with
-  `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff` and
-  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff`.
+  `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`,
+  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff` and the postcomposition rule
+  `ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp`.
 * `ContinuousLinearMap.norm_sq_complexLinearPart_apply`: the norm identity for a linear map
   preserving `Im ⟪·, ·⟫`.
 * `ContinuousLinearMap.complexLinearPartEquiv`: the complex-linear part of such a map, as a
@@ -408,9 +409,10 @@ end ContinuousLinearMap
 
 namespace ContinuousLinearMap
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ E]
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ E]
   [IsScalarTower ℝ ℂ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
-  [IsScalarTower ℝ ℂ F]
+  [IsScalarTower ℝ ℂ F] [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G]
+  [IsScalarTower ℝ ℂ G]
 
 /-- The complex-antilinear part `Ψ ↦ ½ (Ψ + i • Ψ ∘ i)`, as a continuous real-linear operator on
 the real-linear maps `E →L[ℝ] F` between complex normed spaces. Unlike
@@ -473,5 +475,14 @@ theorem complexAntilinearPartL_eq_zero_iff {Ψ : E →L[ℝ] F} :
 theorem complexAntilinearPartL_restrictScalars (f : E →L[ℂ] F) :
     complexAntilinearPartL (f.restrictScalars ℝ) = 0 :=
   complexAntilinearPartL_eq_zero_iff.2 fun v ↦ by simp
+
+/-- Postcomposing with a complex-linear operator commutes with
+`ContinuousLinearMap.complexAntilinearPartL`. -/
+@[simp]
+theorem complexAntilinearPartL_restrictScalars_comp (f : F →L[ℂ] G) (Ψ : E →L[ℝ] F) :
+    complexAntilinearPartL ((f.restrictScalars ℝ).comp Ψ) =
+      (f.restrictScalars ℝ).comp (complexAntilinearPartL Ψ) := by
+  ext v
+  simp [map_smul]
 
 end ContinuousLinearMap

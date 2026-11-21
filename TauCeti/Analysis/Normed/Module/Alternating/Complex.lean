@@ -42,39 +42,45 @@ open Complex
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
 
+/-- The output-scaled contraction `φ ↦ ι_v φ - I • ι_{I • v} φ`, as a complex-linear map in the
+vector with values in real-linear maps of the form: twice the complex-linear part of currying. -/
+private noncomputable def holCurryAux :
+    E →L[ℂ] (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
+  (2 : ℝ) • ContinuousLinearMap.complexLinearPart (E := E)
+    (F := (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+    (curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip
+
+private theorem holCurryAux_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
+    holCurryAux v φ = φ.curryLeft v - I • φ.curryLeft (I • v) := by
+  simp [holCurryAux, smul_smul]
+
 /-- The output-scaled contraction `φ ↦ ι_v φ - I • ι_{I • v} φ`, as a continuous
 complex-bilinear map in the vector and the form. -/
 noncomputable def holCurry :
-    E →L[ℂ] (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℂ] E [⋀^Fin k]→L[ℝ] F := by
-  let C := (2 : ℝ) • ContinuousLinearMap.complexLinearPart (E := E)
-    (F := (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
-    (curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip
-  have hC (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
-      C v φ = φ.curryLeft v - I • φ.curryLeft (I • v) := by
-    simp [C, smul_smul]
-  refine
-    { toFun := fun v ↦ (C v).complexOfMapISmul (fun φ ↦ ?_)
-      map_add' := fun v w ↦ ?_
-      map_smul' := fun c v ↦ ?_
-      cont := ?_ }
-  · ext w
-    simp [hC, smul_sub, smul_smul]
-  · ext φ : 1
-    simpa only [ContinuousLinearMap.coe_complexOfMapISmul, _root_.add_apply]
-      using congrArg (fun L ↦ L φ) (map_add C v w)
-  · ext φ : 1
-    simpa only [ContinuousLinearMap.coe_complexOfMapISmul, _root_.smul_apply,
-      RingHom.id_apply] using congrArg (fun L ↦ L φ) (map_smul C c v)
-  · let ι := ContinuousLinearMap.restrictScalarsIsometry ℂ
+    E →L[ℂ] (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℂ] E [⋀^Fin k]→L[ℝ] F where
+  toFun v := (holCurryAux v).complexOfMapISmul fun φ ↦ by
+    ext w
+    simp [holCurryAux_apply, smul_sub, smul_smul]
+  map_add' v w := by
+    ext φ : 1
+    simp only [ContinuousLinearMap.coe_complexOfMapISmul, map_add, _root_.add_apply]
+  map_smul' c v := by
+    ext φ : 1
+    simp only [ContinuousLinearMap.coe_complexOfMapISmul, map_smul, _root_.smul_apply,
+      RingHom.id_apply]
+  cont := by
+    let ι := ContinuousLinearMap.restrictScalarsIsometry ℂ
       (E [⋀^Fin (k + 1)]→L[ℝ] F) (E [⋀^Fin k]→L[ℝ] F) ℝ ℝ
     apply ι.isometry.isUniformInducing.isInducing.continuous_iff.2
     simpa only [ι, Function.comp_def, ContinuousLinearMap.coe_restrictScalarsIsometry,
-      ContinuousLinearMap.restrictScalars_complexOfMapISmul] using C.continuous
+      ContinuousLinearMap.restrictScalars_complexOfMapISmul] using
+      (holCurryAux (E := E) (F := F) (k := k)).continuous
 
 /-- Evaluation of the holomorphic contraction, with `I` acting on the output. -/
 theorem holCurry_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
     holCurry v φ = φ.curryLeft v - I • φ.curryLeft (I • v) := by
-  simp [holCurry, smul_smul]
+  rw [← holCurryAux_apply]
+  exact congrFun (ContinuousLinearMap.coe_complexOfMapISmul (holCurryAux v) _) φ
 
 /-- Holomorphic contraction anticommutes with alternation of a conjugate-linear family. -/
 theorem alternatizeUncurryFin_holCurry_comp
