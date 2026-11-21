@@ -16,7 +16,8 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 The additive Haar measure attached to a basis gives measure one to the parallelepiped the basis
 spans. For the standard basis of `ι → ℝ` that parallelepiped is the unit cube, so the measure is
 product Lebesgue measure. A general change of basis rescales its normalized Haar measure
-by the inverse absolute determinant.
+by the inverse absolute determinant, while the linear equivalence sending one basis to another
+carries the normalized Haar measure of the first to that of the second.
 
 ## Main results
 
@@ -27,6 +28,14 @@ by the inverse absolute determinant.
   `volume`.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
+* `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
+  additive Haar measure of one to that of the other.
+
+## Attribution
+
+`Module.Basis.measurePreserving_equiv` is adapted from the measure-preservation lemma for the chart
+coordinate change in
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section
@@ -99,6 +108,27 @@ theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
         Measure.map_linearMap_addHaar_eq_smul_addHaar b.addHaar e.isUnit_det'.ne_zero
 
 end ChangeBasis
+
+section Equiv
+
+variable {E F ι ι' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+  [Fintype ι] [Fintype ι']
+
+/-- The linear equivalence `b.equiv b' e` sending each vector of a basis `b` to the corresponding
+vector of a basis `b'` carries the normalized Haar measure of `b` to that of `b'`. -/
+theorem measurePreserving_equiv (b : Basis ι ℝ E) (b' : Basis ι' ℝ F) (e : ι ≃ ι') :
+    MeasurePreserving (b.equiv b' e) b.addHaar b'.addHaar := by
+  have := b.finiteDimensional_of_finite
+  have := b'.finiteDimensional_of_finite
+  have hmap : b.map (b.equiv b' e) = b'.reindex e.symm := by
+    ext i
+    simp
+  refine ⟨(b.equiv b' e).toContinuousLinearEquiv.continuous.measurable, ?_⟩
+  rw [← LinearEquiv.coe_toContinuousLinearEquiv', b.map_addHaar,
+    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, hmap, addHaar_reindex]
+
+end Equiv
 
 end Module.Basis
 

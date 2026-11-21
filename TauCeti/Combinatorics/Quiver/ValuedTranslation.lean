@@ -221,12 +221,12 @@ def homMk {x y : ValuedQuiver val} {p : ℕ+ × ℕ+} (h : val x.vertex y.vertex
 
 /-- The valuation of the valued quiver with valuation matrix `val`. -/
 def valuation (val : V → V → Option (ℕ+ × ℕ+)) : QuiverValuation (ValuedQuiver val) :=
-  fun _ _ f ↦ f.1
+  fun _ _ f ↦ f.val
 
 /-- The valuation of an arrow `x ⟶ y` is the value of the valuation matrix at `(x, y)`. -/
 theorem eq_some_valuation {x y : ValuedQuiver val} (f : x ⟶ y) :
     val x.vertex y.vertex = some (valuation val f) :=
-  f.2
+  f.property
 
 @[simp]
 theorem valuation_homMk {x y : ValuedQuiver val} {p : ℕ+ × ℕ+}

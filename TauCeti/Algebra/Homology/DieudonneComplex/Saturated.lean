@@ -146,7 +146,7 @@ lemma isSaturated_iff_isIso_toNormalizedDecalage (hM : ∀ n, IsSMulRegular (M.X
       rw [← Subtype.val_injective.of_comp_iff, hcomp]
     · obtain ⟨x, hx⟩ := h ⟨z, hz⟩
       exact ⟨x, (toNormalizedDecalage_f_apply M hM n x).symm.trans (congrArg Subtype.val hx)⟩
-    · obtain ⟨x, hx⟩ := h z.2
+    · obtain ⟨x, hx⟩ := h z.property
       exact ⟨x, Subtype.ext ((toNormalizedDecalage_f_apply M hM n x).trans hx)⟩
   refine ⟨fun h ↦ ?_, fun _ ↦ ⟨hM, fun n ↦ ?_, fun n ↦ ?_⟩⟩
   · have (n : ℤ) : IsIso ((M.toNormalizedDecalage hM).f n) :=

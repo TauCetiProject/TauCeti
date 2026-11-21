@@ -126,7 +126,7 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
     refine (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
     refine (nnNorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
     rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
-    exact mem_unitClosedBallSubmodule.mp (e i).2
+    exact mem_unitClosedBallSubmodule.mp (e i).property
   -- For the lower bound, rescale the coefficients so that their largest norm is one.
   classical
   rcases s.eq_empty_or_nonempty with rfl | hs
@@ -257,7 +257,8 @@ theorem span_mk_eq_top_of_isOrthonormalFamily {e : I → unitClosedBallSubmodule
   have hs : ‖s‖ ≤ 1 := by
     have := IsUltrametricDist.norm_add_le_max (x : M) (-((x : M) - s))
     rw [← sub_eq_add_neg, sub_sub_cancel, norm_neg] at this
-    exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.2) (hxs.le.trans ϖ.norm_lt_one.le))
+    exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.property)
+        (hxs.le.trans ϖ.norm_lt_one.le))
   have hg (i : I) : ‖g i‖ ≤ 1 := by
     by_cases hi : i ∈ g.support
     · exact (he.norm_le_norm_sum_smul g hi).trans hs

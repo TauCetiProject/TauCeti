@@ -138,7 +138,7 @@ private theorem testIdx_union_bound {κ κ₂ V : Type*} [Fintype κ] [Fintype V
     calc (2 : ℝ) * Fintype.card (TestIdx Q₀)
         ≤ (2 : ℝ) ^ (3 * n ^ 2 + 7) := by exact_mod_cast hcard2
       _ ≤ exp 1 ^ (3 * n ^ 2 + 7) := pow_le_pow_left₀ (by norm_num) h2e _
-      _ = exp (3 * (n : ℝ) ^ 2 + 7) := by rw [← exp_nat_mul, mul_one]; push_cast; rfl
+      _ = exp (3 * (n : ℝ) ^ 2 + 7) := by rw [← exp_natCast_mul, mul_one]; push_cast; rfl
   have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ) := by
     linarith [add_one_le_exp (Fintype.card κ : ℝ)]
   have hexp_eq : -2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ) =
@@ -185,19 +185,19 @@ private theorem card_support_canonPolyad {κ₂ V : Type*} [Fintype V] [Decidabl
 private noncomputable def canonTriple {κ₂ V : Type*} [Fintype V] [DecidableEq V]
     (T : PairSkeleton3 κ₂ V) (s : Set.powersetCard V 3) : Polyad3 T :=
   let e := (Set.powersetCard.ofFinEmb_surjective 3 V s).choose
-  canonPolyad (Polyad3.ofTriple T ⟨e.1, e.2⟩)
+  canonPolyad (Polyad3.ofTriple T ⟨e.toFun, e.inj'⟩)
 
 private theorem canonTriple_ofFinEmb_eq {κ₂ V : Type*} [Fintype V] [DecidableEq V]
     {T : PairSkeleton3 κ₂ V} {Q : Polyad3 T} {x : {x : Fin 3 → V // Function.Injective x}}
     (hx : x ∈ Q.support) :
-    canonTriple T (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = canonPolyad Q := by
-  set s := Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
+    canonTriple T (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = canonPolyad Q := by
+  set s := Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩
   let e := (Set.powersetCard.ofFinEmb_surjective 3 V s).choose
   have he : Set.powersetCard.ofFinEmb 3 V e = s :=
     (Set.powersetCard.ofFinEmb_surjective 3 V s).choose_spec
-  obtain ⟨σ, hσ⟩ := (Set.powersetCard.ofFinEmb_eq_iff_exists_perm ⟨x.1, x.2⟩ e).1 he.symm
-  let x₀ : {x : Fin 3 → V // Function.Injective x} := ⟨e.1, e.2⟩
-  have hx_eq : x = ⟨x₀.1 ∘ σ, x₀.2.comp σ.injective⟩ := Subtype.ext hσ
+  obtain ⟨σ, hσ⟩ := (Set.powersetCard.ofFinEmb_eq_iff_exists_perm ⟨x.val, x.property⟩ e).1 he.symm
+  let x₀ : {x : Fin 3 → V // Function.Injective x} := ⟨e.toFun, e.inj'⟩
+  have hx_eq : x = ⟨x₀.val ∘ σ, x₀.property.comp σ.injective⟩ := Subtype.ext hσ
   have hQ_eq : Q = (Polyad3.ofTriple T x₀).perm σ := by
     rw [Polyad3.mem_support_iff_eq_ofTriple.1 hx, hx_eq, Polyad3.ofTriple_comp_perm]
   dsimp only [canonTriple]
@@ -206,12 +206,12 @@ private theorem canonTriple_ofFinEmb_eq {κ₂ V : Type*} [Fintype V] [Decidable
 private theorem card_filter_color_fiberwise {κ V : Type*} [Fintype κ] [DecidableEq κ]
     (H : Colored3Graph κ V) (W : Finset {x : Fin 3 → V // Function.Injective x})
     (P : Set.powersetCard V 3 → Prop) [DecidablePred P] :
-    #{x ∈ W | P (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} =
-      ∑ c₀ : κ, #{x ∈ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀ ∧
-        P (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} := by
+    #{x ∈ W | P (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)} =
+      ∑ c₀ : κ, #{x ∈ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+        P (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)} := by
   classical
   rw [card_eq_sum_card_fiberwise
-    (f := fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩))
+    (f := fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩))
     (t := univ) (fun _ _ ↦ mem_univ _)]
   exact sum_congr rfl fun c₀ _ ↦ congrArg card (ext fun x ↦ by simp only [mem_filter]; tauto)
 
@@ -336,27 +336,29 @@ private theorem exists_coupled_recoloring [Fintype κ]
           max ((H.relativeDensity c₀ (canonPolyad Q) : ℝ) -
             H.relativeDensity c₀ ((canonPolyad Q).coarsen hV f)) 0) ∧
         ∀ (S' : Subpolyad3 Q) (c₀ c : κ),
-          |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀ ∧
-              H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℝ) -
+          |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+              H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) -
             M (canonPolyad Q) c₀ c *
-              #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀}| ≤
+              #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val,
+                  x.property⟩) = c₀}| ≤
             β * #Q.support) ∧
       (∀ Q : Polyad3 D.skeleton, ¬N₀ ≤ (#Q.support : ℝ) → H.editedOn H' Q.support = ∅) := by
   classical
   have hN₀_pos : 0 < N₀ := pos_of_support_lower_bound hN₀
   let L (Q₀ : Polyad3 D.skeleton) (c₀ : κ) (idx : TestIdx Q₀) : Finset (Set.powersetCard V 3) :=
     univ.filter fun s ↦ H.color s = c₀ ∧
-      #{x ∈ idx.2.1.support | Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s} = idx.2.2.1 + 1
+      #{x ∈ idx.2.1.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} = idx.2.2.val +
+          1
   have hL_card (Q₀ : Polyad3 D.skeleton) (c₀ : κ) (idx : TestIdx Q₀) :
       #(L Q₀ c₀ idx) ≤ #Q₀.support := by
     obtain ⟨σ, S', k⟩ := idx
     calc #(L Q₀ c₀ ⟨σ, S', k⟩)
         = ∑ _s ∈ L Q₀ c₀ ⟨σ, S', k⟩, 1 := by simp
       _ ≤ ∑ s ∈ L Q₀ c₀ ⟨σ, S', k⟩,
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s} :=
+            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} :=
           sum_le_sum fun s hs ↦ by rw [(mem_filter.1 hs).2.2]; omega
       _ ≤ ∑ s : Set.powersetCard V 3,
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s} :=
+            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} :=
           sum_le_sum_of_subset_of_nonneg (subset_univ _) fun _ _ _ ↦ Nat.zero_le _
       _ = #S'.support := (card_eq_sum_card_fiberwise fun _ _ ↦ mem_univ _).symm
       _ ≤ #(Q₀.perm σ).support := card_le_card S'.support_subset
@@ -407,13 +409,14 @@ private theorem exists_coupled_recoloring [Fintype κ]
     have hS₀ : S₀.support = S'.support := Subpolyad3.support_inclusion _ _ _ S'
     have hH'_on_L (k : Fin (Nat.factorial 3)) :
         #{s : Set.powersetCard V 3 | (H.color s = c₀ ∧ H'.color s = c) ∧
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s} = k.1 + 1} =
+            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} = k.val + 1} =
           #{s ∈ L Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ Q₀ c₀ s = c} := by
       refine congrArg card (ext fun s ↦ ?_)
       simp only [L, mem_filter, mem_univ, true_and, hS₀]
-      by_cases hm : #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s} = k.1 + 1
+      by_cases hm : #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val,
+          x.property⟩ = s} = k.val + 1
       · obtain ⟨x, hx⟩ := card_pos.1 (by omega : 0 < #{x ∈ S'.support |
-          Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s})
+          Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s})
         obtain ⟨hxS, hxs⟩ := mem_filter.1 hx
         have hcan : canonTriple D.skeleton s = Q₀ :=
           hxs ▸ canonTriple_ofFinEmb_eq (S'.support_subset hxS)
@@ -424,19 +427,19 @@ private theorem exists_coupled_recoloring [Fintype κ]
     simp_rw [hH'_on_L]
     have h1' (k : Fin (Nat.factorial 3)) :
         #{s : Set.powersetCard V 3 | H.color s = c₀ ∧
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s} = k.1 + 1} =
+            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} = k.val + 1} =
           #(L Q₀ c₀ ⟨σ₀, S₀, k⟩) := by simp only [L, hS₀]
     simp_rw [h1']
     push_cast
     rw [mul_sum, ← sum_sub_distrib]
     let d (k : Fin (Nat.factorial 3)) : ℝ :=
       (#{s ∈ L Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ Q₀ c₀ s = c} : ℝ) - M Q₀ c₀ c * #(L Q₀ c₀ ⟨σ₀, S₀, k⟩)
-    calc |∑ k : Fin (Nat.factorial 3), ((k.1 + 1 : ℝ) *
+    calc |∑ k : Fin (Nat.factorial 3), ((k.val + 1 : ℝ) *
             #{s ∈ L Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ Q₀ c₀ s = c} -
-            M Q₀ c₀ c * ((k.1 + 1 : ℝ) * #(L Q₀ c₀ ⟨σ₀, S₀, k⟩)))|
-        = |∑ k, (k.1 + 1 : ℝ) * d k| := congrArg abs (sum_congr rfl fun k _ ↦ by dsimp [d]; ring)
-      _ ≤ ∑ k, |(k.1 + 1 : ℝ) * d k| := abs_sum_le_sum_abs _ _
-      _ ≤ ∑ k : Fin (Nat.factorial 3), (k.1 + 1 : ℝ) * ((β / 21) * #Q₀.support) := by
+            M Q₀ c₀ c * ((k.val + 1 : ℝ) * #(L Q₀ c₀ ⟨σ₀, S₀, k⟩)))|
+        = |∑ k, (k.val + 1 : ℝ) * d k| := congrArg abs (sum_congr rfl fun k _ ↦ by dsimp [d]; ring)
+      _ ≤ ∑ k, |(k.val + 1 : ℝ) * d k| := abs_sum_le_sum_abs _ _
+      _ ≤ ∑ k : Fin (Nat.factorial 3), (k.val + 1 : ℝ) * ((β / 21) * #Q₀.support) := by
           refine sum_le_sum fun k _ ↦ ?_
           rw [abs_mul, abs_of_nonneg (by positivity)]
           exact mul_le_mul_of_nonneg_left (hφ_disc c₀ ⟨σ₀, S₀, k⟩ c).le (by positivity)
@@ -449,7 +452,8 @@ private theorem exists_coupled_recoloring [Fintype κ]
     intro x hx
     obtain ⟨hxQ, hne⟩ := (H.mem_editedOn H' Q.support x).1 hx
     have hnot : ¬N₀ ≤
-        (#(canonTriple D.skeleton (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)).support : ℝ) := by
+        (#(canonTriple D.skeleton (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)).support : ℝ)
+            := by
       rwa [canonTriple_ofFinEmb_eq hxQ, card_support_canonPolyad Q]
     exact hne (by simp [H', hnot])
 
@@ -468,15 +472,15 @@ private theorem approximates3_of_coupled_recoloring [Fintype κ]
           H.relativeDensity c₀ ((canonPolyad Q).coarsen hV f)) 0)
     (hkeep : ∀ Q : Polyad3 D.skeleton, N₀ ≤ (#Q.support : ℝ) →
       ∀ (S' : Subpolyad3 Q) (c₀ c : κ),
-        |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀ ∧
-            H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℝ) -
+        |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+            H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) -
           M (canonPolyad Q) c₀ c *
-            #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀}| ≤
+            #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀}| ≤
           β * #Q.support)
     (hsmall : ∀ Q : Polyad3 D.skeleton, ¬N₀ ≤ (#Q.support : ℝ) → H.editedOn H' Q.support = ∅) :
     H.Approximates3 H' (Fintype.card κ * (√g + β)) := by
   let e₃ : {x : Fin 3 → V // Function.Injective x} → Set.powersetCard V 3 :=
-    fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
+    fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩
   have hedit_Q (Q : Polyad3 D.skeleton) :
       (#(H.editedOn H' Q.support) : ℝ) ≤
         (∑ c₀, #Q.support *
@@ -557,7 +561,7 @@ private theorem approximates3_of_coupled_recoloring [Fintype κ]
     _ ≤ (∑ _c₀ : κ, √g * (Fintype.card V).descFactorial 3) +
           Fintype.card κ * β * (Fintype.card V).descFactorial 3 := by
         gcongr with c₀
-        exact H.sum_card_support_mul_abs_relativeDensity_coarsen_le hV f hf hgap c₀
+        exact H.sum_card_support_mul_abs_relativeDensity_coarsen_le_of_color_eq hV f hf hgap c₀
     _ = Fintype.card κ * (√g + β) * (Fintype.card V).descFactorial 3 := by
         rw [sum_const, card_univ, nsmul_eq_mul]; ring
     _ ≤ Fintype.card κ * (√g + β) * (Fintype.card V : ℝ) ^ 3 := by
@@ -577,23 +581,24 @@ private theorem recolored_child_dev_le [Fintype κ]
     (hMpush : (fun c₀ ↦ (H.relativeDensity c₀ (canonPolyad Q) : ℝ)) ᵥ* M (canonPolyad Q) =
       (fun c ↦ (H.relativeDensity c ((canonPolyad Q).coarsen hV f) : ℝ)))
     (hsub : ∀ (S' : Subpolyad3 Q) (c₀ c : κ),
-      |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀ ∧
-          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℝ) -
+      |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) -
         M (canonPolyad Q) c₀ c *
-          #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀}| ≤
+          #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀}| ≤
         β * #Q.support)
     (c : κ) (S' : Subpolyad3 Q) :
     |(H'.relDensityOn c S'.support : ℝ) - H.relativeDensity c P| * #S'.support ≤
       Fintype.card κ * (η + β) * #Q.support := by
   set Q₀ := canonPolyad Q
   let a (c₀ : κ) : ℝ := #{x ∈ S'.support |
-    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀ ∧
-    H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c}
+    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+    H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c}
   let b (c₀ : κ) : ℝ := #{x ∈ S'.support |
-    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c₀}
+    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀}
   have hnew : (H'.relDensityOn c S'.support : ℝ) * #S'.support = ∑ c₀, a c₀ := by
     have hmul : (H'.relDensityOn c S'.support : ℝ) * #S'.support =
-        (#{x ∈ S'.support | H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℝ) := by
+        (#{x ∈ S'.support | H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ)
+            := by
       exact_mod_cast H'.relDensityOn_mul_card c S'.support
     rw [hmul, card_filter_color_fiberwise H S'.support fun s ↦ H'.color s = c, Nat.cast_sum]
   have hpush_c : ∑ c₀, (H.relativeDensity c₀ Q₀ : ℝ) * M Q₀ c₀ c =
@@ -862,7 +867,7 @@ private theorem exists_discrete_topRegularOverMostPolyads {κ₂ : Type*}
       C.polyads = univ ∧
       H.TopRegularOverMostPolyads C (δ C.complexity) (μ C.complexity) (r C.complexity) := by
   let discrete : PairColorSystem {p : V × V // p.1 ≠ p.2} V :=
-    ⟨id, fun p ↦ ⟨p.1.swap, p.2.symm⟩, fun ⟨⟨_, _⟩, _⟩ ↦ rfl, fun _ ↦ rfl⟩
+    ⟨id, fun p ↦ ⟨p.val.swap, p.property.symm⟩, fun ⟨⟨_, _⟩, _⟩ ↦ rfl, fun _ ↦ rfl⟩
   let e := Fintype.equivFin {p : V × V // p.1 ≠ p.2}
   let C : TriadicComplex3 V :=
     ⟨Fintype.card {p : V × V // p.1 ≠ p.2}, ⟨S.vertexPart, discrete.relabel e⟩, univ⟩

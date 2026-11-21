@@ -98,8 +98,8 @@ almost everywhere it sends `f` to `r ^ (-n / p) • f (r⁻¹ • ·)`, where `n
 `p = ∞`, where the dilation is plain precomposition. -/
 noncomputable def dilateLp (r : ℝ) (hr : 0 < r) : Lp F p μ ≃ₗᵢ[ℝ] Lp F p μ :=
   let P : Lp F p μ ≃L[ℝ] Lp F p μ :=
-    Lp.compEquivOfMapLeSmul ℝ (measurable_const_smul r⁻¹) ENNReal.ofReal_ne_top
-      (map_addHaar_smul μ (inv_ne_zero hr.ne')).le (measurable_const_smul r)
+    Lp.compEquivOfMapLeSmul ℝ (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
+      (map_addHaar_smul μ (inv_ne_zero hr.ne')).le (measurable_const_smul r).aemeasurable
       ENNReal.ofReal_ne_top (map_addHaar_smul μ hr.ne').le
       (fun x ↦ smul_inv_smul₀ hr.ne' x) (fun x ↦ inv_smul_smul₀ hr.ne' x)
   { (P.toLinearEquiv.trans (LinearEquiv.smulOfNeZero ℝ _ _
@@ -122,16 +122,16 @@ theorem coeFn_dilateLp (hr : 0 < r) (f : Lp F p μ) :
       fun x ↦ r ^ (-((finrank ℝ E : ℝ) / p.toReal)) • f (r⁻¹ • x) := by
   -- The dilation is, by construction, the scalar multiple of the precomposition.
   have h : dilateLp μ p r hr f = r ^ (-((finrank ℝ E : ℝ) / p.toReal)) •
-      Lp.compOfMapLeSmul ℝ (measurable_const_smul r⁻¹) ENNReal.ofReal_ne_top
+      Lp.compOfMapLeSmul ℝ (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
         (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f := by
     simp only [dilateLp, LinearIsometryEquiv.coe_mk, LinearEquiv.trans_apply,
       ContinuousLinearEquiv.coe_toLinearEquiv, Lp.compEquivOfMapLeSmul_apply,
       LinearEquiv.smulOfNeZero_apply]
   rw [h]
   filter_upwards [Lp.coeFn_smul (r ^ (-((finrank ℝ E : ℝ) / p.toReal)))
-      (Lp.compOfMapLeSmul ℝ (measurable_const_smul r⁻¹) ENNReal.ofReal_ne_top
+      (Lp.compOfMapLeSmul ℝ (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
         (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f),
-    Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) (measurable_const_smul r⁻¹) ENNReal.ofReal_ne_top
+    Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
       (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f] with x hx hy
   rw [hx, Pi.smul_apply, hy, Function.comp_apply]
 

@@ -55,7 +55,7 @@ theorem integrable_exp_mul_id_map_cast_logarithmicSeriesMeasure_iff {q : ℝ} (h
         ((logarithmicSeriesMeasure q).map (Nat.cast : ℕ → ℝ)) ↔ t < -log q := by
   have hcomp : ((fun x : ℝ ↦ exp (t * x)) ∘ (Nat.cast : ℕ → ℝ)) = fun n : ℕ ↦ exp t ^ n := by
     funext n
-    rw [Function.comp_apply, mul_comm, Real.exp_nat_mul]
+    rw [Function.comp_apply, mul_comm, Real.exp_natCast_mul]
   rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff, hcomp,
     integrable_pow_logarithmicSeriesMeasure_iff hq0 hq1,
     abs_of_pos (mul_pos hq0 (exp_pos t)), mul_exp_lt_one_iff hq0]
@@ -196,7 +196,7 @@ theorem charFun_map_cast_logarithmicSeriesMeasure {q : ℝ} (hq0 : 0 < q) (hq1 :
   congr with k
   have hexp : Complex.exp ((t : ℂ) * ((k : ℝ) : ℂ) * Complex.I) =
       Complex.exp (Complex.I * t) ^ k := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   rw [Complex.real_smul, logarithmicSeriesWeight_toReal hq0 hq1,

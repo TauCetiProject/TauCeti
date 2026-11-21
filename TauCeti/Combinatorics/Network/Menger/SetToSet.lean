@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Paths
 public import TauCeti.Combinatorics.Network.Menger.Vertex
+import TauCeti.Combinatorics.Network.PathTrimming
 import Mathlib.Basic.Finite.Sum
 
 /-!

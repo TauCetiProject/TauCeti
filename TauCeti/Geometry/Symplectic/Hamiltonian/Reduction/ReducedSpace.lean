@@ -326,7 +326,7 @@ theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   have : LieGroup 𝓘(ℝ, F) 3 ((Lie.coadjointRepresentation ℝ I G).stabilizer c) :=
     LieGroup.of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
-  have hz : μ z = c := h.mem_levelSubMulAction.1 z.2
+  have hz : μ z = c := h.mem_levelSubMulAction.1 z.property
   set di := (mfderiv 𝓘(ℝ, Fin n → ℝ) I' (Subtype.val : h.levelSubMulAction c → M) z).toLinearMap
   set V := (InfinitesimalAction.fundamental 𝓘(ℝ, F)
     ((Lie.coadjointRepresentation ℝ I G).stabilizer c) 𝓘(ℝ, Fin n → ℝ)
@@ -393,7 +393,7 @@ theorem existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback (hσ : σ.Is
   let := h.orbitRelQuotientChartedSpace c hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
   exact h.existsUnique_isSymplectic_mpullback_eq_mpullback hσ hG hemb.contMDiff
-    (fun z ↦ h.mem_levelSubMulAction.1 z.2) (h.range_mfderiv_coe_levelSubMulAction hreg hn)
+    (fun z ↦ h.mem_levelSubMulAction.1 z.property) (h.range_mfderiv_coe_levelSubMulAction hreg hn)
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) Quotient.mk_surjective
     (h.ker_mfderiv_quotientMk_levelSubMulAction hreg hn d)
     (fun k ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, F)) k)
@@ -415,7 +415,7 @@ theorem finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator
   let := h.levelSubMulActionChartedSpace c hreg hn
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   let := h.orbitRelQuotientChartedSpace c hreg hn d
-  have hz : μ z = c := h.mem_levelSubMulAction.1 z.2
+  have hz : μ z = c := h.mem_levelSubMulAction.1 z.property
   exact h.toIsMomentMap.finrank_add_finrank_add_finrank_lieAnnihilator
     (hσ.nondegenerate_bilinFormAt z) hz (h.momentCocycle_eq_zero z)
     (h.range_mfderiv_coe_levelSubMulAction hreg hn z)
