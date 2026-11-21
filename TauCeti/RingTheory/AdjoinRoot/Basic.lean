@@ -29,6 +29,9 @@ of `AdjoinRoot g`.
   this only in the specialised form `WeierstrassCurve.Affine.CoordinateRing.map_mk`. Marked
   `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
+* `AdjoinRoot.ker_map_of_surjective`: for surjective `f`, the kernel of
+  `AdjoinRoot p → AdjoinRoot (p.map f)` is the extension of the kernel of `f`, so that
+  `AdjoinRoot (p.map f)` is the reduction of `AdjoinRoot p` modulo `ker f`.
 * `AdjoinRoot.algHomOfDvd_mk`: for `g ∣ f`, the reduction `AdjoinRoot f →ₐ[R] AdjoinRoot g` sends
   the class of `p` to the class of `p`.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
@@ -120,6 +123,24 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
   obtain ⟨t, rfl⟩ := mk_surjective y
   obtain ⟨u, rfl⟩ := Polynomial.map_surjective f hf t
   exact ⟨mk p u, map_mk h u⟩
+
+/-- Along a surjective base homomorphism `f`, the kernel of `AdjoinRoot p → AdjoinRoot (p.map f)`
+is the extension of the kernel of `f`. -/
+lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[X]) :
+    RingHom.ker (map f p (p.map f) dvd_rfl) = (RingHom.ker f).map (of p) := by
+  refine le_antisymm (fun x hx ↦ ?_) (Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_)
+  · obtain ⟨x, rfl⟩ := mk_surjective x
+    rw [RingHom.mem_ker, map_mk, mk_eq_zero] at hx
+    obtain ⟨t, ht⟩ := hx
+    obtain ⟨t, rfl⟩ := Polynomial.map_surjective f hf t
+    -- `x - p * t` has coefficients in `ker f`, and has the same class as `x`.
+    have hmem : x - p * t ∈ Ideal.map C (RingHom.ker f) := by
+      rw [← Polynomial.ker_mapRingHom, RingHom.mem_ker, coe_mapRingHom, Polynomial.map_sub,
+        Polynomial.map_mul, ht, sub_self]
+    have := Ideal.mem_map_of_mem (mk p) hmem
+    -- `AdjoinRoot.of p` is `(mk p).comp C` by definition.
+    rwa [Ideal.map_map, map_sub, map_mul, mk_self, zero_mul, sub_zero] at this
+  · simp [RingHom.mem_ker.mp hr]
 
 /-- The reduction map `AdjoinRoot.algHomOfDvd` to the quotient by a divisor `g ∣ f` sends the class
 of `p` modulo `f` to its class modulo `g`. -/
