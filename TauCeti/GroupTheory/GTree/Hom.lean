@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GTree.Line
 public import TauCeti.GroupTheory.GTree.Refinement
 
 /-!
@@ -141,7 +140,8 @@ theorem isUnfoldedAt_iff {x : S.V} : φ.IsUnfoldedAt x ↔
     ∃ e₁ e₂ : S.E, φ.mapE e₁ ≠ φ.mapE e₂ ∧ ∀ e : S.E, S.src e = x ↔ e = e₁ ∨ e = e₂ := Iff.rfl
 
 /-- Unfolded vertices are permuted by the action. -/
-theorem isUnfoldedAt_smul_iff (g : G) {x : S.V} : φ.IsUnfoldedAt (g • x) ↔ φ.IsUnfoldedAt x := by
+@[simp] theorem isUnfoldedAt_smul_iff (g : G) {x : S.V} :
+    φ.IsUnfoldedAt (g • x) ↔ φ.IsUnfoldedAt x := by
   suffices h : ∀ (g : G) (x : S.V), φ.IsUnfoldedAt x → φ.IsUnfoldedAt (g • x) from
     ⟨fun hx => by simpa using h g⁻¹ _ hx, h g x⟩
   rintro g x ⟨e₁, e₂, hne, he⟩
@@ -198,13 +198,26 @@ theorem parallelClass_eq_of_isUnfoldedAt {e e' : S.E} (h : S.src e = S.src e')
     (hx : φ.IsUnfoldedAt (S.src e)) : φ.parallelClass e = φ.parallelClass e' :=
   Quot.sound (.inr (.inr ⟨h, hx⟩))
 
+/-- A function on darts taking the same value on related darts induces a function on the
+parallel classes. -/
+def lift {α : Sort*} (f : S.E → α) (hf : ∀ e e', φ.ParallelStep e e' → f e = f e') :
+    φ.ParallelClass → α :=
+  Quot.lift f hf
+
+/-- The function induced on parallel classes takes the value of the function on darts. -/
+@[simp] theorem lift_parallelClass {α : Sort*} (f : S.E → α)
+    (hf : ∀ e e', φ.ParallelStep e e' → f e = f e') (e : S.E) :
+    φ.lift f hf (φ.parallelClass e) = f e := (rfl)
+
+/-- A function on parallel classes is the function induced by its values on darts. -/
+theorem lift_unique {α : Sort*} (f : S.E → α) (hf : ∀ e e', φ.ParallelStep e e' → f e = f e')
+    (F : φ.ParallelClass → α) (hF : ∀ e, F (φ.parallelClass e) = f e) : F = φ.lift f hf :=
+  funext <| φ.parallelClass_surjective.forall.mpr hF
+
 /-- A tree with finitely many orbits of darts has finitely many parallel classes. -/
-theorem finite_parallelClass [Finite (orbitRel.Quotient G S.E)] : Finite φ.ParallelClass := by
-  refine Finite.of_surjective (Quotient.lift (s := orbitRel G S.E) φ.parallelClass ?_) fun c => ?_
-  · rintro _ e ⟨g, rfl⟩
-    exact φ.parallelClass_smul g e
-  · obtain ⟨e, rfl⟩ := φ.parallelClass_surjective c
-    exact ⟨Quotient.mk _ e, rfl⟩
+theorem finite_parallelClass [Finite (orbitRel.Quotient G S.E)] : Finite φ.ParallelClass :=
+  .of_surjective _ <| Quotient.lift_surjective (s := orbitRel G S.E) φ.parallelClass
+    (by rintro _ e ⟨g, rfl⟩; exact φ.parallelClass_smul g e) φ.parallelClass_surjective
 
 /-- If every vertex is unfolded, there is at most one parallel class. -/
 theorem subsingleton_parallelClass_of_forall_isUnfoldedAt (h : ∀ x : S.V, φ.IsUnfoldedAt x) :
@@ -223,22 +236,6 @@ theorem subsingleton_parallelClass_of_forall_isUnfoldedAt (h : ∀ x : S.V, φ.I
   obtain ⟨e', rfl⟩ := φ.parallelClass_surjective c'
   obtain ⟨p⟩ := S.nonempty_path (S.src e) (S.src e')
   exact key p rfl rfl
-
-/-- The identity of the line is unfolded at every vertex: exactly two darts start at each
-vertex, one in each direction. So the identity of the line has at most one parallel class, by
-`GTree.Hom.subsingleton_parallelClass_of_forall_isUnfoldedAt`. -/
-theorem isUnfoldedAt_id_line (x : line.V) : (Hom.id line).IsUnfoldedAt x := by
-  -- The darts from `x` are `(x, true)`, to `x + 1`, and `(x - 1, false)`, back to `x - 1`.
-  refine ⟨(lineVertexEquiv x, true), (lineVertexEquiv x - 1, false), ?_,
-    fun e => ⟨fun he => ?_, ?_⟩⟩
-  · rw [id_toHom, SerreGraph.Hom.id_mapE]
-    exact fun h => Bool.noConfusion (congrArg Prod.snd h)
-  · have h := (lineVertexEquiv_line_src e).symm.trans (congrArg lineVertexEquiv he)
-    rcases e with ⟨n, _ | _⟩
-    · exact .inr (Prod.ext (by simp at h ⊢; lia) rfl)
-    · exact .inl (Prod.ext (by simpa using h) rfl)
-  · rintro (rfl | rfl) <;>
-      exact lineVertexEquiv.injective ((lineVertexEquiv_line_src _).trans (by simp))
 
 end Hom
 
