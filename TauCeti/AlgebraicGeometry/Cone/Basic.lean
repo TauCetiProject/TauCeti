@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Surjective
@@ -118,9 +119,6 @@ theorem of_epi (hA : A.IsConeAlgebra) (f : A ⟶ B) [IsIso (f.hom.hom.hom 0)]
 
 /-- A graded quasicoherent algebra isomorphic to a cone algebra is a cone algebra. -/
 theorem of_iso (hA : A.IsConeAlgebra) (e : A ≅ B) : B.IsConeAlgebra :=
-  have (n : ℕ) : IsIso (e.hom.hom.hom.hom n) :=
-    ⟨e.inv.hom.hom.hom n, congrArg (fun g : A ⟶ A ↦ g.hom.hom.hom n) e.hom_inv_id,
-      congrArg (fun g : B ⟶ B ↦ g.hom.hom.hom n) e.inv_hom_id⟩
   hA.of_epi e.hom
 
 end IsConeAlgebra
@@ -137,15 +135,13 @@ theorem isConeAlgebra_gradedSymmetricAlgebra_iff (F : QuasicoherentSheaf X) :
     ((gradedSymmetricAlgebra X).obj F).IsConeAlgebra ↔ F.obj.IsFiniteType := by
   -- The degree-one component `Sym¹ F` is identified with `F`, and finite type is transported
   -- along this identification.
-  have key {M N : X.Modules} (e : M ≅ N) [M.IsFiniteType] : N.IsFiniteType :=
-    Scheme.Modules.isFiniteType_of_epi e.hom
   let e : ((gradedSymmetricAlgebra X).obj F).obj.X 1 ≅ F.obj :=
     eqToIso (gradedSymmetricAlgebra_obj_obj_X F 1) ≪≫
       (SheafOfModules.symmetricPowerOneIso X.sheaf).app F.obj
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨inferInstance, ?_, isGeneratedInDegreeOne_gradedSymmetricAlgebra F⟩⟩
   · have := h.isFiniteType_one
-    exact key e
-  · exact key e.symm
+    exact SheafOfModules.IsFiniteType.of_iso (R := X.ringCatSheaf) e
+  · exact SheafOfModules.IsFiniteType.of_iso (R := X.ringCatSheaf) e.symm
 
 /-- **The abelian hull.** For a cone algebra `A`, the morphism `Sym A₁ ⟶ A` extending the identity
 of `A₁` is an epimorphism in every degree. Geometrically, the cone `Spec_X A` is a closed subcone

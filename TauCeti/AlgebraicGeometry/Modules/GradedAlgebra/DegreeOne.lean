@@ -152,24 +152,14 @@ theorem IsGeneratedInDegreeOne.of_epi [∀ n, (A.X n).IsQuasicoherent]
     A.IsGeneratedInDegreeOne := by
   rw [CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top] at h ⊢
   intro U hU
-  -- `φ` is surjective on sections over `U`, being surjective onto every homogeneous component.
-  have hrange : (CommMon.gradedSectionsMap φ U).range = ⊤ := by
-    refine eq_top_iff.mpr ?_
-    rintro x -
-    induction x using DirectSum.induction_on with
-    | zero => exact zero_mem _
-    | of i x =>
-      obtain ⟨y, hy⟩ := CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi φ U hU i
-        (DirectSum.mem_summand.mpr ⟨x, rfl⟩)
-      exact ⟨y, (CommMon.gradedSectionsGradedHom_apply φ U y).symm.trans hy⟩
-    | add x y hx hy => exact add_mem hx hy
   have himage : CommMon.gradedSectionsMap φ U ''
       ((B.gradedSectionsGrading U 0 : Set (⨁ n, Γ(B.X n, U))) ∪ B.gradedSectionsGrading U 1) ⊆
       (A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪ A.gradedSectionsGrading U 1 := by
     rintro _ ⟨y, hy | hy, rfl⟩
     · exact Or.inl (by simpa using (CommMon.gradedSectionsGradedHom φ U).map_mem hy)
     · exact Or.inr (by simpa using (CommMon.gradedSectionsGradedHom φ U).map_mem hy)
-  rw [← top_le_iff, ← hrange, ← Algebra.map_top, ← h U hU, ← Algebra.adjoin_image]
+  rw [← top_le_iff, ← CommMon.range_gradedSectionsMap_eq_top_of_epi φ U hU, ← Algebra.map_top,
+    ← h U hU, ← Algebra.adjoin_image]
   exact Algebra.adjoin_mono himage
 
 end CategoryTheory.CommMon
