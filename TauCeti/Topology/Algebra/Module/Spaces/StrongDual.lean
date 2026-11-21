@@ -22,9 +22,8 @@ both `E` and `F` onto their strong biduals (`ContinuousLinearEquiv.bidualEquivOf
   `ContinuousLinearEquiv.bidualEquivOfDualEquiv_eq_trans`: strong-bidual evaluation equivalence
   on `E` from a compatible dual identification
   `(StrongDual 𝕜 E ≃L[𝕜] F, E ≃L[𝕜] StrongDual 𝕜 F)`, and its factorization.
-* `ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`,
-  `ContinuousLinearEquiv.dualBidualEquivOfDualEquiv_eq_trans`: strong-bidual evaluation
-  equivalence on `F` from the same dual identification, and its factorization.
+* `ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`: strong-bidual evaluation equivalence on
+  `F` from the same dual identification.
 * `ContinuousLinearEquiv.trans_dualBidualEquivOfDualEquiv`: compatibility of `a` composed with
   `dualBidualEquivOfDualEquiv a b h` against `b.arrowCongr (.refl 𝕜 𝕜)`.
 -/
@@ -47,40 +46,39 @@ variable {𝕜 E F : Type*} [NormedField 𝕜]
 def bidualEquivOfDualEquiv (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
     E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
-  let _ : ContinuousSMul 𝕜 E :=
-    ⟨by
-      have hsmul : (fun p : 𝕜 × E ↦ p.1 • p.2) = fun p ↦ b.symm (p.1 • b p.2) := by
-        ext p
-        simp
-      rw [hsmul]
-      exact b.symm.continuous.comp (continuous_fst.smul (b.continuous.comp continuous_snd))⟩
+  letI : ContinuousSMul 𝕜 E :=
+    b.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ b.map_smul c x
   let e := b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))
   have he : ∀ x, e x = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) x := fun x ↦
     ContinuousLinearMap.ext fun ℓ ↦ by
       simpa [e, trans_apply, arrowCongr_apply, refl_apply] using h x ℓ
-  { __ := (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
-      E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E))
-    invFun := e.symm
-    left_inv x := by rw [LinearMap.toFun_eq_coe, ← he x, e.symm_apply_apply]
-    right_inv Ξ := by rw [LinearMap.toFun_eq_coe, ← he (e.symm Ξ), e.apply_symm_apply]
-    continuous_toFun := e.continuous.congr he
-    continuous_invFun := e.symm.continuous }
+  let ev : E →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
+    { __ := (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
+        E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E))
+      cont := e.continuous.congr he }
+  ContinuousLinearEquiv.ofContinuousLinearMap ev e.symm.toContinuousLinearMap
+    (ContinuousLinearMap.ext fun Ξ ↦ by simp [ev, ← he (e.symm Ξ)])
+    (ContinuousLinearMap.ext fun x ↦ by simp [ev, ← he x])
 
-@[simp]
-theorem coe_bidualEquivOfDualEquiv [ContinuousSMul 𝕜 E]
+theorem coe_bidualEquivOfDualEquiv
     (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
+    letI : ContinuousSMul 𝕜 E :=
+      b.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ b.map_smul c x
     ⇑(bidualEquivOfDualEquiv a b h) =
       (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) : E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :=
   (rfl)
 
 @[simp]
-theorem toLinearMap_bidualEquivOfDualEquiv [ContinuousSMul 𝕜 E]
+theorem toLinearMap_bidualEquivOfDualEquiv
     (a : StrongDual 𝕜 E ≃L[𝕜] F)
     (b : E ≃L[𝕜] StrongDual 𝕜 F) (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
+    letI : ContinuousSMul 𝕜 E :=
+      b.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ b.map_smul c x
     (bidualEquivOfDualEquiv a b h).toLinearMap = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
   (rfl)
 
+@[simp]
 theorem bidualEquivOfDualEquiv_apply_apply (a : StrongDual 𝕜 E ≃L[𝕜] F)
     (b : E ≃L[𝕜] StrongDual 𝕜 F) (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x)
     (x : E) (ℓ : StrongDual 𝕜 E) :
@@ -93,7 +91,7 @@ theorem bidualEquivOfDualEquiv_eq_trans (a : StrongDual 𝕜 E ≃L[𝕜] F)
     bidualEquivOfDualEquiv a b h =
       b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) := by
   ext x ℓ
-  simp [bidualEquivOfDualEquiv_apply_apply, h]
+  simp [h]
 
 /-- Given topological linear isomorphisms `a : StrongDual 𝕜 E ≃L[𝕜] F` and
 `b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation (`b x (a ℓ) = ℓ x`), canonical evaluation
@@ -107,36 +105,12 @@ def dualBidualEquivOfDualEquiv
     rw [← h (b.symm φ) (a.symm f), b.apply_symm_apply, a.apply_symm_apply]
 
 @[simp]
-theorem coe_dualBidualEquivOfDualEquiv [ContinuousSMul 𝕜 F]
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    ⇑(dualBidualEquivOfDualEquiv a b h) =
-      (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) : F →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)) :=
-  (rfl)
-
-@[simp]
-theorem toLinearMap_dualBidualEquivOfDualEquiv [ContinuousSMul 𝕜 F]
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    (dualBidualEquivOfDualEquiv a b h).toLinearMap =
-      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
-  (rfl)
-
 theorem dualBidualEquivOfDualEquiv_apply_apply
     (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x)
     (f : F) (φ : StrongDual 𝕜 F) :
     dualBidualEquivOfDualEquiv a b h f φ = φ f :=
   (rfl)
-
-/-- `dualBidualEquivOfDualEquiv a b h` factors as `a.symm` followed by
-`b.arrowCongr (.refl 𝕜 𝕜)`. -/
-theorem dualBidualEquivOfDualEquiv_eq_trans
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    dualBidualEquivOfDualEquiv a b h =
-      a.symm.trans (b.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) := by
-  rw [dualBidualEquivOfDualEquiv, bidualEquivOfDualEquiv_eq_trans, symm_symm]
 
 /-- Composing `a : StrongDual 𝕜 E ≃L[𝕜] F` with the dual-bidual equivalence
 `dualBidualEquivOfDualEquiv a b h` agrees with `b.arrowCongr (.refl 𝕜 𝕜)`. -/
@@ -146,7 +120,7 @@ theorem trans_dualBidualEquivOfDualEquiv
     a.trans (dualBidualEquivOfDualEquiv a b h) = b.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) := by
   ext ℓ Ξ
   obtain ⟨x, rfl⟩ := b.surjective Ξ
-  simp [dualBidualEquivOfDualEquiv_apply_apply, h]
+  simp [h]
 
 end DualReflexivity
 

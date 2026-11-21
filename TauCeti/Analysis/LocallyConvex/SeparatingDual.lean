@@ -17,18 +17,13 @@ continuous linear operator on `E` if and only if it is a scalar multiple of the 
 (`ContinuousLinearMap.commute_forall_iff`). In particular this applies to every normed space over
 `ℝ` or `ℂ`.
 
-Furthermore, forgetting continuity on the codomain of canonical evaluation
-`ContinuousLinearMap.applyₗ` recovers the flipped coercion `(ContinuousLinearMap.coeLM 𝕜).flip`
-used in Mathlib's `separatingDual_iff_injective` (`ContinuousLinearMap.coeLM_comp_applyₗ`), and
-any evaluation-like map recovering continuous linear functionals is injective
+Furthermore, any evaluation-like map recovering continuous linear functionals is injective
 (`TauCeti.injective_of_forall_apply_eq`).
 -/
 
 public section
 
 namespace ContinuousLinearMap
-
-section Commutant
 
 variable {𝕜 E : Type*} [Field 𝕜] [AddCommGroup E] [TopologicalSpace 𝕜] [TopologicalSpace E]
   [IsTopologicalRing 𝕜] [Module 𝕜 E] [SeparatingDual 𝕜 E] [IsTopologicalAddGroup E]
@@ -43,17 +38,6 @@ theorem commute_forall_iff {T : E →L[𝕜] E} :
     exact forall_congr' fun _ => by simp [Commute, SemiconjBy, eq_comm]
   rw [hmem, Algebra.IsCentral.mem_center_iff (K := 𝕜)]
   exact exists_congr fun _ => by simp [Algebra.algebraMap_eq_smul_one]
-
-end Commutant
-
-/-- Forgetting continuity on the codomain of canonical evaluation `applyₗ` recovers the flipped
-coercion `(coeLM 𝕜).flip` used in `separatingDual_iff_injective`. -/
-theorem coeLM_comp_applyₗ {𝕜 E G : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [TopologicalSpace E] [ContinuousSMul 𝕜 E] [AddCommGroup G] [Module 𝕜 G]
-    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G] :
-    (coeLM (R := 𝕜) 𝕜 (M := E →L[𝕜] G) (N₃ := G)).comp (applyₗ G (RingHom.id 𝕜)) =
-      (coeLM (R := 𝕜) 𝕜 (M := E) (N₃ := G)).flip :=
-  rfl
 
 end ContinuousLinearMap
 

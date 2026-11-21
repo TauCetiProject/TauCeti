@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.LocallyConvex.DualProjectiveLimit
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import Mathlib.Analysis.LocallyConvex.StrongTopology
+import TauCeti.Analysis.LocallyConvex.Bounded
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 import TauCeti.Topology.Algebra.Module.Spaces.StrongDual
 
@@ -141,9 +142,7 @@ theorem isVonNBounded_iff_exists_subset_image_closedBall [SeparatingDual 𝕜 L]
   have hbdd (f : dualProjectiveLimit T) :
       BddAbove (Set.range fun x : A ↦ ‖evalInductive hι hinj hcover x f‖) := by
     obtain ⟨φ, rfl⟩ := precomp_surjective hι hinj hcover hfinal f
-    have h := ((NormedSpace.isVonNBounded_iff 𝕜).1 (hA.image φ)).bddAbove_norm
-    rw [Set.image_image, ← Subtype.range_coe (s := A), ← Set.range_comp'] at h
-    simpa using h
+    simpa using (hA.image φ).bddAbove_range_norm
   obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT _ hbdd
   refine ⟨j, R, fun x hx ↦ ?_⟩
   obtain ⟨z, hz, heq⟩ := hrep ⟨x, hx⟩
@@ -363,12 +362,10 @@ theorem continuous_evalInductive_of_continuous_comp_seminorm [IsTopologicalAddGr
   set p : Q → Seminorm 𝕜 L := fun f ↦ (normSeminorm 𝕜 𝕜).comp
     ((applyₗ 𝕜 (RingHom.id 𝕜) f.val).toLinearMap ∘ₗ evalInductive hι hinj hcover)
   have hstage (n : ℕ) : ∃ C : ℝ≥0, ∀ f : Q, ∀ z : B n, p f (ι n z) ≤ C * ‖z‖ := by
-    obtain ⟨C, hC⟩ := (NormedSpace.isVonNBounded_iff' 𝕜).1 (hQ.image (coord T n))
+    obtain ⟨C, hC⟩ := dualProjectiveLimit.isVonNBounded_iff.mp hQ n
     refine ⟨C.toNNReal, fun f z ↦ ?_⟩
-    have hfC : ‖(f.val : ∀ k, StrongDual 𝕜 (B k)) n‖ ≤ C.toNNReal := by
-      have h := hC (coord T n f.val) (Set.mem_image_of_mem (coord T n) f.property)
-      rw [coord_apply] at h
-      exact h.trans (Real.le_coe_toNNReal C)
+    have hfC : ‖(f.val : ∀ k, StrongDual 𝕜 (B k)) n‖ ≤ C.toNNReal :=
+      (hC f.val f.property).trans (Real.le_coe_toNNReal C)
     simpa [p] using (le_opNorm _ z).trans (mul_le_mul_of_nonneg_right hfC (norm_nonneg z))
   have hbdd : BddAbove (Set.range p) := Seminorm.bddAbove_range_iff.2 fun x ↦ by
     obtain ⟨n, z, rfl⟩ := hcover x
