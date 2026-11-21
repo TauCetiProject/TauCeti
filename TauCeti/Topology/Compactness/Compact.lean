@@ -118,25 +118,24 @@ theorem _root_.IsCompact.isClosedEmbedding_domRestrict {Y : Type*} [TopologicalS
   hf.domRestrict.isClosedEmbedding hinj.injective
 
 /-- **Neighbourhoods in a set are read through a map inducing its topology.** Let the restriction
-of `f` to a set `K` be inducing. For `x ∈ K` and a neighbourhood `s` of `x`, there is a
-neighbourhood `t` of `f x` such that every point of `K` that `f` maps into `t` lies in `s`. -/
+of `f` to a set `K` be inducing. For `x ∈ K` and a neighbourhood `s` of `x` within `K`, there is
+a neighbourhood `t` of `f x` such that every point of `K` that `f` maps into `t` lies in `s`. -/
 theorem _root_.Topology.IsInducing.exists_mem_nhds_inter_preimage_subset {Y : Type*}
     [TopologicalSpace Y] {K : Set X} {f : X → Y} (hf : IsInducing (K.domRestrict f)) {x : X}
-    (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝 x) : ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s := by
+    (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝[K] x) : ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s := by
   -- Inside `K`, the neighbourhoods of `x` are read through `f`.
-  have hs' := continuous_subtypeVal.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
-  rw [hf.nhds_eq_comap, mem_comap] at hs'
-  obtain ⟨t, ht, hts⟩ := hs'
+  rw [nhdsWithin_eq_map_subtypeVal hx, mem_map, hf.nhds_eq_comap, mem_comap] at hs
+  obtain ⟨t, ht, hts⟩ := hs
   refine ⟨t, ht, fun p ⟨hpK, hpt⟩ ↦ hts (a := ⟨p, hpK⟩) ?_⟩
   rwa [mem_preimage, domRestrict_apply]
 
 /-- **Neighbourhoods in a compact set are read through a continuous injection.** Let `f` be
 continuous and injective on a compact set `K` with values in a Hausdorff space. For `x ∈ K` and a
-neighbourhood `s` of `x`, there is a neighbourhood `t` of `f x` such that every point of `K` that
-`f` maps into `t` lies in `s`. -/
+neighbourhood `s` of `x` within `K`, there is a neighbourhood `t` of `f x` such that every point of
+`K` that `f` maps into `t` lies in `s`. -/
 theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [TopologicalSpace Y]
     [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝 x) :
+    (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝[K] x) :
     ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s :=
   (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_mem_nhds_inter_preimage_subset hx hs
 
@@ -148,7 +147,8 @@ theorem _root_.Topology.IsInducing.tendsto_nhds_of_tendsto_comp {Y ι : Type*}
     {l : Filter ι} {g : ι → X} (hg : ∀ᶠ i in l, g i ∈ K) {x : X} (hx : x ∈ K)
     (h : Tendsto (f ∘ g) l (𝓝 (f x))) : Tendsto g l (𝓝 x) := by
   intro s hs
-  obtain ⟨t, ht, hts⟩ := hf.exists_mem_nhds_inter_preimage_subset hx hs
+  obtain ⟨t, ht, hts⟩ :=
+    hf.exists_mem_nhds_inter_preimage_subset hx (mem_nhdsWithin_of_mem_nhds hs)
   exact (hg.and (h.eventually_mem ht)).mono fun i hi ↦ hts hi
 
 /-- **Convergence in a compact set is read through a continuous injection.** Let `f` be continuous
@@ -164,8 +164,8 @@ theorem _root_.IsCompact.tendsto_nhds_of_tendsto_comp {Y ι : Type*} [Topologica
 to a set `K` be inducing, with `f '' K` closed, and let `x i` be maps from a space `T` whose values
 at each point of a set `Ω ⊆ T` eventually lie in `K` along a nontrivial filter `l`. If the maps
 `f ∘ x i` converge along `l` pointwise on `Ω` to a map `g` continuous on `Ω`, then `g = f ∘ y` on
-`Ω` for a map `y` continuous on `Ω` with values in `K`, and the `x i` converge along `l` pointwise
-on `Ω` to `y`. -/
+`Ω` for a map `y` that is continuous on `Ω` and maps `Ω` into `K`, and the `x i` converge along `l`
+pointwise on `Ω` to `y`. -/
 theorem _root_.Topology.IsInducing.exists_tendsto_of_tendsto_comp {Y : Type*}
     [TopologicalSpace Y] {K : Set X} {f : X → Y} (hf : IsInducing (K.domRestrict f))
     (hfK : IsClosed (f '' K)) {T : Type*} [TopologicalSpace T] {Ω : Set T} {ι : Type*}
@@ -186,11 +186,11 @@ theorem _root_.Topology.IsInducing.exists_tendsto_of_tendsto_comp {Y : Type*}
   have hy (t : T) (ht : t ∈ Ω) : y t ∈ K ∧ f (y t) = g t := Function.invFunOn_pos (hgK ht)
   -- Both the continuity of `y` and the convergence to it are read in `K` through `f`.
   refine ⟨y, fun t ht ↦ hf.tendsto_nhds_of_tendsto_comp
-      (eventually_mem_nhdsWithin.mono fun t' ht' ↦ (hy t' ht').1) (hy t ht).1 ?_,
+      (eventually_nhdsWithin_of_forall fun t' ht' ↦ (hy t' ht').1) (hy t ht).1 ?_,
     fun t ht ↦ (hy t ht).1, fun t ht ↦ (hy t ht).2,
     fun t ht ↦ hf.tendsto_nhds_of_tendsto_comp (hxK t ht) (hy t ht).1 ?_⟩
   · rw [(hy t ht).2]
-    exact (hg t ht).congr' (eventually_mem_nhdsWithin.mono fun t' ht' ↦ (hy t' ht').2.symm)
+    exact tendsto_nhdsWithin_congr (fun t' ht' ↦ (hy t' ht').2.symm) (hg t ht)
   · rw [(hy t ht).2]
     exact hlim t ht
 
@@ -198,8 +198,8 @@ theorem _root_.Topology.IsInducing.exists_tendsto_of_tendsto_comp {Y : Type*}
 compact set `K`, with values in a Hausdorff space, and let `x i` be maps from a space `T` whose
 values at each point of a set `Ω ⊆ T` eventually lie in `K` along a nontrivial filter `l`. If the
 maps `f ∘ x i` converge along `l` pointwise on `Ω` to a map `g` continuous on `Ω`, then `g = f ∘ y`
-on `Ω` for a map `y` continuous on `Ω` with values in `K`, and the `x i` converge along `l`
-pointwise on `Ω` to `y`. -/
+on `Ω` for a map `y` that is continuous on `Ω` and maps `Ω` into `K`, and the `x i` converge along
+`l` pointwise on `Ω` to `y`. -/
 theorem _root_.IsCompact.exists_tendsto_of_tendsto_comp {Y : Type*} [TopologicalSpace Y]
     [T2Space Y] {K : Set X} (hK : IsCompact K) {f : X → Y} (hf : ContinuousOn f K)
     (hinj : InjOn f K) {T : Type*} [TopologicalSpace T] {Ω : Set T} {ι : Type*} {l : Filter ι}

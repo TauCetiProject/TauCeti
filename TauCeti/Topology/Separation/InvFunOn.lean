@@ -111,7 +111,7 @@ theorem ContinuousOn.exists_continuousOn_injOn_lift [Nonempty α] [T1Space β] {
         (hkc (f x) (mem_image_of_mem f hx)).comp (hf x hx) (mapsTo_image f Q)
       exact ((hinv _ (hkP x hx hxy)).comp_of_preimage_mem_nhdsWithin (f := k ∘ f) hkf <|
         mem_of_superset (inter_mem self_mem_nhdsWithin hne) fun x' hx' ↦ hkP x' hx'.1 hx'.2)
-        |>.congr_of_eventuallyEq (mem_of_superset hne fun _ ↦ hg) (hg hxy)
+        |>.congr_of_eventuallyEq_of_mem (mem_of_superset hne fun _ ↦ hg) hx
   · -- `k` is injective on `f '' R`, so `x` and `x'` have the same image under `f`.
     have hfx : f x = f x' := hki (mem_image_of_mem f hx) (mem_image_of_mem f hx')
       (by rw [← hfg (hRQ hx), ← hfg (hRQ hx'), h])

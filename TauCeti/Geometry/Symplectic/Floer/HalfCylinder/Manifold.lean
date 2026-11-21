@@ -342,7 +342,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
       exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hyper hy hyK
     -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
     obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he.continuous.continuousOn
-      he_inj (hxK 0) (hiso x hx hxK)
+      he_inj (hxK 0) (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK))
     obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
     refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
     obtain ⟨x', hx', hx'K, rfl⟩ :=
