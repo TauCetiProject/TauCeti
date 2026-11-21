@@ -17,6 +17,8 @@ symbol of the proper-input amplitude `conj(χ(y-x)) a(y,ξ)†`. Its quantizatio
 native continuous adjoint of `kernelCutoff χ a` on compactly supported smooth tests, also
 between each compact stage `K` and its closed `R`-thickening. Coefficient Hilbert spaces may have
 zero or infinite dimension, and no uniform position estimates on `a` are assumed.
+The explicit symbol equals `properAdjoint (kernelCutoff χ a)` by
+`TauCeti.Symbol.properAdjoint_kernelCutoff_eq`.
 
 All truncation remainders are the native amplitude remainders. A cutoff equal to one near zero
 gives their complete expansion; equality with the adjoint of an already local original operator
@@ -598,6 +600,18 @@ theorem integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff {χ : 𝓢(Co
     funext (HasCompactSupport.toSchwartzMap_toFun u.hasCompactSupport u.contDiff),
     funext (HasCompactSupport.toSchwartzMap_toFun v.hasCompactSupport v.contDiff)] using h
 
+/-- The formal adjoint of a kernel-cutoff symbol is its explicit reversed-conjugate-cutoff
+left symbol. The cutoff and the order are arbitrary, and the support radius is unchanged. -/
+theorem properAdjoint_kernelCutoff_eq {χ : 𝓢(CoordinateSpace n, ℂ)}
+    (hχ : HasCompactSupport χ) (hχR : Function.support χ ⊆ Metric.ball 0 R)
+    (a : Symbol n V W m) :
+    properAdjoint (kernelCutoff χ a) (hasNearDiagonalKernel_kernelCutoff χ hχR a) =
+      adjointKernelCutoff a χ hχ := by
+  symm
+  refine (eq_properAdjoint_iff (hasNearDiagonalKernel_kernelCutoff χ hχR a)).2 fun u v ↦ ?_
+  simpa only [quantizeTestFunctionCLM_apply] using
+    integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR a u v
+
 /-- The quantization of the explicit adjoint symbol equals `adjointTestFunctionCLM`
 of the kernel-cutoff operator. -/
 theorem adjointTestFunctionCLM_kernelCutoff {χ : 𝓢(CoordinateSpace n, ℂ)}
@@ -605,13 +619,9 @@ theorem adjointTestFunctionCLM_kernelCutoff {χ : 𝓢(CoordinateSpace n, ℂ)}
     (a : Symbol n V W m) :
     Symbol.adjointTestFunctionCLM (Symbol.hasNearDiagonalKernel_kernelCutoff χ hχR a) =
       Symbol.quantizeTestFunctionCLM (hasNearDiagonalKernel_adjointKernelCutoff hχ hχR a) := by
-  apply ContinuousLinearMap.ext
-  intro v
-  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
-  intro u
-  exact (Symbol.integral_inner_quantizeTestFunctionCLM
-    (Symbol.hasNearDiagonalKernel_kernelCutoff χ hχR a) u v).symm.trans
-      (integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR a u v)
+  ext v x
+  rw [quantizeTestFunctionCLM_apply, ← properAdjoint_kernelCutoff_eq hχ hχR a,
+    quantizeSchwartzValue_properAdjoint]
 
 namespace HasNearDiagonalKernel
 
@@ -623,21 +633,16 @@ theorem adjointTestFunctionCLM_eq_quantizeTestFunctionCLM_adjointKernelCutoff
     (hχ₁ : Set.EqOn (χ : CoordinateSpace n → ℂ) 1 (Metric.ball 0 R)) :
     Symbol.adjointTestFunctionCLM ha =
       Symbol.quantizeTestFunctionCLM (hasNearDiagonalKernel_adjointKernelCutoff hχ hχR' a) := by
-  apply ContinuousLinearMap.ext
-  intro v
-  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
-  intro u
-  calc (∫ x, inner ℂ (u x) (Symbol.adjointTestFunctionCLM ha v x))
-      = ∫ x, inner ℂ (Symbol.quantizeTestFunctionCLM ha u x) (v x) :=
-        (Symbol.integral_inner_quantizeTestFunctionCLM ha u v).symm
-    _ = ∫ x, inner ℂ (Symbol.quantizeTestFunctionCLM
-        (Symbol.hasNearDiagonalKernel_kernelCutoff χ hχR' a) u x) (v x) := by
-      apply integral_congr_ae
-      exact .of_forall fun x ↦ by
-        dsimp only
-        rw [Symbol.quantizeTestFunctionCLM_apply, Symbol.quantizeTestFunctionCLM_apply,
-          ha.quantizeSchwartzValue_kernelCutoff_eq χ hχ₁]
-    _ = _ := integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR' a u v
+  have heq : Symbol.properAdjoint (kernelCutoff χ a)
+      (hasNearDiagonalKernel_kernelCutoff χ hχR' a) = Symbol.properAdjoint a ha := by
+    refine (eq_properAdjoint_iff ha).2 fun u v ↦ ?_
+    simpa only [quantizeTestFunctionCLM_apply,
+      ha.quantizeSchwartzValue_kernelCutoff_eq χ hχ₁] using
+      integral_inner_quantizeTestFunctionCLM_properAdjoint
+        (hasNearDiagonalKernel_kernelCutoff χ hχR' a) u v
+  ext v x
+  rw [quantizeTestFunctionCLM_apply, ← properAdjoint_kernelCutoff_eq hχ hχR' a, heq,
+    quantizeSchwartzValue_properAdjoint]
 
 end HasNearDiagonalKernel
 
