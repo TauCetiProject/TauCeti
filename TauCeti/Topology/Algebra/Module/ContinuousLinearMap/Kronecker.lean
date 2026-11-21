@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.Topology.Algebra.Module.Equiv.Fin
 
 /-!
 # Kronecker products of operators on finite coordinates
@@ -32,7 +33,9 @@ coordinate charts. The norm bound and continuity in the two factors are in
 
 The coordinate isomorphisms `ContinuousLinearEquiv.kroneckerAssoc`, `kroneckerComm`,
 `kroneckerLid` and `kroneckerRid` reindex `Fin ((m * n) * p)`, `Fin (m * n)`, `Fin (1 * n)` and
-`Fin (n * 1)` along the associativity, symmetry and unit equivalences of index pairs. They
+`Fin (n * 1)` along the associativity, symmetry and unit equivalences of index pairs; the unit
+isomorphisms are reindexings along `finCongr` (`kroneckerLid_eq_piCongrLeft_finCongr`,
+`kroneckerRid_eq_piCongrLeft_finCongr`). They
 intertwine Kronecker products (`ContinuousLinearMap.kroneckerAssoc_comp_kronecker`,
 `kroneckerComm_comp_kronecker`, `kroneckerLid_comp_kronecker`, `kroneckerRid_comp_kronecker`)
 and satisfy the pentagon, triangle and hexagon identities. These are the structure maps of the
@@ -226,6 +229,22 @@ variable {R} {m n p : ℕ}
 @[simp] theorem kroneckerRid_apply (v : Fin (n * 1) → R) (i : Fin n) :
     kroneckerRid R n v i = v (finProdFinEquiv (i, 0)) :=
   congrArg v (by ext; simp [finProdFinEquiv])
+
+/-- `kroneckerLid` reindexes coordinates along `1 * n = n`. -/
+theorem kroneckerLid_eq_piCongrLeft_finCongr (n : ℕ) :
+    kroneckerLid R n = piCongrLeft R (fun _ : Fin n ↦ R) (finCongr (Nat.one_mul n)) := by
+  ext v j
+  rw [kroneckerLid_apply, piCongrLeft_finCongr_apply]
+  congr 1
+
+/-- `kroneckerRid` reindexes coordinates along `n * 1 = n`. -/
+theorem kroneckerRid_eq_piCongrLeft_finCongr (n : ℕ) :
+    kroneckerRid R n = piCongrLeft R (fun _ : Fin n ↦ R) (finCongr (Nat.mul_one n)) := by
+  ext v i
+  rw [kroneckerRid_apply, piCongrLeft_finCongr_apply]
+  congr 1
+  ext
+  simp [finProdFinEquiv]
 
 @[simp] theorem kroneckerAssoc_symm_apply (v : Fin (m * (n * p)) → R) (i : Fin m) (j : Fin n)
     (k : Fin p) :

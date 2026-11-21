@@ -17,8 +17,10 @@ For a continuous linear operator `g` between coordinate spaces over a normed fie
 `g.exteriorPowerCoords j` is its `j`th exterior power read in the coordinates
 `exteriorPower.piEquiv`, that is, the `j`th compound matrix of `g`, as a continuous linear
 operator between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The
-construction preserves identities and composition, and it depends continuously on the
-operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic map
+construction preserves identities and composition, is homogeneous of degree `j` in the operator
+(`ContinuousLinearMap.exteriorPowerCoords_smul`), sends reindexings of coordinates to reindexings
+(`ContinuousLinearMap.exteriorPowerCoords_piCongrLeft_finCongr`), and it depends continuously on
+the operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic map
 (`ContinuousLinearMap.contDiff_exteriorPowerCoords`), since its matrix entries are minors of the
 matrix of `g`. It can therefore be applied to continuous, smooth or holomorphic families of
 transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m`
@@ -60,6 +62,22 @@ noncomputable def exteriorPowerCoords (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜]
     (g.comp f).exteriorPowerCoords j = (g.exteriorPowerCoords j).comp (f.exteriorPowerCoords j) :=
   coe_injective (LinearMap.exteriorPowerCoords_comp j (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜))
     (f : (Fin l → 𝕜) →ₗ[𝕜] (Fin m → 𝕜)))
+
+/-- The compound matrix of `c • g` in degree `j` is `c ^ j` times the compound matrix of `g`. -/
+@[simp] theorem exteriorPowerCoords_smul (j : ℕ) (c : 𝕜) (g : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :
+    (c • g).exteriorPowerCoords j = c ^ j • g.exteriorPowerCoords j :=
+  coe_injective (LinearMap.exteriorPowerCoords_smul j c (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜)))
+
+/-- The compound matrix of the reindexing of coordinates along `a = b` is the reindexing of
+coordinates along `a.choose j = b.choose j`. -/
+@[simp] theorem exteriorPowerCoords_piCongrLeft_finCongr (j : ℕ) {a b : ℕ} (h : a = b) :
+    (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin b ↦ 𝕜) (finCongr h) :
+        (Fin a → 𝕜) →L[𝕜] (Fin b → 𝕜)).exteriorPowerCoords j =
+      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin (b.choose j) ↦ 𝕜)
+        (finCongr (congrArg (Nat.choose · j) h)) :
+        (Fin (a.choose j) → 𝕜) →L[𝕜] (Fin (b.choose j) → 𝕜)) := by
+  subst h
+  exact exteriorPowerCoords_id j a
 
 /-- In the top degree, the compound matrix of an endomorphism of `Fin m → 𝕜` is multiplication
 by its determinant on the coordinate line `Fin (m.choose m) → 𝕜`. -/
