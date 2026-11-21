@@ -43,6 +43,13 @@ Its cross summand `H¹(Y; ℤ)` is torsion-free: if `g : M ⟶ M'` is injective,
 pulled back from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`).
 For `ℤ → ℝ`, an integral class with a pulled-back real class is pulled back integrally.
 
+**Generators modulo torsion.** If `v` and `α` generate `Hⁿ⁺¹(Y; M)` and `Hⁿ(Y; M)` modulo
+torsion, then `pr₂^* v` and `pr₁^* θ_p ⌣ pr₂^* α` span `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` modulo torsion
+(`TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`). If `Hⁿ(Y; M)` is torsion-free,
+the classes of finite order of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` are exactly the pullbacks of the classes of
+finite order of `Hⁿ⁺¹(Y; M)`
+(`TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`).
+
 These results are the decomposition of `Sᵈ⁺¹ × Y` in
 `TauCeti.AlgebraicTopology.Cohomology.Sphere.Product`, transported along a homeomorphism of the unit
 circle with `ℝ / pℤ` which carries the standard generator of `H₁(S¹; ℤ)` to the circuit class. The
@@ -58,6 +65,10 @@ cohomology.
 * `TopCat.singularCohomologyAddCircleProdSlantEquiv`: the cohomology of `(ℝ / pℤ) × Y`.
 * `TopCat.singularCohomologyMap_snd_add_singularCup_addCircle`: the decomposition of a class.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff`: the classes pulled back from `Y`.
+* `TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`: generators of `Y` give generators
+  of `(ℝ / pℤ) × Y` modulo torsion.
+* `TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`: the classes of finite
+  order when `Hⁿ(Y; M)` is torsion-free.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
 
@@ -280,6 +291,61 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_iff {n : ℕ}
   · have h := singularCohomologyMap_snd_add_singularCup_addCircle M Y 0 φ
     rw [hφ, map_zero, map_zero, add_zero] at h
     exact ⟨_, h⟩
+
+/-- **Generators of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` modulo torsion**: if every class of `Hⁿ⁺¹(Y; M)`
+differs from a multiple of `v` by an element of finite order, and every class of `Hⁿ(Y; M)`
+differs from a multiple of `α` by an element of finite order, then every class of
+`Hⁿ⁺¹((ℝ / pℤ) × Y; M)` differs from a combination of `pr₂^* v` and `pr₁^* θ_p ⌣ pr₂^* α` by an
+element of finite order. -/
+theorem exists_isOfFinAddOrder_sub_smul_add_smul_addCircle {n : ℕ}
+    {v : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)}
+    {α : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n}
+    (hv : ∀ b, ∃ a : ℤ, IsOfFinAddOrder (b - a • v))
+    (hα : ∀ c, ∃ m : ℤ, IsOfFinAddOrder (c - m • α))
+    (x : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    ∃ a c : ℤ, IsOfFinAddOrder (x -
+      (a • TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) v +
+        c • (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ M).hom 1 n (n + 1) (add_comm 1 n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n α))) := by
+  set e := singularCohomologyAddCircleProdSlantEquiv M Y (0 : AddCircle p) n
+  obtain ⟨a, ha⟩ := hv (e x).1
+  obtain ⟨c, hc⟩ := hα (e x).2
+  refine ⟨a, c, ?_⟩
+  -- the combination is the class with components `(a • v, c • α)`
+  have h : a • TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) v +
+      c • (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ M).hom
+          1 n (n + 1) (add_comm 1 n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n α) =
+      e.symm (a • v, c • α) := by
+    rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zsmul, map_zsmul, map_zsmul]
+  rw [h, ← e.symm_apply_apply x, ← map_sub, ← Prod.mk.eta (p := e x), Prod.mk_sub_mk]
+  exact e.symm.toAddMonoidHom.isOfFinAddOrder (ha.prod_mk hc)
+
+/-- **The classes of finite order of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`**: if `Hⁿ(Y; M)` is torsion-free, a
+class of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` has finite order exactly when it is pulled back from a class of
+finite order of `Hⁿ⁺¹(Y; M)`. For `n = 1` and `M = ℤ`, the torsion of `H²((ℝ / pℤ) × Y; ℤ)` is the
+pullback of the torsion of `H²(Y; ℤ)`, its torsion labels unchanged. -/
+theorem isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle {n : ℕ}
+    [IsAddTorsionFree (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)]
+    (x : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    IsOfFinAddOrder x ↔ ∃ w, IsOfFinAddOrder w ∧
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) w = x := by
+  refine ⟨fun hx ↦ ?_, ?_⟩
+  · set e := singularCohomologyAddCircleProdSlantEquiv M Y (0 : AddCircle p) n
+    have hex := e.toAddMonoidHom.isOfFinAddOrder hx
+    have h₂ : (e x).2 = 0 := (isOfFinAddOrder_iff_eq_zero _).1 hex.snd
+    refine ⟨(e x).1, hex.fst, ?_⟩
+    -- the second slant component vanishes, so only the pulled-back summand remains
+    conv_rhs => rw [← e.symm_apply_apply x, ← Prod.mk.eta (p := e x), h₂]
+    rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero, map_zero, add_zero]
+  · rintro ⟨w, hw, rfl⟩
+    exact (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y)
+      (n + 1)).hom.toAddMonoidHom.isOfFinAddOrder hw
 
 variable {M}
 
