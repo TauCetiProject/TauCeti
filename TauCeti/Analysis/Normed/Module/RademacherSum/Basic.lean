@@ -53,50 +53,80 @@ namespace TauCeti
 
 section Signs
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι : Type*} [Fintype ι]
 
-/-- Averaged over the sign cube, the product of two signs is `1` on the diagonal and `0` off it:
-distinct Rademacher signs are orthogonal. -/
-theorem expect_units_apply_mul_apply (i j : ι) :
-    𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
-  split_ifs with hij
-  · subst hij
-    simp [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-  · -- Flipping the sign of the `i`-th coordinate negates every term.
-    let σ := Equiv.mulLeft (Pi.mulSingle i (-1) : ι → ℤˣ)
-    have h := Fintype.expect_equiv σ (fun ε ↦ -(((ε i : ℤ) : ℝ) * (ε j : ℤ)))
-      (fun ε ↦ ((ε i : ℤ) : ℝ) * (ε j : ℤ)) fun ε ↦ by
-        simp [σ, Ne.symm hij]
-    rw [expect_neg_distrib] at h
-    linarith
+/-- Over the sign cube, summing a function that negates when flipping the `i`-th sign gives
+`0`. -/
+theorem sum_eq_zero_of_mulSingle_neg {M : Type*} [DecidableEq ι] [AddCommGroup M] (i : ι)
+    (f : (ι → ℤˣ) → M) (hf : ∀ ε, f (Pi.mulSingle i (-1) * ε) = -f ε) :
+    ∑ ε : ι → ℤˣ, f ε = 0 :=
+  Finset.sum_involution (fun ε _ ↦ Pi.mulSingle i (-1) * ε)
+    (fun ε _ ↦ by simp [hf ε])
+    (fun ε _ _ h ↦ absurd (congrFun h i) (by simp))
+    (fun _ _ ↦ Finset.mem_univ _)
+    fun ε _ ↦ funext fun k ↦ by by_cases hk : k = i <;> simp [hk]
 
 /-- Over the sign cube, summing `ε i • (ε j • m)` gives `card (ι → ℤˣ) • m` on the diagonal and
 `0` off it. -/
-theorem sum_units_smul_units_smul {M : Type*} [AddCommGroup M] (i j : ι) (m : M) :
+theorem sum_units_smul_units_smul {M : Type*} [DecidableEq ι] [AddCommGroup M] (i j : ι) (m : M) :
     ∑ ε : ι → ℤˣ, ε i • (ε j • m) = if i = j then Fintype.card (ι → ℤˣ) • m else 0 := by
   split_ifs with hij
   · subst hij; simp [← mul_smul]
-  · refine Finset.sum_involution (fun ε _ ↦ Pi.mulSingle i (-1) * ε)
-      (fun ε _ => by simp [Ne.symm hij, ← mul_smul])
-      (fun ε _ _ h => absurd (congrFun h i) (by simp)) (fun _ _ => Finset.mem_univ _)
-      fun ε _ => funext fun k => by by_cases hk : k = i <;> simp [hk]
+  · exact sum_eq_zero_of_mulSingle_neg i (fun ε ↦ ε i • (ε j • m)) fun ε ↦ by
+      simp [Ne.symm hij, ← mul_smul]
+
+/-- Averaged over the sign cube, the product of two signs is `1` on the diagonal and `0` off it:
+distinct Rademacher signs are orthogonal. -/
+theorem expect_units_apply_mul_apply [DecidableEq ι] (i j : ι) :
+    𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
+  have h := sum_units_smul_units_smul (M := ℝ) i j 1
+  simp only [Units.smul_def, zsmul_eq_mul, mul_one, nsmul_eq_mul] at h
+  rw [Finset.expect_eq_sum_div_card, Finset.card_univ, h]
+  split_ifs <;> simp
 
 /-- Summing `ε i • ∑ j, ε j • x j` over the sign cube recovers `card (ι → ℤˣ) • x i`. -/
-theorem sum_units_smul_sum_units_smul {M : Type*} [AddCommGroup M] (x : ι → M) (i : ι) :
-    ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = Fintype.card (ι → ℤˣ) • x i := by
+theorem sum_units_smul_sum_units_smul {M : Type*} [DecidableEq ι] [AddCommGroup M] (x : ι → M)
+    (i : ι) : ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = Fintype.card (ι → ℤˣ) • x i := by
   simp_rw [Finset.smul_sum]; rw [Finset.sum_comm]; simp [sum_units_smul_units_smul]
 
 /-- Extracting the `i`-th Rademacher coefficient of a Rademacher sum `∑ j, ε j • x j` recovers
 `x i` in any module over a characteristic-zero division semiring. -/
-theorem inv_card_smul_sum_units_smul_sum_units_smul {𝕜 M : Type*} [DivisionSemiring 𝕜]
-    [CharZero 𝕜] [AddCommGroup M] [Module 𝕜 M] (x : ι → M) (i : ι) :
+theorem inv_card_smul_sum_units_smul_sum_units_smul {𝕜 M : Type*} [DecidableEq ι]
+    [DivisionSemiring 𝕜] [CharZero 𝕜] [AddCommGroup M] [Module 𝕜 M] (x : ι → M) (i : ι) :
     (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = x i := by
   rw [sum_units_smul_sum_units_smul, ← Nat.cast_smul_eq_nsmul 𝕜,
     inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
 
+/-- A Rademacher sum of self-adjoint elements is self-adjoint. -/
+theorem isSelfAdjoint_sum_units_smul {M : Type*} [AddCommGroup M] [StarAddMonoid M]
+    {x : ι → M} (hx : ∀ i, IsSelfAdjoint (x i)) (ε : ι → ℤˣ) :
+    IsSelfAdjoint (∑ i, ε i • x i) := by
+  rw [IsSelfAdjoint, star_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by rw [Units.smul_def, star_zsmul, (hx i).star_eq]
+
+/-- Expanding the fourth power of a Rademacher sum into a four-fold sum of sign products. -/
+theorem sum_units_smul_mul₄ {A : Type*} [NonUnitalNonAssocRing A]
+    (x : ι → A) (ε : ι → ℤˣ) :
+    (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
+      ∑ i, ∑ j, ∑ k, ∑ l,
+        ((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) • (x i * x j * x k * x l) := by
+  rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  conv_lhs => enter [1, 1]; rw [Finset.mul_sum]
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  conv_lhs => enter [1]; rw [Finset.mul_sum]
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  simp only [Units.smul_def, smul_mul_assoc, mul_smul_comm, smul_smul]
+  congr 1
+  ring
+
 /-- Summed over the sign cube, the product of four Rademacher signs splits into `card (ι → ℤˣ)`
 times the three pair matchings minus twice the quadruple diagonal. -/
-theorem sum_units_apply_mul₄ (i j k l : ι) :
+theorem sum_units_apply_mul₄ [DecidableEq ι] (i j k l : ι) :
     ∑ ε : ι → ℤˣ, (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
       (Fintype.card (ι → ℤˣ) : ℤ) *
         ((if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
@@ -120,15 +150,13 @@ theorem sum_units_apply_mul₄ (i j k l : ι) :
             (ε j : ℤ) * (ε k : ℤ) := by linear_combination (ε j : ℤ) * (ε k : ℤ) * hsq (ε i)
         simp_rw [h, h2]; by_cases hjk : j = k <;> subst_vars <;> simp_all
       · simp only [hij, hik, hil, false_and, ite_false, mul_zero, add_zero, sub_zero]
-        have hflip : ∑ ε : ι → ℤˣ, (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
-            ∑ ε : ι → ℤˣ, -((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) :=
-          Fintype.sum_equiv (Equiv.mulLeft (Pi.mulSingle i (-1))) _ _ fun ε => by
+        exact sum_eq_zero_of_mulSingle_neg i
+          (fun ε : ι → ℤˣ ↦ (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) fun ε ↦ by
             simp [Ne.symm hij, Ne.symm hik, Ne.symm hil]
-        rw [Finset.sum_neg_distrib] at hflip; omega
 
 /-- Averaged over the sign cube, the product of four Rademacher signs splits into the three pair
 matchings minus twice the quadruple diagonal. -/
-theorem expect_units_apply_mul₄ (i j k l : ι) :
+theorem expect_units_apply_mul₄ [DecidableEq ι] (i j k l : ι) :
     𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
       (if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
       (if i = l ∧ j = k then 1 else 0) - 2 * (if i = j ∧ j = k ∧ k = l then 1 else 0) := by

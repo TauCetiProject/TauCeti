@@ -149,18 +149,6 @@ end Bessel
 
 section FourthMoment
 
-private theorem sum_units_smul_mul₄ {ι A : Type*} [Fintype ι] [NonUnitalRing A]
-    (x : ι → A) (ε : ι → ℤˣ) :
-    (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
-      ∑ i, ∑ j, ∑ k, ∑ l,
-        ((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) • (x i * x j * x k * x l) := by
-  simp_rw [mul_assoc]; rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i _ => ?_; rw [Finset.sum_mul, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_; rw [Finset.sum_mul, Finset.mul_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_; simp_rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun l _ => ?_
-  simp only [Units.smul_def, smul_mul_assoc, mul_smul_comm, smul_smul]; congr 1; ring
-
 /-- Exact algebraic expansion of the fourth Rademacher moment into the three pair matchings minus
 twice the diagonal fourth product. -/
 theorem inv_card_smul_sum_units_smul_mul₄ {ι 𝕜 A : Type*} [Fintype ι] [DecidableEq ι]
@@ -195,12 +183,6 @@ theorem inv_card_smul_sum_units_smul_mul₄ {ι 𝕜 A : Type*} [Fintype ι] [De
 variable {ι A : Type*} [Fintype ι] [NonUnitalCStarAlgebra A]
   [PartialOrder A] [StarOrderedRing A]
 
-omit [PartialOrder A] [StarOrderedRing A] in
-private theorem isSelfAdjoint_sum_units_smul {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i))
-    (ε : ι → ℤˣ) : IsSelfAdjoint (∑ i, ε i • x i) := by
-  rw [IsSelfAdjoint, star_sum]
-  exact Finset.sum_congr rfl fun i _ => by rw [Units.smul_def, star_zsmul, (hx i).star_eq]
-
 private theorem norm_apply_le_sqrt_norm_sum_mul_self {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i))
     (i : ι) : ‖x i‖ ≤ √‖∑ k, x k * x k‖ :=
   (norm_apply_le_norm_columnSquare x i).trans_eq <| by
@@ -232,8 +214,10 @@ private theorem norm_sum_alternating_four_le {x : ι → A} (hx : ∀ i, IsSelfA
     rw [norm_columnSquare]; refine hle _ ?_; rw [Fintype.sum_prod_type_right]
     exact Finset.sum_congr rfl fun _ _ => by
       simp [a, Finset.mul_sum, Finset.sum_mul, (hx _).star_eq, mul_assoc]
-  rw [show (∑ i, ∑ j, x i * x j * x i * x j) = ∑ p : ι × ι, a p * a p by
-    rw [Fintype.sum_prod_type]; simp only [a, mul_assoc]]
+  have hprod : (∑ i, ∑ j, x i * x j * x i * x j) = ∑ p : ι × ι, a p * a p := by
+    rw [Fintype.sum_prod_type]
+    simp only [a, mul_assoc]
+  rw [hprod]
   exact (norm_sum_mul_le_norm_rowSquare_mul_norm_columnSquare a a).trans <|
     (mul_le_mul hrow hcol (norm_nonneg _) (norm_nonneg _)).trans_eq (sq _).symm
 
@@ -292,11 +276,12 @@ private theorem sub_pisierCutoff_sq_le (t : ℝ) :
   have hc₀_sq : c₀ ^ 2 = 3 / 4 := by
     rw [div_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3)]; norm_num
   rcases le_or_gt t c₀ with hle | hgt
-  · rw [show pisierCutoff t = t by
-      simp [pisierCutoff, c₀, min_eq_right hle, max_eq_right (by linarith : -c₀ ≤ t)],
-      sub_self, zero_pow two_ne_zero]; positivity
-  · rw [show pisierCutoff t = c₀ by
-      simp [pisierCutoff, c₀, min_eq_left hgt.le, max_eq_right (by linarith : -c₀ ≤ c₀)]]
+  · have hcut : pisierCutoff t = t := by
+      simp [pisierCutoff, c₀, min_eq_right hle, max_eq_right (by linarith : -c₀ ≤ t)]
+    rw [hcut, sub_self, zero_pow two_ne_zero]; positivity
+  · have hcut : pisierCutoff t = c₀ := by
+      simp [pisierCutoff, c₀, min_eq_left hgt.le, max_eq_right (by linarith : -c₀ ≤ c₀)]
+    rw [hcut]
     have hfac : 0 ≤ t ^ 2 + 4 * c₀ * t - 4 * c₀ ^ 2 := by nlinarith [sq_nonneg t]
     have hdiff : (1 / 12 : ℝ) * t ^ 4 - (t - c₀) ^ 2 =
         (1 / 12 : ℝ) * (t - 2 * c₀) ^ 2 * (t ^ 2 + 4 * c₀ * t - 4 * c₀ ^ 2) := by
@@ -421,10 +406,13 @@ private theorem pisierIter_step (x : ι → A) (i : ι) (m : ℕ) :
   have hcomm (ε : ι → ℤˣ) : ε i • (((1 / 2 : ℝ) ^ m) • pisierTruncate (pisierIter x m) ε) =
       ((1 / 2 : ℝ) ^ m) • (ε i • pisierTruncate (pisierIter x m) ε) := by
     rw [Units.smul_def, Units.smul_def, smul_comm]
-  simp_rw [hcomm, ← Finset.smul_sum, smul_comm (Fintype.card (ι → ℤˣ) : ℝ)⁻¹,
-    show (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, ε i • pisierTruncate (pisierIter x m) ε =
-      pisierIter x m i - pisierRemainder (pisierIter x m) i by simp [pisierRemainder],
-    smul_sub, pisierIter, smul_smul, pow_succ, mul_assoc]; norm_num
+  have hrec : (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ •
+        ∑ ε : ι → ℤˣ, ε i • pisierTruncate (pisierIter x m) ε =
+      pisierIter x m i - pisierRemainder (pisierIter x m) i := by
+    simp [pisierRemainder]
+  simp_rw [hcomm, ← Finset.smul_sum, smul_comm (Fintype.card (ι → ℤˣ) : ℝ)⁻¹, hrec,
+    smul_sub, pisierIter, smul_smul, pow_succ, mul_assoc]
+  norm_num
 
 private theorem tendsto_pisierIter_tail {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i))
     (hnorm : ‖∑ i, x i * x i‖ ≤ 1) (i : ι) :
@@ -481,11 +469,12 @@ theorem exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_and_norm_le
   · refine ⟨0, fun _ => IsSelfAdjoint.zero _, fun i => ?_, fun _ => by simp [hs]⟩
     simp [norm_le_zero_iff.mp ((norm_apply_le_sqrt_norm_sum_mul_self hx i).trans_eq hs)]
   · let y : ι → A := fun i => s⁻¹ • x i
+    have hscale : (∑ i, y i * y i) = (s⁻¹ ^ 2) • ∑ i, x i * x i := by
+      rw [Finset.smul_sum]
+      exact Finset.sum_congr rfl fun i _ => by
+        simp [y, sq, smul_mul_assoc, mul_smul_comm, smul_smul]
     have hy_norm : ‖∑ i, y i * y i‖ ≤ 1 := by
-      rw [show (∑ i, y i * y i) = (s⁻¹ ^ 2) • ∑ i, x i * x i by
-          rw [Finset.smul_sum]; exact Finset.sum_congr rfl fun i _ => by
-            simp [y, sq, smul_mul_assoc, mul_smul_comm, smul_smul],
-        norm_smul, Real.norm_of_nonneg (by positivity),
+      rw [hscale, norm_smul, Real.norm_of_nonneg (by positivity),
         ← Real.sq_sqrt (norm_nonneg (∑ i, x i * x i)), inv_pow, inv_mul_cancel₀ (pow_ne_zero 2 hs)]
     obtain ⟨Ψ, hΨ_sa, hΨ_avg, hΨ_norm⟩ :=
       exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_of_norm_le_one
@@ -498,6 +487,18 @@ theorem exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_and_norm_le
     simp_rw [hcomm, ← Finset.smul_sum, smul_comm (Fintype.card (ι → ℤˣ) : ℝ)⁻¹, hΨ_avg i]
     exact smul_inv_smul₀ hs (x i)
 
+private def entryLinearMap {B : Type*} [NonUnitalCStarAlgebra B] (p q : Fin 2) :
+    CStarMatrix (Fin 2) (Fin 2) B →ₗ[ℝ] B where
+  toFun M := M p q
+  map_add' M N := CStarMatrix.add_apply M N p q
+  map_smul' r M := CStarMatrix.smul_apply r M p q
+
+@[simp] private theorem entryLinearMap_apply {B : Type*} [NonUnitalCStarAlgebra B] (p q : Fin 2)
+    (M : CStarMatrix (Fin 2) (Fin 2) B) : entryLinearMap p q M = M p q := rfl
+
+private theorem ofMatrix_antidiag_apply_zero_one {B : Type*} [Zero B] (a b : B) :
+    CStarMatrix.ofMatrix !![0, a; b, 0] 0 1 = a := rfl
+
 /-- **Dual Rademacher factorization in a non-unital C⋆-algebra** (Haagerup–Musat, Pisier): for any
 `x : ι → A`, there exists `Φ` with `|ι → ℤˣ|⁻¹ • ∑ ε, ε i • Φ ε = x i` and
 `‖Φ ε‖ ≤ √3 * max ‖columnSquare x‖ ‖rowSquare x‖`. -/
@@ -505,9 +506,6 @@ theorem exists_inv_card_smul_sum_units_smul_eq_and_norm_le (x : ι → A) :
     ∃ Φ : (ι → ℤˣ) → A,
       (∀ i, (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, ε i • Φ ε = x i) ∧
       ∀ ε, ‖Φ ε‖ ≤ Real.sqrt 3 * max ‖columnSquare x‖ ‖rowSquare x‖ := by
-  let entry (p q : Fin 2) : CStarMatrix (Fin 2) (Fin 2) A →ₗ[ℝ] A :=
-    { toFun := fun M => M p q, map_add' := fun M N => CStarMatrix.add_apply M N p q,
-      map_smul' := fun r M => CStarMatrix.smul_apply r M p q }
   let X : ι → CStarMatrix (Fin 2) (Fin 2) A :=
     fun i => CStarMatrix.ofMatrix !![0, x i; star (x i), 0]
   have hX_sa (i : ι) : IsSelfAdjoint (X i) := CStarMatrix.ext fun p q => by
@@ -519,8 +517,7 @@ theorem exists_inv_card_smul_sum_units_smul_eq_and_norm_le (x : ι → A) :
   have hX_sum_sq : (∑ i, X i * X i) = CStarMatrix.ofMatrix
       (Matrix.diagonal ![∑ i, x i * star (x i), ∑ i, star (x i) * x i]) :=
     CStarMatrix.ext fun p q => by
-      rw [show (∑ i, X i * X i) p q = ∑ i, (X i * X i) p q from
-        map_sum (entry p q) (fun i => X i * X i) Finset.univ]
+      rw [CStarMatrix.sum_apply]
       simp_rw [hX_sq]; fin_cases p <;> fin_cases q <;> simp
   have hpair (a b : A) : ‖![a, b]‖ = max ‖b‖ ‖a‖ :=
     le_antisymm ((pi_norm_le_iff_of_nonneg (le_max_of_le_left (norm_nonneg _))).mpr fun k => by
@@ -533,11 +530,10 @@ theorem exists_inv_card_smul_sum_units_smul_eq_and_norm_le (x : ι → A) :
     exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_and_norm_le hX_sa
   refine ⟨fun ε => Ψ ε 0 1, fun i => ?_, fun ε =>
     CStarMatrix.norm_entry_le_norm.trans ((hΨ_norm ε).trans_eq (by rw [hX_norm]))⟩
-  have h := congrArg (entry 0 1) (hΨ_avg i)
+  have h := congrArg (entryLinearMap 0 1) (hΨ_avg i)
   rw [map_smul, map_sum] at h
-  simpa only [entry, LinearMap.coe_mk, AddHom.coe_mk, Units.smul_def, CStarMatrix.smul_apply, X,
-    CStarMatrix.ofMatrix_apply, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one] using h
+  simpa only [Units.smul_def, map_zsmul, entryLinearMap_apply, X,
+    ofMatrix_antidiag_apply_zero_one] using h
 
 end TruncationStep
 

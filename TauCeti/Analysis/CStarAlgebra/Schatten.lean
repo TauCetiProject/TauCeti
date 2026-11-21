@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.SquareFunction
+public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 
 import Mathlib.Analysis.InnerProductSpace.SingularValues
@@ -22,7 +24,9 @@ For a finite type `n`, the **Schatten `p`-gauge** on `CStarMatrix n n ℂ` is
 for `0 < p`. Star invariance holds for all `p`; faithfulness, complex homogeneity, operator-norm
 comparison, and the two-sided ideal bounds hold for `0 < p`; for `1 ≤ p`, agreement with
 `UnitarilyInvariantSeminorm.schatten` gives subadditivity and `matrixLpSeminorm`. At `p = 1`, we
-prove trace-norm duality.
+prove trace-norm duality. We also expose the column stacking map `columnEuclideanLM`, its
+modulus identification `operatorAbs_columnEuclideanLM`, and the Schatten realizations of
+`columnSquare` and `rowSquare`.
 
 ## Main declarations
 
@@ -31,6 +35,8 @@ prove trace-norm duality.
   `TauCeti.matrixLpSeminorm`
 * `TauCeti.norm_trace_mul_le_norm_mul_matrixLpGauge_one`,
   `TauCeti.exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one`
+* `TauCeti.columnEuclideanLM`, `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
+  `TauCeti.matrixLpGauge_rowSquare_eq_schatten`
 
 ## References
 
@@ -121,6 +127,10 @@ theorem matrixLpGauge_rpow {p : ℝ≥0} (hp : 0 < p) (x : CStarMatrix n n ℂ) 
       (Matrix.trace (CStarMatrix.ofMatrix.symm (CFC.nnrpow (CFC.sqrt (star x * x)) p))).re := by
   rw [matrixLpGauge_def, ← Real.rpow_mul (re_trace_nnrpow_sqrt_star_mul_self_nonneg p x),
     one_div_mul_cancel (NNReal.coe_pos.mpr hp).ne', Real.rpow_one]
+
+/-- At exponent `0`, `matrixLpGauge 0 x` evaluates to `1` through `1 / 0 = 0` and `r ^ 0 = 1`. -/
+@[simp] theorem matrixLpGauge_zero_left (x : CStarMatrix n n ℂ) : matrixLpGauge 0 x = 1 := by
+  simp [matrixLpGauge_def]
 
 /-- At `p = 1`, `matrixLpGauge 1 x` is the real part of `tr(|x|)`. -/
 theorem matrixLpGauge_one (x : CStarMatrix n n ℂ) :
@@ -321,5 +331,83 @@ theorem exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one (x : CStarMatrix n
     exact hQ
 
 end Gauge
+
+section ColumnRow
+
+variable {ι m : Type*} [Fintype m] [DecidableEq m]
+
+/-- Stacking a finite family of `m × m` C⋆-matrices into a column operator
+`EuclideanSpace ℂ m →ₗ[ℂ] PiLp 2 (fun _ : ι => EuclideanSpace ℂ m)`. -/
+def columnEuclideanLM :
+    (ι → CStarMatrix m m ℂ) →ₗ[ℂ]
+      (EuclideanSpace ℂ m →ₗ[ℂ] PiLp 2 fun _ : ι => EuclideanSpace ℂ m) where
+  toFun b := (WithLp.linearEquiv 2 ℂ (ι → EuclideanSpace ℂ m)).symm.toLinearMap.comp
+    (LinearMap.pi fun k => (CStarMatrix.toEuclideanCLM (b k)).toLinearMap)
+  map_add' _ _ := by ext v k; simp
+  map_smul' _ _ := by ext v k; simp
+
+/-- Applying `columnEuclideanLM b` to `v` and evaluating at coordinate `k` applies
+`CStarMatrix.toEuclideanCLM (b k)` to `v`. -/
+@[simp] theorem columnEuclideanLM_apply (b : ι → CStarMatrix m m ℂ) (v : EuclideanSpace ℂ m)
+    (k : ι) : (columnEuclideanLM b v).ofLp k = CStarMatrix.toEuclideanCLM (b k) v := (rfl)
+
+/-- Stacking the coordinate projections of an operator `T` into `PiLp` via `columnEuclideanLM`
+recovers `T`. -/
+theorem columnEuclideanLM_projₗ
+    (T : EuclideanSpace ℂ m →ₗ[ℂ] PiLp 2 fun _ : ι => EuclideanSpace ℂ m) :
+    columnEuclideanLM (fun k => CStarMatrix.toEuclideanCLM.symm
+      ((PiLp.projₗ 2 (fun _ : ι => EuclideanSpace ℂ m) k).comp T).toContinuousLinearMap) = T := by
+  ext v k
+  simp
+
+/-- The column Gram operator `(columnEuclideanLM b).adjoint ∘ₗ columnEuclideanLM b` agrees with
+the Euclidean operator of `∑ k, star (b k) * b k`. -/
+theorem adjoint_comp_columnEuclideanLM [Fintype ι] (b : ι → CStarMatrix m m ℂ) :
+    (columnEuclideanLM b).adjoint ∘ₗ columnEuclideanLM b =
+      (CStarMatrix.toEuclideanCLM (∑ k, star (b k) * b k)).toLinearMap :=
+  LinearMap.ext fun _ => ext_inner_left ℂ fun _ => by
+    simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_right, PiLp.inner_apply,
+      columnEuclideanLM_apply, map_sum, ContinuousLinearMap.coe_coe, sum_apply, inner_sum, map_mul,
+      map_star, mul_apply_eq_comp, ContinuousLinearMap.star_eq_adjoint,
+      ContinuousLinearMap.adjoint_inner_right]
+
+/-- The operator modulus `|columnEuclideanLM b|` agrees with the Euclidean operator of
+`columnSquare b`. -/
+theorem operatorAbs_columnEuclideanLM [Fintype ι] (b : ι → CStarMatrix m m ℂ) :
+    (columnEuclideanLM b).operatorAbs =
+      (CStarMatrix.toEuclideanCLM (columnSquare b)).toLinearMap := by
+  set T := CStarMatrix.toEuclideanCLM (columnSquare b)
+  have hnonneg : 0 ≤ T := map_zero (CStarMatrix.toEuclideanCLM (m := m)) ▸
+    OrderHomClass.mono CStarMatrix.toEuclideanCLM (columnSquare_nonneg b)
+  have hsq : T * T = (columnEuclideanLM b).adjoint.toContinuousLinearMap ∘L
+      (columnEuclideanLM b).toContinuousLinearMap := by
+    rw [← map_mul, columnSquare_mul_self]
+    apply ContinuousLinearMap.coe_inj.mp
+    rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.coe_toContinuousLinearMap,
+      LinearMap.coe_toContinuousLinearMap, adjoint_comp_columnEuclideanLM b]
+  exact LinearMap.ext fun v => DFunLike.congr_fun
+    ((LinearMap.toContinuousLinearMap_operatorAbs _).trans (CFC.sqrt_unique hsq hnonneg)) v
+
+/-- For `1 ≤ p`, `matrixLpGauge p (columnSquare b)` equals the Schatten `p`-seminorm of the column
+stacking operator `columnEuclideanLM b`. -/
+theorem matrixLpGauge_columnSquare_eq_schatten [Fintype ι] (p : ℝ≥0) [Fact (1 ≤ (p : ℝ≥0∞))]
+    (b : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (columnSquare b) = UnitarilyInvariantSeminorm.schatten ℂ
+      (EuclideanSpace ℂ m) (PiLp 2 fun _ : ι => EuclideanSpace ℂ m) p (columnEuclideanLM b) := by
+  rw [matrixLpGauge_eq_schatten p, ← operatorAbs_columnEuclideanLM,
+    UnitarilyInvariantSeminorm.schatten_apply, UnitarilyInvariantSeminorm.schatten_apply]
+  simp_rw [(columnEuclideanLM b).singularValues_operatorAbs]
+
+/-- For `1 ≤ p`, `matrixLpGauge p (rowSquare c)` equals the Schatten `p`-seminorm of the adjoint
+column stacking operator `(columnEuclideanLM (fun k => star (c k))).adjoint`. -/
+theorem matrixLpGauge_rowSquare_eq_schatten [Fintype ι] (p : ℝ≥0) [Fact (1 ≤ (p : ℝ≥0∞))]
+    (c : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (rowSquare c) = UnitarilyInvariantSeminorm.schatten ℂ
+      (PiLp 2 fun _ : ι => EuclideanSpace ℂ m) (EuclideanSpace ℂ m) p
+      (columnEuclideanLM (fun k => star (c k))).adjoint := by
+  rw [rowSquare_eq_columnSquare_star, matrixLpGauge_columnSquare_eq_schatten,
+    UnitarilyInvariantSeminorm.schatten_apply_adjoint]
+
+end ColumnRow
 
 end TauCeti
