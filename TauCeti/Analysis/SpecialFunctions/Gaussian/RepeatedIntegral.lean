@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 
 import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
 /-!
@@ -77,8 +77,10 @@ In the Laplace form, the derivative comes from the half-line Gaussian–Laplace 
 integrating the derivative of `t ↦ w(t) e^{-(z+t)²/2}` over `(0, ∞)` for the weight
 `w(t) = tᵏ/k!`, which gives minus its value at `t = 0`. Differentiating the Gaussian factor
 contributes `-(z Hh_k(z) + (k + 1) Hh_{k+1}(z))` in either case; the weight contributes `0` for
-`k = 0` and `Hh_n(z)` for `k = n + 1`. The `erfc` form of `Hh₀` is the upper tail of the
-Gaussian law of mean `-x` and variance `1`.
+`k = 0` and `Hh_n(z)` for `k = n + 1`. The `erfc` form of `Hh₀` comes from the Gaussian law of
+mean `-x` and variance `1`: `Hh₀(x)` is `√(2π)` times the probability that it exceeds `0`. The
+real-line derivative ladders are the real parts of the complex ones
+(`Differentiable.iteratedDeriv_re_comp_ofReal`).
 
 ## References
 
@@ -156,7 +158,9 @@ theorem hasDerivAt_repeatedGaussianIntegral (n : ℕ) (z : ℂ) :
     (s := n + 1) (by norm_num) (by rw [add_re, natCast_re, one_re]; positivity) z
   simp only [add_sub_cancel_right, cpow_natCast] at hL
   have hE : HasDerivAt (fun w : ℂ => cexp (-w ^ 2 / 2)) (cexp (-z ^ 2 / 2) * -z) z := by
-    simpa only [zero_add] using Complex.hasDerivAt_cexp_neg_add_sq_div_two 0 z
+    convert Complex.hasDerivAt_cexp_mul_sub_sq (-(1 / 2)) 0 z using 1
+    · exact funext fun w => by ring_nf
+    · ring_nf
   have hfun : repeatedGaussianIntegral n = fun w => cexp (-w ^ 2 / 2) / n ! *
       ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(1 / 2) * (t : ℂ) ^ 2 - w * t) :=
     funext (repeatedGaussianIntegral_eq_cexp_div_factorial_mul_integral n)
@@ -200,12 +204,19 @@ private theorem integral_Ioi_mul_cexp_eq (k : ℕ) (z : ℂ) {p : ℝ → ℂ}
     integrableOn_repeatedGaussianIntegral_integrand k z
   have hA : IntegrableOn (fun t => z * g k t + (k + 1 : ℂ) * g (k + 1) t) (Ioi 0) :=
     ((hi _).const_mul z).add ((hi _).const_mul _)
-  have hderiv : ∀ t ∈ Ici (0 : ℝ), HasDerivAt (g k)
-      (p t * cexp (-((z + t) ^ 2) / 2) - (z * g k t + (k + 1) * g (k + 1) t)) t := fun t _ => by
-    have h := (hp t).mul (Complex.hasDerivAt_cexp_neg_add_sq_div_two z t).comp_ofReal
+  -- The Gaussian factor is the translated quadratic exponential with `a = -1/2`, `b = -z`.
+  have hG (w : ℂ) : HasDerivAt (fun v : ℂ => cexp (-((z + v) ^ 2) / 2))
+      (cexp (-((z + w) ^ 2) / 2) * -(z + w)) w := by
+    convert Complex.hasDerivAt_cexp_mul_sub_sq (-(1 / 2)) (-z) w using 1
+    · exact funext fun v => by ring_nf
+    · ring_nf
+  have hderiv (t : ℝ) : HasDerivAt (g k)
+      (p t * cexp (-((z + t) ^ 2) / 2) - (z * g k t + (k + 1) * g (k + 1) t)) t := by
+    have h := (hp t).mul (hG t).comp_ofReal
     rw [pow_div_factorial_mul_cexp_mul_neg_add, ← sub_eq_add_neg] at h
     exact h
-  have h := integral_Ioi_of_hasDerivAt_of_integrableOn hderiv (hint.sub hA) (hi k)
+  have h := integral_Ioi_of_hasDerivAt_of_integrableOn (hderiv 0).continuousAt.continuousWithinAt
+    (fun t _ => hderiv t) (hint.sub hA) (hi k)
   rw [integral_sub hint hA, integral_add ((hi _).const_mul z) ((hi _).const_mul _),
     integral_const_mul, integral_const_mul] at h
   simp only [hg, ← repeatedGaussianIntegral_def, Complex.ofReal_zero, add_zero] at h
@@ -302,8 +313,9 @@ theorem norm_repeatedGaussianIntegral_le (n : ℕ) {z : ℂ} (hz : 0 ≤ z.re) :
   have hre : (-((z + t) ^ 2) / 2).re = (z.im ^ 2 - (z.re + t) ^ 2) / 2 := by
     simp only [div_ofNat_re, neg_re, sq, mul_re, add_re, add_im, ofReal_re, ofReal_im, add_zero]
     ring
-  rw [norm_mul, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg ht.le, norm_natCast,
-    Complex.norm_exp, hre, mul_left_comm, ← Real.exp_add]
+  simp only [norm_mul, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg ht.le,
+    norm_natCast, Complex.norm_exp, hre]
+  rw [mul_left_comm, ← Real.exp_add]
   gcongr
   nlinarith [mul_nonneg hz ht.le]
 
@@ -338,11 +350,11 @@ theorem integrableOn_repeatedGaussianIntegral_add (n : ℕ) (z : ℂ) :
 theorem repeatedGaussianIntegral_succ_eq_integral (n : ℕ) (z : ℂ) :
     repeatedGaussianIntegral (n + 1) z =
       ∫ t in Ioi (0 : ℝ), repeatedGaussianIntegral n (z + t) := by
-  have hderiv : ∀ t ∈ Ici (0 : ℝ),
-      HasDerivAt (fun t : ℝ => repeatedGaussianIntegral (n + 1) (z + t))
-        (-repeatedGaussianIntegral n (z + t)) t := fun t _ =>
+  have hderiv (t : ℝ) : HasDerivAt (fun t : ℝ => repeatedGaussianIntegral (n + 1) (z + t))
+      (-repeatedGaussianIntegral n (z + t)) t :=
     ((hasDerivAt_repeatedGaussianIntegral_succ n (z + t)).comp_const_add z t).comp_ofReal
-  have h := integral_Ioi_of_hasDerivAt_of_integrableOn hderiv
+  have h := integral_Ioi_of_hasDerivAt_of_integrableOn (hderiv 0).continuousAt.continuousWithinAt
+    (fun t _ => hderiv t)
     (integrableOn_repeatedGaussianIntegral_add n z).neg
     (integrableOn_repeatedGaussianIntegral_add (n + 1) z)
   rw [integral_neg, Complex.ofReal_zero, add_zero, neg_inj] at h
@@ -367,15 +379,12 @@ real-line form of `TauCeti.iteratedDeriv_repeatedGaussianIntegral`. -/
 theorem iteratedDeriv_re_repeatedGaussianIntegral (n k : ℕ) :
     iteratedDeriv k (fun x : ℝ => (repeatedGaussianIntegral (n + k) x).re) =
       fun x : ℝ => (-1) ^ k * (repeatedGaussianIntegral n x).re := by
-  induction k generalizing n with
-  | zero => simp
-  | succ k ih =>
-    have hk : n + (k + 1) = n + 1 + k := by omega
-    rw [iteratedDeriv_succ, hk, ih (n + 1)]
-    funext x
-    rw [((hasDerivAt_repeatedGaussianIntegral_succ n x).real_of_complex.const_mul
-      ((-1 : ℝ) ^ k)).deriv, neg_re, pow_succ]
-    ring
+  rw [(differentiable_repeatedGaussianIntegral (n + k)).iteratedDeriv_re_comp_ofReal k,
+    iteratedDeriv_repeatedGaussianIntegral]
+  funext x
+  -- The sign `(-1)ᵏ` is the cast of a real number.
+  have hs : (-1 : ℂ) ^ k = (((-1 : ℝ) ^ k : ℝ) : ℂ) := by push_cast; rfl
+  rw [hs, Complex.re_ofReal_mul]
 
 /-- The weighted function `e^{z²/2} Hh_n(z)` has derivative `-(n + 1) e^{z²/2} Hh_{n+1}(z)`. -/
 theorem hasDerivAt_cexp_mul_repeatedGaussianIntegral (n : ℕ) (z : ℂ) :
@@ -430,17 +439,16 @@ theorem iteratedDeriv_exp_mul_re_repeatedGaussianIntegral (n k : ℕ) :
     iteratedDeriv k (fun x : ℝ => Real.exp (x ^ 2 / 2) * (repeatedGaussianIntegral n x).re) =
       fun x => (-1) ^ k * ((n + k) ! / n ! : ℝ) *
         (Real.exp (x ^ 2 / 2) * (repeatedGaussianIntegral (n + k) x).re) := by
-  induction k with
-  | zero =>
-    have hn : (n ! : ℝ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-    simp [hn]
-  | succ k ih =>
-    rw [iteratedDeriv_succ, ih]
-    funext x
-    rw [((hasDerivAt_exp_mul_re_repeatedGaussianIntegral (n + k) x).const_mul
-      ((-1) ^ k * ((n + k) ! / n ! : ℝ))).deriv, ← add_assoc, Nat.factorial_succ (n + k)]
-    push_cast
-    ring
+  have hd : Differentiable ℂ fun z => cexp (z ^ 2 / 2) * repeatedGaussianIntegral n z := by
+    fun_prop
+  simp only [exp_mul_re_repeatedGaussianIntegral]
+  rw [hd.iteratedDeriv_re_comp_ofReal k, iteratedDeriv_cexp_mul_repeatedGaussianIntegral]
+  funext x
+  -- The coefficient `(-1)ᵏ (n + k)!/n!` is the cast of a real number.
+  have hc : (-1 : ℂ) ^ k * ((n + k) ! / n ! : ℂ) =
+      (((-1) ^ k * ((n + k) ! / n ! : ℝ) : ℝ) : ℂ) := by
+    push_cast; rfl
+  rw [hc, Complex.re_ofReal_mul]
 
 /-- The value at the origin `Hh_n(0) = 2^{(n-1)/2} Γ((n + 1)/2) / n!`. -/
 theorem repeatedGaussianIntegral_zero_right (n : ℕ) :
@@ -478,8 +486,8 @@ theorem repeatedGaussianIntegral_ofReal_pos (n : ℕ) (x : ℝ) :
   refine lt_of_lt_of_le ?_ (measure_mono (s := Ioi 0) fun t ht => ⟨(hpos t ht).ne', ht⟩)
   simp
 
-/-- On the real line, `Hh₀(x) = √(π/2) erfc(x/√2)`: up to the factor `√(2π)`, `Hh₀(x)` is the
-upper tail beyond `0` of the Gaussian law of mean `-x` and variance `1`. -/
+/-- On the real line, `Hh₀(x) = √(π/2) erfc(x/√2)`: `Hh₀(x)` is `√(2π)` times the probability
+of exceeding `0` under the Gaussian law of mean `-x` and variance `1`. -/
 theorem repeatedGaussianIntegral_zero_ofReal_eq_erfc (x : ℝ) :
     repeatedGaussianIntegral 0 x = ((√(π / 2) * TauCeti.Real.erfc (x / √2) : ℝ) : ℂ) := by
   -- The integrand of `Hh₀(x)` is `√(2π)` times the Gaussian density of mean `-x`, variance `1`.
@@ -489,22 +497,25 @@ theorem repeatedGaussianIntegral_zero_ofReal_eq_erfc (x : ℝ) :
       TauCeti.Probability.gaussianPDFReal_zero_one, mul_inv_cancel_left₀ (by positivity),
       add_comm t x]
     ring_nf
-  -- The standard Gaussian tail at `-x` is half of `erfc (x / √2)`.
-  have htail : ProbabilityTheory.cdf (ProbabilityTheory.gaussianReal 0 1)
-      ((-x - 0) / √((1 : NNReal) : ℝ)) = TauCeti.Real.erfc (x / √2) / 2 := by
-    rw [TauCeti.Probability.cdf_gaussianReal_zero_one, NNReal.coe_one, Real.sqrt_one, div_one,
-      sub_zero, neg_div, Real.erf_neg, TauCeti.Real.erfc_def]
+  -- The density integral over `(0, ∞)` is the Gaussian mass of `(0, ∞)`.
+  have hmass : ∫ t in Ioi (0 : ℝ), ProbabilityTheory.gaussianPDFReal (-x) 1 t =
+      (ProbabilityTheory.gaussianReal (-x) 1).real (Ioi 0) := by
+    rw [measureReal_def, ProbabilityTheory.gaussianReal_apply_eq_integral _ one_ne_zero,
+      ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_Ioi fun t _ =>
+        ProbabilityTheory.gaussianPDFReal_nonneg _ _ t)]
+  -- The square-root scaling `√(2π) / 2 = √(π/2)`.
+  have hscale (y : ℝ) : √(2 * π) * (y / 2) = √(π / 2) * y := by
+    rw [Real.sqrt_div' π zero_le_two, Real.sqrt_mul zero_le_two]
+    have hs2 : (√2 : ℝ) ≠ 0 := by positivity
+    field_simp
+    rw [Real.sq_sqrt zero_le_two]
     ring
   rw [repeatedGaussianIntegral_ofReal]
   congr 1
   simp_rw [hpdf]
-  rw [integral_const_mul,
-    TauCeti.Probability.integral_Ioi_gaussianPDFReal_eq_cdf (-x) one_ne_zero 0, htail,
-    Real.sqrt_div' π zero_le_two, Real.sqrt_mul zero_le_two]
-  have hs2 : (√2 : ℝ) ≠ 0 := by positivity
-  field_simp
-  rw [Real.sq_sqrt zero_le_two]
-  ring
+  rw [integral_const_mul, hmass,
+    TauCeti.Probability.measureReal_Ioi_gaussianReal _ one_ne_zero, hscale]
+  simp
 
 /-- `Hh₀(0) = √(π/2)`. -/
 @[simp]

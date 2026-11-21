@@ -11,14 +11,17 @@ import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Complex.RealDeriv
 
 /-!
 # Iterated derivatives of holomorphic functions of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
 `g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
-Mathlib's `Differentiable.deriv`. It also computes the norms of the real iterated derivatives
-of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
+Mathlib's `Differentiable.deriv`. For an entire `f : ℂ → ℂ`, the iterated derivatives of the real
+function `x ↦ Re f(x)` on the real line are the real parts of the complex ones
+(`Differentiable.iteratedDeriv_re_comp_ofReal`). It also computes the norms of the real iterated
+derivatives of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
@@ -37,6 +40,19 @@ differentiable. This is the iterated form of `Differentiable.deriv`. -/
 theorem Differentiable.iteratedDeriv {g : ℂ → E} (hg : Differentiable ℂ g) (k : ℕ) :
     Differentiable ℂ (iteratedDeriv k g) :=
   (hg.contDiff (n := ⊤)).differentiable_iteratedDeriv k (by simp)
+
+/-- **Iterated derivatives on the real line.** For an entire function `f : ℂ → ℂ`, the `k`-th
+derivative of the real function `x ↦ Re f(x)` is the real part of the complex `k`-th derivative
+of `f` at `x`. -/
+theorem Differentiable.iteratedDeriv_re_comp_ofReal {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (k : ℕ) :
+    _root_.iteratedDeriv k (fun x : ℝ => (f x).re) =
+      fun x : ℝ => (_root_.iteratedDeriv k f x).re := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedDeriv_succ, ih, iteratedDeriv_succ]
+    exact funext fun x => ((hf.iteratedDeriv k x).hasDerivAt.real_of_complex).deriv
 
 /-- On an open set `U`, the `k`-th iterated derivative over a field `𝕜` below `ℂ` of a map
 holomorphic on `U` is the restriction of scalars of its complex `k`-th iterated derivative, which
