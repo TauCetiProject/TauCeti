@@ -54,7 +54,7 @@ how they enter the local compactness statement up to the axis.
   `W^{k,p} → C^{0,1-2/(k p)}` for `2 < k p`.
 * `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall` and, for a half-disc
   with arbitrary real centre,
-  `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf`:
+  `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_upperHalf_complexBall`:
   `C^{j,1-2/p}` representatives of members of `W^{j+1,p}` for `p > 2`.
 
 ## References
@@ -246,7 +246,7 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall {p : ℝ≥0}
 `K` such that every `u ∈ W^{j+1,p}` agrees almost everywhere with a function `g` that is `Cʲ` on the
 half-disc, and whose derivatives of order `i ≤ j` are bounded by `K ‖u‖` and Hölder of exponent
 `1 - 2/p` with constant `K ‖u‖` on the half-disc. -/
-theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf {p : ℝ≥0}
+theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_upperHalf_complexBall {p : ℝ≥0}
     [Fact (1 ≤ (p : ℝ≥0∞))] (x r : ℝ) (hp : 2 < p) (j : ℕ) :
     ∃ K : ℝ≥0, ∀ u : Wkp volume (Opens.upperHalf ⟨ball (x : ℂ) r, isOpen_ball⟩) p (j + 1),
       ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball (x : ℂ) r ∩ {z | 0 < z.im}) ∧

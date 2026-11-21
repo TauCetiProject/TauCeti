@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.Local.Reflection
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
 import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.MeasureTheory.Function.LocalRepresentative
 
 /-!
 # Higher-order continuity and local bounds on half-discs
@@ -64,7 +65,8 @@ theorem MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul_inter_setOf_im_nonneg 
     (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
     ∃ g : ℂ → F, ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ∧
       u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
-  obtain ⟨V, hSV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection hp
+  have hSV := Ω.inter_setOf_im_nonneg_subset_reflectionCore
+  have hV := hu.planarReflection_higherReflectionCoeff_reflectionCore hp
   obtain ⟨g, hg, hrg⟩ := hV.exists_continuousOn_ae_eq_of_two_lt_mul hp hkp
   refine ⟨g, hg.mono hSV, ?_⟩
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hSV hrg,
@@ -94,7 +96,7 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
             (∀ z ∈ ball (x : ℂ) s ∩ {z | 0 ≤ z.im}, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖v‖) ∧
               HolderOnWith (K * ‖v‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g)
                 (ball (x : ℂ) s ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨K, hK⟩ := Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf x s hq j
+  obtain ⟨K, hK⟩ := Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_upperHalf_complexBall x s hq j
   refine ⟨K, fun {Ω} u hsub hu => ?_⟩
   set B := ball (x : ℂ) s
   set O := B ∩ {z | 0 < z.im}
@@ -119,10 +121,9 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
   have hOV : O ⊆ V := (hOT.trans hTS).trans hSV
   have hug₁ : u =ᵐ[volume.restrict O] g₁ := hv.symm.trans hvg₁
   have hug' : u =ᵐ[volume.restrict O] g := ae_restrict_of_ae_restrict_of_subset (hOT.trans hTS) hug
-  have hgg₁ : EqOn g g₁ O := Measure.eqOn_open_of_ae_eq (hug'.symm.trans hug₁) hO
-    (hg.continuousOn.mono hOV) hg₁.continuousOn
-  have heq (i : ℕ) : EqOn (iteratedFDeriv ℝ i g) (iteratedFDeriv ℝ i g₁) O := fun z hz =>
-    ((Filter.eventuallyEq_of_mem (hO.mem_nhds hz) hgg₁).iteratedFDeriv ℝ i).eq_of_nhds
+  have heq {i : ℕ} (hi : i ≤ j) := eqOn_iteratedFDeriv_of_ae_eq
+    (hO.interior_eq.symm ▸ subset_closure) V.isOpen hO hOV subset_rfl hg hg₁
+    (hug'.symm.trans hug₁) (by exact_mod_cast hi)
   have hcl : B ∩ {z | 0 ≤ z.im} ⊆ closure O := fun z hz => by
     have h := subset_closure_interior_inter_setOf_im_nonneg (Ω := B) isOpen_ball hz
     rwa [interior_inter_setOf_im_nonneg isOpen_ball] at h
@@ -133,10 +134,10 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
   refine ⟨v, hv, V, hTS.trans hSV, g, hg, ae_restrict_of_ae_restrict_of_subset hTS hug,
     fun i hi => ⟨fun z hz => ?_, ?_⟩⟩
   · exact ContinuousWithinAt.closure_le (hcl hz) (hcont hi z hz).norm.continuousWithinAt
-      continuousWithinAt_const fun y hy => heq i hy ▸ (hb i hi).1 y hy
+      continuousWithinAt_const fun y hy => heq hi hy ▸ (hb i hi).1 y hy
   · refine HolderOnWith.of_subset_closure (fun a ha b hb' => ?_) hcl
       (fun z hz => (hcont hi z hz).continuousWithinAt)
-    rw [heq i ha, heq i hb']
+    rw [heq hi ha, heq hi hb']
     exact (hb i hi).2 a ha b hb'
 
 end TauCeti
