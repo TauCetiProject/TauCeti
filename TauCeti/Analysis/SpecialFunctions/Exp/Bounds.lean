@@ -16,7 +16,9 @@ the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers
 weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
-with the rescaled level `exp (-(t / ε))`. For `σ ≥ 0` and `c > 0` the function `x ^ σ exp (-c x)`
+with the rescaled level `exp (-(t / ε))`. Similarly, a two-sided logarithmic approximation
+`|log x - y| ≤ C` for `0 < x` is equivalent to the multiplicative bounds
+`exp (-C) * exp y ≤ x ≤ exp C * exp y`. For `σ ≥ 0` and `c > 0` the function `x ^ σ exp (-c x)`
 is bounded on `x ≥ 0`.
 
 ## Main results
@@ -29,6 +31,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
+* `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
+  `0 < x`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
@@ -46,6 +50,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le`:
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
+* `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 -/
 
 public section
@@ -127,6 +132,13 @@ theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
   · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
   rw [← le_log_iff_exp_le hy, ← le_log_iff_exp_le (rpow_pos_of_pos hy ε), log_rpow hy,
     ← neg_div, div_le_iff₀ hε, mul_comm]
+
+/-- For `0 < x`, a two-sided logarithmic approximation `|log x - y| ≤ C` is equivalent to the
+multiplicative bounds `exp (-C) * exp y ≤ x` and `x ≤ exp C * exp y`. -/
+theorem abs_log_sub_le_iff {x y C : ℝ} (hx : 0 < x) :
+    |log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y := by
+  rw [abs_le, sub_le_iff_le_add, le_sub_iff_add_le, ← exp_add, ← exp_add,
+    le_log_iff_exp_le hx, log_le_iff_le_exp hx]
 
 /-- For `0 ≤ σ` and `0 < c`, the function `x ↦ x ^ σ exp (-c x)` is bounded on `x ≥ 0`: it tends
 to `0` at infinity, and on a bounded interval `x ^ σ` is bounded. -/
@@ -279,5 +291,22 @@ theorem inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le {a y : ℝ} (ha : 0 < 
           ≤ (2 * 2 ^ m) * 1 := mul_le_mul hym hexp1 (by positivity) (by positivity)
         _ ≤ 2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by
             rw [mul_one]; gcongr; exact le_max_right _ _
+
+/-- For `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`: the weight
+`x e^{-r x}` is dominated uniformly in `r ≥ δ` by a single exponential, decaying as `x → ∞`. -/
+theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ) :
+    exp (-(r * x)) * x ≤ 2 / δ * exp (-(δ / 2 * x)) := by
+  rcases lt_or_ge x 0 with hx | hx
+  · exact (mul_nonpos_of_nonneg_of_nonpos (exp_pos _).le hx.le).trans (by positivity)
+  have hy := add_one_le_exp (δ / 2 * x)
+  have h1 : exp (-(r * x)) ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) := by
+    rw [← exp_add]
+    gcongr
+    nlinarith
+  have h2 : exp (-(δ / 2 * x)) * x ≤ 2 / δ := by
+    rw [le_div_iff₀ hδ, exp_neg, inv_mul_eq_div, div_mul_eq_mul_div, div_le_iff₀ (exp_pos _)]
+    nlinarith
+  calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
+    _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
 
 end TauCeti

@@ -10,7 +10,7 @@ public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Variational.DirectMethod
-import TauCeti.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
 import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 

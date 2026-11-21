@@ -13,7 +13,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
-import TauCeti.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 
 /-!
 # Weak-to-norm continuity and weak closures of spheres

@@ -23,15 +23,16 @@ restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced close
 all its darts in `S`.
 
 A morphism `f : Γ → Δ` that is locally injective, in the sense that two darts with a common source
-and the same image are equal, maps reduced paths to reduced paths. So its source is acyclic when
-its target is (`SerreGraph.IsAcyclic.comap`), and from a preconnected graph to an acyclic graph it
-is injective on vertices and on darts (`SerreGraph.Hom.mapV_injective_of_isAcyclic`,
-`SerreGraph.Hom.mapE_injective_of_isAcyclic`). Hence a morphism from a nonempty preconnected graph
-to a preconnected acyclic graph that maps the darts issuing from each vertex bijectively onto those
-issuing from its image is an isomorphism (`SerreGraph.Iso.ofLocallyBijective`). In the structure
-of groups acting on trees, this compares a tree with the Bass–Serre tree of its quotient graph of
-groups. Isomorphic graphs are acyclic together and trees together (`SerreGraph.Iso.isAcyclic_iff`,
-`SerreGraph.Iso.isTree_iff`).
+and the same image are equal, maps reduced paths to reduced paths. So its source is acyclic when its
+target is (`SerreGraph.IsAcyclic.comap`). When its target is acyclic, it is injective on the
+vertices of each connected component (`SerreGraph.Hom.eq_of_mapV_eq_of_isAcyclic`), so from a
+preconnected graph it is injective on vertices and on darts
+(`SerreGraph.Hom.mapV_injective_of_isAcyclic`, `SerreGraph.Hom.mapE_injective_of_isAcyclic`). Hence
+a morphism from a nonempty preconnected graph to a preconnected acyclic graph that maps the darts
+issuing from each vertex bijectively onto those issuing from its image is an isomorphism
+(`SerreGraph.Iso.ofLocallyBijective`). In the structure of groups acting on trees, this compares a
+tree with the Bass–Serre tree of its quotient graph of groups. Isomorphic graphs are acyclic
+together and trees together (`SerreGraph.Iso.isAcyclic_iff`, `SerreGraph.Iso.isTree_iff`).
 
 A graph without darts, such as the graph `noEdge V` without edges, is acyclic, and it is a tree
 exactly when it has one vertex. A graph without vertices is not a tree. The segment is a tree.
@@ -247,22 +248,28 @@ theorem IsAcyclic.comap (f : Γ.Hom Δ)
 
 namespace Hom
 
-/-- A morphism from a preconnected graph to an acyclic graph that is injective on the darts
-issuing from each vertex is injective on vertices. -/
-theorem mapV_injective_of_isAcyclic (f : Γ.Hom Δ) (hΓ : Γ.Preconnected) (hΔ : Δ.IsAcyclic)
-    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') :
-    Function.Injective f.mapV := by
+/-- A morphism to an acyclic graph that is injective on the darts issuing from each vertex is
+injective on the vertices of each connected component: two vertices joined by a path and with the
+same image are equal. -/
+theorem eq_of_mapV_eq_of_isAcyclic (f : Γ.Hom Δ) (hΔ : Δ.IsAcyclic)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') {a b : Γ.V}
+    (p : Γ.Path a b) (hab : f.mapV a = f.mapV b) : a = b := by
   -- A reduced path of `Δ` whose ends coincide is empty.
   have key {x y : Δ.V} (q : Δ.Path x y) (hq : Path.IsReduced Δ q) (hxy : x = y) :
       Path.darts Δ q = [] := by
     subst hxy
     rw [(isAcyclic_iff Δ).mp hΔ _ q hq, Path.darts_nil]
-  intro a b hab
-  obtain ⟨p⟩ := Γ.preconnected_iff.mp hΓ a b
-  -- The image of the reduced path from `a` to `b` is a reduced closed path, hence empty.
+  -- The image of the reduction of `p` is a reduced closed path, hence empty.
   have hd := key _ (f.isReduced_mapPath hf _ (Path.isReduced_reduce Γ p)) hab
   rw [Hom.darts_mapPath, List.map_eq_nil_iff] at hd
   exact Path.eq_of_darts_eq_nil Γ _ hd
+
+/-- A morphism from a preconnected graph to an acyclic graph that is injective on the darts
+issuing from each vertex is injective on vertices. -/
+theorem mapV_injective_of_isAcyclic (f : Γ.Hom Δ) (hΓ : Γ.Preconnected) (hΔ : Δ.IsAcyclic)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') :
+    Function.Injective f.mapV := fun a b hab =>
+  f.eq_of_mapV_eq_of_isAcyclic hΔ hf (Γ.preconnected_iff.mp hΓ a b).some hab
 
 /-- A morphism from a preconnected graph to an acyclic graph that is injective on the darts
 issuing from each vertex is injective on darts. -/
