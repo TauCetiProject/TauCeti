@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Pullback
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LieGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LocalParameter
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Lattice
@@ -13,6 +14,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Holomorphic
 public import TauCeti.Geometry.Manifold.Algebra.TypeTags
 public import TauCeti.Topology.Separation.TypeTags
+import Mathlib.Analysis.Calculus.Deriv.Inverse
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Topology
 import TauCeti.Geometry.Lie.Exponential.Classification
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
@@ -36,12 +38,16 @@ up to a rescaling `v ↦ c v`. The local parameter `t = -X / Y` at the origin
 rescaling along which `t` has derivative `1` at `0`
 (`WeierstrassCurve.Projective.hasDerivAt_localParameter_exp`). As the invariant differential is
 `(1 + O(t)) dt`, this is the classical normalization under which `exp_E` pulls the invariant
-differential back to `dz`: on the affine part of `E(ℂ)`, the `x`-coordinate of `exp_E` has
-derivative `2y + a₁x + a₃`
-(`WeierstrassCurve.Projective.hasDerivAt_of_toAffineAddEquiv_exp_eq_some`). Differential forms
-themselves are not used here.
+differential back to `dz`. The global form
+`WeierstrassCurve.Projective.invariantDifferential` is holomorphic and nowhere zero, and its
+pullback is `dz` everywhere (`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`).
+On affine coordinate neighbourhoods with `2y + a₁x + a₃ ≠ 0` it agrees with
+`dx / (2y + a₁x + a₃)`
+(`WeierstrassCurve.Projective.invariantDifferential_eq_inv_smul_mvfderiv`).
 
-A continuous homomorphism `g : ℂ → E(ℂ)` is determined by `t ∘ g` to first order at `0`
+An additive homomorphism `g : ℂ → E(ℂ)` with `(t ∘ g)'(0) = 1` is automatically continuous:
+compactness confines its cluster points to a finite fibre, and divisibility eliminates them.
+It is then determined by this normalization
 (`WeierstrassCurve.Projective.eq_exp_of_hasDerivAt`): its restrictions to the real lines through `0`
 are continuous one-parameter subgroups, hence exponentials of tangent vectors
 (`exists_eq_mulInvariantOneParameterSubgroup`), and the derivative of `t ∘ g` at `0` recovers those
@@ -70,16 +76,18 @@ map, inducing an isomorphism of topological groups `ℂ / ker exp_E ≃ E(ℂ)`.
   tangent-space exponential of the underlying real Lie group.
 * `WeierstrassCurve.Projective.hasDerivAt_localParameter_exp`: along `exp_E`, the local parameter
   `-X / Y` has derivative `1` at `0`.
-* `WeierstrassCurve.Projective.eq_exp_of_hasDerivAt`: `exp_E` is the only continuous homomorphism
-  with this normalization.
+* `WeierstrassCurve.Projective.eq_exp_of_hasDerivAt`: `exp_E` is the only additive homomorphism
+  with this normalization; continuity follows from it.
 * `WeierstrassCurve.Projective.contMDiff_exp`: `exp_E` is holomorphic.
 * `WeierstrassCurve.Projective.isInvertible_mfderiv_exp`: the derivative of `exp_E` is invertible
   at every point.
 * `WeierstrassCurve.Projective.exp_weierstrassCurve` and
   `WeierstrassCurve.Projective.exp_variableChange_weierstrassCurve`: the comparison with the
   Weierstrass point map `z ↦ (℘(z), ℘'(z) / 2)`.
-* `WeierstrassCurve.Projective.hasDerivAt_of_toAffineAddEquiv_exp_eq_some`: `exp_E` pulls the
-  invariant differential `dx / (2y + a₁x + a₃)` back to `dz`.
+* `WeierstrassCurve.Projective.pullback_invariantDifferential_exp`: the global holomorphic,
+  nowhere-zero invariant differential pulls back to `dz`.
+* `WeierstrassCurve.Projective.invariantDifferential_eq_inv_smul_mvfderiv`: its agreement with
+  the algebraic differential `dx / (2y + a₁x + a₃)` on its regular affine locus.
 * `WeierstrassCurve.Projective.ker_exp`: the kernel of `exp_E` is the period lattice of `E`.
 * `WeierstrassCurve.Projective.exp_surjective`, `WeierstrassCurve.Projective.isOpenMap_exp` and
   `WeierstrassCurve.Projective.isCoveringMap_exp`: `exp_E` is an open covering map onto `E(ℂ)`.
@@ -191,11 +199,118 @@ noncomputable def exp : ℂ →+ W.Point where
   map_zero' := by rw [mul_zero, tangentExp_zero]
   map_add' z w := by rw [mul_add, tangentExp_add]
 
-/-- **`exp_E` is the only normalized continuous homomorphism**: a continuous homomorphism
-`g : ℂ → E(ℂ)` along which the local parameter `-X / Y` has derivative `1` at `0` is `exp_E`. -/
-theorem eq_exp_of_hasDerivAt {g : ℂ →+ W.Point} (hg : Continuous g)
+/-- The nonzero derivative rules out the junk values of the local parameter near zero.
+Every cluster point therefore lies over the finite affine fibre `x = 0`, or is the origin. -/
+private theorem mem_finite_fiber_of_mapClusterPt {g : ℂ →+ W.Point}
+    (h : HasDerivAt (fun z ↦ (g z).localParameter) 1 0) {P : W.Point}
+    (hP : MapClusterPt P (𝓝[≠] 0) g) :
+    P ∈ {Q | (Point.toAffineAddEquiv W Q).xRep 0 = 0} ∪ {0} := by
+  let F := 𝓝[≠] (0 : ℂ) ⊓ comap g (𝓝 P)
+  have : F.NeBot := neBot_inf_comap_iff_map.2 (by simpa [inf_comm] using hP.clusterPt.neBot)
+  have hg : Tendsto g F (𝓝 P) := tendsto_comap.mono_left inf_le_right
+  obtain ⟨s, hs, he⟩ := Point.exists_contMDiffAt_mk_eq P
+  have hcoord : Tendsto (fun z ↦ s (g z)) F (𝓝 (s P)) := hs.continuousAt.tendsto.comp hg
+  have ht : Tendsto (fun z ↦ (g z).localParameter) F (𝓝 0) := by
+    simpa using h.continuousAt.tendsto.mono_left (inf_le_left.trans nhdsWithin_le_nhds)
+  have heq : (fun z ↦ s (g z) 0) =ᶠ[F]
+      fun z ↦ -(g z).localParameter * s (g z) 1 := by
+    filter_upwards [hg.eventually he, (h.eventually_ne one_ne_zero (c := 0)).filter_mono
+      inf_le_left] with z ⟨hz, hez⟩ hne
+    have htval : (g z).localParameter = -(s (g z) 0 / s (g z) 1) := by
+      simpa only [Point.localParameter_mk] using congrArg Point.localParameter hez.symm
+    rw [htval] at hne ⊢
+    have hY : s (g z) 1 ≠ 0 := by
+      intro hzero
+      exact hne (by simp [hzero])
+    simp [hY]
+  have hX : s P 0 = 0 := by
+    have h0 := ht.neg.mul (hcoord.apply_nhds 1)
+    simpa using tendsto_nhds_unique_of_eventuallyEq (hcoord.apply_nhds 0) h0 heq
+  obtain ⟨hns, hrep⟩ := he.self_of_nhds
+  rw [← hrep]
+  by_cases hZ : s P 2 = 0
+  · right
+    apply (Point.toAffineAddEquiv W).injective
+    simp [Point.toAffineAddEquiv_apply, Point.toAffineLift_eq,
+      Point.toAffine_of_Z_eq_zero hZ, Point.toAffineLift_zero]
+  · left
+    simp [Point.toAffineAddEquiv_apply, Point.toAffineLift_eq,
+      Point.toAffine_of_Z_ne_zero hns hZ, Affine.Point.xRep_some, hX]
+
+/-- Compactness and the finite fibre give a uniform integer annihilating every cluster point. -/
+private theorem exists_nsmul_mapClusterPt_eq_zero {g : ℂ →+ W.Point}
+    (h : HasDerivAt (fun z ↦ (g z).localParameter) 1 0) :
+    ∃ N : ℕ, 0 < N ∧ ∀ P, MapClusterPt P (𝓝[≠] 0) g → N • P = 0 := by
+  let S : Set W.Point := {Q | (Point.toAffineAddEquiv W Q).xRep 0 = 0} ∪ {0}
+  have hS : S.Finite := ((W.toAffine.finite_preimage_xRep0 0).preimage
+    (Point.toAffineAddEquiv W).injective.injOn).union (Set.finite_singleton 0)
+  refine ⟨S.ncard.factorial, Nat.factorial_pos _, fun P hP ↦ ?_⟩
+  have hmul : ∀ n : ℕ, n • P ∈ S := by
+    intro n
+    by_cases hn : n = 0
+    · simp [hn, S]
+    have hc := hP.continuousAt_comp (continuous_nsmul n).continuousAt
+    have hscale : Tendsto (fun z : ℂ ↦ n • z) (𝓝[≠] 0) (𝓝[≠] 0) := by
+      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+      · simpa using (continuous_nsmul n).continuousAt.tendsto.mono_left
+          (nhdsWithin_le_nhds (a := (0 : ℂ)))
+      · filter_upwards [self_mem_nhdsWithin] with z hz
+        simpa [nsmul_eq_mul] using mul_ne_zero (by exact_mod_cast hn : (n : ℂ) ≠ 0) hz
+    apply W.mem_finite_fiber_of_mapClusterPt h
+    exact (hc.congrFun (Eventually.of_forall fun z ↦ (g.map_nsmul (n := n) z).symm)).of_comp hscale
+  have hsub : (AddSubmonoid.multiples P : Set W.Point) ⊆ S := by
+    rintro Q ⟨n, rfl⟩
+    exact hmul n
+  have hfin := hS.subset hsub
+  have hord := finite_multiples.1 hfin
+  apply addOrderOf_dvd_iff_nsmul_eq_zero.1
+  apply Nat.dvd_factorial hord.addOrderOf_pos
+  rw [← Nat.card_addSubmonoidMultiples]
+  exact Set.ncard_le_ncard hsub hS
+
+/-- Normalization of an additive homomorphism already forces continuity. Compactness produces
+cluster points of `g(z/N)`; the uniform annihilator forces their `N`-fold multiples to be zero. -/
+private theorem continuous_of_hasDerivAt_localParameter {g : ℂ →+ W.Point}
+    (h : HasDerivAt (fun z ↦ (g z).localParameter) 1 0) : Continuous g := by
+  obtain ⟨N, hN, hkill⟩ := W.exists_nsmul_mapClusterPt_eq_zero h
+  have hlim : Tendsto g (𝓝[≠] (0 : ℂ)) (𝓝 (0 : W.Point)) := by
+    apply tendsto_nhds_of_unique_mapClusterPt
+    intro P hP
+    let F := 𝓝[≠] (0 : ℂ) ⊓ comap g (𝓝 P)
+    have : F.NeBot := neBot_inf_comap_iff_map.2 (by simpa [inf_comm] using hP.clusterPt.neBot)
+    have hg : Tendsto g F (𝓝 P) := tendsto_comap.mono_left inf_le_right
+    obtain ⟨Q, hQ⟩ := exists_clusterPt_of_compactSpace
+      (Filter.map (fun z : ℂ ↦ g (z / N)) F)
+    have hscale : Tendsto (fun z : ℂ ↦ z / N) F (𝓝[≠] 0) := by
+      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+      · simpa using ((continuous_id.div_const (N : ℂ)).continuousAt.tendsto.mono_left
+          (inf_le_left.trans nhdsWithin_le_nhds) :
+          Tendsto (fun z : ℂ ↦ z / N) F (𝓝 (0 / (N : ℂ))))
+      · have hne : ∀ᶠ z : ℂ in F, z ≠ 0 :=
+          Filter.Eventually.filter_mono inf_le_left self_mem_nhdsWithin
+        filter_upwards [hne] with z hz
+        exact div_ne_zero hz (by exact_mod_cast hN.ne')
+    have hQc : MapClusterPt Q F (fun z : ℂ ↦ g (z / N)) := hQ
+    have hQ0 := hkill Q (hQc.of_comp hscale)
+    have hQP := hQc.continuousAt_comp (continuous_nsmul N).continuousAt
+    have heq : (fun z : ℂ ↦ N • g (z / N)) = g := by
+      funext z
+      rw [← map_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (by exact_mod_cast hN.ne')]
+    rw [show (fun P : W.Point ↦ N • P) ∘ (fun z : ℂ ↦ g (z / N)) = g from heq] at hQP
+    have hEq : N • Q = P := eq_of_nhds_neBot
+      (hQP.clusterPt.neBot.mono (inf_le_inf_left _ hg))
+    exact hEq.symm.trans hQ0
+  apply continuous_of_continuousAt_zero g
+  apply continuousAt_iff_punctured_nhds.2
+  simpa only [map_zero] using hlim
+
+/-- **`exp_E` is the only normalized additive homomorphism**: a homomorphism
+`g : ℂ → E(ℂ)` along which the local parameter `-X / Y` has derivative `1` at `0` is `exp_E`.
+Continuity follows from the derivative hypothesis and compactness of `E(ℂ)`. -/
+theorem eq_exp_of_hasDerivAt {g : ℂ →+ W.Point}
     (h : HasDerivAt (fun z ↦ (g z).localParameter) 1 0) : g = W.exp :=
-  AddMonoidHom.ext fun w ↦ (W.tangentScale_ne_zero_and_eq_tangentExp hg h).2 w
+  AddMonoidHom.ext fun w ↦ (W.tangentScale_ne_zero_and_eq_tangentExp
+    (W.continuous_of_hasDerivAt_localParameter h) h).2 w
 
 /-- **`exp_E` is holomorphic**: it is `C^n` over `ℂ` for every `n`, including `n = ω`. -/
 theorem contMDiff_exp (n : ℕ∞ω) : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n W.exp :=
@@ -365,7 +480,6 @@ theorem exp_weierstrassCurve (L : PeriodPair) (z : ℂ) :
   have hg : ⇑g = fun z ↦ (L.weierstrassPoint z).toProjective :=
     funext fun z ↦ by simp [g, PeriodPair.weierstrassPointHom_apply]
   have h := eq_exp_of_hasDerivAt _ (g := g)
-    (by rw [hg]; exact L.continuous_weierstrassPoint_toProjective)
     (by rw [hg]; exact hasDerivAt_localParameter_weierstrassPoint L)
   rw [← h, hg]
 
@@ -377,7 +491,6 @@ theorem exp_variableChange_weierstrassCurve (L : PeriodPair) (C : VariableChange
       (Point.addEquivVariableChange L.weierstrassCurve C).symm
         (L.weierstrassPoint ((C.u : ℂ)⁻¹ * z)).toProjective := by
   rw [← weierstrassPointVariableChange_apply, eq_exp_of_hasDerivAt _
-    (continuous_weierstrassPointVariableChange L C)
     (hasDerivAt_localParameter_weierstrassPointVariableChange L C)]
 
 /-- **`exp_E` pulls the invariant differential back to `dz`**: where `exp_E z` is the affine point
@@ -501,6 +614,156 @@ theorem isCoveringMap_exp : IsCoveringMap W.exp := by
     W.exp_surjective).isAddQuotientCoveringMap_of_isDiscrete_ker_addMonoidHom hd).isCoveringMap
 
 end Global
+
+/-! ### The invariant holomorphic differential -/
+
+/-- The normalized invariant differential on `E(ℂ)`: translate a tangent vector to the origin
+and apply the differential of the local parameter `-X/Y` there. Its pullback along `exp_E` is
+`dz`, including above infinity and affine two-torsion. -/
+noncomputable def invariantDifferential : TauCeti.RiemannSurface.OneForm W.Point := fun P ↦
+  mvfderiv 𝓘(ℂ) (fun Q : W.Point ↦ (Q - P).localParameter) P
+
+/-- The invariant differential inverts the derivative of `exp_E` at every point. -/
+theorem invariantDifferential_apply_mfderiv_exp (z : ℂ) (v : TangentSpace 𝓘(ℂ) z) :
+    W.invariantDifferential (W.exp z) (mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp z v) =
+      NormedSpace.fromTangentSpace z v := by
+  have hτ : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun P : W.Point ↦ P - W.exp z) :=
+    (contMDiff_id.sub contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  have ht := (Point.contMDiffAt_localParameter_zero (W := W) 1).mdifferentiableAt one_ne_zero
+  have hs : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ)
+      (fun P : W.Point ↦ (P - W.exp z).localParameter) (W.exp z) :=
+    ht.comp_of_eq (W.exp z) (hτ _) (sub_self _)
+  have hc : HasDerivAt
+      ((fun P : W.Point ↦ (P - W.exp z).localParameter) ∘ W.exp) 1 z := by
+    simpa only [Function.comp_def, ← map_sub, id_eq, mul_one] using
+      W.hasDerivAt_localParameter_exp.comp_of_eq z ((hasDerivAt_id z).sub_const z) (by simp)
+  rw [invariantDifferential, ← mvfderiv_comp_apply z hs (W.mdifferentiable_exp z),
+    mvfderiv_eq_fderiv, hc.hasFDerivAt.fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_one]
+  rfl
+
+/-- **The global pullback identity `exp_E*ω = dz`.** -/
+@[simp]
+theorem pullback_invariantDifferential_exp :
+    W.invariantDifferential.pullback W.exp = mvfderiv 𝓘(ℂ) id := by
+  funext z
+  apply ContinuousLinearMap.ext
+  intro v
+  rw [TauCeti.RiemannSurface.OneForm.pullback_apply, mvfderiv_eq_fderiv, fderiv_id]
+  exact W.invariantDifferential_apply_mfderiv_exp z v
+
+/-- The invariant differential vanishes nowhere. -/
+theorem invariantDifferential_ne_zero (P : W.Point) : W.invariantDifferential P ≠ 0 := by
+  obtain ⟨z, rfl⟩ := W.exp_surjective P
+  intro h
+  have hv := W.invariantDifferential_apply_mfderiv_exp z
+    ((NormedSpace.fromTangentSpace z).symm 1)
+  rw [h] at hv
+  have h01 : (0 : ℂ) = 1 := by simpa only [zero_apply,
+    ContinuousLinearEquiv.apply_symm_apply] using hv
+  exact zero_ne_one h01
+
+/-- The exponential is locally biholomorphic, by its invertible derivative. -/
+theorem isLocalDiffeomorphAt_exp (z : ℂ) : IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) 1 W.exp z := by
+  obtain ⟨e, he⟩ := W.isInvertible_mfderiv_exp z
+  exact TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq (W.contMDiff_exp 1).contMDiffOn
+    isOpen_univ (Set.mem_univ z) (by exact BoundarylessManifold.isInteriorPoint) le_rfl he
+
+/-- Locally the invariant differential is the differential of a holomorphic logarithm. -/
+private theorem exists_eventuallyEq_invariantDifferential_mvfderiv (P : W.Point) :
+    ∃ s : W.Point → ℂ, (∀ᶠ Q in 𝓝 P, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) s Q) ∧
+      ∀ᶠ Q in 𝓝 P, mvfderiv 𝓘(ℂ) s Q = W.invariantDifferential Q := by
+  obtain ⟨z, rfl⟩ := W.exp_surjective P
+  let hf := W.isLocalDiffeomorphAt_exp z
+  have hU : ∀ᶠ Q in 𝓝 (W.exp z), Q ∈ hf.localInverse.source :=
+    hf.localInverse.open_source.mem_nhds hf.localInverse_mem_source
+  have hmd : ∀ Q ∈ hf.localInverse.source,
+      MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q := fun Q hQ ↦
+    (hf.contMDiffOn_localInverse.contMDiffAt
+      (hf.localInverse.open_source.mem_nhds hQ)).mdifferentiableAt one_ne_zero
+  refine ⟨hf.localInverse, hU.mono hmd, ?_⟩
+  filter_upwards [hU] with Q hQ
+  have hid : W.exp ∘ hf.localInverse =ᶠ[𝓝 Q] id :=
+    eventuallyEq_of_mem (hf.localInverse.open_source.mem_nhds hQ) hf.localInverse_eqOn_right
+  have hc := mfderiv_comp Q (W.mdifferentiable_exp _) (hmd Q hQ)
+  rw [hid.mfderiv_eq, mfderiv_id] at hc
+  apply ContinuousLinearMap.ext
+  intro v
+  have hv : mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp (hf.localInverse Q)
+      (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q v) = v := by
+    have hcast : tangentSpaceCast 𝓘(ℂ) Q (W.exp (hf.localInverse Q)) v = v := by
+      rw [hf.localInverse_right_inv hQ]
+      rfl
+    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearEquiv.coe_coe, Function.comp_apply, id_eq, hcast] using
+      (congrArg (fun T ↦ T v) hc).symm
+  have hω := W.invariantDifferential_apply_mfderiv_exp (hf.localInverse Q)
+    (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q v)
+  rw [hf.localInverse_right_inv hQ] at hv hω
+  rw [mvfderiv, ContinuousLinearMap.comp_apply]
+  exact hω.symm.trans (congrArg (W.invariantDifferential Q) hv)
+
+/-- The invariant differential is holomorphic everywhere, including at infinity and two-torsion. -/
+theorem holomorphicAt_invariantDifferential (P : W.Point) :
+    W.invariantDifferential.HolomorphicAt P := by
+  obtain ⟨s, hs, hω⟩ := W.exists_eventuallyEq_invariantDifferential_mvfderiv P
+  exact (TauCeti.RiemannSurface.OneForm.holomorphicAt_mvfderiv hs).congr hω
+
+
+/-- Translation preserves the invariant differential. -/
+@[simp]
+theorem pullback_invariantDifferential_add (P : W.Point) :
+    W.invariantDifferential.pullback (fun Q ↦ Q + P) = W.invariantDifferential := by
+  funext Q
+  apply ContinuousLinearMap.ext
+  intro v
+  have hplus : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (fun R : W.Point ↦ R + P) Q :=
+    (contMDiff_id.add contMDiff_const).mdifferentiableAt (n := 1) one_ne_zero
+  have hsub : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ)
+      (fun R : W.Point ↦ (R - (Q + P)).localParameter) (Q + P) :=
+    ((Point.contMDiffAt_localParameter_zero (W := W) 1).mdifferentiableAt
+      one_ne_zero).comp_of_eq (Q + P)
+        ((contMDiff_id.sub contMDiff_const).mdifferentiableAt (n := 1) one_ne_zero)
+        (sub_self _)
+  have heq : (fun R : W.Point ↦ (R - (Q + P)).localParameter) ∘ (fun R ↦ R + P) =
+      fun R ↦ (R - Q).localParameter := by
+    funext R
+    change ((R + P) - (Q + P)).localParameter = (R - Q).localParameter
+    apply congrArg Point.localParameter
+    abel
+  rw [TauCeti.RiemannSurface.OneForm.pullback_apply, invariantDifferential,
+    ← mvfderiv_comp_apply Q hsub hplus, heq]
+  rfl
+
+/-- On any affine coordinate neighbourhood where `2y + a₁x + a₃ ≠ 0`, the global invariant
+form is the algebraic differential `dx / (2y + a₁x + a₃)`. Its holomorphy and nonvanishing
+provide the extension across the remaining points. -/
+theorem invariantDifferential_eq_inv_smul_mvfderiv {x y : W.Point → ℂ} {P : W.Point}
+    (h : ∀ᶠ Q in 𝓝 P, ∃ hQ : W.toAffine.Nonsingular (x Q) (y Q),
+      Point.toAffineAddEquiv W Q = .some (x Q) (y Q) hQ)
+    (hne : 2 * y P + W.a₁ * x P + W.a₃ ≠ 0) :
+    W.invariantDifferential P =
+      (2 * y P + W.a₁ * x P + W.a₃)⁻¹ • mvfderiv 𝓘(ℂ) x P := by
+  obtain ⟨z, rfl⟩ := W.exp_surjective P
+  have hd : HasDerivAt (x ∘ W.exp) (2 * y (W.exp z) + W.a₁ * x (W.exp z) + W.a₃) z :=
+    W.hasDerivAt_of_toAffineAddEquiv_exp_eq_some (W.continuous_exp.continuousAt.eventually h)
+  let hf := W.isLocalDiffeomorphAt_exp z
+  have hx : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) x (W.exp z) := by
+    have hi := hf.mdifferentiableAt_localInverse one_ne_zero
+    have hc := hd.differentiableAt.mdifferentiableAt.comp_of_eq (W.exp z) hi
+      (hf.localInverse_left_inv hf.localInverse_mem_target)
+    apply hc.congr_of_eventuallyEq
+    filter_upwards [hf.localInverse_eventuallyEq_right] with Q hQ
+    exact congrArg x hQ.symm
+  apply ContinuousLinearMap.ext
+  intro v
+  obtain ⟨w, rfl⟩ := (W.isInvertible_mfderiv_exp z).surjective v
+  rw [W.invariantDifferential_apply_mfderiv_exp, smul_apply,
+    ← mvfderiv_comp_apply z hx (W.mdifferentiable_exp z), mvfderiv_eq_fderiv,
+    hd.hasFDerivAt.fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, smul_eq_mul]
+  rw [mul_left_comm, inv_mul_cancel₀ hne, mul_one]
+  rfl
 
 /-- **`E(ℂ)` is the quotient of `ℂ` by the kernel of `exp_E`**, as topological groups; that kernel
 is the period lattice (`WeierstrassCurve.Projective.ker_exp`). -/
