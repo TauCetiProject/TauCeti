@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Constructions
-public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Lifting
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
