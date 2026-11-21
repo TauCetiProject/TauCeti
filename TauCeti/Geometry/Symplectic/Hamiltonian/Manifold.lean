@@ -47,7 +47,9 @@ Hamiltonian vector field by `c⁻¹`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
 Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
 (`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`). The value of `X_f` at `x` only depends on the
-germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
+germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`). At a point where the flat
+map is invertible, `X_f` is the unique vector whose contraction with `σ` is `df`, with no condition
+on `σ` elsewhere (`TauCeti.SmoothTwoForm.hamiltonianVectorField_eq_iff_of_isInvertible_flat`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -253,6 +255,14 @@ Hamiltonian at `x`. -/
 theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm I M) {x : M}
     (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
+
+/-- At a point where the flat map of `σ` is invertible, the Hamiltonian vector field of `f` is the
+unique vector whose contraction with `σ` is `df`. -/
+theorem hamiltonianVectorField_eq_iff_of_isInvertible_flat {x : M}
+    (hx : (σ.flat x).IsInvertible) {v : TangentSpace I x} :
+    σ.hamiltonianVectorField f x = v ↔ ∀ w, SmoothBundleForm.eval₂ σ x v w = mvfderiv I f x w := by
+  rw [hamiltonianVectorField_def, hx.inverse_apply_eq, ContinuousLinearMap.ext_iff]
+  exact forall_congr' fun w ↦ by rw [flat_apply, eq_comm]
 
 /-- The Hamiltonian vector field of a constant function vanishes. -/
 @[simp]

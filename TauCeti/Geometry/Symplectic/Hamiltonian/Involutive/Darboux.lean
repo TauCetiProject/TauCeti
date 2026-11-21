@@ -266,12 +266,9 @@ theorem exists_darbouxChart_snd_eq_of_isInteriorPoint (hx : I.IsInteriorPoint x)
   -- The second component of the differential of `Φ` is `dF`.
   have hsnd {y : M} (hy : y ∈ Φ.source) (v : TangentSpace I y) :
       (mvfderiv I Φ y v).2 = mvfderiv I F y v := by
-    have h := (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)).mvfderiv_comp_apply
-      (Φ.mdifferentiableAt (by simp) hy) v
-    simp only [ContinuousLinearMap.coe_snd'] at h
-    have heq : (Prod.snd ∘ Φ : M → ι → ℝ) =ᶠ[𝓝 y] F :=
+    have heq : (fun z ↦ (Φ z).2) =ᶠ[𝓝 y] F :=
       eventuallyEq_of_mem (Φ.open_source.mem_nhds hy) fun z hz ↦ (hΦ z hz).1
-    rw [← h, heq.mvfderiv_eq]
+    rw [← (Φ.mdifferentiableAt (by simp) hy).mvfderiv_snd_apply, heq.mvfderiv_eq]
   -- In the flow box, `σ` is a closed two-form `μ` with `μ(∂_{tᵢ}, ·) = dcᵢ`.
   obtain ⟨μ, hμdef⟩ : ∃ μ : (ι → ℝ) × (ι → ℝ) → ((ι → ℝ) × (ι → ℝ)) [⋀^Fin 2]→L[ℝ] ℝ,
       μ = mpullbackWithin 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Φ.symm Φ.target σ.val := ⟨_, rfl⟩
