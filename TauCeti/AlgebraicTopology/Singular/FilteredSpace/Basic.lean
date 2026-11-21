@@ -47,7 +47,9 @@ singular chains.
   graded pieces `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`, whose connecting map is the
   first differential (`CochainComplex.spectralSequence_first_page_d_eq`), is isomorphic to the
   relative singular chain sequence of the triple.
-* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.chainFiltrationAbutmentIso`).
+* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.chainFiltrationAbutmentIso`),
+  and the `q`th piece of its filtration is the image of `Hₙ(X q) ⟶ Hₙ(Y)`
+  (`TauCeti.range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
   strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
   absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
@@ -275,6 +277,32 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (ha : X a = 
       cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
     (singularChainFiltration_eq_bot R ha) (chainFiltration_eq_top _ hb) r hr pq hra hrb
+
+section ImageFiltration
+
+variable {k : Type w} [Ring k]
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
+identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(Y; M)`,
+the `q`th piece of its filtration is the image of the map `Hₙ(X q; M) ⟶ Hₙ(Y; M)` induced by the
+inclusion of `X q`. -/
+theorem range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom
+    (M : ModuleCat.{w} k) (hX : Monotone X) (q : ℤ) (n : ℕ) :
+    LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q (-n) ≫
+        (chainFiltrationAbutmentIso ((singularChainComplexFunctor _).obj M) hX n).hom).hom =
+      LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom := by
+  have h := congrArg (fun f ↦ LinearMap.range (ModuleCat.Hom.hom f))
+    (chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom
+      ((singularChainComplexFunctor _).obj M) hX q n)
+  simp only [ModuleCat.hom_comp] at h
+  rw [LinearMap.range_comp_of_range_eq_top _
+    ((ModuleCat.epi_iff_range_eq_top _).1 inferInstance)] at h
+  -- `SSet.homologyMap` is by definition the map in homology of the singular chains, whose codomain
+  -- is `Y` up to unfolding `TopPair.ofSubset`; `exact` performs both unfoldings.
+  exact h
+
+end ImageFiltration
 
 section FirstDifferential
 

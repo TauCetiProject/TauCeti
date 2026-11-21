@@ -76,13 +76,6 @@ namespace TopCat
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelCWComplex C D]
   (R : Type u) [Ring R] {n : ℕ}
 
-variable (p C) in
-/-- The stage `n - 1` of the skeletal filtration is the preimage of the `(n - 1)`-skeleton
-`skeletonLT C n`. -/
-private lemma preimageSkeleton_natCast_sub_one :
-    preimageSkeleton C p ((n : ℤ) - 1) = p ⁻¹' (skeletonLT C n : Set B) := by
-  rw [preimageSkeleton_def, show ((n : ℤ) - 1 + 1).toNat = n by lia]
-
 variable (hC : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) = univ)
 include hC
 
@@ -129,6 +122,29 @@ def toSerreTopColumnEInfty (k : ℕ) :
     cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
       ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv
 
+/-- **The defining property of the projection onto the top column.** On the top piece
+`F_n Hₖ(E)` of the filtration of the abutment, identified with `Hₖ(E; R)`, the projection is the
+quotient map onto the cokernel of `F_{n-1} Hₖ(E) ⟶ F_n Hₖ(E)`, identified with `E^∞_{n,k-n}`. -/
+@[reassoc]
+theorem abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_toSerreTopColumnEInfty
+    (k : ℕ) :
+    (serreSpectralObject C p R).abutmentFiltrationι ((n : ℤ) - 1 + 1) (-k) ≫
+        (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) k).hom ≫
+          toSerreTopColumnEInfty p R hC k =
+      cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
+        ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv := by
+  have h := (serreTopFiltrationIso (p := p) R hC k).hom_inv_id_assoc
+    (cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
+      ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv)
+  rw [serreTopFiltrationIso_hom] at h
+  -- The source of `toSerreTopColumnEInfty` is the homology of the singular chains of `E` only up
+  -- to unfolding `SSet.homology`, so the composite is reassociated with a term rather than `rw`.
+  exact (Category.assoc _ _ _).symm.trans h
+
+instance (k : ℕ) : Epi (toSerreTopColumnEInfty p R hC k) := by
+  rw [toSerreTopColumnEInfty]
+  infer_instance
+
 /-- The projection onto the top column vanishes on a class `α ∈ Hₖ(E; R)` exactly when `α` comes
 from the homology of the part of `E` over the `(n - 1)`-skeleton. -/
 theorem toSerreTopColumnEInfty_eq_zero_iff {k : ℕ}
@@ -163,7 +179,7 @@ theorem toSerreTopColumnEInfty_eq_zero_iff {k : ℕ}
     exact Abelian.SpectralObject.abutmentFiltrationMap_ι_assoc _ _ _ _
   have hrange := range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom
     (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p) ((n : ℤ) - 1) k
-  rw [preimageSkeleton_natCast_sub_one p C] at hrange
+  rw [preimageSkeleton_natCast_sub_one] at hrange
   rw [hproj, hπ, hmem, hm]
   -- The two ranges live in the homology of `E`, written once as the ambient space of a pair.
   exact SetLike.ext_iff.1 hrange α

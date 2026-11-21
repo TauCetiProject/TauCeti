@@ -27,9 +27,7 @@ the exhaustiveness hypothesis of the convergence theorems for filtered complexes
 `TauCeti.filteredSpaceSpectralSequence`:
 
 * the filtration of the abutment `Hₙ(Y)` is exhaustive
-  (`TauCeti.exists_mem_range_filteredSpaceAbutmentFiltrationι`); its pieces are the images of the
-  `Hₙ(X q)` in `Hₙ(Y)`, for every filtration of `Y`
-  (`TauCeti.range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`);
+  (`TauCeti.exists_mem_range_filteredSpaceAbutmentFiltrationι`);
 * if the relative homology `Hₙ(X (i + 1), X i)` vanishes for all `i ≥ b`, the `b`th piece of the
   filtration of `Hₙ(Y)` is everything
   (`TauCeti.isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive`);
@@ -117,26 +115,6 @@ theorem exists_mem_range_filteredSpaceAbutmentFiltrationι
     ∃ q, x ∈ LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q n).hom :=
   CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι _ _
     (exists_mem_range_singularChainFiltration_arrow M hX hK n) x
-
-/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
-identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(Y; M)`,
-the `q`th piece of its filtration is the image of the map `Hₙ(X q; M) ⟶ Hₙ(Y; M)` induced by the
-inclusion of `X q`. -/
-theorem range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom (q : ℤ)
-    (n : ℕ) :
-    LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q (-n) ≫
-        (chainFiltrationAbutmentIso ((singularChainComplexFunctor _).obj M) hX n).hom).hom =
-      LinearMap.range
-        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom := by
-  have h := congrArg (fun f ↦ LinearMap.range (ModuleCat.Hom.hom f))
-    (chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom
-      ((singularChainComplexFunctor _).obj M) hX q n)
-  simp only [ModuleCat.hom_comp] at h
-  rw [LinearMap.range_comp_of_range_eq_top _
-    ((ModuleCat.epi_iff_range_eq_top _).1 inferInstance)] at h
-  -- `SSet.homologyMap` is by definition the map in homology of the singular chains, whose codomain
-  -- is `Y` up to unfolding `TopPair.ofSubset`; `exact` performs both unfoldings.
-  exact h
 
 /-- **The filtration of the abutment reaches `Hₙ(Y)`.** For an exhaustive filtration of a space, if
 the relative homology `Hₙ(X (i + 1), X i)` vanishes for every `i ≥ b`, then the `b`th piece of the
