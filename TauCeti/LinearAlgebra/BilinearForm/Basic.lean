@@ -121,8 +121,9 @@ is the converse of `LinearMap.IsAlt.neg`, and a module-valued, semiring form of 
 direction of `LinearMap.isAlt_iff_eq_neg_flip`. -/
 theorem of_neg {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (h2 : IsSMulRegular N (2 : ℕ))
-    (h : ∀ x y, -ω x y = ω y x) : ω.IsAlt := fun x ↦
-  h2 (show 2 • ω x x = 2 • 0 by rw [smul_zero, two_nsmul, ← neg_add_cancel (ω x x), h x x])
+    (h : ∀ x y, -ω x y = ω y x) : ω.IsAlt := fun x ↦ by
+  apply h2
+  simpa only [two_nsmul, smul_zero, h x x] using neg_add_cancel (ω x x)
 
 /-- An alternating bilinear map vanishes on a linearly dependent pair, provided unequal scalars
 act differently on every nonzero value. Over a domain acting on torsion-free values, the latter

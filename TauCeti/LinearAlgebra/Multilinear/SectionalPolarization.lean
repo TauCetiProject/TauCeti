@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
@@ -175,7 +176,8 @@ theorem twentyFour_nsmul_apply_eq_of_cyclic_eq_zero (T : M →ₗ[R] M →ₗ[R]
   -- the difference of two such cross terms. Align the slot order of the second difference with
   -- the sixfold identity by the symmetry `T(a, b, b, a) = T(b, a, a, b)`.
   have hk (a b : M) : T a b b a = T b a a b := by rw [h₁, h₂, neg_neg]
-  rw [show (24 : ℕ) = 4 * 6 from rfl, mul_nsmul', T.six_nsmul_apply_eq_of_cyclic_eq_zero h₁ h₂ h₃,
+  have h24 : (24 : ℕ) = 4 * 6 := by norm_num
+  rw [h24, mul_nsmul', T.six_nsmul_apply_eq_of_cyclic_eq_zero h₁ h₂ h₃,
     hk (y + w) (x + z), hk (y + w) (x - z), hk (y - w) (x + z), hk (y - w) (x - z)]
   -- What remains is multilinearity, up to the symmetry of `T(z, w, w, z)`. As in the sixfold
   -- identity, opaque atoms keep the normalization small.

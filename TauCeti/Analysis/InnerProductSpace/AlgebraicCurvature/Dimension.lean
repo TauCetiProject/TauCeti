@@ -74,9 +74,8 @@ theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor
     (huv : ¬LinearIndependent ℝ ![u, v])
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (z w : V) : r ![u, v, z, w] = 0 := by
   -- Doubling is injective on the values, which form a real vector space.
-  have h2 : IsSMulRegular (V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (2 : ℕ) := fun a b hab ↦
-    (IsUnit.mk0 (2 : ℝ) two_ne_zero).isSMulRegular _ <| by
-      simpa only [two_smul, two_nsmul] using hab
+  have := HasUniqueDiv.of_isTorsionFree ℝ (V →ₗ[ℝ] V →ₗ[ℝ] ℝ)
+  have h2 : IsSMulRegular (V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (2 : ℕ) := .nat_of_hasUniqueDiv two_ne_zero
   have hAlt : (toLinearMap₄ r).IsAlt := .of_neg (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ) h2 fun a b ↦
     LinearMap.ext₂ fun c d ↦ by simp only [LinearMap.neg_apply, toLinearMap₄_apply, ← h₁]
   simpa using congr($(hAlt.eq_zero_of_not_linearIndependent
