@@ -446,7 +446,8 @@ private theorem IsBallFamily.exists_norm_pow_mul_norm_fourier_le (N : ℕ) :
       ring
     calc ‖η‖ ^ (2 * (N + 1)) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
         = ∑ j, ‖η‖ ^ (2 * N) * (η j ^ 2 * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) :=
-          EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum η N _
+          (EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum η N _).trans <| by
+            simp only [Real.norm_eq_abs, sq_abs]
       _ ≤ ∑ j, ((2 * π) ^ 2)⁻¹ * (D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
           Finset.sum_le_sum fun j _ ↦ by
             rw [hj, mul_left_comm]
@@ -467,7 +468,7 @@ theorem IsBallFamily.exists_norm_fourier_le_rpow {c : ι → Symbol n V W m}
   set F := ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := le_add_of_nonneg_right (by positivity)
-  have hF := le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
+  have hF := Real.le_mul_one_add_sq_pow_inv (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
   have hinv : 0 < ((1 + ‖η‖ ^ 2) ^ N)⁻¹ := by positivity
   -- `((1 + ‖η‖²) ^ N)⁻¹ = (1 + ‖η‖²) ^ (-N) ≤ (1 + ‖η‖²) ^ (-s / 2)` since `N ≥ s / 2`.
   have hN : ((1 + ‖η‖ ^ 2) ^ N)⁻¹ ≤ (1 + ‖η‖ ^ 2) ^ (-s / 2) := by

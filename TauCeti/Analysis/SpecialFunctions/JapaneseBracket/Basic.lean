@@ -336,7 +336,8 @@ theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measu
     (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
           gcongr
-          exact one_add_mul_norm_pow_le hc x i
+          simpa only [abs_norm, Real.rpow_natCast] using
+            Real.one_add_mul_abs_rpow_le ‖x‖ hc i.cast_nonneg
     _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
           rw [mul_assoc, ← Real.rpow_add hA]
           ring_nf

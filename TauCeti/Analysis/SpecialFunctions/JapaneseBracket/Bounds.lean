@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Elementary bounds on the Japanese bracket
 
-The Japanese bracket of a real number `t` is `(1 + t ^ 2) ^ (1 / 2)`. The bounds in the `Real`
-namespace compare its real powers with powers of `t`, for scalar `t`; applied to `t = ‖ξ‖`, these
-compare homogeneous growth `‖ξ‖ ^ r` with symbol growth `⟨ξ⟩ ^ r`.
+The Japanese bracket of a real number `t` is `⟨t⟩ = (1 + t ^ 2) ^ (1 / 2)`. The bounds here
+compare its real powers with powers of `t`, for scalar `t`; applied to `t = ‖ξ‖`, these compare
+homogeneous growth `‖ξ‖ ^ r` with symbol growth `⟨ξ⟩ ^ r`.
 
 For `t ≥ 1` and an exponent `r` of either sign, `t ^ r` and `(1 + t ^ 2) ^ (r / 2)` are
 comparable: each is at most `2 ^ (|r| / 2)` times the other. For `|t| ≤ R`, the Japanese bracket
@@ -21,10 +22,9 @@ power `(1 + t ^ 2) ^ (r / 2)` times `(1 + R ^ 2) ^ (|r| / 2)` is at least `1`, s
 is at most a multiple of `(1 + t ^ 2) ^ (r / 2)` for `|t| ≤ R`. These turn homogeneous estimates
 at large frequencies, and bounds on compact sets, into symbol estimates.
 
-For a vector `x` of a seminormed group, with `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`, one power of
-`‖x‖` costs one order of the bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`, and a linear weight
-`(1 + c ‖x‖) ^ i` with `c ≥ 0` is at most `(1 + c) ^ i ⟨x⟩ ^ i`. For `F ≥ 0`, bounds on `F` and
-on `‖v‖ ^ (2N) F` combine to a bound on `F` with the weight `(1 + ‖v‖ ^ 2) ^ (-N)`.
+One power of `|t|` costs one order of the bracket, `⟨t⟩ ^ m |t| ≤ ⟨t⟩ ^ (m + 1)`, and a linear
+weight `(1 + c |t|) ^ p` with `c ≥ 0` and `p ≥ 0` is at most `(1 + c) ^ p ⟨t⟩ ^ p`. For `F ≥ 0`,
+bounds on `F` and on `t ^ (2N) F` combine to a bound on `F` with the weight `(1 + t ^ 2) ^ (-N)`.
 
 ## Main results
 
@@ -35,10 +35,11 @@ on `‖v‖ ^ (2N) F` combine to a bound on `F` with the weight `(1 + ‖v‖ ^ 
   `1 ≤ (1 + R ^ 2) ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2)` for `|t| ≤ R`.
 * `Real.exists_le_mul_one_add_sq_rpow_of_abs_le`: for `|t| ≤ R`, every constant is at most a
   multiple of `(1 + t ^ 2) ^ (r / 2)`.
-* `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
-* `TauCeti.one_add_mul_norm_pow_le`: `(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
-* `TauCeti.le_mul_one_add_norm_sq_pow_inv`: for `F ≥ 0`, bounds on `F` and on `‖v‖ ^ (2N) F`
-  combine to a bound on `F` with the weight `((1 + ‖v‖ ^ 2) ^ N)⁻¹`.
+* `Real.one_add_sq_rpow_mul_abs_le`: `⟨t⟩ ^ m |t| ≤ ⟨t⟩ ^ (m + 1)`.
+* `Real.one_add_mul_abs_rpow_le`: `(1 + c |t|) ^ p ≤ (1 + c) ^ p ⟨t⟩ ^ p` for `c ≥ 0` and
+  `p ≥ 0`.
+* `Real.le_mul_one_add_sq_pow_inv`: for `F ≥ 0`, bounds on `F` and on `t ^ (2N) F` combine to a
+  bound on `F` with the weight `((1 + t ^ 2) ^ N)⁻¹`.
 -/
 
 public section
@@ -48,21 +49,14 @@ namespace Real
 /-- For `t ≥ 1` and an exponent `r` of either sign, `t ^ r ≤ 2 ^ (|r| / 2) (1 + t²) ^ (r / 2)`. -/
 theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
     t ^ r ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-  have hu : 0 < t ^ 2 := by positivity
+  have ht2 : 1 ≤ t ^ 2 := one_le_pow₀ ht
   have hs : 0 < 1 + t ^ 2 := by positivity
-  rw [← sq_rpow_div_two (a := t) (by linarith) r]
-  rcases le_total 0 r with hr | hr
-  · calc (t ^ 2) ^ (r / 2) ≤ (1 + t ^ 2) ^ (r / 2) :=
-          rpow_le_rpow hu.le (by linarith) (by linarith)
-      _ ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) :=
-          le_mul_of_one_le_left (by positivity) (one_le_rpow (by norm_num) (by positivity))
-  · -- For a nonpositive exponent use `(1 + t²) / 2 ≤ t²`, and `2 ^ (|r| / 2) = 2 ^ (-(r / 2))`.
-    have h2 : (1 + t ^ 2) / 2 ≤ t ^ 2 := by nlinarith
-    calc (t ^ 2) ^ (r / 2) ≤ ((1 + t ^ 2) / 2) ^ (r / 2) :=
-          rpow_le_rpow_of_nonpos (by positivity) h2 (by linarith)
-      _ = (1 + t ^ 2) ^ (r / 2) / 2 ^ (r / 2) := div_rpow hs.le zero_le_two _
-      _ = 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-          rw [abs_of_nonpos hr, neg_div, rpow_neg zero_le_two, inv_mul_eq_div]
+  -- The ratio `t ^ 2 / (1 + t ^ 2)` and its reciprocal are both at most `2`.
+  have h := rpow_le_rpow_abs (x := t ^ 2 / (1 + t ^ 2)) (R := 2) (by positivity)
+    (((div_le_one hs).2 (by linarith)).trans one_le_two)
+    (by rw [inv_div, div_le_iff₀ (by positivity)]; linarith) (r / 2)
+  rwa [div_rpow (by positivity) hs.le, div_le_iff₀ (by positivity), abs_div, abs_two,
+    sq_rpow_div_two (by linarith)] at h
 
 /-- For `t ≥ 1` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`. -/
 theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
@@ -83,13 +77,11 @@ theorem one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow (t : ℝ) {R : ℝ} (ht :
     have := sq_le_sq' (abs_le.1 ht).1 (abs_le.1 ht).2
     linarith
   have ht1 : 1 ≤ 1 + t ^ 2 := le_add_of_nonneg_right (sq_nonneg t)
-  rcases le_or_gt 0 r with hr | hr
-  · exact one_le_mul_of_one_le_of_one_le (one_le_rpow (ht1.trans hR) (by positivity))
-      (one_le_rpow ht1 (by linarith))
-  · calc (1 : ℝ) = (1 + t ^ 2) ^ (|r| / 2 + r / 2) := by
-          rw [abs_of_neg hr, neg_div, neg_add_cancel, rpow_zero]
-      _ = (1 + t ^ 2) ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := rpow_add (by positivity) _ _
-      _ ≤ _ := by gcongr
+  -- Both `1 + t ^ 2` and its reciprocal are at most `1 + R ^ 2`.
+  have h := rpow_le_rpow_abs (by positivity) hR ((inv_le_one_of_one_le₀ ht1).trans (ht1.trans hR))
+    (-(r / 2))
+  rwa [rpow_neg (by positivity), abs_neg, abs_div, abs_two,
+    inv_le_iff_one_le_mul₀ (by positivity)] at h
 
 /-- For `|t| ≤ R`, every constant is at most a multiple of each power of the Japanese bracket:
 `M ≤ C (1 + t ^ 2) ^ (r / 2)`. -/
@@ -102,41 +94,36 @@ theorem exists_le_mul_one_add_sq_rpow_of_abs_le (M R r : ℝ) :
       exact mul_le_mul_of_nonneg_left (one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow t ht r)
         (le_max_right _ _)
 
-end Real
-
-namespace TauCeti
-
-/-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
-theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [SeminormedAddCommGroup E] (x : E)
-    (m : ℝ) :
-    (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
-  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
+/-- One power of `|t|` costs one order of the Japanese bracket `⟨t⟩ = (1 + t ^ 2) ^ (1 / 2)`:
+`⟨t⟩ ^ m |t| ≤ ⟨t⟩ ^ (m + 1)` for every real `m`. -/
+theorem one_add_sq_rpow_mul_abs_le (t m : ℝ) :
+    (1 + t ^ 2) ^ (m / 2) * |t| ≤ (1 + t ^ 2) ^ ((m + 1) / 2) := by
+  rw [add_div, rpow_add (by positivity), ← sqrt_eq_rpow]
   gcongr
-  exact Real.le_sqrt_of_sq_le (by linarith)
+  exact abs_le_sqrt (by linarith)
 
-/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
-theorem one_add_mul_norm_pow_le {E : Type*} [SeminormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c)
-    (x : E) (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
-  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
-    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
-    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
+/-- A linear weight is dominated by the Japanese bracket `⟨t⟩ = (1 + t ^ 2) ^ (1 / 2)`:
+`(1 + c |t|) ^ p ≤ (1 + c) ^ p ⟨t⟩ ^ p` for `c ≥ 0` and `p ≥ 0`. -/
+theorem one_add_mul_abs_rpow_le (t : ℝ) {c p : ℝ} (hc : 0 ≤ c) (hp : 0 ≤ p) :
+    (1 + c * |t|) ^ p ≤ (1 + c) ^ p * (1 + t ^ 2) ^ (p / 2) := by
+  have hle : 1 + c * |t| ≤ (1 + c) * √(1 + t ^ 2) := by
+    have h1 : 1 ≤ √(1 + t ^ 2) := one_le_sqrt.2 (by nlinarith [sq_nonneg t])
+    have h2 : |t| ≤ √(1 + t ^ 2) := abs_le_sqrt (by linarith)
     nlinarith
-  rw [← Real.pow_sqrt_eq_rpow (by positivity) i, ← mul_pow]
-  exact pow_le_pow_left₀ (by positivity) hle i
+  rw [rpow_div_two_eq_sqrt p (by positivity), ← mul_rpow (by positivity) (sqrt_nonneg _)]
+  exact rpow_le_rpow (by positivity) hle hp
 
-/-- For `0 ≤ F`, bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
-`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
-theorem le_mul_one_add_norm_sq_pow_inv {E : Type*} [SeminormedAddCommGroup E] {v : E} {N : ℕ}
-    {F C₀ C₁ w : ℝ} (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :
-    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + ‖v‖ ^ 2) ^ N)⁻¹ := by
+/-- For `0 ≤ F`, bounds `F ≤ C₀ w` and `t ^ (2N) F ≤ C₁ w` combine to the weighted bound
+`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + t²) ^ N)⁻¹`. -/
+theorem le_mul_one_add_sq_pow_inv {t : ℝ} {N : ℕ} {F C₀ C₁ w : ℝ} (hF : 0 ≤ F)
+    (h₀ : F ≤ C₀ * w) (h₁ : t ^ (2 * N) * F ≤ C₁ * w) :
+    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + t ^ 2) ^ N)⁻¹ := by
   rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]
-  calc (1 + ‖v‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖v‖ ^ 2) ^ N) * F :=
-        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) hF
-    _ = 2 ^ (N - 1) * (F + ‖v‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
+  calc (1 + t ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (t ^ 2) ^ N) * F :=
+        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (sq_nonneg t) N) hF
+    _ = 2 ^ (N - 1) * (F + t ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
     _ ≤ 2 ^ (N - 1) * (C₀ * w + C₁ * w) :=
         mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
     _ = 2 ^ (N - 1) * (C₀ + C₁) * w := by ring
 
-end TauCeti
+end Real

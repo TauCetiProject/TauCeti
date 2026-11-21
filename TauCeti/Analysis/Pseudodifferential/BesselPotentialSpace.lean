@@ -323,7 +323,7 @@ private theorem HasCompactSpatialSupport.exists_eLpNorm_quantizeSchwartzValue_sh
         _ ≤ S * (‖ζ‖ ^ k)⁻¹ * ρ η := by
             gcongr
             · exact Finset.single_le_sum (fun i _ ↦ hD0 i) (Finset.mem_range.2 (by omega))
-            · simpa only [add_comm, Real.rpow_neg (norm_nonneg ζ), Real.rpow_natCast] using
+            · simpa only [add_comm, Real.rpow_neg_natCast, zpow_neg, zpow_natCast] using
                 norm_sq_add_rpow_div_two_le zero_le_one hζ (neg_nonpos.2 (Nat.cast_nonneg k))
         _ = _ := by ring
     have hgrowth : (shiftedMultiplier b η).HasTemperateGrowth :=

@@ -98,7 +98,7 @@ theorem memLp_two_one_add_norm_sq_rpow_smul_of_norm_le [NormedSpace ℝ V] [Fini
   -- `⟨x⟩ ^ s (1 + ‖x‖) ^ k ≤ 2 ^ k ⟨x⟩ ^ (s + k)`.
   have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hx) (by positivity)
   have hk : (1 + ‖x‖) ^ k ≤ 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
-    simpa [one_add_one_eq_two] using one_add_mul_norm_pow_le zero_le_one x k
+    simpa [one_add_one_eq_two] using Real.one_add_mul_abs_rpow_le ‖x‖ zero_le_one k.cast_nonneg
   rw [norm_smul, Real.norm_of_nonneg (by positivity)]
   calc (1 + ‖x‖ ^ 2) ^ (s / 2) * ‖f x‖
       ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) * (C * (2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2))) := by

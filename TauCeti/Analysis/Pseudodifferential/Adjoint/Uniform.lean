@@ -307,7 +307,8 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_ofRight_le (N : ℕ) :
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖((c i).ofRight hci).coefficient (x, ξ)‖
         = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
             ‖((c i).ofRight hci).coefficient (x, ξ)‖) :=
-          EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
+          (EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _).trans <| by
+            simp only [Real.norm_eq_abs, sq_abs]
       _ ≤ ∑ j, (A j + B j + C j + D j) * w := Finset.sum_le_sum fun j _ ↦ hj j
       _ = _ := by rw [Finset.sum_mul]
 
@@ -354,7 +355,7 @@ private theorem IsBallFamily.exists_norm_mixedDeriv_ofRight_le {c : ι → Symbo
   refine ⟨2 ^ (n - 1) * (C₀ + C₁), by positivity, fun i x ξ ↦ ?_⟩
   have h₀ := hC₀ i x ξ
   rw [mul_zero, pow_zero, one_mul] at h₀
-  exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq (by ring)
+  exact (Real.le_mul_one_add_sq_pow_inv (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq (by ring)
 
 end BallFamily
 

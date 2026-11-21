@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import Mathlib.Topology.Order.Compact
 import TauCeti.Topology.ContinuousOn.CompactDomination
 
 /-!
@@ -29,8 +28,10 @@ survives passing to the larger scale: if `s ≤ t`, then `u ≤ (2 - δ) * s ≤
 Otherwise, rescaling to `s = 1`, the strict inequality holds at `u = min (1 + r) (2 - δ)` for every
 ratio `r = t / s ∈ [0, 1]`: by strict convexity when `r < 1`, and because `2 - δ < 2` when
 `r = 1`. Compactness of `[0, 1]` makes the gap a uniform fraction of the right-hand side. This is
-the scalar step in showing that `q`-th powers of norms on a uniformly convex space are uniformly
-convex.
+the scalar step of `TauCeti.exists_forall_norm_add_rpow_le`: in a uniformly convex space, the
+power mean inequality for `‖a + b‖ ^ q` improves by a uniform factor below `1` when `a` and `b`
+are separated relative to their size, `η (‖a‖ ^ q + ‖b‖ ^ q) ≤ ‖a - b‖ ^ q` with `η > 0`. Without
+such a relative separation there is no uniform improvement.
 
 ## Main results
 
