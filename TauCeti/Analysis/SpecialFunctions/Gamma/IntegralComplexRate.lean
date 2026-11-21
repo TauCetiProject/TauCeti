@@ -23,6 +23,7 @@ positive reals, so they agree on the half-plane by the identity theorem.
 
 ## Main results
 
+* `Complex.norm_cpow_mul_exp_neg_mul`: norm identity for `t^{s-1} e^{-wt}` on `t > 0`.
 * `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`: the Gamma integral with complex rate.
 * `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi` and
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: the integral converges and is
@@ -40,7 +41,7 @@ open scoped Topology
 namespace Complex
 
 /-- The norm of the integrand `t^{s-1} e^{-wt}` for `t > 0`. -/
-private theorem norm_cpow_mul_exp_neg_mul (s w : ℂ) {t : ℝ} (ht : 0 < t) :
+theorem norm_cpow_mul_exp_neg_mul (s w : ℂ) {t : ℝ} (ht : 0 < t) :
     ‖(t : ℂ) ^ (s - 1) * exp (-(w * t))‖ = t ^ (s.re - 1) * Real.exp (-w.re * t) := by
   rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
   simp

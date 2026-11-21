@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.DSlope
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
 import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
@@ -19,14 +20,16 @@ normed algebra `A`, is the formal power series whose `n`-th coefficient is the v
 `n`-th iterated divided difference `(swap dslope a)^[n] f`. It uses no choice of a power series of
 `f`, and it depends only on the germ of `f` at `a` (`TauCeti.taylorSeries_congr`). When `f` has a
 power series `p` at `a`, its coefficients are the coefficients `p.coeff n`
-(`HasFPowerSeriesAt.coeff_taylorSeries`). Mathlib's `ftaylorSeries` records the iterated derivatives
-of a function as a formal multilinear series at each point; `TauCeti.taylorSeries` is the
-one-variable expansion as an element of the ring `PowerSeries A`, where formal expansions can be
-multiplied.
+(`HasFPowerSeriesAt.coeff_taylorSeries`); over a characteristic-zero nontrivially normed field `𝕜`
+into a complete normed algebra `A`, they equal `(n.factorial : 𝕜)⁻¹ • iteratedDeriv n f a`
+(`AnalyticAt.coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv`). Mathlib's `ftaylorSeries`
+records the iterated derivatives of a function as a formal multilinear series at each point;
+`TauCeti.taylorSeries` is the one-variable expansion as an element of the ring `PowerSeries A`,
+where formal expansions can be multiplied.
 
-For functions analytic at `a`, the Taylor series is additive and multiplicative. Multiplicativity
-rests on the product rule for divided differences, `TauCeti.dslope_mul`, which gives the Cauchy
-product formula for the coefficients of the power series of a product
+For functions analytic at `a`, the Taylor series is additive, subtractive, and multiplicative.
+Multiplicativity rests on the product rule for divided differences, `TauCeti.dslope_mul`, which
+gives the Cauchy product formula for the coefficients of the power series of a product
 (`HasFPowerSeriesAt.coeff_mul`). This is the coefficient calculus with which formal expansions of
 germs of analytic and meromorphic functions are compared with the functions themselves.
 
@@ -35,9 +38,12 @@ germs of analytic and meromorphic functions are compared with the functions them
 * `HasFPowerSeriesAt.coeff_mul`: the coefficients of the power series of `f * g` are the Cauchy
   products of those of `f` and `g`.
 * `TauCeti.taylorSeries`: the Taylor series at a point, as a formal power series.
-* `TauCeti.taylorSeries_add`, `TauCeti.taylorSeries_mul`, `TauCeti.taylorSeries_const`,
-  `TauCeti.taylorSeries_pow`: the Taylor series of analytic functions respects the ring
-  operations.
+* `AnalyticAt.coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv`: over a characteristic-zero
+  normed field into a complete normed algebra, the `n`-th Taylor coefficient is
+  `(n.factorial : 𝕜)⁻¹ • iteratedDeriv n f a`.
+* `TauCeti.taylorSeries_add`, `TauCeti.taylorSeries_neg`, `TauCeti.taylorSeries_sub`,
+  `TauCeti.taylorSeries_mul`, `TauCeti.taylorSeries_const`, `TauCeti.taylorSeries_pow`: the Taylor
+  series of analytic functions respects the ring operations.
 * `TauCeti.taylorSeries_eq_C_add_X_mul`: the constant term and divided-difference tail.
 
 ## References
@@ -61,6 +67,13 @@ coefficients. -/
 @[simp]
 theorem coeff_add (p q : FormalMultilinearSeries 𝕜 𝕜 E) (n : ℕ) :
     (p + q).coeff n = p.coeff n + q.coeff n :=
+  (rfl)
+
+/-- The coefficients of a negated formal multilinear series in one variable are the negations of
+its coefficients. -/
+@[simp]
+theorem coeff_neg (p : FormalMultilinearSeries 𝕜 𝕜 E) (n : ℕ) :
+    (-p).coeff n = -p.coeff n :=
   (rfl)
 
 /-- The coefficients of a scalar multiple of a formal multilinear series in one variable are the
@@ -126,6 +139,14 @@ theorem _root_.HasFPowerSeriesAt.coeff_taylorSeries {p : FormalMultilinearSeries
     PowerSeries.coeff n (taylorSeries f a) = p.coeff n := by
   rw [TauCeti.coeff_taylorSeries, hp.iterate_dslope_apply_eq_coeff]
 
+/-- Over a characteristic-zero nontrivially normed field `𝕜`, for an analytic function `f : 𝕜 → A`
+into a complete normed `𝕜`-algebra `A`, the `n`-th coefficient of `TauCeti.taylorSeries f a` is
+`(n.factorial : 𝕜)⁻¹ • iteratedDeriv n f a`. -/
+theorem _root_.AnalyticAt.coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv
+    [CharZero 𝕜] [CompleteSpace A] (hf : AnalyticAt 𝕜 f a) (n : ℕ) :
+    PowerSeries.coeff n (taylorSeries f a) = (n.factorial : 𝕜)⁻¹ • iteratedDeriv n f a := by
+  rw [coeff_taylorSeries, hf.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv n]
+
 /-- The Taylor series of `f` at `a` depends only on the germ of `f` at `a`. -/
 theorem taylorSeries_congr (h : f =ᶠ[𝓝 a] g) : taylorSeries f a = taylorSeries g a := by
   have key : ∀ n, (swap dslope a)^[n] f =ᶠ[𝓝 a] (swap dslope a)^[n] g := fun n ↦ by
@@ -157,6 +178,22 @@ theorem taylorSeries_add (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
   ext n
   rw [map_add, (hp.add hq).coeff_taylorSeries, hp.coeff_taylorSeries, hq.coeff_taylorSeries,
     FormalMultilinearSeries.coeff_add]
+
+/-- The Taylor series of a negated function analytic at `a` is the negation of its Taylor
+series. -/
+@[simp]
+theorem taylorSeries_neg (hf : AnalyticAt 𝕜 f a) :
+    taylorSeries (-f) a = -taylorSeries f a := by
+  obtain ⟨p, hp⟩ := hf
+  ext n
+  rw [map_neg, hp.neg.coeff_taylorSeries, hp.coeff_taylorSeries, FormalMultilinearSeries.coeff_neg]
+
+/-- The Taylor series of a difference of functions analytic at `a` is the difference of their
+Taylor series. -/
+@[simp]
+theorem taylorSeries_sub (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
+    taylorSeries (f - g) a = taylorSeries f a - taylorSeries g a := by
+  rw [sub_eq_add_neg, taylorSeries_add hf hg.neg, taylorSeries_neg hg, sub_eq_add_neg]
 
 /-- **Taylor series of a product.** The Taylor series of a product of functions analytic at `a`
 is the product of their Taylor series. -/

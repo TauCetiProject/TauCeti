@@ -136,6 +136,10 @@ theorem dslope_exp_ne_zero_of_abs_im_sub_lt {a b : ℂ} (h : |(b - a).im| < 2 * 
     rw [him, abs_mul, abs_of_pos Real.two_pi_pos]
   nlinarith [Real.pi_pos]
 
+/-- On the real axis, `dslope Complex.exp (x : ℂ) (y : ℂ)` does not vanish. -/
+theorem dslope_exp_ofReal_ne_zero (x y : ℝ) : dslope exp (x : ℂ) (y : ℂ) ≠ 0 :=
+  dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos])
+
 /-- On `Metric.ball a (2 * π)`, the divided difference `dslope Complex.exp a b` does not vanish. -/
 theorem dslope_exp_ne_zero_of_mem_ball {a b : ℂ} (h : b ∈ Metric.ball a (2 * Real.pi)) :
     dslope exp a b ≠ 0 :=

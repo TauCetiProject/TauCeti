@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Algebra.Exponential
 
@@ -30,6 +32,8 @@ map.
 * `norm_oneSubExpNegDivSelf_sub_one_le`: over `ℝ` or `ℂ`, the series differs from `1` by at most
   `exp ‖a‖ - 1`.
 * `isUnit_oneSubExpNegDivSelf`: consequently it is a unit when `‖a‖ < log 2`.
+* `oneSubExpNegDivSelf_eq_dslope_exp_neg` and `Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg`:
+  identification of `oneSubExpNegDivSelf` with the divided difference `dslope exp 0 (-z)`.
 
 ## References
 
@@ -168,3 +172,27 @@ theorem isUnit_oneSubExpNegDivSelf {a : A} (ha : ‖a‖ < Real.log 2) :
   exact sub_sub_self 1 (oneSubExpNegDivSelf 𝕂 a) ▸ (Units.oneSub _ h).isUnit
 
 end Bound
+
+section DSlope
+
+/-- Over `ℝ` or `ℂ`, the filled-in quotient `oneSubExpNegDivSelf 𝕜 z` coincides everywhere with
+`dslope NormedSpace.exp 0 (-z)`. -/
+theorem oneSubExpNegDivSelf_eq_dslope_exp_neg {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
+    oneSubExpNegDivSelf 𝕜 z = dslope (exp : 𝕜 → 𝕜) 0 (-z) := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp [dslope_same, (hasDerivAt_exp (𝕂 := 𝕜) (x := 0)).deriv]
+  · apply mul_left_cancel₀ (neg_ne_zero.mpr hz)
+    have h1 : (-z) * oneSubExpNegDivSelf 𝕜 z = exp (-z) - 1 := by
+      have h := mul_oneSubExpNegDivSelf (𝕂 := 𝕜) z
+      linear_combination -h
+    have h2 : (-z) * dslope (exp : 𝕜 → 𝕜) 0 (-z) = exp (-z) - 1 := by
+      simpa [exp_zero] using sub_smul_dslope (exp : 𝕜 → 𝕜) 0 (-z)
+    exact h1.trans h2.symm
+
+/-- The complex filled-in quotient `oneSubExpNegDivSelf ℂ z` coincides everywhere with
+`dslope Complex.exp 0 (-z)`. -/
+theorem _root_.Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg (z : ℂ) :
+    oneSubExpNegDivSelf ℂ z = dslope Complex.exp 0 (-z) := by
+  simpa only [Complex.exp_eq_exp_ℂ] using _root_.oneSubExpNegDivSelf_eq_dslope_exp_neg z
+
+end DSlope

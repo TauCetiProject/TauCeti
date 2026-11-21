@@ -14,10 +14,12 @@ import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Analytic.TaylorSeries
-import TauCeti.Analysis.Complex.PowerSeries.TaylorRemainder
+import TauCeti.Analysis.Complex.PowerSeries.ParametricDSlope
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Exp.Taylor
 
 /-!
 # Exponential-Bernoulli kernel and uniform Taylor remainder for Hurwitz continuation
@@ -84,19 +86,6 @@ theorem hurwitzKernel_def (c z : ℂ) :
 theorem hurwitzKernel_zero_right (c : ℂ) : hurwitzKernel c 0 = 1 := by
   simp [hurwitzKernel]
 
-private theorem oneSubExpNegDivSelf_eq_dslope_exp_neg (z : ℂ) :
-    oneSubExpNegDivSelf ℂ z = dslope Complex.exp 0 (-z) := by
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp
-  · apply mul_left_cancel₀ (neg_ne_zero.mpr hz)
-    have h1 : (-z) * oneSubExpNegDivSelf ℂ z = Complex.exp (-z) - 1 := by
-      have h := mul_oneSubExpNegDivSelf (𝕂 := ℂ) z
-      rw [← Complex.exp_eq_exp_ℂ] at h
-      linear_combination -h
-    have h2 : (-z) * dslope Complex.exp 0 (-z) = Complex.exp (-z) - 1 := by
-      simpa [Complex.exp_zero] using sub_smul_dslope Complex.exp 0 (-z)
-    exact h1.trans h2.symm
-
 /-- Away from `z = 0`, `hurwitzKernel c z` equals `z * exp (-c * z) / (1 - exp (-z))`. -/
 theorem hurwitzKernel_of_ne_zero (c : ℂ) {z : ℂ} (hz : z ≠ 0) :
     hurwitzKernel c z = z * Complex.exp (-c * z) / (1 - Complex.exp (-z)) := by
@@ -111,7 +100,7 @@ theorem hurwitzKernel_mul_exp_sub_one (c : ℂ) {z : ℂ} (hz : dslope Complex.e
   rcases eq_or_ne z 0 with rfl | hz0
   · simp
   · have hne : 1 - Complex.exp (-z) ≠ 0 := by
-      rw [← oneSubExpNegDivSelf_eq_dslope_exp_neg] at hz
+      rw [← Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg] at hz
       simpa [Complex.exp_eq_exp_ℂ] using mul_ne_zero hz0 hz
     rw [hurwitzKernel_of_ne_zero c hz0]
     have hexp : Complex.exp z - 1 = Complex.exp z * (1 - Complex.exp (-z)) := by
@@ -129,7 +118,7 @@ theorem analyticOnNhd_hurwitzKernel :
   have heq : (fun p : ℂ × ℂ => hurwitzKernel p.1 p.2) =
       fun p : ℂ × ℂ => Complex.exp (-p.1 * p.2) / dslope Complex.exp 0 (-p.2) := by
     ext p
-    simp [hurwitzKernel, oneSubExpNegDivSelf_eq_dslope_exp_neg]
+    simp [hurwitzKernel, Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg]
   rw [heq]
   intro p hp
   exact (((analyticAt_fst.neg).mul analyticAt_snd).cexp).div
@@ -174,28 +163,6 @@ example (c : ℂ) : hurwitzBernoulliCoeff 2 c = (c ^ 2 - c + 1 / 6) / 2 := by
   simp [hurwitzBernoulliCoeff_def, Polynomial.bernoulli_def, Finset.sum_range_succ]
   ring
 
-private theorem taylorSeries_cexp_sub_one_zero :
-    taylorSeries (fun z : ℂ => Complex.exp z - 1) 0 = PowerSeries.exp ℂ - 1 := by
-  have hexp1 : AnalyticAt ℂ (fun z => Complex.exp z - 1) 0 := by fun_prop
-  ext n
-  rw [hexp1.coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv n, map_sub,
-    PowerSeries.coeff_exp, PowerSeries.coeff_one]
-  rcases n with _ | n
-  · simp
-  · have hder : iteratedDeriv (n + 1) (fun z : ℂ => Complex.exp z - 1) 0 = 1 := by
-      rw [iteratedDeriv_fun_sub (by fun_prop) (by fun_prop), iteratedDeriv_const]
-      simp [iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
-    simp [hder, smul_eq_mul, div_eq_mul_inv]
-
-private theorem taylorSeries_cexp_mul_zero (a : ℂ) :
-    taylorSeries (fun z : ℂ => Complex.exp (a * z)) 0 =
-      PowerSeries.rescale a (PowerSeries.exp ℂ) := by
-  have hexp2 : AnalyticAt ℂ (fun z => Complex.exp (a * z)) 0 := by fun_prop
-  ext n
-  rw [hexp2.coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv n,
-    PowerSeries.coeff_rescale, PowerSeries.coeff_exp, iteratedDeriv_cexp_const_mul]
-  simp [smul_eq_mul, div_eq_mul_inv, mul_comm]
-
 private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c : ℂ) :
     iteratedDeriv m (hurwitzKernel c) 0 =
       Polynomial.aeval (1 - c) (Polynomial.bernoulli m) := by
@@ -212,7 +179,7 @@ private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c :
   rw [taylorSeries_mul hf hexp1, taylorSeries_mul hid_an hexp2] at ht
   have hid : taylorSeries (fun z : ℂ => z) 0 = PowerSeries.X := by
     simpa only [sub_zero] using taylorSeries_sub_const (𝕜 := ℂ) (a := (0 : ℂ))
-  rw [hid, taylorSeries_cexp_sub_one_zero, taylorSeries_cexp_mul_zero (1 - c),
+  rw [hid, Complex.taylorSeries_exp_sub_one_zero, Complex.taylorSeries_exp_mul_zero (1 - c),
     ← Polynomial.bernoulli_generating_function (A := ℂ) (1 - c)] at ht
   have hne : PowerSeries.exp ℂ - (1 : PowerSeries ℂ) ≠ 0 := fun h0 => by
     have := congrArg (PowerSeries.coeff 1) h0
@@ -235,6 +202,11 @@ theorem iteratedDeriv_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
   rw [iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub]
   simpa [Polynomial.aeval_comp, Algebra.smul_def] using
     congrArg (Polynomial.aeval c) (Polynomial.bernoulli_comp_one_sub_X n)
+
+private theorem inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
+    (k.factorial : ℂ)⁻¹ • iteratedDeriv k (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c := by
+  rw [smul_eq_mul, iteratedDeriv_hurwitzKernel_zero, hurwitzBernoulliCoeff]
+  ring
 
 /-- The order-`M` Taylor remainder quotient of `hurwitzKernel c` at `z = 0`, defined as the
 `(M + 1)`-fold divided difference `(Function.swap dslope 0)^[M + 1] (hurwitzKernel c) z`. -/
@@ -260,14 +232,9 @@ theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c z : ℂ)
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
     analyticOnNhd_hurwitzKernel_right c 0 (by simp)
   have h := hf.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope (M + 1) z
-  simp only [sub_zero, smul_eq_mul] at h
-  have hsum : ∑ k ∈ Finset.range (M + 1),
-        z ^ k * ((k.factorial : ℂ)⁻¹ * iteratedDeriv k (hurwitzKernel c) 0) =
-      ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k :=
-    Finset.sum_congr rfl fun k _ => by
-      rw [iteratedDeriv_hurwitzKernel_zero, hurwitzBernoulliCoeff]; ring
-  rw [hsum] at h
-  exact h
+  simp_rw [inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero] at h
+  simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul,
+    mul_comm _ (hurwitzBernoulliCoeff _ c)] using h
 
 /-- At `z = 0`, the order-`M` Taylor remainder quotient equals the next Taylor coefficient
 `hurwitzBernoulliCoeff (M + 1) c`. -/
@@ -277,8 +244,7 @@ theorem hurwitzTaylorQuot_zero_right (M : ℕ) (c : ℂ) :
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
     analyticOnNhd_hurwitzKernel_right c 0 (by simp)
   rw [hurwitzTaylorQuot, hf.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv (M + 1),
-    smul_eq_mul, iteratedDeriv_hurwitzKernel_zero, hurwitzBernoulliCoeff]
-  ring
+    inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero]
 
 /-- Step relation between consecutive Taylor remainder quotients. -/
 theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
@@ -287,13 +253,8 @@ theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
     analyticOnNhd_hurwitzKernel_right c 0 (by simp)
   have h := hf.iterate_dslope_eq_inv_factorial_smul_add_sub_smul_succ (M + 1) z
-  simp only [sub_zero, smul_eq_mul, iteratedDeriv_hurwitzKernel_zero] at h
-  have hcoeff : ((M + 1).factorial : ℂ)⁻¹ *
-      ((-1 : ℂ) ^ (M + 1) * Polynomial.aeval c (Polynomial.bernoulli (M + 1))) =
-      hurwitzBernoulliCoeff (M + 1) c := by
-    rw [hurwitzBernoulliCoeff]; ring
-  rw [hcoeff] at h
-  exact h
+  rw [inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero] at h
+  simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul] using h
 
 /-- `(c, z) ↦ iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c` is jointly analytic on
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
@@ -319,7 +280,7 @@ theorem exists_norm_iteratedDeriv_hurwitzTaylorQuot_le {K : Set ℂ} (hK : IsCom
   have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
   have hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
     rintro ⟨_, _⟩ ⟨_, t, _, rfl⟩
-    exact Complex.dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos])
+    simpa using Complex.dslope_exp_ofReal_ne_zero 0 (-t)
   obtain ⟨B, hB⟩ := hS_comp.exists_bound_of_continuousOn
     ((analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot M d).continuousOn.mono hS_sub)
   exact ⟨max B 0, le_max_right _ _, fun c hc t ht =>

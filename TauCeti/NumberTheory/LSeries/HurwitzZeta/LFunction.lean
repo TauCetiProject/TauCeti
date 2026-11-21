@@ -12,13 +12,13 @@ public import TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod
 # Finite complex-Hurwitz decomposition of continued periodic L-functions
 
 Reindexing `ZMod N` over positive residue representatives `a ∈ Finset.Icc 1 N` expresses
-`ZMod.LFunction Φ s` (for `Φ : ZMod N → ℂ`, including Dirichlet characters
-`χ : DirichletCharacter ℂ N` via `DirichletCharacter.LFunction_eq_ZMod`) in terms of the
-continued complex Hurwitz zeta function `TauCeti.complexHurwitzZeta s ((a : ℂ) / N)` away from
-`s = 1`.
+`ZMod.LFunction Φ s` (for `Φ : ZMod N → ℂ`, applying in particular to any Dirichlet character
+`χ : DirichletCharacter ℂ N`, whose `χ.LFunction` is definitionally `ZMod.LFunction χ`) in terms
+of the continued complex Hurwitz zeta function `TauCeti.complexHurwitzZeta s ((a : ℂ) / N)` away
+from `s = 1`.
 
-See `TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod` for the lightweight circle-Hurwitz and
-convergent `TauCeti.complexHurwitzSeries` decompositions and `DirichletCharacter.LFunction_eq_ZMod`.
+See `TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod` for the lightweight circle-Hurwitz, transport,
+and convergent `TauCeti.complexHurwitzSeries` decompositions.
 
 ## Main results
 
@@ -35,21 +35,13 @@ namespace ZMod
 variable {N : ℕ} [NeZero N]
 
 /-- Away from `s = 1`, `ZMod.LFunction Φ s` is `(N : ℂ) ^ (-s)` times the finite sum of
-`Φ a * TauCeti.complexHurwitzZeta s (a / N)` over `a ∈ {1, ..., N}`. Applies in particular to any
-Dirichlet character `χ : DirichletCharacter ℂ N` via `DirichletCharacter.LFunction_eq_ZMod`. -/
+`Φ a * TauCeti.complexHurwitzZeta s (a / N)` over `a ∈ {1, ..., N}`. -/
 theorem LFunction_eq_cpow_mul_sum_Icc_complexHurwitzZeta (Φ : ZMod N → ℂ) {s : ℂ} (hs : s ≠ 1) :
     ZMod.LFunction Φ s =
       (N : ℂ) ^ (-s) *
-        ∑ a ∈ Finset.Icc 1 N, Φ a * TauCeti.complexHurwitzZeta s ((a : ℂ) / N) := by
-  rw [ZMod.LFunction_eq_cpow_mul_sum_Icc_hurwitzZeta]
-  congr 1
-  refine Finset.sum_congr rfl fun a ha => ?_
-  obtain ⟨ha1, haN⟩ := Finset.mem_Icc.mp ha
-  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
-  have hx : (a : ℝ) / N ∈ Ioc 0 1 :=
-    ⟨div_pos (by exact_mod_cast ha1) hN, (div_le_one hN).mpr (by exact_mod_cast haN)⟩
-  rw [← TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta hs hx]
-  push_cast; rfl
+        ∑ a ∈ Finset.Icc 1 N, Φ a * TauCeti.complexHurwitzZeta s ((a : ℂ) / N) :=
+  LFunction_eq_cpow_mul_sum_Icc_of_eq_hurwitzZeta Φ s
+    fun _ hx => TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta hs hx
 
 end ZMod
 
