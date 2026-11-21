@@ -28,7 +28,7 @@ attached to `K(a)`, the character that describes a quadratic twist of an ellipti
 
 * `TauCeti.exists_continuousMonoidHom_apply_eq_zsmul_of_sq_eq`: some continuous character
   `η : Gal(L/K) →ₜ* ℤˣ` satisfies `g a = η(g) • a` for every `g`.
-* `TauCeti.ContinuousMonoidHom.eq_of_apply_eq_zsmul`: two such characters agree when `a ≠ 0` and
+* `TauCeti.continuousMonoidHom_eq_of_apply_eq_zsmul`: two such characters agree when `a ≠ 0` and
   `2 ≠ 0` in `L`.
 * `TauCeti.mem_range_algebraMap_of_sq_eq_of_forall_apply_eq`: in a normal extension, with
   `2 ≠ 0` in `K`, a square root of an element of `K` fixed by every automorphism lies in `K`.
@@ -77,7 +77,7 @@ theorem exists_continuousMonoidHom_apply_eq_zsmul_of_sq_eq {a : L} {c : K}
 
 /-- **The sign character of a square root is unique.** If `a ≠ 0` and `2 ≠ 0` in `L`, two
 characters `η, η'` with `g a = η(g) • a = η'(g) • a` for every automorphism `g` are equal. -/
-theorem ContinuousMonoidHom.eq_of_apply_eq_zsmul {a : L} (ha : a ≠ 0) (h2 : (2 : L) ≠ 0)
+theorem continuousMonoidHom_eq_of_apply_eq_zsmul {a : L} (ha : a ≠ 0) (h2 : (2 : L) ≠ 0)
     {η η' : (L ≃ₐ[K] L) →ₜ* ℤˣ} (h : ∀ g : L ≃ₐ[K] L, g a = (η g : ℤ) • a)
     (h' : ∀ g : L ≃ₐ[K] L, g a = (η' g : ℤ) • a) : η = η' := by
   ext g
