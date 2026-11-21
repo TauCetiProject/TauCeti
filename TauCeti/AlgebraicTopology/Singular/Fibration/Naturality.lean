@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
-public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.FiberHomotopyEquiv
 
 /-!
 # Naturality of the Serre spectral sequence in maps of fibrations
@@ -36,10 +35,11 @@ fibres over the centre of the cell
 * **Comparison theorem.** If `f` induces isomorphisms on the homology of the fibres over the points
   of `C`, then the morphism of Serre spectral sequences is an isomorphism on every object of every
   page from the first on (`TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f`).
-* **Fibre homotopy equivalences.** In particular a fibre homotopy equivalence over `B` between
-  Serre fibrations induces an isomorphism of their Serre spectral sequences from the first page on
-  (`TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`). This is how the fibration
-  theorem of DG Morse homology passes from a Hurewicz fibration to its Moore-path replacement.
+* **Fibre homotopy equivalences.** A fibre homotopy equivalence over `B`, between any maps to `B`,
+  induces an isomorphism of their Serre spectral sequences from the first page on
+  (`TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`), since it is a homology
+  isomorphism on each step of the filtrations. This is how the fibration theorem of DG Morse
+  homology passes from a Hurewicz fibration to its Moore-path replacement.
 
 ## Main definitions
 
@@ -57,7 +57,7 @@ fibres over the centre of the cell
   that is a homology isomorphism on the fibres induces an isomorphism of Serre spectral sequences
   from the first page on.
 * `TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`: so does a fibre homotopy
-  equivalence.
+  equivalence over `B`, with no fibration hypothesis.
 
 ## References
 
@@ -213,25 +213,48 @@ theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
   rw [(IsIso.eq_inv_comp _).2 e.symm]
   infer_instance
 
-include hp hp' in
 /-- **A fibre homotopy equivalence induces an isomorphism of Serre spectral sequences.** For a
-fibre homotopy equivalence `Φ` over `B` between Serre fibrations `p` and `p'`, the morphism of Serre
-spectral sequences induced by its forward map is an isomorphism on every object of every page
-`r ≥ 2`: the restrictions of `Φ` to the fibres are homotopy equivalences, hence homology
-isomorphisms. -/
+fibre homotopy equivalence `Φ` over `B` between `p` and `p'`, the morphism of Serre spectral
+sequences induced by its forward map is an isomorphism on every object of every page `r ≥ 2`. No
+fibration hypothesis is needed: on each step `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))` of the filtration, the
+restriction of `Φ` over `Xᵏ` is a fibre homotopy equivalence, hence a homology isomorphism relative
+to the preimages of `Xᵏ⁻¹`. -/
 theorem _root_.TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f
     (Φ : FiberHomotopyEquiv p.hom p'.hom) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
     IsIso (((serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
       (_root_.TopCat.hom_ext Φ.comp_toFun)).hom r hr).f pq) := by
-  refine TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f hp hp' R
-    (_root_.TopCat.hom_ext Φ.comp_toFun) (fun b _ q ↦ ?_) r hr pq
-  -- The restriction of `Φ` to the fibres over `b` is the homotopy equivalence `Φ.fiber b`.
-  have h : (_root_.TopCat.ofHom Φ.toFun).preimageMap (_root_.TopCat.hom_ext Φ.comp_toFun) {b} =
-      _root_.TopCat.ofHom (Φ.fiber b).toFun := by
-    ext x
-    exact (TopCat.Hom.coe_preimageMap_apply _ _ _ x).trans (Φ.coe_fiber_apply b x).symm
-  rw [h]
-  exact (Φ.fiber b).isWeakHomotopyEquivalence.isIso_singularHomologyMap _ q
+  refine isIso_filteredSpaceSpectralSequenceMap_hom_f _ _ _ _ _ (fun b n ↦ ?_) r hr pq
+  -- The step `b ≤ b + 1` is the pair of preimages of the skeleta `S₀ ⊆ S₁`, and over `S₁` it is
+  -- the map of pairs of the restriction of `Φ`, relative to the preimages of `S₀`.
+  let S₀ : Set B := skeletonLT C ((b + 1).toNat : ℕ∞)
+  let S₁ : Set B := skeletonLT C ((b + 1 + 1).toNat : ℕ∞)
+  have hS : S₀ ⊆ S₁ := skeletonLT_mono (by norm_cast; lia)
+  -- The preimage of `S₀` under the restriction `p⁻¹(S₁) ⟶ S₁` of `p` is by definition the preimage
+  -- of `p⁻¹(S₀)` in `p⁻¹(S₁)`, the form taken by `TopPair.ofSubsetPreimageValIso`.
+  let φ : TopPair.ofSubset (X := _root_.TopCat.of (p ⁻¹' S₁)) (Subtype.val ⁻¹' (p ⁻¹' S₀)) ⟶
+      TopPair.ofSubset (X := _root_.TopCat.of (p' ⁻¹' S₁)) (Subtype.val ⁻¹' (p' ⁻¹' S₀)) :=
+    (Φ.restrictPreimage S₁).preimagePairMap (Subtype.val ⁻¹' S₀)
+  have hφ : IsIso (TopPair.singularHomologyMap φ (ModuleCat.of R R) n) :=
+    (Φ.restrictPreimage S₁).isIso_singularHomologyMap_preimagePairMap (Subtype.val ⁻¹' S₀)
+      (ModuleCat.of R R) n
+  refine (TopPair.isIso_singularHomologyMap_ofInclusion_congr (ModuleCat.of R R) Φ.toFun
+    (preimageSkeleton_def p b) (preimageSkeleton_def p (b + 1)) (preimageSkeleton_def p' b)
+    (preimageSkeleton_def p' (b + 1)) _
+    ((TopPair.ofSubsetPreimageValIso (preimage_mono hS)).inv ≫ φ ≫
+      (TopPair.ofSubsetPreimageValIso (preimage_mono hS)).hom)
+    (filteredSpaceStepMap_fst_apply _ _ _ _ _) (fun x ↦ ?_) n).2 ?_
+  · -- The identifications of the pairs are the identity on the ambient spaces.
+    have h : TopPair.Hom.fst ((TopPair.ofSubsetPreimageValIso (preimage_mono hS)).inv ≫ φ ≫
+        (TopPair.ofSubsetPreimageValIso (preimage_mono hS)).hom) = TopPair.Hom.fst φ := by
+      rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_inv_fst,
+        TopPair.ofSubsetPreimageValIso_hom_fst]
+      -- The identities are those of `p⁻¹(S₁)` and `p'⁻¹(S₁)`, the ambient spaces of both pairs.
+      exact (Category.id_comp _).trans (Category.comp_id _)
+    refine (congrArg Subtype.val (ConcreteCategory.congr_hom h x)).trans ?_
+    rw [FiberHomotopyEquiv.preimagePairMap_fst]
+    exact Φ.coe_restrictPreimage_toFun_apply S₁ x
+  rw [TopPair.singularHomologyMap_comp, TopPair.singularHomologyMap_comp]
+  infer_instance
 
 end OverBase
 
