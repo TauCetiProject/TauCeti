@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.NumberTheory.Real.Irrational
-import Mathlib.RingTheory.Localization.Integer
+import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Polynomial.ScaleRoots
 
 /-!
@@ -39,7 +39,9 @@ be stable under the quotients and localizations used to cut a valuation ring int
   `IsAlgClosed`.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.of_surjective` and
   `TauCeti.IsAbsolutelyIntegrallyClosed.of_isLocalization`: quotients and localizations of an
-  absolutely integrally closed ring are absolutely integrally closed. Arbitrary products are too.
+  absolutely integrally closed ring are absolutely integrally closed.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.pi`: an arbitrary product of absolutely integrally closed
+  rings is absolutely integrally closed.
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed`: a domain is
   absolutely integrally closed if and only if it is integrally closed and its fraction field is
   algebraically closed.
@@ -59,9 +61,10 @@ open Polynomial
 namespace TauCeti
 
 /-- A commutative ring `A` is *absolutely integrally closed* if every monic polynomial of positive
-degree over `A` has a root in `A`. The constant polynomial `1` imposes no condition, so the zero
-ring is absolutely integrally closed; see `IsAbsolutelyIntegrallyClosed.splits` for the
-equivalent formulation that every monic polynomial is a product of linear factors. -/
+degree over `A` has a root in `A`. The positive-degree restriction excludes the constants, which
+have no root in a nontrivial ring; the zero ring qualifies vacuously, since no polynomial over it
+has positive degree. See `IsAbsolutelyIntegrallyClosed.splits` for the equivalent formulation
+that every monic polynomial is a product of linear factors. -/
 class IsAbsolutelyIntegrallyClosed (A : Type*) [CommRing A] : Prop where
   /-- Every monic polynomial of positive degree has a root. -/
   exists_root (p : A[X]) (hp : p.Monic) (hdeg : 0 < p.natDegree) : ∃ x, p.IsRoot x
@@ -90,11 +93,11 @@ theorem of_subsingleton [Subsingleton A] : IsAbsolutelyIntegrallyClosed A where
   exists_root p _ hdeg := by simp [natDegree_of_subsingleton] at hdeg
 
 /-- The image of an absolutely integrally closed ring under a surjective ring homomorphism is
-absolutely integrally closed: lift a monic polynomial to a monic polynomial of the same degree and
-map one of its roots. -/
+absolutely integrally closed. -/
 theorem of_surjective [IsAbsolutelyIntegrallyClosed A] (f : A →+* B)
     (hf : Function.Surjective f) : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by
+    -- Lift `q` to a monic polynomial of the same degree and map one of its roots.
     obtain ⟨p, rfl, hpdeg, hp⟩ := lifts_and_natDegree_eq_and_monic
       ((lifts_iff_coeff_lifts q).mpr fun _ ↦ hf _) hq
     obtain ⟨a, ha⟩ := exists_root p hp (hpdeg ▸ hdeg)
@@ -105,29 +108,16 @@ instance quotient [IsAbsolutelyIntegrallyClosed A] (I : Ideal A) :
     IsAbsolutelyIntegrallyClosed (A ⧸ I) :=
   of_surjective _ Ideal.Quotient.mk_surjective
 
-/-- A localization of an absolutely integrally closed ring is absolutely integrally closed. For a
-monic `q` of degree `n` over `B` and a common denominator `s` of its coefficients, the rescaled
-polynomial with coefficients `qᵢ sⁿ⁻ⁱ` is monic with coefficients from `A`, and a root `y` of it
-gives the root `y / s` of `q`. -/
+/-- A localization of an absolutely integrally closed ring is absolutely integrally closed. -/
 theorem of_isLocalization [IsAbsolutelyIntegrallyClosed A] [Algebra A B] (M : Submonoid A)
     [IsLocalization M B] : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by
-    obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples M (Finset.range q.natDegree) q.coeff
+    -- Rescaling the roots of `q` by a common denominator `s` of its coefficients gives a monic
+    -- polynomial over `A`; a root `y` of it gives the root `y / s` of `q`.
+    set s := IsLocalization.commonDenom M q.support q.coeff
     have hu : IsUnit (algebraMap A B s) := IsLocalization.map_units B s
-    have hlifts : q.scaleRoots (algebraMap A B s) ∈ lifts (algebraMap A B) := by
-      refine (lifts_iff_coeff_lifts _).mpr fun i ↦ ?_
-      rw [coeff_scaleRoots]
-      rcases lt_or_ge i q.natDegree with hi | hi
-      · obtain ⟨b, hb⟩ := hs i (Finset.mem_range.mpr hi)
-        obtain ⟨k, hk⟩ : ∃ k, q.natDegree - i = k + 1 := ⟨_, (Nat.succ_pred_eq_of_pos
-          (Nat.sub_pos_of_lt hi)).symm⟩
-        refine ⟨b * (s : A) ^ k, ?_⟩
-        rw [hk, map_mul, hb, map_pow, Algebra.smul_def]
-        ring
-      · rw [Nat.sub_eq_zero_of_le hi, pow_zero, mul_one]
-        rcases hi.eq_or_lt with rfl | hi
-        · exact ⟨1, by rw [map_one, hq.coeff_natDegree]⟩
-        · exact ⟨0, by rw [map_zero, coeff_eq_zero_of_natDegree_lt hi]⟩
+    have hlifts := IsLocalization.scaleRoots_commonDenom_mem_lifts M q
+      (by rw [hq.leadingCoeff]; exact one_mem _)
     obtain ⟨p, hpq, hpdeg, hp⟩ :=
       lifts_and_natDegree_eq_and_monic hlifts ((monic_scaleRoots_iff _).mpr hq)
     rw [natDegree_scaleRoots] at hpdeg
@@ -140,9 +130,9 @@ instance localization [IsAbsolutelyIntegrallyClosed A] (M : Submonoid A) :
     IsAbsolutelyIntegrallyClosed (Localization M) :=
   of_isLocalization M
 
-/-- An arbitrary product of absolutely integrally closed rings is absolutely integrally closed:
-find a root in each nontrivial factor. In particular a finite product of algebraically closed
-fields is absolutely integrally closed, although it is not a domain. -/
+/-- An arbitrary product of absolutely integrally closed rings is absolutely integrally closed.
+In particular a finite product of algebraically closed fields is absolutely integrally closed,
+although it is not a domain. -/
 instance pi {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)]
     [∀ i, IsAbsolutelyIntegrallyClosed (R i)] : IsAbsolutelyIntegrallyClosed (∀ i, R i) where
   exists_root q hq hdeg := by
@@ -152,9 +142,7 @@ instance pi {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)]
       · exact exists_root _ (hq.map _) ((hq.natDegree_map (Pi.evalRingHom R i)).symm ▸ hdeg)
     choose x hx using key
     refine ⟨x, funext fun i ↦ ?_⟩
-    rw [Pi.zero_apply, ← Pi.evalRingHom_apply R i (eval x q), ← eval₂_hom, Pi.evalRingHom_apply,
-      ← eval_map]
-    exact hx i
+    exact (eval₂_hom (Pi.evalRingHom R i) x).symm.trans (by rw [← eval_map]; exact hx i)
 
 end IsAbsolutelyIntegrallyClosed
 
@@ -176,15 +164,15 @@ theorem isAbsolutelyIntegrallyClosed_iff_isAlgClosed {K : Type*} [Field K] :
   ⟨fun _ ↦ IsAlgClosed.of_exists_root K fun p hp hirr ↦
     IsAbsolutelyIntegrallyClosed.exists_root p hp hirr.natDegree_pos, fun _ ↦ inferInstance⟩
 
-/-- An absolutely integrally closed domain is integrally closed: an integral element of the
-fraction field is a root of a monic polynomial over `A`, which is a product of linear factors
-over `A`. -/
+/-- An absolutely integrally closed domain is integrally closed. -/
 instance (priority := 100) IsAbsolutelyIntegrallyClosed.isIntegrallyClosed [IsDomain A]
     [IsAbsolutelyIntegrallyClosed A] : IsIntegrallyClosed A := by
+  -- An integral element of the fraction field is a root of a monic polynomial over `A`, which is
+  -- a product of linear factors over `A`.
   refine (isIntegrallyClosed_iff (FractionRing A)).mpr fun {x} ⟨p, hp, hpx⟩ ↦ ?_
   obtain ⟨m, hm⟩ := splits_iff_exists_multiset.mp (IsAbsolutelyIntegrallyClosed.splits hp)
   rw [hp.leadingCoeff, map_one, one_mul] at hm
-  rw [hm, eval₂_multiset_prod, Multiset.prod_eq_zero_iff, Multiset.map_map,
+  simp only [hm, eval₂_multiset_prod, Multiset.prod_eq_zero_iff, Multiset.map_map,
     Multiset.mem_map] at hpx
   obtain ⟨a, -, ha⟩ := hpx
   exact ⟨a, (sub_eq_zero.mp (by simpa using ha)).symm⟩
@@ -200,11 +188,11 @@ theorem IsAbsolutelyIntegrallyClosed.isAlgClosed [IsAbsolutelyIntegrallyClosed A
   isAbsolutelyIntegrallyClosed_iff_isAlgClosed.mp this
 
 /-- An integrally closed domain with algebraically closed fraction field is absolutely integrally
-closed: a monic polynomial over `A` has a root in the fraction field, which is integral over `A`
-and hence lies in `A`. -/
+closed. -/
 theorem IsAbsolutelyIntegrallyClosed.of_isIntegrallyClosed_of_isAlgClosed [IsIntegrallyClosed A]
     [IsAlgClosed K] : IsAbsolutelyIntegrallyClosed A where
   exists_root p hp hdeg := by
+    -- A root of `p` in the fraction field is integral over `A`, hence lies in `A`.
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_root (p.map (algebraMap A K))
       (natDegree_pos_iff_degree_pos.mp ((hp.natDegree_map (algebraMap A K)).symm ▸ hdeg)).ne'
     obtain ⟨y, rfl⟩ :=
