@@ -9,6 +9,7 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
+import TauCeti.GroupTheory.Perm.Cycle.Colouring
 import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
@@ -41,7 +42,8 @@ permutations of the same type.
   moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
-* `Equiv.Perm.card_image_invariantColouringEquiv_le_and_eq_iff`: an invariant colouring uses at
+* `Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount` and
+  `Equiv.Perm.card_image_invariantColouringEquiv_eq_orbitCount_iff`: an invariant colouring uses at
   most one colour per orbit and attains the bound exactly when its orbit labels are injective.
 * `Equiv.Perm.SameCycle.of_forall_sameCycle_apply`: a permutation moving every point within its
   cycle of `π` has each of its cycles inside a cycle of `π`.
@@ -108,33 +110,23 @@ noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
 theorem orbitCount_def (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
 
-/-- Passing from cycle labels to a colouring preserves the set of colours used. -/
-@[simp] theorem _root_.Equiv.Perm.range_invariantColouringEquiv {σ : Type*}
-    (π : Perm α) (g : Quotient (SameCycle.setoid π) → σ) :
-    Set.range (invariantColouringEquiv π g : α → σ) = Set.range g := by
-  have h : (invariantColouringEquiv π g : α → σ) = g ∘ Quotient.mk _ :=
-    funext (invariantColouringEquiv_apply_coe π g)
-  rw [h, Quotient.mk_surjective.range_comp]
-
-/-- The induced colouring and its cycle labels use the same number of colours.
-See `Equiv.Perm.range_invariantColouringEquiv` for equality of the colour sets. -/
-theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv {σ : Type*}
-    [Fintype α] [DecidableEq σ] (π : Perm α) (g : Quotient (SameCycle.setoid π) → σ) :
-    (Finset.univ.image (invariantColouringEquiv π g).val).card = Nat.card (Set.range g) := by
-  rw [← π.range_invariantColouringEquiv, ← Set.image_univ, ← Finset.coe_univ,
-    ← Finset.coe_image, Nat.card_coe_set_eq, Set.ncard_coe_finset]
-
-/-- The number of colours used is at most the number of orbits, with equality exactly when the
-cycle labels are injective. -/
-theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_and_eq_iff
+/-- An invariant colouring uses at most one colour per orbit. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount
     {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
-    (Finset.univ.image (invariantColouringEquiv π f).val).card ≤ orbitCount π ∧
-      ((Finset.univ.image (invariantColouringEquiv π f).val).card = orbitCount π ↔
-        Function.Injective f) := by
+    (Finset.univ.image (invariantColouringEquiv π f).val).card ≤ orbitCount π := by
+  rw [π.card_image_invariantColouringEquiv, orbitCount_def]
+  exact Finite.card_range_le f
+
+/-- An invariant colouring uses as many colours as there are orbits exactly when its orbit labels
+are injective. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_eq_orbitCount_iff
+    {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    (Finset.univ.image (invariantColouringEquiv π f).val).card = orbitCount π ↔
+      Function.Injective f := by
   rw [π.card_image_invariantColouringEquiv, orbitCount_def]
   have h : (Set.univ : Set (Quotient (SameCycle.setoid π))).Finite := Set.finite_univ
   simpa only [Set.image_univ, Set.injOn_univ, ← Nat.card_coe_set_eq, Nat.card_univ] using
-    And.intro (Set.ncard_image_le (f := f) h) (Set.ncard_image_iff (f := f) h)
+    Set.ncard_image_iff (f := f) h
 
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]

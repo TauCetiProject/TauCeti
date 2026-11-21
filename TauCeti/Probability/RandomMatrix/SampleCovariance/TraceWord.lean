@@ -138,12 +138,12 @@ private theorem norm_readFactor {k : ℕ} (s : Fin k ⊕ Fin k) (z : 𝕜) :
     ‖readFactor s z‖ = ‖z‖ := by
   cases s <;> simp [readFactor]
 
-/-- For entries in `L^(2k)` and `k > 0`, a common upper bound on the absolute `2k`th entry
-moments bounds the norm of the expected product along a bipartite word of half-length `k`. -/
+/-- For `k > 0`, a common upper bound on the integrable absolute `2k`th moments of the visited
+entries bounds the norm of the expected product along a bipartite word of half-length `k`. -/
 theorem norm_integral_prod_apply_mul_star_apply_le {k : ℕ} (hk : k ≠ 0)
     (u : Fin k → p) (v : Fin k → n)
-    (hXk : ∀ s, MemLp (fun ω ↦ X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2)
-      (2 * k) P) {B : ℝ}
+    (hint : ∀ s, Integrable
+      (fun ω ↦ ‖X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2‖ ^ (2 * k)) P) {B : ℝ}
     (hB : ∀ s, ∫ ω, ‖X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2‖ ^ (2 * k) ∂P ≤ B) :
     ‖∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P‖ ≤ B := by
   have : NeZero k := ⟨hk⟩
@@ -151,9 +151,7 @@ theorem norm_integral_prod_apply_mul_star_apply_le {k : ℕ} (hk : k ≠ 0)
   simp_rw [prod_mul_star_eq_prod_readFactor]
   refine norm_integral_prod_le_of_integral_norm_pow_le _ Finset.univ_nonempty ?_ ?_
   · intro s _
-    simp only [hcard, norm_readFactor]
-    exact MemLp.integrable_norm_pow
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk s) (by omega)
+    simpa only [hcard, norm_readFactor] using hint s
   · intro s _
     simpa only [hcard, norm_readFactor] using hB s
 

@@ -9,8 +9,7 @@ public import TauCeti.Combinatorics.TraceWord.Counting
 public import TauCeti.Data.Fin.Sum
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.Sum
-public import Mathlib.Logic.Equiv.Fin.Rotate
-import TauCeti.Data.Fin.Cast
+import TauCeti.Data.Finset.Sum
 
 /-!
 # Vertex and edge counts of bipartite trace words
@@ -35,6 +34,8 @@ the number of their labellings by `p` row and `n` column indices.
 ## Main declarations
 
 * `TauCeti.bipartiteEdge`: the positions read by the steps of a bipartite word.
+* `TauCeti.image_univ_sumMap_comp_interleaveIndexEquiv_symm`: read as an ordinary cyclic word
+  through `TauCeti.interleaveIndexEquiv`, a bipartite word visits its row and column indices.
 * `TauCeti.card_image_add_card_image_le_card_image_bipartiteEdge_add_one`: a bipartite word
   visits at most one more row and column index than it reads positions.
 * `TauCeti.card_image_bipartiteEdge_le_of_no_singleton_edge`: a bipartite word of half-length
@@ -82,7 +83,7 @@ theorem bipartiteEdge_inr (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
 
 /-- The ordinary edge traversed by an interleaved step is the unordered pair of vertices
 specified by the bipartite edge of that step. -/
-theorem interleaveIndexEquiv_edge_eq_bipartiteEdge (u : Fin k → α) (v : Fin k → β)
+theorem interleaveIndexEquiv_edge_eq_pair_bipartiteEdge (u : Fin k → α) (v : Fin k → β)
     (a : Fin k ⊕ Fin k) :
     let e := interleaveIndexEquiv k
     let w := Sum.map u v ∘ e.symm
@@ -97,44 +98,32 @@ theorem interleaveIndexEquiv_edge_eq_bipartiteEdge (u : Fin k → α) (v : Fin k
 
 variable [DecidableEq α] [DecidableEq β]
 
+/-- The interleaved word visits exactly the row indices and the column indices of the
+bipartite word. -/
+theorem image_univ_sumMap_comp_interleaveIndexEquiv_symm (u : Fin k → α) (v : Fin k → β) :
+    univ.image (Sum.map u v ∘ (interleaveIndexEquiv k).symm) =
+      (univ.image u).disjSum (univ.image v) := by
+  rw [← image_image, image_univ_equiv, ← univ_disjSum_univ, image_sumMap_disjSum]
+
 /-- A bipartite word visits at most one more row and column index than it reads positions.
 The word may revisit indices and positions. -/
 theorem card_image_add_card_image_le_card_image_bipartiteEdge_add_one (u : Fin k → α)
     (v : Fin k → β) :
     #(univ.image u) + #(univ.image v) ≤ #(univ.image (bipartiteEdge u v)) + 1 := by
-  cases k with
-  | zero => simp
-  | succ m =>
-    -- Read the alternating word as an ordinary path, omitting its closing step.
-    let e := interleaveIndexEquiv (m + 1)
-    let encode (i : ℕ) : Fin (2 * (m + 1)) := Fin.ofNat (2 * (m + 1)) i
-    let w (i : ℕ) : α ⊕ β := Sum.map u v (e.symm (encode i))
-    let edge (p : α × β) : Sym2 (α ⊕ β) := s(.inl p.1, .inr p.2)
-    have hread (a : Fin (m + 1) ⊕ Fin (m + 1)) : w (e a).val = Sum.map u v a := by
-      simp only [w, encode, Fin.ofNat_val_eq_self, Equiv.symm_apply_apply]
-    have hvertices : (univ.image u).disjSum (univ.image v) ⊆
-        (range (2 * m + 2)).image w := by
-      rintro (a | b) hx <;> simp only [inl_mem_disjSum, inr_mem_disjSum] at hx
-      · obtain ⟨t, -, rfl⟩ := mem_image.1 hx
-        exact mem_image.2 ⟨(e (.inl t)).val, mem_range.2 (e (.inl t)).isLt, hread (.inl t)⟩
-      · obtain ⟨t, -, rfl⟩ := mem_image.1 hx
-        exact mem_image.2 ⟨(e (.inr t)).val, mem_range.2 (e (.inr t)).isLt, hread (.inr t)⟩
-    have hedges :
-        (((range (2 * m + 1)).filter fun i ↦ w i ≠ w (i + 1)).image
-          fun i ↦ s(w i, w (i + 1))) ⊆ (univ.image (bipartiteEdge u v)).image edge := by
-      intro a ha
-      obtain ⟨i, -, rfl⟩ := mem_image.1 ha
-      have hnext : finRotate (2 * (m + 1)) (encode i) = encode (i + 1) := by
-        simpa only [encode] using Fin.finRotate_ofNat (n := 2 * (m + 1)) i
-      obtain ⟨a, ha⟩ := e.surjective (encode i)
-      refine mem_image.2 ⟨bipartiteEdge u v a, mem_image_of_mem _ (mem_univ _), ?_⟩
-      simpa only [w, ← ha, ← hnext, Function.comp_apply, edge] using
-        (interleaveIndexEquiv_edge_eq_bipartiteEdge u v a).symm
-    have hpath := card_image_range_le_card_nonloop_edges_add_one w (2 * m + 1)
-    have hv := card_le_card hvertices
-    rw [card_disjSum] at hv
-    exact hv.trans (hpath.trans (Nat.add_le_add_right
-      ((card_le_card hedges).trans (card_image_le)) 1))
+  -- Read the alternating word as an ordinary cyclic word.
+  let e := interleaveIndexEquiv k
+  let w := Sum.map u v ∘ e.symm
+  have hedges : (({i | w i ≠ w (finRotate (2 * k) i)} : Finset (Fin (2 * k))).image
+      fun i ↦ s(w i, w (finRotate (2 * k) i))) ⊆
+        (univ.image (bipartiteEdge u v)).image fun p ↦ s(.inl p.1, .inr p.2) := by
+    intro x hx
+    obtain ⟨i, -, rfl⟩ := mem_image.1 hx
+    obtain ⟨a, rfl⟩ := e.surjective i
+    exact mem_image.2 ⟨bipartiteEdge u v a, mem_image_of_mem _ (mem_univ a),
+      (interleaveIndexEquiv_edge_eq_pair_bipartiteEdge u v a).symm⟩
+  have hcyclic := card_image_le_card_nonloop_cyclic_edges_add_one w
+  rw [image_univ_sumMap_comp_interleaveIndexEquiv_symm, card_disjSum] at hcyclic
+  exact hcyclic.trans (Nat.add_le_add_right ((card_le_card hedges).trans card_image_le) 1)
 
 /-- A bipartite word of half-length `k` that reads no position exactly once reads at most `k`
 distinct positions. -/

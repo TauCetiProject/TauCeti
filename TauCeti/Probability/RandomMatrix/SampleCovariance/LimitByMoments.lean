@@ -46,9 +46,8 @@ private theorem leadingCovarianceMoment_summand_eq (p n k c : ℕ)
   have hr : k + 1 - c = (k - c) + 1 := by omega
   have hpn : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hp
   have hfactor : p.descFactorial ((k - c) + 1) = p * (p - 1).descFactorial (k - c) := by
-    cases p with
-    | zero => contradiction
-    | succ p => simpa only [Nat.add_sub_cancel] using Nat.succ_descFactorial_succ p (k - c)
+    rw [← Nat.descFactorial_mul_descFactorial (Nat.le_add_left 1 (k - c)), Nat.descFactorial_one,
+      Nat.add_sub_cancel, Nat.mul_comm]
   rw [hr, hfactor, Nat.cast_mul, inv_pow, div_mul_div_comm, ← pow_add, Nat.sub_add_cancel hc]
   field_simp
 
@@ -128,7 +127,8 @@ theorem tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur (
     refine squeeze_zero_norm' ?_ hmajorant
     filter_upwards [eventually_imp_distrib_left.mpr hindep, eventually_imp_distrib_left.mpr hmean,
       eventually_imp_distrib_left.mpr hLp, hsecond hk, hBound] with i hI hM hL hS hBi
-    exact norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le hk (hXm i) hI hM hL hS hBi
+    exact norm_integral_pow_expectedCovarianceSpectralMeasure_sub_leadingCovarianceMoment_le hk
+      (hXm i) hI hM hL hS hBi
   have hlead := tendsto_leadingCovarianceMoment hn (.of_forall fun _ ↦ Fintype.card_ne_zero) hy k
   simpa only [sub_add_cancel, zero_add] using herror.add hlead
 

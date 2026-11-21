@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
-import TauCeti.Data.Fin.Cast
+import TauCeti.Data.Fin.Rotate
 
 /-!
 # Vertex and edge counts of trace words

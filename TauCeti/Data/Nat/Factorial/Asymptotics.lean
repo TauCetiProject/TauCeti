@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorial.Basic
 public import Mathlib.Topology.Algebra.Order.Field
+import Mathlib.Data.Nat.Factorial.BigOperators
 
 /-!
 # Falling factorials of proportional sequences
@@ -41,10 +42,9 @@ theorem Filter.Tendsto.natCast_descFactorial_sub_div_pow {ι 𝕜 : Type*} {l : 
         exact_mod_cast (by omega : p i ≤ s)
     · filter_upwards [hd.eventually_ge_atTop 0] with i hi
       exact div_le_div_of_nonneg_right (Nat.cast_le.mpr (Nat.sub_le _ _)) hi
-  induction k with
-  | zero => simpa only [Nat.descFactorial_zero, Nat.cast_one, pow_zero, div_one] using
-      (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : 𝕜)) l (𝓝 1))
-  | succ k ih =>
-    simp only [Nat.descFactorial_succ, Nat.sub_sub, Nat.cast_mul, pow_succ' _ k,
-      ← div_mul_div_comm]
-    exact (hoffset (r + k)).mul ih
+  have hprod := tendsto_finsetProd (Finset.range k) fun j _ ↦ hoffset (r + j)
+  rw [Finset.prod_const, Finset.card_range] at hprod
+  refine hprod.congr fun i ↦ ?_
+  rw [Finset.prod_div_distrib, Finset.prod_const, Finset.card_range,
+    Nat.descFactorial_eq_prod_range, Nat.cast_prod]
+  simp only [Nat.sub_sub]

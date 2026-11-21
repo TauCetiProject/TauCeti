@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.Combinatorics.NoncrossingPartition.FormPerm
 import TauCeti.Combinatorics.NoncrossingPartition.Geodesic
 import TauCeti.Combinatorics.TreeWalk.Leading
-import TauCeti.Data.Finset.Sum
+import TauCeti.GroupTheory.Perm.Cycle.Colouring
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
@@ -53,6 +53,27 @@ theorem isLeadingBipartiteWord_iff {u : Fin k → α} {v : Fin k → β} :
       (∀ a, ∃ b ≠ a, bipartiteEdge u v b = bipartiteEdge u v a) ∧
         #(univ.image u) + #(univ.image v) = k + 1 := Iff.rfl
 
+/-- The empty word visits no vertices, so it is not leading. -/
+@[simp] theorem not_isLeadingBipartiteWord_zero (u : Fin 0 → α) (v : Fin 0 → β) :
+    ¬ IsLeadingBipartiteWord u v := by
+  simp [isLeadingBipartiteWord_iff]
+
+/-- A leading bipartite word has positive half-length. -/
+theorem IsLeadingBipartiteWord.ne_zero {u : Fin k → α} {v : Fin k → β}
+    (h : IsLeadingBipartiteWord u v) : k ≠ 0 := by
+  rintro rfl
+  exact not_isLeadingBipartiteWord_zero u v h
+
+/-- Every word of half-length one is leading: its two steps read the same position, and it
+visits one row and one column. -/
+@[simp] theorem isLeadingBipartiteWord_one (u : Fin 1 → α) (v : Fin 1 → β) :
+    IsLeadingBipartiteWord u v := by
+  refine isLeadingBipartiteWord_iff.mpr ⟨?_, ?_⟩
+  · rintro (i | i)
+    · exact ⟨.inr i, Sum.inr_ne_inl, by simp⟩
+    · exact ⟨.inl i, Sum.inl_ne_inr, by simp⟩
+  · simp [univ_unique]
+
 /-- On each orientation of a leading bipartite word, the visited edges are distinct. -/
 theorem IsLeadingBipartiteWord.injective_bipartiteEdge_orientations {u : Fin k → α} {v : Fin k → β}
     (h : IsLeadingBipartiteWord u v) :
@@ -65,16 +86,14 @@ theorem IsLeadingBipartiteWord.injective_bipartiteEdge_orientations {u : Fin k �
   let w : Fin (2 * k) → α ⊕ β := Sum.map u v ∘ e.symm
   have hw (a : Fin k ⊕ Fin k) : w (e a) = Sum.map u v a :=
     congrArg (Sum.map u v) (e.symm_apply_apply a)
-  have hv : univ.image w = (univ.image u).disjSum (univ.image v) := by
-    unfold w
-    rw [← image_image, image_univ_equiv,
-      ← univ_disjSum_univ, image_sumMap_disjSum]
+  have hv : univ.image w = (univ.image u).disjSum (univ.image v) :=
+    image_univ_sumMap_comp_interleaveIndexEquiv_symm u v
   have hword (i : Fin (2 * k)) :
       ∃ j ≠ i, s(w j, w (finRotate (2 * k) j)) = s(w i, w (finRotate (2 * k) i)) := by
     obtain ⟨a, rfl⟩ := e.surjective i
     obtain ⟨b, hba, hb⟩ := (isLeadingBipartiteWord_iff.mp h).1 a
-    exact ⟨e b, e.injective.ne hba, by rw [interleaveIndexEquiv_edge_eq_bipartiteEdge u v b,
-      interleaveIndexEquiv_edge_eq_bipartiteEdge u v a, hb]⟩
+    exact ⟨e b, e.injective.ne hba, by rw [interleaveIndexEquiv_edge_eq_pair_bipartiteEdge u v b,
+      interleaveIndexEquiv_edge_eq_pair_bipartiteEdge u v a, hb]⟩
   have hd := TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq hword
     (by rw [hv, card_disjSum]; exact (isLeadingBipartiteWord_iff.mp h).2)
   constructor
@@ -126,17 +145,17 @@ private theorem exists_noncrossing_cycleColourings {u : Fin k → α} {v : Fin k
     congrArg Subtype.val ((invariantColouringEquiv ρ).apply_symm_apply _)
   have hg : (invariantColouringEquiv σ g).val = v :=
     congrArg Subtype.val ((invariantColouringEquiv σ).apply_symm_apply _)
-  obtain ⟨hboundf, heqf⟩ := ρ.card_image_invariantColouringEquiv_le_and_eq_iff f
-  obtain ⟨hboundg, heqg⟩ := σ.card_image_invariantColouringEquiv_le_and_eq_iff g
-  rw [hf] at hboundf heqf
-  rw [hg] at hboundg heqg
+  have hboundf := ρ.card_image_invariantColouringEquiv_le_orbitCount f
+  have hboundg := σ.card_image_invariantColouringEquiv_le_orbitCount g
+  rw [hf] at hboundf
+  rw [hg] at hboundg
   have hle : orbitCount ρ + orbitCount σ ≤ k + 1 := by
     simpa only [ρ, orbitCount_finRotate, Nat.card_fin, orbitCount_inv, ite_eq_right hk,
       Nat.add_comm] using (finRotate k).orbitCount_mul_add_orbitCount_le_orbitCount_add_card σ⁻¹
   have hv := (isLeadingBipartiteWord_iff.mp h).2
   have hEq : orbitCount σ + orbitCount ρ = k + 1 := by omega
-  have hfinj := heqf.mp (by omega)
-  have hginj := heqg.mp (by omega)
+  have hfinj := (ρ.card_image_invariantColouringEquiv_eq_orbitCount_iff f).mp (by rw [hf]; omega)
+  have hginj := (σ.card_image_invariantColouringEquiv_eq_orbitCount_iff g).mp (by rw [hg]; omega)
   dsimp only [ρ] at hEq
   rw [orbitCount_mul_comm (finRotate k)] at hEq
   obtain ⟨π, hπ⟩ :=
@@ -226,37 +245,28 @@ private theorem coe_leadingBipartiteWordEquiv (hk : k ≠ 0) :
 
 /-- The forward equivalence evaluates the labels on the cycles containing each position. -/
 @[simp] theorem leadingBipartiteWordEquiv_apply (hk : k ≠ 0)
-    (π : NoncrossingPartition (univ : Finset (Fin k)))
-    (f : Quotient (SameCycle.setoid (finRotate k * π.val.formPerm⁻¹)) ↪ α)
-    (g : Quotient (SameCycle.setoid π.val.formPerm) ↪ β) :
-    (leadingBipartiteWordEquiv hk ⟨π, f, g⟩).val =
-      (fun i ↦ f (Quotient.mk _ i), fun i ↦ g (Quotient.mk _ i)) := by
+    (q : Σ π : NoncrossingPartition (univ : Finset (Fin k)),
+      (Quotient (SameCycle.setoid (finRotate k * π.val.formPerm⁻¹)) ↪ α) ×
+      (Quotient (SameCycle.setoid π.val.formPerm) ↪ β)) :
+    (leadingBipartiteWordEquiv hk q).val =
+      (fun i ↦ q.2.1 (Quotient.mk _ i), fun i ↦ q.2.2 (Quotient.mk _ i)) := by
   rw [coe_leadingBipartiteWordEquiv]
-  exact Prod.ext (funext fun i ↦ invariantColouringEquiv_apply_coe _ f i)
-    (funext fun i ↦ invariantColouringEquiv_apply_coe _ g i)
-
-/-- The inverse recovers the row and column labels on the cycles represented by each position. -/
-private theorem leadingBipartiteWordEquiv_symm_apply_labels (hk : k ≠ 0)
-    (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
-    let q := (leadingBipartiteWordEquiv hk).symm w
-    q.2.1 (Quotient.mk _ i) = w.val.1 i ∧ q.2.2 (Quotient.mk _ i) = w.val.2 i := by
-  have h := congrArg Subtype.val ((leadingBipartiteWordEquiv hk).apply_symm_apply w)
-  generalize (leadingBipartiteWordEquiv hk).symm w = q at h ⊢
-  obtain ⟨π, f, g⟩ := q
-  rw [leadingBipartiteWordEquiv_apply] at h
-  exact ⟨congrFun (congrArg Prod.fst h) i, congrFun (congrArg Prod.snd h) i⟩
+  exact Prod.ext (funext fun i ↦ invariantColouringEquiv_apply_coe _ q.2.1 i)
+    (funext fun i ↦ invariantColouringEquiv_apply_coe _ q.2.2 i)
 
 /-- The recovered row label at the cycle of a position is the word's row at that position. -/
 @[simp] theorem leadingBipartiteWordEquiv_symm_apply_row (hk : k ≠ 0)
     (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
-    ((leadingBipartiteWordEquiv hk).symm w).2.1 (Quotient.mk _ i) = w.val.1 i :=
-  (leadingBipartiteWordEquiv_symm_apply_labels hk w i).1
+    ((leadingBipartiteWordEquiv hk).symm w).2.1 (Quotient.mk _ i) = w.val.1 i := by
+  simpa only [leadingBipartiteWordEquiv_apply] using
+    congrArg (fun w ↦ w.val.1 i) ((leadingBipartiteWordEquiv hk).apply_symm_apply w)
 
 /-- The recovered column label at the cycle of a position is the word's column at that position. -/
 @[simp] theorem leadingBipartiteWordEquiv_symm_apply_col (hk : k ≠ 0)
     (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
-    ((leadingBipartiteWordEquiv hk).symm w).2.2 (Quotient.mk _ i) = w.val.2 i :=
-  (leadingBipartiteWordEquiv_symm_apply_labels hk w i).2
+    ((leadingBipartiteWordEquiv hk).symm w).2.2 (Quotient.mk _ i) = w.val.2 i := by
+  simpa only [leadingBipartiteWordEquiv_apply] using
+    congrArg (fun w ↦ w.val.2 i) ((leadingBipartiteWordEquiv hk).apply_symm_apply w)
 
 /-- The partition recovered by the inverse has the permutation that matches the two orientations
 of each edge in the original word. -/
@@ -264,13 +274,14 @@ theorem bipartiteEdge_inl_formPerm_leadingBipartiteWordEquiv_symm (hk : k ≠ 0)
     (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
     let σ := ((leadingBipartiteWordEquiv hk).symm w).1.val.formPerm
     bipartiteEdge w.val.1 w.val.2 (.inl (σ i)) = bipartiteEdge w.val.1 w.val.2 (.inr i) := by
-  have h := congrArg Subtype.val ((leadingBipartiteWordEquiv hk).apply_symm_apply w)
-  generalize (leadingBipartiteWordEquiv hk).symm w = q at h ⊢
-  obtain ⟨π, f, g⟩ := q
-  rw [← h]
-  simpa only [leadingBipartiteWordEquiv_apply, bipartiteEdge_inl, bipartiteEdge_inr,
-    invariantColouringEquiv_apply_coe] using
-    bipartiteEdge_cycleColouring π.val.formPerm f g i
+  intro σ
+  let q := (leadingBipartiteWordEquiv hk).symm w
+  have hrow : w.val.1 = (invariantColouringEquiv _ q.2.1).val := funext fun j ↦ by
+    rw [invariantColouringEquiv_apply_coe, leadingBipartiteWordEquiv_symm_apply_row]
+  have hcol : w.val.2 = (invariantColouringEquiv _ q.2.2).val := funext fun j ↦ by
+    rw [invariantColouringEquiv_apply_coe, leadingBipartiteWordEquiv_symm_apply_col]
+  rw [hrow, hcol]
+  exact bipartiteEdge_cycleColouring σ q.2.1 q.2.2 i
 
 open Classical in
 /-- At half-length `k > 0`, the leading-word count sums over noncrossing column partitions.
@@ -297,14 +308,8 @@ theorem card_leadingBipartiteWord [Finite α] [Finite β] (hk : k ≠ 0) :
 /-- A leading word of half-length one is specified by one row and one column. -/
 theorem card_leadingBipartiteWord_one :
     Nat.card {w : (Fin 1 → α) × (Fin 1 → β) // IsLeadingBipartiteWord w.1 w.2} =
-      Nat.card α * Nat.card β := by
-  have h (w : (Fin 1 → α) × (Fin 1 → β)) : IsLeadingBipartiteWord w.1 w.2 := by
-    refine ⟨?_, ?_⟩
-    · rintro (i | i)
-      · exact ⟨.inr i, Sum.inr_ne_inl, by simp⟩
-      · exact ⟨.inl i, Sum.inl_ne_inr, by simp⟩
-    · simp [univ_unique]
-  exact Nat.card_congr ((Equiv.subtypeUnivEquiv h).trans
+      Nat.card α * Nat.card β :=
+  Nat.card_congr ((Equiv.subtypeUnivEquiv fun w ↦ isLeadingBipartiteWord_one w.1 w.2).trans
     (Equiv.prodCongr (Equiv.funUnique (Fin 1) α) (Equiv.funUnique (Fin 1) β))) |>.trans
       (Nat.card_prod α β)
 

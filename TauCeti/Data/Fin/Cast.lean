@@ -5,34 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Data.Fin.Basic
 
 /-!
-# Casting finite indices
+# Reading families of tuples through casts of the index
 
 A family `x : ∀ i, Fin (f i) → α` of tuples of varying lengths is read at an index `a` through a
 cast `Fin.cast ha : Fin n → Fin (f a)`. Equal indices `a = b` give equal readings, even though
 `Fin (f a)` and `Fin (f b)` are not syntactically the same type, so the equation cannot be
 rewritten directly.
 
-Natural indices can also be read modulo the length of a nonempty finite ordinal. Rotating the
-result advances the original natural index by one.
-
 ## Main results
 
 * `Fin.apply_cast_eq_apply_cast`: reading `x` at equal indices through casts gives the same value.
-* `Fin.finRotate_ofNat`: rotation commutes with taking the successor of a natural index.
 -/
 
 public section
 
 namespace Fin
-
-open Fin.NatCast in
-/-- Rotation advances a natural index by one modulo the length. -/
-theorem finRotate_ofNat {n : ℕ} [NeZero n] (i : ℕ) :
-    finRotate n (Fin.ofNat n i) = Fin.ofNat n (i + 1) := by
-  rw [finRotate_apply, Fin.ofNat_eq_cast, Fin.ofNat_eq_cast, Nat.cast_succ]
 
 /-- Reading a family of tuples at equal indices, through casts of the coordinate to the lengths of
 the tuples, gives the same value. -/

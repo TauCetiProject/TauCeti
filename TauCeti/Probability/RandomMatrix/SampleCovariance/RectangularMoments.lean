@@ -98,28 +98,27 @@ section Trace
 variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
   {P : Measure Ω} {X : Ω → Matrix p n 𝕜} {k : ℕ}
 
-/-- For independent, almost everywhere measurable entries, a leading word contributes the product
-of the second absolute moments of its row-to-column entries. -/
+/-- A leading word contributes the product of the second absolute moments of its row-to-column
+entries when their squared norms are independent and almost everywhere strongly measurable.
+The phases of the entries cancel, so they need not be independent. -/
 theorem integral_prod_apply_mul_star_apply_of_isLeadingBipartiteWord
     [DecidableEq p] [DecidableEq n]
     {u : Fin k → p} {v : Fin k → n} (hw : IsLeadingBipartiteWord u v)
-    (hXm : ∀ t, AEMeasurable (fun ω ↦ X ω (u t) (v t)) P)
-    (hindep : iIndepFun (fun t ω ↦ X ω (u t) (v t)) P) :
+    (hXm : ∀ t, AEStronglyMeasurable (fun ω ↦ ‖X ω (u t) (v t)‖ ^ 2) P)
+    (hindep : iIndepFun (fun t ω ↦ ‖X ω (u t) (v t)‖ ^ 2) P) :
     (∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P) =
       ∏ t, ((∫ ω, ‖X ω (u t) (v t)‖ ^ 2 ∂P : ℝ) : 𝕜) := by
   obtain ⟨π, hπ, _⟩ := hw.existsUnique_perm_matching_bipartiteEdges
   simp only [bipartiteEdge_inl, bipartiteEdge_inr, Prod.mk.injEq] at hπ
   have hreindex (ω : Ω) :
       (∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t))) =
-        ∏ t, X ω (u t) (v t) * star (X ω (u t) (v t)) := by
-    simp only [prod_mul_distrib]
-    congr 1
-    exact (Fintype.prod_equiv π _ _ fun t ↦ by rw [(hπ t).1, (hπ t).2])
+        ((∏ t, ‖X ω (u t) (v t)‖ ^ 2 : ℝ) : 𝕜) := by
+    have hstar : (∏ t, star (X ω (u (finRotate k t)) (v t))) = ∏ t, star (X ω (u t) (v t)) :=
+      Fintype.prod_equiv π _ _ fun t ↦ by rw [(hπ t).1, (hπ t).2]
+    rw [prod_mul_distrib, hstar, ← prod_mul_distrib, RCLike.ofReal_prod]
+    simp only [RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
   simp_rw [hreindex]
-  rw [hindep.integral_fun_prod_comp hXm
-    (f := fun _ z ↦ z * star z)
-      (fun _ ↦ (continuous_id.mul continuous_star).aestronglyMeasurable)]
-  simp only [RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, integral_ofReal]
+  rw [integral_ofReal, hindep.integral_fun_prod_eq_prod_integral hXm, RCLike.ofReal_prod]
 
 variable [Fintype p] [DecidableEq p] [Fintype n] [DecidableEq n]
 
@@ -134,7 +133,8 @@ private theorem integral_prod_apply_mul_star_apply_eq_one
     simpa only [Function.comp_def, bipartiteEdge_inl] using
       hw.injective_bipartiteEdge_orientations.1
   rw [integral_prod_apply_mul_star_apply_of_isLeadingBipartiteWord hw
-    (fun t ↦ (hXk (u t) (v t)).aestronglyMeasurable.aemeasurable) (hindep.precomp hInj)]
+    (fun t ↦ (hXk (u t) (v t)).aestronglyMeasurable.norm.pow 2)
+    ((hindep.precomp hInj).comp (fun _ z ↦ ‖z‖ ^ 2) fun _ ↦ by fun_prop)]
   simp only [hsecond, RCLike.ofReal_one, prod_const_one]
 
 /-- The expected trace at positive degree `k` differs from the leading-word count times
@@ -193,7 +193,10 @@ theorem norm_integral_trace_sampleCovariance_pow_sub_leading_le (hk : k ≠ 0)
     _ ≤ ∑ _w ∈ S \ L, (B : ℝ) := by
       apply sum_le_sum
       intro w _
-      exact norm_integral_prod_apply_mul_star_apply_le hk w.1 w.2 (fun _ ↦ hXk _ _) (fun _ ↦ hB _ _)
+      exact norm_integral_prod_apply_mul_star_apply_le hk w.1 w.2
+        (fun _ ↦ MemLp.integrable_norm_pow
+          (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk _ _) (by omega))
+        (fun _ ↦ hB _ _)
     _ = (#(S \ L) : ℝ) * B := by simp
     _ ≤ _ := mul_le_mul_of_nonneg_right (Nat.cast_le.mpr hcount) B.coe_nonneg
 
@@ -226,7 +229,8 @@ measurable and its entries have unit second absolute moment. For `k > 1` the ent
 independent, centred and in `L^(2k)`, with absolute moments of order `2k` bounded by `B`.
 With empty columns the positive-degree moment and leading count both vanish, so the bound is
 exact with zero error. -/
-theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le (hk : k ≠ 0)
+theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_leadingCovarianceMoment_le
+    (hk : k ≠ 0)
     (hXm : AEMeasurable X P)
     (hindep : 1 < k → iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hmean : 1 < k → ∀ i j, ∫ ω, X ω i j ∂P = 0)

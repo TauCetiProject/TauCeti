@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TreeWalk.Relabeling
 public import TauCeti.Combinatorics.TraceWord.Counting
-import TauCeti.Data.Fin.Cast
+import TauCeti.Data.Fin.Rotate
 
 /-!
 # Leading trace words as canonical tree walks
