@@ -316,6 +316,12 @@ theorem twistedTranslation_mem_twistedMonoidAlgebra (g : G) :
 
 namespace TwistedMonoidAlgebra
 
+/-- Over a commutative ring the twisted algebra inherits its ring structure from the
+endomorphism ring. -/
+noncomputable instance {k G : Type*} [CommRing k] [Monoid G] (α : G → G → kˣ)
+    [IsFactorSet α] : Ring (twistedMonoidAlgebra k G α) :=
+  Subalgebra.toRing (R := k) (A := Module.End k (G →₀ k)) (twistedMonoidAlgebra k G α)
+
 variable {k G α}
 
 /-- The basis element of `k_α[G]` at `g : G`, namely the `α`-twisted translation by `g`. -/
