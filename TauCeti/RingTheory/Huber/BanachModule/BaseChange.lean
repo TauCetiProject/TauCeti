@@ -53,7 +53,7 @@ private theorem commHom_tmul (v : V) (w : W) :
 /-- **Symmetry of the completed tensor product**: `V ⊗̂_A W ≃L[A] W ⊗̂_A V`, sending `v ⊗ w` to
 `w ⊗ v` (`comm_tmul`). -/
 noncomputable def comm : (V ⊗̂[A] W) ≃L[A] (W ⊗̂[A] V) :=
-  .equivOfInverse' (commHom A V W) (commHom A W V)
+  .ofContinuousLinearMap (commHom A V W) (commHom A W V)
     (ext fun _ _ ↦ by simp [commHom_tmul]) (ext fun _ _ ↦ by simp [commHom_tmul])
 
 variable {A V W}
@@ -96,7 +96,7 @@ theorem comm_map_apply (f : V →L[A] V') (g : W →L[A] W') (z : V ⊗̂[A] W) 
 /-- **Congruence of completed tensor products** along continuous linear equivalences of the
 factors. -/
 noncomputable def congr (eV : V ≃L[A] V') (eW : W ≃L[A] W') : (V ⊗̂[A] W) ≃L[A] (V' ⊗̂[A] W') :=
-  .equivOfInverse' (map (eV : V →L[A] V') (eW : W →L[A] W'))
+  .ofContinuousLinearMap (map (eV : V →L[A] V') (eW : W →L[A] W'))
     (map (eV.symm : V' →L[A] V) (eW.symm : W' →L[A] W))
     (ext fun _ _ ↦ by simp) (ext fun _ _ ↦ by simp)
 
@@ -257,7 +257,7 @@ theorem aeval_baseChange [IsTopologicalAddGroup M] [ContinuousConstSMul A M]
 /-- **Completed scalar extension of continuous linear equivalences**: `e : M ≃L[A] N` induces
 `S ⊗̂_A M ≃L[S] S ⊗̂_A N`. -/
 noncomputable def baseChangeCongr (e : M ≃L[A] N) : (S ⊗̂[A] M) ≃L[S] (S ⊗̂[A] N) :=
-  .equivOfInverse' (baseChange S (e : M →L[A] N)) (baseChange S (e.symm : N →L[A] M))
+  .ofContinuousLinearMap (baseChange S (e : M →L[A] N)) (baseChange S (e.symm : N →L[A] M))
     (by rw [← baseChange_comp, e.coe_comp_coe_symm, baseChange_id])
     (by rw [← baseChange_comp, e.coe_symm_comp_coe, baseChange_id])
 

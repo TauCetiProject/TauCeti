@@ -76,6 +76,15 @@ def relativePicardAddPresheafMk (T : (Over S)ᵒᵖ)
     unfold relativePicardAddPresheaf
     exact Additive.ofMul (QuotientGroup.mk a)
 
+/-- A represented additive section is the transport of the corresponding multiplicative class. -/
+lemma relativePicardAddPresheafMk_eq (T : (Over S)ᵒᵖ)
+    (a : LineBundleClass (pullback T.unop.hom f)) :
+    relativePicardAddPresheafMk f T a =
+      (eqToHom (relativePicardAddPresheaf_eq f).symm).app T
+        (Additive.ofMul (QuotientGroup.mk a : (relativePicardPresheaf f).obj T)) := by
+  unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+  rfl
+
 /-- Every section of the additive relative Picard presheaf is represented by a line-bundle
 class. -/
 theorem relativePicardAddPresheafMk_surjective (T : (Over S)ᵒᵖ) :

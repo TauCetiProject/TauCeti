@@ -93,7 +93,7 @@ theorem mem_modFormCharSpace_one_iff (f : ModularForm ((Gamma1 N).map (mapGL ℝ
   refine ⟨?_, fun h g ↦ ?_⟩
   · rintro h - ⟨g, hg, rfl⟩
     simpa using h ⟨g, hg⟩
-  · simpa using h _ (Subgroup.mem_map_of_mem _ g.2)
+  · simpa using h _ (Subgroup.mem_map_of_mem _ g.property)
 
 /-- A cusp form for `Γ₁(N)` has trivial nebentypus exactly when it is `Γ₀(N)`-slash
 invariant. -/
@@ -104,7 +104,7 @@ theorem mem_cuspFormCharSpace_one_iff (f : CuspForm ((Gamma1 N).map (mapGL ℝ))
   refine ⟨?_, fun h g ↦ ?_⟩
   · rintro h - ⟨g, hg, rfl⟩
     simpa using h ⟨g, hg⟩
-  · simpa using h _ (Subgroup.mem_map_of_mem _ g.2)
+  · simpa using h _ (Subgroup.mem_map_of_mem _ g.property)
 
 /-- Trivial nebentypus means being fixed by every diamond operator. -/
 theorem mem_modFormCharSpace_one_iff_diamondOp (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
@@ -189,7 +189,7 @@ noncomputable def modFormCharSpaceOneEquiv (N : ℕ) [NeZero N] (k : ℤ) :
     modFormCharSpace (N := N) k (1 : (ZMod N)ˣ →* ℂˣ) ≃ₗ[ℂ]
       ModularForm ((Gamma0 N).map (mapGL ℝ)) k where
   toFun f := ModularForm.ofSlashInvariant Subgroup.IsArithmetic.isCusp_of_isCusp
-    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ((mem_modFormCharSpace_one_iff _).mp f.2)
+    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ((mem_modFormCharSpace_one_iff _).mp f.property)
   map_add' _ _ := ModularForm.ext fun _ ↦ by simp
   map_smul' _ _ := ModularForm.ext fun _ ↦ by simp
   invFun f := ⟨ModularForm.restrict (Gamma1_map_le_Gamma0_map N) f,
@@ -222,7 +222,7 @@ noncomputable def cuspFormCharSpaceOneEquiv (N : ℕ) [NeZero N] (k : ℤ) :
     cuspFormCharSpace (N := N) k (1 : (ZMod N)ˣ →* ℂˣ) ≃ₗ[ℂ]
       CuspForm ((Gamma0 N).map (mapGL ℝ)) k where
   toFun f := CuspForm.ofSlashInvariant Subgroup.IsArithmetic.isCusp_of_isCusp
-    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ((mem_cuspFormCharSpace_one_iff _).mp f.2)
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ((mem_cuspFormCharSpace_one_iff _).mp f.property)
   map_add' _ _ := CuspForm.ext fun _ ↦ by simp
   map_smul' _ _ := CuspForm.ext fun _ ↦ by simp
   invFun f :=

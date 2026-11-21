@@ -86,6 +86,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.pow_rpow_comm`: natural and real powers commute in `ℝ≥0∞`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
+* `ENNReal.rpow_le_rpow_sub_one_mul`: `a ^ r ≤ b ^ (r - 1) * a` for `a ≤ b` and `1 ≤ r`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow`: `x a ≤ c a ^ θ` gives
@@ -110,6 +111,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
   `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
 * `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
+* `ENNReal.tendsto_const_mul_rpow_one_div_atTop`: `M * c ^ (1 / p) → M` as `p → ∞` for
+  `c ∉ {0, ∞}` and any `M : ℝ≥0∞`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
@@ -146,6 +149,14 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
   have hpow0 : X ^ (r - 1) ≠ 0 := by simp [rpow_eq_zero_iff, hX0, hX]
   rw [hXr, mul_comm C] at h
   exact (ENNReal.mul_le_mul_iff_right hpow0 (rpow_ne_top_of_ne_zero hX0 hX)).1 h
+
+/-- For `1 ≤ r` and `a ≤ b`, `a ^ r ≤ b ^ (r - 1) * a`. -/
+theorem rpow_le_rpow_sub_one_mul {a b : ℝ≥0∞} (hab : a ≤ b) {r : ℝ} (hr : 1 ≤ r) :
+    a ^ r ≤ b ^ (r - 1) * a := by
+  calc a ^ r = a ^ (r - 1) * a := by
+        conv_lhs => rw [← sub_add_cancel r 1]
+        rw [rpow_add_of_nonneg _ _ (by linarith) zero_le_one, rpow_one]
+    _ ≤ b ^ (r - 1) * a := by gcongr
 
 /-- If `m ≤ K * m ^ p` for a finite `m` and an exponent `p < 1`, then `m ^ (1 - p) ≤ K`: the
 factor `m ^ p` cancels. -/
@@ -316,6 +327,13 @@ theorem tendsto_rpow_one_div_atTop {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ 
   have hexp : Filter.Tendsto (fun p : ℝ ↦ 1 / p) Filter.atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop Filter.tendsto_id
   simpa [coe_rpow_of_ne_zero hc0] using tendsto_coe.2 (tendsto_const_nhds.nnrpow hexp (.inl hc0))
+
+/-- For a finite nonzero `c` and any `M : ℝ≥0∞`, `M * c ^ (1 / p)` tends to `M` as the real
+exponent `p` tends to infinity. -/
+theorem tendsto_const_mul_rpow_one_div_atTop (M : ℝ≥0∞) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
+    Filter.Tendsto (fun p : ℝ ↦ M * c ^ (1 / p)) Filter.atTop (𝓝 M) := by
+  simpa only [mul_one] using
+    Tendsto.const_mul (tendsto_rpow_one_div_atTop hc0 hc) (.inl one_ne_zero)
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/

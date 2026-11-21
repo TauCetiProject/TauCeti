@@ -33,8 +33,8 @@ character, is `MulChar.equivToUnitHom (hL.nebentypus R hE)`.
 
 ## Main definitions
 
-* `ZLattice.IsEven.nebentypus R hL hE`: the nebentypus `χ_L : DirichletCharacter R (level L)` of an
-  even full lattice `L` of even rank.
+* `ZLattice.IsEven.nebentypus`: the nebentypus `χ_L : DirichletCharacter R (level L)` of an even
+  full lattice `L` of even rank.
 
 ## Main statements
 

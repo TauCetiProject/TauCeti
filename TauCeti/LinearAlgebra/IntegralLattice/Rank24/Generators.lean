@@ -231,6 +231,26 @@ theorem generatorVectors_subset_lattice_carrier (r : RootfulNiemeierType) :
     r.componentType r.isSimplyLaced_componentType r.valid_componentType
     r.glueSubgroup r.isIsotropic_glueSubgroup w
 
+/-- **Every glue-word representative attains the coset minimum norm `μ(w)` in `N_r`.** -/
+theorem lattice_form_glueWordRepresentativeVector_self (r : RootfulNiemeierType)
+    (w : r.glueModule) :
+    r.lattice.form
+        (DynkinType.glueWordRepresentativeVector r.componentType r.isSimplyLaced_componentType w)
+        (DynkinType.glueWordRepresentativeVector r.componentType r.isSimplyLaced_componentType w) =
+      ∑ i, (r.componentType i).glueMinimum (r.isSimplyLaced_componentType i) (w i) := by
+  rw [r.lattice_form]
+  exact DynkinType.form_glueWordRepresentativeVector_self _ _ r.valid_componentType w
+
+/-- **Every nonzero glue word in `H_r` has canonical representative of norm at least `4`.** -/
+theorem four_le_lattice_form_glueWordRepresentativeVector_self (r : RootfulNiemeierType)
+    {w : r.glueModule} (hw : w ∈ r.glueSubgroup) (hw0 : w ≠ 0) :
+    4 ≤ r.lattice.form
+        (DynkinType.glueWordRepresentativeVector r.componentType r.isSimplyLaced_componentType w)
+        (DynkinType.glueWordRepresentativeVector r.componentType r.isSimplyLaced_componentType
+          w) := by
+  rw [lattice_form_glueWordRepresentativeVector_self]
+  exact r.four_le_sum_glueMinimum_of_mem_glueSubgroup hw hw0
+
 /-- **Explicit coset decomposition of `N_r`**: `x ∈ r.lattice.carrier` iff `x` differs from
 `glueWordRepresentativeVector _ _ w`, for some `w ∈ r.glueSubgroup`, by a vector in
 `r.rootLattice.carrier`. -/

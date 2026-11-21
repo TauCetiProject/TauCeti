@@ -27,7 +27,9 @@ maps `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ q +
 This is an analogue of the `E∞` part of Weibel's Classical Convergence Theorem 5.5.1(2), whose
 `E∞` is the direct limit along the spectral sequence's own maps from page `r` to page `r + 1`
 (page `r + 1` being the homology of page `r`), in the form needed when the filtration is not
-finite. Identifying `spectralSequencePageXToPageX` with those maps is not done here.
+finite. From page `r` to page `r + 1`, `spectralSequencePageXToPageX` is that map of the
+spectral sequence (`TauCeti.Algebra.Homology.SpectralObject.PageHomology`), so the graded piece
+is the direct limit of the pages along the spectral sequence's own maps.
 Convergence to `H^n(K)` needs in addition hypotheses in degree `n`, which this file does not
 assume: if every element of `K^n` lies in some `F_i`, the filtration of `H^n(K)` is exhaustive
 (`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), and if some stage vanishes in
@@ -124,23 +126,23 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
       (by rw [Category.id_comp, map_comp_eq])) n y = 0 := by
   -- The quotients `G_a / G_q` form a directed family of subcomplexes of `G_⊤ / G_q`.
   let L (a : {a : ℤ // q ≤ a}) : CochainComplex (ModuleCat.{v} R) ℤ :=
-    cokernel (G.map (homOfLE (show (q : EInt) ≤ a.1 by simpa using a.2)))
+    cokernel (G.map (homOfLE (show (q : EInt) ≤ a.val by simpa using a.property)))
   let φ (a : {a : ℤ // q ≤ a}) :
       L a ⟶ cokernel (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤))) :=
     cokernel.map _ _ (𝟙 _) (G.map (homOfLE le_top)) (by rw [Category.id_comp, map_comp_eq])
   have hφ (a : {a : ℤ // q ≤ a}) : Mono (φ a) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by
       rw [Category.id_comp, map_comp_eq]⟩)
-  let ψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.1) : L ⟨j, hqj⟩ ⟶ L a :=
-    cokernel.map _ _ (𝟙 _) (G.map (homOfLE (show (j : EInt) ≤ a.1 by simpa using ha)))
+  let ψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.val) : L ⟨j, hqj⟩ ⟶ L a :=
+    cokernel.map _ _ (𝟙 _) (G.map (homOfLE (show (j : EInt) ≤ a.val by simpa using ha)))
       (by rw [Category.id_comp, map_comp_eq])
-  have hψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.1) : ψ a ha ≫ φ a = φ ⟨j, hqj⟩ := by
+  have hψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.val) : ψ a ha ≫ φ a = φ ⟨j, hqj⟩ := by
     apply coequalizer.hom_ext
     simp only [ψ, φ, cokernel.π_desc, cokernel.π_desc_assoc, Category.assoc, ← G.map_comp_assoc]
     rfl
   -- Every element of `(G_⊤ / G_q)^{n-1}` comes from some `G_a / G_q` with `j ≤ a`.
   have hcover (z : (cokernel (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤)))).X (n - 1)) :
-      ∃ a, ∃ _ : j ≤ a.1, ∃ w, (φ a).f (n - 1) w = z := by
+      ∃ a, ∃ _ : j ≤ a.val, ∃ w, (φ a).f (n - 1) w = z := by
     obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective
       ((cokernel.π (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤)))).f (n - 1))).1 inferInstance z
     obtain ⟨i, w, rfl⟩ := hex z
@@ -153,8 +155,8 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
     rw [← Category.assoc, map_comp_eq]
   obtain ⟨a, ha, hya⟩ := HomologicalComplex.exists_homologyMap_eq_zero_of_injective n φ
     (fun a ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) (m := n - 1) (by simp)
-    (i := ⟨j, hqj⟩) (P := fun a ↦ j ≤ a.1) ψ hψ hcover _ hy
-  exact ⟨a.1, ha, hya⟩
+    (i := ⟨j, hqj⟩) (P := fun a ↦ j ≤ a.val) ψ hψ hcover _ hy
+  exact ⟨a.val, ha, hya⟩
 
 /-- **Vanishing in `H^n(q ≤ ⊤)` is detected at a finite stage.** Suppose that every element of
 `G_⊤` in degree `n - 1` comes from some `G_i`, `i : ℤ`. Then a class of `H^n(q ≤ j)` (the
@@ -303,8 +305,9 @@ the canonical maps `spectralSequencePageXToPageX` between pages. Let `pq = (p, q
 `F_{q+1} H^n / F_q H^n` exactly when it vanishes on some later page `r'` under the canonical map
 `spectralSequencePageXToPageX`. Together with the surjectivity of
 `filtrationSpectralSequencePageXToGraded`, this says that the graded piece is the direct limit of
-the objects at `(p, q)` on the pages `r' ≥ r` along these maps. They are not yet identified with
-the spectral sequence's own maps from page `r` to page `r + 1`. -/
+the objects at `(p, q)` on the pages `r' ≥ r` along these maps, which from page `r` to page
+`r + 1` are the maps of the spectral sequence
+(`TauCeti.Algebra.Homology.SpectralObject.PageHomology`). -/
 theorem filtrationSpectralSequencePageXToGraded_eq_zero_iff (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
     {s : ℤ} (hs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
     (hrs : pq.2 - r + 2 ≤ s)

@@ -37,6 +37,12 @@ multiplication rule
 
 `[L_m^ε] · [L_n^δ] = ∑_(j = 0)^(min m n) [L_(m + n - 2j)^(εδ)]`.
 
+The character homomorphism therefore identifies `R(U_q)` with the **character ring**, its image
+in `ℤ[ℂ]`: the `ℤ`-span of the ladder characters `ch L_m^ε = ∑_(j=0)^m [ε q^(m-2j)]`, which are
+linearly independent. Intrinsically, the character ring consists of the elements of `ℤ[ℂ]`
+supported on the signed powers `ε q^k`, for `ε = ±1` and `k ∈ ℤ`, that are symmetric under the
+inversion `μ ↦ μ⁻¹` of weights, the quantum counterpart of the Weyl group reflection.
+
 ## Main definitions
 
 * `TauCeti.UqSl2.repRing`: the representation ring of `U_q(sl₂)`.
@@ -58,6 +64,12 @@ multiplication rule
   multiplicities `dim Hom_U(L_m^ε, M)`.
 * `TauCeti.UqSl2.of_ladderModule_mul_of_ladderModule`: the Clebsch–Gordan rule in the
   representation ring.
+* `TauCeti.UqSl2.linearIndependent_formalCharacter_ladderModule`: the characters of the signed
+  ladder modules are linearly independent.
+* `TauCeti.UqSl2.coe_range_repRingCharacter`: the image of the character homomorphism is the span
+  of the characters of the signed ladder modules.
+* `TauCeti.UqSl2.mem_range_repRingCharacter_iff`: the image of the character homomorphism consists
+  of the elements supported on the signed powers of `q` and symmetric under `μ ↦ μ⁻¹`.
 
 ## References
 
@@ -287,5 +299,125 @@ theorem of_ladderModule_mul_of_ladderModule (hq : IsGenericQuantumParameter q) (
     formalCharacter_pi, map_sum, ← Fin.sum_univ_eq_sum_range (fun j =>
       repRingCharacter hq (SplitK0.of (.of (LadderModule q (m + n - 2 * j) (ε * δ)))))]
   simp only [repRingCharacter_of_of]
+
+/-! ### The image of the character homomorphism -/
+
+/-- At a generic parameter, the characters `ch L_m^ε = ∑_(j=0)^m [ε q^(m-2j)]` of the signed
+ladder modules are linearly independent over `ℤ`. -/
+theorem linearIndependent_formalCharacter_ladderModule (hq : IsGenericQuantumParameter q) :
+    LinearIndependent ℤ fun p : ℕ × ℤˣ => formalCharacter q (LadderModule q p.1 p.2) := by
+  convert (repRingBasis hq).linearIndependent.map'
+    (repRingCharacter hq).toAddMonoidHom.toIntLinearMap
+    (LinearMap.ker_eq_bot.2 (repRingCharacter_injective hq)) using 1
+  ext1 p
+  simp
+
+/-- **The character ring**: at a generic parameter, the image of the character homomorphism
+`R(U_q) → ℤ[ℂ]` is the `ℤ`-span of the characters `ch L_m^ε = ∑_(j=0)^m [ε q^(m-2j)]` of the
+signed ladder modules. Together with `repRingCharacter_injective`, this identifies `R(U_q)` with
+that span, which is therefore a subring of `ℤ[ℂ]`. -/
+theorem coe_range_repRingCharacter (hq : IsGenericQuantumParameter q) :
+    ((repRingCharacter hq).range : Set (MonoidAlgebra ℤ ℂ)) =
+      Submodule.span ℤ
+        (Set.range fun p : ℕ × ℤˣ => formalCharacter q (LadderModule q p.1 p.2)) := by
+  let φ := (repRingCharacter hq).toAddMonoidHom.toIntLinearMap
+  have h : Set.range (repRingCharacter hq) = (LinearMap.range φ : Set (MonoidAlgebra ℤ ℂ)) :=
+    (LinearMap.coe_range φ).symm
+  rw [RingHom.coe_range, h, LinearMap.range_eq_map, ← (repRingBasis hq).span_eq,
+    Submodule.map_span, ← Set.range_comp]
+  congr 3
+  ext1 p
+  simp [φ]
+
+/-- At a generic parameter, an element of `ℤ[ℂ]` supported on the signed powers `δ q^k` with
+`|k| < N` and symmetric under `μ ↦ μ⁻¹` lies in the span of the characters of the signed ladder
+modules. -/
+private theorem mem_span_formalCharacter_ladderModule (hq : IsGenericQuantumParameter q)
+    (N : ℕ) (f : MonoidAlgebra ℤ ℂ)
+    (hf : f ∈ MonoidAlgebra.supported ℤ ℤ
+      {μ : ℂ | ∃ (δ : ℤˣ) (k : ℤ), |k| < (N : ℤ) ∧ μ = δ * q ^ k})
+    (hinv : ∀ μ, f.coeff μ⁻¹ = f.coeff μ) :
+    f ∈ Submodule.span ℤ
+      (Set.range fun p : ℕ × ℤˣ => formalCharacter q (LadderModule q p.1 p.2)) := by
+  classical
+  induction N generalizing f with
+  | zero =>
+    -- No exponent satisfies `|k| < 0`, so `f = 0`.
+    obtain rfl : f = 0 := by
+      refine MonoidAlgebra.ext (Finsupp.ext fun μ => MonoidAlgebra.mem_supported'.1 hf μ ?_)
+      rintro ⟨_, k, hk, -⟩
+      exact (abs_nonneg k).not_gt (by exact_mod_cast hk)
+    exact zero_mem _
+  | succ N ih =>
+    -- Subtracting the multiples of `ch L_N^ε` that match the coefficients of `f` at the extreme
+    -- weights `ε q^N` leaves a symmetric element supported on the exponents `|k| < N`.
+    obtain ⟨g, hg⟩ : ∃ g, g = f - ∑ ε : ℤˣ,
+        f.coeff (ε * q ^ (N : ℤ)) • formalCharacter q (LadderModule q N ε) := ⟨_, rfl⟩
+    have hginv (μ : ℂ) : g.coeff μ⁻¹ = g.coeff μ := by
+      simp only [hg, MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_smul,
+        Finsupp.sub_apply, Finsupp.finsetSum_apply, Finsupp.smul_apply, hinv,
+        formalCharacter_ladderModule_coeff_inv]
+    have hgtop (δ : ℤˣ) : g.coeff (δ * q ^ (N : ℤ)) = 0 := by
+      simp only [hg, MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_smul,
+        Finsupp.sub_apply, Finsupp.finsetSum_apply, Finsupp.smul_apply,
+        formalCharacter_ladderModule_coeff_units_mul_zpow_self hq, smul_eq_mul, mul_ite, mul_one,
+        mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, sub_self]
+    have hgs : g ∈ MonoidAlgebra.supported ℤ ℤ
+        {μ : ℂ | ∃ (δ : ℤˣ) (k : ℤ), |k| < ((N + 1 : ℕ) : ℤ) ∧ μ = δ * q ^ k} :=
+      hg ▸ sub_mem hf (Submodule.sum_mem _ fun ε _ =>
+        Submodule.smul_mem _ _ (formalCharacter_ladderModule_mem_supported N ε))
+    -- The coefficients of `g` at the extreme weights `δ q^(±N)` vanish.
+    have hg' : g ∈ MonoidAlgebra.supported ℤ ℤ
+        {μ : ℂ | ∃ (δ : ℤˣ) (k : ℤ), |k| < (N : ℤ) ∧ μ = δ * q ^ k} := by
+      refine MonoidAlgebra.mem_supported'.2 fun μ hμ => by_contra fun hne => ?_
+      obtain ⟨δ, k, hk, rfl⟩ := MonoidAlgebra.mem_supported.1 hgs (Finsupp.mem_support_iff.2 hne)
+      have hkN : ¬ |k| < (N : ℤ) := fun h => hμ ⟨δ, k, h, rfl⟩
+      rw [abs_lt] at hk hkN
+      rcases (show k = N ∨ k = -N by push_cast at hk; omega) with rfl | rfl
+      · exact hne (hgtop δ)
+      · refine hne ?_
+        rw [← hginv, units_mul_zpow_inv, neg_neg, hgtop]
+    rw [show f = g + ∑ ε : ℤˣ,
+        f.coeff (ε * q ^ (N : ℤ)) • formalCharacter q (LadderModule q N ε) by
+      rw [hg, sub_add_cancel]]
+    exact add_mem (ih g hg' hginv) (Submodule.sum_mem _ fun ε _ =>
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨(N, ε), rfl⟩))
+
+/-- **The character ring, intrinsically**: at a generic parameter, an element of `ℤ[ℂ]` is the
+character of an element of the representation ring exactly when it is supported on the signed
+powers `ε q^k`, for `ε = ±1` and `k ∈ ℤ`, and is symmetric under the inversion `μ ↦ μ⁻¹` of
+weights, the quantum counterpart of the Weyl group reflection. -/
+theorem mem_range_repRingCharacter_iff (hq : IsGenericQuantumParameter q)
+    (f : MonoidAlgebra ℤ ℂ) :
+    f ∈ (repRingCharacter hq).range ↔
+      f ∈ MonoidAlgebra.supported ℤ ℤ (Set.range fun p : ℤˣ × ℤ => ((p.1 : ℤ) : ℂ) * q ^ p.2) ∧
+        ∀ μ, f.coeff μ⁻¹ = f.coeff μ := by
+  rw [← SetLike.mem_coe, coe_range_repRingCharacter, SetLike.mem_coe]
+  constructor
+  · intro hf
+    induction hf using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨⟨m, ε⟩, rfl⟩ := hx
+      refine ⟨MonoidAlgebra.supported_mono ?_ (formalCharacter_ladderModule_mem_supported m ε),
+        formalCharacter_ladderModule_coeff_inv m ε⟩
+      rintro _ ⟨δ, k, -, rfl⟩
+      exact ⟨(δ, k), rfl⟩
+    | zero => exact ⟨zero_mem _, fun _ => by simp⟩
+    | add x y _ _ hx hy => exact ⟨add_mem hx.1 hy.1, fun μ => by simp [hx.2, hy.2]⟩
+    | smul a x _ hx =>
+      exact ⟨Submodule.smul_mem _ a hx.1, fun μ => by
+        simp only [MonoidAlgebra.coeff_smul, Finsupp.smul_apply, hx.2]⟩
+  · rintro ⟨hs, hinv⟩
+    -- Bound the exponents of the finitely many weights in the support of `f`.
+    have hsupp (μ : ℂ) (hμ : μ ∈ f.coeff.support) : ∃ (k : ℤ) (δ : ℤˣ), μ = δ * q ^ k := by
+      obtain ⟨⟨δ, k⟩, h⟩ := hs hμ
+      exact ⟨k, δ, h.symm⟩
+    choose! k δ hk using hsupp
+    refine mem_span_formalCharacter_ladderModule hq
+      ((f.coeff.support.sup fun μ => (k μ).natAbs) + 1) f
+      (MonoidAlgebra.mem_supported.2 fun μ hμ' => ⟨δ μ, k μ, ?_, hk μ hμ'⟩) hinv
+    have := Finset.le_sup (f := fun μ => (k μ).natAbs) hμ'
+    rw [Int.abs_eq_natAbs]
+    omega
 
 end TauCeti.UqSl2

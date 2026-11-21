@@ -26,6 +26,11 @@ stabilization and take values in an abelian group, such as Connes' odd pairing w
 cohomology, factor through it. A ring homomorphism, applied to the entries of invertible matrices,
 induces a homomorphism of algebraic `K₁`, functorially.
 
+At a finite size with two distinct indices, the invertible matrices commuting with every
+elementary matrix are the scalar matrices with central entry. A stabilization `u ⊕ 1` of
+larger size has a diagonal entry `1`, so in the limit only the identity commutes with `E_∞(A)`:
+the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial.
+
 ## Main definitions
 
 * `TauCeti.stabilizeGL`: the stabilization homomorphism `GL (Fin m) A →* GL (Fin n) A`,
@@ -54,6 +59,9 @@ induces a homomorphism of algebraic `K₁`, functorially.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_eq_commutator`: `E_∞(A)` is the
   commutator subgroup of `GL_∞(A)`.
+* `TauCeti.StableGeneralLinearGroup.centralizer_elementarySubgroup`,
+  `TauCeti.StableGeneralLinearGroup.center_eq_bot`: the centralizer of `E_∞(A)` in `GL_∞(A)`,
+  and hence the center of `GL_∞(A)`, is trivial.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
@@ -349,6 +357,33 @@ instance instIsMulCommutativeQuotientElementarySubgroup :
     IsMulCommutative (StableGeneralLinearGroup A ⧸ elementarySubgroup A) :=
   Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr commutator_le_elementarySubgroup
 
+/-- **The centralizer of the stable elementary subgroup is trivial**: only the identity of
+`GL_∞(A)` commutes with every stably elementary element. -/
+@[simp]
+theorem centralizer_elementarySubgroup :
+    Subgroup.centralizer (elementarySubgroup A : Set (StableGeneralLinearGroup A)) = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  obtain ⟨n, u, rfl⟩ := exists_of x
+  -- Pass to `v = u ⊕ 1` of size `n + 2`: it commutes with every elementary matrix of that size,
+  -- so it is a central scalar matrix, and its last diagonal entry is `1`.
+  rw [← of_stabilizeGL (Nat.le_add_right n 2)] at hx ⊢
+  set v := stabilizeGL A (Nat.le_add_right n 2) u
+  have hv : v ∈ Subgroup.centralizer
+      (TauCeti.elementarySubgroup (Fin (n + 2)) A : Set (GL (Fin (n + 2)) A)) :=
+    Subgroup.mem_centralizer_iff.2 fun e he ↦ of_injective (n + 2) <| by
+      simpa only [map_mul] using Subgroup.mem_centralizer_iff.1 hx _ (of_mem_elementarySubgroup he)
+  obtain ⟨c, -, hc⟩ := TauCeti.mem_centralizer_elementarySubgroup_iff.1 hv
+  -- The last diagonal entry of `v = u ⊕ 1` is `1`, so the scalar `c` is `1`.
+  have hc1 : c = 1 := by
+    simpa [v, coe_stabilizeGL_apply] using congr($hc (Fin.last (n + 1)) (Fin.last (n + 1)))
+  have hv1 : v = 1 := Units.ext (by simp [← hc, hc1])
+  rw [hv1, map_one]
+
+/-- The center of the stable general linear group `GL_∞(A)` is trivial. -/
+@[simp]
+theorem center_eq_bot : Subgroup.center (StableGeneralLinearGroup A) = ⊥ :=
+  eq_bot_iff.2 <| (Subgroup.center_le_centralizer _).trans centralizer_elementarySubgroup.le
+
 end StableGeneralLinearGroup
 
 /-! ## Stable transvections -/
@@ -357,19 +392,19 @@ end StableGeneralLinearGroup
 `max i j + 1` and mapped into `TauCeti.StableGeneralLinearGroup A`. -/
 def stableTransvection (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A) :
     StableGeneralLinearGroup A :=
-  StableGeneralLinearGroup.of A (max p.1.1 p.1.2 + 1)
-    (transvectionUnit (i := (⟨p.1.1, by omega⟩ : Fin (max p.1.1 p.1.2 + 1)))
-      (j := ⟨p.1.2, by omega⟩) (fun h ↦ p.2 (congrArg Fin.val h)) a)
+  StableGeneralLinearGroup.of A (max p.val.1 p.val.2 + 1)
+    (transvectionUnit (i := (⟨p.val.1, by omega⟩ : Fin (max p.val.1 p.val.2 + 1)))
+      (j := ⟨p.val.2, by omega⟩) (fun h ↦ p.property (congrArg Fin.val h)) a)
 
 /-- Forming `e_{ij}(a)` at any size `n` exceeding both `i` and `j` gives the same element of
 `GL_∞(A)`. -/
 theorem stableTransvection_eq_of (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A)
-    {n : ℕ} (hi : p.1.1 < n) (hj : p.1.2 < n) :
+    {n : ℕ} (hi : p.val.1 < n) (hj : p.val.2 < n) :
     stableTransvection p a =
       StableGeneralLinearGroup.of A n
-        (transvectionUnit (i := ⟨p.1.1, hi⟩) (j := ⟨p.1.2, hj⟩)
-          (fun h ↦ p.2 (congrArg Fin.val h)) a) := by
-  have hle : max p.1.1 p.1.2 + 1 ≤ n := by omega
+        (transvectionUnit (i := ⟨p.val.1, hi⟩) (j := ⟨p.val.2, hj⟩)
+          (fun h ↦ p.property (congrArg Fin.val h)) a) := by
+  have hle : max p.val.1 p.val.2 + 1 ≤ n := by omega
   rw [stableTransvection, ← StableGeneralLinearGroup.of_stabilizeGL hle,
     stabilizeGL_transvectionUnit]
 
@@ -502,7 +537,7 @@ theorem ker_mk_eq_iSup (n : ℕ) :
     (mk A n).ker =
       ⨆ (k : ℕ) (h : n ≤ k), (TauCeti.elementarySubgroup (Fin k) A).comap (stabilizeGL A h) := by
   let f : {k : ℕ // n ≤ k} → Subgroup (GL (Fin n) A) :=
-    fun p ↦ (TauCeti.elementarySubgroup (Fin p.1) A).comap (stabilizeGL A p.2)
+    fun p ↦ (TauCeti.elementarySubgroup (Fin p.val) A).comap (stabilizeGL A p.property)
   have hmono : Monotone f := by
     rintro ⟨k₁, hk₁⟩ ⟨k₂, hk₂⟩ (h₁₂ : k₁ ≤ k₂) u hu
     rw [Subgroup.mem_comap] at hu ⊢

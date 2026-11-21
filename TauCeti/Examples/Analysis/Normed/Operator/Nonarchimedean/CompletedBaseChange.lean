@@ -267,7 +267,7 @@ theorem retractIncl_comp_retractProj_idemSnd (n : ℕ) :
 /-- **Tensor extension of `e Rⁿ` is `Sⁿ`** (for every `n : ℕ`, including `n = 0`). -/
 def idemSndCompletedEquiv (n : ℕ) :
     (S₀(p) ⊗̂[R₀(p)] (idempProj e₀(p) n).range) ≃L[S₀(p)] (Fin n → S₀(p)) :=
-  (ContinuousLinearEquiv.equivOfInverse'
+  (ContinuousLinearEquiv.ofContinuousLinearMap
     (CompletedTensor.retractIncl (Fin n) hS₀(p) (idempIncl e₀(p) n))
     (CompletedTensor.retractProj (Fin n) hS₀(p) (idempRetr e₀(p) n))
     (retractIncl_comp_retractProj_idemSnd p n)

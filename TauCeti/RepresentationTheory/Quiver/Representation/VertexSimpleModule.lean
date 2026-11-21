@@ -88,7 +88,7 @@ theorem nonempty_iso_vertexSimpleModule_of_generator {M : ModuleCat (pathAlgebra
         rw [ZeroMemClass.coe_zero]
         obtain ⟨c, rfl⟩ := hspan y
         exact (coe_vertexProjection_apply_of_mem hy).symm.trans
-          (coe_vertexProjection_apply_eq_zero_of_ne ha (Submodule.smul_mem _ c x₀.2))
+          (coe_vertexProjection_apply_eq_zero_of_ne ha (Submodule.smul_mem _ c x₀.property))
     have hpath {a : Q} (p : Quiver.Path i a) (hp : p.length ≠ 0) :
         pathMap k M p x₀ = 0 := by
       cases p with

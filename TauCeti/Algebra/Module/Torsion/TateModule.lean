@@ -142,7 +142,7 @@ def proj (n : ℕ) : TateModule p A →+ TateModuleLevel p A n :=
 theorem proj_succ (x : TateModule p A) (n : ℕ) :
     tateModuleTransition p A n (proj (n + 1) x) = proj n x :=
   -- Unfold `TateModule` to expose the compatible-family subtype carrying `x`.
-  mem_tateModuleSubgroup_iff.1 (show tateModuleSubgroup p A from x).2 n
+  mem_tateModuleSubgroup_iff.1 (show tateModuleSubgroup p A from x).property n
 
 /-- A Tate-module point is determined by all of its finite-level components. -/
 @[ext]
@@ -513,7 +513,7 @@ theorem proj_surjective (h : ∀ n, Function.Surjective (tateModuleTransition p 
     | succ k ih => rw [pow_succ, mul_nsmul', ht, ih]
   refine ⟨mk (fun m ↦ ⟨p ^ n • (t m : A), ?_⟩) fun m ↦ ?_, ?_⟩
   · rw [AddSubgroup.torsionBy.nsmul_iff, smul_smul, ← pow_add, add_comm]
-    exact AddSubgroup.torsionBy.nsmul_iff.mp (t m).2
+    exact AddSubgroup.torsionBy.nsmul_iff.mp (t m).property
   · ext
     simp [smul_comm p (p ^ n), ht]
   · ext
@@ -531,7 +531,7 @@ theorem tateModuleTransition_surjective_of_natCard {r : ℕ} (hp : p ≠ 0)
     have hinj : Function.Injective (fun x : f.ker ↦
         (⟨((x : TateModuleLevel p A (n + 1)) : A), by
           rw [AddSubgroup.torsionBy.nsmul_iff, pow_one]
-          simpa [f] using congrArg Subtype.val x.2⟩ : TateModuleLevel p A 1)) :=
+          simpa [f] using congrArg Subtype.val x.property⟩ : TateModuleLevel p A 1)) :=
       fun x y hxy ↦ Subtype.ext (Subtype.ext (congrArg Subtype.val hxy :))
     exact (Nat.card_le_card_of_injective _ hinj).trans_eq (by rw [hcard 1, pow_one])
   have hrange : Nat.card f.range = Nat.card (TateModuleLevel p A n) := by

@@ -19,7 +19,9 @@ In any graded ring, multiplication by a homogeneous element `a` of degree `i` sh
 homogeneous component by `i`. If `a` is moreover left regular, then the components of `b` can be
 read off from those of `a * b`; in particular, if `a * b` is homogeneous of degree `i + j`, then
 `b` is homogeneous of degree `j`. For instance, dividing a homogeneous polynomial by a linear form
-that divides it produces a homogeneous polynomial of one degree less.
+that divides it produces a homogeneous polynomial of one degree less. Pairing against a functional
+that vanishes off a single degree `d` sees, against an element of degree `l`, only the component
+of degree `i` with `i + l = d`.
 
 ## Main results
 
@@ -34,6 +36,9 @@ that divides it produces a homogeneous polynomial of one degree less.
 * `TauCeti.GradedAlgebra.proj_mem`: the degree-`i` projection lands in the degree-`i` component.
 * `TauCeti.GradedAlgebra.proj_of_mem_same` and `TauCeti.GradedAlgebra.proj_of_mem_ne`: the
   degree-`j` projection fixes elements of degree `j` and kills elements of any other degree.
+* `TauCeti.GradedAlgebra.apply_coe_decompose_mul_of_forall_ne`: for a functional vanishing off
+  one degree `d`, pairing with an element of degree `l` only sees the component of degree `i`,
+  where `i + l = d`.
 * `TauCeti.GradedAlgebra.isScalarTower_gradeZero`: the scalars act on a graded algebra through its
   degree-zero part.
 -/
@@ -105,7 +110,7 @@ theorem eq_zero_of_isIdempotentElem_of_decompose_zero (hneg : ∀ p < 0, 𝒜 p 
   have hr1 : ∀ i < (1 : ℤ), r i = 0 := by
     intro i hi
     rcases lt_or_eq_of_le (show i ≤ 0 by omega) with hi | rfl
-    · exact Subtype.ext (hzero hi (r i).2)
+    · exact Subtype.ext (hzero hi (r i).property)
     · exact Subtype.ext h0
   have hpow (n : ℕ) : r = r ^ (n + 1) := by
     have h : decompose 𝒜 (f ^ (n + 1)) = decompose 𝒜 f ^ (n + 1) :=
@@ -147,7 +152,7 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
       rw [DirectSum.of_eq_same]
     · rw [hk k hkj, DirectSum.of_eq_of_ne _ _ _ hkj]
   rw [← (decompose 𝒜).symm_apply_apply b, hb, decompose_symm_of]
-  exact (decompose 𝒜 b j).2
+  exact (decompose 𝒜 b j).property
 
 end Regular
 
@@ -173,6 +178,30 @@ theorem proj_of_mem_ne {i j : ι} {a : A} (ha : a ∈ 𝒜 i) (hij : i ≠ j) :
   rw [_root_.GradedAlgebra.proj_apply, decompose_of_mem_ne 𝒜 ha hij]
 
 end Proj
+
+section Functional
+
+variable {A ι σ F M : Type*} [AddRightCancelMonoid ι] [DecidableEq ι] [Semiring A] [SetLike σ A]
+  [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜] [AddCommMonoid M] [FunLike F A M]
+  [AddMonoidHomClass F A M]
+
+/-- **Pairing against a functional concentrated in one degree.** If `φ` vanishes on every
+homogeneous component except that of degree `d`, then pairing `x` with an element `c` of degree
+`l` only sees the component of `x` of the complementary degree `i`, where `i + l = d`. -/
+theorem apply_coe_decompose_mul_of_forall_ne {φ : F} {d : ι} (hφ : ∀ i ≠ d, ∀ a ∈ 𝒜 i, φ a = 0)
+    (x : A) {i l : ι} {c : A} (hc : c ∈ 𝒜 l) (hil : i + l = d) :
+    φ ((decompose 𝒜 x i : A) * c) = φ (x * c) := by
+  classical
+  conv_rhs => rw [← sum_support_decompose 𝒜 x]
+  rw [Finset.sum_mul, map_sum, Finset.sum_eq_single i]
+  · intro i' _ hi'
+    exact hφ _ (fun h ↦ hi' (add_right_cancel (h.trans hil.symm))) _
+      (SetLike.mul_mem_graded (SetLike.coe_mem _) hc)
+  · intro hi
+    rw [DFinsupp.notMem_support_iff.mp hi]
+    simp
+
+end Functional
 
 section GradeZero
 

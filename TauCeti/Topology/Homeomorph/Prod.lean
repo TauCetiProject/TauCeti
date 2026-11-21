@@ -25,8 +25,8 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- The subspace `Prod.snd ⁻¹' t` of `X × Y` is homeomorphic to `X × t`. -/
 @[simps]
 def Set.preimageSnd (t : Set Y) : ↥(Prod.snd ⁻¹' t : Set (X × Y)) ≃ₜ X × t where
-  toFun z := (z.1.1, ⟨z.1.2, z.2⟩)
-  invFun z := ⟨(z.1, z.2.1), z.2.2⟩
+  toFun z := (z.val.1, ⟨z.val.2, z.property⟩)
+  invFun z := ⟨(z.1, z.2.val), z.2.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by fun_prop

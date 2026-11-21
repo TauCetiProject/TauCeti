@@ -40,7 +40,7 @@ Under a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`, with `α = 1 - 2/q >
 
 `u⁻¹ ≤ D S^{1/α} R^{-1/α} ‖u⁻¹‖_{L²(B(x₀, R))}` on `B(x₀, R/2)`.
 
-The scale-invariant estimates from small negative powers are in
+The scale-invariant estimates from negative powers are in
 `TauCeti.Analysis.PDE.Regularity.Supersolution.Lp`.
 
 ## Main declarations
@@ -240,7 +240,7 @@ theorem UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos
       continuous_const
   have hsub := w1p0Submodule_subset_of_isClosed hclosed fun φ =>
     energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos h ha hu hF hM hM' hF0 hum hF' hF'' φ
-  have := hsub v.2
+  have := hsub v.property
   rwa [mem_ofPred_eq, W1p.posPart_eq_self_of_ae_nonneg hp hv] at this
 
 /-! ### The lower bound for positive supersolutions -/

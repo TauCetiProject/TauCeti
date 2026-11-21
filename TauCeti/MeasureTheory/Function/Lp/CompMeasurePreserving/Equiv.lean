@@ -1,0 +1,275 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
+
+import Mathlib.MeasureTheory.Function.FactorsThrough
+
+/-!
+# Positivity, ranges and isometric equivalences of measure-preserving `L^p` pullbacks
+
+Mathlib turns a measure-preserving map `f : α → β` into a linear isometry
+`MeasureTheory.Lp.compMeasurePreservingₗᵢ : Lp E p μb →ₗᵢ[𝕜] Lp E p μ`, but stops there: there is
+no constructor producing a `LinearIsometryEquiv`. Transporting structure between `L²` spaces —
+a Hilbert basis, an orthonormal family, a spectral decomposition — needs the equivalence, since
+`HilbertBasis.mapₗᵢ` and its relatives consume `≃ₗᵢ` rather than `→ₗᵢ`.
+
+A change of variables rarely supplies a `MeasurableEquiv`. The maps that arise in practice are
+inverse to each other only *almost everywhere*: `Real.cos ∘ Real.arccos` is the identity only on
+`[-1, 1]`, and `Real.arccos ∘ Real.cos` only on `[0, π]`. This file therefore takes a convenient
+sufficient hypothesis — a pair of measure-preserving maps that compose to the identity almost
+everywhere in one direction — and builds the isometric equivalence from it. One direction is
+enough: both precompositions are linear isometries, hence injective, and an injective map with a
+one-sided inverse has that inverse on both sides.
+
+## Main declarations
+
+* `MeasureTheory.Lp.compMeasurePreservingₗᵢ_apply` is the application lemma for Mathlib's
+  linear isometry. Mathlib's `@[simps!]` generates only `compMeasurePreservingₗᵢ_apply_coe`,
+  which unfolds one level too far to rewrite with. `MeasureTheory.Lp.coe_compMeasurePreservingₗᵢ`
+  is its unapplied form, for statements about the map itself.
+* `MeasureTheory.Lp.compMeasurePreserving_monotone` and
+  `MeasureTheory.Lp.compMeasurePreserving_nonneg`: for ordered values, precomposition is monotone
+  and hence positive, since the order on `Lp` is almost everywhere pointwise.
+* `MeasureTheory.Lp.exists_compMeasurePreservingₗᵢ_eq_of_stronglyMeasurable_comap` factors
+  a comap-measurable `Lp` function through any measure-preserving map, for complete value spaces.
+* `MeasureTheory.Lp.mem_range_compMeasurePreservingₗᵢ_iff` characterizes its range by
+  almost-everywhere strong measurability for the comap sigma algebra.
+* `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` upgrades that linear isometry to a
+  `LinearIsometryEquiv` given a one-sided almost-everywhere inverse partner.
+* `MeasureTheory.Lp.coeFn_compMeasurePreservingₗᵢEquiv` and
+  `MeasureTheory.Lp.coeFn_compMeasurePreservingₗᵢEquiv_symm` identify the equivalence and its
+  inverse with precomposition by `f` and by `g` respectively.
+* `MeasureTheory.Lp.compMeasurePreserving_congr`: precomposition depends only on the almost
+  everywhere class of the map.
+* `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv_eq_refl`,
+  `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv_trans` and
+  `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv_symm`: the identity, composition and inverse laws,
+  for any maps agreeing almost everywhere with the expected ones. They reduce to Mathlib's
+  `MeasureTheory.Lp.compMeasurePreserving_id` and `MeasureTheory.Lp.compMeasurePreserving_comp`
+  through `MeasureTheory.Lp.compMeasurePreserving_congr`.
+* `MeasureTheory.Lp.leftInverse_compMeasurePreserving`: precomposition by `g` is a left inverse
+  of precomposition by `f` when `f ∘ g` is almost everywhere the identity.
+* `MeasureTheory.Lp.compMeasurePreserving_toLp` identifies precomposition on the `Lp` class of a
+  continuous function with ordinary composition of continuous maps.
+-/
+
+public section
+
+open scoped ENNReal
+
+namespace MeasureTheory
+namespace Lp
+
+variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
+  {μb : Measure β} {p : ℝ≥0∞} [NormedAddCommGroup E] {f : α → β} {g : β → α}
+
+/-- Precomposition on `Lp` by a measure-preserving map depends only on the map's almost
+everywhere class: the `Lp` form of Mathlib's `MeasureTheory.AEEqFun.compMeasurePreserving_congr`. -/
+theorem compMeasurePreserving_congr {f' : α → β} (hf : MeasurePreserving f μ μb)
+    (hf' : MeasurePreserving f' μ μb) (h : f =ᵐ[μ] f') :
+    compMeasurePreserving (E := E) (p := p) f hf = compMeasurePreserving f' hf' :=
+  AddMonoidHom.ext fun _ ↦ Subtype.ext (AEEqFun.compMeasurePreserving_congr _ hf hf'.measurable h)
+
+/-- If `f` and `g` are measure-preserving and `f ∘ g` is the identity almost everywhere, then
+precomposition by `g` is a left inverse of precomposition by `f` on `Lp`. -/
+theorem leftInverse_compMeasurePreserving (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) :
+    Function.LeftInverse (compMeasurePreserving (E := E) (p := p) g hg)
+      (compMeasurePreserving f hf) := fun x ↦ by
+  rw [← compMeasurePreserving_comp_apply x hf hg]
+  refine Subtype.ext ?_
+  rw [compMeasurePreserving_val, AEEqFun.compMeasurePreserving_congr _ _ measurable_id hfg,
+    AEEqFun.compMeasurePreserving_id]
+
+/-- For ordered values, precomposition by a measure-preserving map is monotone on `Lp`. -/
+theorem compMeasurePreserving_monotone [PartialOrder E] (hf : MeasurePreserving f μ μb) :
+    Monotone (compMeasurePreserving (E := E) (p := p) f hf) := by
+  intro g h hgh
+  rw [← coeFn_le] at hgh ⊢
+  filter_upwards [hf.quasiMeasurePreserving.tendsto_ae hgh, coeFn_compMeasurePreserving g hf,
+    coeFn_compMeasurePreserving h hf] with x hx hg hh
+  rw [hg, hh]
+  exact hx
+
+/-- For ordered values, precomposition by a measure-preserving map sends nonnegative `Lp`
+classes to nonnegative ones. -/
+theorem compMeasurePreserving_nonneg [PartialOrder E] (hf : MeasurePreserving f μ μb)
+    {g : Lp E p μb} (hg : 0 ≤ g) : 0 ≤ compMeasurePreserving f hf g := by
+  simpa only [map_zero] using compMeasurePreserving_monotone hf hg
+
+variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)]
+
+/-- The application lemma for `MeasureTheory.Lp.compMeasurePreservingₗᵢ`.
+
+Mathlib marks that definition `@[simps!]`, which generates `compMeasurePreservingₗᵢ_apply_coe`
+— an equation about the underlying `AEEqFun`, one unfolding past the point where a rewrite is
+usable. This states the map itself. -/
+@[simp]
+theorem compMeasurePreservingₗᵢ_apply (hf : MeasurePreserving f μ μb) (x : Lp E p μb) :
+    compMeasurePreservingₗᵢ 𝕜 f hf x = compMeasurePreserving f hf x :=
+  rfl
+
+/-- The map underlying `MeasureTheory.Lp.compMeasurePreservingₗᵢ` is
+`MeasureTheory.Lp.compMeasurePreserving`: the unapplied form of
+`MeasureTheory.Lp.compMeasurePreservingₗᵢ_apply`, for statements about the map itself, such as
+its monotonicity or its fixed points. Together with Mathlib's simp lemma
+`LinearIsometry.coe_toContinuousLinearMap` it also normalizes the continuous linear map the
+isometry induces. -/
+@[simp]
+theorem coe_compMeasurePreservingₗᵢ (hf : MeasurePreserving f μ μb) :
+    ⇑(compMeasurePreservingₗᵢ 𝕜 f hf : Lp E p μb →ₗᵢ[𝕜] Lp E p μ) = compMeasurePreserving f hf :=
+  funext (compMeasurePreservingₗᵢ_apply 𝕜 hf)
+
+section CompleteSpace
+
+variable [CompleteSpace E]
+
+/-- Every `Lp` function strongly measurable for the sigma algebra generated by a
+measure-preserving map lies in the range of its pullback. -/
+theorem exists_compMeasurePreservingₗᵢ_eq_of_stronglyMeasurable_comap
+    (hf : MeasurePreserving f μ μb) {u : α → E}
+    (hu : StronglyMeasurable[MeasurableSpace.comap f inferInstance] u) (huLp : MemLp u p μ) :
+    ∃ v : Lp E p μb, compMeasurePreservingₗᵢ 𝕜 f hf v = huLp.toLp u := by
+  obtain ⟨v, hv, huv⟩ := hu.exists_eq_measurable_comp
+  have hvLp : MemLp v p μb := by
+    rw [← hf.map_eq]
+    exact (memLp_map_measure_iff hv.aestronglyMeasurable hf.aemeasurable).2
+      (huv ▸ huLp)
+  refine ⟨hvLp.toLp v, ?_⟩
+  apply Lp.ext
+  filter_upwards [coeFn_compMeasurePreserving (hvLp.toLp v) hf,
+    hf.quasiMeasurePreserving.ae_eq_comp hvLp.coeFn_toLp,
+    huLp.coeFn_toLp] with x h₁ h₂ h₃
+  exact h₁.trans (h₂.trans ((congrFun huv x).symm.trans h₃.symm))
+
+/-- The range of a measure-preserving pullback consists exactly of the `Lp` classes with
+an almost-everywhere strongly measurable representative for the comap sigma algebra. -/
+theorem mem_range_compMeasurePreservingₗᵢ_iff (hf : MeasurePreserving f μ μb) (u : Lp E p μ) :
+    u ∈ LinearMap.range (compMeasurePreservingₗᵢ 𝕜 f hf).toLinearMap ↔
+      AEStronglyMeasurable[MeasurableSpace.comap f inferInstance] u μ := by
+  constructor
+  · rintro ⟨v, rfl⟩
+    refine ⟨(Lp.aestronglyMeasurable v).mk v ∘ f,
+      (Lp.aestronglyMeasurable v).stronglyMeasurable_mk.comp_measurable
+        (measurable_iff_comap_le.mpr le_rfl), ?_⟩
+    exact (coeFn_compMeasurePreserving v hf).trans
+      (hf.quasiMeasurePreserving.ae_eq_comp (Lp.aestronglyMeasurable v).ae_eq_mk)
+  · intro hu
+    have huLp := (Lp.memLp u).ae_eq hu.ae_eq_mk
+    obtain ⟨v, hv⟩ := exists_compMeasurePreservingₗᵢ_eq_of_stronglyMeasurable_comap 𝕜 hf
+      hu.stronglyMeasurable_mk huLp
+    refine ⟨v, hv.trans ?_⟩
+    exact (MemLp.toLp_congr huLp (Lp.memLp u) hu.ae_eq_mk.symm).trans (Lp.toLp_coeFn u _)
+
+end CompleteSpace
+
+/-- **The `L^p` isometric equivalence induced by an almost-everywhere inverse pair of
+measure-preserving maps.**
+
+`f` and `g` are each measure-preserving and `f ∘ g` is the identity almost everywhere;
+precomposition by `f` is then an isometric isomorphism `Lp E p μb ≃ₗᵢ[𝕜] Lp E p μ`, with inverse
+precomposition by `g`.
+
+The symmetric hypothesis `g ∘ f =ᵐ[μ] id` is not required: precomposition by `g` is injective,
+so a one-sided inverse of it is already two-sided.
+
+The almost-everywhere hypothesis is what makes this usable for a change of variables: `Real.cos`
+and `Real.arccos` satisfy it without forming a `MeasurableEquiv`. -/
+noncomputable def compMeasurePreservingₗᵢEquiv (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) : Lp E p μb ≃ₗᵢ[𝕜] Lp E p μ :=
+  have h := leftInverse_compMeasurePreserving (E := E) (p := p) hf hg hfg
+  LinearIsometryEquiv.ofLinearIsometry (compMeasurePreservingₗᵢ 𝕜 f hf)
+    (compMeasurePreservingₗ 𝕜 g hg)
+    (LinearMap.ext (h.rightInverse_of_injective (isometry_compMeasurePreserving hg).injective))
+    (LinearMap.ext h)
+
+@[simp]
+theorem compMeasurePreservingₗᵢEquiv_apply (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) (x : Lp E p μb) :
+    compMeasurePreservingₗᵢEquiv 𝕜 hf hg hfg x = compMeasurePreserving f hf x := by
+  rw [compMeasurePreservingₗᵢEquiv, LinearIsometryEquiv.coe_ofLinearIsometry,
+    compMeasurePreservingₗᵢ_apply]
+
+@[simp]
+theorem compMeasurePreservingₗᵢEquiv_symm_apply (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) (x : Lp E p μ) :
+    (compMeasurePreservingₗᵢEquiv 𝕜 hf hg hfg).symm x = compMeasurePreserving g hg x := by
+  rw [compMeasurePreservingₗᵢEquiv, LinearIsometryEquiv.coe_ofLinearIsometry_symm]
+  rfl
+
+/-- The equivalence is almost everywhere precomposition by `f`. -/
+theorem coeFn_compMeasurePreservingₗᵢEquiv (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) (x : Lp E p μb) :
+    ⇑(compMeasurePreservingₗᵢEquiv 𝕜 hf hg hfg x) =ᵐ[μ] ⇑x ∘ f := by
+  rw [compMeasurePreservingₗᵢEquiv_apply]
+  exact coeFn_compMeasurePreserving x hf
+
+/-- The inverse equivalence is almost everywhere precomposition by `g`. -/
+theorem coeFn_compMeasurePreservingₗᵢEquiv_symm (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) (x : Lp E p μ) :
+    ⇑((compMeasurePreservingₗᵢEquiv 𝕜 hf hg hfg).symm x) =ᵐ[μb] ⇑x ∘ g := by
+  rw [compMeasurePreservingₗᵢEquiv_symm_apply]
+  exact coeFn_compMeasurePreserving x hg
+
+/-- Precomposition by a map that is almost everywhere the identity is the identity of `Lp`. -/
+theorem compMeasurePreservingₗᵢEquiv_eq_refl {f g : α → α} (hf : MeasurePreserving f μ μ)
+    (hg : MeasurePreserving g μ μ) (hfg : f ∘ g =ᵐ[μ] id) (hid : f =ᵐ[μ] id) :
+    compMeasurePreservingₗᵢEquiv (E := E) (p := p) 𝕜 hf hg hfg = .refl 𝕜 _ :=
+  LinearIsometryEquiv.ext fun x ↦ by
+    rw [compMeasurePreservingₗᵢEquiv_apply, compMeasurePreserving_congr hf (.id μ) hid,
+      compMeasurePreserving_id_apply, LinearIsometryEquiv.coe_refl, id_eq]
+
+/-- Precomposition by `f` and then by `f'` is precomposition by any map almost everywhere equal
+to `f ∘ f'`. -/
+theorem compMeasurePreservingₗᵢEquiv_trans {γ : Type*} [MeasurableSpace γ] {μc : Measure γ}
+    {f' : γ → α} {g' : α → γ} {f'' : γ → β} {g'' : β → γ} (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) (hf' : MeasurePreserving f' μc μ)
+    (hg' : MeasurePreserving g' μ μc) (hfg' : f' ∘ g' =ᵐ[μ] id)
+    (hf'' : MeasurePreserving f'' μc μb) (hg'' : MeasurePreserving g'' μb μc)
+    (hfg'' : f'' ∘ g'' =ᵐ[μb] id) (h : f'' =ᵐ[μc] f ∘ f') :
+    (compMeasurePreservingₗᵢEquiv (E := E) (p := p) 𝕜 hf hg hfg).trans
+        (compMeasurePreservingₗᵢEquiv 𝕜 hf' hg' hfg') =
+      compMeasurePreservingₗᵢEquiv 𝕜 hf'' hg'' hfg'' :=
+  LinearIsometryEquiv.ext fun x ↦ by
+    rw [LinearIsometryEquiv.trans_apply, compMeasurePreservingₗᵢEquiv_apply,
+      compMeasurePreservingₗᵢEquiv_apply, compMeasurePreservingₗᵢEquiv_apply,
+      compMeasurePreserving_congr hf'' (hf.comp hf') h, compMeasurePreserving_comp_apply]
+
+/-- The inverse of precomposition by `f` is precomposition by any almost-everywhere inverse
+partner `g'` of `f` that agrees almost everywhere with `g`. -/
+theorem compMeasurePreservingₗᵢEquiv_symm {f' : α → β} {g' : β → α}
+    (hf : MeasurePreserving f μ μb) (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id)
+    (hg' : MeasurePreserving g' μb μ) (hf' : MeasurePreserving f' μ μb) (hgf : g' ∘ f' =ᵐ[μ] id)
+    (h : g' =ᵐ[μb] g) :
+    (compMeasurePreservingₗᵢEquiv (E := E) (p := p) 𝕜 hf hg hfg).symm =
+      compMeasurePreservingₗᵢEquiv 𝕜 hg' hf' hgf :=
+  LinearIsometryEquiv.ext fun x ↦ by
+    rw [compMeasurePreservingₗᵢEquiv_symm_apply, compMeasurePreservingₗᵢEquiv_apply,
+      compMeasurePreserving_congr hg' hg h]
+
+section ContinuousMap
+
+variable [TopologicalSpace α] [CompactSpace α] [BorelSpace α] [TopologicalSpace β]
+  [CompactSpace β] [BorelSpace β] [SecondCountableTopologyEither α E]
+  [SecondCountableTopologyEither β E] [IsFiniteMeasure μ] [IsFiniteMeasure μb]
+
+/-- Precomposition of the `Lp` class of a continuous function by a measure-preserving continuous
+map is the `Lp` class of the composite continuous function. -/
+@[simp]
+theorem compMeasurePreserving_toLp (F : C(β, E)) (φ : C(α, β)) (hφ : MeasurePreserving φ μ μb) :
+    compMeasurePreserving φ hφ (ContinuousMap.toLp p μb 𝕜 F) =
+      ContinuousMap.toLp p μ 𝕜 (F.comp φ) := by
+  refine Lp.ext ((coeFn_compMeasurePreserving _ hφ).trans ?_)
+  exact (hφ.quasiMeasurePreserving.ae_eq_comp
+    (ContinuousMap.coeFn_toLp (𝕜 := 𝕜) (p := p) μb F)).trans
+      (ContinuousMap.coeFn_toLp (𝕜 := 𝕜) (p := p) μ (F.comp φ)).symm
+
+end ContinuousMap
+
+end Lp
+end MeasureTheory
