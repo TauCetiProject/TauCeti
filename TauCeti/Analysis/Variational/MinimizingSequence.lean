@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 public import TauCeti.Analysis.Variational.BoundedSublevels
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Variational.DirectMethod
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Minimizing sequences and the sequential direct method
@@ -300,6 +300,21 @@ theorem exists_isMinOn_of_isSeqClosed
   exact exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel hV hS hE
     ⟨v, hv, le_rfl⟩ (hb.isBounded_sublevel (E v))
 
+/-- Sublevel-localized sequential direct method without a lower bound: if a single nonempty
+bounded sublevel `{u ∈ S | E u ≤ b}` is sequentially weakly closed and `E` is sequentially
+weakly lower semicontinuous on it, then `E` attains its minimum on `S`. -/
+theorem exists_isMinOn_of_isSeqClosed_sublevel
+    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
+    {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
+    (hb : IsBounded {u ∈ S | E u ≤ b})
+    (hclosed : IsSeqClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}))
+    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) :
+    ∃ u ∈ S, IsMinOn E S u := by
+  obtain ⟨u, hu, hmin⟩ :=
+    exists_isMinOn_of_isSeqClosed hV hne hclosed hE (hb.hasBoundedSublevelsOn E)
+  exact ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 hmin⟩
+
 /-- If the full set of minimizers of a sequentially weakly lower semicontinuous energy on a
 sequentially weakly closed set in a reflexive normed space is norm bounded, then it is weakly
 compact. -/
@@ -327,5 +342,26 @@ theorem isCompact_toWeakSpace_minimizers_of_isSeqClosed
   isCompact_toWeakSpace_minimizers_of_isSeqClosed_of_isBounded hV hS hE hb.isBounded_minimizers
 
 end SequentialBoundedSublevels
+
+/-- Under bounded sublevels, every minimizing sequence in a sequentially weakly closed set in a
+reflexive normed space is norm-bounded and admits a subsequence converging weakly to a
+minimizer, without assuming an a priori lower bound on `E`. -/
+theorem exists_subseq_tendsto_toWeakSpace_isMinOn_of_hasBoundedSublevelsOn
+    {𝕜 V β : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [ClosedIciTopology β]
+    {E : V → β} {S : Set V}
+    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
+    (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
+    (hE : SeqLowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
+      (toWeakSpace 𝕜 V '' S))
+    (hb : HasBoundedSublevelsOn E S)
+    {u : ℕ → V} (hu : ∀ n, u n ∈ S)
+    (hminseq : Tendsto (fun n ↦ E (u n)) atTop (𝓝 (sInf (E '' S)))) :
+    ∃ v ∈ S, ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      Tendsto (fun n ↦ toWeakSpace 𝕜 V (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 V v)) ∧
+      IsMinOn E S v ∧ E v = sInf (E '' S) := by
+  obtain ⟨w, _, hminw⟩ := exists_isMinOn_of_isSeqClosed hV ⟨u 0, hu 0⟩ hS hE hb
+  exact exists_subseq_tendsto_toWeakSpace_isMinOn_of_seqLowerSemicontinuousOn hV hminw.bddBelow
+    hS hE hu (hb.isBounded_range_of_tendsto hu hminseq) hminseq
 
 end TauCeti
