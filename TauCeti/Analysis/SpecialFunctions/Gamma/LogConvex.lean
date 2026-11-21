@@ -27,14 +27,19 @@ Log-convexity also bounds and orders the ratios of Gamma values at shifted point
 * `Real.rpow_one_sub_le_Gamma_add_one_div_Gamma_add`,
   `Real.Gamma_add_one_div_Gamma_add_le_rpow`: Wendel's inequalities for `0 ≤ s ≤ 1`, the lower
   bound `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)` for `x ≥ 0` and the upper bound
-  `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}` for `x + s ≥ 0`.
+  `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}` for `x + s ≥ 0`. The classical inequalities are for
+  `x > 0`; the boundary cases at a pole of `Γ` are extensions under Mathlib's conventions
+  `Γ(0) = 0` and `a / 0 = 0`: the lower bound includes `(x, s) = (0, 0)`, where both sides are
+  `0`, and the upper bound includes `x + s = 0`, where the ratio is `0`.
 * `Real.isEquivalent_Gamma_add_one_div_Gamma_add`: for every real `s`,
   `Γ(x + 1)/Γ(x + s) ∼ x^{1-s}` as `x → ∞`.
+* `ConvexOn.sub_le_sub_of_le`: increments of a convex function over a fixed width increase.
 * `Real.strictMonoOn_Gamma_add_div_Gamma`: for `c > 0`, `x ↦ Γ(x + c)/Γ(x)` is strictly
   increasing on `(0, ∞)`.
 
-The statements are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
-file `DLMF/Gamma/Multiplication.lean`.
+The statements of `Real.convexOn_log_Gamma_add_div` and `Real.convexOn_sum_log_Gamma_add_div` are
+adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Gamma/Multiplication.lean`. The results on Gamma ratios are new proofs.
 -/
 
 public section
@@ -74,7 +79,9 @@ private theorem rpow_mul_mul_rpow_eq_mul {g b u v : ℝ} (hg : 0 < g) (huv : u +
     g ^ u * (b ^ v * g ^ v) = b ^ v * g := by
   rw [mul_left_comm, ← rpow_add hg, huv, rpow_one]
 
-/-- Wendel's lower bound: for `x ≥ 0` and `0 ≤ s ≤ 1`, `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)`. -/
+/-- Wendel's lower bound: for `x ≥ 0` and `0 ≤ s ≤ 1`, `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)`. The case
+`(x, s) = (0, 0)`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
+conventions `Γ(0) = 0` and `a / 0 = 0`; there both sides are `0`. -/
 theorem rpow_one_sub_le_Gamma_add_one_div_Gamma_add {x s : ℝ} (hx : 0 ≤ x) (hs0 : 0 ≤ s)
     (hs1 : s ≤ 1) : x ^ (1 - s) ≤ Gamma (x + 1) / Gamma (x + s) := by
   rcases hx.eq_or_lt with rfl | hx
@@ -97,7 +104,9 @@ theorem rpow_one_sub_le_Gamma_add_one_div_Gamma_add {x s : ℝ} (hx : 0 ≤ x) (
   calc x ^ (1 - s) * Gamma (x + s) ≤ x ^ (1 - s) * (x ^ s * Gamma x) := by gcongr
     _ = x * Gamma x := by rw [← mul_assoc, ← rpow_add hx, sub_add_cancel, rpow_one]
 
-/-- Wendel's upper bound: for `0 ≤ s ≤ 1` and `x + s ≥ 0`, `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}`. -/
+/-- Wendel's upper bound: for `0 ≤ s ≤ 1` and `x + s ≥ 0`, `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}`.
+The case `x + s = 0`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
+conventions `Γ(0) = 0` and `a / 0 = 0`; there the ratio is `0`. -/
 theorem Gamma_add_one_div_Gamma_add_le_rpow {x s : ℝ} (hxs : 0 ≤ x + s) (hs0 : 0 ≤ s)
     (hs1 : s ≤ 1) : Gamma (x + 1) / Gamma (x + s) ≤ (x + s) ^ (1 - s) := by
   rcases hxs.eq_or_lt with h | hxs
@@ -154,14 +163,11 @@ private theorem isEquivalent_Gamma_add_one_div_Gamma_add_iff_add_one (s : ℝ) :
     rw [hexp, rpow_sub hx, rpow_one, div_mul_cancel₀ _ hx.ne']
   constructor
   · intro h
-    refine ((h.mul hlin.inv).congr_left ?_).congr_right ?_
+    refine ((h.div hlin).congr_left ?_).congr_right ?_
     · filter_upwards [hΓ, eventually_gt_atTop (-s)] with x hx hxs
-      simp only [Pi.mul_apply, Pi.inv_apply, ← hx]
-      have hne : x + s ≠ 0 := by linarith
-      field_simp [hne]
+      exact ((eq_div_iff (by linarith : x + s ≠ 0)).2 hx).symm
     · filter_upwards [hpow, eventually_gt_atTop 0] with x hx hx0
-      simp only [Pi.mul_apply, Pi.inv_apply, ← hx]
-      field_simp
+      exact ((eq_div_iff hx0.ne').2 hx).symm
   · intro h
     exact ((h.mul hlin).congr_left hΓ).congr_right hpow
 
@@ -186,25 +192,29 @@ theorem isEquivalent_Gamma_add_one_div_Gamma_add (s : ℝ) :
       rwa [hn]
   simpa [Int.fract_add_floor] using key ⌊s⌋
 
+/-- For a convex function on `D ⊆ ℝ`, increments over a fixed width `c > 0` increase: if `s ≤ t`
+with `s ∈ D` and `t + c ∈ D`, then `f (s + c) - f s ≤ f (t + c) - f t`. -/
+theorem _root_.ConvexOn.sub_le_sub_of_le {D : Set ℝ} {f : ℝ → ℝ} (hf : ConvexOn ℝ D f)
+    {s t c : ℝ} (hs : s ∈ D) (htc : t + c ∈ D) (hc : 0 < c) (hst : s ≤ t) :
+    f (s + c) - f s ≤ f (t + c) - f t := by
+  have hsc : s + c ∈ D := hf.1.ordConnected.out hs htc ⟨by linarith, by linarith⟩
+  have ht : t ∈ D := hf.1.ordConnected.out hs htc ⟨hst, by linarith⟩
+  -- Compare the secants from `s` and to `t + c` through the slopes of `f`.
+  have h1 := hf.secant_mono hs hsc htc (by linarith) (by linarith) (by linarith : s + c ≤ t + c)
+  have h2 := hf.secant_mono htc hs ht (by linarith) (by linarith) hst
+  rw [← slope_def_field, ← slope_def_field] at h1 h2
+  rw [slope_comm, slope_comm f (t + c) t] at h2
+  have h := h1.trans h2
+  rw [slope_def_field, slope_def_field, add_sub_cancel_left, add_sub_cancel_left] at h
+  exact (div_le_div_iff_of_pos_right hc).1 h
+
 /-- For `c > 0`, `x ↦ Γ(x + c)/Γ(x)` is strictly increasing on `(0, ∞)`. -/
 theorem strictMonoOn_Gamma_add_div_Gamma {c : ℝ} (hc : 0 < c) :
     StrictMonoOn (fun x : ℝ => Gamma (x + c) / Gamma x) (Set.Ioi 0) := by
   have hmono : ∀ {s t : ℝ}, 0 < s → s ≤ t →
-      log (Gamma (s + c)) - log (Gamma s) ≤ log (Gamma (t + c)) - log (Gamma t) := by
-    intro s t hs hst
-    have ht : 0 < t := hs.trans_le hst
-    have hsc : 0 < s + c := by linarith
-    have htc : 0 < t + c := by linarith
-    have h1 := convexOn_log_Gamma.secant_mono (a := s) (x := s + c) (y := t + c) hs hsc htc
-      (by linarith) (by linarith) (by linarith)
-    have h2 := convexOn_log_Gamma.secant_mono (a := t + c) (x := s) (y := t) htc hs ht
-      (by linarith) (by linarith) hst
-    simp only [Function.comp_apply] at h1 h2
-    rw [add_sub_cancel_left] at h1
-    have htc' : t - (t + c) = -c := by ring
-    rw [← neg_sub (t + c) s, ← neg_sub (log (Gamma (t + c))), neg_div_neg_eq, htc',
-      ← neg_sub (log (Gamma (t + c))), neg_div_neg_eq] at h2
-    exact (div_le_div_iff_of_pos_right hc).1 (h1.trans h2)
+      log (Gamma (s + c)) - log (Gamma s) ≤ log (Gamma (t + c)) - log (Gamma t) :=
+    fun hs hst => convexOn_log_Gamma.sub_le_sub_of_le hs
+      (Set.mem_Ioi.2 (by linarith [hs.trans_le hst])) hc hst
   intro s (hs : 0 < s) t (ht : 0 < t) hst
   have hpos : ∀ {x : ℝ}, 0 < x → 0 < Gamma (x + c) / Gamma x := fun hx =>
     div_pos (Gamma_pos_of_pos (by linarith)) (Gamma_pos_of_pos hx)

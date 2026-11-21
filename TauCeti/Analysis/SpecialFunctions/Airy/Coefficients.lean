@@ -17,7 +17,7 @@ argument, and the Gamma-function multiplier `χ` of their error bounds (DLMF 9.7
 
 * `TauCeti.airyU`: `u_k = (2k + 1)(2k + 3)⋯(6k − 1) / (216^k k!)`, with `u₀ = 1` and the
   recurrence `u_{k+1} = (6k + 1)(6k + 3)(6k + 5) / ((2k + 1) · 216 · (k + 1)) · u_k`
-  (`TauCeti.airyU_succ`);
+  (`Nat.airyU_succ`);
 * `TauCeti.airyV`: `v_k = −(6k + 1)/(6k − 1) · u_k`, with `v₀ = 1` and `v_k < 0` for `k ≥ 1`;
 * `Real.airyChi`: `χ(x) = π^{1/2} Γ(x/2 + 1) / Γ(x/2 + ½)`, with `χ(0) = 1`,
   `χ(1) = π/2`, `χ(2) = 2`, strictly increasing on `(-1, ∞)`
@@ -27,9 +27,11 @@ argument, and the Gamma-function multiplier `χ` of their error bounds (DLMF 9.7
 The asymptotic form of `χ` and its monotonicity come from Wendel's inequalities and the strict
 monotonicity of `Γ(x + c)/Γ(x)`, both consequences of the log-convexity of `Γ`.
 
-The recurrence and the values of `χ` are adapted from the lean-DLMF project
-(<https://github.com/bjbraams/lean-DLMF>), files `DLMF/Airy/Asymptotics/LaplaceSectors.lean` and
-`DLMF/Airy/Asymptotics/DerivativeRemainders.lean`.
+The definitions of `u_k`, `v_k` and `χ`, the statement of the recurrence and the values of `χ`
+are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
+`DLMF/Airy/Asymptotics/LaplaceSectors.lean` and `DLMF/Airy/Asymptotics/DerivativeRemainders.lean`.
+lean-DLMF writes `u_k` with Pochhammer symbols, so the proof of the recurrence from the product
+form is new, as are the monotonicity of `χ` and its asymptotic form.
 
 ## References
 
@@ -50,18 +52,18 @@ def airyU (k : ℕ) : ℝ :=
   (∏ j ∈ range (2 * k), ((2 * k + 1 + 2 * j : ℕ) : ℝ)) / (216 ^ k * (k ! : ℝ))
 
 /-- The defining product formula for `u_k`. -/
-theorem airyU_def (k : ℕ) :
+theorem _root_.Nat.airyU_def (k : ℕ) :
     airyU k = (∏ j ∈ range (2 * k), ((2 * k + 1 + 2 * j : ℕ) : ℝ)) / (216 ^ k * (k ! : ℝ)) :=
   (rfl)
 
 /-- `u₀ = 1`. -/
 @[simp]
 theorem airyU_zero : airyU 0 = 1 := by
-  simp [airyU_def]
+  simp [Nat.airyU_def]
 
 /-- The coefficients `u_k` are positive. -/
-theorem airyU_pos (k : ℕ) : 0 < airyU k := by
-  rw [airyU_def]
+theorem _root_.Nat.airyU_pos (k : ℕ) : 0 < airyU k := by
+  rw [Nat.airyU_def]
   positivity
 
 /-- The products `(2k + 1)(2k + 3)⋯(6k − 1)` in the numerators of `u_k` satisfy
@@ -84,14 +86,14 @@ private theorem airyU_numerator_succ (k : ℕ) :
 
 /-- The recurrence `u_{k+1} = (6k + 1)(6k + 3)(6k + 5) / ((2k + 1) · 216 · (k + 1)) · u_k`
 (DLMF 9.7.2). -/
-theorem airyU_succ (k : ℕ) :
+theorem _root_.Nat.airyU_succ (k : ℕ) :
     airyU (k + 1) = (6 * k + 1) * (6 * k + 3) * (6 * k + 5) / ((2 * k + 1) * 216 * (k + 1)) *
       airyU k := by
   have h : ((∏ j ∈ range (2 * (k + 1)), (2 * (k + 1) + 1 + 2 * j) : ℕ) : ℝ) * (2 * k + 1) =
       ((∏ j ∈ range (2 * k), (2 * k + 1 + 2 * j) : ℕ) : ℝ) *
         ((6 * k + 1) * (6 * k + 3) * (6 * k + 5)) := by
     exact_mod_cast airyU_numerator_succ k
-  rw [airyU_def, airyU_def, ← Nat.cast_prod, ← Nat.cast_prod, Nat.factorial_succ]
+  rw [Nat.airyU_def, Nat.airyU_def, ← Nat.cast_prod, ← Nat.cast_prod, Nat.factorial_succ]
   have h2k : (2 * k + 1 : ℝ) ≠ 0 := by positivity
   push_cast at h ⊢
   rw [(eq_div_iff h2k).mpr h]
@@ -102,18 +104,19 @@ theorem airyU_succ (k : ℕ) :
 def airyV (k : ℕ) : ℝ := -((6 * k + 1 : ℝ) / (6 * k - 1)) * airyU k
 
 /-- The defining formula for `v_k`. -/
-theorem airyV_def (k : ℕ) : airyV k = -((6 * k + 1 : ℝ) / (6 * k - 1)) * airyU k := (rfl)
+theorem _root_.Nat.airyV_def (k : ℕ) : airyV k = -((6 * k + 1 : ℝ) / (6 * k - 1)) * airyU k :=
+  (rfl)
 
 /-- `v₀ = 1`. -/
 @[simp]
 theorem airyV_zero : airyV 0 = 1 := by
-  simp [airyV_def]
+  simp [Nat.airyV_def]
 
 /-- For `k ≥ 1`, `v_k` is negative: its sign is opposite to that of `u_k`. -/
 theorem airyV_neg {k : ℕ} (hk : 1 ≤ k) : airyV k < 0 := by
   have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  rw [airyV_def, neg_mul, neg_neg_iff_pos]
-  exact mul_pos (div_pos (by linarith) (by linarith)) (airyU_pos k)
+  rw [Nat.airyV_def, neg_mul, neg_neg_iff_pos]
+  exact mul_pos (div_pos (by linarith) (by linarith)) (Nat.airyU_pos k)
 
 end TauCeti
 
@@ -133,24 +136,27 @@ theorem airyChi_zero : airyChi 0 = 1 := by
   rw [airyChi_def, zero_div, zero_add, zero_add, Real.Gamma_one,
     Real.Gamma_one_half_eq, mul_one, div_self hπ]
 
+/-- `Γ(3/2) = √π / 2`, the Gamma value in `χ(1)` and `χ(2)`. -/
+private theorem Gamma_three_halves : Real.Gamma (3 / 2) = √π / 2 := by
+  have h : (3 / 2 : ℝ) = 1 / 2 + 1 := by norm_num
+  rw [h, Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
+  ring
+
 /-- `χ(1) = π/2`. -/
 @[simp]
 theorem airyChi_one : airyChi 1 = π / 2 := by
-  have h₁ : Real.Gamma ((1 : ℝ) / 2 + 1) = 1 / 2 * √π := by
-    rw [Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
-  have h₂ : Real.Gamma ((1 : ℝ) / 2 + 1 / 2) = 1 := by norm_num
-  rw [airyChi_def, h₁, h₂, div_one, mul_left_comm, Real.mul_self_sqrt Real.pi_pos.le]
-  ring
+  have h₁ : (1 : ℝ) / 2 + 1 = 3 / 2 := by norm_num
+  have h₂ : (1 : ℝ) / 2 + 1 / 2 = 1 := by norm_num
+  rw [airyChi_def, h₁, h₂, Gamma_three_halves, Real.Gamma_one, div_one, ← mul_div_assoc,
+    Real.mul_self_sqrt Real.pi_pos.le]
 
 /-- `χ(2) = 2`. -/
 @[simp]
 theorem airyChi_two : airyChi 2 = 2 := by
   have hπ : √π ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
-  have h₁ : Real.Gamma ((2 : ℝ) / 2 + 1) = 1 := by norm_num
-  have h₂ : Real.Gamma ((2 : ℝ) / 2 + 1 / 2) = 1 / 2 * √π := by
-    rw [← Real.Gamma_one_half_eq, ← Real.Gamma_add_one (by norm_num)]
-    norm_num
-  rw [airyChi_def, h₁, h₂]
+  have h₁ : (2 : ℝ) / 2 + 1 = 2 := by norm_num
+  have h₂ : (2 : ℝ) / 2 + 1 / 2 = 3 / 2 := by norm_num
+  rw [airyChi_def, h₁, h₂, Real.Gamma_two, Gamma_three_halves]
   field_simp
 
 /-- `χ` is strictly increasing on `(-1, ∞)`, in particular on `(0, ∞)`. -/
