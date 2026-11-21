@@ -21,7 +21,7 @@ represents `1` in `K₁(D)` if and only if it already lies in `TauCeti.elementar
 (`TauCeti.AlgebraicK1.mk_eq_one_iff_mem_elementarySubgroup`).
 
 Over a commutative field `F`, `dieudonneDetEquiv F` agrees with `TauCeti.AlgebraicK1.det F` and
-`TauCeti.AlgebraicK1.detEquiv F` (from
+`TauCeti.AlgebraicK1.detEquiv (specialAlgebraicK1_eq_bot_of_euclideanDomain F)` (from
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1`) via
 `Group.Abelianization.equivOfComm`.
 
@@ -43,7 +43,7 @@ Over a commutative field `F`, `dieudonneDetEquiv F` agrees with `TauCeti.Algebra
 * `TauCeti.AlgebraicK1.dieudonneDetEquiv_eq_abelianizationOf_det`,
   `TauCeti.AlgebraicK1.dieudonneDetEquiv_trans_equivOfComm_symm`: over a field `F`,
   `dieudonneDetEquiv F` agrees with `TauCeti.AlgebraicK1.det F` and
-  `TauCeti.AlgebraicK1.detEquiv F`.
+  `TauCeti.AlgebraicK1.detEquiv`.
 
 ## References
 
@@ -138,9 +138,10 @@ theorem dieudonneDetEquiv_eq_abelianizationOf_det {F : Type*} [Field F] (x : Alg
   simp [GeneralLinearGroup.dieudonneDet_eq_abelianizationOf_det]
 
 /-- Over a field `F`, composing `dieudonneDetEquiv F` with the abelianization equivalence recovers
-`TauCeti.AlgebraicK1.detEquiv F`. -/
+`TauCeti.AlgebraicK1.detEquiv`. -/
 theorem dieudonneDetEquiv_trans_equivOfComm_symm (F : Type*) [Field F] :
-    (dieudonneDetEquiv F).trans Group.Abelianization.equivOfComm.symm = detEquiv F := by
+    (dieudonneDetEquiv F).trans Group.Abelianization.equivOfComm.symm =
+      detEquiv (specialAlgebraicK1_eq_bot_of_euclideanDomain F) := by
   ext x
   simp [dieudonneDetEquiv_eq_abelianizationOf_det]
 

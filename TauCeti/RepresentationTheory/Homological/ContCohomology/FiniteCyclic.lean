@@ -133,7 +133,7 @@ variable [DiscreteTopology G] [ContinuousSMul G M]
   (g : G) (hg : ∀ x : G, x ∈ Subgroup.zpowers g)
 
 private noncomputable def carryCocycle (a : H0 G M) : Z2 G M :=
-  ⟨fun p ↦ if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a.1 else 0,
+  ⟨fun p ↦ if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a.val else 0,
     mem_Z2_iff.mpr ⟨continuous_of_discreteTopology, by
       intro x y z
       have hcarry := Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)

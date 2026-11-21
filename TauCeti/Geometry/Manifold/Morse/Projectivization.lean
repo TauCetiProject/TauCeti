@@ -468,7 +468,7 @@ def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) �
     fun v v' t h ↦ by
       have ht : t ≠ 0 := by
         rintro rfl
-        exact v.2 (by simpa using h)
+        exact v.property (by simpa using h)
       simp only [h, momentQuotient_smul w ht]
 
 @[simp]

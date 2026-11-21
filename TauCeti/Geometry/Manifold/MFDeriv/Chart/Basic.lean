@@ -9,8 +9,10 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
@@ -38,6 +40,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
+* `TauCeti.Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target`: conversely, a
+  derivative within the chart target of a map agreeing there with the coordinate expression of a
+  continuous map is its manifold derivative.
 * `ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt`: a map between model spaces that is
   `C^n` at the chart image of a point, read back through extended charts into a boundaryless
   target, is `C^n` on the manifolds.
@@ -103,6 +108,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifolds read in arbitrary preferred charts of the source and the target.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
+* `TauCeti.contDiffAt_ext_coord_change`: on a boundaryless manifold, a change of extended charts
+  is `C^n` at every point of its domain.
 * `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`: for a `C^n` map out of a
   boundaryless manifold, the open coordinate domain on which it reads as a `C^n` map between the
   extended charts at a point and at its image.
@@ -128,6 +135,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_extChartAt_self` and `TauCeti.mfderiv_extChartAt_eq_id`: the extended
   chart at `x` has the identity as its manifold derivative at `x`, with no smoothness hypothesis on
   the atlas.
+* `TauCeti.hasMFDerivAt_extChartAt_symm_self`: on a boundaryless manifold, the inverse extended
+  chart at `x` has the identity as its manifold derivative at `extChartAt I x x`, with no
+  smoothness hypothesis on the atlas.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -141,6 +151,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   same identity near a point, in the preferred chart at that point.
 * `ContMDiff.contMDiff_deriv_prodMk` and `ContMDiff.continuous_deriv_prodMk`: the derivative along
   `𝕜` of a `C^(n + 1)` function on `M × 𝕜` is `C^n`, and that of a `C¹` function is continuous.
+* `ModelWithCorners.det_fderiv_extendCoordChange_ne_zero`,
+  `OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior`,
+  `OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior`, and
+  `OpenPartialHomeomorph.contDiffOn_extend_comp`: Jacobian determinant, interior differentiability,
+  and `C^n` coordinate-expression regularity for charts of the maximal atlas.
 -/
 
 public section
@@ -220,6 +235,21 @@ theorem HasMFDerivAt.hasFDerivWithinAt_of_mem_source {f : M → M'} {x x' : M} {
     exact (mdifferentiableAt_extChartAt hy).hasMFDerivAt
   exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.1
     ((hchart.comp _ hf').comp_hasMFDerivWithinAt _ hsymm)
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- **Manifold derivatives from derivatives on the chart target.** If the expression of `f` in the
+extended charts at `x` and `f x` agrees on the chart target with a map `φ` between the model
+spaces that has derivative `f'` within that target at the chart image `p` of `x`, and `f` is
+continuous at `x`, then `f'` is the manifold derivative of `f` at `x`. The chart target is a
+neighbourhood of `p` within the range of the model, so no boundaryless hypothesis is needed. -/
+theorem TauCeti.Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target {f : M → M'} {x : M}
+    {φ : E → E'} {f' : E →L[𝕜] E'} {p : E} (hp : extChartAt I x x = p) (hf : ContinuousAt f x)
+    (hφ : HasFDerivWithinAt φ f' (extChartAt I x).target p)
+    (heq : EqOn (writtenInExtChartAt I I' x f) φ (extChartAt I x).target) :
+    HasMFDerivAt I I' f x f' := by
+  subst hp
+  exact ⟨hf, (hasFDerivWithinAt_inter' (extChartAt_target_mem_nhdsWithin x)).1
+    ((hφ.mono inter_subset_right).congr (fun _ hw ↦ heq hw.2) (heq (mem_extChartAt_target x)))⟩
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- A map `g` between model spaces which is `C^n` at the chart image of `x` and sends it to the
@@ -323,10 +353,13 @@ theorem mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E �
   rfl
 
 open Filter in
-/-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
-of a family with differentiable slices is, near `(p, extChartAt I x x)`, uniquely `η q.1`, then the
-zero of the manifold derivative of `fun y ↦ f (q.1, y)` near `(p, x)` is uniquely
-`(extChartAt I x).symm (η q.1)`. -/
+/-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
+the target of the extended chart at `x` for `q.1` near `p`, and that near `(p, extChartAt I x x)`
+the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)` is differentiable in `v` and
+its Fréchet derivative at `q.2` vanishes exactly when `η q.1 = q.2`. Then near `(p, x)` the manifold
+derivative of `fun y ↦ f (q.1, y)` at `q.2` vanishes exactly when
+`(extChartAt I x).symm (η q.1) = q.2`. This transfers the equivalence only: it does not assert that
+a critical point exists. -/
 theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [TopologicalSpace P]
     {f : P × M → F} {p : P} {x : M} {η : P → E}
     (hslice : ∀ᶠ q in 𝓝 (p, extChartAt I x x),
@@ -874,6 +907,15 @@ theorem _root_.ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm {f : M →
   exact h.contDiffAt (Filter.mem_of_superset (isOpen_interior.mem_nhds hy)
     (interior_subset.trans (extChartAt_target_subset_range β)))
 
+/-- On a boundaryless manifold, the change of extended charts from `x'` to `x` is `C^n` at every
+point of its domain. This is Mathlib's `contDiffWithinAt_ext_coord_change` with the model range
+the whole space. -/
+theorem contDiffAt_ext_coord_change [I.Boundaryless] (x x' : M) {y : E}
+    (hy : y ∈ ((extChartAt I x').symm ≫ extChartAt I x).source) :
+    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) y := by
+  have h := contDiffWithinAt_ext_coord_change (n := n) x x' hy
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
+
 end InteriorCharts
 
 section CoordinateDomain
@@ -1096,6 +1138,21 @@ theorem mfderiv_extChartAt_eq_id (x : M) :
     mfderiv I 𝓘(𝕜, E) (extChartAt I x) x = ContinuousLinearMap.id 𝕜 E :=
   (hasMFDerivAt_extChartAt_self x).mfderiv
 
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the inverse of the preferred extended chart at `x` has the identity
+as its manifold derivative at the chart image `extChartAt I x x` of its centre. There is no
+smoothness hypothesis on the atlas. -/
+theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
+    HasMFDerivAt 𝓘(𝕜, E) I (extChartAt I x).symm (extChartAt I x x)
+      (ContinuousLinearMap.id 𝕜 E) := by
+  -- Read in the chart at `x`, the inverse chart is the identity on the chart target.
+  refine ⟨(continuousOn_extChartAt_symm x).continuousAt (extChartAt_target_mem_nhds x), ?_⟩
+  rw [writtenInExtChartAt, extChartAt_to_inv, extChartAt_model_space_eq_id]
+  exact (hasFDerivWithinAt_id (extChartAt I x x) _).congr_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (extChartAt_target_mem_nhds x))
+      fun _ h ↦ (extChartAt I x).right_inv h)
+    ((extChartAt I x).right_inv (mem_extChartAt_target x))
+
 end ExtChartAtSelf
 
 section TimeDerivative
@@ -1169,3 +1226,62 @@ theorem _root_.ContMDiff.continuous_deriv_prodMk (hf : ContMDiff (I.prod 𝓘(�
 end TimeDerivative
 
 end TauCeti
+
+section MaximalAtlasExtend
+
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- Nonvanishing Jacobian `det` of `φ.extend I ∘ (φ'.extend I).symm` on the overlap interior. -/
+theorem ModelWithCorners.det_fderiv_extendCoordChange_ne_zero (I : ModelWithCorners 𝕜 E H)
+    {n : ℕ∞ω} (hn : n ≠ 0) {φ' φ : OpenPartialHomeomorph M H}
+    (hφ' : φ' ∈ IsManifold.maximalAtlas I n M) (hφ : φ ∈ IsManifold.maximalAtlas I n M)
+    {w : E} (hw : w ∈ interior ((φ'.extend I).target ∩ (φ'.extend I).symm ⁻¹' φ.source)) :
+    (fderiv 𝕜 (φ.extend I ∘ (φ'.extend I).symm) w).det ≠ 0 := by
+  have hsrc : (I.extendCoordChange φ' φ).source =
+      (φ'.extend I).target ∩ (φ'.extend I).symm ⁻¹' φ.source := by
+    rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_source, PartialEquiv.symm_source,
+      φ.extend_source]
+  rcases I.isInvertible_fderivWithin_extendCoordChange hn hφ' hφ (hsrc ▸ interior_subset hw) with
+    ⟨L, hL⟩
+  rw [fderivWithin_of_mem_nhds (hsrc ▸ Filter.mem_of_superset (isOpen_interior.mem_nhds hw)
+    interior_subset)] at hL
+  rw [← PartialEquiv.coe_trans, ← hL]
+  exact L.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- Differentiability of `(φ.extend I).symm` on `interior (φ.extend I).target` for `C^n` `φ`
+(`n ≠ 0`). -/
+theorem OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior {n : ℕ∞ω} (hn : n ≠ 0)
+    {φ : OpenPartialHomeomorph M H} (hφ : φ ∈ IsManifold.maximalAtlas I n M) {z : E}
+    (hz : z ∈ interior (φ.extend I).target) :
+    MDifferentiableAt 𝓘(𝕜, E) I (φ.extend I).symm z :=
+  (((φ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hφ) z (interior_subset hz)).contMDiffAt
+    (mem_interior_iff_mem_nhds.1 hz)).mdifferentiableAt hn
+
+/-- On `interior (φ.extend I).target`, `mfderivWithin` of `(φ.extend I).symm` equals `mfderiv`. -/
+theorem OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior
+    (φ : OpenPartialHomeomorph M H) {z : E} (hz : z ∈ interior (φ.extend I).target) :
+    mfderivWithin 𝓘(𝕜, E) I (φ.extend I).symm (range I) z =
+      mfderiv 𝓘(𝕜, E) I (φ.extend I).symm z :=
+  mfderivWithin_of_mem_nhds
+    (Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 hz) φ.extend_target_subset_range)
+
+/-- `C^n` regularity of `ψ'.extend I' ∘ f ∘ (ψ.extend I).symm` on the chart overlap domain. -/
+theorem OpenPartialHomeomorph.contDiffOn_extend_comp {n : ℕ∞ω}
+    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I n M)
+    {ψ' : OpenPartialHomeomorph M' H'} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' n M')
+    {f : M → M'} {t : Set M} (hf : ContMDiffOn I I' n f t) :
+    ContDiffOn 𝕜 n (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
+      ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
+  contMDiffOn_iff_contDiffOn.1 ((ψ'.contMDiffOn_extend hψ').comp
+    (hf.comp ((ψ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hψ).mono inter_subset_left)
+      fun _ hw ↦ hw.2.1) fun _ hw ↦ hw.2.2)
+
+end MaximalAtlasExtend

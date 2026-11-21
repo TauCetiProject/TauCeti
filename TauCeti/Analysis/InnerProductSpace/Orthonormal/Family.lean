@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Coordinate isometries of orthonormal families
@@ -17,11 +19,15 @@ direction, Bessel's inequality makes the analysis map of an orthonormal family a
 
 The orthogonal projection onto the span of a finite orthonormal family is `x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`,
 synthesis after analysis, that is, the frame operator of the family. So Bessel's inequality
-becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
+becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`. The same formula shows that the
+projection onto the span of a continuous family of orthonormal families depends continuously on
+the parameter (`Orthonormal.continuous_starProjection`).
 
 Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
 when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
-identifies the changes of orthonormal frame with the unitary group.
+identifies the changes of orthonormal frame with the unitary group
+(`Orthonormal.orthonormal_sum_smul_iff_mem_unitaryGroup`), and a unitary change of frame
+preserves and reflects orthonormality (`TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup`).
 -/
 
 public section
@@ -109,6 +115,21 @@ theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hw
   simp [inner_sum, inner_smul_right, inner_sub_left, hv.inner_left_fintype]
 
+omit [Fintype ι] in
+/-- The orthogonal projection onto the spans `U x` of a continuous family of finite orthonormal
+families `f x` depends continuously on `x`. -/
+theorem continuous_starProjection [Finite ι] {X : Type*} [TopologicalSpace X]
+    {f : X → ι → E} (hf : Continuous f) (ho : ∀ x, Orthonormal 𝕜 (f x))
+    {U : X → Submodule 𝕜 E} [∀ x, (U x).HasOrthogonalProjection]
+    (hU : ∀ x, Submodule.span 𝕜 (Set.range (f x)) = U x) :
+    Continuous fun x ↦ (U x).starProjection := by
+  have := Fintype.ofFinite ι
+  have h x : (U x).starProjection = ∑ i, (innerSL 𝕜 (f x i)).smulRight (f x i) := by
+    ext w
+    simp [(ho x).starProjection_apply_eq_sum (hU x)]
+  simp only [h]
+  fun_prop
+
 /-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
 operator, synthesis after analysis. -/
 theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
@@ -138,7 +159,31 @@ theorem orthonormal_sum_smul_iff {κ : Type*} [DecidableEq κ] (hv : Orthonormal
   simp only [hv.inner_sum, Matrix.mul_apply, Matrix.one_apply, Matrix.conjTranspose_apply,
     RCLike.star_def, mul_comm, eq_comm (a := k)]
 
+/-- Combining an orthonormal family with the rows of a square matrix `A` produces an orthonormal
+family exactly when `A` is unitary. -/
+theorem orthonormal_sum_smul_iff_mem_unitaryGroup [DecidableEq ι] (hv : Orthonormal 𝕜 v)
+    (A : Matrix ι ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ A ∈ Matrix.unitaryGroup ι 𝕜 := by
+  rw [hv.orthonormal_sum_smul_iff, Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
+
 end Orthonormal
+
+namespace TauCeti
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [Fintype ι] [DecidableEq ι] {v : ι → E}
+
+/-- A unitary change of frame `vⱼ ↦ ∑ i, A j i • vᵢ` preserves and reflects orthonormality. -/
+theorem orthonormal_sum_smul_iff_of_mem_unitaryGroup {A : Matrix ι ι 𝕜}
+    (hA : A ∈ Matrix.unitaryGroup ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ Orthonormal 𝕜 v := by
+  refine ⟨fun hw ↦ ?_, fun hv ↦ (hv.orthonormal_sum_smul_iff_mem_unitaryGroup A).2 hA⟩
+  -- The inverse change of frame is the one by `star A`, which is unitary too.
+  have := (hw.orthonormal_sum_smul_iff_mem_unitaryGroup (star A)).2 (Unitary.star_mem hA)
+  simp_rw [← Matrix.sum_mul_apply_smul, (Matrix.mem_unitaryGroup_iff').1 hA] at this
+  simpa [Matrix.one_apply] using this
+
+end TauCeti
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι]
