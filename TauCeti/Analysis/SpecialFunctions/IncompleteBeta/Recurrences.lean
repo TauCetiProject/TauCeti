@@ -24,8 +24,9 @@ three-term relations between neighbouring parameter pairs, collected in DLMF §8
 * `I_x(a, b) = I_x(a - 1, b + 1) - x ^ (a - 1) x' ^ b / (b Β(a, b))` (8.17.19).
 
 Each holds whenever the parameters that occur in it are positive. Several also hold when one of
-them vanishes, through the boundary values `I_x(0, b) = 1` (for `0 ≤ x`) and `I_x(a, 0) = 0` of
-`TauCeti.regularizedIncompleteBeta`, and each theorem below assumes only what its identity needs.
+them vanishes, through the boundary values of `TauCeti.regularizedIncompleteBeta`: `I_x(0, b) = 1`
+for `0 < b` and `0 ≤ x` (and `I_x(0, b) = 0` for `x < 0` or `b ≤ 0`), and `I_x(a, 0) = 0`. Each
+theorem below assumes only what its identity needs.
 The homogeneous relations 8.17.12–8.17.17 hold for every real `x`, because off `[0, 1]` the clamped
 function takes the same value `0` or `1` at all the parameters involved and the coefficients
 balance (`TauCeti.exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc`); 8.17.18 and 8.17.19
@@ -111,8 +112,8 @@ theorem regularizedIncompleteBeta_eq_sub_one_left_add_one_right_sub (ha : 1 ≤ 
 `(a + b) I_x(a, b) = a I_x(a + 1, b) + b I_x(a, b + 1)`,
 [DLMF 8.17.13](https://dlmf.nist.gov/8.17.E13), for every real `x`.
 
-It also holds at `a = 0` and at `b = 0`, through the boundary values `I_x(0, b) = 1` and
-`I_x(a, 0) = 0`. -/
+It also holds at `a = 0` and at `b = 0`, through the boundary values `I_x(0, b) = 1` for `0 < b`
+and `0 ≤ x` (and `0` for `x < 0` or `b = 0`) and `I_x(a, 0) = 0`. -/
 theorem add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_add_mul_add_one_right (ha : 0 ≤ a)
     (hb : 0 ≤ b) :
     (a + b) * regularizedIncompleteBeta a b x =
@@ -138,7 +139,8 @@ theorem add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_add_mul_add_one_ri
 /-- `I_x(a, b) = x I_x(a - 1, b) + (1 - x) I_x(a, b - 1)`,
 [DLMF 8.17.12](https://dlmf.nist.gov/8.17.E12), for every real `x`.
 
-At `a = 1` it holds through the boundary value `I_x(0, b) = 1`. -/
+At `a = 1` it holds through the boundary values `I_x(0, b) = 1` for `0 ≤ x` and `I_x(0, b) = 0`
+for `x < 0`. -/
 theorem regularizedIncompleteBeta_eq_mul_sub_one_left_add_mul_sub_one_right (ha : 1 ≤ a)
     (hb : 1 < b) :
     regularizedIncompleteBeta a b x = x * regularizedIncompleteBeta (a - 1) b x +
@@ -162,8 +164,8 @@ theorem regularizedIncompleteBeta_eq_mul_sub_one_left_add_mul_sub_one_right (ha 
 /-- `(a + b x) I_x(a, b) = x b I_x(a - 1, b + 1) + a I_x(a + 1, b)`,
 [DLMF 8.17.14](https://dlmf.nist.gov/8.17.E14), for every real `x`.
 
-At `a = 1` it holds through the boundary value `I_x(0, b + 1) = 1`, and at `b = 0` through
-`I_x(a, 0) = 0`. -/
+At `a = 1` it holds through the boundary values `I_x(0, b + 1) = 1` for `0 ≤ x` and
+`I_x(0, b + 1) = 0` for `x < 0`, and at `b = 0` through `I_x(a, 0) = 0`. -/
 theorem add_mul_regularizedIncompleteBeta_eq_mul_sub_one_left_add_one_right_add (ha : 1 ≤ a)
     (hb : 0 ≤ b) :
     (a + b * x) * regularizedIncompleteBeta a b x =
@@ -189,7 +191,8 @@ theorem add_mul_regularizedIncompleteBeta_eq_mul_sub_one_left_add_one_right_add 
 /-- `(b + a (1 - x)) I_x(a, b) = a (1 - x) I_x(a + 1, b - 1) + b I_x(a, b + 1)`,
 [DLMF 8.17.15](https://dlmf.nist.gov/8.17.E15), for every real `x`.
 
-At `a = 0` it holds through the boundary value `I_x(0, b) = 1`. -/
+At `a = 0` it holds through the boundary values `I_x(0, b) = 1` for `0 ≤ x` and `I_x(0, b) = 0`
+for `x < 0`. -/
 theorem add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_sub_one_right_add (ha : 0 ≤ a)
     (hb : 1 < b) :
     (b + a * (1 - x)) * regularizedIncompleteBeta a b x =
@@ -217,8 +220,8 @@ theorem add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_sub_one_right_add 
 /-- `a I_x(a + 1, b) = (a + c x) I_x(a, b) - c x I_x(a - 1, b)` with `c = a + b - 1`,
 [DLMF 8.17.16](https://dlmf.nist.gov/8.17.E16), for every real `x`.
 
-At `a = 1` it holds through the boundary value `I_x(0, b) = 1`. No hypothesis on `b` is needed:
-for `b ≤ 0` every value is `0`. -/
+At `a = 1` it holds through the boundary values `I_x(0, b) = 1` for `0 < b` and `0 ≤ x`, and
+`I_x(0, b) = 0` for `x < 0`. No hypothesis on `b` is needed: for `b ≤ 0` every value is `0`. -/
 theorem mul_regularizedIncompleteBeta_add_one_left_eq_mul_sub_mul_sub_one_left (ha : 1 ≤ a) :
     a * regularizedIncompleteBeta (a + 1) b x =
       (a + (a + b - 1) * x) * regularizedIncompleteBeta a b x -
@@ -256,8 +259,8 @@ theorem mul_regularizedIncompleteBeta_add_one_left_eq_mul_sub_mul_sub_one_left (
 /-- `b I_x(a, b + 1) = (b + c (1 - x)) I_x(a, b) - c (1 - x) I_x(a, b - 1)` with
 `c = a + b - 1`, [DLMF 8.17.17](https://dlmf.nist.gov/8.17.E17), for every real `x`.
 
-No hypothesis on `a` is needed: at `a = 0` it holds through the boundary value `I_x(0, b) = 1`,
-and for `a < 0` every value is `0`. -/
+No hypothesis on `a` is needed: at `a = 0` it holds through the boundary values `I_x(0, b) = 1`
+for `0 ≤ x` and `I_x(0, b) = 0` for `x < 0`, and for `a < 0` every value is `0`. -/
 theorem mul_regularizedIncompleteBeta_add_one_right_eq_mul_sub_mul_sub_one_right (hb : 1 < b) :
     b * regularizedIncompleteBeta a (b + 1) x =
       (b + (a + b - 1) * (1 - x)) * regularizedIncompleteBeta a b x -
