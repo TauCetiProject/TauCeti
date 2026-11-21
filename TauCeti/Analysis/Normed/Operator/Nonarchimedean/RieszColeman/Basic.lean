@@ -37,7 +37,9 @@ second (`ContinuousLinearMap.IsRieszColemanProjection.equivKer`). Such a project
 (`ContinuousLinearMap.IsRieszColemanProjection.unique`); for `Q = 1` it is zero
 (`ContinuousLinearMap.isRieszColemanProjection_one_iff`,
 `ContinuousLinearMap.IsRieszColemanProjection.eq_zero_of_one`,
-`ContinuousLinearMap.isRieszColemanProjection_one_zero`).
+`ContinuousLinearMap.isRieszColemanProjection_one_zero`); scaling `Q` by a unit constant leaves
+the predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.of_C_mul`,
+`ContinuousLinearMap.IsRieszColemanProjection.iff_C_mul`).
 
 When the leading coefficient of `Q` is a unit, the constant term of `Q*` is `Q.leadingCoeff`, so
 dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`. Consequently:
@@ -144,6 +146,38 @@ theorem isRieszColemanProjection_one_iff {u E : M →L[R] M} :
 namespace IsRieszColemanProjection
 
 variable {u E : M →L[R] M} {Q : R[X]}
+
+/-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/
+theorem of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E := by
+  obtain ⟨c', hc'⟩ := hc.exists_left_inv
+  have haeval : Polynomial.aeval u (Polynomial.C c * Q).reverse =
+      c • Polynomial.aeval u Q.reverse := by
+    rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
+  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
+  have : IsTopologicalSemiring (M →L[R] M) := inferInstance
+  set T := (Algebra.adjoin R {u}).topologicalClosure
+  have hwT : c' • w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
+    have hmem : w ∈ T := by rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
+    have hsmul : c' • w ∈ T := T.smul_mem hmem c'
+    rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe] at hsmul
+  refine ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin, ?_,
+    c' • w, ?_, ?_, ?_, ?_, hwT⟩
+  · rw [haeval, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero]
+  · rw [haeval, smul_mul_smul_comm, mul_comm c c', hc', one_smul, hw₁]
+  · rw [haeval, smul_mul_smul_comm, hc', one_smul, hw₂]
+  · rw [mul_smul_comm, hw₃, smul_zero]
+  · rw [smul_mul_assoc, hw₄, smul_zero]
+
+/-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
+@[simp]
+theorem iff_C_mul {c : R} (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
+  obtain ⟨c', hc'⟩ := hc.exists_left_inv
+  refine ⟨fun h ↦ ?_, fun h ↦ h.of_C_mul hc⟩
+  have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
+    rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
+  simpa only [hQ] using h.of_C_mul (IsUnit.of_mul_eq_one _ hc')
 
 /-- A Riesz–Coleman projection commutes with every polynomial in `u`. -/
 theorem commute_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
