@@ -68,7 +68,7 @@ theorem comap_sq_eq_arrowIdeal_sq (f : pathAlgebra k Q →ₐ[k] A) (J : Ideal A
     [J.IsTwoSided]
     (harrows : ∀ (i j : Q) (a : i ⟶ j), f (ofArrow a) ∈ J)
     (hind : LinearIndependent k fun p : ShortPath Q 2 =>
-      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.1))) :
+      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.val))) :
     (J ^ 2).comap f = arrowIdeal k Q ^ 2 := by
   have hle := f.arrowIdeal_pow_le_comap J harrows 2
   let g := Ideal.quotientMapₐ (J ^ 2) f hle
@@ -91,7 +91,7 @@ theorem isAdmissibleIdeal_ker (f : pathAlgebra k Q →ₐ[k] A) (J : Ideal A)
     [J.IsTwoSided] (hnil : IsNilpotent J)
     (harrows : ∀ (i j : Q) (a : i ⟶ j), f (ofArrow a) ∈ J)
     (hind : LinearIndependent k fun p : ShortPath Q 2 =>
-      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.1))) :
+      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.val))) :
     IsAdmissibleIdeal (RingHom.ker f.toRingHom) where
   exists_arrowIdeal_pow_le := by
     obtain ⟨n, hn⟩ := hnil

@@ -100,6 +100,8 @@ leaving the Sobolev space.
   against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
+* `TauCeti.lintegral_rpow_le_of_measure_lt_le_rpow_mul`: a power tail bound
+  `ν {u > t} ≤ t ^ (-ε) W` above a level `m` bounds `∫⁻ u ^ p` for `p < ε`.
 * `TauCeti.exists_contDiff_deriv_eq_rpow`: a `C¹` primitive of `γ (min (t⁺, K)) ^ (γ - 1)` with
   bounded derivative, vanishing on `(-∞, 0]` and dominating `(min (t⁺, K)) ^ γ`.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
@@ -608,6 +610,54 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
             (lintegral_const_mul _ (by fun_prop)).symm
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
+
+/-- **A power tail bound gives integrability below its exponent.** Let `0 ≤ p < ε` and `m > 0`,
+and suppose that the superlevel sets of `u` above `m` decay like a power,
+`ν {u > t} ≤ t ^ (-ε) W` for every `t > m`. Then
+
+`∫⁻ u ^ p ∂ν ≤ m ^ p ν univ + p / (ε - p) m ^ (p - ε) W`.
+
+On a finite measure space this is the quantitative inclusion of weak `L^ε` into `Lᵖ`: below the
+level `m` the superlevel sets are bounded by the whole space, above it by the tail bound. -/
+theorem lintegral_rpow_le_of_measure_lt_le_rpow_mul (ν : Measure β) {u : β → ℝ≥0∞}
+    (hu : AEMeasurable u ν) {p ε m : ℝ} (hp : 0 ≤ p) (hpε : p < ε) (hm : 0 < m) {W : ℝ≥0∞}
+    (h : ∀ t, m < t → ν {y | ENNReal.ofReal t < u y} ≤ ENNReal.ofReal (t ^ (-ε)) * W) :
+    ∫⁻ y, u y ^ p ∂ν ≤
+      ENNReal.ofReal (m ^ p) * ν univ + ENNReal.ofReal (p / (ε - p) * m ^ (p - ε)) * W := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simp
+  rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu hp, ← Ioc_union_Ioi_eq_Ioi hm.le,
+    lintegral_union measurableSet_Ioi Ioc_disjoint_Ioi_same]
+  -- Below `m`, the superlevel sets are bounded by the whole space.
+  have h₁ : ∫⁻ t in Ioc 0 m, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      ν univ * ENNReal.ofReal (m ^ p / p) := by
+    calc _ ≤ ∫⁻ t in Ioc 0 m, ν univ * ENNReal.ofReal (t ^ (p - 1)) :=
+          lintegral_mono fun t ↦ by gcongr; exact subset_univ _
+      _ = ν univ * ENNReal.ofReal (m ^ p / p) := by
+          rw [lintegral_const_mul _ (by fun_prop), setLIntegral_congr Ioo_ae_eq_Ioc.symm,
+            lintegral_ofReal_rpow_Ioo (by linarith) hm.le, sub_add_cancel]
+  -- Above `m`, they are bounded by the tail bound.
+  have h₂ : ∫⁻ t in Ioi m, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      W * ENNReal.ofReal (m ^ (p - ε) / (ε - p)) := by
+    calc _ ≤ ∫⁻ t in Ioi m, W * ENNReal.ofReal (t ^ (p - 1 - ε)) := by
+          refine setLIntegral_mono (by fun_prop) fun t ht ↦ ?_
+          have ht0 : 0 < t := hm.trans ht
+          calc _ ≤ ENNReal.ofReal (t ^ (-ε)) * W * ENNReal.ofReal (t ^ (p - 1)) := by
+                gcongr; exact h t ht
+            _ = W * ENNReal.ofReal (t ^ (p - 1 - ε)) := by
+                rw [mul_comm _ W, mul_assoc, ← ENNReal.ofReal_mul (by positivity),
+                  ← Real.rpow_add ht0, neg_add_eq_sub]
+      _ = W * ENNReal.ofReal (m ^ (p - ε) / (ε - p)) := by
+          rw [lintegral_const_mul _ (by fun_prop),
+            lintegral_ofReal_rpow_Ioi_of_lt (by linarith) hm,
+            show p - 1 - ε + 1 = p - ε by ring, neg_div, ← div_neg, neg_sub]
+  calc _ ≤ ENNReal.ofReal p * (ν univ * ENNReal.ofReal (m ^ p / p) +
+        W * ENNReal.ofReal (m ^ (p - ε) / (ε - p))) := by gcongr
+    _ = ENNReal.ofReal (p * (m ^ p / p)) * ν univ +
+        ENNReal.ofReal (p * (m ^ (p - ε) / (ε - p))) * W := by
+      rw [ENNReal.ofReal_mul hp.le, ENNReal.ofReal_mul hp.le]
+      ring
+    _ = _ := by rw [mul_div_cancel₀ _ hp.ne', mul_div_assoc', div_mul_eq_mul_div]
 
 /-! ### A `C¹` primitive of a truncated power -/
 

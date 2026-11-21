@@ -190,7 +190,7 @@ theorem maslovIndex_symplecticGraphLoop (hK : ∀ z, K (Complex.I • z) = -(Com
     (L₀ := conjGraph K (ContinuousLinearMap.id ℝ E))
     (fun p => graphFrame K Ψ hsymp ((p.1 : ℝ) : ℂ) p.2)
     (continuous_graphFrame (hΨ.comp continuous_snd) (fun p => hsymp p.2)
-      (Complex.continuous_ofReal.comp (continuous_subtype_val.comp continuous_fst)))
+      (Complex.continuous_ofReal.comp (continuous_subtypeVal.comp continuous_fst)))
     (fun t => ?_) (fun t => ?_) (fun s => ?_)).symm
   · simp [B]
   · simpa using (map_graphFrame_one hK Ψ hsymp t).symm
@@ -297,7 +297,7 @@ theorem maslovIndex_symplecticGraphLoop_rotationLoop
       simp
     rw [hrot, ContinuousLinearMap.complexLinearPart_restrictScalars,
       ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
-      LinearMap.det_id, mul_one, ← Complex.exp_nat_mul]
+      LinearMap.det_id, mul_one, ← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   rw [hdet, Complex.norm_exp_ofReal_mul_I, Complex.ofReal_one, one_mul]

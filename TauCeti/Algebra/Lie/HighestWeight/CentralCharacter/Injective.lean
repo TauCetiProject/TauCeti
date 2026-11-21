@@ -89,7 +89,8 @@ private theorem mem_pbwFiltrationPrevious_of_hcProjection_mem {m : ℕ}
   obtain ⟨p, hp⟩ := UniversalEnvelopingAlgebra.pbwHomogeneousComponentMap_surjective K L m
     (Submodule.Quotient.mk ⟨z, hzm⟩)
   have hinv :=
-    UniversalEnvelopingAlgebra.mem_lieInvariants_of_pbwHomogeneousComponentMap_eq_mk hm z.2 hzm hp
+    UniversalEnvelopingAlgebra.mem_lieInvariants_of_pbwHomogeneousComponentMap_eq_mk hm z.property
+        hzm hp
   -- its symmetrization `s` is central and agrees with `z` up to degree below `m`
   let s : Subalgebra.center K (U L) :=
     ⟨UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization K L m hm p,
@@ -109,7 +110,7 @@ private theorem mem_pbwFiltrationPrevious_of_hcProjection_mem {m : ℕ}
     convert sub_mem (add_mem hdiff hz) hlead using 1
     abel
   have hres0 := Submodule.disjoint_def.mp (disjoint_homogeneousSubmodule_wordFiltrationPrevious m)
-    _ (lieCartanRestriction_mem_homogeneousSubmodule H p.2) hres
+    _ (lieCartanRestriction_mem_homogeneousSubmodule H p.property) hres
   -- Chevalley's restriction theorem is injective on the invariants, so `p = 0`
   have hp0 : p = 0 := Subtype.ext <|
     LieSubalgebra.lieCartanRestriction_injOn_lieInvariants H hinv (zero_mem _)

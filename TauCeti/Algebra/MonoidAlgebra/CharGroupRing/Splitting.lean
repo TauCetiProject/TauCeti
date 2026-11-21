@@ -78,7 +78,7 @@ noncomputable def charEvalEquiv (hG : IsUnit (Nat.card G : O)) :
     MonoidAlgebra O G ≃ₐ[O] ((G →* Oˣ) → O) :=
   AlgEquiv.ofBijective (AlgHom.pi fun ψ : G →* Oˣ ↦ ψ.charEval)
     ⟨fun _ _ h ↦ TauCeti.eq_of_forall_charEval_eq (congrFun h), fun y ↦ by
-      obtain ⟨x, hx⟩ := Set.jointEval_surjective (Set.univ : Set (G →* Oˣ)) hG (fun ψ ↦ y ψ.1)
+      obtain ⟨x, hx⟩ := Set.jointEval_surjective (Set.univ : Set (G →* Oˣ)) hG (fun ψ ↦ y ψ.val)
       exact ⟨x, funext fun ψ ↦ by simpa [AlgHom.pi_apply] using congrFun hx ⟨ψ, Set.mem_univ ψ⟩⟩⟩
 
 @[simp] theorem charEvalEquiv_apply (hG : IsUnit (Nat.card G : O)) (x : MonoidAlgebra O G)

@@ -72,7 +72,37 @@ theorem jimboWeight_mul_inv (q : Rˣ) (a : Fin N) :
     jimboWeight q a * jimboWeight q⁻¹ a = 1 := by
   simp only [jimboWeight_def, ← Units.val_mul, inv_zpow, mul_inv_cancel, Units.val_one]
 
+/-- Monoid homomorphisms commute with the Jimbo enhancement weights along `Units.map`. -/
+@[simp]
+theorem _root_.MonoidHom.map_jimboWeight {S : Type*} [Monoid S]
+    (f : R →* S) (q : Rˣ) (a : Fin N) :
+    f (jimboWeight q a) = jimboWeight (Units.map f q) a := by
+  simp only [jimboWeight_def, ← map_zpow, Units.coe_map]
+
+/-- For any involutive unit `q` (`q ^ 2 = 1`), every `N`-colour enhancement weight equals
+`q ^ (N - 1)`. -/
+theorem jimboWeight_of_sq_eq_one {q : Rˣ} (hq : q ^ 2 = 1) (a : Fin N) :
+    jimboWeight q a = ↑(q ^ (N - 1)) := by
+  have he : (N : ℤ) - 1 - 2 * (a : ℕ) = ((N - 1 : ℕ) : ℤ) - 2 * (a : ℤ) := by
+    have := a.isLt
+    omega
+  have hsq : q ^ (2 : ℤ) = 1 := by simpa using hq
+  rw [jimboWeight_def, he, zpow_sub, zpow_mul, hsq, one_zpow, inv_one, mul_one, zpow_natCast]
+
 end Monoid
+
+section Semiring
+
+variable [Semiring R]
+
+/-- Ring homomorphisms commute with the Jimbo enhancement weights along `Units.map`. -/
+@[simp]
+theorem _root_.RingHom.map_jimboWeight {S : Type*} [Semiring S]
+    (f : R →+* S) (q : Rˣ) (a : Fin N) :
+    f (jimboWeight q a) = jimboWeight (Units.map (f : R →* S) q) a := by
+  simpa only [MonoidHom.coe_ofClass] using (f : R →* S).map_jimboWeight q a
+
+end Semiring
 
 section CommSemiring
 
@@ -155,6 +185,12 @@ end CommRing
 section Ring
 
 variable [Ring R]
+
+/-- At `q = -1`, every enhancement weight equals `(-1) ^ (N - 1)`. -/
+@[simp]
+theorem jimboWeight_neg_one (a : Fin N) :
+    jimboWeight (-1 : Rˣ) a = (-1 : R) ^ (N - 1) := by
+  simpa using jimboWeight_of_sq_eq_one (Units.ext (by simp) : (-1 : Rˣ) ^ 2 = 1) a
 
 private theorem weight_step (q : Rˣ) (a : ℕ) :
     ((q : R) - ↑(q⁻¹)) * ↑(q ^ ((N : ℤ) - 1 - 2 * a)) =

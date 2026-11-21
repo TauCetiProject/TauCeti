@@ -135,7 +135,7 @@ theorem one_tmul_mem_primaryComponent_map {m : M} (hm : m ∈ I.primaryComponent
   obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem _ _ _).mp hm
   refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨n, (mem_torsionBySet_iff _ _).mpr fun a ↦ ?_⟩
   rw [← Ideal.mem_torsionOf_iff]
-  exact map_le_torsionOf_one_tmul hn (by rw [Ideal.map_pow]; exact a.2)
+  exact map_le_torsionOf_one_tmul hn (by rw [Ideal.map_pow]; exact a.property)
 
 /-- The base change of an `I`-power torsion module is `IS`-power torsion. -/
 theorem primaryComponent_map_tensorProduct_eq_top (hM : I.primaryComponent M = ⊤) :
@@ -156,18 +156,18 @@ theorem primaryComponent_map_tensorProduct_eq_bot [Module.Flat R S] (hI : I.FG)
   choose! n hn using fun g (hg : g ∈ G) ↦ hy _ (Finset.mem_image_of_mem _ hg)
   -- A single power `N` of every generator kills `y`.
   set N := G.sup n
-  have hN (g : G) : (g.1 ^ N) • y = 0 := by
-    rw [← algebraMap_smul S, map_pow, ← pow_mul_pow_sub _ (Finset.le_sup g.2), mul_comm,
-      mul_smul, hn _ g.2, smul_zero]
+  have hN (g : G) : (g.val ^ N) • y = 0 := by
+    rw [← algebraMap_smul S, map_pow, ← pow_mul_pow_sub _ (Finset.le_sup g.property), mul_comm,
+      mul_smul, hn _ g.property, smul_zero]
   -- Multiplication by the powers `g ^ N` is jointly injective on `M`, hence on `S ⊗[R] M`.
-  let φ : M →ₗ[R] G → M := LinearMap.pi fun g ↦ g.1 ^ N • LinearMap.id
+  let φ : M →ₗ[R] G → M := LinearMap.pi fun g ↦ g.val ^ N • LinearMap.id
   have hφ : Injective φ := by
     refine (injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_
     have : m ∈ (Ideal.span (G : Set R)).primaryComponent M :=
       (Ideal.mem_primaryComponent_span_iff G).mpr fun g hg ↦ ⟨N, congr_fun hm ⟨g, hg⟩⟩
     rwa [hM, mem_bot] at this
   have key (x : S ⊗[R] M) :
-      piRight R R S (fun _ : G ↦ M) (φ.lTensor S x) = fun g ↦ g.1 ^ N • x := by
+      piRight R R S (fun _ : G ↦ M) (φ.lTensor S x) = fun g ↦ g.val ^ N • x := by
     induction x using TensorProduct.inductionOn with
     | tmul s m => ext g; simp [φ, piRightHom_tmul, tmul_smul]
     | add x y hx hy => ext g; simp_all [smul_add]

@@ -221,9 +221,9 @@ continuous `ℤ_p`-algebra homomorphisms `ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] S`. -/
 noncomputable def adicSpecializeEquiv :
     WeightSpace p S ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S // Continuous φ} where
   toFun κ := ⟨κ.adicSpecialize, κ.continuous_adicSpecialize⟩
-  invFun φ := ofContinuousRingHom (φ.1 : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* S) φ.2
+  invFun φ := ofContinuousRingHom (φ.val : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* S) φ.property
   left_inv κ := κ.ofContinuousRingHom_adicSpecialize
-  right_inv φ := Subtype.ext <| (eq_adicSpecialize_of_continuous φ.2 _ fun _ ↦ rfl).symm
+  right_inv φ := Subtype.ext <| (eq_adicSpecialize_of_continuous φ.property _ fun _ ↦ rfl).symm
 
 @[simp] theorem adicSpecializeEquiv_apply (κ : WeightSpace p S) :
     (adicSpecializeEquiv κ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S) =
@@ -231,7 +231,7 @@ noncomputable def adicSpecializeEquiv :
 @[simp] theorem adicSpecializeEquiv_symm_apply
     (φ : {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S // Continuous φ}) :
     adicSpecializeEquiv.symm φ =
-      ofContinuousRingHom (φ.1 : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* S) φ.2 := (rfl)
+      ofContinuousRingHom (φ.val : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* S) φ.property := (rfl)
 
 /-- Every `η : Δ →* Sˣ` and evaluable `z ∈ S` determine a unique continuous `ℤ_p`-algebra
 homomorphism `ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] S` sending `[ω(δ)] ↦ η(δ)` and `[γ] - 1 ↦ z`. -/
@@ -321,9 +321,9 @@ continuous `ℤ_p`-algebra homomorphisms `ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] R`. -/
 noncomputable def normedSpecializeEquiv :
     WeightSpace p R ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R // Continuous φ} where
   toFun κ := ⟨κ.normedSpecialize, κ.continuous_normedSpecialize⟩
-  invFun φ := ofContinuousRingHom (φ.1 : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R) φ.2
+  invFun φ := ofContinuousRingHom (φ.val : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R) φ.property
   left_inv κ := κ.ofContinuousRingHom_normedSpecialize
-  right_inv φ := Subtype.ext <| (eq_normedSpecialize_of_continuous φ.2 _ fun _ ↦ rfl).symm
+  right_inv φ := Subtype.ext <| (eq_normedSpecialize_of_continuous φ.property _ fun _ ↦ rfl).symm
 
 @[simp] theorem normedSpecializeEquiv_apply (κ : WeightSpace p R) :
     (normedSpecializeEquiv κ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R) =
@@ -331,7 +331,7 @@ noncomputable def normedSpecializeEquiv :
 @[simp] theorem normedSpecializeEquiv_symm_apply
     (φ : {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R // Continuous φ}) :
     normedSpecializeEquiv.symm φ =
-      ofContinuousRingHom (φ.1 : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R) φ.2 := (rfl)
+      ofContinuousRingHom (φ.val : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R) φ.property := (rfl)
 
 /-- Every `η : Δ →* Rˣ` and topologically nilpotent `t ∈ R` determine a unique continuous
 `ℤ_p`-algebra homomorphism `ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] R` sending `[ω(δ)] ↦ η(δ)` and `[γ] - 1 ↦ t`. -/
@@ -493,16 +493,16 @@ bijectively to continuous ring homomorphisms `ℤ_p[[ℤ_pˣ]] →+* K`. -/
 noncomputable def specializeRingHomEquiv :
     WeightSpace p K ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K // Continuous φ} where
   toFun κ := ⟨κ.specializeRingHom, κ.continuous_specializeRingHom⟩
-  invFun φ := ofContinuousRingHom φ.1 φ.2
+  invFun φ := ofContinuousRingHom φ.val φ.property
   left_inv κ := κ.ofContinuousRingHom_specializeRingHom
-  right_inv φ := Subtype.ext <| (eq_specializeRingHom_of_continuous φ.2 _ fun _ ↦ rfl).symm
+  right_inv φ := Subtype.ext <| (eq_specializeRingHom_of_continuous φ.property _ fun _ ↦ rfl).symm
 
 @[simp] theorem specializeRingHomEquiv_apply (κ : WeightSpace p K) :
     (specializeRingHomEquiv κ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K) =
       κ.specializeRingHom := (rfl)
 @[simp] theorem specializeRingHomEquiv_symm_apply
     (φ : {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K // Continuous φ}) :
-    specializeRingHomEquiv.symm φ = ofContinuousRingHom φ.1 φ.2 := (rfl)
+    specializeRingHomEquiv.symm φ = ofContinuousRingHom φ.val φ.property := (rfl)
 
 /-- Every `η : Δ →* Kˣ` and topologically nilpotent `t ∈ K` determine a unique continuous ring
 homomorphism `ℤ_p[[ℤ_pˣ]] →+* K` sending `[ω(δ)] ↦ η(δ)` and `[γ] - 1 ↦ t`. -/

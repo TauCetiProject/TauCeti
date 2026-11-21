@@ -47,6 +47,8 @@ difference of dimensions of spaces of square-integrable solutions is
 * `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
   square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
   `v' + A v = 0`.
+* `TauCeti.forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add`: the change of unknown
+  `u = exp (-w) • ξ + S` turns the weighted equation for `ξ` into `u' + A u = 0`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -200,6 +202,39 @@ theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w 
     gcongr
     exact hm ⟨s, rfl⟩
 
+/-- **Change of unknown in the weighted equation.** Write a path as `ξ = exp w • (u - S)`, where
+`S` has derivative `S'`. Then `ξ` solves the weighted equation
+`ξ' = w' ξ - A ξ - exp w • (S' + A S)` exactly when `u = exp (-w) • ξ + S` solves
+`u' + A u = 0`. -/
+theorem forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add {A : ℝ → F →L[ℝ] F}
+    {w w' : ℝ → ℝ} (hw : ∀ s, HasDerivAt w (w' s) s) {S S' ξ : ℝ → F}
+    (hS : ∀ s, HasDerivAt S (S' s) s) :
+    (∀ s, HasDerivAt ξ
+      (w' s • ξ s - A s (ξ s) - Real.exp (w s) • (S' s + A s (S s))) s) ↔
+      ∀ s, HasDerivAt (fun s ↦ Real.exp (-w s) • ξ s + S s)
+        (-A s (Real.exp (-w s) • ξ s + S s)) s := by
+  have hexp (s : ℝ) : Real.exp (-w s) * Real.exp (w s) = 1 := by
+    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  have hexp' (s : ℝ) : Real.exp (w s) * Real.exp (-w s) = 1 := by
+    rw [mul_comm, hexp]
+  constructor
+  · intro h s
+    refine (((hw s).neg.exp.smul (h s)).add (hS s)).congr_deriv ?_
+    simp only [Pi.neg_apply, map_add, map_smul, smul_add, smul_sub, smul_smul, hexp, one_smul]
+    module
+  · intro h s
+    convert (hw s).exp.smul ((h s).sub (hS s)) using 1
+    · ext s
+      simp only [Pi.smul_apply', Pi.sub_apply, add_sub_cancel_right, smul_smul, hexp', one_smul]
+    simp only [Pi.sub_apply, map_add, map_smul]
+    -- The scalar identities only use `exp w * exp (-w) = 1`.
+    match_scalars
+    · linear_combination -w' s * hexp' s
+    · linear_combination hexp' s
+    · ring
+    · ring
+    · ring
+
 end TauCeti
 
 namespace TauCeti.WeakDerivStep
@@ -312,14 +347,14 @@ private def kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) : ℝ → F :=
-  Classical.choose (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)
+  Classical.choose (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.property)
 
 private theorem hasDerivAt_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) (s : ℝ) :
     HasDerivAt (kerSolution hA hAL u) (-A s (kerSolution hA hAL u s)) s :=
-  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)).1 s
+  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.property)).1 s
 
 private theorem continuous_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -331,16 +366,17 @@ private theorem prev_ae_eq_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) :
-    ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
+    ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.val)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] kerSolution hA hAL u :=
-  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)).2
+  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.property)).2
 
 /-- Any continuous representative of an element of the kernel is its chosen solution. -/
 private theorem kerSolution_eq (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) {v : ℝ → F} (hv : Continuous v)
-    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
+    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict
+        ((⊤ : Opens ℝ) : Set ℝ)))) u.val)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v) :
     kerSolution hA hAL u = v := by
   have h := (prev_ae_eq_kerSolution hA hAL u).symm.trans huv
@@ -379,7 +415,7 @@ private theorem kerEval_mem (hA : Continuous A)
     (u : (trajectoryOperator (p := 2) AL).ker) :
     kerEval hA hAL u ∈ squareIntegrableSolutions A := by
   refine ⟨kerSolution hA hAL u, rfl, hasDerivAt_kerSolution hA hAL u, ?_⟩
-  have h := (Lp.memLp (prev _ u.1)).ae_eq (prev_ae_eq_kerSolution hA hAL u)
+  have h := (Lp.memLp (prev _ u.val)).ae_eq (prev_ae_eq_kerSolution hA hAL u)
   simpa using h
 
 /-- A solution vanishing at time `0` vanishes identically, so evaluation is injective. -/
@@ -392,7 +428,7 @@ private theorem kerEval_injective (hA : Continuous A)
   have h0 : kerSolution hA hAL u = 0 := hA.neg.eq_of_hasDerivAt_clm_apply
     (hasDerivAt_kerSolution hA hAL u) (fun s ↦ by simp) (t₀ := 0)
     ((kerEval_apply hA hAL u).symm.trans hu)
-  have hprev : prev _ u.1 = 0 := by
+  have hprev : prev _ u.val = 0 := by
     rw [Lp.eq_zero_iff_ae_eq_zero]
     simpa [h0] using prev_ae_eq_kerSolution hA hAL u
   exact Subtype.ext (ext (by rw [hprev, Submodule.coe_zero, prev_zero]))
@@ -414,7 +450,7 @@ private theorem bijective_codRestrict_kerEval (hA : Continuous A)
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     Function.Bijective ((kerEval hA hAL).codRestrict _ (kerEval_mem hA hAL)) :=
   ⟨fun _ _ h ↦ kerEval_injective hA hAL (congrArg Subtype.val h), fun x ↦
-    (exists_kerEval_eq hA hAL x.2).imp fun _ h ↦ Subtype.ext h⟩
+    (exists_kerEval_eq hA hAL x.property).imp fun _ h ↦ Subtype.ext h⟩
 
 /-- **The kernel of the trajectory operator is the space of square-integrable solutions.** For a
 continuous family `A` of bounded operators on a real Banach space `F`, with `L∞` class `AL`,
@@ -433,7 +469,8 @@ theorem kerTrajectoryOperatorEquiv_apply (hA : Continuous A)
     (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) {v : ℝ → F} (hv : Continuous v)
-    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
+    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict
+        ((⊤ : Opens ℝ) : Set ℝ)))) u.val)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v) :
     (kerTrajectoryOperatorEquiv hA AL hAL u : F) = v 0 := by
   rw [kerTrajectoryOperatorEquiv, LinearEquiv.ofBijective_apply, LinearMap.codRestrict_apply,
