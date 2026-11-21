@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 public import TauCeti.Topology.VectorBundle.Complex.LinearPart
 import TauCeti.Geometry.Symplectic.Cayley.Basic
 import TauCeti.Geometry.Symplectic.Finrank
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ClutchingNumber
 
 /-!
 # The first Chern number of a symplectic manifold on spheres
@@ -51,8 +52,6 @@ with a cohomological first Chern class is made.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.Tames.clutchingNumberHom_eq`: two almost complex structures tamed by the
-  same two-form give the same clutching numbers.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom`: the first Chern
   number is the clutching number homomorphism of the tangent bundle for any tame almost complex
   structure.
@@ -83,19 +82,6 @@ variable [FiniteDimensional ℝ E]
   (G G' : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
   [Fact (finrank ℝ E = 2 * finrank ℂ G)] [NormedAddCommGroup G'] [NormedSpace ℂ G']
   [FiniteDimensional ℂ G'] [Fact (finrank ℝ E = 2 * finrank ℂ G')]
-
-/-- **Independence of the tame almost complex structure.** If `J` and `K` are both tamed by `σ`,
-the tangent bundles `(TM, J)` and `(TM, K)` have the same clutching number homomorphism
-`π₂(M, x) → ℤ`, for any complex model fibres `G` and `G'` and any smoothness levels `n` and `m` at
-which `J` and `K` are regarded. -/
-theorem Tames.clutchingNumberHom_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m : ℕ∞) (x : M) :
-    clutchingNumberHom G' (K.toContMDiff m).toContinuousComplexStructure.Fiber x =
-      clutchingNumberHom G (J.toContMDiff n).toContinuousComplexStructure.Fiber x := by
-  refine Bundle.ContinuousComplexStructure.clutchingNumberHom_fiber_eq (fun y v hv ↦ ?_) G G' x
-  -- On each tangent space, `1 - K J` is invertible because `J` and `K` are tamed by `σ`.
-  have hunit := hJ.isUnit_one_sub_toEndomorphism_mul hK y
-  apply (ContinuousLinearEquiv.unitsEquiv ℝ _ hunit.unit).injective
-  simpa [sub_eq_zero] using hv.symm
 
 namespace IsNondegenerate
 
