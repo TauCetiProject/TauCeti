@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Gradient trajectories of the quadratic well
@@ -26,7 +27,9 @@ trajectories of Morse functions
 `TauCeti.IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient`).
 
 * **The trajectories.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
-  only critical point is `0` (`TauCeti.criticalPoints_sq_real`). The trajectory of `-grad f`
+  only critical point is `0` (`TauCeti.criticalPoints_sq_real`, `TauCeti.mfderiv_sq_real_zero`),
+  of Morse index `0` (`TauCeti.manifoldMorseIndex_sq_real_zero`); its derivative is
+  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The trajectory of `-grad f`
   through `x₀` is `t ↦ x₀ exp (-2 t)`, defined for all time
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq`). For `t ≥ 0` it stays in
   `[-|x₀|, |x₀|]` (`TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_sq`) and it converges to
@@ -82,7 +85,7 @@ open scoped Bundle ContDiff ENNReal Manifold
 namespace TauCeti
 
 /-- For the standard metric on `ℝ`, the negative gradient of `x ↦ x²` at `x` is `-2 x`. -/
-private theorem neg_mgradient_sq_real_apply (x : ℝ) :
+theorem neg_mgradient_sq_real_apply (x : ℝ) :
     (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x = (-(2 * x) : ℝ) := by
   rw [Pi.neg_apply, mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv']
   simp only [differentiableAt_fun_id, deriv_fun_pow, deriv_id'', Nat.cast_ofNat, mul_one,
@@ -116,6 +119,25 @@ theorem isMorse_sq_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) := by
     simp
   rw [hd]
   simp
+
+/-- The derivative of `x ↦ x²` on `ℝ` at `x`, applied to a tangent vector `v`, is `2 x v`. -/
+theorem mvfderiv_sq_real_apply (x v : ℝ) :
+    mvfderiv 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x v = 2 * x * v := by
+  refine (mvfderiv_eq_fderiv_apply _ x v).trans ?_
+  rw [fderiv_eq_smul_deriv]
+  simp
+  ring
+
+/-- `0` is the critical point of `x ↦ x²` on `ℝ`. -/
+theorem mfderiv_sq_real_zero : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ) (fun y : ℝ ↦ y ^ 2) 0 = 0 := by
+  refine mvfderiv_eq_zero_iff.1 (ContinuousLinearMap.ext fun v ↦ ?_)
+  simp
+
+/-- The Morse index of `x ↦ x²` at its minimum `0` is `0`. -/
+theorem manifoldMorseIndex_sq_real_zero :
+    manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 :=
+  manifoldMorseIndex_eq_zero_of_isLocalMin (contDiff_id.pow 2).contMDiff.contMDiffAt
+    (Eventually.of_forall fun y ↦ by simp [sq_nonneg])
 
 /-! ### The trajectories -/
 

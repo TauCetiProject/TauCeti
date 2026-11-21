@@ -199,13 +199,17 @@ namespace Spf
 
 variable {A}
 
+/-- The stalk of `Spf A` at an open prime `p` of `A` is a local ring. This is the instance of
+`Spf A` as a locally ringed space, for points written as open primes. -/
+instance isLocalRing_stalk (p : carrier A) : IsLocalRing ((Spf A).presheaf.stalk p) :=
+  (Spf A).isLocalRing p
+
 /-- The residue field of `Spf A` at an open prime `p` is the fraction field of `A ⧸ p`
 (EGA I, Ch. I, 10.1.6). -/
 noncomputable def stalkResidueFieldEquiv (p : carrier A) :
     (Spf A).residueField p ≃+* FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
   let e : colimit (completedNeighbourhoodDiagram p) ≅ (Spf A).presheaf.stalk p :=
     completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1
-  haveI := (Spf A).isLocalRing p
   (IsLocalRing.ResidueField.mapEquiv e.commRingCatIsoToRingEquiv).symm.trans (stalkResidueIso p)
 
 /-- The residue field isomorphism sends the residue class of the germ at `p` of the section

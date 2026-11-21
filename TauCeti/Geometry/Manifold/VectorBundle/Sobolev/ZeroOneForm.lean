@@ -44,7 +44,7 @@ which lifts the pointwise `(0,1)`-projection
 * `TauCeti.zeroOneSobolevSections A μ p k`: the `(0,1)`-forms in `W^{k,p}` of `V`-valued
   one-forms.
 * `TauCeti.zeroOnePartSobolevL`: the continuous `(0,1)`-projection onto it.
-* `TauCeti.zeroOneLowerOrderL`: the inclusion of order `k + 1` into order `k`.
+* `TauCeti.zeroOneLowerOrdersL`: the inclusion of order `k + d` into order `k`.
 
 ## Main results
 
@@ -72,8 +72,11 @@ which lifts the pointwise `(0,1)`-projection
   `(0,1)`-projection of one-forms.
 * `TauCeti.mem_zeroOneSobolevSections_of_isZeroOneForm`: an element whose chart data are the
   readings of a `(0,1)`-form, for instance of a smooth one, is a Sobolev `(0,1)`-form.
-* `TauCeti.zeroOneLowerOrderL_zeroOnePartSobolevL`: the projection commutes with lowering the
-  order.
+* `TauCeti.zeroOneLowerOrdersL_zeroOnePartSobolevL`:
+  the projection commutes with lowering the order.
+* `TauCeti.zeroOneLowerOrdersL_zero`, `TauCeti.zeroOneLowerOrdersL_zeroOneLowerOrdersL`,
+  `TauCeti.zeroOneLowerOrdersL_injective`: identity, transitivity and injectivity of the order
+  inclusions.
 
 ## References
 
@@ -462,35 +465,84 @@ theorem closedComplemented_zeroOneSobolevSections :
 
 /-! ### Lowering the order -/
 
-/-- Forgetting the highest derivative of a `(0,1)`-form gives a `(0,1)`-form. -/
-theorem lowerOrderL_mem_zeroOneSobolevSections {w : SobolevSection A.tangentHom μ p (k + 1)}
-    (hw : w ∈ zeroOneSobolevSections A μ p (k + 1)) :
-    A.tangentHom.sectionChartData.lowerOrderL μ p k w ∈ zeroOneSobolevSections A μ p k := by
+/-- Forgetting derivatives preserves the native `(0,1)` condition. -/
+theorem lowerOrdersL_mem_zeroOneSobolevSections (d : ℕ)
+    {w : SobolevSection A.tangentHom μ p (k + d)}
+    (hw : w ∈ zeroOneSobolevSections A μ p (k + d)) :
+    A.tangentHom.sectionChartData.lowerOrdersL μ p k d w ∈ zeroOneSobolevSections A μ p k := by
   rw [mem_zeroOneSobolevSections_iff] at hw ⊢
   intro i
-  rw [SectionChartData.chartValueL_coe_lowerOrderL]
+  rw [SectionChartData.chartValueL_lowerOrdersL]
   exact hw i
 
 variable (A μ p k) in
-/-- The continuous inclusion of the `(0,1)`-forms of order `k + 1` into those of order `k`. -/
-def zeroOneLowerOrderL :
-    zeroOneSobolevSections A μ p (k + 1) →L[ℝ] zeroOneSobolevSections A μ p k :=
-  ((A.tangentHom.sectionChartData.lowerOrderL μ p k).comp
-    (zeroOneSobolevSections A μ p (k + 1)).subtypeL).codRestrict _
-      fun w ↦ lowerOrderL_mem_zeroOneSobolevSections w.property
+/-- The continuous inclusion of native `(0,1)`-forms from order `k + d` to order `k`. -/
+def zeroOneLowerOrdersL (d : ℕ) :
+    zeroOneSobolevSections A μ p (k + d) →L[ℝ] zeroOneSobolevSections A μ p k :=
+  (A.tangentHom.sectionChartData.lowerOrdersL μ p k d).restrict
+    (fun _ hw ↦ lowerOrdersL_mem_zeroOneSobolevSections d hw)
 
-/-- The inclusion of `(0,1)`-forms forgets the highest derivative. -/
+/-- As a function, the native order inclusion is the restriction of the canonical order map. -/
+theorem coeFn_zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
+    ⇑(zeroOneLowerOrdersL A μ p k d) =
+      Set.codRestrict
+        (⇑(A.tangentHom.sectionChartData.lowerOrdersL μ p k d) ∘
+          ⇑(zeroOneSobolevSections A μ p (k + d)).subtypeL)
+        (zeroOneSobolevSections A μ p k)
+        (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.property) := by
+  rfl
+
+/-- The inclusion acts by the canonical order inclusion on the underlying one-form. -/
 @[simp]
-theorem coe_zeroOneLowerOrderL (w : zeroOneSobolevSections A μ p (k + 1)) :
-    (zeroOneLowerOrderL A μ p k w : SobolevSection A.tangentHom μ p k) =
-      A.tangentHom.sectionChartData.lowerOrderL μ p k w :=
-  ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
+theorem coe_zeroOneLowerOrdersL (d : ℕ) (w : zeroOneSobolevSections A μ p (k + d)) :
+    (zeroOneLowerOrdersL A μ p k d w : SobolevSection A.tangentHom μ p k) =
+      A.tangentHom.sectionChartData.lowerOrdersL μ p k d w :=
+  ContinuousLinearMap.coe_restrict_apply _ _
 
-/-- The `(0,1)`-projection commutes with forgetting the highest derivative. -/
-theorem zeroOneLowerOrderL_zeroOnePartSobolevL (w : SobolevSection A.tangentHom μ p (k + 1)) :
-    zeroOneLowerOrderL A μ p k (zeroOnePartSobolevL A μ p (k + 1) w) =
-      zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrderL μ p k w) :=
-  Subtype.ext (SectionChartData.lowerOrderL_constMapL μ p k _ w)
+/-- Forgetting zero derivatives is the identity. -/
+@[simp]
+theorem zeroOneLowerOrdersL_zero (w : zeroOneSobolevSections A μ p k) :
+    zeroOneLowerOrdersL A μ p k 0 w = w :=
+  Subtype.ext <| by simp only [coe_zeroOneLowerOrdersL, SectionChartData.lowerOrdersL_zero]
+
+/-- Coercion to one-forms commutes with equality transport of the Sobolev order. -/
+@[simp]
+theorem coe_zeroOneSobolevSections_eqRec {a b : ℕ} (h : a = b)
+    (w : zeroOneSobolevSections A μ p a) :
+    ((h ▸ w : zeroOneSobolevSections A μ p b) : SobolevSection A.tangentHom μ p b) =
+      h ▸ (w : SobolevSection A.tangentHom μ p a) := by
+  subst b
+  rfl
+
+/-- Native order inclusions compose, with the source order reassociated by `Nat.add_assoc`. -/
+@[simp]
+theorem zeroOneLowerOrdersL_zeroOneLowerOrdersL (d e : ℕ)
+    (w : zeroOneSobolevSections A μ p ((k + d) + e)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOneLowerOrdersL A μ p (k + d) e w) =
+      zeroOneLowerOrdersL A μ p k (d + e) ((Nat.add_assoc k d e) ▸ w) := by
+  apply Subtype.ext
+  simpa only [coe_zeroOneLowerOrdersL, coe_zeroOneSobolevSections_eqRec] using
+    A.tangentHom.sectionChartData.lowerOrdersL_lowerOrdersL μ p k d e
+      (w : SobolevSection A.tangentHom μ p ((k + d) + e))
+
+/-- Forgetting `d + 1` derivatives first forgets the highest derivative. -/
+theorem zeroOneLowerOrdersL_succ (d : ℕ) :
+    zeroOneLowerOrdersL A μ p k (d + 1) =
+      (zeroOneLowerOrdersL A μ p k d).comp (zeroOneLowerOrdersL A μ p (k + d) 1) :=
+  ContinuousLinearMap.ext fun w ↦ (zeroOneLowerOrdersL_zeroOneLowerOrdersL d 1 w).symm
+
+/-- The native order inclusion is injective. -/
+theorem zeroOneLowerOrdersL_injective (d : ℕ) :
+    Function.Injective (zeroOneLowerOrdersL A μ p k d) := fun w w' hw ↦
+  Subtype.ext <| A.tangentHom.sectionChartData.lowerOrdersL_injective μ p k d <| by
+    rw [← coe_zeroOneLowerOrdersL, hw, coe_zeroOneLowerOrdersL]
+
+/-- The native `(0,1)` projection commutes with forgetting derivatives. -/
+theorem zeroOneLowerOrdersL_zeroOnePartSobolevL (d : ℕ)
+    (w : SobolevSection A.tangentHom μ p (k + d)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOnePartSobolevL A μ p (k + d) w) =
+      zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrdersL μ p k d w) :=
+  Subtype.ext (A.tangentHom.sectionChartData.lowerOrdersL_constMapL μ p k d _ w)
 
 end ZeroOne
 

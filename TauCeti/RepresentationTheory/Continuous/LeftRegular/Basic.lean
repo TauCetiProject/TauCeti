@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.CountBasis
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Group.Measure
