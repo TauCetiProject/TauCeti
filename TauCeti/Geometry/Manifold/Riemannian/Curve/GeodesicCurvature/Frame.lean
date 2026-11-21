@@ -26,8 +26,8 @@ structure equation `dω = -K vol` in Gauss–Bonnet.
 The formula allows arbitrary parametrizations, including stationary points. There `Im(z' / z)` is
 zero by the totalized division convention rather than a turning rate, and both sides vanish. It
 needs the curve differentiable at `t`, with its velocity differentiable in the
-tangent-bundle trivialization centered at `γ t`, and the frame only on an open neighborhood of
-the point on the curve. The derivative of `z` itself holds for any metric connection
+tangent-bundle trivialization centered at `γ t`. The frame domain only needs to be a neighborhood
+of the point on the curve. The derivative of `z` itself holds for any metric connection
 (`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`).
 
 ## References
@@ -59,8 +59,8 @@ tangent-bundle trivialization centered at `γ t`, and no unit-speed assumption i
 stationary point `Im(z' / z)` is zero by the totalized division convention, and both sides are
 zero. Orthonormality is only required along `γ` near `t`. -/
 theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s u)
-    (hu : IsOpen u) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
-    (o : TauCeti.Manifold.Orientation I M (Fin 2)) (ht : γ t ∈ u)
+    (hu : u ∈ 𝓝 (γ t)) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
+    (o : TauCeti.Manifold.Orientation I M (Fin 2))
     (hor : s 1 (γ t) = (letI := o.fact_finrank_tangentSpace (γ t);
       (o.orientationAt (γ t)).rightAngleRotation (s 0 (γ t))))
     (hγ : MDifferentiableAt 𝓘(ℝ) I γ t)
@@ -71,12 +71,12 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s
   by_cases hv : curveVelocity I γ t = 0
   · simp [hv, connectionForm_apply]
   have hsp : curveVelocity I γ t ∈ Submodule.span ℝ (Set.range fun i ↦ s i (γ t)) :=
-    hs.generating ht Submodule.mem_top
+    hs.generating (mem_of_mem_nhds hu) Submodule.mem_top
   have hz : frameVelocityCoordinates s γ t ≠ 0 :=
     (frameVelocityCoordinates_eq_zero_iff hsp).not.mpr hv
   -- The connection term of `z' / z` is `-i ω(γ')`, which cancels against `ω(γ')`.
   rw [(hs.hasDerivAt_frameVelocityCoordinates hu ho
-      (isMetricCompatible_leviCivitaConnection (I := I) (M := M)) ht hγ hγv).deriv]
+      (isMetricCompatible_leviCivitaConnection (I := I) (M := M)) hγ hγv).deriv]
   simp only [sub_div, mul_div_cancel_right₀ _ hz, Complex.sub_im, Complex.I_mul_im,
     Complex.ofReal_re, sub_add_cancel]
   -- Reduce curvature and the normal component before doing the complex scalar algebra.

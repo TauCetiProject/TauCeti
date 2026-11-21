@@ -47,9 +47,9 @@ coordinate covariant acceleration minus `i ω(γ') z`. This holds for any metric
 only needs `γ` differentiable at `t`, with its velocity differentiable in the tangent-bundle
 trivialization centered at `γ t`. Orthonormality is only required along `γ` near `t`. -/
 theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
-    (hu : IsOpen u) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
+    (hu : u ∈ 𝓝 (γ t)) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
     {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-    (hcov : IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov) (ht : γ t ∈ u)
+    (hcov : IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (hγ : MDifferentiableAt 𝓘(ℝ) I γ t)
     (hv : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (curveVelocity I γ) (γ t)) t) :
     HasDerivAt (frameVelocityCoordinates s γ)
@@ -57,7 +57,8 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
         (inner ℝ (s 1 (γ t)) (alongCurve cov γ (curveVelocity I γ) t) : ℂ) * Complex.I -
           Complex.I * (hs.connectionForm cov 0 1 (γ t) ![curveVelocity I γ t] : ℂ) *
             frameVelocityCoordinates s γ t) t := by
-  have hframe (i : Fin 2) := (hs.contMDiffAt hu ht i).mdifferentiableAt one_ne_zero
+  have ht := mem_of_mem_nhds hu
+  have hframe (i : Fin 2) := ((hs.contMDiffOn i).contMDiffAt hu).mdifferentiableAt one_ne_zero
   have hcoord (i : Fin 2) := differentiableAt_sectionCoord γ (fun r ↦ s i (γ r))
     ((hframe i).comp t hγ) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hskew (i j : Fin 2) :

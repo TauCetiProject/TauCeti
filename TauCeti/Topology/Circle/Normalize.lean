@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.ContinuousMap.Algebra
+public import Mathlib.Topology.Path
 
 import TauCeti.Analysis.Normed.Module.Normalize
 
@@ -31,6 +32,8 @@ multiplicative and sends `1` to `1`.
   `(‖f x‖ : ℂ) * (f.normalizeToCircle hf x : ℂ) = f x`.
 * `ContinuousMap.normalizeToCircle_mul`, `ContinuousMap.normalizeToCircle_one`: radial
   normalization preserves products and `1` in `C(X, Circle)`.
+* `ContinuousMap.exists_path_eq_div_norm`: normalization on the unit interval with equal
+  endpoint directions gives a loop in `Circle`.
 * `Circle.ne_zero_of_coe_eq_div_norm`: a point of the circle equal to `w / ‖w‖` forces `w ≠ 0`.
 -/
 
@@ -76,6 +79,17 @@ theorem normalizeToCircle_one
     (1 : C(X, ℂ)).normalizeToCircle hf = 1 := by
   ext x
   simp [coe_normalizeToCircle_apply]
+
+/-- A nowhere-zero continuous complex map on the unit interval with equal normalized
+endpoints gives a loop in `Circle` with complex coordinate `z t / ‖z t‖`. -/
+theorem exists_path_eq_div_norm (z : C(unitInterval, ℂ)) (hne : ∀ t, z t ≠ 0)
+    (hp : z 1 / (‖z 1‖ : ℂ) = z 0 / (‖z 0‖ : ℂ)) :
+    ∃ v : Circle, ∃ p : Path v v, ∀ t : unitInterval, (p t : ℂ) = z t / (‖z t‖ : ℂ) := by
+  let U := z.normalizeToCircle hne
+  have hclosed : U 1 = U 0 := Circle.ext <|
+    (z.coe_normalizeToCircle_apply _ 1).trans
+      (hp.trans (z.coe_normalizeToCircle_apply _ 0).symm)
+  exact ⟨U 0, ⟨U, rfl, hclosed⟩, fun t ↦ z.coe_normalizeToCircle_apply _ t⟩
 
 end ContinuousMap
 

@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Topology.Circle.Normalize
-public import Mathlib.Topology.Path
 
 /-!
 # Inner products of curve velocities with tangent fields
@@ -25,7 +23,7 @@ metric and tangent fields `C^k` on such a set.
 
 For velocity inner products `z` continuous and nonzero on `[0, 1]` with equal normalized endpoints,
 normalized coordinates `z / ‖z‖` form a loop in the unit circle `Circle`
-(`TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`). When the pair is
+by applying `ContinuousMap.exists_path_eq_div_norm` to the restriction of `z`. When the pair is
 orthonormal along the curve and its span contains the velocity, this is the unit tangent read
 in the pair: if `θ` is a continuous angle of this loop, the unit tangent is
 `T = cos θ s₀ + sin θ s₁`.
@@ -40,8 +38,6 @@ in the pair: if `θ` is a continuous angle of this loop, the unit tangent is
 * `TauCeti.Manifold.periodic_frameVelocityCoordinates`: periodicity along periodic curves.
 * `TauCeti.Manifold.continuous_frameVelocityCoordinates`: continuity along `C¹` curves.
 * `TauCeti.Manifold.contDiff_frameVelocityCoordinates`: `C^k` regularity along `C^(k+1)` curves.
-* `TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`: the normalized
-  velocity-coordinate loop.
 
 ## References
 
@@ -122,14 +118,14 @@ theorem frameVelocityCoordinates_eq_zero_iff {s : Fin 2 → Π x : M, TangentSpa
     (hsp : curveVelocity I γ t ∈ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
     frameVelocityCoordinates s γ t = 0 ↔ curveVelocity I γ t = 0 := by
   refine ⟨fun h ↦ ?_, frameVelocityCoordinates_eq_zero_of_curveVelocity_eq_zero⟩
-  -- The velocity is orthogonal to a span containing it.
-  obtain ⟨h0, h1⟩ := Complex.ext_iff.mp h
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).mp hsp
-  have hv := congrArg (fun w ↦ inner ℝ w (curveVelocity I γ t)) hc
-  simp only [Fin.sum_univ_two, inner_add_left, real_inner_smul_left,
-    ← frameVelocityCoordinates_re, ← frameVelocityCoordinates_im, h0, h1, Complex.zero_re,
-    Complex.zero_im, mul_zero, add_zero] at hv
-  exact inner_self_eq_zero.mp hv.symm
+  have hker : Submodule.span ℝ (range fun i ↦ s i (γ t)) ≤
+      (innerSL ℝ (curveVelocity I γ t)).toLinearMap.ker := by
+    refine Submodule.span_le.mpr (range_subset_iff.mpr fun i ↦ ?_)
+    change inner ℝ (curveVelocity I γ t) (s i (γ t)) = 0
+    fin_cases i
+    · simpa [real_inner_comm] using congrArg Complex.re h
+    · simpa [real_inner_comm] using congrArg Complex.im h
+  exact inner_self_eq_zero.mp (hker hsp)
 
 /-- Along an `a`-periodic curve, the frame coordinates of the velocity are `a`-periodic. -/
 theorem periodic_frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace I x) {γ : ℝ → M}
@@ -166,25 +162,6 @@ theorem continuous_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpac
   exact (Complex.re_add_im (frameVelocityCoordinates s γ t)).symm
 
 end Continuous
-
-/-- **The normalized velocity-coordinate loop.** If the velocity inner products `z` are
-continuous and nonzero on `[0, 1]` and have equal normalized endpoints, then `z / ‖z‖` forms a
-loop in the unit circle. For an orthonormal pair whose span contains the velocity along `γ`,
-this is the unit tangent read in the pair. -/
-theorem exists_path_eq_frameVelocityCoordinates_div_norm
-    {s : Fin 2 → Π x : M, TangentSpace I x} {γ : ℝ → M}
-    (hz : ContinuousOn (frameVelocityCoordinates s γ) (Icc 0 1))
-    (hne : ∀ t ∈ Icc (0 : ℝ) 1, frameVelocityCoordinates s γ t ≠ 0)
-    (hp : frameVelocityCoordinates s γ 1 / (‖frameVelocityCoordinates s γ 1‖ : ℂ) =
-      frameVelocityCoordinates s γ 0 / (‖frameVelocityCoordinates s γ 0‖ : ℂ)) :
-    ∃ v : Circle, ∃ p : Path v v, ∀ t : unitInterval,
-      (p t : ℂ) = frameVelocityCoordinates s γ t / (‖frameVelocityCoordinates s γ t‖ : ℂ) := by
-  let z : C(unitInterval, ℂ) := ⟨_, hz.domRestrict⟩
-  let U := z.normalizeToCircle (fun t ↦ hne t t.property)
-  have hclosed : U 1 = U 0 := Circle.ext <|
-    (z.coe_normalizeToCircle_apply _ 1).trans
-      (hp.trans (z.coe_normalizeToCircle_apply _ 0).symm)
-  exact ⟨U 0, ⟨U, rfl, hclosed⟩, fun t ↦ z.coe_normalizeToCircle_apply _ t⟩
 
 variable {k : ℕ∞ω} [IsManifold I 1 M]
   [IsContMDiffRiemannianBundle I k E (TangentSpace I : M → Type _)]
