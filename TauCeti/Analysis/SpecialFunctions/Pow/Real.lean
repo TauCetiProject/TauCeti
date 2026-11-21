@@ -84,9 +84,14 @@ A nonnegative factor splits off a real power of any real number, including a neg
 `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
 the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
 
-A common nonnegative factor comes out of a weighted geometric mean:
-`(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for `0 ≤ c`. This is how a common factor is
-pulled out of the bound `A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+A common nonnegative factor comes out of a product of two real powers whose exponents sum to `1`:
+`(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t` and `a + b = 1`, with no condition on the signs
+of `x`, `y`, `a` and `b`. For nonnegative bases and weights this is the homogeneity of the
+two-point weighted geometric mean, and it is how a common factor is pulled out of the bound
+`A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+
+A bound `s ^ p u ≤ M` with `s, u ≥ 0` splits as `s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for every
+`θ ≥ 0`. This trades part of a power of a cutoff for a power of its maximum.
 
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
@@ -134,10 +139,11 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
-  and `a + b = 1`, with the special case `Real.mul_rpow_one_sub_mul_mul_rpow` for the exponents
-  `1 - θ` and `θ`.
+  and `a + b = 1`, for all real `x`, `y`, `a` and `b`.
 * `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
   `0 ≤ P` and `0 ≤ δ ≤ 1`.
+* `Real.rpow_mul_mul_le_rpow_mul_rpow`: `s ^ p u ≤ M` gives `s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for
+  `0 ≤ s`, `0 ≤ u` and `0 ≤ θ`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -378,19 +384,13 @@ theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
         log_mul ha.ne' ht.ne, add_mul, exp_add]
       ring
 
-/-- **Homogeneity of the two-point weighted geometric mean.** For exponents with `a + b = 1`, a
-common factor `t ≥ 0` comes out: `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`, for all real `x` and
-`y`. -/
+/-- A common factor `t ≥ 0` comes out of a product of two real powers whose exponents sum to `1`:
+`(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)` for all real `x`, `y`, `a` and `b` with `a + b = 1`. For
+nonnegative bases and weights this is the homogeneity of the two-point weighted geometric mean. -/
 theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hab : a + b = 1) :
     (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
-  rw [mul_rpow_of_nonneg_left ht, mul_rpow_of_nonneg_left ht, mul_mul_mul_comm,
-    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
-
-/-- A common factor `c ≥ 0` comes out of a weighted geometric mean:
-`(c a) ^ (1 - θ) (c b) ^ θ = c (a ^ (1 - θ) b ^ θ)`, for all real `a`, `b` and `θ`. -/
-theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
-    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) :=
-  mul_rpow_mul_mul_rpow_of_add_eq_one hc (sub_add_cancel 1 θ)
+  simp only [mul_rpow_of_nonneg_left ht]
+  rw [mul_mul_mul_comm, ← rpow_of_add_eq ht one_ne_zero hab, rpow_one]
 
 /-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
 every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
@@ -401,6 +401,18 @@ theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤
     _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (rpow_le_rpow hP hA hδ0)
         (rpow_le_rpow hP hB (by linarith)) (by positivity)
         (rpow_nonneg (hP.trans hA) _)
+
+/-- **Splitting a power bound.** If `s ^ p u ≤ M` with `s, u ≥ 0`, then
+`s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for every `θ ≥ 0`: write `s ^ (p θ) u` as
+`(s ^ p u) ^ θ u ^ (1 - θ)`. -/
+theorem rpow_mul_mul_le_rpow_mul_rpow {s u M p θ : ℝ} (hs : 0 ≤ s) (hu : 0 ≤ u) (hθ : 0 ≤ θ)
+    (hM : s ^ p * u ≤ M) : s ^ (p * θ) * u ≤ M ^ θ * u ^ (1 - θ) := by
+  have hsp : s ^ (p * θ) = (s ^ p) ^ θ := rpow_mul hs p θ
+  have hu1 : u = u ^ θ * u ^ (1 - θ) := by
+    rw [← rpow_of_add_eq hu one_ne_zero (add_sub_cancel θ 1), rpow_one]
+  calc s ^ (p * θ) * u = (s ^ p * u) ^ θ * u ^ (1 - θ) := by
+        rw [mul_rpow (rpow_nonneg hs p) hu, hsp, mul_assoc, ← hu1]
+    _ ≤ M ^ θ * u ^ (1 - θ) := by gcongr
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

@@ -148,8 +148,8 @@ end Pairing
 private theorem rpow_mul_rpow_interp {a N θ κ : ℝ} (ha : 0 ≤ a) (hN : 0 ≤ N) :
     (a * N ^ (1 + (0 - θ) * κ)) ^ (1 - θ) * (a * N ^ (1 + (1 - θ) * κ)) ^ θ = a * N := by
   have hsum : (1 + (0 - θ) * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
-  rw [Real.mul_rpow_one_sub_mul_mul_rpow ha, ← Real.rpow_mul hN, ← Real.rpow_mul hN,
-    ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), hsum, Real.rpow_one]
+  rw [Real.mul_rpow_mul_mul_rpow_of_add_eq_one ha (sub_add_cancel 1 θ), ← Real.rpow_mul hN,
+    ← Real.rpow_mul hN, ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), hsum, Real.rpow_one]
 
 /-! ### The analytic family -/
 

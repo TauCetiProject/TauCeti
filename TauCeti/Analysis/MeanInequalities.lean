@@ -64,8 +64,6 @@ of a higher-order Sobolev space.
   sums of coordinate pairs.
 * `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
-* `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
-  `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -181,23 +179,6 @@ theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0
   rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
   nlinarith
 
-/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `a + b > 0`, then
-`s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`: split `s^a u` as
-`(s^(a + b) u)^(a / (a + b)) u^(b / (a + b))`. -/
-theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hab : 0 < a + b) (hs : 0 ≤ s)
-    (hu : 0 ≤ u) (hM : s ^ (a + b) * u ≤ M) :
-    s ^ a * u ≤ M ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
-  have hab' : (a : ℝ) + b ≠ 0 := by exact_mod_cast hab.ne'
-  have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by rw [← add_div, div_self hab']
-  have hsplit : s ^ a * u = (s ^ (a + b) * u) ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
-    rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
-      mul_assoc, ← rpow_add' hu (by rw [hsum]; exact one_ne_zero), hsum, rpow_one]
-    push_cast
-    rw [mul_div_cancel₀ _ hab', rpow_natCast]
-  rw [hsplit]
-  exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
-    (by positivity)
-
 end Real
 
 namespace ENNReal
@@ -269,36 +250,31 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
       2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
   refine ENNReal.tsum_le_of_sum_range_le fun N ↦ ?_
   set W : ℕ → Finset ℕ := fun j ↦ Finset.Ico (j + 1 - L) (j + L)
-  have hcard : ∀ s : Finset ℕ, ∀ k, s ⊆ W k → (s.card : ℝ≥0∞) ≤ 2 * L := fun s k hs ↦ by
-    have : s.card ≤ 2 * L := (Finset.card_le_card hs).trans (by simp only [W, Nat.card_Ico]; omega)
-    exact_mod_cast this
+  -- A finite sum weighted by the sizes of subsets of the windows `W k` is at most `2 L` times
+  -- the full sum, since each window has at most `2 L - 1` elements.
+  have hweight (S : Finset ℕ) (V : ℕ → Finset ℕ) (hV : ∀ k, V k ⊆ W k) (f : ℕ → ℝ≥0∞) :
+      ∑ k ∈ S, ((V k).card : ℝ≥0∞) * f k ≤ 2 * L * ∑' k, f k := by
+    calc ∑ k ∈ S, ((V k).card : ℝ≥0∞) * f k ≤ ∑ k ∈ S, 2 * L * f k := by
+          gcongr with k
+          have : (V k).card ≤ 2 * L :=
+            (Finset.card_le_card (hV k)).trans (by simp only [W, Nat.card_Ico]; omega)
+          exact_mod_cast this
+      _ ≤ 2 * L * ∑' k, f k := by
+          rw [← Finset.mul_sum]
+          gcongr
+          exact _root_.sum_le_tsum _
   -- Cauchy–Schwarz over the finite set `T` of pairs `(j, k)` with `j < N` and `k ∈ W j`, in which
   -- each first index `j` and each second index `k` occurs at most `2 L` times.
   set T := (Finset.range N).sigma W
   have ha : ∑ x ∈ T, a x.1 ^ (2 : ℝ) ≤ 2 * L * ∑' j, a j ^ 2 := by
     rw [Finset.sum_sigma]
     simp only [rpow_two, Finset.sum_const, nsmul_eq_mul]
-    calc ∑ j ∈ Finset.range N, ((W j).card : ℝ≥0∞) * a j ^ 2
-        ≤ ∑ j ∈ Finset.range N, 2 * L * a j ^ 2 := by
-          gcongr with j
-          exact hcard _ j subset_rfl
-      _ ≤ 2 * L * ∑' j, a j ^ 2 := by
-          rw [← Finset.mul_sum]
-          gcongr
-          exact _root_.sum_le_tsum _
+    exact hweight _ W (fun _ ↦ subset_rfl) (a · ^ 2)
   have hb : ∑ x ∈ T, b x.2 ^ (2 : ℝ) ≤ 2 * L * ∑' k, b k ^ 2 := by
     rw [Finset.sum_sigma, Finset.sum_comm' (t' := Finset.range (N + L))
       (s' := fun k ↦ (Finset.range N).filter (· ∈ W k))]
     · simp only [rpow_two, Finset.sum_const, nsmul_eq_mul]
-      calc ∑ k ∈ Finset.range (N + L),
-            (((Finset.range N).filter (· ∈ W k)).card : ℝ≥0∞) * b k ^ 2
-          ≤ ∑ k ∈ Finset.range (N + L), 2 * L * b k ^ 2 := by
-            gcongr with k
-            exact hcard _ k fun j hj ↦ (Finset.mem_filter.1 hj).2
-        _ ≤ 2 * L * ∑' k, b k ^ 2 := by
-            rw [← Finset.mul_sum]
-            gcongr
-            exact _root_.sum_le_tsum _
+      exact hweight _ _ (fun k j hj ↦ (Finset.mem_filter.1 hj).2) (b · ^ 2)
     · intro j k
       simp only [Finset.mem_filter, Finset.mem_range, W, Finset.mem_Ico]
       omega
@@ -311,8 +287,9 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
         gcongr
     _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
         -- The two square roots of `2 * L` combine to `(2 * L) ^ (2⁻¹ + 2⁻¹) = 2 * L`.
-        rw [mul_rpow_of_nonneg _ _ (by norm_num), mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ (by norm_num),
-          mul_mul_mul_comm, ← rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+        have h2 : (0 : ℝ) ≤ 2⁻¹ := by norm_num
+        simp only [mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ h2]
+        rw [mul_mul_mul_comm, ← rpow_add_of_nonneg _ _ h2 h2]
         norm_num
 
 end ENNReal
@@ -352,14 +329,10 @@ theorem Lp_le_mul_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f g : ι → ℝ} {
         · exact Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hf i hi) p
         · exact hf i hi
         · exact hfg i hi
-    _ ≤ c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
-        rcases hc.eq_or_lt with rfl | hc
-        · simp [zero_rpow hp.ne', zero_rpow (inv_ne_zero hp.ne')]
-        have hg (i : ι) (hi : i ∈ s) : 0 ≤ g i :=
-          nonneg_of_mul_nonneg_right ((hf i hi).trans (hfg i hi)) hc
-        rw [Finset.sum_congr rfl fun i hi ↦ mul_rpow hc.le (hg i hi), ← Finset.mul_sum,
-          mul_rpow (rpow_nonneg hc.le p) (Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hg i hi) p),
-          ← rpow_mul hc.le, mul_one_div_cancel hp.ne', rpow_one]
+    _ = c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
+        simp only [mul_rpow_of_nonneg_left hc]
+        rw [← Finset.mul_sum, mul_rpow_of_nonneg_left (rpow_nonneg hc p), one_div,
+          rpow_rpow_inv hc hp.ne']
 
 /-- The finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is `#s ^ (1 / p) * t`. -/
 theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ t) (hp : p ≠ 0) :

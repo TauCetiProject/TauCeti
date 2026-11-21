@@ -232,8 +232,9 @@ theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E₁,
   -- The common factors `N` and `X` come out of the geometric mean of the boundary bounds.
   have hmean : (N * (M₀ * X)) ^ (1 - θ) * (N * (M₁ * X)) ^ θ =
       N * (M₀ ^ (1 - θ) * M₁ ^ θ * X) := by
-    rw [Real.mul_rpow_one_sub_mul_mul_rpow (norm_nonneg _), mul_comm M₀, mul_comm M₁,
-      Real.mul_rpow_one_sub_mul_mul_rpow hX0, mul_comm X]
+    rw [Real.mul_rpow_mul_mul_rpow_of_add_eq_one (norm_nonneg _) (sub_add_cancel 1 θ),
+      mul_comm M₀, mul_comm M₁, Real.mul_rpow_mul_mul_rpow_of_add_eq_one hX0 (sub_add_cancel 1 θ),
+      mul_comm X]
   simp only [hGθ, Complex.ofReal_re, Complex.norm_real, hmean, sq, Real.norm_eq_abs,
     abs_mul_self] at h3
   -- Divide by `N`.
