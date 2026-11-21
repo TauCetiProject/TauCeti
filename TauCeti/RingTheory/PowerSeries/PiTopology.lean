@@ -10,15 +10,18 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
 
 /-!
-# Infinite products and the `(X)`-adic topology on power series
+# Coefficientwise topology on power series
 
-If all but finitely many factors agree with `1` to each prescribed degree, their product
-converges coefficientwise. Each coefficient is computed from any finite cutoff containing all
-factors that can affect it. Over a discrete commutative ring, the coefficientwise topology on
-`R⟦X⟧` coincides with the `(X)`-adic topology.
+This file supplements Mathlib's `PowerSeries.WithPiTopology` with coefficientwise continuity of
+`PowerSeries.map`, compactness of `R⟦X⟧` over a compact ring `R`, convergence of infinite
+products whose factors agree with `1` to increasing powers of `X`, and identification of the
+coefficientwise topology with the `(X)`-adic topology over a discrete commutative ring.
 
 ## Main results
 
+* `PowerSeries.WithPiTopology.continuous_map`: `PowerSeries.map φ` is continuous whenever `φ` is.
+* `PowerSeries.WithPiTopology.instCompactSpace`: `R⟦X⟧` is compact in the coefficientwise topology
+  when `R` is compact.
 * `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: convergence and finite-cutoff
   coefficients for products whose factors approach `1` modulo increasing powers of `X`.
 * `PowerSeries.WithPiTopology.isAdic_span_X`: over a discrete commutative ring, the
@@ -32,6 +35,32 @@ open Finset
 namespace PowerSeries.WithPiTopology
 
 open scoped PowerSeries.WithPiTopology Topology
+
+/-- Coefficientwise change of base ring `PowerSeries.map φ` is continuous in the product topology
+whenever `φ` is continuous. -/
+theorem continuous_map {R S : Type*} [Semiring R] [Semiring S]
+    [TopologicalSpace R] [TopologicalSpace S] {φ : R →+* S} (hφ : Continuous φ) :
+    Continuous (PowerSeries.map φ) := by
+  rw [continuous_iff_continuousAt]
+  intro f
+  rw [ContinuousAt, tendsto_iff_coeff_tendsto]
+  intro d
+  simpa only [coeff_map, Function.comp_def] using
+    (hφ.continuousAt.comp (continuous_coeff R d).continuousAt).tendsto
+
+/-- Power series over a compact semiring form a compact space in the coefficientwise topology. -/
+@[scoped instance]
+theorem instCompactSpace {R : Type*} [Semiring R] [TopologicalSpace R] [CompactSpace R] :
+    CompactSpace R⟦X⟧ := by
+  have hmk : Continuous (PowerSeries.mk : (ℕ → R) → R⟦X⟧) := by
+    rw [continuous_iff_continuousAt]
+    intro a
+    rw [ContinuousAt, tendsto_iff_coeff_tendsto]
+    intro d
+    simpa only [coeff_mk] using (continuous_apply d).continuousAt.tendsto
+  refine ⟨?_⟩
+  rw [← Set.range_eq_univ.mpr fun f : R⟦X⟧ ↦ ⟨fun n ↦ coeff n f, ext fun n ↦ coeff_mk n _⟩]
+  exact isCompact_range hmk
 
 variable {R ι : Type*} [CommRing R] [TopologicalSpace R]
 

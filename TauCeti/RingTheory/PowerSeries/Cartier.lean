@@ -35,7 +35,8 @@ The definition and finite-field multiplication identity follow Section 3, defini
 Proposition 4, of Rowland–Stipulanti–Yassawi, *An elementary proof of Bridy's theorem*
 (<https://arxiv.org/html/2308.10977v2>). The substitution identities use Mathlib's
 `PowerSeries.expand`; the finite-field specializations use
-`FiniteField.PowerSeries.expand_card`.
+`FiniteField.PowerSeries.expand_card`. For `j < q`, `PowerSeries.cartier_one_add_X_pow`
+computes the Cartier components of `(1 + X) ^ j` as constant binomial coefficients.
 -/
 
 public section
@@ -189,6 +190,28 @@ theorem cartier_two_one_mul (F G : PowerSeries R) :
 end Semiring
 
 section CommSemiring
+
+/-- For `j < q`, the `k`-th Cartier component of `(1 + X) ^ j` is the constant binomial
+coefficient `C (j.choose k)`. -/
+theorem cartier_one_add_X_pow {R : Type*} [CommSemiring R] (q k : ℕ) {j : ℕ} (hj : j < q) :
+    cartier R q k ((1 + X : R⟦X⟧) ^ j) = C (j.choose k : R) := by
+  classical
+  ext n
+  rw [coeff_cartier, coeff_C, add_comm (1 : R⟦X⟧) X, add_pow, map_sum]
+  have hterm (m : ℕ) :
+      coeff (q * n + k) (X ^ m * (1 : R⟦X⟧) ^ (j - m) * (j.choose m : R⟦X⟧)) =
+        if q * n + k = m then (j.choose m : R) else 0 := by
+    rw [one_pow, mul_one, ← map_natCast C, mul_comm (X ^ m), coeff_C_mul, coeff_X_pow]
+    split_ifs <;> simp
+  simp_rw [hterm, Finset.sum_ite_eq, Finset.mem_range]
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [mul_zero, zero_add, ↓reduceIte]
+    split_ifs with hk
+    · rfl
+    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+  · have hpos : 1 ≤ n := Nat.pos_of_ne_zero hn
+    have hnot : ¬ q * n + k < j + 1 := by nlinarith
+    simp [hn, hnot]
 
 variable {R : Type*} [CommSemiring R]
 

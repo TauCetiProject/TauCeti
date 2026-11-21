@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Group.Subgroup.Ker
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Matrix
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 
@@ -132,9 +133,6 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
     simp only [hψ] at key
     exact key
   -- Newton's method: the unique zero of `A` congruent to `1` modulo `p`.
-  have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
-    rw [← PadicInt.maximalIdeal_eq_span_p]
-    infer_instance
   obtain ⟨v, ⟨hv, hAv⟩, huniq⟩ :=
     IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (p : ℤ_[p]) A hMdet 1 h₀ hlin
   have hv₁ : ∀ i, (p : ℤ_[p]) ∣ v i - 1 := fun i ↦ by simpa using hv i
