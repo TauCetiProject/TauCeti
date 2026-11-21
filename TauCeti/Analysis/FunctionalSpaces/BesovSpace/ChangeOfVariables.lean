@@ -582,11 +582,15 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
     Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
       (hΨ.1.differentiable (by simp)) fun y ↦ by simpa using hΨL 1 le_rfl (by omega) y
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ
+  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
-    (mul_nonneg hK₂ hG) (fun j f ↦ h₀ hΦ hΨ hdet hg hg₀ j f)
-    (fun hkj f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f hf)
-    (fun j _ hR f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j hR f hf) j k u f hf
+    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg hg₀ k f)
+    (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f
+      (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ _ u))
+    (fun j k u f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by
+      rw [φ.two_mul_rOut_div_rIn_mul, ← hf]
+      simpa only [Set.compl_sdiff, Set.union_comm] using
+        isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)) j k u f hf
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 /-- **Off-diagonal decay of a pullback between Littlewood–Paley blocks.** Let `M` be a natural
