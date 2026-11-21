@@ -277,7 +277,7 @@ def baseChangeComplex (f : W →L[ℝ] W') : ℂ ⊗[ℝ] W →L[ℂ] ℂ ⊗[�
     imaginaryPart W' (f.baseChangeComplex u) = f (imaginaryPart W u) :=
   imaginaryPart_baseChange f.toLinearMap u
 /-- Continuous complex base change commutes with `tmulConj`. -/
-theorem tmulConj_baseChangeComplex (f : W →L[ℝ] W') (u : ℂ ⊗[ℝ] W) :
+@[simp] theorem tmulConj_baseChangeComplex (f : W →L[ℝ] W') (u : ℂ ⊗[ℝ] W) :
     tmulConj W' (f.baseChangeComplex u) = f.baseChangeComplex (tmulConj W u) :=
   tmulConj_baseChange f.toLinearMap u
 @[simp] theorem baseChangeComplex_id :
