@@ -187,9 +187,8 @@ group over an algebraically closed field is flat. -/
 theorem flat_orbitMap_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
     (h : orbit G x = Set.univ) :
     Flat (orbitMap G x).left := by
-  have hcomp : toOrbit G x ≫ (orbitInclusionIso G x h).hom.left = (orbitMap G x).left := by
-    rw [orbitInclusionIso_hom, orbitInclusion_left, toOrbit_ι]
-  rw [← hcomp]
+  have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+  rw [← toOrbit_ι G x]
   infer_instance
 
 /-- For a reduced finite-type group acting transitively on a reduced finite-type scheme `X` over
@@ -204,9 +203,8 @@ theorem smooth_orbitMap_iff_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] 
       rw [← Over.comp_left, orbitMap_comp_orbitInclusionIso_inv, orbitProjection_left]
     rw [← hinv]
     infer_instance
-  · have hcomp : toOrbit G x ≫ (orbitInclusionIso G x h).hom.left = (orbitMap G x).left := by
-      rw [orbitInclusionIso_hom, orbitInclusion_left, toOrbit_ι]
-    rw [← hcomp]
+  · have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+    rw [← toOrbit_ι G x]
     infer_instance
 
 /-- In characteristic zero, the orbit morphism from an affine finite-type group onto a reduced
@@ -214,9 +212,8 @@ finite-type homogeneous scheme over an algebraically closed field is smooth. -/
 theorem smooth_orbitMap_of_orbit_eq_univ_of_charZero [CharZero k] [IsAffine G.left]
     [IsReduced X.left] (h : orbit G x = Set.univ) :
     Smooth (orbitMap G x).left := by
-  have hcomp : toOrbit G x ≫ (orbitInclusionIso G x h).hom.left = (orbitMap G x).left := by
-    rw [orbitInclusionIso_hom, orbitInclusion_left, toOrbit_ι]
-  rw [← hcomp]
+  have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+  rw [← toOrbit_ι G x]
   infer_instance
 
 end Homogeneous

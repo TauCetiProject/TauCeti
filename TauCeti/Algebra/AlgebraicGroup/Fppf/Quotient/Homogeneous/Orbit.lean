@@ -118,13 +118,6 @@ def stabilizerHopfIdeal : HopfIdeal R H :=
     ((TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup H).symm
       (stabilizerClosedSubgroup H x))
 
-/-- The closed subgroup cut out by `stabilizerHopfIdeal H x` is `stabilizerClosedSubgroup H x`. -/
-@[simp]
-theorem quotientClosedSubgroup_stabilizerHopfIdeal :
-    TauCeti.CommHopfAlgCat.quotientClosedSubgroup H (stabilizerHopfIdeal H x) =
-      stabilizerClosedSubgroup H x :=
-  TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup_apply_symm_apply H _
-
 private theorem subobject_quotientSpecι_eq_stabilizerInclGrpHom :
     Subobject.mk (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x)) =
       Subobject.mk (stabilizerInclGrpHom H x) := by
@@ -133,7 +126,9 @@ private theorem subobject_quotientSpecι_eq_stabilizerInclGrpHom :
         = (TauCeti.CommHopfAlgCat.quotientClosedSubgroup H (stabilizerHopfIdeal H x)).val :=
           (TauCeti.CommHopfAlgCat.quotientClosedSubgroup_coe H _).symm
     _ = (stabilizerClosedSubgroup H x).val :=
-          congrArg Subtype.val (quotientClosedSubgroup_stabilizerHopfIdeal H x)
+          congrArg Subtype.val
+            (TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup_apply_symm_apply H
+              (stabilizerClosedSubgroup H x))
     _ = Subobject.mk (stabilizerInclGrpHom H x) :=
           ClosedSubgroupScheme.coe_mk (stabilizerInclGrpHom H x)
 
@@ -263,10 +258,8 @@ def fppfHomogeneousQuotientToPointsSheaf :
         rw [_root_.CommHopfAlgCat.specPointsHomEquiv_apply_app_apply,
           _root_.CommHopfAlgCat.specPointsHomEquiv_apply_app_apply]
         exact congrArg ULift.up <|
-          (inv_mul_mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff H x A.unop.unop
-            (g * n.val) g).mp (by
-            simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel, mul_one] using
-              inv_mem n.property)⟩
+          ((inv_mul_mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff H x A.unop.unop
+            g (g * n.val)).mp (by simpa only [inv_mul_cancel_left] using n.property)).symm⟩
 
 /-- Restricting the descended orbit map along the quotient projection recovers the orbit map on
 convolution points. -/
@@ -318,13 +311,10 @@ private theorem mapMulEquiv_comp_orbitProjection_eq_iff
     Category.assoc, Category.assoc, orbitProjection_inclusion,
     inv_mul_mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff]
 
-/-- **Orbit-map comparison for any orbit.** For a reduced affine group of finite type over an
-algebraically closed field acting on a finite-type scheme, the descended orbit projection gives
-an isomorphism of fppf sheaves `G / Stab_G(x) ≅ CommAlgCat.pointsSheaf (orbitOver G x)`. -/
-def fppfHomogeneousQuotientIsoOrbitPoints [_root_.IsReduced H] :
-    _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
-      TauCeti.CommAlgCat.pointsSheaf
-        (orbitOver ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x) :=
+local instance [_root_.IsReduced H] :
+    Sheaf.IsLocallySurjective
+      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
+        (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) := by
   have : Flat
       (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
     rw [orbitProjection_left]; infer_instance
@@ -334,14 +324,19 @@ def fppfHomogeneousQuotientIsoOrbitPoints [_root_.IsReduced H] :
   have : LocallyOfFinitePresentation
       (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
     rw [orbitProjection_left]; infer_instance
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-        (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) :=
-    TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
+  exact TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
+
+/-- **Orbit-map comparison for any orbit.** For a reduced affine group of finite type over an
+algebraically closed field acting on a finite-type scheme, the descended orbit projection gives
+an isomorphism of fppf sheaves `G / Stab_G(x) ≅ CommAlgCat.pointsSheaf (orbitOver G x)`. -/
+def fppfHomogeneousQuotientIsoOrbitPoints [_root_.IsReduced H] :
+    _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
+      TauCeti.CommAlgCat.pointsSheaf
+        (orbitOver ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x) :=
   _root_.CommHopfAlgCat.fppfHomogeneousQuotientIsoPointsSheaf H (stabilizerHopfIdeal H x)
     (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)
-    (fun A g n ↦ (mapMulEquiv_comp_orbitProjection_eq_iff H x A (g * n.val) g).mpr (by
-      simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel, mul_one] using inv_mem n.property))
+    (fun A g n ↦ ((mapMulEquiv_comp_orbitProjection_eq_iff H x A g (g * n.val)).mpr (by
+      simpa only [inv_mul_cancel_left] using n.property)).symm)
     (fun A g g' h ↦ (mapMulEquiv_comp_orbitProjection_eq_iff H x A g g').mp h)
 
 /-- Under `fppfHomogeneousQuotientIsoOrbitPoints`, `representedQuotientProjection` is the orbit
@@ -351,22 +346,8 @@ theorem representedQuotientProjection_fppfHomogeneousQuotientIsoOrbitPoints
     [_root_.IsReduced H] :
     _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x)
         (fppfHomogeneousQuotientIsoOrbitPoints H x) =
-      orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x := by
-  have : Flat
-      (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-    rw [orbitProjection_left]; infer_instance
-  have : Surjective
-      (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-    rw [orbitProjection_left]; infer_instance
-  have : LocallyOfFinitePresentation
-      (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-    rw [orbitProjection_left]; infer_instance
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-        (orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) :=
-    TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
-  dsimp only [fppfHomogeneousQuotientIsoOrbitPoints]
-  exact _root_.CommHopfAlgCat.representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf
+      orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x :=
+  _root_.CommHopfAlgCat.representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf
     H (stabilizerHopfIdeal H x) _ _ _
 
 /-- Composing the forward direction of `fppfHomogeneousQuotientIsoOrbitPoints` with the orbit
@@ -550,46 +531,6 @@ theorem isModHom_representedQuotientIsoOfOrbitEqUniv_hom [_root_.IsReduced H]
 
 section ProjectiveOrbitComparison
 
-attribute [local instance] Comodule.exteriorPower
-
-omit [LocallyOfFiniteType X.hom] [CompactSpace X.left] in
-private theorem representedQuotientProjection_projectiveOrbit_left
-    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-    [_root_.IsReduced H] (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          TauCeti.CommHopfAlgCat.quotientPointsSubgroup H (stabilizerHopfIdeal H x) A) =
-        QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (Comodule.matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (Comodule.matrixCoefficient (C := H) φ m)) :
-    (_root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x)
-        (Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-          (stabilizerHopfIdeal H x) m hm hcoset)).left =
-      Comodule.toProjectiveOrbit (H := H) m hm := by
-  let q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)) ⟶
-      Over.mk (Comodule.projectiveOrbitToSpec (H := H) m hm) :=
-    Over.homMk (Comodule.toProjectiveOrbit (H := H) m hm)
-      (Comodule.toProjectiveOrbit_projectiveOrbitToSpec (H := H) m hm)
-  suffices h : _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x)
-      (Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-        (stabilizerHopfIdeal H x) m hm hcoset) = q from congrArg Over.Hom.left h
-  apply _root_.CommHopfAlgCat.over_hom_ext_of_mapMulEquiv
-  intro A g
-  rw [_root_.CommHopfAlgCat.mapMulEquiv_comp_representedQuotientProjection,
-    Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom]
-  have hcomp :
-      (_root_.CommHopfAlgCat.fppfHomogeneousQuotientProjection H (stabilizerHopfIdeal H x) ≫
-        (Comodule.fppfHomogeneousQuotientToProjectiveOrbitPoints
-          (stabilizerHopfIdeal H x) m hm hcoset).hom).app (op (op A)) (ULift.up g) =
-        (Comodule.toProjectiveOrbitPoints (H := H) m hm).app (op (op A)) (ULift.up g) := by
-    rw [Comodule.fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints]
-  rw [NatTrans.comp_app, types_comp_apply] at hcomp
-  rw [hcomp, Comodule.toProjectiveOrbitPoints_app_apply]
-  apply Over.OverMorphism.ext
-  rw [Over.comp_left, mapMulEquiv_left]
-  rfl
-
 /-- **Every orbit scheme is isomorphic to Chevalley's projective-orbit quotient model.** For a
 reduced finite-type affine group `Spec H` acting on a finite-type scheme over an algebraically
 closed field, the orbit scheme `orbitOver (Spec H) x` is isomorphic over `Spec k` to a projective
@@ -601,21 +542,13 @@ theorem exists_projectiveOrbit_iso_orbitOver [_root_.IsReduced H] :
         orbitOver ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x),
       Comodule.toProjectiveOrbit (H := H) m hm ≫ e.hom.left =
         toOrbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x := by
-  have := Algebra.FiniteType.isNoetherianRing k H
-  obtain ⟨V, n, hV, m, hm, hcoset⟩ :=
-    (stabilizerHopfIdeal H x).exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient.{u, u,
-      u} (IsNoetherian.noetherian (stabilizerHopfIdeal H x).toIdeal)
-  let _ : Module.Finite k V := hV
-  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let isoQ :=
-    Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-      (stabilizerHopfIdeal H x) m hm hcoset
-  let e := representedQuotientIsoOrbitOver H x isoQ
-  refine ⟨⋀[k]^n V, inferInstance, inferInstance, inferInstance, inferInstance, m, hm, e, ?_⟩
+  obtain ⟨M, _, _, _, _, m, hm, isoQ, hproj⟩ :=
+    HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints (stabilizerHopfIdeal H x)
+  refine ⟨M, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
+    representedQuotientIsoOrbitOver H x isoQ, ?_⟩
   have hcomp := congrArg Over.Hom.left
     (representedQuotientProjection_comp_representedQuotientIsoOrbitOver_hom H x isoQ)
-  rw [Over.comp_left, representedQuotientProjection_projectiveOrbit_left H x m hm hcoset,
-    orbitProjection_left] at hcomp
+  rw [Over.comp_left, congrArg Over.Hom.left hproj, orbitProjection_left] at hcomp
   exact hcomp
 
 /-- **Every reduced homogeneous space is isomorphic to Chevalley's projective-orbit quotient

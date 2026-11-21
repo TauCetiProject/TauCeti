@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Fibe
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lifting
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 /-!
@@ -226,6 +227,54 @@ theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H]
 
 end Descent
 
+/-- `specPointsHomEquiv` sends `toProjectiveOrbit` over `Spec k` to `toProjectiveOrbitPoints`. -/
+@[simp] theorem specPointsHomEquiv_toProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
+    CommHopfAlgCat.specPointsHomEquiv H (Over.mk (projectiveOrbitToSpec (H := H) m hm))
+        (Over.homMk (toProjectiveOrbit (H := H) m hm)
+          (toProjectiveOrbit_projectiveOrbitToSpec m hm)) =
+      toProjectiveOrbitPoints (H := H) m hm := by
+  ext A ⟨g⟩
+  exact (CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H _ A g).trans <|
+    (congrArg ULift.up <| Over.OverMorphism.ext <|
+      congrArg (· ≫ toProjectiveOrbit (H := H) m hm)
+        (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)).trans
+      (toProjectiveOrbitPoints_app_apply m hm A g).symm
+
+/-- For a reduced group `G` and Chevalley's representing isomorphism
+`fppfHomogeneousQuotientIsoProjectiveOrbitPoints`, the descended quotient projection in
+`Over (Spec k)` is `toProjectiveOrbit` over `Spec k`. -/
+@[simp] theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints
+    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
+    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
+        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
+          h.ofConv (matrixCoefficient (C := H) φ m) =
+            c * g.ofConv (matrixCoefficient (C := H) φ m)) :
+    CommHopfAlgCat.representedQuotientProjection H I
+      (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) =
+      Over.homMk (toProjectiveOrbit (H := H) m hm) (toProjectiveOrbit_projectiveOrbitToSpec m hm) :=
+  (CommHopfAlgCat.specPointsHomEquiv H _).injective <| by
+    rw [CommHopfAlgCat.specPointsHomEquiv_representedQuotientProjection,
+      specPointsHomEquiv_toProjectiveOrbit, fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom,
+      fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints]
+
+/-- For a reduced group `G` and Chevalley's representing isomorphism, the underlying scheme morphism
+of `representedQuotientProjection` is `toProjectiveOrbit`. -/
+theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_left
+    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
+    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
+        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
+          h.ofConv (matrixCoefficient (C := H) φ m) =
+            c * g.ofConv (matrixCoefficient (C := H) φ m)) :
+    (CommHopfAlgCat.representedQuotientProjection H I
+      (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset)).left =
+      toProjectiveOrbit (H := H) m hm :=
+  congrArg Over.Hom.left
+    (representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset)
+
 end TauCeti.Comodule
 
 namespace TauCeti.HopfIdeal
@@ -240,12 +289,15 @@ attribute [local instance] Comodule.exteriorPower
 /-- **Homogeneous quotients are representable.** For every closed subgroup `N` of a reduced
 affine group `G` of finite type over an algebraically closed field, there are a
 finite-dimensional representation of `G` and a line in it whose projective orbit scheme
-represents the fppf homogeneous quotient `G/N`. -/
+represents the fppf homogeneous quotient `G/N` compatibly with the projections from `G`. -/
 theorem exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints (I : HopfIdeal k H) :
     ∃ (M : Type u) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k H M)
-      (_ : Module.Finite k M) (m : M) (hm : Module.IsUnimodular k m),
-      Nonempty (CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
-        Comodule.projectiveOrbitPointsSheaf (H := H) m hm) := by
+      (_ : Module.Finite k M) (m : M) (hm : Module.IsUnimodular k m)
+      (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
+        Comodule.projectiveOrbitPointsSheaf (H := H) m hm),
+      CommHopfAlgCat.representedQuotientProjection H I e =
+        Over.homMk (Comodule.toProjectiveOrbit (H := H) m hm)
+          (Comodule.toProjectiveOrbit_projectiveOrbitToSpec m hm) := by
   have := Algebra.FiniteType.isNoetherianRing k H
   obtain ⟨V, n, hV, m, hm, hcoset⟩ :=
     I.exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient.{u, u, u}
@@ -253,6 +305,8 @@ theorem exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints (I : HopfIdeal 
   let : Module.Finite k V := hV
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   exact ⟨⋀[k]^n V, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
-    ⟨Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset⟩⟩
+    Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset,
+    Comodule.representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints
+      I m hm hcoset⟩
 
 end TauCeti.HopfIdeal

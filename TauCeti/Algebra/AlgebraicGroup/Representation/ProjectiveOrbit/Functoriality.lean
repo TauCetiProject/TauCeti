@@ -35,8 +35,6 @@ descent for projective orbit models of homogeneous quotients:
 
 ## Main declarations
 
-* `TauCeti.Comodule.specPointsHomEquiv_toProjectiveOrbit`: identifies `toProjectiveOrbit` over
-  `Spec k` with `toProjectiveOrbitPoints`.
 * `TauCeti.Comodule.projectiveOrbitQuotientProjection`,
   `TauCeti.Comodule.projectiveOrbitQuotient_hom_ext`: the epimorphic scheme projection
   `Spec H ⟶ projectiveOrbitScheme m hm` and its morphism extensionality principle.
@@ -70,19 +68,6 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 section SingleOrbit
 
 variable {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-
-/-- `specPointsHomEquiv` sends `toProjectiveOrbit` over `Spec k` to `toProjectiveOrbitPoints`. -/
-@[simp] theorem specPointsHomEquiv_toProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
-    CommHopfAlgCat.specPointsHomEquiv H (Over.mk (projectiveOrbitToSpec (H := H) m hm))
-        (Over.homMk (toProjectiveOrbit (H := H) m hm)
-          (toProjectiveOrbit_projectiveOrbitToSpec m hm)) =
-      toProjectiveOrbitPoints (H := H) m hm := by
-  ext A ⟨g⟩
-  exact (CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H _ A g).trans <|
-    (congrArg ULift.up <| Over.OverMorphism.ext <|
-      congrArg (· ≫ toProjectiveOrbit (H := H) m hm)
-        (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)).trans
-      (toProjectiveOrbitPoints_app_apply m hm A g).symm
 
 section OrbitProjection
 
@@ -134,27 +119,6 @@ variable [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodu
         CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
       ∃ c : Aˣ, ∀ φ : Module.Dual k M,
         h.ofConv (matrixCoefficient (C := H) φ m) = c * g.ofConv (matrixCoefficient (C := H) φ m))
-
-/-- For a reduced group `G` and Chevalley's representing isomorphism
-`fppfHomogeneousQuotientIsoProjectiveOrbitPoints`, the descended quotient projection in
-`Over (Spec k)` is `toProjectiveOrbit` over `Spec k`. -/
-@[simp] theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints :
-    CommHopfAlgCat.representedQuotientProjection H I
-      (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) =
-      Over.homMk (toProjectiveOrbit (H := H) m hm) (toProjectiveOrbit_projectiveOrbitToSpec m hm) :=
-  (CommHopfAlgCat.specPointsHomEquiv H _).injective <| by
-    rw [CommHopfAlgCat.specPointsHomEquiv_representedQuotientProjection,
-      specPointsHomEquiv_toProjectiveOrbit, fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom,
-      fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints]
-
-/-- For a reduced group `G` and Chevalley's representing isomorphism, the underlying scheme morphism
-of `representedQuotientProjection` is `toProjectiveOrbit`. -/
-theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_left :
-    (CommHopfAlgCat.representedQuotientProjection H I
-      (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset)).left =
-      toProjectiveOrbit (H := H) m hm :=
-  congrArg Over.Hom.left
-    (representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset)
 
 /-- For a reduced group `G`, `projectiveOrbitQuotientProjection` on Chevalley's representing
 isomorphism `fppfHomogeneousQuotientIsoProjectiveOrbitPoints` is `toProjectiveOrbit`. -/
