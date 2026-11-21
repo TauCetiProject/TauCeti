@@ -261,7 +261,7 @@ theorem isAsymptoticSum_properSharp (b : Symbol n V W m) :
     exact coefficient_localize ((mem_ball.1 hz).le.trans (le_max_right _ _)) b ξ
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simp only [coefficient_sharpTerm, mixedDeriv_congr_of_eventually hev]
+  exact coefficient_sharpTerm_congr_of_eventually hev a k η
 
 end Symbol
 

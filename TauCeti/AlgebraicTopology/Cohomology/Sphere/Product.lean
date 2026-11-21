@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 
 /-!
 # The cohomology of `Sᵈ⁺¹ × Y`
@@ -93,11 +94,14 @@ through the isomorphism of these coefficient modules, which is not made here.
 For the circle `S¹` (`d = 0`), with `k = M = ℤ` and `n = 1` this is the integral decomposition
 `H²(S¹ × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ (θ ⌣ pr₂^* H¹(Y; ℤ))` of the second cohomology of a product
 with a circle, torsion included; `θ` generates `H¹(S¹; ℤ)`. Under `S¹ ≅ ℝ / ℤ`, `θ` corresponds
-to `±[ds]` for the angular form `ds`, with the sign fixed by orientations; that identification is
-not made here. Its cross quotient `H¹(Y; ℤ)` is torsion-free, which the following makes precise for
-any coefficient change. A map `g : M ⟶ M'` of coefficient modules which is injective induces an
-injective map `H¹(Y; M) → H¹(Y; M')`, because `H₀(Y; k)` is free and so
-`H¹(Y; M) = Hom(H₁(Y; k), M)`
+to `±[ds]` for the angular form `ds`, with the sign fixed by orientations. The module
+`TauCeti.AlgebraicTopology.Cohomology.AddCircle` states the decomposition directly on
+`(ℝ / pℤ) × Y` with the angular class `θ_p = AddCircle.angularClass p` in place of `θ`,
+oriented by `⟨θ_p, [ℝ / pℤ]⟩ = 1` for the circuit class `[ℝ / pℤ]`
+(`TopCat.singularCohomologyAddCircleProdSlantEquiv`). The cross quotient `H¹(Y; ℤ)` is
+torsion-free, which the following makes precise for any coefficient change. A map `g : M ⟶ M'`
+of coefficient modules which is injective induces an injective map `H¹(Y; M) → H¹(Y; M')`,
+because `H₀(Y; k)` is free and so `H¹(Y; M) = Hom(H₁(Y; k), M)`
 (`TopCat.injective_homologyMap_linearYonedaObjMap_one`). Since slant
 products commute with coefficient changes (`TopCat.singularSlant_linearYonedaObjMap`), a class
 `φ ∈ H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` whose image in `H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M')` is pulled back from `Y` is itself
@@ -425,7 +429,6 @@ theorem mem_range_singularCohomologyMap_snd_sphere_one_add_of_injective (Y : Top
     φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
         (M := M) (CartesianMonoidalCategory.snd (sphere.{w} (d + 1)) Y)
         (1 + (d + 1))).hom := by
-  have : Module.Free k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Free k k)
   exact mem_range_singularCohomologyMap_snd_sphere_of_injective (n := 1) Y g
     (Y.injective_homologyMap_linearYonedaObjMap_one g hg) φ hφ
 
@@ -499,7 +502,6 @@ theorem singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace
           ((-1 : ℤ) ^ ((d + 1) * (p + (d + 1)))) •
             (TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q (p + q + (d + 1))
               (by omega) bc.1 bc'.2) := by
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
   have := ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
     (M := M) (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) hn hpq)
   rw [singularCohomologySphereProdSlantEquiv_singularCup]
@@ -562,7 +564,6 @@ theorem singularCup_self_eq_two_smul_of_compactSpace
           (by omega)
           (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).1
           (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).2) := by
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
   have := ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
     (M := M) (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) hn hnp)
   rw [← map_smul, LinearEquiv.eq_symm_apply, singularCohomologySphereProdSlantEquiv_singularCup_self

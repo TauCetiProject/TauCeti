@@ -21,9 +21,8 @@ flatness hypothesis. The primitive submodule is `Coalgebra.skewPrimitive R 1 1`.
 `UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι` recovers a Lie element from a
 primitive element. `TauCeti.UniversalEnvelopingAlgebra.primitiveEquiv` gives the resulting linear
 equivalence, with forward and inverse equations and compatibility of the Lie bracket with the
-commutator. These classification results assume `R : Type` and `[Algebra ℚ R]`; the Lie algebra
-may lie in any universe. Primitivity of canonical generators itself needs only a commutative ring
-and is available in `TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra`.
+commutator. Primitivity of canonical generators itself needs only a commutative ring and is
+available in `TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra`.
 
 ## References
 
@@ -38,9 +37,9 @@ public section
 
 namespace UniversalEnvelopingAlgebra
 
-universe v
+universe u v
 
-variable {R : Type} {L : Type v} [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
+variable {R : Type u} {L : Type v} [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -72,16 +71,16 @@ end UniversalEnvelopingAlgebra
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R
 
-/-- Over a commutative rational algebra `R : Type`, the canonical Lie inclusion identifies
+/-- Over a commutative rational algebra, the canonical Lie inclusion identifies
 the Lie algebra with the primitive submodule of its enveloping algebra. No freeness or flatness
 hypothesis is needed. -/
 noncomputable def primitiveEquiv : L ≃ₗ[R] Coalgebra.skewPrimitive R (1 : U) 1 :=
