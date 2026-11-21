@@ -13,9 +13,10 @@ import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 
 The standard symplectic plane, with Gram matrix `!![0, 1; -1, 0]`, has dual index one and is
 self-dual at every prime. The rank-four lattice with alternating blocks of weights `1` and `d` has
-dual index `d²`, so for `d ≠ 0` it is self-dual exactly at the primes not dividing `d`. The
-pairing `(x, y) ↦ x * y` on `ℤ` is not alternating, so it is not a symplectic lattice; alternation
-is part of the definition, not a consequence of nondegeneracy.
+dual index `d²`, so for `d ≠ 0` it is self-dual exactly at the primes not dividing `d`. The zero
+lattice has dual index one. The pairing `(x, y) ↦ x * y` on `ℤ` is not alternating, so it is not
+a symplectic lattice; alternation is part of the definition, not a consequence of
+nondegeneracy.
 -/
 
 public section
@@ -92,6 +93,10 @@ theorem weightedLattice_isSelfDualAt_iff (d : ℤ) (hd : d ≠ 0) {p : ℕ} (hp 
     (weightedLattice d hd).IsSelfDualAt p ↔ ¬(p : ℤ) ∣ d := by
   rw [SymplecticOLattice.isSelfDualAt_iff_not_dvd_dualIndex _ hp, weightedLattice_dualIndex,
     (Nat.prime_iff.1 hp).dvd_pow_iff_dvd two_ne_zero, Int.natCast_dvd]
+
+/-- The zero lattice `ℤ⁰` has dual index one. -/
+theorem zeroLattice_dualIndex : (SymplecticOLattice.zero ℤ (Fin 0 → ℤ)).dualIndex = 1 :=
+  SymplecticOLattice.dualIndex_zero
 
 /-- The product pairing on `ℤ` is not alternating, so it does not define a symplectic lattice. -/
 theorem not_isAlt_mul : ¬(LinearMap.mul ℤ ℤ).IsAlt := fun h ↦ by

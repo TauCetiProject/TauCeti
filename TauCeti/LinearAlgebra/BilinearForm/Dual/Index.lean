@@ -22,8 +22,8 @@ Let `B` be a `ℤ`-valued bilinear form on an additive group `L`. Its *dual latt
 image of `L`, and the *dual index* `[L^# : L]` is the index of that image in `L^#`. When `L` is
 finite free over `ℤ` and `B` is nondegenerate over `ℚ`, the dual index is finite: for a `ℤ`-basis
 of `L` it is the absolute value of the Gram determinant. The form is *self-dual at `p`* when `L`
-and `L^#` agree after localizing at `p`; for `L` finite free over `ℤ`, `B` nondegenerate over `ℚ`
-and `p` prime, this happens exactly when `p` does not divide the dual index.
+and `L^#` agree after localizing at `p`; when the dual index is finite and `p` is prime, this
+happens exactly when `p` does not divide the dual index.
 
 ## Main definitions
 
@@ -38,11 +38,11 @@ and `p` prime, this happens exactly when `p` does not divide the dual index.
 * `LinearMap.BilinForm.le_dualLattice`: the image of `L` lies in `L^#`.
 * `LinearMap.BilinForm.exists_tmul_eq_dualIndex_smul`: `[L^# : L] • L^#` lies in the image of
   `L`.
-* `LinearMap.BilinForm.dualIndex_eq_natAbs_det`: `[L^# : L] = |det (B(b i, b j))|` for every
-  `ℤ`-basis `b` of `L`.
-* `LinearMap.BilinForm.dualIndex_ne_zero`: for `L` finite free over `ℤ`, `L^#` contains `L` with
-  finite index.
-* `LinearMap.BilinForm.isSelfDualAt_iff_not_dvd_dualIndex`: for `L` finite free over `ℤ`, `B` is
+* `LinearMap.BilinForm.dualIndex_eq_natAbs_det`: if `B` is nondegenerate over `ℚ`, then
+  `[L^# : L] = |det (B(b i, b j))|` for every `ℤ`-basis `b` of `L`.
+* `LinearMap.BilinForm.dualIndex_ne_zero`: for `L` finite free over `ℤ` and `B` nondegenerate over
+  `ℚ`, `L^#` contains `L` with finite index.
+* `LinearMap.BilinForm.isSelfDualAt_iff_not_dvd_dualIndex`: if the dual index is finite, `B` is
   self-dual at a prime `p` exactly when `p ∤ [L^# : L]`.
 -/
 
@@ -105,8 +105,8 @@ theorem exists_tmul_eq_dualIndex_smul {x : ℚ ⊗[ℤ] L} (hx : x ∈ B.dualLat
   simpa [dualIndex] using AddSubgroup.nsmul_relIndex_mem
     (TensorProduct.mk ℤ ℚ L 1 : L →+ ℚ ⊗[ℤ] L).range (K := B.dualLattice.toAddSubgroup) hx
 
-/-- **The dual index is the Gram determinant.** For every `ℤ`-basis `b` of `L`,
-`[L^# : L] = |det (B(b i, b j))|`. -/
+/-- **The dual index is the Gram determinant.** If `B` is nondegenerate over `ℚ`, then for every
+`ℤ`-basis `b` of `L`, `[L^# : L] = |det (B(b i, b j))|`. -/
 theorem dualIndex_eq_natAbs_det (hB : (B.baseChange ℚ).Nondegenerate) {ι : Type*} [Fintype ι]
     [DecidableEq ι] (b : Basis ι ℤ L) :
     B.dualIndex = (LinearMap.BilinForm.toMatrix b B).det.natAbs := by
@@ -149,8 +149,8 @@ theorem dualIndex_ne_zero [Module.Free ℤ L] [Module.Finite ℤ L]
 
 /-- A `ℤ`-valued bilinear form is **self-dual at `p`** when `L` and its dual lattice `L^#` agree
 after localizing at `p`: every `x ∈ L^#` has a multiple `n • x ∈ L` with `n` prime to `p`. By
-`isSelfDualAt_iff_not_dvd_dualIndex`, for `L` finite free over `ℤ`, the form nondegenerate over
-`ℚ` and `p` prime, this holds exactly when `p ∤ [L^# : L]`. -/
+`isSelfDualAt_iff_not_dvd_dualIndex`, when the dual index is finite and `p` is prime, this holds
+exactly when `p ∤ [L^# : L]`. -/
 def IsSelfDualAt (p : ℕ) : Prop :=
   ∀ x ∈ B.dualLattice, ∃ n : ℕ, ¬p ∣ n ∧ ∃ y : L, (1 : ℚ) ⊗ₜ[ℤ] y = n • x
 
@@ -164,21 +164,21 @@ theorem isSelfDualAt_iff {p : ℕ} :
 theorem isSelfDualAt_of_not_dvd_dualIndex {p : ℕ} (hp : ¬p ∣ B.dualIndex) : B.IsSelfDualAt p :=
   fun _ hx ↦ ⟨B.dualIndex, hp, B.exists_tmul_eq_dualIndex_smul hx⟩
 
-/-- A `ℤ`-valued bilinear form on a finite free `ℤ`-module, nondegenerate over `ℚ`, is self-dual at
-a prime `p` exactly when `p` does not divide its dual index `[L^# : L]`. -/
-theorem isSelfDualAt_iff_not_dvd_dualIndex [Module.Free ℤ L] [Module.Finite ℤ L]
-    (hB : (B.baseChange ℚ).Nondegenerate) {p : ℕ} (hp : p.Prime) :
+/-- A `ℤ`-valued bilinear form whose dual index `[L^# : L]` is finite is self-dual at a prime `p`
+exactly when `p` does not divide `[L^# : L]`. By `dualIndex_ne_zero`, the index is finite when
+`L` is finite free over `ℤ` and the form is nondegenerate over `ℚ`. -/
+theorem isSelfDualAt_iff_not_dvd_dualIndex (h : B.dualIndex ≠ 0) {p : ℕ} (hp : p.Prime) :
     B.IsSelfDualAt p ↔ ¬p ∣ B.dualIndex := by
-  refine ⟨fun h hdvd ↦ ?_, B.isSelfDualAt_of_not_dvd_dualIndex⟩
+  refine ⟨fun hs hdvd ↦ ?_, B.isSelfDualAt_of_not_dvd_dualIndex⟩
   have := Fact.mk hp
   set H := (TensorProduct.mk ℤ ℚ L 1 : L →+ ℚ ⊗[ℤ] L).range.addSubgroupOf
     B.dualLattice.toAddSubgroup
-  have : H.FiniteIndex := ⟨B.dualIndex_ne_zero hB⟩
+  have : H.FiniteIndex := ⟨h⟩
   -- by Cauchy, `L^# / L` has an element `x + L` of order `p`
   obtain ⟨g, hg⟩ := exists_prime_addOrderOf_dvd_card' (G := B.dualLattice.toAddSubgroup ⧸ H) p hdvd
   induction g using QuotientAddGroup.induction_on with | H x
   -- but some multiple `n • x ∈ L` has `n` prime to `p`, so `p ∣ n`, a contradiction
-  obtain ⟨n, hpn, hn⟩ := h x x.2
+  obtain ⟨n, hpn, hn⟩ := hs x x.2
   refine hpn (hg ▸ addOrderOf_dvd_of_nsmul_eq_zero ?_)
   rw [← QuotientAddGroup.mk_nsmul, QuotientAddGroup.eq_zero_iff]
   exact AddSubgroup.mem_addSubgroupOf.2 hn
