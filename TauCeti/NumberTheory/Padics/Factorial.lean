@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Factorial.Basic
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -17,6 +19,12 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 The integers `n!` converge to zero at every finite place, although none is zero. This provides
 one sequence of rational parameters that simultaneously contracts every local unipotent
 one-parameter subgroup. Divisibility by each fixed prime power suffices for the convergence.
+
+Legendre's formula also bounds the `p`-adic norm of `n!` below by `p ^ (-n / (p - 1))` (and by
+`p ^ (-(n - 1) / (p - 1))` for `n ≠ 0`), with equality along `n = p ^ k`. Transferring these
+estimates along `algebraMap ℚ_[p] K` yields factorial and inverse-factorial norm bounds in any
+normed algebra or normed division algebra over `ℚ_[p]`, including weighted estimates at the
+critical radius `p ^ (-1 / (p - 1))`.
 
 ## Main results
 
@@ -30,6 +38,12 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
   divides, `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
+* `TauCeti.rpow_neg_div_le_norm_factorial`, `TauCeti.rpow_neg_sub_one_div_le_norm_factorial`:
+  Legendre's lower bounds for `‖(n! : K)‖` in any seminormed `ℚ_[p]`-algebra with `‖1‖ = 1`.
+* `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_le_rpow_sub_one_div`,
+  `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
+  `TauCeti.norm_inv_factorial_mul_pow_le`, `TauCeti.norm_pow_mul_inv_factorial_le_sq`:
+  inverse-factorial and critical-radius estimates in any normed division algebra over `ℚ_[p]`.
 -/
 
 public section
@@ -145,3 +159,153 @@ theorem norm_factorial_div_add_le (d i j : ℕ) :
     (by simpa using norm_int_le_one (p := p) (k : ℤ))
 
 end Padic
+
+namespace TauCeti
+
+open scoped Nat
+
+section NormedAlgebra
+
+variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [SeminormedRing K] [NormOneClass K]
+  [NormedAlgebra ℚ_[p] K]
+
+/-- Legendre's lower bound `p ^ (-n / (p - 1)) ≤ ‖n!‖` in any seminormed `ℚ_[p]`-algebra with
+`‖(1 : K)‖ = 1`. -/
+theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
+    (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : K)‖ := by
+  rw [TauCeti.norm_natCast_eq_norm_padic (p := p)]
+  exact Padic.rpow_neg_div_le_norm_factorial n
+
+/-- Sharpened Legendre bound for `n ≠ 0`: since `(p - 1) v_p(n!) < n`, we have
+`(p - 1) v_p(n!) ≤ n - 1`, hence `p ^ (-(n - 1) / (p - 1)) ≤ ‖n!‖`. -/
+theorem rpow_neg_sub_one_div_le_norm_factorial {n : ℕ} (hn : n ≠ 0) :
+    (p : ℝ) ^ (-(((n : ℝ) - 1) / ((p : ℝ) - 1))) ≤ ‖(n ! : K)‖ := by
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+  rw [TauCeti.norm_natCast_eq_norm_padic (p := p),
+    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero n), ← Real.rpow_intCast]
+  simp only [Int.cast_neg, Int.cast_natCast]
+  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
+  rw [le_div_iff₀ (sub_pos.mpr hp1)]
+  have hleg : (p - 1) * padicValNat p n ! ≤ n - 1 := by
+    rw [Nat.padicValNat_def]
+    exact Nat.le_sub_one_of_lt (sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn)
+  have hcast : (((p - 1) * padicValNat p n ! : ℕ) : ℝ) ≤ (n : ℝ) - 1 := by
+    simpa [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hn)] using (Nat.cast_le (α := ℝ)).mpr hleg
+  simpa [Nat.cast_sub hp.out.one_le, mul_comm] using hcast
+
+end NormedAlgebra
+
+section NormedDivisionRing
+
+variable {p : ℕ} [hp : Fact p.Prime] {D : Type*} [NormedDivisionRing D] [NormedAlgebra ℚ_[p] D]
+
+/-- Upper bound `‖(n!)⁻¹‖ ≤ p ^ (n / (p - 1))` in a normed division algebra over `ℚ_[p]`. -/
+theorem norm_inv_factorial_le (n : ℕ) :
+    ‖(n ! : D)⁻¹‖ ≤ (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) := by
+  have hpos : (0 : ℝ) < (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) :=
+    Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _
+  rw [norm_inv]
+  refine (inv_anti₀ hpos (rpow_neg_div_le_norm_factorial (p := p) n)).trans_eq ?_
+  rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
+
+/-- Sharpened upper bound `‖(n!)⁻¹‖ ≤ p ^ ((n - 1) / (p - 1))` for `n ≠ 0` in a normed division
+algebra over `ℚ_[p]`. -/
+theorem norm_inv_factorial_le_rpow_sub_one_div {n : ℕ} (hn : n ≠ 0) :
+    ‖(n ! : D)⁻¹‖ ≤ (p : ℝ) ^ (((n : ℝ) - 1) / ((p : ℝ) - 1)) := by
+  have hpos : (0 : ℝ) < (p : ℝ) ^ (-(((n : ℝ) - 1) / ((p : ℝ) - 1))) :=
+    Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _
+  rw [norm_inv]
+  refine (inv_anti₀ hpos (rpow_neg_sub_one_div_le_norm_factorial (p := p) hn)).trans_eq ?_
+  rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
+
+/-- Exact norm of `((p ^ k)!)⁻¹` in any normed division algebra over `ℚ_[p]`: since `p ^ k` has
+base-`p` digit sum `1`, `‖((p ^ k)!)⁻¹‖ = p ^ ((p ^ k - 1) / (p - 1))`. -/
+theorem norm_inv_factorial_pow_prime (k : ℕ) :
+    ‖(((p ^ k)! : ℕ) : D)⁻¹‖ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+  have hpow1 : 1 ≤ p ^ k := Nat.one_le_pow k p hp.out.pos
+  have hdiv : (padicValNat p (p ^ k)! : ℝ) = (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) := by
+    rw [eq_div_iff (sub_pos.mpr hp1).ne']
+    have hcast : (((p - 1) * padicValNat p (p ^ k)! : ℕ) : ℝ) = ((p ^ k - 1 : ℕ) : ℝ) := by
+      exact_mod_cast TauCeti.sub_one_mul_padicValNat_factorial_pow p k
+    simpa [Nat.cast_sub hp.out.one_le, Nat.cast_sub hpow1, mul_comm] using hcast
+  rw [norm_inv, TauCeti.norm_natCast_eq_norm_padic (p := p),
+    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _)]
+  simp [← Real.rpow_natCast, hdiv]
+
+/-- Whenever `p ^ (-1 / (p - 1)) ≤ r`, the `r`-weighted inverse factorials along `n = p ^ k` stay
+bounded below by `p ^ (-1 / (p - 1))`. -/
+theorem le_norm_inv_factorial_pow_prime_mul_pow {r : ℝ}
+    (hr : (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) ≤ r) (k : ℕ) :
+    (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) ≤ ‖(((p ^ k)! : ℕ) : D)⁻¹‖ * r ^ (p ^ k) := by
+  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
+  have hρ0 : 0 ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) := Real.rpow_nonneg hp0.le _
+  have hsplit : (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) +
+      -((p : ℝ) - 1)⁻¹ * ((p ^ k : ℕ) : ℝ) = -((p : ℝ) - 1)⁻¹ := by ring
+  rw [norm_inv_factorial_pow_prime]
+  calc
+    (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)
+        = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) +
+            -((p : ℝ) - 1)⁻¹ * ((p ^ k : ℕ) : ℝ)) := by rw [hsplit]
+    _ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) *
+          ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ (p ^ k) := by
+          rw [Real.rpow_add hp0, Real.rpow_mul hp0.le, Real.rpow_natCast]
+    _ ≤ (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) * r ^ (p ^ k) :=
+          mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hρ0 hr _) (Real.rpow_nonneg hp0.le _)
+
+/-- On the closed critical radius `0 ≤ r ≤ p ^ (-1 / (p - 1))`, the weighted inverse factorials
+satisfy `‖(n!)⁻¹‖ * r ^ n ≤ 1` for every `n`. -/
+theorem norm_inv_factorial_mul_pow_le {r : ℝ} (hr0 : 0 ≤ r)
+    (hr : r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) (n : ℕ) :
+    ‖(n ! : D)⁻¹‖ * r ^ n ≤ 1 := by
+  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
+  calc
+    ‖(n ! : D)⁻¹‖ * r ^ n
+        ≤ (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) * ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ n :=
+          mul_le_mul (norm_inv_factorial_le n) (pow_le_pow_left₀ hr0 hr n)
+            (pow_nonneg hr0 n) (Real.rpow_nonneg hp0.le _)
+    _ = (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ)) := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_add hp0]
+    _ = 1 := by
+          have hexp : (n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ) = 0 := by ring
+          rw [hexp, Real.rpow_zero]
+
+/-- For `n ≥ 2` and any `x : D` with `‖x‖ ≤ p ^ (-1 / (p - 1))`,
+`‖x ^ n * (n!)⁻¹‖ ≤ ‖x‖ ^ 2 * p ^ (1 / (p - 1))`. -/
+theorem norm_pow_mul_inv_factorial_le_sq {x : D}
+    (hx : ‖x‖ ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) {n : ℕ} (hn : 2 ≤ n) :
+    ‖x ^ n * (n ! : D)⁻¹‖ ≤ ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := Nat.exists_eq_add_of_le' hn
+  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
+  have hpow_k : ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) ≤ 1 := by
+    calc
+      ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))
+          ≤ ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) :=
+            mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg x) hx k)
+              (Real.rpow_nonneg hp0.le _)
+      _ = (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹ * (k : ℝ) + (k : ℝ) / ((p : ℝ) - 1)) := by
+            rw [← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_add hp0]
+      _ = 1 := by
+            have hexp : -((p : ℝ) - 1)⁻¹ * (k : ℝ) + (k : ℝ) / ((p : ℝ) - 1) = 0 := by ring
+            rw [hexp, Real.rpow_zero]
+  have hsplit : (((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) =
+      (k : ℝ) / ((p : ℝ) - 1) + ((p : ℝ) - 1)⁻¹ := by
+    push_cast
+    ring
+  rw [norm_mul, norm_pow]
+  calc
+    ‖x‖ ^ (k + 2) * ‖((k + 2)! : D)⁻¹‖
+        ≤ ‖x‖ ^ (k + 2) * (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) :=
+          mul_le_mul_of_nonneg_left
+            (norm_inv_factorial_le_rpow_sub_one_div (p := p) (Nat.succ_ne_zero _)) (by positivity)
+    _ = (‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))) *
+          (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) := by
+          rw [pow_add, hsplit, Real.rpow_add hp0]
+          ring
+    _ ≤ 1 * (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) :=
+          mul_le_mul_of_nonneg_right hpow_k (by positivity)
+    _ = ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := one_mul _
+
+end NormedDivisionRing
+
+end TauCeti

@@ -40,7 +40,12 @@ weights `i - g` and `g - i` cancel. The characteristic polynomial of a symplecti
 basic example.
 
 For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
-iterates preserve the degree of a polynomial and have trivial kernel.
+iterates preserve the degree of a polynomial and have trivial kernel. Over a commutative semiring,
+`Polynomial.expDerivFactor c m` packages the `m`-th power `(derivative + c • id) ^ m` as an
+`R`-linear endomorphism of `R[X]`; because differentiation commutes with scalar multiplication, it
+expands binomially in iterated derivatives (`Polynomial.expDerivFactor_eq_sum`), never increases
+`natDegree`, has degree-`natDegree` coefficient `c ^ m * P.leadingCoeff`, and preserves `natDegree`
+and has trivial kernel whenever `R` has no zero divisors and `c ≠ 0`.
 
 Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a)` at `a`.
 
@@ -54,6 +59,12 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 (`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
+
+## References
+
+* A. Baker, *Transcendental Number Theory*, Cambridge University Press (1975), Chapter 2.
+* M. Karatarakis, `ExpSeries.lean` in `mkaratarakis/mathlib4`, commit
+  `65cdef5722194f07709ab40ff46eede531f52f5d`, `Mathlib/NumberTheory/Transcendental/Baker/Padic/`.
 -/
 
 public section
@@ -242,6 +253,211 @@ end ShiftedDerivative
 end TauCeti
 
 namespace Polynomial
+
+section ExpDerivFactor
+
+variable {R : Type*} [CommSemiring R]
+
+/-- The `m`-th iterate `(D + c) ^ m` of the shifted derivative `Q ↦ Q' + c Q` on `R[X]`, as an
+`R`-linear endomorphism. Under formal differentiation of power series, multiplying by `exp (c X)`
+intertwines `d/dX` with `expDerivFactor c 1`. -/
+noncomputable def expDerivFactor (c : R) (m : ℕ) : R[X] →ₗ[R] R[X] :=
+  (derivative + c • LinearMap.id) ^ m
+
+theorem expDerivFactor_def (c : R) (m : ℕ) :
+    expDerivFactor c m = (derivative + c • LinearMap.id) ^ m :=
+  (rfl)
+
+@[simp]
+theorem expDerivFactor_zero (c : R) : expDerivFactor c 0 = LinearMap.id :=
+  (rfl)
+
+theorem expDerivFactor_zero_apply (c : R) (P : R[X]) : expDerivFactor c 0 P = P :=
+  (rfl)
+
+theorem expDerivFactor_one (c : R) : expDerivFactor c 1 = derivative + c • LinearMap.id :=
+  pow_one _
+
+theorem expDerivFactor_one_apply (c : R) (P : R[X]) :
+    expDerivFactor c 1 P = derivative P + C c * P := by
+  simp [expDerivFactor_one, smul_eq_C_mul]
+
+theorem expDerivFactor_succ (c : R) (m : ℕ) :
+    expDerivFactor c (m + 1) = (derivative + c • LinearMap.id) ∘ₗ expDerivFactor c m :=
+  pow_succ' _ m
+
+theorem expDerivFactor_succ' (c : R) (m : ℕ) :
+    expDerivFactor c (m + 1) = expDerivFactor c m ∘ₗ (derivative + c • LinearMap.id) :=
+  pow_succ _ m
+
+theorem expDerivFactor_succ_apply (c : R) (m : ℕ) (P : R[X]) :
+    expDerivFactor c (m + 1) P =
+      derivative (expDerivFactor c m P) + C c * expDerivFactor c m P := by
+  simp [expDerivFactor_succ, smul_eq_C_mul]
+
+theorem expDerivFactor_succ_apply' (c : R) (m : ℕ) (P : R[X]) :
+    expDerivFactor c (m + 1) P = expDerivFactor c m (derivative P + C c * P) := by
+  simp [expDerivFactor_succ', smul_eq_C_mul]
+
+theorem expDerivFactor_add (c : R) (m n : ℕ) :
+    expDerivFactor c (m + n) = expDerivFactor c m ∘ₗ expDerivFactor c n :=
+  pow_add _ m n
+
+theorem expDerivFactor_add_apply (c : R) (m n : ℕ) (P : R[X]) :
+    expDerivFactor c (m + n) P = expDerivFactor c m (expDerivFactor c n P) := by
+  rw [expDerivFactor_add]
+  rfl
+
+/-- Applying `expDerivFactor c m` agrees with iterating `Q ↦ Q' + C c * Q` `m` times. -/
+theorem expDerivFactor_apply_eq_iterate (c : R) (m : ℕ) (P : R[X]) :
+    expDerivFactor c m P = (fun Q ↦ derivative Q + C c * Q)^[m] P := by
+  induction m generalizing P with
+  | zero => rfl
+  | succ m ih => rw [expDerivFactor_succ_apply', Function.iterate_succ_apply, ih]
+
+/-- At `c = 0`, `expDerivFactor 0 m` is the `m`-th iterated derivative. -/
+@[simp]
+theorem expDerivFactor_zero_left (m : ℕ) (P : R[X]) :
+    expDerivFactor (0 : R) m P = derivative^[m] P := by
+  simp [expDerivFactor_apply_eq_iterate]
+
+/-- Differentiation commutes with `expDerivFactor c m`. -/
+theorem commute_derivative_expDerivFactor (c : R) (m : ℕ) :
+    Commute (derivative : R[X] →ₗ[R] R[X]) (expDerivFactor c m) := by
+  refine Commute.pow_right (Commute.add_right (Commute.refl _) ?_) m
+  ext P
+  simp
+
+theorem derivative_expDerivFactor (c : R) (m : ℕ) (P : R[X]) :
+    derivative (expDerivFactor c m P) = expDerivFactor c m (derivative P) :=
+  LinearMap.congr_fun (commute_derivative_expDerivFactor c m) P
+
+@[simp]
+theorem expDerivFactor_C (c a : R) (m : ℕ) :
+    expDerivFactor c m (C a) = C (c ^ m * a) := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [expDerivFactor_succ_apply, ih, derivative_C]
+    simp
+    ring
+
+@[simp]
+theorem expDerivFactor_one_right (c : R) (m : ℕ) :
+    expDerivFactor c m 1 = C (c ^ m) := by
+  simpa using expDerivFactor_C c 1 m
+
+@[simp]
+theorem expDerivFactor_one_X (c : R) :
+    expDerivFactor c 1 X = 1 + C c * X := by
+  simp [expDerivFactor_one_apply]
+
+/-- **Binomial form of `(D + c) ^ m`.** Since differentiation commutes with scalar multiplication by
+`c`, `expDerivFactor c m P = ∑ j ≤ m, (m choose j) c ^ (m - j) P⁽ʲ⁾`. -/
+theorem expDerivFactor_eq_sum (c : R) (m : ℕ) (P : R[X]) :
+    expDerivFactor c m P =
+      ∑ j ∈ Finset.range (m + 1), C ((m.choose j : R) * c ^ (m - j)) * derivative^[j] P := by
+  have hcomm : Commute (derivative : R[X] →ₗ[R] R[X]) (c • LinearMap.id) := by
+    ext Q
+    simp
+  rw [expDerivFactor_def, hcomm.add_pow, LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [mul_apply_eq_comp, natCast_apply_eq_smul, smul_pow, _root_.pow_apply_eq_iterate,
+    smul_eq_C_mul]
+  ring
+
+/-- Explicit binomial expansion of `expDerivFactor c m (X ^ d)`, the polynomial factor of the
+`m`-th derivative of `X ^ d exp(c X)`. -/
+theorem expDerivFactor_X_pow (c : R) (m d : ℕ) :
+    expDerivFactor c m (X ^ d) =
+      ∑ j ∈ Finset.range (m + 1),
+        C ((m.choose j : R) * c ^ (m - j) * d.descFactorial j) * X ^ (d - j) := by
+  rw [expDerivFactor_eq_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [iterate_derivative_X_pow_eq_C_mul, ← mul_assoc, ← C_mul]
+
+theorem coeff_expDerivFactor (c : R) (m : ℕ) (P : R[X]) (i : ℕ) :
+    (expDerivFactor c m P).coeff i =
+      ∑ j ∈ Finset.range (m + 1), (m.choose j : R) * c ^ (m - j) * (derivative^[j] P).coeff i := by
+  rw [expDerivFactor_eq_sum, ← lcoeff_apply, map_sum]
+  simp only [lcoeff_apply, coeff_C_mul]
+
+theorem eval_expDerivFactor (c : R) (m : ℕ) (P : R[X]) (x : R) :
+    (expDerivFactor c m P).eval x =
+      ∑ j ∈ Finset.range (m + 1), (m.choose j : R) * c ^ (m - j) * (derivative^[j] P).eval x := by
+  rw [expDerivFactor_eq_sum, eval_finsetSum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [eval_mul, eval_C]
+
+/-- `expDerivFactor` commutes with `Polynomial.map` along any ring homomorphism. -/
+theorem map_expDerivFactor {S : Type*} [CommSemiring S] (f : R →+* S) (c : R) (m : ℕ)
+    (P : R[X]) : (expDerivFactor c m P).map f = expDerivFactor (f c) m (P.map f) := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [expDerivFactor_succ_apply, expDerivFactor_succ_apply]
+    simp [← derivative_map, ih]
+
+/-- Applying `expDerivFactor c m` does not increase `natDegree`. -/
+theorem natDegree_expDerivFactor_le (c : R) (m : ℕ) (P : R[X]) :
+    (expDerivFactor c m P).natDegree ≤ P.natDegree := by
+  induction m with
+  | zero => exact le_rfl
+  | succ m ih =>
+    rw [expDerivFactor_succ_apply]
+    exact (natDegree_add_le _ _).trans <| max_le
+      ((natDegree_derivative_le _).trans ((Nat.sub_le _ _).trans ih))
+      ((natDegree_C_mul_le _ _).trans ih)
+
+/-- Applying `expDerivFactor c m` does not increase `degree`. -/
+theorem degree_expDerivFactor_le (c : R) (m : ℕ) (P : R[X]) :
+    (expDerivFactor c m P).degree ≤ P.degree := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  · exact degree_le_natDegree.trans
+      ((WithBot.coe_le_coe.mpr (natDegree_expDerivFactor_le c m P)).trans_eq
+        (degree_eq_natDegree hP).symm)
+
+/-- The coefficient of `expDerivFactor c m P` in degree `P.natDegree` is `c ^ m * P.leadingCoeff`:
+each differentiation drops the top term below degree `P.natDegree`. -/
+theorem coeff_expDerivFactor_natDegree (c : R) (m : ℕ) (P : R[X]) :
+    (expDerivFactor c m P).coeff P.natDegree = c ^ m * P.leadingCoeff := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    have hzero : (expDerivFactor c m P).coeff (P.natDegree + 1) = 0 :=
+      coeff_eq_zero_of_natDegree_lt
+        ((natDegree_expDerivFactor_le c m P).trans_lt (Nat.lt_succ_self _))
+    rw [expDerivFactor_succ_apply]
+    simp [coeff_derivative, hzero, ih]
+    ring
+
+section NoZeroDivisors
+
+variable [NoZeroDivisors R] {c : R}
+
+/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` preserves `natDegree`
+whenever `c ≠ 0`. -/
+@[simp]
+theorem natDegree_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
+    (expDerivFactor c m P).natDegree = P.natDegree := by
+  rw [expDerivFactor_apply_eq_iterate, natDegree_iterate_derivative_add_C_mul hc]
+
+/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` has trivial kernel
+whenever `c ≠ 0`. -/
+@[simp]
+theorem expDerivFactor_eq_zero_iff (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
+    expDerivFactor c m P = 0 ↔ P = 0 := by
+  rw [expDerivFactor_apply_eq_iterate, iterate_derivative_add_C_mul_eq_zero_iff hc]
+
+@[simp]
+theorem leadingCoeff_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
+    (expDerivFactor c m P).leadingCoeff = c ^ m * P.leadingCoeff := by
+  rw [leadingCoeff, natDegree_expDerivFactor hc, coeff_expDerivFactor_natDegree]
+
+end NoZeroDivisors
+
+end ExpDerivFactor
 
 /-- The quotient of `p` by `X - a` takes the value `p' (a)` at `a`, over any commutative ring.
 Note that `a` need not be a root of `p`. -/

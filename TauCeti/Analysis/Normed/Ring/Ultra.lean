@@ -66,6 +66,8 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
   of `1` remain strictly within `ε` of `1`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
+* `TauCeti.norm_pow_sub_pow_le`: difference of powers in a (possibly noncommutative) ultrametric
+  seminormed ring satisfies `‖x ^ n - y ^ n‖ ≤ max ‖x‖ ‖y‖ ^ (n - 1) * ‖x - y‖`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 * `TauCeti.norm_fwdDiff_iter_pow_mul_pow_le`: for `‖x‖, ‖h‖ ≤ c`, the `k`-th forward difference
   of `y ↦ yᵐ` with step `h` at `x` satisfies `‖Δₕᵏ (y ↦ yᵐ)(x)‖ cᵏ ≤ ‖k!‖ ‖h‖ᵏ cᵐ`.
@@ -368,6 +370,32 @@ theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [IsUltra
       _ ≤ max ‖x * (x ^ n - 1)‖ ‖x - 1‖ := IsUltrametricDist.norm_add_le_max _ _
       _ ≤ ‖x - 1‖ := max_le ((norm_mul_le _ _).trans
         ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih)) le_rfl
+
+/-- In an ultrametric seminormed ring (not necessarily commutative),
+`‖x ^ n - y ^ n‖ ≤ max ‖x‖ ‖y‖ ^ (n - 1) * ‖x - y‖`. The exponent uses natural subtraction, so
+the statement includes `n = 0`. -/
+theorem norm_pow_sub_pow_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+    (x y : R) (n : ℕ) :
+    ‖x ^ n - y ^ n‖ ≤ max ‖x‖ ‖y‖ ^ (n - 1) * ‖x - y‖ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rcases n with _ | n
+    · simp
+    simp only [Nat.add_sub_cancel] at ih ⊢
+    have hid : x ^ (n + 2) - y ^ (n + 2) =
+        x ^ (n + 1) * (x - y) + (x ^ (n + 1) - y ^ (n + 1)) * y := by
+      rw [mul_sub, sub_mul, sub_add_sub_cancel, ← pow_succ, ← pow_succ]
+    rw [hid]
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
+    · calc
+        ‖x ^ (n + 1) * (x - y)‖ ≤ ‖x ^ (n + 1)‖ * ‖x - y‖ := norm_mul_le _ _
+        _ ≤ ‖x‖ ^ (n + 1) * ‖x - y‖ := by gcongr; exact norm_pow_le' x (Nat.succ_pos n)
+        _ ≤ max ‖x‖ ‖y‖ ^ (n + 1) * ‖x - y‖ := by gcongr; exact le_max_left _ _
+    · calc
+        ‖(x ^ (n + 1) - y ^ (n + 1)) * y‖ ≤ ‖x ^ (n + 1) - y ^ (n + 1)‖ * ‖y‖ := norm_mul_le _ _
+        _ ≤ (max ‖x‖ ‖y‖ ^ n * ‖x - y‖) * max ‖x‖ ‖y‖ := by gcongr; exact le_max_right _ _
+        _ = max ‖x‖ ‖y‖ ^ (n + 1) * ‖x - y‖ := by rw [pow_succ]; ring
 
 /-- In an ultrametric normed commutative ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/
