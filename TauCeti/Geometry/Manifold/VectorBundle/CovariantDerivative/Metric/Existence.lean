@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Affine
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Existence
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
