@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Semisimple
 public import TauCeti.Algebra.Lie.Reductive.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
+import TauCeti.Algebra.CharP.Invertible
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Reductive.Fixed
@@ -292,18 +293,12 @@ section InvertibleTwo
 
 variable [Invertible (2 : R)]
 
-private theorem eq_zero_of_eq_neg {M : Type*} [AddCommGroup M] [Module R M] {x : M}
-    (hx : x = -x) : x = 0 :=
-  (isUnit_of_invertible (2 : R)).smul_eq_zero.mp <| by
-    rw [two_smul]
-    exact eq_neg_iff_add_eq_zero.mp hx
-
 /-- The identity automorphism has trivial `-1`-eigenspace when `2` is invertible. -/
 @[simp]
 theorem cartanP_refl : (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
   ext x
   simp only [mem_cartanP, refl_apply, Submodule.mem_bot]
-  exact ⟨eq_zero_of_eq_neg (R := R), fun hx ↦ by simp [hx]⟩
+  exact ⟨TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := R), fun hx ↦ by simp [hx]⟩
 
 /-- **The Cartan decomposition `L = 𝔨 ⊕ 𝔭`**: for an involutive Lie automorphism over a ring
 where `2` is invertible, the fixed subalgebra and `-1`-eigenspace are complementary submodules. -/
@@ -314,7 +309,8 @@ theorem isCompl_fixedSubalgebra_cartanP_of_involutive {θ : L ≃ₗ⁅R⁆ L}
   · rw [Submodule.disjoint_def]
     intro x hxk hxp
     have h1 : θ x = x := LieHom.mem_fixedSubalgebra.mp hxk
-    exact eq_zero_of_eq_neg (R := R) (h1.symm.trans (mem_cartanP.mp hxp))
+    exact TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := R)
+      (h1.symm.trans (mem_cartanP.mp hxp))
   · rw [codisjoint_iff, eq_top_iff]
     intro x _
     have hk : ⅟(2 : R) • (x + θ x) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
@@ -333,7 +329,7 @@ theorem killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP {θ : L ≃ₗ
     (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
     killingForm R L x y = 0 := by
   have hx' : θ x = x := LieHom.mem_fixedSubalgebra.mp hx
-  refine eq_zero_of_eq_neg (R := R) ?_
+  refine TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := R) ?_
   calc killingForm R L x y = killingForm R L (θ x) (θ y) :=
         (LieAlgebra.killingForm_of_equiv_apply θ x y).symm
     _ = killingForm R L x (-y) := by rw [hx', mem_cartanP.mp hy]
