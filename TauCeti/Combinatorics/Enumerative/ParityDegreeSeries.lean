@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.Data.Int.Interval
+import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 
@@ -38,8 +39,6 @@ the two parities with `N = 1`, `N₀ = 1` are `X² / (1 - X²)` for `C = {0}` an
 
 * `TauCeti.natEquivLowerBoundParity N₀ e`: the parametrization `k ↦ N₀ + (e + N₀).val + 2 k` of
   the integers that are at least `N₀` and congruent to `e` modulo `2`.
-* `TauCeti.sum_val_eq_hammingNorm`: the Hamming weight of a vector in `𝔽₂^ι` is the sum of the
-  natural-number representatives of its coordinates.
 * `TauCeti.mk_natCard_parityDegrees_eq`: the generating series of the integer degree vectors
   with coordinates at least `N₀` and parity in `C`.
 
@@ -81,15 +80,6 @@ def natEquivLowerBoundParity (N₀ : ℕ) (e : ZMod 2) :
     ext
     simp only [hval]
     omega
-
-/-- The Hamming weight of a vector in `𝔽₂^ι` is the sum of the natural-number representatives
-`0` or `1` of its coordinates. -/
-theorem sum_val_eq_hammingNorm {ι : Type*} [Fintype ι] (x : ι → ZMod 2) :
-    ∑ i, (x i).val = hammingNorm x := by
-  rw [hammingNorm, card_filter]
-  refine sum_congr rfl fun i _ ↦ ?_
-  generalize x i = a
-  fin_cases a <;> decide
 
 /-! ### The generating series -/
 
