@@ -80,14 +80,12 @@ theorem toMatrix_carrierEquiv_mem_isometryMatrices (b : Basis ι ℤ L) (e : Iso
 noncomputable def toIsometryMatrices (b : Basis ι ℤ L) :
     Isometry L L →* isometryMatrices (L.gramMatrix b) where
   toFun e := ⟨LinearMap.toMatrix b b e.carrierEquiv, toMatrix_carrierEquiv_mem_isometryMatrices b e⟩
-  map_one' := Subtype.ext <| by
-    dsimp only
-    rw [Submonoid.coe_one, ← carrierEquivHom_apply, map_one, LinearEquiv.one_eq_refl,
-      LinearEquiv.refl_toLinearMap, LinearMap.toMatrix_id]
-  map_mul' e f := Subtype.ext <| by
-    dsimp only
-    rw [Submonoid.coe_mul, ← LinearMap.toMatrix_mul, ← carrierEquivHom_apply, map_mul,
-      LinearEquiv.coe_toLinearMap_mul, carrierEquivHom_apply, carrierEquivHom_apply]
+  map_one' := Subtype.ext (by
+    simpa using
+      congrArg (fun f : L ≃ₗ[ℤ] L ↦ LinearMap.toMatrix b b f) (map_one (carrierEquivHom L)))
+  map_mul' e f := Subtype.ext (by
+    simpa [LinearMap.toMatrix_mul] using
+      congrArg (fun f : L ≃ₗ[ℤ] L ↦ LinearMap.toMatrix b b f) (map_mul (carrierEquivHom L) e f))
 
 @[simp]
 theorem coe_toIsometryMatrices_apply (b : Basis ι ℤ L) (e : Isometry L L) :
@@ -174,9 +172,7 @@ theorem coe_carrierEquiv_toUnitsIsometryMatrices_symm_apply (b : Basis ι ℤ L)
     (u : (isometryMatrices (L.gramMatrix b))ˣ) :
     (((toUnitsIsometryMatrices b).symm u).carrierEquiv : L →ₗ[ℤ] L) =
       Matrix.toLin b b (u : Matrix ι ι ℤ) :=
-  LinearMap.ext fun x ↦ by
-    rw [LinearEquiv.coe_coe, toUnitsIsometryMatrices, MulEquiv.symm_mk, MulEquiv.coe_mk,
-      Equiv.coe_fn_symm_mk, carrierEquiv_ofCarrierEquiv, Matrix.toLinearEquiv_apply]
+  LinearMap.ext fun x ↦ by simp [toUnitsIsometryMatrices]
 
 /-- Every matrix of unit determinant preserving the Gram matrix of `b` is the matrix of a
 self-isometry. -/
