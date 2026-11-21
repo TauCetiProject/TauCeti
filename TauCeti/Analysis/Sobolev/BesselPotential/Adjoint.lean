@@ -11,6 +11,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.ReciprocalWeight
 import TauCeti.Analysis.Sobolev.BesselPotential.Conjugation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Formal adjoints on the Bessel-potential scale
@@ -143,8 +144,7 @@ theorem inner_toLp_eq_of_integral_inner_eq {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)}
   rw [hTu, hTv, inner_toLp_toBesselPotentialSpaceCLM_neg s,
     inner_toLp_toBesselPotentialSpaceCLM_neg r]
   -- `∫ ⟪A' v, u⟫` is the conjugate of `∫ ⟪u, A' v⟫ = ∫ ⟪A u, v⟫`.
-  simp_rw [← inner_conj_symm (A' v _), ← inner_conj_symm (v _)]
-  rw [integral_conj, integral_conj, hAA']
+  rw [← integral_inner_conj_symm, ← hAA', integral_inner_conj_symm]
 
 /-- **The extension of a formal adjoint is the Hilbert adjoint.** Let `A'` be a formal adjoint of
 `A`, and let `T : H^s → H^r` and `T' : H^{-r} → H^{-s}` be bounded operators extending `A` and

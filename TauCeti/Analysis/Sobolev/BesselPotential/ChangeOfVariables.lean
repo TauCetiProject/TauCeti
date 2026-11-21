@@ -16,6 +16,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Adjoint
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
@@ -304,8 +305,8 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
   -- `u ↦ u ∘ φ` is a formal adjoint of `φ_*`.
   have hadj (v w : 𝓢(E, F)) : ∫ x, ⟪pushforwardCLM ℂ φ hφ hψ v x, w x⟫_ℂ =
       ∫ x, ⟪v x, compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) w x⟫_ℂ := by
-    simp_rw [← inner_conj_symm (pushforwardCLM ℂ φ hφ hψ v _), ← inner_conj_symm (v _)]
-    rw [integral_conj, integral_conj, integral_inner_compCLM_eq volume hφ hψ]
+    rw [← integral_inner_conj_symm, ← integral_inner_compCLM_eq volume hφ hψ,
+      integral_inner_conj_symm]
   -- Duality turns the bound of the transpose `φ_*` on `H^k` into the bound on `H^{-k}`.
   exact ⟨CJ * Cs, mul_nonneg hCJ0 hCs0, norm_toBesselPotentialSpaceCLM_le_of_integral_inner_eq
     (mul_nonneg hCJ0 hCs0) hadj fun v ↦ (hQ v).trans_eq (mul_assoc ..).symm⟩

@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.ReciprocalWeight
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The density pairing of the Bessel-potential spaces `H^{s,p}` and `H^{-s,q}`
@@ -357,8 +358,7 @@ theorem norm_toBesselPotentialSpaceCLM_neg_le_of_forall (r : ℝ) (a : 𝓢(E, F
   refine eLpNorm_smul_fourier_le_of_forall_norm_integral_inner_le (by fun_prop)
     (TauCeti.one_add_norm_sq_rpow_neg_mul_rpow · r) hC fun v ↦ ?_
   -- `∫ ⟪v, a⟫` is the conjugate of `∫ ⟪a, v⟫`.
-  simp_rw [← inner_conj_symm (v _)]
-  rw [integral_conj, RCLike.norm_conj]
+  rw [← integral_inner_conj_symm, RCLike.norm_conj]
   exact h v
 
 /-- **`H^{-r}` is the dual of `H^r` for the `L²` pairing.** For `C ≥ 0`, a Schwartz function `a`
