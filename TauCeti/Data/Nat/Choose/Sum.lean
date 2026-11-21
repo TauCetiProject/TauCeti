@@ -41,6 +41,9 @@ applies to sums in any additive commutative monoid, including coefficient sums f
 
 ## Main results
 
+* `Finset.sum_filter_antidiagonal_choose`: filtering `antidiagonal m ×ˢ antidiagonal n` by
+  componentwise sum `(a, b)` with `a + b = m + n` and summing `a.choose p.1 * b.choose p.2`
+  yields `(m + n).choose m`.
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
 * `Nat.sum_antidiagonal_snd_add_choose`: summing `(r + m).choose (k + m)` over the second
   coordinate of the antidiagonal of `N` gives `(N + (m + 1)).choose (k + (m + 1))`.
@@ -72,6 +75,40 @@ theorem sum_antidiagonal_choose_succ_nsmul_nsmul {M : Type*} [AddCommMonoid M]
   simp only [zero_smul, smul_zero, zero_add]
   simp_rw [← mul_smul, ← Nat.add_one_mul_choose_eq, mul_smul]
   rw [smul_sum]
+
+/-- Filtering pairs `(p, q) ∈ antidiagonal m ×ˢ antidiagonal n` by fixed componentwise sums
+`(p.1 + q.1, p.2 + q.2) = (a, b)` (with `a + b = m + n`) and summing `a.choose p.1 * b.choose p.2`
+yields `(m + n).choose m`, via Vandermonde's identity `Nat.add_choose_eq`. -/
+theorem sum_filter_antidiagonal_choose {m n a b : ℕ} (hab : a + b = m + n) :
+    ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
+        (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
+      a.choose pq.1.1 * b.choose pq.1.2 = (m + n).choose m := by
+  rw [← hab, Nat.add_choose_eq a b m]
+  have hfilt : ∑ p ∈ antidiagonal m, a.choose p.1 * b.choose p.2 =
+      ∑ p ∈ (antidiagonal m).filter (fun p ↦ p.1 ≤ a ∧ p.2 ≤ b),
+        a.choose p.1 * b.choose p.2 := by
+    symm
+    refine sum_filter_of_ne fun p _ hne ↦ ?_
+    by_contra h
+    rw [not_and_or, not_le, not_le] at h
+    rcases h with h | h
+    · exact hne (by simp [Nat.choose_eq_zero_of_lt h])
+    · exact hne (by simp [Nat.choose_eq_zero_of_lt h])
+  rw [hfilt]
+  refine sum_nbij' (fun pq ↦ pq.1) (fun p ↦ (p, (a - p.1, b - p.2))) ?_ ?_ ?_ ?_ ?_
+  · intro ⟨⟨i, j⟩, ⟨k, l⟩⟩ hpq
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
+    omega
+  · intro ⟨i, j⟩ hp
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hp ⊢
+    omega
+  · intro ⟨⟨i, j⟩, ⟨k, l⟩⟩ hpq
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
+    exact ⟨trivial, by omega, by omega⟩
+  · intro ⟨i, j⟩ _
+    rfl
+  · intro ⟨⟨i, j⟩, ⟨k, l⟩⟩ _
+    rfl
 
 end Finset
 

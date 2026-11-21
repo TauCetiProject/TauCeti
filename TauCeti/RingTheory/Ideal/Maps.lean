@@ -24,12 +24,30 @@ element, and its annihilator to the annihilator of that ideal. The principal-ide
 to ideals extended from a common commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. Elements of an extended ideal `I.map f` are
+characterized as finite linear combinations of images of elements of `I`
+(`Ideal.mem_map_iff_exists_fin_sum`).
 -/
 
 public section
 
 namespace Ideal
+
+/-- An element lies in the extension `I.map f` if and only if it is a finite `S`-linear
+combination `∑ i : Fin r, b i * f (x i)` of images of elements of `I`. -/
+theorem mem_map_iff_exists_fin_sum {R S F : Type*} [Semiring R] [Semiring S]
+    [FunLike F R S] {f : F} {I : Ideal R} {z : S} :
+    z ∈ I.map f ↔
+      ∃ (r : ℕ) (b : Fin r → S) (x : Fin r → R),
+        (∀ i, x i ∈ I) ∧ ∑ i : Fin r, b i * f (x i) = z := by
+  constructor
+  · intro hz
+    rw [map, span, Submodule.mem_span_set'] at hz
+    obtain ⟨r, b, g, rfl⟩ := hz
+    choose x hx hxg using fun i ↦ (g i).property
+    exact ⟨r, b, x, hx, Finset.sum_congr rfl fun i _ ↦ by simp [smul_eq_mul, hxg i]⟩
+  · rintro ⟨r, b, x, hx, rfl⟩
+    exact Submodule.sum_mem _ fun i _ ↦ mul_mem_left _ _ (mem_map_of_mem f (hx i))
 
 /-- Taking the radical before extending an ideal does not change the radical of its extension. -/
 @[simp]
