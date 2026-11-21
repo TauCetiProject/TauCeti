@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
 import TauCeti.Algebra.Ring.Commute
-import TauCeti.Algebra.Algebra.PowMulRecurrence
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -585,7 +584,7 @@ theorem IsRowCompact.one_sub_smul_pow_succ_mul_resolventHasseDerivAt
     (Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
       ((Commute.refl u).smul_right a))
     (by simpa [PowerSeries.hasseDeriv_zero] using hu.one_sub_smul_mul_resolventAt a)
-    (hu.one_sub_smul_mul_resolventHasseDerivAt_succ · a)
+    (fun k _ ↦ hu.one_sub_smul_mul_resolventHasseDerivAt_succ k a)
     fun j hj ↦ by ext; simp [hH j hj]).trans (mul_smul_one _ _)
 
 /-- **The Riesz identity at a good zero.** Let `u` be row compact, put `C = 1 - a • u`, and
