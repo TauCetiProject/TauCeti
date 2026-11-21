@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.Coprod.Basic
 import Mathlib.Algebra.Group.ULift
 import TauCeti.GroupTheory.CoprodI
@@ -19,7 +20,9 @@ a nonempty reduced word is not `1`.
 
 Consequently a pair of homomorphisms `f : M →* M'`, `g : N →* N'` keeps a nonidentity element of
 `M ∗ N` away from `1` as soon as it keeps every letter of one of its reduced words away from `1`:
-the image under `Monoid.Coprod.map f g` of the word is again a nonempty reduced word.
+the image under `Monoid.Coprod.map f g` of the word is again a nonempty reduced word. For instance,
+in a free product `G ∗ K` of groups the commutator `[x, z y z⁻¹]` of nontrivial `x, y ∈ G` and
+`z ∈ K` is a nonempty reduced word.
 
 ## Main results
 
@@ -27,6 +30,8 @@ the image under `Monoid.Coprod.map f g` of the word is again a nonempty reduced 
 * `Monoid.Coprod.mk_ofList_ne_one`: the image of a nonempty reduced word is not `1`.
 * `Monoid.Coprod.map_mk_ofList_ne_one`: `Monoid.Coprod.map f g` sends a nonempty reduced word
   to an element other than `1` when `f` and `g` send none of its letters to `1`.
+* `Monoid.Coprod.commutatorElement_inl_conj_ne_one`: `[x, z y z⁻¹] ≠ 1` in `G ∗ K` for
+  `x, y ∈ G` and `z ∈ K` other than `1`.
 
 ## Implementation notes
 
@@ -151,5 +156,22 @@ theorem map_mk_ofList_ne_one {M N M' N' : Type*} [MulOneClass M] [MulOneClass N]
     ?_ ?_
   · simpa using hf
   · simpa using hg
+
+section Group
+
+open scoped commutatorElement
+
+/-- In a free product `G ∗ K` of groups, the commutator of `x` with the conjugate `z y z⁻¹` is not
+`1` when `x, y ∈ G` and `z ∈ K` are not `1`: it is the image of the reduced word
+`x z y z⁻¹ x⁻¹ z y⁻¹ z⁻¹`. -/
+theorem commutatorElement_inl_conj_ne_one {G K : Type*} [Group G] [Group K] {x y : G} {z : K}
+    (hx : x ≠ 1) (hy : y ≠ 1) (hz : z ≠ 1) : ⁅(inl x : G ∗ K), inr z * inl y * (inr z)⁻¹⁆ ≠ 1 := by
+  have h : ⁅(inl x : G ∗ K), inr z * inl y * (inr z)⁻¹⁆ = mk (FreeMonoid.ofList
+      [.inl x, .inr z, .inl y, .inr z⁻¹, .inl x⁻¹, .inr z, .inl y⁻¹, .inr z⁻¹]) := by
+    simp [commutatorElement_def, FreeMonoid.ofList_cons, mul_assoc]
+  rw [h]
+  exact mk_ofList_ne_one (by simp) (by simp) (by simp [eq_comm, hx, hy]) (by simp [eq_comm, hz])
+
+end Group
 
 end Monoid.Coprod

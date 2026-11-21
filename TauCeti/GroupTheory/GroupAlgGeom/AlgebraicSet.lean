@@ -1049,6 +1049,12 @@ theorem homEquiv_apply_coe (φ : GHom (coeff S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.property := (rfl)
 
+/-- Evaluation at a solution agrees with the corresponding homomorphism out of `G_S`. -/
+@[simp]
+theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : SystemGroup G S) :=
+  GX.eval_quotientHomEquiv φ w
+
 /-- A `G`-homomorphism out of `G_S` is determined by its values on the variables. -/
 @[ext]
 theorem gHom_ext {φ ψ : GHom (coeff S) ι}

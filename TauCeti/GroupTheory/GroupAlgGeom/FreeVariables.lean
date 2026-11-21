@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
-public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.GroupAlgGeom.Separated
 public import Mathlib.Algebra.Group.Commutator
+import TauCeti.GroupTheory.Coprod.NormalForm
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Centralizer
-import Mathlib.Algebra.Group.End
+import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
 # Systems of equations with free variables
@@ -34,10 +33,19 @@ arbitrary values of the variables of `Y` (`TauCeti.GroupAlgGeom.V_addFreeVars`).
   these homomorphisms separate the elements of the free product
   (`TauCeti.GroupAlgGeom.CoordGroup.freeVarsHom_injective_iff`), that is, when `G_{R(S)} ∗ F(Y)`
   is separated by `H` (`TauCeti.GroupAlgGeom.CoordGroup.freeVarsHom_injective_iff_isSeparatedBy`).
-* This fails for `S = {[x, a], [y, b], [x, y]}` over the free group `F(a, b)` and one free
-  variable `z` (`TauCeti.GroupAlgGeom.CoordGroup.not_injective_freeVarsHom_commutator`): every
-  solution has `x = 1` or `y = 1`, so the commutator `[x, z y z⁻¹]` vanishes at every solution,
-  but it is not trivial in `F_{R(S)} ∗ ⟨z⟩`.
+* It is not injective when `Y` is nonempty and every solution of `S` kills one of two nontrivial
+  elements `a`, `b` of `G_{R(S)}`
+  (`TauCeti.GroupAlgGeom.CoordGroup.not_injective_freeVarsHom_of_forall_eq_one_or_eq_one`): the
+  commutator `[a, z b z⁻¹]`, `z ∈ Y`, vanishes at every solution but is not trivial in
+  `G_{R(S)} ∗ F(Y)`. This happens for `S = {[x, a], [y, b], [x, y]}` over the free group `F(a, b)`
+  and one free variable `z`
+  (`TauCeti.GroupAlgGeom.CoordGroup.not_injective_freeVarsHom_commutator`): every solution has
+  `x = 1` or `y = 1`.
+* More generally, a `G`-homomorphism `G_S ∗ F(Y) → G_T` of presented groups induces a
+  `G`-homomorphism `G_{R(S)} ∗ F(Y) → G_{R(T)}` of coordinate groups
+  (`TauCeti.GroupAlgGeom.CoordGroup.freeProdMap`), surjective if the first one is; `freeVarsHom` is
+  the one induced by the isomorphism `G_S ∗ F(Y) ≃ G_{S'}`. This gives the coordinate groups along
+  a Tietze isomorphism that adds free generators.
 
 ## References
 
@@ -168,32 +176,6 @@ private theorem toQuotientFreeVars_inr_map (N : Subgroup (GX G X)) [N.Normal] (w
     FreeGroup.ext_hom _ _ fun _ => by simp [toQuotientFreeVars]
   exact DFunLike.congr_fun h w
 
-private theorem toQuotientFreeVars_surjective (N : Subgroup (GX G X)) [N.Normal] :
-    Function.Surjective (toQuotientFreeVars Y N) := by
-  intro w
-  induction w using induction_on with
-  | inl q =>
-    obtain ⟨t, rfl⟩ := QuotientGroup.mk_surjective q
-    exact ⟨_, toQuotientFreeVars_inclFreeVars N t⟩
-  | inr w => exact ⟨_, toQuotientFreeVars_inr_map N w⟩
-  | mul x y hx hy =>
-    obtain ⟨⟨s, rfl⟩, ⟨t, rfl⟩⟩ := hx, hy
-    exact ⟨s * t, map_mul _ s t⟩
-
-/-- A homomorphism `(G[X] ⧸ N) ∗ F(Y) → H` given by a homomorphism on `G[X] ⧸ N` compatible with
-the coefficients and by values of `Y`, restricted to `G[X ⊕ Y]`, is evaluation at the
-corresponding point. -/
-private theorem eval_toQuotientFreeVars (ι : G →* H) {N : Subgroup (GX G X)} [N.Normal]
-    (φ : GX G X ⧸ N →* H) (hφ : ∀ g, φ ((inl g : GX G X) : GX G X ⧸ N) = ι g) (u : Y → H)
-    (t : GX G (X ⊕ Y)) :
-    eval φ u (toQuotientFreeVars Y N t) =
-      eval ι (Sum.elim (fun x => φ ((inr (FreeGroup.of x) : GX G X) : GX G X ⧸ N)) u) t := by
-  have h : (eval φ u).comp (toQuotientFreeVars Y N) =
-      eval ι (Sum.elim (fun x => φ ((inr (FreeGroup.of x) : GX G X) : GX G X ⧸ N)) u) :=
-    hom_ext (MonoidHom.ext fun g => by simp [toQuotientFreeVars, hφ])
-      (FreeGroup.ext_hom _ _ fun x => by cases x <;> simp [toQuotientFreeVars])
-  exact DFunLike.congr_fun h t
-
 /-! ### The group presented by a system with free variables -/
 
 namespace SystemGroup
@@ -296,25 +278,104 @@ theorem evalGHom_addFreeVarsEquiv_symm {v : X ⊕ Y → H} (hv : v ∈ V ι (add
 
 end SystemGroup
 
+/-! ### Coordinate groups and homomorphisms of presented groups with free variables -/
+
+namespace CoordGroup
+
+variable {X' : Type*} {S : Set (GX G X)} {T : Set (GX G X')}
+  (ψ : GHom ((inl : SystemGroup G S →* GX (SystemGroup G S) Y).comp (SystemGroup.coeff S))
+    (SystemGroup.coeff T))
+
+variable (ι) in
+/-- The homomorphism `G_{R(S)} → G_{R(T)}` induced by `G_S → G_S ∗ F(Y) → G_T`: evaluation at the
+solution of `S` in `G_{R(T)}` given by `G_S → G_S ∗ F(Y) → G_T → G_{R(T)}`, since `G_{R(T)}` is
+separated by `H`. -/
+private def inlCoordMap : GHom (coeff ι S) (coeff ι T) :=
+  evalGHomOfIsSeparatedBy (isSeparatedBy_coeff T) _ (SystemGroup.homEquiv _ S
+    ((SystemGroup.toCoordGroup ι T).comp (ψ.comp ⟨inl, fun _ => rfl⟩))).property
+
+variable (ι) in
+/-- A `G`-homomorphism `ψ : G_S ∗ F(Y) → G_T` of presented groups induces a `G`-homomorphism
+`G_{R(S)} ∗ F(Y) → G_{R(T)}` of coordinate groups, compatible with the projections
+`G_S → G_{R(S)}` and `G_T → G_{R(T)}`. -/
+def freeProdMap :
+    GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S)) (coeff ι T) where
+  toMonoidHom := lift (inlCoordMap ι ψ : CoordGroup ι S →* CoordGroup ι T)
+    (((SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp
+      (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp inr)
+  map_coeff' g := by simpa using (inlCoordMap ι ψ).map_coeff g
+
+/-- On `G_{R(S)}`, the induced homomorphism is `G_S → G_S ∗ F(Y) → G_T → G_{R(T)}`. -/
+@[simp]
+theorem freeProdMap_inl (w : GX G X) :
+    freeProdMap ι ψ (inl (w : CoordGroup ι S)) =
+      SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) := by
+  simp [freeProdMap, inlCoordMap, GHom.coe_comp]
+
+/-- On `F(Y)`, the induced homomorphism is `F(Y) → G_S ∗ F(Y) → G_T → G_{R(T)}`. -/
+@[simp]
+theorem freeProdMap_inr (w : FreeGroup Y) :
+    freeProdMap ι ψ (inr w) = SystemGroup.toCoordGroup ι T (ψ (inr w)) := by
+  simp [freeProdMap]
+
+/-- The homomorphism of coordinate groups induced by `ψ : G_S ∗ F(Y) → G_T` is `ψ` on the classes
+of the elements of `G_S ∗ F(Y)`. -/
+@[simp]
+theorem freeProdMap_map_toCoordGroup (w : GX (SystemGroup G S) Y) :
+    freeProdMap ι ψ
+        (Monoid.Coprod.map (SystemGroup.toCoordGroup ι S : SystemGroup G S →* CoordGroup ι S)
+          (.id _) w) =
+      SystemGroup.toCoordGroup ι T (ψ w) :=
+  DFunLike.congr_fun (Monoid.Coprod.hom_ext
+    (f := (freeProdMap ι ψ : GX (CoordGroup ι S) Y →* CoordGroup ι T).comp
+      (Monoid.Coprod.map (SystemGroup.toCoordGroup ι S : SystemGroup G S →* CoordGroup ι S)
+        (.id _)))
+    (g := (SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp ψ)
+    (QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun _ => by simp))
+    (MonoidHom.ext fun _ => by simp)) w
+
+variable {ψ} in
+/-- A surjective homomorphism of presented groups induces a surjective homomorphism of
+coordinate groups. -/
+theorem freeProdMap_surjective (hψ : Function.Surjective ψ) :
+    Function.Surjective (freeProdMap ι ψ) := fun c => by
+  obtain ⟨q, rfl⟩ := SystemGroup.toCoordGroup_surjective (ι := ι) T c
+  obtain ⟨w, rfl⟩ := hψ q
+  exact ⟨_, freeProdMap_map_toCoordGroup ψ w⟩
+
+end CoordGroup
+
 /-! ### The coordinate group of a system with free variables -/
 
 namespace CoordGroup
 
+/-- The `G`-homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` from the free product of the coordinate
+group of a system `S` with the free group on `Y` to the coordinate group of `S` with free
+variables `Y`, induced by the isomorphism `G_S ∗ F(Y) ≃ G_{S'}` of presented groups. -/
+def freeVarsHom (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
+    GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S))
+      (coeff ι (addFreeVars Y S)) :=
+  freeProdMap ι (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp)
+
 /-- The inclusion of the variables induces a homomorphism from the coordinate group of a system
-to the coordinate group of the system with free variables. -/
+to the coordinate group of the system with free variables: the restriction of
+`G_{R(S)} ∗ F(Y) → G_{R(S')}` to the first factor. -/
 def inclFreeVarsHom (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
-    GHom (coeff ι S) (coeff ι (addFreeVars Y S)) :=
-  homOfMapsToWordMap ι (addFreeVars Y S) S (fun x => inr (FreeGroup.of (Sum.inl x)))
-    <| fun v hv => by
-      have h : wordMap ι (fun x : X => (inr (FreeGroup.of (Sum.inl x)) : GX G (X ⊕ Y))) v =
-          v ∘ Sum.inl := funext fun _ => by simp
-      exact h ▸ mem_V_addFreeVars.1 hv
+    GHom (coeff ι S) (coeff ι (addFreeVars Y S)) where
+  toMonoidHom := (freeVarsHom ι Y S : GX (CoordGroup ι S) Y →* CoordGroup ι (addFreeVars Y S)).comp
+    inl
+  map_coeff' := (freeVarsHom ι Y S).map_coeff
+
+@[simp]
+theorem freeVarsHom_inl (q : CoordGroup ι S) :
+    freeVarsHom ι Y S (inl q) = inclFreeVarsHom ι Y S q :=
+  (rfl)
 
 @[simp]
 theorem inclFreeVarsHom_mk (w : GX G X) :
     inclFreeVarsHom ι Y S (w : CoordGroup ι S) =
-      ((inclFreeVars G X Y w : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) :=
-  homOfMapsToWordMap_mk ..
+      ((inclFreeVars G X Y w : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) := by
+  simp [← freeVarsHom_inl, freeVarsHom]
 
 /-- The coordinate group of a system embeds in the coordinate group of the system with free
 variables. -/
@@ -341,45 +402,11 @@ theorem evalGHom_comp_inclFreeVarsHom {v : X ⊕ Y → H} (hv : v ∈ V ι (addF
       evalGHom (v ∘ Sum.inl) (mem_V_addFreeVars.1 hv) :=
   GHom.ext fun _ => by simp
 
-/-- The embedding `G_{R(S)} → G_{R(S')}` is compatible, through `G_S → G_S ∗ F(Y) ≃ G_{S'}`, with
-the projections `G_S → G_{R(S)}` and `G_{S'} → G_{R(S')}`. -/
-@[simp]
-theorem inclFreeVarsHom_toCoordGroup (q : SystemGroup G S) :
-    inclFreeVarsHom ι Y S (SystemGroup.toCoordGroup ι S q) =
-      SystemGroup.toCoordGroup ι (addFreeVars Y S)
-        ((SystemGroup.addFreeVarsEquiv Y S).symm (inl q)) := by
-  induction q using QuotientGroup.induction_on
-  simp
-
-/-- The `G`-homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` from the free product of the coordinate
-group of a system `S` with the free group on `Y` to the coordinate group of `S` with free
-variables `Y`. -/
-def freeVarsHom (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
-    GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S))
-      (coeff ι (addFreeVars Y S)) where
-  toMonoidHom := eval (inclFreeVarsHom ι Y S : CoordGroup ι S →* CoordGroup ι (addFreeVars Y S))
-    fun y => ((inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S))
-  map_coeff' g := by simp
-
-@[simp]
-theorem freeVarsHom_inl (q : CoordGroup ι S) :
-    freeVarsHom ι Y S (inl q) = inclFreeVarsHom ι Y S q := by
-  simp [freeVarsHom]
-
-private theorem freeVarsHom_toQuotientFreeVars (t : GX G (X ⊕ Y)) :
-    freeVarsHom ι Y S (toQuotientFreeVars Y (Rad ι S) t) =
-      (t : CoordGroup ι (addFreeVars Y S)) := by
-  have h : (freeVarsHom ι Y S : _ →* _).comp (toQuotientFreeVars Y (Rad ι S)) =
-      QuotientGroup.mk' (Rad ι (addFreeVars Y S)) :=
-    hom_ext (MonoidHom.ext fun _ => by simp [toQuotientFreeVars])
-      (FreeGroup.ext_hom _ _ fun x => by cases x <;> simp [toQuotientFreeVars, freeVarsHom])
-  exact DFunLike.congr_fun h t
-
 @[simp]
 theorem freeVarsHom_inr (w : FreeGroup Y) :
     freeVarsHom ι Y S (inr w) =
       ((inr (FreeGroup.map Sum.inr w) : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) := by
-  rw [← toQuotientFreeVars_inr_map (Rad ι S) w, freeVarsHom_toQuotientFreeVars]
+  simp [freeVarsHom]
 
 theorem freeVarsHom_inr_of (y : Y) :
     freeVarsHom ι Y S (inr (FreeGroup.of y)) =
@@ -388,9 +415,8 @@ theorem freeVarsHom_inr_of (y : Y) :
 
 /-- The homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` is surjective. -/
 theorem freeVarsHom_surjective (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
-    Function.Surjective (freeVarsHom ι Y S) := fun q => by
-  obtain ⟨t, rfl⟩ := QuotientGroup.mk_surjective q
-  exact ⟨_, freeVarsHom_toQuotientFreeVars t⟩
+    Function.Surjective (freeVarsHom ι Y S) :=
+  freeProdMap_surjective (GHom.ofMulEquiv_bijective _ _).2
 
 /-- Evaluation at a solution `v` of the system with free variables `Y` is, on
 `G_{R(S)} ∗ F(Y)`, evaluation at the restriction of `v` to `X` on `G_{R(S)}` and at the values of
@@ -415,10 +441,16 @@ theorem freeVarsHom_map_toCoordGroup (w : GX (SystemGroup G S) Y) :
           (.id _) w) =
       SystemGroup.toCoordGroup ι (addFreeVars Y S)
         ((SystemGroup.addFreeVarsEquiv Y S).symm w) := by
-  induction w using induction_on with
-  | inl q => simp
-  | inr w => simp
-  | mul x y hx hy => simp [hx, hy]
+  simp [freeVarsHom]
+
+/-- The embedding `G_{R(S)} → G_{R(S')}` is compatible, through `G_S → G_S ∗ F(Y) ≃ G_{S'}`, with
+the projections `G_S → G_{R(S)}` and `G_{S'} → G_{R(S')}`. -/
+@[simp]
+theorem inclFreeVarsHom_toCoordGroup (q : SystemGroup G S) :
+    inclFreeVarsHom ι Y S (SystemGroup.toCoordGroup ι S q) =
+      SystemGroup.toCoordGroup ι (addFreeVars Y S)
+        ((SystemGroup.addFreeVarsEquiv Y S).symm (inl q)) := by
+  simpa using freeVarsHom_map_toCoordGroup (ι := ι) (inl q)
 
 /-- The kernel of `G_{R(S)} ∗ F(Y) → G_{R(S')}` consists of the elements killed by every
 homomorphism `G_{R(S)} ∗ F(Y) → H` given by a solution of `S` in `H` and values of `Y` in `H`. -/
@@ -426,15 +458,12 @@ theorem freeVarsHom_eq_one_iff {w : GX (CoordGroup ι S) Y} :
     freeVarsHom ι Y S w = 1 ↔
       ∀ (v : X → H) (hv : v ∈ V ι S) (u : Y → H),
         eval (evalGHom v hv : CoordGroup ι S →* H) u w = 1 := by
-  obtain ⟨t, rfl⟩ := toQuotientFreeVars_surjective (Rad ι S) w
-  have key (v : X → H) (hv : v ∈ V ι S) (u : Y → H) :
-      eval (evalGHom v hv : CoordGroup ι S →* H) u (toQuotientFreeVars Y (Rad ι S) t) =
-        eval ι (Sum.elim v u) t := by
-    rw [eval_toQuotientFreeVars ι _ (by simp)]
-    simp
-  simp only [freeVarsHom_toQuotientFreeVars, QuotientGroup.eq_one_iff, mem_Rad, key]
-  refine ⟨fun h v hv u => h _ (mem_V_addFreeVars.2 (by simpa using hv)), fun h v hv => ?_⟩
-  simpa using h _ (mem_V_addFreeVars.1 hv) (v ∘ Sum.inr)
+  obtain ⟨t, ht⟩ := QuotientGroup.mk_surjective (freeVarsHom ι Y S w)
+  rw [← ht, QuotientGroup.eq_one_iff, mem_Rad]
+  refine ⟨fun h v hv u => ?_, fun h v hv => ?_⟩
+  · have hv' : Sum.elim v u ∈ V ι (addFreeVars Y S) := mem_V_addFreeVars.2 (by simpa using hv)
+    simpa [← evalGHom_mk hv', ht] using h _ hv'
+  · simpa [← evalGHom_mk hv, ht] using h _ (mem_V_addFreeVars.1 hv) (v ∘ Sum.inr)
 
 /-- The homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` is injective exactly when the homomorphisms
 `G_{R(S)} ∗ F(Y) → H` given by a solution of `S` in `H` and values of `Y` in `H` separate the
@@ -463,6 +492,18 @@ theorem freeVarsHom_injective_iff_isSeparatedBy (ι : G →* H) (Y : Type*) (S :
     refine ⟨_, (homEquiv ι S ψ).property, fun y => φ (inr (FreeGroup.of y)), ?_⟩
     rwa [hψ, hφ]
 
+/-- If every solution of `S` in `H` kills one of two nontrivial elements `a`, `b` of `G_{R(S)}`,
+then for nonempty `Y` the surjection `G_{R(S)} ∗ F(Y) → G_{R(S')}` is not injective: it kills the
+commutator `[a, z b z⁻¹]`, `z ∈ Y`, which is not trivial in the free product. -/
+theorem not_injective_freeVarsHom_of_forall_eq_one_or_eq_one [Nonempty Y] {a b : CoordGroup ι S}
+    (ha : a ≠ 1) (hb : b ≠ 1)
+    (h : ∀ (v : X → H) (hv : v ∈ V ι S), evalGHom v hv a = 1 ∨ evalGHom v hv b = 1) :
+    ¬Function.Injective (freeVarsHom ι Y S) := fun hinj => by
+  obtain ⟨y⟩ := ‹Nonempty Y›
+  refine commutatorElement_inl_conj_ne_one ha hb (FreeGroup.of_ne_one y)
+    ((injective_iff_map_eq_one _).1 hinj _ (freeVarsHom_eq_one_iff.2 fun v hv u => ?_))
+  obtain h | h := h v hv <;> simp [h]
+
 end CoordGroup
 
 /-! ### A system whose free variables are not free in the coordinate group -/
@@ -487,53 +528,27 @@ private theorem mem_V_commutatorSystem {v : Fin 2 → FreeGroup (Fin 2)} :
 private theorem eq_one_or_eq_one_of_mem_V_commutatorSystem {v : Fin 2 → FreeGroup (Fin 2)}
     (hv : v ∈ V (.id _) commutatorSystem) : v 0 = 1 ∨ v 1 = 1 := by
   obtain ⟨h₀, h₁, h⟩ := mem_V_commutatorSystem.1 hv
-  by_contra! hne
-  have hab : Commute (of (0 : Fin 2)) (of 1) :=
-    IsFreeGroup.commute_of_commute hne.2 (IsFreeGroup.commute_of_commute hne.1 h₀.symm h) h₁
-  exact absurd hab.eq (by decide)
-
-/-- The commutator `[x, z y z⁻¹]` in `F_{R(S)} ∗ ⟨z⟩`, for `S` the system
-`[x, a] = [y, b] = [x, y] = 1`. -/
-private abbrev commutatorWord :
-    GX (CoordGroup (.id (FreeGroup (Fin 2))) commutatorSystem) Unit :=
-  let x : GX (CoordGroup (.id (FreeGroup (Fin 2))) commutatorSystem) Unit :=
-    inl ((inr (of 0) : GX (FreeGroup (Fin 2)) (Fin 2)) : CoordGroup (.id _) commutatorSystem)
-  let y : GX (CoordGroup (.id (FreeGroup (Fin 2))) commutatorSystem) Unit :=
-    inl ((inr (of 1) : GX (FreeGroup (Fin 2)) (Fin 2)) : CoordGroup (.id _) commutatorSystem)
-  let z : GX (CoordGroup (.id (FreeGroup (Fin 2))) commutatorSystem) Unit := inr (of ())
-  ⁅x, z * y * z⁻¹⁆
-
-/-- The commutator `[x, z y z⁻¹]` is not trivial in `F_{R(S)} ∗ ⟨z⟩`: the solutions `(a, 1)` and
-`(1, b)` give a homomorphism to the permutations of four points under which `x` and `y` go to
-disjoint transpositions, and `z` can be sent to a transposition meeting both. -/
-private theorem commutatorWord_ne_one : commutatorWord ≠ 1 := by
-  have h₁ : ![of 0, 1] ∈ V (.id (FreeGroup (Fin 2))) commutatorSystem :=
-    mem_V_commutatorSystem.2 (by simp)
-  have h₂ : ![1, of 1] ∈ V (.id (FreeGroup (Fin 2))) commutatorSystem :=
-    mem_V_commutatorSystem.2 (by simp)
-  let ρ : FreeGroup (Fin 2) →* Equiv.Perm (Fin 2) := FreeGroup.lift fun _ => Equiv.swap 0 1
-  let κ : CoordGroup (.id (FreeGroup (Fin 2))) commutatorSystem →* Equiv.Perm (Fin 2 ⊕ Fin 2) :=
-    (Equiv.Perm.sumCongrHom (Fin 2) (Fin 2)).comp
-      ((ρ.comp (CoordGroup.evalGHom _ h₁).toMonoidHom).prod
-        (ρ.comp (CoordGroup.evalGHom _ h₂).toMonoidHom))
-  let t : Equiv.Perm (Fin 2 ⊕ Fin 2) := Equiv.swap (Sum.inl 0) (Sum.inr 0)
-  have hne : ⁅(Equiv.swap (Sum.inl 0) (Sum.inl 1) : Equiv.Perm (Fin 2 ⊕ Fin 2)),
-      t * Equiv.swap (Sum.inr 0) (Sum.inr 1) * t⁆ ≠ 1 := by decide
-  refine fun h => hne ?_
-  simpa [commutatorWord, κ, ρ, t] using congrArg (eval κ fun _ => t) h
+  exact IsFreeGroup.isCommTransitive.eq_one_or_eq_one_of_not_commute
+    (fun hab => absurd hab.eq (by decide)) h₀.symm h h₁
 
 /-- For the system `S = {[x, a], [y, b], [x, y]}` over the free group `F(a, b)` and one free
-variable `z`, the surjection `F_{R(S)} ∗ ⟨z⟩ → F_{R(S')}` is not injective. -/
+variable `z`, the surjection `F_{R(S)} ∗ ⟨z⟩ → F_{R(S')}` is not injective: every solution has
+`x = 1` or `y = 1`, and the solutions `(a, 1)` and `(1, b)` show that `x` and `y` are not trivial
+in `F_{R(S)}`. -/
 theorem CoordGroup.not_injective_freeVarsHom_commutator :
     let x : GX (FreeGroup (Fin 2)) (Fin 2) := inr (of 0)
     let y : GX (FreeGroup (Fin 2)) (Fin 2) := inr (of 1)
     ¬Function.Injective (CoordGroup.freeVarsHom (.id (FreeGroup (Fin 2))) Unit
       {⁅x, inl (of 0)⁆, ⁅y, inl (of 1)⁆, ⁅x, y⁆}) := by
-  intro _ _ h
-  refine commutatorWord_ne_one ((injective_iff_map_eq_one _).1 h _ ?_)
-  refine CoordGroup.freeVarsHom_eq_one_iff.2 fun v hv u => ?_
-  obtain h | h := eq_one_or_eq_one_of_mem_V_commutatorSystem hv <;>
-    simp [commutatorWord, h]
+  intro _ _
+  have h₁ : ![of 0, 1] ∈ V (.id (FreeGroup (Fin 2))) commutatorSystem :=
+    mem_V_commutatorSystem.2 (by simp)
+  have h₂ : ![1, of 1] ∈ V (.id (FreeGroup (Fin 2))) commutatorSystem :=
+    mem_V_commutatorSystem.2 (by simp)
+  exact CoordGroup.not_injective_freeVarsHom_of_forall_eq_one_or_eq_one
+    (CoordGroup.genericPoint_ne_one_iff (x := 0).2 ⟨_, h₁, by simp⟩)
+    (CoordGroup.genericPoint_ne_one_iff (x := 1).2 ⟨_, h₂, by simp⟩)
+    fun _ hv => by simpa using eq_one_or_eq_one_of_mem_V_commutatorSystem hv
 
 end Commutator
 

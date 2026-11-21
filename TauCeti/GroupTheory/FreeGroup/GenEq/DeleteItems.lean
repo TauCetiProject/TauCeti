@@ -168,6 +168,14 @@ theorem substituteVars_restoreWord (U : Fin n → List (A × Bool))
       FreeGroup.substituteVars (U ∘ Sᶜ.orderEmbOfFin rfl) w :=
   FreeGroup.substituteVars_map _ _ _
 
+/-- In the free group, a word read in all the items is the image of the word under the renaming
+`k ↦ Sᶜ.orderEmbOfFin rfl k` of the remaining items. -/
+theorem mk_restoreWord (w : List ((Fin Sᶜ.card ⊕ A) × Bool)) :
+    FreeGroup.mk (restoreWord S w) =
+      FreeGroup.map (Sum.map (Sᶜ.orderEmbOfFin rfl) id) (FreeGroup.mk w) := by
+  rw [FreeGroup.map.mk, restoreWord]
+  exact congrArg _ (List.map_congr_left fun _ _ => rfl)
+
 @[simp]
 theorem restoreEquation_fst
     (e : List ((Fin Sᶜ.card ⊕ A) × Bool) × List ((Fin Sᶜ.card ⊕ A) × Bool)) :
