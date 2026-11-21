@@ -21,14 +21,23 @@ and every index in the support of `g` is at least `i`. This decomposition suppor
 ordered monomials by removing one occurrence of their least variable.
 
 It also contains the residual step of the staircase argument: two nonnegative finitely supported
-functions of equal mass lose their smaller matched weight, leaving smaller supports; and the
+functions of equal mass lose their smaller matched weight, leaving smaller supports; the
 support characterization `Finsupp.single_one_add_single_one_le_iff` of division by a squarefree
-quadratic monomial `single u 1 + single v 1` (`u ≠ v`).
+quadratic monomial `single u 1 + single v 1` (`u ≠ v`); and reindexing along an equivalence
+(`Finsupp.equivMapDomain`), which preserves and reflects the componentwise order
+(`Finsupp.equivMapDomain_le_iff`).
 -/
 
 public section
 
 namespace Finsupp
+
+/-- Reindexing along an equivalence preserves and reflects the componentwise order. -/
+@[simp]
+theorem equivMapDomain_le_iff {α β M : Type*} [Zero M] [LE M] (e : α ≃ β) {x y : α →₀ M} :
+    equivMapDomain e x ≤ equivMapDomain e y ↔ x ≤ y := by
+  simp only [le_def]
+  exact e.forall_congr_right.symm.trans (forall_congr' fun a ↦ by simp)
 
 /-- For a natural-valued finitely supported function `f`, `single u 1 ≤ f` holds if and only if
 `u ∈ f.support`. -/

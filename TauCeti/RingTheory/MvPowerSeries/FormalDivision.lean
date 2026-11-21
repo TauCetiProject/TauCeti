@@ -29,7 +29,7 @@ with `α i + β ≺[ord] γ`. Existence (via `WellFounded.fix` on `ord.syn`) and
 ring `R` and variable type `σ`, specializing to `TauCeti.formalDivision` for `MonomialOrder.degLex`.
 
 When `σ` is finite and the coefficients form a field `K`, choosing generators of
-`I : Ideal (MvPowerSeries σ K)` at `ord.initialDiagramVertices I` yields:
+`I : Ideal (MvPowerSeries σ K)` at `(ord.initialDiagram I).diagramVertices` yields:
 
 * unique normal-form remainders (`MonomialOrder.existsUnique_sub_mem_and_mem_complementSubmodule`)
   and `IsCompl (I.restrictScalars K) (ord.complementSubmodule I)`
@@ -38,8 +38,8 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
   equivalence `ord.quotientEquivComplementSubmodule I` (via `Submodule.quotientEquivOfIsCompl`);
 * for each `v ∈ ord.initialDiagram I`, the normalized generator `ord.standardGenerator I v ∈ I`
   with initial exponent `v` and initial coefficient `1`, generating `I` over
-  `ord.initialDiagramVertices I`
-  (`MonomialOrder.span_image_standardGenerator_initialDiagramVertices`).
+  `(ord.initialDiagram I).diagramVertices`
+  (`MonomialOrder.span_image_standardGenerator_diagramVertices`).
 
 ## Main definitions
 
@@ -64,7 +64,7 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
   `MonomialOrder.snd_eq_normalRemainder_of_eq_sum_mul_add`: complement decomposition and agreement
   of formal-division remainders with `ord.normalRemainder I`.
 * `MonomialOrder.eq_standardGenerator_iff`, `MonomialOrder.initialExp_standardGenerator`,
-  `MonomialOrder.span_image_standardGenerator_initialDiagramVertices`: uniqueness, initial data,
+  `MonomialOrder.span_image_standardGenerator_diagramVertices`: uniqueness, initial data,
   and ideal generation for Hironaka's normalized vertex generators.
 
 ## References
@@ -633,10 +633,10 @@ private theorem exists_vertex_family (I : Ideal (MvPowerSeries σ K)) :
       (∀ i, IsLeast (ord.toSyn '' (F i).support) (ord.toSyn (α i))) ∧
       (∀ i, IsUnit (MvPowerSeries.coeff (α i) (F i))) ∧
       (∀ γ ∈ ord.initialDiagram I, ∃ i, α i ≤ γ) := by
-  let V := ord.initialDiagramVertices I
+  let V := (ord.initialDiagram I).diagramVertices
   let e : Fin V.card ≃ {v // v ∈ V} := (Finset.equivFin V).symm
   have hmem : ∀ i : Fin V.card, ∃ f ∈ I, f ≠ 0 ∧ ord.initialExp f = (e i : σ →₀ ℕ) :=
-    fun i ↦ ord.mem_initialDiagram_iff.mp (ord.initialDiagramVertices_subset I (e i).property)
+    fun i ↦ ord.mem_initialDiagram_iff.mp (Set.diagramVertices_subset _ (e i).property)
   choose F hFI hF0 hFexp using hmem
   refine ⟨V.card, F, fun i ↦ (e i : σ →₀ ℕ), hFI,
     fun i ↦ ord.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq.mpr ⟨hF0 i, hFexp i⟩,
@@ -644,8 +644,7 @@ private theorem exists_vertex_family (I : Ideal (MvPowerSeries σ K)) :
   · dsimp only
     rw [← hFexp i]
     exact (ord.coeff_initialExp_ne_zero (hF0 i)).isUnit
-  · obtain ⟨v, hvV, hle⟩ :=
-      (ord.mem_initialDiagram_iff_exists_mem_initialDiagramVertices_le).mp hγ
+  · obtain ⟨v, hvV, hle⟩ := Set.exists_mem_diagramVertices_le hγ
     exact ⟨e.symm ⟨v, hvV⟩, by simpa using hle⟩
 
 /-- Every power series `G : MvPowerSeries σ K` is congruent modulo `I` to a unique series `R'`
@@ -942,16 +941,17 @@ theorem isLeast_toSyn_standardGenerator {I : Ideal (MvPowerSeries σ K)} {v : σ
     ⟨ord.standardGenerator_ne_zero hv, ord.initialExp_standardGenerator hv⟩
 
 /-- **Bierstone–Milman Corollary 3.19**: the finite set of normalized vertex generators
-`ord.standardGenerator I v` for `v ∈ ord.initialDiagramVertices I` generates `I`. -/
-theorem span_image_standardGenerator_initialDiagramVertices (I : Ideal (MvPowerSeries σ K)) :
-    Ideal.span (ord.standardGenerator I '' (ord.initialDiagramVertices I : Set (σ →₀ ℕ))) = I := by
+`ord.standardGenerator I v` for `v ∈ (ord.initialDiagram I).diagramVertices` generates `I`. -/
+theorem span_image_standardGenerator_diagramVertices (I : Ideal (MvPowerSeries σ K)) :
+    Ideal.span
+      (ord.standardGenerator I '' ((ord.initialDiagram I).diagramVertices : Set (σ →₀ ℕ))) = I := by
   rw [← Set.range_domRestrict]
   refine ord.span_range_eq_of_forall_mem_initialDiagram_exists_le_of_divisionRing
-    (α := fun v : ord.initialDiagramVertices I ↦ (v : σ →₀ ℕ))
+    (α := fun v : (ord.initialDiagram I).diagramVertices ↦ (v : σ →₀ ℕ))
     (fun v ↦ ord.standardGenerator_mem I v)
-    (fun v ↦ ord.isLeast_toSyn_standardGenerator (ord.initialDiagramVertices_subset I v.property))
+    (fun v ↦ ord.isLeast_toSyn_standardGenerator (Set.diagramVertices_subset _ v.property))
     fun γ hγ ↦ ?_
-  obtain ⟨v, hvV, hle⟩ := (ord.mem_initialDiagram_iff_exists_mem_initialDiagramVertices_le).mp hγ
+  obtain ⟨v, hvV, hle⟩ := Set.exists_mem_diagramVertices_le hγ
   exact ⟨⟨v, hvV⟩, hle⟩
 
 end Field
