@@ -58,7 +58,8 @@ theorem orientedUnitNormal_eq_frameVelocityCoordinates
     intro i j
     fin_cases i <;> fin_cases j <;> simp [hor, hunit]
   have hvel := curveVelocity_eq_frameVelocityCoordinates ho
-    (ho.linearIndependent.span_eq_top_of_card_eq_finrank (by simpa using this.out.symm)).ge
+    ((ho.linearIndependent.span_eq_top_of_card_eq_finrank (by simpa using this.out.symm)).ge
+      Submodule.mem_top)
   have hJ : (o.orientationAt (γ t)).rightAngleRotation (s 1 (γ t)) = -s 0 (γ t) := by
     rw [hor, (o.orientationAt (γ t)).rightAngleRotation_rightAngleRotation]
   have hJv : (o.orientationAt (γ t)).rightAngleRotation (curveVelocity I γ t) =

@@ -58,22 +58,25 @@ theorem rightAngleRotation_tangentSpace_congr
   subst hp hv
   rfl
 
+/-- On an oriented Riemannian surface, the volume form evaluated on a pair `![v₀, v₁]` is the
+area form `ω(v₀, v₁)` of the oriented tangent plane. -/
+theorem riemannianVolumeForm_eq_areaForm (o : Manifold.Orientation I M (Fin 2)) {x : M}
+    (v₀ v₁ : TangentSpace I x) :
+    riemannianVolumeForm o x ![v₀, v₁] =
+      (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).areaForm v₀ v₁) := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply, (o.orientationAt x).areaForm_to_volumeForm]
+
 /-- A pair of unit tangent vectors `(v₀, v₁)` satisfies `v₁ = J v₀` exactly when it has
 oriented area one, `vol(v₀, v₁) = 1`. -/
 theorem eq_rightAngleRotation_iff_riemannianVolumeForm_eq_one
-    (o : Manifold.Orientation I M (Fin 2)) {x : M} {v : Fin 2 → TangentSpace I x}
-    (h₀ : ‖v 0‖ = 1) (h₁ : ‖v 1‖ = 1) :
-    v 1 = (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).rightAngleRotation (v 0)) ↔
-      riemannianVolumeForm o x v = 1 := by
+    (o : Manifold.Orientation I M (Fin 2)) {x : M} {v₀ v₁ : TangentSpace I x}
+    (h₀ : ‖v₀‖ = 1) (h₁ : ‖v₁‖ = 1) :
+    v₁ = (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).rightAngleRotation v₀) ↔
+      riemannianVolumeForm o x ![v₀, v₁] = 1 := by
   let := o.fact_finrank_tangentSpace x
-  have hvol : riemannianVolumeForm o x v =
-      inner ℝ ((o.orientationAt x).rightAngleRotation (v 0)) (v 1) := by
-    rw [riemannianVolumeForm_apply, (o.orientationAt x).inner_rightAngleRotation_left,
-      (o.orientationAt x).areaForm_to_volumeForm]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  rw [hvol, inner_eq_one_iff_of_norm_eq_one (by simpa using h₀) h₁, eq_comm]
+  rw [o.riemannianVolumeForm_eq_areaForm, ← (o.orientationAt x).inner_rightAngleRotation_left,
+    inner_eq_one_iff_of_norm_eq_one (by simpa using h₀) h₁, eq_comm]
 
 variable {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (TangentSpace I : M → Type _)]
@@ -112,10 +115,7 @@ theorem contMDiffAt_rightAngleRotation (o : Manifold.Orientation I M (Fin 2))
     have hscalar := (contMDiffAt_totalSpace_iff.mp heval).2
     convert hscalar using 1
     funext y
-    dsimp only [Φ]
-    let := o.fact_finrank_tangentSpace y
-    rw [riemannianVolumeForm_apply, ← (o.orientationAt y).areaForm_to_volumeForm]
-    rfl
+    exact (o.riemannianVolumeForm_eq_areaForm _ _).symm
   exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦
     congrArg (TotalSpace.mk' E y) (hJ y))
 

@@ -16,10 +16,12 @@ public import Mathlib.Topology.Path
 
 For a pair of tangent fields `s = (s₀, s₁)` and a curve `γ` in a Riemannian manifold, the complex
 number `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` is the coordinate of the velocity `γ'(t)` in the frame
-(`TauCeti.Manifold.frameVelocityCoordinates`). When `s` is orthonormal and spanning at `γ t`, it
-determines the velocity, `γ' = Re z • s₀ + Im z • s₁`, and has the norm of the velocity, so it
-vanishes only where the velocity does. It is periodic along a periodic curve, continuous along a
-`C¹` curve for a continuous metric, and `C^k` along a `C^(k+1)` curve for a `C^k` frame and metric.
+(`TauCeti.Manifold.frameVelocityCoordinates`). When `s` is orthonormal at `γ t` and its span
+there contains the velocity, it determines the velocity, `γ' = Re z • s₀ + Im z • s₁`, and has the
+norm of the velocity, so it vanishes exactly where the velocity does. It is periodic along a
+periodic curve, continuous along a `C¹` curve for a continuous metric and tangent fields continuous
+on a set containing the curve, and `C^k` along a `C^(k+1)` curve for a `C^k` metric and tangent
+fields `C^k` on such a set.
 
 For a regular periodic `C¹` curve inside the domain of a frame orthonormal along it, the unit
 coordinates `z / ‖z‖` form a loop in the unit circle `Circle`, the unit tangent read in the frame
@@ -30,6 +32,8 @@ angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
 
 * `TauCeti.Manifold.curveVelocity_eq_frameVelocityCoordinates`: reconstruction of the velocity.
 * `TauCeti.Manifold.norm_frameVelocityCoordinates`: the coordinates have the norm of the velocity.
+* `TauCeti.Manifold.frameVelocityCoordinates_eq_zero_iff`: the coordinates vanish exactly at
+  stationary points.
 * `TauCeti.Manifold.periodic_frameVelocityCoordinates`: periodicity along periodic curves.
 * `TauCeti.Manifold.continuous_frameVelocityCoordinates`: continuity along `C¹` curves.
 * `TauCeti.Manifold.contDiff_frameVelocityCoordinates`: `C^k` regularity along `C^(k+1)` curves.
@@ -72,16 +76,19 @@ theorem frameVelocityCoordinates_im (s : Fin 2 → Π x : M, TangentSpace I x) (
     (t : ℝ) : (frameVelocityCoordinates s γ t).im = inner ℝ (s 1 (γ t)) (curveVelocity I γ t) :=
   (rfl)
 
-/-- A pair orthonormal and spanning at `γ t` recovers the velocity from its complex coordinates:
-`γ' = Re z • s₀ + Im z • s₁`. For a local frame, spanning is `IsLocalFrameOn.generating`. -/
+/-- A pair orthonormal at `γ t` whose span contains the velocity recovers the velocity from its
+complex coordinates: `γ' = Re z • s₀ + Im z • s₁`. For a local frame, the span condition follows
+from `IsLocalFrameOn.generating`. -/
 theorem curveVelocity_eq_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
     {γ : ℝ → M} {t : ℝ} (ho : Orthonormal ℝ (fun i ↦ s i (γ t)))
-    (hsp : ⊤ ≤ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
+    (hsp : curveVelocity I γ t ∈ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
     curveVelocity I γ t = (frameVelocityCoordinates s γ t).re • s 0 (γ t) +
       (frameVelocityCoordinates s γ t).im • s 1 (γ t) := by
-  simpa only [Fin.sum_univ_two, OrthonormalBasis.coe_mk, frameVelocityCoordinates_re,
-    frameVelocityCoordinates_im] using
-    ((OrthonormalBasis.mk ho hsp).sum_repr' (curveVelocity I γ t)).symm
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).mp hsp
+  have hc' (i : Fin 2) : inner ℝ (s i (γ t)) (curveVelocity I γ t) = c i := by
+    rw [← hc, ho.inner_right_fintype]
+  rw [frameVelocityCoordinates_re, frameVelocityCoordinates_im, hc' 0, hc' 1, ← hc,
+    Fin.sum_univ_two]
 
 /-- Zero velocity has zero complex coordinates in any pair of tangent fields. -/
 @[simp]
@@ -90,26 +97,25 @@ theorem frameVelocityCoordinates_eq_zero_of_curveVelocity_eq_zero
     (hv : curveVelocity I γ t = 0) : frameVelocityCoordinates s γ t = 0 := by
   apply Complex.ext <;> simp [frameVelocityCoordinates, hv]
 
-/-- In a pair orthonormal and spanning at `γ t`, the complex coordinates of the velocity have
-the norm of the velocity. -/
+/-- In a pair orthonormal at `γ t` whose span contains the velocity, the complex coordinates of
+the velocity have the norm of the velocity. -/
 theorem norm_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
     {γ : ℝ → M} {t : ℝ} (ho : Orthonormal ℝ (fun i ↦ s i (γ t)))
-    (hsp : ⊤ ≤ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
+    (hsp : curveVelocity I γ t ∈ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
     ‖frameVelocityCoordinates s γ t‖ = ‖curveVelocity I γ t‖ := by
   apply (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
-  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simpa only [Fin.sum_univ_two, OrthonormalBasis.coe_mk, Real.norm_eq_abs, sq_abs,
-    frameVelocityCoordinates_re, frameVelocityCoordinates_im, ← pow_two] using
-    (OrthonormalBasis.mk ho hsp).sum_sq_norm_inner_right (curveVelocity I γ t)
+  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, ← real_inner_self_eq_norm_sq]
+  nth_rw 1 [curveVelocity_eq_frameVelocityCoordinates ho hsp]
+  simp [inner_add_left, real_inner_smul_left]
 
-/-- In a pair orthonormal and spanning at `γ t`, the complex coordinates of a nonzero velocity
-are nonzero. -/
-theorem frameVelocityCoordinates_ne_zero {s : Fin 2 → Π x : M, TangentSpace I x}
+/-- In a pair orthonormal at `γ t` whose span contains the velocity, the complex coordinates of
+the velocity vanish exactly where the velocity does. -/
+@[simp]
+theorem frameVelocityCoordinates_eq_zero_iff {s : Fin 2 → Π x : M, TangentSpace I x}
     {γ : ℝ → M} {t : ℝ} (ho : Orthonormal ℝ (fun i ↦ s i (γ t)))
-    (hsp : ⊤ ≤ Submodule.span ℝ (range fun i ↦ s i (γ t))) (hv : curveVelocity I γ t ≠ 0) :
-    frameVelocityCoordinates s γ t ≠ 0 := by
-  rw [← norm_ne_zero_iff, norm_frameVelocityCoordinates ho hsp]
-  exact norm_ne_zero_iff.mpr hv
+    (hsp : curveVelocity I γ t ∈ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
+    frameVelocityCoordinates s γ t = 0 ↔ curveVelocity I γ t = 0 := by
+  rw [← norm_eq_zero, norm_frameVelocityCoordinates ho hsp, norm_eq_zero]
 
 /-- Along an `a`-periodic curve, the frame coordinates of the velocity are `a`-periodic. -/
 theorem periodic_frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace I x) {γ : ℝ → M}
@@ -159,7 +165,8 @@ theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
   have hz : Continuous z :=
     continuous_frameVelocityCoordinates (fun i ↦ (hs.contMDiffOn i).continuousOn) hγ hγu
   have hz0 (t : ℝ) : z t ≠ 0 :=
-    frameVelocityCoordinates_ne_zero (ho t) (hs.generating (hγu t)) (hne t)
+    (frameVelocityCoordinates_eq_zero_iff (ho t) (hs.generating (hγu t) Submodule.mem_top)).not.mpr
+      (hne t)
   let U (t : ℝ) : Circle := ⟨z t / (‖z t‖ : ℂ), by
     apply mem_sphere_zero_iff_norm.mpr
     rw [norm_div, Complex.norm_real, Real.norm_eq_abs, abs_norm]

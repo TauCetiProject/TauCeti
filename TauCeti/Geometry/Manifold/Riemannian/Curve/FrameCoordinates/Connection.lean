@@ -69,7 +69,8 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
           hs.coeff 1 (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) := by
     rw [alongCurve_pullback cov γ (s i) (hasMFDerivAt_curveVelocity hγ) (hframe i),
       real_inner_comm,
-      curveVelocity_eq_frameVelocityCoordinates (ho _ ht) (hs.generating ht)]
+      curveVelocity_eq_frameVelocityCoordinates (ho _ ht)
+        (hs.generating ht Submodule.mem_top)]
     simp [inner_add_left, real_inner_smul_left, ← hs.coeff_eq_inner ht (ho _ ht)]
   have h0 := hd 0
   have h1 := hd 1
