@@ -30,7 +30,8 @@ normal form of such forms.
 In the other direction, `LinearMap.BilinForm.toMatrix` reads a bilinear form in a basis as its
 Gram matrix. For a nondegenerate form, the Gram matrix in the `B`-dual basis is the inverse
 transpose of the Gram matrix in the original basis; for a symmetric form it is the inverse Gram
-matrix, which is how the dual of a lattice is described in coordinates. Likewise, the
+matrix, which is how the dual of a lattice is described in coordinates. The `B`-dual basis itself
+is obtained from the original basis by the inverse Gram matrix. Likewise, the
 coordinates of a vector are recovered from its pairings with the basis vectors through the inverse
 Gram matrix.
 
@@ -69,6 +70,8 @@ the diagonal condition remains necessary in characteristic two.
   basis is the inverse transpose of its Gram matrix in the original basis.
 * `LinearMap.BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix`: the Gram determinants of a
   nondegenerate form in a basis and in its `B`-dual basis are inverse to each other.
+* `LinearMap.BilinForm.dualBasis_apply_eq_sum_inv_toMatrix_smul`: the `B`-dual basis is obtained
+  from the basis by the inverse Gram matrix.
 * `LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply`: the coordinates of a
   vector in a basis are its pairings with the basis, contracted against the inverse Gram matrix.
 * `LinearMap.BilinForm.separatingLeft_of_toMatrix_mul_eq_smul`: over a domain, a form whose Gram
@@ -254,6 +257,22 @@ theorem det_toMatrix_dualBasis_mul_det_toMatrix (B : LinearMap.BilinForm K V) (h
     (b : Basis ι K V) : (toMatrix (B.dualBasis hB b) B).det * (toMatrix b B).det = 1 := by
   rw [toMatrix_dualBasis, det_nonsing_inv, det_transpose,
     Ring.inverse_mul_cancel _ (isUnit_iff_ne_zero.mpr ((nondegenerate_iff_det_ne_zero b).mp hB))]
+
+/-- **The dual basis through the inverse Gram matrix**: the `i`-th vector of the `B`-dual basis
+of `b` is `∑ⱼ (G⁻¹)ᵢⱼ bⱼ`, where `G = (B (b i) (b j))` is the Gram matrix of `B` in `b`. -/
+theorem dualBasis_apply_eq_sum_inv_toMatrix_smul (B : LinearMap.BilinForm K V)
+    (hB : B.Nondegenerate) (b : Basis ι K V) (i : ι) :
+    B.dualBasis hB b i = ∑ j, (toMatrix b B)⁻¹ i j • b j := by
+  have hdet : IsUnit (toMatrix b B).det :=
+    isUnit_iff_ne_zero.mpr ((nondegenerate_iff_det_ne_zero b).mp hB)
+  -- The family `i ↦ ∑ⱼ (G⁻¹)ᵢⱼ bⱼ` pairs with `b` as the dual basis does, since `G⁻¹ * G = 1`.
+  refine congrFun ((dualBasis_eq_iff hB b fun i ↦ ∑ j, (toMatrix b B)⁻¹ i j • b j).mpr
+    fun i l ↦ ?_) i
+  calc B (∑ j, (toMatrix b B)⁻¹ i j • b j) (b l) = ((toMatrix b B)⁻¹ * toMatrix b B) i l := by
+        simp [Matrix.mul_apply, toMatrix_apply]
+    _ = if l = i then 1 else 0 := by
+        rw [Matrix.nonsing_inv_mul _ hdet, Matrix.one_apply]
+        simp only [eq_comm]
 
 /-- **Coordinates from pairings.** For a nondegenerate bilinear form `B` and a basis `b`, the
 `k`-th coordinate of a vector `v` is `Σ_l B^(kl) B(b l, v)`, where `B^(kl)` is the inverse of the
