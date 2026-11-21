@@ -82,11 +82,12 @@ theorem existsUnique_mpullback_quotientMk_eq {α : SmoothForm I' M F k}
       (hπ.contMDiff.mdifferentiable (by simp))
       (fun g ↦ (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞)
         g).mdifferentiable (by simp))
-      (fun g ↦ funext fun x ↦ Quotient.sound ⟨g, rfl⟩) (fun x y hxy ↦ .inr ?_)
+      (fun g ↦ funext fun x ↦
+        Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit _ g)))
+      (fun x y hxy ↦
+        .inr (MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hxy.symm))))
       (fun x v j hj ↦ hvert x v j (by rwa [← ker_mfderiv_quotientMk]))
       fun g ↦ by simpa only [SmoothForm.coe_mpullback] using congrArg Subtype.val (hinv g)
-    obtain ⟨g, hg⟩ := Quotient.exact hxy.symm
-    exact ⟨g, hg⟩
   exact ⟨SmoothForm.descendedForm hπ Quotient.mk_surjective α hbasic,
     SmoothForm.mpullback_descendedForm, fun β hβ ↦ SmoothForm.eq_descendedForm_iff.2 hβ⟩
 
