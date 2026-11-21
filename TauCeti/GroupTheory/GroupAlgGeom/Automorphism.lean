@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Group.Subgroup.Ker
-import Mathlib.Algebra.BigOperators.Group.List.Basic
 import Mathlib.Algebra.Group.Subgroup.Pointwise
 import Mathlib.Algebra.Group.Submonoid.Membership
 import Mathlib.GroupTheory.FreeGroup.Reduce
@@ -435,16 +434,12 @@ private theorem elementaryAut_toSubmonoid_eq_closure :
         (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G))⁻¹ =
       ({φ : MulAut (GX G X) | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
         (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G)) := by
-    ext φ
-    simp only [Set.mem_inv, Set.mem_union, Set.mem_ofPred_eq, Set.mem_range]
-    constructor
-    · rintro (⟨x, a, b, ha, hb, h⟩ | ⟨x, h⟩)
-      · exact .inl ⟨x, a⁻¹, b⁻¹, inv_mem ha, inv_mem hb,
-          by rw [← transvection_inv ha hb, ← h, inv_inv]⟩
-      · exact .inr ⟨x, by rw [← invertVar_inv x, h, inv_inv]⟩
-    · rintro (⟨x, a, b, ha, hb, rfl⟩ | ⟨x, rfl⟩)
-      · exact .inl ⟨x, a⁻¹, b⁻¹, inv_mem ha, inv_mem hb, by rw [transvection_inv]⟩
-      · exact .inr ⟨x, by rw [invertVar_inv]⟩
+    refine Set.inv_eq_self_iff_inv_subset.mpr fun φ hφ => ?_
+    simp only [Set.mem_inv, Set.mem_union, Set.mem_ofPred_eq, Set.mem_range] at hφ ⊢
+    rcases hφ with ⟨x, a, b, ha, hb, h⟩ | ⟨x, h⟩
+    · exact .inl ⟨x, a⁻¹, b⁻¹, inv_mem ha, inv_mem hb,
+        by rw [← transvection_inv ha hb, ← h, inv_inv]⟩
+    · exact .inr ⟨x, by rw [← invertVar_inv x, h, inv_inv]⟩
   rw [elementaryAut_eq_closure, Subgroup.closure_toSubmonoid, hinv, Set.union_self]
 
 /-- Every elementary automorphism is a finite product of transvections and variable
@@ -463,22 +458,6 @@ theorem mem_elementaryAut_iff_exists_list {f : MulAut (GX G X)} :
   · simpa [Set.mem_union, Set.mem_ofPred_eq, Set.mem_range, eq_comm] using hfs φ hφ
   · simpa [Set.mem_union, Set.mem_ofPred_eq, Set.mem_range, eq_comm] using hfs φ hφ
 
-omit [DecidableEq X] in
-/-- Applying a finite product of `G`-automorphisms evaluates as a right fold: the rightmost
-factor acts first. -/
-theorem list_prod_apply (fs : List (MulAut (GX G X))) (w : GX G X) :
-    fs.prod w = fs.foldr (fun φ u => φ u) w := by
-  induction fs with
-  | nil => rfl
-  | cons φ fs ih => simp [ih]
-
-omit [DecidableEq X] in
-/-- Applying the inverse of a finite product of `G`-automorphisms applies the inverted factors
-in reverse order. -/
-theorem list_prod_inv_apply (fs : List (MulAut (GX G X))) (w : GX G X) :
-    (fs.prod)⁻¹ w = (fs.map (·⁻¹)).reverse.foldr (fun φ u => φ u) w := by
-  rw [List.prod_inv_reverse, list_prod_apply]
-
 /-- Elimination principle for `elementaryAut G X`: to prove a property of every elementary
 automorphism, it suffices to prove it for `1`, for every `transvection`, for every `invertVar`,
 and for products. -/
@@ -491,7 +470,7 @@ theorem elementaryAut_induction {motive : (f : MulAut (GX G X)) → f ∈ elemen
     (mul : ∀ f g (hf : f ∈ elementaryAut G X) (hg : g ∈ elementaryAut G X),
       motive f hf → motive g hg → motive (f * g) (mul_mem hf hg))
     {f : MulAut (GX G X)} (hf : f ∈ elementaryAut G X) : motive f hf := by
-  have hf' : f ∈ (elementaryAut G X).toSubmonoid := hf
+  have hf' : f ∈ (elementaryAut G X).toSubmonoid := (Subgroup.mem_toSubmonoid _ _).2 hf
   rw [elementaryAut_toSubmonoid_eq_closure] at hf'
   refine Submonoid.closure_induction (motive := fun g hg =>
     motive g (by rwa [← Subgroup.mem_toSubmonoid, elementaryAut_toSubmonoid_eq_closure]))

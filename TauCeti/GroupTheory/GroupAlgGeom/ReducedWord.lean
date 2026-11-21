@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.Submonoid.BigOperators
+import Mathlib.Data.List.TakeWhile
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.FreeGroup.Basic
 
@@ -211,26 +212,33 @@ theorem countVar_flatten (x : X) (L : List (List (G ⊕ X × Bool))) :
   | nil => simp
   | cons l L ih => simp [ih]
 
-theorem le_countVar_flatten {L : List (List (G ⊕ X × Bool))} {l : List (G ⊕ X × Bool)}
-    (hl : l ∈ L) (x : X) : countVar x l ≤ countVar x L.flatten := by
-  classical
-  simp_rw [countVar_eq_countP]
-  exact (List.sublist_flatten_of_mem hl).countP_le
-
 /-- A word in which `x` occurs splits at its first letter `x^{±1}`. -/
 theorem exists_split_of_countVar_pos {x : X} {l : List (G ⊕ X × Bool)} (h : 0 < countVar x l) :
     ∃ l₁ b l₂, l = l₁ ++ .inr (x, b) :: l₂ ∧ countVar x l₁ = 0 := by
-  induction l with
-  | nil => simp at h
-  | cons a t ih =>
+  classical
+  let p : G ⊕ X × Bool → Bool := fun a => a.elim (fun _ => true) (fun q => decide (q.1 ≠ x))
+  have hpre : countVar x (l.takeWhile p) = 0 := by
+    refine countVar_eq_zero.2 fun b hb => ?_
+    have hp := List.mem_takeWhile_imp hb
+    simp [p] at hp
+  match hdrop : l.dropWhile p with
+  | [] =>
+    have hsplit := List.takeWhile_append_dropWhile (p := p) (l := l)
+    rw [hdrop, List.append_nil] at hsplit
+    rw [hsplit] at hpre
+    omega
+  | a :: l₂ =>
+    have ha : p a = false := by
+      have hw : l.dropWhile p ≠ [] := by simp [hdrop]
+      simpa [hdrop] using List.head_dropWhile_not p hw
     rcases a with g | ⟨y, b⟩
-    · obtain ⟨l₁, b', l₂, rfl, h₀⟩ := ih (by simpa using h)
-      exact ⟨.inl g :: l₁, b', l₂, rfl, by simp [h₀]⟩
-    · by_cases hyx : y = x
-      · subst hyx
-        exact ⟨[], b, t, rfl, by simp⟩
-      · obtain ⟨l₁, b', l₂, rfl, h₀⟩ := ih (by simpa [hyx] using h)
-        exact ⟨.inr (y, b) :: l₁, b', l₂, rfl, by simp [hyx, h₀]⟩
+    · simp [p] at ha
+    · have hy : y = x := by simpa [p] using ha
+      subst hy
+      refine ⟨l.takeWhile p, b, l₂, ?_, hpre⟩
+      have hsplit := List.takeWhile_append_dropWhile (p := p) (l := l)
+      rw [hdrop] at hsplit
+      exact hsplit.symm
 
 /-- A word in which `x` occurs at least twice splits at its first two letters `x^{±1}`. -/
 theorem exists_two_split_of_two_le_countVar {x : X} {l : List (G ⊕ X × Bool)}
@@ -253,10 +261,11 @@ theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l 
       exact ⟨g :: L, rfl⟩
     · simpa using h x
 
-/-- A signed variable letter `y^{±1}` with `y ≠ x` does not involve `x`. -/
-theorem letter_inr_mem_avoiding [Group G] [DecidableEq X] {x y : X} (hyx : y ≠ x) (b : Bool) :
-    letter (G := G) (.inr (y, b)) ∈ avoiding x := by
-  cases b <;> simp [hyx]
+/-- A signed variable letter `y^{±1}` does not involve `x` if and only if `y ≠ x`. -/
+@[simp]
+theorem letter_inr_mem_avoiding_iff [Group G] [DecidableEq X] {x y : X} {b : Bool} :
+    letter (G := G) (.inr (y, b)) ∈ avoiding x ↔ y ≠ x := by
+  cases b <;> simp
 
 /-- A variable that is not spelled in a word does not occur in its product. -/
 theorem prod_map_letter_mem_avoiding [Group G] [DecidableEq X] {x : X} {l : List (G ⊕ X × Bool)}
@@ -264,7 +273,7 @@ theorem prod_map_letter_mem_avoiding [Group G] [DecidableEq X] {x : X} {l : List
   list_prod_mem <| List.forall_mem_map.2 fun
     | .inl g, _ => by simp
     | .inr (y, b), hm =>
-      letter_inr_mem_avoiding (by rintro rfl; exact countVar_eq_zero.1 h b hm) b
+      letter_inr_mem_avoiding_iff.2 (by rintro rfl; exact countVar_eq_zero.1 h b hm)
 
 end CountVar
 

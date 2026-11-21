@@ -378,9 +378,9 @@ theorem eval_congr (ι : G →* H) {w : GX G X} {v v' : X → H}
     refine list_prod_mem <| List.forall_mem_map.2 fun a ha => ?_
     rcases a with g | ⟨x, b⟩
     · simp
-    · have hx : x ∈ s :=
-        show occurrences x w ≠ 0 from
-          occurrences_eq_countVar_reducedWord x w ▸ fun h0 => countVar_eq_zero.1 h0 b ha
+    · have hx : x ∈ s := by
+        rw [Set.mem_ofPred_eq, occurrences_eq_countVar_reducedWord]
+        exact fun h0 => countVar_eq_zero.1 h0 b ha
       cases b <;> simp [inr_of_mem_varSubgroup hx]
   exact eval_eq_eval_of_mem_varSubgroup hw ι h
 
@@ -533,6 +533,39 @@ theorem isStrictlyQuadratic_inv_mul_inl_mul_self (c : G) (z : X) :
 
 end CyclicReduction
 
+/-! ### Quadratic atoms -/
+
+section Atoms
+
+/-- The commutator atom `x⁻¹ y⁻¹ x y` (Mathlib's `⁅x⁻¹, y⁻¹⁆`) associated to a pair `(x, y)`. -/
+def commWord (p : X × X) : GX G X :=
+  ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2))⁻¹⁆
+
+theorem commWord_def (p : X × X) :
+    commWord (G := G) p = ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2))⁻¹⁆ :=
+  (rfl)
+
+/-- The square atom `x²` associated to a variable `x`. -/
+def sqWord (x : X) : GX G X :=
+  (inr (FreeGroup.of x) : GX G X) ^ 2
+
+theorem sqWord_def (x : X) : sqWord (G := G) x = (inr (FreeGroup.of x) : GX G X) ^ 2 :=
+  (rfl)
+
+/-- The conjugate atom `z⁻¹ c z` associated to a pair `(z, c)`. -/
+def conjWord (p : X × G) : GX G X :=
+  (inr (FreeGroup.of p.1) : GX G X)⁻¹ * inl p.2 * inr (FreeGroup.of p.1)
+
+theorem conjWord_def (p : X × G) :
+    conjWord p = (inr (FreeGroup.of p.1) : GX G X)⁻¹ * inl p.2 * inr (FreeGroup.of p.1) :=
+  (rfl)
+
+@[simp]
+theorem conjWord_one (z : X) : conjWord (z, (1 : G)) = 1 := by
+  simp [conjWord_def]
+
+end Atoms
+
 /-! ### Standard quadratic equations -/
 
 /-- The standard quadratic equations over `G` in the variables `X`, of types (1)–(4). The
@@ -557,18 +590,12 @@ namespace Standard
 /-- The atoms of a standard quadratic equation, in order: the commutators `[xᵢ, yᵢ]` or the
 squares `xᵢ²`, followed by the conjugates `zⱼ⁻¹ cⱼ zⱼ`. -/
 def atoms : Standard G X → List (GX G X)
-  | orientable _ _ x y _ => List.ofFn fun i => ⁅(inr (FreeGroup.of (x i)) : GX G X)⁻¹,
-        (inr (FreeGroup.of (y i)) : GX G X)⁻¹⁆
+  | orientable _ _ x y _ => List.ofFn fun i => commWord (x i, y i)
   | orientableCoeff _ _ _ x y z _ c _ _ _ =>
-    List.ofFn (fun i => ⁅(inr (FreeGroup.of (x i)) : GX G X)⁻¹,
-        (inr (FreeGroup.of (y i)) : GX G X)⁻¹⁆) ++
-      List.ofFn fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-        inr (FreeGroup.of (z j))
-  | nonorientable _ _ x _ => List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2
+    List.ofFn (fun i => commWord (x i, y i)) ++ List.ofFn fun j => conjWord (z j, c j)
+  | nonorientable _ _ x _ => List.ofFn fun i => sqWord (x i)
   | nonorientableCoeff _ _ _ x z _ c _ _ _ =>
-    List.ofFn (fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2) ++
-      List.ofFn fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-        inr (FreeGroup.of (z j))
+    List.ofFn (fun i => sqWord (x i)) ++ List.ofFn fun j => conjWord (z j, c j)
 
 /-- The constant coefficient `d` of a standard quadratic equation of type (2) or (4), and `1` for
 the types (1) and (3), which have no constant. -/
@@ -942,16 +969,15 @@ private def wordLetters : Standard G X → List (G ⊕ X × Bool)
 
 private theorem prod_wordLetters (S : Standard G X) :
     ((wordLetters S).map GX.letter).prod = S.toWord := by
-  have hcomm (a b : X) : ((commLetters (G := G) a b).map GX.letter).prod =
-      ⁅(inr (FreeGroup.of a) : GX G X)⁻¹, (inr (FreeGroup.of b))⁻¹⁆ := by
-    simp [commLetters, commutatorElement_def, mul_assoc]
-  have hsq (a : X) : ((sqLetters (G := G) a).map GX.letter).prod =
-      (inr (FreeGroup.of a) : GX G X) ^ 2 := by simp [sqLetters, pow_two]
-  have hconj (a : X) (c : G) : ((conjLetters a c).map GX.letter).prod =
-      (inr (FreeGroup.of a) : GX G X)⁻¹ * inl c * inr (FreeGroup.of a) := by
-    simp [conjLetters, mul_assoc]
+  have hcomm (a b : X) : ((commLetters (G := G) a b).map GX.letter).prod = commWord (a, b) := by
+    simp [commLetters, commWord_def, commutatorElement_def, mul_assoc]
+  have hsq (a : X) : ((sqLetters (G := G) a).map GX.letter).prod = sqWord a := by
+    simp [sqLetters, sqWord_def, pow_two]
+  have hconj (a : X) (c : G) : ((conjLetters a c).map GX.letter).prod = conjWord (a, c) := by
+    simp [conjLetters, conjWord_def, mul_assoc]
   cases S <;>
-    simp [wordLetters, atomBlocks, toWord_def, Function.comp_def, hcomm, hsq, hconj, mul_assoc]
+    simp [wordLetters, atomBlocks, toWord_def, Standard.atoms, Function.comp_def, hcomm, hsq,
+      hconj, mul_assoc]
 
 private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
     (f : Fin n → List (G ⊕ X × Bool)) (z : Fin m → X) (c : Fin m → G) {d : G}
@@ -1063,14 +1089,6 @@ theorem isCyclicallyReduced_reducedWord (S : Standard G X) :
   rwa [(GX.reducedWord_eq_iff hc.isReduced).2 (prod_wordLetters S)]
 
 open Classical in
-private theorem sum_ite_two {ι : Type*} [Fintype ι] {e : ι → X} (he : e.Injective) (x : X) :
-    (∑ s : ι, if e s = x then 2 else 0) = if x ∈ Set.range e then 2 else 0 := by
-  by_cases hx : x ∈ Set.range e
-  · obtain ⟨s, rfl⟩ := hx
-    simp [he.eq_iff]
-  · simp [hx, show ∀ s, e s ≠ x from fun s h => hx ⟨s, h⟩]
-
-open Classical in
 /-- Each variable occurs twice in a standard quadratic equation if it belongs to `S.vars`, and
 zero times otherwise. -/
 theorem occurrences_toWord (S : Standard G X) (x : X) :
@@ -1083,34 +1101,38 @@ theorem occurrences_toWord (S : Standard G X) (x : X) :
     by_cases hu : u = x <;> simp [sqLetters, hu]
   have hconj (u : X) (c : G) : GX.countVar x (conjLetters u c) = if u = x then 2 else 0 := by
     by_cases hu : u = x <;> simp [conjLetters, hu]
+  have hsum {ι : Type} [Fintype ι] {e : ι → X} (he : e.Injective) :
+      (∑ s : ι, if e s = x then 2 else 0) = if x ∈ Set.range e then 2 else 0 := by
+    rw [← Finset.sum_image (f := fun y => if y = x then 2 else 0) (fun _ _ _ _ h => he h),
+      Finset.sum_ite_eq']
+    exact ite_congr (by simp) (fun _ => rfl) (fun _ => rfl)
   rw [← prod_wordLetters S, (isCyclicallyReduced_wordLetters S).isReduced.occurrences_prod]
   cases S with
   | orientable n hn a b inj =>
-    have h := sum_ite_two inj x
-    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
     simp only [wordLetters, atomBlocks, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
-      Function.comp_def, hcomm, Finset.sum_add_distrib, vars]
-    convert h <;> congr!
-    exact congr_arg _ (Subsingleton.elim _ _)
+      Function.comp_def, hcomm, Finset.sum_add_distrib, vars_orientable]
+    have h := hsum inj
+    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
+    exact h
   | orientableCoeff n m hnm a b z inj c hc d hd =>
-    have h := sum_ite_two inj x
-    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, add_assoc] at h
     simp only [wordLetters, atomBlocks, GX.countVar_append, List.flatten_append,
       GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hcomm, hconj,
-      GX.countVar_cons_inl, GX.countVar_nil, Finset.sum_add_distrib, vars, add_zero, add_assoc]
-    convert h <;> congr!
-    exact congr_arg _ (Subsingleton.elim _ _)
-  | nonorientable n hn a inj =>
-    simpa [wordLetters, atomBlocks, Fin.sum_ofFn, Function.comp_def, hsq, vars] using
-      sum_ite_two inj x
-  | nonorientableCoeff n m hn a z inj c hc d hd =>
-    have h := sum_ite_two inj x
+      GX.countVar_cons_inl, GX.countVar_nil, Finset.sum_add_distrib, vars_orientableCoeff,
+      add_zero]
+    have h := hsum inj
     simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
+    exact h
+  | nonorientable n hn a inj =>
+    simp only [wordLetters, atomBlocks, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
+      Function.comp_def, hsq, vars_nonorientable]
+    exact hsum inj
+  | nonorientableCoeff n m hn a z inj c hc d hd =>
     simp only [wordLetters, atomBlocks, GX.countVar_append, List.flatten_append,
       GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hsq, hconj,
-      GX.countVar_cons_inl, GX.countVar_nil, vars, add_zero]
-    convert h <;> congr!
-    exact congr_arg _ (Subsingleton.elim _ _)
+      GX.countVar_cons_inl, GX.countVar_nil, vars_nonorientableCoeff, add_zero]
+    have h := hsum inj
+    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
+    exact h
 
 /-- Every variable in `S.vars` occurs twice in the standard quadratic equation `S`. -/
 theorem occurrences_toWord_of_mem_vars {S : Standard G X} {x : X} (hx : x ∈ S.vars) :
@@ -1151,13 +1173,20 @@ theorem mem_vars_iff_occurrences_toWord_ne_zero {S : Standard G X} {x : X} :
 /-- Every standard quadratic equation involves at least one variable. -/
 theorem vars_nonempty (S : Standard G X) : S.vars.Nonempty := by
   cases S with
-  | orientable n hn x _ _ => exact ⟨x ⟨0, hn⟩, ⟨.inl ⟨0, hn⟩, rfl⟩⟩
+  | orientable n hn x _ _ =>
+    rw [vars_orientable]
+    exact ⟨x ⟨0, hn⟩, ⟨.inl ⟨0, hn⟩, rfl⟩⟩
   | orientableCoeff n m hnm x _ z _ _ _ _ _ =>
+    rw [vars_orientableCoeff]
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · exact ⟨z ⟨0, by omega⟩, ⟨.inr ⟨0, by omega⟩, rfl⟩⟩
     · exact ⟨x ⟨0, hn⟩, ⟨.inl (.inl ⟨0, hn⟩), rfl⟩⟩
-  | nonorientable n hn x _ => exact ⟨x ⟨0, hn⟩, ⟨⟨0, hn⟩, rfl⟩⟩
-  | nonorientableCoeff n _ hn x _ _ _ _ _ _ => exact ⟨x ⟨0, hn⟩, ⟨.inl ⟨0, hn⟩, rfl⟩⟩
+  | nonorientable n hn x _ =>
+    rw [vars_nonorientable]
+    exact ⟨x ⟨0, hn⟩, ⟨⟨0, hn⟩, rfl⟩⟩
+  | nonorientableCoeff n _ hn x _ _ _ _ _ _ =>
+    rw [vars_nonorientableCoeff]
+    exact ⟨x ⟨0, hn⟩, ⟨.inl ⟨0, hn⟩, rfl⟩⟩
 
 end IsQuadratic
 
@@ -1240,7 +1269,7 @@ theorem one_mem_V_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).
 /-- The trivial solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` is degenerate. -/
 theorem isDegenerate_one_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     (orientable n hn x y inj).IsDegenerate ι 1 :=
-  ⟨_, List.mem_ofFn.2 ⟨⟨0, hn⟩, rfl⟩, by simp [map_commutatorElement]⟩
+  ⟨_, List.mem_ofFn.2 ⟨⟨0, hn⟩, rfl⟩, by simp [commWord_def, map_commutatorElement]⟩
 
 /-- The trivial solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` is commutative. -/
 theorem isCommutative_one_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :

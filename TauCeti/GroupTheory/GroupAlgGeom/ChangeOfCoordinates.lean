@@ -384,15 +384,6 @@ theorem Rad_singleton_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
     Rad ι {w'} = (Rad ι {w}).map (φ : GX G X →* GX G Y) := by
   rw [← hw', Rad_singleton_conj, ← Set.image_singleton, Rad_image_mulEquiv ι φ hφ]
 
-/-- If an isomorphism `φ : G[X] ≃* G[Y]` fixing `inl c` and conjugation by `u` carry `w` to
-`inl c`, then `w` is conjugate in `G[X]` to `inl c`. -/
-theorem eq_conj_inl_of_conj_mulEquiv_eq_inl {c : G} (hφc : φ (inl c) = inl c)
-    (hw' : u * φ w * u⁻¹ = inl c) :
-    w = (φ.symm u)⁻¹ * inl c * ((φ.symm u)⁻¹)⁻¹ := by
-  calc w = φ.symm (u⁻¹ * (u * φ w * u⁻¹) * u) := by simp [mul_assoc]
-    _ = (φ.symm u)⁻¹ * inl c * ((φ.symm u)⁻¹)⁻¹ := by
-      rw [hw', map_mul, map_mul, map_inv, φ.symm_apply_eq.2 hφc.symm, inv_inv]
-
 namespace CoordGroup
 
 /-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` followed by conjugation `u * φ w * u⁻¹ = w'` induces an
