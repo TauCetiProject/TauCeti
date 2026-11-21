@@ -8,9 +8,9 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import Mathlib.Algebra.Group.Commutator
+import TauCeti.GroupTheory.Coprod.NormalForm
 import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Centralizer
-import Mathlib.Algebra.Group.End
 
 /-!
 # Systems of equations with free variables
@@ -523,6 +523,19 @@ def freeProdMap :
   map_coeff' g := by
     simpa [inlCoordMap_mk] using congrArg (SystemGroup.toCoordGroup ι T) (ψ.map_coeff g)
 
+/-- On `G_{R(S)}`, the induced homomorphism is `G_S → G_S ∗ F(Y) → G_T → G_{R(T)}`. -/
+@[simp]
+theorem freeProdMap_inl (w : GX G X) :
+    freeProdMap ι ψ (inl (w : CoordGroup ι S)) =
+      SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) := by
+  simp [freeProdMap, inlCoordMap_mk]
+
+/-- On `F(Y)`, the induced homomorphism is `F(Y) → G_S ∗ F(Y) → G_T → G_{R(T)}`. -/
+@[simp]
+theorem freeProdMap_inr (w : FreeGroup Y) :
+    freeProdMap ι ψ (inr w) = SystemGroup.toCoordGroup ι T (ψ (inr w)) := by
+  simp [freeProdMap]
+
 /-- The homomorphism of coordinate groups induced by `ψ : G_S ∗ F(Y) → G_T` is `ψ` on the classes
 of the elements of `G_S ∗ F(Y)`. -/
 @[simp]
@@ -534,8 +547,8 @@ theorem freeProdMap_map_toCoordGroup (w : GX (SystemGroup G S) Y) :
   induction w using induction_on with
   | inl q =>
     induction q using QuotientGroup.induction_on
-    simp [freeProdMap, inlCoordMap_mk]
-  | inr w => simp [freeProdMap]
+    simp
+  | inr w => simp
   | mul x y hx hy => simp only [map_mul, hx, hy]
 
 variable {ψ} in
@@ -555,13 +568,9 @@ theorem freeProdMap_addFreeVarsEquiv_symm :
   refine GHom.ext fun c => ?_
   induction c using induction_on with
   | inl q =>
-    induction q using QuotientGroup.induction_on with | H w => ?_
-    simpa using freeProdMap_map_toCoordGroup (ι := ι)
-      (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp)
-      (inl (w : SystemGroup G S))
-  | inr w =>
-    simpa using freeProdMap_map_toCoordGroup (ι := ι)
-      (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp) (inr w)
+    induction q using QuotientGroup.induction_on
+    simp
+  | inr w => simp
   | mul x y hx hy => simp only [map_mul, hx, hy]
 
 end CoordGroup
@@ -605,23 +614,15 @@ private abbrev commutatorWord :
   ⁅x, z * y * z⁻¹⁆
 
 /-- The commutator `[x, z y z⁻¹]` is not trivial in `F_{R(S)} ∗ ⟨z⟩`: the solutions `(a, 1)` and
-`(1, b)` give a homomorphism to the permutations of four points under which `x` and `y` go to
-disjoint transpositions, and `z` can be sent to a transposition meeting both. -/
+`(1, b)` show that `x` and `y` are not trivial in `F_{R(S)}`. -/
 private theorem commutatorWord_ne_one : commutatorWord ≠ 1 := by
   have h₁ : ![of 0, 1] ∈ V (.id (FreeGroup (Fin 2))) commutatorSystem :=
     mem_V_commutatorSystem.2 (by simp)
   have h₂ : ![1, of 1] ∈ V (.id (FreeGroup (Fin 2))) commutatorSystem :=
     mem_V_commutatorSystem.2 (by simp)
-  let ρ : FreeGroup (Fin 2) →* Equiv.Perm (Fin 2) := FreeGroup.lift fun _ => Equiv.swap 0 1
-  let κ : CoordGroup (.id (FreeGroup (Fin 2))) commutatorSystem →* Equiv.Perm (Fin 2 ⊕ Fin 2) :=
-    (Equiv.Perm.sumCongrHom (Fin 2) (Fin 2)).comp
-      ((ρ.comp (CoordGroup.evalGHom _ h₁).toMonoidHom).prod
-        (ρ.comp (CoordGroup.evalGHom _ h₂).toMonoidHom))
-  let t : Equiv.Perm (Fin 2 ⊕ Fin 2) := Equiv.swap (Sum.inl 0) (Sum.inr 0)
-  have hne : ⁅(Equiv.swap (Sum.inl 0) (Sum.inl 1) : Equiv.Perm (Fin 2 ⊕ Fin 2)),
-      t * Equiv.swap (Sum.inr 0) (Sum.inr 1) * t⁆ ≠ 1 := by decide
-  refine fun h => hne ?_
-  simpa [commutatorWord, κ, ρ, t] using congrArg (eval κ fun _ => t) h
+  refine Monoid.Coprod.commutatorElement_inl_conj_ne_one (fun h => ?_) (fun h => ?_) (of_ne_one _)
+  · simpa using congrArg (CoordGroup.evalGHom _ h₁) h
+  · simpa using congrArg (CoordGroup.evalGHom _ h₂) h
 
 /-- For the system `S = {[x, a], [y, b], [x, y]}` over the free group `F(a, b)` and one free
 variable `z`, the surjection `F_{R(S)} ∗ ⟨z⟩ → F_{R(S')}` is not injective. -/

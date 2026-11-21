@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.GenEq.FreeItems
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Kernel
 import Mathlib.GroupTheory.FreeGroup.Center
+import TauCeti.GroupTheory.Coprod.NormalForm
 import TauCeti.GroupTheory.GroupAlgGeom.SumVars
 
 /-!
@@ -352,10 +353,15 @@ private theorem kernelExample_mem_V₂ :
 private abbrev kernelExampleItem (i : Fin 12) : Fin #kernelExample.freeItemsᶜ :=
   Fin.cast kernelExample_card.symm i
 
-private theorem kernelExample_orderEmbOfFin_item (i : Fin 12) :
-    kernelExample.freeItemsᶜ.orderEmbOfFin rfl (kernelExampleItem i) = i.castSucc := by
+private theorem kernelExample_orderEmbOfFin_zero :
+    kernelExample.freeItemsᶜ.orderEmbOfFin rfl (kernelExampleItem 0) = 0 := by
   rw [kernelExample_orderEmbOfFin]
-  rfl
+  decide
+
+private theorem kernelExample_orderEmbOfFin_four :
+    kernelExample.freeItemsᶜ.orderEmbOfFin rfl (kernelExampleItem 4) = 4 := by
+  rw [kernelExample_orderEmbOfFin]
+  decide
 
 /-- The commutator `[h₀, z h₄ z⁻¹]` in `F_{R(\overline{Ω})} ∗ ⟨z⟩`, `z` the free item of the
 example. -/
@@ -384,32 +390,23 @@ private theorem freeVarsHom_kernelExampleCommutator :
   have hv' : Sum.elim v 1 ∘ e.symm ∈ V (.id _) kernelExample.toSystem :=
     mem_V_toSystem_iff_deleteFreeItems.2 (by simpa only [hext] using hv)
   obtain h | h := kernelExample_eq_one_or_eq_one hv'
-  · rw [← Fin.castSucc_zero, ← kernelExample_orderEmbOfFin_item, hext] at h
+  · rw [← kernelExample_orderEmbOfFin_zero, hext] at h
     simp [h]
-  · rw [show (4 : Fin 13) = (4 : Fin 12).castSucc from rfl, ← kernelExample_orderEmbOfFin_item,
-      hext] at h
+  · rw [← kernelExample_orderEmbOfFin_four, hext] at h
     simp [h]
 
 /-- The commutator `[h₀, z h₄ z⁻¹]` is not trivial: the points `(a, …, 1, …)` and `(1, …, b, …)`
-give a homomorphism to the permutations of four points under which `h₀` and `h₄` go to disjoint
-transpositions, and `z` can be sent to a transposition meeting both. -/
+show that `h₀` and `h₄` are not trivial in `F_{R(\overline{Ω})}`. -/
 private theorem kernelExampleCommutator_ne_one : kernelExampleCommutator ≠ 1 := by
   have hp₁ := mem_V_toSystem_iff_deleteFreeItems.1 kernelExample_mem_V₁
   have hp₂ := mem_V_toSystem_iff_deleteFreeItems.1 kernelExample_mem_V₂
-  let ρ : FreeGroup (Fin 2) →* Equiv.Perm (Fin 2) := FreeGroup.lift fun _ => Equiv.swap 0 1
-  let κ : kernelExample.deleteFreeItems.coordGroup →* Equiv.Perm (Fin 2 ⊕ Fin 2) :=
-    (Equiv.Perm.sumCongrHom (Fin 2) (Fin 2)).comp
-      ((ρ.comp (CoordGroup.evalGHom _ hp₁).toMonoidHom).prod
-        (ρ.comp (CoordGroup.evalGHom _ hp₂).toMonoidHom))
-  let t : Equiv.Perm (Fin 2 ⊕ Fin 2) := Equiv.swap (Sum.inl 0) (Sum.inr 0)
-  have hne : ⁅(Equiv.swap (Sum.inl 0) (Sum.inl 1) : Equiv.Perm (Fin 2 ⊕ Fin 2)),
-      t * Equiv.swap (Sum.inr 0) (Sum.inr 1) * t⁆ ≠ 1 := by decide
-  have h₀ : kernelExample.freeItemsᶜ.orderEmbOfFin rfl (kernelExampleItem 0) = 0 :=
-    kernelExample_orderEmbOfFin_item 0
-  have h₄ : kernelExample.freeItemsᶜ.orderEmbOfFin rfl (kernelExampleItem 4) = 4 :=
-    kernelExample_orderEmbOfFin_item 4
-  refine fun h => hne ?_
-  simpa [κ, ρ, t, h₀, h₄] using congrArg (eval κ fun _ => t) h
+  -- Passed to `simp` as hypotheses: as global lemmas they do not fire on the evaluated points.
+  have h₀ := kernelExample_orderEmbOfFin_zero
+  have h₄ := kernelExample_orderEmbOfFin_four
+  refine Monoid.Coprod.commutatorElement_inl_conj_ne_one (fun h => ?_) (fun h => ?_)
+    (FreeGroup.of_ne_one _)
+  · simpa [h₀] using congrArg (CoordGroup.evalGHom _ hp₁) h
+  · simpa [h₄] using congrArg (CoordGroup.evalGHom _ hp₂) h
 
 /-- For the example `Ω`, its own kernel, with the free item `z = h₁₂`, the surjection
 `F_{R(\overline{Ω})} ∗ ⟨z⟩ → F_{R(Ω)}` (the coordinate group of `Ω` being that of `\overline{Ω}*`
