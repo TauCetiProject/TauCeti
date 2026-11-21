@@ -39,7 +39,9 @@ density preserves it, and, when the reference measure is positive on nonempty op
 positive on an open set and zero off its closure gives that closure as support. A measure is
 absolutely continuous with respect to itself weighted by an almost-everywhere positive density, and
 continuous nonnegative real densities presenting the same weighted measure against a sigma-finite
-measure that is positive on nonempty open sets are equal.
+measure that is positive on nonempty open sets are equal. Two densities presenting the same
+sigma-finite weighted measure agree almost everywhere against the reference measure, without
+requiring the reference measure itself to be sigma-finite.
 
 ## Main statements
 
@@ -74,6 +76,9 @@ measure that is positive on nonempty open sets are equal.
   does not change the mass of that set.
 * `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
   respect to itself weighted by an almost-everywhere positive real density.
+* `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`: two a.e. measurable densities
+  presenting the same sigma-finite weighted measure agree almost everywhere against the reference
+  measure.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure against a sigma-finite measure positive on nonempty open
   sets are equal pointwise.
@@ -319,6 +324,37 @@ theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α
     {w : α → ℝ} (hwm : AEMeasurable w μ) (hwpos : ∀ᵐ x ∂μ, 0 < w x) :
     μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
   withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
+
+/-- Two a.e. measurable `ℝ≥0∞`-valued densities define the same σ-finite weighted measure if and
+only if they agree almost everywhere with respect to the reference measure `μ`.
+
+Unlike Mathlib's `MeasureTheory.withDensity_eq_iff_of_sigmaFinite`, this requires σ-finiteness of
+the weighted measure `μ.withDensity f` rather than of the reference measure `μ` (for example, when
+`μ` is only s-finite and `μ.withDensity f` is finite). -/
+theorem withDensity_eq_iff_of_sigmaFinite_withDensity {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f g : α → ℝ≥0∞} [SigmaFinite (μ.withDensity f)]
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
+    μ.withDensity f = μ.withDensity g ↔ f =ᵐ[μ] g := by
+  refine ⟨fun hfg ↦ ?_, withDensity_congr_ae⟩
+  have hae_n : ∀ n, f =ᵐ[μ.restrict (spanningSets (μ.withDensity f) n)] g := fun n ↦ by
+    have hs : MeasurableSet (spanningSets (μ.withDensity f) n) :=
+      measurableSet_spanningSets (μ.withDensity f) n
+    have heq : (μ.restrict (spanningSets (μ.withDensity f) n)).withDensity f =
+        (μ.restrict (spanningSets (μ.withDensity f) n)).withDensity g := by
+      rw [← restrict_withDensity hs, ← restrict_withDensity hs]
+      exact congrArg (·.restrict (spanningSets (μ.withDensity f) n)) hfg
+    have hfin : ∫⁻ x, f x ∂μ.restrict (spanningSets (μ.withDensity f) n) ≠ ∞ := by
+      rw [← withDensity_apply f hs]
+      exact (measure_spanningSets_lt_top (μ.withDensity f) n).ne
+    exact (withDensity_eq_iff hf.restrict hg.restrict hfin).mp heq
+  rw [Filter.EventuallyEq, ae_iff]
+  have hcov : {x | ¬f x = g x} =
+      ⋃ n, {x | ¬f x = g x} ∩ spanningSets (μ.withDensity f) n := by
+    rw [← Set.inter_iUnion, iUnion_spanningSets, Set.inter_univ]
+  rw [hcov]
+  refine measure_iUnion_null fun n ↦ ?_
+  have h0 := ae_iff.mp (hae_n n)
+  rwa [Measure.restrict_apply' (measurableSet_spanningSets (μ.withDensity f) n)] at h0
 
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise, with
 respect to a σ-finite reference measure that is positive on nonempty open sets. -/

@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Statistics.Experiments.Density
 
 /-!
@@ -30,6 +31,8 @@ work with a dominating measure that is itself a mixture of the laws of the model
 * `TauCeti.tsum_mixtureWeight`: the weights sum to `1`.
 * `TauCeti.countableMixture_apply_eq_zero_iff`: a set is null for a mixture iff it is null for
   every component.
+* `TauCeti.map_countableMixture`, `TauCeti.countableMixture_compProd`: pushforwards and
+  composition products commute with countable mixtures.
 * `TauCeti.countableMixture_eq_withDensity`, `TauCeti.HasDensity.countableMixture`: a mixture of
   measures with densities has the mixed density.
 * `TauCeti.exists_absolutelyContinuous_countableMixture`: the Halmos–Savage lemma.
@@ -46,7 +49,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory Set
 
 open scoped ENNReal
 
@@ -106,12 +109,32 @@ instance isProbabilityMeasure_countableMixture [∀ n, IsProbabilityMeasure (P (
     IsProbabilityMeasure (countableMixture P θs) :=
   ⟨by simp [countableMixture_apply]⟩
 
+instance sFinite_countableMixture [∀ n, SFinite (P (θs n))] :
+    SFinite (countableMixture P θs) := by
+  rw [countableMixture_def]
+  infer_instance
+
 /-- The mixture of a constant sequence is the measure it repeats. -/
 @[simp]
 theorem countableMixture_const (P : Θ → Measure X) (θ : Θ) :
     countableMixture P (fun _ ↦ θ) = P θ := by
   ext s -
   rw [countableMixture_apply, ENNReal.tsum_mul_right, tsum_mixtureWeight, one_mul]
+
+/-- Pushforward commutes with taking a countable mixture. -/
+theorem map_countableMixture {Y : Type*} [MeasurableSpace Y] {φ : X → Y}
+    (hφ : AEMeasurable φ (countableMixture P θs)) :
+    (countableMixture P θs).map φ = countableMixture (fun θ ↦ (P θ).map φ) θs := by
+  rw [countableMixture_def, countableMixture_def, Measure.map_sum (by rwa [← countableMixture_def])]
+  exact Measure.sum_congr fun n ↦
+    Measure.map_smul _ (hφ.mono_ac (absolutelyContinuous_countableMixture n))
+
+/-- Composition product with an s-finite kernel distributes over a countable mixture on the left. -/
+theorem countableMixture_compProd {Y : Type*} [MeasurableSpace Y] [∀ n, SFinite (P (θs n))]
+    (κ : ProbabilityTheory.Kernel X Y) [ProbabilityTheory.IsSFiniteKernel κ] :
+    countableMixture P θs ⊗ₘ κ = countableMixture (fun θ ↦ P θ ⊗ₘ κ) θs := by
+  rw [countableMixture_def, countableMixture_def, Measure.compProd_sum_left]
+  exact Measure.sum_congr fun n ↦ Measure.compProd_smul_left _
 
 /-- A countable mixture of measures with densities `g n` in `ℝ≥0∞` has the mixed density
 `∑ₙ mixtureWeight n * g n`. -/
