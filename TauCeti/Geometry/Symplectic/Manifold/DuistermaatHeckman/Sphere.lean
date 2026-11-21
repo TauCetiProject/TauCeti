@@ -71,7 +71,8 @@ Duistermaat–Heckman measure.
   measure on `(0, 2π) × (-1, 1)`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`: the Duistermaat–Heckman measure of the
   height is `2π` times Lebesgue measure on `[-1, 1]`.
-* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`.
+* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`, and
+  `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`: that of `r • σ` is `4π |r|`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`: a constant moment map has
   Duistermaat–Heckman measure `4π δ_c`.
 
@@ -193,11 +194,11 @@ theorem mem_longitudeHeightStrip {a : ℝ} {y : ℝ²} :
 
 private theorem measurableEmbedding_subtype_val_longitudeHeightStrip (a : ℝ) :
     MeasurableEmbedding (Subtype.val : longitudeHeightStrip a → ℝ²) :=
-  MeasurableEmbedding.subtype_coe (longitudeHeightStrip a).isOpen.measurableSet
+  MeasurableEmbedding.subtypeVal (longitudeHeightStrip a).isOpen.measurableSet
 
 private theorem sq_lt_one_of_mem_longitudeHeightStrip {a : ℝ} (y : longitudeHeightStrip a) :
     (y : ℝ²) 1 ^ 2 < 1 :=
-  sq_lt_one_iff_abs_lt_one _ |>.2 (abs_lt.2 y.2.2)
+  sq_lt_one_iff_abs_lt_one _ |>.2 (abs_lt.2 y.property.2)
 
 /-- The **longitude–height parametrization** of the unit sphere,
 `(θ, h) ↦ (√(1 - h²) cos θ, √(1 - h²) sin θ, h)`, on the strip `(a, a + 2π) × (-1, 1)`. It is
@@ -221,7 +222,7 @@ theorem contMDiff_sphereLongitudeHeight (a : ℝ) :
     ContMDiff (𝓡 2) (𝓡 2) ∞ (sphereLongitudeHeight a) := by
   refine ContMDiff.codRestrict_sphere (fun y ↦ ?_) _
   exact ((contDiffAt_lhVec (sq_lt_one_of_mem_longitudeHeightStrip y)).contMDiffAt).comp y
-    contMDiff_subtype_val.contMDiffAt
+    contMDiff_subtypeVal.contMDiffAt
 
 /-- The longitude–height parametrization is injective: on a strip of width `2π`, the longitude is
 determined by its cosine and sine. -/
@@ -241,8 +242,8 @@ theorem sphereLongitudeHeight_injective (a : ℝ) : Function.Injective (sphereLo
     simp only [Matrix.cons_val_one, ← h1] at this
     exact mul_left_cancel₀ hr.ne' this
   obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.cos_sin_inj hcos hsin)
-  have hy := y.2.1
-  have hz := z.2.1
+  have hy := y.property.1
+  have hz := z.property.1
   have hk0 : k = 0 := by
     have hlt : |(k : ℝ)| < 1 := by
       rw [abs_lt]
@@ -274,7 +275,7 @@ private theorem mvfderiv_coe_mfderiv_sphereLongitudeHeight (a : ℝ) (y : longit
   have hcomp : ((↑) : S² → ℝ³) ∘ sphereLongitudeHeight a = lhVec ∘ Subtype.val :=
     funext (Set.val_codRestrict_apply _ _ _)
   rw [hcomp, mvfderiv_comp_apply_of_differentiableAt hd
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero), mvfderiv_apply_eq_mfderiv_apply,
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), mvfderiv_apply_eq_mfderiv_apply,
     Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply]
 
@@ -284,7 +285,7 @@ standard area form `dθ ∧ dh` of the `(θ, h)`-plane, the determinant form of 
 theorem mpullback_sphereLongitudeHeight_sphereAreaForm (a : ℝ) :
     SmoothForm.mpullback (sphereLongitudeHeight a) (contMDiff_sphereLongitudeHeight a)
         sphereAreaForm =
-      SmoothForm.mpullback (Subtype.val : longitudeHeightStrip a → ℝ²) contMDiff_subtype_val
+      SmoothForm.mpullback (Subtype.val : longitudeHeightStrip a → ℝ²) contMDiff_subtypeVal
         (SmoothForm.const (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.continuousDet) := by
   refine Subtype.ext (funext fun y ↦ ?_)
   ext v
@@ -332,7 +333,7 @@ private theorem mem_range_sphereLongitudeHeight_of_ne (x : S²)
     rcases hx with hx | hx
     · exact hx (congrArg Complex.re h)
     · exact hx (congrArg Complex.im h)
-  have hnorm := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
+  have hnorm := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.property
   -- `‖z‖ = √(1 - h²)` for the height `h` of `x`.
   have hz2 : ‖z‖ = √(1 - (x : ℝ³) 2 ^ 2) := by
     rw [Complex.norm_def, Complex.normSq_mk]
@@ -360,8 +361,8 @@ private theorem mem_range_sphereLongitudeHeight_of_ne (x : S²)
 private theorem mem_range_sphereLongitudeHeight_zero (y : longitudeHeightStrip (-π))
     (hy : (y : ℝ²) 0 ≠ 0) :
     sphereLongitudeHeight (-π) y ∈ range (sphereLongitudeHeight 0) := by
-  have h0 := y.2.1
-  have h1 := y.2.2
+  have h0 := y.property.1
+  have h1 := y.property.2
   rcases hy.lt_or_gt with hy | hy
   · refine ⟨⟨WithLp.toLp 2 ![(y : ℝ²) 0 + 2 * π, (y : ℝ²) 1],
       ⟨by simp only [cons_val_zero]; linarith [h0.1], by simp only [cons_val_zero]; linarith⟩, h1⟩,
@@ -378,7 +379,7 @@ private theorem liouvilleMeasure_poles :
   refine Set.Finite.of_finite_image (f := fun x : S² ↦ (x : ℝ³) 2)
     ((Set.finite_singleton 1).insert (-1) |>.subset ?_) ?_
   · rintro _ ⟨x, ⟨h0, h1⟩, rfl⟩
-    have hnorm := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
+    have hnorm := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.property
     rw [h0, h1] at hnorm
     have : ((x : ℝ³) 2 + 1) * ((x : ℝ³) 2 - 1) = 0 := by linear_combination hnorm
     rcases mul_eq_zero.1 this with h | h
@@ -451,7 +452,7 @@ private theorem map_restrict_longitudeHeightStrip_zero :
     Measure.restrict_apply_univ, Real.volume_Ioo, zero_add, sub_zero]
 
 private theorem measurable_height : Measurable fun x : S² ↦ (x : ℝ³) 2 :=
-  ((EuclideanSpace.proj (2 : Fin 3) : ℝ³ →L[ℝ] ℝ).continuous.comp continuous_subtype_val).measurable
+  ((EuclideanSpace.proj (2 : Fin 3) : ℝ³ →L[ℝ] ℝ).continuous.comp continuous_subtypeVal).measurable
 
 /-- **The Duistermaat–Heckman measure of the height on `S²` is `2π` times Lebesgue measure.** The
 height `h(x) = x₃` generates the rotations of the unit sphere about the vertical axis with its area
@@ -469,7 +470,7 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm_height :
     funext fun y ↦ by simp [coe_sphereLongitudeHeight]
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, liouvilleMeasure_sphereAreaForm,
     Measure.map_map measurable_height (measurableEmbedding_sphereLongitudeHeight 0).measurable,
-    hcomp, ← Measure.map_map h1 measurable_subtype_coe,
+    hcomp, ← Measure.map_map h1 measurable_subtypeVal,
     (measurableEmbedding_subtype_val_longitudeHeightStrip 0).map_comap,
     Subtype.range_coe, map_restrict_longitudeHeightStrip_zero,
     Measure.restrict_congr_set Ioo_ae_eq_Icc]
@@ -481,6 +482,15 @@ theorem liouvilleMeasure_sphereAreaForm_univ :
   rw [← SmoothTwoForm.duistermaatHeckmanMeasure_univ measurable_height,
     duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply, Measure.restrict_apply_univ,
     Real.volume_Icc, smul_eq_mul, ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  ring
+
+/-- **The area of a rescaled sphere.** Rescaling the area form of the unit sphere by `r` rescales
+its area `4π` by `|r|`. -/
+theorem liouvilleMeasure_smul_sphereAreaForm_univ (r : ℝ) :
+    (r • sphereAreaForm).liouvilleMeasure 1 univ = ENNReal.ofReal (4 * π * |r|) := by
+  rw [SmoothTwoForm.liouvilleMeasure_smul, smul_apply, liouvilleMeasure_sphereAreaForm_univ,
+    pow_one, smul_eq_mul, ← ENNReal.ofReal_mul (abs_nonneg r)]
   congr 1
   ring
 

@@ -225,7 +225,7 @@ lemma Scheme.Modules.section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).
         M.presheaf.map (homOfLE (X := (Spec A).Opens) hf).op t) : s = t := by
   refine TopCat.Presheaf.IsSheaf.section_ext M.isSheaf fun x hx ↦ ?_
   obtain ⟨_, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU : PrimeSpectrum.basicOpen f ≤ U⟩ :=
-    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.2
+    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.is_open'
   exact ⟨_, hfU, hxf, h f hfU⟩
 
 /-- On an affine scheme, a morphism of quasicoherent modules that is bijective on global

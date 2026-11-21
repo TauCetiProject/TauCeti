@@ -101,7 +101,7 @@ theorem coe_inducedProj_apply (hι : ∀ s, IsIdempotentElem (ι s)) (φ : X →
 @[simp]
 theorem inducedProj_coe (hι : ∀ s, IsIdempotentElem (ι s)) (φ : N.inducedModule) :
     N.inducedProj hι φ = φ :=
-  Subtype.ext <| funext <| mem_inducedModule_iff.mp φ.2
+  Subtype.ext <| funext <| mem_inducedModule_iff.mp φ.property
 
 /-- The projection retracts the inclusion of `A ⊠ N` into the row vectors. -/
 theorem inducedProj_comp_subtype (hι : ∀ s, IsIdempotentElem (ι s)) :
@@ -148,7 +148,7 @@ private theorem toRowVectors_mem (z : BalancedTensorProduct R A M N.inducedModul
   induction z using BalancedTensorProduct.induction_on with
   | ht m ψ =>
     refine mem_boxTensor_iff.mpr fun x => ?_
-    rw [toRowVectors_tmul, smul_smul, ← op_mul, mem_inducedModule_iff.mp ψ.2 x]
+    rw [toRowVectors_tmul, smul_smul, ← op_mul, mem_inducedModule_iff.mp ψ.property x]
   | ha z z' hz hz' => exact map_add (toRowVectors N M) z z' ▸ add_mem hz hz'
 
 /-- Tensoring with `M` the projection onto `A ⊠ N`, read on `X → M`. -/
@@ -191,7 +191,7 @@ noncomputable def balancedTensorEquiv (hι : ∀ s, IsIdempotentElem (ι s)) :
   map_smul' r z := Subtype.ext (map_smul _ r z)
   invFun φ := fromRowVectors N M hι φ
   left_inv := fromRowVectors_toRowVectors hι
-  right_inv φ := Subtype.ext (toRowVectors_fromRowVectors hι φ.2)
+  right_inv φ := Subtype.ext (toRowVectors_fromRowVectors hι φ.property)
 
 @[simp]
 theorem coe_balancedTensorEquiv_tmul (hι : ∀ s, IsIdempotentElem (ι s)) (m : M)

@@ -126,7 +126,7 @@ theorem isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic
     isNoetherianRing_of_ringEquiv _ (weightedPolynomialsEquiv isWeightFamily_one_weight)
   have hdense : DenseRange ((Completion.coeRingHom : S →+* Completion S).comp P.subtype) :=
     Completion.denseRange_coe.comp
-      (dense_weightedPolynomials isWeightFamily_one_weight).denseRange_val
+      (dense_weightedPolynomials isWeightFamily_one_weight).denseRange_subtypeVal
       (Completion.continuous_coe _)
   exact Ideal.isNoetherianRing_of_isAdicComplete_of_denseRange (I := J)
     (Ideal.FG.map (IsNoetherian.noetherian I) _)

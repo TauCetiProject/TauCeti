@@ -57,9 +57,11 @@ critical points (`TauCeti.ae_forall_surjective_fderiv_fderiv_sub`). Unlike the M
 derivative more than the Hessian is needed, because the source of `G` has one dimension more than
 its target.
 
-The remaining conditions of Cerf's theorem, that the third derivative along the kernel of a
-degenerate Hessian is nonzero and that the degenerate parameters are isolated, need perturbations
-by quadratic functions as well and are not treated here.
+The remaining conditions of Cerf's theorem concern the third derivative along the kernel of a
+degenerate Hessian. When it is nonzero, the degenerate critical point is isolated
+(`TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`, in
+`TauCeti.Analysis.Calculus.Morse.Cerf.Isolated`). That it is nonzero for a generic family needs
+perturbations by quadratic and cubic polynomials as well and is not treated here.
 
 ## Main declarations
 
@@ -67,6 +69,8 @@ by quadratic functions as well and are not treated here.
   vector is killed by both the Hessian and the parameter derivative of the differential.
 * `TauCeti.finrank_ker_fderiv_fderiv_le_one`: at a transverse point the Hessian has corank at most
   one.
+* `TauCeti.exists_eq_smul_of_fderiv_fderiv_apply_eq_zero`: at a transverse point the kernel of the
+  Hessian is spanned by any of its nonzero vectors.
 * `TauCeti.ae_forall_surjective_fderiv_fderiv_sub`: **for almost every linear functional `a`, the
   family `f t - a` is transverse at all of its critical points.**
 * `TauCeti.ae_forall_finrank_ker_fderiv_fderiv_sub_le_one`,
@@ -162,8 +166,26 @@ theorem finrank_ker_fderiv_fderiv_le_one (hf : ContDiffAt ℝ 2 (uncurry f) (t, 
   let K := LinearMap.ker (fderiv ℝ (fderiv ℝ (f t)) x).toLinearMap
   let w : StrongDual ℝ E := deriv (fun s ↦ fderiv ℝ (f s) x) t
   have hinj : Injective ((w : E →ₗ[ℝ] ℝ) ∘ₗ K.subtype) :=
-    (injective_iff_map_eq_zero _).2 fun v hv ↦ Subtype.ext (hk v v.2 hv)
+    (injective_iff_map_eq_zero _).2 fun v hv ↦ Subtype.ext (hk v v.property hv)
   simpa using LinearMap.finrank_le_finrank_of_injective hinj
+
+/-- **At a transverse point the kernel of the Hessian is the line spanned by any of its nonzero
+vectors.** If the derivative of the parametrized differential `(t, x) ↦ d(f t)_x` is onto at
+`(t, x)` and `v ≠ 0` lies in the kernel of the Hessian of `f t` at `x`, every vector of that
+kernel is a multiple of `v`. -/
+theorem exists_eq_smul_of_fderiv_fderiv_apply_eq_zero
+    (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
+    (hv0 : v ≠ 0) (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) {u : E}
+    (hu : fderiv ℝ (fderiv ℝ (f t)) x u = 0) : ∃ c : ℝ, u = c • v := by
+  set K := LinearMap.ker (fderiv ℝ (fderiv ℝ (f t)) x).toLinearMap
+  have hK : ℝ ∙ v = K := Submodule.eq_of_le_of_finrank_le
+    ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hv))
+    ((finrank_ker_fderiv_fderiv_le_one hf hs).trans (finrank_span_singleton hv0).ge)
+  have huK : u ∈ K := LinearMap.mem_ker.2 hu
+  rw [← hK] at huK
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 huK
+  exact ⟨c, hc.symm⟩
 
 /-! ### Genericity -/
 

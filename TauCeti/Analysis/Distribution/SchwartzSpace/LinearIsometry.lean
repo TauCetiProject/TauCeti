@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
-import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
@@ -18,17 +17,15 @@ Composition with `A` commutes with the Fourier transform and its inverse, `𝓕 
 (`SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv`). So it carries the
 Fourier multiplier with symbol `g` to the one with symbol `g ∘ A`; in particular it commutes with
 every Fourier multiplier whose symbol is invariant under `A`, such as the Bessel potentials
-`⟨ξ⟩ ^ s`. The Jacobian of `A⁻¹` has absolute value `1`, so the pushforward of Schwartz densities
-along a linear isometry `A` of `E` is composition with `A⁻¹`. These are the Schwartz-space inputs
-for the action of linear isometries on tempered distributions and on the Bessel-potential spaces
-`H^{s,p}`.
+`⟨ξ⟩ ^ s`. The same holds for tempered distributions
+(`TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`).
 
 ## Main declarations
 
 * `SchwartzMap.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv`: the
   Fourier multiplier with symbol `g ∘ A` applied to `f ∘ A` is `(T_g f) ∘ A`.
-* `SchwartzMap.pushforwardCLM_linearIsometryEquiv`: the pushforward of Schwartz densities along a
-  linear isometry `A` is composition with `A⁻¹`.
+* `ContinuousLinearEquiv.hasTemperateGrowth_comp_iff`: precomposing with a continuous linear
+  equivalence preserves and reflects temperate growth.
 
 ## References
 
@@ -44,24 +41,6 @@ open MeasureTheory FourierTransform
 open scoped SchwartzMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-namespace LinearEquiv
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W]
-
-/-- A linear equivalence out of a finite-dimensional space, as a bijection, has temperate
-growth. -/
-theorem hasTemperateGrowth_toEquiv (e : V ≃ₗ[ℝ] W) : (e.toEquiv : V → W).HasTemperateGrowth :=
-  e.toContinuousLinearEquiv.hasTemperateGrowth
-
-/-- The inverse of a linear equivalence out of a finite-dimensional space, as a bijection, has
-temperate growth. -/
-theorem hasTemperateGrowth_toEquiv_symm (e : V ≃ₗ[ℝ] W) :
-    (e.toEquiv.symm : W → V).HasTemperateGrowth :=
-  e.toContinuousLinearEquiv.symm.hasTemperateGrowth
-
-end LinearEquiv
 
 namespace ContinuousLinearEquiv
 
@@ -80,24 +59,6 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 namespace SchwartzMap
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The pushforward of Schwartz densities along a linear isometry `A` is composition with `A⁻¹`:
-the Jacobian factor `|det A⁻¹|` is `1`. -/
-@[simp]
-theorem pushforwardCLM_linearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) (f : 𝓢(E, F)) :
-    pushforwardCLM ℂ A.toLinearEquiv.toEquiv A.toLinearEquiv.hasTemperateGrowth_toEquiv
-        A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm f =
-      compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv f := by
-  ext y
-  have hdet : |(fderiv ℝ (A.toLinearEquiv.toEquiv.symm : E → E) y).det| = 1 := by
-    have hA : (A.toLinearEquiv.toEquiv.symm : E → E) = A.symm := by
-      ext x
-      simp
-    rw [hA, A.symm.fderiv, ContinuousLinearMap.det, ← LinearMap.normDet_eq_abs_det]
-    exact A.symm.toLinearIsometry.normDet_eq_one
-  rw [pushforwardCLM_apply, hdet]
-  simp
 
 /-- Composition with a linear isometry equivalence `A` intertwines Fourier multipliers, carrying
 the symbol `g` to `g ∘ A`: `T_{g ∘ A} (f ∘ A) = (T_g f) ∘ A`. In particular a Fourier multiplier

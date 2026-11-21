@@ -92,7 +92,7 @@ instance instCStarRing {𝕜 A : Type*} [DenselyNormedField 𝕜] [StarRing 𝕜
     [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [StarModule 𝕜 A] :
     CStarRing (LeftAction 𝕜 A) where
   norm_mul_self_le T := by
-    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
+    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.property
     have hmul : lift (NonUnitalAlgHom.Lmul 𝕜 A) (star u * u) =
         ((star T * T : LeftAction 𝕜 A) : A →L[𝕜] A) := by
       rw [map_mul, Subalgebra.coe_mul, ← coe_star_of_eq hu, hu]

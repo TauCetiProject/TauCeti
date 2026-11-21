@@ -174,7 +174,7 @@ theorem setLIntegral_riemannianVolume_image_eq_setLIntegral_normDet
         riemannianExp_riemannianLog hyU⟩
   have hTmeas : MeasurableSet T := by
     rw [hTeq, ← Subtype.image_preimage_coe]
-    exact (MeasurableEmbedding.subtype_coe h.isOpen_image.measurableSet).measurableSet_image.mpr
+    exact (MeasurableEmbedding.subtypeVal h.isOpen_image.measurableSet).measurableSet_image.mpr
       ((A.symm.continuous.comp_continuousOn h.continuousOn_riemannianLog).domRestrict.measurable hs)
   have hcov := Φ.setLIntegral_riemannianVolume_eq one_ne_zero b.toBasis (T.indicator φ)
   rw [hcoe, hsource, htarget, b.addHaar_eq_volume] at hcov

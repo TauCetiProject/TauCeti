@@ -108,9 +108,9 @@ theorem pairedWedge_wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n + 1)
     Submodule.coe_subtypeL, Submodule.coe_subtype, hpair]
   constructor
   · intro h v hv hvw
-    exact congrArg Subtype.val (h ⟨v, (hN v).2 hv⟩ fun w ↦ hvw w ((hN w).1 w.2))
+    exact congrArg Subtype.val (h ⟨v, (hN v).2 hv⟩ fun w ↦ hvw w ((hN w).1 w.property))
   · intro h v hv
-    exact Subtype.ext (h v ((hN v).1 v.2) fun w hw ↦ hv ⟨w, (hN w).2 hw⟩)
+    exact Subtype.ext (h v ((hN v).1 v.property) fun w hw ↦ hv ⟨w, (hN w).2 hw⟩)
 
 end ContinuousAlternatingMap
 
@@ -126,10 +126,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 one-form `α` is a contact form at `x` exactly when `α ∧ (dα)ⁿ` does not vanish at `x`. -/
 theorem isContactFormAt_iff_wedge_wedgePow_apply_ne_zero (hn : finrank ℝ E = 2 * n + 1)
     (α : SmoothForm I M ℝ 1) (x : M) :
-    IsContactFormAt α.1 x ↔ (wedge α ((mextDerivₗ I 1 α).wedgePow n)).1 x ≠ 0 := by
+    IsContactFormAt α.val x ↔ (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x ≠ 0 := by
   -- The degree `1 + 1` of `dα` is the degree `2` of the linear criterion only definitionally.
-  have key := ContinuousAlternatingMap.pairedWedge_wedgePow_ne_zero_iff hn (α.1 x)
-    (mextDeriv α.1 x)
+  have key := ContinuousAlternatingMap.pairedWedge_wedgePow_ne_zero_iff hn (α.val x)
+    (mextDeriv α.val x)
   rw [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply', wedgePow_apply,
     mextDerivₗ_apply]
   refine Iff.trans ?_ key.symm
@@ -145,7 +145,7 @@ theorem isContactFormAt_iff_wedge_wedgePow_apply_ne_zero (hn : finrank ℝ E = 2
 is a contact form exactly when `α ∧ (dα)ⁿ` vanishes nowhere. -/
 theorem isContactForm_iff_wedge_wedgePow_apply_ne_zero (hn : finrank ℝ E = 2 * n + 1)
     (α : SmoothForm I M ℝ 1) :
-    α.IsContactForm ↔ ∀ x, (wedge α ((mextDerivₗ I 1 α).wedgePow n)).1 x ≠ 0 := by
+    α.IsContactForm ↔ ∀ x, (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x ≠ 0 := by
   rw [isContactForm_iff_forall_isContactFormAt]
   exact forall_congr' (isContactFormAt_iff_wedge_wedgePow_apply_ne_zero hn α)
 
@@ -154,7 +154,7 @@ on which the volume form `α ∧ (dα)ⁿ` of a contact form `α` is positive. -
 def IsContactForm.volumeOrientation {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm)
     (hn : finrank ℝ E = 2 * n + 1) : Manifold.Orientation I M (Fin (1 + 2 * n)) :=
   Manifold.Orientation.ofTopForm (hn.trans (Nat.add_comm _ _))
-    (wedge α ((mextDerivₗ I 1 α).wedgePow n)).1
+    (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val
     ((wedge α ((mextDerivₗ I 1 α).wedgePow n)).isSmoothForm.of_le bot_le)
     ((isContactForm_iff_wedge_wedgePow_apply_ne_zero hn α).1 hα)
 
@@ -164,7 +164,7 @@ theorem IsContactForm.orientation_eq_orientationAt_volumeOrientation_iff
     {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) {x : M}
     (b : Basis (Fin (1 + 2 * n)) ℝ (TangentSpace I x)) :
     b.orientation = Manifold.Orientation.orientationAt (hα.volumeOrientation hn) x ↔
-      0 < (wedge α ((mextDerivₗ I 1 α).wedgePow n)).1 x b :=
+      0 < (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x b :=
   Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff _ _ _ b
 
 end SmoothForm

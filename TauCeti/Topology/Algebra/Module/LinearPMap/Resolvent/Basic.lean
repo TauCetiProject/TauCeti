@@ -370,7 +370,7 @@ theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_reso
       abel
     rw [hstep, smul_sub_apply_resolvent h (U y), hcancel y]
   · have hx : R (lambda • (x : X) - A x) = (x : X) :=
-      resolvent_smul_sub_apply h ⟨(x : X), x.2⟩
+      resolvent_smul_sub_apply h ⟨(x : X), x.property⟩
     have hstep : lambda • (x : X) - ((B : X →ₗ[𝕜] X) +ᵥ A) x
         = (lambda • (x : X) - A x) - B (R (lambda • (x : X) - A x)) := by
       rw [LinearPMap.vadd_apply, hx]

@@ -145,7 +145,7 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
       exact (congrArg (integerUnitsEquivProd (K := K)).symm hp).trans
         ((integerUnitsEquivProd (K := K)).symm_apply_apply u)
     obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
-      (integerUnitsEquivProd u).2.2
+      (integerUnitsEquivProd u).2.property
     rw [powMonoidHom_apply] at hz
     have hpow : TauCeti.teichmuller 𝒪[K] α ^ n =
         TauCeti.teichmuller 𝒪[K] (α ^ n) :=
@@ -254,7 +254,7 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
       (disjoint_rootsOfUnity_unitFiltration hn hdepth)
       ((mem_rootsOfUnity n _).mpr
         (by simpa using congrArg (fun y : U ↦ ((y : G) : Kˣ)) (MonoidHom.mem_ker.mp hx)))
-      x.2
+      x.property
     exact Subgroup.mem_bot.mpr (Subtype.ext (Subtype.ext h1))
   have hidxU : (powMonoidHom n : U →* U).range.index = Nat.card 𝓀[K] ^ v := by
     let f : U ≃* unitFiltration K (v + 1) :=

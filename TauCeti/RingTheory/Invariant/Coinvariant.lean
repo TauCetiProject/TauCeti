@@ -125,15 +125,15 @@ def coinvariantAlgHomEquiv (R Θ A B : Type*) [CommSemiring R] [CommRing A] [Rin
     (A ⧸ coinvariantIdeal Θ A →ₐ[R] B) ≃
       { f : A →ₐ[R] B // ∀ (θ : Θ) (a : A), f (θ • a) = f a } where
   toFun g := ⟨g.comp (Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A)), fun _ _ ↦ by simp⟩
-  invFun f := Ideal.Quotient.liftₐ (coinvariantIdeal Θ A) f.1 fun _ hx ↦
-    RingHom.mem_ker.mp ((coinvariantIdeal_le_ker_iff f.1.toRingHom).mpr f.2 hx)
+  invFun f := Ideal.Quotient.liftₐ (coinvariantIdeal Θ A) f.val fun _ hx ↦
+    RingHom.mem_ker.mp ((coinvariantIdeal_le_ker_iff f.val.toRingHom).mpr f.property hx)
   left_inv g := AlgHom.ext fun x ↦ by obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x; rfl
   right_inv _ := Subtype.ext <| AlgHom.ext fun _ ↦ rfl
 
 /-- The forward direction of `coinvariantAlgHomEquiv` precomposes with `mkₐ`. -/
 @[simp]
 theorem coe_coinvariantAlgHomEquiv_apply (g : A ⧸ coinvariantIdeal Θ A →ₐ[R] B) :
-    (coinvariantAlgHomEquiv R Θ A B g).1 =
+    (coinvariantAlgHomEquiv R Θ A B g).val =
       g.comp (Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A)) := by rfl
 
 /-- Evaluating `(coinvariantAlgHomEquiv R Θ A B).symm f` on `mk _ a` recovers `f.1 a`. -/
@@ -141,13 +141,13 @@ theorem coe_coinvariantAlgHomEquiv_apply (g : A ⧸ coinvariantIdeal Θ A →ₐ
 theorem coinvariantAlgHomEquiv_symm_mk
     (f : { f : A →ₐ[R] B // ∀ (θ : Θ) (a : A), f (θ • a) = f a }) (a : A) :
     (coinvariantAlgHomEquiv R Θ A B).symm f (Ideal.Quotient.mk (coinvariantIdeal Θ A) a) =
-      f.1 a := by rfl
+      f.val a := by rfl
 
 /-- Algebra-map quotient form of `coinvariantAlgHomEquiv_symm_mk`. -/
 theorem coinvariantAlgHomEquiv_symm_mkₐ
     (f : { f : A →ₐ[R] B // ∀ (θ : Θ) (a : A), f (θ • a) = f a }) (a : A) :
     (coinvariantAlgHomEquiv R Θ A B).symm f (Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A) a) =
-      f.1 a := by rfl
+      f.val a := by rfl
 
 /-- Precomposing with `mkₐ` identifies quotients maps with `Θ`-invariant maps. -/
 theorem range_comp_mkₐ_coinvariantIdeal (R Θ A B : Type*) [CommSemiring R] [CommRing A] [Ring B]

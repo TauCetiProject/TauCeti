@@ -44,6 +44,8 @@ Chris Birkbeck), with `CoprimeDet` and `coprimeDet_iff` from the `CoprimeDet` se
 ## Main results
 
 * `HeckeRing.GL2.mem_Delta0_iff`: membership, unfolded.
+* `HeckeRing.GL2.dvd_mul_apply_one_zero`, `HeckeRing.GL2.intCast_mul_apply_zero_zero`: the
+  congruence conditions `N ∣ c` and `a` a unit modulo `N` are preserved by products.
 * `HeckeRing.GL2.CoprimeDet`, `HeckeRing.GL2.coprimeDet_iff`: the elements whose integral
   representative has determinant coprime to `N`, and the fact that one witness decides it.
 * `HeckeRing.GL2.Delta0_le_posDetInt`: `Δ₀(N)` consists of integral matrices of positive
@@ -68,6 +70,20 @@ open scoped Pointwise MatrixGroups
 
 namespace HeckeRing.GL2
 
+/-- If the lower-left entries of two integral matrices are divisible by `N`, so is the
+lower-left entry of their product. -/
+theorem dvd_mul_apply_one_zero {N : ℕ} {A B : Matrix (Fin 2) (Fin 2) ℤ} (hA : (N : ℤ) ∣ A 1 0)
+    (hB : (N : ℤ) ∣ B 1 0) : (N : ℤ) ∣ (A * B) 1 0 := by
+  simp only [Matrix.mul_apply, Fin.sum_univ_two]
+  exact dvd_add (dvd_mul_of_dvd_left hA _) (dvd_mul_of_dvd_right hB _)
+
+/-- If the lower-left entry of `B` is divisible by `N`, the upper-left entry of `A * B` is
+`A 0 0 * B 0 0` modulo `N`. -/
+theorem intCast_mul_apply_zero_zero {N : ℕ} {A B : Matrix (Fin 2) (Fin 2) ℤ}
+    (hB : (N : ℤ) ∣ B 1 0) :
+    ((A * B) 0 0 : ZMod N) = (A 0 0 : ZMod N) * (B 0 0 : ZMod N) := by
+  simp [Matrix.mul_apply, Fin.sum_univ_two, (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hB]
+
 variable (N : ℕ)
 
 /-- `Δ₀(N)`: integral matrices of positive determinant that are upper-triangular modulo `N`
@@ -84,13 +100,8 @@ noncomputable def Delta0 : Submonoid (GL (Fin 2) ℚ) where
     · ext i j
       simp [hA, hB, Matrix.mul_apply, Matrix.map_apply]
     · simpa [Matrix.det_mul] using mul_pos hda hdb
-    · simp only [Matrix.mul_apply, Fin.sum_univ_two]
-      exact dvd_add (dvd_mul_of_dvd_left hAN _) (dvd_mul_of_dvd_right hBN _)
-    · -- the upper-left entry of the product is `a₁a₂` modulo `N`, since `c₂ ≡ 0`
-      have hentry : ((A * B) 0 0 : ZMod N) = (A 0 0 : ZMod N) * (B 0 0 : ZMod N) := by
-        simp [Matrix.mul_apply, Fin.sum_univ_two,
-          (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hBN]
-      rw [hentry]
+    · exact dvd_mul_apply_one_zero hAN hBN
+    · rw [intCast_mul_apply_zero_zero hBN]
       exact hAunit.mul hBunit
 
 /-- Membership in `Δ₀(N)`, unfolded. -/
@@ -130,19 +141,19 @@ must choose. The choice is harmless: `delta0Witness_eq` shows the witness is uni
 `Delta0UpperUnit_apply_val` states the resulting API against an arbitrary witness, so this
 definition never escapes into a consumer's proof obligation. -/
 private noncomputable def delta0Witness (g : Delta0 N) : Matrix (Fin 2) (Fin 2) ℤ :=
-  Classical.choose ((mem_Delta0_iff N).mp g.2)
+  Classical.choose ((mem_Delta0_iff N).mp g.property)
 
 private lemma delta0Witness_spec (g : Delta0 N) :
     ((g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
       (delta0Witness N g).map (Int.cast : ℤ → ℚ) :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).1
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).1
 
 private lemma delta0Witness_lowerLeft (g : Delta0 N) : (N : ℤ) ∣ delta0Witness N g 1 0 :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).2.2.1
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).2.2.1
 
 private lemma isUnit_delta0Witness_upperLeft (g : Delta0 N) :
     IsUnit ((delta0Witness N g 0 0 : ℤ) : ZMod N) :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).2.2.2
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).2.2.2
 
 /-- The integral witness of an element of `Δ₀(N)` is unique: the entrywise cast `ℤ → ℚ` is
 injective, so two witnesses for the same matrix agree. This is the same observation that lets
@@ -200,9 +211,8 @@ This is the right-hand half of the Hecke triple `Γ ≤ Δ₀(N) ≤ commensurat
 and it holds for every finite-index `Γ ≤ SL₂(ℤ)`: nothing about the subgroup enters beyond its
 index. Shimura's Lemma 3.10. -/
 lemma Delta0_le_commensurator_map (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteIndex] :
-    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid := by
-  rw [Subgroup.Commensurable.eq (commensurable_map_SLnZ 2 Γ)]
-  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
+    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid :=
+  (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator_map 2 Γ)
 
 /-- The gcd of the four entries, as a natural number. -/
 private def entryGCD (A : Matrix (Fin 2) (Fin 2) ℤ) : ℕ :=

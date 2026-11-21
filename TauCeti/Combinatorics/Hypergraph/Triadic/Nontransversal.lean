@@ -97,7 +97,7 @@ theorem sum_placementInjectionCount_of_not_transversal_le_of_card_le
   -- A placement is a map from the pattern vertices to the vertex cells.
   let e : PatternPlacement3 C F ≃ (Fin F.k → C.skeleton.vertexPart.parts) :=
     { toFun φ i := ⟨φ.vertexCell i, φ.vertexCell_mem i⟩
-      invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).2⟩ }
+      invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).property⟩ }
   calc ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, placementInjectionCount φ
       ≤ ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, ∏ i, #(φ.vertexCell i) :=
         sum_le_sum fun φ _ ↦ placementInjectionCount_le_prod φ

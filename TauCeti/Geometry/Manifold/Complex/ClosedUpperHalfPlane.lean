@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Analysis.Complex.ReImTopology
 public import TauCeti.Geometry.Manifold.Boundary.Basic
+public import TauCeti.Geometry.Manifold.Boundary.Model
+public import TauCeti.Analysis.Convex.Cone.StrictInward
 public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 
 /-!
@@ -35,6 +37,11 @@ The fold `ClosedUpperHalfPlane.fold` sends `z` to `re z + |im z| i`; it identifi
 `conj z` and agrees with the model inverse on the closed upper half-plane. An open partial
 homeomorphism of the closed upper half-plane satisfies `ClosedUpperHalfPlane.PreservesRealAxis`
 when it sends real points, and only those, to real points; smooth chart changes do so.
+The explicit constructor `ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace` transports any
+bordered atlas to the native real half-space model. Its preferred chart law fixes the chosen
+structure for boundary constructions. The strict inward cone at the real axis has positive
+imaginary component; the native boundary parametrization has range `Complex.imCLM.ker`.
+
 -/
 
 public section
@@ -83,7 +90,7 @@ def closedUpperHalfPlaneModel : ModelWithCorners ℝ ℂ ClosedUpperHalfPlane :=
         simp only [max_eq_left hz]
         exact Complex.re_add_im _ }
     rfl ((convex_Ici (0 : ℝ)).linear_preimage Complex.imCLM.toLinearMap)
-    continuous_subtype_val (by
+    continuous_subtypeVal (by
       -- The model constructor asks for continuity of a map into the subtype; this unfolds
       -- its bundled partial-equivalence inverse so `fun_prop` can see the clamped coordinate.
       change Continuous (fun z : ℂ ↦ (⟨(z.re : ℂ) + ((max z.im 0 : ℝ) : ℂ) * I,
@@ -175,9 +182,9 @@ def upperHalfPlaneChart : OpenPartialHomeomorph ClosedUpperHalfPlane ℂ where
       using hz
   left_inv' z _ := closedUpperHalfPlaneModel_symm_coe z
   right_inv' _ hz := coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)
-  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtype_val)
+  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtypeVal)
   open_target := isOpen_lt continuous_const continuous_im
-  continuousOn_toFun := continuous_subtype_val.continuousOn
+  continuousOn_toFun := continuous_subtypeVal.continuousOn
   continuousOn_invFun := closedUpperHalfPlaneModel.continuous_symm.continuousOn
 
 /-- `upperHalfPlaneChart` is the inclusion into `ℂ`. -/
@@ -277,14 +284,14 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph :
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph (z : ClosedUpperHalfPlane) :
-    (euclideanHalfSpaceHomeomorph z).1 =
+    (euclideanHalfSpaceHomeomorph z).val =
       closedUpperHalfPlaneCoordinates z := by
   rw [euclideanHalfSpaceHomeomorph]
   rfl
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph_symm (v : EuclideanHalfSpace 2) :
-    (euclideanHalfSpaceHomeomorph.symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.1 := by
+    (euclideanHalfSpaceHomeomorph.symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.val := by
   rw [euclideanHalfSpaceHomeomorph]
   rfl
 
@@ -302,7 +309,7 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
     -- The inherited half-space chart and subtype coercion reduce to their ambient model
     -- coordinates; `simp` has already exposed the chart composition, but cannot rewrite
     -- this dependent subtype expression to the public coefficient getter directly.
-    change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).1 =
+    change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).val =
       closedUpperHalfPlaneCoordinates z
     rw [coe_euclideanHalfSpaceHomeomorph]
     congr 1
@@ -324,14 +331,15 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceDiffeomorph (n : ℕ∞ω)
     (z : ClosedUpperHalfPlane) :
-    (euclideanHalfSpaceDiffeomorph n z).1 = closedUpperHalfPlaneCoordinates z := by
+    (euclideanHalfSpaceDiffeomorph n z).val = closedUpperHalfPlaneCoordinates z := by
   rw [euclideanHalfSpaceDiffeomorph]
   exact coe_euclideanHalfSpaceHomeomorph z
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceDiffeomorph_symm (n : ℕ∞ω)
     (v : EuclideanHalfSpace 2) :
-    ((euclideanHalfSpaceDiffeomorph n).symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.1 := by
+    ((euclideanHalfSpaceDiffeomorph n).symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.val
+        := by
   rw [euclideanHalfSpaceDiffeomorph]
   exact coe_euclideanHalfSpaceHomeomorph_symm v
 
@@ -354,20 +362,119 @@ theorem ClosedUpperHalfPlane.im_eq_zero_iff_of_mem_contDiffGroupoid {n : ℕ∞�
   simpa only [closedUpperHalfPlaneModel_isBoundaryPoint_iff] using
     ModelWithCorners.isBoundaryPoint_iff_of_mem_contDiffGroupoid he hn hz
 
+/-- At a boundary point, the strict inward cone of the closed upper half-plane consists
+of the vectors with positive imaginary part. -/
+theorem mem_strictInwardCone_closedUpperHalfPlaneModel_iff (z v : ℂ) (hz : z.im = 0) :
+    v ∈ strictInwardCone (range closedUpperHalfPlaneModel) z ↔ 0 < v.im := by
+  rw [closedUpperHalfPlaneModel.convex_range.mem_strictInwardCone_iff
+    (by simp [range_closedUpperHalfPlaneModel, hz])]
+  rw [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im]
+  simp only [mem_ofPred_eq, add_im, real_smul, mul_im, ofReal_re, ofReal_im,
+    zero_mul, add_zero, hz, zero_add]
+  constructor
+  · rintro ⟨t, ht, hv⟩
+    exact (mul_pos_iff_of_pos_left ht).1 hv
+  · intro hv
+    exact ⟨1, one_pos, by simpa using hv⟩
+
+/-- The native one-dimensional boundary parametrization reads as the real axis in complex
+coordinates. -/
+theorem closedUpperHalfPlaneCoordinates_symm_boundaryParam
+    (u : EuclideanSpace ℝ (Fin 1)) :
+    closedUpperHalfPlaneCoordinates.symm (euclideanHalfSpaceBoundaryParam 1 u) = (u 0 : ℂ) := by
+  rw [closedUpperHalfPlaneCoordinates_symm_apply, euclideanHalfSpaceBoundaryParam_apply_zero]
+  simp only [ofReal_zero, zero_mul, add_zero]
+  exact congrArg (fun t : ℝ ↦ (t : ℂ))
+    (euclideanHalfSpaceBoundaryParam_apply_succ u (0 : Fin 1))
+
+/-- The native real boundary parametrization in complex coordinates has real-axis range. -/
+theorem range_closedUpperHalfPlaneCoordinates_symm_boundaryParam :
+    LinearMap.range (closedUpperHalfPlaneCoordinates.symm.toLinearMap.comp
+      (euclideanHalfSpaceBoundaryParam 1).toLinearMap) = Complex.imCLM.ker := by
+  ext z
+  constructor
+  · rintro ⟨u, rfl⟩
+    -- Evaluate the linear-map composite and the kernel condition on this boundary vector.
+    change (closedUpperHalfPlaneCoordinates.symm (euclideanHalfSpaceBoundaryParam 1 u)).im = 0
+    rw [closedUpperHalfPlaneCoordinates_symm_boundaryParam]
+    simp
+  · intro hz
+    have hz' : z.im = 0 := by
+      simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Complex.imCLM_apply] using hz
+    refine ⟨WithLp.toLp 2 (fun _ : Fin 1 ↦ z.re), ?_⟩
+    -- Evaluate the composite on the chosen real-coordinate preimage.
+    change closedUpperHalfPlaneCoordinates.symm
+      (euclideanHalfSpaceBoundaryParam 1 (WithLp.toLp 2 (fun _ : Fin 1 ↦ z.re))) = z
+    rw [closedUpperHalfPlaneCoordinates_symm_boundaryParam]
+    exact Complex.ext rfl (by simpa using hz'.symm)
+
 /-- The native coordinate comparison, as a homeomorphism, is the underlying homeomorphism of the
 diffeomorphism `ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph n`. -/
 theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
     (euclideanHalfSpaceDiffeomorph n).toHomeomorph = euclideanHalfSpaceHomeomorph :=
   Homeomorph.ext fun z ↦ Subtype.ext (by simp)
 
+/-- The canonical native half-space charts of a closed-upper-half-plane charted space.
+The original charts are composed with the existing real coordinate homeomorphism. This is
+an explicitly chosen charted-space structure, rather than a global instance on every `M`. -/
+@[instance_reducible]
+def ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] :
+    ChartedSpace (EuclideanHalfSpace (1 + 1)) M :=
+  letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+  ChartedSpace.comp (EuclideanHalfSpace (1 + 1)) ClosedUpperHalfPlane M
+
+/-- The preferred chart of the native half-space transfer is the original chart followed by
+the existing real coordinate homeomorphism. -/
+theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x : M) :
+    letI := euclideanHalfSpaceChartedSpace M
+    chartAt (EuclideanHalfSpace (1 + 1)) x =
+      (chartAt ClosedUpperHalfPlane x).trans
+        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph := by
+  rfl
+
+/-- Evaluation of the preferred chart in the native half-space transfer. -/
+@[simp]
+theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_apply (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x y : M) :
+    letI := euclideanHalfSpaceChartedSpace M
+    chartAt (EuclideanHalfSpace (1 + 1)) x y =
+      euclideanHalfSpaceHomeomorph (chartAt ClosedUpperHalfPlane x y) := by
+  rw [chartAt_euclideanHalfSpace]
+  rfl
+
+/-- The inverse preferred chart undoes the half-space coordinate homeomorphism first. -/
+@[simp]
+theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_symm_apply (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x : M)
+    (v : EuclideanHalfSpace (1 + 1)) :
+    letI := euclideanHalfSpaceChartedSpace M
+    (chartAt (EuclideanHalfSpace (1 + 1)) x).symm v =
+      (chartAt ClosedUpperHalfPlane x).symm (euclideanHalfSpaceHomeomorph.symm v) := by
+  rw [chartAt_euclideanHalfSpace]
+  rfl
+
+/-- Membership in the transferred chart target is membership after undoing the coordinate
+homeomorphism, which is defined on the whole half-space. -/
+@[simp]
+theorem ClosedUpperHalfPlane.mem_chartAt_euclideanHalfSpace_target (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x : M)
+    (v : EuclideanHalfSpace (1 + 1)) :
+    letI := euclideanHalfSpaceChartedSpace M
+    v ∈ (chartAt (EuclideanHalfSpace (1 + 1)) x).target ↔
+      euclideanHalfSpaceHomeomorph.symm v ∈ (chartAt ClosedUpperHalfPlane x).target := by
+  rw [chartAt_euclideanHalfSpace]
+  simp
+
 /-- A `C^n` manifold modelled on the closed upper half-plane is a `C^n` manifold modelled on
 `𝓡∂ 2`, for its charts read in the native half-space coordinates `s + it ↦ (t, s)`. -/
 theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
     [IsManifold closedUpperHalfPlaneModel n M] :
-    letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-    letI := ChartedSpace.comp (EuclideanHalfSpace 2) ClosedUpperHalfPlane M
-    IsManifold (𝓡∂ 2) n M := by
+    letI := euclideanHalfSpaceChartedSpace M
+    IsManifold (𝓡∂ (1 + 1)) n M := by
+  let := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
   have h := (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
   rwa [toHomeomorph_euclideanHalfSpaceDiffeomorph] at h
 

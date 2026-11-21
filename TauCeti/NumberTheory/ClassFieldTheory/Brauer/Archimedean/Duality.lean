@@ -181,7 +181,8 @@ private theorem smul_kummerCoeff_congr_eq_neg {F L : Type*} [Field F] [Field L] 
   let u : (SeparableClosure L)ˣ := (y.toMul : rootsOfUnity n (SeparableClosure L))
   let uF : (SeparableClosure F)ˣ := Units.map e.separableClosureCongr.toRingHom.toMonoidHom u
   have huF : uF ∈ rootsOfUnity n (SeparableClosure F) :=
-    (mem_rootsOfUnity n uF).mpr (by rw [← map_pow, (mem_rootsOfUnity n u).mp y.toMul.2, map_one])
+    (mem_rootsOfUnity n uF).mpr
+        (by rw [← map_pow, (mem_rootsOfUnity n u).mp y.toMul.property, map_one])
   have hval := (smul_kummerCoeff_eq_neg_iff (e.absoluteGaloisGroupCongr g)
     (Additive.ofMul ⟨uF, huF⟩)).mp (hF _ hg' (Additive.ofMul ⟨uF, huF⟩))
   rw [smul_kummerCoeff_eq_neg_iff]
@@ -202,7 +203,7 @@ theorem smul_kummerCoeff_completion_eq_neg {K : Type*} [Field K] (w : InfinitePl
     (y.toMul : rootsOfUnity n (SeparableClosure w.Completion))
   have hz : ((u : SeparableClosure w.Completion) : AlgebraicClosure w.Completion) ^ n = 1 := by
     have hu : (u : SeparableClosure w.Completion) ^ n = 1 := by
-      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n u).mp y.toMul.2, Units.val_one]
+      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n u).mp y.toMul.property, Units.val_one]
     exact_mod_cast hu
   have hinv := fieldAbsoluteGaloisGroup_apply_eq_inv w hσ (NeZero.ne n) hz
   rw [absoluteGaloisGroupRestrictEquiv_symm_apply_coe] at hinv
