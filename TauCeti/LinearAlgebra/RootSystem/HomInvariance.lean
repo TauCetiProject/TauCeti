@@ -34,6 +34,9 @@ weight-space vectors.
 
 * `RootPairing.Hom.weightMap_mem_range_root_iff`: the weight map carries roots to roots and
   nothing else to a root.
+* `RootPairing.Hom.weightMap_mem_rootSpan` and `RootPairing.Hom.coweightMap_mem_corootSpan`:
+  the weight map carries the `S`-span of roots into that of the target, and the coweight map
+  carries the `S`-span of target coroots into that of the source.
 * `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
   which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
@@ -95,6 +98,25 @@ theorem pairingIn_indexEquiv (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra 
   let := f.isValuedIn S
   refine FaithfulSMul.algebraMap_injective S R ?_
   rw [algebraMap_pairingIn, algebraMap_pairingIn, f.pairing]
+
+/-- The weight map of a root-pairing homomorphism carries the `S`-span of the roots into the
+`S`-span of the target roots, for any scalar ring `S` compatible with `R`. -/
+theorem weightMap_mem_rootSpan {S : Type*} [CommRing S] [Module S M] [Module S M₂]
+    [LinearMap.CompatibleSMul M M₂ S R] (f : P.Hom P₂) {x : M} (hx : x ∈ P.rootSpan S) :
+    f.weightMap x ∈ P₂.rootSpan S :=
+  Submodule.mapsTo_span (f := f.weightMap.restrictScalars S) (by
+    rintro _ ⟨i, rfl⟩
+    exact ⟨f.indexEquiv i, (f.root_weightMap_apply P P₂ i).symm⟩) hx
+
+/-- The contravariant coweight map of a root-pairing homomorphism carries the `S`-span of the
+target coroots into the `S`-span of the source coroots, for any scalar ring `S` compatible with
+`R`. -/
+theorem coweightMap_mem_corootSpan {S : Type*} [CommRing S] [Module S N] [Module S N₂]
+    [LinearMap.CompatibleSMul N₂ N S R] (f : P.Hom P₂) {y : N₂} (hy : y ∈ P₂.corootSpan S) :
+    f.coweightMap y ∈ P.corootSpan S :=
+  Submodule.mapsTo_span (f := f.coweightMap.restrictScalars S) (by
+    rintro _ ⟨j, rfl⟩
+    exact ⟨f.indexEquiv.symm j, (f.coroot_coweightMap_apply P P₂ j).symm⟩) hy
 
 /-- The index bijection of a homomorphism of root pairings commutes with root reflections. -/
 @[simp]

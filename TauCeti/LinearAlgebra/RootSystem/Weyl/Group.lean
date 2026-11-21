@@ -30,6 +30,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.smul_eq_self_of_mem_ker_indexHom` and
+  `RootPairing.smul_eq_self_of_mem_ker_weylGroupToPerm` say an automorphism (in particular, a
+  Weyl-group element) fixing every root index fixes the root span pointwise.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
@@ -192,6 +195,25 @@ theorem weylGroupToPerm_injective_of_span_eq_top
 theorem weylGroupToPerm_injective
     [P.IsRootSystem] : Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective P).comp Subtype.val_injective
+
+/-- An automorphism in the kernel of `RootPairing.Equiv.indexHom` fixes every element of the root
+span `P.rootSpan R`. -/
+theorem smul_eq_self_of_mem_ker_indexHom {g : P.Aut}
+    (hg : g ∈ (Equiv.indexHom P).ker) {x : M} (hx : x ∈ P.rootSpan R) :
+    g • x = x :=
+  LinearMap.eqOn_span (f := g.weightMap) (g := LinearMap.id)
+    (by
+      rintro _ ⟨i, rfl⟩
+      rw [LinearMap.id_apply, Hom.root_weightMap_apply, ← Equiv.indexHom_apply,
+        MonoidHom.mem_ker.mp hg, _root_.Equiv.Perm.one_apply])
+    hx
+
+/-- A Weyl-group element in the kernel of `RootPairing.weylGroupToPerm` fixes every element of the
+root span `P.rootSpan R`. -/
+theorem smul_eq_self_of_mem_ker_weylGroupToPerm {k : P.weylGroup}
+    (hk : k ∈ P.weylGroupToPerm.ker) {x : M} (hx : x ∈ P.rootSpan R) :
+    k • x = x :=
+  P.smul_eq_self_of_mem_ker_indexHom hk hx
 
 /-- The Weyl-group permutation is the root-index equivalence of the underlying automorphism.
 Use this explicitly: `MonoidHom.domRestrict_apply` already simplifies its left-hand side. -/
