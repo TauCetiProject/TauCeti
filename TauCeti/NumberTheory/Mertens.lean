@@ -424,27 +424,38 @@ theorem tendsto_sum_primesLE_neg_log_one_sub_inv_sub_log_log :
     (Real.tendsto_log_atTop.inv_tendsto_atTop)).add_const Real.eulerMascheroniConstant
   simpa using h
 
+private theorem sum_Icc_two_vonMangoldt_div_mul_log (N : ℕ) :
+    ∑ n ∈ Icc 2 N, Λ n / ((n : ℝ) * Real.log n) =
+      ∑ n ∈ Icc 1 N, Λ n / ((n : ℝ) * Real.log n) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp
+  · rw [← insert_Icc_add_one_left_eq_Icc (Nat.one_le_iff_ne_zero.mpr hN), sum_insert (by simp)]
+    simp
+
+/-- At any prime power `p ^ k` (including `k = 0`, where both sides vanish by division by zero),
+`Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`. -/
+theorem vonMangoldt_div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    Λ (p ^ k) / (((p ^ k : ℕ) : ℝ) * Real.log ((p ^ k : ℕ) : ℝ)) =
+      ((p : ℝ)⁻¹) ^ k / (k : ℝ) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  have hp0 : (p : ℝ) ≠ 0 := mod_cast hp.ne_zero
+  have hk0 : (k : ℝ) ≠ 0 := mod_cast hk
+  have hlog : Real.log (p : ℝ) ≠ 0 := (Real.log_pos (mod_cast hp.one_lt)).ne'
+  rw [ArithmeticFunction.vonMangoldt_apply_pow hk, ArithmeticFunction.vonMangoldt_apply_prime hp,
+    Nat.cast_pow, Real.log_pow, inv_pow]
+  field_simp
+
 /-- Exact prime-power regrouping of the weighted von Mangoldt sum:
 `∑_{2 ≤ n ≤ N} Λ(n) / (n log n) = ∑_{p ≤ N} ∑_{1 ≤ k ≤ log_p N} 1 / (k p ^ k)`. -/
 theorem sum_Icc_vonMangoldt_div_mul_log_eq (N : ℕ) :
     ∑ n ∈ Icc 2 N, Λ n / (n * Real.log n) =
       ∑ p ∈ Nat.primesLE N, ∑ k ∈ Icc 1 (p.log N), 1 / ((k : ℝ) * (p : ℝ) ^ k) := by
-  have h12 : ∑ n ∈ Icc 2 N, Λ n / (n * Real.log n) =
-      ∑ n ∈ Icc 1 N, Λ n / (n * Real.log n) := by
-    rcases eq_or_ne N 0 with rfl | hN
-    · simp
-    · rw [← insert_Icc_add_one_left_eq_Icc (Nat.one_le_iff_ne_zero.mpr hN),
-        sum_insert (by simp)]
-      simp
-  rw [h12, Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log
+  rw [sum_Icc_two_vonMangoldt_div_mul_log, Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log
     (fun n hn ↦ by rw [ArithmeticFunction.vonMangoldt_eq_zero_iff.mpr hn, zero_div])]
-  refine sum_congr rfl fun p hp ↦ sum_congr rfl fun k hk ↦ ?_
-  have hp_prime := Nat.prime_of_mem_primesLE hp
-  have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.mp (mem_Icc.mp hk).1
-  have hlogp : Real.log p ≠ 0 := (Real.log_pos (mod_cast hp_prime.one_lt)).ne'
-  rw [ArithmeticFunction.vonMangoldt_apply_pow hk0,
-    ArithmeticFunction.vonMangoldt_apply_prime hp_prime, Nat.cast_pow, Real.log_pow]
-  field_simp [hlogp]
+  refine sum_congr rfl fun p hp ↦ sum_congr rfl fun k _ ↦ ?_
+  rw [vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp), inv_pow,
+    div_eq_mul_inv, div_eq_mul_inv, one_mul, mul_inv, mul_comm]
 
 /-- The weighted von Mangoldt sum never exceeds the logarithmic Euler-product sum up to `x`. -/
 theorem sum_Icc_vonMangoldt_div_mul_log_le_sum_primesLE_neg_log_one_sub_inv (x : ℝ) :
@@ -766,20 +777,6 @@ theorem exists_pos_prod_primesLE_filter_notMem_one_sub_inv_inv_bounds (T : Finse
 
 /-! ### Series of higher-prime-power reciprocals -/
 
-/-- At any prime power `p ^ k` (including `k = 0`, where both sides vanish by division by zero),
-`Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`. -/
-theorem vonMangoldt_div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
-    Λ (p ^ k) / (((p ^ k : ℕ) : ℝ) * Real.log ((p ^ k : ℕ) : ℝ)) =
-      ((p : ℝ)⁻¹) ^ k / (k : ℝ) := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  have hp0 : (p : ℝ) ≠ 0 := mod_cast hp.ne_zero
-  have hk0 : (k : ℝ) ≠ 0 := mod_cast hk
-  have hlog : Real.log (p : ℝ) ≠ 0 := (Real.log_pos (mod_cast hp.one_lt)).ne'
-  rw [ArithmeticFunction.vonMangoldt_apply_pow hk, ArithmeticFunction.vonMangoldt_apply_prime hp,
-    Nat.cast_pow, Real.log_pow, inv_pow]
-  field_simp
-
 /-- **Exact sum of the non-prime von Mangoldt reciprocal series.** Summing `Λ(n) / (n log n)` over
 non-prime `n : ℕ` (that is, `1 / (k p ^ k)` over prime powers `p ^ k` with `k ≥ 2`) converges to
 `γ - meisselMertensConstant`. -/
@@ -805,19 +802,13 @@ theorem hasSum_vonMangoldt_nonprime_div_mul_log :
       rw [mem_range] at hnR
       have hn0 : n = 0 := by simp only [mem_Icc, not_and, not_le] at hn; lia
       simp [f, hn0]
-    have h12 : ∑ n ∈ Icc 2 N, Λ n / ((n : ℝ) * Real.log n) =
-        ∑ n ∈ Icc 1 N, Λ n / ((n : ℝ) * Real.log n) := by
-      rcases eq_or_ne N 0 with rfl | hN
-      · simp
-      · rw [← insert_Icc_add_one_left_eq_Icc (Nat.one_le_iff_ne_zero.mpr hN),
-          sum_insert (by simp)]
-        simp
     have hprime_sum : ∑ n ∈ Icc 1 N with n.Prime, Λ n / ((n : ℝ) * Real.log n) =
         ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
       rw [← Nat.primesLE_eq_filter_Icc_one]
       refine sum_congr rfl fun p hp ↦ ?_
       simpa using vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp) 1
-    rw [hrange, h12, ← sum_filter_add_sum_filter_not (Icc 1 N) Nat.Prime f,
+    rw [hrange, sum_Icc_two_vonMangoldt_div_mul_log,
+      ← sum_filter_add_sum_filter_not (Icc 1 N) Nat.Prime f,
       ← sum_filter_add_sum_filter_not (Icc 1 N) Nat.Prime
         (fun n ↦ Λ n / ((n : ℝ) * Real.log n)), hprime_sum]
     have h1 : ∑ n ∈ Icc 1 N with n.Prime, f n = 0 :=

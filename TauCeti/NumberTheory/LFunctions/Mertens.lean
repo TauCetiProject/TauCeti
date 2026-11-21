@@ -837,18 +837,15 @@ private theorem hasSum_ite_not_absNorm_le {f : HeightOneSpectrum (𝓞 K) → �
     HasSum (fun v : HeightOneSpectrum (𝓞 K) ↦
         if (Ideal.absNorm v.asIdeal : ℝ) ≤ x then 0 else f v)
       ((∑' v, f v) - primeSummatory K f x) := by
-  let f_in : HeightOneSpectrum (𝓞 K) → ℝ :=
-    fun v ↦ if (Ideal.absNorm v.asIdeal : ℝ) ≤ x then f v else 0
-  have hsum_eq : ∑ v ∈ primesLE K x, f_in v = primeSummatory K f x := by
-    rw [primeSummatory_apply]
-    exact Finset.sum_congr rfl fun v hv ↦
-      ite_eq_left ((mem_normLE fun w : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm w.asIdeal).mp hv)
-  have hf_in : HasSum f_in (primeSummatory K f x) :=
-    hsum_eq ▸ hasSum_sum_of_ne_finset_zero fun v hv ↦ ite_eq_right
-      (mt (mem_normLE fun w : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm w.asIdeal).mpr hv)
-  refine (hf.hasSum.sub hf_in).congr_fun fun v ↦ ?_
-  simp only [f_in]
-  split_ifs <;> ring
+  have hcompl : HasSum (f ∘ (↑) : ↥((primesLE K x : Set (HeightOneSpectrum (𝓞 K)))ᶜ) → ℝ)
+      ((∑' v, f v) - primeSummatory K f x) := by
+    have hsplit := hf.sum_add_tsum_subtype_compl (primesLE K x)
+    rw [← primeSummatory_apply] at hsplit
+    rw [← hsplit, add_sub_cancel_left]
+    exact (hf.subtype _).hasSum
+  rw [hasSum_subtype_iff_indicator] at hcompl
+  refine hcompl.congr_fun fun v ↦ ?_
+  by_cases hv : (Ideal.absNorm v.asIdeal : ℝ) ≤ x <;> simp [hv]
 
 /-- **Rankin tail bound for the quadratic Euler-product remainders.** Summing
 `-log (1 - N𝔭⁻¹) - N𝔭⁻¹ ≤ N𝔭 ^ (-2) ≤ x ^ (-1/2) N𝔭 ^ (-3/2)` beyond `N𝔭 > x` bounds the tail
@@ -946,18 +943,13 @@ private theorem finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (x : ℝ) :
       if (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x then (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹)⁻¹
       else 1) = Real.exp (primeSummatory K
         (fun v ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹)) x) := by
-  rw [finprod_eq_prod_of_mulSupport_subset (s := primesLE K x), primeSummatory_apply,
-    Real.exp_sum]
-  · refine Finset.prod_congr rfl fun v hv ↦ ?_
-    have h1 : 0 < 1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := sub_pos.mpr
-      (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)))
-    rw [ite_eq_left
-        ((mem_normLE fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal).mp hv),
-      Real.exp_neg, Real.exp_log h1]
-  · intro v hv
-    rw [Finset.mem_coe, mem_normLE]
-    by_contra hvx
-    exact hv (ite_eq_right hvx)
+  rw [finprod_congr (g := fun v ↦ ∏ᶠ (_ : v ∈ primesLE K x),
+      (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹)⁻¹) fun v ↦ by simp only [finprod_eq_if, mem_normLE],
+    finprod_mem_finset_eq_prod _ (primesLE K x), primeSummatory_apply, Real.exp_sum]
+  refine Finset.prod_congr rfl fun v _ ↦ ?_
+  have h1 : 0 < 1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := sub_pos.mpr
+    (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)))
+  rw [Real.exp_neg, Real.exp_log h1]
 
 /-- **Mertens' product for a number field with additive `O(1)` error.** Exponentiating the
 `O(1 / log x)` logarithmic estimate gives

@@ -37,10 +37,10 @@ together with its exact domain of summability and truncated power-series remaind
 * `Real.hasSum_pow_div_natCast` and `Real.summable_pow_div_natCast_iff`: the series
   `∑ xⁿ / n` sums to `-log (1 - x)` for `|x| < 1` and is summable exactly there.
 * `Real.hasSum_pow_div_natCast_tail`, `Real.neg_log_one_sub_sub_sum_Icc_nonneg`,
-  `Real.neg_log_one_sub_sub_sum_Icc_le`, `Real.abs_neg_log_one_sub_sub_sum_Icc_le`,
-  `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and `Real.neg_log_one_sub_inv_sub_sum_Icc_le`:
-  shifted tail series, nonnegativity, and upper bounds for the truncated power-series remainder of
-  `-log (1 - x)` and `-log (1 - x⁻¹)`.
+  `Real.abs_neg_log_one_sub_sub_sum_Icc_le_div`, `Real.neg_log_one_sub_sub_sum_Icc_le`,
+  `Real.abs_neg_log_one_sub_sub_sum_Icc_le`, `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and
+  `Real.neg_log_one_sub_inv_sub_sum_Icc_le`: shifted tail series, nonnegativity, and upper bounds
+  for the truncated power-series remainder of `-log (1 - x)` and `-log (1 - x⁻¹)`.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -203,41 +203,72 @@ theorem neg_log_one_sub_sub_sum_Icc_nonneg {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 
     0 ≤ -log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k :=
   (hasSum_pow_div_natCast_tail (by rwa [abs_of_nonneg hx0]) m).nonneg fun _ ↦ by positivity
 
+/-- For `|x| < 1`, the `m`-th Taylor remainder of `-log (1 - x)` has absolute value at most
+`|x| ^ (m + 1) / ((m + 1) * (1 - |x|))`. This is Mathlib's
+`Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` read along the reals. -/
+theorem abs_neg_log_one_sub_sub_sum_Icc_le_div {x : ℝ} (hx : |x| < 1) (m : ℕ) :
+    |-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / (k : ℝ)| ≤
+      |x| ^ (m + 1) / ((m + 1 : ℝ) * (1 - |x|)) := by
+  have h1 : 0 < 1 - x := sub_pos.mpr (lt_of_le_of_lt (le_abs_self x) hx)
+  have hnx : ‖(x : ℂ)‖ = |x| := by rw [Complex.norm_real, Real.norm_eq_abs]
+  have hz : ‖(x : ℂ)‖ < 1 := by rwa [hnx]
+  have hlog : Complex.log (1 - (x : ℂ))⁻¹ = ((-Real.log (1 - x) : ℝ) : ℂ) := by
+    rw [show (1 : ℂ) - (x : ℂ) = ((1 - x : ℝ) : ℂ) by push_cast; ring, ← Complex.ofReal_inv,
+      ← Complex.ofReal_log (inv_pos.mpr h1).le]
+    push_cast [Real.log_inv]
+    ring
+  have htaylor : Complex.logTaylor (m + 1) (-(x : ℂ)) =
+      -((∑ k ∈ Finset.Icc 1 m, x ^ k / (k : ℝ) : ℝ) : ℂ) := by
+    rw [Complex.logTaylor, Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.succ_pos m)]
+    simp only [pow_zero, mul_one, CharP.cast_eq_zero, div_zero, zero_add,
+      Complex.ofReal_sum, ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [neg_pow (x : ℂ) k, ← mul_assoc, ← pow_add, show k + 1 + k = 2 * k + 1 by ring,
+      pow_add, pow_mul, neg_one_sq, one_pow, one_mul, pow_one, neg_one_mul, neg_div]
+    push_cast
+    rfl
+  have hcast : Complex.log (1 - (x : ℂ))⁻¹ + Complex.logTaylor (m + 1) (-(x : ℂ)) =
+      ((-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / (k : ℝ) : ℝ) : ℂ) := by
+    rw [hlog, htaylor]
+    push_cast
+    ring
+  calc |-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / (k : ℝ)|
+      = ‖Complex.log (1 - (x : ℂ))⁻¹ + Complex.logTaylor (m + 1) (-(x : ℂ))‖ := by
+        rw [hcast, Complex.norm_real, Real.norm_eq_abs]
+    _ ≤ ‖(x : ℂ)‖ ^ (m + 1) * (1 - ‖(x : ℂ)‖)⁻¹ / ((m : ℝ) + 1) :=
+        Complex.norm_log_one_sub_inv_add_logTaylor_neg_le m hz
+    _ = |x| ^ (m + 1) / ((m + 1 : ℝ) * (1 - |x|)) := by
+        rw [hnx]
+        simp only [div_eq_mul_inv, mul_inv]
+        ring
+
 /-- For `0 ≤ x < 1`, the `m`-th Taylor remainder of `-log (1 - x)` is at most
 `x ^ (m + 1) / ((m + 1) (1 - x))`. -/
 theorem neg_log_one_sub_sub_sum_Icc_le {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 1) (m : ℕ) :
     -log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k ≤ x ^ (m + 1) / ((m + 1) * (1 - x)) := by
-  have hgeom : HasSum (fun j : ℕ ↦ x ^ (m + 1) / (m + 1 : ℕ) * x ^ j)
-      (x ^ (m + 1) / ((m + 1) * (1 - x))) := by
-    convert (hasSum_geometric_of_lt_one hx0 hx1).mul_left (x ^ (m + 1) / (m + 1 : ℕ)) using 1
-    rw [Nat.cast_add, Nat.cast_one, ← div_div, div_eq_mul_inv]
-  refine hasSum_le (fun j ↦ ?_) (hasSum_pow_div_natCast_tail (by rwa [abs_of_nonneg hx0]) m) hgeom
-  rw [add_comm j, pow_add, div_mul_eq_mul_div]
-  exact div_le_div_of_nonneg_left (by positivity) (by positivity)
-    (by exact_mod_cast le_add_right le_rfl)
+  have hx : |x| < 1 := by rwa [abs_of_nonneg hx0]
+  calc -log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k
+      = |-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / (k : ℝ)| :=
+        (abs_of_nonneg (neg_log_one_sub_sub_sum_Icc_nonneg hx0 hx1 m)).symm
+    _ ≤ |x| ^ (m + 1) / ((m + 1 : ℝ) * (1 - |x|)) := abs_neg_log_one_sub_sub_sum_Icc_le_div hx m
+    _ = x ^ (m + 1) / ((m + 1) * (1 - x)) := by rw [abs_of_nonneg hx0]
 
 /-- For `|x| ≤ 1 / 2`, the truncated power-series remainder of `-log (1 - x)` has absolute value at
 most `2 |x| ^ (n + 1)`. -/
 theorem abs_neg_log_one_sub_sub_sum_Icc_le {x : ℝ} (hx : |x| ≤ 1 / 2) (n : ℕ) :
     |-log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ)| ≤ 2 * |x| ^ (n + 1) := by
   have habs : |x| < 1 := hx.trans_lt (by norm_num)
-  have hsum : ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ) =
-      ∑ i ∈ Finset.range n, x ^ (i + 1) / ((i : ℝ) + 1) := by
-    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [add_comm 1 i, Nat.cast_add, Nat.cast_one]
-  have h1 : |-log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ)| =
-      |(∑ i ∈ Finset.range n, x ^ (i + 1) / ((i : ℝ) + 1)) + log (1 - x)| := by
-    rw [hsum, ← abs_neg]
-    exact congrArg abs (by ring)
-  have h2 : (1 - |x|)⁻¹ ≤ 2 := by
+  have h1 : (1 - |x|)⁻¹ ≤ 2 := by
     rw [inv_le_comm₀ (by linarith) two_pos]
     linarith
+  have h2 : (1 : ℝ) ≤ n + 1 := by exact_mod_cast Nat.succ_pos n
   calc |-log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ)|
-      ≤ |x| ^ (n + 1) / (1 - |x|) := h1 ▸ abs_log_sub_add_sum_range_le habs n
-    _ = |x| ^ (n + 1) * (1 - |x|)⁻¹ := div_eq_mul_inv _ _
-    _ ≤ |x| ^ (n + 1) * 2 := by gcongr
-    _ = 2 * |x| ^ (n + 1) := mul_comm _ _
+      ≤ |x| ^ (n + 1) / ((n + 1 : ℝ) * (1 - |x|)) :=
+        abs_neg_log_one_sub_sub_sum_Icc_le_div habs n
+    _ = |x| ^ (n + 1) * (1 - |x|)⁻¹ / (n + 1 : ℝ) := by
+        rw [div_eq_mul_inv, mul_inv, mul_comm (n + 1 : ℝ)⁻¹, ← mul_assoc, div_eq_mul_inv]
+    _ ≤ |x| ^ (n + 1) * 2 / 1 := by gcongr
+    _ = 2 * |x| ^ (n + 1) := by ring
 
 /-- For `1 < x`, the truncated harmonic power-series remainder
 `-log (1 - x⁻¹) - ∑_{1 ≤ k ≤ n} 1 / (k x ^ k)` is nonnegative. -/
