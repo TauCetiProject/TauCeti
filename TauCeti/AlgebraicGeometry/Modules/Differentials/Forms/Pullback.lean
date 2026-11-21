@@ -55,27 +55,6 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
-
-variable {X : Scheme.{u}} (M : X.Modules) (U : X.Opens)
-
-/-- The identity comparison `(𝟙 X)^* M ≅ M` carries the pullback of a section along the identity
-back to the section itself. -/
-lemma pullbackSections_id (s : Γ(M, U)) :
-    ((Modules.pullbackId X).hom.app M).app U (pullbackSections (𝟙 X) M U s) = s := by
-  have h := CategoryTheory.unit_conjugateEquiv Adjunction.id
-    (Modules.pullbackPushforwardAdjunction (𝟙 X)) (Modules.pullbackId X).hom M
-  rw [Modules.conjugateEquiv_pullbackId_hom] at h
-  have h' := congrArg (fun a ↦ a.app U s) h
-  simp only [Modules.Hom.comp_app, Modules.pushforward_map_app,
-    Modules.pushforwardId_inv_app_app] at h'
-  rw [pullbackSections_apply]
-  exact h'.symm
-
-end AlgebraicGeometry.Scheme.Hom
-
 namespace TauCeti.AlgebraicGeometry
 
 universe u
@@ -89,19 +68,24 @@ variable (R : Type u) [CommRing R] {X Y Z : Scheme.{u}}
 
 /-- The **pullback of differential `p`-forms** `f^* Ωᵖ_{Y/R} ⟶ Ωᵖ_{X/R}` along a morphism
 `f : X ⟶ Y` over `Spec R`: the exterior-power comparison `f^* (⋀ᵖ Ω_{Y/R}) ⟶ ⋀ᵖ (f^* Ω_{Y/R})`
-followed by the `p`-th exterior power of the cotangent map `f^* Ω_{Y/R} ⟶ Ω_{X/R}`. -/
+followed by the `p`-th exterior power of the cotangent map `f^* Ω_{Y/R} ⟶ Ω_{X/R}`, read through
+the identifications `differentialForms_def`. -/
 def differentialFormsPullbackHom (f : X ⟶ Y) [f.IsOver (Spec (.of R))] (p : ℕ) :
     (Scheme.Modules.pullback f).obj (differentialForms R (Y ↘ Spec (.of R)) p) ⟶
       differentialForms R (X ↘ Spec (.of R)) p :=
-  (Scheme.Modules.pullbackExteriorPowerComparison f p).app (Y.relativeDifferentials R) ≫
-    (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R f)
+  (Scheme.Modules.pullback f).map (eqToHom (differentialForms_def R Y p)) ≫
+    (Scheme.Modules.pullbackExteriorPowerComparison f p).app (Y.relativeDifferentials R) ≫
+      (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R f) ≫
+        eqToHom (differentialForms_def R X p).symm
 
 /-- The pullback of differential forms is the exterior-power comparison followed by the exterior
 power of the cotangent map. -/
 lemma differentialFormsPullbackHom_def (f : X ⟶ Y) [f.IsOver (Spec (.of R))] (p : ℕ) :
     differentialFormsPullbackHom R f p =
-      (Scheme.Modules.pullbackExteriorPowerComparison f p).app (Y.relativeDifferentials R) ≫
-        (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R f) :=
+      (Scheme.Modules.pullback f).map (eqToHom (differentialForms_def R Y p)) ≫
+        (Scheme.Modules.pullbackExteriorPowerComparison f p).app (Y.relativeDifferentials R) ≫
+          (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R f) ≫
+            eqToHom (differentialForms_def R X p).symm :=
   (rfl)
 
 /-- The pullback of differential forms along the identity is the canonical identification
@@ -110,24 +94,36 @@ lemma differentialFormsPullbackHom_def (f : X ⟶ Y) [f.IsOver (Spec (.of R))] (
 theorem differentialFormsPullbackHom_id (p : ℕ) :
     differentialFormsPullbackHom R (𝟙 X) p =
       (Scheme.Modules.pullbackId X).hom.app (differentialForms R (X ↘ Spec (.of R)) p) := by
-  rw [differentialFormsPullbackHom_def, cotangentMap_id, pullbackExteriorPowerComparison_id]
-  rfl
+  have h := pullbackExteriorPowerComparison_id p (X.relativeDifferentials R)
+  have n := (Scheme.Modules.pullbackId X).hom.naturality (eqToHom (differentialForms_def R X p))
+  rw [differentialFormsPullbackHom_def, cotangentMap_id]
+  exact (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h))).trans
+    ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) n).trans
+      ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
+      ((eqToHom_trans (differentialForms_def R X p) (differentialForms_def R X p).symm).trans
+        (eqToHom_refl _ _))).trans (Category.comp_id _)))))
 
-/-- The pullback of differential forms is contravariantly functorial: along `f ≫ g` it is the
-pullback along `g`, pulled back along `f`, followed by the pullback along `f`. -/
-@[reassoc]
-theorem differentialFormsPullbackHom_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+/-- The exterior power of the cotangent map of `f ≫ g`, after the exterior-power comparison,
+factors through the corresponding maps for `g` and `f`; this is
+`differentialFormsPullbackHom_comp` before the identifications `differentialForms_def`. -/
+private lemma pullbackExteriorPowerComparison_comp_map_cotangentMap (f : X ⟶ Y) (g : Y ⟶ Z)
     [f.IsOver (Spec (.of R))] [g.IsOver (Spec (.of R))] (p : ℕ) :
-    differentialFormsPullbackHom R (f ≫ g) p =
-      (Scheme.Modules.pullbackComp f g).inv.app (differentialForms R (Z ↘ Spec (.of R)) p) ≫
-        (Scheme.Modules.pullback f).map (differentialFormsPullbackHom R g p) ≫
-          differentialFormsPullbackHom R f p := by
+    (Scheme.Modules.pullbackExteriorPowerComparison (f ≫ g) p).app (Z.relativeDifferentials R) ≫
+        (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R (f ≫ g)) =
+      (Scheme.Modules.pullbackComp f g).inv.app
+          ((SheafOfModules.exteriorPower Z.sheaf p).obj (Z.relativeDifferentials R)) ≫
+        (Scheme.Modules.pullback f).map
+          ((Scheme.Modules.pullbackExteriorPowerComparison g p).app (Z.relativeDifferentials R) ≫
+            (SheafOfModules.exteriorPower Y.sheaf p).map (cotangentMap R g)) ≫
+        (Scheme.Modules.pullbackExteriorPowerComparison f p).app (Y.relativeDifferentials R) ≫
+          (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R f) := by
   -- The exterior power as an endofunctor of `X.Modules`, so that compositions are taken there.
   let W : X.Modules ⥤ X.Modules := SheafOfModules.exteriorPower X.sheaf p
   have h₁ : (Scheme.Modules.pullbackExteriorPowerComparison (f ≫ g) p).app
         (Z.relativeDifferentials R) ≫
         W.map ((Scheme.Modules.pullbackComp f g).inv.app (Z.relativeDifferentials R)) =
-      (Scheme.Modules.pullbackComp f g).inv.app (differentialForms R (Z ↘ Spec (.of R)) p) ≫
+      (Scheme.Modules.pullbackComp f g).inv.app
+          ((SheafOfModules.exteriorPower Z.sheaf p).obj (Z.relativeDifferentials R)) ≫
         (Scheme.Modules.pullback f).map
           ((Scheme.Modules.pullbackExteriorPowerComparison g p).app (Z.relativeDifferentials R)) ≫
         (Scheme.Modules.pullbackExteriorPowerComparison f p).app
@@ -140,20 +136,61 @@ theorem differentialFormsPullbackHom_comp (f : X ⟶ Y) (g : Y ⟶ Z)
           ((SheafOfModules.exteriorPower Y.sheaf p).map (cotangentMap R g)) ≫
         (Scheme.Modules.pullbackExteriorPowerComparison f p).app (Y.relativeDifferentials R) :=
     ((Scheme.Modules.pullbackExteriorPowerComparison f p).naturality (cotangentMap R g)).symm
-  have e : differentialFormsPullbackHom R (f ≫ g) p
-      = (Scheme.Modules.pullbackExteriorPowerComparison (f ≫ g) p).app
+  have e : (Scheme.Modules.pullbackExteriorPowerComparison (f ≫ g) p).app
+          (Z.relativeDifferentials R) ≫
+        (SheafOfModules.exteriorPower X.sheaf p).map (cotangentMap R (f ≫ g)) =
+      (Scheme.Modules.pullbackExteriorPowerComparison (f ≫ g) p).app
             (Z.relativeDifferentials R) ≫
           W.map ((Scheme.Modules.pullbackComp f g).inv.app (Z.relativeDifferentials R)) ≫
           W.map ((Scheme.Modules.pullback f).map (cotangentMap R g)) ≫
           W.map (cotangentMap R f) := by
     rw [← W.map_comp, ← W.map_comp, ← cotangentMap_comp]
-    rfl
   rw [e, reassoc_of% h₁]
   -- Rewriting under the comparison morphisms fails at reducible transparency, since their types
   -- mix `X.Modules` with the underlying category of sheaves of modules; compose terms instead.
-  refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans ?_))
-  exact (congrArg (_ ≫ ·) ((reassoc_of% h₂) _)).trans ((Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ _) ((Scheme.Modules.pullback f).map_comp _ _).symm))
+  exact congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) ((reassoc_of% h₂) _)).trans
+    ((Category.assoc _ _ _).symm.trans
+      (congrArg (· ≫ _) ((Scheme.Modules.pullback f).map_comp _ _).symm)))
+
+/-- The pullback of differential forms is contravariantly functorial: along `f ≫ g` it is the
+pullback along `g`, pulled back along `f`, followed by the pullback along `f`. -/
+@[reassoc]
+theorem differentialFormsPullbackHom_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+    [f.IsOver (Spec (.of R))] [g.IsOver (Spec (.of R))] (p : ℕ) :
+    differentialFormsPullbackHom R (f ≫ g) p =
+      (Scheme.Modules.pullbackComp f g).inv.app (differentialForms R (Z ↘ Spec (.of R)) p) ≫
+        (Scheme.Modules.pullback f).map (differentialFormsPullbackHom R g p) ≫
+          differentialFormsPullbackHom R f p := by
+  -- Move the identification `differentialForms_def` for `Z` across the composition comparison.
+  have n : (Scheme.Modules.pullback (f ≫ g)).map (eqToHom (differentialForms_def R Z p)) ≫
+        (Scheme.Modules.pullbackComp f g).inv.app
+          ((SheafOfModules.exteriorPower Z.sheaf p).obj (Z.relativeDifferentials R)) =
+      (Scheme.Modules.pullbackComp f g).inv.app (differentialForms R (Z ↘ Spec (.of R)) p) ≫
+        (Scheme.Modules.pullback f).map
+          ((Scheme.Modules.pullback g).map (eqToHom (differentialForms_def R Z p))) :=
+    (Scheme.Modules.pullbackComp f g).inv.naturality _
+  -- The identifications for `Y` cancel between the pullbacks along `g` and along `f`.
+  have r : (Scheme.Modules.pullback f).map (differentialFormsPullbackHom R g p) ≫
+        (Scheme.Modules.pullback f).map (eqToHom (differentialForms_def R Y p)) =
+      (Scheme.Modules.pullback f).map
+          ((Scheme.Modules.pullback g).map (eqToHom (differentialForms_def R Z p))) ≫
+        (Scheme.Modules.pullback f).map
+          ((Scheme.Modules.pullbackExteriorPowerComparison g p).app (Z.relativeDifferentials R) ≫
+            (SheafOfModules.exteriorPower Y.sheaf p).map (cotangentMap R g)) := by
+    rw [differentialFormsPullbackHom_def]
+    refine ((Scheme.Modules.pullback f).map_comp _ _).symm.trans
+      ((congrArg (Scheme.Modules.pullback f).map ?_).trans
+        ((Scheme.Modules.pullback f).map_comp _ _))
+    refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+      (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ?_).trans
+        (Category.comp_id _))))))
+    exact (eqToHom_trans (differentialForms_def R Y p).symm (differentialForms_def R Y p)).trans
+      (eqToHom_refl _ _)
+  rw [differentialFormsPullbackHom_def R (f ≫ g) p, differentialFormsPullbackHom_def R f p]
+  refine (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans ?_
+  rw [pullbackExteriorPowerComparison_comp_map_cotangentMap, reassoc_of% r, ← reassoc_of% n]
+  exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+    ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _)))))
 
 /-- In degree one, the pullback of differential forms is the cotangent map, read through the
 identifications `Ω¹ ≅ Ω`. -/
@@ -164,10 +201,22 @@ theorem differentialFormsPullbackHom_one (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
   have h := (SheafOfModules.exteriorPowerOneIso X.sheaf).hom.naturality (cotangentMap R f)
   have h' := Scheme.Modules.pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso f
     (Y.relativeDifferentials R)
-  rw [differentialFormsOneIso_hom, differentialFormsOneIso_hom]
-  -- As in `differentialFormsPullbackHom_comp`, compose the two squares as terms.
-  exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) h).trans
-    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h')))
+  -- As in `pullbackExteriorPowerComparison_comp_map_cotangentMap`, compose the squares as terms.
+  have core : (Scheme.Modules.pullbackExteriorPowerComparison f 1).app (Y.relativeDifferentials R) ≫
+        (SheafOfModules.exteriorPower X.sheaf 1).map (cotangentMap R f) ≫
+          (SheafOfModules.exteriorPowerOneIso X.sheaf).hom.app (X.relativeDifferentials R) =
+      (Scheme.Modules.pullback f).map
+          ((SheafOfModules.exteriorPowerOneIso Y.sheaf).hom.app (Y.relativeDifferentials R)) ≫
+        cotangentMap R f :=
+    (congrArg (_ ≫ ·) h).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h'))
+  rw [differentialFormsOneIso_hom, differentialFormsOneIso_hom, differentialFormsPullbackHom_def]
+  refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_))))) |>.trans
+    ((congrArg (_ ≫ ·) core).trans ((Category.assoc _ _ _).symm.trans
+      (congrArg (· ≫ _) ((Scheme.Modules.pullback f).map_comp _ _).symm)))
+  exact (eqToHom_trans_assoc (differentialForms_def R X 1).symm
+    (differentialForms_def R X 1) _).trans
+    ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _))
 
 end Sheaf
 
@@ -177,12 +226,6 @@ open Scheme.Modules
 
 variable (R : Type u) [CommRing R] {X Y Z : Scheme.{u}}
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [Z.Over (Spec (.of R))]
-
-/-- Pulling back a global function along a morphism over `Spec R` preserves the image of `R`. -/
-private lemma appTop_baseRingToGlobalSections (f : X ⟶ Y) [f.IsOver (Spec (.of R))] (r : R) :
-    f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
-  rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
-    ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, HomIsOver.comp_over]
 
 /-- The **pullback of global differential `p`-forms** `Γ(Y, Ωᵖ_{Y/R}) →ₗ[R] Γ(X, Ωᵖ_{X/R})` along a
 morphism `f : X ⟶ Y` over `Spec R`: pull a global section back to `f^* Ωᵖ_{Y/R}` and apply
@@ -196,8 +239,9 @@ def differentialFormsPullback (f : X ⟶ Y) [f.IsOver (Spec (.of R))] (p : ℕ) 
     rw [map_add]
     exact map_add _ _ _
   map_smul' r s := by
-    rw [base_smul_globalSections, base_smul_globalSections, map_smulₛₗ, RingHom.id_apply,
-      ← appTop_baseRingToGlobalSections R f r]
+    rw [base_smul_globalSections_eq_baseRingToStructurePresheaf_smul,
+      base_smul_globalSections_eq_baseRingToStructurePresheaf_smul, map_smulₛₗ,
+      app_baseRingToStructurePresheaf R f ⊤ r]
     exact Scheme.Modules.Hom.app_smul _ _ _
 
 /-- The pullback of a global form is the sheaf pullback applied to the pulled-back section. -/
@@ -261,13 +305,14 @@ def differentialFormsRepresentation (p : ℕ) :
       Γ(differentialForms R (X ↘ Spec (.of R)) p, ⊤) where
   toFun g := differentialFormsPullback R (X := X) (Y := X) g.asIso.inv.left p
   map_one' := (differentialFormsPullback_congr R (X := X) (Y := X)
-    (by rw [Aut.one_asIso, Iso.refl_inv, Over.id_left]; rfl) p).trans
+    (by simp [Aut.one_asIso]) p).trans
       (differentialFormsPullback_id R p)
   map_mul' g h := (differentialFormsPullback_congr R (X := X) (Y := X)
     (by rw [Aut.mul_asIso, Iso.trans_inv, Over.comp_left]) p).trans
       (differentialFormsPullback_comp R (X := X) (Y := X) (Z := X) _ _ p)
 
 /-- The automorphism `g` acts on global forms by pullback along its inverse. -/
+@[simp]
 lemma differentialFormsRepresentation_apply (p : ℕ) (g : Aut (Over.mk (X ↘ Spec (.of R)))) :
     differentialFormsRepresentation R X p g =
       differentialFormsPullback R (X := X) (Y := X) g.asIso.inv.left p :=
@@ -287,7 +332,7 @@ theorem mem_ker_differentialFormsRepresentation_iff (p : ℕ)
       ∀ s, differentialFormsPullback R (X := X) (Y := X) g.asIso.hom.left p s = s := by
   rw [← inv_mem_iff, MonoidHom.mem_ker, differentialFormsRepresentation_inv_apply,
     LinearMap.ext_iff]
-  rfl
+  simp only [one_apply_eq_self]
 
 end Automorphisms
 

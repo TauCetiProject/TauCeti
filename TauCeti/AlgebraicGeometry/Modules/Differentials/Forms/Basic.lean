@@ -61,9 +61,8 @@ variable (R : Type u) [CommRing R] {X : Scheme.{u}}
 
 /-- The sheaf `Ωᵖ_{X/R}` of **relative differential `p`-forms** of a scheme `X` along a structure
 morphism `f : X ⟶ Spec R`: the `p`-th exterior power, as a sheaf of `𝒪_X`-modules, of the sheaf of
-relative differentials `Ω_{X/R}` defined by `f`. The body is exposed so that morphisms of
-differential forms, such as their pullback, can be built from exterior powers of morphisms. -/
-@[expose] def differentialForms (f : X ⟶ Spec (.of R)) (p : ℕ) : X.Modules :=
+relative differentials `Ω_{X/R}` defined by `f`. -/
+def differentialForms (f : X ⟶ Spec (.of R)) (p : ℕ) : X.Modules :=
   letI : X.Over (Spec (.of R)) := ⟨f⟩
   (SheafOfModules.exteriorPower X.sheaf p).obj (X.relativeDifferentials R)
 
@@ -87,11 +86,12 @@ def differentialFormsOneIso :
   (SheafOfModules.exteriorPowerOneIso X.sheaf).app _
 
 /-- The identification `Ω¹_{X/R} ≅ Ω_{X/R}` is the degree-one identification of the exterior power
-with the module itself. -/
+with the module itself, read through `differentialForms_def`. -/
 lemma differentialFormsOneIso_hom :
-    (differentialFormsOneIso R X).hom =
+    (differentialFormsOneIso R X).hom = eqToHom (differentialForms_def R X 1) ≫
       (SheafOfModules.exteriorPowerOneIso X.sheaf).hom.app (X.relativeDifferentials R) :=
-  (rfl)
+  -- `differentialForms_def` holds by definition, so its `eqToHom` is the identity.
+  (Category.id_comp _).symm
 
 /-- The sheaf `Ωᵖ_{X/R}` of differential `p`-forms of a scheme smooth over `Spec R`, as a finite
 locally free sheaf. -/
