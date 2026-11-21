@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -21,6 +22,11 @@ with Mathlib's `gradient`; the squared norm therefore has the expected radial gr
 arbitrary Riemannian metric on a normed space, the gradient is read in linear coordinates through
 its pairing with constant vectors, and its squared length is `|dφ|² = dφ(g⁻¹ dφ)` for the metric
 coefficient field `g`.
+
+Every nonzero continuous linear functional has nonzero gradient for any positive Riemannian
+metric. In particular, the first-coordinate function has nonzero gradient, whose normalization
+gives the inward unit normal of a linear boundary chart. These nonvanishing results are ported
+from Riccardo Brasca's original `ForTauCeti` formalization.
 
 The standard metric is analytic (`IsContMDiffRiemannianBundle.vectorSpace`), so the manifold
 results on gradient flows apply to it, and a classical solution of `γ' = -∇ f (γ)` on an open
@@ -105,6 +111,40 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
   rw [mgradient_eq_gradient]
   simp [gradient, fderiv_norm_sq_apply, hx]
   rfl
+
+/-- A genuine nonzero linear defining functional has nonzero native metric gradient. -/
+theorem _root_.ContinuousLinearMap.mgradient_ne_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (L : F →L[ℝ] ℝ) (hL : L ≠ 0) (x : F) :
+    mgradient 𝓘(ℝ, F) L x ≠ 0 := by
+  intro hz
+  apply hL
+  ext v
+  have hd := mgradient_eq_zero_iff.mp hz
+  have he := congrArg
+    (fun A : TangentSpace 𝓘(ℝ, F) x →L[ℝ] ℝ ↦
+      A ((NormedSpace.fromTangentSpace x).symm v)) hd
+  rw [zero_apply] at he
+  have hval : mvfderiv 𝓘(ℝ, F) L x
+      ((NormedSpace.fromTangentSpace x).symm v) = L v := by
+    rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_eq_fderiv, L.hasFDerivAt.fderiv]
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+    exact NormedSpace.fromTangentSpace_symm_apply (L x) (L v)
+  exact hval.symm.trans he
+
+/-- The actual normal-coordinate differential has nonzero native gradient in every
+positive Riemannian metric. -/
+theorem mgradient_fst_ne_zero {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G]
+    [RiemannianBundle (fun x : ℝ × G ↦ TangentSpace 𝓘(ℝ, ℝ × G) x)] (x : ℝ × G) :
+    mgradient 𝓘(ℝ, ℝ × G) (Prod.fst : ℝ × G → ℝ) x ≠ 0 := by
+  apply (ContinuousLinearMap.fst ℝ ℝ G).mgradient_ne_zero ?_ x
+  intro hzero
+  have he := congrArg (fun A : (ℝ × G) →L[ℝ] ℝ ↦ A (1, 0)) hzero
+  simp only [ContinuousLinearMap.coe_fst', zero_apply] at he
+  exact one_ne_zero he
 
 /-- On a normed space with any Riemannian metric, pairing the gradient with a constant vector `v`
 gives the Fréchet derivative in the direction `v`. -/

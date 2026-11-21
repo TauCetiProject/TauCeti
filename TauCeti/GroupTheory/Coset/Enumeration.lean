@@ -699,6 +699,7 @@ private theorem Valid.runSteps {rels : List (List ℕ)} {s : List ℕ}
   | [], _, hst => hst
   | c :: l, st, hst => by
     rw [CosetEnumeration.runSteps]
+    dsimp only
     split <;> exact Valid.runSteps hrels l (hst.step hrels c)
 
 private theorem valid_replay {rels : List (List ℕ)} {s : List ℕ}

@@ -45,7 +45,7 @@ private theorem depthEmbedding_isOpenEmbedding : IsOpenEmbedding depthEmbedding 
     (homeomorphNormalIio 1).symm.isOpenEmbedding
 
 private theorem depthEmbedding_apply (t : Ico (0 : ℝ) 1) :
-    (depthEmbedding t).1 0 = t := by
+    (depthEmbedding t).val 0 = t := by
   rw [depthEmbedding, Function.comp_apply, ← coe_homeomorphNormalIio]
   exact congrArg (fun s : Ico (0 : ℝ) 1 ↦ (s : ℝ))
     ((homeomorphNormalIio 1).apply_symm_apply t)
@@ -78,7 +78,7 @@ noncomputable def boundaryCollar (n : ℕ) :
 /-- The normal coordinate of the explicit collar is its depth parameter. -/
 @[simp] theorem boundaryCollar_apply_zero (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) (t : Ico (0 : ℝ) 1) :
-    (boundaryCollar n (x, t)).1 0 = (t : ℝ) := by
+    (boundaryCollar n (x, t)).val 0 = (t : ℝ) := by
   rw [boundaryCollar, Function.comp_apply, Prod.map_apply,
     EuclideanHalfSpace.collarDiffeomorph_apply_zero]
   exact depthEmbedding_apply t
@@ -86,7 +86,7 @@ noncomputable def boundaryCollar (n : ℕ) :
 /-- The positive coordinates of the explicit collar are its boundary parameters. -/
 @[simp] theorem boundaryCollar_apply_succ (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
     (t : Ico (0 : ℝ) 1) (i : Fin n) :
-    (boundaryCollar n (x, t)).1 i.succ = x i := by
+    (boundaryCollar n (x, t)).val i.succ = x i := by
   rw [boundaryCollar, Function.comp_apply, Prod.map_apply,
     EuclideanHalfSpace.collarDiffeomorph_apply_succ]
   rfl
@@ -94,12 +94,12 @@ noncomputable def boundaryCollar (n : ℕ) :
 /-- The collar image is exactly the half-space region with normal coordinate below one. -/
 theorem mem_range_boundaryCollar_iff (n : ℕ)
     {p : EuclideanHalfSpace (n + 1)} :
-    p ∈ range (boundaryCollar n) ↔ p.1 0 < 1 := by
+    p ∈ range (boundaryCollar n) ↔ p.val 0 < 1 := by
   constructor
   · rintro ⟨⟨x, t⟩, rfl⟩
-    simpa only [boundaryCollar_apply_zero] using t.2.2
+    simpa only [boundaryCollar_apply_zero] using t.property.2
   · intro hp
-    let t : Ico (0 : ℝ) 1 := ⟨p.1 0, p.2, hp⟩
+    let t : Ico (0 : ℝ) 1 := ⟨p.val 0, p.property, hp⟩
     refine ⟨(boundaryProj n p, t), ?_⟩
     apply Subtype.ext
     apply (WithLp.ext_iff _).2

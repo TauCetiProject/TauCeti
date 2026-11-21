@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -294,7 +294,7 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
     (p.endCoord w).im =
       -p.endSign * (ThricePuncturedSphere.Puncture.zero.endCoord w).im := by
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
-    Complex.arg_mul_real]
+    Complex.arg_mul_ofReal]
   ring
 
 /-- The angular coordinate of the negative plane is the negative of that of the positive plane. -/
@@ -409,6 +409,18 @@ theorem perturbation_negative (H : ℝ → M → ℝ) :
   rw [perturbation_def, perturbation_def, hre, him, hform, smul_neg, ← neg_smul]
   congr 1
   ring
+
+/-- **Normalizing the Hamiltonian.** Adding a function `c` of time to the Hamiltonian adds the
+perturbation of the target-independent Hamiltonian `c`. -/
+theorem perturbation_add_const (p : PSSPlane) (H : ℝ → M → ℝ) (c : ℝ → ℝ) (w : ℂ) (x : M) :
+    p.perturbation (fun t y ↦ H t y + c t) w x =
+      p.perturbation H w x + p.perturbation (fun t (_ : M) ↦ c t) w x := by
+  simp only [perturbation_def, mul_add, add_smul]
+
+/-- The perturbation of a target-independent Hamiltonian does not depend on the target point. -/
+theorem perturbation_const_target (p : PSSPlane) (c : ℝ → ℝ) (w : ℂ) (x y : M) :
+    p.perturbation (fun t (_ : M) ↦ c t) w x = p.perturbation (fun t (_ : M) ↦ c t) w y := by
+  simp only [perturbation_def]
 
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 
@@ -540,6 +552,18 @@ theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [Normed
       (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
     contDiff_const
+
+/-- In the end coordinates of the plane, the component of the perturbation of a PSS plane along a
+tangent vector `v` is `C^n` jointly in the domain point and the target point, for a period-one
+`C^n` Hamiltonian. -/
+theorem contDiff_uncurry_endComponent {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} {n : ℕ∞} (hH : Function.Periodic H 1)
+    (hHs : ContDiff ℝ n (Function.uncurry H)) (v : ℂ) :
+    ContDiff ℝ n (Function.uncurry (p.endComponent H v)) := by
+  rw [endComponent_eq hH]
+  exact contDiff_const.mul ((smoothTransition.contDiff.comp
+    ((contDiff_const.mul (contDiff_fst.comp contDiff_fst)).sub contDiff_const)).mul
+    (hHs.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)))
 
 /-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
 plane along a tangent vector `v` is `C^n` jointly in the domain point and the point of the

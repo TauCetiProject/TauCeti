@@ -87,7 +87,7 @@ def LocallyRepresentsScalar (Q : _root_.QuadraticForm K V) (a : K) : Prop :=
       QuadraticMap.Represents (Q.atFinitePlace v)
         (algebraMap K (v.adicCompletion K) a)) ∧
     ∀ w : {w : InfinitePlace K // w.IsReal},
-      QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a)
+      QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.property a)
 
 /-- Local scalar representation is the conjunction of its finite-place and real-place clauses. -/
 @[simp]
@@ -97,7 +97,7 @@ theorem locallyRepresentsScalar_iff (Q : _root_.QuadraticForm K V) (a : K) :
           QuadraticMap.Represents (Q.atFinitePlace v)
             (algebraMap K (v.adicCompletion K) a)) ∧
         ∀ w : {w : InfinitePlace K // w.IsReal},
-          QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a) :=
+          QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.property a) :=
   Iff.rfl
 
 /-- If a quadratic form represents a scalar at every finite and real place, then its
@@ -117,7 +117,7 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       have h := congrArg (TensorProduct.AlgebraTensorModule.rid K (v.adicCompletion K)
         (v.adicCompletion K)) hz
       simp at h
-    · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    · let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
       rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd _ W w⟩]
       intro hani
       have hleft := (QuadraticMap.anisotropic_of_prod hani).1
@@ -134,10 +134,10 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.1 v)
       (by simpa using ha)
     simp
-  · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  · let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd _ W w⟩]
     refine QuadraticMap.not_anisotropic_prod_of_represents_neg
-      (a := -embedding_of_isReal w.2 a)
+      (a := -embedding_of_isReal w.property a)
       ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.2 w)
       (by simpa using ha)
     simp
@@ -168,7 +168,7 @@ theorem isLocallyIsotropic_of_not_anisotropic (Q : _root_.QuadraticForm K V)
     rw [QuadraticForm.atFinitePlace_def]
     exact QuadraticForm.not_anisotropic_baseChange (A := v.adicCompletion K) hQ
   · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
     exact QuadraticForm.not_anisotropic_baseChange (A := ℝ) hQ
 
@@ -181,7 +181,7 @@ theorem LocallyRepresents.of_isRepresentedBy {Q : _root_.QuadraticForm K V}
     rw [QuadraticForm.atFinitePlace_def, QuadraticForm.atFinitePlace_def]
     exact h.baseChange (A := v.adicCompletion K)
   · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def, QuadraticForm.atRealPlace_def]
     exact h.baseChange (A := ℝ)
 
@@ -193,7 +193,7 @@ theorem LocallyRepresentsScalar.of_represents {Q : _root_.QuadraticForm K V} {a 
     rw [QuadraticForm.atFinitePlace_def]
     exact h.baseChange (A := v.adicCompletion K)
   · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
     simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℝ)
 

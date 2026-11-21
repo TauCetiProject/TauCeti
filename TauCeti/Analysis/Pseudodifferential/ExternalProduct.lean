@@ -12,6 +12,8 @@ public import Mathlib.Topology.Algebra.Affine
 public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock
 public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
+public import TauCeti.Analysis.Pseudodifferential.PolarDecomposition
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 
 /-!
 # The external product of two homogeneous symbols
@@ -51,6 +53,25 @@ for `t ≤ 1`, the lower bound above persists: for normalized factors, every `H_
 with `t ∈ [0, 1]` satisfies the same ellipticity bounds `ρ² ‖w‖² ≤ 2 ‖H_t w‖²` and
 `ρ² ‖w‖² ≤ 2 ‖H_t* w‖²` as `A_χ`.
 
+The normalization is not needed for ellipticity. For elliptic factors `a` and `b` between
+finite-dimensional fibres, `A_χ` is elliptic (`HomogeneousSymbol.IsElliptic.externalProduct`) and
+so is every `H_t` (`HomogeneousSymbol.IsElliptic.isInvertible_externalProductHomotopy`): at a
+covector `(ξ, η) ≠ 0` one of the cutoffs is `1`, say the first, so `ξ ≠ 0`, the first factor of
+the block is the invertible value `a (x, ξ)`, and a block with an invertible factor is invertible
+(`ContinuousLinearMap.isInvertible_externalProductBlock_of_left`). This makes `A_χ` independent of
+the two choices made in its construction, up to homotopy through elliptic symbols:
+
+* **the cutoff**: the convex combinations `χ_s = (1 - s) χ₀ + s χ₁`, `s ∈ [0, 1]`, of two conic
+  cutoffs are conic cutoffs (`ConicCutoff.lineMap`), so `s ↦ a ⊠_{χ_s} b` joins the two cut-off
+  external products through elliptic symbols, continuously in `s`
+  (`HomogeneousSymbol.continuousOn_coefficient_externalProduct_conicCutoffLineMap`);
+* **the normalization**: the straight lines from elliptic factors to their normalizations
+  `‖ξ‖ ^ m U_a` and `‖η‖ ^ m U_b` (`HomogeneousSymbol.normalize`) consist of elliptic symbols, so
+  their cut-off external products join `a ⊠_χ b` to the cut-off external product of the normalized
+  factors through elliptic symbols
+  (`HomogeneousSymbol.IsElliptic.externalProduct_lineMap_normalize`), continuously in the time
+  (`HomogeneousSymbol.continuousOn_coefficient_externalProduct_lineMap`).
+
 ## Main declarations
 
 * `TauCeti.ConicCutoff`: smooth cutoffs `ℝ → [0, 1]` vanishing on `t ≤ 1/4` and equal to `1` on
@@ -76,6 +97,15 @@ with `t ∈ [0, 1]` satisfies the same ellipticity bounds `ρ² ‖w‖² ≤ 2 
 * `TauCeti.HomogeneousSymbol.le_two_mul_norm_externalProductHomotopy_apply_sq`,
   `TauCeti.HomogeneousSymbol.le_two_mul_norm_adjoint_externalProductHomotopy_apply_sq`: the
   ellipticity bounds `ρ² ‖w‖² ≤ 2 ‖H_t w‖²` and `ρ² ‖w‖² ≤ 2 ‖H_t* w‖²` for `t ≤ 1`.
+* `TauCeti.HomogeneousSymbol.IsElliptic.externalProduct` and
+  `TauCeti.HomogeneousSymbol.IsElliptic.isInvertible_externalProductHomotopy`: for elliptic
+  factors between finite-dimensional fibres, `A_χ` is elliptic and every `H_t` is invertible at
+  nonzero covectors.
+* `TauCeti.ConicCutoff.lineMap`: convex combinations of conic cutoffs, with
+  `TauCeti.HomogeneousSymbol.continuousOn_coefficient_externalProduct_conicCutoffLineMap`.
+* `TauCeti.HomogeneousSymbol.IsElliptic.externalProduct_lineMap_normalize`, with
+  `TauCeti.HomogeneousSymbol.continuousOn_coefficient_externalProduct_lineMap`: the homotopy to
+  the cut-off external product of the normalized factors.
 
 ## References
 
@@ -202,6 +232,41 @@ theorem add_le_two_mul_lineMap {a b t : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ht :
   have h₂' := χ.nonneg (b / (a + b))
   gcongr
 
+/-- The convex combination `(1 - s) χ₀ + s χ₁` of two conic cutoffs, for `s ∈ [0, 1]`, is again a
+conic cutoff. These join `χ₀` (`ConicCutoff.lineMap_zero`) to `χ₁` (`ConicCutoff.lineMap_one`).
+For elliptic factors with finite-dimensional fibres they also join the cut-off external products
+for `χ₀` and `χ₁` through elliptic symbols (`HomogeneousSymbol.IsElliptic.externalProduct`),
+continuously in `s`
+(`HomogeneousSymbol.continuousOn_coefficient_externalProduct_conicCutoffLineMap`). -/
+def lineMap (χ₀ χ₁ : ConicCutoff) (s : unitInterval) : ConicCutoff where
+  toFun t := AffineMap.lineMap (χ₀ t) (χ₁ t) (s : ℝ)
+  contDiff' := ContDiff.lineMap χ₀.contDiff χ₁.contDiff contDiff_const
+  eq_zero_of_le_one_div_four' t ht := by
+    simp [χ₀.apply_eq_zero_of_le_one_div_four ht, χ₁.apply_eq_zero_of_le_one_div_four ht]
+  eq_one_of_one_div_two_le' t ht := by
+    simp [χ₀.apply_eq_one_of_one_div_two_le ht, χ₁.apply_eq_one_of_one_div_two_le ht]
+  nonneg' t :=
+    ((convex_Icc (0 : ℝ) 1).lineMap_mem ⟨χ₀.nonneg t, χ₀.le_one t⟩ ⟨χ₁.nonneg t, χ₁.le_one t⟩
+      s.property).1
+  le_one' t :=
+    ((convex_Icc (0 : ℝ) 1).lineMap_mem ⟨χ₀.nonneg t, χ₀.le_one t⟩ ⟨χ₁.nonneg t, χ₁.le_one t⟩
+      s.property).2
+
+@[simp]
+theorem lineMap_apply (χ₀ χ₁ : ConicCutoff) (s : unitInterval) (t : ℝ) :
+    χ₀.lineMap χ₁ s t = AffineMap.lineMap (χ₀ t) (χ₁ t) (s : ℝ) :=
+  (rfl)
+
+@[simp]
+theorem lineMap_zero (χ₀ χ₁ : ConicCutoff) : χ₀.lineMap χ₁ 0 = χ₀ := by
+  ext t
+  simp
+
+@[simp]
+theorem lineMap_one (χ₀ χ₁ : ConicCutoff) : χ₀.lineMap χ₁ 1 = χ₁ := by
+  ext t
+  simp
+
 end ConicCutoff
 
 /-! ### Cutting off a homogeneous symbol near an axis -/
@@ -316,6 +381,36 @@ theorem coefficient_conicCutoffSnd_of_norm_le (χ : ConicCutoff) (b : Homogeneou
   have hle : ‖ξ‖ ^ 2 ≤ ‖η‖ ^ 2 := by gcongr
   rw [coefficient_conicCutoffSnd,
     χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hpos]; linarith), one_smul]
+
+/-- Cutting off near the axis `ξ = 0` commutes with straight lines of symbols. -/
+theorem conicCutoffFst_lineMap (χ : ConicCutoff) (a a' : HomogeneousSymbol X E V W m) (s : ℝ) :
+    (AffineMap.lineMap a a' s).conicCutoffFst (Y := Y) (F := F) χ =
+      AffineMap.lineMap (a.conicCutoffFst χ) (a'.conicCutoffFst χ) s := by
+  ext ⟨⟨x, y⟩, ξ, η⟩ : 2
+  simp [AffineMap.lineMap_apply_module, smul_add, smul_comm (χ _)]
+
+/-- Cutting off near the axis `η = 0` commutes with straight lines of symbols. -/
+theorem conicCutoffSnd_lineMap (χ : ConicCutoff) (b b' : HomogeneousSymbol Y F V W m) (s : ℝ) :
+    (AffineMap.lineMap b b' s).conicCutoffSnd (X := X) (E := E) χ =
+      AffineMap.lineMap (b.conicCutoffSnd χ) (b'.conicCutoffSnd χ) s := by
+  ext ⟨⟨x, y⟩, ξ, η⟩ : 2
+  simp [AffineMap.lineMap_apply_module, smul_add, smul_comm (χ _)]
+
+/-- Cutting off near the axis `ξ = 0` with the convex combination `ConicCutoff.lineMap` of two
+cutoffs gives the same convex combination of the two cut-off symbols. -/
+theorem conicCutoffFst_conicCutoffLineMap (χ₀ χ₁ : ConicCutoff) (a : HomogeneousSymbol X E V W m)
+    (s : unitInterval) : a.conicCutoffFst (Y := Y) (F := F) (χ₀.lineMap χ₁ s) =
+      AffineMap.lineMap (a.conicCutoffFst χ₀) (a.conicCutoffFst χ₁) (s : ℝ) := by
+  ext ⟨⟨x, y⟩, ξ, η⟩ : 2
+  simp [AffineMap.lineMap_apply_module, add_smul, smul_smul]
+
+/-- Cutting off near the axis `η = 0` with the convex combination `ConicCutoff.lineMap` of two
+cutoffs gives the same convex combination of the two cut-off symbols. -/
+theorem conicCutoffSnd_conicCutoffLineMap (χ₀ χ₁ : ConicCutoff) (b : HomogeneousSymbol Y F V W m)
+    (s : unitInterval) : b.conicCutoffSnd (X := X) (E := E) (χ₀.lineMap χ₁ s) =
+      AffineMap.lineMap (b.conicCutoffSnd χ₀) (b.conicCutoffSnd χ₁) (s : ℝ) := by
+  ext ⟨⟨x, y⟩, ξ, η⟩ : 2
+  simp [AffineMap.lineMap_apply_module, add_smul, smul_smul]
 
 /-! ### The cut-off external product -/
 
@@ -456,10 +551,7 @@ theorem continuousOn_externalProductHomotopy [ProperSpace E] [ProperSpace F]
         b.coefficient (q.2.1.2, q.2.2.2)) q :=
     (hc (fun p ↦ ‖p.2.2‖) (by fun_prop)).smul
       ((b.continuous_coefficient hm).comp (by fun_prop)).continuousAt
-  have hblock : Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦
-      externalProductBlock AB.1 AB.2 :=
-    (contDiff_externalProductBlock (n := 0)).continuous
-  exact hblock.continuousAt.comp (h₁.prodMk h₂)
+  exact continuous_externalProductBlock.continuousAt.comp (h₁.prodMk h₂)
 
 variable [CompleteSpace (V₀ ⊗[ℂ] W₀)] [CompleteSpace (V₁ ⊗[ℂ] W₁)] [CompleteSpace (V₁ ⊗[ℂ] W₀)]
   [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ m}
@@ -594,6 +686,123 @@ theorem le_two_mul_norm_adjoint_coefficient_externalProduct_apply_sq (χ : Conic
     le_two_mul_norm_adjoint_externalProductHomotopy_apply_sq χ le_rfl x y ξ η ha ha' hb hb' w
 
 end ExternalProduct
+
+/-! ### Elliptic factors and independence of the choices -/
+
+section Elliptic
+
+variable {V₀ V₁ W₀ W₁ : Type*} [NormedAddCommGroup V₀] [InnerProductSpace ℂ V₀] [CompleteSpace V₀]
+  [NormedAddCommGroup V₁] [InnerProductSpace ℂ V₁] [CompleteSpace V₁] [NormedAddCommGroup W₀]
+  [InnerProductSpace ℂ W₀] [CompleteSpace W₀] [NormedAddCommGroup W₁] [InnerProductSpace ℂ W₁]
+  [CompleteSpace W₁]
+
+open ContinuousLinearMap
+
+/-- The straight lines `s ↦ ((1 - s) a + s a') ⊠_χ ((1 - s) b + s b')` of cut-off external
+products, for instance the line from elliptic factors to their normalizations, are jointly
+continuous in the time and the point at every nonzero covector `(ξ, η) ≠ 0`. -/
+theorem continuousOn_coefficient_externalProduct_lineMap (χ : ConicCutoff)
+    (a a' : HomogeneousSymbol X E V₀ V₁ m) (b b' : HomogeneousSymbol Y F W₀ W₁ m) :
+    ContinuousOn (fun q : ℝ × (X × Y) × (E × F) ↦
+      ((AffineMap.lineMap a a' q.1).externalProduct χ (AffineMap.lineMap b b' q.1)).coefficient
+        q.2) {q | q.2.2 ≠ 0} := by
+  have h₁ := continuousOn_coefficient_lineMap (a.conicCutoffFst (Y := Y) (F := F) χ)
+    (a'.conicCutoffFst χ)
+  have h₂ := continuousOn_coefficient_lineMap (b.conicCutoffSnd (X := X) (E := E) χ)
+    (b'.conicCutoffSnd χ)
+  refine (continuous_externalProductBlock.comp_continuousOn (h₁.prodMk h₂)).congr
+    fun ⟨t, ⟨x, y⟩, ξ, η⟩ _ ↦ ?_
+  simp only [Function.comp_apply, ← conicCutoffFst_lineMap, ← conicCutoffSnd_lineMap,
+    coefficient_externalProduct, coefficient_conicCutoffFst, coefficient_conicCutoffSnd]
+
+/-- The cut-off external products `a ⊠_{χ_s} b` for the convex combinations
+`χ_s = (1 - s) χ₀ + s χ₁` of two conic cutoffs (`ConicCutoff.lineMap`) are jointly continuous in
+`s ∈ [0, 1]` and the point at every nonzero covector `(ξ, η) ≠ 0`. -/
+theorem continuousOn_coefficient_externalProduct_conicCutoffLineMap (χ₀ χ₁ : ConicCutoff)
+    (a : HomogeneousSymbol X E V₀ V₁ m) (b : HomogeneousSymbol Y F W₀ W₁ m) :
+    ContinuousOn (fun q : unitInterval × (X × Y) × (E × F) ↦
+      (a.externalProduct (χ₀.lineMap χ₁ q.1) b).coefficient q.2) {q | q.2.2 ≠ 0} := by
+  have hc : Continuous fun q : unitInterval × (X × Y) × (E × F) ↦ ((q.1 : ℝ), q.2) := by
+    fun_prop
+  have h₁ := (continuousOn_coefficient_lineMap (a.conicCutoffFst (Y := Y) (F := F) χ₀)
+    (a.conicCutoffFst χ₁)).comp (s := {q | q.2.2 ≠ 0}) hc.continuousOn fun _ hq ↦ hq
+  have h₂ := (continuousOn_coefficient_lineMap (b.conicCutoffSnd (X := X) (E := E) χ₀)
+    (b.conicCutoffSnd χ₁)).comp (s := {q | q.2.2 ≠ 0}) hc.continuousOn fun _ hq ↦ hq
+  refine (continuous_externalProductBlock.comp_continuousOn (h₁.prodMk h₂)).congr
+    fun ⟨t, ⟨x, y⟩, ξ, η⟩ _ ↦ ?_
+  simp only [Function.comp_apply, ← conicCutoffFst_conicCutoffLineMap,
+    ← conicCutoffSnd_conicCutoffLineMap, coefficient_externalProduct, coefficient_conicCutoffFst,
+    coefficient_conicCutoffSnd]
+
+variable [FiniteDimensional ℂ V₀] [FiniteDimensional ℂ V₁] [FiniteDimensional ℂ W₀]
+  [FiniteDimensional ℂ W₁] {a : HomogeneousSymbol X E V₀ V₁ m}
+  {b : HomogeneousSymbol Y F W₀ W₁ m}
+
+/-- At a nonzero covector `(ξ, η)` one of `‖ξ‖² / ρ²` and `‖η‖² / ρ²`, with `ρ² = ‖ξ‖² + ‖η‖²`,
+is at least `1 / 2`. If the scalar `c₁` multiplying `a (x, ξ)` is `1` in the first case and the
+scalar `c₂` multiplying `b (y, η)` is `1` in the second, then the external product block of
+`c₁ a (x, ξ)` and `c₂ b (y, η)` has an invertible factor, hence is invertible. -/
+private theorem isInvertible_externalProductBlock_smul (ha : a.IsElliptic) (hb : b.IsElliptic)
+    {x : X} {y : Y} {ξ : E} {η : F} (hξη : (ξ, η) ≠ 0) {c₁ c₂ : ℝ}
+    (hc₁ : 1 / 2 ≤ ‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2) → c₁ = 1)
+    (hc₂ : 1 / 2 ≤ ‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2) → c₂ = 1) :
+    (externalProductBlock (c₁ • a.coefficient (x, ξ))
+      (c₂ • b.coefficient (y, η))).IsInvertible := by
+  have hpos : 0 < ‖ξ‖ ^ 2 + ‖η‖ ^ 2 := by
+    rcases eq_or_ne ξ 0 with rfl | hξ
+    · have hη : η ≠ 0 := fun h ↦ hξη (by simp [h])
+      positivity
+    · positivity
+  rcases le_total ‖η‖ ‖ξ‖ with hle | hle
+  · have hξ : ξ ≠ 0 := by
+      rintro rfl
+      exact hξη (by simpa using norm_le_zero_iff.1 (hle.trans_eq norm_zero))
+    have hsq : ‖η‖ ^ 2 ≤ ‖ξ‖ ^ 2 := by gcongr
+    rw [hc₁ (by rw [le_div_iff₀ hpos]; linarith), one_smul]
+    exact isInvertible_externalProductBlock_of_left (isElliptic_iff.1 ha x ξ hξ) _
+  · have hη : η ≠ 0 := by
+      rintro rfl
+      exact hξη (by simpa using norm_le_zero_iff.1 (hle.trans_eq norm_zero))
+    have hsq : ‖ξ‖ ^ 2 ≤ ‖η‖ ^ 2 := by gcongr
+    rw [hc₂ (by rw [le_div_iff₀ hpos]; linarith), one_smul]
+    exact isInvertible_externalProductBlock_of_right (isElliptic_iff.1 hb y η hη) _
+
+/-- **The cut-off external product of elliptic symbols is elliptic**, for finite-dimensional
+fibres and with no normalization of the factors. At a nonzero covector `(ξ, η)` one of the two
+cutoffs is `1`, say the first, so that `ξ ≠ 0` and the first factor of the block is the invertible
+value `a (x, ξ)`; the block of an invertible operator with any operator is invertible
+(`ContinuousLinearMap.isInvertible_externalProductBlock_of_left`). -/
+theorem IsElliptic.externalProduct (ha : a.IsElliptic) (hb : b.IsElliptic) (χ : ConicCutoff) :
+    (a.externalProduct χ b).IsElliptic := by
+  refine isElliptic_iff.2 fun ⟨x, y⟩ ⟨ξ, η⟩ hξη ↦ ?_
+  rw [coefficient_externalProduct]
+  exact isInvertible_externalProductBlock_smul ha hb hξη χ.apply_eq_one_of_one_div_two_le
+    χ.apply_eq_one_of_one_div_two_le
+
+/-- **The coefficient homotopy from the uncut to the cut-off external product is invertible** at
+every time `t` and every nonzero covector, for elliptic factors with finite-dimensional fibres and
+with no normalization: where a cutoff is `1`, so is its interpolation `(1 - t) + t χ`. -/
+theorem IsElliptic.isInvertible_externalProductHomotopy (ha : a.IsElliptic) (hb : b.IsElliptic)
+    (χ : ConicCutoff) (t : ℝ) (x : X) (y : Y) {ξ : E} {η : F} (hξη : (ξ, η) ≠ 0) :
+    (a.externalProductHomotopy χ b t ((x, y), (ξ, η))).IsInvertible := by
+  rw [externalProductHomotopy_apply]
+  exact isInvertible_externalProductBlock_smul ha hb hξη
+    (fun h ↦ by rw [χ.apply_eq_one_of_one_div_two_le h, AffineMap.lineMap_same_apply])
+    (fun h ↦ by rw [χ.apply_eq_one_of_one_div_two_le h, AffineMap.lineMap_same_apply])
+
+/-- **Normalization independence.** For elliptic factors with finite-dimensional fibres, the cut-off
+external products of the straight lines `(1 - s) a + s ‖ξ‖ ^ m U_a` and
+`(1 - s) b + s ‖η‖ ^ m U_b` from the factors to their normalizations
+(`HomogeneousSymbol.normalize`) are elliptic for every `s ∈ [0, 1]`. So `a ⊠_χ b` is joined to the
+cut-off external product of the normalized factors by elliptic symbols, continuously in `s`
+(`HomogeneousSymbol.continuousOn_coefficient_externalProduct_lineMap`). -/
+theorem IsElliptic.externalProduct_lineMap_normalize (ha : a.IsElliptic) (hb : b.IsElliptic)
+    (χ : ConicCutoff) {s : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1) :
+    ((AffineMap.lineMap a (a.normalize ha) s).externalProduct χ
+      (AffineMap.lineMap b (b.normalize hb) s)).IsElliptic :=
+  (a.isElliptic_lineMap_normalize ha hs).externalProduct (b.isElliptic_lineMap_normalize hb hs) χ
+
+end Elliptic
 
 end HomogeneousSymbol
 

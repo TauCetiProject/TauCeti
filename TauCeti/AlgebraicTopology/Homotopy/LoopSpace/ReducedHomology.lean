@@ -34,8 +34,10 @@ Barraud--Damian--Humilière--Oancea. In the paper's argument, the map
 `i_{Q*} : H_*(Q; i_Q^*𝓕) → H_*(𝓛₀Q; 𝓕)`, for the DG local system `𝓕 = C_*(Ω𝓛₀Q)`, is
 identified with the map `H_*(Ω²Q) → H_*(pt)`, whose kernel is `H~_*(Ω²Q)`; that identification is
 not formalized here, so the results of this file are statements about `H~₀(Ω²Q)` rather than about
-`ker i_{Q*}`. The case of the sphere `S²` is
-`TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`, with the homotopy groups of spheres.
+`ker i_{Q*}`. The kernel of the corresponding inclusion of total spaces of path fibrations is
+computed in `TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ConstantLoopKernel`. The case of the
+sphere `S²` is `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`, with the homotopy groups
+of spheres.
 
 Both the fixed-interval double loop space `Ω (Ω X x) (Path.refl x)` and the double Moore loop
 space `MooreLoopSpace (MooreLoopSpace X x) 1` are treated. The statements with coefficients in a
