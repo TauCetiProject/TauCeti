@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.GroupTheory.Finiteness
 public import TauCeti.GroupTheory.ExponentialGroup.FreeCompletion
 import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.Algebra.Group.Basic
 
 /-!
 # Groups with exponents in the polynomial ring `ℤ[t]`
@@ -147,12 +148,6 @@ section Hyp
 
 variable {T : G → G}
 
-private theorem commute_apply (hconj : ∀ g h : G, T (g * h * g⁻¹) = g * T h * g⁻¹) {g h : G}
-    (hc : Commute g h) : Commute g (T h) := by
-  have key := hconj g h
-  rw [hc.mul_inv_cancel, eq_mul_inv_iff_mul_eq] at key
-  exact key.symm
-
 /-- Two commuting elements lie in a commutative subgroup `Z` that `T` maps to itself, namely the
 centralizer of their centralizer. The exponentiation determined by the endomorphism `T` of `Z` is
 a `ℤ[t]`-group structure on `Z`, and the exponentiation determined by `T` restricts to it. -/
@@ -166,7 +161,7 @@ private theorem exists_commutative_subgroup (hconj : ∀ g h : G, T (g * h * g�
   have hcomm := Set.centralizer_centralizer_comm_of_comm hS
   set Z := Subgroup.centralizer (Set.centralizer ({g, h} : Set G))
   have hT (x : G) (hx : x ∈ Z) : T x ∈ Z := Subgroup.mem_centralizer_iff.2 fun y hy =>
-    commute_apply hconj (Subgroup.mem_centralizer_iff.1 hx y hy)
+    Commute.apply_right_of_conj (Subgroup.mem_centralizer_iff.1 hx y hy) (hconj y x)
   let τ : Z →* Z :=
     { toFun x := ⟨T x, hT x x.property⟩
       map_one' := Subtype.ext (by simpa using hmul 1 1 (Commute.one_left 1))

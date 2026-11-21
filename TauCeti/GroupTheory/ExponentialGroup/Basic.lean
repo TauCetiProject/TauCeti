@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Defs
 public import Mathlib.Algebra.Ring.Int.Defs
 public import Mathlib.Algebra.Ring.Nat
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Basic
 
 /-!
 # Groups with exponents in a ring
@@ -104,10 +105,8 @@ open TauCeti
 variable {A G : Type*} [Semiring A] [Group G] [Pow G A] [IsExponentialGroup A G] {g h : G}
 
 /-- An element commuting with `h` commutes with the powers of `h` in an `A`-group. -/
-theorem exponentialPow_right (hc : Commute g h) (a : A) : Commute g (h ^ a) := by
-  have key := IsExponentialGroup.conj_pow g h a
-  rw [hc.mul_inv_cancel, eq_mul_inv_iff_mul_eq] at key
-  exact (commute_iff_eq _ _).2 key.symm
+theorem exponentialPow_right (hc : Commute g h) (a : A) : Commute g (h ^ a) :=
+  hc.apply_right_of_conj (T := (· ^ a)) (IsExponentialGroup.conj_pow g h a)
 
 /-- The powers of `g` in an `A`-group commute with every element commuting with `g`. -/
 theorem exponentialPow_left (hc : Commute g h) (a : A) : Commute (g ^ a) h :=
