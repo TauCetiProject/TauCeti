@@ -72,7 +72,7 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
     ∂_{v} (smulLeftCLM F g f) =
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
   ext u
-  simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
+  simp [SchwartzMap.lineDerivOp_smulLeftCLM _ hg, ← map_add]
 
 end Deriv
 

@@ -8,13 +8,16 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Directional differentiation and linear maps on Schwartz space
 
 Directional derivatives of a Schwartz function commute, since its second derivative is symmetric,
-and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`).
+and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`) and with
+multiplication by a constant from any normed field acting on the values
+(`SchwartzMap.lineDerivOp_smul`).
 Near a point where a Schwartz function is constant, its line derivatives vanish
 (`SchwartzMap.lineDerivOp_eventuallyEq_zero`).
 For a Schwartz function valued in a finite `L^p` product, such as Euclidean space, taking a
@@ -36,7 +39,7 @@ real-linear `L` with values in a normed field over `ℝ`, such as `ℝ` or `ℂ`
 `closedBall 0 t`, this bounds at each point `x`
 `‖∂_v^(k+1) (L f) (x)‖ ≤ t ‖L‖ ‖∂_v^(k+1) f (x)‖ + (k + 1) ‖L‖ ‖v‖ ‖∂_v^k f (x)‖`
 (`SchwartzMap.norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall`). On the
-Fourier side, multiplying a symbol by `⟪h, ξ⟫` differentiates its kernel along `h`, so these
+Fourier side, multiplying a symbol by `2πi ⟪h, ξ⟫` differentiates its kernel along `h`, so these
 identities control the derivatives of the symbol of a differentiated kernel.
 
 Integrating by parts along an orthonormal basis gives Green's identity
@@ -67,11 +70,8 @@ Schwartz function. -/
 theorem lineDerivOp_postcompCLM (φ : 𝓢(V, F)) (L : F →L[𝕜] G) (v : V) :
     ∂_{v} (φ.postcompCLM L) = (∂_{v} φ).postcompCLM L := by
   ext x
-  -- `φ.postcompCLM L` is `L ∘ φ` as a function; `L` is differentiated as a real-linear map.
-  have hfun : ⇑(φ.postcompCLM L) = L.restrictScalars ℝ ∘ φ := by
-    ext y
-    simp
-  rw [lineDerivOp_apply_eq_fderiv, hfun,
+  -- `L` is differentiated as a real-linear map.
+  rw [lineDerivOp_apply_eq_fderiv, coe_postcompCLM, ← L.coe_restrictScalars' (R := ℝ),
     (L.restrictScalars ℝ).fderiv_comp_left φ.differentiableAt]
   simp [lineDerivOp_apply_eq_fderiv]
 
@@ -83,12 +83,10 @@ theorem laplacian_postcompCLM {W : Type*} [NormedAddCommGroup W] [InnerProductSp
     [FiniteDimensional ℝ W] (φ : 𝓢(W, F)) (L : F →L[𝕜] G) :
     Δ (φ.postcompCLM L) = (Δ φ).postcompCLM L := by
   ext x
-  -- `φ.postcompCLM L` is `L ∘ φ` as a function; `L` is applied as a real-linear map.
-  have hfun : ⇑(φ.postcompCLM L) = L.restrictScalars ℝ ∘ φ := by
-    ext y
-    simp
-  rw [laplacian_apply, hfun, (φ.smooth 2).contDiffAt.laplacian_CLM_comp_left, postcompCLM_apply,
-    laplacian_apply, Function.comp_apply, ContinuousLinearMap.coe_restrictScalars']
+  -- `L` is applied as a real-linear map.
+  rw [laplacian_apply, coe_postcompCLM, ← L.coe_restrictScalars' (R := ℝ),
+    (φ.smooth 2).contDiffAt.laplacian_CLM_comp_left, postcompCLM_apply, laplacian_apply,
+    Function.comp_apply, ContinuousLinearMap.coe_restrictScalars']
 
 /-- **Directional derivatives of Schwartz functions commute.** -/
 theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_{w} (∂_{v} f) := by
@@ -140,6 +138,15 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢(ℂ, F)) :
     Δ f = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} f) + ∂_{Complex.I} (∂_{Complex.I} f) := by
   simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
 
+/-- Directional differentiation commutes with multiplication by a constant `c` from any normed
+field `R` acting on the values. Mathlib's `LineDeriv.lineDerivOp_smul` covers only `RCLike`
+scalars on Schwartz space. -/
+@[simp]
+protected theorem lineDerivOp_smul {R : Type*} [NormedField R] [NormedSpace R F]
+    [SMulCommClass ℝ R F] (f : 𝓢(V, F)) (c : R) (v : V) : ∂_{v} (c • f) = c • ∂_{v} f := by
+  ext x
+  simp [lineDerivOp_apply_eq_fderiv, fderiv_const_smul f.differentiableAt]
+
 variable [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G]
 
 /-- **The Leibniz rule for a continuous bilinear map with a function of temperate growth**:
@@ -151,28 +158,25 @@ theorem lineDerivOp_bilinLeftCLM {E : Type*} [NormedAddCommGroup E] [NormedSpace
       bilinLeftCLM B (hg.fderiv_apply v) f + bilinLeftCLM B hg (∂_{v} f) := by
   ext x
   -- `B` is differentiated as a real-bilinear map.
-  have hB : ⇑(bilinLeftCLM B hg f) = fun y ↦ B.bilinearRestrictScalars ℝ (f y) (g y) := rfl
+  have hB : ⇑(bilinLeftCLM B hg f) = fun y ↦ B.bilinearRestrictScalars ℝ (f y) (g y) := by
+    simp only [bilinLeftCLM_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply]
   rw [lineDerivOp_apply_eq_fderiv, hB, (B.bilinearRestrictScalars ℝ).fderiv_of_bilinear
     f.differentiableAt (hg.1.differentiable (by simp) x)]
   simp [lineDerivOp_apply_eq_fderiv]
 
 /-- **The Leibniz rule for multiplication by a function of temperate growth**:
 `∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is `x ↦ Dg(x) v`. -/
-theorem lineDerivOp_smulLeftCLM {g : V → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(V, F)) (v : V) :
+theorem lineDerivOp_smulLeftCLM (f : 𝓢(V, F)) {g : V → 𝕜} (hg : g.HasTemperateGrowth) (v : V) :
     ∂_{v} (smulLeftCLM F g f) =
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
-  -- Multiplication by a function of temperate growth is `bilinLeftCLM` of flipped scalar
-  -- multiplication.
-  have hsmul {h : V → 𝕜} (hh : h.HasTemperateGrowth) :
-      smulLeftCLM F h = bilinLeftCLM (ContinuousLinearMap.lsmul 𝕜 𝕜).flip hh := by
-    simp [smulLeftCLM, hh]
-  rw [hsmul hg, hsmul (hg.fderiv_apply v), lineDerivOp_bilinLeftCLM]
+  rw [smulLeftCLM_eq_bilinLeftCLM hg, smulLeftCLM_eq_bilinLeftCLM (hg.fderiv_apply v),
+    lineDerivOp_bilinLeftCLM]
 
 /-- **The Leibniz rule for multiplication by a linear function**:
 `∂_v (L f) = L ∂_v f + L v f` for a continuous real-linear map `L : V →L[ℝ] 𝕜`. -/
 theorem lineDerivOp_smulLeftCLM_clm (f : 𝓢(V, F)) (L : V →L[ℝ] 𝕜) (v : V) :
     ∂_{v} (smulLeftCLM F L f) = smulLeftCLM F L (∂_{v} f) + L v • f := by
-  rw [lineDerivOp_smulLeftCLM L.hasTemperateGrowth, add_comm]
+  rw [lineDerivOp_smulLeftCLM f L.hasTemperateGrowth, add_comm]
   simp
 
 /-- **The iterated Leibniz rule for multiplication by a linear function**:
@@ -181,10 +185,6 @@ theorem lineDerivOp_smulLeftCLM_clm (f : 𝓢(V, F)) (L : V →L[ℝ] 𝕜) (v :
 theorem iterate_lineDerivOp_smulLeftCLM_clm (f : 𝓢(V, F)) (L : V →L[ℝ] 𝕜) (v : V) (k : ℕ) :
     (∂_{v})^[k + 1] (smulLeftCLM F L f) =
       smulLeftCLM F L ((∂_{v})^[k + 1] f) + ((k + 1) * L v) • (∂_{v})^[k] f := by
-  -- Directional differentiation commutes with multiplication by a constant of `𝕜`.
-  have hsmul (c : 𝕜) (g : 𝓢(V, F)) : ∂_{v} (c • g) = c • ∂_{v} g := by
-    ext x
-    simp [lineDerivOp_apply_eq_fderiv, fderiv_const_smul g.differentiableAt]
   induction k with
   | zero => simpa using lineDerivOp_smulLeftCLM_clm f L v
   | succ k ih =>
@@ -192,7 +192,7 @@ theorem iterate_lineDerivOp_smulLeftCLM_clm (f : 𝓢(V, F)) (L : V →L[ℝ] �
         = ∂_{v} (smulLeftCLM F L ((∂_{v})^[k + 1] f) + ((k + 1) * L v) • (∂_{v})^[k] f) := by
           rw [Function.iterate_succ_apply' _ _ (smulLeftCLM F L f), ih]
       _ = smulLeftCLM F L ((∂_{v})^[k + 1 + 1] f) + ((↑(k + 1) + 1) * L v) • (∂_{v})^[k + 1] f := by
-          rw [LineDeriv.lineDerivOp_add, hsmul, lineDerivOp_smulLeftCLM_clm]
+          rw [LineDeriv.lineDerivOp_add, SchwartzMap.lineDerivOp_smul, lineDerivOp_smulLeftCLM_clm]
           simp only [Function.iterate_succ_apply']
           rw [add_assoc, ← add_smul]
           congr 2
