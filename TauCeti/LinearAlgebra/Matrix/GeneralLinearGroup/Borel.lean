@@ -134,6 +134,18 @@ theorem coe_mk (a d : Rˣ) (b : R) :
     ((mk a d b : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, (d : R)] :=
   (rfl)
 
+/-- Upper-triangular matrices in normal form are equal exactly when their three entries agree. -/
+@[simp]
+theorem mk_inj {a d a' d' : Rˣ} {b b' : R} :
+    mk a d b = mk a' d' b' ↔ a = a' ∧ d = d' ∧ b = b' := by
+  constructor
+  · intro h
+    exact ⟨Units.ext (by simpa using congrArg (fun g : GL (Fin 2) R ↦ g 0 0) h),
+      Units.ext (by simpa using congrArg (fun g : GL (Fin 2) R ↦ g 1 1) h),
+      by simpa using congrArg (fun g : GL (Fin 2) R ↦ g 0 1) h⟩
+  · rintro ⟨rfl, rfl, rfl⟩
+    rfl
+
 /-- Upper-triangular matrices multiply diagonal entry by diagonal entry, and the upper-right entry
 of the product is `a b' + b d'`. -/
 @[simp]
