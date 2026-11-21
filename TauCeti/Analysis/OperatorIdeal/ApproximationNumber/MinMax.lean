@@ -195,11 +195,8 @@ theorem rank_comp_starProjection_le {F : Type*} [TopologicalSpace F] [AddCommMon
     [Module 𝕜 F] (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
     [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
     (T ∘L V.starProjection).rank ≤ n := by
-  have hP : (V.starProjection : E →ₗ[𝕜] E).rank ≤ n := by
-    rwa [LinearMap.rank, Submodule.range_starProjection]
-  have hle := (LinearMap.lift_rank_comp_le_right (V.starProjection : E →ₗ[𝕜] E)
-    (T : E →ₗ[𝕜] F)).trans (Cardinal.lift_le.mpr hP)
-  rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+  refine T.rank_comp_le_of_rank_le ?_
+  rwa [LinearMap.rank, Submodule.range_starProjection]
 
 variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
