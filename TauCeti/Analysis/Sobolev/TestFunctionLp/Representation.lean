@@ -246,54 +246,6 @@ private theorem exists_dual_comp_partialDerivativesLp_eq [Fact (1 ≤ q)]
   have h := hΛ (T.rangeRestrict φ)
   simpa only [LinearMap.codRestrict_apply, LinearMap.mkContinuous_apply, hf₀_apply] using h
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] [IsFiniteMeasureOnCompacts μ] in
-/-- **Representation of functionals on `(Lᵠ(Ω))ᵈ`.** A continuous functional `Λ` on `(Lᵠ(Ω))ᵈ` is
-`g ↦ ∑ᵢ ∫_Ω ⟪H, bᵢ⟫ gᵢ` for a field `H ∈ Lᵖ(Ω; E)` with `‖H‖_{Lᵖ} ≤ d ‖Λ‖`. -/
-private theorem exists_memLp_forall_dual_apply_eq [SigmaFinite (μ.restrict Ω)] [Fact (1 ≤ p)]
-    [Fact (1 ≤ q)] [p.HolderConjugate q] (hq : 1 < q) (hq_top : q ≠ ⊤)
-    (b : OrthonormalBasis (Fin (finrank ℝ E)) ℝ E)
-    (Λ : StrongDual ℝ (Fin (finrank ℝ E) → Lp ℝ q (μ.restrict Ω))) :
-    ∃ H : E → E, MemLp H p (μ.restrict Ω) ∧
-      eLpNorm H p (μ.restrict Ω) ≤ finrank ℝ E * ENNReal.ofReal ‖Λ‖ ∧
-      ∀ g, Λ g = ∑ i, ∫ x in Ω, ⟪H x, b i⟫_ℝ * g i x ∂μ := by
-  classical
-  let Λc : Fin (finrank ℝ E) → StrongDual ℝ (Lp ℝ q (μ.restrict Ω)) := fun i =>
-    Λ.comp (ContinuousLinearMap.single ℝ (fun _ : Fin (finrank ℝ E) => Lp ℝ q (μ.restrict Ω)) i)
-  let Hc : Fin (finrank ℝ E) → Lp ℝ p (μ.restrict Ω) := fun i =>
-    (Lp.dualEquiv ℝ (μ.restrict Ω) p q hq hq_top).symm (Λc i)
-  have hHc (i : Fin (finrank ℝ E)) : ‖Hc i‖ ≤ ‖Λ‖ := by
-    simp only [Hc, LinearIsometryEquiv.norm_map]
-    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun g => ?_
-    calc ‖Λc i g‖ ≤ ‖Λ‖ *
-          ‖Pi.single (M := fun _ : Fin (finrank ℝ E) => Lp ℝ q (μ.restrict Ω)) i g‖ :=
-          Λ.le_opNorm _
-      _ = ‖Λ‖ * ‖g‖ := by rw [Pi.norm_single]
-  have hHi (i : Fin (finrank ℝ E)) : MemLp (fun x => (Hc i : E → ℝ) x • b i) p (μ.restrict Ω) :=
-    (Lp.memLp (Hc i)).smul (memLp_top_const (b i))
-  have hsum : (fun x => ∑ i, (Hc i : E → ℝ) x • b i) = ∑ i, fun x => (Hc i : E → ℝ) x • b i :=
-    (Finset.sum_fn _ _).symm
-  have hinner (x : E) (i : Fin (finrank ℝ E)) : ⟪∑ j, (Hc j : E → ℝ) x • b j, b i⟫_ℝ = Hc i x := by
-    simp [sum_inner, real_inner_smul_left, b.inner_eq_ite]
-  refine ⟨fun x => ∑ i, (Hc i : E → ℝ) x • b i, ?_, ?_, fun g => ?_⟩
-  · rw [hsum]
-    exact memLp_finsetSum' Finset.univ fun i _ => hHi i
-  · calc eLpNorm (fun x => ∑ i, (Hc i : E → ℝ) x • b i) p (μ.restrict Ω)
-        ≤ ∑ i, eLpNorm (fun x => (Hc i : E → ℝ) x • b i) p (μ.restrict Ω) := by
-          rw [hsum]
-          exact eLpNorm_sum_le Fact.out
-      _ ≤ ∑ _i : Fin (finrank ℝ E), ENNReal.ofReal ‖Λ‖ := by
-          refine Finset.sum_le_sum fun i _ => ?_
-          rw [eLpNorm_congr_norm_ae (hHi i).aestronglyMeasurable (Lp.aestronglyMeasurable (Hc i))
-            (ae_of_all _ fun x => by rw [norm_smul, b.orthonormal.1 i, mul_one]), ← Lp.eNorm_def,
-            ← ofReal_norm]
-          exact ENNReal.ofReal_le_ofReal (hHc i)
-      _ = finrank ℝ E * ENNReal.ofReal ‖Λ‖ := by simp
-  · conv_lhs => rw [← Finset.univ_sum_single g]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    simp_rw [hinner]
-    exact (Lp.integral_dualEquiv_symm_mul (p := p) hq hq_top (Λc i) (g i)).symm
-
 /-- **Functionals bounded by the gradient are divergences.** Let `1 < q < ∞` and let `p` be its
 conjugate exponent. If a linear functional `ℓ` on the test functions of `Ω` satisfies
 `|ℓ φ| ≤ M ‖∇φ‖_{L^q}`, then `ℓ φ = ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
@@ -308,7 +260,8 @@ theorem exists_memLp_forall_eq_integral_inner_gradient_of_abs_le [SigmaFinite (�
       ∀ φ : 𝓓(Ω, ℝ), ℓ φ = ∫ x in Ω, ⟪H x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ := by
   set b := stdOrthonormalBasis ℝ E
   obtain ⟨Λ, hΛ, hΛT⟩ := exists_dual_comp_partialDerivativesLp_eq (μ := μ) (q := q) b ℓ hM hℓ
-  obtain ⟨H, hH, hHnorm, hHΛ⟩ := exists_memLp_forall_dual_apply_eq (p := p) hq hq_top b Λ
+  obtain ⟨H, hH, hHnorm, hHΛ⟩ := Lp.exists_memLp_forall_dual_pi_apply_eq (p := p) hq hq_top b Λ
+  rw [Fintype.card_fin] at hHnorm
   refine ⟨H, hH, ?_, fun φ => ?_⟩
   · calc eLpNorm H p (μ.restrict Ω) ≤ finrank ℝ E * ENNReal.ofReal ‖Λ‖ := hHnorm
       _ ≤ finrank ℝ E * ENNReal.ofReal (finrank ℝ E * M) := by gcongr

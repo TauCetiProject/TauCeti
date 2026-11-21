@@ -132,7 +132,7 @@ private theorem abs_integral_mul_le_of_integral_eq_zero {p r : ℝ≥0∞} [Fact
   have hhB : MemLp h r (μ.restrict B) := hh.restrict B
   have hint1 : Integrable (fun x => ((φ : E → ℝ) x - c) * h x) (μ.restrict B) :=
     hφs.integrable_mul hhB
-  have heq := integral_mul_eq_setIntegral_sub_smul (hhB.integrable hr1) hsupp hmean c hint1
+  have heq := integral_mul_eq_setIntegral_sub_mul (hhB.integrable hr1) hsupp hmean c hint1
   have hHolder := enorm_integral_smul_le (μ := μ.restrict B) (p := s) (q := r)
     (a := fun x => (φ : E → ℝ) x - c) (f := h)
   have hfin : ENNReal.ofReal (K * t) * μ B ^ (-δ) * eLpNorm h r μ ≠ ⊤ := by
