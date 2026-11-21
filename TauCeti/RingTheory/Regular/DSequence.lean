@@ -39,7 +39,7 @@ the element acting on it is `rs[i]`.
 * `TauCeti.isDSequence_iff_forall_mem_of_smul_mem`: the membership form of the definition.
 * `RingTheory.Sequence.IsWeaklyRegular.isDSequence`: weakly regular sequences are d-sequences.
 * `TauCeti.isDSequence_singleton_iff`: `[r]` is a d-sequence iff `r` is injective on `r M`.
-* `LinearEquiv.isDSequence_iff`: d-sequences are invariant under linear equivalences.
+* `LinearEquiv.isDSequence_congr`: d-sequences are invariant under linear equivalences.
 * `TauCeti.isDSequence_iff_torsionBy_eq`: the torsion characterization.
 * `TauCeti.IsDSequence.comap_lsmul_inf_pow_smul_top_eq`: the Goto–Yamagishi colon identity.
 * `TauCeti.IsDSequence.inf_pow_smul_top_eq`: the Goto–Yamagishi intersection identity.
@@ -144,7 +144,7 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isDSequence {rs : List R}
     (isSMulRegular_quotient_iff_mem_of_smul_mem _ _).1 (h.regular_mod_prev i hi) x hrx
 
 /-- d-sequences are invariant under linear equivalences. -/
-theorem LinearEquiv.isDSequence_iff (e : M ≃ₗ[R] N) (rs : List R) :
+theorem LinearEquiv.isDSequence_congr (e : M ≃ₗ[R] N) (rs : List R) :
     IsDSequence M rs ↔ IsDSequence N rs := by
   have key : ∀ (I : Ideal R) (x : M),
       e x ∈ (I • ⊤ : Submodule R N) ↔ x ∈ (I • ⊤ : Submodule R M) := fun I x =>
@@ -217,6 +217,11 @@ private theorem isDSequence_of_torsionCondition {rs : List R} (h : TorsionCondit
       exact hrs.mem_of_smul_mem hi' hmem hrx
     · rwa [htake]
 
+/-- The class of `x` in `M ⧸ P` is `a`-torsion if and only if `a • x ∈ P`. -/
+private theorem mk_mem_torsionBy_iff {P : Submodule R M} {a : R} {x : M} :
+    (Submodule.Quotient.mk x : M ⧸ P) ∈ torsionBy R (M ⧸ P) a ↔ a • x ∈ P := by
+  rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero]
+
 /-- **Torsion characterization of d-sequences.** A list `rs` is a d-sequence on `M` if and only if
 for all `i ≤ j` the `rs[j]`-torsion and the `rs[i] * rs[j]`-torsion of the prefix quotient
 `M ⧸ (rs.take i) M` coincide. The later element `rs[j]` appears on both sides. -/
@@ -231,19 +236,12 @@ theorem isDSequence_iff_torsionBy_eq (rs : List R) :
           rs[j] • x ∈ (Ideal.ofList (rs.take i) • ⊤ : Submodule R M) := by
     intro i j hij hj
     refine ⟨fun h x hx => ?_, fun h => le_antisymm ?_ ?_⟩
-    · have hx' : Submodule.Quotient.mk x ∈ torsionBy R (M ⧸ (Ideal.ofList (rs.take i) • ⊤ :
-          Submodule R M)) (rs[i] * rs[j]) := by
-        rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero]
-        exact hx
-      rw [h, mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero] at hx'
-      exact hx'
+    · rwa [← mk_mem_torsionBy_iff, h, mk_mem_torsionBy_iff] at hx
     · rintro ⟨x⟩ hx
-      rw [Quotient.quot_mk_eq_mk, mem_torsionBy_iff, ← Quotient.mk_smul,
-        Quotient.mk_eq_zero] at hx ⊢
+      rw [Quotient.quot_mk_eq_mk, mk_mem_torsionBy_iff] at hx ⊢
       exact h x hx
     · rintro ⟨x⟩ hx
-      rw [Quotient.quot_mk_eq_mk, mem_torsionBy_iff, ← Quotient.mk_smul,
-        Quotient.mk_eq_zero] at hx ⊢
+      rw [Quotient.quot_mk_eq_mk, mk_mem_torsionBy_iff] at hx ⊢
       rw [mul_smul]
       exact smul_mem _ _ hx
   refine ⟨fun h i j hij hj => (key i j hij hj).2 fun x hx => ?_,
