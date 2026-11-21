@@ -15,6 +15,7 @@ import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -540,24 +541,6 @@ theorem quantizeBesselPotentialSpace_comp_inclusion (ha : a.HasCompactSpatialSup
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
   simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
 
-/-- The case `t ≤ s` of `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`. -/
-private theorem toDistr_quantizeBesselPotentialSpace_congr_of_le {b : Symbol n V W m'}
-    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ}
-    (hts : t ≤ s) {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, p}(CoordinateSpace n, V)}
-    (huv : u.toDistr = v.toDistr) :
-    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
-  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L a.quantizeBesselPotentialSpace ha s p =
-      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L b.quantizeBesselPotentialSpace hb t p ∘L
-        BesselPotentialSpace.inclusion hts := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-    simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-      quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]
-  have hv : v = BesselPotentialSpace.inclusion hts u :=
-    BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
-  simpa [hv] using congrArg (fun T ↦ T u) key
-
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
 orders `m` and `m'` with the same coefficient give the same tempered distribution on
@@ -568,11 +551,11 @@ theorem toDistr_quantizeBesselPotentialSpace_congr {b : Symbol n V W m'}
     {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, p}(CoordinateSpace n, V)}
     (huv : u.toDistr = v.toDistr) :
     (a.quantizeBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
-  rcases le_total t s with h | h
-  · exact toDistr_quantizeBesselPotentialSpace_congr_of_le hab ha hb hp hp_top h huv
-  · exact (toDistr_quantizeBesselPotentialSpace_congr_of_le hab.symm hb ha hp hp_top h
-      huv.symm).symm
+      (b.quantizeBesselPotentialSpace hb t p v).toDistr :=
+  SchwartzMap.toDistr_apply_congr_of_comp_eq hp_top (A := quantizeUniformCLM a ha.isUniform)
+    (ContinuousLinearMap.ext fun u ↦ by simp [hp, hp_top])
+    (ContinuousLinearMap.ext fun u ↦ by
+      simp [hp, hp_top, quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]) huv
 
 /-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
 order `0` has compact spatial support, for instance a compactly supported `φ`

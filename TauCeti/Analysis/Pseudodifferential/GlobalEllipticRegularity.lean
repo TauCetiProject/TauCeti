@@ -174,7 +174,8 @@ theorem IsUniformlyEllipticAbove.memSobolev_toDistr_of_memSobolev
   -- `u = Op(b) (T u) - Op(q) u`, where `Op(b) (T u)` only depends on the tempered distribution
   -- `T u ∈ H^{s - m}`, and `Op(q) u ∈ H^s`.
   have hBv : (B (T u)).toDistr = (B' hu.toBesselPotentialSpace).toDistr :=
-    SchwartzMap.toDistr_apply_congr_of_comp_eq hB hB' hu.toBesselPotentialSpace_toDistr.symm
+    SchwartzMap.toDistr_apply_congr_of_comp_eq ENNReal.ofNat_ne_top hB hB'
+      hu.toBesselPotentialSpace_toDistr.symm
   have hid : u.toDistr = (B' hu.toBesselPotentialSpace).toDistr - (Q u).toDistr := by
     rw [← hBv, toDistr_apply_apply_eq_add hbar hT hB hQ u, add_sub_cancel_right]
   rw [hid]
