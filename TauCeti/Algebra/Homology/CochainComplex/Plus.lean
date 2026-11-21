@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
+public import Mathlib.CategoryTheory.Preadditive.Injective.Resolution
+import TauCeti.Algebra.Homology.Embedding.Extend.Basic
 
 /-!
 # Single complexes, mapping cones, truncations, and composition on `CochainComplex.Plus`
@@ -16,6 +18,9 @@ bounded-below `ℤ`-indexed cochain complexes under minimal categorical hypothes
 * `TauCeti.CochainComplex.Plus.singleFunctor` and `singleFunctorCompιIso`: the single-object
   embedding `C ⥤ CochainComplex.Plus C` in degree `n : ℤ` (for `[HasZeroMorphisms C]` and
   `[HasZeroObject C]`).
+* `CategoryTheory.InjectiveResolution.extendResolution` and `extendResolution_naturality`:
+  the bounded-below resolution `X[0] ⟶ extend I.cocomplex` induced by an injective resolution
+  `I` of `X`, together with its `QuasiIso` instance and naturality.
 * `CochainComplex.Plus.mappingCone`, `mappingConeTriangle`, and
   `mappingConeTriangleιIso`: mapping cones and mapping cone triangles in `CochainComplex.Plus C`
   (for `[Preadditive C]` and `[HasBinaryBiproducts C]`).
@@ -67,6 +72,10 @@ lemma singleFunctor_map_hom (n : ℤ) {X Y : C} (f : X ⟶ Y) :
     ((singleFunctor C n).map f).hom = (HomologicalComplex.single C (.up ℤ) n).map f :=
   rfl
 
+instance hasHomology_singleFunctor_obj (n : ℤ) (X : C) (i : ℤ) :
+    ((singleFunctor C n).obj X).obj.HasHomology i :=
+  inferInstanceAs (((HomologicalComplex.single C (.up ℤ) n).obj X).HasHomology i)
+
 @[simp]
 lemma singleFunctorCompιIso_hom_app (n : ℤ) (X : C) :
     (singleFunctorCompιIso C n).hom.app X = 𝟙 _ :=
@@ -80,6 +89,67 @@ lemma singleFunctorCompιIso_inv_app (n : ℤ) (X : C) :
 end Single
 
 end TauCeti.CochainComplex.Plus
+
+namespace CategoryTheory.InjectiveResolution
+
+section BoundedBelow
+
+variable {C : Type u₁} [Category.{v₁} C] [HasZeroMorphisms C] [HasZeroObject C]
+
+/-- The bounded-below resolution `X[0] ⟶ extend I.cocomplex` in `CochainComplex.Plus C`
+induced by an injective resolution `I` of `X`. -/
+def extendResolution {X : C} (I : InjectiveResolution X) :
+    (TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶
+      ⟨I.cocomplex.extend ComplexShape.embeddingUpNat,
+        (_root_.CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ :=
+  ObjectProperty.homMk
+    ((TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫
+      (HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat X 0 0
+        (ComplexShape.embeddingUpNat_f 0)).inv ≫
+      HomologicalComplex.extendMap I.ι ComplexShape.embeddingUpNat)
+
+/-- Underlying cochain-complex morphism of `I.extendResolution`. -/
+@[simp]
+lemma extendResolution_hom {X : C} (I : InjectiveResolution X) :
+    I.extendResolution.hom =
+      (TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫
+        (HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat X 0 0
+          (ComplexShape.embeddingUpNat_f 0)).inv ≫
+        HomologicalComplex.extendMap I.ι ComplexShape.embeddingUpNat :=
+  (rfl)
+
+instance quasiIso_extendResolution_hom {X : C} (I : InjectiveResolution X) :
+    QuasiIso I.extendResolution.hom := by
+  rw [extendResolution_hom]
+  infer_instance
+
+/-- Naturality of `extendResolution` with respect to a lifting morphism `φ` of injective
+resolutions. -/
+lemma extendResolution_naturality {X Y : C} (f : X ⟶ Y)
+    (IX : InjectiveResolution X) (IY : InjectiveResolution Y)
+    (φ : IX.cocomplex ⟶ IY.cocomplex)
+    (hφ : IX.ι ≫ φ = (_root_.CochainComplex.single₀ C).map f ≫ IY.ι) :
+    IX.extendResolution ≫
+        (ObjectProperty.homMk (HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat) :
+          (⟨IX.cocomplex.extend ComplexShape.embeddingUpNat,
+            (_root_.CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ :
+              _root_.CochainComplex.Plus C) ⟶
+          ⟨IY.cocomplex.extend ComplexShape.embeddingUpNat,
+            (_root_.CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩) =
+      (TauCeti.CochainComplex.Plus.singleFunctor C 0).map f ≫ IY.extendResolution := by
+  apply (_root_.CochainComplex.Plus.ι C).map_injective
+  change IX.extendResolution.hom ≫ HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat =
+    ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f).hom ≫ IY.extendResolution.hom
+  simp only [extendResolution_hom, TauCeti.CochainComplex.Plus.singleFunctorCompιIso_hom_app,
+    TauCeti.CochainComplex.Plus.singleFunctor_map_hom, Category.id_comp, Category.assoc]
+  rw [← HomologicalComplex.extendMap_comp, hφ, HomologicalComplex.extendMap_comp]
+  dsimp only [_root_.CochainComplex.single₀]
+  rw [← ComplexShape.embeddingUpNat.extendSingleIso_inv_naturality_assoc f (i := 0) (i' := 0)
+    (by simp)]
+
+end BoundedBelow
+
+end CategoryTheory.InjectiveResolution
 
 namespace CochainComplex.Plus
 
@@ -162,14 +232,9 @@ def mappingConeTriangleιIso {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (by simp [Triangle.mk])
     (by dsimp [Triangle.mk]; exact (Category.comp_id _).trans (Category.id_comp _).symm)
     (by
-      dsimp [Triangle.mk, mappingConeTriangle]
+      dsimp
       rw [CategoryTheory.Functor.map_id, Category.comp_id, Category.id_comp]
-      have h := (CochainComplex.Plus.fullyFaithfulι C).map_preimage
-        (X := mappingCone f) (Y := K⟦(1 : ℤ)⟧)
-        ((_root_.CochainComplex.mappingCone.triangle f.hom).mor₃ ≫
-          ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K)
-      simpa using
-        congrArg (· ≫ ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K) h)
+      exact mappingConeTriangle_mor₃_hom_comp f)
 
 @[simp]
 lemma mappingConeTriangleιIso_hom_hom₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
@@ -240,6 +305,14 @@ instance hasHomology_truncLE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomolo
 instance hasHomology_truncGE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i]
     (n i : ℤ) : (K.truncGE n).obj.HasHomology i :=
   inferInstanceAs ((K.obj.truncGE n).HasHomology i)
+
+instance isStrictlyLE_truncLE_obj (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i]
+    (n : ℤ) : (K.truncLE n).obj.IsStrictlyLE n :=
+  inferInstanceAs ((K.obj.truncLE n).IsStrictlyLE n)
+
+instance isStrictlyGE_truncGE_obj (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i]
+    (n : ℤ) : (K.truncGE n).obj.IsStrictlyGE n :=
+  inferInstanceAs ((K.obj.truncGE n).IsStrictlyGE n)
 
 /-- The canonical morphism `τ_{≤ n} K ⟶ K` in `CochainComplex.Plus C`. -/
 def ιTruncLE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i] (n : ℤ) :

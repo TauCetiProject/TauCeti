@@ -22,10 +22,17 @@ This lets statements about complexes indexed by `ℕ`, such as Čech complexes, 
 their extensions to `ℤ`, which is the indexing used for bounded complexes, compatibly with
 operations applied degreewise such as extension of scalars.
 
-## Main definitions
+## Main definitions and results
 
 * `HomologicalComplex.mapExtendIso`: the isomorphism
-  `F(K.extend e) ≅ (F K).extend e` of complexes of shape `c'`.
+  `F(K.extend e) ≅ (F K).extend e` of complexes of shape `c'`, with component formulas
+  `HomologicalComplex.mapExtendIso_hom_f`, `HomologicalComplex.mapExtendIso_inv_f` and naturality
+  `HomologicalComplex.mapExtendIso_hom_naturality`.
+* `ComplexShape.Embedding.extendFunctorCompMapHomologicalComplexIso`: for any functor `F : C ⥤ D`
+  preserving zero morphisms between categories with zero objects and zero morphisms,
+  `e.extendFunctor C ⋙ F.mapHomologicalComplex c' ≅ F.mapHomologicalComplex c ⋙ e.extendFunctor D`,
+  with component formulas on whole complexes (`extendFunctorCompMapHomologicalComplexIso_app`,
+  `_hom_app`, `_inv_app`) and in degrees in the image of `e.f`.
 -/
 
 public section
@@ -92,4 +99,95 @@ lemma mapExtendIso_hom_f {j : ι} {j' : ι'} (h : e.f j = j') :
   subst h
   exact extend.mapXIso_hom_of_eq_some F K (e.r_f j)
 
+/-- In a degree `i' = e.f i` in the image of `e`, the inverse component of
+`HomologicalComplex.mapExtendIso` identifies `((F(K)).extend e).X i'` with `F((K.extend e).X i')`
+via `HomologicalComplex.extendXIso`. -/
+@[reassoc]
+lemma mapExtendIso_inv_f {i : ι} {i' : ι'} (h : e.f i = i') :
+    (mapExtendIso F K e).inv.f i' =
+      (((F.mapHomologicalComplex c).obj K).extendXIso e h).hom ≫
+        F.map (K.extendXIso e h).inv := by
+  have hid : (mapExtendIso F K e).hom.f i' ≫ (mapExtendIso F K e).inv.f i' = 𝟙 _ := by
+    rw [← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f]
+  rw [← cancel_epi ((mapExtendIso F K e).hom.f i'), hid, mapExtendIso_hom_f F K e h]
+  simp
+
+/-- Naturality of `HomologicalComplex.mapExtendIso` in morphisms of complexes. -/
+@[reassoc]
+lemma mapExtendIso_hom_naturality {K L : HomologicalComplex C c} (φ : K ⟶ L) :
+    (F.mapHomologicalComplex c').map (extendMap φ e) ≫ (mapExtendIso F L e).hom =
+      (mapExtendIso F K e).hom ≫ extendMap ((F.mapHomologicalComplex c).map φ) e := by
+  ext i'
+  by_cases h : ∃ i, e.f i = i'
+  · rcases h with ⟨i, hi⟩
+    simp [mapExtendIso_hom_f _ _ e hi, extendMap_f φ e hi,
+      extendMap_f ((F.mapHomologicalComplex c).map φ) e hi]
+  · exact (F.map_isZero (K.isZero_extend_X e i' fun i hi ↦ h ⟨i, hi⟩)).eq_of_src _ _
+
 end HomologicalComplex
+
+namespace ComplexShape.Embedding
+
+variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+  {C D : Type*} [Category* C] [Category* D] [HasZeroObject C] [HasZeroObject D]
+  [HasZeroMorphisms C] [HasZeroMorphisms D]
+
+/-- Extending along a complex-shape embedding `e` commutes naturally with termwise application of a
+functor `F` preserving zero morphisms. -/
+def extendFunctorCompMapHomologicalComplexIso (e : c.Embedding c') (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] :
+    e.extendFunctor C ⋙ F.mapHomologicalComplex c' ≅
+      F.mapHomologicalComplex c ⋙ e.extendFunctor D :=
+  NatIso.ofComponents (fun K ↦ HomologicalComplex.mapExtendIso F K e)
+    (fun φ ↦ HomologicalComplex.mapExtendIso_hom_naturality F e φ)
+
+/-- The component of `extendFunctorCompMapHomologicalComplexIso` at `K` is
+`HomologicalComplex.mapExtendIso F K e`. -/
+@[simp]
+lemma extendFunctorCompMapHomologicalComplexIso_app (e : c.Embedding c') (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] (K : HomologicalComplex C c) :
+    (e.extendFunctorCompMapHomologicalComplexIso F).app K =
+      HomologicalComplex.mapExtendIso F K e := by
+  simp [extendFunctorCompMapHomologicalComplexIso]
+
+/-- The forward component of `extendFunctorCompMapHomologicalComplexIso` at `K` is
+`(HomologicalComplex.mapExtendIso F K e).hom`. -/
+@[simp]
+lemma extendFunctorCompMapHomologicalComplexIso_hom_app (e : c.Embedding c') (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] (K : HomologicalComplex C c) :
+    (e.extendFunctorCompMapHomologicalComplexIso F).hom.app K =
+      (HomologicalComplex.mapExtendIso F K e).hom :=
+  (rfl)
+
+/-- The inverse component of `extendFunctorCompMapHomologicalComplexIso` at `K` is
+`(HomologicalComplex.mapExtendIso F K e).inv`. -/
+@[simp]
+lemma extendFunctorCompMapHomologicalComplexIso_inv_app (e : c.Embedding c') (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] (K : HomologicalComplex C c) :
+    (e.extendFunctorCompMapHomologicalComplexIso F).inv.app K =
+      (HomologicalComplex.mapExtendIso F K e).inv :=
+  (rfl)
+
+/-- In a degree `i' = e.f i` in the image of `e`, the forward component of
+`extendFunctorCompMapHomologicalComplexIso` identifies `F((K.extend e).X i')` with
+`((F(K)).extend e).X i'` via `HomologicalComplex.extendXIso`. -/
+@[reassoc]
+lemma extendFunctorCompMapHomologicalComplexIso_hom_app_f (e : c.Embedding c') (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] (K : HomologicalComplex C c) {i : ι} {i' : ι'} (h : e.f i = i') :
+    ((e.extendFunctorCompMapHomologicalComplexIso F).hom.app K).f i' =
+      F.map (K.extendXIso e h).hom ≫
+        (((F.mapHomologicalComplex c).obj K).extendXIso e h).inv :=
+  HomologicalComplex.mapExtendIso_hom_f F K e h
+
+/-- In a degree `i' = e.f i` in the image of `e`, the inverse component of
+`extendFunctorCompMapHomologicalComplexIso` identifies `((F(K)).extend e).X i'` with
+`F((K.extend e).X i')` via `HomologicalComplex.extendXIso`. -/
+@[reassoc]
+lemma extendFunctorCompMapHomologicalComplexIso_inv_app_f (e : c.Embedding c') (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] (K : HomologicalComplex C c) {i : ι} {i' : ι'} (h : e.f i = i') :
+    ((e.extendFunctorCompMapHomologicalComplexIso F).inv.app K).f i' =
+      (((F.mapHomologicalComplex c).obj K).extendXIso e h).hom ≫
+        F.map (K.extendXIso e h).inv :=
+  HomologicalComplex.mapExtendIso_inv_f F K e h
+
+end ComplexShape.Embedding

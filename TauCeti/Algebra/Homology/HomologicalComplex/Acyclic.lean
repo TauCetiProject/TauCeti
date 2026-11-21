@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
-public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
 
 /-!
 # Functors preserving acyclicity of complexes in an adapted class
@@ -139,8 +136,11 @@ theorem map_of_shortExact_of_isStrictlyGE {Q : CochainComplex C ℤ} (b : ℤ) [
     exact ((Q.restriction e).extend_exactAt_iff e (j := n) rfl).1
       ((ShortComplex.exact_iff_of_iso ((shortComplexFunctor C _ (e.f n)).mapIso he)).2
         (hQ (e.f n)))
-  have hFQ' : (((F.mapHomologicalComplex _).obj Q).restriction e).Acyclic :=
+  have hFQ_res : ((F.mapHomologicalComplex _).obj (Q.restriction e)).Acyclic :=
     map_of_shortExact F P hP hF hQ' fun n ↦ hQP (e.f n)
+  have hFQ' : (((F.mapHomologicalComplex _).obj Q).restriction e).Acyclic := fun n ↦
+    (ShortComplex.exact_iff_of_iso
+      ((shortComplexFunctor D _ n).mapIso (e.mapRestrictionIso F Q))).1 (hFQ_res n)
   have hFQ_ext : (((F.mapHomologicalComplex _).obj Q).restriction e).extend e ≅
       (F.mapHomologicalComplex _).obj Q :=
     asIso (((F.mapHomologicalComplex _).obj Q).ιStupidTrunc e)

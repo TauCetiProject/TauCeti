@@ -66,17 +66,31 @@ lemma homologyFunctorFactors_hom_naturality {K L : _root_.CochainComplex.Plus C}
       (homologyFunctorFactors C n).hom.app K ≫ HomologicalComplex.homologyMap f.hom n :=
   (homologyFunctorFactors C n).hom.naturality f
 
+end TauCeti.DerivedCategory.Plus
+
+namespace CochainComplex.Plus
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+
+/-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.hom`. -/
 @[simp]
-lemma homologyFunctorFactors_hom_app (K : _root_.CochainComplex.Plus C) (n : ℤ) :
-    (homologyFunctorFactors C n).hom.app K =
-      (_root_.DerivedCategory.homologyFunctorFactors C n).hom.app K.obj :=
+lemma homologyFunctorFactors_hom_app (K : CochainComplex.Plus C) (n : ℤ) :
+    (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).hom.app K =
+      (DerivedCategory.homologyFunctorFactors C n).hom.app K.obj :=
   (rfl)
 
+/-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.inv`. -/
 @[simp]
-lemma homologyFunctorFactors_inv_app (K : _root_.CochainComplex.Plus C) (n : ℤ) :
-    (homologyFunctorFactors C n).inv.app K =
-      (_root_.DerivedCategory.homologyFunctorFactors C n).inv.app K.obj :=
+lemma homologyFunctorFactors_inv_app (K : CochainComplex.Plus C) (n : ℤ) :
+    (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).inv.app K =
+      (DerivedCategory.homologyFunctorFactors C n).inv.app K.obj :=
   (rfl)
+
+end CochainComplex.Plus
+
+namespace TauCeti.DerivedCategory.Plus
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- Homotopic morphisms of bounded-below cochain complexes induce the same morphism in
 `DerivedCategory.Plus C`. -/

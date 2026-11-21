@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import Mathlib.CategoryTheory.Functor.Derived.RightDerivedCommShift
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Functor
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.RightDerived
-public import TauCeti.Algebra.Homology.Embedding.Extend.Basic
+public import TauCeti.Algebra.Homology.Embedding.MapExtend
 
 /-!
 # Comparison theorems for bounded-below right derived functors
@@ -229,17 +228,6 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [HasDerivedCategory.{w�
   {D : Type u₂} [Category.{v₂} D] [Abelian D] [HasDerivedCategory.{w₂} D]
   (F : C ⥤ D) [F.Additive]
 
-/-- The bounded-below resolution `X[0] ⟶ extend I.cocomplex` induced by an injective resolution
-`I` of `X`. -/
-private abbrev extendResolution {X : C} (I : InjectiveResolution X) :
-    (TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶
-      ⟨I.cocomplex.extend ComplexShape.embeddingUpNat,
-        (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ :=
-  ⟨(TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫
-    (HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat X 0 0
-      (ComplexShape.embeddingUpNat_f 0)).inv ≫
-    HomologicalComplex.extendMap I.ι ComplexShape.embeddingUpNat⟩
-
 /-- Component isomorphism identifying `Hⁿ(RF⁺(X[0]))` with `(F.rightDerived n).obj X` via any
 injective resolution `I` of `X`. -/
 private def degreeZeroComponent (n : ℕ) (X : C) (I : InjectiveResolution X) :
@@ -249,7 +237,7 @@ private def degreeZeroComponent (n : ℕ) (X : C) (I : InjectiveResolution X) :
   (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).mapIso
       (F.rightDerivedFunctorPlus.mapIso
         ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).app X)) ≪≫
-    F.rightDerivedFunctorPlusHomologyObjIsoOfResolution (extendResolution I) (n : ℤ) ≪≫
+    F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.extendResolution (n : ℤ) ≪≫
     HomologicalComplex.homologyMapIso
       (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat) (n : ℤ) ≪≫
     ((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
@@ -261,36 +249,13 @@ private lemma degreeZeroComponent_hom (n : ℕ) (X : C) (I : InjectiveResolution
       (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
           (F.rightDerivedFunctorPlus.map
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution (extendResolution I) (n : ℤ)).hom ≫
+        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.extendResolution (n : ℤ)).hom ≫
         HomologicalComplex.homologyMap
           (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
           ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n)).hom ≫
         (I.isoRightDerivedObj F n).inv :=
   rfl
-
-omit [HasDerivedCategory C] [EnoughInjectives C] in
-/-- Naturality of `extendResolution` with respect to a lifting morphism `φ` of injective
-resolutions. -/
-private lemma extendResolution_naturality {X Y : C} (f : X ⟶ Y)
-    (IX : InjectiveResolution X) (IY : InjectiveResolution Y)
-    (φ : IX.cocomplex ⟶ IY.cocomplex) (hφ : IX.ι ≫ φ = (CochainComplex.single₀ C).map f ≫ IY.ι) :
-    extendResolution IX ≫
-        (⟨HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat⟩ :
-          (⟨IX.cocomplex.extend ComplexShape.embeddingUpNat,
-            (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ : CochainComplex.Plus C) ⟶
-          ⟨IY.cocomplex.extend ComplexShape.embeddingUpNat,
-            (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩) =
-      (TauCeti.CochainComplex.Plus.singleFunctor C 0).map f ≫ extendResolution IY := by
-  apply (CochainComplex.Plus.ι C).map_injective
-  dsimp [extendResolution]
-  simp only [TauCeti.CochainComplex.Plus.singleFunctorCompιIso_hom_app, Functor.comp_obj,
-    ObjectProperty.ι_obj, TauCeti.CochainComplex.Plus.singleFunctor_obj_obj, Category.id_comp,
-    Category.assoc]
-  rw [← HomologicalComplex.extendMap_comp, hφ, HomologicalComplex.extendMap_comp]
-  dsimp only [CochainComplex.single₀]
-  rw [← ComplexShape.embeddingUpNat.extendSingleIso_inv_naturality_assoc f (i := 0) (i' := 0)
-    (by simp)]
 
 /-- Naturality of `degreeZeroComponent` for any morphism `f : X ⟶ Y` and any choices of injective
 resolutions `IX` and `IY`. -/
@@ -306,17 +271,18 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
           (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ : CochainComplex.Plus C) ⟶
       ⟨IY.cocomplex.extend ComplexShape.embeddingUpNat,
         (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ :=
-    ⟨HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat⟩
+    ObjectProperty.homMk (HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat)
   have h1 := congrArg (fun g ↦ (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
       (F.rightDerivedFunctorPlus.map g))
     ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.naturality f)
   simp only [Functor.map_comp] at h1
   have h2 := F.rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom_naturality
-    (extendResolution IX) (extendResolution IY)
+    IX.extendResolution IY.extendResolution
     ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f) φExt
-    (extendResolution_naturality f IX IY φ (InjectiveResolution.desc_commutes f IY IX)) (n : ℤ)
+    (InjectiveResolution.extendResolution_naturality f IX IY φ
+      (InjectiveResolution.desc_commutes f IY IX)) (n : ℤ)
   have h3 := congrArg (fun g ↦ HomologicalComplex.homologyMap g (n : ℤ))
-    (HomologicalComplex.mapExtendIso_hom_naturality F φ ComplexShape.embeddingUpNat)
+    (HomologicalComplex.mapExtendIso_hom_naturality F ComplexShape.embeddingUpNat φ)
   simp only [HomologicalComplex.homologyMap_comp] at h3
   have h4 := HomologicalComplex.extendHomologyIso_hom_naturality
     ((F.mapHomologicalComplex (.up ℕ)).map φ) ComplexShape.embeddingUpNat
@@ -328,7 +294,9 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
       (InjectiveResolution.desc_commutes_zero f IY IX) F n).symm
   rw [degreeZeroComponent_hom, degreeZeroComponent_hom]
   simp only [Category.assoc]
-  rw [reassoc_of% h1, reassoc_of% h2, reassoc_of% h3, reassoc_of% h4, h5]
+  rw [reassoc_of% h1, reassoc_of% h2]
+  dsimp only [φExt, ObjectProperty.homMk_hom]
+  rw [reassoc_of% h3, reassoc_of% h4, h5]
 
 /-- **Degree-zero complexes recover classical right derived functors.** For every `n : ℕ`,
 `DerivedCategory.Plus.singleFunctor C 0 ⋙ F.rightDerivedFunctorPlus ⋙
@@ -354,15 +322,7 @@ lemma singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso_hom_app_comp_i
       (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
           (F.rightDerivedFunctorPlus.map
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution
-          (⟨(TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫
-            (HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat X 0 0
-              (ComplexShape.embeddingUpNat_f 0)).inv ≫
-            HomologicalComplex.extendMap I.ι ComplexShape.embeddingUpNat⟩ :
-            (TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶
-              ⟨I.cocomplex.extend ComplexShape.embeddingUpNat,
-                (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩)
-          (n : ℤ)).hom ≫
+        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.extendResolution (n : ℤ)).hom ≫
         HomologicalComplex.homologyMap
           (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
