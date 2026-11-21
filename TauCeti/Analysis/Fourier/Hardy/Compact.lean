@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.Hankel.Classical
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Compact Hankel operators and Toeplitz semicommutators of continuous symbols

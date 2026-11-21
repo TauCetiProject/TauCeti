@@ -11,11 +11,8 @@ public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.Sections
-public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import Mathlib.RingTheory.TensorProduct.Finite
-import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
 
 /-!
 # Finite-type quasi-coherent submodules
@@ -36,8 +33,7 @@ immersions into quasi-compact quasi-separated schemes.
 
 On an affine scheme, generators of the global sections of a quasi-coherent module give a
 surjection onto it from a free module of finite rank. Consequently a quasi-coherent module is of
-finite type exactly when its sections over every affine open are finitely generated, and the tensor
-product of two quasi-coherent modules of finite type is of finite type.
+finite type exactly when its sections over every affine open are finitely generated.
 
 ## Main declarations
 
@@ -58,8 +54,6 @@ product of two quasi-coherent modules of finite type is of finite type.
   of finite rank.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteType_iff_finite_sections`: a quasi-coherent module is
   of finite type if and only if its sections over every affine open are finitely generated.
-* `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj`: the tensor product of two
-  quasi-coherent modules of finite type is of finite type.
 
 ## References
 
@@ -251,26 +245,12 @@ theorem exists_epi_free_of_finite [IsAffine X] (N : X.Modules) [N.IsQuasicoheren
     -- The sections functor applies `Hom.app ⊤`; state surjectivity in terms of the latter.
     change ∀ x : Γ(N, ⊤), ∃ y, (image.ι φ).app ⊤ y = x
     intro x
-    have hx : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)) := hS ▸ Submodule.mem_top
-    induction hx using Submodule.span_induction with
-    | mem s hs =>
-      refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
-        ?_⟩
-      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac,
-        ← sectionsEquivTop_sectionsMap]
-      -- `freeHomEquiv_apply` is stated in sheaves of modules; restate it for `X.Modules`.
-      have : SheafOfModules.sectionsMap φ (SheafOfModules.freeSection ⟨s, hs⟩) =
-          N.freeHomEquiv φ ⟨s, hs⟩ :=
-        (SheafOfModules.freeHomEquiv_apply (M := N) φ ⟨s, hs⟩).symm
-      rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-    | zero => exact ⟨0, map_zero _⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨a, rfl⟩ := hx
-      obtain ⟨b, rfl⟩ := hy
-      exact ⟨a + b, map_add _ _ _⟩
-    | smul r x _ hx =>
-      obtain ⟨a, rfl⟩ := hx
-      exact ⟨r • a, Hom.app_smul _ _ _⟩
+    refine (image.ι φ).exists_app_eq_of_mem_span (fun s hs ↦ ?_)
+      (hS ▸ Submodule.mem_top : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)))
+    refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
+      ?_⟩
+    rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac]
+    exact app_freeHomEquiv_symm_freeSection N (fun s : (S : Set Γ(N, ⊤)) ↦ s.val) ⟨s, hs⟩
   refine ⟨(S : Set Γ(N, ⊤)), inferInstance, φ, ?_⟩
   have := epi_comp (factorThruImage φ) (image.ι φ)
   rwa [image.fac] at this
@@ -299,17 +279,5 @@ are finitely generated. -/
 theorem isFiniteType_iff_finite_sections (K : X.Modules) [K.IsQuasicoherent] :
     K.IsFiniteType ↔ ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U) :=
   ⟨fun _ U hU ↦ K.finite_sections_of_isAffineOpen U hU, isFiniteType_of_finite_sections K⟩
-
-open MonoidalCategory in
-/-- The tensor product of two quasi-coherent `𝒪_X`-modules of finite type is of finite type. -/
-instance isFiniteType_tensorObj (M N : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
-    [N.IsQuasicoherent] [N.IsFiniteType] : (M ⊗ N).IsFiniteType := by
-  refine isFiniteType_of_finite_sections (M ⊗ N) fun U hU ↦ ?_
-  have := M.finite_sections_of_isAffineOpen U hU
-  have := N.finite_sections_of_isAffineOpen U hU
-  let e : TensorProduct Γ(X, U) Γ(M, U) Γ(N, U) ≃ₗ[Γ(X, U)] Γ(M ⊗ N, U) :=
-    LinearEquiv.ofBijective (Functor.LaxMonoidal.μ (sectionsFunctor U) M N).hom
-      (bijective_μ_sectionsFunctor M N hU)
-  exact Module.Finite.equiv e
 
 end AlgebraicGeometry.Scheme.Modules

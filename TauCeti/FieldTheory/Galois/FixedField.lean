@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Fixed fields and fixing subgroups
@@ -96,9 +97,14 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   automorphisms over a finite cyclic fixed field commute and restrict to powers of its generator
 * `TauCeti.natCard_algEquiv_dvd_finrank`: the automorphism group of a finite extension has order
   dividing the degree, since that order is the degree over the field fixed by all automorphisms
+* `IntermediateField.fixedField_stabilizer_smul`: translating a point along an
+  `M ≃ₐ[K] M`-action maps its stabilizer's fixed field by the translating automorphism
 * `TauCeti.fixedFieldStabilizerSmulEquiv` and `TauCeti.apply_fixedField_stabilizer_out`, with
   `TauCeti.finrank_fixedField_stabilizer_smul` and `TauCeti.finrank_fixedField_stabilizer_out`:
   translating a point conjugates its stabilizer, giving isomorphic fixed fields across an orbit
+* `TauCeti.apply_fixedField_stabilizer_smul` and
+  `TauCeti.apply_fixedField_stabilizer_out_of_injective`: every `K`-algebra isomorphism invariant
+  of intermediate fields is constant along orbits and along equivariant injections
 -/
 
 public section
@@ -517,6 +523,21 @@ theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
 
 end Subgroup
 
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- Translating a point along an action of `M ≃ₐ[K] M` maps the fixed field of its stabilizer by
+the translating automorphism. -/
+theorem fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    (σ : M ≃ₐ[K] M) (x : X) :
+    fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) =
+      (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).map σ.toAlgHom := by
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    Subgroup.fixedField_map_conj]
+
+end IntermediateField
+
 namespace FixedPoints
 
 /-- **The fixed subfield of a finite cyclic group action has cyclic Galois group.** For a finite
@@ -679,9 +700,7 @@ noncomputable def fixedFieldStabilizerSmulEquiv (K : Type*) [Field K] {M X : Typ
     [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M) (x : X) :
     IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) ≃ₐ[K]
       IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
-  (IntermediateField.equivOfEq (by
-      rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-        Subgroup.fixedField_map_conj])).trans
+  (IntermediateField.equivOfEq (IntermediateField.fixedField_stabilizer_smul σ x)).trans
     ((IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).equivMap σ.toAlgHom).symm
 
 /-- The inverse of `fixedFieldStabilizerSmulEquiv K σ x` acts on elements of `M` as `σ`. -/
@@ -716,6 +735,32 @@ theorem apply_fixedField_stabilizer_out (K : Type*) [Field K] {M X α : Type*}
       f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
   obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
   exact hf (fixedFieldStabilizerSmulEquiv K σ ω.out).symm
+
+/-- Any `K`-algebra-isomorphism invariant of intermediate fields takes the same value on the fixed
+fields of the stabilizers of `σ • x` and `x`. -/
+theorem apply_fixedField_stabilizer_smul (K : Type*) [Field K] {M X α : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {L₁ L₂ : IntermediateField K M}, (L₁ ≃ₐ[K] L₂) → f L₁ = f L₂)
+    (σ : M ≃ₐ[K] M) (x : X) :
+    f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) =
+      f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) :=
+  hf (fixedFieldStabilizerSmulEquiv K σ x)
+
+/-- Along an equivariant injection `g : X → Y`, any `K`-algebra-isomorphism invariant of
+intermediate fields takes the same value at the orbit representative of `g x` as at `x`. -/
+theorem apply_fixedField_stabilizer_out_of_injective (K : Type*) [Field K] {M X Y α : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] [MulAction (M ≃ₐ[K] M) Y]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {L₁ L₂ : IntermediateField K M}, (L₁ ≃ₐ[K] L₂) → f L₁ = f L₂)
+    (g : X → Y) (hg : Function.Injective g)
+    (he : ∀ (σ : M ≃ₐ[K] M) (x : X), g (σ • x) = σ • g x)
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y} {x : X}
+    (hx : (Quotient.mk'' (g x) : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
+    f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  rw [apply_fixedField_stabilizer_out K hf hx,
+    TauCeti.MulAction.stabilizer_eq_of_injective g hg (he · x)]
 
 /-- Translating a point does not change the degree of its stabilizer's fixed field. -/
 @[simp]

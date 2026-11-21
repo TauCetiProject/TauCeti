@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Toric.Delzant.TangentCone
 public import TauCeti.Analysis.Convex.Polyhedron.Boundary
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.LinearAlgebra.AffineSpace.Span
 
 /-!
 # Faces of Delzant polytopes
@@ -404,7 +405,7 @@ theorem mem_intrinsicInterior_facetFace_iff [Finite ι] (hi : IsIntegralLattice 
     simp only [mem_ofPred_eq, Sum.forall, g, Sum.elim_inl, Sum.elim_inr,
       ContinuousAffineMap.coe_neg, Pi.neg_apply, neg_nonpos, Subtype.forall]
     exact and_congr_right fun h ↦ forall₂_congr fun j _ ↦ ⟨ge_of_eq, (h j).antisymm⟩
-  rw [mem_intrinsicInterior_iff_forall_lt g hP]
+  rw [mem_intrinsicInterior_iff_forall_lt g (eq_setOf_mem_affineSpan_and hP)]
   constructor
   · rintro ⟨hx, hlt⟩
     refine ⟨hx.1, subset_antisymm (fun j hj ↦ ?_) hx.2⟩

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Derivation
 public import TauCeti.Geometry.Lie.Adjoint.Smooth
 public import TauCeti.RepresentationTheory.Continuous.Transport
+import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
 # The group adjoint representation
@@ -24,6 +25,8 @@ then derives joint smoothness of the action by evaluation.
 ## Main results
 
 * `TauCeti.Lie.contMDiff_Ad_apply`: the joint action `(g, X) ↦ Ad g X` is smooth.
+* `TauCeti.Lie.continuous_continuousAdjointRepresentation_apply`: the joint action, read through
+  the adjoint representation, is continuous.
 * `TauCeti.Lie.contMDiff_continuousAdjointRepresentation`: the bounded-operator-valued
   representation is smooth.
 
@@ -127,5 +130,14 @@ theorem contMDiff_Ad_apply :
     exact (continuousAdjointRepresentation_apply (I := I) p.1 p.2).symm]
   exact ((contMDiff_continuousAdjointRepresentation (I := I) (G := G)).comp
     contMDiff_fst).clm_apply contMDiff_snd
+
+/-- The adjoint action `(g, X) ↦ Ad_g X`, read through the adjoint representation, is jointly
+continuous. -/
+theorem continuous_continuousAdjointRepresentation_apply :
+    Continuous fun p : G × LeftInvariantDerivation I G ↦
+      ContRepresentation.toRepresentation ℝ G _ (continuousAdjointRepresentation (I := I) (G := G))
+        p.1 p.2 := by
+  simpa only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply]
+    using (contMDiff_Ad_apply (I := I) (G := G)).continuous
 
 end TauCeti.Lie

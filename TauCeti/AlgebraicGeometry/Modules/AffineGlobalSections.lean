@@ -15,7 +15,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -23,10 +22,7 @@ import TauCeti.AlgebraicGeometry.Modules.Sheaf
 Mathlib's `AlgebraicGeometry.tildeEquiv` identifies quasicoherent modules on `Spec R` with
 `R`-modules. Consequently an epimorphism between quasicoherent modules is surjective on global
 sections, even when the epimorphism is taken in the category of all sheaves of modules.
-The same surjectivity holds over every affine open of an arbitrary scheme, conversely a morphism
-into a quasicoherent module that is surjective on sections over every member of an affine open
-cover is an epimorphism
-(`AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpenCover`), and sections over an
+The same surjectivity holds over every affine open of an arbitrary scheme, and sections over an
 affine open `U` identify the ambient cokernel of a morphism `g : M ⟶ N` of quasicoherent modules
 with the module quotient `Γ(N, U) ⧸ range(g(U))`
 (`AlgebraicGeometry.Scheme.Modules.sectionsCokernelEquiv`).
@@ -158,37 +154,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.app_surjective_of_epi_of_isA
   rw [← Scheme.Modules.Hom.fromSpecSectionsEquiv_naturality,
     LinearEquiv.apply_symm_apply]
   exact hx
-
-/-- A morphism into a quasi-coherent `𝒪_X`-module is an epimorphism as soon as it is surjective on
-sections over every member of an affine open cover of `X`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpenCover
-    [Q.IsQuasicoherent] (φ : P ⟶ Q) {ι : Type*} (U : ι → X.Opens)
-    (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)
-    (hsurj : ∀ i, Function.Surjective (φ.app (U i))) : Epi φ := by
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ) := by
-    constructor
-    intro V y x hxV
-    obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hcover.symm ▸ Opens.mem_top x)
-    obtain ⟨f, hfV, hxf⟩ := (hU i).exists_basicOpen_le ⟨x, hxV⟩ hxi
-    have hV : X.basicOpen f ≤ V := hfV
-    have hUi : X.basicOpen f ≤ U i := X.basicOpen_le f
-    let y' : Γ(Q, X.basicOpen f) := Q.presheaf.map (homOfLE hV).op y
-    obtain ⟨m, z, hz⟩ := Q.exists_pow_smul_eq_map (hU i) f rfl hUi y'
-    obtain ⟨a, ha⟩ := hsurj i z
-    obtain ⟨u, hu⟩ : IsUnit (X.presheaf.map (homOfLE hUi).op f ^ m) :=
-      (X.toRingedSpace.isUnit_res_basicOpen f).pow m
-    refine ⟨X.basicOpen f, homOfLE hV,
-      ⟨(u⁻¹ : (Γ(X, X.basicOpen f))ˣ).val • P.presheaf.map (homOfLE hUi).op a, ?_⟩, hxf⟩
-    have hnat : φ.app (X.basicOpen f) (P.presheaf.map (homOfLE hUi).op a) =
-        Q.presheaf.map (homOfLE hUi).op (φ.app (U i) a) :=
-      φ.mapPresheaf.naturality_apply (homOfLE hUi).op a
-    -- In `Sheaf.IsLocallySurjective`, the map on sections is `φ.app` and restriction is
-    -- `Q.presheaf.map`.
-    change φ.app (X.basicOpen f) _ = y'
-    rw [Scheme.Modules.Hom.app_smul, hnat, ha, ← hz, ← hu, smul_smul, Units.inv_mul, one_smul]
-  exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-    (Sheaf.epi_of_isLocallySurjective _)
 
 noncomputable section
 

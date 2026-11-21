@@ -194,7 +194,7 @@ private theorem exists_subsingleton_cohomology_tensor_twistingSheaf_of_basis
             Proj.twistingSheaf (homogeneousSubmodule R M) (n + -(m : ℤ)) :=
           leftDistributor L (fun _ : Fin k ↦ T) ≪≫
             biproduct.mapIso fun _ ↦
-              Proj.twistingSheaf.tensorIso (_root_.SymmetricAlgebra.ι R M)
+              Proj.twistingSheaf.tensorObjIso (_root_.SymmetricAlgebra.ι R M)
                 (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp))
                 n (-(m : ℤ))
         have hsum : ∀ _ : Fin k,

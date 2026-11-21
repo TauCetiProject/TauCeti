@@ -23,11 +23,16 @@ for the trivial line bundle.
 * `InvertibleSheaf.trivialObjIsoUnit` identifies the trivial line bundle with the monoidal unit;
 * `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf,
   `InvertibleSheaf.tensorProductObjIso` identifies it with the monoidal tensor product of the
-  underlying sheaves, and `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj` records that
-  the monoidal tensor product of two invertible sheaves is invertible;
+  underlying sheaves, through `SheafOfModules.tensorProductIso` and
+  `SheafOfModules.tensorUnderlyingIso` (`InvertibleSheaf.tensorProductObjIso_hom`), and
+  `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj` records that the monoidal tensor
+  product of two invertible sheaves is invertible;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
   isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
-  shows that tensor product respects isomorphism;
+  shows that tensor product respects isomorphism; through `tensorProductObjIso` these transports
+  are whiskerings of the monoidal tensor product
+  (`InvertibleSheaf.tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom` and
+  `InvertibleSheaf.tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom`);
 * `InvertibleSheaf.tensorProductComm` exchanges the two tensor factors;
 * `InvertibleSheaf.tensorProductAssoc` is the associativity isomorphism;
 * `InvertibleSheaf.tensorTrivialLeftIso` and `InvertibleSheaf.tensorTrivialRightIso` are the
@@ -136,6 +141,70 @@ lemma tensorProductCongrRight_inv_hom {L K K' : InvertibleSheaf X} (e : K ≅ K'
     (tensorProductCongrRight (L := L) e).inv.hom =
       (tensorProductCongrRightIso e).inv :=
   (rfl)
+
+/-- `tensorProductObjIso` is the transport along `tensorProduct_obj`, followed by the defining
+identification `SheafOfModules.tensorProductIso` and the inverse of `tensorUnderlyingIso`. -/
+lemma tensorProductObjIso_hom (L K : InvertibleSheaf X) :
+    (tensorProductObjIso L K).hom = eqToHom (tensorProduct_obj L K) ≫
+      (SheafOfModules.tensorProductIso X.sheaf L.obj K.obj).hom ≫
+        (L.obj.tensorUnderlyingIso K.obj).inv :=
+  (rfl)
+
+/-- Read through `tensorProductObjIso`, transport through the first tensor factor is whiskering
+of the monoidal tensor product of underlying sheaves. -/
+@[reassoc]
+lemma tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom {L L' : InvertibleSheaf X}
+    (e : L ≅ L') (K : InvertibleSheaf X) :
+    (tensorProductCongrLeft (K := K) e).hom.hom ≫ (tensorProductObjIso L' K).hom =
+      (tensorProductObjIso L K).hom ≫ e.hom.hom ▷ K.obj := by
+  have hc : (tensorProductCongrLeft (K := K) e).hom.hom =
+      (TauCeti.SheafOfModules.tensorProductCongrLeft X.sheaf (N := K.obj)
+        ((SheafOfModules.isInvertible X).ι.mapIso e)).hom :=
+    tensorProductCongrLeft_hom_hom e
+  -- The transports along `tensorProduct_obj`, which is `rfl`, are identities.
+  have h₁ : (tensorProductObjIso L K).hom = (SheafOfModules.tensorProductIso X.sheaf _ _).hom ≫
+      (L.obj.tensorUnderlyingIso K.obj).inv := by
+    rw [tensorProductObjIso_hom]
+    exact Category.id_comp _
+  have h₂ : (tensorProductObjIso L' K).hom = (SheafOfModules.tensorProductIso X.sheaf _ _).hom ≫
+      (L'.obj.tensorUnderlyingIso K.obj).inv := by
+    rw [tensorProductObjIso_hom]
+    exact Category.id_comp _
+  open TauCeti.SheafOfModules in
+  have h := tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
+      (R := X.sheaf) (N := K.obj) ((SheafOfModules.isInvertible X).ι.mapIso e)
+  rw [Functor.mapIso_hom, ObjectProperty.ι_map] at h
+  rw [hc, h₁, h₂]
+  -- `h` is the goal, read in the category `X.Modules` of sheaves of `X.ringCatSheaf`-modules.
+  exact h
+
+/-- Read through `tensorProductObjIso`, transport through the second tensor factor is whiskering
+of the monoidal tensor product of underlying sheaves. -/
+@[reassoc]
+lemma tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom (L : InvertibleSheaf X)
+    {K K' : InvertibleSheaf X} (e : K ≅ K') :
+    (tensorProductCongrRight (L := L) e).hom.hom ≫ (tensorProductObjIso L K').hom =
+      (tensorProductObjIso L K).hom ≫ L.obj ◁ e.hom.hom := by
+  have hc : (tensorProductCongrRight (L := L) e).hom.hom =
+      (TauCeti.SheafOfModules.tensorProductCongrRight X.sheaf (M := L.obj)
+        ((SheafOfModules.isInvertible X).ι.mapIso e)).hom :=
+    tensorProductCongrRight_hom_hom e
+  -- The transports along `tensorProduct_obj`, which is `rfl`, are identities.
+  have h₁ : (tensorProductObjIso L K).hom = (SheafOfModules.tensorProductIso X.sheaf _ _).hom ≫
+      (L.obj.tensorUnderlyingIso K.obj).inv := by
+    rw [tensorProductObjIso_hom]
+    exact Category.id_comp _
+  have h₂ : (tensorProductObjIso L K').hom = (SheafOfModules.tensorProductIso X.sheaf _ _).hom ≫
+      (L.obj.tensorUnderlyingIso K'.obj).inv := by
+    rw [tensorProductObjIso_hom]
+    exact Category.id_comp _
+  open TauCeti.SheafOfModules in
+  have h := tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
+      (R := X.sheaf) (M := L.obj) ((SheafOfModules.isInvertible X).ι.mapIso e)
+  rw [Functor.mapIso_hom, ObjectProperty.ι_map] at h
+  rw [hc, h₁, h₂]
+  -- As for the first factor, `h` is the goal, read in the category `X.Modules`.
+  exact h
 
 /-- Tensor product preserves isomorphism of line bundles in both variables. -/
 lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}

@@ -156,6 +156,6 @@ theorem isCollared_subtypeVal_boundary [T2Space M]
 the half-space, there is an open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`. -/
 theorem isCollared_subtypeVal_boundary_of_compactSpace [CompactSpace M] [T2Space M] :
     IsCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) :=
-  isCollared_subtypeVal_boundary (𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional.isCompact
+  isCollared_subtypeVal_boundary ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional M).isCompact
 
 end TauCeti

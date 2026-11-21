@@ -18,11 +18,10 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 When degree-one standard opens cover `Proj A`, the nonvanishing locus of the section of
 `𝒪(n)` associated to a homogeneous element `r ∈ Aₙ` is exactly `D₊(r)`. Consequently all
 nonnegative twists are globally generated, every positive twist is ample if `Proj A`
-is quasi-compact, and when `Proj A` is also quasi-separated every quasi-coherent module of finite
-type admits an epimorphism from a finite direct sum `⨁_{Fin k} 𝒪(-n)` for all sufficiently large
-`n` (`AlgebraicGeometry.Proj.exists_epi_biproduct_twistingSheaf`). In particular these conclusions
-apply to the projective spectrum of the symmetric algebra of a finite module, over any commutative
-ring.
+is quasi-compact, every quasi-coherent module of finite type admits an epimorphism from a finite
+direct sum `⨁_{Fin k} 𝒪(-n)` for all sufficiently large `n`
+(`AlgebraicGeometry.Proj.exists_epi_biproduct_twistingSheaf`). In particular these conclusions apply
+to the projective spectrum of the symmetric algebra of a finite module, over any commutative ring.
 
 This connects the local-fraction construction of twisting sheaves to positivity of line
 bundles. The standard affine opens are the affine nonvanishing loci needed for ampleness,
@@ -124,11 +123,11 @@ theorem isAmple_twistingSheaf [CompactSpace (Proj 𝒜)] {n : ℕ} (hn : 0 < n) 
       (by simpa using SetLike.pow_mem_graded n (hf i)) hn
 
 include f hf hcover in
-/-- **Finite negative-twist presentation on `Proj`.** On a quasi-compact, quasi-separated `Proj A`
-covered by degree-one standard opens, every quasi-coherent module `F` of finite type admits an
-epimorphism `(⨁ fun _ : Fin k ↦ 𝒪(-n)) ⟶ F` for all sufficiently large `n : ℕ`. -/
+/-- **Finite negative-twist presentation on `Proj`.** On a quasi-compact `Proj A` covered by
+degree-one standard opens, every quasi-coherent module `F` of finite type admits an epimorphism
+`(⨁ fun _ : Fin k ↦ 𝒪(-n)) ⟶ F` for all sufficiently large `n : ℕ`. -/
 theorem exists_epi_biproduct_twistingSheaf
-    [CompactSpace (Proj 𝒜)] [QuasiSeparatedSpace (Proj 𝒜)]
+    [CompactSpace (Proj 𝒜)]
     (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
     ∃ n₀ : ℕ, ∀ n ≥ n₀,
       ∃ (k : ℕ) (p : (⨁ fun _ : Fin k ↦ twistingSheaf 𝒜 (-(n : ℤ))) ⟶ F), Epi p := by
