@@ -187,9 +187,9 @@ functor, up to the identifications of `congrFullSubcategory_functor_obj_obj`. -/
 theorem congrFullSubcategory_functor_map_hom {X Y : P.FullSubcategory} (f : X ⟶ Y) :
     ((e.congrFullSubcategory h).functor.map f).hom =
       eqToHom (e.congrFullSubcategory_functor_obj_obj h X) ≫ e.functor.map f.hom ≫
-        eqToHom (e.congrFullSubcategory_functor_obj_obj h Y).symm := by
-  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
-    Functor.congr_hom (e.congrFullSubcategory_functor_comp_ι h) f
+        eqToHom (e.congrFullSubcategory_functor_obj_obj h Y).symm :=
+  ObjectProperty.lift_map_hom_of_eq (e.congrFullSubcategory_functor_comp_ι h) f
+    (e.congrFullSubcategory_functor_obj_obj h X) (e.congrFullSubcategory_functor_obj_obj h Y)
 
 /-- The inverse functor on corresponding full subcategories acts on objects as the original
 inverse. Not a simp lemma: `congrFullSubcategory_inverse` already unfolds the left-hand side. -/
@@ -201,9 +201,9 @@ inverse, up to the identifications of `congrFullSubcategory_inverse_obj_obj`. -/
 theorem congrFullSubcategory_inverse_map_hom {X Y : Q.FullSubcategory} (f : X ⟶ Y) :
     ((e.congrFullSubcategory h).inverse.map f).hom =
       eqToHom (e.congrFullSubcategory_inverse_obj_obj h X) ≫ e.inverse.map f.hom ≫
-        eqToHom (e.congrFullSubcategory_inverse_obj_obj h Y).symm := by
-  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
-    Functor.congr_hom (e.congrFullSubcategory_inverse_comp_ι h) f
+        eqToHom (e.congrFullSubcategory_inverse_obj_obj h Y).symm :=
+  ObjectProperty.lift_map_hom_of_eq (e.congrFullSubcategory_inverse_comp_ι h) f
+    (e.congrFullSubcategory_inverse_obj_obj h X) (e.congrFullSubcategory_inverse_obj_obj h Y)
 
 end Evaluation
 
