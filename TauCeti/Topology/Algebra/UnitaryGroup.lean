@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.RCLike.Lemmas
+public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.Star.Unitary
+import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 
 /-!
 # The unitary and special unitary matrix groups are compact
@@ -38,10 +40,17 @@ Closedness is also recorded one level up, for `TauCeti.GLSpecialUnitary`, the sa
 a subgroup of the general linear group of units: its carrier is the preimage of the matrix special
 unitary group under the continuous coercion `Units.val`.  That is the form in which the
 closed-subgroup theorem consumes it.  Over `ℝ` or `ℂ`, compactness of the matrix unitary group
-likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
+likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`. For the same reason the
+block-diagonal product `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and `U(m)` is a closed
+subgroup of `U(n ⊕ m)`.
 
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
+
+## Main definitions
+
+* `ClosedSubgroup.fromBlocksProd`: the block-diagonal product `{diag(g₁, g₂)} ≤ U(n ⊕ m)` of
+  closed subgroups `G₁ ≤ U(n)` and `G₂ ≤ U(m)`, closed by compactness.
 
 ## Main results
 
@@ -54,6 +63,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   group over `ℝ` or `ℂ` is compact.
 * `Matrix.UnitaryGroup.continuous_fromBlocksOne`: the block embedding `B ↦ diag(1_r, B)` of `U(m)`
   in `U(r + m)` is continuous.
+* `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embedding of `SU(m)` in
+  `SU(r + m)` is continuous.
 -/
 
 public section
@@ -73,7 +84,7 @@ variable [CommRing 𝕜] [StarRing 𝕜]
 variable [TopologicalSpace 𝕜] [ContinuousStar 𝕜]
 
 instance : ContinuousInv (Matrix.specialUnitaryGroup n 𝕜) where
-  continuous_inv := continuous_induced_rng.mpr continuous_subtype_val.star
+  continuous_inv := continuous_induced_rng.mpr continuous_subtypeVal.star
 
 section TopologicalSemiring
 
@@ -167,6 +178,63 @@ theorem continuous_fromBlocksOne (m : ℕ) :
   refine continuous_induced_rng.2 ?_
   simp only [Function.comp_def, coe_fromBlocksOne]
   exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
-    continuous_subtype_val).matrix_reindex _ _
+    continuous_subtypeVal).matrix_reindex _ _
 
 end Matrix.UnitaryGroup
+
+namespace Matrix.specialUnitaryGroup
+
+variable {𝕜 : Type*} [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜] {r : ℕ}
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `SU(m)` in `SU(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (fromBlocksOne 𝕜 r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_fromBlocksOne]
+  exact continuous_subtypeVal.comp
+    ((UnitaryGroup.continuous_fromBlocksOne m).comp (continuous_subtypeVal.subtype_mk _))
+
+end Matrix.specialUnitaryGroup
+
+namespace ClosedSubgroup
+
+variable {n m 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [RCLike 𝕜]
+
+/-- The block-diagonal product `G₁ × G₂ ≤ U(n ⊕ m)` of closed subgroups `G₁ ≤ U(n)` and
+`G₂ ≤ U(m)`: the matrices `diag(g₁, g₂)` with `g₁ ∈ G₁` and `g₂ ∈ G₂`. It is closed, being the
+compact image of `G₁ × G₂` under the block-diagonal sum. -/
+def fromBlocksProd (G₁ : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    (G₂ : ClosedSubgroup (Matrix.unitaryGroup m 𝕜)) :
+    ClosedSubgroup (Matrix.unitaryGroup (n ⊕ m) 𝕜) where
+  toSubgroup := ((G₁ : Subgroup _).prod G₂).map Matrix.UnitaryGroup.sum
+  isClosed' := by
+    convert ((G₁.isClosed'.isCompact.prod G₂.isClosed'.isCompact).image
+      Matrix.UnitaryGroup.continuous_sum).isClosed using 1
+    ext g
+    simp only [Subgroup.mem_carrier, Subgroup.mem_map, Subgroup.mem_prod, Set.mem_image,
+      Set.mem_prod]
+
+variable {G₁ : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
+  {G₂ : ClosedSubgroup (Matrix.unitaryGroup m 𝕜)}
+
+/-- An element of `U(n ⊕ m)` lies in the block-diagonal product exactly when it is `diag(g₁, g₂)`
+with `g₁ ∈ G₁` and `g₂ ∈ G₂`. -/
+theorem mem_fromBlocksProd_iff {g : Matrix.unitaryGroup (n ⊕ m) 𝕜} :
+    g ∈ G₁.fromBlocksProd G₂ ↔ ∃ g₁ ∈ G₁, ∃ g₂ ∈ G₂,
+      (g : Matrix (n ⊕ m) (n ⊕ m) 𝕜) = Matrix.fromBlocks (g₁ : Matrix n n 𝕜) 0 0 g₂ := by
+  -- The underlying subgroup of `fromBlocksProd` is, by definition, the image of `G₁ × G₂`.
+  change g ∈ ((G₁ : Subgroup _).prod G₂).map Matrix.UnitaryGroup.sum ↔ _
+  simp only [Subgroup.mem_map, Subgroup.mem_prod, Prod.exists]
+  constructor
+  · rintro ⟨g₁, g₂, ⟨h₁, h₂⟩, rfl⟩
+    exact ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
+  · rintro ⟨g₁, h₁, g₂, h₂, hg⟩
+    exact ⟨g₁, g₂, ⟨h₁, h₂⟩, Subtype.ext ((Matrix.UnitaryGroup.coe_sum _).trans hg.symm)⟩
+
+/-- The block-diagonal sum `diag(g₁, g₂)` of `g₁ ∈ G₁` and `g₂ ∈ G₂` lies in the product. -/
+theorem sum_mem_fromBlocksProd {g₁ : Matrix.unitaryGroup n 𝕜}
+    {g₂ : Matrix.unitaryGroup m 𝕜} (h₁ : g₁ ∈ G₁) (h₂ : g₂ ∈ G₂) :
+    Matrix.UnitaryGroup.sum (g₁, g₂) ∈ G₁.fromBlocksProd G₂ :=
+  mem_fromBlocksProd_iff.mpr ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
+
+end ClosedSubgroup

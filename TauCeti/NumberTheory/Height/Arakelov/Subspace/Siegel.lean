@@ -12,37 +12,23 @@ public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Bounds
 public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 
 import TauCeti.Algebra.Module.ZLattice.Covolume
-import TauCeti.Analysis.SpecialFunctions.Gamma.Growth
 import TauCeti.MeasureTheory.Group.GeometryOfNumbers
 import TauCeti.NumberTheory.Height.Arakelov.Comparison
+import TauCeti.NumberTheory.Height.Arakelov.SiegelsLemma
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 
 /-!
-# Fixed-field Siegel's lemma in the Euclidean height
+# Minkowski-ball and Euclidean Siegel bounds for subspaces and rational systems
 
 Let `K` be a number field of degree `D = [K : ℚ]` and discriminant `discr K`. For any nonzero
 `K`-subspace `W` of `ι → K` of dimension `m`, there exists a nonzero integral point
-`z ∈ W.integerPoints` (`W ∩ 𝓞_K^ι`) whose absolute Euclidean height satisfies
+`z ∈ W.integerPoints` (`W ∩ 𝓞_K^ι`) whose absolute Euclidean height satisfies the sharp `(D * m)`-
+dimensional Minkowski-ball bound
 
 ```text
 height2 z ≤ 2 / √(D * π) * Γ(D * m / 2 + 1) ^ (1 / (D * m)) *
-              |discr K| ^ (1 / (2 * D)) * W.subspaceHeight ^ (1 / m),
-```
-
-and hence, using `2 / √π * Γ(N / 2 + 1) ^ (1 / N) ≤ √N`
-(`Real.two_div_sqrt_pi_mul_Gamma_rpow_le_sqrt`),
-
-```text
-height2 z ≤ √m * |discr K| ^ (1 / (2 * D)) * W.subspaceHeight ^ (1 / m).
-```
-
-Passing to the kernel of a finite family of nonzero linear forms `L : m → ι → K` with
-`#m < #ι`, without any linear-independence hypothesis on the forms, gives Evertse and Ferretti's
-fixed-field Siegel lemma: there exists a nonzero solution `x` with
-
-```text
-height2 x ≤ √(#ι) * |discr K| ^ (1 / (2 * D)) * (∏ i, height2 (L i)) ^ (1 / (#ι - #m)).
+              |discr K| ^ (1 / (2 * D)) * W.subspaceHeight ^ (1 / m).
 ```
 
 The proof applies Minkowski's shortest-vector bound (`ZLattice.exists_ne_zero_mem_norm_le`) inside
@@ -55,22 +41,20 @@ the multiplicity-weighted sum `∑ w, w.mult * ∑ i, ‖w.embedding (z i)‖ ^ 
 (`Submodule.norm_sq_mulMixedSubmodule_multSqrt`). Weighted AM–GM and integrality at finite places
 (`TauCeti.height2_le_sqrt_sum_mult_mul_sum_norm_sq_div`) then bound `height2 z`.
 
+We also record the `K`-vector form for subspaces (`Submodule.exists_ne_zero_mem_height2_le`) and
+the rational `ℤ`-point / `ℤ`-matrix Euclidean height specializations
+(`Submodule.exists_ne_zero_mem_intPoints_height2_le` and
+`Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le`).
+
 ## Main results
 
 * `Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow`: the sharp Minkowski-ball
   form of Siegel's lemma for a nonzero subspace of `ι → K`.
-* `Submodule.exists_ne_zero_mem_integerPoints_height2_le`: the `√(finrank K W)` bound for a
-  nonzero integral point of a subspace.
 * `Submodule.exists_ne_zero_mem_height2_le`: the `K`-vector form for a nonzero subspace.
 * `Submodule.exists_ne_zero_mem_intPoints_height2_le`: the specialization to rational subspaces
   with solutions in `ℤ`.
-* `Matrix.exists_ne_zero_mulVec_eq_zero_height2_le`: fixed-field Siegel's lemma for `A *ᵥ z = 0`
-  with integral solution `z : ι → 𝓞 K`, without row-independence or coordinate-ordering
-  assumptions.
 * `Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le`: the specialization to rational matrices
   with integer solutions.
-* `TauCeti.exists_ne_zero_height2_le`: fixed-field Siegel's lemma for a family of nonzero linear
-  forms over a number field.
 
 ## References
 
@@ -185,7 +169,7 @@ theorem exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow {W : Submodul
     rw [← hTx, ← hzw]
     exact (W.norm_sq_mulMixedSubmodule_multSqrt z).symm
   have hcov_rpow := covolume_comap_mulMixedSubmodule_multSqrt_rpow hW eT heT
-  refine ⟨z, z.2, hz_ne, ?_⟩
+  refine ⟨z, z.property, hz_ne, ?_⟩
   rw [hfin, hcov_rpow] at hx_norm
   calc height2 (fun i ↦ ((z : ι → 𝓞 K) i : K))
       ≤ √((∑ v : InfinitePlace K,
@@ -203,55 +187,15 @@ theorem exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow {W : Submodul
         rw [Nat.cast_mul, Real.sqrt_mul hD.le]
         ring
 
-/-- **Fixed-field Siegel's lemma for a subspace (integral point).**
-Every nonzero `K`-subspace `W` of `ι → K` of dimension `m` contains a nonzero integral point
-`z ∈ W.integerPoints` (`W ∩ 𝓞_K^ι`) with
-`height2 z ≤ √m * |discr K| ^ (1 / (2 * [K : ℚ])) * W.subspaceHeight ^ (1 / m)`. -/
-theorem exists_ne_zero_mem_integerPoints_height2_le {W : Submodule K (ι → K)} (hW : W ≠ ⊥) :
-    ∃ z ∈ W.integerPoints, z ≠ 0 ∧
-      height2 (fun i ↦ (z i : K)) ≤
-        √(finrank K W : ℝ) * |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
-          W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ := by
-  have : Nontrivial W := Submodule.nontrivial_iff_ne_bot.mpr hW
-  obtain ⟨z, hzW, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow hW
-  refine ⟨z, hzW, hz0, hle.trans ?_⟩
-  set D : ℕ := finrank ℚ K
-  set m : ℕ := finrank K W
-  have hD : (0 : ℝ) < D := Nat.cast_pos.mpr finrank_pos
-  have hconst :
-      2 / √((D : ℝ) * Real.pi) * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹) ≤
-        √(m : ℝ) := by
-    have h := Real.two_div_sqrt_pi_mul_Gamma_rpow_le_sqrt (n := D * m)
-      (Nat.mul_pos finrank_pos finrank_pos)
-    rw [Nat.cast_mul] at h
-    calc 2 / √((D : ℝ) * Real.pi) * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹)
-        = (2 / √Real.pi * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹)) / √(D : ℝ) := by
-            rw [Real.sqrt_mul hD.le]
-            ring
-      _ ≤ √((D : ℝ) * m) / √(D : ℝ) := div_le_div_of_nonneg_right h (Real.sqrt_nonneg _)
-      _ = √(m : ℝ) := by
-            rw [Real.sqrt_mul hD.le, mul_div_cancel_left₀ _ (Real.sqrt_pos.mpr hD).ne']
-  have hfac :
-      0 ≤ |(discr K : ℝ)| ^ (1 / (2 * (D : ℝ))) * W.subspaceHeight ^ (m : ℝ)⁻¹ :=
-    mul_nonneg (Real.rpow_nonneg (abs_nonneg _) _)
-      (Real.rpow_nonneg (Submodule.subspaceHeight_pos W).le _)
-  calc 2 / √((D : ℝ) * Real.pi) * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹) *
-          |(discr K : ℝ)| ^ (1 / (2 * (D : ℝ))) * W.subspaceHeight ^ (m : ℝ)⁻¹
-      = (2 / √((D : ℝ) * Real.pi) * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹)) *
-          (|(discr K : ℝ)| ^ (1 / (2 * (D : ℝ))) * W.subspaceHeight ^ (m : ℝ)⁻¹) := by ring
-    _ ≤ √(m : ℝ) * (|(discr K : ℝ)| ^ (1 / (2 * (D : ℝ))) * W.subspaceHeight ^ (m : ℝ)⁻¹) :=
-        mul_le_mul_of_nonneg_right hconst hfac
-    _ = √(m : ℝ) * |(discr K : ℝ)| ^ (1 / (2 * (D : ℝ))) * W.subspaceHeight ^ (m : ℝ)⁻¹ := by ring
-
 /-- **Fixed-field Siegel's lemma for a subspace (`K`-vector form).**
 Every nonzero `K`-subspace `W` of `ι → K` of dimension `m` contains a nonzero vector `x ∈ W` with
 `height2 x ≤ √m * |discr K| ^ (1 / (2 * [K : ℚ])) * W.subspaceHeight ^ (1 / m)`. -/
 theorem exists_ne_zero_mem_height2_le {W : Submodule K (ι → K)} (hW : W ≠ ⊥) :
     ∃ x ∈ W, x ≠ 0 ∧
       height2 x ≤
-        √(finrank K W : ℝ) * |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
+        √(finrank K W : ℝ) * |(discr K : ℝ)| ^ (2 * finrank ℚ K : ℝ)⁻¹ *
           W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ := by
-  obtain ⟨z, hzW, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_height2_le hW
+  obtain ⟨z, hzW, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_height2_le_sqrt hW
   exact ⟨fun i ↦ (z i : K), mem_integerPoints.mp hzW,
     mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hz0, hle⟩
 
@@ -268,7 +212,7 @@ theorem exists_ne_zero_mem_intPoints_height2_le {V : Submodule ℚ (ι → ℚ)}
     ∃ z ∈ V.intPoints, z ≠ 0 ∧
       height2 (fun i ↦ (z i : ℚ)) ≤
         √(finrank ℚ V : ℝ) * V.subspaceHeight ^ (finrank ℚ V : ℝ)⁻¹ := by
-  obtain ⟨z, hzV, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_height2_le hV
+  obtain ⟨z, hzV, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_height2_le_sqrt hV
   let w : V.intPoints := V.integerPointsEquivIntPoints ⟨z, hzV⟩
   have hw0 : (w : ι → ℤ) ≠ 0 := by
     intro h
@@ -279,7 +223,7 @@ theorem exists_ne_zero_mem_intPoints_height2_le {V : Submodule ℚ (ι → ℚ)}
   have hcoe : (fun i ↦ ((w : ι → ℤ) i : ℚ)) = (fun i ↦ (z i : ℚ)) := by
     ext i
     simp [w, Rat.ringOfIntegersEquiv_apply_coe, RingOfIntegers.coe_eq_algebraMap]
-  refine ⟨w, w.2, hw0, ?_⟩
+  refine ⟨w, w.property, hw0, ?_⟩
   rw [hcoe]
   simpa [discr_rat, finrank_self] using hle
 
@@ -288,69 +232,6 @@ end Rat
 end Submodule
 
 namespace Matrix
-
-section NumberField
-
-variable {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι]
-
-/-- **Fixed-field Siegel's lemma for a linear system over a number field (integral solution).**
-Let `A` be a matrix of `#m < #ι` nonzero linear forms in `#ι` variables over a number field `K`,
-with no linear-independence assumption on its rows. Then `A *ᵥ z = 0` has a nonzero integral
-solution `z : ι → 𝓞 K` with
-`height2 z ≤ √(#ι) * |discr K| ^ (1 / (2 * [K : ℚ])) * (∏ i, height2 (A.row i)) ^ (1 / (#ι - #m))`.
--/
-theorem exists_ne_zero_mulVec_eq_zero_height2_le {A : Matrix m ι K} (hA : ∀ i, A.row i ≠ 0)
-    (hlt : Fintype.card m < Fintype.card ι) :
-    ∃ z : ι → 𝓞 K, z ≠ 0 ∧ A *ᵥ (fun i ↦ (z i : K)) = 0 ∧
-      height2 (fun i ↦ (z i : K)) ≤
-        √(Fintype.card ι : ℝ) * |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
-          (∏ i, height2 (A.row i)) ^ ((Fintype.card ι - Fintype.card m : ℕ) : ℝ)⁻¹ := by
-  classical
-  let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  set W : Submodule K (ι → K) := LinearMap.ker A.mulVecLin
-  have hrank : finrank K (LinearMap.range A.mulVecLin) + finrank K W = Fintype.card ι := by
-    simpa [Module.finrank_fintype_fun_eq_card] using
-      LinearMap.finrank_range_add_finrank_ker A.mulVecLin
-  have hrange_le : finrank K (LinearMap.range A.mulVecLin) ≤ Fintype.card m := by
-    calc finrank K (LinearMap.range A.mulVecLin)
-        ≤ finrank K (m → K) := Submodule.finrank_le _
-      _ = Fintype.card m := Module.finrank_fintype_fun_eq_card K
-  have hdiff_le : Fintype.card ι - Fintype.card m ≤ finrank K W := by omega
-  have hdiff_pos : 0 < Fintype.card ι - Fintype.card m := Nat.sub_pos_of_lt hlt
-  have hW_dim_pos : 0 < finrank K W := lt_of_lt_of_le hdiff_pos hdiff_le
-  have hW_ne : W ≠ ⊥ := by
-    intro h
-    rw [h, finrank_bot] at hW_dim_pos
-    exact lt_irrefl 0 hW_dim_pos
-  have hW_dim_le : finrank K W ≤ Fintype.card ι := by
-    simpa [Module.finrank_fintype_fun_eq_card] using Submodule.finrank_le W
-  obtain ⟨z, hzW, hz0, hle⟩ := W.exists_ne_zero_mem_integerPoints_height2_le hW_ne
-  have hmul : A *ᵥ (fun i ↦ (z i : K)) = 0 := by
-    simpa [W, Submodule.mem_integerPoints, LinearMap.mem_ker, Matrix.mulVecLin_apply] using hzW
-  have hprod_ge_one : (1 : ℝ) ≤ ∏ i : m, height2 (A.row i) :=
-    Finset.one_le_prod₀ fun i _ ↦ one_le_height2_of_ne_zero (hA i)
-  have hH_le : W.subspaceHeight ≤ ∏ i : m, height2 (A.row i) :=
-    Matrix.subspaceHeight_ker_mulVecLin_le_prod hA
-  have hsqrt_le : √(finrank K W : ℝ) ≤ √(Fintype.card ι : ℝ) :=
-    Real.sqrt_le_sqrt (by exact_mod_cast hW_dim_le)
-  have hexp_le : (finrank K W : ℝ)⁻¹ ≤ ((Fintype.card ι - Fintype.card m : ℕ) : ℝ)⁻¹ :=
-    inv_anti₀ (by exact_mod_cast hdiff_pos) (by exact_mod_cast hdiff_le)
-  have hrpow_le :
-      W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ ≤
-        (∏ i : m, height2 (A.row i)) ^ ((Fintype.card ι - Fintype.card m : ℕ) : ℝ)⁻¹ :=
-    calc W.subspaceHeight ^ (finrank K W : ℝ)⁻¹
-        ≤ (∏ i : m, height2 (A.row i)) ^ (finrank K W : ℝ)⁻¹ :=
-          Real.rpow_le_rpow (Submodule.subspaceHeight_pos W).le hH_le (by positivity)
-      _ ≤ (∏ i : m, height2 (A.row i)) ^ ((Fintype.card ι - Fintype.card m : ℕ) : ℝ)⁻¹ :=
-          Real.rpow_le_rpow_of_exponent_le hprod_ge_one hexp_le
-  refine ⟨z, hz0, hmul, hle.trans ?_⟩
-  exact mul_le_mul
-    (mul_le_mul_of_nonneg_right hsqrt_le (Real.rpow_nonneg (abs_nonneg _) _))
-    hrpow_le
-    (Real.rpow_nonneg (Submodule.subspaceHeight_pos W).le _)
-    (mul_nonneg (Real.sqrt_nonneg _) (Real.rpow_nonneg (abs_nonneg _) _))
-
-end NumberField
 
 section Rat
 
@@ -365,8 +246,8 @@ theorem exists_ne_zero_int_mulVec_eq_zero_height2_le {A : Matrix m ι ℚ} (hA :
     ∃ z : ι → ℤ, z ≠ 0 ∧ A *ᵥ (fun i ↦ (z i : ℚ)) = 0 ∧
       height2 (fun i ↦ (z i : ℚ)) ≤
         √(Fintype.card ι : ℝ) *
-          (∏ i, height2 (A.row i)) ^ ((Fintype.card ι - Fintype.card m : ℕ) : ℝ)⁻¹ := by
-  obtain ⟨z, hz0, hmul, hle⟩ := exists_ne_zero_mulVec_eq_zero_height2_le hA hlt
+          (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
+  obtain ⟨z, hz0, hmul, hle⟩ := exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt hA hlt
   let w : ι → ℤ := fun i ↦ Rat.ringOfIntegersEquiv (z i)
   have hcoe : (fun i ↦ (w i : ℚ)) = (fun i ↦ (z i : ℚ)) := by
     ext i
@@ -383,30 +264,6 @@ theorem exists_ne_zero_int_mulVec_eq_zero_height2_le {A : Matrix m ι ℚ} (hA :
 end Rat
 
 end Matrix
-
-namespace TauCeti
-
-variable {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι]
-
-/-- **Fixed-field Siegel's lemma (Evertse–Ferretti, Lemma 13.1).**
-For any family `L : m → ι → K` of `#m < #ι` nonzero linear forms in `#ι` variables over a number
-field `K`, without any linear-independence hypothesis on `L`, there exists a nonzero vector
-`x : ι → K` annihilated by every `L i` whose absolute Euclidean height satisfies
-`height2 x ≤ √(#ι) * |discr K| ^ (1 / (2 * [K : ℚ])) * (∏ i, height2 (L i)) ^ (1 / (#ι - #m))`.
--/
-theorem exists_ne_zero_height2_le {L : m → ι → K} (hL : ∀ i, L i ≠ 0)
-    (hlt : Fintype.card m < Fintype.card ι) :
-    ∃ x : ι → K, x ≠ 0 ∧ (∀ i, L i ⬝ᵥ x = 0) ∧
-      height2 x ≤
-        √(Fintype.card ι : ℝ) * |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
-          (∏ i, height2 (L i)) ^ ((Fintype.card ι - Fintype.card m : ℕ) : ℝ)⁻¹ := by
-  obtain ⟨z, hz0, hmul, hle⟩ :=
-    Matrix.exists_ne_zero_mulVec_eq_zero_height2_le (A := Matrix.of L) hL hlt
-  refine ⟨fun i ↦ (z i : K), mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hz0, ?_, hle⟩
-  intro i
-  simpa [Matrix.mulVec, Matrix.of_apply] using congrFun hmul i
-
-end TauCeti
 
 end
 

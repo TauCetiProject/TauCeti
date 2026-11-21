@@ -8,17 +8,20 @@ module
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Siegel
 
 /-!
-# Worked examples: fixed-field Siegel's lemma in the Euclidean height
+# Worked examples: Minkowski-ball and rational Euclidean Siegel bounds
 
-This file illustrates `TauCeti.exists_ne_zero_height2_le` and
-`Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le` on three concrete rational systems:
+This file illustrates `Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow`,
+`Submodule.exists_ne_zero_mem_intPoints_height2_le`, and
+`Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le` on concrete rational systems:
 
-* A single linear form `(1, 2)` in `ℚ²` has height `√5`, so Siegel's lemma produces a nonzero
-  integer kernel vector of Euclidean height at most `√2 * √5`; in fact the kernel is spanned by
-  `(-2, 1)`, which has exact Euclidean height `√5`.
-* The repeated linear form `(1, 1, 0)` taken twice in `ℚ³` (`U = 2 < 3 = V`) is linearly dependent,
-  yet satisfies all hypotheses of `TauCeti.exists_ne_zero_height2_le`; the theorem yields a
-  nonzero kernel vector of height at most `2 * √3` (with `(0, 0, 1)` achieving height `1`).
+* A single linear form `(1, 2)` in `ℚ²` has height `√5`, so
+  `Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le` produces a nonzero integer kernel vector of
+  Euclidean height at most `√2 * √5`; in fact the kernel is spanned by `(-2, 1)`, which has exact
+  Euclidean height `√5`.
+* The `1`-dimensional subspace `ℚ ∙ ![(1 : ℚ), 2]` satisfies both the sharp Minkowski-ball bound
+  (`Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow`, where
+  `2 / √π * Γ(3 / 2) = 1`) and the rational bound
+  (`Submodule.exists_ne_zero_mem_intPoints_height2_le`).
 * A single nonzero linear form in `ℚ¹` (`U = V = 1`) has trivial kernel, showing that the strict
   inequality `Fintype.card m < Fintype.card ι` is necessary.
 
@@ -65,48 +68,41 @@ example :
       Fintype.card (Fin 2))
   refine ⟨z, hz0, ?_, ?_⟩
   · simpa [A, Matrix.mulVec] using congrFun hmul 0
-  · simpa [A, h12] using hle
+  · norm_num [A, h12] at hle
+    exact hle
 
-/-- Over `ℚ` with the repeated form `(1, 1, 0)` (`U = 2`, `V = 3`), no row-independence hypothesis
-is needed: Siegel's lemma yields a nonzero kernel vector of height at most `2 * √3`, while
-`(0, 0, 1)` lies in the kernel with height `1`. -/
+/-- Over `ℚ` on the `1`-dimensional subspace `V = ℚ ∙ ![(1 : ℚ), 2]`, both the Minkowski-ball
+bound `Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow` and the rational bound
+`Submodule.exists_ne_zero_mem_intPoints_height2_le` produce a nonzero integral point with
+`height2 ≤ √5`. -/
 example :
-    let L : Fin 2 → Fin 3 → ℚ := fun _ ↦ ![(1 : ℚ), 1, 0]
-    (∏ i, height2 (L i)) = 2 ∧
-      (∀ i, L i ⬝ᵥ ![(0 : ℚ), 0, 1] = 0) ∧
-      height2 ![(0 : ℚ), 0, 1] = 1 ∧
-      (∃ x : Fin 3 → ℚ, x ≠ 0 ∧ (∀ i, L i ⬝ᵥ x = 0) ∧ height2 x ≤ 2 * √3) := by
-  intro L
-  have hL_ht : height2 ![(1 : ℚ), 1, 0] = √2 := by
-    have hcast : ![(1 : ℚ), 1, 0] = ((↑) : ℤ → ℚ) ∘ ![1, 1, 0] := by
-      ext i; fin_cases i <;> simp
-    rw [hcast, height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
-    norm_num [Fin.sum_univ_three]
-  have hprod : (∏ i : Fin 2, height2 (L i)) = 2 := by
-    simp [L, hL_ht]
-  have h001_ker : ∀ i, L i ⬝ᵥ ![(0 : ℚ), 0, 1] = 0 := by
-    intro i; simp [L, dotProduct, Fin.sum_univ_three]
-  have h001_ht : height2 ![(0 : ℚ), 0, 1] = 1 := by
-    have hcast : ![(0 : ℚ), 0, 1] = ((↑) : ℤ → ℚ) ∘ ![0, 0, 1] := by
-      ext i; fin_cases i <;> simp
-    rw [hcast, height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
-    norm_num [Fin.sum_univ_three]
-  have hL_ne : ∀ i, L i ≠ 0 := by
-    intro i h
-    have := congrFun h 0
-    simp [L] at this
-  obtain ⟨x, hx0, hxker, hle⟩ :=
-    TauCeti.exists_ne_zero_height2_le hL_ne
-      (by decide : Fintype.card (Fin 2) < Fintype.card (Fin 3))
-  refine ⟨hprod, h001_ker, h001_ht, x, hx0, hxker, ?_⟩
-  have hbound :
-      √(Fintype.card (Fin 3) : ℝ) * |(discr ℚ : ℝ)| ^ (1 / (2 * (finrank ℚ ℚ : ℝ))) *
-          (∏ i, height2 (L i)) ^ ((Fintype.card (Fin 3) - Fintype.card (Fin 2) : ℕ) : ℝ)⁻¹ =
-        2 * √3 := by
-    rw [hprod, discr_rat, finrank_self]
+    let V : Submodule ℚ (Fin 2 → ℚ) := ℚ ∙ ![(1 : ℚ), 2]
+    (∃ z ∈ V.integerPoints, z ≠ 0 ∧ height2 (fun i ↦ (z i : ℚ)) ≤ V.subspaceHeight) ∧
+      (∃ z ∈ V.intPoints, z ≠ 0 ∧ height2 (fun i ↦ (z i : ℚ)) ≤ V.subspaceHeight) := by
+  intro V
+  have hv0 : ![(1 : ℚ), 2] ≠ 0 := fun h ↦ one_ne_zero (congrFun h 0)
+  have hV : V ≠ ⊥ := by simp [V]
+  have hdim : Module.finrank ℚ V = 1 := finrank_span_singleton hv0
+  have hconst :
+      2 / √((Module.finrank ℚ ℚ : ℝ) * Real.pi) *
+          Real.Gamma ((Module.finrank ℚ ℚ * Module.finrank ℚ V : ℝ) / 2 + 1) ^
+            ((Module.finrank ℚ ℚ * Module.finrank ℚ V : ℝ)⁻¹) *
+          |(NumberField.discr ℚ : ℝ)| ^ (1 / (2 * (Module.finrank ℚ ℚ : ℝ))) *
+          V.subspaceHeight ^ (Module.finrank ℚ V : ℝ)⁻¹ =
+        V.subspaceHeight := by
+    rw [hdim, NumberField.discr_rat, finrank_self]
     norm_num
-    ring
-  exact hle.trans_eq hbound
+    rw [show (3 / 2 : ℝ) = 1 / 2 + 1 by norm_num, Real.Gamma_add_one (by norm_num),
+      Real.Gamma_one_half_eq]
+    have hpi : 0 < √Real.pi := Real.sqrt_pos.mpr Real.pi_pos
+    field_simp [hpi.ne']
+  refine ⟨?_, ?_⟩
+  · obtain ⟨z, hzV, hz0, hle⟩ :=
+      Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow hV
+    exact ⟨z, hzV, hz0, hle.trans_eq hconst⟩
+  · obtain ⟨z, hzV, hz0, hle⟩ := Submodule.exists_ne_zero_mem_intPoints_height2_le hV
+    refine ⟨z, hzV, hz0, hle.trans_eq ?_⟩
+    simp [hdim]
 
 /-- A single nonzero linear form in one variable has trivial kernel, confirming that the strict
 inequality `Fintype.card m < Fintype.card ι` cannot be weakened to `≤`. -/

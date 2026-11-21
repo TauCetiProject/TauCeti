@@ -7,17 +7,17 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 import TauCeti.Analysis.ExteriorPower.Plucker
-import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Height of a subspace in terms of a spanning family
 
 The Euclidean height of a subspace is at most the product of the Euclidean
-heights of any basis. The constant is one: the local estimate is Hadamard's
-inequality at infinity and the ultrametric determinant bound at finite places.
-This bound lets one estimate the height of a kernel using its defining forms
-and dot-product duality.
+heights of any basis, and more generally of any finite family of nonzero
+spanning vectors (`Submodule.subspaceHeight_span_range_le_prod`). The constant
+is one: the local estimate is Hadamard's inequality at infinity and the
+ultrametric determinant bound at finite places. This bound lets one estimate
+the height of a kernel using its defining forms and dot-product duality.
 
 We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
@@ -117,6 +117,28 @@ theorem subspaceHeight_le_prod {p : ℕ} {x : Fin p → ι → K}
   rw [subspaceHeight_span_range hx]
   exact height2_plucker_le_prod x
 
+/-- Extracting a maximal linearly independent subfamily bounds the subspace height of the span of
+any finite family of nonzero vectors by the product of their Euclidean heights. -/
+theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {v : m → ι → K}
+    (hv : ∀ i, v i ≠ 0) :
+    subspaceHeight (span K (range v)) ≤ ∏ i, height2 (v i) := by
+  classical
+  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K v
+  have : Finite κ := Finite.of_injective a ha
+  let _ := Fintype.ofFinite κ
+  let e : Fin (Fintype.card κ) ≃ κ := (Fintype.equivFin κ).symm
+  let emb : Fin (Fintype.card κ) ↪ m := e.toEmbedding.trans ⟨a, ha⟩
+  have hcomp : v ∘ emb = (v ∘ a) ∘ e := by
+    ext x; simp [emb]
+  have hrange : range (v ∘ emb) = range (v ∘ a) := by
+    rw [hcomp, range_comp, e.range_eq_univ, image_univ]
+  rw [← hspan, ← hrange]
+  refine (subspaceHeight_le_prod (hcomp ▸ hli.comp e e.injective)).trans ?_
+  simp_rw [Function.comp_apply]
+  rw [← Finset.prod_map Finset.univ emb fun i ↦ height2 (v i)]
+  exact Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
+    (fun i _ ↦ height2_nonneg (v i)) fun i _ _ ↦ one_le_height2_of_ne_zero (hv i)
+
 /-- The relative Arakelov height of a subspace is bounded by the product of
 relative Arakelov heights of its basis vectors. -/
 theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p : ℕ}
@@ -124,33 +146,6 @@ theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p :
     relativeSubspaceArakelovHeight U ≤ ∏ i, arakelovMulHeight (b i : ι → K) := by
   rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b]
   exact arakelovMulHeight_plucker_le_prod _
-
-/-- The absolute Euclidean height of the span of any finite family of nonzero vectors is at most
-the product of their absolute Euclidean heights, without any linear-independence hypothesis. -/
-theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {x : m → ι → K}
-    (hx : ∀ i, x i ≠ 0) :
-    (span K (range x)).subspaceHeight ≤ ∏ i, height2 (x i) := by
-  classical
-  obtain ⟨κ, a, ha_inj, hspan, hli⟩ := exists_linearIndependent' K x
-  have : Finite κ := Finite.of_injective a ha_inj
-  have : Fintype κ := Fintype.ofFinite κ
-  let e : Fin (Fintype.card κ) ≃ κ := (Fintype.equivFin κ).symm
-  have hli' : LinearIndependent K (x ∘ a ∘ e) := hli.comp e e.injective
-  have hrange : range (x ∘ a ∘ e) = range (x ∘ a) := by
-    rw [← Function.comp_assoc, Set.range_comp, e.range_eq_univ, Set.image_univ]
-  have himg : ∏ k : κ, height2 (x (a k)) = ∏ i ∈ Finset.univ.image a, height2 (x i) :=
-    (Finset.prod_image (f := fun i ↦ height2 (x i)) fun _ _ _ _ h ↦ ha_inj h).symm
-  have hsub : ∏ i ∈ Finset.univ.image a, height2 (x i) ≤ ∏ i : m, height2 (x i) := by
-    rw [← Finset.prod_sdiff (Finset.subset_univ (Finset.univ.image a))]
-    exact le_mul_of_one_le_left
-      (Finset.prod_nonneg fun _ _ ↦ height2_nonneg _)
-      (Finset.one_le_prod₀ fun i _ ↦ one_le_height2_of_ne_zero (hx i))
-  calc (span K (range x)).subspaceHeight
-      = (span K (range (x ∘ a ∘ e))).subspaceHeight := by rw [hrange, hspan]
-    _ ≤ ∏ j : Fin (Fintype.card κ), height2 (x (a (e j))) := subspaceHeight_le_prod hli'
-    _ = ∏ k : κ, height2 (x (a k)) := Fintype.prod_equiv e _ _ fun _ ↦ rfl
-    _ = ∏ i ∈ Finset.univ.image a, height2 (x i) := himg
-    _ ≤ ∏ i : m, height2 (x i) := hsub
 
 end Submodule
 
@@ -164,10 +159,7 @@ variable {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι] [Li
 product of the absolute Euclidean heights of its rows, without any row-independence hypothesis. -/
 theorem subspaceHeight_ker_mulVecLin_le_prod {A : Matrix m ι K} (hA : ∀ i, A.row i ≠ 0) :
     (LinearMap.ker A.mulVecLin).subspaceHeight ≤ ∏ i, height2 (A.row i) := by
-  have hker : LinearMap.ker A.mulVecLin = (span K (range A.row)).euclideanDual := by
-    simpa only [Matrix.checkedBy_def, Matrix.generatedBy_eq_span_rows] using
-      A.checkedBy_eq_euclideanDual_generatedBy
-  rw [hker, subspaceHeight_euclideanDual]
+  rw [A.subspaceHeight_ker_mulVecLin]
   exact subspaceHeight_span_range_le_prod hA
 
 end Matrix

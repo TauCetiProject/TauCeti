@@ -44,7 +44,11 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
   `w`-coordinate of `x`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_mixedDiag`:
   `normAtPlace w (mixedDiag K g) = w (g w)`.
+* `TauCeti.NumberField.mixedEmbedding.abs_normAtPlace_sub_normAtPlace_le`:
+  `|normAtPlace w x - normAtPlace w y| ≤ normAtPlace w (x - y)`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_le_norm`: `normAtPlace w x ≤ ‖x‖`.
+* `TauCeti.NumberField.mixedEmbedding.abs_normAtPlace_sub_normAtPlace_le_norm`:
+  `|normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_multSqrt`: `normAtPlace w (multSqrt K) = √w.mult`.
 * `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
@@ -64,8 +68,8 @@ variable (K : Type*) [Field K]
 an element of `mixedSpace K` whose `w`-coordinate agrees with `mixedEmbedding K (g w)`. -/
 noncomputable def mixedDiag : (InfinitePlace K → K) →+* mixedSpace K :=
   RingHom.prod
-    (RingHom.pi fun w ↦ (embedding_of_isReal w.2).comp (Pi.evalRingHom _ w.1))
-    (RingHom.pi fun w ↦ w.1.embedding.comp (Pi.evalRingHom _ w.1))
+    (RingHom.pi fun w ↦ (embedding_of_isReal w.property).comp (Pi.evalRingHom _ w.val))
+    (RingHom.pi fun w ↦ w.val.embedding.comp (Pi.evalRingHom _ w.val))
 
 variable {K}
 
@@ -73,14 +77,14 @@ variable {K}
 @[simp]
 theorem mixedDiag_apply_isReal (g : InfinitePlace K → K)
     (w : {w : InfinitePlace K // IsReal w}) :
-    (mixedDiag K g).1 w = embedding_of_isReal w.2 (g w.1) := by
+    (mixedDiag K g).1 w = embedding_of_isReal w.property (g w.val) := by
   rfl
 
 /-- Complex coordinate of `mixedDiag K g` at a complex infinite place `w`. -/
 @[simp]
 theorem mixedDiag_apply_isComplex (g : InfinitePlace K → K)
     (w : {w : InfinitePlace K // IsComplex w}) :
-    (mixedDiag K g).2 w = w.1.embedding (g w.1) := by
+    (mixedDiag K g).2 w = w.val.embedding (g w.val) := by
   rfl
 
 /-- On a constant family `fun _ ↦ x`, `mixedDiag K` reduces to `mixedEmbedding K x`. -/
@@ -106,6 +110,16 @@ theorem normAtPlace_mixedDiag (w : InfinitePlace K) (g : InfinitePlace K → K) 
   rw [← normAtPlace_apply]
   exact normAtPlace_congr w (fun hw ↦ by simp) (fun hwc ↦ by simp)
 
+/-- Reverse triangle inequality for `normAtPlace w`: the absolute difference of local norms at `w`
+is at most the local norm of the difference. -/
+theorem abs_normAtPlace_sub_normAtPlace_le (w : InfinitePlace K) (x y : mixedSpace K) :
+    |normAtPlace w x - normAtPlace w y| ≤ normAtPlace w (x - y) := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · simpa only [normAtPlace_apply_of_isReal hw, Prod.fst_sub, Pi.sub_apply] using
+      abs_norm_sub_norm_le (x.1 ⟨w, hw⟩) (y.1 ⟨w, hw⟩)
+  · simpa only [normAtPlace_apply_of_isComplex hw, Prod.snd_sub, Pi.sub_apply] using
+      abs_norm_sub_norm_le (x.2 ⟨w, hw⟩) (y.2 ⟨w, hw⟩)
+
 open scoped Classical in
 /-- At every infinite place `w`, the local norm `normAtPlace w x` is at most the sup norm `‖x‖` on
 `mixedSpace K`. -/
@@ -113,6 +127,14 @@ theorem normAtPlace_le_norm [NumberField K] (w : InfinitePlace K) (x : mixedSpac
     normAtPlace w x ≤ ‖x‖ := by
   rw [norm_eq_sup'_normAtPlace]
   exact Finset.le_sup' (fun u ↦ normAtPlace u x) (Finset.mem_univ w)
+
+open scoped Classical in
+/-- At every infinite place `w`, `normAtPlace w` is 1-Lipschitz with respect to the sup norm on
+`mixedSpace K`: `|normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖`. -/
+theorem abs_normAtPlace_sub_normAtPlace_le_norm [NumberField K]
+    (w : InfinitePlace K) (x y : mixedSpace K) :
+    |normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖ :=
+  (abs_normAtPlace_sub_normAtPlace_le w x y).trans (normAtPlace_le_norm w (x - y))
 
 /-- The `ℤ`-linear equivalence `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by
 `mixedEmbedding K`. -/

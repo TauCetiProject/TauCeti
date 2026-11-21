@@ -262,16 +262,17 @@ private lemma isClosed_piece (k : Fin (p + 1)) : IsClosed (piece k) := by
 
 private lemma exists_mem_piece (z : StdSimplex ℝ (Fin (p + 1)) × I) : ∃ k, z ∈ piece k := by
   have hex : ∃ N, 1 - (z.2 : ℝ) ≤ prefixSum (N + 1) z.1.weights :=
-    ⟨p, by rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]; linarith [z.2.2.1]⟩
+    ⟨p, by rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]; linarith
+        [z.2.property.1]⟩
   classical
   have hle : Nat.find hex ≤ p :=
     Nat.find_min' hex (by
       rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
-      linarith [z.2.2.1])
+      linarith [z.2.property.1])
   refine ⟨⟨Nat.find hex, by lia⟩, ?_, Nat.find_spec hex⟩
   rcases Nat.eq_zero_or_pos (Nat.find hex) with h | h
   · simp only [h, TauCeti.prefixSum_zero]
-    linarith [z.2.2.2]
+    linarith [z.2.property.2]
   · have := Nat.find_min hex (Nat.sub_lt h one_pos)
     rw [show Nat.find hex - 1 + 1 = Nat.find hex by lia] at this
     exact (not_le.1 this).le
@@ -322,11 +323,11 @@ private lemma map_pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1
   StdSimplex.map_comap _ _ _
 
 private lemma continuous_pieceWeights (k : Fin (p + 1)) :
-    Continuous fun z : piece k ↦ pieceWeights.{u} k z.1 z.2 := by
+    Continuous fun z : piece k ↦ pieceWeights.{u} k z.val z.property := by
   rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (p + 2))).continuous_iff]
   refine continuous_pi fun j ↦ ?_
   simp only [Function.comp_apply, pieceWeights, StdSimplex.weights_comap_apply]
-  exact (continuous_prismWeights _).comp continuous_subtype_val
+  exact (continuous_prismWeights _).comp continuous_subtypeVal
 
 /-- The underlying function of `SSet.prodStdSimplex₁.prism`. -/
 private noncomputable def prismFun (p : ℕ) (z : StdSimplex ℝ (Fin (p + 1)) × I) :
@@ -351,7 +352,8 @@ noncomputable def prism : C(StdSimplex ℝ (Fin (p + 1)) × I, |(Δ[p] ⊗ Δ[1]
     refine (locallyFinite_of_finite _).continuous iUnion_piece isClosed_piece fun k ↦ ?_
     rw [continuousOn_iff_continuous_domRestrict]
     have : (piece k).domRestrict (prismFun.{u} p) =
-        fun z : piece k ↦ toTopObjMk (nonDegenerateEquiv k).val (pieceWeights.{u} k z.1 z.2) :=
+        fun z : piece k ↦ toTopObjMk (nonDegenerateEquiv k).val
+            (pieceWeights.{u} k z.val z.property) :=
       funext fun z ↦ prismFun_eq _ _ (map_pieceWeights _ _ _)
     rw [this]
     exact (continuous_toTopObjMk _).comp (continuous_pieceWeights.{u} k)

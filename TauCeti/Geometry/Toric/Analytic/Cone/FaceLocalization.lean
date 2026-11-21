@@ -112,7 +112,7 @@ theorem faceAffinePointMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf �
 theorem faceAffinePointMap_apply_single (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi τ)) (m : dualSemigroup hi σ) :
     faceAffinePointMap hi hτσ x (MonoidAlgebra.single (ofAdd m) 1) =
-      x (MonoidAlgebra.single (ofAdd ⟨m, dualSemigroup_anti hi hτσ.le m.2⟩) 1) :=
+      x (MonoidAlgebra.single (ofAdd ⟨m, dualSemigroup_anti hi hτσ.le m.property⟩) 1) :=
   comap_apply_single _ x m
 
 /-- The face map on complex points is precomposition with the algebraic restriction of
@@ -170,7 +170,7 @@ theorem faceAffinePointMap_apply_single_ne_zero (hi : IsIntegralLattice i) (hτ�
     faceAffinePointMap hi hτσ x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0 := by
   have hneg : -(m : N →+ ℤ) ∈ dualSemigroup hi τ := (mem_dualSemigroup hi _).2 fun v hv ↦ by
     simp [hm v hv]
-  have h0 : (⟨m, dualSemigroup_anti hi hτσ.le m.2⟩ : dualSemigroup hi τ) + ⟨_, hneg⟩ = 0 :=
+  have h0 : (⟨m, dualSemigroup_anti hi hτσ.le m.property⟩ : dualSemigroup hi τ) + ⟨_, hneg⟩ = 0 :=
     Subtype.ext (add_neg_cancel _)
   refine left_ne_zero_of_mul_eq_one (b := x (MonoidAlgebra.single (ofAdd ⟨_, hneg⟩) 1)) ?_
   rw [faceAffinePointMap_apply_single, ← apply_single_add, h0, ofAdd_zero,
@@ -215,7 +215,8 @@ theorem injective_faceAffinePointMap_of_inf_ker_eq (hσ : σ.FG) (hτσ : τ.IsF
   intro x y hxy
   refine AffineSemigroupComplexPoint.ext fun u ↦ ?_
   have hm₀ := realCharacter_eq_zero_of_inf_ker_eq hi hm
-  obtain ⟨n, hn⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ m.2 (by rw [hm]; exact u.2)
+  obtain ⟨n, hn⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ m.property
+      (by rw [hm]; exact u.property)
   rw [apply_single_eq_div hi hτσ x hm₀ u hn, apply_single_eq_div hi hτσ y hm₀ u hn, hxy]
 
 /-- For a face `τ` cut out by a character `m` of the dual semigroup of a finitely generated cone
@@ -245,7 +246,7 @@ theorem range_faceAffinePointMap_of_inf_ker_eq (hσ : σ.FG) (hτσ : τ.IsFaceO
   refine ⟨{ y with commutes' := fun c ↦ ?_ }, AffineSemigroupComplexPoint.ext fun s ↦ ?_⟩
   · exact (congrArg y (φ.commutes c)).symm.trans ((hy _).trans (x.commutes c))
   · have hφ : φ (MonoidAlgebra.single (ofAdd s) 1) =
-        MonoidAlgebra.single (ofAdd ⟨s, dualSemigroup_anti hi hτσ.le s.2⟩) 1 := by
+        MonoidAlgebra.single (ofAdd ⟨s, dualSemigroup_anti hi hτσ.le s.property⟩) 1 := by
       refine (affineCoordinateRingMap_single
         (σ := σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))) (τ := σ) hi hi
         (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) (fun _ hx ↦ hx.1) s 1).trans ?_
@@ -273,7 +274,8 @@ theorem isOpenEmbedding_faceAffinePointMap_of_inf_ker_eq (hσ : σ.FG) (hτσ : 
       TopologicalSpace.induced (faceAffinePointMap hi hτσ) (affinePointTopology g)
     refine continuous_id_iff_le.1 ((continuous_iff_forall_continuous_apply_single h id).2
       fun u ↦ ?_)
-    obtain ⟨n, hn⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ m.2 (by rw [hm]; exact u.2)
+    obtain ⟨n, hn⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ m.property
+        (by rw [hm]; exact u.property)
     simp only [id, apply_single_eq_div hi hτσ _ hm₀ u hn]
     have hdiv : ContinuousOn (fun x : AffineSemigroupComplexPoint (dualSemigroup hi σ) ↦
         x (MonoidAlgebra.single (ofAdd ⟨(u : N →+ ℤ) + n • (m : N →+ ℤ), hn⟩) 1) /
@@ -317,7 +319,7 @@ theorem range_faceAffinePointMap_inf_of_inf_ker_eq (hi : IsIntegralLattice i) (h
       Set.range (faceAffinePointMap hi hτσ) ∩ Set.range (faceAffinePointMap hi hυσ) := by
   have h₁₂ : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter (m₁ + m₂))) = τ ⊓ υ := by
     rw [map_add, PointedCone.inf_ker_add
-      ((mem_dualSemigroup hi m₁).1 m₁.2) ((mem_dualSemigroup hi m₂).1 m₂.2), h₁, h₂]
+      ((mem_dualSemigroup hi m₁).1 m₁.property) ((mem_dualSemigroup hi m₂).1 m₂.property), h₁, h₂]
   refine Set.Subset.antisymm ?_ fun x ⟨hxτ, hxυ⟩ ↦ ?_
   · rintro x hx
     rw [range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ (hτσ.inf_left hυσ)
@@ -425,7 +427,8 @@ theorem contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq (hτσ : τ.IsFace
   refine (contMDiffOn_iff_forall_contMDiffOn_apply_single hi hτ hB' κ' h).2 fun u ↦ ?_
   -- On the chart of `τ`, the monomial of `u` is a quotient of two monomials of `σ`, the
   -- denominator being a power of the monomial of `m`, which does not vanish there.
-  obtain ⟨p, hp⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ.fg m.2 (by rw [hm]; exact u.2)
+  obtain ⟨p, hp⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ.fg m.property
+      (by rw [hm]; exact u.property)
   exact ((hF ⟨_, hp⟩).div₀ ((hF m).pow p) fun x _ ↦
       pow_ne_zero p (faceAffinePointMap_apply_single_ne_zero hi hτσ (f x) hm₀)).congr
     fun x _ ↦ apply_single_eq_div hi hτσ (f x) hm₀ u hp

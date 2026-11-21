@@ -165,7 +165,7 @@ theorem mul_mem_iff_of_isUnit_mem [AddSubmonoidClass σM A] [Decomposition ℳ]
     have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 ℳ (a := x) (i := n - c) hmem
     rw [smul_eq_mul, sub_add_cancel, decompose_of_mem_same ℳ hx, smul_eq_mul,
       hu.isRegular.right.eq_iff] at h
-    exact h ▸ (decompose 𝒜 x (n - c)).2
+    exact h ▸ (decompose 𝒜 x (n - c)).property
   · simpa using SetLike.GradedSMul.smul_mem (B := ℳ) hx hmem
 
 /-- Linear form of the shift classification: a grading `ℳ` of `A` compatible with `𝒜` with a
