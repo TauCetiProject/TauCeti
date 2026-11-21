@@ -128,7 +128,6 @@ theorem growthTransition_of_lt {n₀ n : ℕ} (h : n < n₀) : growthTransition 
   rw [growthTransition_def, Finset.Icc_eq_empty_of_lt h, Finset.prod_empty]
 
 /-- The transition from level `j` to itself is the single cyclotomic factor `ξ_j`. -/
-@[simp]
 theorem growthTransition_self (j : ℕ) :
     growthTransition p O j j = (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1) := by
   rw [growthTransition_def, Finset.Icc_self, Finset.prod_singleton]
