@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Small.Set
+public import Mathlib.SetTheory.Cardinal.Continuum
 public import Mathlib.Topology.Sequences
 
 /-!
@@ -14,7 +15,9 @@ public import Mathlib.Topology.Sequences
 In a Hausdorff Fréchet–Urysohn space, for instance a metric space, every point of the closure of
 a set `s` is the limit of a sequence in `s`, and that limit is unique. So the closure of `s` is
 the image of the type of convergent sequences in `s` under the limit map, and it is `w`-small
-whenever `s` is, `Set.small_closure`.
+whenever `s` is, `Set.small_closure`. In cardinal terms, `#(closure s) ≤ #s ^ ℵ₀`,
+`Set.cardinalMk_closure_le`; so such a space with a countable dense set, for instance `ℚ_[p]`,
+has at most continuum many points.
 
 This bounds the size of the closed subspace of a Hilbert space spanned by a small set of vectors,
 which is how a representation on a large Hilbert space is reduced to subrepresentations on
@@ -25,7 +28,7 @@ public section
 
 universe w
 
-open Filter Topology
+open Cardinal Filter Topology
 
 namespace Set
 
@@ -37,5 +40,18 @@ theorem small_closure {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [
   refine small_subset (s := Set.range lim) fun x hx => ?_
   obtain ⟨u, hu, hux⟩ := mem_closure_iff_seq_limit.1 hx
   exact ⟨⟨fun n => ⟨u n, hu n⟩, x, hux⟩, hux.limUnder_eq⟩
+
+/-- In a Hausdorff Fréchet–Urysohn space, the closure of a set `s` has cardinality at most
+`#s ^ ℵ₀`: each of its points is the limit of a sequence in `s`, and limits are unique. -/
+theorem cardinalMk_closure_le {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [T2Space X]
+    (s : Set X) : #(closure s) ≤ #s ^ ℵ₀ := by
+  have (x : closure s) : ∃ u : ℕ → s, Tendsto (fun n ↦ (u n : X)) atTop (𝓝 (x : X)) := by
+    obtain ⟨u, hu, hux⟩ := mem_closure_iff_seq_limit.1 x.property
+    exact ⟨fun n ↦ ⟨u n, hu n⟩, hux⟩
+  choose u hu using this
+  calc #(closure s) ≤ #(ℕ → s) :=
+        mk_le_of_injective (f := u) fun x y h ↦
+          Subtype.ext (tendsto_nhds_unique (hu x) (by rw [h]; exact hu y))
+    _ = #s ^ ℵ₀ := by simp
 
 end Set
