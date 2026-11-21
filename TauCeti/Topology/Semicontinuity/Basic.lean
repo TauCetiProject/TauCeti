@@ -7,26 +7,35 @@ module
 
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.Order.Filter.Extr
 
 /-!
-# Lower semicontinuity of suprema over neighbourhoods
+# Basic properties of lower semicontinuous functions
 
-A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s`, for an arbitrary `G : Set X → β` with values in a
-complete linear order, is lower semicontinuous (`TauCeti.lowerSemicontinuous_iSup_nhds`): a strict
-lower bound witnessed by a neighbourhood of `x` is witnessed by the same set at every point of its
-interior. Lower envelopes and lower and upper Γ-limits are of this form.
+This file collects general topological properties of lower semicontinuous functions:
 
-A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and `A 0 = 0`, such as a
-lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
-`A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is needed,
-because the bound on the partial sums passes to their limit through the closed sublevel set.
-In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending to `0`,
-passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
+* A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s`, for an arbitrary `G : Set X → β` with values in a
+  complete linear order, is lower semicontinuous (`TauCeti.lowerSemicontinuous_iSup_nhds`): a strict
+  lower bound witnessed by a neighbourhood of `x` is witnessed by the same set at every point of its
+  interior. Lower envelopes and lower and upper Γ-limits are of this form.
+* If `f` is lower semicontinuous within `s` at `x`, `u → x` within `s` along a nontrivial filter,
+  and `f ∘ u → l` in a linear order with closed order topology, then `f x ≤ l`
+  (`LowerSemicontinuousWithinAt.le_of_tendsto`).
+* The sublevels of a lower semicontinuous function on a closed set are closed
+  (`LowerSemicontinuousOn.isClosed_inter_preimage_Iic`), and a lower semicontinuous function on a
+  set `s` with a nonempty compact sublevel attains its minimum on `s`
+  (`LowerSemicontinuousOn.exists_isMinOn_of_isCompact_sublevel`).
+* A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and `A 0 = 0`, such as a
+  lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
+  `A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is
+  needed, because the bound on the partial sums passes to their limit through the closed sublevel
+  set. In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending
+  to `0`, passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
 -/
 
 public section
 
-open Topology
+open Filter Set Topology
 
 namespace TauCeti
 
@@ -42,6 +51,43 @@ theorem lowerSemicontinuous_iSup_nhds (G : Set X → β) :
   exact hcs.trans_le (le_iSup₂_of_le s hy le_rfl)
 
 end TauCeti
+
+namespace LowerSemicontinuousWithinAt
+
+/-- If `f` is lower semicontinuous within `s` at `x`, `u` tends to `x` within `s` along a
+nontrivial filter `F`, and `f ∘ u` tends to `l` in a linearly ordered space with closed order
+topology, then `f x ≤ l`. -/
+theorem le_of_tendsto {α β ι : Type*} [TopologicalSpace α] [LinearOrder β] [TopologicalSpace β]
+    [OrderClosedTopology β] {f : α → β} {s : Set α} {x : α}
+    (hf : LowerSemicontinuousWithinAt f s x) {F : Filter ι} [F.NeBot] {u : ι → α}
+    (hu : Tendsto u F (𝓝[s] x)) {l : β} (hl : Tendsto (f ∘ u) F (𝓝 l)) :
+    f x ≤ l := by
+  by_contra! hlt
+  obtain ⟨y, hy, z, hz, hdisj⟩ := hlt.exists_disjoint_Iio_Ioi
+  obtain ⟨i, hi1, hi2⟩ := ((hl.eventually (Iio_mem_nhds hy)).and (hu.eventually (hf z hz))).exists
+  exact (hdisj _ hi1 _ hi2).false
+
+end LowerSemicontinuousWithinAt
+
+namespace LowerSemicontinuousOn
+
+/-- The sublevel sets of a lower semicontinuous function on a closed set are closed. -/
+theorem isClosed_inter_preimage_Iic {α β : Type*} [TopologicalSpace α] [LinearOrder β]
+    {f : α → β} {s : Set α} (hfs : LowerSemicontinuousOn f s) (hs : IsClosed s) (b : β) :
+    IsClosed (s ∩ f ⁻¹' Iic b) := by
+  obtain ⟨v, hv, hv'⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hfs b
+  exact hv' ▸ hs.inter hv
+
+/-- A lower semicontinuous function on a set `s` with a nonempty compact sublevel attains its
+minimum on `s`. -/
+theorem exists_isMinOn_of_isCompact_sublevel {α β : Type*} [TopologicalSpace α] [LinearOrder β]
+    {f : α → β} {s : Set α} (hf : LowerSemicontinuousOn f s) {b : β}
+    (hne : {x ∈ s | f x ≤ b}.Nonempty) (hcpt : IsCompact {x ∈ s | f x ≤ b}) :
+    ∃ x ∈ s, IsMinOn f s x := by
+  obtain ⟨x, hx, hmin⟩ := (hf.mono (Set.sep_subset s _)).exists_isMinOn hne hcpt
+  exact ⟨x, hx.1, (TauCeti.isMinOn_sublevel_iff hx.2).1 hmin⟩
+
+end LowerSemicontinuousOn
 
 open scoped ENNReal
 

@@ -292,35 +292,31 @@ section DiagonalModels
 
 /-! #### 1. The harmonic diagonal model and non-normality -/
 
-private theorem harmonicEntry_antitone : Antitone fun j : ℕ ↦ ((j : ℝ≥0) + 1)⁻¹ :=
-  fun _ _ hij ↦ inv_anti₀ (by positivity) (by gcongr)
-
-private noncomputable def harmonicSeq : ℓ^∞(ℕ, ℂ) := lp.ofAntitone ℂ harmonicEntry_antitone
-
 /-- The **harmonic diagonal operator** `diag((j + 1)⁻¹)` on `ℓ²(ℕ, ℂ)`: the canonical positive
 Dixmier-measurable operator in `L^(1,∞)` with Dixmier trace `1`. -/
 noncomputable def harmonicDiagonalCLM : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ) :=
-  lp.diagonalCLM (p := 2) harmonicSeq
+  lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)
 
 /-- Coordinate formula for `TauCeti.harmonicDiagonalCLM`. -/
 @[simp]
 theorem harmonicDiagonalCLM_apply (x : ℓ^2(ℕ, ℂ)) (j : ℕ) :
-    harmonicDiagonalCLM x j = ((j : ℂ) + 1)⁻¹ * x j := by simp [harmonicDiagonalCLM, harmonicSeq]
+    harmonicDiagonalCLM x j = ((j : ℂ) + 1)⁻¹ * x j := by simp [harmonicDiagonalCLM]
 
 /-- The `k`-th Ky Fan prefix gauge of `TauCeti.harmonicDiagonalCLM` is `∑ j < k, (j + 1)⁻¹`. -/
 @[simp]
 theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
     harmonicDiagonalCLM.kyFanGauge k = ∑ j ∈ Finset.range k, ((j : ℝ≥0) + 1)⁻¹ := by
-  simp [harmonicDiagonalCLM, harmonicSeq]
+  simp [harmonicDiagonalCLM, lp.invNatSucc_eq_ofAntitone]
 
 /-- The harmonic diagonal operator is positive on `ℓ²(ℕ, ℂ)`. -/
 theorem isPositive_harmonicDiagonalCLM : harmonicDiagonalCLM.IsPositive :=
-  lp.isPositive_diagonalCLM_ofAntitone harmonicEntry_antitone
+  (lp.isPositive_diagonalCLM_iff _).2 (lp.invNatSucc_apply_nonneg ℂ)
 
 /-- The logarithmic Ky Fan means of `TauCeti.harmonicDiagonalCLM` converge to `1`. -/
 theorem tendsto_kyFanLogMean_harmonicDiagonalCLM :
     Tendsto harmonicDiagonalCLM.kyFanLogMean atTop (𝓝 1) :=
-  tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by simp [harmonicDiagonalCLM, harmonicSeq]
+  tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by
+    simp [harmonicDiagonalCLM, lp.invNatSucc_eq_ofAntitone]
 
 /-- Every generalized limit assigns real Dixmier trace `1` to `TauCeti.harmonicDiagonalCLM`. -/
 @[simp]
@@ -358,20 +354,17 @@ theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
       (∀ ω : GeneralizedLimit, complexDixmierTrace ω T = 1) := by
   -- Witnessed by `harmonicDiagonalCLM` and its finite-rank coordinate truncations.
   open ComplexOrder in
-  have hd_nonneg : ∀ j, 0 ≤ harmonicSeq j := lp.ofAntitone_apply_nonneg ℂ harmonicEntry_antitone
-  have hd_tendsto : Tendsto (fun j ↦ ‖harmonicSeq j‖) atTop (𝓝 0) := by
-    have hnorm : (fun j ↦ ‖harmonicSeq j‖) = fun j : ℕ ↦ ((j : ℝ) + 1)⁻¹ := funext fun j ↦ by
-      simpa [harmonicSeq] using lp.norm_ofAntitone_apply ℂ harmonicEntry_antitone j
-    rw [hnorm]; simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
-  exact ⟨fun n ↦ lp.diagonalTruncation (p := 2) harmonicSeq (Finset.range n), harmonicDiagonalCLM,
-    harmonicDiagonalCLM_mem_logarithmic, isPositive_harmonicDiagonalCLM,
+  have hd_nonneg : ∀ j, 0 ≤ lp.invNatSucc ℂ j := lp.invNatSucc_apply_nonneg ℂ
+  exact ⟨fun n ↦ lp.diagonalTruncation (p := 2) (lp.invNatSucc ℂ) (Finset.range n),
+    harmonicDiagonalCLM, harmonicDiagonalCLM_mem_logarithmic, isPositive_harmonicDiagonalCLM,
     isDixmierMeasurable_harmonicDiagonalCLM,
     fun n ↦ (lp.isPositive_diagonalTruncation_iff _ _).2 fun i _ ↦ hd_nonneg i,
     fun m n hmn ↦ lp.diagonalTruncation_mono hd_nonneg (Finset.range_mono hmn),
-    lp.tendsto_diagonalTruncation_range harmonicSeq hd_tendsto,
+    lp.tendsto_diagonalTruncation_range (lp.invNatSucc ℂ) (lp.tendsto_norm_invNatSucc ℂ),
     lp.isLUB_range_diagonalTruncation_range hd_nonneg,
     fun n ω ↦ complexDixmierTrace_eq_zero_of_rank_le ω
-      (lp.rank_diagonalTruncation_range_le harmonicSeq n), complexDixmierTrace_harmonicDiagonalCLM⟩
+      (lp.rank_diagonalTruncation_range_le (lp.invNatSucc ℂ) n),
+    complexDixmierTrace_harmonicDiagonalCLM⟩
 
 /-! #### 2. Zero Dixmier trace outside the trace class -/
 

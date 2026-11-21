@@ -12,8 +12,8 @@ import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Lp.Schur
-import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
+import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 import TauCeti.Analysis.Normed.Operator.WeaklyCompact.ZeroAtInfty
 import TauCeti.Topology.Algebra.Module.WeakSpace
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
@@ -172,13 +172,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 
 /-- Compact operators are Dunford–Pettis. -/
 theorem _root_.IsCompactOperator.isDunfordPettis {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
-    T.IsDunfordPettis := fun x _ hx ↦ by
-  -- A weakly convergent sequence is bounded, so its image lies in a norm-compact set, on which
-  -- weak convergence is norm convergence.
-  obtain ⟨K, hK, hTK⟩ := hT.image_subset_compact_of_bounded hx.isBounded_range_of_toWeakSpace
-  exact TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact (𝕜 := 𝕜) hK
-    (Eventually.of_forall fun n ↦ hTK (mem_image_of_mem T (mem_range_self n)))
-    (((WeakSpace.map T).continuous.tendsto _).comp hx)
+    T.IsDunfordPettis := fun _ _ hx ↦ hT.tendsto_of_tendsto_toWeakSpace hx
 
 end CompactOperator
 

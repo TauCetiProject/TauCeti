@@ -111,6 +111,8 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.antitone_inv_natCast_add_one`: `n ↦ ((n : α) + 1)⁻¹` is antitone in any strictly
+  ordered semifield.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
@@ -439,6 +441,11 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- The reciprocal sequence `n ↦ ((n : α) + 1)⁻¹` is antitone in any strictly ordered semifield. -/
+theorem antitone_inv_natCast_add_one {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] : Antitone fun n : ℕ ↦ ((n : α) + 1)⁻¹ :=
+  fun _ _ hmn ↦ inv_anti₀ (by positivity) (add_le_add (Nat.cast_le.2 hmn) le_rfl)
 
 /-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
 theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
@@ -76,8 +77,8 @@ theorem isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
     (hclosed : IsClosed s) (hconv : Convex ℝ s) (hbound : IsBounded s) :
     IsCompact (toWeakSpace 𝕜 E '' s) := by
   have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
-  rw [← hclosed.closure_eq, hconv.toWeakSpace_closure 𝕜]
-  exact isCompact_closure_toWeakSpace_of_isBounded hE hbound
+  simpa only [(hconv.isClosed_toWeakSpace hclosed).closure_eq] using
+    isCompact_closure_toWeakSpace_of_isBounded hE hbound
 
 /-- Every closed ball in a reflexive seminormed space is weakly compact, including balls
 of zero or negative radius. -/
