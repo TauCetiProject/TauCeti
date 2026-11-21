@@ -23,9 +23,10 @@ This file provides general `C^n` criteria for morphisms and bundle maps whose lo
 intertwined by a fixed continuous linear map:
 
 * `FiniteRankBundleCore.contMDiff_of_localTriv_snd`,
-  `FiniteRankBundleCore.contMDiff_of_trivializationAt_snd`, and
-  `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_coordChange` establish `C^n` regularity on total
-  spaces without `C^n` assumptions on the cores;
+  `FiniteRankBundleCore.contMDiff_of_trivializationAt_snd`,
+  `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_coordChange`, and
+  `FiniteRankBundleCore.toDiffeomorphOfConstFiberMap` establish `C^n` regularity and construct
+  `C^n` diffeomorphisms on total spaces without `C^n` assumptions on the cores;
 * `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_coordChange_comp` and
   `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_comp_coordChange` establish `C^n`
   regularity of chart operators when the target or source core is `C^n`;
@@ -106,6 +107,53 @@ theorem contMDiff_totalSpaceMap_of_coordChange {E E' : FiniteRankBundleCore 𝕜
   rw [E'.trivializationAt_core]
   simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, E.indexAt_eq, E'.indexAt_eq]
   exact hL x b v
+
+/-- A pair of mutually inverse core morphisms with constant fibre maps `L` and `L'` where `L`
+intertwines all point-to-chart transitions induces a `C^n` diffeomorphism of total spaces without
+smoothness hypotheses. -/
+noncomputable def toDiffeomorphOfConstFiberMap {A D : FiniteRankBundleCore 𝕜 B}
+    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω)
+    (f : A ⟶ D) (g : D ⟶ A) (hfg : f ≫ g = 𝟙 A) (hgf : g ≫ f = 𝟙 D)
+    (L : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (L' : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜))
+    (hf : ∀ x, f.fiberMap x = L) (hg : ∀ x, g.fiberMap x = L')
+    (hL : ∀ x b v, D.core.coordChange x b x (L v) = L (A.core.coordChange x b x v)) :
+    A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
+      I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace :=
+  CoordinateHom.toDiffeomorphOfInv f g hfg hgf
+    (contMDiff_totalSpaceMap_of_coordChange (I := I) (n := n) f L fun x b v ↦ by
+      rw [hf]; exact hL x b v)
+    (contMDiff_totalSpaceMap_of_coordChange (I := I) (n := n) g L' fun x b v ↦ by
+      have h1 : L'.comp L = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+        rw [← hf x, ← hg x, ← fiberMap_comp, hfg, fiberMap_id]
+      have h2 : L.comp L' = ContinuousLinearMap.id 𝕜 (Fin D.rank → 𝕜) := by
+        rw [← hf x, ← hg x, ← fiberMap_comp, hgf, fiberMap_id]
+      have h1' := congrArg (fun S ↦ S (A.core.coordChange x b x (L' v))) h1
+      have h2' := congrArg (fun S ↦ S v) h2
+      dsimp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h1' h2'
+      rw [hg, ← h1', ← hL x b (L' v), h2'])
+
+/-- The diffeomorphism `toDiffeomorphOfConstFiberMap` acts on total spaces as `f.totalSpaceMap`. -/
+theorem coe_toDiffeomorphOfConstFiberMap {A D : FiniteRankBundleCore 𝕜 B}
+    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω)
+    (f : A ⟶ D) (g : D ⟶ A) (hfg : f ≫ g = 𝟙 A) (hgf : g ≫ f = 𝟙 D)
+    (L : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (L' : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜))
+    (hf : ∀ x, f.fiberMap x = L) (hg : ∀ x, g.fiberMap x = L')
+    (hL : ∀ x b v, D.core.coordChange x b x (L v) = L (A.core.coordChange x b x v)) :
+    ⇑(toDiffeomorphOfConstFiberMap I n f g hfg hgf L L' hf hg hL) = f.totalSpaceMap :=
+  CoordinateHom.coe_toDiffeomorphOfInv ..
+
+/-- The inverse of `toDiffeomorphOfConstFiberMap` acts on total spaces as `g.totalSpaceMap`. -/
+theorem coe_toDiffeomorphOfConstFiberMap_symm {A D : FiniteRankBundleCore 𝕜 B}
+    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω)
+    (f : A ⟶ D) (g : D ⟶ A) (hfg : f ≫ g = 𝟙 A) (hgf : g ≫ f = 𝟙 D)
+    (L : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (L' : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜))
+    (hf : ∀ x, f.fiberMap x = L) (hg : ∀ x, g.fiberMap x = L')
+    (hL : ∀ x b v, D.core.coordChange x b x (L v) = L (A.core.coordChange x b x v)) :
+    ⇑(toDiffeomorphOfConstFiberMap I n f g hfg hgf L L' hf hg hL).symm = g.totalSpaceMap :=
+  CoordinateHom.coe_toDiffeomorphOfInv_symm ..
 
 /-- If `E.core.baseSet i ⊆ E'.core.baseSet i`, `E'` is a `C^n` core, and `a : E ⟶ E'` intertwines
 the transitions from `i` to each point `x` with a fixed continuous linear map `L`, then the

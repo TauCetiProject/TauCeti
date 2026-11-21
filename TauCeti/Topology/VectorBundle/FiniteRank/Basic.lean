@@ -25,9 +25,8 @@ Objects here have constant rank. They provide the constituent categories on the 
 strata of a variable-rank bundle; no boundedness assertion about variable ranks is made.
 For real or complex scalars and `B : Type u`, both the objects and the morphisms live in
 `Type u`, independently of the universe of any original bundle's fibres.
-`ofBundle` obtains such an object from an actual bundle with the prescribed model by using
-`TauCeti.pointIndexedCore`; its reconstruction comparison is
-`TauCeti.pointIndexedCoreHomeomorph`.
+`TauCeti.pointIndexedCore` obtains such a core from an actual bundle with model `Fin n → 𝕜`;
+its reconstruction comparison is `TauCeti.pointIndexedCoreHomeomorph`.
 
 `fiberFunctor x` evaluates at a base point as a Mathlib module. The family of these functors
 jointly detects equality of morphisms. Over a complete scalar field, `isIso_iff_bijective`
@@ -291,32 +290,6 @@ theorem isZero_trivial_zero : IsZero (trivial 𝕜 B 0) :=
 /-- A point-indexed rank-zero core supplies the category's zero object. -/
 instance : HasZeroObject (FiniteRankBundleCore 𝕜 B) :=
   ⟨⟨trivial 𝕜 B 0, isZero_trivial_zero⟩⟩
-
-variable (𝕜) in
-/-- Present an actual vector bundle of rank `n` by its point-indexed core.
-The original fibre universe does not occur in the type of the result. -/
--- Expose the rank projection so the dependent fibre model reduces to `Fin n → 𝕜`.
-@[expose]
-noncomputable def ofBundle (n : ℕ) (E : B → Type*)
-    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
-    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
-    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] :
-    FiniteRankBundleCore 𝕜 B where
-  rank := n
-  core := pointIndexedCore 𝕜 (Fin n → 𝕜) E
-  indexAt_eq := pointIndexedCore_indexAt 𝕜 (Fin n → 𝕜) E
-
-@[simp] theorem rank_ofBundle (n : ℕ) (E : B → Type*)
-    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
-    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
-    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] :
-    (ofBundle 𝕜 n E).rank = n := (rfl)
-
-@[simp] theorem core_ofBundle (n : ℕ) (E : B → Type*)
-    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
-    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
-    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] :
-    (ofBundle 𝕜 n E).core = pointIndexedCore 𝕜 (Fin n → 𝕜) E := (rfl)
 
 /-- The bundle map whose coordinate matrix is the same operator `T` at every point, from a core
 whose chart domains lie in those of the target, when `T` intertwines the transition maps. In the

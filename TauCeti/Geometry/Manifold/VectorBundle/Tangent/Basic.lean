@@ -262,6 +262,14 @@ theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
     (FiberBundle.mem_baseSet_trivializationAt' x) u]
   exact symmL_trivializationAt_self x u
 
+/-- A tangent vector at `x` has itself as its coordinate vector in the preferred trivialization at
+`x`. -/
+@[simp]
+theorem _root_.TangentBundle.trivializationAt_apply_self (x : M) (v : TangentSpace I x) :
+    (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = v :=
+  (TangentBundle.trivializationAt_apply_tangentCoordChange (I := I) v).trans
+    (tangentCoordChange_self (I := I) (mem_extChartAt_source x))
+
 /-- The extension `FiberBundle.extend E w` of a tangent vector `w` at `x` is the vector field with
 constant coordinates `w` in the canonical trivialization of the tangent bundle at `x`. -/
 theorem extend_eq_trivializationAt_symm {x : M} (w : TangentSpace I x) :

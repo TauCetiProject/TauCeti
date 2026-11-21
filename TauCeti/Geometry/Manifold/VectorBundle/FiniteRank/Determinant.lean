@@ -59,7 +59,7 @@ noncomputable def dualDetDiffeomorphDetDual (A : FiniteRankBundleCore 𝕜 B)
     ((detScalarEquiv A).trans (detScalarEquiv A.dual).symm).toContinuousLinearMap
     (fiberMap_dualDetIsoDetDual_hom A) (fiberMap_dualDetIsoDetDual_inv A)
     fun _ _ _ ↦ by
-      rw [coordChange_dual_det, coordChange_det_dual]
+      rw [coordChange_det_dual, coordChange_dual_det]
       simp only [smul_apply, ContinuousLinearMap.id_apply]
       exact (map_smul _ _ _).symm
 
@@ -75,12 +75,14 @@ theorem dualDetDiffeomorphDetDual_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (dualDetDiffeomorphDetDual A I n).symm p = (dualDetIsoDetDual A).inv.totalSpaceMap p :=
   congrFun (coe_toDiffeomorphOfConstFiberMap_symm ..) p
 
+@[simp]
 theorem detScalarEquiv_dualDetDiffeomorphDetDual_snd (A : FiniteRankBundleCore 𝕜 B)
     (p : A.dual.det.core.TotalSpace) :
     detScalarEquiv A (dualDetDiffeomorphDetDual A I n p).2 = detScalarEquiv A.dual p.2 := by
   rw [dualDetDiffeomorphDetDual_apply, CoordinateHom.totalSpaceMap_def]
   exact detScalarEquiv_dualDetIsoDetDual_hom A p.proj p.2
 
+@[simp]
 theorem detScalarEquiv_dualDetDiffeomorphDetDual_symm_snd (A : FiniteRankBundleCore 𝕜 B)
     (p : A.det.dual.core.TotalSpace) :
     detScalarEquiv A.dual ((dualDetDiffeomorphDetDual A I n).symm p).2 = detScalarEquiv A p.2 := by
@@ -108,21 +110,11 @@ theorem contMDiff_ofBundleEquivDualDetFiberEquiv :
   intro p₀
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  have hbase (i : B) : (ofBundleEquiv b.equivFunL V).dual.det.core.baseSet i =
-      (trivializationAt F V i).baseSet :=
-    localTriv_baseSet_det (ofBundleEquiv b.equivFunL V).dual i
-  have hU :=
-    ((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv p₀.proj).open_source.mem_nhds <|
-      ((ofBundleEquiv b.equivFunL V).dual.det.core.mem_localTriv_source p₀.proj p₀).2
-        ((hbase p₀.proj).symm ▸ mem_baseSet_trivializationAt F V p₀.proj)
   let L := (detScalarEquiv (ofBundleEquiv b.equivFunL V).dual).trans b.topFormEquiv.symm
-  refine (L.contDiff.comp_contMDiffAt
+  exact (L.contDiff.comp_contMDiffAt
     ((ofBundleEquiv b.equivFunL V).dual.det.contMDiffAt_localTriv_snd (I := I) (n := n)
-      p₀)).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with q hq
-  exact trivializationAt_ofBundleEquivDualDetFiberEquiv_snd b V p₀.proj
-    ((hbase p₀.proj) ▸
-      ((ofBundleEquiv b.equivFunL V).dual.det.core.mem_localTriv_source p₀.proj q).1 hq) q.2
+      p₀)).congr_of_eventuallyEq
+    (eventuallyEq_trivializationAt_ofBundleEquivDualDetFiberEquiv_snd b V p₀)
 
 /-- The reconstructed total space of `(ofBundleEquiv b.equivFunL V).dual.det` is `C^n`
 diffeomorphic to Mathlib's top-degree alternating form bundle `fun x ↦ V x [⋀^Fin r]→L[𝕜] 𝕜`, over
@@ -211,6 +203,7 @@ theorem ofBundleEquivDualDetChangeDiffeomorph_symm_apply
       (ofBundleEquivDualDetChangeIso b₁ b₂ V).inv.totalSpaceMap p :=
   congrFun (coe_toDiffeomorphOfConstFiberMap_symm ..) p
 
+@[simp]
 theorem detScalarEquiv_ofBundleEquivDualDetChangeDiffeomorph_snd
     (p : (ofBundleEquiv b₁.equivFunL V).dual.det.core.TotalSpace) :
     detScalarEquiv (ofBundleEquiv b₂.equivFunL V).dual
@@ -219,6 +212,7 @@ theorem detScalarEquiv_ofBundleEquivDualDetChangeDiffeomorph_snd
   rw [ofBundleEquivDualDetChangeDiffeomorph_apply, CoordinateHom.totalSpaceMap_def]
   exact detScalarEquiv_ofBundleEquivDualDetChangeIso_hom b₁ b₂ V p.proj p.2
 
+@[simp]
 theorem detScalarEquiv_ofBundleEquivDualDetChangeDiffeomorph_symm_snd
     (p : (ofBundleEquiv b₂.equivFunL V).dual.det.core.TotalSpace) :
     detScalarEquiv (ofBundleEquiv b₁.equivFunL V).dual
