@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
@@ -54,6 +55,12 @@ theorem IsCurveOver.isFunctionField [X.IsCurveOver k] :
     TauCeti.IsFunctionField k X.functionField := by
   exact (TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff k).2
     (IsCurveOver.topologicalKrullDim_eq_one k)
+
+/-- The structure morphism of a curve over `k` has relative dimension at most one. -/
+instance IsCurveOver.relativeDimensionLE_one [X.IsCurveOver k] :
+    TauCeti.AlgebraicGeometry.RelativeDimensionLE 1 (X ↘ Spec (.of k)) :=
+  (TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field _).mpr
+    (IsCurveOver.topologicalKrullDim_eq_one k).le
 
 /-- Every point of a curve has coheight at most one. -/
 theorem IsCurveOver.coheight_le_one [X.IsCurveOver k] (x : X) : Order.coheight x ≤ 1 := by

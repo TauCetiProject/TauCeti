@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Normalization
+public import TauCeti.AlgebraicGeometry.Fibers
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.LineBundle.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
+public import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Numerically trivial line bundles
@@ -80,17 +82,6 @@ open Module (finrank)
 
 universe u
 
-/-- The spectrum of a field `k` is identified with the spectrum of its residue field at its unique
-point: `Spec κ(s) ⟶ Spec k` is an isomorphism, as `κ(s) = k`. -/
-instance AlgebraicGeometry.Spec.isIso_fromSpecResidueField {k : Type u} [Field k]
-    (s : Spec (.of k)) : IsIso ((Spec (.of k)).fromSpecResidueField s) := by
-  have := s.isPrime
-  have h : (Ideal.algEquivResidueFieldOfField s.asIdeal).toRingEquiv.toCommRingCatIso.hom =
-      CommRingCat.ofHom (algebraMap (CommRingCat.of k) s.asIdeal.ResidueField) := by
-    ext a; simp [Ideal.algEquivResidueFieldOfField_apply]
-  rw [← Scheme.Spec.map_residueFieldIso_inv_eq_fromSpecResidueField, ← h]
-  infer_instance
-
 namespace TauCeti.AlgebraicGeometry
 
 namespace LineBundleClass
@@ -136,16 +127,12 @@ variable {k}
 theorem IsNumericallyTrivial.mul {a b : LineBundleClass X} (ha : a.IsNumericallyTrivial k)
     (hb : b.IsNumericallyTrivial k) : (a * b).IsNumericallyTrivial k := by
   intro C _ _ ι _ _
-  have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
-    (relativeDimensionLE_iff_of_field _).mpr (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le
   rw [intersectionNumber_mul_of_isIntegral, ha C ι, hb C ι, add_zero]
 
 /-- The inverse of a numerically trivial class is numerically trivial. -/
 theorem IsNumericallyTrivial.inv {a : LineBundleClass X} (ha : a.IsNumericallyTrivial k) :
     a⁻¹.IsNumericallyTrivial k := by
   intro C _ _ ι _ _
-  have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
-    (relativeDimensionLE_iff_of_field _).mpr (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le
   rw [intersectionNumber_inv_of_isIntegral, ha C ι, neg_zero]
 
 /-- A class is numerically trivial exactly when its inverse is. -/
@@ -251,28 +238,31 @@ section Relative
 
 variable {X Y S : Scheme.{u}}
 
+/-- The scheme-theoretic fibre `X_s` of `f : X ⟶ S` is a scheme over `κ(s)` through
+`f.fiberToSpecResidueField s`. This is `Scheme.Hom.fiberOverSpecResidueField` with the base
+written as `Spec (.of κ(s))`, the form numerical triviality over `κ(s)` takes. -/
+noncomputable local instance (f : X ⟶ S) (s : S) :
+    (f.fiber s).Over (Spec (.of (S.residueField s))) :=
+  f.fiberOverSpecResidueField s
+
 /-- **Relative numerical triviality** `a ≡_f 0` for a morphism `f : X ⟶ S`: for every point `s`
 of `S`, the pullback of `a` to the scheme-theoretic fibre `X_s` is numerically trivial over the
 residue field `κ(s)`, the fibre being a scheme over `κ(s)` through
 `f.fiberToSpecResidueField s`. Degrees of curves in `X_s` are taken over `κ(s)`. -/
 def IsRelNumericallyTrivial (f : X ⟶ S) (a : LineBundleClass X) : Prop :=
-  ∀ s : S,
-    letI : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
-    (pullback (f.fiberι s) a).IsNumericallyTrivial (S.residueField s)
+  ∀ s : S, (pullback (f.fiberι s) a).IsNumericallyTrivial (S.residueField s)
 
 /-- A class is relatively numerically trivial for `f` exactly when its pullback to every
 scheme-theoretic fibre `X_s` is numerically trivial over `κ(s)`. -/
 theorem isRelNumericallyTrivial_iff (f : X ⟶ S) (a : LineBundleClass X) :
-    IsRelNumericallyTrivial f a ↔ ∀ s : S,
-      letI : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
-      (pullback (f.fiberι s) a).IsNumericallyTrivial (S.residueField s) :=
+    IsRelNumericallyTrivial f a ↔
+      ∀ s : S, (pullback (f.fiberι s) a).IsNumericallyTrivial (S.residueField s) :=
   Iff.rfl
 
 /-- The trivial class is relatively numerically trivial. -/
 @[simp]
 theorem isRelNumericallyTrivial_one (f : X ⟶ S) : IsRelNumericallyTrivial f 1 := by
   intro s
-  let : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
   rw [pullback_one]
   exact isNumericallyTrivial_one _
 
@@ -282,7 +272,6 @@ variable {f : X ⟶ S}
 theorem IsRelNumericallyTrivial.mul {a b : LineBundleClass X} (ha : IsRelNumericallyTrivial f a)
     (hb : IsRelNumericallyTrivial f b) : IsRelNumericallyTrivial f (a * b) := by
   intro s
-  let : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
   rw [pullback_mul]
   exact (ha s).mul (hb s)
 
@@ -290,7 +279,6 @@ theorem IsRelNumericallyTrivial.mul {a b : LineBundleClass X} (ha : IsRelNumeric
 theorem IsRelNumericallyTrivial.inv {a : LineBundleClass X} (ha : IsRelNumericallyTrivial f a) :
     IsRelNumericallyTrivial f a⁻¹ := by
   intro s
-  let : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
   rw [pullback_inv]
   exact (ha s).inv
 
@@ -323,7 +311,6 @@ whose Picard group is trivial. -/
 theorem isRelNumericallyTrivial_pullback (b : LineBundleClass S) :
     IsRelNumericallyTrivial f (pullback f b) := by
   intro s
-  let : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
   rw [pullback_comp, Scheme.Hom.fiber_fac, ← pullback_comp,
     Subsingleton.elim (pullback (S.fromSpecResidueField s) b) 1, pullback_one]
   exact isNumericallyTrivial_one _
@@ -339,23 +326,16 @@ theorem IsRelNumericallyTrivial.pullback_of_isClosedImmersion {a : LineBundleCla
     IsRelNumericallyTrivial (g ≫ f) (pullback g a) := by
   intro s
   have hf := h s
-  let : (f.fiber s).Over (Spec (.of (S.residueField s))) := ⟨f.fiberToSpecResidueField s⟩
-  let : ((g ≫ f).fiber s).Over (Spec (.of (S.residueField s))) :=
-    ⟨(g ≫ f).fiberToSpecResidueField s⟩
   -- The fibre of `g ≫ f` maps to the fibre of `f` over `κ(s)`, as the base change of `g`.
   let j : (g ≫ f).fiber s ⟶ f.fiber s :=
-    pullback.lift ((g ≫ f).fiberι s ≫ g) ((g ≫ f).fiberToSpecResidueField s)
+    (f.isPullback_fiberι s).lift ((g ≫ f).fiberι s ≫ g) ((g ≫ f).fiberToSpecResidueField s)
       (by rw [Category.assoc, Scheme.Hom.fiber_fac])
-  have hjι : j ≫ f.fiberι s = (g ≫ f).fiberι s ≫ g := pullback.lift_fst _ _ _
+  have hjι : j ≫ f.fiberι s = (g ≫ f).fiberι s ≫ g := IsPullback.lift_fst _ _ _ _
   have hjs : j ≫ f.fiberToSpecResidueField s = (g ≫ f).fiberToSpecResidueField s :=
-    pullback.lift_snd _ _ _
-  have hgf : IsPullback ((g ≫ f).fiberToSpecResidueField s) ((g ≫ f).fiberι s)
-      (S.fromSpecResidueField s) (g ≫ f) :=
-    (IsPullback.of_hasPullback (g ≫ f) _).flip
-  have hf' : IsPullback (f.fiberToSpecResidueField s) (f.fiberι s) (S.fromSpecResidueField s) f :=
-    (IsPullback.of_hasPullback f _).flip
+    IsPullback.lift_snd _ _ _ _
   have hpb : IsPullback j ((g ≫ f).fiberι s) (f.fiberι s) g :=
-    IsPullback.of_right (by rwa [hjs]) hjι hf'
+    IsPullback.of_right (by rw [hjs]; exact ((g ≫ f).isPullback_fiberι s).flip) hjι
+      (f.isPullback_fiberι s).flip
   have : IsClosedImmersion j := MorphismProperty.of_isPullback hpb.flip ‹_›
   have : j.IsOver (Spec (.of (S.residueField s))) := ⟨hjs⟩
   rw [pullback_comp, ← hjι, ← pullback_comp]
@@ -369,10 +349,8 @@ fibre of `X` over the unique point `s` of `Spec k` is `X` itself, and `κ(s) = k
 theorem isRelNumericallyTrivial_iff_isNumericallyTrivial (a : LineBundleClass X) :
     IsRelNumericallyTrivial (X ↘ Spec (.of k)) a ↔ a.IsNumericallyTrivial k := by
   have key (s : Spec (.of k)) :
-      (letI : ((X ↘ Spec (.of k)).fiber s).Over (Spec (.of ((Spec (.of k)).residueField s))) :=
-        ⟨(X ↘ Spec (.of k)).fiberToSpecResidueField s⟩
       (pullback ((X ↘ Spec (.of k)).fiberι s) a).IsNumericallyTrivial
-        ((Spec (.of k)).residueField s)) ↔ a.IsNumericallyTrivial k := by
+        ((Spec (.of k)).residueField s) ↔ a.IsNumericallyTrivial k := by
     let e := (Spec (.of k)).fromSpecResidueField s
     -- The structure of `κ(s)` as a `k`-algebra, under which `Spec κ(s) ⟶ Spec k` is `e`.
     let : Algebra k ((Spec (.of k)).residueField s) := (Spec.preimage e).hom.toAlgebra
@@ -384,14 +362,14 @@ theorem isRelNumericallyTrivial_iff_isNumericallyTrivial (a : LineBundleClass X)
       isIso_SpecMap_iff.mp this
     have : FiniteDimensional k ((Spec (.of k)).residueField s) :=
       .of_surjective (Algebra.linearMap k _) hbij.surjective
-    let : ((X ↘ Spec (.of k)).fiber s).Over (Spec (.of ((Spec (.of k)).residueField s))) :=
-      ⟨(X ↘ Spec (.of k)).fiberToSpecResidueField s⟩
     let : ((X ↘ Spec (.of k)).fiber s).Over (Spec (.of k)) :=
       ⟨(X ↘ Spec (.of k)).fiberToSpecResidueField s ≫ e⟩
     have : ((X ↘ Spec (.of k)).fiberι s).IsOver (Spec (.of k)) :=
       ⟨Scheme.Hom.fiber_fac _ s⟩
-    have : IsIso ((X ↘ Spec (.of k)).fiberι s) := inferInstanceAs (IsIso (pullback.fst _ _))
-    rw [← isNumericallyTrivial_iff_of_finiteDimensional _ (by rw [he]; rfl),
+    have : IsIso ((X ↘ Spec (.of k)).fiberι s) :=
+      ((X ↘ Spec (.of k)).isPullback_fiberι s).isIso_fst_of_isIso
+    rw [← isNumericallyTrivial_iff_of_finiteDimensional (X := (X ↘ Spec (.of k)).fiber s) _
+        (by rw [he]; rfl),
       isNumericallyTrivial_pullback_iff_of_isIso]
   obtain ⟨s⟩ : Nonempty (Spec (.of k)) := inferInstanceAs (Nonempty (PrimeSpectrum k))
   exact ⟨fun h ↦ (key s).mp (h s), fun h t ↦ (key t).mpr h⟩
