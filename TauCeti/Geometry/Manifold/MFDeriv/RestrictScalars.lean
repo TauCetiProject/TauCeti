@@ -27,7 +27,12 @@ over `𝕜`, and that its derivative for the scalar restrictions is its derivati
 `𝕜'` with scalars restricted to `𝕜`. The proofs follow `ContMDiffWithinAt.restrictScalars` and its
 companions in `TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars`: rewrite the extended charts
 with `ModelWithCorners.extChartAt_restrictScalars` and restrict the scalars of the derivative in
-charts.
+charts. The derivative comparisons and the differentiability criteria are the manifold versions of
+those in `Mathlib.Analysis.Calculus.FDeriv.RestrictScalars`: `HasFDerivWithinAt.restrictScalars`,
+`HasFDerivAt.restrictScalars`, `HasFDerivWithinAt.of_restrictScalars`,
+`hasFDerivAt_of_restrictScalars`, `DifferentiableWithinAt.restrictScalars_fderivWithin`,
+`DifferentiableAt.fderiv_restrictScalars`, `differentiableWithinAt_iff_restrictScalars` and
+`differentiableAt_iff_restrictScalars`.
 
 The tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜) x` are both the model
 space `E`, but they are distinct types carrying module structures over different fields.
@@ -118,10 +123,10 @@ The tangent spaces for a model and for its scalar restriction are both the model
 noncomputable def ContinuousLinearMap.restrictScalarsTangent {y : N}
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) y :=
-  ((tangentSpaceCastModel (I'.restrictScalars 𝕜) y).symm : E' →L[𝕜] _) ∘L
-    ((tangentSpaceCastModel I' y : _ →L[𝕜'] E') ∘L f' ∘L
-      ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 ∘L
-    (tangentSpaceCastModel (I.restrictScalars 𝕜) x : _ →L[𝕜] E)
+  (ContinuousLinearEquiv.arrowCongrEquiv (tangentSpaceCastModel (I.restrictScalars 𝕜) x)
+      (tangentSpaceCastModel (I'.restrictScalars 𝕜) y)).symm
+    ((ContinuousLinearEquiv.arrowCongrEquiv (tangentSpaceCastModel I x)
+      (tangentSpaceCastModel I' y) f').restrictScalars 𝕜)
 
 variable {𝕜} in
 /-- As a function, the scalar restriction of a map between tangent spaces is the map: both tangent
@@ -148,7 +153,8 @@ theorem ContinuousLinearMap.injective_restrictScalarsTangent_iff {y : N}
     Function.Injective (f'.restrictScalarsTangent 𝕜) ↔ Function.Injective f' :=
   Iff.rfl
 
-/-- Restricting the scalars of maps between tangent spaces is injective. -/
+/-- Restricting the scalars of maps between tangent spaces is injective. This is the tangent-space
+version of `LinearMap.restrictScalars_injective`. -/
 theorem ContinuousLinearMap.restrictScalarsTangent_injective {y : N} :
     Function.Injective (restrictScalarsTangent 𝕜 :
       (TangentSpace I x →L[𝕜'] TangentSpace I' y) →
@@ -156,7 +162,7 @@ theorem ContinuousLinearMap.restrictScalarsTangent_injective {y : N} :
   fun _ _ h ↦ ContinuousLinearMap.ext (DFunLike.congr_fun h :)
 
 /-- Two maps between tangent spaces have the same scalar restriction if and only if they are
-equal. -/
+equal. This is the tangent-space version of `LinearMap.restrictScalars_inj`. -/
 @[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_inj {y : N}
     (f' g' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
@@ -172,7 +178,7 @@ theorem ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_co
         ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _) =
       ((tangentSpaceCastModel I' y : _ →L[𝕜'] E') ∘L f' ∘L
         ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 :=
-  ContinuousLinearMap.ext fun _ ↦ rfl
+  (ContinuousLinearEquiv.arrowCongrEquiv _ _).apply_symm_apply _
 
 /-- Restricting the scalars of maps between tangent spaces preserves composition. -/
 @[simp]
