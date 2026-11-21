@@ -50,10 +50,9 @@ theorem exists_smul_eq_smul_of_finrank_eq_one (h : finrank F (F ⊗[R] M) = 1) {
   have : IsDomain R := (IsFractionRing.isDomain_iff_isField (R := R) (K := F)).2 (Field.toIsField F)
   -- `M` is torsion-free, so it embeds in its localization `F ⊗[R] M`, a line spanned by `1 ⊗ s`.
   have := IsLocalization.tensorProduct_isLocalizedModule (nonZeroDivisors R) F (M := M)
-  have hinj : Function.Injective (TensorProduct.mk R F M 1) := by
-    refine (injective_iff_map_eq_zero _).2 fun m hm => ?_
-    obtain ⟨r, hr⟩ := (IsLocalizedModule.eq_zero_iff (nonZeroDivisors R) _).1 hm
-    exact (smul_eq_zero_iff_right (nonZeroDivisors.ne_zero r.property)).1 hr
+  have hinj : Function.Injective (TensorProduct.mk R F M 1) :=
+    (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) _).2 fun c =>
+      IsSMulRegular.of_ne_zero (nonZeroDivisors.ne_zero c.property)
   have hs' : (1 : F) ⊗ₜ[R] s ≠ 0 := fun h0 => hs (hinj (by simpa using h0))
   obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hs').1 h ((1 : F) ⊗ₜ t)
   -- Write the coordinate `c` of `1 ⊗ t` as a quotient `b / a` of elements of `R`.

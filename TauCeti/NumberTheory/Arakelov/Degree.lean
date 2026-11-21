@@ -78,8 +78,8 @@ theorem sectionDegree_smul (hE : E.rank = 1) {a : 𝓞 K} (ha : a ≠ 0) (s : E)
   have hsum : ∑ σ : K →+* ℂ, Real.log ‖σ (algebraMap (𝓞 K) K a)‖ =
       Real.log (Ideal.span {a}).cardQuot := by
     rw [← Real.log_prod fun σ _ => norm_ne_zero_iff.2 (hσ σ), prod_norm_embedding_eq_abs_norm,
-      ← Ideal.absNorm_apply, Ideal.absNorm_span_singleton, Nat.cast_natAbs, Int.cast_abs,
-      ← Algebra.coe_norm_int, Rat.cast_intCast]
+      ← Ideal.absNorm_apply, Ideal.absNorm_span_singleton, Nat.cast_natAbs, ← Algebra.coe_norm_int]
+    norm_cast
   simp only [sectionDegree_def, cardQuot_span_singleton_smul a hs, Nat.cast_mul,
     Real.log_mul (Nat.cast_ne_zero.2 hN) (Nat.cast_ne_zero.2 hq), norm_smul,
     Real.log_mul (norm_ne_zero_iff.2 (hσ _)) (E.norm_pos _ hs).ne', Finset.sum_add_distrib, hsum]

@@ -96,6 +96,12 @@ theorem toComplex_algebraMap (a : 𝓞 K) :
     toComplex σ (algebraMap (𝓞 K) (ComplexAlong σ) a) = σ (algebraMap (𝓞 K) K a) :=
   (rfl)
 
+/-- The image of an integer `a` of `K` in `ComplexAlong σ` is that of the complex number `σ(a)`. -/
+theorem algebraMap_ringOfIntegers_eq (a : 𝓞 K) :
+    algebraMap (𝓞 K) (ComplexAlong σ) a =
+      algebraMap ℂ (ComplexAlong σ) (σ (algebraMap (𝓞 K) K a)) :=
+  (rfl)
+
 end ComplexAlong
 
 /-- The complex fibre `E_σ = ℂ ⊗[𝓞 K, σ] E` of an `𝓞 K`-module at a field embedding `σ`. -/
@@ -237,16 +243,14 @@ theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
   set c : ℂ := σ (algebraMap (𝓞 K) K a)
   -- In the fibre, `a` acts on `1 ⊗ x` as the complex number `σ(a)`.
   have h : (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] (a • x) = c • ((1 : ComplexAlong σ) ⊗ₜ x) := by
-    rw [← smul_tmul, smul_tmul', Algebra.smul_def, Algebra.smul_def, mul_one, mul_one]
-    -- Both images in `ComplexAlong σ`, a type synonym of `ℂ`, are `σ(a)` by the definition of its
-    -- `𝓞 K`-algebra structure (as in `ComplexAlong.toComplex_algebraMap`).
-    rfl
+    rw [← smul_tmul, smul_tmul', Algebra.smul_def, Algebra.smul_def, mul_one, mul_one,
+      ComplexAlong.algebraMap_ringOfIntegers_eq]
   have hr : (E.metric.core σ).inner (1 ⊗ₜ x) (c • (1 ⊗ₜ x)) =
       c * (E.metric.core σ).inner (1 ⊗ₜ x) (1 ⊗ₜ x) :=
     InnerProductSpace.Core.inner_smul_right (c := (E.metric.core σ).toCore) _ _
   rw [norm, norm, inner, inner, h, (E.metric.core σ).smul_left, hr, ← mul_assoc, RCLike.conj_mul,
-    ← RCLike.ofReal_pow, RCLike.re_ofReal_mul, Real.sqrt_mul (by positivity),
-    Real.sqrt_sq (norm_nonneg _)]
+    ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
+  simp [Real.sqrt_mul (sq_nonneg _)]
 
 section Trivial
 
