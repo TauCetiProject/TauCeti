@@ -47,6 +47,10 @@ the coadjoint orbit appear on `G` as follows.
 * **Invariance.** Left translations preserve `σ_ν`, and right translation by `h` carries
   `σ_ν` to `σ_{Ad*_h ν}`; in particular right translations by elements of the stabilizer `G_ν`
   preserve `σ_ν`.
+* **Naturality.** A smooth homomorphism `φ : K → G` with differential `dφ` at the identity pulls
+  `α_ν` and `σ_ν` back to `α_{ν ∘ dφ}` and `σ_{ν ∘ dφ}` on `K`
+  (`MonoidHom.mpullback_leftInvariantForm`, `MonoidHom.mpullback_leftInvariantKirillovForm`), since
+  `φ` intertwines the left translations by `k⁻¹` and by `φ(k)⁻¹`.
 * **Moment map.** For the action of `G` on itself by left multiplication, the orbit map
   `g ↦ Ad*_g ν` is a coadjoint-equivariant moment map of `σ_ν`
   (`Module.Dual.isEquivariantMomentMap_leftInvariantKirillovForm`). It is the composite of the
@@ -316,3 +320,61 @@ theorem isEquivariantMomentMap_leftInvariantKirillovForm [T2Space G] [I.Boundary
   rw [Function.comp_apply, momentMap_leftInvariantCovector]
 
 end Module.Dual
+
+/-! ### Naturality under homomorphisms -/
+
+namespace MonoidHom
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {F HK : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace HK] {J : ModelWithCorners ℝ F HK}
+  {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K] [LieGroup J ∞ K]
+  (φ : K →* G) (hφ : ContMDiff J I ∞ φ)
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+include hφ in
+/-- A smooth homomorphism intertwines the translations back to the identity: the differential of
+`φ` at `1` applied to `d(L_{k⁻¹})_k v` is `d(L_{φ(k)⁻¹})_{φ(k)}` applied to `dφ_k v`. -/
+private theorem mfderiv_inv_mul_mfderiv (k : K) (v : TangentSpace J k) :
+    mfderiv I I ((φ k)⁻¹ * ·) (φ k) (mfderiv J I φ k v) =
+      φ.groupLieAlgebraMap J I (mfderiv J J (k⁻¹ * ·) k v) := by
+  have hcomp : ((φ k)⁻¹ * ·) ∘ φ = φ ∘ (k⁻¹ * ·) :=
+    funext fun y ↦ by simp only [Function.comp_apply, map_mul, map_inv]
+  have hφd : ∀ y, MDifferentiableAt J I φ y := fun y ↦ (hφ y).mdifferentiableAt (by simp)
+  rw [← mfderiv_comp_apply k
+    ((contMDiff_mul_left (I := I) (n := ∞)).mdifferentiableAt (by simp)) (hφd k), hcomp,
+    mfderiv_comp_apply_of_eq k (hφd _)
+      ((contMDiff_mul_left (I := J) (n := ∞)).mdifferentiableAt (by simp)) (inv_mul_cancel k)]
+  -- The chain rule lands in the tangent space at `k⁻¹ * k`, which is the model space, as is the
+  -- Lie algebra `TangentSpace J 1` on which `dφ` acts, so the two sides agree definitionally.
+  exact (φ.groupLieAlgebraMap_apply J _).symm
+
+/-- **Naturality of the left-invariant one-form.** A smooth homomorphism `φ : K →* G` pulls the
+left-invariant one-form of `ν ∈ 𝔤*` back to the left-invariant one-form of `ν ∘ dφ ∈ 𝔨*`, where
+`dφ` is the differential of `φ` at the identity. -/
+@[simp]
+theorem mpullback_leftInvariantForm (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    SmoothForm.mpullback φ hφ ν.leftInvariantForm =
+      Module.Dual.leftInvariantForm (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) := by
+  apply Subtype.ext
+  funext k
+  ext v
+  rw [SmoothForm.coe_mpullback, TauCeti.mpullback_apply, Module.Dual.leftInvariantForm_apply,
+    Module.Dual.leftInvariantForm_apply]
+  exact congrArg ν (mfderiv_inv_mul_mfderiv φ hφ k (v 0))
+
+/-- **Naturality of the left-invariant Kirillov form.** A smooth homomorphism `φ : K →* G` pulls
+the left-invariant Kirillov form of `ν ∈ 𝔤*` back to the left-invariant Kirillov form of
+`ν ∘ dφ ∈ 𝔨*`, where `dφ` is the differential of `φ` at the identity. -/
+@[simp]
+theorem mpullback_leftInvariantKirillovForm (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    SmoothForm.mpullback φ hφ ν.leftInvariantKirillovForm =
+      Module.Dual.leftInvariantKirillovForm (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) := by
+  rw [Module.Dual.leftInvariantKirillovForm, Module.Dual.leftInvariantKirillovForm,
+    LinearMap.map_neg, ← SmoothForm.mextDerivₗ_mpullback, mpullback_leftInvariantForm φ hφ]
+
+end MonoidHom
