@@ -253,18 +253,16 @@ def toCkHolderSpaceL (j : ℕ) : Wkp volume (⊤ : Opens F) p (j + 1) →L[ℝ] 
   LinearMap.mkContinuous
     { toFun := ckHolderRepresentative hα hM j
       map_add' u v := ckHolderRepresentative_eq_of_ae_eq hα hM j <| by
+        have h₃ := value_add_ae (j + 1) u v
+        simp only [Opens.coe_top, Measure.restrict_univ] at h₃
         filter_upwards [value_ae_eq_ckHolderRepresentative hα hM j u,
-          value_ae_eq_ckHolderRepresentative hα hM j v,
-          (ae_restrict_iff' MeasurableSet.univ).1 (value_add (j + 1) u v ▸
-            Lp.coeFn_add (value (j + 1) u) (value (j + 1) v))] with x h₁ h₂ h₃
-        rw [CkHolderSpace.coe_add, Pi.add_apply, ← h₁, ← h₂]
-        simpa using h₃ (mem_univ x)
+          value_ae_eq_ckHolderRepresentative hα hM j v, h₃] with x h₁ h₂ h₃
+        rw [h₃, CkHolderSpace.coe_add, Pi.add_apply, Pi.add_apply, h₁, h₂]
       map_smul' c u := ckHolderRepresentative_eq_of_ae_eq hα hM j <| by
-        filter_upwards [value_ae_eq_ckHolderRepresentative hα hM j u,
-          (ae_restrict_iff' MeasurableSet.univ).1
-            (value_smul (j + 1) c u ▸ Lp.coeFn_smul c (value (j + 1) u))] with x h₁ h₂
-        rw [RingHom.id_apply, CkHolderSpace.coe_smul, Pi.smul_apply, ← h₁]
-        simpa using h₂ (mem_univ x) }
+        have h₂ := value_smul_ae (j + 1) c u
+        simp only [Opens.coe_top, Measure.restrict_univ] at h₂
+        filter_upwards [value_ae_eq_ckHolderRepresentative hα hM j u, h₂] with x h₁ h₂
+        rw [h₂, RingHom.id_apply, CkHolderSpace.coe_smul, Pi.smul_apply, Pi.smul_apply, h₁] }
     ((j + 2) * (exists_ckHolderSpace hα hM j).choose) (norm_ckHolderRepresentative_le hα hM j)
 
 /-- The embedding `W^{j+1,p}(F) → C_b^{j,α}(F)` gives a representative of `u`. -/

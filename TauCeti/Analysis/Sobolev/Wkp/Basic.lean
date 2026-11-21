@@ -289,6 +289,17 @@ theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
     value k (c • u) = c • value k u :=
   map_smul (valueL k) c u
 
+/-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
+theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
+    ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
+  simpa only [value_add] using Lp.coeFn_add (value k u) (value k v)
+
+/-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
+of its value. -/
+theorem value_smul_ae (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
+    ⇑(value k (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(value k u) := by
+  simpa only [value_smul] using Lp.coeFn_smul c (value k u)
+
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem value_finsetSum_ae {κ : Type*} (k : ℕ) (s : Finset κ) (u : κ → Wkp mu Omega p k) :
     ∀ᵐ x ∂mu.restrict Omega, value k (∑ j ∈ s, u j) x = ∑ j ∈ s, value k (u j) x := by
