@@ -350,6 +350,14 @@ lemma interPairMapOfSubset_comp_ofSubsetMap_id {C C' : Set X} (h : A ∩ B ⊆ C
       interPairMapOfSubset (h.trans fun _ hx ↦ hC hx) :=
   ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
 
+/-- Following the excision map `(A, A ∩ B) ⟶ (X, B)` by the restriction `(X, B) ⟶ (X, C')` is the
+inclusion `(A, A ∩ B) ⟶ (X, C')`. -/
+@[simp]
+lemma excisionMap_comp_ofSubsetMap_id {C' : Set X} (hC : Set.MapsTo (𝟙 X) B C') :
+    excisionMap A B ≫ ofSubsetMap (𝟙 X) hC =
+      interPairMapOfSubset (Set.inter_subset_right.trans fun _ hx ↦ hC hx) := by
+  rw [← interPairMapOfSubset_eq_excisionMap, interPairMapOfSubset_comp_ofSubsetMap_id]
+
 omit hA hB in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
 `L₂ ⊆ L₁` with `closure L₁ ⊆ U`. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on

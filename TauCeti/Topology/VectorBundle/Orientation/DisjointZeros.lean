@@ -22,8 +22,8 @@ orientation-preserving fibrewise isomorphism `E₁ ≃ E₃` carries `s₁` to `
 (`TauCeti.VectorBundleOrientation.eulerClass_eq_add_of_disjoint`). This is the localization of the
 Euler class at the zeros of a section: the Euler class of `E` is the image of the relative class
 `s^* U ∈ Hⁿ⁺¹(B, B ∖ Z)` of a section `s` nonzero off `Z`
-(`TauCeti.eulerClass_eq_singularCohomologyMap_thomPairMapOfNeZero`), and this class only depends on
-the oriented bundle and the section near `Z`.
+(`TauCeti.VectorBundleOrientation.eulerClass_eq_singularCohomologyπ_thomPairMapOfNeZero`), and this
+class only depends on the oriented bundle and the section near `Z`.
 
 The motivating instance is the tensor product of complex lines. If `s₁` and `s₂` are sections of
 complex lines `L₁` and `L₂` with disjoint zero sets, then off `Z₂` the map `v ↦ v ⊗ s₂` is a
@@ -192,30 +192,11 @@ theorem eulerClass_eq_add_of_disjoint {Z₁ Z₂ : Set B} (hZ₁ : IsClosed Z₁
   have hsplit := TopCat.eq_singularCohomologyComplRestrict_add_of_disjoint (X := TopCat.of B)
     hZ₁ hZ₂ hZ _ _ _ h₁ h₂
   -- Each Euler class is the image in `Hⁿ⁺¹(B)` of the relative class of its section.
-  have he {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type w}
-      [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
-      [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-      (o : VectorBundleOrientation F E (Fin (n + 1))) (hF : finrank ℝ F = n + 1) {s : ∀ b, E b}
-      (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) {Z : Set B} (hs₀ : ∀ b ∉ Z, s b ≠ 0) :
-      o.eulerClass hF = (TopPair.ofSubset (X := TopCat.of B) Zᶜ).singularCohomologyπ _ ℤ _ (n + 1)
-        (TopPair.singularCohomologyMap (thomPairMapOfNeZero ⟨_, hs⟩ hs₀) (n + 1)
-          (o.thomClass hF)) :=
-    (eulerClass_def o hF).trans <| (ConcreteCategory.congr_hom
-      (TauCeti.eulerClass_eq_singularCohomologyMap_thomPairMapOfNeZero F E hs hs₀ (n + 1))
-      (o.thomClass hF)).trans (CategoryTheory.comp_apply _ _ _)
-  -- Restricting from `Hⁿ⁺¹(B, B ∖ Zᵢ)` to `Hⁿ⁺¹(B, B ∖ (Z₁ ∪ Z₂))` commutes with the maps to
-  -- `Hⁿ⁺¹(B)`.
-  have hπ {Z : Set B} (h : Z ⊆ Z₁ ∪ Z₂)
-      (x : (TopPair.ofSubset (X := TopCat.of B) Zᶜ).singularCohomology
-        (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)) :
-      (TopPair.ofSubset (X := TopCat.of B) (Z₁ ∪ Z₂)ᶜ).singularCohomologyπ _ ℤ _ (n + 1)
-          (TopCat.singularCohomologyComplRestrict (X := TopCat.of B)
-            (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) h (n + 1) x) =
-        (TopPair.ofSubset (X := TopCat.of B) Zᶜ).singularCohomologyπ _ ℤ _ (n + 1) x :=
-    (CategoryTheory.comp_apply _ _ _).symm.trans (ConcreteCategory.congr_hom
-      (TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ
-        (X := TopCat.of B) (S := Zᶜ) (S' := (Z₁ ∪ Z₂)ᶜ) _ (n + 1)) x)
-  rw [he o₁ hF₁ hs₁ hs₁₀, he o₂ hF₂ hs₂ hs₂₀, he o₃ hF₃ hs₃ hs₃₀, hsplit, map_add, hπ, hπ]
+  rw [o₁.eulerClass_eq_singularCohomologyπ_thomPairMapOfNeZero hF₁ hs₁ hs₁₀,
+    o₂.eulerClass_eq_singularCohomologyπ_thomPairMapOfNeZero hF₂ hs₂ hs₂₀,
+    o₃.eulerClass_eq_singularCohomologyπ_thomPairMapOfNeZero hF₃ hs₃ hs₃₀, hsplit, map_add,
+    TopCat.singularCohomologyπ_singularCohomologyComplRestrict_apply,
+    TopCat.singularCohomologyπ_singularCohomologyComplRestrict_apply]
   -- The two sides differ only in reading subsets of `B` as subsets of `TopCat.of B`.
   rfl
 
