@@ -20,7 +20,9 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`.
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`. So if
+`k ≤ f.rootMultiplicity a` for every `a` in a finite set `s`, then `k * #s ≤ f.natDegree`
+(`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
@@ -86,6 +88,13 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
           Multiset.mem_toFinset.mpr (Multiset.count_pos.mp (Nat.pos_of_ne_zero ha))
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
+
+/-- **The root-count inequality.** Over a domain, if `k ≤ f.rootMultiplicity a` for every `a` in
+a finite set `s`, then `k * #s ≤ f.natDegree`. -/
+theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {k : ℕ}
+    (h : ∀ a ∈ s, k ≤ f.rootMultiplicity a) : k * s.card ≤ f.natDegree := by
+  rw [mul_comm, ← smul_eq_mul]
+  exact (Finset.card_nsmul_le_sum s _ k h).trans (sum_rootMultiplicity_le_natDegree f s)
 
 /-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
 `r i`. -/
