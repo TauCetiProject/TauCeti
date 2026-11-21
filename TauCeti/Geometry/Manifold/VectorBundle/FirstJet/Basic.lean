@@ -541,6 +541,25 @@ theorem localRep_eventuallyEq_fiberCoordChange (s : ∀ x, V x) {i j y : M}
     ContinuousLinearEquiv.coe_coe,
     Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
 
+/-- Local representatives preserve addition near the centre of their chart. -/
+theorem localRep_eventuallyEq_add (s t : ∀ x, V x) (x : M) :
+    localRep I F (s + t) x =ᶠ[𝓝[range I] extChartAt I x x]
+      localRep I F s x + localRep I F t x := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet I
+    (mem_baseSet_self (H := H) F V x) (mem_chart_source H x)] with z hz
+  simpa only [localRep_apply, Pi.add_apply] using
+    (trivializationAt F V x).linear 𝕜 ((mem_baseSet_iff F V).mp hz).1 |>.map_add (s _) (t _)
+
+/-- Local representatives preserve multiplication by a scalar function near the chart centre. -/
+theorem localRep_eventuallyEq_smul (f : M → 𝕜) (s : ∀ x, V x) (x : M) :
+    localRep I F (f • s) x =ᶠ[𝓝[range I] extChartAt I x x]
+      (f ∘ (extChartAt I x).symm) • localRep I F s x := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet I
+    (mem_baseSet_self (H := H) F V x) (mem_chart_source H x)] with z hz
+  simpa only [Pi.smul_apply', localRep_apply, Function.comp_apply] using
+    (trivializationAt F V x).linear 𝕜 ((mem_baseSet_iff F V).mp hz).1
+      |>.map_smul (f ((extChartAt I x).symm z)) (s ((extChartAt I x).symm z))
+
 section
 
 variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
