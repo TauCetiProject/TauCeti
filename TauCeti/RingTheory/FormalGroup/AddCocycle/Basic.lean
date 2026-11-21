@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Module.Basic
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
+import TauCeti.Algebra.MvPolynomial.Fin.Three
 
 /-!
 # Additive 2-cocycles given by power series in characteristic zero
@@ -27,10 +29,11 @@ available.
 
 * `TauCeti.IsAddCocycleCoeff b`: the cocycle identity at every monomial `XⁱYʲZᵏ`. It is the
   coefficient form of `MvPolynomial.IsAddCocycle₂`
-  (`MvPolynomial.IsAddCocycle₂.isAddCocycleCoeff`).
+  (`MvPolynomial.isAddCocycle₂_iff_isAddCocycleCoeff`).
 * `TauCeti.addCoboundaryCoeff a`: the coefficients of `u(Y + Z) - u(Y) - u(Z)`. For a power
-  series over a commutative ring they are the coefficients of the substitution
-  `u(X₀ + X₁) - u(X₀) - u(X₁)` (`PowerSeries.coeff_subst_X_zero_add_X_one_sub_subst_sub_subst`).
+  series over a commutative ring they are the coefficients of its homomorphism defect
+  `u(X₀ + X₁) - u(X₀) - u(X₁)` from the additive formal group law to itself
+  (`FormalGroup.coeff_homDefect_𝔾ₐ_𝔾ₐ`).
 
 Over a characteristic-zero field every additive 2-cocycle is a coboundary, with no symmetry
 assumption: the cocycle identity at `XⁱY⁰Z⁰` and `X⁰Y⁰Zᵏ` kills the coefficients of `Yⁱ` and `Zᵏ`,
@@ -87,12 +90,6 @@ namespace IsAddCocycleCoeff
 
 variable {b : ℕ × ℕ → M}
 
-/-- The cocycle identity at the coefficient of `XⁱYʲZᵏ`. -/
-theorem apply (h : IsAddCocycleCoeff b) (i j k : ℕ) :
-    (if k = 0 then b (i, j) else 0) + (i + j).choose i • b (i + j, k) =
-      (j + k).choose j • b (i, j + k) + if i = 0 then b (j, k) else 0 :=
-  h i j k
-
 /-- The zero family is an additive 2-cocycle. -/
 theorem zero : IsAddCocycleCoeff (0 : ℕ × ℕ → M) := by
   intro i j k
@@ -110,6 +107,21 @@ theorem map (h : IsAddCocycleCoeff b) (φ : M →+ N) : IsAddCocycleCoeff fun ij
   intro i j k
   have := congrArg φ (h i j k)
   simpa only [map_add, map_nsmul, apply_ite φ, map_zero] using this
+
+/-- A scalar multiple of an additive 2-cocycle is an additive 2-cocycle. -/
+theorem smul {S : Type*} [DistribSMul S M] (c : S) (h : IsAddCocycleCoeff b) :
+    IsAddCocycleCoeff (c • b) :=
+  h.map (DistribSMul.toAddMonoidHom M c)
+
+/-- The negative of an additive 2-cocycle is an additive 2-cocycle, in an additive group. -/
+theorem neg {M : Type*} [AddCommGroup M] {b : ℕ × ℕ → M} (h : IsAddCocycleCoeff b) :
+    IsAddCocycleCoeff (-b) :=
+  h.map (-AddMonoidHom.id M)
+
+/-- The difference of two additive 2-cocycles is an additive 2-cocycle, in an additive group. -/
+theorem sub {M : Type*} [AddCommGroup M] {b b' : ℕ × ℕ → M} (h : IsAddCocycleCoeff b)
+    (h' : IsAddCocycleCoeff b') : IsAddCocycleCoeff (b - b') := by
+  simpa only [sub_eq_add_neg] using h.add h'.neg
 
 /-- The coefficient of `Yⁱ` in an additive 2-cocycle vanishes for `i ≠ 0`, in an additive group. -/
 theorem apply_zero_right {M : Type*} [AddCommGroup M] {b : ℕ × ℕ → M}
@@ -131,14 +143,28 @@ namespace MvPolynomial
 
 open TauCeti
 
+variable {R : Type*} [CommRing R] {f : MvPolynomial (Fin 2) R}
+
+/-- A polynomial is an additive 2-cocycle exactly when its coefficients satisfy the coefficient
+form of the cocycle identity. -/
+theorem isAddCocycle₂_iff_isAddCocycleCoeff :
+    f.IsAddCocycle₂ ↔
+      IsAddCocycleCoeff fun ij : ℕ × ℕ =>
+        f.coeff (Finsupp.single 0 ij.1 + Finsupp.single 1 ij.2) := by
+  refine ⟨fun hf i j k => by simpa only [nsmul_eq_mul] using hf.coeff_eq i j k, fun h => ?_⟩
+  -- Compare the coefficients of `X₀^(d 0) X₁^(d 1) X₂^(d 2)`.
+  rw [isAddCocycle₂_iff]
+  ext d
+  simpa only [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_aeval_X_zero_X_one,
+    coeff_aeval_X_add_X_X, coeff_aeval_X_X_add_X, coeff_aeval_X_one_X_two, nsmul_eq_mul] using
+    h (d 0) (d 1) (d 2)
+
 /-- The coefficients of a polynomial additive 2-cocycle satisfy the coefficient form of the
 cocycle identity. -/
-theorem IsAddCocycle₂.isAddCocycleCoeff {R : Type*} [CommRing R] {f : MvPolynomial (Fin 2) R}
-    (hf : f.IsAddCocycle₂) :
+theorem IsAddCocycle₂.isAddCocycleCoeff (hf : f.IsAddCocycle₂) :
     IsAddCocycleCoeff fun ij : ℕ × ℕ =>
-      f.coeff (Finsupp.single 0 ij.1 + Finsupp.single 1 ij.2) := by
-  intro i j k
-  simpa only [nsmul_eq_mul] using hf.coeff_eq i j k
+      f.coeff (Finsupp.single 0 ij.1 + Finsupp.single 1 ij.2) :=
+  isAddCocycle₂_iff_isAddCocycleCoeff.1 hf
 
 end MvPolynomial
 
@@ -203,24 +229,22 @@ end Group
 
 end TauCeti
 
-namespace PowerSeries
+namespace FormalGroup
 
 open TauCeti
 
-/-- The coefficients of the additivity defect `g(X₀ + X₁) - g(X₀) - g(X₁)` of a power series `g`
-over a commutative ring, formed by substitution, are given by `TauCeti.addCoboundaryCoeff`. -/
-theorem coeff_subst_X_zero_add_X_one_sub_subst_sub_subst {R : Type*} [CommRing R]
-    (g : PowerSeries R) (i j : ℕ) :
+/-- The coefficients of the homomorphism defect `g(X₀ + X₁) - g(X₀) - g(X₁)` of a power series `g`
+from the additive formal group law to itself are given by `TauCeti.addCoboundaryCoeff`. -/
+theorem coeff_homDefect_𝔾ₐ_𝔾ₐ {R : Type*} [CommRing R] (g : PowerSeries R) (i j : ℕ) :
     MvPowerSeries.coeff (Finsupp.single 0 i + Finsupp.single 1 j)
-        (g.subst (MvPowerSeries.X 0 + MvPowerSeries.X 1 : MvPowerSeries (Fin 2) R) -
-          g.subst (MvPowerSeries.X (0 : Fin 2)) - g.subst (MvPowerSeries.X (1 : Fin 2))) =
-      addCoboundaryCoeff (fun k => coeff k g) (i, j) := by
+        ((𝔾ₐ : FormalGroup R).homDefect 𝔾ₐ g) =
+      addCoboundaryCoeff (fun k => PowerSeries.coeff k g) (i, j) := by
   classical
-  rw [map_sub, map_sub, coeff_subst_X_zero_add_X_one, coeff_subst_single, coeff_subst_single,
-    addCoboundaryCoeff_apply]
+  rw [homDefect_𝔾ₐ, 𝔾ₐ_toPowerSeries, map_sub, map_sub, PowerSeries.coeff_subst_X_zero_add_X_one,
+    PowerSeries.coeff_subst_single, PowerSeries.coeff_subst_single, addCoboundaryCoeff_apply]
   simp [nsmul_eq_mul]
 
-end PowerSeries
+end FormalGroup
 
 namespace TauCeti
 
@@ -230,6 +254,7 @@ variable {M : Type*} [AddCommGroup M]
 
 /-- **Every coboundary is a cocycle**: `u(Y + Z) - u(Y) - u(Z)` satisfies the additive 2-cocycle
 identity. -/
+@[simp]
 theorem isAddCocycleCoeff_addCoboundaryCoeff (a : ℕ → M) :
     IsAddCocycleCoeff (addCoboundaryCoeff a) := by
   intro i j k
@@ -312,21 +337,21 @@ theorem exists_addCoboundaryCoeff_eq (𝕜 : Type*) [DivisionRing 𝕜] [CharZer
   rw [zero_add]
   have hm : i + 1 + j ≠ 0 := by omega
   have hm1 : i + 1 + j ≠ 1 := by omega
-  have hb' : ((i + 1 : ℕ) : 𝕜) • b (i + 1, j) = (((i + j).choose i : ℕ) : 𝕜) • b (1, i + j) := by
-    simpa only [Nat.cast_smul_eq_nsmul] using h.succ_nsmul_apply i hj.ne'
   have hb : b (i + 1, j) = ((i + 1 : ℕ) : 𝕜)⁻¹ • (((i + j).choose i : ℕ) : 𝕜) • b (1, i + j) := by
-    rw [← hb', smul_smul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 (Nat.succ_ne_zero i)), one_smul]
+    rw [eq_inv_smul_iff₀ (Nat.cast_ne_zero.2 (Nat.succ_ne_zero i))]
+    simpa only [Nat.cast_smul_eq_nsmul] using h.succ_nsmul_apply i hj.ne'
   have hchoose : (i + 1) * (i + 1 + j).choose (i + 1) = (i + j).choose i * (i + 1 + j) := by
     rw [mul_comm, show i + 1 + j = i + j + 1 by omega, ← Nat.add_one_mul_choose_eq, mul_comm]
   simp only [a, ite_eq_right hm, ite_eq_right hm1, show i + 1 + j - 1 = i + j by omega]
   rw [hb, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, smul_smul]
   congr 1
-  have hchoose' : ((i + 1 : ℕ) : 𝕜) * ((i + 1 + j).choose (i + 1) : ℕ) =
-      ((i + j).choose i : ℕ) * ((i + 1 + j : ℕ) : 𝕜) := by
-    exact_mod_cast hchoose
-  have h1 : ((i + 1 : ℕ) : 𝕜) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero i)
-  have h2 : ((i + 1 + j : ℕ) : 𝕜) ≠ 0 := Nat.cast_ne_zero.2 hm
-  rw [eq_inv_mul_iff_mul_eq₀ h1, ← mul_assoc, hchoose', mul_assoc, mul_inv_cancel₀ h2, mul_one]
+  -- `𝕜` need not be commutative, so prove the scalar identity in `ℚ` and cast it to `𝕜`.
+  have key : (((i + 1 + j).choose (i + 1) : ℕ) : ℚ) * ((i + 1 + j : ℕ) : ℚ)⁻¹ =
+      ((i + 1 : ℕ) : ℚ)⁻¹ * ((i + j).choose i : ℕ) := by
+    field_simp
+    norm_cast
+    linarith
+  simpa only [Rat.cast_mul, Rat.cast_inv, Rat.cast_natCast] using congrArg (Rat.cast : ℚ → 𝕜) key
 
 end IsAddCocycleCoeff
 
