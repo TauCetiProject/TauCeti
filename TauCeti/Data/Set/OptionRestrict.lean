@@ -25,14 +25,14 @@ variable {α β : Type*} (s : Set α) (t : Set β)
 /-- A partial map sending `s` into `t`, as a partial map from `s` to `t`. -/
 def optionRestrict (g : α → Option β) (hg : ∀ ⦃x y⦄, g x = some y → x ∈ s → y ∈ t) (x : s) :
     Option t :=
-  (g x).pmap (fun y hy => ⟨y, hg hy x.2⟩) fun _ h => h
+  (g x).pmap (fun y hy => ⟨y, hg hy x.property⟩) fun _ h => h
 
 variable {s t} {g : α → Option β} {hg : ∀ ⦃x y⦄, g x = some y → x ∈ s → y ∈ t}
 
 @[simp]
 theorem optionRestrict_eq_some_iff {x : s} {y : t} :
-    s.optionRestrict t g hg x = some y ↔ g x = some y.1 := by
-  simp [optionRestrict, Subtype.ext_iff, eq_comm (a := y.1)]
+    s.optionRestrict t g hg x = some y ↔ g x = some y.val := by
+  simp [optionRestrict, Subtype.ext_iff, eq_comm (a := y.val)]
 
 @[simp]
 theorem optionRestrict_eq_none_iff {x : s} : s.optionRestrict t g hg x = none ↔ g x = none := by
@@ -43,6 +43,7 @@ theorem optionRestrict_eq_none_iff {x : s} : s.optionRestrict t g hg x = none �
 theorem unattach_optionRestrict (x : s) : (s.optionRestrict t g hg x).unattach = g x := by
   cases h : g x with
   | none => rw [optionRestrict_eq_none_iff.2 h, Option.unattach_none]
-  | some y => rw [(optionRestrict_eq_some_iff (y := ⟨y, hg h x.2⟩)).2 h, Option.unattach_some]
+  | some y => rw [(optionRestrict_eq_some_iff (y := ⟨y, hg h x.property⟩)).2 h,
+      Option.unattach_some]
 
 end Set

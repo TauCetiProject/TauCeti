@@ -125,7 +125,7 @@ def levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
   carrier := μ ⁻¹' {c}
   smul_mem' g x hx := by
     rw [Set.mem_preimage, Set.mem_singleton_iff, Subgroup.smul_def]
-    exact h.apply_smul_eq_of_mem_stabilizer g.2 hx
+    exact h.apply_smul_eq_of_mem_stabilizer g.property hx
 
 /-- A point lies in the level exactly when `μ` takes the value `c` there. -/
 @[simp]
@@ -181,7 +181,7 @@ theorem stabilizer_levelSubMulAction_eq_bot_iff (h : σ.IsEquivariantMomentMap �
     MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z = ⊥ ↔
       MulAction.stabilizer G (z : M) = ⊥ := by
   have hle := h.stabilizer_le_stabilizer_coadjointRepresentation (z : M)
-  rw [h.mem_levelSubMulAction.1 z.2] at hle
+  rw [h.mem_levelSubMulAction.1 z.property] at hle
   exact SubMulAction.stabilizer_eq_bot_iff _ hle
 
 /-- **Local freeness on the level.** A point `z` of the level `μ⁻¹(c)` has discrete stabilizer in
@@ -193,7 +193,7 @@ theorem discreteTopology_stabilizer_levelSubMulAction_iff (h : σ.IsEquivariantM
         (MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z) ↔
       DiscreteTopology (MulAction.stabilizer G (z : M)) := by
   have hle := h.stabilizer_le_stabilizer_coadjointRepresentation (z : M)
-  rw [h.mem_levelSubMulAction.1 z.2] at hle
+  rw [h.mem_levelSubMulAction.1 z.property] at hle
   exact SubMulAction.discreteTopology_stabilizer_iff _ hle
 
 /-- **Free action on the level.** If `G` acts freely at every point of the level `μ⁻¹(c)`, then
@@ -202,7 +202,7 @@ theorem isCancelSMul_levelSubMulAction (h : σ.IsEquivariantMomentMap μ)
     (hfree : ∀ x, μ x = c → MulAction.stabilizer G x = ⊥) :
     IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
   isCancelSMul_iff_stabilizer_eq_bot.2 fun z ↦
-    (h.stabilizer_levelSubMulAction_eq_bot_iff z).2 (hfree z (h.mem_levelSubMulAction.1 z.2))
+    (h.stabilizer_levelSubMulAction_eq_bot_iff z).2 (hfree z (h.mem_levelSubMulAction.1 z.property))
 
 /-! ### Smoothness -/
 
@@ -232,7 +232,7 @@ theorem properSMul_levelSubMulAction [ProperSMul G M] (h : σ.IsEquivariantMomen
   Topology.IsEmbedding.subtypeVal.properSMul_of_isEmbedding Topology.IsEmbedding.subtypeVal
     (fun g z ↦ SubMulAction.val_smul g z)
     fun _ y y' hg ↦ ⟨⟨_, h.mem_stabilizer_coadjointRepresentation_of_apply_eq
-      (h.mem_levelSubMulAction.1 y.2) (hg ▸ h.mem_levelSubMulAction.1 y'.2)⟩, rfl⟩
+      (h.mem_levelSubMulAction.1 y.property) (hg ▸ h.mem_levelSubMulAction.1 y'.property)⟩, rfl⟩
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 

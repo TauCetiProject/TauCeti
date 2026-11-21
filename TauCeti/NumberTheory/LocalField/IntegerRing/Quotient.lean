@@ -102,7 +102,8 @@ def artinSchreierMaximalIdealQuotientEquiv (K : Type*) [Field K] [ValuativeRel K
     {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} :=
   Equiv.ofBijective
-    (fun x ↦ ⟨x.1 ^ 2 - x.1, by rw [map_sub, map_pow, x.2, zero_pow two_ne_zero, sub_self]⟩)
+    (fun x ↦ ⟨x.val ^ 2 - x.val, by rw [map_sub, map_pow, x.property, zero_pow two_ne_zero,
+        sub_self]⟩)
     (show Function.Bijective _ from ⟨fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ h ↦ by
       obtain ⟨s₁, rfl⟩ := Ideal.Quotient.mk_surjective y₁
       obtain ⟨s₂, rfl⟩ := Ideal.Quotient.mk_surjective y₂
@@ -129,7 +130,7 @@ def artinSchreierMaximalIdealQuotientEquiv (K : Type*) [Field K] [ValuativeRel K
 theorem coe_artinSchreierMaximalIdealQuotientEquiv_apply (m : ℕ)
     (x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0}) :
-    (artinSchreierMaximalIdealQuotientEquiv K m x : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) = x.1 ^ 2 - x.1 := by
+    (artinSchreierMaximalIdealQuotientEquiv K m x : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) = x.val ^ 2 - x.val := by
   rw [artinSchreierMaximalIdealQuotientEquiv, Equiv.coe_ofBijective]
 
 end TauCeti

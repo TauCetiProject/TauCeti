@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Real parts of continuous linear functionals on balls
@@ -16,7 +18,8 @@ For a continuous linear functional `f` on a seminormed space over `RCLike` scala
 `0 ≤ r`, every upper bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`.
 Hahn–Banach separation arguments use this to turn a separating real-part bound on a ball into a
 bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f‖` the real part of
-`f` exceeds `r * ‖x‖` at some point `x`.
+`f` exceeds `r * ‖x‖` at some point `x`. Applying `re_apply_add_mul_norm_le` on unit balls of two
+factors gives the `ℓ¹` norm identity `‖Ψ ∘ inl‖ + ‖Ψ ∘ inr‖ = ‖Ψ‖` on `ℓ^∞` products `E × F`.
 
 ## Main results
 
@@ -24,13 +27,16 @@ bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f�
   ball of nonnegative radius bounds its value at the centre plus the radius times its norm.
 * `StrongDual.exists_mul_norm_lt_re_apply`: for `0 ≤ r < ‖f‖`, the real part of `f` exceeds
   `r * ‖x‖` at some point `x`.
+* `StrongDual.norm_comp_inl_add_norm_comp_inr`: on `E × F` over `RCLike` scalars, the operator
+  norm of `Ψ` equals the sum of the norms of its restrictions `Ψ.comp (.inl 𝕜 E F)` and
+  `Ψ.comp (.inr 𝕜 E F)`.
 -/
 
 public section
 
 open Metric RCLike
 
-variable {𝕜 E : Type*}
+variable {𝕜 E F : Type*}
 
 namespace StrongDual
 
@@ -66,5 +72,27 @@ theorem exists_mul_norm_lt_re_apply (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0
   refine ⟨a • x, ?_⟩
   rw [map_smul, smul_eq_mul, ← hax, ofReal_re, norm_smul, ha, one_mul]
   exact hx
+
+/-- On an `ℓ^∞`-normed product `E × F` over `RCLike` scalars, the operator norm of `Ψ` equals the
+sum of the norms of its restrictions to the two factors. -/
+theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (Ψ : StrongDual 𝕜 (E × F)) :
+    ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ = ‖Ψ‖ := by
+  set f₀ := Ψ.comp (.inl 𝕜 E F); set f₁ := Ψ.comp (.inr 𝕜 E F)
+  refine le_antisymm ?_
+    ((congrArg norm Ψ.coprod_comp_inl_inr.symm).trans_le (f₀.opNorm_coprod_le f₁))
+  have hball {y₀ : E} (hy₀ : y₀ ∈ closedBall 0 1) {y₁ : F} (hy₁ : y₁ ∈ closedBall 0 1) :
+      re (f₀ y₀) + re (f₁ y₁) ≤ ‖Ψ‖ := by
+    have hnorm : ‖(y₀, y₁)‖ ≤ 1 := by
+      simp [Prod.norm_def, mem_closedBall_zero_iff.1 hy₀, mem_closedBall_zero_iff.1 hy₁]
+    rw [← map_add, Ψ.comp_inl_add_comp_inr (y₀, y₁)]
+    exact (re_le_norm _).trans <|
+      (Ψ.le_opNorm _).trans <| mul_le_of_le_one_right (norm_nonneg Ψ) hnorm
+  have h₁ : ∀ y₁ ∈ closedBall (0 : F) 1, re (f₁ y₁) ≤ ‖Ψ‖ - ‖f₀‖ := fun y₁ hy₁ ↦ by
+    have h0 := re_apply_add_mul_norm_le (f := f₀) (x := 0) (u := ‖Ψ‖ - re (f₁ y₁)) zero_le_one
+      fun y₀ hy₀ ↦ by linarith [hball hy₀ hy₁]
+    rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
+  have h0 := re_apply_add_mul_norm_le (f := f₁) (x := 0) zero_le_one h₁
+  rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
 
 end StrongDual

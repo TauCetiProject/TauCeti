@@ -204,7 +204,7 @@ theorem productSeminorm_sum_tmul_le {ι : Type*} (s : Finset ι) (v : ι → V) 
   refine key.trans_eq ?_
   congr 1
   refine le_antisymm (Finset.sup_le fun j _ ↦
-      Finset.le_sup (f := fun i ↦ ‖v i‖₊ * ‖w i‖₊) (e.symm j).2)
+      Finset.le_sup (f := fun i ↦ ‖v i‖₊ * ‖w i‖₊) (e.symm j).property)
     (Finset.sup_le fun i hi ↦ ?_)
   simpa using Finset.le_sup (f := fun j ↦ ‖v (e.symm j)‖₊ * ‖w (e.symm j)‖₊)
     (Finset.mem_univ (e ⟨i, hi⟩))

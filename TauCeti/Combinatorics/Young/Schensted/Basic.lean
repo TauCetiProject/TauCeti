@@ -1139,18 +1139,19 @@ def rowInsertEquiv :
     {rows : List (List α) // rows.IsTableauRows} × α ≃
       {p : List (List α) × ℕ //
         p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length} where
-  toFun p := ⟨(rowInsert p.2 p.1.1, rowInsertIndex p.2 p.1.1), p.1.2.rowInsert p.2,
-    length_getD_succ_rowInsertIndex_lt p.1.2.sortedGE_map_length p.2⟩
-  invFun p := (⟨(reverseRowInsert p.1.2 p.1.1).1, p.2.1.reverseRowInsert p.2.2⟩,
-    (reverseRowInsert p.1.2 p.1.1).2.get
-      (Option.isSome_iff_exists.mpr ((rowInsert_reverseRowInsert p.2.1 p.2.2).imp fun _ h => h.1)))
+  toFun p := ⟨(rowInsert p.2 p.1.val, rowInsertIndex p.2 p.1.val), p.1.property.rowInsert p.2,
+    length_getD_succ_rowInsertIndex_lt p.1.property.sortedGE_map_length p.2⟩
+  invFun p := (⟨(reverseRowInsert p.val.2 p.val.1).1, p.property.1.reverseRowInsert p.property.2⟩,
+    (reverseRowInsert p.val.2 p.val.1).2.get
+      (Option.isSome_iff_exists.mpr ((rowInsert_reverseRowInsert p.property.1 p.property.2).imp fun
+          _ h => h.1)))
   left_inv p := by
-    have h := reverseRowInsert_rowInsert p.2 p.1.2.nil_notMem p.1.2.sortedLE
+    have h := reverseRowInsert_rowInsert p.2 p.1.property.nil_notMem p.1.property.sortedLE
     refine Prod.ext (Subtype.ext ?_) ?_
     · simp [h]
     · simp [h]
   right_inv p := by
-    obtain ⟨x, hx, hins, hidx⟩ := rowInsert_reverseRowInsert p.2.1 p.2.2
+    obtain ⟨x, hx, hins, hidx⟩ := rowInsert_reverseRowInsert p.property.1 p.property.2
     refine Subtype.ext (Prod.ext ?_ ?_)
     · simpa [hx] using hins
     · simpa [hx] using hidx
@@ -1159,20 +1160,20 @@ def rowInsertEquiv :
 @[simp]
 theorem rowInsertEquiv_apply_coe (rows : {rows : List (List α) // rows.IsTableauRows}) (x : α) :
     (rowInsertEquiv (rows, x) : List (List α) × ℕ) =
-      (rowInsert x rows.1, rowInsertIndex x rows.1) := (rfl)
+      (rowInsert x rows.val, rowInsertIndex x rows.val) := (rfl)
 
 /-- The tableau of `rowInsertEquiv.symm p` is the result of reverse row insertion. -/
 @[simp]
 theorem rowInsertEquiv_symm_apply_fst_coe
     (p : {p : List (List α) × ℕ //
       p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length}) :
-    ((rowInsertEquiv.symm p).1 : List (List α)) = (reverseRowInsert p.1.2 p.1.1).1 := (rfl)
+    ((rowInsertEquiv.symm p).1 : List (List α)) = (reverseRowInsert p.val.2 p.val.1).1 := (rfl)
 
 /-- The letter of `rowInsertEquiv.symm p` is the letter returned by reverse row insertion. -/
 theorem some_rowInsertEquiv_symm_apply_snd
     (p : {p : List (List α) × ℕ //
       p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length}) :
-    some (rowInsertEquiv.symm p).2 = (reverseRowInsert p.1.2 p.1.1).2 := by
+    some (rowInsertEquiv.symm p).2 = (reverseRowInsert p.val.2 p.val.1).2 := by
   simp [rowInsertEquiv]
 
 end TauCeti

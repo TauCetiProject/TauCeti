@@ -57,6 +57,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
   and elementwise statements of the contact condition.
 * `TauCeti.SmoothForm.isContactForm_iff_of_eq_smul`,
   `TauCeti.SmoothForm.kerDistribution_of_eq_smul`: rescaling by a nowhere vanishing function.
+* `TauCeti.SmoothForm.apply_eq_smul_of_kerDistribution_le`: a one-form whose kernel at a point
+  contains that of another is proportional to it there.
 * `TauCeti.SmoothForm.isContactForm_smul_iff`, `TauCeti.SmoothForm.isContactForm_neg_iff`:
   rescaling by a nonzero constant.
 * `TauCeti.SmoothForm.IsContactForm.odd_finrank`: contact manifolds are odd-dimensional.
@@ -95,17 +97,17 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The kernel `ker α_x` of a real one-form `α` at each point `x`, as a family of subspaces of
 the tangent spaces. For a contact form this is the contact distribution. -/
 def kerDistribution (α : SmoothForm I M ℝ 1) (x : M) : Submodule ℝ (TangentSpace I x) :=
-  RoughForm.ker α.1 x
+  RoughForm.ker α.val x
 
 @[simp]
 theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
-    v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by
+    v ∈ α.kerDistribution x ↔ α.val x ![v] = 0 := by
   exact RoughForm.mem_ker
 
 /-- The kernel distribution of a smooth one-form is the pointwise kernel of its underlying rough
 form. -/
 theorem kerDistribution_eq_ker (α : SmoothForm I M ℝ 1) (x : M) :
-    α.kerDistribution x = RoughForm.ker α.1 x := by
+    α.kerDistribution x = RoughForm.ker α.val x := by
   ext
   rw [mem_kerDistribution, RoughForm.mem_ker]
 
@@ -132,9 +134,9 @@ theorem isContactForm_def {α : SmoothForm I M ℝ 1} :
 of `ker α` which is `dα`-orthogonal to all of `ker α` is zero. -/
 theorem isContactForm_iff {α : SmoothForm I M ℝ 1} :
     α.IsContactForm ↔
-      ∀ x, (∃ v : TangentSpace I x, α.1 x ![v] ≠ 0) ∧
-        ∀ v : TangentSpace I x, α.1 x ![v] = 0 →
-          (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 := by
+      ∀ x, (∃ v : TangentSpace I x, α.val x ![v] ≠ 0) ∧
+        ∀ v : TangentSpace I x, α.val x ![v] = 0 →
+          (∀ w : TangentSpace I x, α.val x ![w] = 0 → mextDeriv α.val x ![v, w] = 0) → v = 0 := by
   refine forall_congr' fun x ↦ ?_
   rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq, LinearMap.ext_iff,
@@ -142,38 +144,55 @@ theorem isContactForm_iff {α : SmoothForm I M ℝ 1} :
 
 /-- A contact form does not vanish. -/
 theorem IsContactForm.exists_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
-    ∃ v : TangentSpace I x, α.1 x ![v] ≠ 0 :=
+    ∃ v : TangentSpace I x, α.val x ![v] ≠ 0 :=
   (isContactForm_iff.1 hα x).1
 
 /-- A contact form vanishes nowhere. -/
 theorem IsContactForm.apply_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
-    α.1 x ≠ 0 := fun h ↦
+    α.val x ≠ 0 := fun h ↦
   let ⟨_, hv⟩ := hα.exists_ne_zero x
   hv (by simp [h])
 
 /-- Two one-forms with the same kernels vanish at the same points: a covector vanishes exactly
 when its kernel is the whole tangent space. -/
 theorem apply_eq_zero_iff_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1}
-    (hker : β.kerDistribution = α.kerDistribution) (x : M) : β.1 x = 0 ↔ α.1 x = 0 := by
+    (hker : β.kerDistribution = α.kerDistribution) (x : M) : β.val x = 0 ↔ α.val x = 0 := by
   rw [← RoughForm.ker_eq_top_iff, ← RoughForm.ker_eq_top_iff]
   exact Eq.congr_left (congrFun hker x)
 
 /-- If `β = f α` for a nowhere vanishing function `f`, then `α` and `β` have the same kernel. -/
 theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
-    (hf₀ : ∀ x, f x ≠ 0) (hβ : ∀ x, β.1 x = f x • α.1 x) :
+    (hf₀ : ∀ x, f x ≠ 0) (hβ : ∀ x, β.val x = f x • α.val x) :
     β.kerDistribution = α.kerDistribution := by
   ext x v
   rw [mem_kerDistribution, mem_kerDistribution, hβ, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul, mul_eq_zero, or_iff_right (hf₀ x)]
 
+/-- Conversely, if the kernel of `α` at `x` lies in that of `β`, then `β` is proportional to `α`
+there: if `α_x(v) = 1`, then `β_x = β_x(v) α_x`. -/
+theorem apply_eq_smul_of_kerDistribution_le {α β : SmoothForm I M ℝ 1} {x : M}
+    {v : TangentSpace I x} (hker : α.kerDistribution x ≤ β.kerDistribution x)
+    (hv : α.val x ![v] = 1) : β.val x = β.val x ![v] • α.val x := by
+  ext w
+  obtain ⟨u, rfl⟩ : ∃ u, w = ![u] := ⟨w 0, by
+    rw [Matrix.vec_single_eq_const]
+    exact funext fun i ↦ congrArg w (Subsingleton.elim i 0)⟩
+  -- `u - α(u) v` lies in `ker α ⊆ ker β`.
+  have hmem : u - α.val x ![u] • v ∈ β.kerDistribution x := hker <| by
+    rw [kerDistribution_def, LinearMap.mem_ker, map_sub, map_smul, degreeOneEquiv_coe_apply,
+      degreeOneEquiv_coe_apply, hv, smul_eq_mul, mul_one, sub_self]
+  rw [kerDistribution_def, LinearMap.mem_ker, map_sub, map_smul, degreeOneEquiv_coe_apply,
+    degreeOneEquiv_coe_apply, smul_eq_mul, sub_eq_zero] at hmem
+  rw [ContinuousAlternatingMap.smul_apply, hmem, smul_eq_mul, mul_comm]
+
 /-- **Rescaling of contact forms.** If `β = f α` for a nowhere vanishing `C¹` function `f`, then
 `β` is a contact form exactly when `α` is. -/
 theorem isContactForm_iff_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ, ℝ) 1 f) (hf₀ : ∀ x, f x ≠ 0) (hβ : ∀ x, β.1 x = f x • α.1 x) :
+    (hf : ContMDiff I 𝓘(ℝ, ℝ) 1 f) (hf₀ : ∀ x, f x ≠ 0) (hβ : ∀ x, β.val x = f x • α.val x) :
     β.IsContactForm ↔ α.IsContactForm := by
   refine forall_congr' fun x ↦ ?_
   set a := (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-  have ha : ∀ v, a v = α.1 x ![v] := degreeOneEquiv_coe_apply α x
+  have ha : ∀ v, a v = α.val x ![v] := degreeOneEquiv_coe_apply α x
   have hb : (degreeOneEquiv β x : TangentSpace I x →ₗ[ℝ] ℝ) = f x • a := by
     ext v
     rw [degreeOneEquiv_coe_apply, hβ, LinearMap.smul_apply, ContinuousAlternatingMap.smul_apply,
@@ -182,7 +201,7 @@ theorem isContactForm_iff_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → �
   have hdβ : ∀ v w, a v = 0 → a w = 0 →
       (mextDerivₗ I 1 β).bilinFormAt x v w = (f x • (mextDerivₗ I 1 α).bilinFormAt x) v w := by
     intro v w hv hw
-    have hβ' : β.1 = fun y ↦ f y • α.1 y := funext hβ
+    have hβ' : β.val = fun y ↦ f y • α.val y := funext hβ
     rw [ha] at hv hw
     simp only [← mextDeriv_eq_bilinFormAt, LinearMap.smul_apply, smul_eq_mul, hβ',
       mextDeriv_fun_smul_apply ((hf x).mdifferentiableAt one_ne_zero) (α.mdifferentiableAt x),
@@ -236,8 +255,8 @@ of the standard contact form `dz - Σᵢ pᵢ dqᵢ` and of its exterior derivat
 theorem IsContactForm.exists_linearEquiv_eq_stdContact [FiniteDimensional ℝ E]
     {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
     ∃ (n : ℕ) (e : TangentSpace I x ≃ₗ[ℝ] (Fin n → ℝ) × (Fin n → ℝ) × ℝ),
-      (∀ v, α.1 x ![v] = stdContactCovector ℝ n (e v)) ∧
-        ∀ v w, mextDeriv α.1 x ![v, w] = stdContactBilinForm ℝ n (e v) (e w) := by
+      (∀ v, α.val x ![v] = stdContactCovector ℝ n (e v)) ∧
+        ∀ v w, mextDeriv α.val x ![v, w] = stdContactBilinForm ℝ n (e v) (e w) := by
   obtain ⟨n, e, ha, hB⟩ := (hα x).exists_linearEquiv_eq_stdContact (isAlt_bilinFormAt _ x)
   refine ⟨n, e, fun v ↦ ?_, fun v w ↦ ?_⟩
   · rw [← degreeOneEquiv_coe_apply, ← ha, LinearMap.comp_apply, LinearEquiv.coe_coe]
@@ -358,7 +377,7 @@ theorem isContactFormAt_congr {α β : RoughForm I M ℝ 1} {x : M} (hval : β x
 `Module.Dual.IsContact` for the covector `α_x` and the bilinear form of `dα_x`. -/
 theorem SmoothForm.isContactFormAt_iff_isContact [IsManifold I 2 M] {α : SmoothForm I M ℝ 1}
     {x : M} :
-    IsContactFormAt α.1 x ↔ Module.Dual.IsContact
+    IsContactFormAt α.val x ↔ Module.Dual.IsContact
       (SmoothForm.degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       ((mextDerivₗ I 1 α).bilinFormAt x) := by
   rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
@@ -384,7 +403,7 @@ theorem SmoothForm.isContactFormAt_iff_isContact [IsManifold I 2 M] {α : Smooth
 /-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
 at every point. -/
 theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
-    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x :=
+    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.val x :=
   forall_congr' fun _ ↦ SmoothForm.isContactFormAt_iff_isContact.symm
 
 end Pointwise
