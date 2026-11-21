@@ -12,7 +12,6 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
@@ -111,6 +110,7 @@ theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
     eLpNorm (fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)) p (μ.restrict s) ≤
       eLpNorm Du p (μ.restrict V) := by
   have : CompleteSpace F := hu.completeSpace
+  have : Fact (1 ≤ p) := ⟨hp1⟩
   have hDm_V : AEStronglyMeasurable Du (μ.restrict V) :=
     (integrableOn_of_isCompact_closure hu.locallyIntegrableOn_deriv hVc hVΩ).aestronglyMeasurable
   have hDext : AEStronglyMeasurable ((V : Set E).indicator Du) μ :=
@@ -119,28 +119,14 @@ theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
       φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du :=
     (ae_restrict_mem hs).mono fun x hx =>
       fderiv_normed_convolution_indicator hu hVc hVΩ φ (hball x hx)
-  have h1 : eLpNorm (φ.normed μ) 1 μ = 1 := by
-    rw [eLpNorm_one_eq_lintegral_eNorm φ.continuous_normed.aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_eNorm φ.integrable_normed]
-    simp_rw [Real.norm_of_nonneg (φ.nonneg_normed _)]
-    rw [φ.integral_normed, ENNReal.ofReal_one]
-  have hyoung := eLpNorm_convolution_le (L := lsmul ℝ ℝ) (f := φ.normed μ)
-    (φ.continuous_normed (μ := μ)).aestronglyMeasurable hDext hp1
-  have hL : ‖(lsmul ℝ ℝ : ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F)‖ₑ ≤ 1 := by
-    rw [← ofReal_norm, ← ENNReal.ofReal_one]
-    exact ENNReal.ofReal_le_ofReal (opNorm_lsmul_le (𝕜 := ℝ) (E := E →L[ℝ] F))
   calc eLpNorm (fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)) p (μ.restrict s)
       = eLpNorm (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) p (μ.restrict s) :=
         eLpNorm_congr_ae heq
     _ ≤ eLpNorm (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) p μ :=
         eLpNorm_mono_measure _ Measure.restrict_le_self
-    _ ≤ ‖(lsmul ℝ ℝ : ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F)‖ₑ *
-          eLpNorm (φ.normed μ) 1 μ * eLpNorm ((V : Set E).indicator Du) p μ := hyoung
-    _ ≤ 1 * 1 * eLpNorm ((V : Set E).indicator Du) p μ := by
-        gcongr; exact h1.le
-    _ = eLpNorm Du p (μ.restrict V) := by
-        rw [one_mul, one_mul,
-          eLpNorm_indicator_eq_eLpNorm_restrict (f := Du) V.isOpen.measurableSet.nullMeasurableSet]
+    _ ≤ eLpNorm ((V : Set E).indicator Du) p μ := eLpNorm_normed_convolution_le φ hDext
+    _ = eLpNorm Du p (μ.restrict V) :=
+        eLpNorm_indicator_eq_eLpNorm_restrict (f := Du) V.isOpen.measurableSet.nullMeasurableSet
 
 /-- **`Lᵖ` convergence of the derivatives of interior mollifications.** For `1 ≤ p < ∞`, if
 `thickening δ s ⊆ V` where `V` has compact closure in `Ω` and `Du ∈ Lᵖ(V)`, then the derivatives
@@ -156,24 +142,17 @@ theorem HasWeakFDerivOn.tendsto_eLpNorm_fderiv_normed_convolution_indicator_sub
       (μ.restrict s)) l (𝓝 0) := by
   have : CompleteSpace F := hu.completeSpace
   have : Fact (1 ≤ p) := ⟨hp1⟩
-  have hDext : MemLp ((V : Set E).indicator Du) p μ :=
-    (memLp_indicator_iff_restrict (f := Du) V.isOpen.measurableSet.nullMeasurableSet).2 hDu
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_eLpNorm_normed_convolution_sub hp hφ hDext) (.of_forall fun _ => zero_le) ?_
+  refine (tendsto_eLpNorm_normed_convolution_indicator_sub hp hφ
+    V.isOpen.measurableSet.nullMeasurableSet ((self_subset_thickening hδ s).trans hsV) hDu).congr'
+    ?_
   filter_upwards [hφ.eventually (gt_mem_nhds hδ)] with i hi
-  have heq : fderiv ℝ ((φ i).normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) - Du
-      =ᵐ[μ.restrict s]
-      (φ i).normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du - (V : Set E).indicator Du := by
-    filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
-      (ae_mono (Measure.restrict_mono_set μ subset_closure))] with x hx
-    have hxV : x ∈ (V : Set E) := hsV (thickening_closure (δ := δ) (s := s) ▸
-      self_subset_thickening hδ (closure s) hx)
-    have hball : closedBall x (φ i).rOut ⊆ V := fun y hy => hsV <| by
-      rw [← thickening_closure]
-      exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hi⟩
-    simp only [Pi.sub_apply, indicator_of_mem hxV,
-      fderiv_normed_convolution_indicator hu hVc hVΩ (φ i) hball]
-  exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
+    (ae_mono (Measure.restrict_mono_set μ subset_closure))] with x hx
+  have hball : closedBall x (φ i).rOut ⊆ V := fun y hy => hsV <| by
+    rw [← thickening_closure]
+    exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hi⟩
+  simp only [Pi.sub_apply, fderiv_normed_convolution_indicator hu hVc hVΩ (φ i) hball]
 
 /-- Shared interior mollification construction with separate finite exponents `q` (for `u`) and
 `p` (for `Du`), and an optional uniform convergence conclusion when `u` is continuous on `Ω`. -/

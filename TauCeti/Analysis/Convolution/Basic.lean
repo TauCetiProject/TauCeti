@@ -108,9 +108,10 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `∫ ψ (K ⋆ g) = ∫ g(t) (∫ ψ(x) K(x - t) dx) dt`.
 * `MeasureTheory.norm_convolution_le_of_integral_eq_zero`: convolution with a kernel of integral
   zero is bounded by the oscillation of the other factor.
-* `MeasureTheory.enorm_sub_convolution_lsmul_le` and
-  `MeasureTheory.enorm_sub_convolution_lsmul_le_mul_lintegral`: the distance from `f x` to
-  `(ψ ⋆ f) x` is bounded by a `ψ`-weighted integral of the increments `‖f x - f w‖ₑ`.
+* `MeasureTheory.enorm_convolution_lsmul_sub_le`,
+  `MeasureTheory.enorm_sub_convolution_lsmul_le`, and
+  `MeasureTheory.enorm_sub_convolution_lsmul_le_mul_lintegral`: the distance from `(ψ ⋆ f) x` to
+  an arbitrary constant or to `f x` is bounded by a `ψ`-weighted integral of differences.
 * `MeasureTheory.enorm_convolution_lsmul_sub_convolution_lsmul_le`: the increments of `ψ ⋆ f` are
   bounded by a `ψ`-weighted integral of the increments of the translates of `f`.
 -/
@@ -555,23 +556,33 @@ variable {G F : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
   [μ.IsAddLeftInvariant] [μ.IsNegInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {ψ : G → ℝ} {f : G → F}
 
+/-- **Mollification minus an arbitrary constant is bounded by a weighted integral of differences.**
+If `ψ` has integral `1`, `ψ ⋆ f` exists at `x`, and `c : F`, then `‖(ψ ⋆ f) x - c‖ₑ` is at most
+the `‖ψ (x - ·)‖ₑ`-weighted integral of `‖f w - c‖ₑ`. -/
+theorem enorm_convolution_lsmul_sub_le [CompleteSpace F] (hψ1 : ∫ x, ψ x ∂μ = 1) {x : G}
+    (hconv : ConvolutionExistsAt ψ f x (lsmul ℝ ℝ) μ) (c : F) :
+    ‖(ψ ⋆[lsmul ℝ ℝ, μ] f) x - c‖ₑ ≤ ∫⁻ w, ‖ψ (x - w)‖ₑ * ‖f w - c‖ₑ ∂μ := by
+  have hint : Integrable (fun w ↦ ψ (x - w) • f w) μ := hconv.integrable_swap
+  have hψint : Integrable (fun w ↦ ψ (x - w)) μ :=
+    (integrable_of_integral_eq_one hψ1).comp_sub_left x
+  have h1 : ∫ w, ψ (x - w) ∂μ = 1 := by rw [integral_sub_left_eq_self ψ μ x, hψ1]
+  have heq : (ψ ⋆[lsmul ℝ ℝ, μ] f) x - c = ∫ w, ψ (x - w) • (f w - c) ∂μ := by
+    simp only [convolution_eq_swap, lsmul_apply, smul_sub]
+    rw [integral_sub hint (hψint.smul_const c), integral_smul_const, h1, one_smul]
+  rw [heq]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq (lintegral_congr fun w ↦ ?_))
+  rw [eNorm_smul]
+
 /-- **Mollification moves a function by a weighted average of its increments.** If `ψ` is a
 continuous compactly supported kernel of integral `1` and `f` is locally integrable, then
 `‖f x - (ψ ⋆ f) x‖ₑ` is at most the `‖ψ (x - ·)‖ₑ`-weighted integral of `‖f x - f w‖ₑ`. -/
 theorem enorm_sub_convolution_lsmul_le [CompleteSpace F] (hψ : Continuous ψ)
     (hψc : HasCompactSupport ψ) (hψ1 : ∫ x, ψ x ∂μ = 1) (hf : LocallyIntegrable f μ) (x : G) :
     ‖f x - (ψ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ≤ ∫⁻ w, ‖ψ (x - w)‖ₑ * ‖f x - f w‖ₑ ∂μ := by
-  have hint : Integrable (fun w ↦ ψ (x - w) • f w) μ :=
-    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf x).integrable_swap
-  have hψint : Integrable (fun w ↦ ψ (x - w)) μ :=
-    (integrable_of_integral_eq_one hψ1).comp_sub_left x
-  have h1 : ∫ w, ψ (x - w) ∂μ = 1 := by rw [integral_sub_left_eq_self ψ μ x, hψ1]
-  have heq : f x - (ψ ⋆[lsmul ℝ ℝ, μ] f) x = ∫ w, ψ (x - w) • (f x - f w) ∂μ := by
-    simp only [convolution_eq_swap, lsmul_apply, smul_sub]
-    rw [integral_sub (hψint.smul_const (f x)) hint, integral_smul_const, h1, one_smul]
-  rw [heq]
-  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq (lintegral_congr fun w ↦ ?_))
-  rw [eNorm_smul]
+  rw [← eNorm_neg, neg_sub]
+  refine (enorm_convolution_lsmul_sub_le hψ1
+    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf x) (f x)).trans_eq ?_
+  exact lintegral_congr fun w ↦ by rw [← eNorm_neg (f w - f x), neg_sub]
 
 /-- **Increments of a mollification.** For a continuous compactly supported kernel `ψ` and a
 locally integrable `f`, the increments of `ψ ⋆ f` are bounded by the `‖ψ‖ₑ`-weighted integral of

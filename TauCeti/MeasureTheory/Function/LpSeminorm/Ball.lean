@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # `Lᵖ` seminorms on all balls of one radius
@@ -243,19 +244,13 @@ theorem tendsto_iSup_eLpNorm_restrict_ball_zero [Nontrivial E] {ι : Type*} {l :
     (hr : Tendsto r l (𝓝 0)) :
     Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
   refine tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure hp0 hp hf ?_
-  have hpow : Tendsto (fun i => ENNReal.ofReal ((max (r i) 0) ^ finrank ℝ E) * μ (ball (0 : E) 1))
-      l (𝓝 0) := by
-    have h0 : Tendsto (fun i => (max (r i) 0) ^ finrank ℝ E) l (𝓝 0) := by
-      simpa [zero_pow finrank_pos.ne'] using
-        (hr.max (tendsto_const_nhds (x := (0 : ℝ)))).pow (finrank ℝ E)
-    have h1 := ENNReal.Tendsto.mul_const (ENNReal.continuous_ofReal.tendsto 0 |>.comp h0)
-      (Or.inr (measure_ball_lt_top (μ := μ) (x := (0 : E)) (r := 1)).ne)
-    simpa [Function.comp_def] using h1
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hpow (fun _ => zero_le)
-    fun i => ?_
-  rcases le_or_gt (r i) 0 with hri | hri
-  · simp [ball_eq_empty.2 hri]
-  · rw [Measure.addHaar_ball_of_pos μ 0 hri, max_eq_left hri.le]
+  have hpos : Tendsto (fun t => μ (ball (0 : E) t)) (𝓝[>] 0) (𝓝 0) := by
+    simpa using tendsto_measure_ball_nhdsGT_zero (μ := μ) (z := (0 : E))
+      ⟨1, one_pos, measure_ball_lt_top.ne⟩
+  have hnonpos : Tendsto (fun t => μ (ball (0 : E) t)) (𝓝[≤] 0) (𝓝 0) :=
+    tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun t ht => by
+      simp [ball_eq_empty.2 ht]
+  exact ((hnonpos.sup hpos).mono_left (nhdsLE_sup_nhdsGT 0).ge).comp hr
 
 end FiniteDimensional
 

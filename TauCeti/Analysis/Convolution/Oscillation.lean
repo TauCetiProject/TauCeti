@@ -32,8 +32,6 @@ to the constant `(ρ ⋆ f) x` on `B(x, r)` is at most `1 + C` times the mean os
 
 ## Main declarations
 
-* `TauCeti.pos_of_integral_ne_zero_of_support_subset_ball`: a kernel with nonzero integral and
-  support inside `ball 0 r` forces `0 < r`.
 * `TauCeti.enorm_convolution_sub_setAverage_ball_le`: distance from `(ρ ⋆ f) x` to `⨍_{B(x, r)} f`.
 * `TauCeti.setLAverage_enorm_sub_convolution_le`: mean deviation on `B(x, r)` from `(ρ ⋆ f) x`.
 
@@ -54,20 +52,6 @@ namespace TauCeti
 open ContinuousLinearMap MeasureTheory Metric
 open scoped Convolution ENNReal
 
-/-- If a kernel `ρ` has nonzero integral and support inside `ball 0 r`, then `0 < r`. -/
-theorem pos_of_integral_ne_zero_of_support_subset_ball {E G : Type*} [NormedAddCommGroup E]
-    [MeasurableSpace E] {μ : Measure E} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {ρ : E → G} {r : ℝ} (hρ : ∫ y, ρ y ∂μ ≠ 0) (hρs : Function.support ρ ⊆ ball 0 r) :
-    0 < r := by
-  by_contra hr
-  have h0 : ρ = 0 := by
-    ext y
-    exact Function.notMem_support.1 fun hy => by
-      have := hρs hy
-      rw [ball_eq_empty.2 (not_lt.1 hr)] at this
-      exact this
-  simp [h0] at hρ
-
 variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
@@ -80,8 +64,8 @@ theorem enorm_convolution_sub_setAverage_ball_le {ρ : E → ℝ} {f : E → F} 
     (hρM : ∀ y, ρ y ≤ C / μ.real (ball 0 r)) (hf : IntegrableOn f (ball x r) μ) :
     ‖(ρ ⋆[lsmul ℝ ℝ, μ] f) x - ⨍ z in ball x r, f z ∂μ‖ₑ ≤
       ENNReal.ofReal C * ⨍⁻ z in ball x r, ‖f z - ⨍ w in ball x r, f w ∂μ‖ₑ ∂μ := by
-  have hr : 0 < r := pos_of_integral_ne_zero_of_support_subset_ball (μ := μ)
-    (by rw [hρ1]; exact one_ne_zero) hρs
+  obtain ⟨y, hy⟩ := exists_ne_zero_of_integral_ne_zero (by rw [hρ1]; exact one_ne_zero)
+  have hr : 0 < r := Metric.nonempty_ball.1 ⟨y, hρs hy⟩
   have hBtop : μ (ball (0 : E) r) ≠ ∞ := measure_ball_lt_top.ne
   have hBreal_pos : 0 < μ.real (ball (0 : E) r) :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 hr).ne' hBtop
@@ -92,36 +76,24 @@ theorem enorm_convolution_sub_setAverage_ball_le {ρ : E → ℝ} {f : E → F} 
   -- Replace `f` by its indicator on `ball x r`, which does not change the convolution at `x`.
   have hconv_eq : (ρ ⋆[lsmul ℝ ℝ, μ] f) x = (ρ ⋆[lsmul ℝ ℝ, μ] (ball x r).indicator f) x :=
     (convolution_indicator_eq_of_forall_sub_mem (lsmul ℝ ℝ) fun t ht => (hmem t).1 (hρs ht)).symm
-  have hconv_ex : Integrable (fun t => lsmul ℝ ℝ (ρ t) ((ball x r).indicator f (x - t))) μ :=
+  have hconv_ex : ConvolutionExistsAt ρ ((ball x r).indicator f) x (lsmul ℝ ℝ) μ :=
     convolutionExists_of_ae_norm_le_of_integrable (lsmul ℝ ℝ) hρi.aestronglyMeasurable
       (.of_forall fun t => by rw [Real.norm_of_nonneg (hρ0 t)]; exact hρM t) hfi x
-  have hdiff : (ρ ⋆[lsmul ℝ ℝ, μ] f) x - m =
-      ∫ t, ρ t • ((ball x r).indicator f (x - t) - m) ∂μ := by
-    rw [hconv_eq, convolution_def]
-    conv_lhs => rhs; rw [← one_smul ℝ m, ← hρ1, ← integral_smul_const]
-    rw [← integral_sub hconv_ex (hρi.smul_const m)]
-    simp only [lsmul_apply, smul_sub]
-  -- Change of variables `z = x - t` identifies the `ball 0 r` and `ball x r` integrals.
-  have hchg : ∫⁻ t in ball (0 : E) r, ‖f (x - t) - m‖ₑ ∂μ = ∫⁻ z in ball x r, ‖f z - m‖ₑ ∂μ := by
-    rw [← lintegral_indicator measurableSet_ball, ← lintegral_indicator measurableSet_ball,
-      ← lintegral_sub_left_eq_self (fun z => (ball x r).indicator (fun w => ‖f w - m‖ₑ) z) x]
-    refine lintegral_congr fun t => ?_
-    by_cases ht : t ∈ ball (0 : E) r <;> simp [ht, (hmem t).1, mt (hmem t).2]
-  calc ‖(ρ ⋆[lsmul ℝ ℝ, μ] f) x - m‖ₑ
-      ≤ ∫⁻ t, ‖ρ t • ((ball x r).indicator f (x - t) - m)‖ₑ ∂μ :=
-        hdiff ▸ eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ENNReal.ofReal (C / μ.real (ball 0 r)) *
-          (ball (0 : E) r).indicator (fun t => ‖f (x - t) - m‖ₑ) t ∂μ := by
-        refine lintegral_mono fun t => ?_
-        rw [eNorm_smul]
-        by_cases ht : t ∈ ball (0 : E) r
-        · rw [Set.indicator_of_mem ht, Set.indicator_of_mem ((hmem t).1 ht), ← ofReal_norm,
-            Real.norm_of_nonneg (hρ0 t)]
-          gcongr; exact hρM t
-        · simp [Function.notMem_support.1 fun h => ht (hρs h)]
+  rw [hconv_eq]
+  refine (enorm_convolution_lsmul_sub_le hρ1 hconv_ex m).trans ?_
+  calc ∫⁻ w, ‖ρ (x - w)‖ₑ * ‖(ball x r).indicator f w - m‖ₑ ∂μ
+      ≤ ∫⁻ w, ENNReal.ofReal (C / μ.real (ball 0 r)) *
+          (ball x r).indicator (fun w => ‖f w - m‖ₑ) w ∂μ := by
+        refine lintegral_mono fun w => ?_
+        by_cases hw : w ∈ ball x r
+        · rw [Set.indicator_of_mem hw, Set.indicator_of_mem hw, ← ofReal_norm,
+            Real.norm_of_nonneg (hρ0 _)]
+          gcongr; exact hρM _
+        · have h0 : ρ (x - w) = 0 := Function.notMem_support.1 fun h => hw <| by
+            simpa [mem_ball, dist_eq_norm, norm_sub_rev] using hρs h
+          simp [h0]
     _ = ENNReal.ofReal (C / μ.real (ball 0 r)) * ∫⁻ z in ball x r, ‖f z - m‖ₑ ∂μ := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_indicator measurableSet_ball,
-          hchg]
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_indicator measurableSet_ball]
     _ = ENNReal.ofReal C * ⨍⁻ z in ball x r, ‖f z - m‖ₑ ∂μ := by
         rw [ENNReal.ofReal_div_of_pos hBreal_pos, measureReal_def,
           ENNReal.ofReal_toReal hBtop, ← Measure.addHaar_ball_center μ x r,
@@ -136,8 +108,8 @@ theorem setLAverage_enorm_sub_convolution_le {ρ : E → ℝ} {f : E → F} {x :
     (hρM : ∀ y, ρ y ≤ C / μ.real (ball 0 r)) (hf : IntegrableOn f (ball x r) μ) :
     ⨍⁻ z in ball x r, ‖f z - (ρ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ∂μ ≤
       ENNReal.ofReal (1 + C) * ⨍⁻ z in ball x r, ‖f z - ⨍ w in ball x r, f w ∂μ‖ₑ ∂μ := by
-  have hr : 0 < r := pos_of_integral_ne_zero_of_support_subset_ball (μ := μ)
-    (by rw [hρ1]; exact one_ne_zero) hρs
+  obtain ⟨y, hy⟩ := exists_ne_zero_of_integral_ne_zero (by rw [hρ1]; exact one_ne_zero)
+  have hr : 0 < r := Metric.nonempty_ball.1 ⟨y, hρs hy⟩
   have hB0 : μ (ball x r) ≠ 0 := (measure_ball_pos μ x hr).ne'
   have hBtop : μ (ball x r) ≠ ∞ := measure_ball_lt_top.ne
   have hC0 : 0 ≤ C := by

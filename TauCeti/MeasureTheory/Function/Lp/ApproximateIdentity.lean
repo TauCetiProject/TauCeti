@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Convolution.Young
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -164,21 +166,25 @@ theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
     (Measure.continuous_translateLp hp)
 
 /-- Convolution with a normalized smooth bump does not increase the `Lᵖ` seminorm,
-for `1 ≤ p < ∞`. -/
-theorem eLpNorm_normed_convolution_le [CompleteSpace F] (hp : p ≠ ∞)
-    (phi : ContDiffBump (0 : E)) {f : E → F} (hf : MemLp f p mu) :
+for `1 ≤ p ≤ ∞`. -/
+theorem eLpNorm_normed_convolution_le (phi : ContDiffBump (0 : E)) {f : E → F}
+    (hf : AEStronglyMeasurable f mu) :
     eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu ≤ eLpNorm f p mu := by
-  have h := (normedBumpLp (F := F) hp phi mu).le_of_opNorm_le
-    (norm_normedBumpLp_le_one hp phi) (hf.toLp f)
-  have hn : ‖normedBumpLp hp phi mu (hf.toLp f)‖ ≤ ‖hf.toLp f‖ := by simpa using h
-  calc eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu =
-      ‖normedBumpLp hp phi mu (hf.toLp f)‖ₑ := by
-        rw [Lp.eNorm_def]
-        exact eLpNorm_congr_ae (normedBumpLp_ae_eq_convolution hp phi hf).symm
-    _ ≤ ‖hf.toLp f‖ₑ := by simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hn
-    _ = eLpNorm f p mu := by
-        rw [Lp.eNorm_def]
-        exact eLpNorm_congr_ae hf.coeFn_toLp
+  have h1 : eLpNorm (phi.normed mu) 1 mu = 1 := by
+    rw [eLpNorm_one_eq_lintegral_eNorm phi.continuous_normed.aestronglyMeasurable,
+      ← ofReal_integral_norm_eq_lintegral_eNorm phi.integrable_normed]
+    simp_rw [Real.norm_of_nonneg (phi.nonneg_normed _)]
+    rw [phi.integral_normed, ENNReal.ofReal_one]
+  have hyoung := eLpNorm_convolution_le (L := lsmul ℝ ℝ) (f := phi.normed mu)
+    (phi.continuous_normed (μ := mu)).aestronglyMeasurable hf (Fact.out : 1 ≤ p)
+  have hL : ‖(lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F)‖ₑ ≤ 1 := by
+    rw [← ofReal_norm, ← ENNReal.ofReal_one]
+    exact ENNReal.ofReal_le_ofReal (opNorm_lsmul_le (𝕜 := ℝ) (E := F))
+  calc eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu
+      ≤ ‖(lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F)‖ₑ * eLpNorm (phi.normed mu) 1 mu *
+          eLpNorm f p mu := hyoung
+    _ ≤ 1 * 1 * eLpNorm f p mu := by gcongr; exact h1.le
+    _ = eLpNorm f p mu := by rw [one_mul, one_mul]
 
 /-- **Smooth approximate identity in `Lᵖ`.** Let `phi i` be normalized smooth bumps centred at
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
@@ -322,45 +328,6 @@ theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Ty
   simp_rw [eLpNorm_one_eq_lintegral_eNorm (hi _).aestronglyMeasurable] at h
   exact h
 
-/-- Mollifications converge in `Lᵖ(s)`, for `1 ≤ p < ∞`, if the function belongs to `Lᵖ`
-on a fixed positive thickening of `s`. Neither compactness of `s` nor global local
-integrability is required. -/
-theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : Type*}
-    {l : Filter I} (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
-    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F}
-    {s : Set E} {δ : ℝ} (hδ : 0 < δ)
-    (hf : MemLp f p (mu.restrict (thickening δ s))) :
-    Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p
-      (mu.restrict s)) l (nhds 0) := by
-  -- Small bumps only see the function on this fixed neighborhood.
-  set t := thickening δ s
-  have ht : MeasurableSet t := isOpen_thickening.measurableSet
-  have hfs : MemLp (t.indicator f) p mu :=
-    (memLp_indicator_iff_restrict ht.nullMeasurableSet).2 hf
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_eLpNorm_normed_convolution_sub hp hphi hfs)
-    (.of_forall fun _ ↦ zero_le) ?_
-  filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi
-  have heq : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) =ᵐ[mu.restrict s]
-      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] t.indicator f - t.indicator f) := by
-    filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
-      (ae_mono (Measure.restrict_mono_set mu (subset_closure (s := s))))] with x hx
-    have hxt : x ∈ t := by
-      dsimp only [t]
-      rw [← thickening_closure]
-      exact self_subset_thickening hδ (closure s) hx
-    simp only [Pi.sub_apply]
-    rw [indicator_of_mem hxt]
-    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun y hy ↦ ?_).symm
-    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at hy
-    dsimp only [t]
-    rw [← thickening_closure]
-    apply mem_thickening_iff.mpr
-    refine ⟨x, hx, ?_⟩
-    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-    exact hy.trans hi
-  exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
-
 /-- **Local `Lᵖ` convergence of zero-extended mollifications.** If `f ∈ Lᵖ(V)` for a
 null-measurable set `V` and `s ⊆ V`, then for `1 ≤ p < ∞` the mollifications of `V.indicator f`
 converge to `f` in `Lᵖ(s)` as the bump radii tend to zero. No measurability assumption on `s` is
@@ -380,6 +347,29 @@ theorem tendsto_eLpNorm_normed_convolution_indicator_sub [CompleteSpace F] {I : 
       (ae_mono (Measure.restrict_mono hsV le_rfl))] with x hx
     simp only [Pi.sub_apply, indicator_of_mem hx]
   exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
+
+/-- Mollifications converge in `Lᵖ(s)`, for `1 ≤ p < ∞`, if the function belongs to `Lᵖ`
+on a fixed positive thickening of `s`. Neither compactness of `s` nor global local
+integrability is required. -/
+theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : Type*}
+    {l : Filter I} (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F}
+    {s : Set E} {δ : ℝ} (hδ : 0 < δ)
+    (hf : MemLp f p (mu.restrict (thickening δ s))) :
+    Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p
+      (mu.restrict s)) l (nhds 0) := by
+  set t := thickening δ s
+  refine (tendsto_eLpNorm_normed_convolution_indicator_sub hp hphi
+    isOpen_thickening.measurableSet.nullMeasurableSet (self_subset_thickening hδ s) hf).congr' ?_
+  filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
+    (ae_mono (Measure.restrict_mono_set mu (subset_closure (s := s))))] with x hx
+  have hball : ball x (phi i).rOut ⊆ t := fun y hy ↦ by
+    dsimp only [t]
+    rw [← thickening_closure]
+    exact mem_thickening_iff.2 ⟨x, hx, (mem_ball.1 hy).trans hi⟩
+  exact congrArg (· - f x) ((phi i).normed_convolution_indicator_eq_of_ball_subset hball)
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
 bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions

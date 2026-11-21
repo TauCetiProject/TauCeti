@@ -43,8 +43,9 @@ open scoped ContDiff Convolution Distributions ENNReal NNReal Topology
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
   {p q : ℝ≥0∞} [p.HolderConjugate q]
 
+omit [CompleteSpace F] in
 private theorem eLpNorm_fderiv_indicator_convolution_le [Fact (1 ≤ p)]
-    (hp_top : p ≠ (∞ : ℝ≥0∞)) {U : Opens ℂ} {W K : Set ℂ} {C : ℝ≥0}
+    {U : Opens ℂ} {W K : Set ℂ} {C : ℝ≥0}
     (hC : ∀ v : ℂ → F, ContDiffOn ℝ ∞ v W →
       eLpNorm (fderiv ℝ v) p (volume.restrict K) ≤
         C * (eLpNorm (fun z => conjWirtingerDeriv v z 1) p (volume.restrict W) +
@@ -104,9 +105,9 @@ private theorem eLpNorm_fderiv_indicator_convolution_le [Fact (1 ≤ p)]
     _ ≤ C * (eLpNorm f₀ p volume + eLpNorm u₀ p volume) := by
       gcongr
       · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-          (eLpNorm_normed_convolution_le hp_top ρ hf₀)
+          (eLpNorm_normed_convolution_le ρ hf₀.aestronglyMeasurable)
       · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-          (eLpNorm_normed_convolution_le hp_top ρ hu₀)
+          (eLpNorm_normed_convolution_le ρ hu₀.aestronglyMeasurable)
     _ = _ := by
       rw [eLpNorm_indicator_eq_eLpNorm_restrict U.isOpen.measurableSet.nullMeasurableSet,
         eLpNorm_indicator_eq_eLpNorm_restrict U.isOpen.measurableSet.nullMeasurableSet]
@@ -159,7 +160,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
   let uε : ℕ → ℂ → F := fun n => (ρ n).normed volume ⋆[lsmul ℝ ℝ] u₀
   have hbound (n : ℕ) : eLpNorm (fderiv ℝ (uε n)) p (volume.restrict Q) ≤
       C * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) :=
-    eLpNorm_fderiv_indicator_convolution_le hp_top hC hu hf h (ρ n)
+    eLpNorm_fderiv_indicator_convolution_le hC hu hf h (ρ n)
       isOpen_thickening.measurableSet (hshift n)
   have hsmooth (n : ℕ) : ContDiff ℝ ∞ (uε n) :=
     (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
