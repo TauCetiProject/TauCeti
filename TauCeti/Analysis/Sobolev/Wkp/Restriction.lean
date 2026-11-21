@@ -19,8 +19,9 @@ without any boundary regularity assumption.
 
 Restriction to `U` preserves the norm of a function vanishing off a closed set `K` with
 `Ω ∩ K ⊆ U` (`TauCeti.Wkp.norm_restrictL_eq_of_isClosed`), since all its weak derivatives vanish
-off `K` as well. This is how compactness and estimates proved on a relatively compact subdomain
-pass to functions with a common compact support.
+off `K` as well; for the `Lᵖ` norm of the value alone `K` need not be closed
+(`TauCeti.Wkp.norm_value_restrictL_eq`). This is how compactness and estimates proved on a
+relatively compact subdomain pass to functions with a common compact support.
 
 The construction uses `W1p.restrictL` at first order and restricts the successive weak derivative
 fields through Mathlib's `Lp.LpToLpOfMeasureLeSMul`.
@@ -294,6 +295,17 @@ theorem iteratedGradient_toOrderL_restrictL_ae (hU : U ≤ Omega) {j k : ℕ} (h
   rw [toOrderL_restrictL]
   exact iteratedGradient_restrictL_ae hU j (toOrderL h u)
 
+/-- Restriction to `U` preserves the `Lᵖ` norm of the value of a Sobolev function vanishing almost
+everywhere on `Ω` off a set `K` with `Ω ∩ K ⊆ U`. -/
+theorem norm_value_restrictL_eq (hU : U ≤ Omega) {K : Set E} (hKU : (Omega : Set E) ∩ K ⊆ U)
+    (k : ℕ) {u : Wkp mu Omega p k}
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → value k u x = 0) :
+    ‖value k (restrictL hU k u)‖ = ‖value k u‖ := by
+  refine Lp.norm_eq_norm_of_ae_eq_restrict (SetLike.coe_subset_coe.2 hU)
+    U.isOpen.measurableSet.nullMeasurableSet (value_restrictL_ae hU k u) ?_
+  filter_upwards [hu, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ hxU
+  exact hx fun hxK ↦ hxU (hKU ⟨hxΩ, hxK⟩)
+
 /-- Restriction to `U` preserves the norm of a Sobolev function vanishing almost everywhere on `Ω`
 off a closed set `K` with `Ω ∩ K ⊆ U`: all its weak derivatives vanish off `K` as well. -/
 theorem norm_restrictL_eq_of_isClosed (hU : U ≤ Omega) {K : Set E} (hK : IsClosed K)
@@ -301,12 +313,7 @@ theorem norm_restrictL_eq_of_isClosed (hU : U ≤ Omega) {K : Set E} (hK : IsClo
     ∀ (k : ℕ) {u : Wkp mu Omega p k},
       (∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → value k u x = 0) →
         ‖restrictL hU k u‖ = ‖u‖
-  | 0, u, hu => by
-    refine Lp.norm_eq_norm_of_ae_eq_restrict (SetLike.coe_subset_coe.2 hU)
-      U.isOpen.measurableSet.nullMeasurableSet ?_ ?_
-    · simpa only [value_zero] using value_restrictL_ae hU 0 u
-    · filter_upwards [hu, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ hxU
-      exact (value_zero u).symm ▸ hx fun hxK ↦ hxU (hKU ⟨hxΩ, hxK⟩)
+  | 0, u, hu => by simpa only [value_zero] using norm_value_restrictL_eq hU hKU 0 hu
   | 1, u, hu => by
     rw [restrictL_one]
     exact W1p.norm_restrictL_eq_of_isClosed hU hK hKU (by simpa only [value_one] using hu)

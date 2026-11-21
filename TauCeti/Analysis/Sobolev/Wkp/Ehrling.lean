@@ -90,6 +90,15 @@ theorem exists_norm_restrictL_toOrderL_le
 
 /-! ### Functions with a common compact support -/
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A compact subset of `Ω` lies in a relatively compact open subdomain whose closure lies in
+`Ω`. -/
+private theorem exists_opens_between_isCompact_closure {K : Set E} (hK : IsCompact K)
+    (hKO : K ⊆ Omega) :
+    ∃ V : Opens E, K ⊆ V ∧ IsCompact (closure (V : Set E)) ∧ closure (V : Set E) ⊆ Omega :=
+  let ⟨V, hVo, hKV, hVO, hVc⟩ := exists_open_between_and_isCompact_closure hK Omega.isOpen hKO
+  ⟨⟨V, hVo⟩, hKV, hVc, hVO⟩
+
 /-- Truncation keeps a function vanishing off `K` vanishing off `K`. -/
 private theorem ae_value_toOrderL_eq_zero {K : Set E} {l k : ℕ} (hlk : l ≤ k)
     {u : Wkp mu Omega p k} (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → value k u x = 0) :
@@ -105,10 +114,7 @@ theorem exists_subseq_tendsto_toOrderL_of_isCompact {K : Set E} (hK : IsCompact 
     (hK0 : ∀ n, ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → value k (u n) x = 0) :
     ∃ w : Wkp mu Omega p l, ∃ φ : ℕ → ℕ, StrictMono φ ∧
       Tendsto (fun n ↦ toOrderL hlk.le (u (φ n))) atTop (𝓝 w) := by
-  obtain ⟨V, hKV, hVc, hVO⟩ : ∃ V : Opens E, K ⊆ V ∧ IsCompact (closure (V : Set E)) ∧
-      closure (V : Set E) ⊆ Omega :=
-    let ⟨V, hVo, hKV, hVO, hVc⟩ := exists_open_between_and_isCompact_closure hK Omega.isOpen hKO
-    ⟨⟨V, hVo⟩, hKV, hVc, hVO⟩
+  obtain ⟨V, hKV, hVc, hVO⟩ := exists_opens_between_isCompact_closure hK hKO
   have hV : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
   obtain ⟨w, φ, hφ, hw⟩ :=
     (isCompactOperator_restrictL_toOrderL (mu := mu) (p := p) hVc hVO hlk).exists_subseq_tendsto
@@ -140,21 +146,14 @@ theorem exists_norm_toOrderL_le_of_isCompact {K : Set E} (hK : IsCompact K) (hKO
     ∃ C, 0 ≤ C ∧ ∀ u : Wkp mu Omega p k,
       (∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → value k u x = 0) →
         ‖toOrderL hlk.le u‖ ≤ ε * ‖u‖ + C * ‖value k u‖ := by
-  obtain ⟨V, hKV, hVc, hVO⟩ : ∃ V : Opens E, K ⊆ V ∧ IsCompact (closure (V : Set E)) ∧
-      closure (V : Set E) ⊆ Omega :=
-    let ⟨V, hVo, hKV, hVO, hVc⟩ := exists_open_between_and_isCompact_closure hK Omega.isOpen hKO
-    ⟨⟨V, hVo⟩, hKV, hVc, hVO⟩
+  obtain ⟨V, hKV, hVc, hVO⟩ := exists_opens_between_isCompact_closure hK hKO
   have hV : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
   obtain ⟨C, hC, h⟩ :=
     exists_norm_restrictL_toOrderL_le (mu := mu) (p := p) hVc hVO hlk hε
   refine ⟨C, hC, fun u hu ↦ ?_⟩
-  have hvalue : ‖value k (restrictL hV k u)‖ = ‖value k u‖ := by
-    refine Lp.norm_eq_norm_of_ae_eq_restrict (SetLike.coe_subset_coe.2 hV)
-      V.isOpen.measurableSet.nullMeasurableSet (value_restrictL_ae hV k u) ?_
-    filter_upwards [hu] with x hx hxV
-    exact hx fun hxK ↦ hxV (hKV hxK)
   rw [← norm_restrictL_eq_of_isClosed hV hK.isClosed (inter_subset_right.trans hKV) l
-    (ae_value_toOrderL_eq_zero hlk.le hu), ← hvalue]
+    (ae_value_toOrderL_eq_zero hlk.le hu),
+    ← norm_value_restrictL_eq hV (inter_subset_right.trans hKV) k hu]
   exact h u
 
 end TauCeti.Wkp

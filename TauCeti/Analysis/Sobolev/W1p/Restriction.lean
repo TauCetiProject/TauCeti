@@ -258,12 +258,7 @@ theorem W1p.norm_restrictL_eq_of_isClosed (hU : U ≤ Omega) {K : Set E} (hK : I
       W1p.value_apply_ae u, W1p.gradient_apply_ae u,
       ae_restrict_mem Omega.isOpen.measurableSet] with x hv hg hv' hg' hxΩ hxU
     have hxK : x ∉ K := fun hxK ↦ hxU (hKU ⟨hxΩ, hxK⟩)
-    apply (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).injective
-    refine Prod.ext ?_ ?_
-    · simpa only [WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_fst, ← hv', map_zero,
-        Prod.fst_zero] using hv hxK
-    · simpa only [WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_snd, ← hg', map_zero,
-        Prod.snd_zero] using hg hxK
+    exact (WithLp.ext_iff _).2 (Prod.ext (hv'.symm.trans (hv hxK)) (hg'.symm.trans (hg hxK)))
   rw [← Submodule.norm_coe, ← Submodule.norm_coe u, W1p.coe_restrictL]
   exact Lp.norm_eq_norm_of_ae_eq_restrict (SetLike.coe_subset_coe.2 hU)
     U.isOpen.measurableSet.nullMeasurableSet (Sobolev1JetLp.coeFn_restrictL hU _) hJ

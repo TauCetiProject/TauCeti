@@ -18,10 +18,10 @@ A function bounded by `C` and supported in a set `s` has `eLpNorm f p μ ≤ μ 
 bound for the norm of the class in `Lᵖ(μ)` is `MeasureTheory.MemLp.norm_toLp_le_of_support_subset`.
 
 A function vanishing almost everywhere outside a set `s` has the same `Lᵖ` norm for `μ` and for
-`μ.restrict s` (`MeasureTheory.eLpNorm_restrict_eq_of_ae_eq_zero`), the almost-everywhere version
-of Mathlib's `MeasureTheory.eLpNorm_restrict_eq_of_support_subset`. For classes in `Lᵖ` this says
-that restricting an element of `Lᵖ(μ|t)` vanishing off `s ⊆ t` to `Lᵖ(μ|s)` preserves its norm
-(`MeasureTheory.Lp.norm_eq_norm_of_ae_eq_restrict`).
+`μ.restrict s` (`MeasureTheory.eLpNorm_restrict_eq_of_ae_compl_eq_zero`), the almost-everywhere
+version of Mathlib's `MeasureTheory.eLpNorm_restrict_eq_of_support_subset`. For classes in `Lᵖ`
+this says that restricting an element of `Lᵖ(μ|t)` vanishing off `s ⊆ t` to `Lᵖ(μ|s)` preserves
+its norm (`MeasureTheory.Lp.norm_eq_norm_of_ae_eq_restrict`).
 -/
 
 public section
@@ -53,7 +53,7 @@ theorem MemLp.norm_toLp_le_of_support_subset {f : α → F} {p : ℝ≥0∞} (hf
 
 /-- A function vanishing almost everywhere outside a set `s` has the same `Lᵖ` seminorm for `μ` and
 for `μ.restrict s`. -/
-theorem eLpNorm_restrict_eq_of_ae_eq_zero {f : α → F} {s : Set α} {p : ℝ≥0∞}
+theorem eLpNorm_restrict_eq_of_ae_compl_eq_zero {f : α → F} {s : Set α} {p : ℝ≥0∞}
     (hs : NullMeasurableSet s μ) (hf : ∀ᵐ x ∂μ, x ∉ s → f x = 0) :
     eLpNorm f p (μ.restrict s) = eLpNorm f p μ := by
   rw [← eLpNorm_indicator_eq_eLpNorm_restrict hs]
@@ -70,6 +70,6 @@ theorem Lp.norm_eq_norm_of_ae_eq_restrict {s t : Set α} {p : ℝ≥0∞} (hst :
     {g : Lp F p (μ.restrict s)} (hgf : g =ᵐ[μ.restrict s] f)
     (hf : ∀ᵐ x ∂μ.restrict t, x ∉ s → f x = 0) : ‖g‖ = ‖f‖ := by
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hgf, ← Measure.restrict_restrict_of_subset hst,
-    eLpNorm_restrict_eq_of_ae_eq_zero hs hf]
+    eLpNorm_restrict_eq_of_ae_compl_eq_zero hs hf]
 
 end MeasureTheory
