@@ -20,7 +20,9 @@ closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_rang
 No norm, separation, or completeness assumptions are needed.
 
 Likewise, a continuous semilinear map sending a generating set into a closed submodule sends the
-closure of its span there (`Continuous.apply_mem_of_mem_topologicalClosure_span`).
+closure of its span there (`Continuous.apply_mem_of_mem_topologicalClosure_span`), and finite
+linear combinations of a densely spanning family with coefficients from a dense-range scalar map
+are dense (`DenseRange.finset_sum_smul`).
 -/
 
 public section
@@ -88,3 +90,29 @@ theorem DenseRange.topologicalClosure_span_iUnion_range_comp_eq {R α ι X Y : T
   refine (S.isClosed_topologicalClosure.preimage (hL x)).closure_subset_iff.2 ?_ (hg a)
   rintro _ ⟨i, rfl⟩
   exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, x, rfl⟩))
+
+/-- Finite linear combinations of a densely spanning family with coefficients from a dense-range
+scalar map are dense in the ambient topological module. -/
+theorem DenseRange.finset_sum_smul {R M ι α : Type*} [Semiring R] [TopologicalSpace R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M]
+    {g : α → R} (hg : DenseRange g) {v : ι → M}
+    (hv : Dense (Submodule.span R (Set.range v) : Set M)) :
+    DenseRange (fun t : Finset (ι × α) ↦ ∑ p ∈ t, g p.2 • v p.1) := by
+  classical
+  refine Dense.of_closure <| hv.mono fun y hy ↦ ?_
+  rw [SetLike.mem_coe, Finsupp.mem_span_range_iff_exists_finsupp] at hy
+  obtain ⟨c, rfl⟩ := hy
+  let s := c.support
+  have hsum : c.sum (fun i r ↦ r • v i) = ∑ i : s, c i.val • v i.val := by
+    rw [Finsupp.sum, ← Finset.sum_coe_sort s]
+  rw [hsum]
+  let F : (s → R) → M := fun a ↦ ∑ i : s, a i • v i.val
+  have hF : Continuous F := by fun_prop
+  have hpi : DenseRange (Pi.map fun _ : s ↦ g) := DenseRange.piMap fun _ ↦ hg
+  refine closure_mono ?_
+    (hF.range_subset_closure_image_dense hpi ⟨fun i ↦ c i.val, rfl⟩)
+  rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
+  refine ⟨Finset.univ.image (fun i : s ↦ (i.val, a i)), ?_⟩
+  dsimp only
+  rw [Finset.sum_image (fun i _ j _ hij ↦ Subtype.ext (Prod.mk.inj hij).1)]
+  rfl

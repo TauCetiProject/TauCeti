@@ -56,12 +56,13 @@ A uniformly bounded family of operators with a common domain assembles into an `
 operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
 
 For `p ≠ ∞`, every sequence in `ℓᵖ` has countable support (`Memℓp.countable_dsupport`,
-`lp.countable_dsupport`). For a finite exponent `p` and a countable index type, `lp E p` is
-separable as soon as every `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors
-with entries in countable dense subsets are dense. Conversely, for `1 ≤ p`, if every fibre `E i` is
-nontrivial, separability of `lp E p` forces `ι` to be countable because the open balls of radius
+`lp.countable_dsupport`). For `1 ≤ p`, separability of `lp E p` forces the subtype of indices with
+nontrivial fibres `{i : ι // Nontrivial (E i)}` to be countable because the open balls of radius
 `‖v i‖ / 2` around `lp.single p i (v i)` (`v i ≠ 0`) are pairwise disjoint
-(`lp.countable_of_separableSpace`, `lp.separableSpace_iff_countable`).
+(`lp.countable_nontrivial_of_separableSpace`, specializing to `lp.countable_of_separableSpace` when
+all fibres are nontrivial). For `1 ≤ p < ∞`, `lp E p` is separable if and only if every fibre `E i`
+is separable and `{i : ι // Nontrivial (E i)}` is countable (`lp.separableSpace_iff`),
+specializing to `lp.separableSpace` and `lp.separableSpace_iff_countable`.
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
@@ -246,21 +247,6 @@ theorem sum_norm_mul_norm_le {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)
         gcongr
         exact norm_holderL_le 1 _ hB
     _ = ‖f‖ * ‖g‖ := by rw [one_mul]
-
-/-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
--/
-theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
-    [Fact (1 ≤ p)] (hp : p ≠ ⊤) : TopologicalSpace.SeparableSpace (lp E p) := by
-  classical
-  set S : Set (lp E p) := ⋃ i, Set.range (lp.single p i)
-  have hS : TopologicalSpace.IsSeparable S :=
-    .iUnion fun i ↦ TopologicalSpace.isSeparable_range (lp.isometry_single i).continuous
-  rw [← TopologicalSpace.isSeparable_univ_iff]
-  -- Every element is the limit of the finite sums of its coordinate vectors, which lie in the
-  -- additive span of `S`.
-  refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
-    mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
-  exact Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span (Set.mem_iUnion.2 ⟨i, f i, rfl⟩)
 
 section Single
 
@@ -451,29 +437,63 @@ theorem countable_dsupport {ι : Type*} {E : ι → Type*} [∀ i, NormedAddComm
     {p : ℝ≥0∞} (hp : p ≠ ∞) (f : lp E p) : {i | f i ≠ 0}.Countable :=
   (lp.memℓp f).countable_dsupport hp
 
-/-- If `lp E p` (`1 ≤ p`) is separable and every fibre `E i` is nontrivial, then the index type `ι`
-is countable. -/
-theorem countable_of_separableSpace {ι : Type*} (E : ι → Type*) [∀ i, NormedAddCommGroup (E i)]
-    [∀ i, Nontrivial (E i)] (p : ℝ≥0∞) [Fact (1 ≤ p)]
-    [TopologicalSpace.SeparableSpace (lp E p)] : Countable ι := by
+/-- If `lp E p` (`1 ≤ p`) is separable, then the subtype of indices with nontrivial fibres is
+countable. -/
+theorem countable_nontrivial_of_separableSpace {ι : Type*} (E : ι → Type*)
+    [∀ i, NormedAddCommGroup (E i)] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    [TopologicalSpace.SeparableSpace (lp E p)] :
+    Countable {i : ι // Nontrivial (E i)} := by
   classical
-  let v : ∀ i, E i := fun i ↦ (exists_ne (0 : E i)).choose
-  have hv (i : ι) : v i ≠ 0 := (exists_ne (0 : E i)).choose_spec
+  let v : ∀ i : {i : ι // Nontrivial (E i)}, E i.val :=
+    fun i ↦ (@exists_ne (E i.val) i.property 0).choose
+  have hv (i : {i : ι // Nontrivial (E i)}) : v i ≠ 0 :=
+    (@exists_ne (E i.val) i.property 0).choose_spec
   have hd : Pairwise (Function.onFun Disjoint
-      fun i : ι ↦ Metric.ball (lp.single p i (v i)) (‖v i‖ / 2)) := by
+      fun i : {i : ι // Nontrivial (E i)} ↦
+        Metric.ball (lp.single p i.val (v i)) (‖v i‖ / 2)) := by
     intro i j hij
     refine Metric.ball_disjoint_ball ?_
-    have hi := (lp.lipschitzWith_one_eval p i).dist_le_mul
-      (lp.single p i (v i)) (lp.single p j (v j))
-    have hj := (lp.lipschitzWith_one_eval p j).dist_le_mul
-      (lp.single p i (v i)) (lp.single p j (v j))
+    have hij' : i.val ≠ j.val := Subtype.coe_ne_coe.2 hij
+    have hi := (lp.lipschitzWith_one_eval p i.val).dist_le_mul
+      (lp.single p i.val (v i)) (lp.single p j.val (v j))
+    have hj := (lp.lipschitzWith_one_eval p j.val).dist_le_mul
+      (lp.single p i.val (v i)) (lp.single p j.val (v j))
     rw [NNReal.coe_one, one_mul, lp.single_apply_self,
-      lp.single_apply_ne p j (v j) hij, dist_zero_right] at hi
-    rw [NNReal.coe_one, one_mul, lp.single_apply_ne p i (v i) hij.symm,
+      lp.single_apply_ne p j.val (v j) hij', dist_zero_right] at hi
+    rw [NNReal.coe_one, one_mul, lp.single_apply_ne p i.val (v i) hij'.symm,
       lp.single_apply_self, dist_zero_left] at hj
     linarith
   exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
     (fun i ↦ ⟨_, Metric.mem_ball_self (half_pos (norm_pos_iff.2 (hv i)))⟩)
+
+/-- If `lp E p` (`1 ≤ p`) is separable and every fibre `E i` is nontrivial, then the index type `ι`
+is countable. -/
+theorem countable_of_separableSpace {ι : Type*} (E : ι → Type*) [∀ i, NormedAddCommGroup (E i)]
+    [∀ i, Nontrivial (E i)] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    [TopologicalSpace.SeparableSpace (lp E p)] : Countable ι :=
+  have := countable_nontrivial_of_separableSpace E p
+  Countable.of_equiv _ (Equiv.subtypeUnivEquiv ‹∀ i, Nontrivial (E i)›)
+
+/-- For `1 ≤ p < ∞`, `lp E p` is separable when only countably many fibres are nontrivial and
+every fibre `E i` is separable. -/
+theorem separableSpace_of_countable_nontrivial {ι : Type*} {E : ι → Type*}
+    [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    [Countable {i : ι // Nontrivial (E i)}] [∀ i, TopologicalSpace.SeparableSpace (E i)] :
+    TopologicalSpace.SeparableSpace (lp E p) := by
+  classical
+  set S : Set (lp E p) := ⋃ i : {i : ι // Nontrivial (E i)}, Set.range (lp.single p i.val)
+  have hS : TopologicalSpace.IsSeparable S :=
+    .iUnion fun i ↦ TopologicalSpace.isSeparable_range (lp.isometry_single i.val).continuous
+  rw [← TopologicalSpace.isSeparable_univ_iff]
+  -- Every element is the limit of the finite sums of its coordinate vectors, which lie in the
+  -- additive span of `S`.
+  refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
+    mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  by_cases hi : Nontrivial (E i)
+  · exact Submodule.subset_span (Set.mem_iUnion.2 ⟨⟨i, hi⟩, f i, rfl⟩)
+  · rw [not_nontrivial_iff_subsingleton] at hi
+    simp [Subsingleton.elim (f i) 0]
 
 /-- For `1 ≤ p < ∞`, `lp E p` is separable if and only if the subtype of indices with nontrivial
 fibres is countable and every fibre `E i` is separable. -/
@@ -482,43 +502,17 @@ theorem separableSpace_iff {ι : Type*} {E : ι → Type*} [∀ i, NormedAddComm
     TopologicalSpace.SeparableSpace (lp E p) ↔
       Countable {i : ι // Nontrivial (E i)} ∧ ∀ i, TopologicalSpace.SeparableSpace (E i) := by
   classical
-  refine ⟨fun _ ↦ ⟨?_, fun i ↦ ?_⟩, fun ⟨_, _⟩ ↦ ?_⟩
-  · let v : ∀ i : {i : ι // Nontrivial (E i)}, E i.val :=
-      fun i ↦ (@exists_ne (E i.val) i.property 0).choose
-    have hv (i : {i : ι // Nontrivial (E i)}) : v i ≠ 0 :=
-      (@exists_ne (E i.val) i.property 0).choose_spec
-    have hd : Pairwise (Function.onFun Disjoint
-        fun i : {i : ι // Nontrivial (E i)} ↦
-          Metric.ball (lp.single p i.val (v i)) (‖v i‖ / 2)) := by
-      intro i j hij
-      refine Metric.ball_disjoint_ball ?_
-      have hij' : i.val ≠ j.val := Subtype.coe_ne_coe.2 hij
-      have hi := (lp.lipschitzWith_one_eval p i.val).dist_le_mul
-        (lp.single p i.val (v i)) (lp.single p j.val (v j))
-      have hj := (lp.lipschitzWith_one_eval p j.val).dist_le_mul
-        (lp.single p i.val (v i)) (lp.single p j.val (v j))
-      rw [NNReal.coe_one, one_mul, lp.single_apply_self,
-        lp.single_apply_ne p j.val (v j) hij', dist_zero_right] at hi
-      rw [NNReal.coe_one, one_mul, lp.single_apply_ne p i.val (v i) hij'.symm,
-        lp.single_apply_self, dist_zero_left] at hj
-      linarith
-    exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-      (fun i ↦ ⟨_, Metric.mem_ball_self (half_pos (norm_pos_iff.2 (hv i)))⟩)
-  · have : SecondCountableTopology (lp E p) := UniformSpace.secondCountable_of_separable (lp E p)
-    have : SecondCountableTopology (E i) :=
-      (lp.isometry_single (E := E) (p := p) i).isUniformInducing.isInducing.secondCountableTopology
-    infer_instance
-  · set S : Set (lp E p) := ⋃ i : {i : ι // Nontrivial (E i)}, Set.range (lp.single p i.val)
-    have hS : TopologicalSpace.IsSeparable S :=
-      .iUnion fun i ↦ TopologicalSpace.isSeparable_range (lp.isometry_single i.val).continuous
-    rw [← TopologicalSpace.isSeparable_univ_iff]
-    refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
-      mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    by_cases hi : Nontrivial (E i)
-    · exact Submodule.subset_span (Set.mem_iUnion.2 ⟨⟨i, hi⟩, f i, rfl⟩)
-    · rw [not_nontrivial_iff_subsingleton] at hi
-      simp [Subsingleton.elim (f i) 0]
+  refine ⟨fun _ ↦ ⟨countable_nontrivial_of_separableSpace E p, fun i ↦ ?_⟩,
+    fun ⟨_, _⟩ ↦ separableSpace_of_countable_nontrivial hp⟩
+  have : SecondCountableTopology (lp E p) := UniformSpace.secondCountable_of_separable (lp E p)
+  exact (lp.isometry_single (E := E) (p := p) i).isEmbedding.separableSpace
+
+/-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
+-/
+theorem separableSpace {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
+    [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ⊤) : TopologicalSpace.SeparableSpace (lp E p) :=
+  (separableSpace_iff hp).2 ⟨inferInstance, inferInstance⟩
 
 /-- For `1 ≤ p < ∞` and nontrivial separable fibres `E i`, `lp E p` is separable if and only if the
 index type `ι` is countable. -/
@@ -526,7 +520,9 @@ theorem separableSpace_iff_countable {ι : Type*} {E : ι → Type*} [∀ i, Nor
     [∀ i, Nontrivial (E i)] [∀ i, TopologicalSpace.SeparableSpace (E i)] {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     TopologicalSpace.SeparableSpace (lp E p) ↔ Countable ι :=
-  ⟨fun _ ↦ countable_of_separableSpace E p, fun _ ↦ separableSpace hp⟩
+  (separableSpace_iff hp).trans
+    ⟨fun ⟨h, _⟩ ↦ Countable.of_equiv _ (Equiv.subtypeUnivEquiv ‹∀ i, Nontrivial (E i)›),
+     fun _ ↦ ⟨inferInstance, inferInstance⟩⟩
 
 end lp
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.SetTheory.Cardinal.Arithmetic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Prod
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Reindex
@@ -55,8 +54,9 @@ infinite-dimensional Hilbert space is unitarily isomorphic to `ℓ²(ℕ, 𝕜)`
 basis-existence characterizations (`TauCeti.nonempty_hilbertBasis_iff_lift_mk_eq`,
 `TauCeti.nonempty_hilbertBasis_nat_iff`) and cardinal addition laws for `L²` products, orthogonal
 decompositions, and quotients by closed submodules (`TauCeti.hilbertDim_prodLp`,
-`TauCeti.hilbertDim_add_hilbertDim_orthogonal`, `TauCeti.hilbertDim_add_hilbertDim_quotient`,
-`TauCeti.hilbertDim_orthogonal_eq_of_finiteDimensional`).
+`Submodule.hilbertDim_add_hilbertDim_orthogonal`, `Submodule.hilbertDim_add_hilbertDim_quotient`,
+`Submodule.hilbertDim_orthogonal_eq_of_finiteDimensional`,
+`Submodule.hilbertDim_eq_of_finiteDimensional_quotient`).
 
 ## Main declarations
 
@@ -80,8 +80,10 @@ decompositions, and quotients by closed submodules (`TauCeti.hilbertDim_prodLp`,
   finite-dimensional Hilbert spaces.
 * `TauCeti.hilbertDim_le_aleph0_iff`, `TauCeti.hilbertDim_eq_aleph0_iff`: separability and
   countably infinite Hilbert dimension.
-* `TauCeti.hilbertDim_prodLp`, `TauCeti.hilbertDim_add_hilbertDim_orthogonal`,
-  `TauCeti.hilbertDim_add_hilbertDim_quotient`: cardinal addition laws.
+* `TauCeti.hilbertDim_prodLp`, `Submodule.hilbertDim_add_hilbertDim_orthogonal`,
+  `Submodule.hilbertDim_add_hilbertDim_quotient`,
+  `Submodule.hilbertDim_eq_of_finiteDimensional_quotient`: cardinal addition and finite-codimension
+  laws.
 
 ## References
 
@@ -261,61 +263,15 @@ theorem nonempty_linearIsometryEquiv_iff_nonempty_equiv {ι : Type u} {κ : Type
     Nonempty (E ≃ₗᵢ[𝕜] F) ↔ Nonempty (ι ≃ κ) := by
   rw [b.nonempty_linearIsometryEquiv_iff_lift_mk_eq c, Cardinal.lift_mk_eq']
 
-private theorem denseRange_finset_sum_smul {ι : Type u} {α : Type v}
-    (b : HilbertBasis ι 𝕜 E) {g : α → 𝕜} (hg : DenseRange g) :
-    DenseRange (fun t : Finset (ι × α) ↦ ∑ p ∈ t, g p.2 • b p.1) := by
-  classical
-  rw [Metric.denseRange_iff]
-  intro x ε hε
-  obtain ⟨t, ht⟩ := Metric.tendsto_atTop.1 (b.hasSum_repr x) (ε / 2) (half_pos hε)
-  have ht' : dist (∑ i ∈ t, b.repr x i • b i) x < ε / 2 := ht t le_rfl
-  have hδ : 0 < ε / (2 * (t.card + 1)) := by positivity
-  choose n hn using fun i : ι ↦
-    Metric.denseRange_iff.1 hg (b.repr x i) (ε / (2 * (t.card + 1))) hδ
-  refine ⟨t.image fun i ↦ (i, n i), ?_⟩
-  have hsum_eq : ∑ p ∈ t.image (fun i ↦ (i, n i)), g p.2 • b p.1 = ∑ i ∈ t, g (n i) • b i :=
-    Finset.sum_image fun _ _ _ _ h ↦ (Prod.mk.inj h).1
-  have hdist1 : dist (∑ i ∈ t, b.repr x i • b i) (∑ i ∈ t, g (n i) • b i) < ε / 2 := by
-    rw [dist_eq_norm, ← Finset.sum_sub_distrib]
-    calc ‖∑ i ∈ t, (b.repr x i • b i - g (n i) • b i)‖
-        ≤ ∑ i ∈ t, ‖(b.repr x i - g (n i)) • b i‖ := by
-          simpa only [sub_smul] using norm_sum_le t _
-      _ = ∑ i ∈ t, dist (b.repr x i) (g (n i)) := Finset.sum_congr rfl fun i _ ↦ by
-          rw [norm_smul, b.orthonormal.1 i, mul_one, dist_eq_norm]
-      _ ≤ ∑ _i ∈ t, ε / (2 * (t.card + 1)) := Finset.sum_le_sum fun i _ ↦ (hn i).le
-      _ = t.card * (ε / (2 * (t.card + 1))) := by rw [Finset.sum_const, nsmul_eq_mul]
-      _ < ε / 2 := by
-          rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) (by norm_num)]
-          nlinarith
-  rw [hsum_eq]
-  calc dist x (∑ i ∈ t, g (n i) • b i)
-      ≤ dist x (∑ i ∈ t, b.repr x i • b i) +
-          dist (∑ i ∈ t, b.repr x i • b i) (∑ i ∈ t, g (n i) • b i) := dist_triangle _ _ _
-    _ < ε / 2 + ε / 2 := add_lt_add (by rwa [dist_comm]) hdist1
-    _ = ε := add_halves ε
+end Cardinality
 
-private theorem lift_mk_le_of_orthonormal_denseRange {ι : Type u} {α : Type v}
-    {v : ι → F} (hv : Orthonormal 𝕜 v) {ψ : α → F} (hψ : DenseRange ψ) :
-    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α := by
-  choose q hq using fun i ↦ Metric.denseRange_iff.1 hψ (v i) (1 / 2) (by norm_num)
-  refine Cardinal.lift_mk_le'.2 ⟨⟨q, fun i₁ i₂ heq ↦ by_contra fun hne ↦ ?_⟩⟩
-  have hdist : dist (v i₁) (v i₂) < 1 := calc
-    dist (v i₁) (v i₂) ≤ dist (v i₁) (ψ (q i₁)) + dist (ψ (q i₁)) (v i₂) := dist_triangle _ _ _
-    _ = dist (v i₁) (ψ (q i₁)) + dist (v i₂) (ψ (q i₂)) := by
-        rw [heq, dist_comm (ψ (q i₂)) (v i₂)]
-    _ < 1 / 2 + 1 / 2 := add_lt_add (hq i₁) (hq i₂)
-    _ = 1 := by norm_num
-  have hsq : ‖v i₁ - v i₂‖ ^ 2 = 2 := by
-    rw [norm_sub_sq (𝕜 := 𝕜), hv.1 i₁, hv.1 i₂, hv.2 hne]
-    norm_num
-  rw [dist_eq_norm] at hdist
-  nlinarith [norm_nonneg (v i₁ - v i₂)]
-
-/-- **Density-character bound.** If `f : E → F` is continuous with dense range, then the index
-cardinality of any Hilbert basis of `F` is at most `max (#ι) ℵ₀` for any Hilbert basis `b` of
+/-- **Density-character bound.** If `f : E → F` is continuous with dense range, then any orthonormal
+family `v : κ → F` has index cardinality at most `max (#ι) ℵ₀` for any Hilbert basis `b` of
 `E`. -/
-theorem lift_mk_le_max_aleph0_of_denseRange {ι : Type u} {κ : Type v}
-    (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) {f : E → F}
+theorem lift_mk_le_max_aleph0_of_denseRange {𝕜 E F : Type*} {ι : Type u} {κ : Type v}
+    [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    (b : HilbertBasis ι 𝕜 E) {v : κ → F} (hv : Orthonormal 𝕜 v) {f : E → F}
     (hf : Continuous f) (hd : DenseRange f) :
     Cardinal.lift.{u} #κ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ := by
   have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
@@ -326,22 +282,13 @@ theorem lift_mk_le_max_aleph0_of_denseRange {ι : Type u} {κ : Type v}
   have hfφ_dense : DenseRange (f ∘ fun t : Finset (ι × ℕ) ↦ ∑ p ∈ t, g p.2 • b p.1) := by
     rw [DenseRange, Set.range_comp]
     exact hd.dense_image hf hφ_dense
-  refine (lift_mk_le_of_orthonormal_denseRange c.orthonormal hfφ_dense).trans ?_
+  refine (hv.lift_mk_le_of_denseRange hfφ_dense).trans ?_
   by_cases hι : Finite ι
-  · have : Countable (Finset (ι × ℕ)) := inferInstance
-    have hct : Cardinal.lift.{v} #(Finset (ι × ℕ)) ≤ ℵ₀ := by
-      simpa only [Cardinal.lift_aleph0] using
-        Cardinal.lift_le.2 (Cardinal.mk_le_aleph0 (α := Finset (ι × ℕ)))
-    exact hct.trans (le_max_right _ _)
+  · exact (Cardinal.lift_le_aleph0.2 Cardinal.mk_le_aleph0).trans (le_max_right _ _)
   · have : Infinite ι := not_finite_iff_infinite.1 hι
     have : Infinite (ι × ℕ) := inferInstance
-    have hcard : #(Finset (ι × ℕ)) = #ι := by
-      rw [Cardinal.mk_finset_of_infinite, Cardinal.mk_prod, Cardinal.lift_uzero,
-        Cardinal.mk_nat, Cardinal.lift_aleph0, Cardinal.mk_mul_aleph0_eq]
-    rw [hcard]
-    exact le_max_left _ _
-
-end Cardinality
+    rw [Cardinal.mk_finset_of_infinite, Cardinal.mk_prod, Cardinal.mk_nat]
+    simp
 
 end HilbertBasis
 
@@ -629,7 +576,7 @@ theorem lift_hilbertDim_le_max_aleph0_of_denseRange {𝕜 : Type*} {E : Type u} 
   obtain ⟨_, bE, -⟩ := exists_hilbertBasis 𝕜 E
   obtain ⟨_, bF, -⟩ := exists_hilbertBasis 𝕜 F
   rw [bE.hilbertDim_eq, bF.hilbertDim_eq]
-  exact bE.lift_mk_le_max_aleph0_of_denseRange bF hf hd
+  exact bE.lift_mk_le_max_aleph0_of_denseRange bF.orthonormal hf hd
 
 end TauCeti
 
@@ -646,15 +593,12 @@ theorem lift_hilbertDim_eq {E : Type u} {F : Type v}
     Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) := by
   by_cases hE : FiniteDimensional 𝕜 E
   · have : FiniteDimensional 𝕜 F := e.toLinearEquiv.finiteDimensional
-    rw [TauCeti.hilbertDim_eq_finrank, TauCeti.hilbertDim_eq_finrank,
-      Cardinal.lift_natCast, Cardinal.lift_natCast, e.toLinearEquiv.finrank_eq]
+    simp [TauCeti.hilbertDim_eq_finrank, e.toLinearEquiv.finrank_eq]
   · have hF : ¬ FiniteDimensional 𝕜 F := fun h ↦ hE e.symm.toLinearEquiv.finiteDimensional
-    have hE_inf : ℵ₀ ≤ Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) := by
-      simpa only [Cardinal.lift_aleph0] using
-        Cardinal.lift_le.2 (TauCeti.aleph0_le_hilbertDim_iff.2 hE)
-    have hF_inf : ℵ₀ ≤ Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) := by
-      simpa only [Cardinal.lift_aleph0] using
-        Cardinal.lift_le.2 (TauCeti.aleph0_le_hilbertDim_iff.2 hF)
+    have hE_inf : ℵ₀ ≤ Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) :=
+      Cardinal.aleph0_le_lift.2 (TauCeti.aleph0_le_hilbertDim_iff.2 hE)
+    have hF_inf : ℵ₀ ≤ Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) :=
+      Cardinal.aleph0_le_lift.2 (TauCeti.aleph0_le_hilbertDim_iff.2 hF)
     refine le_antisymm ?_ ?_
     · simpa only [max_eq_left hF_inf] using
         TauCeti.lift_hilbertDim_le_max_aleph0_of_denseRange (𝕜 := 𝕜) (f := e.symm)
@@ -713,22 +657,23 @@ example (𝕜 : Type u) (ι : Type v) [RCLike 𝕜] [Fintype ι] (hι : Fintype.
     IsEmpty (𝕜 ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
   isEmpty_linearIsometryEquiv_iff_finrank_ne.2 (by simpa using hι.symm)
 
-/-- Every separable infinite-dimensional Hilbert space admits a Hilbert basis indexed by `ℕ`. -/
-theorem nonempty_hilbertBasis_nat (𝕜 : Type*) (E : Type*) [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] [CompleteSpace E] [TopologicalSpace.SeparableSpace E]
-    (hE : ¬ FiniteDimensional 𝕜 E) : Nonempty (HilbertBasis ℕ 𝕜 E) := by
-  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
-  obtain ⟨e⟩ := b.nonempty_equiv_nat hE
-  exact ⟨b.reindex e⟩
+/-- A Hilbert space admits a Hilbert basis indexed by `ℕ` if and only if it is separable and
+infinite-dimensional. -/
+theorem nonempty_hilbertBasis_nat_iff {𝕜 : Type*} {E : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    Nonempty (HilbertBasis ℕ 𝕜 E) ↔
+      TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E := by
+  rw [nonempty_hilbertBasis_iff_lift_mk_eq, Cardinal.mk_nat, eq_comm]
+  simp [hilbertDim_eq_aleph0_iff]
 
-/-- Every separable infinite-dimensional Hilbert space over `𝕜` is linearly isometric to
-`ℓ²(ℕ, 𝕜)`. -/
-theorem nonempty_linearIsometryEquiv_lp_nat (𝕜 : Type*) (E : Type*) [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [TopologicalSpace.SeparableSpace E] (hE : ¬ FiniteDimensional 𝕜 E) :
-    Nonempty (E ≃ₗᵢ[𝕜] ℓ²(ℕ, 𝕜)) :=
-  let ⟨b⟩ := nonempty_hilbertBasis_nat 𝕜 E hE
-  ⟨b.repr⟩
+/-- A Hilbert space over `𝕜` is linearly isometrically equivalent to `ℓ²(ℕ, 𝕜)` if and only if
+it is separable and infinite-dimensional. -/
+theorem nonempty_linearIsometryEquiv_lp_nat_iff {𝕜 : Type w} {E : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    Nonempty (E ≃ₗᵢ[𝕜] ℓ²(ℕ, 𝕜)) ↔
+      TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E := by
+  rw [nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq, hilbertDim_lp, Cardinal.mk_nat]
+  simp [Cardinal.lift_eq_aleph0, hilbertDim_eq_aleph0_iff]
 
 /-- Any two separable infinite-dimensional Hilbert spaces over the same scalar field `𝕜` are
 linearly isometric. -/
@@ -740,39 +685,16 @@ theorem nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
     [TopologicalSpace.SeparableSpace F]
     (hE : ¬ FiniteDimensional 𝕜 E) (hF : ¬ FiniteDimensional 𝕜 F) :
     Nonempty (E ≃ₗᵢ[𝕜] F) := by
-  obtain ⟨eE⟩ := nonempty_linearIsometryEquiv_lp_nat 𝕜 E hE
-  obtain ⟨eF⟩ := nonempty_linearIsometryEquiv_lp_nat 𝕜 F hF
+  obtain ⟨eE⟩ := nonempty_linearIsometryEquiv_lp_nat_iff.2 ⟨inferInstance, hE⟩
+  obtain ⟨eF⟩ := nonempty_linearIsometryEquiv_lp_nat_iff.2 ⟨inferInstance, hF⟩
   exact ⟨eE.trans eF.symm⟩
 
-/-- A Hilbert space admits a Hilbert basis indexed by `ℕ` if and only if it is separable and
-infinite-dimensional. -/
-theorem nonempty_hilbertBasis_nat_iff {𝕜 : Type*} {E : Type u} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
-    Nonempty (HilbertBasis ℕ 𝕜 E) ↔
-      TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E := by
-  rw [nonempty_hilbertBasis_iff_lift_mk_eq, Cardinal.mk_nat, Cardinal.lift_aleph0,
-    Cardinal.lift_uzero, eq_comm, hilbertDim_eq_aleph0_iff]
-
-/-- A Hilbert space over `𝕜` is linearly isometrically equivalent to `ℓ²(ℕ, 𝕜)` if and only if
-it is separable and infinite-dimensional. -/
-theorem nonempty_linearIsometryEquiv_lp_nat_iff {𝕜 : Type w} {E : Type u} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
-    Nonempty (E ≃ₗᵢ[𝕜] ℓ²(ℕ, 𝕜)) ↔
-      TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E := by
-  rw [nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq, hilbertDim_lp, Cardinal.mk_nat,
-    Cardinal.lift_aleph0, Cardinal.lift_aleph0, ← Cardinal.lift_aleph0.{w, u},
-    Cardinal.lift_inj, hilbertDim_eq_aleph0_iff]
-
 end Separable
-
-section DirectSums
-
-variable {𝕜 : Type*} [RCLike 𝕜]
 
 /-- The Hilbert dimension of the `L²` product `WithLp 2 (E × F)` is the sum of the lifted Hilbert
 dimensions of `E` and `F`. -/
 @[simp]
-theorem hilbertDim_prodLp {E : Type u} {F : Type v}
+theorem hilbertDim_prodLp {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] :
     hilbertDim 𝕜 (WithLp 2 (E × F)) =
@@ -781,27 +703,29 @@ theorem hilbertDim_prodLp {E : Type u} {F : Type v}
   obtain ⟨_, bF, -⟩ := exists_hilbertBasis 𝕜 F
   rw [(bE.prodLp bF).hilbertDim_eq, Cardinal.mk_sum, bE.hilbertDim_eq, bF.hilbertDim_eq]
 
-/-- Same-universe specialization of `TauCeti.hilbertDim_prodLp`. -/
-theorem hilbertDim_prodLp' {E F : Type u}
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] :
-    hilbertDim 𝕜 (WithLp 2 (E × F)) = hilbertDim 𝕜 E + hilbertDim 𝕜 F := by
-  simp
+end TauCeti
+
+namespace Submodule
+
+section DirectSums
+
+variable {𝕜 : Type*} [RCLike 𝕜]
 
 /-- **Orthogonal-direct-sum cardinal law.** For a complete submodule `K` of a Hilbert space `E`,
 the Hilbert dimensions of `K` and `Kᗮ` sum to the Hilbert dimension of `E`. -/
 theorem hilbertDim_add_hilbertDim_orthogonal {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (K : Submodule 𝕜 E) [CompleteSpace K] :
-    hilbertDim 𝕜 K + hilbertDim 𝕜 Kᗮ = hilbertDim 𝕜 E := by
-  rw [← hilbertDim_prodLp', ← K.orthogonalDecomposition.hilbertDim_eq]
+    TauCeti.hilbertDim 𝕜 K + TauCeti.hilbertDim 𝕜 Kᗮ = TauCeti.hilbertDim 𝕜 E := by
+  simpa only [TauCeti.hilbertDim_prodLp, Cardinal.lift_id] using
+    K.orthogonalDecomposition.hilbertDim_eq.symm
 
 /-- The quotient `E ⧸ K` by a closed submodule `K` of a Hilbert space `E` has the same Hilbert
 dimension as `Kᗮ`. -/
 theorem hilbertDim_quotient_eq_orthogonal {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (K : Submodule 𝕜 E) [IsClosed (K : Set E)] :
-    hilbertDim 𝕜 (E ⧸ K) = hilbertDim 𝕜 Kᗮ :=
+    TauCeti.hilbertDim 𝕜 (E ⧸ K) = TauCeti.hilbertDim 𝕜 Kᗮ :=
   K.quotientEquivOrthogonal.hilbertDim_eq
 
 /-- For a closed submodule `K` of a Hilbert space `E`, the Hilbert dimensions of `K` and `E ⧸ K`
@@ -809,22 +733,22 @@ sum to the Hilbert dimension of `E`. -/
 theorem hilbertDim_add_hilbertDim_quotient {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (K : Submodule 𝕜 E) [IsClosed (K : Set E)] :
-    hilbertDim 𝕜 K + hilbertDim 𝕜 (E ⧸ K) = hilbertDim 𝕜 E := by
-  rw [hilbertDim_quotient_eq_orthogonal, hilbertDim_add_hilbertDim_orthogonal]
+    TauCeti.hilbertDim 𝕜 K + TauCeti.hilbertDim 𝕜 (E ⧸ K) = TauCeti.hilbertDim 𝕜 E := by
+  rw [K.hilbertDim_quotient_eq_orthogonal, K.hilbertDim_add_hilbertDim_orthogonal]
 
 /-- Taking the orthogonal complement of a finite-dimensional subspace in an infinite-dimensional
 Hilbert space does not change the Hilbert dimension. -/
 theorem hilbertDim_orthogonal_eq_of_finiteDimensional {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (K : Submodule 𝕜 E) [FiniteDimensional 𝕜 K] (hE : ¬ FiniteDimensional 𝕜 E) :
-    hilbertDim 𝕜 Kᗮ = hilbertDim 𝕜 E := by
-  have hK : hilbertDim 𝕜 K < ℵ₀ := hilbertDim_lt_aleph0_iff.2 inferInstance
-  have hsum : hilbertDim 𝕜 K + hilbertDim 𝕜 Kᗮ = hilbertDim 𝕜 E :=
-    hilbertDim_add_hilbertDim_orthogonal K
-  have hKperp : ℵ₀ ≤ hilbertDim 𝕜 Kᗮ := by
+    TauCeti.hilbertDim 𝕜 Kᗮ = TauCeti.hilbertDim 𝕜 E := by
+  have hK : TauCeti.hilbertDim 𝕜 K < ℵ₀ := TauCeti.hilbertDim_lt_aleph0_iff.2 inferInstance
+  have hsum : TauCeti.hilbertDim 𝕜 K + TauCeti.hilbertDim 𝕜 Kᗮ = TauCeti.hilbertDim 𝕜 E :=
+    K.hilbertDim_add_hilbertDim_orthogonal
+  have hKperp : ℵ₀ ≤ TauCeti.hilbertDim 𝕜 Kᗮ := by
     by_contra h
     push Not at h
-    exact hE (hilbertDim_lt_aleph0_iff.1 (hsum ▸ Cardinal.add_lt_aleph0 hK h))
+    exact hE (TauCeti.hilbertDim_lt_aleph0_iff.1 (hsum ▸ Cardinal.add_lt_aleph0 hK h))
   rw [← hsum, Cardinal.add_eq_right hKperp (hK.le.trans hKperp)]
 
 /-- A complete subspace of finite codimension (meaning finite-dimensional orthogonal complement) in
@@ -833,10 +757,20 @@ theorem hilbertDim_eq_of_finiteDimensional_orthogonal {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (K : Submodule 𝕜 E) [CompleteSpace K] [FiniteDimensional 𝕜 Kᗮ]
     (hE : ¬ FiniteDimensional 𝕜 E) :
-    hilbertDim 𝕜 K = hilbertDim 𝕜 E := by
+    TauCeti.hilbertDim 𝕜 K = TauCeti.hilbertDim 𝕜 E := by
   rw [← (LinearIsometryEquiv.ofEq _ _ K.orthogonal_orthogonal).hilbertDim_eq]
-  exact hilbertDim_orthogonal_eq_of_finiteDimensional Kᗮ hE
+  exact Kᗮ.hilbertDim_orthogonal_eq_of_finiteDimensional hE
+
+/-- A closed subspace of finite codimension (meaning finite-dimensional quotient `E ⧸ K`) in an
+infinite-dimensional Hilbert space has the same Hilbert dimension as the ambient space. -/
+theorem hilbertDim_eq_of_finiteDimensional_quotient {E : Type u}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    (K : Submodule 𝕜 E) [IsClosed (K : Set E)] [FiniteDimensional 𝕜 (E ⧸ K)]
+    (hE : ¬ FiniteDimensional 𝕜 E) :
+    TauCeti.hilbertDim 𝕜 K = TauCeti.hilbertDim 𝕜 E := by
+  have : FiniteDimensional 𝕜 Kᗮ := K.quotientEquivOrthogonal.toLinearEquiv.finiteDimensional
+  exact K.hilbertDim_eq_of_finiteDimensional_orthogonal hE
 
 end DirectSums
 
-end TauCeti
+end Submodule

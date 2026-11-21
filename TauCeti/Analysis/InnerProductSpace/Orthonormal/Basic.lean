@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Topology.Bases
+public import TauCeti.Topology.Bases
 
 /-!
 # Pairwise distance, countability, and elementary constructions for orthonormal families
@@ -15,7 +15,9 @@ Two distinct vectors of an orthonormal family in an inner product space sit at s
 hence at distance `√2` (`Orthonormal.norm_sub_sq`, `Orthonormal.norm_sub_eq_sqrt_two`,
 `Orthonormal.dist_eq_sqrt_two`). Consequently the open balls of radius `√2 / 2` around the members
 of an orthonormal family are pairwise disjoint, so in a separable inner product space every
-orthonormal family is countable (`Orthonormal.countable_of_separableSpace`).
+orthonormal family is countable (`Orthonormal.countable_of_separableSpace`), and more generally
+any orthonormal family has lifted index cardinality at most that of any dense-range map
+(`Orthonormal.lift_mk_le_of_denseRange`).
 
 Independently of separability, Bessel's inequality `Orthonormal.inner_products_summable` implies
 that any vector pairs nontrivially with at most countably many members of an orthonormal family
@@ -37,7 +39,9 @@ in finite dimension (`TauCeti.nonempty_setOfPred_orthonormal_iff`), extracting o
 
 public section
 
-open scoped InnerProductSpace
+open scoped Cardinal InnerProductSpace
+
+universe u v
 
 namespace TauCeti
 
@@ -55,6 +59,8 @@ theorem nonempty_setOfPred_orthonormal_iff [Fintype ι] [FiniteDimensional 𝕜 
 end TauCeti
 
 namespace Orthonormal
+
+section
 
 variable {𝕜 : Type*} {E : Type*} {ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E]
   [InnerProductSpace 𝕜 E] {v : ι → E}
@@ -99,8 +105,23 @@ theorem countable_of_separableSpace (hv : Orthonormal 𝕜 v)
   exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
     (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩)
 
+end
+
+/-- If `ψ : α → E` has dense range, then any orthonormal family `v : ι → E` has lifted index
+cardinality at most `#α`. -/
+theorem lift_mk_le_of_denseRange {𝕜 E : Type*} {ι : Type u} {α : Type v}
+    [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    {v : ι → E} (hv : Orthonormal 𝕜 v) {ψ : α → E} (hψ : DenseRange ψ) :
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α := by
+  have hr : 0 < √2 / 2 := by positivity
+  have hd : Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) :=
+    fun i j hij ↦ Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
+  exact hd.lift_mk_le_of_isOpen_disjoint_of_denseRange (fun _ ↦ Metric.isOpen_ball)
+    (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩) hψ
+
 /-- Two distinct entries of an orthonormal family form an orthonormal pair. -/
-theorem pair {f : ι → E} (hf : Orthonormal 𝕜 f) {i j : ι} (hij : i ≠ j) :
+theorem pair {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    {f : ι → E} (hf : Orthonormal 𝕜 f) {i j : ι} (hij : i ≠ j) :
     Orthonormal 𝕜 ![f i, f j] := by
   simp [hf.norm_eq_one i, hf.norm_eq_one j, hf.inner_eq_zero hij]
 

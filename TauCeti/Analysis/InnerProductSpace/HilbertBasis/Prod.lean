@@ -49,14 +49,12 @@ protected noncomputable def prodLp (b : HilbertBasis ι 𝕜 E) (c : HilbertBasi
       intro x hx
       rw [Submodule.mem_orthogonal] at hx
       apply (WithLp.linearEquiv 2 𝕜 (E × F)).injective
-      rw [map_zero]
+      rw [map_zero, WithLp.coe_linearEquiv]
       refine Prod.ext ?_ ?_
-      · refine b.repr.injective (lp.ext <| funext fun i ↦ ?_)
-        rw [Prod.fst_zero, b.repr_apply_apply, map_zero, lp.coeFn_zero, Pi.zero_apply]
-        simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩)
-      · refine c.repr.injective (lp.ext <| funext fun j ↦ ?_)
-        rw [Prod.snd_zero, c.repr_apply_apply, map_zero, lp.coeFn_zero, Pi.zero_apply]
-        simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩))
+      · exact b.eq_zero_of_forall_inner_eq_zero fun i ↦ by
+          simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩)
+      · exact c.eq_zero_of_forall_inner_eq_zero fun j ↦ by
+          simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩))
 
 /-- The left basis vectors of `b.prodLp c` are `(b i, 0)`. -/
 @[simp]
@@ -91,5 +89,12 @@ theorem repr_prodLp_inr (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F
     (b.prodLp c).repr x (Sum.inr j) = c.repr (WithLp.ofLp x).2 j := by
   rw [(b.prodLp c).repr_apply_apply, c.repr_apply_apply, prodLp_apply_inr, WithLp.prod_inner_apply]
   simp
+
+/-- On finite index types, `HilbertBasis.prodLp` agrees with `OrthonormalBasis.prod`. -/
+@[simp]
+theorem toOrthonormalBasis_prodLp [Fintype ι] [Fintype κ] (b : HilbertBasis ι 𝕜 E)
+    (c : HilbertBasis κ 𝕜 F) :
+    (b.prodLp c).toOrthonormalBasis = b.toOrthonormalBasis.prod c.toOrthonormalBasis :=
+  DFunLike.ext _ _ fun i ↦ by rcases i with i | j <;> simp
 
 end HilbertBasis
