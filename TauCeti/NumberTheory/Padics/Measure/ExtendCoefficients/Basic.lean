@@ -193,12 +193,16 @@ private theorem norm_locallyConstantIntegral_le (hj : ∀ a, ‖j a‖ ≤ B)
   have hB : 0 ≤ B := (norm_nonneg _).trans (hj 0)
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hB (norm_nonneg _))
     fun a _ ↦ ?_
-  obtain ⟨x, rfl⟩ := φ.discreteQuotient.proj_surjective a
-  have hx : φ.lift (φ.discreteQuotient.proj x) = φ x := lift_quotientMap φ x
-  rw [hx, mul_comm B]
+  have hq : Function.Surjective (quotientMap φ) := by
+    simpa only [quotientMap, ContinuousMap.coe_mk] using φ.discreteQuotient.proj_surjective
+  obtain ⟨x, rfl⟩ := hq a
+  rw [lift_quotientMap φ x, mul_comm B]
+  have hφ : ‖φ x‖ ≤ ‖LocallyConstant.toContinuousMapLinearMap K φ‖ := by
+    simpa only [LocallyConstant.toContinuousMapLinearMap_apply,
+      LocallyConstant.coe_continuousMap] using
+      (LocallyConstant.toContinuousMapLinearMap K φ).norm_coe_le_norm x
   exact (norm_mul_le _ _).trans <|
-    mul_le_mul ((LocallyConstant.toContinuousMapLinearMap K φ).norm_coe_le_norm x)
-      (hj _) (norm_nonneg _) (norm_nonneg _)
+    mul_le_mul hφ (hj _) (norm_nonneg _) (norm_nonneg _)
 
 variable [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K]
 
