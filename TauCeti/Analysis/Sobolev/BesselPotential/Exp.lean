@@ -124,10 +124,10 @@ private theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
   -- `r` is `exp v - 1 - v`.
   have hreq : hrs.toBesselPotentialSpace = expSubOne hs v - v := by
     refine inclusionLp_injective h (Lp.ext ?_)
-    rw [← toLp_inclusion, toLp_inclusion_toBesselPotentialSpace h hrs rfl, map_sub]
+    rw [← toLp_inclusion, toLp_inclusion_toBesselPotentialSpace h hrs rfl]
     filter_upwards [hr, coeFn_inclusionLp_expSubOne hs h v,
-      Lp.coeFn_sub (inclusionLp h (expSubOne hs v)) (inclusionLp h v)] with x hx he hsub
-    rw [hsub, Pi.sub_apply, he]
+      coeFn_inclusionLp_sub h (expSubOne hs v) v] with x hx he hsub
+    rw [hsub, he]
     have hexp := Complex.hasSum_exp_sub_one (inclusionLp h v x)
     rw [← hasSum_nat_add_iff' 1] at hexp
     have hx' := (hasSum_nat_add_iff' 1).2 hx
@@ -157,22 +157,14 @@ private theorem expSubOne_add_sub (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) 
       mulCLM hs (expSubOne hs u) (expSubOne hs v - v) + (expSubOne hs v - v) := by
   have h := nonneg_of_finrank_lt hs
   refine inclusionLp_injective h (Lp.ext ?_)
-  have hmul (a b : H^{s}(E)) : ⇑(inclusionLp h (mulCLM hs a b)) =ᵐ[volume]
-      fun x ↦ inclusionLp h a x * inclusionLp h b x := by
-    simpa only [toLp_inclusion] using coeFn_toLp_inclusion_mulCLM hs h a b
-  have hsub (a b : H^{s}(E)) : ⇑(inclusionLp h (a - b)) =ᵐ[volume]
-      fun x ↦ inclusionLp h a x - inclusionLp h b x := by
-    rw [map_sub]; exact Lp.coeFn_sub _ _
-  have hadd (a b : H^{s}(E)) : ⇑(inclusionLp h (a + b)) =ᵐ[volume]
-      fun x ↦ inclusionLp h a x + inclusionLp h b x := by
-    rw [map_add]; exact Lp.coeFn_add _ _
   set U := expSubOne hs u
   set V := expSubOne hs v
-  filter_upwards [hsub (expSubOne hs (u + v) - U) (mulCLM hs U v + v),
-    hsub (expSubOne hs (u + v)) U, hadd (mulCLM hs U v) v,
-    hadd (mulCLM hs U (V - v)) (V - v), hsub V v, hmul U v, hmul U (V - v),
+  filter_upwards [coeFn_inclusionLp_sub h (expSubOne hs (u + v) - U) (mulCLM hs U v + v),
+    coeFn_inclusionLp_sub h (expSubOne hs (u + v)) U, coeFn_inclusionLp_add h (mulCLM hs U v) v,
+    coeFn_inclusionLp_add h (mulCLM hs U (V - v)) (V - v), coeFn_inclusionLp_sub h V v,
+    coeFn_inclusionLp_mulCLM hs h U v, coeFn_inclusionLp_mulCLM hs h U (V - v),
     coeFn_inclusionLp_expSubOne hs h (u + v), coeFn_inclusionLp_expSubOne hs h u,
-    coeFn_inclusionLp_expSubOne hs h v, hadd u v]
+    coeFn_inclusionLp_expSubOne hs h v, coeFn_inclusionLp_add h u v]
     with x h₁ h₂ h₃ h₄ h₅ h₆ h₇ e₁ e₂ e₃ h₈
   rw [h₁, h₂, h₃, h₄, h₆, h₇, h₅, e₁, e₂, e₃, h₈, Complex.exp_add]
   ring

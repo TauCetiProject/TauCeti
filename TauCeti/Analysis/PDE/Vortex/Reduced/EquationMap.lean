@@ -336,7 +336,7 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
     have hρz : ρ c z = ((1 + ‖(monicOfCoeff c).eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P₀ z := by
       rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c),
         Complex.ofReal_add, Complex.ofReal_one, add_mul, one_mul]
-    rw [mul_apply, ring_inverse_apply hc, hρz, backgroundDefect_apply, backgroundDefect_apply]
+    rw [mul_apply, ringInverse_apply hc, hρz, backgroundDefect_apply, backgroundDefect_apply]
     have := one_add_norm_sq_ne_zero (monicOfCoeff c) z
     have := one_add_norm_sq_ne_zero P₀ z
     push_cast
@@ -425,10 +425,28 @@ private theorem coeFn_inclusionLp_expTwo (u : H^{2}(ℂ)) :
     ⇑(inclusionLp zero_le_two (expTwo u)) =ᵐ[volume]
       fun z ↦ Complex.exp (2 * inclusionLp zero_le_two u z) - 1 := by
   filter_upwards [coeFn_inclusionLp_expSubOne finrank_lt zero_le_two ((2 : ℂ) • u),
-    (by rw [map_smul]; exact Lp.coeFn_smul (2 : ℂ) (inclusionLp zero_le_two u) :
-      ⇑(inclusionLp zero_le_two ((2 : ℂ) • u)) =ᵐ[volume] (2 : ℂ) • ⇑(inclusionLp zero_le_two u))]
-    with z h₁ h₂
-  rw [expTwo, h₁, h₂, Pi.smul_apply, smul_eq_mul]
+    coeFn_inclusionLp_smul zero_le_two (2 : ℂ) u] with z h₁ h₂
+  rw [expTwo, h₁, h₂, smul_eq_mul]
+
+/-- Multiplication of `L²(ℂ)` by the background weight `h_c = 1 - φ_c`. -/
+private def backgroundWeightMulL (c : Fin m → ℂ) :
+    Lp ℂ 2 (volume : Measure ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) :=
+  ContinuousLinearMap.id ℂ _ - mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
+
+private theorem backgroundWeightMulL_apply (c : Fin m → ℂ) (f : Lp ℂ 2 (volume : Measure ℂ)) :
+    backgroundWeightMulL c f = f - mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) f :=
+  rfl
+
+/-- `backgroundWeightMulL c f` is almost everywhere `h_c f`. -/
+private theorem coeFn_backgroundWeightMulL (c : Fin m → ℂ) (f : Lp ℂ 2 (volume : Measure ℂ)) :
+    backgroundWeightMulL c f =ᵐ[volume]
+      fun z ↦ (backgroundWeight ((monicOfCoeff c).eval ·) z : ℂ) * f z := by
+  filter_upwards [Lp.coeFn_sub f (mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) f),
+    coeFn_mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) f] with z h₁ h₂
+  rw [backgroundWeightMulL_apply, h₁, Pi.sub_apply, h₂, backgroundDefect_apply,
+    backgroundWeight_eq_one_sub_inv, smul_eq_mul]
+  push_cast
+  ring
 
 /-- **The reduced vortex equation map.** For `m ≥ 1`, coefficients `c ∈ ℂ^m` and
 `u ∈ H²(ℂ)`, the defect `Φ(c, u) = Δu - h_c (exp (2u) - 1) / 8 - k_c ∈ L²(ℂ)` of the reduced
@@ -437,9 +455,7 @@ equation for the zero divisor of `P_c = TauCeti.Polynomial.monicOfCoeff c`
 `(exp (2u) - 1) - φ_c (exp (2u) - 1)` with the bounded defect `φ_c = 1 - h_c`. -/
 def reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{2}(ℂ)) : Lp ℂ 2 (volume : Measure ℂ) :=
   inclusionLp le_rfl (laplacianCLM (by norm_num) u) -
-    (8⁻¹ : ℂ) • (inclusionLp zero_le_two (expTwo u) -
-      mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
-        (inclusionLp zero_le_two (expTwo u))) -
+    (8⁻¹ : ℂ) • backgroundWeightMulL c (inclusionLp zero_le_two (expTwo u)) -
     backgroundSourceLp hm c
 
 /-- **The values of the reduced equation map.** `Φ(c, u)` is almost everywhere
@@ -451,23 +467,15 @@ theorem coeFn_reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{2}(ℂ
         (backgroundWeight ((monicOfCoeff c).eval ·) z : ℂ) *
           (Complex.exp (2 * inclusionLp zero_le_two u z) - 1) / 8 -
         (backgroundSource ((monicOfCoeff c).eval ·) z : ℂ) := by
-  set E := inclusionLp zero_le_two (expTwo u)
-  set F := mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) E
-  have hE : ⇑E =ᵐ[volume] fun z ↦ Complex.exp (2 * inclusionLp zero_le_two u z) - 1 :=
-    coeFn_inclusionLp_expTwo u
+  set H := backgroundWeightMulL c (inclusionLp zero_le_two (expTwo u))
   filter_upwards [Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) u) -
-      (8⁻¹ : ℂ) • (E - F)) (backgroundSourceLp hm c),
-    Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) u))
-      ((8⁻¹ : ℂ) • (E - F)),
-    Lp.coeFn_smul (8⁻¹ : ℂ) (E - F),
-    Lp.coeFn_sub E (F),
-    coeFn_mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) E, hE,
-    coeFn_backgroundSourceLp hm c]
-    with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
+      (8⁻¹ : ℂ) • H) (backgroundSourceLp hm c),
+    Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) u)) ((8⁻¹ : ℂ) • H),
+    Lp.coeFn_smul (8⁻¹ : ℂ) H, coeFn_backgroundWeightMulL c (inclusionLp zero_le_two (expTwo u)),
+    coeFn_inclusionLp_expTwo u, coeFn_backgroundSourceLp hm c]
+    with z h₁ h₂ h₃ h₄ h₅ h₆
   simp only [reducedEquationMap]
-  rw [h₁, Pi.sub_apply, h₂, Pi.sub_apply, h₃, Pi.smul_apply, h₄, Pi.sub_apply, h₅, h₆, h₇,
-    backgroundDefect_apply, backgroundWeight_eq_one_sub_inv, smul_eq_mul, smul_eq_mul]
-  push_cast
+  rw [h₁, Pi.sub_apply, h₂, Pi.sub_apply, h₃, Pi.smul_apply, h₄, h₅, h₆, smul_eq_mul]
   ring
 
 /-- **The reduced vortex equation map is smooth** jointly in the coefficients `c ∈ ℂ^m` and the
@@ -486,7 +494,7 @@ theorem contDiff_reducedEquationMap (hm : 0 < m) :
         (inclusionLp zero_le_two (expTwo p.2)) :=
     ((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).isBoundedBilinearMap.contDiff.restrict_scalars ℝ).comp
       ((contDiff_backgroundDefect_monicOfCoeff.comp contDiff_fst).prodMk hE)
-  unfold reducedEquationMap
+  simp only [reducedEquationMap, backgroundWeightMulL_apply]
   exact (hΔ.sub ((hE.sub hmul).const_smul (8⁻¹ : ℂ))).sub
     ((contDiff_backgroundSourceLp hm).comp contDiff_fst)
 
@@ -495,9 +503,8 @@ theorem contDiff_reducedEquationMap (hm : 0 < m) :
 def reducedLinearization (c : Fin m → ℂ) (u : H^{2}(ℂ)) :
     H^{2}(ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) :=
   (inclusionLp le_rfl).comp (laplacianCLM (by norm_num)) -
-    (4⁻¹ : ℂ) • (inclusionLp zero_le_two -
-      (mulLpL volume 2 (backgroundDefect (monicOfCoeff c))).comp
-        (inclusionLp zero_le_two)).comp (mulCLM finrank_lt (expTwo u) + ContinuousLinearMap.id ℂ _)
+    (4⁻¹ : ℂ) • ((backgroundWeightMulL c).comp (inclusionLp zero_le_two)).comp
+      (mulCLM finrank_lt (expTwo u) + ContinuousLinearMap.id ℂ _)
 
 /-- **The partial derivative of the reduced equation map in the correction.** -/
 theorem hasFDerivAt_reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{2}(ℂ)) :
@@ -509,9 +516,8 @@ theorem hasFDerivAt_reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{
     ext v
     simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply,
       map_smul, expTwo]
-  set A : H^{2}(ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) := inclusionLp zero_le_two -
-    (mulLpL volume 2 (backgroundDefect (monicOfCoeff c))).comp
-      (inclusionLp zero_le_two)
+  set A : H^{2}(ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) :=
+    (backgroundWeightMulL c).comp (inclusionLp zero_le_two)
   have hA : HasFDerivAt (fun u ↦ A (expTwo u)) (A.comp ((2 : ℂ) •
       (mulCLM finrank_lt (expTwo u) + ContinuousLinearMap.id ℂ _))) u :=
     A.hasFDerivAt.comp u hexp
@@ -534,35 +540,22 @@ theorem coeFn_reducedLinearization (c : Fin m → ℂ) (u v : H^{2}(ℂ)) :
   set W := mulCLM finrank_lt (expTwo u) v + v
   have hW : ⇑(inclusionLp zero_le_two W) =ᵐ[volume] fun z ↦
       Complex.exp (2 * inclusionLp zero_le_two u z) * inclusionLp zero_le_two v z := by
-    have hmul := coeFn_toLp_inclusion_mulCLM finrank_lt zero_le_two (expTwo u) v
-    simp only [toLp_inclusion] at hmul
-    filter_upwards [(by rw [map_add]; exact Lp.coeFn_add _ _ :
-        ⇑(inclusionLp zero_le_two W) =ᵐ[volume]
-          ⇑(inclusionLp zero_le_two (mulCLM finrank_lt (expTwo u) v)) +
-            ⇑(inclusionLp zero_le_two v)), hmul, coeFn_inclusionLp_expTwo u]
+    filter_upwards [coeFn_inclusionLp_add zero_le_two (mulCLM finrank_lt (expTwo u) v) v,
+      coeFn_inclusionLp_mulCLM finrank_lt zero_le_two (expTwo u) v, coeFn_inclusionLp_expTwo u]
       with z h₁ h₂ h₃
-    rw [h₁, Pi.add_apply, h₂, h₃]
+    rw [h₁, h₂, h₃]
     ring
-  have hval : reducedLinearization c u v = inclusionLp le_rfl (laplacianCLM (by norm_num) v) -
-      (4⁻¹ : ℂ) • (inclusionLp zero_le_two W - mulLpL volume 2
-        (backgroundDefect (monicOfCoeff c)) (inclusionLp zero_le_two W)) := by
-    simp only [reducedLinearization, ContinuousLinearMap.comp_add, ContinuousLinearMap.sub_comp,
-      ContinuousLinearMap.comp_id, smul_add, sub_apply, ContinuousLinearMap.comp_apply,
-      add_apply, smul_apply, map_add, sub_right_inj, W]
-    module
+  set H := backgroundWeightMulL c (inclusionLp zero_le_two W)
+  have hval : reducedLinearization c u v =
+      inclusionLp le_rfl (laplacianCLM (by norm_num) v) - (4⁻¹ : ℂ) • H := by
+    simp only [reducedLinearization, sub_apply, smul_apply, ContinuousLinearMap.comp_apply,
+      add_apply, ContinuousLinearMap.id_apply, H, W]
   rw [hval]
-  set G := mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
-    (inclusionLp zero_le_two W)
   filter_upwards [Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) v))
-      ((4⁻¹ : ℂ) • (inclusionLp zero_le_two W - G)),
-    Lp.coeFn_smul (4⁻¹ : ℂ) (inclusionLp zero_le_two W - G),
-    Lp.coeFn_sub (inclusionLp zero_le_two W) G,
-    coeFn_mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
-      (inclusionLp zero_le_two W), hW]
-    with z h₁ h₂ h₃ h₄ h₅
-  rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, Pi.sub_apply, h₄, h₅, backgroundDefect_apply,
-    backgroundWeight_eq_one_sub_inv, smul_eq_mul, smul_eq_mul]
-  push_cast
+      ((4⁻¹ : ℂ) • H), Lp.coeFn_smul (4⁻¹ : ℂ) H,
+    coeFn_backgroundWeightMulL c (inclusionLp zero_le_two W), hW]
+    with z h₁ h₂ h₃ h₄
+  rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, h₄, smul_eq_mul]
   ring
 
 /-- **Zeros of the reduced equation map are the classical solutions.** Let the `L²` function of
@@ -580,10 +573,7 @@ theorem reducedEquationMap_eq_zero_iff (hm : 0 < m) (c : Fin m → ℂ) {u : H^{
     push_cast
     ring
   have hcont : Continuous g := by
-    have hΔ : Continuous (Δ w) := by
-      rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-      exact continuous_finsetSum _ fun i _ ↦
-        (continuous_eval_const _).comp (hw.continuous_iteratedFDeriv le_rfl)
+    have hΔ : Continuous (Δ w) := hw.continuous_laplacian
     have hP : Continuous ((monicOfCoeff c).eval ·) := (monicOfCoeff c).continuous
     refine Complex.continuous_ofReal.comp (hΔ.sub ?_)
     rw [funext (reducedSource_def (monicOfCoeff c) w)]

@@ -64,7 +64,9 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.toLp_inclusion_injective`: an element is determined by the `Lᵖ` function
   of its inclusion, and `BesselPotentialSpace.coeFn_toLp_inclusion_add`,
   `BesselPotentialSpace.coeFn_toLp_inclusion_smul`: that function is additive and homogeneous
-  almost everywhere.
+  almost everywhere, as is the function of `inclusionLp`
+  (`BesselPotentialSpace.coeFn_inclusionLp_add`, `BesselPotentialSpace.coeFn_inclusionLp_sub`,
+  `BesselPotentialSpace.coeFn_inclusionLp_smul`).
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
   `H^{0,p}(E, G) = Lᵖ` exhibits every element of `H^{s,p}(E, G)` as an `Lᵖ` function, which lies
   in `H^{s,p}` (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
@@ -243,6 +245,26 @@ theorem coeFn_toLp_inclusion_add (h : r ≤ s) (u v : H^{s, p}(E, G)) :
 theorem coeFn_toLp_inclusion_smul (h : r ≤ s) (c : ℂ) (u : H^{s, p}(E, G)) :
     ⇑(inclusion h (c • u)).toLp =ᵐ[volume] c • ⇑(inclusion h u).toLp := by
   rw [map_smul, toLp_smul]
+  exact Lp.coeFn_smul _ _
+
+/-- The `Lᵖ` function of `inclusionLp hs (u + v)` is almost everywhere the sum of those of `u`
+and `v`. -/
+theorem coeFn_inclusionLp_add (hs : 0 ≤ s) (u v : H^{s, p}(E, G)) :
+    ⇑(inclusionLp hs (u + v)) =ᵐ[volume] fun x ↦ inclusionLp hs u x + inclusionLp hs v x := by
+  rw [map_add]
+  exact Lp.coeFn_add _ _
+
+/-- The `Lᵖ` function of `inclusionLp hs (u - v)` is almost everywhere the difference of those of
+`u` and `v`. -/
+theorem coeFn_inclusionLp_sub (hs : 0 ≤ s) (u v : H^{s, p}(E, G)) :
+    ⇑(inclusionLp hs (u - v)) =ᵐ[volume] fun x ↦ inclusionLp hs u x - inclusionLp hs v x := by
+  rw [map_sub]
+  exact Lp.coeFn_sub _ _
+
+/-- The `Lᵖ` function of `inclusionLp hs (c • u)` is almost everywhere `c` times that of `u`. -/
+theorem coeFn_inclusionLp_smul (hs : 0 ≤ s) (c : ℂ) (u : H^{s, p}(E, G)) :
+    ⇑(inclusionLp hs (c • u)) =ᵐ[volume] fun x ↦ c • inclusionLp hs u x := by
+  rw [map_smul]
   exact Lp.coeFn_smul _ _
 
 /-- **Elements of `H^{s,p}`, `s ≥ 0`, are `Lᵖ` functions.** The `Lᵖ` function underlying the

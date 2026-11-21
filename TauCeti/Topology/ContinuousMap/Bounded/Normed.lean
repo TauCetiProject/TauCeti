@@ -52,7 +52,7 @@ real function is a uniform limit of finite-valued bounded functions.
 `BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
 bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
 
-`BoundedContinuousFunction.ring_inverse_apply` says that the inverse of a unit of the algebra of
+`BoundedContinuousFunction.ringInverse_apply` says that the inverse of a unit of the algebra of
 bounded continuous functions with values in a normed division ring is computed pointwise.
 
 `BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
@@ -281,7 +281,7 @@ theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f 
 
 /-- The inverse of a unit of the algebra of bounded continuous functions with values in a normed
 division ring is computed pointwise. -/
-theorem ring_inverse_apply {α 𝕜 : Type*} [TopologicalSpace α] [NormedDivisionRing 𝕜]
+theorem ringInverse_apply {α 𝕜 : Type*} [TopologicalSpace α] [NormedDivisionRing 𝕜]
     {F : α →ᵇ 𝕜} (hF : IsUnit F) (x : α) : Ring.inverse F x = (F x)⁻¹ := by
   have h := congrArg (fun G : α →ᵇ 𝕜 ↦ G x) (Ring.mul_inverse_cancel F hF)
   simp only [mul_apply, one_apply] at h
