@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+public import TauCeti.GroupTheory.PresentedGroup
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 
 /-!
@@ -36,9 +37,9 @@ with the common kernel of the Fox maps of the relators (`Representation.presente
 a tuple `v` satisfying these relator conditions defines, through `PresentedGroup.toGroup`, a
 homomorphism from `G` to the affine automorphisms of `V`, whose translation part is the cocycle.
 This is the standard computation of `Z¹` from a presentation, used for surface groups in
-`TauCeti.RepresentationTheory.Homological.GroupCohomology.SurfaceGroup`. In particular `Z¹(G, V)`
-is a finite module when there are finitely many generators and `V` is finite over a Noetherian
-ring.
+`TauCeti.RepresentationTheory.Homological.GroupCohomology.SurfaceGroup`. With finitely many
+generators `G` is finitely generated (`PresentedGroup.fg`), so `Z¹(G, V)` is a finite module when
+`V` is finite over a Noetherian ring, by the instance for finitely generated groups.
 
 ## References
 
@@ -193,15 +194,6 @@ theorem cocyclesEvalOf_injective : Function.Injective (cocyclesEvalOf ρ) := fun
   cocycles₁_ext_of_closure_eq_top (PresentedGroup.closure_range_of rels) <| by
     rintro _ ⟨x, rfl⟩
     exact congrFun h x
-
-/-- **The one-cocycles of a presented group on finitely many generators are finite.** Such a
-group is finitely generated, so for a finite module `V` over a Noetherian ring `Z¹(⟨X | R⟩, V)` is
-finite by the instance for finitely generated groups. -/
-instance [IsNoetherianRing k] [Finite X] [Module.Finite k V] :
-    Module.Finite k (cocycles₁ (Rep.of ρ)) :=
-  have : Group.FG (PresentedGroup rels) :=
-    Group.fg_of_surjective (PresentedGroup.mk_surjective rels)
-  inferInstance
 
 /-- **The Fox map evaluates a cocycle of the presented group.** The Fox map of a word `w`, for
 the representation pulled back to the free group, sends the generator values of a cocycle `f`
