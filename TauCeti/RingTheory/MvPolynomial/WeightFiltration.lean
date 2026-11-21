@@ -640,7 +640,7 @@ algebra of the weight filtration. -/
 theorem weightReesAeval_mem_weightReesAlgebra (hc : ∀ i, c i ∈ weightFiltration R w (d i))
     (f : (MvPolynomial ι R)[X]) : weightReesAeval c d f ∈ weightReesAlgebra R w := by
   have hX : (Polynomial.X : (MvPolynomial σ R)[X]) ∈ weightReesAlgebra R w := by
-    simpa using (TauCeti.coeffSubalgebra.X _ (one_mem_weightFiltration_one R w)).2
+    simpa using (TauCeti.coeffSubalgebra.X _ (one_mem_weightFiltration_one R w)).property
   induction f using Polynomial.induction_on with
   | C p =>
     have hp : aeval (fun i ↦ Polynomial.C (c i) * Polynomial.X ^ d i) p ∈

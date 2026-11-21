@@ -62,8 +62,6 @@ import TauCeti.Data.Set.PowersetCard
   minimum.
 * `Finset.filter_min'_lt_eq_erase` identifies the elements above the minimum with the erasure of
   the minimum.
-* `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
-  a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
@@ -131,7 +129,7 @@ theorem card_nonempty_finset {ι : Type*} :
     let := Fintype.ofFinite ι
     have h : Fintype.card {S : Finset ι // S.Nonempty} = 2 ^ Fintype.card ι - 1 := by
       rw [Fintype.card_subtype]
-      simp_rw [Finset.nonempty_iff_ne_empty]
+      simp_rw [← Finset.ne_empty_iff_nonempty]
       rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
         Fintype.card_finset]
     rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
@@ -658,21 +656,6 @@ theorem neg_card_filter_lt_add_neg_card_filter_gt {α : Type*} [LinearOrder α] 
   have := card_filter_lt_add_card_filter_gt_add_one ht
   omega
 
-/-- Counting the elements of a finset `s` satisfying `p` against a pointwise decomposition, on `s`,
-of the indicator of `p` into the indicators of `q₁` and `q₂` and multiples `k₁` and `k₂` of the
-indicators of two elements `a` and `b` of `s`. -/
-theorem card_filter_eq_of_ite_eq {α : Type*} [DecidableEq α] {s : Finset α} {a b : α} (ha : a ∈ s)
-    (hb : b ∈ s) (p q₁ q₂ : α → Prop) [DecidablePred p] [DecidablePred q₁] [DecidablePred q₂]
-    (k₁ k₂ : ℕ)
-    (h : ∀ x ∈ s, (if p x then 1 else 0) = (if q₁ x then 1 else 0) + (if q₂ x then 1 else 0) +
-      k₁ * (if x = a then 1 else 0) + k₂ * (if x = b then 1 else 0)) :
-    #{x ∈ s | p x} = #{x ∈ s | q₁ x} + #{x ∈ s | q₂ x} + k₁ + k₂ := by
-  have h₁ : k₁ = ∑ x ∈ s, k₁ * (if x = a then 1 else 0) := by simp [ha]
-  have h₂ : k₂ = ∑ x ∈ s, k₂ * (if x = b then 1 else 0) := by simp [hb]
-  rw [card_filter, card_filter, card_filter, h₁, h₂, ← sum_add_distrib, ← sum_add_distrib,
-    ← sum_add_distrib]
-  exact sum_congr rfl h
-
 /-- The elements of a finset inside `Ioo a b` that lie below `t` lie in `Ioo a t`. -/
 theorem filter_lt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}
     {s : Finset α} [DecidablePred (· < t)] (hs : s ⊆ Ioo a b) : {x ∈ s | x < t} ⊆ Ioo a t :=
@@ -868,7 +851,7 @@ omitted point. -/
 theorem sum_piecewise_eq_sum_update_of_card_eq_succ {ι : Type*} {α : ι → Type*} {M : Type*}
     [Fintype ι] [DecidableEq ι] [AddCommMonoid M] {m : ℕ} (hm : Fintype.card ι = m + 1)
     (F : ((i : ι) → α i) → M) (f g : (i : ι) → α i) :
-    (∑ s : {s : Finset ι // s.card = m}, F (s.1.piecewise f g)) =
+    (∑ s : {s : Finset ι // s.card = m}, F (s.val.piecewise f g)) =
       ∑ i : ι, F (Function.update f i (g i)) := by
   refine (Fintype.sum_equiv (e := (Set.powersetCard.ofSingleton.trans
     (Set.powersetCard.compl hm.symm)).trans

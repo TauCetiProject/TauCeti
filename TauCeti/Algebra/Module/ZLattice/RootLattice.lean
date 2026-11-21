@@ -177,7 +177,7 @@ theorem signedDiscr_sqrt_two_smul_realModel_typeE₈RootLattice :
     ZLattice.signedDiscr
       (√(2 : ℝ) • typeE₈RootLattice.realModel isPosDef_typeE₈RootLattice) = 256 := by
   have := (isIntegral_realModel typeE₈RootLattice isPosDef_typeE₈RootLattice).signedDiscr_sqrt_smul
-    (m := 2) two_ne_zero
+    (m := 2)
   push_cast at this
   rw [this, signedDiscr_realModel_typeE₈RootLattice, RealModelSpace.finrank_eq, finrank_carrier,
     Module.finrank_fin_fun]
