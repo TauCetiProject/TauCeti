@@ -45,11 +45,17 @@ results also hold for the stalks of Mathlib's complex-smooth structure sheaf.
   formulas without assuming a global manifold structure.
 * `TauCeti.holomorphicStructureSheaf.stalkIsRegularLocalRing`: holomorphic stalks are regular
   local rings.
-* `TauCeti.holomorphicStructureSheaf.ringKrullDim_stalk`: their Krull dimension is the complex
-  dimension of the model.
+* `TauCeti.holomorphicStructureSheaf.ringKrullDim_stalk`,
+  `TauCeti.holomorphicStructureSheaf.spanFinrank_maximalIdeal_stalk`,
+  `TauCeti.holomorphicStructureSheaf.spanFinrank_ker_eval`,
+  `TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_stalk`: their Krull dimension,
+  maximal-ideal generator count, and cotangent dimension equal the complex dimension of the
+  model.
 * `TauCeti.holomorphicStructureSheaf.smoothStalkIsRegularLocalRing`,
-  `TauCeti.holomorphicStructureSheaf.ringKrullDim_smoothStalk`: the same for the stalks of the
-  complex-smooth structure sheaf.
+  `TauCeti.holomorphicStructureSheaf.ringKrullDim_smoothStalk`,
+  `TauCeti.holomorphicStructureSheaf.spanFinrank_maximalIdeal_smoothStalk`,
+  `TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_smoothStalk`: the same for the stalks
+  of the complex-smooth structure sheaf.
 
 ## References
 
@@ -149,11 +155,36 @@ instance stalkIsRegularLocalRing (x : X) :
 
 /-- The Krull dimension of the holomorphic stalk at any point of a finite-dimensional complex
 manifold without boundary is the complex dimension of its model. -/
+@[simp]
 theorem ringKrullDim_stalk (x : X) :
     ringKrullDim ((holomorphicStructureSheaf I X).presheaf.stalk x) = finrank ℂ E := by
   let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   exact (chartAt H x).ringKrullDim_holomorphicStalk
     (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)
+
+/-- The minimal number of generators of the maximal ideal of a holomorphic stalk equals the
+complex dimension of the manifold model. -/
+theorem spanFinrank_maximalIdeal_stalk (x : X) :
+    (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
+      finrank ℂ E := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  exact (chartAt H x).spanFinrank_maximalIdeal_holomorphicStalk
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)
+
+/-- The kernel of evaluation on a holomorphic stalk needs as many generators as the complex
+model dimension. This is the generator count in the simp normal form of the maximal ideal. -/
+@[simp]
+theorem spanFinrank_ker_eval (x : X) :
+    (RingHom.ker (eval I X x)).spanFinrank = finrank ℂ E := by
+  rw [← maximalIdeal_stalk, spanFinrank_maximalIdeal_stalk]
+
+/-- The dimension of the algebraic cotangent space of a holomorphic stalk over its residue field
+equals the complex dimension of the manifold model. -/
+@[simp]
+theorem finrank_cotangentSpace_stalk (x : X) :
+    finrank (ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))
+      (CotangentSpace ((holomorphicStructureSheaf I X).presheaf.stalk x)) = finrank ℂ E := by
+  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace, spanFinrank_maximalIdeal_stalk]
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a regular local ring, via its comparison with holomorphic germs. -/
@@ -163,9 +194,27 @@ instance smoothStalkIsRegularLocalRing (x : X) :
 
 /-- The Krull dimension of a stalk of Mathlib's complex-smooth structure sheaf on a
 finite-dimensional complex manifold without boundary is the complex dimension of its model. -/
+@[simp]
 theorem ringKrullDim_smoothStalk (x : X) :
     ringKrullDim ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x) = finrank ℂ E := by
   rw [← ringKrullDim_eq_of_ringEquiv (smoothStalkIso I X x).commRingCatIsoToRingEquiv,
     ringKrullDim_stalk]
+
+/-- The maximal ideal of the native complex-smooth stalk needs as many generators as the
+complex model dimension. -/
+@[simp]
+theorem spanFinrank_maximalIdeal_smoothStalk (x : X) :
+    (maximalIdeal ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).spanFinrank =
+      finrank ℂ E := by
+  rw [← map_ringEquiv_maximalIdeal (smoothStalkIso I X x).commRingCatIsoToRingEquiv,
+    Ideal.spanFinrank_map_eq_of_ringEquiv, spanFinrank_maximalIdeal_stalk]
+
+/-- The dimension of the algebraic cotangent space of a complex-smooth structure-sheaf stalk over
+its residue field equals the complex dimension of the manifold model. -/
+@[simp]
+theorem finrank_cotangentSpace_smoothStalk (x : X) :
+    finrank (ResidueField ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x))
+      (CotangentSpace ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)) = finrank ℂ E := by
+  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace, spanFinrank_maximalIdeal_smoothStalk]
 
 end TauCeti.holomorphicStructureSheaf

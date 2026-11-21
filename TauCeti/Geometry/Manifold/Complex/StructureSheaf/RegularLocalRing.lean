@@ -6,29 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Cotangent
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Dimension
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Noetherian
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Regular
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-import Mathlib.Algebra.Module.SpanRankOperations
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Coordinate parameters of regular holomorphic local rings
 
-The local ring of holomorphic germs on a finite-dimensional complex manifold without boundary
-is regular, of Krull dimension equal to the complex dimension of the model
-(`TauCeti.holomorphicStructureSheaf.stalkIsRegularLocalRing`,
-`TauCeti.holomorphicStructureSheaf.ringKrullDim_stalk`). Its maximal ideal needs exactly that many
-generators (`TauCeti.holomorphicStructureSheaf.spanFinrank_maximalIdeal_stalk`), by the
-cotangent-space calculation.
+Centered coordinates in any holomorphic chart form a regular sequence in the holomorphic local
+ring (`OpenPartialHomeomorph.isRegular_ofFn_holomorphicLinearCoordinateGerm`). Thus successive
+coordinate equations are non-zero-divisors on the successive quotients. This is the local algebra
+underlying smooth holomorphic zero sets.
 
-Centered coordinates in any holomorphic chart form a regular sequence, not merely a generating
-family of the maximal ideal. Thus successive coordinate equations are non-zero-divisors on the
-successive quotients. This is the local algebra underlying smooth holomorphic zero sets.
-The generator count also applies to the native complex-smooth sheaf stalks through their
-canonical comparison with holomorphic germs.
+Moreover, any holomorphic germ vanishing at the base point with nonzero derivative in a chart
+generates a prime ideal, and is prime and irreducible in the holomorphic stalk
+(`OpenPartialHomeomorph.isPrime_span_of_holomorphicStalkFDeriv_ne_zero`,
+`OpenPartialHomeomorph.prime_of_holomorphicStalkFDeriv_ne_zero`,
+`OpenPartialHomeomorph.irreducible_of_holomorphicStalkFDeriv_ne_zero`). In particular, this
+applies to centered linear coordinate germs along nonzero functionals.
 
 ## References
 
@@ -40,60 +35,6 @@ public noncomputable section
 
 open IsLocalRing
 open scoped ContDiff Manifold
-
-namespace TauCeti.holomorphicStructureSheaf
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
-  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
-
-/-- The minimal number of generators of the maximal ideal of a holomorphic stalk equals the
-complex dimension of the manifold model. -/
-theorem spanFinrank_maximalIdeal_stalk (x : X) :
-    (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
-      Module.finrank ℂ E := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  rw [← Ideal.spanFinrank_map_eq_of_ringEquiv
-    (stalkEquivModelSpace (I := I) (V := Fin (Module.finrank ℂ E) → ℂ) x
-      (ContinuousLinearEquiv.ofFinrankEq (by simp))),
-    map_ringEquiv_maximalIdeal, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
-  let V := Fin (Module.finrank ℂ E) → ℂ
-  exact ((OpenPartialHomeomorph.refl V).finrank_cotangentSpace_holomorphicStalk
-    _ (Set.mem_univ _)
-    (StructureGroupoid.id_mem_maximalAtlas (contDiffGroupoid ω 𝓘(ℂ, V)))).trans (by simp [V])
-
-/-- The dimension of the algebraic cotangent space of a holomorphic stalk over its residue field
-equals the complex dimension of the manifold model. -/
-theorem finrank_cotangentSpace_stalk (x : X) :
-    Module.finrank (ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))
-      (CotangentSpace ((holomorphicStructureSheaf I X).presheaf.stalk x)) = Module.finrank ℂ E := by
-  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace, spanFinrank_maximalIdeal_stalk]
-
-/-- The kernel of evaluation on a holomorphic stalk needs as many generators as the complex
-model dimension. This is the generator count in the simp normal form of the maximal ideal. -/
-@[simp]
-theorem spanFinrank_ker_eval (x : X) :
-    (RingHom.ker (eval I X x)).spanFinrank = Module.finrank ℂ E := by
-  rw [← maximalIdeal_stalk, spanFinrank_maximalIdeal_stalk]
-
-/-- The maximal ideal of the native complex-smooth stalk needs as many generators as the
-complex model dimension. -/
-@[simp]
-theorem spanFinrank_maximalIdeal_smoothStalk (x : X) :
-    (maximalIdeal ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).spanFinrank =
-      Module.finrank ℂ E := by
-  rw [← map_ringEquiv_maximalIdeal (smoothStalkIso I X x).commRingCatIsoToRingEquiv,
-    Ideal.spanFinrank_map_eq_of_ringEquiv, spanFinrank_maximalIdeal_stalk]
-
-/-- The dimension of the algebraic cotangent space of a complex-smooth structure-sheaf stalk over
-its residue field equals the complex dimension of the manifold model. -/
-theorem finrank_cotangentSpace_smoothStalk (x : X) :
-    Module.finrank (ResidueField ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x))
-      (CotangentSpace ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)) =
-        Module.finrank ℂ E := by
-  rw [← spanFinrank_maximalIdeal_eq_finrank_cotangentSpace, spanFinrank_maximalIdeal_smoothStalk]
-
-end TauCeti.holomorphicStructureSheaf
 
 namespace OpenPartialHomeomorph
 
@@ -121,36 +62,64 @@ theorem isRegular_ofFn_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorp
     exact (e.ker_eval_eq_span_holomorphicLinearCoordinateGerm he b hx).symm
   · simp only [List.length_ofFn, hspan, le_refl]
 
+/-- A holomorphic germ vanishing at `x` with nonzero derivative in a chart generates a prime ideal
+in the holomorphic stalk. -/
+theorem isPrime_span_of_holomorphicStalkFDeriv_ne_zero (e : OpenPartialHomeomorph X E)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
+    {s : (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x}
+    (hs : s ∈ maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
+    (hds : e.holomorphicStalkFDeriv x hx s ≠ 0) :
+    (Ideal.span {s}).IsPrime := by
+  have := e.isRegularLocalRing_holomorphicStalk he hx
+  refine TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq hs fun hsq ↦ hds ?_
+  exact (e.holomorphicStalkFDeriv_eq_zero_iff x hx he ⟨s, hs⟩).2 hsq
+
+/-- A holomorphic germ vanishing at `x` with nonzero derivative in a chart is prime in the
+holomorphic stalk. -/
+theorem prime_of_holomorphicStalkFDeriv_ne_zero (e : OpenPartialHomeomorph X E)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
+    {s : (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x}
+    (hs : s ∈ maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
+    (hds : e.holomorphicStalkFDeriv x hx s ≠ 0) :
+    Prime s := by
+  have := e.isRegularLocalRing_holomorphicStalk he hx
+  refine (Ideal.span_singleton_prime fun h0 ↦ hds ?_).1
+    (e.isPrime_span_of_holomorphicStalkFDeriv_ne_zero he x hx hs hds)
+  simp [h0]
+
+/-- A holomorphic germ vanishing at `x` with nonzero derivative in a chart is irreducible in the
+holomorphic stalk. -/
+theorem irreducible_of_holomorphicStalkFDeriv_ne_zero (e : OpenPartialHomeomorph X E)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
+    {s : (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x}
+    (hs : s ∈ maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
+    (hds : e.holomorphicStalkFDeriv x hx s ≠ 0) :
+    Irreducible s := by
+  have := e.isRegularLocalRing_holomorphicStalk he hx
+  exact (e.prime_of_holomorphicStalkFDeriv_ne_zero he x hx hs hds).irreducible
+
 /-- For any nonzero continuous linear functional `ℓ` on `E`, the centered linear coordinate germ
 along `ℓ` generates a prime ideal in the holomorphic stalk. -/
 theorem isPrime_span_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
     {ℓ : StrongDual ℂ E} (hℓ : ℓ ≠ 0) :
-    (Ideal.span {e.holomorphicLinearCoordinateGerm he x ℓ hx}).IsPrime := by
-  have := e.isRegularLocalRing_holomorphicStalk he hx
-  have hm : e.holomorphicLinearCoordinateGerm he x ℓ hx ∈
-      maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) := by simp
-  refine TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq hm fun hsq ↦ hℓ ?_
-  simpa using (e.holomorphicStalkFDeriv_eq_zero_iff x hx he ⟨_, hm⟩).2 hsq
+    (Ideal.span {e.holomorphicLinearCoordinateGerm he x ℓ hx}).IsPrime :=
+  e.isPrime_span_of_holomorphicStalkFDeriv_ne_zero he x hx (by simp) (by simpa)
 
 /-- For any nonzero continuous linear functional `ℓ` on `E`, the centered linear coordinate germ
 along `ℓ` is prime in the holomorphic stalk. -/
 theorem prime_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
     {ℓ : StrongDual ℂ E} (hℓ : ℓ ≠ 0) :
-    Prime (e.holomorphicLinearCoordinateGerm he x ℓ hx) := by
-  have := e.isRegularLocalRing_holomorphicStalk he hx
-  refine (Ideal.span_singleton_prime fun h0 ↦ hℓ ?_).1
-    (e.isPrime_span_holomorphicLinearCoordinateGerm he x hx hℓ)
-  simpa [h0] using (e.holomorphicStalkFDeriv_holomorphicLinearCoordinateGerm x hx he ℓ).symm
+    Prime (e.holomorphicLinearCoordinateGerm he x ℓ hx) :=
+  e.prime_of_holomorphicStalkFDeriv_ne_zero he x hx (by simp) (by simpa)
 
 /-- For any nonzero continuous linear functional `ℓ` on `E`, the centered linear coordinate germ
 along `ℓ` is irreducible in the holomorphic stalk. -/
 theorem irreducible_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
     {ℓ : StrongDual ℂ E} (hℓ : ℓ ≠ 0) :
-    Irreducible (e.holomorphicLinearCoordinateGerm he x ℓ hx) := by
-  have := e.isRegularLocalRing_holomorphicStalk he hx
-  exact (e.prime_holomorphicLinearCoordinateGerm he x hx hℓ).irreducible
+    Irreducible (e.holomorphicLinearCoordinateGerm he x ℓ hx) :=
+  e.irreducible_of_holomorphicStalkFDeriv_ne_zero he x hx (by simp) (by simpa)
 
 end OpenPartialHomeomorph
