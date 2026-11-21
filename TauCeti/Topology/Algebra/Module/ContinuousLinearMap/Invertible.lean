@@ -31,7 +31,11 @@ topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
 (`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
 
 A one-sided inverse of an invertible map is its inverse
-(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
+(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`). A composite
+`g ∘L f` with `g` injective is invertible exactly when both factors are
+(`ContinuousLinearMap.isInvertible_comp_iff_of_injective_left`), without any dimension or
+completeness assumption; this is how invertibility of a derivative of a composite passes to
+the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`).
@@ -104,6 +108,33 @@ theorem IsInvertible.eq_inverse_of_comp_eq_id_right (hf : f.IsInvertible)
   rw [← id_comp g, ← hf.inverse_comp_self, comp_assoc, h, comp_id]
 
 end OneSided
+
+section Comp
+
+variable {R M₁ M₂ M₃ : Type*} [Semiring R]
+  [TopologicalSpace M₁] [AddCommMonoid M₁] [Module R M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R M₃]
+
+/-- A composite `g ∘L f` whose outer factor `g` is injective is invertible exactly when both
+factors are. No dimension or completeness assumption is needed: if `g ∘L f` is a continuous
+linear equivalence `e`, then `e.symm ∘L g` is a continuous inverse of `f`. -/
+theorem isInvertible_comp_iff_of_injective_left {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
+    (hg : Function.Injective g) : (g ∘L f).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
+  refine ⟨fun ⟨e, he⟩ ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
+  have hcomp (v : M₁) : g (f v) = e v := by
+    rw [← ContinuousLinearEquiv.coe_coe, he, comp_apply]
+  -- `e.symm ∘L g` is a left inverse of `f` by construction, and a right inverse after
+  -- cancelling the injective `g`.
+  obtain ⟨φ, hφ⟩ : f.IsInvertible := .of_inverse (g := e.symm.toContinuousLinearMap ∘L g)
+    (ContinuousLinearMap.ext fun y ↦ hg (by simp [hcomp]))
+    (ContinuousLinearMap.ext fun v ↦ by simp [hcomp])
+  -- Then `g ∘L φ = e`, so `g` is invertible as well.
+  refine ⟨⟨φ, hφ⟩, (isInvertible_comp_equiv (e := φ)).1 ?_⟩
+  rw [hφ, ← he]
+  exact isInvertible_equiv
+
+end Comp
 
 section CompleteSpace
 
