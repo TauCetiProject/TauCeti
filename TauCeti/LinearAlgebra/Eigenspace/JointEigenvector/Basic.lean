@@ -397,7 +397,9 @@ variable (ρ) in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
   rw [fourierComponent]
-  exact Submodule.mem_iInf _ |>.1 (Representation.asAlgebraHom_charIdempotent_apply_mem ρ χ₀ v) g
+  exact Module.End.mem_eigenspace_iff.2 <|
+    (Representation.mem_charEigenspace_iff ρ χ₀).1
+      (Representation.asAlgebraHom_charIdempotent_apply_mem ρ χ₀ v) g
 
 end FourierProjector
 
