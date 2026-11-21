@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.Unblocked
 public import TauCeti.LinearAlgebra.Graded.LinearMap
@@ -52,7 +55,12 @@ is graded here is `GC⁻` itself and the pieces are submodules of it.
 
 Forgetting the `O`-Maslov component gives the Alexander grading of `GC⁻`
 (`OddComponentGridDiagram.alexanderChainMinusGrading`), an internal grading over `R` which `∂⁻`
-preserves and in which each variable `V_c` has degree `-1`. This is the grading that descends to
+preserves and in which each variable `V_c` has degree `-1`. Projecting bidegrees onto their second
+coordinate coarsens the chain bigrading to this Alexander grading
+(`OddComponentGridDiagram.coarsen_bigradedChainMinusGrading_snd`), and every Maslov--Alexander or
+Alexander piece of `GC⁻` is finitely generated over `R`
+(`OddComponentGridDiagram.finite_bigradedChainMinusPiece`,
+`OddComponentGridDiagram.finite_alexanderChainMinusPiece`). This is the grading that descends to
 the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` is read off.
 
 ## Main definitions
@@ -91,6 +99,12 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
   `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece_add`).
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
+* `TauCeti.OddComponentGridDiagram.finite_bigradedChainMinusPiece` and
+  `TauCeti.OddComponentGridDiagram.finite_alexanderChainMinusPiece`: each bigraded and each
+  Alexander chain piece of `GC⁻` is finitely generated over `R`.
+* `TauCeti.OddComponentGridDiagram.coarsenGrading_bigradedChainMinusPiece_snd` and
+  `TauCeti.OddComponentGridDiagram.coarsen_bigradedChainMinusGrading_snd`: projecting bidegrees to
+  their Alexander coordinate coarsens the chain bigrading to the Alexander chain grading.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
   and `TauCeti.OddComponentGridDiagram.X_smul_mem_alexanderChainMinusPiece`: `∂⁻` preserves the
   Alexander grading and each variable `V_c` lowers it by one.
@@ -234,13 +248,13 @@ noncomputable def monomialBidegree (x : GridState n) (e : Fin n →₀ ℕ) : �
 /-- The `O`-Maslov component of the bidegree of `V^e · x`. -/
 @[simp]
 theorem monomialBidegree_fst (x : GridState n) (e : Fin n →₀ ℕ) :
-    (G.monomialBidegree x e).1 = G.val.maslovOℤ x - 2 * (e.degree : ℤ) := by
+    (G.monomialBidegree x e).fst = G.val.maslovOℤ x - 2 * (e.degree : ℤ) := by
   rw [monomialBidegree, Prod.fst_sub, bidegree_fst]
 
 /-- The Alexander component of the bidegree of `V^e · x`. -/
 @[simp]
 theorem monomialBidegree_snd (x : GridState n) (e : Fin n →₀ ℕ) :
-    (G.monomialBidegree x e).2 = G.alexanderℤ x - (e.degree : ℤ) := by
+    (G.monomialBidegree x e).snd = G.alexanderℤ x - (e.degree : ℤ) := by
   rw [monomialBidegree, Prod.snd_sub, bidegree_snd]
 
 /-- Renaming the input variables and multiplying by a squarefree weight raises the bidegree by
@@ -248,8 +262,8 @@ theorem monomialBidegree_snd (x : GridState n) (e : Fin n →₀ ℕ) :
 weight's size. -/
 theorem monomialBidegree_mapDomain_add_sum_eq_add (G' : OddComponentGridDiagram n)
     (σ : Equiv.Perm (Fin n)) (d : Fin n →₀ ℕ) (S : Finset (Fin n)) (δ : ℤ × ℤ)
-    (hM : G'.val.maslovOℤ y = G.val.maslovOℤ x + δ.1 + 2 * (S.card : ℤ))
-    (hA : G'.alexanderℤ y = G.alexanderℤ x + δ.2 + S.card) :
+    (hM : G'.val.maslovOℤ y = G.val.maslovOℤ x + δ.fst + 2 * (S.card : ℤ))
+    (hA : G'.alexanderℤ y = G.alexanderℤ x + δ.snd + S.card) :
     G'.monomialBidegree y
       (Finsupp.mapDomain σ d + ∑ c ∈ S, Finsupp.single (σ c) 1) =
       G.monomialBidegree x d + δ := by
@@ -327,6 +341,39 @@ private theorem bigradedChainMinusSupported_mono {R : Type*} [CommSemiring R] {S
     (h : S ⊆ T) : G.bigradedChainMinusSupported R S ≤ G.bigradedChainMinusSupported R T :=
   fun _ hc x e he => h (hc x e he)
 
+private theorem bigradedChainMinusSupported_eq_span (R : Type*) [CommSemiring R]
+    (S : Set (ℤ × ℤ)) :
+    G.bigradedChainMinusSupported R S =
+      Submodule.span R
+        ((Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R) ''
+          {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd ∈ S}) := by
+  let b := Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R
+  ext c
+  rw [b.mem_span_image]
+  constructor
+  · intro hc ix hix
+    rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.basis_repr] at hix
+    exact hc ix.fst ix.snd (MvPolynomial.mem_support_iff.mpr hix)
+  · intro hc x e he
+    have hmem : (⟨x, e⟩ : Σ _ : GridState n, Fin n →₀ ℕ) ∈ (b.repr c).support := by
+      rw [Finsupp.mem_support_iff, Finsupp.basis_repr]
+      exact MvPolynomial.mem_support_iff.mp he
+    exact hc hmem
+
+private theorem finite_state_exponent_of_alexander_eq (a : ℤ) :
+    {ix : Σ _ : GridState n, Fin n →₀ ℕ |
+      G.alexanderℤ ix.fst - (ix.snd.degree : ℤ) = a}.Finite := by
+  refine (Set.finite_iUnion fun x : GridState n ↦
+    (Finsupp.finite_of_degree_eq (G.alexanderℤ x - a).toNat).image (Sigma.mk x)).subset ?_
+  rintro ⟨x, e⟩ (h : G.alexanderℤ x - (e.degree : ℤ) = a)
+  exact Set.mem_iUnion.mpr ⟨x, e, by dsimp; omega, rfl⟩
+
+private theorem finite_bigradedChainMinusSupported (R : Type*) [CommSemiring R] {S : Set (ℤ × ℤ)}
+    (hfin : {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd ∈ S}.Finite) :
+    Module.Finite R (G.bigradedChainMinusSupported R S) := by
+  rw [G.bigradedChainMinusSupported_eq_span R S]
+  exact Module.Finite.iff_fg.mpr (Submodule.fg_span (hfin.image _))
+
 /-- The homogeneous piece of the unblocked grid chain module `GC⁻` in bidegree `g`: the chains all
 of whose monomials `V^e · x` have bidegree `g`.
 
@@ -335,6 +382,15 @@ over `R[V₀, …, V_{n-1}]`. -/
 def bigradedChainMinusPiece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
     Submodule R (GridChainMinus R n) :=
   G.bigradedChainMinusSupported R {g}
+
+/-- Each Maslov--Alexander homogeneous piece of `GC⁻` is finitely generated over the ground
+semiring. -/
+instance finite_bigradedChainMinusPiece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
+    Module.Finite R (G.bigradedChainMinusPiece R g) :=
+  G.finite_bigradedChainMinusSupported R <|
+    (G.finite_state_exponent_of_alexander_eq g.snd).subset
+      fun ix (hix : G.monomialBidegree _ _ = g) ↦
+        (G.monomialBidegree_snd ix.fst ix.snd).symm.trans (congrArg Prod.snd hix)
 
 /-- A chain of `GC⁻` is homogeneous of bidegree `g` exactly when every monomial occurring in it
 has bidegree `g`. -/
@@ -531,6 +587,13 @@ theorem bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ
     (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := by
   rw [bigradedChainMinusGrading]
 
+/-- Each piece of the bundled `(O-Maslov, Alexander)` grading of `GC⁻` is finitely generated over
+the ground ring. -/
+instance finite_bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
+    Module.Finite R ((G.bigradedChainMinusGrading R).piece g) := by
+  rw [bigradedChainMinusGrading_piece]
+  infer_instance
+
 /-- The unblocked grid differential is homogeneous of bidegree `(-1, 0)`. -/
 theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading
     (R : Type*) [CommRing R] :
@@ -549,7 +612,15 @@ chains all of whose monomials `V^e · x` have Alexander grading `A(x) - |e| = a`
 only. -/
 def alexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : ℤ) :
     Submodule R (GridChainMinus R n) :=
-  G.bigradedChainMinusSupported R {g | g.2 = a}
+  G.bigradedChainMinusSupported R {g | g.snd = a}
+
+/-- Each Alexander-homogeneous piece of `GC⁻` is finitely generated over the ground semiring. -/
+instance finite_alexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : ℤ) :
+    Module.Finite R (G.alexanderChainMinusPiece R a) :=
+  G.finite_bigradedChainMinusSupported R <|
+    (G.finite_state_exponent_of_alexander_eq a).subset
+      fun ix (hix : (G.monomialBidegree _ _).snd = a) ↦
+        (G.monomialBidegree_snd ix.fst ix.snd).symm.trans hix
 
 /-- A chain of `GC⁻` is Alexander-homogeneous of degree `a` exactly when every monomial `V^e · x`
 occurring in it has Alexander grading `A(x) - |e| = a`. -/
@@ -571,7 +642,7 @@ theorem unblockedDifferential_mem_alexanderChainMinusPiece {R : Type*} [CommSemi
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     G.val.unblockedDifferential R c ∈ G.alexanderChainMinusPiece R a :=
   G.unblockedDifferential_mem_bigradedChainMinusSupported
-    (fun g (hg : g.2 = a) ↦ by simpa using hg) hc
+    (fun g (hg : g.snd = a) ↦ by simpa using hg) hc
 
 /-- **The variable `V_c` has Alexander degree `-1`**: multiplying an Alexander-homogeneous chain
 of `GC⁻` by a polynomial variable lowers its Alexander grading by one. -/
@@ -579,14 +650,14 @@ theorem X_smul_mem_alexanderChainMinusPiece {R : Type*} [CommSemiring R] (i : Fi
     {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     (X i : MvPolynomial (Fin n) R) • c ∈ G.alexanderChainMinusPiece R (a - 1) := by
   have h := G.monomial_smul_mem_bigradedChainMinusSupported (Finsupp.single i 1) (1 : R)
-    (T := {g | g.2 = a - 1}) (fun g (hg : g.2 = a) ↦ by simp [hg]) hc
+    (T := {g | g.snd = a - 1}) (fun g (hg : g.snd = a) ↦ by simp [hg]) hc
   rwa [← X] at h
 
 /-- The Alexander pieces of `GC⁻` span it. -/
 theorem iSup_alexanderChainMinusPiece_eq_top (R : Type*) [CommSemiring R] :
     ⨆ a : ℤ, G.alexanderChainMinusPiece R a = ⊤ :=
   eq_top_iff.mpr <| (G.iSup_bigradedChainMinusPiece_eq_top R).ge.trans <| iSup_le fun g ↦
-    (G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R g.1 g.2).trans (le_iSup _ g.2)
+    (G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R g.fst g.snd).trans (le_iSup _ g.snd)
 
 /-- The Alexander pieces of `GC⁻` are independent: every monomial of a chain has exactly one
 Alexander grading. -/
@@ -595,9 +666,10 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
   intro a
   rw [Submodule.disjoint_def]
   intro c hc hc'
-  have hcompl : c ∈ G.bigradedChainMinusSupported R {g | g.2 ≠ a} :=
+  have hcompl : c ∈ G.bigradedChainMinusSupported R {g | g.snd ≠ a} :=
     iSup₂_le (fun b hb ↦ G.bigradedChainMinusSupported_mono
-      (S := {g | g.2 = b}) (T := {g | g.2 ≠ a}) fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
+      (S := {g | g.snd = b}) (T := {g | g.snd ≠ a}) fun g (hg : g.snd = b) ↦
+        by simpa [hg] using hb) hc'
   refine Finsupp.ext fun z ↦ ?_
   rw [Finsupp.zero_apply, ← MvPolynomial.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
   exact fun e he ↦ hcompl z e he (hc z e he)
@@ -615,6 +687,46 @@ def alexanderChainMinusGrading (R : Type*) [CommRing R] :
 theorem alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
     (G.alexanderChainMinusGrading R).piece a = G.alexanderChainMinusPiece R a :=
   (rfl)
+
+/-- Each piece of the bundled Alexander grading of `GC⁻` is finitely generated over the ground
+ring. -/
+instance finite_alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
+    Module.Finite R ((G.alexanderChainMinusGrading R).piece a) := by
+  rw [alexanderChainMinusGrading_piece]
+  infer_instance
+
+/-- Coarsening the Maslov--Alexander chain pieces along `Prod.snd` recovers the Alexander chain
+pieces. -/
+@[simp]
+theorem coarsenGrading_bigradedChainMinusPiece_snd (R : Type*) [CommSemiring R] :
+    coarsenGrading (G.bigradedChainMinusPiece R) Prod.snd = G.alexanderChainMinusPiece R := by
+  funext a
+  refine le_antisymm (coarsenGrading_le_iff.mpr ?_) ?_
+  · rintro ⟨m, b⟩ (rfl : b = a)
+    exact G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R m b
+  · rw [alexanderChainMinusPiece, G.bigradedChainMinusSupported_eq_span R, Submodule.span_le]
+    rintro _ ⟨⟨x, e⟩, (hxe : (G.monomialBidegree x e).snd = a), rfl⟩
+    simp only [Finsupp.coe_basis, coe_basisMonomials, SetLike.mem_coe]
+    exact hxe ▸ mem_coarsenGrading_of_mem Prod.snd
+      (G.single_monomial_mem_bigradedChainMinusPiece R x e 1)
+
+/-- Each Alexander piece of `GC⁻` is the supremum of the Maslov--Alexander pieces with that
+Alexander degree. -/
+theorem iSup_bigradedChainMinusPiece_eq_alexanderChainMinusPiece
+    (R : Type*) [CommSemiring R] (a : ℤ) :
+    ⨆ m : ℤ, G.bigradedChainMinusPiece R (m, a) = G.alexanderChainMinusPiece R a := by
+  rw [← coarsenGrading_snd, G.coarsenGrading_bigradedChainMinusPiece_snd R]
+
+/-- Projecting bidegrees to their Alexander coordinate coarsens the internal bigrading of `GC⁻`
+to its internal Alexander grading. -/
+@[simp]
+theorem coarsen_bigradedChainMinusGrading_snd (R : Type*) [CommRing R] :
+    (G.bigradedChainMinusGrading R).coarsen Prod.snd = G.alexanderChainMinusGrading R := by
+  refine InternalGrading.ext fun a ↦ ?_
+  have hp : (G.bigradedChainMinusGrading R).piece = G.bigradedChainMinusPiece R :=
+    funext (G.bigradedChainMinusGrading_piece R)
+  rw [InternalGrading.coarsen_piece, hp, alexanderChainMinusGrading_piece,
+    G.coarsenGrading_bigradedChainMinusPiece_snd R]
 
 /-- The degree-`a` component of the Alexander grading retains exactly the monomials of
 Alexander degree `a`. -/
@@ -698,7 +810,7 @@ Alexander-homogeneous chain of degree `a` for `G` to a chain of Alexander degree
 `G'`. -/
 theorem matrixMap_mem_alexanderChainMinusPiece_add (δ : ℤ)
     (hAlexander : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
-      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2 + δ)
+      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).snd = (G.monomialBidegree x d).snd + δ)
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     f c ∈ G'.alexanderChainMinusPiece R (a + δ) := by
   rw [mem_alexanderChainMinusPiece] at hc ⊢
@@ -713,7 +825,7 @@ omit hgrade in
 Alexander-homogeneous chain for `G` to a chain of the same Alexander degree for `G'`. -/
 theorem matrixMap_mem_alexanderChainMinusPiece
     (hAlexander : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
-      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2)
+      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).snd = (G.monomialBidegree x d).snd)
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     f c ∈ G'.alexanderChainMinusPiece R a := by
   simpa using G.matrixMap_mem_alexanderChainMinusPiece_add R G' σ M f hf 0

@@ -26,15 +26,22 @@ For coordinate transport, forgetting linearity gives the corresponding additive 
 equivalence, with the same direction on coordinates. A commutative square of linear maps with
 isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
 Conjugating an endomorphism by a semilinear equivalence commutes with powers and moves its kernel
-by the equivalence.
+by the equivalence. Finally, any semilinear map or equivalence along a ring homomorphism that
+commutes with the `R`-algebra structure maps restricts to an `R`-linear map or equivalence.
 
-## Main results
+## Main definitions
 
-* `LinearEquiv.map_range_lcomp`: transport of precomposition ranges along an isomorphism
-  of arrows, over a semiring and with any compatible hom-space scalars and target.
+* `LinearMap.restrictScalarsOfCommutes` and `LinearEquiv.restrictScalarsOfCommutes`: restrict a
+  semilinear map or equivalence along a ring homomorphism commuting with `algebraMap R`.
 * `LinearEquiv.homCongrRight`: an isomorphism of targets induces an equivalence of hom spaces
   over the auxiliary scalar semiring.
 
+## Main results
+
+* `SemilinearMapClass.map_smul_of_commutes`: a semilinear map along a ring homomorphism commuting
+  with `algebraMap R` preserves `R`-scalar multiplication.
+* `LinearEquiv.map_range_lcomp`: transport of precomposition ranges along an isomorphism
+  of arrows, over a semiring and with any compatible hom-space scalars and target.
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
   kernels and ranges across an intertwining semilinear equivalence.
 * `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
@@ -48,7 +55,109 @@ by the equivalence.
 
 public section
 
+namespace SemilinearMapClass
+
+/-- If `φ : A →+* B` commutes with the `R`-algebra maps on `A` and `B`, then any `φ`-semilinear
+map preserves `R`-scalar multiplication. -/
+theorem map_smul_of_commutes {R A B M N F : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+    [Algebra R A] [Algebra R B] [AddCommMonoid M] [AddCommMonoid N]
+    [Module R M] [Module A M] [IsScalarTower R A M]
+    [Module R N] [Module B N] [IsScalarTower R B N]
+    {φ : A →+* B} (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r)
+    [FunLike F M N] [SemilinearMapClass F φ M N] (f : F) (r : R) (y : M) :
+    f (r • y) = r • f y := by
+  rw [← algebraMap_smul A r y, map_smulₛₗ f, hφ r, algebraMap_smul]
+
+end SemilinearMapClass
+
+namespace LinearMap
+
+section RestrictScalarsOfCommutes
+
+variable (R : Type*) {A B M N : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module A M] [IsScalarTower R A M]
+  [Module R N] [Module B N] [IsScalarTower R B N]
+  {φ : A →+* B}
+
+/-- Restrict a semilinear map `f : M →ₛₗ[φ] N` to an `R`-linear map when `φ : A →+* B` commutes
+with the `R`-algebra structure maps. -/
+def restrictScalarsOfCommutes (f : M →ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) : M →ₗ[R] N where
+  toAddHom := f.toAddHom
+  map_smul' := SemilinearMapClass.map_smul_of_commutes hφ f
+
+/-- `LinearMap.restrictScalarsOfCommutes` acts as the original semilinear map. -/
+@[simp]
+theorem restrictScalarsOfCommutes_apply (f : M →ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) (x : M) :
+    f.restrictScalarsOfCommutes R hφ x = f x :=
+  (rfl)
+
+/-- The underlying function of `LinearMap.restrictScalarsOfCommutes` is that of the original map. -/
+@[simp]
+theorem coe_restrictScalarsOfCommutes (f : M →ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) :
+    ⇑(f.restrictScalarsOfCommutes R hφ) = ⇑f :=
+  (rfl)
+
+end RestrictScalarsOfCommutes
+
+end LinearMap
+
 namespace LinearEquiv
+
+section RestrictScalarsOfCommutes
+
+variable (R : Type*) {A B M N : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module A M] [IsScalarTower R A M]
+  [Module R N] [Module B N] [IsScalarTower R B N]
+  {φ : A →+* B} {φ' : B →+* A} [RingHomInvPair φ φ'] [RingHomInvPair φ' φ]
+
+/-- Restrict a semilinear equivalence `e : M ≃ₛₗ[φ] N` to an `R`-linear equivalence when
+`φ : A →+* B` commutes with the `R`-algebra structure maps. -/
+def restrictScalarsOfCommutes (e : M ≃ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) : M ≃ₗ[R] N :=
+  e.toAddEquiv.toLinearEquiv (SemilinearMapClass.map_smul_of_commutes hφ e)
+
+/-- `LinearEquiv.restrictScalarsOfCommutes` acts as the original semilinear equivalence. -/
+@[simp]
+theorem restrictScalarsOfCommutes_apply (e : M ≃ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) (x : M) :
+    e.restrictScalarsOfCommutes R hφ x = e x :=
+  (rfl)
+
+/-- The inverse of `LinearEquiv.restrictScalarsOfCommutes` acts as `e.symm`. -/
+@[simp]
+theorem restrictScalarsOfCommutes_symm_apply (e : M ≃ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) (y : N) :
+    (e.restrictScalarsOfCommutes R hφ).symm y = e.symm y :=
+  (rfl)
+
+/-- The underlying function of `LinearEquiv.restrictScalarsOfCommutes` is `⇑e`. -/
+@[simp]
+theorem coe_restrictScalarsOfCommutes (e : M ≃ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) :
+    ⇑(e.restrictScalarsOfCommutes R hφ) = ⇑e :=
+  (rfl)
+
+/-- The underlying function of `(e.restrictScalarsOfCommutes R hφ).symm` is `⇑e.symm`. -/
+@[simp]
+theorem coe_restrictScalarsOfCommutes_symm (e : M ≃ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) :
+    ⇑(e.restrictScalarsOfCommutes R hφ).symm = ⇑e.symm :=
+  (rfl)
+
+/-- The underlying `R`-linear map of `LinearEquiv.restrictScalarsOfCommutes` is
+`LinearMap.restrictScalarsOfCommutes`. -/
+theorem restrictScalarsOfCommutes_toLinearMap (e : M ≃ₛₗ[φ] N)
+    (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) :
+    (e.restrictScalarsOfCommutes R hφ).toLinearMap =
+      e.toLinearMap.restrictScalarsOfCommutes R hφ :=
+  (rfl)
+
+end RestrictScalarsOfCommutes
 
 section Coordinates
 

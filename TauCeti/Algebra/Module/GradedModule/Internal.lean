@@ -51,7 +51,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 
 ## Main results
 
-* `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.ext` and `TauCeti.InternalGrading.eq_of_piece_le`: internal gradings are
+  determined by their homogeneous pieces, and pointwise inclusion between two internal gradings
+  forces equality.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
@@ -139,6 +141,25 @@ theorem ext : ∀ {G H : InternalGrading R M ι}, (∀ p, G.piece p = H.piece p)
 /-- The decomposition attached to an internal grading. -/
 noncomputable instance (G : InternalGrading R M ι) : DirectSum.Decomposition G.piece :=
   G.isInternal.chooseDecomposition
+
+/-- Pointwise inclusion between two internal gradings of the same module forces equality: any
+homogeneous element of `H` decomposes in `G` into components that also lie in the corresponding
+pieces of `H`. -/
+theorem eq_of_piece_le {G H : InternalGrading R M ι} (h : ∀ p, G.piece p ≤ H.piece p) :
+    G = H := by
+  ext p x
+  refine ⟨fun hx ↦ h p hx, fun hx ↦ ?_⟩
+  suffices ∀ y : M, (DirectSum.decompose H.piece y p : M) ∈ G.piece p by
+    simpa [DirectSum.decompose_of_mem_same H.piece hx] using this x
+  intro y
+  induction y using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous q z =>
+    by_cases hqp : q = p
+    · subst p
+      simp [DirectSum.decompose_of_mem_same H.piece (h q z.property)]
+    · simp [DirectSum.decompose_of_mem_ne H.piece (h q z.property) hqp]
+  | add y₁ y₂ hy₁ hy₂ => simpa using (G.piece p).add_mem hy₁ hy₂
 
 /-- The internal grading carried by a family of submodules with a `DirectSum.Decomposition`.  This
 is the bridge from Mathlib's decomposition typeclass, under which graded algebras are stated, to
@@ -345,6 +366,13 @@ theorem map_trans {P : Type*} [AddCommMonoid P] [Module R P]
   apply Submodule.ext
   intro x
   simp
+
+/-- Transporting a finitely generated homogeneous piece across a linear equivalence preserves finite
+generation. -/
+instance finite_map_piece (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) (p : ι)
+    [Module.Finite R (G.piece p)] : Module.Finite R ((G.map e).piece p) := by
+  rw [map_piece]
+  infer_instance
 
 end Map
 
