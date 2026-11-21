@@ -107,6 +107,9 @@ private theorem setIntegral_sobolev_le_of_norm_le_add {η : ℝ × ℝ → E} (h
   have hW : 0 ≤ W := setIntegral_nonneg hrect fun z _ ↦ by positivity
   have := hη.continuous_fderiv one_ne_zero
   have := hη.continuous
+  have hc : Continuous fun z ↦ ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2 :=
+    by simpa only [funext (sobolevDensity_apply η)] using continuous_sobolevDensity hη
   -- Pointwise, `‖g‖² ≤ 2 ‖f‖² + 4 ε² (‖∂t η‖² + ‖η‖²)`.
   have hpt (z : ℝ × ℝ) (hz : z ∈ Icc a b ×ˢ Icc (0 : ℝ) 1) : ‖g z‖ ^ 2 ≤ 2 * ‖f z‖ ^ 2 +
       4 * ε ^ 2 * (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
@@ -120,10 +123,10 @@ private theorem setIntegral_sobolev_le_of_norm_le_add {η : ℝ × ℝ → E} (h
       2 * (∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖f z‖ ^ 2) + 4 * ε ^ 2 * W := by
     rw [← integral_const_mul, ← integral_const_mul,
       ← integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
-        ((continuous_sobolev hη).const_mul _).integrableOn_Icc_prod_Icc]
+        (hc.const_mul _).integrableOn_Icc_prod_Icc]
     exact setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
       ((Continuous.integrableOn_Icc_prod_Icc (by fun_prop)).add
-        ((continuous_sobolev hη).const_mul _).integrableOn_Icc_prod_Icc) hrect hpt
+        (hc.const_mul _).integrableOn_Icc_prod_Icc) hrect hpt
   nlinarith [mul_le_mul_of_nonneg_left hint hC, mul_le_mul_of_nonneg_right hε hW]
 
 /-- **The `L²` norm of `P` on a cut-off section.** If `P (β ξ) = β P ξ + β' σ ξ` for cutoffs
@@ -255,14 +258,17 @@ private theorem setIntegral_sobolev_le_add_of_cutoff {ξ : ℝ × ℝ → E} (h�
     ((contDiff_const.sub hβ).comp contDiff_fst).smul hξ
   have hsum : ξ = (fun w ↦ β w.1 • ξ w) + fun w ↦ (1 - β w.1) • ξ w :=
     funext fun w ↦ by simp [← add_smul]
-  have hi₁ := ((continuous_sobolev (hξ₁.of_le one_le_two)).integrableOn_Icc_prod_Icc
+  simp only [← sobolevDensity_apply]
+  have hi₁ := ((continuous_sobolevDensity (hξ₁.of_le one_le_two)).integrableOn_Icc_prod_Icc
     (a₁ := a) (b₁ := b) (a₂ := 0) (b₂ := 1)).const_mul 2
-  have hi₂ := ((continuous_sobolev (hξ₂.of_le one_le_two)).integrableOn_Icc_prod_Icc
+  have hi₂ := ((continuous_sobolevDensity (hξ₂.of_le one_le_two)).integrableOn_Icc_prod_Icc
     (a₁ := a) (b₁ := b) (a₂ := 0) (b₂ := 1)).const_mul 2
   rw [← integral_const_mul, ← integral_const_mul, ← integral_add hi₁ hi₂]
-  refine setIntegral_mono_on (continuous_sobolev (hξ.of_le one_le_two)).integrableOn_Icc_prod_Icc
+  refine setIntegral_mono_on
+    (continuous_sobolevDensity (hξ.of_le one_le_two)).integrableOn_Icc_prod_Icc
     (hi₁.add hi₂) (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
-  have h := sobolev_add_le (hξ₁.differentiable two_ne_zero z) (hξ₂.differentiable two_ne_zero z)
+  have h :=
+    sobolevDensity_add_le (hξ₁.differentiable two_ne_zero z) (hξ₂.differentiable two_ne_zero z)
   rwa [← hsum] at h
 
 /-- **The uniform estimate for a spliced operator.** Let `P`, `P₁` and `P₂` be operators on maps
@@ -321,7 +327,8 @@ theorem setIntegral_sobolev_le_mul_setIntegral_of_splice {P P₁ P₂ : (ℝ × 
     (fun s hs ↦ by rw [hβm s (le_of_lt (not_le.1 hs)), sub_self])
     (fun s hs ↦ by rw [(hγd s).deriv, hβ'0 s fun h ↦ hs (le_of_lt h.1), neg_zero])
   have hsplit := setIntegral_sobolev_le_add_of_cutoff hξ hβc a b
-  have hL := setIntegral_norm_sq_le_sobolev (hξ.of_le one_le_two) a b
+  have hL := setIntegral_norm_sq_le_setIntegral_sobolevDensity (hξ.of_le one_le_two) a b
+  simp only [sobolevDensity_apply] at hL
   -- The cutoff error `32 C (‖σ‖ / T)²` is at most `1 / 2`, and is absorbed.
   have hk : 64 * C * (1 / T * ‖σ‖) ^ 2 ≤ 1 := by
     rw [show 64 * C * (1 / T * ‖σ‖) ^ 2 = 64 * C * ‖σ‖ ^ 2 / T ^ 2 by field_simp,
