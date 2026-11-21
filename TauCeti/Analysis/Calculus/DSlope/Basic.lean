@@ -31,6 +31,8 @@ congruence, and coordinate factorization also use the derivative at the base poi
 * `TauCeti.dslope_mul`: the product rule for divided differences.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
+* `ContinuousAt.hasDerivAt_sub_smul`: the derivative at the base point of a continuous factor
+  multiplied by the displacement.
 * `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local coordinate factorization
   identifies the coordinate divided difference with its factor.
 -/
@@ -105,6 +107,16 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
 
+/-- Multiplication by the displacement differentiates a continuous factor at the base point;
+the factor itself need not be differentiable. -/
+theorem _root_.ContinuousAt.hasDerivAt_sub_smul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {q : 𝕜 → E} {a : 𝕜}
+    (hq : ContinuousAt q a) : HasDerivAt (fun w ↦ (w - a) • q w) (q a) a := by
+  rw [hasDerivAt_iff_tendsto_slope]
+  apply Filter.Tendsto.congr' ?_ (hq.tendsto.mono_left nhdsWithin_le_nhds)
+  filter_upwards [self_mem_nhdsWithin] with w hw
+  exact (slope_sub_smul q (Set.mem_compl_singleton_iff.mp hw).symm).symm
+
 /-- A local factorization by a coordinate difference identifies the coordinate divided
 difference with its factor. On the base hyperplane only continuity of the factor's
 one-dimensional slices is needed; the index type can be infinite. -/
@@ -129,14 +141,7 @@ theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
       simpa only [Function.update_self, Function.update_idem, huz] using hw
     have hd : HasDerivAt (fun w ↦ (w - x i) • g (Function.update z i w))
         (g z) (x i) := by
-      rw [hasDerivAt_iff_tendsto_slope]
-      have hgt : Filter.Tendsto (fun w ↦ g (Function.update z i w)) (nhdsWithin (x i) {x i}ᶜ)
-          (nhds (g z)) := by
-        simpa only [huz] using (hgz hzi).tendsto.mono_left nhdsWithin_le_nhds
-      apply Filter.Tendsto.congr' ?_ hgt
-      filter_upwards [self_mem_nhdsWithin] with w hw
-      exact (slope_sub_smul (fun w ↦ g (Function.update z i w))
-        (Set.mem_compl_singleton_iff.mp hw).symm).symm
+      simpa only [huz] using (hgz hzi).hasDerivAt_sub_smul
     have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) (x i) :=
       (hasDerivAt_sub_const_iff (f z)).mp (hd.congr_of_eventuallyEq heq')
     simpa only [hzi, dslope_same] using hd'.deriv

@@ -402,14 +402,10 @@ theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update_same [DecidableEq ι]
         (Function.update_add x y i (x i) 0).symm
     rw [← hupdate]
     refine (hsum _ (hnorm.trans_lt hy)).congr_fun fun β ↦ ?_
-    by_cases hβ : β i = 0
-    · simp only [hβ, ite_eq_left]
-      congr 1
-      exact Finset.prod_congr rfl fun j _ ↦ by
-        by_cases hj : j = i <;> simp [hj, hβ]
-    · have hprod : ∏ j, Function.update y i 0 j ^ β j = 0 :=
-        Finset.prod_eq_zero (mem_univ i) (by simp [hβ])
-      simp [hβ, hprod]
+    simp_rw [Function.apply_update (fun j (v : 𝕜) ↦ v ^ β j)]
+    rw [Finset.prod_update_of_mem (mem_univ i),
+      Finset.prod_eq_mul_prod_sdiff_singleton_of_mem (mem_univ i) (fun j ↦ y j ^ β j)]
+    by_cases hβ : β i = 0 <;> simp [hβ]
 
 /-- **Monomial with a vector coefficient**: at the origin, `z ↦ (∏ i, z i ^ τ i) • v` has Taylor
 coefficient `v` at `τ` and `0` at every other multi-index. -/

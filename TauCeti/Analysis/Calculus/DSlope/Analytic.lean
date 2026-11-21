@@ -22,6 +22,8 @@ the divided difference extends analytically and takes the coordinate-slice deriv
   `TauCeti.analyticAt_dslope_update_iff_of_ne`: analyticity away from the base hyperplane.
 * `AnalyticAt.dslope_update_same`: analytic extension across the base hyperplane.
 * `TauCeti.analyticAt_dslope_update`: the combined coordinate divided-difference theorem.
+* `AnalyticOnNhd.dslope_update`: coordinate divided differences preserve neighborhood
+  analyticity on sets preserved by the base-coordinate update.
 -/
 
 public section
@@ -87,3 +89,10 @@ theorem TauCeti.analyticAt_dslope_update [CompleteSpace F] (i : ι) (ζ : 𝕜)
     have hu : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ Function.update z i ζ) x :=
       analyticAt_id.update analyticAt_const
     exact hf.sub (hres.comp_of_eq hu rfl)
+
+/-- If updating the coordinate to `ζ` preserves the set, the coordinate divided difference
+preserves analyticity near the set. -/
+theorem AnalyticOnNhd.dslope_update [CompleteSpace F] {s : Set (ι → 𝕜)}
+    (hf : AnalyticOnNhd 𝕜 f s) (hupdate : Set.MapsTo (fun z ↦ Function.update z i ζ) s s) :
+    AnalyticOnNhd 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s :=
+  fun z hz ↦ TauCeti.analyticAt_dslope_update i ζ (hf z hz) (hf _ (hupdate hz))
