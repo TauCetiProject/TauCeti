@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.Pi.Basic
 public import Mathlib.Algebra.Group.Prod
 public import TauCeti.Data.Finset.Pi
+import Mathlib.Algebra.Group.Equiv.Basic
 
 /-!
 # Products of monoids indexed by finite sets
@@ -28,6 +29,8 @@ charts of an implicit atlas, in the sense of Pardon.
 ## Main definitions
 
 * `Finset.restrict₂MonoidHom`: restriction to a smaller finite set, as a monoid homomorphism.
+* `Finset.mulEquivMap`: relabel a finite product along an embedding, compatibly with restriction
+  (`Finset.restrict₂_mulEquivMap_symm`).
 * `MulEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a multiplicative equivalence.
 
 ## Main results
@@ -91,6 +94,38 @@ theorem restrict₂MonoidHom_comp_restrict₂MonoidHom (hst : s ⊆ t) (htu : t 
     (restrict₂MonoidHom π hst).comp (restrict₂MonoidHom π htu) =
       restrict₂MonoidHom π (hst.trans htu) :=
   (rfl)
+
+section Map
+
+variable {A B : Type*} (I : Finset B) (f : B ↪ A) (π : A → Type*) [∀ α, Mul (π α)]
+
+/-- Restriction along `f` identifies the product indexed by `I.map f` with the product indexed by
+`I`, with the factors pulled back along `f`. The factors on the `I` side are typed directly as
+`π (f β)`, so the same family can be used before and after taking a smaller index set. -/
+noncomputable def mulEquivMap : ((α : I.map f) → π α) ≃* ((β : I) → π (f β)) :=
+  MulEquiv.ofBijective
+    ({ toFun := fun g β ↦ g ⟨f β, I.apply_coe_mem_map f β⟩
+       map_mul' := fun _ _ ↦ rfl } : ((α : I.map f) → π α) →ₙ* ((β : I) → π (f β)))
+    (Equiv.piCongrLeft (fun α : I.map f ↦ π α) (I.equivMap f)).symm.bijective
+
+/-- Relabelling reads the coordinate at the image of the index under `f`. -/
+@[simp]
+theorem mulEquivMap_apply (g : (α : I.map f) → π α) (β : I) :
+    I.mulEquivMap f π g β = g ⟨f β, I.apply_coe_mem_map f β⟩ :=
+  (rfl)
+
+/-- Reindexing by an embedding commutes with projection to a smaller index set. -/
+theorem restrict₂_mulEquivMap_symm {I J : Finset B} (h : I ⊆ J) (g : (β : J) → π (f β)) :
+    Finset.restrict₂ (Finset.map_subset_map.2 h) ((J.mulEquivMap f π).symm g) =
+      (I.mulEquivMap f π).symm (Finset.restrict₂ (π := fun β ↦ π (f β)) h g) := by
+  apply (I.mulEquivMap f π).injective
+  rw [MulEquiv.apply_symm_apply]
+  funext β
+  rw [mulEquivMap_apply]
+  exact ((mulEquivMap_apply J f π _ ⟨β, h β.2⟩).symm.trans
+    (congrFun ((J.mulEquivMap f π).apply_symm_apply g) ⟨β, h β.2⟩))
+
+end Map
 
 end Finset
 
