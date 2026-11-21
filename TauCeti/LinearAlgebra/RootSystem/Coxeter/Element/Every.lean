@@ -7,48 +7,108 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Charpoly
-public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
+import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 
 /-!
-# Every Coxeter element of an exceptional type has order the Coxeter number
+# Every Coxeter element of a Dynkin type has order the Coxeter number
 
 A *Coxeter element* is a product of all the simple reflections, each once, in any order. The Dynkin
-diagrams `E₆`, `E₇`, `E₈`, `F₄`, `G₂` are trees, so their vertices admit a one-degenerate order
-(checked by `decide`), and `List.eq_of_isOneDegenerateOrder` shows that the order and the
-characteristic polynomial of the product do not depend on the ordering:
+diagrams of all classical and exceptional types are trees, so their vertices admit a one-degenerate
+order, and `List.eq_of_isOneDegenerateOrder` shows that the order and the characteristic polynomial
+of the product do not depend on the ordering:
 
-| type | `h` | characteristic polynomial |
-|---|---|---|
-| `E₆` | 12 | `Φ₁₂ Φ₃` |
-| `E₇` | 18 | `Φ₁₈ Φ₂` |
-| `E₈` | 30 | `Φ₃₀` |
-| `F₄` | 12 | `Φ₁₂` |
-| `G₂` | 6 | `Φ₆` |
+| type | rank bound | `h` | characteristic polynomial |
+|---|---|---|---|
+| `Aₙ` | all `n` | `n + 1` | `∑_{k=0}^n X^k` |
+| `Bₙ` | `1 ≤ n` | `2 n` | `X^n + 1` |
+| `Cₙ` | `1 ≤ n` | `2 n` | `X^n + 1` |
+| `Dₙ` | `2 ≤ n` | `2 (n - 1)` | `(X^{n-1} + 1)(X + 1)` |
+| `E₆` | — | 12 | `Φ₁₂ Φ₃` |
+| `E₇` | — | 18 | `Φ₁₈ Φ₂` |
+| `E₈` | — | 30 | `Φ₃₀` |
+| `F₄` | — | 12 | `Φ₁₂` |
+| `G₂` | — | 6 | `Φ₆` |
 
 The statements are phrased with `TauCeti.HasCartanType`, so they apply to any base that the
 classification has matched to a type. TauCeti's `G₂` Cartan matrix is the transpose of Mathlib's
 `CartanMatrix.G₂`.
 
+## Main definitions
+
+* `TauCeti.DynkinType.coxeterNumber`: the Coxeter number `h` of a Dynkin type.
+
 ## Main results
 
+* `TauCeti.DynkinType.numRoots_eq_rank_mul_coxeterNumber`: `t.numRoots = t.rank * t.coxeterNumber`.
 * `TauCeti.Coxeter.orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType` and
   `TauCeti.Coxeter.charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy`: for a base of
   Cartan type `t` with a one-degenerate order, every Coxeter element has the order and the
   characteristic polynomial of the Coxeter element of the standard Cartan matrix of `t`.
-* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_E8` (and `E7`, `E6`, `F4`, `G2`): **every**
-  Coxeter element of a base of type `E₈` has order 30 (and 18, 12, 12, 6).
-* `TauCeti.Coxeter.charpoly_of_hasCartanType_E8_of_actsBy` (and `E7`, `E6`, `F4`, `G2`): the matrix
-  of every such Coxeter element on the simple roots has the characteristic polynomial in the table.
+* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A` (and `B`, `C`, `D`, `E6`, `E7`, `E8`, `F4`,
+  `G2`): every Coxeter element of a base of that type has order `h`.
+* `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy` (and `B`, `C`, `D`, `E6`, `E7`, `E8`,
+  `F4`, `G2`): the matrix of every such Coxeter element on the simple roots has the characteristic
+  polynomial in the table.
+* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType`: every Coxeter element of a base of valid
+  Cartan type `t` has order `t.coxeterNumber`.
 
 ## References
 
-* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, and Plates I--IX.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
   §§ 3.16–3.20.
 -/
 
 public section
+
+namespace TauCeti.DynkinType
+
+/-- The **Coxeter number** `h` of a Dynkin type: for a valid Dynkin type, this is the order of
+every Coxeter element (`TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType`). -/
+def coxeterNumber : DynkinType → ℕ
+  | .A n => n + 1
+  | .B n | .C n => 2 * n
+  | .D n => 2 * (n - 1)
+  | .E6 => 12
+  | .E7 => 18
+  | .E8 => 30
+  | .F4 => 12
+  | .G2 => 6
+
+@[simp] lemma coxeterNumber_A (n : ℕ) : (A n).coxeterNumber = n + 1 := (rfl)
+@[simp] lemma coxeterNumber_B (n : ℕ) : (B n).coxeterNumber = 2 * n := (rfl)
+@[simp] lemma coxeterNumber_C (n : ℕ) : (C n).coxeterNumber = 2 * n := (rfl)
+@[simp] lemma coxeterNumber_D (n : ℕ) : (D n).coxeterNumber = 2 * (n - 1) := (rfl)
+@[simp] lemma coxeterNumber_E6 : E6.coxeterNumber = 12 := (rfl)
+@[simp] lemma coxeterNumber_E7 : E7.coxeterNumber = 18 := (rfl)
+@[simp] lemma coxeterNumber_E8 : E8.coxeterNumber = 30 := (rfl)
+@[simp] lemma coxeterNumber_F4 : F4.coxeterNumber = 12 := (rfl)
+@[simp] lemma coxeterNumber_G2 : G2.coxeterNumber = 6 := (rfl)
+
+/-- Every valid Dynkin type has Coxeter number at least `2`. -/
+lemma two_le_coxeterNumber {t : DynkinType} (ht : t.Valid) : 2 ≤ t.coxeterNumber := by
+  cases t with
+  | A n => have := valid_A.mp ht; simp; omega
+  | B n => have := valid_B.mp ht; simp; omega
+  | C n => have := valid_C.mp ht; simp; omega
+  | D n => have := valid_D.mp ht; simp; omega
+  | E6 | E7 | E8 | F4 | G2 => simp
+
+/-- Every valid Dynkin type has positive Coxeter number. -/
+lemma coxeterNumber_pos {t : DynkinType} (ht : t.Valid) : 0 < t.coxeterNumber :=
+  lt_of_lt_of_le (by norm_num) (two_le_coxeterNumber ht)
+
+/-- **For every Dynkin type, the number of roots equals the rank times the Coxeter number**:
+`|Φ| = r h`. -/
+theorem numRoots_eq_rank_mul_coxeterNumber (t : DynkinType) :
+    t.numRoots = t.rank * t.coxeterNumber := by
+  cases t with
+  | A n | E6 | E7 | E8 | F4 | G2 => rfl
+  | B n | C n | D n => simp; ring
+
+end TauCeti.DynkinType
 
 open Matrix RootPairing TauCeti
 
@@ -234,6 +294,102 @@ theorem charpoly_of_hasCartanType_G2_of_actsBy [DecidableEq ι] (h : HasCartanTy
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .G2)
     DynkinType.cartanMatrix_G2 isOneDegenerateOrder_G2 perm_finRange_G2 h hnd
     hall hW).trans charpoly_coxG2
+
+/-! ### The classical types -/
+
+/-- **Every Coxeter element of a base of type `Aₙ` has order `n + 1`.** -/
+theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ} (h : HasCartanType P b (.A n))
+    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) : orderOf (wordProd P b l) = n + 1 :=
+  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .A n)
+    (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd
+    hall).trans (orderOf_coxA n)
+
+/-- **Every Coxeter element of a base of type `Bₙ` (`1 ≤ n`) has order `2 n`.** -/
+theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 1 ≤ n)
+    (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = 2 * n :=
+  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .B n)
+    (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd
+    hall).trans (orderOf_coxB hn)
+
+/-- **Every Coxeter element of a base of type `Cₙ` (`1 ≤ n`) has order `2 n`.** -/
+theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 1 ≤ n)
+    (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = 2 * n :=
+  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .C n)
+    (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd
+    hall).trans (orderOf_coxC hn)
+
+/-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`) has order `2 (n - 1)`.** -/
+theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 2 ≤ n)
+    (h : HasCartanType P b (.D n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = 2 * (n - 1) :=
+  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .D n)
+    (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd
+    hall).trans (orderOf_coxD hn)
+
+/-- **Every Coxeter element of a base of type `Aₙ`** has characteristic polynomial
+`∑_{k=0}^n X^k` on the simple roots. -/
+theorem charpoly_of_hasCartanType_A_of_actsBy [DecidableEq ι] {n : ℕ}
+    (h : HasCartanType P b (.A n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = ∑ k ∈ Finset.range (n + 1), Polynomial.X ^ k :=
+  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .A n)
+    (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd
+    hall hW).trans (charpoly_coxA n)
+
+/-- **Every Coxeter element of a base of type `Bₙ` (`1 ≤ n`)** has characteristic polynomial
+`X^n + 1` on the simple roots. -/
+theorem charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1 ≤ n)
+    (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = Polynomial.X ^ n + 1 :=
+  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .B n)
+    (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd
+    hall hW).trans (charpoly_coxB hn)
+
+/-- **Every Coxeter element of a base of type `Cₙ` (`1 ≤ n`)** has characteristic polynomial
+`X^n + 1` on the simple roots. -/
+theorem charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1 ≤ n)
+    (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = Polynomial.X ^ n + 1 :=
+  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .C n)
+    (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd
+    hall hW).trans (charpoly_coxC hn)
+
+/-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`)** has characteristic polynomial
+`(X^{n-1} + 1)(X + 1)` on the simple roots. -/
+theorem charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 2 ≤ n)
+    (h : HasCartanType P b (.D n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = (Polynomial.X ^ (n - 1) + 1) * (Polynomial.X + 1) :=
+  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .D n)
+    (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd
+    hall hW).trans (charpoly_coxD hn)
+
+/-! ### Uniform order across all valid Dynkin types -/
+
+/-- **Every Coxeter element of a base of valid Cartan type `t` has order `t.coxeterNumber`.** -/
+theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.Valid)
+    (h : HasCartanType P b t) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = t.coxeterNumber := by
+  cases t with
+  | A n => exact orderOf_wordProd_of_hasCartanType_A h hnd hall
+  | B n =>
+    exact orderOf_wordProd_of_hasCartanType_B (by have := DynkinType.valid_B.mp ht; omega)
+      h hnd hall
+  | C n =>
+    exact orderOf_wordProd_of_hasCartanType_C (by have := DynkinType.valid_C.mp ht; omega)
+      h hnd hall
+  | D n =>
+    exact orderOf_wordProd_of_hasCartanType_D (by have := DynkinType.valid_D.mp ht; omega)
+      h hnd hall
+  | E6 => exact orderOf_wordProd_of_hasCartanType_E6 h hnd hall
+  | E7 => exact orderOf_wordProd_of_hasCartanType_E7 h hnd hall
+  | E8 => exact orderOf_wordProd_of_hasCartanType_E8 h hnd hall
+  | F4 => exact orderOf_wordProd_of_hasCartanType_F4 h hnd hall
+  | G2 => exact orderOf_wordProd_of_hasCartanType_G2 h hnd hall
 
 end TauCeti.Coxeter
 
