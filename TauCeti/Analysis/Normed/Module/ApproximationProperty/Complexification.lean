@@ -79,7 +79,7 @@ theorem HasApproximationProperty.complexification (h : HasApproximationProperty 
   obtain ⟨T, hT, herr⟩ := h (reCLM X '' K ∪ imCLM X '' K)
     ((hK.image (reCLM X).continuous).union (hK.image (imCLM X).continuous))
     (ε / 2) (by positivity)
-  exact ⟨T.complexify, T.hasFiniteRange_complexify hT, fun z hz ↦
+  exact ⟨T.complexify, T.hasFiniteRange_complexify_iff.2 hT, fun z hz ↦
     complexify_error_lt T z (herr _ (Or.inl ⟨z, hz, reCLM_apply z⟩))
       (herr _ (Or.inr ⟨z, hz, imCLM_apply z⟩))⟩
 
@@ -110,7 +110,7 @@ theorem HasBoundedApproximationPropertyWith.complexification {C : ℝ≥0}
   obtain ⟨T, hT, hnorm, herr⟩ := h (reCLM X '' K ∪ imCLM X '' K)
     ((hK.image (reCLM X).continuous).union (hK.image (imCLM X).continuous))
     (ε / 2) (by positivity)
-  refine ⟨T.complexify, T.hasFiniteRange_complexify hT, ?_, fun z hz ↦
+  refine ⟨T.complexify, T.hasFiniteRange_complexify_iff.2 hT, ?_, fun z hz ↦
     complexify_error_lt T z (herr _ (Or.inl ⟨z, hz, reCLM_apply z⟩))
       (herr _ (Or.inr ⟨z, hz, imCLM_apply z⟩))⟩
   simpa only [ContinuousLinearMap.norm_complexify] using hnorm
