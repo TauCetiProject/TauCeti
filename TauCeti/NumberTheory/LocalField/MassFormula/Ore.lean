@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
-import Mathlib.RingTheory.Polynomial.GaussLemma
+import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
@@ -59,6 +59,8 @@ separable over `K` and realizes wild exponent `j` in any characteristic.
   84–117.
 * M. Krasner, *Nombre des extensions d'un degré donné d'un corps p-adique*, Colloques
   Internationaux du CNRS **143**, Paris, 1966, 143–169.
+* J.-P. Serre, *Une « formule de masse » pour les extensions totalement ramifiées de degré donné
+  d'un corps local*, C. R. Acad. Sci. Paris Sér. A **286** (1978), 1031–1036, Remarque 1°.
 * J.-P. Serre, *Local Fields*, GTM 67, Springer, 1979, Chapter III, §6, Proposition 13.
 * S. Pauli and X.-F. Roblot, *On the computation of all extensions of a p-adic field of a given
   degree*, Math. Comp. **70** (2001), 1641–1659, Proposition 3.1.
@@ -460,7 +462,9 @@ theorem IsOreAdmissible.derivative_map_ne_zero_of_isEisensteinAt {n j : ℕ}
 /-- Over any field `K` whose valuation ring `𝒪[K]` is a discrete valuation ring, every
 Ore-admissible pair `(n, j)` is realized on the coefficient level by an explicit monic Eisenstein
 polynomial `monicOfCoeff c` (`X ^ n + ϖ` when `j % n = 0`, and `X ^ n + ϖ ^ ν_b * X ^ b + ϖ` when
-`0 < j % n`). -/
+`0 < j % n`). In equal characteristic with `(n : K) = 0` and `j % n = 1`, this specializes to
+Serre's explicit family `X ^ n + ϖ ^ m * X + ϖ` (Serre 1978, Remarque 1°), generalizing the
+witness construction for `TauCeti.exists_mem_totallyRamifiedOfDegree_discriminantExponent_eq`. -/
 theorem IsOreAdmissible.exists_monic_isEisensteinAt {n j : ℕ} (hadm : IsOreAdmissible K n j) :
     ∃ c : Fin n → 𝒪[K],
       (monicOfCoeff c).IsEisensteinAt 𝓂[K] ∧
@@ -597,11 +601,13 @@ theorem exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff {n j : ℕ} :
     obtain ⟨c, hf, hcoeff, hcrit⟩ := hadm.exists_monic_isEisensteinAt
     let f : 𝒪[K][X] := monicOfCoeff c
     have hdeg : f.natDegree = n := natDegree_monicOfCoeff c
-    have hf_monic : f.Monic := monic_monicOfCoeff c
+    let a : Fin n → K := fun i ↦ (c i : K)
+    have hmap : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a := by
+      simp [f, a, map_monicOfCoeff, Algebra.coe_algebraMap_ofSubsemiring]
+    have ha : a ∈ eisensteinSet K n :=
+      mem_eisensteinSet_iff_exists_isEisensteinAt.mpr ⟨f, hmap, hf⟩
     have hirr : Irreducible (f.map (algebraMap 𝒪[K] K)) :=
-      hf_monic.irreducible_iff_irreducible_map_fraction_map.mp
-        (hf.irreducible (Ideal.IsMaximal.isPrime inferInstance) hf_monic.isPrimitive
-          (hdeg.symm ▸ hn))
+      hmap ▸ irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha
     have hsep : (f.map (algebraMap 𝒪[K] K)).Separable :=
       (separable_iff_derivative_ne_zero hirr).mpr
         (hadm.derivative_map_ne_zero_of_isEisensteinAt hf hdeg hcrit)
