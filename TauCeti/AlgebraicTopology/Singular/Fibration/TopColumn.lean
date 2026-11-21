@@ -19,7 +19,8 @@ the Serre spectral sequence of `p`, whose abutment `Hₖ(E; R)` is filtered by t
 `Hₖ(E)` projects onto the graded piece `F_n Hₖ(E) / F_{n-1} Hₖ(E)`, which is the object
 `E^∞_{n,k-n}` of the column `n` of the limit page
 (`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel`). This projection is
-`TauCeti.TopCat.toSerreTopColumnEInfty`.
+`TauCeti.TopCat.toSerreTopColumnEInfty`, the case of the skeletal filtration of the projection
+`TauCeti.toFilteredSpaceTopColumnEInfty` defined for any filtered space.
 
 The main result is that a class `α ∈ Hₖ(E; R)` lives over the fundamental class at `b`
 (`TauCeti.LivesOverFundamentalClass`) exactly when its image in `E^∞_{n,k-n}` is nonzero
@@ -32,7 +33,8 @@ an absolute CW complex the spectral sequence converges strongly, and every late 
 
 The proof combines two facts. The filtration of the abutment is the image filtration
 (`TauCeti.range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`), so the
-kernel of the projection is the image of `Hₖ(p⁻¹(Xⁿ⁻¹)) → Hₖ(E)`; and a class lives over the
+kernel of the projection is the image of `Hₖ(p⁻¹(Xⁿ⁻¹)) → Hₖ(E)`
+(`TauCeti.toFilteredSpaceTopColumnEInfty_eq_zero_iff`); and a class lives over the
 fundamental class exactly when it does not come from the part of `E` over the `(n - 1)`-skeleton
 (`TauCeti.TopCat.livesOverFundamentalClass_iff_notMem_range`).
 
@@ -85,42 +87,18 @@ private lemma preimageSkeleton_natCast_sub_one_add_one :
     preimageSkeleton C p ((n : ℤ) - 1 + 1) = univ := by
   rw [preimageSkeleton_def, show ((n : ℤ) - 1 + 1 + 1).toNat = n + 1 by lia, hC, preimage_univ]
 
-/-- Over a complex whose `n`-skeleton is all of `B`, the piece `F_n Hₖ(E)` of the filtration of the
-abutment of the Serre spectral sequence is all of `Hₖ(E)`. -/
-private lemma isIso_serreSpectralObject_abutmentFiltrationι_top (k : ℕ) :
-    IsIso ((serreSpectralObject C p R).abutmentFiltrationι ((n : ℤ) - 1 + 1) (-k)) :=
-  CochainComplex.isIso_filtrationAbutmentFiltrationι _ _
-    (chainFiltration_eq_top _ (preimageSkeleton_natCast_sub_one_add_one hC)) _
-
-/-- Over a complex whose `n`-skeleton is all of `B`, the identification of the top piece
-`F_n Hₖ(E; R)` of the filtration of the abutment of the Serre spectral sequence with `Hₖ(E; R)`. -/
-private def serreTopFiltrationIso (k : ℕ) :
-    (serreSpectralObject C p R).abutmentFiltration ((n : ℤ) - 1 + 1) (-k) ≅
-      ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) k : ModuleCat.{u} R) :=
-  haveI := isIso_serreSpectralObject_abutmentFiltrationι_top (p := p) R hC k
-  asIso ((serreSpectralObject C p R).abutmentFiltrationι ((n : ℤ) - 1 + 1) (-k)) ≪≫
-    chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) k
-
-/-- The identification `serreTopFiltrationIso` is the embedding of `F_n Hₖ(E)` into the abutment,
-followed by the identification of the abutment with `Hₖ(E; R)`. -/
-private lemma serreTopFiltrationIso_hom (k : ℕ) :
-    (serreTopFiltrationIso (p := p) R hC k).hom =
-      (serreSpectralObject C p R).abutmentFiltrationι ((n : ℤ) - 1 + 1) (-k) ≫
-        (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) k).hom :=
-  (rfl)
-
 variable (p) in
 /-- **The projection onto the top column of the Serre spectral sequence.** Let `C ⊆ B` be a
 relative CW complex whose `n`-skeleton is all of `B`. The homology `Hₖ(E; R)` is the top piece
 `F_n Hₖ(E)` of the filtration of the abutment of the Serre spectral sequence of `p : E ⟶ B`, and
 this is its projection onto the graded piece `F_n Hₖ(E) / F_{n-1} Hₖ(E)`, the object
-`E^∞_{n,k-n}` of the limit page at the classical position `(n, k - n)`. -/
+`E^∞_{n,k-n}` of the limit page at the classical position `(n, k - n)`. It is the projection
+`TauCeti.toFilteredSpaceTopColumnEInfty` of the skeletal filtration. -/
 def toSerreTopColumnEInfty (k : ℕ) :
     ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) k : ModuleCat.{u} R) ⟶
       (serreSpectralObject C p R).EInfty ((n : ℤ) - 1) (-k) :=
-  (serreTopFiltrationIso (p := p) R hC k).inv ≫
-    cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
-      ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv
+  toFilteredSpaceTopColumnEInfty (ModuleCat.of R R) (monotone_preimageSkeleton p)
+    (preimageSkeleton_natCast_sub_one_add_one hC) k
 
 /-- **The defining property of the projection onto the top column.** On the top piece
 `F_n Hₖ(E)` of the filtration of the abutment, identified with `Hₖ(E; R)`, the projection is the
@@ -132,14 +110,9 @@ theorem abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_toSerreTop
         (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) k).hom ≫
           toSerreTopColumnEInfty p R hC k =
       cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
-        ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv := by
-  have h := (serreTopFiltrationIso (p := p) R hC k).hom_inv_id_assoc
-    (cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
-      ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv)
-  rw [serreTopFiltrationIso_hom] at h
-  -- The source of `toSerreTopColumnEInfty` is the homology of the singular chains of `E` only up
-  -- to unfolding `SSet.homology`, so the composite is reassociated with a term rather than `rw`.
-  exact (Category.assoc _ _ _).symm.trans h
+        ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv :=
+  abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_toFilteredSpaceTopColumnEInfty _ _
+    (preimageSkeleton_natCast_sub_one_add_one hC) k
 
 instance (k : ℕ) : Epi (toSerreTopColumnEInfty p R hC k) := by
   rw [toSerreTopColumnEInfty]
@@ -153,36 +126,10 @@ theorem toSerreTopColumnEInfty_eq_zero_iff {k : ℕ}
       α ∈ LinearMap.range (SSet.homologyMap (_root_.TopCat.toSSet.map
         (TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).map)
           (ModuleCat.of R R) k).hom := by
-  set e := serreTopFiltrationIso (p := p) R hC k
-  set m := (serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)
-  -- The last factor of the projection is an isomorphism, so the projection vanishes exactly when
-  -- the class of `e⁻¹ α` in the cokernel of `m` does, that is, when `e⁻¹ α` lies in the range of
-  -- `m`.
-  have hproj : (toSerreTopColumnEInfty p R hC k).hom α = 0 ↔
-      (cokernel.π m).hom (e.inv.hom α) = 0 := by
-    rw [toSerreTopColumnEInfty, ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
-      LinearMap.comp_apply]
-    exact ((serreSpectralObject C p R).EInftyIsoCokernel _ _).symm.toLinearEquiv.map_eq_zero_iff
-  have hπ : (cokernel.π m).hom (e.inv.hom α) = 0 ↔ e.inv.hom α ∈ LinearMap.range m.hom := by
-    rw [(ShortComplex.exact_cokernel m).moduleCat_range_eq_ker, LinearMap.mem_ker]
-  have hmem : e.inv.hom α ∈ LinearMap.range m.hom ↔ α ∈ LinearMap.range (m ≫ e.hom).hom := by
-    constructor
-    · rintro ⟨y, hy⟩
-      exact ⟨y, by simp [hy]⟩
-    · rintro ⟨y, hy⟩
-      exact ⟨y, by simp [← hy]⟩
-  -- Applying `e`, the range of `m` becomes the range of the embedding of `F_{n-1} Hₖ(E)`, which is
-  -- the image filtration.
-  have hm : m ≫ e.hom = (serreSpectralObject C p R).abutmentFiltrationι ((n : ℤ) - 1) (-k) ≫
-      (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) k).hom := by
-    rw [serreTopFiltrationIso_hom]
-    exact Abelian.SpectralObject.abutmentFiltrationMap_ι_assoc _ _ _ _
-  have hrange := range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom
-    (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p) ((n : ℤ) - 1) k
-  rw [preimageSkeleton_natCast_sub_one] at hrange
-  rw [hproj, hπ, hmem, hm]
-  -- The two ranges live in the homology of `E`, written once as the ambient space of a pair.
-  exact SetLike.ext_iff.1 hrange α
+  have h := toFilteredSpaceTopColumnEInfty_eq_zero_iff (ModuleCat.of R R)
+    (monotone_preimageSkeleton (C := C) p) (preimageSkeleton_natCast_sub_one_add_one hC) α
+  rw [preimageSkeleton_natCast_sub_one] at h
+  exact h
 
 /-- **Classes living over the fundamental class are detected on the top column** of the Serre
 spectral sequence: the spectral-sequence form of Proposition 2.6 of

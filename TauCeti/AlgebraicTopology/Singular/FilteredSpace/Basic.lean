@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
 public import TauCeti.AlgebraicTopology.Singular.Triple
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
@@ -50,6 +51,9 @@ singular chains.
 * **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.chainFiltrationAbutmentIso`),
   and the `q`th piece of its filtration is the image of `Hₙ(X q) ⟶ Hₙ(Y)`
   (`TauCeti.range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`).
+  When `X (q + 1) = Y`, the projection of `Hₙ(Y)` onto the limit object `E∞` at `q`
+  (`TauCeti.toFilteredSpaceTopColumnEInfty`) vanishes exactly on the image of `Hₙ(X q)`
+  (`TauCeti.toFilteredSpaceTopColumnEInfty_eq_zero_iff`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
   strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
   absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
@@ -303,6 +307,88 @@ theorem range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_
   exact h
 
 end ImageFiltration
+
+section TopColumn
+
+variable {q : ℤ} (hq : X (q + 1) = Set.univ)
+
+include hq in
+/-- If `X (q + 1)` is all of `Y`, the identification of the piece `F_{q+1}` of the filtration of
+the abutment in degree `-n` with `Hₙ(Y)`. -/
+private def filteredSpaceTopFiltrationIso (n : ℕ) :
+    (filteredSpaceSpectralObject R hX).abutmentFiltration (q + 1) (-n) ≅
+      (TopCat.toSSet.obj Y).homology R n :=
+  haveI := CochainComplex.isIso_filtrationAbutmentFiltrationι _
+    (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX)
+    (chainFiltration_eq_top _ hq) (-n)
+  asIso ((filteredSpaceSpectralObject R hX).abutmentFiltrationι (q + 1) (-n)) ≪≫
+    chainFiltrationAbutmentIso _ hX n
+
+include hq in
+/-- **The projection onto the top column of the spectral sequence of a filtered space.** If
+`X (q + 1)` is all of `Y`, then `Hₙ(Y)` is the piece `F_{q+1}` of the filtration of the abutment
+in degree `-n`, and this is its projection onto the graded piece `F_{q+1} / F_q`, the limit object
+`E∞` at `q` in degree `-n`. -/
+def toFilteredSpaceTopColumnEInfty (n : ℕ) :
+    (TopCat.toSSet.obj Y).homology R n ⟶ (filteredSpaceSpectralObject R hX).EInfty q (-n) :=
+  (filteredSpaceTopFiltrationIso R hX hq n).inv ≫
+    cokernel.π ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap q (-n)) ≫
+      ((filteredSpaceSpectralObject R hX).EInftyIsoCokernel q (-n)).inv
+
+/-- **The defining property of the projection onto the top column.** On the piece `F_{q+1}` of the
+filtration of the abutment, identified with `Hₙ(Y)`, the projection is the quotient map onto the
+cokernel of `F_q ⟶ F_{q+1}`, identified with `E∞`. -/
+@[reassoc]
+theorem abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_toFilteredSpaceTopColumnEInfty
+    (n : ℕ) :
+    (filteredSpaceSpectralObject R hX).abutmentFiltrationι (q + 1) (-n) ≫
+        (chainFiltrationAbutmentIso ((singularChainComplexFunctor A).obj R) hX n).hom ≫
+          toFilteredSpaceTopColumnEInfty R hX hq n =
+      cokernel.π ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap q (-n)) ≫
+        ((filteredSpaceSpectralObject R hX).EInftyIsoCokernel q (-n)).inv :=
+  (Category.assoc _ _ _).symm.trans ((filteredSpaceTopFiltrationIso R hX hq n).hom_inv_id_assoc _)
+
+instance (n : ℕ) : Epi (toFilteredSpaceTopColumnEInfty R hX hq n) := by
+  rw [toFilteredSpaceTopColumnEInfty]
+  infer_instance
+
+end TopColumn
+
+/-- The projection onto the top column vanishes on a class `α ∈ Hₙ(Y; M)` exactly when `α` comes
+from the homology of `X q`. -/
+theorem toFilteredSpaceTopColumnEInfty_eq_zero_iff {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+    (hX : Monotone X) {q : ℤ} (hq : X (q + 1) = Set.univ) {n : ℕ}
+    (α : ((TopCat.toSSet.obj Y).homology M n : ModuleCat.{w} k)) :
+    (toFilteredSpaceTopColumnEInfty M hX hq n).hom α = 0 ↔
+      α ∈ LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom := by
+  set e := filteredSpaceTopFiltrationIso M hX hq n
+  set m := (filteredSpaceSpectralObject M hX).abutmentFiltrationMap q (-n)
+  -- The last factor of the projection is an isomorphism, so the projection vanishes exactly when
+  -- the class of `e⁻¹ α` in the cokernel of `m` does, that is, when `e⁻¹ α` lies in the range of
+  -- `m`.
+  have hproj : (toFilteredSpaceTopColumnEInfty M hX hq n).hom α = 0 ↔
+      (cokernel.π m).hom (e.inv.hom α) = 0 := by
+    rw [toFilteredSpaceTopColumnEInfty, ModuleCat.hom_comp, ModuleCat.hom_comp,
+      LinearMap.comp_apply, LinearMap.comp_apply]
+    exact ((filteredSpaceSpectralObject M hX).EInftyIsoCokernel _ _).symm.toLinearEquiv
+      |>.map_eq_zero_iff
+  have hπ : (cokernel.π m).hom (e.inv.hom α) = 0 ↔ e.inv.hom α ∈ LinearMap.range m.hom := by
+    rw [(ShortComplex.exact_cokernel m).moduleCat_range_eq_ker, LinearMap.mem_ker]
+  have hmem : e.inv.hom α ∈ LinearMap.range m.hom ↔ α ∈ LinearMap.range (m ≫ e.hom).hom := by
+    constructor
+    · rintro ⟨y, hy⟩
+      exact ⟨y, by simp [hy]⟩
+    · rintro ⟨y, hy⟩
+      exact ⟨y, by simp [← hy]⟩
+  -- Applying `e`, the range of `m` becomes the range of the embedding of `F_q`, which is the image
+  -- filtration.
+  have hm : m ≫ e.hom = (filteredSpaceSpectralObject M hX).abutmentFiltrationι q (-n) ≫
+      (chainFiltrationAbutmentIso ((singularChainComplexFunctor _).obj M) hX n).hom :=
+    Abelian.SpectralObject.abutmentFiltrationMap_ι_assoc _ _ _ _
+  rw [hproj, hπ, hmem, hm]
+  exact SetLike.ext_iff.1
+    (range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom M hX q n) α
 
 section FirstDifferential
 
