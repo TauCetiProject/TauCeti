@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Injective.Bidual
-public import TauCeti.RingTheory.MatlisDuality.Artinian
 public import TauCeti.RingTheory.MatlisDuality.Endomorphism
+import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # Matlis duality for finitely generated modules
 
 Let `R` be a Noetherian local ring and `E` an injective hull of its residue field.
 The hull and the Matlis dual `Hom_R(M, E)` of every finitely generated `R`-module `M`
-are Artinian. If `R` is complete, evaluation identifies `M` with its double Matlis dual,
-and more generally is bijective on products of a finitely generated module and an Artinian
-module (`TauCeti.IsInjectiveEnvelope.bijective_applyₗ_prod_of_finite_of_artinian`).
+are Artinian. If `R` is complete, evaluation identifies `M` with its double Matlis dual.
 The residue field may be infinite.
 
 Completeness identifies the existing endomorphism algebra `End_R(E) ≅ R̂` with `R`.
@@ -34,7 +32,7 @@ public section
 
 noncomputable section
 
-universe u v w z
+universe u v w
 
 namespace TauCeti.IsInjectiveEnvelope
 
@@ -60,7 +58,8 @@ theorem isArtinian : IsArtinian R E := by
       (hι.adicCompletionEquivEnd_apply hι.mem_primaryComponent
         (hι.adicCompletionEquivEnd.symm φ) x).symm
   have := Module.Finite.of_surjective f hf
-  exact hι.isArtinian_of_finite_adicCompletion_linearMap inferInstance
+  have := hι.moduleInjective
+  exact isArtinian_of_isNoetherian_linearMap (_root_.AdicCompletion (maximalIdeal R) R) hι.injective
 
 /-- The Matlis dual of a finitely generated module over a Noetherian local ring is Artinian.
 Completeness and finiteness of the residue field are unnecessary. -/
@@ -83,8 +82,6 @@ theorem finite_iff_isArtinian_linearMap (M : Type w) [AddCommGroup M] [Module R 
   infer_instance
 
 variable [IsAdicComplete (maximalIdeal R) R]
-
-section
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
 
@@ -111,16 +108,5 @@ theorem evalEquivOfFinite_symm_apply_apply (φ : (M →ₗ[R] E) →ₗ[R] E) (f
   simpa only [evalEquivOfFinite_apply_apply] using
     congrArg (fun ψ : (M →ₗ[R] E) →ₗ[R] E ↦ ψ f)
       ((hι.evalEquivOfFinite M).apply_symm_apply φ)
-
-end
-
-/-- Over a complete Noetherian local ring, evaluation into the double Matlis dual is bijective on
-any product `M × P` of a finitely generated module `M` and an Artinian module `P` (such as
-`R × E`, which is neither finite nor Artinian when `dim R ≥ 1`). -/
-theorem bijective_applyₗ_prod_of_finite_of_artinian
-    (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
-    (P : Type z) [AddCommGroup P] [Module R P] [IsArtinian R P] :
-    Function.Bijective (applyₗ : (M × P) →ₗ[R] ((M × P) →ₗ[R] E) →ₗ[R] E) :=
-  bijective_applyₗ_prod_iff.mpr ⟨hι.bijective_applyₗ_of_finite M, hι.bijective_applyₗ_of_artinian P⟩
 
 end TauCeti.IsInjectiveEnvelope

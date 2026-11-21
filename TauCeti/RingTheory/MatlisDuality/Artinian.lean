@@ -5,41 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Injective.Bidual
-public import TauCeti.Algebra.Module.Torsion.ResidueField
-public import TauCeti.RingTheory.AdicCompletion.Noetherian
-public import TauCeti.RingTheory.AdicCompletion.Torsion
 public import TauCeti.RingTheory.Artinian.LocalRing
-public import TauCeti.RingTheory.MatlisDuality.Endomorphism
-public import TauCeti.RingTheory.MatlisDuality.FiniteLength
+public import TauCeti.RingTheory.MatlisDuality.Finite
+import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # Matlis duality for Artinian modules
 
-Let `E` be an injective module containing the residue field of a commutative local ring `R`.
-The annihilator of a submodule `N ≤ M` in `Hom_R(M, E)` is the kernel of restriction to `N`.
-Annihilation reverses and reflects inclusion, since `E` separates points of `M/N`.
-Consequently, if `Hom_R(M, E)` is Noetherian, then `M` is Artinian.
-
-The same argument allows scalars on the dual to act through any semiring acting on `E` and
-commuting with `R`. In particular, for an injective envelope `E` of the residue field of a
-Noetherian local ring `R`, the `𝔪`-adic completion `R̂` acts canonically on `E`. Conversely, every
-Artinian `R`-module embeds into a finite power `E^r`
-(`TauCeti.exists_injective_linearMap_pi_of_isArtinian`), so injectivity of `E` presents
-`Hom_R(M, E)` as a quotient of `Hom_R(E^r, E) ≅ R̂^r`. Thus `M` is Artinian over `R` if and only if
-`Hom_R(M, E)` is finitely generated over `R̂`, with no torsion or completeness assumption on `M` or
-`R`.
+Let `E` be an injective envelope of the residue field of a Noetherian local ring `R`, with
+`𝔪`-adic completion `R̂` acting canonically on `E`. Every Artinian `R`-module `M` embeds into a
+finite power `E^r` (`TauCeti.exists_injective_linearMap_pi_of_isArtinian`), so injectivity of `E`
+presents `Hom_R(M, E)` as a quotient of `Hom_R(E^r, E) ≅ R̂^r`. Combined with the annihilator
+order embedding (`TauCeti.matlisAnnihilatorOrderEmbedding`), `M` is Artinian over `R` if and only
+if `Hom_R(M, E)` is finitely generated over `R̂`, with no torsion or completeness assumption on `M`
+or `R`.
 
 When `R` is complete for its maximal ideal, `Hom_R(M, E)` is finitely generated over `R` whenever
 `M` is Artinian, and the canonical evaluation map `M → Hom_R(Hom_R(M, E), E)` is an isomorphism:
 surjectivity on `E^r` follows from `End_R(E) ≅ R` (`TauCeti.IsInjectiveEnvelope.exists_eq_smul_id`)
-and descends along `M ↪ E^r` via `LinearMap.surjective_applyₗ_of_injective`. No finiteness of the
-residue field is required.
+and descends along `M ↪ E^r` via `LinearMap.surjective_applyₗ_of_injective`. Combined with
+finite-module biduality, evaluation is bijective on products `M × P` of a finitely generated module
+and an Artinian module. No finiteness of the residue field is required.
 
 ## Main declarations
 
-* `TauCeti.matlisAnnihilatorOrderEmbedding`: annihilation embeds `Submodule R M` into the opposite
-  lattice `(Submodule S (M →ₗ[R] E))ᵒᵈ`.
 * `TauCeti.IsInjectiveEnvelope.finite_adicCompletion_linearMap_of_artinian` and
   `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_adicCompletion_linearMap`: over a Noetherian
   local ring `R`, `M` is Artinian over `R` if and only if `Hom_R(M, E)` is finite over `R̂`.
@@ -47,6 +36,9 @@ residue field is required.
   `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_of_artinian`: over a complete Noetherian local ring,
   the Matlis dual of an Artinian module is finite and evaluation into the double Matlis dual is
   bijective (`TauCeti.IsInjectiveEnvelope.evalEquivOfArtinian`).
+* `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_prod_of_finite_of_artinian`: over a complete
+  Noetherian local ring, evaluation into the double Matlis dual is bijective on `M × P` when `M` is
+  finitely generated and `P` is Artinian.
 
 ## References
 
@@ -64,69 +56,7 @@ namespace TauCeti
 
 open IsLocalRing LinearMap
 
-universe u v w t
-
-section General
-
-variable {R : Type u} [CommRing R] [IsLocalRing R]
-  {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
-  {ι : ResidueField R →ₗ[R] E}
-  {M : Type w} [AddCommGroup M] [Module R M]
-  (S : Type t) [Semiring S] [Module S E] [SMulCommClass R S E]
-
-/-- Restriction kernels in the Matlis dual reverse and reflect inclusion of submodules.
-It suffices that the injective target contain the residue field; essentiality is not needed. -/
-theorem ker_lcomp_subtype_le_iff_of_injective [Module.Injective R E]
-    (hι : Function.Injective ι) (N P : Submodule R M) :
-    ker (N.subtype.lcomp S E) ≤ ker (P.subtype.lcomp S E) ↔ P ≤ N := by
-  constructor
-  · intro h x hx
-    have hz : (LinearMap.applyₗ : (M ⧸ N) →ₗ[R] ((M ⧸ N) →ₗ[R] E) →ₗ[R] E)
-        (N.mkQ x) = 0 := by
-      ext f
-      have hf : f.comp N.mkQ ∈ ker (N.subtype.lcomp S E) := by
-        simp only [LinearMap.mem_ker, lcomp_apply']
-        ext y
-        simp only [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.subtype_apply,
-          (Submodule.Quotient.mk_eq_zero N).mpr y.property, map_zero, LinearMap.zero_apply]
-      have hp := LinearMap.congr_fun (h hf) ⟨x, hx⟩
-      simpa using hp
-    have := injective_applyₗ_of_injective (M := M ⧸ N) hι
-    exact (Submodule.Quotient.mk_eq_zero N).mp (this (hz.trans (map_zero _).symm))
-  · intro h f hf
-    apply LinearMap.ext
-    intro x
-    exact LinearMap.congr_fun hf ⟨x, h x.property⟩
-
-/-- Annihilation embeds the submodule lattice into the opposite lattice of submodules of the
-Matlis dual. The dual scalars act on the target `E` and need only commute with `R`. -/
-def matlisAnnihilatorOrderEmbedding [Module.Injective R E] (hι : Function.Injective ι) :
-    Submodule R M ↪o (Submodule S (M →ₗ[R] E))ᵒᵈ :=
-  OrderEmbedding.ofMapLEIff (fun N ↦ OrderDual.toDual (ker (N.subtype.lcomp S E)))
-    (fun _ _ ↦ ker_lcomp_subtype_le_iff_of_injective S hι _ _)
-
-/-- The annihilator embedding assigns to `N` the maps vanishing on `N`. -/
-@[simp]
-theorem matlisAnnihilatorOrderEmbedding_apply [Module.Injective R E]
-    (hι : Function.Injective ι) (N : Submodule R M) :
-    matlisAnnihilatorOrderEmbedding S hι N =
-      OrderDual.toDual (ker (N.subtype.lcomp S E)) :=
-  (rfl)
-
-/-- A module is Artinian if its dual into an injective module containing the residue field
-is Noetherian, even for a commuting scalar action on the dual. -/
-theorem isArtinian_of_isNoetherian_linearMap [Module.Injective R E]
-    (hι : Function.Injective ι) [IsNoetherian S (M →ₗ[R] E)] : IsArtinian R M :=
-  (matlisAnnihilatorOrderEmbedding (M := M) S hι).wellFoundedLT
-
-/-- A module is Noetherian if its dual into an injective module containing the residue field is
-Artinian, even for a commuting scalar action on the dual. -/
-theorem isNoetherian_of_isArtinian_linearMap [Module.Injective R E]
-    (hι : Function.Injective ι) [IsArtinian S (M →ₗ[R] E)] : IsNoetherian R M := by
-  rw [isNoetherian_iff]
-  exact (matlisAnnihilatorOrderEmbedding (M := M) S hι).dual.wellFounded ‹_›
-
-end General
+universe u v w z
 
 namespace IsInjectiveEnvelope
 
@@ -221,6 +151,8 @@ theorem isArtinian_iff_finite_linearMap (M : Type w) [AddCommGroup M] [Module R 
   have := hι.moduleInjective
   exact isArtinian_of_isNoetherian_linearMap R hι.injective
 
+section
+
 variable (M : Type w) [AddCommGroup M] [Module R M] [IsArtinian R M]
 
 /-- Matlis biduality for Artinian modules over a complete Noetherian local ring: the canonical
@@ -250,6 +182,17 @@ theorem evalEquivOfArtinian_symm_apply_apply (φ : (M →ₗ[R] E) →ₗ[R] E) 
   simpa only [evalEquivOfArtinian_apply_apply] using
     congrArg (fun ψ : (M →ₗ[R] E) →ₗ[R] E ↦ ψ f)
       ((hι.evalEquivOfArtinian M).apply_symm_apply φ)
+
+end
+
+/-- Over a complete Noetherian local ring, evaluation into the double Matlis dual is bijective on
+any product `M × P` of a finitely generated module `M` and an Artinian module `P` (such as
+`R × E`, which is neither finite nor Artinian when `dim R ≥ 1`). -/
+theorem bijective_applyₗ_prod_of_finite_of_artinian
+    (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
+    (P : Type z) [AddCommGroup P] [Module R P] [IsArtinian R P] :
+    Function.Bijective (applyₗ : (M × P) →ₗ[R] ((M × P) →ₗ[R] E) →ₗ[R] E) :=
+  bijective_applyₗ_prod_iff.mpr ⟨hι.bijective_applyₗ_of_finite M, hι.bijective_applyₗ_of_artinian P⟩
 
 end Complete
 

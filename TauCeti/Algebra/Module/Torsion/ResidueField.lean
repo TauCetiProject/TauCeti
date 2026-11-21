@@ -7,11 +7,15 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Essential
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Ideal-power torsion in essential extensions of a residue field
 
-Every essential extension of the residue field of a commutative Noetherian local ring is
+Every simple submodule of a module over a commutative local ring is annihilated by the maximal
+ideal (`IsAtom.le_torsionBySet_maximalIdeal`), without any Noetherian hypothesis.
+
+Over a commutative Noetherian local ring, every essential extension of the residue field is
 the union of its submodules annihilated by powers of the maximal ideal. In particular this
 holds for the injective hull. This lets the adic completion act through its residues, without
 requiring completeness of the ring or finiteness of the residue field.
@@ -27,9 +31,23 @@ injectivity of the ambient module is not needed.
 
 public section
 
-namespace TauCeti
-
 open IsLocalRing Submodule
+
+/-- Every simple submodule of a module over a commutative local ring is annihilated by the
+maximal ideal. -/
+theorem IsAtom.le_torsionBySet_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R]
+    {M : Type*} [AddCommGroup M] [Module R M] {a : Submodule R M} (ha : IsAtom a) :
+    a ≤ torsionBySet R M (maximalIdeal R) := by
+  have : IsSimpleModule R a := isSimpleModule_iff_isAtom.mpr ha
+  have hann : Module.annihilator R a = maximalIdeal R :=
+    IsLocalRing.eq_maximalIdeal IsSimpleModule.annihilator_isMaximal
+  intro x hx
+  rw [mem_torsionBySet_iff]
+  intro m
+  have hm : (m : R) ∈ Module.annihilator R a := hann.symm ▸ m.prop
+  exact congrArg Subtype.val (Module.mem_annihilator.mp hm ⟨x, hx⟩)
+
+namespace TauCeti
 
 variable {R E : Type*} [CommRing R] [IsNoetherianRing R] [IsLocalRing R]
   [AddCommGroup E] [Module R E]

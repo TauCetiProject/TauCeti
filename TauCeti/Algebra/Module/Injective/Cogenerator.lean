@@ -35,6 +35,11 @@ of finite length, an injective map between modules of the same finite length bei
   other variable.
 * `TauCeti.bijective_of_injective_of_injective_flip`: a pairing into `E` that is non-degenerate in
   both variables, one of which has finite length, identifies each side with the dual of the other.
+* `TauCeti.annihilatorOrderEmbedding`,
+  `TauCeti.isArtinian_of_isNoetherian_linearMap_of_forall_isMaximal`, and
+  `TauCeti.isNoetherian_of_isArtinian_linearMap_of_forall_isMaximal`: annihilation embeds the
+  submodule lattice into the opposite submodule lattice of the dual over any commuting scalar
+  semiring, so chain conditions transfer contravariantly.
 
 ## References
 
@@ -116,6 +121,68 @@ theorem injective_flip_of_surjective
   obtain ⟨ψ, hψ⟩ := exists_apply_ne_zero_of_forall_isMaximal hE hne
   obtain ⟨m, rfl⟩ := hf ψ
   exact hψ (by rw [← LinearMap.flip_apply, hn, LinearMap.zero_apply])
+
+section Annihilator
+
+variable (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E))
+  (S : Type*) [Semiring S] [Module S E] [SMulCommClass R S E]
+include hE
+
+/-- Restriction kernels in the `E`-dual reverse and reflect inclusion of submodules when `E`
+is an injective cogenerator. -/
+theorem ker_lcomp_subtype_le_iff_of_forall_isMaximal
+    {M : Type w} [AddCommGroup M] [Module R M] (N P : Submodule R M) :
+    ker (N.subtype.lcomp S E) ≤ ker (P.subtype.lcomp S E) ↔ P ≤ N := by
+  constructor
+  · intro h x hx
+    have hz : (LinearMap.applyₗ : (M ⧸ N) →ₗ[R] ((M ⧸ N) →ₗ[R] E) →ₗ[R] E)
+        (N.mkQ x) = 0 := by
+      ext f
+      have hf : f.comp N.mkQ ∈ ker (N.subtype.lcomp S E) := by
+        simp only [LinearMap.mem_ker, lcomp_apply']
+        ext y
+        simp only [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.subtype_apply,
+          (Submodule.Quotient.mk_eq_zero N).mpr y.property, map_zero, LinearMap.zero_apply]
+      have hp := LinearMap.congr_fun (h hf) ⟨x, hx⟩
+      simpa using hp
+    have := injective_applyₗ_of_forall_isMaximal hE (M := M ⧸ N)
+    exact (Submodule.Quotient.mk_eq_zero N).mp (this (hz.trans (map_zero _).symm))
+  · intro h f hf
+    apply LinearMap.ext
+    intro x
+    exact LinearMap.congr_fun hf ⟨x, h x.property⟩
+
+/-- Annihilation embeds the submodule lattice into the opposite lattice of submodules of the
+`E`-dual. The dual scalars act on the target `E` and need only commute with `R`. -/
+def annihilatorOrderEmbedding {M : Type w} [AddCommGroup M] [Module R M] :
+    Submodule R M ↪o (Submodule S (M →ₗ[R] E))ᵒᵈ :=
+  OrderEmbedding.ofMapLEIff (fun N ↦ OrderDual.toDual (ker (N.subtype.lcomp S E)))
+    (fun _ _ ↦ ker_lcomp_subtype_le_iff_of_forall_isMaximal hE S _ _)
+
+/-- The annihilator embedding assigns to `N` the maps vanishing on `N`. -/
+@[simp]
+theorem annihilatorOrderEmbedding_apply {M : Type w} [AddCommGroup M] [Module R M]
+    (N : Submodule R M) :
+    annihilatorOrderEmbedding hE S N =
+      OrderDual.toDual (ker (N.subtype.lcomp S E)) :=
+  (rfl)
+
+/-- A module is Artinian if its dual into an injective cogenerator is Noetherian, even for a
+commuting scalar action on the dual. -/
+theorem isArtinian_of_isNoetherian_linearMap_of_forall_isMaximal
+    {M : Type w} [AddCommGroup M] [Module R M] [IsNoetherian S (M →ₗ[R] E)] :
+    IsArtinian R M :=
+  (annihilatorOrderEmbedding (M := M) hE S).wellFoundedLT
+
+/-- A module is Noetherian if its dual into an injective cogenerator is Artinian, even for a
+commuting scalar action on the dual. -/
+theorem isNoetherian_of_isArtinian_linearMap_of_forall_isMaximal
+    {M : Type w} [AddCommGroup M] [Module R M] [IsArtinian S (M →ₗ[R] E)] :
+    IsNoetherian R M := by
+  rw [isNoetherian_iff]
+  exact (annihilatorOrderEmbedding (M := M) hE S).dual.wellFounded ‹_›
+
+end Annihilator
 
 variable (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 include hE

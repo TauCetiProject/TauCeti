@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Injective.Hom
 public import TauCeti.RingTheory.AdicCompletion.Injective
-public import TauCeti.RingTheory.AdicCompletion.LocalRing
-public import TauCeti.RingTheory.MatlisDuality.Finite
+public import TauCeti.RingTheory.AdicCompletion.ResidueField
+public import TauCeti.RingTheory.MatlisDuality.Artinian
+import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # Matlis duality over the completion of a Noetherian local ring

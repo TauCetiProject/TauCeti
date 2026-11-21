@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Injective
-public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Module.Torsion.ResidueField
 public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
@@ -16,8 +15,8 @@ public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 Let `R` be a commutative local ring with maximal ideal `𝔪` and residue field `κ`. Every simple
 submodule of an `R`-module is annihilated by `𝔪`, so it lies in the socle `M[𝔪]`
-(`Submodule.torsionBySet R M 𝔪`). When `M` is Artinian, its submodule lattice is atomic, hence
-`M[𝔪]` is an essential submodule of `M` and is finite-dimensional over `κ`.
+(`IsAtom.le_torsionBySet_maximalIdeal`). When `M` is Artinian, its submodule lattice is atomic,
+hence `M[𝔪]` is an essential submodule of `M` and is finite-dimensional over `κ`.
 
 Two structural consequences follow:
 * Without any Noetherian hypothesis on `R`, if `E` is an injective `R`-module containing a copy of
@@ -27,8 +26,6 @@ Two structural consequences follow:
 
 ## Main results
 
-* `IsAtom.le_torsionBySet_maximalIdeal`: every simple submodule over a local ring lies in the
-  `𝔪`-torsion submodule.
 * `TauCeti.isEssential_torsionBySet_maximalIdeal`: the `𝔪`-torsion submodule of an Artinian module
   over a local ring is essential.
 * `TauCeti.exists_torsionBySet_maximalIdeal_linearEquiv_pi`: the `𝔪`-torsion submodule of an
@@ -50,20 +47,6 @@ public section
 noncomputable section
 
 open IsLocalRing Submodule
-
-/-- Every simple submodule of a module over a commutative local ring is annihilated by the
-maximal ideal. -/
-theorem IsAtom.le_torsionBySet_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R]
-    {M : Type*} [AddCommGroup M] [Module R M] {a : Submodule R M} (ha : IsAtom a) :
-    a ≤ torsionBySet R M (maximalIdeal R) := by
-  have : IsSimpleModule R a := isSimpleModule_iff_isAtom.mpr ha
-  have hann : Module.annihilator R a = maximalIdeal R :=
-    IsLocalRing.eq_maximalIdeal IsSimpleModule.annihilator_isMaximal
-  intro x hx
-  rw [mem_torsionBySet_iff]
-  intro m
-  have hm : (m : R) ∈ Module.annihilator R a := hann.symm ▸ m.prop
-  exact congrArg Subtype.val (Module.mem_annihilator.mp hm ⟨x, hx⟩)
 
 namespace TauCeti
 
