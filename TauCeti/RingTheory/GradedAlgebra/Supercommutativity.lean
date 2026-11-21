@@ -56,7 +56,7 @@ theorem commute_of_mul_eq_uzpow_smul_mul [DecidableEq ι] [AddSubmonoidClass σ 
     {p : ι} {a : A} (ha : a ∈ ℬ p) (hp : (-1 : ℤˣ) ^ p = 1) (b : A) : Commute a b := by
   induction b using Decomposition.inductionOn ℬ with
   | zero => simp [Commute, SemiconjBy]
-  | @homogeneous q b => simpa [Commute, SemiconjBy, uzpow_mul, hp] using hcomm ha b.2
+  | @homogeneous q b => simpa [Commute, SemiconjBy, uzpow_mul, hp] using hcomm ha b.property
   | add x y hx hy => simp only [Commute, SemiconjBy, mul_add, add_mul, hx.eq, hy.eq]
 
 /-- In an internally graded ring with Koszul signs, every element of degree `0` commutes with the

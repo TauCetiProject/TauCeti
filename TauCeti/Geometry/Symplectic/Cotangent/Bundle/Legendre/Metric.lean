@@ -96,10 +96,10 @@ sends the Riesz dual of a covector `p` back to `p`. -/
 theorem legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual (V : M → ℝ)
     (p : CotangentBundle I M) :
     legendreMap (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V)
-        (TotalSpace.mk' E p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2)) = p := by
+        (TotalSpace.mk' E p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.snd)) = p := by
   let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
   -- The metric lowers the index of the Riesz dual of `p` back to `p`.
-  have hR : g p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2) = p.2 := by
+  have hR : g p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.snd) = p.snd := by
     ext w
     rw [ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, Riemannian.Tensor.inner_rieszDual]
   rw [legendreMap_mechanicalLagrangian g.apply_comm]
@@ -111,11 +111,11 @@ covector `⟪v, ·⟫` has the norm of `v`. -/
 theorem norm_legendreMap_mechanicalLagrangian_ofRiemannianBundle_snd (V : M → ℝ)
     (v : TangentBundle I M) :
     ‖(legendreMap
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V) v).2‖ =
-      ‖v.2‖ := by
+      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V) v).snd‖ =
+      ‖v.snd‖ := by
   let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
   -- `v` is the Riesz dual of `⟪v, ·⟫`, and the Riesz isomorphism is isometric.
-  have hv : v.2 = Riemannian.Tensor.rieszDual (I := I) v.proj (g v.proj v.2) :=
+  have hv : v.snd = Riemannian.Tensor.rieszDual (I := I) v.proj (g v.proj v.snd) :=
     Riemannian.Tensor.eq_rieszDual_iff_inner_eq.2 fun w ↦
       (ContMDiffNondegenerateMetric.ofRiemannianBundle_apply I M v.proj _ w).symm
   rw [legendreMap_mechanicalLagrangian g.apply_comm]

@@ -100,7 +100,7 @@ private theorem hasDerivAt_line {Ψ : ℂ → ℂ} {G : ℍ → ℂ} (hΨ : ∀ 
 private theorem exists_primitive (hF : MDiff F) : ∃ Φ : ℂ → ℂ, ∀ τ : ℍ, HasDerivAt Φ (F τ) τ :=
   ⟨fun w ↦ wedgeIntegral (UpperHalfPlane.I : ℂ) w (F ∘ ofComplex), fun τ ↦ by
     simpa [ofComplex_apply] using (UpperHalfPlane.mdifferentiable_iff.mp hF)
-      |>.hasDerivAt_wedgeIntegral_upperHalfPlane UpperHalfPlane.I τ.2⟩
+      |>.hasDerivAt_wedgeIntegral_upperHalfPlane UpperHalfPlane.I τ.coe_im_pos⟩
 
 end Primitive
 

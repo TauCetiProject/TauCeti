@@ -186,7 +186,7 @@ theorem hatCoefficient_eq_zero_of_hatDomains_eq_empty (h : H.hatDomains χ x y =
 from `x` to `y`. -/
 theorem nonempty_hatDomains_of_hatCoefficient_ne_zero (h : H.hatCoefficient χ x y ≠ 0) :
     (H.hatDomains χ x y).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun he => h (hatCoefficient_eq_zero_of_hatDomains_eq_empty he)
+  Set.ne_empty_iff_nonempty.mp fun he => h (hatCoefficient_eq_zero_of_hatDomains_eq_empty he)
 
 /-- In a weakly admissible diagram the hat differential has no diagonal terms. -/
 @[simp]

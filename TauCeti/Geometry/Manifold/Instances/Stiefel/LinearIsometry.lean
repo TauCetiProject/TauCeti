@@ -39,9 +39,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- A real linear isometry maps orthonormal `k`-frames to orthonormal `k`-frames, vector by
 vector. -/
 def stiefelMap : C(stiefel E k, stiefel F k) where
-  toFun v := ⟨f ∘ v.1, mem_stiefel_iff.2 ((mem_stiefel_iff.1 v.2).comp_linearIsometry f)⟩
+  toFun v := ⟨f ∘ v.val, mem_stiefel_iff.2 ((mem_stiefel_iff.1 v.property).comp_linearIsometry f)⟩
   continuous_toFun := continuous_induced_rng.2 <| continuous_pi fun i ↦
-    f.continuous.comp ((continuous_apply i).comp continuous_subtype_val)
+    f.continuous.comp ((continuous_apply i).comp continuous_subtypeVal)
 
 @[simp]
 theorem coe_stiefelMap_apply (v : stiefel E k) (i : Fin k) :
@@ -84,8 +84,8 @@ vector by vector. -/
 def stiefelHomeomorph (e : E ≃ₗᵢ[ℝ] F) (k : ℕ) : stiefel E k ≃ₜ stiefel F k where
   toFun := e.toLinearIsometry.stiefelMap k
   invFun := e.symm.toLinearIsometry.stiefelMap k
-  left_inv v := Subtype.ext <| funext fun i ↦ e.symm_apply_apply (v.1 i)
-  right_inv w := Subtype.ext <| funext fun i ↦ e.apply_symm_apply (w.1 i)
+  left_inv v := Subtype.ext <| funext fun i ↦ e.symm_apply_apply (v.val i)
+  right_inv w := Subtype.ext <| funext fun i ↦ e.apply_symm_apply (w.val i)
   continuous_toFun := (e.toLinearIsometry.stiefelMap k).continuous
   continuous_invFun := (e.symm.toLinearIsometry.stiefelMap k).continuous
 

@@ -76,9 +76,9 @@ def prod (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n)) 
     compatible := ?_ }
   · intro α
     exact ((o.locallyConstant_sign α.1).comp_continuous
-      ((continuous_fst.comp continuous_subtype_val).subtype_mk _)).mul
+      ((continuous_fst.comp continuous_subtypeVal).subtype_mk _)).mul
         ((o'.locallyConstant_sign α.2).comp_continuous
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk _))
   · intro α β x hα hβ
     have h₁ := o.compatible α.1 β.1 x.1 (left α ⟨x, hα⟩).property
       (left β ⟨x, hβ⟩).property

@@ -39,26 +39,26 @@ variable {k : Type u} {G : Type v} [CommRing k] [Group G]
 
 private def conjugateEnd (p : implementers A) (f : End A) : End A :=
   End.of
-    { hom := FGModuleCat.ofHom (p.1.2.conj f.asHom.hom.hom.hom)
+    { hom := FGModuleCat.ofHom (p.val.2.conj f.asHom.hom.hom.hom)
       comm n := by
         apply FGModuleCat.hom_ext
         ext x
         -- Unbundle the full-subcategory morphisms before using the operator equations.
-        change p.1.2 (f.asHom.hom.hom.hom (p.1.2.symm (A.ρ n x))) =
-          A.ρ n (p.1.2 (f.asHom.hom.hom.hom (p.1.2.symm x)))
-        have hU : p.1.2.symm (A.ρ n x) =
-            A.ρ (MulAut.conjNormal (p.1.1 : G)⁻¹ n) (p.1.2.symm x) :=
-          (mem_implementers_iff A _).mp (p⁻¹).2 n x
+        change p.val.2 (f.asHom.hom.hom.hom (p.val.2.symm (A.ρ n x))) =
+          A.ρ n (p.val.2 (f.asHom.hom.hom.hom (p.val.2.symm x)))
+        have hU : p.val.2.symm (A.ρ n x) =
+            A.ρ (MulAut.conjNormal (p.val.1 : G)⁻¹ n) (p.val.2.symm x) :=
+          (mem_implementers_iff A _).mp (p⁻¹).property n x
         have hf := LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.asHom
-          (MulAut.conjNormal (p.1.1 : G)⁻¹ n)) (p.1.2.symm x)
+          (MulAut.conjNormal (p.val.1 : G)⁻¹ n)) (p.val.2.symm x)
         dsimp only [LinearMap.comp_apply] at hf
-        simpa using (congrArg p.1.2 ((congrArg f.asHom.hom.hom.hom hU).trans hf)).trans
-          ((mem_implementers_iff A _).mp p.2
-            (MulAut.conjNormal (p.1.1 : G)⁻¹ n) (f.asHom.hom.hom.hom (p.1.2.symm x))) }
+        simpa using (congrArg p.val.2 ((congrArg f.asHom.hom.hom.hom hU).trans hf)).trans
+          ((mem_implementers_iff A _).mp p.property
+            (MulAut.conjNormal (p.val.1 : G)⁻¹ n) (f.asHom.hom.hom.hom (p.val.2.symm x))) }
 
 private theorem conjugateEnd_apply (p : implementers A) (f : End A) (x : A) :
     (conjugateEnd p f).asHom.hom.hom.hom x =
-      p.1.2 (f.asHom.hom.hom.hom (p.1.2.symm x)) := (rfl)
+      p.val.2 (f.asHom.hom.hom.hom (p.val.2.symm x)) := (rfl)
 
 /-- An implementing pair conjugates the equivariant endomorphism algebra. -/
 noncomputable def implementerConj (p : implementers A) : End A ≃ₐ[k] End A where
@@ -67,13 +67,13 @@ noncomputable def implementerConj (p : implementers A) : End A ≃ₐ[k] End A w
   left_inv f := by
     apply End.ext
     ext x
-    have hi : (p⁻¹).1.2 = p.1.2.symm := rfl
+    have hi : (p⁻¹).val.2 = p.val.2.symm := rfl
     simp only [conjugateEnd_apply, hi, LinearEquiv.symm_symm,
       LinearEquiv.symm_apply_apply]
   right_inv f := by
     apply End.ext
     ext x
-    have hi : (p⁻¹).1.2 = p.1.2.symm := rfl
+    have hi : (p⁻¹).val.2 = p.val.2.symm := rfl
     simp only [conjugateEnd_apply, hi, LinearEquiv.symm_symm,
       LinearEquiv.apply_symm_apply]
   map_mul' f g := by
@@ -84,22 +84,22 @@ noncomputable def implementerConj (p : implementers A) : End A ≃ₐ[k] End A w
     apply End.ext
     ext x
     -- Unbundle the additive morphisms of the full subcategory to linear maps.
-    change p.1.2 (f.asHom.hom.hom.hom (p.1.2.symm x) +
-      g.asHom.hom.hom.hom (p.1.2.symm x)) = _
-    exact p.1.2.map_add _ _
+    change p.val.2 (f.asHom.hom.hom.hom (p.val.2.symm x) +
+      g.asHom.hom.hom.hom (p.val.2.symm x)) = _
+    exact p.val.2.map_add _ _
   commutes' r := by
     apply End.ext
     ext x
     rw [Algebra.algebraMap_eq_smul_one]
     -- Scalar multiplication and identity morphisms reduce through the full subcategory.
-    change p.1.2 (r • p.1.2.symm x) = r • x
+    change p.val.2 (r • p.val.2.symm x) = r • x
     simp
 
 /-- The conjugation formula on underlying vectors. -/
 @[simp]
 theorem implementerConj_apply (p : implementers A) (f : End A) (x : A) :
     (implementerConj p f).asHom.hom.hom.hom x =
-      p.1.2 (f.asHom.hom.hom.hom (p.1.2.symm x)) := (rfl)
+      p.val.2 (f.asHom.hom.hom.hom (p.val.2.symm x)) := (rfl)
 
 /-- Conjugation is multiplicative in the implementing pair. -/
 @[simp]
@@ -127,7 +127,7 @@ theorem implementerConj_diagonal (n : N) : implementerConj (diagonal A n) = 1 :=
   apply End.ext
   ext x
   have hf := LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.asHom n)
-    ((diagonal A n).1.2.symm x)
+    ((diagonal A n).val.2.symm x)
   dsimp only [LinearMap.comp_apply] at hf
   rw [← diagonal_snd_apply] at hf
   simpa using hf.symm
@@ -153,7 +153,7 @@ theorem implementerConj_kernelLift (d : (End A)ˣ) (f : End A) :
     implementerConj (kernelLift A d) f = (d : End A) * f * (↑d⁻¹ : End A) := by
   apply End.ext
   ext x
-  have hi : (kernelLift A d).1.2.symm = (kernelLift A d⁻¹).1.2 := by
+  have hi : (kernelLift A d).val.2.symm = (kernelLift A d⁻¹).val.2 := by
     rw [map_inv]
     rfl
   simp only [implementerConj_apply, hi, kernelLift_snd_apply]

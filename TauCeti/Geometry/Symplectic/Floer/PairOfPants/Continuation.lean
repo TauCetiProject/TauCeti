@@ -253,7 +253,7 @@ theorem contMDiffAt_pairOfPantsContinuationPerturbation {n : ℕ∞}
       (L, (w : ℂ), x) := by
   simp only [pairOfPantsContinuationPerturbation, continuationHomotopy_def]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hf : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
       (fun p : (Puncture → ℝ) × ℂ × M => p.2.1) (L, (w : ℂ), x) :=
     contMDiffAt_fst.comp (L, (w : ℂ), x) contMDiffAt_snd
@@ -597,12 +597,12 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
       by_contra! h
       exact hwC ⟨⟨h.1, h.2⟩, ht⟩
     rcases hσ with hσ | hσ
-    · simp [hF, smoothTransition.deriv_of_neg (by linarith : q.endSign * w.1 - 1 < 0),
+    · simp [hF, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * w.1 - 1 ≤ 0),
         smoothTransition.zero_of_nonpos (by linarith : q.endSign * w.1 - 1 ≤ 0)]
     · have h₂ : 2 < q.endSign * w.1 := (le_max_left _ _).trans_lt hσ
       have hL : L q + 1 < q.endSign * w.1 := (le_max_right _ _).trans_lt hσ
-      simp [hF, smoothTransition.deriv_of_one_lt (by linarith : 1 < q.endSign * w.1 - 1),
-        smoothTransition.deriv_of_one_lt (by linarith : 1 < q.endSign * w.1 - L q)]
+      simp [hF, smoothTransition.deriv_of_one_le (by linarith : 1 ≤ q.endSign * w.1 - 1),
+        smoothTransition.deriv_of_one_le (by linarith : 1 ≤ q.endSign * w.1 - L q)]
   refine ((hFc.integrableOn_compact hC).of_forall_sdiff_eq_zero (measurableSet_endStrip q)
     hF0).congr_fun (fun w hw ↦ ?_) (measurableSet_endStrip q)
   rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs

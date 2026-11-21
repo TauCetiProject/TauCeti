@@ -282,9 +282,10 @@ instance isMultiplyPretransitive_stabilizer_orbit :
   have h84 : (8 : Fin 100) ≠ 4 := by decide
   refine IsPretransitive.of_orbit (x₀ := ⟨⟨8, h8⟩,
     (SubMulAction.mem_ofStabilizer_iff _ _).mpr fun h ↦ h84 (congrArg Subtype.val h)⟩) fun c ↦ ?_
-  have hc : c.1.1 ∈ orbit S (4 : Fin 100) := orbit_stabilizer_zero 4 ▸ c.1.2
+  have hc : c.val.val ∈ orbit S (4 : Fin 100) := orbit_stabilizer_zero 4 ▸ c.val.property
   rw [orbit_stabilizerChain_one_four, Finset.mem_coe] at hc
-  have hc4 : c.1.1 ≠ 4 := fun h ↦ (SubMulAction.mem_ofStabilizer_iff _ _).mp c.2 (Subtype.ext h)
+  have hc4 : c.val.val ≠ 4 := fun h ↦ (SubMulAction.mem_ofStabilizer_iff _ _).mp c.property
+      (Subtype.ext h)
   obtain ⟨i, hi⟩ := exists_restPoints_eq _ hc hc4
   obtain ⟨h0, h4, h8'⟩ := restWords_apply i
   -- The word fixes `0` and `4`, so it lies in the stabilizer of `4` in the stabilizer of `0`.

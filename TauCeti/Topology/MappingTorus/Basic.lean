@@ -183,7 +183,7 @@ def monodromyHomotopy (φ : F ≃ₜ F) :
     ((incl φ).comp ⟨φ, φ.continuous⟩).Homotopy (incl φ) where
   toFun p := mk φ (φ p.2) p.1
   continuous_toFun := (continuous_mk φ).comp
-    ((φ.continuous.comp continuous_snd).prodMk (continuous_subtype_val.comp continuous_fst))
+    ((φ.continuous.comp continuous_snd).prodMk (continuous_subtypeVal.comp continuous_fst))
   map_zero_left x := rfl
   map_one_left x := by
     simpa using mk_vadd φ 1 x 0
