@@ -146,8 +146,7 @@ theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x)
   refine ⟨fun h η hη hηc ↦ ?_, fun h g hg ↦ ?_⟩
   · -- The field `L_x* η` is continuous with compact support, so it has an `L²` class.
     have hm : MemLp (gaugeFixedAdjoint x η) 2 volume :=
-      (continuous_gaugeFixedAdjoint hx (hη.of_le (by simp))).memLp_of_hasCompactSupport
-        (hasCompactSupport_gaugeFixedAdjoint hηc)
+      memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc
     rw [← L2.inner_toLp u hm, real_inner_comm]
     exact h _ (Submodule.subset_span ⟨η, hη, hηc, hm.coeFn_toLp⟩)
   · induction hg using Submodule.span_induction with
