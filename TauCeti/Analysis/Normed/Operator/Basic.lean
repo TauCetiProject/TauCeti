@@ -123,6 +123,8 @@ obtained by replacing one coordinate. The coordinate arguments are adapted from
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
 `Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
+The identity operator `1` has operator norm at most one on every seminormed space
+(`ContinuousLinearMap.norm_one_le`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -245,6 +247,12 @@ theorem exists_norm_toSpanSingleton_apply_le (R : Type*) {E : Type*} [Seminormed
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
+Mathlib's `norm_one` does not apply. -/
+theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
+  rw [one_def]
+  exact norm_id_le
 
 /-- If `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends to `z`, then
 the moving evaluations `T i (g i)` tend to `w`. -/
