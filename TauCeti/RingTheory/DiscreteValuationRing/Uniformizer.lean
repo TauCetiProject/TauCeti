@@ -118,8 +118,9 @@ private theorem ker_uniformizerPowToMaximalIdealGraded (π : R)
   -- Cancel the uniformizer power `π ^ m`.
   refine ⟨fun h ↦ ?_, fun hx ↦ Ideal.mul_mem_mul hx <|
     Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) m⟩
-  rw [← pow_succ'] at h
-  exact IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπ h
+  rw [← pow_succ', mul_comm] at h
+  simpa only [pow_one] using
+    (IsDiscreteValuationRing.pow_mul_mem_maximalIdeal_pow_add_iff hπ m (k := 1)).mp h
 
 private theorem uniformizerPowToMaximalIdealGraded_surjective (π : R)
     (hπ : Irreducible π) (m : ℕ) :

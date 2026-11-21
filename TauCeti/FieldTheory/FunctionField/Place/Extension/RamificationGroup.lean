@@ -358,32 +358,18 @@ torsion-free additive group, so the filtration is constant from `1` on and meets
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
   have hstep : ∀ i : ℕ, ramificationGroup F P (i + 1) ≤ ramificationGroup F P (i + 2) := by
-    intro i g hg
-    let _ : Finite (ramificationGroup F P (i + 1)) :=
-      Finite.of_injective
-        (fun g : ramificationGroup F P (i + 1) ↦
-          (⟨g, ramificationGroup_antitone F P (Nat.succ_le_succ (Nat.zero_le i)) g.property⟩ :
-            ramificationGroup F P 1))
-        (fun _ _ h ↦ Subtype.ext (congrArg
-          (fun g : ramificationGroup F P 1 ↦ (g : P.integers.decompositionSubgroup F)) h))
-    have hfin : (0 : ℕ) < orderOf (⟨g, hg⟩ : ramificationGroup F P (i + 1)) := orderOf_pos _
-    have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ∈
-        (ramificationResidueHom F P ht i).ker := by
-      rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-      funext x
-      set n := orderOf (⟨g, hg⟩ : ramificationGroup F P (i + 1))
-      have hpow : (ramificationResidueHom F P ht i ⟨g, hg⟩) ^ n = 1 := by
-        rw [← map_pow, pow_orderOf_eq_one, map_one]
-      have hval := congrFun (congrArg Multiplicative.toAdd hpow) x
-      rw [toAdd_pow, toAdd_one, Pi.zero_apply, Pi.smul_apply, nsmul_eq_mul] at hval
-      have hncast : (n : P.ResidueField) ≠ 0 := Nat.cast_ne_zero.mpr hfin.ne'
-      rw [Pi.zero_apply]
-      exact (mul_eq_zero.mp hval).resolve_left hncast
-    rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-    simpa using hmem
+    intro i
+    have : Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F)
+        P.integers ((i + 1 : ℕ) : ℤ)) := by
+      rw [← ramificationGroup_def]
+      exact Finite.of_injective _ (Subgroup.inclusion_injective
+        (ramificationGroup_antitone F P (Nat.succ_le_succ (Nat.zero_le i))))
+    have hsub := IsLocalRing.subsingleton_ramificationGroupGraded_of_charZero
+      (P.integers.decompositionSubgroup F) P.integers (i := ((i + 1 : ℕ) : ℤ)) (by omega)
+    rw [IsLocalRing.RamificationGroupGraded, QuotientGroup.subsingleton_iff,
+      Subgroup.subgroupOf_eq_top] at hsub
+    rwa [ramificationGroup_def, ramificationGroup_def, Nat.cast_succ (R := ℤ) (i + 1)]
   have hle : ∀ i : ℕ, ramificationGroup F P 1 ≤ ramificationGroup F P i := by
     intro i
     induction i with

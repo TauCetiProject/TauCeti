@@ -125,6 +125,11 @@ section UniformizerRatio
 variable {G : Type*} [Group G] {B : Type*} [CommRing B] [MulSemiringAction G B]
 variable [IsDomain B] [_root_.IsDiscreteValuationRing B]
 
+private theorem coe_unitsMap_ringHom {R₁ R₂ : Type*} [Ring R₁] [Ring R₂]
+    (f : R₁ →+* R₂) (u : R₁ˣ) :
+    ((Units.map f.toMonoidHom u : R₂ˣ) : R₂) = f (u : R₁) := by
+  simp
+
 private theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
     (hσ : σ ∈ ramificationGroup G B (i : ℤ)) (u : Bˣ) :
     Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u * u⁻¹ ∈
@@ -133,8 +138,8 @@ private theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
   have hsub :
       ((Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u * u⁻¹ : Bˣ) : B) - 1 =
         (σ • (u : B) - (u : B)) * ↑u⁻¹ := by
-    rw [Units.val_mul, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      MulSemiringAction.toRingHom_apply, sub_mul, Units.mul_inv]
+    rw [Units.val_mul, coe_unitsMap_ringHom, MulSemiringAction.toRingHom_apply, sub_mul,
+      Units.mul_inv]
   rw [hsub]
   exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : B))
 
@@ -199,8 +204,8 @@ theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
   apply Units.ext
   apply mul_left_cancel₀ hϖ.ne_zero
   rw [mul_coe_uniformizerRatio, Subgroup.coe_mul, mul_smul, Units.val_mul, ← mul_assoc,
-    mul_coe_uniformizerRatio, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    MulSemiringAction.toRingHom_apply, ← smul_mul', mul_coe_uniformizerRatio]
+    mul_coe_uniformizerRatio, coe_unitsMap_ringHom, MulSemiringAction.toRingHom_apply,
+    ← smul_mul', mul_coe_uniformizerRatio]
 
 /-- **1-cocycle law** in `B` for `uniformizerRatio`. -/
 theorem val_coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
@@ -208,8 +213,8 @@ theorem val_coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     ((uniformizerRatio i hϖ (σ * τ) : Bˣ) : B) =
       ((uniformizerRatio i hϖ σ : Bˣ) : B) *
         (σ : G) • ((uniformizerRatio i hϖ τ : Bˣ) : B) := by
-  rw [coe_uniformizerRatio_mul, Units.val_mul, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, MulSemiringAction.toRingHom_apply]
+  rw [coe_uniformizerRatio_mul, Units.val_mul, coe_unitsMap_ringHom,
+    MulSemiringAction.toRingHom_apply]
 
 /-! ### Homomorphisms into principal-unit graded pieces -/
 
@@ -269,9 +274,8 @@ theorem ramificationGroupToPrincipalUnitGroupGraded_eq_of_irreducible (i : ℕ) 
             rw [mul_coe_uniformizerRatio, ← mul_uniformizerChangeUnit ϖ ϖ' hϖ hϖ']
       _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
             Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom c : Bˣ) : B) := by
-            rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_map,
-              RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-              MulSemiringAction.toRingHom_apply, mul_assoc]
+            rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul,
+              coe_unitsMap_ringHom, MulSemiringAction.toRingHom_apply, mul_assoc]
   have hquot : (uniformizerRatio i hϖ σ : Bˣ)⁻¹ * (uniformizerRatio i hϖ' σ : Bˣ) =
       Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom c * c⁻¹ := by
     apply mul_left_cancel (a := (uniformizerRatio i hϖ σ : Bˣ))
@@ -352,7 +356,7 @@ theorem coe_tameCharacter_apply {ϖ : B} (hϖ : Irreducible ϖ)
   rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ramificationGroupToPrincipalUnitGroupGraded_apply (i := 0),
     maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits_mk,
-    Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+    coe_unitsMap_ringHom]
 
 /-- If `ϖ * y = σ • ϖ` in `B`, then the tame character of `σ` has underlying value `residue B y`. -/
 theorem coe_tameCharacter_of_mul_eq_smul {ϖ : B} (hϖ : Irreducible ϖ)
@@ -409,6 +413,24 @@ theorem tameCharacterGraded_eq_of_irreducible {ϖ ϖ' : B} (hϖ : Irreducible ϖ
   rw [tameCharacterGraded, tameCharacterGraded,
     ramificationGroupGradedToPrincipalUnitGroupGraded_eq_of_irreducible 0 hϖ hϖ']
 
+private def ramificationGroupCastSuccEquiv (n : ℕ) :
+    ramificationGroup G B ((n : ℤ) + 1) ≃* ramificationGroup G B ((n + 1 : ℕ) : ℤ) :=
+  MulEquiv.subgroupCongr (congrArg (ramificationGroup G B) (Nat.cast_succ (R := ℤ) n).symm)
+
+private def ramificationGroupGradedCastSuccEquiv (n : ℕ) :
+    RamificationGroupGraded G B ((n : ℤ) + 1) ≃*
+      RamificationGroupGraded G B ((n + 1 : ℕ) : ℤ) :=
+  QuotientGroup.congr _ _ (ramificationGroupCastSuccEquiv n) (by
+    ext σ
+    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf,
+      ramificationGroupCastSuccEquiv, Subtype.exists]
+    constructor
+    · rintro ⟨a, _, ha, rfl⟩
+      simpa [Nat.cast_succ] using ha
+    · intro hσ
+      exact ⟨σ, Nat.cast_succ (R := ℤ) n ▸ σ.property,
+        by simpa [Nat.cast_succ] using hσ, rfl⟩)
+
 /-- At positive depth `n + 1`, composing `θ_{n+1}` with the uniformizer coordinate on
 `(1 + 𝔪 ^ (n + 1)) / (1 + 𝔪 ^ (n + 2))` gives an additive homomorphism
 `Additive (G_{n+1} / G_{n+2}) →+ ResidueField B` sending `σ` to the residue of
@@ -417,7 +439,18 @@ def ramificationGroupGradedToResidueField (n : ℕ) {ϖ : B} (hϖ : Irreducible 
     Additive (RamificationGroupGraded G B ((n : ℤ) + 1)) →+ ResidueField B :=
   (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer
     n ϖ hϖ).toAddMonoidHom.comp
-    (ramificationGroupGradedToPrincipalUnitGroupGraded (n + 1) hϖ).toAdditive
+    ((ramificationGroupGradedToPrincipalUnitGroupGraded (n + 1) hϖ).comp
+      (ramificationGroupGradedCastSuccEquiv n).toMonoidHom).toAdditive
+
+private theorem ramificationGroupGradedToResidueField_apply (n : ℕ) {ϖ : B}
+    (hϖ : Irreducible ϖ) (q : RamificationGroupGraded G B ((n : ℤ) + 1)) :
+    ramificationGroupGradedToResidueField n hϖ (Additive.ofMul q) =
+      maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n ϖ hϖ
+        (Additive.ofMul
+          (ramificationGroupGradedToPrincipalUnitGroupGraded (n + 1) hϖ
+            (ramificationGroupGradedCastSuccEquiv n q))) := by
+  rw [ramificationGroupGradedToResidueField]
+  rfl
 
 /-- On the class of `τ ∈ G_{n+1}`, `ramificationGroupGradedToResidueField` evaluates the
 principal-unit coordinate at `uniformizerRatio (n + 1) hϖ τ`. -/
@@ -426,13 +459,12 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) {ϖ : B} (hϖ :
     (τ : ramificationGroup G B ((n : ℤ) + 1)) :
     ramificationGroupGradedToResidueField n hϖ (Additive.ofMul (QuotientGroup.mk τ)) =
       maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n ϖ hϖ
-        (Additive.ofMul (QuotientGroup.mk (uniformizerRatio (n + 1) hϖ τ))) := by
-  rw [ramificationGroupGradedToResidueField, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, MonoidHom.toAdditive_apply_apply, toMul_ofMul]
-  exact congrArg
-    (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n ϖ hϖ ∘
-      Additive.ofMul)
-    (ramificationGroupGradedToPrincipalUnitGroupGraded_mk (n + 1) hϖ τ)
+        (Additive.ofMul (QuotientGroup.mk
+          (uniformizerRatio (n + 1) hϖ
+            ⟨(τ : G), (Nat.cast_succ (R := ℤ) n).symm ▸ τ.property⟩))) := by
+  rw [ramificationGroupGradedToResidueField_apply, ramificationGroupGradedCastSuccEquiv,
+    QuotientGroup.congr_mk, ramificationGroupGradedToPrincipalUnitGroupGraded_mk]
+  rfl
 
 /-- If `(τ : G) • ϖ - ϖ = y * ϖ ^ (n + 2)`, then the positive-depth residue coordinate of the
 class of `τ` relative to `ϖ` is `residue B y`. -/
@@ -457,16 +489,13 @@ theorem ramificationGroupGradedToResidueField_change (n : ℕ) {ϖ ϖ' : B}
     ramificationGroupGradedToResidueField n hϖ (Additive.ofMul q) =
       residue B (uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : B) ^ (n + 1) *
         ramificationGroupGradedToResidueField n hϖ' (Additive.ofMul q) := by
-  have hchange :=
-    maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_change n ϖ ϖ' hϖ hϖ'
-      (Additive.ofMul (ramificationGroupGradedToPrincipalUnitGroupGraded (n + 1) hϖ' q))
-  have htheta := DFunLike.congr_fun
-    (ramificationGroupGradedToPrincipalUnitGroupGraded_eq_of_irreducible (G := G) (n + 1) hϖ hϖ') q
-  rw [ramificationGroupGradedToResidueField, ramificationGroupGradedToResidueField]
-  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, MonoidHom.toAdditive_apply_apply,
-    toMul_ofMul]
-  rw [htheta]
-  exact hchange
+  rw [ramificationGroupGradedToResidueField_apply, ramificationGroupGradedToResidueField_apply,
+    DFunLike.congr_fun
+      (ramificationGroupGradedToPrincipalUnitGroupGraded_eq_of_irreducible (G := G) (n + 1)
+        hϖ hϖ')]
+  exact
+    maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_change n ϖ ϖ'
+      hϖ hϖ' _
 
 end UniformizerRatio
 
@@ -581,15 +610,12 @@ theorem ramificationGroupGradedToResidueField_injective (A : Type*) [CommRing A]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (n : ℕ) {ϖ : B}
     (hϖ : Irreducible ϖ) :
     Function.Injective (ramificationGroupGradedToResidueField (G := G) n hϖ) := by
-  intro x y hxy
-  rw [ramificationGroupGradedToResidueField, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, MonoidHom.toAdditive_apply_apply,
-    MonoidHom.toAdditive_apply_apply] at hxy
-  exact Additive.toMul.injective
-    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective A (n + 1) hϖ
-      (Additive.ofMul.injective
-        ((maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer
-          n ϖ hϖ).injective hxy)))
+  rw [ramificationGroupGradedToResidueField]
+  exact (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer
+    n ϖ hϖ).injective.comp
+    (Additive.ofMul.injective.comp
+      ((ramificationGroupGradedToPrincipalUnitGroupGraded_injective A (n + 1) hϖ).comp
+        ((ramificationGroupGradedCastSuccEquiv n).injective.comp Additive.toMul.injective)))
 
 end Separable
 

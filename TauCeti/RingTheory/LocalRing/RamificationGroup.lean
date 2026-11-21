@@ -835,6 +835,12 @@ end RealDiscreteValuationRing
 
 /-! ### Separable residue extensions -/
 
+private theorem smul_mul_sub_mul {G : Type*} [Group G] {S : Type*} [CommRing S]
+    [MulSemiringAction G S] (σ : G) (a b : S) :
+    σ • (a * b) - a * b = σ • a * (σ • b - b) + (σ • a - a) * b := by
+  rw [smul_mul']
+  ring
+
 section Separable
 
 open Polynomial
@@ -917,8 +923,7 @@ theorem mem_ramificationGroup_iff_of_span_eq_maximalIdeal (R : Type*) [CommRing 
       rw [smul_add, add_sub_add_comm]
       exact add_mem h₁ h₂
     | smul c y hy hcy =>
-      rw [smul_eq_mul, smul_mul', show σ • c * (σ • y) - c * y =
-        σ • c * (σ • y - y) + (σ • c - c) * y by ring]
+      rw [smul_eq_mul, smul_mul_sub_mul]
       refine add_mem (Ideal.mul_mem_left _ _ hcy) ?_
       rw [pow_succ]
       exact Ideal.mul_mem_mul (ihm c) (hs ▸ hy)
@@ -983,10 +988,10 @@ theorem smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup {k m : ℕ} {σ :
   | succ m ih =>
     rw [pow_succ] at hy
     refine Submodule.mul_induction_on hy (fun a ha b hb ↦ ?_) (fun y₁ y₂ h₁ h₂ ↦ ?_)
-    · rw [smul_mul', show σ • a * (σ • b) - a * b =
-        σ • a * (σ • b - b) + (σ • a - a) * b by ring]
+    · rw [smul_mul_sub_mul]
       have h₁ : σ • a * (σ • b - b) ∈ maximalIdeal S ^ (k + (m + 1)) := by
-        rw [show k + (m + 1) = m + (k + 1) by omega, pow_add]
+        have hexp : k + (m + 1) = m + (k + 1) := by omega
+        rw [hexp, pow_add]
         exact Ideal.mul_mem_mul ((smul_mem_maximalIdeal_pow_iff σ).mpr ha)
           (mem_ramificationGroup_natCast_iff.mp hσ b)
       have h₂ : (σ • a - a) * b ∈ maximalIdeal S ^ (k + (m + 1)) := by
@@ -1039,35 +1044,18 @@ theorem commutator_ramificationGroup_le (G : Type*) [Group G] (S : Type*) [CommR
     [IsLocalRing S] [MulSemiringAction G S] {i : ℤ} (hi : 0 < i) :
     ⁅ramificationGroup G S i, ramificationGroup G S i⁆ ≤ ramificationGroup G S (i + 1) := by
   obtain ⟨n, rfl⟩ : ∃ n : ℕ, i = ((n + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
-  rw [Subgroup.commutator_le]
-  intro a ha b hb
-  rw [commutatorElement_def]
-  have hmem : (⟨a, ha⟩ * ⟨b, hb⟩ * ⟨a, ha⟩⁻¹ * ⟨b, hb⟩⁻¹ :
-      ramificationGroup G S ((n + 1 : ℕ) : ℤ)) ∈ (displacementHom G S n).ker := by
-    rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-    funext x
-    simp only [map_mul, map_inv, toAdd_mul, toAdd_inv, Pi.add_apply, Pi.neg_apply, Pi.zero_apply]
-    ring
-  rw [ker_displacementHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  have hker := Group.Abelianization.commutator_le_ker (displacementHom G S n)
+  rw [ker_displacementHom] at hker
+  exact (Subgroup.map_subtype_commutator _).symm.trans_le (Subgroup.map_le_iff_le_comap.mpr hker)
 
 /-- Every positive-depth graded piece `G_i / G_{i+1}` (`i > 0`) of the ramification filtration is
 commutative. -/
 theorem isMulCommutative_ramificationGroupGraded (G : Type*) [Group G] (S : Type*) [CommRing S]
     [IsLocalRing S] [MulSemiringAction G S] {i : ℤ} (hi : 0 < i) :
-    IsMulCommutative (RamificationGroupGraded G S i) where
-  is_comm := ⟨fun x y ↦ by
-    induction x using QuotientGroup.induction_on with
-    | _ σ =>
-      induction y using QuotientGroup.induction_on with
-      | _ τ =>
-        rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq,
-          Subgroup.mem_subgroupOf]
-        simp only [Subgroup.coe_mul, Subgroup.coe_inv, mul_inv_rev]
-        have h := commutator_ramificationGroup_le G S hi
-          (Subgroup.commutator_mem_commutator
-            (Subgroup.inv_mem _ τ.property) (Subgroup.inv_mem _ σ.property))
-        simpa only [commutatorElement_def, inv_inv, mul_assoc] using h⟩
+    IsMulCommutative (RamificationGroupGraded G S i) :=
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr <|
+    Subgroup.map_le_iff_le_comap.mp <|
+      (Subgroup.map_subtype_commutator _).trans_le (commutator_ramificationGroup_le G S hi)
 
 /-- Each positive-depth graded piece `G_{n+1} / G_{n+2}` (indexed by `(n : ℤ) + 1`) is
 commutative. -/

@@ -66,8 +66,10 @@ theorem algebraMap_residue_eq_pow_of_norm_one_add_mul_pow_eq_before_break
     rw [hab, map_mul, map_pow]
     ring
   rw [heq] at hrem
-  have hmem :=
-    IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπK hrem
+  have hmem : b - Algebra.norm 𝒪[K] a ∈ 𝓂[K] := by
+    rw [mul_comm] at hrem
+    simpa only [pow_one] using
+      (IsDiscreteValuationRing.pow_mul_mem_maximalIdeal_pow_add_iff hπK v (k := 1)).mp hrem
   rw [← residue_eq_zero_iff, map_sub, sub_eq_zero] at hmem
   rw [hmem, algebraMap_residue_norm_of_isTotallyRamified h]
 
