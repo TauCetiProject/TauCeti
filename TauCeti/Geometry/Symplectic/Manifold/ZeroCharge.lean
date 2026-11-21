@@ -17,25 +17,26 @@ import TauCeti.Analysis.Complex.Conformal.LocalIndex
 
 Let `f : Y → ℂ` be a continuous function on a space `Y`. A continuous disc `σ : 𝔻 → Y` meets the
 zero set `Z = f⁻¹(0)` in `σ⁻¹(Z)`, the zero set of `f ∘ σ`. Its **zero charge**
-`TauCeti.zeroCharge f σ` is the local degree of `f ∘ σ : 𝔻 → ℂ` at `0`
+`ContinuousMap.zeroCharge f σ` is the local degree of `f ∘ σ : 𝔻 → ℂ` at `0`
 (`TauCeti.HomologicalOrientation.localDegree`): the number of zeros of `f ∘ σ`, counted with their
 topological multiplicities. It is defined with the canonical orientation of `ℂ` on the target and
 its restriction to `𝔻` on the source, and does not depend on that choice
-(`TauCeti.zeroCharge_eq_localDegree`). On open subsets of `ℂ`, local degrees at `0` are winding
-numbers along circles enclosing the zeros
+(`ContinuousMap.zeroCharge_eq_localDegree`). On open subsets of `ℂ`, local degrees at `0` are
+winding numbers along circles enclosing the zeros
 (`TauCeti.HomologicalOrientation.localDegree_comap_eq_degree_toBasedLoop`), so when `f` is the
 framing section of a trivialized line, the zero charge is the framed charge of `σ`.
 
 When `σ⁻¹(Z)` is compact, the zero charge obeys the laws of a positive cohomology assignment
 (`TauCeti.PositiveCohomologyAssignment`) other than positivity, for every continuous `f`:
 
-* **vacuum**: it vanishes when `σ` misses `Z` (`TauCeti.zeroCharge_eq_zero_of_forall_ne_zero`);
+* **vacuum**: it vanishes when `σ` misses `Z`
+  (`ContinuousMap.zeroCharge_eq_zero_of_forall_ne_zero`);
 * **homotopy**: it is constant along a homotopy whose total preimage of `Z` is compact
-  (`TauCeti.zeroCharge_eq_of_homotopy`);
+  (`ContinuousMap.zeroCharge_eq_of_homotopy`);
 * **degree**: it multiplies by the degree of a proper reparametrization `θ : 𝔻 → 𝔻`
-  (`TauCeti.zeroCharge_comp`);
+  (`ContinuousMap.zeroCharge_comp`);
 * **additivity**: it is the sum of the zero charges of finitely many disjoint round subdiscs
-  containing `σ⁻¹(Z)` (`TauCeti.zeroCharge_eq_sum`).
+  containing `σ⁻¹(Z)` (`ContinuousMap.zeroCharge_eq_sum`).
 
 These are the local degree's naturality under proper maps, invariance under homotopies with
 compact fibre, and additivity over disjoint open sets. For additivity, the subdisc maps
@@ -44,9 +45,10 @@ compact fibre, and additivity over disjoint open sets. For additivity, the subdi
 
 If `f ∘ σ` extends to a function `φ` holomorphic on the unit disc, a compact `σ⁻¹(Z)` is finite
 (`TauCeti.finite_preimage_preimage_zero`). The zero charge is then the sum of the orders of
-vanishing of `φ` at the points of `σ⁻¹(Z)` (`TauCeti.zeroCharge_eq_sum_analyticOrderNatAt`), which
-are the local intersection multiplicities of the disc with `Z`, and it is positive as soon as `σ`
-meets `Z` (`TauCeti.zeroCharge_pos`).
+vanishing of `φ` at the points of `σ⁻¹(Z)`
+(`ContinuousMap.zeroCharge_eq_sum_analyticOrderNatAt`), which are the local intersection
+multiplicities of the disc with `Z`, and it is positive as soon as `σ` meets `Z`
+(`ContinuousMap.zeroCharge_pos`).
 
 Now let `Y` carry an almost complex structure `J` and let `f` be `J`-holomorphic. If `σ` is the
 restriction of a map `u` that is `J`-holomorphic on the unit disc, then `f ∘ u` is holomorphic
@@ -57,19 +59,19 @@ hypothesis that `σ` is nonconstant is needed.
 
 ## Main definitions
 
-* `TauCeti.zeroCharge f σ`: the local degree of `f ∘ σ` at `0`.
+* `ContinuousMap.zeroCharge f σ`: the local degree of `f ∘ σ` at `0`.
 * `TauCeti.PositiveCohomologyAssignment.zeroSet`: the positive cohomology assignment to the zero
   set of a `J`-holomorphic function.
 
 ## Main results
 
-* `TauCeti.zeroCharge_comp`, `TauCeti.zeroCharge_eq_of_homotopy`, `TauCeti.zeroCharge_eq_sum`:
-  the degree, homotopy and additivity laws.
+* `ContinuousMap.zeroCharge_comp`, `ContinuousMap.zeroCharge_eq_of_homotopy`,
+  `ContinuousMap.zeroCharge_eq_sum`: the degree, homotopy and additivity laws.
 * `TauCeti.finite_preimage_preimage_zero`: if `f ∘ σ` extends holomorphically, a compact
   `σ⁻¹(Z)` is finite.
-* `TauCeti.zeroCharge_eq_sum_analyticOrderNatAt`: if `f ∘ σ` extends holomorphically, the zero
-  charge is the sum of the orders of vanishing.
-* `TauCeti.zeroCharge_pos`: it is positive on such discs meeting `Z`.
+* `ContinuousMap.zeroCharge_eq_sum_analyticOrderNatAt`: if `f ∘ σ` extends holomorphically, the
+  zero charge is the sum of the orders of vanishing.
+* `ContinuousMap.zeroCharge_pos`: it is positive on such discs meeting `Z`.
 
 ## References
 
@@ -82,17 +84,17 @@ public section
 
 noncomputable section
 
-open Filter Metric Set Topology
+open Filter Metric Set Topology TauCeti
 open TauCeti.Complex.UnitDisc
 open scoped Complex.UnitDisc Manifold ContDiff
-
-namespace TauCeti
-
-/-! ### The zero charge of a disc -/
 
 section ZeroCharge
 
 variable {Y : Type*} [TopologicalSpace Y]
+
+/-! ### The zero charge of a disc -/
+
+namespace ContinuousMap
 
 /-- The **zero charge** of a disc `σ : 𝔻 → Y` for a continuous function `f : Y → ℂ`: the local
 degree at `0` of `f ∘ σ`, for the canonical orientation of `ℂ` on the target and its restriction to
@@ -180,7 +182,11 @@ theorem zeroCharge_eq_sum {ι : Type} [Fintype ι] {f : C(Y, ℂ)} {σ : C(𝔻,
   -- `Subtype.val ∘ e` is `s` by the construction of `e`.
   congr 1
 
+end ContinuousMap
+
 /-! ### Discs along which `f` is holomorphic -/
+
+namespace TauCeti
 
 /-- If `σ⁻¹(f⁻¹(0))` is compact, an extension `φ` of `f ∘ σ` to `ℂ` does not vanish identically on
 the unit disc: otherwise the whole disc, which is not compact, would be that preimage. -/
@@ -221,6 +227,10 @@ private theorem localIndex_eq_analyticOrderNatAt {f : C(Y, ℂ)} {σ : C(𝔻, Y
   rw [key, hφ z, hz]
   simp only [sub_zero]
 
+end TauCeti
+
+namespace ContinuousMap
+
 /-- **The zero charge counts orders of vanishing.** If `f ∘ σ` extends to a function `φ`
 holomorphic on the unit disc, and `σ⁻¹(f⁻¹(0))` is the finite set `s`, then the zero charge of `σ`
 is the sum over `s` of the orders of vanishing of `φ`: the local intersection multiplicities of the
@@ -238,7 +248,8 @@ theorem zeroCharge_eq_sum_analyticOrderNatAt {f : C(Y, ℂ)} {σ : C(𝔻, Y)} {
     simp [hs z]
   rw [zeroCharge, HomologicalOrientation.localDegree_eq_sum_localIndex _ _ _
     Complex.finrank_real_complex _ hfin, hs']
-  exact Finset.sum_congr rfl fun z hz ↦ localIndex_eq_analyticOrderNatAt hφ hφd ((hs z).2 hz)
+  exact Finset.sum_congr rfl fun z hz ↦
+    TauCeti.localIndex_eq_analyticOrderNatAt hφ hφd ((hs z).2 hz)
 
 /-- **Positivity.** If `f ∘ σ` extends to a function `φ` holomorphic on the unit disc, with
 `σ⁻¹(f⁻¹(0))` compact and nonempty, the zero charge of `σ` is positive: by the identity theorem, `φ`
@@ -247,22 +258,26 @@ theorem zeroCharge_pos {f : C(Y, ℂ)} {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻�
     {φ : ℂ → ℂ} (hφ : ∀ z : 𝔻, φ z = f (σ z)) (hφd : DifferentiableOn ℂ φ (ball 0 1))
     (hZ : ∃ z, f (σ z) = 0) :
     0 < zeroCharge f σ := by
-  have hfin := finite_preimage_preimage_zero h hφ hφd
+  have hfin := TauCeti.finite_preimage_preimage_zero h hφ hφd
   rw [zeroCharge_eq_sum_analyticOrderNatAt hφ hφd hfin.toFinset fun z ↦ by simp]
   obtain ⟨z, hz⟩ := hZ
   refine Finset.sum_pos (fun x hx ↦ ?_) ⟨z, hfin.mem_toFinset.2 hz⟩
   have hx0 : φ x = 0 := (hφ x).trans (hfin.mem_toFinset.1 hx)
   have hx := mem_ball_zero_iff.2 x.norm_lt_one
   have han := hφd.analyticOnNhd isOpen_ball
-  obtain ⟨w, hw, hφw⟩ := exists_mem_ball_ne_zero h hφ
+  obtain ⟨w, hw, hφw⟩ := TauCeti.exists_mem_ball_ne_zero h hφ
   -- The order at `x` is finite since it is zero at `w`, where `φ` does not vanish.
   exact Nat.cast_pos.2 (ENat.toNat_pos ((han x hx).analyticOrderAt_ne_zero.2 hx0)
     (han.analyticOrderAt_ne_top_of_isPreconnected (convex_ball _ _).isPreconnected hw hx
       (by simp [(han w hw).analyticOrderAt_eq_zero.2 hφw])))
 
+end ContinuousMap
+
 end ZeroCharge
 
 /-! ### Zero sets of pseudoholomorphic functions -/
+
+namespace TauCeti
 
 section Pseudoholomorphic
 
@@ -271,18 +286,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   [IsManifold I ∞ Y] {J : SmoothAlmostComplexStructure I Y} {f : C(Y, ℂ)}
 
 /-- **The positive cohomology assignment of the zero set of a `J`-holomorphic function.** For a
-`J`-holomorphic `f : Y → ℂ`, the zero charges `TauCeti.zeroCharge f σ` of the discs `σ` with
+`J`-holomorphic `f : Y → ℂ`, the zero charges `ContinuousMap.zeroCharge f σ` of the discs `σ` with
 compact `σ⁻¹(f⁻¹(0))` form a positive cohomology assignment to `f⁻¹(0)`: its integer of a
 holomorphic disc is the sum of the orders of vanishing of `f` along the disc. -/
 def PositiveCohomologyAssignment.zeroSet
     (hf : IsPseudoholomorphic J (AlmostComplexStructure.ofComplexModule ℂ).constSmooth f) :
     PositiveCohomologyAssignment J (f ⁻¹' {0}) where
-  charge σ _ := zeroCharge f σ
-  charge_eq_zero _ _ hZ := zeroCharge_eq_zero_of_forall_ne_zero hZ
-  charge_eq_of_homotopy F hF _ _ := zeroCharge_eq_of_homotopy f F hF
-  charge_comp o _ h _ hθ _ := zeroCharge_comp o h hθ
-  charge_eq_sum _ h c r hc hr hdisj hcov _ := zeroCharge_eq_sum h c r hc hr hdisj hcov
-  charge_pos _ h _ hu hhol _ hZ := zeroCharge_pos h (fun z ↦ congrArg f (hu z))
+  charge σ _ := f.zeroCharge σ
+  charge_eq_zero _ _ hZ := ContinuousMap.zeroCharge_eq_zero_of_forall_ne_zero hZ
+  charge_eq_of_homotopy F hF _ _ := f.zeroCharge_eq_of_homotopy F hF
+  charge_comp o _ h _ hθ _ := ContinuousMap.zeroCharge_comp o h hθ
+  charge_eq_sum _ h c r hc hr hdisj hcov _ := ContinuousMap.zeroCharge_eq_sum h c r hc hr hdisj hcov
+  charge_pos _ h _ hu hhol _ hZ := ContinuousMap.zeroCharge_pos h (fun z ↦ congrArg f (hu z))
     ((hf.isPseudoholomorphicOn univ).differentiableOn_comp hhol (mapsTo_univ _ _)) hZ
 
 /-- The integer of a disc for the zero set of a `J`-holomorphic function is its zero charge. -/
@@ -290,7 +305,7 @@ def PositiveCohomologyAssignment.zeroSet
 theorem PositiveCohomologyAssignment.charge_zeroSet
     (hf : IsPseudoholomorphic J (AlmostComplexStructure.ofComplexModule ℂ).constSmooth f)
     (σ : C(𝔻, Y)) (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) :
-    (PositiveCohomologyAssignment.zeroSet hf).charge σ h = zeroCharge f σ :=
+    (PositiveCohomologyAssignment.zeroSet hf).charge σ h = f.zeroCharge σ :=
   (rfl)
 
 end Pseudoholomorphic
