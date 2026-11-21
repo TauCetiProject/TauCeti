@@ -644,11 +644,9 @@ def IsoClass.lift {α : Sort*} (f : TopBranchedCover.{u} n → α)
   Quotient.lift f hf
 
 /-- Evaluating `IsoClass.lift` on `IsoClass.mk X` gives `f X`. -/
-@[simp]
-theorem IsoClass.lift_mk {α : Sort*} (f : TopBranchedCover.{u} n → α)
+@[simp] theorem IsoClass.lift_mk {α : Sort*} (f : TopBranchedCover.{u} n → α)
     (hf : ∀ X Y, Nonempty (Iso X Y) → f X = f Y) (X : TopBranchedCover.{u} n) :
-    IsoClass.lift f hf (IsoClass.mk X) = f X :=
-  (rfl)
+    IsoClass.lift f hf (IsoClass.mk X) = f X := (rfl)
 
 /-- No topological branched cover has degree zero. -/
 instance : IsEmpty (TopBranchedCover.{u} 0) := ⟨fun X ↦ X.ne_zero rfl⟩
@@ -662,10 +660,8 @@ def IsoClass.ramificationPartitions : IsoClass.{u} n → Multiset ℕ × Multise
   IsoClass.lift TopBranchedCover.ramificationPartitions fun _ _ ⟨ι⟩ ↦ ι.ramificationPartitions_eq
 
 /-- Evaluating `IsoClass.ramificationPartitions` on `.mk X` recovers `X.ramificationPartitions`. -/
-@[simp]
-theorem IsoClass.ramificationPartitions_mk (X : TopBranchedCover.{u} n) :
-    (IsoClass.mk X).ramificationPartitions = X.ramificationPartitions :=
-  (rfl)
+@[simp] theorem IsoClass.ramificationPartitions_mk (X : TopBranchedCover.{u} n) :
+    (IsoClass.mk X).ramificationPartitions = X.ramificationPartitions := (rfl)
 
 /-! ### Uniqueness of the compactification
 
@@ -933,8 +929,7 @@ instance instMulActionDeckRestrictFiber (b : ThricePuncturedSphere) :
 
 /-- On underlying points of `X.Z`, the action of `deck X.π` on a fibre of `X.restrict` is
 evaluation of the deck transformation. -/
-@[simp]
-theorem coe_deck_smul_restrictFiber (b : ThricePuncturedSphere) (φ : deck X.π)
+@[simp] theorem coe_deck_smul_restrictFiber (b : ThricePuncturedSphere) (φ : deck X.π)
     (z : X.restrict ⁻¹' {b}) :
     ((φ • z : X.restrict ⁻¹' {b}) : X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
   congrArg Subtype.val (deck.fiber_smul_coe (X.deckMulEquivDeckRestrict φ) z)
@@ -945,16 +940,14 @@ def Iso.deckMulEquiv {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
   Deck.conjMulEquiv ι.toHomeomorph ι.π_apply
 
 /-- `ι.deckMulEquiv` acts by conjugating the underlying homeomorphism by `ι.toHomeomorph`. -/
-@[simp]
-theorem Iso.coe_deckMulEquiv_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
+@[simp] theorem Iso.coe_deckMulEquiv_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
     (φ : deck X.π) (y : Y.Z) :
     (ι.deckMulEquiv φ : Y.Z ≃ₜ Y.Z) y =
       ι.toHomeomorph ((φ : X.Z ≃ₜ X.Z) (ι.toHomeomorph.symm y)) :=
   Deck.conjMulEquiv_apply_coe _ _ φ y
 
 /-- The inverse of `Iso.deckMulEquiv` conjugates by `ι.toHomeomorph.symm`. -/
-@[simp]
-theorem Iso.coe_deckMulEquiv_symm_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
+@[simp] theorem Iso.coe_deckMulEquiv_symm_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
     (ψ : deck Y.π) (x : X.Z) :
     (ι.deckMulEquiv.symm ψ : X.Z ≃ₜ X.Z) x =
       ι.toHomeomorph.symm ((ψ : Y.Z ≃ₜ Y.Z) (ι.toHomeomorph x)) :=
@@ -982,20 +975,16 @@ def IsoClass.natCardDeck : IsoClass.{u} n → ℕ :=
   IsoClass.lift (fun X ↦ Nat.card (deck X.π)) fun _ _ ⟨ι⟩ ↦ ι.natCard_deck_eq
 
 /-- Evaluating `IsoClass.natCardDeck` on `.mk X` gives `Nat.card (deck X.π)`. -/
-@[simp]
-theorem IsoClass.natCardDeck_mk (X : TopBranchedCover.{u} n) :
-    (IsoClass.mk X).natCardDeck = Nat.card (deck X.π) :=
-  (rfl)
+@[simp] theorem IsoClass.natCardDeck_mk (X : TopBranchedCover.{u} n) :
+    (IsoClass.mk X).natCardDeck = Nat.card (deck X.π) := (rfl)
 
 /-- Regularity on isomorphism classes of topological branched covers. -/
 def IsoClass.IsRegular : IsoClass.{u} n → Prop :=
   IsoClass.lift TopBranchedCover.IsRegular fun _ _ ⟨ι⟩ ↦ propext ι.isRegular_iff
 
 /-- Evaluating `IsoClass.IsRegular` on `.mk X` recovers `X.IsRegular`. -/
-@[simp]
-theorem IsoClass.isRegular_mk (X : TopBranchedCover.{u} n) :
-    (IsoClass.mk X).IsRegular ↔ X.IsRegular :=
-  Iff.rfl
+@[simp] theorem IsoClass.isRegular_mk (X : TopBranchedCover.{u} n) :
+    (IsoClass.mk X).IsRegular ↔ X.IsRegular := Iff.rfl
 
 /-! ### The sphere over itself -/
 

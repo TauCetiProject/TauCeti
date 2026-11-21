@@ -943,16 +943,15 @@ def isoMulEquivDeckToTopBranchedCover {n : ℕ} (h : degree P.β = n) :
   P.isoMulEquivDeck.trans (Deck.conjMulEquiv (Homeomorph.refl P.X) (P.toTopBranchedCover_π_apply h))
 
 /-- The deck transformation of `P.toTopBranchedCover h` attached to `e : P.Iso P` coerces to `e`. -/
-@[simp]
-theorem coe_isoMulEquivDeckToTopBranchedCover_apply {n : ℕ} (h : degree P.β = n) (e : P.Iso P) :
+@[simp] theorem coe_isoMulEquivDeckToTopBranchedCover_apply {n : ℕ} (h : degree P.β = n)
+    (e : P.Iso P) :
     ⇑(P.isoMulEquivDeckToTopBranchedCover h e :
       (P.toTopBranchedCover h).Z ≃ₜ (P.toTopBranchedCover h).Z) = e :=
   funext fun x ↦ (Deck.conjMulEquiv_apply_coe _ _ _ x).trans
     (congrFun (P.coe_isoMulEquivDeck_apply e) x)
 
 /-- The automorphism of `P` attached to `φ : deck (P.toTopBranchedCover h).π` coerces to `φ`. -/
-@[simp]
-theorem coe_isoMulEquivDeckToTopBranchedCover_symm_apply {n : ℕ} (h : degree P.β = n)
+@[simp] theorem coe_isoMulEquivDeckToTopBranchedCover_symm_apply {n : ℕ} (h : degree P.β = n)
     (φ : deck (P.toTopBranchedCover h).π) :
     ⇑((P.isoMulEquivDeckToTopBranchedCover h).symm φ) =
       (φ : (P.toTopBranchedCover h).Z ≃ₜ (P.toTopBranchedCover h).Z) :=
@@ -1056,9 +1055,8 @@ theorem isRegular_iff_monodromyTriple {P : AnalyticBelyiPair.{u}} {n : ℕ}
     isRegular_monodromyTriple_iff_natCard_iso]
 
 /-- Passing to the underlying topological branched cover preserves regularity. -/
-@[simp]
-theorem isRegular_toTopBranchedCover {P : AnalyticBelyiPair.{u}} {n : ℕ} (h : degree P.β = n) :
-    (P.toTopBranchedCover h).IsRegular ↔ P.IsRegular := by
+@[simp] theorem isRegular_toTopBranchedCover {P : AnalyticBelyiPair.{u}} {n : ℕ}
+    (h : degree P.β = n) : (P.toTopBranchedCover h).IsRegular ↔ P.IsRegular := by
   rw [TopBranchedCover.isRegular_iff, isRegular_iff, h,
     Nat.card_congr (P.isoMulEquivDeckToTopBranchedCover h).toEquiv]
 
@@ -1137,14 +1135,12 @@ def isoClassRamificationPartitions (n : ℕ) :
     (isoSetoid_r.1 h).elim Iso.ramificationPartitions_eq
 
 /-- Evaluating `isoClassRamificationPartitions` on `⟦P⟧` gives `P.1.ramificationPartitions`. -/
-@[simp]
-theorem isoClassRamificationPartitions_mk {n : ℕ}
+@[simp] theorem isoClassRamificationPartitions_mk {n : ℕ}
     (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     isoClassRamificationPartitions n ⟦P⟧ = P.1.ramificationPartitions := (rfl)
 
 /-- Forgetting the complex structure preserves the ramification partitions over `0`, `1` and `∞`. -/
-@[simp]
-theorem ramificationPartitions_toTopBranchedCoverIsoClass {n : ℕ}
+@[simp] theorem ramificationPartitions_toTopBranchedCoverIsoClass {n : ℕ}
     (P : Quotient (isoSetoid.{u} n)) :
     (toTopBranchedCoverIsoClass n P).ramificationPartitions =
       isoClassRamificationPartitions n P :=
@@ -1156,8 +1152,7 @@ def isoClassNatCardAut (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
     (isoSetoid_r.1 h).elim Iso.natCard_iso_eq
 
 /-- Evaluating `isoClassNatCardAut` on `⟦P⟧` gives `Nat.card (P.1.Iso P.1)`. -/
-@[simp]
-theorem isoClassNatCardAut_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
+@[simp] theorem isoClassNatCardAut_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     isoClassNatCardAut n ⟦P⟧ = Nat.card (P.1.Iso P.1) := (rfl)
 
 /-- Regularity on isomorphism classes of degree-`n` analytic Belyi pairs. -/
@@ -1166,13 +1161,11 @@ def IsoClassIsRegular (n : ℕ) : Quotient (isoSetoid.{u} n) → Prop :=
     (isoSetoid_r.1 h).elim fun e ↦ propext e.isRegular_iff
 
 /-- Evaluating `IsoClassIsRegular` on `⟦P⟧` recovers `P.1.IsRegular`. -/
-@[simp]
-theorem isoClassIsRegular_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
+@[simp] theorem isoClassIsRegular_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     IsoClassIsRegular n ⟦P⟧ ↔ P.1.IsRegular := Iff.rfl
 
 /-- Forgetting the complex structure matches `isoClassNatCardAut` with `natCardDeck`. -/
-@[simp]
-theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
+@[simp] theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
     (toTopBranchedCoverIsoClass n P).natCardDeck = isoClassNatCardAut n P :=
   Quotient.inductionOn P fun P ↦ by
     rw [toTopBranchedCoverIsoClass_mk, TopBranchedCover.IsoClass.natCardDeck_mk,
@@ -1180,8 +1173,7 @@ theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoi
     exact (Nat.card_congr (P.1.isoMulEquivDeckToTopBranchedCover P.2).toEquiv).symm
 
 /-- Forgetting the complex structure preserves regularity. -/
-@[simp]
-theorem isRegular_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
+@[simp] theorem isRegular_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
     (toTopBranchedCoverIsoClass n P).IsRegular ↔ IsoClassIsRegular n P :=
   Quotient.inductionOn P fun _ ↦ by simp
 

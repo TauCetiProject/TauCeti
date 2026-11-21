@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.ChartedSpace
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Ramification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Transport
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck
+public import TauCeti.Combinatorics.PermutationTriple.ClassInvariants
 public import TauCeti.Topology.Covering.Clopen
 
 /-!
@@ -37,15 +40,14 @@ degree `n` to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0,
 (`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`). Since a branched cover is determined by
 its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
 branched cover is isomorphic to the filled cover of its unbranched part
-(`TauCeti.TopBranchedCover.isoFilledCover`), and restriction is a bijection on isomorphism classes
-(`TauCeti.TopBranchedCover.IsoClass.restrict_bijective`).
+(`TauCeti.TopBranchedCover.isoFilledCover`), restriction is a bijection packaged as
+`TauCeti.TopBranchedCover.IsoClass.equivConnectedCoverClass`, and composing with the classification
+of covers yields `TauCeti.TopBranchedCover.IsoClass.equivConnectedIsoClass`.
 
 Through this isomorphism the ramification of a topological branched cover is read off its
-monodromy: over `0`, `1` and `∞` the ramification partition, formed by the local degrees at the
-points of the fibre, is the full cycle type of `σ0`, `σ1` and `σinf` in the monodromy triple of the
-unbranched part (`TauCeti.TopBranchedCover.parts_ramificationPartition_zero`), since the points over
-a puncture of a filled cover are the added points over it, whose local degrees are the cycle
-lengths (`TauCeti.FilledCover.map_degree_overZero`).
+monodromy: over `0`, `1` and `∞` the ramification partition is the full cycle type of `σ0`, `σ1`,
+`σinf` (`TauCeti.TopBranchedCover.ramificationPartitions_eq_cycleData_monodromyTriple`), matching
+`ramificationPartitions`, `natCardDeck`, and `IsRegular` with `ConnectedIsoClass`.
 
 ## Main results
 
@@ -67,12 +69,10 @@ lengths (`TauCeti.FilledCover.map_degree_overZero`).
   `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
 * `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
   the filled cover of its unbranched part.
-* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`: topological branched covers of degree
-  `n` and connected degree-`n` covers of `ℂ ∖ {0, 1}` have the same isomorphism classes.
-* `TauCeti.TopBranchedCover.parts_ramificationPartition_zero`,
-  `TauCeti.TopBranchedCover.parts_ramificationPartition_one`,
-  `TauCeti.TopBranchedCover.parts_ramificationPartition_inf`: the ramification partitions over
-  `0`, `1` and `∞` are the full cycle types of `σ0`, `σ1` and `σinf`.
+* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`, `equivConnectedCoverClass`,
+  `equivConnectedIsoClass`: classification of topological branched covers of degree `n`.
+* `TauCeti.TopBranchedCover.parts_ramificationPartition_zero`, `_one`, `_inf`,
+  `ramificationPartitions_eq_cycleData_monodromyTriple`: ramification matches `σ0`, `σ1`, `σinf`.
 
 ## References
 
@@ -314,6 +314,56 @@ theorem TopBranchedCover.IsoClass.restrict_bijective {n : ℕ} :
     Bijective (IsoClass.restrict : IsoClass.{0} n → _) :=
   ⟨restrict_injective, restrict_surjective⟩
 
+namespace TopBranchedCover.IsoClass
+
+/-- **Topological branched covers are classified by connected covers of `ℂ ∖ {0, 1}`.** -/
+def equivConnectedCoverClass (n : ℕ) :
+    IsoClass.{0} n ≃ ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n where
+  toFun := restrict
+  invFun := ConnectedCoverClass.toTopBranchedCover
+  left_inv _ := restrict_injective (by simp)
+  right_inv := ConnectedCoverClass.restrict_toTopBranchedCover
+
+/-- Applying `equivConnectedCoverClass` restricts a class of branched covers over `ℂ ∖ {0, 1}`. -/
+@[simp] theorem equivConnectedCoverClass_apply {n : ℕ} (c : IsoClass.{0} n) :
+    equivConnectedCoverClass n c = c.restrict := (rfl)
+
+/-- The inverse of `equivConnectedCoverClass` fills a class of connected covers. -/
+@[simp] theorem equivConnectedCoverClass_symm_apply {n : ℕ}
+    (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    (equivConnectedCoverClass n).symm c = c.toTopBranchedCover := (rfl)
+
+/-- **Topological branched covers are classified by connected permutation triples.** -/
+def equivConnectedIsoClass (n : ℕ) : IsoClass.{0} n ≃ ConnectedIsoClass n :=
+  (equivConnectedCoverClass n).trans ConnectedCoverClass.isoClassEquiv
+
+/-- `equivConnectedIsoClass` classifies the unbranched cover `c.restrict` of `ℂ ∖ {0, 1}`. -/
+theorem equivConnectedIsoClass_apply {n : ℕ} (c : IsoClass.{0} n) :
+    equivConnectedIsoClass n c = c.restrict.isoClass := by
+  rw [equivConnectedIsoClass, Equiv.trans_apply, equivConnectedCoverClass_apply,
+    ConnectedCoverClass.isoClassEquiv_apply]
+
+/-- On `.mk X`, `equivConnectedIsoClass` returns the connected class of its monodromy triple. -/
+theorem equivConnectedIsoClass_mk {n : ℕ} (X : TopBranchedCover.{0} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
+    equivConnectedIsoClass n (.mk X) =
+      .mk ⟨X.isCoveringMap_restrict.monodromyTriple ν,
+        X.isCoveringMap_restrict.isConnected_monodromyTriple ν⟩ := by
+  obtain ⟨ν'⟩ := X.connectedCover.nonempty_equiv_fin
+  rw [equivConnectedIsoClass, Equiv.trans_apply, equivConnectedCoverClass_apply, restrict_mk,
+    ConnectedCoverClass.isoClassEquiv_apply, ConnectedCoverClass.isoClass_mk _ ν']
+  refine ConnectedIsoClass.forget_injective ?_
+  rw [ConnectedIsoClass.forget_mk, ConnectedIsoClass.forget_mk,
+    ConnectedFiberNumberedCover.coe_connectedTriple]
+  exact (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph ν'
+    X.isCoveringMap_restrict ν X.connectedCoverHomeomorph
+    (funext X.restrict_connectedCoverHomeomorph)).symm
+
+/-- Up to isomorphism there is a unique topological branched cover of degree one. -/
+instance : Unique (IsoClass.{0} 1) := (equivConnectedIsoClass 1).unique
+
+end TopBranchedCover.IsoClass
+
 /-! ### Ramification partitions over the punctures -/
 
 namespace TopBranchedCover
@@ -411,6 +461,39 @@ theorem parts_ramificationPartition_inf (ν : X.restrict ⁻¹' {basePt} ≃ Fin
   refine (map_degree_overInf hp ν').trans ?_
   rw [fullCycleType_def, fullCycleType_def, ← PermutationTriple.cycleData_σinf,
     ← PermutationTriple.cycleData_σinf, cycleData_monodromyTriple_connectedCover X ν ν']
+
+/-- On `TopBranchedCover.{0} n`, `ramificationPartitions` equals `cycleData` of the monodromy. -/
+theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
+    X.ramificationPartitions = (X.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  rw [X.ramificationPartitions_def]
+  simp only [parts_ramificationPartition_zero X ν, parts_ramificationPartition_one X ν,
+    parts_ramificationPartition_inf X ν, fullCycleType_def, ← PermutationTriple.cycleData_σ0,
+    ← PermutationTriple.cycleData_σ1, ← PermutationTriple.cycleData_σinf]
+
+/-- `IsoClass.equivConnectedIsoClass` matches `ramificationPartitions` with `cycleData`. -/
+@[simp] theorem IsoClass.cycleData_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
+    (equivConnectedIsoClass n c).cycleData = c.ramificationPartitions := by
+  obtain ⟨X, rfl⟩ := mk_surjective c
+  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
+  rw [equivConnectedIsoClass_mk X ν]
+  simp [X.ramificationPartitions_eq_cycleData_monodromyTriple ν]
+
+/-- `IsoClass.equivConnectedIsoClass` preserves the order of the deck/automorphism group. -/
+@[simp] theorem IsoClass.natCardAutomorphismGroup_equivConnectedIsoClass {n : ℕ}
+    (c : IsoClass.{0} n) :
+    (equivConnectedIsoClass n c).natCardAutomorphismGroup = c.natCardDeck := by
+  obtain ⟨X, rfl⟩ := mk_surjective c
+  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
+  rw [equivConnectedIsoClass_mk X ν, ConnectedIsoClass.natCardAutomorphismGroup_mk, natCardDeck_mk]
+  exact (Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv).symm
+
+/-- `IsoClass.equivConnectedIsoClass` preserves regularity. -/
+@[simp] theorem IsoClass.isRegular_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
+    (equivConnectedIsoClass n c).IsRegular ↔ c.IsRegular := by
+  obtain ⟨X, rfl⟩ := mk_surjective c
+  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
+  rw [equivConnectedIsoClass_mk X ν]; simp [X.isRegular_iff_monodromyTriple ν]
 
 end TopBranchedCover
 

@@ -18,19 +18,16 @@ import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 # Genus and Riemann–Hurwitz for analytic Belyi pairs and three-point covers
 
 Every compact Riemann surface has finite CW type (`TauCeti.ComplexManifold.instFiniteCWType`), so
-every analytic Belyi pair `P` has a finite-CW Euler characteristic `eulerChar P.X` and topological
-genus `RiemannSurface.genus P.X`. This file proves their isomorphism invariance, computes them on
-sphere examples and degree-one pairs in every universe, splits `ramificationDegree P.β` across the
-fibres over `0`, `1`, `∞` (`ramificationDegree_β_eq_sum_three_fibers`), reconciles it with
-`FilledCover.degree` (`natCast_ramificationDegree_toAnalyticBelyiPair`), and identifies `eulerChar`
-and `genus` in `Type 0` with the monodromy triple (`eulerChar_X_eq_eulerChar_monodromyTriple`,
-`genus_X_eq_genus_monodromyTriple`, `two_mul_genus_X_sub_two_eq`) and on `TopBranchedCover.{0} n`.
+every `AnalyticBelyiPair` has `eulerChar P.X` and `genus P.X`. This file proves invariance,
+evaluates them on degree-one pairs and sphere examples, splits `ramificationDegree P.β` across
+`{0, 1, ∞}`, reconciles it with `FilledCover.degree`, and matches `eulerChar` and `genus` with
+the monodromy triple and `TopBranchedCover.{0} n`.
 
 ## References
 
 * O. Forster, *Lectures on Riemann Surfaces*, GTM 81, Springer, 1981, §17, Theorem 17.14.
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
-  d'Enfants*, LMS Student Texts 79, Cambridge University Press, 2012, §1.2.7 and §4.2.
+  d'Enfants*, LMS Student Texts 79, CUP, 2012, §1.2.7 and §4.2.
 -/
 
 public noncomputable section
@@ -61,8 +58,7 @@ theorem eulerChar_X_eq_two_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : de
     eulerChar P.X = 2 := by
   let e : P.X ≃ₜ sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin 3))) 1 :=
     (biholomorphOfDegreeEqOne P.β hP).toHomeomorph.trans
-      (onePointEquivSphereOfFinrankEq (ι := ULift.{u} (Fin 3))
-        (by simp [Complex.finrank_real_complex]))
+      (onePointEquivSphereOfFinrankEq (by simp [Complex.finrank_real_complex]))
   rw [e.eulerChar_eq, eulerChar_sphere (n := 2) (by simp)]; norm_num
 
 /-- **An analytic Belyi pair of degree one has genus `0`.** -/
@@ -104,8 +100,7 @@ def isoClassGenus (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
 
 /-- Every branch value of a Belyi map belongs to `marked = {0, 1, ∞}`. -/
 theorem branchValues_subset_marked (P : AnalyticBelyiPair.{u}) : P.β.branchValues ⊆ marked :=
-  fun _ hy ↦ by simpa only [mem_marked, mem_insert_iff, mem_singleton_iff] using
-    P.branchValues_subset hy
+  fun _ hy ↦ by simpa [mem_marked] using P.branchValues_subset hy
 
 /-- Over `marked`, `(P.β ⁻¹' marked).ncard + ramificationDegree P.β = 3 * degree P.β`. -/
 theorem ncard_preimage_marked_add_ramificationDegree_β (P : AnalyticBelyiPair.{u}) :
@@ -117,19 +112,16 @@ theorem ncard_preimage_marked_add_ramificationDegree_β (P : AnalyticBelyiPair.{
 theorem ncard_preimage_marked (P : AnalyticBelyiPair.{u}) :
     (P.β ⁻¹' marked).ncard = (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard +
       (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard + (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard := by
-  have hpre : P.β ⁻¹' marked =
-      (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)} ∪ P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}) ∪
-        P.β ⁻¹' {(∞ : OnePoint ℂ)} := Set.ext fun _ ↦ by simp [mem_marked, or_assoc]
-  have hdisj01 : Disjoint (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}) (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}) :=
-    Set.disjoint_left.2 fun _ h0 h1 ↦ zero_ne_one (OnePoint.coe_injective (h0.symm.trans h1))
-  have hdisj_inf : Disjoint (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)} ∪ P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)})
-      (P.β ⁻¹' {(∞ : OnePoint ℂ)}) :=
-    Set.disjoint_left.2 fun _ hx hinf ↦ hx.elim
-      (fun h0 ↦ OnePoint.coe_ne_infty 0 (h0.symm.trans hinf))
-      (fun h1 ↦ OnePoint.coe_ne_infty 1 (h1.symm.trans hinf))
-  rw [hpre, ncard_union_eq hdisj_inf
-      ((P.β.finite_fiber _).union (P.β.finite_fiber _)) (P.β.finite_fiber _),
-    ncard_union_eq hdisj01 (P.β.finite_fiber _) (P.β.finite_fiber _)]
+  have h01 : Disjoint (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}) (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}) :=
+    disjoint_left.2 fun _ h0 h1 ↦ zero_ne_one (OnePoint.coe_injective (h0.symm.trans h1))
+  have hi : Disjoint (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)} ∪ P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)})
+      (P.β ⁻¹' {(∞ : OnePoint ℂ)}) := disjoint_left.2 fun _ hx hinf ↦ hx.elim
+    (fun h0 ↦ OnePoint.coe_ne_infty 0 (h0.symm.trans hinf))
+    (fun h1 ↦ OnePoint.coe_ne_infty 1 (h1.symm.trans hinf))
+  rw [show P.β ⁻¹' marked = (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)} ∪ P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)})
+      ∪ P.β ⁻¹' {(∞ : OnePoint ℂ)} from ext fun _ ↦ by simp [mem_marked, or_assoc],
+    ncard_union_eq hi ((P.β.finite_fiber _).union (P.β.finite_fiber _)) (P.β.finite_fiber _),
+    ncard_union_eq h01 (P.β.finite_fiber _) (P.β.finite_fiber _)]
 
 /-- **Three-fibre decomposition of the ramification degree** over `0`, `1` and `∞`. -/
 theorem ramificationDegree_β_eq_sum_three_fibers (P : AnalyticBelyiPair.{u}) :
@@ -181,47 +173,40 @@ section TypeZero
 variable (P : AnalyticBelyiPair.{0}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
 
 /-- The number of points of `P.X` over `0` is `orbitCount σ0` of the monodromy triple. -/
-theorem card_finite_fiber_zero :
-    (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.card =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
+theorem card_finite_fiber_zero : (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.card =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
   card_finite_fiber_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν)
 
 /-- The number of points of `P.X` over `1` is `orbitCount σ1` of the monodromy triple. -/
-theorem card_finite_fiber_one :
-    (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.card =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
+theorem card_finite_fiber_one : (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.card =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
   card_finite_fiber_eq_orbitCount (P.map_localMultiplicity_fiber_one ν)
 
 /-- The number of points of `P.X` over `∞` is `orbitCount σinf` of the monodromy triple. -/
-theorem card_finite_fiber_inf :
-    (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.card =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
+theorem card_finite_fiber_inf : (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.card =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
   card_finite_fiber_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)
 
 /-- The `Set.ncard` of the fibre of `P.β` over `0` is `orbitCount σ0`. -/
-theorem ncard_preimage_singleton_zero :
-    (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
+theorem ncard_preimage_singleton_zero : (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
   ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν)
 
 /-- The `Set.ncard` of the fibre of `P.β` over `1` is `orbitCount σ1`. -/
-theorem ncard_preimage_singleton_one :
-    (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
+theorem ncard_preimage_singleton_one : (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
   ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_one ν)
 
 /-- The `Set.ncard` of the fibre of `P.β` over `∞` is `orbitCount σinf`. -/
-theorem ncard_preimage_singleton_inf :
-    (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
+theorem ncard_preimage_singleton_inf : (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
   ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)
 
 /-- `(P.β ⁻¹' marked).ncard` equals `orbitCount σ0 + orbitCount σ1 + orbitCount σinf`. -/
-theorem ncard_preimage_marked_eq_orbitCount :
-    (P.β ⁻¹' marked).ncard =
-      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 +
-        orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 +
-        orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
+theorem ncard_preimage_marked_eq_orbitCount : (P.β ⁻¹' marked).ncard =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 +
+      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 +
+      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
   rw [P.ncard_preimage_marked, P.ncard_preimage_singleton_zero ν,
     P.ncard_preimage_singleton_one ν, P.ncard_preimage_singleton_inf ν]
 
@@ -339,15 +324,6 @@ end ConnectedCover
 
 namespace TopBranchedCover
 
-/-- **Every topological branched cover is isomorphic to `P.toTopBranchedCover h` for some `P`.** -/
-theorem exists_iso_toTopBranchedCover {n : ℕ} (X : TopBranchedCover.{0} n) :
-    ∃ (P : AnalyticBelyiPair.{0}) (h : degree P.β = n),
-      Nonempty (X.Iso (P.toTopBranchedCover h)) := by
-  obtain ⟨q, hq⟩ := AnalyticBelyiPair.toTopBranchedCoverIsoClass_surjective n (.mk X)
-  obtain ⟨⟨P, h⟩, rfl⟩ := Quotient.exists_rep q
-  rw [AnalyticBelyiPair.toTopBranchedCoverIsoClass_mk, IsoClass.mk_eq_mk_iff] at hq
-  exact ⟨P, h, hq.map Iso.symm⟩
-
 /-- Every topological branched cover `X : TopBranchedCover.{0} n` has finite CW type. -/
 instance instFiniteCWType {n : ℕ} (X : TopBranchedCover.{0} n) : FiniteCWType X.Z := by
   obtain ⟨P, _, ⟨ι⟩⟩ := X.exists_iso_toTopBranchedCover
@@ -355,13 +331,11 @@ instance instFiniteCWType {n : ℕ} (X : TopBranchedCover.{0} n) : FiniteCWType 
 
 /-- Isomorphic topological branched covers have the same Euler characteristic. -/
 theorem Iso.eulerChar_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} [FiniteCWType X.Z]
-    [FiniteCWType Y.Z] (ι : X.Iso Y) : eulerChar X.Z = eulerChar Y.Z :=
-  ι.toHomeomorph.eulerChar_eq
+    [FiniteCWType Y.Z] (ι : X.Iso Y) : eulerChar X.Z = eulerChar Y.Z := ι.toHomeomorph.eulerChar_eq
 
 /-- Isomorphic topological branched covers have the same topological genus. -/
 theorem Iso.genus_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} [FiniteCWType X.Z] [FiniteCWType Y.Z]
-    (ι : X.Iso Y) : genus X.Z = genus Y.Z :=
-  ι.toHomeomorph.toHomotopyEquiv.genus_eq
+    (ι : X.Iso Y) : genus X.Z = genus Y.Z := ι.toHomeomorph.toHomotopyEquiv.genus_eq
 
 end TopBranchedCover
 
@@ -370,8 +344,6 @@ namespace AnalyticBelyiPair
 /-- Forgetting the complex structure preserves the Euler characteristic. -/
 @[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
     (h : degree P.β = n) : eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
-  -- `(P.toTopBranchedCover h).Z` is `P.X`; `Homeomorph.refl` reconciles the `FiniteCWType`
-  -- instances without assuming definitional equality.
   (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).eulerChar_eq
 
 /-- Forgetting the complex structure preserves the topological genus. -/
@@ -389,14 +361,13 @@ theorem eulerChar_Z_eq_eulerChar_monodromyTriple {n : ℕ} (X : TopBranchedCover
     eulerChar X.Z = (X.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
   obtain ⟨P, h, ⟨ι⟩⟩ := X.exists_iso_toTopBranchedCover
   obtain ⟨νP⟩ := P.nonempty_restrict_preimage_singleton_equiv basePt
-  let νP' := νP.trans (finCongr h)
   obtain ⟨νT⟩ := (P.toTopBranchedCover h).nonempty_restrict_preimage_singleton_equiv basePt
-  rw [ι.eulerChar_eq, P.eulerChar_toTopBranchedCover h]
-  refine (P.eulerChar_X_eq_eulerChar_monodromyTriple νP').trans
-    (PermutationTriple.eulerChar_eq_of_equivalent (PermutationTriple.IsoClass.mk_eq_mk_iff.1 ?_))
-  exact (P.isoClass_monodromyTriple_toTopBranchedCover h νP' νT).symm.trans
-    (X.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
-      (P.toTopBranchedCover h).isCoveringMap_restrict νT ι.restrict (funext ι.restrict_restrict))
+  rw [ι.eulerChar_eq, P.eulerChar_toTopBranchedCover h,
+    P.eulerChar_X_eq_eulerChar_monodromyTriple (νP.trans (finCongr h))]
+  exact PermutationTriple.eulerChar_eq_of_equivalent <| PermutationTriple.IsoClass.mk_eq_mk_iff.1 <|
+    (P.isoClass_monodromyTriple_toTopBranchedCover h _ νT).symm.trans <|
+      X.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
+        (P.toTopBranchedCover h).isCoveringMap_restrict νT ι.restrict (funext ι.restrict_restrict)
 
 /-- **The topological genus of a topological branched cover is that of its monodromy triple.** -/
 theorem genus_Z_eq_genus_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
@@ -417,8 +388,7 @@ def IsoClass.eulerChar {n : ℕ} : IsoClass.{0} n → ℤ :=
 
 /-- On the class of `X`, `IsoClass.eulerChar` evaluates to `eulerChar X.Z`. -/
 @[simp] theorem IsoClass.eulerChar_mk {n : ℕ} (X : TopBranchedCover.{0} n) :
-    (IsoClass.mk X).eulerChar = TauCeti.eulerChar X.Z :=
-  IsoClass.lift_mk _ _ X
+    (IsoClass.mk X).eulerChar = TauCeti.eulerChar X.Z := IsoClass.lift_mk _ _ X
 
 /-- The topological genus of an isomorphism class of topological branched covers. -/
 def IsoClass.genus {n : ℕ} : IsoClass.{0} n → ℕ :=
@@ -426,8 +396,23 @@ def IsoClass.genus {n : ℕ} : IsoClass.{0} n → ℕ :=
 
 /-- On the class of `X`, `IsoClass.genus` evaluates to `genus X.Z`. -/
 @[simp] theorem IsoClass.genus_mk {n : ℕ} (X : TopBranchedCover.{0} n) :
-    (IsoClass.mk X).genus = RiemannSurface.genus X.Z :=
-  IsoClass.lift_mk _ _ X
+    (IsoClass.mk X).genus = RiemannSurface.genus X.Z := IsoClass.lift_mk _ _ X
+
+/-- `IsoClass.equivConnectedIsoClass` preserves the Euler characteristic. -/
+@[simp] theorem IsoClass.eulerChar_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
+    (equivConnectedIsoClass n c).eulerChar = c.eulerChar := by
+  obtain ⟨X, rfl⟩ := mk_surjective c
+  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
+  rw [equivConnectedIsoClass_mk X ν, ConnectedIsoClass.eulerChar_mk, eulerChar_mk,
+    X.eulerChar_Z_eq_eulerChar_monodromyTriple ν]
+
+/-- `IsoClass.equivConnectedIsoClass` preserves the genus. -/
+@[simp] theorem IsoClass.genus_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
+    (equivConnectedIsoClass n c).genus = c.genus := by
+  obtain ⟨X, rfl⟩ := mk_surjective c
+  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
+  rw [equivConnectedIsoClass_mk X ν, ConnectedIsoClass.genus_mk, genus_mk,
+    X.genus_Z_eq_genus_monodromyTriple ν]
 
 end TopBranchedCover
 
