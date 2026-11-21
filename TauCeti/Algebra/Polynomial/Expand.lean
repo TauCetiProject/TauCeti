@@ -67,11 +67,12 @@ theorem hasseDeriv_pow_expChar_pow_eq_zero {e k : ℕ} (hk : ¬p ^ e ∣ k) (f :
 
 /-- Over a finite field with `q` elements, the Hasse derivatives of `f ^ q` of every order `k`
 with `0 < k < q` vanish. -/
-theorem hasseDeriv_pow_card_eq_zero {K : Type*} [Field K] [Fintype K] {k : ℕ} (hk₀ : 0 < k)
-    (hk : k < Fintype.card K) (f : K[X]) : hasseDeriv k (f ^ Fintype.card K) = 0 := by
+theorem hasseDeriv_pow_card_eq_zero {K : Type*} [Field K] [Finite K] {k : ℕ} (hk₀ : 0 < k)
+    (hk : k < Nat.card K) (f : K[X]) : hasseDeriv k (f ^ Nat.card K) = 0 := by
+  have := Fintype.ofFinite K
   obtain ⟨p, _, n, hp, hcard⟩ := FiniteField.card' K
   have : Fact p.Prime := ⟨hp⟩
-  rw [hcard] at hk ⊢
+  rw [Nat.card_eq_fintype_card, hcard] at hk ⊢
   exact hasseDeriv_pow_expChar_pow_eq_zero (Nat.not_dvd_of_pos_of_lt hk₀ hk) f
 
 /-- Hasse differentiation of order below `p^e` is linear over polynomials in `X^(p^e)`:
