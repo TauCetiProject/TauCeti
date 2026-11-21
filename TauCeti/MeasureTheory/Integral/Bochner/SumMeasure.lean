@@ -6,54 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import Mathlib.MeasureTheory.Function.L1Space.Integrable
-import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Count
 
 /-!
-# Bochner integrals against counting measure on arbitrary discrete measurable spaces
+# Bochner integrals with respect to counting measure
 
-Mathlib's `MeasureTheory.integral_countable` expresses `∫ x, f x ∂μ` as an unconditional sum when
-the domain `X` is countable, and `MeasureTheory.integral_count` specializes to `Measure.count` when
-`X` is finite. For counting measure on an arbitrary measurable space with measurable singletons,
-any integrable function `f : X → E` has countable support because `Summable (‖f ·‖)` forces the
-support of `f` to be countable. Restricting to `Function.support f` therefore evaluates
-`∫ x, f x ∂Measure.count` as `∑' x, f x` without assuming `Countable X` or
-`SecondCountableTopology E`.
+Mathlib's `Mathlib.MeasureTheory.Integral.Bochner.SumMeasure` evaluates Bochner integrals against
+`Measure.count` only on finite types (`MeasureTheory.integral_count`) and against general measures
+only on countable spaces with measurable singletons (`MeasureTheory.integral_countable`).
 
-## Main statements
-
-* `MeasureTheory.Integrable.integral_count`: `∫ x, f x ∂Measure.count = ∑' x, f x` for any
-  counting-measure integrable function into a Banach space.
-* `MeasureTheory.Integrable.hasSum_count`: `HasSum f (∫ x, f x ∂Measure.count)` under the same
-  hypotheses.
+This file provides `MeasureTheory.hasSum_integral_count` and `MeasureTheory.integral_count_eq_tsum`
+for any `Measure.count`-integrable Banach-space-valued function on an arbitrary measurable space,
+with no countability or `MeasurableSingletonClass` assumption (used for counting-measure `L²`
+Parseval identities and uncountable discrete group von Neumann algebras).
 -/
 
 public section
 
 namespace MeasureTheory
 
-variable {X E : Type*} [MeasurableSpace X] [MeasurableSingletonClass X]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E] {f : α → E}
 
-/-- On any measurable space with measurable singletons — without assuming countability of `X` or
-second countability of `E` — the Bochner integral of a counting-measure integrable function is its
-unconditional sum `∑' x, f x`. -/
-theorem Integrable.integral_count {f : X → E} (hf : Integrable f Measure.count) :
-    ∫ x, f x ∂Measure.count = ∑' x, f x := by
-  have hs : (Function.support f).Countable := by
-    simpa only [Function.support, Ne, norm_eq_zero] using
-      (integrable_count_iff.mp hf).countable_support
-  calc ∫ x, f x ∂Measure.count = ∫ x in Function.support f, f x ∂Measure.count :=
-        setIntegral_support.symm
-    _ = ∑' x : Function.support f, (Measure.count : Measure X).real {(x : X)} • f x :=
-        setIntegral_countable f hs hf.integrableOn
-    _ = ∑' x : Function.support f, f x := by simp
-    _ = ∑' x, f x := tsum_subtype_eq_of_support_subset Set.Subset.rfl
+/-- If `f` is integrable with respect to `Measure.count`, then `f` is unconditionally summable with
+sum `∫ a, f a ∂Measure.count`. No countability or `MeasurableSingletonClass` assumption on `α` is
+required. -/
+theorem hasSum_integral_count (hf : Integrable f (Measure.count : Measure α)) :
+    HasSum f (∫ a, f a ∂(Measure.count : Measure α)) := by
+  have hmk : f = hf.aestronglyMeasurable.mk f :=
+    funext (Measure.ae_count_iff.1 hf.aestronglyMeasurable.ae_eq_mk)
+  have hsm : StronglyMeasurable f := by
+    rw [hmk]
+    exact hf.aestronglyMeasurable.stronglyMeasurable_mk
+  rw [Measure.count] at hf ⊢
+  exact (hasSum_integral_measure hf).congr_fun fun a => (integral_dirac' _ a hsm).symm
 
-/-- A counting-measure integrable function into a Banach space has unconditional sum equal to its
-Bochner integral. -/
-theorem Integrable.hasSum_count {f : X → E} (hf : Integrable f Measure.count) :
-    HasSum f (∫ x, f x ∂Measure.count) :=
-  hf.integral_count ▸ (integrable_count_iff.mp hf).of_norm.hasSum
+/-- The Bochner integral of a `Measure.count`-integrable function equals its `tsum`, with no
+countability or `MeasurableSingletonClass` assumption on `α`. -/
+theorem integral_count_eq_tsum (hf : Integrable f (Measure.count : Measure α)) :
+    ∫ a, f a ∂(Measure.count : Measure α) = ∑' a, f a :=
+  (hasSum_integral_count hf).tsum_eq.symm
 
 end MeasureTheory

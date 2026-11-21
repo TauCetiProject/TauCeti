@@ -59,4 +59,10 @@ theorem Periodic.piSingle_apply {ι γ δ : Type*} [DecidableEq ι] [Add γ] [Ze
   · rw [Pi.single_eq_of_ne h]
     exact fun _ ↦ rfl
 
+/-- The lift of a periodic function, composed with the quotient map, is the function itself. -/
+@[simp]
+theorem Periodic.lift_comp_coe {γ : Type*} [AddGroup γ] {f : γ → β} {c : γ} (h : Periodic f c) :
+    h.lift ∘ ((↑) : γ → γ ⧸ AddSubgroup.zmultiples c) = f :=
+  funext h.lift_coe
+
 end Function

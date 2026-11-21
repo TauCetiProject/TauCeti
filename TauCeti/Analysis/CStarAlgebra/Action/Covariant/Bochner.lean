@@ -130,7 +130,8 @@ theorem integratedOperatorBochnerL1_count_toL1_apply {f : G → A}
     P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.mpr hf).toL1 f) v =
       ∑' s, P.coefficient (f s) (P.group s v) := by
   rw [P.integratedOperatorBochnerL1_toL1_apply (integrable_count_iff.mpr hf) v]
-  exact (P.integrable_integrand_of_integrable (integrable_count_iff.mpr hf) v).integral_count
+  exact integral_count_eq_tsum
+    (P.integrable_integrand_of_integrable (integrable_count_iff.mpr hf) v)
 
 /-- On a discrete group with counting measure, the operator norm of the integrated form of a
 norm-summable `f : G → A` is bounded by `∑' s, ‖f s‖`. -/
@@ -141,7 +142,7 @@ theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A}
   refine (P.norm_integratedOperatorBochnerL1_apply_le _).trans_eq ?_
   rw [L1.norm_eq_integral_norm]
   exact (integral_congr_ae ((integrable_count_iff.mpr hf).coeFn_toL1.fun_comp norm)).trans
-    (integrable_count_iff.mpr hf).norm.integral_count
+    (integral_count_eq_tsum (integrable_count_iff.mpr hf).norm)
 
 end Discrete
 
