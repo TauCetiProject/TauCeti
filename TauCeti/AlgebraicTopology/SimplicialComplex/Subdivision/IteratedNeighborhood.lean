@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.NDRPair
+public import TauCeti.Topology.Compactness.SigmaCompact
 public import TauCeti.Topology.Homotopy.DeformationRetract
 
 import Mathlib.Data.Nat.Cast.Order.Field
@@ -44,6 +45,8 @@ on the neighbourhood after `n` subdivisions, and a compactness argument gives co
 
 * `AbstractSimplicialComplex.iteratedOpenSimplicialNeighborhood`: the open simplicial
   neighbourhood of `P` after `n` further barycentric subdivisions.
+* `AbstractSimplicialComplex.compactExhaustionComplSetOfSupportMem`: compact exhaustion of
+  `|K| \ |P|` for a finite-face complex `K`.
 
 ## Main results
 
@@ -56,6 +59,8 @@ on the neighbourhood after `n` subdivisions, and a compactness argument gives co
 * `AbstractSimplicialComplex.exists_iteratedOpenSimplicialNeighborhood_subset`: **cofinality.**
   For a finite complex, every open set containing the polyhedron of `P` contains one of the
   iterated neighbourhoods.
+* `sigmaCompactSpace_compl_setOf_support_mem` and `instLocallyCompactSpaceComplSetOfSupportMem`:
+  `σ`-compactness and local compactness of `|K| \ |P|`.
 
 ## References
 
@@ -406,5 +411,47 @@ theorem exists_iteratedOpenSimplicialNeighborhood_subset (hfin : K.faces.Finite)
     (fun σ hσ => hD (mem_image_of_mem _ hσ)) hW.isClosed_compl.isCompact
     (disjoint_compl_left_iff_subset.2 hPW)
   exact ⟨n, fun y hy => by_contra fun hyW => hn.notMem_of_mem_left hy hyW⟩
+
+/-- Compact exhaustion of `|K| \ |P|` extracted from iterated open simplicial neighbourhoods. -/
+def compactExhaustionComplSetOfSupportMem (hfin : K.faces.Finite) :
+    CompactExhaustion ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+  have := K.compactSpace_realization_of_finite_faces hfin
+  CompactExhaustion.complOfCofinalNhds (K.subcomplexNDRPair P).isClosed
+    (K.isOpen_iteratedOpenSimplicialNeighborhood P)
+    (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
+    (K.exists_iteratedOpenSimplicialNeighborhood_subset P hfin)
+theorem compactExhaustionComplSetOfSupportMem_def (hfin : K.faces.Finite) :
+    have := K.compactSpace_realization_of_finite_faces hfin
+    K.compactExhaustionComplSetOfSupportMem P hfin =
+      CompactExhaustion.complOfCofinalNhds (K.subcomplexNDRPair P).isClosed
+        (K.isOpen_iteratedOpenSimplicialNeighborhood P)
+        (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
+        (K.exists_iteratedOpenSimplicialNeighborhood_subset P hfin) := (rfl)
+@[simp] theorem compactExhaustionComplSetOfSupportMem_apply (hfin : K.faces.Finite) (n : ℕ) :
+    have := K.compactSpace_realization_of_finite_faces hfin
+    K.compactExhaustionComplSetOfSupportMem P hfin n =
+      Subtype.val ⁻¹' (K.iteratedOpenSimplicialNeighborhood P
+        (TauCeti.cofinalNhdsIndex (K.subcomplexNDRPair P).isClosed
+          (K.isOpen_iteratedOpenSimplicialNeighborhood P)
+          (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
+          (K.exists_iteratedOpenSimplicialNeighborhood_subset P hfin) n))ᶜ :=
+  have := K.compactSpace_realization_of_finite_faces hfin
+  CompactExhaustion.complOfCofinalNhds_apply ..
+/-- For a complex with finitely many faces, `|K| \ |P|` is `σ`-compact. -/
+theorem sigmaCompactSpace_compl_setOf_support_mem (hfin : K.faces.Finite) :
+    SigmaCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+  (K.compactExhaustionComplSetOfSupportMem P hfin).sigmaCompactSpace
+/-- For a finite simplicial complex, `|K| \ |P|` is `σ`-compact. -/
+instance instSigmaCompactSpaceComplSetOfSupportMem [Finite (Face K)] :
+    SigmaCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+  K.sigmaCompactSpace_compl_setOf_support_mem P (Set.toFinite K.faces)
+/-- Whenever `|K|` is weakly locally compact, `|K| \ |P|` is locally compact. -/
+instance instLocallyCompactSpaceComplSetOfSupportMem [WeaklyLocallyCompactSpace (Realization K)] :
+    LocallyCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+  (K.subcomplexNDRPair P).isClosed.isOpen_compl.locallyCompactSpace
+/-- For a complex with finitely many faces, `|K| \ |P|` is locally compact. -/
+theorem locallyCompactSpace_compl_setOf_support_mem (hfin : K.faces.Finite) :
+    LocallyCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+  have := K.compactSpace_realization_of_finite_faces hfin; inferInstance
 
 end AbstractSimplicialComplex
