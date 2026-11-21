@@ -73,7 +73,7 @@ lemma δ_app_pullbackSections_μ (N : X.Modules) (x : Γ(M, U)) (y : Γ(N, U)) :
   have hn := congr($(Functor.LaxMonoidal.μ_natural (Scheme.Modules.sectionsFunctor U)
     ((pullbackPushforwardAdjunction g).unit.app M)
     ((pullbackPushforwardAdjunction g).unit.app N)) (x ⊗ₜ y))
-  have hp := TauCeti.SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
+  have hp := SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
     ((pullback g).obj M) ((pullback g).obj N) (op U) (pullbackSections g M U x)
       (pullbackSections g N U y)
   exact h.trans ((congrArg _ hn.symm).trans hp)
@@ -184,7 +184,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι 
   have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction U.ι)
     (pullbackPushforwardAdjunction U.ι) P
   have h₁ : IsIso (((restrictAdjunction U.ι).unit.app P).app U) :=
-    isIso_restrictAdjunction_unit_app_app U P le_rfl
+    isIso_restrictAdjunction_unit_app_app U.ι P (by simp)
   have h₂ : IsIso (((pullback U.ι).obj P).presheaf.map
       (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op) :=
     have : homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp) = eqToHom (by simp) := Subsingleton.elim _ _

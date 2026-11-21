@@ -128,14 +128,6 @@ theorem isZero_khovanovHomology_of_quantum_notMem_Icc {j : ℤ}
   (ExactAt.of_isZero
     (D.isZero_khovanovComplex_X_of_quantum_notMem_Icc hD R hj i)).isZero_homology
 
-/-- The entire quantum-component Khovanov complex vanishes when `j % 2 ≠ D.componentCount % 2`. -/
-theorem isZero_khovanovComplex_of_mod_two_ne {j : ℤ}
-    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
-    IsZero (D.khovanovComplex hD R j) := by
-  rw [IsZero.iff_id_eq_zero]
-  ext i : 1
-  exact (D.isZero_khovanovComplex_X_of_mod_two_ne hD R hj i).eq_of_src _ _
-
 /-- **Quantum-parity vanishing of Khovanov homology**: `Khⁱʲ(D; R)` is zero whenever `j` does not
 have the parity of `D.componentCount`, over any commutative coefficient ring `R`. -/
 theorem isZero_khovanovHomology_of_mod_two_ne (i : ℤ) {j : ℤ}

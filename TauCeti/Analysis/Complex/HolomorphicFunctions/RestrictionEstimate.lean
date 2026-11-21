@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Jet
-import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.Complex.Schwarz
 
 /-!
 # Small restriction on a subspace of finite codimension
@@ -19,8 +19,9 @@ small after imposing finitely many linear conditions. The subspace is the kernel
 finite jet, so its finite codimension is part of the conclusion, rather than an assumption.
 
 This is the local estimate used in finite-cover proofs of finiteness of analytic cohomology.
-The proof uses Mathlib's higher-order Schwarz lemma and its derivative characterization of
-vanishing order; no Banach space of bounded holomorphic functions is introduced.
+The proof uses the higher-order Schwarz lemma (`Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`)
+and the derivative characterization of vanishing order; no Banach space of bounded holomorphic
+functions is introduced.
 
 ## References
 
@@ -30,7 +31,7 @@ vanishing order; no Banach space of bounded holomorphic functions is introduced.
 
 public noncomputable section
 
-open Asymptotics Filter Metric Set Topology TopologicalSpace
+open Filter Metric Set TopologicalSpace
 
 namespace TauCeti.HolomorphicFunctions
 
@@ -48,30 +49,13 @@ theorem norm_le_mul_pow_of_mem_ker_jet (hR : 0 < R) (hU : ball a R ⊆ U)
     (hM : ∀ z ∈ ball a R, ‖extend f z‖ ≤ M) {z : ℂ} (hz : z ∈ closedBall a r) :
     ‖extend f z‖ ≤ M * (r / R) ^ (n + 1) := by
   have ha := hU (mem_ball_self hR)
-  have hana := (analyticOnNhd_extend (Subset.refl _) f) a ha
   have horder := (jet_eq_zero_iff ha (n + 1) f).mp (LinearMap.mem_ker.mp hf)
-  obtain ⟨g, hg, heq⟩ := (natCast_le_analyticOrderAt hana).mp horder
-  have hf0 : extend f a = 0 := by
-    simpa using heq.self_of_nhds
-  have hbig : (extend f) =O[𝓝 a] fun w ↦ ‖w - a‖ ^ (n + 1) := by
-    have h := (isBigO_refl (fun w : ℂ ↦ (w - a) ^ (n + 1)) (𝓝 a)).smul
-      (hg.continuousAt.tendsto.isBigO_one ℂ)
-    have h' : extend f =O[𝓝 a] fun w ↦ (w - a) ^ (n + 1) := by
-      simpa only [smul_eq_mul, mul_one] using
-        h.congr' (Filter.EventuallyEq.symm heq) EventuallyEq.rfl
-    simpa only [norm_pow] using h'.norm_right
-  have hlittle : (fun w ↦ extend f w - extend f a) =o[𝓝 a] fun w ↦ ‖w - a‖ ^ n := by
-    simpa only [hf0, sub_zero] using
-      hbig.trans_isLittleO (isLittleO_pow_sub_pow_sub a n.lt_succ_self)
-  have hest := Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO
-    ((differentiableOn_extend f).mono hU)
-    (fun w hw ↦ by simpa [hf0, mem_closedBall, dist_zero_right] using hM w hw)
-    hlittle (closedBall_subset_ball hr hz)
+  have hest := Complex.norm_le_mul_div_pow_of_le_analyticOrderAt
+    ((differentiableOn_extend f).mono hU) hM horder (closedBall_subset_ball hr hz)
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM a (mem_ball_self hR))
-  simpa only [hf0, dist_zero_right] using hest.trans
-    (mul_le_mul_of_nonneg_left
-      (pow_le_pow_left₀ (div_nonneg dist_nonneg hR.le)
-        (div_le_div_of_nonneg_right (mem_closedBall.mp hz) hR.le) _) hM0)
+  exact hest.trans <| mul_le_mul_of_nonneg_left
+    (pow_le_pow_left₀ (div_nonneg (norm_nonneg _) hR.le)
+      (div_le_div_of_nonneg_right (by simpa [dist_eq_norm] using hz) hR.le) _) hM0
 
 /-- Restriction from a disc to a strictly smaller concentric closed disc is arbitrarily
 small on a subspace of finite codimension. Its elements satisfy the same estimate for

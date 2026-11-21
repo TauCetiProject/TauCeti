@@ -70,8 +70,6 @@ open CategoryTheory Finset
 
 namespace TauCeti.PDCode
 
-universe u
-
 variable {n : ℕ}
 
 /-! ### The states of the vertices -/
@@ -139,6 +137,8 @@ end TauCeti.OrientedPDCode
 
 namespace TauCeti.PDCode
 
+universe u
+
 variable {n : ℕ}
 
 /-- The vertex `S` is recovered from its state. -/
@@ -155,7 +155,7 @@ theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
 crossing `a ∈ T \ S`. -/
 theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) (j : Fin n) (hj : j ≠ a) : cubeState S j = cubeState T j := by
-  obtain ⟨b, hbS, rfl⟩ := h.exists_finset_insert
+  obtain ⟨b, -, rfl⟩ := h.exists_finset_insert
   obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
   simp [cubeState, hj]
 
@@ -276,7 +276,7 @@ private theorem resolutionCubeEdge_comp_resolutionCubeEdge {S T₁ T₂ U : Fins
   -- `c` and `c'`, applied to the underlying element of `x`.
   ext x
   simpa [resolutionCubeEdge, resolutionCubeEdgeMap_eq D hD R h₁' hc'T₁ hc'U,
-    resolutionCubeEdgeMap_eq D hD R h₂' hcT₂ hcU] using LinearMap.congr_fun hface x.1
+    resolutionCubeEdgeMap_eq D hD R h₂' hcT₂ hcU] using LinearMap.congr_fun hface x.val
 
 /-- **The Khovanov cube of resolutions** of a planar code `D`, in quantum degree `j`. Its vertex
 `S` is the homogeneous piece of degree `j - |S|` of the circle tensor of the resolution
@@ -343,11 +343,8 @@ def resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' : D'.IsPlanar) {j' : �
     (e : D.ResolvedCircle (cubeState S) ≃ D'.ResolvedCircle (cubeState S'))
     (h : j - #S = j' - #S') :
     (D.resolutionCube hD R j).obj S ≃ₗ[R] (D'.resolutionCube hD' R j').obj S' :=
-  (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j S)).trans <|
-    ((PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e).ofSubmodules _ _ (by
-      rw [range_resolutionCubeι, range_resolutionCubeι,
-        Khovanov.map_reindex_circleQuantumGrading_piece, h])).trans
-      (LinearEquiv.ofInjective _ (D'.resolutionCubeι_injective hD' R j' S')).symm
+  (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e).ofSubmodules _ _ (by
+    rw [Khovanov.map_reindex_circleQuantumGrading_piece, h])
 
 /-- `TauCeti.PDCode.resolutionCubeObjCongr` reindexes the circle tensor along the bijection of
 resolved circles. -/
@@ -357,7 +354,7 @@ theorem resolutionCubeι_resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' :
     (h : j - #S = j' - #S') (x : (D.resolutionCube hD R j).obj S) :
     (D'.resolutionCubeι hD' R j' S').hom (D.resolutionCubeObjCongr hD R j hD' e h x) =
       PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e ((D.resolutionCubeι hD R j S).hom x) := by
-  simp [resolutionCubeObjCongr]
+  unfold resolutionCubeObjCongr; rfl
 
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =
@@ -384,7 +381,7 @@ theorem resolutionCube_map_homOfLE_insert_comp_resolutionCubeι {S : Finset (Fin
   -- the chosen crossing of the edge, restricted to the homogeneous pieces, and on the right the
   -- one at `a`.
   exact LinearMap.congr_fun
-    (resolutionCubeEdgeMap_eq D hD R (covBy_insert ha) ha (mem_insert_self a S)) x.1
+    (resolutionCubeEdgeMap_eq D hD R (covBy_insert ha) ha (mem_insert_self a S)) x.val
 
 /-- Along an edge `S ⋖ T` of the cube, the cube of resolutions acts by the saddle map at the
 crossing added along the edge. This restates
