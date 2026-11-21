@@ -176,7 +176,7 @@ theorem fourier_neg_one_coe_apply (t : ℝ) :
 theorem fourier_coe_half_period (hT : T ≠ 0) (n : ℤ) :
     fourier n ((T / 2 : ℝ) : AddCircle T) = (-1) ^ n := by
   have hT' : (T : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hT
-  rw [fourier_coe_apply, ← Complex.exp_pi_mul_I, ← Complex.exp_int_mul]
+  rw [fourier_coe_apply, ← Complex.exp_pi_mul_I, ← Complex.exp_intCast_mul]
   congr 1
   push_cast
   field_simp

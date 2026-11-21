@@ -131,7 +131,7 @@ subspaces of antiperiodic loops. -/
 theorem isClosed_doublyAntiperiodicSobolev (ℓ : ℝ) :
     IsClosed (doublyAntiperiodicSobolev F ℓ : Set (antiperiodicSobolev F ℓ)) :=
   isClosed_setOf_forall_mem_antiperiodic 1 fun k ↦
-    (lp.evalCLM ℂ _ 2 k).continuous.comp (continuous_fst.comp continuous_subtype_val)
+    (lp.evalCLM ℂ _ 2 k).continuous.comp (continuous_fst.comp continuous_subtypeVal)
 
 /-- The Sobolev space `H¹` of maps antiperiodic in both factors is complete. -/
 instance [CompleteSpace F] (ℓ : ℝ) : CompleteSpace (doublyAntiperiodicSobolev F ℓ) :=
@@ -232,7 +232,8 @@ omit hT [FiniteDimensional ℂ F] in
 private def halfRotate {ℓ : ℝ} (x : antiperiodicSobolev F ℓ) : antiperiodicSobolev F ℓ :=
   ⟨(lp.ampliation ℕ 2 (halfRotatePair T 1) (x : 𝕏[F]).1,
       lp.ampliation ℕ 2 (halfRotatePair T 0) (x : 𝕏[F]).2), mem_antiperiodicSobolev_iff.2 fun k ↦ by
-    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply, mem_antiperiodicSobolev_iff.1 x.2 k]
+    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
+      mem_antiperiodicSobolev_iff.1 x.property k]
     refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
       simp [← Complex.coe_smul, map_smul]⟩
 

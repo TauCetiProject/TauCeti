@@ -53,10 +53,10 @@ submodule `q`, as an `R`-linear map `p →L[R] q`. The submodules may be over a 
 scalars, whose module structure on `p` and `q` is kept. -/
 @[expose] def restrictOfTower (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
     (h : ∀ x ∈ p, f x ∈ q) : p →L[R] q where
-  toFun x := ⟨f x, h x x.2⟩
+  toFun x := ⟨f x, h x x.property⟩
   map_add' x y := Subtype.ext (f.map_add x y)
   map_smul' c x := Subtype.ext (f.map_smul c (x : M))
-  cont := (f.continuous.comp continuous_subtype_val).subtype_mk _
+  cont := (f.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_restrictOfTower_apply (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
