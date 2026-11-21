@@ -106,7 +106,7 @@ private theorem exists_normGroup_le_powerSubgroup_of_isPrimitiveRoot {n : ℕ} [
   set q : powerClassQuotient Kˣ n := QuotientGroup.mk b
   obtain ⟨c, hc⟩ := QuotientGroup.mk_out_eq_mul (powerSubgroup Kˣ n) b
   have hb : kummerClass K hn b = kummerClass K hn q.out := by
-    rw [hc, kummerClass_mul, (kummerClass_eq_zero_iff K hn).2 c.2, add_zero]
+    rw [hc, kummerClass_mul, (kummerClass_eq_zero_iff K hn).2 c.property, add_zero]
   -- and `(a, q.out)` vanishes because `a` is a norm from `K(s q) ⊆ E`
   have ht : AdjoinSimple.gen K (s q) ^ n = algebraMap K K⟮s q⟯ (q.out : K) :=
     Subtype.ext (by simpa using hs q)

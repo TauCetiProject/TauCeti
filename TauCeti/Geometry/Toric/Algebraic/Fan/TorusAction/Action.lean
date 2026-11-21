@@ -68,7 +68,7 @@ private theorem tensorChart_hom_ext (T : Over (Spec (.of ℂ))) {Y : Scheme}
         (Φ.affineToricChartι σ) ≪≫ pullback.congrHom rfl
           (Φ.affineToricChartι_comp_algebraicRealizationStructureMap σ)).hom ≫
       pullback.map T.hom
-        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Φ.lattice σ.1))))
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Φ.lattice σ.val))))
         T.hom Φ.algebraicRealizationStructureMap (𝟙 _) (Φ.affineToricChartι σ) (𝟙 _)
         (by simp)
         (by simpa using (Φ.affineToricChartι_comp_algebraicRealizationStructureMap σ).symm) =
@@ -81,28 +81,28 @@ private theorem tensorChart_hom_ext (T : Over (Spec (.of ℂ))) {Y : Scheme}
 private theorem chart_equivariant (σ : Φ.cones) :
     letI : (algSpec (CommRingCat.of ℂ)).LaxMonoidal :=
       braidedAlgSpec.toMonoidal.toLaxMonoidal
-    letI := affineCoordinateRingCoactionModObj Φ.lattice σ.1
+    letI := affineCoordinateRingCoactionModObj Φ.lattice σ.val
     letI : ModObj (torus Φ) (chart Φ σ) := (algSpec (.of ℂ)).modObjObj
       (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))
-      (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.1)))
+      (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.val)))
     γ[torus Φ, chart Φ σ] ≫ chartι Φ σ = torus Φ ◁ chartι Φ σ ≫ action Φ := by
   let _ : (algSpec (CommRingCat.of ℂ)).LaxMonoidal :=
     braidedAlgSpec.toMonoidal.toLaxMonoidal
-  let := affineCoordinateRingCoactionModObj Φ.lattice σ.1
+  let := affineCoordinateRingCoactionModObj Φ.lattice σ.val
   let _ : ModObj (torus Φ) (chart Φ σ) := (algSpec (.of ℂ)).modObjObj
     (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))
-    (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.1)))
-  have hs : γ[torus Φ, chart Φ σ].left = affineToricSchemeAction Φ.lattice σ.1 := by
+    (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.val)))
+  have hs : γ[torus Φ, chart Φ σ].left = affineToricSchemeAction Φ.lattice σ.val := by
     have h := congrArg (fun f ↦ f.left) ((algSpec (.of ℂ)).modObjObj_smul
       (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))
-      (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.1))))
+      (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.val))))
     simp only [Over.comp_left, algSpec_map_left, affineCoordinateRingCoactionModObj_smul] at h
     erw [h]
     -- Normalize only the spectrum tensorator and algebra-map carriers at this boundary.
     with_unfolding_all
       change (pullbackSpecIso ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))
-        (affineCoordinateRing Φ.lattice σ.1)).hom ≫
-        Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction Φ.lattice σ.1).toRingHom) = _
+        (affineCoordinateRing Φ.lattice σ.val)).hom ≫
+        Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction Φ.lattice σ.val).toRingHom) = _
     rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv,
       pullbackSpecIso_inv_comp_affineToricSchemeAction]
     simp
@@ -110,7 +110,7 @@ private theorem chart_equivariant (σ : Φ.cones) :
   simp only [Over.comp_left]
   erw [hs]
   -- Present the chart arrow on its actual scheme carrier after forgetting the base.
-  change affineToricSchemeAction Φ.lattice σ.1 ≫ Φ.affineToricChartι σ = _
+  change affineToricSchemeAction Φ.lattice σ.val ≫ Φ.affineToricChartι σ = _
   have hc : (torus Φ ◁ chartι Φ σ).left = algebraicRealizationActionChartMap σ := by
     exact whiskerLeft_affineToricChartι_asOver_left Φ σ
   rw [hc]
@@ -148,10 +148,10 @@ private theorem action_mul : μ[torus Φ] ▷ realization Φ ≫ action Φ =
   intro σ
   let _ : (algSpec (CommRingCat.of ℂ)).LaxMonoidal :=
     braidedAlgSpec.toMonoidal.toLaxMonoidal
-  let := affineCoordinateRingCoactionModObj Φ.lattice σ.1
+  let := affineCoordinateRingCoactionModObj Φ.lattice σ.val
   let _ : ModObj (torus Φ) (chart Φ σ) := (algSpec (.of ℂ)).modObjObj
     (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))
-    (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.1)))
+    (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.val)))
   have h := ModObj.mul_smul_self (torus Φ) (chart Φ σ) =≫ chartι Φ σ
   have he : (torus Φ ⊗ torus Φ) ◁ chartι Φ σ ≫
       (μ[torus Φ] ▷ realization Φ ≫ action Φ) =
@@ -212,21 +212,21 @@ torus action, as morphisms of schemes over `Spec ℂ`. -/
 theorem isModHom_affineToricChartι (σ : Φ.cones) :
     letI : (algSpec (CommRingCat.of ℂ)).LaxMonoidal :=
       braidedAlgSpec.toMonoidal.toLaxMonoidal
-    letI := affineCoordinateRingCoactionModObj Φ.lattice σ.1
+    letI := affineCoordinateRingCoactionModObj Φ.lattice σ.val
     letI : ModObj
       ((affineToricScheme Φ.lattice (⊥ : PointedCone ℝ V)).asOver (Spec (.of ℂ)))
       ((Φ.affineToricChart σ).asOver (Spec (.of ℂ))) := (algSpec (.of ℂ)).modObjObj
       (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))
-      (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.1)))
+      (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.val)))
     IsModHom
       ((affineToricScheme Φ.lattice (⊥ : PointedCone ℝ V)).asOver (Spec (.of ℂ)))
       ((Φ.affineToricChartι σ).asOver (Spec (.of ℂ))) := by
   let _ : (algSpec (CommRingCat.of ℂ)).LaxMonoidal :=
     braidedAlgSpec.toMonoidal.toLaxMonoidal
-  let := affineCoordinateRingCoactionModObj Φ.lattice σ.1
+  let := affineCoordinateRingCoactionModObj Φ.lattice σ.val
   let _ : ModObj (torus Φ) (chart Φ σ) := (algSpec (.of ℂ)).modObjObj
     (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))
-    (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.1)))
+    (op (CommAlgCat.of ℂ (affineCoordinateRing Φ.lattice σ.val)))
   constructor
   simp only [selfLeftAction_actionHomRight, algebraicRealizationModObj_smul]
   apply Over.OverMorphism.ext

@@ -187,6 +187,16 @@ theorem exists_iso {ι : Type u} [Finite ι] (U : ι → Opens X) (hU : IsOpenCo
     ⟨Fintype.card ι, fun i ↦ U (e i), e.iSup_comp.trans hU.iSup_eq_top⟩
   exact ⟨V, ⟨FormalCoproduct.isoOfComponents e (fun _ ↦ Iso.refl _)⟩⟩
 
+/-- The members of a finite indexed cover isomorphic to a family `W` are members of `W`: the
+member at `i` is the member of `W` at the image of `i`. -/
+theorem opens_eq_of_iso {ν : Type u} {W : ν → Opens X} {T : FiniteOpenCover X}
+    (e : T.toFormalCoproduct ≅ FormalCoproduct.mk ν W) (i : ULift.{u} (Fin T.n)) :
+    T.opens i = W (e.hom.f i) := by
+  have h : e.inv.f (e.hom.f i) = i := congrArg (fun φ ↦ φ.f i) e.hom_inv_id
+  have h' := leOfHom (e.inv.φ (e.hom.f i))
+  rw [h] at h'
+  exact le_antisymm (leOfHom (e.hom.φ i)) h'
+
 /-- On a compact space every small open cover admits a finite indexed refinement. The finite
 subcover is enumerated without excluding the empty subcover. -/
 theorem exists_refinement [CompactSpace X] {ι : Type u} (U : ι → Opens X)

@@ -27,13 +27,14 @@ public section
 
 namespace Matrix
 
-variable {𝕜 p n : Type*} [RCLike 𝕜] [Fintype p] [Fintype n]
+variable {𝕜 p n : Type*} [RCLike 𝕜] [Finite p] [Fintype n]
 
 /-- The sample covariance rank inequality, normalized by the number of samples even when
 that number is zero. -/
 theorem rank_sampleCovariance_sub_le (X Y : Matrix p n 𝕜) :
     (sampleCovariance X - sampleCovariance Y).rank ≤ 2 * (X - Y).rank := by
   classical
+  have := Fintype.ofFinite p
   rw [sampleCovariance_def, sampleCovariance_def, ← smul_sub, ← smul_one_mul]
   exact (rank_mul_le_right _ _).trans
     (rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le X Y)

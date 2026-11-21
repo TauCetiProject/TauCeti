@@ -122,7 +122,7 @@ equivalence on tangent vectors. -/
 theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
     (Φ : RiemannianIsometry I J M N) (z : TangentBundle I M) :
     Φ.toDiffeomorph.tangent z =
-      TotalSpace.mk' F (Φ z.1) (Φ.mfderivToLinearIsometryEquiv z.1 z.2) := by
+      TotalSpace.mk' F (Φ z.proj) (Φ.mfderivToLinearIsometryEquiv z.proj z.snd) := by
   rw [Diffeomorph.coe_tangent, mfderivToLinearIsometryEquiv_apply]
   rfl
 

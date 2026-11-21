@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineSpace
 public import TauCeti.AlgebraicGeometry.RationalPoint.FixedField
 public import TauCeti.FieldTheory.Finite.SepClosedSubfield
+import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
 # The points of affine space
@@ -49,6 +50,39 @@ open CategoryTheory IntermediateField
 universe u
 
 namespace AlgebraicGeometry.AffineSpace
+
+/-- Every nonempty open subset of affine space over an infinite field contains a rational
+point, with no finiteness assumption on the set of coordinates. -/
+theorem exists_rationalPoint_mem_open {k : Type u} [Field k] [Infinite k] (n : Type u)
+    (U : Set 𝔸(n; Spec (.of k))) (hU : IsOpen U) (hne : U.Nonempty) :
+    ∃ s : Spec (.of k) ⟶ 𝔸(n; Spec (.of k)),
+      s ≫ 𝔸(n; Spec (.of k)) ↘ Spec (.of k) = 𝟙 _ ∧
+        s (IsLocalRing.closedPoint k) ∈ U := by
+  let e := SpecIso n (.of k)
+  let V := e.inv ⁻¹' U
+  obtain ⟨x, hx⟩ := hne.preimage e.inv.surjective
+  obtain ⟨_, ⟨p, rfl⟩, hxp, hpV⟩ :=
+    PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open hx
+      (hU.preimage e.inv.continuous)
+  have hp : p ≠ 0 := by
+    rintro rfl
+    exact hxp (zero_mem _)
+  obtain ⟨v, hv⟩ : ∃ v : n → k, MvPolynomial.aeval (R := k) v p ≠ 0 := by
+    by_contra! h
+    exact hp (MvPolynomial.funext fun v ↦ by simpa [MvPolynomial.aeval_def] using h v)
+  let s := Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := k) v).toRingHom)
+  have hC : CommRingCat.ofHom MvPolynomial.C ≫
+      CommRingCat.ofHom (MvPolynomial.aeval (R := k) v).toRingHom = 𝟙 _ :=
+    CommRingCat.hom_ext (MvPolynomial.aeval (R := k) v).comp_algebraMap
+  have hsV : s (IsLocalRing.closedPoint k) ∈ V := hpV (by
+    intro hmem
+    have hker : p ∈ Ideal.comap (MvPolynomial.aeval (R := k) v).toRingHom ⊥ := by
+      convert hmem using 2
+      exact congrArg (Ideal.comap _) (Ideal.eq_bot_of_prime (K := k) _).symm
+    exact hv (by simpa using hker))
+  refine ⟨s ≫ e.inv, ?_, ?_⟩
+  · rw [Category.assoc, SpecIso_inv_over, ← Spec.map_comp, hC, Spec.map_id]
+  · exact (Scheme.Hom.comp_apply s e.inv (IsLocalRing.closedPoint k)).symm ▸ hsV
 
 /-- **The points of affine space.** For a field `L` over a commutative ring `k` and a finite index
 type `n`, the affine space `𝔸(n; Spec k)` has `|L| ^ |n|` points with values in `L` over

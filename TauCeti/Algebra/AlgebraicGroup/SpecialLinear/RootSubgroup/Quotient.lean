@@ -138,7 +138,7 @@ theorem firstColumn_surjective :
       (firstColumn : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A → _) := by
   intro s
   obtain ⟨M, h0, h1⟩ := ((Ideal.span_range_fin_two_eq_top_iff _).mp
-    ((PuncturedAffineSpace.homEquiv R (Fin 2) A) s).2).exists_SL2_col 0
+    ((PuncturedAffineSpace.homEquiv R (Fin 2) A) s).property).exists_SL2_col 0
   refine ⟨(pointsMulEquiv (R := R) (A := A) 2).symm M,
     PuncturedAffineSpace.hom_ext fun i ↦ ?_⟩
   rw [coordinateAlgHom_firstColumn, MulEquiv.apply_symm_apply,

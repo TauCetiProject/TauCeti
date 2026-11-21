@@ -184,7 +184,7 @@ theorem contMDiff_selfDualProj_totalSpace (o : Manifold.Orientation I M (Fin (k 
       (fun p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) ↦
         TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ)
           (E := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
-          p.proj (selfDualProjCLM o p.proj p.2)) := by
+          p.proj (selfDualProjCLM o p.proj p.snd)) := by
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   exact (contMDiff_hom_bundle_iff (F₁ := E [⋀^Fin k]→L[ℝ] ℝ) (F₂ := E [⋀^Fin k]→L[ℝ] ℝ)
     (E₁ := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
@@ -198,7 +198,7 @@ theorem contMDiff_antiSelfDualProj_totalSpace (o : Manifold.Orientation I M (Fin
       (fun p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) ↦
         TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ)
           (E := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
-          p.proj (antiSelfDualProjCLM o p.proj p.2)) := by
+          p.proj (antiSelfDualProjCLM o p.proj p.snd)) := by
   simpa only [selfDualProjCLM_neg_orientation] using contMDiff_selfDualProj_totalSpace (n := n) (-o)
 
 /-- **Local `C^n` subbundle frames for `Λ⁺` of prescribed constant rank `r`.** Whenever `k` is even
@@ -299,7 +299,7 @@ The parameter `r` specifies the model fibre `Fin r → ℝ` of the target subbun
 def selfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (r : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
     TotalSpace (Fin r → ℝ) (fun x ↦ selfDualSubspace o x) :=
-  ⟨p.proj, selfDualProj o hk p.proj p.2⟩
+  ⟨p.proj, selfDualProj o hk p.proj p.snd⟩
 
 /-- The codomain-restricted bundle projection `Λᵏ T*M → Λ⁻` sending `(x, α)` to `(x, P⁻_x α)`.
 The parameter `r` specifies the model fibre `Fin r → ℝ` of the target subbundle total space
@@ -307,14 +307,14 @@ The parameter `r` specifies the model fibre `Fin r → ℝ` of the target subbun
 def antiSelfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (r : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
     TotalSpace (Fin r → ℝ) (fun x ↦ antiSelfDualSubspace o x) :=
-  ⟨p.proj, antiSelfDualProj o hk p.proj p.2⟩
+  ⟨p.proj, antiSelfDualProj o hk p.proj p.snd⟩
 
 /-- `selfDualBundleProj` acts on `(x, α)` by `selfDualProj` in the fibre over `x`. -/
 @[simp]
 theorem selfDualBundleProj_apply (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k)
     (r : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
-    selfDualBundleProj o hk r p = ⟨p.proj, selfDualProj o hk p.proj p.2⟩ :=
+    selfDualBundleProj o hk r p = ⟨p.proj, selfDualProj o hk p.proj p.snd⟩ :=
   (rfl)
 
 /-- `antiSelfDualBundleProj` acts on `(x, α)` by `antiSelfDualProj` in the fibre over `x`. -/
@@ -322,7 +322,7 @@ theorem selfDualBundleProj_apply (o : Manifold.Orientation I M (Fin (k + k))) (h
 theorem antiSelfDualBundleProj_apply (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k)
     (r : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
-    antiSelfDualBundleProj o hk r p = ⟨p.proj, antiSelfDualProj o hk p.proj p.2⟩ :=
+    antiSelfDualBundleProj o hk r p = ⟨p.proj, antiSelfDualProj o hk p.proj p.snd⟩ :=
   (rfl)
 
 /-- `selfDualBundleProj` preserves the base point. -/
@@ -342,14 +342,14 @@ theorem antiSelfDualBundleProj_proj (o : Manifold.Orientation I M (Fin (k + k)))
 /-- `selfDualBundleProj` retracts the canonical inclusion `Λ⁺ → Λᵏ T*M` to the identity. -/
 theorem selfDualBundleProj_inclusion (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k)
     (r : ℕ) (v : TotalSpace (Fin r → ℝ) (fun x ↦ selfDualSubspace o x)) :
-    selfDualBundleProj o hk r ⟨v.proj, v.2⟩ = v := by
+    selfDualBundleProj o hk r ⟨v.proj, v.snd⟩ = v := by
   rcases v with ⟨x, α⟩
   simp
 
 /-- `antiSelfDualBundleProj` retracts the canonical inclusion `Λ⁻ → Λᵏ T*M` to the identity. -/
 theorem antiSelfDualBundleProj_inclusion (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k)
     (r : ℕ) (v : TotalSpace (Fin r → ℝ) (fun x ↦ antiSelfDualSubspace o x)) :
-    antiSelfDualBundleProj o hk r ⟨v.proj, v.2⟩ = v := by
+    antiSelfDualBundleProj o hk r ⟨v.proj, v.snd⟩ = v := by
   rcases v with ⟨x, α⟩
   simp
 
@@ -366,7 +366,7 @@ theorem contMDiff_selfDualSubspace_inclusion (o : Manifold.Orientation I M (Fin 
     letI := hsd.vectorBundle
     ContMDiff (I.prod 𝓘(ℝ, Fin r → ℝ)) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ selfDualSubspace o x) ↦
-        (⟨v.proj, v.2⟩ :
+        (⟨v.proj, v.snd⟩ :
           TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ))) := by
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   exact hsd.contMDiff_totalSpace_inclusion
@@ -380,7 +380,7 @@ theorem contMDiff_antiSelfDualSubspace_inclusion (o : Manifold.Orientation I M (
     letI := hasd.vectorBundle
     ContMDiff (I.prod 𝓘(ℝ, Fin r → ℝ)) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ antiSelfDualSubspace o x) ↦
-        (⟨v.proj, v.2⟩ :
+        (⟨v.proj, v.snd⟩ :
           TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ))) := by
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   exact hasd.contMDiff_totalSpace_inclusion
@@ -393,7 +393,7 @@ theorem isSmoothEmbedding_selfDualSubspace_inclusion (o : Manifold.Orientation I
     letI := hsd.fiberBundle
     Manifold.IsSmoothEmbedding (I.prod 𝓘(ℝ, Fin r → ℝ)) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ selfDualSubspace o x) ↦
-        (⟨v.proj, v.2⟩ :
+        (⟨v.proj, v.snd⟩ :
           TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ))) := by
   have : IsManifold I n M := .of_le (n := n + 1) le_self_add
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
@@ -410,7 +410,7 @@ theorem isSmoothEmbedding_antiSelfDualSubspace_inclusion
     letI := hasd.fiberBundle
     Manifold.IsSmoothEmbedding (I.prod 𝓘(ℝ, Fin r → ℝ)) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ antiSelfDualSubspace o x) ↦
-        (⟨v.proj, v.2⟩ :
+        (⟨v.proj, v.snd⟩ :
           TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ))) := by
   have : IsManifold I n M := .of_le (n := n + 1) le_self_add
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
@@ -435,9 +435,9 @@ theorem contMDiff_selfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))
   let := hsd.vectorBundle
   intro p
   refine (hsd.contMDiffAt_totalSpace_mk le_rfl (contMDiff_selfDualProj_totalSpace o p)
-    fun q ↦ selfDualProjCLM_mem_selfDualSubspace o hk q.proj q.2).congr_of_eventuallyEq ?_
+    fun q ↦ selfDualProjCLM_mem_selfDualSubspace o hk q.proj q.snd).congr_of_eventuallyEq ?_
   exact Eventually.of_forall fun q ↦
-    congrArg (TotalSpace.mk q.proj) (Subtype.ext (coe_selfDualProj_apply o hk q.proj q.2))
+    congrArg (TotalSpace.mk q.proj) (Subtype.ext (coe_selfDualProj_apply o hk q.proj q.snd))
 
 /-- **The codomain-restricted bundle projection `Λᵏ T*M → Λ⁻` is `C^n`.** -/
 theorem contMDiff_antiSelfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k)
@@ -453,9 +453,9 @@ theorem contMDiff_antiSelfDualBundleProj (o : Manifold.Orientation I M (Fin (k +
   let := hasd.vectorBundle
   intro p
   refine (hasd.contMDiffAt_totalSpace_mk le_rfl (contMDiff_antiSelfDualProj_totalSpace o p)
-    fun q ↦ antiSelfDualProjCLM_mem_antiSelfDualSubspace o hk q.proj q.2).congr_of_eventuallyEq ?_
+    fun q ↦ antiSelfDualProjCLM_mem_antiSelfDualSubspace o hk q.proj q.snd).congr_of_eventuallyEq ?_
   exact Eventually.of_forall fun q ↦
-    congrArg (TotalSpace.mk q.proj) (Subtype.ext (coe_antiSelfDualProj_apply o hk q.proj q.2))
+    congrArg (TotalSpace.mk q.proj) (Subtype.ext (coe_antiSelfDualProj_apply o hk q.proj q.snd))
 
 end SmoothSplitting
 
@@ -484,10 +484,10 @@ def selfDualProdAntiSelfDualDiffeomorph (n : WithTop ℕ∞) [IsManifold I (n + 
   letI := hsd.contMDiffVectorBundle
   letI := hasd.contMDiffVectorBundle
   { toFun := fun v ↦
-      ⟨v.proj, (v.2.1 : TangentSpace I v.proj [⋀^Fin k]→L[ℝ] ℝ) +
-        (v.2.2 : TangentSpace I v.proj [⋀^Fin k]→L[ℝ] ℝ)⟩
+      ⟨v.proj, (v.snd.1 : TangentSpace I v.proj [⋀^Fin k]→L[ℝ] ℝ) +
+        (v.snd.2 : TangentSpace I v.proj [⋀^Fin k]→L[ℝ] ℝ)⟩
     invFun := fun p ↦
-      ⟨p.proj, (selfDualProj o hk p.proj p.2, antiSelfDualProj o hk p.proj p.2)⟩
+      ⟨p.proj, (selfDualProj o hk p.proj p.snd, antiSelfDualProj o hk p.proj p.snd)⟩
     left_inv := by
       rintro ⟨x, α₁, α₂⟩
       apply congrArg (TotalSpace.mk x)
@@ -504,14 +504,14 @@ def selfDualProdAntiSelfDualDiffeomorph (n : WithTop ℕ∞) [IsManifold I (n + 
           (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
           (fun w ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ)
             (E := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
-            w.proj (w.2.1 : TangentSpace I w.proj [⋀^Fin k]→L[ℝ] ℝ)) v :=
-        (contMDiff_selfDualSubspace_inclusion o hsd ⟨v.proj, v.2.1⟩).comp v hc.1
+            w.proj (w.snd.1 : TangentSpace I w.proj [⋀^Fin k]→L[ℝ] ℝ)) v :=
+        (contMDiff_selfDualSubspace_inclusion o hsd ⟨v.proj, v.snd.1⟩).comp v hc.1
       have h₂ : ContMDiffAt (I.prod 𝓘(ℝ, (Fin r₁ → ℝ) × (Fin r₂ → ℝ)))
           (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
           (fun w ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ)
             (E := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
-            w.proj (w.2.2 : TangentSpace I w.proj [⋀^Fin k]→L[ℝ] ℝ)) v :=
-        (contMDiff_antiSelfDualSubspace_inclusion o hasd ⟨v.proj, v.2.2⟩).comp v hc.2
+            w.proj (w.snd.2 : TangentSpace I w.proj [⋀^Fin k]→L[ℝ] ℝ)) v :=
+        (contMDiff_antiSelfDualSubspace_inclusion o hasd ⟨v.proj, v.snd.2⟩).comp v hc.2
       exact ContMDiffAt.add_sectionAlong (b := TotalSpace.proj) h₁ h₂
     contMDiff_invFun := by
       intro p
@@ -534,7 +534,7 @@ theorem selfDualProdAntiSelfDualDiffeomorph_apply (n : WithTop ℕ∞) [IsManifo
     letI := hsd.fiberBundle
     letI := hasd.fiberBundle
     selfDualProdAntiSelfDualDiffeomorph n o hk hsd hasd v =
-      ⟨v.proj, (v.2.1 : TangentSpace I v.proj [⋀^Fin k]→L[ℝ] ℝ) + v.2.2⟩ :=
+      ⟨v.proj, (v.snd.1 : TangentSpace I v.proj [⋀^Fin k]→L[ℝ] ℝ) + v.snd.2⟩ :=
   (rfl)
 
 /-- The inverse of `selfDualProdAntiSelfDualDiffeomorph` splits a `k`-form into its self-dual and
@@ -551,7 +551,7 @@ theorem selfDualProdAntiSelfDualDiffeomorph_symm_apply (n : WithTop ℕ∞) [IsM
     letI := hsd.fiberBundle
     letI := hasd.fiberBundle
     (selfDualProdAntiSelfDualDiffeomorph n o hk hsd hasd).symm p =
-      ⟨p.proj, (selfDualProj o hk p.proj p.2, antiSelfDualProj o hk p.proj p.2)⟩ :=
+      ⟨p.proj, (selfDualProj o hk p.proj p.snd, antiSelfDualProj o hk p.proj p.snd)⟩ :=
   (rfl)
 
 /-- **Four-manifold bundle splitting `Λ⁺ ⊕ Λ⁻ ≃ₘ^n Λ² T*M`**, with rank-three model fibres
@@ -580,7 +580,7 @@ theorem selfDualProdAntiSelfDualDiffeomorphTwo_apply (n : WithTop ℕ∞) [IsMan
     letI := (hasLocalContMDiffSubbundleFrames_selfDualSubspace_two (n := n) o).fiberBundle
     letI := (hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace_two (n := n) o).fiberBundle
     selfDualProdAntiSelfDualDiffeomorphTwo n o v =
-      ⟨v.proj, (v.2.1 : TangentSpace I v.proj [⋀^Fin 2]→L[ℝ] ℝ) + v.2.2⟩ :=
+      ⟨v.proj, (v.snd.1 : TangentSpace I v.proj [⋀^Fin 2]→L[ℝ] ℝ) + v.snd.2⟩ :=
   (rfl)
 
 /-- The inverse of `selfDualProdAntiSelfDualDiffeomorphTwo` splits a two-form into its self-dual
@@ -593,7 +593,7 @@ theorem selfDualProdAntiSelfDualDiffeomorphTwo_symm_apply (n : WithTop ℕ∞) [
     letI := (hasLocalContMDiffSubbundleFrames_selfDualSubspace_two (n := n) o).fiberBundle
     letI := (hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace_two (n := n) o).fiberBundle
     (selfDualProdAntiSelfDualDiffeomorphTwo n o).symm p =
-      ⟨p.proj, (selfDualProj o even_two p.proj p.2, antiSelfDualProj o even_two p.proj p.2)⟩ :=
+      ⟨p.proj, (selfDualProj o even_two p.proj p.snd, antiSelfDualProj o even_two p.proj p.snd)⟩ :=
   (rfl)
 
 end BundleSplitting
@@ -689,7 +689,7 @@ theorem contMDiff_section_selfDualSubspace_iff {n : WithTop ℕ∞} [IsManifold 
   let := hsd.vectorBundle
   rw [isSmoothForm_def]
   exact ⟨fun hs ↦ (contMDiff_selfDualSubspace_inclusion o hsd).comp hs,
-    fun hφ x ↦ hsd.contMDiffAt_totalSpace_mk le_rfl (hφ x) fun y ↦ (s y).2⟩
+    fun hφ x ↦ hsd.contMDiffAt_totalSpace_mk le_rfl (hφ x) fun y ↦ (s y).property⟩
 
 /-- A section `s : ∀ x, antiSelfDualSubspace o x` is `C^n` into the subbundle total space of `Λ⁻`
 if and only if the underlying rough `k`-form `x ↦ (s x : Λᵏ T*_x M)` satisfies
@@ -709,7 +709,7 @@ theorem contMDiff_section_antiSelfDualSubspace_iff {n : WithTop ℕ∞} [IsManif
   let := hasd.vectorBundle
   rw [isSmoothForm_def]
   exact ⟨fun hs ↦ (contMDiff_antiSelfDualSubspace_inclusion o hasd).comp hs,
-    fun hφ x ↦ hasd.contMDiffAt_totalSpace_mk le_rfl (hφ x) fun y ↦ (s y).2⟩
+    fun hφ x ↦ hasd.contMDiffAt_totalSpace_mk le_rfl (hφ x) fun y ↦ (s y).property⟩
 
 section SmoothInfty
 
@@ -730,14 +730,14 @@ def selfDualContMDiffSectionEquiv (o : Manifold.Orientation I M (Fin (k + k))) {
       ⟨⟨fun x ↦ (s x : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ),
           ((contMDiff_section_selfDualSubspace_iff o hsd s).1 s.contMDiff).mem_smoothBundleForms⟩,
         SmoothForm.coe_mem_selfDualForms_iff.1
-          (RoughForm.mem_selfDualForms_iff_forall_mem_selfDualSubspace.2 fun x ↦ (s x).2)⟩
+          (RoughForm.mem_selfDualForms_iff_forall_mem_selfDualSubspace.2 fun x ↦ (s x).property)⟩
     invFun := fun α ↦
       { toFun := fun x ↦
           ⟨((α : SmoothForm I M ℝ k) : RoughForm I M ℝ k) x,
             RoughForm.mem_selfDualForms_iff_forall_mem_selfDualSubspace.1
-              (SmoothForm.coe_mem_selfDualForms_iff.2 α.2) x⟩
+              (SmoothForm.coe_mem_selfDualForms_iff.2 α.property) x⟩
         contMDiff_toFun :=
-          (contMDiff_section_selfDualSubspace_iff o hsd _).2 α.1.isSmoothForm }
+          (contMDiff_section_selfDualSubspace_iff o hsd _).2 α.val.isSmoothForm }
     map_add' := fun _ _ ↦ rfl
     map_smul' := fun _ _ ↦ rfl
     left_inv := fun s ↦ by
@@ -793,14 +793,14 @@ def antiSelfDualContMDiffSectionEquiv (o : Manifold.Orientation I M (Fin (k + k)
             s.contMDiff).mem_smoothBundleForms⟩,
         SmoothForm.coe_mem_antiSelfDualForms_iff.1
           (RoughForm.mem_antiSelfDualForms_iff_forall_mem_antiSelfDualSubspace.2
-            fun x ↦ (s x).2)⟩
+            fun x ↦ (s x).property)⟩
     invFun := fun α ↦
       { toFun := fun x ↦
           ⟨((α : SmoothForm I M ℝ k) : RoughForm I M ℝ k) x,
             RoughForm.mem_antiSelfDualForms_iff_forall_mem_antiSelfDualSubspace.1
-              (SmoothForm.coe_mem_antiSelfDualForms_iff.2 α.2) x⟩
+              (SmoothForm.coe_mem_antiSelfDualForms_iff.2 α.property) x⟩
         contMDiff_toFun :=
-          (contMDiff_section_antiSelfDualSubspace_iff o hasd _).2 α.1.isSmoothForm }
+          (contMDiff_section_antiSelfDualSubspace_iff o hasd _).2 α.val.isSmoothForm }
     map_add' := fun _ _ ↦ rfl
     map_smul' := fun _ _ ↦ rfl
     left_inv := fun s ↦ by

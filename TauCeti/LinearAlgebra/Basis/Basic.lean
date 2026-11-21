@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.StdBasis
 
@@ -51,10 +52,16 @@ vectors indexed by `ι`.
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
+* `Module.Basis.map_sum_mul_eq_map_mul_apply`: pushing a scaled finite-basis expansion of an
+  algebra element through a ring homomorphism `f` when scalar multiples of the coordinates and the
+  basis vectors lift through a ring homomorphism `g`.
 * `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
   vector.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
   `b (inr j)` correspond to their values on the basis vectors `b (inl l)`.
+* `Module.Basis.algebraMap_sum_mul_eq_mul` and
+  `Module.Basis.algebraMap_mul_constr_eq_algebraMap_sum`: coordinate-clearing identities for a
+  finite basis over an algebra `F` of a commutative semiring `T`.
 -/
 
 public section
@@ -123,7 +130,7 @@ theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finse
   have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
     funext s t
     simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
-    rw [hv s t t.2]
+    rw [hv s t t.property]
     by_cases hst : t = s
     · simp [hst]
     · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
@@ -214,6 +221,29 @@ theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b �
 
 end RingHom
 
+/-- Pushing a scaled finite-basis expansion of an `R`-algebra element `x : A` through a ring
+homomorphism `f : A →+* T`: if `r'`, `c j`, and `v j` in `S` lift `f (algebraMap R A r)`,
+`f (algebraMap R A (r * b.repr x j))`, and `f (b j)` along a ring homomorphism `g : S →+* T`,
+then `g (∑ j, c j * v j) = g r' * f x`. -/
+theorem map_sum_mul_eq_map_mul_apply {R A S T G H : Type*} [Fintype ι]
+    [CommSemiring R] [Semiring A] [Algebra R A] [Semiring S] [Semiring T]
+    [FunLike G S T] [RingHomClass G S T] [FunLike H A T] [RingHomClass H A T]
+    (b : Basis ι R A) (g : G) (f : H)
+    {x : A} {r : R} {r' : S} {c v : ι → S}
+    (hr : f (algebraMap R A r) = g r')
+    (hc : ∀ j, f (algebraMap R A (r * b.repr x j)) = g (c j))
+    (hv : ∀ j, f (b j) = g (v j)) :
+    g (∑ j, c j * v j) = g r' * f x := by
+  calc
+    g (∑ j, c j * v j)
+        = ∑ j, g (c j) * g (v j) := by simp only [map_sum, map_mul]
+      _ = ∑ j, f (algebraMap R A (r * b.repr x j)) * f (b j) := by simp only [hc, hv]
+      _ = ∑ j, f (algebraMap R A r * (b.repr x j • b j)) := by
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          simp only [map_mul, Algebra.smul_def, mul_assoc]
+      _ = g r' * f x := by
+          rw [← map_sum, ← Finset.mul_sum, b.sum_repr, map_mul, hr]
+
 section Ring
 
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
@@ -245,23 +275,61 @@ variable {κ R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddComm
 determined by its values on the remaining basis vectors `b (inl l)`, and these are arbitrary. -/
 noncomputable def constrSumInrEquiv :
     {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j} ≃ (ι → N) where
-  toFun f l := f.1 (b (.inl l))
+  toFun f l := f.val (b (.inl l))
   invFun g := ⟨b.constr ℕ (Sum.elim g v), fun j ↦ by rw [constr_basis, Sum.elim_inr]⟩
-  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.2]
+  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.property]
   right_inv g := funext fun l ↦ by simp
 
 /-- The parameter of a linear map records its values on the basis vectors `b (inl l)`. -/
 @[simp]
 theorem constrSumInrEquiv_apply (f : {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j}) (l : ι) :
-    b.constrSumInrEquiv v f l = f.1 (b (.inl l)) :=
+    b.constrSumInrEquiv v f l = f.val (b (.inl l)) :=
   (rfl)
 
 /-- The linear map with parameter `g` sends `b (inl l)` to `g l` and `b (inr j)` to `v j`. -/
 @[simp]
 theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
-    ((b.constrSumInrEquiv v).symm g).1 = b.constr ℕ (Sum.elim g v) :=
+    ((b.constrSumInrEquiv v).symm g).val = b.constr ℕ (Sum.elim g v) :=
   (rfl)
 
 end SumInr
+
+section Algebra
+
+/-- Clearing denominators of `b.repr y` by `s` expresses `algebraMap T' F' (ψ s) * φ y` as
+`algebraMap T' F' (∑ j, ψ (a j) * g j)`. -/
+theorem algebraMap_sum_mul_eq_mul
+    {T F M T' F' ι : Type*} [CommSemiring T] [CommSemiring F] [Algebra T F]
+    [Semiring M] [Algebra F M] [CommSemiring T'] [Semiring F'] [Algebra T' F']
+    [Fintype ι] (b : Module.Basis ι F M)
+    (ψ : T →+* T') (g : ι → T') (φ : M →+* F')
+    (hφ_alg : ∀ x, φ (algebraMap F M (algebraMap T F x)) = algebraMap T' F' (ψ x))
+    (hφ_b : ∀ j, φ (b j) = algebraMap T' F' (g j))
+    (y : M) (s : T) (a : ι → T)
+    (ha : ∀ j, algebraMap T F (a j) = s • b.repr y j) :
+    algebraMap T' F' (∑ j, ψ (a j) * g j) = algebraMap T' F' (ψ s) * φ y := by
+  rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have haj : algebraMap T F (a j) = algebraMap T F s * b.repr y j := by
+    simpa only [Algebra.smul_def] using ha j
+  rw [map_mul, ← hφ_alg (a j), haj, map_mul, map_mul, hφ_alg s, ← hφ_b j, mul_assoc,
+    ← map_mul φ, ← Algebra.smul_def (b.repr y j) (b j)]
+
+/-- Evaluating a linear form `b.constr F (algebraMap T F ∘ g)` after clearing denominators of
+`b.repr y` by `s` yields `algebraMap T F (∑ j, a j * g j)`. -/
+theorem algebraMap_mul_constr_eq_algebraMap_sum
+    {T F M ι : Type*} [CommSemiring T] [CommSemiring F] [Algebra T F]
+    [AddCommMonoid M] [Module F M] [Fintype ι] (b : Module.Basis ι F M) (g : ι → T)
+    (y : M) (s : T) (a : ι → T)
+    (ha : ∀ j, algebraMap T F (a j) = s • b.repr y j) :
+    algebraMap T F s * b.constr F (fun j ↦ algebraMap T F (g j)) y =
+      algebraMap T F (∑ j, a j * g j) := by
+  conv_lhs => rw [← b.sum_repr y]
+  rw [map_sum, Finset.mul_sum, map_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [map_smul, b.constr_basis, smul_eq_mul, ← mul_assoc,
+    ← Algebra.smul_def s (b.repr y j), ← ha j, ← map_mul]
+
+end Algebra
 
 end Module.Basis

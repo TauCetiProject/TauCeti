@@ -6,6 +6,7 @@ Authors: Tau Ceti contributors
 module
 
 public import Mathlib.Probability.HasLaw
+public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
 import TauCeti.Probability.HasLaw
 
@@ -21,6 +22,10 @@ whenever restricting `P` to every `m`-measurable event `A` (or `A ∩ F` for an 
 event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A ∩ F) • ν`): see
 `ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict` and
 `ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict_inter`.
+
+An independent, identically distributed family admits a measurable version agreeing almost
+everywhere at each index, preserving independence and identical distribution
+(`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`).
 -/
 
 public section
@@ -129,5 +134,21 @@ theorem indep_comap_of_forall_hasLaw_restrict_inter {m mΩ : MeasurableSpace Ω}
     (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F))) :
     Indep (.comap Z inferInstance) m P :=
   indep_comap_of_forall_hasLaw_restrict hm fun A hA ↦ (h A hA).of_restrict_inter_of_ae_mem hF
+
+/-- Every independent, identically distributed family of random variables admits a measurable
+version agreeing almost everywhere at each index, preserving independence, identical distribution
+within the family, and identical distribution with each original coordinate. -/
+theorem iIndepFun.exists_measurable_ae_eq_of_identDistrib {Ω ι α : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] {P : Measure Ω} {X : ι → Ω → α} {i₀ : ι}
+    (hindep : iIndepFun X P) (hid : ∀ i, IdentDistrib (X i) (X i₀) P P) :
+    ∃ X' : ι → Ω → α, (∀ i, Measurable (X' i)) ∧ (∀ i, X i =ᵐ[P] X' i) ∧
+      iIndepFun X' P ∧ (∀ i, IdentDistrib (X' i) (X' i₀) P P) ∧
+      ∀ i, IdentDistrib (X' i) (X i) P P := by
+  let X' : ι → Ω → α := fun i ↦ (hid i).aemeasurable_fst.mk (X i)
+  have hX'_ae (i : ι) : X i =ᵐ[P] X' i := (hid i).aemeasurable_fst.ae_eq_mk
+  refine ⟨X', fun i ↦ (hid i).aemeasurable_fst.measurable_mk, hX'_ae, hindep.congr hX'_ae,
+    fun i ↦ ((hid i).aemeasurable_fst.identDistrib_mk.symm.trans (hid i)).trans
+      (hid i₀).aemeasurable_fst.identDistrib_mk,
+    fun i ↦ (hid i).aemeasurable_fst.identDistrib_mk.symm⟩
 
 end ProbabilityTheory

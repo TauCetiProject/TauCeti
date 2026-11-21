@@ -139,7 +139,7 @@ theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finit
     refine Order.krullDim_nonpos_iff_forall_isMax.2 fun Q Q' _ ↦ ?_
     suffices key : ∀ Q ∈ support (Localization.AtPrime p) (LocalizedModule p.primeCompl M),
         Q.asIdeal = maximalIdeal (Localization.AtPrime p) by
-      exact (Subtype.ext (PrimeSpectrum.ext ((key _ Q'.2).trans (key _ Q.2).symm))).le
+      exact (Subtype.ext (PrimeSpectrum.ext ((key _ Q'.property).trans (key _ Q.property).symm))).le
     intro Q hQ
     have hQp : Q.asIdeal.under R ≤ p :=
       (Ideal.comap_mono (le_maximalIdeal Q.isPrime.ne_top)).trans_eq

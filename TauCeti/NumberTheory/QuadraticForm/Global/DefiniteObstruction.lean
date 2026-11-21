@@ -75,10 +75,10 @@ theorem exists_anisotropic_and_not_anisotropic_away_from_realPlace
   -- A field unit with sign `+1` at `w₀` and `-1` at every other real place.
   obtain ⟨a, ha⟩ := TauCeti.GlobalNumberFields.signHom_surjective (K := K)
     fun w => if w = w₀ then 1 else -1
-  have hpos : 0 < embedding_of_isReal w₀.2 (a : K) :=
+  have hpos : 0 < embedding_of_isReal w₀.property (a : K) :=
     (TauCeti.GlobalNumberFields.signHom_apply_eq_one_iff a w₀).mp (by rw [ha]; simp)
   have hneg (w : {w : InfinitePlace K // w.IsReal}) (hw : w ≠ w₀) :
-      embedding_of_isReal w.2 (a : K) < 0 :=
+      embedding_of_isReal w.property (a : K) < 0 :=
     (TauCeti.GlobalNumberFields.signHom_apply_eq_neg_one_iff a w).mp (by rw [ha]; simp [hw])
   set c : Fin (n + 1) → K := Fin.cons (a : K) 1
   have hc (i : Fin (n + 1)) : c i ≠ 0 := by
