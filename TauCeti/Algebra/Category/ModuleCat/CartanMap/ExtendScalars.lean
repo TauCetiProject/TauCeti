@@ -53,6 +53,9 @@ and `f.finiteProjectiveModulesK0Extend`.
   idempotent matrix `e` is sent to the class of the image of `f(e)`.
 * `RingHom.finiteProjectiveModulesK0Extend_of_linearEquiv_pi`: the class of `Rⁿ` is sent to the
   class of `Sⁿ`.
+* `TauCeti.finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars` and
+  `TauCeti.finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars`: compatibility of the
+  split/exact `K₀` comparison with extension of scalars.
 
 ## References
 
@@ -168,3 +171,22 @@ theorem finiteProjectiveModulesK0Extend_of_linearEquiv_pi {ι : Type*} [_root_.F
     ((BalancedExtension.congr f θ).trans ((BalancedExtension.piScalarRight f ι).trans θ'.symm))
 
 end RingHom
+
+namespace TauCeti
+
+/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines extension of scalars on `SplitK0` and
+`ExactK0`. -/
+theorem finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars {R S : Type u} [Ring R]
+    [Ring S] (f : R →+* S) : (finiteProjectiveModulesSplitK0EquivExactK0 S).toAddMonoidHom.comp
+      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars) =
+    f.finiteProjectiveModulesK0Extend.comp
+      (finiteProjectiveModulesSplitK0EquivExactK0 R).toAddMonoidHom :=
+  SplitK0.hom_ext fun _ ↦ by simp
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars {R S : Type u} [Ring R]
+    [Ring S] (f : R →+* S) (x) : finiteProjectiveModulesSplitK0EquivExactK0 S
+      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
+    f.finiteProjectiveModulesK0Extend (finiteProjectiveModulesSplitK0EquivExactK0 R x) :=
+  DFunLike.congr_fun (finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars f) x
+
+end TauCeti

@@ -76,6 +76,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
 * `TauCeti.cartanInverse` and `TauCeti.cartanEquiv`: the inverse of the Cartan map and the
   resulting isomorphism, under the hypothesis that every finitely generated module has a finite
   resolution by finitely generated projectives.
+* `TauCeti.finiteProjectiveModulesSplitK0EquivExactK0`: comparison between split and exact `K₀`
+  of finitely generated projective modules.
 
 ## Main results
 
@@ -239,6 +241,25 @@ theorem finiteProjectiveModulesExactStructure_eq_split :
     finiteProjectiveModulesExactStructure R =
       ExactStructure.split (finiteProjectiveModules R).FullSubcategory :=
   ExactStructure.fullSubcategory_eq_split (finiteProjectiveModules_le_isProjective R)
+
+/-- **Comparison between split and exact `K₀` of finitely generated projective modules.** Every
+short exact sequence splits (`TauCeti.finiteProjectiveModulesExactStructure_eq_split`). -/
+noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 :
+    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
+      ExactK0.{u} (finiteProjectiveModulesExactStructure R) :=
+  ExactK0.fromSplitEquiv.{u} fun {S} hS ↦ (ExactStructure.split_conflation S).mp
+    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (P) :
+    finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u},
+    ExactK0.fromSplit_of.{u}]
+  exact fun hS ↦ (ExactStructure.split_conflation _).mp
+    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_symm_of (P) :
+    (finiteProjectiveModulesSplitK0EquivExactK0 R).symm (ExactK0.of.{u} P) = SplitK0.of.{u} P :=
+  (finiteProjectiveModulesSplitK0EquivExactK0 R).injective (by simp)
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/

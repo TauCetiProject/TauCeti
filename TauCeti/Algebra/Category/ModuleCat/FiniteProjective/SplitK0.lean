@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ExtendScalars
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Matrix
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 
 import TauCeti.Algebra.Group.Prod
@@ -16,8 +16,8 @@ import TauCeti.Algebra.Group.Prod
 # Split `K₀` of finitely generated projective modules: Morita invariance and products
 
 For a possibly noncommutative ring `R`, this file develops `SplitK0` of
-`(finiteProjectiveModules R).FullSubcategory`: comparison with `ExactK0`, Morita and
-ring-isomorphism invariance (`finiteProjectiveModulesSplitK0Equiv`), binary product decomposition
+`(finiteProjectiveModules R).FullSubcategory`: ring-isomorphism invariance
+(`RingEquiv.finiteProjectiveModulesSplitK0Equiv`), binary product decomposition
 (`finiteProjectiveModulesProdSplitK0Equiv`), and canonical universe-polymorphic matrix Morita
 invariance (`finiteProjectiveModulesMatrixSplitK0Equiv`).
 
@@ -32,89 +32,7 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u u' v
 
-namespace TauCeti
-
-/-! ### Comparison between `SplitK0` and `ExactK0` of finitely generated projective modules -/
-
-/-- **Comparison between split and exact `K₀` of finitely generated projective modules.** Every
-short exact sequence splits (`TauCeti.finiteProjectiveModulesExactStructure_eq_split`). -/
-noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 (R : Type u) [Ring R] :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
-      ExactK0.{u} (finiteProjectiveModulesExactStructure R) :=
-  ExactK0.fromSplitEquiv.{u} fun {S} hS ↦ (ExactStructure.split_conflation S).mp
-    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
-
-@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (R : Type u) [Ring R] (P) :
-    finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
-  rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u},
-    ExactK0.fromSplit_of.{u}]
-  exact fun hS ↦ (ExactStructure.split_conflation _).mp
-    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
-
-@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_symm_of (R : Type u) [Ring R] (P) :
-    (finiteProjectiveModulesSplitK0EquivExactK0 R).symm (ExactK0.of.{u} P) = SplitK0.of.{u} P :=
-  (finiteProjectiveModulesSplitK0EquivExactK0 R).injective (by simp)
-
-/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines extension of scalars on `SplitK0` and
-`ExactK0`. -/
-theorem finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars {R S : Type u} [Ring R]
-    [Ring S] (f : R →+* S) : (finiteProjectiveModulesSplitK0EquivExactK0 S).toAddMonoidHom.comp
-      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars) =
-    f.finiteProjectiveModulesK0Extend.comp
-      (finiteProjectiveModulesSplitK0EquivExactK0 R).toAddMonoidHom :=
-  SplitK0.hom_ext fun _ ↦ by simp
-
-@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars {R S : Type u} [Ring R]
-    [Ring S] (f : R →+* S) (x) : finiteProjectiveModulesSplitK0EquivExactK0 S
-      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
-    f.finiteProjectiveModulesK0Extend (finiteProjectiveModulesSplitK0EquivExactK0 R x) :=
-  DFunLike.congr_fun (finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars f) x
-
-end TauCeti
-
-/-! ### Morita invariance and ring-isomorphism invariance on `SplitK0` -/
-
-namespace CategoryTheory.Equivalence
-
-open TauCeti
-
-variable {A : Type u} [Ring A] {B : Type u'} [Ring B] (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B)
-
-/-- **Morita invariance of `SplitK0` of finitely generated projective modules.** -/
-noncomputable def finiteProjectiveModulesSplitK0Equiv :
-    SplitK0.{u} (finiteProjectiveModules A).FullSubcategory ≃+
-      SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory :=
-  SplitK0.mapEquiv.{u, u'} e.finiteProjectiveModulesEquivalence
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_of (P) :
-    e.finiteProjectiveModulesSplitK0Equiv (SplitK0.of.{u} P) =
-      SplitK0.of.{u'} (e.finiteProjectiveModulesEquivalence.functor.obj P) :=
-  SplitK0.mapEquiv_of.{u, u'} _ P
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_symm_of (Q) :
-    e.finiteProjectiveModulesSplitK0Equiv.symm (SplitK0.of.{u'} Q) =
-      SplitK0.of.{u} (e.finiteProjectiveModulesEquivalence.inverse.obj Q) :=
-  SplitK0.mapEquiv_symm_of.{u, u'} _ Q
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom :
-    (e.finiteProjectiveModulesSplitK0Equiv :
-        SplitK0.{u} (finiteProjectiveModules A).FullSubcategory →+
-          SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory) =
-      SplitK0.map.{u, u'} e.finiteProjectiveModulesEquivalence.functor :=
-  SplitK0.mapEquiv_toAddMonoidHom.{u, u'} _
-
-/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines Morita equivalences on `SplitK0` and
-`ExactK0`. -/
-@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_finiteProjectiveModulesSplitK0Equiv (x) :
-    TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 B (e.finiteProjectiveModulesSplitK0Equiv x) =
-      e.finiteProjectiveModulesK0Equiv (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 A x) :=
-  DFunLike.congr_fun (SplitK0.hom_ext
-    (f := (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 B).toAddMonoidHom.comp
-      e.finiteProjectiveModulesSplitK0Equiv.toAddMonoidHom)
-    (g := e.finiteProjectiveModulesK0Equiv.toAddMonoidHom.comp
-      (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 A).toAddMonoidHom) fun _ ↦ by simp) x
-
-end CategoryTheory.Equivalence
+/-! ### Ring-isomorphism invariance on `SplitK0` -/
 
 namespace RingEquiv
 

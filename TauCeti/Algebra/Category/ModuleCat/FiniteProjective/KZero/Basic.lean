@@ -6,22 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0
-public import TauCeti.RingTheory.PrincipalIdealDomain.MulOpposite
 
-import Mathlib.Algebra.Field.Opposite
 import TauCeti.Algebra.Ring.Opposite
 
 /-!
-# Algebraic `K₀` of a ring, functoriality, Morita invariance, and rank computations
+# Algebraic `K₀` of a ring, functoriality, and Morita invariance
 
-Built on `TauCeti.KZero R` (from `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`),
-this file provides `[R]` (`KZero.one`), covariant functoriality (`KZero.map`,
-`RingEquiv.kZeroEquiv`), comparison with left-module `SplitK0` for commutative rings
-(`KZero.commRingLeftSplitK0Equiv`), binary product decomposition (`KZero.prodEquiv`), matrix
-Morita invariance (`KZero.matrixEquiv`), and explicit rank isomorphisms `KZero R ≃+ ℤ`
-(`KZero.finrankEquiv{DivisionRing,PID,Int,LocalRing}`).
+Built on `TauCeti.KZero R` and `TauCeti.KZero.one` (from
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`), this file provides covariant
+functoriality (`KZero.map`, `RingEquiv.kZeroEquiv`), comparison with left-module `SplitK0` for
+commutative rings (`KZero.commRingLeftSplitK0Equiv`), binary product decomposition
+(`KZero.prodEquiv`), and matrix Morita invariance (`KZero.matrixEquiv`).
 
 ## References
 
@@ -38,18 +34,11 @@ namespace TauCeti.KZero
 
 variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
 
-/-- The canonical class `[R]` of the free right `R`-module of rank one in `KZero R`. -/
-noncomputable def one (R : Type u) [Ring R] : KZero R :=
-  SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ)
-
-theorem one_def (R : Type u) [Ring R] :
-    one R = SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := (rfl)
-
 /-- Every class in `KZero R` has the form `[P] - n • [R]`. -/
 theorem exists_eq_of_sub_nsmul_one (x : KZero R) :
     ∃ (P : FiniteProjectiveRight R) (n : ℕ),
       x = SplitK0.of.{u} P - n • one R :=
-  SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular x
+  one_def R ▸ SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular x
 
 /-- **Covariant functoriality of `KZero`**, via balanced extension of scalars along
 `RingHom.op f : Rᵐᵒᵖ →+* Sᵐᵒᵖ`. -/
@@ -71,7 +60,7 @@ theorem map_comp (f : R →+* S) (g : S →+* T) : map (g.comp f) = (map g).comp
 @[simp] theorem map_map (f : R →+* S) (g : S →+* T) (x : KZero R) :
     map g (map f x) = map (g.comp f) x := (DFunLike.congr_fun (map_comp f g) x).symm
 
-@[simp] theorem map_one (f : R →+* S) : map f (one R) = one S := by simp [map, one]
+@[simp] theorem map_one (f : R →+* S) : map f (one R) = one S := by simp [map, one_def]
 
 end TauCeti.KZero
 
@@ -133,7 +122,7 @@ theorem commRingLeftSplitK0Equiv_symm_apply (x) : (commRingLeftSplitK0Equiv R).s
 
 @[simp] theorem commRingLeftSplitK0Equiv_one :
     commRingLeftSplitK0Equiv R (one R) = SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
-  simp [commRingLeftSplitK0Equiv_apply, one]
+  simp [commRingLeftSplitK0Equiv_apply, one_def]
 
 end CommRing
 
@@ -196,7 +185,7 @@ theorem matrixEquiv_apply (x : KZero.{u} R) :
 
 @[simp] theorem matrixEquiv_card_nsmul_one :
     matrixEquiv R ι (Fintype.card ι • one R) = one (Matrix ι ι R) := by
-  simp [matrixEquiv_apply, one]
+  simp [matrixEquiv_apply, one_def]
 
 end Matrix
 
@@ -207,68 +196,5 @@ theorem matrixEquiv_eq (R : Type u) [Ring R] (ι : Type u) [Fintype ι] [Decidab
       (ModuleCat.matrixEquivalence Rᵐᵒᵖ (ι := ι) i).finiteProjectiveModulesSplitK0Equiv.trans
         (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv := by
   rw [matrixEquiv, finiteProjectiveModulesMatrixSplitK0Equiv_eq Rᵐᵒᵖ ι i]
-
-/-- **Rank isomorphism `KZero D ≃+ ℤ` over a division ring `D`**, sending `[D] ↦ 1`. -/
-noncomputable def finrankEquivDivisionRing (D : Type u) [DivisionRing D] : KZero D ≃+ ℤ :=
-  finiteProjectiveModulesFinrankSplitK0EquivDivisionRing Dᵐᵒᵖ
-
-@[simp] theorem finrankEquivDivisionRing_of (D : Type u) [DivisionRing D] (P) :
-    finrankEquivDivisionRing D (SplitK0.of.{u} P) = (Module.finrank Dᵐᵒᵖ P.obj : ℤ) :=
-  finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_of Dᵐᵒᵖ P
-
-@[simp] theorem finrankEquivDivisionRing_one (D : Type u) [DivisionRing D] :
-    finrankEquivDivisionRing D (one D) = 1 :=
-  finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_regular Dᵐᵒᵖ
-
-@[simp] theorem finrankEquivDivisionRing_symm_apply (D : Type u) [DivisionRing D] (n : ℤ) :
-    (finrankEquivDivisionRing D).symm n = n • one D :=
-  finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_symm_apply Dᵐᵒᵖ n
-
-section PID
-variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing Rᵐᵒᵖ]
-
-/-- **Rank isomorphism `KZero R ≃+ ℤ` over a principal right-ideal domain `R`** (including any
-commutative PID), sending `[R] ↦ 1`. -/
-noncomputable def finrankEquivPID : KZero R ≃+ ℤ :=
-  finiteProjectiveModulesFinrankSplitK0EquivPID Rᵐᵒᵖ
-
-@[simp] theorem finrankEquivPID_of (P) :
-    finrankEquivPID R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
-  finiteProjectiveModulesFinrankSplitK0EquivPID_of Rᵐᵒᵖ P
-
-@[simp] theorem finrankEquivPID_one : finrankEquivPID R (one R) = 1 :=
-  finiteProjectiveModulesFinrankSplitK0EquivPID_regular Rᵐᵒᵖ
-
-@[simp] theorem finrankEquivPID_symm_apply (n : ℤ) : (finrankEquivPID R).symm n = n • one R :=
-  finiteProjectiveModulesFinrankSplitK0EquivPID_symm_apply Rᵐᵒᵖ n
-
-end PID
-
-/-- **Rank isomorphism `KZero ℤ ≃+ ℤ`**, sending `[ℤ]` to `1`. -/
-noncomputable def finrankEquivInt : KZero ℤ ≃+ ℤ := finrankEquivPID ℤ
-
-@[simp] theorem finrankEquivInt_of (P) :
-    finrankEquivInt (SplitK0.of.{0} P) = (Module.finrank ℤᵐᵒᵖ P.obj : ℤ) := finrankEquivPID_of ℤ P
-
-@[simp] theorem finrankEquivInt_one : finrankEquivInt (one ℤ) = 1 := finrankEquivPID_one ℤ
-
-@[simp] theorem finrankEquivInt_symm_apply (n : ℤ) : finrankEquivInt.symm n = n • one ℤ :=
-  finrankEquivPID_symm_apply ℤ n
-
-/-- **Rank isomorphism `KZero R ≃+ ℤ` over a commutative local ring**, sending `[R] ↦ 1`. -/
-noncomputable def finrankEquivLocalRing (R : Type u) [CommRing R] [IsLocalRing R] :
-    KZero R ≃+ ℤ := finiteProjectiveModulesFinrankSplitK0EquivLocalRing Rᵐᵒᵖ
-
-@[simp] theorem finrankEquivLocalRing_of (R : Type u) [CommRing R] [IsLocalRing R] (P) :
-    finrankEquivLocalRing R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
-  finiteProjectiveModulesFinrankSplitK0EquivLocalRing_of Rᵐᵒᵖ P
-
-@[simp] theorem finrankEquivLocalRing_one (R : Type u) [CommRing R] [IsLocalRing R] :
-    finrankEquivLocalRing R (one R) = 1 :=
-  finiteProjectiveModulesFinrankSplitK0EquivLocalRing_regular Rᵐᵒᵖ
-
-@[simp] theorem finrankEquivLocalRing_symm_apply (R : Type u) [CommRing R] [IsLocalRing R] (n : ℤ) :
-    (finrankEquivLocalRing R).symm n = n • one R :=
-  finiteProjectiveModulesFinrankSplitK0EquivLocalRing_symm_apply Rᵐᵒᵖ n
 
 end TauCeti.KZero

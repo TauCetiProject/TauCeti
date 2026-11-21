@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.BalancedExtension
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 

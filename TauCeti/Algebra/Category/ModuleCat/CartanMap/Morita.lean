@@ -48,12 +48,16 @@ different universes; only the Morita corollaries put them in one, as Mathlib's
 * `CategoryTheory.Equivalence.finiteModulesK0Equiv` and
   `CategoryTheory.Equivalence.finiteProjectiveModulesK0Equiv`: the induced isomorphisms
   `G₀(mod A) ≃+ G₀(mod B)` and `K₀(proj A) ≃+ K₀(proj B)`.
+* `CategoryTheory.Equivalence.finiteProjectiveModulesSplitK0Equiv`: Morita invariance on split `K₀`
+  of finitely generated projective modules.
 
 ## Main results
 
 * `CategoryTheory.Equivalence.finiteProjectiveModules_inverseImage`: an equivalence of module
   categories pulls the finitely generated projective modules back to the finitely generated
   projective modules.
+* `Equivalence.finiteProjectiveModulesSplitK0EquivExactK0_finiteProjectiveModulesSplitK0Equiv`:
+  the split/exact `K₀` comparison intertwines Morita equivalences.
 * `CategoryTheory.Equivalence.cartanMap_comp_finiteProjectiveModulesK0Equiv` and
   `CategoryTheory.Equivalence.cartanMap_finiteProjectiveModulesK0Equiv`: the Cartan maps of `A`
   and `B` commute with the two induced isomorphisms.
@@ -246,6 +250,40 @@ theorem finiteProjectiveModulesK0Equiv_symm_of
     e.finiteProjectiveModulesK0Equiv.symm (ExactK0.of.{u'} M) =
       ExactK0.of.{u} (e.finiteProjectiveModulesEquivalence.inverse.obj M) :=
   ExactK0.mapEquiv_symm_of.{u, u'} _ _ _ M
+
+/-- **Morita invariance of `SplitK0` of finitely generated projective modules.** -/
+noncomputable def finiteProjectiveModulesSplitK0Equiv :
+    SplitK0.{u} (finiteProjectiveModules A).FullSubcategory ≃+
+      SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory :=
+  SplitK0.mapEquiv.{u, u'} e.finiteProjectiveModulesEquivalence
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_of (P) :
+    e.finiteProjectiveModulesSplitK0Equiv (SplitK0.of.{u} P) =
+      SplitK0.of.{u'} (e.finiteProjectiveModulesEquivalence.functor.obj P) :=
+  SplitK0.mapEquiv_of.{u, u'} _ P
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_symm_of (Q) :
+    e.finiteProjectiveModulesSplitK0Equiv.symm (SplitK0.of.{u'} Q) =
+      SplitK0.of.{u} (e.finiteProjectiveModulesEquivalence.inverse.obj Q) :=
+  SplitK0.mapEquiv_symm_of.{u, u'} _ Q
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom :
+    (e.finiteProjectiveModulesSplitK0Equiv :
+        SplitK0.{u} (finiteProjectiveModules A).FullSubcategory →+
+          SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory) =
+      SplitK0.map.{u, u'} e.finiteProjectiveModulesEquivalence.functor :=
+  SplitK0.mapEquiv_toAddMonoidHom.{u, u'} _
+
+/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines Morita equivalences on `SplitK0` and
+`ExactK0`. -/
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_finiteProjectiveModulesSplitK0Equiv (x) :
+    TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 B (e.finiteProjectiveModulesSplitK0Equiv x) =
+      e.finiteProjectiveModulesK0Equiv (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 A x) :=
+  DFunLike.congr_fun (SplitK0.hom_ext
+    (f := (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 B).toAddMonoidHom.comp
+      e.finiteProjectiveModulesSplitK0Equiv.toAddMonoidHom)
+    (g := e.finiteProjectiveModulesK0Equiv.toAddMonoidHom.comp
+      (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 A).toAddMonoidHom) fun _ ↦ by simp) x
 
 /-! ### Compatibility with the Cartan map -/
 

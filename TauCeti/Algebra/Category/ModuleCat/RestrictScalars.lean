@@ -72,6 +72,9 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
 * `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
   of any shape that exist in `AddCommGrpCat`, with independent ring and module universes.
+* `ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply` and
+  `ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply`: the counit of
+  restriction of scalars along a ring equivalence and its inverse keep each element.
 -/
 
 public section
@@ -396,5 +399,26 @@ noncomputable def restrictScalarsOpOpIso :
   e.toModuleIso
 
 end OpOp
+
+section RestrictScalars
+
+-- Mathlib's `ModuleCat` and its scalar-restriction equivalence require rings.
+variable {R S : Type*} [Ring R] [Ring S]
+
+-- Simplify before Mathlib expands the counit into scalar-restriction comparison maps.
+-- The component simp lemmas alone leave their bundled linear-map composite unreduced.
+/-- The counit of restriction of scalars along a ring equivalence keeps each element. -/
+@[simp↓]
+theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply (e : R ≃+* S)
+    (M : ModuleCat.{v} R) (x : M) :
+    (restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app M x = x := (rfl)
+
+/-- The inverse counit of restriction of scalars along a ring equivalence keeps each element. -/
+@[simp↓]
+theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply (e : R ≃+* S)
+    (M : ModuleCat.{v} R) (x : M) :
+    (restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
+
+end RestrictScalars
 
 end ModuleCat

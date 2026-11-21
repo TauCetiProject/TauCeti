@@ -55,6 +55,8 @@ The extension of the zero module is zero by the `Subsingleton` instances of
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
   finiteness hypothesis on `f` is needed.
+* `TauCeti.BalancedExtension.subsingleton_of_isUnit_of_smul_eq_zero`: if a scalar maps to a unit
+  and annihilates `M`, then `S ⊗_R M` is subsingleton.
 
 ## References
 
@@ -444,6 +446,20 @@ instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) :
   exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
 
 end FiniteProjective
+
+/-- If an element `e : E` maps to a unit under `p : E →+* A` and annihilates an `E`-module `M`,
+then `BalancedExtension p M` is subsingleton. -/
+theorem subsingleton_of_isUnit_of_smul_eq_zero {E : Type u₁} {A : Type u₂} [Ring E] [Ring A]
+    (p : E →+* A) {M : Type v} [AddCommGroup M] [Module E M] (e : E) (hp : IsUnit (p e))
+    (hm : ∀ m : M, e • m = 0) : Subsingleton (BalancedExtension p M) := by
+  obtain ⟨u, hu⟩ := hp
+  refine subsingleton_of_forall_eq 0 fun z ↦ ?_
+  induction z using induction_on with
+  | tmul a m =>
+    have h := tmul_smul (f := p) (a * (u⁻¹ : Aˣ)) e m
+    rwa [← hu, mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, mul_one, hm, tmul_zero,
+      eq_comm] at h
+  | add x y hx hy => rw [hx, hy, add_zero]
 
 section Idempotent
 

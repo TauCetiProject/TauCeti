@@ -11,8 +11,6 @@ public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.CategoryTheory.Adjunction.Unique
 
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings, as a functor
 
@@ -31,7 +29,7 @@ Mathlib's `ModuleCat.extendScalars f`, by `s ⊗ p ↦ s ⊗ₜ p`.
   `functorRingEquivIso`: coherence and ring-equivalence natural isomorphisms for `functor`.
 * `TauCeti.BalancedExtension.extendScalarsIso f`: for commutative rings, the identification with
   `ModuleCat.extendScalars f`.
-* `TauCeti.BalancedExtension.restrictScalarsSelfEquiv`, `subsingleton_of_isUnit_of_smul_eq_zero`,
+* `TauCeti.BalancedExtension.restrictScalarsSelfEquiv`,
   `subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero`, and `prodModuleLinearEquiv`:
   surjective recovery, vanishing under annihilators, and `(R × S)`-module decomposition.
 
@@ -492,20 +490,6 @@ noncomputable def restrictScalarsSelfEquiv (p : E →+* A) (hp : Function.Surjec
     (M : ModuleCat.{v} A) (m : M) :
     (restrictScalarsSelfEquiv p hp M).symm m =
       tmul p 1 (ModuleCat.restrictScalarsAddEquiv p M m) := (rfl)
-
-/-- If an element `e : E` maps to a unit under `p : E →+* A` and annihilates an `E`-module `M`,
-then `BalancedExtension p M` is subsingleton. -/
-theorem subsingleton_of_isUnit_of_smul_eq_zero (p : E →+* A) {M : Type v} [AddCommGroup M]
-    [Module E M] (e : E) (hp : IsUnit (p e)) (hm : ∀ m : M, e • m = 0) :
-    Subsingleton (BalancedExtension p M) := by
-  obtain ⟨u, hu⟩ := hp
-  refine subsingleton_of_forall_eq 0 fun z ↦ ?_
-  induction z using induction_on with
-  | tmul a m =>
-    have h := tmul_smul (f := p) (a * (u⁻¹ : Aˣ)) e m
-    rwa [← hu, mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, mul_one, hm, tmul_zero,
-      eq_comm] at h
-  | add x y hx hy => rw [hx, hy, add_zero]
 
 /-- If `p : E →+* A` and `p' : E →+* B` admit an element `e : E` with `p e = 1` and `p' e = 0`,
 then extending along `p` any `B`-module restricted along `p'` yields a subsingleton module. -/
