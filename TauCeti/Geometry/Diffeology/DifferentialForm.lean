@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Diffeology.Basic
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 public import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Differential forms on diffeological spaces
@@ -24,10 +25,11 @@ Forms of each degree form a real vector space. The exterior derivative acts plot
 derivative commutes with pullback (`extDeriv_pullback`); it satisfies `d ∘ d = 0`
 (`TauCeti.Diffeology.DifferentialForm.extDeriv_extDeriv`). A smooth map `g : X → Y` pulls forms
 back by `(g^* ω)_p = ω_(g ∘ p)`; pullback is functorial and commutes with the exterior derivative.
-Real-valued forms have a plotwise wedge product (`TauCeti.Diffeology.DifferentialForm.wedge`),
-which is bilinear, commutes with pullback and satisfies the Leibniz rule
-`d (σ ∧ τ) = dσ ∧ τ + (-1) ^ k σ ∧ dτ`
-(`TauCeti.Diffeology.DifferentialForm.toFun_extDeriv_wedge_apply`).
+A continuous bilinear pairing `μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃` gives a plotwise paired wedge product
+(`TauCeti.Diffeology.DifferentialForm.wedgeWith`), which is bilinear, commutes with pullback and
+satisfies the Leibniz rule `d (σ ∧ τ) = dσ ∧ τ + (-1) ^ k σ ∧ dτ`
+(`TauCeti.Diffeology.DifferentialForm.toFun_extDeriv_wedgeWith_apply`). Real-valued forms have the
+wedge product `TauCeti.Diffeology.DifferentialForm.wedge`, the case of multiplication.
 
 On a finite-dimensional real normed space `E` with its standard diffeology, plotwise forms are
 exactly the smooth forms on `E`: a smooth form `ω` gives the plotwise form `p ↦ p^* ω`
@@ -46,6 +48,8 @@ the basis of transgression.
   and `d ∘ d = 0`.
 * `TauCeti.Diffeology.DifferentialForm.pullback`: pullback along a smooth map, with
   `pullback_id`, `pullback_comp` and `pullback_extDeriv`.
+* `TauCeti.Diffeology.DifferentialForm.wedgeWith`, `toFun_extDeriv_wedgeWith_apply`: the wedge
+  product along a continuous bilinear pairing and the Leibniz rule.
 * `TauCeti.Diffeology.DifferentialForm.wedge`, `toFun_extDeriv_wedge_apply`: the wedge product
   of real-valued forms and the Leibniz rule.
 * `TauCeti.Diffeology.DifferentialForm.ofForm`, `TauCeti.Diffeology.DifferentialForm.toForm`:
@@ -94,6 +98,11 @@ variable {X F k}
 theorem contDiff_toFun (σ : DifferentialForm X F k) {n : ℕ} (p : 𝔼ⁿ → X)
     (hp : _root_.Diffeology.IsPlot p) : ContDiff ℝ ∞ (σ.toFun p hp) :=
   σ.contDiff_toFun' p hp
+
+/-- The form on the domain of each plot is differentiable. -/
+theorem differentiable_toFun (σ : DifferentialForm X F k) {n : ℕ} (p : 𝔼ⁿ → X)
+    (hp : _root_.Diffeology.IsPlot p) : Differentiable ℝ (σ.toFun p hp) :=
+  (σ.contDiff_toFun p hp).differentiable (by simp)
 
 /-- The form on a reparametrized plot `p ∘ f` is the pullback along `f` of the form on `p`. -/
 theorem toFun_comp (σ : DifferentialForm X F k) {n m : ℕ} (p : 𝔼ⁿ → X)
@@ -206,8 +215,7 @@ def extDeriv (σ : DifferentialForm X F k) : DifferentialForm X F (k + 1) where
   contDiff_toFun' p hp := contDiff_extDeriv (σ.contDiff_toFun p hp) (by simp)
   toFun_comp' p hp f hf x := by
     rw [funext (σ.toFun_comp p hp f hf)]
-    exact extDeriv_pullback ((σ.contDiff_toFun p hp).differentiable (by simp) _) hf.contDiffAt
-      (by simp)
+    exact extDeriv_pullback (σ.differentiable_toFun p hp _) hf.contDiffAt (by simp)
 
 @[simp]
 theorem toFun_extDeriv (σ : DifferentialForm X F k) {n : ℕ} (p : 𝔼ⁿ → X)
@@ -218,9 +226,8 @@ theorem toFun_extDeriv (σ : DifferentialForm X F k) {n : ℕ} (p : 𝔼ⁿ → 
 @[simp]
 theorem extDeriv_add (σ τ : DifferentialForm X F k) :
     (σ + τ).extDeriv = σ.extDeriv + τ.extDeriv :=
-  ext fun p hp ↦ funext fun x ↦ _root_.extDeriv_add
-    ((σ.contDiff_toFun p hp).differentiable (by simp) x)
-    ((τ.contDiff_toFun p hp).differentiable (by simp) x)
+  ext fun p hp ↦ funext fun x ↦ _root_.extDeriv_add (σ.differentiable_toFun p hp x)
+    (τ.differentiable_toFun p hp x)
 
 @[simp]
 theorem extDeriv_smul (c : ℝ) (σ : DifferentialForm X F k) :
@@ -236,6 +243,19 @@ def extDerivₗ : DifferentialForm X F k →ₗ[ℝ] DifferentialForm X F (k + 1
 @[simp]
 theorem extDerivₗ_apply (σ : DifferentialForm X F k) : extDerivₗ σ = σ.extDeriv :=
   (rfl)
+
+@[simp]
+theorem extDeriv_zero : (0 : DifferentialForm X F k).extDeriv = 0 :=
+  map_zero extDerivₗ
+
+@[simp]
+theorem extDeriv_neg (σ : DifferentialForm X F k) : (-σ).extDeriv = -σ.extDeriv :=
+  map_neg extDerivₗ σ
+
+@[simp]
+theorem extDeriv_sub (σ τ : DifferentialForm X F k) :
+    (σ - τ).extDeriv = σ.extDeriv - τ.extDeriv :=
+  map_sub extDerivₗ σ τ
 
 /-- `d ∘ d = 0` for differential forms on a diffeological space. -/
 @[simp]
@@ -288,6 +308,17 @@ theorem pullback_smul (g : X → Y) (hg : _root_.Diffeology.DSmooth g) (c : ℝ)
     (σ : DifferentialForm Y F k) : (c • σ).pullback g hg = c • σ.pullback g hg :=
   (rfl)
 
+@[simp]
+theorem pullback_neg (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
+    (σ : DifferentialForm Y F k) : (-σ).pullback g hg = -σ.pullback g hg :=
+  (rfl)
+
+@[simp]
+theorem pullback_sub (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
+    (σ τ : DifferentialForm Y F k) :
+    (σ - τ).pullback g hg = σ.pullback g hg - τ.pullback g hg :=
+  (rfl)
+
 /-- Pullback commutes with the exterior derivative. -/
 @[simp]
 theorem pullback_extDeriv (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
@@ -306,47 +337,140 @@ theorem pullbackₗ_apply (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
     (σ : DifferentialForm Y F k) : pullbackₗ g hg σ = σ.pullback g hg :=
   (rfl)
 
-/-! ### The wedge product of real-valued forms -/
+/-! ### The wedge product -/
+
+section WedgeWith
+
+variable {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] {l : ℕ}
+
+/-- The **paired wedge product** of differential forms on a diffeological space along a continuous
+bilinear pairing `μ`: on each plot, the paired wedge `ContinuousAlternatingMap.pairedWedge` of the
+forms on the domain of the plot. -/
+def wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) : DifferentialForm X F₃ (k + l) where
+  toFun p hp x := ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (σ.toFun p hp x)
+    (τ.toFun p hp x)
+  contDiff_toFun' p hp := contDiff_const.pairedWedge (σ.contDiff_toFun p hp)
+    (τ.contDiff_toFun p hp)
+  toFun_comp' p hp f hf x := by
+    rw [σ.toFun_comp p hp f hf, τ.toFun_comp p hp f hf,
+      ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap]
+
+@[simp]
+theorem toFun_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) {n : ℕ} (p : 𝔼ⁿ → X) (hp : _root_.Diffeology.IsPlot p) :
+    (σ.wedgeWith μ τ).toFun p hp = fun x ↦
+      ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (σ.toFun p hp x) (τ.toFun p hp x) :=
+  (rfl)
+
+@[simp]
+theorem wedgeWith_add_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ σ' : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) :
+    (σ + σ').wedgeWith μ τ = σ.wedgeWith μ τ + σ'.wedgeWith μ τ :=
+  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_add_left _ _ _ _ _
+
+@[simp]
+theorem wedgeWith_add_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ τ' : DifferentialForm X F₂ l) :
+    σ.wedgeWith μ (τ + τ') = σ.wedgeWith μ τ + σ.wedgeWith μ τ' :=
+  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_add_right _ _ _ _ _
+
+@[simp]
+theorem wedgeWith_smul_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) : (c • σ).wedgeWith μ τ = c • σ.wedgeWith μ τ :=
+  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_smul_left _ _ _ _ _
+
+@[simp]
+theorem wedgeWith_smul_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) : σ.wedgeWith μ (c • τ) = c • σ.wedgeWith μ τ :=
+  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_smul_right _ _ _ _ _
+
+@[simp]
+theorem wedgeWith_zero_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (τ : DifferentialForm X F₂ l) :
+    (0 : DifferentialForm X F₁ k).wedgeWith μ τ = 0 :=
+  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_zero_left _ _ _
+
+@[simp]
+theorem wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k) :
+    σ.wedgeWith μ (0 : DifferentialForm X F₂ l) = 0 :=
+  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_zero_right _ _ _
+
+/-- Pullback commutes with the paired wedge product. -/
+@[simp]
+theorem pullback_wedgeWith {Y : Type*} [DiffeologicalSpace Y] (g : X → Y)
+    (hg : _root_.Diffeology.DSmooth g) (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm Y F₁ k)
+    (τ : DifferentialForm Y F₂ l) :
+    (σ.wedgeWith μ τ).pullback g hg = (σ.pullback g hg).wedgeWith μ (τ.pullback g hg) :=
+  (rfl)
+
+/-- **The Leibniz rule** `d (σ ∧ τ) = dσ ∧ τ + (-1) ^ k • σ ∧ dτ` for the paired wedge of a
+`k`-form `σ` and a form `τ`, evaluated on each plot. The degrees `k + 1 + l` and `k + (l + 1)` are
+identified with `k + l + 1` by `Fin.cast`. -/
+theorem toFun_extDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) {n : ℕ} (p : 𝔼ⁿ → X) (hp : _root_.Diffeology.IsPlot p) (x : 𝔼ⁿ)
+    (v : Fin (k + l + 1) → 𝔼ⁿ) :
+    (σ.wedgeWith μ τ).extDeriv.toFun p hp x v =
+      (σ.extDeriv.wedgeWith μ τ).toFun p hp x
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • (σ.wedgeWith μ τ.extDeriv).toFun p hp x
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) :=
+  extDeriv_pairedWedge μ (σ.differentiable_toFun p hp x) (τ.differentiable_toFun p hp x) v
+
+end WedgeWith
 
 section Wedge
 
 variable {l : ℕ}
 
-/-- The **wedge product** of real-valued differential forms on a diffeological space: on each plot,
-the wedge product `ContinuousAlternatingMap.wedge` of the forms on the domain of the plot. -/
+/-- The **wedge product** of real-valued differential forms on a diffeological space: the paired
+wedge product `TauCeti.Diffeology.DifferentialForm.wedgeWith` for multiplication, which on each
+plot is the wedge product `ContinuousAlternatingMap.wedge` of the forms on the domain of the
+plot. -/
 def wedge (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
-    DifferentialForm X ℝ (k + l) where
-  toFun p hp x := (σ.toFun p hp x).wedge (τ.toFun p hp x)
-  contDiff_toFun' p hp := (σ.contDiff_toFun p hp).wedge (τ.contDiff_toFun p hp)
-  toFun_comp' p hp f hf x := by
-    rw [σ.toFun_comp p hp f hf, τ.toFun_comp p hp f hf,
-      ContinuousAlternatingMap.wedge_compContinuousLinearMap]
+    DifferentialForm X ℝ (k + l) :=
+  σ.wedgeWith (ContinuousLinearMap.mul ℝ ℝ) τ
+
+/-- The real wedge product is the paired wedge product for multiplication. -/
+theorem wedge_def (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
+    σ.wedge τ = σ.wedgeWith (ContinuousLinearMap.mul ℝ ℝ) τ :=
+  (rfl)
 
 @[simp]
 theorem toFun_wedge (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) {n : ℕ}
     (p : 𝔼ⁿ → X) (hp : _root_.Diffeology.IsPlot p) :
     (σ.wedge τ).toFun p hp = fun x ↦ (σ.toFun p hp x).wedge (τ.toFun p hp x) :=
-  (rfl)
+  funext fun _ ↦ (ContinuousAlternatingMap.wedge_def _ _).symm
 
 @[simp]
 theorem wedge_add_left (σ σ' : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
     (σ + σ').wedge τ = σ.wedge τ + σ'.wedge τ :=
-  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.wedge_add_left _ _ _
+  wedgeWith_add_left _ _ _ _
 
 @[simp]
 theorem wedge_add_right (σ : DifferentialForm X ℝ k) (τ τ' : DifferentialForm X ℝ l) :
     σ.wedge (τ + τ') = σ.wedge τ + σ.wedge τ' :=
-  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.wedge_add_right _ _ _
+  wedgeWith_add_right _ _ _ _
 
 @[simp]
 theorem wedge_smul_left (c : ℝ) (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
     (c • σ).wedge τ = c • σ.wedge τ :=
-  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.wedge_smul_left _ _ _
+  wedgeWith_smul_left _ _ _ _
 
 @[simp]
 theorem wedge_smul_right (c : ℝ) (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
     σ.wedge (c • τ) = c • σ.wedge τ :=
-  ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.wedge_smul_right _ _ _
+  wedgeWith_smul_right _ _ _ _
+
+@[simp]
+theorem wedge_zero_left (τ : DifferentialForm X ℝ l) :
+    (0 : DifferentialForm X ℝ k).wedge τ = 0 :=
+  wedgeWith_zero_left _ _
+
+@[simp]
+theorem wedge_zero_right (σ : DifferentialForm X ℝ k) :
+    σ.wedge (0 : DifferentialForm X ℝ l) = 0 :=
+  wedgeWith_zero_right _ _
 
 /-- Pullback commutes with the wedge product. -/
 @[simp]
@@ -364,11 +488,8 @@ theorem toFun_extDeriv_wedge_apply (σ : DifferentialForm X ℝ k) (τ : Differe
     (σ.wedge τ).extDeriv.toFun p hp x v =
       (σ.extDeriv.wedge τ).toFun p hp x (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
         (-1 : ℝ) ^ k • (σ.wedge τ.extDeriv).toFun p hp x
-          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
-  simp only [toFun_extDeriv, toFun_wedge, ContinuousAlternatingMap.wedge_def]
-  exact extDeriv_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-    ((σ.contDiff_toFun p hp).differentiable (by simp) x)
-    ((τ.contDiff_toFun p hp).differentiable (by simp) x) v
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) :=
+  toFun_extDeriv_wedgeWith_apply _ σ τ p hp x v
 
 end Wedge
 
@@ -388,9 +509,7 @@ def ofForm (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) : D
   toFun_comp' p hp f hf x := by
     rw [comp_apply, fderiv_comp x (hp.contDiff.differentiable (by simp) _)
       (hf.differentiable (by simp) _)]
-    -- Composing an alternating map with `A ∘L B` is composing with `A`, then with `B`; both sides
-    -- evaluate `σ (p (f x))` on the vectors `A (B vᵢ)`.
-    rfl
+    exact (ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap _ _ _).symm
 
 @[simp]
 theorem toFun_ofForm (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) {n : ℕ} (p : 𝔼ⁿ → E)
