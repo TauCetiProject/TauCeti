@@ -120,38 +120,25 @@ theorem basis_repr_apply (f : QuantumTorus R L u Λ) (a : L) :
         (Multiplicative.ofAdd a) := by
   simp only [basis, Module.Basis.repr_reindex_apply, Multiplicative.toAdd_symm_eq]
 
-/-- Right multiplication by a monomial shifts its coefficient and contributes its twist. -/
-theorem basis_repr_mul_monomial_apply (f : QuantumTorus R L u Λ) (a b : L) :
-    (basis u Λ).repr (f * monomial u Λ b) (a + b) =
-      (basis u Λ).repr f a * (u ^ (Λ a b) : Rˣ) := by
-  simpa only [basis_repr_apply, monomial_def, factorSet_apply,
-    ofAdd_add, toAdd_ofAdd] using
-    TwistedMonoidAlgebra.repr_mul_of_apply (β := factorSet u Λ) f
-      (Multiplicative.ofAdd a) (Multiplicative.ofAdd b)
-
-/-- Left multiplication by a monomial shifts its coefficient with the opposite twist. -/
-theorem basis_repr_monomial_mul_apply (f : QuantumTorus R L u Λ) (a b : L) :
-    (basis u Λ).repr (monomial u Λ b * f) (a + b) =
-      (basis u Λ).repr f a * (u ^ (Λ b a) : Rˣ) := by
-  rw [add_comm a b]
-  simpa only [basis_repr_apply, monomial_def, factorSet_apply,
-    ofAdd_add, toAdd_ofAdd] using
-    TwistedMonoidAlgebra.repr_of_mul_apply (β := factorSet u Λ) f
-      (Multiplicative.ofAdd a) (Multiplicative.ofAdd b)
-
 /-- The coefficient at a free index after right multiplication by a monomial. -/
 @[simp]
 theorem basis_repr_mul_monomial_apply_sub (f : QuantumTorus R L u Λ) (b c : L) :
     (basis u Λ).repr (f * monomial u Λ b) c =
       (basis u Λ).repr f (c - b) * (u ^ (Λ (c - b) b) : Rˣ) := by
-  simpa only [sub_add_cancel] using basis_repr_mul_monomial_apply f (c - b) b
+  simpa only [basis_repr_apply, monomial_def, factorSet_apply, ← ofAdd_neg,
+    ← ofAdd_add, ← sub_eq_add_neg, toAdd_ofAdd] using
+    TwistedMonoidAlgebra.repr_mul_of_apply_mul_inv (β := factorSet u Λ) f
+      (Multiplicative.ofAdd b) (Multiplicative.ofAdd c)
 
 /-- The coefficient at a free index after left multiplication by a monomial. -/
 @[simp]
 theorem basis_repr_monomial_mul_apply_sub (f : QuantumTorus R L u Λ) (b c : L) :
     (basis u Λ).repr (monomial u Λ b * f) c =
       (basis u Λ).repr f (c - b) * (u ^ (Λ b (c - b)) : Rˣ) := by
-  simpa only [sub_add_cancel] using basis_repr_monomial_mul_apply f (c - b) b
+  simpa only [basis_repr_apply, monomial_def, factorSet_apply, ← ofAdd_neg,
+    ← ofAdd_add, add_comm (-b) c, ← sub_eq_add_neg, toAdd_ofAdd] using
+    TwistedMonoidAlgebra.repr_of_mul_apply_inv_mul (β := factorSet u Λ) f
+      (Multiplicative.ofAdd b) (Multiplicative.ofAdd c)
 
 /-- Commutation with a normalized monomial is equality of coefficients weighted by the
 two opposite twist factors. -/

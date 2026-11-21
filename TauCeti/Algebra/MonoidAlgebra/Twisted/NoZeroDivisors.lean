@@ -17,7 +17,8 @@ This is the algebraic input to constructing its fraction division ring.
 
 The coefficient formula from `Twisted.Basic` uses the existing monomial basis. At a uniquely
 represented product of support elements, the coefficient is the product of the two
-coefficients times the factor-set unit, so it cannot vanish.
+coefficients times the factor-set unit. When the scalar semiring has no zero divisors, this
+coefficient cannot vanish.
 
 The unique-product argument adapts `MonoidAlgebra.coeff_mul_mul_of_uniqueMul` and the
 `NoZeroDivisors` and `IsCancelMulZero` instances in `Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors`

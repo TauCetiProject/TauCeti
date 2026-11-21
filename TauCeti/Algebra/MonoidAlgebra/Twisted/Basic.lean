@@ -465,6 +465,61 @@ theorem repr_of_mul_apply [IsLeftCancelMul H] (f : twistedMonoidAlgebra R H β) 
 
 end CancelMonoidCoefficients
 
+section UnitCoefficients
+
+variable {R H : Type*} [CommSemiring R] [Monoid H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- A coefficient outside the right translate of the index monoid vanishes. -/
+theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
+    (hc : c ∉ Set.range (fun a : H ↦ a * b)) :
+    (basis R H β).repr (f * of b) c = 0 := by
+  classical
+  have hn : ∀ a : H, a * b ≠ c := fun a he ↦ hc ⟨a, he⟩
+  simp [repr_mul, repr_of, hn]
+
+/-- A coefficient outside the left translate of the index monoid vanishes. -/
+theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
+    (hc : c ∉ Set.range (fun a : H ↦ b * a)) :
+    (basis R H β).repr (of b * f) c = 0 := by
+  classical
+  have hn : ∀ a : H, b * a ≠ c := fun a he ↦ hc ⟨a, he⟩
+  simp [repr_mul, repr_of, hn]
+
+/-- The coefficient at a free index after right multiplication by a unit-index basis element. -/
+@[simp]
+theorem repr_mul_of_unit_apply (f : twistedMonoidAlgebra R H β) (b : Hˣ) (c : H) :
+    (basis R H β).repr (f * of (b : H)) c =
+      (basis R H β).repr f (c * ↑b⁻¹) * (β (c * ↑b⁻¹) b : R) := by
+  classical
+  have h : UniqueMul ((basis R H β).repr f).support
+      ((basis R H β).repr (of (b : H))).support (c * ↑b⁻¹) (b : H) := by
+    intro x y _ hy hxy
+    have hyb : y = (b : H) := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hy))
+    subst y
+    exact ⟨(Units.mul_left_inj b).mp hxy, rfl⟩
+  simpa only [Units.inv_mul_cancel_right, repr_of, Finsupp.single_eq_same, mul_one] using
+    repr_mul_apply_of_uniqueMul h
+
+/-- The coefficient at a free index after left multiplication by a unit-index basis element. -/
+@[simp]
+theorem repr_of_unit_mul_apply (f : twistedMonoidAlgebra R H β) (b : Hˣ) (c : H) :
+    (basis R H β).repr (of (b : H) * f) c =
+      (basis R H β).repr f (↑b⁻¹ * c) * (β b (↑b⁻¹ * c) : R) := by
+  classical
+  have h : UniqueMul ((basis R H β).repr (of (b : H))).support
+      ((basis R H β).repr f).support (b : H) (↑b⁻¹ * c) := by
+    intro x y hx _ hxy
+    have hxb : x = (b : H) := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hx))
+    subst x
+    exact ⟨rfl, (Units.mul_right_inj b).mp hxy⟩
+  simpa only [Units.mul_inv_cancel_left, repr_of, Finsupp.single_eq_same, one_mul] using
+    repr_mul_apply_of_uniqueMul h
+
+end UnitCoefficients
+
 section GroupCoefficients
 
 variable {R H : Type*} [CommSemiring R] [Group H]
@@ -474,15 +529,15 @@ variable {R H : Type*} [CommSemiring R] [Group H]
 @[simp]
 theorem repr_mul_of_apply_mul_inv (f : twistedMonoidAlgebra R H β) (b c : H) :
     (basis R H β).repr (f * of b) c =
-      (basis R H β).repr f (c * b⁻¹) * (β (c * b⁻¹) b : R) := by
-  simpa only [inv_mul_cancel_right] using repr_mul_of_apply f (c * b⁻¹) b
+      (basis R H β).repr f (c * b⁻¹) * (β (c * b⁻¹) b : R) :=
+  repr_mul_of_unit_apply f (toUnits b) c
 
 /-- The coefficient at a free index after left multiplication by a basis element. -/
 @[simp]
 theorem repr_of_mul_apply_inv_mul (f : twistedMonoidAlgebra R H β) (b c : H) :
     (basis R H β).repr (of b * f) c =
-      (basis R H β).repr f (b⁻¹ * c) * (β b (b⁻¹ * c) : R) := by
-  simpa only [mul_inv_cancel_left] using repr_of_mul_apply f (b⁻¹ * c) b
+      (basis R H β).repr f (b⁻¹ * c) * (β b (b⁻¹ * c) : R) :=
+  repr_of_unit_mul_apply f (toUnits b) c
 
 end GroupCoefficients
 
@@ -505,16 +560,16 @@ theorem commute_of_iff (f : twistedMonoidAlgebra R H β) (b : H) :
     exact he
   · intro h
     apply (basis R H β).repr.injective
-    ext c
+    apply Finsupp.ext
+    intro c
     by_cases hc : c ∈ Set.range (fun a : H ↦ a * b)
-    · obtain ⟨a, rfl⟩ := hc
-      change (basis R H β).repr (f * of b) (a * b) =
-        (basis R H β).repr (of b * f) (a * b)
-      rw [repr_mul_of_apply, mul_comm a b, repr_of_mul_apply]
+    · obtain ⟨a, ha⟩ := hc
+      dsimp only at ha
+      rw [← ha, repr_mul_of_apply, mul_comm a b, repr_of_mul_apply]
       exact h a
-    · have hn : ∀ a : H, a * b ≠ c := fun a he ↦ hc ⟨a, he⟩
-      have hn' : ∀ a : H, b * a ≠ c := fun a ↦ by simpa only [mul_comm b] using hn a
-      simp [repr_mul, repr_of, hn, hn']
+    · rw [repr_mul_of_apply_eq_zero f b c hc,
+        repr_of_mul_apply_eq_zero f b c (by simpa only [mul_comm b] using hc)]
+
 
 end CancelCommMonoidCoefficients
 
