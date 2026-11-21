@@ -96,14 +96,15 @@ private theorem quantizeSchwartzValue_spatialCutoff {ψ : CoordinateSpace n → 
     (fun ξ ↦ coefficient_spatialCutoff hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
 
 /-- If `ψ = 1` on the closed `R`-neighbourhood of the support of `u`, cutting the symbol off by `ψ`
-does not change `Op(a) u`. -/
-private theorem HasNearDiagonalKernel.quantizeSchwartzValue_spatialCutoff_eq {a : Symbol n V W m}
+does not change `Op(a) u`: `Op(ψ a) u = Op(a) u`. -/
+theorem HasNearDiagonalKernel.quantizeSchwartzValue_cutoff_comp {a : Symbol n V W m}
     (ha : a.HasNearDiagonalKernel R) {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     {u : 𝓢(CoordinateSpace n, V)} (hψu : EqOn ψ 1 (Metric.cthickening R (tsupport u))) :
-    quantizeSchwartzValue (spatialCutoff hψ a).coefficient u =
+    quantizeSchwartzValue ((cutoff W hψ).comp a).coefficient u =
       quantizeSchwartzValue a.coefficient u := by
   funext x
-  rw [Symbol.quantizeSchwartzValue_spatialCutoff]
+  rw [show (cutoff W hψ).comp a = spatialCutoff hψ a from rfl,
+    Symbol.quantizeSchwartzValue_spatialCutoff]
   by_cases hx : x ∈ Metric.cthickening R (tsupport u)
   · simp [hψu hx]
   · simp [ha.quantizeSchwartzValue_eq_zero_of_notMem hx]
@@ -194,7 +195,7 @@ private theorem HasNearDiagonalKernel.exists_norm_iteratedFDeriv_le
   obtain ⟨s, C, hC0, hC⟩ := (hasCompactSpatialSupport_spatialCutoff hψ hψc a).isUniform
     |>.exists_norm_iteratedFDeriv_quantize_le K i
   refine ⟨s, C, hC0, fun f x ↦ ?_⟩
-  rw [← ha.quantizeSchwartzValue_spatialCutoff_eq hψ (hψ1.mono ?_)]
+  rw [← ha.quantizeSchwartzValue_cutoff_comp hψ (hψ1.mono ?_)]
   · exact hC f x
   · exact cthickening_tsupport_toSchwartzMapCLM_subset f
 

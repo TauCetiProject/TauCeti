@@ -55,6 +55,8 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
   by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
   with `φ`.
+* `Distribution.isVanishingOn_sub_toDistribution_cutoffTempered`: `χ T` agrees with `T` where
+  `χ = 1`.
 
 ## References
 
@@ -322,6 +324,22 @@ theorem cutoffTempered_toDistribution (u : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) :
   congr 1
   ext x
   simp [SchwartzMap.smulLeftCLM_apply_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)]
+
+/-- **A distribution agrees with its cut-off where the cutoff is one.** If `χ = 1` on a set `V`,
+then `T` and the restriction to `Ω` of the tempered distribution `χ T` agree on the test functions
+supported in `V`. -/
+theorem isVanishingOn_sub_toDistribution_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℂ)} {V : Set E}
+    (hχ : ∀ x ∈ V, χ x = 1) :
+    IsVanishingOn ⇑(T - TemperedDistribution.toDistribution Ω (T.cutoffTempered χ)) V := by
+  intro φ hφ
+  rw [sub_apply, TemperedDistribution.toDistribution_apply,
+    cutoffTempered_def, ← complexPairing_postcompCLM_ofRealCLM T φ, sub_eq_zero]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', toSchwartzMapCLM_apply]
+  by_cases hx : x ∈ tsupport φ
+  · rw [hχ x (hφ hx), one_mul]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end ToDistribution
 
