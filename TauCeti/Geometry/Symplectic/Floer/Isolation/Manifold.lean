@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Isolation
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Cutoff
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
@@ -36,8 +36,8 @@ The proof reads the trajectory in the chart and applies the vector-space theorem
 Hamiltonian read in the chart, `y ↦ H(t, φ⁻¹ y)`, is only defined on the target of `φ`; a cutoff
 equal to one near a compact neighbourhood of the orbit globalizes it to a `C²` Hamiltonian on `V`,
 `1`-periodic in time, which agrees with it near that neighbourhood
-(`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). There the two Hamiltonians have the same
-Hamiltonian vector fields, so the orbit and its nondegeneracy are those of the globalized
+(`PartialDiffeomorph.exists_contDiff_eventuallyEq_comp_symm`). There the two Hamiltonians have
+the same Hamiltonian vector fields, so the orbit and its nondegeneracy are those of the globalized
 Hamiltonian. A trajectory close enough to the orbit stays in that neighbourhood, so its
 coordinate map `φ ∘ u` solves the Floer equation of `(V, ω₀)` for the globalized Hamiltonian and
 has the energy density of `u` (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_comp`,
@@ -64,31 +64,6 @@ variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   [IsManifold I ⊤ M] [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {H : ℝ → M → ℝ} {x : ℝ → V} {c : ℝ}
-
-omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
-/-- **Globalizing the Hamiltonian read in a chart.** For a compact set `K` in the target of a
-smooth chart `φ`, there is a `C²` Hamiltonian on `V`, `1`-periodic in time, which agrees with the
-Hamiltonian read in the chart, `y ↦ H(t, φ⁻¹ y)`, near every point of `K`, for all times. -/
-private theorem exists_contDiff_periodic_eventuallyEq_comp_symm
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
-    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 2 (uncurry H)) (hHper : Periodic H 1) {K : Set V}
-    (hK : IsCompact K) (hKφ : K ⊆ φ.target) :
-    ∃ H' : ℝ → V → ℝ, ContDiff ℝ 2 (uncurry H') ∧ Periodic H' 1 ∧
-      ∀ y ∈ K, ∀ᶠ y' in 𝓝 y, ∀ t, H' t y' = H t (φ.symm y') := by
-  -- The Hamiltonian read in the chart, `(y, t) ↦ H(t, φ⁻¹ y)`, is `C²` on `φ.target × ℝ`.
-  have hHφ : ContDiffOn ℝ 2 (fun p : V × ℝ ↦ H p.2 (φ.symm p.1)) (φ.target ×ˢ univ) := by
-    rintro ⟨y, t⟩ ⟨hy, -⟩
-    have hsymm : ContMDiffAt 𝓘(ℝ, V) I 2 φ.symm y :=
-      (φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).contMDiffAt
-        (φ.open_target.mem_nhds hy)
-    have hpair : ContMDiffAt 𝓘(ℝ, V × ℝ) (𝓘(ℝ, ℝ).prod I) 2
-        (fun p : V × ℝ ↦ (p.2, φ.symm p.1)) (y, t) :=
-      contDiff_snd.contMDiff.contMDiffAt.prodMk
-        (hsymm.comp (y, t) contDiff_fst.contMDiff.contMDiffAt)
-    exact (contMDiffAt_iff_contDiffAt.1 ((hH (t, φ.symm y)).comp (y, t) hpair)).contDiffWithinAt
-  obtain ⟨g, hg, hgeq, hgper⟩ := hHφ.exists_contDiff_eventually_eq_prod_univ hK φ.open_target hKφ
-  exact ⟨fun t y ↦ g (y, t), hg.comp (contDiff_snd.prodMk contDiff_fst),
-    fun t ↦ funext fun y ↦ hgper 1 (fun y t ↦ congrFun (hHper t) (φ.symm y)) y t, hgeq⟩
 
 /-- **A Floer trajectory read in a symplectic chart.** Let `H'` agree near every point of a set `K`
 with the Hamiltonian `y ↦ H(t, φ⁻¹ y)` read in a symplectic chart `φ`, for all times, and let
@@ -182,7 +157,7 @@ theorem exists_pos_forall_eq_of_floer (hω : ω.IsNondegenerate)
   obtain ⟨δ₀, hδ₀, hKφ⟩ :=
     hKx.exists_cthickening_subset_open φ.open_target (range_subset_iff.2 hxφ)
   obtain ⟨H', hH', hH'per, hH'eq⟩ :=
-    exists_contDiff_periodic_eventuallyEq_comp_symm φ hH hHper hKx.cthickening hKφ
+    φ.exists_contDiff_eventuallyEq_comp_symm (WithTop.coe_le_coe.2 le_top) hH hKx.cthickening hKφ
   -- Near the orbit the two Hamiltonians have the same Hamiltonian vector fields, so `x` is a
   -- nondegenerate orbit of `H'`.
   have hX (t : ℝ) : ω₀.hamiltonianVectorField (H' t) =ᶠ[𝓝 (x t)]
@@ -200,7 +175,7 @@ theorem exists_pos_forall_eq_of_floer (hω : ω.IsNondegenerate)
     rw [hfd]
     exact hnd
   obtain ⟨δ₁, hδ₁, hiso⟩ :=
-    SymplecticForm.exists_pos_forall_eq_of_floer hH' hH'per hxper hx' hnd' hc C
+    SymplecticForm.exists_pos_forall_eq_of_floer hH' (hH'per 1 hHper) hxper hx' hnd' hc C
   refine ⟨min δ₀ δ₁, lt_min hδ₀ hδ₁, fun {u J J'} hu hper hJJ' hJc hJM hfloer hE hclose ↦ ?_⟩
   have hsrc (z : ℝ × ℝ) : u z ∈ φ.source := (hclose z.1 z.2).1
   -- The trajectory, read in the chart, stays in `K`, where it solves the Floer equation for `H'`.
