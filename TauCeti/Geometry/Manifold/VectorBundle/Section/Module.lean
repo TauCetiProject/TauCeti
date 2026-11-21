@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The smooth-function module of bundle sections
@@ -22,6 +23,8 @@ These structures allow function-linear maps on sections, in particular tensorial
 operators, to be expressed using the usual `LinearMap` API. The points of `M` separate sections
 modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
 as needed by the algebraic theory of differential operators between modules of sections.
+For a trivial bundle `Bundle.Trivial M F`, `ContMDiffSection.trivialEquiv` identifies `C^n`
+sections `C^n(M, 𝕜)`-linearly with `C^n` maps `M → F`.
 
 For `m ≤ n`, every `Cⁿ` section is a `Cᵐ` section (`ContMDiffSection.ofLE`), linearly over the
 ground field.
@@ -112,6 +115,29 @@ theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top (s : Cₛ^n⟮I; F, V⟯)
     simp [ht, hu]
 
 end Module
+
+section TrivialEquiv
+
+/-- `C^n` sections of `Bundle.Trivial M F` are `C^n(M, 𝕜)`-linearly equivalent to `C^n` maps
+`M → F`. -/
+def trivialEquiv :
+    Cₛ^n⟮I; F, Bundle.Trivial M F⟯ ≃ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝓘(𝕜, F), F⟯ where
+  toFun s := ⟨⇑s, (Bundle.Trivial.contMDiff_mk_iff.mp s.contMDiff).2⟩
+  invFun f := ⟨⇑f, Bundle.Trivial.contMDiff_mk_iff.mpr ⟨contMDiff_id, f.contMDiff⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' f s := by ext x; exact smul_apply f s x
+
+@[simp]
+theorem trivialEquiv_apply (s : Cₛ^n⟮I; F, Bundle.Trivial M F⟯) (x : M) :
+    trivialEquiv s x = s x := (rfl)
+
+@[simp]
+theorem trivialEquiv_symm_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) :
+    trivialEquiv.symm f x = f x := (rfl)
+
+end TrivialEquiv
 
 section Pullback
 

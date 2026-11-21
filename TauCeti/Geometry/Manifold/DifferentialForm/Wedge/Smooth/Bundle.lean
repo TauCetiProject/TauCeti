@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
 
 /-!
 # Smooth paired wedges with bundle coefficients
@@ -69,18 +70,8 @@ theorem inCoordinates_bundleWedgeWith
           (fun z ↦ V₂ z →L[ℝ] V₃ z) x₀ y x₀ y (μ y))
         (ContinuousAlternatingMap.inCoordinates E F₁ x₀ y x₀ y (φ y))
         (ContinuousAlternatingMap.inCoordinates E F₂ x₀ y x₀ y (ψ y)) := by
-  ext v
-  simp only [ContinuousAlternatingMap.pairedWedgeCLM_apply,
-    ContinuousAlternatingMap.inCoordinates, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply,
-    bundleWedgeWith_apply', ContinuousAlternatingMap.pairedWedge_apply,
-    map_smul, map_sum]
-  congr 2
-  funext σ
-  rw [ContinuousLinearMap.map_smul_of_tower, inCoordinates_apply_eq₂ h₁ h₂ h₃]
-  simp only [Trivialization.continuousLinearMapAt_apply,
-    Trivialization.symm_linearMapAt _ h₁, Trivialization.symm_linearMapAt _ h₂,
-    Function.comp_def]
+  rw [bundleWedgeWith_apply']
+  exact inCoordinates_pairedWedge (μ y) (hμ y) (φ y) (ψ y) h₁ h₂ h₃
 
 variable [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
   [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
@@ -100,27 +91,7 @@ theorem _root_.ContMDiffWithinAt.bundleWedgeWith_form
     ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y
         (bundleWedgeWith μ hμ φ ψ y)) s x := by
-  rw [contMDiffWithinAt_hom_bundle] at hpair
-  rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hφ hψ ⊢
-  refine ⟨hφ.1, ?_⟩
-  have h := (((ContinuousAlternatingMap.pairedWedgeCLM
-    (E := E) (k := k) (l := l)).contDiff.comp_contMDiffWithinAt hpair.2).clm_apply
-      hφ.2).clm_apply hψ.2
-  have heq : (fun y ↦ ContinuousAlternatingMap.inCoordinates E F₃ x y x y
-      (bundleWedgeWith μ hμ φ ψ y)) =ᶠ[𝓝 x]
-      (fun y ↦ ContinuousAlternatingMap.pairedWedgeCLM
-        (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
-          (fun z ↦ V₂ z →L[ℝ] V₃ z) x y x y (μ y))
-        (ContinuousAlternatingMap.inCoordinates E F₁ x y x y (φ y))
-        (ContinuousAlternatingMap.inCoordinates E F₂ x y x y (ψ y))) := by
-    filter_upwards [(trivializationAt F₁ V₁ x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F₁ V₁ x),
-      (trivializationAt F₂ V₂ x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F₂ V₂ x),
-      (trivializationAt F₃ V₃ x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F₃ V₃ x)] with y h₁ h₂ h₃
-    exact inCoordinates_bundleWedgeWith μ hμ φ ψ x y h₁ h₂ h₃
-  exact h.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
+  simpa only [bundleWedgeWith_apply'] using ContMDiffWithinAt.pairedWedge_section hμ hpair hφ hψ
 
 /-- A `C^n` bundle pairing takes `C^n` bundle-valued forms to a `C^n` form on a set. -/
 theorem _root_.ContMDiffOn.bundleWedgeWith_form
@@ -135,8 +106,8 @@ theorem _root_.ContMDiffOn.bundleWedgeWith_form
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s) :
     ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y
-        (bundleWedgeWith μ hμ φ ψ y)) s :=
-  fun y hy ↦ ContMDiffWithinAt.bundleWedgeWith_form hμ (hpair y hy) (hφ y hy) (hψ y hy)
+        (bundleWedgeWith μ hμ φ ψ y)) s := by
+  simpa only [bundleWedgeWith_apply'] using ContMDiffOn.pairedWedge_section hμ hpair hφ hψ
 
 /-- Pointwise regularity of a bundle wedge follows from regularity of both forms and pairing. -/
 theorem _root_.ContMDiffAt.bundleWedgeWith_form
@@ -151,8 +122,8 @@ theorem _root_.ContMDiffAt.bundleWedgeWith_form
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) x) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y
-        (bundleWedgeWith μ hμ φ ψ y)) x :=
-  ContMDiffWithinAt.bundleWedgeWith_form hμ hpair hφ hψ
+        (bundleWedgeWith μ hμ φ ψ y)) x := by
+  simpa only [bundleWedgeWith_apply'] using ContMDiffAt.pairedWedge_section hμ hpair hφ hψ
 
 /-- A `C^n` pairing preserves `C^n` bundle-valued forms. -/
 theorem IsSmoothBundleForm.bundleWedgeWith
