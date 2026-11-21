@@ -41,6 +41,7 @@ common compact support, are statements about this map.
 
 ## Main declarations
 
+* `BesselPotentialSpace.continuous_toLp`: the `Lᵖ` function `J^s u` depends continuously on `u`.
 * `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, G)` embeds continuously in `𝓢'(E, G)`.
 * `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
   maps into `H^{s,p}`.
@@ -97,6 +98,11 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
 namespace BesselPotentialSpace
 
 variable {r s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The `Lᵖ` function `J^s u` of an element `u` of `H^{s,p}(E, G)` depends continuously on it. -/
+@[fun_prop]
+theorem continuous_toLp : Continuous fun u : H^{s, p}(E, G) ↦ u.toLp :=
+  (toLpₗᵢ E G s p).continuous.congr toLpₗᵢ_apply
 
 /-- The underlying tempered distribution of an element of `H^{s,p}(E, G)` depends continuously on
 it: it is the Bessel potential of order `-s` of the `Lᵖ` function `toLp u`. -/
