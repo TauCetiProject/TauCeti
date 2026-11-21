@@ -52,7 +52,6 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
   to the discriminant quadratic module of the orthogonal sum of root lattices.
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_pi_glueWordIsometry`,
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`,
-  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr_glueWordIsometry`,
   `TauCeti.DynkinType.discriminantQuadraticIsometry_isometryPiCongr_glueWordIsometry`,
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr'_glueWordIsometry`: naturality of
   the glue-word isometry under componentwise isometries, permutations of the components, and their
@@ -280,41 +279,6 @@ theorem discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (hv : ∀ i, 
       glueWordIsometry t ht hv (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ w) :=
   discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry
     (fun i ↦ (t i).rootLattice (ht i)) (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i)) σ w
-
-/-- **Naturality of glue words under componentwise isometries and component permutations.**  For an
-equivalence `σ : κ ≃ ι`, let `f k` be isometries from the root lattices of `t (σ k)` to those of
-`s k`, and `g k` maps of glue labels compatible with them through the component glue isometries.
-Then reindexing the orthogonal sum of root lattices along `σ` and applying `f` componentwise
-carries the discriminant class of a glue word `w` to the class of the word `k ↦ g k (w (σ k))`. -/
-theorem discriminantQuadraticIsometry_piCongr_glueWordIsometry (hv : ∀ i, (t i).Valid)
-    {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
-    (hvs : ∀ k, (s k).Valid) (σ : κ ≃ ι)
-    (f : ∀ k,
-      IntegralLattice.Isometry ((t (σ k)).rootLattice (ht (σ k))) ((s k).rootLattice (hs k)))
-    (g : ∀ k, (t (σ k)).glueAlphabet (ht (σ k)) → (s k).glueAlphabet (hs k))
-    (h : ∀ k x, (s k).glueAlphabetIsometry (hvs k) (hs k) (g k x) =
-      (f k).discriminantQuadraticIsometry ((t (σ k)).isEven_rootLattice (ht (σ k)))
-        ((t (σ k)).glueAlphabetIsometry (hv (σ k)) (ht (σ k)) x))
-    (w : ∀ i, (t i).glueAlphabet (ht i)) :
-    ((Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ).symm.trans
-        (Isometry.pi f)).discriminantQuadraticIsometry (isEven_pi_rootLattice t ht)
-        (glueWordIsometry t ht hv w) =
-      glueWordIsometry s hs hvs fun k ↦ g k (w (σ k)) := by
-  obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ).surjective w
-  have hσ := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
-    (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry t ht hv σ v)
-  have hpi := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
-    (discriminantQuadraticIsometry_pi_glueWordIsometry (fun k ↦ t (σ k))
-      (fun k ↦ ht (σ k)) (fun k ↦ hv (σ k)) hvs f g h v)
-  -- Undo the reindexing to reach the word `v` of `k ↦ t (σ k)`, then act componentwise by `f`.
-  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-  rw [Isometry.discriminantGroupEquiv_trans]
-  refine (LinearEquiv.trans_apply ..).trans ?_
-  have hsymm := (DFunLike.congr_fun (Isometry.discriminantGroupEquiv_symm
-    (Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ)) _).trans
-    ((congrArg _ hσ.symm).trans (LinearEquiv.symm_apply_apply _ _))
-  refine (congrArg _ hsymm).trans (hpi.trans (congrArg _ (funext fun k ↦ ?_)))
-  rw [Equiv.piCongrLeft_apply_apply]
 
 /-- **Naturality of glue words under `Isometry.piCongr`.**  Given `σ : ι ≃ κ`, root-lattice
 isometries `f i` from `t i` to `s (σ i)`, and compatible glue-label maps `g i`,

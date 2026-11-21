@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4.CyclicSymmetry
 
+import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4
+
 /-!
 # Faithful action of the glue-pattern symmetries across all 23 rootful Niemeier rows
 
@@ -105,9 +107,11 @@ theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
       r ≠ a5FourthD4 := by
   refine ⟨fun h ↦ ?_, fun hr p hp g hg ↦ mem_glueSymmetries_of_mem_symmetries hr hp hg⟩
   rintro rfl
-  exact permCongr_finRotate_notMem_glueSymmetries_a5FourthD4 _
-    (h (GluePattern.cyclic [2] [0, 2, 4] [0]) (List.Mem.head _) _
-      (by rw [GluePattern.symmetries_cyclic]; exact Subgroup.mem_zpowers _))
+  refine a5FourthD4BlockRotation_notMem_glueSymmetries ?_
+  rw [← permCongr_finSumPerm_finRotate]
+  exact h (GluePattern.cyclic [2] [0, 2, 4] [0]) cyclic_mem_gluePatterns_a5FourthD4
+    (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1)
+    (by rw [GluePattern.symmetries_cyclic]; exact Subgroup.mem_zpowers _)
 
 /-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
 `a5FourthD4BlockRot ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
@@ -138,9 +142,14 @@ theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
 theorem det_coupledPatternIsometryHom_a5FourthD4 {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
     Isometry.det a5FourthD4.lattice (coupledPatternIsometryHom hp g) = 1 := by
-  obtain ⟨k, -, -, hg⟩ := exists_coupledPatternIsometryHom_a5FourthD4_eq_pow hp g
-  change Isometry.det niemeierA5FourthD4 (coupledPatternIsometryHom hp g) = 1
-  rw [hg, map_pow, det_a5FourthD4TrialityRotation, one_pow]
+  rcases p with word | ⟨pre, block, post⟩ | @⟨n, word⟩
+  · rw [coupledPatternIsometryHom_literal, MonoidHom.one_apply, map_one]
+  · have hp' : pre = [2] ∧ block = [0, 2, 4] ∧ post = [0] := by
+      simpa [gluePatterns] using hp
+    rcases hp' with ⟨rfl, rfl, rfl⟩
+    rw [coupledPatternIsometryHom_a5FourthD4_cyclic]
+    exact det_a5FourthD4CyclicSymmetryHom g
+  · simp [gluePatterns] at hp
 
 /-- **Every pattern symmetry group across all 23 rootful Niemeier rows embeds faithfully into the
 isometry group of its row's lattice.** -/

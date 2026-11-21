@@ -440,9 +440,9 @@ noncomputable def gluedLatticePiCongrIsometry (σ : κ ≃ ι)
     (hgH : ∀ w, (fun k ↦ g k (w (σ k))) ∈ H' ↔ w ∈ H) :
     IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
   gluedLatticeIsometry t ht hv H hH hvs hH'
-    ((Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ).symm.trans (Isometry.pi f))
+    (Isometry.piCongr' σ.symm f)
     (fun w k ↦ g k (w (σ k)))
-    (discriminantQuadraticIsometry_piCongr_glueWordIsometry t ht hv hvs σ f g hfg) hgH
+    (discriminantQuadraticIsometry_piCongr'_glueWordIsometry t ht hv hvs σ.symm f g hfg) hgH
 
 /-- The isometry of glued lattices induced by componentwise isometries and a reindexing `σ` reads
 the coordinates of component `k` by applying `f k` to component `σ k`. -/
@@ -457,8 +457,8 @@ theorem gluedLatticePiCongrIsometry_apply (σ : κ ≃ ι)
     (hgH : ∀ w, (fun k ↦ g k (w (σ k))) ∈ H' ↔ w ∈ H)
     (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) :
     gluedLatticePiCongrIsometry t ht hv H hH hvs hH' σ f g hfg hgH x k = f k (x (σ k)) := by
-  rw [gluedLatticePiCongrIsometry, gluedLatticeIsometry_apply, Isometry.trans_apply,
-    Isometry.pi_apply, Isometry.piCongrLeft_symm_apply]
+  rw [gluedLatticePiCongrIsometry, gluedLatticeIsometry_apply, Isometry.piCongr'_apply]
+  rfl
 
 end PiCongr
 
