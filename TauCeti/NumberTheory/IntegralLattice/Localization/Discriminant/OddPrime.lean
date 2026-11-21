@@ -10,7 +10,8 @@ public import TauCeti.Data.Fintype.Fiber
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Henselian
-import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
+import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Bilinear
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
@@ -37,7 +38,7 @@ discriminant bilinear modules are the orthogonal sums `⊕ᵢ q_{θᵢ}^{(p)}(p�
 `⊕ⱼ q_{ηⱼ}^{(p)}(pˡʲ)` (`TauCeti.IntegralLattice.nonempty_isometry_pi_oddCyclic_primaryComponent`).
 Isometry of those sums matches the constituent ranks `#{i | kᵢ = m}` and the unit determinant
 square classes `∏_{kᵢ = m} uᵢ` at every positive scale `m ≥ 1`
-(`TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_toFiniteBilinearModule_iff`). Total
+(`TauCeti.FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff`). Total
 rank and the global determinant square class then isolate the unimodular `m = 0` constituent
 (`Function.occCount_eq_of_forall_ne`, `Function.isSquare_prod_fiber_subtype_mul_of_forall_ne`), and
 diagonal Jordan classification over Henselian local domains
@@ -112,7 +113,7 @@ private theorem sum_eq_and_pos_invariants_of_primaryDiscriminantBilinear
     rw [Nat.card_pi, Nat.card_pi] at hcard
     simp_rw [FiniteQuadraticModule.natCard_oddCyclic, Finset.prod_pow_eq_pow_sum] at hcard
     exact Nat.pow_right_injective (Fact.out : p.Prime).one_lt hcard
-  have hpi := (FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_toFiniteBilinearModule_iff
+  have hpi := (FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff
     hp_odd k l (fun i ↦ PadicInt.isCoprime_of_dvd_unit_sub (hθ_p i))
     (fun j ↦ PadicInt.isCoprime_of_dvd_unit_sub (hη_p j))).mp ⟨e⟩
   refine ⟨hsum, fun m hm ↦ ?_⟩

@@ -6,6 +6,7 @@ Authors: Wentao Li, The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 
 /-!
 # Comparing quadratic refinements of finite bilinear modules
