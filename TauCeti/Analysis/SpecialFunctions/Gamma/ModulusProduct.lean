@@ -160,10 +160,8 @@ theorem _root_.Real.norm_Gamma_mul_I_sq (y : ℝ) :
     rw [← Gamma_add_one (-(y * I)) (neg_ne_zero.mpr hz)]
     ring_nf
   have hsin : sin (π * (y * I)) = I * Real.sinh (π * y) := by
-    have hsplit : (π : ℂ) * (y * I) = (0 : ℂ) + ((π * y : ℝ) : ℂ) * I := by push_cast; ring
-    rw [hsplit, sin_add_mul_I]
-    simp only [sin_zero, cos_zero, ← ofReal_sinh]
-    ring
+    rw [show (π : ℂ) * (y * I) = ((π * y : ℝ) : ℂ) * I by push_cast; ring, sin_mul_I,
+      ← ofReal_sinh, mul_comm]
   have hsinh : (Real.sinh (π * y) : ℂ) ≠ 0 := by
     exact_mod_cast Real.sinh_ne_zero.mpr (mul_ne_zero Real.pi_ne_zero hy)
   rw [h1, hsin, eq_div_iff (mul_ne_zero I_ne_zero hsinh)] at hrefl
