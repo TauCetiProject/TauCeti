@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 import Mathlib.Tactic.Linarith
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Elementary norm estimates in normed spaces over `ℝ` or `ℂ`
@@ -17,7 +18,7 @@ In a normed space over an `RCLike` field:
   at most `B`, so the closed ball of radius `B` contains the midpoint of any two of its points;
 * `TauCeti.norm_sum_smul_le_norm_sum_re_add_norm_sum_im`: splitting the scalar coefficients of a
   finite combination `∑ i ∈ s, a i • v i` into real and imaginary parts bounds its norm by the
-  norms of the two combinations with real coefficients.
+  sum of the norms of the two combinations with real coefficients.
 -/
 
 public section
@@ -32,8 +33,9 @@ theorem norm_two_inv_smul_add_le {a b : E} {B : ℝ} (ha : ‖a‖ ≤ B) (hb : 
   rw [norm_smul, norm_inv, RCLike.norm_two]
   linarith [norm_add_le a b]
 
-/-- Splitting scalar coefficients into real and imaginary parts bounds a combination of the `v i`
-by the two combinations with real coefficients `re (a i)` and `im (a i)`. -/
+/-- Splitting scalar coefficients into real and imaginary parts: the norm of a combination of the
+`v i` with coefficients `a i` is at most the sum of the norms of the combinations with real
+coefficients `re (a i)` and `im (a i)`. -/
 theorem norm_sum_smul_le_norm_sum_re_add_norm_sum_im {ι : Type*} {v : ι → E} {s : Finset ι}
     {a : ι → 𝕜} :
     ‖∑ i ∈ s, a i • v i‖ ≤
@@ -44,12 +46,9 @@ theorem norm_sum_smul_le_norm_sum_re_add_norm_sum_im {ι : Type*} {v : ι → E}
     rw [Finset.smul_sum, ← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [smul_smul, mul_comm, ← add_smul, RCLike.re_add_im]
-  have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-    rw [RCLike.norm_I]
-    split_ifs <;> norm_num
   rw [hsplit]
   refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
   rw [norm_smul]
-  exact mul_le_of_le_one_left (norm_nonneg _) hI
+  exact mul_le_of_le_one_left (norm_nonneg _) RCLike.norm_I_le_one
 
 end TauCeti

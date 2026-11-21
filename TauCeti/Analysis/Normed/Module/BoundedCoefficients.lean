@@ -141,20 +141,16 @@ theorem norm_sum_ofReal_smul_le_of_forall_abs_eq_one
     have hε₁ (i : ι) : |ε₁ i| = 1 := by dsimp only [ε₁]; split_ifs <;> simp [hσ]
     have hε₂ (i : ι) : |ε₂ i| = 1 := by dsimp only [ε₂]; split_ifs <;> simp [hσ]
     have hmid : ∑ i ∈ u, (σ i : 𝕜) • v i =
-        ((2⁻¹ : ℝ) : 𝕜) • (∑ i ∈ s, (ε₁ i : 𝕜) • v i + ∑ i ∈ s, (ε₂ i : 𝕜) • v i) := by
+        (2 : 𝕜)⁻¹ • (∑ i ∈ s, (ε₁ i : 𝕜) • v i + ∑ i ∈ s, (ε₂ i : 𝕜) • v i) := by
       rw [← Finset.sum_add_distrib, Finset.smul_sum, ← Finset.sum_subset hu]
       · refine Finset.sum_congr rfl fun i hi ↦ ?_
         simp only [ε₁, ε₂, hi, ↓reduceIte]
-        rw [smul_add, ← add_smul, ← RCLike.ofReal_add]
+        rw [smul_add, ← add_smul]
         norm_num
       · intro i _ hiu
         simp [ε₁, ε₂, hiu]
-    rw [hmid, norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by norm_num)]
-    calc
-      2⁻¹ * ‖∑ i ∈ s, (ε₁ i : 𝕜) • v i + ∑ i ∈ s, (ε₂ i : 𝕜) • v i‖ ≤ 2⁻¹ * (S + S) := by
-        gcongr
-        exact (norm_add_le _ _).trans (add_le_add (hS ε₁ hε₁) (hS ε₂ hε₂))
-      _ = S := by ring
+    rw [hmid]
+    exact norm_two_inv_smul_add_le (hS ε₁ hε₁) (hS ε₂ hε₂)
   have heq : ∑ i ∈ s, (a i : 𝕜) • v i = ∑ i ∈ s, ((|a i| : ℝ) : 𝕜) • (σ i : 𝕜) • v i :=
     Finset.sum_congr rfl fun i _ ↦ by rw [smul_smul, ← RCLike.ofReal_mul, ← haσ]
   rw [heq]
