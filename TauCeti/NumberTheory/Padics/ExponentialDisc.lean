@@ -159,13 +159,10 @@ private theorem norm_smul_pow_le_of_norm_mul_le (x : A) {c : ℚ_[p]} {n : ℕ} 
     (hc : ‖c‖ * amiceRadius p 0 ^ (n - 1) ≤ 1) :
     ‖c • x ^ n‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) := by
   have hr := amiceRadius_pos (p := p) 0
+  refine (norm_smul_pow_le_mul_div_pow hr hn
+    (norm_mul_pow_le_of_norm_mul_pow_sub_one_le hr.le (absurd · hn) hc) x).trans_eq ?_
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at hc ⊢
-  have hc' : ‖c‖ * amiceRadius p 0 ^ (m + 1) ≤ amiceRadius p 0 := by
-    rw [_root_.pow_succ, ← mul_assoc]
-    exact mul_le_of_le_one_left hr.le hc
-  refine (norm_smul_pow_le_mul_div_pow hr hn hc' x).trans_eq ?_
-  rw [_root_.pow_succ]
+  rw [Nat.add_sub_cancel, _root_.pow_succ]
   field_simp
 
 /-- **The terms of the exponential series on its disc.** For `n ≠ 0`,
@@ -371,6 +368,13 @@ theorem log_mul_of_commute_of_norm_sub_one_lt {y w : A} (hyw : Commute y w)
       ((IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hy' hw')),
     log_exp_of_norm_lt hy', log_exp_of_norm_lt hw']
 
+/-- For `‖t‖ < r₀` and `x ∈ ℤ_p`, `x • log (1 + t)` lies in the disc of radius `r₀`. -/
+private theorem norm_coe_smul_log_one_add_lt {t : A} (ht : ‖t‖ < amiceRadius p 0) (x : ℤ_[p]) :
+    ‖(x : ℚ_[p]) • log (1 + t)‖ < amiceRadius p 0 := by
+  refine (norm_smul_le _ _).trans_lt <|
+    (mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt ?_
+  rwa [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left]
+
 /-- **The binomial power as an exponential.** In a complete ultrametric normed algebra over
 `ℚ_[p]`, for `‖t‖ < r₀` and `x ∈ ℤ_p`, the continuous additive character
 `x ↦ (1 + t) ^ x` (`PadicInt.addChar_of_value_at_one`) is `x ↦ exp (x log (1 + t))`. -/
@@ -381,12 +385,11 @@ theorem addChar_of_value_at_one_eq_exp_smul_log [Algebra ℤ_[p] A] [IsBoundedSM
       exp ((x : ℚ_[p]) • log (1 + t)) := by
   have hL : ‖log (1 + t)‖ < amiceRadius p 0 := by
     rwa [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left]
-  have hxL (x : ℤ_[p]) : ‖(x : ℚ_[p]) • log (1 + t)‖ < amiceRadius p 0 :=
-    (norm_smul_le _ _).trans_lt <| (mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt hL
   -- Both sides are continuous in `x` and agree with `(1 + t) ^ n` at natural numbers `n`.
   have hcont : Continuous fun x : ℤ_[p] ↦ exp ((x : ℚ_[p]) • log (1 + t)) :=
     (continuousOn_exp (𝕂 := ℚ_[p])).comp_continuous
-      (continuous_subtypeVal.smul continuous_const) fun x ↦ mem_eball_radius_expSeries (hxL x)
+      (continuous_subtypeVal.smul continuous_const) fun x ↦
+      mem_eball_radius_expSeries (norm_coe_smul_log_one_add_lt ht x)
   refine congrFun (PadicInt.denseRange_natCast.equalizer
     (PadicInt.continuous_addChar_of_value_at_one _) hcont (funext fun n ↦ ?_)) x
   simp only [Function.comp_apply, PadicInt.coe_natCast, Nat.cast_smul_eq_nsmul]
@@ -399,11 +402,10 @@ theorem norm_addChar_of_value_at_one_sub_one_le [Algebra ℤ_[p] A] [IsBoundedSM
     ‖PadicInt.addChar_of_value_at_one t
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one 0))) x - 1‖ ≤
       ‖x‖ * ‖t‖ := by
-  have hxL : ‖(x : ℚ_[p]) • log (1 + t)‖ ≤ ‖x‖ * ‖t‖ := (norm_smul_le _ _).trans_eq <| by
-    rw [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left, PadicInt.norm_def]
-  rw [addChar_of_value_at_one_eq_exp_smul_log ht x, norm_exp_sub_one_of_norm_lt
-    (hxL.trans_lt ((mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt ht))]
-  exact hxL
+  rw [addChar_of_value_at_one_eq_exp_smul_log ht x,
+    norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x)]
+  refine (norm_smul_le _ _).trans_eq ?_
+  rw [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left, PadicInt.norm_def]
 
 /-- When the scalars act isometrically, for instance in a normed field over `ℚ_[p]`, the binomial
 power satisfies `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖` for `‖t‖ < r₀` and `x ∈ ℤ_p`. -/
@@ -412,12 +414,9 @@ theorem norm_addChar_of_value_at_one_sub_one [Algebra ℤ_[p] A] [IsBoundedSMul 
     ‖PadicInt.addChar_of_value_at_one t
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one 0))) x - 1‖ =
       ‖x‖ * ‖t‖ := by
-  have hxL : ‖(x : ℚ_[p]) • log (1 + t)‖ = ‖x‖ * ‖t‖ := by
-    rw [norm_smul, norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left,
-      PadicInt.norm_def]
-  have hlt : ‖(x : ℚ_[p]) • log (1 + t)‖ < amiceRadius p 0 :=
-    hxL ▸ (mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt ht
-  rw [addChar_of_value_at_one_eq_exp_smul_log ht x, norm_exp_sub_one_of_norm_lt hlt, hxL]
+  rw [addChar_of_value_at_one_eq_exp_smul_log ht x,
+    norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x), norm_smul,
+    norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left, PadicInt.norm_def]
 
 end NormedRing
 

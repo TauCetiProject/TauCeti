@@ -29,7 +29,8 @@ polynomial over a normed field whose coefficients satisfy `‖cₖ‖ Rᵏ ≤ R
 at radius `R` is at most `R`. If `P` vanishes below degree `m` and at `0`, then in an ultrametric
 normed algebra it takes at `x` with `‖x‖ ≤ R` a value of norm at most `R (‖x‖ / R) ^ m`
 (`Polynomial.norm_aeval_le_mul_div_pow`): every term `cₖ xᵏ` has norm at most `R (‖x‖ / R) ^ k`
-(`TauCeti.norm_smul_pow_le_mul_div_pow`).
+(`TauCeti.norm_smul_pow_le_mul_div_pow`). For a vanishing constant coefficient, the bound
+`‖cₖ‖ Rᵏ ≤ R` is `‖cₖ‖ R ^ (k - 1) ≤ 1` (`TauCeti.norm_mul_pow_le_of_norm_mul_pow_sub_one_le`).
 
 ## References
 
@@ -56,6 +57,17 @@ end Polynomial
 
 
 namespace TauCeti
+
+/-- The coefficient bound `‖c‖ R ^ (n - 1) ≤ 1` is the weighted bound `‖c‖ Rⁿ ≤ R` when `c`
+vanishes in degree `n = 0`. -/
+theorem norm_mul_pow_le_of_norm_mul_pow_sub_one_le {E : Type*} [SeminormedAddGroup E] {c : E}
+    {n : ℕ} {R : ℝ} (hR : 0 ≤ R) (hc0 : n = 0 → c = 0) (hc : ‖c‖ * R ^ (n - 1) ≤ 1) :
+    ‖c‖ * R ^ n ≤ R := by
+  rcases n with _ | m
+  · simp [hc0 rfl, hR]
+  rw [Nat.add_sub_cancel] at hc
+  rw [pow_succ, ← mul_assoc]
+  exact mul_le_of_le_one_left hR hc
 
 /-- **A weighted monomial bound.** If `‖c‖ Rᵏ ≤ R` with `R > 0` and `k ≠ 0`, then
 `‖c • xᵏ‖ ≤ R (‖x‖ / R) ^ k` in every normed algebra. -/

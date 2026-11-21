@@ -57,16 +57,6 @@ namespace PowerSeries
 
 variable {K : Type*} [NormedField K]
 
-/-- The coefficient bound `‖c‖ R ^ (n - 1) ≤ 1` is the weighted bound `‖c‖ Rⁿ ≤ R` when the
-constant coefficient vanishes. -/
-private theorem norm_mul_pow_le_of_norm_mul_pow_sub_one_le {c : K} {n : ℕ} {R : ℝ} (hR : 0 < R)
-    (hc0 : n = 0 → c = 0) (hc : ‖c‖ * R ^ (n - 1) ≤ 1) : ‖c‖ * R ^ n ≤ R := by
-  rcases n with _ | m
-  · simp [hc0 rfl, hR.le]
-  rw [Nat.add_sub_cancel] at hc
-  rw [pow_succ, ← mul_assoc]
-  exact mul_le_of_le_one_left hR.le hc
-
 variable {A : Type*} [NormedRing A] [NormedAlgebra K A] [IsUltrametricDist K] [IsUltrametricDist A]
 
 /-- **The truncation estimate.** If `f.subst g = X`, the coefficients of `f` and `g` satisfy
@@ -83,7 +73,7 @@ private theorem norm_aeval_trunc_aeval_trunc_sub_le {f g : K⟦X⟧} (hf0 : coef
       (L n : ℕ) : ‖(trunc L h).coeff n‖ * R ^ n ≤ R := by
     rw [coeff_trunc]
     split_ifs
-    · exact norm_mul_pow_le_of_norm_mul_pow_sub_one_le hR (fun h ↦ h ▸ hh0) (hh n)
+    · exact TauCeti.norm_mul_pow_le_of_norm_mul_pow_sub_one_le hR.le (fun h ↦ h ▸ hh0) (hh n)
     · simpa using hR.le
   -- The bound `‖cₙ‖ Rⁿ ≤ R` says that the Gauss norm at radius `R` is at most `R`.
   set v := NormedField.toAbsoluteValue K
