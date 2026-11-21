@@ -98,7 +98,7 @@ theorem IsSubordinate.isCovariantDerivativeOn_finsum_smul (hρ : ρ.IsSubordinat
     (s := (Finset.univ : Finset (ρ.finsupport x))) (u := {x})
     (cov := fun i : ρ.finsupport x ↦ cov i) (f := fun i _ ↦ ρ i x)
     (fun i ↦ (hcov i).mono (singleton_subset_iff.2
-      (hρ i (subset_tsupport _ ((ρ.mem_finsupport x).1 i.2)))))
+      (hρ i (subset_tsupport _ ((ρ.mem_finsupport x).1 i.property)))))
     (by ext; simp [Finset.sum_attach _ fun i ↦ ρ i x, ρ.sum_finsupport hx])
   -- `ρ.sum_finsupport_smul_eq_finsum` stated for the constant families of fibre elements at `x`;
   -- rewriting with it backwards directly needs higher-order unification and does not fire.

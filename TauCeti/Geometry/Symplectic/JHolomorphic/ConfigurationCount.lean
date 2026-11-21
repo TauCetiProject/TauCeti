@@ -182,6 +182,14 @@ theorem compatibleConfigurations_mono (h : s ⊆ t) :
     compatibleConfigurations r cls s A ⊆ compatibleConfigurations r cls t A :=
   fun _ hl ↦ ⟨hl.1.trans h, hl.2⟩
 
+/-- The configurations of the candidates of `s` satisfying `p` are the configurations of `s` all
+of whose components satisfy `p`. -/
+theorem mem_compatibleConfigurations_sep_iff {p : ι → Prop} :
+    l ∈ compatibleConfigurations r cls {c ∈ s | p c} A ↔
+      l ∈ compatibleConfigurations r cls s A ∧ ∀ c ∈ l.support, p c :=
+  ⟨fun ⟨hsub, hl⟩ ↦ ⟨⟨fun _ hc ↦ (hsub hc).1, hl⟩, fun _ hc ↦ (hsub hc).2⟩,
+    fun ⟨⟨hsub, hl⟩, hp⟩ ↦ ⟨fun c hc ↦ ⟨hsub hc, hp c hc⟩, hl⟩⟩
+
 /-- The empty configuration has class zero. -/
 theorem zero_mem_compatibleConfigurations_iff :
     0 ∈ compatibleConfigurations r cls s A ↔ A = 0 := by
@@ -686,12 +694,12 @@ theorem mk_configurationCount_eq_tprod {w : ι → ℕ → ℤ} (hT : T.Pairwise
   set s := (hfin j).toFinset
   have hsT : ↑s ⊆ T := fun c hc ↦ ((hfin j).mem_toFinset.1 hc).1
   have hm : ∀ n : ℕ, {c : T | (m c : ℕ) ≤ n}.Finite := fun n ↦
-    (hfin n).preimage Subtype.val_injective.injOn |>.subset fun c hc ↦ ⟨c.2, hc⟩
+    (hfin n).preimage Subtype.val_injective.injOn |>.subset fun c hc ↦ ⟨c.property, hc⟩
   rw [coeff_mk, configurationCount_eq_coeff_rayTorusWeightSeries hT hcls hA₀ hw hsT
     fun c hc hcj ↦ (hfin j).mem_toFinset.2 ⟨hc, hcj⟩,
     coeff_tprod_expand_torusWeightSeries (m := fun c : T ↦ m c) hm (fun c ↦ σ c) (fun c ↦ i c)
       (s := s.subtype (· ∈ T))
-      fun c hcj ↦ Finset.mem_subtype.2 ((hfin j).mem_toFinset.2 ⟨c.2, hcj⟩),
+      fun c hcj ↦ Finset.mem_subtype.2 ((hfin j).mem_toFinset.2 ⟨c.property, hcj⟩),
     rayTorusWeightSeries_def, rayTorusWeightSeries_def,
     Finset.prod_subtype_eq_prod_filter (f := fun c ↦ expand (m c) (m c).ne_zero
       (torusWeightSeries (σ c) (i c))), Finset.filter_true_of_mem fun c hc ↦ hsT hc]
@@ -845,18 +853,19 @@ theorem configurationCount_eq_coeff_prod_ofPowerSeries (hs : s.Pairwise r)
     (hpos : ∀ c ∈ s, 0 < N (cls c)) (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c))
     (hf : ∀ c ∈ s, constantCoeff (f c) = 1) (T : Finset s) (A : H) :
     configurationCount r cls w (Subtype.val '' (T : Set s)) A =
-      (∏ c ∈ T, ofPowerSeries (cls c) (hpos c c.2) (f c)).coeff A := by
+      (∏ c ∈ T, ofPowerSeries (cls c) (hpos c c.property) (f c)).coeff A := by
   classical
   symm
   induction T using Finset.induction_on generalizing A with
   | empty => simp [configurationCount_empty]
   | @insert c T hc ih =>
     have hsub : insert (c : ι) (Subtype.val '' (T : Set s)) ⊆ s :=
-      Set.insert_subset c.2 (Set.image_subset_iff.2 fun e _ ↦ e.2)
+      Set.insert_subset c.property (Set.image_subset_iff.2 fun e _ ↦ e.property)
     rw [Finset.prod_insert hc, Finset.coe_insert, Set.image_insert_eq]
     exact coeff_ofPowerSeries_mul_eq_configurationCount_insert
       (fun h ↦ hc (Subtype.val_injective.mem_set_image.1 h)) (hs.mono hsub)
-      (T.finite_toSet.image _) (fun d hd ↦ hpos d (hsub hd)) (hw c c.2) (hf c c.2) ih A
+      (T.finite_toSet.image _) (fun d hd ↦ hpos d (hsub hd)) (hw c c.property)
+          (hf c c.property) ih A
 
 end CommSemiring
 
@@ -870,17 +879,18 @@ infinite product `∏_c f c (e ^ cls c)` over the candidates, in the period topo
 theorem hasProd_ofPowerSeries_configurationCountSeries (hs : s.Pairwise r)
     (hpos : ∀ c ∈ s, 0 < N (cls c)) (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite)
     (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c)) (hf : ∀ c ∈ s, constantCoeff (f c) = 1) :
-    HasProd (fun c : s ↦ ofPowerSeries (cls c) (hpos c c.2) (f c))
+    HasProd (fun c : s ↦ ofPowerSeries (cls c) (hpos c c.property) (f c))
       (configurationCountSeries r cls w hpos hfin) := by
   refine tendsto_nhds_iff.2 fun C ↦ ?_
   -- Below the cutoff `C`, only the candidates of period less than `C` matter.
   have hC : {c : s | N (cls c) < C}.Finite :=
-    ((hfin C).preimage Subtype.val_injective.injOn).subset fun c hc ↦ ⟨c.2, le_of_lt hc⟩
+    ((hfin C).preimage Subtype.val_injective.injOn).subset fun c hc ↦ ⟨c.property, le_of_lt hc⟩
   filter_upwards [Filter.eventually_ge_atTop hC.toFinset] with T hT A hA
   rw [← configurationCount_eq_coeff_prod_ofPowerSeries hs hpos hw hf,
     coeff_configurationCountSeries]
   refine configurationCount_eq_of_area_lt (fun c hc ↦ (hpos c hc).le)
-    (Set.image_subset_iff.2 fun c _ ↦ c.2) fun c hc hcT ↦ hA.trans_le (not_lt.1 fun hcC ↦ hcT ?_)
+    (Set.image_subset_iff.2 fun c _ ↦ c.property) fun c hc hcT ↦ hA.trans_le
+        (not_lt.1 fun hcC ↦ hcT ?_)
   exact ⟨⟨c, hc⟩, hT (hC.mem_toFinset.2 hcC), rfl⟩
 
 end Series
