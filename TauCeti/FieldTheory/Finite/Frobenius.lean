@@ -48,6 +48,8 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
   automorphism `x ↦ x ^ p` is an involution.
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (2 n)`, the iterated
   Frobenius `x ↦ x ^ p ^ n` is an involution.
+* `TauCeti.FiniteField.frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff`: exact period of the
+  arithmetic Frobenius on embeddings of any field extension.
 
 ## Mathematical context
 
@@ -195,6 +197,53 @@ theorem exists_iterateFrobenius_ne_of_card_eq_sq {n : ℕ}
   apply exists_iterateFrobenius_ne hq
   rw [hK]
   nlinarith
+
+/-! ### Exact period of the arithmetic Frobenius on embeddings -/
+
+section Algebraic
+
+/-- For any field extension `E / K` of a finite field `K` and any `K`-embedding `φ : E →ₐ[K] L`
+into an algebraic extension `L / K`, postcomposing `φ` with the `m`-th power of
+`FiniteField.frobeniusAlgEquivOfAlgebraic K L` equals `φ` if and only if `[E : K] ∣ m`. -/
+theorem frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff (K L : Type*) [Field K] [Fintype K] [Field L]
+    [Algebra K L] [Algebra.IsAlgebraic K L] {E : Type*} [Field E] [Algebra K E]
+    (φ : E →ₐ[K] L) (m : ℕ) :
+    ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) = φ ↔
+      Module.finrank K E ∣ m := by
+  by_cases hfin : Module.Finite K E
+  · have : Finite E := Module.finite_of_finite K
+    rw [AlgHom.ext_iff]
+    have hcomp (x : E) :
+        ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) x =
+          φ (((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x) := by
+      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
+        _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
+        ← Nat.card_eq_fintype_card, frobeniusAlgHom_pow_apply, map_pow]
+    have hinj : Function.Injective φ := φ.toRingHom.injective
+    simp_rw [hcomp, hinj.eq_iff]
+    have heq : (∀ x : E, ((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x = x) ↔
+        (_root_.FiniteField.frobeniusAlgHom K E) ^ m = 1 :=
+      ⟨fun h ↦ AlgHom.ext h, fun h x ↦ by rw [h, AlgHom.one_apply]⟩
+    rw [heq, ← orderOf_dvd_iff_pow_eq_one, _root_.FiniteField.orderOf_frobeniusAlgHom]
+  · rw [Module.finrank_of_infinite_dimensional hfin, zero_dvd_iff]
+    refine ⟨fun h ↦ ?_, fun hm ↦ by subst hm; exact AlgHom.ext fun x ↦ by simp⟩
+    by_contra hm
+    have hmem (x : E) : x ∈ frobeniusFixedSubalgebra K E m := by
+      rw [mem_frobeniusFixedSubalgebra]
+      have hx := DFunLike.congr_fun h x
+      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
+        _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
+        ← Nat.card_eq_fintype_card] at hx
+      dsimp only at hx
+      rw [← map_pow] at hx
+      exact φ.toRingHom.injective hx
+    have hfinSub : Finite (frobeniusFixedSubalgebra K E m) := finite_frobeniusFixedSubalgebra hm
+    have : Finite E :=
+      Finite.of_injective (fun x : E ↦ (⟨x, hmem x⟩ : frobeniusFixedSubalgebra K E m))
+        fun _ _ hxy ↦ congrArg Subtype.val hxy
+    exact hfin .of_finite
+
+end Algebraic
 
 end TauCeti.FiniteField
 

@@ -57,6 +57,10 @@ its conclusion, so instance search could not find it.
   intermediate extension `L`.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 * `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
+* `IsAlgClosed.iff_surjective_algebraMap`: a field is algebraically closed iff the algebra map
+  into an algebraically closed algebraic extension is surjective.
+* `IsSepClosed.isAlgClosed_iff_perfectField`: a separably closed separable extension of `K` is
+  algebraically closed iff `K` is perfect.
 -/
 
 public section
@@ -91,6 +95,34 @@ theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed 
   splits_of_separable p hp := by
     simpa [Polynomial.map_map] using
       IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
+
+/-- A field `K` is algebraically closed if and only if the algebra map into an algebraically
+closed algebraic extension `E` of `K` is surjective. -/
+theorem IsAlgClosed.iff_surjective_algebraMap (K E : Type*) [Field K] [Field E] [Algebra K E]
+    [IsAlgClosed E] [Algebra.IsAlgebraic K E] :
+    IsAlgClosed K ↔ Function.Surjective (algebraMap K E) := by
+  refine ⟨fun _ ↦ IsAlgClosed.algebraMap_bijective_of_isIntegral.2, fun h ↦ ?_⟩
+  refine IsAlgClosed.of_exists_root K fun p _ hp ↦ ?_
+  obtain ⟨x, hx⟩ := IsAlgClosed.exists_aeval_eq_zero E p
+    (Polynomial.degree_pos_of_irreducible hp).ne'
+  obtain ⟨y, rfl⟩ := h x
+  exact ⟨y, (algebraMap K E).injective (by simpa [Polynomial.aeval_algebraMap_apply] using hx)⟩
+
+/-- A separably closed separable extension `Ω` of a field `K` is algebraically closed if and only
+if `K` is perfect. -/
+theorem IsSepClosed.isAlgClosed_iff_perfectField (K Ω : Type*) [Field K] [Field Ω] [Algebra K Ω]
+    [IsSepClosed Ω] [Algebra.IsSeparable K Ω] :
+    IsAlgClosed Ω ↔ PerfectField K := by
+  refine ⟨fun _ ↦ ⟨fun {f} hf ↦ ?_⟩, fun _ ↦ ?_⟩
+  · obtain ⟨α, hα⟩ := IsAlgClosed.exists_aeval_eq_zero Ω f
+      (Polynomial.degree_pos_of_irreducible hf).ne'
+    obtain ⟨q, hq⟩ := minpoly.dvd K α hα
+    obtain ⟨u, rfl⟩ : IsUnit q := (hf.isUnit_or_isUnit hq).resolve_left
+      (minpoly.irreducible (Algebra.IsIntegral.isIntegral α)).not_isUnit
+    exact (Algebra.IsSeparable.isSeparable K α).of_dvd
+      ⟨↑u⁻¹, by rw [hq, mul_assoc, Units.mul_inv, mul_one]⟩
+  · have : IsSepClosure K Ω := ⟨inferInstance, inferInstance⟩
+    exact IsAlgClosure.isAlgClosed K
 
 namespace TauCeti
 
