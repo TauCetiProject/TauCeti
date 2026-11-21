@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Huber.CompleteRankOneBase
+import TauCeti.RingTheory.Huber.CompleteRankOneBase.Basic
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.FinitePresentation
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
@@ -101,9 +101,8 @@ example :
 -- The reductions of `O⟨ξ⟩` modulo powers of `ϖ` are finitely presented.
 example (n m : ℕ) : Algebra.FinitePresentation (O ⧸ Ideal.span {ϖ ^ m})
     (restrictedMvPowerSeriesCompletion n O ⧸
-      (Ideal.span {ϖ ^ m}).map (algebraMap O (restrictedMvPowerSeriesCompletion n O))) := by
-  have := IsCompleteRankOneBase.isAdicRing ϖ
-  exact IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
+      (Ideal.span {ϖ ^ m}).map (algebraMap O (restrictedMvPowerSeriesCompletion n O))) :=
+  IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
     (isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O n)
     IsCompleteRankOneBase.isAdic m
 

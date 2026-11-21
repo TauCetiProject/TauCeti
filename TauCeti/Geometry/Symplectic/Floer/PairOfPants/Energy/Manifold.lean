@@ -210,7 +210,7 @@ private theorem eventually_eq_of_isNondegenerateFixedPt [T2Space M] [Boundaryles
   have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
     (hh.of_le (by norm_num))
   exact (eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX
-    (mem_periodicSolutions.1 (hP hy)).1 (s := 0) (T := 1)
+    (hP hy) (s := 0) (T := 1)
     (by simpa only [zero_add] using hnd.eventually_not_isFixedPt)).mono
     fun _ hp y' hy' hy'p ↦ hp y' (hP hy') hy'p
 

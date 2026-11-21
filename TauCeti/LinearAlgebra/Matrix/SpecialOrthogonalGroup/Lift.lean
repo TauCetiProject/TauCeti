@@ -51,9 +51,9 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : R)]
     Function.Surjective
       (map (n := n) (Ideal.Quotient.mk I)) := by
   intro g
-  have hg : g.1 ∈ isometryMatrices ((1 : Matrix n n R).map (Ideal.Quotient.mk I)) := by
+  have hg : g.val ∈ isometryMatrices ((1 : Matrix n n R).map (Ideal.Quotient.mk I)) := by
     rw [mem_isometryMatrices, Matrix.map_one _ (map_zero _) (map_one _), Matrix.mul_one]
-    exact (Matrix.mem_orthogonalGroup_iff' n (R ⧸ I)).mp g.2.1
+    exact (Matrix.mem_orthogonalGroup_iff' n (R ⧸ I)).mp g.property.1
   obtain ⟨N, hN, hN_map⟩ := exists_map_eq_of_mem_isometryMatrices_map
     Ideal.Quotient.mk_surjective (by rw [Ideal.mk_ker, hI]) (isUnit_of_invertible 2)
     transpose_one (by rw [det_one]; exact isUnit_one) hg
@@ -62,7 +62,7 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : R)]
     exact mul_eq_one_comm.mp hN
   have hdet_map : Ideal.Quotient.mk I N.det = 1 := by
     rw [RingHom.map_det, RingHom.mapMatrix_apply, hN_map]
-    exact g.2.2
+    exact g.property.2
   have hdet_sub_mem : N.det - 1 ∈ I := by
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hdet_map, map_one, sub_self]
   have hdet_sub_sq : (N.det - 1) ^ 2 = 0 := by

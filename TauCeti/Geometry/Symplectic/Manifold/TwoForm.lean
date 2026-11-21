@@ -14,6 +14,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Symplectic.Cayley.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
 /-!
 # Nondegenerate, tame, and compatible two-forms on manifolds
@@ -60,6 +62,8 @@ example.
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
   relations characterized fiber by fiber through the linear theory.
+* `TauCeti.SmoothTwoForm.Tames.isUnit_one_sub_toEndomorphism_mul`: for two structures tamed by the
+  same form, `1 - J₁ J₀` is invertible on every tangent space.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`: a map into a vector space pulling a
   constant symplectic form back to a nondegenerate form at a point, such as a Darboux chart, is an
   immersion there.
@@ -129,7 +133,7 @@ lemma isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot :
 /-- On a manifold of positive dimension, a fiberwise nondegenerate smooth two-form vanishes
 nowhere. -/
 theorem IsNondegenerate.apply_ne_zero [Nontrivial E] (h : form.IsNondegenerate) (x : M) :
-    form.1 x ≠ 0 := by
+    form.val x ≠ 0 := by
   -- `TangentSpace I x` is the model space `E` by definition
   have : Nontrivial (TangentSpace I x) := ‹Nontrivial E›
   rw [ne_eq, ← SmoothForm.bilinFormAt_eq_zero_iff]
@@ -172,7 +176,7 @@ lemma IsNondegenerate.nondegenerate_bilinFormAt (h : form.IsNondegenerate) (x : 
 chart at `x`, at the chart point of `x`. -/
 theorem inChartAt_extChartAt_self_nondegenerate (form : SmoothTwoForm I M) {x : M}
     (hnd : (form.bilinFormAt x).Nondegenerate) :
-    ∀ v, (∀ w, RoughForm.inChartAt form.1 x (extChartAt I x x) ![v, w] = 0) → v = 0 :=
+    ∀ v, (∀ w, RoughForm.inChartAt form.val x (extChartAt I x x) ![v, w] = 0) → v = 0 :=
   fun v hv ↦ hnd.1 v fun w ↦ by
     have h := hv w
     rw [RoughForm.inChartAt_extChartAt_self] at h
@@ -312,6 +316,17 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
   intro x v hv
   by_contra hv0
   exact (h x v hv0).ne' (hv (J x v))
+
+/-- For two smooth almost complex structures tamed by `form`, the endomorphism `1 - J₁ J₀` of every
+tangent space is invertible. -/
+theorem Tames.isUnit_one_sub_toEndomorphism_mul [FiniteDimensional ℝ E]
+    {J₀ J₁ : SmoothAlmostComplexStructure I M} (h₀ : form.Tames J₀) (h₁ : form.Tames J₁) (x : M) :
+    IsUnit (1 - J₁.toEndomorphism x * J₀.toEndomorphism x) := by
+  have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
+  have hform := h₀.isNondegenerate
+  have h := ((hform.tames_iff.1 h₁) x).isUnit_one_sub_mul ((hform.tames_iff.1 h₀) x)
+  refine ContinuousLinearMap.isUnit_of_isUnit_toLinearMap_of_finiteDimensional ?_
+  simpa using h
 
 /-- A smooth two-form is invariant under a smooth almost complex structure when applying the
 structure in both tangent arguments leaves the form unchanged. -/
@@ -552,27 +567,28 @@ agrees pointwise on `chart.source` with `form₀` pulled back by `mvfderiv I cha
 theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm I M)
     (form₀ : SymplecticForm F) (chart : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) :
     SmoothForm.mpullback
-        (fun x : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) ↦ chart x.1)
-        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2)
+        (fun x : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) ↦ chart x.val)
+        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property)
         form₀.constSmooth =
       SmoothForm.mpullback
         (Subtype.val : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) → M)
-        contMDiff_subtype_val form ↔
+        contMDiff_subtypeVal form ↔
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   let U : TopologicalSpace.Opens M := ⟨chart.source, chart.open_source⟩
   have hpoint (x : U) (v w : TangentSpace I x) :
-      (SmoothForm.mpullback (fun y : U ↦ chart y.1)
-          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun y ↦ y.2)
+      (SmoothForm.mpullback (fun y : U ↦ chart y.val)
+          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun y ↦ y.property)
           form₀.constSmooth).eval₂ x v w =
-        form₀ (mvfderiv I chart x.1 (Manifold.tangentSpaceOpenEquiv (I := I) x v))
-          (mvfderiv I chart x.1 (Manifold.tangentSpaceOpenEquiv (I := I) x w)) := by
-    have hmd : MDifferentiableAt I 𝓘(ℝ, F) chart x.1 :=
-      (chart.contMDiffOn_toFun.contMDiffAt (chart.open_source.mem_nhds x.2)).mdifferentiableAt
+        form₀ (mvfderiv I chart x.val (Manifold.tangentSpaceOpenEquiv (I := I) x v))
+          (mvfderiv I chart x.val (Manifold.tangentSpaceOpenEquiv (I := I) x w)) := by
+    have hmd : MDifferentiableAt I 𝓘(ℝ, F) chart x.val :=
+      (chart.contMDiffOn_toFun.contMDiffAt
+          (chart.open_source.mem_nhds x.property)).mdifferentiableAt
         (by simp)
     have hsub : MDifferentiableAt I I (Subtype.val : U → M) x :=
-      (contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)
+      (contMDiff_subtypeVal (n := ∞)).mdifferentiableAt (by simp)
     rw [SmoothForm.eval₂_mpullback]
     refine (form₀.eval₂_constSmooth_mfderiv_eq (chart ∘ Subtype.val) x v w).trans ?_
     rw [mvfderiv_comp_apply x hmd hsub, mvfderiv_comp_apply x hmd hsub,
@@ -590,7 +606,7 @@ theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm
     exact hvw.symm
   · intro h x v w
     rw [hpoint, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val]
-    exact (h x.1 x.2 _ _).symm
+    exact (h x.val x.property _ _).symm
 
 end SmoothTwoForm
 

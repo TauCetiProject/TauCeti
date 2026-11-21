@@ -9,11 +9,11 @@ public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import Mathlib.Analysis.Complex.Tietze
-import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
-import TauCeti.Topology.Maps.Inducing
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders in a manifold
@@ -35,6 +35,17 @@ namespace `TauCeti.SmoothTwoForm`). On a compact manifold `K` can be the whole m
 This is the first step of Floer breaking at an end of a Floer cylinder or a pair of pants in a
 closed manifold; `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` proves it for a symplectic
 vector space.
+
+Under two further assumptions the loops converge for all `s → ∞`, not only along a sequence: if the
+derivative of `e ∘ u` is bounded on the half-cylinder and the `1`-periodic orbits in `K` are
+isolated, then the loops `t ↦ u(s, t)` converge to a single orbit
+(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`). On a
+compact boundaryless manifold, for a `C²` Hamiltonian all of whose `1`-periodic orbits are
+nondegenerate, the orbits are isolated
+(`TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt` and
+`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), so the loops of a finite-energy
+half-cylinder whose derivative through `e` is bounded converge, `u(s, ·) → x`
+(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer`).
 
 Measuring the convergence needs a metric near `K`. It is measured through a `C¹` map `e : M → F`
 into a finite-dimensional normed space, injective on `K` and with injective differential at the
@@ -61,7 +72,15 @@ The proof transports the problem to `F`, where the vector-space theory applies.
   The limit lies in the closed set `e(K)`, so `y = e ∘ x` for a continuous periodic loop `x` in
   `K`, and there `y' = d e (X_{H_t}(x))`.
 * Since `d e` is injective, `x` is differentiable with velocity `X_{H_t}(x)`
-  (`ContinuousAt.hasMFDerivAt_of_hasDerivAt_comp`), so `x` is a `1`-periodic orbit.
+  (`ContinuousAt.hasMFDerivAt_of_hasDerivAt_comp`), so `x` is a `1`-periodic orbit. In general,
+  every periodic solution of `y' = Y(t, y)` in `e(K)` is read through `e` from a periodic orbit
+  in `K` (`TauCeti.exists_mem_periodicSolutions_comp_eq`).
+
+For convergence along the whole end, the loops of `e ∘ u` converge to a single periodic solution
+of `y' = Y(t, y)` when the derivative of `e ∘ u` is bounded and these solutions are isolated in
+`e(K)`
+(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). Since `e` restricts to a closed
+embedding of `K`, isolation of the orbits in `K` is isolation of their images in `e(K)`.
 
 When `e ∘ u` has bounded derivative on `s > a` and every subsequential uniform-limit `1`-periodic
 orbit of `X_{H_t}` in `K` is isolated at time `0` among such orbits, `t ↦ u(s, t)` converges as
@@ -157,37 +176,14 @@ theorem IsNondegenerate.lintegral_norm_sq_sliceDefect_comp_ne_top (hω : ω.IsNo
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
-omit [FiniteDimensional ℝ E] in
-/-- A `1`-periodic solution `x'` in `e(K)` of a vector field `Y` agreeing with `d e (X_{H_t})` on
-`K` is `e ∘ x` for a `1`-periodic orbit `x` of `X_{H_t}` in `K`. -/
-private theorem exists_mem_periodicSolutions_comp_eq {K : Set M}
-    (hemb : IsEmbedding fun p : K ↦ e p) (he_inj : InjOn e K)
-    (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {Y : ℝ → F → F}
-    (hYe : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p))
-    {x' : ℝ → F} (hx'per : Periodic x' 1) (hx' : ∀ t, HasDerivAt x' (Y t (x' t)) t)
-    (hx'K : ∀ t, x' t ∈ e '' K) :
-    ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
-      (∀ t, x t ∈ K) ∧ e ∘ x = x' := by
-  choose x hxK hx using hx'K
-  have hex : e ∘ x = x' := funext hx
-  have hxc : Continuous x := by
-    have h : Continuous fun t ↦ (⟨x t, hxK t⟩ : K) :=
-      hemb.continuous_iff.2 <| hex ▸ continuous_iff_continuousAt.2 fun t ↦ (hx' t).continuousAt
-    exact continuous_subtype_val.comp h
-  refine ⟨x, mem_periodicSolutions.2 ⟨fun t ↦ ?_, fun t ↦ he_inj (hxK _) (hxK _)
-    (by rw [hx, hx, hx'per t])⟩, hxK, hex⟩
-  refine hxc.continuousAt.hasMFDerivAt_of_hasDerivAt_comp (hde _ (hxK t)) ?_
-  rw [hex, ← hYe t _ (hxK t), hx]
-  exact hx' t
-
-namespace IsNondegenerate
-
-/-- Extend the pushforward `d e (X_{H_t})` from the compact image `e(K)` to a continuous
-`1`-periodic vector field `Y` on `F` with square-integrable slice defect along `e ∘ u`. -/
-private theorem exists_continuous_periodic_sliceDefect_ne_top (hω : ω.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hHper : Periodic H 1)
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K) (he_inj : InjOn e K)
-    {u : ℝ × ℝ → M} {a : ℝ} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
+/-- The pushforward `d e (X_{H_t})` of the Hamiltonian vector field on a compact set `K` on which
+`e` is injective extends to a continuous field `Y` on `F`, `1`-periodic in time, and the defect
+`∂_t (e ∘ u) - Y(e ∘ u)` of a finite-energy Floer half-cylinder in `K` is square-integrable. -/
+private theorem IsNondegenerate.exists_lintegral_norm_sq_sliceDefect_comp_ne_top
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
+    (he_inj : InjOn e K) {u : ℝ × ℝ → M} {a : ℝ}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
     (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
@@ -197,32 +193,28 @@ private theorem exists_continuous_periodic_sliceDefect_ne_top (hω : ω.IsNondeg
         ω.hamiltonianVectorField (H z.2) (u z)) = 0)
     (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
-    IsClosedEmbedding (fun p : K ↦ e p) ∧
-      (∀ z ∈ Ioi a ×ˢ (univ : Set ℝ), MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) ∧
-      ∃ Y : ℝ → F → F, Continuous (uncurry Y) ∧ (∀ y, Periodic (fun t ↦ Y t y) 1) ∧
-        (∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p)) ∧
-        ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect Y (e ∘ u) z‖ ^ 2) ≠ ⊤ := by
+    ∃ Y : ℝ → F → F, Continuous (uncurry Y) ∧ (∀ v, Periodic (fun t ↦ Y t v) 1) ∧
+      (∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p)) ∧
+      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect Y (e ∘ u) z‖ ^ 2) ≠ ⊤ := by
   have := isCompact_iff_compactSpace.1 hK
-  have hemb : IsClosedEmbedding fun p : K ↦ e p :=
-    (he.continuous.comp continuous_subtype_val).isClosedEmbedding fun p q h ↦
-      Subtype.ext (he_inj p.2 q.2 h)
+  have hemb := hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
+  -- The pushforward `(t, p) ↦ d e_p (X_{H_t}(p))` of the Hamiltonian vector field is continuous.
   have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
     (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
       (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
         (by simpa using hH)).continuous
+  -- Extend it from `e(K)` to a continuous periodic field on `F`.
   obtain ⟨Y, hYc, hYper, hYe⟩ := hemb.exists_continuous_periodic_extension
     (f := fun t (p : K) ↦ mvfderiv I e p (ω.hamiltonianVectorField (H t) p))
-    (T := 1) (hXe.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
+    (T := 1) (hXe.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))
     fun p t ↦ congrArg (fun h ↦ mvfderiv I e p (ω.hamiltonianVectorField h p)) (hHper t)
   have hYe' : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) :=
     fun t p hp ↦ hYe t ⟨p, hp⟩
   have hU : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
-  have hmd : ∀ z ∈ Ioi a ×ˢ (univ : Set ℝ), MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z := fun z hz ↦
-    (hu.contMDiffAt (hU.mem_nhds hz)).mdifferentiableAt one_ne_zero
-  exact ⟨hemb, hmd, Y, hYc, hYper, hYe',
-    hω.lintegral_norm_sq_sliceDefect_comp_ne_top (measurableSet_Ioi.prod measurableSet_Icc)
-      (fun _ _ ↦ he.mdifferentiableAt one_ne_zero) (fun z hz ↦ hmd z ⟨hz.1, mem_univ _⟩)
-      (fun z hz ↦ hYe' _ _ (huK z.1 hz.1 z.2)) J hc hJc hfloer hE⟩
+  refine ⟨Y, hYc, hYper, hYe', hω.lintegral_norm_sq_sliceDefect_comp_ne_top
+    (measurableSet_Ioi.prod measurableSet_Icc) (fun _ _ ↦ he.mdifferentiableAt one_ne_zero)
+    (fun z hz ↦ (hu.contMDiffAt (hU.mem_nhds ⟨hz.1, mem_univ _⟩)).mdifferentiableAt one_ne_zero)
+    (fun z hz ↦ hYe' _ _ (huK z.1 hz.1 z.2)) J hc hJc hfloer hE⟩
 
 /-- **Periodic orbits at the end of a finite-energy Floer half-cylinder in a manifold.** Let `ω`
 be a nondegenerate two-form on a manifold `M`, `H` a `C¹` Hamiltonian, `1`-periodic in time, and
@@ -235,7 +227,7 @@ over `(a, ∞) × [0, 1]` is finite, then there are `s_n → ∞`, with `s_n > a
 `t ↦ u(s_n, t)` converge to a `1`-periodic orbit `x` of the Hamiltonian vector field in `K`,
 pointwise in `M` and uniformly after applying `e`, and the `L²` norms of their defects
 `d e (∂_t u - X_{H_t}(u))` tend to `0`. -/
-theorem exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact
+theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
@@ -257,24 +249,27 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact
         Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖mvfderiv I e (u (φ n, t))
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ n, t) stdComplexLineImag -
             ω.hamiltonianVectorField (H t) (u (φ n, t)))‖ ^ 2) atTop (𝓝 0) := by
-  obtain ⟨hemb, hmd, Y, hYc, hYper, hYe', hfin⟩ :=
-    hω.exists_continuous_periodic_sliceDefect_ne_top hH hHper he hK he_inj hu huK J hc hJc hfloer hE
-  -- The loops of `e ∘ u` accumulate at a periodic solution of `y' = Y(t, y)` in `e(K)`.
-  obtain ⟨x', hx'per, hx', φ, hφa, hφ, hconv, hL2⟩ :=
+  have hKe : IsCompact (e '' K) := hK.image he.continuous
+  obtain ⟨Y, hYc, hYper, hYe, hfin⟩ :=
+    hω.exists_lintegral_norm_sq_sliceDefect_comp_ne_top hH hHper he hK he_inj hu huK J hc hJc
+      hfloer hE
+  -- The loops of `e ∘ u` accumulate at a periodic solution of `y' = Y(t, y)`.
+  obtain ⟨y, hyper, hy, φ, hφa, hφ, hconv, hL2⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top
       (contMDiffOn_iff_contDiffOn.1 (he.comp_contMDiffOn hu))
-      (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) (hK.image he.continuous)
+      (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hKe
       (fun s hs t ↦ mem_image_of_mem e (huK s hs t)) hYc hYper hfin
-  obtain ⟨x, hx, hxK, hex⟩ := exists_mem_periodicSolutions_comp_eq hemb.isEmbedding he_inj hde
-    hYe' hx'per hx' fun t ↦ (hK.image he.continuous).isClosed.mem_of_tendsto (hconv.tendsto_at t)
+  -- The limit lies in the closed set `e(K)`, so it is read through `e` from an orbit in `K`.
+  obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe
+    hyper hy fun t ↦ hKe.isClosed.mem_of_tendsto (hconv.tendsto_at t)
       (Eventually.of_forall fun n ↦ mem_image_of_mem e (huK _ (hφa n) t))
-  refine ⟨x, hx, hxK, φ, hφa, hφ, hex ▸ hconv, fun t ↦
-    hemb.isEmbedding.isInducing.tendsto_of_tendsto_comp_of_eventually_mem (hxK t)
-      (Eventually.of_forall fun n ↦ huK _ (hφa n) t)
-      (by simpa only [comp_apply] using (hex ▸ hconv).tendsto_at t),
-    hL2.congr fun n ↦ intervalIntegral.integral_congr fun t _ ↦ ?_⟩
+  -- Inside `K`, convergence is measured by `e`.
+  refine ⟨x, hx, hxK, φ, hφa, hφ, hconv, fun t ↦ hK.tendsto_nhds_of_tendsto_comp
+    he.continuous.continuousOn he_inj (Eventually.of_forall fun n ↦ huK _ (hφa n) t) (hxK t)
+      (hconv.tendsto_at t), hL2.congr fun n ↦ intervalIntegral.integral_congr fun t _ ↦ ?_⟩
   rw [sliceDefect_comp_eq_mvfderiv_sub (he.mdifferentiableAt one_ne_zero)
-    (hmd (φ n, t) ⟨hφa n, mem_univ t⟩) (hYe' t _ (huK _ (hφa n) t))]
+    ((hu.contMDiffAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds (x := (φ n, t)) ⟨hφa n, mem_univ t⟩))
+      |>.mdifferentiableAt one_ne_zero) (hYe t _ (huK _ (hφa n) t))]
 
 /-- **Periodic orbits at the end of a finite-energy Floer half-cylinder in a closed manifold.** Let
 `ω` be a nondegenerate two-form on a compact manifold `M`, `H` a `C¹` Hamiltonian, `1`-periodic in
@@ -286,7 +281,7 @@ space, and suppose that the almost complex structures are uniformly tame with re
 then there are `s_n → ∞`, with `s_n > a`, such that the loops `t ↦ u(s_n, t)` converge to a
 `1`-periodic orbit `x` of the Hamiltonian vector field, pointwise in `M` and uniformly after
 applying `e`, and the `L²` norms of their defects `d e (∂_t u - X_{H_t}(u))` tend to `0`. -/
-theorem exists_mem_periodicSolutions_tendstoUniformly_of_floer [CompactSpace M]
+theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_of_floer [CompactSpace M]
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
     (hde : ∀ p, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
@@ -311,6 +306,8 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_of_floer [CompactSpace M]
     hH hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper
     (fun _ _ _ ↦ mem_univ _) J hc hJc hfloer hE
   exact ⟨x, hx, h⟩
+
+namespace IsNondegenerate
 
 local macro "Orbits(" ω:term ", " H:term ")" : term =>
   `(periodicSolutions (fun t ↦ ($ω).hamiltonianVectorField ($H t)) 1)
@@ -378,10 +375,8 @@ private theorem mem_contractible_of_nullhomotopic {ι : Type*} {l : Filter ι} [
   let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   have : Fact (0 < (1 : ℝ)) := ⟨zero_lt_one⟩
-  have := isCompact_iff_compactSpace.1 hK
   have hind : IsInducing fun p : K ↦ e p :=
-    ((he.continuous.comp continuous_subtype_val).isClosedEmbedding fun p q h ↦
-      Subtype.ext (he_inj p.2 q.2 h)).isInducing
+    (hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
   obtain ⟨s₀, hs₀, hg₀⟩ := hnull
   have hall := forall_exists_nullhomotopic_of_isPreconnected isPreconnected_Ioi
     (u := fun s t ↦ u (s, t)) hu.continuousOn hper hs₀ hg₀
@@ -399,33 +394,31 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompac
     {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
     (hiso : IsoCyl(Orbits(ω, H), K, a, e, u)) :
     ∃ x ∈ Orbits(ω, H), (∀ t, x t ∈ K) ∧ CylLim(e, u, x) := by
-  obtain ⟨hemb, -, Y, hYc, hYper, hYe', hfin⟩ :=
-    hω.exists_continuous_periodic_sliceDefect_ne_top hH hHper he hK he_inj hu huK J hc hJc hfloer hE
+  have hKe : IsCompact (e '' K) := hK.image he.continuous
+  obtain ⟨Y, hYc, hYper, hYe, hfin⟩ :=
+    hω.exists_lintegral_norm_sq_sliceDefect_comp_ne_top hH hHper he hK he_inj hu huK J hc hJc
+      hfloer hE
   -- Periodic solutions of `Y` in `e(K)` lift to `K`, where `hiso` isolates them via `e`.
   obtain ⟨x', hx'per, hx', hconv⟩ := exists_periodic_hasDerivAt_tendstoUniformly_atTop
     (contMDiffOn_iff_contDiffOn.1 (he.comp_contMDiffOn hu))
-    (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) (hK.image he.continuous)
+    (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hKe
     (fun s hs t ↦ mem_image_of_mem e (huK s hs t)) hYc hYper hfin hC
     fun x' hx'per hx' hx'K ⟨φ, hφa, hφtop, hφx'⟩ ↦ by
-      obtain ⟨x, hx, hxK, hex⟩ := exists_mem_periodicSolutions_comp_eq hemb.isEmbedding he_inj hde
-        hYe' hx'per hx' hx'K
-      have hnhds := (continuous_subtype_val.tendsto (⟨x 0, hxK 0⟩ : K)).eventually
-        (hiso x hx hxK ⟨φ, hφa, hφtop, hex.symm ▸ hφx'⟩)
-      rw [hemb.isEmbedding.nhds_eq_comap, eventually_comap, Metric.eventually_nhds_iff] at hnhds
-      obtain ⟨ε, hε, hball⟩ := hnhds
+      obtain ⟨x, hx, hxK, rfl⟩ :=
+        exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hx'per hx' hx'K
+      obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he.continuous.continuousOn
+        he_inj (hxK 0) (hiso x hx hxK ⟨φ, hφa, hφtop, hφx'⟩)
+      obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
       refine ⟨ε, hε, fun y' hy'per hy' hy'K ⟨ψ, hψa, hψtop, hψy'⟩ hdist ↦ ?_⟩
-      obtain ⟨y, hy, hyK, hey⟩ := exists_mem_periodicSolutions_comp_eq hemb.isEmbedding he_inj hde
-        hYe' hy'per hy' hy'K
-      have hyx : y = x := hball (by simpa only [← hex, ← hey, comp_apply] using hdist 0)
-        ⟨y 0, hyK 0⟩ rfl y hy hyK ⟨ψ, hψa, hψtop, hey.symm ▸ hψy'⟩ rfl
-      rw [← hey, ← hex, hyx]
-  obtain ⟨x, hx, hxK, hex⟩ := exists_mem_periodicSolutions_comp_eq hemb.isEmbedding he_inj hde
-    hYe' hx'per hx' fun t ↦ (hK.image he.continuous).isClosed.mem_of_tendsto (hconv.tendsto_at t)
+      obtain ⟨y, hy, hyK, rfl⟩ :=
+        exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hy'per hy' hy'K
+      have h0 : y 0 ∈ K ∩ e ⁻¹' V := ⟨hyK 0, hεV (Metric.mem_ball.2 (hdist 0))⟩
+      rw [hVx h0 y hy hyK ⟨ψ, hψa, hψtop, hψy'⟩ rfl]
+  obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hx'per hx'
+    fun t ↦ hKe.isClosed.mem_of_tendsto (hconv.tendsto_at t)
       ((eventually_gt_atTop a).mono fun s hs ↦ mem_image_of_mem e (huK s hs t))
-  exact ⟨x, hx, hxK, hex ▸ hconv, fun t ↦
-    hemb.isEmbedding.isInducing.tendsto_of_tendsto_comp_of_eventually_mem (hxK t)
-      ((eventually_gt_atTop a).mono fun s hs ↦ huK s hs t)
-      (by simpa only [comp_apply] using (hex ▸ hconv).tendsto_at t)⟩
+  exact ⟨x, hx, hxK, hconv, fun t ↦ hK.tendsto_nhds_of_tendsto_comp he.continuous.continuousOn
+    he_inj ((eventually_gt_atTop a).mono fun s hs ↦ huK s hs t) (hxK t) (hconv.tendsto_at t)⟩
 
 /-- **Contractible periodic orbits at the end of a finite-energy Floer half-cylinder.** Under the
 hypotheses of `exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact`, if one loop
@@ -476,20 +469,9 @@ private theorem iso_of_nondegenerate {P : Set (ℝ → M)} (hP : P ⊆ Orbits(ω
   have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
     (hH.of_le (by norm_num))
   exact (eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX
-    (mem_periodicSolutions.1 (hP hx)).1 (s := 0) (T := 1)
+    (hP hx) (s := 0) (T := 1)
     (by simpa only [zero_add] using hnd.eventually_not_isFixedPt)).mono
     fun _ hp y hy hyp ↦ hp y (hP hy) hyp
-
-/-- **Convergence of a finite-energy Floer half-cylinder to a nondegenerate orbit.** Corollary for a
-`C²` Hamiltonian on a Hausdorff boundaryless manifold whose `1`-periodic orbits in `K` are
-nondegenerate fixed points of `timeDependentFlowOf X_{H_t} 0 1`. -/
-theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
-    (hnd : ∀ x ∈ Orbits(ω, H), (∀ t, x t ∈ K) → NondegenAt(I, ω, H, x)) :
-    ∃ x ∈ Orbits(ω, H), (∀ t, x t ∈ K) ∧ CylLim(e, u, x) :=
-  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact_of_eventually
-    hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE (hH.of_le one_le_two) hC
-    fun x hx hxK _ ↦ (iso_of_nondegenerate hω hH Subset.rfl hx (hnd x hx hxK)).mono
-      fun _ hp y hy _ _ hyp ↦ hp y hy hyp
 
 /-- **Convergence of a contractible Floer half-cylinder to a nondegenerate contractible orbit.**
 Corollary for a `C²` Hamiltonian assuming nondegeneracy only on `contractiblePeriodicSolutions`. -/
@@ -538,17 +520,6 @@ variable [T2Space M] [BoundarylessManifold I M]
 
 include hH hC
 
-/-- Specialization of `exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`
-to a compact Hausdorff boundaryless manifold `M`. -/
-theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer
-    (hnd : ∀ x ∈ Orbits(ω, H), NondegenAt(I, ω, H, x)) :
-    ∃ x ∈ Orbits(ω, H), CylLim(e, u, x) := by
-  obtain ⟨x, hx, -, h⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hHper he
-      isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper (fun _ _ _ ↦ mem_univ _) J hc hJc
-      hfloer hE hH hC fun x hx _ ↦ hnd x hx
-  exact ⟨x, hx, h⟩
-
 /-- Specialization of
 `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact` to a compact
 Hausdorff boundaryless manifold `M`. -/
@@ -566,6 +537,120 @@ end Nondegenerate
 end Closed
 
 end IsNondegenerate
+
+/-- **Convergence of a finite-energy Floer half-cylinder in a manifold to an isolated orbit.**
+Under the hypotheses of
+`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact`, suppose
+moreover that the derivative of `e ∘ u` is bounded on the half-cylinder, and that the
+`1`-periodic orbits of the Hamiltonian vector field in `K` are isolated: for each such orbit `x`,
+no other orbit in `K` starts close to `x 0`. Then the loops `t ↦ u(s, t)` converge, as `s → ∞`, to
+a single `1`-periodic orbit `x` in `K`, pointwise in `M` and uniformly after applying `e`. -/
+theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
+    (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
+    (hiso : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) →
+      ∀ᶠ p in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
+        (∀ t, y t ∈ K) → y 0 = p → y = x) :
+    ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) ∧
+      TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact_of_eventually hHper
+    he hK he_inj hde hu hper huK J hc hJc hfloer hE hH hC
+    fun x hx hxK _ ↦ (hiso x hx hxK).mono fun _ hp y hy hyK _ hyp ↦ hp y hy hyK hyp
+
+/-- **Convergence of a finite-energy Floer half-cylinder to an isolated orbit, from a bound on the
+strip.** The conclusion of
+`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact` holds
+when the derivative of `e ∘ u` is only bounded on the strip `(a, ∞) × [0, 1]`: by `1`-periodicity
+of the loops the bound extends to the whole half-cylinder (`TauCeti.norm_fderiv_le_of_periodic`). -/
+theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
+    (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
+    (hiso : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) →
+      ∀ᶠ y in 𝓝 (x 0), ∀ x' ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
+        (∀ t, x' t ∈ K) → x' 0 = y → x' = x) :
+    ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) ∧
+      TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH hHper he hK
+    he_inj hde hu hper huK J hc hJc hfloer hE
+    (fun z hz ↦ norm_fderiv_le_of_periodic
+      (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hC hz) hiso
+
+/-- **Convergence of a finite-energy Floer half-cylinder in a closed manifold to a nondegenerate
+orbit.** Let `ω` be a nondegenerate two-form on a compact boundaryless manifold `M`, `H` a `C²`
+Hamiltonian, `1`-periodic in time, and let `u` be `C¹` on the half-cylinder `s > a`, with
+`1`-periodic loops `t ↦ u(s, t)`, solving the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0`
+on `(a, ∞) × [0, 1]`. Let `e : M → F` be a `C¹` injective map with injective differential into a
+finite-dimensional normed space, and suppose that the almost complex structures are uniformly tame
+with respect to `e`: `c ‖d e v‖² ≤ ω(v, J z v)` with `c > 0`. Suppose that the energy of `u` over
+`(a, ∞) × [0, 1]` is finite, that the derivative of `e ∘ u` is bounded on the half-cylinder, and
+that every `1`-periodic orbit `x` of the Hamiltonian vector field is nondegenerate: `x 0` is a
+nondegenerate fixed point of the time-one map. Then the loops `t ↦ u(s, t)` converge, as `s → ∞`,
+to a single `1`-periodic orbit `x`, pointwise in `M` and uniformly after applying `e`. -/
+theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer
+    [CompactSpace M] [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry H)) (hHper : Periodic H 1)
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
+    (hde : ∀ p, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
+    (hnd : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
+      IsNondegenerateFixedPt I (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H t)) 0 1)
+        (x 0)) :
+    ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
+      TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
+  have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
+    (hH.of_le (by norm_num))
+  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map, so it is
+  -- isolated among the orbits.
+  have hiso (x) (hx : x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1) :
+      ∀ᶠ p in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
+        y 0 = p → y = x :=
+    eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hx
+      (by simpa only [zero_add] using (hnd x hx).eventually_not_isFixedPt)
+  obtain ⟨x, hx, -, h⟩ :=
+    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
+      (hH.of_le one_le_two) hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper
+      (fun _ _ _ ↦ mem_univ _) J hc hJc hfloer hE hC fun x hx _ ↦
+        (hiso x hx).mono fun _ hp y hy _ ↦ hp y hy
+  exact ⟨x, hx, h⟩
 
 end SmoothTwoForm
 
