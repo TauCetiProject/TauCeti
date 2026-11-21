@@ -37,6 +37,9 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
 when quantum binomial coefficients are evaluated at such a `q`.
 
+The product of all `n`-th roots of unity is `(-1) ^ (n + 1)`, read off from the constant term of
+`X ^ n - 1`.
+
 For a primitive `n`-th root of unity `ζ` with `0 < n`, factoring `1 - X ^ n` via the powers of `ζ`
 gives the reciprocal cyclotomic factorization `∏ i < n, (1 - ζ ^ i X) = 1 - X ^ n` and its
 evaluated scalar form.
@@ -67,6 +70,9 @@ evaluated scalar form.
   `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
+* `IsPrimitiveRoot.prod_range_pow_eq_neg_one_pow`: for a primitive `n`-th root of unity `ζ` in a
+  domain with `0 < n`, the product of the `n`-th roots of unity is
+  `∏ i ∈ range n, ζ ^ i = (-1) ^ (n + 1)`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul_X`: for a primitive `n`-th root of unity `ζ` in a domain
   with `0 < n`, `∏ i ∈ range n, (1 - C (ζ ^ i) * X) = 1 - X ^ n` in `R[X]`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul`: the evaluated form
@@ -224,6 +230,20 @@ theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [Co
   have h' := congrArg (Group.Abelianization.lift (hμ'.autToPow K)) h
   rw [Group.Abelianization.lift_apply_of, Group.Abelianization.lift_apply_of] at h'
   rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']
+
+open Polynomial in
+/-- **The product of the `n`-th roots of unity.** If `ζ` is a primitive `n`-th root of unity in an
+integral domain and `0 < n`, then `∏ i < n, ζ ^ i = (-1) ^ (n + 1)`: up to the sign `(-1) ^ n`, it
+is the constant term of `X ^ n - 1 = ∏ i < n, (X - ζ ^ i)`. -/
+theorem _root_.IsPrimitiveRoot.prod_range_pow_eq_neg_one_pow {n : ℕ} {ζ : R}
+    (hζ : IsPrimitiveRoot ζ n) (hn : 0 < n) : ∏ i ∈ Finset.range n, ζ ^ i = (-1) ^ (n + 1) := by
+  have h0 := congrArg (eval 0) (X_pow_sub_C_eq_prod hζ hn (one_pow n))
+  simp only [eval_sub, eval_pow, eval_X, eval_C, zero_pow hn.ne', zero_sub, eval_prod, mul_one,
+    Finset.prod_neg, Finset.card_range] at h0
+  calc ∏ i ∈ Finset.range n, ζ ^ i
+      = ((-1) ^ n * (-1) ^ n) * ∏ i ∈ Finset.range n, ζ ^ i := by
+        rw [← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+    _ = (-1) ^ (n + 1) := by rw [mul_assoc, ← h0, pow_succ]
 
 open Polynomial in
 /-- **Reciprocal cyclotomic factorization of `1 - X ^ n`.** If `ζ` is a primitive `n`-th root of
