@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import Mathlib.Geometry.Manifold.BumpFunction
 
 /-!
 # Finite smooth spanning families
@@ -15,6 +17,10 @@ A finite-rank smooth real vector bundle over a compact Hausdorff finite-dimensio
 has finitely many global smooth sections spanning every fiber. The base may have corners.
 The construction cuts off local frames and takes a finite subcover. It does not require a
 metric, orientability, connectedness, a nonempty base, or positive rank.
+
+Without compactness, the cut-off local frames still give, near each point, finitely many
+compactly supported smooth sections spanning every nearby fiber
+(`TauCeti.exists_compactlySupported_spanning_nhds`).
 
 This is the finite-dimensional perturbation space for generic smooth sections.
 
@@ -33,33 +39,50 @@ namespace TauCeti
 
 variable {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [FiniteDimensional ℝ X] [TopologicalSpace H] {I : ModelWithCorners ℝ X H}
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+
+/-- Near each point of a smooth real vector bundle of finite rank, finitely many compactly
+supported smooth sections span every fiber. -/
+theorem exists_compactlySupported_spanning_nhds (x : M) :
+    ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F ∞ V,
+      (∀ i, s i ∈ ContMDiffSection.compactlySupported I F ∞ V) ∧
+        ∀ᶠ y in 𝓝 x, Submodule.span ℝ (range fun i ↦ s i y) = ⊤ := by
+  let b := Module.finBasis ℝ F
+  let e := trivializationAt F V x
+  have hx := mem_baseSet_trivializationAt F V x
+  obtain ⟨f, hf, heq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  -- Cut the frame off a second time, now by a compactly supported bump equal to one near `x`.
+  let ρ : SmoothBumpFunction I x := Classical.arbitrary _
+  let ψ : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
+  refine ⟨fun i ↦ ψ • ⟨f i, hf i⟩, fun i ↦
+    ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport ψ
+      ρ.hasCompactSupport _, ?_⟩
+  filter_upwards [Filter.eventually_all.mpr heq, ρ.eventuallyEq_one,
+    e.open_baseSet.mem_nhds hx] with y hy hρ hye
+  have hfun : (fun i ↦ (ψ • ⟨f i, hf i⟩ : ContMDiffSection I F ∞ V) y) =
+      e.basisAt b hye := by
+    funext i
+    rw [ContMDiffSection.smul_apply]
+    simp [ψ, show (ρ : M → ℝ) y = 1 from hρ, hy i, e.localFrame_apply_of_mem_baseSet b hye]
+  exact hfun ▸ (e.basisAt b hye).span_eq
+
+variable [CompactSpace M]
 
 /-- A compact smooth real vector bundle admits a finite family of global smooth sections
 spanning each fiber. This includes rank zero and the empty base. -/
 theorem exists_fin_spanning_contMDiffSection :
     ∃ (n : ℕ) (s : Fin n → ContMDiffSection I F ∞ V),
       ∀ x, Submodule.span ℝ (range fun i ↦ s i x) = ⊤ := by
-  classical
-  let b := Module.finBasis ℝ F
-  let e (x : M) := trivializationAt F V x
   have hlocal (x : M) : ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F ∞ V,
       ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
         ∀ y ∈ U, Submodule.span ℝ (range fun i ↦ s i y) = ⊤ := by
-    obtain ⟨f, hf, heq⟩ := (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) b
-      (mem_baseSet_trivializationAt F V x)
-    obtain ⟨U, hU, hUopen, hxU⟩ := eventually_nhds_iff.mp (Filter.eventually_all.mpr heq)
-    refine ⟨fun i ↦ ⟨f i, hf i⟩, U ∩ (e x).baseSet,
-      hUopen.inter (e x).open_baseSet, ⟨hxU, mem_baseSet_trivializationAt F V x⟩, ?_⟩
-    intro y hy
-    have hfun : (fun i ↦ f i y) = (e x).basisAt b hy.2 := by
-      funext i
-      rw [hU y hy.1 i, (e x).localFrame_apply_of_mem_baseSet b hy.2]
-    exact hfun ▸ ((e x).basisAt b hy.2).span_eq
+    obtain ⟨s, -, hs⟩ := exists_compactlySupported_spanning_nhds (I := I) (F := F) (V := V) x
+    obtain ⟨U, hU, hUopen, hxU⟩ := eventually_nhds_iff.mp hs
+    exact ⟨s, U, hUopen, hxU, hU⟩
   choose s U hU hxU hspan using hlocal
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hU fun x _ ↦
     mem_iUnion.mpr ⟨x, hxU x⟩
