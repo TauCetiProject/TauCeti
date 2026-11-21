@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Convolution
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
@@ -77,12 +78,6 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-/-- The cancellation `r^a r^b = r^(a + b)` behind each rescaling of a radius in this file, with
-the factors already in `ℝ≥0∞`. -/
-private theorem ofReal_rpow_mul_ofReal_rpow {r : ℝ} (hr : 0 < r) (a b : ℝ) :
-    ENNReal.ofReal (r ^ a) * ENNReal.ofReal (r ^ b) = ENNReal.ofReal (r ^ (a + b)) := by
-  rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hr]
-
 section Basic
 
 variable {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [NormedAddCommGroup F]
@@ -147,7 +142,7 @@ theorem setLIntegral_closedBall_le_morreyNormPow_of_mem (hx : x ∈ Ω) (hr : 0 
     ∫⁻ y in closedBall x r, ‖f y‖ₑ ^ p ∂μ.restrict Ω ≤
       ENNReal.ofReal (r ^ lam) * morreyNormPow μ Ω p lam f := by
   have h1 : ENNReal.ofReal (r ^ lam) * ENNReal.ofReal (r ^ (-lam)) = 1 := by
-    simp [ofReal_rpow_mul_ofReal_rpow hr]
+    simp [← ENNReal.ofReal_rpow_add hr]
   calc _ = ENNReal.ofReal (r ^ lam) * (ENNReal.ofReal (r ^ (-lam)) *
         ∫⁻ y in closedBall x r, ‖f y‖ₑ ^ p ∂μ.restrict Ω) := by rw [← mul_assoc, h1, one_mul]
     _ ≤ _ := by gcongr; exact le_morreyNormPow hx hr
@@ -261,7 +256,7 @@ theorem morreyNormPow_le_eLpNorm_rpow_mul (hp : 0 < p) (hpq : p ≤ q)
   have hone : ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) *
       ENNReal.ofReal (r ^ (finrank ℝ E : ℝ)) ^ (1 - p / q) = 1 := by
     rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) hs, ← Real.rpow_mul hr.le,
-      ofReal_rpow_mul_ofReal_rpow hr]
+      ← ENNReal.ofReal_rpow_add hr]
     simp
   calc ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) * ∫⁻ y, ‖f y‖ₑ ^ p ∂ν
       = ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) * eLpNorm' f p ν ^ p := by
@@ -320,14 +315,13 @@ theorem morreyNormPow_comp_add_smul (x₀ : E) {ε : ℝ} (hε : 0 < ε) :
   refine le_antisymm (morreyNormPow_comp_add_smul_le x₀ hε) ?_
   -- The inverse change of variables is again affine, `z ↦ -ε⁻¹ x₀ + ε⁻¹ z`.
   have hinv : ∀ z : E, x₀ + ε • (-(ε⁻¹ • x₀) + ε⁻¹ • z) = z := fun z ↦ by
-    rw [smul_add, smul_neg, smul_smul, smul_smul, mul_inv_cancel₀ hε.ne', one_smul, one_smul,
-      add_neg_cancel_left]
+    simp [smul_smul, hε.ne']
   have h := morreyNormPow_comp_add_smul_le (μ := μ) (Ω := (fun y ↦ x₀ + ε • y) ⁻¹' Ω) (p := p)
     (lam := lam) (f := fun y ↦ f (x₀ + ε • y)) (-(ε⁻¹ • x₀)) (inv_pos.2 hε)
   simp only [hinv, preimage_preimage, preimage_id'] at h
   have hone : ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) *
       ENNReal.ofReal (ε⁻¹ ^ (lam - finrank ℝ E)) = 1 := by
-    rw [← Real.rpow_neg_eq_inv_rpow, ofReal_rpow_mul_ofReal_rpow hε]
+    rw [← Real.rpow_neg_eq_inv_rpow, ← ENNReal.ofReal_rpow_add hε]
     simp
   calc _ ≤ ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) * (ENNReal.ofReal (ε⁻¹ ^ (lam - finrank ℝ E)) *
         morreyNormPow μ ((fun y ↦ x₀ + ε • y) ⁻¹' Ω) p lam (fun y ↦ f (x₀ + ε • y))) := by gcongr
@@ -392,12 +386,11 @@ theorem morreyNormPow_one_convolution_le [NormedSpace ℝ F] (V : Set E) {v : E 
       _ ≤ ∫⁻ t, ‖v t‖ₑ * (ENNReal.ofReal ((2 * r) ^ lam) * M) ∂μ :=
           lintegral_mono fun t ↦ by gcongr; exact setLIntegral_closedBall_indicator_sub_le x t hr
       _ = _ := by
-          rw [lintegral_mul_const'' _ hv.eNorm, eLpNorm_one_eq_lintegral_eNorm]
-          exact hv
+          rw [lintegral_mul_const'' _ hv.eNorm, eLpNorm_one_eq_lintegral_eNorm hv]
   have hfac : ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal ((2 * r) ^ lam) =
       ENNReal.ofReal (2 ^ lam) := by
     rw [Real.mul_rpow zero_le_two hr.le, ENNReal.ofReal_mul (by positivity), mul_left_comm,
-      ofReal_rpow_mul_ofReal_rpow hr]
+      ← ENNReal.ofReal_rpow_add hr]
     simp
   calc _ ≤ ENNReal.ofReal (r ^ (-lam)) *
         (eLpNorm v 1 μ * (ENNReal.ofReal ((2 * r) ^ lam) * M)) := by gcongr
