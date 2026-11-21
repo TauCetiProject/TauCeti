@@ -68,6 +68,8 @@ dimension hypothesis is needed.
   `TauCeti.Toric.none_mem_activeSet_cornerChop_iff`: its old and new facets.
 * `TauCeti.Toric.notMem_facetPolyhedron_cornerChop`: the chopped corner is removed.
 * `TauCeti.Toric.IsSmoothVertex.exists_coord`: coordinates relative to a smooth vertex.
+* `TauCeti.Toric.IsSmoothVertex.eventually_forall_mem_facetPolyhedron`: the small simplex at a
+  smooth vertex lies in the polyhedron.
 * `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
   polytope at a vertex are Delzant polytopes.
 
@@ -266,6 +268,34 @@ private theorem lt_apply_of_sum_le
   linarith [hε k hk]
 
 end Coordinates
+
+/-- **The small simplex at a smooth vertex.** Let `v` be a smooth vertex of the polyhedron
+`Δ = {x | c j ≤ ⟨x, u j⟩}` in an integral lattice, at which the facets indexed by `s` meet. Then for
+every sufficiently small `ε`, the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` in the coordinates
+`y j = ⟨x, u j⟩ - c j`, `j ∈ s`, relative to `v` lies in `Δ`: the constraints inactive at `v` stay
+inactive on it. -/
+theorem IsSmoothVertex.eventually_forall_mem_facetPolyhedron [Finite ι] (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝 0, ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) →
+      ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε → x ∈ facetPolyhedron i u c := by
+  classical
+  obtain ⟨w, -, hx⟩ := hv.exists_coord hi hs
+  -- The constraints inactive at the corner have positive slack there.
+  have hslack (k) (hk : k ∉ s) : 0 < v (i (u k)) - c k := by
+    refine sub_pos.2 ((mem_facetPolyhedron.1 hvP k).lt_of_ne fun h ↦ hk ?_)
+    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply, h]
+  have hε : ∀ᶠ ε in 𝓝 (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
+    refine eventually_all.2 fun k ↦ ?_
+    by_cases hk : k ∈ s
+    · exact Eventually.of_forall fun _ h ↦ absurd hk h
+    exact ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
+      (hslack k hk) |>.mono fun ε hε _ ↦ hε
+  filter_upwards [hε] with ε hε x hxs hxε
+  refine mem_facetPolyhedron.2 fun k ↦ ?_
+  by_cases hk : k ∈ s
+  · exact hxs k hk
+  · exact (lt_apply_of_sum_le hx hε hxs hxε hk).le
 
 /-! ### Vertices of the chopped polytope -/
 
