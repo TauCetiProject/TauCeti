@@ -40,6 +40,9 @@ unique factorisation from `𝒪_{E, x₀}` to `𝒪_{E × ℂ, (x₀, w₀)}`
 
 * `TauCeti.holomorphicStructureSheaf.isRueckert_evalVertical`: vertical polynomial evaluation at
   `(x₀, w₀)` satisfies the Rückert hypotheses for distinguished polynomials.
+* `TauCeti.holomorphicStructureSheaf.isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
+  `TauCeti.holomorphicStructureSheaf.prime_evalVertical_iff_of_isDistinguishedAt`: primality of
+  distinguished Weierstrass polynomials matches that of their vertical evaluations.
 
 ## References
 
@@ -128,5 +131,23 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
     obtain ⟨⟨q, r⟩, ⟨_, hdiv⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
     exact ⟨r, ⟨q, by linear_combination hdiv⟩⟩
   exists_mul_eq hb := exists_aut_mul_eq_evalVertical x₀ w₀ hb
+
+/-- A distinguished polynomial over `𝒪_{E, x₀}` generates a prime ideal after vertical evaluation
+at `(x₀, w₀)` if and only if it generates a prime ideal in `(𝒪_{E, x₀})[X]`. -/
+theorem isPrime_span_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime :=
+  (isRueckert_evalVertical x₀ w₀).isPrime_span_apply_iff hP
+
+/-- A distinguished polynomial over `𝒪_{E, x₀}` has prime vertical evaluation at `(x₀, w₀)` if and
+only if it is prime in `(𝒪_{E, x₀})[X]`. -/
+theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    Prime (evalVertical x₀ w₀ P) ↔ Prime P :=
+  (isRueckert_evalVertical x₀ w₀).prime_apply_iff hP
 
 end TauCeti.holomorphicStructureSheaf
