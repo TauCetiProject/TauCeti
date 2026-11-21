@@ -21,10 +21,11 @@ Let `P` present an `R`-algebra `A` as `R[X] ⧸ I`, and let `Q` present an `A`-a
 Jacobi–Zariski gives the exact sequence `B ⊗[A] I/I² → J/J² → K/K² → 0`
 (`Algebra.Generators.Cotangent.exact`). When `B` is a standard étale `A`-algebra the first map is
 injective (`Algebra.Generators.liftBaseChange_injective_of_isStandardEtale`).
-If moreover `K/K²` is projective, for instance for a submersive presentation `Q`, the sequence
+Since `B` is formally smooth over `A`, the conormal module `K/K²` is projective, so the sequence
 splits: `J/J² ≃ B ⊗[A] I/I² × K/K²`
-(`Algebra.Generators.cotangentCompEquivOfIsStandardEtale`). In particular the fibres of the
-conormal modules at a field-valued point of `B` satisfy
+(`Algebra.Generators.cotangentCompEquivOfIsStandardEtale`). In particular, when `Q` is a
+submersive presentation with finitely many relations and `I/I²` is a finite `A`-module, the fibres
+of the conormal modules at a field-valued point of `B` satisfy
 `dim F ⊗[B] J/J² = dim F ⊗[A] I/I² + #relations of Q`
 (`Algebra.Generators.finrank_tensor_cotangent_comp_of_isStandardEtale`). Thus the number of
 equations needed to cut out `B` near a point exceeds the number needed for `A` near its image by
@@ -157,25 +158,35 @@ theorem liftBaseChange_injective_of_isStandardEtale
     Algebra.IsStandardEtale.exists_flat_lift (S := P.Ring) (B := B) P.algebraMap_surjective
   exact liftBaseChange_injective_of_flat Q P φ hφ hφalg hker
 
-/-- For a standard étale `A`-algebra `B` presented by `Q` with projective conormal module `K/K²`,
-the conormal module `J/J²` of the composite presentation `R[X, Y] → B` splits as
-`B ⊗[A] I/I² × K/K²`. -/
-noncomputable def cotangentCompEquivOfIsStandardEtale [Algebra.IsStandardEtale A B]
-    [Module.Projective B Q.toExtension.Cotangent] :
+omit [IsScalarTower R A B] in
+/-- For a formally smooth `A`-algebra `B`, the conormal module `K/K²` of any presentation `Q` is
+projective: it is a retract of the free module `B ⊗[A[Y]] Ω[A[Y]⁄A]`. -/
+private theorem projective_cotangent_of_formallySmooth [Algebra.FormallySmooth A B] :
+    Module.Projective B Q.toExtension.Cotangent := by
+  have : Algebra.FormallySmooth A Q.toExtension.Ring := instFormallySmoothMvPolynomial ι'
+  obtain ⟨l, hl⟩ := (Extension.formallySmooth_iff_split_injection Q.toExtension).mp ‹_›
+  have : Module.Projective B Q.toExtension.CotangentSpace := .of_basis Q.cotangentSpaceBasis
+  exact .of_split _ l hl
+
+/-- For a standard étale `A`-algebra `B` presented by `Q`, the conormal module `J/J²` of the
+composite presentation `R[X, Y] → B` splits as `B ⊗[A] I/I² × K/K²`. -/
+noncomputable def cotangentCompEquivOfIsStandardEtale [Algebra.IsStandardEtale A B] :
     (Q.comp P).toExtension.Cotangent ≃ₗ[B]
       B ⊗[A] P.toExtension.Cotangent × Q.toExtension.Cotangent :=
+  haveI := projective_cotangent_of_formallySmooth Q
   ((Cotangent.exact Q P).splitSurjectiveEquiv
     (liftBaseChange_injective_of_isStandardEtale Q P)
     ⟨_, (Module.projective_lifting_property _ LinearMap.id
       (Cotangent.surjective_map_ofComp Q P)).choose_spec⟩).val
 
-variable [Algebra.IsStandardEtale A B] [Module.Projective B Q.toExtension.Cotangent]
+variable [Algebra.IsStandardEtale A B]
 
 /-- The splitting restricts to `B ⊗[A] I/I² → J/J²` on the first factor. -/
 @[simp]
 lemma cotangentCompEquivOfIsStandardEtale_symm_inl (a : B ⊗[A] P.toExtension.Cotangent) :
     (cotangentCompEquivOfIsStandardEtale Q P).symm (a, 0) =
       LinearMap.liftBaseChange B (Extension.Cotangent.map (Q.toComp P).toExtensionHom) a := by
+  have := projective_cotangent_of_formallySmooth Q
   rw [((Cotangent.exact Q P).splitSurjectiveEquiv
     (liftBaseChange_injective_of_isStandardEtale Q P)
     ⟨_, (Module.projective_lifting_property _ LinearMap.id
@@ -187,13 +198,13 @@ lemma cotangentCompEquivOfIsStandardEtale_symm_inl (a : B ⊗[A] P.toExtension.C
 lemma snd_cotangentCompEquivOfIsStandardEtale (a : (Q.comp P).toExtension.Cotangent) :
     (cotangentCompEquivOfIsStandardEtale Q P a).2 =
       Extension.Cotangent.map (Q.ofComp P).toExtensionHom a := by
+  have := projective_cotangent_of_formallySmooth Q
   rw [((Cotangent.exact Q P).splitSurjectiveEquiv
     (liftBaseChange_injective_of_isStandardEtale Q P)
     ⟨_, (Module.projective_lifting_property _ LinearMap.id
       (Cotangent.surjective_map_ofComp Q P)).choose_spec⟩).property.2]
   rfl
 
-omit [Module.Projective B Q.toExtension.Cotangent] in
 /-- Through a standard étale `A`-algebra `B` with a submersive presentation `Q`, the fibre at a
 field-valued point of `B` of the conormal module of the composite presentation `R[X, Y] → B` has
 dimension the dimension of the fibre of the conormal module of `P`, plus the number of relations
