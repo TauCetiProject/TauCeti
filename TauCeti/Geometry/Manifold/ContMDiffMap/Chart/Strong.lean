@@ -574,7 +574,7 @@ private theorem AtlasCkControl.exists_refinement (c : AtlasCkControl I M n)
             ((σ (p j)).extend I).target z‖ < δ j) → g ∈ c.ball f := by
   choose N p P hPc hPK hPs hcov using fun i ↦
     TauCeti.exists_finite_cover_extendCoordChange_source σ hσx (c.chart i)
-      ((c.compact i).isCompact.image continuous_subtype_val) (Subtype.coe_image_subset _ _)
+      ((c.compact i).isCompact.image continuous_subtypeVal) (Subtype.coe_image_subset _ _)
   choose C hCpos hC using fun i j ↦ exists_norm_iteratedFDerivWithin_comp_extend_symm_le
     (F := F) (c.chart_mem i) (hσ (p i j)) (hPc i j) (hPs i j) c.order c.order_le
   -- The pieces, moved into the charts `σ (p i j)`.

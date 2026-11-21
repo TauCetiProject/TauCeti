@@ -72,7 +72,7 @@ theorem IsDistinguished.le_of_mem_span_singleton (hc : 0 < c)
   have hcoe : ((f * k : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
       = (f : PowerSeries R) * (k : PowerSeries R) := by simp
   have hk0 : (k : PowerSeries R) ≠ 0 := fun h ↦ hg.ne_zero (by rw [hcoe, h, mul_zero])
-  obtain ⟨j, hj⟩ := exists_isDistinguished hc k.2 hk0
+  obtain ⟨j, hj⟩ := exists_isDistinguished hc k.property hk0
   have hmul : IsDistinguished c (s + j)
       ((f * k : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) := by
     rw [hcoe]; exact hf.mul hj hc (norm_mul _ _)
@@ -105,7 +105,7 @@ theorem IsDistinguished.span_singleton_eq_of_forall_le (hc : 0 < c)
   have hr0 : r = 0 := by
     by_contra hne
     have hne' : (r : PowerSeries K) ≠ 0 := by simpa using hne
-    obtain ⟨t, ht⟩ := exists_isDistinguished hc r.2 hne'
+    obtain ⟨t, ht⟩ := exists_isDistinguished hc r.property hne'
     exact ht.coeff_ne_zero (hr t (hmin r hrI t ht))
   rw [← hqr, hr0, add_zero]
   exact Ideal.mem_span_singleton.mpr ⟨q, mul_comm q f⟩
@@ -120,7 +120,7 @@ private theorem isPrincipalIdealRing_isRestricted_subring_of_pos (hc : 0 < c) :
   · exact ⟨⟨0, by simp⟩⟩
   obtain ⟨g₀, hg₀I, hg₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
   have hex : ∃ t, ∃ g ∈ I, IsDistinguished c t (g : PowerSeries K) := by
-    obtain ⟨t, ht⟩ := exists_isDistinguished hc g₀.2 (by simpa using hg₀)
+    obtain ⟨t, ht⟩ := exists_isDistinguished hc g₀.property (by simpa using hg₀)
     exact ⟨t, g₀, hg₀I, ht⟩
   obtain ⟨f, hfI, hf⟩ := Nat.find_spec hex
   exact ⟨⟨f, (IsDistinguished.span_singleton_eq_of_forall_le hc hfI hf
@@ -164,9 +164,9 @@ theorem exists_isMonicOfDegree_span_singleton_eq (hc : 0 < c)
   obtain ⟨f, hf⟩ := (IsPrincipalIdealRing.principal I).principal
   have hf0 : (f : PowerSeries K) ≠ 0 := fun h ↦
     hI (hf.trans (Ideal.span_singleton_eq_bot.mpr (by simpa using h)))
-  obtain ⟨n, hn⟩ := exists_isDistinguished hc f.2 hf0
+  obtain ⟨n, hn⟩ := exists_isDistinguished hc f.property hf0
   obtain ⟨e, ω, he, hω, heω⟩ :=
-    hn.exists_isUnit_isMonicOfDegree_mul_eq hn.coeff_ne_zero.isUnit hc f.2
+    hn.exists_isUnit_isMonicOfDegree_mul_eq hn.coeff_ne_zero.isUnit hc f.property
   have hωmem : ((ω : PowerSeries K)).IsRestricted c :=
     isRestricted_of_forall_coeff_eq_zero (n := ω.natDegree + 1) fun m hm ↦ by
       rw [Polynomial.coeff_coe]

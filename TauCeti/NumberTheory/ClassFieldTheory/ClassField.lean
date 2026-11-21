@@ -92,7 +92,7 @@ it. -/
 @[simp]
 theorem mem_classField {V : OpenNormalSubgroup (AbsoluteGaloisGroup F)} {x : SeparableClosure F} :
     x ∈ classField F V ↔ ∀ σ ∈ V, σ x = x :=
-  ⟨fun hx σ hσ ↦ hx ⟨σ, hσ⟩, fun hx σ ↦ hx σ σ.2⟩
+  ⟨fun hx σ hσ ↦ hx ⟨σ, hσ⟩, fun hx σ ↦ hx σ σ.property⟩
 
 /-- The fixing subgroup of the class field of `V` is `V`: an open subgroup is closed, so the
 infinite Galois correspondence recovers it from its fixed field. -/
@@ -285,7 +285,7 @@ private theorem mem_relativeTop_iff (hL : fixedField Lay.top.toSubgroup = L) (g 
     g ∈ Lay.relativeTop ↔ ∀ x : L, (g : AbsoluteGaloisGroup F) x = x := by
   rw [Subgroup.mem_subgroupOf, toSubgroup_eq_fixingSubgroup_of_fixedField_eq hL,
     IntermediateField.mem_fixingSubgroup_iff]
-  exact ⟨fun h x ↦ h x x.2, fun h x hx ↦ h ⟨x, hx⟩⟩
+  exact ⟨fun h x ↦ h x x.property, fun h x hx ↦ h ⟨x, hx⟩⟩
 
 /-- Read in `Gal(Fˢ/E)`, the top subgroup of the layer is the subgroup fixing `L`. -/
 private theorem fixingSubgroup_fieldRange (hE : fixedField Lay.ground.toSubgroup = E)

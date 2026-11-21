@@ -77,12 +77,12 @@ irreducible factors of the minimal polynomial modulo `p`, when Kummer–Dedekind
 theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
     {p : ℕ} [Fact p.Prime] (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) =
+        (fun Q => Q.val.inertiaDeg ℤ) =
       (NumberField.RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
   classical
   let e := NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp
   refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup (Finset.nodup _)
-    (fun Q _ => (e Q).1) (fun Q _ => (e Q).2) ?_ ?_ ?_
+    (fun Q _ => (e Q).val) (fun Q _ => (e Q).property) ?_ ?_ ?_
   · intro Q _ R _ h
     exact e.injective (Subtype.ext h)
   · intro q hq
@@ -97,7 +97,7 @@ theorem map_inertiaDeg_primesOver_eq_factorDegrees (θ : 𝓞 K) {p : ℕ} [Fact
     (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ)
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = (minpoly ℤ θ).factorDegrees p := by
+        (fun Q => Q.val.inertiaDeg ℤ) = (minpoly ℤ θ).factorDegrees p := by
   classical
   rw [map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod θ hp,
     factorDegrees_def, Multiset.toFinset_val]

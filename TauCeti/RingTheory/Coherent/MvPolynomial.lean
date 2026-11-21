@@ -61,10 +61,10 @@ theorem isCoherentRing_of_forall_fin {R : Type*} [CommRing R]
     (MvPolynomial.rename ((↑) : V → σ) : MvPolynomial V R →ₐ[R] MvPolynomial σ R).toRingHom
   have hflat : ι.Flat := MvPolynomial.flat_rename Subtype.val_injective
   choose q hq using fun g : s ↦
-    MvPolynomial.exists_rename_eq_of_vars_subset_range g.1 ((↑) : V → σ) Subtype.val_injective
+    MvPolynomial.exists_rename_eq_of_vars_subset_range g.val ((↑) : V → σ) Subtype.val_injective
       (by
         rw [Subtype.range_coe, Finset.coe_subset]
-        exact Finset.subset_biUnion_of_mem MvPolynomial.vars g.2)
+        exact Finset.subset_biUnion_of_mem MvPolynomial.vars g.property)
   let I₀ : Ideal (MvPolynomial V R) := Ideal.span (Set.range q)
   have hI₀_fg : I₀.FG := ⟨Finset.univ.image q, by simp [I₀]⟩
   have : Module.FinitePresentation (MvPolynomial V R) I₀ :=

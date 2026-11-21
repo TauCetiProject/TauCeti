@@ -44,7 +44,7 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
 
 variable (ϕ : ∀ x, V x →ₗ[𝕜] W x)
   (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
-    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W)))
+    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace G W)))
 
 /-- Postcomposition of sections with a smooth fibrewise linear map over the identity. -/
 def mapLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; G, W⟯ where
@@ -137,7 +137,7 @@ variable {J : Type*} [NormedAddCommGroup J] [NormedSpace 𝕜 J] {Z : M → Type
   [TopologicalSpace (TotalSpace J Z)] [FiberBundle J Z] [VectorBundle 𝕜 J Z]
   (ψ : ∀ x, W x →ₗ[𝕜] Z x)
   (hψ : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, J)) n
-    (fun p : TotalSpace G W ↦ (⟨p.proj, ψ p.proj p.2⟩ : TotalSpace J Z)))
+    (fun p : TotalSpace G W ↦ (⟨p.proj, ψ p.proj p.snd⟩ : TotalSpace J Z)))
 
 /-- Composition of bundle maps induces composition of the section maps. -/
 theorem mapLinearMap_comp :
@@ -152,9 +152,9 @@ section Equivalence
 
 variable (e : ∀ x, V x ≃ₗ[𝕜] W x)
   (he : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
-    (fun p : TotalSpace F V ↦ (⟨p.proj, e p.proj p.2⟩ : TotalSpace G W)))
+    (fun p : TotalSpace F V ↦ (⟨p.proj, e p.proj p.snd⟩ : TotalSpace G W)))
   (he' : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, F)) n
-    (fun p : TotalSpace G W ↦ (⟨p.proj, (e p.proj).symm p.2⟩ : TotalSpace F V)))
+    (fun p : TotalSpace G W ↦ (⟨p.proj, (e p.proj).symm p.snd⟩ : TotalSpace F V)))
 
 /-- Smooth fibrewise linear equivalences with smooth inverse transport smooth sections. -/
 def mapEquiv : Cₛ^n⟮I; F, V⟯ ≃ₗ[𝕜] Cₛ^n⟮I; G, W⟯ :=
@@ -195,9 +195,9 @@ variable {J : Type*} [NormedAddCommGroup J] [NormedSpace 𝕜 J] {Z : M → Type
   [TopologicalSpace (TotalSpace J Z)] [FiberBundle J Z] [VectorBundle 𝕜 J Z]
   (f : ∀ x, W x ≃ₗ[𝕜] Z x)
   (hf : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, J)) n
-    (fun p : TotalSpace G W ↦ (⟨p.proj, f p.proj p.2⟩ : TotalSpace J Z)))
+    (fun p : TotalSpace G W ↦ (⟨p.proj, f p.proj p.snd⟩ : TotalSpace J Z)))
   (hf' : ContMDiff (I.prod 𝓘(𝕜, J)) (I.prod 𝓘(𝕜, G)) n
-    (fun p : TotalSpace J Z ↦ (⟨p.proj, (f p.proj).symm p.2⟩ : TotalSpace G W)))
+    (fun p : TotalSpace J Z ↦ (⟨p.proj, (f p.proj).symm p.snd⟩ : TotalSpace G W)))
 
 /-- Composition of fibre equivalences induces composition of section equivalences. -/
 theorem mapEquiv_trans :
