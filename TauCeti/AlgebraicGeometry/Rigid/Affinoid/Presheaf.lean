@@ -161,6 +161,14 @@ theorem restrict_comp {U V W : AffinoidSubdomain K A} (hUV : U ≤ V) (hVW : V �
   apply W.isAffinoidSubdomainMap.algHom_ext U.isAffinoidAlgebra
   simp [AlgHom.comp_assoc]
 
+/-- Restriction carries the extension `J 𝒪(V)` of an ideal `J` of `A` into `J 𝒪(W)`. -/
+theorem restrict_mem_map {U V : AffinoidSubdomain K A} (h : U ≤ V) {J : Ideal A}
+    {f : V.sections} (hf : f ∈ J.map V.toSections) : restrict h f ∈ J.map U.toSections := by
+  refine (Ideal.map_le_iff_le_comap.mpr (fun a ha ↦ ?_) hf :
+    f ∈ (J.map U.toSections).comap (restrict h))
+  rw [Ideal.mem_comap, Ideal.mem_comap, restrict_toSections]
+  exact Ideal.mem_map_of_mem _ ha
+
 /-- Restriction along an inclusion of affinoid subdomains is itself an affinoid subdomain map.
 Its classical points are the inverse image of the smaller subdomain. -/
 theorem isAffinoidSubdomainMap_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) :
@@ -293,6 +301,10 @@ instance : BoundedOrder (AffinoidSubdomain K A) where
 theorem coe_top : (↑(⊤ : AffinoidSubdomain K A) : Set (MaximalSpectrum A)) = Set.univ := by
   -- The top subdomain is the existing `univ` construction.
   exact coe_univ hA.out
+
+@[simp]
+theorem mem_top (x : MaximalSpectrum A) : x ∈ (⊤ : AffinoidSubdomain K A) :=
+  mem_univ hA.out x
 
 @[simp]
 theorem coe_bot : (↑(⊥ : AffinoidSubdomain K A) : Set (MaximalSpectrum A)) = ∅ := by
