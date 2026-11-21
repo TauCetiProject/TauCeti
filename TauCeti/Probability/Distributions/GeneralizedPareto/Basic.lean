@@ -208,7 +208,12 @@ theorem image_generalizedParetoMap_univ {s : ℝ} (hs : s ≠ 0) (ξ : ℝ) :
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
 For positive scale this is the pushforward of a rate-one exponential law by
-`generalizedParetoMap`. For nonpositive scale it is the zero measure. -/
+`generalizedParetoMap`. For nonpositive scale it is the zero measure.
+
+At positive scale this is the textbook law with survival function `(1 + ξ * x / s) ^ (-1 / ξ)` on
+`{x | 0 < x ∧ 0 < 1 + ξ * x / s}` (`exp (-x / s)` at shape zero):
+`TauCeti.Probability.cdf_generalizedParetoMeasure_eq`, in
+`TauCeti.Probability.Distributions.GeneralizedPareto.Cdf`, proves it. -/
 def generalizedParetoMeasure (s ξ : ℝ) : Measure ℝ :=
   if 0 < s then (expMeasure 1).map (generalizedParetoMap s ξ) else 0
 

@@ -11,9 +11,9 @@ public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Normed.Group.NullFamily
-import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.Padics.Complex.Valuation
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Annulus evaluations on `ℤ_p⟦T, p/T⟧` and `H[1/T]`
@@ -211,7 +211,7 @@ theorem summable_norm_eval₂ {K : Type*} [SeminormedRing K] (f : ℤ_[p] →+* 
   have hρ0 : 0 ≤ ρ := le_trans (norm_nonneg _) (le_max_left _ _)
   have hρ1 : ρ < 1 := max_lt ht ((div_lt_one (p_pos (p := p))).2 htinv)
   exact Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (norm_term_le hC t x)
-    (summable_mul_pow_natAbs hρ0 hρ1)
+    ((summable_pow_natAbs hρ0 hρ1).mul_left C)
 
 /-- The bilateral series `∑_{m ∈ ℤ} f(x.coeff m) * t ^ m` converges in `K` whenever `‖t‖ < 1` and
 `‖t⁻¹‖ < p`. -/
@@ -307,7 +307,7 @@ theorem eval₂_ofPowerSeriesT (g : PowerSeries ℤ_[p]) :
     eval₂ f hf t ht htinv (ofPowerSeriesT g) =
       ∑' n : ℕ, f (PowerSeries.coeff n g) * (t : K) ^ n := by
   rw [eval₂_apply]
-  refine tsum_eq_tsum_of_ne_zero_bij (fun n ↦ (n.1 : ℤ))
+  refine tsum_eq_tsum_of_ne_zero_bij (fun n ↦ (n.val : ℤ))
     (fun _ _ h ↦ Subtype.ext (by dsimp only at h; omega)) (fun m hm ↦ ?_) fun n ↦ ?_
   · by_cases hneg : m < 0
     · exfalso; exact hm (by simp [coeff_ofPowerSeriesT_of_neg g hneg])
@@ -333,7 +333,7 @@ theorem eval₂_ofPowerSeriesU (g : PowerSeries ℤ_[p]) :
       Units.val_pow_eq_pow_val, hmul_pow, ← mul_assoc,
       (Nat.cast_commute p (f (PowerSeries.coeff n g))).pow_left n, mul_assoc]
   rw [eval₂_apply]
-  refine tsum_eq_tsum_of_ne_zero_bij (fun n ↦ -(n.1 : ℤ))
+  refine tsum_eq_tsum_of_ne_zero_bij (fun n ↦ -(n.val : ℤ))
     (fun _ _ h ↦ Subtype.ext (by dsimp only at h; omega))
     (fun m hm ↦ ?_) fun n ↦ ?_
   · by_cases hpos : 0 < m
@@ -453,7 +453,7 @@ theorem continuous_localizedEval₂ [TopologicalSpace A] [IsTopologicalAddGroup 
   set ρ := max ‖(t : K)‖ (‖((t⁻¹ : Kˣ) : K)‖ / p)
   have hρ0 : 0 ≤ ρ := le_trans (norm_nonneg _) (le_max_left _ _)
   have hρ1 : ρ < 1 := max_lt ht ((div_lt_one (p_pos (p := p))).2 htinv)
-  have hgeom := summable_mul_pow_natAbs (C := C) hρ0 hρ1
+  have hgeom := (summable_pow_natAbs hρ0 hρ1).mul_left C
   set M : ℝ := ∑' m : ℤ, C * ρ ^ m.natAbs
   have hbound (a : AnnularRing p) : ‖eval₂ f hf t ht htinv a‖ ≤ M :=
     (norm_tsum_le_tsum_norm (summable_norm_eval₂ f hf t ht htinv a)).trans <|

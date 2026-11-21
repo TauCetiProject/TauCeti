@@ -100,7 +100,7 @@ noncomputable def presentationLimitAppTop
     A →+* (X.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj :=
   ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
     TopCommRingCat.isCompleteSeparated.ι.map
-      (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).1
+      (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).val
 
 /-- The global-sections map of `f : X ⟶ Spa(A, A⁺)` is the component of `f` on the whole space,
 precomposed with the identification of `A` with the global sections of `Spa(A, A⁺)`. -/
@@ -109,7 +109,7 @@ theorem presentationLimitAppTop_def
     presentationLimitAppTop P Aplus hAplus hP f =
       ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
         TopCommRingCat.isCompleteSeparated.ι.map
-          (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).1 :=
+          (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).val :=
   (rfl)
 
 /-- The global-sections map of `h ≫ f` is that of `f` followed by restriction of sections
@@ -119,9 +119,9 @@ theorem presentationLimitAppTop_comp_apply {W : PreAdicSpace.{u}} (h : W ⟶ X)
     (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (a : A) :
     presentationLimitAppTop P Aplus hAplus hP (h ≫ f) a =
       (TopCommRingCat.isCompleteSeparated.ι.map
-        (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map h).op)).1
+        (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map h).op)).val
         (presentationLimitAppTop P Aplus hAplus hP f a) :=
-  congrArg (fun k ↦ ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k).1 a)
+  congrArg (fun k ↦ ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k).val a)
     ((PreAdicSpace.forgetToPresheafedSpace.op ⋙ PresheafedSpace.Γ ⋙
       TopCommRingCat.isCompleteSeparated.ι).map_comp f.op h.op)
 
@@ -157,12 +157,12 @@ theorem presentationLimitAppTop_comp_germ
 stalk valuation back along the global-sections map followed by the germ map. -/
 theorem base_eq_comap_presentationLimitAppTop
     (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (x : X) :
-    (f.base x : spa Aplus).1 =
+    (f.base x : spa Aplus).val =
       comap (presentationLimitAppTop P Aplus hAplus hP f)
         (comap (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom
           (X.stalkValuation x)) := by
   calc
-    (f.base x : spa Aplus).1 =
+    (f.base x : spa Aplus).val =
         comap (presentationLimitGlobalGerm P Aplus (f.base x))
           ((presentationLimitPreAdicSpace P Aplus hAplus hP).stalkValuation (f.base x)) :=
       ((congrArg (comap (presentationLimitGlobalGerm P Aplus (f.base x)))
@@ -225,7 +225,7 @@ theorem continuous_presentationLimitHomRingHom
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP) :
     Continuous (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f) :=
-  (globalSectionsPullback P Aplus hAplus hP P' Bplus hBplus hP' f).2
+  (globalSectionsPullback P Aplus hAplus hP P' Bplus hBplus hP' f).property
 
 /-- For a morphism of complete affinoid pre-adic spectra, the recovered ring homomorphism `A → B`
 is the global-sections map `A → 𝒪(Spa(B, B⁺))` followed by the identification of the global
@@ -234,7 +234,7 @@ theorem presentationLimitHomRingHom_eq_comp_presentationLimitAppTop
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP) :
     presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f =
-      (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom.1.comp
+      (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom.val.comp
         (presentationLimitAppTop P Aplus hAplus hP f) := by
   rw [presentationLimitHomRingHom_def, Iso.homCongr_apply]
   rfl
@@ -249,7 +249,7 @@ theorem ker_presentationLimitHomRingHom
       RingHom.ker (presentationLimitAppTop P Aplus hAplus hP f) := by
   rw [presentationLimitHomRingHom_eq_comp_presentationLimitAppTop]
   refine RingHom.ker_comp_of_injective _ (Function.LeftInverse.injective (g :=
-    (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv.1) fun b ↦ ?_)
+    (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv.val) fun b ↦ ?_)
   exact Iso.hom_inv_id_apply (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP') b
 
 private theorem globalSectionsPullback_comp_germ
@@ -279,11 +279,11 @@ theorem base_eq_comap_presentationLimitHomRingHom
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP)
     (x : presentationLimitPreAdicSpace P' Bplus hBplus hP') :
-    (f.base x : spa Aplus).1 =
+    (f.base x : spa Aplus).val =
       comap (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
-        (x : spa Bplus).1 := by
+        (x : spa Bplus).val := by
   calc
-    (f.base x : spa Aplus).1 =
+    (f.base x : spa Aplus).val =
         comap
           (((presentationLimitPreAdicSpace P' Bplus hBplus hP').toRingPresheafedSpace.presheaf.germ
             ⊤ x (Opens.mem_top x)).hom.comp (presentationLimitAppTop P Aplus hAplus hP f))
@@ -299,7 +299,7 @@ theorem base_eq_comap_presentationLimitHomRingHom
       rw [presentationLimitAppTop_comp_germ, globalSectionsPullback_comp_germ]
       rfl
     _ = comap (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
-        (x : spa Bplus).1 :=
+        (x : spa Bplus).val :=
       (congrFun (comap_comp
         (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
         (presentationLimitGlobalGerm P' Bplus x))
@@ -363,7 +363,8 @@ theorem presentationLimitHomRingHom_mem_plus
   apply mem_of_forall_vle_one hopen
   intro v hv
   let x : presentationLimitPreAdicSpace P' Bplus hBplus hP' := ⟨v, hv⟩
-  have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).1).mp (f.base x : spa Aplus).2).2 a ha
+  have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).val).mp (f.base x : spa Aplus).property).2 a
+      ha
   rw [base_eq_comap_presentationLimitHomRingHom, comap_vle, map_one] at hx
   exact hx
 
@@ -381,7 +382,7 @@ noncomputable def presentationLimitHomPairHom (S : Pair A) (T : Pair B)
     P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hT f
   continuous_toRingHom := (globalSectionsPullback P S.plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem hS P' T.plus
-    T.isRingOfIntegralElements.isPowerBounded_of_mem hT f).2
+    T.isRingOfIntegralElements.isPowerBounded_of_mem hT f).property
   map_mem_plus _ ha := by
     have := T.isRingOfIntegralElements.isIntegrallyClosedIn
     exact presentationLimitHomRingHom_mem_plus P S.plus

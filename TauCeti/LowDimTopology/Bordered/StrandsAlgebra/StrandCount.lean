@@ -244,16 +244,16 @@ variable (R) in
 idempotent `I({b})` of each matched pair `b` in the range of `M`, and the single strand of each
 chord `i < j`. -/
 def oneStrandFamily : Set.range M ⊕ {p : α × α // p.1 < p.2} → StrandsAlgebra R α :=
-  Sum.elim (fun b ↦ matchedIdem R M {b.1}) fun p ↦ of (single p.1.1 p.1.2 p.2.le)
+  Sum.elim (fun b ↦ matchedIdem R M {b.val}) fun p ↦ of (single p.val.1 p.val.2 p.property.le)
 
 @[simp]
 theorem oneStrandFamily_inl (b : Set.range M) :
-    oneStrandFamily R M (.inl b) = matchedIdem R M {b.1} :=
+    oneStrandFamily R M (.inl b) = matchedIdem R M {b.val} :=
   (rfl)
 
 @[simp]
 theorem oneStrandFamily_inr (p : {p : α × α // p.1 < p.2}) :
-    oneStrandFamily R M (.inr p) = of (single p.1.1 p.1.2 p.2.le) :=
+    oneStrandFamily R M (.inr p) = of (single p.val.1 p.val.2 p.property.le) :=
   (rfl)
 
 /-- The coefficient of the identity diagram on `{a}` in a combination of the family is the
@@ -265,9 +265,9 @@ private theorem repr_sum_smul_oneStrandFamily_idOn
     Finset.sum_eq_zero ?_, add_zero]
   · simp [repr_matchedIdem_apply]
   · intro p _
-    simp [single_ne_idOn p.2]
+    simp [single_ne_idOn p.property]
   · intro b hb
-    have hb' : M a ≠ b.1 := fun h ↦ hb (Subtype.ext h.symm)
+    have hb' : M a ≠ b.val := fun h ↦ hb (Subtype.ext h.symm)
     simp [repr_matchedIdem_apply, hb']
 
 /-- The coefficient of the single strand of a chord in a combination of the family is the
@@ -280,7 +280,7 @@ private theorem repr_sum_smul_oneStrandFamily_single
     Fintype.sum_eq_single ⟨(i, j), h⟩ ?_]
   · simp
   · intro p hp
-    have hp' : ¬(p.1.1 = i ∧ p.1.2 = j) := fun h' ↦ hp (Subtype.ext (Prod.ext h'.1 h'.2))
+    have hp' : ¬(p.val.1 = i ∧ p.val.2 = j) := fun h' ↦ hp (Subtype.ext (Prod.ext h'.1 h'.2))
     simp [hp']
   · intro b _
     simp [repr_matchedIdem_apply, single_ne_idOn h]
@@ -303,7 +303,7 @@ theorem oneStrandFamily_mem_strandCountPart (i : Set.range M ⊕ {p : α × α /
   · rw [oneStrandFamily_inl, matchedIdem_def]
     exact Submodule.sum_mem _ fun S hS ↦ by
       simpa [(mem_filter.1 hS).2.2] using idem_mem_strandCountPart (R := R) S
-  · simpa using of_mem_strandCountPart (R := R) (single p.1.1 p.1.2 p.2.le)
+  · simpa using of_mem_strandCountPart (R := R) (single p.val.1 p.val.2 p.property.le)
 
 theorem oneStrandFamily_mem_matchedSubalgebra (i : Set.range M ⊕ {p : α × α // p.1 < p.2}) :
     oneStrandFamily R M i ∈ matchedSubalgebra R M := by
@@ -344,8 +344,8 @@ theorem span_oneStrandFamily :
   -- Write `x` as the combination of the family with its coefficients on the identity diagram of
   -- a chosen point of each pair and on the chords.
   let c : Set.range M ⊕ {p : α × α // p.1 < p.2} → R :=
-    Sum.elim (fun b ↦ (basis R α).repr x (idOn {b.2.choose}))
-      fun p ↦ (basis R α).repr x (single p.1.1 p.1.2 p.2.le)
+    Sum.elim (fun b ↦ (basis R α).repr x (idOn {b.property.choose}))
+      fun p ↦ (basis R α).repr x (single p.val.1 p.val.2 p.property.le)
   have hsum : ∑ i, c i • oneStrandFamily R M i ∈ strandCountPart R 1 :=
     Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (oneStrandFamily_mem_strandCountPart M i)
   suffices hx' : x = ∑ i, c i • oneStrandFamily R M i by

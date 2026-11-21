@@ -145,8 +145,8 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
     rw [SlStd.range_weightTorusPoints_eq_diagonalPoints]
     intro x hx
     obtain ⟨y, hy⟩ :
-        x.1 ∈ (Matrix.SpecialLinearGroup.toGL (n := Fin (r + 1)) (R := k)).range :=
-      SlStd.points_eq_range_toGL (K := k) r ▸ x.2
+        x.val ∈ (Matrix.SpecialLinearGroup.toGL (n := Fin (r + 1)) (R := k)).range :=
+      SlStd.points_eq_range_toGL (K := k) r ▸ x.property
     have hφy : φ (e.symm y) = x := Subtype.ext (by simp [φ, hy])
     exact ⟨e.symm y, hDG ((hmem _).mpr (hφy ▸ hx)), hφy⟩
   have hP := SlStd.eq_range_weightTorusPoints_of_le_of_isMulCommutative r k P hle

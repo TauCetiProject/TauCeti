@@ -112,12 +112,12 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_sublevel_component_homeomorp
   have hxS : x ∈ S := ⟨hxU, hxB⟩
   let V : Set B := Subtype.val ⁻¹' U
   have hV : IsClopen V := by
-    refine ⟨?_, hU.preimage continuous_subtype_val⟩
+    refine ⟨?_, hU.preimage continuous_subtypeVal⟩
     have hv : V = Subtype.val ⁻¹' S := by
       ext y
       exact ⟨fun hy ↦ ⟨hy, y.property⟩, And.left⟩
     rw [hv]
-    exact hSc.isClosed.preimage continuous_subtype_val
+    exact hSc.isClosed.preimage continuous_subtypeVal
   have hCV : connectedComponent (⟨x, hxB⟩ : B) ⊆ V :=
     isPreconnected_connectedComponent.subset_isClopen hV ⟨⟨x, hxB⟩, mem_connectedComponent, hxU⟩
   have hset : connectedComponentIn B x = S := by
