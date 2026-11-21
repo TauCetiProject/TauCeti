@@ -105,7 +105,6 @@ space (`TauCeti.cellularChainRepIsoFree`). The group acts by the deck transforma
 def cellularClassifyingSpaceResolution (k : Type u) [CommRing k] :
     ProjectiveResolution (Rep.trivial k (PresentedGroup R) k) :=
   cellularResolutionOfIsAspherical (isQuotientCoveringMap_cellularClassifyingSpace_universalCover R)
-    (UniversalCover.proj_basepointLift _)
     (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical k
 
 /-- The complex of `TauCeti.cellularClassifyingSpaceResolution` is the lifted cellular chain

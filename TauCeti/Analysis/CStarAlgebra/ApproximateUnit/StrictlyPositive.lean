@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
+public import TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
@@ -16,7 +17,6 @@ import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.StarOrder
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Basic
@@ -33,13 +33,11 @@ import TauCeti.Analysis.Normed.Operator.Dense
 # Strictly positive elements and σ-unital C⋆-algebras
 
 An element `h` of a (possibly nonunital) complex C⋆-algebra `A` is *strictly positive*
-(`TauCeti.CStarAlgebra.IsStrictlyPositive h`) if `0 ≤ h` and the corner `h * A * h`
+(`TauCeti.CStarAlgebra.IsStrictlyPositive h`, defined in
+`TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal`) if `0 ≤ h` and the corner `h * A * h`
 is dense in `A`. This generalizes the unital notion `_root_.IsStrictlyPositive` (`0 ≤ h ∧ IsUnit h`,
 recovered in `TauCeti.CStarAlgebra.IsStrictlyPositive.iff_of_unital`), and provides the
 standard characterization of σ-unital C⋆-algebras (those admitting a countable approximate unit).
-Both `IsStrictlyPositive` and `isStrictlyPositive_one` are `protected` so that opening
-`TauCeti.CStarAlgebra` does not shadow `_root_.IsStrictlyPositive` or
-`_root_.isStrictlyPositive_one`.
 
 For any `0 ≤ h`, the continuous functional calculus yields the monotone sequence of positive strict
 contractions
@@ -49,7 +47,6 @@ every `a : A`. When `h` is strictly positive, `eₙ` is an increasing approximat
 
 ## Main definitions and results
 
-* `TauCeti.CStarAlgebra.IsStrictlyPositive`: positivity plus density of `Set.range (h * · * h)`.
 * `TauCeti.CStarAlgebra.strictlyPositiveApproximateUnit`: the canonical monotone sequence
   `h * ((n + 1)⁻¹ + h)⁻¹` built via the nonunital continuous functional calculus, together with
   `strictlyPositiveApproximateUnit_def`, `inr_strictlyPositiveApproximateUnit_eq`,
@@ -64,9 +61,9 @@ every `a : A`. When `h` is strictly positive, `eₙ` is an increasing approximat
   5. `(Filter.atTop.map (strictlyPositiveApproximateUnit h)).IsIncreasingApproximateUnit`.
 * `TauCeti.CStarAlgebra.IsStrictlyPositive.of_le`, `add_nonneg`, `nonneg_add`, `smul`, and `map`:
   order, cone, and dense-range *-homomorphism permanence of strict positivity.
-* `TauCeti.CStarAlgebra.IsStrictlyPositive.iff_of_unital` and `isStrictlyPositive_one`:
+* `TauCeti.CStarAlgebra.IsStrictlyPositive.iff_of_unital`:
   in a unital C⋆-algebra, `TauCeti.CStarAlgebra.IsStrictlyPositive h` coincides with
-  `0 ≤ h ∧ IsUnit h` (i.e. `_root_.IsStrictlyPositive h`).
+  `0 ≤ h ∧ IsUnit h`.
 * `TauCeti.CStarAlgebra.isStrictlyPositive_tsum_of_forall_apply_eq_zero_imp_eq_zero` and
   `exists_isStrictlyPositive_of_forall_apply_eq_zero_imp_eq_zero`: constructing strictly positive
   elements from positive families not jointly annihilated by any nonzero positive functional.
@@ -100,35 +97,21 @@ section Basic
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 
-/-- An element `h` of a (possibly nonunital) C⋆-algebra `A` is *strictly positive* if `0 ≤ h` and
-the corner `h * A * h` is dense in `A`. In a unital C⋆-algebra this coincides with
-`0 ≤ h ∧ IsUnit h` (i.e. `_root_.IsStrictlyPositive h`); see
-`TauCeti.CStarAlgebra.IsStrictlyPositive.iff_of_unital`. -/
-protected def IsStrictlyPositive (h : A) : Prop :=
-  0 ≤ h ∧ Dense (Set.range fun a : A => h * a * h)
-
-theorem isStrictlyPositive_def {h : A} :
-    CStarAlgebra.IsStrictlyPositive h ↔ 0 ≤ h ∧ Dense (Set.range fun a : A => h * a * h) :=
-  Iff.rfl
-
-theorem IsStrictlyPositive.nonneg {h : A} (hh : CStarAlgebra.IsStrictlyPositive h) : 0 ≤ h :=
-  hh.1
-
 theorem IsStrictlyPositive.dense_range_mul_mul {h : A} (hh : CStarAlgebra.IsStrictlyPositive h) :
     Dense (Set.range fun a : A => h * a * h) :=
-  hh.2
+  dense_iff_closure_eq.mpr hh.closure_range_eq_univ
 
 /-- If `h` is strictly positive, then `h * A` is dense in `A`. -/
 theorem IsStrictlyPositive.dense_range_mul_left {h : A} (hh : CStarAlgebra.IsStrictlyPositive h) :
     Dense (Set.range fun a : A => h * a) := by
-  refine hh.2.mono ?_
+  refine hh.dense_range_mul_mul.mono ?_
   rintro _ ⟨a, rfl⟩
   exact ⟨a * h, (mul_assoc h a h).symm⟩
 
 /-- If `h` is strictly positive, then `A * h` is dense in `A`. -/
 theorem IsStrictlyPositive.dense_range_mul_right {h : A} (hh : CStarAlgebra.IsStrictlyPositive h) :
     Dense (Set.range fun a : A => a * h) := by
-  refine hh.2.mono ?_
+  refine hh.dense_range_mul_mul.mono ?_
   rintro _ ⟨a, rfl⟩
   exact ⟨h * a, rfl⟩
 
@@ -140,7 +123,7 @@ theorem isStrictlyPositive_zero_iff :
     have hrange : (Set.range fun a : A => (0 : A) * a * 0) ⊆ {0} := by
       rintro _ ⟨a, rfl⟩
       simp
-    have hdense : Dense ({0} : Set A) := h0.2.mono hrange
+    have hdense : Dense ({0} : Set A) := h0.dense_range_mul_mul.mono hrange
     have huniv : ({0} : Set A) = Set.univ := by
       rw [← isClosed_singleton.closure_eq, hdense.closure_eq]
     refine ⟨fun a b => ?_⟩
@@ -148,8 +131,8 @@ theorem isStrictlyPositive_zero_iff :
     have hb : b ∈ ({0} : Set A) := huniv ▸ Set.mem_univ b
     rw [Set.mem_singleton_iff.mp ha, Set.mem_singleton_iff.mp hb]
   · intro _
-    refine ⟨le_rfl, dense_iff_closure_eq.mpr (Set.eq_univ_of_forall fun a => subset_closure ?_)⟩
-    exact ⟨0, Subsingleton.elim _ _⟩
+    exact isStrictlyPositive_def.mpr
+      ⟨le_rfl, Set.eq_univ_of_forall fun a => subset_closure ⟨0, Subsingleton.elim _ _⟩⟩
 
 end Basic
 
@@ -533,8 +516,8 @@ theorem isStrictlyPositive_tfae {h : A} (hh : 0 ≤ h) :
         eventually_norm := eventually_map.mpr (Eventually.of_forall
           (norm_strictlyPositiveApproximateUnit_le_one h)) }
   tfae_have 5 → 1 := fun hl => by
-    refine ⟨hh, dense_iff_closure_eq.mpr (Set.eq_univ_of_forall fun a => ?_)⟩
-    exact mem_closure_of_tendsto (tendsto_map'_iff.mp (hl.tendsto_mul_mul a))
+    refine isStrictlyPositive_def.mpr ⟨hh, Set.eq_univ_of_forall fun a => ?_⟩
+    exact mem_closure_of_tendsto (tendsto_map'_iff.mp (hl.tendsto_mul_self a))
       (Eventually.of_forall fun n => strictlyPositiveApproximateUnit_mul_mul_mem_range h n a)
   tfae_finish
 
@@ -563,7 +546,7 @@ theorem isStrictlyPositive_iff_isIncreasingApproximateUnit {h : A} :
   · exact (isStrictlyPositive_tfae hh).out 1 5
   · constructor
     · intro hsp
-      exact (hh hsp.1).elim
+      exact (hh hsp.nonneg).elim
     · intro hl
       have hzero : ∀ n, strictlyPositiveApproximateUnit h n = 0 := fun n => by
         rw [strictlyPositiveApproximateUnit_def]
@@ -576,7 +559,7 @@ theorem isStrictlyPositive_iff_isIncreasingApproximateUnit {h : A} :
 strictly positive element. -/
 theorem IsStrictlyPositive.re_apply_pos_of_ne_zero {h : A}
     (hh : CStarAlgebra.IsStrictlyPositive h) {φ : A →P[ℂ] ℂ} (hφ : φ ≠ 0) : 0 < (φ h).re :=
-  ((isStrictlyPositive_iff_forall_positiveContinuousLinearMap_pos hh.1).mp hh) φ hφ
+  ((isStrictlyPositive_iff_forall_positiveContinuousLinearMap_pos hh.nonneg).mp hh) φ hφ
 
 /-- A positive continuous linear functional vanishing on a strictly positive element is zero. -/
 theorem IsStrictlyPositive.eq_zero_of_apply_eq_zero {h : A}
@@ -596,8 +579,8 @@ theorem IsStrictlyPositive.isIncreasingApproximateUnit {h : A}
 /-- Any element dominating a strictly positive element is strictly positive. -/
 theorem IsStrictlyPositive.of_le {h₁ h₂ : A} (hh₁ : CStarAlgebra.IsStrictlyPositive h₁)
     (hle : h₁ ≤ h₂) : CStarAlgebra.IsStrictlyPositive h₂ := by
-  refine (isStrictlyPositive_iff_forall_positiveContinuousLinearMap_pos (hh₁.1.trans hle)).mpr
-    fun φ hφ => ?_
+  refine (isStrictlyPositive_iff_forall_positiveContinuousLinearMap_pos
+    (hh₁.nonneg.trans hle)).mpr fun φ hφ => ?_
   exact (hh₁.re_apply_pos_of_ne_zero hφ).trans_le (Complex.le_def.mp (φ.monotone hle)).1
 
 /-- Adding a nonnegative element on the right preserves strict positivity. -/
@@ -614,7 +597,8 @@ theorem IsStrictlyPositive.nonneg_add {a h : A} (ha : 0 ≤ a)
 positivity. -/
 theorem IsStrictlyPositive.smul {h : A} (hh : CStarAlgebra.IsStrictlyPositive h) {c : ℝ}
     (hc : 0 < c) : CStarAlgebra.IsStrictlyPositive (c • h) := by
-  refine ⟨smul_nonneg hc.le hh.1, hh.2.mono ?_⟩
+  refine isStrictlyPositive_def.mpr ⟨smul_nonneg hc.le hh.nonneg,
+    (hh.dense_range_mul_mul.mono ?_).closure_eq⟩
   rintro _ ⟨a, rfl⟩
   refine ⟨(c⁻¹ * c⁻¹) • a, ?_⟩
   simp only [smul_mul_assoc, mul_smul_comm, smul_smul]
@@ -626,7 +610,8 @@ theorem IsStrictlyPositive.map {B F : Type*} [NonUnitalCStarAlgebra B] [PartialO
     [StarOrderedRing B] [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
     (f : F) (hf : DenseRange f) {h : A} (hh : CStarAlgebra.IsStrictlyPositive h) :
     CStarAlgebra.IsStrictlyPositive (f h) := by
-  refine ⟨map_nonneg f hh.1, (hf.dense_image (map_continuous f) hh.2).mono ?_⟩
+  refine isStrictlyPositive_def.mpr ⟨map_nonneg f hh.nonneg,
+    ((hf.dense_image (map_continuous f) hh.dense_range_mul_mul).mono ?_).closure_eq⟩
   rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
   exact ⟨f a, by simp [map_mul]⟩
 
@@ -780,28 +765,8 @@ variable {D : Type*} [CStarAlgebra D] [PartialOrder D]
 /-- In a unital C⋆-algebra, `TauCeti.CStarAlgebra.IsStrictlyPositive h` coincides with
 `0 ≤ h ∧ IsUnit h` (i.e. Mathlib's `_root_.IsStrictlyPositive h`). -/
 theorem IsStrictlyPositive.iff_of_unital {h : D} :
-    CStarAlgebra.IsStrictlyPositive h ↔ 0 ≤ h ∧ IsUnit h := by
-  constructor
-  · intro hh
-    refine ⟨hh.1, ?_⟩
-    obtain ⟨_, ⟨a, rfl⟩, u, hu⟩ := hh.2.exists_mem_open Units.isOpen ⟨1, isUnit_one⟩
-    refine isUnit_iff_exists_and_exists.mpr
-      ⟨⟨a * h * (u⁻¹ : Dˣ), ?_⟩, ⟨(u⁻¹ : Dˣ) * h * a, ?_⟩⟩
-    · calc h * (a * h * (u⁻¹ : Dˣ)) = (h * a * h) * (u⁻¹ : Dˣ) := by simp [mul_assoc]
-        _ = (u : D) * (u⁻¹ : Dˣ) := by rw [hu]
-        _ = 1 := Units.mul_inv u
-    · calc (u⁻¹ : Dˣ) * h * a * h = (u⁻¹ : Dˣ) * (h * a * h) := by simp [mul_assoc]
-        _ = (u⁻¹ : Dˣ) * (u : D) := by rw [hu]
-        _ = 1 := Units.inv_mul u
-  · rintro ⟨hh₀, ⟨u, rfl⟩⟩
-    refine ⟨hh₀, dense_iff_closure_eq.mpr (Set.eq_univ_of_forall fun a => subset_closure ?_)⟩
-    exact ⟨(u⁻¹ : Dˣ) * a * (u⁻¹ : Dˣ), by simp [mul_assoc]⟩
-
-/-- The unit `1` of a unital C⋆-algebra is strictly positive. -/
-@[simp]
-protected theorem isStrictlyPositive_one [ZeroLEOneClass D] :
-    CStarAlgebra.IsStrictlyPositive (1 : D) :=
-  ⟨zero_le_one, by simp⟩
+    CStarAlgebra.IsStrictlyPositive h ↔ 0 ≤ h ∧ IsUnit h :=
+  isStrictlyPositive_iff_of_unital.trans _root_.IsStrictlyPositive.iff_of_unital
 
 end Unital
 

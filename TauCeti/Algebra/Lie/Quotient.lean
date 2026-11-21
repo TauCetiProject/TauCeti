@@ -21,7 +21,9 @@ surjective homomorphism, the induced map from the quotient by its kernel is an i
 is the first isomorphism theorem.
 
 These declarations live in the root `LieIdeal` and `LieHom` namespaces, extending Mathlib's API
-and supporting receiver notation on the ideal and the homomorphism.
+and supporting receiver notation on the ideal and the homomorphism. For quotients of Lie modules,
+`LieSubmodule.Quotient.coe_mk'` identifies the underlying linear map of the quotient map with the
+quotient map of submodules.
 
 The functorial quotient-map and central-kernel API is adapted from
 `Mei/Algebra/Lie/Quotient/Map.lean`, copyright (c) 2026 Mei contributors,
@@ -55,6 +57,7 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.factor_refl`, `LieIdeal.factor_comp` and `LieIdeal.factor_surjective`: the transitions
   between nested quotients are the identity at equal ideals, compose, and are surjective.
 * `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
+* `LieSubmodule.Quotient.coe_mk'`: the same for the quotient map of a Lie module.
 * `LieIdeal.mkQ_comp_incl_surjective_iff`: a Lie subalgebra `P` maps onto `L ⧸ I` exactly when
   `I + P = L`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
@@ -454,3 +457,14 @@ theorem factor_comp_mapQ (I' : LieIdeal R L) (J' : LieIdeal R L')
   simp [mkQ_apply]
 
 end LieIdeal
+
+namespace LieSubmodule.Quotient
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M] (N : LieSubmodule R L M)
+
+/-- The linear map underlying the quotient map of a Lie module is the quotient map of
+submodules. -/
+theorem coe_mk' : (mk' N : M →ₗ[R] M ⧸ N) = N.toSubmodule.mkQ := (rfl)
+
+end LieSubmodule.Quotient
