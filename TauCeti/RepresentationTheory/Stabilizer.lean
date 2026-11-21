@@ -57,6 +57,22 @@ theorem stabilizer_ofMulAction_single {X : Type*} [MulAction G X] (x : X) {r : A
   rw [mem_stabilizer, ofMulAction_single, MonoidAlgebra.single_left_inj hr,
     MulAction.mem_stabilizer_iff]
 
+/-- The stabilizer of a vector in a restricted representation `ρ.comp f` is the preimage of its
+stabilizer in `ρ`. -/
+@[simp]
+theorem stabilizer_comp {H : Type*} [Group H] (ρ : Representation A G V) (f : H →* G) (v : V) :
+    stabilizer (ρ.comp f) v = (ρ.stabilizer v).comap f := by
+  ext h
+  simp [mem_stabilizer]
+
+/-- The stabilizer of a pair in a binary product of representations is the intersection of the
+stabilizers of its components. -/
+@[simp]
+theorem stabilizer_prod (ρ : Representation A G V) (σ : Representation A G W) (x : V × W) :
+    (ρ.prod σ).stabilizer x = ρ.stabilizer x.fst ⊓ σ.stabilizer x.snd := by
+  ext g
+  simp [mem_stabilizer, Prod.ext_iff]
+
 end Semiring
 
 section CommRing

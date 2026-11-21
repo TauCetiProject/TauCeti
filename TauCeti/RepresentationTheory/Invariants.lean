@@ -243,6 +243,12 @@ theorem invariants_comp_of_surjective {k G H V : Type*} [CommRing k] [Group G] [
   simp only [mem_invariants, MonoidHom.comp_apply]
   exact ⟨fun h g ↦ by obtain ⟨g, rfl⟩ := hf g; exact h g, fun h g ↦ h (f g)⟩
 
+/-- Restricting a representation to a smaller subgroup yields a larger submodule of invariants. -/
+theorem invariants_comp_subtype_antitone {k G V : Type*} [CommRing k] [Group G]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) :
+    Antitone (fun H : Subgroup G ↦ invariants (ρ.comp H.subtype)) :=
+  fun _ _ hle _ hv g ↦ hv ⟨g.val, hle g.property⟩
+
 /-- **Invariance may be tested on a generating set**: if `s` generates `G`, a vector is invariant
 exactly when every element of `s` fixes it. -/
 theorem mem_invariants_iff_of_closure_eq_top {k G V : Type*} [CommRing k] [Group G]

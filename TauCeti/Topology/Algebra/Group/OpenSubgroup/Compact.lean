@@ -90,6 +90,20 @@ theorem IsCompact.isOpen_stabilizer (hC : IsCompact C) (hCo : IsOpen C) :
   refine MulAction.mem_stabilizer_iff.2 ((hsub g hg).antisymm fun c hc ↦ ?_)
   exact ⟨g⁻¹ • c, hsub g⁻¹ hg' (smul_mem_smul_set hc), smul_inv_smul g c⟩
 
+/-- In a topological group, the left translation stabilizer `{g | g • C = C}` of a nonempty
+compact open set `C` is compact. -/
+@[to_additive IsCompact.isCompact_addStabilizer /-- In a topological additive group, the
+translation stabilizer `{g | g +ᵥ C = C}` of a nonempty compact open set `C` is compact. -/]
+theorem IsCompact.isCompact_stabilizer (hC : IsCompact C) (hCo : IsOpen C)
+    (hCne : C.Nonempty) : IsCompact (MulAction.stabilizer G C : Set G) := by
+  obtain ⟨x, hx⟩ := hCne
+  have hclosed : IsClosed (MulAction.stabilizer G C : Set G) :=
+    Subgroup.isClosed_of_isOpen _ (hC.isOpen_stabilizer hCo)
+  have hdiv : IsCompact (C / ({x} : Set G)) := by
+    rw [div_eq_mul_inv]
+    exact hC.mul isCompact_singleton.inv
+  exact hdiv.of_isClosed_subset hclosed (MulAction.stabilizer_subset_div_right hx)
+
 /-- **Compact open subgroups inside compact open sets.** In a topological group, a compact open
 set containing the identity contains a compact open subgroup: its left translation stabilizer. -/
 @[to_additive /-- In a topological additive group, a compact open set containing zero contains a
@@ -127,6 +141,16 @@ theorem NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup [Nonarchime
 namespace NonarchimedeanGroup
 
 variable [NonarchimedeanGroup G] [WeaklyLocallyCompactSpace G]
+
+/-- In a weakly locally compact nonarchimedean group, the compact open subgroups contained in any
+given open subgroup `K₀` still form a neighbourhood basis of `1`. -/
+@[to_additive /-- In a weakly locally compact nonarchimedean additive group, the compact open
+additive subgroups contained in any given open additive subgroup `K₀` still form a neighbourhood
+basis of `0`. -/]
+theorem nhds_one_hasBasis_isCompact_openSubgroup_le (K₀ : OpenSubgroup G) :
+    (𝓝 (1 : G)).HasBasis (fun H : OpenSubgroup G ↦ IsCompact (H : Set G) ∧ H ≤ K₀) (↑) := by
+  simpa only [SetLike.coe_subset_coe] using
+    (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).restrict_subset K₀.mem_nhds_one
 
 /-- In a weakly locally compact nonarchimedean group, left cosets of compact open subgroups form a
 neighbourhood basis at every point `g : G`. -/

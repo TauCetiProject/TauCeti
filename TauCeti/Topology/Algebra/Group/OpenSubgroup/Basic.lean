@@ -182,4 +182,12 @@ theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H)
     rw [hfiber]
     exact h.isOpen_preimage _ (isOpen_discrete _)
 
+/-- Every open subgroup of a preconnected topological group with separately continuous
+multiplication is the whole group. -/
+@[to_additive /-- Every open additive subgroup of a preconnected topological additive group with
+separately continuous addition is the whole group. -/]
+theorem eq_top_of_preconnectedSpace [SeparatelyContinuousMul G] [PreconnectedSpace G]
+    (U : OpenSubgroup G) : U = ⊤ :=
+  SetLike.coe_injective (IsClopen.eq_univ ⟨U.isClosed, U.isOpen⟩ ⟨1, U.one_mem⟩)
+
 end OpenSubgroup

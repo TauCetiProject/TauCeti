@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.Algebra.Exact.Pi
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
@@ -84,6 +85,14 @@ of its components does. -/
 theorem mem_ker_norm_pi_iff [Group G] [Fintype G] (ρ : ∀ i, Representation k G (V i))
     {x : ∀ i, V i} : x ∈ LinearMap.ker (pi ρ).norm ↔ ∀ i, x i ∈ LinearMap.ker (ρ i).norm := by
   simp only [LinearMap.mem_ker, funext_iff, norm_pi_apply, Pi.zero_apply]
+
+/-- The stabilizer of a family in a product of representations is the infimum of the stabilizers of
+its components. -/
+@[simp]
+theorem stabilizer_pi [Group G] (ρ : ∀ i, Representation k G (V i)) (x : ∀ i, V i) :
+    (Representation.pi ρ).stabilizer x = ⨅ i, (ρ i).stabilizer (x i) := by
+  ext g
+  simp [mem_stabilizer, funext_iff, Subgroup.mem_iInf]
 
 end Semiring
 
