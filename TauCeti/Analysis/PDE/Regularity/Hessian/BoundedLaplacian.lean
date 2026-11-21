@@ -163,7 +163,7 @@ private theorem exists_lacunary_sum {φ : V → ℝ} (hφ : ContDiff ℝ ∞ φ)
       rw [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hck)]
       nlinarith [norm_nonneg x]
     simp [hψ_def, hφ0 _ this]
-  · rw [laplacian_sum fun k hk ↦ (hψ2 k hk).contDiffAt]
+  · rw [laplacian_fun_sum fun k hk ↦ (hψ2 k hk).contDiffAt]
     simp only [hψ_def, laplacian_smul_comp_smul hφ2 (hc0 _)]
     exact abs_sum_comp_four_pow_smul_le hΔφ hM0 hM _ x
   · calc |∑ k ∈ range N, ψ k x| ≤ ∑ k ∈ range N, |ψ k x| := Finset.abs_sum_le_sum_abs _ _
