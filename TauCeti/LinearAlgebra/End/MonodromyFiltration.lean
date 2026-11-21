@@ -167,12 +167,12 @@ theorem monodromyFiltration_eq_top_of_le {d : ℕ} (hd : N ^ (d + 1) = 0) {a : �
   simp [hd, Module.End.one_eq_id]
 
 /-- The monodromy filtration of the zero endomorphism vanishes in negative degrees. -/
-theorem monodromyFiltration_zero_of_neg {a : ℤ} (ha : a < 0) :
+theorem monodromyFiltration_zero_eq_bot_of_neg {a : ℤ} (ha : a < 0) :
     (0 : Module.End R V).monodromyFiltration a = ⊥ :=
   monodromyFiltration_eq_bot_of_le _ (d := 0) (by simp) (by omega)
 
 /-- The monodromy filtration of the zero endomorphism is everything in nonnegative degrees. -/
-theorem monodromyFiltration_zero_of_nonneg {a : ℤ} (ha : 0 ≤ a) :
+theorem monodromyFiltration_zero_eq_top_of_nonneg {a : ℤ} (ha : 0 ≤ a) :
     (0 : Module.End R V).monodromyFiltration a = ⊤ :=
   monodromyFiltration_eq_top_of_le _ (d := 0) (by simp) (by omega)
 
@@ -229,9 +229,7 @@ theorem exists_eq_top_and_eq_bot (hF : N.IsMonodromyFiltration c F) :
   · exact eq_top_iff.2 (hb₀ ▸ hF.monotone (by omega))
   · exact eq_bot_iff.2 (ha₀ ▸ hF.monotone (by omega))
 
-/-- A monodromy filtration of `N` centred at `c` is unique. Going down from a step `B` at which
-`F (c + B) = ⊤` and `F (c - B - 1) = ⊥`, the steps `F (c + r - 1)` and `F (c - r)` are determined
-by `F (c + r)` and `F (c - r - 1)` through `inf_comap_pow` and `map_pow_sup`. -/
+/-- A monodromy filtration of `N` centred at `c` is unique. -/
 theorem unique (hF : N.IsMonodromyFiltration c F) (hG : N.IsMonodromyFiltration c G) :
     F = G := by
   obtain ⟨B₁, hB₁⟩ := hF.exists_eq_top_and_eq_bot
@@ -288,6 +286,7 @@ variable [CommSemiring R] [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Modu
   (N : Module.End R V)
 
 /-- Conjugation by a linear equivalence transports the monodromy filtration. -/
+@[simp]
 theorem monodromyFiltration_conj (e : V ≃ₗ[R] W) (a : ℤ) :
     (e.conj N).monodromyFiltration a = (N.monodromyFiltration a).map (e : V →ₗ[R] W) := by
   simp only [monodromyFiltration_def, Submodule.map_iSup, Submodule.map_inf _ e.injective,
@@ -300,6 +299,7 @@ section Semifield
 variable [Semifield K] [AddCommMonoid V] [Module K V] (N : Module.End K V)
 
 /-- The monodromy filtration is unchanged when `N` is multiplied by a nonzero scalar. -/
+@[simp]
 theorem monodromyFiltration_smul {c : K} (hc : c ≠ 0) :
     (c • N).monodromyFiltration = N.monodromyFiltration := by
   funext a

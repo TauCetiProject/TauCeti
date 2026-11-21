@@ -512,20 +512,11 @@ theorem basis_repr_pow_apply (c : f.JordanChainBasis ι) (k : ℕ) (x : V) (i : 
   have key : c.basis.coord ⟨i, ⟨j + k, h⟩⟩ ∘ₗ f ^ k = c.basis.coord ⟨i, ⟨j, by omega⟩⟩ := by
     refine c.basis.ext fun ⟨i', j'⟩ => ?_
     rw [LinearMap.comp_apply, c.pow_apply_basis k i' j']
-    split_ifs with h'
-    · rw [Basis.coord_apply, Basis.repr_self, Basis.coord_apply, Basis.repr_self,
-        Finsupp.single_apply, Finsupp.single_apply]
-      refine if_congr ⟨fun e => ?_, fun e => ?_⟩ rfl rfl <;>
-        obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 e <;>
-        rw [heq_iff_eq, Fin.ext_iff] at he <;>
-        exact Sigma.ext rfl (heq_of_eq (Fin.ext (by simp only at he ⊢; omega)))
-    · rw [map_zero, Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, eq_comm,
-        ite_eq_right_iff]
-      intro e
-      obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 e
-      rw [heq_iff_eq, Fin.ext_iff] at he
-      simp only at he
+    -- Basis vectors of a different chain have zero coordinates on both sides.
+    obtain rfl | hi := eq_or_ne i' i
+    · split_ifs <;> simp [-basis_apply, Finsupp.single_apply, Fin.ext_iff]
       omega
+    · split_ifs <;> simp [-basis_apply, hi]
   exact LinearMap.congr_fun key x
 
 /-- The last vector `f ^ (len j - 1) (head j)` of chain `j` lies in the range of `f ^ k` exactly
