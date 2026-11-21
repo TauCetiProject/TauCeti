@@ -47,6 +47,10 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.coeff_trunc_log_comp_trunc_exp_sub_one`: the identity `log (exp X) = X`, truncated
   to polynomials: the composite of the truncations of the two series agrees with `X` below both
   truncation degrees.
+* `PowerSeries.coeff_exp_sub_one_of_ne_zero`, `PowerSeries.coeff_log_eq_neg_one_pow_div`: over a
+  field, the coefficients `1 / n!` of `exp - 1` and `(-1) ^ (n + 1) / n` of the logarithm series.
+* `PowerSeries.coeff_exp_sub_one_mul_pow`: over a field, the `n`-th term `xⁿ / n!` of `exp - 1`
+  at `x`, which vanishes in degree zero.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
@@ -89,7 +93,7 @@ theorem coeff_logDeriv (f : A⟦X⟧) (n : ℕ) :
 `(log f)' * f = f'`. -/
 theorem logDeriv_mul (f : A⟦X⟧) (hf : constantCoeff f = 1) :
     logDeriv f * f = d⁄dX f := by
-  have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
   have hlog := congrArg (subst (f - 1)) (derivative_log_mul_one_add_X (A := A))
   rw [subst_mul hsub, subst_add hsub, subst_X hsub, subst_one, add_sub_cancel] at hlog
   rw [logDeriv, logOf_eq, derivative_subst hsub, map_sub, derivative_one, sub_zero, mul_right_comm,
@@ -115,6 +119,27 @@ theorem coeff_trunc_log_comp_trunc_exp_sub_one {M N k : ℕ} (hM : k < M) (hN : 
     coeff_X]
   grind
 
+/-- Over a field, the coefficient of `exp - 1` in degree `n ≠ 0` is `1 / n!`. -/
+theorem coeff_exp_sub_one_of_ne_zero {k : Type*} [Field k] [Algebra ℚ k] {n : ℕ} (hn : n ≠ 0) :
+    coeff n (exp k - 1) = (n.factorial : k)⁻¹ := by
+  simp [coeff_exp, coeff_one, hn]
+
+/-- Over a field, the `n`-th term of the series `exp - 1` at `x` is `x ^ n / n!`, except in degree
+zero, where it vanishes. -/
+theorem coeff_exp_sub_one_mul_pow {k : Type*} [Field k] [Algebra ℚ k] (n : ℕ) (x : k) :
+    coeff n (exp k - 1) * x ^ n = if n = 0 then 0 else x ^ n / (n.factorial : k) := by
+  split_ifs with hn
+  · simp [hn]
+  · simp [coeff_exp_sub_one_of_ne_zero hn, div_eq_inv_mul]
+
+/-- Over a field, the coefficient of the logarithm series in degree `n` is `(-1) ^ (n + 1) / n`;
+in degree zero both sides vanish. -/
+theorem coeff_log_eq_neg_one_pow_div {k : Type*} [Field k] [Algebra ℚ k] (n : ℕ) :
+    coeff n (log k) = (-1) ^ (n + 1) / (n : k) := by
+  rw [coeff_log]
+  split_ifs with hn
+  · simp [hn]
+  · simp [-eq_ratCast]
 
 /-! ## Logarithm and exponential as inverse operations -/
 
@@ -144,14 +169,14 @@ theorem logOf_eq_mk_iff {f : A⟦X⟧} (hf : constantCoeff f = 1) (s : ℕ → A
 @[simp]
 theorem constantCoeff_subst_exp {g : A⟦X⟧} (hg : constantCoeff g = 0) :
     constantCoeff ((exp A).subst g) = 1 := by
-  rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero hg, constantCoeff_exp, map_one]
+  rw [constantCoeff_subst_of_constantCoeff_zero' hg, constantCoeff_exp, map_one]
 
 /-- The formal exponential undoes the formal logarithm: `exp (log f) = f` when `f` has constant
 coefficient one. -/
 @[simp]
 theorem subst_exp_logOf {f : A⟦X⟧} (hf : constantCoeff f = 1) :
     (exp A).subst (logOf f) = f := by
-  have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
   rw [logOf_eq, ← subst_comp_subst_apply HasSubst.log hsub, subst_exp_log, subst_add hsub,
     subst_X hsub, subst_one, add_sub_cancel]
 

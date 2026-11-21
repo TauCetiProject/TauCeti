@@ -27,7 +27,10 @@ namespace CategoryTheory.GradedObject.Monoidal
 
 variable {I R C : Type*} [AddMonoid I] [Semiring R] [Category* C]
   [MonoidalCategory C] [Preadditive C] [Linear R C]
-  (X Y : GradedObject I C) [HasTensor X Y]
+
+section Binary
+
+variable (X Y : GradedObject I C) [HasTensor X Y]
 
 /-- Multiply the summand of bidegree `(i, j)` by `u i j`. -/
 def scaleTensorObj (u : I → I → R) : tensorObj X Y ⟶ tensorObj X Y := fun n ↦
@@ -84,44 +87,45 @@ lemma scaleTensorIso_hom (u : I → I → Rˣ) :
 lemma scaleTensorIso_inv (u : I → I → Rˣ) :
     (scaleTensorIso X Y u).inv = scaleTensorObj X Y fun i j ↦ (((u i j)⁻¹ : Rˣ) : R) := (rfl)
 
+end Binary
+
 section Triple
 
-variable [MonoidalPreadditive C] [MonoidalLinear R C]
-  (X Y Z : GradedObject I C) [HasTensor X Y] [HasTensor Y Z]
-  [HasTensor (tensorObj X Y) Z] [HasTensor X (tensorObj Y Z)]
-  (u : I → I → R) (i j k n : I) (h : i + j + k = n)
-
-omit [MonoidalPreadditive C] [MonoidalLinear R C]
-  [HasTensor Y Z] [HasTensor X (tensorObj Y Z)] in
 /-- A scalar on the outer left-associated tensor product acts in bidegree `(i + j, k)`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj₃'_scaleTensorObj :
+lemma ιTensorObj₃'_scaleTensorObj (X Y Z : GradedObject I C)
+    [HasTensor X Y] [HasTensor (tensorObj X Y) Z]
+    (u : I → I → R) (i j k n : I) (h : i + j + k = n) :
     ιTensorObj₃' X Y Z i j k n h ≫ scaleTensorObj (tensorObj X Y) Z u n =
       u (i + j) k • ιTensorObj₃' X Y Z i j k n h := by
   simp [ιTensorObj₃', Linear.comp_smul]
 
-omit [MonoidalPreadditive C] [MonoidalLinear R C]
-  [HasTensor X Y] [HasTensor (tensorObj X Y) Z] in
 /-- A scalar on the outer right-associated tensor product acts in bidegree `(i, j + k)`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj₃_scaleTensorObj :
+lemma ιTensorObj₃_scaleTensorObj (X Y Z : GradedObject I C)
+    [HasTensor Y Z] [HasTensor X (tensorObj Y Z)]
+    (u : I → I → R) (i j k n : I) (h : i + j + k = n) :
     ιTensorObj₃ X Y Z i j k n h ≫ scaleTensorObj X (tensorObj Y Z) u n =
       u i (j + k) • ιTensorObj₃ X Y Z i j k n h := by
   simp [ιTensorObj₃, Linear.comp_smul]
 
-omit [HasTensor Y Z] [HasTensor X (tensorObj Y Z)] in
+variable [MonoidalPreadditive C] [MonoidalLinear R C]
+
 /-- Scaling the first two factors of a homogeneous triple acts in bidegree `(i, j)`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj₃'_tensorHom_scaleTensorObj :
+lemma ιTensorObj₃'_tensorHom_scaleTensorObj (X Y Z : GradedObject I C)
+    [HasTensor X Y] [HasTensor (tensorObj X Y) Z]
+    (u : I → I → R) (i j k n : I) (h : i + j + k = n) :
     ιTensorObj₃' X Y Z i j k n h ≫ tensorHom (scaleTensorObj X Y u) (𝟙 Z) n =
       u i j • ιTensorObj₃' X Y Z i j k n h := by
   simp [ιTensorObj₃', tensorHom_id, ← MonoidalCategory.comp_whiskerRight_assoc,
     Linear.smul_comp]
 
-omit [HasTensor X Y] [HasTensor (tensorObj X Y) Z] in
 /-- Scaling the last two factors of a homogeneous triple acts in bidegree `(j, k)`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj₃_tensorHom_scaleTensorObj :
+lemma ιTensorObj₃_tensorHom_scaleTensorObj (X Y Z : GradedObject I C)
+    [HasTensor Y Z] [HasTensor X (tensorObj Y Z)]
+    (u : I → I → R) (i j k n : I) (h : i + j + k = n) :
     ιTensorObj₃ X Y Z i j k n h ≫ tensorHom (𝟙 X) (scaleTensorObj Y Z u) n =
       u j k • ιTensorObj₃ X Y Z i j k n h := by
   simp [ιTensorObj₃, id_tensorHom, ← MonoidalCategory.whiskerLeft_comp_assoc,
@@ -132,12 +136,11 @@ end Triple
 section Unit
 
 variable [DecidableEq I] [Limits.HasInitial C]
-  [∀ X, Limits.PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
-  [∀ X, Limits.PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
 
-omit [∀ X, Limits.PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)] in
 /-- A scalar function normalized on the left acts trivially when the first object is the unit. -/
-lemma scaleTensorObj_tensorUnit_left (X : GradedObject I C) [HasTensor tensorUnit X]
+lemma scaleTensorObj_tensorUnit_left
+    [∀ X, Limits.PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
+    (X : GradedObject I C) [HasTensor tensorUnit X]
     (u : I → I → R) (hu : ∀ i, u 0 i = 1) :
     scaleTensorObj tensorUnit X u = 𝟙 _ := by
   ext n i j h
@@ -147,9 +150,10 @@ lemma scaleTensorObj_tensorUnit_left (X : GradedObject I C) [HasTensor tensorUni
   · exact ((isInitialTensorUnitApply i hi).isInitialObj
       ((curriedTensor C).flip.obj (X j))).hom_ext _ _
 
-omit [∀ X, Limits.PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)] in
 /-- A scalar function normalized on the right acts trivially when the second object is the unit. -/
-lemma scaleTensorObj_tensorUnit_right (X : GradedObject I C) [HasTensor X tensorUnit]
+lemma scaleTensorObj_tensorUnit_right
+    [∀ X, Limits.PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
+    (X : GradedObject I C) [HasTensor X tensorUnit]
     (u : I → I → R) (hu : ∀ i, u i 0 = 1) :
     scaleTensorObj X tensorUnit u = 𝟙 _ := by
   ext n i j h
