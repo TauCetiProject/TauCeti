@@ -93,45 +93,9 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-! ### Cutoffs in the angular frequency -/
-
 section Dyadic
 
 variable [CompleteSpace F]
-
-/-- The bump function `φ` dilated by `2π`, which converts cutoffs in the frequency `ζ` of Mathlib's
-Fourier transform into cutoffs in the angular frequency `ξ = 2πζ` of the quantization. -/
-private def twoPiDilate (φ : ContDiffBump (0 : CoordinateSpace n)) :
-    ContDiffBump (0 : CoordinateSpace n) where
-  rIn := 2 * Real.pi * φ.rIn
-  rOut := 2 * Real.pi * φ.rOut
-  rIn_pos := by have := φ.rIn_pos; positivity
-  rIn_lt_rOut := mul_lt_mul_of_pos_left φ.rIn_lt_rOut (by positivity)
-
-private theorem twoPiDilate_rIn (φ : ContDiffBump (0 : CoordinateSpace n)) :
-    (twoPiDilate φ).rIn = 2 * Real.pi * φ.rIn :=
-  rfl
-
-private theorem twoPiDilate_rOut (φ : ContDiffBump (0 : CoordinateSpace n)) :
-    (twoPiDilate φ).rOut = 2 * Real.pi * φ.rOut :=
-  rfl
-
-private theorem twoPiDilate_apply (φ : ContDiffBump (0 : CoordinateSpace n))
-    (ξ : CoordinateSpace n) : twoPiDilate φ ξ = φ ((2 * Real.pi)⁻¹ • ξ) := by
-  have h₁ : (twoPiDilate φ).rOut / (twoPiDilate φ).rIn = φ.rOut / φ.rIn := by
-    rw [twoPiDilate_rOut, twoPiDilate_rIn, mul_div_mul_left _ _ (by positivity)]
-  have h₂ : (twoPiDilate φ).rIn⁻¹ = φ.rIn⁻¹ * (2 * Real.pi)⁻¹ := by
-    rw [twoPiDilate_rIn, mul_inv, mul_comm]
-  simp only [ContDiffBump.apply, sub_zero, smul_smul, h₁, h₂]
-
-private theorem inhomogeneousLittlewoodPaley_twoPiDilate (φ : ContDiffBump (0 : CoordinateSpace n))
-    (j : ℕ) (ξ : CoordinateSpace n) :
-    (twoPiDilate φ).inhomogeneousLittlewoodPaley j ξ =
-      φ.inhomogeneousLittlewoodPaley j ((2 * Real.pi)⁻¹ • ξ) := by
-  rcases j with _ | j
-  · simp [twoPiDilate_apply]
-  · simp only [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, twoPiDilate_apply,
-      smul_comm ((2 * Real.pi)⁻¹ : ℝ)]
 
 /-! ### Blocks -/
 
@@ -191,24 +155,27 @@ private theorem IsUniform.exists_quantizeTempered_eq_and_norm_le_of_isVanishingO
       ∃ v : Lp F p (volume : Measure (CoordinateSpace n)),
         quantizeTempered F a ha f = v ∧ ‖v‖ ≤ C * ‖f‖ := by
   obtain ⟨L, hL⟩ := exists_tsupport_enlargedLittlewoodPaley_sub_one_subset φ
+  -- Dilating `φ` by `2π` converts cutoffs in the frequency `ζ` of Mathlib's Fourier transform
+  -- into cutoffs in the angular frequency `ξ = 2πζ` of the quantization.
+  set ψ := φ.dilate Real.two_pi_pos
   obtain ⟨C, hC, hpiece⟩ :=
-    ha.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le (F := F) (twoPiDilate φ)
+    ha.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le (F := F) ψ
   refine ⟨2 * L * C, by positivity, fun k {p} _ f hf ↦ ?_⟩
   set g : CoordinateSpace n → ℂ := fun ζ ↦ ((φ.enlargedLittlewoodPaley L k ζ : ℝ) : ℂ)
   have hg : g.HasTemperateGrowth := φ.hasTemperateGrowth_ofReal_enlargedLittlewoodPaley L k
   have hgf : fourierMultiplierCLM F g (f : 𝓢'(CoordinateSpace n, F)) = f :=
     fourierMultiplierCLM_eq_self_of_isVanishingOn hf hg (hL k)
   set s := Finset.Ico (k + 1 - L) (k + L)
-  have hb (i : ℕ) := ha.littlewoodPaleyPieceLow (twoPiDilate φ) i
+  have hb (i : ℕ) := ha.littlewoodPaleyPieceLow ψ i
   have hq : quantizeTempered F a ha (f : 𝓢'(CoordinateSpace n, F)) =
-      ∑ i ∈ s, quantizeTempered F (a.littlewoodPaleyPieceLow (twoPiDilate φ) i) (hb i) f := by
+      ∑ i ∈ s, quantizeTempered F (a.littlewoodPaleyPieceLow ψ i) (hb i) f := by
     conv_lhs => rw [← hgf]
     rw [ha.quantizeTempered_fourierMultiplierCLM (IsUniform.sum fun i _ ↦ hb i) hg ?_,
       quantizeTempered_sum hb s, sum_apply]
     intro x ξ
     simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPieceLow,
-      coefficient_littlewoodPaleyPiece, inhomogeneousLittlewoodPaley_twoPiDilate, g,
-      ContDiffBump.enlargedLittlewoodPaley_apply, ← Finset.sum_smul, Complex.coe_smul, s]
+      coefficient_littlewoodPaleyPiece, ContDiffBump.inhomogeneousLittlewoodPaley_dilate, g,
+      ContDiffBump.enlargedLittlewoodPaley_apply, ← Finset.sum_smul, Complex.coe_smul, s, ψ]
   choose v hv hvn using fun i ↦ hpiece i f
   simp only [Real.rpow_zero, mul_one] at hvn
   refine ⟨∑ i ∈ s, v i, ?_, ?_⟩

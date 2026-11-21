@@ -53,6 +53,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley_neg`: the pieces `ψⱼ` are even.
+* `ContDiffBump.dilate` and `ContDiffBump.inhomogeneousLittlewoodPaley_dilate`: the dilation
+  `φ (c⁻¹ •)` of a bump function, whose partition is the dilation of the partition of `φ`.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_pos`: on a nontrivial space no piece `ψⱼ`
   is identically zero.
 * `ContDiffBump.littlewoodPaleyOverlap`, `ContDiffBump.inhomogeneousLittlewoodPaley_mul_eq_zero`,
@@ -130,9 +132,41 @@ theorem exists_rOut_lt_two_pow_mul_rIn {c : E} (φ : ContDiffBump c) :
   obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
   exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
 
+omit [NormedSpace ℝ E] in
+/-- The **dilation** of a bump function centred at `0` by a factor `c > 0`: the bump function with
+radii `c * φ.rIn` and `c * φ.rOut`, whose value at `ξ` is `φ (c⁻¹ • ξ)`
+(`ContDiffBump.dilate_apply`). -/
+def dilate (φ : ContDiffBump (0 : E)) {c : ℝ} (hc : 0 < c) : ContDiffBump (0 : E) where
+  rIn := c * φ.rIn
+  rOut := c * φ.rOut
+  rIn_pos := mul_pos hc φ.rIn_pos
+  rIn_lt_rOut := mul_lt_mul_of_pos_left φ.rIn_lt_rOut hc
+
+omit [NormedSpace ℝ E] in
+/-- The inner radius of `ContDiffBump.dilate`. -/
+@[simp]
+theorem dilate_rIn (φ : ContDiffBump (0 : E)) {c : ℝ} (hc : 0 < c) :
+    (φ.dilate hc).rIn = c * φ.rIn :=
+  (rfl)
+
+omit [NormedSpace ℝ E] in
+/-- The outer radius of `ContDiffBump.dilate`. -/
+@[simp]
+theorem dilate_rOut (φ : ContDiffBump (0 : E)) {c : ℝ} (hc : 0 < c) :
+    (φ.dilate hc).rOut = c * φ.rOut :=
+  (rfl)
+
 section HasContDiffBump
 
 variable [HasContDiffBump E] (φ : ContDiffBump (0 : E))
+
+/-- The dilation of `φ` by `c` is `φ` evaluated at `c⁻¹ • ξ`. -/
+theorem dilate_apply {c : ℝ} (hc : 0 < c) (ξ : E) : φ.dilate hc ξ = φ (c⁻¹ • ξ) := by
+  have h₁ : (φ.dilate hc).rOut / (φ.dilate hc).rIn = φ.rOut / φ.rIn := by
+    rw [dilate_rOut, dilate_rIn, mul_div_mul_left _ _ hc.ne']
+  have h₂ : (φ.dilate hc).rIn⁻¹ = φ.rIn⁻¹ * c⁻¹ := by
+    rw [dilate_rIn, mul_inv, mul_comm]
+  simp only [ContDiffBump.apply, sub_zero, smul_smul, h₁, h₂]
 
 /-- The **Littlewood–Paley cutoff** at scale `2^j` built from the bump function `φ`:
 `ψⱼ ξ = φ (2^{-j} ξ) - φ (2^{1-j} ξ)`. It is supported in the annulus
@@ -328,6 +362,15 @@ theorem inhomogeneousLittlewoodPaley_neg (j : ℕ) (ξ : E) :
   rcases j with _ | j
   · simp [ContDiffBump.neg]
   · simp [inhomogeneousLittlewoodPaley_succ_apply, smul_neg, ContDiffBump.neg]
+
+/-- The pieces of the inhomogeneous partition of the dilation of `φ` by `c` are the pieces of the
+partition of `φ` evaluated at `c⁻¹ • ξ`. -/
+theorem inhomogeneousLittlewoodPaley_dilate {c : ℝ} (hc : 0 < c) (j : ℕ) (ξ : E) :
+    (φ.dilate hc).inhomogeneousLittlewoodPaley j ξ =
+      φ.inhomogeneousLittlewoodPaley j (c⁻¹ • ξ) := by
+  rcases j with _ | j
+  · simp [dilate_apply]
+  · simp only [inhomogeneousLittlewoodPaley_succ_apply, dilate_apply, smul_comm c⁻¹]
 
 /-- Each piece of the inhomogeneous partition is smooth. -/
 @[fun_prop]
