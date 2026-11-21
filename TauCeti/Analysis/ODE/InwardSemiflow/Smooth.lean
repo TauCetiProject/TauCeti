@@ -59,8 +59,8 @@ theorem contDiffOn_forwardSemiflow_time {m : ℕ∞} {S : Set E} {X : E → E}
   intro t ht
   obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
   exact (contDiffOn_succ_of_hasDerivWithinAt_comp (uniqueDiffOn_Ico 0 b) hX
-    (fun _ hs ↦ forwardSemiflow_mem hX_lip (hsub hs))
-    (fun _ hs ↦ hasDerivWithinAt_forwardSemiflow_Ico hX_lip hsub hs) t
+    (fun _ hs ↦ forwardSemiflow_mem (hsub hs))
+    (fun _ hs ↦ hX_lip.hasDerivWithinAt_forwardSemiflow_Ico hsub hs) t
     ⟨nonneg_of_mem_forwardSemiflowInterval ht, htb⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
       ⟨Iio b, isOpen_Iio, htb, fun _ hs ↦ ⟨nonneg_of_mem_forwardSemiflowInterval hs.2, hs.1⟩⟩
 
@@ -362,8 +362,9 @@ private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C)
       fun s ↦ (projIcc 0 τ₁ hτ₁.le s).property)
     fun s ↦ ⟨h2r₁U (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).property).1,
       (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).property).2⟩
-  refine (eqOn_forwardSemiflow (γ := fun s ↦ (forwardSemiflow X (U ∩ C) s y, dysonSeriesLeft M_y s))
-    hX'_lip hb (Prod.ext (forwardSemiflow_zero _ _ _) (dysonSeriesLeft_zero _))
+  refine (hX'_lip.eqOn_forwardSemiflow
+    (γ := fun s ↦ (forwardSemiflow X (U ∩ C) s y, dysonSeriesLeft M_y s))
+    hb (Prod.ext (forwardSemiflow_zero _ _ _) (dysonSeriesLeft_zero _))
     (fun s hs ↦ ⟨⟨h2r₁U (hmem₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).1, trivial⟩,
       ⟨(hmem₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).2, trivial⟩⟩)
     (fun s hs ↦ ?_) ht).symm
@@ -372,7 +373,7 @@ private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C)
       (Ico 0 b) s := by
     simpa only [M_y, projIcc_of_mem hτ₁.le ⟨hs.1, hs.2.le.trans hb_le⟩,
       ContinuousLinearMap.mul_def] using (hasDerivAt_dysonSeriesLeft hMy_cont s).hasDerivWithinAt
-  exact ((hasDerivWithinAt_forwardSemiflow_Ico hX_lip hsub₁
+  exact ((hX_lip.hasDerivWithinAt_forwardSemiflow_Ico hsub₁
     ⟨hs.1, hs.2.trans_le (by linarith)⟩).mono (Ico_subset_Ico_right (by linarith))).prodMk hd₂
 
 end VariationalHelpers
@@ -597,22 +598,21 @@ theorem Convex.exists_contDiffOn_inwardSemiflow {C U : Set E} (hC : Convex ℝ C
     fun p hp ↦ TauCeti.mem_forwardSemiflowDomain_iff.mpr
       ⟨⟨hrU' hp.2.1, hp.2.2⟩, hsub p.2 hp.2 ⟨hp.1.1, by linarith [hp.1.2]⟩⟩
   have hmaps : MapsTo (uncurry Φ) (Icc 0 τ ×ˢ (ball x₀ r ∩ C)) (U ∩ C) := fun _ hp ↦ by
-    have h := TauCeti.forwardSemiflow_mem hX_lip_U'
-      (TauCeti.mem_forwardSemiflowDomain_iff.mp (hdom hp)).2
+    have h := TauCeti.forwardSemiflow_mem (TauCeti.mem_forwardSemiflowDomain_iff.mp (hdom hp)).2
     exact ⟨hU'_sub h.1, h.2⟩
   refine ⟨r, hr, τ, hτ, Φ, hrU'.trans hU'_sub,
     (TauCeti.contDiffOn_forwardSemiflow hC isOpen_ball hm
       (hX.mono (inter_subset_inter_left C hU'_sub)) hX_in_U').mono hdom,
     fun _ _ ↦ TauCeti.forwardSemiflow_zero _ _ _, hmaps,
-    fun y hy _ ht ↦ TauCeti.forwardSemiflow_mem_interior hC inter_subset_right hX_lip_U'
-      hX_in_U' (hsub y hy ⟨ht.1.le, by linarith [ht.2]⟩) ht.1,
-    fun y hy _ ht ↦ (TauCeti.hasDerivWithinAt_forwardSemiflow hX_lip_U'
+    fun y hy _ ht ↦ hC.forwardSemiflow_mem_interior inter_subset_right hX_in_U'
+      (hsub y hy ⟨ht.1.le, by linarith [ht.2]⟩) ht.1,
+    fun y hy _ ht ↦ (hX_lip_U'.hasDerivWithinAt_forwardSemiflow
       (hsub y hy ⟨ht.1, by linarith [ht.2]⟩)).mono
         (fun _ (hs : _ ∈ Icc 0 τ) ↦ hsub y hy ⟨hs.1, by linarith [hs.2]⟩),
     fun y hy t s ht hs hts hΦs ↦ ?_⟩
   have hsJ := hsub y hy ⟨hs, by linarith⟩
-  exact TauCeti.forwardSemiflow_add hX_lip_U' hsJ
-    (hsub (Φ s y) ⟨hΦs, (TauCeti.forwardSemiflow_mem hX_lip_U' hsJ).2⟩ ⟨ht, by linarith⟩)
+  exact hX_lip_U'.forwardSemiflow_add hsJ
+    (hsub (Φ s y) ⟨hΦs, (TauCeti.forwardSemiflow_mem hsJ).2⟩ ⟨ht, by linarith⟩)
 
 /-- **`C^m` inward deformation of a convex set into its interior.** Given a `C^m` (`1 ≤ m`,
 including `m = ∞`) strictly inward vector field `X` on a convex set `C` whose forward semiflow is
@@ -629,17 +629,16 @@ theorem Convex.exists_contDiffOn_inward_deformation {C : Set E} (hC : Convex ℝ
       (∀ t ∈ Ico (0 : ℝ) 1, ∀ x ∈ C, H (t, x) ∈ interior C) ∧
       (∀ t ∈ Icc (0 : ℝ) 1, ∀ x ∈ interior C, H (t, x) ∈ interior C) := by
   have hCD := TauCeti.contDiffOn_forwardSemiflow_Ici hC hm hX hX_in hglob
-  have hX_lip : LocallyLipschitzOn C X := (hX.of_le (mod_cast hm)).locallyLipschitzOn hC
   refine ⟨TauCeti.forwardSemiflow X C 1, fun p ↦ TauCeti.forwardSemiflow X C ((1 - p.1) ^ 2) p.2,
     hCD.comp (contDiffOn_const.prodMk contDiffOn_id) (fun _ hx ↦ ⟨zero_le_one, hx⟩),
-    fun x hx ↦ TauCeti.forwardSemiflow_mem_interior hC Subset.rfl hX_lip hX_in
+    fun x hx ↦ hC.forwardSemiflow_mem_interior Subset.rfl hX_in
       (hglob x hx ▸ zero_le_one) zero_lt_one,
     hCD.comp (((contDiffOn_const.sub contDiffOn_fst).pow 2).prodMk contDiffOn_snd)
       (fun _ hp ↦ ⟨sq_nonneg _, hp.2⟩),
     fun _ _ ↦ by simp, fun _ _ ↦ by simp,
     fun t ht x hx ↦ let hpos := sq_pos_of_pos (sub_pos.mpr ht.2)
-      TauCeti.forwardSemiflow_mem_interior hC Subset.rfl hX_lip hX_in (hglob x hx ▸ hpos.le) hpos,
-    fun _ _ x hx ↦ TauCeti.forwardSemiflow_mem_interior_of_mem_interior hC Subset.rfl hX_lip hX_in
+      hC.forwardSemiflow_mem_interior Subset.rfl hX_in (hglob x hx ▸ hpos.le) hpos,
+    fun _ _ x hx ↦ hC.forwardSemiflow_mem_interior_of_mem_interior Subset.rfl hX_in
       hx (hglob x (interior_subset hx) ▸ sq_nonneg _)⟩
 
 end ConvexDeformation

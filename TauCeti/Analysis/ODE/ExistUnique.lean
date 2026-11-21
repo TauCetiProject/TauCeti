@@ -24,8 +24,7 @@ interior or boundary reference point.
 For an autonomous field `X` that is locally Lipschitz only on a subset `S` containing two
 trajectories (without an ambient neighborhood Lipschitz bound), compactness of `[a, c]` yields a
 single Lipschitz constant along their joint image, giving forward uniqueness on `[a, b]` and
-`[a, b)`. An autonomous integral curve on `[a, s]` can also be concatenated with a translated
-integral curve on `[0, b)` at the matching time `s`.
+`[a, b)`.
 
 ## Main results
 
@@ -37,8 +36,6 @@ integral curve on `[0, b)` at the matching time `s`.
 * `LocallyLipschitzOn.eqOn_Icc_of_hasDerivWithinAt_Ici`,
   `LocallyLipschitzOn.eqOn_Ico_of_hasDerivWithinAt_Ico`: forward uniqueness on `[a, b]` and
   `[a, b)` for autonomous fields locally Lipschitz on a subset `S`.
-* `TauCeti.hasDerivWithinAt_ite_Ico`: concatenation of an integral curve on `[a, s]` with a
-  translated integral curve on `[0, b)` into an integral curve on `[a, s + b)`.
 * `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_lipschitzWith`: closed-interval
   uniqueness from interior derivatives and a common value at any `c ∈ [a, b]`.
 
@@ -215,47 +212,6 @@ theorem eqOn_Ico_of_hasDerivWithinAt_Ico {S : Set E} {X : E → E} (hX : Locally
     (hIci hg') (fun t ht ↦ hg_mem (hsub (Ico_subset_Icc_self ht))) ha ⟨hc.1, le_rfl⟩
 
 end LocallyLipschitzOn
-
-open Set in
-/-- Concatenating an integral curve `γ₁` of `X` on `[a, s]` with an integral curve `γ₂` of `X` on
-`[0, b)` starting at `γ₂ 0 = γ₁ s` yields an integral curve of `X` on `[a, s + b)`. -/
-theorem TauCeti.hasDerivWithinAt_ite_Ico (X : E → E) {γ₁ γ₂ : ℝ → E} {a s b u : ℝ}
-    (h0₂ : γ₂ 0 = γ₁ s)
-    (hγ₁' : ∀ t ∈ Icc a s, HasDerivWithinAt γ₁ (X (γ₁ t)) (Icc a s) t)
-    (hγ₂' : ∀ t ∈ Ico 0 b, HasDerivWithinAt γ₂ (X (γ₂ t)) (Ico 0 b) t)
-    (hu : u ∈ Ico a (s + b)) :
-    HasDerivWithinAt (fun r ↦ if r ≤ s then γ₁ r else γ₂ (r - s))
-      (X ((fun r ↦ if r ≤ s then γ₁ r else γ₂ (r - s)) u)) (Ico a (s + b)) u := by
-  set γ : ℝ → E := fun r ↦ if r ≤ s then γ₁ r else γ₂ (r - s)
-  rcases lt_trichotomy u s with hus | rfl | hsu
-  · have hγu : γ u = γ₁ u := ite_eq_left hus.le
-    have hd := (hγ₁' u ⟨hu.1, hus.le⟩).mono_of_mem_nhdsWithin (s := Ico a (s + b))
-      (mem_nhdsWithin.mpr ⟨Iio s, isOpen_Iio, hus, fun _ hr ↦ ⟨hr.2.1, hr.1.le⟩⟩)
-    exact (hγu ▸ hd).congr_of_eventuallyEq
-      (Filter.mem_of_superset (nhdsWithin_le_nhds (Iio_mem_nhds hus))
-        fun _ hr ↦ ite_eq_left (mem_Iio.mp hr).le) hγu
-  · have hγs : γ u = γ₁ u := ite_eq_left le_rfl
-    have hb : 0 < b := by linarith [hu.2]
-    have hleft : HasDerivWithinAt γ (X (γ u)) (Icc a u) u :=
-      (hγs ▸ hγ₁' u ⟨hu.1, le_rfl⟩).congr (fun _ hr ↦ ite_eq_left hr.2) hγs
-    have hright : HasDerivWithinAt γ (X (γ u)) (Ico u (u + b)) u := by
-      have hd₂ := HasDerivWithinAt.scomp_of_eq (s := Ico u (u + b)) u
-        (hγ₂' 0 ⟨le_rfl, hb⟩) ((hasDerivAt_id u).sub_const u).hasDerivWithinAt
-        (fun _ hr ↦ ⟨sub_nonneg.mpr hr.1, sub_lt_iff_lt_add'.mpr hr.2⟩) (sub_self u).symm
-      simp only [Function.comp_def, id_eq, h0₂, one_smul, ← hγs] at hd₂
-      refine hd₂.congr (fun r hr ↦ ?_) (by simp [γ, h0₂])
-      rcases hr.1.eq_or_lt with rfl | hsr
-      · simp [γ, h0₂]
-      · exact ite_eq_right (not_le_of_gt hsr)
-    have hboth : HasDerivWithinAt γ (X (γ u)) (Icc a u ∪ Ico u (u + b)) u :=
-      hleft.union hright
-    rwa [Icc_union_Ico_eq_Ico hu.1 hu.2] at hboth
-  · have hγu : γ u = γ₂ (u - s) := ite_eq_right (not_le_of_gt hsu)
-    have hd₂ := ((hγ₂' (u - s) ⟨by linarith, by linarith [hu.2]⟩).hasDerivAt
-      (Ico_mem_nhds (by linarith) (by linarith [hu.2]))).comp_sub_const u s
-    exact (hγu ▸ hd₂.hasDerivWithinAt).congr_of_eventuallyEq
-      (Filter.mem_of_superset (nhdsWithin_le_nhds (Ioi_mem_nhds hsu))
-        fun _ hr ↦ ite_eq_right (not_le_of_gt (mem_Ioi.mp hr))) hγu
 
 end
 

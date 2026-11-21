@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Analysis.Convex.Cone.StrictInward
 import TauCeti.Analysis.ODE.ExistUnique
+import TauCeti.Analysis.ODE.Glue
 import Mathlib.Tactic.Module
 
 /-!
@@ -42,9 +43,10 @@ and `C^m` inward deformations are established in `TauCeti/Analysis/ODE/InwardSem
   `TauCeti.forwardSemiflowInterval_eq_Ici_of_not_bddAbove`,
   `TauCeti.forwardSemiflowInterval_eq_Ici_or_exists_eq_Ico`: characterization of
   `forwardSemiflowInterval` as `Ici 0` or `Ico 0 b`.
-* `TauCeti.eqOn_forwardSemiflow`, `TauCeti.forwardSemiflow_mem_interior`,
-  `TauCeti.add_mem_forwardSemiflowInterval_iff`, `TauCeti.forwardSemiflow_add`: uniqueness,
-  interior entry, and cocycle law of `forwardSemiflow`.
+* `LocallyLipschitzOn.eqOn_forwardSemiflow`, `Convex.forwardSemiflow_mem_interior`,
+  `LocallyLipschitzOn.add_mem_forwardSemiflowInterval_iff`,
+  `LocallyLipschitzOn.forwardSemiflow_add`: uniqueness, interior entry, and cocycle law of
+  `forwardSemiflow`.
 
 ## References
 
@@ -285,12 +287,57 @@ theorem forwardSemiflowDomain_eq_Ici_prod {X : E → E} {C : Set E}
   simp only [mem_forwardSemiflowDomain_iff, mem_prod, and_comm]
   exact and_congr_right fun hx ↦ by rw [hglob x hx]
 
+/-- On `forwardSemiflowInterval X S x`, `forwardSemiflow` stays in `S`. -/
+theorem forwardSemiflow_mem {X : E → E} {S : Set E} {x : E} {t : ℝ}
+    (ht : t ∈ forwardSemiflowInterval X S x) : forwardSemiflow X S t x ∈ S := by
+  classical
+  dsimp only [forwardSemiflow]
+  rw [dite_eq_left ht]
+  obtain ⟨_, _, htI, _, hS, _⟩ := ht.choose_spec
+  exact hS htI
+
 end ForwardSemiflowDefs
 
-section ForwardSemiflowUnique
+end TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {C S : Set E} {X : E → E} {x : E}
+section ForwardSemiflowGeometry
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C S : Set E} {X : E → E} {x : E}
+
+/-- **Interior entry and persistence of `forwardSemiflow`.** When `S ⊆ C` for a convex set `C` and
+`X` is strictly inward to `C` on `S`, `forwardSemiflow X S` lies in `interior C` at every strictly
+positive time in its forward interval. -/
+theorem Convex.forwardSemiflow_mem_interior (hC : Convex ℝ C) (hSC : S ⊆ C)
+    (hX_in : ∀ y ∈ S, X y ∈ strictInwardCone C y)
+    {t : ℝ} (ht : t ∈ forwardSemiflowInterval X S x) (ht_pos : 0 < t) :
+    forwardSemiflow X S t x ∈ interior C := by
+  classical
+  dsimp only [forwardSemiflow]
+  rw [dite_eq_left ht]
+  obtain ⟨b, _, htI, _, hS, hγ'⟩ := ht.choose_spec
+  exact hC.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico (hS.mono_right hSC)
+    (fun _ hs ↦ hγ' _ (Ioo_subset_Ico_self hs))
+    (fun _ hs ↦ hX_in _ (hS (Ioo_subset_Ico_self hs))) ⟨ht_pos, htI.2⟩
+
+/-- If `x ∈ interior C`, then `forwardSemiflow X S t x ∈ interior C` for all times `t` in its
+forward interval (including `t = 0`). -/
+theorem Convex.forwardSemiflow_mem_interior_of_mem_interior (hC : Convex ℝ C) (hSC : S ⊆ C)
+    (hX_in : ∀ y ∈ S, X y ∈ strictInwardCone C y)
+    (hx : x ∈ interior C) {t : ℝ} (ht : t ∈ forwardSemiflowInterval X S x) :
+    forwardSemiflow X S t x ∈ interior C := by
+  rcases (nonneg_of_mem_forwardSemiflowInterval ht).eq_or_lt with rfl | ht_pos
+  · simpa using hx
+  · exact hC.forwardSemiflow_mem_interior hSC hX_in ht ht_pos
+
+end ForwardSemiflowGeometry
+
+namespace LocallyLipschitzOn
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {S : Set E} {X : E → E} {x : E}
 
 /-- For a locally Lipschitz field `X` on `S`, every forward integral curve on `[0, b)` starting at
 `x` agrees with `forwardSemiflow X S` on `[0, b)`. -/
@@ -315,13 +362,6 @@ theorem eqOn_forwardSemiflow (hX : LocallyLipschitzOn S X)
     (hS₁.mono_left (Ico_subset_Ico_right (min_le_right _ _)))
     (h0.trans h0₁.symm) ⟨ht.1, lt_min ht.2 ht₁.2⟩
 
-/-- On `forwardSemiflowInterval X S x`, `forwardSemiflow` stays in `S`. -/
-theorem forwardSemiflow_mem (hX : LocallyLipschitzOn S X)
-    {t : ℝ} (ht : t ∈ forwardSemiflowInterval X S x) : forwardSemiflow X S t x ∈ S := by
-  obtain ⟨γ, b, hb, htI, h0, hS, hγ'⟩ := ht
-  have heq : γ t = forwardSemiflow X S t x := eqOn_forwardSemiflow hX hb h0 hS hγ' htI
-  exact heq ▸ hS htI
-
 /-- On any `[0, b) ⊆ forwardSemiflowInterval X S x` (`0 < b`), `forwardSemiflow` solves
 `γ' = X ∘ γ` within `[0, b)`. -/
 theorem hasDerivWithinAt_forwardSemiflow_Ico (hX : LocallyLipschitzOn S X) {b t : ℝ}
@@ -329,7 +369,7 @@ theorem hasDerivWithinAt_forwardSemiflow_Ico (hX : LocallyLipschitzOn S X) {b t 
     HasDerivWithinAt (fun s ↦ forwardSemiflow X S s x)
       (X (forwardSemiflow X S t x)) (Ico 0 b) t := by
   obtain ⟨γ, d, hd, htI, h0, hS, hγ'⟩ := hsub ht
-  have heq := eqOn_forwardSemiflow hX hd h0 hS hγ'
+  have heq := hX.eqOn_forwardSemiflow hd h0 hS hγ'
   have h1 := ((hγ' t htI).mono (Ico_subset_Ico_right (min_le_right b d))).congr
     (fun s hs ↦ (heq ⟨hs.1, hs.2.trans_le (min_le_right b d)⟩).symm) (heq htI).symm
   rw [heq htI] at h1
@@ -343,7 +383,7 @@ theorem hasDerivWithinAt_forwardSemiflow (hX : LocallyLipschitzOn S X) {t : ℝ}
     HasDerivWithinAt (fun s ↦ forwardSemiflow X S s x)
       (X (forwardSemiflow X S t x)) (forwardSemiflowInterval X S x) t := by
   obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
-  exact (hasDerivWithinAt_forwardSemiflow_Ico hX hsub
+  exact (hX.hasDerivWithinAt_forwardSemiflow_Ico hsub
     ⟨nonneg_of_mem_forwardSemiflowInterval ht, htb⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
       ⟨Iio b, isOpen_Iio, htb, fun _ hs ↦ ⟨nonneg_of_mem_forwardSemiflowInterval hs.2, hs.1⟩⟩
 
@@ -353,31 +393,8 @@ theorem hasDerivAt_forwardSemiflow (hX : LocallyLipschitzOn S X) {t : ℝ}
     (ht : t ∈ forwardSemiflowInterval X S x) (ht_pos : 0 < t) :
     HasDerivAt (fun s ↦ forwardSemiflow X S s x) (X (forwardSemiflow X S t x)) t := by
   obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
-  exact (hasDerivWithinAt_forwardSemiflow_Ico hX hsub ⟨ht_pos.le, htb⟩).hasDerivAt
+  exact (hX.hasDerivWithinAt_forwardSemiflow_Ico hsub ⟨ht_pos.le, htb⟩).hasDerivAt
     (Ico_mem_nhds ht_pos htb)
-
-/-- **Interior entry and persistence of `forwardSemiflow`.** When `S ⊆ C` for a convex set `C` and
-`X` is locally Lipschitz on `S` and strictly inward to `C` on `S`, `forwardSemiflow X S` lies in
-`interior C` at every strictly positive time in its forward interval. -/
-theorem forwardSemiflow_mem_interior (hC : Convex ℝ C) (hSC : S ⊆ C)
-    (hX : LocallyLipschitzOn S X) (hX_in : ∀ y ∈ S, X y ∈ strictInwardCone C y)
-    {t : ℝ} (ht : t ∈ forwardSemiflowInterval X S x) (ht_pos : 0 < t) :
-    forwardSemiflow X S t x ∈ interior C := by
-  obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
-  exact hC.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico
-    (fun _ hs ↦ hSC (forwardSemiflow_mem hX (hsub hs)))
-    (fun _ hs ↦ hasDerivWithinAt_forwardSemiflow_Ico hX hsub (Ioo_subset_Ico_self hs))
-    (fun _ hs ↦ hX_in _ (forwardSemiflow_mem hX (hsub (Ioo_subset_Ico_self hs)))) ⟨ht_pos, htb⟩
-
-/-- If `x ∈ interior C`, then `forwardSemiflow X S t x ∈ interior C` for all times `t` in its
-forward interval (including `t = 0`). -/
-theorem forwardSemiflow_mem_interior_of_mem_interior (hC : Convex ℝ C) (hSC : S ⊆ C)
-    (hX : LocallyLipschitzOn S X) (hX_in : ∀ y ∈ S, X y ∈ strictInwardCone C y)
-    (hx : x ∈ interior C) {t : ℝ} (ht : t ∈ forwardSemiflowInterval X S x) :
-    forwardSemiflow X S t x ∈ interior C := by
-  rcases (nonneg_of_mem_forwardSemiflowInterval ht).eq_or_lt with rfl | ht_pos
-  · simpa using hx
-  · exact forwardSemiflow_mem_interior hC hSC hX hX_in ht ht_pos
 
 /-- Time-shifted derivative of `forwardSemiflow` on `[0, b - s)`. -/
 private theorem hasDerivWithinAt_forwardSemiflow_shift (hX : LocallyLipschitzOn S X)
@@ -386,7 +403,7 @@ private theorem hasDerivWithinAt_forwardSemiflow_shift (hX : LocallyLipschitzOn 
     HasDerivWithinAt (fun r ↦ forwardSemiflow X S (r + s) x)
       (X (forwardSemiflow X S (u + s) x)) (Ico 0 (b - s)) u := by
   have hcomp := HasDerivWithinAt.scomp (t' := Ico 0 b) (s := Ico 0 (b - s)) u (h := fun r ↦ r + s)
-    (hasDerivWithinAt_forwardSemiflow_Ico hX hsub ⟨by linarith [hu.1], by linarith [hu.2]⟩)
+    (hX.hasDerivWithinAt_forwardSemiflow_Ico hsub ⟨by linarith [hu.1], by linarith [hu.2]⟩)
     ((hasDerivAt_id u).add_const s).hasDerivWithinAt
     (fun _ hr ↦ ⟨by linarith [hr.1], by linarith [hr.2]⟩)
   simpa [Function.comp_def, one_smul] using hcomp
@@ -403,8 +420,8 @@ theorem add_mem_forwardSemiflowInterval_iff (hX : LocallyLipschitzOn S X)
   · obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval hts
     exact Ico_subset_forwardSemiflowInterval (γ := fun u ↦ forwardSemiflow X S (u + s) x)
       (by linarith : 0 < b - s) (by simp)
-      (fun u hu ↦ forwardSemiflow_mem hX (hsub ⟨by linarith [hu.1], by linarith [hu.2]⟩))
-      (fun _ hu ↦ hasDerivWithinAt_forwardSemiflow_shift hX hs0 hsub hu) ⟨ht, by linarith⟩
+      (fun u hu ↦ forwardSemiflow_mem (hsub ⟨by linarith [hu.1], by linarith [hu.2]⟩))
+      (fun _ hu ↦ hX.hasDerivWithinAt_forwardSemiflow_shift hs0 hsub hu) ⟨ht, by linarith⟩
   · obtain ⟨b₁, hsb₁, hsub₁⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval hs
     obtain ⟨γ₂, b₂, hb₂, htI₂, h0₂, hS₂, hγ₂'⟩ := ht'
     refine Ico_subset_forwardSemiflowInterval
@@ -412,10 +429,10 @@ theorem add_mem_forwardSemiflowInterval_iff (hX : LocallyLipschitzOn S X)
       (by positivity : 0 < s + b₂) (by simp [hs0])
       (fun u hu ↦ by
         dsimp only; split_ifs with hus
-        · exact forwardSemiflow_mem hX (hsub₁ ⟨hu.1, hus.trans_lt hsb₁⟩)
+        · exact forwardSemiflow_mem (hsub₁ ⟨hu.1, hus.trans_lt hsb₁⟩)
         · exact hS₂ ⟨by linarith, by linarith [hu.2]⟩)
       (fun _ hu ↦ hasDerivWithinAt_ite_Ico X h0₂
-        (fun _ hv ↦ (hasDerivWithinAt_forwardSemiflow_Ico hX hsub₁
+        (fun _ hv ↦ (hX.hasDerivWithinAt_forwardSemiflow_Ico hsub₁
           ⟨hv.1, hv.2.trans_lt hsb₁⟩).mono fun _ hr ↦ ⟨hr.1, hr.2.trans_lt hsb₁⟩) hγ₂' hu)
       ⟨by positivity, by linarith [htI₂.2]⟩
 
@@ -428,11 +445,9 @@ theorem forwardSemiflow_add (hX : LocallyLipschitzOn S X)
   have hs0 := nonneg_of_mem_forwardSemiflowInterval hs
   have ht0 := nonneg_of_mem_forwardSemiflowInterval ht
   obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval
-    ((add_mem_forwardSemiflowInterval_iff hX hs ht0).mpr ht)
-  exact eqOn_forwardSemiflow hX (by linarith : 0 < b - s) (by simp)
-    (fun u hu ↦ forwardSemiflow_mem hX (hsub ⟨by linarith [hu.1], by linarith [hu.2]⟩))
-    (fun _ hu ↦ hasDerivWithinAt_forwardSemiflow_shift hX hs0 hsub hu) ⟨ht0, by linarith⟩
+    ((hX.add_mem_forwardSemiflowInterval_iff hs ht0).mpr ht)
+  exact hX.eqOn_forwardSemiflow (by linarith : 0 < b - s) (by simp)
+    (fun u hu ↦ forwardSemiflow_mem (hsub ⟨by linarith [hu.1], by linarith [hu.2]⟩))
+    (fun _ hu ↦ hX.hasDerivWithinAt_forwardSemiflow_shift hs0 hsub hu) ⟨ht0, by linarith⟩
 
-end ForwardSemiflowUnique
-
-end TauCeti
+end LocallyLipschitzOn
