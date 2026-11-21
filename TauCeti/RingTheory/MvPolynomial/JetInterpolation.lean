@@ -86,6 +86,15 @@ noncomputable def firstJetMap : restrictTotalDegree σ R d →ₗ[R] ι → Opti
     jetEval {s : σ →₀ ℕ | s.degree ≤ d} (fun z ↦ P z.1) (fun z ↦ z.2.elim 0 (Finsupp.single · 1)) ∘ₗ
       (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R d)).toLinearMap
 
+/-- Defining equation of `firstJetMap` in terms of `MvPolynomial.jetEval`. -/
+theorem firstJetMap_def :
+    firstJetMap P d =
+      (LinearEquiv.curry R R ι (Option σ)).toLinearMap ∘ₗ
+        jetEval {s : σ →₀ ℕ | s.degree ≤ d} (fun z ↦ P z.1)
+          (fun z ↦ z.2.elim 0 (Finsupp.single · 1)) ∘ₗ
+        (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R d)).toLinearMap :=
+  (rfl)
+
 /-- The value row of the first jet at a point. -/
 @[simp]
 theorem firstJetMap_apply_none (f : restrictTotalDegree σ R d) (i : ι) :

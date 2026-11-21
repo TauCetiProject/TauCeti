@@ -10,6 +10,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Algebra.MvPolynomial.Rename
+import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.HermiteInterpolation
 
 /-!
@@ -87,9 +88,9 @@ theorem finrank_range_firstJetValueMap_univariate [Unique σ] [Fintype ι]
     ext f i
     simpa [eDom, eCod, L, a] using
       (eval₂_uniqueAlgEquiv (R := k) (φ := RingHom.id k) (a := P i) (f := f.val)).symm
-  rw [hcomp, LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ eDom.range]
-  simpa using (eCod.submoduleMap (LinearMap.range L)).finrank_eq.symm.trans
-    (Polynomial.finrank_range_hermiteJet_degreeLT ha (fun _ ↦ 1) (d + 1))
+  rw [hcomp, LinearMap.finrank_range_comp_comp eCod.toLinearMap L eDom.toLinearMap
+    eCod.injective eDom.surjective]
+  simpa [L] using Polynomial.finrank_range_hermiteJet_degreeLT ha (fun _ ↦ 1) (d + 1)
 
 /-- In one variable, the range of `firstJetMap P d` at `n` distinct points over any field has
 dimension `min (d + 1) (2 * n)`. -/
@@ -125,9 +126,9 @@ theorem finrank_range_firstJetMap_univariate [Unique σ] [Fintype ι]
         Polynomial.hasseDeriv_one, ← uniqueAlgEquiv_pderiv]
       exact (eval₂_uniqueAlgEquiv (R := k) (φ := RingHom.id k) (a := P i)
         (f := pderiv default f.val)).symm
-  rw [hcomp, LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ eDom.range]
-  simpa [mul_comm] using (eCod.submoduleMap (LinearMap.range L)).finrank_eq.symm.trans
-    (Polynomial.finrank_range_hermiteJet_degreeLT ha (fun _ ↦ 2) (d + 1))
+  rw [hcomp, LinearMap.finrank_range_comp_comp eCod.toLinearMap L eDom.toLinearMap
+    eCod.injective eDom.surjective]
+  simpa [L, mul_comm] using Polynomial.finrank_range_hermiteJet_degreeLT ha (fun _ ↦ 2) (d + 1)
 
 /-- **Univariate Hermite interpolation rank.** Over any field `k` in any characteristic, for any
 injective finite tuple `P` on the affine line, `firstJetMatrix P d` has rank
@@ -271,24 +272,21 @@ theorem rank_firstJetMatrix_of_coord_eq_zero [Finite σ] {d : ℕ}
   classical
   let σ' := {j : σ // j ≠ j₀}
   let P' : ι → σ' → k := fun i l ↦ P i l.val
-  have hrange :
-      LinearMap.range
-          ((hyperplaneJetCodomainEquiv (k := k) (ι := ι) j₀).toLinearMap ∘ₗ
-            firstJetMap P (d + 1)) =
-        (LinearMap.range (firstJetMap P' (d + 1))).prod
-          (LinearMap.range (firstJetValueMap P' d)) := by
-    rw [hyperplaneJetCodomainEquiv_comp_firstJetMap j₀ hP,
-      LinearMap.range_comp_of_range_eq_top _
-        (LinearMap.range_eq_top.2 (hyperplaneSliceMap_surjective j₀ d)),
-      LinearMap.range_prodMap]
+  have hcomp : firstJetMap P (d + 1) =
+      (hyperplaneJetCodomainEquiv (k := k) (ι := ι) j₀).symm.toLinearMap ∘ₗ
+        ((firstJetMap P' (d + 1)).prodMap (firstJetValueMap P' d)) ∘ₗ
+        hyperplaneSliceMap j₀ d := by
+    rw [← hyperplaneJetCodomainEquiv_comp_firstJetMap j₀ hP, ← LinearMap.comp_assoc]
+    ext f i z
+    simp
   have : Module.Finite k (restrictTotalDegree σ' k (d + 1)) :=
     Module.Finite.of_basis (basisRestrictTotalDegree σ' k (d + 1))
   have : Module.Finite k (restrictTotalDegree σ' k d) :=
     Module.Finite.of_basis (basisRestrictTotalDegree σ' k d)
-  rw [rank_firstJetMatrix_eq_finrank_range,
-    ((hyperplaneJetCodomainEquiv j₀).submoduleMap
-      (LinearMap.range (firstJetMap P (d + 1)))).finrank_eq,
-    ← LinearMap.range_comp, hrange, (Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod]
+  rw [rank_firstJetMatrix_eq_finrank_range, hcomp,
+    LinearMap.finrank_range_comp_comp _ _ _ (hyperplaneJetCodomainEquiv j₀).symm.injective
+      (hyperplaneSliceMap_surjective j₀ d),
+    LinearMap.range_prodMap, (Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod]
 
 /-- **Coordinate-hyperplane rank upper bound.** Points lying on a coordinate hyperplane `x_{j₀} = 0`
 have degree-`(d + 1)` first-jet rank at most

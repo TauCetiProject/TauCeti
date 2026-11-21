@@ -393,6 +393,20 @@ theorem quotientSpanXImageEquiv_symm_X (i : {i : σ // i ∉ s}) :
 
 end QuotientSpanXImage
 
+section PointEvaluationSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- The evaluation ideal `RingHom.ker (eval a)` is the pullback of the ideal of variables along
+the Taylor shift `taylor a`. -/
+theorem ker_eval_eq_comap_taylor (a : σ → R) :
+    RingHom.ker (eval a) = (idealOfVars σ R).comap (taylor a).toRingHom := by
+  ext p
+  rw [RingHom.mem_ker, Ideal.mem_comap, ← ker_constantCoeff, RingHom.mem_ker,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, constantCoeff_taylor]
+
+end PointEvaluationSemiring
+
 section PointEvaluation
 
 variable {R : Type*} [CommRing R]
@@ -446,9 +460,8 @@ the `k`-th power of the ideal of variables along the Taylor shift `taylor a`. -/
 theorem pow_ker_eval_eq_comap_taylor (a : σ → R) (k : ℕ) :
     RingHom.ker (eval a) ^ k = (idealOfVars σ R ^ k).comap (taylor a).toRingHom := by
   have h1 : RingHom.ker (eval a) = (idealOfVars σ R).comap (taylorEquiv a).toRingEquiv := by
-    ext p
-    rw [RingHom.mem_ker, Ideal.mem_comap, ← ker_constantCoeff, RingHom.mem_ker]
-    simp
+    rw [ker_eval_eq_comap_taylor a, ← toAlgHom_taylorEquiv]
+    rfl
   rw [h1, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm]
   ext p
   simp
@@ -469,20 +482,6 @@ theorem isCoprime_ker_eval_of_isUnit_sub {P Q : σ → R} {j : σ} (h : IsUnit (
     _ = 1 := by rw [← hu, Units.inv_mul, map_one]
 
 end PointEvaluation
-
-section PointEvaluationSemiring
-
-variable {R : Type*} [CommSemiring R]
-
-/-- The evaluation ideal `RingHom.ker (eval a)` is the pullback of the ideal of variables along
-the Taylor shift `taylor a`. -/
-theorem ker_eval_eq_comap_taylor (a : σ → R) :
-    RingHom.ker (eval a) = (idealOfVars σ R).comap (taylor a).toRingHom := by
-  ext p
-  rw [RingHom.mem_ker, Ideal.mem_comap, ← ker_constantCoeff, RingHom.mem_ker,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, constantCoeff_taylor]
-
-end PointEvaluationSemiring
 
 end MvPolynomial
 

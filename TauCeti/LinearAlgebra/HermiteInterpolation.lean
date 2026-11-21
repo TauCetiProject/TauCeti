@@ -757,8 +757,7 @@ theorem finrank_range_hermiteJet_degreeLT (ha : Injective a) (m : ι → ℕ) (N
     have hinj : Injective L := by
       rw [hcomp]
       exact (hermiteJet_injective ha m).comp (Submodule.inclusion_injective _)
-    rw [min_eq_left hle, (LinearEquiv.ofInjective L hinj).finrank_eq.symm]
-    simp [(degreeLTEquiv K N).finrank_eq]
+    rw [min_eq_left hle, LinearMap.finrank_range_of_inj hinj, Polynomial.finrank_degreeLT]
   · have hcomp : L ∘ₗ Submodule.inclusion (degreeLT_mono hge) = hermiteJet a m := by
       ext f i r
       simp [L]
