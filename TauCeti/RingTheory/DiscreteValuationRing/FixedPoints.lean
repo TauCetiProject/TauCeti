@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.FixedPoints
@@ -33,7 +34,7 @@ instance instIsPrincipalIdealRingFixedPointsSubring :
   principal I := by
     by_cases hI : I = ⊥; · exact ⟨0, by simp [hI]⟩
     obtain ⟨x₀, hx₀I, hx₀0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
-    let f (z : {x : FixedPoints.subring B G // x ∈ I ∧ x ≠ 0}) := (addVal B (z.1 : B)).toNat
+    let f (z : {x : FixedPoints.subring B G // x ∈ I ∧ x ≠ 0}) := (addVal B (z.val : B)).toNat
     obtain ⟨⟨a, haI, ha0⟩, -, hmin⟩ :=
       (InvImage.wf f Nat.lt_wfRel.wf).has_min Set.univ ⟨⟨x₀, hx₀I, hx₀0⟩, trivial⟩
     refine ⟨a, le_antisymm (fun y hyI ↦ ?_) (Ideal.span_le.2 (Set.singleton_subset_iff.2 haI))⟩
@@ -79,11 +80,6 @@ end Monoid
 
 section FiniteGroup
 variable [Group G] [Finite G] [MulSemiringAction G B]
-/-- The fixed-point subalgebra of a DVR under a finite group action is a DVR. -/
-instance instIsDiscreteValuationRingFixedPointsSubalgebra {A : Type*} [CommRing A] [Algebra A B]
-    [SMulCommClass G A B] : _root_.IsDiscreteValuationRing (FixedPoints.subalgebra A B G) :=
-  have := Algebra.IsInvariant.isIntegral (FixedPoints.subalgebra A B G) B G
-  isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
 /-- The fixed-point subring of a DVR under a finite group action is a DVR. -/
 instance instIsDiscreteValuationRingFixedPointsSubring :
     _root_.IsDiscreteValuationRing (FixedPoints.subring B G) :=

@@ -10,11 +10,10 @@ public import Mathlib.NumberTheory.NumberField.DirichletDensity
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree
-import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # The higher prime powers in the logarithm of the Dedekind Euler product
@@ -144,11 +143,6 @@ theorem tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg {s : ℝ} :
         exact Real.log_nonneg (by linarith)
       linarith
   have hfin := (Ring.HasFiniteQuotients.finite_absNorm_heightOneSpectrum_le (S := 𝓞 K) B)
-  have hinf : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    haveI : Infinite (HeightOneSpectrum ℤ) :=
-      Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
-        Rat.HeightOneSpectrum.primesEquiv.surjective
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ) (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
   have hlim := hsum.tendsto_cofinite_zero
   obtain ⟨𝔭, h1, h2⟩ := ((hlim.eventually (Metric.ball_mem_nhds 0 one_pos)).and
     (hfin.eventually_cofinite_notMem)).exists

@@ -25,8 +25,6 @@ extension `M / K` need not be finite or Galois.
 
 ## Main results
 
-* `TauCeti.IsGaloisGroup.moduleFinite`: for a finite Galois group `G` of a domain `B` over an
-  integrally closed Noetherian domain `A`, `B` is module-finite over `A`.
 * `TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup`: `B` is a domain,
   finite and flat over `A`, with Galois group `Gal(M/K)`.
 * `TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField`: `C` is a Dedekind
@@ -36,27 +34,6 @@ extension `M / K` need not be finite or Galois.
 public section
 
 open IntermediateField
-
-/-- For a finite Galois group `G` of an extension `B / A` of domains over an integrally closed
-Noetherian domain `A`, `B` is finitely generated as an `A`-module. -/
-theorem TauCeti.IsGaloisGroup.moduleFinite (G A B : Type*) [CommRing A] [IsDomain A]
-    [IsIntegrallyClosed A] [IsNoetherianRing A] [CommRing B] [IsDomain B] [Algebra A B]
-    [FaithfulSMul A B] [Group G] [Finite G] [MulSemiringAction G B] [IsGaloisGroup G A B] :
-    Module.Finite A B := by
-  let _ := FractionRing.liftAlgebra A (FractionRing B)
-  have _ := FractionRing.isScalarTower_liftAlgebra A (FractionRing B)
-  let _ := IsFractionRing.mulSemiringAction G B (FractionRing B)
-  have _ := IsGaloisGroup.isGalois G (FractionRing A) (FractionRing B)
-  have _ := IsGaloisGroup.finiteDimensional G (FractionRing A) (FractionRing B)
-  have _ := Algebra.IsInvariant.isIntegral A B G
-  have _ : FaithfulSMul A (FractionRing B) := .trans A B _
-  have _ := IsIntegralClosure.finite A (FractionRing A) (FractionRing B)
-    (integralClosure A (FractionRing B))
-  let ι : B →ₐ[A] integralClosure A (FractionRing B) :=
-    (IsScalarTower.toAlgHom A B (FractionRing B)).codRestrict _ fun b ↦
-      (Algebra.IsIntegral.isIntegral (R := A) b).map (IsScalarTower.toAlgHom A B (FractionRing B))
-  exact Module.Finite.of_injective ι.toLinearMap fun _ _ h ↦
-    IsFractionRing.injective B (FractionRing B) (congrArg Subtype.val h)
 
 namespace TauCeti.IsIntegralClosure
 

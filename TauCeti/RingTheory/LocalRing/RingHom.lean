@@ -29,8 +29,8 @@ on units. This is the semilocal counterpart of Mathlib's
 remainder theorem a lift of a unit can be corrected by an element of the kernel so that it avoids
 every maximal ideal.
 
-If `algebraMap A B` reflects units, then so does `algebraMap A S` for every subalgebra `S` of `B`
-(`Subalgebra.instIsLocalHomAlgebraMap`).
+Unit reflection also passes to subalgebras: if `R → S` reflects units then so does `R → T` for
+every subalgebra `T` of `S` (`Subalgebra.isLocalHom_algebraMap`).
 
 For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
 maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
@@ -90,11 +90,14 @@ end RingHom
 
 namespace Subalgebra
 
-/-- If `algebraMap A B` reflects units, then so does `algebraMap A S` for every subalgebra `S`
-of `B`. -/
-instance instIsLocalHomAlgebraMap {A B : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
-    [IsLocalHom (algebraMap A B)] (S : Subalgebra A B) : IsLocalHom (algebraMap A S) :=
-  ⟨fun a ha ↦ isUnit_of_map_unit (algebraMap A B) a (ha.map S.val)⟩
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- If `R → S` reflects units, then so does `R → T` for every subalgebra `T` of `S`. -/
+instance isLocalHom_algebraMap [IsLocalHom (algebraMap R S)] (T : Subalgebra R S) :
+    IsLocalHom (algebraMap R T) :=
+  have : IsLocalHom ((T.val : T →+* S).comp (algebraMap R T)) := by
+    rwa [T.val.comp_algebraMap]
+  isLocalHom_of_comp _ (T.val : T →+* S)
 
 end Subalgebra
 

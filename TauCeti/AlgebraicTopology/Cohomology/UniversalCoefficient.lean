@@ -70,6 +70,8 @@ free in that degree and zero above it, while in the top degree it need not be to
   of coefficient modules is injective on cohomology in degree `n`.
 * `TopCat.injective_homologyMap_linearYonedaObjMap_one`: an injective map of coefficient modules
   is injective on `H¹` of every space.
+* `TopCat.singularKroneckerEquivOne`: for free coefficients the Kronecker map is an isomorphism
+  `H¹(X; R, M) ≃ₗ[k] Hom(H₁(X; R), M)` for every space `X`.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
@@ -152,6 +154,24 @@ theorem injective_homologyMap_linearYonedaObjMap_one [Module.Free k R] {M M' : M
   X.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt g hg 1 fun j hj ↦ by
     obtain rfl : j = 0 := by omega
     exact ModuleCat.projective_of_free (Module.Free.chooseBasis k _)
+
+/-- **The universal coefficient isomorphism in degree one**: for a free coefficient module `R`,
+the Kronecker map is a `k`-linear equivalence `H¹(X; R, M) ≃ₗ[k] (H₁(X; R) ⟶ M)` for every space
+`X` and every module `M`, because `H₀(X; R)` is free (`ModuleCat.free_singularHomology_zero`). -/
+def singularKroneckerEquivOne [Module.Free k R] (M : ModuleCat.{w} k) :
+    X.singularCohomology R k M 1 ≃ₗ[k]
+      (((singularHomologyFunctor (ModuleCat.{w} k) 1).obj R).obj X ⟶ M) :=
+  LinearEquiv.ofBijective _ <| X.singularKronecker_bijective_of_projective_homology_lt M 1
+    fun j hj ↦ by
+      obtain rfl : j = 0 := by omega
+      exact ModuleCat.projective_of_free (Module.Free.chooseBasis k _)
+
+/-- The equivalence `TopCat.singularKroneckerEquivOne` is the Kronecker map. -/
+@[simp]
+lemma singularKroneckerEquivOne_apply [Module.Free k R] (M : ModuleCat.{w} k)
+    (α : X.singularCohomology R k M 1) :
+    X.singularKroneckerEquivOne M α = X.singularKronecker k 1 α :=
+  (rfl)
 
 end ProjectiveHomologyBelow
 
@@ -277,7 +297,7 @@ def singularUniversalCoefficientEquiv (n : ℕ) :
   ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
     (X.singularExtToCohomology_injective R M n)
     ⟨X.singularKroneckerSection R M (n + 1),
-      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).1
+      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).val
 
 /-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
 inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/

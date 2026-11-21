@@ -79,9 +79,10 @@ theorem exists_forall_lowerIndex_mul_restrictScalars_le (σ : M ≃ₐ[K] M) :
     ∃ τ₀ : M ≃ₐ[L] M, ∀ τ : M ≃ₐ[L] M,
       lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K * τ.restrictScalars K) ≤
         lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K) := by
-  obtain ⟨⟨_, τ₀, rfl⟩, hτ₀⟩ := TauCeti.IsLocalRing.exists_forall_lowerIndex_mul_le 𝒪[M]
-    (AlgEquiv.restrictScalarsHom (S := L) K).range σ
-  exact ⟨τ₀, fun τ ↦ hτ₀ ⟨_, τ, rfl⟩⟩
+  obtain ⟨_, ⟨τ₀, rfl⟩, hτ₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le
+    (S := 𝒪[M]) (AlgEquiv.restrictScalarsHom K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range σ
+  refine ⟨τ₀, fun τ ↦ ?_⟩
+  simpa only [AlgEquiv.restrictScalarsHom_apply] using hτ₀ _ ⟨τ, rfl⟩
 
 /-- **Serre's lemma on the lower index of a quotient**, in counting form. If `σ` has the
 largest lower index in its coset `σ H`, and `i_G(σ) = j` is finite, then

@@ -78,17 +78,18 @@ theorem ramificationGroupReal_quotient_herbrandFun (u : ℝ) :
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) =
       (ramificationGroupReal G B u).map (QuotientGroup.mk' H) := by
   have hmk (g : G) (h : H) : QuotientGroup.mk' H (g * h) = QuotientGroup.mk' H g := by
-    simp [QuotientGroup.mk'_apply, h.2]
+    simp [QuotientGroup.mk'_apply, h.property]
   ext q; rw [Subgroup.mem_map]; refine ⟨fun hq ↦ ?_, fun ⟨g, hg, hq⟩ ↦ ?_⟩
   · obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective H q
-    obtain ⟨h₀, hh₀⟩ := exists_forall_lowerIndex_mul_le B H g
+    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) H g
     exact ⟨g * h₀, (quotient_mk_mem_ramificationGroupReal_herbrandFun_iff A B G H (g * h₀)
-      hh₀ u).1 (hmk g h₀ ▸ hq), hmk g h₀⟩
-  · obtain ⟨h₀, hh₀⟩ := exists_forall_lowerIndex_mul_le B H g
-    rw [← hq, ← hmk g h₀, quotient_mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ hh₀,
+      (fun h ↦ hh₀ h h.property) u).1 (hmk g ⟨h₀, hh₀_mem⟩ ▸ hq), hmk g ⟨h₀, hh₀_mem⟩⟩
+  · obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) H g
+    rw [← hq, ← hmk g ⟨h₀, hh₀_mem⟩,
+      quotient_mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ (fun h ↦ hh₀ h h.property),
       ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
     rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg
-    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹)
+    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (H.inv_mem hh₀_mem))
 /-- For normal `H ≤ G`, `(G ⧸ H)_v = (G_{ψ_H(v)}).map (QuotientGroup.mk' H)`. -/
 theorem ramificationGroupReal_quotient_eq_map_inverseHerbrandFun (v : ℝ) :
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) v =

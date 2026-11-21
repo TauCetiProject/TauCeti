@@ -37,13 +37,5 @@ variable {A : Type*} [CommSemiring A]
 instance instIsLocalHomValFixedPointsSubalgebra [Semiring B] [Algebra A B] [MulSemiringAction G B]
     [SMulCommClass G A B] : IsLocalHom (FixedPoints.subalgebra A B G).val :=
   ⟨fun _ ↦ isUnit_coe_fixedPoints_subalgebra_iff.mp⟩
-instance instIsLocalHomAlgebraMapFixedPointsSubalgebra [CommSemiring B] [Algebra A B]
-    [MulSemiringAction G B] [SMulCommClass G A B] :
-    IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
-  ⟨fun _ ↦ isUnit_coe_fixedPoints_subalgebra_iff.mp⟩
-/-- The fixed-point subalgebra of a local semiring under any monoid action is local. -/
-instance instIsLocalRingFixedPointsSubalgebra [Semiring B] [IsLocalRing B] [Algebra A B]
-    [MulSemiringAction G B] [SMulCommClass G A B] : IsLocalRing (FixedPoints.subalgebra A B G) :=
-  RingHom.domain_isLocalRing ((FixedPoints.subalgebra A B G).val : _ →+* B)
 end Subalgebra
 end TauCeti

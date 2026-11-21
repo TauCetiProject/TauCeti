@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 
@@ -15,7 +16,9 @@ For a morphism `g : X₀ ⟶ X₁` and adjacent degrees `i₀ ≠ i₁` of a com
 `HomologicalComplex.double g hi₀₁` is the two-term complex `X₀ ⟶ X₁`. This file provides the
 inclusion of `X₁` in degree `i₁`, the projection onto `X₀` in degree `i₀`, the degreewise
 splitting of the short complex `X₁[i₁] ⟶ (X₀ ⟶ X₁) ⟶ X₀[i₀]` they form, and the map of two-term
-complexes induced by a commutative square. Nothing depends on the shape `c`.
+complexes induced by a commutative square. It also compares the two-term complex of `F.map g`
+with the termwise image under a functor `F` of the two-term complex of `g`. Nothing depends on
+the shape `c`.
 
 The structural maps and `HomologicalComplex.doubleMap` need zero morphisms and a zero object; the
 degreewise splitting needs a preadditive category with a zero object.
@@ -29,6 +32,9 @@ degreewise splitting needs a preadditive category with a zero object.
 * `HomologicalComplex.doubleMap`: the map of two-term complexes induced by a commutative square,
   with its components `doubleMap_f₀` and `doubleMap_f₁`, functoriality `doubleMap_id` and
   `doubleMap_comp`, and naturality of `doubleι₁` and `doubleπ₀`.
+* `HomologicalComplex.doubleToMapHomologicalComplex`: the comparison `(F X₀ ⟶ F X₁) ⟶ F (X₀ ⟶ X₁)`
+  for a functor `F`, compatible with `doubleι₁` and Mathlib's `singleMapHomologicalComplex`
+  (`HomologicalComplex.doubleι₁_comp_doubleToMapHomologicalComplex`).
 -/
 
 public section
@@ -127,6 +133,50 @@ theorem doubleι₁_doubleMap : doubleι₁ g hi₀₁ h ≫ doubleMap hi₀₁ 
   simp [doubleι₁_f₁, single_map_f_self]
 
 end ZeroMorphisms
+
+section Functor
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C]
+  {D : Type*} [Category D] [HasZeroMorphisms D] [HasZeroObject D] (F : C ⥤ D)
+  [F.PreservesZeroMorphisms] {X₀ X₁ : C} (g : X₀ ⟶ X₁) {ι : Type*} {c : ComplexShape ι}
+  {i₀ i₁ : ι} (hi₀₁ : c.Rel i₀ i₁) (h : i₀ ≠ i₁)
+
+/-- The comparison `(F X₀ ⟶ F X₁) ⟶ F (X₀ ⟶ X₁)` from the two-term complex of `F.map g` to the
+termwise image under `F` of the two-term complex of `g`. -/
+noncomputable def doubleToMapHomologicalComplex :
+    double (F.map g) hi₀₁ ⟶ (F.mapHomologicalComplex c).obj (double g hi₀₁) :=
+  mkHomFromDouble hi₀₁ h (F.map (doubleXIso₀ g hi₀₁).inv) (F.map (doubleXIso₁ g hi₀₁ h).inv)
+    (by
+      rw [Functor.mapHomologicalComplex_obj_d, double_d g _ h, ← F.map_comp, ← F.map_comp,
+        Iso.inv_hom_id_assoc])
+    (fun k _ ↦ by
+      rw [Functor.mapHomologicalComplex_obj_d, double_d_eq_zero₀ g _ _ _ h.symm, F.map_zero,
+        comp_zero])
+
+@[simp]
+theorem doubleToMapHomologicalComplex_f₀ : (doubleToMapHomologicalComplex F g hi₀₁ h).f i₀ =
+    (doubleXIso₀ (F.map g) hi₀₁).hom ≫ F.map (doubleXIso₀ g hi₀₁).inv :=
+  mkHomFromDouble_f₀ _ _ _ _ _ _
+
+@[simp]
+theorem doubleToMapHomologicalComplex_f₁ : (doubleToMapHomologicalComplex F g hi₀₁ h).f i₁ =
+    (doubleXIso₁ (F.map g) hi₀₁ h).hom ≫ F.map (doubleXIso₁ g hi₀₁ h).inv :=
+  mkHomFromDouble_f₁ _ _ _ _ _ _
+
+/-- The comparison `doubleToMapHomologicalComplex` is compatible with the inclusions of the
+degree-`i₁` terms, through Mathlib's comparison `singleMapHomologicalComplex` of single
+complexes. -/
+@[reassoc]
+theorem doubleι₁_comp_doubleToMapHomologicalComplex [DecidableEq ι] :
+    doubleι₁ (F.map g) hi₀₁ h ≫ doubleToMapHomologicalComplex F g hi₀₁ h =
+      (singleMapHomologicalComplex F c i₁).inv.app X₁ ≫
+        (F.mapHomologicalComplex c).map (doubleι₁ g hi₀₁ h) := by
+  apply from_single_hom_ext
+  rw [comp_f, comp_f, doubleι₁_f₁, doubleToMapHomologicalComplex_f₁,
+    singleMapHomologicalComplex_inv_app_self, Functor.mapHomologicalComplex_map_f, doubleι₁_f₁]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, ← F.map_comp]
+
+end Functor
 
 section Preadditive
 

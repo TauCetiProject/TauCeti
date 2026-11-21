@@ -150,7 +150,7 @@ theorem _root_.ContinuousLinearMap.exists_homotopy_polarFactor_of_norm_sq_sub
   -- Since `C` pulls `Q` back to `-‖u‖²`, its negative block expands norms.
   have hexp : ∀ u, ‖u‖ ≤ ‖B u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
   have hσ (t : unitInterval) : |(unitInterval.symm t : ℝ)| ≤ 1 :=
-    abs_le.2 ⟨by linarith [(unitInterval.symm t).2.1], (unitInterval.symm t).2.2⟩
+    abs_le.2 ⟨by linarith [(unitInterval.symm t).property.1], (unitInterval.symm t).property.2⟩
   let P : C(E, E × F) → Prop := fun g ↦
     ∀ u, ‖g u‖ ≤ ‖C u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2
   let g₁ : C(E, E × F) := ⟨fun u ↦ C u, by fun_prop⟩
@@ -176,7 +176,7 @@ theorem _root_.ContinuousLinearMap.exists_homotopy_polarFactor_of_norm_sq_sub
       map_zero_left := fun u ↦ by simp [g₂]
       map_one_left := fun u ↦ by simp [g₃]
       prop' := fun t u ↦ by
-        obtain ⟨hlo, hhi⟩ := B.norm_le_norm_polarDeformation_apply_le hexp t.2 u
+        obtain ⟨hlo, hhi⟩ := B.norm_le_norm_polarDeformation_apply_le hexp t.property u
         simp only [ContinuousMap.coe_mk]
         refine ⟨?_, ?_⟩
         · simpa [Prod.norm_def] using hhi.trans (norm_fst_le (C u))
@@ -220,7 +220,7 @@ theorem _root_.HasFDerivAt.exists_negative_disk_homotopy_polarFactor
   -- Points of the small disk and their images under `A` stay in the controlled balls.
   have hmem (u : Metric.closedBall (0 : E) δ) :
       ((u : E), (0 : F)) ∈ Metric.closedBall (0 : E × F) δ :=
-    (closedBall_prod_same (0 : E) (0 : F) δ).subset ⟨u.2, Metric.mem_closedBall_self hδ.le⟩
+    (closedBall_prod_same (0 : E) (0 : F) δ).subset ⟨u.property, Metric.mem_closedBall_self hδ.le⟩
   have hCV (u : Metric.closedBall (0 : E) δ) {z : E × F} (hz : ‖z‖ ≤ ‖C u‖) : z ∈ V := by
     refine hδV (mem_closedBall_zero_iff.2 (hz.trans ?_))
     calc ‖C u‖ ≤ ‖A‖ * ‖((u : E), (0 : F))‖ := A.le_opNorm _
@@ -240,11 +240,11 @@ theorem _root_.HasFDerivAt.exists_negative_disk_homotopy_polarFactor
       continuous_toFun := hcont.comp_continuous
         (by fun_prop : Continuous fun p : unitInterval × Metric.closedBall (0 : E) δ ↦
           ((unitInterval.symm p.1 : ℝ), ((p.2 : E), (0 : F))))
-        fun p ↦ ⟨(unitInterval.symm p.1).2, hmem p.2⟩
+        fun p ↦ ⟨(unitInterval.symm p.1).property, hmem p.2⟩
       map_zero_left := fun u ↦ by simp [g₀, hT0]
       map_one_left := fun u ↦ by simp [g₁, C]
       prop' := fun t u ↦ by
-        obtain ⟨-, hV', hQ'⟩ := hbd _ (unitInterval.symm t).2 _ (hmem u)
+        obtain ⟨-, hV', hQ'⟩ := hbd _ (unitInterval.symm t).property _ (hmem u)
         simp only [ContinuousMap.coe_mk]
         refine ⟨hV', le_of_eq ?_⟩
         rw [hQ']

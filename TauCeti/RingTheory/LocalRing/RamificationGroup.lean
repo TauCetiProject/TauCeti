@@ -369,6 +369,12 @@ theorem le_lowerIndex_iff {n : ℕ∞} {σ : G} :
     n ≤ lowerIndex S σ ↔ ∀ x : S, n ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
   le_iInf_iff
 
+/-- An element of a subgroup `H`, acting on `S` by restriction, has the same lower index in `H` as
+in `G`. -/
+@[simp]
+theorem lowerIndex_coe {H : Subgroup G} (τ : H) : lowerIndex S (τ : G) = lowerIndex S τ :=
+  (rfl)
+
 /-- The lower index is at most the valuation `v (σ x - x)` at any `x`. -/
 theorem lowerIndex_le_addVal (σ : G) (x : S) :
     lowerIndex S σ ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
@@ -430,28 +436,15 @@ theorem min_le_lowerIndex_mul (σ τ : G) :
     (natCast_le_lowerIndex_iff_mem_ramificationGroup (n := n) (σ := τ) |>.mp
       (le_trans hn (min_le_right ..)))
 
-/-- The lower index of an element of a subgroup `H ≤ G` agrees with its lower index in `G`. -/
-@[simp] theorem lowerIndex_coe_subgroup {H : Subgroup G} (h : H) :
-    lowerIndex S (h : G) = lowerIndex S h := by simp only [lowerIndex_def, Subgroup.smul_def]
-/-- If `i_G(g h) ≤ i_G(g)`, then `i_G(g h) = min (i_G(h), i_G(g))`. -/
-theorem lowerIndex_mul_eq_min_of_le {g h : G} (hgh : lowerIndex S (g * h) ≤ lowerIndex S g) :
-    lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) := by
-  have h₂ := min_le_lowerIndex_mul (S := S) g⁻¹ (g * h)
-  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right hgh] at h₂
-  exact le_antisymm (le_min h₂ hgh) (min_comm (lowerIndex S g) _ ▸ min_le_lowerIndex_mul g h)
-/-- If `g` has maximal lower index in `g H`, then `i_G(g h) = min (i_H(h), i_G(g))`. -/
-theorem lowerIndex_mul_of_forall_le {H : Subgroup G} (g : G)
-    (hg : ∀ h : H, lowerIndex S (g * h) ≤ lowerIndex S g) (h : H) :
-    lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) :=
-  lowerIndex_coe_subgroup (S := S) h ▸ lowerIndex_mul_eq_min_of_le (hg h)
-variable (S) in
-/-- Every coset `g H` of a finite subgroup `H ≤ G` contains an element of largest lower index. -/
-theorem exists_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (g : G) :
-    ∃ h₀ : H, ∀ h : H, lowerIndex S (g * h₀ * h) ≤ lowerIndex S (g * h₀) := by
-  let _ := Fintype.ofFinite H
-  obtain ⟨h₀, -, hh₀⟩ := Finset.exists_max_image (Finset.univ : Finset H)
-    (fun h : H ↦ lowerIndex S (g * h)) Finset.univ_nonempty
-  exact ⟨h₀, fun h ↦ by simpa [Subgroup.coe_mul, mul_assoc] using hh₀ (h₀ * h) (Finset.mem_univ _)⟩
+/-- If the product `σ τ` has lower index at most that of `σ`, then
+`i_G(σ τ) = min (i_G(τ), i_G(σ))`. This applies to every `τ ∈ H` when `σ` has the largest lower
+index in its coset `σ H`. -/
+theorem lowerIndex_mul_eq_min_of_le {σ τ : G} (h : lowerIndex S (σ * τ) ≤ lowerIndex S σ) :
+    lowerIndex S (σ * τ) = min (lowerIndex S τ) (lowerIndex S σ) := by
+  -- `i(τ) = i(σ⁻¹ (σ τ)) ≥ min (i(σ), i(σ τ)) = i(σ τ)`.
+  have h₂ := min_le_lowerIndex_mul (S := S) σ⁻¹ (σ * τ)
+  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right h] at h₂
+  exact le_antisymm (le_min h₂ h) (min_comm (lowerIndex S τ) _ ▸ min_le_lowerIndex_mul σ τ)
 
 variable (S) in
 /-- The identity has lower index `⊤`. -/
@@ -600,7 +593,7 @@ def ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ) :
   toFun σ := ⟨((σ : H) : G), by
     have hσ : (σ : H) ∈ (ramificationGroup G S i).subgroupOf H := by
       rw [subgroupOf_ramificationGroup]
-      exact σ.2
+      exact σ.property
     exact hσ⟩
   map_one' := rfl
   map_mul' _ _ := rfl
@@ -893,3 +886,19 @@ end RealDiscreteValuationRing
 end IsLocalRing
 
 end TauCeti
+
+namespace Subgroup
+
+open TauCeti.IsLocalRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+  [MulSemiringAction G S]
+
+/-- Every coset `σ H` of a finite subgroup contains an element `σ τ₀` of largest lower index. -/
+theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G) :
+    ∃ τ₀ ∈ H, ∀ τ ∈ H, lowerIndex S (σ * τ₀ * τ) ≤ lowerIndex S (σ * τ₀) := by
+  obtain ⟨τ₀, hτ₀⟩ := Finite.exists_max fun τ : H ↦ lowerIndex S (σ * τ)
+  refine ⟨τ₀, τ₀.property, fun τ hτ ↦ ?_⟩
+  simpa only [coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
+
+end Subgroup

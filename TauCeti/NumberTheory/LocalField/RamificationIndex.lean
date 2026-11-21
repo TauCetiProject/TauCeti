@@ -266,7 +266,7 @@ private theorem exists_normalizedValuation_algebraMap_eq_zpow :
         ← ValuativeExtension.mapValueGroupWithZero_valuation,
         ← map_one (ValuativeExtension.mapValueGroupWithZero K L),
         ValuativeExtension.mapValueGroupWithZero_strictMono.le_iff_le]
-      exact π.2
+      exact π.property
     exact (mem_integer_iff_toAdd_normalizedValuation_nonneg _).1 hmem
   · -- `π` is not a unit of `𝒪[K]`, so its image is not a unit of `𝒪[L]`.
     intro h
@@ -399,26 +399,30 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
   simp
 
 variable (K L) in
-/-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`. -/
+/-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
+This is the ideal-theoretic form of the characteristic property of the ramification index. -/
 theorem map_maximalIdeal_eq_maximalIdeal_pow :
     𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] ^ ramificationIndex K L := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   have hv : valuation L ((algebraMap 𝒪[K] 𝒪[L] π : 𝒪[L]) : L) =
       valuation L ((ϖ ^ ramificationIndex K L : 𝒪[L]) : L) := by
-    push_cast; rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
+    push_cast
+    rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
+  have hint := Valuation.integer.integers (valuation L)
+  have hass : Associated (algebraMap 𝒪[K] 𝒪[L] π) (ϖ ^ ramificationIndex K L) :=
+    associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
   rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ,
     (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.map_span,
     Set.image_singleton, Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton]
-  have hint := Valuation.integer.integers (valuation L)
-  exact associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
+  exact hass
 
 variable (K L) in
 /-- **The intrinsic ramification index is the ideal-theoretic one**: the index of the image of the
 normalized value group is the ramification index of `𝓂[L]` over `𝒪[K]`. -/
 theorem ramificationIndex_eq_ramificationIdx :
     ramificationIndex K L = 𝓂[L].ramificationIdx 𝒪[K] :=
-  (TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow
+  (IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow
     (map_maximalIdeal_eq_maximalIdeal_pow K L)).symm
 
 /-- The additive valuation on the integer ring scales under the algebra map by the ramification
@@ -427,7 +431,7 @@ index. -/
 theorem addVal_algebraMap (a : 𝒪[K]) :
     IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] a) =
       ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] a := by
-  rw [ramificationIndex_eq_ramificationIdx, TauCeti.IsDiscreteValuationRing.addVal_algebraMap]
+  rw [ramificationIndex_eq_ramificationIdx, IsDiscreteValuationRing.addVal_algebraMap]
 
 /-- **Orthogonality of the powers of a uniformizer.** For a uniformizer `ϖ` of `L` and
 coefficients `c i ∈ 𝒪[K]` indexed by `i < n ≤ e(L/K)`, the terms `c i * ϖ ^ i` have additive
