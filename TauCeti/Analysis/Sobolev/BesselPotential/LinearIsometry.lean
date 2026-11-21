@@ -80,9 +80,11 @@ variable (A : E ≃ₗᵢ[ℝ] E)
 
 /-- On the underlying tempered distributions, `BesselPotentialSpace.compLinearIsometryEquiv A` is
 the pullback `A^*`. -/
-theorem toDistr_compLinearIsometryEquiv (hφ : (A.toHomeomorph.toEquiv : E → E).HasTemperateGrowth)
-    (hψ : (A.toHomeomorph.toEquiv.symm : E → E).HasTemperateGrowth) (f : H^{s, p}(E, F)) :
-    (compLinearIsometryEquiv s p A f).toDistr = compCLM F A.toHomeomorph.toEquiv hφ hψ f.toDistr :=
+@[simp]
+theorem toDistr_compLinearIsometryEquiv (f : H^{s, p}(E, F)) :
+    (compLinearIsometryEquiv s p A f).toDistr =
+      compCLM F A.toHomeomorph.toEquiv A.hasTemperateGrowth_toHomeomorph_toEquiv
+        A.hasTemperateGrowth_toHomeomorph_toEquiv_symm f.toDistr :=
   (rfl)
 
 /-- On the `Lᵖ` representatives `J^s u`, `BesselPotentialSpace.compLinearIsometryEquiv A` is
@@ -123,8 +125,7 @@ theorem compLinearIsometryEquiv_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
       SchwartzMap.toBesselPotentialSpaceCLM s p
         (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) := by
   ext1
-  rw [toDistr_compLinearIsometryEquiv A A.hasTemperateGrowth_toHomeomorph_toEquiv
-    A.hasTemperateGrowth_toHomeomorph_toEquiv_symm, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+  rw [toDistr_compLinearIsometryEquiv, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     SchwartzMap.toDistr_toBesselPotentialSpaceCLM, compCLM_toTemperedDistributionCLM volume]
   refine congrArg _ ?_
   ext x
@@ -142,14 +143,13 @@ theorem reflection_eq_compLinearIsometryEquiv :
   (rfl)
 
 /-- On the underlying tempered distributions, the reflection is the pullback along `x ↦ -x`. -/
-theorem toDistr_reflection
-    (hφ : ((LinearIsometryEquiv.neg ℝ (E := E)).toHomeomorph.toEquiv : E → E).HasTemperateGrowth)
-    (hψ : Function.HasTemperateGrowth
-      ((LinearIsometryEquiv.neg ℝ (E := E)).toHomeomorph.toEquiv.symm : E → E))
-    (f : H^{s, p}(E, F)) :
+@[simp]
+theorem toDistr_reflection (f : H^{s, p}(E, F)) :
     (reflection E F s p f).toDistr =
-      compCLM F (LinearIsometryEquiv.neg ℝ).toHomeomorph.toEquiv hφ hψ f.toDistr := by
-  rw [reflection_eq_compLinearIsometryEquiv, toDistr_compLinearIsometryEquiv _ hφ hψ]
+      compCLM F (LinearIsometryEquiv.neg ℝ (E := E)).toHomeomorph.toEquiv
+        (LinearIsometryEquiv.neg ℝ).hasTemperateGrowth_toHomeomorph_toEquiv
+        (LinearIsometryEquiv.neg ℝ).hasTemperateGrowth_toHomeomorph_toEquiv_symm f.toDistr := by
+  rw [reflection_eq_compLinearIsometryEquiv, toDistr_compLinearIsometryEquiv]
 
 /-- On the `Lᵖ` representatives `J^s u`, the reflection is composition with `x ↦ -x`. -/
 @[simp]

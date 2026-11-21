@@ -87,13 +87,9 @@ theorem fourier_compCLM_linearIsometryEquiv (T : 𝓢'(E, F)) :
     𝓕 (compCLM F A.toHomeomorph.toEquiv hφ hψ T) =
       compCLM F A.toHomeomorph.toEquiv hφ hψ (𝓕 T) := by
   ext f
-  have hf : 𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv f) =
-      SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv (𝓕 f) := by
-    ext ξ
-    rw [SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply]
-    simp
   rw [fourier_apply, compCLM_linearIsometryEquiv_apply_apply,
-    compCLM_linearIsometryEquiv_apply_apply, fourier_apply, hf]
+    compCLM_linearIsometryEquiv_apply_apply, fourier_apply,
+    SchwartzMap.fourier_compCLMOfContinuousLinearEquiv]
 
 /-- The pullback along a linear isometry equivalence commutes with the inverse Fourier
 transform. -/
@@ -101,13 +97,9 @@ theorem fourierInv_compCLM_linearIsometryEquiv (T : 𝓢'(E, F)) :
     𝓕⁻ (compCLM F A.toHomeomorph.toEquiv hφ hψ T) =
       compCLM F A.toHomeomorph.toEquiv hφ hψ (𝓕⁻ T) := by
   ext f
-  have hf : 𝓕⁻ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv f) =
-      SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv (𝓕⁻ f) := by
-    ext ξ
-    rw [SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_apply]
-    simp
   rw [fourierInv_apply, compCLM_linearIsometryEquiv_apply_apply,
-    compCLM_linearIsometryEquiv_apply_apply, fourierInv_apply, hf]
+    compCLM_linearIsometryEquiv_apply_apply, fourierInv_apply,
+    SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv]
 
 /-- The pullback along a linear isometry equivalence `A` commutes with every Fourier multiplier
 whose symbol `g` has temperate growth and is invariant under `A`. -/

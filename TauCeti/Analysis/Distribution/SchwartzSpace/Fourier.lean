@@ -82,7 +82,9 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
   translation multiplies the Fourier transform by a phase and keeps its support.
 * `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`,
-  `SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
+  `SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_apply`,
+  `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv`,
+  `SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv`: composition with a linear isometry
   equivalence commutes with the Fourier transform and its inverse, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
@@ -383,6 +385,28 @@ theorem fourierInv_compCLMOfContinuousLinearEquiv_apply {D : Type*} [NormedAddCo
     𝓕⁻ (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) ξ = 𝓕⁻ u (A ξ) := by
   rw [fourierInv_coe, fourierInv_coe, compCLMOfContinuousLinearEquiv_apply]
   exact Real.fourierInv_comp_linearIsometry A u ξ
+
+/-- The Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕 (u ∘ A) = (𝓕 u) ∘ A`. -/
+theorem fourier_compCLMOfContinuousLinearEquiv {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) :
+    𝓕 (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) =
+      compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕 u) := by
+  ext ξ
+  rw [fourier_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply]
+  rfl
+
+/-- The inverse Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕⁻ (u ∘ A) = (𝓕⁻ u) ∘ A`. -/
+theorem fourierInv_compCLMOfContinuousLinearEquiv {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) :
+    𝓕⁻ (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) =
+      compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕⁻ u) := by
+  ext ξ
+  rw [fourierInv_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply]
+  rfl
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/
