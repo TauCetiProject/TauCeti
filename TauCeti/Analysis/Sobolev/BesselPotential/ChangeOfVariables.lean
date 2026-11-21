@@ -12,10 +12,11 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Adjoint
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
-import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
@@ -58,8 +59,8 @@ The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz
 * **Negative integer orders**, by duality. For the `L²` pairing the transpose of `u ↦ u ∘ φ` is the
   pushforward of densities `φ_* v = |det Dφ⁻¹| (v ∘ φ⁻¹)` (`SchwartzMap.integral_inner_compCLM_eq`),
   which is bounded on `H^k` by the previous step applied to `φ⁻¹` and the multiplier bound for the
-  Jacobian factor. The `H^{-k}` norm is computed by testing against `H^k`
-  (`SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`).
+  Jacobian factor. A transpose of an operator bounded on `H^k` is bounded on `H^{-k}` with the same
+  constant (`SchwartzMap.norm_toBesselPotentialSpaceCLM_le_of_integral_inner_eq`).
 * **Real orders**, by complex interpolation of the Hilbert scale between `⌊s⌋` and `⌊s⌋ + 1`
   (`SchwartzMap.HasSobolevExtension.interpolate`).
 
@@ -301,18 +302,14 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
         Function.comp_apply, J, RCLike.ofReal_eq_complex_ofReal]
     rw [hv]
     exact (hCJ _).trans (mul_le_mul_of_nonneg_left (hCs v) hCJ0)
+  -- `u ↦ u ∘ φ` is a formal adjoint of `φ_*`.
+  have hadj (v w : 𝓢(E, F)) : ∫ x, ⟪pushforwardCLM ℂ φ hφ hψ v x, w x⟫_ℂ =
+      ∫ x, ⟪v x, compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) w x⟫_ℂ := by
+    rw [← integral_inner_conj_symm, ← integral_inner_compCLM_eq volume hφ hψ,
+      integral_inner_conj_symm]
   -- Duality turns the bound of the transpose `φ_*` on `H^k` into the bound on `H^{-k}`.
-  refine ⟨CJ * Cs, mul_nonneg hCJ0 hCs0, fun w ↦ ?_⟩
-  refine norm_toBesselPotentialSpaceCLM_neg_le_of_forall (k : ℝ) _
-    (mul_nonneg (mul_nonneg hCJ0 hCs0) (norm_nonneg _)) fun v ↦ ?_
-  rw [integral_inner_compCLM_eq volume hφ hψ]
-  calc _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 w‖ *
-        ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ :=
-        norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (k : ℝ) w _
-    _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 w‖ *
-        (CJ * (Cs * ‖toBesselPotentialSpaceCLM k 2 v‖)) :=
-        mul_le_mul_of_nonneg_left (hQ v) (norm_nonneg _)
-    _ = _ := by ring
+  exact ⟨CJ * Cs, mul_nonneg hCJ0 hCs0, norm_toBesselPotentialSpaceCLM_le_of_integral_inner_eq
+    (mul_nonneg hCJ0 hCs0) hadj fun v ↦ (hQ v).trans_eq (mul_assoc ..).symm⟩
 
 /-- **Changes of variables on `H^m` for integer `m`, on Schwartz functions.** -/
 private theorem hasSobolevExtension_compCLM_intCast

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
-import TauCeti.Analysis.Sobolev.BesselPotential.Duality
+import TauCeti.Analysis.Sobolev.BesselPotential.Adjoint
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -35,9 +35,9 @@ on the Sobolev scale of a vector bundle.
 * **Nonnegative integer orders.** Multiplication by `g` maps `H^k` into itself
   (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`), so by the closed
   graph theorem (`BesselPotentialSpace.continuous_of_continuous_toDistr`) it is bounded on `H^k`.
-* **Negative integer orders.** By duality: with `v = J^{-2k} (g u)`, which realizes the `H^{-k}`
-  norm of `g u` in the `L²` pairing, `‖g u‖²_{H^{-k}} = ∫ ⟪g u, v⟫ = ∫ ⟪u, conj g v⟫`, and the
-  conjugate `conj g` is bounded on `H^k`.
+* **Negative integer orders.** By duality: multiplication by `g` is the formal adjoint of
+  multiplication by `conj g`, `∫ ⟪conj g u, v⟫ = ∫ ⟪u, g v⟫`, and `conj g` is bounded on `H^k`, so
+  `g` is bounded on `H^{-k}` (`SchwartzMap.HasSobolevExtension.of_integral_inner_eq`).
 * **Real orders.** Between two consecutive integers by the interpolation theorem for the Hilbert
   scale (`SchwartzMap.HasSobolevExtension.interpolate`).
 * **Distributions.** The bounded extension agrees with Mathlib's multiplication of tempered
@@ -98,34 +98,22 @@ private theorem hasSobolevExtension_smulLeftCLM_natCast (k : ℕ) {g : E → ℂ
     simp [L, toDistr_toBesselPotentialSpaceCLM, smulLeftCLM_toTemperedDistributionCLM_eq])
 
 /-- Multiplication by a function with bounded derivatives up to order `k` is bounded on `H^{-k}`,
-on Schwartz functions. By duality (`norm_toBesselPotentialSpaceCLM_neg_le_of_forall`) it suffices
-to bound the pairing `∫ ⟪g u, v⟫ = ∫ ⟪u, conj g v⟫` by `‖v‖_{H^k}`, which follows from the `H^k`
-bound for `conj g`. -/
+on Schwartz functions: it is the formal adjoint of multiplication by `conj g`, which is bounded on
+`H^k`. -/
 private theorem hasSobolevExtension_smulLeftCLM_neg_natCast (k : ℕ) {g : E → ℂ}
     (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
     HasSobolevExtension (smulLeftCLM F g) (-k) (-k) := by
   set g' : E → ℂ := fun x ↦ conj (g x)
   have hg' : g'.HasTemperateGrowth := Complex.conjCLE.hasTemperateGrowth.comp hg
-  obtain ⟨C, hC0, hC⟩ := hasSobolevExtension_iff_exists_norm_le.1 <|
-    hasSobolevExtension_smulLeftCLM_natCast (F := F) k hg' fun n hn ↦ by
-      obtain ⟨C, hC⟩ := hbd n hn
-      exact ⟨C, fun x ↦ (Complex.conjLIE.norm_iteratedFDeriv_comp_left g x n).trans_le (hC x)⟩
-  refine hasSobolevExtension_iff_exists_norm_le.2 ⟨C, hC0, fun u ↦ ?_⟩
-  refine norm_toBesselPotentialSpaceCLM_neg_le_of_forall (k : ℝ) _ (by positivity) fun v ↦ ?_
+  refine (hasSobolevExtension_smulLeftCLM_natCast (F := F) k hg' fun n hn ↦ ?_).of_integral_inner_eq
+    fun u v ↦ ?_
+  · obtain ⟨C, hC⟩ := hbd n hn
+    exact ⟨C, fun x ↦ (Complex.conjLIE.norm_iteratedFDeriv_comp_left g x n).trans_le (hC x)⟩
   -- Move the multiplier to the other side of the pairing.
-  have hmove : ∫ x, ⟪smulLeftCLM F g u x, v x⟫_ℂ = ∫ x, ⟪u x, smulLeftCLM F g' v x⟫_ℂ := by
-    congr 1
-    funext x
-    simp only [smulLeftCLM_apply_apply hg, smulLeftCLM_apply_apply hg', inner_smul_left,
-      inner_smul_right, g']
-  rw [hmove]
-  calc _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 u‖ *
-        ‖toBesselPotentialSpaceCLM k 2 (smulLeftCLM F g' v)‖ :=
-        norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (k : ℝ) u _
-    _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 u‖ * (C * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
-        gcongr
-        exact hC v
-    _ = _ := by ring
+  congr 1
+  funext x
+  simp only [smulLeftCLM_apply_apply hg, smulLeftCLM_apply_apply hg', inner_smul_left,
+    inner_smul_right, g', Complex.conj_conj]
 
 /-- Multiplication by a function with bounded derivatives up to order `|j|` is bounded on `H^j`,
 for every integer `j`, on Schwartz functions. -/

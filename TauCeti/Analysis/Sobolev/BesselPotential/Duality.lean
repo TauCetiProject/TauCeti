@@ -13,9 +13,11 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.SchwartzSpace.ReciprocalWeight
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The density pairing of the Bessel-potential spaces `H^{s,p}` and `H^{-s,q}`
@@ -68,7 +70,9 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   `SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm`: the `L²` pairing
   of `H^{-r}` and `H^r` on Schwartz functions, and `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`: conversely, a bound
-  `|∫ ⟪a, v⟫| ≤ C ‖v‖_{H^r}` for all Schwartz `v` gives `‖a‖_{H^{-r}} ≤ C`.
+  `|∫ ⟪a, v⟫| ≤ C ‖v‖_{H^r}` for all Schwartz `v` gives `‖a‖_{H^{-r}} ≤ C`; together
+  (`SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_iff`), the `H^{-r}` norm is the dual norm of
+  the `H^r` norm for the `L²` pairing.
 * `SchwartzMap.inner_toLp_besselPotentialCLM_left`: the Bessel potentials `J^a` of real order are
   symmetric for the `L²` inner product of Schwartz functions.
 * `BesselPotentialSpace.inner_inclusion_toBesselPotentialSpaceCLM`,
@@ -369,18 +373,15 @@ product of the `L²` parts of `a ∈ H^{-r}` and `b ∈ H^r` is `∫ ⟪a, b⟫`
 theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
     ⟪(toBesselPotentialSpaceCLM (-r) 2 a).toLp, (toBesselPotentialSpaceCLM r 2 b).toLp⟫_ℂ =
       ∫ x, ⟪a x, b x⟫_ℂ := by
+  -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` are reciprocal.
   rw [toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM,
     inner_toL2_toL2_eq _ _ volume, ← integral_inner_fourier_fourier,
-    ← integral_inner_fourier_fourier a b]
+    integral_inner_eq_integral_inner_smul_fourier
+      (fun ξ ↦ (mul_comm _ _).trans (TauCeti.one_add_norm_sq_rpow_neg_mul_rpow ξ r)) a b]
   congr 1
   funext ξ
-  -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` multiply to `1`.
-  have hw : (1 + ‖ξ‖ ^ 2) ^ (-r / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) = 1 :=
-    TauCeti.one_add_norm_sq_rpow_neg_mul_rpow ξ r
   simp only [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
   rw [smulLeftCLM_apply_apply (by fun_prop), smulLeftCLM_apply_apply (by fun_prop)]
-  rw [inner_smul_left, inner_smul_right, ← mul_assoc]
-  simp [← Complex.ofReal_mul, hw]
 
 /-- **Duality of `H^{-r}` and `H^r` under the `L²` pairing**:
 `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}` for Schwartz functions `a` and `b`. -/
@@ -393,33 +394,27 @@ theorem norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (r : ℝ)
   exact norm_inner_le_norm _ _
 
 /-- **The `H^{-r}` norm by duality.** If `‖∫ ⟪a, v⟫‖ ≤ C ‖v‖_{H^r}` for every Schwartz function
-`v`, then `‖a‖_{H^{-r}} ≤ C`: the bound is attained at `v = J^{-2r} a`. -/
+`v`, then `‖a‖_{H^{-r}} ≤ C`: the bound is attained, since the weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r`
+are reciprocal (`SchwartzMap.eLpNorm_smul_fourier_le_of_forall_norm_integral_inner_le`). -/
 theorem norm_toBesselPotentialSpaceCLM_neg_le_of_forall (r : ℝ) (a : 𝓢(E, F)) {C : ℝ}
     (hC : 0 ≤ C)
     (h : ∀ v : 𝓢(E, F), ‖∫ x, ⟪a x, v x⟫_ℂ‖ ≤ C * ‖toBesselPotentialSpaceCLM r 2 v‖) :
     ‖toBesselPotentialSpaceCLM (-r) 2 a‖ ≤ C := by
-  -- Test against `v = J^{-2r} a`, which realizes the `H^{-r}` norm of `a` in the pairing.
-  set v := besselPotentialCLM ((-2 * r : ℝ) : ℂ) a
-  set N := ‖toBesselPotentialSpaceCLM (-r) 2 a‖
-  have hvN : ‖toBesselPotentialSpaceCLM r 2 v‖ = N := by
-    rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
-      show r + -2 * r = -r by ring]
-  have hvL : (toBesselPotentialSpaceCLM r 2 v).toLp =
-      (toBesselPotentialSpaceCLM (-r) 2 a).toLp := by
-    rw [toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
-      toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
-      besselPotentialCLM_besselPotentialCLM_apply,
-      show ((-2 * r : ℝ) : ℂ) + (r : ℂ) = ((-r : ℝ) : ℂ) by push_cast; ring]
-  have hpair : ∫ x, ⟪a x, v x⟫_ℂ = ((N ^ 2 : ℝ) : ℂ) := by
-    rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, hvL, inner_self_eq_norm_sq_to_K,
-      BesselPotentialSpace.norm_toLp_eq]
-    norm_cast
-  have hv := h v
-  rw [hpair, hvN, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at hv
-  -- `N ^ 2 ≤ C N`, so `N ≤ C`.
-  rcases (norm_nonneg _ : 0 ≤ N).eq_or_lt with h0 | h0
-  · exact (show N = 0 from h0.symm) ▸ hC
-  · nlinarith
+  simp only [norm_toBesselPotentialSpaceCLM] at h ⊢
+  refine eLpNorm_smul_fourier_le_of_forall_norm_integral_inner_le (by fun_prop)
+    (TauCeti.one_add_norm_sq_rpow_neg_mul_rpow · r) hC fun v ↦ ?_
+  -- `∫ ⟪v, a⟫` is the conjugate of `∫ ⟪a, v⟫`.
+  rw [← integral_inner_conj_symm, RCLike.norm_conj]
+  exact h v
+
+/-- **`H^{-r}` is the dual of `H^r` for the `L²` pairing.** For `C ≥ 0`, a Schwartz function `a`
+has `‖a‖_{H^{-r}} ≤ C` exactly when `‖∫ ⟪a, v⟫‖ ≤ C ‖v‖_{H^r}` for every Schwartz function `v`. -/
+theorem norm_toBesselPotentialSpaceCLM_neg_le_iff (r : ℝ) (a : 𝓢(E, F)) {C : ℝ} (hC : 0 ≤ C) :
+    ‖toBesselPotentialSpaceCLM (-r) 2 a‖ ≤ C ↔
+      ∀ v : 𝓢(E, F), ‖∫ x, ⟪a x, v x⟫_ℂ‖ ≤ C * ‖toBesselPotentialSpaceCLM r 2 v‖ :=
+  ⟨fun h v ↦ (norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm r a v).trans
+    (mul_le_mul_of_nonneg_right h (norm_nonneg _)),
+    norm_toBesselPotentialSpaceCLM_neg_le_of_forall r a hC⟩
 
 /-- Bessel potentials of real order are symmetric for the `L²` inner product of Schwartz
 functions: `⟪J^a X, Y⟫_{L²} = ⟪X, J^a Y⟫_{L²}`. -/

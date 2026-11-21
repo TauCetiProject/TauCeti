@@ -41,7 +41,8 @@ product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
+`integral_inner` with the integrand in the left slot, the pairing `∫ ⟪f, g⟫` is conjugate
+symmetric (`integral_inner_conj_symm`), and the integral of the Hilbert space
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
 (`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
@@ -336,6 +337,14 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+/-- Conjugate symmetry of the pairing `∫ ⟪f, g⟫` of two functions:
+`conj (∫ ⟪g, f⟫) = ∫ ⟪f, g⟫`. No integrability is needed, since conjugation commutes with the
+integral (`integral_conj`). -/
+theorem integral_inner_conj_symm (f g : α → E) :
+    conj (∫ x, ⟪g x, f x⟫_𝕜 ∂μ) = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  simp_rw [← integral_conj, inner_conj_symm]
 
 /-- The Hilbert space adjoint commutes with the integral of an operator-valued function:
 `∫ (f x)† = (∫ f)†`, the counterpart of Mathlib's `integral_conj`. No integrability is needed,
