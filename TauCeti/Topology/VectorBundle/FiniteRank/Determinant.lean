@@ -322,7 +322,7 @@ theorem continuous_dualDetTopFormFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     Continuous fun p : A.dual.det.core.TotalSpace ↦
       TotalSpace.mk' ((Fin A.rank → 𝕜) [⋀^Fin A.rank]→L[𝕜] 𝕜)
         (E := fun x ↦ A.core.Fiber x [⋀^Fin A.rank]→L[𝕜] 𝕜) p.proj
-        (dualDetTopFormFiberEquiv A p.proj p.2) := by
+        (dualDetTopFormFiberEquiv A p.proj p.snd) := by
   refine continuous_iff_continuousAt.2 fun p ↦ (FiberBundle.continuousAt_totalSpace _ _).2
     ⟨A.dual.det.core.continuous_proj.continuousAt, ?_⟩
   have hU := (A.dual.det.core.localTriv p.proj).open_source.mem_nhds
@@ -344,14 +344,14 @@ noncomputable def dualDetTopFormTotalSpaceHomeomorph (A : FiniteRankBundleCore �
 
 @[simp] theorem dualDetTopFormTotalSpaceHomeomorph_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : A.dual.det.core.TotalSpace) :
-    dualDetTopFormTotalSpaceHomeomorph A p = ⟨p.proj, dualDetTopFormFiberEquiv A p.proj p.2⟩ :=
+    dualDetTopFormTotalSpaceHomeomorph A p = ⟨p.proj, dualDetTopFormFiberEquiv A p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 @[simp] theorem dualDetTopFormTotalSpaceHomeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) [⋀^Fin A.rank]→L[𝕜] 𝕜)
       (fun x ↦ A.core.Fiber x [⋀^Fin A.rank]→L[𝕜] 𝕜)) :
     (dualDetTopFormTotalSpaceHomeomorph A).symm p =
-      ⟨p.proj, (dualDetTopFormFiberEquiv A p.proj).symm p.2⟩ :=
+      ⟨p.proj, (dualDetTopFormFiberEquiv A p.proj).symm p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 end Dual

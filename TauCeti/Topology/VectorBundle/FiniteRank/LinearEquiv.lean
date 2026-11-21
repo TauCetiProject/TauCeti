@@ -114,8 +114,8 @@ noncomputable def ofLinearEquivFiberEquiv (x : B) :
 
 private noncomputable def ofLinearEquivTotalEquiv :
     (ofLinearEquiv e V).core.TotalSpace ≃ TotalSpace F V where
-  toFun p := ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.2⟩
-  invFun p := ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.snd⟩
+  invFun p := ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.snd⟩
   left_inv p := by dsimp only; rw [ContinuousLinearEquiv.symm_apply_apply]
   right_inv p := by dsimp only; rw [ContinuousLinearEquiv.apply_symm_apply]
 
@@ -124,7 +124,7 @@ private theorem trivializationAt_ofLinearEquivTotalEquiv (b : B)
     (trivializationAt F V b) (ofLinearEquivTotalEquiv e V p) =
       (p.proj, e.symm (((ofLinearEquiv e V).core.localTriv b p).2)) := by
   refine ((trivializationAt F V p.proj).mk_coordChangeL (R := 𝕜) (trivializationAt F V b)
-    ⟨mem_baseSet_trivializationAt F V p.proj, hp⟩ (e.symm p.2)).symm.trans (Prod.ext rfl ?_)
+    ⟨mem_baseSet_trivializationAt F V p.proj, hp⟩ (e.symm p.snd)).symm.trans (Prod.ext rfl ?_)
   rw [VectorBundleCore.localTriv_apply]
   exact (e.symm_apply_apply _).symm
 
@@ -132,7 +132,7 @@ private theorem continuous_ofLinearEquivTotalEquiv : Continuous (ofLinearEquivTo
   refine continuous_iff_continuousAt.2 fun p ↦ (FiberBundle.continuousAt_totalSpace _ _).2
     ⟨(ofLinearEquiv e V).core.continuous_proj.continuousAt, ?_⟩
   have hU := ((ofLinearEquiv e V).core.localTriv p.proj).open_source.mem_nhds
-    ((ofLinearEquiv e V).core.mem_source_at p.proj p.2)
+    ((ofLinearEquiv e V).core.mem_source_at p.proj p.snd)
   refine ContinuousAt.congr_of_eventuallyEq (e.symm.continuous.continuousAt.comp
     (((ofLinearEquiv e V).core.localTriv p.proj).continuousOn.continuousAt hU).snd)
     (Filter.eventually_of_mem hU fun q hq ↦ congrArg Prod.snd
@@ -165,11 +165,11 @@ noncomputable def ofLinearEquivTotalSpaceHomeomorph :
 @[simp] theorem ofLinearEquivTotalSpaceHomeomorph_apply
     (p : (ofLinearEquiv e V).core.TotalSpace) :
     ofLinearEquivTotalSpaceHomeomorph e V p =
-      ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.2⟩ := (rfl)
+      ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem ofLinearEquivTotalSpaceHomeomorph_symm_apply (p : TotalSpace F V) :
     (ofLinearEquivTotalSpaceHomeomorph e V).symm p =
-      ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.2⟩ := (rfl)
+      ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.snd⟩ := (rfl)
 
 /-- Over `b`'s chart domain, `ofLinearEquivTotalSpaceHomeomorph` intertwines the core chart at `b`
 with `trivializationAt F V b` through `e.symm` on the fibre coordinate. -/

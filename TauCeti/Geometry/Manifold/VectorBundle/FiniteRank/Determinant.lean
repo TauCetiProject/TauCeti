@@ -157,7 +157,7 @@ theorem contMDiff_dualDetTopFormFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
       (fun p : A.dual.det.core.TotalSpace ↦
         TotalSpace.mk' ((Fin A.rank → 𝕜) [⋀^Fin A.rank]→L[𝕜] 𝕜)
           (E := fun x ↦ A.core.Fiber x [⋀^Fin A.rank]→L[𝕜] 𝕜) p.proj
-          (dualDetTopFormFiberEquiv A p.proj p.2)) := by
+          (dualDetTopFormFiberEquiv A p.proj p.snd)) := by
   intro p₀
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨contMDiffAt_proj _, ?_⟩
@@ -189,14 +189,15 @@ noncomputable def dualDetTopFormTotalSpaceDiffeomorph (A : FiniteRankBundleCore 
 
 @[simp] theorem dualDetTopFormTotalSpaceDiffeomorph_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : A.dual.det.core.TotalSpace) :
-    dualDetTopFormTotalSpaceDiffeomorph A I n p = ⟨p.proj, dualDetTopFormFiberEquiv A p.proj p.2⟩ :=
+    dualDetTopFormTotalSpaceDiffeomorph A I n p =
+      ⟨p.proj, dualDetTopFormFiberEquiv A p.proj p.snd⟩ :=
   bundleDiffeomorph_apply _ _ p
 
 @[simp] theorem dualDetTopFormTotalSpaceDiffeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) [⋀^Fin A.rank]→L[𝕜] 𝕜)
       (fun x ↦ A.core.Fiber x [⋀^Fin A.rank]→L[𝕜] 𝕜)) :
     (dualDetTopFormTotalSpaceDiffeomorph A I n).symm p =
-      ⟨p.proj, (dualDetTopFormFiberEquiv A p.proj).symm p.2⟩ :=
+      ⟨p.proj, (dualDetTopFormFiberEquiv A p.proj).symm p.snd⟩ :=
   bundleDiffeomorph_symm_apply _ _ p
 
 end Dual

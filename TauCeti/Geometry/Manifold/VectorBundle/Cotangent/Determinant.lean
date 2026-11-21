@@ -305,7 +305,7 @@ private theorem contMDiff_cotangentDetCanonicalFiberEquiv (b : Basis (Fin (finra
       (I.prod 𝓘(𝕜, E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)) k
       (fun p : (cotangentCore I b M).det.core.TotalSpace ↦
         TotalSpace.mk' (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (E := CanonicalBundle I M)
-          p.proj (cotangentDetCanonicalFiberEquiv I b M p.proj p.2)) := by
+          p.proj (cotangentDetCanonicalFiberEquiv I b M p.proj p.snd)) := by
   intro p₀
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨contMDiffAt_proj _, ?_⟩
@@ -374,7 +374,7 @@ noncomputable def cotangentDetCanonicalHomeomorph
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω)
     (p : (cotangentCore I b M).det.core.TotalSpace) :
     cotangentDetCanonicalDiffeomorph I b M k p =
-      ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.2⟩ :=
+      ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.snd⟩ :=
   bundleDiffeomorph_apply _ _ p
 
 /-- On total spaces, the inverse of `cotangentDetCanonicalDiffeomorph` acts fibrewise by
@@ -383,7 +383,7 @@ noncomputable def cotangentDetCanonicalHomeomorph
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω)
     (p : TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M)) :
     (cotangentDetCanonicalDiffeomorph I b M k).symm p =
-      ⟨p.proj, (cotangentDetCanonicalFiberEquiv I b M p.proj).symm p.2⟩ :=
+      ⟨p.proj, (cotangentDetCanonicalFiberEquiv I b M p.proj).symm p.snd⟩ :=
   bundleDiffeomorph_symm_apply _ _ p
 
 /-- The underlying homeomorphism of `cotangentDetCanonicalDiffeomorph` at any regularity `k` agrees

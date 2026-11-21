@@ -70,7 +70,7 @@ theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph :
   rw [Bundle.contMDiffAt_totalSpace_iff, ofLinearEquivTotalSpaceHomeomorph_apply]
   refine ⟨((contMDiff_proj (ofLinearEquiv e V).core.Fiber).congr fun p ↦ by simp).contMDiffAt, ?_⟩
   have hU := ((ofLinearEquiv e V).core.localTriv p₀.proj).open_source.mem_nhds
-    ((ofLinearEquiv e V).core.mem_source_at p₀.proj p₀.2)
+    ((ofLinearEquiv e V).core.mem_source_at p₀.proj p₀.snd)
   exact (e.symm.contDiff.comp_contMDiffAt
     ((ofLinearEquiv e V).contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
       (Filter.eventually_of_mem hU fun q hq ↦ congrArg Prod.snd
@@ -117,12 +117,12 @@ noncomputable def ofLinearEquivTotalSpaceDiffeomorph
 @[simp] theorem ofLinearEquivTotalSpaceDiffeomorph_apply
     (p : (ofLinearEquiv e V).core.TotalSpace) :
     ofLinearEquivTotalSpaceDiffeomorph e V I n p =
-      ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.2⟩ :=
+      ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.snd⟩ :=
   ofLinearEquivTotalSpaceHomeomorph_apply e V p
 
 @[simp] theorem ofLinearEquivTotalSpaceDiffeomorph_symm_apply (p : TotalSpace F V) :
     (ofLinearEquivTotalSpaceDiffeomorph e V I n).symm p =
-      ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.2⟩ :=
+      ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.snd⟩ :=
   ofLinearEquivTotalSpaceHomeomorph_symm_apply e V p
 
 end TotalSpace
