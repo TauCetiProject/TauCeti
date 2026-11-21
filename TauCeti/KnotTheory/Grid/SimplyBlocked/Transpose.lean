@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Transpose
-public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
+public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 
 /-!
 # Diagonal reflection of the simply blocked grid complex
@@ -14,7 +14,8 @@ public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
 Reflection sends the `O`-marking in column `i` to column `G.O i`. Consequently it identifies
 chains with `V_i = 0` with reflected chains with `V_{G.O i} = 0`, renaming the surviving
 variables along `G.O`. The specified semilinear equivalence commutes with specialization
-from the unblocked complex and intertwines the simply blocked differentials.
+from the unblocked complex, intertwines the simply blocked differentials, and identifies the
+homogeneous pieces of the `(O-Maslov, Alexander)` bigrading of an odd-component grid.
 
 This symmetry exchanges row and column commutations while retaining the chosen blocked marking.
 The unsigned chain identities hold over any commutative semiring; characteristic two is needed
@@ -28,7 +29,11 @@ The construction specializes `GridDiagram.transposeRenameEquiv` and its differen
 
 public section
 
-namespace TauCeti.GridDiagram
+open MvPolynomial
+
+namespace TauCeti
+
+namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R] (i : Fin n)
 
@@ -90,11 +95,32 @@ theorem simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv
     (c : GridChainHat R n i) :
     G.transpose.simplyBlockedDifferential R (G.O i) (G.simplyBlockedTransposeEquiv R i c) =
       G.simplyBlockedTransposeEquiv R i (G.simplyBlockedDifferential R i c) := by
-  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R i c
-  rw [← simplyBlockedSpecialization_transposeRenameEquiv,
-    ← simplyBlockedSpecialization_unblockedDifferential,
-    unblockedDifferential_transpose_transposeRenameEquiv,
-    simplyBlockedSpecialization_transposeRenameEquiv,
-    simplyBlockedSpecialization_unblockedDifferential]
+  symm
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
+  · intro c
+    exact (G.simplyBlockedSpecialization_transposeRenameEquiv R i c).symm
+  · intro c
+    exact (G.unblockedDifferential_transpose_transposeRenameEquiv R c).symm
 
-end TauCeti.GridDiagram
+end GridDiagram
+
+namespace OddComponentGridDiagram
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) {R : Type*} [CommSemiring R] {i : Fin n}
+
+/-- Diagonal reflection, renaming the surviving variables along `G.O`, identifies the homogeneous
+pieces of the specialized complexes blocking `i` and `G.O i`.
+
+Not a simp lemma: the chain-piece membership criterion is already a simp lemma. -/
+theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff {g : ℤ × ℤ}
+    {c : GridChainHat R n i} :
+    G.val.simplyBlockedTransposeEquiv R i c ∈
+        G.transpose.bigradedChainHatPiece R (G.val.O i) g ↔
+      c ∈ G.bigradedChainHatPiece R i g :=
+  mem_bigradedChainHatPiece_iff_of_rename (φ := GridState.transpose) (κ := G.val.O.toPerm)
+    (fun x => ⟨x.transpose, GridState.transpose_transpose x⟩) G.bidegree_transpose
+    (fun x => by rw [GridDiagram.simplyBlockedTransposeEquiv_apply, GridState.transpose_transpose])
+
+end OddComponentGridDiagram
+
+end TauCeti

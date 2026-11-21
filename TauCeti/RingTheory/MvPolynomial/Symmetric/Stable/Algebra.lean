@@ -297,6 +297,16 @@ which instance search cannot unify with the `AddCommMonoid` of a submodule. -/
 noncomputable instance : CommRing (SymmetricFunction R) :=
   DirectSum.commRing fun n => stableSymmetricSubmodule R n
 
+/-- The Schur coordinates of the unit of the symmetric functions: `1 = s_∅` is the basis vector
+of the empty partition. -/
+@[simp]
+theorem stableSchurBasis_repr_stableSymmetricOne :
+    (stableSchurBasis R 0).repr (stableSymmetricOne R) =
+      Finsupp.single (Nat.Partition.indiscrete 0) 1 := by
+  have : stableSymmetricOne R = stableSchur R (Nat.Partition.indiscrete 0) :=
+    stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
+  rw [this, stableSchurBasis_repr_stableSchur]
+
 namespace SymmetricFunction
 
 /-- **The Schur basis of the ring of symmetric functions**: the Schur functions `s_μ`, over all

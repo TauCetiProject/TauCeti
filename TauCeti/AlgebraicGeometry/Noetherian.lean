@@ -13,9 +13,10 @@ import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 /-!
 # Noetherianity under finite-type morphisms and fibres
 
-A scheme of finite type over a Noetherian scheme is Noetherian. In particular, proper schemes
-over a field are Noetherian, supplying the finiteness hypothesis in divisor and line-bundle
-arguments without requiring a separate instance from the caller.
+A scheme of finite type over a Noetherian scheme is Noetherian (`isNoetherian_of_finiteType`); in
+particular, open subschemes (`isNoetherian_of_isOpenImmersion`) and proper schemes over a field are
+Noetherian, supplying the finiteness hypothesis in divisor and line-bundle arguments without
+requiring a separate instance from the caller.
 
 The fibre `X ×_S Spec κ(s)` of any morphism `f : X ⟶ S` with `X` locally Noetherian is locally
 Noetherian (`AlgebraicGeometry.Scheme.Hom.isLocallyNoetherian_fiber`), with no finiteness
@@ -40,6 +41,11 @@ theorem isNoetherian_of_finiteType {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFi
   toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian f
   toCompactSpace := QuasiCompact.compactSpace_of_compactSpace f
 
+/-- The source of an open immersion into a Noetherian scheme is Noetherian. -/
+theorem isNoetherian_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    [IsNoetherian X] : IsNoetherian U :=
+  isNoetherian_of_finiteType j
+
 /-- The underlying space of a locally Noetherian scheme is locally connected: every point has
 arbitrarily small affine open neighbourhoods, whose underlying spaces are Noetherian and hence
 locally connected. -/
@@ -53,10 +59,10 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   have : TopologicalSpace.NoetherianSpace (W : Set X) := noetherianSpace_of_isAffineOpen W hW
   refine ⟨(↑) '' connectedComponent (⟨x, hxW⟩ : W), ?_, ?_, ?_, ?_⟩
   · rintro _ ⟨y, -, rfl⟩
-    exact interior_subset (hWU y.2)
-  · exact W.isOpen.isOpenMap_subtype_val _ isOpen_connectedComponent
+    exact interior_subset (hWU y.property)
+  · exact W.isOpen.isOpenMap_subtypeVal _ isOpen_connectedComponent
   · exact ⟨_, mem_connectedComponent, rfl⟩
-  · exact isConnected_connectedComponent.image _ continuous_subtype_val.continuousOn
+  · exact isConnected_connectedComponent.image _ continuous_subtypeVal.continuousOn
 
 end TauCeti.AlgebraicGeometry
 

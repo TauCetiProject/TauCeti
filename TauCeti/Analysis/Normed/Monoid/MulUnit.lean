@@ -142,6 +142,15 @@ theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
       eq_inv_mul_iff_mul_eq₀ hu0]
     simpa [← mul_assoc] using (hu.norm_mul (((u⁻¹ : Rˣ) : R) * x)).symm
 
+/-- If `u : Rˣ` is a multiplicative unit with `‖(u : R)‖ * S₀ = R₀` and `R₀ ≠ 0`, then
+`‖((u⁻¹ : Rˣ) : R)‖ * R₀ = S₀`. -/
+theorem norm_units_inv_mul_eq {u : Rˣ} (hu : IsNormMulUnit (u : R)) {S₀ R₀ : ℝ}
+    (hR₀ : R₀ ≠ 0) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    ‖((u⁻¹ : Rˣ) : R)‖ * R₀ = S₀ := by
+  have hu0 : ‖(u : R)‖ ≠ 0 := left_ne_zero_of_mul (huS.trans_ne hR₀)
+  rw [NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← huS,
+    inv_mul_cancel_left₀ hu0]
+
 end IsNormMulUnit
 
 section CommMonoid

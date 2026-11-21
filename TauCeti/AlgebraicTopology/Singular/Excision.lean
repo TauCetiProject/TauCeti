@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Topology.Closure
 
 /-!
@@ -51,7 +52,9 @@ applied to the excision map.
 Combined with the long exact sequence of the triple `(X, A, A ∩ B)`, excision shows that when the
 interiors of `A` and `B` cover `X`, a morphism into `Hₙ(X, A ∩ B)` is determined by its images in
 `Hₙ(X, A)` and `Hₙ(X, B)` (`TopPair.singularHomology_inter_hom_ext`): a morphism vanishing in
-`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`.
+`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`. Dually, a class of
+`Hₙ(X, U)` vanishing in `Hₙ(X, U ∪ V)`, for open `U` and `V`, comes from `Hₙ(V, V ∩ U)`
+(`TopPair.exists_singularHomologyMap_excisionMap_eq`).
 
 ## References
 
@@ -86,13 +89,13 @@ lemma mem_relativeSimplex_restrictMap_right_app (n : ℕ)
     (x : ((toSSetPair.obj P).restrict
         (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i))).RelativeSimplex n) :
     (SSetPair.restrictMap (toSSetPair.map f)
-        (smallSingularSubcomplex_le_preimage f U)).right.app _ x.1 ∈
+        (smallSingularSubcomplex_le_preimage f U)).right.app _ x.val ∈
       ((toSSetPair.obj P').restrict (P'.smallSingularSubcomplex U)).RelativeSimplex n := by
   intro hx
   obtain ⟨a, ha⟩ := (SSetPair.mem_range_restrict_hom_app_iff _ _ _).mp hx
   have hx' := (P'.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff _ _).mp
-    ⟨a, ha.trans (SSetPair.restrictMap_right_app_coe _ _ x.1)⟩
-  refine x.2 ((mem_range_restrict_hom_app_iff P _ _).mpr ?_)
+    ⟨a, ha.trans (SSetPair.restrictMap_right_app_coe _ _ x.val)⟩
+  refine x.property ((mem_range_restrict_hom_app_iff P _ _).mpr ?_)
   rintro _ ⟨t, rfl⟩
   apply hsnd
   apply hx'
@@ -113,23 +116,23 @@ lemma relativeSimplex_restrictMap_bijective (n : ℕ) :
   constructor
   · intro x y hxy
     have h1 := congrArg (fun z : ((toSSetPair.obj P').restrict
-        (P'.smallSingularSubcomplex U)).RelativeSimplex n ↦ z.1.1) hxy
-    have h2 := (SSetPair.restrictMap_right_app_coe _ _ x.1).symm.trans
-      (h1.trans (SSetPair.restrictMap_right_app_coe _ _ y.1))
+        (P'.smallSingularSubcomplex U)).RelativeSimplex n ↦ z.val.val) hxy
+    have h2 := (SSetPair.restrictMap_right_app_coe _ _ x.val).symm.trans
+      (h1.trans (SSetPair.restrictMap_right_app_coe _ _ y.val))
     exact Subtype.ext (Subtype.ext (injective_of_mono ((TopCat.toSSet.map (Hom.fst f)).app _) h2))
   · intro y
-    obtain ⟨i, hi⟩ := (P'.mem_smallSingularSubcomplex_iff U _).mp y.1.2
-    have hy : ¬ Set.range (P'.fst.toSSetObjEquiv _ y.1.1) ⊆ Set.range P'.map := fun h ↦
-      y.2 ((mem_range_restrict_hom_app_iff P' _ _).mpr h)
+    obtain ⟨i, hi⟩ := (P'.mem_smallSingularSubcomplex_iff U _).mp y.val.property
+    have hy : ¬ Set.range (P'.fst.toSSetObjEquiv _ y.val.val) ⊆ Set.range P'.map := fun h ↦
+      y.property ((mem_range_restrict_hom_app_iff P' _ _).mpr h)
     -- The simplex lies in a member of the cover, which lies in the image of `f` since the simplex
     -- does not lie in the subspace; as `f` is an embedding, the simplex is induced from `P`.
-    have hsub : Set.range (P'.fst.toSSetObjEquiv _ y.1.1) ⊆ Set.range (Hom.fst f) := by
+    have hsub : Set.range (P'.fst.toSSetObjEquiv _ y.val.val) ⊆ Set.range (Hom.fst f) := by
       rcases hUf i with h | h
       · exact (hy (hi.trans h)).elim
       · exact hi.trans h
     obtain ⟨σ, hσ⟩ := (hf.isInducing.mem_range_toSSet_map_app_iff _ _).mpr hsub
     have hσ' : (ConcreteCategory.hom (Hom.fst f)).comp (P.fst.toSSetObjEquiv _ σ) =
-        P'.fst.toSSetObjEquiv _ y.1.1 := by
+        P'.fst.toSSetObjEquiv _ y.val.val := by
       rw [← TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, hσ]
     rw [← hσ', ContinuousMap.coe_comp, Set.range_comp, Set.image_subset_iff] at hi
     have hσS : σ ∈ (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i)).obj _ :=
@@ -184,15 +187,15 @@ abbrev interPair : TopPair.{w} := ofSubset (X := TopCat.of A) (Subtype.val ⁻¹
 
 /-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)`. -/
 def excisionMap : interPair A B ⟶ ofSubset B :=
-  ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-    (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtype_val.restrictPreimage⟩)
+  ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtypeVal.restrictPreimage⟩)
 
 @[simp]
-lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B) x = x.1 := (rfl)
+lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B) x = x.val := (rfl)
 
 @[simp]
 lemma excisionMap_snd_apply (x : (interPair A B).snd) :
-    (Hom.snd (excisionMap A B) x).1 = x.1.1 := (rfl)
+    (Hom.snd (excisionMap A B) x).val = x.val.val := (rfl)
 
 /-- The excision map is an embedding of ambient spaces. -/
 lemma isEmbedding_fst_excisionMap : IsEmbedding (Hom.fst (excisionMap A B)) :=
@@ -268,13 +271,13 @@ def interPairMap : interPair A B ⟶ interPair A' B' :=
 
 @[simp]
 lemma interPairMap_fst_apply (x : (interPair A B).fst) :
-    (Hom.fst (interPairMap g hA hB) x).1 = g x.1 :=
+    (Hom.fst (interPairMap g hA hB) x).val = g x.val :=
   congrArg Subtype.val (ofSubsetMap_fst_apply
     (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) (fun _ hx ↦ hB hx) x)
 
 @[simp]
 lemma interPairMap_snd_apply (x : (interPair A B).snd) :
-    (Hom.snd (interPairMap g hA hB) x).1.1 = g x.1.1 :=
+    (Hom.snd (interPairMap g hA hB) x).val.val = g x.val.val :=
   congrArg Subtype.val (ofSubsetMap_snd_apply
     (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) (fun _ hx ↦ hB hx) x)
 
@@ -342,8 +345,8 @@ variable {X : TopCat.{w}} (U V : Set X)
 so that its inner pair is `TopPair.interPair U V`. -/
 private abbrev interTriple : TopTriple.{w} :=
   TopTriple.of (B := TopCat.of (Subtype.val ⁻¹' V : Set U)) (A := TopCat.of U) (X := X)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) IsEmbedding.subtypeVal
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) IsEmbedding.subtypeVal
     IsEmbedding.subtypeVal
 
 /-- The inner pair of `TopPair.interTriple U V` is `TopPair.interPair U V`. -/
@@ -356,11 +359,12 @@ private def subsetToOuter : ofSubset U ⟶ TopTriple.outerPair.obj (interTriple 
 
 /-- The identification of `(X, U ∩ V)` with the total pair of `TopPair.interTriple U V`. -/
 private def interToTotal : ofSubset (U ∩ V) ⟶ TopTriple.totalPair.obj (interTriple U V) :=
-  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, y.2.1⟩, y.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.val, y.property.1⟩, y.property.2⟩, by fun_prop⟩)
+      (by ext; rfl)
 
 private instance : IsIso (interToTotal U V) :=
   have : IsIso (Hom.fst (interToTotal U V)) := inferInstanceAs (IsIso (𝟙 X))
-  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨y.1.1, y.1.2, y.2⟩, rfl⟩
+  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨y.val.val, y.val.property, y.property⟩, rfl⟩
 
 private instance : IsIso (interPairToInner U V) :=
   have : IsIso (Hom.fst (interPairToInner U V)) := inferInstanceAs (IsIso (𝟙 (TopCat.of U)))
@@ -368,14 +372,14 @@ private instance : IsIso (interPairToInner U V) :=
 
 /-- The map from the total pair `(X, U ∩ V)` of `TopPair.interTriple U V` to the pair `(X, V)`. -/
 private def totalToSubset : TopTriple.totalPair.obj (interTriple U V) ⟶ ofSubset V :=
-  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.1.1, y.2⟩, by fun_prop⟩) (by ext; rfl)
+  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.val.val, y.property⟩, by fun_prop⟩) (by ext; rfl)
 
 private lemma interPairToInner_comp_innerToTotal_comp_totalToSubset :
     interPairToInner U V ≫ TopTriple.innerToTotal.app (interTriple U V) ≫ totalToSubset U V =
       excisionMap U V := by
   ext x : 2
   · refine Subtype.ext (Eq.trans ?_ (excisionMap_snd_apply U V x).symm)
-    exact congrArg (fun g ↦ (g x).1.1) (TopTriple.innerToTotal_app_snd (T := interTriple U V))
+    exact congrArg (fun g ↦ (g x).val.val) (TopTriple.innerToTotal_app_snd (T := interTriple U V))
   · refine Eq.trans ?_ (excisionMap_fst_apply U V x).symm
     exact congrArg (fun g ↦ g x) (TopTriple.innerToTotal_app_fst (T := interTriple U V))
 
@@ -386,7 +390,7 @@ private lemma interToTotal_comp_totalToOuter (hU : Set.MapsTo (𝟙 X) (U ∩ V)
       ofSubsetMap (𝟙 X) hU ≫ subsetToOuter U V := by
   ext x : 2
   · refine Subtype.ext (Eq.trans ?_ (ofSubsetMap_snd_apply (𝟙 X) hU x).symm)
-    exact congrArg (fun g ↦ (g (Hom.snd (interToTotal U V) x)).1)
+    exact congrArg (fun g ↦ (g (Hom.snd (interToTotal U V) x)).val)
       (TopTriple.totalToOuter_app_snd (T := interTriple U V))
   · refine Eq.trans ?_ (ofSubsetMap_fst_apply (𝟙 X) hU x).symm
     exact congrArg (fun g ↦ g x) (TopTriple.totalToOuter_app_fst (T := interTriple U V))
@@ -438,5 +442,79 @@ theorem singularHomology_inter_hom_ext (h : interior U ∪ interior V = Set.univ
   rw [← hl, hl₀, zero_comp]
 
 end Inter
+
+section Union
+
+open TauCeti
+
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ) {X : TopCat.{w}} {U V : Set X}
+
+/-- The inclusion of pairs `(V, V ∩ U) ⟶ (U ∪ V, U)`, into the inner pair of the triple
+`(X, U ∪ V, U)`. -/
+private def interPairToUnion (h : U ⊆ U ∪ V) :
+    interPair V U ⟶ TopTriple.innerPair.obj (TopTriple.ofSubset h) :=
+  ofHom (TopCat.ofHom ⟨fun x ↦ ⟨x.val, Or.inr x.property⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.val.val, x.property⟩, by fun_prop⟩) (by ext; rfl)
+
+private lemma interPairToUnion_comp_innerToTotal (h : U ⊆ U ∪ V) :
+    interPairToUnion h ≫ TopTriple.innerToTotal.app (TopTriple.ofSubset h) = excisionMap V U := by
+  ext x : 2
+  · exact Subtype.ext (excisionMap_snd_apply V U x).symm
+  · exact (excisionMap_fst_apply V U x).symm
+
+/-- **A class vanishing modulo a larger open set comes from the excised pair.** For open subsets
+`U` and `V` of `X`, a class of `Hₙ(X, U)` whose image in `Hₙ(X, U ∪ V)` vanishes is the image of
+a class of `Hₙ(V, V ∩ U)` under the excision map `(V, V ∩ U) ⟶ (X, U)`. By the long exact
+sequence of the triple `(X, U ∪ V, U)` it comes from `Hₙ(U ∪ V, U)`, which excision identifies with
+`Hₙ(V, V ∩ U)`. As for `TopPair.singularHomology_inter_hom_ext`, the inclusion `h` is an argument,
+so that the map of pairs in the hypothesis matches that of the caller. -/
+theorem exists_singularHomologyMap_excisionMap_eq (hU : IsOpen U) (hV : IsOpen V)
+    (h : Set.MapsTo (𝟙 X) U (U ∪ V)) (n : ℕ)
+    {y : ((ofSubset U).singularHomology R n : ModuleCat.{w} Λ)}
+    (hy : (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) h) R n).hom y = 0) :
+    ∃ z : ((interPair V U).singularHomology R n : ModuleCat.{w} Λ),
+      (TopPair.singularHomologyMap (excisionMap V U) R n).hom z = y := by
+  have hUV : U ⊆ U ∪ V := Set.subset_union_left
+  let T := TopTriple.ofSubset hUV
+  -- The inclusion `(V, V ∩ U) ⟶ (U ∪ V, U)` is an excision: `U ∪ V` is covered by the open sets
+  -- over `U` and over `V`.
+  have hexc : IsIso (TopPair.singularHomologyMap (interPairToUnion hUV) R n) :=
+    isIso_singularHomologyMap_of_open_cover R (interPairToUnion hUV)
+      ((IsEmbedding.subtypeVal.of_comp_iff
+        (f := fun x : V ↦ (⟨x.val, Or.inr x.property⟩ : ↥(U ∪ V)))).1
+        IsEmbedding.subtypeVal)
+      (fun x ⟨u, hu⟩ ↦
+        ⟨⟨x, Set.mem_preimage.2 ((congrArg Subtype.val hu : u.val = x.val) ▸ u.property)⟩, rfl⟩)
+      (fun b : Bool ↦ bif b then (Subtype.val ⁻¹' U : Set ↥(U ∪ V)) else Subtype.val ⁻¹' V)
+      (fun b ↦ by cases b <;> exact continuous_subtypeVal.isOpen_preimage _ ‹_›)
+      (Set.eq_univ_of_forall fun x ↦ by
+        rcases x.property with hx | hx
+        · exact Set.mem_iUnion.2 ⟨true, hx⟩
+        · exact Set.mem_iUnion.2 ⟨false, hx⟩)
+      (fun b ↦ by
+        cases b
+        · exact Or.inr fun x hx ↦ ⟨⟨x.val, hx⟩, rfl⟩
+        · exact Or.inl fun x hx ↦ ⟨⟨x.val, hx⟩, rfl⟩) n
+  -- By exactness of the triple at `Hₙ(X, U)`, `y` comes from `Hₙ(U ∪ V, U)`.
+  have hy' : (TopPair.singularHomologyMap (TopTriple.totalToOuter.app T) R n).hom y = 0 := by
+    rw [TopTriple.totalToOuter_app_ofSubset]
+    exact hy
+  obtain ⟨y₁, hy₁⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    (T.singularHomology_exact_total R n) y hy'
+  have key : TopPair.singularHomologyMap (excisionMap V U) R n =
+      TopPair.singularHomologyMap (interPairToUnion hUV) R n ≫
+        TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n := by
+    rw [← singularHomologyMap_comp, interPairToUnion_comp_innerToTotal]
+    -- The two sides differ only in the target pair, `(X, U)` or the total pair of the triple,
+    -- which agree definitionally.
+    rfl
+  refine ⟨(inv (TopPair.singularHomologyMap (interPairToUnion hUV) R n)).hom y₁, ?_⟩
+  rw [key]
+  -- A composite in `ModuleCat` is applied by applying its factors in turn.
+  refine (congrArg (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n).hom ?_).trans
+    hy₁
+  exact ConcreteCategory.congr_hom (IsIso.inv_hom_id _) y₁
+
+end Union
 
 end TopPair
