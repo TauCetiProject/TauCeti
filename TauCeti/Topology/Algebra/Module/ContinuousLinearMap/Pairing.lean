@@ -21,8 +21,9 @@ argument is surjective, and scalar multiplication is only assumed continuous for
 scalar. Forgetting continuity, the flip is Mathlib's algebraic flip `LinearMap.flip`
 (`LinearMap.toLinearMap₁₂_pairingFlip`).
 
-When the hypotheses hold in both orientations, flipping a continuous pairing twice gives it back
-(`ContinuousLinearMap.pairingFlip_pairingFlip`).
+When the hypotheses hold in both orientations, flipping twice gives the pairing back: forgetting
+continuity of the curried map in general (`LinearMap.pairingFlip_pairingFlip`), and exactly for a
+continuous pairing (`ContinuousLinearMap.pairingFlip_pairingFlip`).
 -/
 
 public section
@@ -81,7 +82,7 @@ theorem toLinearMap₁₂_pairingFlip (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[
 
 end LinearMap
 
-namespace ContinuousLinearMap
+section PairingFlipPairingFlip
 
 variable {𝕜₁ 𝕜₂ 𝕜₃ G₁ G₂ G₃ : Type*} [NontriviallyNormedField 𝕜₁]
   [NontriviallyNormedField 𝕜₂] [NormedField 𝕜₃] {σ₁₃ : 𝕜₁ →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃}
@@ -93,13 +94,22 @@ variable {𝕜₁ 𝕜₂ 𝕜₃ G₁ G₂ G₃ : Type*} [NontriviallyNormedFie
   [AddCommGroup G₃] [Module 𝕜₃ G₃] [TopologicalSpace G₃]
   [IsTopologicalAddGroup G₃] [ContinuousConstSMul 𝕜₃ G₃]
 
+/-- Flipping a jointly continuous pairing `μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃` twice gives it back,
+after forgetting continuity of the resulting curried map. -/
+@[simp]
+theorem LinearMap.pairingFlip_pairingFlip (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    ((μ.pairingFlip hμ).toLinearMap.pairingFlip (μ.pairingFlip_continuous hμ)).toLinearMap =
+      μ := by
+  ext x y
+  simp only [ContinuousLinearMap.coe_coe, pairingFlip_apply]
+
 /-- Flipping a jointly continuous pairing `μ : G₁ →SL[σ₁₃] G₂ →SL[σ₂₃] G₃` twice gives it back. -/
 @[simp]
-theorem pairingFlip_pairingFlip (μ : G₁ →SL[σ₁₃] G₂ →SL[σ₂₃] G₃)
+theorem ContinuousLinearMap.pairingFlip_pairingFlip (μ : G₁ →SL[σ₁₃] G₂ →SL[σ₂₃] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
     (μ.toLinearMap.pairingFlip hμ).toLinearMap.pairingFlip
-      (μ.toLinearMap.pairingFlip_continuous hμ) = μ := by
-  ext x y
-  simp only [LinearMap.pairingFlip_apply, coe_coe]
+      (μ.toLinearMap.pairingFlip_continuous hμ) = μ :=
+  coe_injective (μ.toLinearMap.pairingFlip_pairingFlip hμ)
 
-end ContinuousLinearMap
+end PairingFlipPairingFlip
