@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Convolution
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Morrey spaces
@@ -76,6 +77,12 @@ namespace TauCeti
 
 namespace MeasureTheory
 
+/-- The cancellation `r^a r^b = r^(a + b)` behind each rescaling of a radius in this file, with
+the factors already in `ℝ≥0∞`. -/
+private theorem ofReal_rpow_mul_ofReal_rpow {r : ℝ} (hr : 0 < r) (a b : ℝ) :
+    ENNReal.ofReal (r ^ a) * ENNReal.ofReal (r ^ b) = ENNReal.ofReal (r ^ (a + b)) := by
+  rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hr]
+
 section Basic
 
 variable {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [NormedAddCommGroup F]
@@ -140,8 +147,7 @@ theorem setLIntegral_closedBall_le_morreyNormPow_of_mem (hx : x ∈ Ω) (hr : 0 
     ∫⁻ y in closedBall x r, ‖f y‖ₑ ^ p ∂μ.restrict Ω ≤
       ENNReal.ofReal (r ^ lam) * morreyNormPow μ Ω p lam f := by
   have h1 : ENNReal.ofReal (r ^ lam) * ENNReal.ofReal (r ^ (-lam)) = 1 := by
-    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hr, add_neg_cancel, Real.rpow_zero,
-      ENNReal.ofReal_one]
+    simp [ofReal_rpow_mul_ofReal_rpow hr]
   calc _ = ENNReal.ofReal (r ^ lam) * (ENNReal.ofReal (r ^ (-lam)) *
         ∫⁻ y in closedBall x r, ‖f y‖ₑ ^ p ∂μ.restrict Ω) := by rw [← mul_assoc, h1, one_mul]
     _ ≤ _ := by gcongr; exact le_morreyNormPow hx hr
@@ -255,8 +261,8 @@ theorem morreyNormPow_le_eLpNorm_rpow_mul (hp : 0 < p) (hpq : p ≤ q)
   have hone : ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) *
       ENNReal.ofReal (r ^ (finrank ℝ E : ℝ)) ^ (1 - p / q) = 1 := by
     rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) hs, ← Real.rpow_mul hr.le,
-      ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hr, neg_add_cancel, Real.rpow_zero,
-      ENNReal.ofReal_one]
+      ofReal_rpow_mul_ofReal_rpow hr]
+    simp
   calc ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) * ∫⁻ y, ‖f y‖ₑ ^ p ∂ν
       = ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) * eLpNorm' f p ν ^ p := by
         rw [lintegral_rpow_eNorm_eq_rpow_eLpNorm' hp]
@@ -274,43 +280,26 @@ theorem morreyNormPow_le_eLpNorm_rpow_mul (hp : 0 < p) (hpq : p ≤ q)
           ENNReal.mul_rpow_of_nonneg _ _ hs, ← mul_assoc, ← mul_assoc,
           mul_right_comm _ (eLpNorm f _ _ ^ p), hone, one_mul]
 
-/-- The mass of `g ∘ (x₀ + ε ·)` on a ball, for the restriction to the preimage of `Ω`, is `ε^(-n)`
-times the mass of `g` on the image ball, for the restriction to `Ω`. -/
-private theorem setLIntegral_closedBall_comp_add_smul (x₀ : E) {ε : ℝ} (hε : 0 < ε)
-    (g : E → ℝ≥0∞) (x : E) (r : ℝ) :
-    ∫⁻ y in closedBall x r, g (x₀ + ε • y) ∂μ.restrict ((fun y ↦ x₀ + ε • y) ⁻¹' Ω) =
-      ENNReal.ofReal (ε ^ (-(finrank ℝ E : ℝ))) *
-        ∫⁻ z in closedBall (x₀ + ε • x) (ε * r), g z ∂μ.restrict Ω := by
-  set e : E ≃ᵐ E := (MeasurableEquiv.smul₀ ε hε.ne').trans (MeasurableEquiv.addLeft x₀)
-  have he : (e : E → E) = (x₀ + ·) ∘ (ε • ·) := rfl
-  -- The Haar measure is pushed forward by `e` to `ε^(-n)` times itself.
-  have hmap : μ.map e = ENNReal.ofReal (ε ^ (-(finrank ℝ E : ℝ))) • μ := by
-    rw [he, ← Measure.map_map (measurable_const_add x₀) (measurable_const_smul ε),
-      Measure.map_addHaar_smul μ hε.ne', Measure.map_smul, map_add_left_eq_self,
-      Real.rpow_neg hε.le, Real.rpow_natCast, abs_of_pos (by positivity)]
-    exact (measurable_const_add x₀).aemeasurable
-  have hpre : closedBall x r ∩ (fun y ↦ x₀ + ε • y) ⁻¹' Ω =
-      e ⁻¹' (closedBall (x₀ + ε • x) (ε * r) ∩ Ω) := by
-    ext y
-    simp only [mem_inter_iff, mem_preimage, mem_closedBall, he, Function.comp_apply,
-      dist_add_left, dist_smul₀, Real.norm_eq_abs, abs_of_pos hε]
-    rw [mul_le_mul_iff_of_pos_left hε]
-  rw [Measure.restrict_restrict measurableSet_closedBall,
-    Measure.restrict_restrict measurableSet_closedBall, hpre]
-  change ∫⁻ y, g (e y) ∂μ.restrict (e ⁻¹' _) = _
-  rw [← lintegral_map_equiv, ← e.restrict_map, hmap, Measure.restrict_smul,
-    lintegral_smul_measure, smul_eq_mul]
-
 /-- One direction of `morreyNormPow_comp_add_smul`. -/
 private theorem morreyNormPow_comp_add_smul_le (x₀ : E) {ε : ℝ} (hε : 0 < ε) :
     morreyNormPow μ ((fun y ↦ x₀ + ε • y) ⁻¹' Ω) p lam (fun y ↦ f (x₀ + ε • y)) ≤
       ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) * morreyNormPow μ Ω p lam f := by
   refine morreyNormPow_le_iff.2 fun x hx r hr ↦ ?_
-  rw [setLIntegral_closedBall_comp_add_smul (g := fun z ↦ ‖f z‖ₑ ^ p) x₀ hε x r]
-  have hfac : ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal (ε ^ (-(finrank ℝ E : ℝ))) =
+  have hpre : closedBall x r ∩ (fun y ↦ x₀ + ε • y) ⁻¹' Ω =
+      (fun y ↦ x₀ + ε • y) ⁻¹' (closedBall (x₀ + ε • x) (ε * r) ∩ Ω) := by
+    ext y
+    simp only [mem_inter_iff, mem_preimage, mem_closedBall, dist_add_left, dist_smul₀,
+      Real.norm_eq_abs, abs_of_pos hε]
+    rw [mul_le_mul_iff_of_pos_left hε]
+  -- The change of variables `z = x₀ + ε y` maps `B(x, r)` onto `B(x₀ + ε x, ε r)`.
+  rw [Measure.restrict_restrict measurableSet_closedBall, hpre,
+    Measure.setLIntegral_comp_add_smul μ (fun z ↦ ‖f z‖ₑ ^ p) x₀ hε.ne',
+    ← Measure.restrict_restrict measurableSet_closedBall]
+  have hfac : ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal |(ε ^ finrank ℝ E)⁻¹| =
       ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) * ENNReal.ofReal ((ε * r) ^ (-lam)) := by
-    rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity),
-      Real.mul_rpow hε.le hr.le, ← mul_assoc, ← Real.rpow_add hε, mul_comm]
+    rw [abs_of_pos (by positivity), ← Real.rpow_natCast, ← Real.rpow_neg hε.le,
+      Real.mul_rpow hε.le hr.le, ENNReal.ofReal_mul (by positivity), ← mul_assoc,
+      ofReal_rpow_mul_ofReal_rpow hε, mul_comm]
     congr 3
     ring
   rw [← mul_assoc, hfac, mul_assoc]
@@ -335,8 +324,8 @@ theorem morreyNormPow_comp_add_smul (x₀ : E) {ε : ℝ} (hε : 0 < ε) :
   simp only [hinv, preimage_preimage, preimage_id'] at h
   have hone : ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) *
       ENNReal.ofReal (ε⁻¹ ^ (lam - finrank ℝ E)) = 1 := by
-    rw [← ENNReal.ofReal_mul (by positivity), Real.inv_rpow hε.le,
-      mul_inv_cancel₀ (by positivity), ENNReal.ofReal_one]
+    rw [← Real.rpow_neg_eq_inv_rpow, ofReal_rpow_mul_ofReal_rpow hε]
+    simp
   calc _ ≤ ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) * (ENNReal.ofReal (ε⁻¹ ^ (lam - finrank ℝ E)) *
         morreyNormPow μ ((fun y ↦ x₀ + ε • y) ⁻¹' Ω) p lam (fun y ↦ f (x₀ + ε • y))) := by gcongr
     _ = _ := by rw [← mul_assoc, hone, one_mul]
@@ -409,8 +398,9 @@ theorem morreyNormPow_one_convolution_le [NormedSpace ℝ F] (V : Set E) {v : E 
           exact hv
   have hfac : ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal ((2 * r) ^ lam) =
       ENNReal.ofReal (2 ^ lam) := by
-    rw [← ENNReal.ofReal_mul (by positivity), Real.mul_rpow zero_le_two hr.le, mul_left_comm,
-      ← Real.rpow_add hr, neg_add_cancel, Real.rpow_zero, mul_one]
+    rw [Real.mul_rpow zero_le_two hr.le, ENNReal.ofReal_mul (by positivity), mul_left_comm,
+      ofReal_rpow_mul_ofReal_rpow hr]
+    simp
   calc _ ≤ ENNReal.ofReal (r ^ (-lam)) *
         (eLpNorm v 1 μ * (ENNReal.ofReal ((2 * r) ^ lam) * M)) := by gcongr
     _ = eLpNorm v 1 μ * (ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal ((2 * r) ^ lam)) * M := by
