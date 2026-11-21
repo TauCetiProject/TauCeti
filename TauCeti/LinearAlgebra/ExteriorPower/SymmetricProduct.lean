@@ -122,4 +122,11 @@ theorem symmMap₂_comp_map (f g : N →ₗ[R] P) (h : M →ₗ[R] N) :
     (symmMap₂ f g).comp (map 2 h) = symmMap₂ (f.comp h) (g.comp h) := by
   rw [← symmMap₂_self h, symmMap₂_comp_symmMap₂, ← two_smul R, smul_smul, invOf_mul_self, one_smul]
 
+/-- Conjugating `symmMap₂ f g` by `map 2 e` conjugates each factor. -/
+theorem conj_map_symmMap₂ (e : M ≃ₗ[R] N) (f g : Module.End R M) :
+    (map 2 e.toLinearMap).comp ((symmMap₂ f g).comp (map 2 e.symm.toLinearMap)) =
+      symmMap₂ (e.conj f) (e.conj g) := by
+  rw [symmMap₂_comp_map, map_comp_symmMap₂]
+  rfl
+
 end exteriorPower
