@@ -355,11 +355,12 @@ open Filter Function
 
 open scoped Topology
 
-/-- In a first-countable topological group `G`, if a left-invariant measure `μ` finite on compact
-sets assigns positive measure to a compact set `K`, then `G` is locally compact. -/
-@[to_additive /-- In a first-countable additive topological group `G`, if a left-invariant measure
-`μ` finite on compact sets assigns positive measure to a compact set `K`, then `G` is locally
-compact. -/]
+/-- In a first-countable topological group `G` with measurable open sets and measurable
+multiplication, if a left-invariant measure `μ` finite on compact sets assigns positive measure to a
+compact set `K`, then `G` is locally compact. -/
+@[to_additive /-- In a first-countable additive topological group `G` with measurable open sets
+and measurable addition, if a left-invariant measure `μ` finite on compact sets assigns positive
+measure to a compact set `K`, then `G` is locally compact. -/]
 theorem IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group
     {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     [FirstCountableTopology G] [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]

@@ -17,9 +17,11 @@ import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 For a `ℤ`-submodule `L` of a real normed space `E`, an arbitrary set `s ⊆ E` and `i : ℕ`, the
 `i`-th successive minimum `MeasureTheory.successiveMin L s i` is the infimum of the `r : ℝ≥0`
-such that the vectors of `L` in the dilate `r • s` span a real subspace of dimension greater than
-`i`. No geometric hypothesis is imposed on `s` or `L`, so indices at or beyond the rank of `L`
-take the junk value `sInf ∅ = 0`.
+satisfying `i < Set.finrank ℝ (r • s ∩ L)`, i.e., such that the vectors of `L` in the dilate
+`r • s` span a finite-dimensional real subspace of dimension greater than `i` (infinite-dimensional
+spans have `Set.finrank` equal to `0`). No geometric hypothesis is imposed on `s` or `L`; when
+`span ℝ L` is finite-dimensional, indices at or beyond the rank of `L` take the junk value
+`sInf ∅ = 0`.
 
 On a convex body with `0` in its interior these are the body minima `ZLattice.successiveMin`
 (`MeasureTheory.coe_successiveMin`), which carry the geometric theory: attainment, positivity and
@@ -41,12 +43,14 @@ Minkowski's second theorem.
   infimum defining a minimum below the integer rank of `L` (or, for a full lattice, below the
   dimension of `E`) is over a nonempty set; the ambient space need not be assumed
   finite-dimensional.
-* `MeasureTheory.successiveMin_mono`: below the integer rank the minima are nondecreasing.
+* `MeasureTheory.successiveMin_mono`: for discrete `L` and absorbent `s`, below the integer rank
+  the minima are nondecreasing.
 * `MeasureTheory.successiveMin_le_of_lt_setFinrank` and
-  `MeasureTheory.lt_setFinrank_smul_inter_of_successiveMin_lt`: a dilate whose lattice vectors
-  span a subspace of dimension greater than `i` bounds the `i`-th minimum from above, and
-  conversely, for discrete `L`, `i < finrank ℤ L` and an absorbent set star-convex about `0`,
-  every dilate by a factor strictly above the minimum is such a dilate.
+  `MeasureTheory.lt_setFinrank_smul_inter_of_successiveMin_lt`: a dilate `r • s` satisfying
+  `i < Set.finrank ℝ (r • s ∩ L)` (so `r • s ∩ L` spans a finite-dimensional real subspace of
+  dimension greater than `i`) bounds the `i`-th minimum from above, and conversely, for discrete
+  `L`, `i < finrank ℤ L` and an absorbent set star-convex about `0`, every dilate by a factor
+  strictly above the minimum satisfies `i < Set.finrank ℝ (r • s ∩ L)`.
 * `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for discrete `L`,
   `i < finrank ℤ L` and a convex neighbourhood of `0`, every dilate by a factor strictly above the
   `i`-th minimum contains `i + 1` linearly independent vectors of `L`.
@@ -82,9 +86,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {L : Submodule �
 
 variable (L s i) in
 /-- The `i`-th successive minimum of a set `s` around the origin with respect to a submodule `L`:
-the infimum of the `r : ℝ≥0` such that `r • s ∩ L` spans a real subspace of dimension greater than
-`i`. The index is zero-based, so `successiveMin L s 0` is the first minimum. At indices for which
-no such `r` exists, for instance beyond the dimension of `E`, its value is the junk value `0`. -/
+the infimum of the `r : ℝ≥0` satisfying `i < Set.finrank ℝ (r • s ∩ L)`, i.e., such that
+`r • s ∩ L` spans a finite-dimensional real subspace of dimension greater than `i`
+(infinite-dimensional spans have `Set.finrank` equal to `0`). The index is zero-based, so
+`successiveMin L s 0` is the first minimum. At indices for which no such `r` exists, for instance
+beyond the dimension of a finite-dimensional `E`, its value is the junk value `0`. -/
 noncomputable def successiveMin : ℝ≥0 :=
   sInf {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)}
 
@@ -92,8 +98,9 @@ variable (L s i) in
 theorem successiveMin_def :
     successiveMin L s i = sInf {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)} := (rfl)
 
-/-- A dilate `r • s` whose vectors of `L` span a real subspace of dimension greater than `i` bounds
-the `i`-th successive minimum from above. -/
+/-- A dilate `r • s` satisfying `i < Set.finrank ℝ (r • s ∩ L)` (i.e., whose vectors of `L` span a
+finite-dimensional real subspace of dimension greater than `i`) bounds the `i`-th successive
+minimum from above. -/
 theorem successiveMin_le_of_lt_setFinrank {r : ℝ≥0} (hr : i < Set.finrank ℝ (r • s ∩ L)) :
     successiveMin L s i ≤ r := by
   rw [successiveMin_def]
@@ -144,8 +151,8 @@ theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ
     _ = Set.finrank ℝ (Set.range f) := by rw [Set.finrank, Set.finrank, hspan]
     _ ≤ Set.finrank ℝ ((⟨r, hr.le⟩ : ℝ≥0) • s ∩ L) := finrank_mono (span_mono hf)
 
-/-- For a full lattice `L`, the infimum defining `successiveMin L s i` is taken over a nonempty set
-at every index below the dimension of `E`. -/
+/-- For a full lattice `L` and an absorbent set `s`, the infimum defining `successiveMin L s i`
+is taken over a nonempty set at every index below the dimension of `E`. -/
 theorem exists_lt_setFinrank_smul_inter_zLattice [DiscreteTopology L] [IsZLattice ℝ L]
     (hs : Absorbent ℝ s) (hi : i < finrank ℝ E) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
   have := Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hi)
