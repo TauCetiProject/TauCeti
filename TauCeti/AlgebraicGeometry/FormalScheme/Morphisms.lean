@@ -49,10 +49,6 @@ namespace TauCeti.FormalScheme
 
 universe u
 
-private noncomputable abbrev globalIso (A : Type u) [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [IsAdicRing A] : (Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
-  @Spf.globalSectionsIso A _ _ _ _ (IsAdicRing.ideal_spec A).2.2 (IsAdicRing.ideal_spec A).2.1
-
 section Gluing
 
 /-- For opens `V ≤ W` of a formal scheme `X`, the inclusion `X|_V ⟶ X|_W` of open formal
@@ -61,15 +57,13 @@ noncomputable def restrictHomOfLE (X : FormalScheme.{u}) {V W : Opens X} (h : V 
     X.restrict V ⟶ X.restrict W :=
   InducedCategory.homMk (X.toLocallyRingedSpace.restrictHomOfLE h)
 
-private theorem ofRestrict_hom (X : FormalScheme.{u}) (U : Opens X) :
-    (X.ofRestrict U).hom = X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding :=
-  forgetToLocallyRingedSpace_map_ofRestrict X U
-
 /-- Composing `X|_V ⟶ X|_W` with `X|_W ⟶ X` gives `X|_V ⟶ X`. -/
 @[reassoc (attr := simp)]
 theorem restrictHomOfLE_ofRestrict (X : FormalScheme.{u}) {V W : Opens X} (h : V ≤ W) :
     X.restrictHomOfLE h ≫ X.ofRestrict W = X.ofRestrict V := InducedCategory.hom_ext <| by
-  rw [InducedCategory.comp_hom, ofRestrict_hom, ofRestrict_hom]
+  rw [InducedCategory.comp_hom, ← forgetToLocallyRingedSpace_map (X.ofRestrict W),
+    ← forgetToLocallyRingedSpace_map (X.ofRestrict V),
+    forgetToLocallyRingedSpace_map_ofRestrict, forgetToLocallyRingedSpace_map_ofRestrict]
   exact X.toLocallyRingedSpace.restrictHomOfLE_ofRestrict h
 
 /-- The inclusion of an open formal subscheme into itself is the identity. -/
@@ -106,7 +100,8 @@ theorem ofRestrict_glueMorphisms {X Y : FormalScheme.{u}} {ι : Type*}
         X.restrictHomOfLE (inf_le_right : U i ⊓ U j ≤ U j) ≫ f j)
     (i : ι) :
     X.ofRestrict (U i) ≫ glueMorphisms U hU f hcompat = f i := InducedCategory.hom_ext <| by
-  rw [InducedCategory.comp_hom, ofRestrict_hom]
+  rw [InducedCategory.comp_hom, ← forgetToLocallyRingedSpace_map (X.ofRestrict (U i)),
+    forgetToLocallyRingedSpace_map_ofRestrict]
   exact X.toLocallyRingedSpace.ofRestrict_glueMorphisms U hU _ _ i
 
 /-- Two morphisms of formal schemes that agree on every member of an open cover are equal. -/
@@ -116,7 +111,9 @@ theorem hom_ext_of_ofRestrict {X Y : FormalScheme.{u}} {ι : Type*}
     f = g :=
   InducedCategory.hom_ext <| X.toLocallyRingedSpace.hom_ext_of_ofRestrict U hU fun i ↦ by
     have hi := congrArg InducedCategory.Hom.hom (h i)
-    rwa [InducedCategory.comp_hom, InducedCategory.comp_hom, ofRestrict_hom] at hi
+    rwa [InducedCategory.comp_hom, InducedCategory.comp_hom,
+      ← forgetToLocallyRingedSpace_map (X.ofRestrict (U i)),
+      forgetToLocallyRingedSpace_map_ofRestrict] at hi
 
 private theorem iSup_affineOpens (X : FormalScheme.{u}) :
     (⨆ U : { U : Opens X // X.IsAffineOpen U }, U.1) = ⊤ := by
@@ -164,9 +161,10 @@ private theorem continuous_restrict_iff_residue_on_chart {X : FormalScheme.{u}}
     exact (isHomeomorph_sectionsIsoOfIsoSpf hU e).isInducing.continuous_iff
   rw [hcont_iff, hI.continuous_iff_map_le_radical (IsAdicRing.ideal_spec B).2.1
     (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1, Ideal.map_le_iff_le_comap]
-  have hj_app (a : A) : j.c.app (op ⊤) (φ a) = (globalIso B).inv (ψ a) :=
+  have hj_app (a : A) : j.c.app (op ⊤) (φ a) = (Spf.globalSectionsIsoOfIsAdicRing B).inv (ψ a) :=
     ConcreteCategory.congr_hom
-      ((Iso.eq_comp_inv (globalIso B)).mpr (chartImmersion_c_app_top e)) (φ a)
+      ((Iso.eq_comp_inv (Spf.globalSectionsIsoOfIsAdicRing B)).mpr (chartImmersion_c_app_top e))
+      (φ a)
   refine ⟨fun h a ha q ↦ ?_, fun h a ha ↦ ?_⟩
   · have hzero := (Spf.mem_radical_iff_forall_Γevaluation_eq_zero
       (IsAdicRing.ideal_spec B).2.1 (ψ a)).mp (h ha) q
@@ -182,7 +180,7 @@ private theorem continuous_restrict_iff_residue_on_chart {X : FormalScheme.{u}}
       (ψ a)).mpr fun q ↦ ?_
     let q' : Spf B := q
     -- `Spf B` and `Spf.carrier B` agree definitionally (`q' = q`).
-    change (Spf B).Γevaluation q' ((globalIso B).inv (ψ a)) = 0
+    change (Spf B).Γevaluation q' ((Spf.globalSectionsIsoOfIsAdicRing B).inv (ψ a)) = 0
     rw [← hj_app a, ← LocallyRingedSpace.Γevaluation_naturality_apply j q' (φ a),
       h a ha q, map_zero]
 
@@ -217,7 +215,7 @@ section SpfMorphismCorrespondence
 noncomputable def sectionsHom {X : FormalScheme.{u}}
     {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
     (f : X ⟶ ofSpf A) : A →+* X.presheaf.obj (op ⊤) :=
-  ((globalIso A).inv ≫ f.hom.c.app (op ⊤)).hom
+  ((Spf.globalSectionsIsoOfIsAdicRing A).inv ≫ f.hom.c.app (op ⊤)).hom
 
 /-- Functoriality of `FormalScheme.sectionsHom` under precomposition. -/
 theorem sectionsHom_comp {Y X : FormalScheme.{u}}
@@ -232,12 +230,12 @@ theorem globalSectionsIso_comp_sectionsHom {A B : Type u}
     [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
     [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
     (f : ofSpf B ⟶ ofSpf A) :
-    ((@Spf.globalSectionsIso B _ _ _ _ (IsAdicRing.ideal_spec B).2.2
-      (IsAdicRing.ideal_spec B).2.1).hom.hom).comp (sectionsHom f) =
+    ((Spf.globalSectionsIsoOfIsAdicRing B).hom.hom).comp (sectionsHom f) =
       Spf.sectionsHom f.hom :=
   congrArg CommRingCat.Hom.hom <|
-    (congrArg ((globalIso A).inv ≫ ·) (Spf.c_app_top_comp_globalSectionsIso_hom f.hom)).trans
-      (Iso.inv_hom_id_assoc (globalIso A) _)
+    (congrArg ((Spf.globalSectionsIsoOfIsAdicRing A).inv ≫ ·)
+        (Spf.c_app_top_comp_globalSectionsIso_hom f.hom)).trans
+      (Iso.inv_hom_id_assoc (Spf.globalSectionsIsoOfIsAdicRing A) _)
 
 private theorem sectionsHom_chart_comp {X : FormalScheme.{u}}
     {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
@@ -249,16 +247,17 @@ private theorem sectionsHom_chart_comp {X : FormalScheme.{u}}
         ((X.presheaf.map (homOfLE le_top).op).hom.comp (sectionsHom f)) := by
   let f' : X.toLocallyRingedSpace ⟶ Spf A := f.hom
   let j := e.inv ≫ X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
-  have hcomp : (j ≫ f').c.app (op ⊤) ≫ (globalIso B).hom =
+  have hcomp : (j ≫ f').c.app (op ⊤) ≫ (Spf.globalSectionsIsoOfIsAdicRing B).hom =
       f'.c.app (op ⊤) ≫ X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op ≫
         (sectionsIsoOfIsoSpf e).hom :=
     CommRingCat.hom_ext <| RingHom.ext fun s ↦
       ConcreteCategory.congr_hom (chartImmersion_c_app_top e) (f'.c.app (op ⊤) s)
   have heq : CommRingCat.ofHom (Spf.sectionsHom (j ≫ f')) =
-      (globalIso A).inv ≫ f'.c.app (op ⊤) ≫ X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op ≫
-        (sectionsIsoOfIsoSpf e).hom :=
-    (Iso.inv_hom_id_assoc (globalIso A) _).symm.trans (congrArg ((globalIso A).inv ≫ ·)
-      ((Spf.c_app_top_comp_globalSectionsIso_hom (j ≫ f')).symm.trans hcomp))
+      (Spf.globalSectionsIsoOfIsAdicRing A).inv ≫ f'.c.app (op ⊤) ≫
+        X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op ≫ (sectionsIsoOfIsoSpf e).hom :=
+    (Iso.inv_hom_id_assoc (Spf.globalSectionsIsoOfIsAdicRing A) _).symm.trans
+      (congrArg ((Spf.globalSectionsIsoOfIsAdicRing A).inv ≫ ·)
+        ((Spf.c_app_top_comp_globalSectionsIso_hom (j ≫ f')).symm.trans hcomp))
   have hassoc : (e.inv ≫ X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding ≫ f.hom :
       Spf B ⟶ Spf A) = j ≫ f' := (Category.assoc _ _ _).symm
   -- `erw`: `ofSpf A` unfolds definitionally to `Spf A`.
@@ -293,7 +292,9 @@ theorem hom_ext_of_sectionsHom_eq {X : FormalScheme.{u}}
     rw [← cancel_epi e.inv]
     exact Spf.hom_ext_of_sectionsHom_eq <|
       (sectionsHom_chart_comp f e).trans (by rw [h]; exact (sectionsHom_chart_comp g e).symm)
-  rw [InducedCategory.comp_hom, InducedCategory.comp_hom, ofRestrict_hom]; exact h1
+  rw [InducedCategory.comp_hom, InducedCategory.comp_hom,
+    ← forgetToLocallyRingedSpace_map (X.ofRestrict U),
+    forgetToLocallyRingedSpace_map_ofRestrict]; exact h1
 
 private noncomputable def localHomOfChart {X : FormalScheme.{u}}
     {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
@@ -320,19 +321,22 @@ private theorem sectionsHom_localHomOfChart {X : FormalScheme.{u}}
   have hψ : Continuous ψ := by
     let _ : TopologicalSpace (X.presheaf.obj (op U)) := sectionsTopology X U hU
     exact (isHomeomorph_sectionsIsoOfIsoSpf hU e).isInducing.continuous_iff.mp (hφ U hU)
-  have hmap : (globalIso A).inv ≫ (Spf.map ψ hψ).c.app (op ⊤) ≫ (globalIso B).hom =
-      CommRingCat.ofHom ψ :=
-    (congrArg ((globalIso A).inv ≫ ·)
+  have hmap : (Spf.globalSectionsIsoOfIsAdicRing A).inv ≫ (Spf.map ψ hψ).c.app (op ⊤) ≫
+        (Spf.globalSectionsIsoOfIsAdicRing B).hom = CommRingCat.ofHom ψ :=
+    (congrArg ((Spf.globalSectionsIsoOfIsAdicRing A).inv ≫ ·)
       (Spf.c_app_top_comp_globalSectionsIso_hom (Spf.map ψ hψ))).trans
-      ((Iso.inv_hom_id_assoc (globalIso A) _).trans (by rw [Spf.sectionsHom_map]))
+      ((Iso.inv_hom_id_assoc (Spf.globalSectionsIsoOfIsAdicRing A) _).trans
+        (by rw [Spf.sectionsHom_map]))
   ext a
-  apply (LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫ globalIso B).commRingCatIsoToRingEquiv.injective
-  have h1 : (LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫ globalIso B).hom
+  apply (LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫
+    Spf.globalSectionsIsoOfIsAdicRing B).commRingCatIsoToRingEquiv.injective
+  have h1 : (LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫ Spf.globalSectionsIsoOfIsAdicRing B).hom
         (sectionsHom (localHomOfChart φ hφ hU e) a) = ψ a := by
     have hc := ConcreteCategory.congr_hom
-      (LocallyRingedSpace.comp_c_app e.hom (Spf.map ψ hψ) (op ⊤)) ((globalIso A).inv a)
+      (LocallyRingedSpace.comp_c_app e.hom (Spf.map ψ hψ) (op ⊤))
+      ((Spf.globalSectionsIsoOfIsAdicRing A).inv a)
     have hee := ConcreteCategory.congr_hom (LocallyRingedSpace.Γ.mapIso e.symm.op).inv_hom_id
-      ((Spf.map ψ hψ).c.app (op ⊤) ((globalIso A).inv a))
+      ((Spf.map ψ hψ).c.app (op ⊤) ((Spf.globalSectionsIsoOfIsAdicRing A).inv a))
     -- `erw`: unfold `sectionsHom`, `localHomOfChart`, and `Γ.mapIso` to match `hc` and `hee`.
     erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hc, hee]
     exact ConcreteCategory.congr_hom hmap a
@@ -383,7 +387,9 @@ theorem sectionsHom_homOfContinuousOnAffines {X : FormalScheme.{u}}
     unfold homOfContinuousOnAffines
     rw [ofRestrict_glueMorphisms]; exact (chosenLocalHom φ hφ i.2).2
   have h1 := RingHom.congr_fun ((sectionsHom_comp (X.ofRestrict i.1) _).symm.trans hres) a
-  dsimp only [RingHom.comp_apply] at h1; rw [ofRestrict_hom] at h1
+  dsimp only [RingHom.comp_apply] at h1
+  rw [← forgetToLocallyRingedSpace_map (X.ofRestrict i.1),
+    forgetToLocallyRingedSpace_map_ofRestrict] at h1
   have htop := Opens.isOpenEmbedding_obj_top i.1
   have hmap : (X.toLocallyRingedSpace.ofRestrict i.1.isOpenEmbedding).c.app (op ⊤) ≫
       X.presheaf.map (eqToHom (congrArg op htop)) = X.presheaf.map (homOfLE le_top).op := by
@@ -447,7 +453,8 @@ private theorem exists_spfLift_sectionsIsoOfIsoSpf {X Y : FormalScheme.{u}} (f :
   have hpreU : (Opens.map jU.base).obj ((Opens.map f.hom.base).obj V) = ⊤ :=
     eq_top_iff.mpr fun q _ ↦ hUV (eU.inv.base q).2
   have hleft : (g ≫ jV).c.app (op V) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hpreB)) ≫
-      (globalIso B).hom = (sectionsIsoOfIsoSpf eV).hom ≫ CommRingCat.ofHom (Spf.sectionsHom g) := by
+      (Spf.globalSectionsIsoOfIsAdicRing B).hom =
+      (sectionsIsoOfIsoSpf eV).hom ≫ CommRingCat.ofHom (Spf.sectionsHom g) := by
     have hfac := ConcreteCategory.congr_hom
       (LocallyRingedSpace.comp_c_app_comp_eqToHom_of_map_eq_top g jV hpreV hpreB)
     refine CommRingCat.hom_ext <| RingHom.ext fun s ↦ ?_
@@ -462,7 +469,7 @@ private theorem exists_spfLift_sectionsIsoOfIsoSpf {X Y : FormalScheme.{u}} (f :
     exact congrArg (Spf.sectionsHom g)
       (hc.trans (congrArg _ (ConcreteCategory.congr_hom (Y.presheaf.map_id (op V)) s)))
   have hright : (jU ≫ f.hom).c.app (op V) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hpreU)) ≫
-      (globalIso B).hom =
+      (Spf.globalSectionsIsoOfIsAdicRing B).hom =
       (f.hom.c.app (op V) ≫ X.presheaf.map (homOfLE hUV).op) ≫ (sectionsIsoOfIsoSpf eU).hom :=
     CommRingCat.hom_ext <| RingHom.ext fun s ↦
       ConcreteCategory.congr_hom (by simpa using chartImmersion_c_app (X := X) hUV eU)
@@ -560,7 +567,8 @@ theorem continuous_c_app {X Y : FormalScheme.{u}} (f : X ⟶ Y) (V : Opens Y) :
   have hg_pre : (Opens.map g.base).obj V = ⊤ := by
     ext q; exact iff_true_intro (hUV (eU.inv.base q).2)
   have hfun : ((sectionsIsoOfIsoSpf eU).hom : _ → _) ∘
-      ((X.presheaf.map (homOfLE hUV).op) ∘ (f.hom.c.app (op V))) = (globalIso B).hom ∘
+      ((X.presheaf.map (homOfLE hUV).op) ∘ (f.hom.c.app (op V))) =
+      (Spf.globalSectionsIsoOfIsAdicRing B).hom ∘
         (g.c.app (op V) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hg_pre))) := by
     funext s
     have h1 := ConcreteCategory.congr_hom (chartImmersion_c_app (X := X) hUV eU)
