@@ -446,7 +446,7 @@ determined by its composites with the chart extensions. -/
 theorem span_iUnion_range_chartTestSection :
     Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun s ↦ ?_
-  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.2⟩
+  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
   let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
   obtain ⟨t, ψ, L, hL, hψ, hdecomp⟩ := exists_ofSupportedIn_eq_sum (I := I) (F := F) (V := V)
     (n := n) K
