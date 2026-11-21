@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 import TauCeti.FieldTheory.FunctionField.Place.Completion.Adic
 import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.RingTheory.DedekindDomain.Different.Completion
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The trace-dual different of a place under completion
@@ -272,16 +273,12 @@ theorem map_differentIdeal_pi_eq_pi_differentIdeal_completionIntegers (P : Place
         differentIdeal P.completionPlace.integers Q'.val.completionPlace.integers := by
   let J := {Q' : Place k' F' // Q'.restrict k F = P}
   let _ := fun Q' : J ↦ P.completionIntegersExtensionAlgebra Q'.val Q'.property
-  let _ := Fintype.ofFinite J
-  apply Ideal.piOrderIso.injective
-  funext Q'
+  refine Ideal.map_eq_pi_of_map_evalRingHom _ _ _ fun Q' ↦ ?_
   have hcomp : (Pi.evalRingHom (fun i : J ↦ i.val.completionPlace.integers) Q').comp
       (RingHom.pi fun R' : J ↦ P.completionIntegersIntegralClosureHom R'.val R'.property) =
       P.completionIntegersIntegralClosureHom Q'.val Q'.property :=
     RingHom.ext fun x ↦ by rw [RingHom.comp_apply, Pi.evalRingHom_apply, RingHom.pi_apply]
-  simp only [Ideal.piOrderIso, OrderIso.symm_mk, RelIso.coe_fn_mk, Equiv.coe_fn_symm_mk]
-  rw [Ideal.map_evalRingHom_pi, Ideal.map_map, hcomp,
-    P.map_differentIdeal_eq_differentIdeal_completionIntegers Q'.val Q'.property]
+  rw [hcomp, P.map_differentIdeal_eq_differentIdeal_completionIntegers Q'.val Q'.property]
 
 /-- **The completed different ideal as a power of the maximal ideal**: with no hypothesis on the
 residue fields, `differentIdeal 𝒪̂_P 𝒪̂_{P'} = 𝔪̂_{P'} ^ d(P' ∣ P)`. -/
@@ -564,25 +561,14 @@ theorem map_differentIdeal_eq_differentIdeal_completionIntegers_of_forall_mem_in
   let _ := P.completionIntegersExtensionAlgebra P' hP
   have hB : ∀ b : B, algebraMap B F b ∈ P.integers :=
     hP ▸ algebraMap_mem_integers_restrict k F P' hC
-  let _ : Algebra B P.integers := ((algebraMap B F).codRestrict P.integers hB).toAlgebra
-  have : IsScalarTower B P.integers F' := .of_algebraMap_eq fun b ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F', ValuationSubring.algebraMap_apply,
-      RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
-      ← IsScalarTower.algebraMap_apply B F F']
-  let f : C →+* integralClosure P.integers F' :=
-    (algebraMap C F').codRestrict (integralClosure P.integers F').toSubring fun c ↦
-      Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff _ _).mpr
-        (IsIntegral.tower_top (R := B) (A := P.integers)
-          ((IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mpr ⟨c, rfl⟩)))
-  have hf (c : C) : algebraMap (integralClosure P.integers F') F' (f c) = algebraMap C F' c := by
-    rw [Subalgebra.algebraMap_apply, RingHom.codRestrict_apply]
   have hcomp : P'.completionIntegersEmbedding.toRingHom.comp
       ((algebraMap C F').codRestrict P'.integers hC) =
-      (P.completionIntegersIntegralClosureHom P' hP).comp f := by
+      (P.completionIntegersIntegralClosureHom P' hP).comp (integralClosureHom P hB) := by
     ext c
-    simp [← Subalgebra.algebraMap_apply, hf]
+    simp
   rw [hcomp, ← Ideal.map_map,
-    P.map_differentIdeal_eq_differentIdeal_integralClosure hB f hf,
+    P.map_differentIdeal_eq_differentIdeal_integralClosure hB (integralClosureHom P hB)
+      (fun c ↦ by rw [Subalgebra.algebraMap_apply, coe_integralClosureHom]),
     P.map_differentIdeal_eq_differentIdeal_completionIntegers P' hP]
 
 end AffineModel

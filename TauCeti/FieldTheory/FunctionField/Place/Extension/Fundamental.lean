@@ -112,13 +112,8 @@ theorem moduleFinite_integralClosure_of_isFunctionField {k : Type u} {F : Type v
   have : IsScalarTower R P.integers F := .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower R P.integers F' := .of_algebraMap_eq fun x ↦
     IsScalarTower.algebraMap_apply R F F' x
-  let eR : HeightOneSpectrum.valuationSubringAtPrime F p ≃ₐ[R] P.integers :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (P.valuationSubringAtPrime_eq_integers hR)))
-      fun _ ↦ rfl
   have : IsLocalization p.asIdeal.primeCompl P.integers :=
-    IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl eR
+    P.isLocalization_integers_center hR
   exact TauCeti.finite_integralClosure_of_isLocalization p.asIdeal.primeCompl P.integers F'
 
 section IntegralConstants

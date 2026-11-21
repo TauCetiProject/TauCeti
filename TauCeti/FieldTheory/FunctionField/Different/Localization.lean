@@ -93,6 +93,31 @@ private theorem isScalarTower_integers_extension {k F F' B : Type*} [Field k] [F
       ← IsScalarTower.algebraMap_apply B P.integers F,
       IsScalarTower.algebraMap_apply B F F']
 
+/-- The canonical ring homomorphism from an affine model `C` to the local integral closure
+`𝒪'_P` when the base affine model `B` lies in `𝒪_P`. -/
+noncomputable def integralClosureHom {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    C →+* integralClosure P.integers F' :=
+  letI := integersAlgebra P hB
+  haveI := isScalarTower_integers_extension (F' := F') P hB
+  (algebraMap C F').codRestrict (integralClosure P.integers F').toSubring fun c ↦
+    Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff _ _).mpr
+      (IsIntegral.tower_top (R := B) (A := P.integers)
+        ((IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mpr ⟨c, rfl⟩)))
+
+/-- Coercing `TauCeti.Place.integralClosureHom` to `F'` agrees with `algebraMap C F'`. -/
+@[simp]
+theorem coe_integralClosureHom {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) (c : C) :
+    (integralClosureHom (F' := F') P hB c : F') = algebraMap C F' c := by
+  rw [integralClosureHom, RingHom.codRestrict_apply]
+
 /-- The `C`-algebra structure on `𝒪'_P` induced by `B ⊆ 𝒪_P` when `C` is the integral closure of
 `B` in `F'`. -/
 @[instance_reducible]
@@ -102,12 +127,7 @@ private noncomputable def integralClosureAlgebra {k F F' B C : Type*}
     [IsScalarTower B F F'] [IsIntegralClosure C B F']
     (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
     Algebra C (integralClosure P.integers F') :=
-  letI := integersAlgebra P hB
-  haveI := isScalarTower_integers_extension (F' := F') P hB
-  ((algebraMap C F').codRestrict (integralClosure P.integers F').toSubring fun c ↦
-    Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff _ _).mpr
-      (IsIntegral.tower_top (R := B) (A := P.integers)
-        ((IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mpr ⟨c, rfl⟩)))).toAlgebra
+  (integralClosureHom P hB).toAlgebra
 
 private theorem isScalarTower_integralClosure_field {k F F' B C : Type*}
     [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
@@ -118,7 +138,7 @@ private theorem isScalarTower_integralClosure_field {k F F' B C : Type*}
     IsScalarTower C (integralClosure P.integers F') F' :=
   letI := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
   .of_algebraMap_eq fun c ↦ by
-    rw [Subalgebra.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+    rw [RingHom.algebraMap_toAlgebra, Subalgebra.algebraMap_apply, coe_integralClosureHom]
 
 /-- Compatibility of `B → C → 𝒪'_P` with `B → 𝒪'_P` given compatibility into `F'`. -/
 private theorem isScalarTower_integralClosure {k F F' B C : Type*}
