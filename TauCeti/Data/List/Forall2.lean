@@ -28,8 +28,8 @@ a function `g` with `R (f i) (g i)` for every `i`. -/
 theorem forall₂_ofFn_left_iff {n : ℕ} {f : Fin n → α} {l : List β} :
     Forall₂ R (ofFn f) l ↔ ∃ g : Fin n → β, (∀ i, R (f i) (g i)) ∧ l = ofFn g := by
   simp only [forall₂_iff_get, length_ofFn, get_ofFn]
-  refine ⟨fun ⟨hn, h⟩ =>
-    ⟨fun i => l.get (Fin.cast hn i), fun i => h i i.isLt (hn ▸ i.isLt), ?_⟩, ?_⟩
+  refine ⟨fun ⟨hn, h⟩ => ⟨fun i => l.get (Fin.cast hn i), fun ⟨i, hi⟩ => ?_, ?_⟩, ?_⟩
+  · simpa only [Fin.cast_mk] using h i hi (hn ▸ hi)
   · exact (ofFn_get l).symm.trans (ofFn_congr hn.symm _)
   · rintro ⟨g, h, rfl⟩
     exact ⟨by simp, fun i h₁ _ => by simpa using h ⟨i, h₁⟩⟩
