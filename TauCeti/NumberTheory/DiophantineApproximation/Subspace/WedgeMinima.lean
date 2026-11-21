@@ -45,9 +45,7 @@ has rank exactly `M - 1`.
 
 * `TauCeti.NumberField.exists_successiveMinimum_wedge`: Lemma 7.5.31, the successive minima of
   the wedge domain.
-* `TauCeti.NumberField.exists_div_pow_le_inv`: (7.41), a large jump among the successive minima of
-  a domain of rank `R` with `1 ≤ R < card ι`.
-* `TauCeti.NumberField.exists_successiveMinimum_wedge_pow`: the two combined.
+* `TauCeti.NumberField.exists_successiveMinimum_wedge_pow`: Lemma 7.5.31 combined with (7.41).
 
 ## References
 
@@ -65,62 +63,6 @@ open scoped Pointwise
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
-
-/-! ### A large jump among the successive minima -/
-
-omit [NumberField K] [Fintype ι] in
-/-- The ratios `μ (k - 1) / μ k` over `k ∈ [R, N)` multiply to `μ (R - 1) / μ (N - 1)`. -/
-private theorem prod_Ico_div_eq {μ : ℕ → ℝ} {R N : ℕ} (hRN : R < N)
-    (hμ : ∀ l < N, μ l ≠ 0) :
-    ∏ k ∈ Ico R N, μ (k - 1) / μ k = μ (R - 1) / μ (N - 1) := by
-  induction N, hRN using Nat.le_induction with
-  | base => simp
-  | succ N hRN ih =>
-    rw [prod_Ico_succ_top (by omega), ih fun l hl ↦ hμ l (by omega), Nat.add_sub_cancel]
-    have h₁ : μ (N - 1) ≠ 0 := hμ _ (by omega)
-    have h₂ : μ N ≠ 0 := hμ _ (by omega)
-    field_simp
-
-omit [NumberField K] [Fintype ι] in
-/-- For positive `μ 0, …, μ (N - 1)` with `μ (R - 1) ≤ 1` and `R < N`, some `k ∈ [R, N)` has
-`(μ (k - 1) / μ k) ^ (N - R) ≤ μ (N - 1)⁻¹`. -/
-private theorem exists_div_pow_le_inv_of_le_one {μ : ℕ → ℝ} {R N : ℕ} (hRN : R < N)
-    (hμ : ∀ l < N, 0 < μ l) (h₁ : μ (R - 1) ≤ 1) :
-    ∃ k, R ≤ k ∧ k < N ∧ (μ (k - 1) / μ k) ^ (N - R) ≤ (μ (N - 1))⁻¹ := by
-  obtain ⟨k, hk, hmin⟩ :=
-    (Ico R N).exists_min_image (fun k ↦ μ (k - 1) / μ k) (nonempty_Ico.2 hRN)
-  rw [mem_Ico] at hk
-  refine ⟨k, hk.1, hk.2, ?_⟩
-  calc (μ (k - 1) / μ k) ^ (N - R) = ∏ _j ∈ Ico R N, μ (k - 1) / μ k := by
-        rw [prod_const, Nat.card_Ico]
-    _ ≤ ∏ j ∈ Ico R N, μ (j - 1) / μ j :=
-        prod_le_prod₀ (fun _ _ ↦ (div_pos (hμ _ (by omega)) (hμ _ hk.2)).le) hmin
-    _ = μ (R - 1) / μ (N - 1) := prod_Ico_div_eq hRN fun l hl ↦ (hμ l hl).ne'
-    _ ≤ (μ (N - 1))⁻¹ := by
-        rw [div_eq_mul_inv]
-        exact mul_le_of_le_one_left (inv_nonneg.2 (hμ _ (by omega)).le) h₁
-
-/-- **A large jump among the successive minima** (Bombieri–Gubler (7.41)). Let `μ` be the
-successive minima over `K` of an approximation domain of level `0 < Q`, with forms independent at
-the infinite places and at `S₀`, and let its rank `R = finrank K (approxSpan S₀ L c Q)` satisfy
-`1 ≤ R < card ι`. Then some `k` with `R ≤ k < card ι` has
-`(μ (k - 1) / μ k) ^ (card ι - R) ≤ μ (card ι - 1)⁻¹`. -/
-theorem exists_div_pow_le_inv {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q)
-    (hR : 0 < finrank K (approxSpan S₀ L c Q))
-    (hRN : finrank K (approxSpan S₀ L c Q) < Fintype.card ι) :
-    ∃ k, finrank K (approxSpan S₀ L c Q) ≤ k ∧ k < Fintype.card ι ∧
-      ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
-          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^
-          (Fintype.card ι - finrank K (approxSpan S₀ L c Q)) ≤
-        ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-          (Fintype.card ι - 1))⁻¹ :=
-  exists_div_pow_le_inv_of_le_one hRN
-    (fun _ hl ↦ successiveMinimum_approx_pos hLinf hLfin c hQ hl)
-    ((successiveMinimum_approx_le_one_iff hLinf hLfin c hQ (by omega)).2 (by omega))
 
 /-! ### The successive minima of the wedge domain -/
 
@@ -408,7 +350,11 @@ theorem exists_successiveMinimum_wedge_pow :
     fun c Q x hQ hQ₁ hR hRN hx hxΛ hxB ↦ ?_⟩
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
   set R := finrank K (approxSpan S₀ L c Q)
-  obtain ⟨k, hRk, hkN, hjump⟩ := exists_div_pow_le_inv hLinf hLfin c hQ hR hRN
+  have hbot : approxSpan S₀ L c Q ≠ ⊥ := fun h ↦ hR.ne' (Submodule.finrank_eq_zero.2 h)
+  have htop : approxSpan S₀ L c Q ≠ ⊤ := fun h ↦ hRN.ne <| by
+    rw [← Module.finrank_fintype_fun_eq_card K, ← finrank_top K (ι → K), ← h]
+  obtain ⟨k, hk, hjump⟩ := exists_div_pow_le_inv hLinf hLfin c hQ hbot htop
+  obtain ⟨hRk, hkN⟩ := Finset.mem_Ico.1 hk
   obtain ⟨y, σ, hspan, hmem, hν, hlast⟩ :=
     h c (k := k) (p := N - k) hQ hQ₁ (by omega) (by omega) hx hxΛ hxB
   refine ⟨k, hRk, hkN, y, σ, hspan, hmem, hν, ?_⟩
