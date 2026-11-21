@@ -149,6 +149,14 @@ theorem AEStronglyMeasurableSection.const_smul (hs : AEStronglyMeasurableSection
     (c : 𝕜) : AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ c • s x) :=
   fun e _ ↦ ((hs e).const_smul c).congr (.of_forall fun x ↦ by simp)
 
+/-- Multiplying a measurable section by an a.e.-strongly measurable scalar function gives a
+measurable section. -/
+theorem AEStronglyMeasurableSection.smul {f : B → 𝕜} (hf : AEStronglyMeasurable f μ)
+    (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
+    AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ f x • s x) :=
+  fun e _ ↦ ((hf.mono_measure Measure.restrict_le_self).smul (hs e)).congr
+    (.of_forall fun x ↦ by simp)
+
 theorem AEStronglyMeasurableSection.neg (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
     AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ -s x) :=
   fun e _ ↦ ((hs e).neg).congr (.of_forall fun x ↦ by simp)
