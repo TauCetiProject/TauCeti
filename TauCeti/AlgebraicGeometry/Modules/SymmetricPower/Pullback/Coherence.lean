@@ -69,6 +69,8 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- wrappers.
   change ((SheafOfModules.pushforwardSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n).app M).val.app U _ = _
+  -- The evaluation lemmas are stated with the sheaf of rings unfolded.
+  dsimp only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
   rw [_root_.SheafOfModules.symmetricPower_map_val_app_unit (R := X.sheaf) n
     ((Scheme.Modules.pushforwardId X).hom.app M) U x]
   -- `erw`: the evaluation lemma is stated for `SheafOfModules.pushforward`, which
@@ -81,11 +83,11 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- Both maps are the identity on scalars and on sections.
   refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x).trans ?_
   refine (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl)
-    (fun _ ↦ rfl)) x.1).trans ?_
+    (fun _ ↦ rfl)) x.val).trans ?_
   exact ((ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ
     (((Scheme.Modules.pushforwardId X).hom.app M).val.app' U) n x).trans
       (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl))
-        x.1)).symm
+        x.val)).symm
 
 /-- The symmetric-power comparison for composite pushforward is the composite of the two
 successive comparisons, through the canonical pushforward composition isomorphism. -/

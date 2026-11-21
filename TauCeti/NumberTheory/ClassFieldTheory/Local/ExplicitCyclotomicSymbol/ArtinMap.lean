@@ -169,7 +169,7 @@ private theorem restrictNormalHom_mem_zpowers_of_mk_eq_artinMap {x : ℚ_[p]ˣ}
   have : IsGalois ℚ_[p] (M.map E.val) := IsGalois.of_algEquiv (M.equivMap E.val)
   have hME : M.map E.val ≤ IntermediateField.adjoin ℚ_[p] {z | z ^ m = 1} := by
     rintro _ ⟨z, -, rfl⟩
-    exact hE z.2
+    exact hE z.property
   have hgM :
       ∀ z : M.map E.val, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
         (z : AlgebraicClosure ℚ_[p]) = z := by

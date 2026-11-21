@@ -14,11 +14,10 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
-import TauCeti.Analysis.PDE.Vortex.KernelDimension
+import TauCeti.Analysis.PDE.Vortex.Kernel.PrincipalPart
 import TauCeti.Analysis.PDE.Vortex.RightInverse
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -69,10 +68,12 @@ framed degree-`m` case) of this Sobolev realization.
 * **Fredholm property.** Combining vanishing cokernel with the finite-dimensional kernel from
   `TauCeti.Analysis.PDE.Vortex.SobolevRealization` via
   `ContinuousLinearMap.IsFredholm.of_surjective` yields
-  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator` (for `C¹` vortices with `∇₁ α → 0`)
-  and `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff` (for `C²` vortices, where
+  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator` (for `C¹` vortices with `∇₁ α → 0`),
+  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff` (for `C²` vortices, where
   exponential decay of `d_a α` in `TauCeti.Analysis.PDE.Vortex.DerivativeDecay` discharges
-  `∇₁ α → 0` automatically).
+  `∇₁ α → 0` automatically), and
+  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_mem_framedFieldSpace` (on `A_m^s` for
+  `s > 3`).
 * **Kernel identification and index `2 |D|` / `2 m`.** At any smooth field `x` whose derivatives
   through order `3` are bounded, elliptic bootstrap to `H⁴` and Sobolev embedding `H⁴(ℂ) ↪ C²(ℂ)`
   give a canonical real-linear equivalence
@@ -86,7 +87,9 @@ framed degree-`m` case) of this Sobolev realization.
   In particular, the kernel has real dimension `2 |D|` (and `2 m` under the degree-`m` end
   framing), and at a smooth plane vortex `sobolevGaugeFixedOperator a` has real Fredholm index
   `2 |D|` (and `2 m` in degree `m`), and is bijective when `α` has no zeros (in particular in
-  degree `0`). Specialization to the framed affine field space `A_m^s` concludes the file.
+  degree `0`). At a continuous plane vortex lying in `A_m^k` for every `k` (see
+  `TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`), the index `2 m` without
+  assuming boundedness separately is proved in `TauCeti.Analysis.PDE.Vortex.Index`.
 
 ## Main declarations
 
@@ -101,25 +104,22 @@ framed degree-`m` case) of this Sobolev realization.
   `TauCeti.Vortex.range_sobolevGaugeFixedOperator_eq_top`, and
   `TauCeti.Vortex.exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id`: surjectivity
   (vanishing cokernel) and bounded `L²`-orthogonal right inverse `L² → H¹`.
-* `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator` and
-  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff`: the Fredholm property of
-  `sobolevGaugeFixedOperator a`.
+* `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`,
+  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff`, and
+  `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_mem_framedFieldSpace`: the Fredholm
+  property of `sobolevGaugeFixedOperator a`.
 * `TauCeti.Vortex.kerSobolevGaugeFixedOperatorEquiv`: canonical real-linear equivalence between
   the `H¹` kernel and the classical `C²` kernel `gaugeFixedKernel x`.
 * `TauCeti.Vortex.bijective_principalPartMap_comp_kerSobolevGaugeFixedOperatorEquiv`: isomorphism
   between the `H¹` kernel and the principal-part space `D → ℂ`.
 * `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_card`,
-  `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul`,
-  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul_card`,
-  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul`: exact kernel dimension and real
-  Fredholm index `2 |D|` and `2 m`.
+  `finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow`,
+  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul_card`, and
+  `index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow`:
+  exact kernel dimension and real Fredholm index `2 |D|` and `2 m`.
 * `TauCeti.Vortex.bijective_sobolevGaugeFixedOperator_of_forall_sectionValue_ne_zero` and
   `TauCeti.Vortex.bijective_sobolevGaugeFixedOperator`: bijectivity when the section has no zeros
   and in degree zero.
-* `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_mem_framedFieldSpace`,
-  `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace`, and
-  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace`: Fredholm
-  property, kernel dimension `2 m`, and index `2 m` on the framed affine field space `A_m^s`.
 
 ## References
 
@@ -204,7 +204,7 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
         (ae_mono (Measure.restrict_coe_opens_top _).ge)
     rw [← hpair, ← integral_inner_value_eq_sum hLj,
       integral_congr_ae (hT.mono fun z hz ↦ by rw [hz]),
-      integral_inner_gaugeFixedOperator hx hY hη (.inl hYc)]
+      integral_inner_gaugeFixedOperator hY hη (.inl hYc)]
     refine integral_congr_ae ?_
     filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
       with z hz
@@ -300,47 +300,10 @@ theorem exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_
 
 /-! ### Internal helpers for `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` value embedding -/
 
-/-- The continuous linear map taking a Sobolev field `y ∈ H¹(ℂ)⁴` to its `L²(ℂ; ℝ⁴)` value class. -/
-private def sobolevFieldValueL :
-    (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-  ∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
-    (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
-      (W1p.valueL.comp (ContinuousLinearMap.proj j))
-
-/-- Almost everywhere, `sobolevFieldValueL y` evaluates to the tuple of values of `y`. -/
-private theorem sobolevFieldValueL_apply_ae (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevFieldValueL y =ᵐ[μ⊤] fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y j) z := by
-  simp only [sobolevFieldValueL, FunLike.coe_sum, Finset.sum_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, W1p.valueL_apply]
-  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
-          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
-    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
-  filter_upwards [Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
-      ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)), hv] with z hsum hcomp
-  rw [hsum]
-  simp only [Finset.sum_apply, hcomp]
-  ext i
-  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
-
-/-- A Sobolev field is uniquely determined by its `L²` value class. -/
-private theorem sobolevFieldValueL_injective : Function.Injective sobolevFieldValueL := by
-  intro y₁ y₂ h
-  have hae : (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y₁ j) z) =ᵐ[μ⊤]
-      fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y₂ j) z :=
-    (sobolevFieldValueL_apply_ae y₁).symm.trans ((Lp.ext_iff.1 h).trans
-      (sobolevFieldValueL_apply_ae y₂))
-  ext j : 1
-  refine W1p.ext_value (Lp.ext ?_)
-  exact hae.mono fun z hz ↦ congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v j) hz
-
-/-- The `L²` inner product of `sobolevFieldValueL y` and `sobolevFieldValueL u` is the sum of
+/-- The `L²` inner product of `sobolevFieldValues y` and `sobolevFieldValues u` is the sum of
 coordinatewise `L²` inner products of their values. -/
-private theorem inner_sobolevFieldValueL (y u : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    ⟪sobolevFieldValueL y, sobolevFieldValueL u⟫ =
+private theorem inner_sobolevFieldValues (y u : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ⟪sobolevFieldValues y, sobolevFieldValues u⟫ =
       ∑ j : Fin 4, ⟪W1p.value (y j), W1p.value (u j)⟫ := by
   rw [L2.inner_def]
   have hcoord (j : Fin 4) : ⟪W1p.value (y j), W1p.value (u j)⟫ =
@@ -351,7 +314,7 @@ private theorem inner_sobolevFieldValueL (y u : Fin 4 → W1p (volume : Measure 
   simp_rw [hcoord]
   rw [← integral_finsetSum _ fun j _ ↦ hint j]
   refine integral_congr_ae ?_
-  filter_upwards [sobolevFieldValueL_apply_ae y, sobolevFieldValueL_apply_ae u] with z hy hu
+  filter_upwards [sobolevFieldValues_ae_eq y, sobolevFieldValues_ae_eq u] with z hy hu
   rw [hy, hu, EuclideanSpace.inner_eq_star_dotProduct]
   simp [dotProduct, mul_comm]
 
@@ -368,35 +331,35 @@ private theorem exists_sobolevField_value_ae_eq_of_mem_sobolevFields
 
 /-- Any continuous linear operator `Q₁ : L²(ℂ; ℝ⁴) → L²(ℂ; ℝ⁴)` whose outputs lie in
 `sobolevFields 1` lifts to a continuous linear operator `Q : L²(ℂ; ℝ⁴) → H¹(ℂ)⁴` with
-`sobolevFieldValueL ∘ Q = Q₁`, by the closed graph theorem. -/
-private theorem exists_lift_sobolevFieldValueL
+`sobolevFieldValues ∘ Q = Q₁`, by the closed graph theorem. -/
+private theorem exists_lift_sobolevFieldValues
     (Q₁ : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)
     (hmem : ∀ f, (Q₁ f : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 1) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      sobolevFieldValueL.comp Q = Q₁ := by
+      sobolevFieldValues.comp Q = Q₁ := by
   have hQ₁_mem (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-      ∃ y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2, sobolevFieldValueL y = Q₁ f := by
+      ∃ y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2, sobolevFieldValues y = Q₁ f := by
     obtain ⟨y, hy⟩ := exists_sobolevField_value_ae_eq_of_mem_sobolevFields (hmem f)
     refine ⟨y, Lp.ext ?_⟩
-    filter_upwards [sobolevFieldValueL_apply_ae y, ae_all_iff.2 hy] with z h₁ h₂
+    filter_upwards [sobolevFieldValues_ae_eq y, ae_all_iff.2 hy] with z h₁ h₂
     rw [h₁]
     ext j
     exact h₂ j
   choose q hq using hQ₁_mem
   let qL : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →ₗ[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
     { toFun := q
-      map_add' f g := sobolevFieldValueL_injective (by simp [hq])
-      map_smul' c f := sobolevFieldValueL_injective (by simp [hq]) }
+      map_add' f g := sobolevFieldValues_injective (by simp [hq])
+      map_smul' c f := sobolevFieldValues_injective (by simp [hq]) }
   have hclosed : IsClosed (qL.graph : Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ×
       (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))) := by
     have hgraph : (qL.graph : Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ×
-        (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))) = {p | sobolevFieldValueL p.2 = Q₁ p.1} := by
+        (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))) = {p | sobolevFieldValues p.snd = Q₁ p.fst} := by
       ext ⟨f, y⟩
       simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq, qL, LinearMap.coe_mk,
         AddHom.coe_mk]
-      exact ⟨fun h ↦ by rw [h, hq], fun h ↦ sobolevFieldValueL_injective (by rw [h, hq])⟩
+      exact ⟨fun h ↦ by rw [h, hq], fun h ↦ sobolevFieldValues_injective (by rw [h, hq])⟩
     rw [hgraph]
-    exact isClosed_eq (sobolevFieldValueL.continuous.comp continuous_snd)
+    exact isClosed_eq (sobolevFieldValues.continuous.comp continuous_snd)
       (Q₁.continuous.comp continuous_fst)
   refine ⟨ContinuousLinearMap.ofIsClosedGraph hclosed, ?_⟩
   ext1 f
@@ -468,13 +431,13 @@ theorem exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id (hx : Co
     simp_rw [hQ₁_apply]
     rw [hQ₀weak (e f) η hη hηc]
     exact integral_congr_ae (.of_forall fun z ↦ by simp only [e, coeFn_castLpₗᵢ])
-  obtain ⟨Q, hQ⟩ := exists_lift_sobolevFieldValueL Q₁ fun f ↦
+  obtain ⟨Q, hQ⟩ := exists_lift_sobolevFieldValues Q₁ fun f ↦
     mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
       hx.continuous.aestronglyMeasurable (.of_forall hM)
       (by simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (Q₁ f))
       (by simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp f)
       fun η hη hηc ↦ hQ₁weak f η (hη.of_le (by simp)) hηc
-  have hQ_apply (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : sobolevFieldValueL (Q f) = Q₁ f :=
+  have hQ_apply (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : sobolevFieldValues (Q f) = Q₁ f :=
     DFunLike.congr_fun hQ f
   refine ⟨Q, ?_, fun f u hu ↦ ?_⟩
   · -- Verify `L_a ∘ Q = id` via the weak formulation.
@@ -485,21 +448,21 @@ theorem exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id (hx : Co
     rw [← hQ₁weak f η (hη.of_le (by simp)) hηc]
     have hae : (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (Q f j) z) =ᵐ[volume] Q₁ f :=
       ae_mono (Measure.restrict_coe_opens_top volume).ge
-        ((sobolevFieldValueL_apply_ae (Q f)).symm.trans (Lp.ext_iff.1 (hQ_apply f)))
+        ((sobolevFieldValues_ae_eq (Q f)).symm.trans (Lp.ext_iff.1 (hQ_apply f)))
     exact integral_congr_ae (hae.mono fun z hz ↦ by simp only [hz])
   · -- Verify `L²`-orthogonality to `ker L_a` from `L²`-orthogonality of `Q₀`.
-    rw [← inner_sobolevFieldValueL, hQ_apply, L2.inner_def,
-      congrArg (fun ν ↦ ∫ z, ⟪Q₁ f z, sobolevFieldValueL u z⟫ ∂ν)
+    rw [← inner_sobolevFieldValues, hQ_apply, L2.inner_def,
+      congrArg (fun ν ↦ ∫ z, ⟪Q₁ f z, sobolevFieldValues u z⟫ ∂ν)
         (Measure.restrict_coe_opens_top (volume : Measure ℂ))]
     have hu_weak (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ 2 η)
         (hηc : HasCompactSupport η) :
-        ∫ z, ⟪(e (sobolevFieldValueL u)) z, gaugeFixedAdjoint x η z⟫ = 0 := by
-      have hae : (e (sobolevFieldValueL u) : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
+        ∫ z, ⟪(e (sobolevFieldValues u)) z, gaugeFixedAdjoint x η z⟫ = 0 := by
+      have hae : (e (sobolevFieldValues u) : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
           fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (u j) z := by
         filter_upwards [ae_mono (Measure.restrict_coe_opens_top volume).ge
-          (sobolevFieldValueL_apply_ae u)] with z hz
+          (sobolevFieldValues_ae_eq u)] with z hz
         simpa only [e, coeFn_castLpₗᵢ] using hz
-      have hEq : ∫ z, ⟪(e (sobolevFieldValueL u)) z, gaugeFixedAdjoint x η z⟫ =
+      have hEq : ∫ z, ⟪(e (sobolevFieldValues u)) z, gaugeFixedAdjoint x η z⟫ =
           ∫ z, ⟪WithLp.toLp 2 (fun j ↦ W1p.value (u j) z), gaugeFixedAdjoint x η z⟫ :=
         integral_congr_ae (hae.mono fun z hz ↦ congrArg (⟪·, gaugeFixedAdjoint x η z⟫) hz)
       have h0 : sobolevGaugeFixedOperator a u = 0 := by simpa using LinearMap.mem_ker.1 hu
@@ -509,7 +472,7 @@ theorem exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id (hx : Co
         ae_mono (Measure.restrict_coe_opens_top volume).ge (Lp.coeFn_zero _ 2 μ⊤)
       rw [integral_congr_ae (hz.mono fun z h ↦ by rw [h, inner_zero_left]), integral_zero]
     refine (integral_congr_ae (.of_forall fun z ↦ ?_)).trans
-      (hQ₀orth (e f) (e (sobolevFieldValueL u)) hu_weak)
+      (hQ₀orth (e f) (e (sobolevFieldValues u)) hu_weak)
     rw [hQ₁_apply]
     simp only [e, coeFn_castLpₗᵢ]
 
@@ -581,15 +544,15 @@ private theorem exists_mem_gaugeFixedKernel_ae_eq (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hax : a =ᵐ[μ⊤] x) (y : (sobolevGaugeFixedOperator a).ker) :
     ∃ Y : gaugeFixedKernel x,
-      ∀ j : Fin 4, W1p.value (y.1 j) =ᵐ[μ⊤] fun z ↦ Y.1 z j := by
-  have hweak := (mem_ker_sobolevGaugeFixedOperator_iff hx.continuous hax).1 y.2
-  have hY₀L : MemLp (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y.1 j) z) 2 volume := by
-    have hmem : MemLp (sobolevFieldValueL y.1 : ℂ → EuclideanSpace ℝ (Fin 4)) 2 volume := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (sobolevFieldValueL y.1)
+      ∀ j : Fin 4, W1p.value (y.val j) =ᵐ[μ⊤] fun z ↦ Y.val z j := by
+  have hweak := (mem_ker_sobolevGaugeFixedOperator_iff hx.continuous hax).1 y.property
+  have hY₀L : MemLp (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y.val j) z) 2 volume := by
+    have hmem : MemLp (sobolevFieldValues y.val : ℂ → EuclideanSpace ℝ (Fin 4)) 2 volume := by
+      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (sobolevFieldValues y.val)
     exact hmem.ae_eq (ae_mono (Measure.restrict_coe_opens_top volume).ge
-      (sobolevFieldValueL_apply_ae y.1))
+      (sobolevFieldValues_ae_eq y.val))
   -- Bootstrap the weak kernel element to `H⁴`, then apply Sobolev embedding `H⁴(ℂ) ↪ C²(ℂ)`.
-  have h4 : (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y.1 j) z) ∈ sobolevFields 4 := by
+  have h4 : (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y.val j) z) ∈ sobolevFields 4 := by
     have h31 : ((3 : ℕ) : ℝ) + 1 = 4 := by norm_num
     rw [← h31]
     exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq 3 hx hbound
@@ -602,14 +565,14 @@ private theorem exists_mem_gaugeFixedKernel_ae_eq (hx : ContDiff ℝ ∞ x)
       (mem_sobolevFields.1 h4 j)
   set Y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ g j z
   have hYcd : ContDiff ℝ 2 Y := contDiff_euclidean.2 fun j ↦ by simpa [Y] using hg j
-  have hae : (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y.1 j) z) =ᵐ[volume] Y := by
+  have hae : (fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y.val j) z) =ᵐ[volume] Y := by
     filter_upwards [ae_all_iff.2 hgy] with z hz
     ext j
     exact hz j
   have hYker : ∀ z, gaugeFixedOperator x Y z = 0 :=
     (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx.continuous
       (hYcd.of_le one_le_two) continuous_const).1 fun η hη hηc ↦ by
-        have hEq : ∫ z, ⟪WithLp.toLp 2 (fun j ↦ W1p.value (y.1 j) z),
+        have hEq : ∫ z, ⟪WithLp.toLp 2 (fun j ↦ W1p.value (y.val j) z),
             gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪Y z, gaugeFixedAdjoint x η z⟫ :=
           integral_congr_ae (hae.mono fun z hz ↦ congrArg (⟪·, gaugeFixedAdjoint x η z⟫) hz)
         rw [← hEq, hweak η hη hηc]
@@ -622,8 +585,8 @@ an `H¹` kernel element of `sobolevGaugeFixedOperator a`. -/
 private theorem exists_mem_ker_sobolevGaugeFixedOperator_ae_eq (hx : Continuous x)
     (hax : a =ᵐ[μ⊤] x) (Y : gaugeFixedKernel x) :
     ∃ y : (sobolevGaugeFixedOperator a).ker,
-      ∀ j : Fin 4, W1p.value (y.1 j) =ᵐ[μ⊤] fun z ↦ Y.1 z j := by
-  obtain ⟨hYcd, hYL, hYker⟩ := mem_gaugeFixedKernel.1 Y.2
+      ∀ j : Fin 4, W1p.value (y.val j) =ᵐ[μ⊤] fun z ↦ Y.val z j := by
+  obtain ⟨hYcd, hYL, hYker⟩ := mem_gaugeFixedKernel.1 Y.property
   have hYweak := (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx
     (hYcd.of_le one_le_two) continuous_const).2 hYker
   obtain ⟨w, hw, hLw⟩ :=
@@ -641,9 +604,9 @@ private theorem exists_mem_ker_sobolevGaugeFixedOperator_ae_eq (hx : Continuous 
 
 /-- Two elements of `gaugeFixedKernel x` agreeing almost everywhere coordinatewise are equal. -/
 private theorem gaugeFixedKernel_eq_of_ae_eq {Y₁ Y₂ : gaugeFixedKernel x}
-    (h : ∀ j : Fin 4, (fun z ↦ Y₁.1 z j) =ᵐ[μ⊤] fun z ↦ Y₂.1 z j) : Y₁ = Y₂ := by
-  refine Subtype.ext (((mem_gaugeFixedKernel.1 Y₁.2).1.continuous.ae_eq_iff_eq volume
-    (mem_gaugeFixedKernel.1 Y₂.2).1.continuous).1 ?_)
+    (h : ∀ j : Fin 4, (fun z ↦ Y₁.val z j) =ᵐ[μ⊤] fun z ↦ Y₂.val z j) : Y₁ = Y₂ := by
+  refine Subtype.ext (((mem_gaugeFixedKernel.1 Y₁.property).1.continuous.ae_eq_iff_eq volume
+    (mem_gaugeFixedKernel.1 Y₂.property).1.continuous).1 ?_)
   filter_upwards [ae_all_iff.2 fun j ↦
     ae_mono (Measure.restrict_coe_opens_top volume).ge (h j)] with z hz
   ext j
@@ -665,14 +628,15 @@ def kerSobolevGaugeFixedOperatorEquiv (hx : ContDiff ℝ ∞ x)
     have h₂ := (exists_mem_gaugeFixedKernel_ae_eq hx hbound hax y₂).choose_spec
     have h₁₂ := (exists_mem_gaugeFixedKernel_ae_eq hx hbound hax (y₁ + y₂)).choose_spec
     refine gaugeFixedKernel_eq_of_ae_eq fun j ↦ ?_
-    filter_upwards [h₁₂ j, h₁ j, h₂ j, W1p.value_add_ae (y₁.1 j) (y₂.1 j)] with z hz hz₁ hz₂ hadd
+    filter_upwards [h₁₂ j, h₁ j, h₂ j, W1p.value_add_ae (y₁.val j) (y₂.val j)]
+      with z hz hz₁ hz₂ hadd
     rw [← hz, Submodule.coe_add, Pi.add_apply, hadd, Pi.add_apply, hz₁, hz₂]
     rfl
   map_smul' c y := by
     have hy := (exists_mem_gaugeFixedKernel_ae_eq hx hbound hax y).choose_spec
     have hcy := (exists_mem_gaugeFixedKernel_ae_eq hx hbound hax (c • y)).choose_spec
     refine gaugeFixedKernel_eq_of_ae_eq fun j ↦ ?_
-    filter_upwards [hcy j, hy j, W1p.value_smul_ae c (y.1 j)] with z hzc hz hsmul
+    filter_upwards [hcy j, hy j, W1p.value_smul_ae c (y.val j)] with z hzc hz hsmul
     rw [← hzc, Submodule.coe_smul, Pi.smul_apply, hsmul, Pi.smul_apply, hz]
     rfl
   left_inv y := by
@@ -692,7 +656,8 @@ everywhere with its value coordinates. -/
 theorem kerSobolevGaugeFixedOperatorEquiv_apply_ae (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hax : a =ᵐ[μ⊤] x) (y : (sobolevGaugeFixedOperator a).ker) (j : Fin 4) :
-    W1p.value (y.1 j) =ᵐ[μ⊤] fun z ↦ (kerSobolevGaugeFixedOperatorEquiv hx hbound hax y).1 z j :=
+    W1p.value (y.val j) =ᵐ[μ⊤]
+      fun z ↦ (kerSobolevGaugeFixedOperatorEquiv hx hbound hax y).val z j :=
   (exists_mem_gaugeFixedKernel_ae_eq hx hbound hax y).choose_spec j
 
 /-- The preimage of a classical kernel element under `kerSobolevGaugeFixedOperatorEquiv` has value
@@ -700,8 +665,8 @@ coordinates agreeing almost everywhere with that classical element. -/
 theorem kerSobolevGaugeFixedOperatorEquiv_symm_value_ae (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hax : a =ᵐ[μ⊤] x) (Y : gaugeFixedKernel x) (j : Fin 4) :
-    W1p.value (((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).symm Y).1 j) =ᵐ[μ⊤]
-      fun z ↦ Y.1 z j :=
+    W1p.value (((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).symm Y).val j) =ᵐ[μ⊤]
+      fun z ↦ Y.val z j :=
   (exists_mem_ker_sobolevGaugeFixedOperator_ae_eq hx.continuous hax Y).choose_spec j
 
 /-- Characteristic property of `kerSobolevGaugeFixedOperatorEquiv`: an `H¹` kernel element `y` maps
@@ -711,7 +676,7 @@ theorem kerSobolevGaugeFixedOperatorEquiv_eq_iff (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hax : a =ᵐ[μ⊤] x) (y : (sobolevGaugeFixedOperator a).ker) (Y : gaugeFixedKernel x) :
     kerSobolevGaugeFixedOperatorEquiv hx hbound hax y = Y ↔
-      ∀ j : Fin 4, W1p.value (y.1 j) =ᵐ[μ⊤] fun z ↦ Y.1 z j :=
+      ∀ j : Fin 4, W1p.value (y.val j) =ᵐ[μ⊤] fun z ↦ Y.val z j :=
   ⟨fun h j ↦ h ▸ kerSobolevGaugeFixedOperatorEquiv_apply_ae hx hbound hax y j,
     fun h ↦ gaugeFixedKernel_eq_of_ae_eq fun j ↦
       (kerSobolevGaugeFixedOperatorEquiv_apply_ae hx hbound hax y j).symm.trans (h j)⟩
@@ -734,7 +699,8 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_card (hx : ContDiff ℝ
 `x` with bounded derivatives through order `3`, vanishing holomorphicity rows, the degree-`m` end
 framing `α(z) (z / |z|)⁻ᵐ → 1`, and `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a`
 has real dimension `2 m`. -/
-theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
+theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow
+    {m : ℕ} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
@@ -745,52 +711,26 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul {m : ℕ} (hx : ContDif
 
 /-- **Identification of the `H¹` kernel with the principal-part space `D → ℂ`.** At a smooth field
 `x` with bounded derivatives through order `3`, vanishing holomorphicity rows, `|α|² → 1` at
-infinity, zero divisor `D`, and `L∞` class `a`, for any `C²` integrating factor `ν` solving
-`∂bar ν = (b₂ - i b₁) / 2` and principal-part decomposition `hdec` on `gaugeFixedKernel x`,
-composing the canonical kernel equivalence with `principalPartMap` yields a real-linear bijection
-from `(sobolevGaugeFixedOperator a).ker` onto `Multiset.ToType D → ℂ`, the real tangent space of
-the symmetric divisor space `Sym^|D| ℂ`. -/
+infinity, zero divisor `D`, and `L∞` class `a`, for any differentiable integrating factor `ν`
+solving `∂bar ν = (b₂ - i b₁) / 2` and principal-part decomposition `hdec` on
+`gaugeFixedKernel x`, composing the canonical kernel equivalence with `principalPartMap` yields a
+real-linear bijection from `(sobolevGaugeFixedOperator a).ker` onto `Multiset.ToType D → ℂ`, the
+real tangent space of the symmetric divisor space `Sym^|D| ℂ`. -/
 theorem bijective_principalPartMap_comp_kerSobolevGaugeFixedOperatorEquiv (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
-    {ν : ℂ → ℂ} (hν : ContDiff ℝ 2 ν)
+    {ν : ℂ → ℂ} (hν : Differentiable ℝ ν)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
     (hdec : ∀ y ∈ gaugeFixedKernel x, ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ,
       Differentiable ℂ H ∧ ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w)
     (hax : a =ᵐ[μ⊤] x) :
     Function.Bijective
       ((principalPartMap hD hν.continuous hdec).comp
-        (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).toLinearMap) := by
-  have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i :=
-    (contDiff_euclidean.1 hx i).of_le (by simp)
-  have : FiniteDimensional ℝ (gaugeFixedKernel x) :=
-    finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := volume)
-      (hx.of_le (by simp)) hhol hlim hD fun _ ↦ mem_gaugeFixedKernel.1
-  have hinj_pp : Function.Injective (principalPartMap hD hν.continuous hdec) := by
-    refine principalPartMap_injective (k := 2) one_le_two (hxi 0) (hxi 1)
-      ((hxi 2).differentiable (by norm_num)) ((hxi 3).differentiable (by norm_num)) hhol hD hν
-      hνeq (fun y hy ↦ ?_) hdec fun y hy η hη hyη ↦ ?_
-    · obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 hy
-      have hyi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ y w i := contDiff_euclidean.1 hyc i
-      refine ⟨hyi 0, hyi 1, (hyi 2).differentiable (by norm_num),
-        (hyi 3).differentiable (by norm_num), fun w ↦ ⟨?_, ?_⟩⟩
-      · rw [← gaugeFixedOperator_apply_two, hker w, PiLp.zero_apply]
-      · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
-    · obtain ⟨hyc, hy₂, hker⟩ := mem_gaugeFixedKernel.1 hy
-      exact eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
-        (hx.of_le (by simp)) hhol hlim hyc.continuous hy₂ hker hη hyη
-  have hdim_pp : finrank ℝ (gaugeFixedKernel x) = finrank ℝ (Multiset.ToType D → ℂ) := by
-    rw [finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD,
-      Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
-      Finset.card_univ, Multiset.card_coe, mul_comm]
-  have hsurj_pp : Function.Surjective (principalPartMap hD hν.continuous hdec) := by
-    have hrank := (principalPartMap hD hν.continuous hdec).finrank_range_add_finrank_ker
-    rw [LinearMap.ker_eq_bot.2 hinj_pp, finrank_bot, add_zero, hdim_pp] at hrank
-    exact LinearMap.range_eq_top.1 (Submodule.eq_top_of_finrank_eq hrank)
-  have hbij_pp : Function.Bijective (principalPartMap hD hν.continuous hdec) := ⟨hinj_pp, hsurj_pp⟩
-  exact hbij_pp.comp (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).bijective
+        (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).toLinearMap) :=
+  (principalPartMap_bijective hx hhol hlim hD hν hνeq hdec).comp
+    (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).bijective
 
 /-! ### Exact Fredholm index and degree-zero bijectivity -/
 
@@ -815,7 +755,8 @@ theorem index_sobolevGaugeFixedOperator_eq_two_mul_card (hx : ContDiff ℝ ∞ x
 `x` with bounded derivatives through order `3`, the degree-`m` end framing
 `α(z) (z / |z|)⁻ᵐ → 1`, and `L∞` class `a`, the Sobolev realization `sobolevGaugeFixedOperator a`
 has real Fredholm index `2 m`. -/
-theorem index_sobolevGaugeFixedOperator_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
+theorem index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow
+    {m : ℕ} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
@@ -824,7 +765,7 @@ theorem index_sobolevGaugeFixedOperator_eq_two_mul {m : ℕ} (hx : ContDiff ℝ 
   rw [(sobolevGaugeFixedOperator a).index_of_surjective
       (sobolevGaugeFixedOperator_surjective (hx.of_le (by simp)) hsol
         (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hax),
-    finrank_ker_sobolevGaugeFixedOperator_eq_two_mul hx hbound
+    finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow hx hbound
       (fun w ↦ by simp [hsol w]) hframe hax]
   push_cast
   rfl
@@ -839,7 +780,7 @@ private theorem ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot
   refine (Submodule.eq_bot_iff _).2 fun y hy ↦ ?_
   have h0 : kerSobolevGaugeFixedOperatorEquiv hx hbound hax ⟨y, hy⟩ = 0 :=
     Subtype.ext ((Submodule.mem_bot ℝ).1 ((SetLike.ext_iff.1 hbot _).1
-      (kerSobolevGaugeFixedOperatorEquiv hx hbound hax ⟨y, hy⟩).2))
+      (kerSobolevGaugeFixedOperatorEquiv hx hbound hax ⟨y, hy⟩).property))
   exact congrArg Subtype.val ((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).injective
     (h0.trans (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).map_zero.symm))
 
@@ -921,30 +862,6 @@ theorem isFredholm_sobolevGaugeFixedOperator_of_mem_framedFieldSpace {s : ℝ} (
       hd.add ((contDiff_referenceField ρ m).of_le (by simp))
   exact isFredholm_sobolevGaugeFixedOperator_of_contDiff hx₂ hsol
     (tendsto_normSq_of_mem_framedFieldSpace (by linarith) hmem hx) hax
-
-/-- **Kernel dimension `2 m` for a field in every `A_m^k`.** At a continuous field lying in
-`framedFieldSpace ρ m k` for every `k`, satisfying the holomorphicity rows `∂bar_a α = 0`, and
-with `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a` has real dimension `2 m`. -/
-theorem finrank_ker_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace
-    (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace ρ m k)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hax : a =ᵐ[μ⊤] x) :
-    finrank ℝ (sobolevGaugeFixedOperator a).ker = 2 * m :=
-  finrank_ker_sobolevGaugeFixedOperator_eq_two_mul
-    (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
-    hhol (tendsto_sectionValue_mul_inv_pow one_lt_two (by exact_mod_cast hmem 2) hx) hax
-
-/-- **Real Fredholm index `2 m` for a vortex in every `A_m^k`.** At a continuous plane vortex
-lying in `framedFieldSpace ρ m k` for every `k` and with `L∞` class `a`,
-`sobolevGaugeFixedOperator a` has real Fredholm index `2 m`. -/
-theorem index_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace
-    (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace ρ m k)
-    (hsol : ∀ z, equation x z = 0) (hax : a =ᵐ[μ⊤] x) :
-    (sobolevGaugeFixedOperator a).index = 2 * m :=
-  index_sobolevGaugeFixedOperator_eq_two_mul
-    (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
-    hsol (tendsto_sectionValue_mul_inv_pow one_lt_two (by exact_mod_cast hmem 2) hx) hax
 
 end FramedFieldSpace
 

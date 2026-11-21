@@ -142,7 +142,8 @@ lemma conjJ_mem_Gamma1 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) : con
 
 /-- `conjJ` leaves the lower-right entry, hence the diamond label, alone. -/
 lemma Gamma0Map_conjJ {N : ℕ} (γ : ↥(Gamma0 N)) :
-    (Gamma0Map N).toHomUnits ⟨conjJ γ, conjJ_mem_Gamma0 γ.2⟩ = (Gamma0Map N).toHomUnits γ := by
+    (Gamma0Map N).toHomUnits ⟨conjJ γ, conjJ_mem_Gamma0 γ.property⟩ = (Gamma0Map N).toHomUnits γ
+        := by
   ext
   simp [Gamma0Map_apply]
 
@@ -178,7 +179,7 @@ private lemma slash_conj_eq {f : ℍ → ℂ}
     (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
       (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
   rw [← SlashAction.slash_mul, J_mul_mapGL, SlashAction.slash_mul,
-    hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash,
+    hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.property⟩, ModularForm.smul_slash,
     Gamma0Map_conjJ, sigma_J]
   congr 1
   rw [Complex.conjCAE_apply, ← MulChar.ofUnitHom_coe, ← MulChar.ofUnitHom_coe,
@@ -378,11 +379,12 @@ variable (k χ) in
 /-- The conjugate cusp form as an antilinear equivalence `S_k(N, χ) ≃ S_k(N, χ⁻¹)`. Its inverse is
 again `f ↦ f_ρ`, now on `S_k(N, χ⁻¹)`. -/
 def conjCharSpace : cuspFormCharSpace k χ ≃ₗ⋆[ℂ] cuspFormCharSpace k χ⁻¹ where
-  toFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f, conj_mem_cuspFormCharSpace f.2⟩
+  toFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f,
+      conj_mem_cuspFormCharSpace f.property⟩
   map_add' f g := by ext1; simp
   map_smul' c f := by ext1; simp
   invFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f, by
-    simpa using conj_mem_cuspFormCharSpace f.2⟩
+    simpa using conj_mem_cuspFormCharSpace f.property⟩
   left_inv f := by ext1; simp
   right_inv f := by ext1; simp
 

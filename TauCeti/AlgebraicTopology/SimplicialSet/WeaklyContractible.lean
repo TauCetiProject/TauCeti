@@ -208,10 +208,10 @@ lemma nonempty : K.Nonempty := by
   have : KanComplex E := by
     rw [KanComplex.iff]
     intro n i f _
-    exact ((f _ (i.succAbove_ne 0)).app _ (stdSimplex.obj₀Equiv.symm 0)).2.elim
+    exact ((f _ (i.succAbove_ne 0)).app _ (stdSimplex.obj₀Equiv.symm 0)).property.elim
   obtain ⟨g, -⟩ := exists_homotopyInverse (K := K) E
   exact ((curry (fst K Δ[0] ≫ (isInitialOfNotNonempty hK).to E) ≫ g).app _
-    (stdSimplex.obj₀Equiv.symm 0)).2.elim
+    (stdSimplex.obj₀Equiv.symm 0)).property.elim
 
 /-- Every map from a weakly contractible simplicial set to a Kan complex is homotopic to a
 constant map. -/
@@ -273,17 +273,17 @@ it never contains all three edges at once. -/
 private noncomputable def boundaryLoop (g : G) : (∂Δ[2] : SSet.{u}) ⟶ nerve (SingleObj G) where
   app n := ↾fun s ↦
     { obj _ := SingleObj.star G
-      map {a b} _ := loopCocycle g (stdSimplex.asOrderHom s.1 a) (stdSimplex.asOrderHom s.1 b)
+      map {a b} _ := loopCocycle g (stdSimplex.asOrderHom s.val a) (stdSimplex.asOrderHom s.val b)
       map_id a := by
         rw [SingleObj.id_as_one, loopCocycle, ite_eq_right_iff]
         rintro ⟨h₀, h₂⟩
         exact absurd (h₀.symm.trans h₂) (by decide)
       map_comp {a b c} hab hbc := by
         rw [SingleObj.comp_as_mul]
-        refine loopCocycle_comp g ((stdSimplex.asOrderHom s.1).monotone (leOfHom hab))
-          ((stdSimplex.asOrderHom s.1).monotone (leOfHom hbc)) ?_
+        refine loopCocycle_comp g ((stdSimplex.asOrderHom s.val).monotone (leOfHom hab))
+          ((stdSimplex.asOrderHom s.val).monotone (leOfHom hbc)) ?_
         rintro ⟨ha, hb, hc⟩
-        apply s.2
+        apply s.property
         intro k
         fin_cases k
         exacts [⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩] }
