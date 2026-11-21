@@ -134,8 +134,9 @@ private def factorι (r : LocallyConstant X ℕ) (n : ℕ) :
 private theorem isIso_factorι_app_app (r : LocallyConstant X ℕ) (M : X.Modules) {n : ℕ}
     {V : X.Opens} (hV : ∀ x ∈ V, r x = n) :
     IsIso (Scheme.Modules.Hom.app ((factorι r n).app M) V) :=
-  isIso_restrictAdjunction_unit_app_app (r.fiberClopens n).toOpens _ fun x hx ↦
-    LocallyConstant.mem_fiberClopens.2 (hV x hx)
+  isIso_restrictAdjunction_unit_app_app (Scheme.Opens.ι (r.fiberClopens n).toOpens) _ (by
+    rw [Scheme.Opens.opensRange_ι]
+    exact fun x hx ↦ LocallyConstant.mem_fiberClopens.2 (hV x hx))
 
 /-- Over an open `U` on which `r` is constantly `n`, the restricted unit
 `(⋀ⁿ M)|_U ⟶ ((r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}}))|_U` is an isomorphism, naturally in `M`. -/
