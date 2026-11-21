@@ -16,6 +16,7 @@ import TauCeti.AlgebraicTopology.Cellular.Dimension
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
 # CW homotopy models of pseudoconvex complex manifolds and holomorphic immersions
@@ -323,16 +324,17 @@ theorem exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt
       (∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f x = m})) ∧
       ∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m) := by
-  rcases isEmpty_or_nonempty M with _ | _
-  · exact ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance,
-      RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun _ _ ↦ inferInstance,
-      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun _ ↦ ⟨Equiv.equivOfIsEmpty _ _⟩,
-      fun _ _ ↦ inferInstance⟩
-  have := hp.weaklyLocallyCompactSpace
-  have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
-  simpa only [add_zero] using
-    hf.exists_cwComplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt (q := 0) hp hbdd
-      fun x hx ↦ (hpos x hx).isManifoldStronglyPseudoconvexAt 0
+  have ⟨_, hidx⟩ : IsManifold 𝓘(ℝ, E) ∞ M ∧
+      ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E := by
+    rcases isEmpty_or_nonempty M with hM | _
+    · exact ⟨inferInstance, fun x _ ↦ hM.elim x⟩
+    · have := hp.weaklyLocallyCompactSpace
+      have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
+      have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+      exact ⟨IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›, fun x hx ↦
+        (hpos x hx).manifoldMorseIndex_le ((hf.contMDiff x).of_le (by norm_cast))
+          (mem_criticalPoints.mp hx)⟩
+  exact hf.exists_cwComplex_homotopyEquiv_of_manifoldMorseIndex_le hp hbdd hidx
 
 /-- **Morse polynomial identity of a strongly `q`-pseudoconvex regular band, with cellular
 coefficients.** Let `f` be a real Morse function on a Hausdorff complex manifold `M` of complex
@@ -456,15 +458,20 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStrictlyPluri
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (M ≃ₕ X) ∧
       ∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m) := by
-  rcases isEmpty_or_nonempty M with _ | _
-  · exact ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance,
-      RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun _ _ ↦ inferInstance,
-      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun _ _ ↦ inferInstance⟩
-  have := hp.weaklyLocallyCompactSpace
-  have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
-  simpa only [add_zero] using
-    exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0)
-      hf hp hbdd fun x ↦ (hpos x).isManifoldStronglyPseudoconvexAt 0
+  have ⟨g, hgm, hgp, hg_bdd, hg_pos⟩ : ∃ g : M → ℝ, IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧
+      BddBelow (range g) ∧ ∀ x, IsManifoldStrictlyPlurisubharmonicAt E g x := by
+    rcases isEmpty_or_nonempty M with hM | _
+    · exact ⟨f, isMorse_iff.2 ⟨hf, fun x ↦ hM.elim x⟩, hp, hbdd, hpos⟩
+    · have := hp.weaklyLocallyCompactSpace
+      have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
+      have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+      obtain ⟨g, hgm, hgp, hg_bdd, hg_pos, -, -⟩ :=
+        exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt hf hp hbdd hpos
+      exact ⟨g, hgm, hgp, hg_bdd, hg_pos⟩
+  obtain ⟨X, instTop, instT2, instCW, hfd, hMX, -, hempty⟩ :=
+    hgm.exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt hgp hg_bdd
+      fun x _ ↦ hg_pos x
+  exact ⟨X, instTop, instT2, instCW, hfd, hMX, hempty⟩
 
 end PseudoconvexExhaustion
 
@@ -502,47 +509,32 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
           manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - z₀‖ ^ 2) x = m})) ∧
       (∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m)) ∧
       ∀ k m, finrank ℂ E < m → IsEmpty (cell (W k : Set X) m) := by
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · -- When `M` is empty, `PEmpty` with constant empty subcomplexes witnesses every conjunct.
-    let W : ℕ → CWComplex.Subcomplex (univ : Set PEmpty.{u + 1}) :=
-      fun _ ↦ ⟨∅, fun _ ↦ ∅, isClosed_empty, by simp⟩
-    have hempty (m : ℕ) : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) :=
-      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    have hWempty (k m : ℕ) : IsEmpty (cell (W k : Set PEmpty.{u + 1}) m) :=
-      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    have (k : ℕ) : IsEmpty {x : M | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.val⟩
-    refine ⟨0, Nat.cast, PEmpty.{u + 1}, inferInstance, inferInstance, inferInstance, W,
-      Homeomorph.empty.toHomotopyEquiv, fun _ ↦ Homeomorph.empty.toHomotopyEquiv,
-      Nat.strictMono_cast, tendsto_natCast_atTop_atTop,
-      fun _ ↦ isRegularValue_iff.2 fun x ↦ hM.elim x, monotone_const, rfl,
-      eq_univ_of_forall fun x ↦ PEmpty.elim x, fun k ↦ RelCWComplex.finite_of_finite_cells
-        (have : IsEmpty (Σ n, cell (W k : Set PEmpty.{u + 1}) n) :=
-          ⟨fun ⟨n, j⟩ ↦ (hWempty k n).elim j⟩
-        inferInstance),
-      RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun m _ ↦ hempty m,
-      fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x, fun m ↦ ⟨?_⟩, fun k m ↦ ⟨?_⟩,
-      fun m _ ↦ hempty m, fun k m _ ↦ hWempty k m⟩
-    · have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) |
-          manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) x = m} := ⟨fun x ↦ hM.elim x.val⟩
-      exact Equiv.equivOfIsEmpty _ _
-    · have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) ∩
-          {x | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} |
-          manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) x = m} := ⟨fun x ↦ hM.elim x.val⟩
-      exact Equiv.equivOfIsEmpty _ _
-  · have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
-    have : FiniteDimensional ℂ E :=
-      Module.Finite.of_injective (mvfderiv 𝓘(ℂ, E) i x₀).toLinearMap (hinj x₀)
-    have : FiniteDimensional ℝ E := .trans ℝ ℂ E
-    have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
-    have : IsManifold 𝓘(ℝ, E) ∞ M := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
-    obtain ⟨z₀, hmorse, hprop, hbdd, hidx⟩ :=
-      exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le
-        hi.contMDiff hinj hip
-    obtain ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, -, hreg, hWmono, hW0, hWuniv,
-        hWfin, hfd, hhW, hsymm, hcell, hWcell, hempty, hWempty⟩ :=
-      hmorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_le hprop hbdd hidx
-    exact ⟨z₀, a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, hreg, hWmono, hW0, hWuniv,
-      hWfin, hfd, hhW, hsymm, hcell, hWcell, hempty, hWempty⟩
+  have ⟨z₀, _, hmorse, hprop, hbdd, hidx⟩ : ∃ (z₀ : F) (_ : IsManifold 𝓘(ℝ, E) ∞ M),
+      IsMorse 𝓘(ℝ, E) (fun x ↦ ‖i x - z₀‖ ^ 2) ∧
+      IsProperMap (fun x ↦ ‖i x - z₀‖ ^ 2) ∧
+      BddBelow (range fun x ↦ ‖i x - z₀‖ ^ 2) ∧
+      ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - z₀‖ ^ 2),
+        manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - z₀‖ ^ 2) x ≤ finrank ℂ E := by
+    rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+    · refine ⟨0, inferInstance, ?_, (isProperMap_norm_sq_sub_comp_iff hi.continuous 0).2 hip,
+        ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩, fun x _ ↦ hM.elim x⟩
+      rw [← isMorseOn_univ, Set.univ_eq_empty_iff.2 hM]
+      exact isMorseOn_empty
+    · have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
+      have : FiniteDimensional ℂ E :=
+        Module.Finite.of_injective (mvfderiv 𝓘(ℂ, E) i x₀).toLinearMap (hinj x₀)
+      have : FiniteDimensional ℝ E := .trans ℝ ℂ E
+      have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+      have : IsManifold 𝓘(ℝ, E) ∞ M := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
+      obtain ⟨z₀, hmorse, hprop, hbdd, hidx⟩ :=
+        exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le
+          hi.contMDiff hinj hip
+      exact ⟨z₀, ‹_›, hmorse, hprop, hbdd, hidx⟩
+  obtain ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, -, hreg, hWmono, hW0, hWuniv,
+      hWfin, hfd, hhW, hsymm, hcell, hWcell, hempty, hWempty⟩ :=
+    hmorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_le hprop hbdd hidx
+  exact ⟨z₀, a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, hreg, hWmono, hW0, hWuniv,
+    hWfin, hfd, hhW, hsymm, hcell, hWcell, hempty, hWempty⟩
 
 section HolomorphicImmersionModel
 
