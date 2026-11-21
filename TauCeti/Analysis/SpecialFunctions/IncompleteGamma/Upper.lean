@@ -55,12 +55,20 @@ theorem upperIncompleteGamma_def (a z : ℂ) :
       _root_.Complex.exp (-z) *
         ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)) := (rfl)
 
-/-- Absolute convergence of the horizontal-ray integrand on the slit plane, for every
-complex parameter `a`. -/
+/-- Absolute convergence of the horizontal-ray integrand
+`(z + t) ^ (a - 1) * exp (-(z + t))` of `Complex.upperIncompleteGamma_eq_integral` on the slit
+plane, for every complex parameter `a`. -/
 theorem integrableOn_upperIncompleteGamma_integrand (a : ℂ) {z : ℂ}
     (hz : z ∈ _root_.Complex.slitPlane) :
-    IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
+    IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(z + t)))
       (Ioi 0) := by
+  -- The integrand with the constant factor `exp (-z)` taken out.
+  suffices h : IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
+      (Ioi 0) by
+    refine IntegrableOn.congr_fun (h.const_mul (_root_.Complex.exp (-z))) (fun t _ => ?_)
+      measurableSet_Ioi
+    rw [neg_add, _root_.Complex.exp_add]
+    ring
   have hi : IntegrableOn (fun t : ℝ => Real.exp (-t) * t ^ (a - 1).re) (Ioi 1) :=
     integrable_of_isBigO_exp_neg one_half_pos
       (continuousOn_id.neg.rexp.mul (continuousOn_id.rpow_const (by grind)))

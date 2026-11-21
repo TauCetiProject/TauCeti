@@ -383,7 +383,7 @@ theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R
   ring
 
 /-- The sums `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} zᵏ` satisfy `S_{n+1} = (a + n) Sₙ + zⁿ`. -/
-theorem sum_range_succ_ascPochhammer_mul_pow [CommRing R] (a z : R) (n : ℕ) :
+theorem sum_range_succ_ascPochhammer_mul_pow [CommSemiring R] (a z : R) (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (ascPochhammer R (n + 1 - k - 1)).eval (a + k + 1) * z ^ k =
       (a + n) * ∑ k ∈ Finset.range n, (ascPochhammer R (n - k - 1)).eval (a + k + 1) * z ^ k +
         z ^ n := by
@@ -395,8 +395,14 @@ theorem sum_range_succ_ascPochhammer_mul_pow [CommRing R] (a z : R) (n : ℕ) :
   have hk : k < n := Finset.mem_range.mp hk
   -- For `k < n` the Pochhammer length `n + 1 - k - 1` is one more than `n - k - 1`.
   have hlen : n + 1 - k - 1 = n - k - 1 + 1 := by omega
-  rw [hlen, ascPochhammer_succ_eval, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
-  push_cast
+  -- The new factor `a + k + 1 + (n - k - 1)` is `a + n`, by an identity in `ℕ` cast to `R`.
+  have hn : k + 1 + (n - k - 1) = n := by omega
+  have hsum : (k : R) + 1 + ((n - k - 1 : ℕ) : R) = n := by
+    simpa only [Nat.cast_add, Nat.cast_one] using congrArg (Nat.cast : ℕ → R) hn
+  have hfac : a + k + 1 + ((n - k - 1 : ℕ) : R) = a + n := by
+    rw [← hsum]
+    ring
+  rw [hlen, ascPochhammer_succ_eval, hfac]
   ring
 
 end Ascending
