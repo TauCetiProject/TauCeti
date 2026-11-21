@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.Deriv.Inverse
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -32,12 +33,13 @@ open Filter MeasureTheory Set
 
 namespace TauCeti
 
-/-- The accumulated integral of a continuous function bounded below by a positive constant is
-inverted by a `C¹` order isomorphism of `ℝ` whose derivative is the reciprocal of the function
-at the inverse point. -/
+/-- The accumulated integral of a continuous function bounded below by a positive constant `m` is
+inverted by a `C¹`, `m⁻¹`-Lipschitz order isomorphism of `ℝ` whose derivative is the reciprocal of
+the function at the inverse point. -/
 theorem exists_orderIso_contDiff_inverse_intervalIntegral {w : ℝ → ℝ} (hw : Continuous w)
     {m : ℝ} (hm : 0 < m) (hwm : ∀ t, m ≤ w t) (a : ℝ) :
-    ∃ ψ : ℝ ≃o ℝ, ContDiff ℝ 1 ψ ∧ (∀ t, ψ (∫ r in a..t, w r) = t) ∧
+    ∃ ψ : ℝ ≃o ℝ, ContDiff ℝ 1 ψ ∧ LipschitzWith (Real.toNNReal m⁻¹) ψ ∧
+      (∀ t, ψ (∫ r in a..t, w r) = t) ∧
       (∀ s, (∫ r in a..ψ s, w r) = s) ∧ ∀ s, HasDerivAt ψ (w (ψ s))⁻¹ s := by
   let φ : ℝ → ℝ := fun t ↦ ∫ r in a..t, w r
   have hwpos : ∀ t, 0 < w t := fun t ↦ hm.trans_le (hwm t)
@@ -51,11 +53,16 @@ theorem exists_orderIso_contDiff_inverse_intervalIntegral {w : ℝ → ℝ} (hw 
   have hψd : ∀ s, HasDerivAt e.symm (w (e.symm s))⁻¹ s := fun s ↦
     HasDerivAt.of_local_left_inverse e.symm.continuous.continuousAt (hφ (e.symm s))
       (hwpos _).ne' (Eventually.of_forall hφψ)
-  refine ⟨e.symm, ?_, fun t ↦ e.symm_apply_apply t, hφψ, hψd⟩
-  refine contDiff_one_iff_deriv.2 ⟨fun s ↦ (hψd s).differentiableAt, ?_⟩
   have hderiv : deriv e.symm = fun s ↦ (w (e.symm s))⁻¹ := funext fun s ↦ (hψd s).deriv
-  rw [hderiv]
-  exact (hw.comp e.symm.continuous).inv₀ fun s ↦ (hwpos _).ne'
+  refine ⟨e.symm, ?_, ?_, fun t ↦ e.symm_apply_apply t, hφψ, hψd⟩
+  · refine contDiff_one_iff_deriv.2 ⟨fun s ↦ (hψd s).differentiableAt, ?_⟩
+    rw [hderiv]
+    exact (hw.comp e.symm.continuous).inv₀ fun s ↦ (hwpos _).ne'
+  · -- The derivative `(w (ψ s))⁻¹` lies in `(0, m⁻¹]`.
+    refine lipschitzWith_of_nnNorm_deriv_le (fun s ↦ (hψd s).differentiableAt) fun s ↦ ?_
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal _ (inv_nonneg.2 hm.le), hderiv,
+      Real.norm_of_nonneg (inv_nonneg.2 (hwpos _).le)]
+    exact inv_anti₀ hm (hwm _)
 
 /-- Accumulated speed `t ↦ ∫ r in a..t, v r`, for a speed `v` continuous and positive on `[a, b]`,
 has an inverse `ψ` on `[0, ∫ r in a..b, v r]` which is the restriction of a strictly increasing
@@ -75,7 +82,7 @@ theorem exists_contDiff_inverse_intervalIntegral {v : ℝ → ℝ} {a b : ℝ} (
   have hw : Continuous w :=
     hv.comp_continuous (continuous_const.max (continuous_const.min continuous_id)) hcmem
   obtain ⟨x₀, hx₀, hmin⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 hab) hv
-  obtain ⟨e, hψC1, hψφ, hφψ, hψd⟩ := exists_orderIso_contDiff_inverse_intervalIntegral hw
+  obtain ⟨e, hψC1, -, hψφ, hφψ, hψd⟩ := exists_orderIso_contDiff_inverse_intervalIntegral hw
     (hpos x₀ hx₀) (fun t ↦ hmin (hcmem t)) a
   -- On `[a, b]` the extended primitive is the accumulated speed itself.
   have hφeq : ∀ t ∈ Icc a b, (∫ r in a..t, w r) = ∫ r in a..t, v r := fun t ht ↦

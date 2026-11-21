@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 import TauCeti.LinearAlgebra.Eigenspace.Involution
