@@ -397,7 +397,7 @@ private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c R₂ : ℝ} {V θ : �
     have := pow_le_pow_left₀ (norm_nonneg _) h₂ 2
     have hδa : min (min c₀ a / 2) (a - c ^ 2) * V z ^ 2 ≤ (a - c ^ 2) * V z ^ 2 :=
       mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)
-    simp [hθz, h₁]
+    simp only [hθz, h₁, Real.cos_pi_div_two, Real.sin_pi_div_two, mul_zero, mul_one, norm_zero]
     linarith [hdV z]
 
 /-- **Weighted coercivity of `L_x L_x*` from a spectral gap and an exterior mass.** Let
