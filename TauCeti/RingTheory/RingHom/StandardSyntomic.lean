@@ -30,7 +30,8 @@ Locally standard syntomic ring maps are also flat and finitely presented
 `TauCeti.finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension`), and to be locally
 standard syntomic it suffices to have a standard syntomic basic open neighbourhood of every closed
 point (`TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal`). Conversely, a
-locally standard syntomic algebra has such a neighbourhood around every proper ideal
+locally standard syntomic algebra has a standard syntomic basic open meeting `V(I)` for every
+proper ideal `I`, and this is a neighbourhood of the point `I` when `I` is prime
 (`TauCeti.exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally`). Over a field
 `k`, a locally standard syntomic algebra of relative dimension `n` has Krull dimension at most `n`
 (`TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`).
@@ -208,9 +209,10 @@ theorem locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal [Algeb
     isStandardSyntomicOfRelativeDimension_algebraMap]
   exact hstd
 
-/-- A locally standard syntomic algebra has a standard syntomic basic open neighbourhood of every
-proper ideal `I`: for some `g` whose powers avoid `I`, the localization `S[1/g]` is standard
-syntomic of relative dimension `n` over `R`. -/
+/-- A locally standard syntomic algebra has a standard syntomic basic open meeting `V(I)` for
+every proper ideal `I`: for some `g` whose powers avoid `I`, the localization `S[1/g]` is standard
+syntomic of relative dimension `n` over `R`. When `I` is prime, this is a neighbourhood of the
+point `I`. -/
 theorem exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally [Algebra R S]
     (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R S))
     (I : Ideal S) (hI : I ≠ ⊤) :

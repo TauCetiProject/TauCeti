@@ -86,8 +86,10 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
     IsLocalization.isPrime_of_isPrime_disjoint _ _ q inferInstance hdisj
   have : Nontrivial (Localization.Away (ϕ (r * b))) := PrimeSpectrum.nontrivial ⟨_, hqB⟩
   refine PB.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le ?_
-    (ringKrullDim_le_of_height_le_on_basicOpen _ fun p hp hrbp ↦
-      hdim p hp fun hbp ↦ hrbp (map_mul ϕ r b ▸ p.mul_mem_left _ hbp))
+    (ringKrullDim_localization_le_of_height_le (.powers (ϕ (r * b))) fun p hp hdisj ↦
+      hdim p hp fun hbp ↦
+        ((Ideal.disjoint_powers_iff_notMem _ hp.isRadical).mp hdisj)
+          (map_mul ϕ r b ▸ p.mul_mem_left _ hbp))
   have := Fintype.ofFinite ι
   simp only [Nat.card_eq_fintype_card, Fintype.card_sum, Fintype.card_unit,
     Fintype.card_coe] at hfin ⊢

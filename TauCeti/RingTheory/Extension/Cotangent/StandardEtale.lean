@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.StandardEtale
-public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 import TauCeti.RingTheory.Etale.StandardEtaleQuotient
 import TauCeti.RingTheory.Extension.Cotangent.FlatLift
 import TauCeti.RingTheory.Extension.Cotangent.Rank

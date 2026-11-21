@@ -132,29 +132,25 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
 is the extension of the kernel of `f`. -/
 lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[X]) :
     RingHom.ker (map f p (p.map f) dvd_rfl) = (RingHom.ker f).map (of p) := by
-  -- `AdjoinRoot.map` factors through `AdjoinRoot p ⧸ (ker f)` via Mathlib's identification of
-  -- this quotient with `AdjoinRoot` of the reduction of `p` modulo `ker f`.
-  let e := f.quotientKerEquivOfSurjective hf
-  -- `e` composed with the quotient map is `f`.
-  have hef : (e : _ →+* S).comp (Ideal.Quotient.mk (RingHom.ker f)) = f :=
-    RingHom.ext (RingHom.quotientKerEquivOfSurjective_apply_mk hf)
-  have he : Associated ((p.map (Ideal.Quotient.mk (RingHom.ker f))).map (e : _ →+* S))
-      (p.map f) := by
-    rw [Polynomial.map_map, hef]
-  let ψ₀ : AdjoinRoot p ⧸ (RingHom.ker f).map (of p) →+*
-      AdjoinRoot (p.map (Ideal.Quotient.mk (RingHom.ker f))) :=
-    (quotEquivQuotMap p (RingHom.ker f)).toRingHom
-  have hψ : map f p (p.map f) dvd_rfl =
-      ((mapRingEquiv e _ _ he).toRingHom.comp ψ₀).comp (Ideal.Quotient.mk _) := by
-    refine RingHom.ext fun x ↦ ?_
-    obtain ⟨g, rfl⟩ := mk_surjective x
-    have h₀ : ψ₀ (Ideal.Quotient.mk _ (mk p g)) =
-        mk _ (g.map (Ideal.Quotient.mk (RingHom.ker f))) :=
-      quotEquivQuotMap_apply_mk p g (RingHom.ker f)
-    rw [map_mk, RingHom.comp_apply, RingHom.comp_apply, h₀, RingEquiv.toRingHom_eq_coe,
-      RingEquiv.coe_toRingHom, coe_mapRingEquiv, map_mk, Polynomial.map_map, hef]
-  rw [hψ, RingHom.ker_comp_of_injective _ ((mapRingEquiv e _ _ he).injective.comp
-    (quotEquivQuotMap p (RingHom.ker f)).injective), Ideal.mk_ker]
+  have hcomp : (map f p (p.map f) dvd_rfl).comp (mk p) =
+      (mk (p.map f)).comp (Polynomial.mapRingHom f) := by
+    apply RingHom.ext
+    intro x
+    simp
+  have hspan : (Ideal.span ({p} : Set R[X])).map (Polynomial.mapRingHom f) =
+      Ideal.span {p.map f} := by simp [Ideal.map_span]
+  have hcomap : (RingHom.ker (map f p (p.map f) dvd_rfl)).comap (mk p) =
+      Ideal.span {p} ⊔ RingHom.ker (Polynomial.mapRingHom f) := by
+    rw [RingHom.comap_ker, hcomp, ← RingHom.comap_ker]
+    rw [show RingHom.ker (mk (p.map f)) = Ideal.span {p.map f} from Ideal.mk_ker]
+    rw [← hspan, Ideal.comap_map_of_surjective _ (Polynomial.map_surjective f hf)]
+    rfl
+  rw [← Ideal.map_comap_of_surjective (mk p) mk_surjective
+    (RingHom.ker (map f p (p.map f) dvd_rfl)), hcomap, Ideal.map_sup]
+  have hzero : (Ideal.span ({p} : Set R[X])).map (mk p) = ⊥ := by
+    exact (Ideal.map_eq_bot_iff_le_ker (mk p)).mpr Ideal.mk_ker.ge
+  rw [hzero, bot_sup_eq, Polynomial.ker_mapRingHom, Ideal.map_map]
+  rfl
 
 /-- The reduction map `AdjoinRoot.algHomOfDvd` to the quotient by a divisor `g ∣ f` sends the class
 of `p` modulo `f` to its class modulo `g`. -/

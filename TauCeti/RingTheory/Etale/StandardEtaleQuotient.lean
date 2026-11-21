@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.StandardEtale
-public import Mathlib.RingTheory.Flat.Basic
 
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Algebra
@@ -105,11 +104,15 @@ theorem exists_flat_lift {S : Type u} {A B : Type*} [CommRing S] [CommRing A] [C
   refine ⟨C, inferInstance, inferInstance, inferInstance, e.symm.toRingHom.comp φ₀,
     e.symm.surjective.comp (IsLocalization.map_surjective_of_surjective _ _ _
       (AdjoinRoot.map_surjective hS _)), fun s ↦ ?_, ?_⟩
-  · simp only [RingHom.coe_comp, Function.comp_apply,
-      IsScalarTower.algebraMap_apply S (AdjoinRoot f) C, φ₀, IsLocalization.map_eq,
-      AdjoinRoot.algebraMap_eq, ρ, AdjoinRoot.map_of]
-    rw [← AdjoinRoot.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
-    exact e.symm.commutes _
+  · have hφ₀ : φ₀ (algebraMap S C s) =
+        algebraMap A (Localization.Away (AdjoinRoot.mk (f.map π) (g.map π))) (π s) := by
+      rw [IsScalarTower.algebraMap_apply S (AdjoinRoot f) C,
+        IsScalarTower.algebraMap_apply A (AdjoinRoot (f.map π))]
+      simp [φ₀, IsLocalization.map_eq, AdjoinRoot.algebraMap_eq, ρ]
+    calc
+      (e.symm.toRingHom.comp φ₀) (algebraMap S C s) =
+          e.symm (algebraMap A _ (π s)) := by simp [hφ₀]
+      _ = algebraMap A B (algebraMap S A s) := e.symm.commutes _
   · rw [RingHom.ker_comp_of_injective _ e.symm.injective, IsLocalization.ker_map _ _ hT,
       AdjoinRoot.ker_map_of_surjective hS, Ideal.map_map, ← AdjoinRoot.algebraMap_eq,
       ← IsScalarTower.algebraMap_eq]

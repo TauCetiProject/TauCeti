@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.RingHom.StandardSyntomic
-public import Mathlib.RingTheory.Etale.Basic
-public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Extension.Cotangent.Rank
 import TauCeti.RingTheory.Extension.Cotangent.StandardEtale
@@ -99,9 +97,6 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandar
       Pe.toSubmersivePresentation F, P.toGenerators.finrank_tensor_cotangent F] at h1
     simp only [Nat.card_eq_fintype_card, Fintype.card_sum, Fintype.card_fin, hP'] at h1 ⊢
     omega
-  have : Algebra.FinitePresentation k B := RingHom.finitePresentation_algebraMap.mp
-    (isStandardSyntomicOfRelativeDimension_algebraMap (n := n) |>.mpr inferInstance
-      ).finitePresentation
   obtain ⟨a, ha, hdim⟩ := exists_notMem_forall_height_le_of_hasGoingDown_of_ringKrullDim_le
     (A := A) (ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension (RingHom.locally_of
       (isStandardSyntomicOfRelativeDimension_respectsIso n) (algebraMap k B)
@@ -138,14 +133,14 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
   have : Algebra.IsStandardEtale A B₂ := .of_isLocalizationAway t₂
   let Q₂ := Q₁.map (algebraMap B₁ B₂)
   have : Q₂.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ _ Q₁ inferInstance hdisj.symm
-  have hQ : Q₂.comap (algebraMap A B₂) = Q.comap (algebraMap A B) := by
-    have e₂ : Q₂.comap (algebraMap B₁ B₂) = Q₁ :=
+  have hQ : Q₂.under A = Q.under A := by
+    have e₂ : Q₂.under B₁ = Q₁ :=
       IsLocalization.under_map_of_isPrime_disjoint (.powers t₂) B₂ inferInstance hdisj.symm
-    have e₁ : Q₁.comap (algebraMap B B₁) = Q :=
+    have e₁ : Q₁.under B = Q :=
       IsLocalization.under_map_of_isPrime_disjoint (.powers t₁) B₁ inferInstance
         ((Ideal.disjoint_powers_iff_notMem _ ‹Q.IsPrime›.isRadical).mpr ht₁)
-    rw [IsScalarTower.algebraMap_eq A B₁ B₂, IsScalarTower.algebraMap_eq A B B₁,
-      ← Ideal.comap_comap, ← Ideal.comap_comap, e₂, e₁]
+    rw [← Ideal.under_under (B := B₁), e₂, ← Ideal.under_under (B := B), e₁]
+  change ∃ g ∉ Q.under A, _
   rw [← hQ]
   exact exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandardEtale Q₂
 
