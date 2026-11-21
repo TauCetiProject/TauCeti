@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
 public import TauCeti.Algebra.Lie.Current.Sugawara
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 
 /-!
 # Scaling of normally ordered and Segal--Sugawara modes
@@ -56,15 +57,13 @@ theorem coordinateCompletedEnvelopingAut_homothety_normalOrderedMode
   refine ((hasSum_normalOrderedMode n x y).map
     (coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv)
     (continuous_coordinateCompletedEnvelopingAut _)).unique ?_
-  have hs := (hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) n x y).mul_left
-    (algebraMap K (CompletedEnveloping Φ hΦ hΦs a) ((u : K) ^ n))
-  convert hs using 1
-  · ext m
-    dsimp only [Function.comp_def]
-    rw [coe_toCompletedEnveloping, coordinateCompletedEnvelopingAut_toLimQuotients,
-      ← coe_toCompletedEnveloping, coordinateEnvelopingAut_homothety_normalOrderedSummand,
-      map_smul, Algebra.smul_def]
-  · rw [Algebra.smul_def]
+  convert (hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) n x y).const_smul
+    ((u : K) ^ n) using 1
+  ext m
+  dsimp only [Function.comp_def]
+  rw [coe_toCompletedEnveloping, coordinateCompletedEnvelopingAut_toLimQuotients,
+    ← coe_toCompletedEnveloping, coordinateEnvelopingAut_homothety_normalOrderedSummand,
+    map_smul]
 
 variable [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
 

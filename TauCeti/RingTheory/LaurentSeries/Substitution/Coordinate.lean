@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
+import TauCeti.RingTheory.LaurentSeries.Rescale
 
 /-!
 # Substituting formal coordinates into Laurent series over a commutative ring
@@ -175,12 +176,12 @@ theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧
 theorem substAlgEquiv_homothety_single (u : Rˣ) (n : ℤ) (c : R) :
     substAlgEquiv (FormalCoordinate.homothety u) (single n c) =
       single n (↑(u ^ n) * c) := by
-  rw [substAlgEquiv_single_of_eq_X_mul (v := Units.map PowerSeries.C.toMonoidHom u)
-    (FormalCoordinate.homothety u) (by
-      simp [FormalCoordinate.toPowerSeries_homothety, PowerSeries.smul_eq_C_mul, mul_comm])]
-  rw [← map_zpow, Units.coe_map]
-  change _ * ofPowerSeries ℤ R (PowerSeries.C (↑(u ^ n) : R)) = _
-  rw [ofPowerSeries_C, HahnSeries.C_apply, single_mul_single, add_zero, mul_comm c]
+  have h : (rescale u).toAlgHom =
+      (substAlgEquiv (FormalCoordinate.homothety u)).toAlgHom :=
+    algHom_eq_substAlgEquiv _ _ fun f ↦ by
+      simp only [AlgEquiv.toAlgHom_apply, rescale_coe, PowerSeries.rescale_eq_subst,
+        FormalCoordinate.substAlgEquiv_apply, FormalCoordinate.toPowerSeries_homothety]
+  rw [← AlgEquiv.toAlgHom_apply, ← h, AlgEquiv.toAlgHom_apply, rescale_single]
 
 /-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`. -/
 @[simp]
