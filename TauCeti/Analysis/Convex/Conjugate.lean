@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Instances.EReal.Lemmas
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Data.EReal.Operations
+import TauCeti.Data.EReal.Quantale
 
 /-!
 # The Legendre–Fenchel conjugate on a real dual pair
@@ -249,7 +250,7 @@ theorem coe_add_le_fenchelConjugate_flip_fenchelConjugate {c : ℝ}
 theorem fenchelConjugate_add_const (f : E → EReal) (r : ℝ) (y : F) :
     fenchelConjugate B (fun x => f x + (r : EReal)) y = fenchelConjugate B f y - (r : EReal) := by
   simp only [fenchelConjugate_apply]
-  rw [← EReal.iSup_sub_coe]
+  conv_rhs => rw [sub_eq_add_neg, AddQuantale.iSup_add_distrib]
   exact iSup_congr fun x => EReal.coe_sub_add_coe (f x) (B x y) r
 
 /-! ### Convexity and lower semicontinuity -/
