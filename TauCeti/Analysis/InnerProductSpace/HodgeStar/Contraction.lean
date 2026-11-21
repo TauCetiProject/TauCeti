@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HodgeLaplacian
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.RingTheory.KoszulComplex.Basic
+import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
@@ -43,6 +44,9 @@ the identity above as its symbol.
 * `Orientation.hodgeStar_koszulDifferential`: `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x` for `x ∈ ⋀ᵏ⁺¹ V`.
 * `Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar`: on `⋀ᵏ⁺¹ V` with
   `m = finrank ℝ V`, `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆`.
+* `Orientation.inner_hodgeStar_wedgeLeft`: `⟪⋆(u ∧ x), y⟫ = (-1) ^ (k l) ⟪x, ⋆(u ∧ y)⟫` for
+  `x ∈ ⋀ᵏ V` and `y ∈ ⋀ˡ V` with `k + 1 + l = finrank ℝ V`. In dimension three, on vectors, the
+  map `x ↦ ⋆(u ∧ x)` (the cross product with `u`) is therefore skew-adjoint.
 
 ## References
 
@@ -180,5 +184,20 @@ theorem koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar (u : V) {k l : 
   obtain ⟨j, hj⟩ := Nat.even_mul_succ_self k
   have he : (k + 1) * l + (k + 1 + l) * k = l + 2 * (k * l + j) := by nlinarith [hj]
   simp [he, pow_add, pow_mul]
+
+/-- **The Hodge star of a wedge is (anti)symmetric**: for `x ∈ ⋀ᵏ V` and `y ∈ ⋀ˡ V` with
+`k + 1 + l = finrank ℝ V`, `⟪⋆(u ∧ x), y⟫ = (-1) ^ (k l) ⟪x, ⋆(u ∧ y)⟫`. In dimension three, on
+vectors, the map `x ↦ ⋆(u ∧ x)` is the cross product with `u`, which is skew-adjoint. -/
+theorem inner_hodgeStar_wedgeLeft (u : V) {k l : ℕ} (hkl : k + 1 + l = finrank ℝ V)
+    (hlk : l + 1 + k = finrank ℝ V) (x : ⋀[ℝ]^k V) (y : ⋀[ℝ]^l V) :
+    ⟪o.hodgeStar hkl (ExteriorAlgebra.wedgeLeft u k x), y⟫ =
+      (-1) ^ (k * l) * ⟪x, o.hodgeStar hlk (ExteriorAlgebra.wedgeLeft u l y)⟫ := by
+  -- Move the star to `y`, then move `u` across as the contraction `ι_u`, and commute `ι_u` past
+  -- the star with `koszulDifferential_hodgeStar`.
+  rw [o.inner_hodgeStar_left hkl (by omega : l + (k + 1) = finrank ℝ V),
+    inner_wedgeLeft_eq_inner_koszulDifferential, o.koszulDifferential_hodgeStar u _ hlk,
+    real_inner_smul_right, ← mul_assoc, ← pow_add,
+    show (k + 1) * l + l = k * l + 2 * l by ring, pow_add, pow_mul]
+  simp
 
 end Orientation
