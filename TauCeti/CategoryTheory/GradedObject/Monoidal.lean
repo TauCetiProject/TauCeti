@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
+public import TauCeti.CategoryTheory.GradedObject.Bifunctor
 
 /-!
 # Exactness and reindexing for tensor products of graded objects
@@ -42,6 +43,12 @@ facts about these coproducts which are used to compare homology of tensor produc
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`), and symmetrically for `X` when the
   indices commute (`CategoryTheory.GradedObject.Monoidal.succTensorObjIso`).  This identifies the
   degree shift of a connecting morphism between tensor products.
+* For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, whose tensor
+  product exists in every degree (`HasTensor`) and whose summands in degree `n` have a biproduct,
+  the tensor product in degree `n` is this biproduct indexed by `Finset.antidiagonal n`
+  (`CategoryTheory.GradedObject.Monoidal.tensorObjIsoBiproduct`), naturally
+  (`CategoryTheory.GradedObject.Monoidal.tensorHom_tensorObjIsoBiproduct_hom`); it is a special
+  case of `CategoryTheory.GradedObject.mapBifunctorMapObjIsoBiproduct`.
 -/
 
 public section
@@ -346,6 +353,62 @@ lemma ι_succTensorObjIso_inv (p q : I) (h : p + 1 + q = m + 1) :
   simp [succTensorObjIso, succTensorObjInvComponent_add_one _ _ _ _ _ _ (add_eq_of_succ_add_eq h)]
 
 end SuccLeft
+
+end Monoidal
+
+namespace Monoidal
+
+section Antidiagonal
+
+variable {I : Type*} [AddMonoid I] [Finset.HasAntidiagonal I] [MonoidalCategory C]
+  [HasZeroMorphisms C] (X Y : GradedObject I C) [HasTensor X Y] (n : I)
+  [HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2]
+
+-- The summands `X i ⊗ Y j` are by definition those of `curriedTensor C`.
+private instance : HasBiproduct fun x : Finset.antidiagonal n ↦
+    ((curriedTensor C).obj (X x.val.1)).obj (Y x.val.2) :=
+  ‹HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2›
+
+/-- For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, whose tensor
+product exists in every degree (`HasTensor X Y`), the tensor product in degree `n` is the biproduct
+of the `X i ⊗ Y j` indexed by `Finset.antidiagonal n`, assuming this biproduct exists. -/
+noncomputable def tensorObjIsoBiproduct :
+    tensorObj X Y n ≅ ⨁ fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2 :=
+  mapBifunctorMapObjIsoBiproduct X Y (curriedTensor C) n
+
+/-- `tensorObjIsoBiproduct` sends the summand `X i ⊗ Y j` to the corresponding summand of the
+biproduct. -/
+@[reassoc (attr := simp)]
+lemma ι_tensorObjIsoBiproduct_hom (i j : I) (h : i + j = n) :
+    ιTensorObj X Y i j n h ≫ (tensorObjIsoBiproduct X Y n).hom =
+      biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2)
+        ⟨(i, j), Finset.mem_antidiagonal.2 h⟩ :=
+  ι_mapBifunctorMapObjIsoBiproduct_hom X Y (curriedTensor C) n i j h
+
+/-- The inverse of `tensorObjIsoBiproduct` sends each summand of the biproduct to the
+corresponding summand of the tensor product. -/
+@[reassoc (attr := simp)]
+lemma ι_tensorObjIsoBiproduct_inv (x : Finset.antidiagonal n) :
+    biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2) x ≫
+        (tensorObjIsoBiproduct X Y n).inv =
+      ιTensorObj X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) :=
+  ι_mapBifunctorMapObjIsoBiproduct_inv X Y (curriedTensor C) n x
+
+variable {X Y} {X' Y' : GradedObject I C} [HasTensor X' Y']
+  [HasBiproduct fun x : Finset.antidiagonal n ↦ X' x.val.1 ⊗ Y' x.val.2]
+
+/-- **Naturality of `tensorObjIsoBiproduct`**: under these identifications, the tensor product of
+morphisms `f` and `g` of graded objects is the map of biproducts given by the `f i ⊗ g j`. -/
+@[reassoc]
+lemma tensorHom_tensorObjIsoBiproduct_hom (f : X ⟶ X') (g : Y ⟶ Y') :
+    tensorHom f g n ≫ (tensorObjIsoBiproduct X' Y' n).hom =
+      (tensorObjIsoBiproduct X Y n).hom ≫ biproduct.map fun x ↦ f x.val.1 ⊗ₘ g x.val.2 := by
+  simp only [MonoidalCategory.tensorHom_def]
+  -- `tensorHom` and `tensorObjIsoBiproduct` are by definition `mapBifunctorMapMap` and
+  -- `mapBifunctorMapObjIsoBiproduct` of `curriedTensor C`
+  exact mapBifunctorMapMap_mapBifunctorMapObjIsoBiproduct_hom (F := curriedTensor C) n f g
+
+end Antidiagonal
 
 end Monoidal
 
