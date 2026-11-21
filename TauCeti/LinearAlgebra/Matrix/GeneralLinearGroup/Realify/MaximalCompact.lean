@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Analysis.Matrix.Polar.Realify
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 public import TauCeti.Topology.Algebra.Matrix.Realify
@@ -100,12 +101,10 @@ theorem exists_conj_realify_smul_le_map_realify_unitarySubgroup {K : Subgroup (G
       MulAut.conj (realify n 𝕜 g) • K ≤ (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) := by
   obtain ⟨g, hg⟩ := exists_conj_smul_le_unitarySubgroup (K := K.comap (realify n 𝕜))
     ((isClosedEmbedding_realify n 𝕜).isCompact_preimage hK)
-  refine ⟨g, fun x hx ↦ ?_⟩
-  obtain ⟨k, hk, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  obtain ⟨a, rfl⟩ := hKR hk
-  refine ⟨MulAut.conj g • a, hg ((Subgroup.mem_smul_pointwise_iff_exists _ _ _).mpr ⟨a, hk, rfl⟩),
-    ?_⟩
-  simp [MulAut.smul_def]
+  refine ⟨g, ?_⟩
+  -- `K` is the image of its preimage, and conjugation commutes with the image.
+  rw [← Subgroup.map_comap_eq_self hKR]
+  exact (Subgroup.map_map_conj _ (realify n 𝕜) g).symm.le.trans (Subgroup.map_mono hg)
 
 /-- **The maximal compact subgroups of the realified group are the conjugates of the realified
 unitary group.** For `𝕜 = ℂ`, the maximal compact subgroups of the realified `GL(n, ℂ)` are the
@@ -118,10 +117,8 @@ theorem maximal_isCompact_range_realify_iff {K : Subgroup (realify n 𝕜).range
     maximal_isCompact_map_realify_unitarySubgroup_subgroupOf fun K hK ↦ ?_
   obtain ⟨g, hg⟩ := exists_conj_realify_smul_le_map_realify_unitarySubgroup
     (hK.image continuous_subtype_val) (Subgroup.map_subtype_le K)
-  refine ⟨⟨realify n 𝕜 g, g, rfl⟩, fun x hx ↦ ?_⟩
-  obtain ⟨k, hk, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  refine Subgroup.mem_subgroupOf.2 (hg ((Subgroup.mem_smul_pointwise_iff_exists _ _ _).mpr
-    ⟨k, ⟨k, hk, rfl⟩, ?_⟩))
-  simp [MulAut.smul_def]
+  -- Conjugation commutes with the image in `GL (n ⊕ n) ℝ`.
+  exact ⟨⟨realify n 𝕜 g, g, rfl⟩, Subgroup.map_le_iff_le_comap.1
+    ((Subgroup.map_map_conj K (realify n 𝕜).range.subtype _).trans_le hg)⟩
 
 end Matrix.GeneralLinearGroup
