@@ -198,7 +198,7 @@ theorem map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     (p : ℕ) [Fact p.Prime]
     (hp : ¬ (p : ℤ) ∣ (-23 : ℤ)) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees p := by
+        (fun Q => Q.val.inertiaDeg ℤ) = (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees p := by
   have hexp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ := by
     intro h
     have hd := h.trans (IntegralPrimitiveElement.exponent_dvd_index
@@ -345,7 +345,7 @@ theorem ramificationIdx_eq_one_of_not_dvd_neg_twenty_three (p : ℕ) [Fact p.Pri
 /-- The prime `2` is inert: its sole prime ideal has residue degree three. -/
 theorem map_inertiaDeg_primesOver_two :
     (Finset.univ : Finset ((span {(2 : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = {3} := by
+        (fun Q => Q.val.inertiaDeg ℤ) = {3} := by
   -- The generic and concrete forms choose extensionally equal finite enumerations of primes.
   convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     hmin hgen 2 (by norm_num) using 1
@@ -355,7 +355,7 @@ theorem map_inertiaDeg_primesOver_two :
 /-- The prime `3` is inert: its sole prime ideal has residue degree three. -/
 theorem map_inertiaDeg_primesOver_three :
     (Finset.univ : Finset ((span {(3 : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = {3} := by
+        (fun Q => Q.val.inertiaDeg ℤ) = {3} := by
   convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     hmin hgen 3 (by norm_num) using 1
   ext a
@@ -364,7 +364,7 @@ theorem map_inertiaDeg_primesOver_three :
 /-- The prime `5` has two primes above it, of residue degrees one and two. -/
 theorem map_inertiaDeg_primesOver_five :
     (Finset.univ : Finset ((span {(5 : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = {1, 2} := by
+        (fun Q => Q.val.inertiaDeg ℤ) = {1, 2} := by
   convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     hmin hgen 5 (by norm_num) using 1
   ext a
@@ -373,7 +373,7 @@ theorem map_inertiaDeg_primesOver_five :
 /-- The prime `7` has two primes above it, of residue degrees one and two. -/
 theorem map_inertiaDeg_primesOver_seven :
     (Finset.univ : Finset ((span {(7 : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = {1, 2} := by
+        (fun Q => Q.val.inertiaDeg ℤ) = {1, 2} := by
   convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     hmin hgen 7 (by norm_num) using 1
   ext a
@@ -382,7 +382,7 @@ theorem map_inertiaDeg_primesOver_seven :
 /-- The prime `59` splits completely: three primes above it each have residue degree one. -/
 theorem map_inertiaDeg_primesOver_fifty_nine :
     (Finset.univ : Finset ((span {(59 : ℤ)}).primesOver (𝓞 K))).val.map
-        (fun Q => Q.1.inertiaDeg ℤ) = {1, 1, 1} := by
+        (fun Q => Q.val.inertiaDeg ℤ) = {1, 1, 1} := by
   convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     hmin hgen 59 (by norm_num) using 1
   ext a

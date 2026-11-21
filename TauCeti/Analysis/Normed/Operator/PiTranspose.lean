@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -26,6 +27,10 @@ reversing composition.
 
 These are the coordinate transition maps of a dual vector bundle presented by finite-matrix
 charts.
+
+On `Fin`-indexed Kronecker coordinates, `ContinuousLinearMap.piTranspose_kronecker_eq_homCoordConj`
+identifies `S.piTranspose.kronecker R` with operator conjugation
+`ContinuousLinearMap.homCoordConj S R`.
 -/
 
 public section
@@ -144,5 +149,25 @@ theorem piTranspose_injective :
 @[simp] theorem piTranspose_smul (c : 𝕜) (T : (ι → 𝕜) →L[𝕜] (κ → 𝕜)) :
     (c • T).piTranspose = c • T.piTranspose :=
   map_smul (piTransposeL 𝕜 ι κ) c T
+
+section Kronecker
+
+variable {m m' n n' : ℕ}
+
+/-- On `Fin (_ * _) → 𝕜`, `S.piTranspose.kronecker R` equals operator conjugation
+`homCoordConj S R`. -/
+theorem piTranspose_kronecker_eq_homCoordConj (S : (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜))
+    (R : (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) :
+    S.piTranspose.kronecker R = homCoordConj S R := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k' ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k'
+  rw [kronecker_apply, homCoordConj_apply, piTranspose_apply]
+  have hv : (fun j : Fin n ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) =
+      ∑ i : Fin m, S (Pi.single i' 1) i • fun j : Fin n ↦ v (finProdFinEquiv (i, j)) := by
+    ext j; simp [Finset.sum_apply, smul_eq_mul]
+  rw [hv, map_sum]
+  simp [Finset.sum_apply, smul_eq_mul]
+
+end Kronecker
 
 end ContinuousLinearMap

@@ -99,9 +99,9 @@ private theorem fittingIdeal_pullback_SpecMap
     {R S : CommRingCat.{u}} (φ : R ⟶ S) (M : (Spec R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (k : ℕ) :
     ((Scheme.Modules.pullback (Spec.map φ)).obj M).fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k =
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k =
       (M.fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k).comap
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k).comap
           (Spec.map φ) := by
   let N := (Scheme.Modules.pullback (Spec.map φ)).obj M
   have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
@@ -130,9 +130,9 @@ private theorem fittingIdeal_pullback_fromSpec
     {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
     {U : X.Opens} (hU : IsAffineOpen U) (k : ℕ) :
     ((Scheme.Modules.pullback hU.fromSpec).obj M).fittingIdeal
-        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2) k =
+        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.val V.property) k =
       (M.fittingIdeal
-        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2) k).comap
+        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.val V.property) k).comap
           hU.fromSpec := by
   let P := (Scheme.Modules.pullback hU.fromSpec).obj M
   have : P.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
@@ -156,29 +156,29 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_pullback
     {X Y : Scheme.{u}} (f : X ⟶ Y) (M : Y.Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (k : ℕ) :
     ((Scheme.Modules.pullback f).obj M).fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k =
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k =
       (M.fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k).comap f := by
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k).comap f := by
   refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over f fun V U hUV ↦ ?_
   let N := (Scheme.Modules.pullback f).obj M
-  let P := (Scheme.Modules.pullback V.2.fromSpec).obj M
+  let P := (Scheme.Modules.pullback V.property.fromSpec).obj M
   have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
   have : N.IsFiniteType := Scheme.Modules.isFiniteType_pullback _ M
   have : P.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
   have : P.IsFiniteType := Scheme.Modules.isFiniteType_pullback _ M
   let ψ := Spec.map (f.appLE V U hUV)
-  have hcomm : ψ ≫ V.2.fromSpec = U.2.fromSpec ≫ f :=
-    IsAffineOpen.SpecMap_appLE_fromSpec f V.2 U.2 hUV
-  let e : (Scheme.Modules.pullback U.2.fromSpec).obj N ≅
+  have hcomm : ψ ≫ V.property.fromSpec = U.property.fromSpec ≫ f :=
+    IsAffineOpen.SpecMap_appLE_fromSpec f V.property U.property hUV
+  let e : (Scheme.Modules.pullback U.property.fromSpec).obj N ≅
       (Scheme.Modules.pullback ψ).obj P :=
-    (Scheme.Modules.pullbackComp U.2.fromSpec f).app M ≪≫
+    (Scheme.Modules.pullbackComp U.property.fromSpec f).app M ≪≫
       (Scheme.Modules.pullbackCongr hcomm.symm).app M ≪≫
-        ((Scheme.Modules.pullbackComp ψ V.2.fromSpec).app M).symm
+        ((Scheme.Modules.pullbackComp ψ V.property.fromSpec).app M).symm
   have he := Scheme.Modules.fittingIdeal_congr
-    (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.1 W.2)
+    (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.val W.property)
     e k
-  rw [← fittingIdeal_pullback_fromSpec N U.2, he,
-    fittingIdeal_pullback_SpecMap, fittingIdeal_pullback_fromSpec M V.2,
+  rw [← fittingIdeal_pullback_fromSpec N U.property, he,
+    fittingIdeal_pullback_SpecMap, fittingIdeal_pullback_fromSpec M V.property,
     ← Scheme.IdealSheafData.comap_comp, hcomm, Scheme.IdealSheafData.comap_comp]
 
 end TauCeti

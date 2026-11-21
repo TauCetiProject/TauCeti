@@ -180,7 +180,7 @@ theorem nonempty_lieModuleEquiv_glIrreducible_of_sl2Std {M : Type u} [AddCommGro
     Nonempty (M ≃ₗ⁅K, Matrix (Fin 2) (Fin 2) K⁆ glIrreducible 2 mu) := by
   obtain ⟨e⟩ := e
   obtain ⟨e'⟩ := nonempty_lieModuleEquiv_glIrreducible_sl2Std hn
-  exact gl_equiv_of_sl_equiv_of_central_scalar _ hM
+  exact gl_equiv_of_sl_equiv_of_central_scalar (fun h => Nat.cast_ne_zero.mpr h) _ hM
     (one_lie_glIrreducible_fin_two (isGlDominantIntegral_fin_two_iff.mpr ⟨n, hn⟩))
     ⟨e.trans e'.symm⟩
 
@@ -225,9 +225,9 @@ theorem finrank_glIrreducible_fin_one (mu : Fin 1 → K) : finrank K (glIrreduci
 sees the integers. The half-integer staircase is a witness. -/
 theorem exists_isGlDominantIntegral_fin_one_forall_dominantWeight_ne :
     ∃ mu : Fin 1 → ℚ, IsGlDominantIntegral mu ∧
-      ∀ l : DominantWeight 1, mu ≠ fun i => (l.1 i : ℚ) :=
+      ∀ l : DominantWeight 1, mu ≠ fun i => (l.val i : ℚ) :=
   ⟨glStaircase 1, isGlDominantIntegral_glStaircase 1, fun l h =>
-    glStaircase_ne_intCast 0 (l.1 0) (congrFun h 0)⟩
+    glStaircase_ne_intCast 0 (l.val 0) (congrFun h 0)⟩
 
 end FinOne
 

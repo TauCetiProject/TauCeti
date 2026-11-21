@@ -125,9 +125,9 @@ theorem IsLocallyWeierstrass.baseChange {hzero : zero ≫ π = 𝟙 S}
       (pullbackSection_snd _ _ _ _) := by
   refine (isLocallyWeierstrass_iff _).mpr fun t ↦ ?_
   obtain ⟨U, hgtU, W, hW, e, hover, hz⟩ := (isLocallyWeierstrass_iff hzero).mp h (g t)
-  obtain ⟨V, hV, htV, hVU⟩ := exists_isAffineOpen_mem_and_subset (U := g ⁻¹ᵁ U.1) hgtU
+  obtain ⟨V, hV, htV, hVU⟩ := exists_isAffineOpen_mem_and_subset (U := g ⁻¹ᵁ U.val) hgtU
   exact ⟨⟨V, hV⟩, htV, _, inferInstance,
-    exists_iso_projModel_map_appLE hzero g U.2 hV hVU e hover hz⟩
+    exists_iso_projModel_map_appLE hzero g U.property hV hVU e hover hz⟩
 
 end IsLocallyWeierstrass
 

@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.OpenSet
 import TauCeti.Analysis.Holder.Leibniz
+import TauCeti.LinearAlgebra.ExtendByZero
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
-# Products in bounded higher-order Hölder spaces
+# Products in higher-order Hölder spaces
 
 A continuous bilinear map acts pointwise on `CkHolderSpace`. For `α ≤ 1`, the lifted map
 `ContinuousLinearMap.compCkHolder₂` is continuous bilinear, with operator norm at most
@@ -19,10 +21,19 @@ A continuous bilinear map acts pointwise on `CkHolderSpace`. For `α ≤ 1`, the
 scalar multiplication, and application of operator-valued coefficient fields in every order.
 The constant is not sharp; it is independent of the exponent, spaces and functions.
 
+The same holds on the spaces `CkHolderSpaceOn k α Ω` of a convex open set `Ω`, with the same
+constant (`ContinuousLinearMap.compCkHolderOn₂`). This is the order-`k` Leibniz estimate
+`‖B (f, g)‖_{C^{k,α}(Ω)} ≤ (k + 7) 2^k ‖B‖ ‖f‖_{C^{k,α}(Ω)} ‖g‖_{C^{k,α}(Ω)}`, which gives bounded
+multiplication by coefficients in `C^{k,α}(Ω)`. Some geometric condition on `Ω` is needed for
+`k ≥ 1`: on a slit annulus in the plane the angle function `θ` lies in `C^{1,α}`, since its
+gradient is the restriction of a smooth field on the full annulus, but `θ²` does not, since the
+derivative `2 θ ∇θ` jumps across the slit.
+
 The norm is the existing sum of the supremum norms of all derivative fields and the Hölder
 seminorm of the top field. We use Mathlib's bilinear Leibniz bound for the supremum terms and
-`ContinuousLinearMap.holderWith_iteratedFDeriv_of_tsupport_subset_right` for the top seminorm.
-Lower derivative fields have Hölder bounds from the mean value inequality.
+`ContinuousLinearMap.holderWith_iteratedFDeriv_of_tsupport_subset_right`, respectively
+`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp₂`, for the top seminorm. Lower derivative
+fields have Hölder bounds from the mean value inequality, which is where convexity enters.
 
 ## References
 
@@ -33,7 +44,7 @@ public section
 noncomputable section
 
 open scoped NNReal BoundedContinuousFunction
-open TauCeti
+open TauCeti TopologicalSpace
 
 namespace ContinuousLinearMap
 
@@ -42,24 +53,40 @@ variable {X E F G : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ} {α : ℝ≥0}
 
-private theorem norm_iteratedFDeriv_ckHolderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
-    (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) {j : ℕ} (hj : j ≤ k)
-    (x : X) :
-    ‖iteratedFDeriv ℝ j (fun y ↦ B (f y) (g y)) x‖ ≤ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
-  refine (B.norm_iteratedFDeriv_le_of_bilinear f.contDiff g.contDiff x
-    (by exact_mod_cast hj)).trans ?_
+/-- The binomial sum in the bilinear Leibniz bound at an order `j ≤ k` is at most
+`2 ^ k * ‖B‖ * M * N` when the derivative norms of the two factors are bounded by `M` and `N`
+through order `k`. -/
+private theorem norm_mul_sum_choose_le (B : E →L[ℝ] F →L[ℝ] G) {j : ℕ} (hj : j ≤ k)
+    {a b : ℕ → ℝ} {M N : ℝ} (ha0 : ∀ i, 0 ≤ a i) (hb0 : ∀ i, 0 ≤ b i)
+    (ha : ∀ i ≤ k, a i ≤ M) (hb : ∀ i ≤ k, b i ≤ N) :
+    ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * a i * b (j - i) ≤
+      2 ^ k * ‖B‖ * M * N := by
+  have hM : 0 ≤ M := (ha0 0).trans (ha 0 k.zero_le)
+  have hN : 0 ≤ N := (hb0 0).trans (hb 0 k.zero_le)
   calc
-    _ ≤ ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * ‖f‖ * ‖g‖ := by
+    _ ≤ ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * M * N := by
       gcongr with i hi
-      · exact f.norm_iteratedFDeriv_apply_le (by have := Finset.mem_range.mp hi; omega) x
-      · exact g.norm_iteratedFDeriv_apply_le ((Nat.sub_le j i).trans hj) x
-    _ = 2 ^ j * ‖B‖ * ‖f‖ * ‖g‖ := by
+      · exact hb0 _
+      · exact ha i (by have := Finset.mem_range.mp hi; omega)
+      · exact hb _ ((Nat.sub_le j i).trans hj)
+    _ = 2 ^ j * ‖B‖ * M * N := by
       rw [← Finset.sum_mul, ← Finset.sum_mul]
       have hsum : (∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ)) = 2 ^ j := by
         exact_mod_cast Nat.sum_range_choose j
       rw [hsum]
       ring
     _ ≤ _ := by gcongr; norm_num
+
+private theorem norm_iteratedFDeriv_ckHolderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) {j : ℕ} (hj : j ≤ k)
+    (x : X) :
+    ‖iteratedFDeriv ℝ j (fun y ↦ B (f y) (g y)) x‖ ≤ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
+  refine (B.norm_iteratedFDeriv_le_of_bilinear f.contDiff g.contDiff x
+    (by exact_mod_cast hj)).trans ?_
+  exact norm_mul_sum_choose_le B hj (a := fun i ↦ ‖iteratedFDeriv ℝ i f x‖)
+    (b := fun i ↦ ‖iteratedFDeriv ℝ i g x‖) (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
+    (fun i hi ↦ f.norm_iteratedFDeriv_apply_le hi x)
+    (fun i hi ↦ g.norm_iteratedFDeriv_apply_le hi x)
 
 private theorem holderWith_iteratedFDeriv_ckHolderBilinear (B : E →L[ℝ] F →L[ℝ] G)
     (hα : α ≤ 1) (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) :
@@ -142,5 +169,131 @@ theorem norm_compCkHolder₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hα : α 
   (B.compCkHolder₂ hα |>.le_opNorm₂ f g).trans (by
     gcongr
     exact B.norm_compCkHolder₂_le hα)
+
+section OpenSet
+
+open Function.ExtendByZero (linearMap_apply_of_injective)
+
+variable {Ω : Opens X}
+
+/-- The bilinear Leibniz bound for the derivative fields on `Ω` of the pointwise product of two
+maps agreeing on `Ω` with elements of `C^{k,α}(Ω)`. -/
+private theorem norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) {f' : X → E} {g' : X → F}
+    (hf : ∀ x : Ω, f' x = f x) (hg : ∀ x : Ω, g' x = g x) {j : ℕ} (hj : j ≤ k) (x : Ω) :
+    ‖iteratedFDeriv ℝ j (fun y ↦ B (f' y) (g' y)) x‖ ≤ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
+  have hΩ := Ω.isOpen
+  rw [← iteratedFDerivWithin_of_isOpen j hΩ x.property]
+  refine (B.norm_iteratedFDerivWithin_le_of_bilinear (f.contDiffOn hf) (g.contDiffOn hg)
+    hΩ.uniqueDiffOn x.property (by exact_mod_cast hj)).trans ?_
+  exact norm_mul_sum_choose_le B hj (a := fun i ↦ ‖iteratedFDerivWithin ℝ i f' Ω x‖)
+    (b := fun i ↦ ‖iteratedFDerivWithin ℝ i g' Ω x‖) (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
+    (fun i hi ↦ by
+      rw [iteratedFDerivWithin_of_isOpen i hΩ x.property]
+      exact f.norm_iteratedFDeriv_apply_le hf hi x)
+    (fun i hi ↦ by
+      rw [iteratedFDerivWithin_of_isOpen i hΩ x.property]
+      exact g.norm_iteratedFDeriv_apply_le hg hi x)
+
+/-- The Hölder bound on `Ω` for the top derivative of the pointwise product of two maps agreeing
+on `Ω` with elements of `C^{k,α}(Ω)`, for convex `Ω`. -/
+private theorem holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E)
+    (g : CkHolderSpaceOn k α Ω F) {f' : X → E} {g' : X → F} (hf : ∀ x : Ω, f' x = f x)
+    (hg : ∀ x : Ω, g' x = g x) :
+    HolderOnWith (6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) α
+      (iteratedFDeriv ℝ k (fun x ↦ B (f' x) (g' x))) Ω := by
+  have h := B.holderOnWith_iteratedFDeriv_comp₂ (f.contDiffOn hf) (g.contDiffOn hg) Ω.isOpen
+    (M := ‖f‖₊) (N := ‖g‖₊) (H := 3 * ‖f‖₊) (K := 3 * ‖g‖₊)
+    (fun j hj x hx ↦ f.norm_iteratedFDeriv_apply_le hf hj ⟨x, hx⟩)
+    (fun j hj x hx ↦ g.norm_iteratedFDeriv_apply_le hg hj ⟨x, hx⟩)
+    (fun j hj ↦ f.holderOnWith_iteratedFDeriv_of_le hf hΩ hα hj)
+    (fun j hj ↦ g.holderOnWith_iteratedFDeriv_of_le hg hΩ hα hj)
+  convert h using 1; ring
+
+/-- The pointwise product of two elements of `C^{k,α}(Ω)`, as an element of `C^{k,α}(Ω)`. The
+product is computed from the extensions by zero (`Function.ExtendByZero.linearMap` along
+`Subtype.val`), which agree with the factors on `Ω`. -/
+private def ckHolderOnBilinear (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
+    CkHolderSpaceOn k α Ω G :=
+  CkHolderSpaceOn.ofContDiffOn (fun x ↦ B (Function.ExtendByZero.linearMap ℝ E Subtype.val f x)
+      (Function.ExtendByZero.linearMap ℝ F Subtype.val g x))
+    (B.isBoundedBilinearMap.contDiff.comp_contDiffOn ((f.contDiffOn
+      (linearMap_apply_of_injective ℝ Subtype.val_injective f)).prodMk
+      (g.contDiffOn (linearMap_apply_of_injective ℝ Subtype.val_injective g))))
+    (fun _ hj ↦ ⟨2 ^ k * ‖B‖ * ‖f‖ * ‖g‖, norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g
+      (linearMap_apply_of_injective ℝ Subtype.val_injective f)
+      (linearMap_apply_of_injective ℝ Subtype.val_injective g) hj⟩)
+    (HolderWith.memHolder fun x y ↦ holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα
+      f g (linearMap_apply_of_injective ℝ Subtype.val_injective f)
+      (linearMap_apply_of_injective ℝ Subtype.val_injective g) x x.property y y.property)
+
+@[simp]
+private theorem ckHolderOnBilinear_apply (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) (x : Ω) :
+    ckHolderOnBilinear B hΩ hα f g x = B (f x) (g x) := by
+  rw [ckHolderOnBilinear, CkHolderSpaceOn.ofContDiffOn_apply,
+    linearMap_apply_of_injective ℝ Subtype.val_injective,
+    linearMap_apply_of_injective ℝ Subtype.val_injective]
+
+private theorem norm_ckHolderOnBilinear_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
+    ‖ckHolderOnBilinear B hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
+  have hf := linearMap_apply_of_injective ℝ Subtype.val_injective f
+  have hg := linearMap_apply_of_injective ℝ Subtype.val_injective g
+  refine (CkHolderSpaceOn.norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
+    (M := fun _ ↦ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖) (fun _ ↦ by positivity) (fun i x ↦ ?_)
+    (K := 6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) (fun x y ↦ ?_)).trans_eq ?_
+  · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn]
+    exact norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g hf hg (by omega) x
+  · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn,
+      CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn, Fin.val_last]
+    exact holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g hf hg x x.property y
+      y.property
+  · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    ring
+
+private def ckHolderOnBilinearLinear (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) :
+    CkHolderSpaceOn k α Ω E →ₗ[ℝ] CkHolderSpaceOn k α Ω F →ₗ[ℝ] CkHolderSpaceOn k α Ω G :=
+  LinearMap.mk₂ ℝ (ckHolderOnBilinear B hΩ hα)
+    (fun f₁ f₂ g ↦ CkHolderSpaceOn.ext fun x ↦ by simp)
+    (fun c f g ↦ CkHolderSpaceOn.ext fun x ↦ by simp)
+    (fun f g₁ g₂ ↦ CkHolderSpaceOn.ext fun x ↦ by simp)
+    (fun c f g ↦ CkHolderSpaceOn.ext fun x ↦ by simp)
+
+/-- Pointwise application of a continuous bilinear map to `C^{k,α}` functions on a convex open
+set `Ω`. Fixing the first argument gives bounded multiplication by a coefficient field in
+`C^{k,α}(Ω)`. -/
+def compCkHolderOn₂ (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1) :
+    CkHolderSpaceOn k α Ω E →L[ℝ] CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpaceOn k α Ω G :=
+  (ckHolderOnBilinearLinear B hΩ hα).mkContinuous₂ ((k + 7) * 2 ^ k * ‖B‖)
+    (norm_ckHolderOnBilinear_le B hΩ hα)
+
+/-- The lifted bilinear operation on `C^{k,α}(Ω)` is pointwise the original one. -/
+@[simp]
+theorem compCkHolderOn₂_apply (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) (x : Ω) :
+    B.compCkHolderOn₂ hΩ hα f g x = B (f x) (g x) := by
+  simp [compCkHolderOn₂, ckHolderOnBilinearLinear]
+
+/-- The lifted bilinear map on `C^{k,α}(Ω)` has an operator norm bound depending only on the order
+and `‖B‖`. -/
+theorem norm_compCkHolderOn₂_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) : ‖B.compCkHolderOn₂ (k := k) hΩ hα‖ ≤ (k + 7) * 2 ^ k * ‖B‖ :=
+  LinearMap.mkContinuous₂_norm_le _ (by positivity) _
+
+/-- The order-`k` Leibniz estimate in `C^{k,α}(Ω)` for a convex open set `Ω`, with an explicit
+order-dependent constant. -/
+theorem norm_compCkHolderOn₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
+    (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
+    ‖B.compCkHolderOn₂ hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ :=
+  (B.compCkHolderOn₂ hΩ hα |>.le_opNorm₂ f g).trans (by
+    gcongr
+    exact B.norm_compCkHolderOn₂_le hΩ hα)
+
+end OpenSet
 
 end ContinuousLinearMap
