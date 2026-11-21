@@ -17,18 +17,18 @@ Directional derivatives of a Schwartz function commute, since its second derivat
 and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`).
 Near a point where a Schwartz function is constant, its line derivatives vanish
 (`SchwartzMap.lineDerivOp_eventuallyEq_zero`).
-The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
-the coordinates of its line derivatives.
+The partial derivatives of the coordinates of a Schwartz function valued in a finite `L^p`
+product, such as Euclidean space, are the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
 
-Applying a continuous real-linear map to the values of a Schwartz function commutes with
-directional differentiation, and hence with the Laplacian. In particular, real and imaginary
+Applying a continuous real- or complex-linear map to the values of a Schwartz function commutes
+with directional differentiation, and hence with the Laplacian. In particular, real and imaginary
 parts, and the embedding of real-valued functions into complex Schwartz space, commute with
 differentiation.
 
 Multiplication by a function `g` of temperate growth satisfies the Leibniz rule
-`∂_v (g f) = (∂_v g) f + g ∂_v f`. For a continuous linear functional `L` it reads
-`∂_v (L f) = L ∂_v f + L v f`, with iterate
+`∂_v (g f) = (∂_v g) f + g ∂_v f`. For a continuous real-linear `L` with values in `ℝ` or `ℂ` it
+reads `∂_v (L f) = L ∂_v f + L v f`, with iterate
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`; when `f` vanishes outside
 `closedBall 0 t`, this bounds `‖∂_v^(k+1) (L f)‖` by
 `t ‖L‖ ‖∂_v^(k+1) f‖ + (k + 1) ‖L‖ ‖v‖ ‖∂_v^k f‖`
@@ -51,28 +51,30 @@ namespace TauCeti
 
 open scoped SchwartzMap LineDeriv
 
-variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G]
 
-/-- Directional differentiation commutes with a continuous real-linear map on the values
-of a Schwartz function. -/
+/-- Directional differentiation commutes with a continuous linear map on the values of a
+Schwartz function. -/
 @[simp]
-theorem lineDerivOp_postcompCLM (v : E) (L : F →L[ℝ] G) (φ : 𝓢(E, F)) :
+theorem lineDerivOp_postcompCLM (v : E) (L : F →L[𝕜] G) (φ : 𝓢(E, F)) :
     ∂_{v} (φ.postcompCLM L) = (∂_{v} φ).postcompCLM L := by
-  have hfun : ⇑(φ.postcompCLM L) = L ∘ φ :=
-    funext (SchwartzMap.postcompCLM_apply L φ)
   ext x
+  -- `φ.postcompCLM L` is `L ∘ φ` as a function; `L` is differentiated as a real-linear map.
+  have hfun : ⇑(φ.postcompCLM L) = L.restrictScalars ℝ ∘ φ := by
+    ext y
+    simp
   rw [SchwartzMap.lineDerivOp_apply_eq_fderiv, hfun,
-    (L.hasFDerivAt.comp x φ.differentiableAt.hasFDerivAt).fderiv]
-  simp only [ContinuousLinearMap.comp_apply, SchwartzMap.postcompCLM_apply,
-    SchwartzMap.lineDerivOp_apply_eq_fderiv]
+    (L.restrictScalars ℝ).fderiv_comp_left φ.differentiableAt]
+  simp [SchwartzMap.lineDerivOp_apply_eq_fderiv]
 
 open Laplacian in
-/-- The Laplacian commutes with a continuous real-linear map on the values of a Schwartz
+/-- The Laplacian commutes with a continuous linear map on the values of a Schwartz
 function. -/
 @[simp]
 theorem laplacian_postcompCLM {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] (L : F →L[ℝ] G) (φ : 𝓢(V, F)) :
+    [FiniteDimensional ℝ V] (L : F →L[𝕜] G) (φ : 𝓢(V, F)) :
     Δ (φ.postcompCLM L) = (Δ φ).postcompCLM L := by
   simp [SchwartzMap.laplacian_eq_sum (stdOrthonormalBasis ℝ V)]
 
@@ -82,8 +84,8 @@ namespace SchwartzMap
 
 open scoped SchwartzMap LineDeriv
 
-variable {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable {𝕜 V F : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
 
 /-- **Directional derivatives of Schwartz functions commute.** -/
 theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_{w} (∂_{v} f) := by
@@ -98,8 +100,8 @@ theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_
 
 /-- Directional differentiation commutes with translation. -/
 @[simp]
-theorem lineDerivOp_compSubConstCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] (f : 𝓢(V, F))
-    (a v : V) : ∂_{v} (f.compSubConstCLM 𝕜 a) = (∂_{v} f).compSubConstCLM 𝕜 a := by
+theorem lineDerivOp_compSubConstCLM (f : 𝓢(V, F)) (a v : V) :
+    ∂_{v} (f.compSubConstCLM 𝕜 a) = (∂_{v} f).compSubConstCLM 𝕜 a := by
   ext x
   rw [lineDerivOp_apply_eq_fderiv, funext (compSubConstCLM_apply f a), fderiv_comp_sub,
     compSubConstCLM_apply, lineDerivOp_apply_eq_fderiv]
@@ -113,14 +115,16 @@ theorem lineDerivOp_eventuallyEq_zero {f : 𝓢(V, F)} {x : V} {c : F}
   rw [lineDerivOp_apply_eq_fderiv, Filter.EventuallyEq.fderiv_eq (f := fun _ ↦ c) hy,
     fderiv_const_apply, zero_apply]
 
-/-- A coordinate partial derivative of a Schwartz function with values in Euclidean space is a
-coordinate of its line derivative. -/
-theorem fderiv_apply_eq_lineDerivOp_apply {ι : Type*} [Fintype ι]
-    (f : 𝓢(V, EuclideanSpace ℝ ι)) (i : ι) (x v : V) :
+open scoped ENNReal in
+/-- A coordinate partial derivative of a Schwartz function with values in a finite `L^p` product
+(for instance Euclidean space) is a coordinate of its line derivative. -/
+theorem fderiv_apply_eq_lineDerivOp_apply {ι : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace ℝ (β i)]
+    (f : 𝓢(V, PiLp p β)) (i : ι) (x v : V) :
     fderiv ℝ (fun y ↦ f y i) x v = ∂_{v} f x i := by
-  have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp x f.differentiableAt.hasFDerivAt).fderiv
-  simpa [Function.comp_def, lineDerivOp_apply_eq_fderiv] using
-    congrArg (fun L : V →L[ℝ] ℝ ↦ L v) hp
+  have hp := (PiLp.proj p β (𝕜 := ℝ) i).fderiv_comp_left f.differentiableAt (x := x)
+  simpa only [lineDerivOp_apply_eq_fderiv, Function.comp_def, PiLp.proj_apply,
+    ContinuousLinearMap.comp_apply] using congr($hp v)
 
 open Laplacian in
 /-- **The Laplacian on the plane in coordinates**: `Δ f = ∂₁² f + ∂₂² f` for a Schwartz function
@@ -131,8 +135,7 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢(ℂ, F)) :
 
 /-- **The Leibniz rule for multiplication by a function of temperate growth**:
 `∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is `x ↦ Dg(x) v`. -/
-theorem lineDerivOp_smulLeftCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] {g : V → 𝕜}
-    (hg : g.HasTemperateGrowth) (f : 𝓢(V, F)) (v : V) :
+theorem lineDerivOp_smulLeftCLM {g : V → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(V, F)) (v : V) :
     ∂_{v} (smulLeftCLM F g f) =
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
   ext x
@@ -140,15 +143,16 @@ theorem lineDerivOp_smulLeftCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F
     fderiv_fun_smul (hg.1.differentiable (by simp) x) f.differentiableAt, add_comm]
 
 /-- **The Leibniz rule for multiplication by a linear function**:
-`∂_v (L f) = L ∂_v f + L v f` for a continuous linear functional `L`. -/
-theorem lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F)) (v : V) :
+`∂_v (L f) = L ∂_v f + L v f` for a continuous real-linear map `L : V →L[ℝ] 𝕜`. -/
+theorem lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] 𝕜) (f : 𝓢(V, F)) (v : V) :
     ∂_{v} (smulLeftCLM F L f) = smulLeftCLM F L (∂_{v} f) + L v • f := by
   rw [lineDerivOp_smulLeftCLM L.hasTemperateGrowth, add_comm]
   simp
 
 /-- **The iterated Leibniz rule for multiplication by a linear function**:
-`∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f` for a continuous linear functional `L`. -/
-theorem iterate_lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F)) (v : V) (k : ℕ) :
+`∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f` for a continuous real-linear map
+`L : V →L[ℝ] 𝕜`. -/
+theorem iterate_lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] 𝕜) (f : 𝓢(V, F)) (v : V) (k : ℕ) :
     (∂_{v})^[k + 1] (smulLeftCLM F L f) =
       smulLeftCLM F L ((∂_{v})^[k + 1] f) + ((k + 1) * L v) • (∂_{v})^[k] f := by
   induction k with
@@ -165,7 +169,7 @@ theorem iterate_lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F
 /-- For `f` supported in `Metric.closedBall 0 t`, the iterated Leibniz rule bounds the
 `(k + 1)`-st directional derivative of `L f` along `v` by
 `t * ‖L‖ * ‖∂_v^(k+1) f‖ + (k + 1) * ‖L‖ * ‖v‖ * ‖∂_v^k f‖`. -/
-theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall (L : V →L[ℝ] ℝ)
+theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall (L : V →L[ℝ] 𝕜)
     (f : 𝓢(V, F)) {t : ℝ} (hf : Function.support f ⊆ Metric.closedBall 0 t) (v : V) (k : ℕ)
     (x : V) :
     ‖(∂_{v})^[k + 1] (smulLeftCLM F L f) x‖ ≤
@@ -179,8 +183,9 @@ theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall
     smulLeftCLM_apply_apply L.hasTemperateGrowth]
   refine (norm_add_le _ _).trans
     (add_le_add (L.norm_apply_smul_le_of_support_subset_closedBall hsupp x) ?_)
-  rw [norm_smul, norm_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity),
-    mul_assoc ((k : ℝ) + 1) ‖L‖ ‖v‖]
+  -- The scalar `k + 1`, cast into `𝕜`, has norm `k + 1`.
+  have hk : ‖((k : 𝕜) + 1)‖ = k + 1 := by exact_mod_cast RCLike.norm_natCast (K := 𝕜) (k + 1)
+  rw [norm_smul, norm_mul, hk, mul_assoc ((k : ℝ) + 1) ‖L‖ ‖v‖]
   gcongr
   exact L.le_opNorm v
 
