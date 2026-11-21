@@ -24,7 +24,7 @@ Fourier variable. In the angular frequency `ξ = 2π ζ`, for which
 (`TemperedDistribution.shiftedLaplacianRpow F c s`). They form a one-parameter group, extending
 the integer powers already present: `(-Δ + c) ^ 1` is `-Δ + c` and `(-Δ + c) ^ (-1)` is the
 resolvent `TemperedDistribution.laplacianResolvent c`. For `c = 1` and a flat metric they are the
-powers `L ^ (s / 2)` of the positive operator `L = 1 + ∇*∇ = 1 - Δ`.
+powers `L ^ s` of the positive operator `L = 1 + ∇*∇ = 1 - Δ`.
 
 Mathlib's Bessel-potential spaces `H^t = H^{t,2}` are normed with the weight
 `⟨ζ⟩ ^ t = (1 + ‖ζ‖ ^ 2) ^ (t / 2)` in the Fourier variable `ζ = ξ / (2π)`, while the norm
@@ -37,7 +37,13 @@ define:
 * `(-Δ + c) ^ s` maps `H^t` onto `H^{t - 2s}` for every real `s` and `t`
   (`TemperedDistribution.memSobolev_shiftedLaplacianRpow_iff`), giving an isomorphism
   `H^t ≃ H^{t - 2s}` with inverse `(-Δ + c) ^ (-s)`
-  (`BesselPotentialSpace.shiftedLaplacianRpowEquiv`);
+  (`BesselPotentialSpace.shiftedLaplacianRpowEquiv`). For `s = -1` the resolvent maps `H^t` to
+  `H^{t+2}` (`TemperedDistribution.MemSobolev.laplacianResolvent`), and for `s = 1` this is elliptic
+  regularity: `f` lies in `H^{t+2}` exactly when `-Δ f + c f` lies in `H^t`
+  (`TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`). Inverting a
+  constant-coefficient first-order operator `L` satisfying a Weitzenböck identity
+  `L* L = L L* = -Δ + c` on the Sobolev scale reduces to these statements, through
+  `L⁻¹ = L* (-Δ + c)⁻¹`;
 * with `a = min c (2π)²` and `b = max c (2π)²`, the norms satisfy the two-sided bound
 
   `‖u‖_{H^t} ≤ max (a ^ (-s)) (b ^ (-s)) ‖(-Δ + c) ^ s u‖_{H^{t - 2s}}` and
@@ -45,8 +51,9 @@ define:
 
   (`BesselPotentialSpace.norm_le_norm_shiftedLaplacianRpowEquiv`,
   `BesselPotentialSpace.norm_shiftedLaplacianRpowEquiv_le`). For `s = t / 2` the target is
-  `H^0 = L²`, so the angular-weight norm `‖(-Δ + c) ^ (t / 2) u‖_{L²}` is equivalent to the
-  Bessel-potential norm `‖u‖_{H^t}`, with these explicit constants.
+  `H^0 = L²`, so the norm `‖(-Δ + c) ^ (t / 2) u‖_{L²}` is equivalent to the Bessel-potential norm
+  `‖u‖_{H^t}`, with these explicit constants; for `c = 1` it is the angular-weight norm
+  `‖(1 - Δ) ^ (t / 2) u‖_{L²}`.
 
 The proofs factor `(-Δ + c) ^ s` as `J ^ (2s)` after the Fourier multiplier with the bounded symbol
 `((2π)² ‖ζ‖² + c) ^ s (1 + ‖ζ‖ ^ 2) ^ (-s)`, whose values lie between `min (a ^ s) (b ^ s)` and
@@ -248,6 +255,21 @@ theorem memSobolev_shiftedLaplacianRpow_iff {c t : ℝ} (hc : 0 < c) (s : ℝ) {
   have h' := h.shiftedLaplacianRpow hc (-s)
   rwa [shiftedLaplacianRpow_neg_shiftedLaplacianRpow hc, show t - 2 * s - 2 * -s = t by ring]
     at h'
+
+/-- **The resolvent of the Laplacian gains two derivatives**: it maps the Sobolev space `H^s` to
+`H^{s+2}`, for `c > 0`. -/
+theorem MemSobolev.laplacianResolvent {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)}
+    (hf : MemSobolev s 2 f) :
+    MemSobolev (s + 2) 2 (TemperedDistribution.laplacianResolvent F c f) := by
+  have h := hf.shiftedLaplacianRpow hc (-1)
+  rwa [shiftedLaplacianRpow_neg_one, show s - 2 * -1 = s + 2 by ring] at h
+
+/-- **Elliptic regularity for the shifted Laplacian**: for `c > 0`, a tempered distribution `f`
+lies in the Sobolev space `H^{s+2}` if and only if `-Δ f + c f` lies in `H^s`. -/
+theorem memSobolev_add_two_iff_neg_laplacian_add_smul {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)} :
+    MemSobolev (s + 2) 2 f ↔ MemSobolev s 2 (-Δ f + c • f) := by
+  rw [← memSobolev_shiftedLaplacianRpow_iff hc 1 (t := s + 2) (f := f), shiftedLaplacianRpow_one,
+    show s + 2 - 2 * 1 = s by ring]
 
 end inner
 
