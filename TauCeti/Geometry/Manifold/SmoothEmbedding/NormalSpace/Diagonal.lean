@@ -107,10 +107,18 @@ private theorem tangentToDiagonalNormalL_apply (x : M) (u : TangentSpace I x) :
 /-- The intrinsic normal space of the smooth diagonal is canonically the tangent space. -/
 def diagonalNormalEquiv (x : M) :
     (diagonal (I := I) (M := M)).NormalSpace x (by simp) ≃L[𝕜] TangentSpace I x :=
-  ContinuousLinearEquiv.equivOfInverse (diagonalNormalToTangentL (I := I) x)
+  ContinuousLinearEquiv.ofContinuousLinearMap (diagonalNormalToTangentL (I := I) x)
     (tangentToDiagonalNormalL (I := I) x)
-    (by
-      intro q
+    (ContinuousLinearMap.ext fun u ↦ by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      -- The inverse obligation has the same two presentations of the ambient tangent fibre.
+      erw [tangentToDiagonalNormalL_apply]
+      -- The normal class uses the tangent space at `diagonal x`, while the representative is
+      -- written at `(x,x)`; `erw` identifies the model instances after `diagonal_apply`.
+      erw [diagonalNormalToTangentL_normalClass, ContinuousLinearEquiv.apply_symm_apply,
+        sub_zero])
+    (ContinuousLinearMap.ext fun q ↦ by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
       obtain ⟨v, rfl⟩ := (diagonal (I := I)).normalClass_surjective x (by simp) q
       rw [diagonalNormalToTangentL_normalClass]
       -- The representative tangent types are written at `diagonal x` and `(x,x)`; `erw`
@@ -122,14 +130,6 @@ def diagonalNormalEquiv (x : M) :
       erw [mem_diagonal_tangentRange_iff, map_sub, ContinuousLinearEquiv.apply_symm_apply]
       simp only [Prod.sub_def]
       abel)
-    (by
-      intro u
-      -- The inverse obligation has the same two presentations of the ambient tangent fibre.
-      erw [tangentToDiagonalNormalL_apply]
-      -- The normal class uses the tangent space at `diagonal x`, while the representative is
-      -- written at `(x,x)`; `erw` identifies the model instances after `diagonal_apply`.
-      erw [diagonalNormalToTangentL_normalClass, ContinuousLinearEquiv.apply_symm_apply,
-        sub_zero])
 
 /-- On the class of an ambient vector, the canonical equivalence is the difference of its two
 native product tangent components. -/
@@ -200,7 +200,7 @@ private theorem contMDiff_diagonal_tangentRead {project : M × M → M}
       (fun p : TotalSpace (E × E)
           ((diagonal (I := I) (M := M) : M → M × M) *ᵖ (TangentSpace (I.prod I))) ↦
         TotalSpace.mk' E p.proj
-          (read p.proj (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.2))) := by
+          (read p.proj (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.snd))) := by
   apply ((hproject.contMDiff_tangentMap (by simp : (∞ : ℕ∞ω) + 1 ≤ ∞)).comp
     (Bundle.Pullback.contMDiff_lift (F := E × E) (E := TangentSpace (I.prod I))
       (diagonal (I := I) (M := M)) (diagonal (I := I) (M := M)).contMDiff)).congr
@@ -223,7 +223,7 @@ theorem contMDiff_diagonalNormalEquiv :
       (by simp [Module.finrank_prod])
     ContMDiff (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) ∞
       (fun p : TotalSpace E ((diagonal (I := I) (M := M)).NormalSpace · (by simp)) ↦
-        TotalSpace.mk' E p.proj (diagonalNormalEquiv (I := I) p.proj p.2)) := by
+        TotalSpace.mk' E p.proj (diagonalNormalEquiv (I := I) p.proj p.snd)) := by
   let := (diagonal (I := I) (M := M)).instTopologicalSpaceNormalBundle (K := E) (by simp)
   let := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
     (by simp [Module.finrank_prod])
@@ -244,7 +244,7 @@ theorem contMDiff_diagonalNormalEquiv :
   simp only [Function.comp_apply]
   rw [(diagonal (I := I) (M := M)).normalQuotientMap_apply (K := E) (by simp) p]
   exact congrArg (fun v : TangentSpace I p.proj ↦ TotalSpace.mk' E p.proj v)
-    (diagonalNormalEquiv_normalClass (I := I) p.proj p.2)
+    (diagonalNormalEquiv_normalClass (I := I) p.proj p.snd)
 
 /-- The actual intrinsic normal bundle of the diagonal is smoothly and fibrewise linearly
 isomorphic to the tangent bundle, including for a zero-dimensional model. -/
@@ -273,7 +273,7 @@ theorem diagonalNormalBundleDiffeomorph_apply
     letI := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
       (by simp [Module.finrank_prod])
     diagonalNormalBundleDiffeomorph (I := I) p =
-      TotalSpace.mk' E p.proj (diagonalNormalEquiv (I := I) p.proj p.2) := by
+      TotalSpace.mk' E p.proj (diagonalNormalEquiv (I := I) p.proj p.snd) := by
   simp only [diagonalNormalBundleDiffeomorph, TauCeti.bundleDiffeomorph_apply]
 
 /-- The smooth inverse fixes the base point and takes the class of the second tangent factor.
@@ -285,7 +285,7 @@ theorem diagonalNormalBundleDiffeomorph_symm_apply (p : TangentBundle I M) :
       (by simp [Module.finrank_prod])
     (diagonalNormalBundleDiffeomorph (I := I) (M := M)).symm p =
       TotalSpace.mk' E p.proj ((diagonal (I := I)).normalClass p.proj (by simp)
-        ((tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj)).symm (0, p.2))) := by
+        ((tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj)).symm (0, p.snd))) := by
   simp only [diagonalNormalBundleDiffeomorph, TauCeti.bundleDiffeomorph_symm_apply,
     diagonalNormalEquiv_symm_apply]
 
@@ -300,15 +300,15 @@ theorem diagonalNormalBundleDiffeomorph_normalQuotientMap
     diagonalNormalBundleDiffeomorph (I := I)
         ((diagonal (I := I)).normalQuotientMap (K := E) (by simp) p) =
       TotalSpace.mk' E p.proj
-        ((tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.2).2 -
-          (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.2).1) := by
+        ((tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.snd).2 -
+          (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.snd).1) := by
   let := (diagonal (I := I) (M := M)).instTopologicalSpaceNormalBundle (K := E) (by simp)
   let := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
     (by simp [Module.finrank_prod])
   rw [(diagonal (I := I) (M := M)).normalQuotientMap_apply (K := E) (by simp) p,
     diagonalNormalBundleDiffeomorph_apply]
   exact congrArg (fun v : TangentSpace I p.proj ↦ TotalSpace.mk' E p.proj v)
-    (diagonalNormalEquiv_normalClass (I := I) p.proj p.2)
+    (diagonalNormalEquiv_normalClass (I := I) p.proj p.snd)
 
 end FiniteDimensional
 
