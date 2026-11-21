@@ -98,6 +98,8 @@ allowing the entire path or loop to be read in one stereographic chart.
   on the unit sphere.
 * `Circle.instContMDiffSMul`, `Circle.instContMDiffConstSMul`: the circle acts smoothly on every
   complex normed space by scalar multiplication.
+* `Circle.instContMDiffSMulSphere`: the circle acts smoothly on the unit sphere of a complex inner
+  product space.
 * `TauCeti.contMDiff_circleExp_two_pi_mul`: the standard loop `t ↦ exp (2π i t)` of the circle is
   smooth.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
@@ -510,6 +512,23 @@ instance instContMDiffSMul {n : ℕ∞ω} : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V) 
 /-- Each element of the circle acts smoothly on every complex normed space. -/
 instance instContMDiffConstSMul {n : ℕ∞ω} : ContMDiffConstSMul 𝓘(ℝ, V) n Circle V :=
   ContMDiffSMul.contMDiffConstSMul (𝓡 1)
+
+/-- The circle acts smoothly, by scalar multiplication, on the unit sphere of a complex normed
+space whose norm comes from a real inner product. For `ℂⁿ⁺¹` this is the circle action on
+`S²ⁿ⁺¹` whose orbit space is complex projective space. -/
+instance instContMDiffSMulSphere {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [NormedSpace ℂ W] [IsScalarTower ℝ ℂ W] {d : ℕ} [Fact (finrank ℝ W = d + 1)] {n : ℕ∞ω} :
+    ContMDiffSMul (𝓡 1) (𝓡 d) n Circle (sphere (0 : W) 1) where
+  contMDiff_smul := by
+    -- The action on the sphere is the restriction of the action on `W`.
+    have hcoe (p : Circle × sphere (0 : W) 1) :
+        ((p.1 • p.2 : sphere (0 : W) 1) : W) = p.1 • (p.2 : W) :=
+      (coe_smul_sphere p.1 p.2).trans (smul_def p.1 (p.2 : W)).symm
+    refine (((contMDiff_smul (I := 𝓡 1) (I' := 𝓘(ℝ, W))).comp
+      (contMDiff_fst.prodMk (contMDiff_coe_sphere.comp contMDiff_snd))).codRestrict_sphere
+      fun p ↦ ?_).congr fun p ↦ Subtype.ext (hcoe p)
+    simp only [comp_apply, ← hcoe p]
+    exact (p.1 • p.2).property
 
 end Circle
 

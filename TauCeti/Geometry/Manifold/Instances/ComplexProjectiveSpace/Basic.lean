@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 
 /-!
 # The standard complex manifold structure on complex projective space
@@ -18,7 +20,9 @@ functions with a nonzero denominator, hence holomorphic. This construction uses 
 quotient and its explicit homogeneous-coordinate charts.
 
 These charts provide the usual complex structure with which to compare realizations of the
-projective-space fan.
+projective-space fan. Restricting scalars, the same charts make `ComplexProjectiveSpace n` a real
+manifold modelled on `𝓘(ℝ, Fin n → ℂ)`, of every order of smoothness: the smooth structure
+underlying its complex structure, in which the charts and their inverses are smooth.
 
 ## References
 
@@ -83,6 +87,30 @@ theorem contMDiff_affineChart_symm (k : Fin (n + 1)) (r : ℕ∞ω) :
   rw [← contMDiffOn_univ, ← affineChart_target k]
   exact contMDiffOn_symm_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas ((mem_atlas_iff _).2 ⟨k, rfl⟩))
+
+/-- With the same homogeneous-ratio charts, complex projective space is a real `C^r` manifold
+modelled on `𝓘(ℝ, Fin n → ℂ)`, for every `r`: the smooth structure underlying its complex
+structure. -/
+instance instIsManifoldReal (r : ℕ∞ω) :
+    IsManifold 𝓘(ℝ, Fin n → ℂ) r (ComplexProjectiveSpace n) :=
+  (instIsManifold r).restrictScalars ℝ
+
+/-- Each homogeneous-ratio chart lies in the maximal atlas of any `C^r` manifold structure on
+complex projective space built on the homogeneous-ratio atlas, such as the complex structure
+`𝓘(ℂ, Fin n → ℂ)` or the underlying real structure `𝓘(ℝ, Fin n → ℂ)`. -/
+theorem affineChart_mem_maximalAtlas {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 (Fin n → ℂ)] {I : ModelWithCorners 𝕜 (Fin n → ℂ) (Fin n → ℂ)} {r : ℕ∞ω}
+    [IsManifold I r (ComplexProjectiveSpace n)] (k : Fin (n + 1)) :
+    affineChart k ∈ IsManifold.maximalAtlas I r (ComplexProjectiveSpace n) :=
+  IsManifold.subset_maximalAtlas ((mem_atlas_iff _).2 ⟨k, rfl⟩)
+
+/-- The standard affine parametrizations `z ↦ [z₀ : ⋯ : 1 : ⋯ : z_{n-1}]` are `C^r` maps of the
+underlying real manifolds, for every `r`. -/
+theorem contMDiff_affineParam_real (k : Fin (n + 1)) (r : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ, Fin n → ℂ) 𝓘(ℝ, Fin n → ℂ) r (affineParam (n := n) k) := by
+  have h := (contMDiff_affineChart_symm k r).restrictScalars ℝ
+  simp only [modelWithCornersSelf_restrictScalars] at h
+  exact h.congr fun z ↦ (affineChart_symm_apply k z).symm
 
 end
 

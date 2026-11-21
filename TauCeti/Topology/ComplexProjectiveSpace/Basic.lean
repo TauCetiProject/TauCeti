@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Action
 public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Topology.Algebra.ProperAction.Basic
-import TauCeti.Analysis.Normed.Module.Ball.Action
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 
 /-!
 # Complex projective space as a quotient of an odd sphere
@@ -33,7 +33,8 @@ connected as a continuous image of the sphere, and the projection is an open quo
 * `TauCeti.ComplexProjectiveSpace.lift`: functions on the sphere invariant under unit complex
   scalars descend to `CPⁿ`.
 * `TauCeti.ComplexProjectiveSpace.mk_eq_mk_iff`: two unit vectors define the same point exactly
-  when they differ by a unit complex scalar.
+  when they differ by a unit complex scalar; `mk_eq_mk_iff_exists_circle_smul` states this for the
+  action of the circle group `Circle`.
 * `TauCeti.ComplexProjectiveSpace.isOpenQuotientMap_mk`: the projection is an open quotient map.
 * `TauCeti.ComplexProjectiveSpace.instT2Space`, `instCompactSpace`, `instPathConnectedSpace`:
   `CPⁿ` is a compact, path-connected Hausdorff space.
@@ -111,6 +112,14 @@ theorem mk_eq_mk_iff (x y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
 theorem mk_smul (c : sphere (0 : ℂ) 1) (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     mk n (c • x) = mk n x :=
   (mk_eq_mk_iff n _ _).2 ⟨c, rfl⟩
+
+/-- Two unit vectors define the same point of complex projective space exactly when one is carried
+to the other by the action of the circle group `Circle`. -/
+theorem mk_eq_mk_iff_exists_circle_smul (x y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    mk n x = mk n y ↔ ∃ c : Circle, c • y = x :=
+  -- `Circle` is Mathlib's type synonym for the unit sphere of `ℂ`, and its action on spheres is
+  -- that of the unit sphere (`Circle.instMulActionSphere`), so this is `mk_eq_mk_iff`.
+  mk_eq_mk_iff n x y
 
 /-- A function on the unit sphere invariant under unit complex scalars descends to complex
 projective space. -/
