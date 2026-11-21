@@ -189,7 +189,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
   have hR (a b : E) : mextDeriv α (u z) ![a, b] =
       fderiv ℝ (α.inChartAt (u z)) (extChartAt I (u z) (u z)) a (fun _ ↦ b) -
         fderiv ℝ (α.inChartAt (u z)) (extChartAt I (u z) (u z)) b (fun _ ↦ a) := by
-    rw [mextDeriv_def, hrange, extDerivWithin_univ]
+    rw [mextDeriv_eq_extDeriv_inChartAt]
     exact extDeriv_apply_pair _ _ _
   rw [(laplacian_congr_nhds heq).self_of_nhds, hloc, hDα, hDα, hD₀, hD₀]
   exact (hR _ _).symm

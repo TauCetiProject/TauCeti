@@ -118,8 +118,8 @@ variable {σ : SmoothForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ i,
 `β`, the flux form of the translation diffeotopy along `v` is the constant one-form `β (v, ·)`, the
 contraction of `β` with `v`. -/
 theorem fluxForm_torusTranslationDiffeotopy_apply
-    (hσ : ∀ x, (σ.1 x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (x : ∀ i, AddCircle (p i)) :
-    ((torusTranslationDiffeotopy p v).fluxForm σ).1 x = β.curryLeft v := by
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (x : ∀ i, AddCircle (p i)) :
+    ((torusTranslationDiffeotopy p v).fluxForm σ).val x = β.curryLeft v := by
   rw [Diffeotopy.fluxForm_apply]
   -- At every time the integrand is `β (v, ·)`: the velocity is `v`, the spatial derivative is the
   -- identity and `σ` has constant coefficients.
@@ -135,7 +135,7 @@ theorem fluxForm_torusTranslationDiffeotopy_apply
 /-- Every time slice of a translation diffeotopy, a translation of the torus, preserves every
 two-form with constant coefficients. -/
 theorem timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
-    (hσ : ∀ x, (σ.1 x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (t : unitInterval) :
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (t : unitInterval) :
     (torusTranslationDiffeotopy p v).timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ := by
   have hslice : ⇑((torusTranslationDiffeotopy (n := ∞) p v).timeSlice t) =
       (· + fun i ↦ (((t : ℝ) * v i : ℝ) : AddCircle (p i))) :=
@@ -149,7 +149,7 @@ theorem timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
 /-- The final diffeomorphism of a translation diffeotopy, a translation of the torus, preserves
 every two-form with constant coefficients. -/
 theorem final_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
-    (hσ : ∀ x, (σ.1 x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) :
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) :
     (torusTranslationDiffeotopy p v).final ∈ SmoothForm.diffeomorphStabilizer σ := by
   rw [Diffeotopy.final_def]
   exact timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v hσ 1
@@ -234,14 +234,14 @@ theorem Diffeotopy.exists_flux_torusTranslationDiffeotopy_eq_flux
     (hΦ : Φ.final = 1) :
     ∃ v : ι → ℝ, (∀ i, v i ∈ AddSubgroup.zmultiples (p i)) ∧
       ∀ (σ : closedForms (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i)) 2)
-        (h : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-        (h' : (torusTranslationDiffeotopy p v).final ∈ SmoothForm.diffeomorphStabilizer σ.1),
+        (h : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+        (h' : (torusTranslationDiffeotopy p v).final ∈ SmoothForm.diffeomorphStabilizer σ.val),
         (torusTranslationDiffeotopy p v).flux σ h' = Φ.flux σ h := by
   obtain ⟨v, hv, hσ⟩ := Φ.exists_fluxForm_torusTranslationDiffeotopy_sub_mem_exactForms p hΦ
   refine ⟨v, hv, fun σ h h' ↦ ?_⟩
   rw [Diffeotopy.flux_def, Diffeotopy.flux_def, ← sub_eq_zero, ← map_sub,
     deRhamCohomology.mk_eq_zero_iff]
-  exact hσ σ.1 ((SmoothForm.isClosed_def _).mpr ((mem_closedForms _ σ.1).mp σ.2))
+  exact hσ σ.val ((SmoothForm.isClosed_def _).mpr ((mem_closedForms _ σ.val).mp σ.property))
 
 end Loop
 
@@ -251,8 +251,8 @@ variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)] (v : Fin 2 → ℝ) (A : �
 
 /-- The area form `A dt_0 ∧ dt_1` of the two-torus has constant coefficients. -/
 private theorem smul_torusVolumeForm_apply_eq (x : ∀ i, AddCircle (p i)) :
-    ((A • torusVolumeForm p).1 x : (Fin 2 → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) =
-      (A • torusVolumeForm p).1 0 :=
+    ((A • torusVolumeForm p).val x : (Fin 2 → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) =
+      (A • torusVolumeForm p).val 0 :=
   congrArg (A • ·) (torusVolumeForm_apply_eq_apply_zero p x)
 
 /-- **The flux form of a translation of the two-torus.** For the area form `A dt_0 ∧ dt_1`, the
@@ -288,7 +288,7 @@ along `v` for the area form `A dt_0 ∧ dt_1` integrates to `-A v 1 (b - a)` for
 `A v 0 (b - a)` for `i = 1`. Over one circuit, `b - a = p i`. -/
 theorem pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update
     (x : ∀ i, AddCircle (p i)) (i : Fin 2) (a b : ℝ) :
-    pathIntegral ((torusTranslationDiffeotopy p v).fluxForm (A • torusVolumeForm p)).1
+    pathIntegral ((torusTranslationDiffeotopy p v).fluxForm (A • torusVolumeForm p)).val
         (fun t : ℝ ↦ Function.update x i (t : AddCircle (p i))) a b =
       ![-(A * v 1), A * v 0] i * (b - a) := by
   rw [fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm,

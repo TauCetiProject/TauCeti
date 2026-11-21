@@ -152,6 +152,13 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
   ext x y
   simp
 
+/-- Divisibility of self-pairings transports across a rescaling by a non-zero-divisor. -/
+theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B C : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a) (hC : a • C = B) (r : R) :
+    (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
+  subst B
+  simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
+
 /-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/
 theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
@@ -274,7 +281,8 @@ end LinearMap
 
 namespace LinearMap.BilinForm
 
-variable {H : Type*} [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t x : H} {a c : ℤ}
+variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H} {v t x : H}
+  {a c : ℤ}
 
 /-- A class `x = a v + c t` modulo torsion, for a hyperbolic pair `v, t` of a `ℤ`-valued form,
 has square `2ac`. -/

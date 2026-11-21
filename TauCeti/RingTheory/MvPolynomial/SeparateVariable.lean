@@ -143,7 +143,7 @@ theorem exists_sum_mul_linearIndependent (P : MvPolynomial σ K) (i : σ) :
       (congr_arg Subtype.val (b.sum_repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩)).symm
   have hbS (k : Fin (finrank K V)) {x : σ →₀ ℕ} (hx : x ∈ (b k : MvPolynomial σ K).support) :
       x ∈ S :=
-    (mem_restrictSupport_iff K).1 (hVS (b k).2) hx
+    (mem_restrictSupport_iff K).1 (hVS (b k).property) hx
   refine ⟨finrank K V, (finrank_range_le_card _).trans (by simp [N]), fun k ↦ b k, g,
     b.linearIndependent.map' V.subtype V.ker_subtype, TauCeti.linearIndependent_ofFn_repr _ b,
     fun k hk ↦ ?_, fun k j ↦ ?_, fun k ↦ ?_, ?_⟩

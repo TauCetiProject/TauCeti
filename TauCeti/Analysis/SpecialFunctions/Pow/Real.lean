@@ -122,6 +122,8 @@ with the corresponding integral of `q`-th powers.
   the natural number `k` lies in the window `j - L ≤ k < j + L`.
 * `Real.rpow_neg_pow_mul_rpow_mul_natCast_add`: `(b ^ (-s)) ^ d b ^ (s (d + k)) = b ^ (s k)` for
   `0 < b` and natural numbers `d`, `k`.
+* `Real.le_mul_rpow_neg_pow_of_rpow_mul_le`: `x ≤ K (b ^ (-s)) ^ j` when `b ^ (s j) x ≤ K` and
+  `0 < b`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
@@ -133,6 +135,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
   `0 ≤ c`.
+* `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
+  `0 ≤ P` and `0 ≤ δ ≤ 1`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -294,6 +298,16 @@ theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (
   push_cast
   ring_nf
 
+/-- For `0 < b`, a weighted bound `b ^ (s j) x ≤ K` gives the geometric bound
+`x ≤ K (b ^ (-s)) ^ j`. -/
+theorem le_mul_rpow_neg_pow_of_rpow_mul_le {b : ℝ} (hb : 0 < b) {s x K : ℝ} {j : ℕ}
+    (h : b ^ (s * j) * x ≤ K) : x ≤ K * (b ^ (-s)) ^ j := by
+  have hj : (b ^ (-s)) ^ j * b ^ (s * j) = 1 := by
+    simpa using rpow_neg_pow_mul_rpow_mul_natCast_add hb s j 0
+  calc x = (b ^ (-s)) ^ j * (b ^ (s * j) * x) := by rw [← mul_assoc, hj, one_mul]
+    _ ≤ (b ^ (-s)) ^ j * K := by gcongr
+    _ = K * (b ^ (-s)) ^ j := mul_comm _ _
+
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
 theorem rpow_le_one_add {x y : ℝ} (hx : 0 ≤ x) (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) : x ^ y ≤ 1 + x := by
@@ -369,6 +383,16 @@ theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
     (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
   rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
     ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
+
+/-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
+every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
+theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A) (hB : P ≤ B)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
+  calc P = P ^ δ * P ^ (1 - δ) := by
+        rw [← rpow_add' hP (by norm_num), add_sub_cancel, rpow_one]
+    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (rpow_le_rpow hP hA hδ0)
+        (rpow_le_rpow hP hB (by linarith)) (by positivity)
+        (rpow_nonneg (hP.trans hA) _)
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

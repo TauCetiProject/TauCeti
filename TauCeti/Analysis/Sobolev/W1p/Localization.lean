@@ -278,7 +278,7 @@ theorem W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact {V : Opens E} {K : Set E}
   have hsub : Ω ⊓ U ≤ V := fun x hx => (hΩV ▸ hx : x ∈ (V : Set E) ∩ U).1
   let w₀ := W1p0.extendByZeroL hsub
     ⟨_, W1p.restrictL_mem_w1p0Submodule_of_isCompact hK hKU hu hu0⟩
-  suffices w = (w₀ : W1p μ V p) from this ▸ w₀.2
+  suffices w = (w₀ : W1p μ V p) from this ▸ w₀.property
   refine W1p.ext_value (Lp.ext ?_)
   rw [W1p0.value_extendByZeroL]
   filter_upwards [hw, coeFn_extendByZeroLpₗᵢ ℝ (Ω ⊓ U).isOpen.nullMeasurableSet
@@ -301,7 +301,7 @@ theorem W1p.exists_zeroBoundaryLocalization (hp : p ≠ (∞ : ℝ≥0∞)) {V :
     (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
     ∃ U : Opens E, μ U ≠ (∞ : ℝ≥0∞) ∧ V ⊆ U ∧
       ∃ T : W1p μ Ω p →L[ℝ] W1p0 μ U p,
-        ∀ u, W1p.value (T u).1 =ᵐ[μ.restrict V] W1p.value u := by
+        ∀ u, W1p.value (T u).val =ᵐ[μ.restrict V] W1p.value u := by
   obtain ⟨ψ, M, hψ, -, hψ1, hψc, hψΩ, hM, hψM, hgM⟩ :=
     hVc.exists_contDiff_cutoff_with_bounds Ω.isOpen hVΩ
   obtain ⟨R, hR⟩ := (hVc.union hψc).isBounded.subset_ball (0 : E)

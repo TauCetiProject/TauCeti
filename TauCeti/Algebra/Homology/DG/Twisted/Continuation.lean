@@ -507,17 +507,22 @@ theorem refl_ν_eq_zero_of_lt [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycl
     {x y : P} (hxy : ind x < ind y) : (refl hd m).ν x y = 0 := by
   rw [refl_ν, Matrix.one_apply_ne fun hxy' ↦ (hxy' ▸ hxy).false]
 
-/-- A composite of continuation cocycles with no entries strictly increasing the index has no
-such entries. -/
-theorem comp_ν_eq_zero_of_lt (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
-    (ν₂ : ContinuationCocycle mQ mS) (hν₁ : ∀ x y, ind x < indQ y → ν₁.ν x y = 0)
-    (hν₂ : ∀ x y, indQ x < indS y → ν₂.ν x y = 0) {x : P} {y : S} (hxy : ind x < indS y) :
-    (ν₁.comp h ν₂).ν x y = 0 := by
+/-- **Action shifts add under composition.** If `ν₁` raises the action by at most `δ₁` and `ν₂`
+by at most `δ₂`, their composite raises it by at most `δ₁ + δ₂`. -/
+theorem comp_ν_eq_zero_of_add_lt {Γ : Type*} [AddCommGroup Γ] [LinearOrder Γ]
+    [IsOrderedAddMonoid Γ] {actP : P → Γ} {actQ : Q → Γ} {actS : S → Γ} (h : IsDGAlgebra 𝒜 d)
+    (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS) {δ₁ δ₂ : Γ}
+    (h₁ : ∀ x y, actP x + δ₁ < actQ y → ν₁.ν x y = 0)
+    (h₂ : ∀ y z, actQ y + δ₂ < actS z → ν₂.ν y z = 0) {x : P} {z : S}
+    (hxz : actP x + (δ₁ + δ₂) < actS z) : (ν₁.comp h ν₂).ν x z = 0 := by
   rw [comp_ν, Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun z _ ↦ ?_
-  rcases lt_or_ge (ind x) (indQ z) with hz | hz
-  · rw [Matrix.of_apply, hν₁ x z hz, zero_mul]
-  · rw [Matrix.of_apply, Matrix.of_apply, hν₂ z y (hz.trans_lt hxy), mul_zero]
+  refine Finset.sum_eq_zero fun y _ ↦ ?_
+  by_cases hxy : actP x + δ₁ < actQ y
+  · rw [Matrix.of_apply, h₁ x y hxy, zero_mul]
+  · have : actQ y + δ₂ < actS z := by
+      calc actQ y + δ₂ ≤ actP x + δ₁ + δ₂ := by gcongr; exact not_lt.1 hxy
+        _ < actS z := by rwa [add_assoc]
+    rw [Matrix.of_apply, Matrix.of_apply, h₂ y z this, mul_zero]
 
 section AddCommMonoid
 

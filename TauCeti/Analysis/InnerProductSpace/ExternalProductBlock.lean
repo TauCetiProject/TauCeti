@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
-public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
+import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
@@ -77,11 +79,18 @@ restrictions of `P` and `Q` to pairs of finite-dimensional eigenspaces of `P†P
   formal adjoint is `(dim ker A - dim ker A†) (dim ker B - dim ker B†)`. The left side is the
   index of the block when the tensor products are complete and the block has closed range; the
   factors on the right are the indices of `A` and `B` when these have closed range.
+* `ContinuousLinearMap.injective_externalProductBlock_of_left`,
+  `ContinuousLinearMap.injective_externalProductBlock_of_right`: if `A` and `A†` (or `B` and
+  `B†`) are injective, so is the block.
+* `ContinuousLinearMap.isInvertible_externalProductBlock_of_left`,
+  `ContinuousLinearMap.isInvertible_externalProductBlock_of_right`: in finite dimensions the
+  block is invertible as soon as one of `A` and `B` is.
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
   function of the pair `(A, B)`. For complex Hilbert spaces it is therefore smooth over `ℝ`
-  (`ContinuousLinearMap.contDiff_externalProductBlock`).
+  (`ContinuousLinearMap.contDiff_externalProductBlock`), in particular continuous
+  (`ContinuousLinearMap.continuous_externalProductBlock`).
 
 ## References
 
@@ -348,6 +357,80 @@ theorem finrank_ker_externalProductBlock_sub_finrank_ker_externalProductBlock_ad
 
 end Kernel
 
+section Invertible
+
+open Function
+
+/-- If `A` and `A†` are injective, then the external product block of `A` and any `B` is
+injective: a vector it kills has its even component killed by `A ⊗ 1` and its odd component killed
+by `A† ⊗ 1` (`ContinuousLinearMap.externalProductBlock_apply_eq_zero_iff`), and tensoring with a
+vector space preserves injectivity. -/
+theorem injective_externalProductBlock_of_left {A : V₀ →L[𝕜] V₁} (hA : Injective A)
+    (hA' : Injective A.adjoint) (B : W₀ →L[𝕜] W₁) : Injective (externalProductBlock A B) := by
+  refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
+  obtain ⟨⟨h₁, -⟩, h₂, -⟩ := (externalProductBlock_apply_eq_zero_iff A B w).1 hw
+  rw [rTensor_apply] at h₁ h₂
+  have hfst := Module.Flat.rTensor_preserves_injective_linearMap (M := W₀)
+    (A : V₀ →ₗ[𝕜] V₁) hA (h₁.trans (map_zero _).symm)
+  have hsnd := Module.Flat.rTensor_preserves_injective_linearMap (M := W₁)
+    (A.adjoint : V₁ →ₗ[𝕜] V₀) hA' (h₂.trans (map_zero _).symm)
+  exact WithLp.ofLp_injective 2 <| Prod.ext hfst hsnd
+
+/-- If `B` and `B†` are injective, then the external product block of any `A` and `B` is
+injective: a vector it kills has its even component killed by `1 ⊗ B` and its odd component killed
+by `1 ⊗ B†`. -/
+theorem injective_externalProductBlock_of_right {B : W₀ →L[𝕜] W₁} (hB : Injective B)
+    (hB' : Injective B.adjoint) (A : V₀ →L[𝕜] V₁) : Injective (externalProductBlock A B) := by
+  refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
+  obtain ⟨⟨-, h₁⟩, -, h₂⟩ := (externalProductBlock_apply_eq_zero_iff A B w).1 hw
+  rw [lTensor_apply] at h₁ h₂
+  have hfst := Module.Flat.lTensor_preserves_injective_linearMap (M := V₀)
+    (B : W₀ →ₗ[𝕜] W₁) hB (h₁.trans (map_zero _).symm)
+  have hsnd := Module.Flat.lTensor_preserves_injective_linearMap (M := V₁)
+    (B.adjoint : W₁ →ₗ[𝕜] W₀) hB' (h₂.trans (map_zero _).symm)
+  exact WithLp.ofLp_injective 2 <| Prod.ext hfst hsnd
+
+variable [FiniteDimensional 𝕜 V₀] [FiniteDimensional 𝕜 V₁] [FiniteDimensional 𝕜 W₀]
+  [FiniteDimensional 𝕜 W₁]
+
+/-- In finite dimensions, an injective external product block is invertible as soon as
+`dim V₀ = dim V₁` or `dim W₀ = dim W₁`: either equality makes the dimensions
+`dim V₀ dim W₀ + dim V₁ dim W₁` of its source and `dim V₁ dim W₀ + dim V₀ dim W₁` of its target
+equal. -/
+private theorem isInvertible_externalProductBlock_of_injective {A : V₀ →L[𝕜] V₁}
+    {B : W₀ →L[𝕜] W₁} (h : Injective (externalProductBlock A B))
+    (hdim : Module.finrank 𝕜 V₀ = Module.finrank 𝕜 V₁ ∨
+      Module.finrank 𝕜 W₀ = Module.finrank 𝕜 W₁) :
+    (externalProductBlock A B).IsInvertible := by
+  refine isInvertible_of_injective_of_finrank_eq _ ?_ h
+  rw [(WithLp.linearEquiv 2 𝕜 _).finrank_eq, (WithLp.linearEquiv 2 𝕜 _).finrank_eq,
+    Module.finrank_prod, Module.finrank_prod, Module.finrank_tensorProduct,
+    Module.finrank_tensorProduct, Module.finrank_tensorProduct, Module.finrank_tensorProduct]
+  rcases hdim with h | h
+  · rw [h]
+  · rw [h, add_comm]
+
+/-- In finite dimensions, the external product block of an invertible `A` and an arbitrary `B` is
+invertible. Applied pointwise to two principal symbols, this is why the external product of an
+elliptic symbol with any symbol is invertible wherever the first factor is. -/
+theorem isInvertible_externalProductBlock_of_left {A : V₀ →L[𝕜] V₁} (hA : A.IsInvertible)
+    (B : W₀ →L[𝕜] W₁) : (externalProductBlock A B).IsInvertible := by
+  obtain ⟨e, -⟩ := id hA
+  exact isInvertible_externalProductBlock_of_injective
+    (injective_externalProductBlock_of_left hA.injective hA.adjoint.injective B)
+    (.inl e.toLinearEquiv.finrank_eq)
+
+/-- In finite dimensions, the external product block of an arbitrary `A` and an invertible `B` is
+invertible. -/
+theorem isInvertible_externalProductBlock_of_right {B : W₀ →L[𝕜] W₁} (hB : B.IsInvertible)
+    (A : V₀ →L[𝕜] V₁) : (externalProductBlock A B).IsInvertible := by
+  obtain ⟨e, -⟩ := id hB
+  exact isInvertible_externalProductBlock_of_injective
+    (injective_externalProductBlock_of_right hB.injective hB.adjoint.injective A)
+    (.inr e.toLinearEquiv.finrank_eq)
+
+end Invertible
+
 section Adjoint
 
 variable [CompleteSpace (V₀ ⊗[𝕜] W₀)] [CompleteSpace (V₁ ⊗[𝕜] W₁)]
@@ -454,6 +537,11 @@ theorem contDiff_externalProductBlock {n : WithTop ℕ∞} :
           exact externalProductBlock_ofReal_smul r AB.1 AB.2))
       ⟨4, by norm_num, fun AB ↦ (norm_externalProductBlock_le _ _).trans (by
         linarith [norm_fst_le AB, norm_snd_le AB])⟩)
+
+/-- The external product block is a continuous function of the pair of operators. -/
+theorem continuous_externalProductBlock :
+    Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦ externalProductBlock AB.1 AB.2 :=
+  (contDiff_externalProductBlock (n := 0)).continuous
 
 end Complex
 

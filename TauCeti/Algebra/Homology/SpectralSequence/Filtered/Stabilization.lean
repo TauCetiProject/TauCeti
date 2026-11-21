@@ -24,7 +24,9 @@ isomorphic to the limit object `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` as soon as
 
 * `CochainComplex.isZero_spectralObject_H_bot`, `CochainComplex.isZero_spectralObject_H_top`: the
   vanishing of `H^m(⊥ ≤ a)` and `H^m(b ≤ ⊤)` for the spectral object of a filtration, from the
-  vanishing of `H^m(F_a)` and `H^m(K / F_b)`.
+  vanishing of `H^m(F_a)` and `H^m(K / F_b)`;
+  `CochainComplex.isZero_spectralObject_H_bot_of_isZero_X` derives the first from the vanishing of
+  a stage in degree `m`.
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInfty`: identification of the page objects
   with `EInfty` under the two vanishing conditions.
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInftyOfFinite`: the case of a finite
@@ -46,15 +48,21 @@ lemma isZero_spectralObject_H_bot (a m : ℤ)
     IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
       (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))) := by
   refine IsZero.of_iso ?_ (spectralObjectHIsoCokernel _ _ m)
-  have hz : (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 := by
-    refine IsZero.eq_of_src ?_ _ _
-    rw [filtrationFunctor_obj, filtrationEInt_bot]
-    exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
   have h' : IsZero (((filtrationFunctor F hF).obj (a : EInt)).homology m) := by
     rw [filtrationFunctor_obj_coe]
     exact h
   exact IsZero.of_iso h' ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    (cokernelIsoOfEq hz ≪≫ cokernelZeroIsoTarget))
+    (cokernelIsoOfEq (filtrationFunctor_map_bot F hF a) ≪≫ cokernelZeroIsoTarget))
+
+/-- `H^m(⊥ ≤ i)` vanishes for the spectral object of a filtration when the stage `F_s` of some
+`s ≥ i` vanishes in degree `m`: the filtration is then bounded below in degree `m`. -/
+lemma isZero_spectralObject_H_bot_of_isZero_X {s m : ℤ}
+    (hs : IsZero ((F s : CochainComplex C ℤ).X m)) {i : ℤ} (hi : i ≤ s) :
+    IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))) :=
+  isZero_spectralObject_H_bot F hF i m
+    (((F i : CochainComplex C ℤ).sc m).isZero_homology_of_isZero_X₂
+      (hs.of_mono ((Subobject.ofLE _ _ (hF hi)).f m)))
 
 /-- `H^m(b ≤ ⊤)` vanishes for the spectral object of a filtration when `H^m(K / F_b)` does. -/
 lemma isZero_spectralObject_H_top (b m : ℤ)
@@ -62,17 +70,14 @@ lemma isZero_spectralObject_H_top (b m : ℤ)
     IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
       (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤)))) := by
   refine IsZero.of_iso ?_ (spectralObjectHIsoCokernel _ _ m)
-  have : IsIso (filtrationEInt F ⊤).arrow := by
-    rw [filtrationEInt_top]
-    infer_instance
   -- The transition map to `⊤` followed by the inclusion `K ≅ ⊤ ⟶ K` is the inclusion of `F_b`.
   have e : (filtrationFunctor F hF).map (homOfLE (le_top : (b : EInt) ≤ ⊤)) ≫
       (filtrationFunctorObjIso F hF ⊤).hom ≫ (filtrationEInt F ⊤).arrow =
       (filtrationFunctorObjIso F hF b).hom ≫ (filtrationEInt F b).arrow := by
     rw [reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_arrow]
   refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    ((cokernelCompIsIso _ ((filtrationFunctorObjIso F hF ⊤).hom ≫
-      (filtrationEInt F ⊤).arrow)).symm ≪≫ cokernelIsoOfEq e ≪≫ cokernelEpiComp _ _))
+    ((cokernelCompIsIso (filtrationFunctorArrow F hF ⊤) _).symm ≪≫ cokernelIsoOfEq e ≪≫
+      cokernelEpiComp _ _))
   rw [HomologicalComplex.homologyFunctor_obj]
   convert h using 1
   rw [filtrationEInt_coe]

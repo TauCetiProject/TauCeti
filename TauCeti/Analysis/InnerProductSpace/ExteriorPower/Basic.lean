@@ -12,7 +12,9 @@ public import TauCeti.Analysis.InnerProductSpace.Dual
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
@@ -71,6 +73,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
 * `Orthonormal.ιMulti_eq_ιMulti_iff`: two orthonormal frames have the same wedge exactly when they
   differ by a special orthogonal change of frame.
+* `exteriorPower.exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul`: every linearly independent
+  `n`-frame `v` admits an orthonormal `n`-frame `u` with the same span and
+  `v₁ ∧ ⋯ ∧ vₙ = ‖v₁ ∧ ⋯ ∧ vₙ‖ • (u₁ ∧ ⋯ ∧ uₙ)`.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -261,6 +266,38 @@ theorem _root_.Orthonormal.ιMulti_eq_ιMulti_iff {e v : Fin n → E} (he : Orth
   refine ⟨A, Matrix.mem_specialOrthogonalGroup_iff.2 ⟨hAO, ?_⟩, hvA⟩
   refine smul_left_injective ℝ ((ιMulti_ne_zero_iff e).2 he.linearIndependent) ?_
   simp only [← ιMulti_sum_smul, ← hvA, h, one_smul]
+
+/-- Every linearly independent `n`-frame `v` in a finite-dimensional real inner product space
+admits an orthonormal `n`-frame `u` with the same span and positive orientation, scaling the
+exterior product by the parallelepiped volume: `v₁ ∧ ⋯ ∧ vₙ = ‖v₁ ∧ ⋯ ∧ vₙ‖ • (u₁ ∧ ⋯ ∧ uₙ)`. -/
+theorem exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul {v : Fin n → E}
+    (hv : LinearIndependent ℝ v) :
+    ∃ u : Fin n → E, Orthonormal ℝ u ∧
+      Submodule.span ℝ (Set.range u) = Submodule.span ℝ (Set.range v) ∧
+      ιMulti ℝ n v = ‖ιMulti ℝ n v‖ • ιMulti ℝ n u := by
+  set W := Submodule.span ℝ (Set.range v)
+  let w : Fin n → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
+  have hdim : Module.finrank ℝ W = Fintype.card (Fin n) := finrank_span_eq_card hv
+  let e : OrthonormalBasis (Fin n) ℝ W := InnerProductSpace.gramSchmidtOrthonormalBasis hdim w
+  let u : Fin n → E := W.subtype ∘ e
+  have hu_orth : Orthonormal ℝ u := by
+    simpa only [u, Submodule.coe_subtypeₗᵢ] using e.orthonormal.comp_linearIsometry W.subtypeₗᵢ
+  have hspan : Submodule.span ℝ (Set.range u) = W := by
+    dsimp only [u]
+    rw [Set.range_comp, ← e.coe_toBasis, ← Submodule.map_span, e.toBasis.span_eq,
+      Submodule.map_top, W.range_subtype]
+  have hdet_nonneg : 0 ≤ e.toBasis.det w := by
+    rw [InnerProductSpace.gramSchmidtOrthonormalBasis_det_eq_prod_norm]
+    exact Finset.prod_nonneg fun _ _ ↦ norm_nonneg _
+  have hdet_eq : e.toBasis.det w = ‖ιMulti ℝ n v‖ := by
+    have hgram : Matrix.gram ℝ w = Matrix.gram ℝ v := by ext i j; simp [Matrix.gram, w]
+    refine (pow_left_inj₀ hdet_nonneg (norm_nonneg _) two_ne_zero).mp ?_
+    rw [norm_ιMulti_sq, ← hgram]
+    simpa [Real.norm_eq_abs, sq_abs] using (e.det_gram_eq_norm_det_sq w).symm
+  refine ⟨u, hu_orth, hspan, ?_⟩
+  have h := congr($(AlternatingMap.eq_basis_det_smulRight e.toBasis
+    ((ιMulti ℝ n).compLinearMap W.subtype)) w)
+  simpa [w, u, hdet_eq, e.coe_toBasis, Function.comp_def] using h
 
 end exteriorPower
 
@@ -472,7 +509,7 @@ theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
   have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) := by
     rw [ha, twoVectorContraction_apply]
     exact ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.2)
+      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.property)
   have h0 := contractLeft_contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)
   rw [← hιa, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
   rw [real_inner_comm]
