@@ -25,10 +25,11 @@ colimits. Applying the homology sequence to its image gives
 `CategoryTheory.ShortComplex.ShortExact.twistedHomologyδ`, the coefficient connecting morphism
 `Hₙ(X; L₃) ⟶ Hₘ(X; L₁)` for `m + 1 = n`. The three exactness statements and naturality use the
 existing maps `TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap`. In degree zero,
-the map `H₀(X; L₂) ⟶ H₀(X; L₃)` is an epimorphism. The coefficient maps are additive, on absolute
-and on relative twisted homology
+the map `H₀(X; L₂) ⟶ H₀(X; L₃)` is an epimorphism. The coefficient maps commute with negation,
+on absolute and on relative twisted homology
 (`TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap_neg`,
-`TopPair.twistedHomologyCoefficientMap_neg`).
+`TopPair.twistedHomologyCoefficientMap_neg`), and on absolute twisted homology also with
+subtraction (`TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap_sub`).
 
 These are sequences varying the coefficients on one space. They supply the geometric connecting
 maps needed to compare local-coefficient homology with algebraic homology theories, in particular
