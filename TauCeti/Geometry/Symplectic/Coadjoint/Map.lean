@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Map
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
+import TauCeti.Geometry.Lie.AutomaticSmoothness
 
 /-!
 # Coadjoint orbits along homomorphisms and through central covers
 
-Let `φ : K →* G` be a smooth homomorphism of real Lie groups with finite-dimensional boundaryless
+Let `φ : K →* G` be a homomorphism of real Lie groups with finite-dimensional boundaryless
 models, with differential `dφ : 𝔨 → 𝔤` at the identity (`MonoidHom.groupLieAlgebraMap`), and fix
 `ν ∈ 𝔤*`. When `dφ` is surjective, the coadjoint stabilizer of the pulled-back functional
 `ν ∘ dφ ∈ 𝔨*` is the preimage of that of `ν`, `K_{ν ∘ dφ} = φ⁻¹(G_ν)`
@@ -23,7 +24,10 @@ homogeneous coadjoint orbits
 (`MonoidHom.coadjointOrbitQuotientMap`). This file shows that `Φ` is compatible with all the
 structure of the two orbits:
 
-* it is smooth, and equivariant along `φ`: `Φ (k • x) = φ k • Φ x`;
+* it is smooth, and equivariant along `φ`: `Φ (k • x) = φ k • Φ x`. No smoothness of `φ` is
+  assumed: when `𝔤 ≠ 0`, the surjectivity of `dφ` makes `φ` differentiable at the identity, hence
+  continuous, hence smooth (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`); when `𝔤 = 0`, the
+  orbit `G ⧸ G_ν` is a point;
 * it intertwines the orbit maps into the duals: `Ad*_{φ k} ν ∘ dφ = Ad*_k (ν ∘ dφ)`, that is,
   the orbit map of `ν ∘ dφ` is the orbit map of `ν` followed by the pullback `μ ↦ μ ∘ dφ`;
 * it pulls the Kirillov–Kostant–Souriau form `ω_ν` back to `ω_{ν ∘ dφ}`
@@ -41,7 +45,8 @@ bijective differential, whose kernel `Γ` is then discrete and, for connected `K
 `ν ↦ ν ∘ dφ`. Under this identification every coadjoint orbit of `K` is a coadjoint orbit of `G`,
 and `Φ` is a bijective smooth symplectic map between the two homogeneous models
 (`MonoidHom.bijective_coadjointOrbitQuotientMap`), although their isotropy groups differ by `Γ`.
-For instance the coadjoint orbits of `SU(2)` and `SO(3)` are the same symplectic spheres.
+For instance `SU(2)` and `SO(3)` have the same coadjoint orbits: the nonzero orbits are the same
+symplectic two-spheres, and the zero orbit is a point.
 
 ## Main definitions
 
@@ -166,9 +171,39 @@ theorem bijective_coadjointOrbitQuotientMap (hφ : Surjective φ) :
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Boundaryless] {φ}
 
-/-- **The induced map of coadjoint orbits is smooth** when `φ` is, by descent along the
-submersion `K → K ⧸ K_{ν ∘ dφ}`. -/
-theorem contMDiff_coadjointOrbitQuotientMap (hφ : ContMDiff J I ∞ φ) :
+omit [I.Boundaryless] [J.Boundaryless] in
+include hdφ in
+/-- A homomorphism whose differential at the identity is surjective onto a nonzero Lie algebra is
+smooth: it is differentiable, hence continuous, at the identity, so continuous, and continuous
+homomorphisms of Lie groups are smooth. -/
+private theorem contMDiff_of_surjective_groupLieAlgebraMap [Nontrivial E] :
+    ContMDiff J I ∞ φ := by
+  have hd : MDifferentiableAt J I φ 1 := by
+    by_contra h
+    obtain ⟨ξ, hξ⟩ := exists_ne (0 : E)
+    obtain ⟨η, hη⟩ := hdφ ξ
+    rw [groupLieAlgebraMap_apply, mfderiv_zero_of_not_mdifferentiableAt h] at hη
+    exact hξ hη.symm
+  have := topologicalGroup_of_lieGroup (G := K) J ∞
+  have := topologicalGroup_of_lieGroup (G := G) I ∞
+  exact Lie.contMDiff_of_continuous_monoidHom φ (continuous_of_continuousAt_one φ hd.continuousAt)
+
+/-- The Kirillov–Kostant–Souriau form of the zero functional vanishes. -/
+private theorem coadjointOrbitForm_eq_zero {μ : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hμ : μ = 0) : μ.coadjointOrbitForm = 0 := by
+  subst hμ
+  have hα : (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantForm = 0 :=
+    Subtype.ext <| funext fun g ↦ by
+      ext v
+      exact Module.Dual.leftInvariantForm_apply _ g v
+  rw [eq_comm, Module.Dual.eq_coadjointOrbitForm_iff _
+    (Module.Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
+      (0 : Module.Dual ℝ (GroupLieAlgebra I G))).contMDiff,
+    map_zero, Module.Dual.leftInvariantKirillovForm_def, hα, map_zero, neg_zero]
+
+/-- **The induced map of coadjoint orbits is smooth**, by descent along the submersion
+`K → K ⧸ K_{ν ∘ dφ}`. -/
+theorem contMDiff_coadjointOrbitQuotientMap :
     ContMDiff
       𝓘(ℝ, Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
         (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)))
@@ -178,22 +213,36 @@ theorem contMDiff_coadjointOrbitQuotientMap (hφ : ContMDiff J I ∞ φ) :
     (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)).contMDiff_comp_iff
       QuotientGroup.mk_surjective le_rfl).1 (by
       rw [coadjointOrbitQuotientMap_comp_mk]
-      exact ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff.comp hφ)
+      rcases subsingleton_or_nontrivial E with hE | hE
+      · -- If `𝔤 = 0`, then `G_ν = G`, so the projection of `G` is constant.
+        have : Subsingleton (GroupLieAlgebra I G) := hE
+        refine (contMDiff_const (c := ((1 : G) : G ⧸
+          (coadjointRepresentation ℝ I G).stabilizer ν))).congr fun k ↦ ?_
+        exact QuotientGroup.eq.2 (Representation.mem_stabilizer.2 (Subsingleton.elim _ _))
+      · exact ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff.comp
+          (contMDiff_of_surjective_groupLieAlgebraMap hdφ))
 
 /-- **The induced map of coadjoint orbits is symplectic**: it pulls the Kirillov–Kostant–Souriau
 form of `ν` back to the Kirillov–Kostant–Souriau form of `ν ∘ dφ`. -/
 @[simp]
-theorem mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm (hφ : ContMDiff J I ∞ φ) :
+theorem mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm :
     SmoothForm.mpullback (φ.coadjointOrbitQuotientMap hdφ ν)
-        (contMDiff_coadjointOrbitQuotientMap hdφ ν hφ) ν.coadjointOrbitForm =
+        (contMDiff_coadjointOrbitQuotientMap hdφ ν) ν.coadjointOrbitForm =
       Module.Dual.coadjointOrbitForm (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- If `𝔤 = 0`, then `ν = 0` and `ν ∘ dφ = 0`, whose KKS forms vanish.
+    have : Subsingleton (GroupLieAlgebra I G) := hE
+    have hν : ν = 0 := Subsingleton.elim ν 0
+    rw [coadjointOrbitForm_eq_zero hν, map_zero,
+      coadjointOrbitForm_eq_zero (by rw [hν, LinearMap.zero_comp])]
+  have hφ := contMDiff_of_surjective_groupLieAlgebraMap hdφ
   have hπK := (Module.Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
     (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)).contMDiff
   have hπG := ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff
   -- Both sides are determined by their pullbacks to `K`, and the square
   -- `Φ ∘ π_K = π_G ∘ φ` reduces the left side to the pullback of `σ_ν` along `φ`.
   rw [Module.Dual.eq_coadjointOrbitForm_iff _ hπK, SmoothForm.mpullback_mpullback_of_comp_eq hπK
-    (contMDiff_coadjointOrbitQuotientMap hdφ ν hφ) hφ hπG
+    (contMDiff_coadjointOrbitQuotientMap hdφ ν) hφ hπG
     (φ.coadjointOrbitQuotientMap_comp_mk hdφ ν),
     Module.Dual.mpullback_quotientMk_coadjointOrbitForm, mpullback_leftInvariantKirillovForm]
 
