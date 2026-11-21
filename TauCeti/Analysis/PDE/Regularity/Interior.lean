@@ -1427,6 +1427,7 @@ theorem UniformlyEllipticOn.exists_memLp_lowerOrder_eq_restrictL_of_locallyLipsc
       _ = ‖T‖ * ‖P t‖ := by rw [← ht, Submodule.norm_coe]
       _ ≤ ‖T‖ * (‖u t‖ + ‖f t‖) := by
         gcongr
+        simp only [P, Prod.norm_mk]
         exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
       _ ≤ ‖‖T‖ * (‖u t‖ + ‖f t‖)‖ := Real.le_norm_self _
   · filter_upwards [hPQ] with t ht
