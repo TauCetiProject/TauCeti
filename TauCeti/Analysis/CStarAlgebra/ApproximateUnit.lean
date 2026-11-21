@@ -41,7 +41,7 @@ that `x * e → x` along an increasing approximate unit of a closed `⋆`-subalg
 public section
 
 open Filter Topology
-open scoped CStarAlgebra
+open scoped CStarAlgebra ComplexOrder
 
 namespace Filter.IsIncreasingApproximateUnit
 
@@ -202,8 +202,10 @@ theorem norm_sub_mul_le_of_star_mul_self_le {x y : A} (hxy : star x * x ≤ star
   have hle : ‖x - x * e‖ ^ 2 ≤ ‖y - y * e‖ ^ 2 := by
     rw [hsq x, hsq y]
     refine CStarAlgebra.norm_le_norm_of_le_of_nonneg
-      (star_left_conjugate_le_conjugate (Unitization.inr_le_inr_iff.mpr hxy) (1 - (e : A⁺¹))) ?_
-    exact star_left_conjugate_nonneg (Unitization.inr_nonneg_iff.mpr (star_mul_self_nonneg x)) _
+      (star_left_conjugate_le_conjugate ((Unitization.inr_le_inr_iff ℂ).mpr hxy) (1 - (e : A⁺¹)))
+      ?_
+    exact star_left_conjugate_nonneg
+      ((Unitization.inr_nonneg_iff ℂ).mpr (star_mul_self_nonneg x)) _
   exact (sq_le_sq.mp hle).trans_eq (abs_of_nonneg (norm_nonneg _)) |>.trans'
     (le_abs_self _)
 

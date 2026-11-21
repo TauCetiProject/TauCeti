@@ -79,7 +79,7 @@ private theorem crossingsAt_eq_nil_iff_of_isRotated
 /-- The closure arc at a slot of a crossing of `w'` is the renamed closure arc of `w` at the same
 slot of the corresponding crossing. -/
 private theorem edgePair_closure_crossingSlotEquiv_of_isRotated
-    (he : ∀ j : Fin w'.length, w'[j.1] = w[(e j).1])
+    (he : ∀ j : Fin w'.length, w'[j.val] = w[(e j).val])
     (hrot : ∀ p, (w'.crossingsAt p).map e ~r w.crossingsAt p) (j : Fin w'.length)
     (slot : Fin 4) :
     w'.closure.edgePair.val (crossingSlotEquiv w'.length (j, slot)) =
@@ -99,7 +99,7 @@ private theorem edgePair_closure_crossingSlotEquiv_of_isRotated
 matches their letters and carries the crossings of `w'` along every strand position to a cyclic
 rotation of the crossings of `w` along that position. The crossings are renamed by `e.symm`, and
 `PDCode.crossingBlockEquiv` applies the same renaming to all four slots of each crossing. -/
-theorem closure_eq_relabel_of_isRotated (he : ∀ j : Fin w'.length, w'[j.1] = w[(e j).1])
+theorem closure_eq_relabel_of_isRotated (he : ∀ j : Fin w'.length, w'[j.val] = w[(e j).val])
     (hrot : ∀ p, (w'.crossingsAt p).map e ~r w.crossingsAt p) :
     w'.closure = w.closure.relabel (crossingBlockEquiv e.symm) e.symm := by
   have hnil (p : Fin n) := crossingsAt_eq_nil_iff_of_isRotated e (hrot p)

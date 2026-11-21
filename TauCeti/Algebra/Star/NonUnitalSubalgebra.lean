@@ -9,16 +9,26 @@ public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Order.Hereditary
 
 /-!
-# Order-hereditary nonunital `⋆`-subalgebras
+# Order-hereditary nonunital `⋆`-subalgebras and direct `SMul` instance
 
-This file provides lattice closure properties of order heredity (`TauCeti.IsHereditary`) for
-`NonUnitalStarSubalgebra`: `⊤` and `⊥` are hereditary, and the infimum `B₁ ⊓ B₂` of two hereditary
-nonunital `⋆`-subalgebras is hereditary.
+This file provides:
+* `NonUnitalStarSubalgebra.instSMul`: direct `R`-scalar action `SetLike.smul S` at default priority,
+  definitionally equal to `S.instModule.toSMul`, avoiding timeouts when synthesizing `SMul R S`;
+* lattice closure properties of order heredity (`TauCeti.IsHereditary`) for
+  `NonUnitalStarSubalgebra`: `⊤` and `⊥` are hereditary (`isHereditary_top`, `isHereditary_bot`),
+  and the infimum `B₁ ⊓ B₂` of two hereditary nonunital `⋆`-subalgebras is hereditary
+  (`isHereditary_inf`).
 -/
 
 public section
 
 namespace NonUnitalStarSubalgebra
+
+/-- Direct `R`-scalar action on the carrier of a `NonUnitalStarSubalgebra R A`, definitionally equal
+to `S.instModule.toSMul`. -/
+instance instSMul {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+    [Star A] (S : NonUnitalStarSubalgebra R A) : SMul R S :=
+  SetLike.smul S
 
 open TauCeti
 

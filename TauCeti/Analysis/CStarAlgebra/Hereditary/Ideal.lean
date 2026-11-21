@@ -229,7 +229,7 @@ instance isClosed_restrictIdeal (B : NonUnitalStarSubalgebra ℂ A) (J : TwoSide
     [hJ : IsClosed (J : Set A)] :
     IsClosed (B.restrictIdeal J : Set B) := by
   rw [B.coe_restrictIdeal]
-  exact hJ.preimage continuous_subtype_val
+  exact hJ.preimage continuous_subtypeVal
 
 theorem restrictIdeal_mono (B : NonUnitalStarSubalgebra ℂ A) : Monotone B.restrictIdeal :=
   fun _ _ h _ hb => B.mem_restrictIdeal.mpr (h (B.mem_restrictIdeal.mp hb))
@@ -249,7 +249,7 @@ theorem restrictIdeal_closedIdeal (B : NonUnitalStarSubalgebra ℂ A) :
     B.restrictIdeal B.closedIdeal = ⊤ := by
   ext b
   simp only [B.mem_restrictIdeal, TwoSidedIdeal.mem_top, iff_true]
-  exact B.subset_closedIdeal b.2
+  exact B.subset_closedIdeal b.property
 
 /-- The closed two-sided ideal `closure (span ℂ (A · K · A))` of `A` induced by a two-sided ideal
 `K` of `B`. -/
@@ -320,11 +320,11 @@ variable [PartialOrder A] [StarOrderedRing A]
 private theorem mul_mem_of_mem_inducedClosedIdeal (B : NonUnitalStarSubalgebra ℂ A)
     [IsClosed (B : Set A)] (hB : IsHereditary B) (K : TwoSidedIdeal B) [hK : IsClosed (K : Set B)]
     (e₁ e₂ : B) {z : A} (hz : z ∈ B.inducedClosedIdeal K) :
-    (⟨(e₁ : A) * z * (e₂ : A), hB.mul_mem e₁.2 z e₂.2⟩ : B) ∈ K := by
+    (⟨(e₁ : A) * z * (e₂ : A), hB.mul_mem e₁.property z e₂.property⟩ : B) ∈ K := by
   have _ : StarOrderedRing B := Subtype.starOrderedRing (𝕜 := ℂ) B
   rw [← SetLike.mem_coe, B.coe_inducedClosedIdeal] at hz
   let Φ : A →ₗ[ℂ] B :=
-    { toFun := fun w => ⟨(e₁ : A) * w * (e₂ : A), hB.mul_mem e₁.2 w e₂.2⟩
+    { toFun := fun w => ⟨(e₁ : A) * w * (e₂ : A), hB.mul_mem e₁.property w e₂.property⟩
       map_add' := fun w₁ w₂ => Subtype.ext (by simp only [mul_add, add_mul, AddMemClass.coe_add])
       map_smul' := fun c w =>
         Subtype.ext (by simp only [mul_smul_comm, smul_mul_assoc, RingHom.id_apply,
@@ -348,15 +348,15 @@ private theorem mul_mem_of_mem_inducedClosedIdeal (B : NonUnitalStarSubalgebra �
     let kS : S := ⟨k, K.mem_toNonUnitalStarSubalgebra.mpr hk⟩
     have hk_lim : Tendsto (fun u : S => ((u : B) : A) * (k : A) * ((u : B) : A))
         (CStarAlgebra.approximateUnit S) (𝓝 (k : A)) := by
-      have h1 := (continuous_subtype_val.tendsto kS).comp (hlS.tendsto_mul_self kS)
+      have h1 := (continuous_subtypeVal.tendsto kS).comp (hlS.tendsto_mul_self kS)
       simpa only [Function.comp_def, MulMemClass.coe_mul] using
-        (continuous_subtype_val.tendsto k).comp h1
+        (continuous_subtypeVal.tendsto k).comp h1
     have hΦ_lim : Tendsto (fun u : S => Φ (x * (((u : B) : A) * (k : A) * ((u : B) : A)) * y))
         (CStarAlgebra.approximateUnit S) (𝓝 (Φ (x * (k : A) * y))) :=
       (hΦ_cont.tendsto _).comp ((hk_lim.const_mul x).mul_const y)
     refine hK.mem_of_tendsto hΦ_lim (Eventually.of_forall fun u => ?_)
-    let b₁ : B := ⟨(e₁ : A) * x * ((u : B) : A), hB.mul_mem e₁.2 x (u : B).2⟩
-    let b₂ : B := ⟨((u : B) : A) * y * (e₂ : A), hB.mul_mem (u : B).2 y e₂.2⟩
+    let b₁ : B := ⟨(e₁ : A) * x * ((u : B) : A), hB.mul_mem e₁.property x (u : B).property⟩
+    let b₂ : B := ⟨((u : B) : A) * y * (e₂ : A), hB.mul_mem (u : B).property y e₂.property⟩
     have hEq : Φ (x * (((u : B) : A) * (k : A) * ((u : B) : A)) * y) = b₁ * k * b₂ :=
       Subtype.ext (by simp only [Φ, b₁, b₂, LinearMap.coe_mk, AddHom.coe_mk, MulMemClass.coe_mul,
         mul_assoc])
@@ -433,10 +433,10 @@ theorem inducedClosedIdeal_restrictIdeal (B : NonUnitalStarSubalgebra ℂ A) (hB
   let zJ : SJ := ⟨z, J.mem_toNonUnitalStarSubalgebra.mpr hz⟩
   have hz_lim : Tendsto (fun u : SJ => (u : A) * z) (CStarAlgebra.approximateUnit SJ) (𝓝 z) := by
     simpa only [Function.comp_def, MulMemClass.coe_mul] using
-      (continuous_subtype_val.tendsto zJ).comp (hlJ.tendsto_mul_right zJ)
+      (continuous_subtypeVal.tendsto zJ).comp (hlJ.tendsto_mul_right zJ)
   refine (B.isClosed_inducedClosedIdeal _).mem_of_tendsto hz_lim (Eventually.of_forall fun u => ?_)
   exact B.mul_mem_inducedClosedIdeal_restrictIdeal hB J
-    (J.mem_toNonUnitalStarSubalgebra.mp u.2) (hJB hz)
+    (J.mem_toNonUnitalStarSubalgebra.mp u.property) (hJB hz)
 
 /-- **Blackadar II.5.3.5**: for a closed hereditary `⋆`-subalgebra `B` of a C⋆-algebra `A`, closed
 two-sided ideals of `A` contained in `B.closedIdeal = closure (span ℂ (A · B · A))` are order
@@ -447,30 +447,30 @@ def closedIdealOrderIso (B : NonUnitalStarSubalgebra ℂ A) [IsClosed (B : Set A
     {J : TwoSidedIdeal A // IsClosed (J : Set A) ∧ J ≤ B.closedIdeal} ≃o
       {K : TwoSidedIdeal B // IsClosed (K : Set B)} :=
   OrderIso.ofHomInv
-    { toFun := fun J => ⟨B.restrictIdeal J.1, @isClosed_restrictIdeal A _ B J.1 J.2.1⟩
+    { toFun := fun J => ⟨B.restrictIdeal J.val, @isClosed_restrictIdeal A _ B J.val J.property.1⟩
       monotone' := fun _ _ h => B.restrictIdeal_mono h }
-    { toFun := fun K => ⟨B.inducedClosedIdeal K.1, B.isClosed_inducedClosedIdeal K.1,
-        B.inducedClosedIdeal_le_closedIdeal K.1⟩
+    { toFun := fun K => ⟨B.inducedClosedIdeal K.val, B.isClosed_inducedClosedIdeal K.val,
+        B.inducedClosedIdeal_le_closedIdeal K.val⟩
       monotone' := fun _ _ h => B.inducedClosedIdeal_mono h }
     (OrderHom.ext _ _ <| funext fun K => Subtype.ext <| by
-      have := K.2
-      exact B.restrictIdeal_inducedClosedIdeal hB K.1)
+      have := K.property
+      exact B.restrictIdeal_inducedClosedIdeal hB K.val)
     (OrderHom.ext _ _ <| funext fun J => Subtype.ext <| by
-      have := J.2.1
-      exact B.inducedClosedIdeal_restrictIdeal hB J.1 J.2.2)
+      have := J.property.1
+      exact B.inducedClosedIdeal_restrictIdeal hB J.val J.property.2)
 
 @[simp]
 theorem coe_closedIdealOrderIso_apply (B : NonUnitalStarSubalgebra ℂ A) [IsClosed (B : Set A)]
     (hB : IsHereditary B)
     (J : {J : TwoSidedIdeal A // IsClosed (J : Set A) ∧ J ≤ B.closedIdeal}) :
-    (B.closedIdealOrderIso hB J).1 = B.restrictIdeal J.1 :=
+    (B.closedIdealOrderIso hB J).val = B.restrictIdeal J.val :=
   (rfl)
 
 @[simp]
 theorem coe_closedIdealOrderIso_symm_apply (B : NonUnitalStarSubalgebra ℂ A)
     [IsClosed (B : Set A)] (hB : IsHereditary B)
     (K : {K : TwoSidedIdeal B // IsClosed (K : Set B)}) :
-    ((B.closedIdealOrderIso hB).symm K).1 = B.inducedClosedIdeal K.1 :=
+    ((B.closedIdealOrderIso hB).symm K).val = B.inducedClosedIdeal K.val :=
   (rfl)
 
 end IdealCorrespondence

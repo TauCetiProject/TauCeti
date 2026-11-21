@@ -153,7 +153,7 @@ theorem isHereditary_of_mul_mem (B : NonUnitalStarSubalgebra ℂ A) [hB : IsClos
   have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit B
   have := hl.neBot
   have hy_lim : Tendsto (fun e : B => ‖y - y * (e : A)‖) l (𝓝 0) := by
-    have h := (continuous_subtype_val.tendsto (⟨y, hyB⟩ : B)).comp
+    have h := (continuous_subtypeVal.tendsto (⟨y, hyB⟩ : B)).comp
       (hl.tendsto_mul_left ⟨y, hyB⟩)
     simpa only [Function.comp_def, MulMemClass.coe_mul, norm_sub_rev] using
       tendsto_iff_norm_sub_tendsto_zero.mp h
@@ -173,7 +173,8 @@ theorem isHereditary_of_mul_mem (B : NonUnitalStarSubalgebra ℂ A) [hB : IsClos
     calc
       ((e : A) * x) * (x * (e : A)) = (e : A) * (x * x) * (e : A) := by simp only [mul_assoc]
       _ = (e : A) * a * (e : A) := by rw [CFC.sqrt_mul_sqrt_self a ha]
-  exact hB.mem_of_tendsto ha_lim (Eventually.of_forall fun e => hmul (e : A) e.2 a (e : A) e.2)
+  exact hB.mem_of_tendsto ha_lim
+    (Eventually.of_forall fun e => hmul (e : A) e.property a (e : A) e.property)
 
 /-- **Sandwich characterization of hereditary C⋆-subalgebras** (Blackadar II.5.3.2): a closed
 `⋆`-subalgebra `B ⊆ A` is hereditary if and only if `B * A * B ⊆ B`. -/
@@ -483,7 +484,7 @@ theorem mem_of_star_mul_self_mem {A : Type*} [NonUnitalCStarAlgebra A]
   have hmem : star x * x ∈ B :=
     L.mem_starSubalgebra.mpr ⟨hx, by rw [star_mul, star_star]; exact hx⟩
   refine L.isClosed.mem_of_tendsto (hl.tendsto_mul_of_star_mul_self_mem hmem) ?_
-  exact Eventually.of_forall fun e => hL x (e : A) (L.mem_starSubalgebra.mp e.2).1
+  exact Eventually.of_forall fun e => hL x (e : A) (L.mem_starSubalgebra.mp e.property).1
 
 /-- For any closed complex left ideal `L` of a C⋆-algebra `A`, `star x * x ∈ L` if and only if
 `x ∈ L`. -/
@@ -532,7 +533,7 @@ def positiveCone (B : NonUnitalStarSubalgebra ℂ A) [hB : IsClosed (B : Set A)]
     ⟨by
       have h : ((c : ℝ) : ℂ) • x ∈ B := SMulMemClass.smul_mem _ hx.1
       rwa [Complex.coe_smul] at h,
-      smul_nonneg c.2 hx.2⟩
+      smul_nonneg c.property hx.2⟩
   isClosed' := hB.inter isClosed_Ici
 
 @[simp, grind =]
@@ -607,7 +608,7 @@ theorem exists_mul_eq_of_star_mul_self_mem (B : NonUnitalStarSubalgebra ℂ A)
   obtain ⟨b, y, hb_norm, hy_mem, hy_dist, hfac⟩ :=
     ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span_right R hR_assoc
       hl.eventually_norm hl.tendsto_mul_left hx_mem hε
-  exact ⟨b, b.2, y, hb_norm, hy_mem, hy_dist, hfac⟩
+  exact ⟨b, b.property, y, hb_norm, hy_mem, hy_dist, hfac⟩
 
 /-- **Left-ideal factorization for hereditary C⋆-subalgebras** (Blackadar II.5.3.7): for a closed
 hereditary `⋆`-subalgebra `B ⊆ A`, the closed left ideal `{x : A | star x * x ∈ B}` equals the
@@ -639,7 +640,8 @@ theorem starSubalgebra_closedLeftIdeal (B : NonUnitalStarSubalgebra ℂ A)
   have hsand : Tendsto (fun e : B => (e : A) * x * (e : A)) l (𝓝 x) :=
     TauCeti.tendsto_mul_mul_of_isBoundedUnder ⟨1, eventually_map.mpr hl.eventually_norm⟩
       (hl.tendsto_mul_of_mul_star_self_mem hx₂) (hl.tendsto_mul_of_star_mul_self_mem hx₁)
-  exact hB_closed.mem_of_tendsto hsand (Eventually.of_forall fun e => hB.mul_mem e.2 x e.2)
+  exact hB_closed.mem_of_tendsto hsand
+    (Eventually.of_forall fun e => hB.mul_mem e.property x e.property)
 
 @[simp]
 theorem closedLeftIdeal_starSubalgebra (L : ClosedSubmodule ℂ A)
@@ -680,46 +682,49 @@ def hereditarySubalgebraOrderIsoClosedLeftIdeal :
     {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ IsHereditary B} ≃o
       {L : ClosedSubmodule ℂ A // ∀ a : A, ∀ x ∈ L, a * x ∈ L} :=
   OrderIso.ofHomInv
-    { toFun := fun B => ⟨@NonUnitalStarSubalgebra.closedLeftIdeal A _ _ _ B.1 B.2.1 B.2.2,
-        @NonUnitalStarSubalgebra.mul_mem_closedLeftIdeal A _ _ _ B.1 B.2.1 B.2.2⟩
+    { toFun := fun B =>
+        ⟨@NonUnitalStarSubalgebra.closedLeftIdeal A _ _ _ B.val B.property.1 B.property.2,
+          @NonUnitalStarSubalgebra.mul_mem_closedLeftIdeal A _ _ _ B.val B.property.1 B.property.2⟩
       monotone' := fun B₁ B₂ h => by
-        have := B₁.2.1
-        have := B₂.2.1
+        have := B₁.property.1
+        have := B₂.property.1
         rw [Subtype.mk_le_mk]
         intro x hx
         exact NonUnitalStarSubalgebra.mem_closedLeftIdeal.mpr
           (h (NonUnitalStarSubalgebra.mem_closedLeftIdeal.mp hx)) }
-    { toFun := fun L => ⟨L.1.starSubalgebra L.2, L.1.isClosed_starSubalgebra L.2,
-        L.1.isHereditary_starSubalgebra L.2⟩
+    { toFun := fun L => ⟨L.val.starSubalgebra L.property, L.val.isClosed_starSubalgebra L.property,
+        L.val.isHereditary_starSubalgebra L.property⟩
       monotone' := fun L₁ L₂ h => by
         rw [Subtype.mk_le_mk] at h ⊢
         intro x hx
         rw [ClosedSubmodule.mem_starSubalgebra] at hx ⊢
         exact ⟨h hx.1, h hx.2⟩ }
     (OrderHom.ext _ _ <| funext fun L => Subtype.ext <|
-      NonUnitalStarSubalgebra.closedLeftIdeal_starSubalgebra L.1 L.2)
+      NonUnitalStarSubalgebra.closedLeftIdeal_starSubalgebra L.val L.property)
     (OrderHom.ext _ _ <| funext fun B => Subtype.ext <|
-      @NonUnitalStarSubalgebra.starSubalgebra_closedLeftIdeal A _ _ _ B.1 B.2.1 B.2.2)
+      @NonUnitalStarSubalgebra.starSubalgebra_closedLeftIdeal A _ _ _
+        B.val B.property.1 B.property.2)
 
 @[simp, grind =]
 theorem mem_hereditarySubalgebraOrderIsoClosedLeftIdeal_apply
     (B : {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ IsHereditary B}) {x : A} :
-    x ∈ (hereditarySubalgebraOrderIsoClosedLeftIdeal A B).1 ↔ star x * x ∈ B.1 := by
-  have := B.2.1
-  exact B.1.mem_closedLeftIdeal (hB := B.2.2)
+    x ∈ (hereditarySubalgebraOrderIsoClosedLeftIdeal A B).val ↔ star x * x ∈ B.val := by
+  have := B.property.1
+  exact B.val.mem_closedLeftIdeal (hB := B.property.2)
 
 @[simp]
 theorem coe_hereditarySubalgebraOrderIsoClosedLeftIdeal_apply
     (B : {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ IsHereditary B}) :
-    ((hereditarySubalgebraOrderIsoClosedLeftIdeal A B).1 : Set A) =
-      {x : A | star x * x ∈ B.1} := by
-  have := B.2.1
-  exact B.1.coe_closedLeftIdeal B.2.2
+    ((hereditarySubalgebraOrderIsoClosedLeftIdeal A B).val : Set A) =
+      {x : A | star x * x ∈ B.val} := by
+  have := B.property.1
+  exact B.val.coe_closedLeftIdeal B.property.2
 
 @[simp]
 theorem coe_hereditarySubalgebraOrderIsoClosedLeftIdeal_symm_apply
     (L : {L : ClosedSubmodule ℂ A // ∀ a : A, ∀ x ∈ L, a * x ∈ L}) :
-    ((hereditarySubalgebraOrderIsoClosedLeftIdeal A).symm L).1 = L.1.starSubalgebra L.2 :=
+    ((hereditarySubalgebraOrderIsoClosedLeftIdeal A).symm L).val =
+      L.val.starSubalgebra L.property :=
   (rfl)
 
 /-- **Blackadar II.5.3.2 (cone correspondence)**: order isomorphism between closed hereditary
@@ -729,49 +734,53 @@ noncomputable def hereditarySubalgebraOrderIsoProperCone :
     {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ IsHereditary B} ≃o
       {P : ProperCone ℝ A // P ≤ ProperCone.positive ℝ A ∧ IsHereditary P} :=
   OrderIso.ofHomInv
-    { toFun := fun B => ⟨@NonUnitalStarSubalgebra.positiveCone A _ _ _ B.1 B.2.1,
-        @NonUnitalStarSubalgebra.positiveCone_le_positive A _ _ _ B.1 B.2.1,
-        @NonUnitalStarSubalgebra.isHereditary_positiveCone A _ _ _ B.1 B.2.1 B.2.2⟩
+    { toFun := fun B =>
+        ⟨@NonUnitalStarSubalgebra.positiveCone A _ _ _ B.val B.property.1,
+          @NonUnitalStarSubalgebra.positiveCone_le_positive A _ _ _ B.val B.property.1,
+          @NonUnitalStarSubalgebra.isHereditary_positiveCone A _ _ _
+            B.val B.property.1 B.property.2⟩
       monotone' := fun B₁ B₂ h => by
-        have := B₁.2.1
-        have := B₂.2.1
+        have := B₁.property.1
+        have := B₂.property.1
         rw [Subtype.mk_le_mk]
         intro x hx
         rw [NonUnitalStarSubalgebra.mem_positiveCone] at hx ⊢
         exact ⟨h hx.1, hx.2⟩ }
-    { toFun := fun P => ⟨(P.1.leftIdeal P.2.2).starSubalgebra (P.1.mul_mem_leftIdeal P.2.2),
-        (P.1.leftIdeal P.2.2).isClosed_starSubalgebra _,
-        (P.1.leftIdeal P.2.2).isHereditary_starSubalgebra _⟩
+    { toFun := fun P =>
+        ⟨(P.val.leftIdeal P.property.2).starSubalgebra (P.val.mul_mem_leftIdeal P.property.2),
+          (P.val.leftIdeal P.property.2).isClosed_starSubalgebra _,
+          (P.val.leftIdeal P.property.2).isHereditary_starSubalgebra _⟩
       monotone' := fun P₁ P₂ h => by
         rw [Subtype.mk_le_mk] at h ⊢
         intro x hx
         rw [ClosedSubmodule.mem_starSubalgebra, ProperCone.mem_leftIdeal] at hx ⊢
         exact ⟨h hx.1, h hx.2⟩ }
     (OrderHom.ext _ _ <| funext fun P => Subtype.ext <|
-      NonUnitalStarSubalgebra.positiveCone_starSubalgebra_leftIdeal P.1 P.2.1 P.2.2)
+      NonUnitalStarSubalgebra.positiveCone_starSubalgebra_leftIdeal
+        P.val P.property.1 P.property.2)
     (OrderHom.ext _ _ <| funext fun B => Subtype.ext <| by
-      have := B.2.1
-      exact B.1.starSubalgebra_closedLeftIdeal B.2.2)
+      have := B.property.1
+      exact B.val.starSubalgebra_closedLeftIdeal B.property.2)
 
 @[simp, grind =]
 theorem mem_hereditarySubalgebraOrderIsoProperCone_apply
     (B : {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ IsHereditary B}) {x : A} :
-    x ∈ (hereditarySubalgebraOrderIsoProperCone A B).1 ↔ x ∈ B.1 ∧ 0 ≤ x := by
-  have := B.2.1
-  exact B.1.mem_positiveCone
+    x ∈ (hereditarySubalgebraOrderIsoProperCone A B).val ↔ x ∈ B.val ∧ 0 ≤ x := by
+  have := B.property.1
+  exact B.val.mem_positiveCone
 
 @[simp]
 theorem coe_hereditarySubalgebraOrderIsoProperCone_apply
     (B : {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ IsHereditary B}) :
-    ((hereditarySubalgebraOrderIsoProperCone A B).1 : Set A) = (B.1 : Set A) ∩ Set.Ici 0 := by
-  have := B.2.1
-  exact B.1.coe_positiveCone
+    ((hereditarySubalgebraOrderIsoProperCone A B).val : Set A) = (B.val : Set A) ∩ Set.Ici 0 := by
+  have := B.property.1
+  exact B.val.coe_positiveCone
 
 @[simp]
 theorem coe_hereditarySubalgebraOrderIsoProperCone_symm_apply
     (P : {P : ProperCone ℝ A // P ≤ ProperCone.positive ℝ A ∧ IsHereditary P}) :
-    ((hereditarySubalgebraOrderIsoProperCone A).symm P).1 =
-      (P.1.leftIdeal P.2.2).starSubalgebra (P.1.mul_mem_leftIdeal P.2.2) :=
+    ((hereditarySubalgebraOrderIsoProperCone A).symm P).val =
+      (P.val.leftIdeal P.property.2).starSubalgebra (P.val.mul_mem_leftIdeal P.property.2) :=
   (rfl)
 
 end OrderIsos

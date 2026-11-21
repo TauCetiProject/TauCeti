@@ -236,6 +236,15 @@ theorem integral_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
       (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
       (value_ae_eq_intervalRepresentativeL hab u) s.property t.property
 
+/-- The fundamental theorem of calculus for the interval representative, as a set integral over
+`(s, t)` for `s ≤ t`. -/
+theorem setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) :
+    ∫ r in Ioo (s : ℝ) t, gradient u r =
+      intervalRepresentativeL hab u t - intervalRepresentativeL hab u s := by
+  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hst,
+    integral_gradient_eq_intervalRepresentativeL_sub]
+
 /-- The weak gradient is interval integrable between any two points of `[a,b]`. -/
 theorem intervalIntegrable_gradient (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : ℝ}
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : IntervalIntegrable (gradient u) volume s t :=
