@@ -33,7 +33,9 @@ inequality in `x` for each `y`, followed by Tonelli's theorem, gives
 conjugate exponent. When `μ` is finite, testing against `min G n ^ (p - 1)` bounds the integrals
 of the truncations `min G n ^ p`, which are finite, and monotone convergence removes the
 truncation. An s-finite `μ` is the supremum of finite measures below it, and both sides of the
-inequality are monotone in `μ`.
+inequality are monotone in `μ`. At equality and finite `R`, testing with `G ^ (p - 1)` shows
+that almost every slice attains equality in Hölder's inequality. Its equality case is
+`ENNReal.lintegral_mul_eq_Lp_mul_Lq_iff_of_ne_zero_of_ne_top`.
 
 A typical consequence bounds a weighted `Lʳ` norm, over a parameter `t`, of the integrals of `g`
 over a family of sets `{x | R t x}`: pulling the power inside makes it an integral of `g` against
@@ -47,6 +49,8 @@ the average over `s` of its pointwise `ℓʳ` norm (`TauCeti.tsum_setLAverage_rp
 ## Main declarations
 
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
+* `TauCeti.lintegral_Lp_lintegral_eq_iff`: equality at finite norm for `1 < p`, characterized
+  by almost-everywhere proportionality of the `p`th powers of the slices and their integral.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
   truncations.
 * `TauCeti.tsum_setLAverage_rpow_le`: Minkowski's inequality for the averages of a countable
@@ -177,6 +181,138 @@ theorem lintegral_Lp_lintegral_le [SFinite μ] [SFinite ν] {f : α → β → �
   rw [lintegral_congr_ae (hL.mono fun x hx ↦ by rw [hx]),
     lintegral_congr_ae (hR.mono fun y hy ↦ by rw [hy])]
   exact lintegral_Lp_lintegral_le_of_measurable hg hp
+
+-- With a nonzero aggregate, the equality case of each dual estimate fixes the slice,
+-- including zero slices, which are not covered by the normalized Hölder equality theorem.
+private theorem minkowski_holder_eq_iff {p : ℝ} (hp : 1 < p) {f G : α → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hG : AEMeasurable G μ)
+    (hN0 : (∫⁻ x, G x ^ p ∂μ) ≠ 0) (hN : (∫⁻ x, G x ^ p ∂μ) ≠ ∞)
+    (hA : (∫⁻ x, f x ^ p ∂μ) ≠ ∞) :
+    (∫⁻ x, f x * G x ^ (p - 1) ∂μ) =
+        (∫⁻ x, f x ^ p ∂μ) ^ (1 / p) * (∫⁻ x, G x ^ p ∂μ) ^ (1 / p.conjExponent) ↔
+      ∀ᵐ x ∂μ, f x ^ p = (∫⁻ z, f z ^ p ∂μ) * (∫⁻ z, G z ^ p ∂μ)⁻¹ * G x ^ p := by
+  have hpq : p.HolderConjugate p.conjExponent := .conjExponent hp
+  by_cases hA0 : (∫⁻ x, f x ^ p ∂μ) = 0
+  · have hf0 := ENNReal.ae_eq_zero_of_lintegral_rpow_eq_zero hpq.pos.le hf hA0
+    have hprod := ENNReal.lintegral_mul_eq_zero_of_lintegral_rpow_eq_zero (g :=
+      fun x ↦ G x ^ (p - 1)) hpq.pos.le hf hA0
+    simp only [hA0, ENNReal.zero_rpow_of_pos hpq.one_div_pos, zero_mul]
+    exact iff_of_true hprod (hf0.mono fun x hx ↦ by
+      simp [hx, ENNReal.zero_rpow_of_pos hpq.pos])
+  have hpow (x : α) : (G x ^ (p - 1)) ^ p.conjExponent = G x ^ p := by
+    rw [← ENNReal.rpow_mul, hpq.sub_one_mul_conj]
+  have h := ENNReal.lintegral_mul_eq_Lp_mul_Lq_iff_of_ne_zero_of_ne_top hpq hf
+    (hG.pow_const (p - 1)) hA (by simpa only [hpow] using hN) hA0
+    (by simpa only [hpow] using hN0)
+  simp only [Pi.mul_apply, hpow] at h
+  rw [h]
+  refine Filter.eventually_congr (Filter.Eventually.of_forall fun x ↦ ?_)
+  simp only [Pi.smul_apply, Pi.pow_apply, smul_eq_mul, hpow]
+  rw [← ENNReal.mul_right_inj hA0 hA, ENNReal.mul_inv_cancel_left hA0 hA, mul_assoc]
+
+-- If the aggregate is zero, Tonelli also makes almost every slice zero.
+private theorem ae_ae_rpow_eq_zero_of_lintegral_lintegral_rpow_eq_zero
+    [SFinite μ] [SFinite ν] {f : α → β → ℝ≥0∞}
+    (hf : AEMeasurable (uncurry f) (μ.prod ν)) {p : ℝ} (hp : 0 < p)
+    (h : (∫⁻ x, (∫⁻ y, f x y ∂ν) ^ p ∂μ) = 0) :
+    ∀ᵐ y ∂ν, (fun x ↦ f x y ^ p) =ᵐ[μ] 0 := by
+  have hG := ENNReal.ae_eq_zero_of_lintegral_rpow_eq_zero hp.le hf.lintegral_prod_right h
+  have h0 : ∫⁻ z, uncurry f z ∂μ.prod ν = 0 :=
+    (lintegral_lintegral hf).symm.trans ((lintegral_congr_ae hG).trans lintegral_zero_fun)
+  have hswap : ∀ᵐ z ∂ν.prod μ, f z.2 z.1 = 0 :=
+    (Measure.measurePreserving_swap (μ := ν) (ν := μ)).quasiMeasurePreserving.ae
+      ((lintegral_eq_zero_iff' hf).mp h0)
+  filter_upwards [Measure.ae_ae_of_ae_prod hswap] with y hy
+  filter_upwards [hy] with x hx
+  simp [hx, ENNReal.zero_rpow_of_pos hp]
+
+-- Pairing the parameter integral with its own dual power recovers its `p`th moment.
+private theorem lintegral_minkowski_pairing [SFinite μ] [SFinite ν] {f : α → β → ℝ≥0∞}
+    (hf : AEMeasurable (uncurry f) (μ.prod ν)) {p : ℝ} (hp : 1 ≤ p) :
+    (∫⁻ y, ∫⁻ x, f x y * (∫⁻ t, f x t ∂ν) ^ (p - 1) ∂μ ∂ν) =
+      ∫⁻ x, (∫⁻ y, f x y ∂ν) ^ p ∂μ := by
+  have hprod : AEMeasurable (uncurry fun x y ↦ f x y * (∫⁻ t, f x t ∂ν) ^ (p - 1))
+      (μ.prod ν) := hf.mul ((hf.lintegral_prod_right.pow_const (p - 1)).comp_fst)
+  rw [← lintegral_lintegral_swap hprod]
+  apply lintegral_congr_ae
+  have hm := hf
+  rw [Measure.prod_eq_of_sfinite] at hm
+  filter_upwards [Measurable.map_prodMk_left.aemeasurable.ae_of_bind hm] with x hx
+  have hfx : AEMeasurable (f x) ν := hx.comp_measurable measurable_prodMk_left
+  refine (lintegral_mul_const'' _ hfx).trans ?_
+  have he : 1 + (p - 1) = p := by ring
+  simpa only [he, ENNReal.rpow_one] using
+    (ENNReal.rpow_add_of_nonneg (x := ∫⁻ y, f x y ∂ν) _ _ zero_le_one (sub_nonneg.2 hp)).symm
+
+private theorem minkowski_eq_iff_of_zero [SFinite μ] [SFinite ν] {f : α → β → ℝ≥0∞}
+    (hf : AEMeasurable (uncurry f) (μ.prod ν)) {p : ℝ} (hp : 0 < p)
+    (hN : (∫⁻ x, (∫⁻ y, f x y ∂ν) ^ p ∂μ) = 0) :
+    (∫⁻ x, (∫⁻ y, f x y ∂ν) ^ p ∂μ) ^ (1 / p) =
+        (∫⁻ y, (∫⁻ x, f x y ^ p ∂μ) ^ (1 / p) ∂ν) ↔
+      ∀ᵐ y ∂ν, ∀ᵐ x ∂μ, f x y ^ p = (∫⁻ z, f z y ^ p ∂μ) *
+        (∫⁻ z, (∫⁻ t, f z t ∂ν) ^ p ∂μ)⁻¹ * (∫⁻ t, f x t ∂ν) ^ p := by
+  have hA := ae_ae_rpow_eq_zero_of_lintegral_lintegral_rpow_eq_zero hf hp hN
+  have he : (fun y ↦ (∫⁻ x, f x y ^ p ∂μ) ^ (1 / p)) =ᵐ[ν] 0 := hA.mono fun y hy ↦ by
+    have hy0 := (lintegral_congr_ae hy).trans lintegral_zero_fun
+    simpa only [Pi.zero_apply, ENNReal.zero_rpow_of_pos (one_div_pos.mpr hp)] using
+      congrArg (· ^ (1 / p)) hy0
+  refine iff_of_true (by rw [hN, ENNReal.zero_rpow_of_pos (one_div_pos.mpr hp),
+    lintegral_congr_ae he, lintegral_zero_fun]) ?_
+  filter_upwards [hA] with y hy
+  rw [(lintegral_congr_ae hy).trans lintegral_zero_fun]
+  filter_upwards [hy] with x hx
+  simp [hx]
+
+/-- **Equality in Minkowski's integral inequality.** For `1 < p` and finite integrated slice norm,
+there is equality exactly when almost every slice to the `p`th power is the aggregate to the `p`th
+power times the ratio of their integrals. If the aggregate vanishes, almost every slice vanishes. -/
+theorem lintegral_Lp_lintegral_eq_iff [SFinite μ] [SFinite ν] {f : α → β → ℝ≥0∞}
+    (hf : AEMeasurable (uncurry f) (μ.prod ν)) {p : ℝ} (hp : 1 < p)
+    (hR : (∫⁻ y, (∫⁻ x, f x y ^ p ∂μ) ^ (1 / p) ∂ν) ≠ ∞) :
+    (∫⁻ x, (∫⁻ y, f x y ∂ν) ^ p ∂μ) ^ (1 / p) =
+        (∫⁻ y, (∫⁻ x, f x y ^ p ∂μ) ^ (1 / p) ∂ν) ↔
+      ∀ᵐ y ∂ν, ∀ᵐ x ∂μ, f x y ^ p = (∫⁻ z, f z y ^ p ∂μ) *
+        (∫⁻ z, (∫⁻ t, f z t ∂ν) ^ p ∂μ)⁻¹ * (∫⁻ t, f x t ∂ν) ^ p := by
+  set G := fun x ↦ ∫⁻ y, f x y ∂ν
+  set A := fun y ↦ ∫⁻ x, f x y ^ p ∂μ
+  set N := ∫⁻ x, G x ^ p ∂μ
+  set R := ∫⁻ y, A y ^ (1 / p) ∂ν
+  have hfy : ∀ᵐ y ∂ν, AEMeasurable (fun x ↦ f x y) μ := by
+    have hm := hf.prod_swap
+    rw [Measure.prod_eq_of_sfinite] at hm
+    filter_upwards [Measurable.map_prodMk_left.aemeasurable.ae_of_bind hm] with y hy
+    exact hy.comp_measurable measurable_prodMk_left
+  have hpq : p.HolderConjugate p.conjExponent := .conjExponent hp
+  have hG : AEMeasurable G μ := hf.lintegral_prod_right'
+  have hA : AEMeasurable A ν := (hf.pow_const p).lintegral_prod_left'
+  have hNR : N ^ (1 / p) ≤ R := lintegral_Lp_lintegral_le hf hp.le
+  have hN : N ≠ ∞ := by
+    intro h
+    rw [h, ENNReal.top_rpow_of_pos hpq.one_div_pos] at hNR
+    exact hR (top_le_iff.mp hNR)
+  by_cases hN0 : N = 0
+  · exact minkowski_eq_iff_of_zero hf hpq.pos hN0
+  set B := N ^ (1 / p.conjExponent)
+  set D := fun y ↦ ∫⁻ x, f x y * G x ^ (p - 1) ∂μ
+  have hD : (∫⁻ y, D y ∂ν) = N := lintegral_minkowski_pairing hf hp.le
+  have hB0 : B ≠ 0 := (ENNReal.rpow_eq_zero_iff_of_pos hpq.symm.one_div_pos).not.mpr hN0
+  have hB : B ≠ ∞ := ENNReal.rpow_ne_top_of_ne_zero hN0 hN
+  have hNB : N ^ (1 / p) * B = N := by
+    dsimp only [B]
+    rw [← ENNReal.rpow_add _ _ hN0 hN, one_div, one_div, hpq.inv_add_inv_eq_one, ENNReal.rpow_one]
+  have hle : D ≤ᵐ[ν] fun y ↦ A y ^ (1 / p) * B := by
+    filter_upwards [hfy] with y hy
+    simpa [D, B, N, A, ← ENNReal.rpow_mul, hpq.sub_one_mul_conj] using
+      ENNReal.lintegral_mul_le_Lp_mul_Lq μ hpq hy (hG.pow_const (p - 1))
+  rw [← ENNReal.mul_left_inj hB0 hB, hNB]
+  have hRB : R * B = ∫⁻ y, A y ^ (1 / p) * B ∂ν := (lintegral_mul_const' _ _ hB).symm
+  rw [hRB]
+  nth_rw 1 [← hD]
+  rw [lintegral_eq_iff_ae_eq_of_ae_le (hD.trans_ne hN) ((hA.pow_const _).mul_const _) hle]
+  refine Filter.eventually_congr ?_
+  filter_upwards [hfy, ae_lt_top' (hA.pow_const (1 / p)) hR] with y hy hyfin
+  exact minkowski_holder_eq_iff hp hy hG hN0 hN (fun he ↦ hyfin.ne (by
+    simp only [A, he, ENNReal.top_rpow_of_pos hpq.one_div_pos]))
 
 /-- **Minkowski's integral inequality for weighted truncations.** For `1 ≤ r`, a weight `w` and a
 measurable relation `R`, the weighted `Lʳ(ν)` norm in `t` of the truncated integrals
