@@ -28,12 +28,13 @@ For commutative `R`-algebras `A` and `B`, the tensor product `A ⊗[R] B` is the
 `A ← R → B` in commutative semirings. Mathlib's `Algebra.TensorProduct.productMap` expresses this
 universal property for algebra homomorphisms into an `R`-algebra, and
 `Algebra.TensorProduct.ringHom_ext` is its uniqueness half for ring homomorphisms.
-`Algebra.TensorProduct.liftRingHom` is the existence half for ring homomorphisms: ring
-homomorphisms `x : A →+* T` and `y : B →+* T` into a commutative semiring `T` which agree on `R`
-induce `a ⊗ b ↦ x a * y b`, even for noncommutative `A` and `B`, with no `R`-algebra structure
-on `T` involved. This is the form needed when `T` already carries an `R`-algebra structure which
-`x` and `y` do not respect, for instance when `T` is itself a tensor product over `R` and `x`
-twists the first factor by a ring automorphism.
+`Algebra.TensorProduct.liftRingHomOfCommute` is the existence half for ring homomorphisms: ring
+homomorphisms `x : A →+* T` and `y : B →+* T` which agree on `R` and have commuting images
+induce `a ⊗ b ↦ x a * y b`, for any semirings `A`, `B` and `T`, with no `R`-algebra structure
+on `T` involved; `Algebra.TensorProduct.liftRingHom` is its case of a commutative `T`. This is
+the form needed when `T` already carries an `R`-algebra structure which `x` and `y` do not
+respect, for instance when `T` is itself a tensor product over `R` and `x` twists the first
+factor by a ring automorphism.
 
 Mathlib's `LinearMap.tensorProduct` and `LinearMap.tensorProductEnd` send `a ⊗ f` to `a` times the
 base change of `f`, but their generated computation lemmas unfold to `TensorProduct.liftAux`; this
@@ -55,7 +56,9 @@ ones, so the public `LinearMap.baseChange` API applies.
   and of endomorphisms sends `a ⊗ f` to `a • f.baseChange A`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
   multiplication maps `s ⊗ b ↦ s • b` and `b ⊗ t ↦ b * t`.
-* `Algebra.TensorProduct.liftRingHom x y h`: the ring homomorphism `a ⊗ b ↦ x a * y b`.
+* `Algebra.TensorProduct.liftRingHomOfCommute x y h hxy`: the ring homomorphism
+  `a ⊗ b ↦ x a * y b` for ring homomorphisms with commuting images, and
+  `Algebra.TensorProduct.liftRingHom x y h` for a commutative target.
 * `Algebra.TensorProduct.map_productMap_eq_zero_of_comp_eq`: if `p : T → U` equalizes
   `f, g : S → T`, then `p` kills `productMap f g e` (`s ⊗ t ↦ f s * g t`) for every `e` in the
   kernel of multiplication `S ⊗[R] S → S`.
@@ -178,19 +181,72 @@ theorem AlgHom.lTensor_rTensor_comm {R B C D E : Type*} [CommSemiring R]
 
 namespace Algebra.TensorProduct
 
+section LiftRingHomOfCommute
+
+variable {R A B T : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B]
+  [Algebra R B] [Semiring T]
+
+/-- The ring homomorphism `A ⊗[R] B →+* T`, `a ⊗ b ↦ x a * y b`, induced by ring homomorphisms
+`x : A →+* T` and `y : B →+* T` which agree on `R` and have commuting images. This is the
+ring-homomorphism form of `Algebra.TensorProduct.lift`: no `R`-algebra structure on `T` is
+involved, and `T` need not be commutative. -/
+noncomputable def liftRingHomOfCommute (x : A →+* T) (y : B →+* T)
+    (h : x.comp (algebraMap R A) = y.comp (algebraMap R B))
+    (hxy : ∀ a b, Commute (x a) (y b)) : A ⊗[R] B →+* T where
+  toFun := liftAddHom ((AddMonoidHom.mul.comp (x : A →+ T)).compl₂ (y : B →+ T))
+    fun r a b ↦ by
+      -- `x (algebraMap R A r)` commutes with `x a`, and equals `y (algebraMap R B r)`
+      have hc := (Algebra.commute_algebraMap_left r a).map x
+      have hr : x (algebraMap R A r) = y (algebraMap R B r) := congr($h r)
+      simp [Algebra.smul_def, ← hr, hc.eq, mul_assoc]
+  map_zero' := map_zero _
+  map_add' := map_add _
+  map_one' := by simp [one_def]
+  map_mul' z w := by
+    induction z using TensorProduct.inductionOn with
+    | add z z' hz hz' => rw [add_mul, map_add, map_add, hz, hz', add_mul]
+    | tmul a b =>
+      induction w using TensorProduct.inductionOn with
+      | add w w' hw hw' => rw [mul_add, map_add, map_add, hw, hw', mul_add]
+      | tmul a' b' =>
+        simp only [tmul_mul_tmul, liftAddHom_tmul, AddMonoidHom.compl₂_apply,
+          AddMonoidHom.comp_apply, AddMonoidHom.mul_apply, AddMonoidHom.coe_ofClass, map_mul]
+        rw [(hxy a' b).symm.mul_mul_mul_comm]
+
+variable (x : A →+* T) (y : B →+* T) (h : x.comp (algebraMap R A) = y.comp (algebraMap R B))
+  (hxy : ∀ a b, Commute (x a) (y b))
+
+@[simp]
+theorem liftRingHomOfCommute_tmul (a : A) (b : B) :
+    liftRingHomOfCommute x y h hxy (a ⊗ₜ b) = x a * y b := by
+  simp [liftRingHomOfCommute]
+
+@[simp]
+theorem liftRingHomOfCommute_comp_includeLeftRingHom :
+    (liftRingHomOfCommute x y h hxy).comp includeLeftRingHom = x := by
+  ext a
+  simp
+
+@[simp]
+theorem liftRingHomOfCommute_comp_includeRight :
+    (liftRingHomOfCommute x y h hxy).comp (includeRight : B →ₐ[R] A ⊗[R] B) = y := by
+  ext b
+  simp
+
+end LiftRingHomOfCommute
+
 section LiftRingHom
 
 variable {R A B T : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B]
   [Algebra R B] [CommSemiring T]
 
 /-- The ring homomorphism `A ⊗[R] B →+* T`, `a ⊗ b ↦ x a * y b`, induced by ring homomorphisms
-`x : A →+* T` and `y : B →+* T` which agree on `R`. The sources `A` and `B` need not be
-commutative, and no `R`-algebra structure on `T` is involved. -/
+`x : A →+* T` and `y : B →+* T` into a commutative semiring which agree on `R`: the case of
+`liftRingHomOfCommute` where the images commute automatically. The sources `A` and `B` need not
+be commutative, and no `R`-algebra structure on `T` is involved. -/
 noncomputable def liftRingHom (x : A →+* T) (y : B →+* T)
     (h : x.comp (algebraMap R A) = y.comp (algebraMap R B)) : A ⊗[R] B →+* T :=
-  letI : Algebra R T := (x.comp (algebraMap R A)).toAlgebra
-  (productMap (R := R) { x with commutes' := fun _ ↦ rfl }
-    { y with commutes' := fun r ↦ congr($h r).symm }).toRingHom
+  liftRingHomOfCommute x y h fun _ _ ↦ .all _ _
 
 variable (x : A →+* T) (y : B →+* T) (h : x.comp (algebraMap R A) = y.comp (algebraMap R B))
 
