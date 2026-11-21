@@ -23,14 +23,18 @@ three-term relations between neighbouring parameter pairs, collected in DLMF §8
 * `I_x(a, b) = I_x(a + 1, b - 1) + x ^ a x' ^ (b - 1) / (a Β(a, b))` (8.17.18);
 * `I_x(a, b) = I_x(a - 1, b + 1) - x ^ (a - 1) x' ^ b / (b Β(a, b))` (8.17.19).
 
-Each holds whenever the parameters that occur in it are positive. Several also hold when one of
-them vanishes, through the boundary values of `TauCeti.regularizedIncompleteBeta`: `I_x(0, b) = 1`
-for `0 < b` and `0 ≤ x` (and `I_x(0, b) = 0` for `x < 0` or `b ≤ 0`), and `I_x(a, 0) = 0`. Each
-theorem below assumes only what its identity needs.
-The homogeneous relations 8.17.12–8.17.17 hold for every real `x`, because off `[0, 1]` the clamped
-function takes the same value `0` or `1` at all the parameters involved and the coefficients
-balance (`TauCeti.exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc`); 8.17.18 and 8.17.19
-need `0 ≤ x ≤ 1`.
+Each holds for `0 ≤ x ≤ 1` whenever the parameters that occur in it are positive. Several also
+hold when one of them vanishes, through the boundary values of
+`TauCeti.regularizedIncompleteBeta`: `I_x(0, b) = 1` for `0 < b` and `0 ≤ x` (and
+`I_x(0, b) = 0` for `x < 0` or `b ≤ 0`), and `I_x(a, 0) = 0`. Each theorem below assumes only
+what its identity needs.
+The homogeneous relations 8.17.12–8.17.17 hold for every real `x`. Off `[0, 1]`, at parameter
+pairs with `0 ≤ a` and `0 < b`, the clamped function takes one common value, `0` for `x < 0` and
+`1` for `1 < x`, and the coefficients balance
+(`TauCeti.exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc`). In 8.17.13 and 8.17.14
+the second parameter may also be `0`: then the term with second parameter `b + 1` drops out,
+because its coefficient contains the factor `b = 0`, and the remaining terms vanish through
+`I_x(a, 0) = 0`. The inhomogeneous relations 8.17.18 and 8.17.19 need `0 ≤ x ≤ 1`.
 
 The unit steps 8.17.20 and 8.17.21 are `TauCeti.regularizedIncompleteBeta_add_one_left` and
 `TauCeti.regularizedIncompleteBeta_add_one_right`; together with the antidiagonal step
@@ -65,14 +69,16 @@ variable {a b x : ℝ}
 /-- The antidiagonal step in the form `I_x(a, b) = I_x(a + 1, b - 1) + x ^ a (1 - x) ^ (b - 1) /
 (a Β(a, b))`, [DLMF 8.17.18](https://dlmf.nist.gov/8.17.E18).
 
-At `b = 1` it reads `I_x(a, 1) = x ^ a`, through the boundary value `I_x(a + 1, 0) = 0`. -/
+At `b = 1` it reads `I_x(a, 1) = x ^ a` for `0 ≤ x ≤ 1`, through the boundary value
+`I_x(a + 1, 0) = 0`. -/
 theorem regularizedIncompleteBeta_eq_add_one_left_sub_one_right_add (ha : 0 < a) (hb : 1 ≤ b)
     (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
     regularizedIncompleteBeta a b x = regularizedIncompleteBeta (a + 1) (b - 1) x +
       x ^ a * (1 - x) ^ (b - 1) / (a * beta a b) := by
   rcases hb.eq_or_lt with rfl | hb
   · rw [sub_self, Real.rpow_zero, regularizedIncompleteBeta_one_right ha hx0 hx1,
-      regularizedIncompleteBeta_eq_zero_of_nonpos_right le_rfl, zero_add, beta_one_right ha]
+      regularizedIncompleteBeta_eq_zero_of_nonpos_right le_rfl, zero_add,
+      beta_one_right (by positivity)]
     field_simp
   obtain ⟨β, rfl⟩ : ∃ β, b = β + 1 := ⟨b - 1, by ring⟩
   have hβ : 0 < β := by linarith
@@ -90,7 +96,8 @@ theorem regularizedIncompleteBeta_eq_add_one_left_sub_one_right_add (ha : 0 < a)
 /-- The antidiagonal step in the form `I_x(a, b) = I_x(a - 1, b + 1) - x ^ (a - 1) (1 - x) ^ b /
 (b Β(a, b))`, [DLMF 8.17.19](https://dlmf.nist.gov/8.17.E19).
 
-At `a = 1` it reads `I_x(1, b) = 1 - (1 - x) ^ b`, through the boundary value `I_x(0, b) = 1`. -/
+At `a = 1` it reads `I_x(1, b) = 1 - (1 - x) ^ b` for `0 ≤ x ≤ 1`, through the boundary value
+`I_x(0, b) = 1`. -/
 theorem regularizedIncompleteBeta_eq_sub_one_left_add_one_right_sub (ha : 1 ≤ a) (hb : 0 < b)
     (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
     regularizedIncompleteBeta a b x = regularizedIncompleteBeta (a - 1) (b + 1) x -
