@@ -120,12 +120,10 @@ theorem exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain
   refine (hC (M := ‖f‖₊) (L := ‖f‖₊)
     (fun x hx ↦ (hcd.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt_iteratedFDeriv
       (by exact_mod_cast hj))
-    (fun x hx ↦ (f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j, by omega⟩
-      ⟨x, hx⟩).trans (f.norm_iteratedFDeriv_le _))
+    (fun x hx ↦ f.norm_iteratedFDeriv_apply_le hg hj.le ⟨x, hx⟩)
     (fun x hx ↦ by
       rw [norm_fderiv_iteratedFDeriv]
-      exact (f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j + 1, by omega⟩
-        ⟨x, hx⟩).trans (f.norm_iteratedFDeriv_le _))).mono_const ?_
+      exact f.norm_iteratedFDeriv_apply_le hg hj ⟨x, hx⟩)).mono_const ?_
   rw [← NNReal.coe_le_coe]
   push_cast
   nlinarith [norm_nonneg f]
