@@ -419,46 +419,4 @@ theorem quasiIso_cellularActionComplexAugmentation [ContractibleSpace C] :
     ext : 1
     simp [-Rep.forget₂_moduleCat_map, eqToHom_map, h]
 
-section MapAugmentation
-
-variable {Y : Type u} [TopologicalSpace Y] [T2Space Y] (D : Set Y) [CWComplex D]
-  {H : Type u} [Monoid H] (σ : H → (TopCat.of D ⟶ TopCat.of D))
-  (hcell' : ∀ h, IsCellular D D (σ h))
-  (hone' : σ 1 = 𝟙 _) (hmul' : ∀ g h, σ (g * h) = σ h ≫ σ g)
-  (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
-  (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g))
-
-/-- Equivariant cellular maps preserve the cellular augmentation in degree zero. -/
-@[reassoc (attr := simp)]
-theorem cellularActionGroupMap_comp_cellularActionAugmentation :
-    cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq 0 ≫
-        (Rep.resFunctor φ).map (cellularActionAugmentation D σ hcell' hone' hmul' R) =
-      cellularActionAugmentation C ρ hcell hone hmul R := by
-  refine Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
-  exact congrArg ModuleCat.Hom.hom
-    (cellularChainGroupMap_comp_cellularAugmentation C D hf (ModuleCat.of R R))
-
-/-- In degree zero, `cellularActionComplexMap` commutes with the equivariant cellular
-augmentations. -/
-@[reassoc]
-theorem cellularActionComplexMap_f_zero_comp_augmentation :
-    (cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq).f 0 ≫
-        (Rep.resFunctor φ).map
-          ((cellularActionComplexAugmentation D σ hcell' hone' hmul' R).f 0) =
-      (cellularActionComplexAugmentation C ρ hcell hone hmul R).f 0 := by
-  have hmap :
-      (Rep.resFunctor φ).map (Y := Rep.trivial R H R)
-          ((cellularActionComplexAugmentation D σ hcell' hone' hmul' R).f 0) =
-      eqToHom (by rw [cellularActionComplex_X]) ≫
-        (Rep.resFunctor φ).map (cellularActionAugmentation D σ hcell' hone' hmul' R) := by
-    rw [cellularActionComplexAugmentation_f_zero, (Rep.resFunctor φ).map_comp, eqToHom_map]
-  refine (congrArg₂ (· ≫ ·)
-    (cellularActionComplexMap_f C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq 0)
-    hmap).trans ?_
-  rw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-    cellularActionGroupMap_comp_cellularActionAugmentation]
-  exact (cellularActionComplexAugmentation_f_zero C ρ hcell hone hmul R).symm
-
-end MapAugmentation
-
 end TauCeti

@@ -248,61 +248,6 @@ theorem
         k G)
   simpa only [Iso.trans_inv, Functor.mapIso_inv] using congrArg Iso.inv h
 
-/-- The equivariant geometric cellular augmentation in degree zero. -/
-def universalGSpaceCellularAugmentationHom :
-    Rep.of (universalGSpaceCellularRepresentation k G 0) ⟶ Rep.trivial k G k :=
-  cellularActionAugmentation univ universalGSpaceCellularTranslation
-    isCellular_universalGSpaceCellularTranslation universalGSpaceCellularTranslation_one
-    universalGSpaceCellularTranslation_mul k
-
-/-- Forgetting equivariance gives the degree-zero cellular augmentation. -/
-@[simp]
-theorem universalGSpaceCellularAugmentationHom_hom_toLinearMap :
-    (universalGSpaceCellularAugmentationHom k G).hom.toLinearMap =
-      (cellularAugmentation (univ : Set (universalGSpace G)) (ModuleCat.of k k)).hom := by
-  unfold universalGSpaceCellularAugmentationHom
-  exact cellularActionAugmentation_hom_toLinearMap _ _ _ _ _ _
-
-/-- The equivariant geometric cellular augmentation of Milnor's join, induced directly by the
-geometric cellular augmentation of its simplicial CW structure. -/
-def universalGSpaceCellularAugmentation :
-    universalGSpaceCellularComplex k G ⟶
-      (ChainComplex.single₀ (Rep k G)).obj (Rep.trivial k G k) :=
-  cellularActionComplexAugmentation univ universalGSpaceCellularTranslation
-    isCellular_universalGSpaceCellularTranslation universalGSpaceCellularTranslation_one
-    universalGSpaceCellularTranslation_mul k
-
-/-- In degree zero, `universalGSpaceCellularAugmentation` is the equivariant cellular
-augmentation up to the canonical term transport. -/
-@[simp]
-theorem universalGSpaceCellularAugmentation_f_zero :
-    (universalGSpaceCellularAugmentation k G).f 0 =
-      eqToHom (universalGSpaceCellularComplex_X k G 0) ≫
-        universalGSpaceCellularAugmentationHom k G := by
-  unfold universalGSpaceCellularAugmentation universalGSpaceCellularAugmentationHom
-  exact cellularActionComplexAugmentation_f_zero _ _ _ _ _ _
-
-/-- The equivariant cellular-to-ordered isomorphism intertwines the geometric cellular
-augmentation with the ordered simplicial augmentation. -/
-@[reassoc]
-theorem universalGSpaceCellularComplexIso_hom_comp_universalGSpaceAugmentation :
-    (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G =
-      universalGSpaceCellularAugmentation k G := by
-  refine ((universalGSpaceCellularComplex k G).toSingle₀Equiv _).injective <| Subtype.ext ?_
-  simp only [ChainComplex.toSingle₀Equiv_apply_coe, HomologicalComplex.comp_f,
-    universalGSpaceCellularComplexIso_hom_f, universalGSpaceAugmentation_f_zero,
-    universalGSpaceCellularAugmentation_f_zero, universalGSpaceChainComplex_X,
-    ChainComplex.single₀_obj_zero, Category.assoc]
-  refine congrArg (eqToHom (universalGSpaceCellularComplex_X k G 0) ≫ ·) ?_
-  refine Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
-  simpa only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
-    universalGSpaceCellularRepIso_hom_toLinearMap,
-    universalGSpaceCellularAugmentationHom_hom_toLinearMap,
-    ModuleCat.hom_comp, LinearEquiv.toModuleIso_hom, Rep.forget₂_moduleCat_map,
-    ModuleCat.hom_ofHom] using
-    congrArg ModuleCat.Hom.hom
-      (universalGSpaceCellularChainLinearEquiv_comp_permutationAugmentation k G)
-
 end ChainComplex
 
 section Resolution

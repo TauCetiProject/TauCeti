@@ -423,19 +423,6 @@ theorem universalGSpaceCellularResolutionMap_def (φ : G →* H) :
         eqToHom (by rw [universalGSpaceCellularResolution_complex]) :=
   (rfl)
 
-/-- In each degree, `universalGSpaceCellularResolutionMap` is `universalGSpaceCellularChainHom`
-up to the canonical term transports. -/
-@[simp]
-theorem universalGSpaceCellularResolutionMap_f (φ : G →* H) (n : ℕ) :
-    (φ.universalGSpaceCellularResolutionMap (k := k)).f n =
-      eqToHom (by
-          rw [universalGSpaceCellularResolution_complex, universalGSpaceCellularComplex_X]) ≫
-        φ.universalGSpaceCellularChainHom n ≫
-        eqToHom (by
-          rw [Functor.mapHomologicalComplex_obj_X,
-            universalGSpaceCellularResolution_complex, universalGSpaceCellularComplex_X]) := by
-  simp [universalGSpaceCellularResolutionMap_def]
-
 /-- The identity homomorphism induces the identity chain map on
 `universalGSpaceCellularResolution`. -/
 @[simp]
