@@ -340,6 +340,18 @@ theorem setIntegral_Icc_update_add_setIntegral_Icc_update {ι E : Type*} [Fintyp
 
 namespace MeasureTheory
 
+/-- The integral of the norm of a sum is bounded by the sum of the integrals of the norms. -/
+theorem _root_.MeasureTheory.Integrable.integral_norm_add_le {Ω E : Type*} [MeasurableSpace Ω]
+    [SeminormedAddCommGroup E] {μ : Measure Ω} {f g : Ω → E}
+    (hf : Integrable f μ) (hg : Integrable g μ) :
+    (∫ x, ‖f x + g x‖ ∂μ) ≤ (∫ x, ‖f x‖ ∂μ) + (∫ x, ‖g x‖ ∂μ) := by
+  have hnorm {u : Ω → E} (hu : Integrable u μ) : Integrable (fun x ↦ ‖u x‖) μ :=
+    hu.congr'_eNorm hu.aestronglyMeasurable.norm (.of_forall fun x ↦ (eNorm_norm (u x)).symm)
+  calc
+    _ ≤ ∫ x, ‖f x‖ + ‖g x‖ ∂μ :=
+      integral_mono (hnorm (hf.add hg)) ((hnorm hf).add (hnorm hg)) (fun x ↦ norm_add_le _ _)
+    _ = _ := integral_add (hnorm hf) (hnorm hg)
+
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
 function is integrable on a finite measure space. -/
 theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}

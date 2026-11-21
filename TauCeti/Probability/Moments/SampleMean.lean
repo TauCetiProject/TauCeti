@@ -54,23 +54,6 @@ namespace TauCeti
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
-section FiniteMean
-
-variable [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ι → Ω → E}
-
-/-- A finite mean of integrable functions is integrable. -/
-theorem integrable_finiteMean (hf : ∀ i, Integrable (f i) μ) :
-    Integrable (fun ω ↦ finiteMean ℝ (f · ω)) μ := by
-  simp only [finiteMean_eq_inv_smul_sum]
-  exact (integrable_finsetSum _ fun i _ ↦ hf i).smul _
-
-/-- Integration commutes with a finite mean of integrable functions. -/
-theorem integral_finiteMean (hf : ∀ i, Integrable (f i) μ) :
-    (∫ ω, finiteMean ℝ (f · ω) ∂μ) = finiteMean ℝ (fun i ↦ ∫ ω, f i ω ∂μ) := by
-  simp only [finiteMean_eq_inv_smul_sum, integral_smul, integral_finsetSum _ fun i _ ↦ hf i]
-
-end FiniteMean
-
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 variable [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]

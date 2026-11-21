@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
+public import TauCeti.Analysis.Matrix.MeasurableSpace
 
 /-!
 # Leave-one-out formula for Hermitian resolvents
@@ -35,18 +36,37 @@ public section
 
 noncomputable section
 
+open MeasureTheory
+open scoped Matrix.Norms.L2Operator
+
 namespace Matrix
 
-variable {𝕜 n : Type*} [CommRing 𝕜] [Fintype n] [DecidableEq n]
+variable {𝕜 n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The resolvent of the principal submatrix obtained by deleting row and column `i`. -/
+section
+
+variable [CommRing 𝕜]
+
+/-- The resolvent of the principal submatrix obtained by deleting row and column `i`.
+The inverse is totalized: the result is zero if the shifted minor has nonunit determinant. -/
 def minorResolvent (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
     Matrix {j // j ≠ i} {j // j ≠ i} 𝕜 :=
   (A.submatrix (↑) (↑) - z • 1)⁻¹
 
-/-- The minor resolvent is the inverse of the shifted principal submatrix. -/
+/-- The minor resolvent is the totalized inverse of the shifted principal submatrix,
+which is zero when its determinant is not a unit. -/
 theorem minorResolvent_def (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
     A.minorResolvent i z = (A.submatrix (↑) (↑) - z • 1)⁻¹ := by rw [minorResolvent]
+
+end
+
+/-- The minor resolvent at a fixed parameter is measurable, including at singular shifts. -/
+@[fun_prop]
+theorem measurable_minorResolvent [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
+    [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜] [MeasurableInv 𝕜]
+    (i : n) (z : 𝕜) : Measurable (fun A : Matrix n n 𝕜 ↦ A.minorResolvent i z) := by
+  simp only [minorResolvent_def]
+  exact Measurable.inv ((continuous_id.matrix_submatrix _ _).measurable.sub_const _)
 
 end Matrix
 
@@ -56,6 +76,13 @@ variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   {A : Matrix n n 𝕜} (hA : A.IsHermitian)
 
 include hA
+
+/-- The Euclidean operator norm of a Hermitian principal-minor resolvent is at most
+the reciprocal of the absolute imaginary part of the nonreal parameter. -/
+theorem l2_opNorm_minorResolvent_le {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
+    ‖A.minorResolvent i z‖ ≤ |RCLike.im z|⁻¹ := by
+  rw [minorResolvent_def]
+  exact (hA.submatrix (Subtype.val : {j // j ≠ i} → n)).l2_opNorm_inv_sub_smul_one_le hz
 
 /-- **Leave-one-out formula.** The reciprocal of a diagonal entry of the resolvent of a Hermitian
 matrix at a non-real point is the diagonal entry of `A - z • 1` minus the quadratic form of the

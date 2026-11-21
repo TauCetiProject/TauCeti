@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
-public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
-public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
-import TauCeti.Analysis.Convex.FiniteMean
+public import TauCeti.Analysis.Matrix.Resolvent.Semicircle
+import Mathlib.Algebra.Order.BigOperators.Expect
 import TauCeti.MeasureTheory.Measure.ResolventTransform.WeakConvergence
 import TauCeti.Analysis.Matrix.MeasurableSpace
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
@@ -33,48 +32,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Matrix Filter
-open scoped Topology NNReal ENNReal Matrix.Norms.L2Operator
-
-namespace Matrix.IsHermitian
-
-/-- The difference from the semicircle transform is controlled by the mean absolute
-leave-one-out error and the principal-minor trace correction. This is the averaged form of
-the uniform-threshold estimate in the original sub-Gaussian Wigner resolvent argument. -/
-theorem norm_resolventTransform_spectralMeasure_sub_semicircleReal_le
-    {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] {A : Matrix ι ι ℂ}
-    (hA : A.IsHermitian) (hd : ∀ i, A i i = 0) {z : ℂ} (hz : 0 < z.im) (v : ℝ≥0) :
-    ‖resolventTransform (A.spectralMeasure hA : Measure ℝ) z -
-      resolventTransform (TauCeti.Probability.semicircleReal 0 v) z‖ ≤
-      z.im⁻¹ ^ 2 * (TauCeti.finiteMean ℝ (fun i ↦ ‖A.minorQuadraticError i z v‖) +
-        3 * (v : ℝ) / ((Fintype.card ι : ℝ) * z.im)) := by
-  let m := resolventTransform (A.spectralMeasure hA : Measure ℝ) z
-  let c := 3 * (v : ℝ) / ((Fintype.card ι : ℝ) * z.im)
-  have hs := TauCeti.Probability.norm_sub_resolventTransform_semicircleReal_le
-    (a := 0) (v := v) hz (w := m)
-    (im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz).le
-  rw [Complex.ofReal_zero, sub_zero] at hs
-  have hentry (i : ι) :
-      ‖(v : ℂ) * m - star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
-        (A.minorResolvent i z *ᵥ fun j : {j // j ≠ i} ↦ A j i)‖ ≤
-      ‖A.minorQuadraticError i z v‖ + c := by
-    rw [minorQuadraticError_def, norm_sub_rev]
-    refine (norm_sub_le_norm_sub_add_norm_sub _
-      (((v : ℂ) / (Fintype.card ι : ℂ)) * (A.minorResolvent i z).trace) _).trans
-      (add_le_add le_rfl ?_)
-    rw [div_eq_mul_inv, mul_assoc, ← mul_sub, norm_mul, Complex.norm_real,
-      Real.norm_of_nonneg v.coe_nonneg]
-    have h := hA.norm_normalized_minor_trace_sub_resolventTransform_le hz.ne' i
-    rw [abs_of_pos hz] at h
-    exact (mul_le_mul_of_nonneg_left h v.coe_nonneg).trans_eq (by unfold c; ring)
-  have hres := hA.norm_resolventTransform_spectralMeasure_quadratic_le hz (v : ℂ)
-  simp only [hd, zero_add] at hres
-  have hbound := hres.trans (mul_le_mul_of_nonneg_left
-    (Finset.sum_le_sum fun i _ ↦ hentry i) (by positivity))
-  refine hs.trans ((div_le_div_of_nonneg_right hbound hz.le).trans_eq ?_)
-  rw [← TauCeti.finiteMean_add_const, TauCeti.finiteMean_eq_inv_smul_sum, smul_eq_mul]
-  ring
-
-end Matrix.IsHermitian
+open scoped BigOperators Topology NNReal ENNReal Matrix.Norms.L2Operator
 
 namespace TauCeti.Probability
 
@@ -118,7 +76,7 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
       2 * Real.exp (-(1 / 150528) *
         min (t ^ 2 * z.im ^ 2 / (K : ℝ) ^ 2) (t * z.im / (K : ℝ)) * (n + 1)) := by
   have hm (ij : StrictUpper) := (integrable_of_hasSubgaussianMGF_re_star_mul (hξ ij)).aemeasurable
-  obtain ⟨hA, hi, hia, ha⟩ := wignerMatrix_zero_minor_column
+  obtain ⟨hA, hi, hia, ha⟩ := aemeasurable_indepFun_wignerMatrix_zero_minor_column
     (hind.precomp Subtype.val_injective) (fun ij _ ↦ hm ij) (fun ij _ ↦ hv ij) i
   have hcard : (Fintype.card {j // j ≠ i} : ℝ) ≤ n + 1 := by
     exact_mod_cast (Fintype.card_subtype_le (fun j : Fin (n + 1) ↦ j ≠ i)).trans_eq
@@ -158,12 +116,11 @@ private theorem norm_wignerTransform_sub_le {n : ℕ} {z : ℂ} (hz : 0 < z.im)
       resolventTransform (semicircleReal 0 v) z‖ ≤
       (t + 3 * (v : ℝ) / ((n + 1) * z.im)) / z.im ^ 2 := by
   intro A hA
-  have h := hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le
-    (by simp) hz v
-  have hmean : finiteMean ℝ (fun i ↦ ‖A.minorQuadraticError i z v‖) ≤ t := by
-    refine (finiteMean_mono (g := fun _ ↦ t) ht).trans_eq ?_
-    rw [finiteMean_def]
-    exact Finset.centerMass_const (by simpa using (show (0 : ℝ) < n + 1 by positivity).ne') t
+  have h := hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le hz v
+  simp only [wignerMatrix_apply_self, Complex.ofReal_zero, mul_zero, norm_zero,
+    Finset.expect_const_zero, add_zero] at h
+  have hmean : (𝔼 i, ‖A.minorQuadraticError i z v‖) ≤ t :=
+    Finset.expect_le Finset.univ_nonempty (fun i _ ↦ ht i)
   have h' := h.trans (mul_le_mul_of_nonneg_left (add_le_add hmean le_rfl) (sq_nonneg _))
   simpa only [Fintype.card_fin, Nat.cast_succ, inv_pow, div_eq_inv_mul] using h'
 

@@ -453,7 +453,8 @@ theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermit
 
 /-- The spectral resolvent transform of an a.e.-measurable Hermitian matrix family is
 integrable over a finite measure at any nonreal parameter. -/
-theorem integrable_resolventTransform_spectralMeasure {Ω : Type*} [MeasurableSpace Ω]
+theorem _root_.AEMeasurable.integrable_resolventTransform_spectralMeasure {Ω : Type*}
+    [MeasurableSpace Ω]
     {P : Measure Ω} [IsFiniteMeasure P] {A : Ω → Matrix n n ℂ}
     (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
     Integrable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)

@@ -59,7 +59,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n] {A : Matrix n n ℂ}
 
 /-- Removing one row and column changes the unnormalized resolvent trace by at most
 `3 / |Im z|`. The trace of the empty minor of a one-by-one matrix is zero. -/
-theorem norm_trace_inv_sub_smul_one_sub_trace_submatrix_le (hA : A.IsHermitian)
+theorem norm_trace_inv_sub_smul_one_sub_trace_minorResolvent_le (hA : A.IsHermitian)
     (i : n) {z : ℂ} (hz : z.im ≠ 0) :
     ‖(A - z • 1)⁻¹.trace -
       (A.minorResolvent i z).trace‖ ≤
@@ -110,16 +110,16 @@ theorem norm_trace_inv_sub_smul_one_sub_trace_submatrix_le (hA : A.IsHermitian)
       exact inv_anti₀ (abs_pos.mpr hz) (Complex.abs_im_le_norm _)
     _ = _ := by ring
 
-/-- Normalizing the principal-minor trace by the original dimension bounds its difference
+/-- Normalizing the principal-minor resolvent trace by the original dimension bounds its difference
 from the original spectral transform by `3 / (card n * |Im z|)`. -/
-theorem norm_normalized_minor_trace_sub_resolventTransform_le [Nonempty n]
+theorem norm_inv_card_mul_trace_minorResolvent_sub_resolventTransform_le [Nonempty n]
     (hA : A.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) (i : n) :
     ‖(Fintype.card n : ℂ)⁻¹ * (A.minorResolvent i z).trace -
       resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
       3 / ((Fintype.card n : ℝ) * |z.im|) := by
   rw [resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz),
     ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast, norm_sub_rev]
-  exact (mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_trace_submatrix_le i hz)
+  exact (mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_trace_minorResolvent_le i hz)
     (by positivity)).trans_eq (by ring)
 
 /-- The quadratic residual of a normalized Hermitian resolvent trace is bounded by its

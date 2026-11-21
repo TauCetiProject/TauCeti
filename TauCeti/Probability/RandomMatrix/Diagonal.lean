@@ -155,11 +155,11 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le
     refine (memLp_two_iff_integrable_sq_norm
       (Real.continuous_sqrt.comp_aestronglyMeasurable hSi.aestronglyMeasurable)).mpr ?_
     simpa only [Real.norm_of_nonneg (Real.sqrt_nonneg _), Real.sq_sqrt (hS _)] using hSi
-  have ha := Matrix.integrable_resolventTransform_spectralMeasure
-    (aemeasurable_wignerMatrix hξ (fun i hi ↦ (hη i hi).aemeasurable))
+  have ha := (aemeasurable_wignerMatrix hξ (fun i hi ↦ (hη i hi).aemeasurable))
+    |>.integrable_resolventTransform_spectralMeasure
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hz
-  have hb := Matrix.integrable_resolventTransform_spectralMeasure
-    (aemeasurable_wignerMatrix hξ (fun _ _ ↦ aemeasurable_const))
+  have hb := (aemeasurable_wignerMatrix hξ (fun _ _ ↦ aemeasurable_const))
+    |>.integrable_resolventTransform_spectralMeasure
     (fun ω ↦ wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) hz
   have hab := (ha.sub hb).norm
   refine (integral_mono hab ((he.integrable one_le_two).const_mul _)

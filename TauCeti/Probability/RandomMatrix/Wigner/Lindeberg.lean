@@ -8,13 +8,11 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.Algebra.Order.BigOperators.Expect
 import TauCeti.Probability.Moments.QuadraticForm.SecondMoment
-import TauCeti.Probability.Moments.SampleMean
 import TauCeti.Probability.RandomMatrix.Diagonal
-import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
-import TauCeti.Analysis.Convex.FiniteMean
-import TauCeti.Analysis.Matrix.MeasurableSpace
+import TauCeti.Analysis.Matrix.Resolvent.Semicircle
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.ResolventTransform.InProbability
 
 /-!
@@ -26,7 +24,6 @@ using only second moments. The truncation of the squared entries controls the di
 part of each quadratic form, and its discarded second moments appear in the Lindeberg sum.
 A diagonal with vanishing normalized mean-square norm contributes a separate error.
 
-The deterministic estimate is shared with the sub-Gaussian Wigner resolvent proof.
 The sample spaces can vary with the size of the matrix.
 `MeasureTheory.ProbabilityMeasure.tendsto_measure_integral_iff_resolventTransform`
 turns the transform bounds into weak convergence in probability.
@@ -44,7 +41,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Matrix Filter Finset
-open scoped Topology NNReal ENNReal Matrix.Norms.L2Operator BoundedContinuousFunction
+open scoped BigOperators Topology NNReal ENNReal Matrix.Norms.L2Operator BoundedContinuousFunction
 
 namespace TauCeti.Probability
 
@@ -81,7 +78,7 @@ theorem wignerLindebergSum_congr_ae {N : ℕ}
   simp [Set.indicator_apply, hω]
 
 /-- Raising the squared-modulus cutoff decreases the Lindeberg sum. -/
-theorem antitone_wignerLindebergSum {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) :
+theorem wignerLindebergSum_antitone {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) :
     Antitone (wignerLindebergSum A P) := by
   intro r s hrs
   simp only [wignerLindebergSum_def]
@@ -170,20 +167,20 @@ private theorem integral_norm_wigner_minor_quadraticForm_sub_normalized_trace_le
   intro a Q
   let R := fun ω ↦ (zeroDiagonalWigner ξ (n + 1) ω).minorResolvent i z
   have := hind.isProbabilityMeasure
-  obtain ⟨hB, hi, hia, ha⟩ :=
-    wignerMatrix_zero_minor_column hind (fun ij hij ↦ (hLp ij hij).aemeasurable) hv i
-  have hres : Measurable (fun M : Matrix {j // j ≠ i} {j // j ≠ i} ℂ ↦ (M - z • 1)⁻¹) := by
-    fun_prop
-  have hR : AEMeasurable R P := by
-    simpa only [R, Matrix.minorResolvent_def, zeroDiagonalWigner, Function.comp_def] using
-      hres.comp_aemeasurable hB
+  obtain ⟨_, hi, hia, ha⟩ :=
+    aemeasurable_indepFun_wignerMatrix_zero_minor_column hind
+      (fun ij hij ↦ (hLp ij hij).aemeasurable) hv i
+  have hA : AEMeasurable (zeroDiagonalWigner ξ (n + 1)) P :=
+    aemeasurable_wignerMatrix (fun ij hij ↦ (hLp ij hij).aemeasurable)
+      (fun _ _ ↦ aemeasurable_const)
+  have hR : AEMeasurable R P := (Matrix.measurable_minorResolvent i z).comp_aemeasurable hA
   have hiR : IndepFun R (fun ω j ↦ a j ω) P := by
-    simpa only [R, a, Matrix.minorResolvent_def, zeroDiagonalWigner, Function.comp_def, id_eq] using
-      hi.comp hres measurable_id
+    simpa only [R, a, zeroDiagonalWigner, Matrix.minorResolvent_def, Function.comp_def,
+      id_eq] using hi.comp (φ := fun M : Matrix {j // j ≠ i} {j // j ≠ i} ℂ ↦ (M - z • 1)⁻¹)
+        (by fun_prop) measurable_id
   have hRbound : ∀ᵐ ω ∂P, ‖R ω‖ ≤ z.im⁻¹ := .of_forall fun ω ↦ by
-    simpa only [R, Matrix.minorResolvent_def, RCLike.im_eq_complex_im, abs_of_pos hz] using
-      ((wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)).submatrix
-        (Subtype.val : {j // j ≠ i} → Fin (n + 1))).l2_opNorm_inv_sub_smul_one_le hz.ne'
+    simpa only [R, RCLike.im_eq_complex_im, abs_of_pos hz] using
+      (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)).l2_opNorm_minorResolvent_le hz.ne' i
   have hmoment (j : {j // j ≠ i}) : ∫ ω, ‖a j ω‖ ^ 2 ∂P = (n + 1 : ℝ)⁻¹ := by
     simpa only [Nat.cast_succ, one_div] using ha j
   have hRi : Integrable (fun ω ↦ ‖R ω‖) P :=
@@ -219,7 +216,7 @@ private theorem integrable_wignerTransform_error [IsFiniteMeasure P]
       resolventTransform ((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ) z -
         resolventTransform (semicircleReal 0 1) z) P :=
-  (Matrix.integrable_resolventTransform_spectralMeasure (aemeasurable_wignerMatrix hξ hη)
+  ((aemeasurable_wignerMatrix hξ hη).integrable_resolventTransform_spectralMeasure
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hz.ne').sub (integrable_const _)
 
 private theorem integral_norm_resolventTransform_wignerMatrix_zero_sub_semicircleReal_le
@@ -244,41 +241,45 @@ private theorem integral_norm_resolventTransform_wignerMatrix_zero_sub_semicircl
   have htest := (integrable_wignerTransform_error (η := fun _ _ ↦ 0)
     (fun ij hij ↦ (hLp ij hij).aemeasurable) (fun _ _ ↦ aemeasurable_const) hz).norm
   let c := 3 / ((n + 1 : ℝ) * z.im)
-  have hm := integrable_finiteMean hi
-  have hmajor : Integrable (fun ω ↦ z.im⁻¹ ^ 2 *
-      (finiteMean ℝ (fun i ↦ ‖Q i ω‖) + c)) P :=
+  have hm : Integrable (fun ω ↦ 𝔼 i, ‖Q i ω‖) P := by
+    simp only [Fintype.expect_eq_sum_div_card, div_eq_inv_mul]
+    exact (integrable_finsetSum _ fun i _ ↦ hi i).const_mul _
+  have hint : (∫ ω, (𝔼 i, ‖Q i ω‖) ∂P) = 𝔼 i, ∫ ω, ‖Q i ω‖ ∂P := by
+    simp only [Fintype.expect_eq_sum_div_card, div_eq_inv_mul, integral_const_mul,
+      integral_finsetSum _ fun i _ ↦ hi i]
+  have hmajor : Integrable (fun ω ↦ z.im⁻¹ ^ 2 * ((𝔼 i, ‖Q i ω‖) + c)) P :=
     (hm.add (integrable_const c)).const_mul _
   have hpoint (ω : Ω) :=
-    Matrix.IsHermitian.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le
-      (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) (by simp) hz 1
+    (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))
+      |>.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le hz 1
   refine (integral_mono htest hmajor (fun ω ↦ by
-    simpa only [Q, c, Fintype.card_fin, Nat.cast_succ, NNReal.coe_one, mul_one] using
-      hpoint ω)).trans ?_
-  rw [integral_const_mul, integral_add hm (integrable_const c), integral_finiteMean hi,
+    simpa only [Q, c, Fintype.card_fin, Nat.cast_succ, NNReal.coe_one, mul_one,
+      wignerMatrix_apply_self, Complex.ofReal_zero, mul_zero, norm_zero,
+      Finset.expect_const_zero, add_zero] using hpoint ω)).trans ?_
+  rw [integral_const_mul, integral_add hm (integrable_const c), hint,
     integral_const, probReal_univ, one_smul]
   let b := 2 / Real.sqrt (n + 1) + Real.sqrt r
   let T (i : Fin (n + 1)) := ∑ j : {j // j ≠ i},
     ∫ ω, {ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2) ω ∂P
-  let U (i : Fin (n + 1)) := z.im⁻¹ • ((2 : ℝ) • T i + b)
+  let U (i : Fin (n + 1)) := z.im⁻¹ * (b + 2 * T i)
   have hU (i : Fin (n + 1)) : (∫ ω, ‖Q i ω‖ ∂P) ≤ U i := by
-    simpa only [U, T, b, A, smul_eq_mul, add_comm (2 * T i)] using (hq i).2
-  have htail : (wignerLindebergSum A P r).toReal = finiteMean ℝ T := by
-    rw [finiteMean_eq_inv_smul_sum, smul_eq_mul, Fintype.card_fin]
+    simpa only [U, T, b, A] using (hq i).2
+  have htail : (wignerLindebergSum A P r).toReal = 𝔼 i, T i := by
+    rw [Fintype.expect_eq_sum_div_card, div_eq_inv_mul, Fintype.card_fin]
     exact wignerLindebergSum_toReal A r (fun i j ↦ by
       have hsq := (memLp_wignerMatrix_apply hLp (fun _ _ ↦ memLp_const 0)
         j.val i).integrable_norm_pow (by decide : 2 ≠ 0)
       exact hsq.indicator₀ (nullMeasurableSet_lt aemeasurable_const hsq.aemeasurable))
-  refine (mul_le_mul_of_nonneg_left (add_le_add (finiteMean_mono hU) le_rfl)
-    (sq_nonneg _)).trans_eq ?_
-  dsimp only [U]
-  rw [finiteMean_def (fun i ↦ z.im⁻¹ • ((2 : ℝ) • T i + b)), Finset.centerMass_smul,
-    ← finiteMean_def, finiteMean_add_const]
-  rw [finiteMean_def (fun i ↦ (2 : ℝ) • T i), Finset.centerMass_smul, ← finiteMean_def, ← htail]
-  simp only [smul_eq_mul, add_comm (2 * (wignerLindebergSum A P r).toReal)]
-  rfl
+  have hscaled : (𝔼 i, U i) = z.im⁻¹ * (b + 2 * (wignerLindebergSum A P r).toReal) := by
+    dsimp only [U]
+    rw [← Finset.mul_expect, Finset.expect_add_distrib, Fintype.expect_const, ← Finset.mul_expect,
+      ← htail]
+  have hmean := Finset.expect_le_expect fun i (_ : i ∈ Finset.univ) ↦ hU i
+  refine (mul_le_mul_of_nonneg_left (add_le_add hmean le_rfl) (sq_nonneg _)).trans_eq ?_
+  simp only [hscaled, b, c, A, zeroDiagonalWigner]
 
 /-- The upper/lower entry tails are unchanged by replacing the real diagonal. -/
-theorem wignerLindebergSum_wignerMatrix_eq {N : ℕ} (ξ : StrictUpper → Ω → ℂ)
+theorem wignerLindebergSum_wignerMatrix_congr_diag {N : ℕ} (ξ : StrictUpper → Ω → ℂ)
     (η η' : ℕ → Ω → ℝ) (r : ℝ≥0) :
     wignerLindebergSum (wignerMatrix ξ η N) P r =
       wignerLindebergSum (wignerMatrix ξ η' N) P r := by
@@ -290,39 +291,76 @@ theorem wignerLindebergSum_wignerMatrix_eq {N : ℕ} (ξ : StrictUpper → Ω �
   · rw [wignerMatrix_apply_of_lt _ _ _ h, wignerMatrix_apply_of_lt _ _ _ h]
   · rw [wignerMatrix_apply_of_gt _ _ _ h, wignerMatrix_apply_of_gt _ _ _ h]
 
-/-- In unnormalized coordinates the Lindeberg sum divides the discarded second moments
-by the square of the dimension. Each strict upper entry contributes twice. -/
+private def offDiagEquivStrictUpperFinSum (N : ℕ) :
+    (Σ i : Fin N, {j : Fin N // j ≠ i}) ≃ StrictUpperFin N ⊕ StrictUpperFin N where
+  toFun p :=
+    if h : p.2.val.val < p.1.val then
+      .inl ⟨(p.2.val, p.1), h⟩
+    else
+      .inr ⟨(p.1, p.2.val), lt_of_le_of_ne (le_of_not_gt h) (Fin.val_ne_of_ne p.2.property).symm⟩
+  invFun
+    | .inl u => ⟨u.val.2, ⟨u.val.1, Fin.ne_of_lt u.property⟩⟩
+    | .inr u => ⟨u.val.1, ⟨u.val.2, (Fin.ne_of_lt u.property).symm⟩⟩
+  left_inv := by
+    rintro ⟨i, j⟩
+    by_cases h : j.val.val < i.val <;> simp [h]
+  right_inv := by
+    rintro (u | u)
+    · simp [u.property]
+    · simp [u.property.not_gt]
+
+/-- In unnormalized coordinates the Lindeberg sum is twice the sum of the discarded second
+moments over the strict upper triangle, divided by the square of the dimension. -/
 theorem wignerLindebergSum_wignerMatrix_eq_sum {N : ℕ} (ξ : StrictUpper → Ω → ℂ)
     (η : ℕ → Ω → ℝ) (r : ℝ≥0) :
-    let edge (i : Fin N) (j : {j : Fin N // j ≠ i}) : StrictUpper :=
-      ⟨(min j.val.val i.val, max j.val.val i.val), min_lt_max.mpr (Fin.val_ne_of_ne j.property)⟩
     wignerLindebergSum (wignerMatrix ξ η N) P r =
-      (N : ℝ≥0∞)⁻¹ ^ 2 * ∑ i : Fin N, ∑ j : {j : Fin N // j ≠ i},
-        ∫⁻ ω, ENNReal.ofReal ({ω | (r : ℝ) * N < ‖ξ (edge i j) ω‖ ^ 2}.indicator
-          (fun ω ↦ ‖ξ (edge i j) ω‖ ^ 2) ω) ∂P := by
+      2 * (N : ℝ≥0∞)⁻¹ ^ 2 * ∑ u : StrictUpperFin N,
+        ∫⁻ ω, ENNReal.ofReal ({ω | (r : ℝ) * N < ‖ξ (wignerUpperIndex u) ω‖ ^ 2}.indicator
+          (fun ω ↦ ‖ξ (wignerUpperIndex u) ω‖ ^ 2) ω) ∂P := by
   cases N with
   | zero => simp
   | succ n =>
-    intro edge
+    let edge (p : Σ i : Fin (n + 1), {j : Fin (n + 1) // j ≠ i}) : StrictUpper :=
+      ⟨(min p.2.val.val p.1.val, max p.2.val.val p.1.val),
+        min_lt_max.mpr (Fin.val_ne_of_ne p.2.property)⟩
+    let T (u : StrictUpper) := ∫⁻ ω, ENNReal.ofReal
+      ({ω | (r : ℝ) * (n + 1 : ℕ) < ‖ξ u ω‖ ^ 2}.indicator (fun ω ↦ ‖ξ u ω‖ ^ 2) ω) ∂P
     have hN : 0 < (n + 1 : ℝ) := by positivity
-    rw [wignerLindebergSum_def, pow_two, mul_assoc]
-    congr 1
-    simp only [mul_sum]
-    refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
-    rw [← lintegral_const_mul' _ _ (by simp)]
-    apply lintegral_congr
-    intro ω
-    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ j.property, Nat.cast_succ,
-      Set.indicator_apply, Set.mem_ofPred_eq]
-    have hcut : (r : ℝ) < (n + 1 : ℝ)⁻¹ * ‖ξ (edge i j) ω‖ ^ 2 ↔
-        (r : ℝ) * (n + 1 : ℝ) < ‖ξ (edge i j) ω‖ ^ 2 := by
-      rw [← div_eq_inv_mul, lt_div_iff₀ hN]
-    dsimp only [edge] at hcut ⊢
-    simp only [hcut]
-    split_ifs
-    · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_inv_of_pos hN,
-        ← Nat.cast_succ, ENNReal.ofReal_natCast, Nat.cast_succ]
-    · simp
+    have hscaled (i : Fin (n + 1)) (j : {j : Fin (n + 1) // j ≠ i}) :
+        (∫⁻ ω, ENNReal.ofReal ({ω | (r : ℝ) < ‖wignerMatrix ξ η (n + 1) ω j i‖ ^ 2}.indicator
+          (fun ω ↦ ‖wignerMatrix ξ η (n + 1) ω j i‖ ^ 2) ω) ∂P) =
+        ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ * T (edge ⟨i, j⟩) := by
+      simp only [T]
+      rw [← lintegral_const_mul' _ _ (by simp)]
+      apply lintegral_congr
+      intro ω
+      simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ j.property, Nat.cast_succ,
+        Set.indicator_apply, Set.mem_ofPred_eq]
+      have hcut : (r : ℝ) < (n + 1 : ℝ)⁻¹ * ‖ξ (edge ⟨i, j⟩) ω‖ ^ 2 ↔
+          (r : ℝ) * (n + 1 : ℝ) < ‖ξ (edge ⟨i, j⟩) ω‖ ^ 2 := by
+        rw [← div_eq_inv_mul, lt_div_iff₀ hN]
+      dsimp only [edge] at hcut ⊢
+      simp only [hcut]
+      split_ifs
+      · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_inv_of_pos hN,
+          ← Nat.cast_succ, ENNReal.ofReal_natCast, Nat.cast_succ]
+      · simp
+    have hsum : (∑ p, T (edge p)) = 2 * ∑ u : StrictUpperFin (n + 1), T (wignerUpperIndex u) := by
+      rw [← (offDiagEquivStrictUpperFinSum (n + 1)).symm.sum_comp (fun p ↦ T (edge p)),
+        Fintype.sum_sum_type, two_mul]
+      congr 1 <;> apply Finset.sum_congr rfl <;> intro u _ <;>
+        apply congrArg T <;> apply Subtype.ext <;> rw [wignerUpperIndex_val]
+      · simp [offDiagEquivStrictUpperFinSum, edge, min_eq_left u.property.le,
+          max_eq_right u.property.le]
+      · simp [offDiagEquivStrictUpperFinSum, edge, min_eq_right u.property.le,
+          max_eq_left u.property.le]
+    have hordered : (∑ i : Fin (n + 1), ∑ j : {j // j ≠ i}, T (edge ⟨i, j⟩)) =
+        2 * ∑ u : StrictUpperFin (n + 1), T (wignerUpperIndex u) :=
+      (Fintype.sum_sigma (fun p ↦ T (edge p))).symm.trans hsum
+    simp_rw [wignerLindebergSum_def, hscaled]
+    simp only [← mul_sum]
+    rw [hordered, pow_two]
+    ac_rfl
 
 private theorem memLp_upper_of_integral_norm_sq_eq_one
     (hm : ∀ ij : StrictUpper, ij.val.2 < n + 1 → AEMeasurable (ξ ij) P)
@@ -354,7 +392,7 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_semicircleReal_le
     (η := fun _ _ ↦ 0) (fun _ _ ↦ aemeasurable_const) hz
   have h := integral_norm_resolventTransform_wignerMatrix_zero_sub_semicircleReal_le
     hind (memLp_upper_of_integral_norm_sq_eq_one hm hv) hc hv hz r
-  rw [wignerLindebergSum_wignerMatrix_eq ξ _ η] at h
+  rw [wignerLindebergSum_wignerMatrix_congr_diag ξ _ η] at h
   have hab := integral_norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le hm hd hz.ne'
   have hd' := (ha.sub hb).congr (.of_forall fun _ ↦ sub_sub_sub_cancel_right _ _ _)
   let L (ω : Ω) := resolventTransform ((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -363,11 +401,7 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_semicircleReal_le
     (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) : Measure ℝ) z
   let m := resolventTransform (semicircleReal 0 1) z
   have hsplit (ω : Ω) : L ω - m = (L₀ ω - m) + (L ω - L₀ ω) := by abel
-  have htriangle := lpNorm_add_le (memLp_one_iff_integrable.mpr hb) le_rfl
-    (g := fun ω ↦ L ω - L₀ ω)
-  rw [lpNorm_one_eq_integral_norm (hb.add hd').aestronglyMeasurable,
-    lpNorm_one_eq_integral_norm hb.aestronglyMeasurable,
-    lpNorm_one_eq_integral_norm hd'.aestronglyMeasurable] at htriangle
+  have htriangle := hb.integral_norm_add_le hd'
   calc
     _ = ∫ ω, ‖(L₀ ω - m) + (L ω - L₀ ω)‖ ∂P :=
       integral_congr_ae (.of_forall fun ω ↦ congrArg norm (hsplit ω))
@@ -414,7 +448,7 @@ theorem tendsto_integral_norm_resolventTransform_wignerMatrix_sub_semicircleReal
   let C := z.im⁻¹ ^ 2 * z.im⁻¹
   have hC : 0 < C := by dsimp [C]; positivity
   let δ := ε / (2 * C)
-  have hδ : 0 < δ := by dsimp [δ]; positivity
+  have hδ : 0 < δ := div_pos hε (mul_pos (by norm_num) hC)
   let r : ℝ≥0 := ⟨δ ^ 2, sq_nonneg _⟩
   have hr : 0 < r := sq_pos_of_pos hδ
   have htail : Tendsto (fun n ↦
@@ -427,11 +461,8 @@ theorem tendsto_integral_norm_resolventTransform_wignerMatrix_sub_semicircleReal
       = ε / 2 := by
     have hr' : (r : ℝ) = δ ^ 2 := rfl
     simp only [hr', Real.sqrt_sq hδ.le, Real.sqrt_zero, mul_zero, zero_add, add_zero]
-    rw [← mul_assoc]
-    -- Fold the two constants used to choose the cutoff.
-    change C * δ = ε / 2
-    dsimp only [δ]
-    field_simp [hC.ne']
+    simp only [← mul_assoc, C, δ]
+    field_simp [hz.ne']
   rw [hlim'] at hlim
   filter_upwards [hlim.eventually_lt_const (u := ε) (by linarith)] with n hn
   exact (integral_norm_resolventTransform_wignerMatrix_sub_semicircleReal_le

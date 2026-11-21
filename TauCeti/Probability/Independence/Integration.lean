@@ -10,7 +10,6 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Probability.Independence.Integration
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Integrability and expectations of products and quadratic forms under independence
@@ -80,32 +79,50 @@ end ProbabilityTheory.iIndepFun
 
 namespace ProbabilityTheory.IndepFun
 
-private theorem indepFun_norm_sq {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
-    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P) :
+/-- Independence is preserved by taking the squared norms of both variables. -/
+theorem norm_sq {Ω E F : Type*} [MeasurableSpace Ω] [SeminormedAddGroup E]
+    [SeminormedAddGroup F] [MeasurableSpace E] [MeasurableSpace F] [BorelSpace E] [BorelSpace F]
+    {P : Measure Ω} {X : Ω → E} {Y : Ω → F} (h : IndepFun X Y P) :
     IndepFun (fun ω ↦ ‖X ω‖ ^ 2) (fun ω ↦ ‖Y ω‖ ^ 2) P :=
   h.comp (φ := fun z ↦ ‖z‖ ^ 2) (ψ := fun z ↦ ‖z‖ ^ 2) (by fun_prop) (by fun_prop)
 
 /-- The product of independent square-integrable variables is square integrable. -/
-theorem memLp_two_mul {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
-    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+theorem memLp_two_mul {Ω R : Type*} [MeasurableSpace Ω] [NormedRing R]
+    [MeasurableSpace R] [BorelSpace R]
+    {P : Measure Ω} {X Y : Ω → R} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
     MemLp (X * Y) 2 P := by
   refine (memLp_two_iff_integrable_sq_norm
     (hX.aestronglyMeasurable.mul hY.aestronglyMeasurable)).2 ?_
   have hx := (memLp_two_iff_integrable_sq_norm hX.aestronglyMeasurable).1 hX
   have hy := (memLp_two_iff_integrable_sq_norm hY.aestronglyMeasurable).1 hY
-  simpa only [Pi.mul_apply, norm_mul, mul_pow] using
-    ((indepFun_norm_sq h).integrable_mul hx hy).congr (.of_forall fun x ↦ Pi.mul_apply _ _ x)
+  refine (h.norm_sq.integrable_mul hx hy).mono'
+    ((hX.aestronglyMeasurable.mul hY.aestronglyMeasurable).norm.aemeasurable.pow_const
+      2).aestronglyMeasurable ?_
+  refine .of_forall fun x ↦ ?_
+  simp only [Pi.mul_apply, Real.norm_of_nonneg (sq_nonneg _), ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (norm_mul_le _ _) 2
 
-/-- The second absolute moment of a product of independent variables is the product
-of their second absolute moments. -/
-theorem integral_norm_sq_mul {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
-    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P)
+/-- The product of the star of one variable and an independent variable is square integrable
+when both variables are square integrable. -/
+theorem memLp_two_star_mul {Ω R : Type*} [MeasurableSpace Ω] [NormedRing R]
+    [StarAddMonoid R] [NormedStarGroup R] [MeasurableSpace R] [BorelSpace R]
+    {P : Measure Ω} {X Y : Ω → R} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+    MemLp (fun ω ↦ star (X ω) * Y ω) 2 P :=
+  (h.comp continuous_star.measurable measurable_id).memLp_two_mul hX.star hY
+
+/-- For independent variables, the totalized Bochner integral of the squared product norm is
+the product of the squared-norm integrals. For square-integrable variables these are their
+finite second absolute moments. -/
+theorem integral_norm_sq_mul {Ω R : Type*} [MeasurableSpace Ω] [SeminormedAddGroup R]
+    [Mul R] [NormMulClass R] [MeasurableSpace R] [BorelSpace R]
+    {P : Measure Ω} {X Y : Ω → R} (h : IndepFun X Y P)
     (hX : AEMeasurable X P) (hY : AEMeasurable Y P) :
     (∫ ω, ‖X ω * Y ω‖ ^ 2 ∂P) =
       (∫ ω, ‖X ω‖ ^ 2 ∂P) * (∫ ω, ‖Y ω‖ ^ 2 ∂P) := by
   simp_rw [norm_mul, mul_pow]
-  exact (indepFun_norm_sq h).integral_fun_mul_eq_mul_integral
-    (hX.norm.pow_const 2).aestronglyMeasurable (hY.norm.pow_const 2).aestronglyMeasurable
+  exact h.norm_sq.integral_fun_mul_eq_mul_integral
+    ((continuous_norm.pow 2).measurable.comp_aemeasurable hX).aestronglyMeasurable
+    ((continuous_norm.pow 2).measurable.comp_aemeasurable hY).aestronglyMeasurable
 
 /-- An integrable bound for the mean norms of sections also bounds the mean norm of the
 joint evaluation at independent variables. -/
@@ -232,8 +249,7 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
 
 /-- A finite product of functions of independent variables has integral zero when one variable
 is read exactly once and its sole factor has integral zero. For an integrable product this
-gives expectation zero. The argument comes from the sample-covariance trace-word cancellation
-in `TauCeti.Probability.integral_prod_apply_mul_star_apply_eq_zero`. -/
+gives expectation zero. -/
 theorem integral_fun_prod_comp_eq_zero_of_singleton_fiber
     {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [DecidableEq κ]
     {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P)
