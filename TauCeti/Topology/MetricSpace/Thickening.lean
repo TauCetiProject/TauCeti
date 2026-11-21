@@ -58,6 +58,9 @@ proper space, a function continuous on `closure s` and at most `m` on `frontier 
 A compact subset `K` of an open set `U` has a radius `δ > 0` such that the closed `δ`-balls
 around the points of `cthickening δ K` stay in `U`
 (`IsCompact.exists_forall_closedBall_subset_of_isOpen`).
+In a proper space, a compact subset of an open set `Ω` has an open neighbourhood with compact
+closure inside `Ω` containing all closed balls of small enough radius about its points
+(`IsCompact.exists_isOpen_closedBall_subset`).
 Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening (`LipschitzWith.thickening_preimage_subset_preimage_thickening`), and likewise for
 closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`).
@@ -384,5 +387,19 @@ theorem IsCompact.exists_forall_closedBall_subset_of_isOpen {X : Type*} [PseudoM
   have hδ : 0 < δ₀ / 2 := half_pos hδ₀
   exact ⟨δ₀ / 2, hδ, fun z hz => (closedBall_subset_cthickening hz _).trans <|
     (cthickening_cthickening_subset hδ.le hδ.le _).trans <| by rw [add_halves]; exact hδ₀U⟩
+
+/-- A compact subset `K` of an open set `Ω` in a proper space has an open neighbourhood `U` with
+compact closure inside `Ω` that contains the closed balls of radius at most some `δ > 0` about the
+points of `K`. -/
+theorem IsCompact.exists_isOpen_closedBall_subset {X : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] {K Ω : Set X} (hK : IsCompact K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
+    ∃ U : Set X, IsOpen U ∧ ∃ δ > 0, IsCompact (closure U) ∧ closure U ⊆ Ω ∧
+      ∀ z ∈ K, ∀ r ≤ δ, closedBall z r ⊆ U := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open hΩ hKΩ
+  have hcl : closure (thickening δ K) ⊆ cthickening δ K := closure_thickening_subset_cthickening δ K
+  exact ⟨thickening δ K, isOpen_thickening, δ / 2, half_pos hδ,
+    hK.cthickening.of_isClosed_subset isClosed_closure hcl, hcl.trans hδΩ,
+    fun z hz r hr => (closedBall_subset_ball (hr.trans_lt (half_lt_self hδ))).trans
+      (ball_subset_thickening hz δ)⟩
 
 end
