@@ -47,6 +47,7 @@ theorem liftOfHomotopy_val (H : (f.comp c).Homotopy (.const X k)) (x : X) :
     (liftOfHomotopy f k c H x).val =
       (c x, (H.toContinuousMap.comp .prodSwap).curry x) := (rfl)
 
+/-- The lift constructed from a nullhomotopy projects to the classifier `c`. -/
 @[simp]
 theorem proj_comp_liftOfHomotopy (H : (f.comp c).Homotopy (.const X k)) :
     (proj f k).comp (liftOfHomotopy f k c H) = c := by
@@ -81,7 +82,13 @@ def liftEquivHomotopy :
     intro x
     apply Subtype.ext
     exact Prod.ext (by simpa using (ContinuousMap.congr_fun l.property x).symm) rfl
-  right_inv H := by ext; rfl
+  right_inv H := by
+    apply ContinuousMap.Homotopy.ext
+    rintro ⟨t, x⟩
+    -- Reading the path at `x` and evaluating at `t` reverses the swap and currying.
+    rw [homotopyOfLift_apply, liftOfHomotopy_val]
+    simp only [ContinuousMap.curry_apply, ContinuousMap.comp_apply, ContinuousMap.prodSwap_apply]
+    rfl -- Evaluating `H.toContinuousMap` is evaluating `H`.
 
 @[simp]
 theorem liftEquivHomotopy_apply (l : C(X, MappingPathFiber f k))
@@ -92,11 +99,30 @@ theorem liftEquivHomotopy_apply (l : C(X, MappingPathFiber f k))
 theorem liftEquivHomotopy_symm_val (H : (f.comp c).Homotopy (.const X k)) :
     ((liftEquivHomotopy f k c).symm H).val = liftOfHomotopy f k c H := (rfl)
 
-/-- Pulling back a nullhomotopy pulls back its strict lift. -/
+/-- Constructing a strict lift from a nullhomotopy commutes with precomposition. -/
 @[simp]
 theorem liftOfHomotopy_comp (H : (f.comp c).Homotopy (.const X k)) (a : C(Y, X)) :
     liftOfHomotopy f k (c.comp a) (H.compContinuousMap a) =
       (liftOfHomotopy f k c H).comp a := (rfl)
+
+/-- Reading a nullhomotopy from a strict lift commutes with precomposition. -/
+@[simp]
+theorem homotopyOfLift_comp (l : C(X, MappingPathFiber f k))
+    (hl : (proj f k).comp l = c) (a : C(Y, X)) :
+    homotopyOfLift f k (c.comp a) (l.comp a) (by rw [← ContinuousMap.comp_assoc, hl]) =
+      ((homotopyOfLift f k c l hl).compContinuousMap a).cast
+        (ContinuousMap.comp_assoc f c a) (ContinuousMap.const_comp k a) := (rfl)
+
+/-- The lift–nullhomotopy equivalence commutes with source precomposition. -/
+theorem liftEquivHomotopy_comp (a : C(Y, X)) :
+    (liftEquivHomotopy f k (c.comp a)) ∘
+        (fun l : {l : C(X, MappingPathFiber f k) // (proj f k).comp l = c} ↦
+          ⟨l.val.comp a, by rw [← ContinuousMap.comp_assoc, l.property]⟩) =
+      (fun H ↦ (H.compContinuousMap a).cast (ContinuousMap.comp_assoc f c a)
+        (ContinuousMap.const_comp k a)) ∘ (liftEquivHomotopy f k c) := by
+  funext l
+  rcases l with ⟨l, hl⟩
+  exact homotopyOfLift_comp f k c l hl a
 
 /-- A strict lift exists exactly when the composite is nullhomotopic. This asserts existence,
 not a replacement of the type of lifts by a proposition. -/
@@ -138,6 +164,12 @@ private def homotopyRelOfHomotopyOver
       exact (F (s, x)).property.2.trans
         ((homotopyOfLift f k c l₀ h₀).apply_one x).symm
 
+private theorem homotopyRelOfHomotopyOver_apply
+    (F : ContinuousMap.HomotopyWith l₀ l₁ (fun l => (proj f k).comp l = c))
+    (s t : I) (x : X) :
+    homotopyRelOfHomotopyOver f k c l₀ l₁ h₀ h₁ F (s, (t, x)) = (F (s, x)).val.2 t :=
+  rfl
+
 private def homotopyOverOfHomotopyRel
     (G : ContinuousMap.HomotopyRel
       (homotopyOfLift f k c l₀ h₀).toContinuousMap
@@ -170,6 +202,14 @@ private def homotopyOverOfHomotopyRel
     ext x
     simp [liftOfHomotopy]
 
+private theorem homotopyOverOfHomotopyRel_apply_snd
+    (G : ContinuousMap.HomotopyRel
+      (homotopyOfLift f k c l₀ h₀).toContinuousMap
+      (homotopyOfLift f k c l₁ h₁).toContinuousMap ({0, 1} ×ˢ Set.univ))
+    (s t : I) (x : X) :
+    (homotopyOverOfHomotopyRel f k c l₀ l₁ h₀ h₁ G (s, x)).val.2 t = G (s, (t, x)) :=
+  rfl
+
 /-- Homotopies of lifts over the fixed classifier correspond to homotopies of their
 nullhomotopies relative to both ends of the nullhomotopy parameter. -/
 def homotopyOverEquivHomotopyRel :
@@ -189,14 +229,18 @@ def homotopyOverEquivHomotopyRel :
       · rfl
       · simpa using (ContinuousMap.congr_fun (F.prop z.1) z.2).symm
     · rfl
-  right_inv G := by ext; rfl
+  right_inv G := by
+    apply ContinuousMap.HomotopyWith.ext
+    rintro ⟨s, t, x⟩
+    -- Recover the original value by evaluating the lifted path at `t`.
+    rw [homotopyRelOfHomotopyOver_apply, homotopyOverOfHomotopyRel_apply_snd]
 
 @[simp]
 theorem homotopyOverEquivHomotopyRel_apply
     (F : ContinuousMap.HomotopyWith l₀ l₁ (fun l => (proj f k).comp l = c))
     (s t : I) (x : X) :
     homotopyOverEquivHomotopyRel f k c l₀ l₁ h₀ h₁ F (s, (t, x)) =
-      (F (s, x)).val.2 t := (rfl)
+      (F (s, x)).val.2 t := homotopyRelOfHomotopyOver_apply f k c l₀ l₁ h₀ h₁ F s t x
 
 @[simp]
 theorem homotopyOverEquivHomotopyRel_symm_apply_val
