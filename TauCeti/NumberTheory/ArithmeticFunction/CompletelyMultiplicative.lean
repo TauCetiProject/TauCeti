@@ -29,7 +29,11 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
   completely multiplicative function distributes over Dirichlet convolution.
 * `ArithmeticFunction.IsCompletelyMultiplicative.moebius_pmul_mul_self`: the Dirichlet inverse of
   a completely multiplicative `f` is `μ · f`.
-* Instances: `ζ`, `pow k`, `n ↦ n ^ ν` for complex `ν` and the Liouville function.
+* `ArithmeticFunction.IsCompletelyMultiplicative.ppow`: pointwise powers of a completely
+  multiplicative function are completely multiplicative.
+* Instances: `ζ`, `id`, `pow k`, `n ↦ n ^ ν` for complex `ν` and the Liouville function;
+  `ArithmeticFunction.not_isCompletelyMultiplicative_moebius`: `μ` is not completely
+  multiplicative.
 
 The Euler products of completely multiplicative functions are in
 `TauCeti/NumberTheory/EulerProduct/CompletelyMultiplicative.lean`, and the instance for
@@ -169,7 +173,19 @@ theorem isCompletelyMultiplicative_one : IsCompletelyMultiplicative (1 : Arithme
     by_cases hm : m = 1 <;> by_cases hn : n = 1 <;>
       simp [hm, hn, mul_eq_one]⟩
 
+/-- The arithmetic function of a function `g : ℕ → R` that is `1` at `1` and multiplicative on
+nonzero arguments is completely multiplicative. -/
+theorem isCompletelyMultiplicative_toArithmeticFunction {g : ℕ → R} (h₁ : g 1 = 1)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → g (m * n) = g m * g n) :
+    (toArithmeticFunction g).IsCompletelyMultiplicative :=
+  .of_ne_zero (by simp [toArithmeticFunction, h₁]) fun hm hn ↦ by
+    simp [toArithmeticFunction, hm, hn, hmul hm hn]
+
 end MonoidWithZero
+
+/-- The identity `n ↦ n` is completely multiplicative. -/
+theorem isCompletelyMultiplicative_id : ArithmeticFunction.id.IsCompletelyMultiplicative :=
+  ⟨by simp, fun m n ↦ by simp⟩
 
 namespace IsCompletelyMultiplicative
 
@@ -192,6 +208,14 @@ multiplicative. -/
 theorem intCast [Ring R] {f : ArithmeticFunction ℤ} (hf : f.IsCompletelyMultiplicative) :
     (f : ArithmeticFunction R).IsCompletelyMultiplicative :=
   ⟨by simp [hf.map_one], fun m n ↦ by simp [hf.map_mul]⟩
+
+/-- The pointwise powers of a completely multiplicative function are completely
+multiplicative. -/
+theorem ppow [CommSemiring R] {f : ArithmeticFunction R} (hf : f.IsCompletelyMultiplicative)
+    (k : ℕ) : (f.ppow k).IsCompletelyMultiplicative := by
+  induction k with
+  | zero => simpa [ppow_zero] using isCompletelyMultiplicative_zeta.natCast (R := R)
+  | succ k ih => exact ppow_succ' (f := f) ▸ hf.pmul ih
 
 /-- Pointwise multiplication by a completely multiplicative function distributes over
 Dirichlet convolution: `f · (g ⋆ h) = (f · g) ⋆ (f · h)`. -/
@@ -252,6 +276,13 @@ theorem isCompletelyMultiplicative_cpow (ν : ℂ) :
 theorem isCompletelyMultiplicative_liouville : liouville.IsCompletelyMultiplicative :=
   ⟨liouville_apply_one, liouville_apply_mul⟩
 
+/-- The Möbius function is not completely multiplicative: `μ(4) = 0 ≠ 1 = μ(2) ^ 2`. -/
+theorem not_isCompletelyMultiplicative_moebius : ¬ IsCompletelyMultiplicative μ := by
+  intro h
+  have h4 := h.map_pow 2 2
+  rw [moebius_apply_prime_pow prime_two two_ne_zero, moebius_apply_prime prime_two] at h4
+  norm_num at h4
+
 end ArithmeticFunction
 
 /-! ### Checks -/
@@ -274,11 +305,8 @@ example : liouville 4 = 1 ∧ liouville 4 = liouville 2 ^ 2 ∧
 
 /-- The Möbius function is multiplicative but not completely multiplicative:
 `μ(4) = 0 ≠ 1 = μ(2) ^ 2`. -/
-example : IsMultiplicative μ ∧ ¬ IsCompletelyMultiplicative μ := by
-  refine ⟨isMultiplicative_moebius, fun h ↦ ?_⟩
-  have h4 : μ (2 ^ 2) = 0 := by rw [moebius_apply_prime_pow prime_two two_ne_zero]; rfl
-  rw [h.map_pow, moebius_apply_prime prime_two] at h4
-  norm_num at h4
+example : IsMultiplicative μ ∧ ¬ IsCompletelyMultiplicative μ :=
+  ⟨isMultiplicative_moebius, not_isCompletelyMultiplicative_moebius⟩
 
 /-- Dropping `f 1 = 1` would admit the zero function, which is not completely
 multiplicative. -/

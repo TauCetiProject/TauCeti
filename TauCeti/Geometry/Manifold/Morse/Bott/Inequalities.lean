@@ -59,7 +59,7 @@ So `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ b_{n - r a}(S a; K)` over the pieces
 (`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum`), and summing over the
 bands counts every piece once.
 
-The Thom isomorphism over a field (`TauCeti.homologyThomIsoOfField`) needs the model fibre
+The homology Thom isomorphism (`TauCeti.homologyThomIso`) needs the model fibre
 `Fin r → ℝ` of the negative normal bundle in the universe of its base, so the manifolds, their
 models and the coefficient field here live in `Type`.
 
