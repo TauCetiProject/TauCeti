@@ -40,14 +40,14 @@ variable {F : X.Presheaf C}
 noncomputable def germSection (F : X.Presheaf C) (U : Opens X)
     (s : ToType (F.obj (Opposite.op U))) :
     U → F.EtaleSpace :=
-  fun x ↦ ⟨x, F.germ U x x.2 s⟩
+  fun x ↦ ⟨x, F.germ U x x.property s⟩
 
 /-- The germ section written out: over `x`, it is the pair of `x` and the germ of `s` at `x`.
 This is the characteristic property of `TopCat.Presheaf.EtaleSpace.germSection`, and the
 form in which a concrete germ map is identified with it. -/
 @[simp]
 theorem germSection_apply (U : Opens X) (s : ToType (F.obj (Opposite.op U))) (x : U) :
-    germSection F U s x = ⟨x, F.germ U x x.2 s⟩ :=
+    germSection F U s x = ⟨x, F.germ U x x.property s⟩ :=
   (rfl)
 
 theorem base_germSection (U : Opens X) (s : ToType (F.obj (Opposite.op U))) (x : U) :
@@ -57,7 +57,7 @@ theorem base_germSection (U : Opens X) (s : ToType (F.obj (Opposite.op U))) (x :
 @[simp]
 theorem germ_germSection (U : Opens X) (s : ToType (F.obj (Opposite.op U))) (x : U) :
     cast (congrArg (fun y : X ↦ ToType (F.stalk y)) (base_germSection U s x))
-      (germSection F U s x).germ = F.germ U x x.2 s :=
+      (germSection F U s x).germ = F.germ U x x.property s :=
   (rfl)
 
 /-- The open set in the étalé space swept out by the germs of a section. -/
@@ -72,7 +72,7 @@ theorem mem_sectionRange_iff {U : Opens X} {s : ToType (F.obj (Opposite.op U))} 
     g ∈ sectionRange F U s ↔ ∃ h : g.base ∈ U, g.germ = F.germ U g.base h s := by
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨x.2, rfl⟩
+    exact ⟨x.property, rfl⟩
   · rintro ⟨h, hg⟩
     refine ⟨⟨g.base, h⟩, ?_⟩
     cases g
@@ -100,18 +100,18 @@ theorem continuous_germSection (U : Opens X) (s : ToType (F.obj (Opposite.op U))
   apply isOpen_iff_forall_mem_open.mpr
   rintro x ⟨hxV, hst⟩
   -- Expose the dependent stalk index so that `Presheaf.germ_eq` applies at the base point `x`.
-  change F.germ U (x : X) x.2 s = F.germ V (x : X) hxV t at hst
+  change F.germ U (x : X) x.property s = F.germ V (x : X) hxV t at hst
   obtain ⟨W, hxW, iWU, iWV, heq⟩ :=
-    F.germ_eq x x.2 hxV s t hst
+    F.germ_eq x x.property hxV s t hst
   let WU : Set U := Subtype.val ⁻¹' W
   refine ⟨WU, ?_, ?_, ?_⟩
   · rintro y hy
     have hyW : (y : X) ∈ W := hy
     refine ⟨iWV.le hyW, ?_⟩
     -- As above, the target topology presents this equality with an implicit dependent index.
-    change F.germ U (y : X) y.2 s = F.germ V (y : X) _ t
+    change F.germ U (y : X) y.property s = F.germ V (y : X) _ t
     exact F.germ_ext W hyW iWU iWV heq
-  · exact W.isOpen.preimage continuous_subtype_val
+  · exact W.isOpen.preimage continuous_subtypeVal
   · exact hxW
 
 /-- A germ section is an open embedding of its domain into the étalé space. -/

@@ -78,7 +78,7 @@ private theorem add_ne_zero_of_ne_neg {ζ z : ℂ} (hz : z ≠ -ζ) : ζ + z ≠
 with inverse `w ↦ ζ (I - w) / (w + I)`. It sends `ζ` to `0` and `0` to `I`. -/
 def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) : OpenPartialHomeomorph 𝕔𝔻 ClosedUpperHalfPlane where
   toFun z := ⟨I * (ζ - z) / (ζ + z), im_I_mul_sub_div_add_nonneg (hζ ▸ z.norm_le_one)⟩
-  invFun w := mk (ζ * (I - w) / (w + I)) (norm_mul_I_sub_div_add_I_le_one hζ.le w.2)
+  invFun w := mk (ζ * (I - w) / (w + I)) (norm_mul_I_sub_div_add_I_le_one hζ.le w.property)
   source := {z : 𝕔𝔻 | (z : ℂ) ≠ -ζ}
   target := univ
   map_source' _ _ := mem_univ _
@@ -92,7 +92,7 @@ def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) : OpenPartialHomeomorph 𝕔𝔻
   right_inv' w _ := Subtype.ext <| by
     simp only [coe_mk]
     exact I_mul_sub_mul_I_sub_div_add_I_div_add (ne_zero_of_norm_eq_one hζ)
-      (add_I_ne_zero_of_im_nonneg w.2)
+      (add_I_ne_zero_of_im_nonneg w.property)
   open_source := isOpen_ne_fun continuous_coe continuous_const
   open_target := isOpen_univ
   continuousOn_toFun := by
@@ -104,7 +104,7 @@ def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) : OpenPartialHomeomorph 𝕔𝔻
     refine Continuous.continuousOn (continuous_iff_continuousAt.2 fun w ↦ ?_)
     simp only [Function.comp_def, coe_mk]
     exact (contDiffAt_mul_I_sub_div_add_I (n := 0) ζ
-      (add_I_ne_zero_of_im_nonneg w.2)).continuousAt.comp continuous_subtype_val.continuousAt
+      (add_I_ne_zero_of_im_nonneg w.property)).continuousAt.comp continuous_subtypeVal.continuousAt
 
 variable {ζ : ℂ} {hζ : ‖ζ‖ = 1}
 
@@ -221,7 +221,7 @@ private theorem cayleyChart_symm_trans_apply (ζ ζ' : ℂ) (hζ : ‖ζ‖ = 1)
     coe_cayleyChart_symm_apply] at hw
   refine ⟨?_, by simp⟩
   exact (contDiffAt_I_mul_sub_div_add ζ' (add_ne_zero_of_ne_neg hw)).comp (w : ℂ)
-    (contDiffAt_mul_I_sub_div_add_I ζ (add_I_ne_zero_of_im_nonneg w.2))
+    (contDiffAt_mul_I_sub_div_add_I ζ (add_I_ne_zero_of_im_nonneg w.property))
 
 /-- The transition map between two Cayley charts lies in the bordered holomorphic groupoid. -/
 theorem cayleyChart_symm_trans_mem_borderedHolomorphicGroupoid (ζ ζ' : ℂ) (hζ : ‖ζ‖ = 1)
@@ -282,7 +282,7 @@ theorem contMDiff_coe {n : ℕ∞ω} : ContMDiff closedUpperHalfPlaneModel 𝓘(
         closedUpperHalfPlaneModel.symm) v = chartCenter x * (I - v) / (v + I) := fun v hv ↦ by
     rw [Function.comp_apply, Function.comp_apply, coe_cayleyChart_symm_apply,
       coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hv]
-  have hx := (cayleyChart (chartCenter x) (norm_chartCenter x) x).2
+  have hx := (cayleyChart (chartCenter x) (norm_chartCenter x) x).property
   exact ((contDiffAt_mul_I_sub_div_add_I _ (add_I_ne_zero_of_im_nonneg hx)).restrict_scalars
     ℝ).contDiffWithinAt.congr hcoe (hcoe _ hx)
 
@@ -291,7 +291,7 @@ structure induced on the interior by the Cayley charts. -/
 theorem contMDiff_coe_borderedInterior {n : ℕ∞ω} :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (fun z : borderedInterior 𝕔𝔻 ↦ ((z : 𝕔𝔻) : ℂ)) := by
   refine ContMDiff.of_le (fun x ↦ ?_) le_top
-  refine contMDiffAt_iff.2 ⟨(continuous_coe.comp continuous_subtype_val).continuousAt, ?_⟩
+  refine contMDiffAt_iff.2 ⟨(continuous_coe.comp continuous_subtypeVal).continuousAt, ?_⟩
   simp only [mfld_simps]
   refine ContDiffAt.contDiffWithinAt ?_
   set w := chartAt ℂ x x

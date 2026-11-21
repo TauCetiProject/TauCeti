@@ -125,7 +125,7 @@ private theorem exists_strongDual_two_mul_sum_norm_sub_norm_le [DecidableEq ι]
   let F : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1) :=
     dualEquiv 𝕜 ι ⊤ 1 ENNReal.one_ne_top ⟨a, memℓp_infty ⟨1, by rintro _ ⟨i, rfl⟩; exact ha_norm i⟩⟩
   refine ⟨F, fun k ↦ two_mul_sum_norm_sub_norm_le_of_hasSum ha_norm (fun i hi ↦ ha_block k hi) ?_⟩
-  simpa [F] using F.hasSum_lp_single_mul ENNReal.one_ne_top (y k)
+  simpa [F, mul_comm] using F.hasSum_smul_lp_single ENNReal.one_ne_top (y k)
 
 /-- **Schur's theorem**, in the weakly null sequential form: a sequence in ℓ¹ on which every
 continuous linear functional tends to zero tends to zero in norm. -/

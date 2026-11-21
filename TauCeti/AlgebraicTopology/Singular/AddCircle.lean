@@ -27,6 +27,11 @@ nonzero periods `p` and `q` sends one circuit class to the other. Rotations of a
 homotopic to the identity, so they act trivially on its singular homology; in particular the
 circuit class does not depend on the starting point of the circuit.
 
+For `p > 0` the circuit class generates `H₁(ℝ / pℤ; ℤ) ≅ ℤ`: the Hurewicz map and the winding
+number of loops give an equivalence `AddCircle.firstHomologyAddEquiv p` sending the circuit class to
+`1`, so every class is its winding number times the circuit class
+(`AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass`).
+
 We use Mathlib's `AddCircle.zsmulLoop` and winding-number isomorphism, and the degree-one
 Hurewicz map. The homological convention is the class of the loop itself. The ordered cross
 product of two circuit classes gives the class of a product of period quotients; for positive
@@ -181,6 +186,42 @@ theorem singularHomologyMap_homeomorphAddCircle_fundamentalClass (hp : p ≠ 0) 
     homeomorphAddCircle_apply_mk]
   congr 1
   field_simp
+
+section WindingNumber
+
+variable (p) [Fact (0 < p)]
+
+/-- **The winding number on the first homology of a circle**: for `p > 0`, the Hurewicz map and
+the winding number of loops identify `H₁(ℝ / pℤ; ℤ)` with `ℤ`. -/
+def firstHomologyAddEquiv : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1 ≃+ ℤ :=
+  (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) ((0 : ℝ) : AddCircle p)).symm.trans
+    (MulEquiv.toAdditiveLeft
+      ((windingNumberIso ((0 : ℝ) : AddCircle p)).abelianizationCongr.trans
+        Group.Abelianization.equivOfComm.symm))
+
+/-- The circuit class has winding number one. -/
+@[simp]
+theorem firstHomologyAddEquiv_fundamentalClass :
+    firstHomologyAddEquiv p (fundamentalClass p) = 1 := by
+  rw [firstHomologyAddEquiv, AddEquiv.trans_apply, fundamentalClass_def,
+    ← hurewiczHomologyAddEquiv_ofMul_of_mk, AddEquiv.symm_apply_apply]
+  exact windingNumber_zsmulLoop 0 1
+
+/-- The class of winding number `n` is `n` times the circuit class. -/
+@[simp]
+theorem firstHomologyAddEquiv_symm_apply (n : ℤ) :
+    (firstHomologyAddEquiv p).symm n = n • fundamentalClass p := by
+  rw [AddEquiv.symm_apply_eq, map_zsmul, firstHomologyAddEquiv_fundamentalClass, smul_eq_mul,
+    mul_one]
+
+/-- **The circuit class generates the first homology of a circle**: every class of
+`H₁(ℝ / pℤ; ℤ)` is the multiple of the circuit class by its winding number. -/
+theorem eq_firstHomologyAddEquiv_zsmul_fundamentalClass
+    (c : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
+    c = firstHomologyAddEquiv p c • fundamentalClass p := by
+  rw [← firstHomologyAddEquiv_symm_apply, AddEquiv.symm_apply_apply]
+
+end WindingNumber
 
 end AddCircle
 

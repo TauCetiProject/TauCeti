@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
@@ -36,14 +38,17 @@ sums `d` on a block `O`, the Laplacian identity
 `∑_{i, i' ∈ O} A i i' (sᵢ - sᵢ')² = 2 (d ∑ sᵢ² - ∑_{i, i' ∈ O} sᵢ A i i' sᵢ')` bounds the quadratic
 form on `O` below by `d ∑ sᵢ²`.
 
-A symmetric matrix whose entries are divisible by `c` and whose diagonal entries are divisible by
-`2 * c` is `c • (D + Dᵀ)`, the shape in which even forms enter Hensel-type arguments when `2` is
-not a unit. The inverse of an invertible symmetric matrix with even diagonal has even diagonal,
-and the trace of the product of two symmetric matrices, one of them with even diagonal, is even.
-Consequently, if `G * H = a • 1` for a non-zero-divisor `a` and a symmetric `H`, a symmetric
-perturbation `G - (a * r) • E` with `2 ∣ r` has determinant `(1 + 2 r t) det G`, provided `H` or
-`E` has even diagonal: to first order the determinant changes by `-r tr(E H)`, which the parity of
-the trace makes divisible by `2 r`.
+A symmetric matrix whose entries are divisible by `c` is `c • F` for a symmetric `F`; if its
+diagonal entries are also divisible by `2 * c`, it is `c • (D + Dᵀ)`, the shape in which even
+forms enter Hensel-type arguments when `2` is not a unit. The inverse of an invertible symmetric
+matrix with even diagonal has even diagonal, and the trace of the product of two symmetric
+matrices, one of them with even diagonal, is even.
+
+If `G` is symmetric and `G * H = a • 1`, a symmetric perturbation `G - (a * r) • E` with `2 ∣ r`
+has determinant `(1 + 2 r t) det G`, provided `H` or `E` has even diagonal. Indeed
+`G - (a * r) • E = G * (1 - r • (H * E))`, so to first order the determinant changes by
+`-r tr(E H) det G`; since `det G • H = a • adjugate G` is symmetric, this term is `-2 r s det G`
+for some `s`. No cancellation is needed, so `a` may be a zero divisor.
 
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
 function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them. More
@@ -54,6 +59,8 @@ same way by their entries on and above the diagonal, in every characteristic.
 
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
+* `Matrix.IsSymm.dotProduct_eq_zero_of_mem_eigenspace`: distinct eigenspaces of a symmetric matrix
+  are orthogonal.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
@@ -61,13 +68,15 @@ same way by their entries on and above the diagonal, in every characteristic.
 * `Matrix.IsSymm.mulVec_row_of_isIdempotentElem`: a symmetric idempotent matrix fixes its rows.
 * `Matrix.IsSymm.mul_sum_sq_le`: with nonpositive off-diagonal entries and constant row sums `d`
   on a block `O`, `d ∑_{i ∈ O} sᵢ² ≤ ∑_{i, i' ∈ O} sᵢ A i i' sᵢ'`.
+* `Matrix.IsSymm.exists_eq_smul`: a symmetric matrix with entries divisible by `c` is `c • F` for a
+  symmetric `F`.
 * `Matrix.IsSymm.exists_eq_smul_add_transpose`: a symmetric matrix with entries divisible by `c`
   and diagonal entries divisible by `2 * c` is `c • (D + Dᵀ)`.
 * `Matrix.IsSymm.two_dvd_inv_apply_self`: the inverse of an invertible symmetric matrix with even
   diagonal has even diagonal.
 * `Matrix.IsSymm.two_dvd_trace_mul`: the trace of the product of two symmetric matrices, the second
   with even diagonal, is even.
-* `Matrix.IsSymm.exists_det_sub_smul_eq_mul_det`: perturbing a matrix with a symmetric inverse up
+* `Matrix.IsSymm.exists_det_sub_smul_eq_mul_det`: perturbing a symmetric matrix with an inverse up
   to the scalar `a` by `(a * r) • E` multiplies its determinant by an element of `1 + 2 r R`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
@@ -96,6 +105,18 @@ theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R
   rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
     dotProduct_neg, neg_neg]
   ring
+
+/-- **Distinct eigenspaces of a symmetric matrix are orthogonal** for the dot product, over a ring
+without zero divisors: `ν (u ⬝ᵥ v) = u ⬝ᵥ A v = v ⬝ᵥ A u = μ (u ⬝ᵥ v)`. -/
+theorem IsSymm.dotProduct_eq_zero_of_mem_eigenspace {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] [NoZeroDivisors R] {A : Matrix ι ι R} (hA : A.IsSymm) {μ ν : R} (h : μ ≠ ν)
+    {u v : ι → R} (hu : u ∈ Module.End.eigenspace A.toLin' μ)
+    (hv : v ∈ Module.End.eigenspace A.toLin' ν) : u ⬝ᵥ v = 0 := by
+  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hu hv
+  have key := hA.dotProduct_mulVec_comm (x := u) (y := v)
+  rw [hu, hv, dotProduct_smul, dotProduct_smul, dotProduct_comm v, smul_eq_mul, smul_eq_mul,
+    ← sub_eq_zero, ← sub_mul] at key
+  exact (mul_eq_zero.1 key).resolve_left (sub_ne_zero.2 h.symm)
 
 /-- If `A` is a symmetric integer matrix and `m` is an integer vector, then `∑ᵢ mᵢ aᵢᵢ` has the
 same parity as the quadratic form `mᵀ A m`. The individual terms `mᵢ aᵢᵢ` need not be even. -/
@@ -172,6 +193,15 @@ theorem IsSymm.mul_sum_sq_le {ι R : Type*} [CommRing R] [LinearOrder R] [IsStri
       · exact mul_nonpos_of_nonpos_of_nonneg (hoff i i' h) (sq_nonneg _)
   linarith
 
+/-- A symmetric matrix all of whose entries are divisible by `c` is `c • F` for a symmetric
+matrix `F`. -/
+theorem IsSymm.exists_eq_smul {n R : Type*} [Semigroup R] {E : Matrix n n R} (hE : E.IsSymm)
+    (c : R) (h : ∀ i i', c ∣ E i i') : ∃ F : Matrix n n R, F.IsSymm ∧ E = c • F := by
+  -- Divide the entries by `c` through one function `R → R`, so that the quotient stays symmetric.
+  have : Nonempty R := ⟨c⟩
+  choose! s hs using fun x (hx : c ∣ x) ↦ dvd_def.mp hx
+  exact ⟨E.map s, hE.map s, Matrix.ext fun i i' ↦ by simpa using hs _ (h i i')⟩
+
 /-- A symmetric matrix all of whose entries are divisible by `c`, and whose diagonal entries are
 divisible by `2 * c`, is `c • (D + Dᵀ)` for some matrix `D`. -/
 theorem IsSymm.exists_eq_smul_add_transpose {n R : Type*} [CommRing R] {E : Matrix n n R}
@@ -214,39 +244,50 @@ theorem IsSymm.two_dvd_trace_mul {n R : Type*} [Fintype n] [CommRing R] {H E : M
     rw [← trace_transpose, transpose_mul, transpose_transpose, hH.eq, trace_mul_comm]
   exact ⟨(H * D).trace, by rw [hD, Matrix.mul_add, trace_add, hDt, two_mul]⟩
 
-/-- **Determinants of symmetric perturbations.** Let `G * H = a • 1` for a non-zero-divisor `a`
-and a symmetric matrix `H`, and let `E` be symmetric, with `H` or `E` of even diagonal. If
-`2 ∣ r`, then `det (G - (a * r) • E) = (1 + 2 r t) det G` for some `t`. For instance, if the
-entries of the symmetric matrix `G` lie in `ℤ_[2]` and `G` is perturbed by `2 a` times a
-symmetric matrix, where `a • G⁻¹` is integral with even diagonal, then the determinant changes by
-a factor `1 + 4 t`: its unit part is unchanged modulo `4`. -/
+/-- **Determinants of symmetric perturbations.** Let `G` be symmetric with `G * H = a • 1`, and let
+`E` be symmetric, with `H` or `E` of even diagonal. If `2 ∣ r`, then
+`det (G - (a * r) • E) = (1 + 2 r t) det G` for some `t`. For instance, if the entries of the
+symmetric matrix `G` lie in `ℤ_[2]` and `G` is perturbed by `2 a` times a symmetric matrix, where
+`a • G⁻¹` is integral with even diagonal, then the determinant changes by a factor `1 + 4 t`: its
+unit part is unchanged modulo `4`. -/
 theorem IsSymm.exists_det_sub_smul_eq_mul_det {n R : Type*} [Fintype n] [DecidableEq n]
-    [CommRing R] {G H E : Matrix n n R} {a r : R} (hH : H.IsSymm) (hE : E.IsSymm)
-    (hGH : G * H = a • 1) (ha : a ∈ nonZeroDivisors R) (hd : (∀ i, 2 ∣ H i i) ∨ ∀ i, 2 ∣ E i i)
-    (hr : 2 ∣ r) :
+    [CommRing R] {G H E : Matrix n n R} {a r : R} (hG : G.IsSymm) (hE : E.IsSymm)
+    (hGH : G * H = a • 1) (hd : (∀ i, 2 ∣ H i i) ∨ ∀ i, 2 ∣ E i i) (hr : 2 ∣ r) :
     ∃ t, (G - (a * r) • E).det = (1 + 2 * r * t) * G.det := by
   obtain ⟨k, rfl⟩ := hr
-  -- The trace of `E * H` is even.
-  obtain ⟨s, hs⟩ : 2 ∣ (E * H).trace := by
+  -- `det G • H = a • adjugate G` is symmetric, which replaces the symmetry of `H`.
+  have hK : (G.det • H).IsSymm := by
+    have : G.det • H = a • G.adjugate :=
+      calc G.det • H = (G.det • (1 : Matrix n n R)) * H := by simp
+        _ = G.adjugate * (G * H) := by rw [← adjugate_mul, Matrix.mul_assoc]
+        _ = a • G.adjugate := by simp [hGH]
+    exact this ▸ hG.adjugate.smul a
+  have htr : G.det * (E * H).trace = (E * (G.det • H)).trace := by simp
+  -- The trace of `E * H` is even, after multiplying by `det G`.
+  obtain ⟨s, hs⟩ : ∃ s, G.det * (E * H).trace = G.det * (2 * s) := by
     rcases hd with hd | hd
-    · exact hE.two_dvd_trace_mul hH hd
-    · exact trace_mul_comm H E ▸ hH.two_dvd_trace_mul hE hd
-  -- Multiplying by `H` turns the perturbation into `a • (1 + r • X)` with `X = -(E * H)`.
-  have hmul : (G - (a * (2 * k)) • E) * H = a • (1 + (2 * k) • -(E * H)) := by
-    rw [Matrix.sub_mul, hGH, Matrix.smul_mul, mul_smul]
-    simp only [smul_add, smul_neg, sub_eq_add_neg]
-  -- To first order, `det (1 + r • X) = 1 + r tr X`.
-  obtain ⟨c, hc⟩ : ∃ c, det (1 + (2 * k) • -(E * H)) = 1 + -(2 * s) * (2 * k) + c * (2 * k) ^ 2 :=
-    ⟨_, by rw [det_one_add_smul, trace_neg, hs]⟩
-  have hdet := congrArg det hmul
-  have hGHdet := congrArg det hGH
-  rw [det_mul, det_smul, hc] at hdet
-  rw [det_mul, det_smul, det_one, mul_one] at hGHdet
-  have hH : H.det ∈ nonZeroDivisors R :=
-    (mul_mem_nonZeroDivisors.mp (hGHdet ▸ pow_mem ha (Fintype.card n))).2
-  refine ⟨-s + k * c, (mul_cancel_right_mem_nonZeroDivisors hH).mp ?_⟩
-  rw [hdet, mul_assoc, hGHdet]
-  ring
+    · obtain ⟨D, hD⟩ := hK.exists_eq_smul_add_transpose G.det (fun i i' ↦ by simp)
+        fun i ↦ by rw [mul_comm]; simpa using mul_dvd_mul_left G.det (hd i)
+      have hEDt : (E * Dᵀ).trace = (E * D).trace := by rw [← trace_transpose_mul E D, hE.eq]
+      refine ⟨(E * D).trace, ?_⟩
+      rw [htr, hD]
+      simp [hEDt, two_mul, mul_add]
+    · obtain ⟨D, hD⟩ := hE.exists_eq_smul_add_transpose 1 (fun _ _ ↦ one_dvd _) (by simpa using hd)
+      rw [one_smul] at hD
+      have hDK : (Dᵀ * (G.det • H)).trace = (D * (G.det • H)).trace := by
+        rw [← trace_transpose_mul D (G.det • H), hK.eq]
+      refine ⟨(D * H).trace, ?_⟩
+      rw [htr, hD, Matrix.add_mul, trace_add, hDK]
+      simp [two_mul, mul_add]
+  -- `G - (a * r) • E = G * (1 - r • (H * E))`, and to first order `det (1 + r • X) = 1 + r tr X`.
+  have hfac : G - (a * (2 * k)) • E = G * (1 + (2 * k) • -(H * E)) := by
+    simp [Matrix.mul_add, ← Matrix.mul_assoc, hGH, smul_smul, mul_comm (2 * k) a, sub_eq_add_neg]
+  obtain ⟨c, hc⟩ : ∃ c, det (1 + (2 * k) • -(H * E)) =
+      1 + -(E * H).trace * (2 * k) + c * (2 * k) ^ 2 :=
+    ⟨_, by rw [det_one_add_smul, trace_neg, trace_mul_comm]⟩
+  refine ⟨-s + k * c, ?_⟩
+  rw [hfac, det_mul, hc]
+  linear_combination (-(2 * k)) * hs
 
 /-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the
 unordered pairs of indices, so there are `Nat.card R ^ (n + 1).choose 2` of them. -/
@@ -270,7 +311,7 @@ strictly lower triangular part of `Q`. No division by two is involved, so this h
 in every additive commutative group, including rings of characteristic two. -/
 def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
     {S : Matrix n n R // S - Sᵀ = Q} ≃ (Sym2 n → R) where
-  toFun S := Sym2.lift ⟨fun i j => S.1 (min i j) (max i j), fun i j => by
+  toFun S := Sym2.lift ⟨fun i j => S.val (min i j) (max i j), fun i j => by
     simp only [min_comm i j, max_comm i j]⟩
   invFun g := ⟨of fun i j => g s(i, j) + if j < i then Q i j else 0, by
     ext i j
@@ -281,7 +322,7 @@ def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
     · simp [h, h.not_gt, Sym2.eq_swap, Function.swap]⟩
   left_inv S := by
     ext i j
-    have hS : S.1 i j - S.1 j i = Q i j := by simpa using congrFun (congrFun S.2 i) j
+    have hS : S.val i j - S.val j i = Q i j := by simpa using congrFun (congrFun S.property i) j
     rcases le_or_gt i j with h | h
     · simp [h, h.not_gt]
     · simp [h, h.le, ← hS]
@@ -296,7 +337,7 @@ def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
 /-- The parameter of a solution of `S - Sᵀ = Q` records its entries on and above the diagonal. -/
 theorem subTransposeEqEquiv_apply_mk_of_le (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
     (S : {S : Matrix n n R // S - Sᵀ = Q}) {i j : n} (h : i ≤ j) :
-    subTransposeEqEquiv hQ hQd S s(i, j) = S.1 i j := by
+    subTransposeEqEquiv hQ hQd S s(i, j) = S.val i j := by
   simp [subTransposeEqEquiv, h]
 
 /-- The solution of `S - Sᵀ = Q` with parameter `g` has entries `g s(i, j)` on and above the
@@ -304,7 +345,7 @@ diagonal, and `g s(i, j) + Q i j` below it. -/
 @[simp]
 theorem coe_subTransposeEqEquiv_symm_apply (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
     (g : Sym2 n → R) (i j : n) :
-    ((subTransposeEqEquiv hQ hQd).symm g).1 i j = g s(i, j) + if j < i then Q i j else 0 :=
+    ((subTransposeEqEquiv hQ hQd).symm g).val i j = g s(i, j) + if j < i then Q i j else 0 :=
   (rfl)
 
 end SubTranspose

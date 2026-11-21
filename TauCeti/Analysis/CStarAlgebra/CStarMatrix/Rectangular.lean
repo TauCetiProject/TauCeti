@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.PEquiv
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import Mathlib.Analysis.CStarAlgebra.Hom
 
 /-!
@@ -65,11 +65,6 @@ variable {k l m n o p q R A B : Type*}
 @[simp] theorem conjTranspose_of [Star A] (M : Matrix m n A) :
     (ofMatrix M).conjTranspose = ofMatrix Mᴴ := (rfl)
 
-/-- Rectangular matrix multiplication on `CStarMatrix` is associative. -/
-protected theorem mul_assoc [Fintype l] [Fintype m] [NonUnitalSemiring A]
-    (L : CStarMatrix k l A) (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    L * M * N = L * (M * N) := Matrix.mul_assoc L M N
-
 /-- Left multiplication by the identity `CStarMatrix` is the identity on rectangular matrices. -/
 @[simp] protected theorem one_mul [Fintype m] [DecidableEq m] [NonAssocSemiring A]
     (M : CStarMatrix m n A) : (1 : CStarMatrix m m A) * M = M := Matrix.one_mul M
@@ -96,10 +91,6 @@ protected theorem sub_mul [Fintype m] [NonUnitalNonAssocRing A]
 @[simp] protected theorem neg_mul [Fintype m] [NonUnitalNonAssocRing A]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) : (-M) * N = -(M * N) := Matrix.neg_mul M N
 
-/-- Conjugate transposition on rectangular `CStarMatrix` is an involution. -/
-@[simp] theorem conjTranspose_conjTranspose [InvolutiveStar A] (M : CStarMatrix m n A) :
-    M.conjTranspose.conjTranspose = M := Matrix.conjTranspose_conjTranspose M
-
 /-- The conjugate transpose of the identity `CStarMatrix` is the identity. -/
 @[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
     (1 : CStarMatrix n n A).conjTranspose = 1 := Matrix.conjTranspose_one
@@ -120,11 +111,6 @@ protected theorem sub_mul [Fintype m] [NonUnitalNonAssocRing A]
 @[simp] theorem conjTranspose_smul [Star R] [Star A] [SMul R A] [StarModule R A]
     (c : R) (M : CStarMatrix m n A) :
     (c • M).conjTranspose = star c • M.conjTranspose := Matrix.conjTranspose_smul c M
-
-/-- Conjugate transposition reverses rectangular matrix products. -/
-@[simp] theorem conjTranspose_mul [Fintype m] [NonUnitalNonAssocSemiring A] [StarRing A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose := Matrix.conjTranspose_mul M N
 
 /-- A rectangular `CStarMatrix` vanishes iff its conjugate transpose vanishes. -/
 @[simp] theorem conjTranspose_eq_zero [AddMonoid A] [StarAddMonoid A] {M : CStarMatrix m n A} :
