@@ -108,19 +108,19 @@ lemma linearHomComplexEvaluation_ιTensorObj_tmul (A : CochainComplex (ModuleCat
   have hι := ι_linearHomComplexComp R (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) A
     (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q p 0 h
   rw [HomologicalComplex.ιTensorObj, reassoc_of% hι, ModuleCat.hom_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply,
-    linearHomComplexFromTensorUnitIso_inv_f_apply, cochainCompTensor_tmul,
-    linearHomComplexFromTensorUnitIso_hom_f_apply, cochainFromTensorUnitLinearEquiv_apply,
-    Cochain.comp_v _ _ _ 0 p 0 (zero_add p) (by omega), cochainToTensorUnitLinearEquiv_apply,
-    Cochain.toSingleEquiv_apply, cochainFromTensorUnitLinearEquiv_symm_apply,
-    Cochain.fromSingleMk_v]
+    LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
   -- The tensor unit `𝟙_ (ModuleCat R)` and `ModuleCat.of R R` index the same single complex but
   -- are presented differently in the two isomorphisms `singleObjXSelf`; `hone` identifies them.
   have hone : (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of R R)).hom
       ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1) =
         (1 : R) :=
     Iso.inv_hom_id_apply _ _
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Iso.hom_inv_id_apply]
+  simp only [linearHomComplex_X, linearHomComplexFromTensorUnitIso_inv_f_apply,
+    cochainFromTensorUnitLinearEquiv_symm_apply, cochainCompTensor_tmul,
+    linearHomComplexFromTensorUnitIso_hom_f_apply, cochainFromTensorUnitLinearEquiv_apply,
+    Cochain.comp_v _ _ _ 0 p 0 (zero_add p) (by omega : p + q = 0),
+    cochainToTensorUnitLinearEquiv_apply, Cochain.toSingleEquiv_apply, Cochain.fromSingleMk_v,
+    ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, Iso.hom_inv_id_apply]
   rw [hone, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, one_smul]
 
 /-- **Applying the dual-tensor comparison is evaluation.** The cochain that the dual-tensor
@@ -134,10 +134,8 @@ lemma linearHomComplexDualTensor_whiskerRight_comp (A B : CochainComplex (Module
         (linearHomComplexFromTensorUnitIso R B).inv := by
   rw [linearHomComplexDualTensor_def, comp_whiskerRight_assoc, ← whisker_exchange_assoc,
     linearHomComplexComp_assoc, linearHomComplexComp_eq_rightUnitor,
-    linearHomComplexEvaluation_def, ← rightUnitor_naturality, ← whisker_exchange_assoc,
-    associator_naturality_left_assoc, associator_naturality_right_assoc]
-  simp only [whiskerLeft_comp, Category.assoc]
-  rw [← whisker_exchange_assoc, ← whisker_exchange_assoc]
+    linearHomComplexEvaluation_def]
+  simp [associator_naturality_left_assoc, ← whisker_exchange_assoc, -whiskerRight_tensor]
 
 /-- **Precomposing with the dual-tensor comparison is evaluation.** Composing a linear form
 `ψ ∈ B∨` with the cochain that the dual-tensor comparison assigns to `b ⊗ φ` gives `ψ(b) φ`. -/
@@ -149,9 +147,8 @@ lemma whiskerLeft_linearHomComplexDualTensor_comp (A B : CochainComplex (ModuleC
     (G := 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (K := B)
     (L := 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)))
   rw [linearHomComplexDualTensor_def, whiskerLeft_comp_assoc, ← h,
-    linearHomComplexComp_eq_leftUnitor, associator_inv_naturality_middle_assoc,
-    linearHomComplexEvaluation_def]
-  simp only [comp_whiskerRight, Category.assoc]
+    linearHomComplexComp_eq_leftUnitor, linearHomComplexEvaluation_def]
+  simp
 
 end Evaluation
 
@@ -185,27 +182,26 @@ noncomputable instance exactPairingLinearHomComplex :
   coevaluation' := linearHomComplexCoevaluation R A
   evaluation' := linearHomComplexEvaluation R A
   coevaluation_evaluation' := by
-    rw [← cancel_mono (λ_ _).hom, Category.assoc, Category.assoc, Category.assoc,
-      Iso.inv_hom_id, Category.comp_id, ← whiskerLeft_linearHomComplexDualTensor_comp,
-      ← whiskerLeft_comp_assoc, linearHomComplexCoevaluation_comp_linearHomComplexDualTensor,
+    rw [← cancel_mono (λ_ _).hom]
+    simp [← whiskerLeft_linearHomComplexDualTensor_comp, ← whiskerLeft_comp_assoc,
       linearHomComplexComp_unit]
   evaluation_coevaluation' := by
-    rw [← cancel_mono ((ρ_ A).hom ≫ (linearHomComplexFromTensorUnitIso R A).inv),
-      Category.assoc, Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
-      ← linearHomComplexDualTensor_whiskerRight_comp, ← comp_whiskerRight_assoc,
-      linearHomComplexCoevaluation_comp_linearHomComplexDualTensor, ← whisker_exchange_assoc,
-      linearHomComplexUnit_comp, leftUnitor_naturality]
+    rw [← cancel_mono ((ρ_ A).hom ≫ (linearHomComplexFromTensorUnitIso R A).inv)]
+    simp only [Category.assoc, Iso.inv_hom_id_assoc]
+    rw [← linearHomComplexDualTensor_whiskerRight_comp, ← comp_whiskerRight_assoc,
+      linearHomComplexCoevaluation_comp_linearHomComplexDualTensor]
+    simp [← whisker_exchange_assoc, linearHomComplexUnit_comp]
 
 /-- The coevaluation of the exact pairing of `A` with its dual complex. -/
 @[simp]
-lemma exactPairing_coevaluation_eq :
+lemma exactPairing_coevaluation_eq_linearHomComplexCoevaluation :
     ExactPairing.coevaluation A (linearHomComplex R A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))) =
       linearHomComplexCoevaluation R A :=
   (rfl)
 
 /-- The evaluation of the exact pairing of `A` with its dual complex. -/
 @[simp]
-lemma exactPairing_evaluation_eq :
+lemma exactPairing_evaluation_eq_linearHomComplexEvaluation :
     ExactPairing.evaluation A (linearHomComplex R A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))) =
       linearHomComplexEvaluation R A :=
   (rfl)

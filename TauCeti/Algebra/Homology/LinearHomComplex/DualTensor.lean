@@ -191,9 +191,13 @@ lemma linearHomComplexUnit_tensorUnit :
     (𝟙_ (ModuleCat.{v} R))).inv]
   refine ModuleCat.hom_ext (LinearMap.ext fun r => ?_)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, HomologicalComplex.comp_f]
-  rw [linearHomComplexUnit_f_zero_apply, map_smul, linearHomComplexFromTensorUnitIso_hom_f_apply,
+  rw [linearHomComplexUnit_f_zero_apply]
+  simp only [linearHomComplex_X, map_smul, linearHomComplexFromTensorUnitIso_hom_f_apply,
     cochainFromTensorUnitLinearEquiv_apply, Cochain.ofHom_v, HomologicalComplex.id_f,
-    ModuleCat.hom_comp, LinearMap.comp_apply, ← map_smul, ← map_smul, smul_eq_mul, mul_one]
+    ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, smul_eq_mul]
+  -- What remains is `r • ι(1) = ι(r)` for the inclusion `ι` of `R` as the degree-zero term.
+  exact (map_smul (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
+    (𝟙_ (ModuleCat.{v} R))).inv.hom r 1).symm.trans (congrArg _ (mul_one r))
 
 /-- Composition `Hom(R[0], B) ⊗ Hom(R[0], R[0]) ⟶ Hom(R[0], B)` is the right unitor, once
 `Hom(R[0], R[0])` is identified with `R[0]` by evaluation at `1`. -/
