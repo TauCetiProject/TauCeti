@@ -9,13 +9,13 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 public import TauCeti.GroupTheory.TitsSystem.Comap
+public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
 
 /-!
 # The Tits system and Weyl quotient of a Chevalley datum
@@ -46,7 +46,11 @@ quotient isomorphism `D.weylSubgroupQuotientMulEquiv K : N(K) / T_D(K) ≃* W` o
 * `ChevalleyDatum.titsSystem` and `ChevalleyDatum.mem_titsSystem_intersection_iff`: the Tits system
   on `D.extendedElementarySubgroup K`, whose `B ∩ N` intersection consists of the points of the
   actual torus `T_D(K)`.
-* `ChevalleyDatum.titsWeylGroupMulEquiv`: the isomorphism `(D.titsSystem K).WeylGroup ≃* W`.
+* `ChevalleyDatum.titsWeylGroupMulEquiv`, `ChevalleyDatum.titsSimpleReflection_injective`,
+  `ChevalleyDatum.ncard_inversions_titsWeylGroupMulEquiv`, and
+  `ChevalleyDatum.wordLength_titsWeylGroupMulEquiv_symm`: the isomorphism
+  `(D.titsSystem K).WeylGroup ≃* W`, injectivity of the numbered simple reflections, and
+  identification of Tits word length with the root-inversion count.
 * `ChevalleyDatum.ker_weylProjection` and `ChevalleyDatum.weylSubgroupQuotientMulEquiv`: the kernel
   of `D.weylProjection K` is the actual torus, giving `N(K) / T_D(K) ≃* W`.
 * `ChevalleyDatum.elementaryTitsSystem`,
@@ -90,8 +94,9 @@ private theorem weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_posRoots
       (n : D.points K)⁻¹ * x * (n : D.points K) ∈
         (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).weylGroupToPerm
           (D.weylProjection K n)⁻¹ (t.simpleIndex ht i)) K).range := by
-    rw [← map_inv (D.weylProjection K), ← D.map_range_rootSubgroupPoints_conj K n⁻¹]
-    exact Subgroup.mem_map.mpr ⟨x, ⟨ofAdd a, rfl⟩, by simp⟩
+    simpa only [MulAut.conj_apply, Subgroup.coe_inv, inv_inv,
+      (D.weylProjection K).map_inv] using
+      D.conj_rootSubgroupPoints_mem_range K n⁻¹ (x := x) ⟨ofAdd a, rfl⟩
   obtain ⟨u', hu'⟩ := hconj_mem
   have hb₂ : (n : D.points K)⁻¹ * x * (n : D.points K) ∈ D.borelSubgroup K := by
     rw [← hu']
@@ -136,8 +141,8 @@ private theorem weylElement_mul_rootSubgroup_mul_mem_union_of_mem_negRoots
         (n : D.points K)⁻¹ * y * (n : D.points K) ∈
           (D.rootSubgroupPoints (P.weylGroupToPerm (D.weylProjection K n)⁻¹
             (P.reflectionPerm α α)) K).range := by
-      rw [← map_inv (D.weylProjection K), ← D.map_range_rootSubgroupPoints_conj K n⁻¹]
-      exact Subgroup.mem_map.mpr ⟨y, hy_range, by simp⟩
+      simpa only [P, MulAut.conj_apply, Subgroup.coe_inv, inv_inv,
+        (D.weylProjection K).map_inv] using D.conj_rootSubgroupPoints_mem_range K n⁻¹ hy_range
     have hβ_pos :
         P.weylGroupToPerm (D.weylProjection K n)⁻¹ (P.reflectionPerm α α) ∈
           posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
@@ -166,14 +171,9 @@ private theorem exists_weylElement_mul_borelSubgroup_mul_eq
   obtain ⟨v, hv, u₀, rfl⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints K i u).mp hu
   have hv' : r * v * r⁻¹ ∈ D.borelSubgroup K := by
     have hmem := (Subgroup.mem_normalizer_iff.mp
-      (D.weylElement_mem_normalizer_positivePoints_diff_singleton K i 1) v).mp hv
-    have hle :
-        (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
-          (D.rootSubgroupPoints γ K).range) ≤ D.positivePoints K := by
-      refine iSup₂_le fun γ hγ => ?_
-      rintro _ ⟨w, rfl⟩
-      exact D.rootSubgroupPoints_mem_positivePoints K hγ.1 w
-    exact D.positivePoints_le_borelSubgroup K (hle hmem)
+      (D.weylElement_mem_normalizer_puncturedPositivePoints K i 1) v).mp hv
+    exact D.positivePoints_le_borelSubgroup K
+      (D.puncturedPositivePoints_le_positivePoints K i hmem)
   have htnorm := D.weylSubgroup_le_normalizer_range_torusPoints K (inv_mem n.property)
   obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp htnorm (D.torusPoints K s)).mp ⟨s, rfl⟩
   have hts' : D.torusPoints K s' ∈ D.borelSubgroup K :=
@@ -622,6 +622,61 @@ theorem titsSystem_simple_eq_preimage :
   · rintro ⟨i, hi⟩
     refine ⟨i, (D.titsWeylGroupMulEquiv K).injective ?_⟩
     rw [D.titsWeylGroupMulEquiv_titsSimpleReflection K i, hi]
+
+/-- Distinct Bourbaki nodes determine distinct simple reflections in `(D.titsSystem K).WeylGroup`
+over every field `K`. -/
+theorem titsSimpleReflection_injective : Function.Injective (D.titsSimpleReflection K) := by
+  intro i j hij
+  by_contra hne
+  have hidx : RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht j) := by
+    rw [← D.titsWeylGroupMulEquiv_titsSimpleReflection K i,
+      ← D.titsWeylGroupMulEquiv_titsSimpleReflection K j, hij]
+  exact RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne (t.simplyConnectedRootDatum ht)
+    (t.simplyConnectedBase ht)
+    ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
+    ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
+    (fun h => hne (Fin.ext (by simpa using congrArg Fin.val h)))
+    hidx
+
+/-- The root-inversion count of `D.titsWeylGroupMulEquiv K q` equals the Tits word length of
+`q`. -/
+theorem ncard_inversions_titsWeylGroupMulEquiv (q : (D.titsSystem K).WeylGroup) :
+    (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (D.titsWeylGroupMulEquiv K q)).ncard =
+      (D.titsSystem K).simpleGenerators.wordLength q := by
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  let T := D.titsSystem K
+  let P := t.simplyConnectedRootDatum ht
+  let b := t.simplyConnectedBase ht
+  let e : T.simple ≃ b.support :=
+    (Equiv.ofInjective (D.titsSimpleReflection K)
+      (D.titsSimpleReflection_injective K)).symm.trans
+      (t.simpleSupportEquivSimplyConnectedBase ht)
+  let cs := (T.coxeterSystem.map (D.titsWeylGroupMulEquiv K)).reindex e
+  have hcs : ∀ k : b.support, cs.simple k = RootPairing.weylGroup.ofIdx P (k : Fin t.numRoots) := by
+    intro k
+    dsimp only [cs]
+    rw [CoxeterSystem.reindex_simple, CoxeterSystem.map_simple, TitsSystem.coxeterSystem_simple]
+    change D.titsWeylGroupMulEquiv K
+      (D.titsSimpleReflection K ((t.simpleSupportEquivSimplyConnectedBase ht).symm k)) = _
+    rw [D.titsWeylGroupMulEquiv_titsSimpleReflection,
+      t.simpleIndex_simpleSupportEquivSimplyConnectedBase_symm]
+  have hlen := RootPairing.length_eq_ncard_inversions_of_simple_eq P b cs hcs
+    (D.titsWeylGroupMulEquiv K q)
+  simpa only [cs, CoxeterSystem.length_reindex, CoxeterSystem.length_map,
+    TitsSystem.coxeterSystem_length] using hlen.symm
+
+/-- Transporting a root-datum Weyl element to `(D.titsSystem K).WeylGroup` turns its inversion
+count into its Tits word length. -/
+@[simp]
+theorem wordLength_titsWeylGroupMulEquiv_symm
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.titsSystem K).simpleGenerators.wordLength
+        ((D.titsWeylGroupMulEquiv K).symm w) =
+      (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w).ncard := by
+  simpa only [MulEquiv.apply_symm_apply] using
+    (D.ncard_inversions_titsWeylGroupMulEquiv K ((D.titsWeylGroupMulEquiv K).symm w)).symm
 
 /-- Over every field, the kernel of `D.weylProjection K` is precisely the actual torus inside
 `D.weylSubgroup K`. -/

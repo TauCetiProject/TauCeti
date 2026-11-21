@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
-public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum
@@ -75,10 +73,11 @@ theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
   subst hn
   rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_weylProjection K n,
-    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, DoubleCoset.image_doubleCoset,
-    ← Subgroup.coe_map,
-    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
-    Subgroup.subtype_apply, coe_titsSubgroupNMulEquiv_symm]
+    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, Subgroup.coe_subtype,
+    DoubleCoset.image_doubleCoset_subgroupOf
+      (D.borelSubgroup_le_extendedElementarySubgroup K)
+      (D.borelSubgroup_le_extendedElementarySubgroup K),
+    coe_titsSubgroupNMulEquiv_symm]
 
 /-- The Bruhat cell of `D.weylProjection K n` is the double coset `B n B` in `D.points K`. -/
 @[simp]

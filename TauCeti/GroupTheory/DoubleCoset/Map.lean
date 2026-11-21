@@ -16,9 +16,10 @@ Enlarging either subgroup coarsens the double-coset relation.  This file package
 surjections, records their values on representatives, and proves their identity and composition
 laws.  It also transports a double-coset space along a group isomorphism, identifies the
 quotients by conjugate right subgroups by right translation, and carries a single double coset
-along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image, and
+along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image,
 `DoubleCoset.mem_doubleCoset_image_iff` transports membership along an injective multiplicative
-map.
+map, and `DoubleCoset.image_doubleCoset_subgroupOf` specializes this to double cosets of restricted
+subgroups `H.subgroupOf E` and `K.subgroupOf E`.
 
 These are the double-coset analogues of `Subgroup.quotientMapOfLE` and `QuotientGroup.congr` for
 ordinary coset spaces.
@@ -177,5 +178,18 @@ theorem mem_doubleCoset_image_iff {f : F} (hf : Function.Injective f) (a : α) (
     (x : α) :
     f x ∈ doubleCoset (f a) (f '' s) (f '' t) ↔ x ∈ doubleCoset a s t := by
   rw [← image_doubleCoset, hf.mem_set_image]
+
+/-- Pushing a double coset of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E` forward
+along `Subtype.val : E → G` recovers the ambient double coset of `H` and `K`, provided `H ≤ E`
+and `K ≤ E`. -/
+theorem image_doubleCoset_subgroupOf {E H K : Subgroup G} (hH : H ≤ E) (hK : K ≤ E) (x : E) :
+    Subtype.val '' doubleCoset x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E) =
+      doubleCoset (x : G) (H : Set G) (K : Set G) := by
+  have hH' : Subtype.val '' (H.subgroupOf E : Set E) = (H : Set G) := by
+    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.map_subgroupOf_eq_of_le hH]
+  have hK' : Subtype.val '' (K.subgroupOf E : Set E) = (K : Set G) := by
+    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.map_subgroupOf_eq_of_le hK]
+  simpa only [Subgroup.coe_subtype, hH', hK'] using
+    image_doubleCoset E.subtype x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E)
 
 end DoubleCoset
