@@ -154,7 +154,8 @@ theorem neg_one_pow_mul_factorialPoly_eq_prod_cyclotomic (N : ℕ) :
 /-- `P_N` is `(-1) ^ N` times its monic associate. -/
 private theorem factorialPoly_eq_C_mul (N : ℕ) :
     factorialPoly R N = C ((-1) ^ N) * ((-1) ^ N * factorialPoly R N) := by
-  rw [← mul_assoc, C_pow, C_neg, C_1, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  rw [← mul_assoc]
+  simp [← mul_pow]
 
 /-- The leading coefficient of `P_N` is `(-1) ^ N`. -/
 @[simp]
@@ -171,7 +172,7 @@ theorem natDegree_factorialPoly [Nontrivial R] (N : ℕ) :
     natDegree_prod_of_monic _ _ fun i _ ↦ monic_X_pow_sub_C 1 i.succ_ne_zero]
   rw [sum_congr rfl fun i _ ↦ by rw [← C_1, natDegree_X_pow_sub_C]]
   have h := sum_range_id_mul_two (N + 1)
-  rw [sum_range_succ', add_zero, Nat.add_sub_cancel, mul_comm (N + 1)] at h
+  simp [sum_range_succ', mul_comm (N + 1)] at h
   omega
 
 /-- A product `∏_{d ∈ s} Φ_d ^ e_d` of powers of distinct cyclotomic polynomials divides `P_N`
