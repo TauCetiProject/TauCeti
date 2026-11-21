@@ -350,7 +350,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_pl
       (max_le (by linarith [hLρ k]) (by linarith [hL4 k]))
   have hψP (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') : ψ k w ∈ P := by
     simp only [P, ψ, mem_ofPred_eq, equivRealProdCLM_symm_realChart]
-    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL4 k) (hwL k hw)
+    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith [hL4 k]) (hwL k hw)
   have hPo : IsOpen P := isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
   refine hconv hΩ' hΩ'D (fun k ↦ (hu k).comp (hψs k).contDiffOn fun _ hw ↦ hψP k (hΩ'D hw))
     (fun k w hw ↦ ?_) huK' (fun k ↦ ?_) fun k ↦ ?_

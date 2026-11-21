@@ -75,7 +75,7 @@ maps on the plumbed sphere is computed.
   the part `s_q ≤ L/2` of `S` and the image of the part `-s_∞ ≤ L/2` of `S'` lie in the
   four-punctured sphere, also in real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le`:
-  for `L > 4` the plumbing map of the end at `1` carries the whole part `-s_∞ ≤ L/2` of the plane,
+  for `L > 1` the plumbing map of the end at `1` carries the whole part `-s_∞ ≤ L/2` of the plane,
   including `0` and `1`, into `ℂ ∖ {0}`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
@@ -585,11 +585,11 @@ theorem plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ 
   rw [endSign_inf, neg_one_mul] at hwL
   linarith
 
-/-- The plumbing map `ψ_L` of the end at `1`, for `L > 4`, carries every point of the inserted
+/-- The plumbing map `ψ_L` of the end at `1`, for `L > 1`, carries every point of the inserted
 plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to a nonzero point: points of the disc
 `‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of the center `1`, and the other points
 land in the plumbed four-punctured sphere. -/
-theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 4 < L) {w : ℂ}
+theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 1 < L) {w : ℂ}
     (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 := by
   by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
   · intro h0

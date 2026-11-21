@@ -1217,7 +1217,7 @@ private theorem differentiableAt_plumbedPerturbation_single_inf_realChart
     (y := realChart (one.plumbingMap L) w) (by
       rw [equivRealProdCLM_symm_realChart]
       exact eq_endCenter_one_or_of_ne_zero
-        (plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le hL hwL)) x v).differentiableAt
+        (plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith) hwL)) x v).differentiableAt
     one_ne_zero
   exact h.comp x ((differentiableAt_const _).prodMk differentiableAt_id)
 
@@ -1291,7 +1291,7 @@ theorem integral_floerEnergyDensity_image_plumbingMap_single_inf (ω : Symplecti
   have hψ {w : ℝ × ℝ} (hw : w ∈ B) :
       realChart (one.plumbingMap L) w ∈ {z : ℝ × ℝ | equivRealProdCLM.symm z ≠ 0} := by
     rw [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
-    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le hL (hB w hw)
+    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith) (hB w hw)
   have hP : IsOpen {z : ℝ × ℝ | equivRealProdCLM.symm z ≠ 0} :=
     isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
   rw [ω.integral_floerEnergyDensity_image hBm
