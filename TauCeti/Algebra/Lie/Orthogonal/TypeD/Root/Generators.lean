@@ -387,7 +387,7 @@ variable {K : Type*} [CommRing K]
 
 /-- A diagonal Cartan generator is the image of its simple-root coordinate vector under the
 coordinate equivalence for the standard diagonal Cartan. -/
-theorem cartanGenerator_eq_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+theorem cartanGenerator_eq_typeDDiagonalEquiv (i : Fin n) :
     cartanGenerator (K := K) n hn i =
       (typeDDiagonalEquiv (K := K) (ι := Fin n)
         (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :
@@ -396,16 +396,15 @@ theorem cartanGenerator_eq_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin 
   rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
 
 /-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
-theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+theorem cartanGenerator_mem_typeDDiagonalCartan (i : Fin n) :
     cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
   rw [cartanGenerator_eq_typeDDiagonalEquiv]
   exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
-    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
+    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).property
 
 /-- The ambient diagonal coordinates of a lifted simple-root Cartan generator are the pinned
 type-D simple root. -/
-theorem typeDDiagonalCartanBasis_repr_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
-    (i j : Fin n) :
+theorem typeDDiagonalCartanBasis_repr_cartanGenerator (i j : Fin n) :
     (typeDDiagonalCartanBasis (K := K) (ι := Fin n)).repr
         (⟨cartanGenerator (K := K) n hn i,
           cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) j =
@@ -927,7 +926,7 @@ theorem lie_rootGenerator_inr_inl {K : Type*} [CommRing K] (i j : Fin n) :
 
 /-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
 theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
-    (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    (i : Fin n) :
     _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
       (rootGenerator (K := K) n hn (.inl i))
       (rootGenerator (K := K) n hn (.inr i)) where

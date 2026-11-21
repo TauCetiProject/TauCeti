@@ -96,7 +96,7 @@ theorem IsEtaleAt.of_isUnramifiedAt_of_height_le [IsNoetherianRing R] [FiniteTyp
   obtain rfl := Q.over_def p
   let D := Localization.AtPrime Q
   have hunit (y : Q.primeCompl) : IsUnit (ψ y) :=
-    notMem_maximalIdeal.mp (Ideal.mem_comap.not.mp (Ideal.mem_primeCompl_iff.mp y.2))
+    notMem_maximalIdeal.mp (Ideal.mem_comap.not.mp (Ideal.mem_primeCompl_iff.mp y.property))
   let θ : D →ₐ[R] T := IsLocalization.liftAlgHom hunit
   have hsurj : Function.Surjective θ := by
     intro z

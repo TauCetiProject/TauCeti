@@ -18,6 +18,8 @@ page, and, by induction, on every object of every page `r' ≥ r`.
 ## Main results
 
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`: the comparison on later pages.
+
+An isomorphism of spectral sequences is an isomorphism on every page (an instance on `f.hom r`).
 -/
 
 public section
@@ -26,6 +28,11 @@ namespace CategoryTheory.SpectralSequence.Hom
 
 variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} {r₀ : ℤ}
   {E E' : SpectralSequence C c r₀} (f : E ⟶ E')
+
+/-- An isomorphism of spectral sequences is an isomorphism on every page. -/
+instance [IsIso f] (r : ℤ) (hr : r₀ ≤ r) : IsIso (f.hom r hr) :=
+  ⟨(inv f).hom r hr, by rw [← comp_hom _ _ r hr, IsIso.hom_inv_id, id_hom],
+    by rw [← comp_hom _ _ r hr, IsIso.inv_hom_id, id_hom]⟩
 
 /-- A morphism of spectral sequences which is an isomorphism on every object of the `r`th page is
 an isomorphism on every object of every page `r' ≥ r`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Amenable.Basic
+public import TauCeti.Analysis.Normed.Algebra.Amenable
 public import TauCeti.Analysis.Normed.Module.Essential
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Analysis.Normed.Module.WeakDual
@@ -158,9 +158,9 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
     (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
     (hEL : ∃ ψ₀ : StrongDual 𝕜 (span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure,
       ∀ a, (D a).comp (span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure.subtypeL =
-        dualAction (R.restrictSubmodule _ fun a _ hx ↦
+        dualAction (R.restrictAction _ fun a _ hx ↦
           apply_mem_topologicalClosure_span_of_comm hLR a hx) a ψ₀ -
-        dualAction (L.restrictSubmodule _ fun a x _ ↦
+        dualAction (L.restrictAction _ fun a x _ ↦
           apply_mem_topologicalClosure_span L a x) a ψ₀) :
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
   let EL := (span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure
@@ -177,8 +177,8 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
   have hD₁_EL (a : A) (x : E) (hx : x ∈ EL) : D₁ a x = 0 := by
     have h1 := congr($(hψ₀ a) ⟨x, hx⟩)
     simp only [comp_apply, Submodule.subtypeL_apply, sub_apply, dualAction_apply_apply] at h1
-    rw [hD₁x, ← coe_restrictSubmodule_apply R EL hR_inv a ⟨x, hx⟩,
-      ← coe_restrictSubmodule_apply L EL hL_inv a ⟨x, hx⟩, hψ, hψ, h1, sub_self]
+    rw [hD₁x, ← coe_restrictAction_apply R EL hR_inv a ⟨x, hx⟩,
+      ← coe_restrictAction_apply L EL hL_inv a ⟨x, hx⟩, hψ, hψ, h1, sub_self]
   -- Since `L b x ∈ EL`, `D₁ a · b = 0` and hence `D₁ (a * b) = a · D₁ b`.
   have hD₁_mul (a b : A) (x : E) : D₁ (a * b) x = D₁ b (R a x) := by
     have h := congr($(hD₁ a b) x)
@@ -213,9 +213,9 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
     (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
     (hER : ∃ ψ₀ : StrongDual 𝕜 (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure,
       ∀ a, (D a).comp (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure.subtypeL =
-        dualAction (R.restrictSubmodule _ fun a x _ ↦
+        dualAction (R.restrictAction _ fun a x _ ↦
           apply_mem_topologicalClosure_span R a x) a ψ₀ -
-        dualAction (L.restrictSubmodule _ fun a _ hx ↦
+        dualAction (L.restrictAction _ fun a _ hx ↦
           apply_mem_topologicalClosure_span_of_comm (fun b c y ↦ (hLR c b y).symm) a hx) a ψ₀) :
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
   let ER := (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure
@@ -232,8 +232,8 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
   have hD₁_ER (a : A) (x : E) (hx : x ∈ ER) : D₁ a x = 0 := by
     have h1 := congr($(hψ₀ a) ⟨x, hx⟩)
     simp only [comp_apply, Submodule.subtypeL_apply, sub_apply, dualAction_apply_apply] at h1
-    rw [hD₁x, ← coe_restrictSubmodule_apply R ER hR_inv a ⟨x, hx⟩,
-      ← coe_restrictSubmodule_apply L ER hL_inv a ⟨x, hx⟩, hψ, hψ, h1, sub_self]
+    rw [hD₁x, ← coe_restrictAction_apply R ER hR_inv a ⟨x, hx⟩,
+      ← coe_restrictAction_apply L ER hL_inv a ⟨x, hx⟩, hψ, hψ, h1, sub_self]
   -- Since `R a x ∈ ER`, `a · D₁ b = 0` and hence `D₁ (a * b) = D₁ a · b`.
   have hD₁_mul (a b : A) (x : E) : D₁ (a * b) x = D₁ a (L b x) := by
     have h := congr($(hD₁ a b) x)
@@ -270,12 +270,12 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
           (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure),
       ∀ a, (D a).comp ((span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure ⊓
           (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure).subtypeL =
-        dualAction (R.restrictSubmodule
+        dualAction (R.restrictAction
           ((span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure ⊓
             (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure)
           fun a _ hx ↦ ⟨apply_mem_topologicalClosure_span_of_comm hLR a hx.1,
             apply_mem_topologicalClosure_span R a _⟩) a ψ₀ -
-        dualAction (L.restrictSubmodule
+        dualAction (L.restrictAction
           ((span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure ⊓
             (span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2)).topologicalClosure)
           fun a _ hx ↦ ⟨apply_mem_topologicalClosure_span L a _,
@@ -288,17 +288,17 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
   have hLL_inv : ∀ a, ∀ x ∈ EL, L a x ∈ EL := fun a x _ ↦ apply_mem_topologicalClosure_span L a x
   have hRL_inv : ∀ a, ∀ x ∈ EL, R a x ∈ EL :=
     fun a _ hx ↦ apply_mem_topologicalClosure_span_of_comm hLR a hx
-  let LL : A →L[𝕜] EL →L[𝕜] EL := L.restrictSubmodule EL hLL_inv
-  let RL : A →L[𝕜] EL →L[𝕜] EL := R.restrictSubmodule EL hRL_inv
-  have hLL := restrictSubmodule_mul_apply_of_left hL EL hLL_inv
-  have hRL := restrictSubmodule_mul_apply_of_right hR EL hRL_inv
-  have hLRL := restrictSubmodule_apply_comm hLR EL hLL_inv hRL_inv
+  let LL : A →L[𝕜] EL →L[𝕜] EL := L.restrictAction EL hLL_inv
+  let RL : A →L[𝕜] EL →L[𝕜] EL := R.restrictAction EL hRL_inv
+  have hLL := restrictAction_mul_apply_of_left hL EL hLL_inv
+  have hRL := restrictAction_mul_apply_of_right hR EL hRL_inv
+  have hLRL := restrictAction_apply_comm hLR EL hLL_inv hRL_inv
   -- Step 1: reduce `E` to `EL`.
   let DL : A →L[𝕜] StrongDual 𝕜 EL := (precomp 𝕜 EL.subtypeL) ∘L D
   have hDL : ∀ a b, DL (a * b) = dualAction RL a (DL b) + dualAction LL b (DL a) := by
     intro a b
     ext x
-    simpa [DL, LL, RL] using congr($(hD a b) x.1)
+    simpa [DL, LL, RL] using congr($(hD a b) x.val)
   suffices ∃ ψL : StrongDual 𝕜 EL, ∀ a, DL a = dualAction RL a ψL - dualAction LL a ψL by
     obtain ⟨ψL, hψL⟩ := this
     exact exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential hL hR hLR hC
@@ -307,36 +307,36 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
   refine exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential hLL hRL hLRL hC
     hl.tendsto_mul_right DL hDL ?_
   let ELR := (span 𝕜 (Set.range fun p : A × EL ↦ RL p.1 p.2)).topologicalClosure
-  -- Every `x : ELR` lies in `ER`, because `R e x.1 = (RL e x).1 → x.1`.
-  have hELR_mem (x : ELR) : (x.1 : E) ∈ EL ⊓ ER := by
-    refine ⟨x.1.2, ?_⟩
+  -- Every `x : ELR` lies in `ER`, because `R e x.val = (RL e x).val → x.val`.
+  have hELR_mem (x : ELR) : (x.val : E) ∈ EL ⊓ ER := by
+    refine ⟨x.val.property, ?_⟩
     have ht := tendsto_apply_of_mem_topologicalClosure_span_right RL hRL hC
-      hl.tendsto_mul_left x.2
-    have htE : Tendsto (fun e ↦ R e (x.1 : E)) l (𝓝 (x.1 : E)) :=
-      ((EL.subtypeL.continuous.tendsto x.1).comp ht).congr fun e ↦
-        coe_restrictSubmodule_apply R EL hRL_inv e x.1
+      hl.tendsto_mul_left x.property
+    have htE : Tendsto (fun e ↦ R e (x.val : E)) l (𝓝 (x.val : E)) :=
+      ((EL.subtypeL.continuous.tendsto x.val).comp ht).congr fun e ↦
+        coe_restrictAction_apply R EL hRL_inv e x.val
     exact (tendsto_apply_iff_mem_topologicalClosure_span_right R hR hC hl.tendsto_mul_left).1 htE
   let ι : ELR →L[𝕜] ↥(EL ⊓ ER) :=
     (EL.subtypeL.comp ELR.subtypeL).codRestrict (EL ⊓ ER) hELR_mem
-  have hι_coe (x : ELR) : (ι x : E) = (x.1 : E) := rfl
+  have hι_coe (x : ELR) : (ι x : E) = (x.val : E) := rfl
   have hιR (a : A) (x : ELR) :
-      ι (RL.restrictSubmodule ELR (fun a y _ ↦ apply_mem_topologicalClosure_span RL a y) a x) =
-        R.restrictSubmodule (EL ⊓ ER)
+      ι (RL.restrictAction ELR (fun a y _ ↦ apply_mem_topologicalClosure_span RL a y) a x) =
+        R.restrictAction (EL ⊓ ER)
           (fun a _ hx ↦ ⟨apply_mem_topologicalClosure_span_of_comm hLR a hx.1,
             apply_mem_topologicalClosure_span R a _⟩) a (ι x) := by
     apply SetLike.coe_eq_coe.1
-    rw [hι_coe, coe_restrictSubmodule_apply, coe_restrictSubmodule_apply, ← hι_coe x]
-    exact (coe_restrictSubmodule_apply R (EL ⊓ ER) _ a (ι x)).symm
+    rw [hι_coe, coe_restrictAction_apply, coe_restrictAction_apply, ← hι_coe x]
+    exact (coe_restrictAction_apply R (EL ⊓ ER) _ a (ι x)).symm
   have hιL (a : A) (x : ELR) :
-      ι (LL.restrictSubmodule ELR (fun a _ hy ↦
+      ι (LL.restrictAction ELR (fun a _ hy ↦
           apply_mem_topologicalClosure_span_of_comm (fun b c y ↦ (hLRL c b y).symm) a hy) a x) =
-        L.restrictSubmodule (EL ⊓ ER)
+        L.restrictAction (EL ⊓ ER)
           (fun a _ hx ↦ ⟨apply_mem_topologicalClosure_span L a _,
             apply_mem_topologicalClosure_span_of_comm (fun b c y ↦ (hLR c b y).symm) a hx.2⟩)
           a (ι x) := by
     apply SetLike.coe_eq_coe.1
-    rw [hι_coe, coe_restrictSubmodule_apply, coe_restrictSubmodule_apply, ← hι_coe x]
-    exact (coe_restrictSubmodule_apply L (EL ⊓ ER) _ a (ι x)).symm
+    rw [hι_coe, coe_restrictAction_apply, coe_restrictAction_apply, ← hι_coe x]
+    exact (coe_restrictAction_apply L (EL ⊓ ER) _ a (ι x)).symm
   obtain ⟨ψ₀, hψ₀⟩ := hEss
   refine ⟨ψ₀.comp ι, fun a ↦ ?_⟩
   ext x
@@ -382,31 +382,31 @@ theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNorme
     have hR_inv : ∀ a, ∀ x ∈ Eess, R a x ∈ Eess := fun a _ hx ↦
       ⟨apply_mem_topologicalClosure_span_of_comm hLR a hx.1,
         apply_mem_topologicalClosure_span R a _⟩
-    let Less : A →L[𝕜] Eess →L[𝕜] Eess := L.restrictSubmodule Eess hL_inv
-    let Ress : A →L[𝕜] Eess →L[𝕜] Eess := R.restrictSubmodule Eess hR_inv
-    have hLess := restrictSubmodule_mul_apply_of_left hL Eess hL_inv
-    have hRess := restrictSubmodule_mul_apply_of_right hR Eess hR_inv
-    have hLRess := restrictSubmodule_apply_comm hLR Eess hL_inv hR_inv
+    let Less : A →L[𝕜] Eess →L[𝕜] Eess := L.restrictAction Eess hL_inv
+    let Ress : A →L[𝕜] Eess →L[𝕜] Eess := R.restrictAction Eess hR_inv
+    have hLess := restrictAction_mul_apply_of_left hL Eess hL_inv
+    have hRess := restrictAction_mul_apply_of_right hR Eess hR_inv
+    have hLRess := restrictAction_apply_comm hLR Eess hL_inv hR_inv
     have hL_top : (span 𝕜 (Set.range fun p : A × Eess ↦ Less p.1 p.2)).topologicalClosure = ⊤ := by
       rw [eq_top_iff]
       intro x _
       refine (tendsto_apply_iff_mem_topologicalClosure_span Less hLess hC hl.tendsto_mul_right).1 ?_
       exact tendsto_subtype_rng.2 <|
-        (tendsto_apply_of_mem_topologicalClosure_span L hL hC hl.tendsto_mul_right x.2.1).congr
-          fun e ↦ (coe_restrictSubmodule_apply L Eess hL_inv e x).symm
+        (tendsto_apply_of_mem_topologicalClosure_span L hL hC hl.tendsto_mul_right
+          x.property.1).congr fun e ↦ (coe_restrictAction_apply L Eess hL_inv e x).symm
     have hR_top : (span 𝕜 (Set.range fun p : A × Eess ↦ Ress p.1 p.2)).topologicalClosure = ⊤ := by
       rw [eq_top_iff]
       intro x _
       refine (tendsto_apply_iff_mem_topologicalClosure_span_right Ress hRess hC
         hl.tendsto_mul_left).1 ?_
       exact tendsto_subtype_rng.2 <|
-        (tendsto_apply_of_mem_topologicalClosure_span_right R hR hC hl.tendsto_mul_left x.2.2).congr
-          fun e ↦ (coe_restrictSubmodule_apply R Eess hR_inv e x).symm
+        (tendsto_apply_of_mem_topologicalClosure_span_right R hR hC hl.tendsto_mul_left
+          x.property.2).congr fun e ↦ (coe_restrictAction_apply R Eess hR_inv e x).symm
     let Dess : A →L[𝕜] StrongDual 𝕜 Eess := (precomp 𝕜 Eess.subtypeL) ∘L D
     have hDess : ∀ a b, Dess (a * b) = dualAction Ress a (Dess b) + dualAction Less b (Dess a) := by
       intro a b
       ext x
-      simpa [Dess, Less, Ress] using congr($(hD a b) x.1)
+      simpa [Dess, Less, Ress] using congr($(hD a b) x.val)
     obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hL_top hR_top Dess hDess
     exact exists_eq_dualAction_sub_dualAction_of_restrict_essential hL hR hLR hl hC D hD
       ⟨ψ₀, fun a ↦ by simpa [Dess] using hψ₀ a⟩

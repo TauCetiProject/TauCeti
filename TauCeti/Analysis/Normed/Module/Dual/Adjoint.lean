@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
-public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import TauCeti.Analysis.Normed.Module.Dual.Submodule
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
 /-!
@@ -30,10 +29,8 @@ in `E`.
 This file proves the unconditional identities `ker T* = (range T)ᗮ`,
 `range T* ≤ (ker T)ᗮ` and, when functionals separate points of `F`, `ker T = (range T*)_⊥`.
 For a bounded operator between Banach spaces it then proves the **closed-range theorem**:
-`range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`, and
-consequently the bidual inclusion `T.ker.subtypeL**` identifies `(ker T)**` isometrically with
-`ker T**`. It also proves that a bounded map between Banach spaces is bijective iff its transpose
-is.
+`range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`.
+It also proves that a bounded map between Banach spaces is bijective iff its transpose is.
 
 If `T` has closed range of finite codimension, every functional vanishing on `range T` is
 continuous, so the kernel of the transpose agrees with the kernel of the algebraic dual map
@@ -44,22 +41,20 @@ that a map whose adjoint is bounded below is surjective: geometric Hahn–Banach
 closure of the image of a ball contains a ball, and Banach's lemma
 `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure` upgrades this to surjectivity.
 The same geometric Hahn–Banach separation also characterizes `closure (T '' closedBall 0 r)` by
-dual norm inequalities, and in particular shows that if `T** Φ = J_F y` with `‖Φ‖ ≤ r` then
-`y ∈ closure (T '' closedBall 0 r)`.
+dual norm inequalities (`ContinuousLinearMap.mem_closure_image_closedBall_iff`).
 Completeness of the domain cannot be dropped: the inclusion of finitely supported sequences
 into `ℓ²` has dense proper range, while its adjoint is surjective.
 
 ## Main declarations
 
 * `ContinuousLinearMap.ker_precomp_eq_orthogonalBilin_range`: `ker T* = (range T)ᗮ`.
+* `ContinuousLinearMap.injective_precomp_iff_denseRange`: `T*` is injective iff `T` has dense
+  range.
 * `ContinuousLinearMap.ker_eq_orthogonalBilin_range_precomp`: `ker T = (range T*)_⊥`.
 * `ContinuousLinearMap.range_precomp_eq_orthogonalBilin_ker`: if `range T` is closed, then
   `range T* = (ker T)ᗮ`.
-* `ContinuousLinearMap.kerDoubleDualEquivKerPrecompPrecomp`: if `range T` is closed, `(ker T)**`
-  is isometrically `ker T**` via `T.ker.subtypeL**`.
-* `ContinuousLinearMap.mem_closure_image_closedBall_iff` and
-  `ContinuousLinearMap.mem_closure_image_closedBall_of_precomp_precomp_eq`: bipolar and bidual
-  criteria for membership in `closure (T '' closedBall 0 r)`.
+* `ContinuousLinearMap.mem_closure_image_closedBall_iff`: bipolar criterion for membership in
+  `closure (T '' closedBall 0 r)`.
 * `ContinuousLinearMap.surjective_of_norm_le_norm_comp`: a map whose adjoint is bounded below
   is surjective.
 * `ContinuousLinearMap.isClosed_range_precomp_iff`: the closed-range theorem.
@@ -114,6 +109,12 @@ theorem ker_eq_orthogonalBilin_range_precomp [SeparatingDual 𝕜 F] (T : E →L
     precomp_apply, comp_apply, coe_coe]
   exact SeparatingDual.eq_zero_iff_forall_dual_eq_zero (T x)
 
+/-- If `T` has dense range, then its transpose `precomp 𝕜 T` on strong duals is injective. -/
+theorem injective_precomp_of_denseRange {T : E →L[𝕜] F} (hT : DenseRange T) :
+    Injective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :=
+  fun f g hfg ↦ DFunLike.coe_injective <|
+    hT.equalizer f.continuous g.continuous (funext fun x ↦ DFunLike.congr_fun hfg x)
+
 end Algebraic
 
 section HahnBanach
@@ -156,67 +157,6 @@ theorem isClosed_range_precomp_of_isClosed_range (T : E →L[𝕜] F)
   rw [T.range_precomp_eq_orthogonalBilin_ker hT, ← h]
   exact isClosed_ker _
 
-attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
-  ContinuousLinearMap.strongDualNormedSpace
-  ContinuousLinearMap.strongBidualSeminormedAddCommGroup ContinuousLinearMap.strongBidualNormedSpace
-
-/-- For a bounded operator between Banach spaces with closed range, the bidual inclusion
-`T.ker.subtypeL**` identifies `(ker T)**` isometrically with `ker T**`. -/
-noncomputable def kerDoubleDualEquivKerPrecompPrecomp (T : E →L[𝕜] F)
-    (hT : IsClosed (T.range : Set F)) :
-    StrongDual 𝕜 (StrongDual 𝕜 T.ker) ≃ₗᵢ[𝕜]
-      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
-        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker :=
-  T.ker.doubleDualEquivOrthogonalBilin.trans <|
-    LinearIsometryEquiv.ofEq _ _ <| by
-      rw [← T.range_precomp_eq_orthogonalBilin_ker hT,
-        ← ker_precomp_eq_orthogonalBilin_range
-          (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)]
-
-/-- The identification `(ker T)** ≃ₗᵢ[𝕜] ker T**` evaluates a functional on `(ker T)*` by
-restricting the ambient functional to `ker T`. -/
-@[simp]
-theorem kerDoubleDualEquivKerPrecompPrecomp_apply (T : E →L[𝕜] F)
-    (hT : IsClosed (T.range : Set F)) (Φ : StrongDual 𝕜 (StrongDual 𝕜 T.ker))
-    (f : StrongDual 𝕜 E) :
-    (kerDoubleDualEquivKerPrecompPrecomp T hT Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) f =
-      Φ (f.comp T.ker.subtypeL) := by
-  simp [kerDoubleDualEquivKerPrecompPrecomp]
-
-/-- Forgetting the kernel subtype recovers the bidual inclusion `T.ker.subtypeL**`. -/
-theorem coe_kerDoubleDualEquivKerPrecompPrecomp (T : E →L[𝕜] F)
-    (hT : IsClosed (T.range : Set F)) (Φ : StrongDual 𝕜 (StrongDual 𝕜 T.ker)) :
-    (kerDoubleDualEquivKerPrecompPrecomp T hT Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) =
-      precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) Φ := by
-  ext f
-  simp
-
-/-- The inverse identification `ker T** ≃ₗᵢ[𝕜] (ker T)**` evaluates on the restriction of an
-ambient functional as the original element of `ker T**`. -/
-@[simp]
-theorem kerDoubleDualEquivKerPrecompPrecomp_symm_apply_comp_subtypeL (T : E →L[𝕜] F)
-    (hT : IsClosed (T.range : Set F))
-    (Ψ : (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
-      StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker)
-    (f : StrongDual 𝕜 E) :
-    (kerDoubleDualEquivKerPrecompPrecomp T hT).symm Ψ (f.comp T.ker.subtypeL) =
-      (Ψ : StrongDual 𝕜 (StrongDual 𝕜 E)) f := by
-  simpa only [← kerDoubleDualEquivKerPrecompPrecomp_apply T hT] using
-    congrArg (fun Φ : StrongDual 𝕜 (StrongDual 𝕜 E) ↦ Φ f)
-      (congrArg Subtype.val ((kerDoubleDualEquivKerPrecompPrecomp T hT).apply_symm_apply Ψ))
-
-/-- For a bounded operator between Banach spaces with closed range, the range of the bidual
-inclusion `T.ker.subtypeL**` is exactly `ker T**`. -/
-theorem range_precomp_precomp_ker_subtypeL (T : E →L[𝕜] F)
-    (hT : IsClosed (T.range : Set F)) :
-    (precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) :
-        StrongDual 𝕜 (StrongDual 𝕜 T.ker) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)).range =
-      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
-        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker := by
-  rw [T.ker.range_precomp_precomp_subtypeL, ← T.range_precomp_eq_orthogonalBilin_ker hT,
-    ← ker_precomp_eq_orthogonalBilin_range
-      (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)]
-
 end HahnBanach
 
 section RCLike
@@ -256,20 +196,6 @@ theorem mem_closure_image_closedBall_iff [SeminormedAddCommGroup F] [NormedSpace
     have hfy' := (RCLike.re_le_norm (f y)).trans (h f)
     linarith
 
-/-- If the bidual adjoint `T**` maps a bidual element `Φ` of norm at most `r` to the canonical
-image of `y`, then `y` lies in the norm closure of `T '' closedBall 0 r`. -/
-theorem mem_closure_image_closedBall_of_precomp_precomp_eq
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F)
-    {Φ : StrongDual 𝕜 (StrongDual 𝕜 E)} {r : ℝ} (hr : ‖Φ‖ ≤ r) {y : F}
-    (hΦ : precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) Φ =
-      NormedSpace.inclusionInDoubleDual 𝕜 F y) :
-    y ∈ closure (T '' closedBall 0 r) :=
-  (T.mem_closure_image_closedBall_iff ((norm_nonneg Φ).trans hr)).2 fun g ↦ by
-    have hgy : g y = Φ (g.comp T) := by
-      simpa [NormedSpace.dual_def] using (congr($hΦ g)).symm
-    rw [hgy]
-    exact (Φ.le_opNorm _).trans (mul_le_mul_of_nonneg_right hr (norm_nonneg _))
-
 /-- If the adjoint of `S` is bounded below with constant `K`, then every `y` lies in the closure
 of the image of the closed ball of radius `K * ‖y‖`. -/
 theorem mem_closure_image_closedBall_of_norm_le_norm_comp
@@ -308,12 +234,11 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
     refine Z.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z ↦ ?_
     have hz : (z : F) ∈ closure (T.range : Set F) := by
       rw [← Submodule.topologicalClosure_coe]
-      exact z.2
+      exact z.property
     rwa [← Set.range_comp, hT₀, ← coe_coe, ← LinearMap.coe_range]
   -- The adjoint of `T₀` is injective, and by Hahn–Banach it has the same range as that of `T`.
   let A : StrongDual 𝕜 Z →L[𝕜] StrongDual 𝕜 E := precomp 𝕜 T₀
-  have hinj : Injective A := fun ψ₁ ψ₂ hψ ↦ DFunLike.coe_injective <|
-    hdense.equalizer ψ₁.continuous ψ₂.continuous (funext fun x ↦ DFunLike.congr_fun hψ x)
+  have hinj : Injective A := injective_precomp_of_denseRange hdense
   have hrange : Set.range A =
       ((precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).range : Set (StrongDual 𝕜 E)) := by
     ext φ
@@ -335,6 +260,16 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
   exact T.range.isClosed_topologicalClosure
 
 end RCLike
+
+/-- Over `ℝ` or `ℂ`, the transpose `precomp 𝕜 T` on strong duals is injective if and only if `T`
+has dense range. -/
+@[simp]
+theorem injective_precomp_iff_denseRange [RCLike 𝕜] [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) :
+    Injective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔ DenseRange T := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ker_precomp_eq_orthogonalBilin_range,
+    ← Submodule.dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot, LinearMap.coe_range, coe_coe]
+  rfl
 
 section Complete
 
@@ -399,7 +334,7 @@ noncomputable def kerPrecompEquivKerDualMap :
     ⟨fun φ ψ h ↦ Subtype.ext <| coe_injective <| congrArg Subtype.val h, fun ψ ↦ by
       have hψ : T.range ≤ LinearMap.ker (ψ : Dual 𝕜 F) := by
         rintro _ ⟨x, rfl⟩
-        exact LinearMap.congr_fun (LinearMap.mem_ker.1 ψ.2) x
+        exact LinearMap.congr_fun (LinearMap.mem_ker.1 ψ.property) x
       -- `ψ` factors through the Hausdorff finite-dimensional quotient by the closed range.
       have : IsClosed (T.range : Set F) := hT
       have hcont : Continuous (ψ : Dual 𝕜 F) := by
