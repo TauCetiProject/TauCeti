@@ -28,7 +28,10 @@ homotopy lifting of
 (`TauCeti.HasHomotopyLiftingProperty.exists_lift_of_mem`); it depends on the space only up to
 homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
 embeddings (`TauCeti.HasHomotopyLiftingProperty.of_isOpenEmbedding`), and a map with it lifts paths
-(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
+(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`), from fibre to fibre
+(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift_fiber`), so that a point of the total space
+over the path component of `b` is joined to the fibre over `b`
+(`TauCeti.HasHomotopyLiftingProperty.exists_joined_of_joined`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
 `TauCeti.Topology.Homotopy.SerreFibration.Basic`.
@@ -69,14 +72,37 @@ theorem HasHomotopyLiftingProperty.exists_path_lift [Nonempty A]
   refine ⟨⟨fun t ↦ G (t, a), by fun_prop⟩, hG₀ a, funext fun t ↦ ?_⟩
   exact congrFun hG (t, a)
 
+/-- A map with the homotopy lifting property with respect to a nonempty space lifts a path `γ`
+from `b₀` to `b₁`, from each point `x` of the fibre over `b₀`, to a path of `E` from `x` ending in
+the fibre over `b₁`. -/
+theorem HasHomotopyLiftingProperty.exists_path_lift_fiber [Nonempty A]
+    (h : HasHomotopyLiftingProperty p A) {b₀ b₁ : B} (γ : Path b₀ b₁) (x : p ⁻¹' {b₀}) :
+    ∃ (y : p ⁻¹' {b₁}) (Γ : Path (x : E) y), ∀ t, p (Γ t) = γ t := by
+  obtain ⟨Γ, hΓ₀, hΓ⟩ := h.exists_path_lift (γ.cast x.2 rfl)
+  have hΓ' (t : I) : p (Γ t) = γ t := congrFun hΓ t
+  exact ⟨⟨Γ 1, (hΓ' 1).trans γ.target⟩, ⟨Γ, hΓ₀, rfl⟩, hΓ'⟩
+
+/-- For a map with the homotopy lifting property with respect to a nonempty space, a point `y` of
+the total space whose image is joined to `b` is joined to a point of the fibre over `b`. -/
+theorem HasHomotopyLiftingProperty.exists_joined_of_joined [Nonempty A]
+    (h : HasHomotopyLiftingProperty p A) {b : B} {y : E} (hy : Joined (p y) b) :
+    ∃ x : p ⁻¹' {b}, Joined (x : E) y := by
+  obtain ⟨x, Γ, -⟩ := h.exists_path_lift_fiber hy.somePath ⟨y, rfl⟩
+  exact ⟨x, ⟨Γ.symm⟩⟩
+
+/-- For a map with the homotopy lifting property with respect to a nonempty space onto a
+path-connected space, every point of the total space is joined to a point of the fibre over `b`. -/
+theorem HasHomotopyLiftingProperty.exists_joined [Nonempty A] [PathConnectedSpace B]
+    (h : HasHomotopyLiftingProperty p A) (b : B) (y : E) : ∃ x : p ⁻¹' {b}, Joined (x : E) y :=
+  h.exists_joined_of_joined (PathConnectedSpace.joined _ _)
+
 /-- A map with the homotopy lifting property with respect to a nonempty space, from a nonempty
 space onto a path-connected space, is surjective. -/
 theorem HasHomotopyLiftingProperty.surjective [Nonempty A] [Nonempty E] [PathConnectedSpace B]
     (h : HasHomotopyLiftingProperty p A) : Function.Surjective p := by
   intro b
-  let e : E := Classical.arbitrary E
-  obtain ⟨Γ, -, hΓ⟩ := h.exists_path_lift (PathConnectedSpace.somePath (p e) b)
-  exact ⟨Γ 1, (congrFun hΓ 1).trans (Path.target _)⟩
+  obtain ⟨x, -⟩ := h.exists_joined b (Classical.arbitrary E)
+  exact ⟨x, x.2⟩
 
 /-- The projection `B × F → B` has the homotopy lifting property with respect to every space: a
 homotopy lifts by keeping the `F`-coordinate of the initial lift fixed. -/
