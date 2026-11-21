@@ -25,6 +25,10 @@ the `d`-dimensional upper density of `μ` is at least `c` on `A`, then `μ` domi
 Neither `A` nor `μ` needs any further regularity, and `c` is not required to be finite. The
 constant is sharp: no covering constant is lost.
 
+Applied on small open sets of finite `μ`-measure, this gives local finiteness: if `μ` is locally
+finite and every point has a neighbourhood on whose part of `A` the density is at least a fixed
+`c ≠ 0`, then `μH[d]` restricted to `A` is locally finite.
+
 Conversely, if at every point `x` of `A` all small closed balls satisfy
 `μ (closedBall x r) ≤ c (2 r) ^ d` with `c ≠ 0, ∞`, then `μ A ≤ 2 ^ d c μH[d] A`. A set of
 diameter `ρ` meeting `A` at `x` lies in `closedBall x ρ`, so here a factor `2 ^ d` is lost. In
@@ -44,6 +48,13 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
 * `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen` and
   `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure`: a measure whose upper density is at
   least `c` on `A` dominates `c • μH[d]` on `A`.
+* `MeasureTheory.Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall`: a lower bound
+  `c ρ ^ d ≤ μ (closedBall y ρ)` for all radii `0 < ρ ≤ ρ₀` gives the density bound
+  `(c / 2 ^ d) (2 r) ^ d ≤ μ (closedBall y r)` for arbitrarily small `r`.
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_restrict_hausdorffMeasure` and
+  `MeasureTheory.Measure.isLocallyFiniteMeasure_restrict_hausdorffMeasure_of_ofReal_mul_pow_le`:
+  if a locally finite measure has upper density bounded below on `A`, locally uniformly, then `A`
+  has locally finite Hausdorff measure.
 * `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure with
   `μ (closedBall x r) ≤ c (2 r) ^ d` for all small `r` at every point `x` of `A`, where
   `c ≠ 0, ∞`, is at most `2 ^ d c • μH[d]` on `A`.
@@ -86,23 +97,24 @@ private lemma countable_and_tsum_le_of_pairwiseDisjoint (μ : Measure X) {d : �
     (hud : u.PairwiseDisjoint fun p => closedBall p.1 p.2)
     (hu : ∀ p ∈ u, 0 < p.2 ∧ closedBall p.1 p.2 ⊆ U ∧
       c * ENNReal.ofReal (2 * p.2) ^ d ≤ μ (closedBall p.1 p.2)) :
-    u.Countable ∧ ∑' p : u, ENNReal.ofReal (2 * p.1.2) ^ d ≤ μ U / c := by
+    u.Countable ∧ ∑' p : u, ENNReal.ofReal (2 * p.val.2) ^ d ≤ μ U / c := by
   -- Disjoint balls of positive measure inside `U` are countable.
   have hcount : u.Countable := by
     have := Measure.countable_meas_pos_of_disjoint_of_meas_iUnion_ne_top μ
-      (As := fun p : u => closedBall p.1.1 p.1.2) (fun _ => measurableSet_closedBall)
-      (fun p q hpq => hud p.2 q.2 (Subtype.coe_ne_coe.2 hpq))
-      (ne_top_of_le_ne_top hUtop (measure_mono (iUnion_subset fun p => (hu _ p.2).2.1)))
-    have hall : {p : u | 0 < μ (closedBall p.1.1 p.1.2)} = univ :=
+      (As := fun p : u => closedBall p.val.1 p.val.2) (fun _ => measurableSet_closedBall)
+      (fun p q hpq => hud p.property q.property (Subtype.coe_ne_coe.2 hpq))
+      (ne_top_of_le_ne_top hUtop (measure_mono (iUnion_subset fun p => (hu _ p.property).2.1)))
+    have hall : {p : u | 0 < μ (closedBall p.val.1 p.val.2)} = univ :=
       eq_univ_of_forall fun p => (ENNReal.mul_pos hc0 (ENNReal.rpow_pos
-        (ENNReal.ofReal_pos.2 (by linarith [(hu _ p.2).1])) ENNReal.ofReal_ne_top).ne').trans_le
-          (hu _ p.2).2.2
+        (ENNReal.ofReal_pos.2 (by linarith
+            [(hu _ p.property).1])) ENNReal.ofReal_ne_top).ne').trans_le
+          (hu _ p.property).2.2
     rw [hall] at this
     exact Set.countable_coe_iff.1 (countable_univ_iff.1 this)
   refine ⟨hcount, ?_⟩
   rw [ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inr hUtop), ← ENNReal.tsum_mul_right]
-  calc ∑' p : u, ENNReal.ofReal (2 * p.1.2) ^ d * c ≤ ∑' p : u, μ (closedBall p.1.1 p.1.2) :=
-        tsum_le_tsum fun p => by rw [mul_comm]; exact (hu _ p.2).2.2
+  calc ∑' p : u, ENNReal.ofReal (2 * p.val.2) ^ d * c ≤ ∑' p : u, μ (closedBall p.val.1 p.val.2) :=
+        tsum_le_tsum fun p => by rw [mul_comm]; exact (hu _ p.property).2.2
     _ = μ (⋃ p ∈ u, closedBall p.1 p.2) :=
         (measure_biUnion hcount hud fun _ _ => measurableSet_closedBall).symm
     _ ≤ μ U := measure_mono (iUnion₂_subset fun p hp => (hu p hp).2.1)
@@ -212,12 +224,12 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
     (ENNReal.div_pos hε.ne' h3)).exists)
   -- Cover by the balls in `F` and the threefold enlargements of the other selected balls.
   classical
-  refine ⟨u, inferInstance, fun p => p.1.1, fun p => if p ∈ F then p.1.2 else 3 * p.1.2,
+  refine ⟨u, inferInstance, fun p => p.val.1, fun p => if p ∈ F then p.val.2 else 3 * p.val.2,
     fun p => ?_, fun x hx => ?_, ?_⟩
-  · have := (huT p.2).2.2.1
+  · have := (huT p.property).2.2.1
     dsimp only
-    split_ifs <;> linarith [(huT p.2).2.1]
-  · by_cases hxF : x ∈ ⋃ p ∈ F, closedBall p.1.1 p.1.2
+    split_ifs <;> linarith [(huT p.property).2.1]
+  · by_cases hxF : x ∈ ⋃ p ∈ F, closedBall p.val.1 p.val.2
     · obtain ⟨p, hpF, hxp⟩ := mem_iUnion₂.1 hxF
       exact mem_iUnion.2 ⟨p, by simpa [hpF] using hxp⟩
     obtain ⟨r, hrT, hrF⟩ := fine x hx _ ((isClosed_biUnion_finset fun p _ =>
@@ -227,7 +239,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
     refine mem_iUnion.2 ⟨⟨b, hbu⟩, ?_⟩
     simp only [hbF, ↓reduceIte, mem_closedBall]
     linarith [dist_triangle x y b.1, mem_closedBall'.1 hyx, mem_closedBall.1 hyb]
-  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.1.2) d
+  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.val.2) d
       _ ≤ μ U / c + 3 ^ d * (ε / 3 ^ d) := by gcongr
       _ ≤ μ U / c + ε := by gcongr; exact ENNReal.mul_div_le
 
@@ -241,6 +253,61 @@ theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : 
   refine le_of_forall_gt fun b hb => ?_
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
   exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hU hAU h).trans_lt hUb
+
+omit [BorelSpace X] in
+/-- **Rescaling a lower bound on the measures of balls.** If `c ρ ^ d ≤ μ (closedBall y ρ)` for
+every radius `0 < ρ ≤ ρ₀`, then arbitrarily small radii `r > 0` have
+`(c / 2 ^ d) (2 r) ^ d ≤ μ (closedBall y r)`, the form of a lower density bound used in
+`MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen`. -/
+theorem frequently_ofReal_div_mul_rpow_le_measure_closedBall {μ : Measure X} {y : X} {c ρ₀ : ℝ}
+    {d : ℕ} (hρ₀ : 0 < ρ₀)
+    (h : ∀ ρ, 0 < ρ → ρ ≤ ρ₀ → ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall y ρ)) :
+    ∃ᶠ r in 𝓝[>] 0,
+      ENNReal.ofReal (c / 2 ^ d) * ENNReal.ofReal (2 * r) ^ (d : ℝ) ≤ μ (closedBall y r) := by
+  refine Eventually.frequently ?_
+  filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ hρ
+  have h2ρ : 0 ≤ 2 * ρ := by linarith [hρ.1]
+  have hscale : c / 2 ^ d * (2 * ρ) ^ d = c * ρ ^ d := by
+    rw [mul_pow]
+    field_simp
+  rw [ENNReal.rpow_natCast, ← ENNReal.ofReal_pow h2ρ, ← ENNReal.ofReal_mul' (pow_nonneg h2ρ d),
+    hscale]
+  exact h ρ hρ.1 hρ.2
+
+/-- **Locally finite Hausdorff measure from a local density bound.** Let `μ` be locally finite.
+If every point has a neighbourhood `V` and a constant `c ≠ 0` such that at every point `y` of
+`A ∩ V` arbitrarily small radii `r > 0` have `c (2 r) ^ d ≤ μ (closedBall y r)`, then `A` has
+locally finite `d`-dimensional Hausdorff measure. -/
+theorem isLocallyFiniteMeasure_restrict_hausdorffMeasure (μ : Measure X)
+    [IsLocallyFiniteMeasure μ] {d : ℝ} {A : Set X}
+    (h : ∀ x, ∃ V ∈ 𝓝 x, ∃ c ≠ 0, ∀ y ∈ A ∩ V,
+      ∃ᶠ r in 𝓝[>] 0, c * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall y r)) :
+    IsLocallyFiniteMeasure (μH[d].restrict A) := by
+  refine ⟨fun x => ?_⟩
+  obtain ⟨V, hV, c, hc, hdens⟩ := h x
+  obtain ⟨W, hxW, hW, hWfin⟩ := μ.exists_isOpen_measure_lt_top x
+  -- On the open neighbourhood `U = W ∩ interior V` of `x`, the density bound controls `μH[d]`.
+  have hU : IsOpen (W ∩ interior V) := hW.inter isOpen_interior
+  refine ⟨W ∩ interior V, hU.mem_nhds ⟨hxW, mem_interior_iff_mem_nhds.2 hV⟩, ?_⟩
+  rw [Measure.restrict_apply hU.measurableSet]
+  have hle := mul_hausdorffMeasure_le_measure_of_isOpen μ hU (inter_subset_left (t := A))
+    fun y hy => hdens y ⟨hy.2, interior_subset hy.1.2⟩
+  exact ENNReal.lt_top_of_mul_ne_top_right
+    ((hle.trans_lt ((measure_mono inter_subset_left).trans_lt hWfin)).ne) hc
+
+/-- **Locally finite Hausdorff measure from a local lower density bound.** Let `μ` be locally
+finite. If every point has a neighbourhood `U` and constants `c > 0`, `ρ₀ > 0` with
+`c ρ ^ d ≤ μ (closedBall y ρ)` for every `y ∈ A ∩ U` and every radius `0 < ρ ≤ ρ₀`, then `A` has
+locally finite `d`-dimensional Hausdorff measure. -/
+theorem isLocallyFiniteMeasure_restrict_hausdorffMeasure_of_ofReal_mul_pow_le (μ : Measure X)
+    [IsLocallyFiniteMeasure μ] {d : ℕ} {A : Set X}
+    (h : ∀ x, ∃ U ∈ 𝓝 x, ∃ c > 0, ∃ ρ₀ > 0, ∀ y ∈ A ∩ U, ∀ ρ, 0 < ρ → ρ ≤ ρ₀ →
+      ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall y ρ)) :
+    IsLocallyFiniteMeasure (μH[d].restrict A) := by
+  refine isLocallyFiniteMeasure_restrict_hausdorffMeasure μ fun x ↦ ?_
+  obtain ⟨U, hU, c, hc, ρ₀, hρ₀, hdens⟩ := h x
+  exact ⟨U, hU, ENNReal.ofReal (c / 2 ^ d), (ENNReal.ofReal_pos.2 (by positivity)).ne',
+    fun y hy ↦ frequently_ofReal_div_mul_rpow_le_measure_closedBall hρ₀ (hdens y hy)⟩
 
 /-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
 closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then

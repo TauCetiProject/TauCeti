@@ -100,7 +100,7 @@ theorem exists_integers_comap_eq (hF : IsFunctionField k F)
   let x₀ : g.range.toSubring := ⟨g (⟨ϖ, hϖO⟩ ⊗ₜ[k] 1), g.mem_range_self _⟩
   have hx₀ : ¬ IsUnit x₀ := fun hu ↦ by
     obtain ⟨u, hu'⟩ := isUnit_iff_exists_inv.mp hu
-    obtain ⟨z, hz⟩ := (g.mem_range).mp (Subalgebra.mem_toSubring.mp u.2)
+    obtain ⟨z, hz⟩ := (g.mem_range).mp (Subalgebra.mem_toSubring.mp u.property)
     have hmul : g ((⟨ϖ, hϖO⟩ ⊗ₜ[k] 1) * z) = g 1 := by
       rw [map_mul, map_one, hz]; exact congrArg Subtype.val hu'
     have hres0 : resAlg ⟨ϖ, hϖO⟩ = 0 :=

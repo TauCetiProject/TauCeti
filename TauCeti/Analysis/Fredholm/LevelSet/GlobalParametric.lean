@@ -199,7 +199,7 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
   -- Package the coordinate-level local theorem as a neighbourhood of each solution together
   -- with one nowhere dense exceptional set in the common parameter space.
   have hlocal := fun z : S => exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl z
-    (hcont z z.2) (hFred z z.2) (htotal z z.2) (hn z z.2)
+    (hcont z z.property) (hFred z z.property) (htotal z z.property) (hn z z.property)
   -- Second countability reduces this neighbourhood cover of the universal level set to a
   -- countable subcover.
   choose! Q hQnhds B hBnowhere hQB using hlocal

@@ -115,10 +115,10 @@ def cartanHomeomorph :
         (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} ≃ₜ
       {x : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
         ∀ t : ℝ, expUnit (t • (x : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∈ GLSymplectic n ℝ} :=
-    { toFun X := ⟨X.1, (hline _).2 X.2⟩
-      invFun x := ⟨x.1, (hline _).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+    { toFun X := ⟨X.val, (hline _).2 X.property⟩
+      invFun x := ⟨x.val, (hline _).1 x.property⟩
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   exact ((realifyUnitaryHomeomorph inf_unitarySubgroup).prodCongr eP).trans
     ((GLSymplectic n ℝ).cartanHomeomorph (fun _ ↦ star_mem) fun x hx h ↦ (hline x).2
       ((IsHermitian.exp_mem_symplecticGroup_iff hx.isHermitian).1 (by simpa using h)))
@@ -203,10 +203,10 @@ def realifyCartanHomeomorph :
         Commute (J n ℝ) (X : Matrix (n ⊕ n) (n ⊕ n) ℝ)} ≃ₜ
       {x : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
         ∀ t : ℝ, expUnit (t • (x : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∈ (realify n ℂ).range} :=
-    { toFun X := ⟨X.1, (hline (isHermitian_iff_isSelfAdjoint.2 X.1.2)).2 X.2⟩
-      invFun x := ⟨x.1, (hline (isHermitian_iff_isSelfAdjoint.2 x.1.2)).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+    { toFun X := ⟨X.val, (hline (isHermitian_iff_isSelfAdjoint.2 X.val.property)).2 X.property⟩
+      invFun x := ⟨x.val, (hline (isHermitian_iff_isSelfAdjoint.2 x.val.property)).1 x.property⟩
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   exact ((realifyUnitaryHomeomorph (inf_comm (realify n ℂ).range _ ▸
       unitarySubgroup_inf_range_realify)).prodCongr eP).trans
     ((realify n ℂ).range.cartanHomeomorph (fun _ ↦ star_mem_range_realify) fun x hx h ↦
@@ -261,7 +261,7 @@ theorem sqrt_mul_star_eq_exp_and_polarUnitary_eq_realify {A : GL (n ⊕ n) ℝ}
   open scoped Matrix.Norms.L2Operator in
   let := Matrix.l2OpNormedAlgebraReal (n := n ⊕ n) (𝕜 := ℝ)
   have hU : (U : Matrix n n ℂ).realify ∈ unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
-    realify_mem_orthogonalGroup_iff.2 U.2
+    realify_mem_orthogonalGroup_iff.2 U.property
   have h := (Units.mul_eq_iff_sqrt_mul_star_eq_and_polarUnitary_eq A
     (nonneg_iff_posSemidef.2 hX.posDef_exp.posSemidef) (v := ⟨_, hU⟩)).1 hA.symm
   exact ⟨h.1, congrArg Subtype.val h.2⟩
@@ -329,7 +329,7 @@ private theorem polar_leftCartanHomeomorph_symm_apply (A : GLSymplectic n ℝ) :
     ((A : GL (n ⊕ n) ℝ).polarUnitary : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       ((((leftCartanHomeomorph n).symm A).2 : unitaryGroup n ℂ) : Matrix n n ℂ).realify := by
   refine sqrt_mul_star_eq_exp_and_polarUnitary_eq_realify
-    (isHermitian_iff_isSelfAdjoint.2 ((leftCartanHomeomorph n).symm A).1.1.2) _ ?_
+    (isHermitian_iff_isSelfAdjoint.2 ((leftCartanHomeomorph n).symm A).1.val.property) _ ?_
   rw [← val_leftCartanHomeomorph_apply, Homeomorph.apply_symm_apply]
 
 /-- The exponential of the symmetric factor of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the
@@ -350,7 +350,7 @@ theorem coe_leftCartanHomeomorph_symm_apply_fst (A : GLSymplectic n ℝ) :
       cfc Real.log (CFC.sqrt (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
         star ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))) := by
   rw [← exp_leftCartanHomeomorph_symm_apply_fst,
-    (isHermitian_iff_isSelfAdjoint.2 ((leftCartanHomeomorph n).symm A).1.1.2).cfc_log_exp]
+    (isHermitian_iff_isSelfAdjoint.2 ((leftCartanHomeomorph n).symm A).1.val.property).cfc_log_exp]
 
 /-- The unitary factor of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the polar order
 realifies to the orthogonal polar factor of `A`. -/

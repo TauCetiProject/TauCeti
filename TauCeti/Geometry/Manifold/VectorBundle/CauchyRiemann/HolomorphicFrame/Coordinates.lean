@@ -117,7 +117,7 @@ theorem contMDiffOn_coordChangeL_trivialization [FiniteDimensional ℂ E]
   have hω : ContMDiffOn 𝓘(ℂ, E) 𝓘(ℂ, F) ω
       (fun x ↦ (hσ'.trivialization b' hU' ⟨x, σ x⟩).2) (U ∩ U') :=
     hc.contMDiffOn (hU.inter hU')
-  refine ((ContinuousLinearMap.smulRightL ℂ F F
+  refine ((ContinuousLinearMap.smulRightL ℂ ℂ ℂ F F
     (b.coord ()).toContinuousLinearMap).contMDiff.comp_contMDiffOn hω).congr ?_
   intro x hx
   ext w

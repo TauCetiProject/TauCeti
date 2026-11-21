@@ -41,6 +41,6 @@ regular. -/
 instance isNormalScheme_algebraicRealization (Φ : Fan i) :
     IsNormalScheme Φ.algebraicRealization :=
   (isNormalScheme_iff_openCover Φ.affineToricOpenCover).mpr fun σ ↦
-    isNormalScheme_affineToricScheme Φ.lattice σ.1
+    isNormalScheme_affineToricScheme Φ.lattice σ.val
 
 end TauCeti.Toric.Fan

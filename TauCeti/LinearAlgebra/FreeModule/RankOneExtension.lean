@@ -57,14 +57,14 @@ theorem exists_extending_of_finrank_eq_add_one {N N' : Submodule R M} (hle : N �
     omega
   have : IsTorsionFree R (N' ⧸ P) :=
     P.isTorsionFree_quotient_of_smul_mem fun c z hc hz ↦
-      hsat c hc z z.2 (by simpa only [hmemP, SetLike.val_smul] using hz)
+      hsat c hc z z.property (by simpa only [hmemP, SetLike.val_smul] using hz)
   let e := Module.finBasisOfFinrankEq R (N' ⧸ P) hQrank
   obtain ⟨y, hy⟩ := P.mkQ_surjective (e 0)
-  refine ⟨y, y.2, fun y' hy' ↦ ⟨fun c x hx hcx ↦ ?_, fun z hz ↦ ?_⟩⟩
+  refine ⟨y, y.property, fun y' hy' ↦ ⟨fun c x hx hcx ↦ ?_, fun z hz ↦ ?_⟩⟩
   · by_contra hc
     refine e.ne_zero 0 ?_
     rw [← hy, mkQ_apply, Quotient.mk_eq_zero, hmemP]
-    refine hsat c hc y y.2 ?_
+    refine hsat c hc y y.property ?_
     have : c • (y : M) = -x - c • (y' - y) := by
       rw [smul_sub, eq_neg_of_add_eq_zero_left hcx]
       abel

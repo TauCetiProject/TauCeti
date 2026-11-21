@@ -231,13 +231,13 @@ theorem _root_.LinearEquiv.extendOfIsFullLattice_map {S : Submodule R V} {T : Su
     S.map ((LinearEquiv.extendOfIsFullLattice (K := K) e).restrictScalars R).toLinearMap = T := by
   apply le_antisymm
   · rintro _ ⟨x, hx, rfl⟩
-    have hmem : (e (⟨x, hx⟩ : S) : W) ∈ T := (e ⟨x, hx⟩).2
+    have hmem : (e (⟨x, hx⟩ : S) : W) ∈ T := (e ⟨x, hx⟩).property
     rw [← LinearEquiv.extendOfIsFullLattice_apply (K := K)] at hmem
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap] using hmem
   · intro y hy
     let yT : T := ⟨y, hy⟩
     let xS : S := e.symm yT
-    refine ⟨(xS : V), xS.2, ?_⟩
+    refine ⟨(xS : V), xS.property, ?_⟩
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap,
       LinearEquiv.extendOfIsFullLattice_apply] using congr_arg Subtype.val (e.apply_symm_apply yT)
 

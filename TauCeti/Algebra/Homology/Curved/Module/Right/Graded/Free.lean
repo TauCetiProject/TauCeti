@@ -268,8 +268,8 @@ private theorem isCurvedDGRightModule_freeCarrier :
         (op a • (op w • x.snd) - op (d a) • V.grading.koszulTwist 1 x.fst) +
           p.negOnePow • (op (d a) • x.fst - op (d (d a)) • V.grading.koszulTwist 1 x.snd)
       rw [hτ₁, hτ₂, h.sq_eq a]
-      simp only [smul_sub, smul_neg, negOnePow_smul_negOnePow_smul, MulOpposite.op_sub, sub_smul,
-        op_mul, mul_smul]
+      simp only [smul_sub, smul_neg, Int.negOnePow_smul_negOnePow_smul, MulOpposite.op_sub,
+        sub_smul, op_mul, mul_smul]
       abel
     · -- Unfold `freeDifferential` and the twisted `Aᵐᵒᵖ`-action on the second coordinate.
       change op a • x.fst - op (d a) • V.grading.koszulTwist 1 x.snd =

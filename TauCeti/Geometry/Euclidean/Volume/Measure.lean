@@ -368,7 +368,7 @@ theorem val_comp_vaddConst (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
 theorem isometry_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
     Isometry fun v : s.direction ↦ ((v +ᵥ q : s) : P) := by
   rw [← s.val_comp_vaddConst q]
-  exact isometry_subtype_coe.comp (IsometryEquiv.vaddConst q).isometry
+  exact isometry_subtypeVal.comp (IsometryEquiv.vaddConst q).isometry
 
 /-- Adding a base point `q` of `s` to the directions of `s` reaches exactly the points of `s`. -/
 theorem range_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
@@ -401,7 +401,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
 isometry. When `‖ν‖ = 1`, its range is the hyperplane `{x | ⟪x, ν⟫ = c}`. -/
 theorem isometry_smul_add_coe (c : ℝ) :
     Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
-  (isometry_add_left (c • ν)).comp isometry_subtype_coe
+  (isometry_add_left (c • ν)).comp isometry_subtypeVal
 
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
@@ -418,7 +418,7 @@ theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (
     ext x
     refine ⟨?_, fun hx => ?_⟩
     · rintro ⟨y, rfl⟩
-      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.2
+      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.property
       simp [inner_add_left, real_inner_smul_left, hν, hy]
     · have hy : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
         rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,

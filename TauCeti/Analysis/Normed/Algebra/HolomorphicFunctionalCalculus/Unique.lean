@@ -151,7 +151,7 @@ theorem eq_holomorphicCalculus_of_forall_continuous {a : A}
   apply holomorphicGerms.algHom_ext
   intro U haU f
   obtain ⟨V, E, Γ, hV, haV, hVU, hEU, hEV, hΓ, hn, hw, hint⟩ :=
-    (spectrum.isCompact a).exists_open_segments_cycle_windingNumber_eq_one.{u} U.isOpen haU
+    (spectrum.isCompact ℂ a).exists_open_segments_cycle_windingNumber_eq_one.{u} U.isOpen haU
   let V' : Opens ℂ := ⟨V, hV⟩
   have h1 : Tendsto (fun N ↦ Φ (toGerm (U := V') haV (cauchyRiemannSum V' (extend f) E hEV N)))
       atTop (𝓝 (Φ (toGerm haU f))) := by

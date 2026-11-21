@@ -128,7 +128,7 @@ namespace TauCeti.PrincipalBundle.Extend
 theorem contMDiff_totalSpaceMk_mk {ρ : G →* H} (hρ : Continuous ρ) (hρ' : ContMDiff IG IH n ρ) :
     ContMDiff ((IB.prod IG).prod IH) (IB.prod IH) n
       (fun x : ManifoldTotalSpace G P × H ↦ homeomorph H (Extend P ρ hρ)
-        ⟨((homeomorph G P).symm x.1).proj, mk ρ hρ ((homeomorph G P).symm x.1).2 x.2⟩) :=
+        ⟨((homeomorph G P).symm x.1).proj, mk ρ hρ ((homeomorph G P).symm x.1).snd x.2⟩) :=
   (contMDiff_fst.congr fun x : ManifoldTotalSpace G P × H ↦ by
     simp only [TotalSpace.eta, Homeomorph.apply_symm_apply]).totalSpaceMk_extendMk
     hρ contMDiff_snd hρ'
@@ -138,7 +138,7 @@ theorem contMDiff_totalSpaceMk_mk {ρ : G →* H} (hρ : Continuous ρ) (hρ' : 
 theorem contMDiff_inl {ρ : G →* H} (hρ : Continuous ρ) (hρ' : ContMDiff IG IH n ρ) :
     ContMDiff (IB.prod IG) (IB.prod IH) n
       (fun x : ManifoldTotalSpace G P ↦ homeomorph H (Extend P ρ hρ)
-        ⟨((homeomorph G P).symm x).proj, inl ρ hρ ((homeomorph G P).symm x).2⟩) := by
+        ⟨((homeomorph G P).symm x).proj, inl ρ hρ ((homeomorph G P).symm x).snd⟩) := by
   simpa only [inl_def] using
     (contMDiff_id.congr fun x : ManifoldTotalSpace G P ↦ by
       simp only [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq]).totalSpaceMk_extendMk
@@ -159,7 +159,7 @@ variable {H EG HG EH HH : Type*}
   (ρ : G →* H) (hρ : Continuous ρ) (φ : ∀ b, P b → Q b)
   (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
   (hφc : ContMDiff (IB.prod IG) (IB.prod IH) n (fun x : ManifoldTotalSpace G P ↦ homeomorph H Q
-    ⟨((homeomorph G P).symm x).proj, φ _ ((homeomorph G P).symm x).2⟩))
+    ⟨((homeomorph G P).symm x).proj, φ _ ((homeomorph G P).symm x).snd⟩))
 
 /-- **Smooth universal comparison.** When `H` is a `C^n` Lie group, any `C^n` `ρ`-equivariant map
 `φ : P → Q` extends to an `H`-equivariant `C^n` diffeomorphism `Extend P ρ hρ ≃ₘ^n Q` over `B`. -/
@@ -187,22 +187,22 @@ def diffeomorphOfEquivariant :
 
 @[simp] theorem diffeomorphOfEquivariant_apply (z : TotalSpace H (Extend P ρ hρ)) :
     diffeomorphOfEquivariant ρ hρ φ hφ hφc (homeomorph H _ z) =
-      homeomorph H Q ⟨z.proj, equivOfEquivariant ρ hρ φ hφ z.proj z.2⟩ :=
+      homeomorph H Q ⟨z.proj, equivOfEquivariant ρ hρ φ hφ z.proj z.snd⟩ :=
   PrincipalBundle.diffeomorphOfEquivariant_apply _ _ _ z
 @[simp] theorem diffeomorphOfEquivariant_symm_apply (q : TotalSpace H Q) :
     (diffeomorphOfEquivariant ρ hρ φ hφ hφc).symm (homeomorph H Q q) =
-      homeomorph H _ ⟨q.proj, (equivOfEquivariant ρ hρ φ hφ q.proj).symm q.2⟩ :=
+      homeomorph H _ ⟨q.proj, (equivOfEquivariant ρ hρ φ hφ q.proj).symm q.snd⟩ :=
   PrincipalBundle.diffeomorphOfEquivariant_symm_apply _ _ _ q
 @[simp] theorem homeomorph_symm_diffeomorphOfEquivariant_apply
     (x : ManifoldTotalSpace H (Extend P ρ hρ)) :
     (homeomorph H Q).symm (diffeomorphOfEquivariant ρ hρ φ hφ hφc x) =
       ⟨((homeomorph H _).symm x).proj,
-        equivOfEquivariant ρ hρ φ hφ _ ((homeomorph H _).symm x).2⟩ :=
+        equivOfEquivariant ρ hρ φ hφ _ ((homeomorph H _).symm x).snd⟩ :=
   PrincipalBundle.homeomorph_symm_diffeomorphOfEquivariant_apply _ _ _ x
 @[simp] theorem homeomorph_symm_diffeomorphOfEquivariant_symm_apply (x : ManifoldTotalSpace H Q) :
     (homeomorph H _).symm ((diffeomorphOfEquivariant ρ hρ φ hφ hφc).symm x) =
       ⟨((homeomorph H Q).symm x).proj,
-        (equivOfEquivariant ρ hρ φ hφ _).symm ((homeomorph H Q).symm x).2⟩ :=
+        (equivOfEquivariant ρ hρ φ hφ _).symm ((homeomorph H Q).symm x).snd⟩ :=
   PrincipalBundle.homeomorph_symm_diffeomorphOfEquivariant_symm_apply _ _ _ x
 theorem diffeomorphOfEquivariant_mk {b : B} (p : P b) (h : H) :
     diffeomorphOfEquivariant ρ hρ φ hφ hφc (homeomorph H _ ⟨b, mk ρ hρ p h⟩) =

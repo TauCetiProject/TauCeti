@@ -216,7 +216,7 @@ theorem norm_sub_le_two_mul_mul_norm_sub {e' : F} {r : ℝ} (hrδ : r ≤ δ) (h
     hyQ hye
   -- The weight in the comparison estimate is at least `1 - C L r ≥ 1 / 2`.
   have hw : 1 / 2 ≤ 1 - C * (L / 2 * (‖x‖ + ‖y‖)) := by
-    have hCL : (0 : ℝ) ≤ C * L := mul_nonneg C.2 L.2
+    have hCL : (0 : ℝ) ≤ C * L := mul_nonneg C.property L.property
     have := mul_le_mul_of_nonneg_left (add_le_add hx hy) hCL
     nlinarith
   nlinarith [mul_le_mul_of_nonneg_right hw (norm_nonneg (x - y))]
@@ -259,10 +259,10 @@ theorem eq_of_add_add_eq_zero {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) {
   rw [hye, norm_zero, mul_zero] at h
   have hk : (L : ℝ) / 2 * (‖x‖ + ‖y‖) ≤ L * r := by
     have := add_le_add hx hy
-    have hL : (0 : ℝ) ≤ L := L.2
+    have hL : (0 : ℝ) ≤ L := L.property
     nlinarith
   have hpos : 0 < 1 - C * (L / 2 * (‖x‖ + ‖y‖)) := by
-    have hC : (0 : ℝ) ≤ C := C.2
+    have hC : (0 : ℝ) ≤ C := C.property
     nlinarith [mul_le_mul_of_nonneg_left hk hC]
   have hxy : ‖x - y‖ ≤ 0 := by
     by_contra hxy
@@ -368,8 +368,8 @@ theorem continuousAt_of_eventually_add_add_eq_zero {p₀ : P}
     (hxQ : ∀ᶠ p in 𝓝 p₀, x p ∈ range (Q p))
     (hxe : ∀ᶠ p in 𝓝 p₀, e p + D p (x p) + N p (x p) = 0)
     (hT : ContinuousAt (fun p ↦ Q p (e p + N p (x p₀))) p₀) : ContinuousAt x p₀ := by
-  have hC : (0 : ℝ) ≤ C := C.2
-  have hL : (0 : ℝ) ≤ L := L.2
+  have hC : (0 : ℝ) ≤ C := C.property
+  have hL : (0 : ℝ) ≤ L := L.property
   have hk : 0 < 1 - C * L * r := by linarith
   have hx₀ := hx.self_of_nhds
   rw [Metric.continuousAt_iff'] at hT ⊢
@@ -426,8 +426,8 @@ theorem exists_continuous_forall_add_add_eq_zero [CompleteSpace E] (hN0 : ∀ p,
     (hT : ∀ z ∈ closedBall (0 : E) r, Continuous fun p ↦ Q p (e p + N p z)) :
     ∃ x : P → E, Continuous x ∧
       ∀ p, x p ∈ range (Q p) ∧ ‖x p‖ ≤ 2 * C * ‖e p‖ ∧ e p + D p (x p) + N p (x p) = 0 := by
-  have hC : (0 : ℝ) ≤ C := C.2
-  have hL : (0 : ℝ) ≤ L := L.2
+  have hC : (0 : ℝ) ≤ C := C.property
+  have hL : (0 : ℝ) ≤ L := L.property
   have hsol (p : P) : ∃ x ∈ range (Q p), ‖x‖ ≤ 2 * C * ‖e p‖ ∧ e p + D p x + N p x = 0 := by
     refine exists_mem_range_norm_le_add_add_eq_zero (hDQ p) (hQ p) (hN p) (hN0 p)
       ((he p).trans hrδ) ?_
@@ -469,8 +469,8 @@ theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : 
         e p + g p ρ + D p y + N p y = 0 → y = x p ρ) ∧
       ∀ p, ∀ ρ ∈ s, ∀ ρ' ∈ s, ‖x p ρ - x p ρ'‖ ≤ 2 * C * ‖g p ρ - g p ρ'‖ := by
   classical
-  have hC : (0 : ℝ) ≤ C := C.2
-  have hL : (0 : ℝ) ≤ L := L.2
+  have hC : (0 : ℝ) ≤ C := C.property
+  have hL : (0 : ℝ) ≤ L := L.property
   -- The solutions are constructed in the ball of radius `r = min (2 C (ε + β)) δ`, on which the
   -- contraction constant `C L r` is below `1 / 2`.
   set R : ℝ := 2 * C * (ε + β)
@@ -486,10 +486,10 @@ theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : 
       (by linarith [mul_nonneg (mul_nonneg zero_le_two hC) (norm_nonneg (e p + g p ρ))])
   -- Solve over the parameter space `P × s`, viewed as a subtype of `P × V`.
   obtain ⟨x, hxc, hx⟩ := exists_continuous_forall_add_add_eq_zero (P := ↥(univ ×ˢ s))
-    (F := fun q ↦ F q.1.1) (G := fun q ↦ G q.1.1) (Q := fun q ↦ Q q.1.1)
-    (D := fun q ↦ D q.1.1) (N := fun q ↦ N q.1.1) (e := fun q ↦ e q.1.1 + g q.1.1 q.1.2)
-    (fun q ↦ hDQ q.1.1) (fun q ↦ hQ q.1.1) (fun q ↦ hN q.1.1) (fun q ↦ hN0 q.1.1)
-    (min_le_right R δ) (by linarith) (fun q ↦ hbound q.1.1 q.1.2 q.2.2)
+    (F := fun q ↦ F q.val.1) (G := fun q ↦ G q.val.1) (Q := fun q ↦ Q q.val.1)
+    (D := fun q ↦ D q.val.1) (N := fun q ↦ N q.val.1) (e := fun q ↦ e q.val.1 + g q.val.1 q.val.2)
+    (fun q ↦ hDQ q.val.1) (fun q ↦ hQ q.val.1) (fun q ↦ hN q.val.1) (fun q ↦ hN0 q.val.1)
+    (min_le_right R δ) (by linarith) (fun q ↦ hbound q.val.1 q.val.2 q.property.2)
     fun z hz ↦ (hT z (closedBall_subset_closedBall (min_le_left R δ) hz)).domRestrict
   set y : P → V → E := fun p ρ ↦ if h : ρ ∈ s then x ⟨(p, ρ), mem_univ p, h⟩ else 0
   have hyx (p : P) (ρ : V) (hρ : ρ ∈ s) : y p ρ = x ⟨(p, ρ), mem_univ p, hρ⟩ := dite_eq_left hρ

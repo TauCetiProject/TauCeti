@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
-public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
@@ -137,11 +137,11 @@ namespace rightMappingSpace
 
 /-- The vertices of the right mapping space `Hom^R_X(x, y)` are the edges from `x` to `y`. -/
 def obj₀Equiv : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌ ≃ Edge x y where
-  toFun σ := Edge.mk (σ.1 : X _⦋1⦌)
-    (by simpa [const_eq_id] using ((mem_rightMappingSpace_iff (n := 0) _).1 σ.2).1)
+  toFun σ := Edge.mk (σ.val : X _⦋1⦌)
+    (by simpa [const_eq_id] using ((mem_rightMappingSpace_iff (n := 0) _).1 σ.property).1)
     (by
       simpa [SimplicialObject.δ, SimplexCategory.δ_zero_eq_const] using
-        ((mem_rightMappingSpace_iff (n := 0) _).1 σ.2).2)
+        ((mem_rightMappingSpace_iff (n := 0) _).1 σ.property).2)
   invFun e := ⟨e.edge, (mem_rightMappingSpace_iff (n := 0) _).2
     ⟨by simp [const_eq_id],
       by simpa [SimplicialObject.δ, SimplexCategory.δ_zero_eq_const] using e.tgt_eq⟩⟩
@@ -150,39 +150,39 @@ def obj₀Equiv : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌ ≃ Edge x y whe
 
 /-- The edge attached to a vertex of `Hom^R_X(x, y)` is that vertex, as a `1`-simplex of `X`. -/
 theorem obj₀Equiv_apply_edge (σ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
-    (obj₀Equiv σ).edge = σ.1 :=
+    (obj₀Equiv σ).edge = σ.val :=
   (rfl)
 
 /-- The vertex of `Hom^R_X(x, y)` attached to an edge is that edge, as a `1`-simplex of `X`. -/
 theorem obj₀Equiv_symm_apply_coe (e : Edge x y) :
-    (obj₀Equiv.symm e).1 = e.edge :=
+    (obj₀Equiv.symm e).val = e.edge :=
   (rfl)
 
 /-- The `j`-th face of an `(n + 1)`-simplex of `Hom^R_X(x, y)` is the `j`-th face of the
 corresponding `(n + 2)`-simplex of `X`. -/
 theorem coe_δ {n : ℕ} (j : Fin (n + 2)) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n + 1⦌) :
-    (SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
-      X.δ j.castSucc (s.1 : X _⦋n + 2⦌) :=
-  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ j) s.1 :)
+    (SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s).val =
+      X.δ j.castSucc (s.val : X _⦋n + 2⦌) :=
+  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_δ j) s.val :)
 
 /-- The `j`-th degeneracy of an `n`-simplex of `Hom^R_X(x, y)` is the `j`-th degeneracy of the
 corresponding `(n + 1)`-simplex of `X`. -/
 theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
-      X.σ j.castSucc (s.1 : X _⦋n + 1⦌) :=
-  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.1 :)
+    (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).val =
+      X.σ j.castSucc (s.val : X _⦋n + 1⦌) :=
+  (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.val :)
 
 /-- The first `n + 1` vertices of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`,
 are `x`. -/
 theorem map_const_castSucc {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌)
     (j : Fin (n + 1)) :
-    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op (s.1 : X _⦋n + 1⦌) = x :=
-  map_const_castSucc_of_δ_last ((mem_rightMappingSpace_iff _).1 s.2).1 j
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op (s.val : X _⦋n + 1⦌) = x :=
+  map_const_castSucc_of_δ_last ((mem_rightMappingSpace_iff _).1 s.property).1 j
 
 /-- The last vertex of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, is `y`. -/
 theorem map_const_last {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.1 : X _⦋n + 1⦌) = y :=
-  ((mem_rightMappingSpace_iff _).1 s.2).2
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.val : X _⦋n + 1⦌) = y :=
+  ((mem_rightMappingSpace_iff _).1 s.property).2
 
 /-! ### Horn filling -/
 
@@ -192,13 +192,13 @@ variable {n : ℕ} {i : Fin (n + 2)}
 private def hornFace
     (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
     (j : Fin (n + 2)) (hj : j ≠ i) : (joinVertex.op ⋙ X) _⦋n⦌ :=
-  (σ₀.app _ (horn.face i j hj)).1
+  (σ₀.app _ (horn.face i j hj)).val
 
 private theorem hornFace_mem
     (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
     (j : Fin (n + 2)) (hj : j ≠ i) :
     hornFace σ₀ j hj ∈ (X.rightMappingSpace x y).obj (op ⦋n⦌) :=
-  (σ₀.app _ (horn.face i j hj)).2
+  (σ₀.app _ (horn.face i j hj)).property
 
 /-- The faces of a horn in `Hom^R_X(x, y)` satisfy the compatibility of faces of a horn. -/
 private theorem hornFace_δ {m : ℕ} {i : Fin (m + 3)}
@@ -367,8 +367,8 @@ private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
         (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s) := by
   refine Subtype.ext ((map_eq_of_isStrictSegal (joinVertex.map
     (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0 ≫ SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)))
-    mkOfSucc_last_comp_joinVertex_map (s.1 : X _⦋n + 1⦌)
-    ((mem_rightMappingSpace_iff _).1 s.2).1).symm.trans ?_)
+    mkOfSucc_last_comp_joinVertex_map (s.val : X _⦋n + 1⦌)
+    ((mem_rightMappingSpace_iff _).1 s.property).1).symm.trans ?_)
   -- The simplicial operators of `Hom^R_X(x, y)` act on `X` through `joinVertex`.
   rw [Functor.map_comp]
   exact Functor.map_comp_apply X (joinVertex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n))).op
@@ -421,9 +421,9 @@ private theorem range_le_rightMappingSpace (f : X ⟶ Y) (x y : X _⦋0⦌) :
       Y.rightMappingSpace (f.app _ x) (f.app _ y) := by
   rintro m _ ⟨s, rfl⟩
   -- The faces of `f σ` are the images under `f` of the faces of `σ`, by naturality of `f`.
-  exact ⟨(NatTrans.naturality_apply f _ s.1).symm.trans
-      ((congrArg (f.app _) s.2.1).trans (NatTrans.naturality_apply f _ x)),
-    (NatTrans.naturality_apply f _ s.1).symm.trans (congrArg (f.app _) s.2.2)⟩
+  exact ⟨(NatTrans.naturality_apply f _ s.val).symm.trans
+      ((congrArg (f.app _) s.property.1).trans (NatTrans.naturality_apply f _ x)),
+    (NatTrans.naturality_apply f _ s.val).symm.trans (congrArg (f.app _) s.property.2)⟩
 
 variable (x y) in
 /-- The map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)` induced by a map of simplicial sets
@@ -447,7 +447,7 @@ theorem map_ι (f : X ⟶ Y) :
 `f`. -/
 @[simp]
 theorem map_app_coe (f : X ⟶ Y) {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    dsimp% ((map x y f).app _ s).1 = f.app _ (s.1 : X _⦋n + 1⦌) :=
+    dsimp% ((map x y f).app _ s).val = f.app _ (s.val : X _⦋n + 1⦌) :=
   (rfl)
 
 variable (x y) in
@@ -509,9 +509,9 @@ instance isIso_map (f : X ⟶ Y) [IsIso f] : IsIso (map x y f) := by
   refine ⟨(mono_iff_injective _).1 inferInstance, fun s ↦ ?_⟩
   -- The preimage of `s` is its image under the inverse of `f`, which lies in `Hom^R_X(x, y)`
   -- because the inverse of `f` sends `f x` and `f y` back to `x` and `y`.
-  have hs : (inv f).app _ (s.1 : Y _⦋n + 1⦌) ∈ (X.rightMappingSpace ((inv f).app _ (f.app _ x))
+  have hs : (inv f).app _ (s.val : Y _⦋n + 1⦌) ∈ (X.rightMappingSpace ((inv f).app _ (f.app _ x))
       ((inv f).app _ (f.app _ y))).obj (op ⦋n⦌) :=
-    ((map (f.app _ x) (f.app _ y) (inv f)).app _ s).2
+    ((map (f.app _ x) (f.app _ y) (inv f)).app _ s).property
   have hx (z : X _⦋0⦌) : (inv f).app _ (f.app _ z) = z := by simp
   rw [hx, hx] at hs
   exact ⟨⟨_, hs⟩, Subtype.ext ((map_app_coe f _).trans (by simp))⟩
@@ -519,16 +519,16 @@ instance isIso_map (f : X ⟶ Y) [IsIso f] : IsIso (map x y f) := by
 /-- If a subcomplex `A` of `X` contains every simplex of `Hom^R_X(x, y)`, for vertices `x` and `y`
 of `A`, then the inclusion of `A` induces an isomorphism `Hom^R_A(x, y) ≅ Hom^R_X(x, y)`. -/
 theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
-    (h : ∀ (n : ℕ) (s : (X.rightMappingSpace x.1 y.1 : SSet.{u}) _⦋n⦌),
-      (s.1 : X _⦋n + 1⦌) ∈ A.obj (op ⦋n + 1⦌)) :
+    (h : ∀ (n : ℕ) (s : (X.rightMappingSpace x.val y.val : SSet.{u}) _⦋n⦌),
+      (s.val : X _⦋n + 1⦌) ∈ A.obj (op ⦋n + 1⦌)) :
     IsIso (map x y A.ι) := by
   rw [NatTrans.isIso_iff_isIso_app]
   rintro ⟨⟨n⟩⟩
   rw [isIso_iff_bijective]
   refine ⟨(mono_iff_injective _).1 inferInstance, fun s ↦ ?_⟩
   -- The simplex `s` of `Hom^R_X(x, y)` lies in `A`, and its faces in `A` are those in `X`.
-  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.2
-  refine ⟨⟨⟨s.1, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
+  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.property
+  refine ⟨⟨⟨s.val, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
   exact Subtype.ext (map_app_coe A.ι _)
 
 end map
@@ -558,7 +558,7 @@ noncomputable def prodIso :
   hom := lift (map (x₀, y₀) (x₁, y₁) (fst X Y)) (map (x₀, y₀) (x₁, y₁) (snd X Y))
   inv := Subcomplex.lift ((X.rightMappingSpace x₀ x₁).ι ⊗ₘ (Y.rightMappingSpace y₀ y₁).ι) (by
     rintro m _ ⟨s, rfl⟩
-    exact (mem_tensor_iff _).2 ⟨s.1.2, s.2.2⟩)
+    exact (mem_tensor_iff _).2 ⟨s.1.property, s.2.property⟩)
   hom_inv_id := by
     ext m s
     rfl
@@ -610,10 +610,10 @@ def uliftIso :
     ((uliftFunctor.{v, u}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) : SSet.{max u v}) ≅
       uliftFunctor.{v, u}.obj (X.rightMappingSpace x y : SSet.{u}) where
   hom :=
-    { app _ := ↾fun s ↦ ULift.up ⟨s.1.down, (mem_uliftFunctor_obj_iff s.1).1 s.2⟩
+    { app _ := ↾fun s ↦ ULift.up ⟨s.val.down, (mem_uliftFunctor_obj_iff s.val).1 s.property⟩
       naturality _ _ _ := rfl }
   inv :=
-    { app _ := ↾fun s ↦ ⟨ULift.up s.down.1, (mem_uliftFunctor_obj_iff _).2 s.down.2⟩
+    { app _ := ↾fun s ↦ ⟨ULift.up s.down.val, (mem_uliftFunctor_obj_iff _).2 s.down.property⟩
       naturality _ _ _ := rfl }
 
 /-- Lowering the image of a simplex under `uliftIso.hom` lowers the underlying simplex of `X`. -/
@@ -622,15 +622,15 @@ theorem uliftIso_hom_app_down_coe {m : SimplexCategoryᵒᵖ}
     (s : ((uliftFunctor.{v, u}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) :
       SSet.{max u v}).obj m) :
     dsimp% (((uliftIso.{u, v} x y).hom.app m s).down :
-      (X.rightMappingSpace x y : SSet.{u}).obj m).1 = s.1.down :=
+      (X.rightMappingSpace x y : SSet.{u}).obj m).val = s.val.down :=
   (rfl)
 
 /-- The inverse of `uliftIso` lifts the underlying simplex of `X` via `ULift.up`. -/
 @[simp]
 theorem uliftIso_inv_app_coe {m : SimplexCategoryᵒᵖ}
     (s : (uliftFunctor.{v, u}.obj (X.rightMappingSpace x y : SSet.{u})).obj m) :
-    dsimp% (((uliftIso.{u, v} x y).inv.app m s).1 :
-      (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.1 :=
+    dsimp% (((uliftIso.{u, v} x y).inv.app m s).val :
+      (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.val :=
   (rfl)
 
 end ulift

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
-public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
+public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.SimplyLaced
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
@@ -138,7 +138,7 @@ theorem indexEquiv_typeA_even_mid {P : RootPairing ι R M N} {b : P.Base} {σ : 
     σ.indexEquiv (e.symm ⟨n - 1, by omega⟩ : b.support) =
       (e.symm ⟨n, by omega⟩ : b.support) := by
   let u : b.support := e.symm ⟨n - 1, by omega⟩
-  let w : b.support := ⟨σ.indexEquiv u, hσ u u.2⟩
+  let w : b.support := ⟨σ.indexEquiv u, hσ u u.property⟩
   have hw : e w = ⟨n, by omega⟩ := by
     rw [hrev u w rfl]
     simp only [u, Equiv.apply_symm_apply]
@@ -191,7 +191,7 @@ theorem not_forall_simpleOrbit_pairing_eq_zero_of_typeA_even_rev {P : RootPairin
   let v : b.support := e.symm ⟨n, by omega⟩
   have huv_ne : (u : ι) ≠ (v : ι) :=
     Subtype.coe_ne_coe.mpr (e.symm.injective.ne (Fin.ne_of_val_ne (by simp; omega)))
-  have hzero := horth u u.2 v (mem_orbitIndices_typeA_even_mid hσ hn hrev) huv_ne
+  have hzero := horth u u.property v (mem_orbitIndices_typeA_even_mid hσ hn hrev) huv_ne
   rw [pairing_typeA_even_mid hn he] at hzero
   exact neg_ne_zero.mpr one_ne_zero hzero
 
