@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DeRham.Presentation
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Alternating.ConsCons
+import TauCeti.Data.Fin.Tuple.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -203,11 +204,7 @@ private theorem d_leibniz_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v
             (d A B n (elementary A c' v) : ExteriorAlgebra B Ω[B⁄A])) := by
   have happend : ExteriorAlgebra.ιMulti B (m + n) (D A B ∘ Fin.append u v) =
       ExteriorAlgebra.ιMulti B m (D A B ∘ u) * ExteriorAlgebra.ιMulti B n (D A B ∘ v) := by
-    symm
-    rw [ExteriorAlgebra.ιMulti_mul_ιMulti]
-    congr 1
-    funext i
-    refine Fin.addCases (fun j => ?_) (fun j => ?_) i <;> simp
+    rw [Fin.comp_append, ExteriorAlgebra.ιMulti_mul_ιMulti]
   have hanti : ExteriorAlgebra.ι B (D A B c') * ExteriorAlgebra.ιMulti B m (D A B ∘ u) =
       (-1 : ℤ) ^ m •
         (ExteriorAlgebra.ιMulti B m (D A B ∘ u) * ExteriorAlgebra.ι B (D A B c')) := by

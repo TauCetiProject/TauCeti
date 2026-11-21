@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DeRham.Complex
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Functorial pullback on ordinary algebraic differential forms and de Rham complexes
@@ -208,17 +209,16 @@ theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : 
     | add β₁ β₂ h₁ h₂ => simp only [map_add, h₁, h₂]
     | elem c' v =>
       rw [wedge_elementary, pullback_elementary, pullback_elementary, pullback_elementary,
-        wedge_elementary, map_mul]
-      congr 1
-      funext i
-      refine Fin.addCases (fun j => ?_) (fun j => ?_) i
-      · simp [Fin.append_left]
-      · simp [Fin.append_right]
+        wedge_elementary, map_mul, Fin.comp_append]
 
 /-- Pullback along the identity `A`-algebra homomorphism is the identity on `Forms A B n`. -/
 theorem pullback_id (n : ℕ) :
     (pullback (AlgHom.id A B) n : Forms A B n →ₗ[B] Forms A B n) = LinearMap.id :=
-  (pullback_unique (AlgHom.id A B) n (φ := LinearMap.id) fun _ _ => rfl).symm
+  (pullback_unique (AlgHom.id A B) n (φ := LinearMap.id) fun c v => by
+    refine (LinearMap.id_apply (elementary A c v)).trans ?_
+    refine congrArg₂ (elementary A) ?_ (funext fun i => ?_)
+    · rw [AlgHom.id_apply]
+    · rw [Function.comp_apply, AlgHom.id_apply]).symm
 
 /-- Pullback along the identity fixes every differential `n`-form. -/
 @[simp]
@@ -230,9 +230,11 @@ theorem pullback_id_apply (n : ℕ) (ω : Forms A B n) :
 theorem pullback_comp (g : C →ₐ[A] E) (f : B →ₐ[A] C) (n : ℕ) :
     pullback (g.comp f) n = (pullback g n).comp (pullback f n) := by
   symm
-  exact pullback_unique (g.comp f) n fun c v => by
-    rw [LinearMap.comp_apply, pullback_elementary, pullback_elementary, AlgHom.comp_apply]
-    rfl
+  refine pullback_unique (g.comp f) n fun c v => ?_
+  rw [LinearMap.comp_apply, pullback_elementary, pullback_elementary]
+  refine congrArg₂ (elementary A) ?_ (funext fun i => ?_)
+  · rw [AlgHom.comp_apply]
+  · rw [Function.comp_apply, Function.comp_apply, Function.comp_apply, AlgHom.comp_apply]
 
 /-- Pullback along `g.comp f` applies `pullback f` followed by `pullback g`. -/
 @[simp]
@@ -267,11 +269,18 @@ def complexMap (f : B →ₐ[A] C) : complex A B ⟶ complex A C :=
   CochainComplex.ofHom
     (fun n => ModuleCat.ofHom (pullbackLinearMap f n))
     (fun n => by
-      rw [complex_d, complex_d]
-      apply ModuleCat.hom_ext
-      apply LinearMap.ext
-      intro ω
-      exact (pullback_d f n ω).symm)
+      refine ConcreteCategory.hom_ext _ _ fun ω => ?_
+      refine (ModuleCat.comp_apply (ModuleCat.ofHom (pullbackLinearMap f n))
+        ((complex A C).d n (n + 1)) ω).trans ?_
+      refine (complex_d_apply A C n _).trans ?_
+      refine (congrArg (d A C n) ((ModuleCat.ofHom_apply (pullbackLinearMap f n) ω).trans
+        (pullbackLinearMap_apply f n ω))).trans ?_
+      refine (pullback_d f n ω).symm.trans ?_
+      refine (congrArg (pullback f (n + 1)) (complex_d_apply A B n ω).symm).trans ?_
+      refine (pullbackLinearMap_apply f (n + 1) _).symm.trans ?_
+      refine (ModuleCat.ofHom_apply (pullbackLinearMap f (n + 1)) _).symm.trans ?_
+      exact (ModuleCat.comp_apply ((complex A B).d n (n + 1))
+        (ModuleCat.ofHom (pullbackLinearMap f (n + 1))) ω).symm)
 
 /-- In degree `n`, `complexMap f` is the `ModuleCat` morphism induced by `pullbackLinearMap f n`. -/
 @[simp]
@@ -281,21 +290,28 @@ theorem complexMap_f (f : B →ₐ[A] C) (n : ℕ) :
 
 /-- Pointwise evaluation of `complexMap f` in degree `n` is `pullback f n`. -/
 theorem complexMap_apply (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
-    (complexMap f).f n ω = pullback f n ω :=
-  (rfl)
+    (complexMap f).f n ω = pullback f n ω := by
+  rw [complexMap_f]
+  exact (ModuleCat.ofHom_apply (pullbackLinearMap f n) ω).trans (pullbackLinearMap_apply f n ω)
 
 /-- `complexMap` sends the identity algebra homomorphism to the identity cochain map. -/
 @[simp]
 theorem complexMap_id : complexMap (AlgHom.id A B) = 𝟙 (complex A B) := by
-  ext n ω
-  exact pullback_id_apply n ω
+  refine HomologicalComplex.hom_ext _ _ fun n => ConcreteCategory.hom_ext _ _ fun ω => ?_
+  rw [HomologicalComplex.id_f, ModuleCat.id_apply ((complex A B).X n) ω]
+  exact (complexMap_apply (AlgHom.id A B) n ω).trans (pullback_id_apply n ω)
 
 /-- `complexMap` is covariant with respect to composition of `A`-algebra homomorphisms. -/
 @[simp]
 theorem complexMap_comp (g : C →ₐ[A] E) (f : B →ₐ[A] C) :
     complexMap (g.comp f) = complexMap f ≫ complexMap g := by
-  ext n ω
-  exact pullback_comp_apply g f n ω
+  refine HomologicalComplex.hom_ext _ _ fun n => ConcreteCategory.hom_ext _ _ fun ω => ?_
+  rw [HomologicalComplex.comp_f,
+    ModuleCat.comp_apply ((complexMap f).f n) ((complexMap g).f n) ω]
+  exact (complexMap_apply (g.comp f) n ω).trans
+    ((pullback_comp_apply g f n ω).trans
+      ((congrArg (pullback g n) (complexMap_apply f n ω).symm).trans
+        (complexMap_apply g n _).symm))
 
 end ComplexMap
 

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.RingTheory.Kaehler.Basic
 import Mathlib.Algebra.DirectSum.Module
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The differential-symbol presentation of differential forms
@@ -166,10 +167,7 @@ theorem wedge_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v : Fin n →
   simp only [elementary_def, map_smul, LinearMap.smul_apply, exteriorPower.wedge_ιMulti,
     smul_smul, mul_comm c' c]
   congr 2
-  funext i
-  refine Fin.addCases (fun j => ?_) (fun j => ?_) i
-  · simp [Fin.append_left]
-  · simp [Fin.append_right]
+  exact (Fin.comp_append (D A B) u v).symm
 
 end Elementary
 
