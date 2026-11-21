@@ -518,26 +518,13 @@ theorem tendsto_qPochhammer_atTop {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
     (qPochhammer_def z q N).symm
 
 omit [CompleteSpace 𝕜] in
-/-- `‖1 - qⁿ⁺¹‖ ≥ 1 - ‖q‖ > 0` for `‖q‖ < 1`. -/
-private theorem one_sub_norm_le_norm_one_sub_pow_succ {q : 𝕜} (hq : ‖q‖ < 1) (n : ℕ) :
-    1 - ‖q‖ ≤ ‖1 - q ^ (n + 1)‖ := by
-  have h := norm_sub_norm_le (1 : 𝕜) (q ^ (n + 1))
-  rw [norm_one, norm_pow] at h
-  have : ‖q‖ ^ (n + 1) ≤ ‖q‖ := pow_le_of_le_one (norm_nonneg q) hq.le n.succ_ne_zero
-  linarith
-
-omit [CompleteSpace 𝕜] in
-private theorem one_sub_pow_succ_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) (n : ℕ) : 1 - q ^ (n + 1) ≠ 0 :=
-  norm_pos_iff.1 ((sub_pos.2 hq).trans_le (one_sub_norm_le_norm_one_sub_pow_succ hq n))
-
-omit [CompleteSpace 𝕜] in
 /-- The ratio of consecutive terms of Euler's expansion of `(z; q)_∞`. -/
 private theorem euler_term_succ {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) (k : ℕ) :
     (-1) ^ (k + 1) * q ^ (k + 1).choose 2 * z ^ (k + 1) / qPochhammer q q (k + 1) *
         (1 - q ^ (k + 1)) =
       -(z * q ^ k) * ((-1) ^ k * q ^ k.choose 2 * z ^ k / qPochhammer q q k) := by
   have hD := qPochhammer_ne_zero_of_norm_lt_one hq hq.le k
-  have h₁ : 1 - q ^ (k + 1) ≠ 0 := one_sub_pow_succ_ne_zero hq k
+  have h₁ : 1 - q ^ (k + 1) ≠ 0 := one_sub_pow_ne_zero hq k.succ_ne_zero
   rw [qPochhammer_succ, Nat.choose_succ_succ, Nat.choose_one_right, ← pow_succ']
   field_simp
   ring
@@ -555,7 +542,7 @@ private theorem summable_norm_euler_term {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜
   have h := congrArg norm (euler_term_succ hq z k)
   rw [norm_mul, norm_mul, norm_neg, norm_mul, norm_pow] at h
   rw [norm_norm, norm_norm]
-  have hpos := one_sub_norm_le_norm_one_sub_pow_succ hq k
+  have hpos := one_sub_norm_le_norm_one_sub_pow hq.le k.succ_ne_zero
   calc _ ≤ ‖z‖ * ‖q‖ ^ k / (1 - ‖q‖) * _ := by
         rw [div_mul_eq_mul_div, le_div_iff₀ hq₁, ← h]
         exact mul_le_mul_of_nonneg_left hpos (norm_nonneg _)
@@ -595,8 +582,12 @@ theorem hasSum_tprod_one_sub_mul_pow {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
     exact div_le_div_of_nonneg_right
       (mul_le_of_le_one_right (by positivity) (pow_le_one₀ (norm_nonneg x) hx)) (norm_nonneg _)
   have hf0 : f 0 = 1 := by
-    rw [show f 0 = ∑' k, a k 0 from rfl, tsum_eq_single 0 fun k hk ↦ by simp [a, hk]]
+    simp only [f]
+    rw [tsum_eq_single 0 fun k hk ↦ by simp [a, hk]]
     simp [a]
+  have hfq (z : 𝕜) : f z = (1 - z) * f (z * q) := by
+    simp only [f, a]
+    exact tsum_euler_term_eq hq z
   -- Iterating the q-difference equation, `f z = (z; q)_N f (z q^N) → (z; q)_∞`.
   have hiter : ∀ N z, f z = qPochhammer z q N * f (z * q ^ N) := by
     intro N
@@ -604,8 +595,7 @@ theorem hasSum_tprod_one_sub_mul_pow {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
     | zero => simp
     | succ N ih =>
       intro z
-      rw [show f z = (1 - z) * f (z * q) from tsum_euler_term_eq hq z, ih (z * q),
-        qPochhammer_succ', pow_succ']
+      rw [hfq z, ih (z * q), qPochhammer_succ', pow_succ']
       ring_nf
   have hlim : Tendsto (fun N ↦ qPochhammer z q N * f (z * q ^ N)) atTop
       (𝓝 ((∏' n : ℕ, (1 - z * q ^ n)) * f 0)) := by
@@ -654,7 +644,7 @@ private theorem one_sub_mul_tsum_pow_div_qPochhammer {q z : 𝕜} (hq : ‖q‖ 
   convert ((hasSum_nat_add_iff' 1).mpr hs.hasSum).sub (hs.hasSum.mul_left z) using 1
   · funext k
     have hD := qPochhammer_ne_zero_of_norm_lt_one hq hq.le k
-    have h₁ : 1 - q ^ (k + 1) ≠ 0 := one_sub_pow_succ_ne_zero hq k
+    have h₁ : 1 - q ^ (k + 1) ≠ 0 := one_sub_pow_ne_zero hq k.succ_ne_zero
     rw [qPochhammer_succ, ← pow_succ']
     field_simp
     ring
@@ -677,9 +667,12 @@ theorem hasSum_inv_tprod_one_sub_mul_pow {q z : 𝕜} (hq : ‖q‖ < 1) (hz : �
     rw [norm_div, norm_pow]
     gcongr
   have hg0 : g 0 = 1 := by
-    rw [show g 0 = ∑' k : ℕ, (0 : 𝕜) ^ k / qPochhammer q q k from rfl,
-      tsum_eq_single 0 fun k hk ↦ by simp [hk]]
+    simp only [g]
+    rw [tsum_eq_single 0 fun k hk ↦ by simp [hk]]
     simp
+  have hgq {z : 𝕜} (hz : ‖z‖ < 1) : (1 - z) * g z = g (z * q) := by
+    simp only [g]
+    exact one_sub_mul_tsum_pow_div_qPochhammer hq hz
   -- Iterating, `g z (z; q)_N = g (z q^N) → 1`.
   have hiter : ∀ N z, ‖z‖ < 1 → g z * qPochhammer z q N = g (z * q ^ N) := by
     intro N
@@ -690,9 +683,8 @@ theorem hasSum_inv_tprod_one_sub_mul_pow {q z : 𝕜} (hq : ‖q‖ < 1) (hz : �
       have hzq : ‖z * q‖ < 1 := by
         rw [norm_mul]
         exact (mul_le_of_le_one_right (norm_nonneg z) hq.le).trans_lt hz
-      rw [qPochhammer_succ', ← mul_assoc, mul_comm (g z),
-        show (1 - z) * g z = g (z * q) from one_sub_mul_tsum_pow_div_qPochhammer hq hz,
-        ih (z * q) hzq, pow_succ', mul_assoc]
+      rw [qPochhammer_succ', ← mul_assoc, mul_comm (g z), hgq hz, ih (z * q) hzq, pow_succ',
+        mul_assoc]
   have hlim : Tendsto (fun N ↦ g z * qPochhammer z q N) atTop (𝓝 (g 0)) := by
     refine (tendsto_congr fun N ↦ (hiter N z hz).symm).mp (hcont.tendsto.comp ?_)
     simpa using (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).const_mul z

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Jacobi's triple product identity
@@ -47,27 +48,6 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [NormedField 𝕜]
 
-/-- The exponent `k(k-1)/2` is an exact quotient: `2 (k(k-1)/2) = k(k-1)`. -/
-private theorem two_mul_mul_sub_one_div_two (k : ℤ) : 2 * (k * (k - 1) / 2) = k * (k - 1) :=
-  Int.mul_ediv_cancel' (even_iff_two_dvd.mp (Int.even_mul_pred_self k))
-
-/-- `(m + n)(m + n - 1)/2 = m(m - 1)/2 + n(n - 1)/2 + m n`. -/
-private theorem add_mul_add_sub_one_div_two (m n : ℤ) :
-    (m + n) * (m + n - 1) / 2 = m * (m - 1) / 2 + n * (n - 1) / 2 + m * n := by
-  refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
-  linear_combination two_mul_mul_sub_one_div_two (m + n) - two_mul_mul_sub_one_div_two m -
-    two_mul_mul_sub_one_div_two n
-
-/-- For a natural number `n`, `n(n - 1)/2 = n.choose 2`. -/
-private theorem natCast_mul_sub_one_div_two (n : ℕ) : (n : ℤ) * (n - 1) / 2 = n.choose 2 := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Nat.cast_succ, add_mul_add_sub_one_div_two, ih, Nat.choose_succ_succ, Nat.choose_one_right]
-    push_cast
-    norm_num
-    ring
-
 /-- The terms `t(k) = (-1)ᵏ q^{k(k-1)/2} wᵏ` of the bilateral series in Jacobi's triple
 product. -/
 private noncomputable def tripleTerm (q w : 𝕜) (k : ℤ) : 𝕜 :=
@@ -84,8 +64,8 @@ private theorem tripleTerm_ne_zero {q w : 𝕜} (hq₀ : q ≠ 0) (hw : w ≠ 0)
 private theorem tripleTerm_add_one {q w : 𝕜} (hq₀ : q ≠ 0) (hw : w ≠ 0) (k : ℤ) :
     tripleTerm q w (k + 1) = -(q ^ k * w) * tripleTerm q w k := by
   unfold tripleTerm
-  rw [add_mul_add_sub_one_div_two, show (1 : ℤ) * (1 - 1) / 2 = 0 by norm_num, add_zero, mul_one,
-    zpow_add₀ hq₀, zpow_add_one₀ (by norm_num), zpow_add_one₀ hw]
+  rw [Int.add_mul_add_sub_one_ediv_two]
+  simp [zpow_add₀, hq₀, hw]
   ring
 
 /-- Replacing `w` by `q w` multiplies the `k`-th term by `qᵏ`. -/
@@ -102,10 +82,14 @@ private theorem tripleTerm_add_mul {q w : 𝕜} (hq₀ : q ≠ 0) (hw : w ≠ 0)
       tripleTerm q w m *
         ((-1) ^ r * q ^ r.choose 2 * (q ^ (m + 1)) ^ r / qPochhammer q q r) := by
   unfold tripleTerm
-  rw [add_mul_add_sub_one_div_two, natCast_mul_sub_one_div_two, zpow_add₀ hq₀, zpow_add₀ hq₀,
-    zpow_add₀ (by norm_num), zpow_add₀ hw, zpow_mul, zpow_add_one₀ hq₀]
-  simp only [zpow_natCast, mul_pow, inv_pow]
+  rw [Int.add_mul_add_sub_one_ediv_two, ← Int.natCast_choose_two]
+  simp [zpow_add₀, zpow_mul, hq₀, hw, mul_pow]
   field_simp
+
+/-- Norms of consecutive terms: `‖t(k + 1)‖ = ‖q‖ᵏ ‖w‖ ‖t(k)‖`. -/
+private theorem norm_tripleTerm_add_one {q w : 𝕜} (hq₀ : q ≠ 0) (hw : w ≠ 0) (k : ℤ) :
+    ‖tripleTerm q w (k + 1)‖ = ‖q‖ ^ k * ‖w‖ * ‖tripleTerm q w k‖ := by
+  simp [tripleTerm_add_one hq₀ hw]
 
 /-- The bilateral series `∑_{k ∈ ℤ} (-1)ᵏ q^{k(k-1)/2} wᵏ` converges absolutely for `‖q‖ < 1`. -/
 private theorem summable_norm_tripleTerm {q w : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) (hw : w ≠ 0) :
@@ -116,28 +100,33 @@ private theorem summable_norm_tripleTerm {q w : 𝕜} (hq : ‖q‖ < 1) (hq₀ 
   · -- `‖t(n + 1)‖ = ‖q‖ⁿ ‖w‖ ‖t(n)‖`
     refine summable_of_ratio_test_tendsto_lt_one zero_lt_one
       (.of_forall fun n ↦ (hpos n).ne') ?_
-    have h : ∀ n : ℕ, ‖‖tripleTerm q w ↑(n + 1)‖‖ / ‖‖tripleTerm q w n‖‖ = ‖q‖ ^ n * ‖w‖ := by
-      intro n
-      rw [norm_norm, norm_norm, Nat.cast_succ, tripleTerm_add_one hq₀ hw, norm_mul, norm_neg,
-        norm_mul, norm_zpow, zpow_natCast, mul_div_assoc, div_self (hpos n).ne', mul_one]
+    have h (n : ℕ) : ‖‖tripleTerm q w ↑(n + 1)‖‖ / ‖‖tripleTerm q w n‖‖ = ‖q‖ ^ n * ‖w‖ := by
+      have := (hpos n).ne'
+      rw [norm_norm, norm_norm, Nat.cast_succ, norm_tripleTerm_add_one hq₀ hw, zpow_natCast]
+      field_simp
     exact (tendsto_congr h).mpr (by simpa using hgeom.mul_const ‖w‖)
-  · -- `‖t(-(n + 2))‖ = ‖q‖ⁿ⁺² ‖w‖⁻¹ ‖t(-(n + 1))‖`
+  · -- `‖t(-(n + 1))‖ = ‖q‖^{-(n + 2)} ‖w‖ ‖t(-(n + 2))‖`
     refine summable_of_ratio_test_tendsto_lt_one zero_lt_one
       (.of_forall fun n ↦ (hpos _).ne') ?_
-    have h : ∀ n : ℕ, ‖‖tripleTerm q w (-(↑(n + 1) + 1))‖‖ / ‖‖tripleTerm q w (-(↑n + 1))‖‖ =
+    have h (n : ℕ) : ‖‖tripleTerm q w (-(↑(n + 1) + 1))‖‖ / ‖‖tripleTerm q w (-(↑n + 1))‖‖ =
         ‖q‖ ^ 2 * ‖w‖⁻¹ * ‖q‖ ^ n := by
-      intro n
-      have e := tripleTerm_add_one hq₀ hw (-(↑(n + 1) + 1))
-      rw [show -((↑(n + 1) : ℤ) + 1) + 1 = -(↑n + 1) by push_cast; ring] at e
+      have e := norm_tripleTerm_add_one hq₀ hw (-(↑(n + 1) + 1))
       have hq' : ‖q‖ ^ (-((↑(n + 1) : ℤ) + 1)) = (‖q‖ ^ (n + 2))⁻¹ := by
         rw [show -((↑(n + 1) : ℤ) + 1) = -↑(n + 2) by push_cast; ring, zpow_neg, zpow_natCast]
+      rw [show -((↑(n + 1) : ℤ) + 1) + 1 = -(↑n + 1) by push_cast; ring, hq'] at e
       have := (hpos (-(↑(n + 1) + 1))).ne'
       have := norm_ne_zero_iff.2 hq₀
       have := norm_ne_zero_iff.2 hw
-      rw [norm_norm, norm_norm, e, norm_mul, norm_neg, norm_mul, norm_zpow, hq']
+      rw [norm_norm, norm_norm, e]
       field_simp
       ring
     exact (tendsto_congr h).mpr (by simpa using hgeom.const_mul (‖q‖ ^ 2 * ‖w‖⁻¹))
+
+/-- For `n : ℕ` the product `(q^{-n}; q)_∞` vanishes: its factor `1 - q^{-n} qⁿ` is zero. -/
+private theorem tprod_one_sub_zpow_neg_mul_pow {q : 𝕜} (hq₀ : q ≠ 0) (n : ℕ) :
+    ∏' i : ℕ, (1 - q ^ (-(n : ℤ)) * q ^ i) = 0 :=
+  tprod_of_exists_eq_zero ⟨n, by rw [zpow_neg, zpow_natCast, inv_mul_cancel₀ (pow_ne_zero n hq₀),
+    sub_self]⟩
 
 variable [CompleteSpace 𝕜]
 
@@ -149,15 +138,6 @@ private theorem tprod_one_sub_pow_succ_eq {q : 𝕜} (hq : ‖q‖ < 1) (n : ℕ
   rw [← Multipliable.prod_mul_tprod_nat_mul' (f := fun i : ℕ ↦ 1 - q ^ (i + 1)) (k := n) hm,
     qPochhammer_self]
   exact congrArg _ (tprod_congr fun i ↦ by ring)
-
-/-- For `n : ℕ` the product `(q^{-n}; q)_∞` vanishes: its factor `1 - q^{-n} qⁿ` is zero. -/
-private theorem tprod_one_sub_zpow_neg_mul_pow {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) (n : ℕ) :
-    ∏' i : ℕ, (1 - q ^ (-(n : ℤ)) * q ^ i) = 0 := by
-  have hm : Multipliable fun i : ℕ ↦ 1 - q ^ (-(n : ℤ)) * q ^ (i + (n + 1)) :=
-    (multipliable_one_sub_mul_pow hq (q ^ (-(n : ℤ)) * q ^ (n + 1))).congr fun i ↦ by ring
-  rw [← Multipliable.prod_mul_tprod_nat_mul' (f := fun i : ℕ ↦ 1 - q ^ (-(n : ℤ)) * q ^ i)
-    (k := n + 1) hm, Finset.prod_eq_zero (i := n) (by simp), zero_mul]
-  rw [zpow_neg, zpow_natCast, inv_mul_cancel₀ (pow_ne_zero n hq₀), sub_self]
 
 /-- For `‖q‖ < ‖w‖`, the product of the bilateral series with Euler's expansion of
 `1 / (q / w; q)_∞`, summed first over the index of the latter: the inner sums are
@@ -199,11 +179,11 @@ private theorem hasSum_tripleTerm_mul_tprod {q : 𝕜} (hq : ‖q‖ < 1) (hq₀
     rw [tprod_one_sub_pow_succ_eq hq m, show q ^ ((m : ℤ) + 1) = q ^ (m + 1) by
       exact_mod_cast zpow_natCast q (m + 1)]
     unfold tripleTerm
-    rw [natCast_mul_sub_one_div_two, zpow_natCast, zpow_natCast, zpow_natCast]
+    rw [← Int.natCast_choose_two, zpow_natCast, zpow_natCast, zpow_natCast]
     field_simp
   · convert hasSum_zero using 1
     funext n
-    rw [show -((n : ℤ) + 1) + 1 = -(n : ℤ) by ring, tprod_one_sub_zpow_neg_mul_pow hq hq₀ n,
+    rw [show -((n : ℤ) + 1) + 1 = -(n : ℤ) by ring, tprod_one_sub_zpow_neg_mul_pow hq₀ n,
       mul_zero]
 
 /-- Jacobi's triple product identity in the range `‖q‖ < ‖w‖`, where Euler's expansion of
@@ -259,7 +239,7 @@ theorem hasSum_qTheta_mul_tprod_one_sub_pow {q w : 𝕜} (hq : ‖q‖ < 1) (hw 
         rcases le_or_gt k 0 with h | h
         · nlinarith [lt_of_le_of_ne h hk.1]
         · nlinarith [show 2 ≤ k by omega]
-      have h₃ := two_mul_mul_sub_one_div_two k
+      have h₃ := Int.two_mul_mul_sub_one_ediv_two k
       have h₄ : k * (k - 1) / 2 ≠ 0 := by
         generalize k * (k - 1) / 2 = a at h₃
         generalize k * (k - 1) = b at h₂ h₃

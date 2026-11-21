@@ -21,7 +21,9 @@ with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
-(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+and the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 0`
+(`TauCeti.one_sub_norm_le_norm_one_sub_pow`).
 -/
 
 public section
@@ -251,6 +253,21 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- For `‖q‖ ≤ 1` and `n ≠ 0`, `1 - qⁿ` has norm at least `1 - ‖q‖`. -/
+theorem one_sub_norm_le_norm_one_sub_pow {R : Type*} [SeminormedRing R] [NormOneClass R] {q : R}
+    (hq : ‖q‖ ≤ 1) {n : ℕ} (hn : n ≠ 0) : 1 - ‖q‖ ≤ ‖1 - q ^ n‖ := by
+  have h := norm_sub_norm_le (1 : R) (q ^ n)
+  have h' : ‖q ^ n‖ ≤ ‖q‖ :=
+    (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans (pow_le_of_le_one (norm_nonneg q) hq hn)
+  rw [norm_one] at h
+  linarith
+
+/-- For `‖q‖ < 1` and `n ≠ 0`, `qⁿ ≠ 1`, that is, `1 - qⁿ ≠ 0`. For integer powers in a normed
+division ring with `‖q‖ ≠ 1`, see `TauCeti.one_sub_zpow_ne_zero`. -/
+theorem one_sub_pow_ne_zero {R : Type*} [SeminormedRing R] [NormOneClass R] {q : R}
+    (hq : ‖q‖ < 1) {n : ℕ} (hn : n ≠ 0) : 1 - q ^ n ≠ 0 :=
+  sub_ne_zero.2 fun h ↦ by simpa [← h] using norm_pow_lt_one hq hn
 
 /-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
 finite partial products `s ↦ ∏ i ∈ s, f i`. -/
