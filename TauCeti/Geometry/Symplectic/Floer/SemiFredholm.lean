@@ -180,15 +180,16 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul
   have hJc : Continuous fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap :=
     continuous_iff_continuousAt.2 fun z ↦ ContinuousAt.comp (f := fun z ↦ (z, u z))
       (hJ z).continuousAt (continuousAt_id.prodMk hu.continuous.continuousAt)
-  have hAc : Continuous fun z ↦ ω.floerLinearizationCoeff J' Ks Kt u z - c z.1 • id ℝ V :=
+  have hAc : Continuous fun z ↦
+      ω.floerLinearizationCoeff J' Ks Kt u z - c z.1 • ContinuousLinearMap.id ℝ V :=
     (continuousOn_univ.1 (ω.continuousOn_floerLinearizationCoeff (fun z _ ↦ hJ z)
       (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) fun z _ ↦ hu.contDiffAt)).sub
       ((hcc.comp continuous_fst).smul continuous_const)
   have hD (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ω.floerLinearization J' Ks Kt u ξ z - c z.1 • ξ z =
       fderiv ℝ ξ z stdComplexLineReal + J z (u z) (fderiv ℝ ξ z stdComplexLineImag) +
-        (ω.floerLinearizationCoeff J' Ks Kt u z - c z.1 • id ℝ V) (ξ z) := by
+        (ω.floerLinearizationCoeff J' Ks Kt u z - c z.1 • ContinuousLinearMap.id ℝ V) (ξ z) := by
     simp only [floerLinearization_eq_add, J', LinearMap.coe_toContinuousLinearMap', sub_apply,
-      smul_apply, id_apply]
+      smul_apply, ContinuousLinearMap.id_apply]
     abel
   simp only [hD] at hp hm ⊢
   exact ω.exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
