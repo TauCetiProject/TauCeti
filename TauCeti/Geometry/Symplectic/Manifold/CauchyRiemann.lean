@@ -51,8 +51,11 @@ convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl
   `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add`. Since
   the energy is half the integral of `e`, this is the pointwise form of the identity
   `E(u) = ∫ u*ω + ∫ e(∂bar_J u)` of McDuff–Salamon: the energy of a curve is its symplectic area
-  plus the energy of its Cauchy–Riemann section. For a taming form the second density vanishes,
-  at a point of differentiability, exactly when the curve is pseudoholomorphic there.
+  plus the integral of the energy density of its Cauchy–Riemann section, which is twice the
+  energy of that section. The integrated identity needs a taming form, since
+  `TauCeti.SmoothTwoForm.stdComplexLineEnergy` truncates negative densities to `0`. For a taming
+  form the second density is nonnegative and vanishes, at a point of differentiability, exactly
+  when the curve is pseudoholomorphic there.
 
 ## References
 
