@@ -135,30 +135,21 @@ private lemma exists_extension (hx : L.IsTerminalVertex x) {n : ℕ} (τ : join 
   -- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the union `U` is the boundary `∂Δ[n + 1]`.
   let e := join.stdSimplexIso.{u} 0 n
   have hU : U.preimage e.inv = ∂Δ[0 + n + 1] := join.preimage_unionJoin_boundary_boundary 0 n
-  have hU' : (∂Δ[0 + n + 1]).preimage e.hom = U := by
-    rw [← hU, ← Subcomplex.preimage_comp, e.hom_inv_id, Subcomplex.preimage_id]
-  let r : (∂Δ[0 + n + 1] : SSet.{u}) ⟶ U := Subcomplex.lift (∂Δ[0 + n + 1].ι ≫ e.inv) (by
-    rw [← Subcomplex.image_top, Subcomplex.image_le_iff, Subcomplex.preimage_comp, hU,
-      Subcomplex.preimage_ι])
-  let r' : (U : SSet.{u}) ⟶ ∂Δ[0 + n + 1] := Subcomplex.lift (U.ι ≫ e.hom) (by
-    rw [← Subcomplex.image_top, Subcomplex.image_le_iff, Subcomplex.preimage_comp, hU',
-      Subcomplex.preimage_ι])
-  have hrr' : r' ≫ r = 𝟙 _ := by
-    rw [← cancel_mono U.ι]
-    simp [r, r']
+  let i := Subcomplex.isoOfPreimageEq e hU
   -- The last vertex of `∂Δ[0 + n + 1]` is the last vertex `n` of `∂Δ[0] ⋆ Δ[n] ≅ Δ[n]`.
-  have hv : stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋0 + n⦌ (Fin.last _)) ≫ boundary.ι 0 ≫ r =
+  have hv :
+      stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋0 + n⦌ (Fin.last _)) ≫ boundary.ι 0 ≫ i.inv =
       (stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ join.inr _ _) ≫
         Subcomplex.unionJoin.ι₁ _ _ := by
     rw [← cancel_mono U.ι, ← cancel_mono e.hom]
-    simp only [U, r, Category.assoc, Subcomplex.lift_ι, boundary.ι_ι_assoc, Iso.inv_hom_id,
-      Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc, Category.id_comp]
+    simp only [U, i, Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, boundary.ι_ι_assoc,
+      Iso.inv_hom_id, Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc,
+      Category.id_comp]
     exact const_last_comp_δ_zero n
-  obtain ⟨σ', hσ'⟩ := (isTerminalVertex_iff x).1 hx (r ≫ g) (by
+  obtain ⟨σ', hσ'⟩ := (isTerminalVertex_iff x).1 hx (i.inv ≫ g) (by
     rw [yonedaEquiv_naturality, reassoc_of% hv, hg₁, comp_const, comp_const, yonedaEquiv_const])
   have key : U.ι ≫ e.hom ≫ σ' = g := by
-    have hr' : r' ≫ ∂Δ[0 + n + 1].ι = U.ι ≫ e.hom := Subcomplex.lift_ι _ _
-    rw [← Category.assoc, ← hr', Category.assoc, ← hσ', reassoc_of% hrr']
+    rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e hU, ← hσ', i.hom_inv_id_assoc]
   refine ⟨e.hom ≫ σ', ?_, ?_⟩
   · rw [← Subcomplex.unionJoin.ι₂_ι, Category.assoc, key, hg₂]
   · have hinr : join.inr Δ[0] Δ[n] = join.inr ∂Δ[0] Δ[n] ≫ Subcomplex.unionJoin.ι₁ _ _ ≫ U.ι := by
