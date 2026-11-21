@@ -8,48 +8,55 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
-import Mathlib.Data.Int.Order.Units
 import Mathlib.GroupTheory.GroupAction.Ring
 import Mathlib.Tactic.Abel
 import TauCeti.Algebra.DirectSum.Internal
-import TauCeti.Algebra.Homology.DG.Algebra.Defs
 import TauCeti.RingTheory.GradedAlgebra.Generators
+import TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Basic
 
 /-!
-# Signed Leibniz endomorphisms
+# Generator criteria for signed Leibniz maps
 
 Let `A` be an internally `ι`-graded `R`-algebra with grading `𝒜 : ι → Submodule R A`. A linear
-endomorphism `d : A →ₗ[R] A` satisfies an `s`-signed Leibniz rule (for a sign function `s : ι → ℤˣ`)
-when
+map `d : A →ₗ[R] B` satisfies an `s`-signed Leibniz rule along `f : A → B` (for a sign function
+`s : ι → ℤˣ`) when
 
-`d (a * b) = d a * b + s i • (a * d b)` for `a ∈ 𝒜 i`.
+`d (a * b) = d a * f b + s i • (f a * d b)` for `a ∈ 𝒜 i`.
 
-Building on the basic signed-Leibniz consequences in `TauCeti.Algebra.Homology.DG.Algebra.Defs`
-(`TauCeti.map_mul_of_leibniz_along_of_map_eq_zero`, `TauCeti.map_one_eq_zero_of_leibniz_along`, and
-`TauCeti.map_algebraMap_of_leibniz`), this file develops uniqueness, homogeneity, and square-zero
-results for arbitrary grading index types `ι` (in particular both `ℤ` and `ZMod 2`) and arbitrary
-sign maps `s : ι → ℤˣ`:
+Building on `TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Basic`, this file develops
+generator-based uniqueness, intertwining, homogeneity, and square-zero criteria for arbitrary
+grading index types `ι` (in particular both `ℤ` and `ZMod 2`) and arbitrary sign maps
+`s : ι → ℤˣ`:
 
-* an `s`-signed Leibniz map vanishes on `A` as soon as it vanishes on an algebra-generating set, so
-  two `s`-signed Leibniz maps (or an intertwining along a grading-preserving algebra map) are
-  determined on any algebra-generating set;
+* an `s`-signed Leibniz map along a unit-preserving map `f` is determined on any algebra-generating
+  set, so two `s`-signed Leibniz endomorphisms (or an intertwining along a grading-preserving
+  algebra map) are determined on any algebra-generating set;
 * if `d` shifts the degrees of homogeneous generators by `q`, then `d` is homogeneous of degree `q`
   on all of `A`;
 * if `d` is homogeneous of degree `q` and `s (i + q) = -s i`, then `d ∘ₗ d` is an unsigned
-  derivation, hence vanishes on `A` as soon as it vanishes on an algebra-generating set.
+  derivation (`TauCeti.map_map_mul_of_leibniz`), hence vanishes on `A` as soon as it vanishes on an
+  algebra-generating set.
 
 ## Main results
 
 * `TauCeti.eq_zero_of_signedLeibniz_along_of_adjoin_eq_top`,
+  `TauCeti.eq_of_signedLeibniz_along_of_adjoin_eq_top`,
+  `TauCeti.eq_zero_of_signedLeibniz_along_of_adjoin_range_eq_top`,
+  `TauCeti.eq_of_signedLeibniz_along_of_adjoin_range_eq_top`,
   `TauCeti.eq_zero_of_signedLeibniz_of_adjoin_eq_top`,
-  `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top`, and
-  `TauCeti.eq_of_signedLeibniz_of_adjoin_eq_top`: an `s`-signed Leibniz map (or intertwining of two
-  `s`-signed Leibniz maps along a grading-preserving algebra map) is determined on any
-  algebra-generating set.
-* `TauCeti.isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top`: degree shift on generators
+  `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top`,
+  `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top`,
+  `TauCeti.eq_of_signedLeibniz_of_adjoin_eq_top`,
+  `TauCeti.eq_zero_of_signedLeibniz_of_adjoin_range_eq_top`, and
+  `TauCeti.eq_of_signedLeibniz_of_adjoin_range_eq_top`: an `s`-signed Leibniz map (along a
+  unit-preserving map, as an endomorphism, or intertwined along a grading-preserving algebra map)
+  is determined on any algebra-generating set.
+* `TauCeti.isHomogeneous_of_signedLeibniz_of_adjoin_eq_top` and
+  `TauCeti.isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top`: degree shift on generators
   propagates to the whole graded algebra.
-* `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top`: an odd-sign Leibniz map
-  squares to zero if and only if its square vanishes on generators.
+* `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top` and
+  `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top`: an odd-sign Leibniz
+  endomorphism squares to zero if and only if its square vanishes on generators.
 
 ## References
 
@@ -87,6 +94,42 @@ theorem eq_zero_of_signedLeibniz_along_of_adjoin_eq_top
   rw [LinearMap.zero_apply, ← LinearMap.mem_ker, ← Submodule.mem_toSubalgebra]
   exact htop Algebra.mem_top
 
+/-- Two linear maps `d₁ d₂ : A →ₗ[R] B` satisfying the same `s`-signed Leibniz rule along a
+unit-preserving map `f` are equal if they agree on an algebra-generating set. -/
+theorem eq_of_signedLeibniz_along_of_adjoin_eq_top
+    {B F : Type*} [NonAssocRing B] [Module R B] [FunLike F A B] [OneHomClass F A B]
+    (f : F) {d₁ d₂ : A →ₗ[R] B}
+    (hl₁ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₁ (a * b) = d₁ a * f b + s i • (f a * d₁ b))
+    (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * f b + s i • (f a * d₂ b))
+    {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, d₁ x = d₂ x) : d₁ = d₂ := by
+  have hzero : d₁ - d₂ = 0 := by
+    refine eq_zero_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (s := s) f
+      (fun {i a} ha b ↦ ?_) hadj fun x hx ↦ sub_eq_zero.2 (hS x hx)
+    simp only [LinearMap.sub_apply, hl₁ ha b, hl₂ ha b, sub_mul, mul_sub,
+      Units.smul_def, zsmul_sub]
+    abel
+  exact sub_eq_zero.1 hzero
+
+/-- An `s`-signed Leibniz map along a unit-preserving map `f` vanishing on the range of an
+algebra-generating map is zero. -/
+theorem eq_zero_of_signedLeibniz_along_of_adjoin_range_eq_top
+    {V B F : Type*} [NonAssocRing B] [Module R B] [FunLike F A B] [OneHomClass F A B]
+    (f : F) {D : A →ₗ[R] B}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, D (a * b) = D a * f b + s i • (f a * D b))
+    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (hg : ∀ x, D (g x) = 0) : D = 0 :=
+  eq_zero_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) f hl hadj <| Set.forall_mem_range.2 hg
+
+/-- Two `s`-signed Leibniz maps along the same unit-preserving map `f` agreeing on the range of an
+algebra-generating map are equal. -/
+theorem eq_of_signedLeibniz_along_of_adjoin_range_eq_top
+    {V B F : Type*} [NonAssocRing B] [Module R B] [FunLike F A B] [OneHomClass F A B]
+    (f : F) {d₁ d₂ : A →ₗ[R] B}
+    (hl₁ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₁ (a * b) = d₁ a * f b + s i • (f a * d₁ b))
+    (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * f b + s i • (f a * d₂ b))
+    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (hg : ∀ x, d₁ (g x) = d₂ (g x)) :
+    d₁ = d₂ :=
+  eq_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) f hl₁ hl₂ hadj <| Set.forall_mem_range.2 hg
+
 end UniquenessAlong
 
 section Uniqueness
@@ -115,13 +158,13 @@ theorem apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top
     (f : F) (hf : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → f a ∈ ℬ i)
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, dB (f x) = f (dA x))
     (a : A) : dB (f a) = f (dA a) := by
-  have hzero : dB ∘ₗ (f : A →ₗ[R] B) - (f : A →ₗ[R] B) ∘ₗ dA = 0 := by
-    refine eq_zero_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (s := s) f
-      (fun {i a} ha b ↦ ?_) hadj fun x hx ↦ sub_eq_zero.2 (hS x hx)
-    simp only [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.coe_ofClass, map_mul,
-      hdB (hf ha), hdA ha, map_add, Units.smul_def, map_zsmul, sub_mul, mul_sub, zsmul_sub]
-    abel
-  exact sub_eq_zero.mp (LinearMap.congr_fun hzero a)
+  have h : dB ∘ₗ (f : A →ₗ[R] B) = (f : A →ₗ[R] B) ∘ₗ dA := by
+    refine eq_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (s := s) f
+      (fun {i a} ha b ↦ ?_) (fun {i a} ha b ↦ ?_) hadj hS
+    · simp only [LinearMap.comp_apply, LinearMap.coe_ofClass, map_mul, hdB (hf ha)]
+    · simp only [LinearMap.comp_apply, LinearMap.coe_ofClass, hdA ha, map_add, map_mul,
+        Units.smul_def, map_zsmul]
+  exact LinearMap.congr_fun h a
 
 /-- A grading-preserving algebra homomorphism out of `A` intertwines `s`-signed Leibniz
 endomorphisms if it does so on the range of an algebra-generating map. -/
@@ -144,8 +187,7 @@ theorem eq_of_signedLeibniz_of_adjoin_eq_top {d₁ d₂ : A →ₗ[R] A}
     (hl₁ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₁ (a * b) = d₁ a * b + s i • (a * d₁ b))
     (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * b + s i • (a * d₂ b))
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, d₁ x = d₂ x) : d₁ = d₂ :=
-  LinearMap.ext <| apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) (ℬ := 𝒜)
-    hl₂ hl₁ (AlgHom.id R A) (fun ha ↦ ha) hadj hS
+  eq_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (OneHom.id A) hl₁ hl₂ hadj hS
 
 /-- An `s`-signed Leibniz endomorphism vanishing on the range of an algebra-generating map is
 zero. -/
@@ -215,33 +257,6 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top
 
 end Homogeneity
 
-section SquareZeroMul
-
-variable {R A ι : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  [DecidableEq ι] [AddMonoid ι] {𝒜 : ι → Submodule R A} [DirectSum.Decomposition 𝒜]
-  {s : ι → ℤˣ} {q : ι} {d : A →ₗ[R] A}
-
-/-- When `d` has degree `q` and `s (i + q) = -s i`, the square `d ∘ₗ d` is an unsigned
-derivation. -/
-theorem comp_self_mul_of_signedLeibniz (hdeg : LinearMap.IsHomogeneous d 𝒜 𝒜 q)
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
-    (hs : ∀ i, s (i + q) = -s i) (a b : A) :
-    d (d (a * b)) = d (d a) * b + a * d (d b) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | add a₁ a₂ h₁ h₂ =>
-    rw [add_mul, map_add, map_add, h₁, h₂, map_add, map_add, add_mul, add_mul]
-    abel
-  | @homogeneous i a =>
-    obtain ⟨a, ha⟩ := a
-    have hda : d a ∈ 𝒜 (i + q) := hdeg.map_mem ha
-    rw [hl ha, map_add, Units.smul_def, map_zsmul, hl hda, hl ha, hs i]
-    simp only [Units.smul_def, Units.val_neg, neg_zsmul, zsmul_add, smul_smul,
-      ← Units.val_mul, Int.units_mul_self, Units.val_one, one_zsmul]
-    abel
-
-end SquareZeroMul
-
 section SquareZero
 
 variable {R A ι : Type*} [CommSemiring R] [Ring A] [Algebra R A]
@@ -257,7 +272,8 @@ theorem comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top
     d ∘ₗ d = 0 ↔ ∀ x ∈ S, d (d x) = 0 := by
   refine ⟨fun h x _ ↦ LinearMap.congr_fun h x, fun hS ↦ ?_⟩
   exact eq_zero_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) (s := fun _ ↦ 1)
-    (fun {_ a} _ b ↦ by simp [comp_self_mul_of_signedLeibniz hdeg hl hs a b]) hadj hS
+    (fun {_ a} _ b ↦ by simp [map_map_mul_of_leibniz 𝒜 (fun hx ↦ hdeg.map_mem hx) hl hs a b])
+    hadj hS
 
 /-- A degree-`q` endomorphism satisfying an `s`-signed Leibniz rule with `s (i + q) = -s i` squares
 to zero if and only if its square vanishes on the range of an algebra-generating map. -/

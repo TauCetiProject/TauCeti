@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.DirectSum.HomogeneousExtend
-import TauCeti.Algebra.Homology.DG.Algebra.SignedDerivation
+import TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Generators
 import TauCeti.LinearAlgebra.Matrix.Triangular.Derivation
 
 /-!
@@ -37,7 +37,7 @@ lower-triangular `2 × 2` matrix construction in `TauCeti.LinearAlgebra.Matrix.T
 `[[a, 0], [d a, σ a]]`, where `σ` is the grade involution `a ↦ (-1) ^ |a| • a`, multiply as
 `a + ε d a` in the dual numbers over `A(V)` with one odd generator `ε`. The signed Leibniz rule
 for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`. Uniqueness, homogeneity, and square-zero
-reduction instantiate `TauCeti.Algebra.Homology.DG.Algebra.SignedDerivation`.
+reduction instantiate `TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Generators`.
 
 ## Main definitions
 

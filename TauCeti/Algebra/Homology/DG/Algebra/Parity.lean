@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
 import TauCeti.RingTheory.GradedAlgebra.Coarsen
+import TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Basic
 
 /-!
 # The parity reduction of a signed derivation
@@ -22,12 +23,10 @@ is an odd signed derivation of the underlying super algebra: apply the theorems 
 `h.map_mem` and `h.leibniz`.
 
 Only the forward direction holds in general: a parity datum does not determine an integer lift.
-The unsigned derivation law for the square of an odd parity-Leibniz map adapts the calculation in
-`TauCeti.SignedSym.comp_self_eq_zero_iff`
-(`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation`) and the additive decomposition
-extension of `TauCeti.map_mul_of_leibniz_of_map_eq_zero`
-(`TauCeti.Algebra.Homology.DG.Algebra.Defs`), where the general cycle, unit, and `algebraMap`
-consequences of a `ℤˣ`-signed Leibniz rule live.
+The unsigned derivation law for the square of an odd parity-Leibniz map specializes
+`TauCeti.map_map_mul_of_leibniz_of_mem` and `TauCeti.map_map_mul_of_leibniz`
+(`TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Basic`), where the general cycle, unit,
+`algebraMap`, and signed-square consequences of a `ℤˣ`-signed Leibniz rule live.
 
 ## Main results
 
@@ -88,12 +87,9 @@ theorem map_map_mul_of_parity_leibniz_of_mem
     (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
     {i : ZMod 2} {a : A} (ha : a ∈ 𝒜 i) (b : A) :
-    d (d (a * b)) = d (d a) * b + a * d (d b) := by
-  have hda := hd ha
-  rw [hl ha, map_add, map_zsmul_unit, hl hda, hl ha, uzpow_add, uzpow_one]
-  simp only [Units.smul_def, Units.val_neg, Units.val_one, mul_neg, mul_one,
-    neg_zsmul, zsmul_add, smul_smul, ← Units.val_mul, Int.units_mul_self, one_zsmul]
-  abel
+    d (d (a * b)) = d (d a) * b + a * d (d b) :=
+  map_map_mul_of_leibniz_of_mem 𝒜 hd hl ha
+    (by rw [uzpow_add, uzpow_one, mul_neg, mul_one]) b
 
 /-- **The square of an odd parity-Leibniz map is an unsigned derivation** on the whole algebra:
 because the unsigned Leibniz rule has no parity sign, it extends additively from homogeneous left
@@ -103,13 +99,9 @@ theorem map_map_mul_of_parity_leibniz [AddSubmonoidClass σ A] [DirectSum.Decomp
     (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
     (a b : A) :
-    d (d (a * b)) = d (d a) * b + a * d (d b) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | homogeneous a => exact map_map_mul_of_parity_leibniz_of_mem hd hl a.property b
-  | add x y hx hy =>
-    rw [add_mul, map_add, map_add, hx, hy, map_add, map_add, add_mul, add_mul]
-    abel
+    d (d (a * b)) = d (d a) * b + a * d (d b) :=
+  map_map_mul_of_leibniz 𝒜 hd hl
+    (fun _ ↦ by rw [uzpow_add, uzpow_one, mul_neg, mul_one]) a b
 
 end ParityLeibniz
 
