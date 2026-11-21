@@ -401,15 +401,6 @@ theorem measurePreserving_prodRightSwap
     measurable_id.aemeasurable measurable_swap.aemeasurable]
   simp only [Measure.map_id, Measure.prod_swap]
 
-/-- Adjoining a coordinate with a Dirac law is the canonical measure-preserving embedding
-`x ↦ (x, y)` of the old space. -/
-theorem measurePreserving_prodMk_right_dirac
-    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) [SFinite μ]
-    (y : β) :
-    MeasurePreserving (fun x : α ↦ (x, y)) μ (μ.prod (Measure.dirac y)) := by
-  rw [Measure.prod_dirac]
-  exact ⟨measurable_prodMk_right, rfl⟩
-
 end MeasureTheory
 
 /-- Almost every section of an almost-everywhere measurable function on `μ.prod ν` is
