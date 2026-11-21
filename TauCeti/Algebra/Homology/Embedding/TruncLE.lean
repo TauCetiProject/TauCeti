@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.Boundary
 public import Mathlib.Algebra.Homology.Embedding.TruncLEHomology
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
+public import TauCeti.Algebra.Homology.Embedding.Boundary
 
 /-!
 # Good truncation of complexes
@@ -39,7 +39,6 @@ embedding of complex shapes, including boundary degrees, naturally in `K`.
 * `HomologicalComplex.liftTruncLE'`: the factorization of a morphism into `K.restriction e`
   whose boundary components are killed by the differential, and
   `HomologicalComplex.liftTruncLE'_truncLE'ToRestriction`, its defining property.
-* `ComplexShape.boundaryLE_embeddingDownNat_iff`: the boundary of `embeddingDownNat` is `0`.
 * `CochainComplex.truncLE'ToX`: the inclusion of degree `n` of `τ_{≥ 0} K` into `K^{-n}`, with
   `CochainComplex.truncLE'ToX_d_succ` and `CochainComplex.truncLE'ToX_zero_d` for the
   differentials.
@@ -64,8 +63,14 @@ lemma truncLE'ToRestriction_f_eq_iso_hom_iso_inv {i : ι} {i' : ι'} (hi' : e.f 
   -- description of `restrictionToTruncGE'` away from the boundary.
   subst hi'
   apply Quiver.Hom.op_inj
-  simpa [truncLE'ToRestriction, truncLE'XIso, restrictionXIso] using
-    K.op.restrictionToTruncGE'_f_eq_iso_hom_iso_inv e.op rfl (by simpa using hi)
+  rw [truncLE'ToRestriction, unopFunctor_map_f, Quiver.Hom.unop_op, Quiver.Hom.op_unop,
+    K.op.restrictionToTruncGE'_f_eq_iso_hom_iso_inv e.op rfl
+      (by rwa [ComplexShape.Embedding.op_boundaryGE_iff])]
+  -- Both restriction isomorphisms are identities, and `truncLE'XIso` is the opposite of the
+  -- inverse of `truncGE'XIso`.
+  simp only [restriction_X, ComplexShape.Embedding.op_f, op_X, restrictionXIso, eqToIso_refl,
+    Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, truncLE'XIso, Iso.unop_symm,
+    Iso.symm_hom, Iso.unop_inv, Quiver.Hom.op_unop]
 
 /-- At the boundary, the comparison `K.truncLE' e ⟶ K.restriction e` is the inclusion of the
 cycles of `K`, up to the canonical isomorphisms. -/
@@ -80,9 +85,15 @@ lemma truncLE'ToRestriction_f_eq_iso_hom_iCycles_iso_inv {i : ι} {i' : ι'} (hi
   -- Under `opcyclesOpIso`, the projection `K.op.pOpcycles` is the opposite of `K.iCycles`.
   have h : K.op.pOpcycles (e.f i) = (K.iCycles (e.f i)).op ≫ (K.opcyclesOpIso (e.f i)).inv :=
     (Iso.eq_comp_inv _).2 (K.sc (e.f i)).op_pOpcycles_opcyclesOpIso_hom
-  simpa [truncLE'ToRestriction, truncLE'XIsoCycles, restrictionXIso, h] using
-    K.op.restrictionToTruncGE'_f_eq_iso_hom_pOpcycles_iso_inv e.op (i' := e.f i) rfl
-      (by simpa using hi)
+  rw [truncLE'ToRestriction, unopFunctor_map_f, Quiver.Hom.unop_op, Quiver.Hom.op_unop,
+    K.op.restrictionToTruncGE'_f_eq_iso_hom_pOpcycles_iso_inv e.op rfl
+      (by rwa [ComplexShape.Embedding.op_boundaryGE_iff])]
+  -- Both restriction isomorphisms are identities, `truncLE'XIsoCycles` is the opposite of
+  -- `truncGE'XIsoOpcycles` followed by `opcyclesOpIso`, and `h` rewrites `K.op.pOpcycles`.
+  simp only [restriction_X, ComplexShape.Embedding.op_f, op_X, restrictionXIso, eqToIso_refl,
+    Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, h, Category.assoc,
+    truncLE'XIsoCycles, Iso.trans_hom, Iso.symm_hom, Iso.unop_inv, op_comp, Opposite.op_unop,
+    Quiver.Hom.op_unop]
 
 /-- At the boundary, the comparison `K.truncLE' e ⟶ K.restriction e` lands in the cycles of `K`:
 it is killed by the differential of `K`. -/
@@ -193,21 +204,6 @@ lemma truncLE'HomologyIso_hom_naturality {L : HomologicalComplex C c'}
 end Homology
 
 end HomologicalComplex
-
-namespace ComplexShape
-
-/-- The only boundary degree of the embedding `n ↦ -n` of `ComplexShape.down ℕ` into
-`ComplexShape.up ℤ` is `0`. -/
-lemma boundaryLE_embeddingDownNat_iff (n : ℕ) :
-    embeddingDownNat.BoundaryLE n ↔ n = 0 := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain _ | n := n
-    · rfl
-    · simpa using h.2 n
-  · rintro rfl
-    exact ⟨by simp, fun i hi ↦ by simp at hi; omega⟩
-
-end ComplexShape
 
 namespace CochainComplex
 
