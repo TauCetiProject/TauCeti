@@ -441,14 +441,12 @@ theorem quotientPeriodicComplex_acyclic (hw : w ∈ nonZeroDivisors S)
     (X : MatrixFactorization S w) : (quotientPeriodicComplex.obj X).Acyclic := by
   intro j
   rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) j with rfl | rfl
-  · rw [HomologicalComplex.exactAt_iff' _ 1 0 1
-        ((ComplexShape.up (ZMod 2)).prev_eq' (ComplexShape.up_mk 1 0 (by decide)))
-        ((ComplexShape.up (ZMod 2)).next_eq' (ComplexShape.up_mk 0 1 (by decide))),
+  · rw [HomologicalComplex.exactAt_iff' _ 1 0 1 CochainComplex.prev_zmod_two_zero
+        CochainComplex.next_zmod_two_zero,
       ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
     exact exact_quotient_d₁_d₀ hw X
-  · rw [HomologicalComplex.exactAt_iff' _ 0 1 0
-        ((ComplexShape.up (ZMod 2)).prev_eq' (ComplexShape.up_mk 0 1 (by decide)))
-        ((ComplexShape.up (ZMod 2)).next_eq' (ComplexShape.up_mk 1 0 (by decide))),
+  · rw [HomologicalComplex.exactAt_iff' _ 0 1 0 CochainComplex.prev_zmod_two_one
+        CochainComplex.next_zmod_two_one,
       ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
     exact exact_quotient_d₀_d₁ hw X
 

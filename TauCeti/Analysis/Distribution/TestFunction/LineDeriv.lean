@@ -26,7 +26,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
-* `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
+* `TestFunction.lineDerivOp_apply_eq_fderiv`, `TestFunction.coe_lineDerivOp_eq_fderiv`:
+  `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
 * `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
   `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
@@ -50,6 +51,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   product rule.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
+* `TestFunction.integrable_laplacian_smul`: `x ↦ Δφ(x) • u x` is integrable when `u` is locally
+  integrable on `Ω`.
 -/
 
 public section
@@ -72,10 +75,16 @@ direction. -/
 theorem lineDerivOp_apply_eq_fderiv (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = fderiv ℝ φ x v := by
   rw [lineDerivOp_apply, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
 
+/-- The underlying function of a directional derivative of a test function is its Fréchet
+derivative applied to the direction. -/
+theorem coe_lineDerivOp_eq_fderiv (φ : 𝓓(Ω, F)) (v : E) :
+    ⇑(∂_{v} φ : 𝓓(Ω, F)) = fun x ↦ fderiv ℝ (φ : E → F) x v :=
+  funext (lineDerivOp_apply_eq_fderiv φ v)
+
 /-- A directional derivative of a test function is supported in the support of the function. -/
 theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
-  rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
+  rw [coe_lineDerivOp_eq_fderiv]
   exact tsupport_fderiv_apply_subset ℝ v
 
 /-- The derivatives of order at most `r` of `∂_v φ` are bounded by `‖v‖` times a bound on the
@@ -83,7 +92,7 @@ derivatives of order at most `r + 1` of `φ`. -/
 theorem norm_iteratedFDeriv_lineDerivOp_le (φ : 𝓓(Ω, F)) (v : E) {r : ℕ} {B : ℝ}
     (hB : ∀ i ≤ r + 1, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) :
     ∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i (∂_{v} φ : 𝓓(Ω, F)) y‖ ≤ ‖v‖ * B := by
-  rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
+  rw [coe_lineDerivOp_eq_fderiv]
   exact fun i hi y ↦ (φ.contDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by simp) hB v i
     hi y).trans_eq (mul_comm _ _)
 
@@ -252,5 +261,13 @@ theorem laplacianCLM_apply (φ : 𝓓(Ω, F)) (x : E) :
     fderiv_clm_apply ((φ.contDiff.fderiv_right (by simp)).differentiable one_ne_zero x)
       (differentiableAt_const _)]
   simp
+
+open MeasureTheory InnerProductSpace Laplacian in
+/-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
+globally integrable one. -/
+theorem integrable_laplacian_smul [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+    (φ : 𝓓(Ω, ℝ)) {u : E → F} (hu : LocallyIntegrableOn u Ω μ) :
+    Integrable (fun x ↦ Δ (φ : E → ℝ) x • u x) μ := by
+  simpa only [laplacianCLM_apply] using (laplacianCLM ℝ E 𝓓(Ω, ℝ) φ).integrable_smul hu
 
 end TestFunction

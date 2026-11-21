@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Extreme
+public import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Extreme subsets and convex combinations
@@ -21,6 +22,10 @@ strictly positive weights that it meets, as long as the convex hull of the point
 `B` in the convex hull of `s` is already in the convex hull of `s ∩ B`
 (`IsExtreme.convexHull_inter_subset`). This is how a triangulation of a convex set restricts to
 each of its faces.
+
+An extreme subset meeting the intrinsic interior of its ambient set is the whole set
+(`IsExtreme.eq_of_mem_intrinsicInterior`); hence proper extreme subsets lie in the intrinsic
+frontier, without convexity or finite dimension.
 
 Every subfamily of an affinely independent family spans an extreme subset of its convex hull
 (`AffineIndependent.isExtreme_convexHull`). Thus the faces of a simplex are extreme, without
@@ -204,3 +209,27 @@ theorem AffineIndependent.isExtreme_convexHull (hp : AffineIndependent 𝕜 p) (
     (fun i hi => Set.mem_image_of_mem p (Finset.mem_filter.mp hi).2)
 
 end Simplex
+
+section IntrinsicInterior
+
+open Filter Topology
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousAdd V]
+  [ContinuousSMul ℝ V] {P F : Set V}
+
+/-- An extreme subset meeting the intrinsic interior of its ambient set is that entire set.
+Neither convexity nor finite dimension is required. -/
+theorem IsExtreme.eq_of_mem_intrinsicInterior (hF : IsExtreme ℝ P F) {x : V} (hxF : x ∈ F)
+    (hx : x ∈ intrinsicInterior ℝ P) : F = P := by
+  refine hF.subset.antisymm fun y hy => ?_
+  obtain ⟨z, hz, hseg⟩ := TauCeti.exists_mem_and_mem_openSegment_of_mem_intrinsicInterior hx hy
+  exact hF.left_mem_of_mem_openSegment hy hz hxF hseg
+
+/-- Every proper extreme subset lies in the intrinsic frontier of its ambient set. -/
+theorem IsExtreme.subset_intrinsicFrontier (hF : IsExtreme ℝ P F) (hne : F ≠ P) :
+    F ⊆ intrinsicFrontier ℝ P := by
+  rw [← intrinsicClosure_sdiff_intrinsicInterior]
+  exact fun _ hx => ⟨subset_intrinsicClosure (hF.subset hx),
+    fun hi => hne (hF.eq_of_mem_intrinsicInterior hx hi)⟩
+
+end IntrinsicInterior

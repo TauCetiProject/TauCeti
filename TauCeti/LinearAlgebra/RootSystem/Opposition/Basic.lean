@@ -53,6 +53,9 @@ alone.
   consequence of that permutation for nonnegative combinations of the simple roots;
   `TauCeti.neg_smul_mem_posRootCone_longestElement_iff` is the resulting `simp` normalisation, `-w₀`
   being an involution.
+* `TauCeti.neg_longestElement_smul_eq_self_iff`: when the coroots span, a weight is fixed by `-w₀`
+  exactly when its simple-coroot coordinates are constant on the orbits of the opposition
+  involution.
 
 ## Implementation notes
 
@@ -209,6 +212,26 @@ theorem coe_oppositionPerm (i : b.support) :
 theorem oppositionPerm_oppositionPerm (i : b.support) :
     oppositionPerm P b (oppositionPerm P b i) = i :=
   Subtype.ext (by simp)
+
+variable {P b} in
+/-- **A weight is fixed by `-w₀` exactly when its simple-coroot coordinates are constant on the
+orbits of the opposition involution**: `-(w₀ • x) = x` exactly when `⟨x, α_{δ i}^∨⟩ = ⟨x, αᵢ^∨⟩`
+for every simple root `αᵢ`, where `δ` is the opposition involution. This needs the coroots to span
+the coweight space; without that, a weight is not determined by its coroot values. -/
+theorem neg_longestElement_smul_eq_self_iff (hspan : P.corootSpan R = ⊤) {x : M} :
+    -(longestElement P b • x) = x ↔
+      ∀ i ∈ b.support, P.coroot' (opposition P b i) x = P.coroot' i x := by
+  have key (i : ι) :
+      P.coroot' i (-(longestElement P b • x)) = P.coroot' (opposition P b i) x := by
+    rw [map_neg, coroot'_opposition]
+  refine ⟨fun h i _ ↦ by rw [← key, h], fun h ↦ ?_⟩
+  -- The difference `-(w₀ • x) - x` is killed by the simple coroots, hence by every coroot, and the
+  -- coroots span the coweight space.
+  rw [← sub_eq_zero]
+  have hker : -(longestElement P b • x) - x ∈ ⨅ j, LinearMap.ker (P.coroot' j) :=
+    Submodule.mem_iInf _ |>.mpr fun j ↦ P.coroot'_eq_zero_of_forall_mem_support b
+      (fun i hi ↦ by rw [map_sub, key, h i hi, sub_self]) j
+  simpa [← P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot', hspan] using hker
 
 end Opposition
 
