@@ -107,7 +107,8 @@ abbrev overlapChart : Type u := integralClosure (adjoin R {(u : B), ((u⁻¹ : B
 
 /-- The inclusion `A₀ ⊆ A₀∞`: an element integral over `R[u]` is integral over `R[u, u⁻¹]`. -/
 def finiteChartRestriction : finiteChart R u →ₐ[R] overlapChart R u where
-  toFun x := ⟨x, (u.isIntegral_adjoin_insert_inv_iff).2 ⟨0, by rw [pow_zero, one_mul]; exact x.2⟩⟩
+  toFun x :=
+    ⟨x, (u.isIntegral_adjoin_insert_inv_iff).2 ⟨0, by rw [pow_zero, one_mul]; exact x.property⟩⟩
   map_one' := rfl
   map_mul' _ _ := rfl
   map_zero' := rfl
@@ -117,7 +118,7 @@ def finiteChartRestriction : finiteChart R u →ₐ[R] overlapChart R u where
 /-- The inclusion `A∞ ⊆ A₀∞`: an element integral over `R[u⁻¹]` is integral over `R[u, u⁻¹]`. -/
 def infinityChartRestriction : infinityChart R u →ₐ[R] overlapChart R u where
   toFun x :=
-    ⟨x, (u.isIntegral_adjoin_insert_inv_iff_inv).2 ⟨0, by rw [pow_zero, one_mul]; exact x.2⟩⟩
+    ⟨x, (u.isIntegral_adjoin_insert_inv_iff_inv).2 ⟨0, by rw [pow_zero, one_mul]; exact x.property⟩⟩
   map_one' := rfl
   map_mul' _ _ := rfl
   map_zero' := rfl

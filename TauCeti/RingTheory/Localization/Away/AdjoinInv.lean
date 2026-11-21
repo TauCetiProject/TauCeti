@@ -116,7 +116,7 @@ theorem isLocalization_away_adjoin_insert_inv
   refine IsLocalization.Away.mk _ ?_ (fun c ↦ ?_) fun y z h ↦ ⟨0, ?_⟩
   · refine IsUnit.of_mul_eq_one ⟨_, subset_adjoin (Set.mem_insert_of_mem _ rfl)⟩ ?_
     exact Subtype.ext (by simp [hcoe])
-  · obtain ⟨n, hn⟩ := exists_pow_mul_mem_adjoin_singleton u c.2
+  · obtain ⟨n, hn⟩ := exists_pow_mul_mem_adjoin_singleton u c.property
     exact ⟨n, ⟨_, hn⟩, Subtype.ext (by simp [hcoe, mul_comm])⟩
   · simpa [hcoe] using congrArg Subtype.val h
 
