@@ -34,7 +34,7 @@ with identity and composition, restricted Lie subalgebras (`RestrictedLieSubalge
 restricted structure, lattice bounds, and images (`RestrictedLieHom.range`), and restricted Lie
 ideals (`RestrictedLieIdeal`) including kernels (`RestrictedLieHom.ker`). We construct the standard
 examples: associative algebras of prime characteristic `p` (`ofAssociative`), endomorphism algebras
-`Module.End R M` over a base ring of prime characteristic `p` (`ofModuleEnd`, including trivial
+`Module.End R M` when `p` annihilates `M` pointwise (`ofModuleEnd`, including trivial
 modules `M`), abelian Lie algebras with the zero `p`-map (`ofAbelianZero`), and the adjoint
 morphisms `RestrictedLieHom.ad` and `RestrictedLieHom.adOfAssociative`.
 
@@ -47,11 +47,11 @@ morphisms `RestrictedLieHom.ad` and `RestrictedLieHom.adOfAssociative`.
 * `TauCeti.RestrictedLieAlgebra.ofAssociative`: the restricted Lie algebra structure `a ↦ a ^ p`
   on an associative algebra of prime characteristic `p`.
 * `TauCeti.RestrictedLieAlgebra.ofModuleEnd`: the restricted Lie algebra structure `f ↦ f ^ p` on
-  `Module.End R M` over a base ring `R` of prime characteristic `p`.
+  `Module.End R M` when `p` annihilates `M` pointwise.
 * `TauCeti.RestrictedLieAlgebra.ofAbelianZero`: the zero `p`-map on an abelian Lie algebra
   (`p ≠ 0`).
 * `TauCeti.RestrictedLieHom.ad`: `LieAlgebra.ad R L` as a restricted morphism for any restricted
-  Lie algebra over a ring of characteristic `p`.
+  Lie algebra annihilated pointwise by `p`.
 * `TauCeti.RestrictedLieHom.adOfAssociative`: `LieAlgebra.ad R A` as a restricted morphism for an
   associative algebra of characteristic `p`.
 
@@ -744,64 +744,65 @@ theorem RestrictedLieAlgebra.ofAssociative_pMap (R A : Type*) [CommRing R] [Ring
   (rfl)
 
 private theorem charP_moduleEnd_of_nontrivial (R M : Type*) [CommRing R] [AddCommGroup M]
-    [Module R M] [Nontrivial M] (p : ℕ) [Fact p.Prime] [CharP R p] :
+    [Module R M] [Nontrivial M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) :
     CharP (Module.End R M) p := by
   have : Nontrivial (Module.End R M) := by
     obtain ⟨m, hm⟩ := exists_ne (0 : M)
     exact ⟨1, 0, fun h => hm (by simpa using LinearMap.congr_fun h m)⟩
   have hp0 : (p : Module.End R M) = 0 := by
     ext m
-    rw [natCast_apply_eq_smul, ← Nat.cast_smul_eq_nsmul R, CharP.cast_eq_zero R p, zero_smul,
-      LinearMap.zero_apply]
+    rw [natCast_apply_eq_smul, hM m, LinearMap.zero_apply]
   exact (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr hp0
 
-/-- The restricted Lie algebra structure `f ↦ f ^ p` on `Module.End R M` over a commutative ring `R`
-of prime characteristic `p`. Valid for every `R`-module `M`, including trivial modules where
-`CharP (Module.End R M) p` does not hold. -/
+/-- The restricted Lie algebra structure `f ↦ f ^ p` on `Module.End R M` for prime `p`, whenever
+`p` annihilates `M` pointwise (`∀ m : M, p • m = 0`). Valid for every such `R`-module `M`,
+including trivial modules where `CharP (Module.End R M) p` does not hold and modules over
+mixed-characteristic base rings `R`. -/
 @[instance_reducible]
 def RestrictedLieAlgebra.ofModuleEnd (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
-    (p : ℕ) [Fact p.Prime] [CharP R p] : RestrictedLieAlgebra R (Module.End R M) p where
+    (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) :
+    RestrictedLieAlgebra R (Module.End R M) p where
   pMap f := f ^ p
   pMap_smul c f := smul_pow c f p
   ad_pMap f := by
     rcases subsingleton_or_nontrivial M with hsub | hnt
     · exact Subsingleton.elim _ _
-    · have : CharP (Module.End R M) p := charP_moduleEnd_of_nontrivial R M p
+    · have : CharP (Module.End R M) p := charP_moduleEnd_of_nontrivial R M p hM
       exact (ofAssociative R (Module.End R M) p).ad_pMap f
   pMap_add f g := by
     rcases subsingleton_or_nontrivial M with hsub | hnt
     · exact Subsingleton.elim _ _
-    · have : CharP (Module.End R M) p := charP_moduleEnd_of_nontrivial R M p
+    · have : CharP (Module.End R M) p := charP_moduleEnd_of_nontrivial R M p hM
       exact (ofAssociative R (Module.End R M) p).pMap_add f g
 
 @[simp]
 theorem RestrictedLieAlgebra.ofModuleEnd_pMap (R M : Type*) [CommRing R] [AddCommGroup M]
-    [Module R M] (p : ℕ) [Fact p.Prime] [CharP R p] (f : Module.End R M) :
-    (ofModuleEnd R M p).pMap f = f ^ p :=
+    [Module R M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) (f : Module.End R M) :
+    (ofModuleEnd R M p hM).pMap f = f ^ p :=
   (rfl)
 
 /-- When `Module.End R M` has characteristic `p`, `ofModuleEnd` agrees with `ofAssociative`. -/
 theorem RestrictedLieAlgebra.ofModuleEnd_eq_ofAssociative (R M : Type*) [CommRing R]
-    [AddCommGroup M] [Module R M] (p : ℕ) [Fact p.Prime] [CharP R p]
+    [AddCommGroup M] [Module R M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0)
     [CharP (Module.End R M) p] :
-    ofModuleEnd R M p = ofAssociative R (Module.End R M) p :=
+    ofModuleEnd R M p hM = ofAssociative R (Module.End R M) p :=
   RestrictedLieAlgebra.ext rfl
 
-/-- The adjoint representation `LieAlgebra.ad R L : L →ₗ⁅R⁆ Module.End R L` of any restricted Lie
-algebra over a base ring `R` of prime characteristic `p`, as a morphism of restricted Lie algebras
-into `ofModuleEnd R L p`. -/
+/-- The adjoint representation `LieAlgebra.ad R L : L →ₗ⁅R⁆ Module.End R L` of a restricted Lie
+algebra annihilated pointwise by `p` (`∀ x : L, p • x = 0`), as a morphism of restricted Lie
+algebras into `ofModuleEnd R L p hL`. -/
 def RestrictedLieHom.ad (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ)
-    [Fact p.Prime] [CharP R p] [RestrictedLieAlgebra R L p] :
+    [Fact p.Prime] [RestrictedLieAlgebra R L p] (hL : ∀ x : L, p • x = 0) :
     @RestrictedLieHom R p L (Module.End R L) _ _ _ _ _ _
-      (RestrictedLieAlgebra.ofModuleEnd R L p) :=
+      (RestrictedLieAlgebra.ofModuleEnd R L p hL) :=
   @RestrictedLieHom.mk R p L (Module.End R L) _ _ _ _ _ _
-    (RestrictedLieAlgebra.ofModuleEnd R L p) (LieAlgebra.ad R L)
+    (RestrictedLieAlgebra.ofModuleEnd R L p hL) (LieAlgebra.ad R L)
     (fun x => RestrictedLieAlgebra.ad_pMap (R := R) (p := p) x)
 
 @[simp]
 theorem RestrictedLieHom.ad_apply (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ)
-    [Fact p.Prime] [CharP R p] [RestrictedLieAlgebra R L p] (x : L) :
-    ad R L p x = LieAlgebra.ad R L x :=
+    [Fact p.Prime] [RestrictedLieAlgebra R L p] (hL : ∀ x : L, p • x = 0) (x : L) :
+    ad R L p hL x = LieAlgebra.ad R L x :=
   (rfl)
 
 /-- The adjoint representation `LieAlgebra.ad R A : A →ₗ⁅R⁆ Module.End R A` of an associative

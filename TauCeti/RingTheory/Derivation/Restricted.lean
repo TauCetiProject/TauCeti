@@ -33,11 +33,12 @@ In particular, whenever `D a = 0`, the correction term vanishes
 `A[X]`, and reading off the constant term of `((C a • D').pPow p) (X ^ m)` for `2 ≤ m < p`, where
 `D' = coeffDer D + d/dX`.
 
-When `R` and `A` are commutative rings of prime characteristic `p`, `Derivation.pPow p` also
-satisfies Jacobson's additivity formula (`Derivation.pPow_add`), equipping `Derivation R A A` with a
-canonical restricted Lie algebra structure (`Derivation.instRestrictedLieAlgebra`), and the
-inclusion `Derivation.toEndRestrictedLieHom` into `Module.End R A` is an injective morphism of
-restricted Lie algebras extending `Derivation.toLinearMapLieHom`.
+When `R` is a commutative ring and `A` is a commutative `R`-algebra of prime characteristic `p`,
+`Derivation.pPow p` also satisfies Jacobson's additivity formula (`Derivation.pPow_add`), equipping
+`Derivation R A A` with a canonical restricted Lie algebra structure
+(`Derivation.instRestrictedLieAlgebra`), and the inclusion `Derivation.toEndRestrictedLieHom` into
+`Module.End R A` is an injective morphism of restricted Lie algebras extending
+`Derivation.toLinearMapLieHom`.
 
 ## Main definitions
 
@@ -484,5 +485,13 @@ example :
   intro h
   have h0 := congrArg (Polynomial.eval 0) h
   simp [Polynomial.coe_derivative', Function.iterate_succ_apply'] at h0
+
+-- Witness 4: over mixed-characteristic base ring `ℤ`, `RestrictedLieHom.ad` expresses the
+-- adjoint representation of `Derivation ℤ (ZMod p)[X] (ZMod p)[X]`.
+example (p : ℕ) [Fact p.Prime] (D : Derivation ℤ (ZMod p)[X] (ZMod p)[X]) :
+    (TauCeti.RestrictedLieHom.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) p
+        (fun E => by ext a; simp [nsmul_eq_mul, CharP.cast_eq_zero])) D =
+      LieAlgebra.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) D :=
+  TauCeti.RestrictedLieHom.ad_apply _ _ _ _ D
 
 end Examples
