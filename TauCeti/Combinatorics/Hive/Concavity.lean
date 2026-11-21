@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Finset.Lattice.Fold
 public import TauCeti.Analysis.Convex.Function.Basic
 public import TauCeti.Analysis.Convex.Piecewise
-public import TauCeti.Combinatorics.Hive.Interpolation
+public import TauCeti.Combinatorics.Hive.SimplicialInterpolation
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Tactic.FinCases

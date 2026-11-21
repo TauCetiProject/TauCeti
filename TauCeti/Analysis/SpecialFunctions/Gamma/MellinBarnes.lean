@@ -42,6 +42,8 @@ sequences (`max (-Re a, -Re b) < σ < min (Re c, Re d)`).
 
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.integrableOn_cpow_mul_one_add_cpow_neg`, `Complex.integral_cpow_mul_one_add_cpow_neg`:
+  the same Beta integral as an integrable function and a set integral on `(0, ∞)`.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
   vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
@@ -133,6 +135,19 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
         fun u hu ↦ abs_deriv_smul_cpow_mul_one_add_cpow s a hu,
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
+
+/-- For `0 < Re s < Re a`, the integrand `u^{s - 1} (1 + u)^{-a}` of Euler's Beta integral of the
+second kind is integrable on `(0, ∞)`. -/
+theorem integrableOn_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a)) (Ioi 0) := by
+  simpa [MellinConvergent] using (hasMellin_one_add_cpow_neg hs hsa).1
+
+/-- **Euler's Beta integral of the second kind** (DLMF 5.12.3), as a set integral: for
+`0 < Re s < Re a`, `∫₀^∞ u^{s - 1} (1 + u)^{-a} du = Γ(s) Γ(a - s) / Γ(a)`. -/
+theorem integral_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a) =
+      Gamma s * Gamma (a - s) / Gamma a := by
+  simpa [mellin] using (hasMellin_one_add_cpow_neg hs hsa).2
 
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
@@ -261,8 +276,8 @@ private theorem integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 
   have hf₁ : Integrable
       (fun u : ℝ ↦ ‖(u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c))‖)
       (volume.restrict (Ioi (0 : ℝ))) := by
-    have hm := (hasMellin_one_add_cpow_neg (s := c) (a := a + c) hc (by simp; linarith)).1.norm
-    simpa only [IntegrableOn, smul_eq_mul] using hm
+    exact (integrableOn_cpow_mul_one_add_cpow_neg (s := c) (a := a + c) hc
+      (by simp; linarith)).norm
   have hf₂ : Integrable (fun y : ℝ ↦ ‖Gamma (b + y * I) * Gamma (d - y * I)‖) :=
     (integrable_Gamma_add_mul_Gamma_sub
       (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])
