@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
+public import TauCeti.Geometry.Lie.FundamentalVectorField
+public import TauCeti.Geometry.Lie.InvariantVectorField.Distribution
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
@@ -27,7 +30,12 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
 * the projection `G → G ⧸ K` is a smooth submersion (`Subgroup.isSubmersion_quotientMk`), so a
   map out of `G ⧸ K` is smooth exactly when its composite with the projection is;
 * its vertical directions at `g` are the tangent space at `g` of the coset `g K`, the image of the
-  differential of `k ↦ g k` at the identity of `K` (`Subgroup.ker_mfderiv_quotientMk`);
+  differential of `k ↦ g k` at the identity of `K` (`Subgroup.ker_mfderiv_quotientMk`), or
+  equivalently the left translate `d(L_g)(S)` of any subspace `S` of `𝔤` of dimension `dim K`
+  whose one-parameter subgroups lie in `K`
+  (`Subgroup.ker_mfderiv_quotientMk_eq_mulInvariantDistribution`);
+* the projection sends the generators of left multiplication on `G` to those of the action on
+  `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`);
 * `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`).
 
 The charts come from the quotient manifold theorem
@@ -58,6 +66,8 @@ open Function Set Manifold Module TauCeti
 open scoped ContDiff Manifold
 
 namespace Subgroup
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -216,6 +226,72 @@ theorem ker_mfderiv_quotientMk (hK : IsClosed (K : Set G)) (g : G) :
     (by rw [add_comm]; exact finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I K hK)
   rw [OneMemClass.coe_one, mul_one] at h
   exact h.symm
+
+/-- **Left-invariant vertical directions.** If the one-parameter subgroup `t ↦ exp (t ξ)` lies in
+`K`, the left-invariant vector field `ξ^L` is vertical for the projection `G → G ⧸ K`. -/
+theorem mfderiv_quotientMk_mulInvariantVectorField [T2Space G] (hK : IsClosed (K : Set G))
+    {ξ : GroupLieAlgebra I G} (hξ : ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K) (g : G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+      (mulInvariantVectorField ξ g) = 0 := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  -- The curve `t ↦ g exp (t ξ)` has velocity `ξ^L(g)` at `0` and stays in the coset `g K`.
+  have hL : HasMFDerivAt I I (g * ·) (mulInvariantExp (I := I) ((0 : ℝ) • ξ))
+      (mfderiv I I (g * ·) 1) := by
+    rw [zero_smul, mulInvariantExp_zero]
+    exact ((contMDiff_mul_left (I := I) (n := ∞)).mdifferentiableAt (by simp)).hasMFDerivAt
+  have hc := hL.comp (0 : ℝ) (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) ξ)
+  have hconst : (QuotientGroup.mk : G → G ⧸ K) ∘
+      ((g * ·) ∘ fun t : ℝ ↦ mulInvariantExp (I := I) (t • ξ)) = fun _ ↦ (g : G ⧸ K) :=
+    funext fun t ↦ QuotientGroup.mk_mul_of_mem g (hξ t)
+  have hπ : MDifferentiableAt I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g :=
+    (contMDiff_quotientMk hK).mdifferentiableAt (by simp)
+  have hy : ((g * ·) ∘ fun t : ℝ ↦ mulInvariantExp (I := I) (t • ξ)) 0 = g := by simp
+  have h := mfderiv_comp_apply_of_eq (0 : ℝ) hπ hc.mdifferentiableAt hy (1 : ℝ)
+  rw [hconst, mfderiv_const, hc.mfderiv] at h
+  -- The composite applied to the unit tangent vector `1` of `ℝ` is `dπ_g (d(L_g)_1 (1 • ξ))`, and
+  -- `d(L_g)_1 (1 • ξ)` is `(1 • ξ)^L(g)` by definition of the invariant vector field.
+  have h' : mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+      (mulInvariantVectorField ((1 : ℝ) • ξ) g) = 0 :=
+    h.symm
+  rwa [one_smul] at h'
+
+/-- **The vertical directions of a homogeneous space as a left-invariant distribution.** Let `S` be
+a subspace of `𝔤` whose one-parameter subgroups lie in `K` and whose dimension is that of the Lie
+algebra of `K`. Then the kernel of the differential at `g` of the projection `G → G ⧸ K` is the
+left translate `d(L_g)(S)`. -/
+theorem ker_mfderiv_quotientMk_eq_mulInvariantDistribution [T2Space G]
+    (hK : IsClosed (K : Set G))
+    {S : Submodule ℝ (GroupLieAlgebra I G)}
+    (hS : ∀ ξ ∈ S, ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K)
+    (hdim : finrank ℝ S = finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+    (g : G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g).ker =
+      mulInvariantDistribution S g := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  refine (Submodule.eq_of_le_of_finrank_eq (fun v hv ↦ ?_) ?_).symm
+  · obtain ⟨ξ, hξ, rfl⟩ := mem_mulInvariantDistribution.1 hv
+    exact mfderiv_quotientMk_mulInvariantVectorField hK (hS ξ hξ) g
+  -- The kernel is the image of the injective differential of `k ↦ g k` on the Lie algebra of `K`.
+  rw [finrank_mulInvariantDistribution, hdim, ker_mfderiv_quotientMk hK g]
+  exact (LinearMap.finrank_range_of_inj (d.injective_mfderiv_mul_left_subtypeVal g 1)).symm
+
+/-- The projection `G → G ⧸ K` sends the generator `ξ_G(g)` of the action of `G` on itself by left
+multiplication to the generator `ξ_(G ⧸ K)([g])` of its action on the homogeneous space. -/
+theorem mfderiv_quotientMk_fundamentalVectorField (hK : IsClosed (K : Set G)) (g : G)
+    (ξ : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+        (fundamentalVectorField I ξ g) =
+      fundamentalVectorField 𝓘(ℝ, QuotientModelSpace I K) ξ (g : G ⧸ K) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  exact mfderiv_fundamentalVectorField_of_map_smul
+    ((contMDiff_quotientMk hK).mdifferentiableAt (by simp))
+    ((contMDiff_mul_right (I := I) (n := ∞)).mdifferentiableAt (by simp))
+    (fun h ↦ (MulAction.Quotient.smul_coe K h g).symm) ξ
 
 /-- **`G` acts smoothly on its homogeneous space** `G ⧸ K` by left multiplication. The action
 lifts along the submersion `(g, h) ↦ (g, [h])` to the multiplication of `G`, followed by the

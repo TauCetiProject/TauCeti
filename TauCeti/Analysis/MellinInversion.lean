@@ -6,12 +6,16 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.MellinInversion
+public import Mathlib.RingTheory.Polynomial.Pochhammer
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -37,6 +41,10 @@ is the Prime Number Theorem and more project by Alex Kontorovich, Terence Tao an
 here composes Mathlib's interval-power Mellin transforms and Mellin inversion, independently of
 that project's contour argument.
 
+The vertical-line bound generalizes the first-order estimates
+`Perron.vertIntBound` and `Perron.vertIntBoundLeft` in the same PNT+ development. Its two endpoint
+margins preserve unequal coefficients and give Cauchy-integral control of outward real lines.
+
 ## Main results
 
 * `Complex.VerticalIntegrable.integrable_cpow_smul`: the integrand of `mellinInv σ f y` is
@@ -47,12 +55,8 @@ that project's contour argument.
   `x ≥ 0` when the horizontal segment integrals tend to `0`.
 * `TauCeti.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le`: shifting `mellinInv` for `x ≥ 0`
   under a uniform norm decay bound on horizontal segments.
-* `TauCeti.verticalIntegrable_inv_mul_add_one`: `1 / (s(s+1))` is integrable on lines avoiding
-  `Re s = 0, -1`, including negative lines.
 * `TauCeti.mellinInv_inv_mul_add_one`: its inverse Mellin transform is `max (1 - x) 0` for
   positive `x`, on every line `Re s = c > 0`.
-* `TauCeti.integrable_cpow_div_mul_add_one`: absolute convergence of `x^s / (s(s+1))` for
-  `x ≥ 0` on every line avoiding the two poles.
 * `TauCeti.integral_cpow_div_mul_add_one`: its integral is `2π * max (1 - 1/x) 0` for
   positive `x` and `c`. At the cutoff `x = 1` this value is zero.
 * `TauCeti.mellinInv_isLittleO_nhdsGT_zero`, `TauCeti.mellinInv_isLittleO_atTop`: the
@@ -60,6 +64,9 @@ that project's contour argument.
   `x → +∞`, both from `TauCeti.mellinInv_isLittleO_of_tendsto_log`. Mathlib writes
   `mellinInv σ G x` as `x^{-σ}` times a Fourier transform of `G` on the line `Re z = σ`,
   evaluated at `log x`, and the Riemann–Lebesgue lemma applies to it.
+
+* `TauCeti.integrable_and_integral_norm_cpow_div_ascPochhammer_le`: absolute convergence and a
+  full-line L¹ bound for all-order Perron kernels, with separate first/last-factor margins.
 
 ## References
 
@@ -213,32 +220,59 @@ theorem mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
       ((eventually_ne_atTop (0 : ℝ)).mono fun T hT u ↦ by simpa using hT)
       (hbound.mono fun T hT u hu ↦ (hT u hu).1)
 
-/-- The kernel `1 / (s(s+1))` is integrable on each vertical line avoiding its two poles. -/
-theorem verticalIntegrable_inv_mul_add_one {c : ℝ} (hc : c ≠ 0) (hc1 : c ≠ -1) :
-    VerticalIntegrable (fun s : ℂ ↦ (s * (s + 1))⁻¹) c := by
-  let d := min |c| |c + 1|
-  have h1 : c + 1 ≠ 0 := by simpa using sub_ne_zero.mpr hc1
-  have hd : 0 < d := lt_min (abs_pos.mpr hc) (abs_pos.mpr h1)
-  have hmajor : Integrable (fun t : ℝ ↦ (d ^ 2 + t ^ 2)⁻¹) := by
-    simpa only [add_comm] using (integrable_inv_sq_add_sq hd.ne')
-  refine hmajor.mono' (by fun_prop) (Filter.Eventually.of_forall fun t ↦ ?_)
-  rw [norm_inv, norm_mul]
-  have hnorm (a : ℝ) (ha : d ≤ |a|) :
-      Real.sqrt (d ^ 2 + t ^ 2) ≤ ‖(a : ℂ) + t * I‖ := by
-    apply (Real.sqrt_le_left (norm_nonneg _)).mpr
-    rw [Complex.sq_norm, Complex.normSq_add_mul_I]
-    nlinarith only [ha, hd.le, sq_abs a]
-  have hshift : (c : ℂ) + t * I + 1 = ((c + 1 : ℝ) : ℂ) + t * I := by
-    push_cast
-    ring
-  apply inv_anti₀ (by positivity)
-  calc
-    d ^ 2 + t ^ 2 = (Real.sqrt (d ^ 2 + t ^ 2)) ^ 2 :=
-      (Real.sq_sqrt (by positivity)).symm
-    _ ≤ ‖(c : ℂ) + t * I‖ * ‖(c : ℂ) + t * I + 1‖ := by
-      rw [sq, hshift]
-      exact mul_le_mul (hnorm c (min_le_left _ _)) (hnorm (c + 1) (min_le_right _ _))
-        (Real.sqrt_nonneg _) (norm_nonneg _)
+/-- The all-order Perron kernel is integrable and its full-line L¹ norm is bounded by the
+mixed square-root majorant determined by its first and last factors.
+
+The positive margins `a` and `b` bound `|c|` and `|c + j|` from below. Every intermediate real
+factor has absolute value at least one, so discarding those factors only increases the bound.
+The real part `c` may be positive or negative. For `j = 1` the intermediate condition is empty,
+and every line away from `0` and `-1` admits such margins. Zero input is included.
+
+Keeping both margins separate preserves unequal majorants; taking their minimum gives a
+scaled Cauchy majorant useful when the vertical line moves outwards. -/
+theorem integrable_and_integral_norm_cpow_div_ascPochhammer_le
+    (j : ℕ) (hj : 1 ≤ j) {x c a b : ℝ} (hx : 0 ≤ x) (ha : 0 < a) (hb : 0 < b)
+    (hac : a ≤ |c|) (hbc : b ≤ |c + j|)
+    (hmid : ∀ k : ℕ, 0 < k → k < j → 1 ≤ |c + k|) :
+    Integrable (fun t : ℝ ↦ (x : ℂ) ^ ((c : ℂ) + t * I) /
+      (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)) ∧
+    (∫ t : ℝ, ‖(x : ℂ) ^ ((c : ℂ) + t * I) /
+      (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)‖) ≤
+      x ^ c * ∫ t : ℝ, 1 /
+        (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) := by
+  have hc : c ≠ 0 := abs_pos.mp (ha.trans_le hac)
+  have hden (t : ℝ) : Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2) ≤
+      ‖(ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)‖ :=
+    (mul_le_mul (Complex.sqrt_sq_add_sq_le_norm_add_mul_I ha.le hac)
+      (Complex.sqrt_sq_add_sq_le_norm_add_mul_I hb.le hbc)
+      (Real.sqrt_nonneg _) (norm_nonneg _)).trans
+        (norm_endpoints_le_norm_ascPochhammer_eval j hj c t hmid)
+  have hne (t : ℝ) : (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I) ≠ 0 := by
+    apply norm_pos_iff.mp
+    exact lt_of_lt_of_le (by positivity) (hden t)
+  rcases hx.eq_or_lt with rfl | hx
+  · have hz (t : ℝ) : (c : ℂ) + t * I ≠ 0 := by
+      intro h
+      exact hc (by simpa using congrArg Complex.re h)
+    simp only [Complex.ofReal_zero, Complex.zero_cpow (hz _), zero_div, norm_zero,
+      integral_zero, Real.zero_rpow hc, zero_mul]
+    exact ⟨integrable_zero ℝ ℂ volume, le_rfl⟩
+  have hmajor := (integrable_one_div_sqrt_mul_sqrt ha hb).const_mul (x ^ c)
+  have hcont : Continuous (fun t : ℝ ↦ (x : ℂ) ^ ((c : ℂ) + t * I) /
+      (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)) :=
+    (Continuous.const_cpow (by fun_prop) (Or.inl (ofReal_ne_zero.mpr hx.ne'))).div
+      ((Polynomial.continuous _).comp (by fun_prop)) hne
+  have hpoint (t : ℝ) : ‖(x : ℂ) ^ ((c : ℂ) + t * I) /
+      (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)‖ ≤
+      x ^ c * (1 / (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) := by
+    rw [norm_div, norm_cpow_eq_rpow_re_of_pos hx]
+    simp only [add_re, ofReal_re, re_ofReal_mul, I_re, mul_zero, add_zero]
+    rw [mul_one_div]
+    exact div_le_div_of_nonneg_left (Real.rpow_nonneg hx.le _) (by positivity) (hden t)
+  have hint := hmajor.mono' hcont.aestronglyMeasurable (Eventually.of_forall hpoint)
+  refine ⟨hint, ?_⟩
+  simpa only [integral_const_mul] using
+    integral_mono hint.norm hmajor hpoint
 
 /-- The inverse Mellin transform of `1 / (s(s+1))` is the continuous first-order cutoff. -/
 theorem mellinInv_inv_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
@@ -247,8 +281,12 @@ theorem mellinInv_inv_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
       ((((c : ℂ) + t * I) * ((c : ℂ) + t * I + 1))⁻¹) :=
     (hasMellin_max_one_sub_zero (by simpa using hc)).2
   have hv : VerticalIntegrable (mellin (fun u : ℝ ↦ ((max (1 - u) 0 : ℝ) : ℂ))) c := by
-    simpa only [VerticalIntegrable, hm] using
-      verticalIntegrable_inv_mul_add_one hc.ne' (by linarith)
+    have hint := integrable_and_integral_norm_cpow_div_ascPochhammer_le 1 (by decide)
+      (x := 1) (by norm_num) hc (by linarith : 0 < c + 1)
+      (le_abs_self c) (by simpa only [Nat.cast_one] using le_abs_self (c + 1))
+      (by intro k hk hk1; omega)
+    simpa [VerticalIntegrable, hm, ascPochhammer_succ_eval, ascPochhammer_zero, one_div]
+      using hint.1
   have h := mellinInv_mellin_eq c (fun u : ℝ ↦ ((max (1 - u) 0 : ℝ) : ℂ)) hx
     (hasMellin_max_one_sub_zero (by simpa using hc)).1 hv (by fun_prop)
   rw [mellinInv] at h ⊢
@@ -258,22 +296,6 @@ private lemma riesz_integrand_eq {x : ℝ} (hx : 0 ≤ x) (s : ℂ) :
     ((x⁻¹ : ℝ) : ℂ) ^ (-s) • (s * (s + 1))⁻¹ = (x : ℂ) ^ s / (s * (s + 1)) := by
   rw [Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg hx, Complex.cpow_neg, inv_inv,
     smul_eq_mul, ← div_eq_mul_inv]
-
-/-- The first-order Perron kernel is absolutely integrable for `x ≥ 0` on every line away from
-`Re s = 0, -1`. At `x = 0` the integrand vanishes. -/
-theorem integrable_cpow_div_mul_add_one {c x : ℝ} (hc : c ≠ 0) (hc1 : c ≠ -1) (hx : 0 ≤ x) :
-    Integrable (fun t : ℝ ↦ (x : ℂ) ^ ((c : ℂ) + t * I) /
-      (((c : ℂ) + t * I) * ((c : ℂ) + t * I + 1))) := by
-  rcases hx.eq_or_lt with rfl | hx
-  · have hz (t : ℝ) : (c : ℂ) + t * I ≠ 0 := by
-      intro h
-      apply hc
-      simpa using congrArg Complex.re h
-    apply (integrable_zero ℝ ℂ volume).congr
-    exact Filter.Eventually.of_forall fun t ↦ by
-      simp only [Pi.zero_apply, Complex.ofReal_zero, Complex.zero_cpow (hz t), zero_div]
-  · simpa only [riesz_integrand_eq hx.le] using
-      (verticalIntegrable_inv_mul_add_one hc hc1).integrable_cpow_smul (inv_pos.mpr hx)
 
 /-- The integral of `x^s / (s(s+1))` on a positive vertical line is the continuous cutoff
 weight times `2π`. In particular, its value at `x = 1` is zero. -/

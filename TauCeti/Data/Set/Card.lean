@@ -45,7 +45,10 @@ the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
 is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
-(`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
+(`Set.finite_and_ncard_le_sum_of_subset_biUnion`). Over a finite index type, the triples
+`(i, a, b)` with `a ∈ A i` and `b ∈ B i` are counted fibrewise by `∑ i, |A i| * |B i|`
+(`Set.ncard_setOf_and_and_mem_and_mem`); this is the count behind the coefficients of a composite
+of two counting matrices.
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -112,6 +115,46 @@ theorem finite_and_ncard_le_sum_of_subset_biUnion {ι α : Type*} {S : Set α} {
   have hfin : (⋃ i ∈ t, C i).Finite := t.finite_toSet.biUnion fun i hi => (hC i hi).1
   exact ⟨hfin.subset hS, (ncard_le_ncard hS hfin).trans <|
     (t.set_ncard_biUnion_le C).trans (Finset.sum_le_sum fun i hi => (hC i hi).2)⟩
+
+/-- Over a finite index type, the triples `(i, a, b)` with `P i`, `Q i`, `a ∈ A i` and `b ∈ B i`
+form a finite set when `A i` is finite whenever `P i` holds and `B i` is finite whenever `Q i`
+holds. -/
+theorem finite_setOf_and_and_mem_and_mem {ι α β : Type*} [Finite ι] {P Q : ι → Prop}
+    {A : ι → Set α} {B : ι → Set β} (hA : ∀ i, P i → (A i).Finite)
+    (hB : ∀ i, Q i → (B i).Finite) :
+    {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite :=
+  ((toFinite {i | P i ∧ Q i}).biUnion fun i hi ↦
+    ((hA i hi.1).prod (hB i hi.2)).image (Prod.mk i)).subset
+    fun x hx ↦ mem_biUnion ⟨hx.1, hx.2.1⟩ ⟨x.2, ⟨hx.2.2.1, hx.2.2.2⟩, rfl⟩
+
+/-- **Counting triples fibrewise.** Over a finite index type, the triples `(i, a, b)` with `P i`,
+`Q i`, `a ∈ A i` and `b ∈ B i`, when finitely many, are counted by summing `|A i| * |B i|` over
+the indices with `P i` and `Q i`. This is the count behind the coefficients of a composite of two
+linear maps given by counting matrices. -/
+theorem ncard_setOf_and_and_mem_and_mem {ι α β : Type*} [Fintype ι] {P Q : ι → Prop}
+    [DecidablePred P] [DecidablePred Q] {A : ι → Set α} {B : ι → Set β}
+    (hfin : {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite) :
+    {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.ncard =
+      ∑ i with P i ∧ Q i, (A i).ncard * (B i).ncard := by
+  classical
+  -- Sort the triples by their index `i`; the fibre over `i` is a copy of `A i ×ˢ B i`.
+  rw [ncard_eq_toFinset_card _ hfin,
+    Finset.card_eq_sum_card_fiberwise fun x _ ↦ Finset.mem_univ x.1, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← ncard_coe_finset, Finset.coe_filter,
+    ← ncard_preimage_of_injective_subset_range (Prod.mk_right_injective i) ?_]
+  swap
+  · rintro ⟨_, z⟩ ⟨-, rfl⟩
+    exact ⟨z, rfl⟩
+  split_ifs with hi
+  · rw [← ncard_prod]
+    congr 1
+    ext
+    simp [hi]
+  · convert ncard_empty (α × β)
+    refine eq_empty_of_forall_notMem fun z hz ↦ hi ?_
+    simp only [mem_preimage, Finite.mem_toFinset, mem_ofPred_eq] at hz
+    exact ⟨hz.1.1, hz.1.2.1⟩
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/
