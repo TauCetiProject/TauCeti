@@ -6,15 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.StandardEtale
+public import Mathlib.RingTheory.Flat.Basic
+
+import Mathlib.RingTheory.Flat.Localization
+import Mathlib.RingTheory.Localization.Algebra
+import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
-# The closed fibre of a standard étale algebra
+# Standard étale algebras and quotients of the base
 
 Let `P` be a standard étale pair over a ring `A` and let `J` be an ideal of `A`. If the defining
 equations of `P` hold modulo `J` at an element `a` of `A`, and the generator of `P.Ring` is
 congruent to `a` modulo the extended ideal, then `P.Ring` has the same closed fibre as `A`: the
 canonical map `A ⧸ J → P.Ring ⧸ J P.Ring` is bijective
 (`StandardEtalePair.algebraMap_quotient_bijective_of_hasMap`).
+
+A standard étale algebra `B` over a quotient `A = S ⧸ I` lifts to a flat `S`-algebra `C` with
+`C ⧸ I C ≅ B` (`Algebra.IsStandardEtale.exists_flat_lift`): if `B = (A[X] ⧸ (f))[1/g]` with `f`
+monic, lift `f` to a monic polynomial `F` and `g` to a polynomial `G` over `S`, and take
+`C = (S[X] ⧸ (F))[1/G]`. The surjection `C → B` has kernel `I C`, and flatness of `C` over `S`
+identifies its conormal module as `I C/(I C)² ≃ B ⊗[A] I/I²`.
 
 ## References
 
@@ -55,3 +66,52 @@ theorem algebraMap_quotient_bijective_of_hasMap (P : StandardEtalePair A) (J : I
     simpa [σbar] using DFunLike.congr_fun hright y
 
 end StandardEtalePair
+
+namespace Algebra.IsStandardEtale
+
+open Polynomial
+
+universe u
+
+/-- A standard étale algebra `B` over a quotient `A` of `S` lifts to a flat `S`-algebra: there is a
+flat `S`-algebra `C` with a surjection `C → B`, compatible with `S → A → B`, whose kernel is the
+extension of the kernel of `S → A`. -/
+theorem exists_flat_lift {S : Type u} {A B : Type*} [CommRing S] [CommRing A] [CommRing B]
+    [Algebra S A] [Algebra A B] (hS : Function.Surjective (algebraMap S A)) [IsStandardEtale A B] :
+    ∃ (C : Type u) (_ : CommRing C) (_ : Algebra S C) (_ : Module.Flat S C) (φ : C →+* B),
+      Function.Surjective φ ∧
+      (∀ s, φ (algebraMap S C s) = algebraMap A B (algebraMap S A s)) ∧
+      RingHom.ker φ = (RingHom.ker (algebraMap S A)).map (algebraMap S C) := by
+  obtain ⟨⟨⟨f, hfm, g, hcond⟩, x, hx, hbij⟩⟩ := nonempty_standardEtalePresentation (R := A) (S := B)
+  let π := algebraMap S A
+  obtain ⟨f, rfl, -, hf⟩ := lifts_and_natDegree_eq_and_monic (mem_lifts_of_surjective hS f) hfm
+  obtain ⟨g, rfl⟩ := Polynomial.map_surjective π hS g
+  let Pe : StandardEtalePresentation A B := ⟨⟨f.map π, hfm, g.map π, hcond⟩, x, hx, hbij⟩
+  let e : B ≃ₐ[A] Localization.Away (AdjoinRoot.mk (f.map π) (g.map π)) :=
+    Pe.equivRing.trans Pe.P.equivAwayAdjoinRoot
+  -- The lift `C = (S[X] ⧸ (f))[1/g]` is flat: `S[X] ⧸ (f)` is free since `f` is monic.
+  let C := Localization.Away (AdjoinRoot.mk f g)
+  have : Module.Free S (AdjoinRoot f) := hf.free_adjoinRoot
+  have : Module.Flat S C := .trans S (AdjoinRoot f) C
+  let ρ := AdjoinRoot.map π f (f.map π) dvd_rfl
+  have hT : (Submonoid.powers (AdjoinRoot.mk f g)).map ρ =
+      Submonoid.powers (AdjoinRoot.mk (f.map π) (g.map π)) := by
+    rw [Submonoid.map_powers, AdjoinRoot.map_mk]
+  have : IsLocalization ((Submonoid.powers (AdjoinRoot.mk f g)).map ρ)
+      (Localization.Away (AdjoinRoot.mk (f.map π) (g.map π))) := by
+    rw [hT]; infer_instance
+  let φ₀ : C →+* Localization.Away (AdjoinRoot.mk (f.map π) (g.map π)) :=
+    IsLocalization.map _ ρ (hT.symm ▸ Submonoid.le_comap_map _)
+  refine ⟨C, inferInstance, inferInstance, inferInstance, e.symm.toRingHom.comp φ₀,
+    e.symm.surjective.comp (IsLocalization.map_surjective_of_surjective _ _ _
+      (AdjoinRoot.map_surjective hS _)), fun s ↦ ?_, ?_⟩
+  · simp only [RingHom.coe_comp, Function.comp_apply,
+      IsScalarTower.algebraMap_apply S (AdjoinRoot f) C, φ₀, IsLocalization.map_eq,
+      AdjoinRoot.algebraMap_eq, ρ, AdjoinRoot.map_of]
+    rw [← AdjoinRoot.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+    exact e.symm.commutes _
+  · rw [RingHom.ker_comp_of_injective _ e.symm.injective, IsLocalization.ker_map _ _ hT,
+      AdjoinRoot.ker_map_of_surjective hS, Ideal.map_map, ← AdjoinRoot.algebraMap_eq,
+      ← IsScalarTower.algebraMap_eq]
+
+end Algebra.IsStandardEtale

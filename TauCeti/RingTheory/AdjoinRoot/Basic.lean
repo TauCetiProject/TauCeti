@@ -29,6 +29,9 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   this only in the specialised form `WeierstrassCurve.Affine.CoordinateRing.map_mk`. Marked
   `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
+* `AdjoinRoot.ker_map_of_surjective`: for surjective `f`, the kernel of
+  `AdjoinRoot p → AdjoinRoot (p.map f)` is the extension of the kernel of `f`, so that
+  `AdjoinRoot (p.map f)` is the reduction of `AdjoinRoot p` modulo `ker f`.
 * `AdjoinRoot.algHomOfDvd_mk`: for `g ∣ f`, the reduction `AdjoinRoot f →ₐ[R] AdjoinRoot g` sends
   the class of `p` to the class of `p`.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
@@ -124,6 +127,34 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
   obtain ⟨t, rfl⟩ := mk_surjective y
   obtain ⟨u, rfl⟩ := Polynomial.map_surjective f hf t
   exact ⟨mk p u, map_mk h u⟩
+
+/-- Along a surjective base homomorphism `f`, the kernel of `AdjoinRoot p → AdjoinRoot (p.map f)`
+is the extension of the kernel of `f`. -/
+lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[X]) :
+    RingHom.ker (map f p (p.map f) dvd_rfl) = (RingHom.ker f).map (of p) := by
+  -- `AdjoinRoot.map` factors through `AdjoinRoot p ⧸ (ker f)` via Mathlib's identification of
+  -- this quotient with `AdjoinRoot` of the reduction of `p` modulo `ker f`.
+  let e := f.quotientKerEquivOfSurjective hf
+  have he : Associated ((p.map (Ideal.Quotient.mk (RingHom.ker f))).map (e : _ →+* S))
+      (p.map f) := by
+    rw [Polynomial.map_map]
+    rfl
+  let ψ₀ : AdjoinRoot p ⧸ (RingHom.ker f).map (of p) →+*
+      AdjoinRoot (p.map (Ideal.Quotient.mk (RingHom.ker f))) :=
+    (quotEquivQuotMap p (RingHom.ker f)).toRingHom
+  have hψ : map f p (p.map f) dvd_rfl =
+      ((mapRingEquiv e _ _ he).toRingHom.comp ψ₀).comp (Ideal.Quotient.mk _) := by
+    refine RingHom.ext fun x ↦ ?_
+    obtain ⟨g, rfl⟩ := mk_surjective x
+    have h₀ : ψ₀ (Ideal.Quotient.mk _ (mk p g)) =
+        mk _ (g.map (Ideal.Quotient.mk (RingHom.ker f))) :=
+      quotEquivQuotMap_apply_mk p g (RingHom.ker f)
+    rw [map_mk, RingHom.comp_apply, RingHom.comp_apply, h₀, RingEquiv.toRingHom_eq_coe,
+      RingEquiv.coe_toRingHom, coe_mapRingEquiv, map_mk, Polynomial.map_map]
+    -- `e` composed with the quotient map is `f`.
+    rfl
+  rw [hψ, RingHom.ker_comp_of_injective _ ((mapRingEquiv e _ _ he).injective.comp
+    (quotEquivQuotMap p (RingHom.ker f)).injective), Ideal.mk_ker]
 
 /-- The reduction map `AdjoinRoot.algHomOfDvd` to the quotient by a divisor `g ∣ f` sends the class
 of `p` modulo `f` to its class modulo `g`. -/

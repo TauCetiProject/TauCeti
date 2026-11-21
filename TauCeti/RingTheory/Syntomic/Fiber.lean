@@ -223,14 +223,8 @@ theorem locally_isStandardSyntomicOfRelativeDimension_of_fiber [Module.Flat R A]
     [Algebra.FinitePresentation R A]
     (h : ∀ (p : Ideal R) [p.IsPrime], RingHom.Locally (IsStandardSyntomicOfRelativeDimension n)
       (algebraMap p.ResidueField (p.Fiber A))) :
-    RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R A) := by
-  rw [RingHom.locally_iff_span_eq_top]
-  by_contra hne
-  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
-  obtain ⟨g, hg, hstd⟩ := exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away h m
-  refine hg (hle (Ideal.subset_span ?_))
-  rw [Set.mem_ofPred_eq, ← IsScalarTower.algebraMap_eq,
-    isStandardSyntomicOfRelativeDimension_algebraMap]
-  exact hstd
+    RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R A) :=
+  locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal fun m _ ↦
+    exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away h m
 
 end TauCeti
