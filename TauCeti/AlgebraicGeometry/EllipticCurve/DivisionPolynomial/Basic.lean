@@ -167,7 +167,7 @@ theorem Ψ₂Sq_of_isCharNeTwoNF [W.IsCharNeTwoNF] :
   ring
 
 /-- `Ψ₂Sq(x) = 4 (x³ + a₂x² + a₄x + a₆)` for a model in characteristic-≠-2 normal form. -/
-theorem eval_Ψ₂Sq_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : R) :
+@[simp] theorem eval_Ψ₂Sq_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : R) :
     W.Ψ₂Sq.eval x = 4 * (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆) := by
   simp [W.Ψ₂Sq_of_isCharNeTwoNF]
 
