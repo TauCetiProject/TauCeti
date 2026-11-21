@@ -183,8 +183,10 @@ theorem apply_fiberAction_of_comp_eq (h₂ : hσ₂.IsLagrangianTorusFibration J
     Ψ (h.fiberAction hσc b α x) = h₂.fiberAction hσ₂c b α y := by
   have := h.apply_fiberAction_comp_mfderiv hσc hσ₂c hΨ hΨσ hΨs (g := id) (by rwa [id_comp]) h₂ b
     α x y hxy
-  -- After `mfderiv_id`, `α` precomposed with the identity of `T_b B` unfolds to `α`.
-  rwa [mfderiv_id] at this
+  -- `T_b B` is a type synonym of `F`, so `comp_id` applies to `α` after `mfderiv_id`.
+  have hid : (α.comp (mfderiv J J id b) : F →L[ℝ] ℝ) = α := by
+    rw [mfderiv_id]; exact α.comp_id
+  rwa [hid] at this
 
 /-- **Fibrewise symplectic maps send periods to periods.** Let `Ψ` be a smooth map with surjective
 differentials, pulling `σ₂` back to `σ`, from one regular Lagrangian torus fibration to another over
@@ -194,8 +196,9 @@ double cover. -/
 theorem periodLattice_le_of_comp_eq (h₂ : hσ₂.IsLagrangianTorusFibration J π₂) (b : B) :
     h.periodLattice hσc b ≤ h₂.periodLattice hσ₂c b := fun α hα ↦
   h.mem_periodLattice_of_comp_mfderiv_mem hσc hσ₂c hΨ hΨσ hΨs (g := id) (by rwa [id_comp]) h₂
-    -- After `mfderiv_id`, `α` precomposed with the identity of `T_b B` unfolds to `α`.
-    (by rwa [mfderiv_id])
+    -- `T_b B` is a type synonym of `F`, so `comp_id` applies to `α` after `mfderiv_id`.
+    (by rwa [show (α.comp (mfderiv J J id b) : F →L[ℝ] ℝ) = α by
+      rw [mfderiv_id]; exact α.comp_id])
 
 /-- **Fibrewise symplectomorphisms preserve the period lattice.** Let `Ψ` be a smooth map with
 surjective differentials, pulling `σ₂` back to `σ`, from one regular Lagrangian torus fibration to
@@ -207,8 +210,10 @@ theorem periodLattice_eq_of_comp_eq (h₂ : hσ₂.IsLagrangianTorusFibration J 
   AddSubgroup.ext fun α ↦ by
     have := h.comp_mfderiv_mem_periodLattice_iff hσc hσ₂c hΨ hΨσ hΨs (g := id)
       (by rwa [id_comp]) h₂ hΨb (α := α)
-    -- After `mfderiv_id`, `α` precomposed with the identity of `T_b B` unfolds to `α`.
-    rw [mfderiv_id] at this
+    -- `T_b B` is a type synonym of `F`, so `comp_id` applies to `α` after `mfderiv_id`.
+    have hid : (α.comp (mfderiv J J id b) : F →L[ℝ] ℝ) = α := by
+      rw [mfderiv_id]; exact α.comp_id
+    rw [hid] at this
     exact this.symm
 
 end SameBase
