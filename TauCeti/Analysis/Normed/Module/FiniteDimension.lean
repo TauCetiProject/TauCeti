@@ -218,8 +218,8 @@ theorem _root_.IsCompact.exists_continuousLinearEquiv_mapsTo_ball {X : Type*}
   have ht0 : 0 < t := by positivity
   set L : X →L[ℝ] Fin (Module.finrank ℝ X) → ℝ := t • (e : X →L[ℝ] _)
   set A : (Fin (Module.finrank ℝ X) → ℝ) →L[ℝ] X := t⁻¹ • (e.symm : _ →L[ℝ] X)
-  refine ⟨.equivOfInverse L A (fun z ↦ by simp [L, A, ht0.ne'])
-    (fun y ↦ by simp [L, A, ht0.ne']), fun z hz ↦ ?_⟩
+  refine ⟨.ofContinuousLinearMap L A (ContinuousLinearMap.ext fun y ↦ by simp [L, A, ht0.ne'])
+    (ContinuousLinearMap.ext fun z ↦ by simp [L, A, ht0.ne']), fun z hz ↦ ?_⟩
   rw [mem_ball_zero_iff]
   calc ‖L z‖ = t * ‖e z‖ := by simp [L, norm_smul, abs_of_pos ht0]
     _ ≤ t * |R| := mul_le_mul_of_nonneg_left ((hR z hz).trans (le_abs_self R)) ht0.le

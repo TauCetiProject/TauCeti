@@ -151,7 +151,7 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
     ext v
     rw [Module.End.pow_restrict, LinearMap.coe_restrict_apply, LinearMap.zero_apply,
       Submodule.coe_zero]
-    exact v.2
+    exact v.property
   have hnil' : (-f).toAddMonoidHom.toRatLinearMap.restrict hV' ^ n = 0 := by
     rw [hneg, neg_pow (R := Module.End ℚ V), hnil, mul_zero]
   have hx : x ∈ V := by rwa [LinearMap.mem_ker, toRatLinearMap_pow_apply]

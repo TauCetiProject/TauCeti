@@ -455,7 +455,8 @@ theorem tangentRepresentation_fundamentalVectorField [LieGroup I 1 G] {x : M}
   -- `mfderiv_smul_fundamentalVectorField` lands in `T_{g • x} M`; both tangent spaces are the
   -- model space `E'`, so the value at `g • x` is transported to `x` along `g • x = x`.
   exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
-    (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
+    (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap
+        (g : G) ξ) y : E')) g.property)
 
 /-- **The exponential flow.** For every `x`, the curve `t ↦ exp(t ξ) • x` is an integral curve of
 the fundamental vector field `ξ_M`. -/

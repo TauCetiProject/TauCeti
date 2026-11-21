@@ -239,12 +239,12 @@ private lemma integral_inner_fluxField_le {J : AlmostComplexStructure E}
   have hmemB : ∀ θ : sphere (0 : E) 1, c + σ • (θ : E) ∈ closedBall c σ := fun θ ↦ by
     rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, hnorm]
   have hcont : Continuous fun θ : sphere (0 : E) 1 ↦ c + σ • (θ : E) :=
-    continuous_const.add (continuous_const.smul continuous_subtype_val)
+    continuous_const.add (continuous_const.smul continuous_subtypeVal)
   have hintV : Integrable (fun θ : sphere (0 : E) 1 ↦
       ⟪fluxField e c F (c + σ • (θ : E)), θ⟫) μ.toSphere :=
     ((ContinuousOn.comp_continuous (fun x hx ↦
       (contDiffAt_fluxField (hF x hx)).continuousAt.continuousWithinAt) hcont hmemB).inner
-        continuous_subtype_val).integrable_of_hasCompactSupport
+        continuous_subtypeVal).integrable_of_hasCompactSupport
           (HasCompactSupport.of_compactSpace _)
   have hintδ : Integrable (fun θ : sphere (0 : E) 1 ↦ δ (c + σ • (θ : E))) μ.toSphere :=
     (hδ.comp_continuous hcont hmemB).integrable_of_hasCompactSupport

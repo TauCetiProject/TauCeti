@@ -121,8 +121,8 @@ theorem countable_image_sentenceTheory_of_isThinOn [Countable ι] [Countable κ]
     {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C)
     (hthin : (isoSetoid L V).IsThinOn C) (θ : ι → L.SentenceInf κ) :
     (sentenceTheory θ '' C).Countable := by
-  let g : C → ι → Bool := fun c => sentenceTheory θ c.1
-  have hg : Measurable g := (measurable_sentenceTheory θ).comp measurable_subtype_coe
+  let g : C → ι → Bool := fun c => sentenceTheory θ c.val
+  have hg : Measurable g := (measurable_sentenceTheory θ).comp measurable_subtypeVal
   let F : Setoid C := (⊥ : Setoid (ι → Bool)).comap g
   have hF_meas : MeasurableSet {p : C × C | F p.1 p.2} :=
     measurableSet_eq_fun (hg.comp measurable_fst) (hg.comp measurable_snd)
@@ -181,23 +181,23 @@ countability on `C` or `L`, is required. -/
 theorem countable_image_sentenceTheory_of_splits_along [Countable ι]
     {C : Set (RelationalConfiguration L V)} {Q : Type*} (classOf : C → Q)
     (htruth : ∀ ⦃c d : C⦄, classOf c = classOf d → ∀ φ : L.Sentenceω,
-      c.1 ∈ modelsOf φ ↔ d.1 ∈ modelsOf φ)
+      c.val ∈ modelsOf φ ↔ d.val ∈ modelsOf φ)
     (hsplit : ∀ φ : L.Sentenceω,
-      (classOf '' {c : C | c.1 ∈ modelsOf φ}).Countable ∨
-        (classOf '' {c : C | c.1 ∉ modelsOf φ}).Countable)
+      (classOf '' {c : C | c.val ∈ modelsOf φ}).Countable ∨
+        (classOf '' {c : C | c.val ∉ modelsOf φ}).Countable)
     (θ : ι → L.Sentenceω) :
     (sentenceTheory θ '' C).Countable := by
   let R := range classOf
-  let rep : R → C := fun q => q.2.choose
-  have hrep (q : R) : classOf (rep q) = q.1 := q.2.choose_spec
-  let P : ι → R → Prop := fun i q => (rep q).1 ∈ modelsOf (θ i)
+  let rep : R → C := fun q => q.property.choose
+  have hrep (q : R) : classOf (rep q) = q.val := q.property.choose_spec
+  let P : ι → R → Prop := fun i q => (rep q).val ∈ modelsOf (θ i)
   have hP_split (i : ι) : {q : R | P i q}.Countable ∨ {q : R | ¬ P i q}.Countable := by
     rcases hsplit (θ i) with hpos | hneg
     · refine .inl ((hpos.preimage Subtype.val_injective).mono fun q hq => ?_)
       exact ⟨rep q, hq, hrep q⟩
     · refine .inr ((hneg.preimage Subtype.val_injective).mono fun q hq => ?_)
       exact ⟨rep q, hq, hrep q⟩
-  let g : R → ι → Bool := fun q => sentenceTheory θ (rep q).1
+  let g : R → ι → Bool := fun q => sentenceTheory θ (rep q).val
   have hg_count : (range g).Countable :=
     countable_range_of_splits g
       (fun _ _ h => sentenceTheory_eq_iff.2 h) hP_split
@@ -214,10 +214,10 @@ is assumed. -/
 theorem isThinOn_of_splits_along [∀ n, Countable (L.Relations n)] [Countable V]
     {C : Set (RelationalConfiguration L V)} {Q : Type*} (classOf : C → Q)
     (htruth : ∀ ⦃c d : C⦄, classOf c = classOf d → ∀ φ : L.Sentenceω,
-      c.1 ∈ modelsOf φ ↔ d.1 ∈ modelsOf φ)
+      c.val ∈ modelsOf φ ↔ d.val ∈ modelsOf φ)
     (hsplit : ∀ φ : L.Sentenceω,
-      (classOf '' {c : C | c.1 ∈ modelsOf φ}).Countable ∨
-        (classOf '' {c : C | c.1 ∉ modelsOf φ}).Countable) :
+      (classOf '' {c : C | c.val ∈ modelsOf φ}).Countable ∨
+        (classOf '' {c : C | c.val ∉ modelsOf φ}).Countable) :
     (isoSetoid L V).IsThinOn C :=
   isThinOn_of_forall_countable_image_sentenceTheory
     (countable_image_sentenceTheory_of_splits_along classOf htruth hsplit)
@@ -228,7 +228,7 @@ countably many points of `Q`, then `C` is thin for isomorphism. -/
 theorem isThinOn_of_holds_splits [∀ n, Countable (L.Relations n)] [Countable V]
     {C : Set (RelationalConfiguration L V)} {Q : Type*}
     (classOf : C → Q) (holds : L.Sentenceω → Q → Prop)
-    (hholds : ∀ (φ : L.Sentenceω) (c : C), c.1 ∈ modelsOf φ ↔ holds φ (classOf c))
+    (hholds : ∀ (φ : L.Sentenceω) (c : C), c.val ∈ modelsOf φ ↔ holds φ (classOf c))
     (hsplit : ∀ φ : L.Sentenceω, {q : Q | holds φ q}.Countable ∨ {q : Q | ¬ holds φ q}.Countable) :
     (isoSetoid L V).IsThinOn C := by
   refine isThinOn_of_splits_along classOf
@@ -250,16 +250,16 @@ theorem isThinOn_of_sentence_splits [∀ n, Countable (L.Relations n)] [Countabl
       (Quotient.mk (isoSetoid L V) '' (C ∩ modelsOf θ)).Countable ∨
         (Quotient.mk (isoSetoid L V) '' (C \ modelsOf θ)).Countable) :
     (isoSetoid L V).IsThinOn C := by
-  let classOf : C → Quotient (isoSetoid L V) := fun c => Quotient.mk (isoSetoid L V) c.1
+  let classOf : C → Quotient (isoSetoid L V) := fun c => Quotient.mk (isoSetoid L V) c.val
   refine isThinOn_of_splits_along classOf
     (fun c d hcd φ => (isomorphismInvariant_modelsOf φ).mem_iff (Quotient.exact hcd)) fun θ => ?_
-  have hpos : classOf '' {c : C | c.1 ∈ modelsOf θ} =
+  have hpos : classOf '' {c : C | c.val ∈ modelsOf θ} =
       Quotient.mk (isoSetoid L V) '' (C ∩ modelsOf θ) := by
     ext q
     simp only [classOf, mem_image, Subtype.exists, mem_ofPred_eq, mem_inter_iff]
     exact ⟨fun ⟨c, hc, hθ, hq⟩ => ⟨c, ⟨hc, hθ⟩, hq⟩,
       fun ⟨c, ⟨hc, hθ⟩, hq⟩ => ⟨c, hc, hθ, hq⟩⟩
-  have hneg : classOf '' {c : C | c.1 ∉ modelsOf θ} =
+  have hneg : classOf '' {c : C | c.val ∉ modelsOf θ} =
       Quotient.mk (isoSetoid L V) '' (C \ modelsOf θ) := by
     ext q
     simp only [classOf, mem_image, Subtype.exists, mem_ofPred_eq, mem_sdiff]
@@ -345,13 +345,13 @@ theorem countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth
   · -- Each individual isomorphism orbit is the Borel model class of its representative's Scott
     -- sentence.
     refine Setoid.isSmooth_of_countable_quotient fun x => ?_
-    have horbit : {d : RelationalConfiguration L V | isoSetoid L V x.1 d} =
-        modelsOf (@scottSentence L _ V x.1.toStructure _ _) := by
+    have horbit : {d : RelationalConfiguration L V | isoSetoid L V x.val d} =
+        modelsOf (@scottSentence L _ V x.val.toStructure _ _) := by
       ext d
       exact isoSetoid_apply.trans
-        ((@realize_scottSentence_iff L _ _ V x.1.toStructure _ V d.toStructure _).symm.trans
+        ((@realize_scottSentence_iff L _ _ V x.val.toStructure _ V d.toStructure _).symm.trans
           mem_modelsOf.symm)
-    exact (horbit ▸ measurableSet_modelsOf _).preimage measurable_subtype_coe
+    exact (horbit ▸ measurableSet_modelsOf _).preimage measurable_subtypeVal
 
 /-- An infinitary sentence `φ` with countable branching has countably many models on `ℕ` up to
 isomorphism if and only if `φ` is thin on `ℕ` and `isoSetoidOn ℕ φ` is smooth. -/

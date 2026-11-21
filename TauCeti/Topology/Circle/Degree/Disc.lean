@@ -66,7 +66,8 @@ theorem degree_toBasedLoop_eq_zero_of_forall_ne_zero {f : ℂ → ℂ} {c : ℂ}
     degree u.toBasedLoop = 0 := by
   -- The circles of radius `s r`, `s ∈ [0, 1]`, contract the boundary circle to the centre.
   have hmem (p : I × Circle) : c + ((p.1 * r : ℝ) : ℂ) * p.2 ∈ Metric.closedBall c r := by
-    simpa [abs_of_nonneg p.1.2.1, abs_of_nonneg hr] using mul_le_of_le_one_left hr p.1.2.2
+    simpa [abs_of_nonneg p.1.property.1, abs_of_nonneg hr] using mul_le_of_le_one_left hr
+        p.1.property.2
   let F : C(I × Circle, ℂ) :=
     ⟨fun p ↦ f (c + ((p.1 * r : ℝ) : ℂ) * p.2), hf.comp_continuous (by fun_prop) hmem⟩
   have hc : f c ≠ 0 := hne c (Metric.mem_closedBall_self hr)

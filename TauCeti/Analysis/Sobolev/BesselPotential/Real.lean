@@ -88,7 +88,7 @@ theorem exists_continuous_ae_eq_of_mem_realSubmodule (hs : finrank ℝ E < 2 * s
   -- everywhere.
   have him : (fun z ↦ (g z).im) = fun _ ↦ (0 : ℝ) := by
     refine (Continuous.ae_eq_iff_eq volume (by fun_prop) continuous_const).1 ?_
-    filter_upwards [(mem_realSubmodule_iff h).1 F.2, hg] with z hz hz'
+    filter_upwards [(mem_realSubmodule_iff h).1 F.property, hg] with z hz hz'
     rw [← hz', hz]
   refine ⟨fun z ↦ (g z).re, by fun_prop, ?_⟩
   filter_upwards [hg] with z hz
