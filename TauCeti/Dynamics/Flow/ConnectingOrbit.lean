@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Dynamics.Flow.Stable
 public import TauCeti.Topology.Path.Extend.Ioo
-public import TauCeti.Analysis.SpecialFunctions.Log.LogSubLogOneSub
+public import TauCeti.Analysis.SpecialFunctions.Sigmoid
 
 /-!
 # Connecting orbits of a real flow
@@ -26,7 +26,7 @@ M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer, 2014, Chapt
 
 A point `y` whose trajectory tends to `p` in backward time and to `q` in forward time traces a path
 from `p` to `q`, `Flow.connectingPath`: the trajectory `t ↦ φ t y`, read along the
-reparametrisation `s ↦ log s - log (1 - s)` of the open unit interval by the real line, and
+logit `s ↦ log (s / (1 - s))`, which reparametrises the open unit interval by the real line, and
 completed by its limits at the two ends. Its homotopy class is what parallel transport in a local
 coefficient system needs, for instance for Morse boundaries with twisted coefficients.
 -/
@@ -75,21 +75,21 @@ variable {α : Type*} [TopologicalSpace α] {φ : _root_.Flow ℝ α} {p q y : �
 
 /-- **The path traced by a connecting trajectory.** If the trajectory of `y` tends to `p` in
 backward time and to `q` in forward time, then it traces a path from `p` to `q`: at `s ∈ (0, 1)` it
-passes through `φ (log s - log (1 - s)) y` (`Flow.connectingPath_apply_of_mem_Ioo`), and its ends
+passes through `φ (log (s / (1 - s))) y` (`Flow.connectingPath_apply_of_mem_Ioo`), and its ends
 are the two limits. -/
 noncomputable def connectingPath (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q) : Path p q :=
   Path.ofContinuousOnIoo zero_lt_one
     ((φ.continuous continuous_id continuous_const).comp_continuousOn
-      Real.continuousOn_log_sub_log_one_sub)
-    ((mem_unstableSet.1 hp).comp Real.tendsto_log_sub_log_one_sub_nhdsGT_zero)
-    ((mem_stableSet.1 hq).comp Real.tendsto_log_sub_log_one_sub_nhdsLT_one)
+      Real.continuousOn_log_div_one_sub)
+    ((mem_unstableSet.1 hp).comp Real.tendsto_log_div_one_sub_nhdsGT_zero)
+    ((mem_stableSet.1 hq).comp Real.tendsto_log_div_one_sub_nhdsLT_one)
 
 /-- On the interior of the unit interval, the path traced by a connecting trajectory is the
-trajectory at time `log s - log (1 - s)`. -/
+trajectory at time `log (s / (1 - s))`. -/
 @[simp]
 theorem connectingPath_apply_of_mem_Ioo (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
     {s : unitInterval} (hs : s ∈ Ioo (0 : unitInterval) 1) :
-    connectingPath hp hq s = φ (Real.log s - Real.log (1 - s)) y := by
+    connectingPath hp hq s = φ (Real.log (s / (1 - s))) y := by
   rw [connectingPath, Path.ofContinuousOnIoo_apply_of_mem_Ioo _ _ _ _ hs]
   simp [AffineMap.lineMap_apply_ring]
 
