@@ -165,6 +165,19 @@ theorem mapCoeffs_mul (u v : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (u * v).mapCoeffs f hf = u.mapCoeffs f hf * v.mapCoeffs f hf :=
   mapCoeffs_comp u v f hf
 
+/-- Coefficientwise extension of endomorphisms on `C₀(J, R)` packaged as a ring homomorphism. -/
+noncomputable def mapCoeffsRingHom (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (C₀(J, R) →L[R] C₀(J, R)) →+* (C₀(J, S) →L[S] C₀(J, S)) :=
+  ⟨⟨⟨(·.mapCoeffs f hf), mapCoeffs_one f hf⟩, fun u v ↦ mapCoeffs_mul u v f hf⟩,
+    mapCoeffs_zero f hf, fun u v ↦ mapCoeffs_add u v f hf⟩
+
+/-- Applying `mapCoeffsRingHom` acts by `ContinuousLinearMap.mapCoeffs`. -/
+@[simp]
+theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (u : C₀(J, R) →L[R] C₀(J, R)) :
+    mapCoeffsRingHom f hf u = u.mapCoeffs f hf := (rfl)
+
 @[simp]
 theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (n : ℕ) :

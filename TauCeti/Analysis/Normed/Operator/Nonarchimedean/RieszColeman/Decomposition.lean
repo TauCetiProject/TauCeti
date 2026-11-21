@@ -18,7 +18,7 @@ import TauCeti.RingTheory.PowerSeries.Entire.Division
 /-!
 # The Riesz–Coleman decomposition on model spaces
 
-Let `R` be a complete ultrametric normed commutative ring with `‖1‖ = 1` and Tate scalars, let
+Let `R` be a complete ultrametric normed commutative ring with Tate scalars, let
 `u : C₀(I, R) →L[R] C₀(I, R)` be a row-compact operator, and suppose its Fredholm series
 `H_u = det (1 - T u)` admits a factorisation
 
@@ -51,10 +51,10 @@ therefore cuts out a finite projective `u`-stable summand `range E` of constant 
 Comparing `H_u = Q₁ * S₁` with the multiplicative splitting `H_u = H_(uE) * H_(u(1-E))`, where
 `H_(uE)` is the reversed characteristic polynomial `P = det (1 - X (u|_{range E}))` of degree at
 most `deg Q₁` and `Q₁*(u * (1 - E))` is invertible on `C₀(I, R)`, coprimality of `Q₁` and
-`H_(u(1-E))` forces `Q₁ ∣ P` in entire series; monic division by `c Q₁` (using `Q₁(0) = 1`) and
-degree comparison yield `P = Q₁` and `H_(u(1-E)) = S₁`. Finally, constant-rank Cayley–Hamilton
-on the finite projective module `range E` upgrades nilpotence of `Q₁*(u)` on `range E` to the
-exact annihilation `Q₁*(u) * E = 0`, establishing
+`H_(u(1-E))` forces `Q₁ ∣ P` in entire series; monic division by `lc(Q₁)⁻¹ Q₁` (using `Q₁(0) = 1`)
+and degree comparison yield `P = Q₁` and `H_(u(1-E)) = S₁`. Constant-rank Cayley–Hamilton on the
+finite projective module `range E` then yields exact annihilation `Q₁*(u) * E = 0` directly from
+`P = Q₁` and the rank bound `rankAtStalk E.range p ≤ deg Q₁`, establishing
 `IsRieszColemanProjection u Q (u.rieszColemanProjection Q)` (and directly identifying `H_(uE) = Q`,
 `H_(u(1-E)) = S` when `Q(0) = 1`).
 
@@ -214,24 +214,73 @@ private theorem isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection
       smul_one_mul, smul_add, smul_mul_assoc, smul_smul, hcq, one_smul, add_comm]
   exact heq ▸ hulc.mul hunit
 
-/-- Algebraic properties of `E = u.rieszColemanProjection Q` inherited directly from its definition
-as a Riesz projection of `B(u)`, prior to sharpening nilpotence of `Q*(u)` on `range E` to `0`. -/
+/-- Core determinant and Cayley–Hamilton step: for `E = u.rieszColemanProjection Q`, the Fredholm
+factors satisfy `H_(uE) = Q` and `H_(u(1-E)) = S`, and `Q*(u) * E = 0`. -/
+private theorem charPowerSeries_and_aeval_reverse_rieszColemanProjection
+    {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {Q : R[X]} {S : R⟦X⟧}
+    (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
+    (hQS : u.matrixCoeff.charPowerSeries = (Q : R⟦X⟧) * S)
+    (hE_idem : IsIdempotentElem (u.rieszColemanProjection Q))
+    (hEu : Commute u (u.rieszColemanProjection Q))
+    (hunit_compl : IsUnit (Polynomial.aeval (u * (1 - u.rieszColemanProjection Q)) Q.reverse))
+    (hE_rc : (u.rieszColemanProjection Q).IsRowCompact)
+    (hrank : ∀ p : PrimeSpectrum R,
+      Module.rankAtStalk (R := R) (u.rieszColemanProjection Q).range p = Q.natDegree) :
+    let E := u.rieszColemanProjection Q
+    (u * E).matrixCoeff.charPowerSeries = (Q : R⟦X⟧) ∧
+      (u * (1 - E)).matrixCoeff.charPowerSeries = S ∧
+      Polynomial.aeval u Q.reverse * E = 0 := by
+  set E := u.rieszColemanProjection Q
+  let : AddCommGroup E.range := inferInstance
+  have := hE_rc.finite_range_of_isIdempotentElem hE_idem
+  have := hE_rc.projective_range_of_isIdempotentElem hE_idem
+  have hu_maps : ∀ x ∈ E.range, u x ∈ E.range := by
+    rintro _ ⟨y, rfl⟩
+    exact ⟨u y, congr($(hEu.eq.symm) y)⟩
+  let f : Module.End R E.range := (u.restrict hu_maps).toLinearMap
+  have hcharE : (u * E).matrixCoeff.charPowerSeries = (f.projectiveCharpolyRev : R⟦X⟧) :=
+    hE_rc.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev hE_idem hu_maps
+  set P := f.projectiveCharpolyRev
+  set S' := (u * (1 - E)).matrixCoeff.charPowerSeries
+  have hS' : S'.IsEntire := (hu.comp_clm (1 - E)).isEntire_charPowerSeries
+  have hsplit : (Q : R⟦X⟧) * S = (P : R⟦X⟧) * S' := by
+    rw [← hQS, hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE_idem hEu, hcharE]
+  have hcop' := ((hu.comp_clm (1 - E)).isUnit_aeval_reverse_iff hQ).mp hunit_compl
+  have hdvd : (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R) ∣
+      ⟨P, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P)⟩ :=
+    hcop'.dvd_of_dvd_mul_right ⟨⟨S, IsEntire.mem_subring.mpr hS⟩, Subtype.ext hsplit.symm⟩
+  have hPQ : P = Q := TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le hQ hdvd
+    (LinearMap.natDegree_projectiveCharpolyRev_le (fun p ↦ (hrank p).le) f)
+    (hQ0 ▸ isRegular_one.left) (f.coeff_projectiveCharpolyRev_zero.trans hQ0.symm)
+  refine ⟨hPQ ▸ hcharE,
+    TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire hQ hS' hS (hPQ ▸ hsplit.symm), ?_⟩
+  have hfQ : Polynomial.aeval f Q.reverse = 0 := by
+    rw [← hPQ]
+    exact LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le
+      (f := f) (fun p ↦ by simpa [P, hPQ] using (hrank p).le)
+  have hcomp : u.toLinearMap.comp E.range.subtype = E.range.subtype.comp f := by
+    ext x
+    simp [f]
+  have haeval := Module.End.aeval_comp_of_comp_eq hcomp Q.reverse
+  rw [hfQ, LinearMap.comp_zero] at haeval
+  ext x : 1
+  have hx := LinearMap.congr_fun haeval ⟨E x, ⟨x, rfl⟩⟩
+  simpa only [LinearMap.comp_apply, Submodule.coe_subtype, ← toLinearMap_aeval, coe_coe,
+    mul_apply_eq_comp, LinearMap.zero_apply, zero_apply] using hx
+
+/-- Normalised-case construction of `E = u.rieszColemanProjection Q`: returns the Riesz–Coleman
+projection certificate, constant stalk rank, and both Fredholm factor identities when `Q(0) = 1`.
+-/
 private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     {Q : R[X]} {S : R⟦X⟧} (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u.matrixCoeff.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     let E := u.rieszColemanProjection Q
-    let B := 1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse
-    IsRieszProjection (Polynomial.aeval u B) 1 Q.natDegree E ∧
-      Commute u E ∧
-      E ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) ∧
-      (∃ w : C₀(I, R) →L[R] C₀(I, R), Polynomial.aeval u Q.reverse * w = 1 - E ∧
-        w * Polynomial.aeval u Q.reverse = 1 - E ∧ E * w = 0 ∧ w * E = 0 ∧
-        w ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R)))) ∧
-      IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) ∧
-      E.IsRowCompact ∧
-      (∀ p : PrimeSpectrum R, Module.rankAtStalk (R := R) E.range p = Q.natDegree) := by
+    IsRieszColemanProjection u Q E ∧
+      (∀ p : PrimeSpectrum R, Module.rankAtStalk (R := R) E.range p = Q.natDegree) ∧
+      (u * E).matrixCoeff.charPowerSeries = (Q : R⟦X⟧) ∧
+      (u * (1 - E)).matrixCoeff.charPowerSeries = S := by
   set c := Ring.inverse Q.leadingCoeff
   have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
   set B : R[X] := 1 - Polynomial.C c * Q.reverse
@@ -263,70 +312,22 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
     refine T.smul_mem ?_ c
     rw [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
     exact hsub hEv.inverse_mem_closure_adjoin
-  refine ⟨hEv, hEu, hsub hEv.mem_closure_adjoin, ⟨c • hEv.inverse, ?_, ?_, ?_, ?_, hwT⟩,
-    isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu,
-    hEv.isRowCompact hv, hEv.rankAtStalk_range hv hv_good⟩
-  · rw [mul_smul_comm, ← smul_mul_assoc, ← h1v, hEv.one_sub_smul_mul_inverse]
-  · rw [smul_mul_assoc, ← mul_smul_comm, ← h1v, hEv.inverse_mul_one_sub_smul]
-  · rw [mul_smul_comm, hEv.mul_inverse_eq_zero]; ext x : 1; simp
-  · rw [smul_mul_assoc, hEv.inverse_mul_eq_zero]; ext x : 1; simp
-
-/-- Core determinant and Cayley–Hamilton step: for `E = u.rieszColemanProjection Q`, the Fredholm
-factors satisfy `H_(uE) = Q` and `H_(u(1-E)) = S`, and `Q*(u) * E = 0`. -/
-private theorem charPowerSeries_and_aeval_reverse_rieszColemanProjection
-    {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {Q : R[X]} {S : R⟦X⟧}
-    (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
-    (hQS : u.matrixCoeff.charPowerSeries = (Q : R⟦X⟧) * S)
-    (hEv : IsRieszProjection
-      (Polynomial.aeval u (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse))
-      1 Q.natDegree (u.rieszColemanProjection Q))
-    (hEu : Commute u (u.rieszColemanProjection Q))
-    (hunit_compl : IsUnit (Polynomial.aeval (u * (1 - u.rieszColemanProjection Q)) Q.reverse))
-    (hE_rc : (u.rieszColemanProjection Q).IsRowCompact)
-    (hrank : ∀ p : PrimeSpectrum R,
-      Module.rankAtStalk (R := R) (u.rieszColemanProjection Q).range p = Q.natDegree) :
-    let E := u.rieszColemanProjection Q
-    (u * E).matrixCoeff.charPowerSeries = (Q : R⟦X⟧) ∧
-      (u * (1 - E)).matrixCoeff.charPowerSeries = S ∧
-      Polynomial.aeval u Q.reverse * E = 0 := by
-  set E := u.rieszColemanProjection Q
-  let : AddCommGroup E.range := inferInstance
-  have := hE_rc.finite_range_of_isIdempotentElem hEv.isIdempotentElem
-  have := hE_rc.projective_range_of_isIdempotentElem hEv.isIdempotentElem
-  have hu_maps : ∀ x ∈ E.range, u x ∈ E.range := by
-    rintro _ ⟨y, rfl⟩
-    exact ⟨u y, congr($(hEu.eq.symm) y)⟩
-  let f : Module.End R E.range := (u.restrict hu_maps).toLinearMap
-  have hcharE : (u * E).matrixCoeff.charPowerSeries = (f.projectiveCharpolyRev : R⟦X⟧) :=
-    hE_rc.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
-      hEv.isIdempotentElem hu_maps
-  set P := f.projectiveCharpolyRev
-  set S' := (u * (1 - E)).matrixCoeff.charPowerSeries
-  have hS' : S'.IsEntire := (hu.comp_clm (1 - E)).isEntire_charPowerSeries
-  have hsplit : (Q : R⟦X⟧) * S = (P : R⟦X⟧) * S' := by
-    rw [← hQS, hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hEv.isIdempotentElem hEu, hcharE]
-  have hcop' := ((hu.comp_clm (1 - E)).isUnit_aeval_reverse_iff hQ).mp hunit_compl
-  have hdvd : (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P)⟩ :=
-    hcop'.dvd_of_dvd_mul_right ⟨⟨S, IsEntire.mem_subring.mpr hS⟩, Subtype.ext hsplit.symm⟩
-  have hPQ : P = Q := TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le hQ hdvd
-    (LinearMap.natDegree_projectiveCharpolyRev_le (fun p ↦ (hrank p).le) f)
-    (hQ0 ▸ isRegular_one.left) (f.coeff_projectiveCharpolyRev_zero.trans hQ0.symm)
-  refine ⟨hPQ ▸ hcharE,
-    TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire hQ hS' hS (hPQ ▸ hsplit.symm), ?_⟩
-  have hfQ : Polynomial.aeval f Q.reverse = 0 := by
-    rw [← hPQ]
-    exact LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le
-      (f := f) (fun p ↦ by simpa [P, hPQ] using (hrank p).le)
-  have hcomp : u.toLinearMap.comp E.range.subtype = E.range.subtype.comp f := by
-    ext x
-    simp [f]
-  have haeval := Module.End.aeval_comp_of_comp_eq hcomp Q.reverse
-  rw [hfQ, LinearMap.comp_zero] at haeval
-  ext x : 1
-  have hx := LinearMap.congr_fun haeval ⟨E x, ⟨x, rfl⟩⟩
-  simpa only [LinearMap.comp_apply, Submodule.coe_subtype, ← toLinearMap_aeval, coe_coe,
-    mul_apply_eq_comp, LinearMap.zero_apply, zero_apply] using hx
+  have hex : ∃ w : C₀(I, R) →L[R] C₀(I, R), Polynomial.aeval u Q.reverse * w = 1 - E ∧
+      w * Polynomial.aeval u Q.reverse = 1 - E ∧ E * w = 0 ∧ w * E = 0 ∧
+      w ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+    refine ⟨c • hEv.inverse, ?_, ?_, ?_, ?_, hwT⟩
+    · rw [mul_smul_comm, ← smul_mul_assoc, ← h1v, hEv.one_sub_smul_mul_inverse]
+    · rw [smul_mul_assoc, ← mul_smul_comm, ← h1v, hEv.inverse_mul_one_sub_smul]
+    · rw [mul_smul_comm, hEv.mul_inverse_eq_zero]; ext x : 1; simp
+    · rw [smul_mul_assoc, hEv.inverse_mul_eq_zero]; ext x : 1; simp
+  have hunit_compl := isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu
+  have hE_rc := hEv.isRowCompact hv
+  have hrank := hEv.rankAtStalk_range hv hv_good
+  obtain ⟨hcharE, hcharCompl, hzero⟩ :=
+    charPowerSeries_and_aeval_reverse_rieszColemanProjection hu hQ0 hQ hS hQS
+      hEv.isIdempotentElem hEu hunit_compl hE_rc hrank
+  exact ⟨⟨hEv.isIdempotentElem, hEu, hsub hEv.mem_closure_adjoin, hzero, hex⟩,
+    hrank, hcharE, hcharCompl⟩
 
 /-- **The Riesz–Coleman projector at a coprime polynomial factor.** Let `u` be row compact on
 `C₀(I, R)`, and suppose `H_u = Q * S` where `Q.leadingCoeff` is a unit, `S` is entire, and `Q`,
@@ -343,14 +344,7 @@ theorem IsRowCompact.isRieszColemanProjection_rieszColemanProjection
   obtain ⟨b, Q₁, S₁, hS₁, -, hb, rfl, -, hQ₁0, hQ₁lc, -, hQS₁, hcop₁⟩ :=
     IsEntire.exists_normalised_factorisation (Matrix.constantCoeff_charPowerSeries _)
       hQ hS hQS hcop
-  obtain ⟨hEv, hEu, hEmem, hex, hunit_compl, hE_rc, hrank⟩ :=
-    rieszColemanProjection_aux hu hQ₁0 hQ₁lc hS₁ hQS₁ hcop₁
-  obtain ⟨-, -, hzero⟩ :=
-    charPowerSeries_and_aeval_reverse_rieszColemanProjection hu hQ₁0 hQ₁lc hS₁ hQS₁
-      hEv hEu hunit_compl hE_rc hrank
-  have hE₁ : IsRieszColemanProjection u (Polynomial.C b * Q)
-      (u.rieszColemanProjection (Polynomial.C b * Q)) :=
-    ⟨hEv.isIdempotentElem, hEu, hEmem, hzero, hex⟩
+  obtain ⟨hE₁, -, -, -⟩ := rieszColemanProjection_aux hu hQ₁0 hQ₁lc hS₁ hQS₁ hcop₁
   simpa [hb] using hE₁
 
 /-- **Existence of the Riesz–Coleman projection on model spaces.** Let `u` be row compact on
@@ -395,8 +389,7 @@ theorem rankAtStalk_range {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]} {S : 
       hQ hS hQS hcop
   rw [hE.eq_rieszColemanProjection hu hQ hS hQS hcop, ← rieszColemanProjection_C_mul u hb, ← hQ₁,
     ← hQ₁deg]
-  obtain ⟨-, -, -, -, -, -, hrank⟩ := rieszColemanProjection_aux hu hQ₁0 hQ₁lc hS₁ hQS₁ hcop₁
-  exact hrank p
+  exact (rieszColemanProjection_aux hu hQ₁0 hQ₁lc hS₁ hQS₁ hcop₁).2.1 p
 
 /-- **Fredholm factor on the finite Riesz–Coleman summand.** For a row-compact operator `u` with a
 coprime factorisation `H_u = Q * S`, where `Q(0) = 1`, `IsUnit Q.leadingCoeff`, and `S` is entire,
@@ -409,10 +402,7 @@ theorem charPowerSeries_matrixCoeff_mul {u E : C₀(I, R) →L[R] C₀(I, R)} {Q
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     (u * E).matrixCoeff.charPowerSeries = (Q : R⟦X⟧) := by
   rw [hE.eq_rieszColemanProjection hu hQ hS hQS hcop]
-  obtain ⟨hEv, hEu, -, -, hunit_compl, hE_rc, hrank⟩ :=
-    rieszColemanProjection_aux hu hQ0 hQ hS hQS hcop
-  exact (charPowerSeries_and_aeval_reverse_rieszColemanProjection hu hQ0 hQ hS hQS
-    hEv hEu hunit_compl hE_rc hrank).1
+  exact (rieszColemanProjection_aux hu hQ0 hQ hS hQS hcop).2.2.1
 
 /-- **Fredholm factor on the complementary Riesz–Coleman summand.** For a row-compact operator `u`
 with a coprime factorisation `H_u = Q * S`, where `Q(0) = 1`, `IsUnit Q.leadingCoeff`, and `S` is
@@ -425,10 +415,7 @@ theorem charPowerSeries_matrixCoeff_mul_one_sub {u E : C₀(I, R) →L[R] C₀(I
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     (u * (1 - E)).matrixCoeff.charPowerSeries = S := by
   rw [hE.eq_rieszColemanProjection hu hQ hS hQS hcop]
-  obtain ⟨hEv, hEu, -, -, hunit_compl, hE_rc, hrank⟩ :=
-    rieszColemanProjection_aux hu hQ0 hQ hS hQS hcop
-  exact (charPowerSeries_and_aeval_reverse_rieszColemanProjection hu hQ0 hQ hS hQS
-    hEv hEu hunit_compl hE_rc hrank).2.1
+  exact (rieszColemanProjection_aux hu hQ0 hQ hS hQS hcop).2.2.2
 
 /-- **Characteristic polynomial of `u` on the finite Riesz–Coleman summand.** For a row-compact
 operator `u` with a coprime factorisation `H_u = Q * S`, where `Q(0) = 1`, `IsUnit Q.leadingCoeff`,

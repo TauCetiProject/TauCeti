@@ -263,6 +263,17 @@ theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
+/-- Rescaling `Q` by a unit scalar `c` scales the complementary inverse by `Ring.inverse c`. -/
+theorem inverse_of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    (hE.of_C_mul hc).inverse = Ring.inverse c • hE.inverse := by
+  refine ((hE.of_C_mul hc).eq_inverse ?_ ?_).symm
+  · have haeval : Polynomial.aeval u (Polynomial.C c * Q).reverse =
+        c • Polynomial.aeval u Q.reverse := by
+      rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
+    rw [haeval, smul_mul_smul_comm, mul_comm c, Ring.inverse_mul_cancel _ hc, one_smul,
+      hE.aeval_reverse_mul_inverse]
+  · rw [mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
+
 /-- The complementary inverse preserves `ker E`. -/
 theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :
     Set.MapsTo hE.inverse E.ker E.ker := by

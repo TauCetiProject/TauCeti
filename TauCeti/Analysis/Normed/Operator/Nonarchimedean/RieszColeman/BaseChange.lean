@@ -14,8 +14,9 @@ import TauCeti.RingTheory.PowerSeries.Dvd
 # Base change of Riesz–Coleman projections
 
 This file records the behaviour of Riesz–Coleman projections, complementary inverses, explicit
-Riesz–Coleman projectors, and spectral-summand ranks and dimensions under completed-tensor base
-change on `(Pr)` modules and bounded coefficient-ring homomorphisms on model spaces `C₀(I, R)`.
+Riesz–Coleman projectors, and spectral-summand ranks and dimensions under bounded completed-tensor
+base change on `(Pr)` modules and bounded coefficient-ring homomorphisms on model spaces
+`C₀(I, R)`.
 
 ## Main results
 
@@ -24,7 +25,7 @@ change on `(Pr)` modules and bounded coefficient-ring homomorphisms on model spa
   `ContinuousLinearMap.IsRieszColemanProjection.rankAtStalk_range_completedBaseChange`, and
   `ContinuousLinearMap.IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange`: transport of
   Riesz–Coleman projections, complementary inverses, stalk ranks, and field kernel dimensions along
-  completed-tensor base change on `(Pr)` modules.
+  completed-tensor base change on `(Pr)` modules for bounded scalar extensions.
 * `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`,
   `ContinuousLinearMap.IsRieszColemanProjection.inverse_mapCoeffs`, and
   `ContinuousLinearMap.IsRowCompact.rieszColemanProjection_mapCoeffs`: compatibility of
@@ -114,10 +115,10 @@ private theorem isRieszColemanProjection_completedBaseChange_aux (hM : HasPr R M
   exact ⟨hE', hinv⟩
 
 include hS in
-/-- **Riesz–Coleman projections under completed-tensor base change.** On a `(Pr)` module `M` over
-`R`, when `Q.leadingCoeff` is a unit, `completedBaseChange` transports a Riesz–Coleman projection of
-`u` for `Q` to one of `u.completedBaseChange α α` for `Q.map (algebraMap R S)` (no compactness
-needed). -/
+/-- **Riesz–Coleman projections under bounded completed-tensor base change.** On a `(Pr)` module
+`M` over `R`, for a bounded scalar extension `S` satisfying `‖r • s‖ ≤ C * ‖r‖ * ‖s‖` and
+`IsUnit Q.leadingCoeff`, `completedBaseChange` transports a Riesz–Coleman projection of `u` for `Q`
+to one of `u.completedBaseChange α α` for `Q.map (algebraMap R S)` (no compactness needed). -/
 theorem IsRieszColemanProjection.completedBaseChange (hM : HasPr R M) (α : S ⊗̂[R] M ≃L[S] N)
     {u E : M →L[R] M} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) :
@@ -127,7 +128,8 @@ theorem IsRieszColemanProjection.completedBaseChange (hM : HasPr R M) (α : S �
 
 include hS in
 /-- The complementary inverse of a Riesz–Coleman projection on a `(Pr)` module commutes with
-completed-tensor base change when `Q.leadingCoeff` is a unit. -/
+completed-tensor base change for a bounded scalar extension `S` satisfying
+`‖r • s‖ ≤ C * ‖r‖ * ‖s‖` when `Q.leadingCoeff` is a unit. -/
 theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
     (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
@@ -135,11 +137,12 @@ theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
   (isRieszColemanProjection_completedBaseChange_aux hS hM α hE hQ).2
 
 include hS in
-/-- **Constant stalk rank after completed-tensor base change.** For a `(Pr)`-compact operator `u`
-on a module `M` over a complete ultrametric Tate ring `R` with a Riesz–Coleman projection `E` for
-a coprime factorisation `H_u = Q * S'`, where `IsUnit Q.leadingCoeff` and `S'` is entire, the
-base-changed summand `(E.completedBaseChange α α).range` has constant stalk rank `Q.natDegree`
-at every prime ideal of `S`. -/
+/-- **Constant stalk rank after bounded completed-tensor base change.** For a `(Pr)`-compact
+operator `u` on a module `M` over a complete ultrametric Tate ring `R` with a Riesz–Coleman
+projection `E` for a coprime factorisation `H_u = Q * S'`, where `IsUnit Q.leadingCoeff` and `S'`
+is entire, completed-tensor base change along a bounded scalar extension `S` satisfying
+`‖r • s‖ ≤ C * ‖r‖ * ‖s‖` yields a summand `(E.completedBaseChange α α).range` of constant stalk
+rank `Q.natDegree` at every prime ideal of `S`. -/
 theorem IsRieszColemanProjection.rankAtStalk_range_completedBaseChange
     [IsUltrametricDist R] [CompleteSpace R] (α : S ⊗̂[R] M ≃L[S] N)
     {u E : M →L[R] M} {Q : R[X]} {S' : R⟦X⟧}
@@ -168,19 +171,6 @@ variable {I R S : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq 
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
   [TauCeti.NormedRing.IsTate S]
 
-/-- Coefficientwise extension of endomorphisms on `C₀(I, R)` packaged as a ring homomorphism. -/
-private noncomputable def mapCoeffsRingHom (f : R →+* S)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (C₀(I, R) →L[R] C₀(I, R)) →+* (C₀(I, S) →L[S] C₀(I, S)) :=
-  ⟨⟨⟨(·.mapCoeffs f hf), mapCoeffs_one f hf⟩, fun u v ↦ mapCoeffs_mul u v f hf⟩,
-    mapCoeffs_zero f hf, fun u v ↦ mapCoeffs_add u v f hf⟩
-
-omit [TauCeti.NormedRing.IsTate S] in
-@[simp]
-private theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
-    (u : C₀(I, R) →L[R] C₀(I, R)) :
-    mapCoeffsRingHom f hf u = u.mapCoeffs f hf := rfl
-
 private theorem isRieszColemanProjection_mapCoeffs_aux
     {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
@@ -191,7 +181,8 @@ private theorem isRieszColemanProjection_mapCoeffs_aux
     (by
       simp only [mapCoeffsRingHom_apply]
       rw [reverse_map_of_isUnit_leadingCoeff hQ f, aeval_mapCoeffs])
-    (fun hv ↦ mapCoeffs_mem_closure_adjoin f hf hv)
+    (fun hv ↦ by
+      simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
   simp only [mapCoeffsRingHom_apply] at hE' hinv
   exact ⟨hE', hinv⟩
 
