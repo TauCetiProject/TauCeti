@@ -513,7 +513,8 @@ theorem cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton_su
   refine cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton (S := univ)
     (fun d _ ↦ ?_)
     (by rw [preimage_univ, cubicalChainModuleSupportedIn_univ]; exact Submodule.mem_top)
-  rw [show (((m : ℤ) + 1 + 1).toNat : ℕ∞) = ((m + 1 + 1 : ℕ) : ℕ∞) by congr 1, sigmaCellMap_apply]
+  rw [show (((m : ℤ) + 1 + 1).toNat : ℕ∞) = ((m + 1 + 1 : ℕ) : ℕ∞) by norm_cast,
+    sigmaCellMap_apply]
   exact map_mem_skeletonLT_succ d.1 (mem_closedBall_zero_iff.1 d.2.property)
 
 /-- **Chains over the boundary spheres of the `(m + 1)`-cells lie over the `m`-skeleton**: their
@@ -527,7 +528,7 @@ theorem cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton_of
       pathFromChainSkeleton b C H R m := by
   refine cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton
     (fun d hd ↦ ?_) hx
-  rw [show (((m : ℤ) + 1).toNat : ℕ∞) = ((m + 1 : ℕ) : ℕ∞) by congr 1, sigmaCellMap_apply]
+  rw [show (((m : ℤ) + 1).toNat : ℕ∞) = ((m + 1 : ℕ) : ℕ∞) by norm_cast, sigmaCellMap_apply]
   exact cellFrontier_subset_skeletonLT (m + 1) d.1 ⟨d.2, mem_sphere_zero_iff_norm.2 hd, rfl⟩
 
 /-- The boundary of the image of the section chain of a cell in `C_*(P_b B; R)` lies over the
