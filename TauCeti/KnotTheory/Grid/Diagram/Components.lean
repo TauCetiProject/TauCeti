@@ -25,7 +25,9 @@ grid-diagram disjointness condition makes the component permutation fixed-point-
 Mathlib's cycle decomposition accounts for every marking, and the component count is also the
 number of orbits `TauCeti.orbitCount` of the component permutation. The quotient
 `GridDiagram.Components` indexes these components, and `componentOfColumn` identifies exactly
-the columns on the same component.
+the columns on the same component. A component has its columns `componentColumns` and its `X`-
+and `O`-marked squares `componentXSet` and `componentOSet`; the two markings of a row lie on the
+same component (`componentOfColumn_X_transpose`).
 
 On a knot grid the component permutation is a single cycle through all columns, so it leads from
 any base column to any other column; the least number of steps is the traversal index
@@ -46,6 +48,8 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.componentCount`: the number of represented link components.
 * `TauCeti.GridDiagram.Components`: the component index type, given by permutation orbits.
 * `TauCeti.GridDiagram.componentOfColumn`: the component containing a column.
+* `TauCeti.GridDiagram.componentColumns`, `TauCeti.GridDiagram.componentXSet`,
+  `TauCeti.GridDiagram.componentOSet`: the columns and the marked squares of one component.
 * `TauCeti.GridDiagram.componentsRelabelRowsEquiv`,
   `TauCeti.GridDiagram.componentsRelabelColumnsEquiv`: component equivalences under relabeling.
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
@@ -209,6 +213,69 @@ theorem natCard_components : Nat.card G.Components = G.componentCount := by
 @[simp]
 theorem card_components : Fintype.card G.Components = G.componentCount := by
   rw [← Nat.card_eq_fintype_card, natCard_components]
+
+/-- The columns whose markings lie on the link component `q`. -/
+def componentColumns (q : G.Components) : Finset (Fin n) :=
+  Finset.univ.filter fun c => G.componentOfColumn c = q
+
+/-- The columns of a component as the fibre of `componentOfColumn`. -/
+theorem componentColumns_def (q : G.Components) :
+    G.componentColumns q = Finset.univ.filter fun c => G.componentOfColumn c = q :=
+  (rfl)
+
+/-- A column lies on a component exactly when its component is that component. -/
+@[simp]
+theorem mem_componentColumns {q : G.Components} {c : Fin n} :
+    c ∈ G.componentColumns q ↔ G.componentOfColumn c = q := by
+  simp [componentColumns]
+
+/-- The `X`-marked squares on the link component `q`. -/
+def componentXSet (q : G.Components) : Finset (Fin n × Fin n) :=
+  G.XSet.filter fun p => G.componentOfColumn p.1 = q
+
+/-- The `X`-markings of a component as a filter of the `X`-markings. -/
+theorem componentXSet_def (q : G.Components) :
+    G.componentXSet q = G.XSet.filter fun p => G.componentOfColumn p.1 = q :=
+  (rfl)
+
+/-- A square is an `X`-marking of a component exactly when it is an `X`-marking whose column lies
+on that component. -/
+@[simp]
+theorem mem_componentXSet {q : G.Components} {p : Fin n × Fin n} :
+    p ∈ G.componentXSet q ↔ G.X p.1 = p.2 ∧ G.componentOfColumn p.1 = q := by
+  simp [componentXSet]
+
+/-- The `O`-marked squares on the link component `q`. -/
+def componentOSet (q : G.Components) : Finset (Fin n × Fin n) :=
+  G.OSet.filter fun p => G.componentOfColumn p.1 = q
+
+/-- The `O`-markings of a component as a filter of the `O`-markings. -/
+theorem componentOSet_def (q : G.Components) :
+    G.componentOSet q = G.OSet.filter fun p => G.componentOfColumn p.1 = q :=
+  (rfl)
+
+/-- A square is an `O`-marking of a component exactly when it is an `O`-marking whose column lies
+on that component. -/
+@[simp]
+theorem mem_componentOSet {q : G.Components} {p : Fin n × Fin n} :
+    p ∈ G.componentOSet q ↔ G.O p.1 = p.2 ∧ G.componentOfColumn p.1 = q := by
+  simp [componentOSet]
+
+/-- The `X`-marking and the `O`-marking of a row lie on the same component: the component
+permutation carries the column of the `O`-marking to the column of the `X`-marking. -/
+theorem componentOfColumn_X_transpose (r : Fin n) :
+    G.componentOfColumn (G.X.transpose r) = G.componentOfColumn (G.O.transpose r) := by
+  have h : G.componentPerm (G.O.transpose r) = G.X.transpose r := by
+    rw [componentPerm_apply_eq_iff, GridState.apply_transpose_apply,
+      GridState.apply_transpose_apply]
+  rw [← h, componentOfColumn_eq_iff]
+  exact (Equiv.Perm.sameCycle_apply_left.mpr (Equiv.Perm.SameCycle.refl _ _))
+
+/-- The component grid sizes `n_q` add up to the grid size. -/
+theorem sum_card_componentColumns : ∑ q, (G.componentColumns q).card = n := by
+  simp only [componentColumns_def]
+  rw [← Finset.card_eq_sum_card_fiberwise (fun c _ => Finset.mem_univ _), Finset.card_univ,
+    Fintype.card_fin]
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=

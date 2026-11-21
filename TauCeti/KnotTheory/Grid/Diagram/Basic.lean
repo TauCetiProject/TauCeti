@@ -551,6 +551,11 @@ theorem apply_transpose_apply (x : GridState n) (r : Fin n) : x (x.transpose r) 
 theorem transpose_apply_apply (x : GridState n) (c : Fin n) : x.transpose (x c) = c := by
   simpa only [transpose_apply] using x.toPerm.symm_apply_apply c
 
+/-- The point of `x` in column `c` lies in row `r` exactly when `c` is the column of the point of
+`x` in row `r`. -/
+theorem apply_eq_iff_eq_transpose {x : GridState n} {c r : Fin n} : x c = r ↔ c = x.transpose r :=
+  ⟨fun h => by rw [← h, transpose_apply_apply], fun h => by rw [h, apply_transpose_apply]⟩
+
 /-- The diagonal reflection is an involution on grid states. -/
 @[simp]
 theorem transpose_transpose (x : GridState n) : x.transpose.transpose = x :=
