@@ -126,6 +126,16 @@ theorem HasEulerPowerSeries.add {P Q : PowerSeries (LaurentPolynomial R)}
       simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at hmem
       exact hn (by simp [hmem.1, hmem.2])
 
+/-- `HasEulerPowerSeries` is closed under multiplication by a constant. -/
+theorem HasEulerPowerSeries.C_mul {P : PowerSeries (LaurentPolynomial R)}
+    (hP : HasEulerPowerSeries P) (c : R) :
+    HasEulerPowerSeries (PowerSeries.C (C c) * P) where
+  coeff_eq_zero_of_neg n a ha := by
+    rw [PowerSeries.coeff_C_mul, coeff_C_mul, hP.coeff_eq_zero_of_neg n ha, mul_zero]
+  finite_support a := (hP.finite_support a).subset fun n hn ↦ by
+    simp only [Set.mem_ofPred_eq, PowerSeries.coeff_C_mul, coeff_C_mul] at hn ⊢
+    exact right_ne_zero_of_mul hn
+
 /-- Any bigraded formal power series vanishing strictly below the diagonal (`a < n`) has an
 Alexander-graded Euler formal power series: negative internal degrees satisfy `a < 0 ≤ n`, and
 internal degree `a ≥ 0` vanishes for all `n > a`. -/
@@ -237,6 +247,20 @@ theorem eulerPowerSeries_add {P Q : PowerSeries (LaurentPolynomial R)}
     coeff_eulerPowerSeries_eq_sum hQ a (max N₁ N₂) hsQ, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   simp [mul_add]
+
+/-- Multiplying by a constant `c` multiplies the Alexander-graded Euler power series by `c`, for any
+finiteness witnesses. -/
+theorem eulerPowerSeries_C_mul {P : PowerSeries (LaurentPolynomial R)}
+    (hP : HasEulerPowerSeries P) (c : R)
+    (hcP : HasEulerPowerSeries (PowerSeries.C (C c) * P)) :
+    eulerPowerSeries hcP = PowerSeries.C c * eulerPowerSeries hP := by
+  ext a
+  obtain ⟨N, hN⟩ := hP.exists_bound a
+  rw [PowerSeries.coeff_C_mul, coeff_eulerPowerSeries_eq_sum hP a N hN,
+    coeff_eulerPowerSeries_eq_sum hcP a N fun n hn ↦ by simp [hN n hn], Finset.mul_sum]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [PowerSeries.coeff_C_mul, coeff_C_mul, ← mul_assoc, ← mul_assoc,
+    ((Commute.neg_one_left c).pow_left n).eq]
 
 end EulerPowerSeries
 

@@ -47,6 +47,7 @@ parametrized by the unit interval: when `X` is a point, the Moore loops at it fo
 * `TauCeti.MooreLoopSpace X x`: the Moore loops at `x`, a monoid under concatenation with unit
   the constant loop of length zero.
 * `TauCeti.MooreLoopSpace.map`: the continuous monoid homomorphism induced by a based map.
+* `TauCeti.MooreLoopSpace.symm`: the reversal of a Moore loop, which reverses products.
 * `TauCeti.MooreLoopSpace.lengthHom`: the length, a continuous monoid homomorphism to `[0, ∞)`,
   with the constant loops `TauCeti.MooreLoopSpace.constOfLengthHom` as a section.
 
@@ -577,6 +578,11 @@ theorem map_const (y : Y) (γ : MoorePath X) :
     γ.map (.const X y) = constOfLength y γ.length :=
   (rfl)
 
+/-- The image of a reversed path is the reversed image. -/
+@[simp]
+theorem map_symm (f : C(X, Y)) (γ : MoorePath X) : γ.symm.map f = (γ.map f).symm :=
+  (rfl)
+
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩
@@ -742,6 +748,13 @@ theorem length_eq_zero_iff {γ : MooreLoopSpace X x} : γ.length = 0 ↔ γ = 1 
 theorem length_mul (γ δ : MooreLoopSpace X x) : (γ * δ).length = γ.length + δ.length :=
   (rfl)
 
+/-- The length of a product of Moore loops is the sum of their lengths. -/
+@[simp]
+theorem length_list_prod (l : List (MooreLoopSpace X x)) : l.prod.length = (l.map length).sum := by
+  induction l with
+  | nil => simp
+  | cons γ l ih => simp [ih]
+
 @[fun_prop]
 theorem continuous_length : Continuous (length : MooreLoopSpace X x → ℝ≥0) :=
   MoorePath.continuous_length.comp continuous_toMoorePath
@@ -860,6 +873,45 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X
     (hg : g y = z) (hf : f x = y) :
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
   ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
+
+/-! ### Reversal of Moore loops -/
+
+/-- The **reversal** of a Moore loop: the same loop run backwards, `t ↦ γ (γ.length - t)`. It is
+an involution reversing products (`MooreLoopSpace.symm_mul`), but not an inverse for the strict
+concatenation: `γ * γ.symm` has length `2 * γ.length`. -/
+def symm (γ : MooreLoopSpace X x) : MooreLoopSpace X x :=
+  ⟨γ.toMoorePath.symm, by simp, by simp⟩
+
+@[simp]
+theorem toMoorePath_symm (γ : MooreLoopSpace X x) : γ.symm.toMoorePath = γ.toMoorePath.symm :=
+  (rfl)
+
+@[simp]
+theorem length_symm (γ : MooreLoopSpace X x) : γ.symm.length = γ.length :=
+  (rfl)
+
+@[simp]
+theorem symm_symm (γ : MooreLoopSpace X x) : γ.symm.symm = γ :=
+  ext (MoorePath.symm_symm _)
+
+@[simp]
+theorem symm_one : (1 : MooreLoopSpace X x).symm = 1 :=
+  ext (MoorePath.symm_refl x)
+
+/-- Reversal exchanges the order of a product of Moore loops. -/
+@[simp]
+theorem symm_mul (γ δ : MooreLoopSpace X x) : (γ * δ).symm = δ.symm * γ.symm :=
+  ext (MoorePath.symm_trans _ _ (by simp))
+
+@[fun_prop]
+theorem continuous_symm : Continuous (symm : MooreLoopSpace X x → MooreLoopSpace X x) :=
+  isEmbedding_toMoorePath.continuous_iff.2 continuous_toMoorePath.moorePath_symm
+
+/-- The Moore loop map of a based map commutes with reversal. -/
+@[simp]
+theorem map_symm (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
+    map f hf γ.symm = (map f hf γ).symm :=
+  (rfl)
 
 end MooreLoopSpace
 

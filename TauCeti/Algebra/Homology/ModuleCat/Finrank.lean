@@ -26,6 +26,9 @@ In a homological complex of vector spaces, a homology group has dimension at mos
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
 with equality, even for complexes of modules over any ring, when the differentials into and out of
 that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
+For a based homological complex over a nontrivial ring whose chain bases have finitely supported
+ranks, the homology bases also have finitely supported ranks
+(`HomologicalComplex.finite_homology_of_finite`).
 Bases of two terms of a complex joined by a bijective differential have the same size
 (`HomologicalComplex.card_eq_card_of_bijective_d`).
 
@@ -77,6 +80,22 @@ theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Ty
     (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
     finrank R (K.homology i) = finrank R (K.X i) :=
   (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
+
+/-- For a bounded based homological complex of modules over a nontrivial ring, only finitely many
+homology bases are nonempty: homology vanishes in every degree where the complex vanishes. -/
+theorem finite_homology_of_finite {R : Type*} [Ring R] [Nontrivial R] {ι : Type*}
+    {s : ComplexShape ι} {C : HomologicalComplex (ModuleCat R) s} {n m : ι → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) R (C.X i))
+    (h : ∀ i, Basis (Fin (m i)) R (C.homology i)) (hn : {i | n i ≠ 0}.Finite) :
+    {i | m i ≠ 0}.Finite :=
+  hn.subset fun i hi ↦ by
+    by_contra hn₀
+    simp only [Set.mem_ofPred_eq, not_not] at hn₀
+    have : IsEmpty (Fin (n i)) := by rw [hn₀]; infer_instance
+    have := (c i).repr.toEquiv.subsingleton
+    have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+    have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+    exact hi (Nat.eq_zero_of_not_pos fun hm ↦ (h i).ne_zero ⟨0, hm⟩ (Subsingleton.elim _ _))
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 

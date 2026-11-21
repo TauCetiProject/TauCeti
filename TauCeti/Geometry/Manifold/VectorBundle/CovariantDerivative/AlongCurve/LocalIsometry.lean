@@ -116,13 +116,13 @@ theorem mfderiv_alongCurveWithin (hf : g.IsLocalIsometry g' f)
     (h : g.IsLeviCivitaConnection cov) (h' : g'.IsLeviCivitaConnection cov')
     {V : ∀ r, TangentSpace I (γ r)} (hs : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t) :
     mfderiv I J f (γ t) (alongCurveWithin cov γ V s t) =
       alongCurveWithin cov' (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) s t := by
   have hfγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (f ∘ γ) s t :=
     (hf.contMDiff.mdifferentiableAt (by simp)).comp_mdifferentiableWithinAt t hγ
   have hfV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
+      (sectionCoord ℝ (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
     hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
   -- Test both sides against differentiable vector fields `Y` on the target. The product rules
   -- on source and target differentiate the same pairing, of `V` with the pullback of `Y`.
@@ -130,12 +130,12 @@ theorem mfderiv_alongCurveWithin (hf : g.IsLocalIsometry g' f)
   ext Y hY
   dsimp only
   set X : Π x : M, TangentSpace I x := mpullback I J f Y
-  have hXcoord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (fun r ↦ X (γ r)) (γ t)) s t :=
+  have hXcoord : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (fun r ↦ X (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ (fun r ↦ X (γ r))
       ((hf.mdifferentiableAt_mpullback hY).comp_mdifferentiableWithinAt t hγ)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hYcoord : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r)) (f (γ t))) s t :=
+      (sectionCoord ℝ (F := F) (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r)) (f (γ t))) s t :=
     differentiableWithinAt_sectionCoord (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r))
       (hY.comp_mdifferentiableWithinAt t hfγ)
       (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
@@ -161,7 +161,7 @@ isometry of nondegenerate metrics. -/
 theorem mfderiv_alongCurve (hf : g.IsLocalIsometry g' f)
     (h : g.IsLeviCivitaConnection cov) (h' : g'.IsLeviCivitaConnection cov')
     {V : ∀ r, TangentSpace I (γ r)} (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t) :
     mfderiv I J f (γ t) (alongCurve cov γ V t) =
       alongCurve cov' (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
@@ -182,7 +182,7 @@ theorem mfderiv_accelerationWithin (hf : g.IsLocalIsometry g' f)
     curveVelocityWithin_map (hf.contMDiff.mdifferentiableAt (by simp)) (hs r hr)
       ((hγ.mdifferentiableOn (by norm_num)) r hr)
   have hcoord : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (curveVelocityWithin I γ s) (γ t)) s t :=
     differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   rw [accelerationWithin_def, accelerationWithin_def,

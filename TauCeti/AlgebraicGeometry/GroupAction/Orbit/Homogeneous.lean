@@ -113,7 +113,7 @@ end Transitivity
 
 section Homogeneous
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]
@@ -174,7 +174,8 @@ instance [IsReduced X.left] (h : orbit G x = Set.univ) :
 
 /-- Every reduced finite-type homogeneous scheme for a reduced finite-type group over an
 algebraically closed field is smooth. -/
-theorem smooth_of_orbit_eq_univ [IsReduced G.left] [IsReduced X.left] (h : orbit G x = Set.univ) :
+theorem smooth_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
+    (h : orbit G x = Set.univ) :
     Smooth X.hom := by
   have hcomp : (orbitInclusionIso G x h).inv.left ≫ orbitToBase G x = X.hom :=
     Over.w (orbitInclusionIso G x h).inv
@@ -183,7 +184,7 @@ theorem smooth_of_orbit_eq_univ [IsReduced G.left] [IsReduced X.left] (h : orbit
 
 /-- The orbit morphism onto a reduced finite-type homogeneous scheme for a reduced finite-type
 group over an algebraically closed field is flat. -/
-theorem flat_orbitMap_of_orbit_eq_univ [IsReduced G.left] [IsReduced X.left]
+theorem flat_orbitMap_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
     (h : orbit G x = Set.univ) :
     Flat (orbitMap G x).left := by
   have hcomp : toOrbit G x ≫ (orbitInclusionIso G x h).hom.left = (orbitMap G x).left := by
@@ -194,7 +195,7 @@ theorem flat_orbitMap_of_orbit_eq_univ [IsReduced G.left] [IsReduced X.left]
 /-- For a reduced finite-type group acting transitively on a reduced finite-type scheme `X` over
 an algebraically closed field, the orbit morphism `G ⟶ X` is smooth if and only if the
 scheme-theoretic stabilizer `stabilizer G x` is smooth over `Spec k`. -/
-theorem smooth_orbitMap_iff_of_orbit_eq_univ [IsReduced G.left] [IsReduced X.left]
+theorem smooth_orbitMap_iff_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
     (h : orbit G x = Set.univ) :
     Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom := by
   refine Iff.trans ?_ (smooth_toOrbit_iff G x)

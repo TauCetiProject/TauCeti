@@ -110,7 +110,7 @@ def rayNormSubgroup (𝔪 : Modulus K) : GlobalNormSubgroups K :=
 /-- The subgroup underlying `rayNormSubgroup 𝔪` is the ray subgroup of `𝔪`. -/
 @[simp]
 theorem rayNormSubgroup_toSubgroup (𝔪 : Modulus K) :
-    (rayNormSubgroup 𝔪).1.toSubgroup = raySubgroup 𝔪 :=
+    (rayNormSubgroup 𝔪).val.toSubgroup = raySubgroup 𝔪 :=
   (rfl)
 
 /-- Inclusions of the bundled ray subgroups are inclusions of the ray subgroups. -/
@@ -124,12 +124,12 @@ the ray subgroup of `𝔪` under the global class-field correspondence, that is,
 abelian extension of `K` in `Kˢ` whose idele-class norm group is the ray subgroup of `𝔪`
 (`range_ideleClassNormMap_rayClassField`). -/
 def rayClassField (𝔪 : Modulus K) : IntermediateField K (SeparableClosure K) :=
-  classField K (globalClassField (rayNormSubgroup 𝔪)).1
+  classField K (globalClassField (rayNormSubgroup 𝔪)).val
 
 /-- The ray class field of `𝔪` is the class field of the value of the global correspondence at the
 ray subgroup of `𝔪`. -/
 theorem rayClassField_def (𝔪 : Modulus K) :
-    rayClassField 𝔪 = classField K (globalClassField (rayNormSubgroup 𝔪)).1 :=
+    rayClassField 𝔪 = classField K (globalClassField (rayNormSubgroup 𝔪)).val :=
   (rfl)
 
 variable (𝔪 : Modulus K)
@@ -144,7 +144,7 @@ instance numberField_rayClassField : NumberField (rayClassField 𝔪) :=
 
 /-- The ray class field of `𝔪` is an abelian extension of `K`. -/
 instance isAbelianGalois_rayClassField : IsAbelianGalois K (rayClassField 𝔪) :=
-  isAbelianGalois_classField_iff.2 (globalClassField (rayNormSubgroup 𝔪)).2
+  isAbelianGalois_classField_iff.2 (globalClassField (rayNormSubgroup 𝔪)).property
 
 /-- **The norm group of the ray class field is the ray subgroup**: `N(C_{K_𝔪}) = U_𝔪`. -/
 @[simp]

@@ -34,9 +34,9 @@ namespace TauCeti
 No finiteness assumption is needed. -/
 theorem topologicalKrullDim_eq_iSup_irreducibleComponents
     (X : Type*) [TopologicalSpace X] :
-    topologicalKrullDim X = ⨆ C : irreducibleComponents X, topologicalKrullDim C.1 := by
+    topologicalKrullDim X = ⨆ C : irreducibleComponents X, topologicalKrullDim C.val := by
   refine le_antisymm (iSup_le fun p ↦ ?_)
-    (iSup_le fun C ↦ topologicalKrullDim_subspace_le X C.1)
+    (iSup_le fun C ↦ topologicalKrullDim_subspace_le X C.val)
   obtain ⟨C, hC, hpC⟩ :=
     exists_mem_irreducibleComponents_subset_of_isIrreducible _ p.last.isIrreducible
   have hsub (j) : (p j : Set X) ⊆ C := fun _ hx ↦ hpC (p.monotone (Fin.le_last j) hx)
@@ -49,7 +49,7 @@ theorem topologicalKrullDim_eq_iSup_irreducibleComponents
   -- Restrict the whole chain to a component containing its largest member.
   let q : LTSeries (IrreducibleCloseds C) :=
     ⟨p.length, fun j ↦ ⟨Subtype.val ⁻¹' (p j : Set X), hirr j,
-      (p j).isClosed.preimage continuous_subtype_val⟩, fun j ↦ by
+      (p j).isClosed.preimage continuous_subtypeVal⟩, fun j ↦ by
         refine lt_of_le_of_ne (Set.preimage_mono (p.step j).le) ?_
         intro h
         have hp : p j.castSucc < p j.succ := p.step j
@@ -70,7 +70,7 @@ theorem topologicalKrullDim_eq_iSup_of_isClosed {X ι : Type*} [TopologicalSpace
   refine le_antisymm ?_ (iSup_le fun i ↦ topologicalKrullDim_subspace_le X (Z i))
   rw [topologicalKrullDim_eq_iSup_irreducibleComponents]
   refine iSup_le fun C ↦ ?_
-  obtain ⟨W, hW, hCW⟩ := isIrreducible_iff_sUnion_isClosed.mp C.2.1
+  obtain ⟨W, hW, hCW⟩ := isIrreducible_iff_sUnion_isClosed.mp C.property.1
     (Set.finite_range Z).toFinset (by simpa using hZ) (by
       intro x _
       obtain ⟨i, hi⟩ := hcover x
@@ -94,29 +94,29 @@ theorem topologicalKrullDim_compl_lt {X : Type*} [TopologicalSpace X]
   have : Nonempty (irreducibleComponents X) :=
     ⟨⟨irreducibleComponent x, irreducibleComponent_mem_irreducibleComponents x⟩⟩
   have hcover : topologicalKrullDim ↥(Uᶜ) =
-      ⨆ C : irreducibleComponents X, topologicalKrullDim ↥(C.1 \ U) := by
+      ⨆ C : irreducibleComponents X, topologicalKrullDim ↥(C.val \ U) := by
     rw [TauCeti.topologicalKrullDim_eq_iSup_of_isClosed
-      (fun C : irreducibleComponents X ↦ (Subtype.val : ↥(Uᶜ) → X) ⁻¹' C.1)
-      (fun C ↦ (isClosed_of_mem_irreducibleComponents _ C.2).preimage continuous_subtype_val)
-      (fun y ↦ ⟨⟨irreducibleComponent y.1,
-        irreducibleComponent_mem_irreducibleComponents y.1⟩, mem_irreducibleComponent⟩)]
+      (fun C : irreducibleComponents X ↦ (Subtype.val : ↥(Uᶜ) → X) ⁻¹' C.val)
+      (fun C ↦ (isClosed_of_mem_irreducibleComponents _ C.property).preimage continuous_subtypeVal)
+      (fun y ↦ ⟨⟨irreducibleComponent y.val,
+        irreducibleComponent_mem_irreducibleComponents y.val⟩, mem_irreducibleComponent⟩)]
     apply iSup_congr
     intro C
-    have h := (IsEmbedding.subtypeVal (p := (· ∈ Uᶜ))).topologicalKrullDim_preimage C.1
+    have h := (IsEmbedding.subtypeVal (p := (· ∈ Uᶜ))).topologicalKrullDim_preimage C.val
     rw [Subtype.range_val] at h
     exact h
   rw [hcover]
   obtain ⟨C, hC⟩ := exists_eq_ciSup_of_finite
-    (f := fun C : irreducibleComponents X ↦ topologicalKrullDim ↥(C.1 \ U))
+    (f := fun C : irreducibleComponents X ↦ topologicalKrullDim ↥(C.val \ U))
   rw [← hC]
   obtain ⟨V, hV, hVne, hVC⟩ :=
-    NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.1 C.2
+    NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.val C.property
   obtain ⟨y, hyV, hyU⟩ := hdense.inter_open_nonempty V hV hVne
-  have hCc := isClosed_of_mem_irreducibleComponents _ C.2
-  exact (C.2.1.topologicalKrullDim_lt (hCc.sdiff hU)
+  have hCc := isClosed_of_mem_irreducibleComponents _ C.property
+  exact (C.property.1.topologicalKrullDim_lt (hCc.sdiff hU)
     (Set.sdiff_ssubset_left_iff.mpr ⟨y, hVC hyV, hyU⟩)
-    (ne_top_of_le_ne_top hdim (topologicalKrullDim_subspace_le X C.1))).trans_le
-      (topologicalKrullDim_subspace_le X C.1)
+    (ne_top_of_le_ne_top hdim (topologicalKrullDim_subspace_le X _))).trans_le
+      (topologicalKrullDim_subspace_le X C.val)
 
 end IsOpen
 

@@ -53,7 +53,7 @@ theorem isImmersionAt_closedBall_of_norm_lt_one {k : ℕ∞ω} (hk : 1 ≤ k)
   have hk0 : k ≠ 0 := by rintro rfl; simp at hk
   -- `Φ` is `C^k` near `x`, where `c` is.
   set s : Set (closedBall (0 : F) 1) := Subtype.val ⁻¹' hc.domChart.source
-  have hs : IsOpen s := hc.domChart.open_source.preimage continuous_subtype_val
+  have hs : IsOpen s := hc.domChart.open_source.preimage continuous_subtypeVal
   have hxs : x ∈ s := hc.mem_domChart_source
   have hfun : Subtype.val ∘ Φ = c ∘ Subtype.val := funext hΦ
   have hΦs : ContMDiffOn (𝓡∂ m) (𝓡∂ n) k Φ s := by

@@ -239,7 +239,7 @@ noncomputable def rotationZPow {L₀ : Submodule ℝ E}
       simp
     -- `e^{iπk} = (-1) ^ k` acts as `±1`.
     have hk : Complex.exp ((π * k * (1 : I) : ℝ) * Complex.I) = (-1) ^ k := by
-      rw [← Complex.exp_pi_mul_I, ← Complex.exp_int_mul]
+      rw [← Complex.exp_pi_mul_I, ← Complex.exp_intCast_mul]
       push_cast
       ring_nf
     rw [h0, hk, Submodule.map_id]

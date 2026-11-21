@@ -172,7 +172,7 @@ theorem involute_volumeElement :
   have hn : (-1 : ℝ) ^ finrank ℝ V = (-1) ^ n := by rw [Fact.out (p := finrank ℝ V = n)]
   apply (equivExterior Q).injective
   rw [equivExterior_involute, volumeElement_def, LinearEquiv.apply_symm_apply,
-    TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (o.volumeEquiv.symm 1).2, map_smul,
+    TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (o.volumeEquiv.symm 1).property, map_smul,
     LinearEquiv.apply_symm_apply, hn]
 
 /-- Reversal multiplies the volume element by `(-1) ^ ⌊n / 2⌋`, the sign of the
@@ -358,8 +358,8 @@ theorem volumeElement_mul_basis (hQ : ∀ v, Q v = -‖v‖ ^ 2) (b : Orthonorma
   have hts : Disjoint t.val s.val := (powersetCard.disjoint_iff_eq_compl hcard).2 rfl
   have hunion : (powersetCard.disjUnion hts : Finset (Fin n)) = Finset.univ :=
     Finset.eq_univ_of_card _ <| by
-      rw [powersetCard.coe_disjUnion, Finset.card_disjUnion, powersetCard.mem_iff.1 s.2,
-        powersetCard.mem_iff.1 t.2]
+      rw [powersetCard.coe_disjUnion, Finset.card_disjUnion, powersetCard.mem_iff.1 s.property,
+        powersetCard.mem_iff.1 t.property]
       exact hcard
   -- `e_t e_s = ε(t) vol`, and `ε(t) ^ 2 = 1`.
   have hsq : ((powersetCard.sign t : ℤ) : ℝ) * ((powersetCard.sign t : ℤ) : ℝ) = 1 := by
@@ -372,7 +372,7 @@ theorem volumeElement_mul_basis (hQ : ∀ v, Q v = -‖v‖ ^ 2) (b : Orthonorma
     simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, smul_smul, hsq, one_smul]
   have hss : basis Q b.toBasis s * basis Q b.toBasis s =
       algebraMap ℝ (CliffordAlgebra Q) ((-1) ^ (k + 1).choose 2) := by
-    rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
+    rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.property]
     simp
   rw [hvol, smul_mul_assoc, mul_assoc, hss, ← Algebra.commutes, ← Algebra.smul_def, smul_smul,
     mul_comm]

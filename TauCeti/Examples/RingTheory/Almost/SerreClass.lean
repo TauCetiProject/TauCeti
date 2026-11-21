@@ -48,7 +48,7 @@ example : ¬ IsIso (ModuleCat.ofHom (zero ℤ).ideal.subtype) := by
   rw [ConcreteCategory.isIso_iff_bijective]
   rintro ⟨-, h⟩
   obtain ⟨x, hx⟩ := h 1
-  have hx0 : (x : ℤ) = 0 := by simpa only [zero_ideal, Ideal.mem_bot] using x.2
+  have hx0 : (x : ℤ) = 0 := by simpa only [zero_ideal, Ideal.mem_bot] using x.property
   simp [hx0] at hx
 
 -- Multiplication by `2` on `ℤ` is not an isomorphism modulo almost zero modules for the classical
