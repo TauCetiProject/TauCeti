@@ -54,24 +54,6 @@ open _root_.QuadraticMap Module
 variable {p : ℕ} [Fact p.Prime] {V ι : Type*} [AddCommGroup V] [Module ℚ_[p] V]
   {Q : QuadraticForm ℚ_[p] V} {b : Basis ι ℚ_[p] V}
 
-/-- A linear form whose values on the basis have absolute value at most `r` has values of
-absolute value at most `r` on the whole `ℤ_[p]`-span of the basis. -/
-private theorem norm_apply_le_of_mem_span {f : V →ₗ[ℚ_[p]] ℚ_[p]} {r : ℝ} (hr : 0 ≤ r)
-    (hf : ∀ i, ‖f (b i)‖ ≤ r) {x : V}
-    (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) : ‖f x‖ ≤ r := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact hf i
-  | zero => simpa using hr
-  | add x y _ _ hx hy =>
-    rw [map_add]
-    exact (Padic.nonarchimedean _ _).trans (max_le hx hy)
-  | smul c x _ hx =>
-    rw [Subring.smul_def, map_smul, smul_eq_mul, norm_mul]
-    exact (mul_le_of_le_one_left (norm_nonneg _) ((PadicInt.mem_subring_iff p).mp c.property)).trans
-      hx
-
 /-- For a nonzero form, some vector `v` of the `ℤ_[p]`-span of `b` has `Q v ≠ 0` and
 `‖polar Q v (b i)‖ ≤ ‖Q v‖` for every `i`: among the vectors `b i` and `b i + b j`, take one whose
 norm has the largest absolute value. -/
@@ -126,8 +108,8 @@ theorem reflectionOrthogonal_mem_integralOrthogonalSubgroup_of_norm_polar_le {v 
   have hmem (x : V) (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) :
       reflection Q v x ∈ Submodule.span (PadicInt.subring p) (Set.range b) := by
     have hle : ‖polar Q v x‖ ≤ ‖Q v‖ := by
-      simpa using norm_apply_le_of_mem_span (f := polarBilin Q v) (norm_nonneg _)
-        (by simpa using hpolar) hx
+      simpa using PadicInt.norm_apply_le_of_mem_span_subring (f := polarBilin Q v)
+        (norm_nonneg _) (by simpa using hpolar) hx
     have hc : ⅟(Q v) * polar Q v x ∈ PadicInt.subring p := by
       rw [PadicInt.mem_subring_iff p, norm_mul, invOf_eq_inv, norm_inv]
       exact inv_mul_le_one_of_le₀ hle (norm_nonneg _)

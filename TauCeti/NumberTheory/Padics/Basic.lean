@@ -28,7 +28,8 @@ range contains the closed unit ball. These are the hypotheses under which `ℚ_[
 of norm at most `1` come from `ℤ_[p]`-valued measures. It also maps exactly the maximal ideal of
 `ℤ_[p]` into the open unit ball (`PadicInt.norm_coe_ringHom_lt_one_iff`); together with the norm
 bound, this is the hypothesis under which formal and normed Weierstrass degrees over `ℤ_[p]` are
-compared.
+compared. A `ℚ_[p]`-linear form bounded by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
+(`PadicInt.norm_apply_le_of_mem_span_subring`).
 
 For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
@@ -87,6 +88,21 @@ theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
 theorem closedBall_subset_range_coe_ringHom :
     Metric.closedBall (0 : ℚ_[p]) 1 ⊆ Set.range (Coe.ringHom (p := p)) :=
   fun x hx ↦ ⟨⟨x, mem_closedBall_zero_iff.mp hx⟩, rfl⟩
+
+/-- A `ℚ_[p]`-linear form whose values on a set `s` have absolute value at most `r` has values of
+absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametric inequality. -/
+theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module ℚ_[p] V]
+    {f : V →ₗ[ℚ_[p]] ℚ_[p]} {s : Set V} {r : ℝ} (hr : 0 ≤ r) (hf : ∀ y ∈ s, ‖f y‖ ≤ r) {x : V}
+    (hx : x ∈ Submodule.span (subring p) s) : ‖f x‖ ≤ r := by
+  induction hx using Submodule.span_induction with
+  | mem x hx => exact hf x hx
+  | zero => simpa using hr
+  | add x y _ _ hx hy =>
+    rw [map_add]
+    exact (Padic.nonarchimedean _ _).trans (max_le hx hy)
+  | smul c x _ hx =>
+    rw [Subring.smul_def, map_smul, smul_eq_mul, norm_mul]
+    exact (mul_le_of_le_one_left (norm_nonneg _) ((mem_subring_iff p).mp c.property)).trans hx
 
 end PadicInt
 

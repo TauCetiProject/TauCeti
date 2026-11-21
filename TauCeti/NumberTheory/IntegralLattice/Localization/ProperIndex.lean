@@ -104,10 +104,7 @@ theorem relIndex_localStabilizer_eq_two (hn : 0 < Module.finrank ℤ L) :
     (specialOrthogonalWithin (L.norm.baseChange ℚ_[p])).relIndex (L.localStabilizer p) = 2 := by
   have := L.finiteDimensional
   have : Nontrivial V := Module.finrank_pos_iff.mp (L.finrank_carrier ▸ hn)
-  refine (L.relIndex_localStabilizer_eq_two_iff p).mpr
-    (L.exists_mem_localStabilizer_orthogonalDet_eq_neg_one p fun h0 ↦ ?_)
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  exact hv (L.form_nondegenerate.1 v fun w ↦ by rw [h0, LinearMap.zero_apply,
-    LinearMap.zero_apply])
+  exact (L.relIndex_localStabilizer_eq_two_iff p).mpr
+    (L.exists_mem_localStabilizer_orthogonalDet_eq_neg_one p L.form_nondegenerate.ne_zero)
 
 end TauCeti.IntegralLattice
