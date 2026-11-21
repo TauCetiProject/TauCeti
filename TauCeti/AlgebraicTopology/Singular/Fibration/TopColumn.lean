@@ -111,7 +111,7 @@ theorem abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_toSerreTop
           toSerreTopColumnEInfty p R hC k =
       cokernel.π ((serreSpectralObject C p R).abutmentFiltrationMap ((n : ℤ) - 1) (-k)) ≫
         ((serreSpectralObject C p R).EInftyIsoCokernel ((n : ℤ) - 1) (-k)).inv :=
-  abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_toFilteredSpaceTopColumnEInfty _ _
+  abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_chainFiltrationToTopColumnEInfty _ _
     (preimageSkeleton_natCast_sub_one_add_one hC) k
 
 instance (k : ℕ) : Epi (toSerreTopColumnEInfty p R hC k) := by
