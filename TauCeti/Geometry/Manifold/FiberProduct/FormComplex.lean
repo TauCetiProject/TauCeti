@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartitionOfUnity
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-import TauCeti.Geometry.Manifold.Submersion.Basic
+import TauCeti.Geometry.Manifold.Submersion.PartitionOfUnity
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Basic
 
 /-!
