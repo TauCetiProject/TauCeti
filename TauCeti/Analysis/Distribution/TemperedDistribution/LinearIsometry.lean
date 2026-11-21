@@ -61,8 +61,8 @@ theorem fourierMultiplierCLM_compCLM_linearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E
       SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv,
       SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv,
       SchwartzMap.smulLeftCLM_compCLMOfContinuousLinearEquiv ℂ hg, hg']
-  · have hgA : ¬(g ∘ A).HasTemperateGrowth := fun h ↦ hg <| by
-      simpa [Function.comp_def] using h.comp A.symm.toContinuousLinearEquiv.hasTemperateGrowth
+  · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
     ext u
     simp [fourierMultiplierCLM_apply_apply, SchwartzMap.smulLeftCLM, hg, hgA]
 

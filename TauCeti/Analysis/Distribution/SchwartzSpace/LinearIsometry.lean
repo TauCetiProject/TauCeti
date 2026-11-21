@@ -63,6 +63,19 @@ theorem hasTemperateGrowth_toEquiv_symm (e : V ≃ₗ[ℝ] W) :
 
 end LinearEquiv
 
+namespace ContinuousLinearEquiv
+
+variable {D V W : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup V]
+  [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- Precomposing with a continuous linear equivalence preserves and reflects temperate growth. -/
+theorem hasTemperateGrowth_comp_iff (e : D ≃L[ℝ] V) {g : V → W} :
+    (g ∘ e).HasTemperateGrowth ↔ g.HasTemperateGrowth :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp e.symm.hasTemperateGrowth,
+    fun h ↦ h.comp e.hasTemperateGrowth⟩
+
+end ContinuousLinearEquiv
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
@@ -95,7 +108,8 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv 
     fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv f) =
       compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (fourierMultiplierCLM F g f) := by
   by_cases hg : g.HasTemperateGrowth
-  · have hgA' : (g ∘ A).HasTemperateGrowth := hg.comp A.toContinuousLinearEquiv.hasTemperateGrowth
+  · have hgA' : (g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.mpr hg
     have hgA : (g ∘ A) ∘ A.toContinuousLinearEquiv.symm = g := by
       ext x
       simp
@@ -103,8 +117,8 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv 
       fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv,
       smulLeftCLM_compCLMOfContinuousLinearEquiv ℂ hgA', hgA,
       fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv]
-  · have hgA : ¬(g ∘ A).HasTemperateGrowth := fun h ↦ hg <| by
-      simpa [Function.comp_def] using h.comp A.symm.toContinuousLinearEquiv.hasTemperateGrowth
+  · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
     simp [fourierMultiplierCLM_apply, smulLeftCLM, hg, hgA]
 
 end SchwartzMap

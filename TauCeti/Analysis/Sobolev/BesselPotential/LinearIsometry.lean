@@ -85,14 +85,12 @@ def compLinearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) : H^{s, p}(E, F) ≃ₗᵢ[
   invFun := compLinearIsometryEquivₗ A.symm
   left_inv u := by
     ext1
-    exact compCLM_symm_compCLM A.toLinearEquiv.hasTemperateGrowth_toEquiv
-      A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm A.toLinearEquiv.hasTemperateGrowth_toEquiv
-      u.toDistr
+    ext f
+    simp [compLinearIsometryEquivₗ]
   right_inv u := by
     ext1
-    exact compCLM_compCLM_symm A.toLinearEquiv.hasTemperateGrowth_toEquiv
-      A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm A.toLinearEquiv.hasTemperateGrowth_toEquiv
-      u.toDistr
+    ext f
+    simp [compLinearIsometryEquivₗ]
   norm_map' u := by
     rw [← norm_toLp_eq, ← norm_toLp_eq u]
     exact Lp.norm_compMeasurePreserving _ _
@@ -122,11 +120,12 @@ theorem compLinearIsometryEquiv_trans (A B : E ≃ₗᵢ[ℝ] E) (u : H^{s, p}(E
     compLinearIsometryEquiv (A.trans B) u =
       compLinearIsometryEquiv A (compLinearIsometryEquiv B u) := by
   ext1
-  exact DFunLike.congr_fun (compCLM_trans A.toLinearEquiv.hasTemperateGrowth_toEquiv
-    A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm B.toLinearEquiv.hasTemperateGrowth_toEquiv
-    B.toLinearEquiv.hasTemperateGrowth_toEquiv_symm
-    (A.trans B).toLinearEquiv.hasTemperateGrowth_toEquiv
-    (A.trans B).toLinearEquiv.hasTemperateGrowth_toEquiv_symm) u.toDistr
+  ext f
+  simp only [toDistr_compLinearIsometryEquiv, compCLM_apply_apply,
+    SchwartzMap.pushforwardCLM_linearIsometryEquiv]
+  refine congrArg _ ?_
+  ext x
+  simp
 
 /-- Pulling back along the identity is the identity. -/
 @[simp]
@@ -135,9 +134,12 @@ theorem compLinearIsometryEquiv_refl :
       LinearIsometryEquiv.refl ℂ _ := by
   ext1 u
   ext1
-  exact DFunLike.congr_fun (compCLM_refl
-    (LinearIsometryEquiv.refl ℝ E).toLinearEquiv.hasTemperateGrowth_toEquiv
-    (LinearIsometryEquiv.refl ℝ E).toLinearEquiv.hasTemperateGrowth_toEquiv_symm) u.toDistr
+  ext f
+  simp only [toDistr_compLinearIsometryEquiv, compCLM_apply_apply,
+    SchwartzMap.pushforwardCLM_linearIsometryEquiv]
+  refine congrArg _ ?_
+  ext x
+  simp
 
 /-- The **reflection** `R u = u(-·)` is an involution of `H^{s,p}`. -/
 @[simp]
