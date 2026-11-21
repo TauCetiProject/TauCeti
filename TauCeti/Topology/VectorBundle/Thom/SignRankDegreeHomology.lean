@@ -142,10 +142,10 @@ homology of pairs of subsets of the total space. -/
 private abbrev restrictOver {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
     (thomPairOver F E W).twistedHomology (signSystemOver R F E hι W) n ⟶
       (thomPairOver F E W').twistedHomology (signSystemOver R F E hι W') n :=
-  HomologicalComplex.homologyMap (LocalCoefficientSystem.subsetPairTwistedChainComplexMap
+  LocalCoefficientSystem.subsetPairTwistedHomologyMap
     ((LocalCoefficientSystem.pullback (projMap F E)).obj (signLocalSystem F E R hι))
     inter_subset_left inter_subset_left (preimage_mono h)
-    (inter_subset_inter_left _ (preimage_mono h))) n
+    (inter_subset_inter_left _ (preimage_mono h)) n
 
 /-- The restrictions compose. -/
 private theorem restrictOver_comp_restrictOver {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'')

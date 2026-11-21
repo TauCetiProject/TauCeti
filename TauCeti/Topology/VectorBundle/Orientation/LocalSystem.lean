@@ -408,6 +408,18 @@ theorem pullbackSignLocalSystemIso_hom_app_apply (e : Trivialization F (π F E))
       signLocalSystemFiberEquiv hι ((e.mapOrientation ι (hg y)).symm ω) f :=
   (rfl)
 
+/-- Over `y`, the inverse of the trivialization sends `r` to the element of the fibre whose
+evaluation at the orientation of `E_{g y}` which `e` reads as `ω` is `r`. -/
+@[simp]
+theorem pullbackSignLocalSystemIso_inv_app_apply (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    (hg : ∀ y, g y ∈ e.baseSet) (y : Y) (r : R) :
+    (ModuleCat.Hom.hom (A := ModuleCat.of R R)
+        (B := (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y)))
+        ((pullbackSignLocalSystemIso R hι e ω g hg).inv.app (FundamentalGroupoid.mk y))) r =
+      (signLocalSystemFiberEquiv hι ((e.mapOrientation ι (hg y)).symm ω)).symm r :=
+  (rfl)
+
 /-- Two trivializations and orientations of the model fibre which pull back to the same
 orientations of the fibres over `g` give the same trivialization of the pulled-back orientation
 local system. -/
@@ -425,6 +437,7 @@ theorem pullbackSignLocalSystemIso_congr {e e' : Trivialization F (π F E)}
 
 /-- Reversing the orientation of the model fibre negates the trivialization of the pulled-back
 orientation local system. -/
+@[simp]
 theorem pullbackSignLocalSystemIso_neg_hom (e : Trivialization F (π F E))
     [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) :
@@ -439,5 +452,15 @@ theorem pullbackSignLocalSystemIso_neg_hom (e : Trivialization F (π F E))
   refine (pullbackSignLocalSystemIso_hom_app_apply hι e (-ω) g hg y f).trans ?_
   rw [h, signLocalSystemFiberEquiv_neg]
   exact congrArg Neg.neg (pullbackSignLocalSystemIso_hom_app_apply hι e ω g hg y f).symm
+
+/-- Reversing the orientation of the model fibre negates the inverse of the trivialization of the
+pulled-back orientation local system. -/
+@[simp]
+theorem pullbackSignLocalSystemIso_neg_inv (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    (hg : ∀ y, g y ∈ e.baseSet) :
+    (pullbackSignLocalSystemIso R hι e (-ω) g hg).inv =
+      -(pullbackSignLocalSystemIso R hι e ω g hg).inv :=
+  Iso.inv_ext (by rw [pullbackSignLocalSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
 
 end TauCeti.VectorBundleOrientationCover

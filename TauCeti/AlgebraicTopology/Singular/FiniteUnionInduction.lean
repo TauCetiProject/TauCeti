@@ -12,13 +12,13 @@ public import TauCeti.AlgebraicTopology.Singular.Reduced
 
 Let `B` be a topological space and `H` a family of objects of an abelian category indexed by the
 subsets of `B`, with restriction maps `H W ⟶ H W'` for `W ⊆ W'` that compose. Suppose that maps
-`ψ W : H₀(W; M) ⟶ H W` are given, natural in `W`, which are isomorphisms over every subset with a
-property `P` inherited by subsets. If for open sets `U` and `V` with `U` satisfying `P` the
-Mayer–Vietoris sequence `H (U ∩ V) ⟶ H U ⊞ H V ⟶ H (U ∪ V)` (`TauCeti.subsetMayerVietoris`) is
-exact and its last map is an epimorphism, then `ψ` is an isomorphism over every finite union of
-open sets satisfying `P` (`TauCeti.isIso_biUnion_of_subsetMayerVietoris`), and so over the whole
-space when it is compact and covered by open sets satisfying `P`
-(`TauCeti.isIso_univ_of_subsetMayerVietoris`).
+`ψ W : H₀(W; M) ⟶ H W` are given, natural in `W`, which are isomorphisms over the empty set and
+over every subset with a property `P` inherited by subsets. If for open sets `U` and `V` with `U`
+satisfying `P` the Mayer–Vietoris sequence `H (U ∩ V) ⟶ H U ⊞ H V ⟶ H (U ∪ V)`
+(`TauCeti.subsetMayerVietoris`) is exact and its last map is an epimorphism, then `ψ` is an
+isomorphism over every finite union of open sets satisfying `P`
+(`TauCeti.isIso_biUnion_of_subsetMayerVietoris`), and so over the whole space when it is compact
+and covered by open sets satisfying `P` (`TauCeti.isIso_univ_of_subsetMayerVietoris`).
 
 This is the induction of Milnor and Stasheff's proof of the Thom isomorphism: for a real vector
 bundle of rank `r`, `H W` is the homology in degree `r` of the Thom pair over `W`, with constant or
@@ -143,10 +143,10 @@ variable {P : Set B → Prop} (hP : ∀ {W W' : Set B}, W ⊆ W' → P W' → P 
 
 include hP hPψ hempty hMV
 
-/-- **Finite unions**: if `ψ` is an isomorphism over every subset with a property `P` inherited by
-subsets, and the Mayer–Vietoris sequence of open sets `U` and `V` with `U` satisfying `P` is exact
-with surjective last map, then `ψ` is an isomorphism over every finite union of open sets
-satisfying `P`. -/
+/-- **Finite unions**: if `ψ` is an isomorphism over the empty set and over every subset with a
+property `P` inherited by subsets, and the Mayer–Vietoris sequence of open sets `U` and `V` with
+`U` satisfying `P` is exact with surjective last map, then `ψ` is an isomorphism over every finite
+union of open sets satisfying `P`. -/
 theorem isIso_biUnion_of_subsetMayerVietoris {κ : Type*} (s : Finset κ) {W : κ → Set B}
     (hWo : ∀ i ∈ s, IsOpen (W i)) (hWP : ∀ i ∈ s, P (W i)) :
     IsIso (ψ (⋃ i ∈ s, W i)) := by

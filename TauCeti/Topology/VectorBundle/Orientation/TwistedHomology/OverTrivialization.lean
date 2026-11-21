@@ -91,6 +91,7 @@ theorem twistedHomologyPullbackSignLocalSystemIso_inv_of_eq (e : Trivialization 
 
 /-- Reversing the orientation of the model fibre negates the identification of homology with
 coefficients in the pulled-back orientation local system with ordinary homology. -/
+@[simp]
 theorem twistedHomologyPullbackSignLocalSystemIso_neg_hom (e : Trivialization F (π F E))
     [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) (P : TopPair.{u})
     (g : C(P.fst, TopCat.of B)) (hg : ∀ y, g y ∈ e.baseSet) (n : ℕ) :
@@ -99,6 +100,18 @@ theorem twistedHomologyPullbackSignLocalSystemIso_neg_hom (e : Trivialization F 
   simp only [twistedHomologyPullbackSignLocalSystemIso, Iso.trans_hom, asIso_hom,
     pullbackSignLocalSystemIso_neg_hom, TopPair.twistedHomologyCoefficientMap_neg,
     Preadditive.neg_comp]
+
+/-- Reversing the orientation of the model fibre negates the inverse of the identification of
+homology with coefficients in the pulled-back orientation local system with ordinary homology. -/
+@[simp]
+theorem twistedHomologyPullbackSignLocalSystemIso_neg_inv (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) (P : TopPair.{u})
+    (g : C(P.fst, TopCat.of B)) (hg : ∀ y, g y ∈ e.baseSet) (n : ℕ) :
+    (twistedHomologyPullbackSignLocalSystemIso R hι e (-ω) P g hg n).inv =
+      -(twistedHomologyPullbackSignLocalSystemIso R hι e ω P g hg n).inv :=
+  Iso.inv_ext (by
+    rw [twistedHomologyPullbackSignLocalSystemIso_neg_hom, Preadditive.neg_comp_neg,
+      Iso.hom_inv_id])
 
 /-- The identification of homology with coefficients in the pulled-back orientation local system
 with ordinary homology is natural in maps of pairs. -/
