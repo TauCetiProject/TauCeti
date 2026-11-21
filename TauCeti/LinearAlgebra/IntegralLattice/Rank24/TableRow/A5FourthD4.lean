@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.Symmetry
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.Symmetry.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
 
 import TauCeti.Data.Fin.Cast
@@ -193,9 +193,8 @@ theorem a5FourthD4BlockRotation_notMem_glueSymmetries :
   have he₀ := (decodeGlueWord_eq_some_iff _ _ _ _).mp hd₀
   have he₁ := (decodeGlueWord_eq_some_iff _ _ _ _).mp hd₁
   have hH {w : a5FourthD4.glueModule} (hw : w ∈ a5FourthD4.glueGenerators) :
-      w ∈ a5FourthD4.glueSubgroup := by
-    rw [glueSubgroup_def]
-    exact AddSubgroup.subset_closure hw
+      w ∈ a5FourthD4.glueSubgroup :=
+    a5FourthD4.glueGenerators_subset_glueSubgroup hw
   set u := piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
     a5FourthD4BlockRotation (componentType_apply_of_mem_glueSymmetries _ hg) w₀
   have hu : u ∈ a5FourthD4.glueSubgroup :=
@@ -366,29 +365,15 @@ theorem a5FourthD4TrialityDigits_mem_glueWords :
     ∀ l ∈ a5FourthD4.glueWords, a5FourthD4TrialityDigits l ∈ a5FourthD4.glueWords := by
   decide
 
-private theorem map_glueSubgroup_a5FourthD4TrialityGlueIsometry :
-    a5FourthD4.glueSubgroup.map
-        (a5FourthD4TrialityGlueIsometry.toLinearEquiv.toAddEquiv :
-          a5FourthD4.glueModule →+ a5FourthD4.glueModule) =
-      a5FourthD4.glueSubgroup := by
-  -- The image of the generators lies in the glue subgroup, and the image has the same order.
-  have hle : a5FourthD4.glueSubgroup.map
-      (a5FourthD4TrialityGlueIsometry.toLinearEquiv.toAddEquiv :
-        a5FourthD4.glueModule →+ a5FourthD4.glueModule) ≤ a5FourthD4.glueSubgroup := by
-    rw [glueSubgroup_def, AddMonoidHom.map_closure, AddSubgroup.closure_le]
-    rintro _ ⟨w, hw, rfl⟩
-    refine AddSubgroup.subset_closure (mem_glueGenerators_iff.mpr ?_)
-    simp only [AddMonoidHom.coe_ofClass]
-    exact encodeGlueWord_a5FourthD4TrialityGlueIsometry w ▸
-      a5FourthD4TrialityDigits_mem_glueWords _ (mem_glueGenerators_iff.mp hw)
-  exact AddSubgroup.eq_of_le_of_card_ge hle
-    (AddSubgroup.card_map_of_injective (EquivLike.injective _)).ge
-
 /-- **The rotation combined with triality preserves the glue subgroup of `A₅⁴ D₄`.** -/
 theorem a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
-    a5FourthD4TrialityGlueIsometry w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup := by
-  conv_lhs => rw [← map_glueSubgroup_a5FourthD4TrialityGlueIsometry]
-  exact AddSubgroup.mem_map_iff_mem (EquivLike.injective _)
+    a5FourthD4TrialityGlueIsometry w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup :=
+  -- The isometry carries the generators to generators.
+  a5FourthD4.apply_mem_glueSubgroup_iff_of_forall_mem
+    a5FourthD4TrialityGlueIsometry.toLinearEquiv.toAddEquiv
+    (fun v hv ↦ a5FourthD4.glueGenerators_subset_glueSubgroup (mem_glueGenerators_iff.mpr
+      (encodeGlueWord_a5FourthD4TrialityGlueIsometry v ▸
+        a5FourthD4TrialityDigits_mem_glueWords _ (mem_glueGenerators_iff.mp hv)))) w
 
 /-! ### The induced isometry of the glued lattice -/
 

@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 /-!
 # The diagonal Cartan subalgebra and the positive base of `sl₂`
@@ -40,6 +42,9 @@ algebraic closure is assumed.
 * `TauCeti.eq_slTwoRoot_or_eq_neg_slTwoRoot`: the nonzero weights of the adjoint action are `±α`.
 * `TauCeti.slTwoPositiveBase_positive_generator`: the base selects `e` as positive.
 * `TauCeti.coroot_slTwoRoot`: the coroot of `α` is `h`.
+* `TauCeti.rootSystem_root_slTwoRootIndex`: the simple root, read in the root system, is the
+  weight `2`.
+* `TauCeti.weylVector_slTwoPositiveBase`: the Weyl vector is the weight `1`.
 * `TauCeti.posRootsFinset_slTwoPositiveBase` and `TauCeti.weylDenominator_slTwoPositiveBase`: `α`
   is the only positive root, so the Weyl denominator is `1 - e^{-α}`.
 
@@ -96,8 +101,8 @@ theorem mem_slTwoDiagonalCartan_iff {x : SpecialLinear.sl (Fin 2) R} :
 
 instance : IsLieAbelian (slTwoDiagonalCartan R) where
   trivial x y := Subtype.ext <| Subtype.ext <| by
-    simpa using lie_eq_zero_of_isDiag (mem_slTwoDiagonalCartan_iff_isDiag.mp x.2)
-      (mem_slTwoDiagonalCartan_iff_isDiag.mp y.2)
+    simpa using lie_eq_zero_of_isDiag (mem_slTwoDiagonalCartan_iff_isDiag.mp x.property)
+      (mem_slTwoDiagonalCartan_iff_isDiag.mp y.property)
 
 /-- The top diagonal entry of `h = E₀₀ - E₁₁` is `1`. -/
 private theorem val_singleSubSingle_zero_zero :
@@ -118,7 +123,8 @@ private theorem lie_single_zero_one_of_mem (x : slTwoDiagonalCartan R) (c : R) :
     ⁅x, SpecialLinear.single (0 : Fin 2) 1 zero_ne_one c⁆ =
       (2 * x.val.val 0 0) • SpecialLinear.single (0 : Fin 2) 1 zero_ne_one c := by
   rw [LieSubalgebra.coe_bracket_of_module, SpecialLinear.lie_single_of_isDiag
-    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.2), val_one_one_eq_neg_val_zero_zero, sub_neg_eq_add,
+    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.property), val_one_one_eq_neg_val_zero_zero,
+        sub_neg_eq_add,
     two_mul]
 
 /-- An element of the diagonal Cartan lowers `E₁₀` by twice its top diagonal entry. -/
@@ -126,7 +132,7 @@ private theorem lie_single_one_zero_of_mem (x : slTwoDiagonalCartan R) (c : R) :
     ⁅x, SpecialLinear.single (1 : Fin 2) 0 one_ne_zero c⁆ =
       -(2 * x.val.val 0 0) • SpecialLinear.single (1 : Fin 2) 0 one_ne_zero c := by
   rw [LieSubalgebra.coe_bracket_of_module, SpecialLinear.lie_single_of_isDiag
-    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.2), val_one_one_eq_neg_val_zero_zero]
+    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.property), val_one_one_eq_neg_val_zero_zero]
   congr 1
   ring
 
@@ -150,7 +156,7 @@ theorem coe_slTwoCartanGenerator :
 /-- An element of the diagonal Cartan is its top diagonal entry times `h`. -/
 theorem eq_smul_slTwoCartanGenerator (x : slTwoDiagonalCartan R) :
     x = x.val.val 0 0 • slTwoCartanGenerator R :=
-  Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.2)
+  Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.property)
 
 /-- A linear form on the diagonal Cartan is determined by its value at `h`. -/
 theorem dual_ext_slTwoCartanGenerator {lam mu : Module.Dual R (slTwoDiagonalCartan R)}
@@ -187,6 +193,15 @@ theorem slTwoWeight_add (s t : R) : slTwoWeight (s + t) = slTwoWeight s + slTwoW
 /-- `slTwoWeight` commutes with subtraction of the values at `h`. -/
 theorem slTwoWeight_sub (s t : R) : slTwoWeight (s - t) = slTwoWeight s - slTwoWeight t :=
   dual_ext_slTwoCartanGenerator <| by simp
+
+/-- `m • slTwoWeight t` is the weight `m t`. -/
+theorem nsmul_slTwoWeight (m : ℕ) (t : R) : m • slTwoWeight t = slTwoWeight (m * t) :=
+  dual_ext_slTwoCartanGenerator <| by simp
+
+/-- The `j`-th rung of the string of `α = 2` above the weight `t` is the weight `t + 2j`. -/
+theorem slTwoWeight_add_nsmul (t : R) (j : ℕ) :
+    slTwoWeight t + j • slTwoWeight 2 = slTwoWeight (t + 2 * j) := by
+  rw [nsmul_slTwoWeight, slTwoWeight_add, mul_comm]
 
 end CommRing
 
@@ -428,6 +443,31 @@ theorem coroot_slTwoRoot : IsKilling.coroot (slTwoRoot K) = slTwoCartanGenerator
   Subtype.ext <| ((isSl2Triple_single (R := K) (zero_ne_one' (Fin 2))).h_eq_coroot
     slTwoRoot_isNonZero (single_zero_one_mem_rootSpace_slTwoRoot 1)
     (single_one_zero_mem_rootSpace_neg_slTwoRoot 1)).symm
+
+/-- The simple root of `sl₂`, as an element of the root system, is the weight `2`. -/
+theorem rootSystem_root_slTwoRootIndex :
+    (IsKilling.rootSystem (slTwoDiagonalCartan K)).root (slTwoRootIndex K) = slTwoWeight 2 := by
+  rw [IsKilling.rootSystem_root_apply, coe_slTwoRootIndex, toLinear_slTwoRoot]
+
+/-- The value of a linear form at `h` is its pairing with the coroot of the simple root. -/
+theorem coroot'_slTwoRootIndex (lam : Module.Dual K (slTwoDiagonalCartan K)) :
+    (IsKilling.rootSystem (slTwoDiagonalCartan K)).coroot' (slTwoRootIndex K) lam =
+      lam (slTwoCartanGenerator K) := by
+  rw [LinearMap.flip_apply, IsKilling.rootSystem_toLinearMap_apply,
+    IsKilling.rootSystem_coroot_apply, coe_slTwoRootIndex, coroot_slTwoRoot]
+
+/-- The value of the Weyl vector at `h` is `1`. -/
+@[simp]
+theorem weylVector_slTwoCartanGenerator :
+    weylVector (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K)
+      (slTwoCartanGenerator K) = 1 := by
+  rw [← coroot'_slTwoRootIndex, coroot'_weylVector _ _ slTwoRootIndex_mem_support]
+
+/-- **The Weyl vector of `sl₂` is the weight `1`**, half the simple root. -/
+theorem weylVector_slTwoPositiveBase :
+    weylVector (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K) =
+      slTwoWeight 1 :=
+  dual_ext_slTwoCartanGenerator <| by simp
 
 /-! ### The positive roots and the Weyl denominator -/
 

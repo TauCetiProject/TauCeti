@@ -104,17 +104,17 @@ instance instNormedSpace : NormedSpace ℝ (C2HolderSpace α E F) := by
   unfold C2HolderSpace
   infer_instance
 
-private abbrev toJet (f : C2HolderSpace α E F) : C2HolderJet α E F := f.1
+private abbrev toJet (f : C2HolderSpace α E F) : C2HolderJet α E F := f.val
 
 private theorem norm_toJet (f : C2HolderSpace α E F) : ‖toJet f‖ = ‖f‖ :=
   Submodule.norm_coe f
 
 /-- The underlying bounded continuous function. -/
-def toBoundedContinuousFunction (f : C2HolderSpace α E F) : E →ᵇ F := f.1.1
+def toBoundedContinuousFunction (f : C2HolderSpace α E F) : E →ᵇ F := f.val.1
 
 /-- A bounded `C^{2,α}` element coerces to its underlying function from `E` to `F`. -/
 instance instCoeFun : CoeFun (C2HolderSpace α E F) fun _ ↦ E → F :=
-  ⟨fun f ↦ f.1.1⟩
+  ⟨fun f ↦ f.val.1⟩
 
 attribute [irreducible] instCoeFun
 
@@ -125,7 +125,7 @@ theorem toBoundedContinuousFunction_apply (f : C2HolderSpace α E F) (x : E) :
   rfl
 
 /-- The first derivative field, retaining its `C^{1,α}` structure. -/
-def fderivC1 (f : C2HolderSpace α E F) : C1HolderSpace α E (E →L[ℝ] F) := f.1.2
+def fderivC1 (f : C2HolderSpace α E F) : C1HolderSpace α E (E →L[ℝ] F) := f.val.2
 
 /-- The first derivative as a bounded continuous field. -/
 def fderiv (f : C2HolderSpace α E F) : E →ᵇ (E →L[ℝ] F) :=
@@ -220,7 +220,7 @@ theorem secondFDeriv_const (c : F) : secondFDeriv (const (α := α) (E := E) c) 
 theorem hasFDerivAt (f : C2HolderSpace α E F) (x : E) :
     HasFDerivAt (f : E → F) (f.fderiv x) x := by
   rw [instCoeFun, fderiv]
-  exact f.2 x
+  exact f.property x
 
 /-- The first derivative accessor agrees with Mathlib's `fderiv`. -/
 @[simp]
