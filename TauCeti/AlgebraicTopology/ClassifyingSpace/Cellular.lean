@@ -13,6 +13,7 @@ public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
+import TauCeti.Topology.Homotopy.Extension.CWComplex
 
 /-!
 # The cellular classifying space of a presented group
@@ -78,7 +79,8 @@ inclusion of the presentation complex is a homotopy equivalence
   of the cellular classifying space to that of a space with vanishing higher homotopy groups is
   induced by a pointed map.
 * `TauCeti.instCWComplexCellularClassifyingSpace`: the cellular classifying space is a CW complex,
-  with a single `0`-cell at its base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`).
+  with a single `0`-cell at its base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`),
+  making it well-pointed (`TauCeti.hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint`).
 * `TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`: pointed maps from the cellular
   classifying space to a space with vanishing higher homotopy groups that induce the same
   homomorphism of fundamental groups are homotopic relative to the base point.
@@ -232,6 +234,14 @@ theorem skeletonLT_one_cellularClassifyingSpace :
     (skeletonLT (univ : Set (cellularClassifyingSpace R)) 1 : Set (cellularClassifyingSpace R)) =
       {cellularClassifyingSpaceBasepoint R} := by
   simp [skeletonLT_one_eq_insert]
+
+/-- **The cellular classifying space is well-pointed.** Its base point is its unique `0`-cell, so
+it has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint :
+    HasHomotopyExtensionProperty
+      ({cellularClassifyingSpaceBasepoint R} : Set (cellularClassifyingSpace R)) :=
+  hasHomotopyExtensionProperty_singleton_of_mem_skeletonLT_one
+    (by rw [skeletonLT_one_cellularClassifyingSpace]; exact Set.mem_singleton _)
 
 /-- **Maps out of the cellular classifying space are determined up to pointed homotopy by their
 effect on `π₁`.** If the homotopy groups of `Z` vanish in dimensions at least two, at every point,

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.OrderedMap
 public import TauCeti.Topology.CWComplex.Classical.FreeAction
 public import TauCeti.Topology.CWComplex.Classical.OrbitSpace
+import TauCeti.Topology.Homotopy.Extension.CWComplex
 
 /-!
 # The CW structures on Milnor's countable join and classifying space
@@ -73,6 +74,10 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
   `TauCeti.closedCell_classifyingSpaceCellEquiv_symm_mk` and
   `TauCeti.cellFrontier_classifyingSpaceCellEquiv_symm_mk`: the open cells, closed cells and cell
   frontiers of the classifying space are the images of those of the countable join.
+* `TauCeti.classifyingSpaceBasepoint_mem_skeletonLT_one`: the base point of the classifying space
+  lies in its `0`-skeleton.
+* `TauCeti.hasHomotopyExtensionProperty_classifyingSpaceBasepoint`: Milnor's classifying space is
+  well-pointed.
 
 ## References
 
@@ -440,6 +445,29 @@ theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
       classifyingSpaceProj G '' {x : universalGSpace G | x.val.support ⊂ c.val.val} := by
   rw [← c.image_characteristicMap_sphere, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
+
+variable (G) in
+/-- The base point of the classifying space is a `0`-cell, hence lies in the `0`-skeleton. -/
+theorem classifyingSpaceBasepoint_mem_skeletonLT_one :
+    classifyingSpaceBasepoint G ∈
+      (skeletonLT (univ : Set (classifyingSpace G)) 1 : Set (classifyingSpace G)) := by
+  let c : (indexedJoin fun _ : ℕ => G).RealizationCell 0 :=
+    ⟨⟨{⟨0, (1 : G)⟩}, mem_indexedJoin_iff.2 ⟨Finset.singleton_nonempty _, by
+        intro v hv w hw _
+        simp only [Finset.coe_singleton, mem_singleton_iff] at hv hw
+        exact hv.trans hw.symm⟩⟩, Finset.card_singleton _⟩
+  refine openCell_subset_skeletonLT 0
+    ((classifyingSpaceCellEquiv G 0).symm (Quotient.mk'' c)) ?_
+  rw [openCell_classifyingSpaceCellEquiv_symm_mk]
+  refine ⟨universalGSpaceBasepoint G, ?_, classifyingSpaceProj_universalGSpaceBasepoint G⟩
+  simp [c, universalGSpaceBasepoint_val]
+
+/-- **Milnor's classifying space is well-pointed.** Its base point is a `0`-cell, so it has the
+homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_classifyingSpaceBasepoint (G : Type u) [Group G] :
+    HasHomotopyExtensionProperty ({classifyingSpaceBasepoint G} : Set (classifyingSpace G)) :=
+  hasHomotopyExtensionProperty_singleton_of_mem_skeletonLT_one
+    (classifyingSpaceBasepoint_mem_skeletonLT_one G)
 
 end ClassifyingSpace
 
