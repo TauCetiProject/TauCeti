@@ -54,7 +54,7 @@ theorem uniformIntegrable_gridExponential (hW : IsFilteredPreBrownianReal ℱ W 
     (hT : ∀ k, (τ k (N k) : ℝ) - τ k 0 ≤ T) :
     UniformIntegrable (fun k ↦ gridExponential (τ k) (θ k) W (N k)) 1 P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  exact uniformIntegrable_of_eLpNorm_bound (by norm_num) (by finiteness)
+  exact uniformIntegrable_of_eLpNorm_le (by norm_num) (by finiteness)
     (fun k ↦ hW.eLpNorm_two_gridExponential_le (hτ k) (hθ k) (hK k) (hT k))
 
 variable {l : Filter ι} [l.IsCountablyGenerated]

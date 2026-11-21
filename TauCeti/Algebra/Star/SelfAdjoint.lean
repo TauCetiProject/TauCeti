@@ -38,6 +38,7 @@ is self-adjoint. For a self-adjoint `x` in an additive group with a star-additiv
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
 * `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
   `ξ` with a self-adjoint `H` is self-adjoint.
+* `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
 * `TauCeti.isSelfAdjoint_neg_fact`: packages `Fact (IsSelfAdjoint (-x))` from
   `Fact (IsSelfAdjoint x)`.
 -/
@@ -100,6 +101,18 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
     {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
   simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]
+
+/-- Two self-adjoint elements agreeing in range with an element `e` are equal.
+For idempotents in a ring, the equations express equality of their principal right ideals. -/
+theorem IsSelfAdjoint.eq_of_mul_eq_right {A : Type*} [Semigroup A] [StarMul A] {e p q : A}
+    (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q)
+    (hep : e * p = p) (hpe : p * e = e) (heq : e * q = q) (hqe : q * e = e) :
+    p = q := by
+  have hpq : p * q = q := by rw [← heq, ← mul_assoc, hpe, heq]
+  have hqp : q * p = p := by rw [← hep, ← mul_assoc, hqe, hep]
+  have hpq' : q * p = q := by
+    simpa only [star_mul, hp.star_eq, hq.star_eq] using congrArg star hpq
+  exact hqp.symm.trans hpq'
 
 namespace TauCeti
 
