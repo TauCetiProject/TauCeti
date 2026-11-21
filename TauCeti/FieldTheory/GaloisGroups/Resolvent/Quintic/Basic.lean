@@ -169,7 +169,7 @@ theorem rename_quinticF20Invariant_eq_self_iff (σ : Perm (Fin 5)) :
       constructor
       intro x y
       obtain ⟨g, hg⟩ := (isPretransitive_referenceSubgroup 5 ⟨2, by simp⟩).exists_smul_eq x y
-      exact ⟨⟨(g : Perm (Fin 5)), hle g.2⟩, hg⟩
+      exact ⟨⟨(g : Perm (Fin 5)), hle g.property⟩, hg⟩
     obtain ⟨j, hj⟩ := exists_transitiveGroupLabel_five
       (renameStabilizer quinticF20Invariant)
     have hcard := hj.natCard_eq

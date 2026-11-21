@@ -29,6 +29,8 @@ that of a disjoint union of disk pairs.
 * `TopPair.twistedHomologyIsoOfHomotopy`: `Hₖ(X, A; L) ≅ Hₖ(X, A; L x)` for a contraction of `X`
   onto `x`.
 * `TopPair.isZero_twistedHomology_diskBoundaryPair_of_ne`: `Hₖ(Dⁿ, Sⁿ⁻¹; L) = 0` for `k ≠ n`.
+* `TauCeti.twistedHomologyDiskBoundaryPairIso`: `Hₙ(Dⁿ, Sⁿ⁻¹; L) ≅ L(0)`, by transport along the
+  straight-line contraction `TauCeti.diskContraction` onto the centre.
 
 ## References
 
@@ -80,3 +82,30 @@ theorem isZero_twistedHomology_diskBoundaryPair_of_ne {n k : ℕ} (hk : k ≠ n)
     ((diskBoundaryPair.{v} n).twistedHomologyIsoOfHomotopy H L k)
 
 end TopPair
+
+namespace TauCeti
+
+variable {R : Type u} [Ring R]
+
+/-- **The relative homology of the disk with local coefficients in its dimension** is the fibre of
+the system over the centre: `Hₙ(Dⁿ, Sⁿ⁻¹; L) ≅ L(0)`. It is the identification of `L` with the
+constant system `L(0)` by transport along the straight-line contraction onto the centre, followed
+by `TauCeti.singularHomologyDiskBoundaryPairIso`. -/
+def twistedHomologyDiskBoundaryPairIso (n : ℕ)
+    (L : LocalCoefficientSystem.{u, v, max v w} R (diskBoundaryPair.{v} n).fst) :
+    (diskBoundaryPair.{v} n).twistedHomology L n ≅ L.obj (FundamentalGroupoid.mk (diskCenter n)) :=
+  (diskBoundaryPair.{v} n).twistedHomologyIsoOfHomotopy (diskContraction n) L n ≪≫
+    singularHomologyDiskBoundaryPairIso _ n
+
+/-- `TauCeti.twistedHomologyDiskBoundaryPairIso` is the identification of the coefficients with a
+constant system along the straight-line contraction `TauCeti.diskContraction`, followed by the
+computation of the relative homology of the disk with constant coefficients. -/
+lemma twistedHomologyDiskBoundaryPairIso_hom (n : ℕ)
+    (L : LocalCoefficientSystem.{u, v, max v w} R (diskBoundaryPair.{v} n).fst) :
+    (twistedHomologyDiskBoundaryPairIso n L).hom =
+      ((diskBoundaryPair.{v} n).twistedHomologyIsoOfHomotopy (diskContraction n) L n).hom ≫
+        (singularHomologyDiskBoundaryPairIso
+          (L.obj (FundamentalGroupoid.mk (diskCenter n))) n).hom :=
+  (rfl)
+
+end TauCeti

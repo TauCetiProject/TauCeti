@@ -91,7 +91,7 @@ theorem boundaryCell_apply_face {n : ℕ}
 theorem boundaryCell_apply_eq_zero_of_not_subset {n : ℕ}
     (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1))
     (d : _root_.AbstractSimplicialComplex.RealizationCell K n)
-    (h : ¬ d.1.1 ⊆ c.1.1) : boundaryCell R c d = 0 := by
+    (h : ¬ d.val.val ⊆ c.val.val) : boundaryCell R c d = 0 := by
   classical
   rw [boundaryCell, Finsupp.finsetSum_apply]
   apply Finset.sum_eq_zero
@@ -101,7 +101,7 @@ theorem boundaryCell_apply_eq_zero_of_not_subset {n : ℕ}
     apply h
     rw [← hj]
     simpa only [_root_.AbstractSimplicialComplex.RealizationCell.face_val] using
-      Finset.erase_subset (c.vertexEmbedding j) c.1.1
+      Finset.erase_subset (c.vertexEmbedding j) c.val.val
   simp [hface]
 
 /-- A cell has nonzero boundary coefficient exactly when it is a codimension-one subface. -/
@@ -109,7 +109,7 @@ theorem boundaryCell_apply_eq_zero_of_not_subset {n : ℕ}
 theorem boundaryCell_apply_ne_zero_iff [Nontrivial R] {n : ℕ}
     (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1))
     (d : _root_.AbstractSimplicialComplex.RealizationCell K n) :
-    boundaryCell R c d ≠ 0 ↔ d.1.1 ⊆ c.1.1 := by
+    boundaryCell R c d ≠ 0 ↔ d.val.val ⊆ c.val.val := by
   constructor
   · intro hne
     by_contra hdc

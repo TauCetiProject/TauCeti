@@ -43,7 +43,7 @@ theorem lipschitzOnWith_ball_of_tendsto [l.NeBot] {x : E} {r C : ℝ}
     (hlim : ∀ y ∈ ball x r, Tendsto (fun i ↦ u i y) l (𝓝 (v y))) :
     LipschitzOnWith C.toNNReal v (ball x r) := by
   refine lipschitzOnWith_iff_restrict.2 <| (isClosed_setOfPred_lipschitzWith _).mem_of_tendsto
-    (tendsto_pi_nhds.2 fun y ↦ hlim y y.2) (hu.mono fun i hi ↦ ?_)
+    (tendsto_pi_nhds.2 fun y ↦ hlim y y.property) (hu.mono fun i hi ↦ ?_)
   refine lipschitzOnWith_iff_restrict.1 <| Convex.lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     (fun y hy ↦ (hi y hy).1) (fun y hy ↦ ?_) (convex_ball x r)
   rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal']
