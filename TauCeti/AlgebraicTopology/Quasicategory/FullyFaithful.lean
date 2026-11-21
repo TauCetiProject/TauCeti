@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 
@@ -94,15 +93,7 @@ space between vertices satisfying `P` has only these two vertices, so it lies in
 subcategory. -/
 instance fullEnhancedSubcategory_ι (P : X _⦋0⦌ → Prop) :
     IsFullyFaithful (X.fullEnhancedSubcategory P).ι :=
-  of_isIso_map _ fun x y ↦ rightMappingSpace.isIso_map_ι x y fun n s ↦
-    (mem_fullEnhancedSubcategory_obj_iff_forall_fin P (s.val : X _⦋n + 1⦌)).2 fun i ↦ by
-      cases i using Fin.lastCases with
-      | last =>
-        rw [rightMappingSpace.map_const_last s]
-        exact (mem_fullEnhancedSubcategory_obj_zero_iff P y.val).1 y.property
-      | cast j =>
-        rw [rightMappingSpace.map_const_castSucc s j]
-        exact (mem_fullEnhancedSubcategory_obj_zero_iff P x.val).1 x.property
+  of_isIso_map _ (rightMappingSpace.isIso_map_fullEnhancedSubcategory_ι P)
 
 /-- The nerve of a fully faithful functor is fully faithful. -/
 instance nerveMap {C D : Type v} [Category.{w} C] [Category.{w} D] (F : C ⥤ D) [F.Full]

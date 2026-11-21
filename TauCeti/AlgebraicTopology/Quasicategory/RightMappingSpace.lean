@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
-public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
@@ -539,22 +539,16 @@ every vertex of a simplex of `Hom^R_X(x, y)` is either `x` or `y`, so the whole 
 lies in the full enhanced subcategory. -/
 instance isIso_map_fullEnhancedSubcategory_ι (P : X _⦋0⦌ → Prop)
     (x y : (X.fullEnhancedSubcategory P : SSet.{u}) _⦋0⦌) :
-    IsIso (map x y (X.fullEnhancedSubcategory P).ι) := by
-  refine isIso_map_ι x y fun n s ↦ ?_
-  let σ : X _⦋n + 1⦌ := s.val
-  refine (mem_fullEnhancedSubcategory_obj_iff_forall_fin P σ).2 ?_
-  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff (n := n) σ).1 s.property
-  refine Fin.lastCases ?_ fun j ↦ ?_
-  · rw [h₂]
-    exact (mem_fullEnhancedSubcategory_obj_zero_iff P _).1 y.property
-  · have hcomp : SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc =
-        SimplexCategory.const ⦋0⦌ ⦋n⦌ j ≫ SimplexCategory.δ (Fin.last (n + 1)) := by
-      ext i
-      exact (congrArg Fin.val (congrFun Fin.succAbove_last j)).symm
-    rw [hcomp, op_comp, Functor.map_comp_apply]
-    change P (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op (X.δ (Fin.last (n + 1)) σ))
-    rw [h₁, map_map_const_zero, const_eq_id]
-    simpa using (mem_fullEnhancedSubcategory_obj_zero_iff P _).1 x.property
+    IsIso (map x y (X.fullEnhancedSubcategory P).ι) :=
+  isIso_map_ι x y fun n s ↦
+    (mem_fullEnhancedSubcategory_obj_iff_forall_fin P (s.val : X _⦋n + 1⦌)).2 fun i ↦ by
+      cases i using Fin.lastCases with
+      | last =>
+        rw [map_const_last s]
+        exact (mem_fullEnhancedSubcategory_obj_zero_iff P y.val).1 y.property
+      | cast j =>
+        rw [map_const_castSucc s j]
+        exact (mem_fullEnhancedSubcategory_obj_zero_iff P x.val).1 x.property
 
 end map
 
