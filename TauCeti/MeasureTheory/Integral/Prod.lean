@@ -52,6 +52,23 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 
 public section
 
+namespace MeasureTheory
+
+/-- Integrating a function of the first coordinate against a difference between the two
+coordinates subtracts the product of their separate means. -/
+theorem integral_mul_sub_comp_prod_eq_sub {α : Type*} [MeasurableSpace α]
+    {μ ν : Measure α} [SFinite μ] [IsProbabilityMeasure ν] {f u : α → ℝ}
+    (hf : Integrable f μ) (hu : Integrable u ν) (hfu : Integrable (fun x ↦ f x * u x) μ) :
+    ∫ p : α × α, f p.1 * (u p.1 - u p.2) ∂μ.prod ν =
+      (∫ x, f x * u x ∂μ) - (∫ x, f x ∂μ) * ∫ x, u x ∂ν := by
+  have hfst : ∫ p : α × α, f p.1 * u p.1 ∂μ.prod ν = ∫ x, f x * u x ∂μ := by
+    simpa only [mul_one, integral_const, probReal_univ, smul_eq_mul, one_mul] using
+      (integral_prod_mul (μ := μ) (ν := ν) (fun x ↦ f x * u x) (fun _ ↦ (1 : ℝ)))
+  simp_rw [mul_sub]
+  rw [integral_sub (hfu.comp_fst ν) (hf.mul_prod hu), hfst, integral_prod_mul]
+
+end MeasureTheory
+
 namespace TauCeti
 
 open MeasureTheory Set

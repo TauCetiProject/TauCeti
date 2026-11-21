@@ -135,10 +135,10 @@ private theorem existsUnique_ne (e : Γ.E) :
     ∃! f : {f : Γ.E // Γ.src f = Γ.src e}, f ≠ ⟨e, rfl⟩ :=
   (Nat.card_eq_two_iff' _).1 (hΓ e)
 
-private noncomputable def other (e : Γ.E) : Γ.E := (existsUnique_ne hΓ e).exists.choose.1
+private noncomputable def other (e : Γ.E) : Γ.E := (existsUnique_ne hΓ e).exists.choose.val
 
 private theorem src_other (e : Γ.E) : Γ.src (other hΓ e) = Γ.src e :=
-  (existsUnique_ne hΓ e).exists.choose.2
+  (existsUnique_ne hΓ e).exists.choose.property
 
 private theorem other_ne (e : Γ.E) : other hΓ e ≠ e := fun h =>
   (existsUnique_ne hΓ e).exists.choose_spec (Subtype.ext h)
@@ -261,7 +261,7 @@ theorem exists_path_nodup_map_toGeomEdge_darts_and_mem (a : Γ.V)
   have hΔ (e : (Γ.restrict S hS).E) :
       Nat.card {f // (Γ.restrict S hS).src f = (Γ.restrict S hS).src e} = 2 :=
     (Nat.card_congr (Equiv.subtypeSubtypeEquivSubtype fun hf =>
-      (congrArg (fun x => Nonempty (Γ.Path a x)) hf).mpr e.2)).trans (hΓ e e.2)
+      (congrArg (fun x => Nonempty (Γ.Path a x)) hf).mpr e.property)).trans (hΓ e e.property)
   obtain ⟨p, hnodup, hmem⟩ := exists_path_nodup_map_toGeomEdge_darts_and_mem_of_forall hΔ a
   obtain ⟨p', hp'⟩ : ∃ p' : Γ.Path a a, Path.darts Γ p' = (Path.darts _ p).map Subtype.val :=
     ⟨_, Hom.darts_mapPath _ (Γ.restrictInclusion S hS) p⟩

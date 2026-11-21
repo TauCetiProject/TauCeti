@@ -61,7 +61,7 @@ instance instLocallyEquiconnectedSpaceContinuousMap [CompactSpace K] [LocallyCom
   -- The pointwise connecting path, as a continuous map on `W' × I`.
   have hG : Continuous fun q : (W' × I) × K => l ((q.1.1 : C(K, X) × C(K, X)).1 q.2,
       (q.1.1 : C(K, X) × C(K, X)).2 q.2) q.1.2 :=
-    h.continuous_comp (by fun_prop) (by fun_prop) (by fun_prop) fun q => q.1.1.2 q.2
+    h.continuous_comp (by fun_prop) (by fun_prop) (by fun_prop) fun q => q.1.1.property q.2
   let L : C(W' × I, C(K, X)) := ContinuousMap.curry ⟨_, hG⟩
   refine ⟨W', fun p t => if hp : p ∈ W' then L (⟨p, hp⟩, t) else p.1,
     { isOpen := hW'
@@ -73,7 +73,8 @@ instance instLocallyEquiconnectedSpaceContinuousMap [CompactSpace K] [LocallyCom
   · rintro ⟨f, g⟩ (rfl : f = g) k
     exact h.mk_self_mem (f k)
   · refine continuousOn_iff_continuous_domRestrict.mpr ?_
-    refine (L.continuous.comp (f := fun q : ↥(W' ×ˢ (univ : Set I)) => (⟨q.1.1, q.2.1⟩, q.1.2))
+    refine (L.continuous.comp (f := fun q : ↥(W' ×ˢ (univ : Set I)) => (⟨q.val.1, q.property.1⟩,
+        q.val.2))
       (by fun_prop)).congr fun ⟨⟨p, t⟩, hp, _⟩ => ?_
     simp [Set.domRestrict, hp]
   · ext k

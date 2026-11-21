@@ -112,8 +112,8 @@ theorem logSpaceExtend_apply_w₀ (y : logSpace L) : logSpaceExtend L y w₀ = -
 
 @[simp]
 theorem logSpaceExtend_apply_val (y : logSpace L) (w : {w : InfinitePlace L // w ≠ w₀}) :
-    logSpaceExtend L y w.1 = y w := by
-  simp [logSpaceExtend, w.2]
+    logSpaceExtend L y w.val = y w := by
+  simp [logSpaceExtend, w.property]
 
 /-- The coordinates of `logSpaceExtend L y` sum to zero. -/
 @[simp]
@@ -130,14 +130,14 @@ theorem sum_logSpaceExtend_perm (y : logSpace L) (e : Equiv.Perm (InfinitePlace 
 
 /-- A vector of coordinate sum zero is the extension of its coordinates away from `w₀`. -/
 theorem logSpaceExtend_eq_self {f : InfinitePlace L → ℝ} (hf : ∑ w, f w = 0) :
-    logSpaceExtend L (fun w ↦ f w.1) = f := by
+    logSpaceExtend L (fun w ↦ f w.val) = f := by
   classical
   ext w
   by_cases hw : w = w₀
   · subst hw
     rw [logSpaceExtend_apply_w₀, eq_comm, ← add_eq_zero_iff_eq_neg,
       ← Fintype.sum_eq_add_sum_subtype_ne f w₀, hf]
-  · exact logSpaceExtend_apply_val (fun w ↦ f w.1) ⟨w, hw⟩
+  · exact logSpaceExtend_apply_val (fun w ↦ f w.val) ⟨w, hw⟩
 
 /-- The extension of the logarithmic embedding of a unit `x` is the full vector
 `(mult w * log w(x))_w` over all infinite places, by the product formula. -/
@@ -254,7 +254,7 @@ theorem norm_logEmbedding_le_logHeight₁ (u : (𝓞 L)ˣ) :
   rw [pi_norm_le_iff_of_nonneg (by positivity)]
   intro w
   rw [Real.norm_eq_abs, logEmbedding_component]
-  exact InfinitePlace.abs_mult_mul_log_le_logHeight₁ w.1 _
+  exact InfinitePlace.abs_mult_mul_log_le_logHeight₁ w.val _
 
 open Classical in
 /-- The relative logarithmic height of a unit is bounded by the unit rank times the supremum
@@ -361,14 +361,14 @@ variable (K L : Type*) [Field K] [Field L] [NumberField L] [Algebra K L]
 coordinates of the sum-zero hyperplane of `ℝ^{InfinitePlace L}` by `w ↦ σ • w`, read in the chart
 `logSpaceExtend L` (`TauCeti.NumberField.Units.logSpaceExtend_logSpaceRep`). -/
 def logSpaceRep : Representation ℝ (L ≃ₐ[K] L) (logSpace L) where
-  toFun σ := LinearMap.funLeft ℝ ℝ (fun w : {w : InfinitePlace L // w ≠ w₀} ↦ σ⁻¹ • w.1) ∘ₗ
+  toFun σ := LinearMap.funLeft ℝ ℝ (fun w : {w : InfinitePlace L // w ≠ w₀} ↦ σ⁻¹ • w.val) ∘ₗ
     logSpaceExtend L
   map_one' := LinearMap.ext fun y ↦ funext fun w ↦ by simp
   map_mul' σ τ := LinearMap.ext fun y ↦ funext fun w ↦ by
     have hτ : ∑ v, logSpaceExtend L y (τ⁻¹ • v) = 0 :=
       sum_logSpaceExtend_perm y (MulAction.toPerm τ⁻¹)
-    have h : (LinearMap.funLeft ℝ ℝ fun w : {w : InfinitePlace L // w ≠ w₀} ↦ τ⁻¹ • w.1)
-        (logSpaceExtend L y) = fun w ↦ logSpaceExtend L y (τ⁻¹ • w.1) :=
+    have h : (LinearMap.funLeft ℝ ℝ fun w : {w : InfinitePlace L // w ≠ w₀} ↦ τ⁻¹ • w.val)
+        (logSpaceExtend L y) = fun w ↦ logSpaceExtend L y (τ⁻¹ • w.val) :=
       funext fun w ↦ LinearMap.funLeft_apply _ _ _ _ w
     simp only [LinearMap.comp_apply, LinearMap.funLeft_apply, mul_apply_eq_comp, h,
       logSpaceExtend_eq_self hτ, mul_inv_rev, mul_smul]
@@ -378,7 +378,7 @@ variable {K L}
 @[simp]
 theorem logSpaceRep_apply (σ : L ≃ₐ[K] L) (y : logSpace L)
     (w : {w : InfinitePlace L // w ≠ w₀}) :
-    logSpaceRep K L σ y w = logSpaceExtend L y (σ⁻¹ • w.1) :=
+    logSpaceRep K L σ y w = logSpaceExtend L y (σ⁻¹ • w.val) :=
   (rfl)
 
 /-- **`logSpaceRep` is the permutation of the infinite places**, read through the identification
@@ -388,7 +388,7 @@ theorem logSpaceExtend_logSpaceRep (σ : L ≃ₐ[K] L) (y : logSpace L) :
     logSpaceExtend L (logSpaceRep K L σ y) =
       fun w : InfinitePlace L ↦ logSpaceExtend L y (σ⁻¹ • w) := by
   have hrep : logSpaceRep K L σ y =
-      fun w : {w : InfinitePlace L // w ≠ w₀} ↦ logSpaceExtend L y (σ⁻¹ • w.1) :=
+      fun w : {w : InfinitePlace L // w ≠ w₀} ↦ logSpaceExtend L y (σ⁻¹ • w.val) :=
     funext (logSpaceRep_apply σ y)
   rw [hrep]
   exact logSpaceExtend_eq_self (f := fun w ↦ logSpaceExtend L y (σ⁻¹ • w))
@@ -405,7 +405,7 @@ theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : Additive (𝓞 L)ˣ) :
   change logEmbedding L (Additive.ofMul (σ • x.toMul)) =
     logSpaceRep K L σ (logEmbedding L (Additive.ofMul x.toMul))
   ext w
-  have hmult : (σ.symm • w.1).mult = w.1.mult := by
+  have hmult : (σ.symm • w.val).mult = w.val.mult := by
     unfold mult
     rw [isReal_smul_iff]
   rw [logSpaceRep_apply, logSpaceExtend_logEmbedding x.toMul,

@@ -86,16 +86,16 @@ private def doubleTriangleCycleEquiv {p : Fin 4 → Prop} {s : Fin 3 → Prop}
       rw [Setoid.ker_def, Subtype.ext_iff]
       exact doubleTriangleSidePairing_sameCycle_iff).trans
     (Setoid.quotientKerEquivOfSurjective
-      (fun j ↦ ⟨(![0, 2, 1, 2] : Fin 4 → Fin 3) j, (hps j).1 j.2⟩) fun i ↦
+      (fun j ↦ ⟨(![0, 2, 1, 2] : Fin 4 → Fin 3) j, (hps j).1 j.property⟩) fun i ↦
         ⟨⟨(![0, 2, 3] : Fin 3 → Fin 4) i,
-            (hps _).2 (by rw [doubleTriangle_index_comp]; exact i.2)⟩,
+            (hps _).2 (by rw [doubleTriangle_index_comp]; exact i.property)⟩,
           Subtype.ext (doubleTriangle_index_comp i)⟩)
 
 private theorem doubleTriangleCycleEquiv_symm_apply {p : Fin 4 → Prop} {s : Fin 3 → Prop}
     (hps : ∀ j, p j ↔ s ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)) (i : {i : Fin 3 // s i}) :
     (doubleTriangleCycleEquiv (h₀ := h₀) (h₁ := h₁) hps).symm i =
       Quotient.mk'' ⟨(![0, 2, 3] : Fin 3 → Fin 4) i,
-        (hps _).2 (by rw [doubleTriangle_index_comp]; exact i.2)⟩ := by
+        (hps _).2 (by rw [doubleTriangle_index_comp]; exact i.property)⟩ := by
   rw [Equiv.symm_apply_eq]
   exact Subtype.ext (doubleTriangle_index_comp i).symm
 
@@ -135,7 +135,7 @@ theorem coe_doubleTriangleEllipticOrbitEquiv_apply
         (interior (P.doubleTriangle h₀ h₁).carrier))
     (i : {i : Fin 3 // (P.vertex i).isLeft}) :
     (doubleTriangleEllipticOrbitEquiv hmap hcover hdisj i : orbitRel.Quotient Γ ℍ) =
-      Quotient.mk'' ((P.vertex i).getLeft i.2) := by
+      Quotient.mk'' ((P.vertex i).getLeft i.property) := by
   rw [doubleTriangleEllipticOrbitEquiv, Equiv.trans_apply, doubleTriangleCycleEquiv_symm_apply,
     Equiv.trans_apply, Equiv.sumEmpty_symm_apply,
     SidePairing.ellipticOrbitEquiv_apply_inl_mk]
@@ -188,7 +188,7 @@ theorem coe_doubleTriangleCuspOrbitEquiv_apply
         (interior (P.doubleTriangle h₀ h₁).carrier))
     (i : {i : Fin 3 // (P.vertex i).isRight}) :
     (doubleTriangleCuspOrbitEquiv hmap hlf hdisj i : Γ.BoundaryOrbit) =
-      Quotient.mk'' ((P.vertex i).getRight i.2) := by
+      Quotient.mk'' ((P.vertex i).getRight i.property) := by
   rw [doubleTriangleCuspOrbitEquiv, Equiv.trans_apply, doubleTriangleCycleEquiv_symm_apply,
     SidePairing.coe_idealVertexCycleEquiv_mk]
   congr 1

@@ -24,6 +24,11 @@ The strip maximum principle below requires growth only along the open strip, hol
 there and continuity on its closure. It applies in particular after normalizing boundary
 estimates for convexity arguments. A three-lines corollary interpolates two constant edge
 bounds geometrically, without assuming boundedness inside the strip in advance.
+
+The analytic principles are Mathlib's `PhragmenLindelof.vertical_strip` and
+`Complex.HadamardThreeLines.norm_le_interp_of_mem_verticalClosedStrip'`; the new input is the
+comparison of their growth hypotheses with finite order, together with stability of finite-order
+strip growth under vertical differences (`isBigO_add_mul_I_sub_exp_rpow`).
 -/
 
 public section
@@ -133,6 +138,45 @@ theorem exists_norm_le_mul_rpow_of_isBigO_cocompact {f : ℂ → E} {σ d p : �
   simpa only [q, hw_eq] using (div_le_iff₀ (Real.rpow_pos_of_pos (by positivity) p)).mp hle
 
 end Seminormed
+
+/-- Finite-order growth along any vertical set `re ⁻¹' s` is preserved under vertical
+differences `z ↦ f (z + h * I) - f z`. -/
+theorem isBigO_add_mul_I_sub_exp_rpow {E : Type*} [SeminormedAddCommGroup E]
+    {f : ℂ → E} {s : Set ℝ} {A B : ℝ} (h : ℝ)
+    (hf : f =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)] fun w ↦ Real.exp (B * ‖w‖ ^ A)) :
+    (fun z ↦ f (z + h * I) - f z) =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)]
+      fun w ↦ Real.exp ((|B| * 2 ^ max A 0) * ‖w‖ ^ max A 0) := by
+  let l := cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)
+  set p := max A 0
+  have htend : Tendsto (fun z : ℂ ↦ z + h * I) l l := by
+    refine tendsto_inf.2 ⟨(tendsto_add_const_cobounded ((h : ℂ) * I)).mono_left inf_le_left,
+      tendsto_principal.2 ?_⟩
+    filter_upwards [(eventually_mem_principal _).filter_mono inf_le_right] with z hz
+    simpa using hz
+  have hexp {w z : ℂ} (hw : 1 ≤ ‖w‖) (hwz : ‖w‖ ≤ 2 * ‖z‖) :
+      ‖Real.exp (B * ‖w‖ ^ A)‖ ≤ Real.exp (|B| * 2 ^ p * ‖z‖ ^ p) := by
+    suffices B * ‖w‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p by
+      simpa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp] using this
+    calc B * ‖w‖ ^ A ≤ |B| * ‖w‖ ^ p :=
+          mul_le_mul (le_abs_self B) (Real.rpow_le_rpow_of_exponent_le hw (le_max_left _ _))
+            (Real.rpow_nonneg (norm_nonneg _) _) (abs_nonneg B)
+      _ ≤ |B| * 2 ^ p * ‖z‖ ^ p := by
+          simpa [Real.mul_rpow zero_le_two (norm_nonneg _), mul_assoc] using
+            mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (norm_nonneg _) hwz (le_max_right _ _))
+              (abs_nonneg B)
+  have hlarge : ∀ᶠ z : ℂ in l, max 1 ‖(h : ℂ) * I‖ + 1 ≤ ‖z‖ :=
+    (tendsto_norm_cobounded_atTop.eventually
+      (eventually_ge_atTop (max 1 ‖(h : ℂ) * I‖ + 1))).filter_mono inf_le_left
+  refine ((hf.comp_tendsto htend).trans (IsBigO.of_norm_eventuallyLE ?_)).sub
+    (hf.trans (IsBigO.of_norm_eventuallyLE ?_))
+  · filter_upwards [hlarge] with z hz
+    have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
+    rw [add_sub_cancel_right] at htri
+    exact hexp (by linarith [le_max_right 1 ‖(h : ℂ) * I‖])
+      (by linarith [norm_add_le z ((h : ℂ) * I), le_max_left 1 ‖(h : ℂ) * I‖,
+        le_max_right 1 ‖(h : ℂ) * I‖])
+  · filter_upwards [hlarge] with z hz
+    exact hexp (by linarith [le_max_left 1 ‖(h : ℂ) * I‖]) (by linarith [norm_nonneg z])
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {f : ℂ → E} {a b C : ℝ} {z : ℂ}

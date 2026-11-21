@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Fourier.LpSpace
-import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -47,10 +49,19 @@ normed complex `F`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
   Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the `H¹` norm of a Schwartz function in terms
-  of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_sq`: the square of the `H^s` norm of a Schwartz
+  function is `∫ ⟨ξ⟩ ^ (2s) ‖𝓕 u ξ‖²`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`: raising the order by one adds the
+  derivatives, `‖u‖²_{H^{s+1}} = ‖u‖²_{H^s} + (2π)⁻² ∑ᵢ ‖∂_{bᵢ} u‖²_{H^s}`; in particular
+  (`SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`)
+  `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
   norm of a Schwartz function.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le`: the `H^s` norm of the
+  wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` is at most `2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`,
+  and
+  `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_cutoffExponential_smul_le`: hence the `H^s`
+  norms of the wave packets of frequency `t ξ` are `O(t ^ s)` as `t → ∞`.
 
 ## References
 
@@ -154,40 +165,91 @@ theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [Inner
   rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM,
     norm_toLp_fourierMultiplierCLM_eq (by fun_prop)]
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [CompleteSpace F] in
+/-- The pointwise integrand of the squared `H^r` norm:
+`‖(1 + ‖ξ‖ ^ 2) ^ (r / 2) • v‖ ^ 2 = (1 + ‖ξ‖ ^ 2) ^ r * ‖v‖ ^ 2`. -/
+private theorem norm_one_add_norm_sq_rpow_smul_sq (r : ℝ) (ξ : E) (v : F) :
+    ‖(((1 + ‖ξ‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) • v‖ ^ 2 = (1 + ‖ξ‖ ^ 2) ^ r * ‖v‖ ^ 2 := by
+  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg (Real.rpow_pos_of_pos h1 _).le, mul_pow,
+    ← Real.rpow_natCast, ← Real.rpow_mul h1.le]
+  norm_num
+
+/-- The square of the `H^r` norm of a Schwartz function `u` with Hilbert-space values is
+`∫ (1 + ‖ξ‖ ^ 2) ^ r ‖𝓕 u ξ‖ ^ 2`. -/
+theorem norm_toBesselPotentialSpaceCLM_sq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] (r : ℝ) (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM r 2 u‖ ^ 2 = ∫ ξ, (1 + ‖ξ‖ ^ 2) ^ r * ‖𝓕 u ξ‖ ^ 2 := by
+  have hw := memLp_one_add_norm_sq_rpow_smul_fourier (F := F) r u 2
+  rw [norm_toBesselPotentialSpaceCLM, hw.eLpNorm_eq_integral_rpow_norm two_ne_zero
+    ENNReal.ofNat_ne_top, ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat]
+  simp_rw [Real.rpow_two]
+  rw [← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
+  rw [Nat.cast_ofNat, inv_mul_cancel₀ two_ne_zero, Real.rpow_one]
+  exact integral_congr_ae (.of_forall fun ξ ↦ norm_one_add_norm_sq_rpow_smul_sq r ξ _)
+
+omit [CompleteSpace F] in
+/-- The integrand `(1 + ‖ξ‖ ^ 2) ^ r ‖𝓕 u ξ‖ ^ 2` of the squared `H^r` norm of a Schwartz function
+is integrable. -/
+theorem integrable_one_add_norm_sq_rpow_mul_norm_fourier_sq (r : ℝ) (u : 𝓢(E, F)) :
+    Integrable fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ r * ‖𝓕 u ξ‖ ^ 2 := by
+  refine ((memLp_one_add_norm_sq_rpow_smul_fourier (F := F) r u 2).integrable_norm_pow
+    two_ne_zero).congr (.of_forall fun ξ ↦ norm_one_add_norm_sq_rpow_smul_sq r ξ _)
+
+/-- The square of the `H⁰` norm of a Schwartz function with Hilbert-space values is the square of
+its `L²` norm, `∫ ‖u‖²`. -/
+theorem norm_toBesselPotentialSpaceCLM_zero_sq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM 0 2 u‖ ^ 2 = ∫ x, ‖u x‖ ^ 2 := by
+  simp [norm_toBesselPotentialSpaceCLM_sq, integral_norm_sq_fourier]
+
+open scoped LineDeriv Real RealInnerProductSpace in
+/-- **One more order of Sobolev regularity is one more derivative.** For a Schwartz function `u`
+with Hilbert-space values, every real `s` and an orthonormal basis `b` of `E`,
+
+`‖u‖²_{H^{s+1}} = ‖u‖²_{H^s} + (2π)⁻² ∑ᵢ ‖∂_{bᵢ} u‖²_{H^s}`.
+
+The factor `(2π)⁻²` comes from the Fourier transform of `∂_v u` being `2πi ⟪ξ, v⟫ 𝓕 u`. -/
+theorem norm_toBesselPotentialSpaceCLM_add_one_sq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (s : ℝ) (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM (s + 1) 2 u‖ ^ 2 =
+      ‖toBesselPotentialSpaceCLM s 2 u‖ ^ 2 +
+        (2 * π)⁻¹ ^ 2 * ∑ i, ‖toBesselPotentialSpaceCLM s 2 (∂_{b i} u)‖ ^ 2 := by
+  simp only [norm_toBesselPotentialSpaceCLM_sq]
+  rw [← integral_finsetSum _ fun i _ ↦ integrable_one_add_norm_sq_rpow_mul_norm_fourier_sq _ _,
+    ← integral_const_mul, ← integral_add (integrable_one_add_norm_sq_rpow_mul_norm_fourier_sq _ _)
+      ((integrable_finsetSum _ fun i _ ↦
+        integrable_one_add_norm_sq_rpow_mul_norm_fourier_sq _ _).const_mul _)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
+  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  simp only [fourier_lineDerivOp_apply, norm_smul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
+    norm_mul, Complex.norm_I, Complex.norm_ofNat, Real.abs_pi, mul_one, sq_abs]
+  -- `(1 + ‖ξ‖²) ^ (s + 1) = (1 + ‖ξ‖²) ^ s (1 + ∑ᵢ ⟪ξ, bᵢ⟫²)`.
+  have hsum : ∑ i, (1 + ‖ξ‖ ^ 2) ^ s * (2 ^ 2 * π ^ 2 * ⟪ξ, b i⟫ ^ 2 * ‖𝓕 u ξ‖ ^ 2) =
+      (1 + ‖ξ‖ ^ 2) ^ s * (2 ^ 2 * π ^ 2) * ‖𝓕 u ξ‖ ^ 2 * ∑ i, ⟪ξ, b i⟫ ^ 2 := by
+    rw [Finset.mul_sum]
+    congr 1 with i
+    ring
+  rw [Real.rpow_add_one h1.ne', hsum, b.sum_sq_inner_left ξ]
+  field_simp
+
 open scoped LineDeriv Real RealInnerProductSpace in
 /-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
 basis `b` of `E`,
 
 `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 
-The factor `(2π)⁻²` comes from the Fourier transform of `∂_v u` being `2πi ⟪ξ, v⟫ 𝓕 u`. -/
+This is the case `s = 0` of `SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`. -/
 theorem norm_toBesselPotentialSpaceCLM_one_sq {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
     ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
       (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
-  have hint (g : 𝓢(E, F)) : Integrable (fun ξ ↦ ‖𝓕 g ξ‖ ^ 2) :=
-    ((𝓕 g).memLp 2).integrable_norm_pow two_ne_zero
-  have hw := memLp_one_add_norm_sq_rpow_smul_fourier (F := F) 1 u 2
-  have hL : ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
-      ∫ ξ, ‖(((1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2) : ℝ) : ℂ) • 𝓕 u ξ‖ ^ 2 := by
-    rw [norm_toBesselPotentialSpaceCLM, hw.eLpNorm_eq_integral_rpow_norm two_ne_zero
-      ENNReal.ofNat_ne_top, ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat]
-    simp_rw [Real.rpow_two]
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
-    norm_num
-  rw [hL, ← integral_norm_sq_fourier u]
-  simp_rw [← integral_norm_sq_fourier (∂_{b _} u)]
-  rw [← integral_finsetSum _ fun i _ ↦ hint _, ← integral_const_mul,
-    ← integral_add (hint u) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
-  have hsum : ∑ i, ⟪ξ, b i⟫ ^ 2 = ‖ξ‖ ^ 2 := b.sum_sq_inner_left ξ
-  have hweight : |(1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)| ^ 2 = 1 + ‖ξ‖ ^ 2 := by
-    rw [sq_abs, ← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
-  simp only [fourier_lineDerivOp_apply, norm_smul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
-    hweight, norm_mul, Complex.norm_I, Complex.norm_ofNat, Real.abs_pi, mul_one, sq_abs]
-  rw [← Finset.sum_mul, ← Finset.mul_sum, hsum]
-  field_simp
+  have h := norm_toBesselPotentialSpaceCLM_add_one_sq b 0 u
+  rw [zero_add] at h
+  simpa [norm_toBesselPotentialSpaceCLM_zero_sq] using h
 
 open scoped LineDeriv Real in
 /-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
@@ -215,6 +277,71 @@ theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCom
     (memLp_one_add_norm_sq_rpow_smul_fourier s _ 2).aestronglyMeasurable
     (memLp_one_add_norm_sq_rpow_smul_fourier s u 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
   simp [fourier_compSubConstCLM_apply, norm_smul]
+
+open scoped Real in
+/-- **The `H^s` norm of a wave packet.** Modulating a Schwartz function by the character
+`exp(i ⟪y, ξ⟫)` translates its Fourier transform to `ξ / 2π`, so by Peetre's inequality the wave
+packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` has `H^s` norm at most
+`2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`, which is `O(‖ξ‖ ^ s)` for high frequencies. -/
+theorem norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (φ : 𝓢(E, ℂ))
+    (ξ : E) (v : F) :
+    ‖toBesselPotentialSpaceCLM s 2 (φ.cutoffExponential 1 ξ v)‖ ≤
+      2 ^ (|s| / 2) * (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) *
+        ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖ := by
+  set c : E := (2 * π)⁻¹ • ξ
+  set g : E → ℂ := fun η ↦ (((1 + ‖η‖ ^ 2) ^ (|s| / 2) : ℝ) : ℂ) • 𝓕 φ η
+  set K : ℝ := 2 ^ (|s| / 2) * (1 + ‖c‖ ^ 2) ^ (s / 2) * ‖v‖
+  have hg : MemLp g 2 volume := memLp_one_add_norm_sq_rpow_smul_fourier |s| φ 2
+  -- Pointwise, Peetre's inequality with `ζ = c + (ζ - c)` bounds the weight at `ζ`.
+  have hpt : ∀ ζ, ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 (φ.cutoffExponential 1 ξ v) ζ‖ ≤
+      K * ‖g (ζ - c)‖ := by
+    intro ζ
+    have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul s c (ζ - c)
+    rw [add_sub_cancel] at hP
+    rw [fourier_cutoffExponential φ one_ne_zero]
+    simp only [g, K, one_pow, abs_one, inv_one, one_smul, norm_smul, Complex.norm_real,
+      Real.norm_of_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ζ‖ ^ 2) _),
+      Real.norm_of_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ζ - c‖ ^ 2) _)]
+    calc (1 + ‖ζ‖ ^ 2) ^ (s / 2) * (‖𝓕 φ (ζ - c)‖ * ‖v‖)
+        ≤ 2 ^ (|s| / 2) * (1 + ‖c‖ ^ 2) ^ (s / 2) * (1 + ‖ζ - c‖ ^ 2) ^ (|s| / 2) *
+            (‖𝓕 φ (ζ - c)‖ * ‖v‖) := by gcongr
+      _ = _ := by ring
+  have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+    (memLp_one_add_norm_sq_rpow_smul_fourier s (φ.cutoffExponential 1 ξ v) 2).aestronglyMeasurable
+    (.of_forall hpt) 2
+  -- Translation by `c` does not change the `L²` norm.
+  have htr : eLpNorm (fun ζ ↦ g (ζ - c)) 2 volume = eLpNorm g 2 volume :=
+    eLpNorm_comp_measurePreserving (f := fun ζ ↦ ζ - c) hg.aestronglyMeasurable
+      (measurePreserving_sub_right volume c)
+  rw [htr] at hle
+  rw [norm_toBesselPotentialSpaceCLM, norm_toBesselPotentialSpaceCLM]
+  calc _ ≤ (ENNReal.ofReal K * eLpNorm g 2 volume).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hg.eLpNorm_ne_top) hle
+    _ = _ := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+        ring
+
+open scoped Real in
+/-- **High-frequency wave packets.** For a nonzero frequency `ξ`, the `H^s` norms of the wave
+packets `y ↦ exp(i ⟪y, t ξ⟫) φ(y) v` grow at most like `t ^ s` as `t → ∞`: they are at most
+`C t ^ s` for all `t ≥ 1`. -/
+theorem exists_norm_toBesselPotentialSpaceCLM_cutoffExponential_smul_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (φ : 𝓢(E, ℂ))
+    {ξ : E} (hξ : ξ ≠ 0) (v : F) :
+    ∃ C, ∀ t : ℝ, 1 ≤ t →
+      ‖toBesselPotentialSpaceCLM s 2 (φ.cutoffExponential 1 (t • ξ) v)‖ ≤ C * t ^ s := by
+  set c : E := (2 * π)⁻¹ • ξ
+  have hc : 0 < ‖c‖ := norm_pos_iff.2 (smul_ne_zero (by positivity) hξ)
+  set M := max ((‖c‖ ^ 2) ^ (s / 2)) ((1 + ‖c‖ ^ 2) ^ (s / 2))
+  refine ⟨2 ^ (|s| / 2) * M * ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖, fun t ht ↦ ?_⟩
+  have hM : (1 + ‖t • c‖ ^ 2) ^ (s / 2) ≤ M * t ^ s :=
+    TauCeti.one_add_norm_smul_sq_rpow_le_max_mul_rpow hc ht ⟨le_rfl, le_rfl⟩ s
+  refine (norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le s φ _ v).trans ?_
+  rw [smul_comm (2 * π)⁻¹ t ξ]
+  calc 2 ^ (|s| / 2) * (1 + ‖t • c‖ ^ 2) ^ (s / 2) * ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖
+      ≤ 2 ^ (|s| / 2) * (M * t ^ s) * ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖ := by gcongr
+    _ = _ := by ring
 
 end SchwartzMap
 

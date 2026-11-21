@@ -159,7 +159,7 @@ theorem finrank_eigenspace_hermitianDilation_eq_adjoint_comp_self {μ : ℝ} (h�
   set p := eigenspace A.hermitianDilation (μ : 𝕜)
   have hinj : Function.Injective (WithLp.fstₗ 2 𝕜 E F ∘ₗ p.subtype) := by
     refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-    have hz' := (A.mem_eigenspace_hermitianDilation_iff.mp z.2).2
+    have hz' := (A.mem_eigenspace_hermitianDilation_iff.mp z.property).2
     rw [comp_apply, Submodule.subtype_apply, WithLp.fstₗ_apply] at hz
     rw [hz, map_zero, eq_comm, smul_eq_zero] at hz'
     refine Subtype.ext (WithLp.ofLp_injective 2 (Prod.ext hz ?_))
@@ -175,7 +175,7 @@ theorem finrank_eigenspace_hermitianDilation_eq_self_comp_adjoint {μ : ℝ} (h�
   set p := eigenspace A.hermitianDilation (μ : 𝕜)
   have hinj : Function.Injective (WithLp.sndₗ 2 𝕜 E F ∘ₗ p.subtype) := by
     refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-    have hz' := (A.mem_eigenspace_hermitianDilation_iff.mp z.2).1
+    have hz' := (A.mem_eigenspace_hermitianDilation_iff.mp z.property).1
     rw [comp_apply, Submodule.subtype_apply, WithLp.sndₗ_apply] at hz
     rw [hz, map_zero, eq_comm, smul_eq_zero] at hz'
     refine Subtype.ext (WithLp.ofLp_injective 2 (Prod.ext ?_ hz))

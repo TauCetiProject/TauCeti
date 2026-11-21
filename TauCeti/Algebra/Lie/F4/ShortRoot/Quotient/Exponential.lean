@@ -264,10 +264,10 @@ private theorem f4ShortRootTransportedQuotientPolynomial_eq_exponential_of_short
     f4ShortRootTransportedQuotientPolynomial k t a =
       f4ShortRootExponential (isogenyReverse k) (t ^ isogenyExponent k)
         ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a) := by
+  delta f4ShortRootTransportedQuotientPolynomial
   simp only [isogenyExponent_eq_two_of_short k hk, f4ShortRootExponential_basis_apply,
     f4ShortRootIdealDividedSquareColumn_eq_zero_of_long (isogenyReverse k)
       (f4Length_isogenyReverse_eq_two_of_short k hk) a,
-    f4ShortRootTransportedQuotientPolynomial,
     f4ShortRootQuotientToIdealEquiv_firstColumn_eq_zero_of_short k hk a,
     f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_short k hk a,
     TensorProduct.tmul_zero, smul_zero, add_zero]
@@ -279,8 +279,8 @@ private theorem f4ShortRootTransportedQuotientPolynomial_eq_exponential_of_long
     f4ShortRootTransportedQuotientPolynomial k t a =
       f4ShortRootExponential (isogenyReverse k) (t ^ isogenyExponent k)
         ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a) := by
+  delta f4ShortRootTransportedQuotientPolynomial
   simp only [isogenyExponent_eq_one_of_long k hk, pow_one, f4ShortRootExponential_basis_apply,
-    f4ShortRootTransportedQuotientPolynomial,
     f4ShortRootQuotientToIdealEquiv_firstColumn_of_long k hk a,
     f4ShortRootQuotientToIdealEquiv_dividedSquare_of_long k hk a]
 
@@ -308,8 +308,8 @@ theorem f4ShortRootQuotient_rootExponential_pinning
       f4ShortRootExponential (isogenyReverse k) (t ^ isogenyExponent k)
         ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a) := by
   refine Eq.trans ?_ (f4ShortRootQuotientColumns_eq_exponential k t a)
-  simp only [f4ShortRootBaseChangeQuotient_rootExponential_quotientColumns,
-    f4ShortRootTransportedQuotientPolynomial, map_add, map_smul,
+  delta f4ShortRootTransportedQuotientPolynomial
+  simp only [f4ShortRootBaseChangeQuotient_rootExponential_quotientColumns, map_add, map_smul,
     f4ShortRootQuotientToIdealBaseChange_tmul, f4ShortRootQuotientToIdealEquiv_basis]
 
 end

@@ -183,15 +183,15 @@ variable (Φ : Hom 𝔸 𝔹) {a b : Γ.V}
 /-- The twisting element `δ_e ∈ B_[a]` of an arrow `e : a ⟶ b` of the quiver of `Γ`: the twisting
 element of the underlying dart, read in `B_[a]` through `src e = a`. -/
 def twistArrow (e : a ⟶ b) : 𝔹.vertexGroup (Φ.graph.mapV a) :=
-  MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV e.2.1) (Φ.twist e.1)
+  MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV e.property.1) (Φ.twist e.val)
 
 theorem twistArrow_def (e : a ⟶ b) : Φ.twistArrow e =
-    MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV e.2.1) (Φ.twist e.1) :=
+    MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV e.property.1) (Φ.twist e.val) :=
   (rfl)
 
 /-- The twisting element of an arrow whose dart is `e'` is `δ_{e'}`, transported along any equality
 of vertices. -/
-theorem twistArrow_eq_cast (e : a ⟶ b) {e' : Γ.E} (h : e.1 = e')
+theorem twistArrow_eq_cast (e : a ⟶ b) {e' : Γ.E} (h : e.val = e')
     (ha : Φ.graph.mapV (Γ.src e') = Φ.graph.mapV a) :
     Φ.twistArrow e = MulEquiv.cast (M := 𝔹.vertexGroup) ha (Φ.twist e') := by
   obtain ⟨e, rfl, rfl⟩ := e

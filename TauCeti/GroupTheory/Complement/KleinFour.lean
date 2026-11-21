@@ -81,7 +81,7 @@ theorem crossedProjection_isComplement'_kleinFour_stabilizer (hα4 : Nat.card α
   obtain ⟨⟨n, d⟩, rfl⟩ := (isComplement'_kleinFour_stabilizer hα4 a).surjective g
   dsimp only
   rw [Subgroup.IsComplement'.crossedProjection_mul, eq_comm, kleinFourEquiv_symm_eq_iff]
-  have hd : (d : alternatingGroup α) • a = a := MulAction.mem_stabilizer_iff.mp d.2
+  have hd : (d : alternatingGroup α) • a = a := MulAction.mem_stabilizer_iff.mp d.property
   rw [mul_smul, hd, Subgroup.smul_def]
 
 /-- Applying the crossed projection of `g` along `MulAction.stabilizer (alternatingGroup α) a` to
@@ -142,7 +142,7 @@ stabilizer of `a`. -/
 @[simp]
 theorem zeroLocus_kleinFourCrossedProjectionEquiv_apply (hα4 : Nat.card α = 4)
     [IsMulCommutative (alternatingGroup.kleinFour α)] (a : α) :
-    groupCohomology.zeroLocus (kleinFourCrossedProjectionEquiv hα4 a).2.1 =
+    groupCohomology.zeroLocus (kleinFourCrossedProjectionEquiv hα4 a).property.1 =
       MulAction.stabilizer (alternatingGroup α) a := by
   rw [kleinFourCrossedProjectionEquiv, Equiv.trans_apply,
     ← Subgroup.crossedProjectionEquiv_symm_apply, Equiv.symm_apply_apply,
@@ -157,7 +157,7 @@ theorem stabilizer_kleinFourCrossedProjectionEquiv_symm_apply (hα4 : Nat.card �
       groupCohomology.IsCocycle₁ c ∧
         ∀ n : alternatingGroup.kleinFour α, c n = Additive.ofMul n}) :
     MulAction.stabilizer (alternatingGroup α) ((kleinFourCrossedProjectionEquiv hα4).symm c) =
-      groupCohomology.zeroLocus c.2.1 := by
+      groupCohomology.zeroLocus c.property.1 := by
   rw [kleinFourCrossedProjectionEquiv, Equiv.symm_trans_apply,
     stabilizer_kleinFourComplementEquiv_symm_apply, Subgroup.crossedProjectionEquiv_symm_apply]
 
@@ -170,7 +170,7 @@ theorem kleinFourCrossedProjectionEquiv_symm_eq_iff (hα4 : Nat.card α = 4)
         ∀ n : alternatingGroup.kleinFour α, c n = Additive.ofMul n})
     (a : α) :
     (kleinFourCrossedProjectionEquiv hα4).symm c = a ↔
-      groupCohomology.zeroLocus c.2.1 = MulAction.stabilizer (alternatingGroup α) a := by
+      groupCohomology.zeroLocus c.property.1 = MulAction.stabilizer (alternatingGroup α) a := by
   rw [kleinFourCrossedProjectionEquiv, Equiv.symm_trans_apply,
     kleinFourComplementEquiv_symm_eq_iff, Subgroup.crossedProjectionEquiv_symm_apply]
 

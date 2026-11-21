@@ -158,7 +158,7 @@ theorem killingCartanProjection_eq_zero_of_mem_rootSpace {χ : H → K}
   refine ((eq_killingCartanProjection_iff H).mpr fun h ↦ ?_).symm
   rw [ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply, traceForm_comm]
   exact (killingForm_eq_zero_of_mem_zeroRoot_mem_posFitting K L H
-    (le_zeroRootSubalgebra K L H h.2) hmem).symm
+    (le_zeroRootSubalgebra K L H h.property) hmem).symm
 
 variable {H} in
 /-- **The projection is the root-space projection at the zero weight**: when `H` splits `L`, `π` is
@@ -186,7 +186,7 @@ theorem killingCartanProjection_eq_zero_of_mem_rootSpaceSpan {S : Set H.root} {x
   have hle : (rootSpaceSpan H S : Submodule K L) ≤ LinearMap.ker (killingCartanProjection H) := by
     rw [rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
     exact iSup_le fun α _ hy ↦ killingCartanProjection_eq_zero_of_mem_rootSpace
-      (Finset.mem_filter.mp (α : H.root).2).2 hy
+      (Finset.mem_filter.mp (α : H.root).property).2 hy
   exact hle hx
 
 variable {H} (b : (IsKilling.rootSystem H).Base)

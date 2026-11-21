@@ -251,12 +251,12 @@ theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)
           fun r hr _ ↦ by linarith
   obtain ⟨r, hr, hrs, hsep⟩ := hev.exists
   replace hr : 0 < r := mem_Ioi.1 hr
-  have hc : ∀ z : s, ‖((z : 𝔻) : ℂ)‖ + r ≤ 1 := fun z ↦ by linarith [hrs z z.2]
+  have hc : ∀ z : s, ‖((z : 𝔻) : ℂ)‖ + r ≤ 1 := fun z ↦ by linarith [hrs z z.property]
   have hdisj : Pairwise fun z w : s ↦
       Disjoint (ball ((z : 𝔻) : ℂ) r) (ball ((w : 𝔻) : ℂ) r) := by
     intro z w hzw
     refine ball_disjoint_ball ?_
-    have := hsep z z.2 w w.2 fun h ↦ hzw (Subtype.ext h.symm)
+    have := hsep z z.property w w.property fun h ↦ hzw (Subtype.ext h.symm)
     rw [dist_comm] at this
     linarith
   have hcov : ∀ z, σ z ∈ Z → ∃ w : s, (z : ℂ) ∈ ball ((w : 𝔻) : ℂ) r :=
@@ -274,7 +274,7 @@ theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)
   refine Finset.sum_congr rfl fun z _ ↦ (A.localCharge_eq_charge_comp_subdisc h (hc z) hr
     (by linarith : r < 2 * r) (fun w hw hwb ↦ ?_)).symm
   by_contra hwz
-  have := hsep z z.2 w ((hs w).1 hw) hwz
+  have := hsep z z.property w ((hs w).1 hw) hwz
   rw [mem_ball] at hwb
   linarith
 

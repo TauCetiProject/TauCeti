@@ -19,7 +19,9 @@ composite of the epimorphism `X.toE : H^n(f₁₂) ⟶ E^n(f₁, f₂, f₃)` an
 `X.fromE : E^n(f₁, f₂, f₃) ⟶ H^n(f₂₃)` (`X.toE_fromE`), so that
 `E^n(f₁, f₂, f₃) ≅ image (H^n(f₁₂) ⟶ H^n(f₂₃))` (`X.EIsoImage`). The elements of `H^n(f₁₂)` are
 thus representatives of the elements of `E^n(f₁, f₂, f₃)`, two representatives giving the same
-element exactly when they have the same image in `H^n(f₂₃)`.
+element exactly when they have the same image in `H^n(f₂₃)`. Both maps are natural for the maps
+`E^n(f₁, f₂, f₃) ⟶ E^n(f₁', f₂', f₃')` induced by morphisms in `ComposableArrows ι 3`
+(`X.toE_map`, `X.map_fromE`).
 
 The differentials are computed on representatives by the connecting maps of `X`: for five
 composable morphisms `f₁, …, f₅`, the differential `d : E^n(f₃, f₄, f₅) ⟶ E^{n+1}(f₁, f₂, f₃)`
@@ -53,6 +55,11 @@ objects as images and of the differentials as connecting maps on representatives
   through `X.toE` and `X.fromE`.
 * `CategoryTheory.Abelian.SpectralObject.toE_fromE`: `X.toE ≫ X.fromE` is the map
   `H^n(f₁ ≫ f₂) ⟶ H^n(f₂ ≫ f₃)`.
+* `CategoryTheory.Abelian.SpectralObject.toE_map`,
+  `CategoryTheory.Abelian.SpectralObject.map_fromE`: the maps between the objects `E` induced by
+  morphisms in `ComposableArrows ι 3`, on representatives and through the embeddings;
+  `CategoryTheory.Abelian.SpectralObject.mapFourδ₄Toδ₃'_fromE` is the case of the canonical maps
+  `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₄)` for an index preorder.
 * `CategoryTheory.Abelian.SpectralObject.toE_d`, `CategoryTheory.Abelian.SpectralObject.d_fromE`:
   the differentials on representatives.
 * `CategoryTheory.Abelian.SpectralObject.toE_spectralSequence_page_d`,
@@ -169,6 +176,65 @@ lemma EIsoImage_hom_ι (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n
   image.isoStrongEpiMono_hom_comp_ι _ _ (X.toE_fromE f₁ f₂ f₃ f₁₂ h₁₂ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂)
 
 end
+
+section Naturality
+
+variable {ι : Type*} [Category* ι] (X : SpectralObject C ι)
+  {i₀ i₁ i₂ i₃ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i₁ ⟶ i₂) (f₃ : i₂ ⟶ i₃)
+  (f₁₂ : i₀ ⟶ i₂) (h₁₂ : f₁ ≫ f₂ = f₁₂) (f₂₃ : i₁ ⟶ i₃) (h₂₃ : f₂ ≫ f₃ = f₂₃)
+  {i₀' i₁' i₂' i₃' : ι} (f₁' : i₀' ⟶ i₁') (f₂' : i₁' ⟶ i₂') (f₃' : i₂' ⟶ i₃')
+  (f₁₂' : i₀' ⟶ i₂') (h₁₂' : f₁' ≫ f₂' = f₁₂') (f₂₃' : i₁' ⟶ i₃') (h₂₃' : f₂' ≫ f₃' = f₂₃')
+  (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ f₁' f₂' f₃') (n₀ n₁ n₂ : ℤ)
+
+/-- **Naturality of the representatives.** The map `E^{n₁}(f₁, f₂, f₃) ⟶ E^{n₁}(f₁', f₂', f₃')`
+induced by `α` sends the element represented by `x ∈ H^{n₁}(f₁ ≫ f₂)` to the element represented
+by the image of `x` in `H^{n₁}(f₁' ≫ f₂')`. -/
+@[reassoc]
+lemma toE_map (β : mk₁ f₁₂ ⟶ mk₁ f₁₂') (hβ₀ : β.app 0 = α.app 0 := by cat_disch)
+    (hβ₁ : β.app 1 = α.app 2 := by cat_disch)
+    (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫ X.map f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ =
+      (X.H n₁).map β ≫ X.toE f₁' f₂' f₃' f₁₂' h₁₂' n₀ n₁ n₂ hn₁ hn₂ := by
+  simp only [toE, Category.assoc]
+  rw [X.πE_map f₁ f₂ f₃ f₁' f₂' f₃' α (homMk₂ (α.app 0) (α.app 1) (α.app 2)
+      (naturality' α 0 1) (naturality' α 1 2)) n₀ n₁ n₂ rfl hn₁ hn₂,
+    X.toCycles_cyclesMap_assoc (β := β) (hβ₀ := hβ₀) (hβ₁ := hβ₁)]
+
+/-- **Naturality of the embedding into `H^{n₁}(f₂ ≫ f₃)`.** The map
+`E^{n₁}(f₁, f₂, f₃) ⟶ E^{n₁}(f₁', f₂', f₃')` induced by `α`, followed by `X.fromE`, is `X.fromE`
+followed by the map `H^{n₁}(f₂ ≫ f₃) ⟶ H^{n₁}(f₂' ≫ f₃')` induced by `α`. -/
+@[reassoc]
+lemma map_fromE (β : mk₁ f₂₃ ⟶ mk₁ f₂₃') (hβ₀ : β.app 0 = α.app 1 := by cat_disch)
+    (hβ₁ : β.app 1 = α.app 3 := by cat_disch)
+    (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.map f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ ≫ X.fromE f₁' f₂' f₃' f₂₃' h₂₃' n₀ n₁ n₂ hn₁ hn₂ =
+      X.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂ ≫ (X.H n₁).map β := by
+  simp only [fromE]
+  rw [X.map_ιE_assoc f₁ f₂ f₃ f₁' f₂' f₃' α (homMk₂ (α.app 1) (α.app 2) (α.app 3)
+      (naturality' α 1 2) (naturality' α 2 3)) n₀ n₁ n₂ rfl hn₁ hn₂, Category.assoc,
+    X.opcyclesMap_fromOpcycles (β := β) (hβ₀ := hβ₀) (hβ₁ := hβ₁)]
+
+end Naturality
+
+section Preorder
+
+variable {ι : Type*} [Preorder ι] (X : SpectralObject C ι) (i₀ i₁ i₂ i₃ i₄ : ι)
+  (hi₀₁ : i₀ ≤ i₁) (hi₁₂ : i₁ ≤ i₂) (hi₂₃ : i₂ ≤ i₃) (hi₃₄ : i₃ ≤ i₄) (n₀ n₁ n₂ : ℤ)
+
+/-- The canonical map `E^{n₁}(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^{n₁}(i₀ ≤ i₁ ≤ i₂ ≤ i₄)`, followed by
+`X.fromE`, is `X.fromE` followed by the map `H^{n₁}(i₁ ≤ i₃) ⟶ H^{n₁}(i₁ ≤ i₄)`. -/
+@[reassoc]
+lemma mapFourδ₄Toδ₃'_fromE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.mapFourδ₄Toδ₃' i₀ i₁ i₂ i₃ i₄ hi₀₁ hi₁₂ hi₂₃ hi₃₄ n₀ n₁ n₂ hn₁ hn₂ ≫
+        X.fromE (homOfLE hi₀₁) (homOfLE hi₁₂) (homOfLE (hi₂₃.trans hi₃₄))
+          (homOfLE (hi₁₂.trans (hi₂₃.trans hi₃₄))) rfl n₀ n₁ n₂ hn₁ hn₂ =
+      X.fromE (homOfLE hi₀₁) (homOfLE hi₁₂) (homOfLE hi₂₃) (homOfLE (hi₁₂.trans hi₂₃)) rfl
+          n₀ n₁ n₂ hn₁ hn₂ ≫
+        (X.H n₁).map (twoδ₂Toδ₁' i₁ i₃ i₄ (hi₁₂.trans hi₂₃) hi₃₄) :=
+  X.map_fromE _ _ _ _ rfl _ _ _ _ rfl _ n₀ n₁ n₂ _ (Subsingleton.elim _ _) (Subsingleton.elim _ _)
+    hn₁ hn₂
+
+end Preorder
 
 section
 

@@ -156,7 +156,7 @@ theorem isProperMap_snd [TopologicalSpace G] [DiscreteTopology G] [ContinuousCon
   have hsupp : tsupport (fun p : G × X ↦ c (p.1 • p.2)) ⊆ (fun p ↦ p.1 • p.2) ⁻¹' tsupport c :=
     closure_minimal (fun p hp ↦ subset_tsupport c hp) ((isClosed_tsupport c).preimage hact)
   rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨continuous_snd.comp continuous_subtype_val, fun K hK ↦ ?_⟩
+  refine ⟨continuous_snd.comp continuous_subtypeVal, fun K hK ↦ ?_⟩
   have hpre : (fun p : tsupport (fun p : G × X ↦ c (p.1 • p.2)) ↦ (p : G × X).2) ⁻¹' K =
       Subtype.val ⁻¹' ({g : G | (g • K ∩ tsupport c).Nonempty} ×ˢ K) := by
     ext ⟨⟨g, x⟩, hp⟩

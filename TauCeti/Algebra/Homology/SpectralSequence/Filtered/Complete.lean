@@ -115,7 +115,7 @@ theorem isZero_homology_of_isCompleteFiltration {a m : ℤ}
       obtain ⟨y, hy, hzy⟩ :=
         Subobject.exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel _
           (i := m - 1) (k := m + 1) (by simp) (by simp) (h (a - (k + 1 : ℕ)) (by lia))
-          (e ▸ Submodule.mem_comap.1 hz) z.2
+          (e ▸ Submodule.mem_comap.1 hz) z.property
       exact ⟨y, e ▸ hy, Submodule.mem_comap.2 hzy⟩)
     hx₀
   obtain ⟨y, rfl⟩ := Subobject.range_arrow_f_hom_le (hF e₀.le) (m - 1) hy₀
