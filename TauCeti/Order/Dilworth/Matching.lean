@@ -183,16 +183,17 @@ theorem isOrderMatching_map_iff {β : Type*} {r : α → α → Prop} {r' : β �
     (s.map f.toEmbedding).IsOrderMatching r' (E.map (f.toEmbedding.prodMap f.toEmbedding)) ↔
       s.IsOrderMatching r E := by
   let ff : α × α ↪ β × β := f.toEmbedding.prodMap f.toEmbedding
+  have hff : (ff : α × α → β × β) = Prod.map f f := by
+    dsimp only [ff]
+    rw [Function.Embedding.coe_prodMap, RelEmbedding.coe_toEmbedding]
   have hfst : ((E.map ff : Finset (β × β)) : Set (β × β)).InjOn Prod.fst ↔
       (E : Set (α × α)).InjOn Prod.fst := by
-    rw [coe_map, ← ff.injective.injOn.comp_iff]
-    exact show Set.InjOn (f ∘ Prod.fst) (E : Set (α × α)) ↔ _ from
-      ⟨Set.InjOn.of_comp, f.injective.comp_injOn⟩
+    rw [coe_map, ← ff.injective.injOn.comp_iff, hff, Prod.map_fst']
+    exact ⟨Set.InjOn.of_comp, f.injective.comp_injOn⟩
   have hsnd : ((E.map ff : Finset (β × β)) : Set (β × β)).InjOn Prod.snd ↔
       (E : Set (α × α)).InjOn Prod.snd := by
-    rw [coe_map, ← ff.injective.injOn.comp_iff]
-    exact show Set.InjOn (f ∘ Prod.snd) (E : Set (α × α)) ↔ _ from
-      ⟨Set.InjOn.of_comp, f.injective.comp_injOn⟩
+    rw [coe_map, ← ff.injective.injOn.comp_iff, hff, Prod.map_snd']
+    exact ⟨Set.InjOn.of_comp, f.injective.comp_injOn⟩
   refine ⟨fun h ↦ ⟨?_, ?_, ?_, hfst.mp h.injOn_fst, hsnd.mp h.injOn_snd⟩,
     fun h ↦ ⟨?_, ?_, ?_, hfst.mpr h.injOn_fst, hsnd.mpr h.injOn_snd⟩⟩
   · exact fun _ he ↦ (mem_map' f.toEmbedding).mp (h.fst_mem (mem_map_of_mem ff he))
