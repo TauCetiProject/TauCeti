@@ -181,11 +181,26 @@ private theorem contMDiffOn_transportedNormalExp
 
 omit [FiniteDimensional ℝ E] [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   [IsManifold I ∞ Q] [IsManifold J ∞ M]
+  [IsContMDiffRiemannianBundle J ∞ V (fun y : M ↦ TangentSpace J y)] [K.Boundaryless]
+  [T2Space N] in
+/-- The transported normal exponential is the fibrewise exponential of `A` composed with the
+orthogonal representative of a normal vector. -/
+private theorem transportedNormalExp_eq :
+    transportedNormalExp i hn A = fun p : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
+      Manifold.riemannianExp K N (g p.proj)
+        ((A p.proj).comp (i.normalRepresentative p.proj hn) p.2) := by
+  funext p
+  rw [ContinuousLinearMap.comp_apply, transportedNormalExp]
+
+omit [FiniteDimensional ℝ E] [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+  [IsManifold I ∞ Q] [IsManifold J ∞ M]
   [IsContMDiffRiemannianBundle J ∞ V (fun y : M ↦ TangentSpace J y)] in
 /-- The transported normal exponential sends the zero section to `g`. -/
 private theorem transportedNormalExp_zeroSection (q : Q) :
-    transportedNormalExp i hn A (zeroSection P (fun q ↦ i.NormalSpace q hn) q) = g q :=
-  Bundle.riemannianExp_fiberwise_zeroSection (fun q ↦ (A q).comp (i.normalRepresentative q hn)) q
+    transportedNormalExp i hn A (zeroSection P (fun q ↦ i.NormalSpace q hn) q) = g q := by
+  rw [transportedNormalExp_eq]
+  exact Bundle.riemannianExp_fiberwise_zeroSection
+    (fun q ↦ (A q).comp (i.normalRepresentative q hn)) q
 
 /-- Under the splitting of the tangent space along the zero section, the differential of the
 transported normal exponential sends `(u, n)` to `d g u + A n`, the normal class `n` being read
@@ -208,7 +223,7 @@ private theorem mfderiv_transportedNormalExp_zeroSection_apply
     ((contMDiffOn_transportedNormalExp i hn A hdim hg hA).contMDiffAt
       ((isOpen_transportedNormalExpDomain i hn A hdim hg hA).mem_nhds
         (zeroSection_mem_transportedNormalExpDomain i hn A q))).mdifferentiableAt (by simp)
-  -- The map is the fibrewise exponential of `A q ∘ normalRepresentative`.
+  rw [transportedNormalExp_eq] at he ⊢
   exact Bundle.mfderiv_riemannianExp_fiberwise_zeroSection_apply
     (fun q ↦ (A q).comp (i.normalRepresentative q hn)) q he u v
 
