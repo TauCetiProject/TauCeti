@@ -133,9 +133,9 @@ private theorem image_symm_range_cellPullbackPair_map (n : ℕ) :
   rintro ⟨_, ⟨v, rfl⟩, hv⟩
   -- The inverse of `cellPullbackHomeomorph` is the identity on the underlying pairs, so the cell
   -- coordinate of `hv` is this equation by definition.
-  have hd : v.1.1.1 = d := congrArg (fun z ↦ z.1.1) hv
+  have hd : v.val.val.1 = d := congrArg (fun z ↦ z.val.1) hv
   rw [← hd]
-  exact v.2
+  exact v.property
 
 variable (b C) in
 /-- The preimage of `Xⁿ⁻¹`, as a subset of `P_b B`. -/
@@ -146,7 +146,7 @@ private theorem image_range_preimageSkeletonPair_map (n : ℕ) :
   refine Set.ext fun γ ↦ ⟨?_, fun hγ ↦ ?_⟩
   · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
     rw [← preimage_skeletonLT_eq]
-    exact w.2
+    exact w.property
   · rw [← preimage_skeletonLT_eq] at hγ
     exact ⟨_, ⟨⟨γ, hγ⟩, rfl⟩, rfl⟩
 

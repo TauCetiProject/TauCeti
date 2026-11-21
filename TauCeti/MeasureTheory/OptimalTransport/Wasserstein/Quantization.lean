@@ -119,7 +119,7 @@ theorem wassersteinQuantizationError_eq_iInf_eLpNorm_infEDist
     exact (ae_map_iff hT.aemeasurable s.measurableSet).2 (.of_forall hTs)
   · obtain ⟨s, hsN, hνs⟩ := hcarrier
     have hs : s.Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
+      rw [← Finset.ne_empty_iff_nonempty]
       rintro rfl
       simp at hνs
     exact (iInf₂_le s hs).trans ((iInf_le _ hsN).trans
@@ -166,10 +166,10 @@ private theorem exists_finitePart_eq {s : Finset X} (hs : s.card ≤ N) :
   · rintro ⟨i, hi⟩
     split_ifs at hi with h
     · rw [← OnePoint.coe_injective hi]
-      exact (s.equivFin.symm ⟨i, h⟩).2
+      exact (s.equivFin.symm ⟨i, h⟩).property
     · exact absurd hi.symm (OnePoint.coe_ne_infty y)
   · intro hy
-    refine ⟨⟨s.equivFin ⟨y, hy⟩, (s.equivFin ⟨y, hy⟩).2.trans_le hs⟩, ?_⟩
+    refine ⟨⟨s.equivFin ⟨y, hy⟩, (s.equivFin ⟨y, hy⟩).isLt.trans_le hs⟩, ?_⟩
     simp
 
 variable [PseudoMetricSpace X]

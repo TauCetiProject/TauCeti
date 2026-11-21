@@ -161,9 +161,10 @@ second.** The isomorphism is the restriction of `q`; its inverse is
 `ContinuousLinearMap.kerSection`. -/
 noncomputable def kerEquivOfProd (A : M →L[R] F) (q : M →L[R] G)
     (h : (A.prod q).IsInvertible) : G ≃L[R] ↥A.ker :=
-  ContinuousLinearEquiv.equivOfInverse ((A.kerSection q).codRestrict A.ker kerSection_mem_ker)
-    (q ∘L A.ker.subtypeL) (apply_kerSection_right h) fun x ↦
-      Subtype.ext (kerSection_apply_of_mem_ker h x.2)
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((A.kerSection q).codRestrict A.ker kerSection_mem_ker) (q ∘L A.ker.subtypeL)
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (kerSection_apply_of_mem_ker h x.property))
+    (ContinuousLinearMap.ext (apply_kerSection_right h))
 
 /-- The isomorphism `G ≃L[R] ↥A.ker` is the section, read in the ambient space. -/
 @[simp]

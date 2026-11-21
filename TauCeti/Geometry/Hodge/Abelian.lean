@@ -73,7 +73,7 @@ noncomputable def kernelFork : KernelFork f :=
   KernelFork.ofι (substructureInclusion X (kerSubstructure f)) <| by
     apply Hom.ext
     ext x
-    simpa using (kerSubstructure_WQ f).le x.2
+    simpa using (kerSubstructure_WQ f).le x.property
 
 /-- The point of the kernel fork is the object induced on the kernel substructure. -/
 @[simp]
