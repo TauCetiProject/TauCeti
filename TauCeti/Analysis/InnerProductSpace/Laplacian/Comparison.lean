@@ -36,6 +36,8 @@ frontier, so a harmonic function is bounded by the supremum of `|·|` over `fron
   maximum and its minimum on the frontier.
 * `TauCeti.abs_le_of_harmonicOnNhd_of_abs_le_frontier`: a harmonic function is bounded on `K` by any
   bound its absolute value respects on `frontier K`.
+* `TauCeti.abs_le_add_mul_sq_div_of_abs_laplacian_le`: a function with `|Δ u| ≤ C` on a ball of
+  radius `R` and `|u| ≤ ε` outside it is bounded by `ε + C R² / (2 dim E)`.
 -/
 
 public section
@@ -164,6 +166,82 @@ theorem abs_le_of_harmonicOnNhd_of_abs_le_frontier (hK : IsCompact K)
       (fun y hy => (abs_le.mp (hbdry hy)).2) hxK
 
 end Bound
+
+section BallBound
+
+variable [Nontrivial E] {u : E → ℝ} {C ε R : ℝ}
+
+/-- The barrier `ε + C (R² - ‖y‖²) / (2 dim E)` has Laplacian `-C`. -/
+private theorem laplacian_barrier_ball (ε C R : ℝ) (y : E) :
+    Δ (fun y : E ↦ (ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) : ℝ)) y = -C := by
+  have hfun : (fun y : E ↦ (ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) : ℝ)) =
+      (fun _ ↦ ε + C * R ^ 2 / (2 * Module.finrank ℝ E)) +
+        (-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2 := by
+    funext y
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    ring
+  have h2 : ContDiffAt ℝ 2 ((-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2) y :=
+    contDiffAt_const.smul (contDiff_norm_sq ℝ).contDiffAt
+  have : (Module.finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  rw [hfun, contDiffAt_const.laplacian_add h2, laplacian_smul _ (contDiff_norm_sq ℝ).contDiffAt]
+  simp [laplacian_norm_sq]
+  field_simp
+
+/-- **A bounded Laplacian and smallness outside a ball bound a function.** Let `u` be continuous
+on the closed ball of radius `R ≥ 0` about the origin and `C²` on the open ball, with `|Δ u| ≤ C`
+there, and suppose `|u| ≤ ε` wherever `‖x‖ ≥ R`. Then `|u| ≤ ε + C R² / (2 dim E)` everywhere.
+-/
+theorem abs_le_add_mul_sq_div_of_abs_laplacian_le (hR : 0 ≤ R)
+    (hcont : ContinuousOn u (Metric.closedBall 0 R))
+    (hu : ∀ x ∈ Metric.ball (0 : E) R, ContDiffAt ℝ 2 u x)
+    (hΔ : ∀ x ∈ Metric.ball (0 : E) R, |Δ u x| ≤ C) (hout : ∀ x, R ≤ ‖x‖ → |u x| ≤ ε) (x : E) :
+    |u x| ≤ ε + C * R ^ 2 / (2 * Module.finrank ℝ E) := by
+  rcases hR.eq_or_lt with rfl | hR
+  · simpa using hout x (norm_nonneg x)
+  have hC : 0 ≤ C := (abs_nonneg _).trans (hΔ 0 (by simpa using hR))
+  rcases lt_or_ge ‖x‖ R with hx | hx
+  swap
+  · -- Outside the open ball the bound is the hypothesis, as `C ≥ 0`.
+    exact (hout x hx).trans (le_add_of_nonneg_right (by positivity))
+  have hxb : x ∈ Metric.ball (0 : E) R := by simpa using hx
+  have hd : (0 : ℝ) < 2 * Module.finrank ℝ E := by
+    have := Module.finrank_pos (R := ℝ) (M := E)
+    positivity
+  -- The barrier `g y = ε + C (R² - ‖y‖²) / (2 dim E)` has `Δ g = -C`.
+  set g : E → ℝ := fun y ↦ ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) with hg
+  have hgd : ContDiff ℝ 2 g :=
+    contDiff_const.add ((contDiff_const.mul (contDiff_const.sub (contDiff_norm_sq ℝ))).div_const _)
+  have hgΔ (y : E) : Δ g y = -C := laplacian_barrier_ball ε C R y
+  have hK : IsCompact (Metric.closedBall (0 : E) R) := isCompact_closedBall 0 R
+  have hfr {y : E} (hy : y ∈ frontier (Metric.closedBall (0 : E) R)) : ‖y‖ = R := by
+    simpa using Metric.frontier_closedBall_subset_sphere hy
+  have hgfr {y : E} (hy : y ∈ frontier (Metric.closedBall (0 : E) R)) : g y = ε := by
+    simp [hg, hfr hy]
+  have hint : interior (Metric.closedBall (0 : E) R) = Metric.ball 0 R := interior_closedBall' 0 R
+  have hxK : x ∈ Metric.closedBall (0 : E) R := Metric.ball_subset_closedBall hxb
+  -- A function with `Δ v ≥ -C` on the ball and `v ≤ ε` outside it lies below the barrier.
+  have hside (v : E → ℝ) (hvc : ContinuousOn v (Metric.closedBall 0 R))
+      (hv : ∀ y ∈ Metric.ball (0 : E) R, ContDiffAt ℝ 2 v y)
+      (hvΔ : ∀ y ∈ Metric.ball (0 : E) R, -C ≤ Δ v y) (hvout : ∀ y, R ≤ ‖y‖ → v y ≤ ε) :
+      v x ≤ g x :=
+    le_of_laplacian_le_of_le_frontier hK hvc hgd.continuous.continuousOn
+      (fun y hy ↦ hv y (hint ▸ hy)) (fun y _ ↦ hgd.contDiffAt)
+      (fun y hy ↦ by rw [hgΔ]; exact hvΔ y (hint ▸ hy))
+      (fun y hy ↦ (hvout y (hfr hy).ge).trans (hgfr hy).ge) hxK
+  have hup : u x ≤ g x := hside u hcont hu (fun y hy ↦ neg_le_of_abs_le (hΔ y hy))
+    (fun y hy ↦ (le_abs_self _).trans (hout y hy))
+  have hlo : -u x ≤ g x := hside (-u) hcont.neg (fun y hy ↦ (hu y hy).neg)
+    (fun y hy ↦ by
+      rw [laplacian_neg, Pi.neg_apply, neg_le_neg_iff]
+      exact le_of_abs_le (hΔ y hy))
+    (fun y hy ↦ (neg_le_abs _).trans (hout y hy))
+  have hgx : g x ≤ ε + C * R ^ 2 / (2 * Module.finrank ℝ E) := by
+    simp only [hg]
+    gcongr
+    nlinarith [norm_nonneg x]
+  exact abs_le.2 ⟨by linarith, hup.trans hgx⟩
+
+end BallBound
 
 end TauCeti
 

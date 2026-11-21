@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -39,10 +40,13 @@ membership of the pointwise norm (`TauCeti.memLpLoc_iff_aestronglyMeasurable_and
 This file supplies restriction to arbitrary subsets (also combined with a change of the function
 off the subset), linearity, continuous-linear composition, pairing of fields of continuous linear
 maps into product maps, multiplication of local `Lᵖ` functions by continuous factors (with
-extension by zero for factors supported in the domain), composition of local `Lᵖ` operator
-families with continuous ones, pairing, pointwise product maps of operator fields, decreasing the
-integrability exponent, and decreasing the derivative order. On an open set, local `Lᵖ` membership
-is detected on the open subsets with compact closure inside it.
+extension by zero for factors supported in the domain, and global `Lᵖ` membership for compactly
+supported ones), Hölder's inequality for local `Lᵖ` fields of continuous linear maps
+(`TauCeti.MemLpLoc.clm_apply`), composition of local `Lᵖ` operator families with continuous ones,
+pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
+decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
+subsets with compact closure inside it, and on a ball in a proper metric space on the smaller
+concentric balls (`TauCeti.memLpLoc_ball_iff`).
 Differentiability on an open set with a locally `Lᵖ` (in particular continuous) derivative gives
 first-order local Sobolev membership (`DifferentiableOn.memWkpLoc_one`), smoothness on an open
 neighbourhood gives membership at every order, and smooth or continuous linear maps on the whole
@@ -209,6 +213,27 @@ theorem _root_.ContinuousOn.memLpLoc [T2Space E] [OpensMeasurableSpace E]
   fun _K hK hc => (hf.mono hK).memLp_restrict_of_subset_isCompact
     hc hc.measurableSet subset_rfl p
 
+open scoped Topology in
+/-- An a.e.-strongly measurable function on `U` that is bounded near every point of `U` is locally
+`Lᵖ` on `U` for every exponent, including infinity: it is bounded on each compact subset. -/
+theorem memLpLoc_of_forall_eventually_norm_le [T2Space E] [OpensMeasurableSpace E]
+    [IsFiniteMeasureOnCompacts (volume : Measure E)]
+    (hf : AEStronglyMeasurable f (volume.restrict U))
+    (hb : ∀ z ∈ U, ∃ M, ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ M) : MemLpLoc p U f := by
+  intro K hKU hK
+  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
+  -- a bound on `K`, glued from the local bounds by compactness
+  obtain ⟨M, hM⟩ : ∃ M, ∀ w ∈ K, ‖f w‖ ≤ M := by
+    refine hK.induction_on (p := fun t ↦ ∃ M, ∀ w ∈ t, ‖f w‖ ≤ M) ⟨0, by simp⟩
+      (fun _ _ hst ⟨M, hM⟩ ↦ ⟨M, fun w hw ↦ hM w (hst hw)⟩)
+      (fun _ _ ⟨M, hM⟩ ⟨N, hN⟩ ↦ ⟨max M N, fun w hw ↦ hw.elim
+        (fun h ↦ (hM w h).trans (le_max_left M N)) fun h ↦ (hN w h).trans (le_max_right M N)⟩)
+      fun z hz ↦ ?_
+    obtain ⟨M, hM⟩ := hb z (hKU hz)
+    exact ⟨_, mem_nhdsWithin_of_mem_nhds hM, M, fun _ hw ↦ hw⟩
+  exact MemLp.of_bound (hf.mono_measure (Measure.restrict_mono hKU le_rfl)) M
+    (ae_restrict_of_forall_mem hK.measurableSet hM)
+
 /-- Every constant function is locally `Lᵖ` for all exponents, including infinity. -/
 @[simp]
 theorem memLpLoc_const [IsFiniteMeasureOnCompacts (volume : Measure E)] (c : F) :
@@ -339,11 +364,20 @@ theorem MemLpLoc.clm_comp_continuousOn [T2Space E] [OpensMeasurableSpace E]
     ((hA.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
 
 /-- **Hölder's inequality on compact subsets**, for a Hölder triple `1/r = 1/p + 1/q`: a locally
-`Lᵖ` field of continuous linear maps applied to a locally `L^q` field is locally `Lʳ`. -/
+`Lᵖ` field of continuous linear maps applied to a locally `L^q` field is locally `Lʳ`. With `p = ∞`
+this covers locally bounded coefficient fields. -/
 theorem MemLpLoc.clm_apply {A : E → F →L[ℝ] G} {w : E → F} {r : ENNReal}
     [ENNReal.HolderTriple p q r] (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) :
     MemLpLoc r U (fun z => A z (w z)) :=
   fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin r (hA K hK hc) (hw K hK hc)
+
+/-- **Hölder's inequality on compact subsets** with exponent one: a locally `Lᵖ` field of
+continuous linear maps applied to a locally `L^q` field is locally `L¹` when `1/p + 1/q ≤ 1`. -/
+theorem MemLpLoc.memLpLoc_one_clm_apply [IsFiniteMeasureOnCompacts (volume : Measure E)]
+    {A : E → F →L[ℝ] G} {w : E → F} (hA : MemLpLoc p U A)
+    (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1) : MemLpLoc 1 U (fun z => A z (w z)) := by
+  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
+  exact (hA.clm_apply hw).mono_exponent (ENNReal.one_le_inv.2 hpq)
 
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally integrable on a locally closed set when
@@ -351,9 +385,8 @@ applied to a locally `L^q` field is locally integrable on a locally closed set w
 theorem MemLpLoc.locallyIntegrableOn_clm_apply [LocallyCompactSpace E]
     [IsFiniteMeasureOnCompacts (volume : Measure E)] {A : E → F →L[ℝ] G} {w : E → F}
     (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume := by
-  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  exact (hA.clm_apply hw).locallyIntegrableOn (ENNReal.one_le_inv.2 hpq) hU
+    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume :=
+  (hA.memLpLoc_one_clm_apply hw hpq).locallyIntegrableOn le_rfl hU
 
 /-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
 @[simp]
@@ -401,6 +434,19 @@ theorem MemLpLoc.continuous_smul_of_tsupport_subset [T2Space E] [OpensMeasurable
     Measure.restrict_restrict hcl.measurableSet]
   exact memLpLoc_iff.1 hT _ (Set.inter_subset_left.trans hsupp) (hK.inter_left hcl)
 
+/-- A continuous compactly supported factor supported in `U` turns a locally `Lᵖ` function on `U`
+into a function in `Lᵖ` of the whole space. -/
+theorem MemLpLoc.memLp_smul_of_hasCompactSupport [T2Space E] [OpensMeasurableSpace E]
+    {χ : E → ℝ} (hf : MemLpLoc p U f) (hχ : Continuous χ) (hχc : HasCompactSupport χ)
+    (hsupp : tsupport χ ⊆ U) :
+    MemLp (fun z => χ z • f z) p volume := by
+  have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
+  have heq : (fun z => χ z • f z) = (tsupport χ).indicator (fun z => χ z • f z) := by
+    refine (Set.indicator_eq_self.2 ?_).symm
+    exact (Function.support_smul_subset_left χ f).trans (subset_tsupport χ)
+  rw [heq, memLp_indicator_iff_restrict hcl.measurableSet.nullMeasurableSet]
+  exact memLpLoc_iff.1 (hf.continuousOn_smul hχ.continuousOn) _ hsupp hχc
+
 /-- A continuous compactly supported factor whose support meets the closed set `T` inside `S`
 makes a function in `MemLpLoc 1 S` integrable on `T`, even though `T` may be unbounded or leave
 `S`. -/
@@ -416,6 +462,23 @@ theorem MemLpLoc.integrableOn_smul [T2Space E] [OpensMeasurableSpace E] {S T : S
   simp [image_eq_zero_of_notMem_tsupport fun h => hz.2 ⟨h, hz.1⟩]
 
 end MemLpLoc
+
+section MemLpLocBall
+
+variable {E F : Type*} [MetricSpace E] [ProperSpace E] [MeasureSpace E]
+  [NormedAddCommGroup F] {p : ENNReal} {f : E → F}
+
+/-- Local `Lᵖ` membership on a ball `ball c r` in a proper metric space is `Lᵖ` membership on
+every smaller concentric ball `ball c R`, `R < r`. -/
+theorem memLpLoc_ball_iff {c : E} {r : ℝ} :
+    MemLpLoc p (Metric.ball c r) f ↔ ∀ R < r, MemLp f p (volume.restrict (Metric.ball c R)) := by
+  refine ⟨fun hf R hR => hf.memLp_of_closure_subset Metric.isCompact_closure_ball
+    (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hR)),
+    fun hf K hK hKc => ?_⟩
+  obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK
+  exact (hf R hR).mono_measure (Measure.restrict_mono hKR le_rfl)
+
+end MemLpLocBall
 
 section PreciseRepresentative
 
