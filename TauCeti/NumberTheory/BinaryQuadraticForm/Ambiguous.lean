@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Reflection
+import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -21,8 +22,9 @@ translation `(x, y) ↦ (x - y, y)` carries `(a, a, c)` to `(a, -a, c)`.
 
 This file proves that every ambiguous class of integral forms contains a normalized form
 (`exists_smul_b_eq_zero_or_b_eq_a_iff`), with no hypothesis on the discriminant. Over `ℚ` an
-improper automorph `g` of a nonzero form has trace zero, since the form identifies `g` with the
-inverse transpose of `g⁻¹`; hence `g² = 1`, and `g` has a primitive integral eigenvector `v`. In an
+improper automorph `g` of a nonzero form has trace zero, since the Gram matrix of the form
+identifies `g` with its inverse transpose `g⁻ᵀ`, whose trace is `tr g⁻¹ = -tr g` because
+`det g = -1`; hence `g² = 1`, and `g` has a primitive integral eigenvector `v`. In an
 oriented basis `(v, e)` the automorph sends `v` to `±v` and `e` to `∓e + k v`, and invariance of
 the form forces `b = ±k a` with `a = f(v)`; a translation `e ↦ e + m v` then moves `b` to `0` or
 `a`. When the form represents a positive integer, which
@@ -87,8 +89,14 @@ theorem exists_eq_smul_reflected_of_b_eq_zero_or_b_eq_a (h : f.b = 0 ∨ f.b = f
   rcases h with h | h
   · exact ⟨1, by ext <;> simp [h]⟩
   · refine ⟨SpecialLinearGroup.map (Int.castRingHom R) ModularGroup.T⁻¹, ?_⟩
-    ext <;> simp [h]
-    ring
+    ext <;>
+      simp only [smul_a, smul_b, smul_c, reflected_a, reflected_b, reflected_c, h, map_inv,
+        SpecialLinearGroup.inv_apply_zero_zero, SpecialLinearGroup.inv_apply_zero_one,
+        SpecialLinearGroup.inv_apply_one_zero, SpecialLinearGroup.inv_apply_one_one,
+        SpecialLinearGroup.map_apply_coe, ModularGroup.coe_T, Int.coe_castRingHom, map_apply,
+        of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, Int.cast_one,
+        Int.cast_zero] <;>
+      ring
 
 end CommRing
 
@@ -141,34 +149,6 @@ private theorem exists_T_zpow_smul_b_eq_zero_or_b_eq_a (h : f.a ∣ f.b) :
   · right
     linear_combination hm - f.a * hdiv + f.a * hm2
 
-/-- For `γ = !![p, q; r, p]` in `SL(2, ℤ)`, the form `r x² - 2 p x y + q y²`, of discriminant
-`4`, vanishes at a coprime pair `(u, v)`. This is an eigenvector of the improper automorph
-`σ γ⁻¹`, with `σ = diag(1, -1)`. -/
-private theorem exists_isCoprime_conjugate_apply_one_zero_eq_zero {γ : SL(2, ℤ)}
-    (hp : γ 0 0 = γ 1 1) : ∃ u v : ℤ, IsCoprime u v ∧
-      γ 1 0 * u ^ 2 - 2 * γ 0 0 * u * v + γ 0 1 * v ^ 2 = 0 := by
-  have hdet := SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  rw [← hp] at hdet
-  let F : BinaryQuadraticForm ℤ := ⟨γ 1 0, -2 * γ 0 0, γ 0 1⟩
-  -- The two eigenvectors `(p + 1, r)` and `(p - 1, r)`; one of them is nonzero.
-  obtain ⟨x, y, hxy, hF⟩ : ∃ x y : ℤ, (x ≠ 0 ∨ y ≠ 0) ∧ F.eval x y = 0 := by
-    by_cases hx : γ 0 0 + 1 = 0
-    · refine ⟨γ 0 0 - 1, γ 1 0, Or.inl (by omega), ?_⟩
-      simp only [F, eval_mk]
-      linear_combination (-γ 1 0) * hdet
-    · refine ⟨γ 0 0 + 1, γ 1 0, Or.inl hx, ?_⟩
-      simp only [F, eval_mk]
-      linear_combination (-γ 1 0) * hdet
-  obtain ⟨u, v, huv, -, -, hval⟩ := exists_isCoprime_eval_eq_gcd_sq_mul F x y hxy
-  have hg : (Int.gcd x y : ℤ) ^ 2 ≠ 0 := by
-    have := Int.gcd_pos_iff.mpr hxy
-    positivity
-  refine ⟨u, v, huv, ?_⟩
-  have hFuv : F.eval u v = 0 := by
-    rw [hF] at hval
-    exact (mul_eq_zero.mp hval.symm).resolve_left hg
-  simpa only [F, eval_mk, neg_mul, sub_eq_add_neg] using hFuv
-
 /-- **Ambiguous classes contain normalized forms.** An integral binary quadratic form is properly
 equivalent to its reflection `(a, -b, c)` exactly when it is properly equivalent to a form
 `(a, b, c)` with `b = 0` or `b = a`. No hypothesis on the discriminant is needed. -/
@@ -180,15 +160,24 @@ theorem exists_smul_b_eq_zero_or_b_eq_a_iff :
   by_cases hf : f = 0
   · exact ⟨1, Or.inl (by simp [hf])⟩
   have hp := apply_zero_zero_eq_apply_one_one hf h
-  obtain ⟨u, v, huv, huv0⟩ := exists_isCoprime_conjugate_apply_one_zero_eq_zero hp
+  have hdet := SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+  rw [← hp] at hdet
+  -- The form `r x² - 2 p x y + q y²`, of discriminant `4`, vanishes at a coprime pair `(u, v)`;
+  -- this is an eigenvector of the improper automorph `σ γ⁻¹`, with `σ = diag(1, -1)`.
+  obtain ⟨u, v, huv, huv0⟩ := exists_isCoprime_eval_eq_zero_of_discrim_eq_sq
+    ⟨γ 1 0, -2 * γ 0 0, γ 0 1⟩ 2 (by
+      simp only [discrim_def, _root_.discrim]
+      linear_combination 4 * hdet)
+  simp only [eval_mk] at huv0
   obtain ⟨ρ, hρ0, hρ1⟩ := huv.exists_SL2_col 0
   -- In the oriented basis `(ρ e₀, ρ e₁)`, whose first vector is the eigenvector `(u, v)`, the
   -- improper automorph fixes the first line.
   have h₁ := smul_eq_smul_smul_reflected h ρ⁻¹
   have hγ₁ : (ρ⁻¹ * γ * (SpecialLinearGroup.conjJ ρ⁻¹)⁻¹) 1 0 = 0 := by
     rw [SpecialLinearGroup.conjJ_inv, inv_inv]
-    simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two,
-      SpecialLinearGroup.coe_inv, adjugate_fin_two, hρ0, hρ1]
+    simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv, SpecialLinearGroup.coe_conjJ,
+      adjugate_fin_two, hρ0, hρ1, Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val',
+      cons_val_zero, cons_val_one, cons_val_fin_one]
     linear_combination huv0 + v * u * hp
   obtain ⟨k, hk⟩ := exists_T_zpow_smul_b_eq_zero_or_b_eq_a (a_dvd_b_of_eq_smul_reflected h₁ hγ₁)
   exact ⟨ModularGroup.T ^ k * ρ⁻¹, by rwa [mul_smul]⟩
@@ -243,16 +232,8 @@ theorem exists_smul_a_pos_and_b_eq_zero_or_b_eq_a (hpos : ∃ x y, 0 < f.eval x 
     (h : ∃ γ : SL(2, ℤ), f = γ • f.reflected) :
     ∃ γ : SL(2, ℤ), 0 < (γ • f).a ∧ ((γ • f).b = 0 ∨ (γ • f).b = (γ • f).a) := by
   obtain ⟨δ, hδ⟩ := exists_smul_b_eq_zero_or_b_eq_a_iff.mpr h
-  -- The values of `δ • f` are those of `f`.
-  have hpos' : ∃ x y, 0 < (δ • f).eval x y := by
-    obtain ⟨x, y, hxy⟩ := hpos
-    have hdet := SpecialLinearGroup.fin_two_mul_sub_mul_eq_one δ
-    refine ⟨δ 0 0 * x + δ 0 1 * y, δ 1 0 * x + δ 1 1 * y, ?_⟩
-    rw [eval_smul]
-    convert hxy using 2
-    · linear_combination x * hdet
-    · linear_combination y * hdet
-  obtain ⟨γ, hγ⟩ := exists_smul_a_pos_of_b_eq_zero_or_b_eq_a hpos' hδ
+  obtain ⟨γ, hγ⟩ :=
+    exists_smul_a_pos_of_b_eq_zero_or_b_eq_a ((exists_eval_smul_iff δ f (0 < ·)).mpr hpos) hδ
   exact ⟨γ * δ, by rwa [mul_smul]⟩
 
 end TauCeti.BinaryQuadraticForm
