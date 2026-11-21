@@ -74,6 +74,8 @@ theorem exists_continuous_section_mem_of_isProP_ker [Fact p.Prime]
     obtain ⟨e, he, rfl⟩ := Subgroup.mem_map.mp (hf ▸ Subgroup.mem_top g)
     exact ⟨⟨e, he⟩, rfl⟩
   have hker' : IsProP p f'.toMonoidHom.ker := by
+    -- `f'.toMonoidHom` is `f.toMonoidHom.domRestrict E'` by definition: both send `x : E'` to
+    -- `f x`, so `ker_domRestrict` applies after unfolding `ContinuousMonoidHom.comp` and `ι`.
     rw [show f'.toMonoidHom.ker = _ from MonoidHom.ker_domRestrict E' f.toMonoidHom,
       ← Subgroup.inf_subgroupOf_right, Subgroup.isProP_subgroupOf_iff inf_le_right]
     exact hker
