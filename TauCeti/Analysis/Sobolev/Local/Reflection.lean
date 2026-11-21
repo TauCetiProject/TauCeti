@@ -165,7 +165,8 @@ private theorem mapsTo_imDilation_higherReflectionNode {Ω : Set ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
     (j : Fin k) :
     MapsTo (imDilation (higherReflectionNode j)) (Ω ∩ {z | z.im ≤ 0}) (Ω ∩ {z | 0 ≤ z.im}) := by
-  rintro z ⟨hzΩ, hz : z.im ≤ 0⟩
+  rintro z ⟨hzΩ, hz⟩
+  have hz : z.im ≤ 0 := mem_ofPred.1 hz
   refine ⟨?_, ?_⟩
   · rcases hz.lt_or_eq with hz | hz
     · exact hΩ z hzΩ hz j
