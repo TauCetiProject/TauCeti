@@ -68,6 +68,7 @@ def frobeniusPreimageIdeal : Ideal D :=
 
 variable {p q}
 
+@[simp]
 theorem mem_frobeniusPreimageIdeal {x : D} :
     x ∈ frobeniusPreimageIdeal p q ↔ qInteger q p ∣ frobenius p D x := by
   rw [frobeniusPreimageIdeal, Ideal.mem_comap, Ideal.mem_span_singleton]
