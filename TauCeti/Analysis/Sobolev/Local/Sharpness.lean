@@ -21,7 +21,7 @@ exactly when a norm power `z ↦ ‖z‖ ^ s` belongs to them near the origin, a
 show that the mixed-exponent product and the composition results for `W^{1,p}_loc` fail at the
 subcritical exponent `p = 4 / 3`, below the critical exponent `p = 2`.
 
-For `0 < p < ∞`, `‖z‖ ^ s` is in `Lᵖ_loc` near the origin exactly when `s p > -2`. For
+For `p < ∞`, `‖z‖ ^ s` is in `Lᵖ_loc` near the origin exactly when `s p > -2`. For
 `1 ≤ p < ∞` and `s ≠ 0`, it is in `W^{1,p}_loc` near the origin exactly when `(s - 1) p > -2`:
 its weak derivative is the classical derivative, of norm `|s| ‖z‖ ^ (s - 1)`. Membership holds on
 every set when the exponent condition holds; failure holds on every neighbourhood of the origin.
@@ -71,26 +71,23 @@ theorem memLpLoc_norm_rpow (hp : p ≠ ∞) (hs : -2 < s * p.toReal) :
   memLpLoc_iff.2 fun K _ hc => hc.isBounded.memLp_norm_rpow_restrict hp
     (by rw [Complex.finrank_real_complex]; push_cast; linarith)
 
-/-- For `0 < p < ∞`, if `s p ≤ -2` then `z ↦ ‖z‖ ^ s` is not locally `Lᵖ` on any neighbourhood
+/-- For `p < ∞`, if `s p ≤ -2` then `z ↦ ‖z‖ ^ s` is not locally `Lᵖ` on any neighbourhood
 of the origin. -/
-theorem not_memLpLoc_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
+theorem not_memLpLoc_norm_rpow (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
     (hs : s * p.toReal ≤ -2) : ¬ MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) := by
   intro h
   obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 hU
-  have hint := (memLpLoc_iff.1 h _ hrU (isCompact_closedBall 0 r)).integrable_norm_rpow hp0 hp
-  simp only [Real.norm_eq_abs, Real.abs_rpow_of_nonneg (norm_nonneg _), abs_norm,
-    ← Real.rpow_mul (norm_nonneg _)] at hint
-  have hball : IntegrableOn (fun z : ℂ => ‖z‖ ^ (s * p.toReal)) (ball 0 r) volume :=
-    IntegrableOn.mono_set hint ball_subset_closedBall
-  rw [integrableOn_norm_rpow_ball_iff hr, Complex.finrank_real_complex] at hball
-  push_cast at hball
+  have h2 := (isBounded_closedBall.memLp_norm_rpow_restrict_iff (closedBall_mem_nhds 0 hr) hp).1
+    (memLpLoc_iff.1 h _ hrU (isCompact_closedBall 0 r))
+  rw [Complex.finrank_real_complex] at h2
+  push_cast at h2
   linarith
 
-/-- **Local `Lᵖ` membership of a norm power.** For `0 < p < ∞` and a neighbourhood `U` of the
+/-- **Local `Lᵖ` membership of a norm power.** For `p < ∞` and a neighbourhood `U` of the
 origin, `z ↦ ‖z‖ ^ s` is locally `Lᵖ` on `U` exactly when `s p > -2`. -/
-theorem memLpLoc_norm_rpow_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ)) :
+theorem memLpLoc_norm_rpow_iff (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ)) :
     MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) ↔ -2 < s * p.toReal :=
-  ⟨fun h => not_le.1 fun hs => not_memLpLoc_norm_rpow hp0 hp hU hs h,
+  ⟨fun h => not_le.1 fun hs => not_memLpLoc_norm_rpow hp hU hs h,
     memLpLoc_norm_rpow hp⟩
 
 /-- For `1 ≤ p < ∞`, the norm power `z ↦ ‖z‖ ^ s` is in `W^{1,p}_loc` on every subset of the
@@ -100,9 +97,9 @@ theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hs : -2 < (s -
   have hpr : 1 ≤ p.toReal := by
     simpa using ENNReal.toReal_mono hp hp1
   have hs1 : 1 - (Module.finrank ℝ ℂ : ℝ) < s := by
-    have := neg_finrank_lt_of_neg_finrank_lt_mul (E := ℂ) hpr
-      (by rw [Complex.finrank_real_complex]; push_cast; exact hs)
-    linarith
+    rw [Complex.finrank_real_complex]
+    push_cast
+    linarith [neg_lt_of_neg_lt_mul (by norm_num) hpr hs]
   refine memWkpLoc_succ_iff.2 ⟨memLpLoc_norm_rpow hp (by nlinarith),
     fun z => (s * ‖z‖ ^ (s - 2)) • innerSL ℝ z, hasWeakFDerivOn_norm_rpow hs1 _,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hK hc => ?_)⟩
@@ -163,7 +160,6 @@ theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
     MemLpLoc (4 / 3) (ball (0 : ℂ) 1) (fun z => ‖z‖ ^ (-6 / 5 : ℝ)) ∧
       MemWkpLoc (4 / 3) (ball (0 : ℂ) 1) 1 (fun z => ‖z‖ ^ (-2 / 5 : ℝ)) ∧
       ¬ MemLpLoc (4 / 3) (ball (0 : ℂ) 1) (fun z => ‖z‖ ^ (-6 / 5 : ℝ) * ‖z‖ ^ (-2 / 5 : ℝ)) := by
-  have hp0 : (4 / 3 : ENNReal) ≠ 0 := by simp
   refine ⟨memLpLoc_norm_rpow four_thirds_ne_top (by rw [toReal_four_thirds]; norm_num),
     memWkpLoc_norm_rpow_neg_two_fifths, ?_⟩
   have hmul : (fun z : ℂ => ‖z‖ ^ (-6 / 5 : ℝ) * ‖z‖ ^ (-2 / 5 : ℝ)) =
@@ -172,7 +168,7 @@ theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
     rw [← Real.rpow_add' (norm_nonneg z) (by norm_num)]
     norm_num
   rw [hmul]
-  exact not_memLpLoc_norm_rpow hp0 four_thirds_ne_top (ball_mem_nhds 0 one_pos)
+  exact not_memLpLoc_norm_rpow four_thirds_ne_top (ball_mem_nhds 0 one_pos)
     (by rw [toReal_four_thirds]; norm_num)
 
 /-- **Composition at order one fails at `p = 4 / 3`.** On the unit disc,

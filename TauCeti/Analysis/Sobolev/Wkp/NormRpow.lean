@@ -146,7 +146,7 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow (hb : Bornology.IsBounded (Ω : Set
     ∃ W : Wkp μ Ω p 2, Wkp.value 2 W =ᵐ[μ.restrict Ω] fun x => ‖x‖ ^ s := by
   have hp1 : 1 ≤ p.toReal := ENNReal.toReal_mono hp (Fact.out : (1 : ℝ≥0∞) ≤ p) |>.trans_eq'
     ENNReal.toReal_one.symm
-  have hs2 : -(Module.finrank ℝ E : ℝ) < s - 2 := neg_finrank_lt_of_neg_finrank_lt_mul hp1 h
+  have hs2 : -(Module.finrank ℝ E : ℝ) < s - 2 := neg_lt_of_neg_lt_mul (Nat.cast_nonneg _) hp1 h
   -- The coordinates of the gradient, `s ‖x‖ ^ (s - 2) ⟪x, v⟫`, are in `W^{1,p}(Ω)`.
   have hcoord : ∀ v : E, ∃ D : Wkp μ Ω p 1,
       Wkp.value 1 D =ᵐ[μ.restrict Ω] s • fun x => ‖x‖ ^ (s - 2) * ⟪x, v⟫ := by

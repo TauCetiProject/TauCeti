@@ -74,7 +74,7 @@ theorem exists_w1p_value_ae_eq_norm_rpow (hp : p ≠ ∞) (hb : Bornology.IsBoun
       W1p.gradient u =ᵐ[μ.restrict Ω] fun x => (s * ‖x‖ ^ (s - 2)) • x := by
   have hp1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
   have hs1 : 1 - (Module.finrank ℝ E : ℝ) < s := by
-    linarith [neg_finrank_lt_of_neg_finrank_lt_mul hp1 hs]
+    linarith [neg_lt_of_neg_lt_mul (Nat.cast_nonneg _) hp1 hs]
   have hu : MemLp (fun x : E => ‖x‖ ^ s) p (μ.restrict Ω) :=
     hb.memLp_norm_rpow_restrict (mu := μ) hp (by nlinarith)
   have hD : MemLp (fun x : E => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) p (μ.restrict Ω) := by
