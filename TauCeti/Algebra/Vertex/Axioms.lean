@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.HasseDeriv
-public import Mathlib.Algebra.Lie.OfAssociative
 
 /-!
 # Formal vertex algebras

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.RingTheory.Polynomial.Pochhammer
 -- Proof-only: modules over `ℚ` are torsion-free.
 import Mathlib.Algebra.Module.Torsion.Field
@@ -529,9 +530,11 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
   `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
   division semiring.
-* `TauCeti.Ring.sum_range_choose_add_one_smul` and
-  `TauCeti.Ring.sum_range_neg_one_pow_mul_choose_smul`: Pascal identities summed against a
-  sequence over `Finset.range (N + 1)`.
+* `TauCeti.Ring.sum_range_choose_add_one_smul`,
+  `TauCeti.Ring.sum_range_neg_one_pow_mul_choose_smul`,
+  `TauCeti.Ring.finsum_choose_add_one_smul`, and
+  `TauCeti.Ring.finsum_neg_one_pow_mul_choose_smul`: Pascal identities summed against a
+  sequence over `Finset.range (N + 1)` and as `finsum`s for finitely supported sequences.
 
 ## References
 
@@ -714,6 +717,44 @@ theorem sum_range_neg_one_pow_mul_choose_smul {M : Type*} [AddCommGroup M] [Modu
   exact sum_congr rfl fun i _ ↦ by
     rw [← add_smul, _root_.Ring.choose_succ_succ, pow_succ, mul_add]
     congr 1; simp only [mul_neg_one, neg_mul]; abel
+
+/-- Pascal's identity as a `finsum` for a finitely supported sequence `u : ℕ → M`:
+`∑ᶠ i : ℕ, (m + 1 choose i) • u i =`
+`(∑ᶠ i : ℕ, (m choose i) • u i) + ∑ᶠ i : ℕ, (m choose i) • u (i + 1)`. -/
+theorem finsum_choose_add_one_smul {M : Type*} [AddCommMonoid M] [Module R M]
+    (m : R) {u : ℕ → M} (hu : Function.HasFiniteSupport u) :
+    (∑ᶠ i : ℕ, _root_.Ring.choose (m + 1) i • u i) =
+      (∑ᶠ i : ℕ, _root_.Ring.choose m i • u i) +
+        ∑ᶠ i : ℕ, _root_.Ring.choose m i • u (i + 1) := by
+  obtain ⟨N, hN⟩ := hu.bddAbove
+  have hzero (i : ℕ) (hi : N + 1 ≤ i) : u i = 0 :=
+    Function.notMem_support.1 fun h ↦ (hN h).not_gt hi
+  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := N + 2) fun i hi ↦ by
+        simp [hzero i (by omega)],
+      TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := N + 2) fun i hi ↦ by
+        simp [hzero i (by omega)],
+      TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := N + 1) fun i hi ↦ by
+        simp [hzero (i + 1) (by omega)],
+      sum_range_choose_add_one_smul]
+
+/-- Alternating-sign Pascal identity as a `finsum` for a finitely supported sequence `u : ℕ → M`:
+`∑ᶠ i : ℕ, (-1)ⁱ (n choose i) • u i =`
+`(∑ᶠ i : ℕ, (-1)ⁱ (n choose i) • u (i + 1)) + ∑ᶠ i : ℕ, (-1)ⁱ (n + 1 choose i) • u i`. -/
+theorem finsum_neg_one_pow_mul_choose_smul {M : Type*} [AddCommGroup M] [Module R M]
+    (n : R) {u : ℕ → M} (hu : Function.HasFiniteSupport u) :
+    (∑ᶠ i : ℕ, ((-1 : R) ^ i * _root_.Ring.choose n i) • u i) =
+      (∑ᶠ i : ℕ, ((-1 : R) ^ i * _root_.Ring.choose n i) • u (i + 1)) +
+        ∑ᶠ i : ℕ, ((-1 : R) ^ i * _root_.Ring.choose (n + 1) i) • u i := by
+  obtain ⟨N, hN⟩ := hu.bddAbove
+  have hzero (i : ℕ) (hi : N + 1 ≤ i) : u i = 0 :=
+    Function.notMem_support.1 fun h ↦ (hN h).not_gt hi
+  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := N + 2) fun i hi ↦ by
+        simp [hzero i (by omega)],
+      TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := N + 1) fun i hi ↦ by
+        simp [hzero (i + 1) (by omega)],
+      TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := N + 2) fun i hi ↦ by
+        simp [hzero i (by omega)],
+      sum_range_neg_one_pow_mul_choose_smul]
 
 end Ring
 

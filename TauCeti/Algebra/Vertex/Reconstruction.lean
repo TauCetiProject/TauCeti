@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.Borcherds.Basic
+public import TauCeti.Algebra.Vertex.StateFieldProduct
 
 /-!
 # The reconstruction theorem for formal vertex algebras

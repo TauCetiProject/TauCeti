@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Vertex.HasseDeriv
 public import TauCeti.Algebra.Vertex.ResidueProduct
 public import TauCeti.Algebra.Vertex.NormalOrder
-public import Mathlib.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Data.Nat.Choose.Sum
 import TauCeti.RingTheory.Binomial
