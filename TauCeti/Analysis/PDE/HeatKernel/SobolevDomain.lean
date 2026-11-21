@@ -18,6 +18,8 @@ the heat semigroup `e^{tΔ}` on `Lᵖ(E)` is the Laplacian in the sense of distr
 `{f ∈ Lᵖ : Δf ∈ Lᵖ}` (`TauCeti.generator_heatSemigroup_eq_weakLaplacianLp`). This file identifies
 that domain with a Sobolev space for real-valued functions and `1 < p < ∞`:
 
+* `TauCeti.mem_domain_heatSemigroup_of_wkp`: the value of an element of `W^{2,p}(E)` lies in the
+  domain of `A`, for every `1 ≤ p < ∞`;
 * `TauCeti.mem_domain_heatSemigroup_iff_exists_wkp`: `f` lies in the domain of `A` exactly when it
   is the value of an element of `W^{2,p}(E)`;
 * `TauCeti.mem_domain_heatSemigroup_iff_memSobolev`: equivalently, `f` lies in the Bessel
@@ -25,9 +27,9 @@ that domain with a Sobolev space for real-valued functions and `1 < p < ∞`:
 * `TauCeti.generator_heatSemigroup_ae_eq_trace`: on the domain, `A f` is the trace of the weak
   Hessian of `f`, for every `1 ≤ p < ∞`.
 
-One inclusion holds because the distributional Laplacian of a `W^{2,p}` function is the trace of
-its weak Hessian (`TauCeti.Wkp.integral_laplacian_smul_value_eq`), which lies in `Lᵖ`. The other is
-the `W^{2,p}` regularity of solutions of Poisson's equation on the whole space,
+One inclusion holds because the distributional Laplacian of a `W^{2,p}` function is its weak
+Laplacian (`TauCeti.Wkp.integral_laplacian_smul_value_eq_laplacianL`), an element of `Lᵖ`. The
+other is the `W^{2,p}` regularity of solutions of Poisson's equation on the whole space,
 `TauCeti.exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq`, which rests on the
 Calderón–Zygmund estimates and therefore needs `1 < p < ∞`. At `p = 1` the domain is strictly
 larger than `W^{2,1}` once `dim E ≥ 2`, and no identification is made there.
@@ -50,6 +52,22 @@ open scoped ENNReal Laplacian Distributions
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- **`W^{2,p}` lies in the domain of the heat generator.** For `1 ≤ p < ∞`, a real-valued
+`f ∈ Lᵖ(E)` that is, almost everywhere, the value of an element of the Sobolev space `W^{2,p}(E)`
+lies in the domain of the generator of the heat semigroup on `Lᵖ(E)`. -/
+theorem mem_domain_heatSemigroup_of_wkp (hp_top : p ≠ ∞) {f : Lp ℝ p (volume : Measure E)}
+    (w : Wkp (volume : Measure E) ⊤ p 2) (hw : (Wkp.value 2 w : E → ℝ) =ᵐ[volume] f) :
+    f ∈ (heatSemigroup hp_top).domain := by
+  have hΔ := Wkp.memLp_value 0 (Wkp.laplacianL 0 w)
+  rw [mem_domain_heatSemigroup_iff hp_top]
+  refine ⟨hΔ.toLp _, fun φ ↦ ?_⟩
+  calc ∫ x, Δ (φ : E → ℝ) x • f x = ∫ x, Δ (φ : E → ℝ) x • Wkp.value 2 w x :=
+        integral_congr_ae (hw.mono fun x hx ↦ by simp only [hx])
+    _ = ∫ x, (φ : E → ℝ) x • Wkp.value 0 (Wkp.laplacianL 0 w) x :=
+        Wkp.integral_laplacian_smul_value_eq_laplacianL 0 w φ
+    _ = ∫ x, φ x • (hΔ.toLp _ : Lp ℝ p (volume : Measure E)) x :=
+        integral_congr_ae (hΔ.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
+
 /-- **The domain of the heat generator is `W^{2,p}`.** For `1 < p < ∞`, a real-valued
 `f ∈ Lᵖ(E)` lies in the domain of the generator of the heat semigroup on `Lᵖ(E)` if and only if it
 is, almost everywhere, the value of an element of the Sobolev space `W^{2,p}(E)`. -/
@@ -57,32 +75,14 @@ theorem mem_domain_heatSemigroup_iff_exists_wkp (hp : 1 < p) (hp_top : p ≠ ∞
     {f : Lp ℝ p (volume : Measure E)} :
     f ∈ (heatSemigroup hp_top).domain ↔
       ∃ w : Wkp (volume : Measure E) ⊤ p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[volume] f := by
-  rw [mem_domain_heatSemigroup_iff hp_top]
-  constructor
-  · rintro ⟨g, hg⟩
-    obtain ⟨w, hw, -⟩ := exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq hp hp_top
-      (Lp.memLp f) (Lp.memLp g) fun φ hφ hc ↦ by
-        have h := hg (TestFunction.mk φ hφ hc (by simp only [Opens.coe_top, Set.subset_univ]))
-        rw [TestFunction.coe_mk] at h
-        simpa only [smul_eq_mul] using h
-    exact ⟨w, hw⟩
-  · rintro ⟨w, hw⟩
-    have hμ : (volume : Measure E) ≤ volume.restrict ((⊤ : Opens E) : Set E) := by
-      rw [Opens.coe_top, Measure.restrict_univ]
-    -- The trace of the weak Hessian of `w` is an `Lᵖ` function.
-    have htr : MemLp (fun x ↦ LinearMap.trace ℝ E (Wkp.iteratedGradient 1 w x)) p volume := by
-      refine ((Lp.memLp ((traceCLM ℝ E).compLpL p _ (Wkp.iteratedGradient 1 w))).mono_measure
-        hμ).ae_eq ?_
-      filter_upwards [ae_mono hμ ((traceCLM ℝ E).coeFn_compLpL
-        (Wkp.iteratedGradient 1 w))] with x hx
-      rw [hx, traceCLM_apply]
-    refine ⟨htr.toLp _, fun φ ↦ ?_⟩
-    calc ∫ x, Δ (φ : E → ℝ) x • f x = ∫ x, Δ (φ : E → ℝ) x • Wkp.value 2 w x :=
-          integral_congr_ae (hw.mono fun x hx ↦ by simp only [hx])
-      _ = ∫ x, (φ : E → ℝ) x • LinearMap.trace ℝ E (Wkp.iteratedGradient 1 w x) :=
-          Wkp.integral_laplacian_smul_value_eq w φ
-      _ = ∫ x, φ x • (htr.toLp _ : Lp ℝ p (volume : Measure E)) x :=
-          integral_congr_ae (htr.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
+  refine ⟨fun hf ↦ ?_, fun ⟨w, hw⟩ ↦ mem_domain_heatSemigroup_of_wkp hp_top w hw⟩
+  obtain ⟨g, hg⟩ := (mem_domain_heatSemigroup_iff hp_top).1 hf
+  obtain ⟨w, hw, -⟩ := exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq hp hp_top
+    (Lp.memLp f) (Lp.memLp g) fun φ hφ hc ↦ by
+      have h := hg (TestFunction.mk φ hφ hc (by simp only [Opens.coe_top, Set.subset_univ]))
+      rw [TestFunction.coe_mk] at h
+      simpa only [smul_eq_mul] using h
+  exact ⟨w, hw⟩
 
 /-- **The domain of the heat generator is the Bessel potential space `H^{2,p}`.** For
 `1 < p < ∞`, a real-valued `f ∈ Lᵖ(E)` lies in the domain of the generator of the heat semigroup on
@@ -113,8 +113,6 @@ theorem generator_heatSemigroup_ae_eq_trace (hp_top : p ≠ ∞)
   have h := (Wkp.forall_integral_laplacian_smul_value_eq_iff w hloc).1 fun φ ↦
     (integral_congr_ae (hw.mono fun x hx ↦ by simp only [hx])).trans
       ((mem_graph_weakLaplacianLp_iff.1 hgraph) φ)
-  have hμ : (volume : Measure E) ≤ volume.restrict ((⊤ : Opens E) : Set E) := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  exact Filter.EventuallyEq.symm (ae_mono hμ h)
+  simpa only [Opens.coe_top, Measure.restrict_univ] using h.symm
 
 end TauCeti
