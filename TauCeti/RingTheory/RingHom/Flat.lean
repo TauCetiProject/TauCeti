@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
+import Mathlib.RingTheory.Flat.Localization
 
 /-!
 # Flat ring homomorphisms
@@ -15,6 +16,10 @@ A commutative square whose horizontal maps are isomorphisms transports flatness 
 localizing the targets at corresponding submonoids
 (`RingHom.flat_localization_comp_iff_of_ringEquiv`). Applied at corresponding primes, this lets
 symmetry arguments reduce flatness of a morphism to flatness at one point.
+
+Precomposing a ring homomorphism out of a localization with the localization map preserves and
+reflects flatness (`RingHom.Flat.comp_algebraMap_isLocalization_iff`), allowing flatness of an
+endomorphism of a localization to be checked after restricting along the localization map.
 
 The file also states the equational criterion for flatness for a ring homomorphism
 `g : A →+* B`, without an `Algebra A B` instance
@@ -64,5 +69,15 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq_zero {A B : Type*} [CommRing A] [Co
   obtain ⟨k, a, y, hxy, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero (R := A)
     (M := B) (f := f) (x := x) (by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using h)
   exact ⟨k, a, y, fun j ↦ by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hxy j, ha⟩
+
+/-- Precomposing a ring homomorphism out of a localization with the localization map preserves and
+reflects flatness. Stated for ring homomorphisms without an `Algebra Rₘ T` instance so that it
+applies to endomorphisms `Rₘ →+* Rₘ`. -/
+theorem Flat.comp_algebraMap_isLocalization_iff {R Rₘ T : Type*} [CommRing R] [CommRing Rₘ]
+    [CommRing T] (M : Submonoid R) [Algebra R Rₘ] [IsLocalization M Rₘ] (f : Rₘ →+* T) :
+    (f.comp (algebraMap R Rₘ)).Flat ↔ f.Flat := by
+  algebraize_only [f, f.comp (algebraMap R Rₘ)]
+  have : IsScalarTower R Rₘ T := .of_algebraMap_eq' rfl
+  exact (Module.flat_iff_of_isLocalization Rₘ M T).symm
 
 end RingHom
