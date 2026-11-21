@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
@@ -56,13 +57,17 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 * `TauCeti.KacMoody.range_serreHom_sup_range_cartanElement`: `𝔤 = 𝔤' + H`, where `𝔤'` is the
   image of `Matrix.ToLieAlgebra K A`.
 * `TauCeti.KacMoody.range_serreHom_eq_derivedSeries`: that image is the derived algebra `⁅𝔤, 𝔤⁆`.
+* `TauCeti.KacMoody.engel_positiveGenerator` and `TauCeti.KacMoody.engel_negativeGenerator`: the
+  Chevalley generators `eᵢ` and `fᵢ` act locally nilpotently in the adjoint representation, with no
+  matrix or finiteness hypotheses.
 
 ## References
 
 * V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, §1.2 (the auxiliary algebra on
-  a realization), §1.3 (the algebra `𝔤(A)`, its derived algebra and `𝔤(A) = 𝔤'(A) + 𝔥`) and
-  Theorem 9.11 (the presentation of `𝔤(A)` by Serre's relations in the symmetrizable case, stated
-  over the complex numbers and used here only in characteristic zero).
+  a realization), §1.3 (the algebra `𝔤(A)`, its derived algebra and `𝔤(A) = 𝔤'(A) + 𝔥`), §3.6
+  (adjoint local nilpotence of Chevalley generators), and Theorem 9.11 (the presentation of `𝔤(A)`
+  by Serre's relations in the symmetrizable case, stated over the complex numbers and used here
+  only in characteristic zero).
 -/
 
 public section
@@ -576,6 +581,87 @@ theorem range_serreHom_eq_derivedSeries :
     exact lie_mem_range_serreHom R (hsup ▸ Submodule.mem_top) (hsup ▸ Submodule.mem_top)
 
 end Serre
+
+/-! ## Adjoint local nilpotence of the Chevalley generators -/
+
+section AdjointNilpotence
+
+variable (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
+
+private theorem ad_positiveGenerator_sq_cartanElement (i : I) (x : H) :
+    (ad K (PresentedLieAlgebra R) (positiveGenerator R i) ^ 2) (cartanElement R x) = 0 := by
+  rw [sq, _root_.mul_apply_eq_comp, ad_apply, ad_apply,
+    ← lie_skew (positiveGenerator R i) (cartanElement R x), lie_cartanElement_positiveGenerator,
+    lie_neg, lie_smul, lie_self, smul_zero, neg_zero]
+
+private theorem ad_negativeGenerator_sq_cartanElement (i : I) (x : H) :
+    (ad K (PresentedLieAlgebra R) (negativeGenerator R i) ^ 2) (cartanElement R x) = 0 := by
+  rw [sq, _root_.mul_apply_eq_comp, ad_apply, ad_apply,
+    ← lie_skew (negativeGenerator R i) (cartanElement R x), lie_cartanElement_negativeGenerator,
+    neg_neg, lie_smul, lie_self, smul_zero]
+
+/-- **Adjoint local nilpotence of `eᵢ`.** The Engel subalgebra of `positiveGenerator R i` is the
+whole Kac–Moody algebra `PresentedLieAlgebra R`, with no hypotheses on the integer matrix `A` or on
+`I`. -/
+@[simp]
+theorem engel_positiveGenerator (i : I) :
+    LieSubalgebra.engel K (positiveGenerator R i) = ⊤ := by
+  classical
+  rw [eq_top_iff, ← lieSpan_generators_eq_top R, LieSubalgebra.lieSpan_le]
+  rintro _ ((⟨x, rfl⟩ | ⟨j, rfl⟩) | ⟨j, rfl⟩) <;>
+    rw [SetLike.mem_coe, LieSubalgebra.mem_engel_iff]
+  · exact ⟨2, ad_positiveGenerator_sq_cartanElement R i x⟩
+  · refine ⟨(-A i j).toNat + 1, ?_⟩
+    rw [pow_succ, _root_.mul_apply_eq_comp, ad_apply]
+    exact ad_pow_lie_positiveGenerator_positiveGenerator R i j
+  · by_cases hij : i = j
+    · subst hij
+      refine ⟨2 + 1, ?_⟩
+      rw [pow_succ, _root_.mul_apply_eq_comp, ad_apply,
+        lie_positiveGenerator_negativeGenerator_self]
+      exact ad_positiveGenerator_sq_cartanElement R i (R.coroot i)
+    · refine ⟨1, ?_⟩
+      rw [pow_one, ad_apply, lie_positiveGenerator_negativeGenerator_of_ne R hij]
+
+/-- **Adjoint local nilpotence of `fᵢ`.** The Engel subalgebra of `negativeGenerator R i` is the
+whole Kac–Moody algebra `PresentedLieAlgebra R`, with no hypotheses on `A` or `I`. -/
+@[simp]
+theorem engel_negativeGenerator (i : I) :
+    LieSubalgebra.engel K (negativeGenerator R i) = ⊤ := by
+  classical
+  rw [eq_top_iff, ← lieSpan_generators_eq_top R, LieSubalgebra.lieSpan_le]
+  rintro _ ((⟨x, rfl⟩ | ⟨j, rfl⟩) | ⟨j, rfl⟩) <;>
+    rw [SetLike.mem_coe, LieSubalgebra.mem_engel_iff]
+  · exact ⟨2, ad_negativeGenerator_sq_cartanElement R i x⟩
+  · by_cases hij : i = j
+    · subst hij
+      refine ⟨2 + 1, ?_⟩
+      rw [pow_succ, _root_.mul_apply_eq_comp, ad_apply,
+        ← lie_skew (negativeGenerator R i) (positiveGenerator R i),
+        lie_positiveGenerator_negativeGenerator_self, map_neg,
+        ad_negativeGenerator_sq_cartanElement, neg_zero]
+    · refine ⟨1, ?_⟩
+      rw [pow_one, ad_apply, ← lie_skew (negativeGenerator R i) (positiveGenerator R j),
+        lie_positiveGenerator_negativeGenerator_of_ne R (Ne.symm hij), neg_zero]
+  · refine ⟨(-A i j).toNat + 1, ?_⟩
+    rw [pow_succ, _root_.mul_apply_eq_comp, ad_apply]
+    exact ad_pow_lie_negativeGenerator_negativeGenerator R i j
+
+/-- Every element of `PresentedLieAlgebra R` is annihilated by some power of
+`ad (positiveGenerator R i)`. -/
+theorem exists_ad_positiveGenerator_pow_apply_eq_zero (i : I) (y : PresentedLieAlgebra R) :
+    ∃ k : ℕ, (ad K (PresentedLieAlgebra R) (positiveGenerator R i) ^ k) y = 0 :=
+  (LieSubalgebra.mem_engel_iff K (positiveGenerator R i) y).mp
+    (by rw [engel_positiveGenerator]; trivial)
+
+/-- Every element of `PresentedLieAlgebra R` is annihilated by some power of
+`ad (negativeGenerator R i)`. -/
+theorem exists_ad_negativeGenerator_pow_apply_eq_zero (i : I) (y : PresentedLieAlgebra R) :
+    ∃ k : ℕ, (ad K (PresentedLieAlgebra R) (negativeGenerator R i) ^ k) y = 0 :=
+  (LieSubalgebra.mem_engel_iff K (negativeGenerator R i) y).mp
+    (by rw [engel_negativeGenerator]; trivial)
+
+end AdjointNilpotence
 
 end KacMoody
 

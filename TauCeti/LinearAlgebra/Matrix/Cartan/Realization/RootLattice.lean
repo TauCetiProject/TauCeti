@@ -34,7 +34,8 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.rootLattice`: the root lattice `Q`.
 * `TauCeti.CartanRealization.posRootCone`: the positive root cone `Q₊`.
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
-* `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
+* `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`, with height
+  difference `TauCeti.CartanRealization.RootLE.height`.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
 * `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
   `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
@@ -48,6 +49,10 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
+* `TauCeti.CartanRealization.exists_maximal_of_rootLE_finset`: any nonempty predicate on weights
+  bounded above by finitely many cones `λ - Q₊` has a `RootLE`-maximal element above any witness.
+* `TauCeti.CartanRealization.isDominant_of_forall_exists_nat_apply_coroot`: a weight taking natural
+  values on all simple coroots is dominant.
 * `TauCeti.CartanRealization.CoweightLattice.rootLattice_le_weightLattice`: `Q ⊆ P`.
 * `TauCeti.CartanRealization.CoweightLattice.isDominant_coe_iff`: dominance of an integral weight
   is nonnegativity of its coroot coordinates.
@@ -272,6 +277,85 @@ theorem finite_setOf_rootLE_height_le [Finite I] [CharZero K] (lam : Dual K H) (
   (R.linearIndependent_nat_root.finite_sub_natSpanHeight_le lam n).subset
     fun μ ⟨h, hn⟩ ↦ ⟨⟨lam - μ, h⟩, (sub_sub_cancel lam μ).symm, hn⟩
 
+section RootLEHeight
+
+variable [CharZero K]
+
+/-- The **height difference** `ht(λ - μ)` attached to a witness `h : R.RootLE μ lam`. -/
+noncomputable def RootLE.height {μ lam : Dual K H} (h : R.RootLE μ lam) : ℕ :=
+  R.height ⟨lam - μ, rootLE_iff.mp h⟩
+
+theorem RootLE.height_def {μ lam : Dual K H} (h : R.RootLE μ lam) :
+    h.height = R.height ⟨lam - μ, rootLE_iff.mp h⟩ := (rfl)
+
+/-- A reflexive inequality has height difference zero. -/
+@[simp]
+theorem RootLE.height_refl (lam : Dual K H) : (rootLE_refl (R := R) lam).height = 0 := by
+  simp [RootLE.height_def]
+
+/-- Height differences add along transitive chains `μ ≤ ν ≤ λ`. -/
+theorem RootLE.height_trans {μ ν lam : Dual K H} (h₁ : R.RootLE μ ν) (h₂ : R.RootLE ν lam) :
+    (h₁.trans h₂).height = h₂.height + h₁.height := by
+  have hadd : (⟨lam - μ, rootLE_iff.mp (h₁.trans h₂)⟩ : R.posRootCone) =
+      ⟨lam - ν, rootLE_iff.mp h₂⟩ + ⟨ν - μ, rootLE_iff.mp h₁⟩ :=
+    Subtype.ext (sub_add_sub_cancel lam ν μ).symm
+  exact (congrArg R.height hadd).trans (map_add R.height _ _)
+
+/-- The height difference vanishes if and only if the two weights coincide. -/
+@[simp]
+theorem RootLE.height_eq_zero_iff {μ lam : Dual K H} (h : R.RootLE μ lam) :
+    h.height = 0 ↔ μ = lam := by
+  rw [RootLE.height_def, CartanRealization.height_eq_zero_iff, Subtype.ext_iff]
+  simp [sub_eq_zero, eq_comm]
+
+/-- A strict inequality `μ ≤ λ` with `μ ≠ λ` has positive height difference. -/
+theorem RootLE.height_pos_of_ne {μ lam : Dual K H} (h : R.RootLE μ lam) (hne : μ ≠ lam) :
+    0 < h.height :=
+  Nat.pos_of_ne_zero fun hz ↦ hne (h.height_eq_zero_iff.mp hz)
+
+/-- **Maximal elements in a union of finitely many downward cones.** Over a field of characteristic
+zero, any nonempty predicate `Q` on `Dual K H` whose elements lie below a finite set `S` in
+`R.RootLE` has a `RootLE`-maximal element above any given witness `μ₀`, with no finiteness
+hypothesis on the index set `I`. -/
+theorem exists_maximal_of_rootLE_finset {Q : Dual K H → Prop} {S : Finset (Dual K H)}
+    (hS : ∀ μ, Q μ → ∃ lam ∈ S, R.RootLE μ lam) {μ₀ : Dual K H} (hμ₀ : Q μ₀) :
+    ∃ μ, Q μ ∧ R.RootLE μ₀ μ ∧ ∀ ν, Q ν → R.RootLE μ ν → ν = μ := by
+  classical
+  let bound : Dual K H → ℕ := fun lam ↦ if h : R.RootLE μ₀ lam then h.height else 0
+  let B : ℕ := S.sup bound
+  have hle_B (ν : Dual K H) (hQ : Q ν) (h₀ : R.RootLE μ₀ ν) : h₀.height ≤ B := by
+    obtain ⟨lam, hlam, hνlam⟩ := hS ν hQ
+    have hsup : bound lam ≤ B := Finset.le_sup hlam
+    have hb : bound lam = (h₀.trans hνlam).height := dite_eq_left (h₀.trans hνlam)
+    have hht := h₀.height_trans hνlam
+    omega
+  suffices ∀ d ν, Q ν → ∀ (h₀ : R.RootLE μ₀ ν), B - h₀.height ≤ d →
+      ∃ μ, Q μ ∧ R.RootLE ν μ ∧ ∀ ν', Q ν' → R.RootLE μ ν' → ν' = μ from
+    this B μ₀ hμ₀ (rootLE_refl μ₀) (Nat.sub_le _ _)
+  intro d
+  induction d with
+  | zero =>
+    intro ν hQ h₀ hd
+    refine ⟨ν, hQ, rootLE_refl ν, fun ν' hQ' hν' ↦ ?_⟩
+    by_contra hne
+    have := hν'.height_pos_of_ne (Ne.symm hne)
+    have := h₀.height_trans hν'
+    have := hle_B ν' hQ' (h₀.trans hν')
+    omega
+  | succ d ih =>
+    intro ν hQ h₀ hd
+    by_cases hmax : ∀ ν', Q ν' → R.RootLE ν ν' → ν' = ν
+    · exact ⟨ν, hQ, rootLE_refl ν, hmax⟩
+    · push Not at hmax
+      obtain ⟨ν₁, hQ₁, h₁, hne⟩ := hmax
+      have := h₁.height_pos_of_ne (Ne.symm hne)
+      have := h₀.height_trans h₁
+      have := hle_B ν₁ hQ₁ (h₀.trans h₁)
+      obtain ⟨μ, hQμ, h₁μ, hμmax⟩ := ih ν₁ hQ₁ (h₀.trans h₁) (by omega)
+      exact ⟨μ, hQμ, h₁.trans h₁μ, hμmax⟩
+
+end RootLEHeight
+
 /-! ### Dominance -/
 
 section Dominance
@@ -301,6 +385,14 @@ theorem isDominant_zero [Preorder K] : R.IsDominant 0 := fun _ ↦ le_rfl
 theorem IsDominant.add [PartialOrder K] [IsOrderedAddMonoid K] {lam μ : Dual K H}
     (hlam : R.IsDominant lam) (hμ : R.IsDominant μ) : R.IsDominant (lam + μ) :=
   fun i ↦ add_nonneg (hlam i) (hμ i)
+
+/-- A weight whose pairing with every simple coroot is a natural number is dominant. -/
+theorem isDominant_of_forall_exists_nat_apply_coroot [PartialOrder K] [IsOrderedRing K]
+    {μ : Dual K H} (h : ∀ i : I, ∃ n : ℕ, μ (R.coroot i) = n) : R.IsDominant μ :=
+  isDominant_iff.mpr fun i ↦ by
+    obtain ⟨n, hn⟩ := h i
+    rw [hn]
+    exact Nat.cast_nonneg n
 
 end Dominance
 

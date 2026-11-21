@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors, Codex
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.LinearMap.Rat
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
+import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Module.BigOperators
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.RingTheory.Nilpotent.Exp.Basic
-public import Mathlib.Algebra.Algebra.Tower
 
 /-!
 # The exponential of a nilpotent or locally nilpotent endomorphism
@@ -54,6 +57,11 @@ commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 * `Module.End.locallyNilpotentExp_symm`: the inverse is the exponential of `-f`.
 * `Module.End.map_locallyNilpotentExp`: an additive map intertwining two locally nilpotent
   endomorphisms intertwines their exponentials.
+* `Module.End.locallyNilpotentExp_apply_eq_sum_of_iterate_lie_eq_zero` (with specializations
+  `Module.End.locallyNilpotentExp_apply_of_lie_eq_zero`,
+  `Module.End.locallyNilpotentExp_apply_of_lie_lie_eq_zero`, and
+  `Module.End.locallyNilpotentExp_apply_of_lie_lie_lie_eq_zero`): pushing an endomorphism past a
+  locally nilpotent exponential when their iterated commutator vanishes in `m` steps.
 * `Module.End.locallyNilpotentExp_eq_exp`: for nilpotent `f` the exponential is
   `IsNilpotent.exp f`.
 * `Module.End.map_exp`: an additive map intertwining two nilpotent endomorphisms intertwines
@@ -227,6 +235,96 @@ theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :
     locallyNilpotentExp_apply_eq_sum f _ (by rw [hk, LinearMap.zero_apply]),
     IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
   simp only [LinearMap.smul_apply]
+
+/-! ### Pushing an endomorphism past a locally nilpotent exponential -/
+
+/-- **Pushing an endomorphism past a locally nilpotent exponential.** If the `m`-fold iterated
+commutator `(fun h ↦ ⁅f, h⁆)^[m] g` vanishes in `Module.End R M`, then
+`exp f (g x) = (∑ j ∈ range m, (j ! : ℚ)⁻¹ • (fun h ↦ ⁅f, h⁆)^[j] g) (exp f x)`. -/
+theorem locallyNilpotentExp_apply_eq_sum_of_iterate_lie_eq_zero {g : Module.End R M} {m : ℕ}
+    (hfg : (fun h ↦ ⁅f, h⁆)^[m] g = 0) (x : M) :
+    locallyNilpotentExp f hf (g x) =
+      (∑ j ∈ range m, (j.factorial : ℚ)⁻¹ • (fun h ↦ ⁅f, h⁆)^[j] g)
+        (locallyNilpotentExp f hf x) := by
+  let : LieRing (Module.End R M) := LieRing.ofAssociativeRing
+  let : LieAlgebra ℤ (Module.End R M) := LieAlgebra.ofAssociativeAlgebra
+  let : LieRingModule (Module.End R M) M := LieRingModule.ofAssociativeModule
+  let : LieModule ℤ (Module.End R M) M := LieModule.ofAssociativeModule
+  set d : ℕ → Module.End R M := fun j ↦ (fun h ↦ ⁅f, h⁆)^[j] g
+  have hd_zero (j : ℕ) (hj : m ≤ j) : d j = 0 := by
+    obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le hj
+    clear hj
+    induction t with
+    | zero => exact hfg
+    | succ t ih =>
+      simpa [d, ← add_assoc, Function.iterate_succ_apply', Ring.lie_def] using
+        congrArg (fun h ↦ ⁅f, h⁆) ih
+  have had (j : ℕ) : (LieAlgebra.ad ℤ (Module.End R M) f ^ j) g = d j := by
+    rw [_root_.pow_apply_eq_iterate]
+    rfl
+  have htoEnd (j : ℕ) (z : M) :
+      (LieModule.toEnd ℤ (Module.End R M) M f ^ j) z = (f ^ j) z := by
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      rw [pow_succ', _root_.mul_apply_eq_comp, ih, pow_succ', _root_.mul_apply_eq_comp]
+      rfl
+  have hpow (n : ℕ) :
+      (f ^ n) (g x) = ∑ ij ∈ antidiagonal n, n.choose ij.fst • d ij.fst ((f ^ ij.snd) x) := by
+    have h := LieModule.toEnd_pow_lie ℤ (L := Module.End R M) (M := M) f g x n
+    simpa [htoEnd, had, lie_eq_smul, Module.End.smul_def] using h
+  obtain ⟨k, hk⟩ := hf x
+  have hgx : (f ^ (m + k)) (g x) = 0 := by
+    rw [hpow]
+    refine sum_eq_zero fun ij hij ↦ ?_
+    have hsum := mem_antidiagonal.mp hij
+    rcases le_or_gt m ij.fst with hi | hi
+    · rw [hd_zero _ hi, LinearMap.zero_apply, smul_zero]
+    · rw [pow_map_zero_of_le (by omega) hk, map_zero, smul_zero]
+  rw [locallyNilpotentExp_apply_eq_sum f hf hgx,
+    locallyNilpotentExp_apply_eq_sum f hf hk, LinearMap.sum_apply]
+  simp_rw [hpow, smul_sum, LinearMap.smul_apply, map_sum, smul_sum, map_rat_smul, smul_smul]
+  have hterm (n : ℕ) :
+      ∑ ij ∈ antidiagonal n,
+        (n.factorial : ℚ)⁻¹ • n.choose ij.fst • d ij.fst ((f ^ ij.snd) x) =
+        ∑ ij ∈ antidiagonal n,
+          ((ij.fst.factorial : ℚ)⁻¹ * (ij.snd.factorial : ℚ)⁻¹) • d ij.fst ((f ^ ij.snd) x) := by
+    refine sum_congr rfl fun ij hij ↦ ?_
+    rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul,
+      Nat.inv_factorial_mul_choose (K := ℚ) n ij.fst ij.snd (mem_antidiagonal.mp hij)]
+  simp_rw [hterm]
+  exact TauCeti.sum_range_add_antidiagonal_of_support m k
+    (fun ij ↦ ((ij.fst.factorial : ℚ)⁻¹ * (ij.snd.factorial : ℚ)⁻¹) • d ij.fst ((f ^ ij.snd) x))
+    fun i j hij ↦ by
+      rcases hij with hi | hj
+      · rw [hd_zero _ hi, LinearMap.zero_apply, smul_zero]
+      · rw [pow_map_zero_of_le hj hk, map_zero, smul_zero]
+
+/-- **Commuting with a locally nilpotent exponential.** An endomorphism whose commutator with `f`
+vanishes commutes with `locallyNilpotentExp f hf`. -/
+theorem locallyNilpotentExp_apply_of_lie_eq_zero {g : Module.End R M} (hfg : ⁅f, g⁆ = 0) (x : M) :
+    locallyNilpotentExp f hf (g x) = g (locallyNilpotentExp f hf x) := by
+  simpa [sum_range_one] using
+    locallyNilpotentExp_apply_eq_sum_of_iterate_lie_eq_zero f hf (m := 1) hfg x
+
+/-- **Pushing an endomorphism past a locally nilpotent exponential (two-step truncation).** If the
+iterated commutator `⁅f, ⁅f, g⁆⁆` vanishes in `Module.End R M`, then
+`exp f (g x) = (g + ⁅f, g⁆) (exp f x)`. -/
+theorem locallyNilpotentExp_apply_of_lie_lie_eq_zero {g : Module.End R M}
+    (hfg : ⁅f, ⁅f, g⁆⁆ = 0) (x : M) :
+    locallyNilpotentExp f hf (g x) = (g + ⁅f, g⁆) (locallyNilpotentExp f hf x) := by
+  simpa [sum_range_succ, Nat.factorial] using
+    locallyNilpotentExp_apply_eq_sum_of_iterate_lie_eq_zero f hf (m := 2) hfg x
+
+/-- **Pushing an endomorphism past a locally nilpotent exponential (three-step truncation).** If
+the threefold commutator `⁅f, ⁅f, ⁅f, g⁆⁆⁆` vanishes in `Module.End R M`, then
+`exp f (g x) = (g + ⁅f, g⁆ + (1/2) ⁅f, ⁅f, g⁆⁆) (exp f x)`. -/
+theorem locallyNilpotentExp_apply_of_lie_lie_lie_eq_zero {g : Module.End R M}
+    (hfg : ⁅f, ⁅f, ⁅f, g⁆⁆⁆ = 0) (x : M) :
+    locallyNilpotentExp f hf (g x) =
+      (g + ⁅f, g⁆ + (2⁻¹ : ℚ) • ⁅f, ⁅f, g⁆⁆) (locallyNilpotentExp f hf x) := by
+  simpa [sum_range_succ, Nat.factorial] using
+    locallyNilpotentExp_apply_eq_sum_of_iterate_lie_eq_zero f hf (m := 3) hfg x
 
 /-- **Naturality of Mathlib's exponential.** An additive map `g` with `g ∘ f = f' ∘ g` carries
 `IsNilpotent.exp f` to `IsNilpotent.exp f'` for nilpotent `f` and `f'`. The two endomorphisms may
