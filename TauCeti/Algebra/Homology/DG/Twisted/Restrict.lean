@@ -80,6 +80,13 @@ namespace TauCeti
 
 universe uR uA uM uP
 
+/-- If `f` vanishes from `S` to outside `S'`, it vanishes from outside the complement `T` of `S`
+to the complement `T'` of `S'`. -/
+theorem apply_eq_zero_of_compl {P Q X : Type*} [Zero X] {f : P → Q → X} {S T : Set P}
+    {S' T' : Set Q} (hf : ∀ x y, x ∈ S → y ∉ S' → f x y = 0) (hST : ∀ x, x ∈ T ↔ x ∉ S)
+    (hST' : ∀ x, x ∈ T' ↔ x ∉ S') : ∀ x y, x ∉ T → y ∈ T' → f x y = 0 :=
+  fun x y hx hy ↦ hf x y (not_not.1 ((hST x).not.1 hx)) ((hST' y).1 hy)
+
 /-! ### Restriction of twisting and continuation cocycles -/
 
 section Cocycle
@@ -127,7 +134,7 @@ theorem mul_eq_zero_of_forall_eq_zero' {T : Set P} (hT : ∀ x y, x ∉ T → y 
 outside. -/
 theorem forall_eq_zero_of_compl {S T : Set P} (hS : ∀ x y, x ∈ S → y ∉ S → m.m x y = 0)
     (hST : ∀ x, x ∈ T ↔ x ∉ S) : ∀ x y, x ∉ T → y ∈ T → m.m x y = 0 :=
-  fun x y hx hy ↦ hS x y (not_not.1 ((hST x).not.1 hx)) ((hST y).1 hy)
+  apply_eq_zero_of_compl hS hST hST
 
 end TwistingCocycle
 
@@ -241,7 +248,7 @@ omit [GradedAlgebra 𝒜] [DecidableEq P] in
 theorem forall_eq_zero_of_compl (ν : ContinuationCocycle mP mQ) {S T : Set P} {S' T' : Set Q}
     (hν : ∀ x y, x ∈ S → y ∉ S' → ν.ν x y = 0) (hST : ∀ x, x ∈ T ↔ x ∉ S)
     (hST' : ∀ x, x ∈ T' ↔ x ∉ S') : ∀ x y, x ∉ T → y ∈ T' → ν.ν x y = 0 :=
-  fun x y hx hy ↦ hν x y (not_not.1 ((hST x).not.1 hx)) ((hST' y).1 hy)
+  apply_eq_zero_of_compl hν hST hST'
 
 end ContinuationCocycle
 
