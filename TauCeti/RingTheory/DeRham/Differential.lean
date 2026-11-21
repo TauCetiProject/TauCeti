@@ -175,12 +175,23 @@ theorem d_algebraMap (a : A) :
   apply (exteriorPower.oneEquiv B Ω[B⁄A]).injective
   rw [oneEquiv_d_zeroEquiv_symm, Derivation.map_algebraMap, map_zero]
 
-private theorem coe_ιMulti_cons {n : ℕ} (c : B) (v : Fin n → B) :
-    (ιMulti B (n + 1) (Fin.cons (D A B c) fun i => D A B (v i)) :
-      ExteriorAlgebra B Ω[B⁄A]) =
+private theorem coe_elementary {n : ℕ} (c : B) (v : Fin n → B) :
+    (elementary A c v : ExteriorAlgebra B Ω[B⁄A]) =
+      c • ExteriorAlgebra.ιMulti B n (D A B ∘ v) := by
+  simp [elementary_def, Function.comp_def]
+
+private theorem coe_d_elementary {n : ℕ} (c : B) (v : Fin n → B) :
+    (d A B n (elementary A c v) : ExteriorAlgebra B Ω[B⁄A]) =
       ExteriorAlgebra.ι B (D A B c) * ExteriorAlgebra.ιMulti B n (D A B ∘ v) := by
-  rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_succ_apply]
+  rw [d_elementary, exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_succ_apply]
   simp [Matrix.vecTail, Function.comp_def]
+
+private theorem coe_d_elementary_mul {n : ℕ} (b c : B) (v : Fin n → B) :
+    (d A B n (elementary A (b * c) v) : ExteriorAlgebra B Ω[B⁄A]) =
+      b • (ExteriorAlgebra.ι B (D A B c) * ExteriorAlgebra.ιMulti B n (D A B ∘ v)) +
+        c • (ExteriorAlgebra.ι B (D A B b) * ExteriorAlgebra.ιMulti B n (D A B ∘ v)) := by
+  rw [coe_d_elementary, Derivation.leibniz]
+  simp only [map_add, map_smul, add_mul, smul_mul_assoc]
 
 private theorem d_leibniz_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v : Fin n → B) :
     (d A B (m + n) (exteriorPower.wedge B Ω[B⁄A] m n (elementary A c u) (elementary A c' v)) :
@@ -196,23 +207,19 @@ private theorem d_leibniz_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v
     rw [ExteriorAlgebra.ιMulti_mul_ιMulti]
     congr 1
     funext i
-    refine Fin.addCases (fun j => ?_) (fun j => ?_) i
-    · simp [Fin.append_left]
-    · simp [Fin.append_right]
+    refine Fin.addCases (fun j => ?_) (fun j => ?_) i <;> simp
   have hanti : ExteriorAlgebra.ι B (D A B c') * ExteriorAlgebra.ιMulti B m (D A B ∘ u) =
       (-1 : ℤ) ^ m •
         (ExteriorAlgebra.ιMulti B m (D A B ∘ u) * ExteriorAlgebra.ι B (D A B c')) := by
     rw [ExteriorAlgebra.ι_mul_ιMulti_anticomm, Units.smul_def, Units.val_pow_eq_pow_val,
       Units.val_neg, Units.val_one]
-  rw [wedge_elementary, d_elementary, d_elementary, d_elementary, coe_ιMulti_cons,
-    coe_ιMulti_cons, coe_ιMulti_cons, happend]
-  simp only [elementary_def, Submodule.coe_smul_of_tower, exteriorPower.ιMulti_apply_coe]
-  rw [Derivation.leibniz, map_add, map_smul, map_smul, add_mul, smul_mul_assoc, smul_mul_assoc,
-    ← mul_assoc (ExteriorAlgebra.ι B (D A B c')), hanti,
-    mul_assoc (ExteriorAlgebra.ι B (D A B c)), add_comm]
+  rw [wedge_elementary, coe_d_elementary_mul, happend]
+  simp only [coe_d_elementary, coe_elementary, mul_smul_comm, smul_mul_assoc]
+  rw [add_comm]
   congr 1
-  · rw [← mul_assoc, ← mul_smul_comm, mul_assoc]; rfl
-  · rw [smul_mul_assoc, smul_comm c ((-1 : ℤ) ^ m), smul_mul_assoc, mul_assoc]; rfl
+  · simp only [mul_assoc]
+  · rw [← mul_assoc (ExteriorAlgebra.ι B (D A B c')), hanti]
+    simp only [smul_mul_assoc, mul_assoc, smul_comm c ((-1 : ℤ) ^ m)]
 
 /-- **Graded Leibniz rule**: inside `ExteriorAlgebra B Ω[B⁄A]`,
 `d (α ∧ β) = d α ∧ β + (-1) ^ m • (α ∧ d β)` for `α : Forms A B m` and `β : Forms A B n`. -/
@@ -247,12 +254,10 @@ theorem d_smul (b : B) (ω : Forms A B n) :
     abel
   | elem c v =>
     apply Subtype.ext
-    rw [elementary_smul_coeff, d_elementary, d_elementary, Submodule.coe_add,
-      TauCeti.ExteriorAlgebra.coe_wedgeLeft_apply, Submodule.coe_smul_of_tower,
-      coe_ιMulti_cons, coe_ιMulti_cons, elementary_def, Submodule.coe_smul_of_tower,
-      exteriorPower.ιMulti_apply_coe, Derivation.leibniz, map_add, map_smul, map_smul, add_mul,
-      smul_mul_assoc, smul_mul_assoc, mul_smul_comm, add_comm]
-    rfl
+    rw [elementary_smul_coeff, coe_d_elementary_mul]
+    simp only [Submodule.coe_add, TauCeti.ExteriorAlgebra.coe_wedgeLeft_apply,
+      Submodule.coe_smul_of_tower, coe_elementary, coe_d_elementary, mul_smul_comm]
+    rw [add_comm]
 
 end
 
