@@ -482,7 +482,7 @@ theorem exists_gridRectangleBetween_isEmpty_domain_eq
   obtain ⟨c₁, c₂, hc₁₂, hc₁, hc₂, hxc₂⟩ := GridState.exists_ne_of_ne hxy
   obtain ⟨hcorner, hfix⟩ := G.cornerSum_eq_of_sum_eq_four hD hD₀ hsum hc₁₂ hc₁ hc₂
   let R := GridRectangleBetween.ofSwapColumns x y c₁ c₂ hc₁₂
-    (GridState.eq_swapColumns_of_agree hc₁ hxc₂ fun c h₁ h₂ => (hfix c h₁ h₂).1)
+    (GridState.eq_swapColumns_of_agree hxc₂ fun c h₁ h₂ => (hfix c h₁ h₂).1)
   have hRl : R.left = c₁ := GridRectangleBetween.ofSwapColumns_left ..
   have hRr : R.right = c₂ := GridRectangleBetween.ofSwapColumns_right ..
   obtain ⟨S, hS⟩ : ∃ S : GridRectangleBetween x y, D = S.toGridRectangle.domain :=
