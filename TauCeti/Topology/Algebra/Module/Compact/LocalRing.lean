@@ -30,8 +30,7 @@ variable {R M : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [
 
 variable (R) in
 /-- A compact Hausdorff noetherian local ring is a compact module over itself. -/
-theorem self_of_isLocalRing : IsCompactModule R R :=
-  self_of_isAdic (isAdic_maximalIdeal R)
+theorem self_of_isLocalRing : IsCompactModule R R := self_of_isAdic (isAdic_maximalIdeal R)
 
 variable (R) in
 /-- Over a compact Hausdorff noetherian local ring `R`, the residue field `R ⧸ maximalIdeal R` with

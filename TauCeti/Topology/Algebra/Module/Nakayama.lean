@@ -13,8 +13,7 @@ public import Mathlib.Topology.Algebra.Group.Pointwise
 public import Mathlib.Topology.Algebra.Module.Compact
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
-public import TauCeti.Topology.Algebra.Module.Compact
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!

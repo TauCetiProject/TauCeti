@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Topology
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Compact
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 import Mathlib.RingTheory.Filtration

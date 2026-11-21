@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # The decreasing ideal-power filtration and quotient multiplication

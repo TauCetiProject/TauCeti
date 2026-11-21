@@ -51,8 +51,7 @@ theorem mem_submodulePiPow_iff (s : Finset I) (n : ℕ) (m : M) :
   simp [submodulePiPow_def]
 
 @[simp, grind =]
-theorem submodulePiPow_empty (n : ℕ) : e.submodulePiPow J ∅ n = ⊤ := by
-  simp [submodulePiPow_def]
+theorem submodulePiPow_empty (n : ℕ) : e.submodulePiPow J ∅ n = ⊤ := by simp [submodulePiPow_def]
 
 @[simp, grind =]
 theorem submodulePiPow_zero (s : Finset I) : e.submodulePiPow J s 0 = ⊤ := by
@@ -61,8 +60,7 @@ theorem submodulePiPow_zero (s : Finset I) : e.submodulePiPow J s 0 = ⊤ := by
 @[simp, grind =]
 theorem submodulePiPow_union [DecidableEq I] (s₁ s₂ : Finset I) (n : ℕ) :
     e.submodulePiPow J (s₁ ∪ s₂) n = e.submodulePiPow J s₁ n ⊓ e.submodulePiPow J s₂ n := by
-  ext m
-  simp [or_imp, forall_and]
+  ext m; simp [or_imp, forall_and]
 
 @[simp, grind =]
 theorem map_submodulePiPow (s : Finset I) (n : ℕ) :
@@ -82,8 +80,7 @@ theorem submodulePiPow_left_antitone (n : ℕ) :
   fun _ _ hs ↦ e.submodulePiPow_anti J hs le_rfl
 
 /-- `e.submodulePiPow J s n` is antitone in the exponent `n`. -/
-theorem submodulePiPow_right_antitone (s : Finset I) :
-    Antitone (e.submodulePiPow J s) :=
+theorem submodulePiPow_right_antitone (s : Finset I) : Antitone (e.submodulePiPow J s) :=
   fun _ _ hn ↦ e.submodulePiPow_anti J Finset.Subset.rfl hn
 
 end Submodule

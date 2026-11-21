@@ -8,7 +8,6 @@ module
 public import Mathlib.Logic.Small.Defs
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
-import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Logic.Small.Basic
 import TauCeti.Topology.Algebra.Module.Quotient

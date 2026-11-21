@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.Basic
 public import TauCeti.Topology.Algebra.Ring.Compact
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 import TauCeti.RingTheory.AdicCompletion.Topology
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Pi
 import TauCeti.RingTheory.Ideal.Quotient.PowTransition
 import TauCeti.Topology.Algebra.Module.Compact.LocalRing
@@ -55,8 +54,7 @@ variable (O) in
 /-- Over a compact Hausdorff discrete valuation ring `O`, every product `I → O` with the product
 topology is profinite flat. -/
 theorem pi_self_of_isDiscreteValuationRing (I : Type*) : IsProfiniteFlat O (I → O) :=
-  have := IsLocalRing.totallyDisconnectedSpace_of_compactSpace O
-  pi_self I
+  have := IsLocalRing.totallyDisconnectedSpace_of_compactSpace O; pi_self I
 
 section Pseudobasis
 

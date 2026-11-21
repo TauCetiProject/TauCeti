@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
-public import TauCeti.Topology.Algebra.Module.Compact
+public import TauCeti.Topology.Algebra.Module.Compact.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Separation.Connected

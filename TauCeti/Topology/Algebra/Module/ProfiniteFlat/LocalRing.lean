@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.Basic
+public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.Adic
 public import TauCeti.Topology.Algebra.Ring.Compact
 
 /-!

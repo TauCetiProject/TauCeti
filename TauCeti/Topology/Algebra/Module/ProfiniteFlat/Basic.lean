@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.Flat.Basic
-public import TauCeti.Topology.Algebra.Module.Compact.Adic
+public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RingTheory.Flat.Pi
 
@@ -76,20 +76,13 @@ theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
     IsProfiniteFlat R R :=
   ⟨.self, inferInstance⟩
 
-/-- A compact Hausdorff commutative ring whose topology is `I`-adic is profinite flat over
-itself. -/
-theorem self_of_isAdic [CompactSpace R] [T2Space R] {I : Ideal R} (hI : IsAdic I) :
-    IsProfiniteFlat R R :=
-  ⟨.self_of_isAdic hI, inferInstance⟩
-
 /-- Any subsingleton topological `R`-module is profinite flat. -/
 theorem of_subsingleton [Subsingleton M] : IsProfiniteFlat R M :=
   ⟨.of_subsingleton, inferInstance⟩
 
 /-- Binary products of profinite flat modules are profinite flat. -/
 theorem prod {N : Type*} [AddCommGroup N] [Module R N] [TopologicalSpace N]
-    (hM : IsProfiniteFlat R M) (hN : IsProfiniteFlat R N) :
-    IsProfiniteFlat R (M × N) :=
+    (hM : IsProfiniteFlat R M) (hN : IsProfiniteFlat R N) : IsProfiniteFlat R (M × N) :=
   have := hM.flat; have := hN.flat
   ⟨hM.toIsCompactModule.prod hN.toIsCompactModule, inferInstance⟩
 
@@ -116,8 +109,7 @@ variable {R M : Type*} [CommRing R] [IsDedekindDomain R] [TopologicalSpace R]
 module and torsion-free. -/
 theorem _root_.TauCeti.isProfiniteFlat_iff_isCompactModule_and_isTorsionFree :
     IsProfiniteFlat R M ↔ IsCompactModule R M ∧ Module.IsTorsionFree R M :=
-  ⟨fun h ↦ ⟨h.toIsCompactModule, h.isTorsionFree⟩,
-    fun ⟨hc, _⟩ ↦ ⟨hc, inferInstance⟩⟩
+  ⟨fun h ↦ ⟨h.toIsCompactModule, h.isTorsionFree⟩, fun ⟨hc, _⟩ ↦ ⟨hc, inferInstance⟩⟩
 
 /-- Over a Dedekind domain, a closed submodule of a profinite flat module is profinite flat. -/
 theorem submodule (hM : IsProfiniteFlat R M) (N : Submodule R M) (hN : IsClosed (N : Set M)) :
@@ -133,8 +125,7 @@ theorem pi {ι : Type*} {P : ι → Type*} [∀ i, AddCommGroup (P i)] [∀ i, M
 
 /-- Over a compact totally disconnected Dedekind domain, every product `I → R` is profinite flat. -/
 theorem pi_self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R] (I : Type*) :
-    IsProfiniteFlat R (I → R) :=
-  pi fun _ : I ↦ self
+    IsProfiniteFlat R (I → R) := pi fun _ : I ↦ self
 
 end DedekindDomain
 
