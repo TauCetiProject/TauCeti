@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.DiagramA
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Basic
 public import Mathlib.FieldTheory.Perfect
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.HomExt
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.CharacterMap
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Subgroup
@@ -350,32 +351,6 @@ theorem isCharacterMap_conj_weylElement_comp_frobenius_typeA1 {h1 : (DynkinType.
     ← neg_smul] at h
   exact h
 
-private theorem weylElement_one_mul_self (i : Fin t.rank) :
-    D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht i) A 1 =
-      D.torusPoints A (D.simpleCorootParameter i A (-1)) := by
-  have hcoroot : D.weylElement (t.simpleIndex ht i) A (-1) =
-      D.torusPoints A (D.simpleCorootParameter i A (-1)) *
-        D.weylElement (t.simpleIndex ht i) A 1 := Subtype.ext <| by
-    simpa only [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix, weylElement_def,
-      Subgroup.coe_mul, coe_rootSubgroupPoints_simpleIndex,
-      coe_rootSubgroupPoints_reflectionPerm_simpleIndex, Subgroup.coe_inv, inv_neg, inv_one,
-      Units.val_neg, Units.val_one, neg_neg] using
-      (eq_mul_inv_iff_mul_eq.mp (D.coe_simpleCorootPoints_eq_root_word i A (-1))).symm
-  have hinv : (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
-      D.weylElement (t.simpleIndex ht i) A (-1) := by
-    simp only [weylElement_def, mul_inv_rev, ← map_inv, ofAdd_neg, inv_inv, inv_neg, inv_one,
-      Units.val_neg, Units.val_one, neg_neg, mul_assoc]
-  have h2 : (D.torusPoints A (D.simpleCorootParameter i A (-1)))⁻¹ =
-      D.torusPoints A (D.simpleCorootParameter i A (-1)) := by
-    rw [← map_inv, ← map_inv, inv_neg, inv_one]
-  have hsq : D.torusPoints A (D.simpleCorootParameter i A (-1)) *
-      (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ = D.weylElement (t.simpleIndex ht i) A 1 := by
-    rw [hinv, hcoroot, ← mul_assoc]
-    nth_rw 1 [← h2]
-    rw [inv_mul_cancel, one_mul]
-  conv_lhs => lhs; rw [← hsq]
-  exact inv_mul_cancel_right _ _
-
 /-- In type `A₁`, the square of the non-based standard endomorphism `Int(n₀) ∘ Frob_{p^k}` agrees
 with `D.frobenius p (2 * k) A` on `D.rootTorusSubgroup A`, because `n₀² = h₀(-1)` is central on
 every root subgroup and on the torus. -/
@@ -413,16 +388,16 @@ theorem conj_weylElement_comp_frobenius_self_eq_typeA1 {h1 : (DynkinType.A 1).Va
     refine D.rootTorusSubgroup_hom_ext _ _ (fun j u => ?_) (fun j u => ?_) (fun s => ?_)
     · obtain rfl := eq_of_fin_rank_typeA1 j i
       simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
-        MulAut.conj_apply, n, D.weylElement_one_mul_self A j]
+        MulAut.conj_apply, n, D.weylElement_mul_self, D.simpleCorootPoints_eq_torusPoints]
       rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints, hch, Units.val_one, one_mul]
     · obtain rfl := eq_of_fin_rank_typeA1 j i
       simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
-        MulAut.conj_apply, n, D.weylElement_one_mul_self A j]
+        MulAut.conj_apply, n, D.weylElement_mul_self, D.simpleCorootPoints_eq_torusPoints]
       rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints,
         D.coordinateRoot_reflectionPerm_self, torusCharacter_neg, hch, inv_one, Units.val_one,
         one_mul]
     · simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
-        MulAut.conj_apply, n, D.weylElement_one_mul_self A i]
+        MulAut.conj_apply, n, D.weylElement_mul_self, D.simpleCorootPoints_eq_torusPoints]
       exact ((Commute.all (D.simpleCorootParameter i A (-1)) s).map
         (D.torusPoints A)).mul_inv_cancel
   have hmem : D.frobenius p (2 * k) A x ∈ D.rootTorusSubgroup A := by
