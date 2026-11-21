@@ -30,8 +30,10 @@ Where `∂bar_a α = 0`, the covariant derivative is complex linear,
 the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
 (`fderiv_normSq_apply_one_sq_add_apply_I_sq`), so `|d_a α (1)| ≤ |∇ |α|²|` where `|α|² ≥ 1 / 2`
 (`norm_covariantDerivative_one_le_norm_fderiv_normSq`).
-On a solution with continuous `b₁` and `C¹` section, this linearity and the curvature equation
-also make the energy density continuous (`continuous_energyDensity_of_equation_eq_zero`).
+With the curvature equation, this linearity gives the energy density of a solution as
+`(65 / 64) (1 - |α|²)² + 2 |d_a α (1)|²` (`energyDensity_eq_of_equation_eq_zero`); in particular it
+is continuous on a solution with continuous `b₁` and `C¹` section
+(`continuous_energyDensity_of_equation_eq_zero`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -573,6 +575,19 @@ theorem covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpa
       (v.re + v.im * I) * covariantDerivative x z 1 := by ring
     _ = v * covariantDerivative x z 1 := by rw [re_add_im]
 
+/-- At a solution of the vortex equation the energy density is determined by the modulus defect
+and one covariant derivative: `|F_a|² + |d_a α|² + (1 - |α|²)² = (65 / 64) (1 - |α|²)² +
+2 |d_a α (1)|²`, since `curvature = -(1 - |α|²) / 8` and `|d_a α (i)| = |d_a α (1)|`. -/
+theorem energyDensity_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hsol : equation x z = 0) :
+    energyDensity x z = 65 / 64 * (1 - ‖sectionValue x z‖ ^ 2) ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 := by
+  rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero hsol,
+    ← sq_norm_sectionValue, covariantDerivative_eq_mul_of_equation_eq_zero hp hq
+      (by simp [hsol]) (by simp [hsol]) I, norm_mul, norm_I, one_mul]
+  ring
+
 /-- On a vortex whose `b₁` is continuous and whose section is `C¹`, the energy density is
 continuous: the equation gives `|d_a α (i)| = |d_a α (1)|` and `curvature = -(1 - |α|²) / 8`,
 neither of which involves `b₂`. -/
@@ -581,15 +596,10 @@ theorem continuous_energyDensity_of_equation_eq_zero {x : ℂ → EuclideanSpace
     (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) :
     Continuous (energyDensity x) := by
-  have heq : energyDensity x = fun z ↦ (-((1 - ‖sectionValue x z‖ ^ 2) / 8)) ^ 2 +
-      2 * ‖covariantDerivative x z 1‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := by
-    funext z
-    rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero (hsol z),
-      ← sq_norm_sectionValue,
-      covariantDerivative_eq_mul_of_equation_eq_zero (hp.differentiable one_ne_zero z)
-        (hq.differentiable one_ne_zero z) (by simp [hsol z]) (by simp [hsol z]) I, norm_mul,
-      norm_I, one_mul]
-    ring
+  have heq : energyDensity x = fun z ↦ 65 / 64 * (1 - ‖sectionValue x z‖ ^ 2) ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 :=
+    funext fun z ↦ energyDensity_eq_of_equation_eq_zero (hp.differentiable one_ne_zero z)
+      (hq.differentiable one_ne_zero z) (hsol z)
   rw [heq]
   have := (contDiff_sectionValue hp hq).continuous
   have := continuous_covariantDerivative_one hb hp hq
