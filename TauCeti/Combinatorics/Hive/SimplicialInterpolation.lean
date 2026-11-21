@@ -62,11 +62,11 @@ variable {R : Type*} [AddCommGroup R]
 
 /-- The zero-sum triple of finite differences of `f : Vertex n → R` on a unit triangle
 `T : UnitTriangle n` along the fixed outer-perimeter directions `A → B` (`s = 0`, `(-1, 1, 0)`),
-`B → C` (`s = 1`, `(0, -1, 1)`), and `C → A` (`s = 2`, `(1, 0, -1)`). On an upward triangle
-`up b`, `vertex s → vertex (s + 1)` follows these directions clockwise
-(`f (vertex (s + 1)) - f (vertex s)`); on a downward triangle `down b`,
-`vertex s → vertex (s + 1)` runs counterclockwise, so the difference is negated
-(`f (vertex s) - f (vertex (s + 1))`). -/
+`B → C` (`s = 1`, `(0, -1, 1)`), and `C → A` (`s = 2`, `(1, 0, -1)`). Both upward and downward
+vertex cycles `vertex 0 → vertex 1 → vertex 2` run clockwise in the plane: on `up b`, each edge
+`vertex s → vertex (s + 1)` matches the `s`-th perimeter direction
+(`f (vertex (s + 1)) - f (vertex s)`); on `down b`, each indexed edge `vertex s → vertex (s + 1)`
+points opposite to the `s`-th perimeter direction, giving `f (vertex s) - f (vertex (s + 1))`. -/
 def triangleGradient (f : Vertex n → R) : UnitTriangle n → Fin 3 → R
   | .up b, s => f ((UnitTriangle.up b).vertex (s + 1)) - f ((UnitTriangle.up b).vertex s)
   | .down b, s => f ((UnitTriangle.down b).vertex s) - f ((UnitTriangle.down b).vertex (s + 1))
