@@ -93,6 +93,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+* `MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`: an action commuting with the
+  action of `G` descends to the space of `G`-orbits, acting on representatives
+  (`MulAction.orbitRel.Quotient.smul_mk`), and its additive version.
 * `TauCeti.AddAction.orbitRelQuotientEquivMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientEquivAdditive`: the canonical equivalences of orbit spaces
   identifying an action of `G` with the corresponding action of `Multiplicative G` or `Additive G`.
@@ -970,6 +973,40 @@ instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P
     induction g' using QuotientGroup.induction_on with | H g' =>
     induction x using Quotient.inductionOn' with
     | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
+
+end MulAction.orbitRel.Quotient
+
+/-! ### Commuting actions on orbit spaces -/
+
+namespace MulAction.orbitRel.Quotient
+
+variable {M G X : Type*} [Monoid M] [Group G] [MulAction M X] [MulAction G X]
+  [SMulCommClass M G X]
+
+/-- An action of `M` commuting with the action of `G` maps `G`-orbits to `G`-orbits, so `M` acts
+on the space of `G`-orbits by acting on representatives. -/
+@[to_additive /-- An additive action of `M` commuting with the additive action of `G` maps
+`G`-orbits to `G`-orbits, so `M` acts on the space of `G`-orbits by acting on representatives. -/]
+instance instSMulOfSMulCommClass : SMul M (orbitRel.Quotient G X) where
+  smul m := Quotient.map (m • ·) fun _ _ ⟨g, hg⟩ ↦ ⟨g, (smul_comm m g _).symm.trans (congrArg _ hg)⟩
+
+/-- The action on orbits induced by a commuting action is computed on representatives. -/
+@[to_additive (attr := simp) /-- The additive action on orbits induced by a commuting additive
+action is computed on representatives. -/]
+theorem smul_mk (m : M) (x : X) :
+    m • (Quotient.mk'' x : orbitRel.Quotient G X) = Quotient.mk'' (m • x) :=
+  rfl
+
+/-- An action of `M` commuting with the action of `G` descends to the space of `G`-orbits. -/
+@[to_additive /-- An additive action of `M` commuting with the additive action of `G` descends to
+the space of `G`-orbits. -/]
+instance instMulActionOfSMulCommClass : MulAction M (orbitRel.Quotient G X) where
+  one_smul q := by
+    induction q using Quotient.inductionOn' with
+    | h x => rw [smul_mk, one_smul]
+  mul_smul m m' q := by
+    induction q using Quotient.inductionOn' with
+    | h x => rw [smul_mk, smul_mk, smul_mk, mul_smul]
 
 end MulAction.orbitRel.Quotient
 
