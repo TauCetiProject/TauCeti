@@ -24,9 +24,10 @@ group.
 This file proves the **sign criterion**: for `w ∈ W` the root `w αᵢ` lies in the positive root cone
 `Q₊ = ⊕ᵢ ℕ αᵢ` when `ℓ(w sᵢ) > ℓ(w)`, and in `-Q₊` when `ℓ(w sᵢ) < ℓ(w)`. Over a field of
 characteristic zero `Q₊` is pointed, so the two cases are exclusive and the criterion becomes an
-equivalence. Its consequence is that `W` acts faithfully on the root lattice: an element `w ≠ 1`
-has a right descent `i`, so `w αᵢ ∈ -Q₊` is not `αᵢ`. Hence `coxeterHom` is injective and the
-Weyl group, with the simple reflections, is a Coxeter system for the matrix `mᵢⱼ`
+equivalence. Its consequence is that, over a field of characteristic zero, `W` acts faithfully on
+the root lattice: an element `w ≠ 1` has a right descent `i`, so `w αᵢ ∈ -Q₊` is not `αᵢ`. Hence,
+still over a field of characteristic zero, `coxeterHom` is injective and the Weyl group, with the
+simple reflections, is a Coxeter system for the matrix `mᵢⱼ`
 (`TauCeti.CartanRealization.weylCoxeterSystem`). Its length function is the length of the Weyl
 group in the simple reflections, and the sign criterion reads `ℓ(w sᵢ) < ℓ(w)` exactly when
 `w αᵢ ∈ -Q₊`. Nothing here needs the matrix to be symmetrizable, nonsingular or of finite type,
@@ -34,7 +35,8 @@ and the Weyl group may be infinite, as in affine type `A₁⁽¹⁾`.
 
 The proof is Tits' argument for the geometric representation of a Coxeter group, transported to
 the action on `H*`, which is not the geometric representation when `A` is not symmetric or has a
-Cartan product larger than `4`. One inducts on the length of `w`: a right descent `j` of `w`
+Cartan product larger than `4`. One inducts on the length of `w`
+(`CoxeterSystem.parabolic_pair_induction`): a right descent `j` of `w`
 factors `w = u v` with `u` a minimal coset representative for the standard parabolic subgroup on
 `{i, j}` and `v` in it, the lengths adding, and the induction hypothesis applies to `u` at `i` and
 at `j`. The rank-two input is that an alternating word `⋯ sᵢ sⱼ` shorter than `mᵢⱼ` sends `αᵢ` to
@@ -107,8 +109,7 @@ private theorem rankTwoCoeff_add_four (a b : ℤ) (n : ℕ) :
   · simp only [hn, ↓reduceIte, not_false_eq_true] at h₂ h₃ h₄
     linear_combination h₄ + a * h₃ + h₂
 
-/-- For a Cartan product at least `4` the coefficients are nonnegative and nondecreasing along
-each parity class. -/
+/-- For a Cartan product at least `4` the coefficients are nonnegative. -/
 private theorem rankTwoCoeff_nonneg_of_four_le {a b : ℤ} (hb : 0 ≤ b) (h4 : 4 ≤ a * b) (n : ℕ) :
     0 ≤ rankTwoCoeff a b n := by
   have key (n : ℕ) : 0 ≤ rankTwoCoeff a b n ∧ rankTwoCoeff a b n ≤ rankTwoCoeff a b (n + 2) := by
@@ -239,33 +240,12 @@ theorem coxeterHom_apply_root_mem_posRootCone
     {w : (coxeterMatrixOfGeneralizedCartanMatrix A).Group} {i : I}
     (h : ¬(coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.IsRightDescent w i) :
     R.coxeterHom hA hzero w (R.root i) ∈ R.posRootCone := by
-  set cs := (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem
-  induction hn : cs.length w using Nat.strong_induction_on generalizing w i with
-  | _ n ih =>
-    rcases eq_or_ne w 1 with rfl | hw
-    · simpa using R.root_mem_posRootCone i
-    -- a right descent `j` of `w` factors `w = u * v` along the standard parabolic subgroup on
-    -- `{i, j}`, where lengths add and `u` is strictly shorter than `w`, which sets up the induction
-    obtain ⟨j, hj⟩ := cs.exists_rightDescent_of_ne_one hw
-    obtain ⟨⟨u, v⟩, ⟨hu, hv, huv⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul {i, j} w
-    dsimp only at hu hv huv
-    subst huv
-    have hu' := cs.isMinimalCosetRep_iff.mp hu
-    have hlen := cs.length_mul_of_isMinimalCosetRep hu hv
-    have hv₁ : v ≠ 1 := by
-      rintro rfl
-      exact hu' j (by simp) (by simpa using hj)
-    have hvpos : 0 < cs.length v := Nat.pos_of_ne_zero (mt cs.length_eq_zero_iff.mp hv₁)
-    have hvi : ¬cs.IsRightDescent v i := fun hd ↦ h <| by
-      rw [CoxeterSystem.IsRightDescent] at hd ⊢
-      rw [mul_assoc, cs.length_mul_of_isMinimalCosetRep hu
-        (mul_mem hv (cs.simple_mem_parabolic (by simp))), hlen]
-      omega
-    obtain ⟨a, b, hab⟩ :=
-      R.exists_coxeterHom_apply_root_eq_of_mem_parabolic_pair hA hzero hneg hv hvi
-    rw [map_mul, mul_apply_eq_comp, hab, map_add, map_nsmul, map_nsmul]
-    exact add_mem (Submodule.smul_mem _ a (ih _ (by omega) (hu' i (by simp)) rfl))
-      (Submodule.smul_mem _ b (ih _ (by omega) (hu' j (by simp)) rfl))
+  refine (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.parabolic_pair_induction
+    (P := fun w i ↦ R.coxeterHom hA hzero w (R.root i) ∈ R.posRootCone)
+    (fun i ↦ by simpa using R.root_mem_posRootCone i) (fun hv hvi hu hu' ↦ ?_) h
+  obtain ⟨a, b, hab⟩ := R.exists_coxeterHom_apply_root_eq_of_mem_parabolic_pair hA hzero hneg hv hvi
+  rw [map_mul, mul_apply_eq_comp, hab, map_add, map_nsmul, map_nsmul]
+  exact add_mem (Submodule.smul_mem _ a hu) (Submodule.smul_mem _ b hu')
 
 include hneg in
 /-- **The sign criterion, negative case.** If `i` is a right descent of `w`, that is
@@ -347,8 +327,8 @@ noncomputable def weylCoxeterSystem :
 theorem coe_weylCoxeterSystem_mulEquiv_symm_apply
     (w : (coxeterMatrixOfGeneralizedCartanMatrix A).Group) :
     ((R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm w : Dual K H ≃ₗ[K] Dual K H) =
-      R.coxeterHom hA hzero w :=
-  (rfl)
+      R.coxeterHom hA hzero w := by
+  simp [weylCoxeterSystem, CoxeterMatrix.toCoxeterSystem, MonoidHom.ofInjective_apply]
 
 /-- The simple reflections of the Coxeter system of the Weyl group are the simple reflections
 `sᵢ λ = λ - λ(hᵢ) αᵢ`. -/
@@ -356,8 +336,8 @@ theorem coe_weylCoxeterSystem_mulEquiv_symm_apply
 theorem coe_weylCoxeterSystem_simple (i : I) :
     ((R.weylCoxeterSystem hA hzero hneg).simple i : Dual K H ≃ₗ[K] Dual K H) =
       R.simpleReflection hA i := by
-  rw [CoxeterSystem.simple, coe_weylCoxeterSystem_mulEquiv_symm_apply]
-  exact R.coxeterHom_simple hA hzero i
+  rw [← CoxeterSystem.mulEquiv_symm_simple, coe_weylCoxeterSystem_mulEquiv_symm_apply,
+    coxeterHom_simple]
 
 /-- The length of an element of the Weyl group in the simple reflections is the length of the
 corresponding element of the Coxeter group. -/
@@ -378,13 +358,9 @@ theorem weylCoxeterSystem_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
   obtain ⟨g, rfl⟩ := (R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm.surjective w
   rw [coe_weylCoxeterSystem_mulEquiv_symm_apply, R.neg_coxeterHom_apply_root_mem_posRootCone_iff hA
     hzero hneg]
-  -- the simple reflections of a Coxeter system are, by definition of `CoxeterSystem.simple`, the
-  -- images of the Coxeter generators under the inverse of its stored isomorphism
-  have hsimple : (R.weylCoxeterSystem hA hzero hneg).simple i =
-      (R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm
-        ((coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.simple i) := (rfl)
-  rw [CoxeterSystem.IsRightDescent, CoxeterSystem.IsRightDescent, hsimple, ← map_mul,
-    length_weylCoxeterSystem_mulEquiv_symm_apply, length_weylCoxeterSystem_mulEquiv_symm_apply]
+  rw [CoxeterSystem.IsRightDescent, CoxeterSystem.IsRightDescent,
+    ← CoxeterSystem.mulEquiv_symm_simple, ← map_mul, length_weylCoxeterSystem_mulEquiv_symm_apply,
+    length_weylCoxeterSystem_mulEquiv_symm_apply, CoxeterMatrix.toCoxeterSystem_simple]
 
 end CharZero
 
