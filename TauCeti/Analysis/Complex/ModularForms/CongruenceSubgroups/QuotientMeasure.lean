@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
@@ -39,7 +37,7 @@ domain (`Subgroup.lintegral_quotientVolume`, `Subgroup.integral_quotientVolume`)
 * `Subgroup.quotientVolume_eq_map_restrict`: it is the push-forward of `volume` restricted to any
   fundamental domain of the effective image of `Γ`.
 * `Subgroup.quotientVolume_univ`: its total mass is the covolume of the effective image.
-* `Subgroup.quotientVolume_univ_eq_index_mul`: for `Γ` of finite index, the total mass is
+* `Subgroup.quotientVolume_univ_eq_withCenter_index_mul`: for `Γ` of finite index, the total mass is
   `[SL(2, ℤ) : ±Γ] · π / 3`, which is `[SL(2, ℤ) : Γ] · π / 3` when `-I ∈ Γ`
   (`Subgroup.quotientVolume_univ_eq_index_mul_of_neg_one_mem`).
 * `Subgroup.instIsFiniteMeasureQuotientVolume`, `Subgroup.instNeZeroQuotientVolume`: the
@@ -85,7 +83,10 @@ private theorem preimage_smul_preimage_quotientMk (U : Set (orbitRel.Quotient Γ
 
 /-- **Independence of the fundamental domain.** The hyperbolic measure on `Γ \ ℍ` is the
 push-forward of `volume` restricted to any measurable fundamental domain of the effective image of
-`Γ` in `PSL(2, ℝ)`. -/
+`Γ` in `PSL(2, ℝ)`.
+
+The proof adapts Mathlib's `MeasureTheory.IsFundamentalDomain.quotientMeasure_eq` to the quotient
+by `Γ` rather than by its effective image. -/
 theorem quotientVolume_eq_map_restrict {s : Set ℍ}
     (hs : IsFundamentalDomain (Γ.map sl2zToPSL2R) s) :
     Γ.quotientVolume = (volume.restrict s).map (Quotient.mk (orbitRel Γ ℍ)) := by
@@ -110,7 +111,7 @@ theorem quotientVolume_univ :
 
 /-- **The area of `Γ \ ℍ` for `Γ` of finite index** is `[SL(2, ℤ) : ±Γ] · π / 3`: the index of
 `Γ` with `-I` adjoined times the area `π / 3` of the level-one quotient. -/
-theorem quotientVolume_univ_eq_index_mul [Γ.FiniteIndex] :
+theorem quotientVolume_univ_eq_withCenter_index_mul [Γ.FiniteIndex] :
     Γ.quotientVolume univ = Γ.withCenter.index * ENNReal.ofReal (Real.pi / 3) := by
   have : (Γ.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
     ⟨by rw [relIndex_map_sl2zToPSL2R]; exact FiniteIndex.index_ne_zero⟩
@@ -121,7 +122,7 @@ theorem quotientVolume_univ_eq_index_mul [Γ.FiniteIndex] :
 finite hyperbolic area. -/
 instance instIsFiniteMeasureQuotientVolume [Γ.FiniteIndex] : IsFiniteMeasure Γ.quotientVolume :=
   ⟨by
-    rw [Γ.quotientVolume_univ_eq_index_mul]
+    rw [Γ.quotientVolume_univ_eq_withCenter_index_mul]
     exact ENNReal.mul_lt_top (ENNReal.natCast_lt_top _) ENNReal.ofReal_lt_top⟩
 
 /-- The hyperbolic measure on `Γ \ ℍ` is nonzero: the quotient has positive area. -/
@@ -151,7 +152,7 @@ theorem integral_quotientVolume {E : Type*} [NormedAddCommGroup E] [NormedSpace 
 This applies to `SL(2, ℤ)`, `Γ₀(N)` and `Γ(2)`. -/
 theorem quotientVolume_univ_eq_index_mul_of_neg_one_mem [Γ.FiniteIndex] (h : -1 ∈ Γ) :
     Γ.quotientVolume univ = Γ.index * ENNReal.ofReal (Real.pi / 3) := by
-  rw [quotientVolume_univ_eq_index_mul,
+  rw [quotientVolume_univ_eq_withCenter_index_mul,
     withCenter_eq_self_iff.mpr (Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h)]
 
 /-- **The area of the level-one quotient** `SL(2, ℤ) \ ℍ` is `π / 3`. -/
@@ -168,12 +169,8 @@ namespace CongruenceSubgroup
 `|SL(2, ℤ/2ℤ)| = 6`. -/
 theorem quotientVolume_Gamma_two_univ :
     (Gamma 2).quotientVolume Set.univ = ENNReal.ofReal (2 * Real.pi) := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hcard : Nat.card SL(2, ZMod 2) = 6 := by
-    rw [Matrix.card_SL_field, Fin.prod_univ_two, ZMod.card]
-    decide
   rw [Subgroup.quotientVolume_univ_eq_index_mul_of_neg_one_mem _
-    (neg_one_mem_Gamma_iff.mpr dvd_rfl), index_Gamma, hcard, ← ENNReal.ofReal_natCast,
+    (neg_one_mem_Gamma_iff.mpr dvd_rfl), index_Gamma_two, ← ENNReal.ofReal_natCast,
     ← ENNReal.ofReal_mul (by norm_num)]
   ring_nf
 
