@@ -51,8 +51,8 @@ The converse direction of the universal property is
   the chart recovers `ψ • s`.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
-* `ContMDiffSection.span_iUnion_range_chartTestSection`: compactly supported sections are finite
-  sums of chart extensions of native test functions.
+* `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
+  finite sums of chart extensions of native test functions.
 * `ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`: the universal
   property of the test topology with respect to chart extensions.
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection`:
@@ -411,7 +411,7 @@ private theorem exists_ofSupportedIn_eq_sum (K : Compacts M) :
 `σ`-compact manifold with finite-dimensional model, every compactly supported section is a finite
 sum of chart extensions of native test functions. In particular a linear map on compactly supported
 sections is determined by its composites with the chart extensions. -/
-theorem span_iUnion_range_chartTestSection :
+theorem span_iUnion_range_chartTestSection_eq_top :
     Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun s ↦ ?_
   let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩

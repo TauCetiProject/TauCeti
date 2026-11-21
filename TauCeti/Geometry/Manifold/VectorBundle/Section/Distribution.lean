@@ -40,8 +40,8 @@ and a vector `v : F` are paired as `T (φ • v)`, where `φ • v` is extended 
 the chart and the frame (`Bundle.Trivialization.chartTestCLM`). This is the local representative
 through which regularity of distributions on manifolds, for instance local Sobolev regularity, is
 defined chart by chart from the Euclidean theory. Since bundle tests are finite sums of such
-extended tests (`ContMDiffSection.span_iUnion_range_chartTestSection`), a functional is determined
-by its local representatives (`TauCeti.BundleTest.ext_chartDistributionCLM`).
+extended tests (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`), a functional is
+determined by its local representatives (`TauCeti.BundleTest.ext_chartDistributionCLM`).
 
 The point mass `δ_x ℓ : s ↦ ℓ (s x)` at `x : M`, for a covector `ℓ` on the fibre `V x` or more
 generally a continuous linear map `ℓ : V x →L[ℝ] W` (`TauCeti.BundleTest.delta`), vanishes only
@@ -390,7 +390,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, two functionals agree
 once their local representatives agree in every smooth chart lying over the base set of a
 trivialization of the bundle atlas: bundle tests are finite sums of chart extensions of native
-test functions (`ContMDiffSection.span_iUnion_range_chartTestSection`). -/
+test functions (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`). -/
 theorem ext_chartDistributionCLM {T T' : BundleTest I F V →L_c[ℝ] W}
     (h : ∀ (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
       (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
@@ -399,7 +399,7 @@ theorem ext_chartDistributionCLM {T T' : BundleTest I F V →L_c[ℝ] W}
     T = T' := by
   -- The chart extensions span the bundle tests.
   have hspan := congrArg (Submodule.map (ofCompactlySupported I F V).toLinearMap)
-    (span_iUnion_range_chartTestSection (I := I) (F := F) (V := V) (n := ⊤))
+    (span_iUnion_range_chartTestSection_eq_top (I := I) (F := F) (V := V) (n := ⊤))
   rw [Submodule.map_span, Submodule.map_top, LinearEquiv.range] at hspan
   refine ContinuousLinearMap.coe_injective (LinearMap.ext_on hspan ?_)
   rintro _ ⟨_, ⟨_, ⟨p, rfl⟩, φ, rfl⟩, rfl⟩
