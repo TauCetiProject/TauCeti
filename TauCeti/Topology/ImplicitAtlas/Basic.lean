@@ -49,6 +49,9 @@ cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUni
 and the regular locus is empty where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over `X_I^reg`
+(`TauCeti.ImplicitAtlas.footprintMap_notMem_regLocus_of_act_eq`), so an ineffective point has no
+regular base (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_nontrivial`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 
 ## Implementation notes
@@ -312,11 +315,12 @@ theorem footprintMap_notMem_regLocus_of_act_eq {I J : Finset A} (h : I ⊆ J)
 
 /-- **An ineffective point has no regular base.** Suppose that for some index `α` the obstruction
 space `E_α` is zero, the thickenings `X_∅` and `X_α` are single points and the group `Γ_α` is
-nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty: a
-nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the point of
-`X_∅`, so `ImplicitAtlas.footprintMap_notMem_regLocus_of_act_eq` applies. -/
+nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty,
+since `Γ_α` cannot act freely over `ψ_∅α⁻¹(X_∅^reg)`. -/
 theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Subsingleton (E α)]
     [Subsingleton (T ∅)] [Subsingleton (T {α})] [Nonempty (T {α})] : 𝒜.regLocus ∅ = ∅ := by
+  -- A nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the
+  -- point of `X_∅`.
   refine eq_empty_of_forall_notMem fun y hy ↦ ?_
   obtain ⟨x⟩ := ‹Nonempty (T {α})›
   have hx : x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ {α} := mem_kuranishiZeroSet.2 fun ⟨β, hβ⟩ _ ↦ by
