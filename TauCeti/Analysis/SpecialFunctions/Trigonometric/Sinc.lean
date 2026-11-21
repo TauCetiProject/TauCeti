@@ -28,6 +28,13 @@ namespace Real
 theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
   simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
 
+/-- The double-angle formula `sinc (2x) = sinc x * cos x`, including at `x = 0`. -/
+theorem sinc_two_mul (x : ℝ) : sinc (2 * x) = sinc x * cos x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [sinc_of_ne_zero (mul_ne_zero two_ne_zero hx), sinc_of_ne_zero hx, sin_two_mul]
+  field_simp
+
 /-- For `ω ≠ 0`, `t sinc (ω t) = sin (ω t) / ω`. -/
 theorem mul_sinc_mul_of_ne_zero {ω : ℝ} (hω : ω ≠ 0) (t : ℝ) :
     t * sinc (ω * t) = sin (ω * t) / ω := by
