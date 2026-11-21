@@ -348,7 +348,7 @@ private theorem kernelExample_mem_V₂ :
       by simp only [coeffEquation_fst, coeffEquation_snd]; decide,
       fun _ hc => absurd hc (Finset.notMem_empty _)⟩)
 
-/-- The remaining items `h₀` and `h₄` of the example, as items of `Ω̄`. -/
+/-- The remaining items `h₀` and `h₄` of the example, as items of `\overline{Ω}`. -/
 private abbrev kernelExampleItem (i : Fin 12) : Fin #kernelExample.freeItemsᶜ :=
   Fin.cast kernelExample_card.symm i
 
@@ -357,7 +357,8 @@ private theorem kernelExample_orderEmbOfFin_item (i : Fin 12) :
   rw [kernelExample_orderEmbOfFin]
   rfl
 
-/-- The commutator `[h₀, z h₄ z⁻¹]` in `F_{R(Ω̄)} ∗ ⟨z⟩`, `z` the free item of the example. -/
+/-- The commutator `[h₀, z h₄ z⁻¹]` in `F_{R(\overline{Ω})} ∗ ⟨z⟩`, `z` the free item of the
+example. -/
 private abbrev kernelExampleCommutator :
     GX kernelExample.deleteFreeItems.coordGroup (Fin #kernelExample.freeItems) :=
   let x : GX kernelExample.deleteFreeItems.coordGroup (Fin #kernelExample.freeItems) :=
@@ -370,8 +371,8 @@ private abbrev kernelExampleCommutator :
     inr (FreeGroup.of ⟨0, by simp [kernelExample_freeItems]⟩)
   ⁅x, z * y * z⁻¹⁆
 
-/-- The commutator `[h₀, z h₄ z⁻¹]` vanishes at every point: every point of `Ω̄` extends to a point
-of `Ω`, at which `h₀ = 1` or `h₄ = 1`. -/
+/-- The commutator `[h₀, z h₄ z⁻¹]` vanishes at every point: every point of `\overline{Ω}` extends
+to a point of `Ω`, at which `h₀ = 1` or `h₄ = 1`. -/
 private theorem freeVarsHom_kernelExampleCommutator :
     CoordGroup.freeVarsHom (.id _) _ _ kernelExampleCommutator = 1 := by
   refine CoordGroup.freeVarsHom_eq_one_iff.2 fun v hv u => ?_
@@ -411,10 +412,11 @@ private theorem kernelExampleCommutator_ne_one : kernelExampleCommutator ≠ 1 :
   simpa [κ, ρ, t, h₀, h₄] using congrArg (eval κ fun _ => t) h
 
 /-- For the example `Ω`, its own kernel, with the free item `z = h₁₂`, the surjection
-`F_{R(Ω̄)} ∗ ⟨z⟩ → F_{R(Ω)}` (the coordinate group of `Ω` being that of `Ω̄*` with the free variable
-`z`, by `toSystem_eq_image_addFreeVars`) is not injective: `[h₀, z h₄ z⁻¹]` vanishes at every point,
-since every point has `h₀ = 1` or `h₄ = 1`, but it is not trivial in the free product, since the
-points `(a, 1, …)` and `(1, b, …)` show that neither `h₀` nor `h₄` is trivial in `F_{R(Ω̄)}`. -/
+`F_{R(\overline{Ω})} ∗ ⟨z⟩ → F_{R(Ω)}` (the coordinate group of `Ω` being that of `\overline{Ω}*`
+with the free variable `z`, by `toSystem_eq_image_addFreeVars`) is not injective:
+`[h₀, z h₄ z⁻¹]` vanishes at every point, since every point has `h₀ = 1` or `h₄ = 1`, but it is
+not trivial in the free product, since the points `(a, 1, …)` and `(1, b, …)` show that neither
+`h₀` nor `h₄` is trivial in `F_{R(\overline{Ω})}`. -/
 example : ¬ Function.Injective (CoordGroup.freeVarsHom (.id (FreeGroup (Fin 2)))
     (Fin #kernelExample.freeItems) kernelExample.deleteFreeItems.toSystem) := fun h =>
   kernelExampleCommutator_ne_one (h (freeVarsHom_kernelExampleCommutator.trans (map_one _).symm))
