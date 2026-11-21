@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.Distribution.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-import TauCeti.Topology.VectorBundle.Smul
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Nonvanishing
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -26,13 +24,12 @@ nowhere-zero smooth section of the line bundle `D⁰`.
 This file proves that already a *continuous* nowhere-zero section `σ` of `D⁰`, that is, a
 continuous choice of a nonzero annihilating covector at every point, gives a global defining form:
 on a Hausdorff σ-compact manifold there is a smooth one-form `α` with `α_x` a positive multiple of
-`σ_x` at every point (`TauCeti.IsContMDiffDistribution.exists_smoothForm_pos_smul`). The proof glues
-local defining forms by a smooth partition of unity
-(`exists_contMDiffSection_forall_mem_convex_of_local`). Near a point `x₀`, a local defining form
-`a` is a nonzero multiple `σ_y = c(y) a_y`. The multiplier `c` is continuous
-(`TauCeti.VectorBundle.continuousAt_of_eventually_eq_smul`), so it keeps the sign of `c(x₀)` near
-`x₀`, and `c(x₀) a` is a local smooth form whose values lie in the open ray `{c σ_y | c > 0}`. These
-rays are convex, so the glued form also takes values in them.
+`σ_x` at every point (`TauCeti.IsContMDiffDistribution.exists_smoothForm_pos_smul`). Since `D⁰`
+is a smooth line bundle (`TauCeti.IsContMDiffDistribution.annihilatorContMDiffVectorBundle`), this
+is the general fact that a continuous nowhere-zero section of a smooth line bundle is a positive
+multiple of a smooth section
+(`TauCeti.exists_contMDiffSection_forall_exists_pos_smul_of_continuous`), whose proof glues local
+sections by a smooth partition of unity.
 
 Consequently `D` is the kernel of a global nowhere-zero smooth one-form exactly when its annihilator
 line has a continuous nowhere-zero section
@@ -45,8 +42,6 @@ coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 
 ## Main results
 
-* `TauCeti.IsContMDiffDistribution.exists_local_pos_smul`: near every point a continuous
-  nowhere-zero section of the annihilator line is a positive multiple of a smooth local section.
 * `TauCeti.IsContMDiffDistribution.exists_smoothForm_pos_smul`: a continuous nowhere-zero section of
   the annihilator line is a positive multiple of a global smooth one-form.
 * `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_continuous`: a hyperplane
@@ -69,8 +64,8 @@ public section
 
 noncomputable section
 
-open Bundle Set Filter Module
-open scoped Manifold ContDiff Topology
+open Bundle Set Module
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
@@ -82,48 +77,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace IsContMDiffDistribution
 
-/-- **A continuous section of the annihilator line is locally a positive multiple of a smooth
-one.** Let `σ` be a continuous section of the annihilator line `D⁰` of a smooth hyperplane field
-`D` which vanishes nowhere. Every point has a neighbourhood carrying a smooth covector field `a`
-with `a_y` a positive multiple of `σ_y` at every point `y` of the neighbourhood. -/
-theorem exists_local_pos_smul (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E)
+/-- A continuous covector field with values in the annihilators of `D` is a continuous section of
+the annihilator bundle `D⁰`. -/
+private theorem continuous_totalSpaceMk_annihilatorSpace
     (hσ : Continuous fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x (σ x))
-    (hσ₀ : ∀ x, σ x ≠ 0) (hσD : ∀ x, σ x ∈ CotangentBundle.annihilatorSpace I D x) (x₀ : M) :
-    ∃ U ∈ 𝓝 x₀, ∃ a : Π x : M, TangentSpace I x →L[ℝ] ℝ,
-      ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) y
-          (a y)) U ∧
-      ∀ y ∈ U, ∃ c : ℝ, 0 < c ∧ a y = c • σ y := by
-  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-  obtain ⟨U, a, hU, hx₀U, ha, haD⟩ := hD.exists_local_annihilator hk x₀
-  -- On `U` the covector `σ_y` is a nonzero multiple `c y • a_y` of the local defining covector.
-  have hmul : ∀ y ∈ U, ∃ c : ℝ, c ≠ 0 ∧ σ y = c • a y := by
-    intro y hy
-    have hmem := hσD y
-    rw [CotangentBundle.annihilatorSpace_eq_span_singleton (haD y hy).2,
-      Submodule.mem_span_singleton] at hmem
-    obtain ⟨c, hc⟩ := hmem
-    refine ⟨c, fun hc0 ↦ hσ₀ y ?_, hc.symm⟩
-    rw [← hc, hc0, zero_smul]
-  choose! c hc₀ hσa using hmul
-  -- The multiplier `c` is continuous at `x₀`, so near `x₀` it has the sign of `c x₀`, and
-  -- `c x₀ • a` is a positive multiple of `σ` there.
-  have hcont := VectorBundle.continuousAt_of_eventually_eq_smul
-    ((ha x₀ hx₀U).contMDiffAt (hU.mem_nhds hx₀U)).continuousAt hσ.continuousAt
-    (eventually_of_mem (hU.mem_nhds hx₀U) fun y hy ↦ by rw [hσa y hy]) (haD x₀ hx₀U).1
-  have hpos : ∀ᶠ y in 𝓝 x₀, 0 < c x₀ * c y :=
-    (continuousAt_const.mul hcont).eventually
-      (lt_mem_nhds (mul_self_pos.2 (hc₀ x₀ hx₀U)))
-  refine ⟨U ∩ {y | 0 < c x₀ * c y}, inter_mem (hU.mem_nhds hx₀U) hpos, fun y ↦ c x₀ • a y,
-    (ha.mono inter_subset_left).const_smul_section (a := c x₀), ?_⟩
-  rintro y ⟨hyU, hy⟩
-  have hcy := hc₀ y hyU
-  refine ⟨c x₀ * (c y)⁻¹, ?_, ?_⟩
-  · have : c x₀ * (c y)⁻¹ = (c x₀ * c y) * ((c y)⁻¹ * (c y)⁻¹) := by field_simp
-    rw [this]
-    exact mul_pos hy (mul_self_pos.2 (inv_ne_zero hcy))
-  · rw [hσa y hyU, smul_smul, mul_assoc, inv_mul_cancel₀ hcy, mul_one]
+    (hσD : ∀ x, σ x ∈ CotangentBundle.annihilatorSpace I D x) :
+    Continuous fun x ↦ TotalSpace.mk' (Fin 1 → ℝ)
+      (E := fun x ↦ CotangentBundle.annihilatorSpace I D x) x ⟨σ x, hσD x⟩ := by
+  rw [(CotangentBundle.isEmbedding_annihilatorInclusion I D _).continuous_iff]
+  convert hσ using 1
+  funext x
+  rw [Function.comp_apply, CotangentBundle.annihilatorInclusion_apply]
 
 /-- **A one-form proportional to a nonzero annihilating covector defines the hyperplane.** If the
 value at `x` of a smooth one-form `α` is a nonzero multiple of a nonzero covector `σ_x` annihilating
@@ -134,22 +99,15 @@ theorem ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul (hD : IsContMDiffDistributi
     (hαc : SmoothForm.degreeOneEquiv α x = c • σ x) :
     α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
   have hne : RoughForm.eval α.val x ≠ 0 := by
-    intro h
-    refine hσ₀ (ContinuousLinearMap.ext fun v ↦ ?_)
-    have hv := congr($h v)
-    rw [RoughForm.eval_apply, ← SmoothForm.degreeOneEquiv_apply_apply_vec, hαc,
-      smul_apply, smul_eq_mul, LinearMap.zero_apply] at hv
-    rw [zero_apply]
-    exact (mul_eq_zero.1 hv).resolve_left hc
-  refine ⟨fun h ↦ hne ?_, ?_⟩
-  · ext v
-    rw [RoughForm.eval_apply, h, ContinuousAlternatingMap.coe_zero, Pi.zero_apply,
-      LinearMap.zero_apply]
+    rw [SmoothForm.eval_val, hαc, Ne, ← ContinuousLinearMap.toLinearMap_zero,
+      ContinuousLinearMap.coe_inj]
+    exact smul_ne_zero hc hσ₀
+  refine ⟨by rwa [Ne, ← SmoothForm.degreeOneEquiv_coe_eq_zero_iff, ← SmoothForm.eval_val], ?_⟩
   rw [RoughForm.ker_eq_ker_eval]
   refine Module.Dual.ker_eq_of_le_of_finrank_add_one _ hne (fun v hv ↦ ?_)
     (by rw [hD.finrank_eq x]; exact hk)
-  rw [LinearMap.mem_ker, RoughForm.eval_apply, ← SmoothForm.degreeOneEquiv_apply_apply_vec, hαc,
-    smul_apply, (CotangentBundle.mem_annihilatorSpace_iff.1 hσD) v hv, smul_zero]
+  rw [LinearMap.mem_ker, SmoothForm.eval_val, hαc, ContinuousLinearMap.coe_coe, smul_apply,
+    (CotangentBundle.mem_annihilatorSpace_iff.1 hσD) v hv, smul_zero]
 
 variable [T2Space M] [SigmaCompactSpace M]
 
@@ -164,22 +122,22 @@ theorem exists_smoothForm_pos_smul (hD : IsContMDiffDistribution I ∞ k D)
     (hσ₀ : ∀ x, σ x ≠ 0) (hσD : ∀ x, σ x ∈ CotangentBundle.annihilatorSpace I D x) :
     ∃ α : SmoothForm I M ℝ 1, ∀ x, ∃ c : ℝ, 0 < c ∧ SmoothForm.degreeOneEquiv α x = c • σ x := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
-  -- The positive multiples of `σ_x` form the convex image of `(0, ∞)` under `c ↦ c • σ_x`.
-  have hloc (x₀ : M) : ∃ U ∈ 𝓝 x₀, ∃ a : Π x : M, TangentSpace I x →L[ℝ] ℝ,
-      ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) y
-          (a y)) U ∧ ∀ y ∈ U, a y ∈ LinearMap.toSpanSingleton ℝ _ (σ y) '' Ioi 0 := by
-    obtain ⟨U, hU, a, ha, haσ⟩ := hD.exists_local_pos_smul hk hσ hσ₀ hσD x₀
-    refine ⟨U, hU, a, ha, fun y hy ↦ ?_⟩
-    obtain ⟨c, hc, hac⟩ := haσ y hy
-    exact ⟨c, hc, by rw [LinearMap.toSpanSingleton_apply, hac]⟩
-  obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local I (F_fiber := E →L[ℝ] ℝ)
-    (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
-    (fun x ↦ LinearMap.toSpanSingleton ℝ _ (σ x) '' Ioi 0)
-    (fun x ↦ (convex_Ioi 0).linear_image _) hloc
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  let := hD.annihilatorFiberBundle hk
+  let := hD.annihilatorVectorBundle hk
+  let := hD.annihilatorContMDiffVectorBundle hk
+  -- `σ` is a continuous nowhere-zero section of the smooth line bundle `D⁰`.
+  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_exists_pos_smul_of_continuous (I := I) (n := ⊤)
+    (Module.finrank_fin_fun ℝ) (continuous_totalSpaceMk_annihilatorSpace hσ hσD)
+    fun x h ↦ hσ₀ x (congrArg Subtype.val h)
+  let s : ContMDiffSection I (E →L[ℝ] ℝ) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
+    ⟨fun x ↦ (t x : TangentSpace I x →L[ℝ] ℝ), by
+      convert (hD.contMDiff_annihilatorInclusion hk).comp t.contMDiff using 1
+      funext x
+      rw [Function.comp_apply, CotangentBundle.annihilatorInclusion_apply]⟩
   refine ⟨SmoothForm.degreeOneEquiv.symm s, fun x ↦ ?_⟩
-  obtain ⟨c, hc, hcs⟩ := hs x
-  exact ⟨c, hc, by rw [LinearEquiv.apply_symm_apply, ← hcs, LinearMap.toSpanSingleton_apply]⟩
+  obtain ⟨c, hc, htc⟩ := ht x
+  exact ⟨c, hc, by rw [LinearEquiv.apply_symm_apply]; exact congrArg Subtype.val htc⟩
 
 /-- **A hyperplane field is the kernel of a global one-form exactly when it is coorientable.** A
 smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a smooth one-form
@@ -228,26 +186,15 @@ theorem exists_smoothForm_ker_eq_iff_exists_trivialization [FiniteDimensional �
   let := hD.annihilatorFiberBundle hk
   let := hD.annihilatorVectorBundle hk
   let := hD.annihilatorContMDiffVectorBundle hk
-  have hemb := hD.isSmoothEmbedding_annihilatorInclusion hk
   rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
     (Module.finrank_fin_fun ℝ), hD.exists_smoothForm_ker_eq_iff_exists_continuous hk]
   constructor
   · rintro ⟨σ, hσ, hσD⟩
-    -- A continuous section of `D⁰` glues to a smooth form, whose values are a smooth section.
-    obtain ⟨α, hα⟩ := hD.exists_smoothForm_pos_smul hk hσ (fun x ↦ (hσD x).1) fun x ↦ (hσD x).2
-    have hmem (x : M) : SmoothForm.degreeOneEquiv α x ∈ CotangentBundle.annihilatorSpace I D x := by
-      obtain ⟨c, -, hc⟩ := hα x
-      rw [hc]
-      exact Submodule.smul_mem _ c (hσD x).2
-    refine ⟨fun x ↦ ⟨SmoothForm.degreeOneEquiv α x, hmem x⟩, ?_, fun x h ↦ ?_⟩
-    · rw [hemb.contMDiff_iff_comp]
-      convert (SmoothForm.degreeOneEquiv α).contMDiff using 1
-      funext x
-      rw [Function.comp_apply, CotangentBundle.annihilatorInclusion_apply]
-    · obtain ⟨c, hc, hαc⟩ := hα x
-      have h' : SmoothForm.degreeOneEquiv α x = 0 := congrArg Subtype.val h
-      rw [hαc] at h'
-      exact (hσD x).1 ((smul_eq_zero.1 h').resolve_left hc.ne')
+    -- A continuous nowhere-zero section of `D⁰` gives a smooth one.
+    obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_ne_zero_of_continuous (I := I) (n := ⊤)
+      (continuous_totalSpaceMk_annihilatorSpace hσ fun x ↦ (hσD x).2)
+      fun x h ↦ (hσD x).1 (congrArg Subtype.val h)
+    exact ⟨t, t.contMDiff, ht⟩
   · rintro ⟨σ, hσ, hσ₀⟩
     refine ⟨fun x ↦ (σ x : TangentSpace I x →L[ℝ] ℝ), ?_, fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h),
       (σ x).property⟩⟩

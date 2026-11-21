@@ -45,7 +45,7 @@ public section
 
 noncomputable section
 
-open Bundle Module Set
+open Bundle Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -56,25 +56,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {σ : Π x : M, TangentSpace I x →L[ℝ] ℝ}
 
 namespace IsContactDistribution
-
-/-- On a nonempty manifold the rank `dim M - 1` of a contact structure is one less than the
-dimension. -/
-theorem finrank_sub_one_add_one [Nonempty M] (hD : IsContactDistribution I ∞ D) :
-    finrank ℝ E - 1 + 1 = finrank ℝ E :=
-  Nat.sub_add_cancel hD.odd_finrank.pos
-
-/-- **Global contact forms of a contact structure are its nowhere-vanishing defining forms.** A
-smooth one-form is a contact form with kernel the contact structure `D` exactly when it vanishes
-nowhere and has kernel `D`. -/
-theorem isContactForm_and_kerDistribution_eq_iff (hD : IsContactDistribution I ∞ D)
-    {α : SmoothForm I M ℝ 1} :
-    α.IsContactForm ∧ α.kerDistribution = D ↔ ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
-  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-  refine ⟨fun ⟨hα, hαD⟩ x ↦ ⟨hα.apply_ne_zero x, ?_⟩, fun h ↦ ?_⟩
-  · rw [← SmoothForm.kerDistribution_eq_ker, hαD]
-  · have hαD : α.kerDistribution = D :=
-      funext fun x ↦ (SmoothForm.kerDistribution_eq_ker α x).trans (h x).2
-    exact ⟨SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hαD ▸ hD), hαD⟩
 
 variable [T2Space M] [SigmaCompactSpace M]
 
@@ -88,6 +69,7 @@ theorem exists_isContactForm_pos_smul (hD : IsContactDistribution I ∞ D)
     (hσ₀ : ∀ x, σ x ≠ 0) (hσD : ∀ x, σ x ∈ CotangentBundle.annihilatorSpace I D x) :
     ∃ α : SmoothForm I M ℝ 1, α.IsContactForm ∧ α.kerDistribution = D ∧
       ∀ x, ∃ c : ℝ, 0 < c ∧ SmoothForm.degreeOneEquiv α x = c • σ x := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   rcases isEmpty_or_nonempty M with hM | hM
   · obtain ⟨hc, hk⟩ := hD.isContactForm_and_kerDistribution_eq_iff (α := 0).2 isEmptyElim
     exact ⟨0, hc, hk, isEmptyElim⟩
@@ -103,7 +85,8 @@ theorem exists_isContactForm_pos_smul (hD : IsContactDistribution I ∞ D)
   exact ⟨α, hαc, hαD, hα⟩
 
 /-- **A contact structure is the kernel of a global contact form exactly when it is
-coorientable**, that is, when its annihilator line `D⁰` has a continuous section vanishing
+coorientable.** On a Hausdorff σ-compact manifold, a contact structure `D` is the kernel of a
+global contact form exactly when its annihilator line `D⁰` has a continuous section vanishing
 nowhere. -/
 theorem exists_isContactForm_kerDistribution_eq_iff_exists_continuous
     (hD : IsContactDistribution I ∞ D) :
@@ -112,6 +95,7 @@ theorem exists_isContactForm_kerDistribution_eq_iff_exists_continuous
         (Continuous fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
           (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x (σ x)) ∧
         ∀ x, σ x ≠ 0 ∧ σ x ∈ CotangentBundle.annihilatorSpace I D x := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   simp only [hD.isContactForm_and_kerDistribution_eq_iff]
   rcases isEmpty_or_nonempty M with hM | hM
   · exact ⟨fun _ ↦ ⟨isEmptyElim, continuous_of_discreteTopology, isEmptyElim⟩,
@@ -135,6 +119,7 @@ theorem exists_isContactForm_kerDistribution_eq_iff_exists_trivialization [Nonem
         e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear M (Fin 1 → ℝ) I ∞).maximalAtlas
           (TotalSpace (Fin 1 → ℝ) fun x ↦ CotangentBundle.annihilatorSpace I D x) ∧
         e.baseSet = univ := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   simp only [hD.isContactForm_and_kerDistribution_eq_iff]
   exact hD.isContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization
     hD.finrank_sub_one_add_one
