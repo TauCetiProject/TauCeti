@@ -49,6 +49,8 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.hasseDeriv`, `PowerSeries.IsEntire.derivative`,
   `PowerSeries.IsEntire.rescale` and `PowerSeries.IsEntire.map`: entireness is preserved by Hasse
   derivatives, rescaling and bounded coefficient maps.
+* `PowerSeries.IsEntire.isCoprime_map`: bounded coefficient maps preserve coprimality in the ring
+  of entire series.
 * `PowerSeries.IsEntire.summable_norm_coeff_mul_pow`: `∑ ‖aₙ‖ tⁿ` converges for every real `t`.
 * `PowerSeries.IsEntire.mk_coeff_succ`: dropping the constant term and dividing by `X` keeps a
   series entire.
@@ -297,6 +299,20 @@ theorem IsEntire.rescale (hf : f.IsEntire) (a : R) : (rescale a f).IsEntire :=
 theorem IsEntire.derivative (hf : f.IsEntire) : (d⁄dX f).IsEntire := by
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
+
+/-- A bounded ring homomorphism `φ`, `‖φ x‖ ≤ C ‖x‖`, preserves coprimality in the ring of entire
+series: it maps a Bézout identity `a f + b g = 1` among entire series coefficientwise to one among
+their images. -/
+theorem IsEntire.isCoprime_map {S : Type*} [NormedCommRing S] {g : R⟦X⟧} (hf : f.IsEntire)
+    (hg : g.IsEntire) (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖)
+    (h : IsCoprime (⟨f, IsEntire.mem_subring.mpr hf⟩ : IsEntire.subring R)
+      ⟨g, IsEntire.mem_subring.mpr hg⟩) :
+    IsCoprime (⟨PowerSeries.map φ f, IsEntire.mem_subring.mpr (hf.map φ hφ)⟩ :
+      IsEntire.subring S) ⟨PowerSeries.map φ g, IsEntire.mem_subring.mpr (hg.map φ hφ)⟩ := by
+  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, hab⟩ := h
+  refine ⟨⟨PowerSeries.map φ a, IsEntire.mem_subring.mpr (IsEntire.map ha φ hφ)⟩,
+    ⟨PowerSeries.map φ b, IsEntire.mem_subring.mpr (IsEntire.map hb φ hφ)⟩, Subtype.ext ?_⟩
+  simpa using congrArg (fun x : IsEntire.subring R ↦ PowerSeries.map φ (x : R⟦X⟧)) hab
 
 end NormedCommRing
 
