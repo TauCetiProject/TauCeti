@@ -174,7 +174,7 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
       frontier ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
         (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f r := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
-  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
+  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.val.1⟩
     exact ⟨1, fun x ↦ (IsEmpty.false x).elim, .of_isEmpty _, .of_isEmpty _, .of_isEmpty _,
       by simp [Set.eq_empty_of_isEmpty]⟩
   have : FiniteDimensional ℝ E :=
@@ -194,7 +194,7 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
     isOpenEmbedding_normalTubeOfRadius_of_le r.continuous (fun x => (hrs x).le) h
   exact ⟨r, hr, hopen, hd,
     hd.comp (IsClosedEmbedding.inclusion normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius
-      ((isClosed_normalSphereBundleOfRadius hf1 r.continuous).preimage continuous_subtype_val)),
+      ((isClosed_normalSphereBundleOfRadius hf1 r.continuous).preimage continuous_subtypeVal)),
     frontier_image_normalTubeOfRadius hf1 hclosed.isProperMap r.continuous hr hbound hrs h⟩
 
 /-- **Closed disc and sphere form of the tubular neighbourhood theorem.** For a compact
@@ -214,7 +214,7 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius_const [FiniteDimension
       frontier ((fun p : M × V => f p.1 + p.2) '' normalTube I f ε) =
         (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f (fun _ => ε) := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
-  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
+  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.val.1⟩
     exact ⟨1, one_pos, .of_isEmpty _, .of_isEmpty _, .of_isEmpty _,
       by simp [Set.eq_empty_of_isEmpty]⟩
   have : FiniteDimensional ℝ E :=
@@ -230,7 +230,7 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius_const [FiniteDimension
         (fun _ => (half_lt_self hR).le)
         (by rw [normalTubeOfRadius_const]; exact h)), hd,
     hd.comp (IsClosedEmbedding.inclusion normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius
-      ((isClosed_normalSphereBundleOfRadius hf1 continuous_const).preimage continuous_subtype_val)),
+      ((isClosed_normalSphereBundleOfRadius hf1 continuous_const).preimage continuous_subtypeVal)),
     frontier_image_normalTube hf1 (half_pos hR) (half_lt_self hR) h⟩
 
 end TauCeti

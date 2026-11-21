@@ -92,6 +92,8 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 
 * `TauCeti.diagonalStraightening_mul_graphFrame`: the straightened graph frame of a real matrix
   `A` is `(1/√2) ((1 + A) + i J (1 - A))`.
+* `TauCeti.map_star_diagonalStraightening_mul_graphFrame_sub`: the imaginary part of the
+  straightened graph frame, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
@@ -208,7 +210,7 @@ theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ
 
 /-- The diagonal straightening of the graph frame of the identity, whose columns span the
 diagonal, is the real matrix `√2 • 1`. -/
-private theorem diagonalStraightening_mul_graphFrame_one :
+theorem diagonalStraightening_mul_graphFrame_one :
     diagonalStraightening n * graphFrame 1 =
       ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
   rw [diagonalStraightening_mul_graphFrame, sub_self, Matrix.mul_zero, ← two_smul ℝ 1,
@@ -231,6 +233,19 @@ theorem diagonalStraightening_sum {m : Type*} [DecidableEq m] :
   ext ((i | i) | (i | i)) ((j | j) | (j | j)) <;>
     simp [diagonalStraightening_def, symplecticSum_def, Equiv.sumSumSumComm, ← fromBlocks_one]
 
+/-- The imaginary part of the straightened graph frame: for every real matrix `A` on
+`ℝ^{n ⊕ n}`, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`, where `T` is the diagonal straightening
+and `Γ(A)` the graph frame. So the straightened graph meets the real points nontrivially, that
+is, the graph of `A` meets the diagonal, exactly when `A` has the eigenvalue `1`. -/
+theorem map_star_diagonalStraightening_mul_graphFrame_sub (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (diagonalStraightening n * graphFrame A).map star - diagonalStraightening n * graphFrame A =
+      (Complex.I * ((√2 : ℝ) : ℂ)) • (J n ℝ * (A - 1)).map ((↑) : ℝ → ℂ) := by
+  conv_rhs => rw [← fromBlocks_toBlocks (A - 1), J, fromBlocks_multiply]
+  rw [diagonalStraightening_def, graphFrame_def, Matrix.smul_mul, fromBlocks_multiply]
+  ext (i | i) (j | j) <;>
+  simp [Matrix.one_apply, Complex.ext_iff, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;>
+  split_ifs <;> simp <;> ring
+
 namespace GLSymplectic
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
@@ -238,7 +253,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The graph frame of a symplectic matrix, as an invertible matrix. -/
 private noncomputable def graphFrameUnit (A : GLSymplectic n ℝ) : GL (n ⊕ n) ℂ :=
   ((Matrix.isUnit_iff_isUnit_det _).2
-    (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))).unit
+    (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.property))).unit
 
 private theorem coe_graphFrameUnit (A : GLSymplectic n ℝ) :
     (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
@@ -249,7 +264,7 @@ open scoped Matrix.Norms.L2Operator in
 private theorem continuous_graphFrameUnit : Continuous (graphFrameUnit (n := n)) := by
   have hF : Continuous fun A : GLSymplectic n ℝ ↦
       graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
-    continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)
+    continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtypeVal)
   exact Units.isOpenEmbedding_val.continuous_iff.2 (hF.congr fun A ↦ (coe_graphFrameUnit A).symm)
 
 /-- The **unitary graph frame** of a symplectic matrix `A`: the diagonal straightening `T` times
@@ -261,7 +276,7 @@ noncomputable def graphUnitaryFrame (A : GLSymplectic n ℝ) : unitaryGroup (n �
     mul_mem diagonalStraightening_mem_unitaryGroup (realOrthonormalize_mem_unitaryGroup (by
       rw [coe_graphFrameUnit]
       exact map_im_conjTranspose_graphFrame_mul_graphFrame
-        (mem_iff_mem_symplecticGroup.1 A.2)))⟩
+        (mem_iff_mem_symplecticGroup.1 A.property)))⟩
 
 /-- **The unitary graph frame frames the straightened graph**: its columns span the image
 `T Γ(A)` of the graph of `A` under the diagonal straightening. -/
@@ -288,6 +303,16 @@ theorem coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
   Continuous.subtype_mk (continuous_const.mul (Units.continuous_val.comp
     (continuous_realOrthonormalize continuous_graphFrameUnit))) _
+
+/-- The unitary graph frame of `A` is the straightened graph frame `T Γ(A)` times a positive
+definite real matrix, the real orthonormalization. -/
+theorem exists_posDef_coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+    ∃ P : Matrix (n ⊕ n) (n ⊕ n) ℝ, P.PosDef ∧
+      (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+        diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+          P.map ((↑) : ℝ → ℂ) := by
+  obtain ⟨P, hP, h⟩ := exists_posDef_coe_realOrthonormalize (graphFrameUnit A)
+  exact ⟨P, hP, by rw [graphUnitaryFrame, Subtype.coe_mk, h, coe_graphFrameUnit, Matrix.mul_assoc]⟩
 
 /-- At the identity, the unitary graph frame frames the real points: the Souriau map of the
 straightened diagonal is the identity. -/
@@ -380,9 +405,9 @@ private theorem conjTranspose_graphFrame_realify_mul_self (W : unitaryGroup n �
     (graphFrame (W : Matrix n n ℂ).realify)ᴴ * graphFrame (W : Matrix n n ℂ).realify =
       (2 : ℂ) • 1 := by
   have hsymp : (W : Matrix n n ℂ).realify ∈ symplecticGroup n ℝ :=
-    realify_mem_symplecticGroup_iff.2 W.2
+    realify_mem_symplecticGroup_iff.2 W.property
   have horth : ((W : Matrix n n ℂ).realify)ᵀ * (W : Matrix n n ℂ).realify = 1 :=
-    (mem_orthogonalGroup_iff' _ _).1 (realify_mem_orthogonalGroup_iff.2 W.2)
+    (mem_orthogonalGroup_iff' _ _).1 (realify_mem_orthogonalGroup_iff.2 W.property)
   rw [conjTranspose_graphFrame_mul_graphFrame, horth, SymplecticGroup.mem_iff'.1 hsymp, sub_self]
   ext i j
   by_cases hij : i = j
@@ -469,7 +494,7 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal {U V : unitaryGr
     congr 1
     funext k
     rcases k with j | j <;>
-    · simp only [Sum.elim_inl, Sum.elim_inr, hφdef, Circle.coe_exp, ← Complex.exp_nat_mul]
+    · simp only [Sum.elim_inl, Sum.elim_inr, hφdef, Circle.coe_exp, ← Complex.exp_natCast_mul]
       congr 1
       push_cast
       ring
@@ -490,7 +515,7 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
     (hγ : ∀ t : I, (γ t : Matrix n n ℂ) = diagonal fun j ↦ Complex.exp (α j * t * Complex.I)) :
     conleyZehnderIndex (γ.map continuous_ofUnitary) = -∑ j, Real.sign (α j) := by
   rw [conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal γ (θ := fun j t ↦ α j * t)
-    (fun j ↦ continuous_const.mul continuous_subtype_val) fun t ↦ by rw [hγ t]; push_cast; simp]
+    (fun j ↦ continuous_const.mul continuous_subtypeVal) fun t ↦ by rw [hγ t]; push_cast; simp]
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   -- Since `|α_j / 2π| < 1`, the count `⌊α_j / 2π⌋ + ⌈α_j / 2π⌉` is `sign α_j`.
@@ -536,11 +561,11 @@ theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {C D : GLSymplectic m 
   let f : I → unitaryGroup ((n ⊕ m) ⊕ (n ⊕ m)) ℂ := fun t ↦
     ⟨symplecticSum (graphUnitaryFrame (γ₁ t) : Matrix (n ⊕ n) (n ⊕ n) ℂ)
       (graphUnitaryFrame (γ₂ t) : Matrix (m ⊕ m) (m ⊕ m) ℂ),
-      symplecticSum_mem_unitaryGroup (graphUnitaryFrame _).2 (graphUnitaryFrame _).2⟩
+      symplecticSum_mem_unitaryGroup (graphUnitaryFrame _).property (graphUnitaryFrame _).property⟩
   have hf : Continuous f := Continuous.subtype_mk
     (Continuous.matrix_symplecticSum
-      (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₁.continuous))
-      (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₂.continuous))) _
+      (continuous_subtypeVal.comp (continuous_graphUnitaryFrame.comp γ₁.continuous))
+      (continuous_subtypeVal.comp (continuous_graphUnitaryFrame.comp γ₂.continuous))) _
   let δ : Path (f 0) (f 1) := ⟨⟨f, hf⟩, rfl, rfl⟩
   rw [conleyZehnderIndex_eq_neg_maslovIndex _ δ fun t ↦
       realImage_symplecticSum_graphUnitaryFrame (γ₁ t) (γ₂ t),

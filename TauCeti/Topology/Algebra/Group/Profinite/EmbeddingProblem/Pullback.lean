@@ -51,11 +51,11 @@ def pullbackSnd : P.pullback →* P.E :=
   (MonoidHom.snd G P.E).domRestrict P.pullback
 
 @[simp]
-theorem pullbackFst_apply (x : P.pullback) : P.pullbackFst x = x.1.1 :=
+theorem pullbackFst_apply (x : P.pullback) : P.pullbackFst x = x.val.1 :=
   (rfl)
 
 @[simp]
-theorem pullbackSnd_apply (x : P.pullback) : P.pullbackSnd x = x.1.2 :=
+theorem pullbackSnd_apply (x : P.pullback) : P.pullbackSnd x = x.val.2 :=
   (rfl)
 
 /-- Surjectivity of `α` makes the pullback projection surjective. -/
@@ -67,9 +67,10 @@ theorem pullbackFst_surjective : Function.Surjective P.pullbackFst := by
 /-- The kernel of the pullback projection is the original kernel, by `e ↦ (1, e)`. -/
 def kernelEquivPullbackKer : P.α.ker ≃* P.pullbackFst.ker where
   toFun n := ⟨⟨(1, n), by simpa using n.property.symm⟩, rfl⟩
-  invFun x := ⟨x.1.1.2, by
-    have hx : x.1.1.1 = 1 := (P.pullbackFst_apply x.1).symm.trans (MonoidHom.mem_ker.mp x.property)
-    rw [MonoidHom.mem_ker, ← (P.mem_pullback _).mp x.1.property, hx, map_one]⟩
+  invFun x := ⟨x.val.val.2, by
+    have hx : x.val.val.1 = 1 := (P.pullbackFst_apply x.val).symm.trans
+        (MonoidHom.mem_ker.mp x.property)
+    rw [MonoidHom.mem_ker, ← (P.mem_pullback _).mp x.val.property, hx, map_one]⟩
   left_inv _ := rfl
   right_inv x := Subtype.ext (Subtype.ext (Prod.ext x.property.symm rfl))
   map_mul' _ _ := by
@@ -94,7 +95,7 @@ theorem pullbackGroupExtension_inl (n : P.α.ker) :
 
 /-- Conjugation in the pullback acts on its kernel through the second coordinate. -/
 theorem coe_pullbackGroupExtension_conjAct (x : P.pullback) (n : P.α.ker) :
-    (P.pullbackGroupExtension.conjAct x n : P.E) = x.1.2 * n * x.1.2⁻¹ := by
+    (P.pullbackGroupExtension.conjAct x n : P.E) = x.val.2 * n * x.val.2⁻¹ := by
   have h := congrArg P.pullbackSnd
     (P.pullbackGroupExtension.inl_conjAct_comm (e := x) (n := n))
   simpa only [map_mul, map_inv, pullbackSnd_apply, pullbackGroupExtension_inl] using h
@@ -108,15 +109,15 @@ section Topology
 variable [TopologicalSpace P.E]
 
 theorem continuous_pullbackFst : Continuous P.pullbackFst :=
-  continuous_fst.comp continuous_subtype_val
+  continuous_fst.comp continuous_subtypeVal
 
 theorem continuous_pullbackSnd : Continuous P.pullbackSnd :=
-  continuous_snd.comp continuous_subtype_val
+  continuous_snd.comp continuous_subtypeVal
 
 theorem continuous_pullbackGroupExtension_inl : Continuous P.pullbackGroupExtension.inl := by
   apply continuous_induced_rng.mpr
   simpa only [Function.comp_def, pullbackGroupExtension_inl] using
-    (continuous_const.prodMk continuous_subtype_val :
+    (continuous_const.prodMk continuous_subtypeVal :
       Continuous fun n : P.α.ker ↦ ((1 : G), (n : P.E)))
 
 variable [DiscreteTopology P.E]
@@ -220,7 +221,7 @@ theorem pullbackGroupExtension_inducesAction :
   ext g n
   rw [GroupExtension.conjActOfSection_apply, coe_pullbackGroupExtension_conjAct,
     MulDistribMulAction.toMulAut_apply, MulDistribMulAction.toMulEquiv_apply, kernelAction_smul]
-  have hg : P.α (σ g).1.2 = P.π g := by
+  have hg : P.α (σ g).val.2 = P.π g := by
     rw [← (P.mem_pullback _).mp (σ g).property]
     congr 1
     simpa using σ.rightHom_section g

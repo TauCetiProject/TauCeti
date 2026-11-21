@@ -152,7 +152,7 @@ omit [Fact (1 ≤ p)] in
 private theorem memLp_inter_fst (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
     MemLp (x : Lp E p₀ μ × Lp E p₁ μ).1 p μ :=
   (Lp.memLp _).of_le_of_le ((Lp.memLp (x : Lp E p₀ μ × Lp E p₁ μ).2).ae_eq
-      (mem_lebesgue_inter_iff.1 x.2).symm)
+      (mem_lebesgue_inter_iff.1 x.property).symm)
     (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' h₀ h₁
 
 omit [Fact (1 ≤ p)] in
@@ -161,7 +161,7 @@ private theorem norm_toLp_inter_fst_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁)
   rw [Lp.norm_toLp, norm_inter]
   have h := eLpNorm_le_max_of_le_of_le (f := (x : Lp E p₀ μ × Lp E p₁ μ).1) (μ := μ)
     (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' h₀ h₁
-  rw [eLpNorm_congr_ae (p := p₁) (mem_lebesgue_inter_iff.1 x.2)] at h
+  rw [eLpNorm_congr_ae (p := p₁) (mem_lebesgue_inter_iff.1 x.property)] at h
   calc (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p μ).toReal
       ≤ (max (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p₀ μ)
           (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).2 p₁ μ)).toReal :=
@@ -199,7 +199,8 @@ theorem lebesgueInterToLp_injective (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
     (coeFn_lebesgueInterToLp h₀ h₁ x).symm.trans
       (hxy ▸ coeFn_lebesgueInterToLp h₀ h₁ y)
   refine Subtype.ext (Prod.ext (Lp.ext h₀') (Lp.ext ?_))
-  exact (mem_lebesgue_inter_iff.1 x.2).symm.trans (h₀'.trans (mem_lebesgue_inter_iff.1 y.2))
+  exact (mem_lebesgue_inter_iff.1 x.property).symm.trans (h₀'.trans
+      (mem_lebesgue_inter_iff.1 y.property))
 
 /-- The inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` is compatible with the embeddings into `L¹ + L^∞`. -/
 @[simp]
@@ -218,7 +219,7 @@ theorem lebesgueInterToLp_eq_interFst (h₁ : p₀ ≤ p₁) (x : (lebesgue 𝕜
 theorem lebesgueInterToLp_eq_interSnd (h₀ : p₀ ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
     lebesgueInterToLp h₀ le_rfl x = (lebesgue 𝕜 E μ p₀ p₁).interSnd x := by
   rw [interSnd_apply]
-  exact Lp.ext ((coeFn_lebesgueInterToLp h₀ le_rfl x).trans (mem_lebesgue_inter_iff.1 x.2))
+  exact Lp.ext ((coeFn_lebesgueInterToLp h₀ le_rfl x).trans (mem_lebesgue_inter_iff.1 x.property))
 
 /-- At the endpoint `p = p₀`, the inclusion `Lᵖ → L^{p₀} + L^{p₁}` is the canonical one. -/
 theorem lpToLebesgueSum_eq_fstToSum (h₁ : p₀ ≤ p₁) (f : Lp E p₀ μ) :

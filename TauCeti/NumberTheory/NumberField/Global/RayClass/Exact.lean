@@ -124,7 +124,7 @@ theorem exists_idealClass_eq_principalRayClass {𝔪 : Modulus K} {J : integralI
     {β : 𝓞 K} (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) :
     ∃ x : primeToSubgroup 𝔪, ((x : Kˣ) : K) = β ∧ idealClass 𝔪 J = principalRayClass 𝔪 x := by
   obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp
-    (hJ ▸ Modulus.mem_integralIdealsPrimeTo.mp J.2)
+    (hJ ▸ Modulus.mem_integralIdealsPrimeTo.mp J.property)
   refine ⟨x, hx, ?_⟩
   rw [idealClass_apply, principalRayClass_apply,
     NumberFieldArithmetic.integralIdealsAwayHom_eq_principalIdealAway hJ hx.symm]
@@ -161,8 +161,8 @@ gives an ideal prime to `𝔫`. -/
 private theorem mul_toPrincipalIdeal_mem_idealsAway {𝔪 𝔫 : Modulus K} (I : idealsPrimeTo 𝔪)
     {x : Kˣ} (hxm : IsCongrOne 𝔪 x)
     (hval : ∀ v ∈ 𝔫.support, v ∉ 𝔪.support →
-      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.1.1)) :
-    I.1 * toPrincipalIdeal (RingOfIntegers K) K x ∈
+      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.val.val)) :
+    I.val * toPrincipalIdeal (RingOfIntegers K) K x ∈
       NumberFieldArithmetic.idealsAway K 𝔫.support :=
   NumberFieldArithmetic.mem_idealsAway_iff.mpr (by
     intro v hv
@@ -170,7 +170,7 @@ private theorem mul_toPrincipalIdeal_mem_idealsAway {𝔪 𝔫 : Modulus K} (I :
       (Units.ne_zero (toPrincipalIdeal (RingOfIntegers K) K x)),
       FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation]
     by_cases hvm : v ∈ 𝔪.support
-    · rw [NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v hvm,
+    · rw [NumberFieldArithmetic.mem_idealsAway_iff.mp I.property v hvm,
         hxm.valuation_eq_one ((Modulus.mem_support_iff 𝔪 v).mp hvm)]
       simp
     · rw [hval v hv hvm, WithZero.log_exp]
@@ -184,12 +184,12 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
   choose p hp using fun v : HeightOneSpectrum (RingOfIntegers K) ↦
     v.valuation_surjective K
-      (WithZero.exp (FractionalIdeal.count K v I.1.1))
+      (WithZero.exp (FractionalIdeal.count K v I.val.val))
   let a : HeightOneSpectrum (RingOfIntegers K) → K := fun v ↦
     if v ∈ 𝔪.support then 1 else p v
   let γ := fun v : HeightOneSpectrum (RingOfIntegers K) ↦
     if v ∈ 𝔪.support then WithZero.exp (-(𝔪.exponent v : ℤ))
-    else WithZero.exp (FractionalIdeal.count K v I.1.1)
+    else WithZero.exp (FractionalIdeal.count K v I.val.val)
   obtain ⟨x, hx, hsign⟩ := exists_fieldUnit_valuation_sub_lt_and_signHom_eq
     (S := 𝔫.support) a γ (fun v _ ↦ by
       dsimp [γ]
@@ -203,7 +203,7 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     · rw [← signHom_apply_eq_one_iff x w, hsign]
       rfl
   have hval : ∀ v ∈ 𝔫.support, v ∉ 𝔪.support →
-      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.1.1) := by
+      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.val.val) := by
     intro v hv hvm
     calc
       v.valuation K (x : K) = v.valuation K (p v) :=
@@ -213,7 +213,7 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
           rw [hp v]
           exact hlt)
       _ = _ := hp v
-  let J : idealsPrimeTo 𝔫 := ⟨I.1 * toPrincipalIdeal (RingOfIntegers K) K x,
+  let J : idealsPrimeTo 𝔫 := ⟨I.val * toPrincipalIdeal (RingOfIntegers K) K x,
     mul_toPrincipalIdeal_mem_idealsAway I hxm hval⟩
   refine ⟨rayClassMk 𝔫 J, ?_⟩
   rw [classMap_rayClassMk]
@@ -326,7 +326,7 @@ theorem classMap_residueSignRayClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     classMap h (residueSignRayClass 𝔫 a) =
       residueSignRayClass 𝔪
         (finiteUnitsMap (Modulus.dvd_iff.mp h).1 a.1,
-          fun w ↦ a.2 ⟨w.1, (Modulus.dvd_iff.mp h).2 w.2⟩) := by
+          fun w ↦ a.2 ⟨w.val, (Modulus.dvd_iff.mp h).2 w.property⟩) := by
   obtain ⟨x, rfl⟩ := residueSignHom_surjective 𝔫 a
   rw [residueSignRayClass_residueSignHom, classMap_principalRayClass,
     ← residueSignRayClass_residueSignHom]
@@ -426,7 +426,7 @@ residue together with a pattern of signs `s` that is trivial at the real places 
 theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     (hfin : 𝔪.finitePart = 𝔫.finitePart) (c : RayClassGroup 𝔫) :
     classMap h c = 1 ↔ ∃ s : 𝔫.infinitePart → ℤˣ,
-      (∀ w : 𝔫.infinitePart, w.1 ∈ 𝔪.infinitePart → s w = 1) ∧
+      (∀ w : 𝔫.infinitePart, w.val ∈ 𝔪.infinitePart → s w = 1) ∧
         residueSignRayClass 𝔫 (1, s) = c := by
   constructor
   · intro hc
@@ -440,7 +440,7 @@ theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 �
     obtain ⟨hres, hpos⟩ := (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin hxn).mp hx
     refine ⟨modulusSignHom 𝔫 x, fun w hw ↦ ?_, ?_⟩
     · rw [modulusSignHom_apply, signHom_apply_eq_one_iff]
-      exact hpos w.1 hw
+      exact hpos w.val hw
     · have hI : NumberFieldArithmetic.principalIdealAway K 𝔫.support ⟨x, hxn⟩ = I :=
         Subtype.ext (Units.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway, hxI]))
       rw [← hI, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom]
@@ -451,7 +451,7 @@ theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 �
       rayClassMk_eq_one_iff, mem_ray_iff]
     refine ⟨x, ?_, by rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
       NumberFieldArithmetic.coe_principalIdealAway]⟩
-    refine (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin x.2).mpr
+    refine (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin x.property).mpr
       ⟨by rw [← residueSignHom_fst, hx], fun w hw ↦ ?_⟩
     have hw' := congrArg (fun p ↦ p.2 ⟨w, (Modulus.dvd_iff.mp h).2 hw⟩) hx
     simp only [residueSignHom_snd, modulusSignHom_apply] at hw'

@@ -149,7 +149,7 @@ theorem decompose_mem_augmentationIdeal (ε : 𝒜.Augmentation) (x : ε.augment
     have hmap := 𝒜.grading.map_eq_map_decompose (i := 0) f hf (x : A)
     have hx : f (x : A) = 0 := (mem_augmentationIdeal ε).mp x.property
     exact hmap.symm.trans hx
-  · exact ε.map_of_mem_ne_zero p _ (DirectSum.decompose 𝒜.grading.piece (x : A) p).2 hp
+  · exact ε.map_of_mem_ne_zero p _ (DirectSum.decompose 𝒜.grading.piece (x : A) p).property hp
 
 /-- The internal grading on the reduced augmentation ideal obtained by intersecting it with each
 homogeneous piece of the original algebra. -/

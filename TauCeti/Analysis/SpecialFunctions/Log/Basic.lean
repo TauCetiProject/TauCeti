@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
-# Upper boundedness of `Real.log` on bounded and compact sets
+# Basic facts about the real logarithm
+
+* `Real.log_div_pos`: for `0 < r < c` the logarithm `log (c / r)` is positive.
+
+## Upper boundedness of `Real.log` on bounded and compact sets
 
 Although `Real.log` is discontinuous at `0`, Lean's conventions `Real.log 0 = 0` and
 `Real.log (-x) = Real.log x` (`Real.log_abs`), combined with `Real.log_le_self`, ensure
@@ -18,6 +22,14 @@ continuous real-valued function on a compact set `s` (even if `f` vanishes or ch
 -/
 
 public section
+
+namespace Real
+
+/-- For `0 < r < c` the logarithm `log (c / r)` is positive. -/
+theorem log_div_pos {c r : ℝ} (h0 : 0 < r) (hr : r < c) : 0 < log (c / r) :=
+  log_pos ((one_lt_div h0).2 hr)
+
+end Real
 
 /-- For any bounded subset `s : Set ℝ`, the image `Real.log '' s` is bounded above (using
 `Real.log y = Real.log |y| ≤ |y|` across nonpositive values). -/
