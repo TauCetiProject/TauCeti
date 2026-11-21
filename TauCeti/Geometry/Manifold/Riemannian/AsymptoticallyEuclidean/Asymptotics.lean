@@ -253,11 +253,8 @@ theorem riemannianVolume_image_eq_top [FiniteDimensional ℝ E] [IsManifold I 1 
     (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t) :
     riemannianVolume I M (φ '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) = ⊤ := by
   have hloc : IsLocalDiffeomorphOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I 1 φ
-      (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
-    rintro ⟨x, hx⟩
-    obtain ⟨e, he⟩ := h.isInvertible_mfderiv x hx
-    exact isLocalDiffeomorphAt_of_mfderiv_eq (h.contMDiffOn.of_le (by simp))
-      isClosed_closedBall.isOpen_compl hx BoundarylessManifold.isInteriorPoint le_rfl he
+      (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
+    h.isLocalDiffeomorphOn 1 le_rfl (by simp)
   have hcov := hloc.setLIntegral_riemannianVolume_image one_ne_zero
     isClosed_closedBall.isOpen_compl.measurableSet h.injOn
     (EuclideanSpace.basisFun (Fin n) ℝ).toBasis (fun _ ↦ (1 : ℝ≥0∞))
