@@ -15,11 +15,11 @@ public import TauCeti.LinearAlgebra.Matrix.DetDescent
 
 A real matrix `N` is viewed as a complex matrix through the entrywise coercion
 `N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary and a real
-symmetric matrix Hermitian as a complex matrix, and how the real Gram matrix `Re (Mᴴ M)` of the
-columns of a complex matrix `M` behaves: it transforms by congruence under a real change of basis,
-and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns. The
-imaginary part `Im (Mᴴ M)`, the matrix of the symplectic form `Im ⟪·, ·⟫` on the columns, transforms
-by the same congruence.
+symmetric matrix Hermitian as a complex matrix, that the determinant does not change, and how the
+real Gram matrix `Re (Mᴴ M)` of the columns of a complex matrix `M` behaves: it transforms by
+congruence under a real change of basis, and it is positive definite when `Mᴴ M` is, in particular
+when `M` has independent columns. The imaginary part `Im (Mᴴ M)`, the matrix of the symplectic
+form `Im ⟪·, ·⟫` on the columns, transforms by the same congruence.
 
 ## Main results
 
@@ -29,6 +29,7 @@ by the same congruence.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
   coercion is multiplicative, preserves the identity and commutes with the trace.
+* `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
 * `Matrix.map_im_conjTranspose_mul_self_mul_map_ofReal`: likewise, the imaginary part of the Gram
@@ -81,6 +82,12 @@ theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ �
 theorem trace_map_ofReal [Fintype n] (X : Matrix n n ℝ) :
     trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
   (AddMonoidHom.map_trace Complex.ofRealHom X).symm
+
+/-- The determinant of the complex image of a real matrix is the image of its determinant. -/
+@[simp]
+theorem det_map_ofReal [Fintype n] [DecidableEq n] (M : Matrix n n ℝ) :
+    (M.map ((↑) : ℝ → ℂ)).det = M.det :=
+  (Complex.ofRealHom.map_det M).symm
 
 /-- The real Gram matrix `Re ((M N)ᴴ (M N))` of the columns of `M N`, for a real matrix `N`, is
 `Nᵀ Re (Mᴴ M) N`. -/

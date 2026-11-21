@@ -260,7 +260,7 @@ theorem projectiveLine_chart_cover :
   intro x
   obtain ⟨σ, y, rfl⟩ := projectiveLineFan.exists_analyticAffineChartι_apply_eq
     isRegular_projectiveLineFan x
-  rcases (mem_projectiveLineFan_cones σ.1).1 σ.2 with h | h | h
+  rcases (mem_projectiveLineFan_cones σ.val).1 σ.property with h | h | h
   · have hz : σ ≤ projectiveLinePositiveCone := by
       rcases σ with ⟨σ, _⟩
       apply Subtype.mk_le_mk.mpr
@@ -269,7 +269,7 @@ theorem projectiveLine_chart_cover :
       exact bot_le
     left
     exact ⟨faceAffinePointMap projectiveLineFan.lattice
-      (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2 σ.2 hz) y,
+      (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.property σ.property hz) y,
       projectiveLineFan.analyticAffineChartι_faceAffinePointMap
         isRegular_projectiveLineFan hz y⟩
   · left
@@ -313,15 +313,15 @@ theorem projectiveLine_chart_coordinates_mul_of_eq
     exact ⟨⟨x, rfl⟩, ⟨y, hxy.symm⟩⟩
   obtain ⟨z, hz⟩ := hz
   have hpx : faceAffinePointMap projectiveLineFan.lattice
-      (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-        projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) z = x :=
+      (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.property
+        projectiveLineZeroCone.property projectiveLineZeroCone_le_positiveCone) z = x :=
     (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
       isRegular_projectiveLineFan projectiveLinePositiveCone).injective <| by
       exact (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
         isRegular_projectiveLineFan projectiveLineZeroCone_le_positiveCone z).trans hz
   have hny : faceAffinePointMap projectiveLineFan.lattice
-      (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.2
-        projectiveLineZeroCone.2 projectiveLineZeroCone_le_negativeCone) z = y :=
+      (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.property
+        projectiveLineZeroCone.property projectiveLineZeroCone_le_negativeCone) z = y :=
     (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
       isRegular_projectiveLineFan projectiveLineNegativeCone).injective <| by
       exact (projectiveLineFan.analyticAffineChartι_faceAffinePointMap

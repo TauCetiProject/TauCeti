@@ -309,9 +309,7 @@ theorem standardComplexVolume_realGraphMap (A : Matrix (Fin n) (Fin n) ℝ)
   have hdet : ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis.det w : ℂ) =
       (Matrix.of fun i j ↦ (w i j : ℂ)).det := by
     rw [Module.Basis.det_apply, ← det_transpose]
-    have h := Complex.ofRealHom.map_det ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis.toMatrix w)ᵀ
-    rw [Complex.ofRealHom_eq_coe] at h
-    rw [h]
+    rw [← det_map_ofReal]
     refine congrArg det ?_
     ext i j
     simp [Module.Basis.toMatrix_apply]

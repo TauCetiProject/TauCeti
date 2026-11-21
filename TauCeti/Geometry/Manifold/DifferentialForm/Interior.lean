@@ -208,6 +208,17 @@ theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) (x : M) (v : Fin k → TangentSpace I x) :
     ω.interior X x v = ω x (Matrix.vecCons (X x) v) := (rfl)
 
+/-- The interior product of a form with a vector field is supported in the topological support
+of the vector field. -/
+theorem RoughForm.tsupport_interior_subset (ω : RoughForm I M F (k + 1))
+    (X : (x : M) → TangentSpace I x) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X) ⊆
+      tsupport (α := E) X := by
+  refine closure_mono fun x hx ↦ Function.mem_support.2 fun h ↦ hx ?_
+  ext v
+  simp only [RoughForm.interior_apply, h]
+  exact (ω x).map_coord_zero 0 rfl
+
 /-- Insertion of the zero field vanishes. -/
 @[simp]
 theorem RoughForm.interior_zero_field (ω : RoughForm I M F (k + 1)) :

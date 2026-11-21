@@ -101,7 +101,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_t
     M.IsQuasicoherent ↔ ∀ i, (M.restrict (U i).ι).IsQuasicoherent := by
   refine ⟨fun _ _ ↦ inferInstance, fun h ↦ ?_⟩
   -- Reindex the cover by `Set.range U`, which lives in the universe required by `of_coversTop`.
-  have (V : Set.range U) : (M.over V.1).IsQuasicoherent := by
+  have (V : Set.range U) : (M.over V.val).IsQuasicoherent := by
     obtain ⟨_, i, rfl⟩ := V
     exact (M.isQuasicoherent_over_iff (U i)).2 (h i)
   exact SheafOfModules.IsQuasicoherent.of_coversTop M (Subtype.val : Set.range U → X.Opens)
@@ -111,8 +111,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_t
 are quasicoherent. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_forall_affineOpens
     {X : Scheme.{u}} (M : X.Modules) :
-    M.IsQuasicoherent ↔ ∀ U : X.affineOpens, (M.restrict U.1.ι).IsQuasicoherent :=
-  M.isQuasicoherent_iff_of_iSup_eq_top (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X)
+    M.IsQuasicoherent ↔ ∀ U : X.affineOpens, (M.restrict U.val.ι).IsQuasicoherent :=
+  M.isQuasicoherent_iff_of_iSup_eq_top (fun U : X.affineOpens ↦ U.val) (iSup_affineOpens_eq_top X)
 
 end
 
