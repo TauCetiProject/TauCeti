@@ -37,6 +37,8 @@ in `G`.
   `CommHopfAlgCat`.
 * `TauCeti.DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply`: its forward map is
   the scalar-tensor bialgebra equivalence.
+* `TauCeti.DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_naturality`: it is natural
+  in the character group.
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv_apply_coe`: the equivalence reads a
   point by evaluating it on `1 ⊗ single g 1`.
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv_mapDomain_scalarTensorBialgEquiv`:
@@ -114,6 +116,24 @@ theorem baseChangeCoordinateHopfAlgebraIso_hom_apply
     (baseChangeCoordinateHopfAlgebraIso k K G).hom.hom x =
       MonoidAlgebra.scalarTensorBialgEquiv k K x :=
   rfl
+
+/-- The isomorphism `K ⊗[k] k[G] ≅ K[G]` is natural in `G`: it intertwines the scalar extension
+of the coordinate map `k[G] → k[H]` induced by `G ⟶ H` with the coordinate map `K[G] → K[H]`. -/
+@[reassoc]
+theorem baseChangeCoordinateHopfAlgebraIso_hom_naturality
+    (k : Type u) (K : Type v) [CommRing k] [CommRing K] [Algebra k K]
+    {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
+    CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap k f).hom ≫
+        (baseChangeCoordinateHopfAlgebraIso k K H).hom =
+      (baseChangeCoordinateHopfAlgebraIso k K G).hom ≫ (coordinateMap K f).hom := by
+  ext x
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp_all
+  | tmul a p =>
+    induction p using MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add p q hp hq => simp_all [TensorProduct.tmul_add]
+    | single g r => simp
 
 /-- The `A`-points of the base change `K ⊗[k] k[G]` of the diagonalizable group `D(G)` are
 the character group `G →* Aˣ`.
