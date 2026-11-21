@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 
 /-!
-# The standard pairing on `ℤ/n`
+# The standard pairing on `ℤ/n` and the shifts of a primitive character
 
 Mathlib's `AddChar.zmodHom` indexes the circle-valued characters of `ZMod n` by `ZMod n` itself,
 `a ↦ (b ↦ e(a b / n))` with `e(x) = exp(2 π i x)`. This file writes it multiplicatively, as a
@@ -17,15 +17,26 @@ pairing `TauCeti.zmodPairing n` on `Multiplicative (ZMod n)` that is a monoid ho
 variable, the form in which it can be composed with group homomorphisms into
 `Multiplicative (ZMod n)`, such as discrete logarithms.
 
+A primitive complex additive character `ψ` of a finite commutative ring `R` indexes all the
+complex additive characters of `R` in the same way: the shifts `a ↦ ψ.mulShift a` are injective
+(Mathlib's `AddChar.to_mulShift_inj_of_isPrimitive`), and `R` has exactly `#R` complex additive
+characters (Mathlib's `AddChar.card_eq`), so the shifts are an isomorphism. For `R = ZMod n` and
+`ψ = ZMod.stdAddChar` this agrees pointwise with Mathlib's `AddChar.zmodAddEquiv`;
+over a finite field it says that every additive character is a shift of a fixed nontrivial one.
+
 ## Main definitions
 
 * `TauCeti.zmodPairing n`: the pairing `(a, b) ↦ e(a b / n)` on `Multiplicative (ZMod n)`.
+* `AddChar.IsPrimitive.mulShiftAddEquiv`: for a primitive complex additive character `ψ` of a
+  finite commutative ring `R`, the isomorphism `a ↦ ψ.mulShift a` from `R` onto `AddChar R ℂ`.
 
 ## Main results
 
 * `TauCeti.zmodPairing_apply`: `zmodPairing n a b = ZMod.toCircle (a b)`.
 * `TauCeti.zmodPairing_comm`: the pairing is symmetric.
 * `TauCeti.zmodPairing_eq_one_iff`: the pairing is nondegenerate: `e(a / n) = 1` only for `a = 0`.
+* `AddChar.IsPrimitive.existsUnique_mulShift_eq`: every complex additive character of a finite
+  commutative ring is the shift of a primitive one by exactly one element.
 -/
 
 public section
@@ -64,3 +75,34 @@ theorem zmodPairing_eq_one_iff (a : Multiplicative (ZMod n)) :
     (ZMod.injective_toCircle (N := n)).eq_iff, toAdd_eq_zero]
 
 end TauCeti
+
+namespace AddChar.IsPrimitive
+
+variable {R : Type*} [CommRing R] [Finite R] {ψ : AddChar R ℂ}
+
+/-- For a primitive complex additive character `ψ` of a finite commutative ring `R`, the shifts
+`a ↦ ψ.mulShift a` form an isomorphism from the additive group of `R` onto the group of complex
+additive characters of `R`. -/
+noncomputable def mulShiftAddEquiv (hψ : ψ.IsPrimitive) : R ≃+ AddChar R ℂ :=
+  AddEquiv.ofBijective
+    ({ toFun := ψ.mulShift
+       map_zero' := mulShift_zero ψ
+       map_add' := fun a b ↦ (mulShift_mul ψ a b).symm } : R →+ AddChar R ℂ) <| by
+    have := Fintype.ofFinite R
+    rw [Fintype.bijective_iff_injective_and_card, card_eq]
+    exact ⟨to_mulShift_inj_of_isPrimitive hψ, rfl⟩
+
+@[simp]
+theorem mulShiftAddEquiv_apply (hψ : ψ.IsPrimitive) (a : R) :
+    hψ.mulShiftAddEquiv a = ψ.mulShift a := by
+  -- A tactic proof, unlike a term `rfl`, does not require the body of `mulShiftAddEquiv` to be
+  -- exposed.
+  rfl
+
+/-- Every complex additive character of a finite commutative ring is the shift of a primitive
+one by exactly one element. -/
+theorem existsUnique_mulShift_eq (hψ : ψ.IsPrimitive) (φ : AddChar R ℂ) :
+    ∃! a : R, ψ.mulShift a = φ := by
+  simpa using hψ.mulShiftAddEquiv.bijective.existsUnique φ
+
+end AddChar.IsPrimitive
