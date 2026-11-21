@@ -40,6 +40,8 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
   compact subset of the principal domain.
 * `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`: interval integrability of the
   differentiated kernel `(-log t) ^ k / (1 - t z)` on `[0, 1]` for `z` in the principal domain.
+* `TauCeti.Polylog.hasDerivAt_radialIntegrand`: pointwise complex derivative of the radial
+  integrand away from `t = 0` when `1 - t * w ∈ Complex.slitPlane`.
 * `TauCeti.Polylog.hasDerivAt_integral_radialIntegrand`: parametric complex derivative of the
   weight-`(k + 2)` radial integral on the principal domain.
 
@@ -184,6 +186,23 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
           gcongr
           · linarith [le_max_right R 0]
 
+/-- Pointwise complex derivative of the radial polylogarithm integrand in `w` away from `t = 0`
+whenever `1 - t * w ∈ Complex.slitPlane`. -/
+theorem hasDerivAt_radialIntegrand (k : ℕ) {t : ℝ} (ht : t ≠ 0) {w : ℂ}
+    (htw : 1 - (t : ℂ) * w ∈ Complex.slitPlane) :
+    HasDerivAt
+      (fun x : ℂ ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * x)) / (t : ℂ))
+      (((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * w)) w := by
+  have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht
+  have htw0 : 1 - (t : ℂ) * w ≠ 0 := Complex.slitPlane_ne_zero htw
+  have hin : HasDerivAt (fun x : ℂ ↦ 1 - (t : ℂ) * x) (0 - (t : ℂ) * 1) w :=
+    (hasDerivAt_const w (1 : ℂ)).sub ((hasDerivAt_id w).const_mul (t : ℂ))
+  have hlog := (((Complex.hasDerivAt_log htw).comp w hin).neg.const_mul
+    (((-Real.log t : ℝ) : ℂ) ^ k)).div_const (t : ℂ)
+  refine hlog.congr_deriv ?_
+  field_simp [ht0, htw0]
+  ring
+
 /-- Parametric differentiation of the raw weight-`(k + 2)` radial integral on the principal domain,
 yielding both interval integrability of the differentiated kernel and `HasDerivAt` of the
 integral. -/
@@ -217,18 +236,8 @@ private lemma intervalIntegrable_and_hasDerivAt_radialIntegrand (k : ℕ) {z : �
       ∀ w ∈ closedBall z ε, HasDerivAt (fun x ↦ F x t) (F' w t) w := by
     refine ae_of_all _ fun t ht w hw_mem ↦ ?_
     rw [uIoc_of_le zero_le_one] at ht
-    have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
-    have htwΩ : 1 - (t : ℂ) * w ∈ Complex.slitPlane :=
-      Complex.one_sub_ofReal_mul_mem_slitPlane (hball hw_mem) (Ioc_subset_Icc_self ht)
-    have htw0 : 1 - (t : ℂ) * w ≠ 0 := Complex.slitPlane_ne_zero htwΩ
-    have hin : HasDerivAt (fun x : ℂ ↦ 1 - (t : ℂ) * x) (0 - (t : ℂ) * 1) w :=
-      (hasDerivAt_const w (1 : ℂ)).sub ((hasDerivAt_id w).const_mul (t : ℂ))
-    have hlog := (((Complex.hasDerivAt_log htwΩ).comp w hin).neg.const_mul
-      (((-Real.log t : ℝ) : ℂ) ^ k)).div_const (t : ℂ)
-    refine hlog.congr_deriv ?_
-    dsimp only [F']
-    field_simp [ht0, htw0]
-    ring
+    exact hasDerivAt_radialIntegrand k ht.1.ne'
+      (Complex.one_sub_ofReal_mul_mem_slitPlane (hball hw_mem) (Ioc_subset_Icc_self ht))
   exact intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (closedBall_mem_nhds z hε)
     (Eventually.of_forall fun w ↦ (by fun_prop : Measurable (F w)).aestronglyMeasurable)
