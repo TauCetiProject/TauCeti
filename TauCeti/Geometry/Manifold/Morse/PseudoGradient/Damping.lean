@@ -15,9 +15,10 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 On a noncompact manifold an adapted pseudo-gradient of a Morse function need not be complete, even
 when the function is proper and bounded below: the negative Euclidean gradient of `x² + x⁴` on
 `ℝ` has a trajectory escaping in finite backward time
-(`TauCeti.NoncompactLineExample.exists_isIntegralCurveOn_Icc_iff`). This file shows that every
-adapted pseudo-gradient of a smooth proper function can be rescaled to a complete one, without
-changing it near the critical points.
+(`TauCeti.NoncompactLineExample.exists_isIntegralCurveOn_Icc_iff`), and so does any adapted
+pseudo-gradient that agrees with it outside a bounded neighbourhood of `0`. This file shows that
+every adapted pseudo-gradient of a smooth proper function can be rescaled to a complete one,
+without changing it near the critical points.
 
 The rescaled field is the damped field `TauCeti.rateDampedField 𝓘(ℝ, E) f X`, the positive
 multiple `rateDamping (df(X)) • X` of `X` from `TauCeti.Geometry.Manifold.Flow.Damping`. It is
@@ -29,10 +30,11 @@ field is linear. Along the damped field `f` changes at rate at most `2`, so when
 damped field is complete (`TauCeti.IsAdaptedPseudoGradient.isCompleteVectorField_rateDampedField`).
 No lower bound on `f` is needed for completeness.
 
-So the global flow of an adapted pseudo-gradient, used for stable and unstable manifolds and
-trajectory spaces, is available for a proper Morse function on a noncompact manifold once its
-pseudo-gradient is damped. The damped field has the same oriented trajectories as `X`, since it
-is a positive multiple of it.
+So whenever a proper Morse function on a noncompact manifold is given an adapted
+pseudo-gradient `X`, the global flow used for stable and unstable manifolds and trajectory spaces
+is available for the damped field of `X`. The existence of adapted pseudo-gradients on
+noncompact manifolds is not provided here. The damped field has the same oriented trajectories
+as `X`, since it is a positive multiple of it.
 
 ## Main results
 

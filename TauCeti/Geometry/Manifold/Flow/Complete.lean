@@ -261,12 +261,9 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
     have h := hmv t ht
     have hCT := mul_le_mul_of_nonneg_left htT hC0
     exact ⟨by linarith [h.1], by linarith [h.2]⟩
-  have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
-    have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
-    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
-    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hb0)
-      (eventually_notMem_nhdsLT_maximalIntegralCurve hv hlub (hK _))).exists
-    exact htK (hband (hsub ⟨ha.trans ht.1, ht.2⟩) (by rw [abs_of_pos ht.1]; exact ht.2.le))
+  have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun ⟨b, hb⟩ ↦ not_bddAbove_Ici 0
+    (BddAbove.mono (Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo hv (hK b)
+      fun t ⟨ht, ht0⟩ ↦ hband ht (by rw [abs_of_nonneg ht0]; exact hb ht)) ⟨b, hb⟩)
   have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
     have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
     obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
