@@ -441,34 +441,6 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂} [Finite ι] [Finite ι₂]
 
-private noncomputable def foldedIndicesCongr (e : P.Equiv P₂) {σ : P.Aut} {τ : P₂.Aut}
-    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap) :
-    P.foldedIndices σ ≃ P₂.foldedIndices τ where
-  toFun u := ⟨e.weightEquiv u.val, mem_foldedIndices.mpr <| by
-    obtain ⟨i, hi⟩ := mem_foldedIndices.mp u.property
-    exact ⟨e.indexEquiv i, (weightMap_orbitSum e
-      (e.indexEquiv_apply_of_weightEquiv_comp_weightMap hw) i).symm.trans
-      (congrArg e.weightMap hi)⟩⟩
-  invFun v := ⟨e.weightEquiv.symm v.val, mem_foldedIndices.mpr <| by
-    have hwsymm : (e.symm P P₂).weightEquiv.toLinearMap ∘ₗ τ.weightMap =
-        σ.weightMap ∘ₗ (e.symm P P₂).weightEquiv.toLinearMap :=
-      LinearMap.ext fun y ↦ e.weightEquiv.injective <| by
-        simpa using (LinearMap.congr_fun hw (e.weightEquiv.symm y)).symm
-    obtain ⟨i, hi⟩ := mem_foldedIndices.mp v.property
-    exact ⟨(e.symm P P₂).indexEquiv i, (weightMap_orbitSum (e.symm P P₂)
-      ((e.symm P P₂).indexEquiv_apply_of_weightEquiv_comp_weightMap hwsymm) i).symm.trans
-      (congrArg (e.symm P P₂).weightMap hi)⟩⟩
-  left_inv u := Subtype.ext (e.weightEquiv.symm_apply_apply u.val)
-  right_inv v := Subtype.ext (e.weightEquiv.apply_symm_apply v.val)
-
-@[simp] private theorem coe_foldedIndicesCongr_apply (e : P.Equiv P₂) {σ : P.Aut} {τ : P₂.Aut}
-    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap)
-    (u : P.foldedIndices σ) : (foldedIndicesCongr e hw u : M₂) = e.weightMap (u : M) := by rfl
-@[simp] private theorem coe_foldedIndicesCongr_symm_apply (e : P.Equiv P₂) {σ : P.Aut} {τ : P₂.Aut}
-    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap)
-    (v : P₂.foldedIndices τ) :
-    ((foldedIndicesCongr e hw).symm v : M) = e.weightEquiv.symm (v : M₂) := by rfl
-
 section MapEquiv
 
 variable {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
@@ -478,7 +450,8 @@ variable {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
 
 /-- **Transport an orbit-sum realization along an intertwining based equivalence.** -/
 noncomputable def map : P₂.OrbitSumRealization b₂ τ :=
-  let e_idx := foldedIndicesCongr e hw
+  let hφ := e.autCongr_eq_iff_weightEquiv_comp_weightMap.mpr hw
+  let e_idx := e.foldedIndicesCongr hφ
   let f_fix := e.weightEquiv.fixedSubmoduleCongr hw
   let eqv := F.pairing.equivMapDual e_idx f_fix
   have hidx := e.indexEquiv_apply_of_weightEquiv_comp_weightMap hw
@@ -488,7 +461,7 @@ noncomputable def map : P₂.OrbitSumRealization b₂ τ :=
     evaluation x y := F.pairing.mapDual_toLinearMap_apply e_idx f_fix x y
     root_eq v := by
       rw [mapDual_root_apply, LinearEquiv.fixedSubmoduleCongr_apply, F.coe_root,
-        coe_foldedIndicesCongr_symm_apply, e.weightEquiv.apply_symm_apply]
+        Equiv.coe_foldedIndicesCongr_symm_apply, e.weightEquiv.apply_symm_apply]
     base_eq v := by
       classical
       rw [F.base.support_map_eq, Finset.mem_image]
@@ -496,18 +469,20 @@ noncomputable def map : P₂.OrbitSumRealization b₂ τ :=
       · obtain ⟨j, hj, hju⟩ := F.mem_support_base_iff.mp hu
         refine ⟨e.indexEquiv j, ?_, ?_⟩
         · rw [← hb, b.support_map_eq]; exact Finset.mem_image_of_mem _ hj
-        · rw [← huv, equivMapDual_indexEquiv, coe_foldedIndicesCongr_apply, ← hju,
+        · rw [← huv, equivMapDual_indexEquiv, Equiv.coe_foldedIndicesCongr_apply, ← hju,
             weightMap_orbitSum e hidx j]
       · rw [← hb, b.support_map_eq, Finset.mem_image] at hj₂
         obtain ⟨j, hj, rfl⟩ := hj₂
         refine ⟨⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩,
           F.orbitSum_mem_support_base hj, Subtype.ext ?_⟩
-        rw [equivMapDual_indexEquiv, coe_foldedIndicesCongr_apply, weightMap_orbitSum e hidx j,
-          hjv] }
+        rw [equivMapDual_indexEquiv, Equiv.coe_foldedIndicesCongr_apply,
+          weightMap_orbitSum e hidx j, hjv] }
 
 /-- The canonical based equivalence from `F.pairing` to `(F.map e hw hb).pairing`. -/
 noncomputable def mapEquiv : F.pairing.Equiv (F.map e hw hb).pairing :=
-  F.pairing.equivMapDual (foldedIndicesCongr e hw) (e.weightEquiv.fixedSubmoduleCongr hw)
+  F.pairing.equivMapDual
+    (e.foldedIndicesCongr (e.autCongr_eq_iff_weightEquiv_comp_weightMap.mpr hw))
+    (e.weightEquiv.fixedSubmoduleCongr hw)
 
 @[simp] theorem coe_weightMap_mapEquiv (x : LinearMap.fixedSubmodule σ.weightMap) :
     ((F.mapEquiv e hw hb).weightMap x : M₂) = e.weightMap (x : M) := by simp [mapEquiv, map]

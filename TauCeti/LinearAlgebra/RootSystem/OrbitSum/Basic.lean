@@ -48,6 +48,8 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
 * `RootPairing.card_orbitIndices`: the size of the orbit is the minimal period of `i`.
 * `RootPairing.orbitSum_eq_of_mem`: the orbit sum does not depend on the representative.
 * `RootPairing.orbitSum_eq_root_of_indexEquiv_eq`: the orbit sum of a fixed root is that root.
+* `RootPairing.orbitSum_eq_add_of_apply_apply`: the orbit sum of a non-fixed period-two root is
+  `P.root i + P.root (σ.indexEquiv i)`.
 * `RootPairing.sum_range_root_pow_apply_eq_nsmul`: a sum over a period `m` is `m / d` times the
   orbit sum.
 * `RootPairing.coroot'_orbitSum`: evaluating a coroot functional on an orbit sum sums the
@@ -225,6 +227,14 @@ theorem orbitSum_eq_of_mem (h : j ∈ P.orbitIndices σ i) : P.orbitSum σ j = P
 theorem orbitSum_eq_root_of_indexEquiv_eq (h : σ.indexEquiv i = i) :
     P.orbitSum σ i = P.root i := by
   rw [orbitSum, orbitIndices_eq_singleton_iff.mpr h, sum_singleton]
+
+/-- The orbit sum of a root `i` of local period dividing `2` (`σ² i = i`) and not fixed by `σ`
+is the two-term sum `P.root i + P.root (σ.indexEquiv i)`. -/
+theorem orbitSum_eq_add_of_apply_apply (h : σ.indexEquiv (σ.indexEquiv i) = i)
+    (hne : σ.indexEquiv i ≠ i) :
+    P.orbitSum σ i = P.root i + P.root (σ.indexEquiv i) := by
+  classical
+  rw [orbitSum_def, orbitIndices_eq_pair_of_apply_apply h, sum_pair hne.symm]
 
 /-- **Full-period sums.** If `σᵐ` fixes `i`, then summing the roots `σᵏ αᵢ` over `k < m`
 counts every root of the orbit `m / d` times, where `d` is the size of the orbit. -/
@@ -475,6 +485,12 @@ noncomputable def foldedIndicesCongr (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P
 @[simp] theorem coe_foldedIndicesCongr_apply (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
     (hφ : φ.autCongr σ = σ₂) (v : P.foldedIndices σ) :
     ((φ.foldedIndicesCongr hφ v : P₂.foldedIndices σ₂) : M₂) = φ.weightMap (v : M) := (rfl)
+
+/-- Coercing `(φ.foldedIndicesCongr hφ).symm w` applies `φ.weightEquiv.symm` to `(w : M₂)`. -/
+@[simp] theorem coe_foldedIndicesCongr_symm_apply (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) (w : P₂.foldedIndices σ₂) :
+    (((φ.foldedIndicesCongr hφ).symm w : P.foldedIndices σ) : M) =
+      φ.weightEquiv.symm (w : M₂) := (rfl)
 
 /-- An intertwining equivalence preserves and reflects membership in `foldedIndices`. -/
 theorem mem_foldedIndices_weightMap_iff (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}

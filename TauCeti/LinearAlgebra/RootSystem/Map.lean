@@ -46,6 +46,9 @@ variable (P : RootPairing ι R M N) (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g
 @[simp] theorem reflectionPerm_map (i j : ι₂) :
     (P.map e f g).reflectionPerm i j = e (P.reflectionPerm (e.symm i) (e.symm j)) := (rfl)
 
+-- Not `@[simp]`: `RootPairing.coroot'` is an `abbrev` for `toLinearMap.flip ∘ coroot`, so
+-- `simp` already unfolds and proves this via `LinearMap.flip_apply`, `coroot_map`, and
+-- `toLinearMap_map` (`simpNF`).
 /-- Coroot functionals of `P.map e f g` pull back along `e.symm` and `f.symm`. -/
 theorem coroot'_map (i : ι₂) (x : M₂) :
     (P.map e f g).coroot' i x = P.coroot' (e.symm i) (f.symm x) := by simp [coroot']

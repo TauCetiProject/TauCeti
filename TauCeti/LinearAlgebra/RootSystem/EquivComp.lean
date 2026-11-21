@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.RootSystem.Hom
+import TauCeti.LinearAlgebra.RootSystem.Basic
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Composing, inverting and conjugating equivalences of root pairings
@@ -51,10 +53,14 @@ instance, so they are not restated here.
 * `RootPairing.Equiv.indexEquiv_mul_apply`, `RootPairing.Equiv.weightMap_mul_apply`, and
   `RootPairing.reflection_weightMap_apply`: index-permutation and weight-map evaluation on products
   and reflections of automorphisms.
-* `RootPairing.Equiv.indexEquiv_reflection_comm_of_indexEquiv_eq`: reflection in a `σ`-fixed root
-  commutes with `σ` on root indices.
-* `RootPairing.Equiv.autCongr_smul` and `RootPairing.Equiv.autCongr_smul_index`: conjugation
-  transports the actions on weight vectors and on root indices.
+* `RootPairing.Equiv.indexEquiv_reflection_comm_of_indexEquiv_eq`,
+  `RootPairing.Equiv.pairing_indexEquiv_of_apply_apply`,
+  `RootPairing.Equiv.indexEquiv_reflection_mul_comm_of_pairing_eq_zero`, and
+  `RootPairing.Equiv.indexEquiv_reflection_braid_comm_of_pairing_eq_neg_one`: fixed-root and
+  period-two orbit reflection commutators with an automorphism `σ`.
+* `RootPairing.Equiv.autCongr_smul`, `RootPairing.Equiv.autCongr_smul_index`, and
+  `RootPairing.Equiv.autCongr_eq_iff_weightEquiv_comp_weightMap`: conjugation transports the actions
+  on weight vectors and on root indices, and characterizes intertwining along `weightEquiv`.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
   functorial.
 * `RootPairing.Hom.weightMap_comp_of_indexEquiv`,
@@ -144,12 +150,39 @@ theorem indexEquiv_reflection_comm_of_indexEquiv_eq (σ : Aut P) {j : ι}
     (hfix : σ.indexEquiv j = j) (r : ι) :
     (reflection P j).indexEquiv (σ.indexEquiv r) =
       σ.indexEquiv ((reflection P j).indexEquiv r) := by
-  refine P.root.injective ?_
-  rw [reflection_indexEquiv, root_reflectionPerm,
-    ← Hom.root_weightMap_apply _ _ (P.reflectionPerm j r) σ.toHom,
-    root_reflectionPerm, reflection_apply_root, reflection_apply_root,
-    map_sub, map_smul, Hom.root_weightMap_apply, Hom.root_weightMap_apply,
-    ← σ.toHom.pairing (i := r) (j := j), hfix]
+  rw [reflection_indexEquiv, σ.toHom.indexEquiv_reflectionPerm, hfix]
+
+/-- For a local period-two root `j` (`σ² j = j`), the pairings between `j` and `σ j` are equal. -/
+theorem pairing_indexEquiv_of_apply_apply (σ : Aut P) {j : ι}
+    (hinv : σ.indexEquiv (σ.indexEquiv j) = j) :
+    P.pairing j (σ.indexEquiv j) = P.pairing (σ.indexEquiv j) j := by
+  have hp := σ.toHom.pairing (i := j) (j := σ.indexEquiv j)
+  rw [hinv] at hp
+  exact hp.symm
+
+/-- On root indices, the product `s_j * s_{σ j}` commutes with `σ` when `σ² j = j` and
+`P.pairing (σ.indexEquiv j) j = 0`. -/
+theorem indexEquiv_reflection_mul_comm_of_pairing_eq_zero (σ : Aut P) {j : ι}
+    (hinv : σ.indexEquiv (σ.indexEquiv j) = j) (h0 : P.pairing (σ.indexEquiv j) j = 0) (r : ι) :
+    (reflection P j * reflection P (σ.indexEquiv j)).indexEquiv (σ.indexEquiv r) =
+      σ.indexEquiv ((reflection P j * reflection P (σ.indexEquiv j)).indexEquiv r) := by
+  have h0' : P.pairing j (σ.indexEquiv j) = 0 :=
+    (σ.pairing_indexEquiv_of_apply_apply hinv).trans h0
+  simp only [indexEquiv_mul_apply, reflection_indexEquiv, σ.toHom.indexEquiv_reflectionPerm, hinv]
+  exact P.reflectionPerm_comm_of_isOrthogonal ⟨h0', h0⟩ (σ.indexEquiv r)
+
+/-- On root indices, the braid product `s_j * s_{σ j} * s_j` commutes with `σ` when `σ² j = j` and
+`P.pairing (σ.indexEquiv j) j = -1`. -/
+theorem indexEquiv_reflection_braid_comm_of_pairing_eq_neg_one (σ : Aut P) {j : ι}
+    (hinv : σ.indexEquiv (σ.indexEquiv j) = j) (hneg : P.pairing (σ.indexEquiv j) j = -1)
+    (r : ι) :
+    (reflection P j * reflection P (σ.indexEquiv j) * reflection P j).indexEquiv (σ.indexEquiv r) =
+      σ.indexEquiv ((reflection P j * reflection P (σ.indexEquiv j) *
+        reflection P j).indexEquiv r) := by
+  have hneg' : P.pairing j (σ.indexEquiv j) = -1 :=
+    (σ.pairing_indexEquiv_of_apply_apply hinv).trans hneg
+  simp only [indexEquiv_mul_apply, reflection_indexEquiv, σ.toHom.indexEquiv_reflectionPerm, hinv]
+  exact P.reflectionPerm_braid_of_pairing_eq_neg_one hneg' hneg (σ.indexEquiv r)
 
 noncomputable section Conjugation
 
@@ -214,6 +247,23 @@ theorem autCongr_smul_index (e : P.Equiv Q) (g : Aut P) (i : ι) :
     e.autCongr g • e.indexEquiv i = e.indexEquiv (g • i) := by
   rw [RootPairing.Equiv.smul_index_eq_indexEquiv, RootPairing.Equiv.smul_index_eq_indexEquiv,
     RootPairing.Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
+
+/-- Conjugation by `e` maps `σ` to `τ` if and only if `e.weightEquiv` intertwines their
+weight-space maps. -/
+theorem autCongr_eq_iff_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q} :
+    e.autCongr σ = τ ↔
+      e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap := by
+  refine ⟨fun h ↦ LinearMap.ext fun x ↦ ?_, fun h ↦ ?_⟩
+  · have hx := e.autCongr_smul σ x
+    rw [h] at hx
+    exact hx.symm
+  · refine Equiv.weightHom_injective Q (LinearEquiv.ext fun y ↦ ?_)
+    have hy := LinearMap.congr_fun h (e.weightEquiv.symm y)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+      weightEquiv_apply] at hy
+    rw [weightHom_apply, weightHom_apply, weightEquiv_autCongr_apply]
+    simp only [weightEquiv_apply]
+    exact hy
 
 /-- Conjugation by the identity equivalence is the identity. -/
 @[simp]

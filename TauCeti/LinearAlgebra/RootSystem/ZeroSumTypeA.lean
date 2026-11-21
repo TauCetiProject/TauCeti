@@ -61,7 +61,7 @@ def typeAZeroSumVec (a b : Fin (m + 1)) : singleParityCheckCode R (Fin (m + 1)) 
     -typeAZeroSumVec R a b = typeAZeroSumVec R b a := Subtype.ext (by simp)
 
 /-- Ambient dot product of two difference vectors `eₐ - e_b` and `e_c - e_d`. -/
-theorem typeAZeroSumVec_dotProduct (a b c d : Fin (m + 1)) :
+theorem typeAZeroSumVec_dotProduct_typeAZeroSumVec (a b c d : Fin (m + 1)) :
     (typeAZeroSumVec R a b : Fin (m + 1) → R) ⬝ᵥ (typeAZeroSumVec R c d : Fin (m + 1) → R) =
       (if a = c then 1 else 0) - (if a = d then 1 else 0) -
         ((if b = c then 1 else 0) - (if b = d then 1 else 0)) := by
@@ -71,7 +71,8 @@ theorem typeAZeroSumVec_dotProduct (a b c d : Fin (m + 1)) :
 /-- Every classical root `eₐ - e_b` (`a ≠ b`) has squared length `2` for the ambient dot product. -/
 theorem typeAZeroSumVec_dotProduct_self {a b : Fin (m + 1)} (h : a ≠ b) :
     (typeAZeroSumVec R a b : Fin (m + 1) → R) ⬝ᵥ (typeAZeroSumVec R a b : Fin (m + 1) → R) = 2 := by
-  rw [typeAZeroSumVec_dotProduct]; simp only [ite_true, h, h.symm, ite_false]; norm_num
+  rw [typeAZeroSumVec_dotProduct_typeAZeroSumVec]
+  simp only [ite_true, h, h.symm, ite_false]; norm_num
 
 /-- The `i`-th vector of `singleParityCheckCodeBasis R m` is the Bourbaki simple root
 `eᵢ - eᵢ₊₁`. -/
@@ -85,6 +86,17 @@ theorem singleParityCheckCodeBasis_repr_typeAZeroSumVec (a b : Fin (m + 1)) (i :
     (singleParityCheckCodeBasis R m).repr (typeAZeroSumVec R a b) i =
       (if a ≤ i.castSucc then 1 else 0) - (if b ≤ i.castSucc then 1 else 0) := by
   rw [singleParityCheckCodeBasis_repr_apply, coe_typeAZeroSumVec]; simp [Pi.single_apply]
+
+private lemma singleParityCheckCodeBasis_repr_typeAZeroSumVec_of_lt {a b : Fin (m + 1)}
+    (hlt : a < b) (i : Fin m) :
+    (singleParityCheckCodeBasis R m).repr (typeAZeroSumVec R a b) i =
+      ((if a ≤ i.castSucc ∧ i.castSucc < b then 1 else 0 : ℕ) : R) := by
+  rw [singleParityCheckCodeBasis_repr_typeAZeroSumVec]
+  by_cases ha : a ≤ i.castSucc <;> by_cases hb : i.castSucc < b
+  · simp [ha, hb, not_le.mpr hb]
+  · simp [ha, hb, not_lt.mp hb]
+  · simp [ha, hb]
+  · exact absurd (lt_of_lt_of_le hlt (not_lt.mp hb)) (lt_asymm (not_le.mp ha))
 
 /-- The reversal linear involution `(θ x) a = -x (rev a)` on the sum-zero hyperplane. -/
 def typeAZeroSumNegRevEquiv (m : ℕ) :
@@ -135,10 +147,19 @@ private def zeroSumDiffMap (m : ℕ) : singleParityCheckCode K (Fin (m + 1)) →
   map_add' _ _ := funext fun _ ↦ by simp; ring
   map_smul' _ _ := funext fun _ ↦ by simp [mul_sub]
 
+omit [CharZero K] in
+private lemma zeroSumDiffMap_apply (m : ℕ) (u : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
+    zeroSumDiffMap K m u k =
+      (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ := rfl
+
 private lemma zeroSumDiffMap_injective (m : ℕ) : Injective (zeroSumDiffMap K m) := by
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]; intro u hu
+  have hker : zeroSumDiffMap K m u = 0 := LinearMap.mem_ker.mp hu
   have hc (a : Fin (m + 1)) : (u : Fin (m + 1) → K) a = (u : Fin (m + 1) → K) 0 :=
-    Fin.induction rfl (fun k ih ↦ (sub_eq_zero.mp (congrFun hu k)).symm.trans ih) a
+    Fin.induction rfl (fun k ih ↦ by
+      have hk := congrFun hker k
+      rw [zeroSumDiffMap_apply, Pi.zero_apply, sub_eq_zero] at hk
+      exact hk.symm.trans ih) a
   have hsum := (mem_singleParityCheckCode K (Fin (m + 1))).mp u.property
   simp_rw [hc, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
   have hu0 := (mul_eq_zero.mp hsum).resolve_left (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m))
@@ -154,7 +175,8 @@ private noncomputable def zeroSumWeightEquiv (m : ℕ) :
 private lemma zeroSumWeightEquiv_apply (m : ℕ)
     (u : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
     zeroSumWeightEquiv K m u k =
-      (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ := rfl
+      (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ :=
+  zeroSumDiffMap_apply K m u k
 
 omit [CharZero K] in
 private noncomputable def zeroSumCoweightEquiv (m : ℕ) :
@@ -249,6 +271,9 @@ noncomputable def typeAZeroSumBase (m : ℕ) : (typeAZeroSumRootPairing K m).Bas
     (typeAZeroSumRootPairing K m).coroot p = typeAZeroSumVec K p.val.1 p.val.2 := by
   rw [typeAZeroSumRootPairing, RootPairing.coroot_map, Equiv.symm_symm, zeroSumCoweightEquiv_coroot]
 
+-- Not `@[simp]`: `RootPairing.coroot'` is an `abbrev`, so `simp` already proves this via
+-- `LinearMap.flip_apply`, `coroot_typeAZeroSumRootPairing`, and
+-- `toLinearMap_typeAZeroSumRootPairing` (`simpNF`).
 /-- Evaluating the coroot functional at `p = (a, b)` on `u` computes `uₐ - u_b`. -/
 theorem coroot'_typeAZeroSumRootPairing (m : ℕ) (p : TypeAIndex m)
     (u : singleParityCheckCode K (Fin (m + 1))) :
@@ -374,16 +399,13 @@ theorem isPos_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
   have hfwd (q : TypeAIndex m) (hlt : q.val.1 < q.val.2) : (typeAZeroSumBase K m).IsPos q := by
     rw [← mem_posRoots, mem_posRoots_iff_root_mem_posRootCone,
       mem_posRootCone_iff_exists_nat_of_bijOn _ _ hbij]
-    refine ⟨fun i ↦ if q.val.1 ≤ i.castSucc ∧ i.castSucc < q.val.2 then 1 else 0,
-      (singleParityCheckCodeBasis K m).repr.injective (Finsupp.ext fun k ↦ ?_)⟩
-    simp only [root_typeAZeroSumRootPairing, singleParityCheckCodeBasis_repr_typeAZeroSumVec,
-      map_sum, map_nsmul, typeAZeroSumSimplePair_val,
-      ← singleParityCheckCodeBasis_eq_typeAZeroSumVec, Finset.sum_apply', Finsupp.smul_apply,
-      Module.Basis.repr_self_apply, nsmul_eq_mul, mul_ite, mul_one, mul_zero, sum_ite_eq',
-      mem_univ, ite_true, Nat.cast_ite, Nat.cast_one, Nat.cast_zero, Fin.le_def, Fin.lt_def,
-      Fin.val_castSucc]
-    have : (q.val.1 : ℕ) < (q.val.2 : ℕ) := hlt
-    split_ifs <;> first | (norm_num; done) | (exfalso; omega)
+    refine ⟨fun i ↦ if q.val.1 ≤ i.castSucc ∧ i.castSucc < q.val.2 then 1 else 0, ?_⟩
+    rw [root_typeAZeroSumRootPairing,
+      ← (singleParityCheckCodeBasis K m).sum_repr (typeAZeroSumVec K q.val.1 q.val.2)]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [singleParityCheckCodeBasis_repr_typeAZeroSumVec_of_lt K hlt i, Nat.cast_smul_eq_nsmul,
+      root_typeAZeroSumRootPairing, typeAZeroSumSimplePair_val,
+      singleParityCheckCodeBasis_eq_typeAZeroSumVec]
   refine ⟨fun hpos ↦ (lt_or_gt_of_ne p.property).resolve_right fun hgt ↦ ?_, hfwd p⟩
   have hq : _ ∈ posRoots _ _ :=
     (mem_posRoots _ _ _).mpr (hfwd ⟨(p.val.2, p.val.1), p.property.symm⟩ hgt)

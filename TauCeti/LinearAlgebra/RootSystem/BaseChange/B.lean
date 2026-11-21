@@ -98,6 +98,9 @@ theorem piAlgebraMap_mem_range_root_typeBBaseChangeRootSystem_iff (n : ℕ) (x :
     m ∈ (typeBBaseChangeBase K n).support ↔ (m : ℕ) < n := by
   rw [typeBBaseChangeBase, support_rootPairingBaseChangeBase, mem_typeBSimplyConnectedBase_support]
 
+-- Not `@[simp]`: `RootPairing.coroot'` is an `abbrev`, so `simp` unfolds the LHS via
+-- `LinearMap.flip_apply`, `coroot_typeBBaseChangeRootSystem`, and
+-- `coroot_typeBSimpleIndex` (`simpNF`).
 /-- Evaluating the `k`-th simple coroot of `typeBBaseChangeRootSystem K n` on `y` gives `y k`. -/
 theorem coroot'_typeBBaseChangeRootSystem_simpleIndex (n : ℕ) (k : Fin n) (y : Fin n → K) :
     (typeBBaseChangeRootSystem K n).coroot' (typeBSimpleIndex n k) y = y k := by
