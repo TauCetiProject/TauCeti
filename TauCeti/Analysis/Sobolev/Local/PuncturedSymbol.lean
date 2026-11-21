@@ -1,0 +1,53 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass
+public import TauCeti.Analysis.Sobolev.Local.Basic
+import TauCeti.Analysis.Sobolev.Local.Lipschitz
+
+/-!
+# Punctured symbols of order at least two are locally `W^{2,∞}`
+
+A punctured symbol of order `ℓ` on the plane (`TauCeti.IsPuncturedSymbol`) is smooth on a
+punctured disc about `0`, with `j`-th derivative `O(|z| ^ (ℓ - j))`. Nothing is asked at `0`, so a
+priori its classical derivatives only live on the punctured disc. When `ℓ ≥ 2` and the symbol
+vanishes at `0`, it is `C¹` on a disc about `0` with Lipschitz derivative
+(`TauCeti.IsPuncturedSymbol.exists_contDiffOn_holderOnWith_fderiv`), and this file deduces that it
+lies in the local Sobolev class `W^{2,∞}` on that disc
+(`TauCeti.IsPuncturedSymbol.exists_memWkpLoc_two`). Its first weak derivative is its classical
+derivative, which exists at `0` as well, and its second weak derivative is the classical second
+derivative on the punctured disc: the Lipschitz first derivative is weakly differentiable across
+the origin, with weak derivative its almost-everywhere derivative, bounded by the Lipschitz
+constant. So the derivative bounds of a symbol of order `ℓ ≥ 2` survive at the puncture in the
+Sobolev sense, as needed to use such a symbol as a coefficient in elliptic estimates.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix E (the Micallef–White theorem, whose proof uses
+  symbols of order at least two on the punctured disc as `C^{1,α}` elliptic coefficients).
+-/
+
+public section
+
+namespace TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {ℓ : ℝ}
+  {f : ℂ → F}
+
+/-- **A punctured symbol of order at least two is locally `W^{2,∞}`.** A punctured symbol on the
+plane of order `ℓ ≥ 2`, with values in a finite-dimensional space and vanishing at `0`, lies in
+the local Sobolev class `W^{2,∞}` on a disc about `0`. -/
+theorem IsPuncturedSymbol.exists_memWkpLoc_two (hf : IsPuncturedSymbol ℓ f) (hℓ : 2 ≤ ℓ)
+    (h0 : f 0 = 0) : ∃ r > 0, MemWkpLoc ⊤ (Metric.ball (0 : ℂ) r) 2 f := by
+  obtain ⟨r, hr, hC1, C, hC⟩ := hf.exists_contDiffOn_holderOnWith_fderiv (α := 1) one_pos
+    (by push_cast; linarith) le_rfl h0
+  exact ⟨r, hr, (hC1.differentiableOn one_ne_zero).memWkpLoc_two_of_locallyLipschitzOn_fderiv
+    (Ω := ⟨_, Metric.isOpen_ball⟩)
+    fun _ _ ↦ ⟨C, _, self_mem_nhdsWithin, holderOnWith_one.1 hC⟩⟩
+
+end TauCeti
