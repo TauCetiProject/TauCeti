@@ -119,6 +119,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
   `TauCeti.Manifold.derivWithin_extChartAt_comp_curve` its form for the named velocity.
+* `TauCeti.Manifold.curveVelocity_chartInverse_eq`: a model-space curve through the chart centre
+  retains its velocity when carried back through the inverse chart.
 * `TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve`: for a `C²` curve, the
   second within-derivative of its reading in the chart at `γ t` is a genuine derivative of the
   first one.
@@ -884,6 +886,26 @@ theorem hasDerivAt_extChartAt_comp_curve
     (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)) :
     HasDerivAt (extChartAt I (γ t) ∘ γ) w t :=
   hasDerivWithinAt_univ.mp (hasDerivWithinAt_extChartAt_comp_curve hγ.hasMFDerivWithinAt)
+
+/-- A model-space curve through the centre of an extended chart has the same velocity after
+composition with the inverse chart, provided the chart target is a neighbourhood of the centre. -/
+theorem curveVelocity_chartInverse_eq
+    (x : M) {γ : 𝕜 → E} {v : E}
+    (htarget : (extChartAt I x).target ∈ nhds (extChartAt I x x))
+    (hγt : γ t = extChartAt I x x) (hγ : HasDerivAt γ v t) :
+    curveVelocity I ((extChartAt I x).symm ∘ γ) t = v := by
+  have hc : MDifferentiableAt 𝓘(𝕜, E) I (extChartAt I x).symm (γ t) := by
+    rw [hγt]
+    exact ((contMDiffWithinAt_extChartAt_symm_target_self x).contMDiffAt htarget).mdifferentiableAt
+      one_ne_zero
+  have hdiff := hc.comp t hγ.differentiableAt.mdifferentiableAt
+  have hbase : ((extChartAt I x).symm ∘ γ) t = x := by simp [Function.comp_def, hγt]
+  have heq : (extChartAt I x) ∘ ((extChartAt I x).symm ∘ γ) =ᶠ[nhds t] γ := by
+    filter_upwards [hγ.continuousAt.preimage_mem_nhds (hγt.symm ▸ htarget)] with s hs
+    exact (extChartAt I x).right_inv hs
+  have hvel := hasDerivAt_extChartAt_comp_curve (hasMFDerivAt_curveVelocity hdiff)
+  rw [hbase] at hvel
+  exact hvel.unique (hγ.congr_of_eventuallyEq heq)
 
 /-- The derivative within `s` of a differentiable curve read in the chart centred at the current
 point is its velocity within `s`. -/

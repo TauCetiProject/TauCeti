@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Vertex.FormalDistribution
 public import Mathlib.Algebra.Lie.OfAssociative
-public import Mathlib.RingTheory.Binomial
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.AtTopBot.Group
 
@@ -31,8 +30,8 @@ and are not constructed here.
 
 * `VertexOperator.nonnegResidueProduct`, `ncoeff_nonnegResidueProduct`: the bilinear nonnegative
   residue product and its normalized modes.
-* `VertexOperator.IsLocalOfOrder.nonnegResidueProduct_eq_zero`, `nonnegResidueProduct_id_left`,
-  `nonnegResidueProduct_id_right`: vanishing above a locality bound and with `VertexOperator.id`.
+* `VertexOperator.IsLocalOfOrder.nonnegResidueProduct_eq_zero`, `nonnegResidueProduct_idField_left`,
+  `nonnegResidueProduct_idField_right`: vanishing above a locality bound and with `idField`.
 * `VertexOperator.IsLocalOfOrder.lie_ncoeff`: commutator formula for mutually local fields.
 
 ## References
@@ -149,14 +148,16 @@ theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {
   simpa using isLocalOfOrder_iff.mp (h.mono hn) 0 m
 
 /-- Every nonnegative residue product with the identity field on the left vanishes. -/
-@[simp] theorem nonnegResidueProduct_id_left (n : ℕ) (B : VertexOperator R V) :
-    nonnegResidueProduct n (VertexOperator.id R V) B = 0 :=
-  (IsLocalOfOrder.id_left B).nonnegResidueProduct_eq_zero (Nat.zero_le n)
+@[simp]
+theorem nonnegResidueProduct_idField_left (n : ℕ) (B : VertexOperator R V) :
+    nonnegResidueProduct n (idField : VertexOperator R V) B = 0 :=
+  (isLocalOfOrder_idField B).nonnegResidueProduct_eq_zero (Nat.zero_le n)
 
 /-- Every nonnegative residue product with the identity field on the right vanishes. -/
-@[simp] theorem nonnegResidueProduct_id_right (n : ℕ) (A : VertexOperator R V) :
-    nonnegResidueProduct n A (VertexOperator.id R V) = 0 :=
-  (IsLocalOfOrder.id_right A).nonnegResidueProduct_eq_zero (Nat.zero_le n)
+@[simp]
+theorem nonnegResidueProduct_idField_right (n : ℕ) (A : VertexOperator R V) :
+    nonnegResidueProduct n A (idField : VertexOperator R V) = 0 :=
+  (isLocalOfOrder_idField A).symm.nonnegResidueProduct_eq_zero (Nat.zero_le n)
 
 /-- **Commutator formula for mutually local vertex operators.** If `A` and `B` are local of order
 `N`, then `[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A_{(j)} B)₍ₘ₊ₙ₋ⱼ₎` over any commutative ring. -/

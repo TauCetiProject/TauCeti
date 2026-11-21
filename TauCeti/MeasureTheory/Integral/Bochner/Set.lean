@@ -61,6 +61,9 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
+  integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
+  measure finite on compact sets.
 -/
 
 public section
@@ -351,3 +354,20 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
 
 end MeasureTheory
+
+/-- Continuity of `f` on the closed box `Set.Icc a b` gives integrability on every slice `x i = c`
+for `c ∈ Set.Icc (a i) (b i)`, against any measure finite on compact sets. -/
+theorem ContinuousOn.integrableOn_insertNth_Icc {n : ℕ} {α : Fin (n + 1) → Type*}
+    [∀ j, Preorder (α j)] [∀ j, TopologicalSpace (α j)]
+    {E : Type*} [NormedAddCommGroup E]
+    {a b : ∀ j, α j} {f : (∀ j, α j) → E}
+    (hf : ContinuousOn f (Icc a b)) (i : Fin (n + 1))
+    [MeasurableSpace (∀ j, α (i.succAbove j))]
+    [OpensMeasurableSpace (∀ j, α (i.succAbove j))]
+    [CompactIccSpace (∀ j, α (i.succAbove j))] [T2Space (∀ j, α (i.succAbove j))]
+    {μ : Measure (∀ j, α (i.succAbove j))} [IsFiniteMeasureOnCompacts μ]
+    {c : α i} (hc : c ∈ Icc (a i) (b i)) :
+    IntegrableOn (fun x ↦ f (i.insertNth c x))
+      (Icc (fun j ↦ a (i.succAbove j)) (fun j ↦ b (i.succAbove j))) μ :=
+  (hf.comp (continuousOn_const.finInsertNth i continuousOn_id) fun _ hx ↦
+    Fin.insertNth_mem_Icc.mpr ⟨hc, hx⟩).integrableOn_Icc

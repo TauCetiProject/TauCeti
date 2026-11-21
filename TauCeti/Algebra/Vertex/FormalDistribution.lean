@@ -25,9 +25,7 @@ Every distribution killed by `(z-w)^N` has a unique expansion in these terms for
 The coefficient of the `j`th term is exactly `Res_z (z-w)^j c`. Applied to the commutator of
 native vertex operators, this gives the formal delta expansion of mutual locality.
 If a distribution killed by `(z-w)^N` also vanishes uniformly for large second index, it must be
-identically zero (`FormalDistribution.eq_zero_of_mulSub_pow_eq_zero`), which implies that the
-common kernel of all modes of a field is invariant under every mutually local field
-(`VertexOperator.IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero`).
+identically zero (`FormalDistribution.eq_zero_of_mulSub_pow_eq_zero`).
 No multiplication of arbitrary distributions or convergence of infinite sums is asserted.
 
 ## References
@@ -349,19 +347,5 @@ theorem IsLocalOfOrder.commutatorDistribution_eq_sum_deltaTerm {A B : VertexOper
       FormalDistribution.deltaTerm j (FormalDistribution.residue
         ((FormalDistribution.mulSub ^ j) (A.commutatorDistribution B))) :=
   FormalDistribution.eq_sum_deltaTerm ((isLocalOfOrder_iff_mulSub_pow_eq_zero A B N).mp h)
-
-/-- If `B` is mutually local with `C` and all modes of `B` annihilate `v`, then all modes of `B`
-also annihilate `(C[[n]]) v` for every `n : ℤ`. -/
-theorem IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero {B C : VertexOperator R V} {N : ℕ}
-    (h : B.IsLocalOfOrder C N) {v : V} (hv : ∀ m : ℤ, (B[[m]]) v = 0) (m n : ℤ) :
-    (B[[m]]) ((C[[n]]) v) = 0 := by
-  have hc : (FormalDistribution.mulSub ^ N) (fun p q ↦ (B[[p]]) ((C[[q]]) v)) = 0 := by
-    funext p q; rw [FormalDistribution.mulSub_pow_apply]
-    simpa only [LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp,
-      LinearMap.zero_apply, Pi.zero_apply, hv, map_zero, sub_zero] using
-      LinearMap.congr_fun (isLocalOfOrder_iff.mp h p q) v
-  obtain ⟨K, hK⟩ := C.exists_forall_ncoeff_apply_eq_zero v
-  exact congrFun (congrFun (FormalDistribution.eq_zero_of_mulSub_pow_eq_zero hc
-    ⟨K, fun _ q hq ↦ by simp [hK q hq]⟩) m) n
 
 end VertexOperator

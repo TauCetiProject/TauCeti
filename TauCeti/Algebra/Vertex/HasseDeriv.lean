@@ -194,8 +194,15 @@ end IsLocalOfOrder
 
 /-- Every positive Hasse derivative of the identity field is zero. -/
 @[simp]
-theorem hasseDeriv_succ_id (k : ℕ) : hasseDeriv (k + 1) (VertexOperator.id R V) = 0 :=
-  LinearMap.ext fun v ↦ by simp [hasseDeriv, LaurentSeries.hasseDeriv_single, Ring.choose_zero_succ]
+theorem hasseDeriv_succ_idField (k : ℕ) :
+    hasseDeriv (k + 1) (idField : VertexOperator R V) = 0 := by
+  refine ext_ncoeff fun n ↦ ?_
+  rw [ncoeff_hasseDeriv, ncoeff_idField]
+  split_ifs with h
+  · have hn : n = k := by omega
+    subst hn
+    simp [Ring.choose_natCast]
+  · simp
 
 /-- Formal differentiation commutes with every Hasse derivative. -/
 theorem derivative_hasseDeriv_comm (k : ℕ) (A : VertexOperator R V) :

@@ -19,7 +19,7 @@ nonnegative modes on the right. For fields `A` and `B`, its normalized coefficie
 
 Both sums are finite on each vector, though generally not finite as sums of endomorphisms.
 We prove that these coefficients again define a field, without assuming mutual locality, that
-`VertexOperator.id` is a two-sided unit (`normalOrder_id_left`, `normalOrder_id_right`), and that
+`idField` is a two-sided unit (`normalOrder_idField_left`, `normalOrder_idField_right`), and that
 formal differentiation is a derivation of normal ordering (`VertexOperator.derivative_normalOrder`).
 This is the binary operation needed to form quadratic current fields.
 
@@ -273,31 +273,48 @@ theorem normalOrder_sum_right {ι : Type*} (A : VertexOperator R V) (s : Finset 
   map_sum (normalOrderₗ A) B s
 
 /-- The identity field is a left unit for normal ordering. -/
-@[simp] theorem normalOrder_id_left (B : VertexOperator R V) :
-    normalOrder (VertexOperator.id R V) B = B := by
+@[simp]
+theorem normalOrder_idField_left (B : VertexOperator R V) :
+    normalOrder (idField : VertexOperator R V) B = B := by
   refine ext_ncoeff fun n ↦ LinearMap.ext fun v ↦ ?_
   rw [ncoeff_normalOrder, normalOrderCoeff_apply, add_comm,
-    finsum_eq_zero_of_forall_eq_zero fun i ↦ by rw [ncoeff_id_of_ne (by omega)]; simp,
+    finsum_eq_zero_of_forall_eq_zero fun i ↦ by
+      rw [ncoeff_idField]
+      simp [show (i : ℤ) ≠ -1 by omega],
     zero_add, finsum_eq_single _ 0]
-  · simp
-  · intro i hi; rw [ncoeff_id_of_ne (by omega), LinearMap.zero_apply]
+  · simp [ncoeff_idField]
+  · intro i hi
+    rw [ncoeff_idField]
+    simp [show -(i : ℤ) - 1 ≠ -1 by omega]
 
 /-- The identity field is a right unit for normal ordering. -/
-@[simp] theorem normalOrder_id_right (A : VertexOperator R V) :
-    normalOrder A (VertexOperator.id R V) = A := by
+@[simp]
+theorem normalOrder_idField_right (A : VertexOperator R V) :
+    normalOrder A (idField : VertexOperator R V) = A := by
   refine ext_ncoeff fun n ↦ LinearMap.ext fun v ↦ ?_
   rw [ncoeff_normalOrder, normalOrderCoeff_apply]
   rcases le_or_gt 0 n with hn | hn
-  · rw [finsum_eq_zero_of_forall_eq_zero fun i ↦ by rw [ncoeff_id_of_ne (by omega)]; simp,
+  · rw [finsum_eq_zero_of_forall_eq_zero fun i ↦ by
+        rw [ncoeff_idField]
+        simp [show n + i ≠ -1 by omega],
       zero_add, finsum_eq_single _ n.toNat]
     · rw [show n - (n.toNat : ℤ) - 1 = -1 by omega, show (n.toNat : ℤ) = n by omega,
-        ncoeff_neg_one_id, one_apply_eq_self]
-    · intro i hi; rw [ncoeff_id_of_ne (by omega), LinearMap.zero_apply]
-  · rw [add_comm, finsum_eq_zero_of_forall_eq_zero fun i ↦ by rw [ncoeff_id_of_ne (by omega)]; simp,
+        ncoeff_idField]
+      simp
+    · intro i hi
+      rw [ncoeff_idField]
+      simp [show n - i - 1 ≠ -1 by omega]
+  · rw [add_comm,
+      finsum_eq_zero_of_forall_eq_zero fun i ↦ by
+        rw [ncoeff_idField]
+        simp [show n - i - 1 ≠ -1 by omega],
       zero_add, finsum_eq_single _ (-n - 1).toNat]
     · rw [show n + ((-n - 1).toNat : ℤ) = -1 by omega,
-        show -((-n - 1).toNat : ℤ) - 1 = n by omega, ncoeff_neg_one_id, one_apply_eq_self]
-    · intro i hi; rw [ncoeff_id_of_ne (by omega), LinearMap.zero_apply, map_zero]
+        show -((-n - 1).toNat : ℤ) - 1 = n by omega, ncoeff_idField]
+      simp
+    · intro i hi
+      rw [ncoeff_idField]
+      simp [show n + i ≠ -1 by omega]
 
 /-- Formal differentiation is a derivation of normal ordering:
 `∂(:AB:) = :(∂A)B: + :A(∂B):`. -/

@@ -420,21 +420,22 @@ theorem ncoeff_neg_one_nthProduct_apply {A B : VertexOperator R V} {vac : V}
 
 /-- Left `n`-th products with the identity field vanish except at `n = -1`, where they act as the
 identity. -/
-theorem nthProduct_id_left (n : ℤ) (B : VertexOperator R V) :
-    nthProduct n (VertexOperator.id R V) B = if n = -1 then B else 0 := by
+theorem nthProduct_idField_left (n : ℤ) (B : VertexOperator R V) :
+    nthProduct n (idField : VertexOperator R V) B = if n = -1 then B else 0 := by
   rcases le_or_gt 0 n with hn | hn
   · simp [nthProduct_of_nonneg hn, show n ≠ -1 by omega]
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
     cases k with
     | zero => simp
     | succ k =>
-      rw [nthProduct_neg_natCast_sub_one, hasseDeriv_succ_id, normalOrder_zero_left]
+      rw [nthProduct_neg_natCast_sub_one, hasseDeriv_succ_idField, normalOrder_zero_left]
       split_ifs <;> [omega; rfl]
 
 /-- Right `n`-th products with the identity field vanish for `n ≥ 0` and yield the `(-n - 1)`-st
 Hasse derivative for `n < 0`. -/
-theorem nthProduct_id_right (n : ℤ) (A : VertexOperator R V) :
-    nthProduct n A (VertexOperator.id R V) = if 0 ≤ n then 0 else hasseDeriv (-n - 1).toNat A := by
+theorem nthProduct_idField_right (n : ℤ) (A : VertexOperator R V) :
+    nthProduct n A (idField : VertexOperator R V) =
+      if 0 ≤ n then 0 else hasseDeriv (-n - 1).toNat A := by
   rcases le_or_gt 0 n with hn | hn
   · simp [nthProduct_of_nonneg hn, hn]
   · simp [nthProduct_of_neg hn, not_le.mpr hn]
