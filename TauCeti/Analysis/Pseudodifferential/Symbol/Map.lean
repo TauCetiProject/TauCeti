@@ -97,9 +97,9 @@ theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a
     exact Φ.coordinateDeriv_comp_left [j]
       ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
 
-/-- A symbol commutes with `T` at every point exactly when its images under right and left
+/-- If every value of a symbol commutes with an operator `T`, its images under right and left
 composition with `T` agree. -/
-private theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
+theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
     (h : ∀ p, Commute (a.coefficient p) T) :
     a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ) =
       a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ) :=
