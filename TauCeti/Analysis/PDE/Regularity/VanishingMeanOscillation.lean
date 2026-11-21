@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.SpecificLimits.Absorption
+import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -125,37 +126,38 @@ private theorem exists_extendByZero_cutoff (hUΩ : U ≤ Ω)
   · rw [indicator_of_mem hxU, indicator_of_mem hxU, h1 hxU, h2 hxU]
   · rw [indicator_of_notMem hxU, indicator_of_notMem hxU]
 
-/-- The test function `ζ φ` on `Ω`, for a cutoff `ζ` supported in `U ⊆ Ω` and a test function `φ`
-on the whole space, with its gradient. -/
-private theorem exists_testFunction_mul (hUΩ : U ≤ Ω) {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hζ : ContDiff ℝ ∞ ζ) (hζc : HasCompactSupport ζ) (hts : tsupport ζ ⊆ U)
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ)) :
-    ∃ ψ : 𝓓(Ω, ℝ), (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = (fun x => ζ x * φ x) ∧
-      ∀ x, ∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x = ζ x • ∇ φ x + φ x • ∇ ζ x := by
-  refine ⟨⟨fun x => ζ x * φ x, hζ.mul φ.contDiff, hζc.mul_right,
-    (tsupport_mul_subset_left).trans (hts.trans hUΩ)⟩, rfl, fun x => ?_⟩
-  apply (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).injective
-  simp only [toDual_gradient, map_add, map_smul]
-  exact fderiv_fun_mul (hζ.differentiable (by simp) x) (φ.contDiff.differentiable (by simp) x)
-
-/-- The gradient `ζ ∇φ + φ ∇ζ` of a product is bounded by `2 N P` when `|ζ|, ‖∇ζ‖ ≤ N` and
-`|φ|, ‖∇φ‖ ≤ P`. -/
-private theorem norm_smul_gradient_add_smul_gradient_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [CompleteSpace E] {ζ φ : E → ℝ} {N P : ℝ} (hζN : ∀ x, |ζ x| ≤ N)
-    (hgradN : ∀ x, ‖∇ ζ x‖ ≤ N) (hφP : ∀ x, |φ x| ≤ P) (hgradP : ∀ x, ‖∇ φ x‖ ≤ P) (x : E) :
-    ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ 2 * N * P := by
-  have hN : 0 ≤ N := (abs_nonneg _).trans (hζN x)
-  calc ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ |ζ x| * ‖∇ φ x‖ + |φ x| * ‖∇ ζ x‖ := by
-        refine (norm_add_le _ _).trans_eq ?_
-        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-    _ ≤ N * P + P * N := by
-        gcongr
-        exacts [hζN x, hgradP x, (abs_nonneg _).trans (hφP x), hφP x, hgradN x]
-    _ = 2 * N * P := by ring
+/-- Pairings with a bounded continuous field `V` that are integrable on `U`: `⟪G, V⟫` and
+`⟪V, a ∇u⟫`. -/
+private theorem integrable_inner_and_matrixBilinearForm (ha : AEStronglyMeasurable a volume)
+    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
+    {u : W1p volume Ω 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hG : MemLp G 2 (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    {V : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} (hV : Continuous V)
+    {M : ℝ} (hVM : ∀ x, ‖V x‖ ≤ M) :
+    Integrable (fun x => ⟪G x, V x⟫_ℝ) (volume.restrict U) ∧
+    Integrable (fun x => matrixBilinearForm (a x) (V x) (W1p.gradient u x))
+      (volume.restrict U) := by
+  have hle : volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤
+      volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
+    Measure.restrict_mono hUΩ le_rfl
+  have hgu : MemLp (W1p.gradient u : _ → EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict U) :=
+    (Lp.memLp (W1p.gradient u)).mono_measure hle
+  have hBm : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) (volume.restrict U) :=
+    (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).restrict
+  refine ⟨((hG.integrable one_le_two).norm.mul_const M).mono'
+      (hG.aestronglyMeasurable.inner hV.aestronglyMeasurable)
+      (ae_of_all _ fun x => (norm_inner_le_norm _ _).trans (by gcongr; exact hVM x)),
+    ((hgu.integrable one_le_two).norm.const_mul (Lam * M)).mono'
+      (aestronglyMeasurable_matrixBilinearForm_apply hBm hV.aestronglyMeasurable
+        ((Lp.aestronglyMeasurable _).mono_measure hle))
+      (ae_of_all _ fun x => ((matrixBilinearForm (a x)).le_opNorm₂ _ _).trans
+        (by gcongr; exacts [hbd x, hVM x]))⟩
 
 /-- The four terms of the weak equation of a cutoff are integrable on `U`. -/
 private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -175,7 +177,6 @@ private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
   obtain ⟨N, -, hζN, hgradN⟩ := (hζ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hζc
   obtain ⟨P, hP, hφP, hgradP⟩ :=
     (φ.contDiff.of_le (by simp)).exists_abs_le_and_norm_gradient_le φ.hasCompactSupport
-  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hBle (x : EuclideanSpace ℝ (Fin (n + 1))) (v w : EuclideanSpace ℝ (Fin (n + 1))) :
       ‖matrixBilinearForm (a x) v w‖ ≤ Lam * ‖v‖ * ‖w‖ :=
     ((matrixBilinearForm (a x)).le_opNorm₂ v w).trans (by gcongr; exact hbd x)
@@ -186,14 +187,9 @@ private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
   have hvu : MemLp (fun x => W1p.value u x - c) 2 (volume.restrict U) :=
     ((Lp.memLp (W1p.value u)).mono_measure hle).sub (memLp_const c)
   have hgζ := ContDiff.continuous_gradient hζ (by simp)
-  have hψN := norm_smul_gradient_add_smul_gradient_le hζN hgradN hφP hgradP
-  have hT1 : Integrable (fun x => matrixBilinearForm (a x) (ζ x • ∇ φ x + φ x • ∇ ζ x)
-      (W1p.gradient u x)) (volume.restrict U) := by
-    refine ((hgu.integrable one_le_two).norm.const_mul (Lam * (2 * N * P))).mono'
-      (aestronglyMeasurable_matrixBilinearForm_apply hBm
-        (Continuous.aestronglyMeasurable (by fun_prop))
-        ((Lp.aestronglyMeasurable _).mono_measure hle)) (ae_of_all _ fun x => ?_)
-    exact (hBle x _ _).trans (by gcongr; exact hψN x)
+  obtain ⟨hT4, hT1⟩ := integrable_inner_and_matrixBilinearForm ha hLam hbd hUΩ hG (u := u)
+    (V := fun x => ζ x • ∇ φ x + φ x • ∇ ζ x) (by fun_prop)
+    (norm_smul_gradient_add_smul_gradient_le hζN hgradN hφP hgradP)
   have hT2 : Integrable (fun x => φ x * matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x))
       (volume.restrict U) := by
     refine ((hgu.integrable one_le_two).norm.const_mul (P * (Lam * N))).mono'
@@ -213,44 +209,43 @@ private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
     rw [norm_mul]
     exact mul_le_mul_of_nonneg_left ((hBle x _ _).trans (by gcongr <;> simp_all))
       (norm_nonneg _)
-  have hT4 : Integrable (fun x => ⟪G x, ζ x • ∇ φ x + φ x • ∇ ζ x⟫_ℝ) (volume.restrict U) := by
-    refine ((hG.integrable one_le_two).norm.mul_const (2 * N * P)).mono'
-      (hG.aestronglyMeasurable.inner (Continuous.aestronglyMeasurable (by fun_prop)))
-      (ae_of_all _ fun x => ?_)
-    exact (norm_inner_le_norm _ _).trans (by gcongr; exact hψN x)
   exact ⟨hT1, hT2, hT3, hT4⟩
+
+/-- The weak equation of `u` tested against a test function `ψ` supported in `U`, as integrals
+over `U`. -/
+private theorem setIntegral_test_eq (hUΩ : U ≤ Ω) {u : W1p volume Ω 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hu : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
+      ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (ψ : 𝓓(Ω, ℝ)) (hψ : tsupport (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) ⊆ U) :
+    ∫ x in U, matrixBilinearForm (a x) (∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
+      (W1p.gradient u x) = ∫ x in U, ⟪G x, ∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
+  have hUΩ' : (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Ω := hUΩ
+  have h0 : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) \ U,
+      ∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x = 0 := fun x hx =>
+    gradient_of_notMem_tsupport fun h => hx.2 (hψ h)
+  have h := hu ψ
+  rw [energyFormH1_zero_zero_eq_setIntegral] at h
+  rw [← setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet hUΩ'
+      (fun x hx => by simp [h0 x hx]),
+    ← setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet hUΩ'
+      (fun x hx => by simp [h0 x hx]), ← h]
+  refine integral_congr_ae ?_
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 ψ] with x hx
+  rw [W1p.gradient_ofTestFunctionₗ, hx]
 
 /-- The weak equation of `u` tested against `ζ φ`, whose gradient vanishes off `U`. -/
 private theorem setIntegral_cutoff_test_eq (hUΩ : U ≤ Ω) {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     (hu : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
-    {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζ : ContDiff ℝ ∞ ζ) (hζc : HasCompactSupport ζ)
+    {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζ : ContDiff ℝ ∞ ζ)
     (hts : tsupport ζ ⊆ U) (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ)) :
     ∫ x in U, matrixBilinearForm (a x) (ζ x • ∇ φ x + φ x • ∇ ζ x)
       (W1p.gradient u x) = ∫ x in U, ⟪G x, ζ x • ∇ φ x + φ x • ∇ ζ x⟫_ℝ := by
-  set V := (U : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hUΩ' : V ⊆ Ω := hUΩ
-  obtain ⟨ψ, -, hgradψ⟩ := exists_testFunction_mul hUΩ hζ hζc hts φ
-  have hψ0 : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) \ V,
-      ζ x • ∇ φ x + φ x • ∇ ζ x = 0 := fun x hx => by
-    have hxζ : x ∉ tsupport ζ := fun h => hx.2 (hts h)
-    rw [image_eq_zero_of_notMem_tsupport hxζ, gradient_of_notMem_tsupport hxζ, zero_smul,
-      smul_zero, add_zero]
-  have h := hu ψ
-  rw [energyFormH1_zero_zero_eq_setIntegral] at h
-  rw [← setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet hUΩ'
-      (fun x hx => by simp [hψ0 x hx]),
-    ← setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet hUΩ'
-      (fun x hx => by rw [hψ0 x hx, inner_zero_right])]
-  calc ∫ x in Ω, matrixBilinearForm (a x) (ζ x • ∇ φ x + φ x • ∇ ζ x) (W1p.gradient u x)
-      = ∫ x in Ω, matrixBilinearForm (a x)
-          (W1p.gradient (W1p.ofTestFunctionₗ volume Ω 2 ψ) x) (W1p.gradient u x) := by
-        refine integral_congr_ae ?_
-        filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 ψ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hgradψ]
-    _ = ∫ x in Ω, ⟪G x, ∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := h
-    _ = _ := by simp_rw [hgradψ]
+  obtain ⟨ψ, hψ, hgradψ⟩ := exists_testFunction_mul hζ (hts.trans hUΩ) φ
+  have h := setIntegral_test_eq hUΩ hu ψ (by rw [hψ]; exact tsupport_mul_subset_left.trans hts)
+  simpa only [hgradψ] using h
 
 /-- **The weak equation of a cutoff of a local weak solution.** If `u` solves `-div(a ∇u) = -div G`
 weakly in `Ω`, and `w` is the extension by zero of `ζ (u - c)` for a cutoff `ζ` supported in
@@ -260,7 +255,7 @@ weakly in `Ω`, and `w` is the extension by zero of `ζ (u - c)` for a cutoff `�
 
 both data being supported in `U`. -/
 private theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -279,8 +274,8 @@ private theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a
         (⟪G x, ∇ ζ x⟫_ℝ - matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)) * φ x) := by
   set V := (U : Set (EuclideanSpace ℝ (Fin (n + 1))))
   have hUm : MeasurableSet V := U.isOpen.measurableSet
-  obtain ⟨hT1, hT2, hT3, hT4⟩ := integrable_cutoff_terms ha hbd hUΩ hG hζ hζc c φ (u := u)
-  have hψeq := setIntegral_cutoff_test_eq hUΩ hu hζ hζc hts φ
+  obtain ⟨hT1, hT2, hT3, hT4⟩ := integrable_cutoff_terms ha hLam hbd hUΩ hG hζ hζc c φ (u := u)
+  have hψeq := setIntegral_cutoff_test_eq hUΩ hu hζ hts φ
   -- The energy of `w` is an integral over `U`.
   have hlhs : energyFormH1 a 0 0 w (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
       ∫ x in V, matrixBilinearForm (a x) (∇ φ x)
@@ -321,7 +316,7 @@ private theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a
 /-- **The cutoff forcing has mean zero.** Testing the equation of a local weak solution with the
 cutoff `ζ` itself gives `∫_U (⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫) = 0`. -/
 private theorem setIntegral_cutoff_forcing_eq_zero (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -331,45 +326,13 @@ private theorem setIntegral_cutoff_forcing_eq_zero (ha : AEStronglyMeasurable a 
     {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζ : ContDiff ℝ ∞ ζ) (hζc : HasCompactSupport ζ)
     (hts : tsupport ζ ⊆ U) :
     ∫ x in U, (⟪G x, ∇ ζ x⟫_ℝ - matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)) = 0 := by
-  set V := (U : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hUΩ' : V ⊆ Ω := hUΩ
-  have hle : volume.restrict V ≤ volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
-    Measure.restrict_mono hUΩ' le_rfl
   obtain ⟨N, -, -, hgradN⟩ := (hζ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hζc
-  have hgζ := ContDiff.continuous_gradient hζ (by simp)
-  have hgu : MemLp (W1p.gradient u : _ → EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict V) :=
-    (Lp.memLp (W1p.gradient u)).mono_measure hle
-  have hBm : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) (volume.restrict V) :=
-    (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).restrict
-  have hT1 : Integrable (fun x => ⟪G x, ∇ ζ x⟫_ℝ) (volume.restrict V) :=
-    ((hG.integrable one_le_two).norm.mul_const N).mono'
-      (hG.aestronglyMeasurable.inner hgζ.aestronglyMeasurable)
-      (ae_of_all _ fun x => (norm_inner_le_norm _ _).trans (by gcongr; exact hgradN x))
-  have hT2 : Integrable (fun x => matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x))
-      (volume.restrict V) :=
-    ((hgu.integrable one_le_two).norm.const_mul (Lam * N)).mono'
-      (aestronglyMeasurable_matrixBilinearForm_apply hBm hgζ.aestronglyMeasurable
-        ((Lp.aestronglyMeasurable _).mono_measure hle))
-      (ae_of_all _ fun x => ((matrixBilinearForm (a x)).le_opNorm₂ _ _).trans
-        (by gcongr; exacts [(ContinuousLinearMap.opNorm_nonneg _).trans (hbd x), hbd x,
-          hgradN x]))
-  have h0 : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) \ V, ∇ ζ x = 0 := fun x hx =>
-    gradient_of_notMem_tsupport fun h => hx.2 (hts h)
-  set ζΩ : 𝓓(Ω, ℝ) := ⟨ζ, hζ, hζc, hts.trans hUΩ'⟩
-  have hcoe : (ζΩ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = ζ := rfl
-  have h := hu ζΩ
-  rw [energyFormH1_zero_zero_eq_setIntegral, hcoe] at h
-  have h' : ∫ x in Ω, matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x) =
-      ∫ x in Ω, ⟪G x, ∇ ζ x⟫_ℝ := by
-    rw [← h]
-    refine integral_congr_ae ?_
-    filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω) 2 ζΩ] with x hx
-    rw [W1p.gradient_ofTestFunctionₗ, hx, hcoe]
-  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet hUΩ'
-      (fun x hx => by simp [h0 x hx]),
-    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet hUΩ'
-      (fun x hx => by simp [h0 x hx])] at h'
-  rw [integral_sub hT1 hT2, h', sub_self]
+  obtain ⟨hT1, hT2⟩ := integrable_inner_and_matrixBilinearForm ha hLam hbd hUΩ hG (u := u)
+    (ContDiff.continuous_gradient hζ (by simp)) hgradN
+  have h := setIntegral_test_eq hUΩ hu ⟨ζ, hζ, hζc, hts.trans hUΩ⟩
+    (by rw [TestFunction.coe_mk]; exact hts)
+  rw [TestFunction.coe_mk] at h
+  rw [integral_sub hT1 hT2, h, sub_self]
 
 end Localization
 
@@ -377,60 +340,11 @@ section Step
 
 variable {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 
-/-- **Sobolev–Poincaré for a function of `W^{1,p}` on a ball.** If `u ∈ H¹(Ω)` has value and
-gradient in `Lᵖ(B(x₀, R))` with `B(x₀, R) ⊆ Ω`, then on every concentric `B_t`, `t ≤ R`, and for
-`q ≤ p` with `δ = 1/q - 1/p < 1/(n + 1)`,
-`‖u - u_{B_t}‖_{Lᵖ(B_t)} ≤ K t |B_t|^(-δ) ‖∇u‖_{L^q(B_t)}`. -/
-private theorem eLpNorm_value_sub_setAverage_le_of_memLp (u : W1p volume Ω 2)
-    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hball : ball x₀ R ⊆ (Ω : Set _))
-    {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (hp : p ≠ ⊤) (hqp : q ≤ p)
-    (hv : MemLp (W1p.value u) p (volume.restrict (ball x₀ R)))
-    (hg : MemLp (W1p.gradient u) p (volume.restrict (ball x₀ R))) {δ : ℝ}
-    (hδ : q.toReal⁻¹ - p.toReal⁻¹ = δ)
-    (hδn : δ < (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) : ℝ)⁻¹) {t : ℝ} (ht : 0 < t)
-    (htR : t ≤ R) :
-    eLpNorm (fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y) p
-        (volume.restrict (ball x₀ t)) ≤
-      ENNReal.ofReal (sobolevPoincareConst (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))) δ * t) *
-        volume (ball x₀ t) ^ (-δ) * eLpNorm (W1p.gradient u) q (volume.restrict (ball x₀ t)) := by
-  set BR : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ R, isOpen_ball⟩
-  have hBR : BR ≤ Ω := hball
-  set uB := W1p.restrictL hBR u
-  have hval := W1p.value_restrictL_ae hBR u
-  have hgrad := W1p.gradient_restrictL_ae hBR u
-  have hv' : MemLp (W1p.value uB) p (volume.restrict (BR : Set _)) := hv.ae_eq hval.symm
-  have hg' : MemLp (W1p.gradient uB) p (volume.restrict (BR : Set _)) := hg.ae_eq hgrad.symm
-  set uR : W1p volume BR p := W1p.mk (hv'.toLp _) (hg'.toLp _)
-    (((W1p.hasWeakFDerivOn uB).congr_ae hv'.coeFn_toLp.symm).congr_ae_deriv
-      (hg'.coeFn_toLp.mono fun x hx => by simp only [hx]))
-  have hvR : W1p.value uR =ᵐ[volume.restrict (ball x₀ R)] W1p.value u := by
-    rw [W1p.value_mk]
-    exact hv'.coeFn_toLp.trans hval
-  have hgR : W1p.gradient uR =ᵐ[volume.restrict (ball x₀ R)] W1p.gradient u := by
-    rw [W1p.gradient_mk]
-    exact hg'.coeFn_toLp.trans hgrad
-  have hpN : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp
-  have hsub : ball x₀ t ⊆ ball x₀ R := ball_subset_ball htR
-  have hle : volume.restrict (ball x₀ t) ≤ volume.restrict (ball x₀ R) :=
-    Measure.restrict_mono hsub le_rfl
-  have hδ' : q.toReal⁻¹ - ((p.toNNReal : ℝ≥0) : ℝ)⁻¹ = δ := by
-    rw [ENNReal.coe_toNNReal_eq_toReal]; exact hδ
-  have h := W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset (mu := volume) (s := p.toNNReal)
-    (ne_top_of_le_ne_top hp hqp) hqp (by rw [hpN]; exact hqp) hδ' hδn ht hsub uR
-  have hvt : W1p.value uR =ᵐ[volume.restrict (ball x₀ t)] W1p.value u := ae_mono hle hvR
-  have hgt : W1p.gradient uR =ᵐ[volume.restrict (ball x₀ t)] W1p.gradient u := ae_mono hle hgR
-  have havg : ⨍ y in ball x₀ t, W1p.value uR y = ⨍ y in ball x₀ t, W1p.value u y :=
-    average_congr hvt
-  have h1 : (fun x => W1p.value uR x - ⨍ y in ball x₀ t, W1p.value uR y) =ᵐ[volume.restrict
-      (ball x₀ t)] fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y :=
-    hvt.mono fun x hx => by simp only [hx, havg]
-  rwa [hpN, eLpNorm_congr_ae h1, eLpNorm_congr_ae hgt] at h
-
 /-- The `Lᵖ` norm of the divergence datum `ζ G + v a ∇ζ` of a cutoff, for `|ζ| ≤ 1` and
 `‖∇ζ‖ ≤ L`. -/
 private theorem eLpNorm_indicator_cutoffField_le
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
+    (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {V : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hV : MeasurableSet V)
     {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζc : Continuous ζ) (hζ1 : ∀ x, |ζ x| ≤ 1)
@@ -442,7 +356,6 @@ private theorem eLpNorm_indicator_cutoffField_le
         volume ≤
       eLpNorm G p (volume.restrict V) +
         ENNReal.ofReal (Lam * L) * eLpNorm v p (volume.restrict V) := by
-  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hm1 : AEStronglyMeasurable (fun y => ζ y • G y) (volume.restrict V) :=
     hζc.aestronglyMeasurable.smul hG
   have hm2 : AEStronglyMeasurable (fun y => v y • toEuclideanCLM (𝕜 := ℝ) (a y) (∇ ζ y))
@@ -462,7 +375,7 @@ private theorem eLpNorm_indicator_cutoffField_le
 /-- The `L^q` norm of the scalar forcing `⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫` of a cutoff, for `‖∇ζ‖ ≤ L`. -/
 private theorem eLpNorm_indicator_cutoffForcing_le
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
+    (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {q : ℝ≥0∞} [Fact (1 ≤ q)]
     {V : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hV : MeasurableSet V)
     {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hgζ : Continuous (∇ ζ)) {L : ℝ}
@@ -474,7 +387,6 @@ private theorem eLpNorm_indicator_cutoffForcing_le
         volume ≤
       ENNReal.ofReal L * eLpNorm G q (volume.restrict V) +
         ENNReal.ofReal (Lam * L) * eLpNorm g q (volume.restrict V) := by
-  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hBm : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) (volume.restrict V) :=
     (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).restrict
   rw [eLpNorm_indicator_eq_eLpNorm_restrict hV.nullMeasurableSet]
@@ -500,7 +412,9 @@ private theorem setIntegral_inner_add_mul_eq {p q : ℝ≥0∞} [Fact (1 ≤ p)]
     ∫ x in V, (⟪F x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ + k x * φ x) =
       ∫ x, ⟪(V.indicator F + H) x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
   have h1 := integrable_inner_gradient_testFunction hF φ
-  have h2 := integrable_mul_testFunction hk φ
+  have h2 : Integrable (fun x => V.indicator k x * φ x) :=
+    (φ.integrable_smul ((hk.locallyIntegrable Fact.out).locallyIntegrableOn _)).congr
+      (ae_of_all _ fun x => by simp [smul_eq_mul, mul_comm])
   have hpair : ∀ x, ⟪V.indicator F x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ =
       V.indicator (fun y => ⟪F y, ∇ φ y⟫_ℝ) x := fun x => by
     by_cases hx : x ∈ V <;> simp [hx]
@@ -522,7 +436,7 @@ the whole space, for an explicit field `F ∈ Lᵖ`: the divergence datum of the
 `H` with `-div H` the scalar forcing of the cutoff. -/
 private theorem exists_wholeSpace_cutoff
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
+    (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     (hp2 : 2 ≤ p) (hqp : q ≤ p) {δ : ℝ} {CD : ℝ≥0}
     (hD : ∀ {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ}, 0 < t →
@@ -565,18 +479,19 @@ private theorem exists_wholeSpace_cutoff
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hgζ := ContDiff.continuous_gradient hζ (by simp)
   obtain ⟨w, hw⟩ := exists_extendByZero_cutoff hUΩ u hζ hζc hts c
-  have heq := energyFormH1_extendByZero_cutoff_eq ha hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
+  have heq := energyFormH1_extendByZero_cutoff_eq ha hLam hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
     hts c hw
-  have hmean := setIntegral_cutoff_forcing_eq_zero ha hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc hts
+  have hmean := setIntegral_cutoff_forcing_eq_zero ha hLam hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
+    hts
   set G₁ := (ball x₀ t).indicator fun y =>
     ζ y • G y + (W1p.value u y - c) • toEuclideanCLM (𝕜 := ℝ) (a y) (∇ ζ y)
   set h := (ball x₀ t).indicator fun y =>
     ⟪G y, ∇ ζ y⟫_ℝ - matrixBilinearForm (a y) (∇ ζ y) (W1p.gradient u y)
   have hvc : MemLp (fun x => W1p.value u x - c) p (volume.restrict (ball x₀ t)) :=
     hv.sub (memLp_const c)
-  have hG₁le := eLpNorm_indicator_cutoffField_le (p := p) ha hbd hU hζ.continuous hζ1 hgζ hgradL
-    hG.aestronglyMeasurable hvc.aestronglyMeasurable
-  have hhle := eLpNorm_indicator_cutoffForcing_le (q := q) ha hbd hU hgζ hgradL
+  have hG₁le := eLpNorm_indicator_cutoffField_le (p := p) ha hLam hbd hU hζ.continuous hζ1 hgζ
+    hgradL hG.aestronglyMeasurable hvc.aestronglyMeasurable
+  have hhle := eLpNorm_indicator_cutoffForcing_le (q := q) ha hLam hbd hU hgζ hgradL
     hG.aestronglyMeasurable hg.aestronglyMeasurable
   have hG₁ : MemLp G₁ p volume :=
     hG₁le.trans_lt (ENNReal.add_lt_top.2 ⟨hG.eLpNorm_lt_top,
@@ -593,82 +508,62 @@ private theorem exists_wholeSpace_cutoff
           eLpNorm_add_le Fact.out
       _ ≤ _ := add_le_add hG₁le (hHle.trans (by gcongr; exact hhle))
 
-/-- The arithmetic of the step between concentric balls: with `L = c₀ / ((s + t) / 2 - s)` the
-gradient bound of the cutoff, the bound produced by the whole-space estimate is at most
+/-- The arithmetic of the step between concentric balls: with `L = c₀ / (t - s)` the gradient
+bound of the cutoff, the bound produced by the whole-space estimate is at most
 `C ((1 + t / (t - s)) A + t / (t - s) ε X)`. -/
 private theorem step_bound_le {CW CD : ℝ≥0} {A At X Y Gq ε ε' : ℝ≥0∞} {c₀ Lam K s t : ℝ}
     (hc₀ : 0 ≤ c₀) (hLam : 0 ≤ Lam) (hK : 0 ≤ K) (hs : 0 < s) (hst : s < t) (hAt : At ≤ A)
     (hεε' : ε * ε' = 1) (hY : Y ≤ ENNReal.ofReal (K * t) * ε * X) (hGq : Gq ≤ At * ε') :
-    (CW : ℝ≥0∞) * (At + ENNReal.ofReal (Lam * (c₀ / ((s + t) / 2 - s))) * Y +
-        CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (c₀ / ((s + t) / 2 - s)) * Gq +
-          ENNReal.ofReal (Lam * (c₀ / ((s + t) / 2 - s))) * X)) ≤
-      ((CW * (1 + (2 * c₀).toNNReal * CD + ((2 * c₀ * Lam * K).toNNReal +
-          CD * (2 * c₀ * Lam).toNNReal)) : ℝ≥0) : ℝ≥0∞) *
+    (CW : ℝ≥0∞) * (At + ENNReal.ofReal (Lam * (c₀ / (t - s))) * Y +
+        CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (c₀ / (t - s)) * Gq +
+          ENNReal.ofReal (Lam * (c₀ / (t - s))) * X)) ≤
+      ((CW * (1 + c₀.toNNReal * CD + ((c₀ * Lam * K).toNNReal +
+          CD * (c₀ * Lam).toNNReal)) : ℝ≥0) : ℝ≥0∞) *
         ((1 + ENNReal.ofReal (t / (t - s))) * A + ENNReal.ofReal (t / (t - s)) * ε * X) := by
-  have hL : c₀ / ((s + t) / 2 - s) = 2 * c₀ / (t - s) := by
-    rw [show (s + t) / 2 - s = (t - s) / 2 by ring]
-    field_simp
-  rw [hL]
   set τ := ENNReal.ofReal (t / (t - s))
   have ht : 0 ≤ t := hs.le.trans hst.le
-  have e1 : ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * ENNReal.ofReal (K * t) =
-      ENNReal.ofReal (2 * c₀ * Lam * K) * τ := by
+  have e1 : ENNReal.ofReal (Lam * (c₀ / (t - s))) * ENNReal.ofReal (K * t) =
+      ENNReal.ofReal (c₀ * Lam * K) * τ := by
     rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     congr 1; field_simp
-  have e2 : ENNReal.ofReal t * ENNReal.ofReal (2 * c₀ / (t - s)) = ENNReal.ofReal (2 * c₀) * τ := by
+  have e2 : ENNReal.ofReal t * ENNReal.ofReal (c₀ / (t - s)) = ENNReal.ofReal c₀ * τ := by
     rw [← ENNReal.ofReal_mul ht, ← ENNReal.ofReal_mul (by positivity)]
     congr 1; field_simp
-  have e3 : ENNReal.ofReal t * ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) =
-      ENNReal.ofReal (2 * c₀ * Lam) * τ := by
+  have e3 : ENNReal.ofReal t * ENNReal.ofReal (Lam * (c₀ / (t - s))) =
+      ENNReal.ofReal (c₀ * Lam) * τ := by
     rw [← ENNReal.ofReal_mul ht, ← ENNReal.ofReal_mul (by positivity)]
     congr 1; field_simp
-  set S : ℝ≥0∞ := 1 + ENNReal.ofReal (2 * c₀) * CD + (ENNReal.ofReal (2 * c₀ * Lam * K) +
-    CD * ENNReal.ofReal (2 * c₀ * Lam))
-  have hS : ((CW * (1 + (2 * c₀).toNNReal * CD + ((2 * c₀ * Lam * K).toNNReal +
-      CD * (2 * c₀ * Lam).toNNReal)) : ℝ≥0) : ℝ≥0∞) = CW * S := by
+  set S : ℝ≥0∞ := 1 + ENNReal.ofReal c₀ * CD + (ENNReal.ofReal (c₀ * Lam * K) +
+    CD * ENNReal.ofReal (c₀ * Lam))
+  have hS : ((CW * (1 + c₀.toNNReal * CD + ((c₀ * Lam * K).toNNReal +
+      CD * (c₀ * Lam).toNNReal)) : ℝ≥0) : ℝ≥0∞) = CW * S := by
     simp only [S, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_one, ENNReal.ofNNReal_toNNReal]
   rw [hS]
-  calc (CW : ℝ≥0∞) * (At + ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * Y +
-        CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (2 * c₀ / (t - s)) * Gq +
-          ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * X))
-      ≤ CW * (At + ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * (ENNReal.ofReal (K * t) * ε * X) +
-        CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (2 * c₀ / (t - s)) * (At * ε') +
-          ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * X)) := by gcongr
-    _ = CW * (At + (ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * ENNReal.ofReal (K * t)) * ε * X +
-        CD * (ENNReal.ofReal t * ENNReal.ofReal (2 * c₀ / (t - s))) * (ε * ε') * At +
-        CD * (ENNReal.ofReal t * ENNReal.ofReal (Lam * (2 * c₀ / (t - s)))) * ε * X) := by ring
-    _ = CW * (At + ENNReal.ofReal (2 * c₀) * CD * τ * (ε * ε') * At +
-        (ENNReal.ofReal (2 * c₀ * Lam * K) + CD * ENNReal.ofReal (2 * c₀ * Lam)) * τ * ε * X) := by
+  calc (CW : ℝ≥0∞) * (At + ENNReal.ofReal (Lam * (c₀ / (t - s))) * Y +
+        CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (c₀ / (t - s)) * Gq +
+          ENNReal.ofReal (Lam * (c₀ / (t - s))) * X))
+      ≤ CW * (At + ENNReal.ofReal (Lam * (c₀ / (t - s))) * (ENNReal.ofReal (K * t) * ε * X) +
+        CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (c₀ / (t - s)) * (At * ε') +
+          ENNReal.ofReal (Lam * (c₀ / (t - s))) * X)) := by gcongr
+    _ = CW * (At + (ENNReal.ofReal (Lam * (c₀ / (t - s))) * ENNReal.ofReal (K * t)) * ε * X +
+        CD * (ENNReal.ofReal t * ENNReal.ofReal (c₀ / (t - s))) * (ε * ε') * At +
+        CD * (ENNReal.ofReal t * ENNReal.ofReal (Lam * (c₀ / (t - s)))) * ε * X) := by ring
+    _ = CW * (At + ENNReal.ofReal c₀ * CD * τ * (ε * ε') * At +
+        (ENNReal.ofReal (c₀ * Lam * K) + CD * ENNReal.ofReal (c₀ * Lam)) * τ * ε * X) := by
         rw [e1, e2, e3]
         ring
     _ ≤ CW * (S * A + S * τ * A + S * τ * ε * X) := by
         rw [hεε', mul_one]
         have h1 : 1 ≤ S := le_self_add.trans le_self_add
-        have h2 : ENNReal.ofReal (2 * c₀) * CD ≤ S := le_add_self.trans le_self_add
-        have h3 : ENNReal.ofReal (2 * c₀ * Lam * K) + CD * ENNReal.ofReal (2 * c₀ * Lam) ≤ S :=
+        have h2 : ENNReal.ofReal c₀ * CD ≤ S := le_add_self.trans le_self_add
+        have h3 : ENNReal.ofReal (c₀ * Lam * K) + CD * ENNReal.ofReal (c₀ * Lam) ≤ S :=
           le_add_self
         gcongr CW * (?_ + ?_ + ?_)
         · exact hAt.trans (le_mul_of_one_le_left' h1)
-        · calc ENNReal.ofReal (2 * c₀) * CD * τ * At ≤ S * τ * At := by gcongr
+        · calc ENNReal.ofReal c₀ * CD * τ * At ≤ S * τ * At := by gcongr
             _ ≤ S * τ * A := by gcongr
         · gcongr
     _ = CW * S * ((1 + τ) * A + τ * ε * X) := by ring
-
-/-- Cutoffs between concentric balls: `ζ = 1` on `closedBall x₀ s`, supported in `B(x₀, t)`, with
-values in `[0, 1]` and `‖∇ζ‖ ≤ c₀ / ((s + t)/2 - s)`. -/
-private theorem exists_cutoff_ball :
-    ∃ c₀ : ℝ, 0 ≤ c₀ ∧ ∀ (x₀ : EuclideanSpace ℝ (Fin (n + 1))) {s t : ℝ}, 0 < s → s < t →
-      ∃ ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ, ContDiff ℝ ∞ ζ ∧ HasCompactSupport ζ ∧
-        tsupport ζ ⊆ ball x₀ t ∧ (∀ x, |ζ x| ≤ 1) ∧ EqOn ζ 1 (closedBall x₀ s) ∧
-        ∀ x, ‖∇ ζ x‖ ≤ c₀ / ((s + t) / 2 - s) := by
-  obtain ⟨c₀, hc₀, hcut⟩ := exists_forall_contDiff_cutoff_closedBall
-    (E := EuclideanSpace ℝ (Fin (n + 1)))
-  refine ⟨c₀, hc₀, fun x₀ {s t} hs hst => ?_⟩
-  obtain ⟨ζ, hζ, hζr, hζ1, hts, hgrad, -⟩ := hcut x₀ hs.le (show s < (s + t) / 2 by linarith)
-  refine ⟨ζ, hζ, (isCompact_closedBall x₀ _).of_isClosed_subset (isClosed_tsupport _) hts,
-    hts.trans (closedBall_subset_ball (by linarith)), fun x => ?_, hζ1, hgrad⟩
-  obtain ⟨h0, h1⟩ := hζr (mem_range_self x)
-  rwa [abs_of_nonneg h0]
 
 /-- The gradient of the extended cutoff `ζ (u - c)` lies in `Lᵖ ∩ L¹` when `u`, `∇u ∈ Lᵖ(B_t)`. -/
 private theorem memLp_integrable_of_ae_eq_indicator_cutoff {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -745,17 +640,21 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
     exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero (n := n) hp hp_top lam Lam
   obtain ⟨CD, hD⟩ := exists_memLp_forall_integral_mul_eq_integral_inner_gradient_of_integral_eq_zero
     (μ := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1))))) hq hqp hp_top hδ hδn
-  obtain ⟨c₀, hc₀, hcut⟩ := exists_cutoff_ball (n := n)
+  obtain ⟨c₀, hc₀, hcut⟩ :=
+    exists_forall_contDiff_cutoff_ball (E := EuclideanSpace ℝ (Fin (n + 1)))
   set d := finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
   set K : ℝ := sobolevPoincareConst d δ
   have hK : 0 ≤ K := sobolevPoincareConst_nonneg hδn
-  refine ⟨CW * (1 + (2 * c₀).toNNReal * CD + ((2 * c₀ * Lam * K).toNNReal +
-    CD * (2 * c₀ * Lam).toNNReal)), δ₀, hδ₀,
+  refine ⟨CW * (1 + c₀.toNNReal * CD + ((c₀ * Lam * K).toNNReal + CD * (c₀ * Lam).toNNReal)),
+    δ₀, hδ₀,
     fun {a r₀} ha hbd hosc {Ω x₀ R} hRr₀ hball u G hu hv hg hG {s t} hs hst htR => ?_⟩
   have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have ht : 0 < t := hs.trans hst
   -- A cutoff between `B_s` and `B_t`.
-  obtain ⟨ζ, hζ, hζc, htsb, hζabs, hζ1, hgrad⟩ := hcut x₀ hs hst
+  obtain ⟨ζ, hζ, hζc, hζr, hζ1, htsb, hgrad⟩ := hcut x₀ hs.le hst
+  have hζabs (x : EuclideanSpace ℝ (Fin (n + 1))) : |ζ x| ≤ 1 := by
+    obtain ⟨h0, h1⟩ := hζr (mem_range_self x)
+    rwa [abs_of_nonneg h0]
   have hballt : ball x₀ t ⊆ (Ω : Set _) := (ball_subset_ball htR).trans hball
   have hle : volume.restrict (ball x₀ t) ≤ volume.restrict (ball x₀ R) :=
     Measure.restrict_mono (ball_subset_ball htR) le_rfl
@@ -764,7 +663,8 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
   have hv' := hv.mono_measure hle
   have hg' := hg.mono_measure hle
   have hG' := hG.mono_measure hle
-  obtain ⟨w, F, hw, hF, hweq, hFle⟩ := exists_wholeSpace_cutoff ha hbd hp.le hqp hD ht hballt u hu
+  obtain ⟨w, F, hw, hF, hweq, hFle⟩ := exists_wholeSpace_cutoff ha hLam hbd hp.le hqp hD ht
+    hballt u hu
     hv' hg' hG' hζ hζc htsb hζabs hgrad (⨍ y in ball x₀ t, W1p.value u y)
   -- The whole-space estimate applies to `w`, and `∇w = ∇u` on `B_s`.
   obtain ⟨hwp, hwint⟩ := memLp_integrable_of_ae_eq_indicator_cutoff u hv' hg' hζ hζabs hgrad _ hw
@@ -773,7 +673,8 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
     rw [hx, indicator_of_notMem fun h => hxr (ball_subset_ball (by linarith) h)]
   have hlow := eLpNorm_le_of_ae_eq_indicator_cutoff (p := p) hst.le u hζ1 _ hw
   -- Sobolev–Poincaré for `u` and Hölder's inequality for `G` on `B_t`.
-  have hSP := eLpNorm_value_sub_setAverage_le_of_memLp u hball hp_top hqp hv hg hδ hδn ht htR
+  have hSP := W1p.eLpNorm_value_sub_setAverage_le_of_memLp u hball hp_top hqp hv hg hδ hδn ht
+    htR
   have hHol : eLpNorm G q (volume.restrict (ball x₀ t)) ≤
       eLpNorm G p (volume.restrict (ball x₀ t)) * volume (ball x₀ t) ^ δ := by
     have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hqp hG'.aestronglyMeasurable
@@ -787,45 +688,6 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
         (step_bound_le hc₀ hLam hK hs hst (eLpNorm_mono_measure _ hle) hεε' hSP hHol)
 
 end Step
-
-section Interpolation
-
-/-- The intermediate exponent `q` with `1/q = θ/2 + (1 - θ)/p`, for `2 < p < ∞` and `0 < θ < 1`:
-it lies in `(1, p]`, and `1/q - 1/p = θ (1/2 - 1/p)`. -/
-private theorem exists_interpolation_exponent {p : ℝ≥0∞} (hp : 2 < p) (hp_top : p ≠ ⊤) {θ : ℝ}
-    (hθ0 : 0 < θ) (hθ1 : θ < 1) :
-    ∃ q : ℝ≥0∞, 1 < q ∧ q ≤ p ∧
-      q⁻¹ = ENNReal.ofReal θ * 2⁻¹ + ENNReal.ofReal (1 - θ) * p⁻¹ ∧
-      q.toReal⁻¹ - p.toReal⁻¹ = θ * (2⁻¹ - p.toReal⁻¹) := by
-  have hpR : 2 < p.toReal := by simpa using ENNReal.toReal_strict_mono hp_top hp
-  set Q : ℝ := θ / 2 + (1 - θ) / p.toReal
-  have hQ0 : 0 < Q := by positivity
-  have hQ1 : Q < 1 := by
-    have : (1 - θ) / p.toReal < (1 - θ) / 2 := by gcongr
-    simp only [Q]
-    linarith
-  have hQp : p.toReal⁻¹ ≤ Q := by
-    have : p.toReal⁻¹ < 2⁻¹ := by rw [inv_lt_inv₀ (by linarith) (by norm_num)]; exact hpR
-    simp only [Q]; rw [div_eq_mul_inv, div_eq_mul_inv]; nlinarith
-  refine ⟨ENNReal.ofReal Q⁻¹, ?_, ?_, ?_, ?_⟩
-  · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
-    exact one_lt_inv₀ hQ0 |>.2 hQ1
-  · rw [← ENNReal.ofReal_toReal hp_top, ENNReal.ofReal_le_ofReal_iff (by positivity)]
-    rw [inv_le_comm₀ hQ0 (by linarith)]
-    exact hQp
-  · rw [← ENNReal.ofReal_inv_of_pos (inv_pos.2 hQ0), inv_inv, ← ENNReal.ofReal_toReal hp_top,
-      ← ENNReal.ofReal_inv_of_pos (by linarith), ← ENNReal.ofReal_ofNat 2,
-      ← ENNReal.ofReal_inv_of_pos (by norm_num), ← ENNReal.ofReal_mul hθ0.le,
-      ← ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_add (by positivity) (by
-        have : 0 ≤ 1 - θ := by linarith
-        positivity)]
-    simp only [Q]
-    congr 1
-  · rw [ENNReal.toReal_ofReal (by positivity), inv_inv]
-    simp only [Q]
-    ring
-
-end Interpolation
 
 /-- The step between concentric balls in real numbers, after interpolating the `L^q` norm of the
 gradient between its `L²` and `Lᵖ` norms and comparing `|B_t|` with `|B_{R/2}|`. -/
@@ -881,9 +743,8 @@ private theorem step_toReal {p q : ℝ≥0∞} {θ δ : ℝ} (hθ0 : 0 < θ) (h�
       (ENNReal.rpow_ne_top_of_nonneg (by linarith) hft))
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
     (ENNReal.add_ne_top.2 ⟨h1, h2⟩)) h').trans_eq ?_
-  rw [ENNReal.toReal_mul, ENNReal.toReal_add h1 h2, ENNReal.toReal_mul, ENNReal.toReal_add
-    ENNReal.one_ne_top ENNReal.ofReal_ne_top, ENNReal.toReal_mul, ENNReal.toReal_mul,
-    ENNReal.toReal_mul, ENNReal.toReal_rpow, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
+  simp only [ENNReal.toReal_mul, ENNReal.toReal_add h1 h2,
+    ENNReal.toReal_add ENNReal.one_ne_top ENNReal.ofReal_ne_top, ENNReal.toReal_rpow,
     ENNReal.toReal_ofReal hτ, ENNReal.toReal_one, ENNReal.coe_toReal]
 
 /-- Returning from real numbers to `ℝ≥0∞`: a bound `A.toReal ≤ C (Γ.toReal + m.toReal^e X.toReal)`
@@ -892,19 +753,19 @@ private theorem le_mul_add_rpow_mul_of_toReal_le {A Γ X m : ℝ≥0∞} {C e : 
     (hA : A ≠ ⊤) (hΓ : Γ ≠ ⊤) (hX : X ≠ ⊤) (hm0 : m ≠ 0) (hm : m ≠ ⊤)
     (h : A.toReal ≤ C * (Γ.toReal + m.toReal ^ e * X.toReal)) :
     A ≤ C.toNNReal * (Γ + m ^ e * X) := by
-  have hmR : 0 < m.toReal := ENNReal.toReal_pos hm0 hm
-  calc A = ENNReal.ofReal A.toReal := (ENNReal.ofReal_toReal hA).symm
-    _ ≤ ENNReal.ofReal (C * (Γ.toReal + m.toReal ^ e * X.toReal)) := ENNReal.ofReal_le_ofReal h
-    _ = _ := by
-        rw [ENNReal.ofReal_mul hC, ENNReal.ofReal_add ENNReal.toReal_nonneg (by positivity),
-          ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal hΓ, ENNReal.ofReal_toReal hX,
-          ← ENNReal.ofReal_rpow_of_pos hmR, ENNReal.ofReal_toReal hm, ENNReal.ofNNReal_toNNReal]
+  have hR : (C.toNNReal : ℝ≥0∞) * (Γ + m ^ e * X) ≠ ⊤ :=
+    ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.add_ne_top.2 ⟨hΓ, ENNReal.mul_ne_top
+      (ENNReal.rpow_ne_top_of_ne_zero hm0 hm) hX⟩)
+  refine (ENNReal.toReal_le_toReal hA hR).1 (h.trans_eq ?_)
+  simp only [ENNReal.toReal_mul, ENNReal.toReal_add hΓ (ENNReal.mul_ne_top
+    (ENNReal.rpow_ne_top_of_ne_zero hm0 hm) hX), ENNReal.toReal_rpow, ENNReal.coe_toReal,
+    Real.coe_toNNReal C hC]
 
 /-- Absorption and the return to `ℝ≥0∞` in the interior estimate: if the step estimate between
 concentric balls holds for `g` on `B_R`, with the `L^q` norm on the right, then
 `‖g‖_{Lᵖ(B_{R/2})} ≤ C (‖G‖_{Lᵖ(B_R)} + |B_R|^(1/p - 1/2) ‖g‖_{L²(B_R)})`. -/
-private theorem eLpNorm_ball_half_le_of_step {p q : ℝ≥0∞} (hp : 2 < p)
-    (hp_top : p ≠ ⊤) {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1)
+private theorem eLpNorm_ball_half_le_of_step {p q : ℝ≥0∞} (hp : 2 < p) {θ : ℝ} (hθ0 : 0 < θ)
+    (hθ1 : θ < 1)
     (hqinv : q⁻¹ = ENNReal.ofReal θ * 2⁻¹ + ENNReal.ofReal (1 - θ) * p⁻¹)
     (hδ0 : 0 ≤ θ * (2⁻¹ - p.toReal⁻¹)) {Cs : ℝ≥0} {C₁ : ℝ} (hC₁ : 0 ≤ C₁)
     (habs : ∀ {f : ℝ → ℝ} {R Γ X ε : ℝ}, 0 < R → 0 ≤ Γ → 0 ≤ X → 0 ≤ ε →
@@ -925,7 +786,6 @@ private theorem eLpNorm_ball_half_le_of_step {p q : ℝ≥0∞} (hp : 2 < p)
         (eLpNorm G p (volume.restrict (ball x₀ R)) +
           volume (ball x₀ R) ^ (p.toReal⁻¹ - 2⁻¹) * eLpNorm g 2 (volume.restrict (ball x₀ R))) := by
   set d := finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-  have hpR : 2 < p.toReal := by simpa using ENNReal.toReal_strict_mono hp_top hp
   set δ := θ * (2⁻¹ - p.toReal⁻¹)
   have : IsFiniteMeasure (volume.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
@@ -1016,23 +876,38 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le {p : ℝ≥0∞} (hp : 
   set θ : ℝ := ((d : ℝ) + 1)⁻¹
   have hθ0 : 0 < θ := by positivity
   have hθ1 : θ < 1 := inv_lt_one_of_one_lt₀ (by linarith)
-  obtain ⟨q, hq1, hqp, hqinv, hqδ⟩ := exists_interpolation_exponent hp hp_top hθ0 hθ1
+  have hθI : θ ∈ Icc (0 : ℝ) 1 := ⟨hθ0.le, hθ1.le⟩
+  have hpR : 2 < p.toReal :=
+    (ENNReal.ofReal_lt_iff_lt_toReal zero_le_two hp_top).1 (by rwa [ENNReal.ofReal_ofNat])
+  have hp2 : p.toReal⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos hpR
+  -- The exponent `q` with `1/q = θ/2 + (1 - θ)/p` lies in `[2, p]`.
+  set q : ℝ≥0∞ := (ENNReal.ofReal θ * 2⁻¹ + ENNReal.ofReal (1 - θ) * p⁻¹)⁻¹
+  have hqinv : q⁻¹ = ENNReal.ofReal θ * 2⁻¹ + ENNReal.ofReal (1 - θ) * p⁻¹ := inv_inv _
+  have hqinv' : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * 2⁻¹ := by
+    rw [hqinv, add_comm]
+  have hq2p : q ∈ Icc 2 p := by
+    have h := mem_uIcc_of_inv_eq hθI hqinv'
+    rwa [uIcc_of_ge hp.le] at h
+  have hq1 : 1 < q := ENNReal.one_lt_two.trans_le hq2p.1
   have : Fact (1 ≤ q) := ⟨hq1.le⟩
-  have hpR : 2 < p.toReal := by simpa using ENNReal.toReal_strict_mono hp_top hp
-  have hδ0 : 0 ≤ θ * (2⁻¹ - p.toReal⁻¹) := by
-    have : p.toReal⁻¹ < 2⁻¹ := by rw [inv_lt_inv₀ (by linarith) (by norm_num)]; exact hpR
-    nlinarith
+  have hqδ : q.toReal⁻¹ - p.toReal⁻¹ = θ * (2⁻¹ - p.toReal⁻¹) := by
+    have h := inv_eq_ofReal_of_inv_eq (zero_lt_two.trans hp).ne' two_ne_zero hθI hqinv'
+    rw [← ENNReal.toReal_inv q, h, ENNReal.toReal_ofReal (add_nonneg
+      (mul_nonneg (by linarith) ENNReal.toReal_nonneg) (mul_nonneg hθ0.le ENNReal.toReal_nonneg))]
+    simp only [ENNReal.toReal_inv, ENNReal.toReal_ofNat]
+    ring
+  have hδ0 : 0 ≤ θ * (2⁻¹ - p.toReal⁻¹) := mul_nonneg hθ0.le (sub_nonneg.2 hp2.le)
   have hδn : θ * (2⁻¹ - p.toReal⁻¹) < (d : ℝ)⁻¹ := by
     have h1 : θ * (2⁻¹ - p.toReal⁻¹) ≤ θ := by
       have : 0 ≤ p.toReal⁻¹ := by positivity
       nlinarith
     exact h1.trans_lt (inv_strictAnti₀ (by positivity) (by linarith))
   obtain ⟨Cs, δ₀, hδ₀, hstep⟩ :=
-    exists_eLpNorm_gradient_ball_le_step (n := n) hp hp_top hq1 hqp hqδ hδn lam Lam
+    exists_eLpNorm_gradient_ball_le_step (n := n) hp hp_top hq1 hq2p.2 hqδ hδn lam Lam
   obtain ⟨C₁, hC₁, habs⟩ := exists_le_mul_add_rpow_mul_of_le hθ0 hθ1.le Cs.coe_nonneg
   refine ⟨(C₁ * 2 ^ d).toNNReal, δ₀, hδ₀,
     fun {a r₀} ha hbd hosc {Ω x₀ R} hR hRr₀ hball u G hu hv hg hG => ?_⟩
-  exact eLpNorm_ball_half_le_of_step hp hp_top hθ0 hθ1 hqinv hδ0 hC₁ habs hR hg hG
+  exact eLpNorm_ball_half_le_of_step hp hθ0 hθ1 hqinv hδ0 hC₁ habs hR hg hG
     (fun hs hst htR => hstep ha hbd hosc hRr₀ hball u G hu hv hg hG hs hst htR)
 
 end PDE

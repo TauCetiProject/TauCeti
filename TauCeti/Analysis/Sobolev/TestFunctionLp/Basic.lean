@@ -31,9 +31,11 @@ The bridge is linear: `TauCeti.testFunctionLp_add` and `TauCeti.testFunctionLp_s
 passing to the `Lᵖ` class commutes with the vector space structure of the test functions, and
 `TauCeti.testFunctionLpₗ` bundles it as a linear map. For an inner product space,
 `TauCeti.gradientTestFunctionLp` and `TauCeti.gradientTestFunctionLpₗ` provide the parallel
-construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
-space a subspace. On the whole space, passing a test function or its gradient to `Lᵖ`
-commutes with translation, as recorded by `TauCeti.testFunctionLp_translateTestFunction` and
+construction for the gradient, and `TauCeti.exists_testFunction_mul` multiplies a test function
+by a smooth function supported in the domain, with the product rule for the gradient. These facts
+make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function space a subspace. On the whole space,
+passing a test function or its gradient to `Lᵖ` commutes with translation, as recorded by
+`TauCeti.testFunctionLp_translateTestFunction` and
 `TauCeti.gradientTestFunctionLp_translateTestFunction`, and turns dilation of test functions into
 the normalized `Lᵖ` dilation `MeasureTheory.Measure.dilateLp`, up to an explicit power of the
 factor, as recorded by `TauCeti.testFunctionLp_dilateTestFunction` and
@@ -63,12 +65,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
 theorem memLp_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (phi : E → ℝ) q (mu.restrict Omega) :=
   phi.continuous.memLp_of_hasCompactSupport phi.hasCompactSupport
-
-/-- A function in `Lᵖ` times a test function is integrable. -/
-theorem integrable_mul_testFunction {p : ENNReal} [Fact (1 ≤ p)] {h : E → ℝ} (hh : MemLp h p mu)
-    (phi : 𝓓(Omega, ℝ)) : Integrable (fun x => h x * phi x) mu :=
-  hh.integrable_mul (q := p.conjExponent)
-    (phi.continuous.memLp_of_hasCompactSupport phi.hasCompactSupport)
 
 /-- A test function on `Omega` as an element of `Lᵠ(Omega)`. -/
 def testFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp ℝ q (mu.restrict Omega) :=
@@ -340,6 +336,33 @@ theorem lineDerivCLM_apply_eq_inner (phi : 𝓓(Omega, ℝ)) (v x : E) :
   rw [TestFunction.lineDerivCLM_apply_of_le le_top, real_inner_comm, gradient,
     InnerProductSpace.toDual_symm_apply,
     (phi.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
+/-- The product `ζ φ` of a test function `φ` with a smooth function `ζ` whose support lies in
+`Omega` is a test function on `Omega`, with gradient `ζ ∇φ + φ ∇ζ`. -/
+theorem exists_testFunction_mul {U : Opens E} {ζ : E → ℝ} (hζ : ContDiff ℝ ∞ ζ)
+    (hts : tsupport ζ ⊆ Omega) (phi : 𝓓(U, ℝ)) :
+    ∃ psi : 𝓓(Omega, ℝ), (psi : E → ℝ) = (fun x => ζ x * phi x) ∧
+      ∀ x, ∇ (psi : E → ℝ) x = ζ x • ∇ (phi : E → ℝ) x + phi x • ∇ ζ x := by
+  refine ⟨⟨fun x => ζ x * phi x, hζ.mul phi.contDiff, phi.hasCompactSupport.mul_left,
+    tsupport_mul_subset_left.trans hts⟩, TestFunction.coe_mk, fun x => ?_⟩
+  rw [TestFunction.coe_mk]
+  apply (InnerProductSpace.toDual ℝ E).injective
+  simp only [toDual_gradient, map_add, map_smul]
+  exact fderiv_fun_mul (hζ.differentiable (by simp) x) (phi.contDiff.differentiable (by simp) x)
+
+/-- The gradient `ζ ∇φ + φ ∇ζ` of a product is bounded by `2 N P` when `|ζ|, ‖∇ζ‖ ≤ N` and
+`|φ|, ‖∇φ‖ ≤ P`. -/
+theorem norm_smul_gradient_add_smul_gradient_le {ζ φ : E → ℝ} {N P : ℝ} (hζN : ∀ x, |ζ x| ≤ N)
+    (hgradN : ∀ x, ‖∇ ζ x‖ ≤ N) (hφP : ∀ x, |φ x| ≤ P) (hgradP : ∀ x, ‖∇ φ x‖ ≤ P) (x : E) :
+    ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ 2 * N * P := by
+  have hN : 0 ≤ N := (abs_nonneg _).trans (hζN x)
+  calc ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ |ζ x| * ‖∇ φ x‖ + |φ x| * ‖∇ ζ x‖ := by
+        refine (norm_add_le _ _).trans_eq ?_
+        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+    _ ≤ N * P + P * N := by
+        gcongr
+        exacts [hζN x, hgradP x, (abs_nonneg _).trans (hφP x), hφP x, hgradN x]
+    _ = 2 * N * P := by ring
 
 variable [MeasurableSpace E] [OpensMeasurableSpace E] {mu : Measure E}
   [IsFiniteMeasureOnCompacts mu]

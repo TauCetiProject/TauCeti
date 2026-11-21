@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Sobolev
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Analysis.Sobolev.TestFunctionLp.Representation
 import TauCeti.Analysis.Sobolev.W1p.Zero
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
@@ -84,47 +85,13 @@ private theorem eLpNorm_sub_setAverage_le_of_testFunction {q : ℝ≥0∞} [Fact
     simp only [Opens.coe_top, Measure.restrict_univ] at h
     filter_upwards [h] with x hx
     rw [W1p.gradient_ofTestFunctionₗ, hx]
-  have h := W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset (mu := μ) (x₀ := x₀) hq le_rfl hqs
-    hδ hδn ht (by simp) v
-  have havg : ⨍ y in ball x₀ t, W1p.value v y ∂μ = ⨍ y in ball x₀ t, (φ : E → ℝ) y ∂μ :=
-    average_congr (ae_restrict_of_ae hv)
-  have h1 : (fun x => W1p.value v x - ⨍ y in ball x₀ t, W1p.value v y ∂μ) =ᵐ[μ]
-      fun x => (φ : E → ℝ) x - ⨍ y in ball x₀ t, (φ : E → ℝ) y ∂μ :=
-    hv.mono fun x hx => by simp only [hx, havg]
-  rwa [eLpNorm_congr_ae (ae_restrict_of_ae h1), eLpNorm_congr_ae (ae_restrict_of_ae hg)] at h
-
-/-- Exponent bookkeeping for the conjugate exponents of `1 < r ≤ p < ∞`. -/
-private theorem conjExponent_facts {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)] (hr : 1 < r)
-    (hrp : r ≤ p) (hp : p ≠ ⊤) :
-    1 < p.conjExponent ∧ p.conjExponent ≠ ⊤ ∧ r.conjExponent ≠ ⊤ ∧
-      p.conjExponent ≤ r.conjExponent ∧
-      p.conjExponent.toReal⁻¹ - r.conjExponent.toReal⁻¹ = r.toReal⁻¹ - p.toReal⁻¹ := by
-  have hp1 : 1 < p := hr.trans_le hrp
-  have hpq : p.conjExponent ≠ ⊤ := by
-    rw [ENNReal.conjExponent, Ne, ENNReal.add_eq_top, not_or, ENNReal.inv_eq_top,
-      tsub_eq_zero_iff_le]
-    exact ⟨ENNReal.one_ne_top, not_le.2 hp1⟩
-  have hrs : r.conjExponent ≠ ⊤ := by
-    rw [ENNReal.conjExponent, Ne, ENNReal.add_eq_top, not_or, ENNReal.inv_eq_top,
-      tsub_eq_zero_iff_le]
-    exact ⟨ENNReal.one_ne_top, not_le.2 hr⟩
-  have hr_top : r ≠ ⊤ := ne_top_of_le_ne_top hp hrp
-  have hP := ENNReal.HolderConjugate.toReal_of_ne_top hp hpq (p := p) (q := p.conjExponent)
-  have hR := ENNReal.HolderConjugate.toReal_of_ne_top hr_top hrs (p := r) (q := r.conjExponent)
-  refine ⟨?_, hpq, hrs, ?_, ?_⟩
-  · rw [ENNReal.conjExponent]
-    exact ENNReal.lt_add_right ENNReal.one_ne_top
-      (ENNReal.inv_ne_zero.2 (ENNReal.sub_ne_top hp))
-  · rw [ENNReal.conjExponent, ENNReal.conjExponent]
-    gcongr
-  · have h1 := hP.inv_add_inv_eq_one
-    have h2 := hR.inv_add_inv_eq_one
-    linarith
+  exact W1p.eLpNorm_sub_setAverage_le_of_ae_eq hq le_rfl hqs hδ hδn ht (by simp) v
+    (ae_restrict_of_ae hv.symm) (ae_restrict_of_ae hg.symm)
 
 /-- The pairing of a mean-zero `h ∈ Lʳ` supported in a ball `B = B(x₀, t)` with a test function
 `φ` is bounded by `K t μ(B)^(-δ) ‖h‖_{Lʳ} ‖∇φ‖_{L^q}`, `q` the exponent conjugate to `p`. This is
 the Sobolev–Poincaré inequality for `φ` on `B` read through Hölder's inequality. -/
-private theorem abs_integral_mul_le_of_integral_eq_zero {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)]
+private theorem abs_integral_mul_le_of_integral_eq_zero {p r : ℝ≥0∞} [Fact (1 ≤ r)]
     (hr : 1 < r) (hrp : r ≤ p) (hp : p ≠ ⊤) {δ : ℝ} (hδ : r.toReal⁻¹ - p.toReal⁻¹ = δ)
     (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {x₀ : E} {t : ℝ} (ht : 0 < t) {h : E → ℝ}
     (hh : MemLp h r μ) (hsupp : ∀ᵐ x ∂μ, x ∉ ball x₀ t → h x = 0) (hmean : ∫ x, h x ∂μ = 0)
@@ -133,24 +100,27 @@ private theorem abs_integral_mul_le_of_integral_eq_zero {p r : ℝ≥0∞} [Fact
       (ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t) *
         μ (ball x₀ t) ^ (-δ) * eLpNorm h r μ).toReal *
       (eLpNorm (∇ (φ : E → ℝ)) p.conjExponent μ).toReal := by
-  obtain ⟨hq1, hq_top, hs_top, hqs, hqsδ⟩ := conjExponent_facts hr hrp hp
   set q := p.conjExponent
   set s := r.conjExponent
   set K : ℝ := sobolevPoincareConst (finrank ℝ E) δ
   set B := ball x₀ t
+  have hq_top : q ≠ ⊤ := ENNReal.conjExponent_ne_top (hr.trans_le hrp)
+  have hs_top : s ≠ ⊤ := ENNReal.conjExponent_ne_top hr
   have hB0 : μ B ≠ 0 := (measure_ball_pos μ x₀ ht).ne'
   have hBt : μ B ≠ ⊤ := measure_ball_lt_top.ne
   have : IsFiniteMeasure (μ.restrict B) := isFiniteMeasure_restrict.2 hBt
   have hr1 : (1 : ℝ≥0∞) ≤ r := Fact.out
   have hsN : ((s.toNNReal : ℝ≥0) : ℝ≥0∞) = s := ENNReal.coe_toNNReal hs_top
   have hδ' : q.toReal⁻¹ - ((s.toNNReal : ℝ≥0) : ℝ)⁻¹ = δ := by
-    rw [← hδ, ← hqsδ, ENNReal.coe_toNNReal_eq_toReal]
+    rw [← hδ, ENNReal.coe_toNNReal_eq_toReal, ENNReal.inv_toReal_conjExponent (hr.trans_le hrp) hp,
+      ENNReal.inv_toReal_conjExponent hr (ne_top_of_le_ne_top hp hrp)]
+    ring
   have hs : s.HolderConjugate r := inferInstance
-  have : Fact (1 ≤ q) := ⟨hq1.le⟩
+  have : Fact (1 ≤ q) := ⟨(ENNReal.one_lt_conjExponent hp).le⟩
   set c := ⨍ y in B, (φ : E → ℝ) y ∂μ
   -- Sobolev–Poincaré for `φ` on `B`.
   have hSP := eLpNorm_sub_setAverage_le_of_testFunction (μ := μ) hq_top
-    (by rw [hsN]; exact hqs) hδ' hδn (x₀ := x₀) ht φ
+    (by rw [hsN]; exact ENNReal.conjExponent_le_conjExponent hrp) hδ' hδn (x₀ := x₀) ht φ
   rw [hsN] at hSP
   have hgrad : eLpNorm (∇ (φ : E → ℝ)) q μ ≠ ⊤ :=
     (φ.hasCompactSupport.memLp_gradient (φ.contDiff.of_le (by simp))).eLpNorm_ne_top
@@ -198,7 +168,8 @@ theorem exists_memLp_forall_integral_mul_eq_integral_inner_gradient_of_integral_
       ∃ H : E → E, MemLp H p μ ∧
         eLpNorm H p μ ≤ C * ENNReal.ofReal t * μ (ball x₀ t) ^ (-δ) * eLpNorm h r μ ∧
         ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, h x * φ x ∂μ = ∫ x, ⟪H x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ := by
-  obtain ⟨hq1, hq_top, -, -, -⟩ := conjExponent_facts hr hrp hp
+  have hq1 : 1 < p.conjExponent := ENNReal.one_lt_conjExponent hp
+  have hq_top := ENNReal.conjExponent_ne_top (hr.trans_le hrp)
   set q := p.conjExponent
   set K : ℝ := sobolevPoincareConst (finrank ℝ E) δ
   refine ⟨(finrank ℝ E : ℝ≥0) ^ 2 * K.toNNReal, fun {x₀ t} ht {h} hh hsupp hmean => ?_⟩

@@ -49,19 +49,21 @@ in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported 
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
-It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
-gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
-universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps. With such a cutoff of small gradient, an angle `θ` rising from `0` to `π / 2`
-across an annulus gives the IMS-type partition `cos² θ + sin² θ = 1` with gradients at most a
-prescribed `ε` (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the
-identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
-(`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a smooth, even, compactly
-supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius `r / 2`
-(`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported in `[c - r - 1, c + r + 1]`
-have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
-(`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
-ball with bounded gradient there has integral at most the squared bound times the volume of the ball
+It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose gradient
+is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a universal
+constant `c`, the quantitative form needed by iteration arguments over families of balls with
+shrinking gaps; on a proper space the outer closed ball can be replaced by an open one, with compact
+support (`TauCeti.exists_forall_contDiff_cutoff_ball`). With such a cutoff of small gradient, an
+angle `θ` rising from `0` to `π / 2` across an annulus gives the IMS-type partition
+`cos² θ + sin² θ = 1` with gradients at most a prescribed `ε`
+(`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the identity equals `s` on
+`[-r, r]` and vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product
+space, a smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and
+vanishes on the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus
+supported in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
+independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
+function supported in a closed ball with bounded gradient there has integral at most the squared
+bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
@@ -635,6 +637,24 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
         = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr
       _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
+
+/-- **Smooth cutoffs between a closed ball and a larger open ball.** There is a universal `c ≥ 0`
+such that for `0 ≤ r < R` some smooth `ψ` with values in `[0, 1]` equals `1` on the closed ball
+of radius `r`, has compact topological support inside the open ball of radius `R`, and has
+gradient at most `c / (R - r)`. This is `TauCeti.exists_forall_contDiff_cutoff_closedBall` with
+the outer radius `(r + R) / 2`. -/
+theorem exists_forall_contDiff_cutoff_ball [InnerProductSpace ℝ E] [ProperSpace E] :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, 0 ≤ r → r < R →
+      ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ HasCompactSupport ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.ball x₀ R ∧
+        ∀ x, ‖∇ ψ x‖ ≤ c / (R - r) := by
+  obtain ⟨c, hc, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  refine ⟨2 * c, by positivity, fun x₀ r R hr hrR => ?_⟩
+  obtain ⟨ψ, hψ, hψr, hψ1, hts, hgrad, -⟩ := hcut x₀ hr (show r < (r + R) / 2 by linarith)
+  refine ⟨ψ, hψ, (isCompact_closedBall x₀ _).of_isClosed_subset (isClosed_tsupport _) hts, hψr,
+    hψ1, hts.trans (Metric.closedBall_subset_ball (by linarith)), fun x => (hgrad x).trans_eq ?_⟩
+  rw [show (r + R) / 2 - r = (R - r) / 2 by ring]
+  field_simp
 
 open Real in
 /-- **A slowly rising angle.** For `0 ≤ R` and `0 < ε`, some smooth `θ` vanishes on the closed
