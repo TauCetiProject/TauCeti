@@ -25,11 +25,12 @@ includes dimension zero. Every such basis is a Darboux basis for the associated 
 symplectic orientation `ω.orientation`
 (`TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`).
 
-The construction takes a complex orthonormal basis for the Hermitian metric induced by `J`,
-then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real coordinate
-immediately before its imaginary coordinate. Both constructions preserve the original norm
-and real scalar action. Conversely, any almost complex structure admitting an adapted orthonormal
-basis `(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})` is orthogonal
+The construction takes a complex orthonormal basis for the Hermitian metric induced by `J`, whose
+coordinates are a real linear isometry with `ℂⁿ` turning `J` into multiplication by `i`, then uses
+`TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real coordinate immediately before
+its imaginary coordinate. Both constructions preserve the original norm and real scalar action.
+Conversely, any almost complex structure admitting an adapted orthonormal basis
+`(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})` is orthogonal
 (`TauCeti.AlmostComplexStructure.inner_apply_apply_of_adapted`; in dimension four,
 `TauCeti.AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis`).
 
@@ -41,6 +42,10 @@ form
 
 ## Main results
 
+* `TauCeti.AlmostComplexStructure.exists_linearIsometryEquiv_euclideanSpace`: an orthogonal almost
+  complex structure is multiplication by `i` in a real linear isometry with `ℂⁿ`.
+* `TauCeti.SymplecticForm.apply_map_map_eq_im_inner`: in such an isometry, a symplectic form whose
+  metric `ω(·, J ·)` is the inner product is the imaginary part of the Hermitian product.
 * `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
   exist in every even dimension `2 * n`.
 * `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
@@ -76,32 +81,42 @@ section EvenDimension
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- An orthogonal complex structure admits an orthonormal basis consisting of consecutive
-pairs `(u₁, J u₁, …, uₙ, J uₙ)`, including the empty basis in dimension zero. -/
-theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀ v, ‖J v‖ = ‖v‖)
-    (n : ℕ) (hdim : finrank ℝ V = 2 * n) :
-    ∃ b : OrthonormalBasis (Fin (2 * n)) ℝ V,
-      ∀ k : Fin n, b ⟨2 * k.val + 1, by omega⟩ = J (b ⟨2 * k.val, by omega⟩) := by
-  classical
+/-- **A unitary frame from `ℂⁿ`.** An orthogonal almost complex structure `J` on a
+finite-dimensional real inner product space is multiplication by `i` in some real linear isometry
+`Φ : ℂⁿ ≃ V`: `Φ (i • x) = J (Φ x)`. -/
+theorem exists_linearIsometryEquiv_euclideanSpace (J : AlmostComplexStructure V)
+    (hJ : ∀ v, ‖J v‖ = ‖v‖) :
+    ∃ (n : ℕ) (Φ : EuclideanSpace ℂ (Fin n) ≃ₗᵢ[ℝ] V),
+      ∀ x, Φ (Complex.I • x) = J (Φ x) := by
   let := J.complexInnerProductSpace hJ
   let := J.complexInnerProductSpace_isScalarTower hJ
   have hI (v : V) : Complex.I • v = J v := by
     rw [J.complexInnerProductSpace_smul_def hJ]
     simp
   have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
-  have hn : finrank ℂ V = n := by
-    have h := Module.finrank_mul_finrank ℝ ℂ V
-    rw [Complex.finrank_real_complex, hdim] at h
-    omega
-  let b := (stdOrthonormalBasis ℂ V).reindex (finCongr hn)
-  let f : V ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin n) :=
+  let b := stdOrthonormalBasis ℂ V
+  let f : V ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin (finrank ℂ V)) :=
     { b.repr.toLinearEquiv.restrictScalars ℝ with norm_map' := b.repr.norm_map }
-  let e := f.trans (complexEuclideanRealLinearIsometryEquiv n)
+  exact ⟨_, f.symm, fun x ↦ (b.repr.symm.map_smul Complex.I x).trans (hI _)⟩
+
+/-- An orthogonal complex structure admits an orthonormal basis consisting of consecutive
+pairs `(u₁, J u₁, …, uₙ, J uₙ)`, including the empty basis in dimension zero. -/
+theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀ v, ‖J v‖ = ‖v‖)
+    (n : ℕ) (hdim : finrank ℝ V = 2 * n) :
+    ∃ b : OrthonormalBasis (Fin (2 * n)) ℝ V,
+      ∀ k : Fin n, b ⟨2 * k.val + 1, by omega⟩ = J (b ⟨2 * k.val, by omega⟩) := by
+  obtain ⟨m, Φ, hΦ⟩ := J.exists_linearIsometryEquiv_euclideanSpace hJ
+  obtain rfl : m = n := by
+    have h := Φ.toLinearEquiv.finrank_eq
+    rw [hdim, ← Module.finrank_mul_finrank ℝ ℂ, Complex.finrank_real_complex,
+      finrank_euclideanSpace_fin] at h
+    omega
+  let e := Φ.symm.trans (complexEuclideanRealLinearIsometryEquiv m)
   refine ⟨OrthonormalBasis.ofRepr e, fun k ↦ ?_⟩
   have hsingle :
-      (complexEuclideanRealLinearIsometryEquiv n).symm
+      (complexEuclideanRealLinearIsometryEquiv m).symm
           (EuclideanSpace.single ⟨2 * k.val + 1, by omega⟩ (1 : ℝ)) =
-        Complex.I • (complexEuclideanRealLinearIsometryEquiv n).symm
+        Complex.I • (complexEuclideanRealLinearIsometryEquiv m).symm
           (EuclideanSpace.single ⟨2 * k.val, by omega⟩ (1 : ℝ)) := by
     ext j
     simp only [complexEuclideanRealLinearIsometryEquiv_symm_apply,
@@ -110,9 +125,9 @@ theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀
       Fin.cast_mk]
     split_ifs <;> first | omega | norm_num
   simp only [OrthonormalBasis.coe_ofRepr, e, LinearIsometryEquiv.symm_trans,
-    LinearIsometryEquiv.trans_apply]
+    LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.symm_symm]
   rw [hsingle]
-  exact (b.repr.symm.map_smul Complex.I _).trans (hI _)
+  exact hΦ _
 
 /-- An even-dimensional real inner product space admits an orthogonal almost complex structure,
 including the zero structure in dimension zero. -/
@@ -290,6 +305,30 @@ theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientatio
 end DimensionFour
 
 end TauCeti.AlmostComplexStructure
+
+namespace TauCeti.SymplecticForm
+
+open scoped RealInnerProductSpace
+
+variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup F]
+  [InnerProductSpace ℂ F] {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- **A symplectic form in a unitary frame is the imaginary part of the Hermitian product.** If
+the inner product of `V` is the metric `ω(·, J ·)` and a real linear isometry `Φ : F → V` from a
+complex inner product space turns multiplication by `i` into `J`, then
+`ω(Φ x, Φ y) = Im ⟪x, y⟫`. -/
+theorem apply_map_map_eq_im_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (Φ : F →ₗᵢ[ℝ] V)
+    (hΦ : ∀ x, Φ (Complex.I • x) = J (Φ x)) (x y : F) :
+    ω (Φ x) (Φ y) = (inner ℂ x y).im := by
+  let := InnerProductSpace.complexToReal (G := F)
+  -- `Φ y = J (Φ (-i • y))`, and the metric of `J` is the inner product.
+  have hy : Φ y = J (Φ ((-Complex.I) • y)) := by
+    rw [← hΦ, smul_smul]
+    simp
+  rw [hy, hg, Φ.inner_map_map, real_inner_eq_re_inner ℂ, inner_smul_right]
+  simp
+
+end TauCeti.SymplecticForm
 
 namespace OrthonormalBasis
 

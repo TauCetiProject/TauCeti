@@ -54,6 +54,8 @@ two-vectors.
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
 * `exteriorPower.ιMulti_ne_zero_iff`: over a field, an exterior product of vectors is nonzero
   exactly when the vectors are linearly independent.
+* `exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along a linear map `g` of a basis of its
+  target have a nonzero exterior product.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -74,7 +76,8 @@ two-vectors.
   unchanged by renumbering its factors along `Fin.cast`, an empty part of an appended family can
   be dropped (`TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left`,
   `TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right`), and
-  `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
+  `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family;
+  `TauCeti.ExteriorAlgebra.ιMulti_append_comp_cast` multiplies two renumbered families.
 * `TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero`: an exterior product of a family indexed by `Fin n`
   with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
@@ -297,6 +300,14 @@ theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
   simpa [ιMulti_family, he] using (ιMulti_family_linearIndependent_field (n := n) hv).ne_zero
     (Set.powersetCard.ofCard hs)
 
+/-- The exterior product of lifts `v₁, …, vₙ` along `g` of the vectors of a basis of `W` is
+nonzero. -/
+theorem ιMulti_comp_ne_zero_of_eq_basis {W : Type*} [AddCommGroup W] [Module K W]
+    {g : V →ₗ[K] W} {n : ℕ} {b : Module.Basis (Fin n) K W} {v : Fin n → V}
+    (hv : ∀ i, g (v i) = b i) : ιMulti K n (g ∘ v) ≠ 0 := by
+  rw [show g ∘ v = ⇑b from funext hv]
+  exact (ιMulti_ne_zero_iff _).2 b.linearIndependent
+
 end Field
 
 /-! ### Induced maps -/
@@ -486,6 +497,14 @@ theorem ιMulti_comp_append {n m : ℕ} (f : M →ₗ[R] N) (a : Fin n → M) (b
       _root_.ExteriorAlgebra.ιMulti R n (f ∘ a) * _root_.ExteriorAlgebra.ιMulti R m (f ∘ b) := by
   rw [← _root_.ExteriorAlgebra.map_apply_ιMulti, ← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti,
     map_mul, _root_.ExteriorAlgebra.map_apply_ιMulti, _root_.ExteriorAlgebra.map_apply_ιMulti]
+
+/-- Exterior products of two families renumbered along `Fin.cast` multiply to the exterior
+product of their concatenation. -/
+theorem ιMulti_append_comp_cast {n₁ n₂ m₁ m₂ : ℕ} (x : Fin m₁ → M) (y : Fin m₂ → M)
+    (h₁ : n₁ = m₁) (h₂ : n₂ = m₂) :
+    _root_.ExteriorAlgebra.ιMulti R (n₁ + n₂) (Fin.append (x ∘ Fin.cast h₁) (y ∘ Fin.cast h₂)) =
+      _root_.ExteriorAlgebra.ιMulti R m₁ x * _root_.ExteriorAlgebra.ιMulti R m₂ y := by
+  rw [← ιMulti_comp_cast h₁ x, ← ιMulti_comp_cast h₂ y, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
 
 /-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)`, written
 with a scalar of the base ring rather than Mathlib's unit of `ℤ`

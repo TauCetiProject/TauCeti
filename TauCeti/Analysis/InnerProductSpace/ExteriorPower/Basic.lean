@@ -50,7 +50,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
-* `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`.
+* `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
+  `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
+  wedges `e ∧ x` and `e ∧ y` are orthonormal.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
   corresponding extensionality principle for linear maps between exterior powers;
@@ -123,6 +125,23 @@ theorem inner_ιMulti_two (a b u w : E) :
     ⟪ιMulti ℝ 2 ![a, b], ιMulti ℝ 2 ![u, w]⟫ = ⟪a, u⟫ * ⟪b, w⟫ - ⟪a, w⟫ * ⟪b, u⟫ := by
   simp [inner_ιMulti_ιMulti, Matrix.det_fin_two]
   ring
+
+/-- For an orthonormal triple `e, x, y`, the wedges `e ∧ x` and `e ∧ y` are orthonormal. -/
+theorem orthonormal_ιMulti_two_of_orthonormal {e x y : E} (h : Orthonormal ℝ ![e, x, y]) :
+    Orthonormal ℝ ![ιMulti ℝ 2 ![e, x], ιMulti ℝ 2 ![e, y]] := by
+  have he : ‖e‖ = 1 := h.left 0
+  have hx : ‖x‖ = 1 := h.left 1
+  have hy : ‖y‖ = 1 := h.left 2
+  have hex : ⟪e, x⟫ = 0 := h.right (by decide : (0 : Fin 3) ≠ 1)
+  have hey : ⟪e, y⟫ = 0 := h.right (by decide : (0 : Fin 3) ≠ 2)
+  have hxy : ⟪x, y⟫ = 0 := h.right (by decide : (1 : Fin 3) ≠ 2)
+  have hyx : ⟪y, x⟫ = 0 := h.right (by decide : (2 : Fin 3) ≠ 1)
+  rw [orthonormal_iff_ite]
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] <;>
+    rw [inner_ιMulti_two] <;>
+    simp [he, hx, hy, hex, hey, hxy, hyx]
 
 /-- Elements of `⋀ⁿ E` are determined by their inner products with wedges of vectors, since these
 wedges span `⋀ⁿ E`. -/

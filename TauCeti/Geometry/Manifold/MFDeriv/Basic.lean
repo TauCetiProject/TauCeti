@@ -16,9 +16,9 @@ manifold-derivative API.
 
 ## Main results
 
-* `TauCeti.mfderiv_comp_of_apply_eq_self`: the chain rule at a fixed point `f x = x`, with both
-  derivatives taken at `x`, so the composite is an endomorphism of the single tangent space
-  `T_x M`.
+* `TauCeti.mfderiv_comp_of_apply_eq_self`: the chain rule at a fixed point `f x = x` of the
+  inner map, with both derivatives taken at `x`, so no cast between `T_(f x) M` and `T_x M` is
+  needed.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
 * `TauCeti.mdifferentiableAt_iterate`: if `f` is differentiable at the first `n` points of the
   orbit of `x`, then `f^[n]` is differentiable at `x`.
@@ -43,11 +43,13 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
   [ChartedSpace H M] {x : M}
 
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
 /-- The chain rule at a fixed point: if `f x = x`, the derivative of `g ∘ f` at `x` is the
 composite of the derivatives of `g` and `f` at `x`, the tangent space at `f x` being that at `x`. -/
-theorem mfderiv_comp_of_apply_eq_self {f g : M → M} (hg : MDifferentiableAt I I g x)
+theorem mfderiv_comp_of_apply_eq_self {f : M → M} {g : M → N} (hg : MDifferentiableAt I J g x)
     (hf : MDifferentiableAt I I f x) (hfx : f x = x) :
-    mfderiv I I (g ∘ f) x = (mfderiv I I g x).comp (mfderiv I I f x) := by
+    mfderiv I J (g ∘ f) x = (mfderiv I J g x).comp (mfderiv I I f x) := by
   have h := mfderiv_comp_of_eq hg hf hfx
   -- `mfderiv_comp_of_eq` takes the derivative of `g` at `f x`; replace that point by `x`.
   generalize hz : f x = z at h

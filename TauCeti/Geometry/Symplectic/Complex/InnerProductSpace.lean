@@ -20,13 +20,21 @@ structure rather than a global instance, since it depends on `J`.
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
 real inner product, `TauCeti.AlmostComplexStructure.inner_apply_left_eq_neg_swap` the antisymmetry
 `⟪J v, w⟫ = -⟪J w, v⟫`, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`. Consequently, by `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the
-parametrization `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
+`⟪J v, v⟫ = 0`. Hence `p` and `J p` are orthogonal of equal norm, and Cauchy–Schwarz for the
+complex inner product bounds the components of any vector along them
+(`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`). Consequently, by
+`TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the parametrization
+`z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
 
 Conversely, multiplication by `i` on a complex inner product space preserves the real inner product
 `Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`), and
 more generally any compatible real inner product on a complex inner product space
 (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply`).
+
+Conversely, on a complex inner product space the imaginary part `Im ⟪·, ·⟫` of the inner product,
+when it is given as a symplectic form, is compatible with multiplication by `i`
+(`TauCeti.SymplecticForm.compatible_ofComplexModule_of_forall_eq_im_inner`): its associated metric
+`Im ⟪v, i w⟫` is the real inner product `Re ⟪v, w⟫`.
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -163,6 +171,19 @@ theorem real_inner_ofComplexModule_apply_ofComplexModule_apply
     ⟪ofComplexModule E v, ofComplexModule E w⟫_ℝ = ⟪v, w⟫_ℝ := by
   simp [TauCeti.inner_real_eq_re_inner ℂ, inner_smul_left, inner_smul_right]
 
+/-- Cauchy–Schwarz for the Hermitian metric of an orthogonal complex structure, in real terms: the
+components of `d` along the orthogonal pair `p`, `J p` of equal norms satisfy
+`⟪d, J p⟫² + ⟪d, p⟫² ≤ ‖d‖² ‖p‖²`. -/
+theorem inner_sq_add_inner_sq_le {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (d p : V) :
+    ⟪d, J p⟫ ^ 2 + ⟪d, p⟫ ^ 2 ≤ ‖d‖ ^ 2 * ‖p‖ ^ 2 := by
+  let := J.complexInnerProductSpace (norm_apply hJ)
+  have h := pow_le_pow_left₀ (norm_nonneg _) (norm_inner_le_norm (𝕜 := ℂ) p d) 2
+  simp only [complexInnerProductSpace_inner, Complex.sq_norm, mul_comm Complex.I,
+    Complex.normSq_add_mul_I, mul_pow] at h
+  rw [real_inner_comm p d, real_inner_comm (J p) d]
+  linarith
+
 /-- Multiplication by `i` preserves the real inner product `Re ⟪·, ·⟫_ℂ` of a complex inner
 product space, so `ofComplexModule E` is an orthogonal complex structure. -/
 theorem real_inner_ofComplexModule_ofComplexModule {E : Type*} [NormedAddCommGroup E]
@@ -173,3 +194,21 @@ theorem real_inner_ofComplexModule_ofComplexModule {E : Type*} [NormedAddCommGro
   simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right, ← mul_assoc]
 
 end TauCeti.AlmostComplexStructure
+
+namespace TauCeti.SymplecticForm
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+
+/-- The imaginary part `Im ⟪·, ·⟫` of a complex inner product, as a symplectic form, is compatible
+with multiplication by `i`: it is invariant under `i`, and `ω(v, i v) = ‖v‖²`. -/
+theorem compatible_ofComplexModule_of_forall_eq_im_inner (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) :
+    ω.Compatible (AlmostComplexStructure.ofComplexModule F) := by
+  refine .of_tames ((ω.invariant_iff _).2 fun v w ↦ ?_) fun v hv ↦ ?_
+  · simp [hω, inner_smul_left, inner_smul_right]
+  · rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right,
+      inner_self_eq_norm_sq_to_K]
+    simp only [Complex.mul_im, Complex.I_re, Complex.I_im, zero_mul, one_mul, zero_add]
+    exact_mod_cast pow_pos (norm_pos_iff.2 hv) 2
+
+end TauCeti.SymplecticForm
