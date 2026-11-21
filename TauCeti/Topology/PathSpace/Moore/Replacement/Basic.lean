@@ -312,6 +312,12 @@ def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
 theorem val_mk' (x : MooreReplacement p) (h : x.path.target = b) : (mk' x h).val = x :=
   (rfl)
 
+/-- A family of points of the fibre is continuous when the family of underlying pairs is. -/
+@[fun_prop]
+theorem continuous_mk' {Y : Type*} [TopologicalSpace Y] {f : Y → MooreReplacement p}
+    (hf : Continuous f) (h : ∀ y, (f y).path.target = b) : Continuous fun y ↦ mk' (f y) (h y) :=
+  hf.subtype_mk _
+
 /-- The fibre `F'` is the fibre of the endpoint map `p'` over `b`: a point of `F'` is sent to its
 underlying pair. -/
 def homeomorphEndpointFiber (p : C(E, B)) (b : B) : Fiber p b ≃ₜ {x // endpoint p x = b} :=
