@@ -574,6 +574,7 @@ private noncomputable def structureOfPoint {X : EllObj B}
         rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
         exact hP)⟩
 
+omit [NeZero N] in
 private theorem naiveLevelEquiv_structureOfPoint {X : EllObj B}
     {P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap} (hP : X.curve.IsOfNaiveExactOrder P N) :
     (ModuliProblem.naiveLevelEquiv X (structureOfPoint hP)).val (.ofAdd 1) = P := by

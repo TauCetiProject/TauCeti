@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Algebra.Group.ULift
 import TauCeti.Algebra.Group.Conj
+import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.GroupTheory.CoprodI
 import TauCeti.GroupTheory.CoprodI.Word
 
@@ -25,6 +26,8 @@ arbitrary universes are covered.
 
 ## Main results
 
+* `Monoid.CoprodI.not_isOfFinOrder_of_mul_of`: in `CoprodI M`, `of x * of y` for nontrivial
+  elements of distinct factors has infinite order.
 * `Monoid.CoprodI.exists_isConj_of_isOfFinOrder_of_ne_one`,
   `Monoid.CoprodI.eq_one_or_exists_isConj_of_isOfFinOrder`,
   `Monoid.CoprodI.isOfFinOrder_iff`: classification of torsion elements in `CoprodI G`.
@@ -39,10 +42,11 @@ arbitrary universes are covered.
 The torsion classification on `CoprodI G` uses Mathlib's reduced-word normal form
 `Monoid.CoprodI.Word.equiv`. A reduced word of length at least `2` whose first and last letters lie
 in distinct factors has no cancellation between adjacent copies, so all of its positive powers are
-nonempty reduced words. When the first and last letters lie in the same factor `G i`, conjugating by
-the inverse of the first letter and taking the inverse merges those two letters into a strictly
-shorter reduced word. Binary `Monoid.Coprod` results across distinct universes reduce to `CoprodI`
-over `Bool` via `ULift` and `Monoid.CoprodI.boolEquivCoprod`.
+nonempty reduced words (`Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`). When the first and
+last letters lie in the same factor `G i`, conjugating by the inverse of the first letter and taking
+the inverse merges those two letters into a strictly shorter reduced word. Binary `Monoid.Coprod`
+results across distinct universes reduce to `CoprodI` over `Bool` via
+`Monoid.CoprodI.uliftBoolEquivCoprod`.
 
 ## References
 
@@ -69,36 +73,22 @@ theorem isOfFinOrder_of_iff {i : ι} {x : M i} :
 theorem orderOf_of {i : ι} (x : M i) : orderOf (of x : CoprodI M) = orderOf x :=
   orderOf_injective of (of_injective i) x
 
+/-- In `CoprodI M`, the product `of x * of y` of two nontrivial elements from distinct factors
+`M i` and `M j` (`i ≠ j`) has infinite order. -/
+theorem not_isOfFinOrder_of_mul_of {i j : ι} (hij : i ≠ j) {x : M i} {y : M j}
+    (hx : x ≠ 1) (hy : y ≠ 1) : ¬IsOfFinOrder (of x * of y : CoprodI M) := by
+  have hprod : ((NeWord.singleton x hx).append hij (NeWord.singleton y hy)).prod =
+      of x * of y := by
+    rw [NeWord.append_prod]
+    rfl
+  rw [← hprod]
+  exact ((NeWord.singleton x hx).append hij (NeWord.singleton y hy)).not_isOfFinOrder_prod_of_ne hij
+
 end Monoid
 
 section Group
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
-
-/-- Iterated concatenation `u^(n + 1)` of a nonempty reduced word `u : NeWord G i j` whose first
-and last letters lie in distinct factors (`j ≠ i`), so no cancellation occurs between copies. -/
-private def neWordPowAux {i j : ι} (u : NeWord G i j) (hji : j ≠ i) : ℕ → NeWord G i j
-  | 0 => u
-  | n + 1 => u.append hji (neWordPowAux u hji n)
-
-private theorem prod_neWordPowAux {i j : ι} (u : NeWord G i j) (hji : j ≠ i) :
-    ∀ n : ℕ, (neWordPowAux u hji n).prod = u.prod ^ (n + 1)
-  | 0 => by simp [neWordPowAux]
-  | n + 1 => by rw [neWordPowAux, NeWord.append_prod, prod_neWordPowAux u hji n, ← pow_succ']
-
-/-- A nonempty reduced word whose first and last letters lie in distinct factors represents an
-element of infinite order. -/
-private theorem not_isOfFinOrder_prod_neWord_of_ne {i j : ι} (u : NeWord G i j) (hij : i ≠ j) :
-    ¬IsOfFinOrder u.prod := by
-  classical
-  rw [isOfFinOrder_iff_pow_eq_one]
-  rintro ⟨n, hn, hpow⟩
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  have hprod : (neWordPowAux u hij.symm k).toWord.prod = (Word.empty : Word G).prod := by
-    rw [← NeWord.prod, prod_neWordPowAux, hpow, Word.prod_empty]
-  have hempty : (neWordPowAux u hij.symm k).toWord = Word.empty :=
-    Word.equiv.symm.injective hprod
-  exact (neWordPowAux u hij.symm k).toList_ne_nil (congrArg Word.toList hempty)
 
 /-- Cyclic reduction step: if a reduced word `Word.cons a v hfv ha1` with `v` nonempty represents an
 element of finite order, its first and last letters lie in the same factor `G i`, so conjugating by
@@ -115,7 +105,7 @@ private theorem exists_word_length_lt_of_cons
   obtain ⟨i₀, j₀, u, hu⟩ := NeWord.of_word w hw_ne
   have hij : i₀ = j₀ := by
     by_contra hne
-    exact not_isOfFinOrder_prod_neWord_of_ne u hne (by rwa [NeWord.prod, hu])
+    exact u.not_isOfFinOrder_prod_of_ne hne (by rwa [NeWord.prod, hu])
   subst hij
   have hi₀ : i = i₀ := by
     have hhead := congrArg Word.fstIdx hu
@@ -248,19 +238,30 @@ theorem orderOf_inl (x : M) : orderOf (inl x : M ∗ N) = orderOf x :=
 theorem orderOf_inr (y : N) : orderOf (inr y : M ∗ N) = orderOf y :=
   orderOf_injective (inr : N →* M ∗ N) inr_injective y
 
+/-- In `M ∗ N`, the product `inl x * inr y` of two nontrivial factor elements has infinite
+order. -/
+theorem not_isOfFinOrder_inl_mul_inr {x : M} {y : N} (hx : x ≠ 1) (hy : y ≠ 1) :
+    ¬IsOfFinOrder (inl x * inr y : M ∗ N) := by
+  intro hfin
+  have hfin' : IsOfFinOrder ((CoprodI.uliftBoolEquivCoprod M N).symm (inl x * inr y)) :=
+    (CoprodI.uliftBoolEquivCoprod M N).symm.toMonoidHom.isOfFinOrder hfin
+  rw [map_mul, CoprodI.uliftBoolEquivCoprod_symm_inl,
+    CoprodI.uliftBoolEquivCoprod_symm_inr] at hfin'
+  exact CoprodI.not_isOfFinOrder_of_mul_of Bool.false_ne_true
+    (fun h => hx (congrArg ULift.down h)) (fun h => hy (congrArg ULift.down h)) hfin'
+
+/-- In `M ∗ N`, the product `inr y * inl x` of two nontrivial factor elements has infinite
+order. -/
+theorem not_isOfFinOrder_inr_mul_inl {x : M} {y : N} (hx : x ≠ 1) (hy : y ≠ 1) :
+    ¬IsOfFinOrder (inr y * inl x : M ∗ N) := fun h =>
+  not_isOfFinOrder_inl_mul_inr hy hx <| by
+    simpa using (MulEquiv.coprodComm M N).toMonoidHom.isOfFinOrder h
+
 end Monoid
 
 section Group
 
 variable {G : Type u} {H : Type v} [Group G] [Group H]
-
-private def uliftBoolFam (G : Type u) (H : Type v) : Bool → Type (max u v)
-  | false => ULift.{v} G
-  | true => ULift.{u} H
-
-private instance instGroupUliftBoolFam : ∀ b, Group (uliftBoolFam G H b)
-  | false => inferInstanceAs (Group (ULift.{v} G))
-  | true => inferInstanceAs (Group (ULift.{u} H))
 
 /-- Every nontrivial element of finite order in the free product `G ∗ H` of two groups is conjugate
 to a nontrivial element of finite order in `G` or in `H`. -/
@@ -268,9 +269,7 @@ theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : G ∗ H}
     (hg : IsOfFinOrder g) (hg1 : g ≠ 1) :
     (∃ x : G, x ≠ 1 ∧ IsConj g (inl x) ∧ IsOfFinOrder x) ∨
        (∃ y : H, y ≠ 1 ∧ IsConj g (inr y) ∧ IsOfFinOrder y) := by
-  let e : CoprodI (uliftBoolFam G H) ≃* G ∗ H :=
-    (CoprodI.boolEquivCoprod (uliftBoolFam G H)).trans
-      (MulEquiv.coprodCongr (MulEquiv.ulift (α := G)) (MulEquiv.ulift (α := H)))
+  let e : CoprodI (CoprodI.boolFactors G H) ≃* G ∗ H := CoprodI.uliftBoolEquivCoprod G H
   have hg' : IsOfFinOrder (e.symm g) :=
     (Function.Injective.isOfFinOrder_iff (f := e.symm.toMonoidHom) e.symm.injective).mpr hg
   have hg1' : e.symm g ≠ 1 := by simp [hg1]
@@ -279,20 +278,18 @@ theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : G ∗ H}
   cases b with
   | false =>
     have he := e.toMonoidHom.map_isConj hconj
-    have he_of : e (CoprodI.of (M := uliftBoolFam G H) (i := false) z) = inl z.down := by
-      rw [MulEquiv.trans_apply, CoprodI.boolEquivCoprod_of_false (M := uliftBoolFam G H)]
-      rfl
-    rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, he_of] at he
+    rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply] at he
+    rw [show e (CoprodI.of (i := false) z) = inl z.down from
+      CoprodI.uliftBoolEquivCoprod_of_false z] at he
     exact Or.inl ⟨z.down, fun hx => hz1 (ULift.ext hx), he,
       (Function.Injective.isOfFinOrder_iff
         (f := (MulEquiv.ulift (α := G)).toMonoidHom)
         (MulEquiv.ulift (α := G)).injective).mpr hz_fin⟩
   | true =>
     have he := e.toMonoidHom.map_isConj hconj
-    have he_of : e (CoprodI.of (M := uliftBoolFam G H) (i := true) z) = inr z.down := by
-      rw [MulEquiv.trans_apply, CoprodI.boolEquivCoprod_of_true (M := uliftBoolFam G H)]
-      rfl
-    rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, he_of] at he
+    rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply] at he
+    rw [show e (CoprodI.of (i := true) z) = inr z.down from
+      CoprodI.uliftBoolEquivCoprod_of_true z] at he
     exact Or.inr ⟨z.down, fun hy => hz1 (ULift.ext hy), he,
       (Function.Injective.isOfFinOrder_iff
         (f := (MulEquiv.ulift (α := H)).toMonoidHom)
@@ -321,29 +318,14 @@ theorem isOfFinOrder_iff {g : G ∗ H} :
   · exact h.symm.isOfFinOrder ((inl : G →* G ∗ H).isOfFinOrder hx)
   · exact h.symm.isOfFinOrder ((inr : H →* G ∗ H).isOfFinOrder hy)
 
-/-- In `G ∗ H`, the product `inl x * inr y` of two nontrivial factor elements has infinite
-order. -/
-theorem not_isOfFinOrder_inl_mul_inr {x : G} {y : H} (hx : x ≠ 1) (hy : y ≠ 1) :
-    ¬IsOfFinOrder (inl x * inr y : G ∗ H) := by
-  intro hfin
-  rcases exists_isConj_inl_or_inr_of_isOfFinOrder hfin with ⟨a, h, -⟩ | ⟨b, h, -⟩
-  · exact hy (isConj_one_left.mp (by simpa using snd.map_isConj h))
-  · exact hx (isConj_one_left.mp (by simpa using fst.map_isConj h))
-
-/-- In `G ∗ H`, the product `inr y * inl x` of two nontrivial factor elements has infinite
-order. -/
-theorem not_isOfFinOrder_inr_mul_inl {x : G} {y : H} (hx : x ≠ 1) (hy : y ≠ 1) :
-    ¬IsOfFinOrder (inr y * inl x : G ∗ H) := fun h =>
-  not_isOfFinOrder_inl_mul_inr hy hx <| by
-    simpa using (MulEquiv.coprodComm G H).toMonoidHom.isOfFinOrder h
-
 /-- The free product of two torsion-free groups is torsion-free. -/
 instance instIsMulTorsionFree [IsMulTorsionFree G] [IsMulTorsionFree H] :
     IsMulTorsionFree (G ∗ H) := by
-  refine .of_not_isOfFinOrder fun g hg1 hg => ?_
-  rcases exists_isConj_of_isOfFinOrder_of_ne_one hg hg1 with ⟨x, hx1, -, hx⟩ | ⟨y, hy1, -, hy⟩
-  · exact isMulTorsionFree_iff_not_isOfFinOrder.mp inferInstance hx1 hx
-  · exact isMulTorsionFree_iff_not_isOfFinOrder.mp inferInstance hy1 hy
+  have : ∀ b, IsMulTorsionFree (CoprodI.boolFactors G H b)
+    | false => (MulEquiv.ulift (α := G)).isMulTorsionFree_iff.mpr inferInstance
+    | true => (MulEquiv.ulift (α := H)).isMulTorsionFree_iff.mpr inferInstance
+  exact (CoprodI.uliftBoolEquivCoprod G H).isMulTorsionFree_iff.mp
+    CoprodI.instIsMulTorsionFree
 
 end Group
 

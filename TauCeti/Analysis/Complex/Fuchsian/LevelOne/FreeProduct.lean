@@ -365,13 +365,9 @@ theorem _root_.Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one (Γ : Subgro
 theorem _root_.Subgroup.six_dvd_index_of_isMulTorsionFree (Γ : Subgroup PSL(2, ℤ))
     [IsMulTorsionFree Γ] :
     6 ∣ Γ.index := by
-  have h2 : 2 ∣ Γ.index := by
-    have h := Γ.orderOf_dvd_index_of_isMulTorsionFree isOfFinOrder_coe_S
-    rwa [orderOf_coe_S] at h
-  have h3 : 3 ∣ Γ.index := by
-    have h := Γ.orderOf_dvd_index_of_isMulTorsionFree isOfFinOrder_coe_R
-    rwa [orderOf_coe_R] at h
-  exact (by decide : Nat.Coprime 2 3).mul_dvd_of_dvd_of_dvd h2 h3
+  refine Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one fun g hg hg_fin ↦ ?_
+  exact congrArg Subtype.val
+    (Submonoid.isOfFinOrder_coe.mp hg_fin : IsOfFinOrder (⟨g, hg⟩ : Γ)).eq_one'
 
 /-! ### Abelianization of `PSL(2, ℤ)` -/
 
@@ -380,28 +376,28 @@ additively, is canonically isomorphic to `ZMod 6`, normalized so that the cusp t
 to `1`, `U = S * T⁻¹` maps to `2`, `S` maps to `3`, and `R = S * T` maps to `4`. -/
 def psl2zAbelianizationAddEquiv :
     Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6 :=
-  ((triangleGroupEquiv.symm.abelianizationCongr.toAdditive.trans
-    (TriangleGroup.abelianizationZeroAddEquivProd 3 2)).trans
-    AddEquiv.prodComm).trans
-    (ZMod.chineseRemainder (by decide : Nat.Coprime 2 3)).symm.toAddEquiv
+  triangleGroupEquiv.symm.abelianizationCongr.toAdditive.trans
+    (TriangleGroup.abelianizationZeroAddEquivZMod (by decide : Nat.Coprime 3 2))
 
 /-- `psl2zAbelianizationAddEquiv` sends the class of `S` to `3`. -/
 @[simp]
 theorem psl2zAbelianizationAddEquiv_coe_S :
     psl2zAbelianizationAddEquiv (.ofMul (.of (S : PSL(2, ℤ)))) = 3 := by
-  apply (ZMod.chineseRemainder (by decide : Nat.Coprime 2 3)).injective
-  have h3 : (ZMod.chineseRemainder (by decide : Nat.Coprime 2 3)) 3 = (1, 0) := by decide
-  rw [h3]
-  simp [psl2zAbelianizationAddEquiv, AddEquiv.trans_apply, triangleGroupEquiv_symm_coe_S]
+  apply (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).injective
+  have h3 : (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)) 3 = (0, 1) := by decide
+  rw [h3, psl2zAbelianizationAddEquiv, AddEquiv.trans_apply,
+    TriangleGroup.chineseRemainder_abelianizationZeroAddEquivZMod]
+  simp [triangleGroupEquiv_symm_coe_S]
 
 /-- `psl2zAbelianizationAddEquiv` sends the class of `R = S * T` to `4`. -/
 @[simp]
 theorem psl2zAbelianizationAddEquiv_coe_R :
     psl2zAbelianizationAddEquiv (.ofMul (.of (R : PSL(2, ℤ)))) = 4 := by
-  apply (ZMod.chineseRemainder (by decide : Nat.Coprime 2 3)).injective
-  have h4 : (ZMod.chineseRemainder (by decide : Nat.Coprime 2 3)) 4 = (0, 1) := by decide
-  rw [h4]
-  simp [psl2zAbelianizationAddEquiv, AddEquiv.trans_apply, triangleGroupEquiv_symm_coe_R]
+  apply (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).injective
+  have h4 : (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)) 4 = (1, 0) := by decide
+  rw [h4, psl2zAbelianizationAddEquiv, AddEquiv.trans_apply,
+    TriangleGroup.chineseRemainder_abelianizationZeroAddEquivZMod]
+  simp [triangleGroupEquiv_symm_coe_R]
 
 /-- `psl2zAbelianizationAddEquiv` sends the class of the cusp translation `T` to `1`. -/
 @[simp]
@@ -454,6 +450,13 @@ theorem psl2zAbelianizationMulEquiv_coe_T :
 theorem psl2zAbelianizationMulEquiv_coe_U :
     psl2zAbelianizationMulEquiv (.of (U : PSL(2, ℤ))) = .ofAdd 2 :=
   congrArg Multiplicative.ofAdd psl2zAbelianizationAddEquiv_coe_U
+
+/-- The inverse of `psl2zAbelianizationMulEquiv` maps `ofAdd 1` to the class of `T`. -/
+@[simp]
+theorem psl2zAbelianizationMulEquiv_symm_ofAdd_one :
+    psl2zAbelianizationMulEquiv.symm (.ofAdd 1) = .of (T : PSL(2, ℤ)) := by
+  apply psl2zAbelianizationMulEquiv.injective
+  rw [MulEquiv.apply_symm_apply, psl2zAbelianizationMulEquiv_coe_T]
 
 /-- The abelianization of `PSL(2, ℤ)` has cardinality `6`. -/
 @[simp]

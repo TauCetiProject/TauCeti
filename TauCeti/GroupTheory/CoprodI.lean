@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.ULift
 public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.Coprod.Basic
 
@@ -15,12 +16,15 @@ A family of isomorphisms `M i ≃* N i` induces an isomorphism `CoprodI M ≃* C
 products, acting on each factor by the given isomorphism.  This is the indexed counterpart of
 Mathlib's `MulEquiv.coprodCongr` for the free product of two monoids.  It is used to rewrite a
 free product of fundamental groups one factor at a time, for instance to recognise the
-fundamental group of a wedge of circles as a free group.
+fundamental group of a wedge of circles as a free group.  Reindexing a family along an equivalence
+`e : ι ≃ κ` likewise induces `MulEquiv.coprodICongrLeft`.
 
 The free product of a family of two monoids indexed by `Bool` or `Fin 2` is the binary free
 product `Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
-Under the `Bool`-indexed isomorphism, the homomorphisms induced by a pair of homomorphisms on the
-two members correspond, so one of them is injective exactly when the other is.
+For two monoids in possibly different universes, lifting both factors to `Type (max u v)` gives
+the cross-universe isomorphism `Monoid.CoprodI.uliftBoolEquivCoprod`. Under the `Bool`-indexed
+isomorphism, the homomorphisms induced by a pair of homomorphisms on the two members correspond,
+so one of them is injective exactly when the other is.
 
 A free product of trivial monoids is trivial; in particular, so is the free product of an empty
 family. The free product of a family indexed by a type with a unique element is that single
@@ -30,13 +34,17 @@ from the free product.
 ## Main declarations
 
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
+* `MulEquiv.coprodICongrLeft`: the isomorphism of free products induced by reindexing along an
+  equivalence of index types.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
-* `Monoid.CoprodI.finTwoEquivCoprod`: `CoprodI M ≃* Coprod (M 0) (M 1)` for a family `M`
-  indexed by `Fin 2`.
+* `Monoid.CoprodI.boolFactors`, `Monoid.CoprodI.uliftBoolEquivCoprod`: cross-universe
+  comparison between `CoprodI (boolFactors M N)` and `Coprod M N`.
+* `Monoid.CoprodI.finTwoEquivCoprod`, `Monoid.CoprodI.lift_comp_finTwoEquivCoprod_symm`:
+  `CoprodI M ≃* Coprod (M 0) (M 1)` for a family `M` indexed by `Fin 2`, and lift transport.
 * `Monoid.CoprodI.instUnique`: the free product of a family of trivial monoids is trivial.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
@@ -85,6 +93,52 @@ theorem coprodICongr_apply_of (e : ∀ i, M i ≃* N i) {i : ι} (m : M i) :
 theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
     (coprodICongr e).symm = coprodICongr fun i => (e i).symm :=
   (rfl)
+
+private def mulEquivOfEq {α : Sort*} {M : α → Type*} [∀ a, Monoid (M a)] {a b : α}
+    (h : a = b) : M a ≃* M b := by
+  subst h
+  exact .refl _
+
+private theorem of_mulEquivOfEq_eq {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
+    (e : ι ≃ κ) {i' i : ι} (h : i' = i) (he : e i' = e i) (x : M (e i)) :
+    CoprodI.of (M := fun j => M (e j)) (i := i') (mulEquivOfEq he.symm x) =
+      CoprodI.of (M := fun j => M (e j)) (i := i) x := by
+  subst h
+  rfl
+
+/-- Reindexing the index type of an indexed free product along an equivalence `e : ι ≃ κ`
+induces an isomorphism `CoprodI (fun i => M (e i)) ≃* CoprodI M`. -/
+def coprodICongrLeft {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)] (e : ι ≃ κ) :
+    CoprodI (fun i => M (e i)) ≃* CoprodI M :=
+  MonoidHom.toMulEquiv
+    (CoprodI.lift fun i => CoprodI.of (i := e i))
+    (CoprodI.lift fun k =>
+      (CoprodI.of (M := fun i => M (e i)) (i := e.symm k)).comp
+        (mulEquivOfEq (e.apply_symm_apply k).symm).toMonoidHom)
+    (by
+      ext i x
+      exact of_mulEquivOfEq_eq M e (e.symm_apply_apply i) (e.apply_symm_apply (e i)) x)
+    (by
+      ext k m
+      obtain ⟨i, rfl⟩ := e.surjective k
+      change (CoprodI.lift fun j => CoprodI.of (i := e j))
+          (CoprodI.of (M := fun j => M (e j)) (i := e.symm (e i))
+            (mulEquivOfEq (e.apply_symm_apply (e i)).symm m)) = CoprodI.of m
+      rw [of_mulEquivOfEq_eq M e (e.symm_apply_apply i) (e.apply_symm_apply (e i)) m,
+        CoprodI.lift_of])
+
+@[simp]
+theorem coprodICongrLeft_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
+    (e : ι ≃ κ) {i : ι} (m : M (e i)) :
+    coprodICongrLeft M e (CoprodI.of (M := fun i => M (e i)) m) = CoprodI.of (i := e i) m :=
+  CoprodI.lift_of _ _
+
+@[simp]
+theorem coprodICongrLeft_symm_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
+    (e : ι ≃ κ) {i : ι} (m : M (e i)) :
+    (coprodICongrLeft M e).symm (CoprodI.of (i := e i) m) =
+      CoprodI.of (M := fun i => M (e i)) m := by
+  rw [(coprodICongrLeft M e).symm_apply_eq, coprodICongrLeft_apply_of]
 
 variable (M) [Unique ι]
 
@@ -164,6 +218,87 @@ theorem coprodLift_injective_iff :
 
 end Bool
 
+section ULiftBool
+
+universe u v
+
+/-- The factors `M : Type u` and `N : Type v` lifted to `Type (max u v)` as a `Bool`-indexed
+family: `false` gives `ULift.{v} M` and `true` gives `ULift.{u} N`. -/
+@[expose]
+def boolFactors (M : Type u) (N : Type v) : Bool → Type (max u v)
+  | false => ULift.{v} M
+  | true => ULift.{u} N
+
+instance instMonoidBoolFactors (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
+    ∀ b, Monoid (boolFactors M N b)
+  | false => inferInstanceAs (Monoid (ULift M))
+  | true => inferInstanceAs (Monoid (ULift N))
+
+instance instGroupBoolFactors (G : Type u) (H : Type v) [Group G] [Group H] :
+    ∀ b, Group (boolFactors G H b) := fun b =>
+  { toMonoid := instMonoidBoolFactors G H b
+    inv := match b with
+      | false => (inferInstance : Group (ULift G)).inv
+      | true => (inferInstance : Group (ULift H)).inv
+    div := match b with
+      | false => (inferInstance : Group (ULift G)).div
+      | true => (inferInstance : Group (ULift H)).div
+    div_eq_mul_inv := by
+      cases b
+      · exact (inferInstance : Group (ULift G)).div_eq_mul_inv
+      · exact (inferInstance : Group (ULift H)).div_eq_mul_inv
+    zpow := match b with
+      | false => (inferInstance : Group (ULift G)).zpow
+      | true => (inferInstance : Group (ULift H)).zpow
+    zpow_zero' := by cases b <;> exact (inferInstance : Group (ULift _)).zpow_zero'
+    zpow_succ' := by cases b <;> exact (inferInstance : Group (ULift _)).zpow_succ'
+    zpow_neg' := by cases b <;> exact (inferInstance : Group (ULift _)).zpow_neg'
+    inv_mul_cancel := by
+      cases b
+      · exact (inferInstance : Group (ULift G)).inv_mul_cancel
+      · exact (inferInstance : Group (ULift H)).inv_mul_cancel }
+
+/-- Cross-universe comparison between the indexed free product over `Bool` of `ULift`ed factors
+and the binary free product `M ∗ N`. -/
+def uliftBoolEquivCoprod (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
+    CoprodI (boolFactors M N) ≃* Coprod M N :=
+  (boolEquivCoprod (boolFactors M N)).trans
+    (MulEquiv.coprodCongr MulEquiv.ulift MulEquiv.ulift)
+
+/-- `uliftBoolEquivCoprod` maps the `false` factor inclusion to `Coprod.inl`. -/
+@[simp]
+theorem uliftBoolEquivCoprod_of_false {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+    (x : ULift.{v} M) :
+    uliftBoolEquivCoprod M N (of (i := false) x) = Coprod.inl x.down := by
+  simp [uliftBoolEquivCoprod]; rfl
+
+/-- `uliftBoolEquivCoprod` maps the `true` factor inclusion to `Coprod.inr`. -/
+@[simp]
+theorem uliftBoolEquivCoprod_of_true {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+    (y : ULift.{u} N) :
+    uliftBoolEquivCoprod M N (of (i := true) y) = Coprod.inr y.down := by
+  simp [uliftBoolEquivCoprod]; rfl
+
+/-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inl x` to the `false` factor
+inclusion. -/
+@[simp]
+theorem uliftBoolEquivCoprod_symm_inl {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+    (x : M) :
+    (uliftBoolEquivCoprod M N).symm (Coprod.inl x) =
+      of (i := false) (MulEquiv.ulift.symm x) := by
+  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]; rfl
+
+/-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inr y` to the `true` factor
+inclusion. -/
+@[simp]
+theorem uliftBoolEquivCoprod_symm_inr {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+    (y : N) :
+    (uliftBoolEquivCoprod M N).symm (Coprod.inr y) =
+      of (i := true) (MulEquiv.ulift.symm y) := by
+  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]; rfl
+
+end ULiftBool
+
 section FinTwo
 
 variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
@@ -172,39 +307,47 @@ variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
 members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
 `Monoid.Coprod.inr`. -/
 def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
-  MonoidHom.toMulEquiv
-    (lift fun
-      | ⟨0, _⟩ => Coprod.inl
-      | ⟨1, _⟩ => Coprod.inr)
-    (Coprod.lift (of (i := 0)) (of (i := 1)))
-    (by
-      ext ⟨_ | _ | i, hi⟩ x
-      · exact Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
-      · exact Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
-      · omega)
-    (by ext <;> simp)
+  (MulEquiv.coprodICongrLeft M finTwoEquiv.symm).symm.trans
+    (boolEquivCoprod (fun b => M (finTwoEquiv.symm b)))
 
 variable {M}
 
-/-- `finTwoEquivCoprod` maps the canonical inclusion of `M 0` to `Coprod.inl`. -/
-@[simp]
-theorem finTwoEquivCoprod_of_zero (x : M 0) : finTwoEquivCoprod M (of x) = Coprod.inl x :=
-  lift_of _ _
-
-/-- `finTwoEquivCoprod` maps the canonical inclusion of `M 1` to `Coprod.inr`. -/
-@[simp]
-theorem finTwoEquivCoprod_of_one (x : M 1) : finTwoEquivCoprod M (of x) = Coprod.inr x :=
-  lift_of _ _
-
 /-- The inverse of `finTwoEquivCoprod` maps `Coprod.inl` to the canonical inclusion of `M 0`. -/
 @[simp]
-theorem finTwoEquivCoprod_symm_inl (x : M 0) : (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
-  Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
+theorem finTwoEquivCoprod_symm_inl (x : M 0) :
+    (finTwoEquivCoprod M).symm (Coprod.inl x) = of x := by
+  simp [finTwoEquivCoprod]; rfl
 
 /-- The inverse of `finTwoEquivCoprod` maps `Coprod.inr` to the canonical inclusion of `M 1`. -/
 @[simp]
-theorem finTwoEquivCoprod_symm_inr (x : M 1) : (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
-  Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
+theorem finTwoEquivCoprod_symm_inr (x : M 1) :
+    (finTwoEquivCoprod M).symm (Coprod.inr x) = of x := by
+  simp [finTwoEquivCoprod]; rfl
+
+/-- `finTwoEquivCoprod` maps the canonical inclusion of `M 0` to `Coprod.inl`. -/
+@[simp]
+theorem finTwoEquivCoprod_of_zero (x : M 0) : finTwoEquivCoprod M (of x) = Coprod.inl x := by
+  rw [← finTwoEquivCoprod_symm_inl, MulEquiv.apply_symm_apply]
+
+/-- `finTwoEquivCoprod` maps the canonical inclusion of `M 1` to `Coprod.inr`. -/
+@[simp]
+theorem finTwoEquivCoprod_of_one (x : M 1) : finTwoEquivCoprod M (of x) = Coprod.inr x := by
+  rw [← finTwoEquivCoprod_symm_inr, MulEquiv.apply_symm_apply]
+
+variable {N : Type*} [Monoid N] (f : ∀ i, M i →* N)
+
+/-- Under `finTwoEquivCoprod`, the homomorphism `CoprodI M →* N` induced by homomorphisms `f i` on
+the two factors is `Monoid.Coprod.lift (f 0) (f 1)`. -/
+@[simp]
+theorem lift_comp_finTwoEquivCoprod_symm :
+    (lift f).comp ((finTwoEquivCoprod M).symm : Coprod (M 0) (M 1) →* CoprodI M) =
+      Coprod.lift (f 0) (f 1) := by
+  ext <;> simp
+
+@[simp]
+theorem lift_finTwoEquivCoprod_symm (x : Coprod (M 0) (M 1)) :
+    lift f ((finTwoEquivCoprod M).symm x) = Coprod.lift (f 0) (f 1) x :=
+  DFunLike.congr_fun (lift_comp_finTwoEquivCoprod_symm f) x
 
 end FinTwo
 

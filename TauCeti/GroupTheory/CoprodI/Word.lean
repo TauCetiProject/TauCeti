@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.CoprodI
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Reduced words in a free product: functorial images and word length
@@ -18,13 +19,17 @@ under the homomorphism `CoprodI M →* CoprodI N` induced by the `f i`. In parti
 word. Likewise, injective homomorphisms of the factors induce an injective homomorphism of free
 products.
 
-We also record basic length properties of reduced words (`Word` and `NeWord`): left-multiplying a
-reduced word whose leading letter lies in `M i` by an element of `M i` does not increase its word
-length, and inverting a nonempty reduced word in a free product of groups preserves its word length.
+We also record basic length and power properties of reduced words (`Word` and `NeWord`):
+left-multiplying a reduced word whose leading letter lies in `M i` by an element of `M i` does not
+increase its word length, inverting a nonempty reduced word in a free product of groups preserves
+its word length, and concatenating a nonempty reduced word whose endpoints lie in distinct factors
+with itself gives all of its positive powers as reduced words, so its product has infinite order.
 
 ## Main definitions
 
 * `Monoid.CoprodI.Word.map`: the image of a reduced word under the `f i`.
+* `Monoid.CoprodI.NeWord.powSucc`: iterated concatenation `u^(n + 1)` of a nonempty reduced word
+  `u` with distinct endpoint indices.
 
 ## Main results
 
@@ -36,6 +41,9 @@ length, and inverting a nonempty reduced word in a free product of groups preser
 * `Monoid.CoprodI.Word.length_toList_of_smul_le_of_fstIdx_eq`: left-multiplying by `of m` does not
   increase word length when the first letter lies in the same factor.
 * `Monoid.CoprodI.NeWord.length_toList_inv`: inverting a nonempty reduced word preserves its length.
+* `Monoid.CoprodI.NeWord.powSucc_prod`, `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`:
+  product of `u.powSucc` and infinite order of a nonempty reduced word with distinct endpoint
+  indices.
 * `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
   injective homomorphism of free products.
 -/
@@ -136,6 +144,39 @@ theorem length_toList_of_smul_le_of_fstIdx_eq {ι : Type*} {M : ι → Type*} [�
 end Monoid.CoprodI.Word
 
 namespace Monoid.CoprodI.NeWord
+
+section Monoid
+
+variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
+
+/-- Iterated concatenation `u^(n + 1)` of a nonempty reduced word `u : NeWord M i j` whose first
+and last letters lie in distinct factors (`j ≠ i`), so no cancellation occurs between copies. -/
+def powSucc {i j : ι} (u : NeWord M i j) (hji : j ≠ i) : ℕ → NeWord M i j
+  | 0 => u
+  | n + 1 => u.append hji (u.powSucc hji n)
+
+/-- The product of the iterated concatenation `u.powSucc hji n` is `u.prod ^ (n + 1)`. -/
+@[simp]
+theorem powSucc_prod {i j : ι} (u : NeWord M i j) (hji : j ≠ i) (n : ℕ) :
+    (u.powSucc hji n).prod = u.prod ^ (n + 1) := by
+  induction n with
+  | zero => simp [powSucc]
+  | succ n ih => rw [powSucc, append_prod, ih, ← pow_succ']
+
+/-- A nonempty reduced word whose first and last letters lie in distinct factors represents an
+element of infinite order in `CoprodI M`. -/
+theorem not_isOfFinOrder_prod_of_ne {i j : ι} (u : NeWord M i j) (hij : i ≠ j) :
+    ¬IsOfFinOrder u.prod := by
+  rw [isOfFinOrder_iff_pow_eq_one]
+  rintro ⟨n, hn, hpow⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  have hprod : (u.powSucc hij.symm k).toWord.prod = (Word.empty : Word M).prod := by
+    rw [← NeWord.prod, powSucc_prod, hpow, Word.prod_empty]
+  have hempty : (u.powSucc hij.symm k).toWord = Word.empty :=
+    Word.prod_injective hprod
+  exact (u.powSucc hij.symm k).toList_ne_nil (congrArg Word.toList hempty)
+
+end Monoid
 
 /-- Inverting a nonempty reduced word preserves its length. -/
 @[simp]
