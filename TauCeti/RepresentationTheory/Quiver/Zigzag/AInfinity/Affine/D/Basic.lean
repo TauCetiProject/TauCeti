@@ -23,9 +23,11 @@ without isolated vertices containing a copy of `Dₙ` (`n ≥ 4`), not necessari
    (`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`).
 2. Over every nontrivial commutative ring, there exists a closed walk of length four in `G` whose
    single-walk loop deformation is not formal
-   (`TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD`), and hence the
-   strict zigzag algebra `Z` is not intrinsically formal
-   (`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_affineD`).
+   (`TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD` and
+   `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D`), and hence the strict
+   and public zigzag algebras of `G` are not intrinsically formal
+   (`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D` and
+   `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D`).
 
 Specializing to `G = Dₙ` gives the same conclusions for the affine `Dₙ` zigzag algebra itself for
 all `n ≥ 4`. Explicit quartic deformations of the affine `D₄` zigzag algebra are constructed in
@@ -39,13 +41,24 @@ all `n ≥ 4`. Explicit quartic deformations of the affine `D₄` zigzag algebra
 * `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD`: along any copy of
   an affine `Dₙ` diagram (`n ≥ 4`) in `G`, there exists a closed walk of length four whose
   single-walk loop deformation is not formal over every nontrivial commutative ring.
-* `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_affineD`: if `G`
-  contains a copy of an affine `Dₙ` diagram (`n ≥ 4`), then `Z` is not intrinsically formal over
-  every nontrivial commutative ring.
+* `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D`,
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D`: over every nontrivial
+  commutative ring, if `G` contains a copy of affine `Dₙ` (`n ≥ 4`), some quartic loop deformation
+  is not formal and the strict and public zigzag algebras of `G` are not intrinsically formal
+  (connected in the public case).
 * `TauCeti.not_hochschildVanishesAt_four_affineD`: `HH^{4, -2}` of the affine `Dₙ` zigzag algebra
   is nonzero for `n ≥ 4`, over every nontrivial commutative ring.
-* `TauCeti.not_isIntrinsicallyFormal_affineD`: the affine `Dₙ` zigzag algebra is not
-  intrinsically formal for `n ≥ 4`, over every nontrivial commutative ring.
+* `TauCeti.not_isIntrinsicallyFormal_affineD` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineD`: the strict and public affine `Dₙ`
+  zigzag algebras (`n ≥ 4`) are not intrinsically formal over every nontrivial commutative ring.
+
+## References
+
+* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+  https://arxiv.org/abs/2301.06757, Sections 3 and 4.
+* T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
+  cohomologies*, Trudy Tbiliss. Mat. Inst. 91 (1988), 19--27.
 -/
 
 public section
@@ -118,15 +131,30 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD [Non
       (sum_affineDMatrix_mul_affineDMatrix k hn) (affineDWalk_fst_eq_snd hn)
       (by rw [trace_affineDMatrix_affineDWalk]; exact isUnit_one)⟩
 
-/-- **Graphs containing an affine `Dₙ` have non-intrinsically-formal zigzag algebras**, over every
-nontrivial commutative ring. If a finite graph `G` with no isolated vertex contains a copy of the
-affine diagram `Dₙ` (`n ≥ 4`), not necessarily induced, then `𝒵` is not intrinsically formal. -/
-theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_affineD
-    [Nontrivial k] {n : ℕ} (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
-    ¬(𝒵).IsIntrinsicallyFormal := by
+/-- **Graphs containing an affine `Dₙ` admit a non-formal quartic loop deformation**, over every
+nontrivial commutative ring: if `G` has no isolated vertex and contains a copy of the affine diagram
+`Dₙ` (`n ≥ 4`), not necessarily induced, then the loop deformation supported on the image of the
+closed walk `1 → 0 → 1 → (n - 1) → 1` is not formal. -/
+theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
+    [Nontrivial k] {V : Type u} {G : SimpleGraph V} [Finite V]
+    {hns : ∀ i : V, ∃ j, G.Adj i j} {n : ℕ} (hn : 4 ≤ n)
+    (hG : (AffineDynkinType.D n).graph.IsContained G) :
+    ∃ (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
+      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
   obtain ⟨f⟩ := hG
-  obtain ⟨w, hw, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD
-    (k := k) (hns := hns) hn f
+  obtain ⟨_, _, hnf⟩ :=
+    exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD (k := k) (hns := hns) hn f
+  exact ⟨_, _, hnf⟩
+
+/-- **The strict zigzag algebra of a graph containing an affine `Dₙ` is not intrinsically formal**
+for `n ≥ 4`, over every nontrivial commutative ring. -/
+theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D
+    [Nontrivial k] {V : Type u} {G : SimpleGraph V} [Finite V]
+    {hns : ∀ i : V, ∃ j, G.Adj i j} {n : ℕ} (hn : 4 ≤ n)
+    (hG : (AffineDynkinType.D n).graph.IsContained G) :
+    ¬(zigzagStrictAInfinityAlgebra k hns).IsIntrinsicallyFormal := by
+  obtain ⟨_, _, hnf⟩ :=
+    exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D (k := k) (hns := hns) hn hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `Dₙ` zigzag algebra is nonzero**
@@ -140,10 +168,29 @@ theorem not_hochschildVanishesAt_four_affineD [Nontrivial k] {n : ℕ} (hn : 4 �
 /-- **The affine `Dₙ` zigzag algebra is not intrinsically formal** for `n ≥ 4`, over every
 nontrivial commutative ring: some `A∞` algebra whose cohomology algebra is the path-graded zigzag
 algebra is not formal. This is the case `G = Dₙ` of
-`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_affineD`. -/
+`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D`. -/
 theorem not_isIntrinsicallyFormal_affineD [Nontrivial k] {n : ℕ} (hn : 4 ≤ n) :
     ¬(zigzagStrictAInfinityAlgebra k (AffineDynkinType.exists_adj_graph (t := .D n)
       (AffineDynkinType.valid_D.2 hn))).IsIntrinsicallyFormal :=
-  not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_affineD hn .rfl
+  not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D hn .rfl
+
+/-- **Connected graphs containing a copy of affine `Dₙ` (`n ≥ 4`) are not intrinsically formal**,
+over every nontrivial commutative ring. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D [Nontrivial k]
+    {V : Type u} [Finite V] {G : SimpleGraph V} (hconn : G.Connected)
+    {n : ℕ} (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained (AffineDynkinType.valid_D.2 hn) hG
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hn hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
+
+/-- **The public affine `Dₙ` zigzag algebra (`n ≥ 4`) is not intrinsically formal**, over every
+nontrivial commutative ring. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineD [Nontrivial k] {n : ℕ} (hn : 4 ≤ n) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k (AffineDynkinType.D n).graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D
+    (AffineDynkinType.graph_connected (AffineDynkinType.valid_D.2 hn)) hn .rfl
 
 end TauCeti

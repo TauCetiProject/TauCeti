@@ -116,7 +116,7 @@ private theorem apply_subword_mem_zigzagIntegerGrade_one
     ψ (subword k x p d) ∈ zigzagIntegerGrade k G 1 := by
   rw [subword_eq_of_tprod k x hd hpd]
   have h := hψ.map_mem (mem_gradedPiece_of_tprod ((𝒵).grading.shift 1) (n := d) hd
-    (fun j ↦ x ⟨p + j.1, by omega⟩) (fun _ ↦ 0) fun j ↦ by
+    (fun j ↦ x ⟨p + j.val, by omega⟩) (fun _ ↦ 0) fun j ↦ by
       rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
       exact hx _)
   simpa [InternalGrading.shift_piece] using h

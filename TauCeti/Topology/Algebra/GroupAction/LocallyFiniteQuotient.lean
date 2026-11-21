@@ -57,7 +57,7 @@ theorem isClosedMap_quotientMk_domRestrict_of_locallyFinite_smul (hF : IsClosed 
     (hlf : LocallyFinite fun g : G ↦ g • F) :
     IsClosedMap (F.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
   intro A hA
-  have hA' : IsClosed ((↑) '' A : Set X) := hF.isClosedMap_subtype_val A hA
+  have hA' : IsClosed ((↑) '' A : Set X) := hF.isClosedMap_subtypeVal A hA
   rw [domRestrict_eq, image_comp, ← isQuotientMap_quotient_mk'.isClosed_preimage]
   -- The saturation of `A` is a locally finite union of closed translates.
   convert (hlf.subset fun g ↦ smul_set_mono (Subtype.coe_image_subset F A)).isClosed_iUnion
@@ -76,7 +76,7 @@ theorem isQuotientMap_quotientMk_domRestrict_of_locallyFinite_smul (hF : IsClose
     (hcover : ⋃ g : G, g • F = univ) (hlf : LocallyFinite fun g : G ↦ g • F) :
     IsQuotientMap (F.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
   refine (isClosedMap_quotientMk_domRestrict_of_locallyFinite_smul hF hlf).isQuotientMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
   rintro ⟨x⟩
   obtain ⟨g, y, hy, rfl⟩ := mem_iUnion.mp (hcover ▸ mem_univ x)
   exact ⟨⟨y, hy⟩, (Quotient.sound (MulAction.mem_orbit y g)).symm⟩

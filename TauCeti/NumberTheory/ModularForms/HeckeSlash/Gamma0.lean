@@ -92,9 +92,9 @@ lemma rightCosetRep_mem_Delta0
       (D.out : GL (Fin 2) ℚ)⁻¹) :
     rightCosetRep D v ∈ Delta0 N := by
   rw [rightCosetRep_def]
-  refine mul_mem D.out.2 (Gamma0Image_le_Delta0 N ?_)
+  refine mul_mem D.out.property (Gamma0Image_le_Delta0 N ?_)
   rw [Subgroup.mem_toSubmonoid, Gamma0Image_def]
-  exact inv_mem v.out.2
+  exact inv_mem v.out.property
 
 /-- The representatives have positive determinant. They lie in `Δ₀(N)`, and every element of
 `Δ₀(N)` is an integral matrix of positive determinant, so — unlike for the unweighted

@@ -95,7 +95,7 @@ variable {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
 
 section Blocks
 
-variable [Fintype V] [DecidableEq V] [DecidableRel G.Adj] [DecidableEq m]
+variable [Fintype V] [DecidableEq V] [DecidableEq m]
 
 /-- The block matrix of the arrow of a dart `d`: the block `β d.fst d.snd` from the block of
 `d.fst` to the block of `d.snd`. -/
@@ -105,8 +105,8 @@ private noncomputable def dartMatrix (β : V → V → Matrix m m k) (d : G.Dart
 
 omit [DecidableEq m] in
 /-- The block matrices of the darts satisfy the signless relations when `β` does. -/
-private theorem sum_dartMatrix_mul_dartMatrix_symm (β : V → V → Matrix m m k)
-    (hβ : ∀ v, ∑ w ∈ G.neighborFinset v, β w v * β v w = 0) (v : V) :
+private theorem sum_dartMatrix_mul_dartMatrix_symm [DecidableRel G.Adj]
+    (β : V → V → Matrix m m k) (hβ : ∀ v, ∑ w ∈ G.neighborFinset v, β w v * β v w = 0) (v : V) :
     ∑ d : G.Dart with d.snd = v, dartMatrix β d * dartMatrix β d.symm = 0 := by
   have hd (d : G.Dart) (hd : d.snd = v) : dartMatrix β d * dartMatrix β d.symm =
       Matrix.single v v 1 ⊗ₖ (β d.fst v * β v d.fst) := by
@@ -128,7 +128,6 @@ private theorem sum_dartMatrix_mul_dartMatrix_symm (β : V → V → Matrix m m 
     simp [Matrix.sum_apply, Finset.mul_sum]
   rw [hsum, hβ, kronecker_zero]
 
-omit [DecidableRel G.Adj] in
 /-- **The twisted trace is anticyclic** on the block matrices of the darts, for a sign `ε` which
 changes along every dart carrying a nonzero block. -/
 private theorem trace_twist_mul_dartMatrix (β : V → V → Matrix m m k) (ε : V → k)
@@ -145,7 +144,7 @@ private theorem trace_twist_mul_dartMatrix (β : V → V → Matrix m m k) (ε :
   rw [trace_mul_cycle', ← Matrix.mul_assoc, ← Matrix.mul_assoc, hr, hl, hε d h]
   simp
 
-omit [Fintype m] [Fintype V] [DecidableRel G.Adj] [DecidableEq m] in
+omit [Fintype m] [Fintype V] [DecidableEq m] in
 /-- Along a copy, the block matrix of the image of a dart of `H` is the block of the dart. -/
 private theorem dartMatrix_extendByZero_mapDart (f : H.Copy G) (β : W → W → Matrix m m k)
     (d : H.Dart) :
@@ -156,7 +155,8 @@ private theorem dartMatrix_extendByZero_mapDart (f : H.Copy G) (β : W → W →
 /-- Extending a bipartition of `H` by `1` outside a copy `f : H.Copy G` produces a vertex sign `ε`
 making `Y ↦ tr((diagonal ε ⊗ₖ 1) * Y)` anticyclic on the block matrices of `f.extendByZero β`, and
 evaluating to `ε (f (w 0).snd) * tr(β (w 0) ⋯ β (w (n + 1)))` on the single walk `f.mapDart ∘ w`. -/
-private theorem exists_bipartite_sign_dartMatrix (f : H.Copy G) (hH : H.IsBipartite)
+private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj]
+    (f : H.Copy G) (hH : H.IsBipartite)
     (β : W → W → Matrix m m k) {n : ℕ} {w : Fin (n + 2) → H.Dart}
     (hw : ∀ i, (w i).fst = (w (i + 1)).snd) :
     ∃ ε : V → k,
@@ -287,7 +287,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_ne_zero [Algebra ℚ k]
     (htr : trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod ≠ 0) :
     ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k))
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal :=
-  not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat _ _
+  not_isFormal_zigzagLoopAInfinityAlgebra_of_not_exists_hochschildDifferential_eq_obstruction _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero
       f hH β hβ hn hw htr)
 
@@ -301,7 +301,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one [Nontrivial k] [
     (htr : trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod = 1) :
     ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k))
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal :=
-  not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat _ _
+  not_isFormal_zigzagLoopAInfinityAlgebra_of_not_exists_hochschildDifferential_eq_obstruction _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one
       f hH β h₀ hβ hn hw htr)
 

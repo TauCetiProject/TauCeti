@@ -125,7 +125,7 @@ theorem ofMul_mk_padicPow {x : G} (hx : x ∈ N) (l : ℤ_[p]) :
   let _ := hA.isScalarTower_completedGroupAlgebraModule (G ⧸ N)
   have hpow : (⟨hG.padicPow x l, hG.padicPow_mem ‹IsClosed (N : Set G)› hx l⟩ : N) =
       (hG.subgroup N).padicPow ⟨x, hx⟩ l :=
-    Subtype.ext ((hG.subgroup N).map_padicPow hG N.subtype continuous_subtype_val ⟨x, hx⟩ l).symm
+    Subtype.ext ((hG.subgroup N).map_padicPow hG N.subtype continuous_subtypeVal ⟨x, hx⟩ l).symm
   rw [hpow, (hG.subgroup N).ofMul_mk_padicPow_quotient, algebraMap_smul]
 
 /-- **The class of Labute's commutator `(x, g)`, for `x ∈ N`**, in `N^{ab}` as a module over
