@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
@@ -31,10 +31,6 @@ mass to every singleton.
 
 ## Main results
 
-* `TauCeti.norm_inv_mul_integral_cexp_mul_I_le_one`: uniform bound `≤ 1` on the exponential
-  averaging kernel `(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, exp (t * u * I)`.
-* `TauCeti.tendsto_inv_mul_integral_cexp_mul_I`: pointwise convergence of the exponential
-  averaging kernel to `1` at `u = 0` and `0` otherwise.
 * `MeasureTheory.tendsto_average_exp_mul_charFun`: recovery of the point mass `σ.real {ω}` from
   twisted time averages of `charFun σ`.
 * `MeasureTheory.tendsto_average_charFun_mul_conj`: bilinear Wiener lemma for two finite Borel
@@ -57,63 +53,6 @@ noncomputable section
 
 open Filter MeasureTheory
 open scoped ComplexConjugate Topology
-
-namespace TauCeti
-
-/-- The exponential averaging kernel `(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, exp (t * u * I)` has norm at
-most `1` for every real frequency `u` and every `T : ℝ`. -/
-theorem norm_inv_mul_integral_cexp_mul_I_le_one (u T : ℝ) :
-    ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 1 := by
-  by_cases hT : T = 0
-  · simp [hT]
-  have hnorm : ∀ t ∈ Set.uIoc (0 : ℝ) T, ‖Complex.exp (t * u * Complex.I)‖ ≤ 1 := fun t _ ↦ by
-    rw [Complex.norm_exp]
-    simp
-  calc ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖
-      = |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ := by
-        rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
-    _ ≤ |T|⁻¹ * (1 * |T - 0|) := by
-        gcongr
-        exact intervalIntegral.norm_integral_le_of_norm_le_const hnorm
-    _ = 1 := by
-        rw [sub_zero, one_mul, inv_mul_cancel₀ (abs_ne_zero.mpr hT)]
-
-/-- The exponential averaging kernel `(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, exp (t * u * I)` converges to
-`1` at `u = 0` and to `0` for `u ≠ 0` as `T → ∞`. -/
-theorem tendsto_inv_mul_integral_cexp_mul_I (u : ℝ) :
-    Tendsto (fun T : ℝ ↦ (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I))
-      atTop (𝓝 (if u = 0 then (1 : ℂ) else 0)) := by
-  split_ifs with hu
-  · subst hu
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-    simp [Complex.real_smul, hT.ne']
-  · have hc : (u : ℂ) * Complex.I ≠ 0 :=
-      mul_ne_zero (Complex.ofReal_ne_zero.mpr hu) Complex.I_ne_zero
-    have hlim : Tendsto (fun T : ℝ ↦ T⁻¹ * (2 / |u|)) atTop (𝓝 0) := by
-      simpa using tendsto_inv_atTop_zero.mul_const (2 / |u|)
-    refine squeeze_zero_norm' ?_ hlim
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-    have heq : (fun t : ℝ ↦ Complex.exp (t * u * Complex.I)) =
-        fun t : ℝ ↦ Complex.exp (((u : ℂ) * Complex.I) * t) := by
-      funext t
-      congr 1
-      ring
-    have hnorm (x : ℝ) : ‖Complex.exp ((u : ℂ) * Complex.I * x)‖ = 1 := by
-      rw [Complex.norm_exp]
-      simp
-    rw [heq, integral_exp_mul_complex hc, norm_mul, norm_inv, Complex.norm_real,
-      Real.norm_of_nonneg hT.le, norm_div, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-      Complex.norm_I, mul_one]
-    gcongr
-    calc ‖Complex.exp ((u : ℂ) * Complex.I * T) - Complex.exp ((u : ℂ) * Complex.I * (0 : ℝ))‖
-        ≤ ‖Complex.exp ((u : ℂ) * Complex.I * T)‖ +
-          ‖Complex.exp ((u : ℂ) * Complex.I * (0 : ℝ))‖ := norm_sub_le _ _
-      _ = 2 := by
-          rw [hnorm T, hnorm 0]
-          norm_num
-
-end TauCeti
 
 namespace MeasureTheory
 

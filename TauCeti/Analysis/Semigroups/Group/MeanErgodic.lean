@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
 import TauCeti.Analysis.Bochner.CharFun.Bochner
+import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Wiener
 
 /-!
@@ -382,25 +383,17 @@ theorem tendsto_twistedAverage_starProjection [CompleteSpace H] (hU : U.IsUnitar
 /-- The correlation function `t ↦ ⟪v, U t v⟫_ℂ` of a unitary C₀-group is positive definite. -/
 theorem isPositiveDefiniteSub_inner (hU : U.IsUnitary) (v : H) :
     TauCeti.IsPositiveDefiniteSub fun t : ℝ ↦ ⟪v, U t v⟫_ℂ := by
-  rw [TauCeti.isPositiveDefiniteSub_iff_forall_sum_nonneg]
-  intro n c t
-  let w : H := ∑ i : Fin n, c i • U (t i) v
-  have hgram : ∑ i : Fin n, ∑ j : Fin n, c i * conj (c j) * ⟪v, U (t i - t j) v⟫_ℂ = ⟪w, w⟫_ℂ := by
-    calc ∑ i : Fin n, ∑ j : Fin n, c i * conj (c j) * ⟪v, U (t i - t j) v⟫_ℂ
-        = ∑ i : Fin n, ∑ j : Fin n, c i * (conj (c j) * ⟪U (t j) v, U (t i) v⟫_ℂ) := by
-          refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-          have hinner : ⟪U (t j) v, U (t i) v⟫_ℂ = ⟪v, U (t i - t j) v⟫_ℂ := by
-            calc ⟪U (t j) v, U (t i) v⟫_ℂ
-                = ⟪U (-t j) (U (t j) v), U (-t j) (U (t i) v)⟫_ℂ :=
-                  (hU.inner_map_map (-t j) _ _).symm
-              _ = ⟪v, U (t i - t j) v⟫_ℂ := by
-                  rw [U.map_neg_apply_map_apply, ← U.map_add_apply, neg_add_eq_sub]
-          rw [hinner, mul_assoc]
-      _ = ⟪w, w⟫_ℂ := by
-          simp only [w, sum_inner, inner_sum, inner_smul_left, inner_smul_right, Finset.mul_sum]
-  rw [hgram, Complex.nonneg_iff]
-  exact ⟨by simpa [RCLike.re_to_complex] using inner_self_nonneg (𝕜 := ℂ) (x := w),
-    by simpa [RCLike.im_to_complex] using (inner_self_im (𝕜 := ℂ) w).symm⟩
+  refine TauCeti.IsPositiveDefiniteSub.of_posSemidef ?_
+  have hgram : (fun a b : ℝ ↦ ⟪v, U (a - b) v⟫_ℂ) =
+      Matrix.gram ℂ (fun t : ℝ ↦ U (-t) v) := by
+    ext a b
+    rw [Matrix.gram_apply]
+    calc ⟪v, U (a - b) v⟫_ℂ
+        = ⟪U (-a) v, U (-a) (U (a - b) v)⟫_ℂ := (hU.inner_map_map (-a) _ _).symm
+      _ = ⟪U (-a) v, U (-b) v⟫_ℂ := by
+          rw [← U.map_add_apply, ← add_sub_assoc, neg_add_cancel, zero_sub]
+  rw [hgram]
+  exact TauCeti.posSemidef_gram ℂ (fun t : ℝ ↦ U (-t) v)
 
 /-- **Spectral measure of a unitary C₀-group.** For every vector `v` in a complex inner product
 space and every unitary C₀-group `U`, there is a unique finite Borel measure `σ` on `ℝ` whose
