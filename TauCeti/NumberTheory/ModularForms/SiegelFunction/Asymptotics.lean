@@ -20,7 +20,10 @@ For `r ∉ ℤ²` the leading coefficient is nonzero. Consequently the logarithm
 `B₂(r₁)/2`: `log ‖g_r(τ)‖ / log ‖exp (2π i τ)‖ → B₂(r₁)/2`.
 This is the growth calculation underlying the orders of Siegel modular units at cusps;
 it does not assert that an arbitrary real-indexed Siegel function has an integral Laurent
-expansion in `q`.
+expansion in `q`. In the same way every integral power `g_r^m` with `r ∉ ℤ²` is
+`O(|q|^(m B₂({r₁})/2))` at `i∞`, where `{r₁}` is the fractional part of `r₁`
+(`TauCeti.ModularForm.isBigO_siegelFunction_zpow`); this bounds products of Siegel functions at
+the cusps, so that they extend to meromorphic functions on modular curves.
 
 ## References
 
@@ -144,5 +147,54 @@ theorem tendsto_log_norm_siegelFunction_div_log_norm_q {r : Fin 2 → ℝ}
     Real.log_rpow hq]
   field_simp [Real.log_ne_zero_of_pos_of_ne_one hq hq1]
   ring
+
+/-- Moving `r₁` into `[0, 1)` by an integral translation does not change `‖g_r‖`. -/
+private theorem norm_siegelFunction_fract (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0 < τ.im) :
+    ‖siegelFunction r τ‖ = ‖siegelFunction ![Int.fract (r 0), r 1] τ‖ := by
+  have hr : r = ![Int.fract (r 0), r 1] + fun i ↦ ((![⌊r 0⌋, 0] : Fin 2 → ℤ) i : ℝ) := by
+    ext i; fin_cases i <;> simp [Int.fract_add_floor]
+  conv_lhs => rw [hr, siegelFunction_add_intCast _ _ hτ]
+  simp [Complex.norm_exp]
+
+/-- **Exponential growth of integral powers of a Siegel function.** For `r ∉ ℤ²` and every
+integer `m`, `g_r(τ)^m = O(|q|^(m B₂({r₁})/2))` at `i∞`, where `{r₁}` is the fractional part of
+`r₁` and `|q| = exp (-2π Im τ)`. For negative `m` this bounds `g_r` from below. -/
+theorem isBigO_siegelFunction_zpow {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ))
+    (m : ℤ) :
+    (fun τ : ℍ ↦ siegelFunction r τ ^ m) =O[atImInfty]
+      fun τ ↦ Real.exp (-(π * m * bernoulliFun 2 (Int.fract (r 0))) * τ.im) := by
+  set r' : Fin 2 → ℝ := ![Int.fract (r 0), r 1]
+  have hr' : ∀ s : Fin 2 → ℤ, r' ≠ fun i ↦ (s i : ℝ) := fun s h ↦ by
+    refine hr (s + ![⌊r 0⌋, 0]) (funext fun i ↦ ?_)
+    have := congrFun h i
+    fin_cases i
+    · have h0 : Int.fract (r 0) = s 0 := this
+      simp [← h0, Int.fract_add_floor]
+    · simpa [r'] using this
+  have hlim := tendsto_norm_siegelFunction_div_rpow (r := r') (Int.fract_nonneg _)
+    (Int.fract_lt_one _)
+  -- The limit is nonzero because `r' ∉ ℤ²`.
+  have hL : (if r' 0 = 0 then ‖1 - cexp (2 * π * I * r' 1)‖ else 1) ≠ 0 := by
+    split_ifs with hz
+    · apply norm_ne_zero_iff.mpr
+      simpa only [ofReal_zero, zero_mul, zero_add] using
+        UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero (x := 0) (y := r' 1)
+          (τ := Complex.I) (by simp)
+          (fun k _ hk ↦ hr' ![0, k] (by ext i; fin_cases i <;> simp_all))
+    · exact one_ne_zero
+  have hbdd := ((hlim.zpow₀ m (Or.inl hL)).isBigO_one ℝ).mul
+    (Asymptotics.isBigO_refl (fun τ : ℍ ↦
+      Real.exp (-(π * m * bernoulliFun 2 (Int.fract (r 0))) * τ.im)) atImInfty)
+  simp only [one_mul] at hbdd
+  refine Asymptotics.isBigO_norm_left.mp (hbdd.congr_left fun τ ↦ ?_)
+  have hA : 0 < ‖cexp (2 * π * I * (τ : ℂ))‖ := norm_pos_iff.mpr (Complex.exp_ne_zero _)
+  have hpow : (‖cexp (2 * π * I * (τ : ℂ))‖ ^ (bernoulliFun 2 (r' 0) / 2)) ^ m =
+      Real.exp (-(π * m * bernoulliFun 2 (Int.fract (r 0))) * τ.im) := by
+    rw [← Real.rpow_intCast, ← Real.rpow_mul hA.le, UpperHalfPlane.norm_exp_two_pi_I_mul,
+      ← Real.exp_mul]
+    simp only [r', Matrix.cons_val_zero, coe_im]
+    ring_nf
+  rw [← hpow, div_zpow, div_mul_cancel₀ _ (zpow_ne_zero _ (Real.rpow_pos_of_pos hA _).ne'),
+    norm_zpow, norm_siegelFunction_fract r τ.im_pos]
 
 end TauCeti.ModularForm
