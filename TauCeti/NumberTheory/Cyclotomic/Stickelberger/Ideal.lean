@@ -176,9 +176,10 @@ representing the same residue give different generators: `b = 1` gives `0` and `
 `-m`. -/
 theorem stickelbergerDenominatorIdeal_eq_span :
     stickelbergerDenominatorIdeal m = Ideal.span (Set.range fun b : {b : ℕ // b.Coprime m} ↦
-      single (ZMod.unitOfCoprime b.1 b.2) 1 - (b.1 : MonoidAlgebra ℤ (ZMod m)ˣ)) := by
+      single (ZMod.unitOfCoprime b.val b.property) 1 - (b.val : MonoidAlgebra ℤ (ZMod m)ˣ)) := by
   set g : {b : ℕ // b.Coprime m} → MonoidAlgebra ℤ (ZMod m)ˣ :=
-    fun b ↦ single (ZMod.unitOfCoprime b.1 b.2) 1 - (b.1 : MonoidAlgebra ℤ (ZMod m)ˣ) with hg
+    fun b ↦ single (ZMod.unitOfCoprime b.val b.property) 1 -
+      (b.val : MonoidAlgebra ℤ (ZMod m)ˣ) with hg
   refine le_antisymm (fun x hx ↦ ?_) (Ideal.span_le.2 ?_)
   · obtain ⟨k, hk⟩ := mem_stickelbergerDenominatorIdeal_iff_dvd.1 hx
     have hcop : (1 + m).Coprime m := by simp
@@ -206,19 +207,19 @@ theorem stickelbergerDenominatorIdeal_eq_span :
       zsmul_mem (Ideal.subset_span (Set.mem_range_self _)) _)
       (zsmul_mem (Ideal.subset_span (Set.mem_range_self _)) _)
   · rintro _ ⟨b, rfl⟩
-    exact single_unitOfCoprime_sub_mem_stickelbergerDenominatorIdeal b.2
+    exact single_unitOfCoprime_sub_mem_stickelbergerDenominatorIdeal b.property
 
 variable (m)
 
 /-- The integral element `x θ_m` attached to `x` in the denominator ideal. -/
 private noncomputable def stickelbergerMulFun (x : stickelbergerDenominatorIdeal m) :
     MonoidAlgebra ℤ (ZMod m)ˣ :=
-  (mem_stickelbergerDenominatorIdeal.1 x.2).choose
+  (mem_stickelbergerDenominatorIdeal.1 x.property).choose
 
 private theorem mapRingHom_stickelbergerMulFun (x : stickelbergerDenominatorIdeal m) :
     mapRingHom _ (Int.castRingHom ℚ) (stickelbergerMulFun m x) =
       mapRingHom _ (Int.castRingHom ℚ) (x : MonoidAlgebra ℤ (ZMod m)ˣ) * stickelberger m :=
-  (mem_stickelbergerDenominatorIdeal.1 x.2).choose_spec
+  (mem_stickelbergerDenominatorIdeal.1 x.property).choose_spec
 
 /-- **Integral Stickelberger multiplication.** Multiplication by `θ_m`, as a
 `ℤ[(ZMod m)ˣ]`-linear map from the denominator ideal `J_m` to the integral Stickelberger ideal
