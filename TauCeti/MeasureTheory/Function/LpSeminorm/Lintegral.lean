@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
@@ -26,7 +27,9 @@ and `p ≠ 0, ∞` in `ℝ≥0∞`, the two sides agree
 (`MeasureTheory.lintegral_rpow_enorm_eq_eLpNorm_rpow`), so `∫⁻ ‖f‖ₑ ^ p ∂μ ≤ t ^ p` gives
 `eLpNorm f p μ ≤ t` (`MeasureTheory.eLpNorm_le_of_lintegral_rpow_le`). In particular a pointwise
 bound `‖k x‖ ^ q ≤ t ^ (q - p) ‖f x‖ ^ p` with `t = ‖f‖_p` integrates to `‖k‖_q ≤ t`
-(`MeasureTheory.eLpNorm_le_of_rpow_le_rpow_mul`).
+(`MeasureTheory.eLpNorm_le_of_rpow_le_rpow_mul`). For `p ≠ 0`, dividing by a constant `c`
+divides the seminorm by `c`: `eLpNorm (‖f‖ₑ / c) p μ = eLpNorm f p μ / c`
+(`MeasureTheory.eLpNorm_enorm_div_const`).
 
 Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
 (`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`.
@@ -100,6 +103,13 @@ theorem eLpNorm_le_of_lintegral_rpow_le {k : α → ε} {q : ℝ≥0∞} {t : �
   have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
   rw [← ENNReal.rpow_le_rpow_iff hq', ← lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hk]
   exact h
+
+/-- For `p ≠ 0`, the `Lᵖ` seminorm of `x ↦ ‖f x‖ₑ / c` is `eLpNorm f p μ / c`. -/
+theorem eLpNorm_enorm_div_const {f : α → ε} {p : ℝ≥0∞} (hp : p ≠ 0)
+    (hf : AEStronglyMeasurable f μ) (c : ℝ≥0∞) :
+    eLpNorm (fun x => ‖f x‖ₑ / c) p μ = eLpNorm f p μ / c := by
+  simp_rw [div_eq_mul_inv, mul_comm _ c⁻¹]
+  rw [eLpNorm_const_mul_ennreal_of_pos (pos_iff_ne_zero.2 hp), eLpNorm_eNorm _ hf]
 
 /-- If `‖f‖_q ≤ M` for `M ≠ 0, ∞`, then `∫ M ^ (r - q) ‖f‖ ^ q ≤ M ^ r` for every real `r`. -/
 theorem lintegral_rpow_sub_mul_rpow_enorm_le {f : α → ε} {q M : ℝ≥0∞} (r : ℝ) (hq0 : q ≠ 0)
