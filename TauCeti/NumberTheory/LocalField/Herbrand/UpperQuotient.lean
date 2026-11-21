@@ -8,6 +8,7 @@ module
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
+import TauCeti.NumberTheory.LocalField.Herbrand.Tower
 import TauCeti.RingTheory.DiscreteValuationRing.Herbrand
 
 /-!
@@ -92,7 +93,7 @@ variable (K L M : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Algebra K M] [ValuativeExtension K M]
   [IsScalarTower K L M] [IsGalois K L] [IsGalois K M]
 
-open TauCeti.IsLocalRing _root_.IsLocalRing _root_.IsDiscreteValuationRing in
+open TauCeti.IsLocalRing in
 private theorem tower_integralClosure_bridge (v : RamificationIndexDomain) :
     haveI : Module.Finite K M := Module.Finite.trans L M
     haveI := IsGalois.tower_top_of_isGalois K L M
@@ -100,33 +101,20 @@ private theorem tower_integralClosure_bridge (v : RamificationIndexDomain) :
       upperRamificationGroup K L v) ∧
     ((upperRamificationGroup K M v).comap (AlgEquiv.restrictScalarsHom (S := L) K) =
       upperRamificationGroup L M (inverseHerbrand K L v)) ∧
-    (UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v)) := by
-  have : Module.Finite K M := Module.Finite.trans L M
-  have := IsGalois.tower_top_of_isGalois K L M; let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
-  let eM := TauCeti.integerRingEquivIntegralClosure K M
-  have := RingEquivClass.isDiscreteValuationRing eM
-  have : IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] M)) :=
-    eM.toAlgHom.comp_algebraMap ▸ inferInstance
-  have := Finite.of_equiv (ResidueField 𝒪[M]) (ResidueField.mapEquiv eM.toRingEquiv).toEquiv
-  let _ := TauCeti.isLocalRing_integralClosure_of_tower 𝒪[K] L M
-  have hMK := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (M ≃ₐ[K] M))
-    (e := eM.toRingEquiv) (fun _ _ ↦ Subtype.ext (by simp [eM]))
-  have hML := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (M ≃ₐ[L] M))
-    (e := eM.toRingEquiv) (fun _ _ ↦ Subtype.ext (by simp [eM]))
-  have hLK := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (L ≃ₐ[K] L))
-    (e := (TauCeti.integerRingEquivIntegralClosure K L).toRingEquiv) fun _ _ ↦ Subtype.ext (by simp)
-  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup,
-    coe_inverseHerbrand_eq_inverseHerbrandFun, upperJump_iff_isLocalRingUpperJump,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hMK,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hML,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hLK,
-    inverseHerbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
-    upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hMK,
-    upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hML,
-    upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hLK, Subgroup.comap_id]
-  exact ⟨map_restrictNormalHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
-    comap_restrictScalarsHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
-    upperJump_integralClosure_tower_iff 𝒪[K] L v⟩
+    (UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v)) :=
+  withIntegralClosureTower K L M fun {_ _ _ _ _ _ _} hMK hML hLK ↦ by
+    simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup,
+      coe_inverseHerbrand_eq_inverseHerbrandFun, upperJump_iff_isLocalRingUpperJump,
+      upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hMK,
+      upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hML,
+      upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hLK,
+      inverseHerbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
+      upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hMK,
+      upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hML,
+      upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hLK, Subgroup.comap_id]
+    exact ⟨map_restrictNormalHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
+      comap_restrictScalarsHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
+      upperJump_integralClosure_tower_iff 𝒪[K] L v⟩
 
 /-- **Herbrand's theorem in the upper numbering.** For a tower `M/L/K` of Galois extensions, the
 image of the upper ramification group `G^v` of `M/K` under restriction to `L` is the upper

@@ -368,6 +368,7 @@ theorem lowerJump_iff (u : RamificationIndexDomain) :
 theorem lowerJump_iff_isLocalRingLowerJump (u : RamificationIndexDomain) :
     LowerJump K L u ↔ TauCeti.IsLocalRing.LowerJump (L ≃ₐ[K] L) 𝒪[L] u := by
   rw [lowerJump_iff, TauCeti.IsLocalRing.lowerJump_iff]
+  simp_rw [lowerRamificationGroupReal_eq_ramificationGroupReal]
   exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
 
 /-- Every lower break occurs at an integer index. -/
@@ -382,9 +383,9 @@ theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u)
 @[simp]
 theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
     LowerJump K L ⟨i, hi⟩ ↔
-      lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i :=
-  (lowerJump_iff_isLocalRingLowerJump K L ⟨i, hi⟩).trans
-    (TauCeti.IsLocalRing.lowerJump_intCast_iff (L ≃ₐ[K] L) 𝒪[L] i)
+      lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
+  rw [lowerJump_iff_isLocalRingLowerJump, Subtype.coe_mk, TauCeti.IsLocalRing.lowerJump_intCast_iff,
+    lowerRamificationGroup_def, lowerRamificationGroup_def]
 
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest

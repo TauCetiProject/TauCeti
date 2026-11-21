@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
-public import TauCeti.RingTheory.LocalRing.Herbrand
+public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!

@@ -119,64 +119,6 @@ theorem upperJump_iff_of_smul_eq (u : ℝ) : UpperJump G S u ↔ UpperJump H S u
   upperJump_iff_of_ramificationGroup_eq_comap hφ (ramificationGroup_eq_comap_of_smul_eq he) u
 end SMul
 end Actions
-
-section IntegralClosure
-variable {A K E E' : Type*} [CommRing A] [CommRing K] [CommRing E] [CommRing E'] [Algebra A K]
-  [Algebra K E] [Algebra A E] [IsScalarTower A K E] [Algebra K E'] [Algebra A E']
-  [IsScalarTower A K E'] [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')]
-  (e : E ≃ₐ[K] E')
-include e
-/-- `e : E ≃ₐ[K] E'` over `A` preserves `herbrandFun` on `integralClosure`. -/
-theorem _root_.AlgEquiv.herbrandFun_integralClosure_eq_of_algEquiv (u : ℝ) :
-    herbrandFun (E ≃ₐ[K] E) (integralClosure A E) u =
-      herbrandFun (E' ≃ₐ[K] E') (integralClosure A E') u :=
-  herbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
-    e.ramificationGroup_integralClosure_eq_comap_autCongr u
-/-- `e : E ≃ₐ[K] E'` over `A` preserves `inverseHerbrandFun` on `integralClosure`. -/
-theorem _root_.AlgEquiv.inverseHerbrandFun_integralClosure_eq_of_algEquiv (v : ℝ) :
-    inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v =
-      inverseHerbrandFun (E' ≃ₐ[K] E') (integralClosure A E') v :=
-  inverseHerbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
-    e.ramificationGroup_integralClosure_eq_comap_autCongr v
-/-- Conjugation `e.autCongr` pulls back `upperRamificationGroup` on `integralClosure`. -/
-theorem _root_.AlgEquiv.upperRamificationGroup_integralClosure_eq_comap_autCongr (v : ℝ) :
-    upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v =
-      (upperRamificationGroup (E' ≃ₐ[K] E') (integralClosure A E') v).comap
-        (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) :=
-  upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap e.autCongr.bijective
-    e.ramificationGroup_integralClosure_eq_comap_autCongr v
-/-- `e : E ≃ₐ[K] E'` over `A` preserves `UpperJump` on `integralClosure`. -/
-theorem _root_.AlgEquiv.upperJump_integralClosure_iff_of_algEquiv (u : ℝ) :
-    UpperJump (E ≃ₐ[K] E) (integralClosure A E) u ↔
-      UpperJump (E' ≃ₐ[K] E') (integralClosure A E') u :=
-  upperJump_iff_of_ramificationGroup_eq_comap e.autCongr.bijective
-    e.ramificationGroup_integralClosure_eq_comap_autCongr u
-end IntegralClosure
-
-section FixedField
-open _root_.IntermediateField
-variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L]
-  [Algebra A L] [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
-  [IsLocalRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal]
-/-- `herbrandFun` of `Gal(L/K) ⧸ H` on `(integralClosure A L)^H` agrees with `fixedField H`. -/
-theorem herbrandFun_fixedPoints_integralClosure (u : ℝ) :
-    herbrandFun ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) u =
-      herbrandFun (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H)) u :=
-  herbrandFun_eq_of_ramificationGroup_eq_comap (IsGalois.normalAutEquivQuotient H).bijective
-    (ramificationGroup_fixedPoints_integralClosure_eq_comap A H) u
-/-- `inverseHerbrandFun` of `Gal(L/K) ⧸ H` on `(integralClosure A L)^H` matches `fixedField H`. -/
-theorem inverseHerbrandFun_fixedPoints_integralClosure (v : ℝ) :
-    inverseHerbrandFun ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) v =
-      inverseHerbrandFun (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H)) v :=
-  inverseHerbrandFun_eq_of_ramificationGroup_eq_comap (IsGalois.normalAutEquivQuotient H).bijective
-    (ramificationGroup_fixedPoints_integralClosure_eq_comap A H) v
-/-- `UpperJump` of `Gal(L/K) ⧸ H` on `(integralClosure A L)^H` agrees with `fixedField H`. -/
-theorem upperJump_fixedPoints_integralClosure_iff (u : ℝ) :
-    UpperJump ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) u ↔
-      UpperJump (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H)) u :=
-  upperJump_iff_of_ramificationGroup_eq_comap (IsGalois.normalAutEquivQuotient H).bijective
-    (ramificationGroup_fixedPoints_integralClosure_eq_comap A H) u
-end FixedField
 end Transport
 
 section Finite
@@ -192,12 +134,14 @@ private theorem herbrandFun_sub (a b : ℝ) :
     herbrandFun G S b - herbrandFun G S a = ∫ t in a..b, herbrandDensity G S t :=
   integral_interval_sub_left (herbrandDensity_antitone G S).intervalIntegrable
     (herbrandDensity_antitone G S).intervalIntegrable
+private theorem sub_mul_eq_integral_const (a b c : ℝ) : (b - a) * c = ∫ _ in a..b, c := by
+  rw [← smul_eq_mul, ← intervalIntegral.integral_const]
 /-- On `[a, b]` where `(a, b]` has constant `G_t = H`, `herbrandFun` has slope `#H / #G_0`. -/
 theorem herbrandFun_sub_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup G}
     (h : ∀ t : ℝ, a < t → t ≤ b → ramificationGroupReal G S t = H) :
     herbrandFun G S b - herbrandFun G S a =
       (b - a) * (Nat.card H / Nat.card (ramificationGroup G S 0)) := by
-  rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
+  rw [herbrandFun_sub, sub_mul_eq_integral_const]
   exact integral_congr_ae <| Filter.Eventually.of_forall fun t ht ↦ by
     rw [uIoc_of_le hab] at ht; rw [herbrandDensity, h t ht.1 ht.2]
 /-- On any subinterval `[a, b] ⊆ [i - 1, i]`, `herbrandFun` is affine of slope `#G_i / #G_0`. -/
@@ -208,7 +152,7 @@ theorem herbrandFun_sub_of_sub_one_le_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ
     ramificationGroupReal_eq_of_sub_one_lt_of_le G S (ha.trans_lt ht₁) (ht₂.trans hb)
 private theorem div_sub_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
     (b - a) / Nat.card (ramificationGroup G S 0) ≤ herbrandFun G S b - herbrandFun G S a := by
-  rw [herbrandFun_sub, div_eq_mul_inv, ← smul_eq_mul, ← intervalIntegral.integral_const]
+  rw [herbrandFun_sub, div_eq_mul_inv, sub_mul_eq_integral_const]
   exact integral_mono_on hab intervalIntegrable_const
     (herbrandDensity_antitone G S).intervalIntegrable fun _ _ ↦ by
       rw [herbrandDensity, div_eq_mul_inv]
@@ -227,7 +171,7 @@ theorem herbrandFun_slope_anti_adjacent {u v w : ℝ} (huv : u < v) (hvw : v < w
   have hd := herbrandDensity_antitone G S
   refine le_trans (b := herbrandDensity G S v)
     ((div_le_iff₀' (sub_pos.2 hvw)).2 ?_) ((le_div_iff₀' (sub_pos.2 huv)).2 ?_) <;>
-    rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
+    rw [herbrandFun_sub, sub_mul_eq_integral_const]
   · exact integral_mono_on hvw.le hd.intervalIntegrable intervalIntegrable_const fun _ ht ↦ hd ht.1
   · exact integral_mono_on huv.le intervalIntegrable_const hd.intervalIntegrable fun _ ht ↦ hd ht.2
 /-- The Herbrand function is concave on `ℝ`. -/
@@ -386,16 +330,14 @@ theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
 @[simp] theorem inverseHerbrandFun_eq_zero_iff {v : ℝ} : inverseHerbrandFun G S v = 0 ↔ v = 0 :=
   (inverseHerbrandFun_strictMono G S).injective.eq_iff' (inverseHerbrandFun_zero G S)
 /-- `herbrandFun` restricted to an order automorphism of `[-1, ∞)`. -/
-def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) where
-  toFun u := ⟨herbrandFun G S u, (neg_one_le_herbrandFun_iff G S).2 u.property⟩
-  invFun v := ⟨inverseHerbrandFun G S v, (neg_one_le_inverseHerbrandFun_iff G S).2 v.property⟩
-  left_inv u := Subtype.ext (inverseHerbrandFun_herbrandFun G S u)
-  right_inv v := Subtype.ext (herbrandFun_inverseHerbrandFun G S v)
-  map_rel_iff' := (herbrandFun_strictMono G S).le_iff_le
+def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) :=
+  ((herbrandRealOrderIso G S).Ici (-1)).trans
+    (Set.orderIsoOfEq _ _ (congrArg Ici (herbrandFun_neg_one G S)))
 @[simp] theorem coe_herbrandOrderIso_apply (u : Ici (-1 : ℝ)) :
     (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := (rfl)
 @[simp] theorem coe_herbrandOrderIso_symm_apply (v : Ici (-1 : ℝ)) :
-    ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v := (rfl)
+    ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v :=
+  (inverseHerbrandFun_eq_symm G S v).symm
 /-- When inertia is trivial (`G_0 = ⊥`), `herbrandFun` is the identity on `[-1, ∞)`. -/
 theorem herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot (h0 : ramificationGroup G S 0 = ⊥)
     {u : ℝ} (hu : -1 ≤ u) : herbrandFun G S u = u := by
@@ -441,9 +383,11 @@ omit [Finite G] in
     (by exact_mod_cast Nat.card_pos.ne') <| by
       linear_combination -hφ + (by exact_mod_cast hc :
         (n : ℝ) * g 0 - ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) = g (m + 1 : ℕ) * c)
-  have : 0 ≤ c ∧ c < 1 := ⟨by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c),
+  have hc_bounds : 0 ≤ c ∧ c < 1 := ⟨by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c),
     by exact_mod_cast (hcu ▸ by linarith [Nat.lt_floor_add_one u] : (c : ℝ) < 1)⟩
-  rw [show c = 0 by omega, Int.cast_zero, sub_eq_zero] at hcu; rw [psiNat_def, ← hcu]
+  have hc_zero : c = 0 := by omega
+  simp only [hc_zero, Int.cast_zero, sub_eq_zero] at hcu
+  rw [psiNat_def, ← hcu]
 /-- Arithmetic characterization: `ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`. -/
 theorem psiNat_eq_iff {n m : ℕ} : psiNat G S n = m ↔
     ∑ i ∈ Finset.Icc 1 m, Nat.card (ramificationGroup G S i) =
@@ -477,7 +421,7 @@ theorem self_le_psiNat (n : ℕ) : n ≤ psiNat G S n := (psiNat_strictMono G S)
     upperRamificationGroup G S (herbrandFun G S u) = ramificationGroupReal G S u := by
   rw [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun]
 /-- At `n : ℕ`, the upper ramification group `G^n` equals the lower group `G_{ψℕ(n)}`. -/
-theorem upperRamificationGroup_natCast (n : ℕ) :
+@[simp] theorem upperRamificationGroup_natCast (n : ℕ) :
     upperRamificationGroup G S n = ramificationGroup G S (psiNat G S n) := by
   rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast, ramificationGroupReal_intCast]
 /-- The upper ramification filtration is decreasing. -/

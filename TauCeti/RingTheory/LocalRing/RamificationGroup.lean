@@ -15,8 +15,6 @@ public import TauCeti.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
-public import TauCeti.RingTheory.Invariant.Basic
-public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
@@ -92,9 +90,7 @@ integer indexing that Herbrand theory uses. The coset-maximizer lemmas for `lowe
 * `TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow`: along an
   equivariant homomorphism of local rings inducing isomorphisms `S ⧸ 𝔪 ^ n ≃ T ⧸ 𝔪 ^ n`, such as
   the inclusion of a discrete valuation ring into its completion, the ramification groups are the
-  preimages of each other; `AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr` and
-  `TauCeti.IsLocalRing.ramificationGroup_fixedPoints_integralClosure_eq_comap` specialize ring
-  isomorphism transport to algebra equivalences and Galois fixed fields on `integralClosure`.
+  preimages of each other.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
@@ -749,30 +745,6 @@ theorem ramificationGroup_eq_comap_of_smul_eq {e : G →* H} {S : Type*} [CommRi
     [MulSemiringAction G S] [MulSemiringAction H S] (he : ∀ (g : G) (x : S), g • x = e g • x)
     (i : ℤ) : ramificationGroup G S i = (ramificationGroup H S i).comap e := by
   ext g; simp [mem_ramificationGroup_iff, he g]
-/-- `e : E ≃ₐ[K] E'` over `A` pulls back lower ramification groups on `integralClosure`. -/
-theorem _root_.AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*}
-    [CommRing A] [CommRing K] [CommRing E] [CommRing E'] [Algebra A K] [Algebra K E] [Algebra A E]
-    [IsScalarTower A K E] [Algebra K E'] [Algebra A E'] [IsScalarTower A K E']
-    [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')] (e : E ≃ₐ[K] E')
-    (i : ℤ) : ramificationGroup (E ≃ₐ[K] E) (integralClosure A E) i =
-      (ramificationGroup (E' ≃ₐ[K] E') (integralClosure A E') i).comap
-        (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) :=
-  ramificationGroup_eq_comap_of_ringEquiv
-    (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv)
-    (fun _ _ ↦ Subtype.ext <| by simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]) i
-open IntermediateField in
-/-- `IsGalois.normalAutEquivQuotient H` pulls back lower ramification groups from
-`integralClosure A (fixedField H)` to `FixedPoints.subalgebra A (integralClosure A L) H`. -/
-theorem ramificationGroup_fixedPoints_integralClosure_eq_comap (A : Type*) {K L : Type*}
-    [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L]
-    [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
-    [IsLocalRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (i : ℤ) :
-    ramificationGroup ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) i =
-      (ramificationGroup (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H))
-        i).comap (IsGalois.normalAutEquivQuotient H : _ →* _) :=
-  ramificationGroup_eq_comap_of_ringEquiv
-    (e := (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv)
-    (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv_smul A H) i
 
 end Comap
 

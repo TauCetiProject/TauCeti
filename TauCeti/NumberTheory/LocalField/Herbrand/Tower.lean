@@ -38,6 +38,8 @@ All declarations live in the namespace `TauCeti.LocalFieldsRamification`.
 * `inverseHerbrand_tower`: `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`, as the identity of the inverse order
   isomorphisms.
 * `psiNat_tower`: `ψℕ_{M/K} = ψℕ_{M/L} ∘ ψℕ_{L/K}`.
+* `withIntegralClosureTower`: installs integral-closure instances and transports lower
+  filtrations for a Galois tower `M/L/K`.
 
 ## References
 
@@ -119,13 +121,22 @@ recover `IsGalois L M` from `[IsGalois K M]`; the statements below therefore ins
 variable [IsGalois K L] [IsGalois K M]
 
 open TauCeti.IsLocalRing _root_.IsLocalRing _root_.IsDiscreteValuationRing in
-/-- **Transitivity of the Herbrand function** in a tower `M/L/K` of Galois extensions:
-`φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`, as an identity of the bundled order isomorphisms of
-`RamificationIndexDomain`. -/
-theorem herbrand_tower :
-    haveI : Module.Finite K M := Module.Finite.trans L M
-    haveI := IsGalois.tower_top_of_isGalois K L M
-    herbrandOrderIso K M = (herbrandOrderIso L M).trans (herbrandOrderIso K L) := by
+/-- Installs the finite-Galois and integral-closure instances for a tower `M/L/K` and transports
+the lower ramification filtrations from `𝒪[M]` and `𝒪[L]` to `integralClosure 𝒪[K] M` and
+`integralClosure 𝒪[K] L`. -/
+theorem withIntegralClosureTower {P : Prop}
+    (h : [Module.Finite K M] → [IsGalois L M] → [IsScalarTower 𝒪[K] L M] →
+      [IsLocalRing (integralClosure 𝒪[K] L)] →
+      [_root_.IsDiscreteValuationRing (integralClosure 𝒪[K] M)] →
+      [IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] M))] →
+      [Algebra.IsSeparable (ResidueField 𝒪[K]) (ResidueField (integralClosure 𝒪[K] M))] →
+      (∀ i : ℤ, ramificationGroup (M ≃ₐ[K] M) 𝒪[M] i =
+        (ramificationGroup (M ≃ₐ[K] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _)) →
+      (∀ i : ℤ, ramificationGroup (M ≃ₐ[L] M) 𝒪[M] i =
+        (ramificationGroup (M ≃ₐ[L] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _)) →
+      (∀ i : ℤ, ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
+        (ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K] L) i).comap (MonoidHom.id _)) →
+      P) : P := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M; let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
   let eM := TauCeti.integerRingEquivIntegralClosure K M
@@ -140,12 +151,23 @@ theorem herbrand_tower :
     (e := eM.toRingEquiv) (fun _ _ ↦ Subtype.ext (by simp [eM]))
   have hLK := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (L ≃ₐ[K] L))
     (e := (TauCeti.integerRingEquivIntegralClosure K L).toRingEquiv) fun _ _ ↦ Subtype.ext (by simp)
-  refine OrderIso.ext <| funext fun u ↦ Subtype.ext ?_
-  simp only [OrderIso.trans_apply, herbrandOrderIso_apply, coe_herbrand_eq_herbrandFun,
-    herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hMK,
-    herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
-    herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hML]
-  exact herbrandFun_integralClosure_tower 𝒪[K] L u
+  exact h hMK hML hLK
+
+open TauCeti.IsLocalRing in
+/-- **Transitivity of the Herbrand function** in a tower `M/L/K` of Galois extensions:
+`φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`, as an identity of the bundled order isomorphisms of
+`RamificationIndexDomain`. -/
+theorem herbrand_tower :
+    haveI : Module.Finite K M := Module.Finite.trans L M
+    haveI := IsGalois.tower_top_of_isGalois K L M
+    herbrandOrderIso K M = (herbrandOrderIso L M).trans (herbrandOrderIso K L) :=
+  withIntegralClosureTower K L M fun {_ _ _ _ _ _ _} hMK hML hLK ↦ by
+    refine OrderIso.ext <| funext fun u ↦ Subtype.ext ?_
+    simp only [OrderIso.trans_apply, herbrandOrderIso_apply, coe_herbrand_eq_herbrandFun,
+      herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hMK,
+      herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
+      herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hML]
+    exact herbrandFun_integralClosure_tower 𝒪[K] L u
 
 /-- **Transitivity of the inverse Herbrand function** in a tower `M/L/K` of Galois extensions:
 `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`, as an identity of the inverse order isomorphisms. Inverting the

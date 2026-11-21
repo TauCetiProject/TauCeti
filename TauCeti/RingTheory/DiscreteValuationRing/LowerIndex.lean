@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DiscreteValuationRing.FixedPoints
+public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-import TauCeti.RingTheory.KrullDimension.Basic
-import TauCeti.RingTheory.KrullDimension.Integral
-import TauCeti.RingTheory.LocalRing.ResidueField.Instances
+import TauCeti.RingTheory.LocalRing.FixedPoints
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Inertia cardinality and Serre's lower-index quotient formula on discrete valuation rings
@@ -29,7 +28,9 @@ lower index `i_G(σ) = min_x v_B(σ x - x)` (`TauCeti.IsLocalRing.lowerIndex`) o
 `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`,
 
 where `e` is the ramification index of `B` over `B^H`. Neither completeness of `A` nor finiteness
-of its residue field is assumed.
+of its residue field is assumed. Adapts the coset formula and its counting form from
+`TauCeti/NumberTheory/LocalField/LowerIndex.lean` and
+`TauCeti/NumberTheory/LocalField/Herbrand/Quotient.lean`.
 
 ## Main results
 
@@ -37,14 +38,10 @@ of its residue field is assumed.
 * `TauCeti.IsLocalRing.natCard_ramificationGroup_zero_fixedPoints`: `#G_0 = e(B / B^G)`.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top`: the quotient
   formula `e · i(σ|_C) = ∑_{τ ∈ H} i(σ τ)` for a tower of monogenic discrete valuation rings.
-* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_finsum`: **Serre's quotient formula**
-  `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)` for `[IsDiscreteValuationRing A]` and
-  `[Algebra.IsInvariant A B G]`.
-* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`: its counting form
-  `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` for `σ` of largest lower index `j` in `σ H`.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum` and
-  `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card`: the same formulas
-  over a general local ring `A` using `QuotientGroup.mk' H`.
+  `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card`: **Serre's
+  quotient formula** `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)` and its counting form
+  `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` over a general local ring `A` using `QuotientGroup.mk' H`.
 
 ## References
 
@@ -107,64 +104,6 @@ theorem ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top {x : B}
 
 end Monogenic
 
-end IsLocalRing
-
-section InvariantDVR
-
-variable {A B : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-  [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
-  {G : Type*} [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
-  [Algebra.IsInvariant A B G] [FaithfulSMul G B]
-  (H : Subgroup G) [H.Normal]
-
-namespace IsLocalRing
-
-variable (A B) in
-/-- **Serre's quotient formula for the lower index.** Let a finite group `G` act faithfully on the
-discrete valuation ring `B` by `A`-algebra automorphisms, with invariants the discrete valuation
-ring `A` and separable residue extension, and let `H` be a normal subgroup. Then for every
-`σ : G`, `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`, where `e` is the ramification index of `B` over
-the invariants `B^H` and `i_{G/H}` is the lower index of the action of `G ⧸ H` on `B^H`. Both
-sides are `⊤` for `σ ∈ H`. -/
-theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum [IsLocalHom (algebraMap A B)]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (σ : G) :
-    ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
-        lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
-      ∑ᶠ τ : H, lowerIndex B (σ * τ) := by
-  have := Algebra.IsInvariant.isIntegral A B G
-  have := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
-  have : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  have := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
-  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
-  obtain ⟨y, hy⟩ := FixedPoints.exists_adjoin_eq_top A B H
-  exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
-    (fun c ↦ (H.coe_mk_smul σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
-
-variable (A) in
-/-- **Serre's lemma on the lower index of a quotient**, in counting form. Let a finite group `G`
-act faithfully on the discrete valuation ring `B` by `A`-algebra automorphisms, with invariants the
-discrete valuation ring `A` and separable residue extension, and let `H` be a normal subgroup. If
-`σ` has the largest lower index in its coset `σ H`, and `i_G(σ) = j` is finite, then
-`e · i_{G/H}(σ H) = ∑_{k < j} #H_k`, where `H_k` are the ramification groups of `H` acting on `B`
-and `e` is the ramification index of `B` over `B^H`. -/
-theorem ramificationIdx_mul_lowerIndex_mk_eq_sum_card [IsLocalHom (algebraMap A B)]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] {σ : G} {j : ℕ}
-    (hj : lowerIndex B σ = j) (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
-    ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
-        lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
-      ∑ k ∈ Finset.range j, (Nat.card (ramificationGroup H B k) : ℕ∞) := by
-  have := Fintype.ofFinite H
-  rw [ramificationIdx_mul_lowerIndex_mk_eq_finsum A B, finsum_eq_sum_of_fintype,
-    ← sum_min_lowerIndex_natCast (G := H) (S := B) j]
-  refine Finset.sum_congr rfl fun τ _ ↦ ?_
-  rw [lowerIndex_mul_eq_min_of_le (hσ τ τ.property), lowerIndex_coe, hj]
-
-end IsLocalRing
-
-end InvariantDVR
-
-namespace IsLocalRing
-
 /-- For a faithful finite Galois action `G` on a DVR `B` with invariant DVR `A` and separable
 residue extension, `#G_0 = e(B / A)`. -/
 theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
@@ -173,12 +112,7 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
     [IsGaloisGroup G A B] [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
     Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
   have _ : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
-  have _ : FiniteRingKrullDim A := FiniteRingKrullDim.of_ringKrullDim_eq_natCast (n := 1)
-    (by simpa using _root_.IsDiscreteValuationRing.ringKrullDim_eq_one A)
-  have _ : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).2 <|
-    (algebraMap A B).injective_of_isIntegral_of_ringKrullDim_le
-      (Algebra.isIntegral_def.1 inferInstance)
-      (by simp [_root_.IsDiscreteValuationRing.ringKrullDim_eq_one])
+  have _ : FaithfulSMul A B := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
   have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   have _ := (isSeparable_residueField_iff (A := A) (B := B)).mp ‹_›
   rw [ramificationGroup_zero_eq_inertia,
@@ -200,6 +134,8 @@ theorem natCard_ramificationGroup_zero_fixedPoints :
       (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
   let _ : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
     ⟨inferInstance, inferInstance, inferInstance⟩
+  let _ : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
+    ⟨fun _ ↦ IsLocalHom.map_nonunit (f := (FixedPoints.subalgebra A B G).val) _⟩
   have _ : Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B) :=
     Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) _ (ResidueField B)
   natCard_ramificationGroup_zero
@@ -218,7 +154,11 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   have _ : FaithfulSMul R₀ B := (faithfulSMul_iff_algebraMap_injective R₀ B).2 Subtype.val_injective
   have _ : FaithfulSMul R₀ C :=
     (faithfulSMul_iff_algebraMap_injective R₀ C).2 (Subalgebra.inclusion_injective hle)
-  have _ : IsLocalHom (algebraMap R₀ B) := FixedPoints.isLocalHom_algebraMap_subalgebra
+  have _ : IsLocalHom (algebraMap R₀ B) := by
+    rw [Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHom.id_comp]
+    exact ⟨fun _ ↦ IsLocalHom.map_nonunit (f := R₀.val) _⟩
+  have _ : IsLocalHom (algebraMap C B) :=
+    ⟨fun _ ↦ IsLocalHom.map_nonunit (f := C.val) _⟩
   have _ : IsLocalHom ((algebraMap C B).comp (algebraMap R₀ C)) :=
     IsScalarTower.algebraMap_eq R₀ C B ▸ inferInstance
   have _ : IsLocalHom (algebraMap R₀ C) := isLocalHom_of_comp _ (algebraMap C B)
@@ -231,12 +171,9 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   have _ : Algebra.IsSeparable (ResidueField R₀) (ResidueField C) :=
     Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField R₀) (ResidueField C) (ResidueField B)
   let _ : SMulCommClass G R₀ B := ⟨fun k r b ↦ by
-    change k • ((r : B) * b) = (r : B) * (k • b)
-    rw [smul_mul', r.property k]⟩
-  let _ : SMulCommClass (G ⧸ H) R₀ C := ⟨fun q r c ↦ QuotientGroup.induction_on q fun k ↦
-    Subtype.ext <| by
-      change k • ((r : B) * (c : B)) = (r : B) * (k • (c : B))
-      rw [smul_mul', r.property k]⟩
+    rw [Subalgebra.smul_def, smul_eq_mul, Subalgebra.smul_def, smul_eq_mul, smul_mul',
+      r.property k]⟩
+  let _ : SMulCommClass (G ⧸ H) R₀ C := instSMulCommClassQuotientFixedPointsSubalgebra
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := R₀) (S := B)
   obtain ⟨y, hy⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := R₀) (S := C)
   exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top (G := G)

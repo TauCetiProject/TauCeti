@@ -7,9 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 public import TauCeti.RingTheory.IntegralClosure.Map
-public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-public import TauCeti.RingTheory.LocalRing.Herbrand
-import TauCeti.FieldTheory.Galois.Restriction
+public import TauCeti.RingTheory.LocalRing.Herbrand.IntegralClosure
 
 /-!
 # Herbrand's theorem and transitivity of Herbrand functions on discrete valuation rings
@@ -18,8 +16,9 @@ For a faithful finite action of `G` on a DVR `B` over a local ring `A` with sepa
 extension (no completeness or residue-finiteness), we prove Herbrand's lemma
 (`ramificationGroupReal_quotient_herbrandFun`), transitivity (`herbrandFun_tower`,
 `inverseHerbrandFun_tower`, `herbrandOrderIso_tower`, `psiNat_tower`), Herbrand's theorem
-(`upperRamificationGroup_quotient_eq_map`), upper breaks in quotients, and Galois tower transport,
-adapting `NumberTheory/LocalField/Herbrand/{Quotient,Tower,UpperQuotient}.lean`.
+(`upperRamificationGroup_quotient_eq_map`), upper breaks in quotients,
+`TauCeti.instIsDiscreteValuationRingIntegralClosureFixedField`, and Galois tower transport, adapting
+`NumberTheory/LocalField/Herbrand/{Quotient,Tower,UpperQuotient}.lean`.
 
 ## References
 
@@ -233,49 +232,6 @@ theorem upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun (v : �
 end Quotient
 
 open _root_.IntermediateField
-section TowerHelpers
-variable (K E L : Type*) [Field K] [Field E] [Field L] [Algebra K E] [Algebra E L] [Algebra K L]
-  [IsScalarTower K E L]
-private abbrev towerFixingSubgroup : Subgroup (L ≃ₐ[K] L) :=
-  (IsScalarTower.toAlgHom K E L).fieldRange.fixingSubgroup
-private def towerSubgroupEquiv [Normal K E] : (L ≃ₐ[E] L) ≃* towerFixingSubgroup K E L :=
-  (MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective K)).trans <|
-    MulEquiv.subgroupCongr <| by
-      rw [AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K E L,
-        ← AlgHom.restrictNormalHom_toAlgHom (F := K), AlgHom.ker_restrictNormalHom]
-private theorem smul_eq_towerSubgroupEquiv {A : Type*} [CommRing A] [Algebra A K] [Algebra A L]
-    [IsScalarTower A K L] [Algebra A E] [IsScalarTower A E L] [Normal K E] (σ : L ≃ₐ[E] L)
-    (x : integralClosure A L) :
-    σ • x = (towerSubgroupEquiv K E L : (L ≃ₐ[E] L) →* towerFixingSubgroup K E L) σ • x := by
-  simp [towerSubgroupEquiv, MonoidHom.coe_ofClass, MonoidHom.ofInjective_apply, Subgroup.smul_def]
-variable [IsGalois K L]
-private theorem isGalois_tower [Normal K E] :
-    IsGalois K E ∧ IsGalois K (IsScalarTower.toAlgHom K E L).fieldRange :=
-  have := Algebra.isSeparable_tower_bot_of_isSeparable K E L; have : IsGalois K E := ⟨⟩
-  ⟨‹_›, .of_algEquiv (IsScalarTower.toAlgHom K E L).equivFieldRange⟩
-variable [FiniteDimensional K L]
-private def towerFixedFieldEquiv : E ≃ₐ[K] fixedField (towerFixingSubgroup K E L) :=
-  (IsScalarTower.toAlgHom K E L).equivFieldRange.trans
-    (equivOfEq (IsGalois.fixedField_fixingSubgroup _).symm)
-private theorem coe_towerFixedFieldEquiv (x : E) :
-    ((towerFixedFieldEquiv K E L x : fixedField (towerFixingSubgroup K E L)) : L) =
-      algebraMap E L x := by simp [towerFixedFieldEquiv]
-private theorem autCongr_towerFixedFieldEquiv_comp_restrictNormalHom [Normal K E] :
-    haveI := (isGalois_tower K E L).2
-    MonoidHom.comp (MonoidHom.ofClass (towerFixedFieldEquiv K E L).autCongr)
-      (AlgEquiv.restrictNormalHom E) = MonoidHom.comp
-        (MonoidHom.ofClass (IsGalois.normalAutEquivQuotient (towerFixingSubgroup K E L)))
-        (QuotientGroup.mk' (towerFixingSubgroup K E L)) := by
-  ext σ y
-  have heK : algebraMap E L ((towerFixedFieldEquiv K E L).symm y) = y := by
-    rw [← coe_towerFixedFieldEquiv K E L, (towerFixedFieldEquiv K E L).apply_symm_apply]
-  simp only [MonoidHom.coe_comp, MonoidHom.coe_ofClass, Function.comp_apply,
-    IsGalois.normalAutEquivQuotient_apply, AlgEquiv.autCongr_apply, AlgEquiv.trans_apply,
-    QuotientGroup.coe_mk', coe_towerFixedFieldEquiv K E L,
-    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal, AlgEquiv.restrictNormal_commutes, heK]
-  exact (σ.restrictNormal_commutes (fixedField (towerFixingSubgroup K E L)) y).symm
-end TowerHelpers
-
 variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L]
   [Algebra A L] [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
   [IsLocalRing A] [FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L)]
@@ -291,9 +247,7 @@ variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K
       upperRamificationGroup (fixedField H ≃ₐ[K] fixedField H)
         (integralClosure A (fixedField H)) v := by
   rw [← upperRamificationGroup_quotient_eq_map A (integralClosure A L) (L ≃ₐ[K] L) H v,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap
-      (IsGalois.normalAutEquivQuotient H).bijective
-      (ramificationGroup_fixedPoints_integralClosure_eq_comap A H) v]
+    upperRamificationGroup_fixedPoints_integralClosure_eq_comap A H v]
   exact Subgroup.map_comap_eq_self_of_surjective (IsGalois.normalAutEquivQuotient H).surjective _
 variable (E : Type*) [Field E] [Algebra K E] [Algebra E L] [Algebra A E] [IsScalarTower A K E]
   [IsScalarTower K E L] [Normal K E]
@@ -305,12 +259,14 @@ theorem herbrandFun_integralClosure_tower (u : ℝ) :
       herbrandFun (E ≃ₐ[K] E) (integralClosure A E)
         (herbrandFun (L ≃ₐ[E] L) (integralClosure A L) u) := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  obtain ⟨_, _⟩ := isGalois_tower K E L
-  rw [herbrandFun_tower A (integralClosure A L) (L ≃ₐ[K] L) (towerFixingSubgroup K E L) u,
-    ← herbrandFun_eq_of_smul_eq (φ := (towerSubgroupEquiv K E L : (L ≃ₐ[E] L) →* _))
-      (towerSubgroupEquiv K E L).bijective (smul_eq_towerSubgroupEquiv K E L) u,
-    herbrandFun_fixedPoints_integralClosure A (towerFixingSubgroup K E L),
-    (towerFixedFieldEquiv K E L).herbrandFun_integralClosure_eq_of_algEquiv]
+  have := IsGalois.tower_bot_of_normal K E L
+  rw [herbrandFun_tower A (integralClosure A L) (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) u,
+    ← herbrandFun_eq_of_smul_eq
+      (φ := (TauCeti.algEquivEquivEmbeddingSubgroup K E L : (L ≃ₐ[E] L) →* _))
+      (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
+      (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) u,
+    herbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
+    (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).herbrandFun_integralClosure_eq_of_algEquiv]
 /-- **Transitivity of `inverseHerbrandFun` in a field tower `L / E / K`** (`L / K` finite Galois,
 `E / K` normal): `ψ_{L/K}(v) = ψ_{L/E}(ψ_{E/K}(v))`. -/
 theorem inverseHerbrandFun_integralClosure_tower (v : ℝ) :
@@ -356,10 +312,12 @@ Galois, `E / K` normal): `AlgEquiv.restrictNormalHom E` maps `Gal(L/K)^v` onto `
         (AlgEquiv.restrictNormalHom E) =
       upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  obtain ⟨_, _⟩ := isGalois_tower K E L; let eK := towerFixedFieldEquiv K E L
+  have := IsGalois.tower_bot_of_normal K E L
+  let eK := TauCeti.equivFixedFieldEmbeddingSubgroup K E L
   apply Subgroup.map_injective (f := MonoidHom.ofClass eK.autCongr)
     (by simpa using eK.autCongr.injective)
-  rw [Subgroup.map_map, autCongr_towerFixedFieldEquiv_comp_restrictNormalHom K E L,
+  rw [Subgroup.map_map,
+    TauCeti.autCongr_equivFixedFieldEmbeddingSubgroup_comp_restrictNormalHom K E L,
     ← Subgroup.map_map,
     map_normalAutEquivQuotient_map_mk'_upperRamificationGroup_integralClosure A _ v,
     eK.upperRamificationGroup_integralClosure_eq_comap_autCongr v,
@@ -374,15 +332,34 @@ theorem upperJump_integralClosure_tower_iff (v : ℝ) :
         UpperJump (L ≃ₐ[E] L) (integralClosure A L)
           (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  obtain ⟨_, _⟩ := isGalois_tower K E L
+  have := IsGalois.tower_bot_of_normal K E L
   rw [upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun A (integralClosure A L)
-      (L ≃ₐ[K] L) (towerFixingSubgroup K E L) v,
-    upperJump_fixedPoints_integralClosure_iff A (towerFixingSubgroup K E L),
-    ← (towerFixedFieldEquiv K E L).upperJump_integralClosure_iff_of_algEquiv,
+      (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) v,
+    upperJump_fixedPoints_integralClosure_iff A (TauCeti.embeddingSubgroup K E L),
+    ← (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).upperJump_integralClosure_iff_of_algEquiv,
     ← upperJump_iff_of_smul_eq (S := integralClosure A L)
-      (φ := (towerSubgroupEquiv K E L : (L ≃ₐ[E] L) →* _))
-      (towerSubgroupEquiv K E L).bijective (smul_eq_towerSubgroupEquiv K E L),
-    inverseHerbrandFun_fixedPoints_integralClosure A (towerFixingSubgroup K E L),
-    (towerFixedFieldEquiv K E L).inverseHerbrandFun_integralClosure_eq_of_algEquiv]
+      (φ := (TauCeti.algEquivEquivEmbeddingSubgroup K E L : (L ≃ₐ[E] L) →* _))
+      (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
+      (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm),
+    inverseHerbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
+    (TauCeti.equivFixedFieldEmbeddingSubgroup K E
+      L).inverseHerbrandFun_integralClosure_eq_of_algEquiv]
 
 end TauCeti.IsLocalRing
+
+namespace TauCeti
+
+/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)`, then
+`integralClosure A (fixedField H)` is a DVR. -/
+instance instIsDiscreteValuationRingIntegralClosureFixedField {A K L : Type*} [CommRing A]
+    [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+    [_root_.IsDiscreteValuationRing (integralClosure A L)] {H : Subgroup (L ≃ₐ[K] L)} :
+    _root_.IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
+  have : Algebra.IsIntegral (FixedPoints.subalgebra A (integralClosure A L) H)
+      (integralClosure A L) := Algebra.IsIntegral.tower_top A
+  have := isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
+    (A := A) (B := integralClosure A L) (G := H)
+  _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (fixedPointsSubalgebraIntegralClosureEquiv A H)
+
+end TauCeti
