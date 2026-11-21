@@ -8,12 +8,16 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 
 /-!
-# Uniform approximation of finite sums by differentiable functions
+# Differentiability of sums and of linear families of functions
 
 If each summand `f i : E → F` (`i ∈ s`) is uniformly approximable on `K ⊆ E` to arbitrary accuracy
 by functions `𝕜`-differentiable on `Ω ⊆ E`, then the finite sum `∑ i ∈ s, f i` is likewise
 uniformly approximable on `K` by functions `𝕜`-differentiable on `Ω`
 (`TauCeti.exists_differentiableOn_norm_sum_sub_lt`).
+
+For a linear family of functions `P : Λ →ₗ[R] E → F`, moving the parameter from `p` to
+`p + s • q` subtracts `s • P q` from `g - P p` (`LinearMap.sub_map_add_smul`), and so subtracts
+`s • d(P q)_x` from the differential of `g - P p` at `x` (`LinearMap.fderiv_sub_map_add_smul`).
 -/
 
 public section
