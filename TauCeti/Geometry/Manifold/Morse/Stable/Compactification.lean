@@ -59,8 +59,11 @@ broken trajectory from `p` to `r` has at most `ind p - ind r` components
 This generalizes the compactified space of index-two trajectories of
 `TauCeti.Geometry.Manifold.Morse.Boundary.Compactification`, which records them on two levels in
 `M × M`, to any index difference and any family of levels, countable for the closure result. That
-every broken trajectory is a limit of unbroken ones, and the charts of the compactified space near
-broken trajectories, need gluing; beyond index two they are not proved here.
+every broken trajectory is a limit of unbroken ones needs gluing; it is
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`. Charts of the
+compactified space near broken trajectories are only constructed for index two
+(`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet` in the namespace
+`TauCeti.IsAdaptedPseudoGradient`).
 
 ## Main declarations
 
@@ -216,10 +219,11 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
   have hg : Continuous fun (y : S) i ↦ hX.flow (τ i y) (y : M) :=
     continuous_pi fun i ↦ hX.flow.continuous ((Flow.continuousOn_levelCrossingTime
       hX.mdifferentiable.continuous.continuousOn hanti (hex i)).comp_continuous
-      continuous_subtype_val fun y ↦ y.2.1) continuous_subtype_val
+      continuous_subtypeVal fun y ↦ y.property.1) continuous_subtypeVal
   -- The point on the level `c i₀` is the point itself.
   have hτ₀ (y : S) : τ i₀ y = 0 :=
-    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.2.1) (hex i₀ y y.2.1)).2 y.2.2
+    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.property.1)
+        (hex i₀ y y.property.1)).2 y.property.2
   -- The point of a record on the level `c i₀` lies in the slice, and determines the record.
   have hmem : ∀ w ∈ hX.morseTrajectoryRecords p r c, w i₀ ∈ S := by
     rintro w ⟨y, hy, hw⟩
@@ -236,11 +240,12 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
       (Flow.eq_levelCrossingTime_iff (hanti _ hC) (hex i _ hC)).2 (by rw [hflow]; exact hwi)
     rw [← hτi, hflow]
   refine ⟨
-    { toFun w := ⟨w.1 i₀, hmem w.1 w.2⟩
-      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.2.1, fun i ↦ ⟨hτ' i y y.2.1, τ i y, rfl⟩⟩
-      left_inv w := Subtype.ext (funext (hrec w.1 w.2))
+    { toFun w := ⟨w.val i₀, hmem w.val w.property⟩
+      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.property.1, fun i ↦ ⟨hτ' i y y.property.1, τ i y,
+          rfl⟩⟩
+      left_inv w := Subtype.ext (funext (hrec w.val w.property))
       right_inv y := Subtype.ext (by simp only [hτ₀, Flow.map_zero_apply])
-      continuous_toFun := ((continuous_apply i₀).comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := ((continuous_apply i₀).comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := hg.subtype_mk _ }, fun w ↦ rfl⟩
 
 /-- **The records of unbroken trajectories form the space of unparametrized trajectories.** For a

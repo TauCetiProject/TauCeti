@@ -198,7 +198,7 @@ instance unitDiscAut.isPretransitive :
 theorem exists_mem_unitDiscAut_apply_eq (z w : Complex.UnitDisc) :
     ∃ e ∈ unitDiscAut, e z = w :=
   let ⟨e, he⟩ := MulAction.exists_smul_eq unitDiscAut z w
-  ⟨e, e.2, he⟩
+  ⟨e, e.property, he⟩
 
 /-- The rotations `z ↦ u * z`, as a subgroup of the permutations of the unit disc.  It is the
 image of `Circle` under its multiplicative action on the disc. -/
@@ -248,6 +248,6 @@ theorem stabilizer_zero_eq_unitDiscRotation_subgroupOf :
       unitDiscRotation.subgroupOf unitDiscAut := by
   ext e
   rw [MulAction.mem_stabilizer_iff, Subgroup.mem_subgroupOf, mem_unitDiscRotation_iff,
-    and_iff_right e.2, Subgroup.smul_def, Equiv.Perm.smul_def]
+    and_iff_right e.property, Subgroup.smul_def, Equiv.Perm.smul_def]
 
 end TauCeti

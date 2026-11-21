@@ -43,11 +43,11 @@ theorem mem_closedAnnulus {r₁ r₂ : ℝ} {z : ℂ} :
 
 /-- A point of the closed annulus has norm at least `r₁`. -/
 theorem closedAnnulus.le_norm_coe {r₁ r₂ : ℝ} (z : closedAnnulus r₁ r₂) : r₁ ≤ ‖(z : ℂ)‖ :=
-  (mem_closedAnnulus.1 z.2).1
+  (mem_closedAnnulus.1 z.property).1
 
 /-- A point of the closed annulus has norm at most `r₂`. -/
 theorem closedAnnulus.norm_coe_le {r₁ r₂ : ℝ} (z : closedAnnulus r₁ r₂) : ‖(z : ℂ)‖ ≤ r₂ :=
-  (mem_closedAnnulus.1 z.2).2
+  (mem_closedAnnulus.1 z.property).2
 
 theorem isCompact_closedAnnulus (r₁ r₂ : ℝ) : IsCompact (closedAnnulus r₁ r₂) :=
   (isCompact_closedBall 0 r₂).diff isOpen_ball
@@ -62,27 +62,27 @@ variable {r₁ r₂ : ℝ}
 noncomputable def closedAnnulusHomeomorph (h₀ : 0 < r₁) :
     closedAnnulus r₁ r₂ ≃ₜ Circle × Set.Icc r₁ r₂ where
   toFun z :=
-    have hz : (z : ℂ) ≠ 0 := norm_pos_iff.1 (h₀.trans_le (mem_closedAnnulus.1 z.2).1)
+    have hz : (z : ℂ) ≠ 0 := norm_pos_iff.1 (h₀.trans_le (mem_closedAnnulus.1 z.property).1)
     (Circle.homeomorphSphere.symm (homeomorphUnitSphereProd ℂ ⟨z, hz⟩).1,
-      ⟨‖(z : ℂ)‖, mem_closedAnnulus.1 z.2⟩)
+      ⟨‖(z : ℂ)‖, mem_closedAnnulus.1 z.property⟩)
   invFun p := ⟨(p.2 : ℝ) • (p.1 : ℂ), by
-    have h2 := p.2.2
+    have h2 := p.2.property
     rw [mem_closedAnnulus, norm_smul, Circle.norm_coe, mul_one, Real.norm_of_nonneg
       (h₀.le.trans h2.1)]
     exact h2⟩
   left_inv z := by
-    have hz : (z : ℂ) ≠ 0 := norm_pos_iff.1 (h₀.trans_le (mem_closedAnnulus.1 z.2).1)
+    have hz : (z : ℂ) ≠ 0 := norm_pos_iff.1 (h₀.trans_le (mem_closedAnnulus.1 z.property).1)
     ext1
     simp [hz]
   right_inv p := by
-    have ht : 0 < (p.2 : ℝ) := h₀.trans_le p.2.2.1
+    have ht : 0 < (p.2 : ℝ) := h₀.trans_le p.2.property.1
     ext
     · simp [abs_of_pos ht, ht.ne']
     · simp [abs_of_pos ht]
   continuous_toFun := by
     refine .prodMk (Circle.homeomorphSphere.symm.continuous.comp (continuous_fst.comp
-      ((homeomorphUnitSphereProd ℂ).continuous.comp (continuous_subtype_val.subtype_mk _))))
-      (continuous_subtype_val.norm.subtype_mk _)
+      ((homeomorphUnitSphereProd ℂ).continuous.comp (continuous_subtypeVal.subtype_mk _))))
+      (continuous_subtypeVal.norm.subtype_mk _)
   continuous_invFun := by
     refine Continuous.subtype_mk ?_ _
     fun_prop

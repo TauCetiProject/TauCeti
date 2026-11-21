@@ -65,7 +65,7 @@ structure PreTorsor (G : Sheaf J GrpCat.{w}) where
     presheaf.map f (g • x) = G.obj.map f g • presheaf.map f x
   /-- The presheaf is locally nonempty: the objects over which it has a section cover the
   site. -/
-  coversTop : J.CoversTop fun U : {U : C // Nonempty (presheaf.obj (op U))} ↦ U.1
+  coversTop : J.CoversTop fun U : {U : C // Nonempty (presheaf.obj (op U))} ↦ U.val
   /-- The action is simply transitive: `(g, x) ↦ (g • x, x)` is a bijection on sections. -/
   bijective (U : Cᵒᵖ) :
     Function.Bijective fun x : G.obj.obj U × presheaf.obj U ↦ (x.1 • x.2, x.2)

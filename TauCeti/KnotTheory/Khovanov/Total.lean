@@ -52,24 +52,28 @@ def totalEnhancedStateAtEquiv (i : ℤ) :
     (Equiv.subtypeSubtypeEquivSubtypeInter
       (fun e ↦ D.stateCochainDegree e.1 = i)
       (fun e ↦ D.enhancedQuantumDegree e = j)).symm).trans
-    (Equiv.sigmaFiberEquiv fun e : D.TotalEnhancedStateAt i ↦ D.enhancedQuantumDegree e.1)
+    (Equiv.sigmaFiberEquiv fun e : D.TotalEnhancedStateAt i ↦ D.enhancedQuantumDegree e.val)
 
 /-- Forgetting the quantum index retains the underlying native enhanced state. -/
 @[simp]
 theorem totalEnhancedStateAtEquiv_apply_val (i j : ℤ) (e : D.EnhancedStateAt i j) :
-    (D.totalEnhancedStateAtEquiv i ⟨j, e⟩).1 = e.toEnhancedState D := by
+    (D.totalEnhancedStateAtEquiv i ⟨j, e⟩).val = e.toEnhancedState D := by
   exact D.enhancedStateAtEquiv_apply_val e
 
 /-- The inverse recovers the intrinsic quantum degree of an enhanced state. -/
 @[simp]
 theorem totalEnhancedStateAtEquiv_symm_fst (i : ℤ) (e : D.TotalEnhancedStateAt i) :
-    ((D.totalEnhancedStateAtEquiv i).symm e).1 = D.enhancedQuantumDegree e.1 := (rfl)
+    ((D.totalEnhancedStateAtEquiv i).symm e).1 = D.enhancedQuantumDegree e.val := (rfl)
 
 variable (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 
 /-- The ordinary Khovanov complex, obtained by taking the coproduct of the quantum components. -/
 abbrev khovanovTotalComplex : CochainComplex (ModuleCat.{u} R) ℤ :=
   ∐ D.khovanovComplex hD R
+
+/-- Cochain complexes of `R`-modules have coproducts indexed by `Type`, as required by
+`GradedObject.total`. -/
+instance : HasCoproducts.{0} (CochainComplex (ModuleCat.{u} R) ℤ) := .mk fun _ ↦ inferInstance
 
 /-- The ordinary complex is the native quantum total, not a product completion. -/
 theorem khovanovTotalComplex_def :
@@ -101,7 +105,7 @@ theorem quantumComplexDirectSumXIso_hom_ι_basis (i j : ℤ) (e : D.EnhancedStat
       (PreservesCoproduct.iso (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i)
         (D.khovanovComplex hD R)).hom =
       Sigma.ι (fun j ↦ (D.khovanovComplex hD R j).X i) j := by
-    simpa only [← PreservesCoproduct.inv_hom, IsIso.Iso.inv_inv, eval_obj, eval_map] using
+    simpa only [← PreservesCoproduct.iso_inv, IsIso.Iso.inv_inv, eval_obj, eval_map] using
       map_ι_comp_inv_sigmaComparison
         (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i) (D.khovanovComplex hD R) j
   simp only [quantumComplexDirectSumXIso, Iso.trans_hom, ModuleCat.hom_comp,

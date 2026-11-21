@@ -5,54 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DedekindSum
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
-import TauCeti.NumberTheory.Modular.ConjugateTranslation
 import TauCeti.NumberTheory.Modular.Reduction
 
 /-!
-# Explicit formulas for the Dedekind eta multiplier
+# Kronecker-symbol formulas for the Dedekind eta multiplier
 
 This file evaluates the Dedekind eta multiplier `ε(γ)` (`TauCeti.ModularForm.etaMultiplier`) for
-every matrix `γ = (a b; c d) ∈ SL(2, ℤ)`:
+matrices `γ = (a b; c d) ∈ SL(2, ℤ)` with `c > 0` in terms of the Kronecker symbol
+(complementing the negation, `c = 0`, and Dedekind-sum formulas in
+`TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation` and
+`TauCeti.NumberTheory.ModularForms.DedekindEta.DedekindSum`):
 
-* **Negation and upper-triangular matrices**: `ε(-γ) = i ε(γ)` when `c > 0`, `ε(-γ) = -i ε(γ)`
-  when `c < 0`, and `ε(γ)` is evaluated explicitly when `c = 0` (`γ = ±Tᵇ`).
-* **The Dedekind-sum formula** (Apostol, Theorem 3.4): for `c > 0`,
-  `ε(γ) = exp(π i ((a + d) / (12 c) - s(d, c) - 1/4))`, where `s(d, c)` is `TauCeti.dedekindSum`.
 * **The Kronecker-symbol formula** (Strömberg, Remark 2.5, equation (2.5)): for `c > 0`, writing
   `e(x) = exp(2 π i x)`,
   - `ε(γ) = (d / c) e(((a + d) c - b d (c² - 1) - 3 c) / 24)` if `c` is odd,
   - `ε(γ) = (c / d) e(((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)` if `c` is even,
   where `(· / ·)` is the Kronecker symbol `TauCeti.kroneckerSym`.
 
-Both `c > 0` formulas are proved by Euclidean induction on `SL(2, ℤ)`
+The formula is proved by Euclidean induction on `SL(2, ℤ)`
 (`Matrix.SpecialLinearGroup.induction_on_of_c_pos`), starting from `c = 1`
 (`etaMultiplier_of_c_eq_one`) and matching the transformation laws under right multiplication by
-`T` (`etaMultiplier_mul_T`) and `S` (`etaMultiplier_mul_S`). For the Dedekind-sum formula, the `S`
-step uses Dedekind's reciprocity law (`dedekindSum_add_dedekindSum`); for the Kronecker-symbol
-formula, the `T` and `S` steps use quadratic reciprocity and its supplements for `kroneckerSym`.
+`T` (`etaMultiplier_mul_T`) and `S` (`etaMultiplier_mul_S`) via quadratic reciprocity and its
+supplements for `kroneckerSym`.
 
 ## Main results
 
-* `TauCeti.ModularForm.etaMultiplier_neg_of_c_pos`,
-  `TauCeti.ModularForm.etaMultiplier_neg_of_c_neg`: behavior of `ε(γ)` under negation for `c > 0`
-  and `c < 0`.
-* `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero`: evaluation of `ε(γ)` when `c = 0`.
-* `TauCeti.ModularForm.etaMultiplier_eq_exp_dedekindSum`: the Dedekind-sum formula for `c > 0`.
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_of_c_odd`,
   `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_of_c_even`: the Kronecker-symbol formulas for
   `c > 0`.
 
 ## References
 
-* T. M. Apostol, *Modular Functions and Dirichlet Series in Number Theory*, 2nd ed., GTM 41,
-  Theorem 3.4.
 * F. Strömberg, *Computation of Maass waveforms with nontrivial multiplier systems*, Math. Comp.
   77 (2008), 2375–2416, Remark 2.5, equation (2.5).
 -/
@@ -63,111 +51,6 @@ open Complex ModularGroup Matrix.SpecialLinearGroup ZMod
 open scoped UpperHalfPlane Real ModularForm MatrixGroups
 
 namespace TauCeti.ModularForm
-
-/-! ### Negation and upper-triangular matrices -/
-
-/-- For `γ ∈ SL(2, ℤ)` with `c > 0`, negating multiplies the eta multiplier by `i`:
-at `τ = i`, `c i + d` lies in the open upper half-plane, so `√(-(c i + d)) = -i √(c i + d)`. -/
-theorem etaMultiplier_neg_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
-    etaMultiplier (-γ) = I * etaMultiplier γ := by
-  refine etaMultiplier_eq_of_eta_smul_eq (τ := UpperHalfPlane.I) ?_
-  have him : 0 < ((γ 1 0 : ℂ) * UpperHalfPlane.I + γ 1 1).im := by
-    simpa using (Int.cast_pos.mpr hc : (0 : ℝ) < γ 1 0)
-  have hsqrt : Complex.sqrt (((-γ) 1 0 : ℂ) * UpperHalfPlane.I + (-γ) 1 1) =
-      -I * Complex.sqrt ((γ 1 0 : ℂ) * UpperHalfPlane.I + γ 1 1) := by
-    have hneg : ((-γ) 1 0 : ℂ) * UpperHalfPlane.I + (-γ) 1 1 =
-        -((γ 1 0 : ℂ) * UpperHalfPlane.I + γ 1 1) := by
-      simp [Matrix.SpecialLinearGroup.coe_neg]
-      ring
-    rw [hneg, Complex.sqrt_neg_of_im_pos him]
-  rw [SL_neg_smul, eta_smul γ UpperHalfPlane.I, hsqrt]
-  ring_nf
-  simp [mul_assoc]
-
-/-- For `γ ∈ SL(2, ℤ)` with `c < 0`, negating multiplies the eta multiplier by `-i`. -/
-theorem etaMultiplier_neg_of_c_neg (γ : SL(2, ℤ)) (hc : γ 1 0 < 0) :
-    etaMultiplier (-γ) = -I * etaMultiplier γ := by
-  have h := etaMultiplier_neg_of_c_pos (-γ) (by simpa [Matrix.SpecialLinearGroup.coe_neg] using hc)
-  rw [neg_neg] at h
-  rw [h]
-  ring_nf
-  simp
-
-/-- For an upper-triangular matrix `γ = (±1, b; 0, ±1) ∈ SL(2, ℤ)`, the eta multiplier is
-`e^{π i b / 12}` when `d = 1` and `-i e^{-π i b / 12}` when `d = -1`. -/
-theorem etaMultiplier_of_c_eq_zero (γ : SL(2, ℤ)) (hc : γ 1 0 = 0) :
-    etaMultiplier γ = if γ 1 1 = 1 then cexp (π * I * γ 0 1 / 12)
-      else -I * cexp (-(π * I * γ 0 1 / 12)) := by
-  rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ
-  · have hd : γ 1 1 = 1 := by rw [hγ]; simp [coe_T_zpow]
-    rw [ite_eq_left hd]
-    conv_lhs => rw [hγ]
-    exact etaMultiplier_T_zpow (γ 0 1)
-  · have hd : γ 1 1 = -1 := by rw [hγ]; simp [Matrix.SpecialLinearGroup.coe_neg, coe_T_zpow]
-    rw [ite_eq_right (by omega)]
-    conv_lhs => rw [hγ, ← neg_one_mul]
-    rw [etaMultiplier_mul_T_zpow, etaMultiplier_neg_one]
-    simp [mul_comm, neg_div]
-
-/-! ### The Dedekind-sum formula -/
-
-/-- **The Dedekind-sum formula for the eta multiplier** (Apostol, Theorem 3.4): for
-`γ = (a b; c d) ∈ SL(2, ℤ)` with `c > 0`,
-`ε(γ) = exp(π i ((a + d) / (12 c) - s(d, c) - 1/4))`, where `s(d, c)` is the Dedekind sum
-`TauCeti.dedekindSum d c`. The term `-1/4` converts Apostol's root `√(-i(c τ + d))` to the
-principal root `√(c τ + d)` used in `eta_smul`. -/
-theorem etaMultiplier_eq_exp_dedekindSum (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
-    etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
-      dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  refine γ.induction_on_of_c_pos hc (P := fun γ ↦ etaMultiplier γ =
-    cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
-      dedekindSum (γ 1 1) (γ 1 0) - 1 / 4))) ?_ ?_ ?_
-  · intro γ hc1
-    rw [etaMultiplier_of_c_eq_one γ hc1, hc1, dedekindSum_one_right]
-    simp
-  · intro γ hc
-    have hc₀ : (γ 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc.ne'
-    have hrhs : cexp (π * I * ((((γ * T) 0 0 : ℂ) + (γ * T) 1 1) / (12 * (γ * T) 1 0) -
-        dedekindSum ((γ * T) 1 1) ((γ * T) 1 0) - 1 / 4)) =
-        cexp (π * I / 12) * cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
-          dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-      rw [coe_mul_T, ← Complex.exp_add]
-      congr 1
-      simp [dedekindSum_self_add]
-      field_simp
-      ring
-    rw [etaMultiplier_mul_T, hrhs, mul_right_inj' (Complex.exp_ne_zero _)]
-  · intro γ hc hd ih
-    have hdetC : (γ 0 0 : ℂ) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-      exact_mod_cast (by simpa only [Matrix.det_fin_two] using γ.det_coe :
-        γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1)
-    have hrec := congrArg (Rat.cast : ℚ → ℂ)
-      (dedekindSum_add_dedekindSum hd hc (ModularGroup.bottom_row_coprime γ).symm)
-    push_cast at hrec
-    have hc₀ : (γ 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc.ne'
-    have hd₀ : (γ 1 1 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hd.ne'
-    have hS := etaMultiplier_mul_S γ hd
-    have haS : (γ * S) 0 0 = γ 0 1 := by rw [coe_mul_S]; simp
-    have hcS : (γ * S) 1 0 = γ 1 1 := by rw [coe_mul_S]; simp
-    have hdS : (γ * S) 1 1 = -γ 1 0 := by rw [coe_mul_S]; simp
-    rw [ih, haS, hcS, hdS, dedekindSum_neg] at hS
-    -- Solve `exp(-π i / 4) * ε(γ) = exp(...)` for `ε(γ)` and substitute Dedekind reciprocity.
-    have hmul := congrArg (cexp (π * I / 4) * ·) hS
-    simp only [← mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul] at hmul
-    rw [← hmul]
-    congr 1
-    have hfrac : ((γ 0 1 : ℂ) + -(γ 1 0 : ℂ)) / (12 * γ 1 1) +
-        ((γ 1 1 : ℂ) ^ 2 + (γ 1 0 : ℂ) ^ 2 + 1) / (12 * γ 1 1 * γ 1 0) =
-        ((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) := by
-      field_simp
-      linear_combination -hdetC
-    have hsum : (dedekindSum (γ 1 0) (γ 1 1) : ℂ) =
-        ((γ 1 1 : ℂ) ^ 2 + (γ 1 0 : ℂ) ^ 2 + 1) / (12 * γ 1 1 * γ 1 0) - 1 / 4 -
-          dedekindSum (γ 1 1) (γ 1 0) := by
-      linear_combination hrec
-    push_cast
-    rw [hsum]
-    linear_combination π * I * hfrac
 
 /-! ### The Kronecker-symbol formula -/
 
@@ -180,7 +63,7 @@ private theorem cexp_twentyFour_add_twelve_mul (n k : ℤ) :
       (k : ℂ) * (π * I) + 2 * π * I * (n : ℂ) / 24 := by
     push_cast
     ring
-  rw [harg, Complex.exp_add, Complex.exp_int_mul, Complex.exp_pi_mul_I]
+  rw [harg, Complex.exp_add, Complex.exp_intCast_mul, Complex.exp_pi_mul_I]
   congr 1
   rcases Int.even_or_odd k with hk | hk
   · rw [hk.neg_one_zpow, Int.negOnePow_even _ hk, Units.val_one, Int.cast_one]
