@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Multiplication
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
