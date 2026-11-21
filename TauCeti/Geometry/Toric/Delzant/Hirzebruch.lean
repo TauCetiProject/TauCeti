@@ -360,6 +360,13 @@ theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
 
 /-! ### Vertices -/
 
+/-- A point of `(ℝ²)*` is determined by its coordinates `x(e₁)` and `x(e₂)`. -/
+private theorem strongDual_eq_smul_proj_add_smul_proj (x : StrongDual ℝ (Fin 2 → ℝ)) :
+    x = x (Pi.single 0 1) • ContinuousLinearMap.proj 0 +
+      x (Pi.single 1 1) • ContinuousLinearMap.proj 1 :=
+  ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin 2)).ext fun l ↦ by
+    fin_cases l <;> simp
+
 /-- Every vertex of the trapezoid is one of `(0, 0)`, `(a, 0)`, `(0, b)` and `(a - k b, b)`: it is
 the meeting point of a pair of adjacent facets. -/
 private theorem extremePoints_facetPolyhedron_hirzebruch_subset (hb : 0 < b) (ha : 0 < a)
@@ -374,12 +381,7 @@ private theorem extremePoints_facetPolyhedron_hirzebruch_subset (hb : 0 < b) (ha
       (hirzebruchNormal k)) (hirzebruchSupport a b) x := by rw [hA]; simp
   have hj : j ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
       (hirzebruchNormal k)) (hirzebruchSupport a b) x := by rw [hA]; simp
-  -- A point of `(ℝ²)*` is determined by its coordinates `x(e₁)` and `x(e₂)`.
-  have hx' : x = x (Pi.single 0 1) • ContinuousLinearMap.proj 0 +
-      x (Pi.single 1 1) • ContinuousLinearMap.proj 1 :=
-    ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin 2)).ext fun l ↦ by
-      fin_cases l <;> simp
-  rw [hx']
+  rw [strongDual_eq_smul_proj_add_smul_proj x]
   obtain h | h | h | h := hij <;> obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 h
   · simp [zero_mem_activeSet_hirzebruch_iff.1 hi, one_mem_activeSet_hirzebruch_iff.1 hj]
   · simp [zero_mem_activeSet_hirzebruch_iff.1 hi, two_mem_activeSet_hirzebruch_iff.1 hj]
@@ -415,9 +417,9 @@ theorem extremePoints_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab 
     rw [facetPairing_apply]
     exact hw j hj
   -- A functional on `ℝ²` vanishing on `e₁` and `e₂` is zero.
-  suffices w (Pi.single 0 1) = 0 ∧ w (Pi.single 1 1) = 0 from
-    ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin 2)).ext fun l ↦ by
-      fin_cases l <;> simp [this.1, this.2]
+  suffices w (Pi.single 0 1) = 0 ∧ w (Pi.single 1 1) = 0 by
+    rw [strongDual_eq_smul_proj_add_smul_proj w, this.1, this.2]
+    simp
   rcases hx with rfl | rfl | rfl | rfl
   · have h₀ := hw' 0 (zero_mem_activeSet_hirzebruch_iff.2 (by simp))
     have h₁ := hw' 1 (one_mem_activeSet_hirzebruch_iff.2 (by simp))
