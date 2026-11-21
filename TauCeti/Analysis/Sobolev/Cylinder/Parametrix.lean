@@ -21,10 +21,11 @@ by `TauCeti.CylinderSobolev.jetOperator`. This file proves that `D` is Fredholm 
 asymptotic, as `s → -∞` and as `s → +∞`, to operators `Dneg` and `Dpos` with the same principal
 part which are invertible
 (`TauCeti.CylinderSobolev.isFredholm_jetOperator_comp_subtypeL_of_isInvertible`).
-This is the Fredholm property of the linearized Floer operator `∂s + J₀ ∂t + S(s, t)` along a
-Floer trajectory, written in a unitary frame: its models at the ends are the stationary cylinder
-operators `∂s + J₀ (∂t - S±(t))` at the two asymptotic orbits, which are invertible when the
-orbits are nondegenerate.
+The invertibility of `Dneg` and `Dpos` is a hypothesis. The result is designed to apply to the
+linearized Floer operator `∂s + J₀ ∂t + S(s, t)` along a Floer trajectory, written in a unitary
+frame as a `jetOperator`, with models the stationary cylinder operators `∂s + J₀ (∂t - S±(t))` at
+the two asymptotic orbits, once their invertibility on `W^{1,2}` is supplied; neither step is
+carried out in this file.
 
 The proof constructs a two-sided parametrix modulo compact operators, so that Atkinson's theorem
 (`ContinuousLinearMap.IsFredholm.of_isCompactOperator_comp_sub_one`) applies. It uses no
@@ -90,13 +91,21 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 section Cutoff
 
 variable (V) in
+/-- The map `(a, b, c) ↦ (0, a, 0)` on jets, moving the value into the `s`-derivative slot. -/
+def sSlot : V × V × V →L[ℝ] V × V × V :=
+  (ContinuousLinearMap.inr ℝ V (V × V)).comp
+    ((ContinuousLinearMap.inl ℝ V V).comp (ContinuousLinearMap.fst ℝ V (V × V)))
+
+@[simp]
+theorem sSlot_apply (v : V × V × V) : sSlot V v = (0, v.1, 0) := by
+  simp [sSlot]
+
+variable (V) in
 /-- The coefficient field of multiplication by a function `β(s)` of the first variable, acting
 on jets: `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`. On the jet of a section `ξ` it is the jet
 of `β(s) ξ` (`TauCeti.CylinderSobolev.jet_smul_fst_eq_cutoffCoeff`). -/
 def cutoffCoeff (β : ℝ → ℝ) (z : ℝ × ℝ) : V × V × V →L[ℝ] V × V × V :=
-  β z.1 • ContinuousLinearMap.id ℝ (V × V × V) +
-    deriv β z.1 • ((ContinuousLinearMap.inr ℝ V (V × V)).comp
-      ((ContinuousLinearMap.inl ℝ V V).comp (ContinuousLinearMap.fst ℝ V (V × V))))
+  β z.1 • ContinuousLinearMap.id ℝ (V × V × V) + deriv β z.1 • sSlot V
 
 @[simp]
 theorem cutoffCoeff_apply (β : ℝ → ℝ) (z : ℝ × ℝ) (v : V × V × V) :
@@ -154,13 +163,13 @@ theorem smul_fst_mem_testSection {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {�
   exact mem_testSection_iff.2 ⟨(hβ.comp contDiff_fst).smul hξ2, fun s t ↦ by simp [hξp],
     R, fun s t hs ↦ by simp [hR s t hs]⟩
 
-/-- For a `C²` function `β` with `β` and `β'` bounded, the coefficient field of multiplication by
+/-- For a `C¹` function `β` with `β` and `β'` bounded, the coefficient field of multiplication by
 `β(s)` is essentially bounded. -/
-theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
+theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
     (hβ'B : ∀ s, |deriv β s| ≤ B) : MemLp (cutoffCoeff V β) ∞ stripMeasure := by
   have hc : Continuous (cutoffCoeff V β) :=
     ((hβ.continuous.comp continuous_fst).smul continuous_const).add
-      (((hβ.continuous_deriv (by norm_num)).comp continuous_fst).smul continuous_const)
+      (((hβ.continuous_deriv le_rfl).comp continuous_fst).smul continuous_const)
   refine memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦ ?_)
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
   · exact (mul_le_of_le_one_right (abs_nonneg _) (ContinuousLinearMap.norm_id_le)).trans (hβB _)
@@ -174,7 +183,7 @@ section by `β(s)`, maps `H1 V` into itself. -/
 theorem jetOperator_cutoffCoeff_mem_H1 {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ}
     (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {f : Lp (V × V × V) 2 stripMeasure}
     (hf : f ∈ H1 V) : jetOperator (cutoffCoeff V β) f ∈ H1 V := by
-  have hN := memLp_cutoffCoeff (V := V) hβ hβB hβ'B
+  have hN := memLp_cutoffCoeff (V := V) (hβ.of_le one_le_two) hβB hβ'B
   refine jetClosure_subset_of_isClosed
     (s := jetOperator (cutoffCoeff V β) ⁻¹' (H1 V : Set (Lp (V × V × V) 2 stripMeasure)))
     ((isClosed_jetClosure _).preimage (jetOperator _).continuous) ?_ hf
@@ -196,25 +205,6 @@ end Cutoff
 /-! ### Zeroth-order operators with small or compactly supported coefficients -/
 
 section Operator
-
-/-- The first-order operator is additive in its coefficient field. -/
-theorem jetOperator_add {M N : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    (hN : MemLp N ∞ stripMeasure) : jetOperator (M + N) = jetOperator M + jetOperator N := by
-  ext1 f
-  refine Lp.ext ?_
-  filter_upwards [coeFn_jetOperator (hM.add hN) f, coeFn_jetOperator hM f,
-    coeFn_jetOperator hN f, Lp.coeFn_add (jetOperator M f) (jetOperator N f)] with z h h₁ h₂ h₃
-  rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, Pi.add_apply, add_apply]
-
-/-- An almost everywhere bound `‖M z‖ ≤ C` on the coefficient field bounds the first-order
-operator by `C`. -/
-theorem norm_jetOperator_apply_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    {C : ℝ} (hC : ∀ᵐ z ∂stripMeasure, ‖M z‖ ≤ C) (f : Lp (V × V × V) 2 stripMeasure) :
-    ‖jetOperator M f‖ ≤ C * ‖f‖ :=
-  Lp.norm_le_mul_norm_of_ae_le_mul (by
-    filter_upwards [coeFn_jetOperator hM f, hC] with z h₁ h₂
-    rw [h₁]
-    exact ((M z).le_opNorm _).trans (mul_le_mul_of_nonneg_right h₂ (norm_nonneg _)))
 
 /-- A coefficient field acting on values only and vanishing for `|s| > R` is controlled by the
 value on `[-R, R] × [0, 1]`. -/
@@ -270,11 +260,10 @@ private theorem isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero [FiniteDi
     IsCompactOperator ((jetOperator G).comp (H1 V).subtypeL) := by
   have hC := ae_le_lpNorm_exponent_top hG
   have hT₀ := isCompactOperator_restrictValue_comp_subtypeL (V := V) R
-  exact IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
+  exact IsCompactOperator.of_norm_le_mul_norm
     (T₀ := ((restrictValue (V := V) R).comp (H1 V).subtypeL).toLinearMap) hT₀
-    (0 : H1 V →L[ℝ] ℝ) (T := ((jetOperator G).comp (H1 V).subtypeL).toLinearMap) le_rfl
-    zero_lt_one (C := lpNorm G ∞ stripMeasure) fun x ↦ by
-      simpa using norm_jetOperator_le_mul_norm_restrictValue hG hval hR lpNorm_nonneg hC (x : _)
+    (T := ((jetOperator G).comp (H1 V).subtypeL).toLinearMap) fun x ↦
+      norm_jetOperator_le_mul_norm_restrictValue hG hval hR lpNorm_nonneg hC x
 
 /-- A coefficient field acting on values only with `‖G z‖ ≤ ε` for `|s| > R` gives an operator on
 `H1 V` within `ε` of a compact one: the part of `G` over `[-R, R] × S¹`. -/
@@ -337,20 +326,15 @@ section Parametrix
 private def valueProj : V × V × V →L[ℝ] V × V × V :=
   (ContinuousLinearMap.inl ℝ V (V × V)).comp (ContinuousLinearMap.fst ℝ V (V × V))
 
-/-- The map `(a, b, c) ↦ (0, a, 0)`, moving the value into the `s`-derivative slot. -/
-private def sSlot : V × V × V →L[ℝ] V × V × V :=
-  (ContinuousLinearMap.inr ℝ V (V × V)).comp
-    ((ContinuousLinearMap.inl ℝ V V).comp (ContinuousLinearMap.fst ℝ V (V × V)))
-
 variable (V) in
 /-- The zeroth-order error `v ↦ a (L - L') (v₁, 0, 0) + b L' (0, v₁, 0)` produced by commuting a
 cutoff with an operator `L` whose principal part agrees with that of `L'`. -/
 private def errCoeff (a b : ℝ) (L L' : V × V × V →L[ℝ] W) : V × V × V →L[ℝ] W :=
-  (a • (L - L') + b • L'.comp sSlot).comp valueProj
+  (a • (L - L') + b • L'.comp (sSlot V)).comp valueProj
 
 private theorem errCoeff_apply (a b : ℝ) (L L' : V × V × V →L[ℝ] W) (v : V × V × V) :
     errCoeff V a b L L' v = a • (L (v.1, 0, 0) - L' (v.1, 0, 0)) + b • L' (0, v.1, 0) := by
-  simp [errCoeff, valueProj, sSlot, Prod.mk_zero_zero]
+  simp [errCoeff, valueProj, Prod.mk_zero_zero]
 
 private theorem errCoeff_apply_zero_fst (a b : ℝ) (L L' : V × V × V →L[ℝ] W) (x y : V) :
     errCoeff V a b L L' (0, x, y) = 0 := by
@@ -407,9 +391,9 @@ private theorem apply_eq_add_sub_apply {L L' : V × V × V →L[ℝ] W}
 private theorem apply_cutoffCoeff {L L' : V × V × V →L[ℝ] W}
     (h : ∀ a b : V, L (0, a, b) = L' (0, a, b)) (β : ℝ → ℝ) (z : ℝ × ℝ) (v : V × V × V) :
     L (cutoffCoeff V β z v) = β z.1 • L' v + errCoeff V (β z.1) (deriv β z.1) L L' v := by
-  have e : cutoffCoeff V β z v = β z.1 • v + deriv β z.1 • ((0 : V), v.1, (0 : V)) := by
-    ext <;> simp
-  rw [e, map_add, map_smul, map_smul, apply_eq_add_sub_apply h v, h, errCoeff_apply, smul_add]
+  simp only [cutoffCoeff, add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, sSlot_apply, map_add, map_smul]
+  rw [apply_eq_add_sub_apply h v, h, errCoeff_apply, smul_add]
   abel
 
 /-- **Commuting a cutoff past an operator.** If `L` and `L'` agree on `(0, a, b)`, then
@@ -465,7 +449,8 @@ private theorem jetOperator_cutL_ae (hM : MemLp M ∞ stripMeasure)
           (y : Lp (V × V × V) 2 stripMeasure) z := by
   have hE := memLp_errCoeff hβ.continuous (hβ.continuous_deriv (by norm_num)) hβB hβ'B hM hM'
   filter_upwards [coeFn_jetOperator hM (cutL hβ hβB hβ'B y : Lp (V × V × V) 2 stripMeasure),
-    coeFn_jetOperator (memLp_cutoffCoeff hβ hβB hβ'B) (y : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
+      (y : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator hM' (y : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator hE (y : Lp (V × V × V) 2 stripMeasure), hp] with z h₁ h₂ h₃ h₄ h₅
   rw [h₁, coe_cutL, h₂, h₃, h₄, apply_cutoffCoeff h₅]
@@ -484,7 +469,8 @@ private theorem smul_jetOperator_ae (hM : MemLp M ∞ stripMeasure)
     (fun s ↦ by simpa using hγ'B s) hM hM'
   filter_upwards [coeFn_jetOperator hM (x : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator hM' (cutL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure),
-    coeFn_jetOperator (memLp_cutoffCoeff hγ hγB hγ'B) (x : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hγ.of_le one_le_two) hγB hγ'B)
+      (x : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator hE (x : Lp (V × V × V) 2 stripMeasure), hp] with z h₁ h₂ h₃ h₄ h₅
   rw [h₁, h₂, coe_cutL, h₃, h₄, smul_apply_eq h₅]
 
@@ -544,9 +530,10 @@ private theorem cutL_cutL (hβ : ContDiff ℝ 2 β) (hβB : ∀ s, |β s| ≤ B)
     cutL hβ hβB hβ'B (cutL hγ hγB hγ'B x) = cutL hγ hγB hγ'B x := by
   refine Subtype.ext (Lp.ext ?_)
   rw [coe_cutL, coe_cutL]
-  filter_upwards [coeFn_jetOperator (memLp_cutoffCoeff hβ hβB hβ'B)
+  filter_upwards [coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
       (jetOperator (cutoffCoeff V γ) (x : Lp (V × V × V) 2 stripMeasure)),
-    coeFn_jetOperator (memLp_cutoffCoeff hγ hγB hγ'B) (x : Lp (V × V × V) 2 stripMeasure)]
+    coeFn_jetOperator (memLp_cutoffCoeff (hγ.of_le one_le_two) hγB hγ'B)
+      (x : Lp (V × V × V) 2 stripMeasure)]
     with z h₁ h₂
   rw [h₁, h₂, ← ContinuousLinearMap.comp_apply, cutoffCoeff_comp_cutoffCoeff
     (hβ.differentiable (by norm_num) _) (hγ.differentiable (by norm_num) _), h]
@@ -560,8 +547,10 @@ private theorem cutL_add_cutL {γ₁ γ₂ : ℝ → ℝ} (hγ₁ : ContDiff ℝ
   rw [Submodule.coe_add, coe_cutL, coe_cutL]
   filter_upwards [Lp.coeFn_add (jetOperator (cutoffCoeff V γ₁) (x : Lp (V × V × V) 2 stripMeasure))
       (jetOperator (cutoffCoeff V γ₂) (x : Lp (V × V × V) 2 stripMeasure)),
-    coeFn_jetOperator (memLp_cutoffCoeff hγ₁ hγ₁B hγ₁'B) (x : Lp (V × V × V) 2 stripMeasure),
-    coeFn_jetOperator (memLp_cutoffCoeff hγ₂ hγ₂B hγ₂'B) (x : Lp (V × V × V) 2 stripMeasure)]
+    coeFn_jetOperator (memLp_cutoffCoeff (hγ₁.of_le one_le_two) hγ₁B hγ₁'B)
+      (x : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hγ₂.of_le one_le_two) hγ₂B hγ₂'B)
+      (x : Lp (V × V × V) 2 stripMeasure)]
     with z h₁ h₂ h₃
   rw [h₁, Pi.add_apply, h₂, h₃, ← add_apply, cutoffCoeff_add_cutoffCoeff
     (hγ₁.differentiable (by norm_num) _) (hγ₂.differentiable (by norm_num) _), h, cutoffCoeff_one,
@@ -651,7 +640,7 @@ and `1` for `s ≥ 1 - c`. -/
 private def stepUp (c s : ℝ) : ℝ := Real.smoothTransition (s + c)
 
 /-- The falling step `s ↦ 1 - ψ (s + c)`. -/
-private def stepDown (c s : ℝ) : ℝ := 1 - Real.smoothTransition (s + c)
+private def stepDown (c s : ℝ) : ℝ := 1 - stepUp c s
 
 /-- A common bound for the steps and their derivatives. -/
 private def stepBound : ℝ := max 1 (⨆ s, deriv Real.smoothTransition s)
@@ -668,7 +657,8 @@ private theorem deriv_stepUp (c s : ℝ) :
 
 private theorem deriv_stepDown (c s : ℝ) :
     deriv (stepDown c) s = -deriv Real.smoothTransition (s + c) := by
-  rw [show stepDown c = fun s ↦ 1 - stepUp c s from rfl, deriv_const_sub, deriv_stepUp]
+  unfold stepDown
+  rw [deriv_const_sub, deriv_stepUp]
 
 private theorem abs_deriv_smoothTransition_le (x : ℝ) :
     |deriv Real.smoothTransition x| ≤ stepBound := by
@@ -679,7 +669,7 @@ private theorem abs_stepUp_le_one (c s : ℝ) : |stepUp c s| ≤ 1 :=
   Real.smoothTransition.abs_le_one _
 
 private theorem abs_stepDown_le_one (c s : ℝ) : |stepDown c s| ≤ 1 := by
-  unfold stepDown
+  unfold stepDown stepUp
   exact abs_le.2 ⟨by linarith [Real.smoothTransition.le_one (s + c)],
     by linarith [Real.smoothTransition.nonneg (s + c)]⟩
 
@@ -708,7 +698,7 @@ private theorem deriv_smoothTransition_add_eq_zero {c s : ℝ} (hc : |c| ≤ 1) 
 /-- The falling step `stepDown (-1)` is `1` wherever `stepDown 0` is not `0`. -/
 private theorem stepDown_mul_stepDown : stepDown (-1) * stepDown 0 = stepDown 0 := by
   funext s
-  simp only [Pi.mul_apply, stepDown, add_zero]
+  simp only [Pi.mul_apply, stepDown, stepUp, add_zero]
   rcases le_total s 1 with hs | hs
   · rw [Real.smoothTransition.zero_of_nonpos (show s + -1 ≤ 0 by linarith)]
     ring
@@ -730,7 +720,8 @@ private theorem stepDown_add_stepUp : stepDown 0 + stepUp 0 = 1 := by
   simp [stepDown, stepUp]
 
 private theorem stepDown_eq_zero {c s : ℝ} (hc : |c| ≤ 1) (hs : 2 < s) : stepDown c s = 0 := by
-  rw [stepDown, Real.smoothTransition.one_of_one_le (by linarith [(abs_le.1 hc).1]), sub_self]
+  rw [stepDown, stepUp, Real.smoothTransition.one_of_one_le (by linarith [(abs_le.1 hc).1]),
+    sub_self]
 
 private theorem stepUp_eq_zero {c s : ℝ} (hc : |c| ≤ 1) (hs : s < -2) : stepUp c s = 0 :=
   Real.smoothTransition.zero_of_nonpos (by linarith [(abs_le.1 hc).2])
@@ -829,8 +820,9 @@ bounded coefficient fields whose operators `Dneg` and `Dpos` are invertible from
 asymptotic to `Mneg` as `s → -∞` and to `Mpos` as `s → +∞`: for every `ε > 0` there is `R` with
 `‖M z - Mneg z‖ ≤ ε` for `s < -R` and `‖M z - Mpos z‖ ≤ ε` for `s > R`. Then `D` is Fredholm.
 
-For the linearized Floer operator `∂s + J₀ ∂t + S(s, t)` along a trajectory, written in a
-unitary frame, the models are the stationary cylinder operators at the two asymptotic orbits. -/
+The theorem applies to the linearized Floer operator `∂s + J₀ ∂t + S(s, t)` along a trajectory
+once it is written as a `jetOperator` in a unitary frame and the stationary cylinder operators at
+the two asymptotic orbits are shown to be invertible on `W^{1,2}`. -/
 theorem isFredholm_jetOperator_comp_subtypeL_of_isInvertible [FiniteDimensional ℝ V]
     [CompleteSpace W] {M Mneg Mpos : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     (hMneg : MemLp Mneg ∞ stripMeasure) (hMpos : MemLp Mpos ∞ stripMeasure)
