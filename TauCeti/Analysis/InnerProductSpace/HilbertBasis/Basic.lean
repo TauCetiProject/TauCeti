@@ -42,6 +42,15 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 theorem completeSpace {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
 
+/-- A space with a countable Hilbert basis is separable. -/
+theorem separableSpace {ι : Type*} [Countable ι] (b : _root_.HilbertBasis ι 𝕜 E) :
+    TopologicalSpace.SeparableSpace E := by
+  have hsep : TopologicalSpace.IsSeparable (closure (Submodule.span 𝕜 (Set.range b) : Set E)) :=
+    (Set.countable_range b).isSeparable.span.closure
+  have hcl : closure (Submodule.span 𝕜 (Set.range b) : Set E) = Set.univ := by
+    rw [← Submodule.topologicalClosure_coe, b.dense_span, Submodule.top_coe]
+  exact TopologicalSpace.isSeparable_univ_iff.mp (hcl ▸ hsep)
+
 /-- A vector orthogonal to every member of a Hilbert basis of a subspace is orthogonal to every
 vector of the represented subspace. -/
 theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E}

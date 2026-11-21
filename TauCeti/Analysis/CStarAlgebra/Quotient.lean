@@ -39,6 +39,11 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
   `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
   `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
+* `TwoSidedIdeal.star_mul_self_mem_iff_of_isClosed`,
+  `TwoSidedIdeal.mul_star_self_mem_iff_of_isClosed`, and
+  `TwoSidedIdeal.exists_isSelfAdjoint_mem_notMem`: closed-ideal membership criterion
+  `star a * a ∈ I ↔ a ∈ I` (and `a * star a ∈ I ↔ a ∈ I`), and its corollary producing a
+  self-adjoint element of `J` outside a closed ideal `I` whenever `¬ J ≤ I`.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
 * `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
@@ -194,6 +199,12 @@ theorem mkStarAlgHom_surjective : Function.Surjective (mkStarAlgHom I) :=
 @[simp]
 theorem ker_mkStarAlgHom : TwoSidedIdeal.ker (mkStarAlgHom I) = I :=
   ker_mk I
+
+/-- The quotient `⋆`-algebra homomorphism `mkStarAlgHom I` is continuous. -/
+@[fun_prop]
+theorem continuous_mkStarAlgHom : Continuous (mkStarAlgHom I) := by
+  rw [coe_mkStarAlgHom]
+  exact continuous_mk I
 
 /-- Two nonunital `⋆`-homomorphisms out of `A ⧸ I` agree when their compositions with
 `mkStarAlgHom I` agree. -/
@@ -352,10 +363,27 @@ theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
 
+/-- The kernel of `mkUnitalStarAlgHom I` is `I`. -/
 @[simp]
 theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I := by
   ext a
   simp [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
+
+/-- The unital quotient `⋆`-algebra homomorphism `mkUnitalStarAlgHom I` is continuous. -/
+@[fun_prop]
+theorem continuous_mkUnitalStarAlgHom : Continuous (mkUnitalStarAlgHom I) := by
+  rw [coe_mkUnitalStarAlgHom]
+  exact continuous_mk I
+
+/-- Two unital `⋆`-homomorphisms out of `A ⧸ I` agree when their compositions with
+`mkUnitalStarAlgHom I` agree. -/
+@[ext 1100]
+theorem starAlgHom_ext {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    ⦃f g : A ⧸ I →⋆ₐ[ℂ] B⦄
+    (h : f.comp (mkUnitalStarAlgHom I) = g.comp (mkUnitalStarAlgHom I)) : f = g := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective I x
+  exact DFunLike.congr_fun h a
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/
@@ -394,6 +422,35 @@ theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf 
 end Unital
 
 end TwoSidedIdeal.Quotient
+
+namespace TwoSidedIdeal
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+
+/-- In a C⋆-algebra, `star a * a` belongs to a closed two-sided ideal `I` if and only if
+`a ∈ I`. -/
+@[simp]
+theorem star_mul_self_mem_iff_of_isClosed {a : A} : star a * a ∈ I ↔ a ∈ I := by
+  refine ⟨fun h ↦ ?_, fun ha ↦ I.mul_mem_left (star a) a ha⟩
+  rw [← Quotient.eq_zero_iff_mem] at h ⊢
+  rwa [map_mul, Quotient.mk_star, star_mul_self_eq_zero] at h
+
+/-- In a C⋆-algebra, `a * star a` belongs to a closed two-sided ideal `I` if and only if
+`a ∈ I`. -/
+@[simp]
+theorem mul_star_self_mem_iff_of_isClosed {a : A} : a * star a ∈ I ↔ a ∈ I := by
+  simpa only [star_star, star_mem_iff_of_isClosed] using
+    I.star_mul_self_mem_iff_of_isClosed (a := star a)
+
+/-- If a two-sided ideal `J` of a C⋆-algebra is not contained in a closed two-sided ideal `I`, then
+`J` contains a self-adjoint element outside `I`. -/
+theorem exists_isSelfAdjoint_mem_notMem {J : TwoSidedIdeal A} (hJI : ¬ J ≤ I) :
+    ∃ b ∈ J, b ∉ I ∧ IsSelfAdjoint b := by
+  obtain ⟨a, haJ, haI⟩ := IsConcreteLE.not_le_iff_exists.mp hJI
+  exact ⟨star a * a, J.mul_mem_left (star a) a haJ,
+    mt I.star_mul_self_mem_iff_of_isClosed.mp haI, IsSelfAdjoint.star_mul_self a⟩
+
+end TwoSidedIdeal
 
 namespace NonUnitalStarAlgHom
 

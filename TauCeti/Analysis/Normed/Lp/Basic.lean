@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.StdBasis
-public import Mathlib.LinearAlgebra.Dimension.Finite
-public import Mathlib.Analysis.Normed.Lp.lpHolder
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
@@ -36,12 +37,16 @@ infinite-dimensional normed space therefore contains, for each `p ≠ 0`, a line
 sequence in `ℓᵖ` (`lp.exists_linearIndependent`). Membership in `ℓᵖ` is unchanged by a unit scalar
 factor (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a
 nonzero multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
-(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and vectors in their span vanish outside the corresponding indices. These
-algebraic facts hold over normed rings at every exponent; over a ring with the strong rank
-condition, for instance a field, `lp` over an infinite index type is therefore not a finite module
-(`lp.not_finite`). Finite sums of single-coordinate vectors over a finset `s` along a map `g`
-evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
+(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). Linearly independent families in the
+fibers assemble via `lp.single` into linearly independent families in `lp`
+(`lp.linearIndependent_single`); in particular, the scalar coordinate vectors are linearly
+independent (`lp.linearIndependent_single_one`), and vectors in their span vanish outside the
+corresponding indices. These algebraic facts hold over normed rings at every exponent; over a ring
+with the strong rank condition, for instance a field, `lp` over an infinite index type is therefore
+not a finite module (`lp.not_finite`), and over a normed division ring `lp E p` is
+infinite-dimensional whenever `ι` is infinite and every fiber is nontrivial
+(`lp.not_finiteDimensional`). Finite sums of single-coordinate vectors over a finset `s` along a
+map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
 (`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
 (`lp.sum_single_apply_eq_zero_of_forall_ne`). Subtracting a finite sum of coordinate vectors
 zeroes out those coordinates (`lp.sub_sum_single_apply`) and, for `p ≠ 0`, does not increase the
@@ -266,16 +271,25 @@ section Single
 
 variable [DecidableEq ι]
 
+/-- Linearly independent families in the fibers `E i` assemble via `lp.single` into a linearly
+independent family in `lp E p`. -/
+theorem linearIndependent_single {κ : ι → Type*} (v : ∀ i, κ i → E i)
+    (hv : ∀ i, LinearIndependent 𝕜 (v i)) :
+    LinearIndependent 𝕜 fun ij : Σ i, κ i ↦ lp.single p ij.1 (v ij.1 ij.2) := by
+  apply LinearIndependent.of_comp (lpSubmodule 𝕜 E p).subtype
+  have hcoe : (lpSubmodule 𝕜 E p).subtype ∘ (fun ij : Σ i, κ i ↦ lp.single p ij.1 (v ij.1 ij.2)) =
+      fun ij : Σ i, κ i ↦ Pi.single ij.1 (v ij.1 ij.2) :=
+    funext fun ij ↦ lp.coeFn_single p ij.1 (v ij.1 ij.2)
+  rw [hcoe]
+  exact Pi.linearIndependent_single v hv
+
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :
     LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
-  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
-  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
-      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
-    funext i
-    exact lp.coeFn_single p i 1
-  rw [hcoe]
-  exact Pi.linearIndependent_single_one ι 𝕜
+  rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+  exact linearIndependent_single (fun (_ : ι) (_ : Unit) ↦ (1 : 𝕜)) fun _ ↦
+    Fintype.linearIndependent_iff.mpr fun g hg _ ↦ by
+      simpa only [Fintype.sum_unique, smul_eq_mul, mul_one] using hg
 
 /-- A vector in the span of a family of coordinate vectors vanishes outside their indices. -/
 theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p(ι, 𝕜)}
@@ -317,6 +331,21 @@ theorem not_finite [Infinite ι] [StrongRankCondition 𝕜] :
     (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p))
 
 end Single
+
+/-- For an infinite index type `ι` with nontrivial fibers `E i`, `lp E p` is infinite-dimensional
+for every exponent `p`. -/
+theorem not_finiteDimensional {𝕜 ι : Type*} {E : ι → Type*} [NormedDivisionRing 𝕜]
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, IsBoundedSMul 𝕜 (E i)]
+    [∀ i, Nontrivial (E i)] {p : ℝ≥0∞} [Infinite ι] :
+    ¬ FiniteDimensional 𝕜 (lp E p) := fun _ ↦ by
+  classical
+  choose v hv using fun i ↦ exists_ne (0 : E i)
+  have hli : LinearIndependent 𝕜 fun i : ι ↦ lp.single p i (v i) := by
+    rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+    exact linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
+      linearIndependent_unique_iff.mpr (hv i)
+  have : Finite ι := hli.finite_of_isNoetherian
+  exact _root_.not_finite ι
 
 /-- Evaluating a single-coordinate vector at its own coordinate is the identity continuous linear
 map. -/
