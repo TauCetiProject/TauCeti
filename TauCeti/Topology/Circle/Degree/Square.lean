@@ -206,6 +206,7 @@ theorem squareBoundaryDegree_pow (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
 /-- **Inverses.** The degree around the boundary of the square of the pointwise inverse of a map
 is the negative of its degree. No continuity is assumed: if `Γ` is not continuous on the boundary,
 neither is `Γ⁻¹`, and both degrees are `0`. -/
+@[simp]
 theorem squareBoundaryDegree_inv : squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
   by_cases hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))
   · have h := squareBoundaryDegree_mul hΓ hΓ.inv
