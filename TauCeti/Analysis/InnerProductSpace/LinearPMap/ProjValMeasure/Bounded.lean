@@ -52,8 +52,7 @@ private theorem cayley_mul_integral (hA : IsSelfAdjoint A)
   let z : C(_root_.spectrum ℂ A.cayley, ℂ) :=
     (ContinuousMap.id ℂ).restrict (_root_.spectrum ℂ A.cayley)
   have hz : A.cayley = A.cayley.borelCalculus (BoundedBorelFunction.ofContinuousMap z) := by
-    rw [ContinuousLinearMap.borelCalculus_ofContinuousMap]
-    exact (cfcHom_id _).symm
+    exact A.cayley.borelCalculus_restrict_id.symm
   rw [hp, hp]
   conv_lhs => arg 1; rw [hz]
   rw [← map_mul]
@@ -222,15 +221,7 @@ theorem _root_.IsSelfAdjoint.mem_graph_spectralGapInverse (hA : IsSelfAdjoint A)
   have hc : Bᶜ = Set.Ioo (-δ) δ := by
     ext s
     simp only [B, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le, Set.mem_Ioo, abs_lt]
-  have hp0 : (A.spectralPVM hA).proj Bᶜ hB.compl x = 0 := by
-    apply norm_eq_zero.mp
-    have h := (A.spectralPVM hA).norm_sq_proj_apply Bᶜ hB.compl x
-    have hz : (A.spectralPVM hA).diag x Bᶜ = 0 := by rw [hc, hgap]
-    rw [hz, ENNReal.toReal_zero] at h
-    nlinarith [norm_nonneg ((A.spectralPVM hA).proj Bᶜ hB.compl x)]
-  have hpx : (A.spectralPVM hA).proj B hB x = x := by
-    rw [ProjValMeasure.proj_compl, _root_.sub_apply, ContinuousLinearMap.id_apply] at hp0
-    exact (sub_eq_zero.mp hp0).symm
+  have hpx := ((A.spectralPVM hA).proj_apply_eq_self_iff hB x).2 (by rw [hc, hgap])
   have h := hA.mem_graph_integral_spectralPVM (reciprocalSymbol δ hδ) g hfg x
   simpa only [g, ProjValMeasure.integral_indicator, hpx, spectralGapInverse] using h
 
