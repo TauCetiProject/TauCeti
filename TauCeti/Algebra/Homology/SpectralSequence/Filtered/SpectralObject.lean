@@ -280,14 +280,14 @@ lemma spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom {i j i' j' : ι} 
     ((spectralObject F).H n).map φ ≫ (spectralObjectHIsoCokernel F g n).hom =
       (spectralObjectHIsoCokernel F f n).hom ≫ HomologicalComplex.homologyMap
         (cokernel.map (F.map f) (F.map g) (F.map (φ.app 0)) (F.map (φ.app 1))
-          (naturality' ((F.mapComposableArrows 1).map φ) 0 1)) n := by
+          (naturality' ((F.mapComposableArrows 1).map φ) 0 1).symm) n := by
   have w : F.map f ≫ F.map (φ.app 1) = F.map (φ.app 0) ≫ F.map g :=
     naturality' ((F.mapComposableArrows 1).map φ) 0 1
   -- The morphism of cokernel sequences induced by `φ`.
   let ψ : ShortComplex.cokernelSequence (F.map f) ⟶ ShortComplex.cokernelSequence (F.map g) :=
     { τ₁ := F.map (φ.app 0)
       τ₂ := F.map (φ.app 1)
-      τ₃ := cokernel.map _ _ _ _ w
+      τ₃ := cokernel.map _ _ _ _ w.symm
       comm₁₂ := w.symm
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
   have e := congrArg (fun u ↦ HomologicalComplex.homologyMap u n)

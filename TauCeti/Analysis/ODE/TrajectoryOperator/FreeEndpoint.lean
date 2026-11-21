@@ -191,7 +191,7 @@ omit [Fact (1 ≤ p)] [∀ i, FiniteDimensional ℝ (K i)] in
 private theorem memLp_sum_endTail (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) p)
     (v : Π i, K i) :
     MemLp (fun s ↦ ∑ i, endTail w (χ i) A (v i) s) p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  (memLp_finsetSum _ fun i _ ↦ hmem i (v i) (v i).2).restrict _
+  (memLp_finsetSum _ fun i _ ↦ hmem i (v i) (v i).property).restrict _
 
 /-- The **free endpoint variables** of a finite family of ends: the map sending `(v i)ᵢ`, with
 `v i` in the space `K i` of free variables at the end `i` with cutoff `χ i`, to the class in `Lᵖ`

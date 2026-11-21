@@ -326,7 +326,7 @@ def boundaryBasisSemilinearMap
     Basis (Fin p) K (LinearMap.range (D.d i j).hom) :=
   haveI : Module.Finite K (D.X i) := .of_basis (e i)
   basisOfLinearIndependentOfCardEqFinrank'
-    (fun l ↦ ⟨_, semilinearMap_mem_range_d φ hd (b l).2⟩)
+    (fun l ↦ ⟨_, semilinearMap_mem_range_d φ hd (b l).property⟩)
     (LinearIndependent.of_comp (LinearMap.range (D.d i j).hom).subtype
       ((Basis.linearIndependent_semilinearMap_comp_iff φ φ.injective (c j) (e j)).2
         (b.linearIndependent.map' _ (LinearMap.range (C.d i j).hom).ker_subtype)))

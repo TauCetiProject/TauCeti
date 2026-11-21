@@ -101,9 +101,8 @@ example :
 -- The reductions of `O⟨ξ⟩` modulo powers of `ϖ` are finitely presented.
 example (n m : ℕ) : Algebra.FinitePresentation (O ⧸ Ideal.span {ϖ ^ m})
     (restrictedMvPowerSeriesCompletion n O ⧸
-      (Ideal.span {ϖ ^ m}).map (algebraMap O (restrictedMvPowerSeriesCompletion n O))) := by
-  have := IsCompleteRankOneBase.isAdicRing ϖ
-  exact IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
+      (Ideal.span {ϖ ^ m}).map (algebraMap O (restrictedMvPowerSeriesCompletion n O))) :=
+  IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
     (isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O n)
     IsCompleteRankOneBase.isAdic m
 

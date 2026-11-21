@@ -137,13 +137,13 @@ theorem strictLift_C (p : (A →+* R) × (linearCoeff (R := R)).ker) (r : A) :
 /-- The homomorphism attached to `(f, φ)` sends `bᵢ` to the coefficient of `X^(i + 1)` in `φ`. -/
 @[simp]
 theorem strictLift_X (p : (A →+* R) × (linearCoeff (R := R)).ker) (i : ℕ+) :
-    strictLift p (X i) = PowerSeries.coeff (i + 1) p.2.1.toPowerSeries :=
+    strictLift p (X i) = PowerSeries.coeff (i + 1) p.2.val.toPowerSeries :=
   (eval₂Hom_X' _ _ _).trans (strictCoeffsEquiv_symm_apply p.2 i)
 
 /-- The homomorphism attached to `(f, φ)` specializes the universal strict coordinate to `φ`. -/
 @[simp]
 theorem map_strictLift_universalStrictCoordinate (p : (A →+* R) × (linearCoeff (R := R)).ker) :
-    map (strictLift p) universalStrictCoordinate = p.2.1 := by
+    map (strictLift p) universalStrictCoordinate = p.2.val := by
   have h : ⇑(strictLift p) ∘ X = strictCoeffsEquiv.symm p.2 := funext fun i ↦ by simp
   rw [map_universalStrictCoordinate, h, ← coe_strictCoeffsEquiv_apply, Equiv.apply_symm_apply]
 

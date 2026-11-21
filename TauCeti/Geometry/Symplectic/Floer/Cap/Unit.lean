@@ -474,7 +474,7 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype �
   | H b =>
     rw [LinearMap.cohomologyProduct_mk, LinearMap.cohomology_mk_eq_mk_iff]
     have h := kernelProduct_coordinates_symm_sub_mem_coboundaries_right r₁ q hq hF₁ r hF hμ D hδ Q
-      hnQ E ⟨K, hK, hunit⟩ b.2
+      hnQ E ⟨K, hK, hunit⟩ b.property
     rw [← he] at h
     exact h
 
@@ -525,7 +525,7 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype �
   | H a =>
     rw [LinearMap.cohomologyProduct_mk, LinearMap.cohomology_mk_eq_mk_iff]
     have h := kernelProduct_coordinates_symm_sub_mem_coboundaries_left r₂ q hq hF₂ r hF hμ D hδ Q
-      hnQ E ⟨K, hK, hunit⟩ a.2
+      hnQ E ⟨K, hK, hunit⟩ a.property
     rw [← he] at h
     exact h
 

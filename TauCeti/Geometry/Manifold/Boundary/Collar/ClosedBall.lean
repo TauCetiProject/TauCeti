@@ -36,15 +36,15 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 half-line model `EuclideanHalfSpace 1`: the point at normal coordinate `s ≥ 0` above `u` is
 `exp (-s) • u`. -/
 noncomputable def ballCollar (q : sphere (0 : V) 1 × EuclideanHalfSpace 1) : closedBall (0 : V) 1 :=
-  ⟨Real.exp (-q.2.1 0) • (q.1 : V), by
+  ⟨Real.exp (-q.2.val 0) • (q.1 : V), by
     rw [mem_closedBall_zero_iff, norm_smul, norm_eq_of_mem_sphere q.1, mul_one, Real.norm_eq_abs,
       abs_of_pos (Real.exp_pos _)]
-    exact Real.exp_le_one_iff.2 (neg_nonpos.2 q.2.2)⟩
+    exact Real.exp_le_one_iff.2 (neg_nonpos.2 q.2.property)⟩
 
 /-- The value of the radial collar in the ambient space. -/
 @[simp]
 theorem coe_ballCollar (q : sphere (0 : V) 1 × EuclideanHalfSpace 1) :
-    (ballCollar q : V) = Real.exp (-q.2.1 0) • (q.1 : V) :=
+    (ballCollar q : V) = Real.exp (-q.2.val 0) • (q.1 : V) :=
   (rfl)
 
 /-- The inverse of the radial collar at a nonzero point `y` of the closed unit ball: the direction
@@ -72,7 +72,7 @@ theorem ballCollar_ballCollarInv (y : closedBall (0 : V) 1) (hy : (y : V) ≠ 0)
     ballCollar (ballCollarInv y hy) = y := by
   have hy' : 0 < ‖(y : V)‖ := norm_pos_iff.2 hy
   have hlog : Real.log ‖(y : V)‖ ≤ 0 :=
-    Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.2)
+    Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.property)
   apply Subtype.ext
   rw [coe_ballCollar, ballCollarInv_snd, EuclideanHalfSpace.normalRay_coe_apply,
     max_eq_left (neg_nonneg.2 hlog), neg_neg, Real.exp_log hy', coe_ballCollarInv_fst]
@@ -91,7 +91,7 @@ theorem range_ballCollar :
 theorem isOpenEmbedding_ballCollar : IsOpenEmbedding (ballCollar (V := V)) := by
   -- Read in `V`, the collar is the open embedding `(u, r) ↦ exp r • u` after the embedding
   -- `s ↦ -s` of the half-line into the real line.
-  have hcoord : IsEmbedding fun s : EuclideanHalfSpace 1 => -s.1 0 :=
+  have hcoord : IsEmbedding fun s : EuclideanHalfSpace 1 => -s.val 0 :=
     Function.LeftInverse.isEmbedding (f := fun r : ℝ => EuclideanHalfSpace.normalRay (-r))
       (fun s => by simp) (EuclideanHalfSpace.continuous_normalRay.comp continuous_neg)
       (by fun_prop)
@@ -99,7 +99,7 @@ theorem isOpenEmbedding_ballCollar : IsOpenEmbedding (ballCollar (V := V)) := by
     (Real.isOpenEmbedding_exp.smul_coe_sphere Real.exp_pos).isEmbedding
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hexp.comp (IsEmbedding.id.prodMap hcoord)), ?_⟩
   rw [range_ballCollar]
-  exact isOpen_ne_fun continuous_subtype_val continuous_const
+  exact isOpen_ne_fun continuous_subtypeVal continuous_const
 
 /-- `ballCollarInv` inverts the radial collar. -/
 @[simp]

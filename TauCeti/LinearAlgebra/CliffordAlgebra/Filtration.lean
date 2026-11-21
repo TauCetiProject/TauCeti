@@ -72,7 +72,8 @@ of Mathlib's `evenOdd`, whose definition is the analogous supremum over the `i` 
 * `CliffordAlgebra.involute_mem_filtration`,
   `CliffordAlgebra.reverse_mem_filtration` and
   `CliffordAlgebra.map_mem_filtration`: the filtration is preserved by the grade
-  involution, by reversal, and by an isometry of quadratic forms.
+  involution, by reversal, and by an isometry of quadratic forms, which sends each generator into
+  the first step (`CliffordAlgebra.map_apply_ι_mem_filtration_one`).
 * `CliffordAlgebra.contractLeft_mem_filtration_succ` and
   `CliffordAlgebra.contractLeft_mem_filtration`,
   `CliffordAlgebra.changeForm_mem_filtration`, and
@@ -430,6 +431,13 @@ end Conjugation
 section Map
 
 variable {N : Type w} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
+
+variable {Q} in
+/-- The Clifford map of an isometry sends every generator into the first filtration step. -/
+theorem map_apply_ι_mem_filtration_one (f : Q →qᵢ Q') (m : M) :
+    CliffordAlgebra.map f (ι Q m) ∈ filtration Q' 1 := by
+  rw [CliffordAlgebra.map_apply_ι]
+  exact ι_mem_filtration_one Q' (f m)
 
 /-- An isometry of quadratic forms respects the degree filtration: it takes a product of generators
 to a product of the same length. -/

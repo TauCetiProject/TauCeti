@@ -311,8 +311,8 @@ private theorem fiber_fold (m : ℕ) (Y : Set (Fin n → ℝ)) (z : {i : Fin n /
   simp only [fold, foldPi, mem_ofPred_eq]
   constructor
   · rintro ⟨hI, k, hk, hY⟩
-    refine ⟨fun i ↦ by simpa [i.2] using hI i.1 i.2,
-      fun i ↦ k i.1, ?_⟩
+    refine ⟨fun i ↦ by simpa [i.property] using hI i.val i.property,
+      fun i ↦ k i.val, ?_⟩
     convert hY using 1
     ext i
     by_cases h : (i : ℕ) < m
@@ -596,7 +596,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
     refine discreteTopology_of_isOpen_singleton_zero ?_
     have hopen : IsOpen {v : E | gauge K v < g ⟨0, hnpos⟩} :=
       isOpen_lt (continuous_gauge hK (mem_interior_iff_mem_nhds.1 h0)) continuous_const
-    convert hopen.preimage (continuous_subtype_val (p := (· ∈ L))) using 1
+    convert hopen.preimage (continuous_subtypeVal (p := (· ∈ L))) using 1
     ext v
     simp only [mem_singleton_iff, mem_preimage, mem_ofPred_eq]
     refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
@@ -604,7 +604,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
     · have hIio : Iio (⟨0, hnpos⟩ : Fin n) = ∅ := by
         ext i
         simp [Fin.lt_def]
-      have h := hgap ⟨0, hnpos⟩ v v.2 hv
+      have h := hgap ⟨0, hnpos⟩ v v.property hv
       rw [hIio, image_empty, span_empty, mem_bot] at h
       exact Subtype.ext h
   -- Replace `g` by its running maximum `G`, which is monotone and still satisfies `hgap`.

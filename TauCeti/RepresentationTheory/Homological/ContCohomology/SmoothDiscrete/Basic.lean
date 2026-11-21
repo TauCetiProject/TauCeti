@@ -839,7 +839,7 @@ statements that must see the restricted representation (for instance the domain 
 `TauCeti.coindTraceHom`) use this abbreviation. -/
 abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
-  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
+  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩
 
 /-- Restriction along `U → G` on smooth discrete representations: Mathlib's `TopRep.resFunctor`
 along the subgroup inclusion, lifted to the smooth discrete objects since restriction preserves
@@ -849,13 +849,13 @@ object map as `TauCeti.smoothDiscreteResTopRep` and its action on morphisms as t
 @[expose] def smoothDiscreteResFunctor :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U :=
   ObjectProperty.lift _ (smoothDiscreteι R G ⋙ TopRep.resFunctor (U.subtype : U →* G))
-    fun A ↦ A.property.res continuous_subtype_val
+    fun A ↦ A.property.res continuous_subtypeVal
 
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩ :=
   (rfl)
 
 /-- Restriction along `U → G` does not change the underlying map of a morphism. -/
