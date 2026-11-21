@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
@@ -22,11 +23,12 @@ trajectory does. The Sobolev space `TauCeti.CylinderSobolev.H1` is the closure o
 sections, which vanish for `|s|` large. This file shows that a `C²` section `ξ` of period one in
 `t` which does not vanish for `|s|` large still defines an element of `H1` as soon as `ξ` and
 `D ξ` are square integrable on the strip: its jet `(ξ, ∂s ξ, ∂t ξ)` is square integrable
-(`TauCeti.CylinderSobolev.memLp_jet_of_hasSemiFredholmEstimate`), and its class lies in `H1`
-(`TauCeti.CylinderSobolev.toLp_jet_mem_H1_of_hasSemiFredholmEstimate`), where the extension of `D`
-acts on it pointwise (`TauCeti.CylinderSobolev.coeFn_jetOperator`). In particular a classical
-solution of `D ξ = 0` that is square integrable on the cylinder lies in the kernel of the extension
-of `D` to `H1`. A continuous section of period one in `t` that vanishes almost everywhere
+(`TauCeti.CylinderSobolev.memLp_jet_of_hasSemiFredholmEstimate`). A `C²` section of period one
+in `t` with square-integrable jet has its class in `H1`
+(`TauCeti.CylinderSobolev.toLp_jet_mem_H1`), where the extension of `D` acts on it pointwise
+(`TauCeti.CylinderSobolev.coeFn_jetOperator`). In particular a classical solution of `D ξ = 0`
+that is square integrable on the cylinder lies in the kernel of the extension of `D` to `H1`.
+A continuous section of period one in `t` that vanishes almost everywhere
 on the strip vanishes everywhere (`TauCeti.CylinderSobolev.eq_zero_of_ae_eq_zero`), so a nonzero
 such solution gives a nonzero element of the kernel.
 
@@ -218,17 +220,12 @@ theorem memLp_jet_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasure)
     (continuous_jet (hξ.of_le (by norm_num))).aestronglyMeasurable
     (Eventually.of_forall (tendsto_jet_smul_fst h1))).trans_lt hA.lt_top)
 
-/-- **Square-integrable sections with square-integrable image lie in `W^{1,2}`.** Let
-`D ξ = M (ξ, ∂s ξ, ∂t ξ)` have an essentially bounded coefficient field and satisfy the
-semi-Fredholm estimate. If a `C²` section `ξ` of period one in `t` and `D ξ` are square
-integrable on the strip, the class of the jet `(ξ, ∂s ξ, ∂t ξ)` lies in
-`H1 = W^{1,2}(ℝ × S¹, V)`, although `ξ` need not vanish for `|s|` large. -/
-theorem toLp_jet_mem_H1_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasure)
-    (hest : HasSemiFredholmEstimate M C T) (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hξ2 : MemLp ξ 2 stripMeasure)
-    (hD : MemLp (fun z ↦ M z (jet ξ z)) 2 stripMeasure) :
-    (memLp_jet_of_hasSemiFredholmEstimate hM hest hξ hper hξ2 hD).toLp (jet ξ) ∈ H1 V := by
-  set hj := memLp_jet_of_hasSemiFredholmEstimate hM hest hξ hper hξ2 hD
+/-- **Sections with square-integrable jets lie in `W^{1,2}`.** If a `C²` section `ξ` of period
+one in `t` has a square-integrable jet `(ξ, ∂s ξ, ∂t ξ)` on the strip, the class of that jet lies
+in `H1 = W^{1,2}(ℝ × S¹, V)`, although `ξ` need not vanish for `|s|` large. -/
+theorem toLp_jet_mem_H1 (hξ : ContDiff ℝ 2 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
+    (hj : MemLp (jet ξ) 2 stripMeasure) : hj.toLp (jet ξ) ∈ H1 V := by
+  have hξ2 : MemLp ξ 2 stripMeasure := by simpa only [jet_apply] using hj.fst
   obtain ⟨B, ρ, ρ', hρ, h01, h1, h0, hd, hb⟩ := exists_cutoff_seq
   have hB : 0 ≤ B := (abs_nonneg _).trans (hb 0 0)
   have hmem (n : ℕ) : (fun w : ℝ × ℝ ↦ ρ n w.1 • ξ w) ∈ testSection V :=

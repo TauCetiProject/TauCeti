@@ -22,11 +22,12 @@ is an element of the kernel of the Sobolev realization
 `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator`) as soon
 as it is square integrable on the cylinder, as it is for a trajectory of finite energy
 (`TauCeti.SymplecticForm.exists_mem_ker_floerSobolevOperator_valueL_eq`). Since `D_u` satisfies the
-semi-Fredholm estimate, this follows from
-`TauCeti.CylinderSobolev.toLp_jet_mem_H1_of_hasSemiFredholmEstimate`, which places the jet of
-`∂s u` in `W^{1,2}` although `∂s u` does not vanish for `|s|` large. For a trajectory that is not
-stationary, `∂s u` does not vanish identically, so this element is nonzero and the kernel of `D_u`
-is nontrivial (`TauCeti.SymplecticForm.ker_floerSobolevOperator_ne_bot`).
+semi-Fredholm estimate, the jet of `∂s u` is square integrable
+(`TauCeti.CylinderSobolev.memLp_jet_of_hasSemiFredholmEstimate`), and
+`TauCeti.CylinderSobolev.toLp_jet_mem_H1` places it in `W^{1,2}` although `∂s u` does not vanish
+for `|s|` large. For a trajectory that is not stationary, `∂s u` does not vanish identically, so
+this element is nonzero and the kernel of `D_u` is nontrivial
+(`TauCeti.SymplecticForm.ker_floerSobolevOperator_ne_bot`).
 
 This is the linear shadow of the translation action on Floer trajectories: the tangent line to the
 orbit of `u` under translation lies in the kernel of `D_u`, so the moduli spaces of Floer
@@ -113,7 +114,7 @@ theorem exists_mem_ker_floerSobolevOperator_valueL_eq (ω : SymplecticForm V) {H
       (fun _ _ ↦ 0) (fun w ↦ H w.2) u z (jet (fun z ↦ fderiv ℝ u z (1, 0)) z)) 2 stripMeasure := by
     simp only [hD0, MemLp.zero']
   have hj := memLp_jet_of_hasSemiFredholmEstimate hM hest hξd hξper hξ hD
-  have hmem := toLp_jet_mem_H1_of_hasSemiFredholmEstimate hM hest hξd hξper hξ hD
+  have hmem := toLp_jet_mem_H1 hξd hξper hj
   refine ⟨⟨_, hmem⟩, ?_, ?_⟩
   · -- `D_u` sends the jet of `∂s u` to the class of `D_u (∂s u) = 0`.
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, floerSobolevOperator_def,
