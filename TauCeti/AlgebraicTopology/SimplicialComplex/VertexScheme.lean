@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
+public import TauCeti.Analysis.Convex.SimplicialComplex.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 
 /-!
@@ -70,11 +70,6 @@ theorem mem_vertexScheme_iff {σ : Finset K.vertices} :
   rw [← mem_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.mem_restrict_iff_map _ _ σ
 
-/-- Every point of a face of a geometric complex is a vertex. -/
-theorem mem_vertices_of_mem_faces {s : Finset E} (hs : s ∈ K.faces) {x : E} (hx : x ∈ s) :
-    x ∈ K.vertices :=
-  K.down_closed hs (Finset.singleton_subset_iff.mpr hx) (Finset.singleton_nonempty x)
-
 variable (K) in
 /-- The faces of the vertex scheme of `K` are the faces of `K`, read as finite sets of points. -/
 noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces where
@@ -114,7 +109,7 @@ theorem mem_faces_iff_exists_mem_vertexScheme {s : Finset E} :
     fun ⟨_, hσ, hs⟩ => hs ▸ mem_vertexScheme_iff.mp hσ⟩
 
 /-- The points of a face of the vertex scheme are the points of the corresponding face of `K`. -/
-theorem range_vertexScheme_face (σ : Face K.vertexScheme) :
+theorem range_vertexScheme_face_coe (σ : Face K.vertexScheme) :
     range (fun a : σ.val => ((a : K.vertices) : E)) =
       (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
   ext x
@@ -129,26 +124,39 @@ theorem affineIndependent_vertexScheme_face (σ : Face K.vertexScheme) :
 
 /-! ### Subcomplexes -/
 
-/-- The vertices of a subcomplex are vertices of the larger complex. -/
-theorem vertices_mono {L : SimplicialComplex 𝕜 E} (h : K ≤ L) : K.vertices ⊆ L.vertices :=
-  fun _ hx => h hx
-
 /-- A subcomplex `K ≤ L` induces the simplicial map of vertex schemes sending each vertex of `K`
 to itself, as a vertex of `L`. -/
 def vertexSchemeInclusion [DecidableEq E] {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
     PreAbstractSimplicialComplex.SimplicialMap K.vertexScheme.toPreAbstractSimplicialComplex
-      L.vertexScheme.toPreAbstractSimplicialComplex where
-  toFun := inclusion (vertices_mono h)
-  map_face' σ hσ := by
-    rw [mem_toPreAbstractSimplicialComplex] at hσ ⊢
-    rw [mem_vertexScheme_iff, Finset.map_eq_image, Finset.image_image]
-    rw [mem_vertexScheme_iff, Finset.map_eq_image] at hσ
-    exact h hσ
+      L.vertexScheme.toPreAbstractSimplicialComplex :=
+  (L.toPreAbstractSimplicialComplex.restrictInclusionOfSubset (vertices_mono h)).domainRestrict
+    (PreAbstractSimplicialComplex.restrict_mono h K.vertices)
 
 /-- The simplicial map induced by a subcomplex is the inclusion of vertices. -/
 @[simp]
 theorem coe_vertexSchemeInclusion [DecidableEq E] {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
     ⇑(vertexSchemeInclusion h) = inclusion (vertices_mono h) :=
-  (rfl)
+  (PreAbstractSimplicialComplex.SimplicialMap.coe_domainRestrict _ _).trans
+    (PreAbstractSimplicialComplex.coe_restrictInclusionOfSubset _ _)
+
+/-- The reflexive subcomplex inclusion induces the identity vertex-scheme map. -/
+@[simp]
+theorem vertexSchemeInclusion_refl [DecidableEq E] (h : K ≤ K) :
+    vertexSchemeInclusion h = PreAbstractSimplicialComplex.SimplicialMap.id
+      K.vertexScheme.toPreAbstractSimplicialComplex :=
+  DFunLike.coe_injective (by
+    rw [coe_vertexSchemeInclusion, PreAbstractSimplicialComplex.SimplicialMap.coe_id]
+    rfl)
+
+/-- Composing subcomplex inclusions agrees with the inclusion for the transitive inequality. -/
+@[simp]
+theorem vertexSchemeInclusion_comp [DecidableEq E] {L N : SimplicialComplex 𝕜 E}
+    (hLN : L ≤ N) (hKL : K ≤ L) :
+    (vertexSchemeInclusion hLN).comp (vertexSchemeInclusion hKL) =
+      vertexSchemeInclusion (hKL.trans hLN) :=
+  DFunLike.coe_injective (by
+    rw [PreAbstractSimplicialComplex.SimplicialMap.coe_comp,
+      coe_vertexSchemeInclusion, coe_vertexSchemeInclusion, coe_vertexSchemeInclusion]
+    rfl)
 
 end Geometry.SimplicialComplex

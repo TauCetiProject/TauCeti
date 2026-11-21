@@ -98,69 +98,7 @@ end LinearMap
 namespace AbstractSimplicialComplex
 
 variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : WithTop ℕ∞}
-  (K : AbstractSimplicialComplex ι)
-
-/-- The secant map of `f : |K| → E`: the map which agrees with `f` at the vertices of `K` and is
-linear in barycentric coordinates on every closed simplex, the linear extension of the values of
-`f` at the vertices. -/
-def secantMap (f : Realization K → E) (x : Realization K) : E :=
-  K.linearExtension (fun v => f (vertex K v)) x
-
-variable {K}
-
-/-- The secant map evaluates a point of the realization as the combination, with its
-barycentric coordinates as weights, of the values of `f` at the vertices. -/
-theorem secantMap_apply (f : Realization K → E) (x : Realization K) :
-    K.secantMap f x = x.val.sum fun v t => t • f (vertex K v) :=
-  (linearExtension_apply _ x).trans (Finsupp.linearCombination_apply ℝ x.val)
-
-/-- The secant map agrees with `f` at every vertex. -/
-@[simp]
-theorem secantMap_vertex (f : Realization K → E) (v : ι) :
-    K.secantMap f (vertex K v) = f (vertex K v) :=
-  linearExtension_vertex _ v
-
-/-- On a closed simplex `σ`, the secant map is the combination of the values of `f` at the
-vertices of `σ`, weighted by the barycentric coordinates. -/
-theorem secantMap_faceInclusion (f : Realization K → E) (σ : Face K) (x : StandardSimplex σ.val) :
-    K.secantMap f (faceInclusion K σ x) = ∑ a : σ.val, x.val a • f (vertex K a) :=
-  linearExtension_faceInclusion _ σ x
-
-/-- The secant map is continuous. -/
-theorem continuous_secantMap (f : Realization K → E) : Continuous (K.secantMap f) :=
-  continuous_linearExtension _
-
-/-- Taking secant maps is idempotent: the secant map of a secant map is itself. -/
-@[simp]
-theorem secantMap_secantMap (f : Realization K → E) :
-    K.secantMap (K.secantMap f) = K.secantMap f := by
-  funext x
-  rw [secantMap_apply]
-  simp only [secantMap_vertex]
-  rw [secantMap_apply]
-
-/-- **Uniqueness of secant maps.** A map that is linear in barycentric coordinates on every closed
-simplex, and agrees with `f` at the vertices, is the secant map of `f`. -/
-theorem eq_secantMap {f g : Realization K → E}
-    (hg : ∀ (σ : Face K) (x : StandardSimplex σ.val),
-      g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • g (vertex K a))
-    (hfg : ∀ v : ι, g (vertex K v) = f (vertex K v)) :
-    g = K.secantMap f := by
-  funext x
-  -- Every point of the realization lies in the closed simplex spanned by its carrier.
-  obtain ⟨σ, y, rfl⟩ : ∃ (σ : Face K) (y : StandardSimplex σ.val), faceInclusion K σ y = x :=
-    ⟨carrier K x, ⟨x.val, mem_convexHull_carrier K x⟩, Subtype.ext (faceInclusion_val _ _ _)⟩
-  simp only [hg, secantMap_faceInclusion, hfg]
-
-/-- A map is its own secant map exactly when it is linear in barycentric coordinates on every
-closed simplex. -/
-theorem secantMap_eq_self_iff {g : Realization K → E} :
-    K.secantMap g = g ↔ ∀ (σ : Face K) (x : StandardSimplex σ.val),
-      g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • g (vertex K a) :=
-  ⟨fun h σ x => by
-    conv_lhs => rw [← h]
-    exact secantMap_faceInclusion g σ x,
-   fun hg => (eq_secantMap hg fun _ => rfl).symm⟩
+  {K : AbstractSimplicialComplex ι}
 
 /-- **Non-degeneracy of secant maps.** Let `σ` be a closed simplex of `K`, and let
 `F : (σ → ℝ) → E` take the values of `f` at the vertices of `σ`. If the derivative of `F` within

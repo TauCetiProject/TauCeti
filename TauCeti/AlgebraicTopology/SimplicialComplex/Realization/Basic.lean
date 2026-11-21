@@ -446,6 +446,17 @@ theorem faceInclusion_mk_val (K : AbstractSimplicialComplex ι) (σ : Face K) (x
     faceInclusion K σ ⟨x.val, hx⟩ = x :=
   Subtype.ext (faceInclusion_val K σ _)
 
+/-- A point lies in a closed face exactly when its barycentric support lies in that face. -/
+theorem mem_range_faceInclusion_iff (K : AbstractSimplicialComplex ι) (σ : Face K)
+    (x : Realization K) :
+    x ∈ Set.range (faceInclusion K σ) ↔ x.val.support ⊆ σ.val := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [faceInclusion_val]
+    exact StandardSimplex.support_subset y
+  · intro hx
+    exact ⟨_, faceInclusion_mk_val K σ x (Realization.mem_convexHull_of_support_subset K x hx)⟩
+
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}
     (hx : x.val ∈ convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) :

@@ -121,6 +121,43 @@ theorem isSimplexImmersion_iff {σ : Finset ι} {g : StandardSimplex σ → M} :
             ∀ v : σ → ℝ, ∑ a, v a = 0 → F' v = 0 → v = 0 :=
   Iff.rfl
 
+/-- Composing the barycentric map of an affinely independent vertex family with a map smooth
+within its convex hull gives an immersion if the derivative is injective along its affine span. -/
+theorem isSimplexImmersion_comp_linearCombination
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {σ : Finset ι} {p : σ → V} (hp : AffineIndependent ℝ p) {F : V → M}
+    (hF : ContMDiffOn 𝓘(ℝ, V) I n F (convexHull ℝ (range p)))
+    (hF' : ∀ x ∈ convexHull ℝ (range p), ∃ F' : V →L[ℝ] E,
+      HasMFDerivWithinAt 𝓘(ℝ, V) I F (convexHull ℝ (range p)) x F' ∧
+        ∀ v ∈ vectorSpan ℝ (range p), F' v = 0 → v = 0) :
+    IsSimplexImmersion I n (fun y : StandardSimplex σ =>
+      F (Fintype.linearCombination ℝ p fun a => y.val a)) := by
+  -- The barycentric map is the linear combination of the vertices.
+  let L : (σ → ℝ) →L[ℝ] V := (Fintype.linearCombination ℝ p).toContinuousLinearMap
+  have hL (v : σ → ℝ) : L v = ∑ a, v a • p a := by
+    rw [LinearMap.coe_toContinuousLinearMap', Fintype.linearCombination_apply]
+  have hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)
+      (convexHull ℝ (range p)) := by
+    rw [← Finset.range_standardSimplex_coordinates,
+      ← Finset.range_linearCombination_standardSimplex]
+    rintro _ ⟨y, rfl⟩
+    exact ⟨y, by simp only [hL, Fintype.linearCombination_apply]⟩
+  refine TauCeti.isSimplexImmersion_iff.mpr ⟨F ∘ L,
+    fun y => by
+      simp only [comp_apply, hL, Fintype.linearCombination_apply],
+    hF.comp L.contMDiff.contMDiffOn hmaps, fun t => ?_⟩
+  obtain ⟨F', hFt, hinj⟩ := hF' _ (hmaps ⟨t, rfl⟩)
+  refine ⟨F'.comp L, hFt.comp (⇑t.weights) L.hasMFDerivWithinAt hmaps.subset_preimage,
+    fun v hv hv0 => ?_⟩
+  -- A direction of the simplex is sent into the vector span of its vertices.
+  have hLv : L v ∈ vectorSpan ℝ (range p) := by
+    have h := weightedVSub_mem_vectorSpan (s := Finset.univ) (w := v) hv p
+    rwa [Finset.weightedVSub_eq_linear_combination _ hv, ← hL] at h
+  have hL0 := hinj _ hLv (by rwa [ContinuousLinearMap.comp_apply] at hv0)
+  rw [hL] at hL0
+  exact funext fun a => hp.eq_zero_of_sum_eq_zero
+    (s := Finset.univ) hv hL0 a (Finset.mem_univ a)
+
 namespace IsSimplexImmersion
 
 variable {σ : Finset ι} {g : StandardSimplex σ → M}
