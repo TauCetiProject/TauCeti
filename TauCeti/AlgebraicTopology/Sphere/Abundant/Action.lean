@@ -208,9 +208,8 @@ private theorem exists_forall_apply_eq_zsmul {x₀ : M} (π : C(G, M)) (hπ : �
     ext r
     obtain ⟨r⟩ := r
     have hr : (ULift.up r : ULift.{0} ℤ) = r • ULift.up 1 := ULift.ext (by simp)
-    rw [hr, map_zsmul, map_zsmul, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.hom_ofHom,
-      LinearMap.comp_apply, LinearEquiv.coe_coe, ULift.moduleEquiv_apply,
-      LinearMap.toSpanSingleton_apply_one]
+    simp only [R, c₁, hr, map_zsmul, ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, ULift.moduleEquiv_apply, LinearMap.toSpanSingleton_apply_one]
   have := ConcreteCategory.congr_hom key (fib.hom c)
   rw [ConcreteCategory.comp_apply, Iso.hom_inv_id_apply] at this
   rw [this, ConcreteCategory.comp_apply]
@@ -440,8 +439,11 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_eq_zsmul {B 
   rw [← hm, smul_smul] at hLc hLz
   have h₁ := o.zsmul_left_injective hd x₀ ((one_smul ℤ _).trans hLz)
   have h₂ := o.zsmul_left_injective hd x₀ hLc
-  rw [← hPapply, ← hPapply, map_zsmul, hPc, hPz, smul_smul, h₂, mul_assoc, mul_comm m, ← h₁,
-    mul_one]
+  -- Hence `χ c = χ c * χ (s_* o_U) * m = ℓ * χ (s_* o_U)`.
+  have hχc : χ c = ℓ * χ ((localHomologyMap R s hsU d).hom
+      ((localHomologyIsoOfIsOpenEmbedding R hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom
+        (o x₀).val)) := by grind
+  rw [← hPapply, ← hPapply, map_zsmul, hPc, hPz, smul_smul, hχc]
 
 omit [Group G] [IsTopologicalGroup G] [MulAction G M] [ContinuousSMul G M] in
 include o hd in
