@@ -24,10 +24,11 @@ For the critical values of a function this is a sequence of regular values whose
 bands each contain at most one critical value; the sublevels at these values filter the space by
 its critical levels.
 
-Between two points `a₀ < a₁` of `C`, the points of `C ∩ [a₀, a₁]` can be listed in increasing
-order `a₀ = d 0 < ⋯ < d (m + 1) = a₁`, with no point of `C` between two consecutive ones
-(`Set.Finite.exists_strictMono_fin_consecutive`). There is also a finite version with exactly
-one point of `C` in each band: the midpoints `b 0 < ⋯ < b m` of consecutive points of
+The remaining two results hold for a finite set `C` in any linear order, respectively in any
+linearly ordered field. Between two points `a₀ < a₁` of `C`, the points of `C ∩ [a₀, a₁]` can be
+listed in increasing order `a₀ = d 0 < ⋯ < d (m + 1) = a₁`, with no point of `C` between two
+consecutive ones (`Set.Finite.exists_strictMono_fin_consecutive`). There is also a finite version
+with exactly one point of `C` in each band: the midpoints `b 0 < ⋯ < b m` of consecutive points of
 `C ∩ [a₀, a₁]` avoid `C`, and `[a₀, b 0]`, each `[b i, b (i + 1)]` and `[b m, a₁]` contain exactly
 one point of `C` (`Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton`). For the actions of
 the periodic orbits of a Hamiltonian, these are the values at which a breaking sequence of Floer
@@ -72,19 +73,19 @@ theorem Set.Finite.exists_strictMono_notMem_subsingleton_inter_Icc {C : Set ℝ}
     have : |x - y| ≤ h := abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
     linarith
 
-/-- **Listing the points of a finite set between two of its points.** Let `C ⊆ ℝ` be finite and
-let `a₀ < a₁` be two of its points. The points of `C` in `[a₀, a₁]` can be listed in increasing
-order `a₀ = d 0 < d 1 < ⋯ < d (m + 1) = a₁`, and no point of `C` lies strictly between two
-consecutive ones. -/
-theorem Set.Finite.exists_strictMono_fin_consecutive {C : Set ℝ} (hC : C.Finite)
-    {a₀ a₁ : ℝ} (h₀ : a₀ ∈ C) (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
-    ∃ m : ℕ, ∃ d : Fin (m + 2) → ℝ, StrictMono d ∧ (∀ j, d j ∈ C) ∧ d 0 = a₀ ∧
+/-- **Listing the points of a finite set between two of its points.** Let `C` be a finite subset
+of a linear order and let `a₀ < a₁` be two of its points. The points of `C` in `[a₀, a₁]` can
+be listed in increasing order `a₀ = d 0 < d 1 < ⋯ < d (m + 1) = a₁`, and no point of `C` lies
+strictly between two consecutive ones. -/
+theorem Set.Finite.exists_strictMono_fin_consecutive {α : Type*} [LinearOrder α] {C : Set α}
+    (hC : C.Finite) {a₀ a₁ : α} (h₀ : a₀ ∈ C) (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
+    ∃ m : ℕ, ∃ d : Fin (m + 2) → α, StrictMono d ∧ (∀ j, d j ∈ C) ∧ d 0 = a₀ ∧
       d (Fin.last (m + 1)) = a₁ ∧
-      ∀ (i : Fin (m + 1)) {x : ℝ}, x ∈ C → d i.castSucc < x → x < d i.succ → False := by
+      ∀ (i : Fin (m + 1)) {x : α}, x ∈ C → d i.castSucc < x → x < d i.succ → False := by
   set s := (hC.inter_of_left (Icc a₀ a₁)).toFinset with hs
-  have hmem {x : ℝ} : x ∈ s ↔ x ∈ C ∧ x ∈ Icc a₀ a₁ := by simp [hs]
+  have hmem {x : α} : x ∈ s ↔ x ∈ C ∧ x ∈ Icc a₀ a₁ := by simp [hs]
   have hcard : 2 ≤ s.card := by
-    have hsub : ({a₀, a₁} : Finset ℝ) ⊆ s := by
+    have hsub : ({a₀, a₁} : Finset α) ⊆ s := by
       intro x hx
       rcases Finset.mem_insert.1 hx with rfl | hx
       · exact hmem.2 ⟨h₀, le_rfl, h.le⟩
@@ -95,7 +96,7 @@ theorem Set.Finite.exists_strictMono_fin_consecutive {C : Set ℝ} (hC : C.Finit
   set d := s.orderEmbOfFin hm
   have hdI (j : Fin (m + 2)) : d j ∈ Icc a₀ a₁ := (hmem.1 (s.orderEmbOfFin_mem hm j)).2
   -- Every point of `C` in `[a₀, a₁]` is some `d j`.
-  have hd {x : ℝ} (hx : x ∈ C) (hxI : x ∈ Icc a₀ a₁) : ∃ j, d j = x := by
+  have hd {x : α} (hx : x ∈ C) (hxI : x ∈ Icc a₀ a₁) : ∃ j, d j = x := by
     have hx' : x ∈ Set.range d := by
       rw [Finset.range_orderEmbOfFin]
       exact Finset.mem_coe.2 (hmem.2 ⟨hx, hxI⟩)
@@ -113,21 +114,22 @@ theorem Set.Finite.exists_strictMono_fin_consecutive {C : Set ℝ} (hC : C.Finit
     rw [Fin.lt_def, Fin.val_succ] at h₂
     omega
 
-/-- **Finitely many points separating a finite set between two of its points.** Let `C ⊆ ℝ` be
-finite and let `a₀ < a₁` be two of its points. There are strictly increasing reals
-`b 0 < ⋯ < b m` in `(a₀, a₁)`, none of them in `C`, such that `a₀` is the only point of `C` in
-`[a₀, b 0]`, `a₁` is the only point of `C` in `[b m, a₁]`, and each `[b i, b (i + 1)]` contains
-exactly one point of `C`. -/
-theorem Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton {C : Set ℝ} (hC : C.Finite)
-    {a₀ a₁ : ℝ} (h₀ : a₀ ∈ C) (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
-    ∃ m : ℕ, ∃ b : Fin (m + 1) → ℝ, StrictMono b ∧ (∀ i, b i ∉ C) ∧ a₀ < b 0 ∧
+/-- **Finitely many points separating a finite set between two of its points.** Let `C` be a
+finite subset of a linearly ordered field and let `a₀ < a₁` be two of its points. There are
+strictly increasing points `b 0 < ⋯ < b m` in `(a₀, a₁)`, none of them in `C`, such that `a₀`
+is the only point of `C` in `[a₀, b 0]`, `a₁` is the only point of `C` in `[b m, a₁]`, and each
+`[b i, b (i + 1)]` contains exactly one point of `C`. -/
+theorem Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton {α : Type*} [Field α]
+    [LinearOrder α] [IsStrictOrderedRing α] {C : Set α} (hC : C.Finite) {a₀ a₁ : α} (h₀ : a₀ ∈ C)
+    (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
+    ∃ m : ℕ, ∃ b : Fin (m + 1) → α, StrictMono b ∧ (∀ i, b i ∉ C) ∧ a₀ < b 0 ∧
       b (Fin.last m) < a₁ ∧ C ∩ Icc a₀ (b 0) = {a₀} ∧ C ∩ Icc (b (Fin.last m)) a₁ = {a₁} ∧
       ∀ i : Fin m, ∃ c, C ∩ Icc (b i.castSucc) (b i.succ) = {c} := by
   -- The points of `C` in `[a₀, a₁]`, in increasing order `a₀ = d 0 < d 1 < ⋯ < d (m + 1) = a₁`.
   obtain ⟨m, d, hdm, hdC, hd0, hdl, hgap⟩ := hC.exists_strictMono_fin_consecutive h₀ h₁ h
   have hlt (i : Fin (m + 1)) : d i.castSucc < d i.succ := hdm Fin.castSucc_lt_succ
   -- `b i` is the midpoint of `d i` and `d (i + 1)`.
-  set b : Fin (m + 1) → ℝ := fun i ↦ (d i.castSucc + d i.succ) / 2 with hb
+  set b : Fin (m + 1) → α := fun i ↦ (d i.castSucc + d i.succ) / 2 with hb
   have hbl (i : Fin (m + 1)) : d i.castSucc < b i := by simp only [hb]; linarith [hlt i]
   have hbu (i : Fin (m + 1)) : b i < d i.succ := by simp only [hb]; linarith [hlt i]
   have hb0 : a₀ < b 0 := by simpa [hd0] using hbl 0
