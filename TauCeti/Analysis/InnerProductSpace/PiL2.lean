@@ -16,6 +16,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Fibrewise sums of Euclidean coordinates
@@ -37,9 +38,14 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
+  real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
+* `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
+  of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
   over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
@@ -54,6 +60,8 @@ Borel measurable structure on the scalar field.
   cardinality of `ι`.
 * `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
   a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
+* `EuclideanSpace.sumEquivProd_apply_fst` and `EuclideanSpace.sumEquivProd_apply_snd`: the
+  coordinates of the two blocks of `EuclideanSpace.sumEquivProd`.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
@@ -92,6 +100,19 @@ theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
   exact MeasurableSet.iInter fun i ↦
     measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
 
+/-- A quadratic form `∑ i, w i * x i ^ 2` that is diagonal in the coordinates of real Euclidean
+space is positive definite exactly when all of its weights are positive. This is
+`QuadraticMap.posDef_weightedSumSquares_iff` read in Euclidean coordinates. -/
+theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
+    {Q : QuadraticForm ℝ (EuclideanSpace ℝ ι)} {w : ι → ℝ} (hQ : ∀ x, Q x = ∑ i, w i * x i ^ 2) :
+    Q.PosDef ↔ ∀ i, 0 < w i := by
+  have hQ' : Q = (QuadraticMap.weightedSumSquares ℝ w).comp
+      (WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap :=
+    QuadraticMap.ext fun x ↦ by simp [hQ, QuadraticMap.weightedSumSquares_apply, sq]
+  rw [← QuadraticMap.posDef_weightedSumSquares_iff, hQ']
+  refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
+  simpa using h (WithLp.toLp 2 x) (by simpa using hx)
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
@@ -104,6 +125,13 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
     WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
     ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
+
+/-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
+theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
+    (hx : x ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
+    x 0 ^ 2 + x 1 ^ 2 + x 2 ^ 2 = 1 := by
+  have h : ‖x‖ ^ 2 = 1 := by rw [mem_sphere_zero_iff_norm.1 hx, one_pow]
+  rwa [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three] at h
 
 /-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
 `x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
@@ -216,6 +244,12 @@ end take
 
 variable [RCLike 𝕜]
 
+omit [Fintype ι] in
+/-- Every coordinate projection of Euclidean space is surjective. -/
+theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i) := by
+  classical
+  exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
+
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
@@ -316,6 +350,26 @@ theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
   · rw [L.norm_map, ← Submodule.norm_coe]
   · rw [L.inner_map_map, Submodule.coe_inner]
 
+section sumEquivProd
+
+/-! `EuclideanSpace.sumEquivProd` is a reducible composite, so `simp` unfolds it through
+`ContinuousLinearEquiv.trans_apply` before these lemmas could fire; they are not `@[simp]` and
+are meant for `rw` and `simp only`. -/
+
+variable {κ : Type*} [Fintype κ]
+
+/-- The first block of `EuclideanSpace.sumEquivProd x` reads the `Sum.inl` coordinates of `x`. -/
+theorem sumEquivProd_apply_fst (x : EuclideanSpace 𝕜 (ι ⊕ κ)) (i : ι) :
+    (sumEquivProd x).1 i = x (Sum.inl i) :=
+  rfl
+
+/-- The second block of `EuclideanSpace.sumEquivProd x` reads the `Sum.inr` coordinates of `x`. -/
+theorem sumEquivProd_apply_snd (x : EuclideanSpace 𝕜 (ι ⊕ κ)) (k : κ) :
+    (sumEquivProd x).2 k = x (Sum.inr k) :=
+  rfl
+
+end sumEquivProd
+
 section sumCompl
 
 variable (𝕜) (p : ι → Prop) [DecidablePred p]
@@ -393,7 +447,7 @@ theorem snd_sumComplEquivProd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} :
   refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
   · simpa using congr($h ⟨i, hi⟩)
   · ext i
-    simpa using h i i.2
+    simpa using h i i.property
 
 /-- The cell condition `‖u‖² ≤ ε`, `v = 0` on the components `(u, v)` of the splitting along `p`
 says that `‖x‖² ≤ ε` and that the coordinates not satisfying `p` vanish. -/
@@ -419,8 +473,8 @@ theorem inner_fst_sumComplEquivProd (x : EuclideanSpace 𝕜 ι) (u : EuclideanS
     inner 𝕜 (sumComplEquivProd 𝕜 p x).1 u = inner 𝕜 x ((sumComplEquivProd 𝕜 p).symm (u, 0)) := by
   simp only [PiLp.inner_apply, sumComplEquivProd_apply_fst, sumComplEquivProd_symm_apply]
   rw [← Fintype.sum_subtype_add_sum_subtype p]
-  have hpos (i : {i // p i}) : p i := i.2
-  have hneg (i : {i // ¬p i}) : ¬p i := i.2
+  have hpos (i : {i // p i}) : p i := i.property
+  have hneg (i : {i // ¬p i}) : ¬p i := i.property
   simp [hpos, hneg]
 
 end sumCompl
@@ -439,7 +493,7 @@ def finCastLEEquiv (hm : m ≤ n) :
 
 @[simp]
 theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
-    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.1, j.2⟩ := by
+    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.val, j.property⟩ := by
   simp only [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
     OrderIso.coe_symm_toEquiv]
   -- `Fin.castLEOrderIso_symm_apply` is stated with `RelIso.symm`, so `simp` cannot rewrite with it.
@@ -447,7 +501,7 @@ theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
 
 @[simp]
 theorem finCastLEEquiv_symm_apply (hm : m ≤ n) (v : EuclideanSpace 𝕜 {j : Fin n // j.val < m})
-    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.2⟩ := by
+    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.isLt⟩ := by
   simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
 
 /-- Inserting `w : 𝕜ᵐ` as the first factor of the splitting along `j < m`, with zero second
@@ -589,7 +643,7 @@ orthogonal projection onto each `N i`. -/
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [e.apply_coe_submodulePiLp_symm M N hMN, PiLp.toLp_apply,
     Submodule.coe_orthogonalProjectionOnto_apply, ← (N j).inner_starProjection_left_eq_right,
-    (N j).starProjection_eq_self_iff.mpr ((hMN w.1).mp w.2 j)]
+    (N j).starProjection_eq_self_iff.mpr ((hMN w.val).mp w.property j)]
 
 /-- If `e : X ≃ₗᵢ[𝕜] PiLp 2 F` characterizes `M` coordinatewise by `N`, then `M.starProjection`
 acts coordinatewise as `(N i).starProjection`. -/

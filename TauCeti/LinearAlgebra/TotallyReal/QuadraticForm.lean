@@ -88,7 +88,7 @@ theorem two_mul_finrank_le_of_add_comp_posDef (J : E →ₗ[K] E)
   apply Subtype.ext
   exact hQJ.le_zero_iff.mp <| by
     simpa only [add_apply, QuadraticMap.comp_apply, hv, QuadraticMap.map_zero, add_zero]
-      using hW v v.2
+      using hW v v.property
 
 end FiniteDimensional
 

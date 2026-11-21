@@ -113,7 +113,7 @@ theorem exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic
         (A : Module.End ℝ V) (b (k, 1)) = ν k • b (k, 0)) ∧
       ω.hamiltonianEndEquiv.symm A = ∑ k, ν k • elliptic b k := by
   obtain ⟨n, b, c, hb, hbJ, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint hJ
-    (fun _ : Unit ↦ (A : Module.End ℝ V)) (fun _ _ h ↦ absurd rfl h) (fun _ ↦ A.2) fun _ ↦ hA
+    (fun _ : Unit ↦ (A : Module.End ℝ V)) (fun _ _ h ↦ absurd rfl h) (fun _ ↦ A.property) fun _ ↦ hA
   -- `A` acts on `span(qₖ, pₖ)` by `a + b i`, and `ω(A qₖ, pₖ) = -ω(qₖ, A pₖ)` reads `a = -a`.
   have hre (k : Fin n) : (c () k).re = 0 := by
     have h : ω ((A : Module.End ℝ V) (b (k, 0))) (b (k, 1)) =

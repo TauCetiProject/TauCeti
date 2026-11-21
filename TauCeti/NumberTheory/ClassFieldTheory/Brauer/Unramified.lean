@@ -416,7 +416,7 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     apply unitFiltrationZeroIncl_injective K L
     simp only [map_add, hc']
     rw [Rep.hom_comm_apply, hc']
-    exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
+    exact (mem_cocycles₂_iff (c : _ → _)).1 c.property g h j
   have hmap : mapCocycles₂ (MonoidHom.id _) (unitFiltrationZeroIncl K L) ⟨c', hmem⟩ = c :=
     cocycles₂_ext fun g h ↦ hc' (g, h)
   -- `H²(Gal(L/K), U(L,0))` vanishes, since `U(L,0)` has no Tate cohomology.
@@ -432,7 +432,7 @@ value `σ (u (g|_L, h|_L))`, for a function `u` on `Gal(L/K) × Gal(L/K)` with v
 theorem mk_eq_zero_of_forall_mem_unitFiltration_zero [Normal K L] (σ : L →ₐ[K] SeparableClosure K)
     (z : ContCohomology.Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) (u : Gal(L/K) × Gal(L/K) → Lˣ)
     (hu : ∀ p, u p ∈ unitFiltration L 0)
-    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.val (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
     (z : ContCohomology.H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) = 0 := by

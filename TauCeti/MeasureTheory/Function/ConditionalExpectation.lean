@@ -42,6 +42,12 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
 - `integral_mul_sub_condExp`: the residual `g - μ[g | m]` of an integrable `g` is orthogonal to
   every a.e. `m`-measurable `f`, `∫ f * (g - μ[g | m]) = 0`.
+- `integral_mul_eq_of_forall_setIntegral_eq`: if `g` is `m`-measurable with the same set integrals
+  as `f` over `m`-measurable sets, then `∫ h f = ∫ h g` for every `m`-measurable `h` with `h f`
+  integrable.
+- `integral_comp_mul_eq_of_forall_setIntegral_preimage_eq`: the regression identity
+  `E[f(X) Y] = E[f(X) g(X)]` when `g(X)` is a version of `E[Y | X]`, given by its set integrals
+  over the events `{X ∈ A}`.
 - `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
   continuous linear operator on `Lᵖ`.
 
@@ -53,6 +59,9 @@ The first two are adapted from `cameronfreer/exchangeability` (`Probability/Cond
 third from `Graphon/LevyDownward.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
 `175911f9d2e053f2a33d966658dfce0e4ae2811d`. `lintegral_ofReal_posPart_condExp_sub_le` is adapted
 from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, same pin).
+`integral_mul_eq_of_forall_setIntegral_eq` and
+`integral_comp_mul_eq_of_forall_setIntegral_preimage_eq` are adapted from the lean-CKSD project
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Asymptotics/CrossFitting/FoldBounds.lean`.
 -/
 
 public section
@@ -359,6 +368,41 @@ theorem integral_mul_sub_condExp {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : M
   calc ∫ ω, f ω * (g ω - μ[g | m] ω) ∂μ = ∫ ω, μ[f * (g - μ[g | m]) | m] ω ∂μ :=
         (integral_condExp hm).symm
     _ = 0 := by simp [integral_congr_ae hzero]
+
+/-- If `g` is `m`-measurable and has the same integral as `f` over every `m`-measurable set,
+then `∫ h f = ∫ h g` for every `m`-measurable `h` with `h f` integrable: `g` is a version of the
+conditional expectation of `f`, and `h` pulls out of it. -/
+theorem integral_mul_eq_of_forall_setIntegral_eq {Ω : Type*} {m mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {f g h : Ω → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) (hgm : StronglyMeasurable[m] g)
+    (hfg : ∀ s, MeasurableSet[m] s → ∫ x in s, g x ∂μ = ∫ x in s, f x ∂μ)
+    (hh : StronglyMeasurable[m] h) (hhf : Integrable (fun x ↦ h x * f x) μ) :
+    ∫ x, h x * f x ∂μ = ∫ x, h x * g x ∂μ := by
+  have hce : g =ᵐ[μ] μ[f | m] :=
+    ae_eq_condExp_of_forall_setIntegral_eq hm hf (fun _ _ _ ↦ hg.integrableOn)
+      (fun s hs _ ↦ hfg s hs) hgm.aestronglyMeasurable
+  have hpull := condExp_mul_of_stronglyMeasurable_left (m := m) (μ := μ) hh hhf hf
+  rw [← integral_condExp hm]
+  refine integral_congr_ae ?_
+  filter_upwards [hpull, hce] with x h1 h2
+  exact h1.trans (by rw [Pi.mul_apply, h2])
+
+/-- **The regression identity.** If `g(X)` is an integrable version of `E[Y | X]`, given by its
+set integrals over the events `{X ∈ A}`, then `E[f(X) Y] = E[f(X) g(X)]` for every measurable `f`
+with `f(X) Y` integrable. -/
+theorem integral_comp_mul_eq_of_forall_setIntegral_preimage_eq {Ω α : Type*}
+    {mΩ : MeasurableSpace Ω} [MeasurableSpace α] {μ : Measure Ω}
+    {X : Ω → α} (hX : Measurable X) [SigmaFinite (μ.trim hX.comap_le)] {Y : Ω → ℝ} {g f : α → ℝ}
+    (hY : Integrable Y μ)
+    (hg : Measurable g) (hgi : Integrable (fun ω ↦ g (X ω)) μ)
+    (hreg : ∀ A : Set α, MeasurableSet A → ∫ ω in X ⁻¹' A, Y ω ∂μ = ∫ ω in X ⁻¹' A, g (X ω) ∂μ)
+    (hf : Measurable f) (hfY : Integrable (fun ω ↦ f (X ω) * Y ω) μ) :
+    ∫ ω, f (X ω) * Y ω ∂μ = ∫ ω, f (X ω) * g (X ω) ∂μ := by
+  have hXc : Measurable[MeasurableSpace.comap X inferInstance] X := comap_measurable X
+  refine integral_mul_eq_of_forall_setIntegral_eq hX.comap_le hY hgi
+    (hg.comp hXc).stronglyMeasurable ?_ (hf.comp hXc).stronglyMeasurable hfY
+  rintro _ ⟨A, hA, rfl⟩
+  exact (hreg A hA).symm
 
 section Lp
 

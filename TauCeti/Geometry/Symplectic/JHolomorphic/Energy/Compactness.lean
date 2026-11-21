@@ -146,10 +146,10 @@ theorem exists_pos_forall_tendstoUniformlyOn_subseq_of_small_energy
     exact h₁.inter h₂
   have hcompact : IsCompact A := BoundedContinuousFunction.arzela_ascoli₂ K hK A hclosed
     (fun f z hf ↦ hf.2 z)
-    ((LipschitzWith.uniformEquicontinuous (fun f : A ↦ (f.1 : D → V)) C
-      (fun f ↦ f.2.1)).equicontinuous)
+    ((LipschitzWith.uniformEquicontinuous (fun f : A ↦ (f.val : D → V)) C
+      (fun f ↦ f.property.1)).equicontinuous)
   obtain ⟨v, hv, φ, hφ, hconv⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ ⟨(lipschitzOnWith_iff_restrict.mp (hL n)), fun z ↦ huK n (hD z.2)⟩)
+    (fun n ↦ ⟨(lipschitzOnWith_iff_restrict.mp (hL n)), fun z ↦ huK n (hD z.property)⟩)
   -- Extend the limit off the disk only to express uniform convergence on a subset of `ℂ`.
   let v' : ℂ → V := fun z ↦ if hz : z ∈ D then v ⟨z, hz⟩ else 0
   have hv' : D.domRestrict v' = v := by funext z; simp [v', Set.domRestrict]

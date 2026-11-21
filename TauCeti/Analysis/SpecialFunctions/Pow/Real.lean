@@ -122,6 +122,8 @@ with the corresponding integral of `q`-th powers.
   the natural number `k` lies in the window `j - L ≤ k < j + L`.
 * `Real.rpow_neg_pow_mul_rpow_mul_natCast_add`: `(b ^ (-s)) ^ d b ^ (s (d + k)) = b ^ (s k)` for
   `0 < b` and natural numbers `d`, `k`.
+* `Real.le_mul_rpow_neg_pow_of_rpow_mul_le`: `x ≤ K (b ^ (-s)) ^ j` when `b ^ (s j) x ≤ K` and
+  `0 < b`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
@@ -295,6 +297,16 @@ theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (
   rw [← rpow_mul_natCast hb.le, ← rpow_add hb]
   push_cast
   ring_nf
+
+/-- For `0 < b`, a weighted bound `b ^ (s j) x ≤ K` gives the geometric bound
+`x ≤ K (b ^ (-s)) ^ j`. -/
+theorem le_mul_rpow_neg_pow_of_rpow_mul_le {b : ℝ} (hb : 0 < b) {s x K : ℝ} {j : ℕ}
+    (h : b ^ (s * j) * x ≤ K) : x ≤ K * (b ^ (-s)) ^ j := by
+  have hj : (b ^ (-s)) ^ j * b ^ (s * j) = 1 := by
+    simpa using rpow_neg_pow_mul_rpow_mul_natCast_add hb s j 0
+  calc x = (b ^ (-s)) ^ j * (b ^ (s * j) * x) := by rw [← mul_assoc, hj, one_mul]
+    _ ≤ (b ^ (-s)) ^ j * K := by gcongr
+    _ = K * (b ^ (-s)) ^ j := mul_comm _ _
 
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/

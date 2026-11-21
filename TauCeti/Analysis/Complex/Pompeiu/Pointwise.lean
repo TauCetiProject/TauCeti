@@ -177,7 +177,7 @@ theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
   set fb := {x | M ≤ ‖f x‖₊}.indicator f
   have hfbm : AEStronglyMeasurable fb volume := hf.aestronglyMeasurable.indicator₀
     (nullMeasurableSet_le aemeasurable_const
-      (measurable_subtype_coe.comp_aemeasurable hf.aestronglyMeasurable.nnNorm.aemeasurable))
+      (measurable_subtypeVal.comp_aemeasurable hf.aestronglyMeasurable.nnNorm.aemeasurable))
   have hfb : MemLp fb p volume :=
     hf.of_le hfbm (ae_of_all _ fun x ↦ norm_indicator_le_norm_self f x)
   have hfbs : support fb ⊆ closedBall c r := by

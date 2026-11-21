@@ -27,6 +27,8 @@ this gives a factor of at most `2 ^ d`, where `d` is the degree of the product.
 
 These estimates control growth of coefficients under polynomial multiplication.
 They include zero factors and empty products, and use Mathlib's `Polynomial.supNorm`.
+Over `ℤ`, every nonzero polynomial has coefficient sup norm at least `1`
+(`Polynomial.one_le_supNorm_of_ne_zero_int`).
 
 ## References
 

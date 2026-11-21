@@ -33,6 +33,8 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
 
 ## Main results
 
+* `TauCeti.le_ceil_div_mul`: `t ≤ ⌈t / τ⌉₊ * τ` for `τ > 0`.
+* `TauCeti.ceil_div_mul_lt_add`: `⌈t / τ⌉₊ * τ < t + τ` for `t ≥ 0` and `τ > 0`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
 * `TauCeti.exists_pos_nat_mul_bounds`: a positive multiple `N a` lies in `(t, t + a]`.
@@ -55,6 +57,16 @@ namespace TauCeti
 
 variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
   {τ s t B : K}
+
+/-- For a positive step `τ`, `t ≤ ⌈t / τ⌉₊ * τ`. -/
+theorem le_ceil_div_mul (hτ : 0 < τ) : t ≤ (⌈t / τ⌉₊ : K) * τ :=
+  (div_le_iff₀ hτ).1 (Nat.le_ceil _)
+
+/-- For `0 ≤ t` and a positive step `τ`, `⌈t / τ⌉₊ * τ < t + τ`. -/
+theorem ceil_div_mul_lt_add (ht : 0 ≤ t) (hτ : 0 < τ) :
+    (⌈t / τ⌉₊ : K) * τ < t + τ := by
+  simpa [add_mul, div_mul_cancel₀ t hτ.ne'] using
+    mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg ht hτ.le)) hτ
 
 /-- For a nonnegative step `τ` and `s ≤ t`, the indices in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)` number
 strictly less than `(t - s) / τ + 1`. This holds for both ordinary and truncated subtraction. -/

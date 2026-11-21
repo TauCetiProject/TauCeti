@@ -175,7 +175,7 @@ lemma coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter (n : ℕ) (j
       (TopPair.Hom.fst (characteristicPairMap C n))
         (TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom
           (TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
-            (diskCenter n)))).1 = map n j 0 := by
+            (diskCenter n)))).val = map n j 0 := by
   let c := TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
     (diskCenter n)
   have h₁ := sigmaDiskBoundaryPairIso_hom_fst_apply_fst (cell C n) n c

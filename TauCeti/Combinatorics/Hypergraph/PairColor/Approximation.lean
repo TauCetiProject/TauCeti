@@ -14,6 +14,7 @@ import Mathlib.Data.Rat.BigOperators
 import Mathlib.Tactic.GCongr
 import TauCeti.Combinatorics.Regularity.Partition.Equitabilise
 import TauCeti.Data.Finset.Basic
+import TauCeti.Order.Partition.Equipartition
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -23,7 +24,9 @@ Given a pair-color system `S` with a finite palette `κ`, an equitable vertex pa
 edit tolerance `α > 0`, and a positive error schedule `F : ℕ → ℝ`, this file constructs an
 exact equitable refinement `P ≤ P₀` of bounded size together with a recolored pair-color system
 `T` over `Option κ` such that the lower skeleton `⟨P, T⟩` is `F`-regular at its own lower
-complexity and `T` disagrees with `some ∘ S.color` on at most `α |V|²` ordered distinct pairs.
+complexity, off-diagonal coarse block densities are preserved within `F (#P.parts + card κ + 1) / 2`
+(with zero density for the fresh diagonal color), and `T` disagrees with `some ∘ S.color` on at
+most `α |V|²` ordered distinct pairs.
 
 Unlike single-scale cleanup (`PairColorSystem.exists_recoloring_isPairColorRegular`), which takes
 a constant tolerance `ε` and cannot refine `P` without shrinking `F (#P.parts + card κ + 1)`,
@@ -36,8 +39,8 @@ tolerance governed by `F (#P.parts + card κ + 1)`. By
 `PairColorSystem.exists_coupled_recoloring_abs_card_filter_sub_le` adjusts regular fine blocks
 toward `pairColorDensity S · A B` while editing few pairs and replaces irregular fine blocks by
 quasi-random colorings. Summing rectangle discrepancies across the fine subblocks of each coarse
-pair `(A, B)` makes every off-diagonal coarse pair regular, and `PairColorSystem.fillDiagonal`
-cleans up within-cell pairs.
+pair `(A, B)` makes every off-diagonal coarse pair regular while keeping its color densities close
+to those of `S`, and `PairColorSystem.fillDiagonal` cleans up within-cell pairs.
 
 ## Main definitions
 
@@ -47,8 +50,12 @@ cleans up within-cell pairs.
 
 ## Main results
 
-* `TauCeti.PairColorSystem.exists_refining_equipartition_lowerSkeletonRegular`: strong regular
-  approximation of a pair-color system refining a seed equipartition.
+* `PairColorSystem.exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le`:
+  strong regular approximation of a pair-color system refining a seed equipartition, preserving
+  off-diagonal coarse block densities.
+* `TauCeti.PairSkeleton3.exists_refining_lowerSkeletonRegular`: strong regular approximation of a
+  lower skeleton `PairSkeleton3 κ V` with minimum cell count `t₀` and finite palette
+  `Fin (Fintype.card κ + 1)`.
 
 ## References
 
@@ -181,7 +188,8 @@ section Assembly
 
 open Classical in
 /-- Summing rectangle discrepancies of `T_off` over the fine subblocks `A' ×ˢ B'` of a coarse
-block `A ×ˢ B` yields coarse `δ`-regularity once `2 * τ ≤ δ ^ 3`. -/
+block `A ×ˢ B` yields coarse `δ`-regularity and preserves the target densities `p` within `δ / 2`
+once `2 * τ ≤ δ ^ 3`. -/
 private theorem isRegularPair_of_fine_discrepancy {κ V : Type*} [Fintype V] [DecidableEq V]
     {T_off : PairColorSystem κ V} {P Q : Finpartition (univ : Finset V)} (hQP : Q ≤ P)
     {A B : Finset V} (hA : A ∈ P.parts) (hB : B ∈ P.parts) (hAB : A ≠ B)
@@ -190,7 +198,8 @@ private theorem isRegularPair_of_fine_discrepancy {κ V : Type*} [Fintype V] [De
       ∀ s' ⊆ A', ∀ t' ⊆ B', ∀ d : κ,
         |(#{q ∈ s' ×ˢ t' | T_off.colorOfPair q.1 q.2 = some d} : ℝ) - p d * (#s' * #t')| ≤
           τ * (#A' * #B')) :
-    T_off.IsRegularPair δ A B := by
+    T_off.IsRegularPair δ A B ∧
+      ∀ d : κ, |(pairColorDensity T_off d A B : ℝ) - p d| ≤ δ / 2 := by
   classical
   have hdisj : Disjoint A B := P.disjoint hA hB hAB
   have hApos : (0 : ℝ) < #A := Nat.cast_pos.2 (P.nonempty_of_mem_parts hA).card_pos
@@ -279,11 +288,12 @@ private theorem isRegularPair_of_fine_discrepancy {κ V : Type*} [Fintype V] [De
           gcongr
       _ = (δ / 2) * (δ ^ 2 * (#A * #B)) := by ring
       _ ≤ (δ / 2) * (#X * #Y) := by gcongr
-  rw [isRegularPair_iff]
-  intro d X hXA Y hYB hX hY
+  have hAB_dens (d : κ) : |(pairColorDensity T_off d A B : ℝ) - p d| ≤ δ / 2 :=
+    hdens A B Subset.rfl Subset.rfl
+      (mul_le_of_le_one_left hApos.le hδ1) (mul_le_of_le_one_left hBpos.le hδ1) d
+  refine ⟨isRegularPair_iff.2 fun d X hXA Y hYB hX hY ↦ ?_, hAB_dens⟩
   have h1 := hdens X Y hXA hYB hX hY d
-  have h2 := hdens A B Subset.rfl Subset.rfl
-    (mul_le_of_le_one_left hApos.le hδ1) (mul_le_of_le_one_left hBpos.le hδ1) d
+  have h2 := hAB_dens d
   calc |(pairColorDensity T_off d X Y : ℝ) - pairColorDensity T_off d A B|
       ≤ |(pairColorDensity T_off d X Y : ℝ) - p d| +
           |p d - pairColorDensity T_off d A B| := abs_sub_le _ _ _
@@ -297,13 +307,13 @@ private noncomputable def assembleOffDiag {κ V : Type*} [Fintype V] [DecidableE
     (hrev : ∀ A B A' B', (blockSys A B A' B').rev = S.rev) :
     PairColorSystem κ V where
   color p :=
-    let u := p.1.1; let v := p.1.2
+    let u := p.val.1; let v := p.val.2
     let pA : P.parts := ⟨P.part u, P.part_mem.2 (mem_univ u)⟩
     let pB : P.parts := ⟨P.part v, P.part_mem.2 (mem_univ v)⟩
     if eP pA < eP pB then
-      (blockSys pA.1 pB.1 (Q.part u) (Q.part v)).color p
+      (blockSys pA.val pB.val (Q.part u) (Q.part v)).color p
     else if eP pB < eP pA then
-      (blockSys pB.1 pA.1 (Q.part v) (Q.part u)).color p
+      (blockSys pB.val pA.val (Q.part v) (Q.part u)).color p
     else S.color p
   rev := S.rev
   rev_involutive := S.rev_involutive
@@ -314,10 +324,10 @@ private noncomputable def assembleOffDiag {κ V : Type*} [Fintype V] [DecidableE
     by_cases h1 : eP pA < eP pB
     · have h2 : ¬ eP pB < eP pA := lt_asymm h1
       simpa [pA, pB, h1, h2, hrev] using
-        (blockSys pA.1 pB.1 (Q.part u) (Q.part v)).color_rev ⟨(u, v), huv⟩
+        (blockSys pA.val pB.val (Q.part u) (Q.part v)).color_rev ⟨(u, v), huv⟩
     · by_cases h2 : eP pB < eP pA
       · simpa [pA, pB, h1, h2, hrev] using
-          (blockSys pB.1 pA.1 (Q.part v) (Q.part u)).color_rev ⟨(u, v), huv⟩
+          (blockSys pB.val pA.val (Q.part v) (Q.part u)).color_rev ⟨(u, v), huv⟩
       · simpa [pA, pB, h1, h2] using S.color_rev ⟨(u, v), huv⟩
 
 /-- On a canonical fine block `A' ×ˢ B'` (`eP A < eP B`), `assembleOffDiag` agrees with
@@ -438,17 +448,18 @@ private theorem sum_regular_canonicalFineBlocks_le
     obtain ⟨h1, h2, hlt⟩ := mem_canonicalFineBlocks_elim hFB
     set pA := refinementParent hQP ⟨uv.1, h1⟩
     set pB := refinementParent hQP ⟨uv.2, h2⟩
-    have huv_sub1 : uv.1 ⊆ pA.1 := le_refinementParent hQP ⟨uv.1, h1⟩
-    have huv_sub2 : uv.2 ⊆ pB.1 := le_refinementParent hQP ⟨uv.2, h2⟩
-    have hpAB : pA.1 ≠ pB.1 := fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
+    have huv_sub1 : uv.1 ⊆ pA.val := le_refinementParent hQP ⟨uv.1, h1⟩
+    have huv_sub2 : uv.2 ⊆ pB.val := le_refinementParent hQP ⟨uv.2, h2⟩
+    have hpAB : pA.val ≠ pB.val := fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
     have hf : {x ∈ uv.1 ×ˢ uv.2 | T_off.colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2} =
         {x ∈ uv.1 ×ˢ uv.2 |
-          (blockSys pA.1 pB.1 uv.1 uv.2).colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2} :=
+          (blockSys pA.val pB.val uv.1 uv.2).colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2} :=
       filter_congr fun x hx ↦ by
-        rw [colorOfPair_assembleOffDiag pA.2 pB.2 hlt h1 h2 huv_sub1 huv_sub2 hx]
-    have hspec := hreg_edit pA.1 pA.2 pB.1 pB.2 hpAB uv.1 h1 huv_sub1 uv.2 h2 huv_sub2 hreg
+        rw [colorOfPair_assembleOffDiag pA.property pB.property hlt h1 h2 huv_sub1 huv_sub2 hx]
+    have hspec := hreg_edit pA.val pA.property pB.val pB.property hpAB uv.1 h1 huv_sub1 uv.2 h2
+        huv_sub2 hreg
     have hconst : ∑ c : κ, |(pairColorDensity S c uv.1 uv.2 : ℝ) -
-          pairColorDensity S c pA.1 pB.1| * (#uv.1 * #uv.2) =
+          pairColorDensity S c pA.val pB.val| * (#uv.1 * #uv.2) =
         ∑ x ∈ uv.1 ×ˢ uv.2, ∑ c : κ,
           |(pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
             pairColorDensity S c (P.part x.1) (P.part x.2)| := by
@@ -457,11 +468,12 @@ private theorem sum_regular_canonicalFineBlocks_le
       have hpt : ∀ x ∈ uv.1 ×ˢ uv.2,
           |(pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
             pairColorDensity S c (P.part x.1) (P.part x.2)| =
-          |(pairColorDensity S c uv.1 uv.2 : ℝ) - pairColorDensity S c pA.1 pB.1| :=
+          |(pairColorDensity S c uv.1 uv.2 : ℝ) - pairColorDensity S c pA.val pB.val| :=
         fun x hx ↦ by
           obtain ⟨hx1, hx2⟩ := mem_product.1 hx
           rw [Q.part_eq_of_mem h1 hx1, Q.part_eq_of_mem h2 hx2,
-            P.part_eq_of_mem pA.2 (huv_sub1 hx1), P.part_eq_of_mem pB.2 (huv_sub2 hx2)]
+            P.part_eq_of_mem pA.property (huv_sub1 hx1), P.part_eq_of_mem pB.property
+                (huv_sub2 hx2)]
       rw [sum_congr rfl hpt, sum_const, card_product, nsmul_eq_mul]
       push_cast; ring
     rw [hf]; linarith
@@ -479,11 +491,11 @@ private theorem sum_regular_canonicalFineBlocks_le
     obtain ⟨uv, huv, hxuv⟩ := mem_biUnion.1 hx
     obtain ⟨h1, h2, hlt⟩ := mem_canonicalFineBlocks_elim (mem_filter.1 huv).1
     obtain ⟨hx1, hx2⟩ := mem_product.1 hxuv
-    have hpAB : (refinementParent hQP ⟨uv.1, h1⟩).1 ≠ (refinementParent hQP ⟨uv.2, h2⟩).1 :=
+    have hpAB : (refinementParent hQP ⟨uv.1, h1⟩).val ≠ (refinementParent hQP ⟨uv.2, h2⟩).val :=
       fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
     exact mem_offDiag.2 ⟨mem_univ _, mem_univ _,
-      (P.disjoint (refinementParent hQP ⟨uv.1, h1⟩).2
-        (refinementParent hQP ⟨uv.2, h2⟩).2 hpAB).forall_ne_finset
+      (P.disjoint (refinementParent hQP ⟨uv.1, h1⟩).property
+        (refinementParent hQP ⟨uv.2, h2⟩).property hpAB).forall_ne_finset
         (le_refinementParent hQP ⟨uv.1, h1⟩ hx1) (le_refinementParent hQP ⟨uv.2, h2⟩ hx2)⟩
   have hL1_total : ∑ uv ∈ FB_reg, ∑ x ∈ uv.1 ×ˢ uv.2, ∑ c : κ,
         |(pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
@@ -618,21 +630,13 @@ private theorem card_edit_fillDiagonal_assembleOffDiag_le
       exact mem_filter.2
         ⟨mem_offDiag.2 ⟨mem_univ _, mem_univ _, hxy.symm⟩, hlt, hswap_ne hne⟩
   have hdiag_bound : (#E_diag : ℝ) ≤ α / 4 * (Fintype.card V : ℝ) ^ 2 := by
-    set n := Fintype.card V
-    have hnat : #E_diag ≤ n * (n / #P.parts) :=
-      T_off.card_fillDiagonal_colorOfPair_ne_le_of_isEquipartition P hP
-    have hdiv_le : (#E_diag : ℝ) ≤ (n : ℝ) ^ 2 / #P.parts := by
-      rw [le_div_iff₀ (Nat.cast_pos.2 hPparts_pos)]
-      calc (#E_diag : ℝ) * #P.parts
-          ≤ ((n * (n / #P.parts) : ℕ) : ℝ) * #P.parts :=
-            mul_le_mul_of_nonneg_right (by exact_mod_cast hnat) (Nat.cast_nonneg _)
-        _ = (n : ℝ) * (((n / #P.parts : ℕ) * #P.parts : ℕ) : ℝ) := by push_cast; ring
-        _ ≤ (n : ℝ) * n := by gcongr; exact_mod_cast Nat.div_mul_le_self n #P.parts
-        _ = (n : ℝ) ^ 2 := (sq _).symm
+    have hdiv_le : (#E_diag : ℝ) ≤ (Fintype.card V : ℝ) ^ 2 / #P.parts := by
+      simpa only [E_diag, T, T_off.card_fillDiagonal_colorOfPair_ne P, card_univ] using
+        hP.cast_sum_card_mul_sub_one_le (K := ℝ)
     refine hdiv_le.trans ?_
     rw [div_le_iff₀ (Nat.cast_pos.2 hPparts_pos)]
     have h1 : 1 ≤ α / 4 * #P.parts := by rw [div_le_iff₀ hα] at ha₀_le; linarith
-    linarith [le_mul_of_one_le_left (sq_nonneg (n : ℝ)) h1]
+    linarith [le_mul_of_one_le_left (sq_nonneg (Fintype.card V : ℝ)) h1]
   set FB := canonicalFineBlocks hQP eP
   have hE_pos_sub : E_pos ⊆ FB.biUnion (fun uv ↦
       {x ∈ uv.1 ×ˢ uv.2 | T_off.colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2}) := by
@@ -685,15 +689,17 @@ private theorem card_edit_fillDiagonal_assembleOffDiag_le
     _ ≤ α * (Fintype.card V : ℝ) ^ 2 := mul_le_mul_of_nonneg_right hcoeff (sq_nonneg _)
 
 open Classical in
-/-- **Strong regular approximation of a pair-color system.** Given an equitable partition `P₀`,
-an edit budget `α > 0`, and a positive error schedule `F`, if `V` has at least
-`pairApproximationBound (card κ) α F #P₀.parts` vertices, there exist an equitable refinement
-`P ≤ P₀` with at most `pairApproximationPartsBound (card κ) α F #P₀.parts` cells and a
-pair-color system `T` over `Option κ` with `T.rev = Option.map S.rev` such that `⟨P, T⟩` is
-`F`-regular at its lower complexity and `T` differs from `some ∘ S.color` on at most `α |V|²`
+/-- **Strong regular approximation of a pair-color system with off-diagonal density preservation.**
+Given an equitable partition `P₀`, an edit budget `α > 0`, and a positive error schedule `F`, if
+`V` has at least `pairApproximationBound (card κ) α F #P₀.parts` vertices, there exist an
+equitable refinement `P ≤ P₀` with at most `pairApproximationPartsBound (card κ) α F #P₀.parts`
+cells and a pair-color system `T` over `Option κ` with `T.rev = Option.map S.rev` such that
+`⟨P, T⟩` is `F`-regular at its lower complexity, every off-diagonal coarse block `(A, B)` preserves
+each original color's density within `F (#P.parts + card κ + 1) / 2` while assigning density zero
+to the fresh diagonal color `none`, and `T` differs from `some ∘ S.color` on at most `α |V|²`
 ordered distinct pairs. -/
-theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
-    [Fintype V] [DecidableEq V] [Fintype κ] (S : PairColorSystem κ V)
+theorem exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le
+    {κ V : Type*} [Fintype V] [DecidableEq V] [Fintype κ] (S : PairColorSystem κ V)
     (P₀ : Finpartition (univ : Finset V)) (hP₀ : P₀.IsEquipartition) {α : ℝ} (hα : 0 < α)
     {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
     (hV : pairApproximationBound (Fintype.card κ) α F #P₀.parts ≤ Fintype.card V) :
@@ -702,6 +708,10 @@ theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
       #P.parts ≤ pairApproximationPartsBound (Fintype.card κ) α F #P₀.parts ∧
       T.rev = Option.map S.rev ∧
       (⟨P, T⟩ : PairSkeleton3 (Option κ) V).LowerSkeletonRegular F ∧
+      (∀ A ∈ P.parts, ∀ B ∈ P.parts, A ≠ B →
+        ∀ c : κ, |(pairColorDensity T (some c) A B : ℝ) - pairColorDensity S c A B| ≤
+          F (#P.parts + Fintype.card κ + 1) / 2) ∧
+      (∀ A ∈ P.parts, ∀ B ∈ P.parts, A ≠ B → pairColorDensity T none A B = 0) ∧
       (#{p : {p : V × V // p.1 ≠ p.2} | T.color p ≠ some (S.color p)} : ℝ) ≤
         α * (Fintype.card V : ℝ) ^ 2 := by
   classical
@@ -732,7 +742,6 @@ theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
   have hPparts_ge : a₀ * #P₀.parts ≤ #P.parts := hP₁card ▸ card_mono hPP₁
   have hPparts_pos : 0 < #P.parts :=
     lt_of_lt_of_le (Nat.mul_pos (Nat.pos_of_ne_zero ha₀) hP₀_pos) hPparts_ge
-  have hQparts_pos : 0 < #Q.parts := hPparts_pos.trans_le (card_mono hQP)
   -- Step 2: Cell-size lower bounds on `Q`.
   set η := pairApproximationTolerance q α F #P.parts
   have hη : 0 < η := pairApproximationTolerance_pos q hα hF #P.parts
@@ -743,19 +752,12 @@ theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
         (fun t ↦ ⌈(q + 3 : ℝ) / (pairApproximationTolerance q α F t) ^ 2⌉₊) :=
       le_sup (f := fun t ↦ ⌈(q + 3 : ℝ) / (pairApproximationTolerance q α F t) ^ 2⌉₊)
         (mem_range.2 (Nat.lt_succ_of_le hPcard))
-    have hQK : #Q.parts * K ≤ Fintype.card V :=
-      calc #Q.parts * K ≤ max 1 M_fine * (K + 1) :=
-            Nat.mul_le_mul (hQcard.trans (le_max_right 1 M_fine)) (Nat.le_succ K)
-        _ ≤ pairApproximationBound q α F #P₀.parts := by
-            rw [pairApproximationBound_def]
-            exact Nat.mul_le_mul_left _ (Nat.succ_le_succ hKsup)
-        _ ≤ Fintype.card V := hV
-    have hKdiv : K ≤ #(univ : Finset V) / #Q.parts := by
-      rw [card_univ, Nat.le_div_iff_mul_le hQparts_pos, mul_comm]; exact hQK
-    have hKA' : (K : ℝ) ≤ #A' := by exact_mod_cast hKdiv.trans (hQ.average_le_card_part hA')
-    have hceil : (q + 3 : ℝ) / η ^ 2 ≤ K := Nat.le_ceil _
-    rw [div_le_iff₀ (pow_pos hη 2)] at hceil
-    linarith [mul_le_mul_of_nonneg_right hKA' (sq_nonneg η)]
+    have hMK : max 1 M_fine * K ≤ #(univ : Finset V) := by
+      rw [card_univ]
+      exact (Nat.mul_le_mul_left _ (hKsup.trans (Nat.le_succ _))).trans hV
+    have hKA' : (K : ℝ) ≤ #A' := by
+      exact_mod_cast hQ.le_card_part_of_mul_le (hQcard.trans (le_max_right 1 M_fine)) hMK hA'
+    exact (div_le_iff₀' (pow_pos hη 2)).1 ((Nat.le_ceil _).trans hKA')
   -- Step 3: Choose fine block recolorings and assemble `T_off` and `T = T_off.fillDiagonal P`.
   let eP : P.parts ≃ Fin (Fintype.card P.parts) := Fintype.equivFin P.parts
   let target (A B : Finset V) : κ → ℝ := fun c ↦ (pairColorDensity S c A B : ℝ)
@@ -810,49 +812,71 @@ theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
     exact ⟨hsp.2.2.1, hsp.2.2.2⟩
   set T_off := assembleOffDiag S P Q eP blockSys hblock_rev
   set T : PairColorSystem (Option κ) V := T_off.fillDiagonal P
-  -- Step 4: Coarse regularity of `⟨P, T⟩` and edit bound.
+  -- Step 4: Coarse regularity, off-diagonal density preservation, and edit bound.
+  set δ := min (1 / 2) (F (#P.parts + q + 1))
+  have hδ0 : 0 < δ := lt_min (by norm_num) (hF _)
+  have hδ1 : δ ≤ 1 / 2 := min_le_left _ _
+  have hη_δ : 4 * (q' : ℝ) * η ≤ δ ^ 3 := by
+    have hle : η ≤ δ ^ 3 / (4 * (q' : ℝ)) := by
+      simp [η, pairApproximationTolerance_def, δ, q']
+    exact (le_div_iff₀' (by positivity : (0 : ℝ) < 4 * q')).1 hle
+  have hdiag (A : Finset V) (hA : A ∈ P.parts) : 1 < δ * #A := by
+    obtain ⟨u, hu⟩ := P.nonempty_of_mem_parts hA
+    have hQu : Q.part u ∈ Q.parts := Q.part_mem.2 (mem_univ u)
+    have hQuA : Q.part u ⊆ A := P.part_eq_of_mem hA hu ▸ part_mono hQP u
+    have hcardA : (#(Q.part u) : ℝ) ≤ #A := Nat.cast_le.2 (card_le_card hQuA)
+    have h3 := hQsize (Q.part u) hQu
+    have hη_le_δ : η ≤ δ := by
+      have hδ3 : δ ^ 3 ≤ δ := by nlinarith [sq_nonneg δ]
+      have hq'1 : (1 : ℝ) ≤ q' := by exact_mod_cast le_max_right q 1
+      nlinarith
+    have hη2 : η ^ 2 ≤ δ := by nlinarith
+    nlinarith [Nat.cast_nonneg (α := ℝ) q]
+  have hoff_lt {A B : Finset V} (hA : A ∈ P.parts) (hB : B ∈ P.parts)
+      (hlt : eP ⟨A, hA⟩ < eP ⟨B, hB⟩) :
+      T_off.IsRegularPair δ A B ∧
+        ∀ d : κ, |(pairColorDensity T_off d A B : ℝ) - pairColorDensity S d A B| ≤ δ / 2 := by
+    have hAB : A ≠ B := fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
+    refine isRegularPair_of_fine_discrepancy (τ := 2 * (q' : ℝ) * η) hQP hA hB hAB
+      (target A B) hδ0 (by linarith) (by linarith)
+      fun A' hA' hA'A B' hB' hB'B s' hs' t' ht' d ↦ ?_
+    have hf : {x ∈ s' ×ˢ t' | T_off.colorOfPair x.1 x.2 = some d} =
+        {x ∈ s' ×ˢ t' | (blockSys A B A' B').colorOfPair x.1 x.2 = some d} :=
+      filter_congr fun x hx ↦ by
+        rw [colorOfPair_assembleOffDiag hA hB hlt hA' hB' hA'A hB'B
+          (product_subset_product hs' ht' hx)]
+    rw [hf]
+    exact (hblock_spec hA hB hAB hA' hB' hA'A hB'B).1 s' hs' t' ht' d
+  have hoff (A : Finset V) (hA : A ∈ P.parts) (B : Finset V) (hB : B ∈ P.parts)
+      (hAB : A ≠ B) :
+      T_off.IsRegularPair δ A B ∧
+        ∀ d : κ, |(pairColorDensity T_off d A B : ℝ) - pairColorDensity S d A B| ≤ δ / 2 := by
+    have hne : eP ⟨A, hA⟩ ≠ eP ⟨B, hB⟩ :=
+      fun h ↦ hAB (Subtype.ext_iff.1 (eP.injective h))
+    rcases lt_or_gt_of_ne hne with hlt | hgt
+    · exact hoff_lt hA hB hlt
+    · refine ⟨(hoff_lt hB hA hgt).1.symm, fun d ↦ ?_⟩
+      have hrev_off : T_off.rev d = S.rev d := rfl
+      have h := (hoff_lt hB hA hgt).2 (S.rev d)
+      rwa [← hrev_off, pairColorDensity_swap T_off d A B, hrev_off,
+        pairColorDensity_swap S d A B] at h
   have hlower : (⟨P, T⟩ : PairSkeleton3 (Option κ) V).LowerSkeletonRegular F := by
-    rw [PairSkeleton3.lowerSkeletonRegular_iff, Fintype.card_option]
-    set δ := min (1 / 2) (F (#P.parts + (q + 1)))
-    have hδ0 : 0 < δ := lt_min (by norm_num) (hF _)
-    have hδ1 : δ ≤ 1 / 2 := min_le_left _ _
-    have hη_δ : 4 * (q' : ℝ) * η ≤ δ ^ 3 := by
-      have hle : η ≤ δ ^ 3 / (4 * (q' : ℝ)) := by
-        simp [η, pairApproximationTolerance_def, δ, q', add_assoc]
-      exact (le_div_iff₀' (by positivity : (0 : ℝ) < 4 * q')).1 hle
-    have hdiag (A : Finset V) (hA : A ∈ P.parts) : 1 < δ * #A := by
-      obtain ⟨u, hu⟩ := P.nonempty_of_mem_parts hA
-      have hQu : Q.part u ∈ Q.parts := Q.part_mem.2 (mem_univ u)
-      have hQuA : Q.part u ⊆ A := P.part_eq_of_mem hA hu ▸ part_mono hQP u
-      have hcardA : (#(Q.part u) : ℝ) ≤ #A := Nat.cast_le.2 (card_le_card hQuA)
-      have h3 := hQsize (Q.part u) hQu
-      have hη_le_δ : η ≤ δ := by
-        have hδ3 : δ ^ 3 ≤ δ := by nlinarith [sq_nonneg δ]
-        have hq'1 : (1 : ℝ) ≤ q' := by exact_mod_cast le_max_right q 1
-        nlinarith
-      have hη2 : η ^ 2 ≤ δ := by nlinarith
-      nlinarith [Nat.cast_nonneg (α := ℝ) q]
-    have hoff_lt {A B : Finset V} (hA : A ∈ P.parts) (hB : B ∈ P.parts)
-        (hlt : eP ⟨A, hA⟩ < eP ⟨B, hB⟩) : T_off.IsRegularPair δ A B := by
-      have hAB : A ≠ B := fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
-      refine isRegularPair_of_fine_discrepancy (τ := 2 * (q' : ℝ) * η) hQP hA hB hAB
-        (target A B) hδ0 (by linarith) (by linarith)
-        fun A' hA' hA'A B' hB' hB'B s' hs' t' ht' d ↦ ?_
-      have hf : {x ∈ s' ×ˢ t' | T_off.colorOfPair x.1 x.2 = some d} =
-          {x ∈ s' ×ˢ t' | (blockSys A B A' B').colorOfPair x.1 x.2 = some d} :=
-        filter_congr fun x hx ↦ by
-          rw [colorOfPair_assembleOffDiag hA hB hlt hA' hB' hA'A hB'B
-            (product_subset_product hs' ht' hx)]
-      rw [hf]
-      exact (hblock_spec hA hB hAB hA' hB' hA'A hB'B).1 s' hs' t' ht' d
-    have hoff (A : Finset V) (hA : A ∈ P.parts) (B : Finset V) (hB : B ∈ P.parts)
-        (hAB : A ≠ B) : T_off.IsRegularPair δ A B := by
-      have hne : eP ⟨A, hA⟩ ≠ eP ⟨B, hB⟩ :=
-        fun h ↦ hAB (Subtype.ext_iff.1 (eP.injective h))
-      rcases lt_or_gt_of_ne hne with hlt | hgt
-      · exact hoff_lt hA hB hlt
-      · exact (hoff_lt hB hA hgt).symm
-    exact (T_off.isPairColorRegular_fillDiagonal P hdiag hoff).mono (min_le_right _ _)
+    rw [PairSkeleton3.lowerSkeletonRegular_iff, Fintype.card_option, ← add_assoc]
+    exact (T_off.isPairColorRegular_fillDiagonal P hdiag fun A hA B hB hAB ↦
+      (hoff A hA B hB hAB).1).mono (min_le_right _ _)
+  have hdens (A : Finset V) (hA : A ∈ P.parts) (B : Finset V) (hB : B ∈ P.parts)
+      (hAB : A ≠ B) (c : κ) :
+      |(pairColorDensity T (some c) A B : ℝ) - pairColorDensity S c A B| ≤
+        F (#P.parts + q + 1) / 2 := by
+    dsimp only [T]
+    rw [T_off.pairColorDensity_fillDiagonal_of_ne P hA hB hAB Subset.rfl Subset.rfl (some c),
+      Option.elim_some]
+    exact ((hoff A hA B hB hAB).2 c).trans
+      (div_le_div_of_nonneg_right (min_le_right _ _) (by norm_num))
+  have hnone (A : Finset V) (hA : A ∈ P.parts) (B : Finset V) (hB : B ∈ P.parts)
+      (hAB : A ≠ B) :
+      pairColorDensity T none A B = 0 := by
+    simpa [T] using T_off.pairColorDensity_fillDiagonal_of_ne P hA hB hAB Subset.rfl Subset.rfl none
   have ha₀_le : 4 / α ≤ #P.parts :=
     (Nat.le_ceil _).trans (Nat.cast_le.2 ((le_max_right 1 ⌈4 / α⌉₊).trans
       ((Nat.le_mul_of_pos_right a₀ hP₀_pos).trans hPparts_ge)))
@@ -863,6 +887,7 @@ theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
     rw [le_div_iff₀' (by positivity : (0 : ℝ) < 4 * ((q' : ℝ) + 1))] at hle
     nlinarith
   refine ⟨P, T, hPP₁.trans hP₁P₀, hP, hPcard, funext (T_off.fillDiagonal_rev P), hlower,
+    hdens, hnone,
     card_edit_fillDiagonal_assembleOffDiag_le S hQP hP hPparts_pos eP blockSys hblock_rev
       hα hη ha₀_le hQirreg hgap hη_α fun A hA B hB hAB A' hA' hA'A B' hB' hB'B hreg ↦
         (hblock_spec hA hB hAB hA' hB' hA'A hB'B).2 hreg⟩
@@ -870,4 +895,97 @@ theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
 end Assembly
 
 end PairColorSystem
+
+namespace PairSkeleton3
+
+/-- **Strong regular approximation of a lower skeleton at a scheduled tolerance.**
+Given `S : PairSkeleton3 κ V` whose vertex partition is an equipartition, a minimum cell count
+`t₀`, a pair-edit budget `α > 0`, and a positive schedule `F : ℕ → ℝ`, once
+`pairApproximationBound (card κ) α F (max 1 t₀ * #S.vertexPart.parts) ≤ |V|` there exist a lower
+skeleton `T : PairSkeleton3 (Fin (card κ + 1)) V` and a palette embedding
+`g : κ ↪ Fin (card κ + 1)` such that:
+
+* `T.vertexPart ≤ S.vertexPart`, `T.vertexPart.IsEquipartition`, and
+  `t₀ ≤ #T.vertexPart.parts ≤`
+  `pairApproximationPartsBound (card κ) α F (max 1 t₀ * #S.vertexPart.parts)`;
+* `T.LowerSkeletonRegular F`;
+* `g` intertwines palette reversals (`T.pairColors.rev (g c) = g (S.pairColors.rev c)`);
+* on every off-diagonal cell pair `(A, B)`, each embedded color `g c` keeps its density within
+  `F (#T.vertexPart.parts + card κ + 1) / 2` of `pairColorDensity S.pairColors c A B`, while the
+  fresh color outside `Set.range g` has density zero; and
+* `T.pairColors.color p ≠ g (S.pairColors.color p)` on at most `α |V|²` ordered distinct
+  pairs `p`. -/
+theorem exists_refining_lowerSkeletonRegular {κ V : Type*} [Fintype V] [DecidableEq V]
+    [Fintype κ] (S : PairSkeleton3 κ V) (hS : S.vertexPart.IsEquipartition) (t₀ : ℕ)
+    {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
+    (hV : pairApproximationBound (Fintype.card κ) α F (max 1 t₀ * #S.vertexPart.parts) ≤
+      Fintype.card V) :
+    ∃ (T : PairSkeleton3 (Fin (Fintype.card κ + 1)) V) (g : κ ↪ Fin (Fintype.card κ + 1)),
+      T.vertexPart ≤ S.vertexPart ∧ T.vertexPart.IsEquipartition ∧
+      t₀ ≤ #T.vertexPart.parts ∧
+      #T.vertexPart.parts ≤
+        pairApproximationPartsBound (Fintype.card κ) α F (max 1 t₀ * #S.vertexPart.parts) ∧
+      T.LowerSkeletonRegular F ∧
+      (∀ c, T.pairColors.rev (g c) = g (S.pairColors.rev c)) ∧
+      (∀ A ∈ T.vertexPart.parts, ∀ B ∈ T.vertexPart.parts, A ≠ B →
+        ∀ c : κ, |(pairColorDensity T.pairColors (g c) A B : ℝ) -
+          pairColorDensity S.pairColors c A B| ≤
+            F (#T.vertexPart.parts + Fintype.card κ + 1) / 2) ∧
+      (∀ A ∈ T.vertexPart.parts, ∀ B ∈ T.vertexPart.parts, A ≠ B →
+        ∀ c' ∉ Set.range g, pairColorDensity T.pairColors c' A B = 0) ∧
+      (#{p : {p : V × V // p.1 ≠ p.2} |
+          T.pairColors.color p ≠ g (S.pairColors.color p)} : ℝ) ≤
+        α * (Fintype.card V : ℝ) ^ 2 := by
+  classical
+  set m : ℕ := max 1 t₀
+  have hm : m ≠ 0 := by positivity
+  have hVpos : 0 < Fintype.card V := lt_of_lt_of_le (by
+    rw [pairApproximationBound_def]
+    exact Nat.mul_pos (lt_of_lt_of_le Nat.zero_lt_one (le_max_left _ _)) (Nat.succ_pos _)) hV
+  have : Nonempty V := Fintype.card_pos_iff.1 hVpos
+  have hSparts_pos : 0 < #S.vertexPart.parts :=
+    (S.vertexPart.parts_nonempty univ_nonempty.ne_empty).card_pos
+  have hmS : m * #S.vertexPart.parts ≤ #(univ : Finset V) := by
+    rw [card_univ]
+    exact (le_pairApproximationPartsBound (Fintype.card κ) hα hF _).trans
+      ((pairApproximationPartsBound_le_pairApproximationBound (Fintype.card κ) hα hF _).trans hV)
+  obtain ⟨P₀, hP₀, hP₀card, hP₀S, -⟩ :=
+    hS.exists_refining_equipartition_card_eq_mul S.vertexPart le_rfl hm hmS
+  obtain ⟨P, T₀, hPP₀, hP, hPcard, hrev, hlower, hdens, hnone, hedit⟩ :=
+    S.pairColors.exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le
+      P₀ hP₀ hα hF (hP₀card.symm ▸ hV)
+  let e : Option κ ≃ Fin (Fintype.card κ + 1) :=
+    (Fintype.equivFin (Option κ)).trans (finCongr Fintype.card_option)
+  let T : PairSkeleton3 (Fin (Fintype.card κ + 1)) V :=
+    (⟨P, T₀⟩ : PairSkeleton3 (Option κ) V).relabel e
+  let g : κ ↪ Fin (Fintype.card κ + 1) :=
+    ⟨fun c ↦ e (some c), fun _ _ h ↦ Option.some.inj (e.injective h)⟩
+  have hg (c : κ) : g c = e (some c) := rfl
+  have hT_part : T.vertexPart = P := relabel_vertexPart e
+  have ht₀ : t₀ ≤ #P.parts :=
+    (le_max_right 1 t₀).trans
+      ((Nat.le_mul_of_pos_right m hSparts_pos).trans (hP₀card ▸ card_mono hPP₀))
+  refine ⟨T, g, hT_part.symm ▸ hPP₀.trans hP₀S, hT_part.symm ▸ hP, hT_part.symm ▸ ht₀,
+    hT_part.symm ▸ hP₀card ▸ hPcard,
+    (lowerSkeletonRegular_relabel_iff e).2 hlower, fun c ↦ by simp [T, hg, hrev],
+    fun A hA B hB hAB c ↦ by
+      rw [hT_part] at hA hB ⊢
+      simpa [T, hg] using hdens A hA B hB hAB c,
+    fun A hA B hB hAB c' hc' ↦ ?_, ?_⟩
+  · rw [hT_part] at hA hB
+    rw [relabel_pairColors, pairColorDensity_relabel]
+    cases h : e.symm c' with
+    | none => exact hnone A hA B hB hAB
+    | some c => exact absurd ⟨c, by simp [hg, ← h]⟩ hc'
+  · have hcard : #{p : {p : V × V // p.1 ≠ p.2} |
+          T.pairColors.color p ≠ g (S.pairColors.color p)} =
+        #{p : {p : V × V // p.1 ≠ p.2} |
+          T₀.color p ≠ some (S.pairColors.color p)} :=
+      congrArg card <| Finset.ext fun p ↦ by
+        simp only [mem_filter, mem_univ, true_and, T, hg, relabel_pairColors,
+          PairColorSystem.relabel_color, ne_eq, e.injective.eq_iff]
+    rwa [hcard]
+
+end PairSkeleton3
+
 end TauCeti
