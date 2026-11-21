@@ -47,9 +47,20 @@ namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- Pullback along the associator `((b, x), y) ↦ (b, x, y)` is a bijection of holomorphic
+stalks. It identifies local rings in the coordinates of `OffNodeChart` with those in the
+coordinates of `Node.NormalForm`. -/
+theorem stalkPrecomp_assoc_bijective (p : (E × ℂ) × ℂ) :
+    Function.Bijective (stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)
+      (fun z ↦ (z.1.1, z.1.2, z.2)) (contMDiff_iff_contDiff.mpr (by fun_prop)) p) := by
+  rw [← stalkPullback_eq_stalkPrecomp]
+  exact stalkPullback_bijective _ (g := fun q : E × ℂ × ℂ ↦ ((q.1, q.2.1), q.2.2))
+    (.of_forall fun _ ↦ (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt)
+    (.of_forall fun _ ↦ rfl) (.of_forall fun _ ↦ rfl)
+
 /-- The associator `((b, x), y) ↦ (b, x, y)` carries the local equation of `N_s` in the
 coordinates of `OffNodeChart` to the node equation in the coordinates of `Node.NormalForm`. -/
-private theorem stalkPrecomp_assoc_smoothingEquation (b : E)
+theorem stalkPrecomp_assoc_smoothingEquation (b : E)
     (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b) :
     stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) (fun z ↦ (z.1.1, z.1.2, z.2))
         (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, 0), 0)
@@ -81,14 +92,9 @@ private theorem flat_quotientMk_comp_stalkPrecomp_smoothingEquation_node (b : E)
     ((Ideal.Quotient.mk (Ideal.span {smoothingEquation (b, 0, 0) s})).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) Prod.fst
         (contMDiff_iff_contDiff.mpr contDiff_fst) (b, 0, 0))).Flat := by
-  have hP : Function.Bijective (stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)
-      (fun z ↦ (z.1.1, z.1.2, z.2)) (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, 0), 0)) := by
-    rw [← stalkPullback_eq_stalkPrecomp]
-    exact stalkPullback_bijective _ (g := fun q : E × ℂ × ℂ ↦ ((q.1, q.2.1), q.2.2))
-      (.of_forall fun _ ↦ (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt)
-      (.of_forall fun _ ↦ rfl) (.of_forall fun _ ↦ rfl)
   let Q := Ideal.quotientEquiv (Ideal.span {smoothingEquation (b, 0, 0) s})
-    (Ideal.span {nodeEquation b 0 0 s}) (RingEquiv.ofBijective _ hP) (by
+    (Ideal.span {nodeEquation b 0 0 s})
+    (RingEquiv.ofBijective _ (stalkPrecomp_assoc_bijective ((b, 0), 0))) (by
       rw [Ideal.map_span, Set.image_singleton]
       exact congrArg (Ideal.span {·}) (stalkPrecomp_assoc_smoothingEquation b s).symm)
   have key : Q.toRingHom.comp ((Ideal.Quotient.mk _).comp
