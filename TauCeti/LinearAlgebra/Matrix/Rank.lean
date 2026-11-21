@@ -44,9 +44,10 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.ker_mulVecLin_transpose_mul_diagonal_mul` and
   `Matrix.rank_transpose_mul_diagonal_mul`: positive diagonal weights preserve the kernel and
-  rank of a Gram matrix over a linearly ordered field.
-* `Matrix.isCompl_ker_transpose_mul_diagonal_range_of_rat`: the weighted transpose kernel and
-  column range of a rational matrix remain complementary over any characteristic-zero field.
+  rank of a Gram matrix over a linearly ordered ring and field, respectively.
+* `Matrix.isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map`: the weighted transpose kernel
+  and column range of a matrix over a linearly ordered field remain complementary after mapping
+  its entries to any field.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
 * `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
@@ -267,9 +268,9 @@ end KernelDimension
 section WeightedGram
 
 /-- A Gram matrix with strictly positive diagonal weights has the same kernel as the original
-matrix over a linearly ordered field. This extends the sum-of-squares argument for
-`Matrix.ker_mulVecLin_transpose_mul_self` to weighted inner products. -/
-theorem ker_mulVecLin_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [LinearOrder R]
+matrix over a linearly ordered commutative ring. This is the weighted analogue of
+`Matrix.ker_mulVecLin_transpose_mul_self`. -/
+theorem ker_mulVecLin_transpose_mul_diagonal_mul {R m n : Type*} [CommRing R] [LinearOrder R]
     [IsStrictOrderedRing R] [Fintype m] [Fintype n] [DecidableEq m]
     (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
     LinearMap.ker (Aᵀ * diagonal w * A).mulVecLin = LinearMap.ker A.mulVecLin := by
@@ -288,7 +289,8 @@ theorem ker_mulVecLin_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [Line
     rw [h, mulVec_zero, mulVec_zero]
 
 /-- A Gram matrix with strictly positive diagonal weights has the same rank as the original
-matrix over a linearly ordered field. -/
+matrix over a linearly ordered field. This is the weighted analogue of
+`Matrix.rank_transpose_mul_self`. -/
 theorem rank_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] [Fintype m] [Finite n] [DecidableEq m]
     (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
@@ -300,17 +302,16 @@ theorem rank_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [LinearOrder R
   rw [finrank_range_mulVecLin] at h h'
   omega
 
-/-- For a rational matrix and positive rational diagonal weights, the kernel of its weighted
-transpose complements its column range after extension to any characteristic-zero field.
-Positivity is used over `ℚ`; invariance of rank under scalar extension supplies the result over
-the target field, which need not be ordered. -/
-theorem isCompl_ker_transpose_mul_diagonal_range_of_rat {m n : Type*} [Fintype m] [Fintype n]
-    [DecidableEq m] (K : Type*) [Field K] [CharZero K] (A : Matrix m n ℚ) (w : m → ℚ)
-    (hw : ∀ i, 0 < w i) :
-    IsCompl (LinearMap.ker ((Aᵀ * diagonal w).map (Rat.castHom K)).mulVecLin)
-      (LinearMap.range (A.map (Rat.castHom K)).mulVecLin) := by
-  set D := A.map (Rat.castHom K)
-  set B := (Aᵀ * diagonal w).map (Rat.castHom K)
+/-- After mapping a matrix and its positively weighted transpose from a linearly ordered field
+to any field, the kernel of the weighted transpose complements the column range of the matrix.
+The target field can be unordered. -/
+theorem isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map {R K m n : Type*} [Field R]
+    [LinearOrder R] [IsStrictOrderedRing R] [Field K] [Fintype m] [Fintype n] [DecidableEq m]
+    (A : Matrix m n R) (φ : R →+* K) (w : m → R) (hw : ∀ i, 0 < w i) :
+    IsCompl (LinearMap.ker ((Aᵀ * diagonal w).map φ).mulVecLin)
+      (LinearMap.range (A.map φ).mulVecLin) := by
+  set D := A.map φ
+  set B := (Aᵀ * diagonal w).map φ
   have hrank : (B * D).rank = D.rank := by
     dsimp only [B, D]
     rw [← Matrix.map_mul, Matrix.rank_map, Matrix.rank_map]

@@ -13,8 +13,9 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 # Weighted harmonic and exact cochains of multigraphs
 
 For positive rational edge lengths the harmonic and exact subspaces of a finite multigraph are
-complementary over every characteristic-zero field. The harmonic projection commutes with
-coefficient extension and with sign changes on reversed edges.
+complementary over every characteristic-zero field. The harmonic projection selects the unique
+harmonic representative modulo exact cochains. It commutes with coefficient extension and with
+sign changes on reversed edges.
 
 ## Main results
 
@@ -22,9 +23,7 @@ coefficient extension and with sign changes on reversed edges.
 - `Graph.harmonicProjectionOnto` is the linear projection onto the harmonic subspace.
 
 This is the rational-length version of Besser, *p-adic heights and Vologodsky integration*,
-arXiv:1711.06957, Definitions 4.1–4.3 and Theorem 4.4. The weighted rank calculation follows
-the sum-of-squares argument for `Matrix.rank_transpose_mul_self`, and `Matrix.rank_map`
-transports that calculation from the rationals.
+arXiv:1711.06957, Definitions 4.1–4.3 and Theorem 4.4.
 -/
 
 public section
@@ -61,8 +60,8 @@ theorem isCompl_harmonic_exact (K : Type w) [Field K] [CharZero K]
   let := Fintype.ofFinite G.vertexSet
   rw [harmonicCochains, exactCochains_eq_range, edgeDivergence_eq_matrix,
     edgeDifferentialLinear_eq_matrix]
-  exact Matrix.isCompl_ker_transpose_mul_diagonal_range_of_rat K (endpointMatrix tail head) _
-    (fun e ↦ inv_pos.2 (hpos e))
+  exact (endpointMatrix tail head).isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map
+    (Rat.castHom K) _ (fun e ↦ inv_pos.2 (hpos e))
 
 /-- Every cochain of a finite oriented multigraph with positive rational edge lengths and
 coefficients in a characteristic-zero field has a unique harmonic/exact pair.
