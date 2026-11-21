@@ -16,6 +16,7 @@ import TauCeti.RingTheory.Ideal.TensorProduct
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Spectrum.Prime.Point
 import TauCeti.RingTheory.Syntomic.Fiber
+import TauCeti.RingTheory.Syntomic.KrullDimension
 import TauCeti.RingTheory.Syntomic.LocalCriterion
 
 /-!

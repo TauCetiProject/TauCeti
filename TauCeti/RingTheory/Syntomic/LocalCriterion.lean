@@ -14,10 +14,11 @@ import TauCeti.RingTheory.KrullDimension.Localization
 /-!
 # A local presentation criterion for standard syntomic algebras over a field
 
-Let `P` present a `k`-algebra `A` as `k[x₁, …, x_m] ⧸ I`, and let `q` be a prime of `A`. If the
-fibre of `I` at some field-valued point killing `q` has dimension at most `m - n`, and all primes
-of `A` near `q` have height at most `n`, then `q` has a standard syntomic neighbourhood `A[1/g]`
-of relative dimension `n` over `k`
+Let `P` present a `k`-algebra `A` as `P.Ring = k[x₁, …, x_m]` modulo `I = P.ker`, and let `q` be
+a prime of `A`. Suppose that some field-valued point `P.Ring → F` kills the inverse image of `q`
+and satisfies `dim_F (F ⊗[P.Ring] P.ker) + n ≤ m`, and that all primes of `A` near `q` have
+height at most `n`. Then `q` has a standard syntomic neighbourhood `A[1/g]` of relative dimension
+`n` over `k`
 (`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le`).
 By Nakayama's lemma the kernel `I` needs at most `m - n` generators after inverting one element,
 and Krull's height theorem forces the localization to have the expected dimension.
@@ -65,11 +66,8 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
     intro x hx
     rw [hker] at hx
     have := Submodule.mem_map_of_mem (f := P.ker.subtype) (hrs ⟨x, hx⟩)
-    rw [Submodule.map_span] at this
-    have hrange : (Set.range fun l : s ↦ (l : P.ker).val) = P.ker.subtype '' s := by
-      ext
-      simp
-    rw [mul_right_comm, hrange]
+    rw [Submodule.map_span, Set.image_eq_range] at this
+    rw [mul_right_comm]
     exact Ideal.mul_mem_right _ _ this
   obtain ⟨PB⟩ := _root_.Algebra.Presentation.nonempty_presentation_localizationAway
     P.aeval_val_surjective hk hg
@@ -86,8 +84,8 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
     IsLocalization.isPrime_of_isPrime_disjoint _ _ q inferInstance hdisj
   have : Nontrivial (Localization.Away (ϕ (r * b))) := PrimeSpectrum.nontrivial ⟨_, hqB⟩
   refine PB.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le ?_
-    (ringKrullDim_localization_le_of_height_le (.powers (ϕ (r * b))) fun p hp hdisj ↦
-      hdim p hp fun hbp ↦
+    ((ringKrullDim_localization_le_iff_height_le (.powers (ϕ (r * b))) _).mpr fun p hp hdisj ↦
+      WithBot.coe_le_coe.mpr <| hdim p hp fun hbp ↦
         ((Ideal.disjoint_powers_iff_notMem _ hp.isRadical).mp hdisj)
           (map_mul ϕ r b ▸ p.mul_mem_left _ hbp))
   have := Fintype.ofFinite ι

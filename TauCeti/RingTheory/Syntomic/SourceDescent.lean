@@ -10,6 +10,7 @@ import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Extension.Cotangent.Rank
 import TauCeti.RingTheory.Extension.Cotangent.StandardEtale
 import TauCeti.RingTheory.KrullDimension.GoingDown
+import TauCeti.RingTheory.Syntomic.KrullDimension
 import TauCeti.RingTheory.Syntomic.LocalCriterion
 
 /-!
@@ -34,7 +35,7 @@ of `I` (`Algebra.Generators.finrank_tensor_cotangent_comp_of_isStandardEtale`), 
 the standard syntomic presentation of `B` bounds the fibre of `I` at `Q` by `m - n`. The image of
 `Spec B → Spec A` is an open neighbourhood of `Q ∩ A`, and on it heights are at most
 `dim B ≤ n`, since flat maps satisfy going down
-(`TauCeti.exists_notMem_forall_height_le_of_hasGoingDown_of_ringKrullDim_le`).
+(`TauCeti.exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown`).
 The presentation criterion
 `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le`
 then gives the standard syntomic neighbourhood.
@@ -81,8 +82,9 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandar
   have : IsScalarTower A B F := .of_algebraMap_eq' rfl
   have : IsScalarTower P.Ring A F := .of_algebraMap_eq' rfl
   have hF (r : P.Ring) (hr : algebraMap P.Ring A r ∈ Q.comap (algebraMap A B)) :
-      algebraMap P.Ring F r = 0 :=
-    Ideal.algebraMap_residueField_eq_zero.mpr hr
+      algebraMap P.Ring F r = 0 := by
+    rw [IsScalarTower.algebraMap_apply P.Ring A F, IsScalarTower.algebraMap_apply A B F]
+    exact Ideal.algebraMap_residueField_eq_zero.mpr (Ideal.mem_comap.mp hr)
   -- Compare the presentation of `B` through the standard étale coordinates with a standard
   -- syntomic presentation of `B`: the kernel of `P` needs at most `#ι - n` generators near `Q`.
   have hfin : Module.finrank F (F ⊗[P.Ring] P.ker) + n ≤
@@ -97,12 +99,13 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandar
       Pe.toSubmersivePresentation F, P.toGenerators.finrank_tensor_cotangent F] at h1
     simp only [Nat.card_eq_fintype_card, Fintype.card_sum, Fintype.card_fin, hP'] at h1 ⊢
     omega
-  obtain ⟨a, ha, hdim⟩ := exists_notMem_forall_height_le_of_hasGoingDown_of_ringKrullDim_le
-    (A := A) (ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension (RingHom.locally_of
+  have hdimB : ringKrullDim B ≤ n :=
+    ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension (RingHom.locally_of
       (isStandardSyntomicOfRelativeDimension_respectsIso n) (algebraMap k B)
-      (isStandardSyntomicOfRelativeDimension_algebraMap.mpr inferInstance))) Q
+      (isStandardSyntomicOfRelativeDimension_algebraMap.mpr inferInstance))
+  obtain ⟨a, ha, hdim⟩ := exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown (A := A) Q
   exact exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le
-    P.toGenerators _ F hF hfin ha hdim
+    P.toGenerators _ F hF hfin ha fun p hp hap ↦ WithBot.coe_le_coe.mp ((hdim p hp hap).trans hdimB)
 
 /-- **Local complete intersections descend along étale maps.** Let `A` be a finite type algebra
 over a field `k`, and `B` an étale `A`-algebra which is locally standard syntomic of relative
@@ -140,8 +143,7 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
       IsLocalization.under_map_of_isPrime_disjoint (.powers t₁) B₁ inferInstance
         ((Ideal.disjoint_powers_iff_notMem _ ‹Q.IsPrime›.isRadical).mpr ht₁)
     rw [← Ideal.under_under (B := B₁), e₂, ← Ideal.under_under (B := B), e₁]
-  change ∃ g ∉ Q.under A, _
-  rw [← hQ]
+  rw [← Ideal.under_def, ← hQ]
   exact exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandardEtale Q₂
 
 /-- **Local complete intersections descend along étale covers.** Let `A` be a finite type algebra

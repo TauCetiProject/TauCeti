@@ -29,7 +29,7 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   this only in the specialised form `WeierstrassCurve.Affine.CoordinateRing.map_mk`. Marked
   `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
-* `AdjoinRoot.ker_map_of_surjective`: for surjective `f`, the kernel of
+* `AdjoinRoot.ker_map_map_of_surjective`: for surjective `f`, the kernel of
   `AdjoinRoot p → AdjoinRoot (p.map f)` is the extension of the kernel of `f`, so that
   `AdjoinRoot (p.map f)` is the reduction of `AdjoinRoot p` modulo `ker f`.
 * `AdjoinRoot.algHomOfDvd_mk`: for `g ∣ f`, the reduction `AdjoinRoot f →ₐ[R] AdjoinRoot g` sends
@@ -130,8 +130,14 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
 
 /-- Along a surjective base homomorphism `f`, the kernel of `AdjoinRoot p → AdjoinRoot (p.map f)`
 is the extension of the kernel of `f`. -/
-lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[X]) :
+lemma ker_map_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[X]) :
     RingHom.ker (map f p (p.map f) dvd_rfl) = (RingHom.ker f).map (of p) := by
+  have hkerR : RingHom.ker (mk p) = Ideal.span {p} := by
+    ext x
+    rw [RingHom.mem_ker, mk_eq_zero, Ideal.mem_span_singleton]
+  have hkerS : RingHom.ker (mk (p.map f)) = Ideal.span {p.map f} := by
+    ext x
+    rw [RingHom.mem_ker, mk_eq_zero, Ideal.mem_span_singleton]
   have hcomp : (map f p (p.map f) dvd_rfl).comp (mk p) =
       (mk (p.map f)).comp (Polynomial.mapRingHom f) := by
     apply RingHom.ext
@@ -141,16 +147,13 @@ lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[
       Ideal.span {p.map f} := by simp [Ideal.map_span]
   have hcomap : (RingHom.ker (map f p (p.map f) dvd_rfl)).comap (mk p) =
       Ideal.span {p} ⊔ RingHom.ker (Polynomial.mapRingHom f) := by
-    rw [RingHom.comap_ker, hcomp, ← RingHom.comap_ker]
-    rw [show RingHom.ker (mk (p.map f)) = Ideal.span {p.map f} from Ideal.mk_ker]
-    rw [← hspan, Ideal.comap_map_of_surjective _ (Polynomial.map_surjective f hf)]
-    rfl
+    rw [RingHom.comap_ker, hcomp, ← RingHom.comap_ker, hkerS, ← hspan,
+      Ideal.comap_map_of_surjective _ (Polynomial.map_surjective f hf), RingHom.ker_eq_comap_bot]
   rw [← Ideal.map_comap_of_surjective (mk p) mk_surjective
     (RingHom.ker (map f p (p.map f) dvd_rfl)), hcomap, Ideal.map_sup]
-  have hzero : (Ideal.span ({p} : Set R[X])).map (mk p) = ⊥ := by
-    exact (Ideal.map_eq_bot_iff_le_ker (mk p)).mpr Ideal.mk_ker.ge
-  rw [hzero, bot_sup_eq, Polynomial.ker_mapRingHom, Ideal.map_map]
-  rfl
+  have hzero : (Ideal.span ({p} : Set R[X])).map (mk p) = ⊥ :=
+    (Ideal.map_eq_bot_iff_le_ker (mk p)).mpr hkerR.ge
+  rw [hzero, bot_sup_eq, Polynomial.ker_mapRingHom, Ideal.map_map, of]
 
 /-- The reduction map `AdjoinRoot.algHomOfDvd` to the quotient by a divisor `g ∣ f` sends the class
 of `p` modulo `f` to its class modulo `g`. -/

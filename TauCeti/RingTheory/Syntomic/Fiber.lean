@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.RingHom.StandardSyntomic
 import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.RingTheory.Extension.Presentation.Fiber
 import TauCeti.RingTheory.KrullDimension.Presentation
+import TauCeti.RingTheory.Syntomic.KrullDimension
 
 /-!
 # The fibrewise criterion for syntomic ring maps
@@ -29,7 +30,7 @@ localization have Krull dimension at least `n` by Krull's height theorem applied
 changed presentation, and at most `n` because they are again locally standard syntomic of
 relative dimension `n` over a field
 (`TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`, in
-`TauCeti.RingTheory.RingHom.StandardSyntomic`).
+`TauCeti.RingTheory.Syntomic.KrullDimension`).
 
 ## Main results
 

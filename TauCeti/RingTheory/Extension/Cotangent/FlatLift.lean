@@ -102,11 +102,10 @@ theorem Hom.liftBaseChange_injective_of_bijective_liftBaseChange_mapKer_of_comp_
     (g : P'.Hom E) (hgf : g.comp h = f) :
     Function.Injective ((Cotangent.map h).liftBaseChange B) := by
   -- Composing with the map induced by `g` gives Mathlib's isomorphism `tensorCotangent`.
-  intro x y hxy
-  apply (tensorCotangent f halg H).injective
-  rw [tensorCotangent_apply, tensorCotangent_apply, ← hgf, Cotangent.map_comp,
-    ← LinearMap.comp_liftBaseChange]
-  simp only [LinearMap.comp_apply, hxy]
+  refine Function.Injective.of_comp (f := Cotangent.map g) ?_
+  rw [← LinearMap.coe_comp, LinearMap.comp_liftBaseChange, ← Cotangent.map_comp, hgf]
+  exact fun x y hxy ↦ (tensorCotangent f halg H).injective <| by
+    rwa [tensorCotangent_apply, tensorCotangent_apply]
 
 end Algebra.Extension
 

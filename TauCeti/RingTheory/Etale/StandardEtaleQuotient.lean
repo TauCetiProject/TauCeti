@@ -93,14 +93,12 @@ theorem exists_flat_lift {S : Type u} {A B : Type*} [CommRing S] [CommRing A] [C
   have : Module.Free S (AdjoinRoot f) := hf.free_adjoinRoot
   have : Module.Flat S C := .trans S (AdjoinRoot f) C
   let ρ := AdjoinRoot.map π f (f.map π) dvd_rfl
-  have hT : (Submonoid.powers (AdjoinRoot.mk f g)).map ρ =
-      Submonoid.powers (AdjoinRoot.mk (f.map π) (g.map π)) := by
-    rw [Submonoid.map_powers, AdjoinRoot.map_mk]
-  have : IsLocalization ((Submonoid.powers (AdjoinRoot.mk f g)).map ρ)
+  have : IsLocalization.Away (ρ (AdjoinRoot.mk f g))
       (Localization.Away (AdjoinRoot.mk (f.map π) (g.map π))) := by
-    rw [hT]; infer_instance
+    rw [AdjoinRoot.map_mk]
+    infer_instance
   let φ₀ : C →+* Localization.Away (AdjoinRoot.mk (f.map π) (g.map π)) :=
-    IsLocalization.map _ ρ (hT.symm ▸ Submonoid.le_comap_map _)
+    IsLocalization.Away.map _ _ ρ (AdjoinRoot.mk f g)
   refine ⟨C, inferInstance, inferInstance, inferInstance, e.symm.toRingHom.comp φ₀,
     e.symm.surjective.comp (IsLocalization.map_surjective_of_surjective _ _ _
       (AdjoinRoot.map_surjective hS _)), fun s ↦ ?_, ?_⟩
@@ -108,13 +106,15 @@ theorem exists_flat_lift {S : Type u} {A B : Type*} [CommRing S] [CommRing A] [C
         algebraMap A (Localization.Away (AdjoinRoot.mk (f.map π) (g.map π))) (π s) := by
       rw [IsScalarTower.algebraMap_apply S (AdjoinRoot f) C,
         IsScalarTower.algebraMap_apply A (AdjoinRoot (f.map π))]
-      simp [φ₀, IsLocalization.map_eq, AdjoinRoot.algebraMap_eq, ρ]
+      simp [φ₀, IsLocalization.Away.map, IsLocalization.map_eq, AdjoinRoot.algebraMap_eq, ρ]
     calc
       (e.symm.toRingHom.comp φ₀) (algebraMap S C s) =
           e.symm (algebraMap A _ (π s)) := by simp [hφ₀]
       _ = algebraMap A B (algebraMap S A s) := e.symm.commutes _
-  · rw [RingHom.ker_comp_of_injective _ e.symm.injective, IsLocalization.ker_map _ _ hT,
-      AdjoinRoot.ker_map_of_surjective hS, Ideal.map_map, ← AdjoinRoot.algebraMap_eq,
+  · have hker : RingHom.ker φ₀ = (RingHom.ker ρ).map (algebraMap (AdjoinRoot f) C) :=
+      IsLocalization.ker_map _ _ (Submonoid.map_powers ρ (AdjoinRoot.mk f g))
+    rw [RingHom.ker_comp_of_injective _ e.symm.injective, hker,
+      AdjoinRoot.ker_map_map_of_surjective hS, Ideal.map_map, ← AdjoinRoot.algebraMap_eq,
       ← IsScalarTower.algebraMap_eq]
 
 end Algebra.IsStandardEtale
