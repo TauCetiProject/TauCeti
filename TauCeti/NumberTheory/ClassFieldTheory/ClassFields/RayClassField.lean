@@ -668,8 +668,7 @@ theorem rayClassFieldOver_le_rayClassFieldOver_iff {𝔫 : Modulus L} :
   have := TauCeti.isSepClosure_tower_top K L (SeparableClosure K)
   let e := IsSepClosure.equiv L (SeparableClosure K) (SeparableClosure L)
   rw [rayClassFieldOver_eq_map K 𝔪 e, restrictScalars_le_rayClassFieldOver_iff K 𝔫 _ e,
-    show ((rayClassField 𝔪).map e.symm.toAlgHom).map e.toAlgHom = rayClassField 𝔪 from
-      IntermediateField.map_map_symm e.symm _,
+    IntermediateField.map_map, e.comp_symm, IntermediateField.map_id,
     rayClassField_le_rayClassField_iff]
 
 variable {K 𝔪} in
