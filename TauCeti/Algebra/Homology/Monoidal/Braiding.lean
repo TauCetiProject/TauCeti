@@ -34,15 +34,13 @@ structures.
 
 ## Main definitions
 
-* `TauCeti.koszulBraidingSummand`: the bidegree component of the braiding.
-* `TauCeti.koszulBraidingHom`: the braiding `X ⊗ Y ⟶ Y ⊗ X` of cochain complexes, the forward
-  map of `HomologicalComplex.tensorBraiding`.
 * `TauCeti.koszulBraidedCategory` and `TauCeti.koszulSymmetricCategory`: the `BraidedCategory`
-  and `SymmetricCategory` instances on `CochainComplex C ℤ`.
+  and `SymmetricCategory` instances on `CochainComplex C ℤ`, whose braiding `β_ X Y` is
+  `HomologicalComplex.tensorBraiding X Y` (`TauCeti.braiding_eq_tensorBraiding`).
 
 ## Main results
 
-* `TauCeti.koszulBraidingHom_hexagon_forward` and `TauCeti.koszulBraidingHom_hexagon_reverse`: the
+* `TauCeti.tensorBraiding_hexagon_forward` and `TauCeti.tensorBraiding_hexagon_reverse`: the
   two hexagon identities.
 * `TauCeti.ι_tensorμ`: on a homogeneous summand, the middle-four interchange
   `MonoidalCategory.tensorμ` of cochain complexes is that of `C`, with the Koszul sign of
@@ -60,7 +58,9 @@ and in the tensor product and opposite of differential graded categories.
 
 The braiding `β_ X Y` is `HomologicalComplex.tensorBraiding X Y` for Mathlib's `up ℤ` symmetry
 signs, so its summand formulas, naturality and involutivity come from the generic API of
-`TauCeti/Algebra/Homology/Monoidal/Tensor/Symmetry.lean`. The inverse is identified with the
+`TauCeti/Algebra/Homology/Monoidal/Tensor/Symmetry.lean`: on the summand `X^p ⊗ Y^q` it is given by
+`HomologicalComplex.ιTensorObj_tensorBraiding_hom_f`, whose sign `ComplexShape.σ_up_ℤ` rewrites to
+`(p * q).negOnePow`. The inverse is identified with the
 braiding for the reversed coefficient braiding
 (`HomologicalComplex.tensorBraiding_inv_eq_reverseBraiding`), which turns the first hexagon
 identity into the second.
@@ -98,66 +98,41 @@ section Braided
 
 variable [BraidedCategory C]
 
-/-- The bidegree-`(p, q)` component of the Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`: the braiding of
-`C` on the summand `X.X p ⊗ Y.X q`, carrying the Koszul sign `(-1)^{p * q}`. -/
-noncomputable def koszulBraidingSummand (X Y : CochainComplex C ℤ) (p q j : ℤ)
-    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
-    X.X p ⊗ Y.X q ⟶ (Y ⊗ X).X j :=
-  (p * q).negOnePow • ((β_ (X.X p) (Y.X q)).hom ≫
-    HomologicalComplex.ιMapBifunctor Y X (curriedTensor C)
-      (ComplexShape.up ℤ) q p j (by dsimp at h ⊢; omega))
+section Summand
 
-/-- The bidegree component of the Koszul braiding is the coefficient braiding, followed by
-the inclusion of the swapped summand, and scaled by `(-1)^(p*q)`. -/
-lemma koszulBraidingSummand_def (X Y : CochainComplex C ℤ) (p q j : ℤ)
+omit [HasZeroObject C] [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X Y Z]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X Y Z]
+
+/- The summand formula `HomologicalComplex.ιTensorObj_tensorBraiding_hom_f` for `up ℤ`, with the
+summand inclusions spelled as `HomologicalComplex.ιMapBifunctor` for the coefficient tensor
+bifunctor, as the associator lemmas of `HomologicalComplex.monoidalCategory` produce them. -/
+@[reassoc]
+private lemma ιMapBifunctor_tensorBraiding_hom_f (X Y : CochainComplex C ℤ) (p q j : ℤ)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
-    koszulBraidingSummand C X Y p q j h =
+    HomologicalComplex.ιMapBifunctor X Y (curriedTensor C) (ComplexShape.up ℤ) p q j h ≫
+        (HomologicalComplex.tensorBraiding X Y).hom.f j =
       (p * q).negOnePow • ((β_ (X.X p) (Y.X q)).hom ≫
         HomologicalComplex.ιMapBifunctor Y X (curriedTensor C)
-          (ComplexShape.up ℤ) q p j (by dsimp at h ⊢; omega)) :=
-  (rfl)
+          (ComplexShape.up ℤ) q p j (by dsimp at h ⊢; omega)) := by
+  simpa only [ComplexShape.σ_up_ℤ] using
+    HomologicalComplex.ιTensorObj_tensorBraiding_hom_f X Y p q j h
 
-/-- The Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`: the signed interchange
-`HomologicalComplex.tensorBraiding` of the tensor product, for the Koszul signs of Mathlib's
-`TotalComplexShapeSymmetry (up ℤ) (up ℤ) (up ℤ)`. -/
-noncomputable def koszulBraidingHom (X Y : CochainComplex C ℤ) :
-    X ⊗ Y ⟶ Y ⊗ X :=
-  (HomologicalComplex.tensorBraiding X Y).hom
-
-@[reassoc (attr := simp)]
-lemma ι_koszulBraidingHom (X Y : CochainComplex C ℤ) (p q j : ℤ)
-    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
-    HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
-        (ComplexShape.up ℤ) p q j h ≫ (koszulBraidingHom C X Y).f j =
-      koszulBraidingSummand C X Y p q j h :=
-  HomologicalComplex.ιTensorObj_tensorBraiding_hom_f X Y p q j h
-
-/- Composing a left whiskering into the braiding summand: the braiding of `C` is natural,
+/- Composing a left whiskering into a signed braiding summand: the braiding of `C` is natural,
 so a map into the second factor passes through it and becomes a right whiskering.  Stating this
 with a general `g` avoids rewriting under the two different spellings (`⊗` and
 `HomologicalComplex.mapBifunctor`) of a totalized tensor product. -/
 @[reassoc]
-private lemma whiskerLeft_comp_koszulBraidingSummand (X W : CochainComplex C ℤ)
+private lemma whiskerLeft_comp_braiding_ιMapBifunctor (X W : CochainComplex C ℤ)
     (A : C) (p m j : ℤ) (g : A ⟶ W.X m)
-    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, m) = j) :
-    (X.X p ◁ g) ≫ koszulBraidingSummand C X W p m j h =
-      (p * m).negOnePow • ((β_ (X.X p) A).hom ≫ (g ▷ X.X p) ≫
-        HomologicalComplex.ιMapBifunctor W X (curriedTensor C)
-          (ComplexShape.up ℤ) m p j (by dsimp at h ⊢; omega)) := by
-  rw [koszulBraidingSummand, Linear.comp_units_smul,
-    BraidedCategory.braiding_naturality_right_assoc]
-
-/- The counterpart of `whiskerLeft_comp_koszulBraidingSummand` for a right whiskering. -/
-@[reassoc]
-private lemma whiskerRight_comp_koszulBraidingSummand (W X : CochainComplex C ℤ)
-    (A : C) (m p j : ℤ) (g : A ⟶ W.X m)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (m, p) = j) :
-    (g ▷ X.X p) ≫ koszulBraidingSummand C W X m p j h =
-      (m * p).negOnePow • ((β_ A (X.X p)).hom ≫ (X.X p ◁ g) ≫
-        HomologicalComplex.ιMapBifunctor X W (curriedTensor C)
-          (ComplexShape.up ℤ) p m j (by dsimp at h ⊢; omega)) := by
-  rw [koszulBraidingSummand, Linear.comp_units_smul,
-    BraidedCategory.braiding_naturality_left_assoc]
+    (X.X p ◁ g) ≫ ((p * m).negOnePow • ((β_ (X.X p) (W.X m)).hom ≫
+        HomologicalComplex.ιMapBifunctor W X (curriedTensor C) (ComplexShape.up ℤ) m p j h)) =
+      (p * m).negOnePow • ((β_ (X.X p) A).hom ≫ (g ▷ X.X p) ≫
+        HomologicalComplex.ιMapBifunctor W X (curriedTensor C) (ComplexShape.up ℤ) m p j h) := by
+  rw [Linear.comp_units_smul, BraidedCategory.braiding_naturality_right_assoc]
+
+end Summand
 
 section Hexagon
 
@@ -179,7 +154,7 @@ private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
     HomologicalComplex.mapBifunctor₁₂.ι (curriedTensor C)
         (curriedTensor C) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
         p q r j h ≫
-      ((α_ X Y Z).hom ≫ koszulBraidingHom C X (Y ⊗ Z) ≫ (α_ Y Z X).hom).f j =
+      ((α_ X Y Z).hom ≫ (HomologicalComplex.tensorBraiding X (Y ⊗ Z)).hom ≫ (α_ Y Z X).hom).f j =
       (p * (q + r)).negOnePow • ((α_ (X.X p) (Y.X q) (Z.X r)).hom ≫
         (β_ (X.X p) (Y.X q ⊗ Z.X r)).hom ≫ (α_ (Y.X q) (Z.X r) (X.X p)).hom ≫
           HomologicalComplex.mapBifunctor₂₃.ι (curriedTensor C)
@@ -191,8 +166,8 @@ private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
     Category.assoc,
     HomologicalComplex.ι_ι_associator_hom_assoc _ _ _ p q r (p + q) (q + r) j rfl rfl h'
       (by omega),
-    ι_koszulBraidingHom_assoc,
-    whiskerLeft_comp_koszulBraidingSummand_assoc C X (Y ⊗ Z) _ p (q + r) j
+    ιMapBifunctor_tensorBraiding_hom_f_assoc,
+    whiskerLeft_comp_braiding_ιMapBifunctor_assoc C X (Y ⊗ Z) _ p (q + r) j
       (HomologicalComplex.ιTensorObj Y Z q r (q + r) rfl)]
   simp only [Linear.units_smul_comp, Category.assoc]
   rw [HomologicalComplex.ι_ι_associator_hom Y Z X q r p (q + r) (r + p) j rfl rfl (by omega)
@@ -205,8 +180,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     HomologicalComplex.mapBifunctor₁₂.ι (curriedTensor C)
         (curriedTensor C) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
         p q r j h ≫
-      ((koszulBraidingHom C X Y ▷ Z) ≫ (α_ Y X Z).hom ≫
-        (Y ◁ koszulBraidingHom C X Z)).f j =
+      (((HomologicalComplex.tensorBraiding X Y).hom ▷ Z) ≫ (α_ Y X Z).hom ≫
+        (Y ◁ (HomologicalComplex.tensorBraiding X Z).hom)).f j =
       (p * (q + r)).negOnePow • (((β_ (X.X p) (Y.X q)).hom ▷ Z.X r) ≫
         (α_ (Y.X q) (X.X p) (Z.X r)).hom ≫ (Y.X q ◁ (β_ (X.X p) (Z.X r)).hom) ≫
           HomologicalComplex.mapBifunctor₂₃.ι (curriedTensor C)
@@ -220,30 +195,33 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     HomologicalComplex.ι_mapBifunctorMap_assoc]
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, Category.id_comp]
   simp only [curriedTensor_map_app]
-  rw [← MonoidalCategory.comp_whiskerRight_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
+  rw [← MonoidalCategory.comp_whiskerRight_assoc, ιMapBifunctor_tensorBraiding_hom_f,
     Units.smul_def, ← tensorHom_id, zsmul_tensorHom, tensorHom_id, ← Units.smul_def,
-    MonoidalCategory.comp_whiskerRight,
-    Linear.units_smul_comp, Category.assoc,
-    HomologicalComplex.ι_ι_associator_hom_assoc Y X Z q p r (q + p) (p + r) j rfl rfl
-      (by omega) (by omega),
-    HomologicalComplex.whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
+    MonoidalCategory.comp_whiskerRight, Linear.units_smul_comp, Category.assoc]
+  -- The whiskered `tensorBraiding X Y` ends in `HomologicalComplex.tensorObj Y X ⊗ Z`, which is
+  -- `(Y ⊗ X) ⊗ Z` only after unfolding the monoidal structure.
+  erw [HomologicalComplex.ι_ι_associator_hom_assoc Y X Z q p r (q + p) (p + r) j rfl rfl
+      (by omega) (by omega)]
+  rw [HomologicalComplex.whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, NatTrans.id_app,
     Category.id_comp]
   simp only [curriedTensor_obj_map]
-  rw [← MonoidalCategory.whiskerLeft_comp_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
+  rw [← MonoidalCategory.whiskerLeft_comp_assoc, ιMapBifunctor_tensorBraiding_hom_f,
     Units.smul_def (p * r).negOnePow, ← id_tensorHom, tensorHom_zsmul, id_tensorHom,
     ← Units.smul_def,
-    MonoidalCategory.whiskerLeft_comp,
-    Linear.units_smul_comp, Category.assoc,
-    ← HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft Y Z X q r p (p + r) j (by omega)
-      (by omega),
-    Linear.comp_units_smul, Linear.comp_units_smul, smul_smul, ← Int.negOnePow_add,
+    MonoidalCategory.whiskerLeft_comp, Linear.units_smul_comp, Category.assoc]
+  -- As above, `Y ◁ tensorBraiding X Z` ends in `Y ⊗ HomologicalComplex.tensorObj Z X`.
+  erw [← HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft Y Z X q r p (p + r) j (by omega)
+      (by omega)]
+  rw [Linear.comp_units_smul, Linear.comp_units_smul, smul_smul, ← Int.negOnePow_add,
     show p * q + p * r = p * (q + r) by ring]
 
-/-- **The first hexagon identity** for the Koszul braiding. -/
-lemma koszulBraidingHom_hexagon_forward :
-    (α_ X Y Z).hom ≫ koszulBraidingHom C X (Y ⊗ Z) ≫ (α_ Y Z X).hom =
-      (koszulBraidingHom C X Y ▷ Z) ≫ (α_ Y X Z).hom ≫ (Y ◁ koszulBraidingHom C X Z) := by
+/-- **The first hexagon identity** for the signed interchange of cochain complexes, the
+`hexagon_forward` axiom of `TauCeti.koszulBraidedCategory`. -/
+lemma tensorBraiding_hexagon_forward :
+    (α_ X Y Z).hom ≫ (HomologicalComplex.tensorBraiding X (Y ⊗ Z)).hom ≫ (α_ Y Z X).hom =
+      ((HomologicalComplex.tensorBraiding X Y).hom ▷ Z) ≫ (α_ Y X Z).hom ≫
+        (Y ◁ (HomologicalComplex.tensorBraiding X Z).hom) := by
   ext j : 1
   apply HomologicalComplex.mapBifunctor₁₂.hom_ext
   intro p q r h
@@ -259,10 +237,12 @@ end Hexagon
 variable [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
   [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
 
-/-- **The second hexagon identity** for the Koszul braiding. -/
-lemma koszulBraidingHom_hexagon_reverse (X Y Z : CochainComplex C ℤ) :
-    (α_ X Y Z).inv ≫ koszulBraidingHom C (X ⊗ Y) Z ≫ (α_ Z X Y).inv =
-      (X ◁ koszulBraidingHom C Y Z) ≫ (α_ X Z Y).inv ≫ (koszulBraidingHom C X Z ▷ Y) := by
+/-- **The second hexagon identity** for the signed interchange of cochain complexes, the
+`hexagon_reverse` axiom of `TauCeti.koszulBraidedCategory`. -/
+lemma tensorBraiding_hexagon_reverse (X Y Z : CochainComplex C ℤ) :
+    (α_ X Y Z).inv ≫ (HomologicalComplex.tensorBraiding (X ⊗ Y) Z).hom ≫ (α_ Z X Y).inv =
+      (X ◁ (HomologicalComplex.tensorBraiding Y Z).hom) ≫ (α_ X Z Y).inv ≫
+        ((HomologicalComplex.tensorBraiding X Z).hom ▷ Y) := by
   apply (Iso.inv_eq_inv
       ((α_ X Y Z).symm ≪≫ HomologicalComplex.tensorBraiding (X ⊗ Y) Z ≪≫ (α_ Z X Y).symm)
       (whiskerLeftIso X (HomologicalComplex.tensorBraiding Y Z) ≪≫ (α_ X Z Y).symm ≪≫
@@ -271,7 +251,7 @@ lemma koszulBraidingHom_hexagon_reverse (X Y Z : CochainComplex C ℤ) :
   simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
     HomologicalComplex.tensorBraiding_inv_eq_reverseBraiding, Category.assoc]
   let := reverseBraiding C
-  exact koszulBraidingHom_hexagon_forward C Z X Y
+  exact tensorBraiding_hexagon_forward C Z X Y
 
 /-- Cochain complexes in `C` form a braided monoidal category under the Koszul braiding: on the
 summand `X^p ⊗ Y^q` of Mathlib's totalized tensor product it is `(-1)^(p * q)` times the
@@ -282,20 +262,13 @@ noncomputable instance koszulBraidedCategory :
   braiding X Y := HomologicalComplex.tensorBraiding X Y
   braiding_naturality_right X _ _ f := HomologicalComplex.tensorBraiding_hom_naturality (𝟙 X) f
   braiding_naturality_left f Z := HomologicalComplex.tensorBraiding_hom_naturality f (𝟙 Z)
-  hexagon_forward X Y Z := by
-    simpa only [koszulBraidingHom.eq_1] using koszulBraidingHom_hexagon_forward C X Y Z
-  hexagon_reverse X Y Z := by
-    simpa only [koszulBraidingHom.eq_1] using koszulBraidingHom_hexagon_reverse C X Y Z
+  hexagon_forward X Y Z := tensorBraiding_hexagon_forward C X Y Z
+  hexagon_reverse X Y Z := tensorBraiding_hexagon_reverse C X Y Z
 
 /-- The braiding of the monoidal category `CochainComplex C ℤ` is the signed interchange
 `HomologicalComplex.tensorBraiding`. -/
 lemma braiding_eq_tensorBraiding (X Y : CochainComplex C ℤ) :
     β_ X Y = HomologicalComplex.tensorBraiding X Y :=
-  (rfl)
-
-/-- The forward braiding of the monoidal category `CochainComplex C ℤ` is the Koszul braiding. -/
-lemma braiding_hom_eq_koszulBraidingHom (X Y : CochainComplex C ℤ) :
-    (β_ X Y).hom = koszulBraidingHom C X Y :=
   (rfl)
 
 section TensorMu
@@ -329,7 +302,8 @@ lemma ι_tensorμ (X₁ X₂ Y₁ Y₂ : CochainComplex C ℤ) (a b c d ab cd n 
     HomologicalComplex.ι_ι_associator_inv X₂ Y₁ Y₂ b c d (b + c) (c + d) _ rfl rfl (by omega) rfl,
     HomologicalComplex.ι_whiskerLeft_assoc, ← whiskerLeft_comp_assoc, Category.assoc,
     Category.assoc, HomologicalComplex.ι_whiskerRight, ← comp_whiskerRight_assoc,
-    braiding_hom_eq_koszulBraidingHom, ι_koszulBraidingHom, koszulBraidingSummand_def]
+    braiding_eq_tensorBraiding, HomologicalComplex.ιTensorObj_tensorBraiding_hom_f,
+    ComplexShape.σ_up_ℤ]
   -- Pull the Koszul sign out of the whiskerings; what remains is sign-free.
   simp only [Units.smul_def, ← tensorHom_id, ← id_tensorHom, zsmul_tensorHom, tensorHom_zsmul,
     Preadditive.comp_zsmul, Preadditive.zsmul_comp]

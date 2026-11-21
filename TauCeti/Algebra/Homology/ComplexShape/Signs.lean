@@ -20,8 +20,9 @@ that chain complexes indexed by `ℤ`, such as Floer complexes graded by an inde
 products with the Koszul differential `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y`. The instance
 `ComplexShape.instTotalComplexShapeSymmetryDownInt` adds the Koszul sign `(-1)^(p q)` relating the
 total complexes of a bicomplex indexed by `ℤ` and of its flip (`ComplexShape.σ_down_ℤ`), the
-chain-complex counterpart of Mathlib's instance for `ComplexShape.up ℤ`; it gives the signed
-interchange of the factors of tensor products of such chain complexes. The signs on
+chain-complex counterpart of Mathlib's instance for `ComplexShape.up ℤ`, whose sign is
+`ComplexShape.σ_up_ℤ`; it gives the signed interchange of the factors of tensor products of such
+chain complexes. The signs on
 `ComplexShape.down ℤ` and on `ComplexShape.up ℤ` are symmetric in the two factors
 (`TotalComplexShapeSymmetrySymmetry`).
 
@@ -86,9 +87,14 @@ theorem σ_down_ℤ (p q : ℤ) : σ (down ℤ) (down ℤ) (down ℤ) p q = (p *
 instance : TotalComplexShapeSymmetrySymmetry (down ℤ) (down ℤ) (down ℤ) where
   σ_symm p q := by rw [σ_down_ℤ, σ_down_ℤ, mul_comm]
 
+/-- The Koszul symmetry sign of Mathlib's instance on `ComplexShape.up ℤ` in bidegree `(p, q)` is
+`(-1)^(p q)`. -/
+@[simp]
+theorem σ_up_ℤ (p q : ℤ) : σ (up ℤ) (up ℤ) (up ℤ) p q = (p * q).negOnePow := rfl
+
 /-- The Koszul symmetry signs on `ComplexShape.up ℤ` are symmetric in the two factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (up ℤ) (up ℤ) (up ℤ) where
-  σ_symm p q := by simp [mul_comm]
+  σ_symm p q := by rw [σ_up_ℤ, σ_up_ℤ, mul_comm]
 
 end ComplexShape
 
