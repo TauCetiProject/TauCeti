@@ -87,6 +87,9 @@ gives `IsIntegralCurve.exists_openPartialHomeomorph_setOf_isIntegralCurve_neg_gr
 
 ## Main declarations
 
+* `TauCeti.WeakDerivStep.trajectorySectionOfMemLp`: the section `ξ ↦ ξ' - (V (γ + ξ) - V γ)`
+  for any field whose difference along every Sobolev path lies in `Lᵖ`, with its pointwise formula;
+  both sections below are built from it.
 * `TauCeti.WeakDerivStep.trajectorySection`: the section `ξ ↦ ξ' - (V (γ + ξ) - V γ)`.
 * `TauCeti.WeakDerivStep.trajectorySection_apply_ae`: its pointwise formula.
 * `TauCeti.WeakDerivStep.trajectorySection_congr`: it does not depend on the Lipschitz constant
@@ -140,6 +143,24 @@ open scoped BoundedContinuousFunction ENNReal NNReal Topology ZeroAtInfty
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {V : F → F} {K : ℝ≥0} {γ : ℝ → F}
 
+/-- For a continuous field `V` which is Lipschitz on a set `s` containing the paths `γ` and
+`γ + ξ`, the difference `t ↦ V (γ t + ξ t) - V (γ t)` along the Sobolev path `ξ`, evaluated
+through its continuous representative, lies in `Lᵖ`. -/
+theorem memLp_comp_add_toZeroAtInfty_sub_of_lipschitzOnWith (hp : p ≠ ∞) (hVc : Continuous V)
+    {s : Set F} (hV : LipschitzOnWith K V s) (hγ : AEStronglyMeasurable γ volume)
+    {ξ : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    (h₀ : ∀ t, γ t ∈ s) (h₁ : ∀ t, γ t + toZeroAtInfty (F := F) hp ξ t ∈ s) :
+    MemLp (fun t ↦ V (γ t + toZeroAtInfty (F := F) hp ξ t) - V (γ t)) p
+      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
+  refine (Lp.memLp (prev _ ξ)).of_le_mul (c := K) ?_ ?_
+  · exact ((hVc.comp_aestronglyMeasurable
+      (hγ.add (toZeroAtInfty (F := F) hp ξ).continuous.aestronglyMeasurable)).sub
+      (hVc.comp_aestronglyMeasurable hγ)).restrict
+  · filter_upwards [ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty (F := F) hp ξ)] with t ht
+    rw [ht, ← dist_eq_norm]
+    exact (hV.dist_le_mul _ (h₁ t) _ (h₀ t)).trans_eq (by rw [dist_self_add_left])
+
 /-- For a Lipschitz field `V`, the difference `s ↦ V (γ s + ξ s) - V (γ s)` along a Sobolev path
 `ξ`, evaluated through its continuous representative, lies in `Lᵖ`. -/
 theorem memLp_comp_add_toZeroAtInfty_sub (hp : p ≠ ∞) (hV : LipschitzWith K V)
@@ -147,14 +168,57 @@ theorem memLp_comp_add_toZeroAtInfty_sub (hp : p ≠ ∞) (hV : LipschitzWith K 
     (ξ : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     MemLp (fun s ↦ V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) p
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
-  refine (Lp.memLp (prev _ ξ)).of_le_mul (c := K) ?_ ?_
-  · exact ((hV.continuous.comp_aestronglyMeasurable
-      (hγ.add (toZeroAtInfty (F := F) hp ξ).continuous.aestronglyMeasurable)).sub
-      (hV.continuous.comp_aestronglyMeasurable hγ)).restrict
-  · filter_upwards [ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty (F := F) hp ξ)] with s hs
-    rw [hs, ← dist_eq_norm]
-    exact (hV.dist_le_mul _ _).trans_eq (by rw [dist_self_add_left])
+      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+  memLp_comp_add_toZeroAtInfty_sub_of_lipschitzOnWith hp hV.continuous
+    (hV.lipschitzOnWith (s := univ)) hγ (fun _ ↦ mem_univ _) fun _ ↦ mem_univ _
+
+/-- The section `ξ ↦ ξ' - (V (γ + ξ) - V γ)` from `W^{1,p}(ℝ, F)` to `Lᵖ(ℝ, F)`, for any field `V`
+and reference path `γ` for which `t ↦ V (γ t + ξ t) - V (γ t)` lies in `Lᵖ` for every Sobolev path
+`ξ`, evaluated through its continuous representative. The trajectory sections
+`TauCeti.WeakDerivStep.trajectorySection` of a Lipschitz field and
+`TauCeti.WeakDerivStep.boundedTrajectorySection` of a locally Lipschitz field around a bounded path
+are both of this form. -/
+def trajectorySectionOfMemLp (V : F → F) (γ : ℝ → F) (hp : p ≠ ∞)
+    (hV : ∀ ξ : WeakDerivStep volume ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      MemLp (fun s ↦ V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) p
+        (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (ξ : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+  (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _ (weakFDerivL _ ξ) - (hV ξ).toLp _
+
+/-- The pointwise formula for `TauCeti.WeakDerivStep.trajectorySectionOfMemLp`: almost everywhere,
+its value at `ξ` is `ξ' s - (V (γ s + ξ s) - V (γ s))`. -/
+theorem trajectorySectionOfMemLp_apply_ae (hp : p ≠ ∞)
+    (hV : ∀ ξ : WeakDerivStep volume ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      MemLp (fun s ↦ V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) p
+        (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (ξ : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    trajectorySectionOfMemLp V γ hp hV ξ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦
+      weakFDeriv _ ξ s 1 - (V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) := by
+  rw [trajectorySectionOfMemLp]
+  filter_upwards [Lp.coeFn_sub ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _
+      (weakFDerivL _ ξ)) ((hV ξ).toLp _),
+    (ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLpL (weakFDerivL _ ξ),
+    (hV ξ).coeFn_toLp] with s hs hd hN
+  rw [hs, Pi.sub_apply, hd, hN, weakFDerivL_apply, ContinuousLinearMap.apply_apply]
+
+/-- `TauCeti.WeakDerivStep.trajectorySectionOfMemLp` vanishes at the reference path. -/
+@[simp]
+theorem trajectorySectionOfMemLp_zero (hp : p ≠ ∞)
+    (hV : ∀ ξ : WeakDerivStep volume ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      MemLp (fun s ↦ V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) p
+        (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
+    trajectorySectionOfMemLp V γ hp hV 0 = 0 := by
+  rw [trajectorySectionOfMemLp, map_zero, map_zero, zero_sub, neg_eq_zero]
+  refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
+  filter_upwards [(hV 0).coeFn_toLp] with s hs
+  rw [hs]
+  simp
 
 /-- **The trajectory section** `ξ ↦ ξ' - (V (γ + ξ) - V γ)` of a Lipschitz vector field `V` around
 a reference path `γ`, from `W^{1,p}(ℝ, F)` to `Lᵖ(ℝ, F)`. The path `ξ` enters through its
@@ -167,8 +231,7 @@ def trajectorySection (V : F → F) (γ : ℝ → F) (hV : LipschitzWith K V)
     (ξ : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _ (weakFDerivL _ ξ) -
-    (memLp_comp_add_toZeroAtInfty_sub hp hV hγ ξ).toLp _
+  trajectorySectionOfMemLp V γ hp (memLp_comp_add_toZeroAtInfty_sub hp hV hγ) ξ
 
 /-- The trajectory section is the weak derivative, evaluated on the unit vector, minus the class
 of `s ↦ V (γ s + ξ s) - V (γ s)` in `Lᵖ`. -/
@@ -195,23 +258,14 @@ theorem trajectorySection_apply_ae (hV : LipschitzWith K V) (hγ : AEStronglyMea
     (ξ : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     trajectorySection V γ hV hγ hp ξ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦
-      weakFDeriv _ ξ s 1 - (V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) := by
-  rw [trajectorySection]
-  filter_upwards [Lp.coeFn_sub ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _
-      (weakFDerivL _ ξ)) ((memLp_comp_add_toZeroAtInfty_sub hp hV hγ ξ).toLp _),
-    (ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLpL (weakFDerivL _ ξ),
-    (memLp_comp_add_toZeroAtInfty_sub hp hV hγ ξ).coeFn_toLp] with s hs hd hN
-  rw [hs, Pi.sub_apply, hd, hN, weakFDerivL_apply, ContinuousLinearMap.apply_apply]
+      weakFDeriv _ ξ s 1 - (V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) :=
+  trajectorySectionOfMemLp_apply_ae hp _ ξ
 
 /-- The trajectory section vanishes at the reference path. -/
 @[simp]
 theorem trajectorySection_zero (hV : LipschitzWith K V) (hγ : AEStronglyMeasurable γ volume)
-    (hp : p ≠ ∞) : trajectorySection V γ hV hγ hp 0 = 0 := by
-  rw [trajectorySection, map_zero, map_zero, zero_sub, neg_eq_zero]
-  refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
-  filter_upwards [(memLp_comp_add_toZeroAtInfty_sub hp hV hγ 0).coeFn_toLp] with s hs
-  rw [hs]
-  simp
+    (hp : p ≠ ∞) : trajectorySection V γ hV hγ hp 0 = 0 :=
+  trajectorySectionOfMemLp_zero hp _
 
 /-- The trajectory section is Lipschitz with constant `1 + K`: the derivative part is
 `1`-Lipschitz for the graph norm and the field part is `K`-Lipschitz. -/
@@ -600,16 +654,10 @@ theorem memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz (hp : p ≠ ∞)
   set ξc := toZeroAtInfty (F := F) hp ξ
   obtain ⟨K, hK⟩ := hV.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
     (isCompact_closedBall (0 : F) (C + ‖ξc‖))
-  refine (Lp.memLp (prev _ ξ)).of_le_mul (c := K) ?_ ?_
-  · exact ((hV.continuous.comp_aestronglyMeasurable
-      (hγ.add ξc.continuous.aestronglyMeasurable)).sub
-      (hV.continuous.comp_aestronglyMeasurable hγ)).restrict
-  · filter_upwards [ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty (F := F) hp ξ)] with s hs
-    rw [hs, ← dist_eq_norm]
-    refine (hK.dist_le_mul _ (mem_closedBall_zero_iff.2 (norm_add_apply_le hC ξc s)) _
-      (mem_closedBall_zero_iff.2 ((hC _ (mem_range_self s)).trans
-        (le_add_of_nonneg_right (norm_nonneg _))))).trans_eq ?_
-    rw [dist_self_add_left]
+  exact memLp_comp_add_toZeroAtInfty_sub_of_lipschitzOnWith hp hV.continuous hK hγ
+    (fun s ↦ mem_closedBall_zero_iff.2 ((hC _ (mem_range_self s)).trans
+      (le_add_of_nonneg_right (norm_nonneg _))))
+    fun s ↦ mem_closedBall_zero_iff.2 (norm_add_apply_le hC ξc s)
 
 /-- **The trajectory section of a locally Lipschitz field around a bounded path**
 `ξ ↦ ξ' - (V (γ + ξ) - V γ)`, from `W^{1,p}(ℝ, F)` to `Lᵖ(ℝ, F)`, for a locally Lipschitz vector
@@ -624,19 +672,8 @@ def boundedTrajectorySection (V : F → F) (γ : ℝ → F) (hV : LocallyLipschi
     (ξ : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _ (weakFDerivL _ ξ) -
-    (memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz hp hV hγ hb ξ).toLp _
-
-/-- The trajectory section of a locally Lipschitz field is the weak derivative, evaluated on the
-unit vector, minus the class of `s ↦ V (γ s + ξ s) - V (γ s)` in `Lᵖ`. -/
-theorem boundedTrajectorySection_def (hV : LocallyLipschitz V)
-    (hγ : AEStronglyMeasurable γ volume) (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞)
-    (ξ : WeakDerivStep volume ⊤ p
-      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    boundedTrajectorySection V γ hV hγ hb hp ξ =
-      (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _ (weakFDerivL _ ξ) -
-        (memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz hp hV hγ hb ξ).toLp _ :=
-  (rfl)
+  trajectorySectionOfMemLp V γ hp
+    (memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz hp hV hγ hb) ξ
 
 /-- The pointwise formula for the trajectory section of a locally Lipschitz field: almost
 everywhere, `boundedTrajectorySection V γ hV hγ hb hp ξ s = ξ' s - (V (γ s + ξ s) - V (γ s))`. -/
@@ -645,27 +682,15 @@ theorem boundedTrajectorySection_apply_ae (hV : LocallyLipschitz V)
     (ξ : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     boundedTrajectorySection V γ hV hγ hb hp ξ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ weakFDeriv _ ξ s 1 - (V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) := by
-  rw [boundedTrajectorySection]
-  filter_upwards [Lp.coeFn_sub ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p _
-      (weakFDerivL _ ξ))
-      ((memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz hp hV hγ hb ξ).toLp _),
-    (ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLpL (weakFDerivL _ ξ),
-    (memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz hp hV hγ hb ξ).coeFn_toLp]
-    with s hs hd hN
-  rw [hs, Pi.sub_apply, hd, hN, weakFDerivL_apply, ContinuousLinearMap.apply_apply]
+      fun s ↦ weakFDeriv _ ξ s 1 - (V (γ s + toZeroAtInfty (F := F) hp ξ s) - V (γ s)) :=
+  trajectorySectionOfMemLp_apply_ae hp _ ξ
 
 /-- The trajectory section of a locally Lipschitz field vanishes at the reference path. -/
 @[simp]
 theorem boundedTrajectorySection_zero (hV : LocallyLipschitz V)
     (hγ : AEStronglyMeasurable γ volume) (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞) :
-    boundedTrajectorySection V γ hV hγ hb hp 0 = 0 := by
-  rw [boundedTrajectorySection, map_zero, map_zero, zero_sub, neg_eq_zero]
-  refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
-  filter_upwards [(memLp_comp_add_toZeroAtInfty_sub_of_locallyLipschitz hp hV hγ hb 0).coeFn_toLp]
-    with s hs
-  rw [hs]
-  simp
+    boundedTrajectorySection V γ hV hγ hb hp 0 = 0 :=
+  trajectorySectionOfMemLp_zero hp _
 
 /-- **Locality of the trajectory section.** If a locally Lipschitz field `V` agrees on a set `s`
 with a Lipschitz field `W`, then their trajectory sections agree at every Sobolev path `ξ` for which
