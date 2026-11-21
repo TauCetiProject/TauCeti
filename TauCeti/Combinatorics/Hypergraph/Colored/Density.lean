@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
+public import TauCeti.Logic.Embedding.Basic
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -34,6 +35,8 @@ the number of supported edited triples `editedOn`, defined in
 ## Main results
 
 * `TauCeti.Colored3Graph.sum_relDensityOn`: on a nonempty support the densities sum to one.
+* `TauCeti.Colored3Graph.relDensityOn_map_subtypeInjectiveCongr`: precomposition by a permutation
+  of `Fin 3` preserves relative color densities.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_mul_card_le_card_editedOn`: the count-scaled
   density change is bounded by the supported edit count.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_editedOn_le`: an `η`-fraction
@@ -75,6 +78,17 @@ theorem relDensityOn_mul_card (H : Colored3Graph κ V) (c : κ)
   obtain rfl | hs := supp.eq_empty_or_nonempty
   · simp
   · rw [relDensityOn_def, div_mul_cancel₀ _ (by exact_mod_cast hs.card_pos.ne')]
+
+/-- Precomposing a finite set of injective triples by a permutation of `Fin 3` leaves relative
+color densities unchanged. -/
+theorem relDensityOn_map_subtypeInjectiveCongr (H : Colored3Graph κ V) (c : κ)
+    (s : Finset {x : Fin 3 → V // Function.Injective x}) (σ : Equiv.Perm (Fin 3)) :
+    H.relDensityOn c
+        (s.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding) =
+      H.relDensityOn c s := by
+  rw [relDensityOn_def, relDensityOn_def, card_map, filter_map, card_map]
+  simp only [Function.comp_apply, Equiv.coe_toEmbedding, Equiv.subtypeInjectiveCongr_apply,
+    Equiv.coe_refl, Function.id_comp, Equiv.symm_symm, Set.powersetCard.ofFinEmb_comp_perm]
 
 /-- Recoloring changes a color count by at most the number of edited supported triples.
 The count-scaled form includes empty supports and does not require a finite palette. -/

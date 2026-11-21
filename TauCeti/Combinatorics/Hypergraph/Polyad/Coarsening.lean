@@ -73,6 +73,41 @@ theorem coarsen_color₀₂ (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart)
 theorem coarsen_color₁₂ (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) :
     (P.coarsen hV f).color₁₂ = f P.color₁₂ := by simp [coarsen]
 
+/-- The role-`i` cell of a coarsened polyad is the coarse parent of its role-`i` cell. -/
+@[simp]
+theorem coarsen_cell (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    (i : Fin 3) :
+    (P.coarsen hV f).cell i =
+      (Finpartition.refinementParent hV ⟨P.cell i, P.cell_mem_parts i⟩).val := by
+  rw [coarsen_def, map_cell]
+
+/-- Coarsening a polyad along a reversal-compatible color projection applies `f` to `colorAt` on
+every directed role pair. -/
+theorem coarsen_colorAt (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    (hrev : ∀ c, f (T.pairColors.rev c) = S.pairColors.rev (f c)) {i j : Fin 3} (hij : i ≠ j) :
+    (P.coarsen hV f).colorAt i j hij = f (P.colorAt i j hij) := by
+  rw [coarsen_def, map_colorAt _ _ _ hrev]
+
+/-- When two skeletons share the same vertex partition, coarsening preserves every role cell. -/
+theorem coarsen_cell_of_eq (P : Polyad3 T) (hV : T.vertexPart = S.vertexPart) (f : κ' → κ)
+    (i : Fin 3) :
+    (P.coarsen hV.le f).cell i = P.cell i := by
+  have hmem (A : Finset V) (hA : A ∈ T.vertexPart.parts) :
+      (Finpartition.refinementParent hV.le ⟨A, hA⟩).val = A :=
+    congrArg Subtype.val ((Finpartition.refinementParent_eq_iff hV.le (A := ⟨A, hV ▸ hA⟩)).2 le_rfl)
+  rw [P.coarsen_cell hV.le f i]
+  exact hmem (P.cell i) (P.cell_mem_parts i)
+
+/-- When two skeletons share the same vertex partition, coarsening preserves having distinct
+cells. -/
+@[simp]
+theorem hasDistinctCells_coarsen_iff (P : Polyad3 T) (hV : T.vertexPart = S.vertexPart)
+    (f : κ' → κ) :
+    (P.coarsen hV.le f).HasDistinctCells ↔ P.HasDistinctCells := by
+  simp only [hasDistinctCells_iff_injective_cell]
+  have heq : (P.coarsen hV.le f).cell = P.cell := funext (P.coarsen_cell_of_eq hV f)
+  rw [heq]
+
 /-- If the two skeletons have the same vertex cells, the coarse parent along an injective color
 map determines the polyad. -/
 theorem coarsen_injective (hV : T.vertexPart = S.vertexPart) {f : κ' → κ}

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Basic
+import Mathlib.Tactic.FinCases
 
 /-!
 # Subpolyads of a triadic polyad
@@ -28,6 +29,9 @@ When the pair graphs of a polyad `P'`, possibly over another skeleton, lie in th
 `Subpolyad3.inclusion` regards each subpolyad of `P'` as a subpolyad of `P` with the same
 support. For arbitrary polyads `P` and `P'`, `Subpolyad3.restrict` intersects the selected pair
 graphs with those of `P`; the resulting support is the part of the original one lying in `P`.
+The role-indexed pair graph `Subpolyad3.pairGraph` accesses all directed role pairs uniformly, and
+`Subpolyad3.cast_pairGraph`, `Subpolyad3.cast_support`, and `Subpolyad3.unionSupport_cast`
+transport subpolyad data along equalities of parent polyads.
 
 ## References
 
@@ -127,9 +131,8 @@ theorem card_subpolyad3_eq (P : Polyad3 S) :
           mem_powerset.1 q₁₂.property⟩
       left_inv := fun _ ↦ Subpolyad3.ext_data rfl rfl rfl
       right_inv := fun ⟨_, _, _⟩ ↦ rfl }
-  rw [Fintype.card_congr e, Fintype.card_prod, Fintype.card_prod, Fintype.card_coe,
-    Fintype.card_coe, Fintype.card_coe, card_powerset, card_powerset, card_powerset,
-    pow_add, pow_add, mul_assoc]
+  rw [Fintype.card_congr e]
+  simp [pow_add, mul_assoc, -mem_powerset]
 
 /-- The number of subpolyads of a polyad `P` is at most
 `2 ^ (#P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂)`. -/
@@ -479,6 +482,123 @@ theorem unionSupport_restrict {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Pol
     unionSupport (fun i ↦ (Q i).restrict P) = unionSupport Q ∩ P.support := by
   ext x
   simp only [mem_unionSupport, support_restrict, mem_inter, exists_and_right]
+
+/-! ### Oriented pair graphs and parent-equality transport -/
+
+/-- The selected pair graph of a subpolyad from role `i` to role `j`, swapping pairs when
+`i > j`. -/
+noncomputable def pairGraph (Q : Subpolyad3 P) :
+    Fin 3 → Fin 3 → Finset {p : V × V // p.1 ≠ p.2}
+  | 0, 1 => Q.pair₀₁
+  | 0, 2 => Q.pair₀₂
+  | 1, 2 => Q.pair₁₂
+  | 1, 0 => Q.pair₀₁.image swapDistinctPair
+  | 2, 0 => Q.pair₀₂.image swapDistinctPair
+  | 2, 1 => Q.pair₁₂.image swapDistinctPair
+  | _, _ => ∅
+
+/-- On diagonal roles, `pairGraph` is empty. -/
+@[simp]
+theorem pairGraph_self (Q : Subpolyad3 P) (i : Fin 3) : Q.pairGraph i i = ∅ := by
+  fin_cases i <;> rfl
+
+/-- On roles `(0, 1)`, `pairGraph` is `pair₀₁`. -/
+@[simp]
+theorem pairGraph_zero_one (Q : Subpolyad3 P) : Q.pairGraph 0 1 = Q.pair₀₁ := (rfl)
+
+/-- On roles `(0, 2)`, `pairGraph` is `pair₀₂`. -/
+@[simp]
+theorem pairGraph_zero_two (Q : Subpolyad3 P) : Q.pairGraph 0 2 = Q.pair₀₂ := (rfl)
+
+/-- On roles `(1, 2)`, `pairGraph` is `pair₁₂`. -/
+@[simp]
+theorem pairGraph_one_two (Q : Subpolyad3 P) : Q.pairGraph 1 2 = Q.pair₁₂ := (rfl)
+
+/-- Two subpolyads agree precisely when all their oriented pair graphs agree. -/
+theorem ext_pairGraph {Q R : Subpolyad3 P}
+    (h : ∀ i j : Fin 3, i ≠ j → Q.pairGraph i j = R.pairGraph i j) : Q = R :=
+  ext_data
+    (by simpa only [pairGraph_zero_one] using h 0 1 (by decide))
+    (by simpa only [pairGraph_zero_two] using h 0 2 (by decide))
+    (by simpa only [pairGraph_one_two] using h 1 2 (by decide))
+
+/-- Swapping a pair corresponds to exchanging the roles of `pairGraph`. -/
+theorem swapDistinctPair_mem_pairGraph (Q : Subpolyad3 P) {i j : Fin 3} (hij : i ≠ j)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    swapDistinctPair p ∈ Q.pairGraph j i ↔ p ∈ Q.pairGraph i j := by
+  have himg (E : Finset {p : V × V // p.1 ≠ p.2}) (q) :
+      swapDistinctPair q ∈ E.image swapDistinctPair ↔ q ∈ E :=
+    ⟨fun h ↦ let ⟨_, hr, hrq⟩ := mem_image.1 h; swapDistinctPair_injective hrq ▸ hr,
+      fun h ↦ mem_image.2 ⟨q, h, rfl⟩⟩
+  have himg' (E : Finset {p : V × V // p.1 ≠ p.2}) :
+      swapDistinctPair p ∈ E ↔ p ∈ E.image swapDistinctPair := by
+    simpa [swapDistinctPair_swap] using (himg E (swapDistinctPair p)).symm
+  match i, j with
+  | 0, 1 | 0, 2 | 1, 2 => exact himg _ p
+  | 1, 0 | 2, 0 | 2, 1 => exact himg' _
+  | 0, 0 | 1, 1 | 2, 2 => exact (hij rfl).elim
+
+/-- Each oriented pair graph of a subpolyad lies in the corresponding pair graph of its parent. -/
+theorem pairGraph_subset_pairSupportAt (Q : Subpolyad3 P) (i j : Fin 3) :
+    Q.pairGraph i j ⊆ P.pairSupportAt i j := by
+  intro p hp
+  match i, j with
+  | 0, 1 => simpa using Q.pair₀₁_sub hp
+  | 0, 2 => simpa using Q.pair₀₂_sub hp
+  | 1, 2 => simpa using Q.pair₁₂_sub hp
+  | 1, 0 =>
+    rw [← Q.swapDistinctPair_mem_pairGraph (by decide : (1 : Fin 3) ≠ 0)] at hp
+    exact (P.swapDistinctPair_mem_pairSupportAt (by decide : (1 : Fin 3) ≠ 0) p).1
+      (by simpa using Q.pair₀₁_sub hp)
+  | 2, 0 =>
+    rw [← Q.swapDistinctPair_mem_pairGraph (by decide : (2 : Fin 3) ≠ 0)] at hp
+    exact (P.swapDistinctPair_mem_pairSupportAt (by decide : (2 : Fin 3) ≠ 0) p).1
+      (by simpa using Q.pair₀₂_sub hp)
+  | 2, 1 =>
+    rw [← Q.swapDistinctPair_mem_pairGraph (by decide : (2 : Fin 3) ≠ 1)] at hp
+    exact (P.swapDistinctPair_mem_pairSupportAt (by decide : (2 : Fin 3) ≠ 1) p).1
+      (by simpa using Q.pair₁₂_sub hp)
+  | 0, 0 | 1, 1 | 2, 2 => simp at hp
+
+/-- Membership in a subpolyad's support characterized uniformly across all distinct role pairs. -/
+theorem mem_support_iff_pairGraph (Q : Subpolyad3 P)
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    x ∈ Q.support ↔
+      ∀ i j : Fin 3, (hij : i ≠ j) → coordPair x i j hij ∈ Q.pairGraph i j := by
+  rw [mem_support_iff_coordPair_mem]
+  refine ⟨fun ⟨h₀₁, h₀₂, h₁₂⟩ i j hij ↦ ?_,
+    fun h ↦ ⟨h 0 1 (by decide), h 0 2 (by decide), h 1 2 (by decide)⟩⟩
+  have hsw (a b : Fin 3) (hab : a ≠ b) :
+      swapDistinctPair (coordPair x a b hab) = coordPair x b a hab.symm :=
+    Subtype.ext (by simp [swapDistinctPair_val, coe_coordPair])
+  match i, j with
+  | 0, 1 => exact h₀₁
+  | 0, 2 => exact h₀₂
+  | 1, 2 => exact h₁₂
+  | 1, 0 => rw [← hsw 0 1 (by decide), Q.swapDistinctPair_mem_pairGraph (by decide)]; exact h₀₁
+  | 2, 0 => rw [← hsw 0 2 (by decide), Q.swapDistinctPair_mem_pairGraph (by decide)]; exact h₀₂
+  | 2, 1 => rw [← hsw 1 2 (by decide), Q.swapDistinctPair_mem_pairGraph (by decide)]; exact h₁₂
+  | 0, 0 | 1, 1 | 2, 2 => exact (hij rfl).elim
+
+/-- Transporting a subpolyad along an equality of parent polyads preserves `pairGraph`. -/
+@[simp]
+theorem cast_pairGraph {P₁ P₂ : Polyad3 S} (hP : P₁ = P₂) (Q : Subpolyad3 P₁) (i j : Fin 3) :
+    (hP ▸ Q).pairGraph i j = Q.pairGraph i j := by
+  subst hP; rfl
+
+/-- Transporting a subpolyad along an equality of parent polyads preserves its support. -/
+@[simp]
+theorem cast_support {P₁ P₂ : Polyad3 S} (hP : P₁ = P₂) (Q : Subpolyad3 P₁) :
+    (hP ▸ Q).support = Q.support := by
+  subst hP; rfl
+
+/-- Transporting a family of subpolyads along an equality of parent polyads preserves its union
+support. -/
+@[simp]
+theorem unionSupport_cast {ι' : Type*} [Fintype ι'] {P₁ P₂ : Polyad3 S} (hP : P₁ = P₂)
+    (Q : ι' → Subpolyad3 P₁) :
+    unionSupport (fun i ↦ hP ▸ Q i) = unionSupport Q := by
+  subst hP; rfl
 
 end Subpolyad3
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
+import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Order.Partition.Finpartition
 
@@ -22,6 +23,9 @@ polyads are disjoint and split every finite set of injective triples
 (`Polyad3.sum_card_inter_support`).
 
 The three pair supports expose the colored bigraphs whose arbitrary subgraphs form subpolyads.
+Role-indexed accessors `Polyad3.cell`, `Polyad3.colorAt`, and `Polyad3.pairSupportAt` provide a
+uniform interface across roles `Fin 3`, and `Polyad3.HasDistinctCells` characterizes polyads whose
+three vertex cells are pairwise distinct.
 The `faceKey` convention translates colors indexed by role pairs to the omitted-coordinate
 indexing used by face-based descriptions of triads.
 
@@ -428,6 +432,216 @@ theorem sum_comp_ofTriple [Fintype κ] {M : Type*} [AddCommMonoid M] (φ : Polya
   congr 2
   ext x
   rw [mem_filter, mem_support_iff_eq_ofTriple, eq_comm, and_iff_right (mem_univ x)]
+
+/-! ### Role-indexed accessors and distinct vertex cells -/
+
+/-- The vertex cell of `P` at role `i : Fin 3`. -/
+def cell (P : Polyad3 S) : Fin 3 → Finset V :=
+  ![P.c₀, P.c₁, P.c₂]
+
+@[simp]
+theorem cell_zero (P : Polyad3 S) : P.cell 0 = P.c₀ := (rfl)
+
+@[simp]
+theorem cell_one (P : Polyad3 S) : P.cell 1 = P.c₁ := (rfl)
+
+@[simp]
+theorem cell_two (P : Polyad3 S) : P.cell 2 = P.c₂ := (rfl)
+
+/-- Every role cell of a polyad belongs to the vertex partition of the skeleton. -/
+theorem cell_mem_parts (P : Polyad3 S) (i : Fin 3) : P.cell i ∈ S.vertexPart.parts := by
+  fin_cases i
+  · exact P.hc₀
+  · exact P.hc₁
+  · exact P.hc₂
+
+/-- The pair color prescribed by `P` on the distinct roles `(i, j)`, using palette reversal when
+`j < i`. -/
+def colorAt (P : Polyad3 S) : (i j : Fin 3) → i ≠ j → κ
+  | ⟨0, _⟩, ⟨1, _⟩, _ => P.color₀₁
+  | ⟨0, _⟩, ⟨2, _⟩, _ => P.color₀₂
+  | ⟨1, _⟩, ⟨2, _⟩, _ => P.color₁₂
+  | ⟨1, _⟩, ⟨0, _⟩, _ => S.pairColors.rev P.color₀₁
+  | ⟨2, _⟩, ⟨0, _⟩, _ => S.pairColors.rev P.color₀₂
+  | ⟨2, _⟩, ⟨1, _⟩, _ => S.pairColors.rev P.color₁₂
+  | ⟨0, _⟩, ⟨0, _⟩, h => absurd rfl h
+  | ⟨1, _⟩, ⟨1, _⟩, h => absurd rfl h
+  | ⟨2, _⟩, ⟨2, _⟩, h => absurd rfl h
+
+@[simp]
+theorem colorAt_zero_one (P : Polyad3 S) (h : (0 : Fin 3) ≠ 1) : P.colorAt 0 1 h = P.color₀₁ :=
+  (rfl)
+
+@[simp]
+theorem colorAt_zero_two (P : Polyad3 S) (h : (0 : Fin 3) ≠ 2) : P.colorAt 0 2 h = P.color₀₂ :=
+  (rfl)
+
+@[simp]
+theorem colorAt_one_two (P : Polyad3 S) (h : (1 : Fin 3) ≠ 2) : P.colorAt 1 2 h = P.color₁₂ :=
+  (rfl)
+
+@[simp]
+theorem colorAt_one_zero (P : Polyad3 S) (h : (1 : Fin 3) ≠ 0) :
+    P.colorAt 1 0 h = S.pairColors.rev P.color₀₁ :=
+  (rfl)
+
+@[simp]
+theorem colorAt_two_zero (P : Polyad3 S) (h : (2 : Fin 3) ≠ 0) :
+    P.colorAt 2 0 h = S.pairColors.rev P.color₀₂ :=
+  (rfl)
+
+@[simp]
+theorem colorAt_two_one (P : Polyad3 S) (h : (2 : Fin 3) ≠ 1) :
+    P.colorAt 2 1 h = S.pairColors.rev P.color₁₂ :=
+  (rfl)
+
+/-- Exchanging the two roles applies palette reversal to `colorAt`. -/
+theorem colorAt_swap (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j) :
+    P.colorAt j i hij.symm = S.pairColors.rev (P.colorAt i j hij) := by
+  fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
+    first | exact absurd rfl hij | simp
+
+/-- Two polyads are equal when they have the same role cells and directed role-pair colors. -/
+theorem ext_cell_colorAt {P Q : Polyad3 S} (hcell : ∀ i, P.cell i = Q.cell i)
+    (hcol : ∀ i j (hij : i ≠ j), P.colorAt i j hij = Q.colorAt i j hij) : P = Q :=
+  ext_data (hcell 0) (hcell 1) (hcell 2) (hcol 0 1 (by decide)) (hcol 0 2 (by decide))
+    (hcol 1 2 (by decide))
+
+@[simp]
+theorem ofTriple_cell (x : {x : Fin 3 → V // Function.Injective x}) (i : Fin 3) :
+    (ofTriple S x).cell i = S.vertexPart.part (x.val i) := by
+  fin_cases i <;> simp
+
+@[simp]
+theorem ofTriple_colorAt (x : {x : Fin 3 → V // Function.Injective x}) {i j : Fin 3}
+    (hij : i ≠ j) :
+    (ofTriple S x).colorAt i j hij = S.pairColors.color (coordPair x i j hij) := by
+  fin_cases i <;> fin_cases j <;> dsimp at hij ⊢
+  · exact absurd rfl hij
+  · simp
+  · simp
+  · rw [colorAt_one_zero, ofTriple_color₀₁, ← S.pairColors.color_rev]
+    exact congrArg S.pairColors.color (Subtype.ext (by simp))
+  · exact absurd rfl hij
+  · simp
+  · rw [colorAt_two_zero, ofTriple_color₀₂, ← S.pairColors.color_rev]
+    exact congrArg S.pairColors.color (Subtype.ext (by simp))
+  · rw [colorAt_two_one, ofTriple_color₁₂, ← S.pairColors.color_rev]
+    exact congrArg S.pairColors.color (Subtype.ext (by simp))
+  · exact absurd rfl hij
+
+/-- Membership in a polyad's support characterized uniformly across all roles and distinct role
+pairs. -/
+theorem mem_support_iff_cell_colorAt (P : Polyad3 S)
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    x ∈ P.support ↔
+      (∀ i : Fin 3, x.val i ∈ P.cell i) ∧
+        ∀ i j : Fin 3, (hij : i ≠ j) →
+          S.pairColors.colorOfPair (x.val i) (x.val j) = some (P.colorAt i j hij) := by
+  rw [mem_support]
+  constructor
+  · rintro ⟨h₀, h₁, h₂, hc₀₁, hc₀₂, hc₁₂⟩
+    refine ⟨fun i ↦ by fin_cases i <;> assumption, fun i j hij ↦ ?_⟩
+    fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
+      first | exact absurd rfl hij | simp_all [colorAt, S.pairColors.colorOfPair_swap_eq_some_iff]
+  · rintro ⟨hcell, hcol⟩
+    exact ⟨hcell 0, hcell 1, hcell 2,
+      hcol 0 1 (by decide), hcol 0 2 (by decide), hcol 1 2 (by decide)⟩
+
+/-- The pair graph of `P` from role `i` to role `j` (swapping pairs when `i > j`). -/
+noncomputable def pairSupportAt (P : Polyad3 S) :
+    Fin 3 → Fin 3 → Finset {p : V × V // p.1 ≠ p.2}
+  | 0, 1 => P.pairSupport₀₁
+  | 0, 2 => P.pairSupport₀₂
+  | 1, 2 => P.pairSupport₁₂
+  | 1, 0 => P.pairSupport₀₁.image swapDistinctPair
+  | 2, 0 => P.pairSupport₀₂.image swapDistinctPair
+  | 2, 1 => P.pairSupport₁₂.image swapDistinctPair
+  | _, _ => ∅
+
+/-- On diagonal roles, `pairSupportAt` is empty. -/
+@[simp]
+theorem pairSupportAt_self (P : Polyad3 S) (i : Fin 3) : P.pairSupportAt i i = ∅ := by
+  fin_cases i <;> rfl
+
+/-- On roles `(0, 1)`, `pairSupportAt` is `pairSupport₀₁`. -/
+@[simp]
+theorem pairSupportAt_zero_one (P : Polyad3 S) : P.pairSupportAt 0 1 = P.pairSupport₀₁ := (rfl)
+
+/-- On roles `(0, 2)`, `pairSupportAt` is `pairSupport₀₂`. -/
+@[simp]
+theorem pairSupportAt_zero_two (P : Polyad3 S) : P.pairSupportAt 0 2 = P.pairSupport₀₂ := (rfl)
+
+/-- On roles `(1, 2)`, `pairSupportAt` is `pairSupport₁₂`. -/
+@[simp]
+theorem pairSupportAt_one_two (P : Polyad3 S) : P.pairSupportAt 1 2 = P.pairSupport₁₂ := (rfl)
+
+/-- Membership in `pairSupportAt i j` for distinct roles `i ≠ j`. -/
+theorem mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    p ∈ P.pairSupportAt i j ↔
+      p.val.1 ∈ P.cell i ∧ p.val.2 ∈ P.cell j ∧ S.pairColors.color p = P.colorAt i j hij := by
+  have hswap (s : Finset {q : V × V // q.1 ≠ q.2}) (A B : Finset V) (c : κ)
+      (hs : ∀ q, q ∈ s ↔ q.val.1 ∈ A ∧ q.val.2 ∈ B ∧ S.pairColors.color q = c) :
+      p ∈ s.image swapDistinctPair ↔
+        p.val.1 ∈ B ∧ p.val.2 ∈ A ∧ S.pairColors.color p = S.pairColors.rev c := by
+    constructor
+    · rintro hp
+      obtain ⟨q, hq, rfl⟩ := mem_image.1 hp
+      obtain ⟨hqA, hqB, hqc⟩ := (hs q).1 hq
+      have hsw : swapDistinctPair q = ⟨q.val.swap, q.property.symm⟩ :=
+        Subtype.ext (swapDistinctPair_val q)
+      refine ⟨by simpa using hqB, by simpa using hqA, ?_⟩
+      rw [hsw, S.pairColors.color_rev, hqc]
+    · rintro ⟨hpB, hpA, hpc⟩
+      refine mem_image.2
+        ⟨swapDistinctPair p, (hs _).2 ⟨by simpa using hpA, by simpa using hpB, ?_⟩,
+          swapDistinctPair_swap p⟩
+      have hsw : swapDistinctPair p = ⟨p.val.swap, p.property.symm⟩ :=
+        Subtype.ext (swapDistinctPair_val p)
+      rw [hsw, S.pairColors.color_rev, hpc, S.pairColors.rev_rev]
+  fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
+    first
+    | exact (hij rfl).elim
+    | exact P.mem_pairSupport₀₁ p
+    | exact P.mem_pairSupport₀₂ p
+    | exact P.mem_pairSupport₁₂ p
+    | exact hswap _ _ _ _ P.mem_pairSupport₀₁
+    | exact hswap _ _ _ _ P.mem_pairSupport₀₂
+    | exact hswap _ _ _ _ P.mem_pairSupport₁₂
+
+/-- Swapping a pair corresponds to exchanging the roles of `pairSupportAt`. -/
+theorem swapDistinctPair_mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    swapDistinctPair p ∈ P.pairSupportAt j i ↔ p ∈ P.pairSupportAt i j := by
+  have hsw : swapDistinctPair p = ⟨p.val.swap, p.property.symm⟩ :=
+    Subtype.ext (swapDistinctPair_val p)
+  rw [P.mem_pairSupportAt hij.symm, P.mem_pairSupportAt hij, P.colorAt_swap hij,
+    hsw, S.pairColors.color_rev]
+  simp only [Prod.fst_swap, Prod.snd_swap, and_left_comm]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦
+    S.pairColors.rev_involutive.injective.eq_iff
+
+/-- A polyad has distinct cells when its three vertex cells are pairwise distinct (and hence
+pairwise disjoint, as parts of `S.vertexPart`). -/
+def HasDistinctCells (P : Polyad3 S) : Prop :=
+  P.c₀ ≠ P.c₁ ∧ P.c₀ ≠ P.c₂ ∧ P.c₁ ≠ P.c₂
+
+/-- Unfolded form of `Polyad3.HasDistinctCells`. -/
+theorem hasDistinctCells_iff (P : Polyad3 S) :
+    P.HasDistinctCells ↔ P.c₀ ≠ P.c₁ ∧ P.c₀ ≠ P.c₂ ∧ P.c₁ ≠ P.c₂ :=
+  Iff.rfl
+
+/-- Having distinct cells is equivalent to `P.cell` being injective. -/
+theorem hasDistinctCells_iff_injective_cell (P : Polyad3 S) :
+    P.HasDistinctCells ↔ Function.Injective P.cell := by
+  constructor
+  · rintro ⟨h₀₁, h₀₂, h₁₂⟩ i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [cell]
+  · intro hinj
+    exact ⟨hinj.ne (by decide : (0 : Fin 3) ≠ 1),
+      hinj.ne (by decide : (0 : Fin 3) ≠ 2),
+      hinj.ne (by decide : (1 : Fin 3) ≠ 2)⟩
 
 end Polyad3
 

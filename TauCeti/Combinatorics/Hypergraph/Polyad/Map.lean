@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Basic
+import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
@@ -67,6 +68,21 @@ theorem map_color₀₂ (P : Polyad3 S) (f : S.vertexPart.parts → T.vertexPart
 @[simp]
 theorem map_color₁₂ (P : Polyad3 S) (f : S.vertexPart.parts → T.vertexPart.parts) (g : κ → κ') :
     (P.map f g).color₁₂ = g P.color₁₂ := by simp [map]
+
+/-- The role-`i` cell of a mapped polyad. -/
+@[simp]
+theorem map_cell (P : Polyad3 S) (f : S.vertexPart.parts → T.vertexPart.parts) (g : κ → κ')
+    (i : Fin 3) :
+    (P.map f g).cell i = (f ⟨P.cell i, P.cell_mem_parts i⟩ : Finset V) := by
+  fin_cases i <;> simp
+
+/-- Mapping a polyad along a reversal-compatible color map applies `g` to `colorAt` on every
+directed role pair. -/
+theorem map_colorAt (P : Polyad3 S) (f : S.vertexPart.parts → T.vertexPart.parts) (g : κ → κ')
+    (hrev : ∀ c, g (S.pairColors.rev c) = T.pairColors.rev (g c)) {i j : Fin 3} (hij : i ≠ j) :
+    (P.map f g).colorAt i j hij = g (P.colorAt i j hij) := by
+  fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
+    first | exact absurd rfl hij | simp [hrev]
 
 /-- Mapping cells and colors by the identity leaves a polyad unchanged. -/
 @[simp]

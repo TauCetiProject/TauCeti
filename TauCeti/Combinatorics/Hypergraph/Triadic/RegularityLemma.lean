@@ -176,7 +176,7 @@ private theorem exists_regularization (P : Finpartition (univ : Finset V))
   set n := Fintype.card V
   have hN : (0 : ℝ) < n.descFactorial 3 := Nat.cast_pos.2 (Nat.descFactorial_pos.2 (by omega))
   have hcube : (n : ℝ) ^ 3 ≤ 2 * n.descFactorial 3 := by
-    exact_mod_cast Nat.pow_three_le_two_mul_descFactorial_three h6
+    exact_mod_cast Nat.pow_le_two_mul_descFactorial (k := 3) h6
   have hloss : 6 * (#{p | T.color p ≠ some (X.color p)} : ℝ) * n /
       n.descFactorial 3 ≤ g / 2 := by
     rw [div_le_iff₀ hN]

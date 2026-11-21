@@ -28,7 +28,8 @@ coherent by recording its colors in both orientations, using the product palette
 `PairColorSystem.relabel` renames the palette along an equivalence.
 `PairColorSystem.split` refines a coloring by a symmetric labelling of the unordered pairs.
 `PairColorSystem.comap` restricts a coloring along a vertex embedding, preserving the palette.
-`coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple, and
+`coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple,
+`swapDistinctPair` reverses an ordered distinct pair, and
 `card_filter_coordPair_mem_le` counts the injective triples with a coordinate pair in a given set.
 -/
 
@@ -214,6 +215,26 @@ theorem comap_comap {W U : Type*} (S : PairColorSystem κ U) (g : W ↪ U) (f : 
   ext <;> rfl
 
 end PairColorSystem
+
+/-- Swap the two vertices of an ordered distinct pair. -/
+def swapDistinctPair (p : {p : V × V // p.1 ≠ p.2}) : {p : V × V // p.1 ≠ p.2} :=
+  ⟨p.val.swap, p.property.symm⟩
+
+/-- Underlying pair of `swapDistinctPair p`. -/
+@[simp]
+theorem swapDistinctPair_val (p : {p : V × V // p.1 ≠ p.2}) :
+    (swapDistinctPair p).val = p.val.swap :=
+  (rfl)
+
+/-- Swapping an ordered distinct pair twice returns the original pair. -/
+@[simp]
+theorem swapDistinctPair_swap (p : {p : V × V // p.1 ≠ p.2}) :
+    swapDistinctPair (swapDistinctPair p) = p :=
+  Subtype.ext (Prod.swap_swap p.val)
+
+/-- Swapping ordered distinct pairs is injective. -/
+theorem swapDistinctPair_injective : Function.Injective (swapDistinctPair (V := V)) :=
+  Function.Involutive.injective swapDistinctPair_swap
 
 /-- The ordered distinct pair formed by two coordinates of an injective tuple. -/
 def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)

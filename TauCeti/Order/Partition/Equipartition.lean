@@ -25,6 +25,8 @@ finite equipartition `P : Finpartition s` (`Finpartition.IsEquipartition`):
   `(#s : K) ^ 2 / #P.parts` in any linearly ordered semifield `K`.
 * `Finpartition.IsEquipartition.le_card_part_of_mul_le`: if `#P.parts ≤ k` and `k * m ≤ #s`, every
   cell of `P` has size at least `m`.
+* `Finpartition.IsEquipartition.card_part_le_two_mul_div`: every cell of `P` has size at most
+  `2 * (#s / #P.parts)`.
 * `Finpartition.IsEquipartition.le_mul_card_part_of_sup_mul_le`: if `#s` is at least `k` times the
   supremum of `⌈a / g j⌉₊` over `j ≤ k`, then `a ≤ g t * #C` for every cell `C ∈ P.parts` and every
   `t ≤ k` with `0 < g t`.
@@ -69,6 +71,15 @@ theorem IsEquipartition.le_card_part_of_mul_le (hP : P.IsEquipartition) {k m : �
   have hk_pos : 0 < k := hP_pos.trans_le hk
   have hm_le : m ≤ #s / k := (Nat.le_div_iff_mul_le hk_pos).2 (by rwa [mul_comm])
   exact hm_le.trans ((Nat.div_le_div_left hk hP_pos).trans (hP.average_le_card_part hC))
+
+/-- Every part of a finite equipartition `P` of `s` has size at most twice the floor average
+`#s / #P.parts`. -/
+theorem IsEquipartition.card_part_le_two_mul_div (hP : P.IsEquipartition) {A : Finset α}
+    (hA : A ∈ P.parts) : #A ≤ 2 * (#s / #P.parts) := by
+  have hpos : 0 < #s / #P.parts :=
+    Nat.div_pos P.card_parts_le_card (card_pos.2 ⟨A, hA⟩)
+  have hle := hP.card_part_le_average_add_one hA
+  omega
 
 /-- If `#s` is at least `k` times the supremum of `⌈a / g j⌉₊` over `j ≤ k`, then every part `C` of
 an equipartition `P` of `s` with `#P.parts ≤ k` satisfies `a ≤ g t * #C` whenever `t ≤ k` and

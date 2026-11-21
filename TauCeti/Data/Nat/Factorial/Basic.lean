@@ -22,11 +22,9 @@ the pairwise-collision upper bound on `n ^ (k + 1) - (n)_{k + 1}`;
 `Nat.pow_le_two_mul_descFactorial`, the falling-factorial lower bound `n ^ k ≤ 2 * (n)_k` whenever
 `k * (k - 1) ≤ n`; `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`,
 `6 ^ n * n ! ≤ (2 * n + 1)!`, the termwise comparison of the power series of `x * exp (x ^ 2 / 6)`
-and `sinh x`; `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`,
+and `sinh x`; and `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`,
 `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the termwise comparison that sums moment bounds `((n + 1)!)² aⁿ`
-against the series of `cosh`; and `Nat.pow_three_le_two_mul_descFactorial_three`,
-`n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the number of triples of `n` elements with the number of
-injective ones.
+against the series of `cosh`.
 -/
 
 public section
@@ -72,54 +70,19 @@ theorem pow_succ_le_descFactorial_succ_add (n k : ℕ) :
 for `n ≥ 6`. -/
 theorem pow_le_two_mul_descFactorial {n k : ℕ} (h : k * (k - 1) ≤ n) :
     n ^ k ≤ 2 * n.descFactorial k := by
-  have hkey : ∀ m, (2 * n - m * (m - 1)) * n ^ m ≤ 2 * n * n.descFactorial m := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      simp only [Nat.add_sub_cancel]
-      by_cases hlt : (m + 1) * m < 2 * n
-      · have hstep : (m + 1) * m = m * (m - 1) + 2 * m := by
-          cases m with
-          | zero => simp
-          | succ j =>
-            simp only [Nat.add_sub_cancel]
-            rw [Nat.mul_comm (j + 1) j, ← Nat.add_mul]
-        have hmn : m ≤ n := by omega
-        have hsub : 2 * n - m * (m - 1) = (2 * n - (m + 1) * m) + 2 * m := by omega
-        have hle1 : (2 * n - (m + 1) * m) * n ≤ (n - m) * (2 * n - m * (m - 1)) := by
-          set a := 2 * n - (m + 1) * m
-          have ha : a ≤ 2 * (n - m) := by omega
-          calc a * n = a * ((n - m) + m) := by rw [Nat.sub_add_cancel hmn]
-            _ = a * (n - m) + a * m := Nat.mul_add a (n - m) m
-            _ ≤ a * (n - m) + (2 * (n - m)) * m :=
-                Nat.add_le_add_left (Nat.mul_le_mul_right m ha) _
-            _ = (n - m) * (a + 2 * m) := by
-                rw [Nat.mul_add, Nat.mul_comm a (n - m)]
-                congr 1
-                ac_rfl
-            _ = (n - m) * (2 * n - m * (m - 1)) := by rw [hsub]
-        calc (2 * n - (m + 1) * m) * n ^ (m + 1)
-            = (2 * n - (m + 1) * m) * n * n ^ m := by
-                rw [Nat.pow_succ, Nat.mul_assoc, Nat.mul_comm (n ^ m) n, ← Nat.mul_assoc]
-          _ ≤ (n - m) * (2 * n - m * (m - 1)) * n ^ m := Nat.mul_le_mul_right _ hle1
-          _ = (n - m) * ((2 * n - m * (m - 1)) * n ^ m) := Nat.mul_assoc _ _ _
-          _ ≤ (n - m) * (2 * n * n.descFactorial m) := Nat.mul_le_mul_left _ ih
-          _ = 2 * n * ((n - m) * n.descFactorial m) := by
-                rw [← Nat.mul_assoc, Nat.mul_comm (n - m), Nat.mul_assoc]
-          _ = 2 * n * n.descFactorial (m + 1) := by rw [descFactorial_succ]
-      · have hzero : 2 * n - (m + 1) * m = 0 := Nat.sub_eq_zero_of_le (Nat.le_of_not_lt hlt)
-        simp [hzero]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · rcases k with _ | _ | k
-    · simp
-    · simp
-    · exact absurd h (Nat.not_le_of_lt (Nat.mul_pos (Nat.succ_pos _) (Nat.succ_pos _)))
-  · have hle : n * n ^ k ≤ n * (2 * n.descFactorial k) := by
-      calc n * n ^ k ≤ (2 * n - k * (k - 1)) * n ^ k := Nat.mul_le_mul_right _ (by omega)
-        _ ≤ 2 * n * n.descFactorial k := hkey k
-        _ = n * (2 * n.descFactorial k) := by rw [Nat.mul_comm 2 n, Nat.mul_assoc]
-    exact Nat.le_of_mul_le_mul_left hle hn
+  cases k with
+  | zero => simp
+  | succ m =>
+    simp only [Nat.add_sub_cancel] at h
+    have hpow := pow_succ_le_descFactorial_succ_add n m
+    have herr : 2 * ((m + 1).choose 2 * n ^ m) ≤ n ^ (m + 1) := by
+      calc 2 * ((m + 1).choose 2 * n ^ m)
+          = 2 * ((m + 1) * m / 2) * n ^ m := by
+              rw [Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_assoc]
+        _ ≤ (m + 1) * m * n ^ m := Nat.mul_le_mul_right _ (Nat.mul_div_le _ 2)
+        _ ≤ n * n ^ m := Nat.mul_le_mul_right _ h
+        _ = n ^ (m + 1) := by rw [Nat.pow_succ, Nat.mul_comm]
+    omega
 
 /-- `6 ^ n * n ! ≤ (2 * n + 1)!`, with equality at `n = 0` and `n = 1`. -/
 theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :
@@ -153,13 +116,5 @@ theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
     exact le_of_dvd (factorial_pos _) (factorial_mul_factorial_dvd_factorial_add n n)
   rw [factorial_succ, Nat.mul_pow, Nat.pow_two n !]
   exact Nat.mul_le_mul hn hc
-
-/-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
-`n ^ 3 ≤ 2 * (n)₃`. -/
-theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
-    n ^ 3 ≤ 2 * n.descFactorial 3 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  simp only [descFactorial_succ, descFactorial_zero]
-  grind
 
 end Nat
