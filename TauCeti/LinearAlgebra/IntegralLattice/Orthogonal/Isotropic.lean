@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.UnitNorm
 public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
@@ -32,10 +31,6 @@ nondegeneracy beyond unimodularity nor any definiteness is assumed.
 
 ## Main results
 
-* `TauCeti.IntegralLattice.isUnimodular_orthogonalSum_iff`: an orthogonal sum is unimodular
-  exactly when both summands are.
-* `TauCeti.IntegralLattice.IsUnimodular.exists_integralForm_eq_one`: in a unimodular lattice
-  every primitive vector pairs to `1` with some lattice vector.
 * `TauCeti.IntegralLattice.exists_isPrimitive_integralNorm_eq_zero`: an isotropic rational form
   has a primitive isotropic lattice vector.
 * `TauCeti.IntegralLattice.hyperbolicPlaneSplittingIsometry`: a hyperbolic pair `v, w` splits
@@ -62,30 +57,9 @@ universe u v
 
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
-/-! ### Unimodularity of orthogonal sums -/
-
-/-- An orthogonal sum is unimodular exactly when both summands are. -/
-theorem isUnimodular_orthogonalSum_iff {W : Type v} [AddCommGroup W] [Module ℚ W]
-    (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.orthogonalSum M).IsUnimodular ↔ L.IsUnimodular ∧ M.IsUnimodular := by
-  simp only [isUnimodular_iff_isUnit_determinant, determinant_orthogonalSum, IsUnit.mul_iff]
-
-/-- The hyperbolic plane is unimodular. -/
-theorem isUnimodular_hyperbolicPlane : hyperbolicPlane.IsUnimodular :=
-  hyperbolicPlane.isUnimodular_iff_discriminant_eq_one.mpr hyperbolicPlane_discriminant
-
-/-! ### Partners and primitive isotropic vectors -/
+/-! ### Primitive isotropic vectors -/
 
 variable (L : IntegralLattice V)
-
-/-- In a unimodular lattice every primitive vector pairs to `1` with some lattice vector. -/
-theorem IsUnimodular.exists_integralForm_eq_one {L : IntegralLattice V} (hL : L.IsUnimodular)
-    {v : L} (hv : IsPrimitive v) : ∃ w : L, L.integralForm v w = 1 := by
-  obtain ⟨f, hf⟩ := isPrimitive_def.1 hv
-  obtain ⟨w, hw⟩ := hL.isPerfPair_integralForm.bijective_left.2 f.toAddMonoidHom.toIntLinearMap
-  refine ⟨w, ?_⟩
-  rw [L.isSymm_integralForm.eq v w, hw]
-  exact hf
 
 /-- If the rational form of `L` is isotropic, then `L` contains a primitive isotropic vector. -/
 theorem exists_isPrimitive_integralNorm_eq_zero (hiso : ¬ L.norm.Anisotropic) :
@@ -108,9 +82,7 @@ theorem exists_isPrimitive_integralNorm_eq_zero (hiso : ¬ L.norm.Anisotropic) :
     rw [← hsx', hdv, Submodule.coe_smul, Int.cast_smul_eq_zsmul]
   have hnorm : L.norm ((d : ℚ) • (v : V)) = 0 := by
     rw [← hcoe, QuadraticMap.map_smul, hx, smul_zero]
-  rw [QuadraticMap.map_smul, smul_eq_zero] at hnorm
-  rw [integralNorm_apply, integralForm_cast, Int.cast_zero, ← norm_apply]
-  exact hnorm.resolve_left (mul_ne_zero (Int.cast_ne_zero.mpr hd.ne') (Int.cast_ne_zero.mpr hd.ne'))
+  simpa [integralNorm_apply, integralForm_cast, ← norm_apply, hd.ne'] using hnorm
 
 /-! ### The plane of an isotropic vector and a partner -/
 
@@ -134,13 +106,12 @@ private theorem linearIndependent_pair : LinearIndependent ℤ ![v, w] :=
   LinearMap.BilinForm.linearIndependent_of_isUnit_det (one_mem _) (L.integralForm_pair hv hvw)
     L.isUnit_det_pair
 
-/-- The plane spanned by an isotropic vector and a partner is complementary to its orthogonal
-complement, since its Gram matrix is invertible over `ℤ`. -/
-private theorem isCompl_span_pair :
-    IsCompl (span ℤ (Set.range ![v, w])) (L.integralForm.orthogonal (span ℤ (Set.range ![v, w]))) :=
-  L.isCompl_orthogonal_of_restrict_bijective _
-    (LinearMap.BilinForm.isModular_one_iff.mp (LinearMap.BilinForm.isModular_restrict_span_range
-      (one_mem _) (L.integralForm_pair hv hvw) L.isUnit_det_pair)).bijective_left
+/-- The integral form restricted to the plane spanned by an isotropic vector and a partner is
+bijective onto the dual, since its Gram matrix is invertible over `ℤ`. -/
+private theorem bijective_restrict_span_pair :
+    Function.Bijective (L.integralForm.restrict (span ℤ (Set.range ![v, w]))) :=
+  (LinearMap.BilinForm.isModular_one_iff.mp (LinearMap.BilinForm.isModular_restrict_span_range
+    (one_mem _) (L.integralForm_pair hv hvw) L.isUnit_det_pair)).bijective_left
 
 end IsotropicPair
 
@@ -170,13 +141,11 @@ private theorem gramMatrix_spanPairBasis :
       (L.isSymm_integralForm.restrict (span ℤ (Set.range ![v, w])))).gramMatrix
         (spanPairBasis L hv hvw) = !![0, 1; 1, 0] := by
   ext i j
-  rw [gramMatrix_apply]
   apply Int.cast_injective (α := ℚ)
-  rw [integralForm_cast, coe_spanPairBasis, coe_spanPairBasis, ofIntegralForm_form,
-    LinearMap.BilinForm.baseChange_tmul]
   have h := L.integralForm_pair hv hvw i j
   rw [hw] at h
-  simp [LinearMap.BilinForm.restrict_apply, h]
+  simp [gramMatrix_apply, integralForm_cast, coe_spanPairBasis, LinearMap.BilinForm.restrict_apply,
+    h]
 
 include hw in
 /-- The hyperbolic plane is carried onto the rationalized span of a hyperbolic pair, sending the
@@ -196,10 +165,9 @@ private theorem spanPairIsometry_apply (x : Fin 2 → ℚ) :
       x 1 • ((hyperbolicPlaneBasis 1 : hyperbolicPlane) : Fin 2 → ℚ) := by
     ext i
     fin_cases i <;> simp
-  rw [hx, map_add, map_smul, map_smul, spanPairIsometry, Isometry.ofGramMatrixEq_apply_basis,
-    Isometry.ofGramMatrixEq_apply_basis, coe_spanPairBasis, coe_spanPairBasis,
-    TensorProduct.smul_tmul', TensorProduct.smul_tmul']
-  simp
+  conv_lhs => rw [hx]
+  simp [-coe_hyperbolicPlaneBasis, spanPairIsometry, Isometry.ofGramMatrixEq_apply_basis,
+    coe_spanPairBasis, TensorProduct.smul_tmul']
 
 /-- **Splitting off a hyperbolic plane.** A hyperbolic pair `v, w` of `L`, that is
 `v² = w² = 0` and `v · w = 1`, spans a copy of the hyperbolic plane `U`, and `L` is the orthogonal
@@ -213,7 +181,7 @@ noncomputable def hyperbolicPlaneSplittingIsometry :
           (L.isSymm_integralForm.restrict
             (L.integralForm.orthogonal (span ℤ (Set.range ![v, w])))))) L :=
   ((spanPairIsometry L hv hw hvw).orthogonalSum (Isometry.refl _)).trans
-    (L.orthogonalSumIsometryOfIsCompl _ _ (L.isCompl_span_pair hv hvw) le_rfl)
+    (L.orthogonalSplittingIsometry _ (L.bijective_restrict_span_pair hv hvw))
 
 /-- The hyperbolic splitting sends the standard basis of `U` to `v, w`, and a pure tensor of the
 orthogonal complement to its underlying scalar multiple. -/
@@ -222,15 +190,10 @@ theorem hyperbolicPlaneSplittingIsometry_apply_tmul (x : Fin 2 → ℚ) (r : ℚ
     (t : L.integralForm.orthogonal (span ℤ (Set.range ![v, w]))) :
     L.hyperbolicPlaneSplittingIsometry hv hw hvw (x, r ⊗ₜ[ℤ] t) =
       x 0 • (v : V) + x 1 • (w : V) + r • ((t : L) : V) := by
-  have hsplit : (spanPairIsometry L hv hw hvw x, r ⊗ₜ[ℤ] t) =
-      (x 0 ⊗ₜ[ℤ] (⟨v, subset_span (Set.mem_range_self 0)⟩ : span ℤ (Set.range ![v, w])),
-          r ⊗ₜ[ℤ] t) +
-        (x 1 ⊗ₜ[ℤ] (⟨w, subset_span (Set.mem_range_self 1)⟩ : span ℤ (Set.range ![v, w])),
-          (0 : ℚ) ⊗ₜ[ℤ] t) := by
-    rw [spanPairIsometry_apply, Prod.mk_add_mk, zero_tmul, add_zero]
   rw [hyperbolicPlaneSplittingIsometry, Isometry.trans_apply, Isometry.orthogonalSum_apply,
-    Isometry.refl_apply, hsplit, map_add, orthogonalSumIsometryOfIsCompl_apply_tmul,
-    orthogonalSumIsometryOfIsCompl_apply_tmul, zero_smul, add_zero]
+    Isometry.refl_apply, spanPairIsometry_apply,
+    show r ⊗ₜ[ℤ] t = r ⊗ₜ[ℤ] t + (0 : ℚ) ⊗ₜ[ℤ] t by simp, ← Prod.mk_add_mk, map_add]
+  simp only [orthogonalSplittingIsometry_apply_tmul, zero_smul, add_zero]
   abel
 
 /-- The inverse hyperbolic splitting sends `v` to the first standard basis vector of `U`. -/
@@ -266,8 +229,8 @@ end HyperbolicPair
 /-! ### The even case -/
 
 /-- **An even unimodular lattice with isotropic rational form splits off a hyperbolic plane.**
-It is isometric to `U ⊕ Y`, where `Y`, the rationalized orthogonal complement of a hyperbolic
-pair, is again even and unimodular. -/
+It is isometric to `U ⊕ Y`, where `Y` is the rationalized restriction of `L` to some sublattice
+`S` and is again even and unimodular. -/
 theorem IsUnimodular.exists_isometry_hyperbolicPlane_orthogonalSum {L : IntegralLattice V}
     (hL : L.IsUnimodular) (hE : L.IsEven) (hiso : ¬ L.norm.Anisotropic) :
     ∃ S : Submodule ℤ L,
@@ -306,7 +269,8 @@ private theorem exists_odd_partner (hodd : ¬ L.IsEven) {v w : L} (hvv : L.integ
   · exact ⟨w, hw, hvw⟩
   rw [Int.not_odd_iff_even] at hw
   -- Decompose `x = p + z` along the plane `P` of `v, w` and its orthogonal complement.
-  have hP := L.isCompl_span_pair hvv hvw
+  have hP :=
+    L.isCompl_orthogonal_of_restrict_bijective _ (L.bijective_restrict_span_pair hvv hvw)
   obtain ⟨p, hp, z, hz, rfl⟩ := mem_sup.mp (hP.codisjoint.eq_top ▸ mem_top : x ∈ _ ⊔ _)
   obtain ⟨c, rfl⟩ := (mem_span_range_iff_exists_fun ℤ).mp hp
   have hvz : B v z = 0 := (LinearMap.BilinForm.mem_orthogonal_iff.1 hz) v
@@ -362,8 +326,9 @@ theorem IsUnimodular.exists_integralForm_eq_and_eq_neg {L : IntegralLattice V}
     linear_combination -hεε
 
 /-- **An odd unimodular lattice with isotropic rational form splits off `⟨ε⟩` with odd
-complement.** For either sign `ε = ±1` it is isometric to `⟨ε⟩ ⊕ Y`, where `Y`, the rationalized
-orthogonal complement of a vector of norm `ε`, is unimodular and contains a vector of norm `-ε`. -/
+complement.** For either sign `ε = ±1` it is isometric to `⟨ε⟩ ⊕ Y`, where `Y` is the
+rationalized restriction of `L` to some sublattice `S`, is unimodular, and contains a vector of
+norm `-ε`. -/
 theorem IsUnimodular.exists_isometry_rankOne_orthogonalSum {L : IntegralLattice V}
     (hL : L.IsUnimodular) (hodd : ¬ L.IsEven) (hiso : ¬ L.norm.Anisotropic) {ε : ℤ}
     (hε : IsUnit ε) :
