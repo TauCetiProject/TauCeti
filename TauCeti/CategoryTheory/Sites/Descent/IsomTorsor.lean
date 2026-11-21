@@ -19,9 +19,10 @@ with every isomorphism, this is also precomposition with the band automorphisms 
 is free and transitive: any two isomorphisms `p q : x ≅ y` differ by a unique coefficient, their
 difference. Hence the isomorphisms `x ≅ y`, when there is one, form an `A(U)`-torsor, and choosing
 one identifies them with `A(U)` (Olsson, Lemma 31.3 and Remark 31.5). The action and the difference
-are compatible with pullback along arrows `V ⟶ U`, and with Mathlib's restriction maps `pullHom` of
-the presheaves of morphisms `Pseudofunctor.presheafHom x y`. For a gerbe, local isomorphisms
-`x ≅ y` exist on a covering sieve, so that the sheaf of isomorphisms is locally a trivial torsor.
+are compatible with pullback along arrows `V ⟶ U`, and the action on morphisms `homAct` is
+compatible with Mathlib's restriction maps `pullHom` of the presheaves of morphisms
+`Pseudofunctor.presheafHom x y`. The torsor structure is built over each object `U` separately; the
+sheaf-level torsor of isomorphisms is not constructed here.
 
 ## Main declarations
 

@@ -29,7 +29,7 @@ with an arrow to it.
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.Neutralization`: the neutralizations of `F` over `S`.
-* `CategoryTheory.Pseudofunctor.Neutralization.equivFibre`: neutralizations over `S` are
+* `CategoryTheory.Pseudofunctor.Neutralization.equivFiber`: neutralizations over `S` are
   equivalent to the fibre of `F` over `S`.
 * `CategoryTheory.Pseudofunctor.Neutralization.pullback`: the pullback of a neutralization along an
   arrow `V ⟶ S`.
@@ -46,7 +46,7 @@ with an arrow to it.
   Remark 31.5
 -/
 
-@[expose] public section
+public section
 
 universe v u v' u'
 
@@ -99,9 +99,10 @@ abbrev isoMk {x y : Neutralization F S} (e : x.obj ≅ y.obj) : x ≅ y :=
   InducedCategory.isoMk e
 
 variable (F S) in
-/-- Neutralizations of `F` over `S` are equivalent to the fibre of `F` over `S`. -/
-@[simps]
-def equivFibre : Neutralization F S ≌ F.obj (.mk (op S)) where
+/-- Neutralizations of `F` over `S` are equivalent to the fibre of `F` over `S`. Its body is
+exposed because the statements of its `simps` lemmas need its functors to reduce on objects. -/
+@[expose, simps]
+def equivFiber : Neutralization F S ≌ F.obj (.mk (op S)) where
   functor.obj x := x.obj
   functor.map f := f.hom
   inverse.obj x := ⟨x⟩
@@ -112,17 +113,20 @@ def equivFibre : Neutralization F S ≌ F.obj (.mk (op S)) where
 
 variable {V W : C}
 
-/-- The pullback of a neutralization over `S` along an arrow `f : V ⟶ S`. -/
-def pullback (f : V ⟶ S) (x : Neutralization F S) : Neutralization F V :=
+/-- The pullback of a neutralization over `S` along an arrow `f : V ⟶ S`. Its body is exposed
+because the statements of the characterization lemmas of `pullbackId` and `pullbackComp` need
+`(pullback f x).obj` to reduce to `(F.map f.op.toLoc).toFunctor.obj x.obj`. -/
+@[expose] def pullback (f : V ⟶ S) (x : Neutralization F S) : Neutralization F V :=
   ⟨(F.map f.op.toLoc).toFunctor.obj x.obj⟩
 
 @[simp]
 lemma pullback_obj (f : V ⟶ S) (x : Neutralization F S) :
     (pullback f x).obj = (F.map f.op.toLoc).toFunctor.obj x.obj :=
-  rfl
+  (rfl)
 
-/-- The pullback of neutralizations along an arrow `f : V ⟶ S`, as a functor. -/
-def pullbackFunctor (f : V ⟶ S) : Neutralization F S ⥤ Neutralization F V where
+/-- The pullback of neutralizations along an arrow `f : V ⟶ S`, as a functor. Its body is
+exposed because the statement of `pullbackFunctor_map_hom` needs it to reduce on objects. -/
+@[expose] def pullbackFunctor (f : V ⟶ S) : Neutralization F S ⥤ Neutralization F V where
   obj := pullback f
   map g := homMk ((F.map f.op.toLoc).toFunctor.map g.hom)
   map_id x := by ext; exact Functor.map_id _ _
@@ -131,12 +135,12 @@ def pullbackFunctor (f : V ⟶ S) : Neutralization F S ⥤ Neutralization F V wh
 @[simp]
 lemma pullbackFunctor_obj (f : V ⟶ S) (x : Neutralization F S) :
     (pullbackFunctor f).obj x = pullback f x :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma pullbackFunctor_map_hom (f : V ⟶ S) {x y : Neutralization F S} (g : x ⟶ y) :
     ((pullbackFunctor f).map g).hom = (F.map f.op.toLoc).toFunctor.map g.hom :=
-  rfl
+  (rfl)
 
 /-- The pullback of a neutralization along the identity is isomorphic to it. -/
 def pullbackId (x : Neutralization F S) : pullback (𝟙 S) x ≅ x :=
@@ -145,7 +149,12 @@ def pullbackId (x : Neutralization F S) : pullback (𝟙 S) x ≅ x :=
 @[simp]
 lemma pullbackId_hom_hom (x : Neutralization F S) :
     (pullbackId x).hom.hom = (F.mapId (.mk (op S))).hom.toNatTrans.app x.obj :=
-  rfl
+  (rfl)
+
+@[simp]
+lemma pullbackId_inv_hom (x : Neutralization F S) :
+    (pullbackId x).inv.hom = (F.mapId (.mk (op S))).inv.toNatTrans.app x.obj :=
+  (rfl)
 
 /-- The pullback of a neutralization along a composite `g ≫ f` is isomorphic to the pullback along
 `g` of its pullback along `f`. -/
@@ -156,7 +165,12 @@ def pullbackComp (f : V ⟶ S) (g : W ⟶ V) (x : Neutralization F S) :
 @[simp]
 lemma pullbackComp_hom_hom (f : V ⟶ S) (g : W ⟶ V) (x : Neutralization F S) :
     (pullbackComp f g x).hom.hom = (F.mapComp f.op.toLoc g.op.toLoc).hom.toNatTrans.app x.obj :=
-  rfl
+  (rfl)
+
+@[simp]
+lemma pullbackComp_inv_hom (f : V ⟶ S) (g : W ⟶ V) (x : Neutralization F S) :
+    (pullbackComp f g x).inv.hom = (F.mapComp f.op.toLoc g.op.toLoc).inv.toNatTrans.app x.obj :=
+  (rfl)
 
 end Neutralization
 

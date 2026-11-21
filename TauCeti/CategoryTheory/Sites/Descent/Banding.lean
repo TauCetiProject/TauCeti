@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 public import Mathlib.CategoryTheory.Sites.Sheaf
-public import TauCeti.CategoryTheory.Category.Cat
 
 /-!
 # Abelian bandings of gerbes and band-preserving transformations
@@ -25,9 +24,7 @@ condition forces every automorphism group `Aut x` to be commutative.
 A strong transformation `η : F ⟶ G` between banded pseudofunctors is band-preserving when its
 component functors carry the band automorphism of each coefficient to the band automorphism of
 the same coefficient. Band-preserving transformations are closed under identities and
-composition. When the fibres of `G` are groupoids, in particular when `G` is a gerbe, every
-modification between strong transformations `F ⟶ G` is invertible, so these transformations and
-their modifications form a groupoid.
+composition.
 
 ## Main declarations
 
@@ -38,8 +35,6 @@ their modifications form a groupoid.
   pseudofunctor are commutative.
 * `CategoryTheory.Pseudofunctor.BandPreserving`: the property of a strong transformation of
   preserving the bands.
-* `CategoryTheory.Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`: modifications between
-  strong transformations into a pseudofunctor with groupoid fibres are invertible.
 
 ## References
 
@@ -80,6 +75,8 @@ structure AbelianBanding (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}) (J : 
   autMulEquivOfIso_mulEquiv {U : C} {x y : F.obj (.mk (op U))} (e : x ≅ y)
       (a : Multiplicative (A.obj.obj (op U))) :
     Aut.autMulEquivOfIso e (mulEquiv U x a) = mulEquiv U y a
+
+attribute [simp] AbelianBanding.mapAut_mulEquiv AbelianBanding.autMulEquivOfIso_mulEquiv
 
 namespace AbelianBanding
 
@@ -186,24 +183,5 @@ lemma comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η] [BandPreservi
     rfl
 
 end BandPreserving
-
-namespace StrongTrans
-
-open scoped Pseudofunctor.StrongTrans
-
-variable {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-
-/-- If the fibres of `G` are groupoids, every modification between strong transformations
-`F ⟶ G` is invertible, so strong transformations `F ⟶ G` and their modifications form a
-groupoid. This applies when `G` is a gerbe. -/
-instance isGroupoid_of_isGroupoid [∀ U : C, IsGroupoid (G.obj (.mk (op U)))] :
-    IsGroupoid (F ⟶ G) where
-  all_isIso {η θ} Γ := by
-    have (a : LocallyDiscrete Cᵒᵖ) : IsIso (Γ.as.app a) := by
-      have : IsGroupoid (G.obj a) := inferInstanceAs (IsGroupoid (G.obj (.mk (op a.as.unop))))
-      exact Cat.Hom₂.isIso_of_isIso_app _
-    exact (isoMk (fun a ↦ asIso (Γ.as.app a)) fun f ↦ Γ.as.naturality f).isIso_hom
-
-end StrongTrans
 
 end CategoryTheory.Pseudofunctor

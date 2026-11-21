@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Equivalence
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Equivalence
 
@@ -28,7 +29,9 @@ of composite pseudofunctors, which `simp` and `rw` do not see through. The same 
 handles identity and composite transport cells. The file also evaluates the naturality cell
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
-(`Pseudofunctor.StrongTrans.naturalityObjIso`).
+(`Pseudofunctor.StrongTrans.naturalityObjIso`). When the values of the target pseudofunctor are
+groupoids, every modification between strong transformations into it is invertible
+(`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
@@ -171,6 +174,15 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
+
+/-- If the values of `G` are groupoids, every modification between strong transformations
+`F ⟶ G` is invertible, so strong transformations `F ⟶ G` and their modifications form a
+groupoid. This applies when `G` is a gerbe. -/
+instance isGroupoid_of_isGroupoid {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} [∀ b, IsGroupoid (G.obj b)] : IsGroupoid (F ⟶ G) where
+  all_isIso Γ := by
+    have (a : B) : IsIso (Γ.as.app a) := Cat.Hom₂.isIso_of_isIso_app _
+    exact isIso_of_isIso_app Γ
 
 end Pseudofunctor.StrongTrans
 
