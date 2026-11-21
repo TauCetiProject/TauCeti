@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.Analysis.Normed.Module.RCLike.Basic
 
 /-!
 # Finite sums with bounded coefficients
@@ -100,25 +101,6 @@ theorem norm_sum_ofReal_smul_le_two_mul (hS : ∀ u ⊆ s, ‖∑ i ∈ u, v i�
         (norm_sum_ofReal_smul_le_of_nonneg hS ht (fun i _ ↦ posPart_nonneg _) hpos)
         (norm_sum_ofReal_smul_le_of_nonneg hS ht (fun i _ ↦ negPart_nonneg _) hneg))
     _ = 2 * t * S := by ring
-
-/-- Splitting scalar coefficients into real and imaginary parts bounds a combination of the `v i`
-by the two combinations with real coefficients `re (a i)` and `im (a i)`. -/
-theorem norm_sum_smul_le_norm_sum_re_add_norm_sum_im {a : ι → 𝕜} :
-    ‖∑ i ∈ s, a i • v i‖ ≤
-      ‖∑ i ∈ s, (RCLike.re (a i) : 𝕜) • v i‖ + ‖∑ i ∈ s, (RCLike.im (a i) : 𝕜) • v i‖ := by
-  -- The imaginary parts contribute `I • ∑ i ∈ s, im (a i) • v i`, and `‖I‖ ≤ 1`.
-  have hsplit : ∑ i ∈ s, a i • v i = ∑ i ∈ s, (RCLike.re (a i) : 𝕜) • v i +
-      (RCLike.I : 𝕜) • ∑ i ∈ s, (RCLike.im (a i) : 𝕜) • v i := by
-    rw [Finset.smul_sum, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smul_smul, mul_comm, ← add_smul, RCLike.re_add_im]
-  have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-    rw [RCLike.norm_I]
-    split_ifs <;> norm_num
-  rw [hsplit]
-  refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
-  rw [norm_smul]
-  exact mul_le_of_le_one_left (norm_nonneg _) hI
 
 /-- If every subsum of `v` over a subset of `s` has norm at most `S`, then a combination of the
 `v i` with scalar coefficients of norm at most `t` has norm at most `4 * t * S`. -/
