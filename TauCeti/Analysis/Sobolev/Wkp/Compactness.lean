@@ -29,9 +29,10 @@ Any domain with a first-order Rellich theorem therefore has the higher-order one
 
 Compactness of the truncations gives the interpolation inequalities of `W^{k,p}(Ω)` with a
 non-explicit constant, by Ehrling's inequality: lower-order norms are bounded by an arbitrarily
-small multiple of a higher norm plus a multiple of the `Lᵖ` norm, which is injective on
-`W^{k,p}(Ω)` because weak derivatives are unique. This is how lower-order terms are absorbed in
-global a priori estimates on domains with a Rellich theorem.
+small multiple of a higher norm plus a multiple of the `Lᵖ` norm. This uses that the value map
+`W^{k,p}(Ω) → Lᵖ(Ω)` is injective (`TauCeti.Wkp.valueL_injective`) because weak derivatives are
+unique. This is how lower-order terms are absorbed in global a priori estimates on domains with a
+Rellich theorem.
 
 ## Main declarations
 
