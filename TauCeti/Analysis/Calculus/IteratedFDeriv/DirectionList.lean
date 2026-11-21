@@ -30,8 +30,11 @@ evaluated on the directions.
 ## Main declarations
 
 * `TauCeti.iteratedFDerivAlong`: the iterated directional derivative along a list of directions.
-* `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map along `k` directions gives a map
-  which is `C^m` whenever `m + k ≤ n`.
+* `TauCeti.tsupport_iteratedFDerivAlong_subset`, `HasCompactSupport.iteratedFDerivAlong`:
+  differentiating along a list of directions shrinks the topological support and preserves compact
+  support.
+* `ContDiffAt.iteratedFDerivAlong`, `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map
+  along `k` directions gives a map which is `C^m` whenever `m + k ≤ n`.
 * `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
 * `TauCeti.iteratedFDerivAlong_sum`: additivity over finite sums of `C^n` maps.
@@ -126,18 +129,40 @@ theorem iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero {f : E → F} {x : E}
     (h : f =ᶠ[𝓝 x] 0) (vs : List E) : iteratedFDerivAlong 𝕜 vs f x = 0 := by
   simpa using (h.iteratedFDerivAlong (𝕜 := 𝕜) vs).eq_of_nhds
 
+/-- Iterated directional differentiation shrinks the topological support. -/
+theorem tsupport_iteratedFDerivAlong_subset (vs : List E) (f : E → F) :
+    tsupport (iteratedFDerivAlong 𝕜 vs f) ⊆ tsupport f := by
+  induction vs with
+  | nil => rw [iteratedFDerivAlong_nil]
+  | cons v vs ih =>
+    rw [iteratedFDerivAlong_cons]
+    exact (tsupport_fderiv_apply_subset 𝕜 v).trans ih
+
+/-- Iterated directional differentiation preserves compact support. -/
+theorem _root_.HasCompactSupport.iteratedFDerivAlong {f : E → F} (hf : HasCompactSupport f)
+    (vs : List E) :
+    HasCompactSupport (iteratedFDerivAlong 𝕜 vs f) :=
+  hf.of_isClosed_subset (isClosed_tsupport _) (tsupport_iteratedFDerivAlong_subset vs f)
+
 variable {n : ℕ∞ω}
+
+/-- Differentiating a map which is `C^n` at `x` along `k` directions gives a map which is `C^m`
+at `x` whenever `m + k ≤ n`. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) (vs : List E) (hvs : m + vs.length ≤ n) :
+    ContDiffAt 𝕜 m (iteratedFDerivAlong 𝕜 vs f) x := by
+  induction vs generalizing m with
+  | nil => exact hf.of_le (by simpa using hvs)
+  | cons v vs ih =>
+    refine ((ih (m := m + 1) ?_).fderiv_right le_rfl).clm_apply contDiffAt_const
+    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
 
 /-- Differentiating a map which is `C^n` on an open set `s` along `k` directions gives a map which
 is `C^m` on `s` whenever `m + k ≤ n`. -/
 theorem _root_.ContDiffOn.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : m + vs.length ≤ n) :
-    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s := by
-  induction vs generalizing m with
-  | nil => exact hf.of_le (by simpa using hvs)
-  | cons v vs ih =>
-    refine ((ih (m := m + 1) ?_).fderiv_of_isOpen hs le_rfl).clm_apply contDiffOn_const
-    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
+    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s :=
+  fun _ hx => ((hf.contDiffAt (hs.mem_nhds hx)).iteratedFDerivAlong vs hvs).contDiffWithinAt
 
 theorem _root_.ContDiffOn.differentiableOn_iteratedFDerivAlong {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : vs.length < n) :

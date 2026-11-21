@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Group.Integral
+public import Mathlib.MeasureTheory.Measure.Haar.Basic
+import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Integrals of odd and even functions over symmetric domains
@@ -25,6 +28,12 @@ carries the interval to `(-R)..0`, so for even `g` the integrals over `(-R)..0` 
 this is the reflection `∫ t in 0..-R, g t = -∫ t in 0..R, g t`, and splitting `[-R, R]` at `0`
 gives the doubling formula. When `g` fails to be integrable, both sides of each statement are `0`.
 
+Dually, for a negation-invariant measure `μ`, the integral of an integrable even function `φ` over
+`{y | 0 ≤ g y}`, for any measurable odd `g : G → ℝ` with null zero locus, equals half of
+`∫ y, φ y ∂μ` (`MeasureTheory.setIntegral_setOf_nonneg_of_even`). On a finite-dimensional real
+normed space with an additive Haar measure, every nonzero continuous linear functional has null
+kernel, yielding the half-space formula `MeasureTheory.setIntegral_halfSpace_of_even`.
+
 ## Main results
 
 * `intervalIntegral.integral_eq_zero_of_odd` — `∫ t in -R..R, g t = 0` for odd `g`.
@@ -34,6 +43,12 @@ gives the doubling formula. When `g` fails to be integrable, both sides of each 
   `g`.
 * `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for odd `g` and a measure `μ`
   invariant under negation.
+* `MeasureTheory.setIntegral_setOf_nonneg_of_even` — `∫ y in {y | 0 ≤ g y}, φ y ∂μ =
+  (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ` for integrable even `φ`, measurable odd `g` with null zero set, and
+  negation-invariant `μ`.
+* `MeasureTheory.setIntegral_halfSpace_of_even` — `∫ y in {y | 0 ≤ L y}, φ y ∂μ =
+  (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ` for integrable even `φ`, nonzero `L : E →L[ℝ] ℝ`, and additive Haar
+  measure `μ`.
 -/
 
 public section
@@ -103,6 +118,58 @@ theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [AddGroup G] [
   rw [hfun, integral_neg] at h
   rw [neg_eq_iff_add_eq_zero, ← two_smul ℝ] at h
   exact (smul_eq_zero.1 h).resolve_left two_ne_zero
+
+/-- Integrating an integrable even function against a negation-invariant measure over
+`{y | 0 ≤ g y}`, where `g : G → ℝ` is measurable, odd, and vanishes only on a null set, yields
+half its full-space integral. -/
+theorem setIntegral_setOf_nonneg_of_even {G F : Type*} [MeasurableSpace G] [AddGroup G]
+    [MeasurableNeg G] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {μ : Measure G} [μ.IsNegInvariant] {φ : G → F} (hφ : Integrable φ μ)
+    (heven : Function.Even φ) {g : G → ℝ} (hg : Measurable g) (hodd : Function.Odd g)
+    (hzero : μ {y | g y = 0} = 0) :
+    ∫ y in {y | 0 ≤ g y}, φ y ∂μ = (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ := by
+  let P : Set G := {y | 0 ≤ g y}
+  let N : Set G := {y | g y < 0}
+  let Ppos : Set G := {y | 0 < g y}
+  let Z : Set G := {y | g y = 0}
+  have hNm : MeasurableSet N := measurableSet_lt hg measurable_const
+  have hZm : MeasurableSet Z := measurableSet_eq_fun hg measurable_const
+  have hPpos_m : MeasurableSet Ppos := measurableSet_lt measurable_const hg
+  have hPN_union : P ∪ N = Set.univ := by ext y; simp [P, N, le_or_gt]
+  have hP_union : P = Ppos ∪ Z := by ext y; simp [P, Ppos, Z, le_iff_lt_or_eq, eq_comm]
+  have hPN_disj : Disjoint P N := Set.disjoint_left.mpr fun y h1 h2 ↦ by
+    simp only [P, N, Set.mem_ofPred_eq] at h1 h2; exact not_lt_of_ge h1 h2
+  have hPposZ_disj : Disjoint Ppos Z := Set.disjoint_left.mpr fun y h1 h2 ↦ by
+    simp only [Ppos, Z, Set.mem_ofPred_eq] at h1 h2; exact ne_of_gt h1 h2
+  have hsum : ∫ y in P, φ y ∂μ + ∫ y in N, φ y ∂μ = ∫ y, φ y ∂μ := by
+    rw [← setIntegral_union hPN_disj hNm hφ.integrableOn hφ.integrableOn, hPN_union,
+      setIntegral_univ]
+  have hind : (fun y ↦ Ppos.indicator φ (-y)) = N.indicator φ := by
+    ext y; by_cases hy : g y < 0 <;> simp [Ppos, N, hodd y, heven y, hy]
+  have heq_PN : ∫ y in P, φ y ∂μ = ∫ y in N, φ y ∂μ := by
+    rw [hP_union, setIntegral_union hPposZ_disj hZm hφ.integrableOn hφ.integrableOn,
+      setIntegral_measure_zero _ hzero, add_zero, ← integral_indicator hPpos_m,
+      ← integral_indicator hNm, ← integral_neg_eq_self, hind]
+  rw [← heq_PN, ← two_smul ℝ] at hsum
+  rw [← hsum, inv_smul_smul₀ two_ne_zero]
+
+/-- Integrating an integrable even function against an additive Haar measure over the closed
+half-space `{y : E | 0 ≤ L y}` defined by any nonzero continuous linear functional
+`L : E →L[ℝ] ℝ` yields half its full-space integral. -/
+theorem setIntegral_halfSpace_of_even {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure E} [μ.IsAddHaarMeasure]
+    {φ : E → F} (hφ : Integrable φ μ) (heven : Function.Even φ)
+    {L : E →L[ℝ] ℝ} (hL : L ≠ 0) :
+    ∫ y in {y : E | 0 ≤ L y}, φ y ∂μ = (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ := by
+  have hker : μ {y : E | L y = 0} = 0 := by
+    have hneq : LinearMap.ker L.toLinearMap ≠ ⊤ := fun htop ↦
+      let ⟨v, hv⟩ := DFunLike.ne_iff.mp hL
+      hv (htop ▸ Submodule.mem_top : v ∈ LinearMap.ker L.toLinearMap)
+    have hset : ({y : E | L y = 0} : Set E) = (LinearMap.ker L.toLinearMap : Set E) := by
+      ext y; simp
+    exact hset ▸ Measure.addHaar_submodule μ (LinearMap.ker L.toLinearMap) hneq
+  exact setIntegral_setOf_nonneg_of_even hφ heven L.continuous.measurable (fun y ↦ map_neg L y) hker
 
 end MeasureTheory
 
