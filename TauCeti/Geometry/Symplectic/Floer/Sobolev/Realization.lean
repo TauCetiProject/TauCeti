@@ -148,15 +148,15 @@ theorem norm_apply_le_norm_floerJetCoeff (ω : SymplecticForm V)
 when the coefficients of `D_u` are not essentially bounded on the cylinder. -/
 def floerSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) : H1 V →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL
+  (jetOperator stripMeasure (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL
 
 /-- The definition of the Sobolev realization of the linearized Floer operator: the first-order
-operator `TauCeti.CylinderSobolev.jetOperator` of the coefficient field on jets, restricted to
+operator `TauCeti.jetOperator` of the coefficient field on jets, restricted to
 `TauCeti.CylinderSobolev.H1`. -/
 theorem floerSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
     ω.floerSobolevOperator J Ks Kt u =
-      (jetOperator (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL :=
+      (jetOperator stripMeasure (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL :=
   (rfl)
 
 /-- When the coefficients of `D_u` are essentially bounded on the cylinder, the Sobolev realization

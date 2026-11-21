@@ -804,15 +804,6 @@ theorem isComplexLinearMap_fderiv_positiveEndChart (q : Puncture) (z : ℝ × �
   simp only [ContinuousLinearMap.coe_coe, fderiv_positiveEndChart_apply] at h ⊢
   rw [h, map_smul]
 
-/-- The positive end charts preserve orientation strictly. -/
-theorem det_fderiv_positiveEndChart_pos (q : Puncture) (z : ℝ × ℝ) :
-    0 < (fderiv ℝ (positiveEndChart q) z).det := by
-  have h : fderiv ℝ (positiveEndChart q) z = q.endSign • fderiv ℝ (endChart q) (q.endSign • z) :=
-    ContinuousLinearMap.ext fun v ↦ fderiv_positiveEndChart_apply q z v
-  rw [h, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul,
-    Module.finrank_prod, Module.finrank_self, one_add_one_eq_two, sq, endSign_mul_self, one_mul]
-  exact det_fderiv_endChart_pos q _
-
 /-- The Jacobian of the positive end chart at `ζ` is `4π² |φ'_q(ζ) - c_q|²`, where `c_q` is the
 center of the end, as for the end chart at the reflected point. -/
 theorem det_fderiv_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
@@ -823,6 +814,13 @@ theorem det_fderiv_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
   rw [h, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul,
     Module.finrank_prod, Module.finrank_self, one_add_one_eq_two, sq, endSign_mul_self, one_mul,
     ← ContinuousLinearMap.det, det_fderiv_endChart, positiveEndChart_apply]
+
+/-- The positive end charts preserve orientation strictly. -/
+theorem det_fderiv_positiveEndChart_pos (q : Puncture) (z : ℝ × ℝ) :
+    0 < (fderiv ℝ (positiveEndChart q) z).det := by
+  rw [det_fderiv_positiveEndChart, positiveEndChart_apply]
+  have := sub_ne_zero.2 (equivRealProdCLM_symm_endChart_ne_endCenter q (q.endSign • z))
+  positivity
 
 /-- The positive end chart sends the part `s > 0` of the end into `S`. -/
 theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}

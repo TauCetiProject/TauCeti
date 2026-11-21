@@ -85,39 +85,6 @@ open Floer ConformalSobolev ContinuousLinearMap
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
-/-- Inverting `a - b J` for an almost complex structure `J`: if `B = (a - b J) A` and
-`a² + b² = r²` with `r > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, since `(a + b J) (a - b J) = a² + b²`. -/
-private theorem mul_norm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
-    {A B : V →L[ℝ] V} {a b r : ℝ} (hAB : ∀ v, B v = a • A v - b • J (A v))
-    (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
-    r * ‖A‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖B‖ := by
-  set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
-  have hinv (v : V) : (a ^ 2 + b ^ 2) • A v = a • B v + b • J (B v) := by
-    rw [hAB v, map_sub, map_smul, map_smul, AlmostComplexStructure.apply_apply]
-    module
-  have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr.le
-  have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
-  -- Taking norms in `(a² + b²) A v = a B v + b J B v`: `r² ‖A v‖ ≤ r (1 + ‖J‖) ‖B‖ ‖v‖`.
-  have hv (v : V) : r * ‖A v‖ ≤ (1 + NJ) * ‖B‖ * ‖v‖ := by
-    have hJv : ‖J (B v)‖ ≤ NJ * ‖B v‖ := J.toLinearMap.toContinuousLinearMap.le_opNorm _
-    have h1 : r ^ 2 * ‖A v‖ ≤ r * ((1 + NJ) * ‖B‖ * ‖v‖) := by
-      have hn : ‖(a ^ 2 + b ^ 2) • A v‖ = r ^ 2 * ‖A v‖ := by
-        rw [norm_smul, hab, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
-      rw [← hn, hinv v]
-      refine (norm_add_le _ _).trans ?_
-      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-      calc |a| * ‖B v‖ + |b| * ‖J (B v)‖ ≤ r * ‖B v‖ + r * (NJ * ‖B v‖) := by gcongr
-        _ = r * ((1 + NJ) * ‖B v‖) := by ring
-        _ ≤ r * ((1 + NJ) * (‖B‖ * ‖v‖)) := by gcongr; exact B.le_opNorm v
-        _ = r * ((1 + NJ) * ‖B‖ * ‖v‖) := by ring
-    nlinarith [norm_nonneg (A v)]
-  have hA : ‖A‖ ≤ (1 + NJ) * ‖B‖ / r :=
-    opNorm_le_bound _ (by positivity) fun v ↦ by
-      rw [div_mul_eq_mul_div, le_div_iff₀ hr]
-      linarith [hv v]
-  calc r * ‖A‖ ≤ r * ((1 + NJ) * ‖B‖ / r) := by gcongr
-    _ = (1 + NJ) * ‖B‖ := by field_simp
-
 /-- **The zeroth-order part of the linearized operator on an end.** Let `u` solve the Floer
 equation for the pair-of-pants perturbation of period-one Hamiltonians `H_q` at the point
 `w = φ'_q(ζ)` of the end `q`, with `ζ = (s, t)` and `s ≥ 2`, where `φ'_q` is the positive end chart,
@@ -176,7 +143,7 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
       rw [hw, positiveEndChart_apply]
       exact equivRealProdCLM_symm_endChart_ne_endCenter q _
     exact mul_pos (mul_pos two_pos pi_pos) (norm_pos_iff.2 (sub_ne_zero.2 hne))
-  exact mul_norm_le_of_eq_smul_sub_smul Jw hid hdet hr
+  exact Jw.mul_opNorm_le_of_eq_smul_sub_smul hid hdet hr
 
 /-- **The coefficient field on conformal jets on an end.** Let `u` solve the Floer equation for the
 pair-of-pants perturbation of period-one `C²` Hamiltonians `H_q` at the point `w = φ'_q(ζ)` of the

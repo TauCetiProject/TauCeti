@@ -30,11 +30,12 @@ coefficient field
 `M(z) (a, b, c) = b + J(z, u z) c + ρ(z)^(-1/2) C(z) a`
 
 (`TauCeti.SymplecticForm.floerConformalJetCoeff`), so that `M(z)` applied to the jet of `ξ` at a
-point of `U` is `D_u ξ (z)` (`TauCeti.SymplecticForm.floerConformalJetCoeff_jet`). The operator is
-bounded exactly when `M` is essentially bounded on `U`. Its first two terms are bounded where `J`
-is, so the condition is that `C(z)` grows at most like `√ρ(z)` (`norm_floerConformalJetCoeff_le`):
-on a cylindrical end of `U`, where `ρ` is the conformal factor of the metric `ds² + dt²`, this says
-that the zeroth-order part of `D_u` in the end coordinates is bounded. The realization is
+point of `U` is `D_u ξ (z)` (`TauCeti.SymplecticForm.floerConformalJetCoeff_jet`). The operator
+realizes `D_u` when `M` is essentially bounded on `U` (and is `0` by convention otherwise). Its
+first two terms are bounded where `J` is, so the condition is that `C(z)` grows at most like
+`√ρ(z)` (`norm_floerConformalJetCoeff_le`): on a cylindrical end of `U`, where `ρ` is the conformal
+factor of the metric `ds² + dt²`, this says that the zeroth-order part of `D_u` in the end
+coordinates is bounded. The realization is
 `TauCeti.SymplecticForm.floerConformalSobolevOperator`, which agrees with `D_u` on test sections
 (`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`).
 
@@ -132,18 +133,19 @@ variable (U : Set (ℝ × ℝ)) (ρ : ℝ × ℝ → ℝ)
 
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
 `W^{1,2}_0(U, V)` of the conformal metric `ρ (ds² + dt²)` (`TauCeti.ConformalSobolev.H1`) to
-`L²(U, V)`. It is the first-order operator `TauCeti.ConformalSobolev.jetOperator` of the
-coefficient field on conformal jets, and it is `0` by convention when this field is not
+`L²(U, V)`. It is the first-order operator `TauCeti.jetOperator` of the coefficient
+field on conformal jets, and it is `0` by convention when this field is not
 essentially bounded on `U`. -/
 def floerConformalSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) : H1 V U ρ →L[ℝ] Lp V 2 (volume.restrict U) :=
-  (jetOperator U (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp (H1 V U ρ).subtypeL
+  (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp (H1 V U ρ).subtypeL
 
 /-- The definition of the conformal Sobolev realization of the linearized Floer operator. -/
 theorem floerConformalSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
     ω.floerConformalSobolevOperator U ρ J Ks Kt u =
-      (jetOperator U (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp (H1 V U ρ).subtypeL :=
+      (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+        (H1 V U ρ).subtypeL :=
   (rfl)
 
 variable {U ρ}

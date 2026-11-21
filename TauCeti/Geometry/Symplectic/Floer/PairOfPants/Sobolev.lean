@@ -49,7 +49,7 @@ Floer operator along a Floer pair of pants, transfer to the norm of `H1`. Pointw
 at least `|w - c_q|⁻²` for the center `c_q` of every end
 (`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
 `TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`): the distance `|w - c_q|` to the
-puncture is, up to the constant `2π`, the conformal factor of the end chart.
+center of the end is, up to the constant `2π`, the conformal factor of the end chart.
 
 ## References
 
