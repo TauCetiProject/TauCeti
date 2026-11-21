@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.TensorProduct
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Localization.Finiteness
 
@@ -23,7 +24,9 @@ the family is exhaustive, the scalar extension along `R[X] → R[T;T⁻¹]` is t
 
 The proof identifies `toLaurentTensor : coeffSubalgebra M → R[T;T⁻¹] ⊗[R] B` as the
 localization of `coeffSubalgebra M` at the powers of the parameter, and uses that localization
-of modules is base change to the localized ring.
+of modules is base change to the localized ring. When `B` is commutative and `M` is monotone
+and exhaustive, `Localization.Away (X M h1)` is directly `R`-algebra isomorphic to
+`LaurentPolynomial B`.
 
 This is the Rees construction with the parameter inverted; see J. Dixmier, *Enveloping
 Algebras*, for filtered enveloping algebras and their Rees algebras.
@@ -32,6 +35,9 @@ Algebras*, for filtered enveloping algebras and their Rees algebras.
 
 * `TauCeti.coeffSubalgebra.baseChangeLaurentEquiv`: for an exhaustive family, the
   `R[T;T⁻¹]`-algebra isomorphism `R[T;T⁻¹] ⊗[R[X]] coeffSubalgebra M ≃ R[T;T⁻¹] ⊗[R] B`.
+* `TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent`: for a commutative `R`-algebra `B`
+  and a monotone exhaustive family `M`, the `R`-algebra isomorphism
+  `Localization.Away (X M h1) ≃ₐ[R] LaurentPolynomial B`.
 
 ## Main results
 
@@ -39,6 +45,9 @@ Algebras*, for filtered enveloping algebras and their Rees algebras.
   image of the second factor under `toLaurentTensor` by the first factor.
 * `TauCeti.coeffSubalgebra.baseChangeLaurentEquiv_symm_tmul_of_mem`: the inverse comparison
   sends `f ⊗ b`, for `b ∈ M n`, to `f T⁻ⁿ ⊗ b Xⁿ`.
+* `TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent_algebraMap` and
+  `TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent_algebraMap_X`: the action on images
+  of `coeffSubalgebra M` and `X`.
 -/
 
 public section
@@ -172,5 +181,113 @@ theorem baseChangeLaurentEquiv_symm_tmul_of_mem (hex : (⨆ n, M n) = ⊤) (f : 
   let := algebra M h1
   rw [AlgEquiv.symm_apply_eq, baseChangeLaurentEquiv_tmul, coe_monomial, toLaurentTensor_monomial,
     TensorProduct.smul_tmul', smul_eq_mul, mul_assoc, ← T_add, neg_add_cancel, T_zero, mul_one]
+
+section Commutative
+
+variable {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
+variable (M : ℕ → Submodule R B) [SetLike.GradedMonoid M]
+
+/-- The canonical embedding `coeffSubalgebra M →ₐ[R] LaurentPolynomial B`, sending a polynomial
+over `B` to itself as a Laurent polynomial. -/
+private noncomputable def toLaurentAlgHom :
+    coeffSubalgebra M →ₐ[R] LaurentPolynomial B :=
+  ((Polynomial.toLaurentAlg : B[X] →ₐ[B] LaurentPolynomial B).restrictScalars R).comp
+    (coeffSubalgebra M).val
+
+private theorem toLaurentAlgHom_apply (p : coeffSubalgebra M) :
+    toLaurentAlgHom M p = Polynomial.toLaurent (p : B[X]) :=
+  rfl
+
+private theorem toLaurentAlgHom_injective :
+    Function.Injective (toLaurentAlgHom M) :=
+  fun _ _ h ↦ Subtype.ext (Polynomial.toLaurent_injective h)
+
+variable (h1 : (1 : B) ∈ M 1)
+
+/-- Lift `toLaurentAlgHom` to `Localization.Away (X M h1)`. -/
+private noncomputable def localizationAwayXLift :
+    Localization.Away (X M h1) →ₐ[R] LaurentPolynomial B :=
+  IsLocalization.Away.liftAlgHom (S := Localization.Away (X M h1))
+    (f := toLaurentAlgHom M) (X M h1)
+    (by simpa [toLaurentAlgHom_apply] using LaurentPolynomial.isUnit_T (R := B) 1)
+
+private theorem localizationAwayXLift_algebraMap (p : coeffSubalgebra M) :
+    localizationAwayXLift M h1 (algebraMap (coeffSubalgebra M) _ p) =
+      Polynomial.toLaurent (p : B[X]) := by
+  simp [localizationAwayXLift, IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift,
+    IsLocalization.lift_eq, toLaurentAlgHom_apply]
+
+private theorem localizationAwayXLift_bijective
+    (hM : Monotone M) (hex : (⨆ n, M n) = ⊤) :
+    Function.Bijective (localizationAwayXLift M h1) := by
+  classical
+  set t := X M h1
+  refine ⟨fun x₁ x₂ h ↦ ?_, fun z ↦ ?_⟩
+  · obtain ⟨m₁, y₁, h₁⟩ := IsLocalization.Away.surj t x₁
+    obtain ⟨m₂, y₂, h₂⟩ := IsLocalization.Away.surj t x₂
+    have hy : y₁ * t ^ m₂ = y₂ * t ^ m₁ := toLaurentAlgHom_injective M <| by
+      rw [toLaurentAlgHom_apply, toLaurentAlgHom_apply,
+        ← localizationAwayXLift_algebraMap M h1, ← localizationAwayXLift_algebraMap M h1]
+      simp only [map_mul, map_pow, ← h₁, ← h₂, h]
+      ring
+    refine ((IsLocalization.Away.algebraMap_isUnit (S := Localization.Away t) t).pow
+      (m₁ + m₂)).mul_right_cancel ?_
+    calc x₁ * algebraMap _ _ t ^ (m₁ + m₂)
+        = algebraMap _ _ (y₁ * t ^ m₂) := by rw [pow_add, ← mul_assoc, h₁, map_mul, map_pow]
+      _ = algebraMap _ _ (y₂ * t ^ m₁) := congrArg _ hy
+      _ = x₂ * algebraMap _ _ t ^ (m₁ + m₂) := by
+        rw [map_mul, map_pow, ← h₂, mul_assoc, ← pow_add, add_comm]
+  · obtain ⟨m, f, hf⟩ := LaurentPolynomial.exists_T_pow z
+    choose deg hdeg using fun i : ℕ ↦
+      (Submodule.mem_iSup_of_directed M hM.directed_le).mp (hex.symm ▸ trivial : f.coeff i ∈ _)
+    let d₀ := f.support.sup deg
+    let num : coeffSubalgebra M := ⟨Polynomial.X ^ d₀ * f,
+      mem_coeffSubalgebra_iff.mpr fun j ↦ by
+        rw [Polynomial.coeff_X_pow_mul']
+        split_ifs with h
+        · by_cases hi : j - d₀ ∈ f.support
+          · exact hM ((Finset.le_sup hi).trans h) (hdeg _)
+          · rw [Polynomial.notMem_support_iff.mp hi]; exact zero_mem _
+        · exact zero_mem _⟩
+    let den : Submonoid.powers t :=
+      ⟨t ^ (d₀ + m), Submonoid.pow_mem _ (Submonoid.mem_powers t) (d₀ + m)⟩
+    refine ⟨IsLocalization.mk' (Localization.Away t) num den,
+      (LaurentPolynomial.isUnit_T (R := B) ((d₀ + m : ℕ) : ℤ)).mul_left_cancel ?_⟩
+    have hspec := congrArg (localizationAwayXLift M h1)
+      (IsLocalization.mk'_spec' (Localization.Away t) num den)
+    rw [map_mul, localizationAwayXLift_algebraMap, localizationAwayXLift_algebraMap] at hspec
+    have hden : Polynomial.toLaurent ((den : coeffSubalgebra M) : B[X]) =
+        LaurentPolynomial.T ((d₀ + m : ℕ) : ℤ) := by
+      simp [den, t]
+    have hnum : Polynomial.toLaurent (num : B[X]) =
+        LaurentPolynomial.T (d₀ : ℤ) * Polynomial.toLaurent f := by
+      simp [num, map_mul, Polynomial.toLaurent_X_pow]
+    rw [hden, hnum] at hspec
+    rw [hspec, hf, mul_left_comm, ← LaurentPolynomial.T_add, Nat.cast_add, mul_comm]
+
+/-- For a commutative `R`-algebra `B` and a monotone exhaustive multiplicative filtration `M`
+with `1 ∈ M 1`, inverting the Rees parameter `X` yields `LaurentPolynomial B`. -/
+noncomputable def localizationAwayXEquivLaurent
+    (hM : Monotone M) (hex : (⨆ n, M n) = ⊤) :
+    Localization.Away (X M h1) ≃ₐ[R] LaurentPolynomial B :=
+  AlgEquiv.ofBijective _ (localizationAwayXLift_bijective M h1 hM hex)
+
+/-- The localization comparison sends the image of `p : coeffSubalgebra M` to
+`Polynomial.toLaurent p`. -/
+@[simp]
+theorem localizationAwayXEquivLaurent_algebraMap
+    (hM : Monotone M) (hex : (⨆ n, M n) = ⊤) (p : coeffSubalgebra M) :
+    localizationAwayXEquivLaurent M h1 hM hex (algebraMap (coeffSubalgebra M) _ p) =
+      Polynomial.toLaurent (p : B[X]) :=
+  localizationAwayXLift_algebraMap M h1 p
+
+/-- The localization comparison sends the Rees parameter `X` to `T 1`. -/
+theorem localizationAwayXEquivLaurent_algebraMap_X
+    (hM : Monotone M) (hex : (⨆ n, M n) = ⊤) :
+    localizationAwayXEquivLaurent M h1 hM hex (algebraMap (coeffSubalgebra M) _ (X M h1)) =
+      LaurentPolynomial.T 1 := by
+  simp
+
+end Commutative
 
 end TauCeti.coeffSubalgebra

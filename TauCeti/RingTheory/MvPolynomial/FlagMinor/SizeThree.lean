@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.FlagMinor
+public import TauCeti.RingTheory.MvPolynomial.FlagMinor.Basic
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Presentation
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.MvPolynomial.Monomial.Quadratic

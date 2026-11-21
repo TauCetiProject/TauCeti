@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Basic
+public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 public import Mathlib.Algebra.Order.Monoid.Basic
+public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Algebra.Order.Pi
 
 /-!
@@ -30,6 +32,8 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.zero_le_iff_topRow`: a pattern is nonnegative exactly when its top row is.
 * `TauCeti.GTPattern.zero_le_iff_isPolynomial`: a pattern is nonnegative exactly when its top
   weight is polynomial.
+* `TauCeti.GTPattern.nsmulSaturated_nonneg` and `TauCeti.GTPattern.nsmulSaturation_nonneg`: the
+  nonnegative patterns form a saturated submonoid under positive natural multiples.
 * `TauCeti.GTPattern.rowWeight_add` and `TauCeti.GTPattern.rowWeight_nsmul`: row weights respect
   addition and natural scaling.
 -/
@@ -216,6 +220,22 @@ theorem zero_le_iff_topRow {P : GTPattern n} : 0 ≤ P ↔ ∀ i, 0 ≤ P.topRow
 theorem zero_le_iff_isPolynomial {P : GTPattern n} : 0 ≤ P ↔ P.topWeight.IsPolynomial := by
   rw [DominantWeight.isPolynomial_def, topWeight_coe]
   exact zero_le_iff_topRow
+
+/-- The submonoid of nonnegative Gelfand-Tsetlin patterns is saturated under positive natural
+multiples inside `GTPattern n`. -/
+theorem nsmulSaturated_nonneg (n : ℕ) : (AddSubmonoid.nonneg (GTPattern n)).NSMulSaturated := by
+  intro k P hkP
+  rcases eq_or_ne k 0 with rfl | hk
+  · exact .inl rfl
+  · refine .inr (AddSubmonoid.mem_nonneg.mpr (zero_le_iff.mpr fun i j ↦ ?_))
+    have h := (zero_le_iff.mp (AddSubmonoid.mem_nonneg.mp hkP)) i j
+    rw [nsmul_apply, nsmul_eq_mul, ← Int.mul_zero (k : ℤ)] at h
+    exact Int.le_of_mul_le_mul_left h (Int.natCast_pos.mpr (Nat.pos_of_ne_zero hk))
+
+@[simp]
+theorem nsmulSaturation_nonneg (n : ℕ) :
+    (AddSubmonoid.nonneg (GTPattern n)).nsmulSaturation = AddSubmonoid.nonneg (GTPattern n) :=
+  AddSubmonoid.nsmulSaturation_eq_self (nsmulSaturated_nonneg n)
 
 end GTPattern
 

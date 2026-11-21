@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Young.Columns
 public import TauCeti.Combinatorics.Young.Diagram
 public import TauCeti.Combinatorics.Young.Kostka
+public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 public import Mathlib.Data.Fintype.Fin
+import TauCeti.Data.Finset.Sort
 
 /-!
 # Gelfand-Tsetlin patterns are semistandard Young tableaux
@@ -54,6 +58,8 @@ regime is there a tableau to speak of.
 * `TauCeti.gtPatternEquivSSYT`: **the bijection**, between the patterns with `n` rows and top row
   the shape `μ` and the semistandard Young tableaux of shape `μ` with entries below `n`, that is,
   `TauCeti.BoundedSSYT n μ`.
+* `TauCeti.GTPattern.nonnegEquivBoundedSSYT`: the bijection between nonnegative Gelfand-Tsetlin
+  patterns with `n` rows and bounded semistandard tableaux across all shapes with at most `n` rows.
 
 ## Main results
 
@@ -64,6 +70,8 @@ regime is there a tableau to speak of.
 * `TauCeti.card_gtPattern_topRow_eq_card_ssyt`: the patterns with a given top row are as many as
   the semistandard tableaux of the corresponding shape with bounded entries, both counts being
   finite by `TauCeti.GTPattern.finite_topRow_eq` and `TauCeti.finite_boundedSSYT`.
+* `TauCeti.BoundedSSYT.sum_rowSubset_colFinset`: the row-subset patterns of the columns of `T` sum
+  to `SemistandardYoungTableau.toGTPattern T.1 n`.
 
 ## Implementation notes
 
@@ -451,5 +459,115 @@ theorem card_gtPattern_topRow_eq_card_ssyt (n : ℕ) (μ : YoungDiagram) (hμ : 
     Nat.card {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)}
       = Nat.card (BoundedSSYT n μ) :=
   Nat.card_congr (gtPatternEquivSSYT n μ hμ)
+
+/-! ### Column decomposition and nonnegative patterns across all shapes -/
+
+/-- **Column decomposition of a tableau pattern.** Summing the row-subset Gelfand-Tsetlin patterns
+of the nonempty columns of a bounded semistandard tableau `T` produces the pattern
+`SemistandardYoungTableau.toGTPattern T.1 n` attached to `T`. -/
+@[simp]
+theorem BoundedSSYT.sum_rowSubset_colFinset (T : BoundedSSYT n μ) :
+    ∑ m ∈ range (μ.rowLen 0), GTPattern.rowSubset (T.colFinset m) =
+      SemistandardYoungTableau.toGTPattern T.val n := by
+  ext i j
+  rw [GTPattern.coe_sum, Finset.sum_apply, Finset.sum_apply,
+    SemistandardYoungTableau.toGTPattern_apply, SemistandardYoungTableau.patternEntry_def]
+  by_cases hnj : n < j
+  · rw [ite_eq_left hnj]
+    exact sum_eq_zero fun m _ ↦ by simp [GTPattern.rowSubset_apply, not_le.mpr hnj]
+  · have hjn : j ≤ n := not_lt.mp hnj
+    rw [ite_eq_right hnj]
+    -- In column `m`, `i < #{r ∈ T.colFinset m | r < j}` holds precisely when `(i, m) ∈ μ`
+    -- and `T i m < j`.
+    have hcol (m : ℕ) :
+        i < #{r ∈ T.colFinset m | r.val < j} ↔ m < μ.rowLen i ∧ T.val i m < j := by
+      by_cases him : i < μ.colLen m
+      · have hmem : m < μ.rowLen i :=
+          YoungDiagram.mem_iff_lt_rowLen.mp (YoungDiagram.mem_iff_lt_colLen.mpr him)
+        have hlt := lt_card_filter_iff_apply_orderEmbOfFin_of_imp (T.colFinset m)
+          (T.card_colFinset m) ⟨i, him⟩ (fun r : Fin n ↦ r.val < j)
+          fun _ _ hba hp ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.1 hba) hp
+        simpa [hmem] using hlt
+      · have hle : #{r ∈ T.colFinset m | r.val < j} ≤ i :=
+          (card_filter_le _ _).trans ((T.card_colFinset m).le.trans (not_lt.mp him))
+        have hnot : ¬ m < μ.rowLen i := fun hm ↦
+          him (YoungDiagram.mem_iff_lt_colLen.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hm))
+        simp [hle.not_gt, hnot]
+    simp only [GTPattern.rowSubset_apply, hjn, true_and, hcol]
+    rw [sum_boole]
+    congr 2
+    ext m
+    simp only [mem_filter, mem_range]
+    have hrow := μ.rowLen_anti 0 i (Nat.zero_le i)
+    omega
+
+namespace GTPattern
+
+/-- **Nonnegative Gelfand-Tsetlin patterns are bounded semistandard tableaux.** A nonnegative
+pattern `P` with `n` rows has a polynomial top weight, naming a shape `μ` with at most `n` rows via
+`TauCeti.shapeEquivPolynomialWeight`, and `TauCeti.gtPatternEquivSSYT` identifies the patterns with
+that top row with `BoundedSSYT n μ`. -/
+def nonnegEquivBoundedSSYT (n : ℕ) :
+    AddSubmonoid.nonneg (GTPattern n) ≃
+      Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val :=
+  let f : AddSubmonoid.nonneg (GTPattern n) → {l : DominantWeight n // l.IsPolynomial} :=
+    fun P ↦ ⟨P.val.topWeight, zero_le_iff_isPolynomial.mp P.property⟩
+  ((Equiv.sigmaFiberEquiv f).symm.trans
+    (Equiv.sigmaCongrLeft (shapeEquivPolynomialWeight n)).symm).trans
+    (Equiv.sigmaCongrRight fun μ ↦
+      ({ toFun := fun q ↦
+           ⟨q.val.val, fun i ↦ by
+             simpa [f, topWeight_coe] using congrArg (fun x ↦ x.val.val i) q.property⟩
+         invFun := fun r ↦
+           ⟨⟨r.val, zero_le_iff_topRow.mpr fun i ↦ (r.property i).symm ▸ Int.natCast_nonneg _⟩,
+             Subtype.ext (Subtype.ext (funext fun i ↦ by
+               simpa [f, topWeight_coe] using r.property i))⟩
+         left_inv := fun _ ↦ rfl
+         right_inv := fun _ ↦ rfl } :
+        {P : AddSubmonoid.nonneg (GTPattern n) // f P = shapeEquivPolynomialWeight n μ} ≃
+          {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.val.rowLen i : ℤ)}).trans
+      (gtPatternEquivSSYT n μ.val μ.property))
+
+@[simp]
+theorem fst_nonnegEquivBoundedSSYT_apply (P : AddSubmonoid.nonneg (GTPattern n)) :
+    ((nonnegEquivBoundedSSYT n P).fst : YoungDiagram) = (P : GTPattern n).topWeight.shape :=
+  (rfl)
+
+@[simp]
+theorem coe_nonnegEquivBoundedSSYT_symm_apply
+    (s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) :
+    ((nonnegEquivBoundedSSYT n).symm s : GTPattern n) =
+      SemistandardYoungTableau.toGTPattern s.snd.val n :=
+  gtPatternEquivSSYT_symm_apply_coe n s.fst.val s.fst.property s.snd
+
+@[simp]
+theorem snd_nonnegEquivBoundedSSYT_apply_entry (P : AddSubmonoid.nonneg (GTPattern n))
+    (i c : ℕ) :
+    (nonnegEquivBoundedSSYT n P).snd.val i c =
+      if (i, c) ∈ (P : GTPattern n).topWeight.shape then (P : GTPattern n).tableauEntry i c
+      else 0 := by
+  let s := nonnegEquivBoundedSSYT n P
+  let Q := (gtPatternEquivSSYT n s.fst.val s.fst.property).symm s.snd
+  have hQ : Q.val = (P : GTPattern n) := by
+    have hs := congrArg Subtype.val ((nonnegEquivBoundedSSYT n).symm_apply_apply P)
+    rw [coe_nonnegEquivBoundedSSYT_symm_apply] at hs
+    exact (gtPatternEquivSSYT_symm_apply_coe n s.fst.val s.fst.property s.snd).trans hs
+  have hsnd : s.snd.val = Q.val.toTableau s.fst.property Q.property :=
+    (congrArg Subtype.val
+      ((gtPatternEquivSSYT n s.fst.val s.fst.property).apply_symm_apply s.snd).symm).trans
+      (gtPatternEquivSSYT_apply_coe n s.fst.val s.fst.property Q)
+  rw [congrArg (fun T : SemistandardYoungTableau s.fst.val ↦ T i c) hsnd,
+    GTPattern.toTableau_apply, hQ, fst_nonnegEquivBoundedSSYT_apply]
+
+theorem snd_nonnegEquivBoundedSSYT_apply_eq_toTableau (P : AddSubmonoid.nonneg (GTPattern n))
+    (i c : ℕ) :
+    (nonnegEquivBoundedSSYT n P).snd.val i c =
+      (P : GTPattern n).toTableau (DominantWeight.colLen_zero_shape_le (P : GTPattern n).topWeight)
+        (fun j ↦ by
+          rw [DominantWeight.natCast_rowLen_shape (zero_le_iff_isPolynomial.mp P.property)]
+          exact congrFun (topWeight_coe (P : GTPattern n)).symm j) i c := by
+  rw [snd_nonnegEquivBoundedSSYT_apply_entry, GTPattern.toTableau_apply]
+
+end GTPattern
 
 end TauCeti
