@@ -10,6 +10,7 @@ public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Topology.VectorBundle.Contractible
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Topology.CWComplex.Classical.Image
 import TauCeti.Topology.CWComplex.Classical.OpenCells
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.MetricSpace.Isometry.Basic
@@ -31,8 +32,11 @@ vectors of norm less than one over the open cell of `e`
 (`TauCeti.cellFrontier_relCWComplexDiscBundle`). For an absolute CW complex `C` the base is the
 sphere bundle `S(E)|_C`, so gluing `D(E)` to a space along a map out of `S(E)`
 (`TauCeti.relativeCWPushout`) attaches one `(m + r)`-cell for each `m`-cell of `C`; these are the
-cells of the Thom space `D(E)/S(E)` outside its base point. A finite CW complex gives a finite
-relative CW complex (`TauCeti.finite_relCWComplexDiscBundle`).
+cells of the Thom space `D(E)/S(E)` outside its base point. Over the whole of a CW complex `B`
+this is a CW structure on `D(E)` relative to `S(E)` (`TauCeti.relCWComplexDiscBundleSphereBundle`,
+`TauCeti.relCWComplexDiscBundleSphereBundleCellEquiv`).
+A finite CW complex gives a finite relative CW complex (`TauCeti.finite_relCWComplexDiscBundle`,
+`TauCeti.finite_relCWComplexDiscBundleSphereBundle`).
 
 The characteristic map of the cell over an `m`-cell `j` of `C` is built from a continuous
 orthonormal frame `φ` of `E` along the characteristic map `χ` of `j`
@@ -57,6 +61,8 @@ has a neighbourhood `W` missing a neighbourhood of `v`; the projection of the re
 * `TauCeti.relCWComplexDiscBundle`: the relative CW structure on `D(E)|_C`, relative to
   `S(E)|_C ∪ D(E)|_D`.
 * `TauCeti.cellDiscBundleEquiv`: its `n`-cells are the `m`-cells of `C` with `m + r = n`.
+* `TauCeti.relCWComplexDiscBundleSphereBundle`: the relative CW structure on `D(E)`, relative to
+  `S(E)`, for a CW complex `B`, with cells `TauCeti.relCWComplexDiscBundleSphereBundleCellEquiv`.
 
 ## Main results
 
@@ -543,5 +549,130 @@ theorem finite_relCWComplexDiscBundle [RelCWComplex.Finite C] :
   exact finite_of_finiteDimensional_finiteType _
 
 end Structure
+
+end TauCeti
+
+namespace TauCeti
+
+section Sets
+
+variable {B : Type u} (F : Type*) (E : B → Type u) [∀ b, NormedAddCommGroup (E b)]
+
+/-- The part of the disc bundle over all of `B` is the disc bundle. -/
+private theorem image_id_discBundle_inter_preimage_univ :
+    id '' (discBundle F E ∩ TotalSpace.proj ⁻¹' (univ : Set B)) = discBundle F E := by
+  simp
+
+/-- The base of the relative CW structure of the disc bundle over all of `B` is the sphere
+bundle. -/
+private theorem image_id_sphereBundle_union :
+    id '' (sphereBundle F E ∩ TotalSpace.proj ⁻¹' (univ : Set B) ∪
+      discBundle F E ∩ TotalSpace.proj ⁻¹' (∅ : Set B)) = sphereBundle F E := by
+  simp
+
+end Sets
+
+variable {B : Type u} [TopologicalSpace B] [T2Space B] (F : Type*) [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [FiniteDimensional ℝ F] (E : B → Type u) [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, InnerProductSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+  [VectorBundle ℝ F E] [ContinuousFiberNorm F E] [CWComplex (univ : Set B)]
+
+section DiscBundle
+
+/-- **The disc bundle over a CW complex, relative to the sphere bundle.** If `B` is a CW complex,
+the unit disc bundle `D(E)` is a CW complex relative to the unit sphere bundle `S(E)`, with one
+`(m + r)`-cell for each `m`-cell of `B`, `r` the rank
+(`TauCeti.relCWComplexDiscBundleSphereBundleCellEquiv`). It is `TauCeti.relCWComplexDiscBundle`
+for the whole of `B`. -/
+@[instance_reducible]
+def relCWComplexDiscBundleSphereBundle : RelCWComplex (discBundle F E) (sphereBundle F E) :=
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  IsClosedEmbedding.id.relCWComplex (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union F E)
+
+/-- The `n`-cells of the disc bundle relative to the sphere bundle are the `m`-cells of `B` with
+`m + r = n`, where `r` is the rank of the bundle. -/
+def relCWComplexDiscBundleSphereBundleCellEquiv (n : ℕ) :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    cell (discBundle F E) n ≃
+      Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m :=
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union F E) n).trans (cellDiscBundleEquiv F E univ n)
+
+variable {F E} {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
+
+/-- The characteristic maps of `TauCeti.relCWComplexDiscBundleSphereBundle` are those of
+`TauCeti.relCWComplexDiscBundle` for the whole of `B`. -/
+private theorem map_relCWComplexDiscBundleSphereBundle :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    letI := relCWComplexDiscBundle F E (univ : Set B)
+    ⇑(map n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c)) =
+      ⇑(map n ((cellDiscBundleEquiv F E univ n).symm c)) := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.coe_map_relCWComplex, relCWComplexDiscBundleSphereBundleCellEquiv,
+    Equiv.symm_trans_apply, Equiv.apply_symm_apply, Function.id_comp]
+
+/-- The characteristic map of the cell of the disc bundle over an `m`-cell of `B` lies over the
+characteristic map of that cell, applied to the first `m` coordinates. -/
+theorem proj_map_relCWComplexDiscBundleSphereBundle {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    (map n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) x).proj =
+      map c.1.val c.2 ((Fin.appendIsometryOfEq c.1.property).symm x).1 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [map_relCWComplexDiscBundleSphereBundle]
+  exact proj_map_relCWComplexDiscBundle c hx
+
+/-- The closed cell of the disc bundle over an `m`-cell `j` of `B` is the part of the disc bundle
+over the closed cell of `j`. -/
+theorem closedCell_relCWComplexDiscBundleSphereBundle :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    closedCell n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) =
+      discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.closedCell_relCWComplex, image_id,
+    relCWComplexDiscBundleSphereBundleCellEquiv, Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+  exact closedCell_relCWComplexDiscBundle (E := E) c
+
+/-- The open cell of the disc bundle over an `m`-cell `j` of `B` consists of the vectors of norm
+less than one over the open cell of `j`. -/
+theorem openCell_relCWComplexDiscBundleSphereBundle :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    openCell n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) =
+      {v : TotalSpace F E | ‖v.snd‖ < 1} ∩ TotalSpace.proj ⁻¹' openCell c.1.val c.2 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.openCell_relCWComplex, image_id,
+    relCWComplexDiscBundleSphereBundleCellEquiv, Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+  exact openCell_relCWComplexDiscBundle (E := E) c
+
+/-- The boundary of the cell of the disc bundle over an `m`-cell `j` of `B` is the part of the
+sphere bundle over the closed cell of `j` together with the part of the disc bundle over the
+boundary of `j`. -/
+theorem cellFrontier_relCWComplexDiscBundleSphereBundle :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    cellFrontier n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) =
+      sphereBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 ∪
+        discBundle F E ∩ TotalSpace.proj ⁻¹' cellFrontier c.1.val c.2 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.cellFrontier_relCWComplex, image_id,
+    relCWComplexDiscBundleSphereBundleCellEquiv, Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+  exact cellFrontier_relCWComplexDiscBundle (E := E) c
+
+variable (F E) in
+/-- The disc bundle over a finite CW complex is a finite CW complex relative to the sphere
+bundle. -/
+theorem finite_relCWComplexDiscBundleSphereBundle [RelCWComplex.Finite (univ : Set B)] :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    RelCWComplex.Finite (discBundle F E) :=
+  letI := relCWComplexDiscBundleSphereBundle F E
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  have := finite_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))
+  have := RelCWComplex.finite_cells_of_finite (C := discBundle F E ∩ TotalSpace.proj ⁻¹' univ)
+  -- The cells are those of the disc bundle over the whole of `B`.
+  RelCWComplex.finite_of_finite_cells (.of_equiv _
+    (Equiv.sigmaCongrRight fun n ↦ (IsClosedEmbedding.id.relCWComplexCellEquiv
+      (image_id_discBundle_inter_preimage_univ F E) (image_id_sphereBundle_union F E) n).symm))
+
+end DiscBundle
 
 end TauCeti
