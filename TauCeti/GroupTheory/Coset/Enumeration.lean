@@ -403,7 +403,7 @@ open scoped Pointwise
 variable {G : Type*} [Group G] {n : ℕ} (x : Fin n → G) (h : G) (parents : List ℕ)
 
 /-- The element `w_p` of the point `p`, defined from its parent code. -/
-private def pt : ℕ → G
+def pt : ℕ → G
   | 0 => 1
   | p + 1 =>
     if _hc : parents.getD p 0 / (2 * n) < p + 1 then
@@ -412,10 +412,12 @@ private def pt : ℕ → G
 termination_by p => p
 decreasing_by simp_wf; simp_all
 
-private theorem pt_zero : pt x parents 0 = 1 := by
+/-- The element assigned to the base point `0` is `1`. -/
+theorem pt_zero : pt x parents 0 = 1 := by
   rw [pt.eq_1]
 
-private theorem pt_succ {p : ℕ} (hc : parents.getD p 0 / (2 * n) < p + 1) :
+/-- Unfolding `pt` at a successor point `p + 1` whose parent code references a prior point. -/
+theorem pt_succ {p : ℕ} (hc : parents.getD p 0 / (2 * n) < p + 1) :
     pt x parents (p + 1) =
       letter x (parents.getD p 0 % (2 * n)) * pt x parents (parents.getD p 0 / (2 * n)) := by
   rw [pt.eq_2, dite_eq_left hc]

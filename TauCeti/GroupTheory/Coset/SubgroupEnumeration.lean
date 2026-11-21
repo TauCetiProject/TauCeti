@@ -303,24 +303,6 @@ open scoped Pointwise
 
 variable {G : Type*} [Group G] {n : ℕ} (x : Fin n → G) (H : Subgroup G) (parents : List ℕ)
 
-/-- The element `w_p` of the point `p`, defined from its parent code. -/
-private def pt : ℕ → G
-  | 0 => 1
-  | p + 1 =>
-    if _hc : parents.getD p 0 / (2 * n) < p + 1 then
-      letter x (parents.getD p 0 % (2 * n)) * pt (parents.getD p 0 / (2 * n))
-    else 1
-termination_by p => p
-decreasing_by simp_wf; simp_all
-
-private theorem pt_zero : pt x parents 0 = 1 := by
-  rw [pt.eq_1]
-
-private theorem pt_succ {p : ℕ} (hc : parents.getD p 0 / (2 * n) < p + 1) :
-    pt x parents (p + 1) =
-      letter x (parents.getD p 0 % (2 * n)) * pt x parents (parents.getD p 0 / (2 * n)) := by
-  rw [pt.eq_2, dite_eq_left hc]
-
 /-- The invariant of a replay: every recorded edge and coincidence is a true coset equality in
 `G ⧸ H`, and the remaining parent codes are those of the points still to be defined. -/
 private structure Valid (st : State) : Prop where
