@@ -205,8 +205,8 @@ theorem tendstoUniformlyOn_fderiv_metricGradient {ι : Type*} {l : Filter ι}
     p.2.1.inverse ∘L (hessianOperator f p.1 - p.2.2.flip (p.2.1.inverse (∇ f p.1)))
   have hD {H : E → E →L[ℝ] E} {y : E} (hH : DifferentiableAt ℝ H y) (hHy : (H y).IsInvertible)
       (hfy : ContDiffAt ℝ 2 f y) :
-      fderiv ℝ (metricGradient H f) y = D (y, H y, fderiv ℝ H y) :=
-    (hasFDerivAt_metricGradient hfy hH hHy).fderiv
+      fderiv ℝ (metricGradient H f) y = D (y, H y, fderiv ℝ H y) := by
+    rw [(hasFDerivAt_metricGradient hfy hH hHy).fderiv, metricGradient_apply]
   have hGc (y : E) (hy : y ∈ K) : ContinuousAt G y := (hG y hy).continuousAt
   have hinv := hGG.eventually_forall_isInvertible
     (hK.image_of_continuousOn fun y hy ↦ (hGc y hy).continuousWithinAt) hGK
