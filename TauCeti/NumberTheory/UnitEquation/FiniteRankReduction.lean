@@ -82,7 +82,7 @@ private theorem exists_subspaceCover_of_finite
     (hsum : ∀ j, ∑ i, (x j i : L) * (z j i : L) = 1) :
     ∃ T : Finset (Submodule L (Fin n → L)), (T.card : ℝ) ≤ B ∧ (∀ V ∈ T, V ≠ ⊤) ∧
       ∀ j, ∃ V ∈ T, (fun i ↦ (x j i : L) * (z j i : L)) ∈ V := by
-  obtain ⟨E, hE, S, Δ, x', z', hΔfg, hΔ, hx'Δ, hx', hz'⟩ :=
+  obtain ⟨E, hE, S, Δ, x', z', hΔfg, hΔ, hΔx', hx', hz'⟩ :=
     Γ.exists_numberField_subgroup_pi_unit_rank_le (z := z) hxΓ
       (fun _ _ ↦ Algebra.IsAlgebraic.isAlgebraic _) fun _ _ ↦ Algebra.IsAlgebraic.isAlgebraic _
   obtain ⟨T, hTB, hTtop, hTcov⟩ := h E S Δ hΔfg (hΔ.trans hΓ)
@@ -104,7 +104,8 @@ private theorem exists_subspaceCover_of_finite
     exact congrArg _ (funext hab)
   have hsum' : ∑ i, ((x' j i : Eˣ) : E) * ((z' j i : Eˣ) : E) = 1 :=
     (algebraMap E L).injective (by simp only [map_sum, hxz, map_one, hsum j])
-  obtain ⟨V, hV, hmem⟩ := hTcov (x' j) (hx'Δ j) (fun i ↦ (z' j i : Eˣ))
+  obtain ⟨V, hV, hmem⟩ := hTcov (x' j) (hΔx' ▸ Subgroup.subset_closure (Set.mem_range_self j))
+    (fun i ↦ (z' j i : Eˣ))
     (by rw [hh (hx' j), hh (hz' j)]; exact hz j) hsum'
   exact ⟨_, Finset.mem_image_of_mem _ hV, subset_span ⟨_, hmem, funext hxz⟩⟩
 
