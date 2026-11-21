@@ -10,8 +10,10 @@ public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 import Mathlib.RingTheory.IntegralClosure.GoingDown
 
+import Mathlib.RingTheory.Ideal.Operations
+
 /-!
-# The polynomial `(1 + X) ^ n - 1`
+# The polynomial `(1 + X) ^ n - 1` and distinguished polynomials
 
 The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
@@ -29,7 +31,9 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
-polynomials at `I` are closed under finite products, including the empty product `1`.
+polynomials at `I` are closed under finite products, including the empty product `1`, are monotone
+in `I`, and—when `I` is radical—are closed under taking monic factors
+(`Polynomial.IsDistinguishedAt.of_dvd`).
 
 ## Main results
 
@@ -38,6 +42,10 @@ polynomials at `I` are closed under finite products, including the empty product
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
   distinguished at every ideal containing `p`.
+* `Polynomial.IsWeaklyEisensteinAt.mono`, `Polynomial.IsDistinguishedAt.mono`: monotonicity in the
+  ideal.
+* `Polynomial.Monic.isDistinguishedAt_iff_map_eq_X_pow`: a monic polynomial is distinguished at `I`
+  if and only if its reduction modulo `I` is `X ^ f.natDegree`.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
 * `Polynomial.IsDistinguishedAt.of_dvd`: a monic divisor of a polynomial distinguished at a radical
@@ -100,7 +108,24 @@ end TauCeti
 
 namespace Polynomial
 
-variable {R : Type*} [CommRing R] {I : Ideal R}
+/-- Weakly Eisenstein polynomials are preserved when enlarging the ideal. -/
+theorem IsWeaklyEisensteinAt.mono {R : Type*} [CommSemiring R] {f : R[X]} {I J : Ideal R}
+    (hf : f.IsWeaklyEisensteinAt I) (hIJ : I ≤ J) : f.IsWeaklyEisensteinAt J :=
+  ⟨fun hn ↦ hIJ (hf.mem hn)⟩
+
+variable {R : Type*} [CommRing R] {I J : Ideal R}
+
+/-- Distinguished polynomials are preserved when enlarging the ideal. -/
+theorem IsDistinguishedAt.mono {f : R[X]} (hf : f.IsDistinguishedAt I) (hIJ : I ≤ J) :
+    f.IsDistinguishedAt J :=
+  ⟨hf.toIsWeaklyEisensteinAt.mono hIJ, hf.monic⟩
+
+/-- A monic polynomial is distinguished at `I` if and only if its reduction modulo `I` is a power
+of `X`. -/
+theorem Monic.isDistinguishedAt_iff_map_eq_X_pow {f : R[X]} (hf : f.Monic) :
+    f.IsDistinguishedAt I ↔ f.map (Ideal.Quotient.mk I) = X ^ f.natDegree := by
+  refine ⟨IsDistinguishedAt.map_eq_X_pow, fun hmap ↦ ⟨⟨fun {n} hn ↦ ?_⟩, hf⟩⟩
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, hmap, coeff_X_pow, ite_eq_right hn.ne]
 
 /-- The constant polynomial `1` is distinguished at every ideal. -/
 theorem isDistinguishedAt_one : (1 : R[X]).IsDistinguishedAt I :=

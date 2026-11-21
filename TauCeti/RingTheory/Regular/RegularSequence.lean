@@ -45,6 +45,7 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   span of a range.
 * `TauCeti.isRegular_cons_iff_isRegular_quotient`: `x :: rs` is `R`-regular exactly
   when `x` is a non-zero-divisor and the images of `rs` are regular on `R ⧸ (x)`.
+* `RingTheory.Sequence.IsRegular.of_append_left`: a prefix of a regular sequence is regular.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
   `R`-regular sequence `a, b`, a fraction which lies in `R` after multiplication by a power of `a`,
   and also after multiplication by a power of `b`, already lies in `R`.
@@ -84,6 +85,14 @@ theorem Ideal.ofList_eq_span_range_getElem (rs : List R) :
     Ideal.ofList rs = Ideal.span (Set.range fun i : Fin rs.length ↦ rs[i]) := by
   simpa using Ideal.ofList_ofFn fun i : Fin rs.length ↦ rs[(i : ℕ)]
 
+/-- If a list `l` contains every index of `ι`, then `l.map f` generates the span of the range of
+`f`. -/
+theorem Ideal.ofList_map_eq_span_range {ι : Type*} {l : List ι} (hl : ∀ i : ι, i ∈ l)
+    (f : ι → R) : Ideal.ofList (l.map f) = Ideal.span (Set.range f) :=
+  congrArg Ideal.span <| Set.ext fun _ ↦ by
+    simp only [Set.mem_ofPred_eq, List.mem_map, Set.mem_range]
+    exact ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, hi⟩, fun ⟨i, hi⟩ ↦ ⟨i, hl i, hi⟩⟩
+
 end OfList
 
 
@@ -116,6 +125,19 @@ theorem TauCeti.isRegular_cons_iff_isRegular_quotient (x : R) (rs : List R) :
     ((e.extendScalarsOfSurjective Ideal.Quotient.mk_surjective).isRegular_congr _)
 
 end Cons
+
+section Append
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+/-- A prefix of a regular sequence is regular. -/
+theorem RingTheory.Sequence.IsRegular.of_append_left {rs ss : List R}
+    (h : IsRegular M (rs ++ ss)) : IsRegular M rs := by
+  refine ⟨((isWeaklyRegular_append_iff M rs ss).1 h.toIsWeaklyRegular).1, fun htop ↦ ?_⟩
+  exact h.top_ne_smul (top_le_iff.1 (htop.le.trans (Submodule.smul_mono_left
+    (by rw [Ideal.ofList_append]; exact le_sup_left)))).symm
+
+end Append
 
 
 section FractionRing
