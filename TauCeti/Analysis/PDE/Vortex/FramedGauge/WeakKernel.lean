@@ -53,11 +53,12 @@ which exists at every plane vortex with `|α| → 1`, are minimal weak solutions
   supplies one at every gauge transform of `x`
   (`TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_gaugeLp_apply_symm`).
 
-**The weak kernel.** For a smooth gauge and a continuous field, the weak `L²` kernel
+**The weak kernel.** For a `C¹` gauge and a continuous field, the weak `L²` kernel
 `TauCeti.Vortex.weakGaugeFixedKernel` of `L_{u·x}` is the image of that of `L_x` under the gauge
-(`TauCeti.Vortex.weakGaugeFixedKernel_gaugeTransform`); this is the case `n = ∞`, `f = 0` of the
-transport of weak equations above. Since the gauge is a linear isometry, the
-orthogonal projections onto the two kernels are conjugate
+(`TauCeti.Vortex.weakGaugeFixedKernel_gaugeTransform`); this is the case `n = 1`, `f = 0` of the
+transport of weak equations above, since the weak kernel is detected by `C¹` test fields
+(`TauCeti.Vortex.mem_weakGaugeFixedKernel_iff_contDiff_one`). Since the gauge is a linear
+isometry, the orthogonal projections onto the two kernels are conjugate
 (`TauCeti.Vortex.starProjection_weakGaugeFixedKernel_gaugeTransform`) and the kernels have the
 same dimension (`TauCeti.Vortex.finrank_weakGaugeFixedKernel_gaugeTransform`).
 
@@ -276,8 +277,9 @@ theorem forall_integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform_iff {n : 
 theorem isGaugeFixedWeakSolution_gaugeLp_iff {u : C(ℂ, Circle)}
     (hu : ContDiff ℝ 2 (fun z ↦ (u z : ℂ))) {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
     IsGaugeFixedWeakSolution μ (gaugeTransform u x) (gaugeLp μ u f) (gaugeLp μ u y) ↔
-      IsGaugeFixedWeakSolution μ x f y :=
-  forall_integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform_iff one_le_two hu x f y
+      IsGaugeFixedWeakSolution μ x f y := by
+  rw [isGaugeFixedWeakSolution_iff, isGaugeFixedWeakSolution_iff]
+  exact forall_integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform_iff one_le_two hu x f y
 
 /-- The gauge action on weak solutions: if `y` is a weak solution of `L_x y = f`, then `u·y` is
 a weak solution of `L_{u·x} (u·y) = u·f`, for a `C²` gauge `u`. -/
@@ -293,11 +295,12 @@ theorem isMinimalGaugeFixedWeakSolution_gaugeLp_iff {u : C(ℂ, Circle)}
     (hu : ContDiff ℝ 2 (fun z ↦ (u z : ℂ))) {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
     IsMinimalGaugeFixedWeakSolution μ (gaugeTransform u x) (gaugeLp μ u f) (gaugeLp μ u y) ↔
       IsMinimalGaugeFixedWeakSolution μ x f y := by
+  rw [isMinimalGaugeFixedWeakSolution_iff, isMinimalGaugeFixedWeakSolution_iff]
   refine and_congr (isGaugeFixedWeakSolution_gaugeLp_iff hu) ?_
   -- The weak solutions of `L_{u·x} w = 0` are the images of those of `L_x w = 0`.
   have hker (w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) := isGaugeFixedWeakSolution_gaugeLp_iff
     (x := x) hu (f := 0) (y := w)
-  simp only [map_zero, isGaugeFixedWeakSolution_zero_iff] at hker
+  simp only [map_zero] at hker
   have hpair (w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
       ∫ z, ⟪gaugeLp μ u y z, gaugeLp μ u w z⟫ ∂μ = ∫ z, ⟪y z, w z⟫ ∂μ := by
     rw [← L2.inner_def, ← L2.inner_def, LinearIsometryEquiv.inner_map_map]
@@ -350,23 +353,23 @@ section WeakKernel
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- **Gauge covariance of the weak kernel**, elementwise. For a smooth gauge `u` and a continuous
+/-- **Gauge covariance of the weak kernel**, elementwise. For a `C¹` gauge `u` and a continuous
 field `x`, `u·w` lies in the weak `L²` kernel of `L_{u·x}` exactly when `w` lies in that of
 `L_x`. -/
 theorem gaugeLp_mem_weakGaugeFixedKernel_gaugeTransform_iff {u : C(ℂ, Circle)}
-    (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) (hx : Continuous x)
+    (hu : ContDiff ℝ 1 (fun z ↦ (u z : ℂ))) (hx : Continuous x)
     {w : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
     gaugeLp volume u w ∈ weakGaugeFixedKernel (gaugeTransform u x) ↔
       w ∈ weakGaugeFixedKernel x := by
-  rw [mem_weakGaugeFixedKernel_iff (continuous_gaugeTransform (hu.of_le (by simp)) hx),
-    mem_weakGaugeFixedKernel_iff hx]
+  rw [mem_weakGaugeFixedKernel_iff_contDiff_one (continuous_gaugeTransform hu hx),
+    mem_weakGaugeFixedKernel_iff_contDiff_one hx]
   simpa only [map_zero, Lp.integral_inner_coeFn_zero_left] using
-    forall_integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform_iff (by simp) hu x 0 w
+    forall_integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform_iff le_rfl hu x 0 w
 
-/-- **Gauge covariance of the weak kernel.** For a smooth gauge `u` and a continuous field `x`,
+/-- **Gauge covariance of the weak kernel.** For a `C¹` gauge `u` and a continuous field `x`,
 the weak `L²` kernel of `L_{u·x}` is the image under the gauge of the weak kernel of `L_x`. -/
 theorem weakGaugeFixedKernel_gaugeTransform {u : C(ℂ, Circle)}
-    (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) (hx : Continuous x) :
+    (hu : ContDiff ℝ 1 (fun z ↦ (u z : ℂ))) (hx : Continuous x) :
     weakGaugeFixedKernel (gaugeTransform u x) =
       (weakGaugeFixedKernel x).map ((gaugeLp volume u).toLinearEquiv :
         Lp (EuclideanSpace ℝ (Fin 4)) 2 volume →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 volume) := by
@@ -374,21 +377,21 @@ theorem weakGaugeFixedKernel_gaugeTransform {u : C(ℂ, Circle)}
   rw [Submodule.mem_map_equiv, ← gaugeLp_mem_weakGaugeFixedKernel_gaugeTransform_iff hu hx]
   simp
 
-/-- **The kernel projections are conjugate.** For a smooth gauge `u` and a continuous field `x`,
+/-- **The kernel projections are conjugate.** For a `C¹` gauge `u` and a continuous field `x`,
 the orthogonal projection of `L²(ℂ; ℝ⁴)` onto the weak kernel of `L_{u·x}` is the conjugate by
 the gauge of the orthogonal projection onto the weak kernel of `L_x`. -/
 theorem starProjection_weakGaugeFixedKernel_gaugeTransform {u : C(ℂ, Circle)}
-    (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) (hx : Continuous x)
+    (hu : ContDiff ℝ 1 (fun z ↦ (u z : ℂ))) (hx : Continuous x)
     (w : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) :
     (weakGaugeFixedKernel (gaugeTransform u x)).starProjection (gaugeLp volume u w) =
       gaugeLp volume u ((weakGaugeFixedKernel x).starProjection w) := by
   simp_rw [weakGaugeFixedKernel_gaugeTransform hu hx]
   rw [Submodule.starProjection_map_apply, LinearIsometryEquiv.symm_apply_apply]
 
-/-- For a smooth gauge `u` and a continuous field `x`, the weak kernels of `L_{u·x}` and `L_x`
+/-- For a `C¹` gauge `u` and a continuous field `x`, the weak kernels of `L_{u·x}` and `L_x`
 have the same dimension. -/
 theorem finrank_weakGaugeFixedKernel_gaugeTransform {u : C(ℂ, Circle)}
-    (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) (hx : Continuous x) :
+    (hu : ContDiff ℝ 1 (fun z ↦ (u z : ℂ))) (hx : Continuous x) :
     Module.finrank ℝ (weakGaugeFixedKernel (gaugeTransform u x)) =
       Module.finrank ℝ (weakGaugeFixedKernel x) := by
   rw [weakGaugeFixedKernel_gaugeTransform hu hx, LinearEquiv.finrank_map_eq]

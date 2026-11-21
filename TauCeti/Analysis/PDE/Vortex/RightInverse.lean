@@ -121,7 +121,7 @@ variable {μ : Measure ℂ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- `y` is a **weak solution** of `L_x y = f`: `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
 supported `C²` test field `η`. -/
-@[expose] def IsGaugeFixedWeakSolution (μ : Measure ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+def IsGaugeFixedWeakSolution (μ : Measure ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4))
     (f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) : Prop :=
   ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
     ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ
@@ -132,13 +132,29 @@ solution of least norm (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.norm_le`
 unique (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.unique`). At a plane vortex with
 `|α| → 1` it is the value at `f` of a bounded weak right inverse
 (`TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`). -/
-@[expose] def IsMinimalGaugeFixedWeakSolution (μ : Measure ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+def IsMinimalGaugeFixedWeakSolution (μ : Measure ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4))
     (f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) : Prop :=
   IsGaugeFixedWeakSolution μ x f y ∧
     ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
       (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
         ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
       ∫ z, ⟪y z, w z⟫ ∂μ = 0
+
+/-- Unfolding `TauCeti.Vortex.IsGaugeFixedWeakSolution`: `y` is a weak solution of `L_x y = f`
+exactly when `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly supported `C²` test field `η`. -/
+theorem isGaugeFixedWeakSolution_iff {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsGaugeFixedWeakSolution μ x f y ↔
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
+  Iff.rfl
+
+/-- A weak solution of `L_x y = f` satisfies `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
+supported `C²` test field `η`. -/
+theorem IsGaugeFixedWeakSolution.integral_inner_eq {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (h : IsGaugeFixedWeakSolution μ x f y) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
+  h η hη hηc
 
 /-- The weak solutions of `L_x w = 0` are the fields `w` with `∫ ⟪w, L_x* η⟫ = 0` for every
 compactly supported `C²` test field `η`. -/
@@ -147,6 +163,28 @@ theorem isGaugeFixedWeakSolution_zero_iff {w : Lp (EuclideanSpace ℝ (Fin 4)) 2
       ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
         ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
   simp only [IsGaugeFixedWeakSolution, Lp.integral_inner_coeFn_zero_left]
+
+/-- A minimal weak solution of `L_x y = f` is a weak solution orthogonal to every weak solution
+of `L_x w = 0`. -/
+theorem isMinimalGaugeFixedWeakSolution_iff {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsMinimalGaugeFixedWeakSolution μ x f y ↔
+      IsGaugeFixedWeakSolution μ x f y ∧
+        ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ, IsGaugeFixedWeakSolution μ x 0 w →
+          ∫ z, ⟪y z, w z⟫ ∂μ = 0 := by
+  simp only [IsMinimalGaugeFixedWeakSolution, isGaugeFixedWeakSolution_zero_iff]
+
+/-- A minimal weak solution is a weak solution. -/
+theorem IsMinimalGaugeFixedWeakSolution.isGaugeFixedWeakSolution
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y) :
+    IsGaugeFixedWeakSolution μ x f y :=
+  h.1
+
+/-- A minimal weak solution of `L_x y = f` is orthogonal to every weak solution of
+`L_x w = 0`. -/
+theorem IsMinimalGaugeFixedWeakSolution.integral_inner_eq_zero
+    {f y w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y)
+    (hw : IsGaugeFixedWeakSolution μ x 0 w) : ∫ z, ⟪y z, w z⟫ ∂μ = 0 :=
+  (isMinimalGaugeFixedWeakSolution_iff.1 h).2 w hw
 
 /-- At a continuous field, weak solutions can be subtracted: if `y` and `y'` are weak solutions
 of `L_x y = f` and `L_x y' = f'`, then `y - y'` is a weak solution of `L_x w = f - f'`. -/

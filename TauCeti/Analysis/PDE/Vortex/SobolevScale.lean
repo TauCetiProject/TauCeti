@@ -133,7 +133,8 @@ theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobol
   refine ⟨Q, fun f ↦ ⟨hQ f, fun k hf ↦ ?_⟩⟩
   exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hxs
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
-    (Lp.memLp _) hf fun η hη hηc ↦ (hQ f).1 η (hη.of_le (by norm_cast)) hηc
+    (Lp.memLp _) hf fun η hη hηc ↦
+      (hQ f).isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by norm_cast)) hηc
 
 /-- **Classical surjectivity at a vortex.** Let `x` be a continuous solution of the plane vortex
 equations lying in the affine field space `A_m^k` for every `k`. Every continuous field `f` lying
@@ -151,7 +152,7 @@ theorem exists_contDiff_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace (hx
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
     (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
     (Lp.memLp (Q (hfL.toLp f))) hf hfc fun η hη hηc ↦ by
-      rw [(hQ _).1.1 η (hη.of_le (by norm_cast)) hηc]
+      rw [(hQ _).1.isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by norm_cast)) hηc]
       exact integral_congr_ae (hfL.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
   exact ⟨y, hy, hyk, heq⟩
 

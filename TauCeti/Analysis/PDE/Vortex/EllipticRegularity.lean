@@ -410,7 +410,7 @@ theorem exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq
     exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution (μ := volume) hx hsol hlim
   have hQf (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
       ∫ z, ⟪Q (hf.toLp f) z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫ := by
-    rw [(hQ _).1 η hη hηc]
+    rw [(hQ _).isGaugeFixedWeakSolution.integral_inner_eq hη hηc]
     exact integral_congr_ae (hf.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
   exact ⟨_, mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
     hx.continuous.aestronglyMeasurable (.of_forall hC) (Lp.memLp _) hf
@@ -558,6 +558,7 @@ theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobol
     (μ := volume) hx₁ hsol (tendsto_normSq_of_mem_framedFieldSpace hs hx hx₁.continuous)
   exact ⟨Q, fun g ↦ ⟨hQ g,
     mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq hs hx
-      hx₁.continuous (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ (hQ g).1 η (hη.of_le (by simp)) hc⟩⟩
+      hx₁.continuous (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦
+        (hQ g).isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by simp)) hc⟩⟩
 
 end TauCeti.Vortex

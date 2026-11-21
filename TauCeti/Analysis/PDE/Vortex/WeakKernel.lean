@@ -343,11 +343,11 @@ theorem isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal (hx : Continuous x)
     {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
     IsMinimalGaugeFixedWeakSolution volume x f y ↔
       IsGaugeFixedWeakSolution volume x f y ∧ y ∈ (weakGaugeFixedKernel x)ᗮ := by
+  rw [isMinimalGaugeFixedWeakSolution_iff]
   refine and_congr_right fun _ ↦ ?_
   rw [Submodule.mem_orthogonal']
   refine forall_congr' fun w ↦ ?_
-  rw [← isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx,
-    isGaugeFixedWeakSolution_zero_iff, L2.inner_def]
+  rw [isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx, L2.inner_def]
 
 /-- **The weak right inverse takes values orthogonal to `weakGaugeFixedKernel x`.** At a `C¹`
 solution `x` of the plane vortex equation with `|α|² → 1` at infinity, there is a bounded right
