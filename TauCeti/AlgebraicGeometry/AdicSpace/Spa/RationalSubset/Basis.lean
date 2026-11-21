@@ -81,6 +81,8 @@ the basis arguments uses it.
   pair of definition.
 * `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
   to a rational open when the ring map sends open ideals to open ideals.
+* `TauCeti.ValuationSpectrum.bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily`: preimage
+  along `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto `spaRationalFamily A⁺`.
 * `TauCeti.ValuationSpectrum.exists_finite_spaRationalFamily_refinement`: every open cover of a
   member of the family admits a finite refinement by members of the family — the basis and
   compactness results combined, and the form a sheaf criterion on this basis consumes.
@@ -166,6 +168,42 @@ theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
     ⟨V.image φ, φ s, by
       rw [Finset.coe_image, ← Ideal.map_span]
       exact hopen _ hV, rfl⟩
+
+/-- Preimage under `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto
+`spaRationalFamily A⁺`. -/
+theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [CommRing B]
+    [TopologicalSpace B] {Aplus : Subring A} {Bplus : Subring B}
+    (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
+    (hplus : Aplus.map (e : A →+* B) = Bplus) :
+    Set.BijOn (fun V : Set (spa Bplus) ↦ spaHomeomorphOfRingEquiv e he he' hplus ⁻¹' V)
+      (spaRationalFamily Bplus) (spaRationalFamily Aplus) := by
+  have hplus_inv : ∀ b ∈ Bplus, (e.symm : B →+* A) b ∈ Aplus := fun b hb ↦ by
+    obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
+    simpa using ha
+  have hplus_fwd : ∀ a ∈ Aplus, (e : A →+* B) a ∈ Bplus := fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
+  have hfwd : (spaHomeomorphOfRingEquiv e he he' hplus : spa Aplus → spa Bplus) =
+      spaComap (e.symm : B →+* A) he' Bplus Aplus hplus_inv :=
+    funext fun v ↦ Subtype.ext <|
+      (spaHomeomorphOfRingEquiv_val e he he' hplus v).trans (spaComap_val ..).symm
+  have hinv : ((spaHomeomorphOfRingEquiv e he he' hplus).symm : spa Bplus → spa Aplus) =
+      spaComap (e : A →+* B) he Aplus Bplus hplus_fwd :=
+    funext fun w ↦ Subtype.ext <|
+      (spaHomeomorphOfRingEquiv_symm_val e he he' hplus w).trans (spaComap_val ..).symm
+  have hopen_symm : ∀ J : Ideal B, IsOpen (J : Set B) →
+      IsOpen (Ideal.map (e.symm : B →+* A) J : Set A) := fun J hJ ↦ by
+    rw [Ideal.map_eq_image_of_surjective (e.symm : B →+* A) e.symm.surjective]
+    exact (IsOpenMap.of_inverse he e.symm_apply_apply e.apply_symm_apply) J hJ
+  have hopen : ∀ J : Ideal A, IsOpen (J : Set A) →
+      IsOpen (Ideal.map (e : A →+* B) J : Set B) := fun J hJ ↦ by
+    rw [Ideal.map_eq_image_of_surjective (e : A →+* B) e.surjective]
+    exact (IsOpenMap.of_inverse he' e.apply_symm_apply e.symm_apply_apply) J hJ
+  refine ⟨fun V hV ↦ hfwd ▸ spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus
+      Aplus hplus_inv hopen_symm hV,
+    (spaHomeomorphOfRingEquiv e he he' hplus).surjective.preimage_injective.injOn,
+    fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U,
+      hinv ▸ spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus hplus_fwd
+        hopen hU, ?_⟩⟩
+  ext x; simp
 
 /-- The whole adic spectrum belongs to its rational family, presented as `R({1}/1)`. -/
 theorem univ_mem_spaRationalFamily (Aplus : Subring A) :

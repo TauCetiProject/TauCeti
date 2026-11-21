@@ -76,6 +76,23 @@ theorem completionLocalization_ringOfDefinition_le_completedPlusPair :
 
 end Subring
 
+/-- For any Huber pair `U` on `A` and any pair of definition `P` of `A`, `completedPlusSubring` is a
+ring of integral elements of `A⟨T/s⟩`, even without assuming `P.ringOfDefinition ≤ U.plus`: elements
+of `P.idealOfDefinition` are topologically nilpotent and therefore belong to `U.plus`. -/
+theorem isRingOfIntegralElements_completedPlusSubring_of_pair {A : Type*} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] (P : PairOfDefinition A)
+    (U : Pair A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    IsRingOfIntegralElements (completedPlusSubring P U.plus T s S hden) :=
+  isRingOfIntegralElements_completedPlusSubring P U.plus
+    (fun _ hj ↦ U.isRingOfIntegralElements.mem_of_isTopologicallyNilpotent
+      (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hj))
+    U.isRingOfIntegralElements.isPowerBounded_of_mem T s S hden
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus)
   (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
