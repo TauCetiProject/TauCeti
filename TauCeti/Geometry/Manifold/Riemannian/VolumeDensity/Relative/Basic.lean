@@ -513,4 +513,14 @@ theorem riemannianTotalVolume_eq_integral_relativeVolumeDensity [CompactSpace M]
 
 end Measure
 
+/-- In dimension zero, every relative volume density is one. -/
+@[simp]
+theorem relativeVolumeDensity_finrank_zero
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
+    (hE : Module.finrank ℝ E = 0) (x : M) : relativeVolumeDensity g g' x = 1 := by
+  have hdim : Module.finrank ℝ (TangentSpace I x) = 0 := hE
+  rw [(Module.finBasis ℝ (TangentSpace I x)).relativeVolumeDensity_eq_sqrt_div]
+  simp [hdim]
+
 end Bundle.ContMDiffRiemannianMetric
