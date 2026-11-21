@@ -34,6 +34,8 @@ elementary manipulations used to reduce general solutions to nondegenerate ones:
 * `TauCeti.IsNondegenerateSolution α x`: `∑ αᵢ xᵢ = 1` and no nonempty subsum vanishes;
 * `TauCeti.IsNondegenerateHomogeneousSolution α x`: `∑ αᵢ xᵢ = 0` and no proper nonempty
   subsum vanishes;
+* `TauCeti.isNondegenerateSolution_mul_div_iff`: nonzero factors of the unknowns may be moved to
+  the coefficients;
 * `TauCeti.exists_sum_eq_zero_and_isNondegenerateSolution_compl`: every solution of
   `∑ αᵢ xᵢ = 1` restricts to a nondegenerate solution on the complement of a vanishing subsum;
 * `TauCeti.isNondegenerateHomogeneousSolution_option_iff`: dehomogenization, adjoining the term
@@ -146,6 +148,17 @@ theorem restrict [DecidableEq ι] {I : Finset ι} (h : ∑ i, α i * x i = 1)
     simpa [sum_map] using hJ _ hJne.map hdisj
 
 end Semiring
+
+/-- Moving nonzero factors `cᵢ` from the unknowns to the coefficients: `x / c` is a nondegenerate
+solution of `∑ αᵢ cᵢ wᵢ = 1` exactly when `x` is one of `∑ αᵢ xᵢ = 1`, since the terms
+`αᵢ cᵢ (xᵢ / cᵢ) = αᵢ xᵢ` agree. -/
+@[simp]
+theorem _root_.TauCeti.isNondegenerateSolution_mul_div_iff [Semifield R] {α x c : ι → R}
+    (hc : ∀ i, c i ≠ 0) :
+    IsNondegenerateSolution (α * c) (x / c) ↔ IsNondegenerateSolution α x := by
+  have h (i : ι) : (α * c) i * (x / c) i = α i * x i := by
+    rw [Pi.mul_apply, Pi.div_apply, mul_assoc, mul_div_cancel₀ _ (hc i)]
+  simp only [isNondegenerateSolution_iff, h]
 
 /-- With a single unknown, `α x = 1` is a nondegenerate solution. -/
 theorem _root_.TauCeti.isNondegenerateSolution_of_subsingleton [Semiring R] [Nontrivial R]
