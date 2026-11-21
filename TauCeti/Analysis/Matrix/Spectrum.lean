@@ -70,6 +70,8 @@ first variation of a simple eigenvalue.
   of `A` with eigenvalue `a` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`;
 * `Matrix.IsHermitian.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary` — `Uᴴ B U` is the
   diagonal matrix of eigenvalues;
+* `Matrix.IsHermitian.star_eigenvectorUnitary_mulVec_apply_eq_zero` — the eigen-coordinates of an
+  eigenvector for `μ` vanish off the indices with eigenvalue `μ`;
 * `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`.
 
@@ -179,6 +181,22 @@ theorem star_eigenvectorUnitary_mul_mul_eigenvectorUnitary :
       diagonal (RCLike.ofReal ∘ hB.eigenvalues) := by
   simpa [Unitary.conjStarAlgAut_star_apply] using hB.conjStarAlgAut_star_eigenvectorUnitary
 
+/-- The coordinates `Uᴴ u` of an eigenvector `u` of `B` for the eigenvalue `μ`, in the eigenbasis
+`U = hB.eigenvectorUnitary`, vanish at every index whose eigenvalue differs from `μ`. -/
+theorem star_eigenvectorUnitary_mulVec_apply_eq_zero {μ : ℝ} {u : ι → 𝕜}
+    (hu : B *ᵥ u = (μ : 𝕜) • u) {k : ι} (hk : hB.eigenvalues k ≠ μ) :
+    (star (hB.eigenvectorUnitary : Matrix ι ι 𝕜) *ᵥ u) k = 0 := by
+  set U : Matrix ι ι 𝕜 := (hB.eigenvectorUnitary : Matrix ι ι 𝕜)
+  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hB.eigenvectorUnitary.property
+  have h : diagonal (RCLike.ofReal ∘ hB.eigenvalues) *ᵥ (star U *ᵥ u) =
+      (μ : 𝕜) • (star U *ᵥ u) := by
+    rw [← hB.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary, ← mulVec_mulVec,
+      mulVec_mulVec _ U, hU', one_mulVec, ← mulVec_mulVec, hu, mulVec_smul]
+  have hk' := congrFun h k
+  simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at hk'
+  have h' : ((hB.eigenvalues k : 𝕜) - μ) * (star U *ᵥ u) k = 0 := by rw [sub_mul, hk', sub_self]
+  exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk))
+
 /-- A unit eigenvector `u` of a simple eigenvalue `λ k₀` of a Hermitian matrix `B` is a unimodular
 multiple of the `k₀`-th column of `U = hB.eigenvectorUnitary`, so `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for
 every matrix `C`. -/
@@ -194,18 +212,12 @@ theorem star_dotProduct_mulVec_eq_of_simple {k₀ : ι}
   -- Coordinates of `u` in the eigenbasis vanish off `k₀`.
   set w := star U *ᵥ u
   have huw : u = U *ᵥ w := by rw [mulVec_mulVec, hU', one_mulVec]
-  have hDw : diagonal (RCLike.ofReal ∘ d) *ᵥ w = (d k₀ : 𝕜) • w := by
-    rw [← hB.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary, ← mulVec_mulVec, ← mulVec_mulVec,
-      ← huw, hu, mulVec_smul]
   have hw : w = Pi.single k₀ (w k₀) := by
     ext k
     obtain rfl | hk := eq_or_ne k k₀
     · simp
-    have h := congrFun hDw k
-    simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at h
-    have h' : ((d k : 𝕜) - d k₀) * w k = 0 := by rw [sub_mul, h, sub_self]
     rw [Pi.single_eq_of_ne hk]
-    exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk₀ k hk))
+    exact hB.star_eigenvectorUnitary_mulVec_apply_eq_zero hu (hk₀ k hk)
   have hconj (D : Matrix ι ι 𝕜) : star u ⬝ᵥ (D *ᵥ u) = star w ⬝ᵥ ((star U * D * U) *ᵥ w) := by
     rw [huw, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, star_eq_conjTranspose,
       Matrix.mul_assoc]
