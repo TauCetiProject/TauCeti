@@ -33,23 +33,22 @@ namespace SimplexCategory
 lemma val_subinterval_toOrderHom_apply {n : ℕ} (j l : ℕ) (hjl : j + l ≤ n) (i : Fin (l + 1)) :
     ((subinterval j l hjl).toOrderHom i : ℕ) = i + j := (rfl)
 
-/-- A face of a front face is the front face of the corresponding face. -/
-lemma δ_comp_subinterval_zero {n p : ℕ} (i : Fin (p + 2)) (k : Fin (n + 2))
-    (hik : (i : ℕ) = k) (h : 0 + (p + 1) ≤ n + 1) :
-    δ i ≫ subinterval 0 (p + 1) h = subinterval 0 p (by omega) ≫ δ k := by
-  ext j : 3
+/-- A face of a subinterval is a subinterval of the corresponding face: the `i`-th face of the
+subinterval `j, …, j + q + 1`, which omits its vertex `k = j + i`, is the subinterval `j, …, j + q`
+followed by the coface map skipping `k`. -/
+lemma δ_comp_subinterval {n j q : ℕ} (i : Fin (q + 2)) (k : Fin (n + 2))
+    (hik : j + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
+    δ i ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
+  ext l : 3
   rw [Fin.ext_iff]
-  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, δ, mkHom, Hom.toOrderHom_mk,
-    OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
-    Fin.succAbove, Fin.lt_def, apply_ite Fin.val, Fin.val_castSucc, Fin.val_succ,
-    val_subinterval_toOrderHom_apply]
+  simp [δ, Fin.succAbove, Fin.lt_def, apply_ite Fin.val]
   split_ifs <;> omega
 
-/-- The last face of the front `(p + 1)`-face is the front `p`-face. -/
+/-- The last face of the subinterval `j, …, j + q + 1` is the subinterval `j, …, j + q`. -/
 @[simp]
-lemma δ_last_comp_subinterval_zero {n p : ℕ} (h : 0 + (p + 1) ≤ n) :
-    δ (Fin.last (p + 1)) ≫ subinterval 0 (p + 1) h = subinterval 0 p (by omega) := by
-  ext j : 3
+lemma δ_last_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
+    δ (Fin.last (q + 1)) ≫ subinterval j (q + 1) h = subinterval j q (by omega) := by
+  ext l : 3
   rw [Fin.ext_iff]
   simp [δ]
 
@@ -62,18 +61,6 @@ lemma δ_zero_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
   simp [δ]
   omega
 
-/-- A positive face of a subinterval is the subinterval of the corresponding face. -/
-lemma δ_succ_comp_subinterval {n j q : ℕ} (i : Fin (q + 1)) (k : Fin (n + 2))
-    (hik : j + 1 + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
-    δ i.succ ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, δ, mkHom, Hom.toOrderHom_mk,
-    OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
-    Fin.succAbove, Fin.lt_def, apply_ite Fin.val, Fin.val_castSucc, Fin.val_succ,
-    val_subinterval_toOrderHom_apply]
-  split_ifs <;> omega
-
 /-- Deleting a vertex before a subinterval shifts the subinterval. -/
 @[simp]
 lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) ≤ j)
@@ -81,24 +68,18 @@ lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) 
     subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
   ext l : 3
   rw [Fin.ext_iff]
-  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, δ, mkHom, Hom.toOrderHom_mk,
-    OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
-    Fin.succAbove, Fin.lt_def, apply_ite Fin.val, Fin.val_castSucc, Fin.val_succ,
-    val_subinterval_toOrderHom_apply]
+  simp [δ, Fin.succAbove, Fin.lt_def, apply_ite Fin.val]
   split_ifs <;> omega
 
-/-- Deleting a vertex after a front face does not change it. -/
+/-- Deleting a vertex after a subinterval does not change it. -/
 @[simp]
-lemma subinterval_zero_comp_δ_of_lt {n p : ℕ} (k : Fin (n + 2)) (hk : p < (k : ℕ))
-    (h : 0 + p ≤ n) :
-    subinterval 0 p h ≫ δ k = subinterval 0 p (by omega) := by
+lemma subinterval_comp_δ_of_lt {n j q : ℕ} (k : Fin (n + 2)) (hk : j + q < k)
+    (h : j + q ≤ n) :
+    subinterval j q h ≫ δ k = subinterval j q (by omega) := by
   ext l : 3
   rw [Fin.ext_iff]
-  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, δ, mkHom, Hom.toOrderHom_mk,
-    OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
-    Fin.succAbove, Fin.lt_def, apply_ite Fin.val, Fin.val_castSucc, Fin.val_succ,
-    val_subinterval_toOrderHom_apply]
-  split_ifs <;> omega
+  simp [δ, Fin.succAbove, Fin.lt_def, apply_ite Fin.val]
+  omega
 
 /-- A subinterval containing two consecutive vertices `i` and `i + 1` is not injective after the
 codegeneracy `σ i`, which identifies them. -/
