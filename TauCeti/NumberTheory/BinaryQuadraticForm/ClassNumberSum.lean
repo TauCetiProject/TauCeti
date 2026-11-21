@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Reduction
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SumIntegralComparisons
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.SumIntegralComparisons
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -91,25 +92,16 @@ private theorem integral_max_sub_mul_sq {X k R : ℝ} (hX : 0 ≤ X) (hk : 0 < k
 `[0, n]` by at most `X`. -/
 private theorem abs_sum_max_sub_mul_sq_sub_integral_le {X k : ℝ} (hX : 0 ≤ X) (hk : 0 ≤ k)
     (n : ℕ) :
-    |∑ i ∈ range n, max (X - k * ((i : ℝ) + 1) ^ 2) 0 -
+    |∑ i ∈ range n, max (X - k * ((i + 1 : ℕ) : ℝ) ^ 2) 0 -
       ∫ a in (0 : ℝ)..n, max (X - k * a ^ 2) 0| ≤ X := by
-  set g : ℝ → ℝ := fun a ↦ max (X - k * a ^ 2) 0 with hg
-  have hanti : AntitoneOn g (Set.Icc 0 (0 + n)) := fun x hx y _ hxy ↦ by
-    have : x ^ 2 ≤ y ^ 2 := pow_le_pow_left₀ hx.1 hxy 2
-    simp only [hg]
-    gcongr
-  have h1 := hanti.integral_le_sum
-  have h2 := hanti.sum_le_integral
-  have htel := sum_range_sub' (fun i : ℕ ↦ g i) n
-  rw [sum_sub_distrib] at htel
-  simp only [zero_add, Nat.cast_add, Nat.cast_one] at h1 h2
-  have hg0 : g 0 = X := by simp [hg, hX]
-  have hgn : 0 ≤ g n := le_max_right _ _
-  simp only [Nat.cast_add, Nat.cast_one, Nat.cast_zero] at htel
-  have key : |∑ i ∈ range n, g ((i : ℝ) + 1) - ∫ a in (0 : ℝ)..n, g a| ≤ X := by
-    rw [abs_le]
-    constructor <;> linarith
-  simpa only [hg] using key
+  have hanti : AntitoneOn (fun a : ℝ ↦ max (X - k * a ^ 2) 0) (Set.Icc 0 (0 + n)) :=
+    fun x hx y _ hxy ↦ by
+      have : x ^ 2 ≤ y ^ 2 := pow_le_pow_left₀ hx.1 hxy 2
+      dsimp only
+      gcongr
+  have h := hanti.abs_sum_range_sub_integral_le
+  simp only [zero_add] at h
+  exact h.trans (by simp [hX])
 
 /-- `∫₀^{1/2} (1 - u²)^{-1/2} du = π / 6`. -/
 private theorem integral_one_div_sqrt_one_sub_sq_zero_half :
@@ -129,12 +121,8 @@ private theorem abs_sum_Icc_sub_two_mul_integral_le {X : ℝ} (hX : 0 ≤ X) {n 
     have : x ^ 2 ≤ y ^ 2 := pow_le_pow_left₀ hx.1 hxy 2
     simp only [hg]
     gcongr
-  have h1 := hmono.sum_le_integral
-  have h2 := hmono.integral_le_sum
-  have htel := sum_range_sub (fun i : ℕ ↦ g i) n
-  rw [sum_sub_distrib] at htel
-  simp only [zero_add, Nat.cast_add, Nat.cast_one] at h1 h2
-  simp only [Nat.cast_add, Nat.cast_one, Nat.cast_zero] at htel
+  have h := hmono.abs_sum_range_sub_integral_le
+  simp only [zero_add, Nat.cast_add, Nat.cast_one] at h
   -- `g` is even, so the sum over `[-n, n]` is `g 0` plus twice the sum over `[1, n]`
   have hsum : ∑ b ∈ Icc (-(n : ℤ)) n, g b = g 0 + 2 * ∑ i ∈ range n, g ((i : ℝ) + 1) := by
     have h := sum_Icc_eq_add_sum_range (fun b : ℤ ↦ g b) n n
@@ -150,25 +138,10 @@ private theorem abs_sum_Icc_sub_two_mul_integral_le {X : ℝ} (hX : 0 ≤ X) {n 
     nlinarith
   have key : |∑ b ∈ Icc (-(n : ℤ)) n, g b - 2 * ∫ t in (0 : ℝ)..n, g t| ≤ X / (2 * n) := by
     rw [hsum, abs_le]
+    rw [abs_le] at h
     have : X / (2 * n) = 2 * (X / (4 * n)) := by field_simp; ring
     constructor <;> linarith
   simpa only [hg] using key
-
-/-! ### Counting the last coefficient -/
-
-/-- The number of integers in `[a, y)` is `max (y - a) 0` up to an error of at most one. -/
-private theorem abs_card_Ico_ceil_sub_le (a : ℤ) (y : ℝ) :
-    |((Ico a ⌈y⌉).card : ℝ) - max (y - a) 0| ≤ 1 := by
-  rw [Int.card_Ico]
-  rcases le_or_gt ⌈y⌉ a with h | h
-  · have : y ≤ a := Int.ceil_le.1 h
-    rw [Int.toNat_of_nonpos (by omega), max_eq_right (by linarith)]
-    simp
-  · have hay : (a : ℝ) < y := Int.lt_ceil.1 h
-    rw [← Int.cast_natCast, Int.toNat_of_nonneg (by omega), max_eq_left (by linarith)]
-    push_cast
-    rw [abs_le]
-    constructor <;> linarith [Int.le_ceil y, Int.ceil_lt_add_one y]
 
 /-! ### The forms in a box -/
 
@@ -386,12 +359,10 @@ private theorem abs_integral_sum_sub_le (hX : 0 ≤ X) :
   have hsqrt : √(X / (4 * (1 - u ^ 2))) = √X / (2 * √(1 - u ^ 2)) := by
     rw [sqrt_div' _ hk.le, sqrt_mul (by norm_num), show (4 : ℝ) = 2 ^ 2 by norm_num,
       sqrt_sq (by norm_num)]
-  rw [hsqrt] at hsum
-  rw [Real.norm_eq_abs]
-  convert hsum using 3
-  · push_cast
-    rfl
-  · field_simp
+  have hval : 2 / 3 * X * (√X / (2 * √(1 - u ^ 2))) = X * √X / 3 * (1 / √(1 - u ^ 2)) := by
+    field_simp
+  rw [hsqrt, hval] at hsum
+  rwa [Real.norm_eq_abs]
 
 end Box
 
