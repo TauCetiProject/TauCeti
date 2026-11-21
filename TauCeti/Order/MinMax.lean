@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.MinMax
+public import Mathlib.Algebra.Group.Defs
+import Mathlib.Algebra.Group.Basic
 import Mathlib.Tactic.Order
 
 /-!
@@ -13,8 +15,8 @@ import Mathlib.Tactic.Order
 
 An unordered pair of distinct points `x`, `y` of a linear order is recorded as the sorted pair
 `(min x y, max x y)`. This file collects facts about sorted pairs, their images under a function
-and how two of them can overlap, and a comparison of the relative orders of two triples of distinct
-points.
+and how two of them can overlap, a comparison of the relative orders of two triples of distinct
+points, and the increment identity for intersecting two intervals via `min` and `max`.
 
 ## Main results
 
@@ -27,6 +29,9 @@ points.
 * `TauCeti.xor_of_lt_iff`: given triples `s, u, w` and `S, U, W` of distinct points in two linear
   orders with `s < u ↔ U < S` and `s < w ↔ W < U`, exactly one of two further pairs of order
   conditions holds.
+* `TauCeti.sub_max_min_eq_sub_sub_of_le`: the increment of a group-valued function across the
+  intersection of two intervals `[a, b]` and `[u, v]` equals the difference of its increments on
+  `[a, b]` capped at `v` and at `u`.
 -/
 
 public section
@@ -103,5 +108,24 @@ theorem xor_of_lt_iff {s u w : α} {S U W : β}
       h₇.not_gt, h₈.not_gt, iff_true, iff_false, not_true_eq_false, not_false_eq_true, and_true,
       and_false, or_false, false_or] at h₁ h₂ ⊢ <;>
     order
+
+/-- For a group-valued function `f` on a linear order and intervals `a ≤ b`, `u ≤ v`, the increment
+across the intersection `[max a u, max (max a u) (min b v)]` equals the difference between the
+increments on `[a, b]` capped at `v` and at `u`. -/
+theorem sub_max_min_eq_sub_sub_of_le {G : Type*} [AddGroup G] {a b u v : α}
+    (hab : a ≤ b) (huv : u ≤ v) (f : α → G) :
+    f (max (max a u) (min b v)) - f (max a u) =
+      (f (min b v) - f (min a v)) - (f (min b u) - f (min a u)) := by
+  rcases le_total b u with hbu | hub
+  · simp [max_eq_right (hab.trans hbu), min_eq_left (hbu.trans huv), max_eq_left hbu,
+      min_eq_left (hab.trans (hbu.trans huv)), min_eq_left hbu, min_eq_left (hab.trans hbu)]
+  · rcases le_total v a with hva | hav
+    · simp [max_eq_left (huv.trans hva), min_eq_right (hva.trans hab), max_eq_left hva,
+        min_eq_right hva, min_eq_right (huv.trans (hva.trans hab)), min_eq_right (huv.trans hva)]
+    · rw [max_eq_right (max_le (le_min hab hav) (le_min hub huv)), min_eq_left hav,
+        min_eq_right hub]
+      rcases le_total a u with hau | hua
+      · rw [max_eq_right hau, min_eq_left hau, sub_sub_sub_cancel_right]
+      · rw [max_eq_left hua, min_eq_right hua, sub_self, sub_zero]
 
 end TauCeti

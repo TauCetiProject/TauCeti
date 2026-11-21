@@ -7,16 +7,21 @@ module
 
 public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Probability.Kernel.MeasurableIntegral
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.Probability.Kernel.Composition.MapComap
+import TauCeti.MeasureTheory.Measure.NNReal
 
 /-!
 # Progressive time integrals
 
 Time integration of a strongly progressive process remains strongly progressive on the
-original filtration. The integrating measure may depend on the sample, provided its restriction
-to each time horizon is an s-finite kernel measurable at that horizon. This applies to signed
-and Banach-valued drift integrals, without integrability in the sample variable or usual
-conditions on the filtration.
+original filtration (`MeasureTheory.IsStronglyProgressive.integral_Ioc`), in particular when
+integrated against finite-horizon Lebesgue time measure
+(`MeasureTheory.IsStronglyProgressive.integral_timeMeasure`). The integrating measure may depend on
+the sample, provided its restriction to each time horizon is an s-finite kernel measurable at that
+horizon (`MeasureTheory.IsStronglyProgressive.integral_Ioc_kernel`). This applies to signed and
+Banach-valued drift integrals, without integrability in the sample variable or usual conditions
+on the filtration.
 
 The integral is the ordinary Bochner integral, including its zero value for nonintegrable
 sections. Path regularity requires pathwise integrability; measurability alone makes no
@@ -31,6 +36,7 @@ continuity assertion.
 public section
 
 open Set MeasureTheory ProbabilityTheory
+open scoped NNReal
 
 namespace MeasureTheory
 
@@ -89,5 +95,15 @@ theorem IsStronglyProgressive.integral_Ioc (hH : IsStronglyProgressive F H)
     simp
   rw [heq]
   infer_instance
+
+/-- Integrating a strongly progressive process against `TauCeti.Probability.timeMeasure`
+preserves strong progressivity. No pathwise or expected integrability is required. -/
+theorem IsStronglyProgressive.integral_timeMeasure {Ω E : Type*}
+    [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {F : Filtration ℝ≥0 ‹MeasurableSpace Ω›} {H : ℝ≥0 → Ω → E}
+    (hH : IsStronglyProgressive F H) :
+    IsStronglyProgressive F (fun t ω ↦ ∫ s, H s ω ∂TauCeti.Probability.timeMeasure t) := by
+  simpa only [TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def] using
+    hH.integral_Ioc TauCeti.nnvolume 0
 
 end MeasureTheory

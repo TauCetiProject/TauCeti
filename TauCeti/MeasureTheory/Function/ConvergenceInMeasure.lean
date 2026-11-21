@@ -47,6 +47,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
 
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `MeasureTheory.ae_eq_of_tendstoInMeasure_sub_zero`: two families converging in measure whose
+  difference tends to `0` in measure have a.e.-equal limits.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -384,6 +386,15 @@ theorem TendstoInMeasure.sub [AddGroup E] [PseudoEMetricSpace E] [IsUniformAddGr
     (hf₁ : TendstoInMeasure μ f₁ l g₁) (hf₂ : TendstoInMeasure μ f₂ l g₂) :
     TendstoInMeasure μ (fun i x ↦ f₁ i x - f₂ i x) l (fun x ↦ g₁ x - g₂ x) :=
   hf₁.uniformContinuous₂_comp uniformContinuous_sub hf₂
+
+/-- If two families converge in measure along a countably generated nontrivial filter and their
+difference converges to `0` in measure, then their limits agree almost everywhere. -/
+theorem ae_eq_of_tendstoInMeasure_sub_zero [NormedAddCommGroup E] [NeBot l] [IsCountablyGenerated l]
+    {f f' : ι → α → E} {g g' : α → E} (hf : TendstoInMeasure μ f l g)
+    (hf' : TendstoInMeasure μ f' l g')
+    (hsub : TendstoInMeasure μ (fun i x ↦ f i x - f' i x) l (fun _ ↦ 0)) :
+    g =ᵐ[μ] g' :=
+  (tendstoInMeasure_ae_unique (hf.sub hf') hsub).mono fun _ h ↦ sub_eq_zero.mp h
 
 /-- Pointwise multiplication by a fixed scalar preserves convergence in measure whenever
 constant scalar multiplication is uniformly continuous, on any measure space. -/

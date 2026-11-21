@@ -70,6 +70,8 @@ A point off a finite set stays farther than `ε` from all of its points for ever
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
+* `TauCeti.eNorm_sub_sq_le_two_mul` -- the extended-norm squared triangle inequality through an
+  intermediate point.
 * `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
 * `TauCeti.setOf_exists_norm_sub_le_eq_preimage` -- `{t | ∃ s ∈ S, ‖f t - s‖ ≤ ε}` is the
   preimage under `f` of the union of the closed `ε`-balls about the points of `S`.
@@ -189,6 +191,16 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
     [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     0 ≤ B :=
   (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
+
+/-- **Extended-norm squared triangle inequality.** The squared extended distance from `a` to `b`
+is at most twice the sum of the squared extended distances from `a` and from `b` to an
+intermediate point `c`. -/
+theorem eNorm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E) :
+    ‖a - b‖ₑ ^ 2 ≤ 2 * (‖a - c‖ₑ ^ 2 + ‖b - c‖ₑ ^ 2) := by
+  simp only [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
+    ← ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _), ← ENNReal.ofReal_ofNat 2,
+    ← ENNReal.ofReal_mul zero_le_two]
+  exact ENNReal.ofReal_le_ofReal (norm_sub_sq_le_two_mul a b c)
 
 /-- The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances: the distance from
 `x + (c - c₀)` to `c` is the distance from `x` to `c₀`. -/
