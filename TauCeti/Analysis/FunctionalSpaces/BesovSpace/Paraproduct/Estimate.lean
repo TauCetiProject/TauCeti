@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
 import TauCeti.Analysis.Normed.Lp.Holder
@@ -30,7 +30,7 @@ Theorem 2.82 as continuous bilinear maps:
 * **Negative regularity:** `TauCeti.BesovSpace.paraproductNegCLM` (`α < 0`) and
   `TauCeti.BesovSpace.paraproductRightNegCLM` (`β < 0`) mapping
   `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^{α + β}_{r,q}` (`1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`),
-  proved via `TauCeti.BesovSpace.exists_lp_lowPass_le_of_neg` and `lp.mulL`.
+  proved via `TauCeti.BesovSpace.exists_lp_lowPass_sub_le_of_neg` and `lp.mulL`.
 * **Vanishing and constant-`1` identities:** `paraproductLpCLM_eq_zero`,
   `paraproductRightLpCLM_eq_zero`, `paraproductNegCLM_eq_zero`, `paraproductRightNegCLM_eq_zero`
   (with single-block corollaries) and `toDistr_paraproductLpCLM_one_left`,
@@ -58,34 +58,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace TauCeti.BesovSpace
 
 section Helpers
-
-variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Shifted version of `exists_lp_lowPass_le_of_neg` for `S_{j - N} u`: for `s < 0`, the sequence
-`2^{s j} ‖S_{j - N} u‖_p` is bounded by an `ℓ^q` sequence of norm at most `(2^{-s} - 1)⁻¹ ‖u‖`. -/
-private theorem exists_lp_lowPass_sub_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (N : ℕ)
-    (u : BesovSpace F φ s p q) :
-    ∃ a : lp (fun _ : ℕ ↦ ℝ) q,
-      (∀ j : ℕ, 2 ^ (s * j) * ‖u.lowPass (j - N)‖ ≤ a j) ∧ ‖a‖ ≤ (2 ^ (-s) - 1)⁻¹ * ‖u‖ := by
-  obtain ⟨a₀, _, ha₀, ha₀_norm⟩ := exists_lp_lowPass_le_of_neg hs u
-  have hinj : {j : ℕ | N ≤ j}.InjOn fun j ↦ j - N := fun _ hj _ hj' h ↦ tsub_inj_left hj hj' h
-  set a : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨{j | N ≤ j}.indicator (a₀ ∘ fun j ↦ j - N), (lp.memℓp a₀).indicator_comp hinj⟩
-  -- The entries of the anonymous `lp` element `a` are its defining indicator sequence by
-  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
-  -- constructor.
-  have ha_val (j : ℕ) : a j = {j | N ≤ j}.indicator (a₀ ∘ fun j ↦ j - N) j := rfl
-  refine ⟨a, fun j ↦ ?_, (lp.norm_le_of_forall_eq_indicator_comp hinj ha_val).trans
-    ha₀_norm⟩
-  by_cases hj : N ≤ j
-  · have hexp : (2 : ℝ) ^ (s * j) = 2 ^ (s * N) * 2 ^ (s * (j - N : ℕ)) := by
-      rw [← Real.rpow_add two_pos, ← mul_add]; congr 2; exact_mod_cast (Nat.add_sub_of_le hj).symm
-    have hle1 : (2 : ℝ) ^ (s * N) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos one_le_two
-      (mul_nonpos_of_nonpos_of_nonneg hs.le N.cast_nonneg)
-    rw [ha_val, Set.indicator_of_mem hj, Function.comp_apply, hexp, mul_assoc]
-    exact (mul_le_of_le_one_left (by positivity) hle1).trans (ha₀ (j - N))
-  · rw [ha_val, Set.indicator_of_notMem hj, Nat.sub_eq_zero_of_le (le_of_not_ge hj),
-      lowPass_zero_right, norm_zero, mul_zero]
 
 /-- Specialises `exists_hasSum_toDistr_and_norm_le_of_annulus` to the dyadic annuli supporting the
 terms of Bony's paraproducts when `φ.rOut < 2 ^ N * φ.rIn`. -/

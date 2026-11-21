@@ -7,15 +7,14 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Operator.Mul
-import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Pointwise multiplication for `lp`
 
-Specialisation of Mathlib's `lp.holderL` (with coordinate evaluation `lp.holderL_apply_apply_coe`)
-to pointwise multiplication `lp.mulL : ℓ^p(ι, R) →L[𝕜] ℓ^q(ι, R) →L[𝕜] ℓ^r(ι, R)`
-(`1/r = 1/p + 1/q`) on a non-unital normed `𝕜`-algebra `R`, with `lp.mulL_apply_apply`,
-`lp.norm_mulL_le`, and `lp.norm_mulL_apply_apply_le`.
+Specialisation of Mathlib's `lp.holderL` to pointwise multiplication
+`lp.mulL : ℓ^p(ι, R) →L[𝕜] ℓ^q(ι, R) →L[𝕜] ℓ^r(ι, R)` (`1/r = 1/p + 1/q`) on a non-unital
+normed `𝕜`-algebra `R`, with `lp.mulL_apply_apply`, `lp.norm_mulL_le`, and
+`lp.norm_mulL_apply_apply_le`.
 -/
 
 public section
@@ -41,7 +40,8 @@ def mulL (r : ℝ≥0∞) [Fact (1 ≤ r)] [p.HolderTriple q r] :
 @[simp] theorem mulL_apply_apply (r : ℝ≥0∞) [Fact (1 ≤ r)] [p.HolderTriple q r]
     (a : lp (fun _ : ι ↦ R) p) (b : lp (fun _ : ι ↦ R) q) (i : ι) :
     mulL 𝕜 R r a b i = a i * b i := by
-  rw [mulL, holderL_apply_apply_coe, ContinuousLinearMap.mul_apply']
+  rw [mulL, holderL, LinearMap.mkContinuous₂_apply, holderₗ_apply_apply_coe,
+    ContinuousLinearMap.mul_apply']
 
 /-- Operator norm bound `‖lp.mulL 𝕜 R r‖ ≤ 1`. -/
 theorem norm_mulL_le (r : ℝ≥0∞) [Fact (1 ≤ r)] [p.HolderTriple q r] :

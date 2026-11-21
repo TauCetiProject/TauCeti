@@ -106,8 +106,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Set Filter Distribution FourierTransform TemperedDistribution
-open scoped ENNReal SchwartzMap Pointwise Topology
+open MeasureTheory Metric Set Distribution FourierTransform TemperedDistribution
+open scoped ENNReal SchwartzMap Pointwise
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
