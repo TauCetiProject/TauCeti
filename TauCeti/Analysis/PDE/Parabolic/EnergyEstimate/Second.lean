@@ -146,7 +146,9 @@ theorem apply_self_add_integral_norm_sq_le_mul_exp
         (mul_le_mul_of_nonneg_left (hEX r (Icc_subset_Icc_right hs.2 hr)) hK))
     rw [intervalIntegral.integral_const_mul] at hderivint
     exact henergy.trans (by linarith)
-  exact TauCeti.le_mul_exp_of_le_add_mul_integral hX hK hgr t (right_mem_Icc.2 ht.1)
+  have htt := right_mem_Icc.2 ht.1
+  exact TauCeti.le_mul_exp_of_le_add_mul_integral hX.integrableOn_Icc hK
+    (ae_restrict_of_forall_mem measurableSet_Icc hgr) htt (hgr t htt)
 
 /-- The coercive specialization of the second energy estimate: coercivity with constant
 `α > 0` and an upper derivative bound `M ‖v‖²`, with `M ≥ 0`, give the rate `M / α`. -/

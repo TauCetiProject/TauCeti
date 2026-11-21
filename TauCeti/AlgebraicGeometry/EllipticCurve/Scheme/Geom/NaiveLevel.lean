@@ -351,8 +351,8 @@ disjoint sections. -/
 theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
     (hφ : E.IsFiberwiseInjective φ) : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
   rw [pointsDivisor_def]
-  apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
-  intro a b hab
+  refine (Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
+    fun a _ b _ hab ↦ ?_).trans (by simp)
   apply disjoint_iff.mpr
   apply SetLike.coe_injective
   simpa only [Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,

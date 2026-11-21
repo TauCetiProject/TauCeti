@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Derivatives of continuous-linear-map applications
@@ -187,9 +188,9 @@ theorem _root_.HasDerivAt.clm_apply_self {c : 𝕜 → F →L[𝕜] F →L[𝕜]
     (hc : HasDerivAt c c' t) (hu : HasDerivAt u u' t)
     (hsym : ∀ v w, c t v w = c t w v) :
     HasDerivAt (fun r ↦ c r (u r) (u r)) (c' (u t) (u t) + 2 * c t (u t) u') t := by
-  convert (hc.clm_apply hu).clm_apply hu using 1
-  simp only [add_apply, hsym u' (u t)]
-  ring
+  have hc' := HasDerivAt.hasDerivWithinAt (𝕜 := 𝕜) (F := F →L[𝕜] F →L[𝕜] 𝕜)
+    (f := c) (f' := c') (x := t) (s := univ) hc
+  exact hasDerivWithinAt_univ.mp (hc'.clm_apply_self hu.hasDerivWithinAt hsym)
 
 /-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
 derivative of `c` at `x`. -/
@@ -400,18 +401,12 @@ its derivative along any filter. All spaces need only seminorms. -/
 theorem HasDerivAtFilter.bilinearComp {l : Filter (𝕜 × 𝕜)} (hc : HasDerivAtFilter c c' l)
     (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
     HasDerivAtFilter (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) l := by
-  let L := (ContinuousLinearMap.compL 𝕜 F V (W →L[𝕜] F')).flip e
-  let R := (ContinuousLinearMap.compL 𝕜 G W F').flip f
-  let P := ContinuousLinearMap.compL 𝕜 F (W →L[𝕜] F') (G →L[𝕜] F') R
-  have hP (d : V →L[𝕜] W →L[𝕜] F') : (P.comp L) d = d.bilinearComp e f := by
-    ext v w
-    rfl
   -- The form space need not be normed, so apply the pullback directly to the remainder.
   refine HasFDerivAtFilter.of_isLittleOTVS ?_
-  have h := (P.comp L).isBigOTVS_comp.trans_isLittleOTVS hc.hasFDerivAtFilter.isLittleOTVS
-  simp only [Function.comp_def, map_sub, ContinuousLinearMap.toSpanSingleton_apply,
-    map_smul] at h
-  simpa only [hP, ContinuousLinearMap.toSpanSingleton_apply, sub_smul] using h
+  have h := (ContinuousLinearMap.bilinearCompL (G := F') e f).isBigOTVS_comp.trans_isLittleOTVS
+    hc.hasFDerivAtFilter.isLittleOTVS
+  simpa only [Function.comp_def, map_sub, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
+    ContinuousLinearMap.bilinearCompL_apply, sub_smul] using h
 
 /-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
 its derivative within a set. All spaces need only seminorms. -/
