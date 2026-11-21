@@ -76,6 +76,9 @@ gives a set of measure one.
 * `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
+* `MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ball_inter`: for the
+  restriction to a set `Ω`, restricting further to a closed ball is restricting to the
+  intersection of `Ω` with the open ball.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
   with the measure of a closed ball of the same radius, agrees with the containing closed ball up
   to a null set.
@@ -419,6 +422,19 @@ theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_
     (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) {r : ℝ} (hr : r ≠ 0) :
     mu.restrict (closedBall x r) = mu.restrict (ball x r) :=
   Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr)
+
+/-- In a nontrivial finite-dimensional space, restricting the restriction of an additive Haar
+measure to a set `Ω` further to a closed ball is restricting it to the intersection of `Ω` with
+the open ball of the same radius, since spheres are null. So the averages over closed balls for
+`mu.restrict Ω` are the averages over `ball x r ∩ Ω`. -/
+theorem _root_.MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ball_inter
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (Ω : Set E) (x : E) (r : ℝ) :
+    (mu.restrict Ω).restrict (closedBall x r) = mu.restrict (ball x r ∩ Ω) := by
+  rw [Measure.restrict_restrict measurableSet_closedBall]
+  exact Measure.restrict_congr_set
+    ((mu.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)
 
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
 of radius `r`, agrees up to a null set with the closed ball of radius `r` about `c` containing

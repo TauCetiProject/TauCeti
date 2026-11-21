@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -94,8 +96,12 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `dist_preciseRepresentative_restrict_le_of_setAverage_norm_sub_le`,
   `dist_preciseRepresentative_le_of_setAverage_norm_sub_le`: the local Hölder estimate between
   two points, from mean oscillation bounds on balls of radius comparable to their distance.
-* `norm_setAverage_closedBall_sub_setAverage_closedBall_le`: mean oscillation decaying like `r^α`
+* `norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le`,
+  `norm_setAverage_closedBall_sub_setAverage_closedBall_le`: mean oscillation decaying like `r^α`
   at `x` keeps the averages over concentric balls within `O(r^α)` of each other.
+* `exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`: square mean oscillation decaying like
+  `r^{n+2κ}` at `x` keeps the averages bounded, so that `∫_{B(x, r) ∩ Ω} ‖f‖²` decays like `rⁿ`,
+  on a set with density bounded below in the balls around `x`.
 * `holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le`: the Hölder bound on a set, from
   mean oscillation bounds at scales below a fixed radius and a bound on the averages at that radius.
 * `holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le`: **Campanato's
@@ -228,15 +234,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {Ω : Set E} {c : ℝ≥0}
   {x : E} {M α ρ : ℝ}
 
-/-- Integrating over a closed ball for the restriction of an additive Haar measure to a set `Ω`
-is integrating over the intersection of `Ω` with the open ball, since spheres are null. So the
-averages over closed balls for `μ.restrict Ω` below are the averages over `B(x, r) ∩ Ω`. -/
-theorem restrict_restrict_closedBall_eq_restrict_ball_inter [Nontrivial E] (Ω : Set E) (x : E)
-    (r : ℝ) : (μ.restrict Ω).restrict (closedBall x r) = μ.restrict (ball x r ∩ Ω) := by
-  rw [Measure.restrict_restrict measurableSet_closedBall]
-  exact Measure.restrict_congr_set
-    ((μ.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)
-
 /-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
 private lemma one_sub_two_rpow_neg_pos (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
   sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
@@ -258,11 +255,15 @@ private lemma norm_setAverage_closedBall_sub_le_of_le_two_mul {y : E} {ε r : �
     mul_le_mul (μ.addHaar_real_restrict_closedBall_div_le x y hc hε hr hrε hd) hosc
       (average_nonneg fun _ ↦ norm_nonneg _) (by positivity)
 
-/-- **Telescoping over dyadic radii.** If `Ω` has density at least `c > 0` in `closedBall x r` and
-the mean oscillation of `f` on `closedBall x r` with respect to `μ.restrict Ω` is at most `M r^α`
-for `0 < r ≤ ρ`, then the averages over `closedBall x ε` and `closedBall x r`, `0 < ε ≤ r ≤ ρ`,
-differ by at most `2ⁿ / (c (1 - 2^(-α))) · M r^α`. -/
-private lemma norm_setAverage_closedBall_sub_le (hα : 0 < α) (hc : 0 < c)
+/-- **Averages over concentric balls, on a set with the measure density property.** Let
+`α > 0` and `c > 0`. If `Ω` has density at least `c` in `closedBall x r`, `f` is integrable on
+`closedBall x ρ` and its mean oscillation on `closedBall x r` with respect to `μ.restrict Ω` is at
+most `M r^α` for `0 < r ≤ ρ`, then the averages over `closedBall x ε` and `closedBall x r`,
+`0 < ε ≤ r ≤ ρ`, with respect to `μ.restrict Ω` differ by at most
+`2ⁿ / (c (1 - 2^(-α))) · M r^α`, where `n` is the dimension. The proof telescopes over dyadic
+radii. -/
+theorem norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le (hα : 0 < α)
+    (hc : 0 < c)
     (hf : IntegrableOn f (closedBall x ρ) (μ.restrict Ω))
     (hdens : ∀ r, 0 < r → r ≤ ρ → (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω))
     (hosc : ∀ r, 0 < r → r ≤ ρ →
@@ -367,8 +368,10 @@ private theorem tendsto_setAverage_closedBall_restrict_preciseRepresentative_of_
       _ ≤ C * (M * τ ^ α) + C * (M * τ ^ α) := by
           rw [dist_eq_norm, dist_eq_norm]
           exact add_le_add
-            (norm_setAverage_closedBall_sub_le hα hc hf hdens hosc ha.1 ha.2 hτρ.2)
-            (norm_setAverage_closedBall_sub_le hα hc hf hdens hosc hb.1 hb.2 hτρ.2)
+            (norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le hα hc hf hdens hosc
+              ha.1 ha.2 hτρ.2)
+            (norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le hα hc hf hdens hosc
+              hb.1 hb.2 hτρ.2)
       _ < δ := by linarith
   obtain ⟨v, hv⟩ := CompleteSpace.complete hcauchy
   rwa [preciseRepresentative_eq_of_tendsto hv]
@@ -423,7 +426,8 @@ theorem norm_setAverage_closedBall_restrict_sub_preciseRepresentative_le (hα : 
   refine le_of_tendsto (tendsto_const_nhds.sub ht).norm ?_
   filter_upwards [Ioc_mem_nhdsGT hr] with ε hε
   rw [norm_sub_rev]
-  exact norm_setAverage_closedBall_sub_le hα hc hf hdens hosc hε.1 hε.2 hrρ
+  exact norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le hα hc hf hdens hosc hε.1
+    hε.2 hrρ
 
 /-- **The local Campanato estimate on a set with the measure density property.** Let `α > 0`,
 `c > 0` and `d = dist x y`. Suppose that `Ω` has density at least `c` in `closedBall x r` for
@@ -527,6 +531,238 @@ theorem holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le {�
 
 end Domain
 
+/-! ### Morrey decay from Campanato decay on a set with the measure density property -/
+
+section MorreyDecay
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The squared norm of the average of `f` over a set `S` of finite measure, times the measure of
+`S`, is at most `∫_S ‖f‖²`. -/
+private lemma measureReal_mul_sq_norm_setAverage_le [CompleteSpace F] {X : Type*}
+    [MeasurableSpace X] {m : Measure X} {f : X → F} {S : Set X} (hS : m S ≠ ⊤)
+    (hf : MemLp f 2 (m.restrict S)) :
+    m.real S * ‖⨍ y in S, f y ∂m‖ ^ 2 ≤ ∫ x in S, ‖f x‖ ^ 2 ∂m := by
+  have h := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hS
+    (hf.integrableOn_of_subset one_le_two subset_rfl hS)
+    (hf.integrableOn_norm_sub_sq_of_subset subset_rfl hS 0)
+  simp only [sub_zero] at h
+  rw [h]
+  exact le_add_of_nonneg_left (integral_nonneg fun _ => by positivity)
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {g : E → F}
+  {Ω : Set E} {c : ℝ≥0} {z : E}
+
+/-- The volume of a ball scales like the `n`-th power of its radius:
+`μ(B(z, t)) = (t / R)ⁿ μ(B(z, R))`. -/
+private lemma measureReal_ball_eq_div_pow_mul {t R : ℝ} (ht : 0 < t) (hR : 0 < R) :
+    μ.real (ball z t) = (t / R) ^ finrank ℝ E * μ.real (ball z R) := by
+  rw [μ.addHaar_real_ball_of_pos z ht, μ.addHaar_real_ball_of_pos z hR, div_pow]
+  field_simp
+
+variable [Nontrivial E]
+
+/-- If `Ω` has density at least `c` in `closedBall z t`, then `c μ(B(z, t)) ≤ μ(B(z, t) ∩ Ω)`,
+since closed and open balls differ by a null set. -/
+private lemma mul_measureReal_ball_le {t : ℝ}
+    (hd : (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω)) :
+    (c : ℝ) * μ.real (ball z t) ≤ μ.real (ball z t ∩ Ω) := by
+  rw [μ.addHaar_closedBall_eq_addHaar_ball, measure_congr
+    ((μ.addHaar_closedBall_ae_eq_ball z t).inter Filter.EventuallyEqSet.rfl)] at hd
+  simpa only [measureReal_def, ENNReal.toReal_mul, ENNReal.coe_toReal] using
+    ENNReal.toReal_mono (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne hd
+
+/-- **Mean oscillation from square mean oscillation.** Let `c > 0`, let `Ω` have density at least
+`c` in `closedBall z t`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C V ((t / R)ⁿ (t / R)^{2κ})`, where
+`g_t` is the average of `g` over `ball z t ∩ Ω`. Then the mean oscillation of `g` on
+`closedBall z t` for `μ.restrict Ω` is at most `√(C V / (μ(B(z, R)) c)) R^{-κ} t^κ`. -/
+private lemma setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc : 0 < c)
+    (hR : 0 < R) (ht : 0 < t)
+    (hd : (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
+    (hg : MemLp g 2 (μ.restrict (ball z t ∩ Ω)))
+    (hψ : ∫ x in ball z t ∩ Ω, ‖g x - ⨍ y in ball z t ∩ Ω, g y ∂μ‖ ^ 2 ∂μ ≤
+      C * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ))) :
+    ⨍ y in closedBall z t, ‖g y - ⨍ w in closedBall z t, g w ∂μ.restrict Ω‖ ∂μ.restrict Ω ≤
+      √(C * (V / μ.real (ball z R)) / c) * R ^ (-κ) * t ^ κ := by
+  rw [μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
+  set S := ball z t ∩ Ω
+  have hS : μ S ≠ ⊤ := (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
+  have hB := measureReal_ball_pos μ z hR
+  have hBt := measureReal_ball_pos μ z ht
+  have hdS : (c : ℝ) * μ.real (ball z t) ≤ μ.real S := mul_measureReal_ball_le hd
+  have hS0 : 0 < μ.real S := (mul_pos hc hBt).trans_le hdS
+  -- Jensen's inequality.
+  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
+    (hg.integrableOn_norm_sub_sq_of_subset subset_rfl hS (⨍ y in S, g y ∂μ))
+  have hav : ⨍ x in S, ‖g x - ⨍ y in S, g y ∂μ‖ ^ 2 ∂μ =
+      (μ.real S)⁻¹ * ∫ x in S, ‖g x - ⨍ y in S, g y ∂μ‖ ^ 2 ∂μ := by
+    rw [setAverage_eq, smul_eq_mul]
+  rw [hav] at hJ
+  have hX0 : 0 ≤ C * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ)) :=
+    (integral_nonneg fun _ => by positivity).trans hψ
+  have h2κ : (t / R) ^ (2 * κ) = ((t / R) ^ κ) ^ 2 := by
+    rw [mul_comm, Real.rpow_mul (by positivity), Real.rpow_two]
+  have hrhs : √(C * (V / μ.real (ball z R)) / c) * R ^ (-κ) * t ^ κ =
+      √(C * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ)) / (c * μ.real (ball z t))) := by
+    have heq : C * V * ((t / R) ^ finrank ℝ E * ((t / R) ^ κ) ^ 2) /
+        (c * ((t / R) ^ finrank ℝ E * μ.real (ball z R))) =
+        C * (V / μ.real (ball z R)) / c * ((t / R) ^ κ) ^ 2 := by
+      field_simp
+    rw [mul_assoc, ← Real.div_rpow_eq_rpow_neg_mul_rpow ht.le hR,
+      measureReal_ball_eq_div_pow_mul ht hR, h2κ, heq, Real.sqrt_mul' _ (by positivity),
+      Real.sqrt_sq (by positivity)]
+  rw [hrhs]
+  refine Real.le_sqrt_of_sq_le (hJ.trans ?_)
+  rw [inv_mul_eq_div]
+  exact (div_le_div_of_nonneg_right hψ hS0.le).trans
+    (div_le_div_of_nonneg_left hX0 (mul_pos hc hBt) hdS)
+
+variable [CompleteSpace F]
+
+/-- If `Ω` has density at least `c` in `closedBall z s`, `s ≤ R`, and `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`,
+then the average `g_s` of `g` over `ball z s ∩ Ω` satisfies `c (s / R)ⁿ μ(B(z, R)) ‖g_s‖² ≤ V`. -/
+private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hs : 0 < s) (hsR : s ≤ R)
+    (hR : 0 < R) (hd : (c : ℝ≥0∞) * μ (closedBall z s) ≤ μ (closedBall z s ∩ Ω))
+    (hg : MemLp g 2 (μ.restrict (ball z R ∩ Ω))) (hΦR : ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V) :
+    c * ((s / R) ^ finrank ℝ E * μ.real (ball z R)) * ‖⨍ y in ball z s ∩ Ω, g y ∂μ‖ ^ 2 ≤ V := by
+  have hsub : ball z s ∩ Ω ⊆ ball z R ∩ Ω := inter_subset_inter_left _ (ball_subset_ball hsR)
+  have hfin : ∀ r, μ (ball z r ∩ Ω) ≠ ⊤ := fun r =>
+    (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
+  have h1 := (measureReal_mul_sq_norm_setAverage_le (hfin s)
+    (hg.mono_measure (Measure.restrict_mono hsub le_rfl))).trans
+    ((setIntegral_mono_set ((hg.integrableOn_norm_sub_sq_of_subset subset_rfl (hfin R) 0).congr
+      (ae_of_all _ fun _ => by simp only [sub_zero])) (ae_of_all _ fun _ => by positivity)
+      hsub.eventuallySubset).trans hΦR)
+  have h2 := mul_measureReal_ball_le hd
+  rw [measureReal_ball_eq_div_pow_mul hs hR] at h2
+  exact (mul_le_mul_of_nonneg_right h2 (sq_nonneg _)).trans h1
+
+/-- **Bounded averages from Campanato decay.** Let `κ > 0`, `θ ∈ (0, 1]` and `c > 0`. Let `Ω` have
+density at least `c` in the closed balls `closedBall z t`, `0 < t ≤ R`, let `g` be square
+integrable on `ball z R ∩ Ω` with `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`, and let
+`∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C₂ V (t / R)^{n+2κ}` for `0 < t ≤ θ R`, where `g_t` is the average of
+`g` over `ball z t ∩ Ω` and `n` is the dimension. Then for `0 < t ≤ θ R`,
+`‖g_t‖² ≤ (2 / (c θⁿ) + 2 c'² C₂ / c) V / μ(B(z, R))`, where `c' = 2ⁿ / (c (1 - 2^{-κ}))` is the
+constant of Campanato's estimate
+(`TauCeti.MeasureTheory.norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le`). -/
+private lemma sq_norm_setAverage_ball_inter_le {κ θ C₂ R V t : ℝ} (hκ : 0 < κ) (hθ : 0 < θ)
+    (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) (hc : 0 < c)
+    (hdens : ∀ t, 0 < t → t ≤ R → (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
+    (hg : MemLp g 2 (μ.restrict (ball z R ∩ Ω))) (hR : 0 < R)
+    (hΦR : ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V)
+    (hψ : ∀ t, 0 < t → t ≤ θ * R →
+      ∫ x in ball z t ∩ Ω, ‖g x - ⨍ y in ball z t ∩ Ω, g y ∂μ‖ ^ 2 ∂μ ≤
+        C₂ * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ)))
+    (ht : 0 < t) (htθ : t ≤ θ * R) :
+    ‖⨍ y in ball z t ∩ Ω, g y ∂μ‖ ^ 2 ≤
+      (2 / (c * θ ^ finrank ℝ E) + 2 * (2 ^ finrank ℝ E / (c * (1 - 2 ^ (-κ)))) ^ 2 * (C₂ / c)) *
+        (V / μ.real (ball z R)) := by
+  set cc : ℝ := 2 ^ finrank ℝ E / (c * (1 - 2 ^ (-κ)))
+  set W := V / μ.real (ball z R)
+  have hB := measureReal_ball_pos μ z hR
+  have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
+  have hθR0 : 0 < θ * R := ht.trans_le htθ
+  have hV0 : 0 ≤ V := (integral_nonneg fun _ => by positivity).trans hΦR
+  have hcc : 0 ≤ cc := div_nonneg (by positivity) (mul_nonneg c.property
+    (sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hκ))).le)
+  have hsub : ∀ r ≤ R, ball z r ∩ Ω ⊆ ball z R ∩ Ω := fun r hr =>
+    inter_subset_inter_left _ (ball_subset_ball hr)
+  have hfin : ∀ r, μ (ball z r ∩ Ω) ≠ ⊤ := fun r =>
+    (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
+  have hgr : ∀ r ≤ R, MemLp g 2 (μ.restrict (ball z r ∩ Ω)) := fun r hr =>
+    hg.mono_measure (Measure.restrict_mono (hsub r hr) le_rfl)
+  -- By Campanato's estimate, the averages stay close to the average at radius `θ R`.
+  have hcamp := norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le (μ := μ) (Ω := Ω)
+    (f := g) (M := √(C₂ * W / c) * R ^ (-κ)) hκ hc
+    (by rw [IntegrableOn, μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
+        exact (hgr _ hθR).integrableOn_of_subset one_le_two subset_rfl (hfin _))
+    (fun r hr hrθ => hdens r hr (hrθ.trans hθR))
+    (fun r hr hrθ => setAverage_closedBall_restrict_norm_sub_le hc hR hr
+      (hdens r hr (hrθ.trans hθR)) (hgr r (hrθ.trans hθR)) (hψ r hr hrθ)) ht htθ le_rfl
+  simp only [μ.restrict_restrict_closedBall_eq_restrict_ball_inter] at hcamp
+  have hθκ : R ^ (-κ) * (θ * R) ^ κ ≤ 1 := by
+    rw [← Real.div_rpow_eq_rpow_neg_mul_rpow hθR0.le hR]
+    exact Real.rpow_le_one (by positivity) ((div_le_one hR).2 hθR) hκ.le
+  have hd : ‖(⨍ y in ball z t ∩ Ω, g y ∂μ) - ⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ‖ ≤
+      cc * √(C₂ * W / c) := hcamp.trans (by
+    rw [mul_assoc]
+    exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_right (Real.sqrt_nonneg _) hθκ) hcc)
+  -- The average at radius `θ R` is controlled by `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`.
+  have hmθ : ‖⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ‖ ^ 2 ≤ W / (c * θ ^ finrank ℝ E) := by
+    have h := mul_sq_norm_setAverage_ball_inter_le hθR0 hθR hR (hdens _ hθR0 hθR) hg hΦR
+    rw [mul_div_cancel_right₀ θ hR.ne'] at h
+    rw [div_div, le_div_iff₀ (by positivity)]
+    exact (le_of_eq (by ring)).trans h
+  have hsq : (cc * √(C₂ * W / c)) ^ 2 = cc ^ 2 * (C₂ / c) * W := by
+    rw [mul_pow, Real.sq_sqrt (by positivity)]; ring
+  have hmt := norm_le_norm_add_norm_sub' (⨍ y in ball z t ∩ Ω, g y ∂μ)
+    (⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ)
+  calc _ ≤ (‖⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ‖ + cc * √(C₂ * W / c)) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) (by linarith) 2
+    _ ≤ 2 * ‖⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ‖ ^ 2 + 2 * (cc * √(C₂ * W / c)) ^ 2 :=
+        add_sq_le.trans_eq (mul_add _ _ _)
+    _ ≤ 2 * (W / (c * θ ^ finrank ℝ E)) + 2 * (cc ^ 2 * (C₂ / c) * W) := by rw [hsq]; gcongr
+    _ = _ := by ring
+
+/-- **Morrey decay from Campanato decay, on a set with the measure density property.** Let
+`κ > 0`, `θ ∈ (0, 1]`, `C₂ ≥ 0` and `c > 0`, and let `n` be the dimension. There is `C₃`,
+depending only on `n`, `κ`, `θ`, `C₂` and `c`, such that the following holds. Let `Ω` have density
+at least `c` in the closed balls `closedBall z t`, `0 < t ≤ R`, that is
+`c μ(B(z, t)) ≤ μ(B(z, t) ∩ Ω)`, let `g` be square integrable on `ball z R ∩ Ω` with
+`∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C₂ V (t / R)^{n+2κ}` for
+`0 < t ≤ θ R`, where `g_t` is the average of `g` over `ball z t ∩ Ω`. Then
+
+`∫_{B(z, t) ∩ Ω} ‖g‖² ≤ C₃ V (t / R)ⁿ` for `0 < t ≤ θ R`.
+
+By Campanato's estimate the averages `g_t` stay bounded, so the mass of `g` decays like the
+volume of the balls. This is the step from Campanato decay to Morrey decay with the full exponent
+in Campanato's approach to the Schauder estimates, both in the interior (`Ω = univ`, `c = 1`) and
+at a flat boundary (`Ω` a half-space, `c = 1 / 2`). -/
+theorem exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow {κ θ C₂ : ℝ} (hκ : 0 < κ)
+    (hθ : 0 < θ) (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) (hc : 0 < c) :
+    ∃ C₃ : ℝ, 0 ≤ C₃ ∧ ∀ {Ω : Set E} {g : E → F} {z : E} {R V : ℝ},
+      (∀ t, 0 < t → t ≤ R → (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω)) →
+      MemLp g 2 (μ.restrict (ball z R ∩ Ω)) → 0 < R → ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V →
+      (∀ t, 0 < t → t ≤ θ * R →
+        ∫ x in ball z t ∩ Ω, ‖g x - ⨍ y in ball z t ∩ Ω, g y ∂μ‖ ^ 2 ∂μ ≤
+          C₂ * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ))) →
+      ∀ t, 0 < t → t ≤ θ * R →
+        ∫ x in ball z t ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ C₃ * V * (t / R) ^ finrank ℝ E := by
+  set K : ℝ := 2 / (c * θ ^ finrank ℝ E) +
+    2 * (2 ^ finrank ℝ E / (c * (1 - 2 ^ (-κ)))) ^ 2 * (C₂ / c)
+  refine ⟨C₂ + K, by positivity, ?_⟩
+  intro Ω g z R V hdens hg hR hΦR hψ t ht htθ
+  have hB := measureReal_ball_pos μ z hR
+  have htR : t ≤ R := htθ.trans (mul_le_of_le_one_left hR.le hθ1)
+  have hV0 : 0 ≤ V := (integral_nonneg fun _ => by positivity).trans hΦR
+  have hfin : μ (ball z t ∩ Ω) ≠ ⊤ :=
+    (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
+  have hgt : MemLp g 2 (μ.restrict (ball z t ∩ Ω)) :=
+    hg.mono_measure
+      (Measure.restrict_mono (inter_subset_inter_left _ (ball_subset_ball htR)) le_rfl)
+  have hm := sq_norm_setAverage_ball_inter_le hκ hθ hθ1 hC₂ hc hdens hg hR hΦR hψ ht htθ
+  -- Split `∫_{B(z, t) ∩ Ω} ‖g‖²` into the square mean oscillation and the squared average.
+  have hsplit := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hfin
+    (hgt.integrableOn_of_subset one_le_two subset_rfl hfin)
+    (hgt.integrableOn_norm_sub_sq_of_subset subset_rfl hfin 0)
+  simp only [sub_zero] at hsplit
+  have hosc : C₂ * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ)) ≤
+      C₂ * V * (t / R) ^ finrank ℝ E :=
+    mul_le_mul_of_nonneg_left (mul_le_of_le_one_right (by positivity)
+      (Real.rpow_le_one (by positivity) ((div_le_one hR).2 htR) (by positivity))) (by positivity)
+  have hvol : μ.real (ball z t ∩ Ω) ≤ (t / R) ^ finrank ℝ E * μ.real (ball z R) :=
+    (measureReal_mono inter_subset_left measure_ball_lt_top.ne).trans_eq
+      (measureReal_ball_eq_div_pow_mul ht hR)
+  rw [hsplit]
+  calc _ ≤ C₂ * V * (t / R) ^ finrank ℝ E +
+        (t / R) ^ finrank ℝ E * μ.real (ball z R) * (K * (V / μ.real (ball z R))) :=
+      add_le_add ((hψ t ht htθ).trans hosc) (mul_le_mul hvol hm (sq_nonneg _) (by positivity))
+    _ = (C₂ + K) * V * (t / R) ^ finrank ℝ E := by
+      field_simp
+
+end MorreyDecay
+
 /-! ### Campanato's theorem on the whole space -/
 
 section WholeSpace
@@ -547,8 +783,8 @@ theorem norm_setAverage_closedBall_sub_setAverage_closedBall_le (hα : 0 < α)
     {ε r : ℝ} (hε : 0 < ε) (hεr : ε ≤ r) (hrρ : r ≤ ρ) :
     ‖(⨍ y in closedBall x ε, f y ∂μ) - ⨍ y in closedBall x r, f y ∂μ‖ ≤
       2 ^ finrank ℝ E / (1 - 2 ^ (-α)) * (M * r ^ α) := by
-  simpa using norm_setAverage_closedBall_sub_le (Ω := univ) (c := 1) hα one_pos
-    (by simpa using hf) (fun _ _ _ ↦ by simp) (by simpa using hosc) hε hεr hrρ
+  simpa using norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le (Ω := univ) (c := 1)
+    hα one_pos (by simpa using hf) (fun _ _ _ ↦ by simp) (by simpa using hosc) hε hεr hrρ
 
 /-- **Mean oscillation decay gives convergence of the averages.** Let `α > 0` and `ρ > 0`. If
 the mean oscillation of `f` on `closedBall x r` is at most `M r^α` for `0 < r ≤ ρ`, then the

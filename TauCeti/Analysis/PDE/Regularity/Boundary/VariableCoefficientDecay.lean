@@ -8,14 +8,13 @@ module
 public import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
 public import TauCeti.Analysis.PDE.Regularity.Boundary.ConstantCoefficientDecay
 import TauCeti.Analysis.Sobolev.W1p.Extension
-import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecificLimits.CampanatoIteration
 import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Decay estimates at a flat boundary for Hölder coefficients
@@ -65,8 +64,8 @@ The proof is Campanato's, by comparison with the problem frozen at the boundary 
   the decay: Morrey decay with exponent `n + 1 - γ`, Campanato decay with exponent `n + 1 + γ`,
   Morrey decay with the full exponent `n + 1`, and Campanato decay with exponent `n + 1 + 2γ`.
   The third step bounds the averages of `∇u` over the half-balls, by Campanato's estimate on the
-  half-space, which has density at least `2^{-(n+1)}` in the balls centred on its boundary
-  (`TauCeti.MeasureTheory.norm_setAverage_closedBall_restrict_sub_preciseRepresentative_le`).
+  half-space, which has density one half in the balls centred on its boundary
+  (`TauCeti.MeasureTheory.exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`).
 
 ## References
 
@@ -170,7 +169,8 @@ private theorem exists_frozen_ball_inter {U H : Opens (EuclideanSpace ℝ (Fin (
   set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := Ub ⊓ H
   have hBUb : B ≤ Ub := inf_le_left
   have hBΩ : B ≤ U ⊓ H := inf_le_inf_right H hball
-  have hBset : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball z r ∩ H := rfl
+  have hBset : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball z r ∩ H := by
+    simp only [B, Ub, Opens.coe_inf, Opens.coe_mk]
   have hBr : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z r := inter_subset_left
   have hBΩs : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆
       ((U ⊓ H : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
@@ -205,9 +205,7 @@ private theorem exists_frozen_ball_inter {U H : Opens (EuclideanSpace ℝ (Fin (
       rw [Real.sq_sqrt measureReal_nonneg]
       refine (measureReal_mono hBr measure_ball_lt_top.ne).trans_eq ?_
       rw [(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).addHaar_real_ball_of_pos z hr,
-        finrank_euclideanSpace_fin, mul_comm, ← Real.rpow_natCast]
-      push_cast
-      rfl
+        finrank_euclideanSpace_fin, mul_comm, ← Real.rpow_natCast, Nat.cast_succ]
     have hF : ‖hf.toLp‖ ^ 2 = ∫ x in ball z r ∩ H, f x ^ 2 := by
       simp only [hf.norm_toLp_sq, Real.norm_eq_abs, sq_abs]
     have hr2 : (r ^ (α : ℝ)) ^ 2 = r ^ (2 * (α : ℝ)) := by
@@ -216,6 +214,11 @@ private theorem exists_frozen_ball_inter {U H : Opens (EuclideanSpace ℝ (Fin (
     rw [← hr2]
     exact sq_le_of_mul_le_mul_add_mul_add h.pos (norm_nonneg _) measureReal_nonneg
       (by positivity) hest hX hY hF
+
+/-- A half-ball has finite volume. -/
+private theorem volume_ball_inter_ne_top (z : EuclideanSpace ℝ (Fin (n + 1))) (t : ℝ)
+    (s : Set (EuclideanSpace ℝ (Fin (n + 1)))) : volume (ball z t ∩ s) ≠ ⊤ :=
+  (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
 
 /-- **Transferring decay from a comparison function on half-balls.** Let `u ∈ H¹(U)`,
 `ball z r ⊆ U` and `W ∈ H¹(B_r)`, write `B_t⁺ = B(z, t) ∩ H`, and suppose that `W` decays like
@@ -244,7 +247,7 @@ private theorem setIntegral_ball_inter_le_add_of_le {U H : Opens (EuclideanSpace
           (4 * C₂ + 2) * ∫ x in ball z r ∩ H, ‖W1p.gradient u x - W1p.gradient W x‖ ^ 2 := by
   have hr : 0 < r := hρ.trans_le hρr
   set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hS : volume S ≠ ⊤ := ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
+  have hS : volume S ≠ ⊤ := volume_ball_inter_ne_top z r H
   have hsS : ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ S :=
     inter_subset_inter_left _ (ball_subset_ball hρr)
   have hs : volume (ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
@@ -362,60 +365,17 @@ section HalfBall
 variable {H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {ν z : EuclideanSpace ℝ (Fin (n + 1))}
   {c₀ : ℝ}
 
-/-- A half-ball centred on the boundary hyperplane contains a ball of half its radius. -/
-private theorem ball_subset_ball_inter (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
-    (hz : ⟪z, ν⟫_ℝ = c₀) {t : ℝ} (ht : 0 < t) :
-    ball (z + (t / 2 / ‖ν‖) • ν) (t / 2) ⊆ ball z t ∩ H := by
-  have hν0 : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  have hc : ‖(t / 2 / ‖ν‖) • ν‖ = t / 2 := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    field_simp
-  intro y hy
-  rw [mem_ball, dist_eq_norm] at hy
-  refine ⟨?_, (hH y).2 ?_⟩
-  · rw [mem_ball, dist_eq_norm]
-    calc ‖y - z‖ = ‖(y - (z + (t / 2 / ‖ν‖) • ν)) + (t / 2 / ‖ν‖) • ν‖ := by
-          congr 1; abel
-      _ ≤ ‖y - (z + (t / 2 / ‖ν‖) • ν)‖ + ‖(t / 2 / ‖ν‖) • ν‖ := norm_add_le _ _
-      _ < t := by rw [hc]; linarith
-  · have h1 : ⟪y, ν⟫_ℝ = c₀ + t / 2 * ‖ν‖ + ⟪y - (z + (t / 2 / ‖ν‖) • ν), ν⟫_ℝ := by
-      rw [inner_sub_left, inner_add_left, inner_smul_left, real_inner_self_eq_norm_sq, hz]
-      simp only [conj_trivial]
-      field_simp
-      ring
-    have h2 : -(‖y - (z + (t / 2 / ‖ν‖) • ν)‖ * ‖ν‖) ≤ ⟪y - (z + (t / 2 / ‖ν‖) • ν), ν⟫_ℝ :=
-      neg_le_of_abs_le (abs_real_inner_le_norm _ _)
-    have h3 : ‖y - (z + (t / 2 / ‖ν‖) • ν)‖ * ‖ν‖ < t / 2 * ‖ν‖ :=
-      mul_lt_mul_of_pos_right hy hν0
-    linarith
-
-/-- The volume of a half-ball centred on the boundary hyperplane is at least that of a ball of
-half its radius. -/
-private theorem mul_le_measureReal_ball_inter (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
-    (hz : ⟪z, ν⟫_ℝ = c₀) {t : ℝ} (ht : 0 < t) :
-    volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * (t / 2) ^ (n + 1) ≤
-      volume.real (ball z t ∩ H) := by
-  refine le_of_eq_of_le ?_ (measureReal_mono (ball_subset_ball_inter hν hH hz ht)
-    ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne)
-  rw [Measure.addHaar_real_ball_of_pos volume (z + (t / 2 / ‖ν‖) • ν) (by positivity : 0 < t / 2),
-    finrank_euclideanSpace_fin, mul_comm]
-
-/-- The half-balls centred on the boundary hyperplane have density at least `2^{-(n+1)}` in the
-closed balls. -/
-private theorem two_pow_inv_mul_volume_closedBall_le (hν : ν ≠ 0)
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hz : ⟪z, ν⟫_ℝ = c₀) {t : ℝ} (ht : 0 < t) :
-    ((((2 : ℝ≥0) ^ (n + 1))⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z t) ≤
-      volume (closedBall z t ∩ H) := by
-  refine le_of_eq_of_le ?_ (measure_mono ((ball_subset_ball_inter hν hH hz ht).trans
-    (inter_subset_inter_left _ ball_subset_closedBall)))
-  rw [Measure.addHaar_closedBall _ _ ht.le,
-    Measure.addHaar_ball_of_pos volume (z + (t / 2 / ‖ν‖) • ν) (by positivity : 0 < t / 2),
-    finrank_euclideanSpace_fin, ← mul_assoc, ← ENNReal.ofReal_coe_nnreal,
-    ← ENNReal.ofReal_mul (by positivity)]
-  congr 2
-  push_cast
-  rw [div_pow]
-  ring
+/-- The half-space has density one half in the closed balls centred on its boundary hyperplane
+(`MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`). -/
+private theorem two_inv_mul_volume_closedBall_le (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
+    (hz : ⟪z, ν⟫_ℝ = c₀) (t : ℝ) :
+    (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z t) ≤ volume (closedBall z t ∩ H) := by
+  have hHs : (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | ⟪y, -ν⟫_ℝ < -c₀} := by
+    ext y
+    simp only [SetLike.mem_coe, hH, mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
+  rw [hHs, inter_comm, Measure.addHaar_setOf_inner_lt_inter_closedBall volume (neg_ne_zero.2 hν)
+    (by rw [inner_neg_right, hz]), ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat,
+    ENNReal.div_eq_inv_mul]
 
 variable {U : Set (EuclideanSpace ℝ (Fin (n + 1)))}
   {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -428,7 +388,7 @@ private theorem monotoneOn_setIntegral_ball_inter_norm_sq (hg : MemLp g 2 (volum
   have hint := hg.integrableOn_norm_sub_sq_of_subset
     (s := ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (inter_subset_left.trans ((ball_subset_ball ht.2).trans hball))
-    ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne 0
+    (volume_ball_inter_ne_top z t H) 0
   simp only [sub_zero] at hint
   exact setIntegral_mono_set hint (ae_of_all _ fun _ => by positivity)
     (inter_subset_inter_left _ (ball_subset_ball hst)).eventuallySubset
@@ -443,7 +403,7 @@ private theorem setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le
   have hsub : ball z s ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z t ∩ H :=
     inter_subset_inter_left _ (ball_subset_ball hst)
   have ht : volume (ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
-    ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
+    volume_ball_inter_ne_top z t H
   refine (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (ne_top_of_le_ne_top ht
     (measure_mono hsub)) (hg.mono_measure (Measure.restrict_mono
       (hsub.trans (inter_subset_left.trans hball)) le_rfl)) ν c).trans ?_
@@ -451,188 +411,16 @@ private theorem setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le
       (inter_subset_left.trans hball) ht _) (ae_of_all _ fun _ => by positivity)
     hsub.eventuallySubset
 
-/-- **Mean oscillation from the distance to the normal constants.** If
-`∫_{B_r ∩ H} ‖g - p_r‖² ≤ C V (r / R)^{n+1+2κ}`, where `p_r` is the multiple of `ν` closest to `g`
-in `L²(B_r ∩ H)` and `z` lies on the boundary hyperplane, then the mean oscillation of `g` on
-`B_r ∩ H` is at most `√(C 2^{n+1} V / (ω R^{n+1})) (r / R)^κ`, where `ω` is the volume of the unit
-ball. -/
-private theorem setAverage_ball_inter_norm_sub_setAverage_le (hg : MemLp g 2 (volume.restrict U))
-    (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hz : ⟪z, ν⟫_ℝ = c₀) {r R C V κ : ℝ}
-    (hball : ball z r ⊆ U) (hr : 0 < r) (hR : 0 < R)
-    (hψ : ∫ x in ball z r ∩ H, ‖g x - (⟪⨍ y in ball z r ∩ H, g y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ≤
-      C * V * (r / R) ^ ((n : ℝ) + 1 + 2 * κ)) :
-    ⨍ y in ball z r ∩ H, ‖g y - ⨍ w in ball z r ∩ H, g w‖ ≤
-      √(C * 2 ^ (n + 1) * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
-        R ^ (n + 1)))) * (r / R) ^ κ := by
-  set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
-  have hS : volume S ≠ ⊤ := ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
-  have hSpos : ω * (r / 2) ^ (n + 1) ≤ volume.real S := mul_le_measureReal_ball_inter hν hH hz hr
-  have hS0 : 0 < volume.real S := (by positivity : 0 < ω * (r / 2) ^ (n + 1)).trans_le hSpos
-  -- Jensen's inequality, and the average as the best constant.
-  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
-    (hg.integrableOn_norm_sub_sq_of_subset (inter_subset_left.trans hball) hS
-      (⨍ y in S, g y))
-  have hav : ⨍ x in S, ‖g x - ⨍ y in S, g y‖ ^ 2 =
-      (volume.real S)⁻¹ * ∫ x in S, ‖g x - ⨍ y in S, g y‖ ^ 2 := by
-    rw [setAverage_eq, smul_eq_mul]
-  rw [hav] at hJ
-  have hbest := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hS
-    (hg.integrableOn_of_subset one_le_two (inter_subset_left.trans hball) hS)
-    (hg.integrableOn_norm_sub_sq_of_subset (inter_subset_left.trans hball) hS
-      ((⟪⨍ y in S, g y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν))
-  have hψ0 : 0 ≤ C * V * (r / R) ^ ((n : ℝ) + 1 + 2 * κ) :=
-    (setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
-      fun _ _ => by positivity).trans hψ
-  have hrR : (r / R) ^ ((n : ℝ) + 1 + 2 * κ) = (r / R) ^ (n + 1) * ((r / R) ^ κ) ^ 2 := by
-    rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity),
-      ← Real.rpow_add (by positivity)]
-    push_cast
-    ring_nf
-  have h1 : (⨍ y in S, ‖g y - ⨍ w in S, g w‖) ^ 2 ≤
-      C * 2 ^ (n + 1) * (V / (ω * R ^ (n + 1))) * ((r / R) ^ κ) ^ 2 := by
-    calc _ ≤ (volume.real S)⁻¹ * ∫ x in S, ‖g x - ⨍ y in S, g y‖ ^ 2 := hJ
-      _ ≤ (volume.real S)⁻¹ * (C * V * (r / R) ^ ((n : ℝ) + 1 + 2 * κ)) :=
-          mul_le_mul_of_nonneg_left (hbest.trans hψ) (by positivity)
-      _ ≤ (ω * (r / 2) ^ (n + 1))⁻¹ * (C * V * (r / R) ^ ((n : ℝ) + 1 + 2 * κ)) :=
-          mul_le_mul_of_nonneg_right (inv_anti₀ (by positivity) hSpos) hψ0
-      _ = _ := by
-          rw [hrR, div_pow, div_pow]
-          field_simp
-  calc _ = √((⨍ y in S, ‖g y - ⨍ w in S, g w‖) ^ 2) :=
-        (Real.sqrt_sq (average_nonneg fun _ => norm_nonneg _)).symm
-    _ ≤ √(C * 2 ^ (n + 1) * (V / (ω * R ^ (n + 1))) * ((r / R) ^ κ) ^ 2) := Real.sqrt_le_sqrt h1
-    _ = _ := by rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (by positivity)]
-
-/-- **The averages over half-balls converge.** Let `κ > 0`, `θ R ≤ R` and
-`∫_{B_t ∩ H} ‖g - p_t‖² ≤ C V (t / R)^{n+1+2κ}` for `0 < t ≤ θ R`, where `p_t` is the multiple of
-`ν` closest to `g` in `L²(B_t ∩ H)` and `z` lies on the boundary hyperplane. Then for `0 < r ≤ θ R`
-the averages of `g` over `B_r ∩ H` and `B_{θR} ∩ H` differ by at most
-`2 c √(C 2^{n+1} V / (ω R^{n+1}))`, where `ω` is the volume of the unit ball and `c` is the constant
-of Campanato's estimate for the density `2^{-(n+1)}` of the half-space in the balls centred on its
-boundary. -/
-private theorem norm_setAverage_ball_inter_sub_setAverage_ball_inter_le
-    (hg : MemLp g 2 (volume.restrict U)) (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
-    (hz : ⟪z, ν⟫_ℝ = c₀) {κ θ R C V : ℝ} (hκ : 0 < κ) (hball : ball z R ⊆ U) (hR : 0 < R)
-    (hθR : θ * R ≤ R)
-    (hψ : ∀ t, 0 < t → t ≤ θ * R →
-      ∫ x in ball z t ∩ H, ‖g x - (⟪⨍ y in ball z t ∩ H, g y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ≤
-        C * V * (t / R) ^ ((n : ℝ) + 1 + 2 * κ))
-    {r : ℝ} (hr : 0 < r) (hrθ : r ≤ θ * R) :
-    ‖(⨍ y in ball z r ∩ H, g y) - ⨍ y in ball z (θ * R) ∩ H, g y‖ ≤
-      2 * (2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
-        (((((2 : ℝ≥0) ^ (n + 1))⁻¹ : ℝ≥0) : ℝ) * (1 - 2 ^ (-κ)))) *
-        √(C * 2 ^ (n + 1) * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
-          R ^ (n + 1)))) := by
-  set cc := 2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
-    (((((2 : ℝ≥0) ^ (n + 1))⁻¹ : ℝ≥0) : ℝ) * (1 - 2 ^ (-κ)))
-  set X := √(C * 2 ^ (n + 1) * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
-    R ^ (n + 1))))
-  have hcc : 0 ≤ cc := div_nonneg (by positivity) (mul_nonneg NNReal.zero_le_coe
-    (sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hκ))).le)
-  have hθR0 : 0 < θ * R := hr.trans_le hrθ
-  -- Campanato's estimate on the half-space: the averages converge at the rate `t^κ`.
-  have hcamp : ∀ t, 0 < t → t ≤ θ * R →
-      ‖(⨍ y in ball z t ∩ H, g y) -
-          preciseRepresentative (volume.restrict (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) g z‖ ≤
-        cc * X := fun t ht htθ => by
-    have h := norm_setAverage_closedBall_restrict_sub_preciseRepresentative_le
-      (μ := volume) (Ω := (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) (f := g)
-      (M := X * R ^ (-κ)) (x := z) (ρ := θ * R) hκ (inv_pos.2 (pow_pos two_pos _)) (by
-        rw [IntegrableOn, restrict_restrict_closedBall_eq_restrict_ball_inter]
-        exact hg.integrableOn_of_subset one_le_two (inter_subset_left.trans
-          ((ball_subset_ball hθR).trans hball))
-          ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne)
-      (fun t ht _ => two_pow_inv_mul_volume_closedBall_le hν hH hz ht) (fun t ht htθ => by
-        rw [restrict_restrict_closedBall_eq_restrict_ball_inter]
-        refine (setAverage_ball_inter_norm_sub_setAverage_le hg hν hH hz
-          ((ball_subset_ball (htθ.trans hθR)).trans hball) ht hR (hψ t ht htθ)).trans_eq ?_
-        rw [Real.div_rpow_eq_rpow_neg_mul_rpow ht.le hR]
-        ring) ht htθ
-    rw [restrict_restrict_closedBall_eq_restrict_ball_inter] at h
-    refine h.trans (mul_le_mul_of_nonneg_left ?_ hcc)
-    have h1 : R ^ (-κ) * t ^ κ ≤ 1 := by
-      rw [← Real.div_rpow_eq_rpow_neg_mul_rpow ht.le hR]
-      exact Real.rpow_le_one (by positivity) ((div_le_one hR).2 (htθ.trans hθR)) hκ.le
-    calc X * R ^ (-κ) * t ^ κ = X * (R ^ (-κ) * t ^ κ) := by ring
-      _ ≤ X * 1 := mul_le_mul_of_nonneg_left h1 (Real.sqrt_nonneg _)
-      _ = X := mul_one _
-  have h1 := hcamp r hr hrθ
-  have h2 := hcamp (θ * R) hθR0 le_rfl
-  have h3 := norm_sub_le_norm_sub_add_norm_sub (⨍ y in ball z r ∩ H, g y)
-    (preciseRepresentative (volume.restrict (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) g z)
-    (⨍ y in ball z (θ * R) ∩ H, g y)
-  rw [norm_sub_rev (preciseRepresentative _ g z)] at h3
-  linarith
-
-/-- The average of `g` over the half-ball `B_t ∩ H` centred on the boundary hyperplane satisfies
-`‖g_t‖² ≤ 2^{n+1} V / (ω t^{n+1})` when `∫_{B_t ∩ H} ‖g‖² ≤ V`, where `ω` is the volume of the unit
-ball. -/
-private theorem sq_norm_setAverage_ball_inter_le (hg : MemLp g 2 (volume.restrict U))
-    (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hz : ⟪z, ν⟫_ℝ = c₀) {t V : ℝ}
-    (hball : ball z t ⊆ U) (ht : 0 < t) (hΦ : ∫ x in ball z t ∩ H, ‖g x‖ ^ 2 ≤ V) :
-    ‖⨍ y in ball z t ∩ H, g y‖ ^ 2 ≤
-      2 ^ (n + 1) * V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
-        t ^ (n + 1)) := by
-  have hω : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-    measureReal_ball_pos volume _ one_pos
-  have hfin : volume (ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
-    ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
-  have h1 := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hfin
-    (hg.integrableOn_of_subset one_le_two (inter_subset_left.trans hball) hfin)
-    (hg.integrableOn_norm_sub_sq_of_subset (inter_subset_left.trans hball) hfin 0)
-  simp only [sub_zero] at h1
-  have h3 : 0 ≤ ∫ x in ball z t ∩ H, ‖g x - ⨍ y in ball z t ∩ H, g y‖ ^ 2 :=
-    setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
-      fun _ _ => by positivity
-  have h5 : volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * (t / 2) ^ (n + 1) *
-      ‖⨍ y in ball z t ∩ H, g y‖ ^ 2 ≤ V :=
-    (mul_le_mul_of_nonneg_right (mul_le_measureReal_ball_inter hν hH hz ht) (sq_nonneg _)).trans
-      (by linarith)
-  rw [le_div_iff₀ (by positivity)]
-  calc ‖⨍ y in ball z t ∩ H, g y‖ ^ 2 *
-        (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * t ^ (n + 1)) =
-        (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * (t / 2) ^ (n + 1) *
-          ‖⨍ y in ball z t ∩ H, g y‖ ^ 2) * 2 ^ (n + 1) := by
-        rw [div_pow]; field_simp
-    _ ≤ V * 2 ^ (n + 1) := mul_le_mul_of_nonneg_right h5 (by positivity)
-    _ = _ := by ring
-
-/-- The `L²` mass of `g` on a half-ball is at most its distance to the multiples of `ν` plus the
-volume of the ball times the squared average: `∫_{B_t ∩ H} ‖g‖² ≤ ∫_{B_t ∩ H} ‖g - p_t‖² +
-ω t^{n+1} ‖g_t‖²`, where `ω` is the volume of the unit ball. -/
-private theorem setIntegral_ball_inter_norm_sq_le_add (hg : MemLp g 2 (volume.restrict U)) {t : ℝ}
-    (hball : ball z t ⊆ U) (ht : 0 < t) :
-    ∫ x in ball z t ∩ H, ‖g x‖ ^ 2 ≤
-      (∫ x in ball z t ∩ H, ‖g x - (⟪⨍ y in ball z t ∩ H, g y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2) +
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * t ^ (n + 1) *
-          ‖⨍ y in ball z t ∩ H, g y‖ ^ 2 := by
-  have hfin : volume (ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
-    ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
-  have hsub : ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ U :=
-    inter_subset_left.trans hball
-  have hsplit := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hfin
-    (hg.integrableOn_of_subset one_le_two hsub hfin) (hg.integrableOn_norm_sub_sq_of_subset hsub
-      hfin 0)
-  simp only [sub_zero] at hsplit
-  have hvol : volume.real (ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≤
-      volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * t ^ (n + 1) := by
-    refine (measureReal_mono inter_subset_left measure_ball_lt_top.ne).trans_eq ?_
-    rw [Measure.addHaar_real_ball_of_pos _ _ ht, finrank_euclideanSpace_fin, mul_comm]
-  rw [hsplit]
-  exact add_le_add (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hfin
-    (hg.integrableOn_of_subset one_le_two hsub hfin)
-    (hg.integrableOn_norm_sub_sq_of_subset hsub hfin _))
-    (mul_le_mul_of_nonneg_right hvol (sq_nonneg _))
-
 /-- **Morrey decay with the full exponent from Campanato decay, at a flat boundary.** Let `κ > 0`
 and `θ ∈ (0, 1]`. There is `C₃`, depending only on `n`, `κ`, `θ` and `C₂`, such that the following
 holds. Let `z` lie on the boundary hyperplane of `H = {x | c₀ < ⟪x, ν⟫}`, let `g` be square
 integrable on `U ⊇ ball z R`, let `∫_{B_R ∩ H} ‖g‖² ≤ V`, and let
 `∫_{B_t ∩ H} ‖g - p_t‖² ≤ C₂ V (t / R)^{n+1+2κ}` for `0 < t ≤ θ R`, where `p_t` is the multiple of
 `ν` closest to `g` in `L²(B_t ∩ H)`. Then `∫_{B_t ∩ H} ‖g‖² ≤ C₃ V (t / R)^{n+1}` for
-`0 < t ≤ θ R`: the averages of `g` over the half-balls stay bounded. -/
+`0 < t ≤ θ R`: the averages of `g` over the half-balls stay bounded. This is the case of the
+half-space, which has density one half in the balls centred on its boundary, of
+`TauCeti.MeasureTheory.exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`, since the distance
+to the multiples of `ν` bounds the square mean oscillation. -/
 private theorem exists_setIntegral_ball_inter_norm_sq_le_rpow {κ θ C₂ : ℝ} (hκ : 0 < κ)
     (hθ : 0 < θ) (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) :
     ∃ C₃ : ℝ, 0 ≤ C₃ ∧ ∀ {U : Set (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -646,54 +434,26 @@ private theorem exists_setIntegral_ball_inter_norm_sq_le_rpow {κ θ C₂ : ℝ}
           C₂ * V * (t / R) ^ ((n : ℝ) + 1 + 2 * κ)) →
       ∀ t, 0 < t → t ≤ θ * R →
         ∫ x in ball z t ∩ H, ‖g x‖ ^ 2 ≤ C₃ * V * (t / R) ^ ((n : ℝ) + 1) := by
-  set cc : ℝ := 2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
-    (((((2 : ℝ≥0) ^ (n + 1))⁻¹ : ℝ≥0) : ℝ) * (1 - 2 ^ (-κ)))
-  set K : ℝ := 2 * (2 ^ (n + 1) / θ ^ (n + 1)) + 2 * (2 * cc) ^ 2 * (C₂ * 2 ^ (n + 1))
-  refine ⟨C₂ + K, by positivity, ?_⟩
+  obtain ⟨C₃, hC₃, h⟩ := exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow
+    (μ := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))))
+    (F := EuclideanSpace ℝ (Fin (n + 1))) (c := 2⁻¹) hκ hθ hθ1 hC₂ (by norm_num)
+  refine ⟨C₃, hC₃, ?_⟩
   intro U H g ν z c₀ R V hg hν hH hz hball hR hΦR hψ t ht htθ
-  set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
-  have hV0 : 0 ≤ V := (setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
-    fun _ _ => by positivity).trans hΦR
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
-  have htR : t ≤ R := htθ.trans hθR
-  have hθR0 : 0 < θ * R := by positivity
-  set W := V / (ω * R ^ (n + 1)) with hWdef
-  -- The averages of `g` over the half-balls stay bounded.
-  have hmθ : ‖⨍ y in ball z (θ * R) ∩ H, g y‖ ^ 2 ≤ 2 ^ (n + 1) / θ ^ (n + 1) * W := by
-    refine (sq_norm_setAverage_ball_inter_le hg hν hH hz ((ball_subset_ball hθR).trans hball)
-      hθR0 ((monotoneOn_setIntegral_ball_inter_norm_sq hg hball ⟨hθR0, hθR⟩ ⟨hR, le_rfl⟩
-        hθR).trans hΦR)).trans_eq ?_
-    rw [hWdef, mul_pow]
-    field_simp
-    exact mul_div_cancel_right₀ V hω.ne'
-  have hm : ‖⨍ y in ball z t ∩ H, g y‖ ^ 2 ≤ K * W := by
-    have hmt := norm_le_norm_add_norm_sub' (⨍ y in ball z t ∩ H, g y)
-      (⨍ y in ball z (θ * R) ∩ H, g y)
-    have hd := norm_setAverage_ball_inter_sub_setAverage_ball_inter_le hg hν hH hz hκ hball hR
-      hθR hψ ht htθ
-    have hsq : (2 * cc * √(C₂ * 2 ^ (n + 1) * W)) ^ 2 = (2 * cc) ^ 2 * (C₂ * 2 ^ (n + 1)) * W := by
-      rw [mul_pow, Real.sq_sqrt (by positivity)]; ring
-    calc _ ≤ (‖⨍ y in ball z (θ * R) ∩ H, g y‖ + 2 * cc * √(C₂ * 2 ^ (n + 1) * W)) ^ 2 :=
-          pow_le_pow_left₀ (norm_nonneg _) (by linarith) 2
-      _ ≤ 2 * ‖⨍ y in ball z (θ * R) ∩ H, g y‖ ^ 2 +
-            2 * (2 * cc * √(C₂ * 2 ^ (n + 1) * W)) ^ 2 := add_sq_le.trans_eq (mul_add _ _ _)
-      _ ≤ 2 * (2 ^ (n + 1) / θ ^ (n + 1) * W) + 2 * ((2 * cc) ^ 2 * (C₂ * 2 ^ (n + 1)) * W) := by
-          rw [hsq]; gcongr
-      _ = K * W := by ring
-  -- Split `∫_{B_t ∩ H} ‖g‖²` into the distance to the normal constants and the squared average.
-  have hrp : (t / R) ^ ((n : ℝ) + 1) = (t / R) ^ (n + 1) := by
-    rw [← Real.rpow_natCast]; push_cast; ring_nf
-  have hosc := (hψ t ht htθ).trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge
-    (by positivity) ((div_le_one hR).2 htR) (by linarith : (n : ℝ) + 1 ≤ (n : ℝ) + 1 + 2 * κ))
-    (by positivity))
-  rw [hrp] at hosc ⊢
-  calc _ ≤ C₂ * V * (t / R) ^ (n + 1) + ω * t ^ (n + 1) * (K * W) :=
-        (setIntegral_ball_inter_norm_sq_le_add hg ((ball_subset_ball htR).trans hball) ht).trans
-          (add_le_add hosc (mul_le_mul_of_nonneg_left hm (by positivity)))
-    _ = (C₂ + K) * V * (t / R) ^ (n + 1) := by
-        rw [div_pow, hWdef]
-        field_simp
+  have hgs : ∀ s ≤ R, MemLp g 2 (volume.restrict (ball z s ∩ H)) := fun s hs =>
+    hg.mono_measure (Measure.restrict_mono (inter_subset_left.trans
+      ((ball_subset_ball hs).trans hball)) le_rfl)
+  refine (h (Ω := H) (g := g) (fun t _ _ => two_inv_mul_volume_closedBall_le hν hH hz t)
+    (hgs R le_rfl) hR hΦR (fun s hs hsθ => ?_) t ht htθ).trans_eq ?_
+  · -- The distance to the multiples of `ν` bounds the square mean oscillation.
+    have hS := volume_ball_inter_ne_top z s (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
+    refine (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hS
+      ((hgs s (hsθ.trans hθR)).integrableOn_of_subset one_le_two subset_rfl hS)
+      ((hgs s (hsθ.trans hθR)).integrableOn_norm_sub_sq_of_subset subset_rfl hS _)).trans
+      ((hψ s hs hsθ).trans_eq ?_)
+    rw [finrank_euclideanSpace_fin, Real.rpow_add (div_pos hs hR), ← Real.rpow_natCast,
+      Nat.cast_succ]
+  · rw [finrank_euclideanSpace_fin, ← Real.rpow_natCast, Nat.cast_succ]
 
 end HalfBall
 

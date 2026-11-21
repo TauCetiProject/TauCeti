@@ -36,9 +36,10 @@ estimates, provided that `K R^α ≤ M` and the data decay like `D r ≤ V (r / 
   is an inhomogeneity of order `(r / R)^{2α+β}`, and `φ ρ ≤ C V (ρ / R)^τ` for `ρ ≤ θ R` and every
   `τ < d + 2` with `τ ≤ 2α + β` and `τ ≤ κ`.
 
-Alternating the two steps raises the decay exponent of the mean oscillation until it reaches
-`d + 2α`, which Campanato's characterization turns into the Hölder continuity of `∇u` with
-exponent `α`. The steps only use the inequalities above, so they serve the comparison on balls
+Alternating the two steps raises the decay exponent of the mean oscillation to `d + 2γ` for
+every `γ ≤ α` with `γ < 1`, since the Campanato step needs `τ < d + 2`; so for `α < 1` it reaches
+`d + 2α`. Campanato's characterization turns this into the Hölder continuity of `∇u` with
+exponent `γ`. The steps only use the inequalities above, so they serve the comparison on balls
 in the interior as well as the comparison on half-balls centred on a flat boundary.
 
 ## References
@@ -54,59 +55,6 @@ public section
 namespace TauCeti
 
 open Set
-
-/-- The error term `(r^{2α} (K_a² Φ + K_G² d) + 4 r² I) / λ²` of the comparison with a frozen
-problem is at most `(1 + λ⁻²) (r^{2α} (K_a / λ)² Φ + r^{2α} K_G² d + 4 r² I)`: the coefficient
-term enters the decay steps through `K = K_a / λ`, and the data term `D = r^{2α} K_G² d + 4 r² I`
-does not depend on `λ`. -/
-theorem rpow_mul_add_mul_div_sq_le {r α Ka KG Φ d I lam : ℝ} (hr : 0 ≤ r) (hΦ : 0 ≤ Φ)
-    (hd : 0 ≤ d) (hI : 0 ≤ I) :
-    (r ^ (2 * α) * (Ka ^ 2 * Φ + KG ^ 2 * d) + 4 * r ^ 2 * I) / lam ^ 2 ≤
-      (1 + (lam ^ 2)⁻¹) * (r ^ (2 * α) * (Ka / lam) ^ 2 * Φ +
-        (r ^ (2 * α) * (KG ^ 2 * d) + 4 * r ^ 2 * I)) := by
-  have h1 : 0 ≤ r ^ (2 * α) * (Ka / lam) ^ 2 * Φ := by positivity
-  have h2 : 0 ≤ r ^ (2 * α) * (KG ^ 2 * d) + 4 * r ^ 2 * I := by positivity
-  rcases eq_or_ne lam 0 with rfl | hlam
-  · simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, div_zero, inv_zero,
-      add_zero, one_mul]
-    positivity
-  have heq : (r ^ (2 * α) * (Ka ^ 2 * Φ + KG ^ 2 * d) + 4 * r ^ 2 * I) / lam ^ 2 =
-      r ^ (2 * α) * (Ka / lam) ^ 2 * Φ +
-        (lam ^ 2)⁻¹ * (r ^ (2 * α) * (KG ^ 2 * d) + 4 * r ^ 2 * I) := by
-    field_simp
-    ring
-  rw [heq]
-  nlinarith [mul_nonneg (inv_nonneg.2 (sq_nonneg lam)) h1]
-
-/-- The constants of a comparison estimate combine into one: if `Y ≤ 4 D q X + (4 D + 2) E`,
-`E ≤ 3 (1 + ω) e` and `e ≤ (1 + l) e'`, then `Y ≤ A q X + A e'` with
-`A = 3 (1 + ω) (4 (D + D') + 2) (1 + l)`, for `D, D', ω, l ≥ 0`. This is how the decay `D q` of the
-frozen problem, its transfer to a solution `Y` at the cost `E` of the comparison
-(`TauCeti.MeasureTheory.setIntegral_norm_sub_sq_le_add_of_le`), and the bound on `E` by the
-error term `e` of `rpow_mul_add_mul_div_sq_le` combine into the form taken by the decay steps;
-`D'` lets two such estimates share one constant. -/
-theorem le_mul_add_mul_of_le_of_le_mul {Y D D' q X E ω e e' l : ℝ} (hD : 0 ≤ D)
-    (hD' : 0 ≤ D') (hqX : 0 ≤ q * X) (hω : 0 ≤ ω) (hl : 0 ≤ l) (he' : 0 ≤ e')
-    (hY : Y ≤ 4 * D * q * X + (4 * D + 2) * E) (hE : E ≤ 3 * (1 + ω) * e)
-    (he : e ≤ (1 + l) * e') :
-    Y ≤ 3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * q * X +
-      3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * e' := by
-  have hc : 1 ≤ 3 * (1 + ω) * (1 + l) := by nlinarith
-  have h1 : 4 * D * q * X ≤ 3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * q * X := by
-    have : 4 * D ≤ 3 * (1 + ω) * (1 + l) * (4 * (D + D') + 2) := by nlinarith
-    calc 4 * D * q * X = 4 * D * (q * X) := by ring
-      _ ≤ 3 * (1 + ω) * (1 + l) * (4 * (D + D') + 2) * (q * X) :=
-          mul_le_mul_of_nonneg_right this hqX
-      _ = _ := by ring
-  have h2 : (4 * D + 2) * E ≤ 3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * e' := by
-    have hE' : E ≤ 3 * (1 + ω) * ((1 + l) * e') :=
-      hE.trans (mul_le_mul_of_nonneg_left he (by positivity))
-    calc (4 * D + 2) * E ≤ (4 * D + 2) * (3 * (1 + ω) * ((1 + l) * e')) :=
-          mul_le_mul_of_nonneg_left hE' (by positivity)
-      _ ≤ (4 * (D + D') + 2) * (3 * (1 + ω) * ((1 + l) * e')) :=
-          mul_le_mul_of_nonneg_right (by linarith) (by positivity)
-      _ = _ := by ring
-  linarith
 
 /-- One step of the Morrey decay. For `r ≤ θ R`, the coefficient term `A r^{2α} K² Φ_r` of the
 comparison estimate is a perturbation `A θ^{2α} M² Φ_r` of the decay factor, and the data term

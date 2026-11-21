@@ -58,8 +58,8 @@ By Hölder's inequality `∫_{B_r} f² ≤ |B_r|^{1-2/q} ‖f‖²_{L^q}`, so th
 `TauCeti.PDE.setIntegral_norm_gradient_sub_setAverage_sq_le_add_of_frozen`) gives, for
 `0 < ρ ≤ r`,
 
-`Φ(ρ) ≤ A ((ρ / r)^{n+1} + r^{2α} K_a² / λ²) Φ(r) + A D(r) / λ²`,
-`ψ(ρ) ≤ A (ρ / r)^{n+3} ψ(r) + A (r^{2α} K_a² Φ(r) + D(r)) / λ²`.
+`Φ(ρ) ≤ A (ρ / r)^{n+1} Φ(r) + A (r^{2α} (K_a / λ)² Φ(r) + D(r))`,
+`ψ(ρ) ≤ A (ρ / r)^{n+3} ψ(r) + A (r^{2α} (K_a / λ)² Φ(r) + D(r))`.
 
 The coefficient oscillation `r^{2α} K_a²` is not small on `B_R` itself, only on `B_{θR}` for a
 small `θ`, depending on `M`. There the two steps of Campanato's perturbation argument
@@ -72,7 +72,8 @@ two inequalities into decay estimates in four steps:
 2. Campanato decay `ψ(t) ≲ (t / R)^{n+1+β}`, from the second inequality and step 1, using
    `β ≤ α`.
 3. Morrey decay `Φ(t) ≲ (t / R)^{n+1}`: by step 2 and Campanato's theorem the averages of `∇u`
-   over the balls `B_t` stay bounded.
+   over the balls `B_t` stay bounded
+   (`TauCeti.MeasureTheory.exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`).
 4. Campanato decay `ψ(t) ≲ (t / R)^{n+1+2β}`, from the second inequality and step 3. This needs
    `β < 1`.
 
@@ -329,82 +330,12 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
       (hf.mono_measure (Measure.restrict_mono (ball_subset_ball (hrθ.trans hθR)) le_rfl))
       ((ball_subset_ball (hrθ.trans hθR)).trans hball) hρ hρr).2
 
-/-- **Bounded averages from Campanato decay.** Let `κ > 0` and `θ ∈ (0, 1]`. If
-`ball z R ⊆ Ω`, `∫_{B_R} ‖∇u‖² ≤ V` and the square mean oscillation of `∇u` satisfies
-`∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C₂ V (t / R)^{n+1+2κ}` for `0 < t ≤ θ R`, then for `0 < t ≤ θ R`
-the averages of `∇u` over `closedBall z t` satisfy
-`‖(∇u)_{z,t}‖² ≤ (2 θ^{-(n+1)} + 2 c² C₂) V / (ω R^{n+1})`, where `ω` is the volume of the unit
-ball and `c = 2^{n+1} / (1 - 2^{-κ})` is the constant of Campanato's theorem. -/
-private theorem sq_norm_setAverage_closedBall_gradient_le {κ θ C₂ : ℝ} (hκ : 0 < κ) (hθ : 0 < θ)
-    (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    {u : W1p volume Omega 2} {z : EuclideanSpace ℝ (Fin (n + 1))} {R V : ℝ}
-    (hball : ball z R ⊆ Omega) (hR : 0 < R) (hΦR : ∫ x in ball z R, ‖W1p.gradient u x‖ ^ 2 ≤ V)
-    (hψ : ∀ t, 0 < t → t ≤ θ * R →
-      ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 ≤
-        C₂ * V * ((t / R) ^ (n + 1) * (t / R) ^ (2 * κ)))
-    {t : ℝ} (ht : 0 < t) (htθ : t ≤ θ * R) :
-    ‖⨍ y in closedBall z t, W1p.gradient u y‖ ^ 2 ≤
-      (2 / θ ^ (n + 1) + 2 * (2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
-        (1 - 2 ^ (-κ))) ^ 2 * C₂) *
-        (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * R ^ (n + 1))) := by
-  obtain ⟨c, hcdef⟩ : ∃ c : ℝ,
-      c = 2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) / (1 - 2 ^ (-κ)) := ⟨_, rfl⟩
-  rw [← hcdef]
-  have hc : 0 ≤ c := hcdef ▸ div_nonneg (by positivity)
-    (sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hκ))).le
-  have hω := measureReal_ball_pos volume (0 : EuclideanSpace ℝ (Fin (n + 1))) one_pos
-  obtain ⟨W, hW⟩ : ∃ W : ℝ, W =
-      V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * R ^ (n + 1)) := ⟨_, rfl⟩
-  rw [← hW]
-  have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
-  have hV0 : 0 ≤ V := (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity).trans hΦR
-  have hW0 : 0 ≤ W := hW ▸ by positivity
-  -- The mean oscillation on `closedBall z r` is at most `m r^κ`, `m = √(C₂ W) R^{-κ}`.
-  have hosc : ∀ r, 0 < r → r ≤ θ * R →
-      ⨍ y in closedBall z r, ‖W1p.gradient u y - ⨍ w in closedBall z r, W1p.gradient u w‖ ≤
-        √(C₂ * W) * R ^ (-κ) * r ^ κ := fun r hr hrθ => hW ▸
-    W1p.setAverage_closedBall_norm_gradient_sub_le u
-      ((ball_subset_ball (hrθ.trans hθR)).trans hball) hr hR (hψ r hr hrθ)
-  -- The average at radius `θ R` is controlled by `∫_{B_R} ‖∇u‖² ≤ V`.
-  have ha₁ : ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ ^ 2 ≤ W / θ ^ (n + 1) := by
-    have h := (W1p.sq_norm_setAverage_closedBall_gradient_mul_le u
-      ((ball_subset_ball hθR).trans hball)).trans
-      ((monotoneOn_setIntegral_norm_gradient_sq u hball ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩
-        hθR).trans hΦR)
-    rw [Measure.addHaar_real_ball_of_pos _ z (by positivity), finrank_euclideanSpace_fin,
-      mul_comm _ (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)), mul_pow] at h
-    rw [hW, le_div_iff₀ (by positivity), le_div_iff₀ (by positivity)]
-    linarith
-  -- By Campanato's estimate, the averages over `closedBall z t` stay close to the average at
-  -- radius `θ R`.
-  have hat : ‖⨍ y in closedBall z t, W1p.gradient u y‖ ≤
-      ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ + c * √(C₂ * W) := by
-    have h := norm_setAverage_closedBall_sub_setAverage_closedBall_le hκ
-      (W1p.integrableOn_closedBall_gradient u hball hθR) hosc ht htθ le_rfl
-    rw [← hcdef] at h
-    have hRr : R ^ (-κ) * (θ * R) ^ κ ≤ 1 := by
-      rw [Real.rpow_neg hR.le, inv_mul_le_one₀ (by positivity)]
-      exact Real.rpow_le_rpow (by positivity) hθR hκ.le
-    have h' : c * (√(C₂ * W) * R ^ (-κ) * (θ * R) ^ κ) ≤ c * √(C₂ * W) := by
-      have := mul_le_mul_of_nonneg_left hRr (by positivity : (0 : ℝ) ≤ c * √(C₂ * W))
-      linarith
-    have h4 := norm_le_norm_add_norm_sub' (⨍ y in closedBall z t, W1p.gradient u y)
-      (⨍ y in closedBall z (θ * R), W1p.gradient u y)
-    linarith
-  have hsq : (c * √(C₂ * W)) ^ 2 = c ^ 2 * C₂ * W := by
-    rw [mul_pow, Real.sq_sqrt (by positivity)]; ring
-  calc ‖⨍ y in closedBall z t, W1p.gradient u y‖ ^ 2
-      ≤ (‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ + c * √(C₂ * W)) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) hat 2
-    _ ≤ 2 * ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ ^ 2 +
-          2 * (c * √(C₂ * W)) ^ 2 := add_sq_le.trans_eq (mul_add _ _ _)
-    _ ≤ 2 * (W / θ ^ (n + 1)) + 2 * (c ^ 2 * C₂ * W) := by nlinarith
-    _ = (2 / θ ^ (n + 1) + 2 * c ^ 2 * C₂) * W := by ring
-
 /-- **Morrey decay with the full exponent from Campanato decay.** Let `κ > 0` and `θ ∈ (0, 1]`.
 There is `C₃`, depending only on `n`, `κ`, `θ` and `C₂`, such that the following holds. If
 `ball z R ⊆ Ω`, `∫_{B_R} ‖∇u‖² ≤ V` and `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C₂ V (t / R)^{n+1+2κ}` for
-`0 < t ≤ θ R`, then `∫_{B_t} ‖∇u‖² ≤ C₃ V (t / R)^{n+1}` for `0 < t ≤ θ R`. -/
+`0 < t ≤ θ R`, then `∫_{B_t} ‖∇u‖² ≤ C₃ V (t / R)^{n+1}` for `0 < t ≤ θ R`. This is the case
+`Ω = univ` of `TauCeti.MeasureTheory.exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`: by
+Campanato's estimate the averages of `∇u` over the balls stay bounded. -/
 private theorem exists_setIntegral_norm_gradient_sq_le_pow {κ θ C₂ : ℝ} (hκ : 0 < κ) (hθ : 0 < θ)
     (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) :
     ∃ C₃ : ℝ, 0 ≤ C₃ ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -415,46 +346,16 @@ private theorem exists_setIntegral_norm_gradient_sq_le_pow {κ θ C₂ : ℝ} (h
           C₂ * V * ((t / R) ^ (n + 1) * (t / R) ^ (2 * κ))) →
       ∀ t, 0 < t → t ≤ θ * R →
         ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2 ≤ C₃ * V * (t / R) ^ (n + 1) := by
-  obtain ⟨K, hK⟩ : ∃ K : ℝ, K = 2 / θ ^ (n + 1) + 2 * (2 ^ finrank ℝ
-      (EuclideanSpace ℝ (Fin (n + 1))) / (1 - 2 ^ (-κ))) ^ 2 * C₂ := ⟨_, rfl⟩
-  have hK0 : 0 ≤ K := hK ▸ by positivity
-  refine ⟨C₂ + K, by positivity, ?_⟩
-  intro Omega u z R V hball hR hΦR hψ t ht htθ
-  have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
-  have htR : t ≤ R := htθ.trans hθR
-  have hballt : ball z t ⊆ Omega := (ball_subset_ball htR).trans hball
-  have hω := measureReal_ball_pos volume (0 : EuclideanSpace ℝ (Fin (n + 1))) one_pos
-  have ha := sq_norm_setAverage_closedBall_gradient_le hκ hθ hθ1 hC₂ hball hR hΦR hψ ht htθ
-  rw [← hK] at ha
-  -- Split `∫_{B_t} ‖∇u‖²` into the square mean oscillation and the squared average.
-  have hpy := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add
-    measure_ball_lt_top.ne
-    ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hballt measure_ball_lt_top.ne)
-    ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hballt
-      measure_ball_lt_top.ne 0)
-  have hcb : ⨍ y in ball z t, W1p.gradient u y = ⨍ y in closedBall z t, W1p.gradient u y := by
-    rw [volume.restrict_closedBall_eq_restrict_ball z t]
-  simp only [sub_zero] at hpy
-  rw [hpy, Measure.addHaar_real_ball_of_pos _ z ht, finrank_euclideanSpace_fin,
-    mul_comm _ (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))]
-  rw [← hcb] at ha
-  have h1 := hψ t ht htθ
-  have h2 : (t / R) ^ (2 * κ) ≤ 1 :=
-    Real.rpow_le_one (by positivity) ((div_le_one hR).2 htR) (by positivity)
-  have h3 : C₂ * V * ((t / R) ^ (n + 1) * (t / R) ^ (2 * κ)) ≤ C₂ * V * (t / R) ^ (n + 1) := by
-    have hV0 : 0 ≤ V :=
-      (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity).trans hΦR
-    have := mul_le_mul_of_nonneg_left h2 (by positivity : (0 : ℝ) ≤ C₂ * V * (t / R) ^ (n + 1))
-    linarith
-  have h4 : volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * t ^ (n + 1) *
-      ‖⨍ y in ball z t, W1p.gradient u y‖ ^ 2 ≤ K * V * (t / R) ^ (n + 1) := by
-    calc _ ≤ volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * t ^ (n + 1) *
-          (K * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
-            R ^ (n + 1)))) := by gcongr
-      _ = K * V * (t / R) ^ (n + 1) := by
-          rw [div_pow]
-          field_simp
-  linarith
+  obtain ⟨C₃, hC₃, h⟩ := exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow
+    (μ := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))))
+    (F := EuclideanSpace ℝ (Fin (n + 1))) hκ hθ hθ1 hC₂ one_pos
+  refine ⟨C₃, hC₃, fun {Omega u z R V} hball hR hΦR hψ => ?_⟩
+  simpa only [inter_univ, finrank_euclideanSpace_fin] using
+    h (Ω := univ) (g := W1p.gradient u) (fun _ _ _ => by simp)
+      ((Lp.memLp (W1p.gradient u)).mono_measure
+        (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)) hR
+      (by simpa only [inter_univ] using hΦR)
+      (by simpa only [inter_univ, finrank_euclideanSpace_fin] using hψ)
 
 end Iteration
 
