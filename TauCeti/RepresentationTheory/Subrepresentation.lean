@@ -43,7 +43,9 @@ semisimple-module API applies to minimal subrepresentations; being about `asSubm
 the coefficients to be a commutative ring, as `Subrepresentation.asSubmodule` and
 `IsSimpleModule` between them do.  `Subrepresentation.isCompl_toSubmodule` is one more entry in
 the lattice dictionary, moving `IsCompl` across it, and stated with the rest of that dictionary at
-the typeclasses `Subrepresentation` itself asks for.  Finally,
+the typeclasses `Subrepresentation` itself asks for. The same dictionary shows that the
+subrepresentations of a representation on a module over a ring form a modular lattice
+(`Subrepresentation.instIsModularLattice`), as the submodules do.  Finally,
 `Subrepresentation.equivProdOfIsCompl` upgrades a complement to an equivalence of representations
 `ρ ≃ ρ₁ × ρ₂`: `Submodule.prodEquivOfIsCompl` supplies the linear isomorphism and each `ρ g`,
 being additive and preserving both summands, supplies the equivariance.  Being about
@@ -70,6 +72,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
+* `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
 * `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot`
 * `Representation.IntertwiningMap.surjective_iff_range_eq_top`
@@ -137,6 +140,17 @@ theorem isCompl_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
     IsCompl ρ₁.toSubmodule ρ₂.toSubmodule ↔ IsCompl ρ₁ ρ₂ := by
   simp only [isCompl_iff, disjoint_iff, codisjoint_iff, ← toSubmodule_inf, ← toSubmodule_sup,
     ← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), toSubmodule_injective.eq_iff]
+
+/-- The subrepresentations of a representation on a module over a ring form a modular lattice, as
+the submodules they carry do. So Mathlib's modular-lattice API applies to them: in a semisimple
+representation, for instance, a subrepresentation has a complement inside any larger one
+(`IsModularLattice.exists_disjoint_and_sup_eq`). -/
+instance instIsModularLattice {A W : Type*} [Ring A] [AddCommGroup W] [Module A W]
+    {ρ : Representation A G W} : IsModularLattice (Subrepresentation ρ) :=
+  ⟨fun {_} _ {_} h ↦ by
+    rw [← toSubmodule_le_toSubmodule, toSubmodule_inf, toSubmodule_sup, toSubmodule_sup,
+      toSubmodule_inf]
+    exact IsModularLattice.sup_inf_le_assoc_of_le _ (toSubmodule_le_toSubmodule.2 h)⟩
 
 /-- The action on a subrepresentation is the restriction of the original action. -/
 theorem toRepresentation_apply (S : Subrepresentation ρ) (g : G) :
