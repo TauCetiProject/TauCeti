@@ -57,8 +57,8 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
   kernel (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator_of_cylindrical`) and
   closed range (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator_of_cylindrical`). For a
   Floer trajectory these are `TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`
-  and `TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`. All of these are proved as the
-  case `c = 0` of the weighted results below.
+  and `TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`. All of these are the case
+  `c = 0` of the weighted results below; the estimate is derived from its weighted version.
 * At the stationary cylinder `u(s, t) = x(t)` over a nondegenerate orbit `x`, `D_u` is the
   translation-invariant operator `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`, and the spectral gap
   estimate `TauCeti.Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator` bounds
@@ -730,16 +730,10 @@ theorem finiteDimensional_ker_floerSobolevOperator_of_cylindrical (ω : Symplect
         (Icc 0 1)) :
     FiniteDimensional ℝ (ω.floerSobolevOperator
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).ker := by
-  rw [← floerWeightedSobolevOperator_zero]
-  exact ω.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical
-      hcyl hu hJu continuous_const (δm := 0) (δp := 0)
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm
-      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
-      hJm hJxm (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-        hXm hHm hxm hndm _) huxm hδm hHp
-      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJp hJxp
-      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-        hXp hHp hxp hndp _) huxp hδp
+  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical hcyl hu
+    hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+  exact finiteDimensional_ker_jetOperator_comp_subtypeL
+    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp) hest
 
 /-- **The linearized Floer operator for data cylindrical near the ends has closed range on
 `W^{1,2}`.** Under the hypotheses of
@@ -775,16 +769,10 @@ theorem isClosed_range_floerSobolevOperator_of_cylindrical (ω : SymplecticForm 
     IsClosed ((ω.floerSobolevOperator
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).range :
         Set (Lp V 2 stripMeasure)) := by
-  rw [← floerWeightedSobolevOperator_zero]
-  exact ω.isClosed_range_floerWeightedSobolevOperator_of_cylindrical
-      hcyl hu hJu continuous_const (δm := 0) (δp := 0)
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm
-      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
-      hJm hJxm (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-        hXm hHm hxm hndm _) huxm hδm hHp
-      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJp hJxp
-      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-        hXp hHp hxp hndp _) huxp hδp
+  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical hcyl hu
+    hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+  exact isClosed_range_jetOperator_comp_subtypeL
+    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp) hest
 
 /-- **The semi-Fredholm estimate along a Floer trajectory**, in the form
 `TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
