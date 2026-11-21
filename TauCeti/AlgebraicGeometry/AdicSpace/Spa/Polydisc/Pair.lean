@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Homeomorph
-import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 
 /-!

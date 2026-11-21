@@ -5,35 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint.Topology
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Basic
-public import TauCeti.RingTheory.Huber.Reduction
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Eval
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Unit
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
-public import TauCeti.RingTheory.Valuation.Continuous.Valued
 
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
-import TauCeti.RingTheory.Huber.Restricted.GaussValuation
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
-# The unit Gauss point of a closed polydisc and closure of rational points
+# Closure of rational points and the unit Gauss point
 
-Let `K` be an ultrametric normed field and `D = closedPolydisc n K` the closed unit polydisc
-`Spa (K⟨T₁, …, Tₙ⟩, K⟨T₁, …, Tₙ⟩°)` of dimension `n`. Applying the general unit-radius Gauss
-valuation `TauCeti.Huber.weightedGaussValuation` to `NormedField.valuation` yields a continuous
-valuation on `K⟨T₁, …, Tₙ⟩` bounded by `1` on `K⟨T₁, …, Tₙ⟩°`, whose real value is the unit Gauss
-norm `‖∑ a_α T^α‖ = max_α ‖a_α‖`. Its equivalence class is the *unit Gauss point*
-`unitGaussPoint n K : closedPolydisc n K`, which is uniquely characterized by the predicate
-`IsUnitGaussPoint` comparing series by their unit Gauss norms. At `n = 1` it coincides with the
-one-variable Gauss point `gaussPoint zero_lt_one le_rfl`; at `n = 0` it coincides with the unique
-classical point; for `n ≥ 1` it has trivial support and is not classical.
+Let `K` be a complete ultrametric normed field and `D = closedPolydisc n K` the closed unit
+polydisc `Spa (K⟨T₁, …, Tₙ⟩, K⟨T₁, …, Tₙ⟩°)` of dimension `n`, with unit Gauss point
+`unitGaussPoint n K : closedPolydisc n K` defined in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Unit`.
 
-Now assume `K` is complete and nontrivially normed. Every rational neighbourhood `R(T/s)` of
-`unitGaussPoint n K` can be rescaled by the inverse of a coefficient attaining the Gauss norm of
-`s` so that `‖s‖ = 1` and `‖f‖ ≤ 1` for all `f ∈ T`. Then `s` has a nonzero polynomial reduction
+When `K` is nontrivially normed, every rational neighbourhood `R(T/s)` of `unitGaussPoint n K` can
+be rescaled by a scalar unit (`TauCeti.Huber.exists_units_norm_mul_weightedC_eq_one`) so that
+`‖s‖ = 1` and `‖f‖ ≤ 1` for all `f ∈ T`. Then `s` has a nonzero polynomial reduction
 `p ∈ 𝓀[K][T₁, …, Tₙ]`, and every integral tuple `a ∈ 𝒪[K]ⁿ` whose residue `ā` satisfies
 `p(ā) ≠ 0` gives a classical point `classicalPoint x a ha ∈ R(T/s)`. When the canonical reduction
 `K° / K°° ≃+* 𝓀[K]` is infinite, `MvPolynomial.funext` provides such a tuple `ā`, which lifts to
@@ -52,19 +43,10 @@ Thus for `n ≥ 1`, `unitGaussPoint n K` lies in the closure of the `K`-rational
 if the residue field `K° / K°°` is infinite. In dimension `0`, membership in the closure holds
 unconditionally.
 
-## Main definitions
-
-* `TauCeti.ValuationSpectrum.unitGaussPoint`: the unit Gauss point of `closedPolydisc n K` for any
-  ultrametric normed field `K`.
-* `TauCeti.ValuationSpectrum.IsUnitGaussPoint`: the predicate characterizing the valuation class of
-  the unit Gauss point via `MvPowerSeries.gaussNorm`.
-
 ## Main results
 
-* `TauCeti.ValuationSpectrum.isUnitGaussPoint_iff_eq_unitGaussPoint`: `unitGaussPoint n K` is the
-  unique point satisfying `IsUnitGaussPoint`.
-* `TauCeti.ValuationSpectrum.unitGaussPoint_one_eq_gaussPoint`: in dimension `1`,
-  `unitGaussPoint 1 K` agrees with `gaussPoint zero_lt_one le_rfl`.
+* `TauCeti.ValuationSpectrum.unitGaussPoint_zero_mem_closure_range_classicalPoint`: in dimension
+  `0`, `unitGaussPoint 0 K` lies in the closure of the `K`-rational points unconditionally.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_rationalSubset_of_eval_restrictedReduction_ne_zero`:
   normalized rational neighbourhoods of `unitGaussPoint n K` contain every classical point whose
   reduction does not vanish on the reduced denominator.
@@ -97,152 +79,21 @@ public section
 namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber
-open scoped NNReal
 
-section Definition
+section DimensionZero
 
-/-- A point `η` of the closed unit polydisc of dimension `n` over `K` is the unit Gauss point if it
-compares restricted power series as their unit Gauss norms `‖∑ a_α T^α‖ = max ‖a_α‖` do. -/
-def IsUnitGaussPoint (K : Type*) [SeminormedCommRing K] [NonarchimedeanRing K] (n : ℕ)
-    (η : closedPolydisc n K) : Prop :=
-  ∀ f g : weightedRestrictedSubring
-      (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-    η.val.toValuativeRel.vle f g ↔
-      MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
-        (f : MvPowerSeries (Fin n) K) ≤
-      MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
-        (g : MvPowerSeries (Fin n) K)
-
-/-- Unfolding rule for `IsUnitGaussPoint`. -/
-theorem isUnitGaussPoint_def {K : Type*} [SeminormedCommRing K] [NonarchimedeanRing K] {n : ℕ}
-    {η : closedPolydisc n K} :
-    IsUnitGaussPoint K n η ↔
-      ∀ f g : weightedRestrictedSubring
-          (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-        η.val.toValuativeRel.vle f g ↔
-          MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
-            (f : MvPowerSeries (Fin n) K) ≤
-          MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
-            (g : MvPowerSeries (Fin n) K) :=
-  Iff.rfl
-
-end Definition
-
-section UnitGaussPoint
-
-open scoped NormedField
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-/-- **The unit Gauss point of the closed polydisc `closedPolydisc n K`**: the point of
-`Spa (K⟨T₁, …, Tₙ⟩, K⟨T₁, …, Tₙ⟩°)` defined by the unit-radius Gauss valuation
-`f ↦ max_ν ‖coeff ν f‖`. -/
-noncomputable def unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    closedPolydisc n K :=
-  ⟨ofValuation (weightedGaussValuation n (Valued.isContinuous_v (R := K))),
-    (mem_closedPolydisc_iff n K _).mpr
-      ⟨(isContinuous_ofValuation_iff _).mpr (isContinuous_weightedGaussValuation _),
-        fun _ hf ↦ (vle_ofValuation _ _ _).mpr <| by
-          rw [map_one]
-          exact weightedGaussValuation_le_one_of_mem_powerBoundedSubring n hf⟩⟩
-
-/-- The underlying point of `unitGaussPoint n K` in `Spv K⟨T⟩` is the valuation spectrum point of
-the unit-radius Gauss valuation. -/
-theorem unitGaussPoint_val (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    (unitGaussPoint n K).val =
-      ofValuation (weightedGaussValuation n (Valued.isContinuous_v (R := K))) :=
-  (rfl)
-
-/-- The unit Gauss point compares restricted power series by their unit Gauss norms. -/
-@[simp]
-theorem unitGaussPoint_vle_iff (n : ℕ)
-    (f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).val.toValuativeRel.vle f g ↔
-      MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) ≤
-        MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (g : MvPowerSeries (Fin n) K) := by
-  rw [unitGaussPoint_val, vle_ofValuation, ← NNReal.coe_le_coe,
-    coe_weightedGaussValuation_normedField, coe_weightedGaussValuation_normedField]
-
-/-- The unit Gauss point compares restricted power series by the Gauss norms of their images under
-`restrictedMvPowerSeriesGaussEquiv`. -/
-theorem unitGaussPoint_vle_iff_norm (n : ℕ)
-    (f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).val.toValuativeRel.vle f g ↔
-      ‖restrictedMvPowerSeriesGaussEquiv f‖ ≤ ‖restrictedMvPowerSeriesGaussEquiv g‖ := by
-  rw [unitGaussPoint_vle_iff, MvPowerSeries.norm_eq_gaussNorm, MvPowerSeries.norm_eq_gaussNorm,
-    coe_restrictedMvPowerSeriesGaussEquiv, coe_restrictedMvPowerSeriesGaussEquiv]
-
-/-- The unit Gauss point sends a series to `0` if and only if the series is `0`. -/
-theorem unitGaussPoint_vle_zero_iff (n : ℕ)
-    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).val.toValuativeRel.vle f 0 ↔ f = 0 := by
-  rw [unitGaussPoint_vle_iff_norm, map_zero, norm_zero, norm_le_zero_iff,
-    map_eq_zero_iff _ restrictedMvPowerSeriesGaussEquiv.injective]
-
-/-- The support of the unit Gauss point is trivial. -/
-@[simp]
-theorem supp_unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    (unitGaussPoint n K).val.supp = ⊥ := by
-  ext f
-  rw [mem_supp_iff, unitGaussPoint_vle_zero_iff, Ideal.mem_bot]
-
-/-- `unitGaussPoint n K` satisfies `IsUnitGaussPoint`. -/
-theorem isUnitGaussPoint_unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    IsUnitGaussPoint K n (unitGaussPoint n K) :=
-  fun f g ↦ unitGaussPoint_vle_iff n f g
-
-/-- **Uniqueness of the unit Gauss point.** A point of `closedPolydisc n K` satisfies
-`IsUnitGaussPoint` if and only if it equals `unitGaussPoint n K`. -/
-theorem isUnitGaussPoint_iff_eq_unitGaussPoint {n : ℕ} {η : closedPolydisc n K} :
-    IsUnitGaussPoint K n η ↔ η = unitGaussPoint n K := by
-  refine ⟨fun h ↦ Subtype.ext (ext' fun f g ↦ ?_), fun h ↦ h ▸ isUnitGaussPoint_unitGaussPoint n K⟩
-  rw [isUnitGaussPoint_def.mp h f g, unitGaussPoint_vle_iff]
-
-/-- Over a complete ultrametric normed field, the unit Gauss point is not classical in positive
-dimension. -/
-theorem unitGaussPoint_ne_classicalPoint [CompleteSpace K] {n : ℕ} [NeZero n]
-    (x : spa (powerBoundedSubring K)) (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    unitGaussPoint n K ≠ classicalPoint x a ha :=
-  ne_classicalPoint_of_supp_eq_bot _ (supp_unitGaussPoint n K) x a ha
-
-/-- **In dimension `0`, the unit Gauss point equals the unique classical point.** -/
-theorem unitGaussPoint_zero_eq_classicalPoint [CompleteSpace K]
-    (x : spa (powerBoundedSubring K)) :
-    unitGaussPoint 0 K = classicalPoint x Fin.elim0 (fun i ↦ i.elim0) :=
-  eq_classicalPoint_zero x (unitGaussPoint 0 K)
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-- **In dimension `0`, the unit Gauss point lies in the closure of the `K`-rational points
 unconditionally**, without any hypothesis on the residue field. -/
-theorem unitGaussPoint_zero_mem_closure_range_classicalPoint [CompleteSpace K]
+theorem unitGaussPoint_zero_mem_closure_range_classicalPoint
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint 0 K ∈ closure (Set.range
       (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
         classicalPoint x a.val a.property)) :=
   subset_closure ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩, (unitGaussPoint_zero_eq_classicalPoint x).symm⟩
 
-end UnitGaussPoint
-
-/-- **In dimension `1`, `unitGaussPoint 1 K` coincides with the one-variable Gauss point at radius
-`1`.** -/
-theorem unitGaussPoint_one_eq_gaussPoint {K : Type*} [NontriviallyNormedField K]
-    [IsUltrametricDist K] :
-    unitGaussPoint 1 K = gaussPoint (K := K) zero_lt_one le_rfl := by
-  have hval : ∀ f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
-      isWeightFamily_one_weight,
-      (closedDiscGaussValuation (R := K) zero_lt_one le_rfl f : ℝ) =
-        ‖restrictedMvPowerSeriesGaussEquiv f‖ := fun f ↦ by
-    refine le_antisymm ?_ ?_
-    · refine closedDiscGaussValuation_le_of_forall_norm_coeff_le zero_lt_one le_rfl fun ν ↦ ?_
-      rw [← coe_restrictedMvPowerSeriesGaussEquiv]
-      exact MvPowerSeries.norm_coeff_le_norm (restrictedMvPowerSeriesGaussEquiv f) ν
-    · obtain ⟨ν, hν⟩ := MvPowerSeries.exists_norm_coeff_eq_norm
-        (restrictedMvPowerSeriesGaussEquiv f)
-      have hν' : ν = Finsupp.single 0 (ν 0) :=
-        Finsupp.ext fun i ↦ by rw [Subsingleton.elim i 0, Finsupp.single_eq_same]
-      rw [← hν, coe_restrictedMvPowerSeriesGaussEquiv, hν']
-      simpa using norm_coeff_mul_pow_le_closedDiscGaussValuation (R := K) zero_lt_one le_rfl f (ν 0)
-  refine Subtype.ext (ext' fun f g ↦ ?_)
-  rw [unitGaussPoint_vle_iff_norm, gaussPoint_vle_iff, ← NNReal.coe_le_coe, hval f, hval g]
+end DimensionZero
 
 section Closure
 
@@ -251,35 +102,6 @@ open scoped NormedField
 section InfiniteResidueField
 
 variable {n : ℕ} {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-omit [CompleteSpace K] in
-/-- Every nonzero restricted power series over a nontrivially normed ultrametric field can be
-rescaled by a constant unit to have unit Gauss norm `1`, scaling all other norms by `‖s‖⁻¹`. -/
-private theorem exists_isUnit_norm_mul_eq_one
-    {s : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight}
-    (hs0 : s ≠ 0) :
-    ∃ u : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-      IsUnit u ∧ ‖restrictedMvPowerSeriesGaussEquiv (s * u)‖ = 1 ∧
-        ∀ t, ‖restrictedMvPowerSeriesGaussEquiv t‖ ≤ ‖restrictedMvPowerSeriesGaussEquiv s‖ →
-          ‖restrictedMvPowerSeriesGaussEquiv (t * u)‖ ≤ 1 := by
-  have hsnorm_pos : 0 < ‖restrictedMvPowerSeriesGaussEquiv s‖ :=
-    norm_pos_iff.mpr ((map_ne_zero_iff _ restrictedMvPowerSeriesGaussEquiv.injective).mpr hs0)
-  obtain ⟨ν, hν⟩ := MvPowerSeries.exists_norm_coeff_eq_norm (restrictedMvPowerSeriesGaussEquiv s)
-  set c : K := MvPowerSeries.coeff ν (s : MvPowerSeries (Fin n) K)
-  have hc_norm : ‖c‖ = ‖restrictedMvPowerSeriesGaussEquiv s‖ := by
-    simpa only [c, coe_restrictedMvPowerSeriesGaussEquiv] using hν
-  have hc0 : c ≠ 0 := norm_pos_iff.mp (hc_norm.symm ▸ hsnorm_pos)
-  refine ⟨weightedC _ isWeightFamily_one_weight c⁻¹,
-    (isUnit_iff_ne_zero.mpr (inv_ne_zero hc0)).map _, ?_, ?_⟩
-  · rw [map_mul, norm_mul, restrictedMvPowerSeriesGaussEquiv_weightedC,
-      MvPowerSeries.norm_algebraMap_isRestrictedSubring, norm_inv, ← hc_norm,
-      mul_inv_cancel₀ (norm_ne_zero_iff.mpr hc0)]
-  · intro t ht
-    rw [← hc_norm] at ht
-    rw [map_mul, norm_mul, restrictedMvPowerSeriesGaussEquiv_weightedC,
-      MvPowerSeries.norm_algebraMap_isRestrictedSubring, norm_inv]
-    exact (mul_le_mul_of_nonneg_right ht (inv_nonneg.mpr (norm_nonneg c))).trans
-      (mul_inv_cancel₀ (norm_ne_zero_iff.mpr hc0)).le
 
 /-- **Normalized rational-neighbourhood containment.** Let `R(T/g)` be a rational subset of
 `closedPolydisc n K` whose denominator `g` has unit Gauss norm `1` and whose numerators `f ∈ T`
@@ -339,13 +161,18 @@ theorem exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem
   rw [Set.mem_preimage, mem_rationalSubset_iff] at hs
   obtain ⟨-, hTle, hs_ne⟩ := hs
   have hs0 : s ≠ 0 := fun h ↦ hs_ne (by simp [h])
-  obtain ⟨u, hu_unit, hg_norm, hscale⟩ := exists_isUnit_norm_mul_eq_one hs0
+  obtain ⟨c, hg_norm, hscale⟩ := exists_units_norm_mul_weightedC_eq_one hs0
+  set u : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight :=
+    weightedC _ isWeightFamily_one_weight (c : K)
+  have hu_unit : IsUnit u := c.isUnit.map _
   set g := s * u
   set T' := T.image fun t ↦ t * u
   have hT'_norm : ∀ f ∈ T', ‖restrictedMvPowerSeriesGaussEquiv f‖ ≤ 1 := by
     rintro _ hf
     obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hf
-    exact hscale t ((unitGaussPoint_vle_iff_norm n t s).mp (hTle t ht))
+    have hle := (unitGaussPoint_vle_iff_norm n t s).mp (hTle t ht)
+    rw [hscale t]
+    exact div_le_one_of_le₀ hle (norm_nonneg _)
   -- The reduced denominator is nonzero; over the infinite residue field it is nonvanishing.
   set gball : Subring.unitClosedBall
       (MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :=

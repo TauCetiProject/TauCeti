@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Eval
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import Mathlib.Topology.Baire.CompleteMetrizable
 
 import Mathlib.Topology.Homeomorph.Lemmas
@@ -20,12 +18,9 @@ Let `K` be a complete ultrametric normed field and `D = closedPolydisc k K` the 
 polydisc `Spa (K⟨T₁, …, Tₖ⟩, K⟨T₁, …, Tₖ⟩°)`. Given a point `x ∈ Spa (K, K°)`, each tuple
 `a ∈ (K°)ᵏ` determines the classical evaluation point `classicalPoint x a ha ∈ D`.
 
-This file identifies the evaluation homomorphism `evalAtHom a ha` with the normed evaluation
-`MvPowerSeries.restrictedEval₂` through the Gauss comparison `restrictedMvPowerSeriesGaussEquiv`,
-which transfers the Lipschitz and continuity bounds in the evaluation argument `a` to `evalAtHom`.
-
-Consequently the classical-point map `a ↦ classicalPoint x a ha` is continuous for every complete
-ultrametric normed field `K`. Although the basic opens of `Spv K⟨T⟩` cut out weak inequalities
+Using the evaluation continuity proved in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Eval`,
+the classical-point map `a ↦ classicalPoint x a ha` is continuous for every complete ultrametric
+normed field `K`. Although the basic opens of `Spv K⟨T⟩` cut out weak inequalities
 `‖f(a)‖ ≤ ‖g(a)‖ ≠ 0`, the ultrametric inequality preserves them on a neighbourhood where `g`
 varies by less than `‖g(a₀)‖` and `f` varies by less than `‖g(a₀)‖`, so preimages of basic opens
 are open in `(K°)ᵏ`.
@@ -39,8 +34,7 @@ field the subspace topology on `D(K)` is strictly coarser than the discrete topo
 
 Since `(K°)ᵏ` is the closed unit ball in the complete finite product `Kᵏ`, it is complete as a
 metric space. Transporting along the homeomorphism shows that `D(K)` is completely metrizable and
-hence a Baire space. In dimension `0`, every point of `closedPolydisc 0 K` is classical, so
-`closedPolydisc 0 K` is a subsingleton coinciding with the range of `classicalPoint`.
+hence a Baire space.
 
 ## Main definitions
 
@@ -50,13 +44,6 @@ hence a Baire space. In dimension `0`, every point of `closedPolydisc 0 K` is cl
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.evalAtHom_eq_restrictedEval₂`: comparison of `evalAtHom` with
-  `MvPowerSeries.restrictedEval₂` via `restrictedMvPowerSeriesGaussEquiv`.
-* `TauCeti.ValuationSpectrum.norm_evalAtHom_le` and
-  `TauCeti.ValuationSpectrum.norm_evalAtHom_sub_le`: Gauss-norm bound and Lipschitz bound for
-  `evalAtHom` in its evaluation point.
-* `TauCeti.ValuationSpectrum.continuous_evalAtHom_arg`: for fixed `f`, `a ↦ evalAtHom a.1 a.2 f`
-  is continuous on `(K°)ᵏ`.
 * `TauCeti.ValuationSpectrum.continuous_classicalPoint`: the classical-point map
   `(K°)ᵏ → closedPolydisc k K` is continuous.
 * `TauCeti.ValuationSpectrum.preimage_rationalSubset_classicalPoint_closedBall`: the preimage of
@@ -67,9 +54,6 @@ hence a Baire space. In dimension `0`, every point of `closedPolydisc 0 K` is cl
 * `TauCeti.ValuationSpectrum.isCompletelyMetrizableSpace_range_classicalPoint` and
   `TauCeti.ValuationSpectrum.baireSpace_range_classicalPoint`: the subspace of `K`-rational points
   of `closedPolydisc k K` is completely metrizable and a Baire space.
-* `TauCeti.ValuationSpectrum.eq_classicalPoint_zero` and
-  `TauCeti.ValuationSpectrum.range_classicalPoint_zero_eq_univ`: in dimension `0`, every point of
-  `closedPolydisc 0 K` is the unique classical point.
 
 ## References
 
@@ -85,82 +69,9 @@ namespace TauCeti.ValuationSpectrum
 open Filter Topology TauCeti.Huber
 open scoped Topology
 
-section NormedCommRing
-
-variable {k : ℕ} {A : Type*} [NormedCommRing A] [IsUltrametricDist A] [CompleteSpace A]
-
-/-- **Comparison of `evalAtHom` with normed restricted evaluation.** Through the Gauss-norm
-comparison `restrictedMvPowerSeriesGaussEquiv`, Wedhorn's evaluation `evalAtHom a ha` agrees with
-`MvPowerSeries.restrictedEval₂` along the identity of `A`. -/
-theorem evalAtHom_eq_restrictedEval₂ (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
-    (ha' : ∀ i, ‖a i‖ ≤ 1)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    evalAtHom a ha f =
-      MvPowerSeries.restrictedEval₂ (RingHom.id A) a (fun _ ↦ le_rfl) ha'
-        (restrictedMvPowerSeriesGaussEquiv f) := by
-  have heq : (evalAtHom a ha).comp restrictedMvPowerSeriesGaussEquiv.symm.toRingHom =
-      MvPowerSeries.restrictedEval₂ (RingHom.id A) a (fun _ ↦ le_rfl) ha' := by
-    refine MvPowerSeries.eq_restrictedEval₂ (RingHom.id A) a (fun _ ↦ le_rfl) ha' _
-      ((continuous_evalAtHom a ha).comp continuous_restrictedMvPowerSeriesGaussEquiv_symm)
-      (fun r ↦ ?_) fun i ↦ ?_
-    · have hC : restrictedMvPowerSeriesGaussEquiv.symm
-          (algebraMap A (MvPowerSeries.IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1)) r) =
-          weightedC _ isWeightFamily_one_weight r :=
-        restrictedMvPowerSeriesGaussEquiv.injective (by simp)
-      simp [hC]
-    · have hX : restrictedMvPowerSeriesGaussEquiv.symm
-          ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_monomial _ (Finsupp.single i 1) 1⟩ =
-          weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i :=
-        restrictedMvPowerSeriesGaussEquiv.injective (by simp)
-      simp [hX]
-  simpa using RingHom.congr_fun heq (restrictedMvPowerSeriesGaussEquiv f)
-
-/-- **Gauss-norm bound on evaluation.** Evaluating `f ∈ A⟨T⟩` at a point `a` with `‖a i‖ ≤ 1`
-produces an element of norm at most the unit Gauss norm of `f`. -/
-theorem norm_evalAtHom_le (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
-    (ha' : ∀ i, ‖a i‖ ≤ 1)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    ‖evalAtHom a ha f‖ ≤ ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [evalAtHom_eq_restrictedEval₂ a ha ha' f]
-  exact MvPowerSeries.norm_restrictedEval₂_le (RingHom.id A) a (fun _ ↦ le_rfl) ha' _
-
-/-- **Ultrametric Lipschitz bound for `evalAtHom` in its argument.** If `a` and `b` lie in the
-closed unit polydisc and satisfy `‖a i - b i‖ ≤ δ` for every `i`, then
-`‖f(a) - f(b)‖ ≤ δ * ‖f‖`. -/
-theorem norm_evalAtHom_sub_le {a b : Fin k → A} (ha : ∀ i, IsPowerBounded (a i))
-    (ha' : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, IsPowerBounded (b i)) (hb' : ∀ i, ‖b i‖ ≤ 1)
-    {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    ‖evalAtHom a ha f - evalAtHom b hb f‖ ≤ δ * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [evalAtHom_eq_restrictedEval₂ a ha ha' f, evalAtHom_eq_restrictedEval₂ b hb hb' f]
-  exact MvPowerSeries.norm_restrictedEval₂_sub_le (RingHom.id A) (fun _ ↦ le_rfl) ha' hb' hδ
-    (fun i ↦ by simpa using hab i) (restrictedMvPowerSeriesGaussEquiv f)
-
-end NormedCommRing
-
 section NormedField
 
 variable {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-/-- **Evaluation of a fixed restricted series is continuous in its argument** on `(K°)ᵏ`. -/
-theorem continuous_evalAtHom_arg
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    Continuous fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      evalAtHom a.val a.property f := by
-  let e : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} →
-      {a : Fin k → K // ∀ i, ‖a i‖ ≤ (1 : ℝ)} :=
-    fun a ↦ ⟨a.val, fun i ↦ isPowerBounded_iff_norm_le_one.mp (a.property i)⟩
-  have he : Continuous e := continuous_subtypeVal.subtype_mk _
-  have hfun : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        evalAtHom a.val a.property f) =
-      (fun a : {a : Fin k → K // ∀ i, ‖a i‖ ≤ (1 : ℝ)} ↦
-        MvPowerSeries.restrictedEval₂ (RingHom.id K) a.val (fun _ ↦ le_rfl) a.property
-          (restrictedMvPowerSeriesGaussEquiv f)) ∘ e :=
-    funext fun a ↦ evalAtHom_eq_restrictedEval₂ a.val a.property (fun i ↦
-      isPowerBounded_iff_norm_le_one.mp (a.property i)) f
-  rw [hfun]
-  exact (MvPowerSeries.continuous_restrictedEval₂_arg (RingHom.id K) (fun _ ↦ le_rfl)
-    (restrictedMvPowerSeriesGaussEquiv f)).comp he
 
 /-- **Continuity of the classical-point map `(K°)ᵏ → closedPolydisc k K`.** Every basic open
 `Spv(K⟨T⟩)(f/g)` pulls back to `{a | ‖f(a)‖ ≤ ‖g(a)‖ ∧ 0 < ‖g(a)‖}`. By continuity of evaluation
@@ -221,38 +132,6 @@ theorem preimage_rationalSubset_classicalPoint_closedBall (x : spa (powerBounded
     pi_norm_le_iff_of_nonneg (norm_nonneg c), Pi.sub_apply]
 
 end NormedField
-
-section DimensionZero
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-/-- **In dimension `0`, every point of `closedPolydisc 0 K` is the unique classical point.** -/
-theorem eq_classicalPoint_zero (x : spa (powerBoundedSubring K)) (v : closedPolydisc 0 K) :
-    v = classicalPoint x Fin.elim0 (fun i ↦ i.elim0) := by
-  let e := weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set K))
-  have he : ∀ a : K, e.symm a = weightedC _ isWeightFamily_one_weight a := fun a ↦
-    Subtype.ext (by simp [e])
-  refine Subtype.ext (ext' fun f g ↦ ?_)
-  rw [← e.symm_apply_apply f, ← e.symm_apply_apply g, he, he,
-    closedPolydisc_vle_weightedC_iff, classicalPoint_vle, evalAtHom_weightedC,
-    evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.property]
-
-/-- In dimension `0`, `closedPolydisc 0 K` has at most one point (indeed exactly one whenever
-`Spa (K, K°)` is nonempty). -/
-theorem subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) where
-  allEq v w := by
-    let x : spa (powerBoundedSubring K) := ⟨_, comap_weightedC_mem_spa v⟩
-    rw [eq_classicalPoint_zero x v, eq_classicalPoint_zero x w]
-
-/-- **In dimension `0`, the classical points exhaust `closedPolydisc 0 K`.** -/
-theorem range_classicalPoint_zero_eq_univ (x : spa (powerBoundedSubring K)) :
-    Set.range (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.val a.property) = Set.univ := by
-  ext v
-  simp only [Set.mem_range, Set.mem_univ, iff_true]
-  exact ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩, (eq_classicalPoint_zero x v).symm⟩
-
-end DimensionZero
 
 section NontriviallyNormedField
 

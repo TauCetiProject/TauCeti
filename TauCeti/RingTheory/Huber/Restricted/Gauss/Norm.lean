@@ -64,6 +64,8 @@ type or norm is introduced here.
   ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
 * `TauCeti.Huber.weightedSubring_powerBoundedSubring_eq`: over a nontrivially normed ultrametric
   field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩` is `K°⟨X₁, …, Xₙ⟩`.
+* `TauCeti.Huber.exists_units_norm_mul_weightedC_eq_one`: every nonzero restricted series over
+  an ultrametric normed field can be normalized to unit Gauss norm by a scalar unit.
 * `TauCeti.MvPowerSeries.isAdicHom_algebraMap_isRestrictedSubring_quotient`: for an ultrametric
   normed algebra `A` over a nontrivially normed field, the structure map `A → A⟨X⟩ ⧸ I` is adic
   for the quotient topology.
@@ -461,6 +463,37 @@ theorem weightedSubring_powerBoundedSubring_eq (n : ℕ) :
     isPowerBounded_iff_norm_le_one, coe_restrictedMvPowerSeriesGaussEquiv]
 
 end Tate
+
+section NormedField
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- Every nonzero restricted power series `s` over an ultrametric normed field can be rescaled by
+a scalar unit `c : Kˣ` to have unit Gauss norm `1`, dividing the Gauss norm of every series by
+`‖s‖`. -/
+theorem exists_units_norm_mul_weightedC_eq_one
+    {s : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight}
+    (hs : s ≠ 0) :
+    ∃ c : Kˣ,
+      ‖restrictedMvPowerSeriesGaussEquiv (s * weightedC _ isWeightFamily_one_weight (c : K))‖ = 1 ∧
+        ∀ t : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
+          ‖restrictedMvPowerSeriesGaussEquiv (t * weightedC _ isWeightFamily_one_weight (c : K))‖ =
+            ‖restrictedMvPowerSeriesGaussEquiv t‖ / ‖restrictedMvPowerSeriesGaussEquiv s‖ := by
+  have hsnorm_pos : 0 < ‖restrictedMvPowerSeriesGaussEquiv s‖ :=
+    norm_pos_iff.mpr ((map_ne_zero_iff _ restrictedMvPowerSeriesGaussEquiv.injective).mpr hs)
+  obtain ⟨ν, hν⟩ := MvPowerSeries.exists_norm_coeff_eq_norm (restrictedMvPowerSeriesGaussEquiv s)
+  set a : K := MvPowerSeries.coeff ν (s : MvPowerSeries (Fin n) K)
+  have ha_norm : ‖a‖ = ‖restrictedMvPowerSeriesGaussEquiv s‖ := by
+    simpa only [a, coe_restrictedMvPowerSeriesGaussEquiv] using hν
+  have ha0 : a ≠ 0 := norm_pos_iff.mp (ha_norm.symm ▸ hsnorm_pos)
+  refine ⟨Units.mk0 a⁻¹ (inv_ne_zero ha0), ?_, fun t ↦ ?_⟩
+  · rw [Units.val_mk0, map_mul, norm_mul, restrictedMvPowerSeriesGaussEquiv_weightedC,
+      MvPowerSeries.norm_algebraMap_isRestrictedSubring, norm_inv, ← ha_norm,
+      mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0)]
+  · rw [Units.val_mk0, map_mul, norm_mul, restrictedMvPowerSeriesGaussEquiv_weightedC,
+      MvPowerSeries.norm_algebraMap_isRestrictedSubring, norm_inv, ← ha_norm, div_eq_mul_inv]
+
+end NormedField
 
 end TauCeti.Huber
 

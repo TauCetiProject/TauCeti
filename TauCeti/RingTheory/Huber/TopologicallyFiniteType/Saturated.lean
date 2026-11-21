@@ -18,7 +18,7 @@ import TauCeti.Analysis.Normed.Module.StrictGenerators
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.CompleteRankOneBase.FractionRing
 import TauCeti.RingTheory.Huber.Restricted.Adic
-import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 import TauCeti.RingTheory.Huber.Restricted.Noetherian
 import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Submodule
