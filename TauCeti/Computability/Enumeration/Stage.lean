@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Finset.Sum
 public import Mathlib.Order.Monotone.Defs
 import Mathlib.Data.Nat.Order.Lemmas
 import Mathlib.Data.Set.Finite.Lattice
@@ -27,9 +29,9 @@ is fresh at most once: it has a unique entry stage.
 
 ## Main results
 
-* `TauCeti.Enumeration.unique_entry_stage`: under monotone stages a number is fresh at most once.
-* `TauCeti.Enumeration.exists_mem_fresh_of_mem_stageLimit`: a number of the limit that is not in
-  the first stage is fresh at some stage.
+* `TauCeti.Enumeration.unique_entry_stage`: under monotone stages an element is fresh at most once.
+* `TauCeti.Enumeration.exists_mem_fresh_of_mem_stageLimit`: every element of the limit outside the
+  first stage is fresh at some stage.
 * `TauCeti.Enumeration.finite_prefix_stabilizes`: under monotone stages, the stages eventually
   agree with the limit below any bound.
 * `TauCeti.Enumeration.agrees_of_no_fresh_below`: under monotone stages, if nothing below `u`
@@ -73,7 +75,7 @@ theorem unique_entry_stage [DecidableEq α] {A : ℕ → Finset α} (hA : Monoto
     {s t : ℕ} {x : α}
     (hs : x ∈ fresh A s) (ht : x ∈ fresh A t) : s = t := by
   rw [mem_fresh] at hs ht
-  -- an earlier entry would already put the number in the later stage
+  -- An earlier entry would already put the element in the later stage.
   rcases lt_trichotomy s t with h | h | h
   · exact (ht.2 (hA (Nat.succ_le_of_lt h) hs.1)).elim
   · exact h
@@ -111,6 +113,22 @@ theorem stageLimit_mono {A B : ℕ → Finset α} (h : ∀ s, A s ⊆ B s) :
     stageLimit A ⊆ stageLimit B :=
   Set.iUnion_mono fun s => Finset.coe_subset.2 (h s)
 
+/-- The stagewise product of two increasing enumerations has the product of their limits. -/
+theorem stageLimit_product {β : Type*} {A : ℕ → Finset α} {B : ℕ → Finset β}
+    (hA : Monotone A) (hB : Monotone B) :
+    stageLimit (fun s => A s ×ˢ B s) = stageLimit A ×ˢ stageLimit B := by
+  simp only [stageLimit_eq_iUnion, Finset.coe_product]
+  exact Set.iUnion_prod_of_monotone (fun _ _ h => Finset.coe_subset.2 (hA h))
+    (fun _ _ h => Finset.coe_subset.2 (hB h))
+
+/-- At the limit, stagewise disjoint sums retain both the left and the right tags. -/
+@[simp]
+theorem stageLimit_disjSum {β : Type*} (A : ℕ → Finset α) (B : ℕ → Finset β) :
+    stageLimit (fun s => (A s).disjSum (B s)) =
+      Sum.inl '' stageLimit A ∪ Sum.inr '' stageLimit B := by
+  ext x
+  cases x <;> simp [Set.mem_image]
+
 /-- A fresh entry belongs to the limit. -/
 theorem mem_stageLimit_of_mem_fresh [DecidableEq α] {A : ℕ → Finset α} {s : ℕ} {x : α}
     (hx : x ∈ fresh A s) : x ∈ stageLimit A :=
@@ -123,7 +141,7 @@ theorem exists_mem_fresh_of_mem_stageLimit [DecidableEq α] {A : ℕ → Finset 
   obtain ⟨s, hs, hs'⟩ := Nat.exists_not_and_succ_of_not_zero_of_exists h0 (mem_stageLimit.1 hx)
   exact ⟨s, mem_fresh.2 ⟨hs', hs⟩⟩
 
-/-- Under monotone stages, a element is in the limit exactly when it is in every late enough
+/-- Under monotone stages, an element is in the limit exactly when it is in every late enough
 stage. -/
 theorem mem_stageLimit_iff_eventually {A : ℕ → Finset α} (hA : Monotone A) {x : α} :
     x ∈ stageLimit A ↔ ∃ s₀, ∀ s, s₀ ≤ s → x ∈ A s := by
@@ -138,6 +156,35 @@ theorem exists_subset_stage_of_subset_stageLimit {A : ℕ → Finset α} (hA : M
   rw [stageLimit_eq_iUnion] at hD
   obtain ⟨s, hs⟩ := hmono.directed_le.exists_mem_subset_of_finset_subset_biUnion hD
   exact ⟨s, Finset.coe_subset.mp hs⟩
+
+/-- Increasing finite stages have unbounded cardinalities exactly when their limit is
+infinite. -/
+theorem stageLimit_infinite_iff {A : ℕ → Finset α} (hA : Monotone A) :
+    (stageLimit A).Infinite ↔ ∀ n, ∃ s, n ≤ (A s).card := by
+  constructor
+  · intro h n
+    obtain ⟨D, hD, hcard⟩ := h.exists_subset_card_eq n
+    obtain ⟨s, hs⟩ := exists_subset_stage_of_subset_stageLimit hA hD
+    exact ⟨s, hcard ▸ Finset.card_le_card hs⟩
+  · intro h hfin
+    obtain ⟨s, hs⟩ := h (hfin.toFinset.card + 1)
+    have hle : (A s).card ≤ hfin.toFinset.card :=
+      Finset.card_le_card fun x hx => hfin.mem_toFinset.mpr (subset_stageLimit A s hx)
+    omega
+
+/-- An increasing enumeration with at least one fresh entry at every transition
+has an infinite limit. -/
+theorem stageLimit_infinite_of_fresh_nonempty {A : ℕ → Finset α} [DecidableEq α]
+    (hA : Monotone A) (hstep : ∀ s, (fresh A s).Nonempty) : (stageLimit A).Infinite := by
+  apply (stageLimit_infinite_iff hA).mpr
+  suffices hcard : ∀ s, s ≤ (A s).card by exact fun n => ⟨n, hcard n⟩
+  intro s
+  induction s with
+  | zero => exact Nat.zero_le _
+  | succ s ih =>
+    have h := card_fresh_add_card (hA (Nat.le_succ s))
+    have hpos := Finset.card_pos.mpr (hstep s)
+    omega
 
 /-- **Finite-prefix stabilization.** Under monotone stages, the stages eventually agree with the
 limit below any bound `u`. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Serialization
-public import TauCeti.Computability.RecursiveIn
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -18,9 +17,13 @@ when the limit is infinite. When the source starts empty and has at most one ent
 transition, reading it at the cardinality clock removes pauses without dropping any stage
 contents or changing the order of entry.
 
-The cardinality search is relative computable from relative computable binary stage codes
-and is partial without any promise on the limit. Applied to a serialized c.e. domain, it
-uniformly gives an exactly-one-entry presentation whenever the domain is infinite.
+The partial cardinality search is computable in any oracles that compute the binary stage
+codes. Every infinite c.e. set has a computable presentation with exactly one new element
+per transition (`exists_unpaused_stages`).
+
+For an empty-start serialized enumeration, `entryAt` returns each element at its unique
+discovery position and diverges at positions beyond the entries of a finite limit.
+A primitive-recursive compiler turns an ordinary c.e. index into a program for this search.
 
 ## References
 
@@ -52,21 +55,6 @@ theorem stageAtCard_dom {A : ℕ → Finset α} {n : ℕ} :
   simpa only [stageAtCard, Part.mem_some_iff, decide_eq_true_eq, Part.some_dom, implies_true,
     and_true, eq_comm (a := true)]
     using (@Nat.rfind_dom (fun s => Part.some (decide (n ≤ (A s).card))))
-
-/-- Increasing finite stages have unbounded cardinalities exactly when their limit is
-infinite. -/
-theorem stageLimit_infinite_iff {A : ℕ → Finset α} (hA : Monotone A) :
-    (stageLimit A).Infinite ↔ ∀ n, ∃ s, n ≤ (A s).card := by
-  constructor
-  · intro h n
-    obtain ⟨D, hD, hcard⟩ := h.exists_subset_card_eq n
-    obtain ⟨s, hs⟩ := exists_subset_stage_of_subset_stageLimit hA hD
-    exact ⟨s, hcard ▸ Finset.card_le_card hs⟩
-  · intro h hfin
-    obtain ⟨s, hs⟩ := h (hfin.toFinset.card + 1)
-    have hle : (A s).card ≤ hfin.toFinset.card :=
-      Finset.card_le_card fun x hx => hfin.mem_toFinset.mpr (subset_stageLimit A s hx)
-    omega
 
 /-- An increasing enumeration with infinite limit has a total cardinality clock. -/
 def cardClock (A : ℕ → Finset α) (hA : Monotone A) (hInf : (stageLimit A).Infinite)
@@ -125,7 +113,7 @@ def unpausedStage (A : ℕ → Finset α) (hA : Monotone A) (hInf : (stageLimit 
   A (cardClock A hA hInf n)
 
 /-- The unpaused stage is the source at its cardinality clock. -/
-theorem unpausedStage_eq {A : ℕ → Finset α} (hA : Monotone A)
+theorem unpausedStage_def {A : ℕ → Finset α} (hA : Monotone A)
     (hInf : (stageLimit A).Infinite) (n : ℕ) :
     unpausedStage A hA hInf n = A (cardClock A hA hInf n) :=
   (rfl)
@@ -134,7 +122,7 @@ theorem unpausedStage_eq {A : ℕ → Finset α} (hA : Monotone A)
 @[simp]
 theorem unpausedStage_zero {A : ℕ → Finset α} (hA : Monotone A)
     (hInf : (stageLimit A).Infinite) : unpausedStage A hA hInf 0 = A 0 := by
-  rw [unpausedStage_eq, cardClock_zero]
+  rw [unpausedStage_def, cardClock_zero]
 
 /-- Removing pauses preserves monotonicity. -/
 theorem monotone_unpausedStage {A : ℕ → Finset α} (hA : Monotone A)
@@ -160,7 +148,7 @@ unpaused enumeration. This comparison does not require a single-entry source. -/
 theorem unpausedStage_card {A : ℕ → Finset α} (hA : Monotone A)
     (hInf : (stageLimit A).Infinite) (s : ℕ) :
     unpausedStage A hA hInf (A s).card = A s := by
-  rw [unpausedStage_eq]
+  rw [unpausedStage_def]
   apply Finset.eq_of_subset_of_card_le (hA ((cardClock_le_iff hA hInf).mpr le_rfl))
   exact (mem_stageAtCard.mp (cardClock_mem_stageAtCard hA hInf _)).1
 
@@ -226,13 +214,7 @@ private theorem leastBitIndex_fresh_eq_some {A : ℕ → Finset ℕ} {s x : ℕ}
     (hstep : (fresh A s).card ≤ 1) :
     Nat.leastBitIndex (Finset.equivBitIndices.symm (fresh A s)) = some x ↔ x ∈ fresh A s := by
   rw [Nat.leastBitIndex_eq_some_iff, Equiv.apply_symm_apply]
-  refine ⟨And.left, fun hx => ⟨hx, ?_⟩⟩
-  have hcard : (fresh A s).card = 1 := by
-    have := Finset.card_pos.mpr ⟨x, hx⟩
-    omega
-  obtain ⟨y, hy⟩ := Finset.card_eq_one.mp hcard
-  rw [hy] at hx ⊢
-  simp_all
+  exact ⟨And.left, fun hx => ⟨hx, fun _ hy => (Finset.card_le_one_iff.mp hstep hx hy).le⟩⟩
 
 /-- An entry is the `n`th discovery exactly when it enters with `n` elements already
 present. A transition can have an empty fresh set, in which case the search continues. -/
@@ -314,18 +296,6 @@ theorem existsUnique_mem_entryAt_iff {A : ℕ → Finset ℕ} (hA : Monotone A) 
     rw [unique_entry_stage hA hxt hs] at ht
     exact ht.symm
 
-/-- The binary code of the fresh batch is relatively computable from consecutive stage codes. -/
-private theorem computableIn_freshCode {ι : Type*} [Primcodable ι] {O : Set (ℕ →. ℕ)}
-    {A : ι → ℕ → Finset ℕ}
-    (hA : ComputableIn₂ O fun i s => Finset.equivBitIndices.symm (A i s)) :
-    ComputableIn₂ O fun i s => Finset.equivBitIndices.symm (fresh (A i) s) := by
-  have hnext := hA.comp (ComputableIn.fst.pair (ComputableIn.succ.comp ComputableIn.snd))
-  refine (Primrec.nat_ldiff.computableIn.comp (hnext.pair hA)).of_eq fun ⟨i, s⟩ => ?_
-  simp only [Part.some_inj, Nat.succ_eq_add_one]
-  apply Finset.equivBitIndices.injective
-  -- The primitive-recursive operation and the decoder lemma use the same bitwise difference.
-  exact (Finset.equivBitIndices_ldiff _ _).trans (by simp [fresh_eq_sdiff])
-
 /-- Searching for the `n`th entry is relatively computable, uniformly in the cardinality
 and the source parameter. Termination is governed by `entryAt_dom`. -/
 theorem recursiveIn_entryAt {ι : Type*} [Primcodable ι] {O : Set (ℕ →. ℕ)}
@@ -337,7 +307,7 @@ theorem recursiveIn_entryAt {ι : Type*} [Primcodable ι] {O : Set (ℕ →. ℕ
   have hcard : ComputableIn O fun q : (ι × ℕ) × ℕ => (A q.1.1 q.2).card :=
     (Primrec.card_equivBitIndices.computableIn.comp (hA.comp hargs)).of_eq fun _ => by simp
   have hmin := Primrec.nat_leastBitIndex.computableIn.comp
-    ((computableIn_freshCode hA).comp hargs)
+    ((computableIn_equivBitIndices_symm_fresh hA).comp hargs)
   have hselect :=
     (Primrec.cond Primrec.fst Primrec.snd (Primrec.const (none : Option ℕ))).computableIn (O := O)
   exact RecursiveIn.rfindOpt ((hselect.comp
@@ -351,18 +321,15 @@ theorem fresh_unpausedStage_eq_singleton {A : ℕ → Finset ℕ} (hA : Monotone
     (hstep : ∀ s, (fresh A s).card ≤ 1) (hInf : (stageLimit A).Infinite)
     {n x : ℕ} (hx : x ∈ entryAt A n) : fresh (unpausedStage A hA hInf) n = {x} := by
   obtain ⟨s, hs, hx⟩ := (mem_entryAt hA hstep).mp hx
-  have hcard : (fresh A s).card = 1 := by
-    have hpos := Finset.card_pos.mpr ⟨x, hx⟩
-    have hle := hstep s
-    omega
+  have hfresh : fresh A s = {x} :=
+    Finset.eq_singleton_iff_unique_mem.mpr
+      ⟨hx, fun _ hy => Finset.card_le_one_iff.mp (hstep s) hy hx⟩
   have hnext := card_fresh_add_card (hA (Nat.le_succ s))
-  rw [hcard, hs, Nat.add_comm] at hnext
+  rw [hfresh, Finset.card_singleton, hs, Nat.add_comm] at hnext
   have hnow : unpausedStage A hA hInf n = A s := hs ▸ unpausedStage_card hA hInf s
   have hlater : unpausedStage A hA hInf (n + 1) = A (s + 1) :=
     hnext ▸ unpausedStage_card hA hInf (s + 1)
-  rw [fresh_eq_sdiff, hnow, hlater, ← fresh_eq_sdiff]
-  symm
-  exact Finset.eq_of_subset_of_card_le (Finset.singleton_subset_iff.mpr hx) (by simp [hcard])
+  rw [fresh_eq_sdiff, hnow, hlater, ← fresh_eq_sdiff, hfresh]
 
 /-- Every infinite c.e. subset of the naturals has computable increasing stages starting
 empty with exactly one entry at each transition. -/
@@ -380,43 +347,24 @@ theorem exists_unpaused_stages {S : Set ℕ} (hS : REPred (· ∈ S)) (hinf : S.
     (unpausedStage_zero hmono hInf).trans hzero, card_fresh_unpausedStage hmono hzero hstep hInf,
     heff.comp (Computable.const ()) Computable.id, (stageLimit_unpausedStage hmono hInf).trans hlim⟩
 
-/-- An increasing enumeration with at least one fresh entry at every transition
-has an infinite limit. -/
-theorem stageLimit_infinite_of_fresh_nonempty {A : ℕ → Finset α} [DecidableEq α]
-    (hA : Monotone A) (hstep : ∀ s, (fresh A s).Nonempty) : (stageLimit A).Infinite := by
-  apply (stageLimit_infinite_iff hA).mpr
-  suffices hcard : ∀ s, s ≤ (A s).card by exact fun n => ⟨n, hcard n⟩
-  intro s
-  induction s with
-  | zero => exact Nat.zero_le _
-  | succ s ih =>
-    have h := card_fresh_add_card (hA (Nat.le_succ s))
-    have hpos := Finset.card_pos.mpr (hstep s)
-    omega
-
-end TauCeti.Enumeration
-
-namespace Nat.Partrec.Code
-
-open TauCeti.Enumeration
-
 /-- An ordinary c.e. index can be compiled into a program that returns the entries of
 its serialized domain in discovery order, diverging beyond the last entry if finite.
 The index transformation is primitive recursive. -/
 theorem exists_primrec_eval_entryAt_serializedStage :
-    ∃ compile : Code → Code, Primrec compile ∧
+    ∃ compile : Nat.Partrec.Code → Nat.Partrec.Code, Primrec compile ∧
       ∀ c n, (compile c).eval n = entryAt (serializedStage c.domStage) n := by
   have hrec := TauCeti.recursiveIn₂_empty_iff.mp
-    (recursiveIn_entryAt (A := fun c : Code => serializedStage c.domStage)
+    (recursiveIn_entryAt (A := fun c : Nat.Partrec.Code => serializedStage c.domStage)
       computable_serializedStage_domStage.computableIn)
   have hnat : Nat.Partrec fun m =>
-      entryAt (serializedStage (Denumerable.ofNat Code m.unpair.1).domStage) m.unpair.2 :=
-    Partrec.nat_iff.mp (hrec.comp ((Primrec.ofNat Code).to_comp.comp
+      entryAt (serializedStage (Denumerable.ofNat Nat.Partrec.Code m.unpair.1).domStage)
+        m.unpair.2 :=
+    Partrec.nat_iff.mp (hrec.comp ((Primrec.ofNat Nat.Partrec.Code).to_comp.comp
       (Computable.fst.comp Computable.unpair)) (Computable.snd.comp Computable.unpair))
-  obtain ⟨u, hu⟩ := exists_code.mp hnat
+  obtain ⟨u, hu⟩ := Nat.Partrec.Code.exists_code.mp hnat
   refine ⟨fun c => u.curry (Encodable.encode c),
-    primrec₂_curry.comp (_root_.Primrec.const u) _root_.Primrec.encode, fun c n => ?_⟩
-  rw [eval_curry, hu]
+    Nat.Partrec.Code.primrec₂_curry.comp (Primrec.const u) Primrec.encode, fun c n => ?_⟩
+  rw [Nat.Partrec.Code.eval_curry, hu]
   simp
 
-end Nat.Partrec.Code
+end TauCeti.Enumeration

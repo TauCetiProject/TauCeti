@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Serialization
-public import Mathlib.Data.Finset.Prod
-public import Mathlib.Data.Finset.Sum
 import Mathlib.Data.Finset.Option
 import TauCeti.Computability.Primrec.FiniteSet
 
@@ -31,7 +29,7 @@ open Encodable
 
 namespace TauCeti.Enumeration
 
-variable {α β : Type*}
+variable {α : Type*}
 
 /-- Serialize the natural codes of the elements of each stage, then decode the entries. -/
 def serializedStageOf [Encodable α] [DecidableEq α] (A : ℕ → Finset α) (s : ℕ) : Finset α :=
@@ -62,7 +60,7 @@ theorem mem_serializedStageOf [Encodable α] [DecidableEq α] {A : ℕ → Finse
     x ∈ serializedStageOf A s ↔ ∃ t, Nat.pair (encode x) t < s ∧ x ∈ A t := by
   rw [← Finset.mem_map' (encode' α), map_encode_serializedStageOf, mem_serializedStage]
   simp only [Finset.mem_map']
-  rfl
+  simp only [Encodable.encode', Function.Embedding.coeFn_mk]
 
 /-- The typed serialized enumeration starts empty. -/
 @[simp]
@@ -117,29 +115,6 @@ theorem computable_serializedStageOf {ι : Type*} [Primcodable ι] [Encodable α
       Finset.equivBitIndices.symm ((serializedStageOf (A i) s).map (encode' α)) :=
   (computable_serializedStage (A := fun i s => (A i s).map (encode' α)) hA).of_eq fun ⟨_, _⟩ => by
     simp only [map_encode_serializedStageOf]
-
-/-- Synchronizing two increasing enumerations before taking stagewise products
-enumerates exactly the product of their limits. -/
-theorem stageLimit_product {A : ℕ → Finset α} {B : ℕ → Finset β}
-    (hA : Monotone A) (hB : Monotone B) :
-    stageLimit (fun s => A s ×ˢ B s) = stageLimit A ×ˢ stageLimit B := by
-  apply Set.ext
-  rintro ⟨x, y⟩
-  simp only [mem_stageLimit, Finset.mem_product, Set.mem_prod]
-  exact ⟨fun ⟨s, hx, hy⟩ => ⟨⟨s, hx⟩, ⟨s, hy⟩⟩,
-    fun ⟨⟨s, hx⟩, ⟨t, hy⟩⟩ => ⟨max s t, hA (le_max_left _ _) hx, hB (le_max_right _ _) hy⟩⟩
-
-/-- At the limit, stagewise disjoint sums retain both the left and the right tags. -/
-@[simp]
-theorem stageLimit_disjSum (A : ℕ → Finset α) (B : ℕ → Finset β) :
-    stageLimit (fun s => (A s).disjSum (B s)) =
-      Sum.inl '' stageLimit A ∪ Sum.inr '' stageLimit B := by
-  ext x
-  cases x <;> simp [Set.mem_image]
-
-end TauCeti.Enumeration
-
-namespace TauCeti.Enumeration
 
 /-- Serialize products uniformly from the two effective tables of source stages. -/
 theorem computable_serializedStageOf_product {ι : Type*} [Primcodable ι]

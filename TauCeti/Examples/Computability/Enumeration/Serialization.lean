@@ -44,10 +44,7 @@ public theorem TauCeti.Enumeration.Examples.distinct_tagged_entry_stages :
   refine ⟨s, t, ?_, hs, ht⟩
   rintro rfl
   have hle : (fresh B s).card ≤ 1 := card_fresh_serializedStageOf_le_one A s
-  have hpos := Finset.card_pos.mpr ⟨_, hs⟩
-  obtain ⟨x, hx⟩ := Finset.card_eq_one.mp (show (fresh B s).card = 1 by omega)
-  simp [hx] at hs ht
-  exact Sum.inl_ne_inr (hs.trans ht.symm)
+  exact Sum.inl_ne_inr (Finset.card_le_one_iff.mp hle hs ht)
 
 /-- A serialized singleton that first appears at the end of stage three. -/
 private def singletonStages (s : ℕ) : Finset ℕ :=
