@@ -47,8 +47,9 @@ The positivity of `τ⁺¹` is the inequality `0 ≤ |λ|² ‖τ‖ + 2 Re (sta
 value of `τ⁺¹` at `(λ + a)⋆ (λ + a)`, which follows from `|τ a|² ≤ ‖τ‖ τ (a⋆a)`
 (`PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul`); every positive element of the
 C⋆-algebra `A⁺¹` has the form `x⋆x`. Faithfulness passes to `τ⁺¹` because, for `x = λ + b` with
-`τ⁺¹ (x⋆x) = 0`, the null space of `τ⁺¹` is a left ideal, so `cx = λc + cb ∈ A` lies in the null
-space of `τ` for every `c ∈ A` and vanishes. If `λ ≠ 0`, then `e = -λ⁻¹ b` is a right unit of `A`,
+`τ⁺¹ (x⋆x) = 0`, the null space of `τ⁺¹` is a left ideal
+(`TauCeti.map_star_mul_mul_self_eq_zero`), so `cx = λc + cb ∈ A` lies in the null space of `τ`
+for every `c ∈ A` and vanishes. If `λ ≠ 0`, then `e = -λ⁻¹ b` is a right unit of `A`,
 and a right unit of a star algebra is a two-sided unit (`TauCeti.exists_right_identity_iff`).
 Without the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺¹` vanishes at `1 - 1_A`.
 
@@ -69,9 +70,13 @@ namespace PositiveContinuousLinearMap
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {τ σ : A →P[ℂ] ℂ}
 
-/-- The value of `λ + a ↦ λ ‖τ‖ + τ a` at `(λ + a)⋆ (λ + a)` is nonnegative. -/
-private theorem unitization_aux_nonneg (τ : A →P[ℂ] ℂ) (r : ℂ) (a : A) :
-    0 ≤ ‖(τ : A →L[ℂ] ℂ)‖ * (star r * r) + (star r * τ a + r * star (τ a) + τ (star a * a)) := by
+/-- The value of `λ + a ↦ λ ‖τ‖ + τ a` at `x⋆x` is nonnegative. -/
+private theorem unitization_aux_nonneg (τ : A →P[ℂ] ℂ) (x : Unitization ℂ A) :
+    0 ≤ ‖(τ : A →L[ℂ] ℂ)‖ * (star x * x).fst + τ (star x * x).snd := by
+  simp only [Unitization.fst_mul, Unitization.snd_mul, Unitization.fst_star, Unitization.snd_star,
+    map_add, map_smul, map_star, smul_eq_mul]
+  set r := x.fst
+  set a := x.snd
   have hs : 0 ≤ τ (star a * a) := τ.map_nonneg (star_mul_self_nonneg a)
   have hts := τ.norm_map_sq_le_opNorm_mul a
   rw [Complex.nonneg_iff] at hs ⊢
@@ -104,7 +109,7 @@ noncomputable def unitization (τ : A →P[ℂ] ℂ) : Unitization ℂ A →P[�
       cont := by fun_prop }
     fun x hx => by
       obtain ⟨y, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hx
-      simpa [map_star τ] using unitization_aux_nonneg τ y.fst y.snd
+      exact unitization_aux_nonneg τ y
 
 /-- `τ⁺¹ (λ + a) = λ ‖τ‖ + τ a`. -/
 theorem unitization_apply (τ : A →P[ℂ] ℂ) (x : Unitization ℂ A) :
@@ -205,14 +210,7 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
   -- for `c ∈ A`, `c x = λ c + c b` lies in `A` and in the null space of `τ⁺¹`, hence vanishes
   have hl : ∀ c : A, x.fst • c + c * x.snd = 0 := fun c => by
     refine hf _ ?_
-    -- the null space of a positive functional is a left ideal
-    let φ := TauCeti.StarPositiveFunctional.ofPositiveLinearMap
-      (τ.unitization : Unitization ℂ A →ₚ[ℂ] ℂ)
-    have h := (φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _).mp <|
-      φ.mul_mem_nullSubmodule (c : Unitization ℂ A)
-        ((φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero x).mpr (by simpa [φ] using hx))
-    simp only [φ, TauCeti.StarPositiveFunctional.ofPositiveLinearMap_apply,
-      coe_toPositiveLinearMap] at h
+    have h := TauCeti.map_star_mul_mul_self_eq_zero τ.unitization (c : Unitization ℂ A) hx
     have hcx : (c : Unitization ℂ A) * x = ((x.fst • c + c * x.snd : A) : Unitization ℂ A) :=
       Unitization.ext (by simp) (by simp [add_comm])
     rwa [hcx, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr] at h
