@@ -30,8 +30,9 @@ extension of a ring of dimension at most one in it is injective.
 
 ## Main results
 
-* `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ`: if
-  `c * ϖ ^ n ∈ 𝔪 ^ (n + 1)` for a uniformizer `ϖ`, then `c ∈ 𝔪`.
+* `TauCeti.IsDiscreteValuationRing.pow_mul_mem_maximalIdeal_pow_add_iff` and
+  `TauCeti.IsDiscreteValuationRing.mul_mem_maximalIdeal_pow_succ_iff`: multiplying by a power of a
+  uniformizer shifts membership in powers of the maximal ideal.
 * `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal`: `x ∈ 𝔪 ^ n` is
   `n ≤ addVal x`.
 * `TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton`: for `x ≠ 0`,
@@ -70,14 +71,19 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
 
-/-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
-the coefficient in the maximal ideal. -/
-theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
-    (hϖ : Irreducible ϖ) (h : c * ϖ ^ n ∈ maximalIdeal S ^ (n + 1)) :
-    c ∈ maximalIdeal S := by
-  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_succ',
-    mul_dvd_mul_iff_right (pow_ne_zero n hϖ.ne_zero)] at h
-  rwa [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+/-- Multiplying by `ϖ ^ m` for a uniformizer `ϖ` shifts membership in powers of the maximal ideal
+by `m`. -/
+theorem pow_mul_mem_maximalIdeal_pow_add_iff {ϖ : S} (hϖ : Irreducible ϖ) (m : ℕ) {k : ℕ}
+    {x : S} : ϖ ^ m * x ∈ maximalIdeal S ^ (m + k) ↔ x ∈ maximalIdeal S ^ k := by
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton, Ideal.mem_span_singleton, pow_add,
+    mul_dvd_mul_iff_left (pow_ne_zero m hϖ.ne_zero)]
+
+/-- Multiplying by a uniformizer `ϖ` shifts membership in powers of the maximal ideal by `1`. -/
+theorem mul_mem_maximalIdeal_pow_succ_iff {ϖ : S} (hϖ : Irreducible ϖ) {k : ℕ} {x : S} :
+    ϖ * x ∈ maximalIdeal S ^ (k + 1) ↔ x ∈ maximalIdeal S ^ k := by
+  simpa only [pow_one, add_comm 1 k] using
+    pow_mul_mem_maximalIdeal_pow_add_iff hϖ 1 (k := k) (x := x)
 
 /-- Membership in a power of the maximal ideal of a discrete valuation ring, read on the additive
 valuation. -/

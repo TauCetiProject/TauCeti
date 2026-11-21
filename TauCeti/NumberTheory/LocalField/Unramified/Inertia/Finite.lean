@@ -119,8 +119,9 @@ cardinality of the residue field of `K`. -/
 theorem IsArithFrobeniusLift.tameCharacter_conj_restrictNormal {σ : Gal(AlgebraicClosure K/K)}
     (hσ : IsArithFrobeniusLift K σ) {π : 𝒪[L]} (hπ : Irreducible π)
     (τ : IsLocalRing.ramificationGroup Gal(L/K) 𝒪[L] 0) :
-    tameCharacter hπ (MulAut.conjNormal (AlgEquiv.restrictNormal σ L) τ) =
-      tameCharacter hπ τ ^ Nat.card 𝓀[K] :=
+    IsDiscreteValuationRing.tameCharacter hπ
+        (MulAut.conjNormal (AlgEquiv.restrictNormal σ L) τ) =
+      IsDiscreteValuationRing.tameCharacter hπ τ ^ Nat.card 𝓀[K] :=
   tameCharacter_conj_of_smul_eq_pow hπ (hσ.restrictNormal_smul_residueField_eq_pow L) τ
 
 end TauCeti

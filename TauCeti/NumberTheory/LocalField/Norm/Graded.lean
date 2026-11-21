@@ -455,8 +455,10 @@ private theorem exists_algebraMap_residue_eq_of_norm_one_add_mul_pow_eq
     exact add_mem (trace_mem_maximalIdeal_pow_of_le hG le_rfl hd)
       (trace_mem_maximalIdeal_pow_of_le hG le_rfl
         (Ideal.pow_le_pow_right (show t + 1 ≤ 2 * t by omega) hw))
-  have hmem :=
-    IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπK hrem
+  have hmem : b - a₀ * β₀ - Algebra.norm 𝒪[K] a ∈ 𝓂[K] := by
+    rw [mul_comm] at hrem
+    simpa only [pow_one] using
+      (IsDiscreteValuationRing.pow_mul_mem_maximalIdeal_pow_add_iff hπK t (k := 1)).mp hrem
   rw [← residue_eq_zero_iff, map_sub, map_sub, sub_sub, sub_eq_zero] at hmem
   rw [hmem, map_add, map_mul, map_mul, ha₀, algebraMap_residue_norm_of_isTotallyRamified h]
   ring

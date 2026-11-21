@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
+import Mathlib.GroupTheory.Perm.Cycle.Type
 import TauCeti.Algebra.Group.Hom.Instances
 
 /-!
@@ -55,6 +56,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   which supplies the nonzero denominators in root averaging.
 * `TauCeti.subsingleton_rootsOfUnity_prime_pow`: in a reduced commutative ring of exponential
   characteristic `p`, the group of `pʲ`-th roots of unity is trivial.
+* `TauCeti.not_dvd_natCard_of_injective_units`: in a reduced commutative ring of prime
+  characteristic `p`, no finite group embedding into `Rˣ` has cardinality divisible by `p`.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
@@ -448,5 +451,20 @@ theorem subsingleton_rootsOfUnity_prime_pow [IsReduced R] (p j : ℕ) [ExpChar R
       (mem_rootsOfUnity_prime_pow_mul_iff R p j 1).1 (by simp)
     exact Subtype.ext (by simpa [mem_rootsOfUnity] using h)
   exact ⟨fun x y ↦ (key x).trans (key y).symm⟩
+
+/-- In a reduced commutative ring `R` of prime characteristic `p`, no finite group admitting an
+injective monoid homomorphism into `Rˣ` has cardinality divisible by `p`. -/
+theorem not_dvd_natCard_of_injective_units [IsReduced R] {G F : Type*} [Group G] [Finite G]
+    (p : ℕ) [Fact p.Prime] [CharP R p] [FunLike F G Rˣ] [MonoidHomClass F G Rˣ] (f : F)
+    (hf : Function.Injective f) : ¬ p ∣ Nat.card G := by
+  intro hp
+  obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hp
+  have hmem : f x ∈ rootsOfUnity (p ^ 1) R := by
+    rw [pow_one, mem_rootsOfUnity, ← map_pow, ← hx, pow_orderOf_eq_one, map_one]
+  have : Subsingleton (rootsOfUnity (p ^ 1) R) := subsingleton_rootsOfUnity_prime_pow (R := R) p 1
+  have h1 : (⟨f x, hmem⟩ : rootsOfUnity (p ^ 1) R) = 1 := Subsingleton.elim _ _
+  have hx1 : x = 1 := hf ((congrArg Subtype.val h1).trans (map_one f).symm)
+  rw [hx1, orderOf_one] at hx
+  exact (Fact.out : p.Prime).ne_one hx.symm
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.RamificationGroup
 public import Mathlib.GroupTheory.PGroup
+import TauCeti.RingTheory.Valuation.RamificationGroup
 
 /-!
 # Positive ramification groups are p-groups
@@ -40,26 +41,15 @@ characteristic `p`. This includes the wild inertia group `G₁`. -/
 theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
     [CharP P.ResidueField p] [Finite (ramificationGroup F P 0)] :
     IsPGroup p (ramificationGroup F P (i + 1)) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot F P
-  rw [isPGroup_iff_pow_pow_eq_one]
-  intro g
-  refine ⟨N, ?_⟩
-  have hpow : ∀ n : ℕ,
-      (g : P.integers.decompositionSubgroup F) ^ (p ^ n) ∈
-        ramificationGroup F P (i + n + 1) := by
-    intro n
-    induction n with
-    | zero => simpa only [pow_zero, pow_one, Nat.add_zero] using g.property
-    | succ n ih =>
-      have h := pow_mem_ramificationGroup_of_charP F P p (i + n) ih
-      simpa [pow_succ, pow_mul, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using h
-  have hbot : ramificationGroup F P (i + N + 1) = ⊥ :=
-    hN _ (by omega)
-  have h : (g : P.integers.decompositionSubgroup F) ^ (p ^ N) = 1 := by
-    have := hpow N
-    rw [hbot, Subgroup.mem_bot] at this
-    exact this
-  exact Subtype.ext h
+  have h0 : ramificationGroup F P 0 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 := by
+    rw [ramificationGroup_def, Int.natCast_zero]
+  have : Finite
+      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) :=
+    h0 ▸ ‹Finite (ramificationGroup F P 0)›
+  rw [ramificationGroup_def]
+  exact IsLocalRing.isPGroup_ramificationGroup
+    (P.integers.decompositionSubgroup F) P.integers p (by omega)
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- If the residue characteristic does not divide the order of inertia, every positive
