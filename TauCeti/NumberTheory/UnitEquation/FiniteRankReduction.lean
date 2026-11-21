@@ -27,7 +27,8 @@ number field, which is where the height, packing and Subspace-theorem arguments 
 This file formalizes that reduction. A finite set of solutions, together with its witnesses `x`
 and `z`, has its coordinates in one number field `E`. The finitely many `x` generate a subgroup of
 `Γ` of rank at most `r`, which consists of tuples of `S`-units of `E` for a finite set `S` of
-places. A cover of its solutions over `E` by proper subspaces extends to a cover over the large
+places; the `z` are tuples of `S`-units too, so the hypothesis only needs `S`-unit perturbations.
+A cover of its solutions over `E` by proper subspaces extends to a cover over the large
 field by the subspaces they span, and these remain proper. The bounded covers of finite sets of
 solutions then give one cover of all of them, by the finite character of covers by boundedly many
 proper subspaces (`Submodule.exists_subset_biUnion_iff_forall_finite`).
@@ -70,11 +71,11 @@ private theorem exists_subspaceCover_of_finite
       (Δ : Subgroup (Fin n → (S : Set (HeightOneSpectrum (𝓞 E))).unit E)),
       Δ.FG → Module.rank ℤ (Additive Δ) ≤ r →
       ∃ T : Finset (Submodule E (Fin n → E)), (T.card : ℝ) ≤ B ∧ (∀ V ∈ T, V ≠ ⊤) ∧
-        ∀ x ∈ Δ, ∀ z : Fin n → Eˣ,
+        ∀ x ∈ Δ, ∀ z : Fin n → (S : Set (HeightOneSpectrum (𝓞 E))).unit E,
           absoluteLogHeightAff (fun i ↦ ((z i : Eˣ) : E)) ≤
             φ (absoluteLogHeightAff (fun i ↦ ((x i : Eˣ) : E))) →
-          ∑ i, ((x i : Eˣ) : E) * (z i : E) = 1 →
-          ∃ V ∈ T, (fun i ↦ ((x i : Eˣ) : E) * (z i : E)) ∈ V)
+          ∑ i, ((x i : Eˣ) : E) * ((z i : Eˣ) : E) = 1 →
+          ∃ V ∈ T, (fun i ↦ ((x i : Eˣ) : E) * ((z i : Eˣ) : E)) ∈ V)
     {Γ : Subgroup (Fin n → Lˣ)} (hΓ : Module.rank ℤ (Additive Γ) ≤ r) {J : Type*} [Finite J]
     {x z : J → Fin n → Lˣ} (hxΓ : ∀ j, x j ∈ Γ)
     (hz : ∀ j, absoluteLogHeightAff (fun i ↦ (z j i : L)) ≤
@@ -90,10 +91,10 @@ private theorem exists_subspaceCover_of_finite
   refine ⟨T.image fun V : Submodule E (Fin n → E) ↦ span L (ε '' V),
     (Nat.cast_le.mpr Finset.card_image_le).trans hTB, ?_, fun j ↦ ?_⟩
   · simp only [Finset.mem_image, forall_exists_index, and_imp]
-    rintro _ V hV rfl htop
-    have := V.finrank_span_image_comp (algebraMap E L)
-    rw [htop, finrank_top, Module.finrank_fin_fun] at this
-    exact (finrank_lt (hTtop V hV)).ne (by rw [← this, Module.finrank_fin_fun])
+    rintro _ V hV rfl
+    refine (lt_top_of_finrank_lt_finrank ?_).ne
+    rw [V.finrank_span_image_comp, Module.finrank_fin_fun]
+    simpa only [Module.finrank_fin_fun] using finrank_lt (hTtop V hV)
   have hxz (i : Fin n) : algebraMap E L (((x' j i : Eˣ) : E) * ((z' j i : Eˣ) : E)) =
       (x j i : L) * (z j i : L) := by
     rw [map_mul, hx', hz']
@@ -105,17 +106,17 @@ private theorem exists_subspaceCover_of_finite
   have hsum' : ∑ i, ((x' j i : Eˣ) : E) * ((z' j i : Eˣ) : E) = 1 :=
     (algebraMap E L).injective (by simp only [map_sum, hxz, map_one, hsum j])
   obtain ⟨V, hV, hmem⟩ := hTcov (x' j) (hΔx' ▸ Subgroup.subset_closure (Set.mem_range_self j))
-    (fun i ↦ (z' j i : Eˣ))
-    (by rw [hh (hx' j), hh (hz' j)]; exact hz j) hsum'
+    (z' j) (by rw [hh (hx' j), hh (hz' j)]; exact hz j) hsum'
   exact ⟨_, Finset.mem_image_of_mem _ hV, subset_span ⟨_, hmem, funext hxz⟩⟩
 
 /-- **Reduction to `S`-units of number fields.** Let `L` be an algebraic extension of `ℚ`, let
 `φ : ℝ → ℝ` and `B : ℝ`. Suppose that, for every number field `E ⊆ L`, every finite set `S` of
 finite places of `E` and every finitely generated group `Δ` of `n`-tuples of `S`-units of `E` of
 rank at most `r`, at most `B` proper subspaces of `Eⁿ` contain every product `x z` with `x ∈ Δ`,
-`z ∈ (Eˣ)ⁿ`, `h_aff(z) ≤ φ(h_aff(x))` and `∑ xᵢ zᵢ = 1`. Then for every group `Γ ≤ (Lˣ)ⁿ` of
-rank at most `r`, finitely generated or not, at most `B` proper subspaces of `Lⁿ` contain every
-product `x z` with `x ∈ Γ`, `z ∈ (Lˣ)ⁿ`, `h_aff(z) ≤ φ(h_aff(x))` and `∑ xᵢ zᵢ = 1`.
+`z` an `n`-tuple of `S`-units of `E`, `h_aff(z) ≤ φ(h_aff(x))` and `∑ xᵢ zᵢ = 1`. Then for every
+group `Γ ≤ (Lˣ)ⁿ` of rank at most `r`, finitely generated or not, at most `B` proper subspaces of
+`Lⁿ` contain every product `x z` with `x ∈ Γ`, `z ∈ (Lˣ)ⁿ`, `h_aff(z) ≤ φ(h_aff(x))` and
+`∑ xᵢ zᵢ = 1`.
 
 For `n ≥ 2`, `L = AlgebraicClosure ℚ`, `φ(h) = n⁻¹ exp(-(5n)^(3n)) (1 + h)` and
 `B = exp((5n)^(3n)(r + 1))` the conclusion is Theorem 2.1 of Evertse, Schlickewei and Schmidt, and
@@ -125,11 +126,11 @@ theorem exists_subspaceCover_of_forall_numberField
       (Δ : Subgroup (Fin n → (S : Set (HeightOneSpectrum (𝓞 E))).unit E)),
       Δ.FG → Module.rank ℤ (Additive Δ) ≤ r →
       ∃ T : Finset (Submodule E (Fin n → E)), (T.card : ℝ) ≤ B ∧ (∀ V ∈ T, V ≠ ⊤) ∧
-        ∀ x ∈ Δ, ∀ z : Fin n → Eˣ,
+        ∀ x ∈ Δ, ∀ z : Fin n → (S : Set (HeightOneSpectrum (𝓞 E))).unit E,
           absoluteLogHeightAff (fun i ↦ ((z i : Eˣ) : E)) ≤
             φ (absoluteLogHeightAff (fun i ↦ ((x i : Eˣ) : E))) →
-          ∑ i, ((x i : Eˣ) : E) * (z i : E) = 1 →
-          ∃ V ∈ T, (fun i ↦ ((x i : Eˣ) : E) * (z i : E)) ∈ V)
+          ∑ i, ((x i : Eˣ) : E) * ((z i : Eˣ) : E) = 1 →
+          ∃ V ∈ T, (fun i ↦ ((x i : Eˣ) : E) * ((z i : Eˣ) : E)) ∈ V)
     (Γ : Subgroup (Fin n → Lˣ)) (hΓ : Module.rank ℤ (Additive Γ) ≤ r) :
     ∃ T : Finset (Submodule L (Fin n → L)), (T.card : ℝ) ≤ B ∧ (∀ V ∈ T, V ≠ ⊤) ∧
       ∀ x ∈ Γ, ∀ z : Fin n → Lˣ,
