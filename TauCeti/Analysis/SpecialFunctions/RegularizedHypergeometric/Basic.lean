@@ -48,9 +48,8 @@ hypothesis on the lower parameter.
 * `Complex.differentiable_regularizedHGFun_of_card_le` — `regularizedHGFun a b` is entire when
   `a.card ≤ b.card`, and `Complex.hasSum_deriv_regularizedHGFun` expresses its derivative as the
   termwise differentiated series.
-* `Complex.regularizedHGFun_of_zero_mem`, `Complex.regularizedHGFun_singleton_zero_left` — when
-  `0 ∈ a`, `regularizedHGFun a b` is constant and equals `(b.map Gamma).prod⁻¹`; in particular
-  `𝐌(0, b, z) = (Γ b)⁻¹`.
+* `Complex.regularizedHGFun_of_zero_mem` — when `0 ∈ a`, `regularizedHGFun a b` is constant and
+  equals `(b.map Gamma).prod⁻¹`.
 * `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
   converges to it on the open unit disk `‖z‖ < 1`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
@@ -116,14 +115,6 @@ theorem regularizedHGFun_of_zero_mem {a b : Multiset ℂ} (h : (0 : ℂ) ∈ a) 
   · simp [regularizedHGFunCoeff]
   · intro n hn
     simp [regularizedHGFunCoeff_eq_zero_left a b n 0 (by simpa using h) (Nat.pos_of_ne_zero hn)]
-
-/-- At `a = 0`, Kummer's regularized function reduces to the constant `𝐌(0, b, z) = (Γ b)⁻¹`
-(directly from the series [DLMF 13.2.4](https://dlmf.nist.gov/13.2#E4), since `(0)ₙ = 0` for
-`n ≥ 1`), including at `b ∈ -ℕ` where both sides vanish. -/
-@[simp]
-theorem regularizedHGFun_singleton_zero_left (b z : ℂ) :
-    regularizedHGFun {0} {b} z = (Gamma b)⁻¹ := by
-  simp [regularizedHGFun_of_zero_mem]
 
 /-- When there are at most as many upper as lower parameters, the regularized hypergeometric
 series converges to `regularizedHGFun a b z` at every `z`. -/

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.Normed.Group.Defs
 public import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.Analysis.Asymptotics.Basic
+import Mathlib.Analysis.Normed.Group.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.IcoMulLe
 
 /-!
@@ -27,11 +27,9 @@ sequence `u : ℕ → E` grows by at least a factor of `c ≥ 2` from each index
 (`∃ᶠ m in atTop, 0 < ‖u m‖`), then the norms of the partial sums `∑ m ∈ Finset.Ico N n, u m` tend
 to `+∞` as `n → ∞` for every starting index `N`.
 
-In particular, this applies whenever `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently
-(for instance when `u m / u (m + 1) → 0` for a sequence of nonzero elements in a normed division
-ring). In continued-fraction theory, this is the criterion by which super-exponential growth of the
-reduction-of-order summands implies divergence of the reduction-of-order series in Pincherle's
-theorem.
+In continued-fraction theory, this is the criterion by which geometric growth (with ratio at least
+`2`) of the reduction-of-order summands implies divergence of the reduction-of-order series in
+Pincherle's theorem.
 
 ## Main results
 
@@ -42,17 +40,11 @@ theorem.
   and `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`.
 * `TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le`: if `2 ≤ c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖`
   eventually, and `0 < ‖u m‖` frequently, then `‖∑ m ∈ Finset.Ico N n, u m‖ → ∞`.
-* `Asymptotics.IsLittleO.tendsto_norm_atTop_of_succ`: if `u =o[atTop] fun m ↦ u (m + 1)` and
-  `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`.
-* `Asymptotics.IsLittleO.eventually_norm_pos_of_succ`: under the same hypotheses, `0 < ‖u m‖`
-  eventually.
-* `Asymptotics.IsLittleO.tendsto_norm_sum_Ico_atTop_of_succ`: under the same hypotheses,
-  `‖∑ m ∈ Finset.Ico N n, u m‖ → ∞` for every `N`.
 -/
 
 public section
 
-open Asymptotics Filter Finset
+open Filter Finset
 
 namespace TauCeti
 
@@ -135,31 +127,3 @@ theorem tendsto_norm_sum_Ico_atTop_of_mul_norm_le {E : Type*} [SeminormedAddComm
     linarith [hM₁ M hM₁M]
 
 end TauCeti
-
-namespace Asymptotics.IsLittleO
-
-/-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`. -/
-theorem tendsto_norm_atTop_of_succ {E : Type*} [Norm E]
-    {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
-    (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
-    Tendsto (fun n ↦ ‖u n‖) atTop atTop :=
-  TauCeti.tendsto_norm_atTop_of_mul_norm_le one_lt_two
-    ((isBigOWith_inv zero_lt_two).1 (hu.def' (inv_pos.2 zero_lt_two))) hne
-
-/-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `0 < ‖u m‖` eventually. -/
-theorem eventually_norm_pos_of_succ {E : Type*} [Norm E]
-    {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
-    (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
-    ∀ᶠ m in atTop, 0 < ‖u m‖ :=
-  (hu.tendsto_norm_atTop_of_succ hne).eventually_gt_atTop 0
-
-/-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then the norms of the partial
-sums `∑ m ∈ Ico N n, u m` tend to `+∞` for every starting index `N`. -/
-theorem tendsto_norm_sum_Ico_atTop_of_succ {E : Type*} [SeminormedAddCommGroup E]
-    {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
-    (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) (N : ℕ) :
-    Tendsto (fun n ↦ ‖∑ m ∈ Ico N n, u m‖) atTop atTop :=
-  TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le le_rfl
-    ((isBigOWith_inv zero_lt_two).1 (hu.def' (inv_pos.2 zero_lt_two))) hne N
-
-end Asymptotics.IsLittleO
