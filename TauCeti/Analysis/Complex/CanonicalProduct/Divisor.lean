@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv
 public import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The genus-one product of a native zero divisor
@@ -17,14 +18,21 @@ its index type and the divisor's natural values as multiplicities. For an entire
 zero, and has exactly the divisor of `f`.
 
 Its logarithmic derivative is the classical paired sum
-`∑' ρ, mρ * (1 / (z - ρ) + 1 / ρ)`. The series is absolutely convergent at every point
-off the divisor support and converges locally uniformly on its complement to the logarithmic
-derivative of the product. These series results assume only the weighted inverse-square
-summability of the zeros and that `0` is off the divisor support, rather than that `f` is entire
-with `f 0 ≠ 0`; for an entire `f` with `f 0 ≠ 0` the latter condition is
-`AnalyticAt.divisor_apply_eq_zero`. This constructs
-the product and logarithmic-derivative ingredients of Hadamard factorization; it does not
-assume an enumeration of the zeros or choose a representative for the divisor.
+`∑' ρ, mρ * (1 / (z - ρ) + 1 / ρ)`. Under total division, the paired series is absolutely
+convergent at every point `z : ℂ` from weighted inverse-square summability alone; when `0` is
+off the divisor support, it converges locally uniformly on the complement of the support to the
+logarithmic derivative of the product (for an entire `f` with `f 0 ≠ 0`, `0` lies off the support
+by `AnalyticAt.notMem_divisor_support_of_ne_zero`). Consequently, for every `s : ℂ`, summability of
+`mρ * Re (1 / (s - ρ))` is equivalent to summability of `mρ * Re (1 / ρ)`
+(`summable_divisor_toNat_mul_re_one_div_sub_iff`); when all positive-multiplicity support points
+have bounded real part (`|Re ρ| ≤ B`), `Re (1 / ρ) = Re ρ / ‖ρ‖ ^ 2` gains an extra factor of
+`‖ρ‖⁻¹`, so both real-part series converge separately. When `ρ.re ≤ s.re` on positive-multiplicity
+support points (or outside a finite set `S`), the corresponding summands `mρ * Re (1 / (s - ρ))`
+are nonnegative, so the full `tsum` `∑' ρ, mρ * Re (1 / (s - ρ))` is nonnegative and, when
+summable, dominates the finite subsum over `S`. This constructs the product and
+logarithmic-derivative ingredients of Hadamard
+factorization without assuming an enumeration of the zeros or choosing a representative for the
+divisor.
 
 A function with zero divisor, such as `exp (c s)`, has product `1`, and the product of `1 - s` is
 the single factor `E₁(s)`.
@@ -242,21 +250,31 @@ end TauCeti
 
 namespace TauCeti
 
-variable {f : ℂ → ℂ} (h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support)
-  (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
-    ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
-
-include h0 hsum
-
-/-- The classical paired divisor series is absolutely convergent off the divisor support. -/
-theorem summable_norm_natCast_divisor_mul_one_div_sub_add_one_div {z : ℂ}
-    (hz : z ∉ (MeromorphicOn.divisor f Set.univ).support) :
+/-- The classical paired divisor series is absolutely convergent at every point, using total
+division at `ρ = 0` and `ρ = z`. -/
+theorem summable_norm_natCast_divisor_mul_one_div_sub_add_one_div {f : ℂ → ℂ}
+    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2)) (z : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)‖) := by
   have hs := summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
     (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat) hsum z
-  exact hs.congr fun ρ ↦ by rw [logDerivWeierstrassFactorOneMul_inv_eq h0 hz]
+  refine hs.congr_cofinite ?_
+  rw [Filter.EventuallyEq, Filter.eventually_cofinite]
+  refine (((Set.finite_singleton (0 : ℂ)).union (Set.finite_singleton z)).preimage
+    Subtype.coe_injective.injOn).subset fun ρ hρ ↦ ?_
+  by_contra hnot
+  simp only [Set.mem_preimage, Set.mem_union, Set.mem_singleton_iff, not_or] at hnot
+  exact hρ (by rw [logDerivWeierstrassFactorOneMul_inv hnot.1 (Ne.symm hnot.2)])
+
+section
+
+variable {f : ℂ → ℂ} (h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support)
+  (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+    ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
+
+include h0 hsum
 
 /-- The logarithmic derivative of the native divisor product is its paired divisor series. -/
 theorem logDeriv_divisorProductOne {z : ℂ}
@@ -296,5 +314,97 @@ theorem hasSumLocallyUniformlyOn_logDeriv_divisorProductOne :
     rw [logDerivWeierstrassFactorOneMul_inv_eq h0 (hKS hz)]
   exact hpair.congr_right fun z hz ↦
     (hpair.tsum_eqOn hz).symm.trans (logDeriv_divisorProductOne h0 hsum (hKS hz)).symm
+
+end
+
+/-! ### Vertical-strip real-part summability and positivity -/
+
+/-- Under weighted inverse-square summability, if all positive-multiplicity points of the
+whole-plane divisor have bounded real part (`|ρ.re| ≤ B`), then the real-part series
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support. -/
+theorem summable_divisor_toNat_mul_re_one_div {f : ℂ → ℂ}
+    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
+    {B : ℝ} (hre : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → |ρ.re| ≤ B) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
+  refine Summable.of_norm_bounded (hsum.mul_left (max B 0)) fun ρ ↦ ?_
+  set m : ℕ := (MeromorphicOn.divisor f Set.univ ρ).toNat
+  rcases eq_or_ne m 0 with hm | hm
+  · simp [hm]
+  · have hpos : 0 < MeromorphicOn.divisor f Set.univ ρ := by omega
+    have hρ := (hre ρ hpos).trans (le_max_left B 0)
+    calc ‖(m : ℝ) * (1 / (ρ : ℂ)).re‖
+        = (m : ℝ) * (|(ρ : ℂ).re| / ‖(ρ : ℂ)‖ ^ 2) := by simp [inv_re, normSq_eq_norm_sq]
+      _ ≤ (m : ℝ) * (max B 0 / ‖(ρ : ℂ)‖ ^ 2) := by gcongr
+      _ = max B 0 * ((m : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
+          simp only [norm_inv, inv_pow]
+          ring
+
+/-- Under weighted inverse-square summability, for every `s : ℂ` the unsubtracted real-part series
+`ρ ↦ m_ρ * Re (1 / (s - ρ))` is summable on the divisor support if and only if
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable. -/
+theorem summable_divisor_toNat_mul_re_one_div_sub_iff {f : ℂ → ℂ}
+    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2)) (s : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re) ↔
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
+  have hpair := (Complex.hasSum_re
+    (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hsum s).of_norm.hasSum).summable
+  exact ⟨fun hsub ↦ (hpair.sub hsub).congr fun ρ ↦ by simp; ring,
+    fun hinv ↦ (hpair.sub hinv).congr fun ρ ↦ by simp; ring⟩
+
+/-- Under weighted inverse-square summability, if all positive-multiplicity points of the
+whole-plane divisor have bounded real part (`|ρ.re| ≤ B`), then the unsubtracted real-part series
+`ρ ↦ m_ρ * Re (1 / (s - ρ))` is summable on the divisor support for every `s : ℂ`. -/
+theorem summable_divisor_toNat_mul_re_one_div_sub {f : ℂ → ℂ}
+    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
+    {B : ℝ} (hre : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → |ρ.re| ≤ B) (s : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re) :=
+  (summable_divisor_toNat_mul_re_one_div_sub_iff hsum s).mpr
+    (summable_divisor_toNat_mul_re_one_div hsum hre)
+
+private theorem divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ} {s ρ : ℂ}
+    (hle : 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) :
+    0 ≤ ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
+  rcases le_or_gt (MeromorphicOn.divisor f Set.univ ρ) 0 with hd | hd
+  · simp [Int.toNat_of_nonpos hd]
+  · refine mul_nonneg (Nat.cast_nonneg _) ?_
+    rw [one_div, Complex.inv_re_nonneg, sub_re, sub_nonneg]
+    exact hle hd
+
+/-- At any `s : ℂ` whose real part is at least that of every positive-multiplicity point of the
+whole-plane divisor of `f`, the `tsum` `∑' ρ, m_ρ * Re (1 / (s - ρ))` over the divisor support is
+nonnegative. -/
+theorem tsum_divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ} {s : ℂ}
+    (hle : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) :
+    0 ≤ ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re :=
+  tsum_nonneg fun ρ ↦ divisor_toNat_mul_re_one_div_sub_nonneg (hle ρ)
+
+/-- When `ρ ↦ m_ρ * Re (1 / (s - ρ))` is summable on the whole-plane divisor support of `f` and
+every positive-multiplicity point outside `S : Finset ℂ` has real part at most `Re s`, the finite
+subsum over `S` is bounded above by the full support `tsum` `∑' ρ, m_ρ * Re (1 / (s - ρ))`. -/
+theorem sum_divisor_toNat_mul_re_one_div_sub_le_tsum {f : ℂ → ℂ} {s : ℂ}
+    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re))
+    (S : Finset ℂ)
+    (hle : ∀ ρ ∉ S, 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) :
+    ∑ ρ ∈ S, ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re ≤
+      ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
+  let d := MeromorphicOn.divisor f Set.univ
+  let F : ℂ → ℝ := fun ρ ↦ ((d ρ).toNat : ℝ) * (1 / (s - ρ)).re
+  have hF_supp : Function.support F ⊆ d.support := fun ρ hρ ↦
+    Function.mem_support.mpr fun h0 ↦ hρ (by simp [F, h0])
+  have hF_sum : HasSum F (∑' ρ : d.support, F ρ) :=
+    (hasSum_subtype_iff_of_support_subset hF_supp).mp hsum.hasSum
+  rw [← hF_sum.tsum_eq]
+  exact hF_sum.summable.sum_le_tsum S fun ρ hρS ↦
+    divisor_toNat_mul_re_one_div_sub_nonneg (hle ρ hρS)
 
 end TauCeti

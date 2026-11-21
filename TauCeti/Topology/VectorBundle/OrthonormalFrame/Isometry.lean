@@ -148,7 +148,7 @@ variable [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F' E'
 /-- If the isometries `Φ` form a continuous map of total spaces, the induced map of orthonormal
 frame bundles is continuous. -/
 theorem continuous_map {Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b}
-    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E')) :
+    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E')) :
     Continuous (map (F := F) (F' := F') (V := V) Φ) :=
   continuous_iff.2 fun v ↦ hΦ.comp (continuous_totalSpaceMk_frame v)
 
@@ -157,9 +157,9 @@ as a map of total spaces induces a homeomorphism of orthonormal frame bundles. I
 identity of the base and commutes with the right action of the orthogonal group
 (`TauCeti.OrthonormalFrameBundle.map_smul`). -/
 def mapHomeomorph (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
-    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E'))
+    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E'))
     (hΦsymm : Continuous fun x : TotalSpace F' E' ↦
-      (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E)) :
+      (⟨x.proj, (Φ x.proj).symm x.snd⟩ : TotalSpace F E)) :
     OrthonormalFrameBundle ℝ F E V ≃ₜ OrthonormalFrameBundle ℝ F' E' V where
   toFun := map Φ
   invFun := map fun b ↦ (Φ b).symm
@@ -170,17 +170,17 @@ def mapHomeomorph (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
 
 @[simp]
 theorem mapHomeomorph_apply (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
-    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E'))
+    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E'))
     (hΦsymm : Continuous fun x : TotalSpace F' E' ↦
-      (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E)) (p : OrthonormalFrameBundle ℝ F E V) :
+      (⟨x.proj, (Φ x.proj).symm x.snd⟩ : TotalSpace F E)) (p : OrthonormalFrameBundle ℝ F E V) :
     mapHomeomorph Φ hΦ hΦsymm p = map Φ p :=
   (rfl)
 
 @[simp]
 theorem mapHomeomorph_symm_apply (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
-    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E'))
+    (hΦ : Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E'))
     (hΦsymm : Continuous fun x : TotalSpace F' E' ↦
-      (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E)) (p : OrthonormalFrameBundle ℝ F' E' V) :
+      (⟨x.proj, (Φ x.proj).symm x.snd⟩ : TotalSpace F E)) (p : OrthonormalFrameBundle ℝ F' E' V) :
     (mapHomeomorph Φ hΦ hΦsymm).symm p = map (fun b ↦ (Φ b).symm) p :=
   (rfl)
 
@@ -195,7 +195,7 @@ its frames: applying frames to vectors is a quotient map. -/
 theorem continuous_map_iff [FiniteDimensional ℝ F] [FiniteDimensional ℝ V]
     (h : Module.finrank ℝ V = Module.finrank ℝ F) {Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b} :
     Continuous (map (F := F) (F' := F') (V := V) Φ) ↔
-      Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E') := by
+      Continuous fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E') := by
   refine ⟨fun hc ↦ ?_, continuous_map⟩
   -- Precomposed with applying frames of `E` to vectors, the total-space map applies the
   -- induced frames of `E'` to the same vectors.

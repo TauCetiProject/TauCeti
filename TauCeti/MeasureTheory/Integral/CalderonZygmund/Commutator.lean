@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.DistRpow
+import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Cutoff
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
@@ -79,12 +80,25 @@ truncations `fₖ = 1_{Sₖ} f` with `Sₖ = spanningSets volume k ∩ {‖f‖ 
 `T (bₖ fₖ) → T (b f)` almost everywhere along a subsequence, and the uniform bound passes to
 `[b, T] f` by Fatou's lemma. In dimension `0` the commutator vanishes.
 
+## The small-radius estimate
+
+On a ball `B = B(x₀, r)`, the commutator only sees `b` on `B`, up to an additive constant. There
+`b` agrees, up to a constant, with a function of BMO seminorm `O(η_b(16 r))`
+(`MeasureTheory.LocallyIntegrable.exists_bmoSeminorm_le_and_eqOn`), where `η_b` is the VMO modulus
+of `b`. Hence `‖[b, T] f‖_{Lᵖ(B)} ≤ C η_b(16 r) ‖f‖_p` for `f` vanishing off `B`
+(`TauCeti.exists_eLpNorm_restrict_ball_smul_sub_le_of_vmoModulus_le`). For `b` of vanishing mean
+oscillation this is small for small balls, which is how the commutator theorem perturbs equations
+with such coefficients.
+
 ## Main declarations
 
 * `TauCeti.exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow`: the sharp maximal
   function estimate for `[b, T] f`.
 * `TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`: the Coifman–Rochberg–Weiss
   theorem, `‖[b, T] f‖_p ≤ C ‖b‖_{BMO} ‖f‖_p` for `f ∈ L²` with `b f ∈ L²`.
+* `TauCeti.exists_eLpNorm_restrict_ball_smul_sub_le_of_vmoModulus_le`: the **small-radius
+  commutator estimate** `‖[b, T] f‖_{Lᵖ(B)} ≤ C η_b(16 r) ‖f‖_p` on a ball `B` of radius `r`, for
+  `f` vanishing off `B`, where `η_b` is the VMO modulus of `b`.
 
 ## References
 
@@ -836,5 +850,75 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*}
         simp only [C]
         push_cast
         ring
+
+omit [Nonempty ι] in
+/-- **The small-radius commutator estimate.** Let `ℝⁿ = ι → ℝ` carry the sup distance, let
+`1 ≤ s < p`, and let `T` be an operator as in
+`TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`. Then for every locally integrable
+`b`, every ball `B = B(x₀, r)` and every `f ∈ L²` vanishing off `B`, with `b f ∈ L²`,
+
+`‖[b, T] f‖_{Lᵖ(B)} = ‖b T f - T (b f)‖_{Lᵖ(B)} ≤ C η_b(16 r) ‖f‖_p`,
+
+where `η_b` is the VMO modulus of `b`, bounded here by `M`, and `C` depends only on
+`n = Fintype.card ι`, `s`, `p`, `A`, `Aₚ`, `C₀` and `δ`. For `b` of vanishing mean oscillation the
+bound `‖[b, T] f‖_{Lᵖ(B)} ≤ C η_b(16 r) ‖f‖_p` is therefore small for small balls `B`, uniformly in
+their centre, for all such `f`. -/
+theorem exists_eLpNorm_restrict_ball_smul_sub_le_of_vmoModulus_le {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {s p : ℝ} (hs : 1 ≤ s)
+    (hsp : s < p) (A Aₚ C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ C : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+      {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F}, (∀ x, AEStronglyMeasurable (K x) volume) →
+      (∀ x x' y, 2 * dist x x' < dist y x' →
+        ‖K x y - K x' y‖ ≤ C₀ * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ)))) →
+      (∀ (h : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (ρ : ℝ),
+        (∀ᵐ z, z ∈ ball y ρ → h z = 0) → ∀ᵐ x, x ∈ ball y ρ → T h x = ∫ z, K x z (h z)) →
+      (∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T h) (ENNReal.ofReal s) volume ≤ A * eLpNorm h (ENNReal.ofReal s) volume) →
+      (∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T h) (ENNReal.ofReal p) volume ≤ Aₚ * eLpNorm h (ENNReal.ofReal p) volume) →
+      ∀ {b : (ι → ℝ) → ℝ} {M : ℝ≥0}, LocallyIntegrable b volume → ∀ (x₀ : ι → ℝ) (r : ℝ),
+      vmoModulus b volume (16 * r) ≤ M →
+      ∀ (f g : Lp E 2 (volume : Measure (ι → ℝ))), (∀ᵐ y, y ∉ ball x₀ r → f y = 0) →
+      g =ᵐ[volume] (fun y => b y • f y) →
+      eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) (volume.restrict (ball x₀ r)) ≤
+        C * M * eLpNorm f (ENNReal.ofReal p) volume := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow (ι := ι) (E := E) (F := F)
+    hs hsp A Aₚ C₀ hδ
+  set n := Module.finrank ℝ (ι → ℝ)
+  refine ⟨C * (2 + 20 * 8 ^ n), fun T K hKm hK hrep hTs hTp b M hb x₀ r hM f g hf hg => ?_⟩
+  -- Replace `b` by a function `b'` of bounded mean oscillation with `b' = b - κ` on `B(x₀, r)`.
+  obtain ⟨b', κ, hb'i, hbmo, hb'⟩ := hb.exists_bmoSeminorm_le_and_eqOn x₀ r
+  replace hbmo : bmoSeminorm b' volume ≤ (((2 + 20 * 8 ^ n) * M : ℝ≥0) : ℝ≥0∞) := by
+    refine hbmo.trans ?_
+    push_cast
+    gcongr
+  -- `b' f = b f - κ f`, since `f` vanishes off `B(x₀, r)`.
+  set g' : Lp E 2 (volume : Measure (ι → ℝ)) := g - κ • f
+  have hg' : g' =ᵐ[volume] fun y => b' y • f y := by
+    filter_upwards [Lp.coeFn_sub g (κ • f), Lp.coeFn_smul κ f, hf, hg] with y h1 h2 h3 h4
+    rw [h1, Pi.sub_apply, h2, Pi.smul_apply, h4]
+    by_cases hy : y ∈ ball x₀ r
+    · rw [hb' hy, sub_smul]
+    · simp [h3 hy]
+  -- On `B(x₀, r)`, the commutators with `b` and with `b'` agree.
+  have heq : (fun y => b y • T f y - T g y) =ᵐ[volume.restrict (ball x₀ r)]
+      fun y => b' y • T f y - T g' y := by
+    have hTg' : T g' = T g - κ • T f := by simp [g', map_sub, map_smul]
+    rw [hTg']
+    filter_upwards [ae_restrict_mem measurableSet_ball,
+      ae_restrict_of_ae (Lp.coeFn_sub (T g) (κ • T f)),
+      ae_restrict_of_ae (Lp.coeFn_smul κ (T f))] with y hy h1 h2
+    rw [h1, Pi.sub_apply, h2, Pi.smul_apply, hb' hy, sub_smul]
+    abel
+  calc eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) (volume.restrict (ball x₀ r))
+      = eLpNorm (fun y => b' y • T f y - T g' y) (ENNReal.ofReal p)
+          (volume.restrict (ball x₀ r)) :=
+        eLpNorm_congr_ae heq
+    _ ≤ eLpNorm (fun y => b' y • T f y - T g' y) (ENNReal.ofReal p) volume :=
+        eLpNorm_mono_measure _ Measure.restrict_le_self
+    _ ≤ C * (((2 + 20 * 8 ^ n) * M : ℝ≥0) : ℝ≥0∞) * eLpNorm f (ENNReal.ofReal p) volume :=
+        hC T hKm hK hrep hTs hTp hb'i.locallyIntegrable.aestronglyMeasurable hbmo f g' hg'
+    _ = (C * (2 + 20 * 8 ^ n) : ℝ≥0) * M * eLpNorm f (ENNReal.ofReal p) volume := by
+        push_cast; ring
 
 end TauCeti

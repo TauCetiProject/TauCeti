@@ -138,7 +138,7 @@ theorem constantTermAtCuspTranslationOrbit_mk (f : F)
       valueAtInfty (quotientFunc f q) := by
   obtain ⟨h, hh⟩ := (MulAction.orbitRel_apply (G := Subgroup.zpowers TSL)).mp
     (Quotient.eq.mp (Quotient.out_eq (⟦q⟧ : CuspTranslationOrbit 𝒢)))
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.2
+  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
   have heq : TSL ^ j • q = (⟦q⟧ : CuspTranslationOrbit 𝒢).out := by
     simpa only [hj, Subgroup.smul_def] using hh
   rw [constantTermAtCuspTranslationOrbit_def, ← heq]
@@ -414,7 +414,7 @@ theorem qExpansionAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
     (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
     qExpansionAt γ (diamondOp k d f) = qExpansionAt ((g : SL(2, ℤ)) * γ) f := by
   simp only [qExpansionAt_apply, coe_translate, coe_diamondOp k d g hg, map_mul,
-    CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.2, SlashAction.slash_mul]
+    CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.property, SlashAction.slash_mul]
 
 /-- Applying a diamond operator to a modular form acts on its cusp constant terms by left
 multiplication of the cusp representative. The representative `g ∈ Γ₀(N)` may be any lift
@@ -501,7 +501,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
       (((γ₁⁻¹ : SL(2, ℤ)) 1 j : ℤ) : ZMod N) = (((γ₂⁻¹ : SL(2, ℤ)) 1 j : ℤ) : ZMod N) := by
     have := congrFun h j
     simp only [vecMul, dotProduct, Fin.sum_univ_two, cons_val_zero, cons_val_one, zero_mul,
-      one_mul, zero_add, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+      one_mul, zero_add, Matrix.SpecialLinearGroup.map_apply_coe,
       Matrix.map_apply, eq_intCast] at this
     exact this
   have hentry (g : SL(2, ℤ)) (j : Fin 2) : (g⁻¹ * γ₁ : SL(2, ℤ)) 1 j =

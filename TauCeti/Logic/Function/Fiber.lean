@@ -69,6 +69,22 @@ theorem fiberMap_comp_apply (f : E → F) (g : F → G) (hf : q ∘ f = p) (hg :
       fiberMap g hg x (fiberMap f hf x e) :=
   (Subtype.map_comp f (mapsTo_fiber f hf x) g (mapsTo_fiber g hg x)).symm
 
+/-- An involution over the base restricts to an involution of each fibre. -/
+theorem fiberMap_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
+    (x : X) (e : p ⁻¹' {x}) :
+    fiberMap f hf x (fiberMap f hf x e) = e :=
+  Subtype.ext (by simp only [fiberMap_apply_coe]; exact hff e)
+
+/-- An involution over the base is injective on each fibre. -/
+theorem injective_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
+    (x : X) : Injective (fiberMap f hf x) :=
+  LeftInverse.injective (fiberMap_fiberMap_of_involutive hff hf x)
+
+/-- A map over the base without fixed points has no fixed points on any fibre. -/
+theorem fiberMap_ne_self {f : E → E} (hfix : ∀ e, f e ≠ e) (hf : p ∘ f = p) (x : X)
+    (e : p ⁻¹' {x}) : fiberMap f hf x e ≠ e :=
+  fun h ↦ hfix e ((fiberMap_apply_coe f hf x e).symm.trans (congrArg Subtype.val h))
+
 end Function
 
 namespace Equiv
@@ -76,27 +92,27 @@ namespace Equiv
 /-- An equivalence onto `p ⁻¹' U` that commutes with the projections identifies the fibres over
 each `y ∈ U`. No topology or finiteness assumption is needed. -/
 def fiberEquivOfPreimage {A X Y : Type*} {p : X → Y} {q : A → Y} {U : Set Y}
-    (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y} (hy : y ∈ U) :
+    (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y} (hy : y ∈ U) :
     q ⁻¹' {y} ≃ p ⁻¹' {y} :=
-  (k.subtypeEquiv (p := fun a ↦ q a = y) (q := fun x ↦ p x.1 = y)
+  (k.subtypeEquiv (p := fun a ↦ q a = y) (q := fun x ↦ p x.val = y)
     (fun a ↦ by rw [hk a])).trans
     (subtypeSubtypeEquivSubtype (p := fun x ↦ p x ∈ U) (q := fun x ↦ p x = y)
       fun hx ↦ hx.symm ▸ hy)
 
 @[simp]
 theorem fiberEquivOfPreimage_apply_coe {A X Y : Type*} {p : X → Y} {q : A → Y}
-    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y}
     (hy : y ∈ U) (a : q ⁻¹' {y}) :
-    (k.fiberEquivOfPreimage hk hy a : X) = (k a).1 :=
+    (k.fiberEquivOfPreimage hk hy a : X) = (k a).val :=
   (rfl)
 
 @[simp]
 theorem fiberEquivOfPreimage_symm_apply_coe {A X Y : Type*} {p : X → Y} {q : A → Y}
-    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y}
     (hy : y ∈ U) (x : p ⁻¹' {y}) :
     ((k.fiberEquivOfPreimage hk hy).symm x : A) =
       k.symm ⟨x, by
-        have hx : p x = y := x.2
+        have hx : p x = y := x.property
         rw [Set.mem_preimage, hx]
         exact hy⟩ :=
   (rfl)

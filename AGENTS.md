@@ -54,9 +54,8 @@ The `quality-pass` review angle checks it.
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
-- Content CI verifies the mathematics. Regression tests of CI tooling belong in
-  independent workflows triggered by changes under `scripts/` or `.github/`
-  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint,
+- Content CI verifies the mathematics. Regression tests of CI tooling belong with the
+  shared tooling in TauCetiTools and run in its CI. Never make content builds, audits, lint,
   merge statuses, or cache
   publication depend on infrastructure test suites. Runtime checks needed to establish
   a safe sandbox and validate the actual candidate remain part of content CI.
@@ -85,7 +84,7 @@ The `quality-pass` review angle checks it.
   Wait for each prerequisite to land on main before opening its dependent PR;
   then rebase onto current main and include only the new work. Targeting main
   while carrying another unmerged PR's commits or content is still stacking.
-  The trusted [no-stacking policy](scripts/stack-policy.md) comments and closes
+  The trusted [no-stacking policy](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/stack-policy.md) comments and closes
   confirmed stacks without deleting their branches. Ordinary independent PRs
   may touch the same files or share roadmap areas.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,

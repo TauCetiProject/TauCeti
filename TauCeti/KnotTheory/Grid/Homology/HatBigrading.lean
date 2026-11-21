@@ -66,11 +66,11 @@ local instance : IsScalarTower R Poly ((C).homology ()) := IsScalarTower.of_comp
 private noncomputable def hatComplexGrading : InternalGrading R ((C).X ()) (ℤ × ℤ) :=
   (InternalGrading.mk (G.bigradedChainHatPiece R i)
     (G.isInternal_bigradedChainHatPiece R i)).map
-      ((G.1.simplyBlockedChainEquiv R i).symm.restrictScalars R)
+      ((G.val.simplyBlockedChainEquiv R i).symm.restrictScalars R)
 
 private theorem mem_hatComplexGrading_piece {g : ℤ × ℤ} {c : (C).X ()} :
     c ∈ (hatComplexGrading G R i).piece g ↔
-      G.1.simplyBlockedChainEquiv R i c ∈ G.bigradedChainHatPiece R i g := by
+      G.val.simplyBlockedChainEquiv R i c ∈ G.bigradedChainHatPiece R i g := by
   rw [hatComplexGrading, InternalGrading.mem_map_piece_iff]
   simp only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_symm]
 
@@ -80,7 +80,7 @@ private theorem hatDifferential_homogeneous :
   rw [LinearMap.isHomogeneous_def]
   intro g c hc
   rw [mem_hatComplexGrading_piece] at hc ⊢
-  rw [G.1.simplyBlockedChainEquiv_d]
+  rw [G.val.simplyBlockedChainEquiv_d]
   simpa only [sub_eq_add_neg] using G.simplyBlockedDifferential_mem_bigradedChainHatPiece hc
 
 private noncomputable def hatHomologyEquiv :
@@ -110,8 +110,8 @@ chain has the specified bidegree. -/
 theorem mem_bigradedHatHomologyPiece_iff {g : ℤ × ℤ} {y : (Base).obj ((C).homology ())} :
     y ∈ G.bigradedHatHomologyPiece R i g ↔
       ∃ z : LinearMap.ker d,
-        G.1.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g ∧
-          G.1.oneVariableSpecializationHomologyClass R i z = y := by
+        G.val.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g ∧
+          G.val.oneVariableSpecializationHomologyClass R i z = y := by
   rw [bigradedHatHomologyPiece, bigradedHatHomologyGrading,
     InternalGrading.mem_map_piece_iff, InternalGrading.mem_homology_piece_iff]
   simp only [mem_hatComplexGrading_piece]
@@ -126,8 +126,8 @@ theorem mem_bigradedHatHomologyPiece_iff {g : ℤ × ℤ} {y : (Base).obj ((C).h
 /-- A homogeneous cycle represents a class of the same bidegree. -/
 theorem oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece
     {g : ℤ × ℤ} {z : LinearMap.ker d}
-    (hz : G.1.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g) :
-    G.1.oneVariableSpecializationHomologyClass R i z ∈ G.bigradedHatHomologyPiece R i g :=
+    (hz : G.val.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g) :
+    G.val.oneVariableSpecializationHomologyClass R i z ∈ G.bigradedHatHomologyPiece R i g :=
   (G.mem_bigradedHatHomologyPiece_iff R i).mpr ⟨z, hz, rfl⟩
 
 /-- The homogeneous pieces span the homology of the specialization. -/
@@ -176,11 +176,11 @@ The class equation keeps this independent of how the homology comparison was con
 theorem isHomogeneous_bigradedHatHomologyGrading_of_cycles {q : ℤ × ℤ}
     (f : (Base).obj ((C).homology ()) →ₗ[R] (BaseH).obj ((D).homology ()))
     (cycles : LinearMap.ker d → LinearMap.ker ((D).d () ()).hom)
-    (hclass : ∀ z, f (G.1.oneVariableSpecializationHomologyClass R i z) =
-      H.1.oneVariableSpecializationHomologyClass R j (cycles z))
+    (hclass : ∀ z, f (G.val.oneVariableSpecializationHomologyClass R i z) =
+      H.val.oneVariableSpecializationHomologyClass R j (cycles z))
     (hdegree : ∀ (g : ℤ × ℤ) (z : LinearMap.ker d),
-      G.1.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g →
-      H.1.simplyBlockedChainEquiv R j (cycles z) ∈ H.bigradedChainHatPiece R j (g + q)) :
+      G.val.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g →
+      H.val.simplyBlockedChainEquiv R j (cycles z) ∈ H.bigradedChainHatPiece R j (g + q)) :
     LinearMap.IsHomogeneous f (G.bigradedHatHomologyGrading R i).piece
       (H.bigradedHatHomologyGrading R j).piece q := by
   rw [LinearMap.isHomogeneous_def]

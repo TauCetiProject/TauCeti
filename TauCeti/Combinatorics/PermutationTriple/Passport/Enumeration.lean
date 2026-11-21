@@ -43,18 +43,18 @@ conjugate to the supplied finset of permutations. Fixed points occur as parts eq
 @[expose] def passportTriples (G : Finset (Perm (Fin n)))
     (lam0 lam1 laminf : Multiset ℕ) : Finset (ConnectedTriple n) :=
   Finset.univ.filter fun t =>
-    (∃ τ : Perm (Fin n), t.1.monodromyFinset.image (MulAut.conj τ) = G) ∧
-      t.1.σ0.partition.parts = lam0 ∧ t.1.σ1.partition.parts = lam1 ∧
-        t.1.σinf.partition.parts = laminf
+    (∃ τ : Perm (Fin n), t.val.monodromyFinset.image (MulAut.conj τ) = G) ∧
+      t.val.σ0.partition.parts = lam0 ∧ t.val.σ1.partition.parts = lam1 ∧
+        t.val.σinf.partition.parts = laminf
 
 /-- Membership in the computed triple fiber is conjugacy of the monodromy finset together with
 agreement of the ordered full cycle partitions. -/
 @[simp] theorem mem_passportTriples {G : Finset (Perm (Fin n))}
     {lam0 lam1 laminf : Multiset ℕ} {t : ConnectedTriple n} :
     t ∈ passportTriples G lam0 lam1 laminf ↔
-      (∃ τ : Perm (Fin n), t.1.monodromyFinset.image (MulAut.conj τ) = G) ∧
-        t.1.σ0.partition.parts = lam0 ∧ t.1.σ1.partition.parts = lam1 ∧
-          t.1.σinf.partition.parts = laminf := by
+      (∃ τ : Perm (Fin n), t.val.monodromyFinset.image (MulAut.conj τ) = G) ∧
+        t.val.σ0.partition.parts = lam0 ∧ t.val.σ1.partition.parts = lam1 ∧
+          t.val.σinf.partition.parts = laminf := by
   simp [passportTriples]
 
 /-- A finset presentation of any conjugate of the reference subgroup turns the computed
@@ -75,7 +75,7 @@ theorem mem_passportTriples_iff_hasPassport (P : PassportSpec n)
   intro τ
   rw [← Finset.coe_inj, Finset.coe_image, PermutationTriple.coe_monodromyFinset, hG]
   simpa only [Subgroup.coe_map, MulEquiv.coe_toMonoidHom] using
-    (SetLike.coe_injective.eq_iff (a := t.1.monodromyGroup.map (MulAut.conj τ).toMonoidHom)
+    (SetLike.coe_injective.eq_iff (a := t.val.monodromyGroup.map (MulAut.conj τ).toMonoidHom)
       (b := (P.conjugate ρ).G))
 
 open scoped Classical in
@@ -158,7 +158,7 @@ theorem biUnion_passportClasses (G : Finset (Perm (Fin n)))
     -- invariance applies without assuming that arbitrary inputs present a subgroup.
     obtain ⟨τ, hτ⟩ := (mem_passportTriples.mp ht').1
     let P : PassportSpec n :=
-      ⟨t'.1.monodromyGroup.map (MulAut.conj τ).toMonoidHom, lam0, lam1, laminf⟩
+      ⟨t'.val.monodromyGroup.map (MulAut.conj τ).toMonoidHom, lam0, lam1, laminf⟩
     have hG : (G : Set (Perm (Fin n))) = P.G := by
       dsimp [P]
       rw [← hτ, Finset.coe_image, PermutationTriple.coe_monodromyFinset]

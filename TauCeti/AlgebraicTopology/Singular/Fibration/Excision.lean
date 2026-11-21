@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Excisive
+public import TauCeti.Topology.CWComplex.Classical.RadialNeighborhood
+public import TauCeti.Topology.Homotopy.DeformationRetract
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
@@ -32,6 +34,18 @@ equivalences (`TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`), he
 quasi-isomorphisms on singular chains, and the open preimages `p⁻¹(U₁)` and `p⁻¹(U₂)` cover `E`.
 This is the hypothesis of `TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_of_nhds`.
 
+For subcomplexes `A₁` and `A₂` of a relative CW complex `C ⊆ B`, the neighbourhoods are their open
+radial neighbourhoods in `C` (`Topology.RelCWComplex.Subcomplex.radialNeighborhood`). These
+deformation retract onto `A₁` and `A₂`, and the intersection of the two neighbourhoods is the
+radial neighbourhood of `A₁ ⊓ A₂`, which deformation retracts onto `A₁ ∩ A₂`. When `A₁` and `A₂`
+cover `C`, their radial neighbourhoods cover `C`. Applied to the restriction of `p` over `C`, this
+makes `p⁻¹(A₁)` and `p⁻¹(A₂)` an excisive couple in `p⁻¹(C)`
+(`TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex`). For
+arbitrary subcomplexes, applied to the CW complex `A₁ ⊔ A₂`, it gives the quasi-isomorphism
+`C(p⁻¹(A₁)) + C(p⁻¹(A₂)) → C(p⁻¹(A₁ ∪ A₂))`
+(`TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup`). No condition
+is placed on the cells of `C`: there may be infinitely many, in every dimension.
+
 Products of cochains are defined on small chains: a cochain vanishing on `p⁻¹(A₁)` cupped with a
 cochain vanishing on `p⁻¹(A₂)` vanishes on `C(p⁻¹(A₁)) + C(p⁻¹(A₂))`. The chain homotopy
 equivalence above lets such relative products be computed on the preimages of the subcomplexes of
@@ -43,6 +57,13 @@ a skeletal filtration, which is how the products of a Serre spectral sequence ar
   subsets with weakly equivalent open neighbourhoods form an excisive couple.
 * `TauCeti.TopCat.homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage`: with
   projective coefficients the small-chain inclusion is a chain homotopy equivalence.
+* `TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex`: the
+  preimages of two subcomplexes covering a CW complex form an excisive couple in the part of the
+  total space over it. The `homotopyEquivalences_` form of the name is the chain homotopy
+  equivalence with projective coefficients.
+* `TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup`: the preimages
+  of any two subcomplexes form an excisive couple in the part of the total space over their union,
+  with its `homotopyEquivalences_` form as well.
 
 ## References
 
@@ -101,5 +122,110 @@ theorem homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage
   have := quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage hp hU₁ hU₂ hU h₁ h₂ hw₁ hw₂
     hw R
   (ChainComplex.quasiIso_iff_of_projective _).1 this
+
+/-! ### Preimages of subcomplexes -/
+
+section Subcomplex
+
+open Topology Topology.RelCWComplex
+
+variable [T2Space B] {C D : Set B} [RelCWComplex C D]
+
+/-- Read inside the complex `C`, the inclusion of a set `S` with the same points as a subcomplex
+`A` in a set `T` with the same points as its radial neighbourhood is a weak homotopy equivalence:
+`A` is a deformation retract of its radial neighbourhood. -/
+private theorem isWeakHomotopyEquivalence_inclusion_preimage_val_radialNeighborhood
+    (A : Subcomplex C) {S T : Set B} (hS : (A : Set B) = S) (hT : A.radialNeighborhood = T)
+    (hST : S ⊆ T) :
+    (ContinuousMap.inclusion (Set.preimage_mono hST :
+      (Subtype.val ⁻¹' S : Set C) ⊆ Subtype.val ⁻¹' T)).IsWeakHomotopyEquivalence := by
+  subst hS hT
+  let e := ContinuousMap.HomotopyEquiv.ofRetraction A.subset_radialNeighborhood
+    A.radialNeighborhoodRetraction (Subcomplex.radialNeighborhoodRetraction_inclusion A)
+    A.radialNeighborhoodDeformation.symm.toHomotopy
+  have he : e.toFun = ContinuousMap.inclusion A.subset_radialNeighborhood :=
+    ContinuousMap.ext fun a ↦
+      Subtype.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ a)
+  rw [ContinuousMap.isWeakHomotopyEquivalence_inclusion_preimage_val_iff
+    (A.radialNeighborhood_subset_complex)]
+  exact he ▸ e.isWeakHomotopyEquivalence
+
+/-- **Preimages of two subcomplexes covering a CW complex form an excisive couple.** Let
+`p : E ⟶ B` be a Serre fibration, `C ⊆ B` a relative CW complex, and `A₁`, `A₂` subcomplexes
+covering it, `A₁ ⊔ A₂ = ⊤`. In the part `p⁻¹(C)` of `E` over `C`, the chains of the singular
+simplices lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the singular chains of `p⁻¹(C)` by a
+quasi-isomorphism, with coefficients in any module `R`. -/
+theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex
+    (hp : serreFibrations p) {A₁ A₂ : Subcomplex C} (hA : A₁ ⊔ A₂ = ⊤) {k : Type v} [Ring k]
+    (R : ModuleCat.{u} k) :
+    QuasiIso (SSet.chainComplexMap ((_root_.TopCat.of (p ⁻¹' C)).smallSingularSubcomplex
+      ![Subtype.val ⁻¹' (p ⁻¹' A₁), Subtype.val ⁻¹' (p ⁻¹' A₂)]).ι R) := by
+  have h₁ := Set.preimage_mono (f := (Subtype.val : C → B)) A₁.subset_radialNeighborhood
+  have h₂ := Set.preimage_mono (f := (Subtype.val : C → B)) A₂.subset_radialNeighborhood
+  -- Apply the excision criterion to the restriction `p⁻¹(C) → C` of `p`, with the radial
+  -- neighbourhoods read in `C`. The preimage of `Subtype.val ⁻¹' Aᵢ` under this restriction is
+  -- `Subtype.val ⁻¹' (p ⁻¹' Aᵢ)` by definition of `ContinuousMap.restrictPreimage`.
+  exact quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage
+    (mem_serreFibrations_restrictPreimage hp C) A₁.isOpen_preimage_val_radialNeighborhood
+    A₂.isOpen_preimage_val_radialNeighborhood
+    (by rw [← Set.preimage_union, ← Subcomplex.radialNeighborhood_sup, hA,
+      Subcomplex.radialNeighborhood_top, Subtype.coe_preimage_self]) h₁ h₂
+    (isWeakHomotopyEquivalence_inclusion_preimage_val_radialNeighborhood A₁ rfl rfl
+      A₁.subset_radialNeighborhood)
+    (isWeakHomotopyEquivalence_inclusion_preimage_val_radialNeighborhood A₂ rfl rfl
+      A₂.subset_radialNeighborhood)
+    (isWeakHomotopyEquivalence_inclusion_preimage_val_radialNeighborhood (A₁ ⊓ A₂)
+      (Subcomplex.coe_inf _ _) (Subcomplex.radialNeighborhood_inf _ _)
+      (Set.inter_subset_inter A₁.subset_radialNeighborhood A₂.subset_radialNeighborhood)) R
+
+/-- **The excisive couple of preimages of two subcomplexes covering a CW complex, with projective
+coefficients.** Under the hypotheses of
+`TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex`, with
+coefficients in a projective module `R`, the chains of the singular simplices of `p⁻¹(C)` lying in
+`p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the singular chains of `p⁻¹(C)` by a chain homotopy
+equivalence. -/
+theorem homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex
+    (hp : serreFibrations p) {A₁ A₂ : Subcomplex C} (hA : A₁ ⊔ A₂ = ⊤) {k : Type v} [Ring k]
+    (R : ModuleCat.{u} k) [Projective R] :
+    HomologicalComplex.homotopyEquivalences _ _
+      (SSet.chainComplexMap ((_root_.TopCat.of (p ⁻¹' C)).smallSingularSubcomplex
+        ![Subtype.val ⁻¹' (p ⁻¹' A₁), Subtype.val ⁻¹' (p ⁻¹' A₂)]).ι R) :=
+  have := quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex hp hA R
+  (ChainComplex.quasiIso_iff_of_projective _).1 this
+
+/-- **Preimages of two subcomplexes form an excisive couple.** Let `p : E ⟶ B` be a Serre
+fibration and `A₁`, `A₂` subcomplexes of a relative CW complex `C ⊆ B`. In the part
+`p⁻¹(A₁ ∪ A₂)` of `E` over their union, the chains of the singular simplices lying in `p⁻¹(A₁)`
+or in `p⁻¹(A₂)` include into the singular chains of `p⁻¹(A₁ ∪ A₂)` by a quasi-isomorphism,
+`C(p⁻¹(A₁)) + C(p⁻¹(A₂)) → C(p⁻¹(A₁ ∪ A₂))`, with coefficients in any module `R`. This is the
+case `C = A₁ ⊔ A₂` of
+`TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex`. -/
+theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup
+    (hp : serreFibrations p) (A₁ A₂ : Subcomplex C) {k : Type v} [Ring k] (R : ModuleCat.{u} k) :
+    QuasiIso (SSet.chainComplexMap
+      ((_root_.TopCat.of (p ⁻¹' (A₁ ⊔ A₂ : Subcomplex C))).smallSingularSubcomplex
+        ![Subtype.val ⁻¹' (p ⁻¹' A₁), Subtype.val ⁻¹' (p ⁻¹' A₂)]).ι R) := by
+  -- `A₁` and `A₂` are subcomplexes of the CW complex `A₁ ⊔ A₂`, which they cover.
+  have h := quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex
+    (A₁ := Subcomplex.ofLE (le_sup_left : A₁ ≤ A₁ ⊔ A₂))
+    (A₂ := Subcomplex.ofLE (le_sup_right : A₂ ≤ A₁ ⊔ A₂)) hp
+    (SetLike.coe_injective (by simp [Subcomplex.coe_sup])) R
+  rwa [Subcomplex.coe_ofLE, Subcomplex.coe_ofLE] at h
+
+/-- **The excisive couple of preimages of two subcomplexes, with projective coefficients.** Under
+the hypotheses of `TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup`,
+with coefficients in a projective module `R`, the chains of the singular simplices of
+`p⁻¹(A₁ ∪ A₂)` lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the singular chains of
+`p⁻¹(A₁ ∪ A₂)` by a chain homotopy equivalence. -/
+theorem homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup
+    (hp : serreFibrations p) (A₁ A₂ : Subcomplex C) {k : Type v} [Ring k] (R : ModuleCat.{u} k)
+    [Projective R] :
+    HomologicalComplex.homotopyEquivalences _ _ (SSet.chainComplexMap
+      ((_root_.TopCat.of (p ⁻¹' (A₁ ⊔ A₂ : Subcomplex C))).smallSingularSubcomplex
+        ![Subtype.val ⁻¹' (p ⁻¹' A₁), Subtype.val ⁻¹' (p ⁻¹' A₂)]).ι R) :=
+  have := quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup hp A₁ A₂ R
+  (ChainComplex.quasiIso_iff_of_projective _).1 this
+
+end Subcomplex
 
 end TauCeti.TopCat

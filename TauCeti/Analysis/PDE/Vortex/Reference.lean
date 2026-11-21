@@ -227,14 +227,6 @@ theorem hasCompactSupport_referenceConnection_sub (f g : ContDiffBump (0 : ℝ))
 
 /-! ### Bounded derivatives and Sobolev multiplication -/
 
-/-- The winding phase is homogeneous of degree `0`. -/
-private theorem phase_smul (m : ℕ) {t : ℝ} (ht : 0 < t) (z : ℂ) :
-    (t • z / (‖t • z‖ : ℂ)) ^ m = (z / (‖z‖ : ℂ)) ^ m := by
-  rcases eq_or_ne z 0 with rfl | _
-  · simp
-  rw [norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
-    mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
-
 /-- The angular connection `-i m dθ` is smooth away from the origin. -/
 private theorem contDiffOn_angular (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (-(m : ℂ) * I) •
@@ -262,7 +254,7 @@ theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : �
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceSection f m) z‖ ≤ C :=
   exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq (d := 0) le_rfl
     ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top)) (contDiffOn_div_norm_pow m)
-    (fun t ht z _ ↦ by rw [zpow_zero, one_smul, phase_smul m ht])
+    (fun t ht z _ ↦ by rw [zpow_zero, one_smul, smul_div_norm_smul ht])
     (fun _ hz ↦ referenceSection_eq_phase f m (rOut_le_norm_sq f hz)) n le_rfl
 
 /-- Every iterated derivative of the reference connection is bounded. -/

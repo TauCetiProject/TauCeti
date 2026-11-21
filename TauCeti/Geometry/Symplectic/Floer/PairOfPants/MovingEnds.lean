@@ -46,7 +46,9 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   family over any smooth path of configurations; for a fixed configuration and a normed target,
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates, and
   `TauCeti.Floer.contMDiffAt_uncurry_puncturedSpherePerturbation` that of its components for a
-  manifold target;
+  manifold target; along a `C^n` family of configurations over a normed space of parameters and
+  for a normed target, `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form
+  jointly in the parameter;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
@@ -422,6 +424,30 @@ theorem contDiffAt_puncturedSpherePerturbation_prod {ι : Type*} [Fintype ι] {n
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha hw x).comp (w, x)
     (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
   exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt
+
+/-- For a family of configurations `p ↦ (c p, a p)` over a normed space of parameters, the
+perturbation datum is `C^n` jointly in the parameter, the domain point and the target point, at
+parameters where the family is `C^n` and the scales do not vanish, and at domain points other than
+the centers. -/
+theorem contDiffAt_puncturedSpherePerturbation_comp {ι : Type*} [Fintype ι] {n : ℕ∞}
+    {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ n (uncurry Hout)) {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {c a : P → ι → ℂ} {p : P} (hc : ContDiffAt ℝ n c p) (ha : ContDiffAt ℝ n a p)
+    (ha₀ : ∀ i, a p i ≠ 0) {w : ℂ} (hw : ∀ i, w ≠ c p i) (x : V) :
+    ContDiffAt ℝ n
+      (fun q : P × (ℂ × V) => puncturedSpherePerturbation (c q.1) (a q.1) H Hout q.2.1 q.2.2)
+      (p, (w, x)) := by
+  have hg : ContMDiffAt 𝓘(ℝ, P × (ℂ × V)) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V)))
+      n (fun q : P × (ℂ × V) => ((c q.1, a q.1), (q.2.1, q.2.2))) (p, (w, x)) :=
+    ((hc.comp (p, (w, x)) contDiffAt_fst).prodMk
+      (ha.comp (p, (w, x)) contDiffAt_fst)).contMDiffAt.prodMk
+      ((contDiff_fst.comp contDiff_snd).contMDiff.prodMk
+        (contDiff_snd.comp contDiff_snd).contMDiff).contMDiffAt
+  exact ((contMDiffAt_puncturedSpherePerturbation hH
+    (fun i => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha₀ hw x).comp (p, (w, x))
+    hg).contDiffAt
 
 end SmoothProd
 

@@ -151,7 +151,7 @@ theorem apply_deckSubgroupQuotientProjEquivOfNormal_mk_apply [PathConnectedSpace
     (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
     (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I (subgroupQuotientProj x K) θ)
     (g : FundamentalGroup M x) (y : SubgroupQuotient x K) :
-    f ((deckSubgroupQuotientProjEquivOfNormal x K (QuotientGroup.mk g)).1 y) =
+    f ((deckSubgroupQuotientProjEquivOfNormal x K (QuotientGroup.mk g)).val y) =
       f y - periodHom θ x (Additive.ofMul g) := by
   induction y using Quotient.inductionOn' with | h e =>
   obtain ⟨y, q⟩ := e
@@ -253,7 +253,7 @@ theorem deckEquiv_symm_period_apply [PreconnectedSpace M]
     (g : FundamentalGroup M x) (e : UniversalCover x) :
     ((deckEquiv θ x).symm
       ⟨(periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight g,
-        ⟨g, rfl⟩⟩).1 (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
+        ⟨g, rfl⟩⟩).val (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
   let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   let : Nonempty M := ⟨x⟩
@@ -295,7 +295,7 @@ theorem apply_deck_apply [PreconnectedSpace M] (hθ : θ ∈ closedForms I M 1)
     {f : PeriodCover θ x → ℝ} (hf : ContMDiff I 𝓘(ℝ, ℝ) 2 f)
     (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I (proj θ x) θ)
     (d : deck (proj θ x)) (y : PeriodCover θ x) :
-    f (d.1 y) = f y + Multiplicative.toAdd (deckEquiv θ x d : Multiplicative ℝ) := by
+    f (d.val y) = f y + Multiplicative.toAdd (deckEquiv θ x d : Multiplicative ℝ) := by
   let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   let : Nonempty M := ⟨x⟩
