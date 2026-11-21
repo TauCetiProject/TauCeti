@@ -107,7 +107,7 @@ theorem normForm_spinGroupEquivQuaternionUnitaryOverCenter
       (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s :
         ℍ[Subalgebra.center K (even Q),a,0,b]) = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s).2
+    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s).property
 
 /-- Every regular quaternary Spin group whose even-Clifford center is a field is isomorphic to the
 norm-one group of a quaternion algebra over that center. -/

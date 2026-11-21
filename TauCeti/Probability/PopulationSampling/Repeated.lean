@@ -41,9 +41,6 @@ For `m ≤ 1` (i.e. `Subsingleton ι`), the two sampling laws agree for every po
   corresponding eventwise bounds for arbitrary sets;
 * `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_le_of_not_injective`: twice that
   bound for `etvDist`;
-* `descFactorial_two_div_mul_min_pos`,
-  `ofReal_onePairSamplingExcess_lt_one_sub_descFactorial_div_pow`: positivity of
-  `t * min p (1 - p)` and strictness of `onePairSamplingExcess m n` below `1 - p` for `2 ≤ m ≤ n`;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective`,
   `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective`: strict
   inequality below the collision bound for non-injective populations when `2 ≤ m ≤ n`;
@@ -88,10 +85,11 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_of_not_
               sampleWithoutReplacement (Measure.dirac (Function.update id b a)) B -
                 sampleWithReplacement (Measure.dirac (Function.update id b a)) B :=
         iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_update_id hxab
-      _ = _ :=
-        iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq hab hmn
+      _ = ENNReal.ofReal (onePairSamplingExcess (Fintype.card ι) (Fintype.card κ)) := by
+        simpa only [onePairSamplingExcess_def] using
+          iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq hab hmn
   · have : IsEmpty (ι ↪ κ) := Function.Embedding.isEmpty_of_card_lt hlt
-    simp [sampleWithoutReplacement_eq_zero_of_isEmpty_embedding]
+    simp [sampleWithoutReplacement_eq_zero_of_isEmpty]
 
 /-- If a deterministic finite population repeats a value, the largest eventwise excess of sampling
 with replacement over sampling without replacement is at most `onePairSamplingExcess |ι| |κ|`. No
@@ -114,13 +112,14 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_le_of_not_
               sampleWithoutReplacement (Measure.dirac (Function.update id b a)) B -
                 sampleWithReplacement (Measure.dirac (Function.update id b a)) B :=
         iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_le_update_id e hxab
-      _ = _ :=
-        iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq hab hmn
+      _ = ENNReal.ofReal (onePairSamplingExcess (Fintype.card ι) (Fintype.card κ)) := by
+        simpa only [onePairSamplingExcess_def] using
+          iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq hab hmn
   · have : IsEmpty (ι ↪ κ) := Function.Embedding.isEmpty_of_card_lt hlt
     let _ : Nonempty (ι → κ) := ⟨fun _ => a⟩
     let _ := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
     rw [onePairSamplingExcess_eq_one_of_lt hlt, ENNReal.ofReal_one]
-    simp only [sampleWithoutReplacement_eq_zero_of_isEmpty_embedding, FunLike.coe_zero,
+    simp only [sampleWithoutReplacement_eq_zero_of_isEmpty, FunLike.coe_zero,
       Pi.zero_apply, tsub_zero]
     exact iSup₂_le fun _ _ => prob_le_one
 
@@ -166,40 +165,6 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_le_of_not_i
 end RepeatedBound
 
 section Strictness
-
-/-- For `2 ≤ m`, the real injective-selection ratio `n_(m) / n^m` is strictly less than `1`
-(including `n = 0`, where `0 / 0 = 0`). -/
-private theorem descFactorial_div_pow_lt_one (n : ℕ) {m : ℕ} (hm : 2 ≤ m) :
-    (n.descFactorial m : ℝ) / (n : ℝ) ^ m < 1 := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · rw [Nat.descFactorial_eq_zero_iff_lt.2 (by omega)]
-    simp
-  · exact (div_lt_one (by positivity)).2 (by exact_mod_cast Nat.descFactorial_lt_pow hn hm)
-
-/-- For `2 ≤ m ≤ n`, the repeated-value discrepancy reduction `t * min p (1 - p)` is strictly
-positive, where `p = n_(m) / n^m` and `t = m_(2) / n_(2)`. -/
-theorem descFactorial_two_div_mul_min_pos {m n : ℕ} (hm : 2 ≤ m) (hmn : m ≤ n) :
-    0 < (m.descFactorial 2 / (n.descFactorial 2 : ℝ)) *
-      min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
-  have hn0 : n ≠ 0 := by omega
-  have hm2_pos : (0 : ℝ) < m.descFactorial 2 := by exact_mod_cast Nat.descFactorial_pos.2 hm
-  have hn2_pos : (0 : ℝ) < n.descFactorial 2 := by
-    exact_mod_cast Nat.descFactorial_pos.2 (hm.trans hmn)
-  have hnm_pos : (0 : ℝ) < n.descFactorial m := by exact_mod_cast Nat.descFactorial_pos.2 hmn
-  exact mul_pos (div_pos hm2_pos hn2_pos)
-    (lt_min (div_pos hnm_pos (by positivity)) (sub_pos.2 (descFactorial_div_pow_lt_one n hm)))
-
-/-- For `2 ≤ m ≤ n`, `ENNReal.ofReal (onePairSamplingExcess m n)` is strictly smaller than the
-collision probability `1 - n_(m) / n^m` in `ℝ≥0∞`. -/
-theorem ofReal_onePairSamplingExcess_lt_one_sub_descFactorial_div_pow {m n : ℕ}
-    (hm : 2 ≤ m) (hmn : m ≤ n) :
-    ENNReal.ofReal (onePairSamplingExcess m n) <
-      1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m := by
-  rw [← ofReal_descFactorial_div_pow, ← ENNReal.ofReal_one,
-    ← ENNReal.ofReal_sub 1 (by positivity),
-    ENNReal.ofReal_lt_ofReal_iff (sub_pos.2 (descFactorial_div_pow_lt_one n hm)),
-    onePairSamplingExcess_def]
-  exact sub_lt_self _ (descFactorial_two_div_mul_min_pos hm hmn)
 
 variable {ι κ α : Type*} [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
   [MeasurableSpace α]
