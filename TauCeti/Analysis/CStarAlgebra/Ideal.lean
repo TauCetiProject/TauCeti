@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Algebra.Star.Basic
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
@@ -49,8 +49,9 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
-* `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
-  `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
+* `TwoSidedIdeal.nonUnitalCStarAlgebra` and `TwoSidedIdeal.instStarOrderedRing`: a closed two-sided
+  ideal `I : TwoSidedIdeal A` is a `NonUnitalCStarAlgebra` (and `StarOrderedRing` when `A` is) on
+  its subtype carrier, with canonical isometric `⋆`-monomorphism
   `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`, `⋆`-isomorphism
   `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`, and
   functional-calculus closure `TwoSidedIdeal.cfcₙ_mem_of_isClosed` and
@@ -272,6 +273,22 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+/-- Every closed two-sided ideal of a star-ordered C⋆-algebra inherits the `StarOrderedRing`
+structure from the ambient algebra. -/
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I where
+  le_iff x y := by
+    let e := I.toNonUnitalStarSubalgebraEquiv
+    have hle : x ≤ y ↔ e x ≤ e y := by
+      simp only [← Subtype.coe_le_coe, e, coe_toNonUnitalStarSubalgebraEquiv_apply]
+    have hcl : (AddSubmonoid.closure (Set.range fun s : I => star s * s)).map
+        (e : I →+ I.toNonUnitalStarSubalgebra) =
+        AddSubmonoid.closure (Set.range fun s : I.toNonUnitalStarSubalgebra => star s * s) := by
+      rw [AddMonoidHom.map_mclosure, ← Set.range_comp, ← (EquivLike.surjective e).range_comp]
+      simp [Function.comp_def, map_star]
+    rw [hle, StarOrderedRing.le_iff, (EquivLike.surjective e).exists]
+    refine exists_congr fun p => and_congr ?_ (by rw [← map_add, (EquivLike.injective e).eq_iff])
+    simp [← hcl, AddSubmonoid.mem_map, (EquivLike.injective e).eq_iff]
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/

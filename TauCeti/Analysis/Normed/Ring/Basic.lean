@@ -10,10 +10,11 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm (for instance, a
-nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
-norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
-multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
+This file records elementary consequences of the submultiplicativity of the norm (including bounds
+on powers, finite products, and commutators, as well as `IsIdempotentElem.one_le_norm` for a
+nonzero idempotent), exact positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖`
+with `‖w‖ = 1` when the norm is multiplicative, convergence to `0` of finite partial products when
+factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
@@ -251,6 +252,13 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- In a seminormed ring, the commutator `a * b - b * a` has norm at most `2 * ‖a‖ * ‖b‖`. -/
+theorem norm_commutator_le {A : Type*} [NonUnitalSeminormedRing A] (a b : A) :
+    ‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖ :=
+  calc ‖a * b - b * a‖ ≤ ‖a * b‖ + ‖b * a‖ := norm_sub_le _ _
+    _ ≤ ‖a‖ * ‖b‖ + ‖b‖ * ‖a‖ := add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
+    _ = 2 * ‖a‖ * ‖b‖ := by ring
 
 /-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
 finite partial products `s ↦ ∏ i ∈ s, f i`. -/
