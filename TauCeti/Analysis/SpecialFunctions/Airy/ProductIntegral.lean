@@ -7,13 +7,13 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Gamma.Multiplication
+import TauCeti.MeasureTheory.Integral.Exp.Cubic
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -117,46 +117,35 @@ theorem airyAi_sq_add_airyBi_sq_eq_regularizedHGFun (z : ℂ) :
 
 /-! ### Integrability and moment evaluation on `(0, ∞)` -/
 
+/-- On `(0, ∞)` the moment integrand of DLMF 9.11.4 is the cubic-decay kernel with
+`q = n - 1/2` and `b = 1/12`. -/
+private theorem pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq {t : ℝ} (ht : 0 < t) (n : ℕ)
+    (z : ℂ) :
+    (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) =
+      (t : ℂ) ^ (((n : ℝ) - 1 / 2 : ℝ) : ℂ) * cexp (z * t - ((1 / 12 : ℝ) : ℂ) * (t : ℂ) ^ 3) := by
+  have hpow : (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) = (t : ℂ) ^ (((n : ℝ) - 1 / 2 : ℝ) : ℂ) := by
+    rw [← cpow_natCast, ← cpow_add _ _ (ofReal_ne_zero.mpr ht.ne')]
+    push_cast
+    ring_nf
+  rw [mul_right_comm, hpow]
+  push_cast
+  ring_nf
+
 private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0 < t) (n : ℕ)
     (z : ℂ) :
     ‖(t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)‖ =
       t ^ ((n : ℝ) - 1 / 2) * Real.exp (z.re * t - 1 / 12 * t ^ (3 : ℝ)) := by
-  have hre : (z * (t : ℂ) - (t : ℂ) ^ 3 / 12).re = z.re * t - 1 / 12 * t ^ (3 : ℝ) := by
-    have hcube : ((t : ℂ) ^ 3 / 12).re = 1 / 12 * t ^ (3 : ℝ) := by
-      have ht3 : (t : ℂ) ^ 3 / 12 = ((t ^ 3 / 12 : ℝ) : ℂ) := by push_cast; ring
-      rw [ht3, ofReal_re, Real.rpow_ofNat]
-      ring
-    rw [sub_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, hcube]
-  rw [norm_mul, norm_mul, norm_pow, Complex.norm_of_nonneg ht.le, Complex.norm_exp, hre,
-    Complex.norm_cpow_eq_rpow_re_of_pos ht, ← Real.rpow_natCast t n, mul_right_comm,
-    ← Real.rpow_add ht]
-  congr 2
-  norm_num
-  ring
+  rw [pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht, norm_cpow_mul_cexp_mul_sub_mul_cube ht]
 
 /-- For every complex `z` and natural number `n`, the `n`-th moment integrand
 `t ↦ tⁿ exp(z t − t³ / 12) t^{−1/2}` is Bochner integrable on `(0, ∞)`. -/
 theorem integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) (z : ℂ) :
     IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
-      (Ioi 0) := by
-  have hmajor := integrableOn_rpow_mul_exp_mul_sub_mul_rpow
-    (p := 3) (q := (n : ℝ) - 1 / 2) (b := 1 / 12)
-    (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z.re
-  have hmeas : AEStronglyMeasurable
-      (fun t : ℝ => (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
-      (volume.restrict (Ioi 0)) := by
-    refine ContinuousOn.aestronglyMeasurable ?_ measurableSet_Ioi
-    intro t (ht : 0 < t)
-    refine ContinuousAt.continuousWithinAt ?_
-    exact (((continuous_ofReal.pow n).mul
-      (Complex.continuous_exp.comp
-        ((continuous_const.mul continuous_ofReal).sub
-          ((continuous_ofReal.pow 3).div_const 12)))).continuousAt).mul
-      (continuousAt_ofReal_cpow_const t (-1 / 2) (Or.inr ht.ne'))
-  refine hmajor.mono' hmeas ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-  rw [norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow ht]
+      (Ioi 0) :=
+  (integrableOn_cpow_mul_cexp_mul_sub_mul_cube (q := (n : ℝ) - 1 / 2) (b := 1 / 12)
+    (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z).congr_fun
+    (fun _ ht => (pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht n z).symm) measurableSet_Ioi
 
 /-- The integrand `t ↦ exp(z t − t³ / 12) t^{−1/2}` of DLMF 9.11.4 is Bochner integrable on
 `(0, ∞)` for every complex `z`. -/
@@ -568,38 +557,20 @@ theorem hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) 
       (∫ t in Ioi (0 : ℝ),
         (t : ℂ) ^ (n + 1) * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
       z := by
-  let F : ℂ → ℝ → ℂ := fun w t =>
-    (t : ℂ) ^ n * cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)
-  let F' : ℂ → ℝ → ℂ := fun w t =>
-    (t : ℂ) ^ (n + 1) * cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)
-  let bound : ℝ → ℝ := fun t =>
-    t ^ (((n + 1 : ℕ) : ℝ) - 1 / 2) * Real.exp ((‖z‖ + 1) * t - 1 / 12 * t ^ (3 : ℝ))
-  have hbound_int : Integrable bound (volume.restrict (Ioi 0)) :=
-    integrableOn_rpow_mul_exp_mul_sub_mul_rpow
-      (p := 3) (q := ((n + 1 : ℕ) : ℝ) - 1 / 2) (b := 1 / 12)
-      (by norm_num) (by linarith [(n + 1).cast_nonneg (α := ℝ)]) (by norm_num) (‖z‖ + 1)
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (F := F) (F' := F') (bound := bound)
-    (Metric.ball_mem_nhds z zero_lt_one)
-    (.of_forall fun w => (integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow n w).1)
-    (integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow n z)
-    (integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n + 1) z).1
-    ?_ hbound_int ?_).2
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w hw
-    have hw_re : w.re ≤ ‖z‖ + 1 := by
-      have hdist : ‖w - z‖ < 1 := by simpa [dist_eq_norm] using Metric.mem_ball.mp hw
-      have hnorm : ‖w‖ ≤ ‖z‖ + 1 := by
-        linarith [norm_sub_rev w z, norm_sub_norm_le w z]
-      exact (Complex.re_le_norm w).trans hnorm
-    dsimp only [F', bound]
-    rw [norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow ht (n + 1) w]
-    gcongr
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _ w _
-    have hd := ((((hasDerivAt_id w).mul_const (t : ℂ)).sub_const ((t : ℂ) ^ 3 / 12)).cexp.const_mul
-      ((t : ℂ) ^ n)).mul_const ((t : ℂ) ^ (-1 / 2 : ℂ))
-    refine hd.congr_deriv ?_
-    dsimp only [F', id]
-    rw [pow_succ]
+  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cube (q := (n : ℝ) - 1 / 2)
+    (b := 1 / 12) (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z
+  -- The exponent `q + 1` of the derivative kernel is `(n + 1) - 1/2`.
+  have hcast : (((n : ℝ) - 1 / 2 : ℝ) : ℂ) + 1 = ((((n + 1 : ℕ) : ℝ) - 1 / 2 : ℝ) : ℂ) := by
+    push_cast
     ring
+  have hF (k : ℕ) (w : ℂ) :
+      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ k * cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) =
+        ∫ t in Ioi (0 : ℝ),
+          (t : ℂ) ^ (((k : ℝ) - 1 / 2 : ℝ) : ℂ) * cexp (w * t - ((1 / 12 : ℝ) : ℂ) * (t : ℂ) ^ 3) :=
+    setIntegral_congr_fun measurableSet_Ioi fun _ ht =>
+      pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht k w
+  rw [hcast] at h
+  simpa only [hF] using h
 
 /-- Every iterated derivative of `Ai(z)² + Bi(z)²` is represented by the corresponding `tⁿ` moment
 of the integral of DLMF 9.11.4. -/
