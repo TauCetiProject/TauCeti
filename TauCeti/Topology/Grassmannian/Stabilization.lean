@@ -47,14 +47,14 @@ variable {𝕜 : Type*} [Field 𝕜] {r N : ℕ}
 /-- Prepend `e₀` to a frame and shift each old vector into the remaining coordinates. -/
 def rankStabilization (v : finiteFullRankFrame 𝕜 r N) :
     finiteFullRankFrame 𝕜 (r + 1) (N + 1) :=
-  ⟨Fin.cons (Pi.single 0 1) (fun i ↦ Fin.cons 0 (v.1 i)), by
-    have hli : LinearIndependent 𝕜 (fun i ↦ (Fin.cons 0 (v.1 i) : Fin (N + 1) → 𝕜)) := by
+  ⟨Fin.cons (Pi.single 0 1) (fun i ↦ Fin.cons 0 (v.val i)), by
+    have hli : LinearIndependent 𝕜 (fun i ↦ (Fin.cons 0 (v.val i) : Fin (N + 1) → 𝕜)) := by
       apply LinearIndependent.of_comp (LinearMap.funLeft 𝕜 𝕜 Fin.succ)
-      convert v.2 using 1
+      convert v.property using 1
       ext i j
       simp
     apply hli.finCons
-    have hs : Submodule.span 𝕜 (range fun i ↦ (Fin.cons 0 (v.1 i) : Fin (N + 1) → 𝕜)) ≤
+    have hs : Submodule.span 𝕜 (range fun i ↦ (Fin.cons 0 (v.val i) : Fin (N + 1) → 𝕜)) ≤
         LinearMap.ker (LinearMap.proj (0 : Fin (N + 1))) := by
       apply Submodule.span_le.2
       rintro _ ⟨i, rfl⟩
@@ -65,7 +65,7 @@ def rankStabilization (v : finiteFullRankFrame 𝕜 r N) :
 
 @[simp]
 theorem coe_rankStabilization (v : finiteFullRankFrame 𝕜 r N) :
-    (rankStabilization v).1 = Fin.cons (Pi.single 0 1) (fun i ↦ Fin.cons 0 (v.1 i)) := (rfl)
+    (rankStabilization v).val = Fin.cons (Pi.single 0 1) (fun i ↦ Fin.cons 0 (v.val i)) := (rfl)
 
 /-- Stabilizing a full-rank frame is continuous in all its coordinates. -/
 @[fun_prop]
@@ -74,7 +74,7 @@ theorem continuous_rankStabilization [TopologicalSpace 𝕜] :
   refine Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _
   refine Fin.cases continuous_const (fun i ↦ continuous_pi fun j ↦ ?_) i
   exact Fin.cases continuous_const (fun j ↦
-    (continuous_apply j).comp ((continuous_apply i).comp continuous_subtype_val)) j
+    (continuous_apply j).comp ((continuous_apply i).comp continuous_subtypeVal)) j
 
 end finiteFullRankFrame
 
@@ -86,25 +86,25 @@ variable {𝕜 : Type*} [Field 𝕜] {r N : ℕ}
 by `Fin.succ`. The rank increases by one. -/
 def rankStabilization (V : finiteGrassmannian 𝕜 r N) :
     finiteGrassmannian 𝕜 (r + 1) (N + 1) :=
-  ⟨V.1.comap (LinearMap.funLeft 𝕜 𝕜 Fin.succ), by
-    rw [← V.1.finConsEquiv.finrank_eq, Module.finrank_prod, Module.finrank_self, V.2]
+  ⟨V.val.comap (LinearMap.funLeft 𝕜 𝕜 Fin.succ), by
+    rw [← V.val.finConsEquiv.finrank_eq, Module.finrank_prod, Module.finrank_self, V.property]
     omega⟩
 
 /-- Rank stabilization is inverse image under deletion of coordinate zero.
 Use `mem_rankStabilization` for membership simplification. -/
 theorem coe_rankStabilization (V : finiteGrassmannian 𝕜 r N) :
-    (rankStabilization V).1 = V.1.comap (LinearMap.funLeft 𝕜 𝕜 Fin.succ) := (rfl)
+    (rankStabilization V).val = V.val.comap (LinearMap.funLeft 𝕜 𝕜 Fin.succ) := (rfl)
 
 /-- Membership in the stabilized plane is detected by deleting coordinate zero. -/
 @[simp]
 theorem mem_rankStabilization (V : finiteGrassmannian 𝕜 r N) (v : Fin (N + 1) → 𝕜) :
-    v ∈ (rankStabilization V).1 ↔ Fin.tail v ∈ V.1 := Iff.rfl
+    v ∈ (rankStabilization V).val ↔ Fin.tail v ∈ V.val := Iff.rfl
 
 /-- The new coordinate line belongs to every rank-stabilized plane. -/
 theorem single_zero_mem_rankStabilization (V : finiteGrassmannian 𝕜 r N) :
-    Pi.single (0 : Fin (N + 1)) 1 ∈ (rankStabilization V).1 := by
+    Pi.single (0 : Fin (N + 1)) 1 ∈ (rankStabilization V).val := by
   rw [mem_rankStabilization]
-  convert V.1.zero_mem using 1
+  convert V.val.zero_mem using 1
   ext i
   simp [Fin.tail]
 
@@ -125,7 +125,7 @@ noncomputable def ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmanni
     (Function.extend_injective (Fin.castLE_injective h) 0) V
 
 theorem coe_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N) :
-    (ambientInclusion h V).1 = V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h)) :=
+    (ambientInclusion h V).val = V.val.map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h)) :=
   coe_map _ _ V
 
 /-- Membership in an ambient inclusion is detected by restricting to the old coordinates and
@@ -133,7 +133,7 @@ checking that the remaining coordinates vanish. -/
 @[simp]
 theorem mem_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N)
     (v : Fin M → 𝕜) :
-    v ∈ (ambientInclusion h V).1 ↔ v ∘ Fin.castLE h ∈ V.1 ∧ ∀ i : Fin M, N ≤ i → v i = 0 := by
+    v ∈ (ambientInclusion h V).val ↔ v ∘ Fin.castLE h ∈ V.val ∧ ∀ i : Fin M, N ≤ i → v i = 0 := by
   rw [coe_ambientInclusion, Submodule.mem_map]
   constructor
   · rintro ⟨w, hw, rfl⟩
@@ -186,8 +186,8 @@ theorem ambientInclusion_succ (V : finiteGrassmannian 𝕜 r N) :
 /-- Ambient stabilization is exactly the image under extension along `Fin.castSucc`.
 Use `mem_ambientStabilization` for membership simplification. -/
 theorem coe_ambientStabilization (V : finiteGrassmannian 𝕜 r N) :
-    (ambientStabilization V).1 =
-      V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc) := by
+    (ambientStabilization V).val =
+      V.val.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc) := by
   have : Fin.castLE (Nat.le_succ N) = Fin.castSucc := funext fun i ↦ Fin.ext (by simp)
   rw [ambientStabilization, coe_ambientInclusion, this]
 
@@ -200,7 +200,7 @@ theorem ambientStabilization_injective :
 original plane and the last coordinate vanishes. -/
 @[simp]
 theorem mem_ambientStabilization (V : finiteGrassmannian 𝕜 r N) (v : Fin (N + 1) → 𝕜) :
-    v ∈ (ambientStabilization V).1 ↔ Fin.init v ∈ V.1 ∧ v (Fin.last N) = 0 := by
+    v ∈ (ambientStabilization V).val ↔ Fin.init v ∈ V.val ∧ v (Fin.last N) = 0 := by
   rw [coe_ambientStabilization, Submodule.mem_map]
   constructor
   · rintro ⟨w, hw, rfl⟩
@@ -239,7 +239,8 @@ theorem frameSpan_rankStabilization (v : finiteFullRankFrame 𝕜 r N) :
     apply (mem_rankStabilization (frameSpan v) _).2
     rw [Fin.tail_cons, coe_frameSpan]
     exact Submodule.subset_span (mem_range_self i)
-  · exact (frameSpan v.rankStabilization).2.trans (rankStabilization (frameSpan v)).2.symm
+  · exact (frameSpan v.rankStabilization).property.trans (rankStabilization
+      (frameSpan v)).property.symm
 
 /-- Rank stabilization is continuous for the frame-quotient topologies. -/
 @[fun_prop]
@@ -265,24 +266,24 @@ theorem continuous_ambientStabilization [TopologicalSpace 𝕜] :
 first coordinate vector. -/
 theorem mem_range_rankStabilization (W : finiteGrassmannian 𝕜 (r + 1) (N + 1)) :
     W ∈ range (rankStabilization : finiteGrassmannian 𝕜 r N → _) ↔
-      Pi.single (0 : Fin (N + 1)) 1 ∈ W.1 := by
+      Pi.single (0 : Fin (N + 1)) 1 ∈ W.val := by
   constructor
   · rintro ⟨V, rfl⟩
     exact single_zero_mem_rankStabilization V
   · intro hW
     let t := LinearMap.funLeft 𝕜 𝕜 (Fin.succ : Fin N → Fin (N + 1))
-    have hker : LinearMap.ker t ≤ W.1 := by
+    have hker : LinearMap.ker t ≤ W.val := by
       intro v hv
       have htail : Fin.tail v = 0 :=
         funext fun i ↦ by simpa [t, Fin.tail] using congrFun (LinearMap.mem_ker.1 hv) i
       rw [Function.ExtendByZero.eq_smul_single_zero_add_linearMap_succ_tail v, htail, map_zero,
         add_zero]
-      exact W.1.smul_mem _ hW
-    have hcomap : (W.1.map t).comap t = W.1 := Submodule.comap_map_eq_self hker
-    have hdim := (W.1.map t).finConsEquiv.finrank_eq
+      exact W.val.smul_mem _ hW
+    have hcomap : (W.val.map t).comap t = W.val := Submodule.comap_map_eq_self hker
+    have hdim := (W.val.map t).finConsEquiv.finrank_eq
     rw [Module.finrank_prod, Module.finrank_self] at hdim
-    rw [hcomap, W.2] at hdim
-    refine ⟨⟨W.1.map t, by omega⟩, Subtype.ext hcomap⟩
+    rw [hcomap, W.property] at hdim
+    refine ⟨⟨W.val.map t, by omega⟩, Subtype.ext hcomap⟩
 
 end finiteGrassmannian
 
@@ -308,7 +309,7 @@ theorem isClosedEmbedding_ambientStabilization :
 
 /-- The locus of planes containing the first coordinate line is closed. -/
 theorem isClosed_single_zero_mem :
-    IsClosed {W : finiteGrassmannian 𝕜 (r + 1) (N + 1) | Pi.single 0 1 ∈ W.1} := by
+    IsClosed {W : finiteGrassmannian 𝕜 (r + 1) (N + 1) | Pi.single 0 1 ∈ W.val} := by
   convert (isClosedEmbedding_rankStabilization (𝕜 := 𝕜) (r := r) (N := N)).isClosed_range using 1
   ext W
   exact (mem_range_rankStabilization W).symm
@@ -317,16 +318,16 @@ theorem isClosed_single_zero_mem :
 planes containing that line. -/
 noncomputable def rankStabilizationHomeomorph :
     finiteGrassmannian 𝕜 r N ≃ₜ
-      {W : finiteGrassmannian 𝕜 (r + 1) (N + 1) // Pi.single 0 1 ∈ W.1} :=
+      {W : finiteGrassmannian 𝕜 (r + 1) (N + 1) // Pi.single 0 1 ∈ W.val} :=
   (isClosedEmbedding_rankStabilization (𝕜 := 𝕜) (r := r) (N := N)).isEmbedding.toHomeomorph.trans
     (Homeomorph.setCongr
       (s := range (rankStabilization : finiteGrassmannian 𝕜 r N → _))
-      (t := {W : finiteGrassmannian 𝕜 (r + 1) (N + 1) | Pi.single 0 1 ∈ W.1})
+      (t := {W : finiteGrassmannian 𝕜 (r + 1) (N + 1) | Pi.single 0 1 ∈ W.val})
       (Set.ext fun W ↦ mem_range_rankStabilization W))
 
 @[simp]
 theorem coe_rankStabilizationHomeomorph_apply (V : finiteGrassmannian 𝕜 r N) :
-    (rankStabilizationHomeomorph V).1 = rankStabilization V := (rfl)
+    (rankStabilizationHomeomorph V).val = rankStabilization V := (rfl)
 
 @[simp]
 theorem rankStabilizationHomeomorph_symm_apply (V : finiteGrassmannian 𝕜 r N) :

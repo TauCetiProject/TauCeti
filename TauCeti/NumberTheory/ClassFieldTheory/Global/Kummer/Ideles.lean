@@ -50,10 +50,10 @@ arbitrary coordinates at `T \ S`, and integral units outside `S ∪ T`. The powe
 applies at places in `S ∩ T`. -/
 def auxiliaryKummerIdeleSubgroup (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
     Subgroup (IdeleGroup (𝓞 K) K) :=
-  (⨅ v : S, (powMonoidHom n).range.comap v.1.ideleFiniteCoord) ⊓
+  (⨅ v : S, (powMonoidHom n).range.comap v.val.ideleFiniteCoord) ⊓
     (⨅ w : InfinitePlace K, (powMonoidHom n).range.comap w.ideleInfiniteCoord) ⊓
     ⨅ v : {v : HeightOneSpectrum (𝓞 K) // v ∉ S ∧ v ∉ T},
-      (v.1.adicCompletionIntegers K).units.comap v.1.ideleFiniteCoord
+      (v.val.adicCompletionIntegers K).units.comap v.val.ideleFiniteCoord
 
 /-- Membership is given by the local power conditions at `S` and infinity and the integral-unit
 condition outside `S ∪ T`. -/
@@ -113,14 +113,14 @@ theorem comap_unitEmbedding_auxiliaryKummerIdeleSubgroup_one
   Subgroup.ext (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T)
 
 private abbrev LocalPowerClasses (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :=
-  (∀ v : S, (v.1.adicCompletion K)ˣ ⧸ (powMonoidHom n).range) ×
+  (∀ v : S, (v.val.adicCompletion K)ˣ ⧸ (powMonoidHom n).range) ×
     (∀ w : InfinitePlace K, w.Completionˣ ⧸ (powMonoidHom n).range)
 
 private def localPowerClassMap
     (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
     auxiliaryKummerIdeleSubgroup S T 1 →* LocalPowerClasses S n where
-  toFun x := (fun v ↦ QuotientGroup.mk (v.1.ideleFiniteCoord x.1),
-    fun w ↦ QuotientGroup.mk (w.ideleInfiniteCoord x.1))
+  toFun x := (fun v ↦ QuotientGroup.mk (v.val.ideleFiniteCoord x.val),
+    fun w ↦ QuotientGroup.mk (w.ideleInfiniteCoord x.val))
   map_one' := by ext <;> simp
   map_mul' x y := by ext <;> simp [QuotientGroup.mk_mul]
 
@@ -128,8 +128,8 @@ private theorem localPowerClassMap_apply
     (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
     (x : auxiliaryKummerIdeleSubgroup S T 1) :
     localPowerClassMap S T n x =
-      (fun v ↦ QuotientGroup.mk (v.1.ideleFiniteCoord x.1),
-        fun w ↦ QuotientGroup.mk (w.ideleInfiniteCoord x.1)) :=
+      (fun v ↦ QuotientGroup.mk (v.val.ideleFiniteCoord x.val),
+        fun w ↦ QuotientGroup.mk (w.ideleInfiniteCoord x.val)) :=
   (rfl)
 
 private theorem localPowerClassMap_surjective
@@ -151,7 +151,7 @@ private theorem localPowerClassMap_surjective
   refine ⟨⟨x, hx⟩, ?_⟩
   apply Prod.ext
   · funext v
-    simpa [localPowerClassMap, x, zf, v.2] using hz v
+    simpa [localPowerClassMap, x, zf, v.property] using hz v
   · funext w
     simpa [localPowerClassMap, x] using hzi w
 
@@ -161,7 +161,7 @@ private theorem ker_localPowerClassMap
       (auxiliaryKummerIdeleSubgroup S T n).subgroupOf
         (auxiliaryKummerIdeleSubgroup S T 1) := by
   ext x
-  have hx := (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x.1).mp x.2
+  have hx := (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x.val).mp x.property
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, localPowerClassMap_apply]
   simp only [mem_auxiliaryKummerIdeleSubgroup_iff, Prod.ext_iff, funext_iff, Prod.fst_one,
     Prod.snd_one, Pi.one_apply, QuotientGroup.eq_one_iff]
@@ -169,7 +169,7 @@ private theorem ker_localPowerClassMap
   · rintro ⟨hf, hi⟩
     exact ⟨fun v hv ↦ hf ⟨v, hv⟩, hi, hx⟩
   · rintro ⟨hf, hi, -⟩
-    exact ⟨fun v ↦ hf v.1 v.2, hi⟩
+    exact ⟨fun v ↦ hf v.val v.property, hi⟩
 
 /-- The relative index of the auxiliary Kummer subgroup in the `(S ∪ T)`-ideles is the product
 of the finite power-class counts over `S` and the infinite power-class counts. As usual,

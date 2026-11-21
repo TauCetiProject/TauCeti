@@ -134,7 +134,7 @@ theorem exists_fundSystem_sum_abs_logEmbedding_le_max_one_mul {u : Fin (rank K) 
     (convex_logBall K) (fun x ↦ (neg_mem_logBall K x).2) (absorbent_logBall K)
     (Units.finrank_eq_rank K).symm (a := fun i ↦ logEmbedding K (Additive.ofMul (u i)))
     (fun i ↦ logEmbedding_mem_unitLattice _) hu (by simpa only [gauge_logBall] using hmono)
-  choose ε hε using fun j ↦ mem_unitLattice_iff.1 (b j).2
+  choose ε hε using fun j ↦ mem_unitLattice_iff.1 (b j).property
   refine ⟨ε, closure_sup_torsion_eq_top_of_basis b hε, fun j ↦ ?_⟩
   simpa only [gauge_logBall, hε] using hb j
 

@@ -37,6 +37,9 @@ closed-subgroup inclusion assumes the source Hopf algebra `H` is commutative.
   the inverse equivalence with the quotient-points inclusion.
 * `TauCeti.HopfIdeal.quotientPointsHom_quotientKerPointsMulEquiv_apply`: the corresponding
   compatibility for an arbitrary point of the kernel quotient.
+* `TauCeti.HopfIdeal.quotientPointsHom_quotientKerPointsMulEquiv_symm_apply_apply` and
+  `TauCeti.HopfIdeal.quotientPointsHom_quotientKerPointsMulEquiv_apply_apply`: the pointwise
+  forms of these two compatibilities.
 * `TauCeti.HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range`: the subgroup cut out by
   the kernel consists exactly of points obtained by pre-composition with the morphism.
 * `TauCeti.HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor`: its form

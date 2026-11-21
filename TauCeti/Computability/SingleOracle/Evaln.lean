@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
-public import Mathlib.Algebra.Notation.Indicator
+public import TauCeti.Computability.TuringDegree
 
 /-!
 # Bounded evaluation of oracle programs, with use
@@ -40,8 +40,10 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.evaln_mono`: a successful run persists, with the same output and
   use, at larger fuel; `TauCeti.Oracle.Single.Code.evaln_unique`: its output and use do not
   depend on the fuel.
-* `TauCeti.Oracle.Single.Code.evaln_bound`, `TauCeti.Oracle.Single.Code.evaln_use_le`: the input
-  and the use of a run at fuel `k` are below `k`, respectively at most `k`.
+* `TauCeti.Oracle.Single.Code.evaln_bound`, `TauCeti.Oracle.Single.Code.evaln_use_le`,
+  `TauCeti.Oracle.Single.Code.evaln_use_le_of_forall_eq_none`: the input and the use of a run at
+  fuel `k` are below `k`, respectively at most `k`, and the use is at most `m` when no answers are
+  supplied from `m` onwards.
 * `TauCeti.Oracle.Single.Code.evaln_eq_some_of_eqOn`: the **use principle**, a run succeeds with
   the same output and use against answers agreeing below its use.
 * `TauCeti.Oracle.Single.Code.evaln_sound`: the output of a successful run is a value of the
@@ -52,6 +54,10 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`: the values of a program
   relative to a total oracle are exactly the outputs of its successful runs against the finite
   initial segments of the oracle.
+* `TauCeti.Oracle.Single.Code.mem_eval_oracle_iff_exists_evaln_finset`,
+  `TauCeti.Oracle.Single.Code.dom_eval_oracle_iff_exists_evaln_finset`: the values and halting
+  of a program relative to a set oracle are witnessed by successful runs against finite sets
+  agreeing with the oracle below the use.
 
 ## References
 
@@ -314,6 +320,43 @@ theorem evaln_use_le : ∀ {k c n d}, evaln σ k c n = some d → d.use ≤ k
       · exact hf _ dx hdx
       · exact max_le (hf _ _ hdx) ((evaln_use_le hd').trans k.le_succ)
 
+/-- If the partial oracle answers `σ` supply `none` at every address `z ≥ m`, then every successful
+bounded run against `σ` has use at most `m`. -/
+theorem evaln_use_le_of_forall_eq_none {m : ℕ} (hσ : ∀ z, m ≤ z → σ z = none) :
+    ∀ {k : ℕ} {c : Code} {n : ℕ} {d : Halt}, evaln σ k c n = some d → d.use ≤ m
+  | 0, _, _, _, h => by simp at h
+  | k + 1, c, n, d, h => by
+    induction c generalizing n d with
+    | zero | succ | left | right =>
+      simp only [evaln_succ_zero_eq_some, evaln_succ_succ_eq_some, evaln_succ_left_eq_some,
+        evaln_succ_right_eq_some] at h
+      obtain ⟨-, rfl⟩ := h
+      exact Nat.zero_le m
+    | oracle =>
+      obtain ⟨-, y, hy, rfl⟩ := evaln_succ_oracle_eq_some.1 h
+      dsimp only
+      by_contra hlt
+      have hnone := hσ n (by omega)
+      simp [hnone] at hy
+    | pair cf cg hf hg =>
+      obtain ⟨-, df, dg, hdf, hdg, rfl⟩ := evaln_succ_pair_eq_some.1 h
+      exact max_le (hf _ _ hdf) (hg _ _ hdg)
+    | comp cf cg hf hg =>
+      obtain ⟨-, dg, df, hdg, hdf, rfl⟩ := evaln_succ_comp_eq_some.1 h
+      exact max_le (hg _ _ hdg) (hf _ _ hdf)
+    | prec cf cg hf hg =>
+      obtain ⟨a, y, rfl⟩ := exists_eq_pair n
+      cases y with
+      | zero => exact hf _ _ (evaln_succ_prec_zero_eq_some.1 h).2
+      | succ y =>
+        obtain ⟨-, di, d', hdi, hd', rfl⟩ := evaln_succ_prec_succ_eq_some.1 h
+        exact max_le (evaln_use_le_of_forall_eq_none hσ hdi) (hg _ _ hd')
+    | rfind' cf hf =>
+      obtain ⟨a, y, rfl⟩ := exists_eq_pair n
+      obtain ⟨-, dx, hdx, ⟨-, rfl⟩ | ⟨-, d', hd', rfl⟩⟩ := evaln_succ_rfind'_eq_some.1 h
+      · exact hf _ dx hdx
+      · exact max_le (hf _ _ hdx) (evaln_use_le_of_forall_eq_none hσ hd')
+
 /-- The **stage use** of the run of `c` on `n` with fuel `k` against the answers `σ`: the use of
 the run when it succeeds, and `0` when it fails. A successful run can also have use `0`, so the
 stage use does not record whether the run succeeded. -/
@@ -562,5 +605,48 @@ theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : 
       ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
   simp_rw [evaln_range_map]
   exact mem_eval_iff_exists_evaln (σ := fun z => some (O z)) (by simp [eq_comm])
+
+/-- **Evaluation through finite oracle sets.** For a set oracle `A`, the values of a program
+relative to `A` are exactly the outputs of its successful runs against finite sets `F` agreeing
+with `A` below the run's use. -/
+theorem mem_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n y : ℕ} :
+    y ∈ eval A.oracle c n ↔
+      ∃ (k : ℕ) (F : Finset ℕ) (d : Halt),
+        evaln (setAnswers F) k c n = some d ∧
+          d.output = y ∧ ∀ z < d.use, z ∈ F ↔ z ∈ A := by
+  classical
+  have hanswers : ∀ z y, setAnswers A z = some y ↔ y ∈ A.oracle z := by
+    simp [eq_comm]
+  constructor
+  · intro hy
+    obtain ⟨k, d, hd, rfl⟩ := (mem_eval_iff_exists_evaln hanswers).1 hy
+    let F : Finset ℕ := (Finset.range d.use).filter (· ∈ A)
+    have hdF : evaln (setAnswers F) k c n = some d :=
+      evaln_eq_some_of_eqOn hd <| eqOn_setAnswers_iff.2 fun z hz => by
+        simp [F, Set.mem_Iio.1 hz]
+    exact ⟨k, F, d, hdF, rfl, fun z hz => by simp [F, hz]⟩
+  · rintro ⟨k, F, d, hd, rfl, hagree⟩
+    have hdA : evaln (setAnswers A) k c n = some d :=
+      evaln_eq_some_of_eqOn hd <| eqOn_setAnswers_iff.2 fun z hz => hagree z (Set.mem_Iio.1 hz)
+    exact evaln_sound hdA fun z _ y hy => (hanswers z y).1 hy
+
+/-- **Halting through finite oracle sets.** A program halts relative to a set oracle `A` if and
+only if it succeeds at some fuel against a finite set `F` agreeing with `A` below the run's stage
+use. -/
+theorem dom_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n : ℕ} :
+    (eval A.oracle c n).Dom ↔
+      ∃ (k : ℕ) (F : Finset ℕ),
+        (evaln (setAnswers F) k c n).isSome ∧
+          ∀ z < stageUse (setAnswers F) k c n, z ∈ F ↔ z ∈ A := by
+  constructor
+  · intro hdom
+    obtain ⟨y, hy⟩ := Part.dom_iff_mem.1 hdom
+    obtain ⟨k, F, d, hd, -, hagree⟩ := mem_eval_oracle_iff_exists_evaln_finset.1 hy
+    exact ⟨k, F, by simp [hd], by simpa [stageUse_eq_of_evaln_eq_some hd] using hagree⟩
+  · rintro ⟨k, F, hsome, hagree⟩
+    obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 hsome
+    rw [stageUse_eq_of_evaln_eq_some hd] at hagree
+    exact Part.dom_iff_mem.2 ⟨d.output, mem_eval_oracle_iff_exists_evaln_finset.2
+      ⟨k, F, d, hd, rfl, hagree⟩⟩
 
 end TauCeti.Oracle.Single.Code

@@ -50,8 +50,8 @@ theorem isIso_supportedSubmoduleFunctor_map_ι (hZS : Z ≤ S) :
     apply (ConcreteCategory.isIso_iff_bijective _).2
     refine ⟨?_, fun s ↦ ?_⟩
     · exact injective_app_of_mono ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)) W
-    · refine ⟨⟨⟨s.1, F.supportedSubmodule_mono hZS W.unop s.2⟩, ?_⟩, ?_⟩
-      · exact (F.mem_supportedSubmodule_supportedSubmoduleSheaf_iff S Z W.unop _).2 s.2
+    · refine ⟨⟨⟨s.val, F.supportedSubmodule_mono hZS W.unop s.property⟩, ?_⟩, ?_⟩
+      · exact (F.mem_supportedSubmodule_supportedSubmoduleSheaf_iff S Z W.unop _).2 s.property
       · exact Subtype.ext (F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W _)
   have : IsIso ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom :=
     NatIso.isIso_of_isIso_app _
@@ -96,7 +96,7 @@ lemma coe_supportedSubmoduleCompIso_hom_hom_app_apply (hZS : Z ≤ S)
     (W : (Opens X)ᵒᵖ)
     (s : (F.supportedSubmoduleSheaf S).supportedSubmodule Z W.unop) :
     Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule Z W.unop))
-      ((F.supportedSubmoduleCompIso hZS).hom.hom.app W s) = s.1.1 := by
+      ((F.supportedSubmoduleCompIso hZS).hom.hom.app W s) = s.val.val := by
   rw [supportedSubmoduleCompIso_hom]
   exact F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W s
 
@@ -122,14 +122,14 @@ lemma supportedSubmoduleCompIso_inv_ι (hZS : Z ≤ S) :
 lemma coe_coe_supportedSubmoduleCompIso_inv_hom_app_apply (hZS : Z ≤ S)
     (W : (Opens X)ᵒᵖ) (s : F.supportedSubmodule Z W.unop) :
     Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule S W.unop))
-      (((F.supportedSubmoduleCompIso hZS).inv.hom.app W s).1) =
-        s.1 := by
+      (((F.supportedSubmoduleCompIso hZS).inv.hom.app W s).val) =
+        s.val := by
   have h := congr_arg (fun f ↦ (f.hom.app W).hom) (F.supportedSubmoduleCompIso hZS).inv_hom_id
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
     ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app,
     ModuleCat.hom_comp, ModuleCat.hom_id] at h
   exact (F.coe_supportedSubmoduleCompIso_hom_hom_app_apply hZS W _).symm.trans
-    (congr_arg (fun t : F.supportedSubmodule Z W.unop ↦ t.1) (LinearMap.congr_fun h s))
+    (congr_arg (fun t : F.supportedSubmodule Z W.unop ↦ t.val) (LinearMap.congr_fun h s))
 
 /-- Forgetting scalars commutes with flattening iterated supported sections. This formulation
 uses the canonical abelian inclusions, without choosing a second composition isomorphism. -/

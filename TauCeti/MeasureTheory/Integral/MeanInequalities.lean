@@ -11,10 +11,10 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
-import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Variants of Hölder's inequality
@@ -48,20 +48,18 @@ divergence-form equations.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
-expected products without any independence assumption. On a finite or probability measure space,
-lower absolute moments `∫ ‖f‖ ^ j` (`j ≤ m`) are likewise bounded linearly by `μ(Ω) + ∫ ‖f‖ ^ m`.
+expected products without any independence assumption.
 
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
+* `TauCeti.lintegral_mul_le_rpow_mul_eLpNorm`: uniform `1 < p ≤ ∞` Hölder bound
+  `∫⁻ k g ≤ (∫⁻ k ^ (1 - 1/p)⁻¹) ^ (1 - 1/p) * ‖g‖_p`.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
-* `MeasureTheory.integral_norm_pow_le_measureReal_univ_add_of_le`,
-  `MeasureTheory.integral_norm_pow_le_one_add_of_le`: linear bounds on lower absolute moments
-  `∫ ‖f‖ ^ j` (`j ≤ m`) on finite and probability measure spaces.
 
 ## References
 
@@ -120,6 +118,32 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hr0.le ha) (mul_nonneg hr0.le hb),
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
         ring
+
+/-- **Hölder's inequality against an `eLpNorm` factor.** For `1 < p ≤ ∞` (with `1/∞` read as `0`),
+`∫⁻ y, k y * g y ∂ν ≤ (∫⁻ y, k y ^ (1 - 1/p)⁻¹ ∂ν) ^ (1 - 1/p) * ‖g‖_p`. -/
+theorem lintegral_mul_le_rpow_mul_eLpNorm {k g : β → ℝ≥0∞} (hk : AEMeasurable k ν)
+    {p : ℝ≥0∞} (hp : 1 < p) :
+    ∫⁻ y, k y * g y ∂ν ≤
+      (∫⁻ y, k y ^ (1 - p.toReal⁻¹)⁻¹ ∂ν) ^ (1 - p.toReal⁻¹) * eLpNorm g p ν := by
+  have : ENNReal.HolderTriple (1 - p⁻¹)⁻¹ p 1 :=
+    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.le).symm
+  have hp_inv_lt : p⁻¹ < 1 := ENNReal.inv_lt_one.2 hp
+  have hsub_pos : 0 < 1 - p⁻¹ := tsub_pos_of_lt hp_inv_lt
+  have hq0 : (1 - p⁻¹)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 (ENNReal.sub_ne_top ENNReal.one_ne_top)
+  have hq_top : (1 - p⁻¹)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hsub_pos.ne'
+  have htoReal : ((1 - p⁻¹)⁻¹).toReal = (1 - p.toReal⁻¹)⁻¹ := by
+    rw [ENNReal.toReal_inv, ENNReal.toReal_sub_of_le hp_inv_lt.le ENNReal.one_ne_top,
+      ENNReal.toReal_one, ENNReal.toReal_inv]
+  calc ∫⁻ y, k y * g y ∂ν
+      ≤ eLpNorm (k * g) 1 ν := by
+        simpa only [Pi.mul_apply, eNorm_eq_self] using
+          lintegral_eNorm_le_eLpNorm_one (f := k * g) (μ := ν)
+    _ ≤ eLpNorm k (1 - p⁻¹)⁻¹ ν * eLpNorm g p ν :=
+        eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal_of_pos one_pos
+    _ = (∫⁻ y, k y ^ (1 - p.toReal⁻¹)⁻¹ ∂ν) ^ (1 - p.toReal⁻¹) * eLpNorm g p ν := by
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq_top hk.aestronglyMeasurable, htoReal,
+          one_div, inv_inv]
+        simp only [eNorm_eq_self]
 
 /-- **Hölder's inequality for a power times a norm.** If `p'` and `p` are conjugate exponents and
 `(γ - 1) p' = q`, then `∫⁻ w ^ (γ - 1) ‖g‖ₑ ≤ (∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. -/
@@ -246,27 +270,5 @@ theorem norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow {Ω ι 𝕜 : T
     (Filter.Eventually.of_forall hpoint)
   simpa only [integral_finsetSum _ fun i hi ↦ (hf i hi).const_mul _, integral_const_mul,
     Finset.mul_sum] using hbound
-
-/-- On a finite measure space, for `j ≤ m` and `f ∈ L^m(μ)`,
-`∫ ‖f‖ ^ j ≤ μ.real Set.univ + ∫ ‖f‖ ^ m`. -/
-theorem integral_norm_pow_le_measureReal_univ_add_of_le {Ω E : Type*} [MeasurableSpace Ω]
-    [NormedAddCommGroup E] {μ : Measure Ω} [IsFiniteMeasure μ] {f : Ω → E}
-    {j m : ℕ} (hjm : j ≤ m) (hfp : MemLp f (m : ℕ) μ) :
-    ∫ ω, ‖f ω‖ ^ j ∂μ ≤ μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ := by
-  have hfj : MemLp f (j : ℕ) μ := hfp.mono_exponent (by exact_mod_cast hjm)
-  calc ∫ ω, ‖f ω‖ ^ j ∂μ
-      ≤ ∫ ω, (1 + ‖f ω‖ ^ m) ∂μ := integral_mono hfj.integrable_norm_pow'
-        ((integrable_const 1).add hfp.integrable_norm_pow')
-        fun ω ↦ TauCeti.pow_le_one_add_pow_of_le (norm_nonneg _) hjm
-    _ = μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ := by
-        rw [integral_add (integrable_const 1) hfp.integrable_norm_pow', integral_const,
-          smul_eq_mul, mul_one]
-
-/-- On a probability space, for `j ≤ m`, `f ∈ L^m(μ)` and `∫ ‖f‖ ^ m ≤ B`, `∫ ‖f‖ ^ j ≤ 1 + B`. -/
-theorem integral_norm_pow_le_one_add_of_le {Ω E : Type*} [MeasurableSpace Ω]
-    [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
-    {j m : ℕ} {B : ℝ} (hjm : j ≤ m) (hfp : MemLp f (m : ℕ) μ)
-    (hf : ∫ ω, ‖f ω‖ ^ m ∂μ ≤ B) : ∫ ω, ‖f ω‖ ^ j ∂μ ≤ 1 + B := by
-  simpa using (integral_norm_pow_le_measureReal_univ_add_of_le hjm hfp).trans (add_le_add le_rfl hf)
 
 end MeasureTheory

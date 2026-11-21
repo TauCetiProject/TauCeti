@@ -9,7 +9,6 @@ public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.Probability.Moments.Variance
-import TauCeti.Probability.Moments.Chebyshev
 
 /-!
 # Second spectral moment of a Wigner matrix
@@ -79,6 +78,38 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
 
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
+/-- Finite coordinates embedded in the Wigner array. -/
+def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper ⊕ ℕ
+  | .inl i => .inr i.val
+  | .inr p => .inl ⟨(p.val.1.val, p.val.2.val), p.property⟩
+
+/-- A diagonal coordinate maps to its diagonal array index. -/
+@[simp] theorem wignerCoordinateIndex_inl (n : ℕ) (i : Fin n) :
+    wignerCoordinateIndex n (.inl i) = .inr i.val := by rfl
+
+/-- A strict-upper coordinate maps to its upper array index. -/
+@[simp] theorem wignerCoordinateIndex_inr (n : ℕ) (p : FinStrictUpper n) :
+    wignerCoordinateIndex n (.inr p) = .inl ⟨(p.val.1.val, p.val.2.val), p.property⟩ := by rfl
+
+theorem wignerCoordinateIndex_injective (n : ℕ) :
+    Function.Injective (wignerCoordinateIndex n) := by
+  intro a b h
+  cases a with
+  | inl i =>
+    cases b with
+    | inl j =>
+      simp only [wignerCoordinateIndex, Sum.inr.injEq] at h
+      exact congrArg Sum.inl (Fin.ext h)
+    | inr j => simp [wignerCoordinateIndex] at h
+  | inr i =>
+    cases b with
+    | inl j => simp [wignerCoordinateIndex] at h
+    | inr j =>
+      simp only [wignerCoordinateIndex, Sum.inl.injEq, Subtype.mk.injEq, Prod.mk.injEq] at h
+      apply congrArg Sum.inr
+      apply Subtype.ext
+      exact Prod.ext (Fin.ext h.1) (Fin.ext h.2)
+
 /-- Diagonal coordinates carry weight one and strict-upper coordinates weight two. -/
 def wignerCoordinateWeight (n : ℕ) : Fin n ⊕ FinStrictUpper n → ℝ
   | .inl _ => 1
@@ -101,14 +132,14 @@ omit [MeasurableSpace Ω] in
 /-- The diagonal statistic is the square of the corresponding entry. -/
 @[simp] theorem wignerCoordinateSquare_inl (n : ℕ) (i : Fin n) (ω : Ω) :
     wignerCoordinateSquare ξ η n (.inl i) ω = η i.val ω ^ 2 := by
-  simp [wignerCoordinateSquare, Complex.norm_real, Real.norm_eq_abs]
+  simp [wignerCoordinateSquare, wignerCoordinateIndex, Complex.norm_real, Real.norm_eq_abs]
 
 omit [MeasurableSpace Ω] in
 /-- The strict-upper statistic is the squared norm of the corresponding entry. -/
 @[simp] theorem wignerCoordinateSquare_inr (n : ℕ) (p : FinStrictUpper n) (ω : Ω) :
     wignerCoordinateSquare ξ η n (.inr p) ω =
       ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2 := by
-  simp [wignerCoordinateSquare]
+  simp [wignerCoordinateSquare, wignerCoordinateIndex]
 
 /-- Squared coordinate norms remain independent. -/
 theorem wignerCoordinateSquare_independent
@@ -137,8 +168,8 @@ theorem integral_sq_spectralMeasure_wignerMatrix_weighted (n : ℕ) (ω : Ω) :
           wignerCoordinateSquare ξ η (n + 1) i ω := by
   rw [integral_sq_spectralMeasure_wignerMatrix_coordinates]
   simp only [Fintype.sum_sum_type, wignerCoordinateWeight, wignerCoordinateSquare,
-    wignerCoordinateIndex_inl, wignerCoordinateIndex_inr, Sum.elim_inl, Sum.elim_inr,
-    Complex.norm_real, Real.norm_eq_abs, sq_abs, mul_one]
+    wignerCoordinateIndex, Sum.elim_inl, Sum.elim_inr, Complex.norm_real, Real.norm_eq_abs,
+    sq_abs, mul_one]
   rw [← Finset.mul_sum, ← Finset.mul_sum]
   ring
 
@@ -247,9 +278,22 @@ theorem tendsto_second_spectralMoment_sub_mean_probability
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) -
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n|})
-      atTop (𝓝 0) :=
-  tendsto_measure_abs_ge_of_le_div_add_one_sq fun n ↦
-    measure_second_spectralMoment_sub_mean_ge n (hindep n) (hmem n) (hvar n) hε
+      atTop (𝓝 0) := by
+  have hmem' (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ 2
+      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) 2 (P n) := by
+    simp_rw [integral_sq_spectralMeasure_wignerMatrix_weighted]
+    exact memLp_finsetSum Finset.univ fun i _ ↦ (hmem n i).const_mul _
+  have hvar' : Tendsto (fun n ↦ Var[fun ω ↦ ∫ x, x ^ 2
+      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ); P n]) atTop (𝓝 0) :=
+    squeeze_zero (fun n ↦ variance_nonneg _ _)
+      (fun n ↦ variance_second_spectralMoment_le n (hindep n) (hmem n) (hvar n))
+      (by
+        simpa using tendsto_const_nhds.div_atTop
+          ((tendsto_pow_atTop two_ne_zero).comp
+            (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)))
+  exact tendsto_measure_abs_sub_integral_ge_of_tendsto_variance hmem' hvar' hε
 
 /-- The variance bound applies in particular when the original Wigner coordinates are jointly
 independent. -/

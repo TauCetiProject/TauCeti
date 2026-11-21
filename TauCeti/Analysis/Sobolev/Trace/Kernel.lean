@@ -162,7 +162,8 @@ theorem W1p.mem_w1p0Submodule_normalHalfSpace_iff (hp : p ≠ (∞ : ℝ≥0∞)
   let w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p := ⟨_, hJ⟩
   have hw : ∀ᵐ x ∂volume, W1p.value w x =
       (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator (W1p.value u) x := by
-    have h := coeFn_extendByZeroLpₗᵢ ℝ hH (SetLike.coe_subset_coe.mpr le_top) (W1p.value u)
+    have h := coeFn_extendByZeroLpₗᵢ ℝ hH.nullMeasurableSet (SetLike.coe_subset_coe.mpr le_top)
+      (W1p.value u)
     filter_upwards [h.filter_mono (ae_mono (by rw [Opens.coe_top, Measure.restrict_univ]))]
       with x hx
     rw [W1p.value_coe, Sobolev1JetLp.value_extendByZeroₗᵢ, ← W1p.value_coe, hx]

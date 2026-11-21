@@ -16,13 +16,15 @@ also lets `NeZero.charZero` infer nonvanishing of factorials cast to characteris
 scalars, so constructions requiring an invertible factorial apply automatically there.
 
 The file also records `Nat.sq_eq_descFactorial_two_add`, the expansion `n ^ 2 = (n)₂ + n` of a
-square into falling factorials, which converts second factorial moments into second moments,
-`Nat.pow_le_descFactorial_add_choose_two_mul_pow`, the collision bound
-`n ^ k ≤ n.descFactorial k + k.choose 2 * n ^ (k - 1)`,
-and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
-termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
+square into falling factorials, which converts second factorial moments into second moments;
+`Nat.pow_succ_le_descFactorial_succ_add`, `n ^ (k + 1) ≤ (n)_{k + 1} + ((k + 1).choose 2) * n ^ k`,
+the pairwise-collision upper bound on `n ^ (k + 1) - (n)_{k + 1}`;
+`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
+termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`; and
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
-termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
+termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`, and
+`Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
+number of triples of `n` elements with the number of injective ones.
 -/
 
 public section
@@ -44,33 +46,25 @@ theorem sq_eq_descFactorial_two_add (n : ℕ) : n ^ 2 = n.descFactorial 2 + n :=
   · simp
   · rw [succ_descFactorial_succ, descFactorial_one, Nat.pow_two, succ_mul, Nat.mul_comm]
 
-/-- A pure power `n ^ k` exceeds `n.descFactorial k` by at most `k.choose 2 * n ^ (k - 1)`. -/
-theorem pow_le_descFactorial_add_choose_two_mul_pow (n k : ℕ) :
-    n ^ k ≤ n.descFactorial k + k.choose 2 * n ^ (k - 1) := by
+/-- A natural power exceeds the corresponding falling factorial by at most the pairwise-collision
+bound `((k + 1).choose 2) * n ^ k`: `n ^ (k + 1) ≤ (n)_{k + 1} + ((k + 1).choose 2) * n ^ k`,
+with equality for `k ≤ 1`. -/
+theorem pow_succ_le_descFactorial_succ_add (n k : ℕ) :
+    n ^ (k + 1) ≤ n.descFactorial (k + 1) + (k + 1).choose 2 * n ^ k := by
   induction k with
   | zero => simp
   | succ k ih =>
-    rcases k with _ | m
-    · simp
-    · have hchoose : (m + 2).choose 2 = (m + 1) + (m + 1).choose 2 := by
-        simpa [Nat.choose_one_right] using Nat.choose_succ_succ (m + 1) 1
-      rcases le_or_gt n (m + 1) with hnm | hmn
-      · rw [descFactorial_eq_zero_iff_lt.mpr (by omega), Nat.zero_add, Nat.pow_succ']
-        exact Nat.mul_le_mul_right _ (by rw [hchoose]; omega)
-      · have hstep : n * n.descFactorial (m + 1) =
-            n.descFactorial (m + 2) + (m + 1) * n.descFactorial (m + 1) := by
-          rw [descFactorial_succ n (m + 1), ← Nat.add_mul, Nat.sub_add_cancel (by omega)]
-        calc n ^ (m + 2) = n * n ^ (m + 1) := Nat.pow_succ'
-          _ ≤ n * (n.descFactorial (m + 1) + (m + 1).choose 2 * n ^ m) := Nat.mul_le_mul_left n ih
-          _ = n.descFactorial (m + 2) + (m + 1) * n.descFactorial (m + 1) +
-              (m + 1).choose 2 * n ^ (m + 1) := by
-            rw [Nat.mul_add, hstep, Nat.mul_left_comm n ((m + 1).choose 2), ← Nat.pow_succ']
-          _ ≤ n.descFactorial (m + 2) + (m + 1) * n ^ (m + 1) +
-              (m + 1).choose 2 * n ^ (m + 1) :=
-            Nat.add_le_add_right (Nat.add_le_add_left
-              (Nat.mul_le_mul_left _ (descFactorial_le_pow n (m + 1))) _) _
-          _ = n.descFactorial (m + 2) + (m + 2).choose 2 * n ^ (m + 1) := by
-            rw [hchoose, Nat.add_mul (m + 1), Nat.add_assoc]
+    calc n ^ (k + 1 + 1) = n ^ (k + 1) * n := Nat.pow_succ n (k + 1)
+      _ ≤ (n.descFactorial (k + 1) + (k + 1).choose 2 * n ^ k) * n := Nat.mul_le_mul_right n ih
+      _ = n.descFactorial (k + 1 + 1) + (k + 1) * n.descFactorial (k + 1) +
+            (k + 1).choose 2 * n ^ (k + 1) := by
+          rw [Nat.add_mul, descFactorial_mul_self, Nat.mul_assoc, ← Nat.pow_succ]
+      _ ≤ n.descFactorial (k + 1 + 1) + (k + 1) * n ^ (k + 1) +
+            (k + 1).choose 2 * n ^ (k + 1) :=
+          Nat.add_le_add_right
+            (Nat.add_le_add_left (Nat.mul_le_mul_left _ (descFactorial_le_pow n (k + 1))) _) _
+      _ = n.descFactorial (k + 1 + 1) + (k + 1 + 1).choose 2 * n ^ (k + 1) := by
+          rw [choose_succ_succ (k + 1) 1, choose_one_right, Nat.add_mul (k + 1), ← Nat.add_assoc]
 
 /-- `6 ^ n * n ! ≤ (2 * n + 1)!`, with equality at `n = 0` and `n = 1`. -/
 theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :
@@ -104,5 +98,13 @@ theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
     exact le_of_dvd (factorial_pos _) (factorial_mul_factorial_dvd_factorial_add n n)
   rw [factorial_succ, Nat.mul_pow, Nat.pow_two n !]
   exact Nat.mul_le_mul hn hc
+
+/-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
+`n ^ 3 ≤ 2 * (n)₃`. -/
+theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
+    n ^ 3 ≤ 2 * n.descFactorial 3 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  simp only [descFactorial_succ, descFactorial_zero]
+  grind
 
 end Nat

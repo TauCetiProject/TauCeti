@@ -106,10 +106,11 @@ theorem coe_smulTopGen : (he.smulTopGen : A) = e := (rfl)
 makes `eA` a right `A`-module. -/
 def smulTopMulRight (a : A) :
     ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ A)) where
-  toFun x := ⟨x.1 * a, he.mem_smul_top_iff_smul_eq_self.2 (by
-    rw [smul_eq_mul, ← mul_assoc, ← smul_eq_mul e x.1, he.smul_eq_self_of_mem_smul_top x.2])⟩
-  map_add' x y := Subtype.ext (add_mul x.1 y.1 a)
-  map_smul' b x := Subtype.ext (mul_assoc b.1 x.1 a)
+  toFun x := ⟨x.val * a, he.mem_smul_top_iff_smul_eq_self.2 (by
+    rw [smul_eq_mul, ← mul_assoc, ← smul_eq_mul e x.val, he.smul_eq_self_of_mem_smul_top
+        x.property])⟩
+  map_add' x y := Subtype.ext (add_mul x.val y.val a)
+  map_smul' b x := Subtype.ext (mul_assoc b.val x.val a)
 
 @[simp]
 theorem coe_smulTopMulRight_apply (a : A) (x : ↥(e • (⊤ : Submodule ℤ A))) :
@@ -117,36 +118,36 @@ theorem coe_smulTopMulRight_apply (a : A) (x : ↥(e • (⊤ : Submodule ℤ A)
 
 @[simp]
 theorem smulTopMulRight_one : he.smulTopMulRight 1 = LinearMap.id :=
-  LinearMap.ext fun x ↦ Subtype.ext (mul_one x.1)
+  LinearMap.ext fun x ↦ Subtype.ext (mul_one x.val)
 
 theorem smulTopMulRight_mul (a a' : A) :
     he.smulTopMulRight (a * a') = he.smulTopMulRight a' ∘ₗ he.smulTopMulRight a :=
-  LinearMap.ext fun x ↦ Subtype.ext (mul_assoc x.1 a a').symm
+  LinearMap.ext fun x ↦ Subtype.ext (mul_assoc x.val a a').symm
 
 @[simp]
 theorem smulTopMulRight_zero : he.smulTopMulRight 0 = 0 :=
-  LinearMap.ext fun x ↦ Subtype.ext (mul_zero x.1)
+  LinearMap.ext fun x ↦ Subtype.ext (mul_zero x.val)
 
 @[simp]
 theorem smulTopMulRight_add (a a' : A) :
     he.smulTopMulRight (a + a') = he.smulTopMulRight a + he.smulTopMulRight a' :=
-  LinearMap.ext fun x ↦ Subtype.ext (mul_add x.1 a a')
+  LinearMap.ext fun x ↦ Subtype.ext (mul_add x.val a a')
 
 @[simp]
 theorem smulTopMulRight_neg (a : A) : he.smulTopMulRight (-a) = -he.smulTopMulRight a :=
-  LinearMap.ext fun x ↦ Subtype.ext (mul_neg x.1 a)
+  LinearMap.ext fun x ↦ Subtype.ext (mul_neg x.val a)
 
 /-- The element `x * e` of the corner ring attached to an element `x` of `eA`. -/
 def smulTopToCorner : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] he.Corner where
-  toFun x := ⟨x.1 * e, (Subsemigroup.mem_corner_iff he).2
-    ⟨by rw [← mul_assoc, ← smul_eq_mul e x.1, he.smul_eq_self_of_mem_smul_top x.2],
+  toFun x := ⟨x.val * e, (Subsemigroup.mem_corner_iff he).2
+    ⟨by rw [← mul_assoc, ← smul_eq_mul e x.val, he.smul_eq_self_of_mem_smul_top x.property],
       by rw [mul_assoc, he.eq]⟩⟩
-  map_add' x y := Subtype.ext (add_mul x.1 y.1 e)
-  map_smul' b x := Subtype.ext (mul_assoc b.1 x.1 e)
+  map_add' x y := Subtype.ext (add_mul x.val y.val e)
+  map_smul' b x := Subtype.ext (mul_assoc b.val x.val e)
 
 @[simp]
 theorem val_smulTopToCorner_apply (x : ↥(e • (⊤ : Submodule ℤ A))) :
-    (he.smulTopToCorner x).1 = x * e := (rfl)
+    (he.smulTopToCorner x).val = x * e := (rfl)
 
 /-! ### Homomorphisms out of `eA` as an `A`-module -/
 
@@ -213,7 +214,7 @@ theorem cornerCoindFunctor_obj (N : ModuleCat.{max u v} he.Corner) :
 @[simp]
 theorem coe_cornerFunctor_map_hom_apply {M N : ModuleCat.{v} A} (f : M ⟶ N)
     (x : ↥(e • (⊤ : Submodule ℤ M))) :
-    ((he.cornerFunctor.map f).hom x).1 = f.hom x :=
+    ((he.cornerFunctor.map f).hom x).val = f.hom x :=
   TauCeti.coe_smulTopMap_apply e f.hom x
 
 @[simp]
@@ -233,10 +234,10 @@ variable (N : Type v) [AddCommGroup N] [Module he.Corner N]
 inverse sends `n` to the homomorphism `x ↦ (x * e) • n`. -/
 def smulTopCoindEquiv :
     ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N))) ≃ₗ[he.Corner] N where
-  toFun f := f.1 he.smulTopGen
+  toFun f := f.val he.smulTopGen
   map_add' _ _ := rfl
   map_smul' b f := by
-    rw [RingHom.id_apply, ← f.1.map_smul, Corner.coe_smul, smul_smulTop_linearMap_apply]
+    rw [RingHom.id_apply, ← f.val.map_smul, Corner.coe_smul, smul_smulTop_linearMap_apply]
     congr 1
     exact Subtype.ext (by simp)
   invFun n := ⟨LinearMap.toSpanSingleton he.Corner N n ∘ₗ he.smulTopToCorner,
@@ -248,9 +249,9 @@ def smulTopCoindEquiv :
       exact Subtype.ext (by simp [val_smulTopToCorner_apply, mul_assoc, he.eq]))⟩
   left_inv f := by
     refine Subtype.ext (LinearMap.ext fun x ↦ ?_)
-    conv_rhs => rw [← he.smul_eq_self_of_mem_smul_top f.2]
+    conv_rhs => rw [← he.smul_eq_self_of_mem_smul_top f.property]
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.toSpanSingleton_apply,
-      ← f.1.map_smul, smul_smulTop_linearMap_apply]
+      ← f.val.map_smul, smul_smulTop_linearMap_apply]
     congr 1
     exact Subtype.ext (by simp [val_smulTopToCorner_apply, mul_assoc, he.eq])
   right_inv n := by
@@ -261,11 +262,11 @@ def smulTopCoindEquiv :
 @[simp]
 theorem smulTopCoindEquiv_apply
     (f : ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)))) :
-    he.smulTopCoindEquiv N f = f.1 he.smulTopGen := (rfl)
+    he.smulTopCoindEquiv N f = f.val he.smulTopGen := (rfl)
 
 @[simp]
 theorem smulTopCoindEquiv_symm_apply_coe_apply (n : N) (x : ↥(e • (⊤ : Submodule ℤ A))) :
-    ((he.smulTopCoindEquiv N).symm n).1 x = he.smulTopToCorner x • n := (rfl)
+    ((he.smulTopCoindEquiv N).symm n).val x = he.smulTopToCorner x • n := (rfl)
 
 end Counit
 
@@ -279,16 +280,16 @@ variable (M : Type v) [AddCommGroup M] [Module A M]
 def smulTopActionHom :
     M →ₗ[A] (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M))) where
   toFun m :=
-    { toFun := fun x ↦ ⟨x.1 • m, TauCeti.smul_mem_smul_top_of_mul_eq_self
-        (he.smul_eq_self_of_mem_smul_top x.2) m⟩
-      map_add' := fun x y ↦ Subtype.ext (add_smul x.1 y.1 m)
-      map_smul' := fun b x ↦ Subtype.ext (mul_smul b.1 x.1 m) }
-  map_add' m m' := LinearMap.ext fun x ↦ Subtype.ext (smul_add x.1 m m')
-  map_smul' a m := LinearMap.ext fun x ↦ Subtype.ext (mul_smul x.1 a m).symm
+    { toFun := fun x ↦ ⟨x.val • m, TauCeti.smul_mem_smul_top_of_mul_eq_self
+        (he.smul_eq_self_of_mem_smul_top x.property) m⟩
+      map_add' := fun x y ↦ Subtype.ext (add_smul x.val y.val m)
+      map_smul' := fun b x ↦ Subtype.ext (mul_smul b.val x.val m) }
+  map_add' m m' := LinearMap.ext fun x ↦ Subtype.ext (smul_add x.val m m')
+  map_smul' a m := LinearMap.ext fun x ↦ Subtype.ext (mul_smul x.val a m).symm
 
 @[simp]
 theorem coe_smulTopActionHom_apply_apply (m : M) (x : ↥(e • (⊤ : Submodule ℤ A))) :
-    (he.smulTopActionHom M m x : M) = x.1 • m := (rfl)
+    (he.smulTopActionHom M m x : M) = x.val • m := (rfl)
 
 variable {M}
 
@@ -318,7 +319,7 @@ theorem smulTopActionHom_surjective : Function.Surjective (he.smulTopActionHom M
   -- The `z : A` for which `x ↦ f (x * z)` is the action of an element of `M` form an additive
   -- subgroup of `A`; it contains every `a * e * b`, hence `1`.
   let H : AddSubgroup A :=
-    { carrier := {z | ∃ m : M, ∀ x, x.1 • m = (f (he.smulTopMulRight z x) : M)}
+    { carrier := {z | ∃ m : M, ∀ x, x.val • m = (f (he.smulTopMulRight z x) : M)}
       zero_mem' := ⟨0, fun x ↦ by simp⟩
       add_mem' := by
         rintro z z' ⟨m, hm⟩ ⟨m', hm'⟩
@@ -332,8 +333,8 @@ theorem smulTopActionHom_surjective : Function.Surjective (he.smulTopActionHom M
     let y : ↥(e • (⊤ : Submodule ℤ M)) := f ⟨e * b, Submodule.smul_mem_pointwise_smul b e ⊤ trivial⟩
     refine ⟨a • (y : M), fun x ↦ ?_⟩
     -- `x * a • y = (x * a * e) • y`, and `x * a * e` lies in the corner ring.
-    rw [← mul_smul, ← he.smul_eq_self_of_mem_smul_top y.2, ← mul_smul]
-    have hxy : (x.1 * a * e) • (y : M) =
+    rw [← mul_smul, ← he.smul_eq_self_of_mem_smul_top y.property, ← mul_smul]
+    have hxy : (x.val * a * e) • (y : M) =
         ((he.smulTopToCorner (he.smulTopMulRight a x) • y : ↥(e • (⊤ : Submodule ℤ M))) : M) := by
       rw [Corner.coe_smul, val_smulTopToCorner_apply, coe_smulTopMulRight_apply]
     rw [hxy, ← f.map_smul]
@@ -359,7 +360,7 @@ def cornerCounitIso :
 theorem cornerCounitIso_hom_app_hom_apply (N : ModuleCat.{max u v} he.Corner)
     (f : ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)))) :
     (ModuleCat.Hom.hom (A := he.cornerFunctor.obj (he.cornerCoindFunctor.obj N)) (B := N)
-      (he.cornerCounitIso.hom.app N)) f = f.1 he.smulTopGen :=
+      (he.cornerCounitIso.hom.app N)) f = f.val he.smulTopGen :=
   (rfl)
 
 @[simp]
@@ -375,7 +376,7 @@ noncomputable def cornerUnitIso (hfull : TwoSidedIdeal.span {e} = ⊤) :
   NatIso.ofComponents (fun M ↦ (LinearEquiv.ofBijective (he.smulTopActionHom M)
     ⟨he.smulTopActionHom_injective hfull, he.smulTopActionHom_surjective hfull⟩).toModuleIso)
     fun f ↦ ModuleCat.hom_ext (LinearMap.ext fun m ↦ LinearMap.ext fun x ↦ Subtype.ext
-      ((he.coe_cornerFunctor_map_hom_apply f _).trans (f.hom.map_smul x.1 m)).symm)
+      ((he.coe_cornerFunctor_map_hom_apply f _).trans (f.hom.map_smul x.val m)).symm)
 
 @[simp]
 theorem cornerUnitIso_hom_app_hom_apply (hfull : TwoSidedIdeal.span {e} = ⊤)
@@ -398,10 +399,10 @@ equivalent**: the corner functor `M ↦ eM` is an equivalence, with inverse
       (congrArg (fun f : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) ↦
         (f he.smulTopGen : M))
         ((he.coe_cornerFunctor_map_hom_apply ((he.cornerUnitIso hfull).hom.app M) m).trans
-          (he.cornerUnitIso_hom_app_hom_apply hfull M m.1))).trans <|
-      (he.coe_smulTopActionHom_apply_apply M m.1 he.smulTopGen).trans <|
-      (congrArg (· • m.1) he.coe_smulTopGen).trans <|
-      (he.smul_eq_self_of_mem_smul_top m.2).trans
+          (he.cornerUnitIso_hom_app_hom_apply hfull M m.val))).trans <|
+      (he.coe_smulTopActionHom_apply_apply M m.val he.smulTopGen).trans <|
+      (congrArg (· • m.val) he.coe_smulTopGen).trans <|
+      (he.smul_eq_self_of_mem_smul_top m.property).trans
       (congrArg Subtype.val (ModuleCat.id_apply _ m)).symm)
 
 @[simp]
