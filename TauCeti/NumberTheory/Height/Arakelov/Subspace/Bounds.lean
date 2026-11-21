@@ -119,28 +119,6 @@ theorem subspaceHeight_le_prod {p : ℕ} {x : Fin p → ι → K}
   rw [subspaceHeight_span_range hx]
   exact height2_plucker_le_prod x
 
-/-- Extracting a maximal linearly independent subfamily bounds the subspace height of the span of
-any finite family of nonzero vectors by the product of their Euclidean heights. -/
-theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {v : m → ι → K}
-    (hv : ∀ i, v i ≠ 0) :
-    subspaceHeight (span K (range v)) ≤ ∏ i, height2 (v i) := by
-  classical
-  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K v
-  have : Finite κ := Finite.of_injective a ha
-  let _ := Fintype.ofFinite κ
-  let e : Fin (Fintype.card κ) ≃ κ := (Fintype.equivFin κ).symm
-  let emb : Fin (Fintype.card κ) ↪ m := e.toEmbedding.trans ⟨a, ha⟩
-  have hcomp : v ∘ emb = (v ∘ a) ∘ e := by
-    ext x; simp [emb]
-  have hrange : range (v ∘ emb) = range (v ∘ a) := by
-    rw [hcomp, range_comp, e.range_eq_univ, image_univ]
-  rw [← hspan, ← hrange]
-  refine (subspaceHeight_le_prod (hcomp ▸ hli.comp e e.injective)).trans ?_
-  simp_rw [Function.comp_apply]
-  rw [← Finset.prod_map Finset.univ emb fun i ↦ height2 (v i)]
-  exact Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
-    (fun i _ ↦ height2_nonneg (v i)) fun i _ _ ↦ one_le_height2_of_ne_zero (hv i)
-
 /-- The relative Arakelov height of a subspace is bounded by the product of
 relative Arakelov heights of its basis vectors. -/
 theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p : ℕ}
@@ -193,5 +171,15 @@ theorem subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow {m : Type*} [Fi
   refine (relativeSubspaceArakelovHeight_span_range_le_prod x).trans_eq ?_
   exact Finset.prod_congr rfl fun i _ ↦
     (Real.rpow_inv_natCast_pow (arakelovMulHeight_nonneg _) finrank_pos.ne').symm
+
+/-- Extracting a maximal linearly independent subfamily bounds the subspace height of the span of
+any finite family of nonzero vectors by the product of their Euclidean heights. -/
+theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {v : m → ι → K}
+    (hv : ∀ i, v i ≠ 0) :
+    subspaceHeight (span K (range v)) ≤ ∏ i, height2 (v i) := by
+  classical
+  refine (subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow v).trans_eq ?_
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  simpa only [one_div, ite_eq_right (hv i)] using arakelovMulHeight_eq_height2 (v i)
 
 end Submodule

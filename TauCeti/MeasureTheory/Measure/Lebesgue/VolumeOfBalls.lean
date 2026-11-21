@@ -52,6 +52,13 @@ theorem volume_real_unitClosedBall :
   rw [measureReal_def, Measure.addHaar_unitClosedBall_eq_addHaar_unitBall, ← measureReal_def,
     volume_real_unitBall]
 
+/-- The Euclidean unit ball has positive real volume in every dimension. -/
+theorem volume_real_unitBall_pos (n : ℕ) :
+    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) :=
+  ENNReal.toReal_pos
+    (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
+    measure_ball_lt_top.ne
+
 /-- There is a closed ball about the origin of volume one. -/
 theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (closedBall (0 : V) ρ) = 1 := by
   rcases subsingleton_or_nontrivial V with hV | hV

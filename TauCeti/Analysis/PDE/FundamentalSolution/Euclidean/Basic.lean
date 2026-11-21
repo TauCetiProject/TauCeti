@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.NormPow
-public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -114,13 +114,6 @@ theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
   rw [newtonianKernel_def, newtonianKernel_def, norm_smul,
     Real.mul_rpow (norm_nonneg r) (norm_nonneg x)]
   ring
-
-/-- The Euclidean unit ball has positive real volume in every dimension. -/
-theorem volume_real_unitBall_pos (n : ℕ) :
-    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) := by
-  exact ENNReal.toReal_pos
-    (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
-    measure_ball_ne_top
 
 /-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
 theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :

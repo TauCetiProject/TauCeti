@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Estimates
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
 
 /-!
@@ -254,11 +255,6 @@ end Extraction
 
 section UnitBallCube
 
-/-- The real volume of a Euclidean unit ball is positive. -/
-private theorem volume_real_unitBall_pos (m : ℕ) :
-    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin m)) 1) :=
-  ENNReal.toReal_pos (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne
-
 /-- Across all archimedean places of `K`, the unit-ball volume factor is bounded by `√k ^ k`. -/
 private theorem unitBall_factor_rpow_le_sqrt_pow (K : Type*) [Field K] [NumberField K] (k : ℕ) :
     (((2 : ℝ) ^ k / volume.real (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) ^ nrRealPlaces K *
@@ -285,22 +281,29 @@ private theorem unitBall_factor_rpow_le_sqrt_pow (K : Type*) [Field K] [NumberFi
     have h2 := EuclideanSpace.two_mul_div_sqrt_card_pow_le_volume_real_ball
       (0 : EuclideanSpace ℝ (Fin (2 * k))) zero_le_one
     rw [mul_one, Fintype.card_fin] at h2
-    have hlhs : (2 / √((2 * k : ℕ) : ℝ)) ^ (2 * k) = (2 : ℝ) ^ k / √(k : ℝ) ^ (2 * k) := by
-      rw [pow_mul, pow_mul (√(k : ℝ)) 2 k, Real.sq_sqrt hk_pos.le, ← div_pow]
-      congr 1
+    have hsq : (2 / √((2 * k : ℕ) : ℝ)) ^ 2 = 2 / k := by
       rw [div_pow, Nat.cast_mul, Nat.cast_ofNat, Real.sq_sqrt (by positivity)]
       field_simp [hk_pos.ne']
+    have hlhs : (2 / √((2 * k : ℕ) : ℝ)) ^ (2 * k) = (2 : ℝ) ^ k / √(k : ℝ) ^ (2 * k) := by
+      calc (2 / √((2 * k : ℕ) : ℝ)) ^ (2 * k)
+          = ((2 / √((2 * k : ℕ) : ℝ)) ^ 2) ^ k := by rw [pow_mul]
+        _ = (2 / (k : ℝ)) ^ k := by rw [hsq]
+        _ = (2 : ℝ) ^ k / (√(k : ℝ) ^ 2) ^ k := by rw [div_pow, Real.sq_sqrt hk_pos.le]
+        _ = (2 : ℝ) ^ k / √(k : ℝ) ^ (2 * k) := by rw [← pow_mul]
     rw [hlhs] at h2
     exact (div_le_iff₀ (volume_real_unitBall_pos (2 * k))).2
       (((div_le_iff₀ (pow_pos hsqrt_pos (2 * k))).1 h2).trans_eq (mul_comm _ _))
+  have hdeg : nrRealPlaces K + 2 * nrComplexPlaces K = finrank ℚ K :=
+    card_add_two_mul_card_eq_rank (K := K)
+  have hexp : k * nrRealPlaces K + (2 * k) * nrComplexPlaces K = k * finrank ℚ K := by
+    rw [← hdeg]; ring
   have hprod :
       ((2 : ℝ) ^ k / volume.real (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) ^ nrRealPlaces K *
         ((2 : ℝ) ^ k / volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * k))) 1)) ^
           nrComplexPlaces K ≤ (√(k : ℝ) ^ k) ^ finrank ℚ K := by
     refine (mul_le_mul (pow_le_pow_left₀ (by positivity) hreal _)
       (pow_le_pow_left₀ (by positivity) hcomplex _) (by positivity) (by positivity)).trans_eq ?_
-    rw [← pow_mul, ← pow_mul, ← pow_add, ← card_add_two_mul_card_eq_rank (K := K), ← pow_mul]
-    congr 1; ring
+    rw [← pow_mul, ← pow_mul, ← pow_add, hexp, pow_mul]
   exact (Real.rpow_le_rpow (by positivity) hprod (by positivity)).trans_eq
     (Real.pow_rpow_inv_natCast (by positivity) (Module.finrank_pos (R := ℚ) (M := K)).ne')
 
@@ -328,19 +331,24 @@ private theorem prod_successiveMin_le {ι : Type*} [Fintype ι] [LinearOrder ι]
   set r₁ := nrRealPlaces K
   set r₂ := nrComplexPlaces K with ← hr₂_def
   have hD : D = r₁ + 2 * r₂ := (card_add_two_mul_card_eq_rank (K := K)).symm
+  have hDk : D * k = r₁ * k + r₂ * k + r₂ * k := by rw [hD]; ring
   have htwo :
       (2 : ℝ) ^ (D * k) * ((2⁻¹ : ℝ) ^ r₂) ^ k = (2 : ℝ) ^ (r₁ * k) * (2 : ℝ) ^ (r₂ * k) := by
-    rw [hD, add_mul, pow_add, ← pow_mul (2⁻¹ : ℝ), two_mul r₂, add_mul, pow_add (2 : ℝ) (r₂ * k),
-      mul_assoc, mul_assoc, ← mul_pow, mul_inv_cancel₀ two_ne_zero, one_pow, mul_one]
+    rw [hDk, pow_add, pow_add, ← pow_mul, inv_pow]
+    field_simp
   refine le_of_mul_le_mul_right ?_ hV_pos
   refine (mul_le_mul_of_nonneg_left hV_le
     (Finset.prod_nonneg fun _ _ ↦ ZLattice.successiveMin_nonneg _ _ _)).trans
     ((ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume
       W.integerLattice volume (K := B) hB_symm).trans_eq ?_)
   simp only [W.finrank_euclideanSpan, W.covolume_integerLattice, hk_def, hD_def, hr₂_def]
-  rw [mul_pow ((2⁻¹ : ℝ) ^ r₂), ← mul_assoc ((2 : ℝ) ^ (D * k)),
-    ← mul_assoc ((2 : ℝ) ^ (D * k)), htwo, ← hcV]
-  ring
+  calc (2 : ℝ) ^ (D * k) * (((2⁻¹ : ℝ) ^ r₂ * √|(discr K : ℝ)|) ^ k * W.subspaceHeight ^ D)
+      = ((2 : ℝ) ^ (D * k) * ((2⁻¹ : ℝ) ^ r₂) ^ k) * √|(discr K : ℝ)| ^ k *
+          W.subspaceHeight ^ D := by rw [mul_pow]; ring
+    _ = ((2 : ℝ) ^ (r₁ * k) * (2 : ℝ) ^ (r₂ * k)) * √|(discr K : ℝ)| ^ k *
+          W.subspaceHeight ^ D := by rw [htwo]
+    _ = (c * V) * √|(discr K : ℝ)| ^ k * W.subspaceHeight ^ D := by rw [hcV]
+    _ = c * √|(discr K : ℝ)| ^ k * W.subspaceHeight ^ D * V := by ring
 
 open scoped Classical in
 /-- Take the `[K : ℚ]`-th root of an established Minkowski product bound on `W.integerLattice`. -/
@@ -354,14 +362,23 @@ private theorem prod_successiveMin_rpow_inv_le {ι : Type*} [Fintype ι] [Linear
   set k := finrank K W
   set D := finrank ℚ K
   have hD_pos : 0 < D := Module.finrank_pos
+  have hdiscr :
+      (√|(discr K : ℝ)| ^ k) ^ (D : ℝ)⁻¹ = |(discr K : ℝ)| ^ ((k : ℝ) / (2 * D)) := by
+    have hexp : (1 / 2 : ℝ) * k * (D : ℝ)⁻¹ = (k : ℝ) / (2 * D) := by ring
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast _ k, ← Real.rpow_mul (abs_nonneg _),
+      ← Real.rpow_mul (abs_nonneg _), hexp]
+  have hH : (W.subspaceHeight ^ D) ^ (D : ℝ)⁻¹ = W.subspaceHeight :=
+    Real.pow_rpow_inv_natCast (Submodule.subspaceHeight_pos W).le hD_pos.ne'
   refine (Real.rpow_le_rpow (Finset.prod_nonneg fun _ _ ↦ ZLattice.successiveMin_nonneg _ _ _)
     hprod_min (by positivity)).trans_eq ?_
-  rw [Real.mul_rpow (by positivity) (pow_nonneg (Submodule.subspaceHeight_pos W).le D),
-    Real.mul_rpow hc (by positivity),
-    Real.pow_rpow_inv_natCast (Submodule.subspaceHeight_pos W).le hD_pos.ne',
-    Real.sqrt_eq_rpow, ← Real.rpow_natCast _ k, ← Real.rpow_mul (abs_nonneg _),
-    ← Real.rpow_mul (abs_nonneg _)]
-  congr 2; congr 1; ring
+  calc (c * √|(discr K : ℝ)| ^ k * W.subspaceHeight ^ D) ^ (D : ℝ)⁻¹
+      = (c * √|(discr K : ℝ)| ^ k) ^ (D : ℝ)⁻¹ * (W.subspaceHeight ^ D) ^ (D : ℝ)⁻¹ :=
+          Real.mul_rpow (by positivity) (pow_nonneg (Submodule.subspaceHeight_pos W).le D)
+    _ = c ^ (D : ℝ)⁻¹ * (√|(discr K : ℝ)| ^ k) ^ (D : ℝ)⁻¹ *
+          (W.subspaceHeight ^ D) ^ (D : ℝ)⁻¹ := by
+          rw [Real.mul_rpow hc (by positivity)]
+    _ = c ^ (D : ℝ)⁻¹ * |(discr K : ℝ)| ^ ((k : ℝ) / (2 * D)) * W.subspaceHeight := by
+          rw [hdiscr, hH]
 
 open scoped Classical in
 /-- **Product of successive minima of `W.integerLattice` for `W.supSlice`.** Minkowski's second
@@ -372,12 +389,19 @@ theorem prod_successiveMin_integerLattice_supSlice_le {ι : Type*} [Fintype ι] 
     ∏ i, ZLattice.successiveMin W.integerLattice W.supSlice i ≤
       (2 / Real.pi) ^ (finrank K W * nrComplexPlaces K) *
         √|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K := by
+  have hcV :
+      (2 / Real.pi) ^ (nrComplexPlaces K * finrank K W) *
+          ((2 : ℝ) ^ (nrRealPlaces K * finrank K W) *
+            Real.pi ^ (nrComplexPlaces K * finrank K W)) =
+        (2 : ℝ) ^ (nrRealPlaces K * finrank K W) *
+          (2 : ℝ) ^ (nrComplexPlaces K * finrank K W) := by
+    rw [div_pow]
+    field_simp
   refine (W.prod_successiveMin_le (fun _ hx ↦ W.neg_mem_supSlice.2 hx)
     (V := (2 : ℝ) ^ (nrRealPlaces K * finrank K W) * Real.pi ^ (nrComplexPlaces K * finrank K W))
     (c := (2 / Real.pi) ^ (nrComplexPlaces K * finrank K W))
-    (by positivity) W.two_pow_mul_pi_pow_le_volume_real_supSlice ?_).trans_eq ?_
-  · rw [mul_comm ((2 / Real.pi) ^ _), mul_assoc, ← mul_pow, mul_div_cancel₀ _ Real.pi_ne_zero]
-  · rw [mul_comm (finrank K W) (nrComplexPlaces K)]
+    (by positivity) W.two_pow_mul_pi_pow_le_volume_real_supSlice hcV).trans_eq ?_
+  rw [mul_comm (finrank K W) (nrComplexPlaces K)]
 
 open scoped Classical in
 /-- **Product of successive minima of `W.integerLattice` for `W.euclideanBallSlice`.** Minkowski's
@@ -394,11 +418,24 @@ theorem prod_successiveMin_integerLattice_euclideanBallSlice_le {ι : Type*} [Fi
         √|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K := by
   have hωk := volume_real_unitBall_pos (finrank K W)
   have hω2k := volume_real_unitBall_pos (2 * finrank K W)
-  refine W.prod_successiveMin_le (fun _ hx ↦ W.neg_mem_euclideanBallSlice.2 hx)
-    (by positivity) W.volume_real_euclideanBallSlice.symm.le ?_
-  rw [mul_mul_mul_comm, ← mul_pow, ← mul_pow, div_mul_cancel₀ _ hωk.ne',
-    div_mul_cancel₀ _ hω2k.ne', ← pow_mul, ← pow_mul, mul_comm (finrank K W),
-    mul_comm (finrank K W)]
+  have hcV :
+      ((2 ^ finrank K W /
+            volume.real (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1)) ^ nrRealPlaces K *
+          (2 ^ finrank K W /
+            volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1)) ^
+            nrComplexPlaces K) *
+          (volume.real (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1) ^ nrRealPlaces K *
+            volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1) ^
+              nrComplexPlaces K) =
+        (2 : ℝ) ^ (nrRealPlaces K * finrank K W) *
+          (2 : ℝ) ^ (nrComplexPlaces K * finrank K W) := by
+    rw [div_pow, div_pow, ← pow_mul, ← pow_mul]
+    have h1 : finrank K W * nrRealPlaces K = nrRealPlaces K * finrank K W := mul_comm _ _
+    have h2 : finrank K W * nrComplexPlaces K = nrComplexPlaces K * finrank K W := mul_comm _ _
+    rw [h1, h2]
+    field_simp [hωk.ne', hω2k.ne']
+  exact W.prod_successiveMin_le (fun _ hx ↦ W.neg_mem_euclideanBallSlice.2 hx)
+    (by positivity) W.volume_real_euclideanBallSlice.symm.le hcV
 
 variable {ι : Type*} [Finite ι] [LinearOrder ι]
 
@@ -419,11 +456,17 @@ theorem exists_linearIndependent_integerPoints_prod_absHeight_le (W : Submodule 
   cases nonempty_fintype ι
   obtain ⟨z, hz_li, hz_span, hz_mem, hz_min⟩ :=
     W.exists_linearIndependent_integerPoints_prod_absHeight_le_successiveMin
-  refine ⟨z, hz_li, hz_span, hz_mem, hz_min.trans ?_⟩
-  refine (W.prod_successiveMin_rpow_inv_le (by positivity)
-    W.prod_successiveMin_integerLattice_supSlice_le).trans_eq ?_
-  rw [← Real.rpow_natCast (2 / Real.pi), ← Real.rpow_mul (by positivity)]
-  congr 3; push_cast; ring
+  have hexp :
+      ((2 / Real.pi) ^ (finrank K W * nrComplexPlaces K)) ^ (finrank ℚ K : ℝ)⁻¹ =
+        (2 / Real.pi) ^ ((finrank K W * nrComplexPlaces K : ℝ) / finrank ℚ K) := by
+    have hcast :
+        ((finrank K W * nrComplexPlaces K : ℕ) : ℝ) * (finrank ℚ K : ℝ)⁻¹ =
+          (finrank K W * nrComplexPlaces K : ℝ) / finrank ℚ K := by
+      push_cast; ring
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity), hcast]
+  exact ⟨z, hz_li, hz_span, hz_mem, hz_min.trans <|
+    (W.prod_successiveMin_rpow_inv_le (by positivity)
+      W.prod_successiveMin_integerLattice_supSlice_le).trans_eq (by rw [hexp])⟩
 
 open scoped Classical in
 /-- **Bombieri–Vaaler subspace basis theorem over a number field, Euclidean height.** A `K`-subspace
