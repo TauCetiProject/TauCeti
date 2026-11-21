@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Oscillatory
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Integral.Asymptotics
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Exp.Laplace
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
@@ -110,10 +111,11 @@ private theorem integral_Ioi_smul_eq_of_tendsto [CompleteSpace E] {φ : ℝ → 
     refine _root_.intervalIntegral.integral_congr fun s hs ↦ ?_
     rw [uIcc_of_le hR] at hs
     rw [← iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hs.1 hL, smul_sub]
-  rw [id, show ∫ t in 0..R, φ t • g t = φ R • (G 0 - G R) -
-      ((φ R - φ 0) • G 0 - ∫ s in 0..R, deriv φ s • G s) by
+  have hlhs : ∫ t in 0..R, φ t • g t = φ R • (G 0 - G R) -
+      ((φ R - φ 0) • G 0 - ∫ s in 0..R, deriv φ s • G s) := by
     rw [iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hR hL, ← hφ'G_sub,
-      hibp, sub_sub_cancel], smul_sub, sub_smul]
+      hibp, sub_sub_cancel]
+  rw [id, hlhs, smul_sub, sub_smul]
   abel
 
 /-- Improper integration by parts for `∫ t in Ioi 0, exp (-(p * t)) • g t` (`0 < p`). -/
@@ -208,9 +210,10 @@ private theorem tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero [Com
         simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi (m + 1) hp
       have hh_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ (m + 1)) • h t) (Ioi 0) :=
         hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont (hh_top.isBigO_one ℝ)
-      rw [show m + 1 + 1 - (k + 1) = m + 1 - k by omega,
-        integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp m hloc ⟨L0, hL0'⟩ hh_int,
-        smul_sub, smul_comm, show m + 2 - k = m + 1 - k + 1 by omega, pow_succ, mul_smul]
+      have hk₁ : m + 1 + 1 - (k + 1) = m + 1 - k := by omega
+      have hk₂ : m + 2 - k = m + 1 - k + 1 := by omega
+      rw [hk₁, integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp m hloc ⟨L0, hL0'⟩ hh_int,
+        smul_sub, smul_comm, hk₂, pow_succ, mul_smul]
 
 /-- Base case (`n = 0`) of the Abelian Laplace theorem assuming `[CompleteSpace E]`. -/
 private theorem tendsto_integral_exp_neg_mul_smul_nhdsGT_zero_aux [CompleteSpace E] {f : ℝ → E}

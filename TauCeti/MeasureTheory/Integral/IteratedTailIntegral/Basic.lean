@@ -230,8 +230,9 @@ theorem tendsto_iteratedTailIntegral_succ_atTop {f : ℝ → E} {n : ℕ} {a : �
     (hloc : LocallyIntegrableOn (iteratedTailIntegral f n) (Ici a))
     (hconv : Tendsto (fun R : ℝ ↦ ∫ t in a..R, iteratedTailIntegral f n t) atTop (𝓝 L)) :
     Tendsto (iteratedTailIntegral f (n + 1)) atTop (𝓝 0) := by
-  refine (show Tendsto (fun x : ℝ ↦ L - ∫ t in a..x, iteratedTailIntegral f n t) atTop (𝓝 0) by
-    simpa [sub_self] using (tendsto_const_nhds (x := L)).sub hconv).congr' ?_
+  have hlim : Tendsto (fun x : ℝ ↦ L - ∫ t in a..x, iteratedTailIntegral f n t) atTop (𝓝 0) := by
+    simpa [sub_self] using (tendsto_const_nhds (x := L)).sub hconv
+  refine hlim.congr' ?_
   filter_upwards [eventually_ge_atTop a] with x hx using
     (iteratedTailIntegral_succ_eq_sub_intervalIntegral hloc le_rfl hx hconv).symm
 
@@ -434,8 +435,8 @@ theorem iteratedTailIntegral_neg {f : ℝ → E} {n : ℕ} {a x : ℝ}
       Tendsto (fun R : ℝ ↦ ∫ t in a..R, iteratedTailIntegral f m t) atTop (𝓝 L))
     (hx : a ≤ x) :
     iteratedTailIntegral (-f) n x = -iteratedTailIntegral f n x := by
-  rw [show (-f) = fun t ↦ (-1 : ℝ) • f t by ext; simp,
-    iteratedTailIntegral_const_smul (-1 : ℝ) hloc hconv hx, neg_one_smul]
+  have hneg : (-f) = fun t ↦ (-1 : ℝ) • f t := by ext; simp
+  rw [hneg, iteratedTailIntegral_const_smul (-1 : ℝ) hloc hconv hx, neg_one_smul]
 
 /-- Addition commutes with `iteratedTailIntegral` on `[a, ∞)` when `f` and `g` are locally
 integrable on `[a, ∞)` (for `n > 0`) and their improper tail integrals up to order `n` converge at

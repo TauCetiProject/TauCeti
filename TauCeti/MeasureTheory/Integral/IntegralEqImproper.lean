@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -14,7 +13,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -60,9 +58,7 @@ For improper interval integrals on a ray `[a, ∞)`,
 `MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
 any two points of `[a, ∞)`, while
 `TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici` records the
-`intervalIntegral.integral_undef` collapse when local integrability fails.
-`MeasureTheory.IntegrableOn.smul_of_continuousOn_of_isBigO_one` multiplies an integrable scalar
-weight on `s ⊆ [a, ∞)` by a continuous function bounded at `+∞`, and
+`intervalIntegral.integral_undef` collapse when local integrability fails, and
 `TauCeti.integrableOn_integral_Ioi_sub_pow_smul` / `TauCeti.integral_Ioi_integral_Ioi_sub_pow_smul`
 establish the Cauchy triangle Fubini swap on `(y, ∞)`.
 
@@ -502,17 +498,3 @@ theorem MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub {E : Type
       (hg.intervalIntegrable fun _ ht ↦ (le_min hb hx).trans ht.1)
       (hg.intervalIntegrable fun _ ht ↦ (le_min hx hR).trans ht.1),
     add_sub_cancel_left]
-
-/-- If `w` is integrable on `s ⊆ [a, ∞)` and `h` is continuous on `[a, ∞)` and bounded at `+∞`
-(`h =O[atTop] (1 : ℝ → ℝ)`), then `t ↦ w t • h t` is integrable on `s`. -/
-theorem MeasureTheory.IntegrableOn.smul_of_continuousOn_of_isBigO_one {R E : Type*}
-    [NormedRing R] [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
-    {μ : Measure ℝ} {w : ℝ → R} {h : ℝ → E} {a : ℝ} {s : Set ℝ}
-    (hw : IntegrableOn w s μ) (hs : s ⊆ Ici a)
-    (hh_cont : ContinuousOn h (Ici a)) (hh_top : h =O[atTop] (1 : ℝ → ℝ)) :
-    IntegrableOn (fun t ↦ w t • h t) s μ := by
-  obtain ⟨C, hC⟩ := Asymptotics.isBigO_principal.mp
-    (hh_top.isBigO_principal_Ici_of_continuousOn hh_cont continuousOn_const fun _ _ ↦ one_ne_zero)
-  exact hw.smul_bdd C ((hh_cont.aestronglyMeasurable measurableSet_Ici).mono_set hs)
-    (ae_mono (Measure.restrict_mono hs le_rfl)
-      (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦ by simpa using hC t ht))

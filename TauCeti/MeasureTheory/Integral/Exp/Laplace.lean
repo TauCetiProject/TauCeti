@@ -72,8 +72,8 @@ theorem integrableOn_exp_neg_mul_mul_pow_smul_of_lt {μ : Measure ℝ} {f : ℝ 
     rw [Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.le _)), mul_comm,
       ← Real.rpow_natCast]
     exact hM t ht.le
-  · rw [Pi.smul_apply', smul_smul, mul_right_comm, ← Real.exp_add,
-      show -((p - q) * t) + -(q * t) = -(p * t) by ring]
+  · have hexp : -((p - q) * t) + -(q * t) = -(p * t) := by ring
+    rw [Pi.smul_apply', smul_smul, mul_right_comm, ← Real.exp_add, hexp]
 
 /-- Differentiation under the integral sign for the Laplace moments
 `r ↦ ∫ t in Ioi 0, (exp (-(r * t)) * t ^ j) • f t ∂μ` on `{r | q < r}`. -/
@@ -194,17 +194,18 @@ theorem tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero [Com
     fun t ht ↦ by simpa [dist_eq_norm] using hT₀ t ((le_max_left T₀ 0).trans (mem_Ioi.mp ht).le)
   have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j) (Ioi 0) := by
     simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi j hp
+  have hw_int : ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial / p ^ (j + 1) := by
+    simpa only [mul_comm] using integral_pow_mul_exp_neg_mul_Ioi j hp
   have hw_eq : p ^ (j + 1) * ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial := by
-    rw [show (∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j) = j.factorial / p ^ (j + 1) by
-      simpa only [mul_comm] using integral_pow_mul_exp_neg_mul_Ioi j hp,
-      mul_div_cancel₀ _ (pow_pos hp _).ne']
+    rw [hw_int, mul_div_cancel₀ _ (pow_pos hp _).ne']
+  have hfun : (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) = fun t ↦
+      (Real.exp (-(p * t)) * t ^ j) • (h t - L) + (Real.exp (-(p * t)) * t ^ j) • L := by
+    ext t; rw [← smul_add, sub_add_cancel]
   have hsplit : p ^ (j + 1) • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t =
       p ^ (j + 1) • (∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • (h t - L)) +
         (j.factorial : ℝ) • L := by
-    rw [show (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) = fun t ↦
-          (Real.exp (-(p * t)) * t ^ j) • (h t - L) + (Real.exp (-(p * t)) * t ^ j) • L by
-        ext t; rw [← smul_add, sub_add_cancel],
-      integral_add hint_sub (hw.smul_const L), integral_smul_const, smul_add, smul_smul, hw_eq]
+    rw [hfun, integral_add hint_sub (hw.smul_const L), integral_smul_const, smul_add, smul_smul,
+      hw_eq]
   rw [dist_eq_norm, hsplit, add_sub_cancel_right, norm_smul,
     Real.norm_of_nonneg (pow_nonneg hp.le _)]
   calc p ^ (j + 1) * ‖∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • (h t - L)‖
