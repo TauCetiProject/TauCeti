@@ -8,8 +8,7 @@ module
 public import TauCeti.LinearAlgebra.End.Adjoin
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.RepresentationTheory.Spin.OddStructure
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
+public import TauCeti.RepresentationTheory.Spin.Polarization.SkewAdjoint
 
 /-!
 # Irreducibility of the spin and half-spin modules over the orthogonal Lie algebra
@@ -30,6 +29,15 @@ onto the full endomorphism algebra of `S` in odd dimension (`TauCeti.evenSpinAct
 and of each of `S⁺` and `S⁻` in even dimension (`TauCeti.spinPlusAction_surjective`,
 `TauCeti.spinMinusAction_surjective`). The invariant-subspace dichotomy is then
 `TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top`.
+
+The same argument applies without coordinates to the spin representation
+`TauCeti.SpinPolarizationData.soSpinLieRep` of the orthogonal Lie algebra
+`skewAdjointLieSubalgebra (polarBilin Q)` of a finite-dimensional polarized space, through the
+quadratic realization `CliffordAlgebra.soEquivQuadratic`: the spin module is irreducible in odd
+dimension, and the half-spin modules `TauCeti.SpinPolarizationData.soSpinPlusLieRep` and
+`TauCeti.SpinPolarizationData.soSpinMinusLieRep` are irreducible in even dimension, the second when
+it is nonzero. In odd dimension no unit-length vector in the orthogonal remainder is needed, unlike
+for the type-`B` coordinate model.
 
 Irreducibility of the Spin *group* representations on the same modules is
 `TauCeti/RepresentationTheory/Spin/Irreducible.lean`; the statements here are the Lie algebra
@@ -63,6 +71,10 @@ hypothesis.
 * `TauCeti.SpinPolarizationData.isIrreducible_typeDSpinPlusLieRep` and
   `TauCeti.SpinPolarizationData.isIrreducible_typeDSpinMinusLieRep`: the two dichotomies packaged
   as irreducible Lie modules for their respective half-spin actions.
+* `TauCeti.SpinPolarizationData.isIrreducible_soSpinLieRep`,
+  `TauCeti.SpinPolarizationData.isIrreducible_soSpinPlusLieRep` and
+  `TauCeti.SpinPolarizationData.isIrreducible_soSpinMinusLieRep`: the coordinate-free statements for
+  `𝔰𝔬(Q)`.
 
 ## References
 
@@ -222,5 +234,99 @@ theorem isIrreducible_typeDSpinMinusLieRep (hline : P.line = ⊥) (hW : P.W ≠ 
     (P.typeDSpinMinusLieRep b hline) (P.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le b hline)
 
 end TypeD
+
+/-! ### The orthogonal Lie algebra `𝔰𝔬(Q)` -/
+
+section SkewAdjoint
+
+variable [FiniteDimensional K V]
+
+/-- **The spin operators of `𝔰𝔬(Q)` generate every endomorphism of the spinor module in odd
+dimension.** -/
+@[simp]
+theorem adjoin_range_soSpinLieRep_eq_top (hodd : Odd (finrank K V)) :
+    Algebra.adjoin K (Set.range P.soSpinLieRep) = ⊤ := by
+  have : NeZero (2 : K) := ⟨Invertible.ne_zero 2⟩
+  have hQ := P.nondegenerate ((isUnit_of_invertible (2 : K)).isSMulRegular K)
+  exact adjoin_range_eq_top (soEquivQuadratic Q hQ) (evenSpinAction Q P)
+    (evenSpinAction_surjective P hodd) _ fun f => by
+      rw [P.soSpinLieRep_apply hQ, evenSpinAction_apply]
+
+/-- **The spin module of `𝔰𝔬(Q)` is irreducible in odd dimension**: a subspace of `S = ⋀·W`
+invariant under every skew-adjoint endomorphism is `⊥` or all of `S`. -/
+theorem eq_bot_or_eq_top_of_map_soSpinLieRep_le (hodd : Odd (finrank K V))
+    (N : Submodule K (ExteriorAlgebra K P.W)) (hN : ∀ f, N.map (P.soSpinLieRep f) ≤ N) :
+    N = ⊥ ∨ N = ⊤ :=
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_soSpinLieRep_eq_top hodd) <| by
+    rintro _ ⟨f, rfl⟩
+    exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN f)
+
+/-- **The spin Lie module of `𝔰𝔬(Q)` is irreducible in odd dimension.** The action is pulled back
+along `P.soSpinLieRep`. In even dimension the two half-spin summands are proper invariant
+subspaces, so the hypothesis cannot be dropped. -/
+theorem isIrreducible_soSpinLieRep (hodd : Odd (finrank K V)) :
+    letI : LieRingModule (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+        (ExteriorAlgebra K P.W) :=
+      LieRingModule.compLieHom _ P.soSpinLieRep
+    letI : LieModule K (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+        (ExteriorAlgebra K P.W) :=
+      LieModule.compLieHom _ P.soSpinLieRep
+    LieModule.IsIrreducible K (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+      (ExteriorAlgebra K P.W) :=
+  LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top P.soSpinLieRep
+    (P.eq_bot_or_eq_top_of_map_soSpinLieRep_le hodd)
+
+/-- **The even half-spin operators of `𝔰𝔬(Q)` generate every endomorphism of `S⁺`.** -/
+@[simp]
+theorem adjoin_range_soSpinPlusLieRep_eq_top (hline : P.line = ⊥) :
+    Algebra.adjoin K (Set.range (P.soSpinPlusLieRep hline)) = ⊤ := by
+  have hQ := P.nondegenerate_of_line_eq_bot hline
+  exact adjoin_range_eq_top (soEquivQuadratic Q hQ) (spinPlusAction Q P hline)
+    (spinPlusAction_surjective P hline) _ fun f => LinearMap.ext fun s => Subtype.ext <| by
+      rw [coe_soSpinPlusLieRep_apply, P.soSpinLieRep_apply hQ, coe_spinPlusAction_apply]
+
+/-- **The odd half-spin operators of `𝔰𝔬(Q)` generate every endomorphism of `S⁻`.** -/
+@[simp]
+theorem adjoin_range_soSpinMinusLieRep_eq_top (hline : P.line = ⊥) :
+    Algebra.adjoin K (Set.range (P.soSpinMinusLieRep hline)) = ⊤ := by
+  have hQ := P.nondegenerate_of_line_eq_bot hline
+  exact adjoin_range_eq_top (soEquivQuadratic Q hQ) (spinMinusAction Q P hline)
+    (spinMinusAction_surjective P hline) _ fun f => LinearMap.ext fun s => Subtype.ext <| by
+      rw [coe_soSpinMinusLieRep_apply, P.soSpinLieRep_apply hQ, coe_spinMinusAction_apply]
+
+/-- **The even half-spin Lie module of `𝔰𝔬(Q)` is irreducible.** It is always nonzero, since it
+contains the scalar spinors. -/
+theorem isIrreducible_soSpinPlusLieRep (hline : P.line = ⊥) :
+    letI : LieRingModule (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ (P.soSpinPlusLieRep hline)
+    letI : LieModule K (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (spinPlus Q P) :=
+      LieModule.compLieHom _ (P.soSpinPlusLieRep hline)
+    LieModule.IsIrreducible K (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+      (spinPlus Q P) := by
+  let _ : Nontrivial (spinPlus Q P) := nontrivial_spinPlus P
+  exact LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top (P.soSpinPlusLieRep hline)
+    fun N hN => TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top
+      (P.adjoin_range_soSpinPlusLieRep_eq_top hline) <| by
+        rintro _ ⟨f, rfl⟩
+        exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN f)
+
+/-- **The odd half-spin Lie module of `𝔰𝔬(Q)` is irreducible when it is nonzero.** The hypothesis
+`P.W ≠ ⊥` is necessary because the odd half-spin space vanishes when the isotropic summand
+does. -/
+theorem isIrreducible_soSpinMinusLieRep (hline : P.line = ⊥) (hW : P.W ≠ ⊥) :
+    letI : LieRingModule (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.soSpinMinusLieRep hline)
+    letI : LieModule K (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.soSpinMinusLieRep hline)
+    LieModule.IsIrreducible K (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+      (spinMinus Q P) := by
+  let _ : Nontrivial (spinMinus Q P) := nontrivial_spinMinus P hW
+  exact LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top (P.soSpinMinusLieRep hline)
+    fun N hN => TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top
+      (P.adjoin_range_soSpinMinusLieRep_eq_top hline) <| by
+        rintro _ ⟨f, rfl⟩
+        exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN f)
+
+end SkewAdjoint
 
 end TauCeti.SpinPolarizationData
