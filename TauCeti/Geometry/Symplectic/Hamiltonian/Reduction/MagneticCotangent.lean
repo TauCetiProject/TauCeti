@@ -168,16 +168,6 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [CompleteS
   [MulAction G Q] [ContMDiffSMul IG I ∞ G Q] {α : SmoothForm I Q ℝ 1}
   {ν : Module.Dual ℝ (GroupLieAlgebra IG G)}
 
-omit [CompleteSpace EG] [LieGroup IG ∞ G] [CompleteSpace E] [ContMDiffSMul IG I ∞ G Q] in
-/-- If `α` pairs every fundamental vector field with `-ν`, translation by `α` carries the level
-`μ⁻¹(ν)` of the cotangent moment map exactly onto the zero level. -/
-theorem momentMap_vectorBundleTranslateDiffeomorph_eq_zero_iff
-    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) (z : CotangentBundle I Q) :
-    momentMap IG G (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
-        (SmoothForm.degreeOneEquiv α).contMDiff z) = 0 ↔ momentMap IG G z = ν := by
-  rw [momentMap_vectorBundleTranslateDiffeomorph (c := -ν)
-    fun x ξ ↦ (hα x ξ).trans (LinearMap.neg_apply ν ξ).symm, add_neg_eq_zero]
-
 /-- On the level `μ⁻¹(ν)`, the covectors translated by `α` vanish on the vertical tangent vectors
 of `ρ`, when these are the orbit directions. -/
 theorem vectorBundleTranslateDiffeomorph_snd_eq_zero_of_momentMap_eq
@@ -191,6 +181,38 @@ theorem vectorBundleTranslateDiffeomorph_snd_eq_zero_of_momentMap_eq
         (SmoothForm.degreeOneEquiv α).contMDiff z).snd v = 0 :=
   (momentMap_eq_zero_iff_of_ker_eq (hker _)).1
     ((momentMap_vectorBundleTranslateDiffeomorph_eq_zero_iff hα z).2 hz)
+
+/-- On the level `μ⁻¹(ν)`, the covector translated by `α` is the pullback of its image under the
+magnetic reduction map: `p + α_q = (Ψ_α (q, p)).snd ∘ dρ_q`, when the vertical tangent vectors of
+`ρ` are the orbit directions and `dρ_q` has a continuous right inverse. -/
+theorem cotangentRel_magneticReductionMap
+    (hker : ∀ q, (mfderiv I IB ρ q).ker =
+      (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
+    (hρ : ∀ q, (mfderiv I IB ρ q).HasRightInverse)
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) {z : CotangentBundle I Q}
+    (hz : momentMap IG G z = ν) :
+    cotangentRel I IB ρ
+      (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
+        (SmoothForm.degreeOneEquiv α).contMDiff z)
+      (magneticReductionMap I IB ρ α z) :=
+  cotangentRel_reductionMap (hρ _)
+    (vectorBundleTranslateDiffeomorph_snd_eq_zero_of_momentMap_eq hker hα hz)
+
+/-- **The value of the magnetic reduction map.** On the level `μ⁻¹(ν)`, when the vertical tangent
+vectors of `ρ` are the orbit directions and `dρ_q` has a continuous right inverse, the reduced
+covector evaluates on `dρ_q v` as `p + α_q` on `v`:
+`(Ψ_α (q, p)).snd (dρ_q v) = p v + α_q v`. -/
+theorem magneticReductionMap_snd_apply_mfderiv
+    (hker : ∀ q, (mfderiv I IB ρ q).ker =
+      (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
+    (hρ : ∀ q, (mfderiv I IB ρ q).HasRightInverse)
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) {z : CotangentBundle I Q}
+    (hz : momentMap IG G z = ν) (v : TangentSpace I z.proj) :
+    (magneticReductionMap I IB ρ α z).snd (mfderiv I IB ρ z.proj v) =
+      z.snd v + α.val z.proj ![v] := by
+  have h := cotangentRel_magneticReductionMap hker hρ hα hz
+  rw [vectorBundleTranslateDiffeomorph_apply] at h
+  exact (cotangentRel_snd_apply h v).symm.trans (by simp)
 
 /-- **The magnetic reduction map is onto.** If `ρ` is surjective, its differentials have
 continuous right inverses and its vertical tangent vectors are the orbit directions, every
@@ -224,12 +246,9 @@ theorem magneticReductionMap_eq_vectorBundleTranslateDiffeomorph [IsManifold IB 
     magneticReductionMap I IB ρ α' z =
       vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv γ)
         (SmoothForm.degreeOneEquiv γ).contMDiff (magneticReductionMap I IB ρ α z) := by
-  set y := vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
-    (SmoothForm.degreeOneEquiv α).contMDiff z
-  -- `Ψ_α' z` is the reduction of `τ_(α' - α) y`, which is related to `τ_γ (Ψ_α z)`.
+  -- `Ψ_α' z` is the reduction of `τ_(α' - α) (τ_α z)`, which is related to `τ_γ (Ψ_α z)`.
   have h := cotangentRel_vectorBundleTranslateDiffeomorph_mpullback hρs γ
-    (cotangentRel_reductionMap (hρ y.proj)
-      (vectorBundleTranslateDiffeomorph_snd_eq_zero_of_momentMap_eq hker hα hz))
+    (cotangentRel_magneticReductionMap hker hρ hα hz)
   rw [hγ] at h
   rw [magneticReductionMap_def, magneticReductionMap_def,
     ← vectorBundleTranslateDiffeomorph_trans_sub (α := α) α', Diffeomorph.coe_trans, comp_apply]
