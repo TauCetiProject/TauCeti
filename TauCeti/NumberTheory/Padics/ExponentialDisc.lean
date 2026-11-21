@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -35,12 +36,12 @@ disc bijectively onto the disc of radius `r₀` about `1`: it maps into it by
 `TauCeti.log_exp_of_norm_lt`), and it is onto because `TauCeti.norm_log_of_norm_sub_one_lt` puts
 `log y` in the first disc and `TauCeti.exp_log_of_norm_sub_one_lt` gives `exp (log y) = y`.
 
-When `A` is commutative, the exponential turns sums into products and the logarithm turns products
-into sums on these discs. For `‖t‖ < r₀`, the continuous additive character `x ↦ (1 + t) ^ x` of
-`ℤ_p` (Mathlib's `PadicInt.addChar_of_value_at_one`) is then `x ↦ exp (x log (1 + t))`: both
-sides are continuous in `x` and equal `(1 + t) ^ n` at natural numbers `n`, which are dense in
-`ℤ_p`. In particular `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖`, with equality when `ℚ_[p]` acts
-isometrically, as on a normed field.
+On these discs, the exponential turns sums of commuting elements into products and the logarithm
+turns products of commuting elements into sums. For `‖t‖ < r₀`, the continuous additive character
+`x ↦ (1 + t) ^ x` of `ℤ_p` (Mathlib's `PadicInt.addChar_of_value_at_one`) is then
+`x ↦ exp (x log (1 + t))`: both sides are continuous in `x` and equal `(1 + t) ^ n` at natural
+numbers `n`, which are dense in `ℤ_p`. In particular `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖`, with equality
+when `ℚ_[p]` acts isometrically, as on a normed field.
 
 The key estimate is the sharp factorial bound `r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≥ 1`
 (`TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`): by Legendre's formula
@@ -70,7 +71,9 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 * `TauCeti.ofReal_amiceRadius_zero_le_radius_expSeries`: the exponential series converges on
   the disc of radius `r₀`.
 * `TauCeti.expSeries_hasSum_exp_of_norm_lt`: on that disc, `exp x = ∑ xⁿ / n!`.
-* `TauCeti.exp_add_of_norm_lt`, `TauCeti.exp_sum_of_norm_lt`: the functional equation.
+* `TauCeti.exp_add_of_commute_of_norm_lt`, `TauCeti.exp_sum_of_commute_of_norm_lt`: the
+  functional equation for commuting elements, with the commutative forms
+  `TauCeti.exp_add_of_norm_lt`, `TauCeti.exp_sum_of_norm_lt`.
 * `TauCeti.exp_nsmul_of_norm_lt`, `TauCeti.exp_zsmul_of_norm_lt`: `exp (n • x) = exp x ^ n`.
 * `TauCeti.norm_exp_sub_one_of_norm_lt`: `‖exp x - 1‖ = ‖x‖`.
 * `TauCeti.norm_exp_of_norm_lt`: `‖exp x‖ = 1`.
@@ -82,7 +85,8 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 * `TauCeti.log_exp_of_norm_lt`, `TauCeti.exp_log_of_norm_sub_one_lt`: the exponential and the
   logarithm are inverse.
 * `TauCeti.injOn_exp_ball`: the exponential is injective on the disc.
-* `TauCeti.log_mul_of_norm_sub_one_lt`: `log (y * w) = log y + log w`.
+* `TauCeti.log_mul_of_commute_of_norm_sub_one_lt`, `TauCeti.log_mul_of_norm_sub_one_lt`:
+  `log (y * w) = log y + log w` for commuting `y` and `w`.
 * `TauCeti.addChar_of_value_at_one_eq_exp_smul_log`: `(1 + t) ^ x = exp (x log (1 + t))`.
 * `TauCeti.norm_addChar_of_value_at_one_sub_one_le`, `TauCeti.norm_addChar_of_value_at_one_sub_one`:
   `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖`, with equality for isometric scalars.
@@ -157,12 +161,12 @@ private theorem norm_smul_pow_le_of_norm_mul_le (x : A) {c : ℚ_[p]} {n : ℕ} 
   have hr := amiceRadius_pos (p := p) 0
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   rw [Nat.add_sub_cancel] at hc ⊢
-  calc ‖c • x ^ (m + 1)‖ ≤ ‖c‖ * ‖x‖ ^ (m + 1) :=
-        (norm_smul_le _ _).trans (by gcongr; exact norm_pow_le' x m.succ_pos)
-    _ = ‖c‖ * amiceRadius p 0 ^ m * (‖x‖ * (‖x‖ / amiceRadius p 0) ^ m) := by
-        rw [div_pow, _root_.pow_succ']
-        field_simp
-    _ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ m := mul_le_of_le_one_left (by positivity) hc
+  have hc' : ‖c‖ * amiceRadius p 0 ^ (m + 1) ≤ amiceRadius p 0 := by
+    rw [_root_.pow_succ, ← mul_assoc]
+    exact mul_le_of_le_one_left hr.le hc
+  refine (norm_smul_pow_le_mul_div_pow hr hn hc' x).trans_eq ?_
+  rw [_root_.pow_succ]
+  field_simp
 
 /-- **The terms of the exponential series on its disc.** For `n ≠ 0`,
 `‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)`. When `‖x‖ < r₀` the terms decay geometrically, and every
@@ -195,6 +199,13 @@ theorem expSeries_hasSum_exp_of_norm_lt {x : A} (hx : ‖x‖ < amiceRadius p 0)
     HasSum (fun n ↦ (n ! : ℚ_[p])⁻¹ • x ^ n) (exp x) :=
   expSeries_hasSum_exp_of_mem_ball' x (mem_eball_radius_expSeries hx)
 
+/-- **The functional equation of the `p`-adic exponential for commuting elements.** If `x` and `y`
+commute and `‖x‖, ‖y‖ < r₀`, then `exp (x + y) = exp x * exp y`. -/
+theorem exp_add_of_commute_of_norm_lt {x y : A} (hxy : Commute x y)
+    (hx : ‖x‖ < amiceRadius p 0) (hy : ‖y‖ < amiceRadius p 0) : exp (x + y) = exp x * exp y :=
+  exp_add_of_commute_of_mem_ball (𝕂 := ℚ_[p]) hxy (mem_eball_radius_expSeries hx)
+    (mem_eball_radius_expSeries hy)
+
 /-- The series of `exp x - 1` on the disc, with the coefficients of the formal series `exp - 1`. -/
 private theorem hasSum_exp_sub_one {x : A} (hx : ‖x‖ < amiceRadius p 0) :
     HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.exp ℚ_[p] - 1) • x ^ n) (exp x - 1) := by
@@ -217,7 +228,7 @@ theorem hasSum_log_of_norm_sub_one_lt_one {y : A} (hy : ‖y - 1‖ < 1) :
     · simp
     refine (norm_smul_le _ _).trans (mul_le_mul ?_ (norm_pow_le' _ (Nat.pos_of_ne_zero hn))
       (norm_nonneg _) (Nat.cast_nonneg _))
-    rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div]
+    simp only [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div]
     exact inv_le_of_inv_le₀ (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn))
       (Padic.inv_natCast_le_norm_natCast n)
   have hsum : Summable fun n : ℕ ↦ ((-1) ^ (n + 1) / n : ℚ_[p]) • (y - 1) ^ n := by
@@ -314,24 +325,14 @@ theorem injOn_exp_ball : Set.InjOn (exp : A → A) (Metric.ball 0 (amiceRadius p
     rw [mem_ball_zero_iff] at hx hy
     rw [← log_exp_of_norm_lt hx, hxy, log_exp_of_norm_lt hy]
 
-end NormedRing
-
-section NormedCommRing
-
-variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℚ_[p] A] [CompleteSpace A]
-
-/-- **The functional equation of the `p`-adic exponential.** For `‖x‖, ‖y‖ < r₀`,
-`exp (x + y) = exp x * exp y`. -/
-theorem exp_add_of_norm_lt {x y : A} (hx : ‖x‖ < amiceRadius p 0)
-    (hy : ‖y‖ < amiceRadius p 0) : exp (x + y) = exp x * exp y :=
-  exp_add_of_mem_ball (𝕂 := ℚ_[p]) (mem_eball_radius_expSeries hx) (mem_eball_radius_expSeries hy)
-
-variable [IsUltrametricDist A]
-
-/-- The functional equation for finite sums: if `‖f i‖ < r₀` for every `i ∈ s`, then
-`exp (∑ i ∈ s, f i) = ∏ i ∈ s, exp (f i)`. -/
-theorem exp_sum_of_norm_lt {ι : Type*} (s : Finset ι) {f : ι → A}
-    (hf : ∀ i ∈ s, ‖f i‖ < amiceRadius p 0) : exp (∑ i ∈ s, f i) = ∏ i ∈ s, exp (f i) := by
+open scoped Function in
+/-- The functional equation for finite sums of pairwise commuting elements: if the `f i` commute
+pairwise and `‖f i‖ < r₀` for every `i ∈ s`, then `exp (∑ i ∈ s, f i)` is the product of the
+`exp (f i)`. -/
+theorem exp_sum_of_commute_of_norm_lt {ι : Type*} (s : Finset ι) {f : ι → A}
+    (h : (s : Set ι).Pairwise (Commute on f)) (hf : ∀ i ∈ s, ‖f i‖ < amiceRadius p 0) :
+    exp (∑ i ∈ s, f i) =
+      s.noncommProd (fun i ↦ exp (f i)) (h.mono' fun _ _ hij ↦ Commute.exp hij) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp [exp_zero]
@@ -342,27 +343,36 @@ theorem exp_sum_of_norm_lt {ι : Type*} (s : Finset ι) {f : ι → A}
       · simpa using amiceRadius_pos (p := p) 0
       obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne f
       exact hle.trans_lt (hs i hi)
-    rw [Finset.sum_insert ha, Finset.prod_insert ha,
-      exp_add_of_norm_lt (hf a (Finset.mem_insert_self a s)) hsum, ih hs]
+    have hcomm : Commute (f a) (∑ i ∈ s, f i) := Commute.sum_right _ _ _ fun i hi ↦
+      h.forall₂ (Finset.mem_insert_self _ _) (Finset.mem_insert_of_mem hi)
+    rw [Finset.noncommProd_insert_of_notMem _ _ _ _ ha, Finset.sum_insert ha,
+      exp_add_of_commute_of_norm_lt hcomm (hf a (Finset.mem_insert_self a s)) hsum,
+      ih (h.mono <| Finset.subset_insert _ _) hs]
 
 /-- For `‖x‖ < r₀` and every natural number `n`, `exp (n • x) = exp x ^ n`. -/
 theorem exp_nsmul_of_norm_lt (n : ℕ) {x : A} (hx : ‖x‖ < amiceRadius p 0) :
     exp (n • x) = exp x ^ n := by
-  simpa using exp_sum_of_norm_lt (Finset.range n) (f := fun _ ↦ x) fun _ _ ↦ hx
+  induction n with
+  | zero => rw [zero_smul, pow_zero, exp_zero]
+  | succ n ih =>
+    rw [succ_nsmul, pow_succ, exp_add_of_commute_of_norm_lt ((Commute.refl x).smul_left n)
+      ((IsUltrametricDist.norm_nsmul_le x n).trans_lt hx) hx, ih]
 
-/-- **The logarithm turns products into sums on the disc of radius `r₀` about `1`.** For
-`‖y - 1‖ < r₀` and `‖w - 1‖ < r₀`, `log (y * w) = log y + log w`. -/
-theorem log_mul_of_norm_sub_one_lt {y w : A} (hy : ‖y - 1‖ < amiceRadius p 0)
-    (hw : ‖w - 1‖ < amiceRadius p 0) : log (y * w) = log y + log w := by
+/-- **The logarithm turns products of commuting elements into sums on the disc of radius `r₀`
+about `1`.** If `y` and `w` commute, `‖y - 1‖ < r₀` and `‖w - 1‖ < r₀`, then
+`log (y * w) = log y + log w`. -/
+theorem log_mul_of_commute_of_norm_sub_one_lt {y w : A} (hyw : Commute y w)
+    (hy : ‖y - 1‖ < amiceRadius p 0) (hw : ‖w - 1‖ < amiceRadius p 0) :
+    log (y * w) = log y + log w := by
   have hy' : ‖log y‖ < amiceRadius p 0 := by rwa [norm_log_of_norm_sub_one_lt hy]
   have hw' : ‖log w‖ < amiceRadius p 0 := by rwa [norm_log_of_norm_sub_one_lt hw]
   rw [← exp_log_of_norm_sub_one_lt hy, ← exp_log_of_norm_sub_one_lt hw,
-    ← exp_add_of_norm_lt hy' hw', log_exp_of_norm_lt
+    ← exp_add_of_commute_of_norm_lt hyw.log hy' hw', log_exp_of_norm_lt
       ((IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hy' hw')),
     log_exp_of_norm_lt hy', log_exp_of_norm_lt hw']
 
-/-- **The binomial power as an exponential.** In a complete ultrametric commutative normed
-algebra over `ℚ_[p]`, for `‖t‖ < r₀` and `x ∈ ℤ_p`, the continuous additive character
+/-- **The binomial power as an exponential.** In a complete ultrametric normed algebra over
+`ℚ_[p]`, for `‖t‖ < r₀` and `x ∈ ℤ_p`, the continuous additive character
 `x ↦ (1 + t) ^ x` (`PadicInt.addChar_of_value_at_one`) is `x ↦ exp (x log (1 + t))`. -/
 theorem addChar_of_value_at_one_eq_exp_smul_log [Algebra ℤ_[p] A] [IsBoundedSMul ℤ_[p] A] {t : A}
     (ht : ‖t‖ < amiceRadius p 0) (x : ℤ_[p]) :
@@ -408,6 +418,33 @@ theorem norm_addChar_of_value_at_one_sub_one [Algebra ℤ_[p] A] [IsBoundedSMul 
   have hlt : ‖(x : ℚ_[p]) • log (1 + t)‖ < amiceRadius p 0 :=
     hxL ▸ (mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt ht
   rw [addChar_of_value_at_one_eq_exp_smul_log ht x, norm_exp_sub_one_of_norm_lt hlt, hxL]
+
+end NormedRing
+
+section NormedCommRing
+
+variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℚ_[p] A] [CompleteSpace A]
+
+/-- **The functional equation of the `p`-adic exponential.** For `‖x‖, ‖y‖ < r₀`,
+`exp (x + y) = exp x * exp y`. -/
+theorem exp_add_of_norm_lt {x y : A} (hx : ‖x‖ < amiceRadius p 0)
+    (hy : ‖y‖ < amiceRadius p 0) : exp (x + y) = exp x * exp y :=
+  exp_add_of_commute_of_norm_lt (Commute.all x y) hx hy
+
+variable [IsUltrametricDist A]
+
+/-- The functional equation for finite sums: if `‖f i‖ < r₀` for every `i ∈ s`, then
+`exp (∑ i ∈ s, f i) = ∏ i ∈ s, exp (f i)`. -/
+theorem exp_sum_of_norm_lt {ι : Type*} (s : Finset ι) {f : ι → A}
+    (hf : ∀ i ∈ s, ‖f i‖ < amiceRadius p 0) : exp (∑ i ∈ s, f i) = ∏ i ∈ s, exp (f i) := by
+  rw [exp_sum_of_commute_of_norm_lt s (fun _ _ _ _ _ ↦ Commute.all _ _) hf,
+    Finset.noncommProd_eq_prod]
+
+/-- **The logarithm turns products into sums on the disc of radius `r₀` about `1`.** For
+`‖y - 1‖ < r₀` and `‖w - 1‖ < r₀`, `log (y * w) = log y + log w`. -/
+theorem log_mul_of_norm_sub_one_lt {y w : A} (hy : ‖y - 1‖ < amiceRadius p 0)
+    (hw : ‖w - 1‖ < amiceRadius p 0) : log (y * w) = log y + log w :=
+  log_mul_of_commute_of_norm_sub_one_lt (Commute.all y w) hy hw
 
 end NormedCommRing
 

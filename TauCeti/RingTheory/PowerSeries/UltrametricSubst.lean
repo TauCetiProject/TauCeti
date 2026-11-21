@@ -11,8 +11,10 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.RingTheory.Polynomial.GaussNorm
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Polynomial.Ultra
+import TauCeti.RingTheory.Polynomial.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -28,9 +30,9 @@ commutative or a field, and its norm need only be submultiplicative, with `‖c 
 The proof compares truncations. Below both truncation degrees, the composite of the truncation of
 `f` with the truncation of `g` agrees with `X` (`PowerSeries.coeff_trunc_comp_trunc`). The bound
 `‖cₙ‖ Rⁿ ≤ R` says that a polynomial has Gauss norm at most `R` at radius `R`; since the Gauss
-norm is nonarchimedean and submultiplicative (`Polynomial.isNonarchimedean_gaussNorm`,
-`Polynomial.gaussNorm_mul_le`), the composite of the truncations satisfies it too. Hence, with
-`S = ‖x‖ / R < 1`, its value at `x` differs from `x` by at most `R S ^ M` below degree `M`.
+norm is nonarchimedean and submultiplicative, the composite of the truncations satisfies it too
+(`Polynomial.gaussNorm_comp_le`). Hence, with `S = ‖x‖ / R < 1`, its value at `x` differs from
+`x` by at most `R S ^ M` below degree `M` (`Polynomial.norm_aeval_le_mul_div_pow`).
 Letting the truncation degrees tend to infinity gives the identity. The argument adapts the proof
 of `TauCeti.log_exp_of_mem_maximalIdeal_pow` (`TauCeti.NumberTheory.LocalField.ExpLog`), with
 norms in place of the valuation of the valuative relation.
@@ -52,58 +54,6 @@ public section
 open Filter Topology
 
 namespace PowerSeries
-
-open Polynomial in
-/-- **Composition preserves the coefficient bound `‖cₙ‖ Rⁿ ≤ R`.** If the coefficients of the
-polynomials `F` and `Q` over an ultrametric normed field satisfy `‖cₙ‖ Rⁿ ≤ R`, then so do those
-of `F.comp Q`: each `C (F.coeff n) * Q ^ n` has Gauss norm at most `‖F.coeff n‖ Rⁿ ≤ R` at
-radius `R`, and the Gauss norm is nonarchimedean. -/
-private theorem norm_coeff_comp_mul_pow_le {K : Type*} [NormedField K] [IsUltrametricDist K]
-    {F Q : K[X]} {R : ℝ} (hR : 0 ≤ R) (hF : ∀ n, ‖F.coeff n‖ * R ^ n ≤ R)
-    (hQ : ∀ n, ‖Q.coeff n‖ * R ^ n ≤ R) (k : ℕ) : ‖(F.comp Q).coeff k‖ * R ^ k ≤ R := by
-  set v := NormedField.toAbsoluteValue K
-  have hna : IsNonarchimedean v := IsUltrametricDist.isNonarchimedean_norm
-  have hle {P : K[X]} (hP : ∀ n, ‖P.coeff n‖ * R ^ n ≤ R) : P.gaussNorm v R ≤ R := by
-    obtain ⟨i, hi⟩ := P.exists_eq_gaussNorm v R
-    exact hi ▸ hP i
-  have hQn (n : ℕ) : (Q ^ n).gaussNorm v R ≤ R ^ n := by
-    induction n with
-    | zero => simp [← Polynomial.C_1, -map_one]
-    | succ n ih =>
-      rw [pow_succ, pow_succ]
-      exact (gaussNorm_mul_le v hna _ _ hR).trans (mul_le_mul ih (hle hQ)
-        (Polynomial.gaussNorm_nonneg v _ hR) (pow_nonneg hR n))
-  refine (Polynomial.le_gaussNorm v _ hR k).trans ?_
-  rw [comp_eq_sum_left, Polynomial.sum_def]
-  obtain ⟨n, -, hsum⟩ := (isNonarchimedean_gaussNorm v hna hR).finset_image_add
-    (fun n ↦ Polynomial.C (F.coeff n) * Q ^ n) F.support fun P ↦ by
-      simpa using Polynomial.gaussNorm_nonneg v P hR
-  refine hsum.trans <| (gaussNorm_mul_le v hna _ _ hR).trans ?_
-  rw [Polynomial.gaussNorm_C]
-  exact (mul_le_mul_of_nonneg_left (hQn n) (norm_nonneg _)).trans (hF n)
-
-/-- **Evaluating a polynomial with small coefficients.** In an ultrametric normed algebra over
-an ultrametric normed field, a polynomial with vanishing constant coefficient, vanishing
-coefficients below degree `m` and coefficients bounded by `‖cₖ‖ Rᵏ ≤ R` takes at `x` with
-`‖x‖ ≤ R` a value of norm at most `R (‖x‖ / R) ^ m`. -/
-private theorem norm_aeval_le {K A : Type*} [NormedField K] [NormedRing A] [NormedAlgebra K A]
-    [IsUltrametricDist A] {P : Polynomial K} {R : ℝ} (hR : 0 < R) (hP0 : P.coeff 0 = 0) {m : ℕ}
-    (hPm : ∀ k < m, P.coeff k = 0) (hP : ∀ k, ‖P.coeff k‖ * R ^ k ≤ R) {x : A}
-    (hx : ‖x‖ ≤ R) : ‖Polynomial.aeval x P‖ ≤ R * (‖x‖ / R) ^ m := by
-  have hS0 : 0 ≤ ‖x‖ / R := by positivity
-  have hS1 : ‖x‖ / R ≤ 1 := (div_le_one hR).mpr hx
-  rw [Polynomial.aeval_eq_sum_range]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun k _ ↦ ?_
-  rcases lt_or_ge k m with hk | hk
-  · simpa [hPm k hk] using by positivity
-  rcases Nat.eq_zero_or_pos k with rfl | hk0
-  · simpa [hP0] using by positivity
-  calc ‖P.coeff k • x ^ k‖ ≤ ‖P.coeff k‖ * ‖x‖ ^ k :=
-        (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (norm_pow_le' x hk0) (norm_nonneg _))
-    _ = ‖P.coeff k‖ * R ^ k * (‖x‖ / R) ^ k := by
-        rw [div_pow, mul_assoc, mul_div_cancel₀ _ (pow_pos hR k).ne']
-    _ ≤ R * (‖x‖ / R) ^ m :=
-        mul_le_mul (hP k) (pow_le_pow_of_le_one hS0 hS1 hk) (by positivity) hR.le
 
 variable {K : Type*} [NormedField K]
 
@@ -135,24 +85,30 @@ private theorem norm_aeval_trunc_aeval_trunc_sub_le {f g : K⟦X⟧} (hf0 : coef
     split_ifs
     · exact norm_mul_pow_le_of_norm_mul_pow_sub_one_le hR (fun h ↦ h ▸ hh0) (hh n)
     · simpa using hR.le
-  have hcomp := norm_coeff_comp_mul_pow_le hR.le (htrunc hf0 hf M) (htrunc hg0 hg N)
+  -- The bound `‖cₙ‖ Rⁿ ≤ R` says that the Gauss norm at radius `R` is at most `R`.
+  set v := NormedField.toAbsoluteValue K
+  have hle {P : Polynomial K} (hP : ∀ n, ‖P.coeff n‖ * R ^ n ≤ R) : P.gaussNorm v R ≤ R := by
+    obtain ⟨i, hi⟩ := P.exists_eq_gaussNorm v R
+    exact hi ▸ hP i
+  have hcomp (k : ℕ) : ‖((trunc M f).comp (trunc N g)).coeff k‖ * R ^ k ≤ R :=
+    (Polynomial.le_gaussNorm v _ hR.le k).trans <|
+      (Polynomial.gaussNorm_comp_le IsUltrametricDist.isNonarchimedean_norm hR.le _
+        (hle (htrunc hg0 hg N))).trans (hle (htrunc hf0 hf M))
   -- `F ∘ Q - X` vanishes below degree `min M N` and has coefficients bounded by `‖cₖ‖ Rᵏ ≤ R`.
   have hG : Polynomial.aeval x ((trunc M f).comp (trunc N g) - Polynomial.X) =
       Polynomial.aeval (Polynomial.aeval x (trunc N g)) (trunc M f) - x := by
     simp [Polynomial.aeval_comp]
   rw [← hG]
   have h0 : ((trunc M f).comp (trunc N g) - Polynomial.X).coeff 0 = 0 := by
-    rw [Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_sub, Polynomial.eval_X, sub_zero,
-      Polynomial.eval_comp, ← Polynomial.coeff_zero_eq_eval_zero, coeff_trunc, hg0, ite_self,
-      ← Polynomial.coeff_zero_eq_eval_zero, coeff_trunc, hf0, ite_self]
-  refine norm_aeval_le hR h0 (fun k hk ↦ ?_) (fun k ↦ ?_) hx
+    rw [Polynomial.coeff_zero_eq_eval_zero]
+    simp [Polynomial.eval_comp, ← Polynomial.coeff_zero_eq_eval_zero, coeff_trunc, hf0, hg0]
+  refine Polynomial.norm_aeval_le_mul_div_pow hR h0 (fun k hk ↦ ?_) (fun k ↦ ?_) hx
   · rw [Polynomial.coeff_sub, coeff_trunc_comp_trunc f hg0' (lt_min_iff.mp hk).1
       (lt_min_iff.mp hk).2, hfg, Polynomial.coeff_X, coeff_X]
     grind
-  · have hsub (a b : K) : ‖a - b‖ ≤ max ‖a‖ ‖b‖ := by
-      simpa [sub_eq_add_neg] using IsUltrametricDist.norm_add_le_max a (-b)
-    rw [Polynomial.coeff_sub]
-    refine (mul_le_mul_of_nonneg_right (hsub _ _) (pow_nonneg hR.le k)).trans ?_
+  · rw [Polynomial.coeff_sub]
+    refine (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_sub_le_max _ _)
+      (pow_nonneg hR.le k)).trans ?_
     rw [max_mul_of_nonneg _ _ (pow_nonneg hR.le k)]
     refine max_le (hcomp k) ?_
     rw [Polynomial.coeff_X]
