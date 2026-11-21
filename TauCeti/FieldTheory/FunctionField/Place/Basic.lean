@@ -422,11 +422,10 @@ theorem generator_eq_exp_neg_one : IsRankOneDiscrete.generator P.valuation =
 elements for `P`. -/
 @[simp]
 theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P.ord t = 1 :=
-  Valuation.isUniformizer_iff_ord_eq_one_of_surjective
-    P.valuation P.valuation_surjective
+  Valuation.isUniformizer_iff_ord_eq_one_of_mem_range P.valuation (P.valuation_surjective _)
 
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
-  Valuation.exists_isUniformizer_of_surjective P.valuation P.valuation_surjective
+  Valuation.exists_isUniformizer_of_mem_range P.valuation (P.valuation_surjective _)
 
 /-- A uniformizer of a place is irreducible in its valuation ring. -/
 theorem irreducible_of_isUniformizer {t : P.integers}
