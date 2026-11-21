@@ -31,8 +31,8 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   the value and weak-gradient projections; their `_ae` variants identify representatives.
 * `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
   value almost everywhere on the smaller open set.
-* `TauCeti.W1p.norm_restrictL_eq_of_isClosed`: restriction preserves the norm of a function
-  vanishing off a closed set `K` with `Ω ∩ K ⊆ U`.
+* `TauCeti.W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed`: restriction preserves the norm
+  of a function vanishing off a closed set `K` with `Ω ∩ K ⊆ U`.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
@@ -248,8 +248,8 @@ theorem W1p.norm_restrictL_le_one (hU : U ≤ Omega) :
 /-- Restriction to `U` preserves the norm of a Sobolev function vanishing almost everywhere on `Ω`
 off a closed set `K` with `Ω ∩ K ⊆ U`: its weak gradient vanishes off `K` as well, so the whole
 value-gradient jet is supported in `U`. -/
-theorem W1p.norm_restrictL_eq_of_isClosed (hU : U ≤ Omega) {K : Set E} (hK : IsClosed K)
-    (hKU : (Omega : Set E) ∩ K ⊆ U) {u : W1p mu Omega p}
+theorem W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed (hU : U ≤ Omega) {K : Set E}
+    (hK : IsClosed K) (hKU : (Omega : Set E) ∩ K ⊆ U) {u : W1p mu Omega p}
     (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
     ‖W1p.restrictL hU u‖ = ‖u‖ := by
   have hJ : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ (U : Set E) →

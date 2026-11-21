@@ -33,8 +33,9 @@ fixed nonzero test function are bounded in `W^{k,p}` and have no subsequence con
 The compactness input is the local Rellich theorem
 `TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`, and Ehrling's inequality follows from it by
 the abstract `IsCompactOperator.exists_norm_le_mul_norm_add_mul_norm`. A function vanishing off
-`K ⊆ V` has the same norm on `V` as on `Ω` (`TauCeti.Wkp.norm_restrictL_eq_of_isClosed`), which
-transfers both statements from `V` to `Ω`.
+`K ⊆ V` has the same norm on `V` as on `Ω`
+(`TauCeti.Wkp.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed`), which transfers both statements
+from `V` to `Ω`.
 
 ## References
 
@@ -122,7 +123,7 @@ theorem exists_subseq_tendsto_toOrderL_of_isCompact {K : Set E} (hK : IsCompact 
           (value l (toOrderL hlk.le (u (φ n)))), ae_value_toOrderL_eq_zero hlk.le (hK0 (φ m)),
         ae_value_toOrderL_eq_zero hlk.le (hK0 (φ n))] with x hx hxm hxn hxK
       rw [hx, Pi.sub_apply, hxm hxK, hxn hxK, sub_zero]
-    rw [dist_eq_norm, ← norm_restrictL_eq_of_isClosed hV hK.isClosed
+    rw [dist_eq_norm, ← norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed hV hK.isClosed
       (inter_subset_right.trans hKV) l hsub, map_sub, ← dist_eq_norm]
     simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply] using hN m hm n hn
   obtain ⟨w', hw'⟩ := cauchySeq_tendsto_of_complete hcauchy
@@ -142,9 +143,9 @@ theorem exists_norm_toOrderL_le_of_isCompact {K : Set E} (hK : IsCompact K) (hKO
   obtain ⟨C, hC, h⟩ :=
     exists_norm_restrictL_toOrderL_le (mu := mu) (p := p) hVc hVO hlk hε
   refine ⟨C, hC, fun u hu ↦ ?_⟩
-  rw [← norm_restrictL_eq_of_isClosed hV hK.isClosed (inter_subset_right.trans hKV) l
-    (ae_value_toOrderL_eq_zero hlk.le hu),
-    ← norm_value_restrictL_eq hV (inter_subset_right.trans hKV) k hu]
+  rw [← norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed hV hK.isClosed
+    (inter_subset_right.trans hKV) l (ae_value_toOrderL_eq_zero hlk.le hu),
+    ← norm_value_restrictL_eq_of_value_ae_eq_zero hV (inter_subset_right.trans hKV) k hu]
   exact h u
 
 end TauCeti.Wkp
