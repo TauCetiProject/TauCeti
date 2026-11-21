@@ -107,11 +107,13 @@ theorem one_sub_exp_neg_mul_log_eq {z : ℝ} (hz : 0 ≤ z) :
     (intervalIntegrable_iff_integrableOn_Ioc_of_le hz).mpr
       (integrableOn_log_mul_exp_neg_Ioi.mono_set Ioc_subset_Ioi_self)
   have hsub_int : IntervalIntegrable (fun t : ℝ ↦ (1 - exp (-t)) / t) volume 0 z := by
-    refine ((continuous_dslope_exp_zero.comp continuous_neg).intervalIntegrable 0 z).congr_ae ?_
-    filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℝ))] with t ht
-    rw [Function.comp_apply, dslope_exp_zero_of_ne (neg_ne_zero.mpr ht)]
-    field_simp [ht]
-    ring
+    have heq : (fun t : ℝ ↦ (1 - exp (-t)) / t) = fun t : ℝ ↦ (exp (-t) - 1) / (-t) := by
+      ext t
+      rw [← neg_sub 1 (exp (-t)), neg_div_neg_eq]
+    rw [heq]
+    simpa only [neg_zero, neg_neg] using
+      (IntervalIntegrable.iff_comp_neg (a := 0) (b := -z)).mp
+        (intervalIntegrable_exp_sub_one_div 0 (-z))
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hz
     continuous_one_sub_exp_neg_mul_log.continuousOn
     (f' := fun t : ℝ ↦ log t * exp (-t) + (1 - exp (-t)) / t)

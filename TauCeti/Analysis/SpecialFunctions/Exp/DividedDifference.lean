@@ -165,6 +165,14 @@ theorem integral_dslope_exp_zero_eq_tsum (y : ℝ) :
   rw [intervalIntegral.integral_div, integral_pow, zero_pow (Nat.succ_ne_zero n), sub_zero,
     div_div, mul_comm]
 
+/-- The function `u ↦ (exp u - 1) / u` is interval integrable on every closed interval `[a, b]`
+(including across `0`). -/
+theorem intervalIntegrable_exp_sub_one_div (a b : ℝ) :
+    IntervalIntegrable (fun u : ℝ ↦ (exp u - 1) / u) volume a b := by
+  refine (continuous_dslope_exp_zero.intervalIntegrable a b).congr_ae ?_
+  filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℝ))] with u hu
+  exact dslope_exp_zero_of_ne hu
+
 /-- The entire part `∑_{n ≥ 1} y^n / (n * n!)` of the exponential integral equals
 `∫ u in 0..y, (exp u - 1) / u`. -/
 theorem integral_exp_sub_one_div_eq_tsum (y : ℝ) :

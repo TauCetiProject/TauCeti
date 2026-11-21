@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
-import Mathlib.Analysis.Calculus.LHopital
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -49,9 +48,7 @@ and `li 2`:
 * `Real.hasDerivAt_li_exp`, `Real.integral_exp_div_eq_li_exp_sub`,
   `Real.integral_Iic_exp_div_eq_li_exp`, `Real.li_exp`, and
   `Real.tendsto_integral_exp_div_principalValue` — exponential-integral forms.
-* `Real.continuousAt_inv_log_sub_inv_sub_one_zero`,
-  `Real.tendsto_inv_log_sub_inv_sub_one_nhdsNE_one`,
-  `Real.intervalIntegrable_inv_log_sub_inv_sub_one`,
+* `Real.intervalIntegrable_inv_log_sub_inv_sub_one`,
   `Real.exists_abs_inv_log_sub_inv_sub_one_le`, and
   `Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
 * `Real.tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero`,
@@ -261,63 +258,6 @@ theorem tendsto_integral_exp_div_principalValue {y : ℝ} (hy : 0 < y) :
   ring
 
 /-! ### Absolutely convergent integral representations -/
-
-/-- `t ↦ (log t)⁻¹ - (t - 1)⁻¹` is continuous at `0`, where it takes the value `1`. -/
-theorem continuousAt_inv_log_sub_inv_sub_one_zero :
-    ContinuousAt (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) 0 :=
-  continuousAt_inv_log_zero.sub (by fun_prop (disch := norm_num))
-
-/-- `(log t)⁻¹ - (t - 1)⁻¹ → 1 / 2` as `t → 1`, `t ≠ 1`. -/
-theorem tendsto_inv_log_sub_inv_sub_one_nhdsNE_one :
-    Tendsto (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) (𝓝[≠] 1) (𝓝 (1 / 2)) := by
-  have hnum : Tendsto (fun t : ℝ ↦ (t - 1 - log t) / (t - 1) ^ 2) (𝓝[≠] 1) (𝓝 (1 / 2)) := by
-    refine HasDerivAt.lhopital_zero_nhdsNE (f' := fun t : ℝ ↦ 1 - t⁻¹)
-      (g' := fun t : ℝ ↦ 2 * (t - 1)) ?_ ?_ ?_ ?_ ?_ ?_
-    · filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds one_pos)] with t ht
-      exact ((hasDerivAt_id' t).sub_const 1).sub (hasDerivAt_log ht.ne')
-    · filter_upwards with t
-      simpa using ((hasDerivAt_id' t).sub_const 1).fun_pow 2
-    · filter_upwards [self_mem_nhdsWithin] with t (ht : t ≠ 1)
-      exact mul_ne_zero two_ne_zero (sub_ne_zero.mpr ht)
-    · have hc : ContinuousAt (fun t : ℝ ↦ t - 1 - log t) 1 :=
-        (continuousAt_id.sub continuousAt_const).sub (continuousAt_log one_ne_zero)
-      simpa [log_one] using hc.tendsto.mono_left nhdsWithin_le_nhds
-    · have hc : ContinuousAt (fun t : ℝ ↦ (t - 1) ^ 2) 1 := by fun_prop
-      simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
-    · have hc : ContinuousAt (fun t : ℝ ↦ (2 * t)⁻¹) 1 := by fun_prop (disch := norm_num)
-      have hlim : Tendsto (fun t : ℝ ↦ (2 * t)⁻¹) (𝓝[≠] 1) (𝓝 (1 / 2)) := by
-        simpa [one_div] using hc.tendsto.mono_left nhdsWithin_le_nhds
-      refine hlim.congr' ?_
-      filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds one_pos), self_mem_nhdsWithin]
-        with t ht0 (ht1 : t ≠ 1)
-      have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
-      field_simp [ht0.ne', hsub]
-  have hden : Tendsto (fun t : ℝ ↦ log t / (t - 1)) (𝓝[≠] 1) (𝓝 1) := by
-    have hd : HasDerivAt log 1 1 := by simpa using hasDerivAt_log one_ne_zero
-    exact hd.tendsto_slope.congr fun t ↦ by simp [slope_def_field, log_one]
-  have hq : Tendsto
-      (fun t : ℝ ↦ ((t - 1 - log t) / (t - 1) ^ 2) / (log t / (t - 1)))
-      (𝓝[≠] 1) (𝓝 (1 / 2)) := by
-    simpa [Pi.div_def] using hnum.div hden one_ne_zero
-  refine hq.congr' ?_
-  filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds one_pos), self_mem_nhdsWithin] with t ht0 ht1
-  have hlt : log t ≠ 0 := log_ne_zero_of_pos_of_ne_one ht0 ht1
-  have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
-  field_simp [hlt, hsub]
-
-private theorem continuousOn_update_inv_log_sub_inv_sub_one :
-    ContinuousOn (Function.update (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) 1 (1 / 2)) (Ici 0) := by
-  rw [continuousOn_update_iff]
-  refine ⟨fun t ⟨ht0, ht1⟩ ↦ ?_, fun _ ↦
-    tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.mono_left
-      (nhdsWithin_mono 1 fun _ h ↦ h.2)⟩
-  rcases eq_or_lt_of_le ht0 with rfl | htpos
-  · exact continuousAt_inv_log_sub_inv_sub_one_zero.continuousWithinAt
-  · have htne : t ≠ 0 := htpos.ne'
-    have hlt : log t ≠ 0 := log_ne_zero_of_pos_of_ne_one htpos ht1
-    have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
-    exact (by fun_prop (disch := assumption) :
-      ContinuousAt (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) t).continuousWithinAt
 
 /-- The regularized integrand `(log t)⁻¹ - (t - 1)⁻¹` is interval integrable on any interval in
 `[0, ∞)`. -/
