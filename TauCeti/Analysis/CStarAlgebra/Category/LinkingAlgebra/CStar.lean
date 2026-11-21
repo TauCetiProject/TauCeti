@@ -28,10 +28,10 @@ boundedly on its GNS space (by `CStarCategory.comp_self_comp_dagger_le`), so
 `‖A.entry i j‖ ≤ ‖A‖ ≤ ∑ i, ∑ j, ‖A.entry i j‖` and `‖single X i j f‖ = ‖f‖`.
 
 From this we obtain isometric corner identifications
-`cornerSubmodule X ℂ i j ≃ₗᵢ[ℂ] (X j ⟶ X i)`, isometric order-embedding diagonal
-maps `diagHom X ℂ i : End (X i) →⋆ₙₐ[ℂ] LinkingAlgebra X`, the matrix positivity criterion
-`LinkingAlgebra.nonneg_iff`, and recovery of the Hom norm and endomorphism positivity from
-two-object corners `LinkingAlgebra ![X, Y]`.
+`TauCeti.cornerSubmodule ℂ (proj X i) (proj X j) ≃ₗᵢ[ℂ] (X j ⟶ X i)`, isometric order-embedding
+diagonal maps `diagHom X ℂ i : End (X i) →⋆ₙₐ[ℂ] LinkingAlgebra X`, the matrix positivity
+criterion `LinkingAlgebra.nonneg_iff`, and recovery of the Hom norm and endomorphism positivity
+from two-object corners `LinkingAlgebra ![X, Y]`.
 
 ## References
 
@@ -69,7 +69,7 @@ variable (k : ι) (φ : End (X k) →ₚ[ℂ] ℂ)
 
 /-- The `StarPositiveFunctional` on `LinkingAlgebra X` obtained by composing a positive linear
 functional `φ : End (X k) →ₚ[ℂ] ℂ` with extraction of the `(k, k)` diagonal corner. -/
-def cornerFunctional : StarPositiveFunctional (LinkingAlgebra X) where
+noncomputable def cornerFunctional : StarPositiveFunctional (LinkingAlgebra X) where
   toLinearMap :=
     { toFun A := φ (End.of (A.entry k k))
       map_add' A B := by simp only [add_entry, End.of_add, map_add]
@@ -381,6 +381,33 @@ noncomputable instance instNormedAlgebra : NormedAlgebra ℂ (LinkingAlgebra X) 
     rw [map_smul, norm_smul]
     exact mul_le_mul_of_nonneg_left (norm_gnsRep_le k φ A) (norm_nonneg c)
 
+/-- The `(i, j)` matrix entry extraction as a continuous `ℂ`-linear map
+`LinkingAlgebra X →L[ℂ] (X j ⟶ X i)`. -/
+noncomputable def entryCLM (X : ι → C) (i j : ι) :
+    letI := CStarCategory.normedAddCommGroup (X j) (X i)
+    letI := CStarCategory.normedSpace (X j) (X i)
+    LinkingAlgebra X →L[ℂ] (X j ⟶ X i) :=
+  letI := CStarCategory.normedAddCommGroup (X j) (X i)
+  letI := CStarCategory.normedSpace (X j) (X i)
+  LinearMap.mkContinuous
+    { toFun := fun A => A.entry i j
+      map_add' := fun A B => add_entry A B i j
+      map_smul' := fun c A => smul_entry c A i j }
+    1 (fun A => by simpa only [LinearMap.coe_mk, AddHom.coe_mk, one_mul] using norm_entry_le A i j)
+
+/-- Evaluation of `LinkingAlgebra.entryCLM`. -/
+@[simp] theorem entryCLM_apply (X : ι → C) (i j : ι) (A : LinkingAlgebra X) :
+    entryCLM X i j A = A.entry i j := (rfl)
+
+/-- Matrix entry extraction `entryCLM X i j` has operator norm at most `1`. -/
+theorem norm_entryCLM_le (X : ι → C) (i j : ι) :
+    letI := CStarCategory.normedAddCommGroup (X j) (X i)
+    letI := CStarCategory.normedSpace (X j) (X i)
+    ‖entryCLM X i j‖ ≤ 1 := by
+  let := CStarCategory.normedAddCommGroup (X j) (X i)
+  let := CStarCategory.normedSpace (X j) (X i)
+  exact LinearMap.mkContinuous_norm_le _ zero_le_one _
+
 /-- Finite linking algebras of a C*-category are complete. -/
 instance instCompleteSpace : CompleteSpace (LinkingAlgebra X) :=
   Metric.complete_of_cauchySeq_tendsto fun u hu => by
@@ -455,7 +482,7 @@ variable [DecidableEq ι] (X)
 
 /-- The `(i, j)` matrix-unit embedding as a linear isometry
 `(X j ⟶ X i) →ₗᵢ[ℂ] LinkingAlgebra X`. -/
-def singleLinearIsometry (i j : ι) :
+noncomputable def singleLinearIsometry (i j : ι) :
     letI := CStarCategory.normedAddCommGroup (X j) (X i)
     (X j ⟶ X i) →ₗᵢ[ℂ] LinkingAlgebra X :=
   letI := CStarCategory.normedAddCommGroup (X j) (X i)
@@ -467,11 +494,11 @@ def singleLinearIsometry (i j : ι) :
 @[simp] theorem singleLinearIsometry_apply (i j : ι) (f : X j ⟶ X i) :
     singleLinearIsometry X i j f = single X i j f := (rfl)
 
-/-- The `(i, j)` corner `cornerSubmodule X ℂ i j` is linearly isometrically equivalent to the Hom
-space `X j ⟶ X i`. -/
-def cornerLinearIsometryEquiv (i j : ι) :
+/-- The `(i, j)` corner `TauCeti.cornerSubmodule ℂ (proj X i) (proj X j)` is linearly
+isometrically equivalent to the Hom space `X j ⟶ X i`. -/
+noncomputable def cornerLinearIsometryEquiv (i j : ι) :
     letI := CStarCategory.normedAddCommGroup (X j) (X i)
-    cornerSubmodule X ℂ i j ≃ₗᵢ[ℂ] (X j ⟶ X i) :=
+    TauCeti.cornerSubmodule ℂ (proj X i) (proj X j) ≃ₗᵢ[ℂ] (X j ⟶ X i) :=
   letI := CStarCategory.normedAddCommGroup (X j) (X i)
   { toFun A := A.1.entry i j
     invFun f := ⟨single X i j f, by simp⟩
@@ -488,7 +515,8 @@ def cornerLinearIsometryEquiv (i j : ι) :
       conv_rhs => rw [← Submodule.norm_coe, hA]
       exact (norm_single X i j (A.1.entry i j)).symm }
 
-@[simp] theorem cornerLinearIsometryEquiv_apply (i j : ι) (A : cornerSubmodule X ℂ i j) :
+@[simp] theorem cornerLinearIsometryEquiv_apply (i j : ι)
+    (A : TauCeti.cornerSubmodule ℂ (proj X i) (proj X j)) :
     cornerLinearIsometryEquiv X i j A = A.1.entry i j := (rfl)
 
 @[simp] theorem cornerLinearIsometryEquiv_symm_apply (i j : ι) (f : X j ⟶ X i) :

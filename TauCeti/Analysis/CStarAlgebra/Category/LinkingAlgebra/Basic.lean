@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.CategoryTheory.Preadditive.Mat
 public import TauCeti.CategoryTheory.Dagger.Basic
 public import TauCeti.CategoryTheory.Linear.Mat
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # Algebraic finite linking algebras of dagger linear categories
@@ -23,9 +24,10 @@ the dagger structure equips `LinkingAlgebra X` with the conjugate-transpose invo
 `(star A).entry i j = dagger (A.entry j i)`.
 
 This file establishes the algebraic ring, module, algebra, and star-ring structures on
-`TauCeti.LinkingAlgebra X`, together with matrix units `LinkingAlgebra.single`, diagonal corner
-projections `LinkingAlgebra.proj`, non-unital star-algebra diagonal embeddings
-`LinkingAlgebra.diagHom`, and corner submodules `LinkingAlgebra.cornerSubmodule`. For the
+`TauCeti.LinkingAlgebra X`, together with the bundled algebra equivalence
+`LinkingAlgebra.endMatAlgEquiv`, matrix units `LinkingAlgebra.single`, diagonal corner projections
+`LinkingAlgebra.proj`, non-unital star-algebra diagonal embeddings `LinkingAlgebra.diagHom`, and
+corner membership `LinkingAlgebra.mem_cornerSubmodule` for `TauCeti.cornerSubmodule`. For the
 C*-algebra norm, GNS representations, isometric corner identifications, and matrix positivity
 criterion on C*-categories, see `TauCeti.Analysis.CStarAlgebra.Category.LinkingAlgebra.CStar`.
 
@@ -37,6 +39,8 @@ criterion on C*-categories, see `TauCeti.Analysis.CStarAlgebra.Category.LinkingA
 
 public section
 
+noncomputable section
+
 open CategoryTheory
 
 universe r v u
@@ -47,7 +51,7 @@ namespace TauCeti
 synonym of `CategoryTheory.End (Mat_.mk ι X)`. Its `(i, j)` matrix entry `A.entry i j` is a
 morphism `X j ⟶ X i`, equipped with operator-order matrix multiplication and (in a dagger
 category) conjugate-transpose involution. -/
-@[expose] def LinkingAlgebra {C : Type u} [Category.{v} C] [Preadditive C]
+def LinkingAlgebra {C : Type u} [Category.{v} C] [Preadditive C]
     {ι : Type} [Fintype ι] (X : ι → C) : Type v :=
   End (Mat_.mk ι X)
 
@@ -78,7 +82,7 @@ def ofEntry (f : (i j : ι) → (X j ⟶ X i)) : LinkingAlgebra X :=
   ext i j; rfl
 
 /-- The ring structure on `LinkingAlgebra X`, inherited from `End (Mat_.mk ι X)`. -/
-noncomputable instance instRing : Ring (LinkingAlgebra X) :=
+instance instRing : Ring (LinkingAlgebra X) :=
   inferInstanceAs (Ring (End (Mat_.mk ι X)))
 
 @[simp] theorem zero_entry (i j : ι) : (0 : LinkingAlgebra X).entry i j = 0 := (rfl)
@@ -124,11 +128,23 @@ section Linear
 variable {R : Type r} [Semiring R] [CategoryTheory.Linear R C]
 
 /-- The `R`-module structure on `LinkingAlgebra X`, inherited from `End (Mat_.mk ι X)`. -/
-noncomputable instance instModule : Module R (LinkingAlgebra X) :=
+instance instModule : Module R (LinkingAlgebra X) :=
   inferInstanceAs (Module R (End (Mat_.mk ι X)))
 
 @[simp] theorem smul_entry (c : R) (A : LinkingAlgebra X) (i j : ι) :
     (c • A).entry i j = c • A.entry i j := (rfl)
+
+/-- Left scalar multiplication commutes with multiplication in `LinkingAlgebra X`. -/
+instance instSMulCommClass : SMulCommClass R (LinkingAlgebra X) (LinkingAlgebra X) where
+  smul_comm c A B := by
+    ext i k
+    simp [smul_eq_mul, Finset.smul_sum]
+
+/-- Left scalar multiplication associates with multiplication in `LinkingAlgebra X`. -/
+instance instIsScalarTower : IsScalarTower R (LinkingAlgebra X) (LinkingAlgebra X) where
+  smul_assoc c A B := by
+    ext i k
+    simp [smul_eq_mul, Finset.smul_sum]
 
 end Linear
 
@@ -138,10 +154,8 @@ variable {R : Type r} [CommSemiring R] [CategoryTheory.Linear R C]
 
 /-- The `R`-algebra structure on `LinkingAlgebra X`, built via `Algebra.ofModule` on top of
 `instModule` and `instRing` to stay diamond-free with `instModule`. -/
-noncomputable instance instAlgebra : Algebra R (LinkingAlgebra X) :=
-  Algebra.ofModule
-    (fun c A B => by ext i k; simp [Finset.smul_sum])
-    (fun c A B => by ext i k; simp [Finset.smul_sum])
+instance instAlgebra : Algebra R (LinkingAlgebra X) :=
+  Algebra.ofModule (fun _ _ _ => smul_mul_assoc _ _ _) (fun _ _ _ => mul_smul_comm _ _ _)
 
 @[simp] theorem algebraMap_entry [DecidableEq ι] (c : R) (i j : ι) :
     (algebraMap R (LinkingAlgebra X) c).entry i j =
@@ -150,6 +164,43 @@ noncomputable instance instAlgebra : Algebra R (LinkingAlgebra X) :=
   split_ifs <;> simp
 
 end Algebra
+
+section EndMatAlgEquiv
+
+/-- The canonical `R`-algebra equivalence identifying `LinkingAlgebra X` with
+`CategoryTheory.End (Mat_.mk ι X)`, reversing entry indices to match operator order. -/
+def endMatAlgEquiv (X : ι → C) (R : Type r)
+    [CommSemiring R] [CategoryTheory.Linear R C] :
+    LinkingAlgebra X ≃ₐ[R] End (Mat_.mk ι X) where
+  toFun A := A
+  invFun f := f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  commutes' c := by
+    apply End.ext
+    refine Mat_.hom_ext _ _ fun j i => ?_
+    classical
+    change (algebraMap R (LinkingAlgebra X) c).entry i j =
+      (algebraMap R (End (Mat_.mk ι X)) c).asHom j i
+    rw [algebraMap_entry, Algebra.algebraMap_eq_smul_one, End.smul_asHom, End.one_asHom,
+      Mat_.smul_apply]
+    by_cases hji : i = j
+    · subst hji; simp [Mat_.id_apply_self]
+    · simp [hji, Mat_.id_apply_of_ne (Mat_.mk ι X) j i (Ne.symm hji)]
+
+/-- Entrywise evaluation of `endMatAlgEquiv`. -/
+@[simp] theorem endMatAlgEquiv_asHom {R : Type r} [CommSemiring R]
+    [CategoryTheory.Linear R C] (A : LinkingAlgebra X) (j i : ι) :
+    (endMatAlgEquiv X R A).asHom j i = A.entry i j := (rfl)
+
+/-- Entrywise evaluation of `(endMatAlgEquiv X R).symm`. -/
+@[simp] theorem endMatAlgEquiv_symm_entry {R : Type r} [CommSemiring R]
+    [CategoryTheory.Linear R C] (f : End (Mat_.mk ι X)) (i j : ι) :
+    ((endMatAlgEquiv X R).symm f).entry i j = f.asHom j i := (rfl)
+
+end EndMatAlgEquiv
 
 section Star
 
@@ -207,11 +258,11 @@ theorem single_entry (i j i' j' : ι) (f : X j ⟶ X i) :
     (single X i j f).entry i j = f := by simp [single_entry]
 
 /-- Off-row entries of `single X i j f` vanish. -/
-theorem single_entry_of_ne_left {i j i' j' : ι} (hi : i' ≠ i) (f : X j ⟶ X i) :
+@[simp] theorem single_entry_of_ne_left {i j i' j' : ι} (hi : i' ≠ i) (f : X j ⟶ X i) :
     (single X i j f).entry i' j' = 0 := by simp [single_entry, hi]
 
 /-- Off-column entries of `single X i j f` vanish. -/
-theorem single_entry_of_ne_right {i j i' j' : ι} (hj : j' ≠ j) (f : X j ⟶ X i) :
+@[simp] theorem single_entry_of_ne_right {i j i' j' : ι} (hj : j' ≠ j) (f : X j ⟶ X i) :
     (single X i j f).entry i' j' = 0 := by simp [single_entry, hj]
 
 /-- `single X i j` sends `0` to `0`. -/
@@ -271,14 +322,14 @@ theorem single_injective (i j : ι) : Function.Injective (single X i j) := fun _
   · simp [mul_entry, single_entry_of_ne_left X hi]
 
 /-- Multiplying incompatible matrix units gives `0`. -/
-theorem single_mul_single_of_ne {i j j' k : ι} (h : j ≠ j') (f : X j ⟶ X i) (g : X k ⟶ X j') :
-    single X i j f * single X j' k g = 0 := by
+@[simp] theorem single_mul_single_of_ne {i j j' k : ι} (h : j ≠ j') (f : X j ⟶ X i)
+    (g : X k ⟶ X j') : single X i j f * single X j' k g = 0 := by
   ext i' k'
   simp only [mul_entry, zero_entry]
   refine Finset.sum_eq_zero fun m _ => ?_
   by_cases hm : m = j
-  · subst hm; simp [single_entry_of_ne_left X h]
-  · simp [single_entry_of_ne_right X hm]
+  · subst hm; simp [h]
+  · simp [hm]
 
 /-- Multiplying a matrix unit on the left by its star yields the diagonal matrix unit of
 `f ≫ dagger f`. -/
@@ -309,11 +360,13 @@ theorem proj_def (i : ι) : proj X i = single X i i (𝟙 (X i)) := (rfl)
   single_entry_self X i i (𝟙 (X i))
 
 /-- Off-row entries of `proj X i` vanish. -/
-theorem proj_entry_of_ne_left {i i' j' : ι} (hi : i' ≠ i) : (proj X i).entry i' j' = 0 :=
+@[simp] theorem proj_entry_of_ne_left {i i' j' : ι} (hi : i' ≠ i) :
+    (proj X i).entry i' j' = 0 :=
   single_entry_of_ne_left X hi _
 
 /-- Off-column entries of `proj X i` vanish. -/
-theorem proj_entry_of_ne_right {i i' j' : ι} (hj : j' ≠ i) : (proj X i).entry i' j' = 0 :=
+@[simp] theorem proj_entry_of_ne_right {i i' j' : ι} (hj : j' ≠ i) :
+    (proj X i).entry i' j' = 0 :=
   single_entry_of_ne_right X hj _
 
 @[simp] theorem star_proj [DaggerCategory C] [DaggerPreadditive C] (i : ι) :
@@ -333,6 +386,10 @@ theorem proj_mul_proj (i j : ι) :
 
 @[simp] theorem proj_mul_proj_self (i : ι) : proj X i * proj X i = proj X i := by
   simp [proj_mul_proj]
+
+/-- Each diagonal corner projection is idempotent. -/
+theorem isIdempotentElem_proj (i : ι) : IsIdempotentElem (proj X i) :=
+  proj_mul_proj_self X i
 
 /-- Each diagonal corner projection is a star projection. -/
 theorem isStarProjection_proj [DaggerCategory C] [DaggerPreadditive C] (i : ι) :
@@ -363,10 +420,10 @@ theorem isStarProjection_proj [DaggerCategory C] [DaggerPreadditive C] (i : ι) 
   · rw [Fintype.sum_eq_single j]
     · simp [proj_def]
     · intro j' hj'
-      simp [proj_def, single_mul_single_of_ne X hj']
+      simp [proj_def, hj']
   · intro i' hi'
     exact Finset.sum_eq_zero fun j' _ => by
-      simp [proj_def, single_mul_single_of_ne X (Ne.symm hi')]
+      simp [proj_def, Ne.symm hi']
 
 section DiagHom
 
@@ -389,6 +446,7 @@ variable {R}
     diagHom X R i a = single X i i a.asHom := (rfl)
 
 /-- The diagonal embedding `diagHom X R i` sends `1 : End (X i)` to `proj X i`. -/
+-- Not `@[simp]`: `diagHom_apply` and `End.one_asHom` simplify the LHS (`simpNF`).
 theorem diagHom_one (i : ι) : diagHom X R i 1 = proj X i := by
   rw [diagHom_apply, End.one_asHom, proj_def]
 
@@ -408,22 +466,12 @@ theorem mem_range_diagHom_iff (i : ι) (A : LinkingAlgebra X) :
 
 end DiagHom
 
-/-- The `(i, j)` corner submodule `{ A : LinkingAlgebra X | proj X i * A * proj X j = A }`. -/
-def cornerSubmodule (R : Type r) [Semiring R] [CategoryTheory.Linear R C] (i j : ι) :
-    Submodule R (LinkingAlgebra X) where
-  carrier := { A : LinkingAlgebra X | proj X i * A * proj X j = A }
-  zero_mem' := by simp
-  add_mem' {A B} hA hB := by
-    simp only [Set.mem_ofPred_eq] at hA hB ⊢
-    rw [mul_add, add_mul, hA, hB]
-  smul_mem' c {A} hA := by
-    simp only [Set.mem_ofPred_eq] at hA ⊢
-    rw [proj_mul_mul_proj, smul_entry, single_smul, ← proj_mul_mul_proj, hA]
-
+/-- Membership in the `(i, j)` idempotent corner `TauCeti.cornerSubmodule R (proj X i) (proj X j)`
+is characterized by left-right compression `proj X i * A * proj X j = A`. -/
 @[simp] theorem mem_cornerSubmodule {R : Type r} [Semiring R] [CategoryTheory.Linear R C]
     (i j : ι) (A : LinkingAlgebra X) :
-    A ∈ cornerSubmodule X R i j ↔ proj X i * A * proj X j = A :=
-  Iff.rfl
+    A ∈ TauCeti.cornerSubmodule R (proj X i) (proj X j) ↔ proj X i * A * proj X j = A :=
+  TauCeti.mem_cornerSubmodule_iff R (isIdempotentElem_proj X i) (isIdempotentElem_proj X j)
 
 end MatrixUnits
 
