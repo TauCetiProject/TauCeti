@@ -399,6 +399,16 @@ theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ :
   simpa using ((hσ.tendsto.comp tendsto_snd).add
     (b.tendsto_rpow_neg_smul_coefficient_smul_zero (by linarith) hξ)).congr' heq
 
+/-- The principal symbol vanishes at every position where the full symbol vanishes. -/
+theorem coefficient_principal_eq_zero_of_forall {x : CoordinateSpace n}
+    (h : ∀ η, a.toSymbol.coefficient (x, η) = 0) (ξ : CoordinateSpace n) :
+    a.principal.coefficient (x, ξ) = 0 := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · exact a.principal.zero_covector x
+  refine tendsto_nhds_unique ((a.tendsto_rpow_neg_smul_coefficient_smul hξ).comp
+    (tendsto_id.prodMk tendsto_const_nhds)) ?_
+  simp [Function.comp_def, h]
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _
