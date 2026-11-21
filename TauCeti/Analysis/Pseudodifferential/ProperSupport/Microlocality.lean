@@ -180,14 +180,9 @@ theorem quantizeDistribution_toDistribution_cutoffTempered (ha : a.HasNearDiagon
         (T.cutoffTempered χ)) := by
   ext φ
   rw [quantizeDistribution_apply, complexPairing_toDistribution, toDistribution_apply,
-    quantizeTempered_apply_apply, cutoffTempered_def, cutoffTempered_def]
-  congr 1
-  ext x
-  simp only [TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-    TestFunction.toSchwartzMapCLM_apply]
-  by_cases hx : x ∈ tsupport χ
-  · rw [eqOn_transposeTest ha hψ hψc hU hψU φ (hχU hx)]
-  · simp [image_eq_zero_of_notMem_tsupport hx]
+    quantizeTempered_apply_apply]
+  refine T.cutoffTempered_apply_congr χ fun x hx ↦ ?_
+  rw [TestFunction.toSchwartzMapCLM_apply, eqOn_transposeTest ha hψ hψc hU hψU φ (hχU hx)]
 
 /-- Microlocality on cut-off distributions: if `χ T` is microlocally smooth at `(x₀, ξ₀)`, so is
 `Op(a) (χ T)`. Since `χ T` lies in some `H^t` and `Op(a) (χ T) = Op(ψ a) (χ T)` for a cutoff `ψ`,
