@@ -48,7 +48,6 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
 * `Complex.neg_mem_slitPlane_of_norm_eq_one`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`
-* `Complex.reflected_eulerKernel_mem_slitPlane`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -379,16 +378,6 @@ theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
   convert h using 1
   simp only [real_smul]
   ring
-
-/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
-theorem reflected_eulerKernel_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
-    {u : ℝ} (hu : u ∈ Set.Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
-  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
-    push_cast
-    ring
-  rw [hreflect]
-  exact one_sub_mul_ofReal_mem_slitPlane hz
-    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
 
 /-- Left-multiplying `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)

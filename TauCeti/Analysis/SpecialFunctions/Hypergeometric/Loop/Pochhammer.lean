@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
-import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
@@ -312,7 +311,7 @@ private theorem pochhammer_change_radii (a b c z : ℂ) {A ρ₀ ρ₀' ρ₁ ρ
   have hint₁ (r : ℝ) (hr : 0 < r) (hrA : r < 1 - A) :
       IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume r (1 - A) :=
     (continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr h1A1 fun u hu =>
-      reflected_eulerKernel_mem_slitPlane hz
+      one_sub_sub_neg_mul_ofReal_mem_slitPlane hz
         ⟨hr.le.trans hu.1, hu.2.trans h1A1.le⟩).intervalIntegrable_of_Icc hrA.le
   rw [hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀ hρ₀A hρ₁ hρ₁A hz,
     hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀' hρ₀'A hρ₁' hρ₁'A hz,
@@ -336,7 +335,7 @@ private theorem pochhammer_change_basepoint (a b c z : ℂ) (hz : 1 - z ∈ slit
     one_sub_mul_ofReal_mem_slitPlane hz ⟨hr₀.le.trans hu.1, hu.2.trans hAA'.le⟩
   have hcont₁ := continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr₁ h1AA'
     fun u hu =>
-      reflected_eulerKernel_mem_slitPlane hz ⟨hr₁.le.trans hu.1, hu.2.trans h1AA'.le⟩
+      one_sub_sub_neg_mul_ofReal_mem_slitPlane hz ⟨hr₁.le.trans hu.1, hu.2.trans h1AA'.le⟩
   have hsplit₀ : (∫ u : ℝ in r₀..A', affineSegIntegrand a b (c - b) 1 z u) =
       (∫ u : ℝ in r₀..A, affineSegIntegrand a b (c - b) 1 z u) +
         ∫ u : ℝ in A..A', affineSegIntegrand a b (c - b) 1 z u :=
@@ -429,7 +428,7 @@ theorem analyticOnNhd_hypergeometricPochhammerLoop {A ρ₀ ρ₁ : ℝ}
     one_sub_mul_ofReal_mem_slitPlane hz ⟨hρ₀.le.trans hu.1, hu.2.trans hA1.le⟩
   have hslit₁ : ∀ u ∈ Icc ρ₁ (1 - A), (1 - p.2.2.2) - (-p.2.2.2) * (u : ℂ) ∈ slitPlane :=
     fun u hu =>
-      reflected_eulerKernel_mem_slitPlane hz ⟨hρ₁.le.trans hu.1, hu.2.trans h1A1.le⟩
+      one_sub_sub_neg_mul_ofReal_mem_slitPlane hz ⟨hρ₁.le.trans hu.1, hu.2.trans h1A1.le⟩
   have haff₀ : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
       affineLoopZero q.1 q.2.1 (q.2.2.1 - q.2.1) 1 q.2.2.2 A ρ₀) p :=
     ((by fun_prop : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
@@ -488,7 +487,8 @@ theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0
       exact Icc_subset_Icc_right (by linarith))
     rw [uIcc_of_le zero_le_one]
     exact continuousOn_of_forall_continuousAt fun u hu =>
-      ContinuousAt.cpow (by fun_prop) continuousAt_const (reflected_eulerKernel_mem_slitPlane hz hu)
+      ContinuousAt.cpow (by fun_prop) continuousAt_const
+        (one_sub_sub_neg_mul_ofReal_mem_slitPlane hz hu)
   rw [hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀ hρ₀A hρ₁ hρ₁A hz,
     affineLoopZero_eq_integral a b (c - b) 1 z hb hρ₀ (hρ₀A.trans hA1) hρ₀A.le
       (closedBall_one_subset_slitPlane_iff.mpr hz₀) hint₀,

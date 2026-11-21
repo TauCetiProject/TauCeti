@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 ## Main results
 
+* `Complex.exp_ofReal_log_add_mul_I`: logarithmic coordinates parametrize a positive-radius circle.
 * `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
   from `c`.
 * `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
@@ -31,6 +32,17 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 -/
 
 public section
+
+namespace Complex
+
+/-- Exponentiating logarithmic polar coordinates gives the circle of positive radius `r`
+about the origin. The angle is unrestricted, so the logarithmic coordinate may continue
+through any number of turns. -/
+theorem exp_ofReal_log_add_mul_I {r : ℝ} (hr : 0 < r) (θ : ℝ) :
+    exp ((Real.log r : ℂ) + θ * I) = circleMap 0 r θ := by
+  rw [exp_add, ← ofReal_exp, Real.exp_log hr, circleMap_zero]
+
+end Complex
 
 namespace TauCeti
 

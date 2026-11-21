@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.Ring.Hom.Defs
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
 import TauCeti.Data.Rat.NumDenDvd
 
@@ -84,7 +85,9 @@ namespace TauCeti
 theorem one_add_div_one_sub_sub_mul_div_one_sub {K : Type*} [DivisionRing K] {u : K}
     (hu : 1 - u ≠ 0) (z : K) :
     1 + u / (1 - u) - z * (u / (1 - u)) = (1 - z * u) * (1 - u)⁻¹ := by
-  rw [one_add_div hu, sub_add_cancel, one_div, div_eq_mul_inv, sub_mul, one_mul, mul_assoc]
+  rw [one_add_div hu]
+  simp only [div_eq_mul_inv]
+  noncomm_ring
 
 /-- **The Möbius difference formula**: if both denominators are nonzero, then
 `(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =

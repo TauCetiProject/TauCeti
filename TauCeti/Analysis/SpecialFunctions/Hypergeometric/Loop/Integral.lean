@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
-import Mathlib.Analysis.Analytic.Uniqueness
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
@@ -44,7 +42,8 @@ boundary throughout the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`:
   `{p | 1 - p.2.2 ∈ Complex.slitPlane ∧ ‖p.2.2‖ * ρ < 1}`
   (`Complex.analyticOnNhd_hypergeometricLoopZero`).
   `Complex.hypergeometricLoopZero_eq_of_integrableOn` gives radius independence whenever
-  the Euler tail from the smaller radius is integrable.
+  the Euler tail from the smaller radius is integrable: this replaces the global cut-plane
+  condition, while both radii still satisfy `0 < ρᵢ < 1` and `‖z‖ * ρᵢ < 1`.
 
 For `0 < re b < re c` and admissible radii `ρ ∈ (0, 1)` (satisfying
 `Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane` for `hypergeometricLoopOne`, or
@@ -89,6 +88,16 @@ open scoped Topology Interval
 namespace Complex
 
 /-! ### Internal `(0+)` keyhole functional -/
+
+/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
+private theorem one_sub_sub_neg_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {u : ℝ} (hu : u ∈ Set.Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
+  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [hreflect]
+  exact one_sub_mul_ofReal_mem_slitPlane hz
+    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
 
 private def affineSegIntegrand (a β γ w₀ w₁ : ℂ) (u : ℝ) : ℂ :=
   (u : ℂ) ^ (β - 1) * (1 - (u : ℂ)) ^ (γ - 1) * (w₀ - w₁ * u) ^ (-a)
@@ -140,8 +149,7 @@ private theorem I_mul_affineLogIntegrand_vertical (a β γ w₀ w₁ : ℂ) {ρ 
       affineCircIntegrand a β γ w₀ w₁ ρ θ := by
   have hρ0 : (ρ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hρ.ne'
   have hexp : exp ((Real.log ρ : ℂ) + θ * I) = ρ * exp (θ * I) := by
-    simpa only [ofReal_log hρ.le, mul_one, cpow_one] using
-      exp_log_add_mul hρ0 (θ * I) 1
+    simpa only [circleMap_zero] using exp_ofReal_log_add_mul_I hρ θ
   have hpow : exp ((β - 1) * ((Real.log ρ : ℂ) + θ * I)) =
       (ρ : ℂ) ^ (β - 1) * exp (θ * I * (β - 1)) := by
     rw [mul_comm]
@@ -547,7 +555,7 @@ private theorem intervalIntegrable_loopOne_seg (a b c z : ℂ) (hb : 0 < b.re) {
   rw [uIcc_of_le hρ1.le]
   refine continuousOn_of_forall_continuousAt fun u hu => ?_
   exact ContinuousAt.cpow (by fun_prop) continuousAt_const
-    (reflected_eulerKernel_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩)
+    (one_sub_sub_neg_mul_ofReal_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩)
 
 /-- **Radius independence of the `(1+)` loop integral.** Whenever `0 < re b` and the closed disks
 around `1` of radii `ρ₁, ρ₂ ∈ (0, 1)` map into the slit plane under `u ↦ 1 - z u`, the loop
@@ -575,7 +583,7 @@ theorem analyticOnNhd_hypergeometricLoopOne {b : ℂ} (hb : 0 < b.re) {ρ : ℝ}
   intro p hp
   have hz : 1 - p.2.2 ∈ slitPlane := hp (mem_closedBall_self (by positivity))
   have hslit : ∀ u ∈ Icc ρ 1, (1 - p.2.2) - (-p.2.2) * (u : ℂ) ∈ slitPlane := fun u hu =>
-    reflected_eulerKernel_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩
+    one_sub_sub_neg_mul_ofReal_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩
   have ha : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ => q.1) p := analyticAt_fst
   have hc : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ => q.2.1) p := analyticAt_fst.comp analyticAt_snd
   have hz_an : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ => q.2.2) p := analyticAt_snd.comp analyticAt_snd
@@ -610,7 +618,7 @@ theorem hypergeometricLoopOne_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re
       rw [uIcc_of_le zero_le_one]
       exact continuousOn_of_forall_continuousAt fun u hu =>
         ContinuousAt.cpow (by fun_prop) continuousAt_const
-          (reflected_eulerKernel_mem_slitPlane hz_slit hu))
+          (one_sub_sub_neg_mul_ofReal_mem_slitPlane hz_slit hu))
   rw [hypergeometricLoopOne_eq_affineLoopZero,
     affineLoopZero_eq_integral a (c - b) b (1 - z) (-z) hcb hρ hρ1 hρ1.le
       (by simpa only [norm_neg] using hz) hint]
@@ -874,11 +882,16 @@ private theorem eq_mul_of_eq_mul_hypergeometricLoopZeroFactor {b c loop value : 
   have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos (by simpa using hbc)
   have hG1b : Gamma (1 - b) ≠ 0 :=
     Gamma_ne_zero fun n hn => hb_int n (by linear_combination -hn)
-  have hexp : exp (-(b * π * I)) * exp (b * π * I) = 1 := by
-    rw [← exp_add, neg_add_cancel, exp_zero]
-  rw [h]
-  field_simp
-  linear_combination value * hexp.symm
+  have hfactor : 2 * π * I * exp (b * π * I) * Gamma (c - b) / Gamma (1 - b) ≠ 0 := by
+    simp [hGcb, hG1b, Real.pi_ne_zero]
+  have hphase : -(b * π * I) = -b * π * I := by ring
+  have hinv : (2 * π * I * exp (b * π * I) * Gamma (c - b) / Gamma (1 - b))⁻¹ =
+      exp (-b * π * I) * Gamma (1 - b) / (2 * π * I * Gamma (c - b)) := by
+    simp only [div_eq_mul_inv, mul_inv_rev, inv_inv, ← exp_neg]
+    rw [hphase]
+    ring
+  rw [← hinv, eq_inv_mul_iff_mul_eq₀ hfactor]
+  exact h.symm
 
 /-- **DLMF 15.6.4 in the Euler convergence region.** For `0 < re b < re c`, `b ∉ {1, 2, …}`,
 `1 - z ∈ Complex.slitPlane`, and `ρ ∈ (0, 1)` satisfying `‖z‖ * ρ < 1`, `Complex.eulerIntegral` is
