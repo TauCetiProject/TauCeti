@@ -49,6 +49,8 @@ valid including at positive integers where both sides vanish.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
+* `Real.Gamma_pos_of_mem_Ioo`, `Real.Gamma_neg_of_mem_Ioo` — the sign of `Γ` between consecutive
+  poles: positive on `(-2n, -2n + 1)` and negative on `(-2n - 1, -2n)`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
@@ -164,6 +166,32 @@ theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
   | succ n ih =>
     rw [Finset.prod_range_succ, mul_right_comm, ih, Nat.cast_succ, ← add_assoc,
       Gamma_add_one (by positivity), mul_comm]
+
+/-- `Γ` is positive between the poles `-2n` and `-2n + 1`. -/
+theorem Gamma_pos_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) :
+    0 < Gamma s := by
+  -- reflection: `Γ(s) Γ(1 - s) = π / sin(π s)`, with `Γ(1 - s) > 0` and `sin(π s) > 0`
+  have hsin : 0 < sin (π * s) := by
+    rw [← sin_add_nat_mul_two_pi _ n]
+    exact sin_pos_of_pos_of_lt_pi (by nlinarith [hs.1, pi_pos]) (by nlinarith [hs.2, pi_pos])
+  have h1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  have h2 : 0 < Gamma s * Gamma (1 - s) := by
+    rw [Gamma_mul_Gamma_one_sub]
+    positivity
+  exact pos_of_mul_pos_left h2 h1.le
+
+/-- `Γ` is negative between the poles `-2n - 1` and `-2n`. -/
+theorem Gamma_neg_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : ℝ) - 1) (-2 * n)) :
+    Gamma s < 0 := by
+  -- reflection: `Γ(s) Γ(1 - s) = π / sin(π s)`, with `Γ(1 - s) > 0` and `sin(π s) < 0`
+  have hsin : sin (π * s) < 0 := by
+    rw [← sin_add_nat_mul_two_pi _ n]
+    exact sin_neg_of_neg_of_neg_pi_lt (by nlinarith [hs.2, pi_pos]) (by nlinarith [hs.1, pi_pos])
+  have h1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  have h2 : Gamma s * Gamma (1 - s) < 0 := by
+    rw [Gamma_mul_Gamma_one_sub]
+    exact div_neg_of_pos_of_neg pi_pos hsin
+  exact neg_of_mul_neg_left h2 h1.le
 
 /-- The half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the factorial form of
 `Real.Gamma_nat_add_half`, obtained from Legendre's duplication formula at `n + 1 / 2`. -/
