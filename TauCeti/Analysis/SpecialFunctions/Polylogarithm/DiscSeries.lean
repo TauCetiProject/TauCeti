@@ -15,19 +15,19 @@ import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 
 /-!
-# The power series of integer-weight polylogarithms on the open unit disc
+# The power series of integer-weight polylogarithms on the unit disc
 
 On the open unit disc `‖z‖ < 1`, the principal polylogarithm `Liₙ(z)` of every integer weight
 `n : ℤ` expands as the Dirichlet-type power series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n`, with
-complex integer power `(k + 1 : ℂ) ^ n`. The convergence is absolute on the open disc, uniform on
-every closed subdisc `‖z‖ ≤ r` with `r < 1`, and locally uniform on `Metric.ball 0 1`.
+complex integer power `(k + 1 : ℂ) ^ n`; in weight `n ≥ 2` the expansion holds on the whole closed
+unit disc `‖z‖ ≤ 1`. The convergence is absolute on the open disc and, in weight `n ≥ 2`, on the
+closed disc, where the termwise integration of the radial integral is dominated by the series at
+`z = 1`. It is uniform on every closed subdisc `‖z‖ ≤ r` with `r < 1`, and locally uniform on
+`Metric.ball 0 1`.
 
 This germ identification provides the local analytic expansion of `polylog n` around `0`: its
 term-by-term derivative gives `deriv (polylog n) 0 = 1` in every integer weight and supplies the
 open-disc Euler differential relation that analytically continues across `{z | 1 - z ∈ slitPlane}`.
-
-In weight `n ≥ 2` the termwise integration of the radial integral is dominated by the series at
-`z = 1`, so the expansion holds, absolutely, on the whole closed unit disc `‖z‖ ≤ 1`.
 
 ## Main results
 
