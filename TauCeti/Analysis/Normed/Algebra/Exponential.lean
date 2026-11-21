@@ -217,6 +217,21 @@ end TauCeti
 
 namespace IsIdempotentElem
 
+private theorem exp_mul_of_commute_aux (𝕂 : Type*) {A : Type*}
+    [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
+    [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A]
+    {e : A} (he : IsIdempotentElem e) {a : A} (h : Commute a e) :
+    NormedSpace.exp (a * e) = 1 + (NormedSpace.exp a - 1) * e := by
+  have hseries : HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • (a * e) ^ (n + 1))
+      ((NormedSpace.exp a - 1) * e) :=
+    ((NormedSpace.hasSum_exp_sub_one 𝕂 a).map (AddMonoidHom.mulRight e)
+      (continuous_mul_const e)).congr_fun fun n ↦ by
+      simp [h.mul_pow, he.pow_succ_eq]
+  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : 𝕂) • (a * e) ^ n)
+      (1 + (NormedSpace.exp a - 1) * e) := by
+    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
+  exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕂) (a * e)).unique hfull
+
 section RatBanachAlgebra
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A] {e : A}
@@ -224,16 +239,8 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A] {e :
 /-- In a complete normed `ℚ`-algebra, if `a` commutes with an idempotent `e`, then
 `exp (a * e) = 1 + (exp a - 1) * e`. -/
 theorem exp_mul_of_commute (he : IsIdempotentElem e) {a : A} (h : Commute a e) :
-    NormedSpace.exp (a * e) = 1 + (NormedSpace.exp a - 1) * e := by
-  have hseries : HasSum (fun n : ℕ ↦ (((n + 1)! : ℚ))⁻¹ • (a * e) ^ (n + 1))
-      ((NormedSpace.exp a - 1) * e) :=
-    ((NormedSpace.hasSum_exp_sub_one ℚ a).map (AddMonoidHom.mulRight e)
-      (continuous_mul_const e)).congr_fun fun n ↦ by
-      simp [h.mul_pow, he.pow_succ_eq]
-  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : ℚ) • (a * e) ^ n)
-      (1 + (NormedSpace.exp a - 1) * e) := by
-    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
-  exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) (a * e)).unique hfull
+    NormedSpace.exp (a * e) = 1 + (NormedSpace.exp a - 1) * e :=
+  exp_mul_of_commute_aux ℚ he h
 
 /-- In a complete normed `ℚ`-algebra, `exp e = 1 + (exp 1 - 1) * e` for an idempotent `e`. -/
 theorem exp (he : IsIdempotentElem e) :
@@ -252,15 +259,9 @@ continuous rational scaling (such as `ℝ` or `ℂ`), `exp (z • e) = 1 + (exp 
 idempotent `e`. -/
 theorem exp_smul (he : IsIdempotentElem e) (z : 𝕂) :
     NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e := by
-  have hseries : HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • (z • e) ^ (n + 1))
-      ((NormedSpace.exp z - 1) • e) :=
-    ((NormedSpace.hasSum_exp_sub_one 𝕂 z).mapL
-      ((ContinuousLinearMap.id 𝕂 𝕂).smulRight e)).congr_fun fun n ↦ by
-      simp [smul_pow, he.pow_succ_eq, mul_smul]
-  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : 𝕂) • (z • e) ^ n)
-      (1 + (NormedSpace.exp z - 1) • e) := by
-    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
-  exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕂) (z • e)).unique hfull
+  rw [Algebra.smul_def, exp_mul_of_commute_aux 𝕂 he (Algebra.commutes z e),
+    ← NormedSpace.algebraMap_exp_comm, ← map_one (algebraMap 𝕂 A), ← map_sub,
+    ← Algebra.smul_def]
 
 end BanachAlgebra
 

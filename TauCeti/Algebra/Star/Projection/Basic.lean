@@ -7,14 +7,13 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
-import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
 # Reflections of star projections
 
-For a star projection `p` in a star ring, the reflection `1 - 2 * p` (the negative of the
-symmetry `2 * p - 1` in Mathlib's `IsStarProjection.two_mul_sub_one_mem_unitary`) is self-adjoint
-and squares to `1` (`IsIdempotentElem.one_sub_two_mul_mul_self`), so it lies in `unitary A`.
+For a star projection `p` in a star ring, the reflection `1 - 2 * p` is the negative of the
+symmetry `2 * p - 1` in Mathlib's `IsStarProjection.two_mul_sub_one_mem_unitary`, so it is
+self-adjoint and lies in `unitary A`.
 
 ## Main declarations
 
@@ -48,9 +47,8 @@ variable {A : Type*} [Ring A] [StarRing A] {p : A}
 
 /-- For a star projection `p`, the reflection `1 - 2 * p` is a unitary element. -/
 theorem one_sub_two_mul_mem_unitary (hp : IsStarProjection p) : 1 - 2 * p ∈ unitary A := by
-  rw [Unitary.mem_iff, hp.isSelfAdjoint_one_sub_two_mul.star_eq,
-    hp.isIdempotentElem.one_sub_two_mul_mul_self]
-  exact ⟨rfl, rfl⟩
+  rw [← neg_sub (2 * p) 1, ← Unitary.coe_neg ⟨2 * p - 1, hp.two_mul_sub_one_mem_unitary⟩]
+  exact SetLike.coe_mem _
 
 end StarRing
 

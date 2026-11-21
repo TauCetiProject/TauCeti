@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.PEquiv
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import Mathlib.Analysis.CStarAlgebra.Hom
+import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 
 /-!
 # Rectangular norms, reindexing, and permutation matrices on `CStarMatrix`
@@ -21,8 +22,7 @@ decompositions, and coordinate equivalences `e : m ≃ n` requires rectangular m
 conjugate transposition, and reindexing to interact cleanly with that operator norm. This file
 develops that rectangular calculus:
 
-* Rectangular algebraic, conjugate-transpose, entrywise map, and proper-star cancellation
-  identities (`Mᴴ * M = 0 ↔ M = 0` and `(Mᴴ * M) * N = 0 ↔ M * N = 0`).
+* Rectangular algebraic, conjugate-transpose, and entrywise map identities.
 * Rectangular operator-norm submultiplicativity `‖M * N‖ ≤ ‖M‖ * ‖N‖` and the rectangular
   C⋆-identities `‖M.conjTranspose‖ = ‖M‖`, `‖M * M.conjTranspose‖ = ‖M‖ ^ 2`, and
   `‖M.conjTranspose * M‖ = ‖M‖ ^ 2`.
@@ -31,8 +31,6 @@ develops that rectangular calculus:
 
 ## Main declarations
 
-* `CStarMatrix.conjTranspose_mul_self_eq_zero`, `CStarMatrix.conjTranspose_mul_self_mul_eq_zero`:
-  proper-star cancellation laws for rectangular `CStarMatrix` values.
 * `CStarMatrix.norm_hMul_le`, `CStarMatrix.norm_conjTranspose`,
   `CStarMatrix.norm_self_mul_conjTranspose`, `CStarMatrix.norm_conjTranspose_mul_self`:
   rectangular operator-norm submultiplicativity and C⋆-identities.
@@ -166,56 +164,6 @@ theorem reindexₗ_conjTranspose [Semiring R] [AddCommMonoid A] [Module R A] [St
     [Module R A] [Star A] (e : m ≃ n) (M : CStarMatrix m m A) :
     reindexₗ R A e e M = reindexₐ R A e M := (rfl)
 
-section ProperStar
-
-variable [NonUnitalSemiring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
-
-/-- Over a star-ordered semiring with proper star, `Mᴴ * M = 0` iff `M = 0`. -/
-@[simp] theorem conjTranspose_mul_self_eq_zero [Fintype m] {M : CStarMatrix m n A} :
-    M.conjTranspose * M = 0 ↔ M = 0 := by
-  refine ⟨fun h ↦ ext fun i j ↦ ?_, fun h ↦ by rw [h, CStarMatrix.mul_zero]⟩
-  have hjj : ∑ k : m, star (M k j) * M k j = 0 := by
-    simpa [mul_apply] using congrFun (congrFun h j) j
-  rw [Finset.sum_eq_zero_iff_of_nonneg (fun k _ ↦ star_mul_self_nonneg (M k j))] at hjj
-  exact star_mul_self_eq_zero.mp (hjj i (Finset.mem_univ i))
-
-/-- Over a star-ordered semiring with proper star, `M * Mᴴ = 0` iff `M = 0`. -/
-@[simp] theorem self_mul_conjTranspose_eq_zero [Fintype n] {M : CStarMatrix m n A} :
-    M * M.conjTranspose = 0 ↔ M = 0 := by
-  simpa using conjTranspose_mul_self_eq_zero (M := M.conjTranspose)
-
-/-- Left cancellation of `M.conjTranspose` from `(M.conjTranspose * M) * N = 0`. -/
-theorem conjTranspose_mul_self_mul_eq_zero [Fintype m] [Fintype n]
-    (M : CStarMatrix m n A) (N : CStarMatrix n p A) :
-    (M.conjTranspose * M) * N = 0 ↔ M * N = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [mul_assoc_rectangular, h, CStarMatrix.mul_zero]⟩
-  apply_fun (N.conjTranspose * ·) at h
-  rwa [CStarMatrix.mul_zero, ← mul_assoc_rectangular, ← mul_assoc_rectangular,
-    ← conjTranspose_mul, mul_assoc_rectangular, conjTranspose_mul_self_eq_zero] at h
-
-/-- Left cancellation of `M` from `(M * M.conjTranspose) * N = 0`. -/
-theorem self_mul_conjTranspose_mul_eq_zero [Fintype m] [Fintype n]
-    (M : CStarMatrix m n A) (N : CStarMatrix m p A) :
-    (M * M.conjTranspose) * N = 0 ↔ M.conjTranspose * N = 0 := by
-  simpa only [conjTranspose_conjTranspose] using
-    conjTranspose_mul_self_mul_eq_zero M.conjTranspose N
-
-/-- Right cancellation of `M.conjTranspose` from `N * (M * M.conjTranspose) = 0`. -/
-theorem mul_self_mul_conjTranspose_eq_zero [Fintype m] [Fintype n]
-    (M : CStarMatrix m n A) (N : CStarMatrix p m A) :
-    N * (M * M.conjTranspose) = 0 ↔ N * M = 0 := by
-  rw [← conjTranspose_eq_zero, conjTranspose_mul, conjTranspose_mul, conjTranspose_conjTranspose,
-    self_mul_conjTranspose_mul_eq_zero, ← conjTranspose_mul, conjTranspose_eq_zero]
-
-/-- Right cancellation of `M` from `N * (M.conjTranspose * M) = 0`. -/
-theorem mul_conjTranspose_mul_self_eq_zero [Fintype m] [Fintype n]
-    (M : CStarMatrix m n A) (N : CStarMatrix p n A) :
-    N * (M.conjTranspose * M) = 0 ↔ N * M.conjTranspose = 0 := by
-  simpa only [conjTranspose_conjTranspose] using
-    mul_self_mul_conjTranspose_eq_zero M.conjTranspose N
-
-end ProperStar
-
 end RectangularAlgebraic
 
 section RectangularNorm
@@ -239,55 +187,29 @@ theorem norm_hMul_le [Fintype l] [Fintype m] [Fintype n]
   rw [norm_def, norm_def, norm_def, toCLM_mul, mul_comm]
   exact (toCLM N).opNorm_comp_le (toCLM M)
 
-/-- Restates Mathlib's `inner_toCLM_conjTranspose_right` using `CStarMatrix.conjTranspose` rather
-than `Matrix.conjTranspose` (`Mᴴ`), which agree definitionally via `ofMatrix`, so `rw` matches
-`toCLM M.conjTranspose` directly. -/
-private theorem inner_toCLM_conjTranspose_right_apply [Fintype m] [Fintype n]
-    {M : CStarMatrix m n A} {v : C⋆ᵐᵒᵈ(A, m → A)} {w : C⋆ᵐᵒᵈ(A, n → A)} :
-    ⟪v, toCLM M.conjTranspose w⟫_A = ⟪toCLM M v, w⟫_A :=
-  inner_toCLM_conjTranspose_right
-
-/-- Auxiliary bound `‖M.conjTranspose‖ ≤ ‖M‖`; see `norm_conjTranspose` for equality. -/
-private theorem norm_conjTranspose_le [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
-    ‖M.conjTranspose‖ ≤ ‖M‖ := by
-  refine norm_le_of_forall_inner_le (C := ‖M‖₊) fun v w ↦ ?_
-  rw [coe_nnNorm, inner_toCLM_conjTranspose_right_apply]
-  calc ‖⟪toCLM M w, v⟫_A‖
-      ≤ ‖toCLM M w‖ * ‖v‖ := CStarModule.norm_inner_le _
-    _ ≤ (‖toCLM M‖ * ‖w‖) * ‖v‖ :=
-        mul_le_mul_of_nonneg_right ((toCLM M).le_opNorm w) (norm_nonneg v)
-    _ = ‖M‖ * ‖v‖ * ‖w‖ := by rw [norm_def]; ring
+/-- `toCLM M` and `toCLM M.conjTranspose` form a bounded Hilbert C⋆-module adjoint pair. -/
+private theorem isAdjointPair_toCLM [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
+    LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := C⋆ᵐᵒᵈ(A, m → A))).flip
+      (CStarModule.innerₛₗ (A := A) (E := C⋆ᵐᵒᵈ(A, n → A))).flip
+      (toCLM M : C⋆ᵐᵒᵈ(A, m → A) →L[ℂ] C⋆ᵐᵒᵈ(A, n → A))
+      (toCLM M.conjTranspose : C⋆ᵐᵒᵈ(A, n → A) →L[ℂ] C⋆ᵐᵒᵈ(A, m → A)) :=
+  CStarModule.isAdjointPair_inner_iff.mpr fun v w ↦ by
+    -- `CStarMatrix.conjTranspose` agrees definitionally with `Matrix.conjTranspose` (`Mᴴ`).
+    change ⟪toCLM M v, w⟫_A = ⟪v, toCLM Mᴴ w⟫_A
+    exact inner_toCLM_conjTranspose_right.symm
 
 /-- Conjugate transposition preserves the operator norm of a rectangular `CStarMatrix`. -/
 @[simp] theorem norm_conjTranspose [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
-    ‖M.conjTranspose‖ = ‖M‖ :=
-  le_antisymm (norm_conjTranspose_le M)
-    (by simpa only [conjTranspose_conjTranspose] using norm_conjTranspose_le M.conjTranspose)
+    ‖M.conjTranspose‖ = ‖M‖ := by
+  rw [norm_def, norm_def]
+  exact (isAdjointPair_toCLM M).norm_eq_cstarModule
 
 /-- The rectangular C⋆-identity `‖M * Mᴴ‖ = ‖M‖ ^ 2` for `M : CStarMatrix m n A`, extending the
 square `CStarRing` norm estimate of `CStarMatrix.instCStarRing` in Mathlib. -/
 @[simp] theorem norm_self_mul_conjTranspose [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
     ‖M * M.conjTranspose‖ = ‖M‖ ^ 2 := by
-  refine le_antisymm ?_ ?_
-  · calc ‖M * M.conjTranspose‖ ≤ ‖M‖ * ‖M.conjTranspose‖ := norm_hMul_le M M.conjTranspose
-      _ = ‖M‖ ^ 2 := by rw [norm_conjTranspose, sq]
-  · have hsqrt : ‖M‖ ≤ √‖M * M.conjTranspose‖ := by
-      rw [norm_def, ContinuousLinearMap.opNorm_le_iff (by positivity)]
-      intro v
-      rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A),
-        ← inner_toCLM_conjTranspose_right_apply,
-        ← ContinuousLinearMap.comp_apply, ← toCLM_mul]
-      have hinner : ‖⟪v, toCLM (M * M.conjTranspose) v⟫_A‖ ≤
-          ‖M * M.conjTranspose‖ * ‖v‖ ^ 2 := by
-        calc ‖⟪v, toCLM (M * M.conjTranspose) v⟫_A‖
-            ≤ ‖v‖ * ‖toCLM (M * M.conjTranspose) v‖ := CStarModule.norm_inner_le _
-          _ ≤ ‖v‖ * (‖toCLM (M * M.conjTranspose)‖ * ‖v‖) := by
-              gcongr; exact (toCLM (M * M.conjTranspose)).le_opNorm v
-          _ = ‖M * M.conjTranspose‖ * ‖v‖ ^ 2 := by rw [norm_def]; ring
-      rw [← Real.sqrt_sq (norm_nonneg v), ← Real.sqrt_mul (by positivity)]
-      exact Real.sqrt_le_sqrt hinner
-    simpa [Real.sq_sqrt (norm_nonneg (M * M.conjTranspose))] using
-      pow_le_pow_left₀ (norm_nonneg M) hsqrt 2
+  rw [norm_def, norm_def, toCLM_mul]
+  exact (isAdjointPair_toCLM M).norm_adjoint_comp_self_cstarModule
 
 /-- The rectangular C⋆-identity `‖Mᴴ * M‖ = ‖M‖ ^ 2` for `M : CStarMatrix m n A`. -/
 @[simp] theorem norm_conjTranspose_mul_self [Fintype m] [Fintype n] (M : CStarMatrix m n A) :

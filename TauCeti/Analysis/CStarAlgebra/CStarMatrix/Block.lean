@@ -283,13 +283,8 @@ theorem blockDiagStarAlgHom_injective [Fintype m] [Fintype n] [Semiring R]
 /-- Upper-left corner embedding `M ↦ fromBlocks M 0 0 0`. -/
 def inl [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
-    CStarMatrix m m A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A where
-  toFun M := fromBlocks M 0 0 0
-  map_smul' c M := by simp [fromBlocks_smul]
-  map_zero' := fromBlocks_zero
-  map_add' M N := by simp [fromBlocks_add]
-  map_mul' M N := by simp [fromBlocks_multiply]
-  map_star' M := by simp [star_fromBlocks]
+    CStarMatrix m m A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A :=
+  blockDiagStarAlgHom.comp (NonUnitalStarAlgHom.inl R _ _)
 
 @[simp] theorem inl_apply [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (M : CStarMatrix m m A) :
@@ -298,13 +293,8 @@ def inl [Fintype m] [Fintype n] [Semiring R]
 /-- Lower-right corner embedding `N ↦ fromBlocks 0 0 0 N`. -/
 def inr [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
-    CStarMatrix n n A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A where
-  toFun N := fromBlocks 0 0 0 N
-  map_smul' c N := by simp [fromBlocks_smul]
-  map_zero' := fromBlocks_zero
-  map_add' M N := by simp [fromBlocks_add]
-  map_mul' M N := by simp [fromBlocks_multiply]
-  map_star' N := by simp [star_fromBlocks]
+    CStarMatrix n n A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A :=
+  blockDiagStarAlgHom.comp (NonUnitalStarAlgHom.inr R _ _)
 
 @[simp] theorem inr_apply [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (N : CStarMatrix n n A) :

@@ -53,25 +53,20 @@ end CommRing
 
 section NonAssocRing
 
-variable {R : Type*} [NonAssocRing R] {e : R}
-
-/-- For an idempotent `e`, the element `1 - 2 * e` is an involution. -/
-theorem one_sub_two_mul_mul_self (he : IsIdempotentElem e) : (1 - 2 * e) * (1 - 2 * e) = 1 := by
-  simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, he.eq]
-  abel
-
-end NonAssocRing
-
-section Ring
-
-variable {R : Type*} [Ring R] {p : R}
+variable {R : Type*} [NonAssocRing R]
 
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
-theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by
+theorem two_mul_sub_one_mul_self {p : R} (hp : IsIdempotentElem p) :
+    (2 * p - 1) * (2 * p - 1) = 1 := by
   simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, hp.eq]
   abel
 
-end Ring
+/-- For an idempotent `e`, the element `1 - 2 * e` is an involution. -/
+theorem one_sub_two_mul_mul_self {e : R} (he : IsIdempotentElem e) :
+    (1 - 2 * e) * (1 - 2 * e) = 1 := by
+  rw [← neg_sub (2 * e) 1, neg_mul_neg, he.two_mul_sub_one_mul_self]
+
+end NonAssocRing
 
 end IsIdempotentElem
 
