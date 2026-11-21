@@ -269,16 +269,18 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
       Complex.angle_self_mul_right Complex.I_ne_zero]
     simp [hAm]
-  · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle, since it lies to the
-    -- left of `q`, whose real part is at most `m + ρ`
+  · -- an ideal left vertex is a real point `m ± ρ` of the semicircle; it is the left endpoint
+    -- `m - ρ`, since it lies to the left of `q`, whose real part is at most `m + ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
-    have hqm' : ‖toComplex q - m‖ = ρ := by rw [Complex.norm_def, hqm, Real.sqrt_sq hρ.le]
-    have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_norm_sub_le hqm'.le).2
+    have hx : x ∈ Metric.sphere m ρ := by
+      rw [Metric.mem_sphere, Real.dist_eq, ← Real.sqrt_mul_self_eq_abs, ← Complex.normSq_ofReal,
+        Complex.ofReal_sub, hpm, Real.sqrt_sq hρ.le]
+    simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
+    have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_normSq_sub_le hρ.le hqm.le).2
     simp only [Complex.ofReal_re] at hxρ
-    rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero,
-      Complex.eq_sub_of_normSq_eq_of_ne_add hpm hxρ.ne, sub_sub_cancel_left, neg_div,
-      div_self hρ.ne', Real.arccos_neg_one]
+    rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero, hx.resolve_right hxρ.ne,
+      sub_sub_cancel_left, neg_div, div_self hρ.ne', Real.arccos_neg_one]
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
 lie on the semicircle of centre `m` and radius `ρ` (or are among its ideal endpoints), with `p` to
@@ -298,15 +300,18 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
       Complex.angle_self_mul_right Complex.I_ne_zero]
     simp [hBm]
-  · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle, since it lies to the
-    -- right of `p`, whose real part is at least `m - ρ`
+  · -- an ideal right vertex is a real point `m ± ρ` of the semicircle; it is the right endpoint
+    -- `m + ρ`, since it lies to the right of `p`, whose real part is at least `m - ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    have hpm' : ‖toComplex p - m‖ = ρ := by rw [Complex.norm_def, hpm, Real.sqrt_sq hρ.le]
-    have hxρ := (Complex.re_mem_Icc_of_norm_sub_le hpm'.le).1.trans_lt hpq
+    have hx : x ∈ Metric.sphere m ρ := by
+      rw [Metric.mem_sphere, Real.dist_eq, ← Real.sqrt_mul_self_eq_abs, ← Complex.normSq_ofReal,
+        Complex.ofReal_sub, hqm, Real.sqrt_sq hρ.le]
+    simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
+    have hxρ := (Complex.re_mem_Icc_of_normSq_sub_le hρ.le hpm.le).1.trans_lt hpq
     simp only [Complex.ofReal_re] at hxρ
-    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_ne_sub hqm hxρ.ne',
-      add_sub_cancel_left, div_self hρ.ne', Real.arccos_one]
+    rw [Complex.ofReal_re, vertexAngle_inr, hx.resolve_left hxρ.ne', add_sub_cancel_left,
+      div_self hρ.ne', Real.arccos_one]
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
 `m₁`, `m₂` and radii `ρ₁`, `ρ₂`; let `p` lie on the first, to the left of `A`, and `q` on the

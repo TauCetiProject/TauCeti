@@ -61,7 +61,8 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 (`Complex.dist_equivRealProdCLM_le`).
 
 A point of the closed disc of centre `c` and radius `ρ` has real part in `[c.re - ρ, c.re + ρ]`
-(`Complex.re_mem_Icc_of_norm_sub_le`). Two complex numbers with the same real part compare in
+(`Complex.re_mem_Icc_of_norm_sub_le`, and `Complex.re_mem_Icc_of_normSq_sub_le` for the disc
+written as `normSq (w - c) ≤ ρ ^ 2`). Two complex numbers with the same real part compare in
 norm as their imaginary parts compare in absolute value
 (`Complex.norm_le_norm_iff_abs_im_le_abs_im_of_re_eq`). Hence moving up the vertical ray from a
 point `z` of the closed upper half-plane does not decrease the norm
@@ -357,9 +358,19 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
 `[c.re - ρ, c.re + ρ]`. -/
 theorem re_mem_Icc_of_norm_sub_le {w c : ℂ} {ρ : ℝ} (h : ‖w - c‖ ≤ ρ) :
     w.re ∈ Set.Icc (c.re - ρ) (c.re + ρ) := by
-  have hre := (abs_re_le_norm (w - c)).trans h
-  rw [sub_re, abs_le] at hre
-  constructor <;> linarith
+  -- the real part is `1`-Lipschitz, so it maps the closed ball `B̄(c, ρ)` into `B̄(c.re, ρ)`
+  rw [← Real.closedBall_eq_Icc]
+  simpa only [RCLike.re_to_complex, NNReal.coe_one, one_mul] using
+    (RCLike.lipschitzWith_re (K := ℂ)).mapsTo_closedBall c ρ
+      (by rwa [Metric.mem_closedBall, dist_eq])
+
+/-- A point `w` with `normSq (w - c) ≤ ρ ^ 2`, for `0 ≤ ρ`, has real part in
+`[c.re - ρ, c.re + ρ]`. -/
+theorem re_mem_Icc_of_normSq_sub_le {w c : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ) (h : normSq (w - c) ≤ ρ ^ 2) :
+    w.re ∈ Set.Icc (c.re - ρ) (c.re + ρ) :=
+  re_mem_Icc_of_norm_sub_le <| by
+    rw [norm_def, ← Real.sqrt_sq hρ]
+    exact Real.sqrt_le_sqrt h
 
 /-- Two complex numbers with the same real part compare in norm as their imaginary parts compare
 in absolute value. -/

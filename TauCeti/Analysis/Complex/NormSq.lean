@@ -13,16 +13,13 @@ public import Mathlib.Analysis.Complex.Basic
 For two real points `c₁`, `c₂` of the complex plane, the difference of the two power functions
 `|z - c|² - |C - c|²` is affine in the real part of `z` and vanishes when `z.re = C.re`
 (`Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`): the radical axis of two circles centred on
-the real line is the vertical line through their intersection points. This file also records the
-real points of such a circle and on which side of a second circle its points lie.
+the real line is the vertical line through their intersection points. This file also records on
+which side of a second circle the points of such a circle lie.
 
 ## Main results
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
 * `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
-* `Complex.eq_sub_of_normSq_eq_of_ne_add`, `Complex.eq_add_of_normSq_eq_of_ne_sub`: a real
-  point of the circle of centre `m` and radius `ρ` other than `m + ρ` is `m - ρ`, and one other
-  than `m - ρ` is `m + ρ`.
 * `Complex.lt_normSq_sub_of_le_normSq_sub`: if the second of two circles has its centre to the
   right of the first, and the power of `a` with respect to the first is at most that with respect
   to the second, the points on or outside the first circle to the left of `a` lie strictly outside
@@ -58,24 +55,6 @@ theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
   simp only [normSq_apply, sub_re, sub_im, ofReal_re,
     ofReal_im, sub_zero]
   ring
-
-/-- A real point `x` of the circle of centre `m` and radius `ρ` is `m + ρ` or `m - ρ`. -/
-private theorem eq_add_or_eq_sub_of_normSq_eq {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2) :
-    x = m + ρ ∨ x = m - ρ := by
-  rw [← ofReal_sub, normSq_ofReal, ← sq, sq_eq_sq_iff_eq_or_eq_neg] at hx
-  exact hx.imp (fun h ↦ by linarith) fun h ↦ by linarith
-
-/-- A real point `x` of the circle of centre `m` and radius `ρ`, other than `m + ρ`, is the
-other real point `m - ρ`. -/
-theorem eq_sub_of_normSq_eq_of_ne_add {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2)
-    (hxρ : x ≠ m + ρ) : x = m - ρ :=
-  (eq_add_or_eq_sub_of_normSq_eq hx).resolve_left hxρ
-
-/-- A real point `x` of the circle of centre `m` and radius `ρ`, other than `m - ρ`, is the
-other real point `m + ρ`. -/
-theorem eq_add_of_normSq_eq_of_ne_sub {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2)
-    (hxρ : x ≠ m - ρ) : x = m + ρ :=
-  (eq_add_or_eq_sub_of_normSq_eq hx).resolve_right hxρ
 
 /-- **The radical line of two circles.** Consider two circles centred on the real axis, the level
 sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, with `m₁ < m₂`, and a point `a` whose power
