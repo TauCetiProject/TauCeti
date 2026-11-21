@@ -397,33 +397,33 @@ private theorem glueFn_insFn_add {c d : ℕ} (φ : ℕ → ℕ) :
 
 /-- Gluing a block of nested pairs before an inserted block is gluing them in the outer
 matching. -/
-private theorem glueFn_insFn_of_lt {c : ℕ} (ψ : ℕ → ℕ) :
-    ∀ (j K : ℕ) (x : PlanarMatching K), c + 2 * j ≤ K →
-      glueFn c j (insFn (c + 2 * j) l (pv x) ψ) = insFn c l (glueFn c j (pv x)) ψ ∧
-      glueCircles c j (insFn (c + 2 * j) l (pv x) ψ) = glueCircles c j (pv x)
+private theorem glueFn_insFn_of_lt {c t : ℕ} (hct : c ≤ t) (ψ : ℕ → ℕ) :
+    ∀ (j K : ℕ) (x : PlanarMatching K), t + 2 * j ≤ K →
+      glueFn c j (insFn (t + 2 * j) l (pv x) ψ) = insFn t l (glueFn c j (pv x)) ψ ∧
+      glueCircles c j (insFn (t + 2 * j) l (pv x) ψ) = glueCircles c j (pv x)
   | 0, K, x, _ => ⟨rfl, rfl⟩
   | j + 1, K, x, hK => by
     obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := c + j) (by omega)
-    obtain ⟨h₁, h₂⟩ := contractFn_insFn_of_lt (l := l) (c := c + 2 * j) x ψ (j := c + j)
+    obtain ⟨h₁, h₂⟩ := contractFn_insFn_of_lt (l := l) (c := t + 2 * j) x ψ (j := c + j)
       (by omega) (by omega)
-    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_of_lt (c := c) ψ j (K - 2) x' (by omega)
+    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_of_lt hct ψ j (K - 2) x' (by omega)
     simp only [glueFn, glueCircles]
-    rw [show c + 2 * (j + 1) = c + 2 * j + 2 by omega, h₁, ← hx', ih₁, h₂, ih₂]
+    rw [show t + 2 * (j + 1) = t + 2 * j + 2 by omega, h₁, ← hx', ih₁, h₂, ih₂]
     exact ⟨rfl, rfl⟩
 
 /-- Gluing a block of nested pairs after an inserted block is gluing them in the outer
 matching. -/
-private theorem glueFn_insFn_of_le {c : ℕ} (y : PlanarMatching l) :
-    ∀ (j K : ℕ) (x : PlanarMatching K), c + 2 * j ≤ K →
-      glueFn (c + l) j (insFn c l (pv x) (pv y)) = insFn c l (glueFn c j (pv x)) (pv y) ∧
-      glueCircles (c + l) j (insFn c l (pv x) (pv y)) = glueCircles c j (pv x)
+private theorem glueFn_insFn_of_le {c t : ℕ} (hct : c ≤ t) (y : PlanarMatching l) :
+    ∀ (j K : ℕ) (x : PlanarMatching K), t + 2 * j ≤ K →
+      glueFn (t + l) j (insFn c l (pv x) (pv y)) = insFn c l (glueFn t j (pv x)) (pv y) ∧
+      glueCircles (t + l) j (insFn c l (pv x) (pv y)) = glueCircles t j (pv x)
   | 0, K, x, _ => ⟨rfl, rfl⟩
   | j + 1, K, x, hK => by
-    obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := c + j) (by omega)
-    obtain ⟨h₁, h₂⟩ := contractFn_insFn_of_le x y (c := c) (j := c + j) (by omega) (by omega)
-    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_of_le (c := c) y j (K - 2) x' (by omega)
+    obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := t + j) (by omega)
+    obtain ⟨h₁, h₂⟩ := contractFn_insFn_of_le x y (c := c) (j := t + j) (by omega) (by omega)
+    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_of_le hct y j (K - 2) x' (by omega)
     simp only [glueFn, glueCircles]
-    rw [show c + l + j = c + j + l by omega, h₁, ← hx', ih₁, h₂, ih₂]
+    rw [show t + l + j = t + j + l by omega, h₁, ← hx', ih₁, h₂, ih₂]
     exact ⟨rfl, rfl⟩
 
 /-! ### Identities between insertions -/
@@ -587,11 +587,11 @@ theorem tensor_comp_tensor (f₁ : TLDiagram n m) (f₂ : TLDiagram n' m') (g₁
       show m + m' + (p + p') = m + (m' + p') + p by omega,
       appendFn_insFn_insFn f₁.matching f₂.matching g₁.matching g₂.matching]
   -- Gluing the `m` pairs between `f₁` and `g₁`, which lie after the block of `f₂`…
-  have hB := glueFn_insFn_of_le (c := n) f₂.matching m (n + 2 * m + (m' + p') + p)
+  have hB := glueFn_insFn_of_le (Nat.le_refl n) f₂.matching m (n + 2 * m + (m' + p') + p)
     ((PlanarMatching.cast (k' := n + 2 * m + p) (by omega)
       (f₁.matching.append g₁.matching)).insertBlock g₂.matching) (by omega)
   -- … and before the block of `g₂`, …
-  have hC := glueFn_insFn_of_lt (c := n) (l := m' + p') (pv g₂.matching) m (n + m + (m + p))
+  have hC := glueFn_insFn_of_lt (Nat.le_refl n) (l := m' + p') (pv g₂.matching) m (n + m + (m + p))
     (f₁.matching.append g₁.matching) (by omega)
   -- … then the `m'` pairs between `f₂` and `g₂`, inside the merged block.
   have hD := glueFn_insFn_add (c := n) (d := n')
