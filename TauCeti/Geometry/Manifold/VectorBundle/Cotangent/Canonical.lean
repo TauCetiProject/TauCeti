@@ -211,6 +211,14 @@ theorem coordForm_eq_det_smul_coordForm (hx₀ : x ∈ (chartAt H x₀).source)
   rw [trivializationAt_apply_snd_basis_eq_det_mul hx₀ hx₁, trivializationAt_apply_snd_coordForm hx₀]
   simp [b.det_self]
 
+/-- Changing the model basis from `b₁` to `b₂` rescales `coordForm` by `b₁.det b₂`. -/
+theorem coordForm_basis_change (x₀ : M) (b₁ b₂ : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x : M) :
+    coordForm I x₀ b₁ x = (b₁.det b₂) • coordForm I x₀ b₂ x := by
+  ext v
+  rw [ContinuousAlternatingMap.smul_apply, coordForm_apply, coordForm_apply, smul_eq_mul,
+    ← b₁.continuousDet_apply, ← b₂.continuousDet_apply, b₁.continuousDet_eq_det_smul b₂,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+
 variable {k : WithTop ℕ∞}
   [ContMDiffVectorBundle k (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) I]
 
