@@ -26,9 +26,9 @@ compares the vortices of the different orders.
   `A_m^(k') ⊆ A_m^k` does not change the divisor
   (`TauCeti.Vortex.sobolevVortexDivisor_inclusion`).
 * **Every orbit has a smooth representative of every order.** Every `C²` vortex `x` of `A_m^k`,
-  `k ≥ 2`, is carried by an element of `G_(k+1)` to a smooth vortex lying in `A_m^s` for every real
-  `s`, every derivative of whose difference with the reference field `x_m` is `O(exp (-c |z|))` at
-  infinity for every rate `c < 1 / 2`
+  `k ≥ 2`, is carried by a unique element of `G_(k+1)` to a smooth vortex lying in `A_m^s` for
+  every real `s`, every derivative of whose difference with the reference field `x_m` is
+  `O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`
   (`TauCeti.Vortex.exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`). The representative is a
   smooth vortex with the divisor of `x` (`TauCeti.Vortex.exists_contDiff_sobolevVortexDivisor_eq`),
   and it lies in the `G_(k+1)`-orbit of `x` by Taubes's classification on the Sobolev scale. A `C²`
@@ -53,8 +53,8 @@ All in the namespace `TauCeti.Vortex`:
 * `sobolevVortexDivisor_inclusion`: the inclusion `A_m^(k') ⊆ A_m^k` preserves the divisor.
 * `exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff_of_le`: `G_(k+1)`-equivalence of vortices
   of `A_m^(k')` is `G_(k'+1)`-equivalence.
-* `exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`: every `C²` vortex of `A_m^k` is
-  `G_(k+1)`-equivalent to a smooth vortex of every `A_m^s`, with exponential decay.
+* `exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`: every `C²` vortex of `A_m^k` is carried by
+  a unique element of `G_(k+1)` to a smooth vortex of every `A_m^s`, with exponential decay.
 * `sobolevVortexModuliEquivOfLE`: for `4 ≤ k ≤ k'`, the bijection between the Sobolev moduli of
   orders `k'` and `k` induced by the inclusion.
 
@@ -118,25 +118,22 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff_of_le (h : k ≤ k')
       (key hs' x y).symm
 
 /-- **Every orbit has a smooth representative of every order.** For `k ≥ 2`, every `C²` vortex `x`
-of `A_m^k` is carried by an element of `G_(k+1)` to a smooth vortex lying in the affine Sobolev
-space `A_m^s` for every real `s`, such that every derivative of its difference with the reference
-field is `O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`. -/
+of `A_m^k` is carried by a unique element of `G_(k+1)` to a smooth vortex `y` lying in the affine
+Sobolev space `A_m^s` for every real `s`, such that every derivative of its difference with the
+reference field is `O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`. -/
 theorem exists_sobolevGaugeGroup_smul_mem_framedFieldSpace {hs : 1 < (k : ℝ) + 1}
     (x : sobolevVortices f m k) :
-    ∃ u : sobolevGaugeGroup hs,
-      ContDiff ℝ ∞ ((u • (x : framedFieldSpace f m k) : framedFieldSpace f m k) :
-        ℂ → EuclideanSpace ℝ (Fin 4)) ∧
-      (∀ s : ℝ, ((u • (x : framedFieldSpace f m k) : framedFieldSpace f m k) :
-        ℂ → EuclideanSpace ℝ (Fin 4)) ∈ framedFieldSpace f m s) ∧
-      ∀ c < 1 / 2, ∀ n : ℕ,
-        iteratedFDeriv ℝ n (((u • (x : framedFieldSpace f m k) : framedFieldSpace f m k) :
-          ℂ → EuclideanSpace ℝ (Fin 4)) - referenceField f m) =O[cocompact ℂ]
-          fun z ↦ Real.exp (-(c * ‖z‖)) := by
+    ∃ y : sobolevVortices f m k,
+      ContDiff ℝ ∞ (y : ℂ → EuclideanSpace ℝ (Fin 4)) ∧
+      (∀ s : ℝ, (y : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ framedFieldSpace f m s) ∧
+      (∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n ((y : ℂ → EuclideanSpace ℝ (Fin 4)) - referenceField f m)
+          =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖))) ∧
+      ∃! u : sobolevGaugeGroup hs, u • (x : framedFieldSpace f m k) = y := by
   -- The smooth vortex with the divisor of `x` is in the orbit of `x`.
   obtain ⟨y, hy, hyc, hys, hdec⟩ :=
     exists_contDiff_sobolevVortexDivisor_eq (f := f) (k := k) (sobolevVortexDivisor x)
-  obtain ⟨u, hu⟩ := sobolevVortexDivisor_eq_sobolevVortexDivisor_iff (hs := hs).1 hy
-  exact ⟨u, by rw [hu]; exact ⟨hyc, hys, hdec⟩⟩
+  exact ⟨y, hyc, hys, hdec, existsUnique_sobolevGaugeGroup_smul_eq hy⟩
 
 /-! ### The Sobolev moduli of different orders -/
 

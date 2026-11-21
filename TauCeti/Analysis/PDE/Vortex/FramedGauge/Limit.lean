@@ -240,19 +240,6 @@ theorem exists_tendstoLocallyUniformly_of_tendstoLocallyUniformly_gaugeForm [l.N
 
 /-! ### Limits of gauge equivalent fields -/
 
-/-- The connection difference `(b₁ - b₁') ds + (b₂ - b₂') dt` of a pair of field values, as a
-continuous linear map. -/
-private def connectionDifferenceCLM :
-    (EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) →L[ℝ] (ℂ →L[ℝ] ℝ) :=
-  ((EuclideanSpace.proj (0 : Fin 4)).comp (ContinuousLinearMap.fst ℝ _ _) -
-      (EuclideanSpace.proj (0 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight reCLM +
-    ((EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.fst ℝ _ _) -
-      (EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight imCLM
-
-private theorem connectionDifferenceCLM_apply
-    (p : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
-    connectionDifferenceCLM p = (p.1 0 - p.2 0) • reCLM + (p.1 1 - p.2 1) • imCLM := (rfl)
-
 /-- Sections converge pointwise along locally uniformly convergent fields. -/
 private theorem tendsto_sectionValue_of_tendstoLocallyUniformly
     {F : ι → ℂ → EuclideanSpace ℝ (Fin 4)} {G : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -275,7 +262,7 @@ private theorem exists_gaugeTransform_eq_of_tendsto_apply [l.NeBot]
   set ω : ℂ → ℂ →L[ℝ] ℝ := fun z ↦ connectionDifferenceCLM (x z, y z)
   have hωc : Continuous ω := connectionDifferenceCLM.continuous.comp (hxc.prodMk hyc)
   have hgauge (i : ι) : gaugeForm (us i) = fun z ↦ connectionDifferenceCLM (xs i z, ys i z) :=
-    funext fun z ↦ by rw [connectionDifferenceCLM_apply, (gaugeTransform_eq_iff.1 (hxy i) z).1]
+    funext (gaugeForm_eq_connectionDifferenceCLM (hxy i))
   have hω : TendstoLocallyUniformly (fun i ↦ gaugeForm (us i)) ω l := by
     simp only [hgauge]
     exact connectionDifferenceCLM.uniformContinuous.comp_tendstoLocallyUniformly (hx.prodMk hy)

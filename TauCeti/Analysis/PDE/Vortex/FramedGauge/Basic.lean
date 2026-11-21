@@ -652,6 +652,27 @@ theorem gaugeTransform_eq_iff {u : ℂ → Circle} {x y : ℂ → EuclideanSpace
     · simp [gaugeTransform_apply, hω]
     · simp [gaugeTransform_apply, hω]
 
+/-- The connection difference `(b₁ - b₁') ds + (b₂ - b₂') dt` of a pair of field values, as a
+continuous linear map. -/
+def connectionDifferenceCLM :
+    (EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) →L[ℝ] (ℂ →L[ℝ] ℝ) :=
+  ((EuclideanSpace.proj (0 : Fin 4)).comp (ContinuousLinearMap.fst ℝ _ _) -
+      (EuclideanSpace.proj (0 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight reCLM +
+    ((EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.fst ℝ _ _) -
+      (EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight imCLM
+
+/-- Pointwise formula for `connectionDifferenceCLM`. -/
+theorem connectionDifferenceCLM_apply
+    (p : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
+    connectionDifferenceCLM p = (p.1 0 - p.2 0) • reCLM + (p.1 1 - p.2 1) • imCLM := (rfl)
+
+/-- If a gauge `u` carries `x` to `y`, its logarithmic derivative `gaugeForm u` is the connection
+difference of `(x, y)`. -/
+theorem gaugeForm_eq_connectionDifferenceCLM {u : ℂ → Circle}
+    {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (h : gaugeTransform u x = y) (z : ℂ) :
+    gaugeForm u z = connectionDifferenceCLM (x z, y z) :=
+  (gaugeTransform_eq_iff.1 h z).1
+
 /-- **A differentiable gauge between `C^n` fields is `C^(n+1)`.** Converse to
 `contDiff_gaugeTransform`: if `u` is differentiable and both `x` and `gaugeTransform u x` are
 `C^n` (`n ≤ ∞`), then `gaugeForm u` is `C^n` from the connection difference and `u` is `C^(n+1)`
@@ -661,16 +682,11 @@ theorem contDiff_coe_of_contDiff_gaugeTransform {n : ℕ∞} {u : ℂ → Circle
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x)
     (hux : ContDiff ℝ n (gaugeTransform u x)) :
     ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
-  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := (contDiff_piLp _).mp hx i
-  have huxc (i : Fin 4) : ContDiff ℝ n (fun z ↦ gaugeTransform u x z i) :=
-    (contDiff_piLp _).mp hux i
   refine contDiff_coe_of_contDiff_gaugeForm hu ?_
-  have hform : gaugeForm u = fun z ↦
-      (x z 0 - gaugeTransform u x z 0) • reCLM + (x z 1 - gaugeTransform u x z 1) • imCLM :=
-    funext fun z ↦ ((gaugeTransform_eq_iff (u := u) (x := x)).1 rfl z).1
+  have hform : gaugeForm u = fun z ↦ connectionDifferenceCLM (x z, gaugeTransform u x z) :=
+    funext (gaugeForm_eq_connectionDifferenceCLM rfl)
   rw [hform]
-  exact (((hc 0).sub (huxc 0)).smul contDiff_const).add
-    (((hc 1).sub (huxc 1)).smul contDiff_const)
+  exact connectionDifferenceCLM.contDiff.comp (hx.prodMk hux)
 
 /-- Covariant derivatives transform by multiplication by the circle-valued gauge. -/
 theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
