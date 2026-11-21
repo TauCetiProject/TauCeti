@@ -63,11 +63,11 @@ theorem natCard_isometryMatrices_smul (f : R →+* S) (hf : Function.Surjective 
   -- the kernel of the reduction is the matrices with entries in `ker f`
   have hker : Nat.card φ.ker = Nat.card (RingHom.ker f) ^ (Fintype.card n ^ 2) := by
     have e : φ.ker ≃ (n → n → RingHom.ker f) :=
-      { toFun X i j := ⟨X.1 i j, by
+      { toFun X i j := ⟨X.val i j, by
           rw [RingHom.mem_ker]
-          exact congrFun (congrFun (φ.mem_ker.mp X.2) i) j⟩
+          exact congrFun (congrFun (φ.mem_ker.mp X.property) i) j⟩
         invFun K := ⟨fun i j ↦ K i j, φ.mem_ker.mpr <| Matrix.ext fun i j ↦
-          RingHom.mem_ker.mp (K i j).2⟩
+          RingHom.mem_ker.mp (K i j).property⟩
         left_inv _ := rfl
         right_inv _ := rfl }
     rw [Nat.card_congr e, Nat.card_fun, Nat.card_fun, ← pow_mul, Nat.card_eq_fintype_card (α := n),

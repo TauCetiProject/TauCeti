@@ -31,8 +31,11 @@ unital only up to reparametrization, so the homotopies here are reparametrizatio
 ## Main definitions
 
 * `Path.prepend α z`: the continuous map `γ ↦ α.trans γ`.
-* `Path.reparamHomotopy`: the straight-line homotopy from the identity of a path space to a
-  reparametrization.
+* `Path.reparamHomotopy`, `Path.reparamHomotopy_continuous_family`: the straight-line homotopy from
+  the identity of a path space to a reparametrization, and its continuity for path families with
+  varying endpoints.
+* `Path.transAssocHomotopy`: the associativity homotopy of concatenation, continuous in the
+  three paths.
 * `Path.Homotopic.cast_map_reparam`: reparametrizing every loop of a loop of loops does not change
   its homotopy class.
 * `Path.Homotopic.Quotient.cast_map_trans_prod_refl` and
@@ -66,6 +69,11 @@ theorem delayReflLeft_continuous_family {A : Type*} [TopologicalSpace A]
       fun_prop)
   exact h
 
+/-- The product of the H-space structure of the loop space `Path x x` is concatenation. -/
+@[simp]
+theorem hmul_eq_trans (γ₁ γ₂ : Path x x) : HSpace.hmul (γ₁, γ₂) = γ₁.trans γ₂ :=
+  (rfl)
+
 /-! ### Reparametrizing the paths of a path space -/
 
 /-- Reparametrizing by a fixed endpoint-preserving map `f : I → I` is continuous on the
@@ -74,6 +82,17 @@ compact-open space of paths. -/
 theorem continuous_reparam {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
     Continuous fun γ : Path x y ↦ γ.reparam f hf hf₀ hf₁ :=
   continuous_uncurry_iff.mp <| continuous_fst.eval (hf.comp continuous_snd)
+
+/-- The straight-line homotopy `Path.Homotopy.reparam` from a path to its reparametrization by
+`f` evaluates the path at the convex combination `(1 - s) t + s f(t)`. -/
+theorem Homotopy.reparam_apply (γ : Path x y) {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0)
+    (hf₁ : f 1 = 1) (q : I × I) :
+    Homotopy.reparam γ f hf hf₀ hf₁ q = γ.extend (σ q.1 * q.2 + q.1 * f q.2) := by
+  have h : (σ q.1 : ℝ) * q.2 + q.1 * f q.2 ∈ I := by
+    simpa only [smul_eq_mul] using
+      convex_Icc _ _ q.2.property (f q.2).property (nonneg (σ q.1)) (nonneg q.1) (by simp)
+  rw [extend_apply _ h]
+  rfl
 
 /-- The straight-line homotopy from the identity of the path space to reparametrization by `f`,
 evaluating `Path.Homotopy.reparam γ f` at each time. It is continuous in the path. -/
@@ -91,6 +110,78 @@ theorem reparamHomotopy_apply (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0
     (s : I) (γ : Path x y) :
     reparamHomotopy f hf hf₀ hf₁ (s, γ) = (Homotopy.reparam γ f hf hf₀ hf₁).eval s := (rfl)
 
+/-- Reparametrizing a continuously varying family of paths with varying endpoints by a fixed
+endpoint-preserving map `f : I → I` varies continuously with a continuous homotopy parameter
+`s : A → I`. -/
+theorem reparamHomotopy_continuous_family {A : Type*} [TopologicalSpace A]
+    {a b : A → X} (γ : ∀ q, Path (a q) (b q)) (hγ : Continuous ↿γ)
+    {s : A → I} (hs : Continuous s)
+    {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
+    Continuous ↿fun q : A ↦
+      (Homotopy.reparam (γ q) f hf hf₀ hf₁).eval (s q) :=
+  -- `Path.Homotopy.reparam (γ q)` factors through `γ q` applied to the reparametrization homotopy
+  -- of the identity path on `I`; this applies even when the endpoints vary with `q`.
+  hγ.comp (continuous_fst.prodMk <|
+    (Homotopy.reparam ⟨ContinuousMap.id I, rfl, rfl⟩ f hf hf₀ hf₁).continuous.comp
+      ((hs.comp continuous_fst).prodMk continuous_snd))
+
+/-- Every reparametrization homotopy fixes the constant path. -/
+@[simp]
+theorem Homotopy.reparam_refl_eval (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0)
+    (hf₁ : f 1 = 1) (s : I) :
+    (Homotopy.reparam (Path.refl x) f hf hf₀ hf₁).eval s = Path.refl x := by
+  -- `Path.Homotopy.reparam` evaluates its path, here the constant path, at a convex combination.
+  ext
+  rfl
+
+/-- The reparametrization of `[0, 1]` taking `γ₁ ⬝ (γ₂ ⬝ γ₃)` to `(γ₁ ⬝ γ₂) ⬝ γ₃`
+(`Path.Homotopy.trans_assoc_reparam`), as a map of the unit interval. -/
+def transAssocReparam (t : I) : I :=
+  ⟨Homotopy.transAssocReparamAux t, Homotopy.transAssocReparamAux_mem_I t⟩
+
+@[simp]
+theorem coe_transAssocReparam (t : I) :
+    (transAssocReparam t : ℝ) = Homotopy.transAssocReparamAux t :=
+  (rfl)
+
+@[fun_prop]
+theorem continuous_transAssocReparam : Continuous transAssocReparam :=
+  Homotopy.continuous_transAssocReparamAux.subtype_mk _
+
+@[simp]
+theorem transAssocReparam_zero : transAssocReparam 0 = 0 :=
+  Subtype.ext Homotopy.transAssocReparamAux_zero
+
+@[simp]
+theorem transAssocReparam_one : transAssocReparam 1 = 1 :=
+  Subtype.ext Homotopy.transAssocReparamAux_one
+
+/-- **The associativity homotopy of concatenation.** The straight-line homotopy, continuous in
+the three paths, from `γ₁ ⬝ (γ₂ ⬝ γ₃)` to `(γ₁ ⬝ γ₂) ⬝ γ₃`: the second is the first
+reparametrized by a map of `[0, 1]` that does not depend on the paths
+(`Path.Homotopy.trans_assoc_reparam`), and the homotopy moves along the segments to this
+reparametrization (`Path.reparamHomotopy`). -/
+def transAssocHomotopy (w x y z : X) :
+    ContinuousMap.Homotopy
+      (⟨fun γ : Path w x × Path x y × Path y z => γ.1.trans (γ.2.1.trans γ.2.2),
+        continuous_fst.path_trans (continuous_fst.comp continuous_snd |>.path_trans
+          (continuous_snd.comp continuous_snd))⟩ : C(_, Path w z))
+      ⟨fun γ : Path w x × Path x y × Path y z => (γ.1.trans γ.2.1).trans γ.2.2,
+        (continuous_fst.path_trans (continuous_fst.comp continuous_snd)).path_trans
+          (continuous_snd.comp continuous_snd)⟩ :=
+  ((reparamHomotopy transAssocReparam continuous_transAssocReparam transAssocReparam_zero
+      transAssocReparam_one).compContinuousMap _).cast
+    (ContinuousMap.id_comp _) (by
+      ext γ : 1
+      exact (Homotopy.trans_assoc_reparam γ.1 γ.2.1 γ.2.2).symm)
+
+@[simp]
+theorem transAssocHomotopy_apply (s : I) (γ : Path w x × Path x y × Path y z) :
+    transAssocHomotopy w x y z (s, γ) =
+      reparamHomotopy transAssocReparam continuous_transAssocReparam transAssocReparam_zero
+        transAssocReparam_one (s, γ.1.trans (γ.2.1.trans γ.2.2)) :=
+  (rfl)
+
 /-- Reparametrizing every loop of a loop `L` at the constant loop in `Ω X x` by the same map `f`
 does not change the homotopy class of `L`: `reparamHomotopy` acts on all loops at once and fixes
 the constant loop. -/
@@ -106,17 +197,14 @@ theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I
     map_one_left s := by simp
     prop' r s hs := by
       -- At the ends `L` is the constant loop, which every reparametrization fixes. The `change`
-      -- unfolds the homotopy's value and the cast path at an endpoint, after which the
-      -- reparametrized constant loop is the constant loop by definition, closed by `rfl`.
+      -- unfolds the homotopy's value and the cast path at an endpoint.
       rcases hs with rfl | hs
       · change reparamHomotopy f hf hf₀ hf₁ (r, L 0) = L 0
-        rw [L.source]
-        rfl
+        rw [L.source, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
       · rw [Set.mem_singleton_iff] at hs
         subst hs
         change reparamHomotopy f hf hf₀ hf₁ (r, L 1) = L 1
-        rw [L.target]
-        rfl }⟩
+        rw [L.target, reparamHomotopy_apply, Homotopy.reparam_refl_eval] }⟩
 
 /-- Concatenating every loop of a loop of loops `L` at the constant loop with the constant loop
 does not change its homotopy class. -/
@@ -170,19 +258,9 @@ theorem prepend_apply (α : Path x y) (γ : Path y z) : prepend α z γ = α.tra
 
 /-- Prepending `q` and then `p` is homotopic to prepending `p.trans q`. -/
 theorem homotopic_prepend_comp_prepend (p : Path w x) (q : Path x y) (z : X) :
-    ((prepend p z).comp (prepend q z)).Homotopic (prepend (p.trans q) z) := by
-  let φ : I → I := fun t ↦ ⟨Homotopy.transAssocReparamAux t, Homotopy.transAssocReparamAux_mem_I t⟩
-  have hφ : Continuous φ := by fun_prop
-  have hφ₀ : φ 0 = 0 := Subtype.ext Homotopy.transAssocReparamAux_zero
-  have hφ₁ : φ 1 = 1 := Subtype.ext Homotopy.transAssocReparamAux_one
-  -- `Homotopy.trans_assoc_reparam`: left association reparametrizes right association.
-  have h : (⟨fun γ ↦ γ.reparam φ hφ hφ₀ hφ₁, by fun_prop⟩ : C(Path w z, Path w z)).comp
-      ((prepend p z).comp (prepend q z)) = prepend (p.trans q) z := by
-    ext γ : 1
-    exact (Homotopy.trans_assoc_reparam p q γ).symm
-  have H := (reparamHomotopy φ hφ hφ₀ hφ₁).compContinuousMap ((prepend p z).comp (prepend q z))
-  rw [ContinuousMap.id_comp, h] at H
-  exact ⟨H⟩
+    ((prepend p z).comp (prepend q z)).Homotopic (prepend (p.trans q) z) :=
+  ⟨((transAssocHomotopy w x y z).compContinuousMap ⟨fun γ ↦ (p, q, γ), by fun_prop⟩).cast
+    (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)⟩
 
 /-- Prepending depends only on the path-homotopy class of the prepended path. -/
 theorem Homotopic.prepend {p p' : Path x y} (h : p.Homotopic p') (z : X) :

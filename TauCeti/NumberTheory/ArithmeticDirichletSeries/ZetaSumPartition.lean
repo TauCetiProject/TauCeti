@@ -83,7 +83,7 @@ finite union of summable pieces is summable even at an `s` where the full prime 
 diverges, and the identity holds there too. -/
 theorem primeIdealZetaSum_biUnion_of_pairwiseDisjoint {ι : Type*} (t : Finset ι)
     (g : ι → Set (HeightOneSpectrum (𝓞 K))) (hg : (t : Set ι).PairwiseDisjoint g) {s : ℝ}
-    (hsum : ∀ i ∈ t, Summable fun 𝔭 : g i ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (hsum : ∀ i ∈ t, Summable fun 𝔭 : g i ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     (⋃ i ∈ t, g i).primeIdealZetaSum s = ∑ i ∈ t, (g i).primeIdealZetaSum s := by
   simp only [primeIdealZetaSum_def]
   -- `f` is pinned because `Summable.tsum_finset_bUnion_disjoint` states each piece as
@@ -121,12 +121,12 @@ summability over `T`, the sum over `S` is at most the sum over `T` plus the sum 
 
 No summability over `S ∆ T` is needed: if that series diverges, then so does the one over `S`. -/
 theorem primeIdealZetaSum_le_add_symmDiff {S T : Set (HeightOneSpectrum (𝓞 K))} {s : ℝ}
-    (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     S.primeIdealZetaSum s ≤ T.primeIdealZetaSum s + (S ∆ T).primeIdealZetaSum s := by
-  by_cases hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)
+  by_cases hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)
   · -- `S` lies in `S ∪ T = T ∪ S ∆ T`, which is summable because `S` and `T \ S` are.
-    have hST : Summable fun 𝔭 : ↥(S ∪ T) ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) := by
-      have hdiff : Summable fun 𝔭 : ↥(T \ S) ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) := by
+    have hST : Summable fun 𝔭 : ↥(S ∪ T) ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s) := by
+      have hdiff : Summable fun 𝔭 : ↥(T \ S) ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s) := by
         simpa only [Function.comp_def, Set.coe_inclusion] using
           hT.comp_injective (Set.inclusion_injective Set.sdiff_subset)
       have := hS.hasSum.add_disjoint (f := fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
@@ -144,7 +144,7 @@ theorem primeIdealZetaSum_le_add_symmDiff {S T : Set (HeightOneSpectrum (𝓞 K)
 /-- **Deleting a summable set of primes does not increase the sum.** In particular this applies
 to a finite set of primes. -/
 theorem primeIdealZetaSum_compl_le_univ {s : ℝ}
-    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     Sᶜ.primeIdealZetaSum s ≤ (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s := by
   rw [primeIdealZetaSum_def, primeIdealZetaSum_univ]
   by_cases hsum : Summable fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)

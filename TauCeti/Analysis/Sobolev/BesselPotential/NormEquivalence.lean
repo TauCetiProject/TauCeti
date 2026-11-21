@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -242,7 +243,7 @@ theorem toBesselPotentialSpace_eq_iff {k : ℕ} {u : Wkp (volume : Measure E) �
       BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k) h
         =ᵐ[volume] fun x ↦ (value k u x : ℂ) := by
   refine ⟨fun hu ↦ hu ▸ coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k u, fun hh ↦ ?_⟩
-  refine BesselPotentialSpace.inclusionLp_injective (Nat.cast_nonneg k) (Lp.ext ?_)
+  refine BesselPotentialSpace.ext_of_ae_eq_inclusionLp (Nat.cast_nonneg k) ?_
   exact (coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k u).trans hh.symm
 
 /-- The identification is compatible with lowering the order: the inclusion

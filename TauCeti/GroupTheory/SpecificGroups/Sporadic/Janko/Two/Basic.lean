@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 
 /-!
@@ -110,6 +111,11 @@ theorem orderOf_b : orderOf b = 3 :=
 theorem orderOf_a_mul_b : orderOf (a * b) = 7 :=
   have : Fact (Nat.Prime 7) := ⟨by decide⟩
   orderOf_eq_prime (by decide +kernel) (by decide +kernel)
+
+/-- Every element of the ATLAS model of `J₂` is an even permutation. -/
+theorem le_alternatingGroup : J2 ≤ alternatingGroup (Fin 100) := by
+  simp only [J2_def, Subgroup.closure_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+  constructor <;> apply Equiv.Perm.mem_alternatingGroup.mpr <;> decide +kernel
 
 /-! ### Images of Stoytchev's generators -/
 
