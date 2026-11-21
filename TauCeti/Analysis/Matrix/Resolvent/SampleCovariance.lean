@@ -199,31 +199,24 @@ theorem norm_mul_quadratic_resolventTransform_spectralMeasure_sampleCovariance_l
   intro c m
   rw [card_div_card_mul_quadratic_resolventTransform_spectralMeasure_sampleCovariance X hz]
   have hzim : 0 < |z.im| := abs_pos.2 hz
+  set T := (sampleCovariance X - z • 1)⁻¹.trace
+  let Tₖ (k : n) := (sampleCovariance (X.updateCol k 0) - z • 1)⁻¹.trace
+  let q (k : n) := star (X.col k) ⬝ᵥ ((sampleCovariance (X.updateCol k 0) - z • 1)⁻¹ *ᵥ X.col k)
   -- Removing the `k`-th column is a perturbation of rank at most one.
-  have htrace (k : n) : ‖(sampleCovariance (X.updateCol k 0) - z • 1)⁻¹.trace -
-      (sampleCovariance X - z • 1)⁻¹.trace‖ ≤ 1 / |z.im| := by
+  have htrace (k : n) : ‖Tₖ k - T‖ ≤ 1 / |z.im| := by
     rw [norm_sub_rev]
     refine ((isHermitian_sampleCovariance X).norm_trace_inv_sub_smul_one_sub_le_rank
       (isHermitian_sampleCovariance _) hz).trans (div_le_div_of_nonneg_right ?_ hzim.le)
     rw [← sampleCovariance_updateCol_zero_add X k, add_sub_cancel_left, ← smul_vecMulVec]
     exact_mod_cast rank_vecMulVec_le _ _
-  have hterm (k : n) : ‖((Fintype.card n : ℂ)⁻¹ *
-      (star (X.col k) ⬝ᵥ ((sampleCovariance (X.updateCol k 0) - z • 1)⁻¹ *ᵥ X.col k)) -
-      (Fintype.card n : ℂ)⁻¹ * (sampleCovariance X - z • 1)⁻¹.trace) *
-      (1 + (Fintype.card n : ℂ)⁻¹ *
-        (star (X.col k) ⬝ᵥ ((sampleCovariance (X.updateCol k 0) - z • 1)⁻¹ *ᵥ X.col k)))⁻¹‖ ≤
+  have hterm (k : n) : ‖((Fintype.card n : ℂ)⁻¹ * q k - (Fintype.card n : ℂ)⁻¹ * T) *
+      (1 + (Fintype.card n : ℂ)⁻¹ * q k)⁻¹‖ ≤
       (ε + 1 / ((Fintype.card n : ℝ) * |z.im|)) * (‖z‖ / |z.im|) := by
     rw [norm_mul]
     refine mul_le_mul ?_ ?_ (norm_nonneg _) (by have := (norm_nonneg _).trans (hε k); positivity)
-    · have hsplit : (Fintype.card n : ℂ)⁻¹ *
-            (star (X.col k) ⬝ᵥ ((sampleCovariance (X.updateCol k 0) - z • 1)⁻¹ *ᵥ X.col k)) -
-          (Fintype.card n : ℂ)⁻¹ * (sampleCovariance X - z • 1)⁻¹.trace =
-          (Fintype.card n : ℂ)⁻¹ *
-            (star (X.col k) ⬝ᵥ ((sampleCovariance (X.updateCol k 0) - z • 1)⁻¹ *ᵥ X.col k) -
-              (sampleCovariance (X.updateCol k 0) - z • 1)⁻¹.trace) +
-          (Fintype.card n : ℂ)⁻¹ * ((sampleCovariance (X.updateCol k 0) - z • 1)⁻¹.trace -
-            (sampleCovariance X - z • 1)⁻¹.trace) := by ring
-      rw [hsplit]
+    · -- Triangle inequality through the leave-one-out trace `Tₖ k`.
+      rw [show (Fintype.card n : ℂ)⁻¹ * q k - (Fintype.card n : ℂ)⁻¹ * T =
+          (Fintype.card n : ℂ)⁻¹ * (q k - Tₖ k) + (Fintype.card n : ℂ)⁻¹ * (Tₖ k - T) by ring]
       refine (norm_add_le _ _).trans (add_le_add (hε k) ?_)
       rw [norm_mul, norm_inv, Complex.norm_natCast, one_div, mul_inv]
       exact mul_le_mul_of_nonneg_left ((htrace k).trans_eq (one_div _)) (by positivity)

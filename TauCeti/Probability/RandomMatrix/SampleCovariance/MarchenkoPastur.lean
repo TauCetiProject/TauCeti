@@ -87,30 +87,29 @@ theorem ae_tendsto_spectralMeasure_sampleCovariance_marchenkoPastur
   refine (ae_tendsto_marchenkoPastur_iff_ae_quadratic_tendsto_zero hc).2 fun z hz ↦ ?_
   filter_upwards [ae_tendsto_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace
     hind hX hunit hdim hz.ne'] with ω hω
-  set r := fun m ↦ (c m : ℂ) * z * (resolventTransform
-      ((X m ω).sampleCovariance.spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ) z *
-    resolventTransform
-      ((X m ω).sampleCovariance.spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ) z) +
-    (z + c m - 1) * resolventTransform
-      ((X m ω).sampleCovariance.spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ) z + 1
+  set s := fun m ↦ resolventTransform
+    ((X m ω).sampleCovariance.spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ) z
+  set r := fun m ↦ (c m : ℂ) * z * (s m * s m) + (z + c m - 1) * s m + 1
   -- The deterministic residual bound turns quadratic-form errors into `c * r → 0`.
   have hcr : Tendsto (fun m ↦ (c m : ℂ) * r m) atTop (𝓝 0) := by
     have hbound := (hω.add (tendsto_one_div_add_atTop_nhds_zero_nat.div_const |z.im|)).const_mul
       (‖z‖ / |z.im|)
     rw [zero_div, zero_add, mul_zero] at hbound
     refine squeeze_zero_norm (fun m ↦ ?_) hbound
+    -- The quadratic-form errors of the columns, whose sup norm `hω` controls.
+    let E (k : Fin (m + 1)) := ((m + 1 : ℕ) : ℂ)⁻¹ *
+      (star ((X m ω).col k) ⬝ᵥ (sampleCovariance ((X m ω).updateCol k 0) - z • 1)⁻¹ *ᵥ
+        (X m ω).col k - (sampleCovariance ((X m ω).updateCol k 0) - z • 1)⁻¹.trace)
     have h := norm_mul_quadratic_resolventTransform_spectralMeasure_sampleCovariance_le
-      (X m ω) hz.ne' fun k ↦ by
+      (X m ω) hz.ne' (ε := ‖E‖) fun k ↦ by
         rw [Fintype.card_fin]
-        exact norm_le_pi_norm (fun k ↦ ((m + 1 : ℕ) : ℂ)⁻¹ *
-          (star (fun i ↦ X m ω i k) ⬝ᵥ (sampleCovariance ((X m ω).updateCol k 0) - z • 1)⁻¹ *ᵥ
-            (fun i ↦ X m ω i k) - (sampleCovariance ((X m ω).updateCol k 0) - z • 1)⁻¹.trace)) k
+        exact norm_le_pi_norm E k
     have hcm : ((c m : ℝ) : ℂ) = (Fintype.card (Fin (p m)) : ℂ) / Fintype.card (Fin (m + 1)) := by
       simp [c]
     calc
-      _ = _ := by simp only [r, hcm]
+      _ = _ := by simp only [r, s, hcm]
       _ ≤ _ := h
-      _ = _ := by simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_div]
+      _ = _ := by simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_div, E, col_apply']
   have hdiv := hcr.div ((Complex.continuous_ofReal.tendsto _).comp hc')
     (by exact_mod_cast hy.ne' : ((y : ℝ) : ℂ) ≠ 0)
   rw [zero_div] at hdiv
