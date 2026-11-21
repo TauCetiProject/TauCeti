@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -914,12 +915,9 @@ theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
     setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq (t • ν))]
   refine add_le_add_right (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg) _
   -- `m - p ⊥ ν` for the projection `p` of `m`, so `‖m - t ν‖² = ‖m - p‖² + ‖p - t ν‖²`.
-  rcases eq_or_ne ν 0 with rfl | hν
-  · simp
-  have hν2 : ‖ν‖ ^ 2 ≠ 0 := by positivity
   have horth : ⟪m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
-    rw [inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq, RCLike.conj_to_real,
-      div_mul_cancel₀ _ hν2, sub_self]
+    simpa only [real_inner_comm m ν, RCLike.ofReal_real_eq_id, id_eq] using
+      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) m ν
   have hsplit : m - t • ν = (m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) + (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2 - t) • ν := by
     rw [sub_smul]; abel
   rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]

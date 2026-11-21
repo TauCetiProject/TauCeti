@@ -25,6 +25,9 @@ span of a finite linearly independent family has codimension its cardinality, an
 vector followed by a linearly independent family in its orthogonal complement is linearly
 independent.
 
+In a seminormed inner product space, the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal
+to `ν` and does not increase norms. In a normed space it is `z - (𝕜 ∙ ν).starProjection z`.
+
 For a family of subspaces `K x` of a finite-dimensional real inner product space whose orthogonal
 projections are continuous at `x₀`, projecting linearly independent vectors of `K x₀` onto `K x`
 keeps them linearly independent near `x₀`. If moreover a second such family `L x` has
@@ -83,6 +86,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `‖⟪w, z⟫‖ ≤ ‖w‖ * infDist z P`.
 * `TauCeti.exists_mem_orthogonal_inner_ne_zero_of_not_le`: if `S` is not contained in `P`, some
   vector orthogonal to `P` is not orthogonal to `S`.
+* `TauCeti.inner_sub_div_norm_sq_smul_self_eq_zero`, `TauCeti.norm_sub_div_norm_sq_smul_self_le`:
+  the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal to `ν` and does not increase
+  norms, in a seminormed inner product space.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -479,6 +485,35 @@ end Submodule
 namespace TauCeti
 
 open scoped InnerProductSpace
+
+section Seminormed
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` onto the subspace orthogonal to `ν` is orthogonal to
+`ν`. In a normed space it is `z - (𝕜 ∙ ν).starProjection z`, by
+`Submodule.starProjection_singleton`. -/
+@[simp]
+theorem inner_sub_div_norm_sq_smul_self_eq_zero (z ν : E) :
+    ⟪z - (⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν, ν⟫_𝕜 = 0 := by
+  rcases eq_or_ne ‖ν‖ 0 with hν | hν
+  · exact inner_eq_zero_of_right _ hν
+  rw [inner_eq_zero_symm]
+  simp [inner_sub_right, inner_smul_right, hν]
+
+/-- The projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` onto the subspace orthogonal to `ν` does not increase
+norms. -/
+theorem norm_sub_div_norm_sq_smul_self_le (z ν : E) :
+    ‖z - (⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν‖ ≤ ‖z‖ := by
+  set a := ⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2
+  -- Pythagoras for `z = (z - a • ν) + a • ν`, whose two summands are orthogonal.
+  have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (z - a • ν) (a • ν)
+    (by rw [inner_smul_right, inner_sub_div_norm_sq_smul_self_eq_zero, mul_zero])
+  rw [sub_add_cancel] at h
+  rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
+  exact le_add_of_nonneg_right (mul_self_nonneg _)
+
+end Seminormed
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 

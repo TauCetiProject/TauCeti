@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
@@ -373,9 +374,12 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
   set D : ℝ := Lam * M + K * ‖W1p.gradient U‖
   have hν' : (‖e‖ ^ 2)⁻¹ • e = e := by simp [he]
   have hb : ∀ i, ‖b i‖ = 1 := fun i => b.orthonormal.1 i
-  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z => real_inner_sub_div_norm_sq_smul_self_eq_zero z e
-  have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i =>
-    (norm_sub_div_norm_sq_smul_self_le (b i) e).trans_eq (hb i)
+  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z => by
+    simpa only [real_inner_comm z e, RCLike.ofReal_real_eq_id, id_eq] using
+      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) z e
+  have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i => by
+    simpa only [real_inner_comm (b i) e, RCLike.ofReal_real_eq_id, id_eq, hb i] using
+      norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) (b i) e
   have hgK : 0 ≤ (K : ℝ) * ‖W1p.gradient U‖ := by positivity
   -- The tangential terms `Gᵢⱼ = ∂_{P eᵢ} (aⁱʲ ∂ⱼu)`, each of norm at most `D`.
   choose G hGn hG using fun i j =>
@@ -442,7 +446,13 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
   set Py := y - (⟪y, e⟫_ℝ / ‖e‖ ^ 2) • e
   have hdec : y = ⟪y, e⟫_ℝ • e + Py := by simp [Py, he]
   -- `∂_e ∂_y u = ⟪y, e⟫ ∂_e ∂_e u + ∂_{P y} ∂_e u`, where weak derivatives commute.
-  obtain ⟨G₁, hG₁n, hG₁⟩ := htan e Py (real_inner_sub_div_norm_sq_smul_self_eq_zero y e)
+  have hPy : ⟪Py, e⟫_ℝ = 0 := by
+    simpa only [real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
+      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) y e
+  have hPyn : ‖Py‖ ≤ ‖y‖ := by
+    simpa only [real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
+      norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) y e
+  obtain ⟨G₁, hG₁n, hG₁⟩ := htan e Py hPy
   have hsplit : ∀ x, ⟪y, e⟫_ℝ * ⟪W1p.gradient U x, e⟫_ℝ + ⟪W1p.gradient U x, Py⟫_ℝ =
       ⟪W1p.gradient U x, y⟫_ℝ := fun x => by
     conv_rhs => rw [hdec]
@@ -450,7 +460,7 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
   have hye : ‖⟪y, e⟫_ℝ‖ ≤ ‖y‖ := (norm_inner_le_norm y e).trans_eq (by rw [he, mul_one])
   have h1 : ‖G₁‖ ≤ ‖y‖ * M := hG₁n.trans (by
     rw [he, one_mul]
-    exact mul_le_mul_of_nonneg_right (norm_sub_div_norm_sq_smul_self_le y e) hM)
+    exact mul_le_mul_of_nonneg_right hPyn hM)
   obtain ⟨G, hGn, hGae⟩ := exists_norm_le_ae_eq_smul_add ⟪y, e⟫_ℝ Gee G₁
   refine ⟨G, hGn.trans ?_, (((hGee.const_smul ⟪y, e⟫_ℝ).add
     (W1p.hasWeakLineDerivOn_inner_gradient_comm hG₁)).congr_ae
@@ -476,13 +486,19 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_normal_of_ta
   have hdec : ⟪w, e⟫_ℝ • e + Pw = w := by simp [Pw, he]
   obtain ⟨G₁, hG₁n, hG₁⟩ :=
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tangential he hM hGeen hGee htan y
-  obtain ⟨G₂, hG₂n, hG₂⟩ := htan y Pw (real_inner_sub_div_norm_sq_smul_self_eq_zero w e)
+  have hPw : ⟪Pw, e⟫_ℝ = 0 := by
+    simpa only [real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
+      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) w e
+  have hPwn : ‖Pw‖ ≤ ‖w‖ := by
+    simpa only [real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
+      norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) w e
+  obtain ⟨G₂, hG₂n, hG₂⟩ := htan y Pw hPw
   -- `∂_w = ⟪w, e⟫ ∂_e + ∂_{P w}`.
   have hw := (hG₁.smul_direction ⟪w, e⟫_ℝ).add_direction hG₂
   rw [hdec] at hw
   have hwe : ‖⟪w, e⟫_ℝ‖ ≤ ‖w‖ := (norm_inner_le_norm w e).trans_eq (by rw [he, mul_one])
   have h2 : ‖G₂‖ ≤ ‖y‖ * ‖w‖ * M :=
-    hG₂n.trans (by gcongr; exact norm_sub_div_norm_sq_smul_self_le w e)
+    hG₂n.trans (by gcongr)
   obtain ⟨G, hGn, hGae⟩ := exists_norm_le_ae_eq_smul_add ⟪w, e⟫_ℝ G₁ G₂
   refine ⟨G, hGn.trans ?_, hw.congr_ae_deriv hGae.symm⟩
   calc ‖⟪w, e⟫_ℝ‖ * ‖G₁‖ + ‖G₂‖ ≤ ‖w‖ * (‖y‖ * (C + M)) + ‖y‖ * ‖w‖ * M := by gcongr
