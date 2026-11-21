@@ -235,7 +235,7 @@ private def groupImage (i : Fin SporadicName.J1.presentation.generatorCount) :
 
 /-- `groupImage` is `presentationImage` precomposed with the cast of generator indices. -/
 private theorem groupImage_eq : groupImage = presentationImage ∘ finCongr generatorCount_eq :=
-  (rfl)
+  funext fun i ↦ by simp only [groupImage, Function.comp_apply, finCongr_apply]
 
 /-- All five transcribed relators hold on `groupImage`. -/
 private theorem lift_groupImage_toFreeGroup_eq_one
@@ -273,9 +273,8 @@ theorem presentationHom_of_one :
 
 /-- The range of `presentationHom` is the permutation model `J1`. -/
 theorem range_presentationHom : presentationHom.range = J1 := by
-  rw [← closure_range_presentationImage, presentationHom, GroupPresentation.range_homEquiv_symm]
-  dsimp only
-  rw [groupImage_eq, EquivLike.range_comp]
+  rw [← closure_range_presentationImage, presentationHom, GroupPresentation.range_homEquiv_symm,
+    Subtype.coe_mk, groupImage_eq, EquivLike.range_comp]
 
 -- Direction and product checks on the literal image data.
 example : b 0 = 145 := by decide +kernel

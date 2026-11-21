@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.Sporadic.Janko.One
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.Sporadic.Janko.One.Index
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One.Simple
+import TauCeti.Algebra.Group.Subgroup.Finite
 
 /-!
 # Recognition and simplicity of the presented group of `J₁`
@@ -74,20 +75,16 @@ namespace TauCeti.Sporadic.J1
 
 /-- The transcribed presentation of `J₁` is isomorphic to the ATLAS permutation model, via the
 homomorphism sending its generators to `presentationImage`. -/
-noncomputable def presentationEquiv : SporadicName.J1.Group ≃* Sporadic.J1 := by
-  let f := (MulEquiv.subgroupCongr range_presentationHom).toMonoidHom.comp
-    presentationHom.rangeRestrict
-  have hf : Function.Surjective f :=
-    (MulEquiv.subgroupCongr range_presentationHom).surjective.comp
-      presentationHom.rangeRestrict_surjective
-  exact MulEquiv.ofBijective f (hf.bijective_of_nat_card_le
-    (by simpa only [card_J1] using SporadicName.natCard_group_J1_le))
+noncomputable def presentationEquiv : SporadicName.J1.Group ≃* Sporadic.J1 :=
+  presentationHom.mulEquivOfRangeEq range_presentationHom
+    (by simpa only [card_J1] using SporadicName.natCard_group_J1_le)
 
 /-- The underlying permutation of the recognition equivalence is the canonical presentation
 homomorphism. -/
 @[simp]
 theorem coe_presentationEquiv (g : SporadicName.J1.Group) :
-    (presentationEquiv g : Equiv.Perm (Fin 266)) = presentationHom g := (rfl)
+    (presentationEquiv g : Equiv.Perm (Fin 266)) = presentationHom g :=
+  presentationHom.coe_mulEquivOfRangeEq_apply _ _ g
 
 end TauCeti.Sporadic.J1
 
