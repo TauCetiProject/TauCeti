@@ -190,9 +190,7 @@ theorem IsMinimumVarianceUnbiasedEstimator.ae_eq (hW : IsMinimumVarianceUnbiased
     rw [← covariance_self (hU.measurable.aemeasurable),
       covariance_fun_sub_left (hW'.memLp θ) (hW.memLp θ) (hU2 θ),
       hW'.covariance_eq_zero hU hU2 θ, hW.covariance_eq_zero hU hU2 θ, sub_zero]
-  have hev : evariance (fun x ↦ W' x - W x) (P θ) = 0 := by
-    rw [← ofReal_variance (hU2 θ), hvar, ENNReal.ofReal_zero]
-  filter_upwards [(evariance_eq_zero_iff hU.measurable.aemeasurable).1 hev] with x hx
+  filter_upwards [ae_eq_integral_of_variance_eq_zero (hU2 θ) hvar] with x hx
   rw [hU.integral_eq θ, sub_eq_zero] at hx
   exact hx.symm
 
