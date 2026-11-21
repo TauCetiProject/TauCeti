@@ -103,20 +103,6 @@ section Field
 
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K]
 
-/-- The modulus `q = p ^ k` lies in the disc of convergence of the exponential:
-`p ^ (-k) < r_0 = p ^ (-1 / (p - 1))`. -/
-private theorem zpow_neg_padicUnitsDepth_lt_amiceRadius_zero :
-    (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) < amiceRadius p 0 := by
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  have hsub : (0 : ℝ) < (p : ℝ) - 1 := sub_pos.mpr hp1
-  have hk : (1 : ℝ) < ((p : ℝ) - 1) * padicUnitsDepth p := by
-    have := (Nat.one_lt_cast (α := ℝ)).mpr (one_lt_sub_one_mul_padicUnitsDepth (p := p))
-    rwa [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_one] at this
-  rw [amiceRadius_def, ← Real.rpow_intCast]
-  refine Real.rpow_lt_rpow_of_exponent_lt hp1 ?_
-  rw [pow_zero, mul_one, Int.cast_neg, Int.cast_natCast, neg_lt_neg_iff, div_lt_iff₀ hsub]
-  linarith
-
 /-- **The conductor bound for locally algebraic weights.** If `ψ` is trivial on
 `1 + p ^ (k + j) ℤ_p`, where `q = p ^ k`, then for every `m ∈ ℤ` the coordinate of the weight
 `x ↦ x ^ m ψ(x)` satisfies `‖T‖ < r_j`: the weight satisfies the analyticity condition at every
@@ -134,7 +120,7 @@ theorem norm_coord_inclusion_zpow_mul_lt_amiceRadius (m : ℤ) {ψ : WeightSpace
   rw [← norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff, ContinuousMonoidHom.mul_apply, hψu,
     mul_one, ContinuousMonoidHom.zpow_apply, ← map_zpow, norm_coe_inclusion_apply_sub_one]
   refine (mem_unitsPrincipal_iff_norm.mp hum).trans_lt
-    (lt_of_le_of_lt ?_ zpow_neg_padicUnitsDepth_lt_amiceRadius_zero)
+    (lt_of_le_of_lt ?_ (zpow_neg_lt_amiceRadius_zero one_lt_sub_one_mul_padicUnitsDepth))
   exact zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_le) (by omega)
 
 /-- **The analytic level of a weight of exact conductor `p ^ (k + j + 1)`**, where `q = p ^ k`:

@@ -13,6 +13,8 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
+-- Non-public: the general linear version of `vecMul_eq_iff_eq_vecMul_inv` is used only in a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 
 /-!
 # Special linear groups: reduction, centers, and coordinate descriptions
@@ -79,6 +81,8 @@ proof is independent of the source's.
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring and `mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero` its upper-triangular
   diagonal specialization.
+* `Matrix.SpecialLinearGroup.odd_apply_one_of_even_apply_zero`: in a row of an element of
+  `SL₂(ℤ)` with even first entry, the second entry is odd.
 * `Matrix.SpecialLinearGroup.coe_GL_eq_mapGL`: the coercion of `SL(n, ℤ)` into `GL(n, S)` is
   `mapGL S`.
 * `Matrix.SpecialLinearGroup.coe_mapGL_int` and `Matrix.SpecialLinearGroup.mapGL_map_intCast`:
@@ -189,11 +193,7 @@ theorem mem_range_map_iff {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [F
 theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n]
     [DecidableEq n] (g : SpecialLinearGroup n R) (a y : n → R) :
     a ᵥ* (g : Matrix n n R) = y ↔ a = y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R) := by
-  constructor
-  · rintro rfl
-    rw [vecMul_vecMul, ← coe_mul, mul_inv_cancel, coe_one, vecMul_one]
-  · rintro rfl
-    rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
+  simpa [← map_inv] using GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv (toGL g) a y
 
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
 a sum over all row vectors when `R` is finite. -/
@@ -264,6 +264,14 @@ lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2,
 lemma mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] {g : SL(2, R)}
     (hg : g 1 0 = 0) : g 0 0 * g 1 1 = 1 := by
   simpa only [hg, mul_zero, sub_zero] using fin_two_mul_sub_mul_eq_one g
+
+/-- In a row of an element of `SL₂(ℤ)`, if the first entry is even then the second is odd, the two
+being coprime. -/
+lemma odd_apply_one_of_even_apply_zero (g : SL(2, ℤ)) {i : Fin 2} (h : Even (g i 0)) :
+    Odd (g i 1) := by
+  refine (Int.even_or_odd (g i 1)).resolve_left fun he ↦ ?_
+  have hu := (g.isCoprime_row i).isUnit_of_dvd' (even_iff_two_dvd.mp h) (even_iff_two_dvd.mp he)
+  rcases Int.isUnit_iff.mp hu with h | h <;> omega
 
 /-- The coercion of `SL(n, ℤ)` into `GL(n, S)` is `mapGL S`. -/
 lemma coe_GL_eq_mapGL {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
