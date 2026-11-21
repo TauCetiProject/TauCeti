@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.Algebra.Algebra.Hom
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
@@ -128,26 +129,6 @@ private lemma existsUnique_lift_quotientMapₐ {x : A}
     rw [AlgHom.commutes, IsScalarTower.algebraMap_apply A S (S ⧸ _), ← ι.commutes]
     exact hx.map _)
 
-/-- Let `ι : R → S`, `ι' : R → S'` and `ρ : S → S'` be `A`-algebra maps with `ρ ∘ ι = ι'`. If
-`f : C → S` lifts the image of `g : C → R ⧸ I` in `S ⧸ I S`, then `ρ ∘ f` lifts the image of `g`
-in `S' ⧸ I S'`. -/
-private lemma mkₐ_comp_comp_eq {S S' : Type*} [CommRing S] [CommRing S'] [Algebra A S]
-    [Algebra A S'] {I : Ideal R} {ι : R →ₐ[A] S} {ι' : R →ₐ[A] S'} (ρ : S →ₐ[A] S')
-    (hρ : ρ.comp ι = ι') {g : C →ₐ[A] R ⧸ I} {f : C →ₐ[A] S}
-    (hf : (Ideal.Quotient.mkₐ A (I.map ι)).comp f =
-      (Ideal.quotientMapₐ (I.map ι) ι Ideal.le_comap_map).comp g) :
-    (Ideal.Quotient.mkₐ A (I.map ι')).comp (ρ.comp f) =
-      (Ideal.quotientMapₐ (I.map ι') ι' Ideal.le_comap_map).comp g := by
-  have hle : I.map ι ≤ (I.map ι').comap ρ := Ideal.map_le_iff_le_comap.2 fun r hr ↦ by
-    rw [Ideal.mem_comap, Ideal.mem_comap, ← AlgHom.comp_apply, hρ]
-    exact Ideal.mem_map_of_mem ι' hr
-  rw [← AlgHom.comp_assoc, ← Ideal.quotient_map_comp_mkₐ _ _ hle, AlgHom.comp_assoc, hf,
-    ← AlgHom.comp_assoc]
-  congr 1
-  refine Ideal.Quotient.algHom_ext A ?_
-  rw [AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ, ← AlgHom.comp_assoc,
-    Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc, hρ, Ideal.quotient_map_comp_mkₐ]
-
 /-- The gluing step of `TauCeti.Algebra.existsUnique_lift_of_isWeaklyRegular`: a lift `fa` of `g`
 over `D(a)` takes values in `R`. Indeed, `g` also lifts over `D(b)`, the two lifts agree over
 `D(ab)` by uniqueness, and their values glue across the weakly regular sequence `a, b`. -/
@@ -180,9 +161,16 @@ private lemma mem_range_of_lift_away {a b : A}
   -- Lift `g` over `D(b)`; the two lifts agree over `D(ab)`, so `fa c` and `fb c` glue.
   obtain ⟨fb, hfb, -⟩ := existsUnique_lift_quotientMapₐ (C := C) ιb
     (IsLocalization.Away.algebraMap_isUnit (algebraMap A R b)) hI g
-  have hab : ρa.comp fa = ρb.comp fb :=
-    (existsUnique_lift_quotientMapₐ (C := C) ιab hua hI g).unique
-      (mkₐ_comp_comp_eq ρa hρa hfa) (mkₐ_comp_comp_eq ρb hρb hfb)
+  -- `ρa ∘ fa` and `ρb ∘ fb` both lift the image of `g` over `D(ab)`, so they agree.
+  have hab : ρa.comp fa = ρb.comp fb := by
+    have ha := congr((Ideal.quotientMapₐ (I.map ιab) ρa
+      (Ideal.map_le_iff_le_comap.2 fun r hr ↦ hρa ▸ Ideal.mem_map_of_mem ιab hr)).comp $hfa)
+    have hb := congr((Ideal.quotientMapₐ (I.map ιab) ρb
+      (Ideal.map_le_iff_le_comap.2 fun r hr ↦ hρb ▸ Ideal.mem_map_of_mem ιab hr)).comp $hfb)
+    simp only [← AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ, Ideal.quotientMapₐ_comp, hρa,
+      hρb] at ha hb
+    rw [AlgHom.comp_assoc] at ha hb
+    exact (existsUnique_lift_quotientMapₐ (C := C) ιab hua hI g).unique ha hb
   obtain ⟨r, ⟨hr, -⟩, -⟩ := hR.existsUnique_algebraMap_eq (fa c) (fb c) congr($hab c)
   exact ⟨r, hr⟩
 
