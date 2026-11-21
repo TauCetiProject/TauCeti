@@ -127,17 +127,12 @@ theorem not_exists_wkp_two_firstOrder_eq_of_forall_integral_gradient_mul_deriv_e
     simp only [one_mul, Pi.zero_apply, intervalIntegral.integral_zero, sub_zero] at ht
     rw [← hFt, ← ht, add_sub_cancel_right]
 
-/-- The indicator of `(0, 1/2)` is `1` almost everywhere on `(0, 1/2)`. -/
-private theorem ae_indicator_Ioo_eq_one :
-    ∀ᵐ t ∂volume.restrict (Ioo (0 : ℝ) (1 / 2)), (Ioo (0 : ℝ) (1 / 2)).indicator 1 t = (1 : ℝ) := by
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  rw [indicator_of_mem ht, Pi.one_apply]
-
 /-- The indicator of `(0, 1/2)` is `0` almost everywhere on `(1/2, 1)`. -/
 private theorem ae_indicator_Ioo_eq_zero :
-    ∀ᵐ t ∂volume.restrict (Ioo (1 / 2 : ℝ) 1), (Ioo (0 : ℝ) (1 / 2)).indicator 1 t = (0 : ℝ) := by
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  exact indicator_of_notMem (fun h : t ∈ Ioo (0 : ℝ) (1 / 2) => lt_asymm h.2 ht.1) _
+    ∀ᵐ t ∂volume.restrict (Ioo (1 / 2 : ℝ) 1), (Ioo (0 : ℝ) (1 / 2)).indicator 1 t = (0 : ℝ) :=
+  ae_restrict_of_ae_restrict_of_subset
+    (t := (Ioo (0 : ℝ) (1 / 2))ᶜ) (fun _ ht h => lt_asymm h.2 ht.1)
+    (indicator_ae_eq_restrict_compl (f := (1 : ℝ → ℝ)) measurableSet_Ioo.nullMeasurableSet)
 
 omit [Fact (1 ≤ p)] in
 /-- The indicator of `(0, 1/2)` lies in `Lᵖ(0, 1)`. -/
@@ -167,7 +162,9 @@ theorem exists_neg_iteratedGradient_eq_indicator_Ioo_and_not_exists_wkp_three (h
     filter_upwards [hu, hf.coeFn_toLp] with t ht hft
     rw [← hft, ← ht, one_mul]
   refine ⟨u, hu0, hu', not_exists_wkp_three_lowerOrder_eq_of_neg_iteratedGradient_eq
-    (by norm_num) (by norm_num) one_ne_zero ae_indicator_Ioo_eq_one ae_indicator_Ioo_eq_zero hu'⟩
+    (by norm_num) (by norm_num) one_ne_zero
+    (indicator_ae_eq_restrict (f := (1 : ℝ → ℝ)) measurableSet_Ioo.nullMeasurableSet)
+    ae_indicator_Ioo_eq_zero hu'⟩
 
 /-- **A divergence datum with a jump gives no `H²` regularity.** For `1 ≤ p ≤ ∞`, the Dirichlet
 problem `-u'' = (1_{(0, 1/2)})'` on `(0, 1)` with zero boundary values has a solution
@@ -189,6 +186,8 @@ theorem exists_forall_integral_gradient_mul_deriv_eq_indicator_Ioo_and_not_exist
         -∫ t in Ioo (0 : ℝ) 1, (Ioo (0 : ℝ) (1 / 2)).indicator 1 t * deriv φ t := fun φ => by
     simpa using hu φ
   refine ⟨u, hu0, hu', not_exists_wkp_two_firstOrder_eq_of_forall_integral_gradient_mul_deriv_eq
-    (by norm_num) (by norm_num) one_ne_zero ae_indicator_Ioo_eq_one ae_indicator_Ioo_eq_zero hu'⟩
+    (by norm_num) (by norm_num) one_ne_zero
+    (indicator_ae_eq_restrict (f := (1 : ℝ → ℝ)) measurableSet_Ioo.nullMeasurableSet)
+    ae_indicator_Ioo_eq_zero hu'⟩
 
 end TauCeti.PDE
