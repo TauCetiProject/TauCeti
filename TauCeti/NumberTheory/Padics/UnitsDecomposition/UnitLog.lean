@@ -149,7 +149,7 @@ variable (p) in
 /-- The unit logarithm is continuous. -/
 theorem continuous_padicUnitLog : Continuous (padicUnitLog p) := by
   rw [funext (padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd (p := p))]
-  exact continuous_const.mul ((continuous_subtype_val : Continuous ((↑) : ℤ_[p] → ℚ_[p])).comp
+  exact continuous_const.mul ((continuous_subtypeVal : Continuous ((↑) : ℤ_[p] → ℚ_[p])).comp
     (continuous_toAdd.comp (padicIntUnitsEquivZModUnitsProd p).continuous.snd))
 
 variable (p) in

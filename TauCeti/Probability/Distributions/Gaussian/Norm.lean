@@ -212,7 +212,7 @@ theorem integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
   let _ : Nonempty s := hs.coe_sort
   let μG : Measure (s → ℝ) := Measure.pi fun i : s ↦ gaussianReal 0 (σ i)
   have hG : HasLaw (fun ω (i : s) ↦ g i ω) μG P :=
-    hindep.hasLaw_pi fun i ↦ hlaw i i.2
+    hindep.hasLaw_pi fun i ↦ hlaw i i.property
   let q : Seminorm ℝ (s → ℝ) := p.comp (∑ i : s, (LinearMap.proj i).smulRight (v i))
   have hsup (ω : Ω) : s.sup' hs (fun i ↦ |g i ω| * p (v i)) =
       Finset.univ.sup' Finset.univ_nonempty (fun i : s ↦ |g i ω| * p (v i)) :=
@@ -220,7 +220,7 @@ theorem integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
       (Finset.sup'_le hs _ fun i hi ↦
         Finset.le_sup' (fun j : s ↦ |g j ω| * p (v j)) (Finset.mem_univ ⟨i, hi⟩))
       (Finset.sup'_le Finset.univ_nonempty _ fun i _ ↦
-        Finset.le_sup' (fun j ↦ |g j ω| * p (v j)) i.2)
+        Finset.le_sup' (fun j ↦ |g j ω| * p (v j)) i.property)
   have hsum (ω : Ω) : p (∑ i ∈ s, g i ω • v i) = q (fun i : s ↦ g i ω) := by
     simp [q, LinearMap.sum_apply, ← Finset.sum_coe_sort s]
   have hM_cont : Continuous

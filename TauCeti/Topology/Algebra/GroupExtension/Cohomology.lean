@@ -258,7 +258,7 @@ theorem exists_contCohomologyClass_eq (c : H2 G (Additive M)) :
     with hb_def
   have hb : b ∈ B2 G (Additive M) := mem_B2_iff.2 ⟨_, continuous_const, rfl⟩
   have hz' : (z : G × G → Additive M) - b ∈ Z2 G (Additive M) :=
-    (Z2 G (Additive M)).sub_mem z.2 (B2_le_Z2 G (Additive M) hb)
+    (Z2 G (Additive M)).sub_mem z.property (B2_le_Z2 G (Additive M) hb)
   have hz'₁ : ((z : G × G → Additive M) - b) (1, 1) = 0 := by
     simp [hb_def, d1_apply]
   refine ⟨ofMemZ2 hz' hz'₁, continuous_ofMemZ2 hz' hz'₁, ?_⟩
@@ -274,7 +274,7 @@ variable (G M)
 /-- Being continuously cohomologous is an equivalence relation on continuous factor sets: by
 `TauCeti.FactorSet.contCohomologyClass_eq_iff` it is the kernel of the class map. -/
 def isContCohomologousSetoid : Setoid {α : FactorSet G M // Continuous ⇑α} :=
-  Setoid.ker fun α : {α : FactorSet G M // Continuous ⇑α} => α.1.contCohomologyClass α.2
+  Setoid.ker fun α : {α : FactorSet G M // Continuous ⇑α} => α.val.contCohomologyClass α.property
 
 /-- **`H²(G, M)` classifies continuous factor sets up to continuous cohomology.** The class descends
 to a bijection from the continuous factor sets of `G` with values in `M`, taken modulo the
@@ -289,12 +289,12 @@ variable {G M}
 
 @[simp]
 theorem isContCohomologousSetoid_apply {α β : {α : FactorSet G M // Continuous ⇑α}} :
-    isContCohomologousSetoid G M α β ↔ IsContCohomologous α.1 β.1 :=
-  Setoid.ker_def.trans (contCohomologyClass_eq_iff α.1 β.1 α.2 β.2)
+    isContCohomologousSetoid G M α β ↔ IsContCohomologous α.val β.val :=
+  Setoid.ker_def.trans (contCohomologyClass_eq_iff α.val β.val α.property β.property)
 
 @[simp]
 theorem contCohomologyClassEquiv_apply_mk (α : {α : FactorSet G M // Continuous ⇑α}) :
-    contCohomologyClassEquiv G M (Quotient.mk _ α) = α.1.contCohomologyClass α.2 :=
+    contCohomologyClassEquiv G M (Quotient.mk _ α) = α.val.contCohomologyClass α.property :=
   (rfl)
 
 end Class

@@ -292,7 +292,7 @@ theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
   -- The Hessian is positive definite on the line through `b`.
   have hpos := finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
     (f := sphereHeight u ^ 2 + t • sphereHeight v) (W := ℝ ∙ b) fun z hz ↦ by
-      obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 z.2
+      obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 z.property
       have hc0 : c ≠ 0 := by
         rintro rfl
         exact hz (Subtype.ext (by simpa using hc.symm))
@@ -314,7 +314,7 @@ theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
     (f := sphereHeight u ^ 2 + t • sphereHeight v) (W := LinearMap.ker ℓ) fun z hz ↦ by
       have hzu : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v z, (u : E)⟫ = 0 := by
         rw [real_inner_comm]
-        simpa [ℓ, LinearMap.mem_ker] using z.2
+        simpa [ℓ, LinearMap.mem_ker] using z.property
       have hx := (map_ne_zero_iff _ (injective_mvfderiv_subtypeVal_sphere v)).2
         fun h : (z : TangentSpace (𝓡 n) v) = 0 ↦ hz (Subtype.ext h)
       simp only [QuadraticMap.restrict_apply, neg_apply,

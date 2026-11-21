@@ -214,7 +214,7 @@ private theorem exists_pos_forall_pow_eq_one (hu : Continuous u) {z₀ : ℂ}
   have hm' : (m : ℝ) * g = Complex.arg c := by simpa [zsmul_eq_mul] using congrArg Subtype.val hm
   -- `c ^ k = exp (m k g i) = exp (2π m i) = 1`.
   have hck : c ^ k = 1 := by
-    rw [← hexp, ← Complex.exp_int_mul, ← hm']
+    rw [← hexp, ← Complex.exp_intCast_mul, ← hm']
     push_cast
     rw [show (k : ℂ) * ((m : ℂ) * (g : ℝ) * Complex.I) = m * (2 * Real.pi * Complex.I) by
       linear_combination ((m : ℂ) * Complex.I) * hk']

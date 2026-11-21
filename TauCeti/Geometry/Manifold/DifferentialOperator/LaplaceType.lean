@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
 
 /-!
 # Laplace-type operators on smooth functions
@@ -51,6 +52,8 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 * `TauCeti.IsLaplaceType.unique`: in positive dimension the constant is determined by the operator.
 * `TauCeti.IsLaplaceType.conjDifferentialOperators`: the Laplace type is invariant under
   transport along diffeomorphisms which are Riemannian isometries.
+* `TauCeti.IsLocalRiemannianIsometry.smoothLaplaceBeltrami_comp`: a smooth local Riemannian
+  isometry `φ` intertwines the Laplace–Beltrami operators, `Δ (u ∘ φ) = (Δ u) ∘ φ`.
 
 ## References
 
@@ -259,5 +262,24 @@ theorem not_isLaplaceType_smoothLaplaceBeltrami [T2Space M] [Nontrivial E] {x : 
   have h := hD.smoothPrincipalSymbol_eq hx ξ
   rw [smoothPrincipalSymbol_smoothLaplaceBeltrami] at h
   nlinarith [hD.pos, pow_pos hξ 2]
+
+section LocalIsometry
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+/-- A smooth local Riemannian isometry `φ : M → N` intertwines the Laplace–Beltrami operators on
+smooth functions: `Δ_M (u ∘ φ) = (Δ_N u) ∘ φ`. Examples are the isometries of `M`, and the
+projection of `M` onto its quotient by a free, properly discontinuous isometric group action,
+for the quotient metric. -/
+theorem IsLocalRiemannianIsometry.smoothLaplaceBeltrami_comp {φ : C^∞⟮I, M; J, N⟯}
+    (hφ : IsLocalRiemannianIsometry I J φ) (u : C^∞⟮J, N; ℝ⟯) :
+    smoothLaplaceBeltrami I M (u.comp φ) = (smoothLaplaceBeltrami J N u).comp φ :=
+  ContMDiffMap.ext fun _ ↦ hφ.laplaceBeltrami_comp (u.contMDiff.contMDiffAt.of_le (by simp))
+
+end LocalIsometry
 
 end TauCeti

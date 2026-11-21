@@ -230,7 +230,7 @@ theorem mem_range_ι_iff {x : CliffordAlgebra Q} :
 /-- On a vector, the retraction `ιInv` computes the inverse of the vector equivalence. -/
 theorem ιRangeEquiv_symm_apply (x : LinearMap.range (ι Q)) :
     (ιRangeEquiv Q).symm x = ιInv Q x :=
-  (ι_injective Q) <| by rw [ι_ιRangeEquiv_symm_apply, ι_ιInv_of_mem Q x.2]
+  (ι_injective Q) <| by rw [ι_ιRangeEquiv_symm_apply, ι_ιInv_of_mem Q x.property]
 
 /-! ### The first step of the degree filtration -/
 
