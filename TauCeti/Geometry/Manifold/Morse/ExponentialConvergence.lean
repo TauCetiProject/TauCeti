@@ -17,6 +17,7 @@ import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Distance
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Exponential convergence of a negative gradient trajectory on a manifold
@@ -397,22 +398,17 @@ private theorem riemannianEDist_lt_of_lojasiewicz (hf : ContMDiff I 𝓘(ℝ) 2 
       (Icc_subset_Ici_self.trans ((Ici_subset_Ici.2 ht₀0).trans hx))
   by_contra! hsr
   -- The first time `τ ∈ [t₀, s]` at which `γ` is outside the ball.
-  set F := Icc t₀ s ∩ γ ⁻¹' {y | Manifold.riemannianEDist I p y < r}ᶜ
-  have hFc : IsClosed F := hγ₀.continuousOn.preimage_isClosed_of_isClosed isClosed_Icc
-    (Manifold.isOpen_setOfPred_riemannianEDist_lt I p r).isClosed_compl
-  have hFb : BddBelow F := ⟨t₀, fun u hu ↦ hu.1.1⟩
-  have hτ : sInf F ∈ F := hFc.csInf_mem ⟨s, ⟨hs, le_rfl⟩, not_lt.2 hsr⟩ hFb
-  have hin : ∀ u ∈ Ico t₀ (sInf F), Manifold.riemannianEDist I p (γ u) < r := fun u hu ↦ by
-    by_contra! h
-    exact (csInf_le hFb ⟨⟨hu.1, hu.2.le.trans hτ.1.2⟩, not_lt.2 h⟩).not_gt hu.2
+  obtain ⟨τ, hτ, -, hτV, -, hin⟩ :=
+    (Manifold.isOpen_setOfPred_riemannianEDist_lt I p r).exists_first_exit hγ₀.continuousOn
+      (ht₀.trans_le ENNReal.half_le_self) ⟨s, ⟨hs, le_rfl⟩, not_lt.2 hsr⟩
   -- Before `τ` the trajectory stays in the ball, so its length on `[t₀, τ]` is at most `r / 2`.
-  have hdist : Manifold.riemannianEDist I (γ t₀) (γ (sInf F)) ≤ r / 2 :=
-    (Manifold.riemannianEDist_le_pathELength hγ₀ rfl rfl hτ.1.1).trans
-      ((pathELength_le_of_forall_abs_le hf hx hle hθ hc ht₀0 hτ.1.1 fun u hu ↦
+  have hdist : Manifold.riemannianEDist I (γ t₀) (γ τ) ≤ r / 2 :=
+    (Manifold.riemannianEDist_le_pathELength hγ₀ rfl rfl hτ.1).trans
+      ((pathELength_le_of_forall_abs_le hf hx hle hθ hc ht₀0 hτ.1 fun u hu ↦
         hrU _ (hin u hu)).trans hL)
-  refine hτ.2 ?_
-  calc Manifold.riemannianEDist I p (γ (sInf F))
-      ≤ Manifold.riemannianEDist I p (γ t₀) + Manifold.riemannianEDist I (γ t₀) (γ (sInf F)) :=
+  refine hτV ?_
+  calc Manifold.riemannianEDist I p (γ τ)
+      ≤ Manifold.riemannianEDist I p (γ t₀) + Manifold.riemannianEDist I (γ t₀) (γ τ) :=
         Manifold.riemannianEDist_triangle
     _ < r / 2 + r / 2 :=
         ENNReal.add_lt_add_of_lt_of_le (ne_top_of_le_ne_top (by finiteness) hdist) ht₀ hdist
