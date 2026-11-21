@@ -51,9 +51,9 @@ the positive orientation and `-1` for the negative one.
   `(-i) ^ ⌊(n + 1) / 2⌋ Γ`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`, and
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
-* `CliffordAlgebra.map_complexVolume`, `CliffordAlgebra.map_complexVolume_of_eq`: the
-  complexification of an isometry of quadratic forms that also preserves the norms carries `Γ` to
-  `Γ` for the transported orientation.
+* `CliffordAlgebra.map_complexVolume`, `CliffordAlgebra.map_complexVolume_eq_complexVolume_reindex`:
+  the complexification of an isometry of quadratic forms that also preserves the norms carries `Γ`
+  to `Γ` for the transported orientation.
 * `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`, while
   `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
   positive dimension.
@@ -190,9 +190,9 @@ end Naturality
 
 /-- Variant of `CliffordAlgebra.map_complexVolume` when the source and target dimension indices are
 identified along `h : n = n'`. -/
-theorem map_complexVolume_of_eq {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
-    [FiniteDimensional ℝ V'] {n' : ℕ} [Fact (finrank ℝ V' = n')] {Q' : QuadraticForm ℝ V'}
-    (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) (h : n = n') :
+theorem map_complexVolume_eq_complexVolume_reindex {V' : Type*} [NormedAddCommGroup V']
+    [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V'] {n' : ℕ} [Fact (finrank ℝ V' = n')]
+    {Q' : QuadraticForm ℝ V'} (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) (h : n = n') :
     map (e.toIsometry.baseChange ℂ) (complexVolume Q o) =
       complexVolume Q'
         (Orientation.reindex ℝ V' (finCongr h) (o.map (Fin n) e.toLinearEquiv)) := by

@@ -103,8 +103,10 @@ theorem conjAlgEquiv_lid_cliffordProdTensor_one (ρ₁ : CliffordAlgebra Q₁ �
         (cliffordProdTensor ρ₁ 1 (one_mul 1)
           (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂) =
       ρ₂.comp (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry) := by
-  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun x ↦ LinearMap.ext fun f ↦ ?_
-  simp [LinearEquiv.conjAlgEquiv_apply, cliffordProdTensor_ι_tmul, Subsingleton.elim x.1 0]
+  refine AlgHom.ext fun a ↦ LinearMap.ext fun f ↦ ?_
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [lid_cliffordProdTensor, LinearEquiv.apply_symm_apply]
 
 /-- For a trivial left quadratic module `M₁` and the negative grading `-1` on `R`, conjugating
 `cliffordProdTensor` by `TensorProduct.lid R F` twists `ρ₂` by `CliffordAlgebra.involute`. -/
@@ -170,8 +172,10 @@ theorem conjAlgEquiv_rid_cliffordProdTensor (ρ₂ : CliffordAlgebra Q₂ →ₐ
     ((TensorProduct.rid R E).conjAlgEquiv R).toAlgHom.comp
         (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) =
       ρ₁.comp (map (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂).toIsometry) := by
-  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun x ↦ LinearMap.ext fun e ↦ ?_
-  simp [LinearEquiv.conjAlgEquiv_apply, cliffordProdTensor_ι_tmul, Subsingleton.elim x.2 0]
+  refine AlgHom.ext fun a ↦ LinearMap.ext fun e ↦ ?_
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [rid_cliffordProdTensor, LinearEquiv.apply_symm_apply]
 
 end Right
 

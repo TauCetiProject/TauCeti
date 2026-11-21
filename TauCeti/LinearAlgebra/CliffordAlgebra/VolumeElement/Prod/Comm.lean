@@ -77,9 +77,9 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
   rw [complexProdTensor_eq_cliffordProdTensor, complexProdTensor_eq_cliffordProdTensor, hcomm_a]
   exact AlgHom.koszulComm_cliffordProdTensor
     ρ₁ (ρ₁ (complexVolume Q₁ o₁)) (ρ₁.involutive_complexVolume o₁ hQ₁)
-    (fun v ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₁ hn, map_neg])
+    (map_complexVolume_mul_map_ι o₁ hn ρ₁)
     ρ₂ (ρ₂ (complexVolume Q₂ o₂)) (ρ₂.involutive_complexVolume o₂ hQ₂)
-    (fun w ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg])
+    (map_complexVolume_mul_map_ι o₂ hm ρ₂)
     (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) a) z
 
 /-- Bundled algebra-homomorphism form of `CliffordAlgebra.koszulComm_complexProdTensor`. -/
@@ -113,34 +113,8 @@ theorem conj_koszulComm_complexProdTensor_complexVolume
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)) =
       complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁ (complexVolume Q' o') := by
   subst o o'
-  have hnorm : ∀ x, ‖QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ' x‖ = ‖x‖ := fun x ↦ by
-    simpa using (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).norm_map x
-  have hcongr : (LinearEquiv.prodComm ℝ V W).withLpCongr 2 =
-      ((WithLp.linearEquiv 2 ℝ (V × W)).trans (LinearEquiv.prodComm ℝ V W)).trans
-        (WithLp.linearEquiv 2 ℝ (W × V)).symm := by ext x; rfl
-  have horient :
-      Orientation.map (Fin (n + m)) (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').toLinearEquiv
-          ((Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-            (WithLp.linearEquiv 2 ℝ (V × W)).symm) =
-        Orientation.reindex ℝ (WithLp 2 (W × V)) (finCongr (add_comm m n))
-          ((Orientation.prod o₂ o₁ Fact.out Fact.out).map (Fin (m + n))
-            (WithLp.linearEquiv 2 ℝ (W × V)).symm) := by
-    simp only [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm, hcongr,
-      Orientation.map_trans]
-    rw [← Orientation.map_symm (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)),
-      Equiv.apply_symm_apply,
-      Orientation.map_prodComm_prod_of_even o₁ o₂ Fact.out Fact.out (hn.mul_right m),
-      Orientation.map_reindex]
-  refine LinearMap.ext fun z ↦ ?_
-  rw [LinearEquiv.conj_apply_apply,
-    koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂ _
-      (((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-        (ρ₁.involutive_complexVolume o₁ hQ₁)
-        (ρ₂.involutive_complexVolume o₂ hQ₂)).symm z),
-    LinearEquiv.apply_symm_apply, equivOfIsometry_apply,
-    QuadraticMap.IsometryEquiv.baseChange_toIsometry,
-    map_complexVolume_of_eq _ _ hnorm (add_comm n m), horient,
-    Orientation.reindex_finCongr_reindex_finCongr]
-  simp [finCongr_refl, Orientation.reindex_refl]
+  exact conj_complexVolume_of_conjAlgEquiv_comp
+    (conjAlgEquiv_koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂)
+    (equivOfIsometry_withLpProdComm_complexVolume hQ hQ' o₁ o₂ (hn.mul_right m))
 
 end CliffordAlgebra

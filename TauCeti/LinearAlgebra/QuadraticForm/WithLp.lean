@@ -56,16 +56,8 @@ theorem withLpProd_symm_apply (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (
 /-- Exchanging the factors of `WithLp p (M₁ × M₂)` as an isometric equivalence of quadratic maps. -/
 def withLpProdComm {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) : Q.IsometryEquiv Q' where
-  toLinearEquiv := (LinearEquiv.prodComm R M₁ M₂).withLpCongr p
-  map_app' x := by simp [hQ, hQ', add_comm]
-
-/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
-@[simp]
-theorem toLinearEquiv_withLpProdComm {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
-    (withLpProdComm hQ hQ').toLinearEquiv = (LinearEquiv.prodComm R M₁ M₂).withLpCongr p := (rfl)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) : Q.IsometryEquiv Q' :=
+  ((withLpProd hQ).trans (QuadraticMap.IsometryEquiv.prodComm Q₁ Q₂)).trans (withLpProd hQ').symm
 
 /-- `QuadraticMap.IsometryEquiv.withLpProdComm` swaps the two coordinates inside `WithLp`. -/
 @[simp]
@@ -73,49 +65,87 @@ theorem withLpProdComm_apply {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
     (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) (x : WithLp p (M₁ × M₂)) :
     withLpProdComm hQ hQ' x = WithLp.toLp p ((WithLp.ofLp x).2, (WithLp.ofLp x).1) := by
-  simp [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, toLinearEquiv_withLpProdComm]; rfl
+  rw [withLpProdComm, ← coe_toLinearEquiv]
+  simp
+  rfl
+
+/-- The inverse of `QuadraticMap.IsometryEquiv.withLpProdComm` swaps the two coordinates back. -/
+@[simp]
+theorem withLpProdComm_symm_apply {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) (y : WithLp p (M₂ × M₁)) :
+    (withLpProdComm hQ hQ').symm y = WithLp.toLp p ((WithLp.ofLp y).2, (WithLp.ofLp y).1) := by
+  rw [symm_apply_eq, withLpProdComm_apply]
+
+/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdComm {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
+    (withLpProdComm hQ hQ').toLinearEquiv = (LinearEquiv.prodComm R M₁ M₂).withLpCongr p :=
+  LinearEquiv.ext fun x ↦ by
+    rw [coe_toLinearEquiv, withLpProdComm_apply]
+    rfl
 
 /-- Deleting a trivial left factor from `WithLp p (M₁ × M₂)` as a quadratic isometric
 equivalence. -/
 def withLpUniqueProd [Unique M₁] (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
-    Q.IsometryEquiv Q₂ where
-  toLinearEquiv := (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.uniqueProd
-  map_app' x := by rw [hQ x, Subsingleton.elim (WithLp.ofLp x).1 0]; simp
+    Q.IsometryEquiv Q₂ :=
+  (withLpProd hQ).trans (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂)
+
+/-- `QuadraticMap.IsometryEquiv.withLpUniqueProd` extracts the second coordinate. -/
+@[simp]
+theorem withLpUniqueProd_apply [Unique M₁]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (x : WithLp p (M₁ × M₂)) :
+    withLpUniqueProd hQ x = (WithLp.ofLp x).2 := by
+  rw [withLpUniqueProd, ← coe_toLinearEquiv]
+  simp
+
+/-- The inverse of `QuadraticMap.IsometryEquiv.withLpUniqueProd` inserts zero in the trivial left
+coordinate. -/
+@[simp]
+theorem withLpUniqueProd_symm_apply [Unique M₁]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (m : M₂) :
+    (withLpUniqueProd hQ).symm m = WithLp.toLp p (0, m) := by
+  rw [symm_apply_eq, withLpUniqueProd_apply]
 
 /-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpUniqueProd`. -/
 @[simp]
 theorem toLinearEquiv_withLpUniqueProd [Unique M₁]
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
     (withLpUniqueProd hQ).toLinearEquiv =
-      (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.uniqueProd := (rfl)
-
-/-- `QuadraticMap.IsometryEquiv.withLpUniqueProd` extracts the second coordinate. -/
-@[simp]
-theorem withLpUniqueProd_apply [Unique M₁]
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (x : WithLp p (M₁ × M₂)) :
-    withLpUniqueProd hQ x = (WithLp.ofLp x).2 :=
-  LinearEquiv.uniqueProd_apply (R := R) (WithLp.ofLp x)
+      (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.uniqueProd :=
+  LinearEquiv.ext fun x ↦ by simp [coe_toLinearEquiv]
 
 /-- Deleting a trivial right factor from `WithLp p (M₁ × M₂)` as a quadratic isometric
 equivalence. -/
 def withLpProdUnique [Unique M₂] (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
-    Q.IsometryEquiv Q₁ where
-  toLinearEquiv := (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.prodUnique
-  map_app' x := by rw [hQ x, Subsingleton.elim (WithLp.ofLp x).2 0]; simp
+    Q.IsometryEquiv Q₁ :=
+  (withLpProd hQ).trans (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂)
+
+/-- `QuadraticMap.IsometryEquiv.withLpProdUnique` extracts the first coordinate. -/
+@[simp]
+theorem withLpProdUnique_apply [Unique M₂]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (x : WithLp p (M₁ × M₂)) :
+    withLpProdUnique hQ x = (WithLp.ofLp x).1 := by
+  rw [withLpProdUnique, ← coe_toLinearEquiv]
+  simp
+
+/-- The inverse of `QuadraticMap.IsometryEquiv.withLpProdUnique` inserts zero in the trivial right
+coordinate. -/
+@[simp]
+theorem withLpProdUnique_symm_apply [Unique M₂]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (m : M₁) :
+    (withLpProdUnique hQ).symm m = WithLp.toLp p (m, 0) := by
+  rw [symm_apply_eq, withLpProdUnique_apply]
 
 /-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdUnique`. -/
 @[simp]
 theorem toLinearEquiv_withLpProdUnique [Unique M₂]
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
     (withLpProdUnique hQ).toLinearEquiv =
-      (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.prodUnique := (rfl)
-
-/-- `QuadraticMap.IsometryEquiv.withLpProdUnique` extracts the first coordinate. -/
-@[simp]
-theorem withLpProdUnique_apply [Unique M₂]
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (x : WithLp p (M₁ × M₂)) :
-    withLpProdUnique hQ x = (WithLp.ofLp x).1 :=
-  LinearEquiv.prodUnique_apply (R := R) (WithLp.ofLp x)
+      (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.prodUnique :=
+  LinearEquiv.ext fun x ↦ by simp [coe_toLinearEquiv]
 
 end Binary
 
@@ -135,14 +165,38 @@ def withLpProdAssoc (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂
     (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
     (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
     (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2) :
-    Q₁₂_₃.IsometryEquiv Q₁_₂₃ where
-  toLinearEquiv :=
-    ((WithLp.linearEquiv p R (WithLp p (M₁ × M₂) × M₃)).trans
-      (((WithLp.linearEquiv p R (M₁ × M₂)).prodCongr (LinearEquiv.refl R M₃)).trans
-        ((LinearEquiv.prodAssoc R M₁ M₂ M₃).trans
-          ((LinearEquiv.refl R M₁).prodCongr (WithLp.linearEquiv p R (M₂ × M₃)).symm)))).trans
-      (WithLp.linearEquiv p R (M₁ × WithLp p (M₂ × M₃))).symm
-  map_app' x := by simp [hQ₁₂_₃, hQ₁₂, hQ₁_₂₃, hQ₂₃, add_assoc]
+    Q₁₂_₃.IsometryEquiv Q₁_₂₃ :=
+  ((withLpProd hQ₁₂_₃).trans
+    (((withLpProd hQ₁₂).prod (QuadraticMap.IsometryEquiv.refl Q₃)).trans
+      ((QuadraticMap.IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).trans
+        ((QuadraticMap.IsometryEquiv.refl Q₁).prod (withLpProd hQ₂₃).symm)))).trans
+    (withLpProd hQ₁_₂₃).symm
+
+/-- Application formula for `QuadraticMap.IsometryEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem withLpProdAssoc_apply (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2)
+    (x : WithLp p (WithLp p (M₁ × M₂) × M₃)) :
+    withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ x =
+      WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).1,
+        WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).2, (WithLp.ofLp x).2)) := by
+  rw [withLpProdAssoc, ← coe_toLinearEquiv]
+  simp
+
+/-- Inverse application formula for `QuadraticMap.IsometryEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem withLpProdAssoc_symm_apply
+    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2)
+    (y : WithLp p (M₁ × WithLp p (M₂ × M₃))) :
+    (withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).symm y =
+      WithLp.toLp p (WithLp.toLp p ((WithLp.ofLp y).1, (WithLp.ofLp (WithLp.ofLp y).2).1),
+        (WithLp.ofLp (WithLp.ofLp y).2).2) := by
+  rw [symm_apply_eq, withLpProdAssoc_apply]
 
 /-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdAssoc`. -/
 @[simp]
@@ -156,19 +210,8 @@ theorem toLinearEquiv_withLpProdAssoc
         (((WithLp.linearEquiv p R (M₁ × M₂)).prodCongr (LinearEquiv.refl R M₃)).trans
           ((LinearEquiv.prodAssoc R M₁ M₂ M₃).trans
             ((LinearEquiv.refl R M₁).prodCongr (WithLp.linearEquiv p R (M₂ × M₃)).symm)))).trans
-        (WithLp.linearEquiv p R (M₁ × WithLp p (M₂ × M₃))).symm := (rfl)
-
-/-- Application formula for `QuadraticMap.IsometryEquiv.withLpProdAssoc`. -/
-@[simp]
-theorem withLpProdAssoc_apply (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
-    (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
-    (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2)
-    (x : WithLp p (WithLp p (M₁ × M₂) × M₃)) :
-    withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ x =
-      WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).1,
-        WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).2, (WithLp.ofLp x).2)) := by
-  simp [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, toLinearEquiv_withLpProdAssoc]
+        (WithLp.linearEquiv p R (M₁ × WithLp p (M₂ × M₃))).symm :=
+  LinearEquiv.ext fun x ↦ by simp [coe_toLinearEquiv]
 
 end Assoc
 

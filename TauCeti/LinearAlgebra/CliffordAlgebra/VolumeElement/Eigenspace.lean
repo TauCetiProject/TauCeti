@@ -86,9 +86,9 @@ orientation-reversing isometry exchanges the labels.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_neg`: in even positive dimension, for every
   quadratic form, the `-μ`- and `μ`-eigenspaces of `Γ` have equal dimension; in particular
   `dim E⁻ = dim E⁺`.
-* `CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul`: in positive dimension,
-  the half-spin spaces of a spinor module, its `1`- and `-1`-eigenspaces of `Γ`, have dimension
-  `2 ^ (n / 2 - 1)`.
+* `CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul` and
+  `AlgHom.finrank_eigenspace_complexVolume_of_bijective`: in positive dimension, the half-spin
+  spaces of a spinor module, its `1`- and `-1`-eigenspaces of `Γ`, have dimension `2 ^ (n / 2 - 1)`.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap`: in positive
   dimension, given a spinor module, `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
 
@@ -365,5 +365,23 @@ theorem involutive_complexVolume : Function.Involutive (ρ (complexVolume Q o)) 
 theorem isCompl_eigenspace_complexVolume :
     IsCompl ((ρ (complexVolume Q o)).eigenspace 1) ((ρ (complexVolume Q o)).eigenspace (-1)) :=
   isCompl_eigenspace_one_neg_one two_ne_zero.isUnit (ρ.involutive_complexVolume o hQ)
+
+/-- **The half-spin spaces of a bijective representation**: in positive dimension, for
+`Q v = -‖v‖²`, the `1`- and `-1`-eigenspaces of `ρ(Γ)` on `S` both have dimension
+`2 ^ (n / 2 - 1)`. -/
+theorem finrank_eigenspace_complexVolume_of_bijective (hρ : Function.Bijective ρ) (hn0 : n ≠ 0)
+    {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
+    finrank ℂ ((ρ (complexVolume Q o)).eigenspace μ) = 2 ^ (n / 2 - 1) := by
+  let _ : Module (CliffordAlgebra (Q.baseChange ℂ)) S := Module.compHom S ρ.toRingHom
+  have hsmul : ∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (s : S), a • s = ρ a s := fun _ _ ↦ rfl
+  have _ : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S :=
+    ⟨fun c a s ↦ by rw [hsmul, hsmul, map_smul, LinearMap.smul_apply]⟩
+  have hlsmul :
+      (Algebra.lsmul ℂ ℂ S : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) = ρ := by
+    refine AlgHom.ext fun a ↦ LinearMap.ext fun s ↦ ?_
+    rw [Algebra.lsmul_apply, hsmul]
+  rw [← hlsmul]
+  exact CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul o hQ
+    (hlsmul.symm ▸ hρ) hn0 hμ
 
 end AlgHom

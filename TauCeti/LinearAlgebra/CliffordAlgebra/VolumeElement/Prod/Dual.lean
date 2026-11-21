@@ -16,12 +16,14 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Unit
 For an even-dimensional oriented real inner product space `V` of dimension `n = 2ℓ` with
 `Q₁ v = -‖v‖²`, the intrinsic chirality of the reverse dual `E*` is `Γ_(E*) = (-1) ^ (n / 2) Γ_Eᵀ`:
 
-* **When `Even (n / 2)` (`n ≡ 0 (mod 4)`)**: `TensorProduct.dualDistrib ℂ E F` intertwines
-  `complexProdTensor` of `(E*, F*)` with `(complexProdTensor ρ₁ ρ₂).cliffordReverseDual` for the
-  same orientation `o₁` (`CliffordAlgebra.dualDistrib_complexProdTensor_of_even_div_two`,
+* **Unified reverse duality**: `TensorProduct.dualDistrib ℂ E F` intertwines `complexProdTensor`
+  of `(E*, F*)` for `if Even (n / 2) then o₁ else -o₁` with
+  `(complexProdTensor ρ₁ ρ₂).cliffordReverseDual` (`CliffordAlgebra.dualDistrib_complexProdTensor`,
+  `CliffordAlgebra.cliffordReverseDual_complexProdTensor_eq_conj`).
+* **When `Even (n / 2)` (`n ≡ 0 (mod 4)`)**: specializes to the same orientation `o₁`
+  (`CliffordAlgebra.dualDistrib_complexProdTensor_of_even_div_two`,
   `CliffordAlgebra.cliffordReverseDual_complexProdTensor_eq_conj_of_even_div_two`).
-* **When `Odd (n / 2)` (`n ≡ 2 (mod 4)`)**: `dualDistrib ℂ E F` intertwines `complexProdTensor` of
-  `(E*, F*)` for `-o₁` with the reverse dual for `o₁`
+* **When `Odd (n / 2)` (`n ≡ 2 (mod 4)`)**: specializes to `-o₁`
   (`CliffordAlgebra.dualDistrib_complexProdTensor_neg_orientation_of_odd_div_two`,
   `CliffordAlgebra.cliffordReverseDual_complexProdTensor_eq_conj_neg_orientation_of_odd_div_two`),
   and precomposing with `1 ⊗ Γ_(F*)` when `W` is even-dimensional restores `o₁`
@@ -51,17 +53,44 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
-private theorem cliffordReverseDual_equivOfIsometry_apply
-    {M₁ M₂ : Type*} [AddCommGroup M₁] [Module ℂ M₁] [AddCommGroup M₂] [Module ℂ M₂]
-    {Qₐ : QuadraticForm ℂ M₁} {Qᵦ : QuadraticForm ℂ M₂} {S : Type*} [AddCommGroup S] [Module ℂ S]
-    (ρ : CliffordAlgebra Qᵦ →ₐ[ℂ] Module.End ℂ S) (f : Qₐ.IsometryEquiv Qᵦ)
-    (x : CliffordAlgebra Qₐ) :
-    (ρ.comp (equivOfIsometry f).toAlgHom).cliffordReverseDual x =
-      ρ.cliffordReverseDual (equivOfIsometry f x) := by
-  have hcomp : ρ.cliffordReverseDual.comp (equivOfIsometry f).toAlgHom =
-      (ρ.comp (equivOfIsometry f).toAlgHom).cliffordReverseDual :=
-    AlgHom.cliffordReverseDual_unique _ _ fun v ↦ by simp [equivOfIsometry_apply]
-  exact (AlgHom.congr_fun hcomp x).symm
+/-- **Unified reverse duality of `CliffordAlgebra.complexProdTensor`**:
+`TensorProduct.dualDistrib ℂ E F` intertwines `complexProdTensor` of `(E*, F*)` for
+`if Even (n / 2) then o₁ else -o₁` with `(complexProdTensor hQ o₁ ...).cliffordReverseDual`,
+without finiteness assumptions on `E`, `F`, or `W`. -/
+theorem dualDistrib_complexProdTensor (x : CliffordAlgebra (Q.baseChange ℂ)) :
+    dualDistrib ℂ E F ∘ₗ
+        complexProdTensor hQ (if Even (n / 2) then o₁ else -o₁) hQ₁ hn
+          ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x =
+      (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x ∘ₗ dualDistrib ℂ E F := by
+  have hγ : ρ₁.cliffordReverseDual (complexVolume Q₁ (if Even (n / 2) then o₁ else -o₁)) =
+      (ρ₁ (complexVolume Q₁ o₁)).dualMap := by
+    split_ifs with h
+    · rw [AlgHom.cliffordReverseDual_complexVolume, h.neg_one_pow, one_smul]
+    · have ho : Odd (n / 2) := Nat.not_even_iff_odd.mp h
+      rw [complexVolume_neg_orientation, map_neg, AlgHom.cliffordReverseDual_complexVolume,
+        ho.neg_one_pow]
+      ext φ; simp
+  rw [complexProdTensor_eq_cliffordProdTensor, complexProdTensor_eq_comp,
+    AlgHom.cliffordReverseDual_comp_equivOfIsometry, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+  simpa only [hγ] using
+    AlgHom.dualDistrib_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
+      ρ₂ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) x)
+
+/-- **Unified reverse-dual isomorphism**: for finite-dimensional `E` and `F`,
+`TensorProduct.dualDistribEquiv ℂ E F` conjugates `complexProdTensor` of `(E*, F*)` for
+`if Even (n / 2) then o₁ else -o₁` to the reverse dual of `complexProdTensor`. -/
+theorem cliffordReverseDual_complexProdTensor_eq_conj
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] (x : CliffordAlgebra (Q.baseChange ℂ)) :
+    (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x =
+      (dualDistribEquiv ℂ E F).conj
+        (complexProdTensor hQ (if Even (n / 2) then o₁ else -o₁) hQ₁ hn
+          ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x) := by
+  refine LinearMap.ext fun Φ ↦ ?_
+  obtain ⟨z, rfl⟩ := (dualDistribEquiv ℂ E F).surjective Φ
+  rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
+  simpa only [LinearMap.comp_apply, ← toLinearMap_dualDistribEquiv, LinearEquiv.coe_coe] using
+    (LinearMap.congr_fun (dualDistrib_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x) z).symm
 
 /-- **Reverse duality when `n ≡ 0 (mod 4)` (`Even (n / 2)`)**: `TensorProduct.dualDistrib ℂ E F`
 intertwines `complexProdTensor` of the reverse duals `(E*, F*)` with the reverse dual of
@@ -71,16 +100,7 @@ theorem dualDistrib_complexProdTensor_of_even_div_two (hndiv : Even (n / 2))
     dualDistrib ℂ E F ∘ₗ
         complexProdTensor hQ o₁ hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x =
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x ∘ₗ dualDistrib ℂ E F := by
-  have hγ : ρ₁.cliffordReverseDual (complexVolume Q₁ o₁) =
-      (ρ₁ (complexVolume Q₁ o₁)).dualMap := by
-    rw [AlgHom.cliffordReverseDual_complexVolume, hndiv.neg_one_pow, one_smul]
-  rw [complexProdTensor_eq_cliffordProdTensor, complexProdTensor_eq_comp,
-    cliffordReverseDual_equivOfIsometry_apply]
-  simpa only [hγ] using
-    AlgHom.dualDistrib_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (by rw [← map_mul, complexVolume_mul_self o₁ hQ₁, map_one])
-      (fun v ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₁ hn, map_neg])
-      ρ₂ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) x)
+  simpa [hndiv] using dualDistrib_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x
 
 /-- **Reverse-dual isomorphism when `Even (n / 2)`**: for finite-dimensional `E` and `F`,
 `TensorProduct.dualDistribEquiv ℂ E F` conjugates `complexProdTensor` of `(E*, F*)` to the reverse
@@ -91,12 +111,7 @@ theorem cliffordReverseDual_complexProdTensor_eq_conj_of_even_div_two
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x =
       (dualDistribEquiv ℂ E F).conj
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x) := by
-  refine LinearMap.ext fun Φ ↦ ?_
-  obtain ⟨z, rfl⟩ := (dualDistribEquiv ℂ E F).surjective Φ
-  rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
-  simpa only [LinearMap.comp_apply, ← toLinearMap_dualDistribEquiv, LinearEquiv.coe_coe] using
-    (LinearMap.congr_fun
-      (dualDistrib_complexProdTensor_of_even_div_two hQ o₁ hQ₁ hn ρ₁ ρ₂ hndiv x) z).symm
+  simpa [hndiv] using cliffordReverseDual_complexProdTensor_eq_conj hQ o₁ hQ₁ hn ρ₁ ρ₂ x
 
 /-- **Reverse duality when `n ≡ 2 (mod 4)` (`Odd (n / 2)`)**: because `Γ_(E*) = -Γ_Eᵀ`,
 `TensorProduct.dualDistrib ℂ E F` intertwines `complexProdTensor` of `(E*, F*)` for `-o₁` with the
@@ -106,17 +121,8 @@ theorem dualDistrib_complexProdTensor_neg_orientation_of_odd_div_two (hndiv : Od
     dualDistrib ℂ E F ∘ₗ
         complexProdTensor hQ (-o₁) hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x =
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x ∘ₗ dualDistrib ℂ E F := by
-  have hγ : ρ₁.cliffordReverseDual (complexVolume Q₁ (-o₁)) =
-      (ρ₁ (complexVolume Q₁ o₁)).dualMap := by
-    rw [complexVolume_neg_orientation, map_neg, AlgHom.cliffordReverseDual_complexVolume,
-      hndiv.neg_one_pow]; ext φ e; simp
-  rw [complexProdTensor_eq_cliffordProdTensor, complexProdTensor_eq_comp,
-    cliffordReverseDual_equivOfIsometry_apply]
-  simpa only [hγ] using
-    AlgHom.dualDistrib_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (by rw [← map_mul, complexVolume_mul_self o₁ hQ₁, map_one])
-      (fun v ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₁ hn, map_neg])
-      ρ₂ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) x)
+  simpa [Nat.not_even_iff_odd.mpr hndiv] using
+    dualDistrib_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x
 
 /-- **Reverse-dual isomorphism with `-o₁` when `Odd (n / 2)`**: for finite-dimensional `E` and `F`,
 `TensorProduct.dualDistribEquiv ℂ E F` conjugates `complexProdTensor` of `(E*, F*)` for `-o₁` to the
@@ -127,13 +133,8 @@ theorem cliffordReverseDual_complexProdTensor_eq_conj_neg_orientation_of_odd_div
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x =
       (dualDistribEquiv ℂ E F).conj
         (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x) := by
-  refine LinearMap.ext fun Φ ↦ ?_
-  obtain ⟨z, rfl⟩ := (dualDistribEquiv ℂ E F).surjective Φ
-  rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
-  simpa only [LinearMap.comp_apply, ← toLinearMap_dualDistribEquiv, LinearEquiv.coe_coe] using
-    (LinearMap.congr_fun
-      (dualDistrib_complexProdTensor_neg_orientation_of_odd_div_two hQ o₁ hQ₁ hn ρ₁ ρ₂ hndiv x)
-      z).symm
+  simpa [Nat.not_even_iff_odd.mpr hndiv] using
+    cliffordReverseDual_complexProdTensor_eq_conj hQ o₁ hQ₁ hn ρ₁ ρ₂ x
 
 /-- **Restoring `o₁` when `Odd (n / 2)` and `W` is even-dimensional**: precomposing
 `TensorProduct.dualDistrib ℂ E F` with `1 ⊗ Γ_(F*)` intertwines `complexProdTensor` of `(E*, F*)`
@@ -174,8 +175,7 @@ theorem cliffordReverseDual_complexProdTensor_eq_conj_of_odd_div_two
   congr 1
   have h := AlgHom.congr_fun (conjAlgEquiv_lTensor_complexVolume_complexProdTensor hQ o₁ hQ₁ hn
     ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual o₂ hQ₂ hm) x
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply] at h
-  refine LinearMap.ext fun z ↦ ?_
-  rw [LinearEquiv.conj_apply_apply, ← h]; rfl
+  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply] at h
+  exact h.symm
 
 end CliffordAlgebra

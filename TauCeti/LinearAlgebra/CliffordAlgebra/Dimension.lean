@@ -100,11 +100,12 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
   the grading of the Clifford algebra of a nonzero finite-dimensional space has dimension
   `2 ^ (finrank K V - 1)`, and the even subalgebra has dimension `2 ^ (finrank K V - 1)` for every
   finite-dimensional space (including `V = 0`, where `2 ^ (0 - 1) = 1`).
-* `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a module on which
-  the Clifford algebra of a `2l`-dimensional space acts as its whole endomorphism algebra has
-  dimension `2 ^ l`.
-* `CliffordAlgebra.even_finrank_of_algEquiv_end`: if a module's endomorphism algebra is
-  isomorphic to the Clifford algebra, the underlying space has even dimension.
+* `CliffordAlgebra.finrank_eq_two_pow_of_bijective` and
+  `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a module on which the Clifford algebra
+  of a `2l`-dimensional space acts as its whole endomorphism algebra has dimension `2 ^ l`.
+* `CliffordAlgebra.even_finrank_of_algEquiv_end` and `CliffordAlgebra.even_finrank_of_bijective`:
+  if a module's endomorphism algebra is isomorphic to the Clifford algebra, the underlying space
+  has even dimension.
 
 ## References
 
@@ -329,6 +330,29 @@ theorem even_finrank_of_algEquiv_end [Module.Finite K V] {S : Type*}
   rw [hk, ← pow_add] at hdim
   exact ⟨k, Nat.pow_right_injective le_rfl hdim⟩
 
+/-- **Only even-dimensional spaces have spinor modules**, stated for an algebra homomorphism
+`ρ : CliffordAlgebra Q →ₐ[K] Module.End K S`. -/
+theorem even_finrank_of_bijective [Module.Finite K V] {S : Type*}
+    [AddCommGroup S] [Module K S] {ρ : CliffordAlgebra Q →ₐ[K] Module.End K S}
+    (h : Function.Bijective ρ) :
+    Even (finrank K V) :=
+  even_finrank_of_algEquiv_end Q (AlgEquiv.ofBijective _ h)
+
+/-- **The dimension of a spinor module**, stated for a bijective representation
+`ρ : CliffordAlgebra Q →ₐ[K] Module.End K S`: `S` is finite-dimensional, `n = finrank K V` is
+even, and `dim S = 2 ^ (n / 2)`. -/
+theorem finrank_eq_two_pow_of_bijective [Module.Finite K V] {S : Type*}
+    [AddCommGroup S] [Module K S] {ρ : CliffordAlgebra Q →ₐ[K] Module.End K S}
+    (h : Function.Bijective ρ) :
+    finrank K S = 2 ^ (finrank K V / 2) := by
+  let e := AlgEquiv.ofBijective _ h
+  have hV := even_finrank_of_bijective Q h
+  have := Module.Finite.of_surjective_end e e.surjective
+  have hdim := e.toLinearEquiv.finrank_eq
+  rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
+    sq] at hdim
+  exact Nat.mul_self_inj.1 hdim.symm
+
 /-- **The dimension of a spinor module.** If the Clifford algebra acts on a module `S` as the whole
 endomorphism algebra `End_K S`, then `S` is finite-dimensional, `n = finrank K V` is even
 (`CliffordAlgebra.even_finrank_of_algEquiv_end`) and `dim S = 2 ^ (n / 2)`: the algebra has
@@ -337,14 +361,8 @@ theorem finrank_eq_two_pow_of_bijective_lsmul [Module.Finite K V]
     {S : Type*} [AddCommGroup S] [Module K S] [Module (CliffordAlgebra Q) S]
     [IsScalarTower K (CliffordAlgebra Q) S]
     (h : Function.Bijective (Algebra.lsmul K K S : CliffordAlgebra Q →ₐ[K] Module.End K S)) :
-    finrank K S = 2 ^ (finrank K V / 2) := by
-  let ρ := AlgEquiv.ofBijective _ h
-  have hV := even_finrank_of_algEquiv_end Q ρ
-  have := Module.Finite.of_surjective_end ρ ρ.surjective
-  have hdim := ρ.toLinearEquiv.finrank_eq
-  rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
-    sq] at hdim
-  exact Nat.mul_self_inj.1 hdim.symm
+    finrank K S = 2 ^ (finrank K V / 2) :=
+  finrank_eq_two_pow_of_bijective Q h
 
 end Field
 

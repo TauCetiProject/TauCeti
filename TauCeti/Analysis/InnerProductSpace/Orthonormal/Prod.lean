@@ -24,7 +24,7 @@ two factor orientations transported to `WithLp 2 (V × W)`.
 
 * `OrthonormalBasis.isOrthoᵢ_associated_prod`: the product of orthogonal orthonormal bases is
   orthogonal for `Q`.
-* `OrthonormalBasis.orientation_toBasis_prod_reindex`: the orientation of
+* `OrthonormalBasis.orientation_toBasis_reindex_prod`: the orientation of
   `(b₁.prod b₂).reindex finSumFinEquiv` is the transported `Orientation.prod` of the factor
   orientations.
 -/
@@ -66,14 +66,19 @@ end IsOrtho
 /-- The orientation of the concatenated product orthonormal basis `(b₁.prod b₂).reindex
 finSumFinEquiv` of `WithLp 2 (V × W)` is `Orientation.prod` of the two factor orientations,
 transported along `(WithLp.linearEquiv 2 ℝ (V × W)).symm`. -/
-theorem orientation_toBasis_prod_reindex {V W : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-    {n m : ℕ} (b₁ : OrthonormalBasis (Fin n) ℝ V) (b₂ : OrthonormalBasis (Fin m) ℝ W)
-    (hn : Module.finrank ℝ V = n) (hm : Module.finrank ℝ W = m) :
+theorem orientation_toBasis_reindex_prod {V W : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    {n m : ℕ} (b₁ : OrthonormalBasis (Fin n) ℝ V) (b₂ : OrthonormalBasis (Fin m) ℝ W) :
     ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation =
-      (Orientation.prod b₁.toBasis.orientation b₂.toBasis.orientation hn hm).map (Fin (n + m))
-        (WithLp.linearEquiv 2 ℝ (V × W)).symm := by
+      letI : Module.Finite ℝ V := Module.Finite.of_basis b₁.toBasis
+      letI : Module.Finite ℝ W := Module.Finite.of_basis b₂.toBasis
+      (Orientation.prod b₁.toBasis.orientation b₂.toBasis.orientation
+          ((Module.finrank_eq_card_basis b₁.toBasis).trans (Fintype.card_fin n))
+          ((Module.finrank_eq_card_basis b₂.toBasis).trans (Fintype.card_fin m))).map
+        (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm := by
+  let : Module.Finite ℝ V := Module.Finite.of_basis b₁.toBasis
+  let : Module.Finite ℝ W := Module.Finite.of_basis b₂.toBasis
   have hbasis : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis =
       ((b₁.toBasis.prod b₂.toBasis).reindex finSumFinEquiv).map
         (WithLp.linearEquiv 2 ℝ (V × W)).symm := by
