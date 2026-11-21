@@ -53,12 +53,14 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
   have : IsModuleTopology C (C ⊗[A] B) := ⟨rfl⟩
   let : IsTopologicalRing (C ⊗[A] B) := IsModuleTopology.isTopologicalRing C _
   let : IsHuberRing (C ⊗[A] B) := IsHuberRing.of_isModuleTopology (A := C)
+  have hnc : IsNaturallyComplete C (C ⊗[A] B) :=
+    IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B)
   let : Algebra C (CompletedTensor A C B) := (CompletedTensor.inl A C B).toAlgebra
   let e : C ⊗[A] B ≃ₐ[C] CompletedTensor A C B :=
-    { finiteAlgebra.baseChangeEquiv A C B with
+    { finiteAlgebra.baseChangeEquiv A C B hnc with
       commutes' := fun c ↦ by
         simp [RingHom.algebraMap_toAlgebra, Algebra.TensorProduct.algebraMap_apply] }
-  have he : IsHomeomorph e := finiteAlgebra.isHomeomorph_baseChangeEquiv A C B
+  have he : IsHomeomorph e := finiteAlgebra.isHomeomorph_baseChangeEquiv A C B hnc
   have : Module.Finite C (CompletedTensor A C B) := Module.Finite.equiv e.toLinearEquiv
   have : Algebra.Etale C (CompletedTensor A C B) := Algebra.Etale.of_equiv e
   have htop : IsModuleTopology C (CompletedTensor A C B) :=
@@ -73,7 +75,7 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
   · simpa only [_root_.toAlgebra_algebraMap] using htop
   · rw [← finiteAlgebra_plus]
     apply le_antisymm
-    · rw [← finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
+    · rw [← finiteAlgebra.map_plus_baseChangeEquiv hnc S T f hf]
       rintro _ ⟨x, hx, rfl⟩
       simpa [e] using (finiteAlgebra.lift
         (finiteAlgebra.algebraHom T (CompletedTensor A C B)) (by simp)

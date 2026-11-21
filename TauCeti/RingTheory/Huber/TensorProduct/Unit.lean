@@ -48,7 +48,8 @@ namespace CompletedTensor
 
 /-- The right unit of the completed tensor product, for a complete Hausdorff Huber algebra. -/
 noncomputable def rightUnitor : CompletedTensor A B A ≃+* B :=
-  (Pair.finiteAlgebra.baseChangeEquiv A B A).symm.trans
+  (Pair.finiteAlgebra.baseChangeEquiv A B A
+    (IsNaturallyComplete.of_projective (A := B) (M := B ⊗[A] A))).symm.trans
     (Algebra.TensorProduct.rid A B B).toRingEquiv
 
 /-- The right unit sends the left coprojection to the identity. -/
@@ -79,10 +80,12 @@ theorem rightUnitor_tmul (b : B) (a : A) :
 /-- The right unit is continuous. -/
 @[fun_prop] theorem continuous_rightUnitor : Continuous (rightUnitor A B) := by
   let : TopologicalSpace (B ⊗[A] A) := moduleTopology B (B ⊗[A] A)
+  have hnc : IsNaturallyComplete B (B ⊗[A] A) :=
+    IsNaturallyComplete.of_projective (A := B) (M := B ⊗[A] A)
   exact (IsModuleTopology.continuous_of_linearMap
     (Algebra.TensorProduct.rid A B B).toLinearMap).comp
-      ((Pair.finiteAlgebra.baseChangeEquiv A B A).toEquiv.isHomeomorph_iff.mp
-        (Pair.finiteAlgebra.isHomeomorph_baseChangeEquiv A B A)).2
+      ((Pair.finiteAlgebra.baseChangeEquiv A B A hnc).toEquiv.isHomeomorph_iff.mp
+        (Pair.finiteAlgebra.isHomeomorph_baseChangeEquiv A B A hnc)).2
 
 /-- The inverse right unit is continuous. -/
 @[fun_prop] theorem continuous_rightUnitor_symm : Continuous (rightUnitor A B).symm := by

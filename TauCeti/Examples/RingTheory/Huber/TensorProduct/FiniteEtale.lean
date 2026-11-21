@@ -49,7 +49,8 @@ example (n : ℕ) :
 
 /-- The completed base change of the empty cover is still zero. -/
 example : Subsingleton (CompletedTensor ℤ (ZMod 2) (Fin 0 → ℤ)) :=
-  (Pair.finiteAlgebra.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)).symm.injective.subsingleton
+  (Pair.finiteAlgebra.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)
+    (IsNaturallyComplete.of_projective (A := ZMod 2) (M := _))).symm.injective.subsingleton
 
 /-- The new base map in these checks is genuinely noninjective. -/
 example : ¬ Function.Injective (algebraMap ℤ (ZMod 2)) := by

@@ -41,11 +41,15 @@ here holds for every adic `A → B` with `B` complete and Hausdorff.
 
 ## Main results
 
+* `TauCeti.Huber.ContinuousKaehlerDifferential.isClosed_ideal`: the completed diagonal ideal is
+  closed in `B ⊗̂_A B`.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.smul_eq_mulRingHom_smul`: the action of
   `B ⊗̂_A B` on `Ωᶜ[B⁄A]` factors through multiplication; in particular the two coprojections
   induce the same `B`-module structure.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.fromKaehler_fromIdeal`: the comparison is induced
   by the completion map on diagonal ideals.
+* `TauCeti.Huber.ContinuousKaehlerDifferential.fromKaehler_bijective_of_bijective_toCompletion`:
+  `fromKaehler A B` is bijective whenever `B ⊗[A] B → B ⊗̂_A B` is bijective.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.subsingleton_of_surjective`: `Ωᶜ[B⁄A] = 0` when
   `A → B` is surjective; in particular `Ωᶜ[A⁄A] = 0` for complete Hausdorff `A`.
 
@@ -80,6 +84,12 @@ variable {A B} in
 @[simp] theorem mem_ideal_iff {x : CompletedTensor A B B} :
     x ∈ ideal A B ↔ mulRingHom A B x = 0 :=
   RingHom.mem_ker
+
+/-- The completed diagonal ideal `ker (B ⊗̂_A B → B)` is closed in `B ⊗̂_A B`. -/
+theorem isClosed_ideal : IsClosed (ideal A B : Set (CompletedTensor A B B)) := by
+  convert (isClosed_singleton (x := (0 : B))).preimage (continuous_mulRingHom A B) using 1
+  ext x
+  simp
 
 /-- `1 ⊗ b − b ⊗ 1` lies in the completed diagonal ideal. -/
 theorem inr_sub_inl_mem_ideal (b : B) : inr A B B b - inl A B B b ∈ ideal A B := by
@@ -273,6 +283,36 @@ theorem fromKaehler_fromIdeal (x : KaehlerDifferential.ideal A B) :
   simp [RingHom.mem_ker.mp x.2]
 
 variable {A B}
+
+/-- Whenever the canonical map `B ⊗[A] B → B ⊗̂_A B` is bijective, the comparison
+`fromKaehler A B : Ω[B⁄A] →ₗ[B] Ωᶜ[B⁄A]` is bijective. -/
+theorem fromKaehler_bijective_of_bijective_toCompletion
+    (hbij : Function.Bijective (toCompletion A B B)) :
+    Function.Bijective (fromKaehler A B) := by
+  let e : B ⊗[A] B ≃+* CompletedTensor A B B := RingEquiv.ofBijective (toCompletion A B B) hbij
+  have hmem (x : B ⊗[A] B) : e x ∈ ideal A B ↔ x ∈ KaehlerDifferential.ideal A B := by
+    simp [e, mem_ideal_iff, KaehlerDifferential.ideal]
+  have hmap_sq : ((KaehlerDifferential.ideal A B) ^ 2).map e.toRingHom = ideal A B ^ 2 := by
+    rw [Ideal.map_pow]
+    congr 1
+    ext y
+    obtain ⟨x, rfl⟩ := e.surjective y
+    rw [Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective, hmem]
+    exact ⟨fun ⟨z, hz, hze⟩ ↦ e.injective hze ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
+  refine ⟨LinearMap.ker_eq_bot.mp (eq_bot_iff.mpr fun η hη ↦ ?_), fun ω ↦ ?_⟩
+  · obtain ⟨⟨x, hx⟩, rfl⟩ := KaehlerDifferential.fromIdeal_surjective A B η
+    rw [LinearMap.mem_ker, fromKaehler_fromIdeal, fromIdeal_eq_zero_iff, ← hmap_sq] at hη
+    obtain ⟨z, hz, hze⟩ := (Ideal.mem_map_iff_of_surjective _ e.surjective).mp hη
+    obtain rfl := e.injective hze
+    rw [KaehlerDifferential.fromIdeal]
+    exact ((KaehlerDifferential.ideal A B).toCotangent_eq_zero _).mpr hz
+  · obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective A B ω
+    have hx : e.symm y ∈ KaehlerDifferential.ideal A B := (hmem _).mp (by simpa using hy)
+    refine ⟨KaehlerDifferential.fromIdeal A B ⟨e.symm y, hx⟩, ?_⟩
+    rw [fromKaehler_fromIdeal]
+    congr 1
+    ext
+    exact e.apply_symm_apply y
 
 /-- **Continuous differentials vanish along a surjection**: if `A → B` is surjective, then
 `Ωᶜ[B⁄A] = 0`, because multiplication `B ⊗̂_A B → B` is then injective. -/

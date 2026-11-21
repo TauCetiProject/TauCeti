@@ -25,12 +25,12 @@ over `A`, or when `C` is complete Hausdorff of noetherian type — the canonical
 `CompletedTensor.toCompletion_bijective_of_isNoetherianType`). Neither completeness of `A` nor
 étaleness of `B` is necessary.
 
-In the finite projective case, the equivalence `Pair.finiteAlgebra.baseChangeEquiv` is the
-canonical tensor map, not an unspecified isomorphism, and is a homeomorphism for the natural
-`C`-module topology. If `B⁺` is the integral closure of the image of `A⁺`, it carries the integral
-closure of `C⁺` onto the completed tensor plus ring. In particular finite étale base change
-requires no additional completion, and retains the given plus ring rather than replacing it by all
-power-bounded elements.
+Whenever `C ⊗[A] B` is naturally complete over `C`, the equivalence
+`Pair.finiteAlgebra.baseChangeEquiv` is the canonical tensor map, not an unspecified isomorphism,
+and is a homeomorphism for the natural `C`-module topology. If `B⁺` is the integral closure of
+the image of `A⁺`, it carries the integral closure of `C⁺` onto the completed tensor plus ring.
+In particular finite étale base change requires no additional completion, and retains the given
+plus ring rather than replacing it by all power-bounded elements.
 
 ## References
 
@@ -168,95 +168,68 @@ theorem CompletedTensor.toCompletion_bijective_of_isNoetherianType
   CompletedTensor.toCompletion_bijective_of_isNaturallyComplete A C B
     (IsNoetherianType.isNaturallyComplete (A := C) (M := C ⊗[A] B))
 
-end NaturallyComplete
-
-section FiniteProjective
-
-variable (A C B : Type*) [CommRing A] [CommRing C] [CommRing B]
-  [Algebra A C] [Algebra A B]
-  [TopologicalSpace A] [IsTopologicalRing A]
-  [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [IsHuberRing C]
-  [CompleteSpace C] [T2Space C]
-  [TopologicalSpace B] [IsTopologicalRing B] [IsModuleTopology A B]
-  [Module.Finite A B] [Module.Projective A B]
-  [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap A B)]
-
-/-- The natural module topology on the finite base change. -/
-noncomputable local instance tensorModuleTopologyProjective : TopologicalSpace (C ⊗[A] B) :=
-  moduleTopology C (C ⊗[A] B)
-local instance : IsTopologicalRing (C ⊗[A] B) := IsModuleTopology.isTopologicalRing C _
-local instance : IsHuberRing (C ⊗[A] B) := IsHuberRing.of_isModuleTopology (A := C)
-/-- The additive uniformity of the natural module topology. -/
-noncomputable local instance tensorModuleUniformityProjective : UniformSpace (C ⊗[A] B) :=
-  IsTopologicalAddGroup.rightUniformSpace _
-local instance : IsUniformAddGroup (C ⊗[A] B) := isUniformAddGroup_of_addCommGroup
-local instance tensorComplete : CompleteSpace (C ⊗[A] B) :=
-  (isNaturallyComplete_iff.mp (IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B))).1
-local instance tensorT2 : T2Space (C ⊗[A] B) :=
-  (isNaturallyComplete_iff.mp (IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B))).2
-
 namespace Pair.finiteAlgebra
 
-/-- **Completed base change of a finite projective algebra needs no completion.**
+/-- **Completed base change of a naturally complete finite algebra needs no completion.**
 The forward map is the canonical map on algebraic tensors. The topology on the source
 for the homeomorphism theorem below is the natural `C`-module topology. -/
-noncomputable def baseChangeEquiv : C ⊗[A] B ≃+* CompletedTensor A C B :=
+noncomputable def baseChangeEquiv (h : IsNaturallyComplete C (C ⊗[A] B)) :
+    C ⊗[A] B ≃+* CompletedTensor A C B :=
   RingEquiv.ofBijective (CompletedTensor.toCompletion A C B)
-    (CompletedTensor.toCompletion_bijective_of_isNaturallyComplete A C B
-      (IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B)))
+    (CompletedTensor.toCompletion_bijective_of_isNaturallyComplete A C B h)
 
 /-- The base-change equivalence is the canonical tensor map on every element. -/
 @[simp]
-theorem baseChangeEquiv_apply (x : C ⊗[A] B) :
-    baseChangeEquiv A C B x = CompletedTensor.toCompletion A C B x := (rfl)
+theorem baseChangeEquiv_apply (h : IsNaturallyComplete C (C ⊗[A] B)) (x : C ⊗[A] B) :
+    baseChangeEquiv A C B h x = CompletedTensor.toCompletion A C B x := (rfl)
 
 /-- The inverse comparison recovers every algebraic tensor. -/
 @[simp]
-theorem baseChangeEquiv_symm_toCompletion (x : C ⊗[A] B) :
-    (baseChangeEquiv A C B).symm (CompletedTensor.toCompletion A C B x) = x :=
-  (baseChangeEquiv A C B).symm_apply_apply x
+theorem baseChangeEquiv_symm_toCompletion (h : IsNaturallyComplete C (C ⊗[A] B))
+    (x : C ⊗[A] B) :
+    (baseChangeEquiv A C B h).symm (CompletedTensor.toCompletion A C B x) = x :=
+  (baseChangeEquiv A C B h).symm_apply_apply x
 
 /-- The inverse comparison takes the left coprojection to the left pure tensor. -/
 @[simp]
-theorem baseChangeEquiv_symm_inl (c : C) :
-    (baseChangeEquiv A C B).symm (CompletedTensor.inl A C B c) = c ⊗ₜ[A] 1 := by
-  apply (baseChangeEquiv A C B).injective
+theorem baseChangeEquiv_symm_inl (h : IsNaturallyComplete C (C ⊗[A] B)) (c : C) :
+    (baseChangeEquiv A C B h).symm (CompletedTensor.inl A C B c) = c ⊗ₜ[A] 1 := by
+  apply (baseChangeEquiv A C B h).injective
   simp
 
 /-- The inverse comparison takes the right coprojection to the right pure tensor. -/
 @[simp]
-theorem baseChangeEquiv_symm_inr (b : B) :
-    (baseChangeEquiv A C B).symm (CompletedTensor.inr A C B b) = 1 ⊗ₜ[A] b := by
-  apply (baseChangeEquiv A C B).injective
+theorem baseChangeEquiv_symm_inr (h : IsNaturallyComplete C (C ⊗[A] B)) (b : B) :
+    (baseChangeEquiv A C B h).symm (CompletedTensor.inr A C B b) = 1 ⊗ₜ[A] b := by
+  apply (baseChangeEquiv A C B h).injective
   simp
 
 /-- The canonical comparison is a homeomorphism for the natural module topology. -/
-theorem isHomeomorph_baseChangeEquiv : IsHomeomorph (baseChangeEquiv A C B) := by
-  have hnc : IsNaturallyComplete C (C ⊗[A] B) :=
-    IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B)
+theorem isHomeomorph_baseChangeEquiv (h : IsNaturallyComplete C (C ⊗[A] B)) :
+    IsHomeomorph (baseChangeEquiv A C B h) := by
   have hc : Continuous (CompletedTensor.toCompletion A C B) :=
     IsModuleTopology.continuous_of_ringHom (R := C) _ <| by
       convert CompletedTensor.continuous_inl A C B using 1
       ext c
       simp [Algebra.TensorProduct.algebraMap_apply]
   apply Homeomorph.isHomeomorph
-    (Homeomorph.mk (baseChangeEquiv A C B).toEquiv hc ?_)
-  have h : (fun x ↦ (baseChangeEquiv A C B).symm x) = fromCompletion A C B hnc := by
+    (Homeomorph.mk (baseChangeEquiv A C B h).toEquiv hc ?_)
+  have h' : (fun x ↦ (baseChangeEquiv A C B h).symm x) = fromCompletion A C B h := by
     funext x
-    apply (baseChangeEquiv A C B).injective
+    apply (baseChangeEquiv A C B h).injective
     simp [toCompletion_fromCompletion]
-  exact (continuous_fromCompletion A C B hnc).congr (congrFun h.symm)
+  exact (continuous_fromCompletion A C B h).congr (congrFun h'.symm)
 
 variable {A C B} [IsHuberRing A] [IsHuberRing B]
 
 /-- The comparison transports the integral-closure plus ring of the finite base change
 onto the completed tensor plus ring. No uniformity or sheafiness hypothesis is needed. -/
-theorem map_plus_baseChangeEquiv (S : Pair A) (T : Pair C)
-    (f : Pair.Hom S T) (hf : f.toRingHom = algebraMap A C) :
-    (T.finiteAlgebra (C ⊗[A] B)).plus.map (baseChangeEquiv A C B).toRingHom =
+theorem map_plus_baseChangeEquiv (h : IsNaturallyComplete C (C ⊗[A] B))
+    (S : Pair A) (T : Pair C) (f : Pair.Hom S T) (hf : f.toRingHom = algebraMap A C) :
+    (T.finiteAlgebra (C ⊗[A] B)).plus.map (baseChangeEquiv A C B h).toRingHom =
       (T.completedTensor A (S.finiteAlgebra B)).plus := by
-  have hnc : IsNaturallyComplete C (C ⊗[A] B) :=
-    IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B)
+  have : CompleteSpace (C ⊗[A] B) := (isNaturallyComplete_iff.mp h).1
+  have : T2Space (C ⊗[A] B) := (isNaturallyComplete_iff.mp h).2
   let : Algebra C (CompletedTensor A C B) := (CompletedTensor.inl A C B).toAlgebra
   let hleft := Pair.completedTensor.inl A T (S.finiteAlgebra B)
   let hforward := Pair.finiteAlgebra.lift hleft
@@ -276,10 +249,10 @@ theorem map_plus_baseChangeEquiv (S : Pair A) (T : Pair C)
   · rintro _ ⟨x, hx, rfl⟩
     simpa [hforward] using hforward.map_mem_plus x hx
   · intro x hx
-    refine ⟨fromCompletion A C B hnc x, ?_, toCompletion_fromCompletion A C B hnc x⟩
-    have hmap : hback.toRingHom = fromCompletion A C B hnc := by
+    refine ⟨fromCompletion A C B h x, ?_, toCompletion_fromCompletion A C B h x⟩
+    have hmap : hback.toRingHom = fromCompletion A C B h := by
       apply CompletedTensor.hom_ext hback.continuous_toRingHom
-        (continuous_fromCompletion A C B hnc)
+        (continuous_fromCompletion A C B h)
       · ext c
         simp [hback, fromCompletion, Algebra.TensorProduct.algebraMap_apply]
       · ext b
@@ -289,6 +262,6 @@ theorem map_plus_baseChangeEquiv (S : Pair A) (T : Pair C)
 
 end Pair.finiteAlgebra
 
-end FiniteProjective
+end NaturallyComplete
 
 end TauCeti.Huber

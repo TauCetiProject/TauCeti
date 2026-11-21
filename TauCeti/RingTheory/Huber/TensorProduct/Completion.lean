@@ -487,14 +487,19 @@ variable [Algebra A R] [Algebra B R] [Algebra C R]
   [IsScalarTower (CompletedTensor A B C) R M]
   [ContinuousSMul R M]
 
+section
+
+variable (dB : Derivation A B M) (dC : Derivation A C M)
+  (hdB : Continuous dB) (hdC : Continuous dC)
+  (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
+  (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
+  (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R)
+
+include dB dC hdB hdC hcont hinl hinr
+
 /-- Internal bundled construction for `liftDerivation`, sharing the `TrivSqZeroExt` setup across
 the derivation, its continuity, and its values on `inl` and `inr`. -/
-private noncomputable def liftDerivationAux
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) :
+private noncomputable def liftDerivationAux :
     {d : Derivation A (CompletedTensor A B C) M //
       Continuous d ∧ (∀ b, d (inl A B C b) = dB b) ∧ (∀ c, d (inr A B C c) = dC c)} := by
   haveI : IsScalarTower A (CompletedTensor A B C) R :=
@@ -553,53 +558,28 @@ private noncomputable def liftDerivationAux
 nonarchimedean module `M` over a complete Hausdorff nonarchimedean ring `R`, to a continuous
 `A`-derivation on `B ⊗̂_A C` along a continuous algebra map `B ⊗̂_A C → R` compatible with
 `inl` and `inr`. -/
-noncomputable def liftDerivation
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) :
+noncomputable def liftDerivation :
     Derivation A (CompletedTensor A B C) M :=
   (liftDerivationAux dB dC hdB hdC hcont hinl hinr).1
 
 /-- The derivation extended to `B ⊗̂_A C` is continuous. -/
-@[fun_prop] theorem continuous_liftDerivation
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) :
+@[fun_prop] theorem continuous_liftDerivation :
     Continuous (liftDerivation dB dC hdB hdC hcont hinl hinr) :=
   (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.1
 
 /-- The extended derivation agrees with `dB` on the left coprojection. -/
-@[simp] theorem liftDerivation_inl
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) (b : B) :
+@[simp] theorem liftDerivation_inl (b : B) :
     liftDerivation dB dC hdB hdC hcont hinl hinr (inl A B C b) = dB b :=
   (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.2.1 b
 
 /-- The extended derivation agrees with `dC` on the right coprojection. -/
-@[simp] theorem liftDerivation_inr
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) (c : C) :
+@[simp] theorem liftDerivation_inr (c : C) :
     liftDerivation dB dC hdB hdC hcont hinl hinr (inr A B C c) = dC c :=
   (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.2.2 c
 
 /-- A continuous `A`-derivation on `B ⊗̂_A C` agreeing with `dB` on `inl` and with `dC` on `inr`
 equals `liftDerivation`. -/
 theorem eq_liftDerivation
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R)
     {d : Derivation A (CompletedTensor A B C) M} (hd : Continuous d)
     (hB : ∀ b, d (inl A B C b) = dB b) (hC : ∀ c, d (inr A B C c) = dC c) :
     d = liftDerivation dB dC hdB hdC hcont hinl hinr :=
@@ -609,12 +589,7 @@ theorem eq_liftDerivation
 
 /-- There is a unique continuous `A`-derivation on `B ⊗̂_A C` extending a pair of continuous
 `A`-derivations on `B` and `C`. -/
-theorem existsUnique_liftDerivation
-    (dB : Derivation A B M) (dC : Derivation A C M)
-    (hdB : Continuous dB) (hdC : Continuous dC)
-    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
-    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
-    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) :
+theorem existsUnique_liftDerivation :
     ∃! d : Derivation A (CompletedTensor A B C) M,
       Continuous d ∧ (∀ b, d (inl A B C b) = dB b) ∧ (∀ c, d (inr A B C c) = dC c) :=
   ⟨liftDerivation dB dC hdB hdC hcont hinl hinr,
@@ -622,6 +597,8 @@ theorem existsUnique_liftDerivation
       liftDerivation_inl dB dC hdB hdC hcont hinl hinr,
       liftDerivation_inr dB dC hdB hdC hcont hinl hinr⟩,
     fun _ ⟨hd, hB, hC⟩ ↦ eq_liftDerivation dB dC hdB hdC hcont hinl hinr hd hB hC⟩
+
+end
 
 end LiftDerivation
 

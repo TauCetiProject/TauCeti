@@ -78,13 +78,6 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace
   [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
   [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
 
-variable (A B) in
-/-- The completed diagonal ideal `ker (B ⊗̂_A B → B)` is closed in `B ⊗̂_A B`. -/
-theorem isClosed_ideal : IsClosed (ideal A B : Set (CompletedTensor A B B)) := by
-  convert (isClosed_singleton (x := (0 : B))).preimage (continuous_mulRingHom A B) using 1
-  ext x
-  simp
-
 omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
 /-- If `A[S]` is dense in `B`, then `1 ⊗ b − b ⊗ 1` belongs to the closure of the ideal generated
 by `{1 ⊗ s − s ⊗ 1 | s ∈ S}` for every `b ∈ B`. -/
@@ -289,45 +282,6 @@ theorem t2Space (h : IsTopologicallyFiniteType (algebraMap A B)) :
   exact IsNoetherianType.t2Space_of_isModuleTopology (A := B)
 
 end FiniteType
-
-section FiniteAlgebra
-
-variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-  [TopologicalSpace A] [IsTopologicalRing A]
-  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
-  [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
-
-/-- Whenever the canonical map `B ⊗[A] B → B ⊗̂_A B` is bijective, the comparison
-`fromKaehler A B : Ω[B⁄A] →ₗ[B] Ωᶜ[B⁄A]` is bijective. -/
-theorem fromKaehler_bijective_of_bijective_toCompletion
-    (hbij : Function.Bijective (toCompletion A B B)) :
-    Function.Bijective (fromKaehler A B) := by
-  let e : B ⊗[A] B ≃+* CompletedTensor A B B := RingEquiv.ofBijective (toCompletion A B B) hbij
-  have hmem (x : B ⊗[A] B) : e x ∈ ideal A B ↔ x ∈ KaehlerDifferential.ideal A B := by
-    simp [e, mem_ideal_iff, KaehlerDifferential.ideal]
-  have hmap_sq : ((KaehlerDifferential.ideal A B) ^ 2).map e.toRingHom = ideal A B ^ 2 := by
-    rw [Ideal.map_pow]
-    congr 1
-    ext y
-    obtain ⟨x, rfl⟩ := e.surjective y
-    rw [Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective, hmem]
-    exact ⟨fun ⟨z, hz, hze⟩ ↦ e.injective hze ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
-  refine ⟨LinearMap.ker_eq_bot.mp (eq_bot_iff.mpr fun η hη ↦ ?_), fun ω ↦ ?_⟩
-  · obtain ⟨⟨x, hx⟩, rfl⟩ := KaehlerDifferential.fromIdeal_surjective A B η
-    rw [LinearMap.mem_ker, fromKaehler_fromIdeal, fromIdeal_eq_zero_iff, ← hmap_sq] at hη
-    obtain ⟨z, hz, hze⟩ := (Ideal.mem_map_iff_of_surjective _ e.surjective).mp hη
-    obtain rfl := e.injective hze
-    rw [KaehlerDifferential.fromIdeal]
-    exact ((KaehlerDifferential.ideal A B).toCotangent_eq_zero _).mpr hz
-  · obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective A B ω
-    have hx : e.symm y ∈ KaehlerDifferential.ideal A B := (hmem _).mp (by simpa using hy)
-    refine ⟨KaehlerDifferential.fromIdeal A B ⟨e.symm y, hx⟩, ?_⟩
-    rw [fromKaehler_fromIdeal]
-    congr 1
-    ext
-    exact e.apply_symm_apply y
-
-end FiniteAlgebra
 
 section FiniteAlgebraNoetherianType
 
