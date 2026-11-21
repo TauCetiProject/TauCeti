@@ -583,6 +583,39 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
+/-- If `t` computes the address `q` on the everywhere undefined oracle, then at sufficient
+fuel `comp oracle t` looks up `q` with use `q + 1` when the answer is supplied, and fails
+otherwise. The same threshold works for every answer table. -/
+theorem exists_forall_evaln_comp_oracle_eq_map {t : Code} {x q : ℕ}
+    (h : q ∈ eval (fun _ => Part.none) t x) :
+    ∃ K, ∀ (σ : ℕ → Option ℕ) (k : ℕ), K ≤ k →
+      evaln σ k (comp oracle t) x = (σ q).map (fun y => ⟨y, q + 1⟩) := by
+  obtain ⟨j, ⟨q, u⟩, hr, rfl⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun _ => none)
+    (by simp) h
+  have hzero : u = 0 := Nat.eq_zero_of_le_zero
+    (evaln_use_le_of_forall_eq_none (fun _ _ => rfl) hr)
+  subst u
+  refine ⟨max j (q + 1), fun σ k hk => ?_⟩
+  have hrun := evaln_eq_some_of_use_eq_zero σ
+    (evaln_mono ((le_max_left _ _).trans hk) hr) rfl
+  have hindex := (le_max_right j (q + 1)).trans hk
+  cases k with
+  | zero => simp at hrun
+  | succ k =>
+    have hx := Nat.lt_succ_iff.1 (evaln_bound hrun)
+    have hq := Nat.succ_le_succ_iff.1 hindex
+    apply Option.ext
+    intro r
+    rw [evaln_succ_comp_eq_some, Option.map_eq_some_iff]
+    constructor
+    · rintro ⟨-, r', r'', hr', hr'', rfl⟩
+      rw [evaln_unique hr' hrun] at hr'' ⊢
+      obtain ⟨-, y, hy, rfl⟩ := evaln_succ_oracle_eq_some.1 hr''
+      exact ⟨y, hy, by simp⟩
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨hx, ⟨q, 0⟩, ⟨y, q + 1⟩, hrun,
+        evaln_succ_oracle_eq_some.2 ⟨hq, y, hy, rfl⟩, by simp⟩
+
 /-! ### Bounded oracle answers -/
 
 section BoundedAnswers

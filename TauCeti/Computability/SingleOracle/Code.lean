@@ -479,6 +479,19 @@ def toSingleOracleCode : Nat.Partrec.Code → TauCeti.Oracle.Single.Code
   | prec cf cg => .prec cf.toSingleOracleCode cg.toSingleOracleCode
   | rfind' cf => .rfind' cf.toSingleOracleCode
 
+/-- Translation to single-oracle code preserves each constructor of an ordinary program. -/
+theorem toSingleOracleCode_def (c : Nat.Partrec.Code) :
+    c.toSingleOracleCode = match c with
+      | zero => .zero
+      | succ => .succ
+      | left => .left
+      | right => .right
+      | pair cf cg => .pair cf.toSingleOracleCode cg.toSingleOracleCode
+      | comp cf cg => .comp cf.toSingleOracleCode cg.toSingleOracleCode
+      | prec cf cg => .prec cf.toSingleOracleCode cg.toSingleOracleCode
+      | rfind' cf => .rfind' cf.toSingleOracleCode := by
+  cases c <;> rfl
+
 /-- `Nat.Partrec.Code.toSingleOracleCode` is injective: distinct ordinary codes give distinct
 programs. -/
 theorem toSingleOracleCode_injective : Function.Injective toSingleOracleCode := by

@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
--- The semantic proof uses the function-valued equations of the evaluator.
-import all TauCeti.Computability.SingleOracle.Code
 
 /-!
 # Substitution of an oracle program
@@ -84,7 +82,24 @@ The equality includes divergence, even when the intermediate oracle is partial. 
 @[simp]
 theorem eval_subst (O : ℕ →. ℕ) (c d : Code) :
     eval O (c.subst d) = eval (eval O d) c := by
-  induction c <;> simp [eval, *] <;> rfl
+  induction c with
+  | zero | succ | left | right | oracle =>
+    funext n
+    simp
+  | pair cf cg hf hg | comp cf cg hf hg =>
+    funext n
+    simp [hf, hg]
+  | prec cf cg hf hg =>
+    funext n
+    obtain ⟨a, k, rfl⟩ : ∃ a k, n = Nat.pair a k := ⟨_, _, (Nat.pair_unpair n).symm⟩
+    simp only [prec_subst]
+    induction k with
+    | zero => simp only [eval_prec_zero, hf]
+    | succ k ih => simp only [eval_prec_succ, ih, hg]
+  | rfind' cf hf =>
+    funext n
+    obtain ⟨a, m, rfl⟩ : ∃ a m, n = Nat.pair a m := ⟨_, _, (Nat.pair_unpair n).symm⟩
+    simp only [rfind'_subst, eval_rfind', hf]
 
 private theorem primrec_lookup_subst (ctor : Code → Code → Code) (hctor : Primrec₂ ctor) :
     Primrec₂ fun (p : Code × List Code) (cs : Code × Code) =>
@@ -131,6 +146,6 @@ namespace Nat.Partrec.Code
 @[simp]
 theorem toSingleOracleCode_subst (c : Nat.Partrec.Code) (d : TauCeti.Oracle.Single.Code) :
     c.toSingleOracleCode.subst d = c.toSingleOracleCode := by
-  induction c <;> simp [toSingleOracleCode, *]
+  induction c <;> rw [toSingleOracleCode_def] <;> simp_all
 
 end Nat.Partrec.Code
