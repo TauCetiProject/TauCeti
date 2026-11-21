@@ -881,6 +881,14 @@ theorem measurableSet_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
 theorem truncation_mono : Monotone truncation := fun _ _ hRR' _ hw =>
   ⟨hw.1, hw.2.1, fun q => (hw.2.2 q).trans hRR'⟩
 
+/-- For `R ≤ R'`, the points of norm greater than `2 exp (2πR')` lie outside the truncation
+`S_R`. -/
+theorem notMem_truncation_of_lt_norm {R R' : ℝ} (hR : R ≤ R') {w : ℂ}
+    (hw : 2 * Real.exp (2 * π * R') < ‖w‖) : w ∉ truncation R := fun hmem => by
+  have h := (truncation_subset_closedBall_sdiff_ball _ (truncation_mono hR hmem)).1
+  rw [Metric.mem_closedBall, dist_zero_right] at h
+  linarith
+
 /-- The poles `0` and `1` lie outside every truncation. -/
 theorem notMem_truncation_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) (R : ℝ) :
     c ∉ truncation R := fun h => by
