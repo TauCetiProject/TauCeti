@@ -44,6 +44,8 @@ representative.
 
 * `TauCeti.MeasureTheory.preciseRepresentative`: the limit of the averages over shrinking closed
   balls.
+* `TauCeti.MeasureTheory.preciseRepresentative_restrict_of_mem_nhds`: restricting the measure to a
+  neighbourhood of a point does not change the precise representative there.
 * `TauCeti.MeasureTheory.preciseRepresentative_congr_ae`: the precise representative depends only
   on the almost-everywhere class.
 * `TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`: a function locally integrable on
@@ -100,17 +102,33 @@ theorem preciseRepresentative_eq_of_tendsto {v : E}
     preciseRepresentative μ f x = v :=
   h.limUnder_eq
 
+/-- Two precise representatives agree at `x` when the averages over `closedBall x r` agree for all
+small `r > 0`. -/
+theorem preciseRepresentative_eq_of_eventuallyEq {ν : Measure X}
+    (h : (fun r => ⨍ y in closedBall x r, f y ∂μ) =ᶠ[𝓝[>] 0]
+      fun r => ⨍ y in closedBall x r, g y ∂ν) :
+    preciseRepresentative μ f x = preciseRepresentative ν g x := by
+  simp only [preciseRepresentative, limUnder, map_congr h]
+
 /-- The precise representative at `x` only depends on the almost-everywhere class of `f` on a
 neighbourhood of `x`. -/
 theorem preciseRepresentative_congr_ae_nhds {V : Set X} (hV : V ∈ 𝓝 x)
     (h : f =ᵐ[μ.restrict V] g) : preciseRepresentative μ f x = preciseRepresentative μ g x := by
   obtain ⟨δ, hδ, hsub⟩ := nhds_basis_closedBall.mem_iff.1 hV
-  have hev : (fun r => ⨍ y in closedBall x r, f y ∂μ) =ᶠ[𝓝[>] 0]
-      fun r => ⨍ y in closedBall x r, g y ∂μ := by
-    filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
-    exact average_congr (ae_restrict_of_ae_restrict_of_subset
-      ((closedBall_subset_closedBall hr.2.le).trans hsub) h)
-  simp only [preciseRepresentative, limUnder, map_congr hev]
+  refine preciseRepresentative_eq_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
+  exact average_congr (ae_restrict_of_ae_restrict_of_subset
+    ((closedBall_subset_closedBall hr.2.le).trans hsub) h)
+
+/-- At a point `x`, the precise representative of `f` for the restriction of `μ` to a
+neighbourhood of `x` is its precise representative for `μ`: small closed balls about `x` lie in
+the neighbourhood. -/
+theorem preciseRepresentative_restrict_of_mem_nhds {s : Set X} (hs : s ∈ 𝓝 x) :
+    preciseRepresentative (μ.restrict s) f x = preciseRepresentative μ f x := by
+  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_closedBall.mem_iff.1 hs
+  refine preciseRepresentative_eq_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
+  rw [Measure.restrict_restrict_of_subset ((closedBall_subset_closedBall hr.2.le).trans hsub)]
 
 /-- The precise representative only depends on the almost-everywhere class of `f`. -/
 theorem preciseRepresentative_congr_ae (h : f =ᵐ[μ] g) :
