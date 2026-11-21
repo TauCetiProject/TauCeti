@@ -54,7 +54,7 @@ jobs:
       staging_runner: '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]'
       staging_pools: '["tauchonki2"]'
     secrets:
-      FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+      FLEET_INVENTORY_APP_PRIVATE_KEY: ${{ secrets.FLEET_INVENTORY_APP_PRIVATE_KEY }}
       TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
       LAKE_CACHE_KEY: ${{ secrets.LAKE_CACHE_KEY }}
       CI_READ_APP_ID: ${{ secrets.CI_READ_APP_ID }}
