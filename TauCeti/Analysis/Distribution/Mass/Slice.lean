@@ -12,7 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 /-!
 # Slicing currents by a function
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E`, let `T` be a
+Let `Ω` be an open set of a real normed space `E`, let `T` be a
 `(k + 1)`-current on `Ω` (a continuous linear functional on the test `(k + 1)`-forms), and let
 `u : E → ℝ` be measurable. The **slice** of `T` by `u` at `t` is the `k`-current
 
@@ -34,7 +34,8 @@ inequality**
 so for a normal current `T` and a smooth `u` with bounded derivative almost every slice is a
 normal current. The mass here is taken with respect to the operator norm on alternating forms
 (`Distribution.mass`); the factor `k + 1` comes from the unnormalized alternatization defining the
-wedge `du ∧ φ`. Slices by merely Lipschitz functions are not treated here.
+wedge `du ∧ φ`. Slices by merely Lipschitz functions are not treated here. If `E` is
+infinite-dimensional, every test form is zero, so every current and every slice is zero.
 
 ## Main declarations
 
@@ -64,7 +65,7 @@ open scoped ENNReal Distributions Topology ContDiff
 
 namespace Distribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E} {k : ℕ} {u : E → ℝ} {t : ℝ}
 
@@ -79,7 +80,7 @@ zero by convention. -/
 def slice (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ) (t : ℝ) :
     𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ :=
   if hu : Measurable u then
-    let hA := measurableSet_lt (hu.comp measurable_subtype_coe) (measurable_const (a := t))
+    let hA := measurableSet_lt (hu.comp measurable_subtypeVal) (measurable_const (a := t))
     massRestrict T hA ∘L extDerivCLM - massRestrict (T ∘L extDerivCLM) hA
   else 0
 
@@ -90,10 +91,10 @@ variable (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ)
 /-- For measurable `u`, the slice evaluates as `(T ⌞ {u < t}) (dφ) - ((∂T) ⌞ {u < t}) φ`. -/
 theorem slice_apply (hu : Measurable u) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     slice T u t φ =
-      massRestrict T (measurableSet_lt (hu.comp measurable_subtype_coe) (measurable_const (a := t)))
+      massRestrict T (measurableSet_lt (hu.comp measurable_subtypeVal) (measurable_const (a := t)))
           (extDerivCLM φ) -
         massRestrict (T ∘L extDerivCLM)
-          (measurableSet_lt (hu.comp measurable_subtype_coe) (measurable_const (a := t))) φ := by
+          (measurableSet_lt (hu.comp measurable_subtypeVal) (measurable_const (a := t))) φ := by
   simp [slice, hu]
 
 /-- The slice by a non-measurable function is zero by convention. -/
@@ -132,7 +133,7 @@ theorem dsupport_slice_subset {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
   have hum : Measurable u := hu.measurable
   have hA : MeasurableSet {x : Ω | u x < t} :=
-    measurableSet_lt (hum.comp measurable_subtype_coe) measurable_const
+    measurableSet_lt (hum.comp measurable_subtypeVal) measurable_const
   -- Off `spt T`, both Borel restrictions vanish.
   have hv₁ : IsVanishingOn (slice T u t) (dsupport T)ᶜ := fun φ hφ => by
     have h₁ : massRestrict T hA (extDerivCLM φ) = 0 :=
@@ -188,7 +189,7 @@ private theorem mass_slice_le_liminf {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] 
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
   have hum : Measurable u := hu.continuous.measurable
   have hA : MeasurableSet {x : Ω | u x < t} :=
-    measurableSet_lt (hum.comp measurable_subtype_coe) measurable_const
+    measurableSet_lt (hum.comp measurable_subtypeVal) measurable_const
   have hf (m : ℕ) : ContDiff ℝ ∞ fun x => Real.smoothTransition (((m : ℝ) + 1) * (t - u x)) :=
     Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_const.sub hu))
   have hfC (m : ℕ) : ∀ x ∈ Ω, |Real.smoothTransition (((m : ℝ) + 1) * (t - u x))| ≤ 1 :=
@@ -218,10 +219,16 @@ private theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u) :
     ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ t, mass (slice T u t) ≤ G t) ∧
       ∫⁻ t, G t ≤ (k + 1) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In infinite dimension every test form is zero, so every slice has mass zero.
+    refine ⟨0, measurable_const, fun t => ?_, by simp⟩
+    rw [Pi.zero_apply, nonpos_iff_eq_zero, mass_eq_zero_iff]
+    exact funext fun φ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtype_coe
+  have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtypeVal
   have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_eNorm.comp
-    ((hu.continuous_fderiv (by simp)).comp continuous_subtype_val)).measurable
+    ((hu.continuous_fderiv (by simp)).comp continuous_subtypeVal)).measurable
   have hg' (m : ℕ) :=
     Real.smoothTransition.measurable_ofReal_mul_deriv_mul_sub_mul hum hdu ((m : ℝ) + 1)
   have hg (m : ℕ) : Measurable fun t => (k + 1 : ℝ≥0∞) *
@@ -251,7 +258,8 @@ theorem lintegral_mass_slice_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[�
     ∫⁻ t, mass (slice T u t) ≤ (k + 1) * L * mass T := by
   rw [mul_assoc]
   exact (lintegral_mass_slice_le hT hu).trans
-    (by gcongr; exact lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass fun x => hdu x x.2)
+    (by gcongr
+        exact lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass fun x => hdu x x.property)
 
 /-- If `∫ ‖du‖ d‖T‖` is finite, then almost every slice `⟨T, u, t⟩` has finite mass. -/
 theorem ae_mass_slice_lt_top {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
@@ -271,7 +279,8 @@ theorem ae_isNormal_slice {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ
   have hfin {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin (j + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hS : IsNormal S) :
       ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure S ≠ ⊤ :=
     ne_top_of_le_ne_top (ENNReal.mul_ne_top hL hS.mass_ne_top)
-      (lintegral_massMeasure_le_mul_mass hS.isLocallyNormal.hasLocallyFiniteMass fun x => hdu x x.2)
+      (lintegral_massMeasure_le_mul_mass hS.isLocallyNormal.hasLocallyFiniteMass fun x => hdu x
+          x.property)
   cases k with
   | zero =>
     filter_upwards [ae_mass_slice_lt_top hT.isLocallyNormal hu (hfin hT)] with t ht

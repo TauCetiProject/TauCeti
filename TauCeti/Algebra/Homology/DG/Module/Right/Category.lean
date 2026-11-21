@@ -293,7 +293,7 @@ noncomputable def toCochainMap (φ : M ⟶ N) : M.toCochainComplex ⟶ N.toCocha
     ((φ.toLinearMap.restrictScalars R ∘ₗ (M.grading p).subtype).codRestrict (N.grading p)
       fun x ↦ by
         simpa only [LinearMap.comp_apply, Submodule.coe_subtype,
-          LinearMap.restrictScalars_apply] using φ.map_mem' x.2) ∘ₗ
+          LinearMap.restrictScalars_apply] using φ.map_mem' x.property) ∘ₗ
       (gradedCochainComplexXEquiv p).toLinearMap
   comm' p q hpq := by
     obtain rfl : p + 1 = q := hpq

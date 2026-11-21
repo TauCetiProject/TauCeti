@@ -15,11 +15,15 @@ If the topological support `tsupport f` of a function `f : α → β` is contain
 any `OpensMeasurableSpace`. Consequently `f =ᵐ[μ.restrict sᶜ] 0` without any measurability
 assumption on `s` or `f`.
 
-The file also records the total mass of a rescaled restriction, and that normalized restrictions to
-sets of positive mass, scaled by the smallest mass over their number, sum to at most the measure.
+The file also records that almost every point under `μ.restrict s` belongs to `closure s` whether
+or not `s` is measurable, the total mass of a rescaled restriction, and that normalized
+restrictions to sets of positive mass, scaled by the smallest mass over their number, sum to at
+most the measure.
 
 ## Main results
 
+* `MeasureTheory.ae_restrict_mem_closure`: almost every point under `μ.restrict s` lies in
+  `closure s`.
 * `MeasureTheory.Measure.smul_restrict_univ`: `(s • μ.restrict A) univ = s * μ A`.
 * `MeasureTheory.Measure.smul_sum_inv_smul_restrict_le`: the normalized restrictions of a measure
   to finitely many sets, scaled by the smallest mass over their number, sum to at most the
@@ -34,6 +38,14 @@ open Set
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- Almost every point under `μ.restrict s` belongs to `closure s`, whether or not `s` is
+measurable. -/
+theorem ae_restrict_mem_closure {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] {μ : Measure α} (s : Set α) :
+    ∀ᵐ x ∂μ.restrict s, x ∈ closure s :=
+  ae_restrict_of_ae_restrict_of_subset subset_closure
+    (ae_restrict_mem isClosed_closure.measurableSet)
 
 /-- A function whose topological support lies in `s` vanishes almost everywhere on `sᶜ`. -/
 theorem ae_restrict_compl_eq_zero_of_tsupport_subset {α β : Type*} [MeasurableSpace α]

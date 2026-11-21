@@ -371,7 +371,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
   -- `2 r ‖f‖ ‖∇v‖`.
   have hℓ : ∀ v : W1p0 volume B 2, |⟪hf.toLp, W1p.value (v : W1p volume B 2)⟫_ℝ| ≤
       2 * r * ‖hf.toLp‖ * ‖W1p.gradient (v : W1p volume B 2)‖ := fun v => by
-    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.2
+    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.property
     have hfv := abs_real_inner_le_norm hf.toLp (W1p.value (v : W1p volume B 2))
     have := mul_le_mul_of_nonneg_left hv (norm_nonneg hf.toLp)
     linarith

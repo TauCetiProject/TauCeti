@@ -56,7 +56,7 @@ theorem coe_proj_of_mem {i p : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]
 /-- The projection onto `⋀ᵖ M` is the identity on `⋀ᵖ M`. -/
 @[simp]
 theorem proj_coe (p : ℕ) (x : ⋀[R]^p M) : proj R M p x = x :=
-  Subtype.ext ((coe_proj_of_mem x.2).trans (by simp))
+  Subtype.ext ((coe_proj_of_mem x.property).trans (by simp))
 
 end exteriorPower
 

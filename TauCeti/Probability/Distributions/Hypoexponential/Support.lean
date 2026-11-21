@@ -51,7 +51,7 @@ theorem hypoexponentialMeasure_absolutelyContinuous [Nonempty ι] (r : ι → �
     funext j
     cases j with
     | inl j => simp [e]
-    | inr j => simp [e, not_not.1 j.2]
+    | inr j => simp [e, not_not.1 j.property]
   by_cases hr : 0 < r i₀
   · rw [← hypoexponentialMeasure_reindex r e, hsplit,
       ← hypoexponentialMeasure_conv_hypoexponentialMeasure, hypoexponentialMeasure_const hr,

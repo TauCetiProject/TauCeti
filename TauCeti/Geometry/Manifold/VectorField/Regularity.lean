@@ -132,15 +132,15 @@ end TangentBundleInputs
 /-- If `f` is `C^n` at a point, its differential evaluated on tangent vectors is `C^m` at
 every vector over that point, provided `m + 1 ≤ n`. -/
 theorem ContMDiffAt.contMDiffAt_mvfderiv_apply {f : M → F} {p : TangentBundle I M}
-    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.1) (hmn : m + 1 ≤ n) :
+    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.proj) (hmn : m + 1 ≤ n) :
     ContMDiffAt I.tangent 𝓘(𝕜, F) m
-      (fun q : TangentBundle I M ↦ mvfderiv I f q.1 q.2) p := by
+      (fun q : TangentBundle I M ↦ mvfderiv I f q.proj q.snd) p := by
   have h := (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F) (n := m)).contMDiffAt.comp p
     (hf.contMDiffAt_tangentMap hmn)
   -- `NormedSpace.fromTangentSpace` is definitionally the identity on `F`, identifying
   -- `TangentSpace 𝓘(𝕜, F) (f q.1)` with `F` in the equality below.
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦
-    (mvfderiv_apply_eq_mfderiv_apply f q.1 q.2).trans tangentMap_snd.symm)
+    (mvfderiv_apply_eq_mfderiv_apply f q.proj q.snd).trans tangentMap_snd.symm)
 
 /-- The map that applies the differential of a `C^n` function to tangent vectors is `C^m` on the
 tangent bundle when `m + 1 ≤ n`. -/
@@ -148,8 +148,8 @@ theorem ContMDiff.contMDiff_mvfderiv_apply {f : M → F}
     (hf : ContMDiff I 𝓘(𝕜, F) n f)
     (hmn : m + 1 ≤ n) :
     ContMDiff I.tangent 𝓘(𝕜, F) m
-      (fun p : TangentBundle I M => mvfderiv I f p.1 p.2) :=
-  fun p ↦ (hf p.1).contMDiffAt_mvfderiv_apply hmn
+      (fun p : TangentBundle I M => mvfderiv I f p.proj p.snd) :=
+  fun p ↦ (hf p.proj).contMDiffAt_mvfderiv_apply hmn
 
 /-- The derivative of a `C^n` function along a `C^m` vector field is `C^m` on an open set, when
 `m + 1 ≤ n`. This is the set-local form of `ContMDiff.contMDiff_mvfderiv_apply`: only the germ of
