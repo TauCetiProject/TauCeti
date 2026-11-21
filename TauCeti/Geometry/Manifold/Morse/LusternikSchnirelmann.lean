@@ -112,7 +112,8 @@ theorem lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton [Subsingleton
   -- Each tangent space is the zero space `E`, on which the derivative of `f` vanishes.
   have hcrit : criticalPoints I f = univ := eq_univ_of_forall fun x ↦ by
     have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
-    exact mem_criticalPoints.mpr (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0])
+    exact mem_criticalPoints.mpr (ContinuousLinearMap.ext fun v ↦ by
+      simp only [Subsingleton.elim v 0, map_zero])
   rw [lsCategoryCount_eq_encard, totalCriticalCount_def, hcrit]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M]

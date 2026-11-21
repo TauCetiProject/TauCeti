@@ -40,10 +40,10 @@ one, so `∫ ⟪∇χ, V⟫ = -∫ χ tr (DV)`
 coordinates reads `∫ ψ' Φ = -∫ ψ g`: `g` is the weak derivative of `Φ`. So
 `Φ R - Φ 0 = ∫₀^R g = G R` by the fundamental theorem of calculus for weak derivatives
 (`TauCeti.HasWeakLineDerivOn.integral_eq_sub`, which rests on the du Bois-Reymond lemma), and
-`Φ 0 = 0` because the surface measure has barycenter zero (`TauCeti.integral_toSphere_coe_eq_zero`).
-This is the radial test-function argument of the mean-value property for harmonic functions
-(`InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq`), applied to the flux instead of the sphere
-average.
+`Φ 0 = 0` because the surface measure has barycenter zero
+(`MeasureTheory.Measure.integral_coe_toSphere`). This is the radial test-function argument of the
+mean-value property for harmonic functions (`InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq`),
+applied to the flux instead of the sphere average.
 
 ## Main results
 
@@ -147,7 +147,7 @@ private lemma setIntegral_ball_zero_trace_fderiv [Nontrivial E] {R : ℝ} (hR : 
       ∫ θ : sphere (0 : E) 1, ⟪V ((0 : ℝ) • (θ : E)), θ⟫ ∂μ.toSphere = 0 := by
     simp only [zero_smul]
     rw [integral_inner (continuous_subtypeVal.integrable_of_hasCompactSupport
-      (HasCompactSupport.of_compactSpace _)), integral_toSphere_coe_eq_zero, inner_zero_right,
+      (HasCompactSupport.of_compactSpace _)), Measure.integral_coe_toSphere, inner_zero_right,
       smul_zero]
   rcases hR.eq_or_lt with rfl | hR
   · rw [Metric.ball_eq_empty.mpr le_rfl, Measure.restrict_empty, integral_zero_measure,

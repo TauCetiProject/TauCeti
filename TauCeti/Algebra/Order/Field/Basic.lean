@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -107,15 +108,25 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
+  nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
   `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
+* `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Normalizing by a nonzero square converts a scale inequality into a bound on time. -/
+theorem two_mul_sq_inv_mul_lt_one_iff {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {r t : K} (hr : r ≠ 0) :
+    2 * (r ^ 2)⁻¹ * t < 1 ↔ t < r ^ 2 / 2 := by
+  rw [mul_right_comm, ← div_eq_mul_inv, div_lt_one (sq_pos_of_ne_zero hr),
+    lt_div_iff₀ zero_lt_two, mul_comm t]
 
 /-- A scalar inequality is equivalent to its sign-dependent bounds: a negative coefficient
 gives a lower bound, a positive coefficient gives an upper bound, and a zero coefficient
@@ -359,6 +370,17 @@ theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
 theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
   nlinarith [mul_le_mul_of_nonneg_right hX hJ]
+
+/-- **Absorption of a supremum.** If `Φ ≥ 0` is bounded above and every value of `Φ` is at most
+`X` plus `c ≤ 1 / 2` times another value, then the supremum of `Φ` is at most `2 X`. -/
+theorem ciSup_le_two_mul_of_le_add_mul {α : Type*} [Field α] [ConditionallyCompleteLinearOrder α]
+    [IsStrictOrderedRing α] {I : Sort*} [Nonempty I] {Φ : I → α} {X c : α}
+    (hΦ : BddAbove (Set.range Φ)) (hΦ₀ : ∀ i, 0 ≤ Φ i) (hc : c ≤ 1 / 2) (f : I → I)
+    (h : ∀ i, Φ i ≤ X + c * Φ (f i)) : ⨆ i, Φ i ≤ 2 * X := by
+  have : ⨆ i, Φ i ≤ X + 1 / 2 * ⨆ i, Φ i := ciSup_le fun i ↦ (h i).trans <| by
+    nlinarith [le_ciSup hΦ (f i), mul_nonneg (sub_nonneg.2 hc) (hΦ₀ (f i))]
+  exact le_two_mul_of_le_add_mul
+    ((hΦ₀ (Classical.arbitrary I)).trans (le_ciSup hΦ _)) le_rfl this
 
 /-- The bookkeeping bound `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and
 `P`. -/

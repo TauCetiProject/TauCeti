@@ -19,6 +19,8 @@ matrix.
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero.
 
+Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
+
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
@@ -31,6 +33,8 @@ out to the left without any commutativity, since the left factor has entries `0`
   is nonempty and neither factor is zero.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
+* `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
+  reindexed vectors.
 -/
 
 public section
@@ -104,5 +108,12 @@ theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
   · simp [vecMulVec_apply, h]
 
 end MulZeroOneClass
+
+/-- A submatrix of an outer product is the outer product of the reindexed vectors. -/
+@[simp]
+theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n → α) (f : l → m)
+    (g : o → n) : (vecMulVec u v).submatrix f g = vecMulVec (u ∘ f) (v ∘ g) := by
+  ext
+  simp [vecMulVec_apply]
 
 end Matrix
