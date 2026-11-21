@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
 # The area form of the cylinder
@@ -30,6 +32,7 @@ two-form on a surface.
 * `TauCeti.eval₂_cylinderAreaForm`, `TauCeti.cylinderAreaForm_apply`: the area form evaluates as
   the determinant of two tangent vectors.
 * `TauCeti.isClosed_cylinderAreaForm`: the area form is closed.
+* `TauCeti.cylinderAreaForm_mem_exactForms`: the area form is exact, `dr ∧ dθ = d(r dθ)`.
 
 ## References
 
@@ -41,7 +44,7 @@ public section
 
 noncomputable section
 
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -82,5 +85,30 @@ def cylinderAreaClosedForm : closedForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddC
 @[simp]
 theorem coe_cylinderAreaClosedForm : (cylinderAreaClosedForm p).val = cylinderAreaForm p :=
   (rfl)
+
+/-- **The area form of the cylinder is exact**: it is the exterior derivative of the one-form
+`r dθ`, the coordinate function `r` of the line times the time form of the circle. -/
+theorem cylinderAreaForm_mem_exactForms :
+    cylinderAreaForm p ∈ exactForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 2 := by
+  let r : C^∞⟮𝓘(ℝ).prod 𝓘(ℝ), ℝ × AddCircle p; ℝ⟯ := ⟨Prod.fst, contMDiff_fst⟩
+  let dθ : SmoothForm (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) ℝ 1 :=
+    SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm p)
+  -- The differential of `r` is the pulled back coordinate form `dr`, and `dθ` is closed.
+  have hdr : mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ)) r) =
+      (SmoothForm.mpullback (M := ℝ × AddCircle p) Prod.fst contMDiff_fst
+        SmoothForm.realLineCoordForm).val := by
+    rw [SmoothForm.coe_mpullback]
+    exact (SmoothForm.mpullback_realLineCoordForm _).symm
+  have hdθ : mextDerivₗ (𝓘(ℝ).prod 𝓘(ℝ)) 1 dθ = 0 :=
+    (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero _).mp
+      ((AddCircle.isClosed_timeForm p).mpullback Prod.snd contMDiff_snd)
+  rw [exactForms_succ]
+  refine ⟨SmoothForm.funSMulₗ r dθ, Subtype.ext (funext fun y ↦ ?_)⟩
+  ext v
+  rw [SmoothForm.mextDerivₗ_funSMulₗ_apply, hdr, hdθ, Submodule.coe_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, Pi.zero_apply, mul_zero, add_zero, cylinderAreaForm,
+    SmoothForm.coe_wedge]
+  -- The degree cast `0 + 1 + 1 = 1 + 1` reindexes `Fin 2` by the identity.
+  rfl
 
 end TauCeti
