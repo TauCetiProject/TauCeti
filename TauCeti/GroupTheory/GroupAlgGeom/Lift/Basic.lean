@@ -61,6 +61,13 @@ compatible with `S` and admits an `S`-lift (`isCompatible_of_V_eq_empty`,
 
 * `TauCeti.GroupAlgGeom.Lift.HasLift.isCompatible`: a system of equations with an `S`-lift is
   compatible with `S`.
+* `TauCeti.GroupAlgGeom.Lift.HasLift.exists_sumElim_mem_V_of_gHom`,
+  `TauCeti.GroupAlgGeom.Lift.HasLiftNe.exists_sumElim_mem_V_of_gHom`: a `G`-homomorphism `φ` from
+  the coordinate group of `S`, injective in the case of an inequation, carries an `S`-lift to a
+  solution over the image under `φ` of the generic point.
+* `TauCeti.GroupAlgGeom.Lift.hasLift_iff_of_Rad_eq`,
+  `TauCeti.GroupAlgGeom.Lift.hasLiftNe_iff_of_Rad_eq`: lifts depend on the group of solutions
+  only through the radical of `S`.
 * `TauCeti.GroupAlgGeom.Lift.hasLift_of_forall_sumElim_wordMap_mem_V`,
   `TauCeti.GroupAlgGeom.Lift.hasLiftNe_of_forall_sumElim_wordMap_mem_V`: words `y(X)` solving `T`
   at every point of a family `Θ` whose ideal `I(Θ)` lies in the radical of `S` give an `S`-lift,
@@ -216,6 +223,60 @@ theorem hasLiftNe_iff :
         eval (CoordGroup.coeff ι S) (Sum.elim (CoordGroup.genericPoint ι S) w) W ≠ 1 :=
   Iff.rfl
 
+section Transport
+
+variable {K : Type*} [Group K] {κ : G →* K}
+
+/-- A `G`-homomorphism `φ` from the coordinate group of `S` to `K` carries a lift of `T` to the
+generic point `μ` of `S` to a solution of `T` in `K` over the point `p = φ ∘ μ`. -/
+theorem HasLift.exists_sumElim_mem_V_of_gHom (h : HasLift ι S T)
+    (φ : GHom (CoordGroup.coeff ι S) κ) {p : X → K} (hp : φ ∘ CoordGroup.genericPoint ι S = p) :
+    ∃ w : Y → K, Sum.elim p w ∈ V κ T := by
+  obtain ⟨w, hw⟩ := h
+  subst hp
+  exact ⟨φ ∘ w, by simpa [Sum.comp_elim] using φ.comp_mem_V hw⟩
+
+/-- An injective `G`-homomorphism `φ` from the coordinate group of `S` to `K` carries a lift of
+`T = 1 ∧ W ≠ 1` to the generic point `μ` of `S` to a solution of `T = 1 ∧ W ≠ 1` in `K` over the
+point `p = φ ∘ μ`. -/
+theorem HasLiftNe.exists_sumElim_mem_V_of_gHom (h : HasLiftNe ι S T W)
+    (φ : GHom (CoordGroup.coeff ι S) κ) (hφ : Function.Injective φ) {p : X → K}
+    (hp : φ ∘ CoordGroup.genericPoint ι S = p) :
+    ∃ w : Y → K, Sum.elim p w ∈ V κ T ∧ eval κ (Sum.elim p w) W ≠ 1 := by
+  obtain ⟨w, hw, hW⟩ := h
+  subst hp
+  refine ⟨φ ∘ w, by simpa [Sum.comp_elim] using φ.comp_mem_V hw, ?_⟩
+  rwa [← Sum.comp_elim, ← map_eval, map_ne_one_iff φ hφ]
+
+/-- A lift through `ι` is a lift through `κ` when the radicals of `S` over `H` and over `K`
+agree: the two coordinate groups are the same quotient of `G[X]`. -/
+private theorem HasLift.of_Rad_eq (hR : Rad ι S = Rad κ S) (h : HasLift ι S T) :
+    HasLift κ S T :=
+  hasLift_iff.2 <| h.exists_sumElim_mem_V_of_gHom
+    ⟨(CoordGroup.equivOfRadEq hR).toMonoidHom, CoordGroup.equivOfRadEq_coeff hR⟩
+    (funext (CoordGroup.equivOfRadEq_genericPoint hR))
+
+/-- A lift of `T = 1 ∧ W ≠ 1` through `ι` is one through `κ` when the radicals of `S` over `H`
+and over `K` agree. -/
+private theorem HasLiftNe.of_Rad_eq (hR : Rad ι S = Rad κ S) (h : HasLiftNe ι S T W) :
+    HasLiftNe κ S T W :=
+  hasLiftNe_iff.2 <| h.exists_sumElim_mem_V_of_gHom
+    ⟨(CoordGroup.equivOfRadEq hR).toMonoidHom, CoordGroup.equivOfRadEq_coeff hR⟩
+    (CoordGroup.equivOfRadEq hR).injective (funext (CoordGroup.equivOfRadEq_genericPoint hR))
+
+/-- A system admits a lift to the generic point of `S` over `H` exactly when it admits one over
+`K`, if `S` has the same radical over `H` and over `K`. -/
+theorem hasLift_iff_of_Rad_eq (hR : Rad ι S = Rad κ S) : HasLift ι S T ↔ HasLift κ S T :=
+  ⟨.of_Rad_eq hR, .of_Rad_eq hR.symm⟩
+
+/-- A system with an inequation admits a lift to the generic point of `S` over `H` exactly when
+it admits one over `K`, if `S` has the same radical over `H` and over `K`. -/
+theorem hasLiftNe_iff_of_Rad_eq (hR : Rad ι S = Rad κ S) :
+    HasLiftNe ι S T W ↔ HasLiftNe κ S T W :=
+  ⟨.of_Rad_eq hR, .of_Rad_eq hR.symm⟩
+
+end Transport
+
 /-- Dropping the inequation preserves the existence of a lift. -/
 theorem HasLiftNe.hasLift (h : HasLiftNe ι S T W) : HasLift ι S T :=
   h.imp fun _ => And.left
@@ -230,12 +291,10 @@ theorem hasLift_empty : HasLift ι S (∅ : Set (GX G (X ⊕ Y))) :=
   ⟨fun _ => 1, by simp⟩
 
 /-- A system of equations with an `S`-lift is compatible with `S`. -/
-theorem HasLift.isCompatible (h : HasLift ι S T) : IsCompatible ι S T := by
-  obtain ⟨w, hw⟩ := h
-  intro v hv
+theorem HasLift.isCompatible (h : HasLift ι S T) : IsCompatible ι S T := fun v hv =>
   -- Evaluation at `v` maps the solution at the generic point to a solution over `v`.
-  refine ⟨CoordGroup.evalGHom v hv ∘ w, ?_⟩
-  simpa [Sum.comp_elim] using (CoordGroup.evalGHom v hv).comp_mem_V hw
+  h.exists_sumElim_mem_V_of_gHom (CoordGroup.evalGHom v hv)
+    (CoordGroup.evalGHom_comp_genericPoint hv)
 
 /-- When the coordinate group of `S` is trivial, for instance over a trivial group, every system
 of equations admits an `S`-lift. -/

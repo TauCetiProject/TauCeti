@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Regular
 import Mathlib.GroupTheory.Commutator.Basic
+import TauCeti.GroupTheory.GroupAlgGeom.Separated
 
 /-!
 # Standard quadratic equations under a change of the coefficient group
@@ -24,6 +25,13 @@ group, so results about equations over their own coefficient group apply to it. 
 must stay nontrivial: if `f d = 1`, the image of `[x, y] d = 1` would be `[x, y] = 1`, an equation
 of another type.
 
+The coefficient group of the lower levels may change as well. Let `f : G →* G'` be injective,
+with `G'` separated by `G` over `G`, and let `E ⊆ G[Y]` be the system of the lower levels. An
+equation with coefficients in `G[Y]` is then regular over the coordinate group of `E` over `G`
+exactly when it is regular, through the induced map `G[Y] →* G'[Y]`, over the coordinate group of
+the image of `E` over `G'`: the former embeds in the latter, which is separated by it over it
+(`TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_mapCoeff`).
+
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.map`: the image of a standard quadratic equation under
@@ -38,6 +46,10 @@ of another type.
   general-position solutions.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_map_eq`: an equation whose coefficients lie in
   the range of `f` is the image under `f` of an equation over `G`.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_comp_map_iff`: along an injective change of
+  coefficients `f : G →* G'` by which `G'` is separated over `G`, an equation is regular over the
+  coordinate group of a lower system over `G` exactly when it is regular over that of its image
+  over `G'`.
 * `TauCeti.GroupAlgGeom.Quadratic.isRegular_commutator_eq_commutator_eval`: over `F(a, b)[t]`, the
   equation `[x, y] = [a, t]` is regular along the specialisation `t ↦ b`.
 
@@ -227,6 +239,41 @@ theorem exists_map_eq {f : G →* H} (S : Standard H X) (hS : ∀ g ∈ S.coeffs
       (Set.range_subset_iff.2 fun j => hS (c j) (by simp))
     exact ⟨nonorientableCoeff n m hn x z inj c (fun j h => hc j (by simp [h])) d
       (fun h => hd (by simp [h])), by simpa using ⟨hd, hc⟩, rfl⟩
+
+section CoordGroup
+
+variable {G' Y : Type*} [Group G'] {f : G →* G'}
+
+/-- Let `f : G →* G'` be injective, with `G'` separated by `G` over `G`. A standard quadratic
+equation `Q` with coefficients in `G[Y]` is regular over the coordinate group `G[Y] ⧸ Rad_G(E)` of
+a system `E ⊆ G[Y]` exactly when it is regular, through the induced map `G[Y] →* G'[Y]`, over the
+coordinate group `G'[Y] ⧸ Rad_{G'}(f(E))` of the image of `E`. -/
+theorem isRegular_comp_map_iff (hf : Function.Injective f) (hsep : IsSeparatedBy f (.id G))
+    (E : Set (GX G Y)) (Q : Standard (GX G Y) X) :
+    Q.IsRegular
+        ((QuotientGroup.mk' (Rad (.id G') (Monoid.Coprod.map f (FreeGroup.map id) '' E))).comp
+          (Monoid.Coprod.map f (FreeGroup.map id))) ↔
+      Q.IsRegular (QuotientGroup.mk' (Rad (.id G) E)) := by
+  -- the coordinate group of `E` with solutions in `G'` is the one over `G`
+  have hRad : Rad ((MonoidHom.id G').comp f) E = Rad (.id G) E :=
+    Rad_eq_of_isSeparatedBy hf (by simpa using hsep) E
+  rw [← isRegular_congr (ι := QuotientGroup.mk' (Rad ((MonoidHom.id G').comp f) E))
+    (ιK := QuotientGroup.mk' (Rad (.id G) E))
+    ⟨(CoordGroup.equivOfRadEq hRad).toMonoidHom, CoordGroup.equivOfRadEq_mk hRad⟩
+    (CoordGroup.equivOfRadEq hRad).bijective]
+  -- and it embeds in the coordinate group of the image, which is separated by it over it
+  have hκ : (CoordGroup.mapCoeff f (.id G') E : _ →* _).comp
+      (QuotientGroup.mk' (Rad ((MonoidHom.id G').comp f) E)) =
+      (QuotientGroup.mk' (Rad (.id G') (Monoid.Coprod.map f (FreeGroup.map id) '' E))).comp
+        (Monoid.Coprod.map f (FreeGroup.map id)) :=
+    MonoidHom.ext fun w => CoordGroup.mapCoeff_mk w
+  refine ⟨fun h => h.of_isSeparatedBy ?_,
+    fun h => h.map ⟨_, DFunLike.congr_fun hκ⟩ CoordGroup.mapCoeff_injective⟩
+  have := (CoordGroup.isSeparatedBy_mapCoeff (S := E) hsep).comp
+    (QuotientGroup.mk' (Rad ((MonoidHom.id G').comp f) E))
+  rwa [hκ, MonoidHom.id_comp (QuotientGroup.mk' (Rad ((MonoidHom.id G').comp f) E))] at this
+
+end CoordGroup
 
 end TauCeti.GroupAlgGeom.Quadratic.Standard
 
