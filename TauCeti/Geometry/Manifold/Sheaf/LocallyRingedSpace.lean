@@ -202,7 +202,6 @@ theorem stalkMap_evalHom_of_forall_C
 /-- Smooth maps `M → N` into a finite-dimensional manifold are the morphisms of locally ringed
 spaces `locallyRingedSpace IM M ⟶ locallyRingedSpace IN N` which preserve values at points: a
 smooth map gives `locallyRingedSpaceMap`, and a morphism gives its underlying map. -/
-@[expose]
 def locallyRingedSpaceMapEquiv [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN] [IsManifold IN ∞ N] :
     C^∞⟮IM, M; IN, N⟯ ≃
       {φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N // PreservesValues φ} where
