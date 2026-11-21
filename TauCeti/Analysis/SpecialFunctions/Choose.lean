@@ -150,7 +150,7 @@ theorem exists_pos_choose_mul_pow_le_exp (B : ℝ) {a : ℝ} (ha : 0 < a) :
       nlinarith only [hbk, hbudget]
 
 /-- Every tail `∑_{j ≥ c} n.choose j` of the binomial sum is at most `exp n`: it is at most the
-full sum `2 ^ n`, and `2 ≤ exp 1`. -/
+full sum `2 ^ n`, and `2 ^ n = (1 + n / n) ^ n ≤ exp n`. -/
 theorem sum_range_choose_add_le_exp (n c : ℕ) :
     ∑ j ∈ Finset.range (n + 1 - c), (n.choose (j + c) : ℝ) ≤ Real.exp n := by
   calc _ = ∑ j ∈ Finset.Ico c (n + 1), (n.choose j : ℝ) := by
@@ -160,8 +160,10 @@ theorem sum_range_choose_add_le_exp (n c : ℕ) :
           (by rw [Finset.range_eq_Ico]; exact Finset.Ico_subset_Ico_left (Nat.zero_le c))
           fun _ _ _ ↦ by positivity
     _ = 2 ^ n := by exact_mod_cast Nat.sum_range_choose n
-    _ ≤ Real.exp 1 ^ n :=
-        pow_le_pow_left₀ zero_le_two (by linarith [Real.add_one_le_exp 1]) n
-    _ = Real.exp n := by rw [← Real.exp_natCast_mul, mul_one]
+    _ = (1 + (n : ℝ) / n) ^ n := by
+        rcases n.eq_zero_or_pos with rfl | hn
+        · simp
+        · rw [div_self (by positivity)]; norm_num
+    _ ≤ Real.exp n := Real.one_add_div_pow_le_exp (neg_le_self (Nat.cast_nonneg n))
 
 end TauCeti
