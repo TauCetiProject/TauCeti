@@ -26,9 +26,9 @@ structure equation `dω = -K vol` in Gauss–Bonnet.
 The formula allows arbitrary parametrizations, including stationary points. There `Im(z' / z)` is
 zero by the totalized division convention rather than a turning rate, and both sides vanish. It
 needs the curve differentiable at `t`, with its velocity differentiable in the
-tangent-bundle trivialization centered at `γ t`. The frame domain only needs to be a neighborhood
-of the point on the curve. The derivative of `z` itself holds for any metric connection
-(`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`).
+tangent-bundle trivialization centered at `γ t`. The frame domain only needs to contain the point
+on the curve, with the frame differentiable there. The derivative of `z` itself holds for any
+metric connection (`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`).
 
 ## References
 
@@ -39,7 +39,7 @@ of the point on the curve. The derivative of `z` itself holds for any metric con
 public noncomputable section
 
 open Bundle CovariantDerivative Filter TauCeti.Manifold
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace IsLocalFrameOn
 
@@ -48,7 +48,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M}
+  {n : ℕ∞ω} {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M}
   {γ : ℝ → M} {t : ℝ}
 
 /-- **The boundary moving-frame formula.** In a positively oriented orthonormal local frame,
@@ -57,9 +57,11 @@ on the velocity. Where `z ≠ 0`, `Im(z' / z)` is the turning rate of the unit t
 The curve need only be differentiable at `t`, with its velocity differentiable in the
 tangent-bundle trivialization centered at `γ t`, and no unit-speed assumption is needed. At a
 stationary point `Im(z' / z)` is zero by the totalized division convention, and both sides are
-zero. Orthonormality is only required along `γ` near `t`. -/
-theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s u)
-    (hu : u ∈ 𝓝 (γ t)) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
+zero. The frame sections need only be differentiable at `γ t`, and orthonormality is only required
+along `γ` near `t`. -/
+theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E n s u)
+    (hu : γ t ∈ u) (hsd : ∀ i, MDiffAt (T% (s i)) (γ t))
+    (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
     (o : TauCeti.Manifold.Orientation I M (Fin 2))
     (hor : s 1 (γ t) = (letI := o.fact_finrank_tangentSpace (γ t);
       (o.orientationAt (γ t)).rightAngleRotation (s 0 (γ t))))
@@ -71,11 +73,11 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s
   by_cases hv : curveVelocity I γ t = 0
   · simp [hv, connectionForm_apply]
   have hsp : curveVelocity I γ t ∈ Submodule.span ℝ (Set.range fun i ↦ s i (γ t)) :=
-    hs.generating (mem_of_mem_nhds hu) Submodule.mem_top
+    hs.generating hu Submodule.mem_top
   have hz : frameVelocityCoordinates s γ t ≠ 0 :=
     (frameVelocityCoordinates_eq_zero_iff hsp).not.mpr hv
   -- The connection term of `z' / z` is `-i ω(γ')`, which cancels against `ω(γ')`.
-  rw [(hs.hasDerivAt_frameVelocityCoordinates hu ho
+  rw [(hs.hasDerivAt_frameVelocityCoordinates hu hsd ho
       (isMetricCompatible_leviCivitaConnection (I := I) (M := M)) hγ hγv).deriv]
   simp only [sub_div, mul_div_cancel_right₀ _ hz, Complex.sub_im, Complex.I_mul_im,
     Complex.ofReal_re, sub_add_cancel]

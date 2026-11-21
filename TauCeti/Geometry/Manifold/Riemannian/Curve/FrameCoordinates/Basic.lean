@@ -121,11 +121,13 @@ theorem frameVelocityCoordinates_eq_zero_iff {s : Fin 2 → Π x : M, TangentSpa
   have hker : Submodule.span ℝ (range fun i ↦ s i (γ t)) ≤
       (innerSL ℝ (curveVelocity I γ t)).toLinearMap.ker := by
     refine Submodule.span_le.mpr (range_subset_iff.mpr fun i ↦ ?_)
-    change inner ℝ (curveVelocity I γ t) (s i (γ t)) = 0
+    rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, innerSL_apply_apply]
     fin_cases i
     · simpa [real_inner_comm] using congrArg Complex.re h
     · simpa [real_inner_comm] using congrArg Complex.im h
-  exact inner_self_eq_zero.mp (hker hsp)
+  have hself := hker hsp
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, innerSL_apply_apply] at hself
+  exact inner_self_eq_zero.mp hself
 
 /-- Along an `a`-periodic curve, the frame coordinates of the velocity are `a`-periodic. -/
 theorem periodic_frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace I x) {γ : ℝ → M}
