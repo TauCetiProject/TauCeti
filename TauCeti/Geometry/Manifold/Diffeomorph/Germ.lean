@@ -67,8 +67,6 @@ the invariance of the Sobolev and Besov scales on `E` under changes of variables
   prescribed neighbourhood.
 * `TauCeti.exists_diffeomorph_eventuallyEq_of_det_fderiv_ne_zero`: a `C^n` germ with invertible
   derivative is the germ of a `C^n` diffeomorphism which is affine outside a compact set.
-* `ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl`: a map which is affine outside a compact set
-  has bounded derivatives of every positive order.
 * `TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero`: a smooth germ with invertible
   derivative is the germ of a bijection of `E` which, with its inverse, is smooth with bounded
   derivatives of every positive order.
@@ -370,36 +368,6 @@ theorem exists_diffeomorph_eventuallyEq_of_det_fderiv_ne_zero {n : ℕ∞} (hn :
   · filter_upwards [hψ] with x hx
     rw [Diffeomorph.coe_trans, Function.comp_apply, hx, hαapp]
     simp [h]
-
-/-- A `C^i` map, `1 ≤ i`, which agrees outside a compact set with an affine map `x ↦ b + L x` has
-a bounded derivative of order `i`. -/
-theorem _root_.ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl {𝕜 D F : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup D] [NormedSpace 𝕜 D] [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {f : D → F} {i : ℕ} (hf : ContDiff 𝕜 i f) (hi : 1 ≤ i) {K : Set D}
-    (hK : IsCompact K) {b : F} {L : D →L[𝕜] F} (hfK : EqOn f (fun x ↦ b + L x) Kᶜ) :
-    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C := by
-  -- `f` is the affine map plus the compactly supported map `u`.
-  set u : D → F := fun x ↦ f x - (b + L x)
-  have haff : ContDiff 𝕜 i fun x ↦ b + L x := contDiff_const.add L.contDiff
-  have hu_supp : HasCompactSupport u :=
-    HasCompactSupport.intro hK fun x hx ↦ by simp [u, hfK hx]
-  obtain ⟨C, -, hC⟩ := hu_supp.exists_bound_iteratedFDeriv_of_contDiff (hf.sub haff)
-  -- The derivatives of positive order of the affine map are those of the constant `L`.
-  obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
-  have hL (x : D) : ‖iteratedFDeriv 𝕜 (j + 1) (fun x ↦ b + L x) x‖ ≤ ‖L‖ := by
-    have hfd : fderiv 𝕜 (fun x ↦ b + L x) = fun _ ↦ L := by
-      ext1 y
-      exact ((L.hasFDerivAt (x := y)).const_add b).fderiv
-    rw [← norm_iteratedFDeriv_fderiv, hfd]
-    rcases j with _ | j
-    · simp
-    · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
-  refine ⟨C + ‖L‖, fun x ↦ ?_⟩
-  have hf_eq : f = u + fun x ↦ b + L x := by
-    ext x
-    simp [u]
-  rw [hf_eq, iteratedFDeriv_add_apply ((hf.sub haff).contDiffAt) haff.contDiffAt]
-  exact (norm_add_le _ _).trans (add_le_add (hC _ le_rfl x) (hL x))
 
 /-- **Local diffeomorphisms are germs of diffeomorphisms with bounded derivatives.** Let `E` be a
 finite-dimensional real normed space. If `g : E → E` is smooth near `c` and its derivative at `c`

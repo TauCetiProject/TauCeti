@@ -33,9 +33,10 @@ chart: chart transitions are such maps `e`.
 
 ## The argument
 
-The global statement is on `main`: pullback along a bijection `Φ` of `E` such that `Φ` and `Φ⁻¹`
-are smooth with bounded derivatives of every positive order preserves the Bessel-potential space
-`H^s` (`TemperedDistribution.MemSobolev.compCLM`). Two steps reduce the local statement to it.
+Pullback along a bijection `Φ` of `E` such that `Φ` and `Φ⁻¹` are smooth with bounded
+derivatives of every positive order preserves the Bessel-potential space `H^s`
+(`TemperedDistribution.MemSobolev.compCLM`). Two steps reduce the local statement to this global
+statement.
 
 * **Extension of the change of variables.** Near `x`, `e` agrees with such a global bijection `Φ`
   (`TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero`), which is affine outside a compact
