@@ -17,9 +17,10 @@ For an element `p` of an additive group that is not of finite additive order, th
 the ambient group to be torsion-free. A homomorphism into a torsion-free additive group is
 injective on `zmultiples p` whenever it is nonzero at `p`. If `n ↦ n • g` identifies `ℤ` with a
 group `H`, then any element that an additive endomorphism of `H` sends to `g` is `g` up to a unit
-of `ℤ`, and every surjective additive endomorphism of `H` is an involution. Free generation
-`n ↦ n • g` is transported along additive equivalences, and generation of the whole group is
-transported along surjective additive maps.
+of `ℤ`, and every surjective additive endomorphism of `H` is an involution. A homomorphism out of
+an infinite cyclic group is injective as soon as some element has image of infinite order. Free
+generation `n ↦ n • g` is transported along additive equivalences, and generation of the whole
+group is transported along surjective additive maps.
 
 ## Main declarations
 
@@ -32,6 +33,8 @@ transported along surjective additive maps.
   an element sent to `g` by an additive endomorphism is a unit multiple of `g`.
 * `AddMonoidHom.involutive_of_surjective`: a surjective additive endomorphism of an infinite cyclic
   group is `±1`, hence an involution.
+* `AddMonoidHom.injective_of_addEquiv_int`: a homomorphism out of an infinite cyclic group is
+  injective when it sends some element to an element of infinite order.
 * `AddEquiv.bijective_zmultiplesHom_apply_iff`: `n ↦ n • f a` is bijective exactly when
   `n ↦ n • a` is, for an additive equivalence `f`.
 -/
@@ -114,6 +117,20 @@ theorem involutive_of_surjective {H : Type*} [AddCommGroup H] (f : H →+ H) {g 
   intro y
   obtain ⟨k, rfl⟩ := hg.2 y
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [hfg]
+
+/-- A homomorphism out of an infinite cyclic group is injective as soon as it sends some element
+to an element of infinite order. -/
+theorem injective_of_addEquiv_int {Z N : Type*} [AddGroup Z] [AddGroup N] (f : Z →+ N)
+    (e : Z ≃+ ℤ) {z₀ : Z} (hz₀ : Function.Injective fun c : ℤ ↦ c • f z₀) :
+    Function.Injective f := by
+  -- On `ℤ`, `f` is `c ↦ c • v` for `v` the image of the generator `e⁻¹ 1`.
+  have hf : ∀ z, f z = e z • f (e.symm 1) := fun z ↦ by
+    rw [← map_zsmul, ← map_zsmul, zsmul_one, Int.cast_id, e.symm_apply_apply]
+  intro z z' h
+  apply e.injective
+  apply hz₀
+  beta_reduce
+  rw [hf z₀, smul_comm (e z), smul_comm (e z'), ← hf, ← hf, h]
 
 end AddMonoidHom
 

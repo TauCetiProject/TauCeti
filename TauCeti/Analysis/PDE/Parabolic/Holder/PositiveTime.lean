@@ -83,18 +83,6 @@ variable {a b : ℝ} {hab : a < b}
 attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
   instNormedSpaceRealContinuousLinearMapId
 
-/-- Clamping the time of a point of `E × [a, b]` to `[s, b]`. -/
-private def slabClamp {s : ℝ} (hsb : s ≤ b) (p : slab (E := E) a b) : slab (E := E) s b :=
-  slabMk (p : ParabolicSpaceTime E).space (projIcc s b hsb (p : ParabolicSpaceTime E).time)
-
-omit [NormedSpace ℝ E] in
-private theorem lipschitzWith_slabClamp {s : ℝ} (hsb : s ≤ b) :
-    LipschitzWith 1 (slabClamp (E := E) (a := a) hsb) :=
-  LipschitzWith.of_dist_le_mul fun p q ↦ by
-    rw [NNReal.coe_one, one_mul, Subtype.dist_eq, Subtype.dist_eq, dist_eq, dist_eq]
-    simp only [slabClamp, space_slabMk, time_slabMk]
-    exact add_le_add le_rfl (Real.sqrt_le_sqrt (abs_projIcc_sub_projIcc hsb))
-
 /-- **Products with a factor vanishing before time `s`.** If `g` vanishes before time `s` and
 `|g| ≤ G`, then `‖g u‖_{α,par} ≤ G ‖u‖_{α,par;[s,b]} + [g]_{α,par} ‖u‖_∞`: the value of `u`
 enters through its parabolic Hölder norm on `E × [s, b]` only. -/
@@ -106,30 +94,10 @@ private theorem norm_mul_valueHolderL_le (hα : α ≤ 1) (g : HolderSpace α (s
       G * ‖valueHolderL hα (restrictL has le_rfl hsb u)‖ +
         nnHolderNorm α (g : slab (E := E) a b → ℝ) * ‖valueL u‖ := by
   have hG₀ : 0 ≤ G := (abs_nonneg _).trans (hG (slabMk 0 ⟨a, left_mem_Icc.2 hab.le⟩))
-  lift G to ℝ≥0 using hG₀
-  -- Extend `u` from `E × [s, b]` to `E × [a, b]`, constantly in time below `s`.
-  set v := HolderSpace.compLipschitzL _ (lipschitzWith_slabClamp (E := E) (a := a) hsb.le)
-    (valueHolderL hα (restrictL has le_rfl hsb u))
-  have hv : (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ g (valueHolderL hα u) =
-      (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ g v := by
-    ext p
-    simp only [ContinuousLinearMap.compHolder₂_apply, ContinuousLinearMap.mul_apply',
-      valueHolderL_apply, v, HolderSpace.compLipschitzL_apply, restrictL_apply]
-    rcases lt_or_ge (p : ParabolicSpaceTime E).time s with hp | hp
-    · simp [hg p hp]
-    · congr 2
-      ext
-      · simp [slabClamp]
-      · simp [slabClamp, projIcc_of_mem hsb.le ⟨hp, (mem_slab.1 p.2).2⟩]
-  have hvn : ‖v‖ ≤ ‖valueHolderL hα (restrictL has le_rfl hsb u)‖ :=
-    (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_of_le_one_left (norm_nonneg _)
-      (HolderSpace.norm_compLipschitzL_le_one _))
-  have hvs : ‖v.toBoundedContinuousFunction‖ ≤ ‖valueL u‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
-      simpa [v] using (valueL u).norm_coe_le_norm _
-  rw [hv]
-  refine (ContinuousLinearMap.norm_compHolder₂_apply_le_of_eq_zero _ g v (s := univ)
-    (fun p _ ↦ by simpa using hG p) (fun p hp ↦ absurd (mem_univ p) hp)).trans ?_
+  have hgG : ‖g.toBoundedContinuousFunction‖ ≤ G :=
+    (BoundedContinuousFunction.norm_le hG₀).2 fun p ↦ by simpa using hG p
+  refine ((ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_valueHolderL_le_of_eq_zero hα has hsb hg
+    u).trans ?_
   refine (mul_le_of_le_one_left (by positivity) (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)).trans ?_
   gcongr
 
@@ -166,11 +134,11 @@ private theorem norm_restrictL_le_of_timeCutoff (hα : α ≤ 1) {T : ℝ} {hT :
   -- On `E × [δ, T]` the localization `χ u` is `u`, and it vanishes at the initial time.
   have hw : restrictL hδ le_rfl hδT u = restrictL hδ le_rfl hδT w := by
     ext p
-    simp [← hwu, hχ₁ (inclusion (slab_subset_slab hδ le_rfl) p) (mem_slab.1 p.2).1]
+    simp [← hwu, hχ₁ (inclusion (slab_subset_slab hδ le_rfl) p) (mem_slab.1 p.property).1]
   have hw₀ : w.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ = 0 :=
     CkHolderSpace.ext fun x ↦ by
       simp [spatialTrace_apply, ← hwu, hχ₀ (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) (by simp [hs.le])]
-  have hR : ‖restrictL hδ le_rfl hδT u‖ ≤ ‖w‖ := hw ▸ norm_restrictL_apply_le w
+  have hR : ‖restrictL hδ le_rfl hδT u‖ ≤ ‖w‖ := hw ▸ norm_restrictL_le _ _ _ w
   -- The two terms of `P (χ u) = χ P u + (∂ₜχ) u`.
   have hmul := ContinuousLinearMap.opNorm_mul_le ℝ ℝ
   have h₁ : ‖(ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
@@ -182,13 +150,11 @@ private theorem norm_restrictL_le_of_timeCutoff (hα : α ≤ 1) {T : ℝ} {hT :
     refine add_le_add ((BoundedContinuousFunction.norm_le zero_le_one).2 fun p ↦ ?_) hK₀
     rw [valueL_apply, Real.norm_eq_abs, abs_of_nonneg (hχ p).1]
     exact (hχ p).2
-  have hu₀ : ‖valueL (restrictL hs.le le_rfl hsT u)‖ ≤ ‖valueL u‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
-      simpa using (valueL u).norm_coe_le_norm _
   have hK₁₀ : 0 ≤ K₁ := (abs_nonneg _).trans (hK₁ (slabMk 0 ⟨0, left_mem_Icc.2 hT.le⟩))
   have h₂ := (norm_mul_valueHolderL_le hα (timeDerivL χ) u hs.le hsT hχt₀ hK₁).trans
     (add_le_add (mul_le_mul_of_nonneg_left ((norm_valueHolderL_le hα _ hτ hτT).trans
-      (add_le_add le_rfl (mul_le_mul_of_nonneg_left hu₀ (by positivity)))) hK₁₀)
+      (add_le_add le_rfl (mul_le_mul_of_nonneg_left (norm_valueL_restrictL_le u)
+        (by positivity)))) hK₁₀)
       (mul_le_mul_of_nonneg_right hK₂ (norm_nonneg _)))
   refine hR.trans ((hS w).trans (mul_le_mul_of_nonneg_left ?_ hC_S))
   rw [hw₀, norm_zero, add_zero, ← hwu,
@@ -326,24 +292,29 @@ private theorem rpow_mul_norm_le_of_forall_two_mul {T : ℝ} {hT : 0 < T}
     by_cases h : 0 < d ∧ d < T
     · rw [hN d h.1 h.2]
       exact mul_le_mul (Real.rpow_le_rpow h.1.le h.2.le (by positivity))
-        (norm_restrictL_apply_le u) (norm_nonneg _) (by positivity)
+        (norm_restrictL_le _ _ _ u) (norm_nonneg _) (by positivity)
     · rw [hN' d h]
       positivity
-  have key (d : ℝ) : N d ≤ (⨆ d, N d) / 2 + A := by
+  have hN₀ (d : ℝ) : 0 ≤ N d := by
     by_cases h : 0 < d ∧ d < T
-    · obtain ⟨s, hs, hsT, hsd⟩ : ∃ s : ℝ, 0 < s ∧ s < T ∧ d = 2 * s :=
-        ⟨d / 2, by linarith, by linarith, by ring⟩
+    · rw [hN d h.1 h.2]
+      exact mul_nonneg (Real.rpow_nonneg h.1.le _) (norm_nonneg _)
+    · exact (hN' d h).ge
+  -- Each weighted norm is at most half of the weighted norm at half the scale, plus `A`.
+  have key (d : ℝ) : N d ≤ A + 1 / 2 * N (d / 2) := by
+    by_cases h : 0 < d ∧ d < T
+    · have hs : 0 < d / 2 := by linarith [h.1]
+      have hsT : d / 2 < T := by linarith [h.1, h.2]
       -- Name the restrictions, so that unification does not unfold the order-two norm.
       obtain ⟨r, hr⟩ : ∃ r, restrictL h.1.le le_rfl h.2 u = r := ⟨_, rfl⟩
       obtain ⟨r', hr'⟩ : ∃ r', restrictL hs.le le_rfl hsT u = r' := ⟨_, rfl⟩
-      have hY := le_ciSup hbdd s
-      rw [hN s hs hsT, hr'] at hY
+      have hY : (d / 2) ^ (1 + (α : ℝ) / 2) * ‖r'‖ ≤ N (d / 2) :=
+        le_of_eq (by rw [hN _ hs hsT, hr'])
       rw [hN d h.1 h.2, hr]
-      exact hstep s d _ hs hsT h.1 h.2 hsd hr hr' hY
+      linarith [hstep (d / 2) d _ hs hsT h.1 h.2 (by ring) hr hr' hY]
     · rw [hN' d h]
-      have := (hN' 0 fun h ↦ h.1.false).ge.trans (le_ciSup hbdd 0)
-      positivity
-  have hsup := ciSup_le key
+      linarith [hN₀ (d / 2)]
+  have hsup := ciSup_le_two_mul_of_le_add_mul hbdd hN₀ le_rfl (· / 2) key
   have h := le_ciSup hbdd δ
   rw [hN δ hδ hδT, hr] at h
   linarith

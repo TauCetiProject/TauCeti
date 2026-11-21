@@ -164,7 +164,7 @@ theorem exists_mul_map_eq_map_mul_diagonal (M : GLSymplecticFin m Q)
     rw [isUnit_iff_isUnit_det, det_submatrix_equiv_self, ← isUnit_iff_isUnit_det]
     exact P₀.isUnit
   obtain ⟨P', hP', u, hu⟩ := exists_mem_symplecticGroup_mul_map_eq_map_mul_diagonal
-    (submatrix_mem_symplecticGroup (mem_iff.1 M.2)) hP₀ hsub
+    (submatrix_mem_symplecticGroup (mem_iff.1 M.property)) hP₀ hsub
   let P : GLSymplecticFin m k := (mulEquivGLSymplectic m k).symm
     ((GLSymplectic.mulEquivSymplecticGroup (Fin m) k).symm ⟨P', hP'⟩)
   have hP : ((P : GL (Fin (m + m)) k) : Matrix _ _ k).submatrix e e = P' := by

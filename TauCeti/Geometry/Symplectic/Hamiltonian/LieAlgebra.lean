@@ -104,7 +104,7 @@ theorem exists_isHamiltonianVectorField_lie (hσ : σ.IsClosed)
     {X Y : (LieAlgebroid.tangent I M).Sections}
     (hX : (LieAlgebroid.tangent I M).sectionsEquiv X ∈ σ.symplecticVectorFields)
     (hY : (LieAlgebroid.tangent I M).sectionsEquiv Y ∈ σ.symplecticVectorFields) :
-    ∃ φ : SmoothForm I M ℝ 0, σ.IsHamiltonianVectorField (fun y ↦ φ.1 y 0)
+    ∃ φ : SmoothForm I M ℝ 0, σ.IsHamiltonianVectorField (fun y ↦ φ.val y 0)
       ((LieAlgebroid.tangent I M).sectionsEquiv ⁅X, Y⁆) := by
   set X' := (LieAlgebroid.tangent I M).sectionsEquiv X
   set Y' := (LieAlgebroid.tangent I M).sectionsEquiv Y
@@ -185,7 +185,7 @@ symplectic vector fields (`TauCeti.SmoothTwoForm.lie_mem_hamiltonianLieIdeal`). 
 def hamiltonianLieIdeal (hσ : σ.IsClosed) : LieIdeal ℝ (σ.symplecticLieSubalgebra hσ) where
   toSubmodule := (LinearMap.ker σ.interiorClass).comap (σ.symplecticLieSubalgebraEquiv hσ)
   lie_mem {Y X} _ := by
-    obtain ⟨φ, hφ⟩ := exists_isHamiltonianVectorField_lie hσ Y.2 X.2
+    obtain ⟨φ, hφ⟩ := exists_isHamiltonianVectorField_lie hσ Y.property X.property
     refine (interiorClass_eq_zero_iff (σ.symplecticLieSubalgebraEquiv hσ ⁅Y, X⁆)).2 ⟨φ, ?_⟩
     rwa [coe_symplecticLieSubalgebraEquiv_apply, LieSubalgebra.coe_bracket]
 
@@ -201,7 +201,7 @@ theorem mem_hamiltonianLieIdeal_iff_interiorClass_eq_zero (hσ : σ.IsClosed)
 the Hamiltonian vector field of a smooth function. -/
 theorem mem_hamiltonianLieIdeal_iff (hσ : σ.IsClosed) {X : σ.symplecticLieSubalgebra hσ} :
     X ∈ σ.hamiltonianLieIdeal hσ ↔ ∃ φ : SmoothForm I M ℝ 0,
-      σ.IsHamiltonianVectorField (fun y ↦ φ.1 y 0)
+      σ.IsHamiltonianVectorField (fun y ↦ φ.val y 0)
         ((LieAlgebroid.tangent I M).sectionsEquiv (X : (LieAlgebroid.tangent I M).Sections)) := by
   rw [mem_hamiltonianLieIdeal_iff_interiorClass_eq_zero, interiorClass_eq_zero_iff,
     coe_symplecticLieSubalgebraEquiv_apply]
@@ -212,7 +212,7 @@ vector fields by the Hamiltonian ones is abelian. -/
 theorem lie_mem_hamiltonianLieIdeal (hσ : σ.IsClosed) (X Y : σ.symplecticLieSubalgebra hσ) :
     ⁅X, Y⁆ ∈ σ.hamiltonianLieIdeal hσ := by
   rw [mem_hamiltonianLieIdeal_iff, LieSubalgebra.coe_bracket]
-  exact exists_isHamiltonianVectorField_lie hσ X.2 Y.2
+  exact exists_isHamiltonianVectorField_lie hσ X.property Y.property
 
 /-- **The class map vanishes on brackets**: `[ι_[X, Y] σ] = 0` in `H¹_dR(M)` for symplectic vector
 fields `X` and `Y`. So `X ↦ [ι_X σ]` is a Lie algebra homomorphism to the abelian Lie algebra
@@ -419,10 +419,10 @@ theorem range_negHamiltonianLieHom (hσ : σ.IsSymplectic) :
     exact ⟨_, (symplecticLieSubalgebraEquiv_negHamiltonianLieHom hσ f).symm⟩
   · rintro ⟨φ, hφ⟩
     -- Every smooth `0`-form is the form of a smooth function.
-    let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ φ.1 y 0,
+    let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ φ.val y 0,
       isSmoothForm_ofFunction_iff.1 (by rw [← RoughForm.eq_ofFunction]; exact φ.isSmoothForm)⟩
     have hg : SmoothForm.ofFunction g = φ :=
-      Subtype.ext <| (SmoothForm.coe_ofFunction g).trans (RoughForm.eq_ofFunction φ.1).symm
+      Subtype.ext <| (SmoothForm.coe_ofFunction g).trans (RoughForm.eq_ofFunction φ.val).symm
     refine ⟨(σ.poissonLieAlgebraEquiv hσ).symm g, (σ.symplecticLieSubalgebraEquiv _).injective ?_⟩
     rw [symplecticLieSubalgebraEquiv_negHamiltonianLieHom, LinearEquiv.apply_symm_apply, hg, hφ]
 

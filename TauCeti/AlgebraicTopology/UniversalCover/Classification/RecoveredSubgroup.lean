@@ -98,7 +98,7 @@ private theorem proj_eq_of_mem_fiber_subgroupQuotientMap
     (e : (subgroupQuotientMap x₀ H) ⁻¹' {SubgroupQuotient.basepoint x₀ H}) :
     proj (e : UniversalCover x₀) = x₀ := by
   have hbase : subgroupQuotientMap x₀ H e = SubgroupQuotient.basepoint x₀ H := by
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
+    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.property
   calc
     proj (e : UniversalCover x₀) =
         subgroupQuotientProj x₀ H (subgroupQuotientMap x₀ H e) :=
@@ -180,7 +180,7 @@ theorem mapOfEq_subgroupQuotientProj_apply
     FundamentalGroup.mapOfEq
         ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
         (subgroupQuotientProj_basepoint x₀ H) g =
-      ((SubgroupQuotient.fundamentalGroupEquiv x₀ H g).unop.1)⁻¹ := by
+      ((SubgroupQuotient.fundamentalGroupEquiv x₀ H g).unop.val)⁻¹ := by
   let f := FundamentalGroup.mapOfEq
     ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
     (subgroupQuotientProj_basepoint x₀ H) g
@@ -199,7 +199,7 @@ theorem mapOfEq_subgroupQuotientProj_apply
       monodromy_mapOfEq_subgroupQuotientProj x₀ H g
     _ = h • mk x₀ (Path.Homotopic.Quotient.refl x₀) := by
       exact (SubgroupQuotient.fundamentalGroupEquiv_unop_smul x₀ H g).symm
-    _ = h.1 • (TauCeti.UniversalCover.basepointLift x₀ : UniversalCover x₀) := by
+    _ = h.val • (TauCeti.UniversalCover.basepointLift x₀ : UniversalCover x₀) := by
       simp only [TauCeti.UniversalCover.basepointLift_coe, Subgroup.smul_def]
 
 /-- The subgroup induced by the descended endpoint map is exactly the subgroup used to form
@@ -214,7 +214,7 @@ theorem range_mapOfEq_subgroupQuotientProj
   constructor
   · rintro ⟨γ, rfl⟩
     rw [mapOfEq_subgroupQuotientProj_apply]
-    exact H.inv_mem (SubgroupQuotient.fundamentalGroupEquiv x₀ H γ).unop.2
+    exact H.inv_mem (SubgroupQuotient.fundamentalGroupEquiv x₀ H γ).unop.property
   · intro hg
     let h : H := ⟨g⁻¹, H.inv_mem hg⟩
     refine ⟨(SubgroupQuotient.fundamentalGroupEquiv x₀ H).symm

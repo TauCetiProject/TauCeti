@@ -93,7 +93,7 @@ theorem IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent {v : Spv A} (hv 
     rwa [Ne, ← Valuation.mem_supp_iff, ← supp_eq_valuation_supp]
   obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent (v := v.valuation)
     ((Valuation.isContinuous_def.mp ((isContinuous_def v).mp hv) f).mem_nhds
-      (by rw [Set.mem_ofPred_eq, map_zero]; exact zero_lt_iff.mpr hfne)) ht
+      (by rw [Set.mem_ofPred_eq, map_zero]; exact pos_iff_ne_zero.mpr hfne)) ht
   exact ⟨n, (valuation_lt_iff v _ _).mp (by rwa [map_pow])⟩
 
 /-- **The basic opens `Spv(A)(tⁿ/f)` increase in the exponent at a continuous point.** A
@@ -164,7 +164,7 @@ theorem exists_mem_nhds_zero_forall_vlt {X : Set (Spv A)} (hXcont : X ⊆ cont A
   calc v.valuation (ϖ ^ m * y) = v.valuation (ϖ ^ m) * v.valuation y := map_mul _ _ _
     _ < v.valuation (ϖ ^ m) * 1 :=
         mul_lt_mul_of_pos_left (hcont.lt_one_of_isTopologicallyNilpotent
-          (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero hy)) (zero_lt_iff.mpr hne)
+          (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero hy)) (pos_iff_ne_zero.mpr hne)
     _ = v.valuation (ϖ ^ m) := mul_one _
     _ ≤ v.valuation f := (valuation_le_iff v (ϖ ^ m) f).mpr
         ((mem_basicOpen_iff (ϖ ^ m) f v).mp (hm hv)).1

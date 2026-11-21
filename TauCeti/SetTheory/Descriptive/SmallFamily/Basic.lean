@@ -162,7 +162,7 @@ theorem exists_not_isSmallFamily_inter [Countable κ] {Ψ : κ → Set (ι → X
 
 /-- A family that is not small is nonempty. -/
 theorem nonempty_of_not_isSmallFamily (hΦ : ¬ G.IsSmallFamily Φ) : Φ.Nonempty :=
-  nonempty_iff_ne_empty.2 fun h ↦ hΦ (h ▸ isSmallFamily_empty)
+  ne_empty_iff_nonempty.1 fun h ↦ hΦ (h ▸ isSmallFamily_empty)
 
 /-- **The seed of the G₀ construction.** For nonempty `ι`, the family of all assignments is small
 iff the relation has a countable Borel coloring. -/

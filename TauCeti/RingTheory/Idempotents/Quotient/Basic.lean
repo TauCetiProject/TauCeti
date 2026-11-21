@@ -46,14 +46,14 @@ variable {A : Type*} [Semiring A] {e : A} (he : IsIdempotentElem e)
 /-- The left ideal `I ∩ eAe` of the corner: its elements have ambient value in `I`.
 For two-sided `I`, this is the ideal `eIe`. -/
 def cornerIdeal (I : Ideal A) : Ideal he.Corner where
-  carrier := {x | x.1 ∈ I}
+  carrier := {x | x.val ∈ I}
   zero_mem' := I.zero_mem
   add_mem' hx hy := I.add_mem hx hy
-  smul_mem' a _ hx := I.mul_mem_left a.1 hx
+  smul_mem' a _ hx := I.mul_mem_left a.val hx
 
 @[simp]
 theorem mem_cornerIdeal (I : Ideal A) (x : he.Corner) :
-    x ∈ he.cornerIdeal I ↔ x.1 ∈ I :=
+    x ∈ he.cornerIdeal I ↔ x.val ∈ I :=
   (Iff.rfl)
 
 @[simp]
@@ -108,7 +108,7 @@ def cornerQuotientHom :
 
 @[simp]
 theorem val_cornerQuotientHom (x : he.Corner) :
-    (he.cornerQuotientHom I x).1 = Ideal.Quotient.mk I x.1 :=
+    (he.cornerQuotientHom I x).val = Ideal.Quotient.mk I x.val :=
   he.val_cornerMap _ x
 
 /-- The quotient homomorphism is surjective on the corner, even when `e` is not full. -/

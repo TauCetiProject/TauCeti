@@ -138,7 +138,7 @@ def trivialThomPairMap :
 
 @[simp]
 theorem trivialThomPairMap_fst_apply (v : TotalSpace F (Bundle.Trivial B F)) :
-    TopPair.Hom.fst (trivialThomPairMap B F) v = v.2 := by
+    TopPair.Hom.fst (trivialThomPairMap B F) v = v.snd := by
   unfold trivialThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
@@ -175,7 +175,7 @@ omit [NormedSpace ℝ F] in
 @[simp]
 theorem trivialThomPairIso_hom_fst_apply
     (v : TotalSpace F (Bundle.Trivial B F)) :
-    TopPair.Hom.fst (trivialThomPairIso B F).hom v = (v.1, v.2) := by
+    TopPair.Hom.fst (trivialThomPairIso B F).hom v = (v.proj, v.snd) := by
   rw [trivialThomPairIso, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
@@ -293,9 +293,9 @@ variable (R : Type*) [Semiring R] {B : Type w} [TopologicalSpace B] {F : Type w}
 whose base set contains `W`. -/
 private def thomPairOverHom : thomPairOver F E W ⟶ prodThomPair W F :=
   TopPair.ofHom (TopCat.isoOfHomeo (e.preimageHomeomorph hW)).hom
-    (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.1, v.2.1⟩, by
+    (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.val, v.property.1⟩, by
       simpa [preimageHomeomorph_apply] using
-        (e.snd_apply_ne_zero_iff R (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
+        (e.snd_apply_ne_zero_iff R (hW v.property.1)).2 (mem_zeroSectionCompl.1 v.property.2)⟩,
       by fun_prop⟩) (by ext; rfl)
 
 /-- Over a subset `W` of the base set of a linear trivialization `e`, the trivialization identifies
@@ -304,22 +304,24 @@ product bundle. -/
 def thomPairOverIso : thomPairOver F E W ≅ prodThomPair W F :=
   have : IsIso (TopPair.Hom.fst (e.thomPairOverHom R hW)) := (TopCat.isoOfHomeo _).isIso_hom
   have := TopPair.isIso_of_isIso_fst_of_surjective_snd (e.thomPairOverHom R hW) fun p ↦ by
-    let v := (e.preimageHomeomorph hW).symm p.1
-    have hv : e.preimageHomeomorph hW v = p.1 := Homeomorph.apply_symm_apply _ _
-    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff R (hW v.2)).1 ?_)⟩,
+    let v := (e.preimageHomeomorph hW).symm p.val
+    have hv : e.preimageHomeomorph hW v = p.val := Homeomorph.apply_symm_apply _ _
+    refine ⟨⟨v.val, v.property, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff R
+        (hW v.property)).1 ?_)⟩,
       Subtype.ext hv⟩
-    simpa [preimageHomeomorph_apply, ← hv] using p.2
+    simpa [preimageHomeomorph_apply, ← hv] using p.property
   asIso (e.thomPairOverHom R hW)
 
 @[simp]
 theorem thomPairOverIso_hom_fst_apply (v : π F E ⁻¹' W) :
-    TopPair.Hom.fst (e.thomPairOverIso R hW).hom v = (⟨v.1.proj, v.2⟩, (e v).2) :=
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom v = (⟨v.val.proj, v.property⟩, (e v).2) :=
   e.preimageHomeomorph_apply hW v
 
 @[simp]
 theorem thomPairOverIso_hom_snd_apply (v : (thomPairOver F E W).snd) :
-    (TopPair.Hom.snd (e.thomPairOverIso R hW).hom v).1 = (⟨v.1.proj, v.2.1⟩, (e v.1).2) :=
-  e.preimageHomeomorph_apply hW ⟨v.1, v.2.1⟩
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).hom v).val = (⟨v.val.proj, v.property.1⟩, (e v.val).2)
+        :=
+  e.preimageHomeomorph_apply hW ⟨v.val, v.property.1⟩
 
 @[simp]
 theorem thomPairOverIso_inv_fst_apply (p : W × F) :
@@ -329,9 +331,20 @@ theorem thomPairOverIso_inv_fst_apply (p : W × F) :
 
 @[simp]
 theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
-    (TopPair.Hom.snd (e.thomPairOverIso R hW).inv p).1 = (e.preimageHomeomorph hW).symm p.1 :=
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).inv p).val = (e.preimageHomeomorph hW).symm p.val :=
   (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso R hW).inv p).trans
-    (e.thomPairOverIso_inv_fst_apply R hW p.1)) :)
+    (e.thomPairOverIso_inv_fst_apply R hW p.val)) :)
+
+/-- The trivialization isomorphism `(E|_W, E₀|_W) ≅ (W × F, W × (F ∖ {0}))` commutes with the
+projections `TauCeti.thomPairOverProj` and `TauCeti.prodThomPairProj` onto `W`. -/
+@[reassoc]
+theorem thomPairOverIso_hom_fst_comp_prodThomPairProj
+    [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom ≫ prodThomPairProj W F =
+      thomPairOverProj F E W := by
+  refine TopCat.ext fun v ↦ (TopCat.comp_app _ _ v).trans ?_
+  exact (congrArg (prodThomPairProj W F) (e.thomPairOverIso_hom_fst_apply R hW v)).trans
+    ((prodThomPairProj_apply F _).trans (thomPairOverProj_apply F E v).symm)
 
 end ThomPairOver
 
@@ -368,10 +381,10 @@ inverse of the isomorphism of fibre pairs given by the trivialization at `b`. -/
 @[reassoc]
 theorem prodThomPairFiberMap_comp_thomPairOverIso_inv (b : W) :
     prodThomPairFiberMap F b ≫ (e.thomPairOverIso 𝕜 hW).inv =
-      (e.continuousLinearEquivAt 𝕜 b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
+      (e.continuousLinearEquivAt 𝕜 b (hW b.property)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E b.property := by
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.2]
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.property]
 
 include hW in
 /-- **Local classes over a trivializing set.** For `W` contained in the base set of a linear
@@ -422,7 +435,7 @@ theorem singularCohomology_thomPairOver_ext
     (hφu v))
   simp only [← TopPair.singularCohomologyMap_comp_apply, φ,
     e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b]
-  simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
+  simp only [TopPair.singularCohomologyMap_comp_apply, h b b.property]
 
 end ThomPairOverExt
 
@@ -471,7 +484,7 @@ theorem exists_isThomClass_pullback_baseSet (K : Type w) [CommRing K] :
         (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
       IsThomClass F ((⇑(ContinuousMap.subtypeVal e.baseSet)) *ᵖ E) u :=
   (e.pullback (ContinuousMap.subtypeVal e.baseSet)).exists_isThomClass
-    (Set.eq_univ_of_forall fun b ↦ b.2) K
+    (Set.eq_univ_of_forall fun b ↦ b.property) K
 
 section ProdThomPair
 

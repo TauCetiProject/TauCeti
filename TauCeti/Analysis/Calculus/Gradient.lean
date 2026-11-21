@@ -43,6 +43,10 @@ chain rule for the gradient of a real profile composed with a real function.
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
+* `TauCeti.gradient_add_const` and `TauCeti.gradient_const_add`: adding a constant does not change
+  the gradient.
+* `TauCeti.hasGradientAt_inner_const_left` and `TauCeti.gradient_inner_const_left`: the functional
+  `y ↦ ⟪v, y⟫_𝕜` has gradient `v`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
@@ -108,6 +112,30 @@ theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt �
     ∇ (f + g) x = ∇ f x + ∇ g x := by
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_add, fderiv_add hf hg]
+
+/-- Adding a constant to a function does not change its gradient. -/
+@[simp]
+theorem gradient_add_const (c : 𝕜) : ∇ (fun y => f y + c) x = ∇ f x := by
+  simp only [gradient, fderiv_add_const]
+
+/-- Adding a constant on the left to a function does not change its gradient. -/
+@[simp]
+theorem gradient_const_add (c : 𝕜) : ∇ (fun y => c + f y) x = ∇ f x := by
+  simp only [gradient, fderiv_const_add]
+
+/-- The continuous linear functional `y ↦ inner 𝕜 v y` has gradient `v` at every point `x`. -/
+theorem hasGradientAt_inner_const_left (v x : F) :
+    HasGradientAt (fun y : F => inner 𝕜 v y) v x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (innerSL 𝕜 v).hasFDerivAt.congr_fderiv ?_
+  ext y
+  simp
+
+/-- The continuous linear functional `y ↦ inner 𝕜 v y` has gradient `v` at every point `x`. -/
+@[simp]
+theorem gradient_inner_const_left (v x : F) :
+    ∇ (fun y : F => inner 𝕜 v y) x = v :=
+  (hasGradientAt_inner_const_left v x).gradient
 
 /-- The gradient is conjugate-homogeneous: `toDual` is conjugate-linear, so scaling the function
 by `c` scales the gradient by `conj c`. Over `ℝ` the conjugation is the identity. -/

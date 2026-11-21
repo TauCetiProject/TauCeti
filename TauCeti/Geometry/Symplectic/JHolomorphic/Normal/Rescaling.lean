@@ -11,6 +11,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 import Mathlib.Analysis.Calculus.TaylorIntegral
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -60,8 +61,12 @@ tubular map defined on a disk bundle. This file proves:
   `δ_a^* J` through Hadamard's lemma as a field depending smoothly on `(a, z, W)` jointly,
   including `a = 0`, where its value is `J_N`. These statements take `N` complete, so that the
   average in Hadamard's lemma is a Bochner integral;
-* `J_N(z, W)` squares to `-1` when `J` is differentiable at `(z, 0)`, squares to `-1` near
-  `(z, 0)`, and `J(z, 0)` preserves `E × {0}`
+* the base block of `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
+  (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the base block of `J` on the
+  zero section uniformly on compact sets as `a → 0` when `J` is only continuous along the zero
+  section (`TauCeti.tendstoUniformlyOn_fst_comp_normalDilation_comp_inl`);
+* `J_N(z, W)` squares to `-1` when `J` squares to `-1` near `(z, 0)` and `J(z, 0)` preserves
+  `E × {0}`
   (`TauCeti.normalLinearization_apply_normalLinearization_apply`); `J_N` is `Cᵐ` near `(z, W)`
   when `J` is `C^(m+1)` near `(z, 0)` (`TauCeti.contDiffAt_normalLinearization`); and it is
   invariant under every nonzero normal dilation (`TauCeti.normalDilation_normalLinearization`);
@@ -272,12 +277,12 @@ theorem cauchyRiemannOperator_normalLinearization (J : E × N → E × N →L[�
     abel
 
 /-- **The normal linearization of an almost complex structure is an almost complex structure.**
-At `p`, it suffices that `J` is differentiable at `(p.1, 0)`, squares to `-1` near `(p.1, 0)`, and
-`J(p.1, 0)` preserves `E × {0}`: the identity `J' J + J J' = 0` obtained by differentiating
-`J² = -1` in the direction `(0, p.2)` makes the block `E → N` of `J_N(p)` anticommute with the
-diagonal blocks. -/
+At `p`, it suffices that `J` squares to `-1` near `(p.1, 0)` and `J(p.1, 0)` preserves `E × {0}`:
+the identity `J' J + J J' = 0` obtained by differentiating `J² = -1` in the direction `(0, p.2)`
+(`TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`) makes the block `E → N` of `J_N(p)`
+anticommute with the diagonal blocks. -/
 theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E × N →L[ℝ] E × N}
-    {p : E × N} (hJ : DifferentiableAt ℝ J (p.1, 0)) (hJ₀ : ∀ w, (J (p.1, 0) (w, 0)).2 = 0)
+    {p : E × N} (hJ₀ : ∀ w, (J (p.1, 0) (w, 0)).2 = 0)
     (hJ₂ : ∀ᶠ q in 𝓝 (p.1, 0), ∀ w, J q (J q w) = -w) (v : E × N) :
     normalLinearization J p (normalLinearization J p v) = -v := by
   rw [normalLinearization_apply, normalLinearization_apply]
@@ -285,11 +290,7 @@ theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E ×
   set J' := fderiv ℝ J x ((0 : E), p.2)
   -- Differentiating `q ↦ J q (J q w) = -w` at `x`.
   have hderiv (w : E × N) : J' (J x w) + J x (J' w) = 0 := by
-    have hf := hJ.hasFDerivAt.clm_apply (hJ.hasFDerivAt.clm_apply (hasFDerivAt_const w x))
-    have h0 : HasFDerivAt (fun q ↦ J q (J q w)) (0 : E × N →L[ℝ] E × N) x :=
-      (hasFDerivAt_const (-w) x).congr_of_eventuallyEq (hJ₂.mono fun q hq ↦ hq w)
-    have h := congrArg (fun L : E × N →L[ℝ] E × N ↦ L ((0 : E), p.2)) (hf.unique h0)
-    simpa [J', add_comm] using h
+    rw [fderiv_apply_apply_eq_neg_of_eventually_sq hJ₂, neg_add_cancel]
   have hJx := hJ₂.self_of_nhds
   have hA : J x (v.1, 0) = ((J x (v.1, 0)).1, 0) := Prod.ext rfl (hJ₀ v.1)
   -- The normal component of `J x u` only depends on the normal component of `u`.
@@ -306,6 +307,38 @@ theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E ×
     rw [Prod.snd_add, hsplit (J' (v.1, 0))] at h
     rw [hadd, Prod.snd_add, ← hsplit (J x (0, v.2)), ← hA, ← add_assoc, h]
     simp [hJx]
+
+/-! ### The base block of the normal dilation -/
+
+/-- The base block of the normal dilation of `J` at `p` is the base block of `J` at the dilated
+point `(p.1, a p.2)`: the dilation only rescales the normal directions. -/
+theorem fst_comp_normalDilation_comp_inl (J : E × N → E × N →L[ℝ] E × N) (a : ℝ) (p : E × N) :
+    ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L ContinuousLinearMap.inl ℝ E N =
+      ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L ContinuousLinearMap.inl ℝ E N := by
+  ext v
+  simp
+
+/-- **The base blocks of the normal dilations converge to that of the zero section.** If `J` is
+continuous along the zero section over a compact set `K`, the base blocks of `δ_a^* J` converge to
+the base block of `J` on the zero section, uniformly on `K`, as `a → 0`. -/
+theorem tendstoUniformlyOn_fst_comp_normalDilation_comp_inl {J : E × N → E × N →L[ℝ] E × N}
+    {K : Set (E × N)} (hK : IsCompact K) (hJ : ∀ p ∈ K, ContinuousAt J (p.1, 0)) :
+    TendstoUniformlyOn
+      (fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L
+        ContinuousLinearMap.inl ℝ E N)
+      (fun p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, 0) ∘L ContinuousLinearMap.inl ℝ E N)
+      (𝓝 0) K := by
+  simp only [fst_comp_normalDilation_comp_inl]
+  have h := hK.tendstoUniformlyOn_of_continuousAt (q := (0 : ℝ))
+    (Φ := fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L
+      ContinuousLinearMap.inl ℝ E N) fun p hp ↦ by
+    have hd : ContinuousAt (fun q : ℝ × (E × N) ↦ (q.2.1, q.1 • q.2.2)) (0, p) :=
+      (continuous_snd.fst.prodMk (continuous_fst.smul continuous_snd.snd)).continuousAt
+    have hJd : ContinuousAt (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2)) (0, p) := by
+      refine ContinuousAt.comp (g := J) ?_ hd
+      simpa using hJ p hp
+    exact continuousAt_const.clm_comp (hJd.clm_comp continuousAt_const)
+  simpa using h
 
 /-! ### Regularity -/
 
