@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Factorization.Basic
-import TauCeti.Data.Nat.Factorization.Basic
 
 /-!
 # Splitting a gcd at a prime
@@ -22,9 +21,9 @@ two exponents:
 the one `Nat.ordProj` and `Nat.ordCompl` perform. The canonical form is stated for every `p`: when
 `p` is not prime, both factorization exponents are zero and both complements are the numbers
 themselves, so it holds trivially. Passing to `p`-free parts commutes with the gcd
-(`TauCeti.Nat.ordCompl_gcd`), so `TauCeti.Nat.gcd_ordCompl_lt_iff` draws the consequence that lets
-an induction on the gcd terminate: passing to the `p`-free parts strictly shrinks the gcd exactly
-when `p` is a prime factor of it.
+(`TauCeti.Nat.ordCompl_gcd`). Together with `TauCeti.ordCompl_lt_self_iff`, this shows that passing
+to the `p`-free parts strictly shrinks the gcd exactly when `p` is a prime factor of it, which lets
+an induction on the gcd terminate.
 
 ## Main results
 
@@ -32,8 +31,6 @@ when `p` is a prime factor of it.
 * `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min`: the same for the `ordProj`/`ordCompl` splitting,
   for any `p` (trivially when `p` is not prime).
 * `TauCeti.Nat.ordCompl_gcd`: removing the `p`-part commutes with the gcd.
-* `TauCeti.Nat.gcd_ordCompl_lt_iff`: removing the `p`-part strictly shrinks the gcd exactly when
-  `p` is a prime factor of it.
 * `Nat.coprime_iff_coprime_ordCompl`: coprimality to `n` splits into a condition at `p`
   and coprimality to the `p`-free part of `n`, for any `p`.
 * `Nat.gcd_mul_prime_eq_of_factorization_le`: multiplying `c` by a prime `p` does not change
@@ -103,17 +100,6 @@ theorem ordCompl_gcd (m n p : ℕ) :
   rw [gcd_eq_gcd_ordCompl_mul_pow_min (p := p) hm hn, mul_comm,
     Nat.ordCompl_pow_mul_of_not_dvd _ hp]
   exact fun h ↦ Nat.not_dvd_ordCompl hp hm (h.trans (Nat.gcd_dvd_left _ _))
-
-/-- **Removing the `p`-part strictly shrinks the gcd** exactly when `p` is a prime factor of the
-gcd:
-
-`gcd (ordCompl[p] m) (ordCompl[p] n) < gcd m n ↔ p ∈ (gcd m n).primeFactors`.
-
-This is what lets an induction along `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min` terminate. The
-right side holds when `p` is a prime dividing both `m` and `n`, and they are not both zero. -/
-theorem gcd_ordCompl_lt_iff {p m n : ℕ} :
-    Nat.gcd (ordCompl[p] m) (ordCompl[p] n) < Nat.gcd m n ↔ p ∈ (Nat.gcd m n).primeFactors := by
-  rw [← ordCompl_gcd, ordCompl_lt_self_iff]
 
 end Nat
 
