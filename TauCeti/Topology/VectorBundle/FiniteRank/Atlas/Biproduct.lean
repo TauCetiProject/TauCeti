@@ -38,7 +38,8 @@ From this criterion we obtain:
 * the canonical projections and inclusions `whitneyFst`, `whitneySnd`, `whitneyInl`, `whitneyInr`,
   the bicone `whitneyBicone`, its bilimit witness `whitneyBiconeIsBilimit`, and the instances
   `HasBinaryBiproducts (FiniteRankAtlas 𝕜 X)` and `HasFiniteBiproducts (FiniteRankAtlas 𝕜 X)`,
-  together with rank additivity `rank_biprod` and `rank_biproduct`;
+  the comparison `biprodIsoWhitneySum` of the chosen biproduct with the Whitney sum, and rank
+  additivity `rank_biprod` and `rank_biproduct`;
 * concrete pairing, copairing, functoriality, symmetry, associativity, unit, and trivial-atlas sum
   isomorphisms (`whitneyLift`, `whitneyDesc`, `whitneyMap`, `whitneyMapIso`, `whitneyCommIso`,
   `whitneyAssocIso`, `whitneyZeroLeftIso`, `whitneyZeroRightIso`, `trivialAddIso`);
@@ -418,10 +419,15 @@ instance : HasBinaryBiproducts (FiniteRankAtlas 𝕜 X) where
 instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
   hasFiniteBiproducts_of_hasBinaryBiproducts
 
+/-- The chosen categorical binary biproduct `A ⊞ D` is the Whitney sum. -/
+noncomputable def biprodIsoWhitneySum (A D : FiniteRankAtlas 𝕜 X) :
+    A ⊞ D ≅ whitneySum A D :=
+  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm
+
 /-- Rank additivity for the categorical binary biproduct `A ⊞ D`. -/
 @[simp] theorem rank_biprod (A D : FiniteRankAtlas 𝕜 X) :
     (A ⊞ D).rank = A.rank + D.rank :=
-  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm.finiteRankAtlas_rank_eq
+  (biprodIsoWhitneySum A D).finiteRankAtlas_rank_eq
 
 /-- Rank additivity for finite categorical biproducts `⨁ f`. -/
 @[simp] theorem rank_biproduct.{w} {J : Type w} [Fintype J] (f : J → FiniteRankAtlas 𝕜 X) :
