@@ -34,9 +34,10 @@ def sigmaFstLeZeroEquiv (β : ℕ → Type*) : {p : Σ m : ℕ, β m // p.1 ≤ 
 /-- Elements of `Σ m : ℕ, β m` with `m ≤ k + 1` split into those with `m ≤ k` and `β (k + 1)`. -/
 def sigmaFstLeSuccEquiv (β : ℕ → Type*) (k : ℕ) :
     {p : Σ m : ℕ, β m // p.1 ≤ k + 1} ≃ {p : Σ m : ℕ, β m // p.1 ≤ k} ⊕ β (k + 1) where
-  toFun p := if hp : p.1.1 ≤ k then Sum.inl ⟨p.1, hp⟩
-    else Sum.inr (Nat.le_antisymm p.2 (Nat.gt_of_not_le hp) ▸ p.1.2)
-  invFun | Sum.inl p => ⟨p.1, Nat.le_succ_of_le p.2⟩ | Sum.inr x => ⟨⟨k + 1, x⟩, Nat.le_refl _⟩
+  toFun p := if hp : p.val.1 ≤ k then Sum.inl ⟨p.val, hp⟩
+    else Sum.inr (Nat.le_antisymm p.property (Nat.gt_of_not_le hp) ▸ p.val.2)
+  invFun | Sum.inl p => ⟨p.val, Nat.le_succ_of_le p.property⟩ | Sum.inr x => ⟨⟨k + 1, x⟩,
+      Nat.le_refl _⟩
   left_inv := fun ⟨⟨m, _⟩, hm⟩ ↦ by
     by_cases hmk : m ≤ k
     · simp [hmk]
@@ -54,7 +55,7 @@ def sigmaFstLeSuccEquiv (β : ℕ → Type*) (k : ℕ) :
 
 @[simp] theorem sigmaFstLeSuccEquiv_symm_inl {β : ℕ → Type*} {k : ℕ}
     (p : {p : Σ m : ℕ, β m // p.1 ≤ k}) :
-    (sigmaFstLeSuccEquiv β k).symm (Sum.inl p) = ⟨p.1, Nat.le_succ_of_le p.2⟩ := (rfl)
+    (sigmaFstLeSuccEquiv β k).symm (Sum.inl p) = ⟨p.val, Nat.le_succ_of_le p.property⟩ := (rfl)
 
 @[simp] theorem sigmaFstLeSuccEquiv_symm_inr {β : ℕ → Type*} (k : ℕ) (x : β (k + 1)) :
     (sigmaFstLeSuccEquiv β k).symm (Sum.inr x) = ⟨⟨k + 1, x⟩, Nat.le_refl (k + 1)⟩ := (rfl)

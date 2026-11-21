@@ -83,7 +83,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff_of_closedComplemented {Y : Ty
           (Subtype.val : ↥{y | s y = 0} → M) ∧
         ∀ z : ↥{y | s y = 0},
           (mfderiv 𝓘(𝕜, Y) 𝓘(𝕜, X) Subtype.val z).range =
-            (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.1).ker := by
+            (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.val).ker := by
   let := ContMDiffVectorBundle.of_le (F := F) (E := E) (IB := I)
     (ENat.one_le_iff_ne_zero_withTop.mpr hm)
   intro hs hsurj hker hY
@@ -92,62 +92,62 @@ theorem exists_isManifold_sectionZero_of_contMDiff_of_closedComplemented {Y : Ty
   -- linearization to the derivative `D z` of these coordinates, installs the section-zero
   -- atlas, and identifies the tangent image of the inclusion.
   -- Smoothness into the total space supplies smooth coordinates in every relevant chart.
-  let e (z : ↥{y | s y = 0}) := trivializationAt F E (b z.1)
-  have he (z : ↥{y | s y = 0}) : b z.1 ∈ (e z).baseSet :=
-    mem_baseSet_trivializationAt F E (b z.1)
-  have hcoord (z w : ↥{y | s y = 0}) (hw : b w.1 ∈ (e z).baseSet) :
-      ContMDiffAt 𝓘(𝕜, X) 𝓘(𝕜, F) m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 :=
-    (((e z).contMDiffAt_iff ((e z).mem_source.2 hw)).1 (hs w.1 w.2)).2
-  have hb (z : ↥{y | s y = 0}) : ContinuousAt b z.1 :=
-    (contMDiffAt_totalSpace_iff.1 (hs z.1 z.2)).1.continuousAt
-  have hchart (z w : ↥{y | s y = 0}) (hc : w.1 ∈ (chartAt X z.1).source)
-      (hw : b w.1 ∈ (e z).baseSet) :
+  let e (z : ↥{y | s y = 0}) := trivializationAt F E (b z.val)
+  have he (z : ↥{y | s y = 0}) : b z.val ∈ (e z).baseSet :=
+    mem_baseSet_trivializationAt F E (b z.val)
+  have hcoord (z w : ↥{y | s y = 0}) (hw : b w.val ∈ (e z).baseSet) :
+      ContMDiffAt 𝓘(𝕜, X) 𝓘(𝕜, F) m (fun y ↦ (e z ⟨b y, s y⟩).2) w.val :=
+    (((e z).contMDiffAt_iff ((e z).mem_source.2 hw)).1 (hs w.val w.property)).2
+  have hb (z : ↥{y | s y = 0}) : ContinuousAt b z.val :=
+    (contMDiffAt_totalSpace_iff.1 (hs z.val z.property)).1.continuousAt
+  have hchart (z w : ↥{y | s y = 0}) (hc : w.val ∈ (chartAt X z.val).source)
+      (hw : b w.val ∈ (e z).baseSet) :
       ContDiffAt 𝕜 m
-        (fun y ↦ (e z ⟨b ((chartAt X z.1).symm y), s ((chartAt X z.1).symm y)⟩).2)
-        (chartAt X z.1 w.1) := by
+        (fun y ↦ (e z ⟨b ((chartAt X z.val).symm y), s ((chartAt X z.val).symm y)⟩).2)
+        (chartAt X z.val w.val) := by
     have hi := contMDiffAt_symm_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, X)) (n := m) z.1)
-      ((chartAt X z.1).map_source hc)
-    have h := (hcoord z w hw).comp_of_eq hi ((chartAt X z.1).left_inv hc)
+      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, X)) (n := m) z.val)
+      ((chartAt X z.val).map_source hc)
+    have h := (hcoord z w hw).comp_of_eq hi ((chartAt X z.val).left_inv hc)
     exact contMDiffAt_iff_contDiffAt.1 h
   let D (z : ↥{y | s y = 0}) := fderiv 𝕜
-    (fun y ↦ (e z ⟨b ((chartAt X z.1).symm y), s ((chartAt X z.1).symm y)⟩).2)
-    (chartAt X z.1 z.1)
+    (fun y ↦ (e z ⟨b ((chartAt X z.val).symm y), s ((chartAt X z.val).symm y)⟩).2)
+    (chartAt X z.val z.val)
   have hf (z : ↥{y | s y = 0}) : HasStrictFDerivAt
-      (fun y ↦ (e z ⟨b ((chartAt X z.1).symm y), s ((chartAt X z.1).symm y)⟩).2)
-      (D z) (chartAt X z.1 z.1) :=
-    (hchart z z (mem_chart_source X z.1) (he z)).hasStrictFDerivAt_fderiv hm
+      (fun y ↦ (e z ⟨b ((chartAt X z.val).symm y), s ((chartAt X z.val).symm y)⟩).2)
+      (D z) (chartAt X z.val z.val) :=
+    (hchart z z (mem_chart_source X z.val) (he z)).hasStrictFDerivAt_fderiv hm
   have hmd (z : ↥{y | s y = 0}) :
-      MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 :=
+      MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.val :=
     (hcoord z z (he z)).mdifferentiableAt hm
   -- `mvfderiv` is the derivative in the preferred source chart. For a boundaryless
   -- self model its domain is all of the model space, exactly as in `D`.
   have hD (z : ↥{y | s y = 0}) :
-      mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 = D z := by
+      mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.val = D z := by
     rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     simp only [extChartAt, OpenPartialHomeomorph.extend_coe,
       OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
       modelWithCornersSelf_coe_symm, Function.comp_def]
     rfl
   have hS (z : ↥{y | s y = 0}) : Function.Surjective (D z) := by
-    have h := (surjective_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1
-      (hsurj z.1 z.2)
+    have h := (surjective_sectionLinearization_iff (hb z) (he z) (hmd z) z.property).1
+      (hsurj z.val z.property)
     rwa [hD] at h
   -- The coordinate derivative has the same kernel as the intrinsic linearization.
   have hK (z : ↥{y | s y = 0}) : (D z).ker.ClosedComplemented := by
-    have h := hker z.1 z.2
-    rwa [ker_sectionLinearization (hb z) (he z) (hmd z) z.2, hD] at h
+    have h := hker z.val z.property
+    rwa [ker_sectionLinearization (hb z) (he z) (hmd z) z.property, hD] at h
   have hKY (z : ↥{y | s y = 0}) : Nonempty ((D z).ker ≃L[𝕜] Y) := by
-    have h := hY z.1 z.2
-    rwa [ker_sectionLinearization (hb z) (he z) (hmd z) z.2, hD] at h
+    have h := hY z.val z.property
+    rwa [ker_sectionLinearization (hb z) (he z) (hmd z) z.property, hD] at h
   let K (z : ↥{y | s y = 0}) : (D z).ker ≃L[𝕜] Y := (hKY z).some
-  have hsmooth : m ≠ 0 → ∀ z w : ↥{y | s y = 0}, w.1 ∈ (chartAt X z.1).source →
-      b w.1 ∈ (e z).baseSet →
-      chartAt X z.1 w.1 ∈ (hf z).implicitCoordSource
+  have hsmooth : m ≠ 0 → ∀ z w : ↥{y | s y = 0}, w.val ∈ (chartAt X z.val).source →
+      b w.val ∈ (e z).baseSet →
+      chartAt X z.val w.val ∈ (hf z).implicitCoordSource
         (LinearMap.range_eq_top.2 (hS z)) (hK z) →
       ContDiffAt 𝕜 m
-        (fun y ↦ (e z ⟨b ((chartAt X z.1).symm y), s ((chartAt X z.1).symm y)⟩).2)
-        (chartAt X z.1 w.1) := fun _ z w hc hw _ ↦ hchart z w hc hw
+        (fun y ↦ (e z ⟨b ((chartAt X z.val).symm y), s ((chartAt X z.val).symm y)⟩).2)
+        (chartAt X z.val w.val) := fun _ z w hc hw _ ↦ hchart z w hc hw
   let _ := sectionZeroChartedSpace hf hS hK K hb he
   let := isManifold_sectionZero hf hS hK K hb he hsmooth
   refine ⟨sectionZeroChartedSpace hf hS hK K hb he,
@@ -157,17 +157,17 @@ theorem exists_isManifold_sectionZero_of_contMDiff_of_closedComplemented {Y : Ty
   intro z
   let T : Y →L[𝕜] X := (D z).ker.subtypeL.comp ((K z).symm : Y →L[𝕜] (D z).ker)
   have hmf (z : ↥{y | s y = 0}) :
-      HasMFDerivAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 (D z) := by
+      HasMFDerivAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.val (D z) := by
     -- The normed target's tangent identification acts as the identity on vectors;
     -- evaluate `hD` to preserve the tangent carriers while identifying the derivative.
-    have hd : (D z : TangentSpace 𝓘(𝕜, X) z.1 →L[𝕜]
-        TangentSpace 𝓘(𝕜, F) ((e z ⟨b z.1, s z.1⟩).2)) =
-        mfderiv 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 := by
+    have hd : (D z : TangentSpace 𝓘(𝕜, X) z.val →L[𝕜]
+        TangentSpace 𝓘(𝕜, F) ((e z ⟨b z.val, s z.val⟩).2)) =
+        mfderiv 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.val := by
       ext v
-      exact congrArg (fun L : TangentSpace 𝓘(𝕜, X) z.1 →L[𝕜] F ↦ L v) (hD z).symm
+      exact congrArg (fun L : TangentSpace 𝓘(𝕜, X) z.val →L[𝕜] F ↦ L v) (hD z).symm
     exact (hmd z).hasMFDerivAt.congr_mfderiv hd.symm
-  have hrange : T.range = (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.1).ker :=
-    range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z) (hmf z) z.2 (K z)
+  have hrange : T.range = (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.val).ker :=
+    range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z) (hmf z) z.property (K z)
   exact (hasMFDerivAt_coe_sectionZero hf hS hK K hb he z).mfderiv.symm ▸ hrange
 
 /-- Regular zeros of a smooth Fredholm section along a map from a Banach manifold form a smooth
@@ -195,7 +195,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
           (Subtype.val : ↥{y | s y = 0} → M) ∧
         ∀ z : ↥{y | s y = 0},
           (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) Subtype.val z).range =
-            (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.1).ker := by
+            (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.val).ker := by
   intro hs hFred hsurj hindex
   refine exists_isManifold_sectionZero_of_contMDiff_of_closedComplemented hm hs hsurj
     (fun x hx ↦ (hFred x hx).closedComplemented_ker) fun x hx ↦ ?_

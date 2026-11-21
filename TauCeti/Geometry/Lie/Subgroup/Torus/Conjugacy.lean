@@ -158,7 +158,7 @@ theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
   let _ : LieGroup 𝓘(ℝ, L) ∞ K := d.lieGroup
   let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
   obtain ⟨c, hc⟩ := (hS.subgroupOf hSK).exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTK)
-  refine ⟨c, c.2, (hS.map_conj c).eq_of_le hT.isTorus ?_⟩
+  refine ⟨c, c.property, (hS.map_conj c).eq_of_le hT.isTorus ?_⟩
   rintro _ ⟨s, hs, rfl⟩
   have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K := hc ▸ ⟨_, hs, rfl⟩
   exact hmem

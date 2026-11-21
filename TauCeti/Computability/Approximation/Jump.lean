@@ -18,8 +18,8 @@ function. Running a bounded computation against these approximate bits and retur
 on failure gives a total approximation to any total function computable in `Z'`.
 
 Together with the computation of a limit in the jump, this proves both directions of the
-relativized Limit Lemma, for total natural-valued functions and for characteristic functions.
-No stabilization modulus is supplied or assumed computable.
+relativized Limit Lemma, for total functions between primitive-codable types and for
+characteristic functions. No stabilization modulus is supplied or assumed computable.
 
 ## References
 
@@ -102,10 +102,7 @@ end Set
 
 namespace TauCeti.Approximation
 
-/-- **Limit Lemma, approximating a computation in the jump.** Every total natural-valued
-function computable in `Z'` is the pointwise eventually constant limit of a sequence of total
-functions computable uniformly in `Z`. -/
-theorem exists_computableIn_converges_of_computableIn_jump {Z : Set ℕ} {g : ℕ → ℕ}
+private theorem exists_computableIn_converges_of_computableIn_jump_nat {Z : Set ℕ} {g : ℕ → ℕ}
     (hg : ComputableIn {Z.jump.oracle} g) :
     ∃ f : ℕ → ℕ → ℕ, ComputableIn₂ {Z.oracle} f ∧ Converges f g := by
   obtain ⟨c, hc⟩ := Code.exists_code.1 (RecursiveIn.iff_nat.1 hg)
@@ -131,11 +128,41 @@ theorem exists_computableIn_converges_of_computableIn_jump {Z : Set ℕ} {g : �
       (t := fun s => s) (by simp) hσ tendsto_id hx
     exact he.mono fun s hs => by simp [f, hs, hd]
 
-/-- **The relativized Limit Lemma.** A total function is computable in `Z'` exactly when it
-has a uniformly `Z`-computable pointwise eventually constant approximation. -/
-theorem computableIn_jump_iff_exists_converges {Z : Set ℕ} {g : ℕ → ℕ} :
+/-- **Limit Lemma, approximating a computation in the jump.** Every total function between
+primitive-codable types that is computable in `Z'` is the pointwise eventually constant limit of a
+sequence of total functions computable uniformly in `Z`. -/
+theorem exists_computableIn_converges_of_computableIn_jump {α β : Type*}
+    [Primcodable α] [Primcodable β] {Z : Set ℕ} {g : α → β}
+    (hg : ComputableIn {Z.jump.oracle} g) :
+    ∃ f : ℕ → α → β, ComputableIn₂ {Z.oracle} f ∧ Converges f g := by
+  cases isEmpty_or_nonempty α with
+  | inl hα =>
+    refine ⟨fun _ => g, ?_, converges_const g⟩
+    unfold ComputableIn₂ ComputableIn
+    exact RecursiveIn.none.of_eq fun p => hα.elim p.2
+  | inr hne =>
+    obtain ⟨x₀⟩ := hne
+    let decα : ℕ → α := fun n => (decode (α := α) n).getD x₀
+    have hdecα : Primrec decα := Primrec.option_getD.comp Primrec.decode (Primrec.const x₀)
+    let decβ : ℕ → β := fun m => (decode (α := β) m).getD (g x₀)
+    have hdecβ : Primrec decβ := Primrec.option_getD.comp Primrec.decode (Primrec.const (g x₀))
+    have hg' : ComputableIn {Z.jump.oracle} (fun n => encode (g (decα n))) :=
+      Primrec.encode.computableIn.comp (hg.comp hdecα.computableIn)
+    obtain ⟨f', hf', hconv'⟩ := exists_computableIn_converges_of_computableIn_jump_nat hg'
+    refine ⟨fun s x => decβ (f' s (encode x)),
+      hdecβ.computableIn.comp
+        (hf'.comp (ComputableIn.fst.pair (Primrec.encode.computableIn.comp ComputableIn.snd))),
+      converges_iff_eventually.2 fun x => ?_⟩
+    exact (converges_iff_eventually.1 hconv' (encode x)).mono fun s hs => by
+      simp [hs, decα, decβ, encodek]
+
+/-- **The relativized Limit Lemma.** A total function between primitive-codable types is
+computable in `Z'` exactly when it has a uniformly `Z`-computable pointwise eventually constant
+approximation. -/
+theorem computableIn_jump_iff_exists_converges {α β : Type*} [Primcodable α] [Primcodable β]
+    {Z : Set ℕ} {g : α → β} :
     ComputableIn {Z.jump.oracle} g ↔
-      ∃ f : ℕ → ℕ → ℕ, ComputableIn₂ {Z.oracle} f ∧ Converges f g :=
+      ∃ f : ℕ → α → β, ComputableIn₂ {Z.oracle} f ∧ Converges f g :=
   ⟨exists_computableIn_converges_of_computableIn_jump,
     fun ⟨_, hf, h⟩ => h.computableIn_jump hf⟩
 
@@ -145,5 +172,22 @@ theorem turingReducible_jump_iff_exists_converges {Z A : Set ℕ} :
     TuringReducible A.oracle Z.jump.oracle ↔
       ∃ f : ℕ → ℕ → ℕ, ComputableIn₂ {Z.oracle} f ∧ Converges f (A.indicator 1) := by
   rw [A.turingReducible_iff_computableIn_indicator, computableIn_jump_iff_exists_converges]
+
+/-- **The Limit Lemma, unrelativized.** A total function between primitive-codable types is
+computable in the halting set `∅'` exactly when it is the pointwise limit of a uniformly
+computable sequence. -/
+theorem computableIn_jump_empty_iff_exists_converges {α β : Type*}
+    [Primcodable α] [Primcodable β] {g : α → β} :
+    ComputableIn {(∅ : Set ℕ).jump.oracle} g ↔
+      ∃ f : ℕ → α → β, Computable₂ f ∧ Converges f g := by
+  simp [computableIn_jump_iff_exists_converges]
+
+/-- **The Limit Lemma for sets, unrelativized.** A set is Turing reducible to the halting set
+`∅'` exactly when its characteristic function is the pointwise limit of a uniformly computable
+sequence. -/
+theorem turingReducible_jump_empty_iff_exists_converges {A : Set ℕ} :
+    TuringReducible A.oracle (∅ : Set ℕ).jump.oracle ↔
+      ∃ f : ℕ → ℕ → ℕ, Computable₂ f ∧ Converges f (A.indicator 1) := by
+  simp [turingReducible_jump_iff_exists_converges]
 
 end TauCeti.Approximation

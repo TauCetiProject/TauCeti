@@ -55,7 +55,7 @@ private theorem summable_subst (g : OnOpenDisc.subring R S₀)
   have hrestricted : Summable (fun n ↦
       restrict s (OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n)) := by
     simpa only [map_mul, map_pow, restrict_polynomialHom_C, Algebra.smul_def] using
-      ((OnOpenDisc.mem_subring.mp f.2).hasSum_evalAt (hg s)).summable
+      ((OnOpenDisc.mem_subring.mp f.property).hasSum_evalAt (hg s)).summable
   have hsum (t : Finset ℕ) :
       (restrictFamily (∑ n ∈ t,
         OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n)) s =
@@ -93,7 +93,8 @@ noncomputable def analyticSubst (g : OnOpenDisc.subring R S₀)
     apply restrict_injective s
     rw [restrict_tsum_subst g hg (f * h), map_mul,
       restrict_tsum_subst g hg f, restrict_tsum_subst g hg h, Subring.coe_mul]
-    exact (OnOpenDisc.mem_subring.mp f.2).evalAt_mul (OnOpenDisc.mem_subring.mp h.2) (hg s)
+    exact (OnOpenDisc.mem_subring.mp f.property).evalAt_mul (OnOpenDisc.mem_subring.mp h.property)
+        (hg s)
   map_zero' := by
     apply restrict_injective substRadius
     rw [restrict_tsum_subst g hg 0]
@@ -103,7 +104,8 @@ noncomputable def analyticSubst (g : OnOpenDisc.subring R S₀)
     apply restrict_injective s
     rw [restrict_tsum_subst g hg (f + h), map_add,
       restrict_tsum_subst g hg f, restrict_tsum_subst g hg h, Subring.coe_add]
-    exact (OnOpenDisc.mem_subring.mp f.2).evalAt_add (OnOpenDisc.mem_subring.mp h.2) (hg s)
+    exact (OnOpenDisc.mem_subring.mp f.property).evalAt_add (OnOpenDisc.mem_subring.mp h.property)
+        (hg s)
   commutes' a := by
     apply restrict_injective substRadius
     rw [restrict_tsum_subst g hg]
@@ -138,7 +140,7 @@ theorem norm_restrict_analyticSubst_le [NormOneClass R] (f : OnOpenDisc.subring 
     ‖restrict s (analyticSubst g hg f)‖ ≤ ‖restrict r f‖ := by
   rw [restrict_analyticSubst, norm_eq_gaussNorm (restrict r f), coe_restrict]
   exact norm_evalAt_le_gaussNorm
-    (hasGaussNorm_of_isRestricted (mem_subring_iff_forall_isRestricted.mp f.2 r)) hgr
+    (hasGaussNorm_of_isRestricted (mem_subring_iff_forall_isRestricted.mp f.property r)) hgr
 
 /-- Constants are fixed by analytic substitution. -/
 @[simp]
@@ -216,7 +218,7 @@ theorem constantCoeff_analyticSubst (f : OnOpenDisc.subring R R₀) :
   have hsum := hasSum_coeff_analyticSubst g hg f 0
   simp only [coeff_zero_eq_constantCoeff_apply, map_pow] at hsum
   exact hsum.unique (by simpa only [smul_eq_mul] using
-    (OnOpenDisc.mem_subring.mp f.2).hasSum_evalAt hc)
+    (OnOpenDisc.mem_subring.mp f.property).hasSum_evalAt hc)
 
 /-- On polynomials analytic substitution is polynomial evaluation. -/
 @[simp low]
@@ -255,8 +257,8 @@ theorem norm_evalAt_lt (hb : ‖b‖ < S₀) : ‖(g : R⟦X⟧).evalAt b‖ < R
   obtain ⟨s, hbs, hsS⟩ := exists_between hb
   let s' : Set.Ioo (0 : ℝ) S₀ := ⟨s, (norm_nonneg _).trans_lt hbs, hsS⟩
   -- Reduction to the real witness s hides its interval subtype from instance search.
-  have : Fact (0 < (s' : ℝ)) := ⟨s'.2.1⟩
-  have hf := hasGaussNorm_of_isRestricted (mem_subring_iff_forall_isRestricted.mp g.2 s')
+  have : Fact (0 < (s' : ℝ)) := ⟨s'.property.1⟩
+  have hf := hasGaussNorm_of_isRestricted (mem_subring_iff_forall_isRestricted.mp g.property s')
   calc ‖(g : R⟦X⟧).evalAt b‖ ≤ (g : R⟦X⟧).gaussNorm norm s :=
       norm_evalAt_le_gaussNorm hf hbs.le
     _ = ‖restrict s' g‖ := by rw [norm_eq_gaussNorm, coe_restrict]
@@ -296,10 +298,10 @@ theorem analyticSubst_comp_analyticSubst [NormOneClass R] (h : OnOpenDisc.subrin
 @[simp]
 theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
     analyticSubst (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R S₀)
-      (fun s ↦ by simpa only [norm_restrict_X] using s.2.2) f = f := by
+      (fun s ↦ by simpa only [norm_restrict_X] using s.property.2) f = f := by
   have heq := eq_analyticSubst
     (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R S₀)
-    (fun s ↦ by simpa only [norm_restrict_X] using s.2.2)
+    (fun s ↦ by simpa only [norm_restrict_X] using s.property.2)
     (AlgHom.id R _) continuous_id rfl
   exact (AlgHom.congr_fun heq f).symm
 
@@ -308,9 +310,12 @@ series. -/
 theorem radiusHom_analyticSubst (hTS : T₀ ≤ S₀) (f : OnOpenDisc.subring R R₀) :
     radiusHom hTS (analyticSubst g hg f) =
       analyticSubst (radiusHom hTS g)
-        (fun t ↦ by simpa only [restrict_radiusHom] using hg ⟨t, t.2.1, t.2.2.trans_le hTS⟩) f := by
+        (fun t ↦ by
+          simpa only [restrict_radiusHom] using hg ⟨t, t.property.1, t.property.2.trans_le hTS⟩)
+        f := by
   have heq := eq_analyticSubst (radiusHom hTS g)
-    (fun t ↦ by simpa only [restrict_radiusHom] using hg ⟨t, t.2.1, t.2.2.trans_le hTS⟩)
+    (fun t ↦ by
+        simpa only [restrict_radiusHom] using hg ⟨t, t.property.1, t.property.2.trans_le hTS⟩)
     ((radiusAlgHom R hTS).comp (analyticSubst g hg))
     (((continuous_radiusHom hTS).congr fun f ↦ (radiusAlgHom_apply R hTS f).symm).comp
       (continuous_analyticSubst g hg)) (by simp)

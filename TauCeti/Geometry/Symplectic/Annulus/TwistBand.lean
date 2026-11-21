@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+public import TauCeti.Geometry.Symplectic.Annulus.CyclicAction
 public import TauCeti.Geometry.Symplectic.Annulus.GeneratingFunction
 import Mathlib.Analysis.Calculus.Darboux
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
@@ -44,8 +45,9 @@ band, and when `F` preserves area and the line `y = 0`:
 
 * it satisfies the generating equations `∂₁ S'(x, X) = -y`, `∂₂ S'(x, X) = Y` at every point
   `(x, X) = G(x, y)` of the band (`TauCeti.hasFDerivAt_stripBandGeneratingFunction`), so it
-  generates `F` over the whole strip when `J` is an interval containing `0`
-  (`TauCeti.isStripGeneratingFunction_stripBandGeneratingFunction`);
+  generates `F` on the strip over the band when `J` is an interval containing `0`
+  (`TauCeti.isStripGenerating_stripBandGeneratingFunction`), as the chain dictionary
+  `TauCeti.exists_equiv_periodic_of_isStripGenerating` requires;
 * it is `C^n` on the band when `F` is `C^(n + 1)`
   (`TauCeti.contDiffAt_stripBandGeneratingFunction`);
 * it vanishes on the lower boundary graph `X = X(x, 0)`
@@ -53,7 +55,8 @@ band, and when `F` preserves area and the line `y = 0`:
   constant;
 * it is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` when `F` commutes
   with `(x, y) ↦ (x + a, y)` on the strip, as a lift of an annulus map does for `a = 1`
-  (`TauCeti.stripBandGeneratingFunction_add_diag`);
+  (`TauCeti.stripBandGeneratingFunction_add_diag`), and then so is the band itself
+  (`TauCeti.add_mem_image_stripTwistCoord_iff`);
 * its mixed second derivative is `∂₁ ∂₂ S' = -1 / ∂_y X`
   (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its sign is opposite to that of
   the twist.
@@ -226,6 +229,23 @@ theorem stripBandGeneratingFunction_add_diag (hJ : IsOpen J) (hJc : J.OrdConnect
     mem_preimage.2 (hJc.uIcc_subset h0 (mem_preimage.1 hq) (uIoo_subset_uIcc_self ht))
   exact eventually_of_mem ((hJ.preimage continuous_snd).mem_nhds ht') hFa
 
+/-- **Periodicity of the band.** If `F` commutes on the strip `ℝ × J` with the translation
+`(x, y) ↦ (x + a, y)`, as a lift of an annulus map does for `a = 1`, then the band `G(ℝ × J)` of
+twist coordinates is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)`. -/
+theorem add_mem_image_stripTwistCoord_iff {a : ℝ}
+    (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) (z : ℝ × ℝ) :
+    z + (a, a) ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J) ↔
+      z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J) := by
+  refine ⟨fun ⟨q, hq, hqz⟩ ↦ ?_, fun ⟨q, hq, hqz⟩ ↦ ⟨q + (a, 0), by simpa using hq, ?_⟩⟩
+  · have hq' : q - (a, 0) ∈ Prod.snd ⁻¹' J := by simpa using hq
+    have hF := hFa _ hq'
+    rw [sub_add_cancel] at hF
+    refine ⟨q - (a, 0), hq', ?_⟩
+    rw [← add_left_inj (a, a), ← hqz]
+    ext <;> simp [hF]
+  · rw [← hqz]
+    ext <;> simp [hFa q hq]
+
 /-- **The generating equations on the band.** Let the twist coordinates be injective on the strip
 `ℝ × J` over an open set `J`, and let `p = (x, y)` be a point of the strip at which `F = (X, Y)`
 twists, such that `F` is `C²` along the segment from `(x, 0)` to `p`, maps `(x, 0)` to the line
@@ -244,17 +264,20 @@ theorem hasFDerivAt_stripBandGeneratingFunction (hJ : IsOpen J)
     eventually_of_mem ((hJ.preimage continuous_snd).mem_nhds hp) fun _ hq ↦
       stripBandGeneratingFunction_stripTwistCoord hinj hq
 
-/-- **Band generating functions are generating functions.** Let `F` be `C²` on a strip `ℝ × J`
-over an open interval `J ∋ 0`, preserve the area form `dx ∧ dy` and the line `y = 0` there, and
-twist, `∂_y X ≠ 0`. Then its band generating function generates it over the whole strip. -/
-theorem isStripGeneratingFunction_stripBandGeneratingFunction (hJ : IsOpen J)
-    (hJc : J.OrdConnected) (h0 : (0 : ℝ) ∈ J)
-    (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q) (hY : ∀ x, (F (x, 0)).2 = 0)
-    (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
+/-- **Band generating functions generate.** Let `F` be `C²` on a strip `ℝ × J` over an open
+interval `J ∋ 0`, preserve the area form `dx ∧ dy` and the line `y = 0` there, and twist,
+`∂_y X ≠ 0`. Then its band generating function generates it on the strip over the band
+`G(ℝ × J)` of twist coordinates, in the sense of `TauCeti.IsStripGenerating`. -/
+theorem isStripGenerating_stripBandGeneratingFunction (hJ : IsOpen J) (hJc : J.OrdConnected)
+    (h0 : (0 : ℝ) ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q)
+    (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) :
-    IsStripGeneratingFunction (stripBandGeneratingFunction F J) F (Prod.snd ⁻¹' J) :=
-  isStripGeneratingFunction_iff.2 fun p hp ↦
-    hasFDerivAt_stripBandGeneratingFunction hJ (injOn_stripTwistCoord hJc htwist) hp
+    IsStripGenerating (stripBandGeneratingFunction F J) F (Prod.snd ⁻¹' J)
+      (stripTwistCoord F '' (Prod.snd ⁻¹' J)) where
+  mapsTo p hp := by simpa using mem_image_of_mem (stripTwistCoord F) hp
+  surjOn _ := by simp
+  hasFDerivAt p hp := by
+    simpa using hasFDerivAt_stripBandGeneratingFunction hJ (injOn_stripTwistCoord hJc htwist) hp
       (fun _ ht ↦ hF _ (hJc.uIcc_subset h0 hp ht)) (hY p.1)
       (fun _ ht ↦ hdet _ (hJc.uIcc_subset h0 hp (uIoo_subset_uIcc_self ht))) (htwist p hp)
 

@@ -95,7 +95,7 @@ theorem eLpNorm_sum_measure_le_mul_of_forall_le {α ι E F : Type*} [MeasurableS
   by_cases hc : c = 0
   · simp only [hc, zero_mul, ENNReal.zero_rpow_of_pos hr] at h ⊢
     exact le_of_eq <| tsum_eq_zero_iff.2 fun i ↦ by
-      rw [← hpow (hfm i), le_zero_iff.1 (h i), ENNReal.zero_rpow_of_pos hr]
+      rw [← hpow (hfm i), nonpos_iff_eq_zero.1 (h i), ENNReal.zero_rpow_of_pos hr]
   have hgm : AEStronglyMeasurable g (Measure.sum μ) :=
     aestronglyMeasurable_of_eLpNorm_ne_top (p := p) fun htop ↦ hg (by simp [htop, hc])
   rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le, eLpNorm_eq_eLpNorm' hp0 hp hgm,

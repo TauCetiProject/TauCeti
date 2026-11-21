@@ -24,8 +24,7 @@ manifold structure, modelled on `I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)`, are thos
 continuous linear maps from the tangent bundle to the trivial line bundle. In particular, the
 projection is a submersion by `Bundle.isSubmersion_proj`, the zero section is smooth by
 `Bundle.contMDiff_zeroSection`, and the fibrewise addition and scalar multiplication are the vector
-space structures of the fibres. The cotangent bundle of the model line `𝕜` is `𝕜 × 𝕜`, the pair
-`(x, y)` being the covector `y dx` at `x` (`TauCeti.CotangentBundle.fieldEquiv`).
+space structures of the fibres.
 
 This file computes the trivializations and charts in coordinates. The canonical trivialization at
 `x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
@@ -92,40 +91,11 @@ variable {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [Chart
 
 /-- Two covectors are equal if they have the same base point and take the same values. -/
 theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
-    (h : ∀ v : TangentSpace I z.proj, z.2 v = w.2 v) : z = w := by
+    (h : ∀ v : TangentSpace I z.proj, z.snd v = w.snd v) : z = w := by
   obtain ⟨x, p⟩ := z
   obtain ⟨y, q⟩ := w
   obtain rfl : x = y := hproj
   exact congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) x) (ContinuousLinearMap.ext h)
-
-variable (𝕜) in
-/-- The covectors of the model line `𝕜` are the pairs `(x, y)`: the pair `(x, y)` is the covector
-`y dx` at `x`, and a covector at `x` is `y dx` for its value `y` on the unit tangent vector. The
-tangent lines of `𝕜` are `𝕜` by definition. -/
-def fieldEquiv : 𝕜 × 𝕜 ≃ CotangentBundle 𝓘(𝕜) 𝕜 where
-  toFun p := TotalSpace.mk' (𝕜 →L[𝕜] 𝕜) p.1 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight p.2)
-  invFun z := (z.proj, z.2 (1 : 𝕜))
-  -- Both inverse laws are `1 • y = y`, the tangent lines of `𝕜` being `𝕜` by definition.
-  left_inv p := Prod.ext rfl (one_smul 𝕜 p.2)
-  right_inv z := by
-    obtain ⟨x, c⟩ := z
-    refine congrArg (TotalSpace.mk' (𝕜 →L[𝕜] 𝕜) x) ?_
-    ext
-    exact one_smul 𝕜 (c (1 : 𝕜))
-
-@[simp]
-theorem proj_fieldEquiv (p : 𝕜 × 𝕜) : (fieldEquiv 𝕜 p).proj = p.1 :=
-  (rfl)
-
-@[simp]
-theorem fieldEquiv_snd_apply (p : 𝕜 × 𝕜) (v : 𝕜) :
-    (fieldEquiv 𝕜 p).2 v = v * p.2 :=
-  (rfl)
-
-@[simp]
-theorem fieldEquiv_symm_apply (z : CotangentBundle 𝓘(𝕜) 𝕜) :
-    (fieldEquiv 𝕜).symm z = (z.proj, z.2 (1 : 𝕜)) :=
-  (rfl)
 
 variable [IsManifold I 1 M]
 
@@ -169,7 +139,7 @@ its base point and to the covector precomposed with the inverse of the tangent c
 theorem extChartAt_apply (z₀ z : CotangentBundle I M) :
     extChartAt (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) z₀ z =
       (extChartAt I z₀.proj z.proj,
-        z.2 ∘L (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜 z.proj) := by
+        z.snd ∘L (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜 z.proj) := by
   simp [ContinuousLinearMap.inCoordinates]
 
 /-- The inverse of the preferred chart of the cotangent bundle at `z₀` sends a point `q` of the
@@ -317,7 +287,7 @@ private theorem contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates {Ψ : X → 
     (hd : ContMDiffAt IX 𝓘(𝕜, E →L[𝕜] E') m
       (inTangentCoordinates I J g (fun z ↦ f z (g z)) (fun z ↦ mfderiv I J (f z) (g z)) z₀) z₀) :
     ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J (f z) (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z)) :
         CotangentBundle I M)) z₀ := by
   rw [contMDiffAt_hom_bundle] at hΨ ⊢
   refine ⟨hg, (hΨ.2.clm_comp hd).congr_of_eventuallyEq ?_⟩
@@ -345,7 +315,7 @@ theorem contMDiffAt_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → 
     (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
     (hf : ContMDiffAt I J n f (g z₀)) (hmn : m + 1 ≤ n) :
     ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J f (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J f (g z)) :
         CotangentBundle I M)) z₀ :=
   -- Differentiating `f` on its own source needs no `C¹` structure on the parameter space.
   contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates (f := fun _ ↦ f) hΨg hΨ hg
@@ -358,7 +328,7 @@ theorem contMDiff_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → M}
     (hΨ : ContMDiff IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ) (hg : ContMDiff IX I m g)
     (hf : ContMDiff I J n f) (hmn : m + 1 ≤ n) :
     ContMDiff IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J f (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J f (g z)) :
         CotangentBundle I M)) :=
   fun z ↦ contMDiffAt_mk_comp_mfderiv hΨg (hΨ z) (hg z) (hf (g z)) hmn
 
@@ -373,7 +343,7 @@ theorem contMDiffAt_mk_comp_mfderiv_uncurry [IsManifold IX 1 X] {Ψ : X → Cota
     (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
     (hf : ContMDiffAt (IX.prod I) J n (Function.uncurry f) (z₀, g z₀)) (hmn : m + 1 ≤ n) :
     ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J (f z) (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z)) :
         CotangentBundle I M)) z₀ :=
   contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates hΨg hΨ hg
     (hf.continuousAt.comp (f := fun z ↦ (z, g z)) (continuousAt_id.prodMk hg.continuousAt))

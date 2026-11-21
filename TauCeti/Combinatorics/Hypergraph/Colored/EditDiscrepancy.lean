@@ -68,15 +68,15 @@ in `H` and `H'`. Each supported ordering is counted separately. -/
 def editedOn (H H' : Colored3Graph κ V)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
     Finset {x : Fin 3 → V // Function.Injective x} :=
-  supp.filter fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-    H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
+  supp.filter fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) ≠
+    H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)
 
 /-- Edited triples are obtained by filtering the support for unequal colors. -/
 theorem editedOn_def (H H' : Colored3Graph κ V)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
     H.editedOn H' supp = supp.filter fun x ↦
-      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) :=
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) ≠
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) :=
   (rfl)
 
 /-- Membership means being supported and having different colors. -/
@@ -85,8 +85,8 @@ theorem mem_editedOn (H H' : Colored3Graph κ V)
     (supp : Finset {x : Fin 3 → V // Function.Injective x})
     (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ H.editedOn H' supp ↔ x ∈ supp ∧
-      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) := by
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) ≠
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) := by
   simp [editedOn_def]
 
 /-- Every edited triple belongs to the given support. -/
@@ -153,7 +153,7 @@ theorem editDiscrepancy3_mul_card_pow [Finite V] (H H' : Colored3Graph κ V) :
       apply Nat.eq_zero_of_le_zero
       calc
         _ ≤ Nat.card (Set.powersetCard V 3) := Set.ncard_le_card _
-        _ = 0 := by simp [hn]
+        _ = 0 := by simp [(ENat.card_eq_zero_iff_empty V).2 (Finite.card_eq_zero_iff.1 hn)]
     simp [hn, he]
   · rw [editDiscrepancy3_def, div_mul_cancel₀]
     exact pow_ne_zero 3 (Nat.cast_ne_zero.mpr hn)
@@ -240,10 +240,10 @@ theorem card_editedOn_univ (H H' : Colored3Graph κ V) :
   let edits : Finset (Set.powersetCard V 3) := univ.filter fun t ↦ H.color t ≠ H'.color t
   have hfib : #(H.editedOn H' univ) =
       ∑ t ∈ edits, #{x : {x : Fin 3 → V // Function.Injective x} |
-        Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = t} := by
+        Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = t} := by
     rw [editedOn_def, card_eq_sum_card_fiberwise
       (f := fun x : {x : Fin 3 → V // Function.Injective x} ↦
-        Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) (t := edits)
+        Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) (t := edits)
       (fun x hx ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hx).2⟩)]
     refine sum_congr rfl fun t ht ↦ congrArg card (ext fun x ↦ ?_)
     simp only [mem_filter, mem_univ, true_and, and_iff_right_iff_imp]

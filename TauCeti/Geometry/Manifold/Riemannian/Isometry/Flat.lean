@@ -165,9 +165,10 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
   let b₀ := stdOrthonormalBasis ℝ (TangentSpace I x₀)
   have hLC := isLeviCivitaConnection_leviCivitaConnection I (M := M)
   have htors : (leviCivitaConnection I M).IsTorsionFree :=
-    (isTorsionFree_iff_torsion_eq_zero (leviCivitaConnection I M)).2 hLC.2
+    (isTorsionFree_iff_torsion_eq_zero (leviCivitaConnection I M)).2 hLC.torsion
   obtain ⟨s, W₁, hs_smooth, hW₁open, hx₀W₁, hW₁U, hframe₁, hs_x₀, hpar₁, horth₁⟩ :=
-    hLC.1.exists_orthonormal_isLocalFrameOn_parallel_of_isInteriorPoint hx₀ hflat hU b₀
+    hLC.isMetricCompatible.exists_orthonormal_isLocalFrameOn_parallel_of_isInteriorPoint hx₀ hflat
+        hU b₀
   -- Step 2: Form the dual coframe 1-forms `α i (y) = ⟪s i y, ·⟫` and prove they are closed on `W₁`.
   let g := Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun y : M ↦ TangentSpace I y)

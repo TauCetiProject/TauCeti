@@ -53,6 +53,9 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
+* `TauCeti.exists_Icc_mem_subset_of_mem_nhdsWithin_Icc` — every neighbourhood of `t₀ ∈ [u, v]`
+  (`u < v`) within `[u, v]` contains a nondegenerate closed subinterval `[p, q] ⊆ [u, v]` that is
+  itself a neighbourhood of `t₀` within `[u, v]`.
 * `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
   as `δ → 0⁺`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
@@ -166,6 +169,38 @@ theorem exists_Icc_subset_uIcc_disjoint {α : Type*} [LinearOrder α] [Topologic
   refine ⟨c, d, ⟨hct, htd⟩, fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hcd hx).1),
     disjoint_right.mpr fun x hx => (hcd (Ioo_subset_Icc_self hx)).2⟩
 
+/-- Every neighbourhood of `t₀ ∈ [u, v]` (with `u < v`) within `[u, v]` contains a nondegenerate
+closed subinterval `[p, q] ⊆ [u, v]` around `t₀` that is itself a neighbourhood of `t₀` within
+`[u, v]`. -/
+theorem exists_Icc_mem_subset_of_mem_nhdsWithin_Icc {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] {u v t₀ : α} {s : Set α}
+    (huv : u < v) (ht₀ : t₀ ∈ Icc u v) (hs : s ∈ 𝓝[Icc u v] t₀) :
+    ∃ p q, u ≤ p ∧ p < q ∧ q ≤ v ∧ t₀ ∈ Icc p q ∧
+      Icc p q ∈ 𝓝[Icc u v] t₀ ∧ Icc p q ⊆ s := by
+  rcases ht₀.1.eq_or_lt with rfl | hut
+  · rw [nhdsWithin_Icc_eq_nhdsGE huv] at hs ⊢
+    obtain ⟨r, hur, hrs⟩ := (nhdsGE_basis_of_exists_gt ⟨v, huv⟩).mem_iff.1
+      (inter_mem hs (Ico_mem_nhdsGE huv))
+    obtain ⟨q, huq, hqr⟩ := exists_between hur
+    exact ⟨u, q, le_rfl, huq, (hrs ⟨huq.le, hqr⟩).2.2.le, ⟨le_rfl, huq.le⟩, Icc_mem_nhdsGE huq,
+      fun x hx ↦ (hrs ⟨hx.1, hx.2.trans_lt hqr⟩).1⟩
+  · rcases ht₀.2.eq_or_lt with rfl | htv
+    · rw [nhdsWithin_Icc_eq_nhdsLE huv] at hs ⊢
+      obtain ⟨l, hlt, hls⟩ := (nhdsLE_basis_of_exists_lt ⟨u, huv⟩).mem_iff.1
+        (inter_mem hs (Ioc_mem_nhdsLE huv))
+      obtain ⟨p, hlp, hpt⟩ := exists_between hlt
+      exact ⟨p, t₀, (hls ⟨hlp, hpt.le⟩).2.1.le, hpt, le_rfl, ⟨hpt.le, le_rfl⟩, Icc_mem_nhdsLE hpt,
+        fun x hx ↦ (hls ⟨hlp.trans_le hx.1, hx.2⟩).1⟩
+    · have hmem : s ∩ Ioo u v ∈ 𝓝 t₀ :=
+        inter_mem (nhdsWithin_eq_nhds.2 (Icc_mem_nhds hut htv) ▸ hs) (Ioo_mem_nhds hut htv)
+      obtain ⟨l, r, ⟨hlt, htr⟩, hlr⟩ := (mem_nhds_iff_exists_Ioo_subset' ⟨u, hut⟩ ⟨v, htv⟩).1 hmem
+      obtain ⟨p, hlp, hpt⟩ := exists_between hlt
+      obtain ⟨q, htq, hqr⟩ := exists_between htr
+      have hsub : Icc p q ⊆ s ∩ Ioo u v := fun x hx ↦ hlr ⟨hlp.trans_le hx.1, hx.2.trans_lt hqr⟩
+      exact ⟨p, q, (hsub ⟨le_rfl, hpt.le.trans htq.le⟩).2.1.le, hpt.trans htq,
+        (hsub ⟨hpt.le.trans htq.le, le_rfl⟩).2.2.le, ⟨hpt.le, htq.le⟩,
+        nhdsWithin_le_nhds (Icc_mem_nhds hpt htq), hsub.trans inter_subset_left⟩
+
 /-- A nonempty compact subset `K` of an open interval `Ioo a b` lies in the interior `Ioo c d` of
 a closed interval `Icc c d ⊆ Ioo a b`. This is the interval form of `exists_compact_between`. -/
 theorem _root_.IsCompact.exists_Icc_between {α : Type*} [LinearOrder α] [TopologicalSpace α]
@@ -255,12 +290,13 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
   have hcd : c ≤ d := hc ▸ hd ▸ hm.monotoneOn ha hb hab
   subst hc hd
   let g : Icc a b → Icc (f a) (f b) := fun s ↦
-    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
+    ⟨f s, hm.monotoneOn ha s.property s.property.1, hm.monotoneOn s.property hb s.property.2⟩
   have hg_cont : Continuous g :=
     Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
   have hg_bij : Function.Bijective g := by
-    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
-    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
+    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.property s'.property (congrArg Subtype.val h)),
+        fun r ↦ ?_⟩
+    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.property
     exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
   -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
   -- and Mathlib states no lemma for its coercion.
@@ -268,11 +304,12 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
     hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
   have hF (s : Icc a b) : (F s : β) = f s := rfl
   refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
-    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    continuous_subtypeVal.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦
+        (F.symm _).property,
     fun r ↦ ?_, fun s hs ↦ ?_⟩
   · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
   · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
-      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).property)
     simp only [this, Homeomorph.symm_apply_apply]
 
 /-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`

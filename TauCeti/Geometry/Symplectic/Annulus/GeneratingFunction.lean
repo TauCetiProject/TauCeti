@@ -53,11 +53,6 @@ coordinates `(x, X)`.
   agrees with `S` through it satisfies the generating equations
   `∂₁ S'(x, X) = -y`, `∂₂ S'(x, X) = Y(x, y)` at `X = X(x, y)`
   (`TauCeti.hasFDerivAt_of_eventuallyEq_stripGeneratingFunction`).
-* A function `S'` of `(x, X)` *generates* `F` over a set `D` of states
-  (`TauCeti.IsStripGeneratingFunction`) if it has derivative `Y dX - y dx` at the twist coordinates
-  of every state of `D`. Then its partial derivatives give the generating equations
-  `∂₁ S'(x, X) = -y` (`TauCeti.IsStripGeneratingFunction.hasDerivAt_left`) and
-  `∂₂ S'(x, X) = Y` (`TauCeti.IsStripGeneratingFunction.hasDerivAt_right`).
 
 The normalization `S = 0` on the lower boundary fixes the additive constant of the generating
 function. For the affine shear `(x, y) ↦ (x + a + c y, y)` the generating function is `c y² / 2`
@@ -379,54 +374,6 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
   rw [hΛ, ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
     ContinuousLinearMap.comp_id] at hSk
   exact hSk.congr_of_eventuallyEq heq
-
-/-! ### Generating functions in the strip convention -/
-
-/-- **Generating functions in the strip convention.** A function `S` of the twist coordinates
-`(x, X)` generates a map `F = (X, Y)` of the plane over a set `D` of states if at the twist
-coordinates `(x, X(x, y))` of every state `(x, y) ∈ D` it has derivative `Y(x, y) dX - y dx`, that
-is `∂₁ S(x, X) = -y` and `∂₂ S(x, X) = Y(x, y)`. -/
-def IsStripGeneratingFunction (S : ℝ × ℝ → ℝ) (F : ℝ × ℝ → ℝ × ℝ) (D : Set (ℝ × ℝ)) : Prop :=
-  ∀ p ∈ D, HasFDerivAt S
-    ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
-    (stripTwistCoord F p)
-
-/-- Unfolding `TauCeti.IsStripGeneratingFunction`. -/
-theorem isStripGeneratingFunction_iff {S : ℝ × ℝ → ℝ} {D : Set (ℝ × ℝ)} :
-    IsStripGeneratingFunction S F D ↔ ∀ p ∈ D, HasFDerivAt S
-      ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
-      (stripTwistCoord F p) :=
-  Iff.rfl
-
-namespace IsStripGeneratingFunction
-
-variable {S : ℝ × ℝ → ℝ} {D : Set (ℝ × ℝ)}
-  (hS : IsStripGeneratingFunction S F D) {p : ℝ × ℝ} (hp : p ∈ D)
-include hS hp
-
-/-- A generating function is differentiable at the twist coordinates of every state. -/
-theorem differentiableAt : DifferentiableAt ℝ S (stripTwistCoord F p) :=
-  (hS p hp).differentiableAt
-
-/-- **The first generating equation**, `∂₁ S(x, X) = -y`. -/
-theorem hasDerivAt_left : HasDerivAt (fun x ↦ S (x, (F p).1)) (-p.2) p.1 := by
-  have h := hS p hp
-  rw [stripTwistCoord_apply] at h
-  rw [hasDerivAt_iff_hasFDerivAt]
-  refine (h.comp p.1 (hasFDerivAt_prodMk_left p.1 (F p).1)).congr_fderiv ?_
-  ext
-  simp
-
-/-- **The second generating equation**, `∂₂ S(x, X) = Y`. -/
-theorem hasDerivAt_right : HasDerivAt (fun X ↦ S (p.1, X)) (F p).2 (F p).1 := by
-  have h := hS p hp
-  rw [stripTwistCoord_apply] at h
-  rw [hasDerivAt_iff_hasFDerivAt]
-  refine (h.comp (F p).1 (hasFDerivAt_prodMk_right p.1 (F p).1)).congr_fderiv ?_
-  ext
-  simp
-
-end IsStripGeneratingFunction
 
 /-! ### Affine shears -/
 
