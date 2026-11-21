@@ -47,7 +47,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.measure_plateau_eq_zero` and
   `MeasureTheory.Measure.ae_not_of_lt_of_cdf_eq` show that the part of a plateau of the cdf lying
   to the right of a point is null, so almost no mass lies on the plateau of a level above that
-  point;
+  point; consequently `MeasureTheory.Measure.preimage_cdf_Iic_cdf_ae_eq_Iic` shows that
+  `cdf ν x ≤ cdf ν t` holds `ν`-almost everywhere exactly when `x ≤ t`;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there, and
   `MeasureTheory.Measure.cdf_eq_zero_of_lt_of_measure_Iio_eq_zero` shows without atomlessness that
@@ -438,6 +439,17 @@ theorem measure_plateau_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν] {y 
 theorem ae_not_of_lt_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure ν] (y : ℝ) :
     ∀ᶠ x in ae ν, ¬ (y < x ∧ cdf ν y = cdf ν x) :=
   ae_iff.mpr <| by simpa using measure_plateau_eq_zero (ν := ν) (y := y)
+
+/-- For a real probability law `ν`, the set where `cdf ν` is at most `cdf ν t` agrees `ν`-almost
+everywhere with `Iic t`: the plateau of `cdf ν` to the right of `t` is null. -/
+theorem preimage_cdf_Iic_cdf_ae_eq_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] (t : ℝ) :
+    cdf ν ⁻¹' Iic (cdf ν t) =ᵐ[ν] Iic t := by
+  refine ae_eq_set.2 ⟨measure_mono_null (fun x hx => ?_) (measure_plateau_eq_zero (y := t)),
+    measure_mono_null (fun x hx => ?_) measure_empty⟩
+  · simp only [Set.mem_sdiff, mem_preimage, mem_Iic, not_le] at hx
+    exact ⟨hx.2, le_antisymm ((cdf ν).mono hx.2.le) hx.1⟩
+  · simp only [Set.mem_sdiff, mem_preimage, mem_Iic] at hx
+    exact hx.2 ((cdf ν).mono hx.1)
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/
