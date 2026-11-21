@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Fourier.PoissonSummation
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
+import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
@@ -34,7 +35,8 @@ this are of independent use:
   `N_k (χ.modulate w) ≤ (sup_{i ≤ k} N_i χ) (1 + 2π ‖w‖) ^ k`
   (`ContDiffMapSupportedIn.seminorm_modulate_le`), so every continuous seminorm, for instance
   `ψ ↦ ‖T ψ‖` for a continuous linear map `T` to a normed space, grows polynomially along the
-  modulated cutoffs (`ContDiffMapSupportedIn.exists_seminorm_modulate_le`);
+  modulated cutoffs, uniformly over the cutoffs with bounded derivatives
+  (`ContDiffMapSupportedIn.exists_seminorm_modulate_le`);
 * the coefficients `𝓕 φ (m)` decay faster than every power of `‖m‖`, since `𝓕 φ` is a Schwartz
   function (`ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier`).
 
@@ -55,9 +57,12 @@ the resulting double series converge.
 * `ContDiffMapSupportedIn.seminorm_modulate_le`: the polynomial bound on the derivatives of a
   modulated cutoff.
 * `ContDiffMapSupportedIn.exists_seminorm_modulate_le`: a continuous seminorm grows at most
-  polynomially along modulated cutoffs.
+  polynomially along modulated cutoffs, with a degree independent of the cutoff and a constant
+  proportional to a sup norm of finitely many of its derivatives.
 * `ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier`: the Fourier transform of a
-  smooth function supported in `K` decays rapidly along a lattice.
+  smooth function supported in `K` decays rapidly along a lattice;
+  `ContDiffMapSupportedIn.exists_tsum_one_add_norm_pow_mul_norm_fourier_le` bounds the weighted
+  sums by a sup norm of finitely many derivatives.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
   function supported in `K`, converging in `𝓓_{K}(E, ℂ)`.
 
@@ -198,16 +203,19 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
         ring
 
 /-- Every continuous seminorm `q` on `𝓓_{K}(E, F)` grows at most polynomially along the
-modulated cutoffs `χ.modulate w`: there are `C` and `k` with
-`q (χ.modulate w) ≤ C (1 + ‖w‖) ^ k` for every frequency `w`. Applied to `ψ ↦ ‖T ψ‖`, this bounds
-the images of modulated cutoffs under a continuous linear map `T` to a normed space. -/
-theorem exists_seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (q : Seminorm ℂ 𝓓_{K}(E, F))
-    (hq : Continuous q) : ∃ C k, ∀ w : E, q (χ.modulate w) ≤ C * (1 + ‖w‖) ^ k := by
+modulated cutoffs `χ.modulate w`, with a degree and a constant independent of the cutoff: there are
+`k` and `C` such that `q (χ.modulate w) ≤ C (sup_{i ≤ k} N_i χ) (1 + ‖w‖) ^ k` for every `χ` and
+every frequency `w`. Applied to `ψ ↦ ‖T ψ‖`, this bounds the images of modulated cutoffs under a
+continuous linear map `T` to a normed space, uniformly over the cutoffs with bounded derivatives
+of order at most `k`. -/
+theorem exists_seminorm_modulate_le (q : Seminorm ℂ 𝓓_{K}(E, F)) (hq : Continuous q) :
+    ∃ (k : ℕ) (C : ℝ), ∀ (χ : 𝓓_{K}(E, F)) (w : E),
+      q (χ.modulate w) ≤ C * ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ * (1 + ‖w‖) ^ k := by
   obtain ⟨s, C, -, hC⟩ :=
     Seminorm.bound_of_continuous (ContDiffMapSupportedIn.withSeminorms ℂ E F ⊤ K) q hq
   set k := s.sup id
+  refine ⟨k, C * (2 * π) ^ k, fun χ w ↦ ?_⟩
   set S := ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ
-  refine ⟨C * (S * (2 * π) ^ k), k, fun w ↦ ?_⟩
   have h1 : 1 ≤ 1 + 2 * π * ‖w‖ := by
     have := Real.pi_pos
     nlinarith [norm_nonneg w]
@@ -226,7 +234,7 @@ theorem exists_seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (q : Seminorm ℂ 𝓓
     _ ≤ C * (S * ((2 * π) ^ k * (1 + ‖w‖) ^ k)) := by
         gcongr
         exact hs.trans (by gcongr; exact one_add_two_pi_mul_pow_le (norm_nonneg w) k)
-    _ = C * (S * (2 * π) ^ k) * (1 + ‖w‖) ^ k := by ring
+    _ = C * (2 * π) ^ k * S * (1 + ‖w‖) ^ k := by ring
 
 /-! ### The Fourier expansion -/
 
@@ -279,6 +287,66 @@ theorem summable_one_add_norm_pow_mul_norm_fourier (Λ : Submodule ℤ E) [Discr
   have hg : (g : E → ℂ) = φ := rfl
   have hdecay := ZLattice.summable_one_add_norm_pow_mul_norm Λ (𝓕 g) k
   rwa [SchwartzMap.fourier_coe, hg] at hdecay
+
+/-- **Uniform rapid decay of the Fourier transform along a lattice.** For a discrete subgroup `Λ`
+and a degree `j`, the sums `∑ ℓ : Λ, (1 + ‖ℓ‖) ^ j ‖𝓕 φ ℓ‖` of the smooth functions `φ`
+supported in `K` are bounded by a constant times a sup norm of finitely many derivatives of `φ`.
+In particular they are bounded uniformly over the functions supported in `K` whose derivatives of
+order at most `r` are bounded. -/
+theorem exists_tsum_one_add_norm_pow_mul_norm_fourier_le (Λ : Submodule ℤ E) [DiscreteTopology Λ]
+    (j : ℕ) : ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ : 𝓓_{K}(E, ℂ),
+      ∑' ℓ : Λ, (1 + ‖(ℓ : E)‖) ^ j * ‖𝓕 (φ : E → ℂ) ℓ‖ ≤
+        C * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r φ := by
+  set d := Module.finrank ℤ Λ + 1
+  set N := j + d
+  -- The Schwartz seminorms of `𝓕 g` controlling `(1 + ‖ξ‖) ^ N ‖𝓕 g ξ‖` are bounded by finitely
+  -- many Schwartz seminorms of `g`.
+  let q : Seminorm ℂ 𝓢(E, ℂ) :=
+    ((Finset.Iic (N, 0)).sup (schwartzSeminormFamily ℂ E ℂ)).comp
+      (SchwartzMap.fourierTransformCLM ℂ).toLinearMap
+  have hq : Continuous q := ((schwartz_withSeminorms ℂ E ℂ).continuous_finsetSup_seminorm _).comp
+    (SchwartzMap.fourierTransformCLM ℂ).continuous
+  obtain ⟨s, C₁, -, hC₁⟩ := Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ E ℂ) q hq
+  obtain ⟨R, hR⟩ := K.isCompact.isBounded.exists_norm_le
+  set R₁ := max R 1
+  set A := s.sup Prod.fst; set r := s.sup Prod.snd
+  have hsum := ZLattice.summable_one_add_norm_pow_inv Λ (r := d) (by omega)
+  refine ⟨r, 2 ^ N * (C₁ * R₁ ^ A) * ∑' ℓ : Λ, ((1 + ‖(ℓ : E)‖) ^ d)⁻¹,
+    mul_nonneg (by positivity) (tsum_nonneg fun _ ↦ by positivity), fun φ ↦ ?_⟩
+  let g : 𝓢(E, ℂ) := φ.hasCompactSupport.toSchwartzMap φ.contDiff
+  have hg : (g : E → ℂ) = φ := rfl
+  set S := ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r φ
+  -- The Schwartz seminorms of `g` occurring in `s` are at most `R₁ ^ A S`.
+  have hgs : s.sup (schwartzSeminormFamily ℂ E ℂ) g ≤ R₁ ^ A * S := by
+    refine Seminorm.finset_sup_apply_le (by positivity) fun m hm ↦ ?_
+    refine SchwartzMap.seminorm_le_bound ℂ m.1 m.2 g (by positivity) fun x ↦ ?_
+    by_cases hx : x ∈ K
+    · have hxR : ‖x‖ ≤ R₁ := (hR x hx).trans (le_max_left _ _)
+      gcongr ?_ * ?_
+      · exact (pow_le_pow_left₀ (norm_nonneg x) hxR m.1).trans
+          (pow_le_pow_right₀ (le_max_right _ _) (Finset.le_sup (f := Prod.fst) hm))
+      · rw [hg]
+        exact (norm_iteratedFDeriv_apply_le_seminorm_top ℂ).trans <|
+          Finset.le_sup (f := ContDiffMapSupportedIn.seminorm ℂ E ℂ ⊤ K)
+            (Finset.mem_Iic.2 (Finset.le_sup (f := Prod.snd) hm)) φ
+    · rw [hg, φ.iteratedFDeriv_zero_on_compl hx]
+      simp only [Pi.zero_apply, norm_zero, mul_zero]
+      positivity
+  -- Pointwise, `(1 + ‖ξ‖) ^ N ‖𝓕 φ ξ‖ ≤ 2 ^ N q g`.
+  have hpt (ξ : E) : (1 + ‖ξ‖) ^ N * ‖𝓕 (φ : E → ℂ) ξ‖ ≤ 2 ^ N * (C₁ * (R₁ ^ A * S)) := by
+    have h := (𝓕 g).one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (N, 0)) le_rfl le_rfl ξ
+    rw [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hg] at h
+    refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+    calc (Finset.Iic (N, 0)).sup (schwartzSeminormFamily ℂ E ℂ) (𝓕 g) = q g := rfl
+      _ ≤ C₁ * s.sup (schwartzSeminormFamily ℂ E ℂ) g := hC₁ g
+      _ ≤ C₁ * (R₁ ^ A * S) := by gcongr
+  rw [mul_assoc (2 ^ N * (C₁ * R₁ ^ A)), ← tsum_mul_right, ← tsum_mul_left]
+  refine (summable_one_add_norm_pow_mul_norm_fourier Λ φ j).tsum_le_tsum (fun ℓ ↦ ?_)
+    ((hsum.mul_right S).mul_left _)
+  have hpos : 0 < (1 + ‖(ℓ : E)‖) ^ d := by positivity
+  rw [inv_mul_eq_div, mul_div_assoc', le_div_iff₀ hpos, mul_right_comm, ← pow_add]
+  calc (1 + ‖(ℓ : E)‖) ^ (j + d) * ‖𝓕 (φ : E → ℂ) ℓ‖ ≤ 2 ^ N * (C₁ * (R₁ ^ A * S)) := hpt ℓ
+    _ = 2 ^ N * (C₁ * R₁ ^ A) * S := by ring
 
 /-- The `k`-th seminorm bound for the terms of the Fourier expansion is summable. -/
 private theorem summable_norm_fourier_mul (φ χ : 𝓓_{K}(E, ℂ)) (k : ℕ) :

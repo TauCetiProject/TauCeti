@@ -5,34 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
-public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.AlgebraicTopology.Cellular.Augmentation
 public import TauCeti.AlgebraicTopology.Cellular.Map
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.RepresentationTheory.Rep.HomologicalComplex
 
 /-!
 # Cellular chains with a monoid action
 
-A family of cellular self-maps of a relative CW complex satisfying the action laws induces
-representations on cellular chains. Naturality of the cellular differential assembles these into a
-complex in `Rep`, and the forgetful isomorphism identifies it with the original cellular chain
-complex. For a CW complex, naturality of the cellular augmentation promotes
-`TauCeti.cellularAugmentation` to an equivariant augmentation to the trivial representation, which
-is a quasi-isomorphism whenever the complex is contractible.
+A family of cellular self-maps satisfying the action laws induces representations on cellular
+chains. Naturality of the cellular differential assembles these into a complex in `Rep`.
+The forgetful isomorphism identifies it with the original cellular chain complex.
 
-A cellular map between relative CW complexes intertwining two cellular actions along a monoid
-homomorphism `φ : G →* H` induces a chain map from the `G`-equivariant cellular complex to the
-restriction along `φ` of the `H`-equivariant cellular complex, respecting identities, composition,
-forgetting the actions, and (for CW complexes) the cellular augmentations.
+A cellular map intertwining two cellular monoid actions along a monoid homomorphism induces
+morphisms of representations in every degree (`TauCeti.cellularActionGroupMap`) and a chain map
+into the restricted target complex (`TauCeti.cellularActionComplexMap`), respecting identity,
+composition, and the forgetful identifications
+(`TauCeti.cellularActionComplexForget₂Iso_hom_naturality`).
 
-The maps act on the relative CW subsets themselves; no extension to their ambient spaces or
-compatibility with chosen characteristic maps is required.
+Naturality of the cellular augmentation under cellular maps likewise makes the degree-`0`
+augmentation a morphism to the trivial representation, assembling into a chain-map augmentation
+`TauCeti.cellularActionComplexAugmentation` which is a quasi-isomorphism whenever the CW complex
+is contractible (`TauCeti.quasiIso_cellularActionComplexAugmentation`).
 
-## References
-
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 2.2.
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section I.4.
+The maps act on the CW subset itself; no extension to its ambient space or compatibility with
+chosen characteristic maps is required.
 -/
 
 public section
@@ -45,9 +42,7 @@ namespace TauCeti
 
 universe u
 
-section Action
-
-variable {X : Type u} [TopologicalSpace X] [T2Space X] {A : Set X} (C : Set X) [RelCWComplex C A]
+variable {X : Type u} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
   {G : Type u} [Monoid G] (ρ : G → (TopCat.of C ⟶ TopCat.of C))
   (hcell : ∀ g, IsCellular C C (ρ g))
   (hone : ρ 1 = 𝟙 _) (hmul : ∀ g h, ρ (g * h) = ρ h ≫ ρ g)
@@ -156,17 +151,209 @@ theorem cellularActionComplexForget₂Iso_inv_f (n : ℕ) :
           cellularChainComplex_X]
         rfl) := (rfl)
 
-end Action
+section Functoriality
 
-section ActionAugmentation
+variable {Y : Type u} [TopologicalSpace Y] [T2Space Y] (D : Set Y) [CWComplex D]
+  {H : Type u} [Monoid H] (σ : H → (TopCat.of D ⟶ TopCat.of D))
+  (hcell' : ∀ h, IsCellular D D (σ h))
+  (hone' : σ 1 = 𝟙 _) (hmul' : ∀ g h, σ (g * h) = σ h ≫ σ g)
 
-variable {X : Type u} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
-  {G : Type u} [Monoid G] (ρ : G → (TopCat.of C ⟶ TopCat.of C))
-  (hcell : ∀ g, IsCellular C C (ρ g))
-  (hone : ρ 1 = 𝟙 _) (hmul : ∀ g h, ρ (g * h) = ρ h ≫ ρ g)
-  (R : Type u) [Ring R]
+/-- A cellular map intertwining two cellular monoid actions along a monoid homomorphism induces
+a morphism of cellular chain representations, with the target action restricted along that
+homomorphism. -/
+def cellularActionGroupMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
+    (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g)) (n : ℕ) :
+    Rep.of (cellularActionRepresentation C ρ hcell hone hmul R n) ⟶
+      Rep.res φ (Rep.of (cellularActionRepresentation D σ hcell' hone' hmul' R n)) :=
+  Rep.ofHom
+    { toLinearMap := (cellularChainGroupMap C D hf (ModuleCat.of R R) n).hom
+      isIntertwining' g := by
+        have hfg : cellularChainGroupMap C D (IsCellular.comp C C (hcell g) hf)
+            (ModuleCat.of R R) n =
+          cellularChainGroupMap C D (IsCellular.comp C D hf (hcell' (φ g)))
+            (ModuleCat.of R R) n := by
+          congr 1
+          exact heq g
+        rw [cellularChainGroupMap_comp C C (hcell g) D hf,
+          cellularChainGroupMap_comp C D hf D (hcell' (φ g))] at hfg
+        simpa only [Rep.res_obj_ρ, MonoidHom.comp_apply,
+          cellularActionRepresentation_apply, ModuleCat.hom_comp] using
+          congrArg ModuleCat.Hom.hom hfg }
 
-/-- The cellular augmentation in degree zero as a morphism to the trivial representation. -/
+/-- Forgetting equivariance recovers the underlying cellular chain-group map. -/
+@[simp]
+theorem cellularActionGroupMap_hom_toLinearMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D}
+    (hf : IsCellular C D f) (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g)) (n : ℕ) :
+    (cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq
+      n).hom.toLinearMap = (cellularChainGroupMap C D hf (ModuleCat.of R R) n).hom := (rfl)
+
+/-- Equal underlying cellular maps induce equal morphisms of cellular chain representations,
+regardless of the cellularity and equivariance witnesses. -/
+theorem cellularActionGroupMap_congr (φ : G →* H)
+    {f f' : TopCat.of C ⟶ TopCat.of D} (hff' : f = f')
+    (hf : IsCellular C D f) (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g))
+    (hf' : IsCellular C D f') (heq' : ∀ g, ρ g ≫ f' = f' ≫ σ (φ g)) (n : ℕ) :
+    cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq n =
+      cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf' heq' n := by
+  subst hff'
+  have h1 : hf = hf' := Subsingleton.elim _ _
+  subst h1
+  rfl
+
+/-- The identity cellular map induces the identity morphism of cellular chain representations. -/
+@[simp]
+theorem cellularActionGroupMap_id {hf : IsCellular C C (𝟙 _)}
+    {heq : ∀ g, ρ g ≫ 𝟙 _ = 𝟙 _ ≫ ρ (MonoidHom.id G g)} (n : ℕ) :
+    cellularActionGroupMap C ρ hcell hone hmul R C ρ hcell hone hmul (MonoidHom.id G) hf heq n =
+      𝟙 (Rep.of (cellularActionRepresentation C ρ hcell hone hmul R n)) := by
+  have hfid : hf = isCellular_id C := Subsingleton.elim _ _
+  subst hfid
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  simpa only [cellularActionGroupMap_hom_toLinearMap, Rep.hom_id,
+    Representation.IntertwiningMap.toLinearMap_id, ModuleCat.hom_id] using
+    congrArg ModuleCat.Hom.hom (cellularChainGroupMap_id C (ModuleCat.of R R) n)
+
+/-- Equivariant cellular chain-group maps respect composition, restricting the second morphism
+along the first homomorphism. -/
+@[reassoc]
+theorem cellularActionGroupMap_comp {Z : Type u} [TopologicalSpace Z] [T2Space Z]
+    (E : Set Z) [CWComplex E] {K : Type u} [Monoid K]
+    (τ : K → (TopCat.of E ⟶ TopCat.of E)) (hcell'' : ∀ k, IsCellular E E (τ k))
+    (hone'' : τ 1 = 𝟙 _) (hmul'' : ∀ g h, τ (g * h) = τ h ≫ τ g)
+    (ψ : H →* K) (φ : G →* H)
+    {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
+    (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g))
+    {g : TopCat.of D ⟶ TopCat.of E} (hg : IsCellular D E g)
+    (heq' : ∀ h, σ h ≫ g = g ≫ τ (ψ h))
+    {hfg : IsCellular C E (f ≫ g)}
+    {heq'' : ∀ x, ρ x ≫ (f ≫ g) = (f ≫ g) ≫ τ ((ψ.comp φ) x)} (n : ℕ) :
+    cellularActionGroupMap C ρ hcell hone hmul R E τ hcell'' hone'' hmul''
+        (ψ.comp φ) hfg heq'' n =
+      cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq n ≫
+        (Rep.resFunctor φ).map
+          (cellularActionGroupMap D σ hcell' hone' hmul' R E τ hcell'' hone'' hmul''
+            ψ hg heq' n) := by
+  have hcomp : hfg = IsCellular.comp C D hf hg := Subsingleton.elim _ _
+  subst hcomp
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  simpa only [cellularActionGroupMap_hom_toLinearMap, Rep.hom_comp,
+    Representation.IntertwiningMap.comp_toLinearMap, Rep.resMap_hom_toLinearMap,
+    ModuleCat.hom_comp] using
+    congrArg ModuleCat.Hom.hom
+      (cellularChainGroupMap_comp C D hf E hg (ModuleCat.of R R) n)
+
+/-- A cellular map intertwining two cellular monoid actions along a monoid homomorphism induces
+a chain map of equivariant cellular chain complexes, with the target complex restricted along
+that homomorphism. -/
+def cellularActionComplexMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
+    (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g)) :
+    cellularActionComplex C ρ hcell hone hmul R ⟶
+      ((Rep.resFunctor φ).mapHomologicalComplex _).obj
+        (cellularActionComplex D σ hcell' hone' hmul' R) where
+  f n := eqToHom (cellularActionComplex_X C ρ hcell hone hmul R n) ≫
+    cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq n ≫
+    eqToHom (by rw [Functor.mapHomologicalComplex_obj_X, cellularActionComplex_X])
+  comm' i j hij := by
+    subst i
+    simp only [Functor.mapHomologicalComplex_obj_d, cellularActionComplex_d,
+      Rep.resMap_comp, Rep.resMap_eqToHom, ← Category.assoc]
+    rw [cancel_mono]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    apply (cancel_epi (eqToHom (cellularActionComplex_X C ρ hcell hone hmul R (j + 1)))).mpr
+    apply Rep.hom_ext
+    apply Representation.IntertwiningMap.ext
+    simpa only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+      Rep.resMap_hom_toLinearMap, cellularActionGroupMap_hom_toLinearMap,
+      cellularActionDifferential_hom_toLinearMap, ModuleCat.hom_comp] using
+      congrArg ModuleCat.Hom.hom
+        (cellularChainGroupMap_comp_cellularDifferential C D hf (ModuleCat.of R R) j)
+
+/-- Components of the equivariant cellular chain map are the degreewise representation maps
+between the canonical cellular-chain terms. -/
+@[simp]
+theorem cellularActionComplexMap_f (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D}
+    (hf : IsCellular C D f) (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g)) (n : ℕ) :
+    (cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq).f n =
+      eqToHom (cellularActionComplex_X C ρ hcell hone hmul R n) ≫
+        cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq n ≫
+        eqToHom (by rw [Functor.mapHomologicalComplex_obj_X, cellularActionComplex_X]) := (rfl)
+
+/-- Equal underlying cellular maps induce equal chain maps of equivariant cellular complexes. -/
+theorem cellularActionComplexMap_congr (φ : G →* H)
+    {f f' : TopCat.of C ⟶ TopCat.of D} (hff' : f = f')
+    (hf : IsCellular C D f) (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g))
+    (hf' : IsCellular C D f') (heq' : ∀ g, ρ g ≫ f' = f' ≫ σ (φ g)) :
+    cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq =
+      cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf' heq' := by
+  subst hff'
+  have h1 : hf = hf' := Subsingleton.elim _ _
+  subst h1
+  rfl
+
+/-- The identity cellular map induces the identity chain map of equivariant cellular complexes. -/
+@[simp]
+theorem cellularActionComplexMap_id {hf : IsCellular C C (𝟙 _)}
+    {heq : ∀ g, ρ g ≫ 𝟙 _ = 𝟙 _ ≫ ρ (MonoidHom.id G g)} :
+    cellularActionComplexMap C ρ hcell hone hmul R C ρ hcell hone hmul (MonoidHom.id G) hf heq =
+      𝟙 (cellularActionComplex C ρ hcell hone hmul R) := by
+  ext n : 1
+  simp only [cellularActionComplexMap_f, cellularActionGroupMap_id, Category.id_comp,
+    HomologicalComplex.id_f, eqToHom_trans, eqToHom_refl]
+
+/-- Equivariant cellular chain maps respect composition, restricting the second map along the
+first homomorphism. -/
+@[reassoc]
+theorem cellularActionComplexMap_comp {Z : Type u} [TopologicalSpace Z] [T2Space Z]
+    (E : Set Z) [CWComplex E] {K : Type u} [Monoid K]
+    (τ : K → (TopCat.of E ⟶ TopCat.of E)) (hcell'' : ∀ k, IsCellular E E (τ k))
+    (hone'' : τ 1 = 𝟙 _) (hmul'' : ∀ g h, τ (g * h) = τ h ≫ τ g)
+    (ψ : H →* K) (φ : G →* H)
+    {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
+    (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g))
+    {g : TopCat.of D ⟶ TopCat.of E} (hg : IsCellular D E g)
+    (heq' : ∀ h, σ h ≫ g = g ≫ τ (ψ h))
+    {hfg : IsCellular C E (f ≫ g)}
+    {heq'' : ∀ x, ρ x ≫ (f ≫ g) = (f ≫ g) ≫ τ ((ψ.comp φ) x)} :
+    cellularActionComplexMap C ρ hcell hone hmul R E τ hcell'' hone'' hmul''
+        (ψ.comp φ) hfg heq'' =
+      cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq ≫
+        ((Rep.resFunctor φ).mapHomologicalComplex _).map
+          (cellularActionComplexMap D σ hcell' hone' hmul' R E τ hcell'' hone'' hmul''
+            ψ hg heq') := by
+  ext n : 1
+  simp only [cellularActionComplexMap_f, HomologicalComplex.comp_f,
+    Functor.mapHomologicalComplex_map_f, Rep.resMap_comp, Rep.resMap_eqToHom]
+  rw [cellularActionGroupMap_comp C ρ hcell hone hmul R D σ hcell' hone' hmul'
+    E τ hcell'' hone'' hmul'' ψ φ hf heq hg heq' (hfg := hfg) (heq'' := heq'') n]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+
+/-- Forgetting the group actions identifies the equivariant cellular chain map with the ordinary
+geometric cellular chain map. -/
+@[reassoc]
+theorem cellularActionComplexForget₂Iso_hom_naturality (φ : G →* H)
+    {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
+    (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g)) :
+    cellularChainComplexMap C D hf (ModuleCat.of R R) ≫
+        (cellularActionComplexForget₂Iso D σ hcell' hone' hmul' R).hom =
+      (cellularActionComplexForget₂Iso C ρ hcell hone hmul R).hom ≫
+        ((forget₂ (Rep R G) (ModuleCat R)).mapHomologicalComplex _).map
+          (cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq) ≫
+        ((cellularActionComplex D σ hcell' hone' hmul' R).repResForget₂Iso φ).hom := by
+  ext n : 1
+  simp only [HomologicalComplex.comp_f, cellularChainComplexMap_f,
+    cellularActionComplexForget₂Iso_hom_f, Functor.mapHomologicalComplex_map_f,
+    cellularActionComplexMap_f, HomologicalComplex.repResForget₂Iso_hom_f,
+    Functor.map_comp, eqToHom_map, Category.comp_id, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_trans]
+  unfold cellularActionComplex
+  simp only [eqToHom_refl, Category.comp_id, Rep.forget₂_moduleCat_map,
+    cellularActionGroupMap_hom_toLinearMap, ModuleCat.ofHom_hom]
+
+end Functoriality
+
+/-- The cellular augmentation in degree `0`, as a morphism to the trivial representation. -/
 def cellularActionAugmentation :
     Rep.of (cellularActionRepresentation C ρ hcell hone hmul R 0) ⟶ Rep.trivial R G R :=
   Rep.ofHom
@@ -177,7 +364,8 @@ def cellularActionAugmentation :
         exact ConcreteCategory.congr_hom
           (cellularChainGroupMap_comp_cellularAugmentation C C (hcell g) (ModuleCat.of R R)) x }
 
-/-- The underlying linear map is the cellular augmentation in degree zero. -/
+/-- The underlying linear map of `TauCeti.cellularActionAugmentation` is the cellular augmentation
+of `C`. -/
 @[simp]
 theorem cellularActionAugmentation_hom_toLinearMap :
     (cellularActionAugmentation C ρ hcell hone hmul R).hom.toLinearMap =
@@ -188,21 +376,25 @@ theorem cellularActionAugmentation_hom_toLinearMap :
 theorem cellularActionDifferential_comp_cellularActionAugmentation :
     cellularActionDifferential C ρ hcell hone hmul R 0 ≫
         cellularActionAugmentation C ρ hcell hone hmul R = 0 := by
-  ext x
-  exact ConcreteCategory.congr_hom
-    (cellularDifferential_comp_cellularAugmentation C (ModuleCat.of R R)) x
+  refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ ?_
+  have h := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (cellularDifferential_comp_cellularAugmentation C (ModuleCat.of R R))) x
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_zero, LinearMap.comp_apply,
+    LinearMap.zero_apply] at h
+  simpa [Rep.hom_comp] using h
 
-/-- The cellular augmentation as a chain map of complexes of representations to the trivial
-representation placed in degree zero. -/
+/-- The augmentation of `TauCeti.cellularActionComplex`, as a chain map in
+`ChainComplex (Rep R G) ℕ` to the trivial representation placed in degree `0`. -/
 def cellularActionComplexAugmentation :
     cellularActionComplex C ρ hcell hone hmul R ⟶
-      (ChainComplex.single₀ (Rep R G)).obj (Rep.trivial R G R) :=
+      (ChainComplex.single₀ (Rep.{u} R G)).obj (Rep.trivial R G R) :=
   ((cellularActionComplex C ρ hcell hone hmul R).toSingle₀Equiv _).symm
     ⟨eqToHom (cellularActionComplex_X C ρ hcell hone hmul R 0) ≫
-      cellularActionAugmentation C ρ hcell hone hmul R, by
-        simp [cellularActionComplex_d]⟩
+        cellularActionAugmentation C ρ hcell hone hmul R, by
+      simp [cellularActionComplex_d]⟩
 
-/-- In degree zero the chain augmentation is the equivariant cellular augmentation. -/
+/-- In degree `0` the equivariant chain-map augmentation is
+`TauCeti.cellularActionAugmentation`. -/
 @[simp]
 theorem cellularActionComplexAugmentation_f_zero :
     (cellularActionComplexAugmentation C ρ hcell hone hmul R).f 0 =
@@ -210,265 +402,38 @@ theorem cellularActionComplexAugmentation_f_zero :
         cellularActionAugmentation C ρ hcell hone hmul R :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
-/-- Forgetting the action in degree zero recovers the module-level cellular augmentation. -/
-@[reassoc]
-theorem cellularActionComplexForget₂Iso_hom_f_zero_comp_augmentation :
-    (cellularActionComplexForget₂Iso C ρ hcell hone hmul R).hom.f 0 ≫
-        (forget₂ (Rep R G) (ModuleCat R)).map
-          ((cellularActionComplexAugmentation C ρ hcell hone hmul R).f 0) =
-      eqToHom (cellularChainComplex_X C (ModuleCat.of R R) 0) ≫
-        cellularAugmentation C (ModuleCat.of R R) := by
-  have h : (forget₂ (Rep R G) (ModuleCat R)).map
-      (cellularActionAugmentation C ρ hcell hone hmul R) =
-        cellularAugmentation C (ModuleCat.of R R) := by
-    rw [Rep.forget₂_moduleCat_map, cellularActionAugmentation_hom_toLinearMap,
-      ModuleCat.ofHom_hom]
-  simp [-Rep.forget₂_moduleCat_map, eqToHom_map, h]
-
-/-- **The augmented equivariant cellular chain complex of a contractible CW complex is exact**:
-forgetting the action, the augmentation is that of the underlying cellular chain complex. -/
+/-- **When `C` is contractible, the equivariant cellular augmentation is a quasi-isomorphism.** -/
 theorem quasiIso_cellularActionComplexAugmentation [ContractibleSpace C] :
     QuasiIso (cellularActionComplexAugmentation C ρ hcell hone hmul R) := by
   rw [← HomologicalComplex.quasiIso_map_iff_of_preservesHomology _ (forget₂ _ (ModuleCat R)),
     quasiIso_iff_of_arrow_mk_iso _ (cellularChainComplexAugmentation C (ModuleCat.of R R)) ?_]
-  · exact quasiIso_cellularChainComplexAugmentation C (ModuleCat.of R R)
+  · exact quasiIso_cellularChainComplexAugmentation _ _
   · refine Arrow.isoMk' _ _ (cellularActionComplexForget₂Iso C ρ hcell hone hmul R).symm
       ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
-    rw [Iso.symm_hom, Iso.inv_comp_eq]
+    -- Keep `forget₂` visible on the object transport (`eqToHom_map`) and on the augmentation (`h`).
+    have h : (forget₂ (Rep R G) (ModuleCat R)).map
+        (cellularActionAugmentation C ρ hcell hone hmul R) =
+        cellularAugmentation C (ModuleCat.of R R) := by
+      rw [Rep.forget₂_moduleCat_map, cellularActionAugmentation_hom_toLinearMap,
+        ModuleCat.ofHom_hom]
     ext : 1
-    have h := cellularActionComplexForget₂Iso_hom_f_zero_comp_augmentation C ρ hcell hone hmul R
-    simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
-      cellularChainComplexAugmentation_f_zero]
-    simpa [Category.assoc] using h.symm
-
-end ActionAugmentation
-
-section Map
-
-variable {X Y Z : Type u} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y]
-  [TopologicalSpace Z] [T2Space Z]
-  {A : Set X} (C : Set X) [RelCWComplex C A] {G : Type u} [Monoid G]
-  {ρ₁ : G → (TopCat.of C ⟶ TopCat.of C)} (hcell₁ : ∀ g, IsCellular C C (ρ₁ g))
-  (hone₁ : ρ₁ 1 = 𝟙 _) (hmul₁ : ∀ g g', ρ₁ (g * g') = ρ₁ g' ≫ ρ₁ g)
-  {B : Set Y} (D : Set Y) [RelCWComplex D B] {H : Type u} [Monoid H]
-  {ρ₂ : H → (TopCat.of D ⟶ TopCat.of D)} (hcell₂ : ∀ h, IsCellular D D (ρ₂ h))
-  (hone₂ : ρ₂ 1 = 𝟙 _) (hmul₂ : ∀ h h', ρ₂ (h * h') = ρ₂ h' ≫ ρ₂ h)
-  (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
-  (hcomm : ∀ g, ρ₁ g ≫ f = f ≫ ρ₂ (φ g))
-  (R : Type u) [Ring R]
-
-/-- A cellular map intertwining two cellular actions along `φ : G →* H` induces a morphism from
-the `G`-representation on cellular chains to the restriction along `φ` of the `H`-representation. -/
-def cellularActionRepresentationHom (n : ℕ) :
-    Rep.of (cellularActionRepresentation C ρ₁ hcell₁ hone₁ hmul₁ R n) ⟶
-      Rep.res φ (Rep.of (cellularActionRepresentation D ρ₂ hcell₂ hone₂ hmul₂ R n)) :=
-  Rep.ofHom
-    { toLinearMap := (cellularChainGroupMap C D hf (ModuleCat.of R R) n).hom
-      isIntertwining' g := by
-        have hcomp :
-            cellularChainGroupMap C D (IsCellular.comp C C (hcell₁ g) hf)
-                (ModuleCat.of R R) n =
-              cellularChainGroupMap C D (IsCellular.comp C D hf (hcell₂ (φ g)))
-                (ModuleCat.of R R) n := by
-          congr 1
-          exact hcomm g
-        rw [cellularChainGroupMap_comp C C (hcell₁ g) D hf,
-          cellularChainGroupMap_comp C D hf D (hcell₂ (φ g))] at hcomp
-        simpa only [Rep.res_obj_ρ, MonoidHom.comp_apply, cellularActionRepresentation_apply,
-          ModuleCat.hom_comp] using congrArg ModuleCat.Hom.hom hcomp }
-
-/-- The underlying linear map is the cellular chain-group map. -/
-@[simp]
-theorem cellularActionRepresentationHom_hom_toLinearMap (n : ℕ) :
-    (cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R
-        n).hom.toLinearMap =
-      (cellularChainGroupMap C D hf (ModuleCat.of R R) n).hom := (rfl)
-
-/-- The identity cellular map and identity monoid homomorphism induce the identity morphism on
-cellular chain representations. -/
-@[simp]
-theorem cellularActionRepresentationHom_id
-    (hf_id : IsCellular C C (𝟙 (TopCat.of C)))
-    (hcomm_id : ∀ g, ρ₁ g ≫ 𝟙 (TopCat.of C) = 𝟙 (TopCat.of C) ≫ ρ₁ (MonoidHom.id G g))
-    (n : ℕ) :
-    cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ C hcell₁ hone₁ hmul₁
-        (MonoidHom.id G) hf_id hcomm_id R n =
-      𝟙 (Rep.of (cellularActionRepresentation C ρ₁ hcell₁ hone₁ hmul₁ R n)) := by
-  refine Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
-  simp
-
-/-- A cellular self-map equal to the identity, over `MonoidHom.id G`, induces the identity
-morphism on cellular chain representations. -/
-theorem cellularActionRepresentationHom_eq_id
-    {f₀ : TopCat.of C ⟶ TopCat.of C} (hf₀ : IsCellular C C f₀)
-    (hcomm₀ : ∀ g, ρ₁ g ≫ f₀ = f₀ ≫ ρ₁ (MonoidHom.id G g)) (hf_id : f₀ = 𝟙 _) (n : ℕ) :
-    cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ C hcell₁ hone₁ hmul₁
-        (MonoidHom.id G) hf₀ hcomm₀ R n =
-      𝟙 (Rep.of (cellularActionRepresentation C ρ₁ hcell₁ hone₁ hmul₁ R n)) := by
-  subst hf_id
-  simp
-
-/-- Composition of equivariant cellular maps induces composition of cellular chain-representation
-morphisms, restricting the second map along the first monoid homomorphism. -/
-@[reassoc]
-theorem cellularActionRepresentationHom_comp
-    {F : Set Z} (E : Set Z) [RelCWComplex E F] {K : Type u} [Monoid K]
-    {ρ₃ : K → (TopCat.of E ⟶ TopCat.of E)} (hcell₃ : ∀ k, IsCellular E E (ρ₃ k))
-    (hone₃ : ρ₃ 1 = 𝟙 _) (hmul₃ : ∀ k k', ρ₃ (k * k') = ρ₃ k' ≫ ρ₃ k)
-    (ψ : H →* K) {f' : TopCat.of D ⟶ TopCat.of E} (hf' : IsCellular D E f')
-    (hcomm' : ∀ h, ρ₂ h ≫ f' = f' ≫ ρ₃ (ψ h))
-    {f'' : TopCat.of C ⟶ TopCat.of E} (hf_comp : IsCellular C E f'')
-    (hcomm_comp : ∀ g, ρ₁ g ≫ f'' = f'' ≫ ρ₃ ((ψ.comp φ) g))
-    (hcomp : f'' = f ≫ f') (n : ℕ) :
-    cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ E hcell₃ hone₃ hmul₃
-        (ψ.comp φ) hf_comp hcomm_comp R n =
-      cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂
-          φ hf hcomm R n ≫
-        (Rep.resFunctor φ).map
-          (cellularActionRepresentationHom D hcell₂ hone₂ hmul₂ E hcell₃ hone₃ hmul₃
-            ψ hf' hcomm' R n) := by
-  subst hcomp
-  refine Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
-  have hfc : hf_comp = IsCellular.comp C D hf hf' := Subsingleton.elim _ _
-  simpa only [hfc, cellularActionRepresentationHom_hom_toLinearMap, Rep.hom_comp,
-    Representation.IntertwiningMap.comp_toLinearMap, Rep.resMap_hom_toLinearMap,
-    ModuleCat.hom_comp] using
-    congrArg ModuleCat.Hom.hom (cellularChainGroupMap_comp C D hf E hf' (ModuleCat.of R R) n)
-
-/-- Equivariant cellular chain-group maps commute with the equivariant cellular differential. -/
-@[reassoc]
-theorem cellularActionRepresentationHom_comp_cellularActionDifferential (n : ℕ) :
-    cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂
-        φ hf hcomm R (n + 1) ≫
-      (Rep.resFunctor φ).map (cellularActionDifferential D ρ₂ hcell₂ hone₂ hmul₂ R n) =
-    cellularActionDifferential C ρ₁ hcell₁ hone₁ hmul₁ R n ≫
-      cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂
-        φ hf hcomm R n := by
-  refine Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
-  exact congrArg ModuleCat.Hom.hom
-    (cellularChainGroupMap_comp_cellularDifferential C D hf (ModuleCat.of R R) n)
-
-/-- A cellular map intertwining two cellular actions along `φ : G →* H` induces a chain map from
-the `G`-equivariant cellular complex to the restriction along `φ` of the `H`-equivariant cellular
-complex. -/
-def cellularActionComplexMap :
-    cellularActionComplex C ρ₁ hcell₁ hone₁ hmul₁ R ⟶
-      ((Rep.resFunctor φ).mapHomologicalComplex _).obj
-        (cellularActionComplex D ρ₂ hcell₂ hone₂ hmul₂ R) :=
-  ChainComplex.ofHom
-    (fun n ↦
-      eqToHom (cellularActionComplex_X C ρ₁ hcell₁ hone₁ hmul₁ R n) ≫
-        cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R n ≫
-        eqToHom (by rw [Functor.mapHomologicalComplex_obj_X, cellularActionComplex_X]))
-    fun n ↦ by
-      unfold cellularActionComplex
-      simp only [Functor.mapHomologicalComplex_obj_d, ChainComplex.of_d,
-        eqToHom_refl, Category.comp_id]
-      exact cellularActionRepresentationHom_comp_cellularActionDifferential
-        C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R n
-
-/-- In each degree the equivariant cellular chain map is the equivariant cellular chain-group map,
-up to the canonical term transports. -/
-@[simp]
-theorem cellularActionComplexMap_f (n : ℕ) :
-    (cellularActionComplexMap C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R).f n =
-      eqToHom (cellularActionComplex_X C ρ₁ hcell₁ hone₁ hmul₁ R n) ≫
-        cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R n ≫
-        eqToHom (by rw [Functor.mapHomologicalComplex_obj_X, cellularActionComplex_X]) := (rfl)
-
-/-- The identity cellular map and identity monoid homomorphism induce the identity chain map on
-the equivariant cellular complex. -/
-@[simp]
-theorem cellularActionComplexMap_id
-    (hf_id : IsCellular C C (𝟙 (TopCat.of C)))
-    (hcomm_id : ∀ g, ρ₁ g ≫ 𝟙 (TopCat.of C) = 𝟙 (TopCat.of C) ≫ ρ₁ (MonoidHom.id G g)) :
-    cellularActionComplexMap C hcell₁ hone₁ hmul₁ C hcell₁ hone₁ hmul₁
-        (MonoidHom.id G) hf_id hcomm_id R =
-      𝟙 (cellularActionComplex C ρ₁ hcell₁ hone₁ hmul₁ R) := by
-  ext n : 1
-  simp
-
-/-- A cellular self-map equal to the identity, over `MonoidHom.id G`, induces the identity chain
-map on the equivariant cellular complex. -/
-theorem cellularActionComplexMap_eq_id
-    {f₀ : TopCat.of C ⟶ TopCat.of C} (hf₀ : IsCellular C C f₀)
-    (hcomm₀ : ∀ g, ρ₁ g ≫ f₀ = f₀ ≫ ρ₁ (MonoidHom.id G g)) (hf_id : f₀ = 𝟙 _) :
-    cellularActionComplexMap C hcell₁ hone₁ hmul₁ C hcell₁ hone₁ hmul₁
-        (MonoidHom.id G) hf₀ hcomm₀ R =
-      𝟙 (cellularActionComplex C ρ₁ hcell₁ hone₁ hmul₁ R) := by
-  subst hf_id
-  exact cellularActionComplexMap_id C hcell₁ hone₁ hmul₁ R hf₀ hcomm₀
-
-/-- Equivariant cellular chain maps respect composition, restricting the second map along the
-first monoid homomorphism. -/
-@[reassoc]
-theorem cellularActionComplexMap_comp
-    {F : Set Z} (E : Set Z) [RelCWComplex E F] {K : Type u} [Monoid K]
-    {ρ₃ : K → (TopCat.of E ⟶ TopCat.of E)} (hcell₃ : ∀ k, IsCellular E E (ρ₃ k))
-    (hone₃ : ρ₃ 1 = 𝟙 _) (hmul₃ : ∀ k k', ρ₃ (k * k') = ρ₃ k' ≫ ρ₃ k)
-    (ψ : H →* K) {f' : TopCat.of D ⟶ TopCat.of E} (hf' : IsCellular D E f')
-    (hcomm' : ∀ h, ρ₂ h ≫ f' = f' ≫ ρ₃ (ψ h))
-    {f'' : TopCat.of C ⟶ TopCat.of E} (hf_comp : IsCellular C E f'')
-    (hcomm_comp : ∀ g, ρ₁ g ≫ f'' = f'' ≫ ρ₃ ((ψ.comp φ) g))
-    (hcomp : f'' = f ≫ f') :
-    cellularActionComplexMap C hcell₁ hone₁ hmul₁ E hcell₃ hone₃ hmul₃
-        (ψ.comp φ) hf_comp hcomm_comp R =
-      cellularActionComplexMap C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R ≫
-        ((Rep.resFunctor φ).mapHomologicalComplex _).map
-          (cellularActionComplexMap D hcell₂ hone₂ hmul₂ E hcell₃ hone₃ hmul₃ ψ hf' hcomm' R) := by
-  subst hcomp
-  ext n : 1
-  -- Rewrite under `(Rep.resFunctor φ).map` before `simp` projects it to `Rep.resMap φ`.
-  rw [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
-    cellularActionComplexMap_f (C := D), (Rep.resFunctor φ).map_comp,
-    (Rep.resFunctor φ).map_comp, eqToHom_map, eqToHom_map]
-  simp [cellularActionRepresentationHom_comp C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂
-    φ hf hcomm R E hcell₃ hone₃ hmul₃ ψ hf' hcomm' hf_comp hcomm_comp rfl n]
-
-/-- Forgetting the actions intertwines `cellularActionComplexMap` with the underlying module
-cellular chain map `cellularChainComplexMap`. -/
-@[reassoc]
-theorem cellularActionComplexForget₂Iso_hom_naturality :
-    cellularChainComplexMap C D hf (ModuleCat.of R R) ≫
-        (cellularActionComplexForget₂Iso D ρ₂ hcell₂ hone₂ hmul₂ R).hom =
-      (cellularActionComplexForget₂Iso C ρ₁ hcell₁ hone₁ hmul₁ R).hom ≫
-        ((forget₂ (Rep R G) (ModuleCat R)).mapHomologicalComplex _).map
-          (cellularActionComplexMap C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R) ≫
-        ((cellularActionComplex D ρ₂ hcell₂ hone₂ hmul₂ R).repResForget₂Iso φ).hom := by
-  ext n : 1
-  have h : (forget₂ (Rep R G) (ModuleCat R)).map
-      (cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R n) =
-        cellularChainGroupMap C D hf (ModuleCat.of R R) n := by
-    rw [Rep.forget₂_moduleCat_map, cellularActionRepresentationHom_hom_toLinearMap,
-      ModuleCat.ofHom_hom]
-  simp only [HomologicalComplex.comp_f, cellularChainComplexMap_f,
-    cellularActionComplexForget₂Iso_hom_f, Functor.mapHomologicalComplex_map_f,
-    cellularActionComplexMap_f, HomologicalComplex.repResForget₂Iso_hom_f,
-    Functor.map_comp, eqToHom_map, h]
-  dsimp only [Functor.mapHomologicalComplex_obj_X, Rep.res_obj_V]
-  simp [Category.assoc]
-
-end Map
+    simp [-Rep.forget₂_moduleCat_map, eqToHom_map, h]
 
 section MapAugmentation
 
-variable {X Y : Type u} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y]
-  (C : Set X) [CWComplex C] {G : Type u} [Monoid G]
-  {ρ₁ : G → (TopCat.of C ⟶ TopCat.of C)} (hcell₁ : ∀ g, IsCellular C C (ρ₁ g))
-  (hone₁ : ρ₁ 1 = 𝟙 _) (hmul₁ : ∀ g g', ρ₁ (g * g') = ρ₁ g' ≫ ρ₁ g)
-  (D : Set Y) [CWComplex D] {H : Type u} [Monoid H]
-  {ρ₂ : H → (TopCat.of D ⟶ TopCat.of D)} (hcell₂ : ∀ h, IsCellular D D (ρ₂ h))
-  (hone₂ : ρ₂ 1 = 𝟙 _) (hmul₂ : ∀ h h', ρ₂ (h * h') = ρ₂ h' ≫ ρ₂ h)
+variable {Y : Type u} [TopologicalSpace Y] [T2Space Y] (D : Set Y) [CWComplex D]
+  {H : Type u} [Monoid H] (σ : H → (TopCat.of D ⟶ TopCat.of D))
+  (hcell' : ∀ h, IsCellular D D (σ h))
+  (hone' : σ 1 = 𝟙 _) (hmul' : ∀ g h, σ (g * h) = σ h ≫ σ g)
   (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
-  (hcomm : ∀ g, ρ₁ g ≫ f = f ≫ ρ₂ (φ g))
-  (R : Type u) [Ring R]
+  (heq : ∀ g, ρ g ≫ f = f ≫ σ (φ g))
 
 /-- Equivariant cellular maps preserve the cellular augmentation in degree zero. -/
 @[reassoc (attr := simp)]
-theorem cellularActionRepresentationHom_comp_cellularActionAugmentation :
-    cellularActionRepresentationHom C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R 0 ≫
-        (Rep.resFunctor φ).map (cellularActionAugmentation D ρ₂ hcell₂ hone₂ hmul₂ R) =
-      cellularActionAugmentation C ρ₁ hcell₁ hone₁ hmul₁ R := by
+theorem cellularActionGroupMap_comp_cellularActionAugmentation :
+    cellularActionGroupMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq 0 ≫
+        (Rep.resFunctor φ).map (cellularActionAugmentation D σ hcell' hone' hmul' R) =
+      cellularActionAugmentation C ρ hcell hone hmul R := by
   refine Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
   exact congrArg ModuleCat.Hom.hom
     (cellularChainGroupMap_comp_cellularAugmentation C D hf (ModuleCat.of R R))
@@ -477,20 +442,22 @@ theorem cellularActionRepresentationHom_comp_cellularActionAugmentation :
 augmentations. -/
 @[reassoc]
 theorem cellularActionComplexMap_f_zero_comp_augmentation :
-    (cellularActionComplexMap C hcell₁ hone₁ hmul₁ D hcell₂ hone₂ hmul₂ φ hf hcomm R).f 0 ≫
+    (cellularActionComplexMap C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq).f 0 ≫
         (Rep.resFunctor φ).map
-          ((cellularActionComplexAugmentation D ρ₂ hcell₂ hone₂ hmul₂ R).f 0) =
-      (cellularActionComplexAugmentation C ρ₁ hcell₁ hone₁ hmul₁ R).f 0 := by
+          ((cellularActionComplexAugmentation D σ hcell' hone' hmul' R).f 0) =
+      (cellularActionComplexAugmentation C ρ hcell hone hmul R).f 0 := by
   have hmap :
       (Rep.resFunctor φ).map (Y := Rep.trivial R H R)
-          ((cellularActionComplexAugmentation D ρ₂ hcell₂ hone₂ hmul₂ R).f 0) =
+          ((cellularActionComplexAugmentation D σ hcell' hone' hmul' R).f 0) =
       eqToHom (by rw [cellularActionComplex_X]) ≫
-        (Rep.resFunctor φ).map (cellularActionAugmentation D ρ₂ hcell₂ hone₂ hmul₂ R) := by
+        (Rep.resFunctor φ).map (cellularActionAugmentation D σ hcell' hone' hmul' R) := by
     rw [cellularActionComplexAugmentation_f_zero, (Rep.resFunctor φ).map_comp, eqToHom_map]
-  refine (congrArg₂ (· ≫ ·) (cellularActionComplexMap_f _ _ _ _ _ _ _ _ _ _ _ _ 0) hmap).trans ?_
+  refine (congrArg₂ (· ≫ ·)
+    (cellularActionComplexMap_f C ρ hcell hone hmul R D σ hcell' hone' hmul' φ hf heq 0)
+    hmap).trans ?_
   rw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-    cellularActionRepresentationHom_comp_cellularActionAugmentation]
-  exact (cellularActionComplexAugmentation_f_zero C ρ₁ hcell₁ hone₁ hmul₁ R).symm
+    cellularActionGroupMap_comp_cellularActionAugmentation]
+  exact (cellularActionComplexAugmentation_f_zero C ρ hcell hone hmul R).symm
 
 end MapAugmentation
 

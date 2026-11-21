@@ -58,7 +58,7 @@ theorem exists_homeomorph_comp_eq_of_card_fiber_eq
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (e₀ : p ⁻¹' {x}) (f₀ : q ⁻¹' {x})
     (hcard : Nat.card (p ⁻¹' {x}) = Nat.card (q ⁻¹' {x})) :
     ∃ h : E ≃ₜ F, h e₀ = f₀ ∧ q ∘ h = p :=
-  hp.exists_homeomorph_comp_eq_of_range_eq hq e₀.2 f₀.2 <| by
+  hp.exists_homeomorph_comp_eq_of_range_eq hq e₀.property f₀.property <| by
     rw [IsCyclic.subgroup_eq_iff_index_eq, ← hp.card_fiber_eq_index e₀,
       ← hq.card_fiber_eq_index f₀, hcard]
 

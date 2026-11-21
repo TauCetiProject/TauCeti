@@ -161,13 +161,13 @@ theorem trace_genWeightSpaceProjection (χ : Weight K L M) :
   have hid : (genWeightSpaceProjection K L M χ).restrict (hmaps χ) = LinearMap.id := by
     refine LinearMap.ext fun m ↦ Subtype.ext ?_
     rw [LinearMap.coe_restrict_apply]
-    exact genWeightSpaceProjection_apply_of_mem m.2
+    exact genWeightSpaceProjection_apply_of_mem m.property
   have hzero : ∀ ψ : Weight K L M, ψ ≠ χ →
       (genWeightSpaceProjection K L M χ).restrict (hmaps ψ) = 0 := by
     intro ψ h
     refine LinearMap.ext fun m ↦ Subtype.ext ?_
     rw [LinearMap.coe_restrict_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero]
-    exact genWeightSpaceProjection_apply_of_mem_of_ne h m.2
+    exact genWeightSpaceProjection_apply_of_mem_of_ne h m.property
   rw [LinearMap.trace_eq_sum_trace_restrict (isInternal_genWeightSpace K L M) hmaps,
     Finset.sum_eq_single χ (fun ψ _ h ↦ by rw [hzero ψ h, map_zero]) (by simp), hid,
     LinearMap.trace_id]

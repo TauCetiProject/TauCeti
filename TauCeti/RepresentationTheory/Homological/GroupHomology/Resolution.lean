@@ -24,9 +24,6 @@ This is the homological counterpart of `TauCeti.Rep.groupCohomologyIso_inv_eq_ho
 
 * `Rep.groupHomologyIso_hom_eq_homologyMap`: `groupHomologyIso A n P` is the map on
   homology induced by a comparison map from the bar resolution to `P`.
-* `Rep.groupHomologyIso_hom_comp_homologyMap`, `Rep.homologyMap_comp_groupHomologyIso_inv`:
-  an augmentation-preserving chain map between two projective resolutions intertwines their
-  `groupHomologyIso` identifications.
 
 ## References
 
@@ -48,39 +45,6 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
 
-/-- **Group homology from two projective resolutions related by a chain map.** For projective
-resolutions `P` and `Q` of the trivial representation `k` and a chain map
-`φ : P.complex ⟶ Q.complex` lying over the identity of `k`, `groupHomologyIso` intertwines the two
-homology computations via `A ⊗ φ`. -/
-@[reassoc]
-theorem groupHomologyIso_hom_comp_homologyMap
-    (P Q : ProjectiveResolution (Rep.trivial k G k))
-    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) :
-    (groupHomologyIso A n P).hom ≫
-        HomologicalComplex.homologyMap
-          ((((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n =
-      (groupHomologyIso A n Q).hom := by
-  have h := ProjectiveResolution.isoLeftDerivedObj_hom_naturality (𝟙 _)
-    P Q φ (comm.trans (Category.comp_id _).symm) ((Rep.coinvariantsTensor k G).obj A) n
-  rw [CategoryTheory.Functor.map_id, Category.id_comp] at h
-  have hP : (groupHomologyIso A n P).hom = _ := Iso.trans_hom _ _
-  have hQ : (groupHomologyIso A n Q).hom = _ := Iso.trans_hom _ _
-  rw [hP, hQ]
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) h.symm)
-
-/-- Inverse form of `Rep.groupHomologyIso_hom_comp_homologyMap`: `A ⊗ φ` on homology commutes with
-the inverse identifications `groupHomologyIso`. -/
-@[reassoc]
-theorem homologyMap_comp_groupHomologyIso_inv
-    (P Q : ProjectiveResolution (Rep.trivial k G k))
-    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) :
-    HomologicalComplex.homologyMap
-        ((((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n ≫
-        (groupHomologyIso A n Q).inv =
-      (groupHomologyIso A n P).inv :=
-  (Iso.comp_inv_eq _).2 <|
-    (Iso.eq_inv_comp _).2 (groupHomologyIso_hom_comp_homologyMap A P Q φ comm n)
-
 /-- **Group homology from a projective resolution, through a comparison map.** For a projective
 resolution `P` of the trivial representation `k` and a chain map `φ` from the bar resolution to `P`
 lying over the identity of `k`, `groupHomologyIso A n P` is the map on homology induced by the
@@ -91,20 +55,19 @@ theorem groupHomologyIso_hom_eq_homologyMap (P : ProjectiveResolution (Rep.trivi
     (groupHomologyIso A n P).hom = HomologicalComplex.homologyMap
       ((groupHomology.inhomogeneousChainsIso A).hom ≫
         (((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n := by
-  -- `groupHomologyIso` is `groupHomologyIsoTor` followed by the `Tor` computation, so for the bar
-  -- resolution the two `Tor` isomorphisms cancel, leaving the inhomogeneous chain isomorphism.
-  have hbar : (groupHomologyIso A n (Rep.barResolution k G)).hom =
-      HomologicalComplex.homologyMap (groupHomology.inhomogeneousChainsIso A).hom n := by
-    have h₁ : (groupHomologyIso A n (Rep.barResolution k G)).hom = _ := Iso.trans_hom _ _
-    have h₂ : (groupHomologyIsoTor A n).hom = _ := Iso.trans_hom _ _
-    rw [h₁, h₂, Iso.symm_hom, isoOfQuasiIsoAt_hom]
-    exact (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (Rep.torIso A (Rep.barResolution k G) n).inv_hom_id).trans
-        (Category.comp_id _)
+  have h := ProjectiveResolution.isoLeftDerivedObj_hom_naturality (𝟙 _)
+    (Rep.barResolution k G) P φ (comm.trans (Category.comp_id _).symm)
+    ((Rep.coinvariantsTensor k G).obj A) n
+  rw [CategoryTheory.Functor.map_id, Category.id_comp] at h
+  -- `groupHomologyIso` is `groupHomologyIsoTor` followed by the `Tor` computation from `P`,
+  -- and `groupHomologyIsoTor` is the inhomogeneous chain isomorphism followed by the inverse
+  -- `Tor` computation from the bar resolution.
+  have h₁ : (groupHomologyIso A n P).hom = _ := Iso.trans_hom _ _
+  have h₂ : (groupHomologyIsoTor A n).hom = _ := Iso.trans_hom _ _
+  rw [h₁, h₂, Iso.symm_hom, isoOfQuasiIsoAt_hom, HomologicalComplex.homologyMap_comp]
   -- The homotopy equivalence `HomotopyEquiv.ofIso e` has forward map `e.hom` by definition, and
   -- `groupHomology A n` is the homology of the inhomogeneous chains by definition; `exact`
   -- compares these presentations up to unfolding.
-  exact ((groupHomologyIso_hom_comp_homologyMap A (Rep.barResolution k G) P φ comm n).symm.trans
-    (congrArg (· ≫ _) hbar)).trans (HomologicalComplex.homologyMap_comp _ _ n).symm
+  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Iso.inv_comp_eq _).2 h))
 
 end Rep

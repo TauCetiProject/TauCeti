@@ -15,18 +15,16 @@ public import TauCeti.AlgebraicTopology.Cellular.Covering
 
 Let `p : E → B` be the quotient covering map of a free action of a group `G` on `E`
 (`IsQuotientCoveringMap p G`), let `C` be a CW complex in the Hausdorff space `B`, and give
-`p ⁻¹' C` the lifted CW structure `TauCeti.cwComplexPreimage`. With coefficients in a commutative
-ring `R`, the cellular chain complex of `p ⁻¹' C` is a chain complex of representations of `G`,
-`TauCeti.cellularChainComplexRep`, in which `g` acts by the chain map of translation by `g`, and
-each of its terms is free over `R[G]` (`TauCeti.cellularChainRepIsoFree`), hence projective
-(`TauCeti.projective_cellularChainComplexRep_X`).
-
+`p ⁻¹' C` the lifted CW structure `TauCeti.cwComplexPreimage`. With coefficients in a ring `R`, the
+cellular chain complex of `p ⁻¹' C` is a chain complex of representations of `G`,
+`TauCeti.cellularChainComplexRep`, in which `g` acts by the chain map of translation by `g`.
 Translations are cellular, and the augmentation of cellular chains is natural under cellular maps,
 so the augmentation is a morphism of representations to the trivial representation
 (`TauCeti.cellularAugmentationRep`). If `p ⁻¹' C` is contractible, the augmented cellular chain
-complex is exact (`TauCeti.quasiIso_cellularChainComplexAugmentation`), so the cellular chains of
-`p ⁻¹' C` form a projective resolution of the trivial representation of `G` over `R`
-(`TauCeti.cellularResolution`).
+complex is exact (`TauCeti.quasiIso_cellularChainComplexAugmentation`). Over a commutative ring
+`R`, each term is free over `R[G]` (`TauCeti.cellularChainRepIsoFree`), hence projective
+(`TauCeti.projective_cellularChainComplexRep_X`), so the cellular chains of `p ⁻¹' C` form a
+projective resolution of the trivial representation of `G` over `R` (`TauCeti.cellularResolution`).
 
 This applies to the universal cover of a `K(G, 1)` CW complex: if `B` carries a CW structure on
 the whole space and is aspherical, and `E` is simply connected, then `E` is weakly contractible, and
@@ -69,7 +67,11 @@ namespace TauCeti
 
 variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
   (C : Set B) {G : Type w} [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G)
-  [T2Space B] [CWComplex C] (R : Type w) [CommRing R]
+  [T2Space B] [CWComplex C]
+
+section Augmentation
+
+variable (R : Type w) [Ring R]
 
 /-- The **augmentation** of the cellular chains of the lift `p ⁻¹' C` of `C` in degree `0`, as a
 morphism to the trivial representation: translation by an element of `G` is cellular, and the
@@ -78,7 +80,8 @@ def cellularAugmentationRep :
     Rep.of (cellularChainRepresentation C hG R 0) ⟶ Rep.trivial R G R :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
-  eqToHom (congrArg Rep.of (cellularChainRepresentation_def C hG R 0)) ≫
+  eqToHom (congrArg Rep.of
+      (cellularChainRepresentation_eq_cellularActionRepresentation C hG R 0)) ≫
     cellularActionAugmentation (p ⁻¹' C) (preimageSMul C hG)
       (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
 
@@ -92,14 +95,15 @@ lemma cellularAugmentationRep_hom_toLinearMap :
       (cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R)).hom := by
   let := cwComplexPreimage C hG.isCoveringMap
   have := hG.isCoveringMap.t2Space
-  have heq :
-      (eqToHom (congrArg Rep.of (cellularChainRepresentation_def C hG R 0))).hom.toLinearMap =
-        LinearMap.id := by
-    simpa [Rep.forget₂_moduleCat_map] using
-      congrArg ModuleCat.Hom.hom
-        (eqToHom_map (forget₂ (Rep R G) (ModuleCat R))
-          (congrArg Rep.of (cellularChainRepresentation_def C hG R 0)))
-  simp [cellularAugmentationRep, Rep.hom_comp, heq]
+  unfold cellularAugmentationRep
+  have h : ∀ {ρ₁ ρ₂ : Representation R G
+      (cellularChainGroup (p ⁻¹' C) (ModuleCat.of R R) 0 : ModuleCat R)} (e : ρ₁ = ρ₂)
+      (f : Rep.of ρ₂ ⟶ Rep.trivial R G R),
+      (eqToHom (congrArg Rep.of e) ≫ f).hom.toLinearMap = f.hom.toLinearMap := by
+    rintro _ _ rfl f
+    simp
+  rw [h (cellularChainRepresentation_eq_cellularActionRepresentation C hG R 0),
+    cellularActionAugmentation_hom_toLinearMap]
 
 /-- The equivariant augmentation vanishes on the boundaries of lifted `1`-cells. -/
 @[reassoc (attr := simp)]
@@ -107,7 +111,9 @@ lemma cellularDifferentialRep_comp_cellularAugmentationRep :
     cellularDifferentialRep C hG R 0 ≫ cellularAugmentationRep C hG R = 0 := by
   let := cwComplexPreimage C hG.isCoveringMap
   have := hG.isCoveringMap.t2Space
-  simp [cellularDifferentialRep_def, cellularAugmentationRep]
+  rw [cellularDifferentialRep_eq_cellularActionDifferential, cellularAugmentationRep,
+    Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    cellularActionDifferential_comp_cellularActionAugmentation, comp_zero]
 
 /-- The **augmentation of the lifted cellular chain complex**, as a chain map of complexes of
 representations to the trivial representation placed in degree `0`. -/
@@ -116,7 +122,7 @@ def cellularChainComplexRepAugmentation :
       (ChainComplex.single₀ (Rep.{w} R G)).obj (Rep.trivial R G R) :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
-  eqToHom (cellularChainComplexRep_def C hG R) ≫
+  eqToHom (cellularChainComplexRep_eq_cellularActionComplex C hG R) ≫
     cellularActionComplexAugmentation (p ⁻¹' C) (preimageSMul C hG)
       (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
 
@@ -128,7 +134,10 @@ lemma cellularChainComplexRepAugmentation_f_zero :
       eqToHom (cellularChainComplexRep_X C hG R 0) ≫ cellularAugmentationRep C hG R := by
   let := cwComplexPreimage C hG.isCoveringMap
   have := hG.isCoveringMap.t2Space
-  simp [cellularChainComplexRepAugmentation, cellularAugmentationRep]
+  rw [cellularChainComplexRepAugmentation, cellularAugmentationRep]
+  refine ((HomologicalComplex.comp_f _ _ 0).trans (HomologicalComplex.eqToHom_f _ 0 =≫ _)).trans ?_
+  rw [cellularActionComplexAugmentation_f_zero]
+  exact (eqToHom_trans_assoc _ _ _).trans (eqToHom_trans_assoc _ _ _).symm
 
 /-- **The augmented lifted cellular chain complex of a contractible cover is exact**: forgetting
 the action, the augmentation is that of the cellular chain complex of the contractible CW
@@ -141,6 +150,12 @@ theorem quasiIso_cellularChainComplexRepAugmentation [ContractibleSpace (p ⁻¹
   have := quasiIso_cellularActionComplexAugmentation (p ⁻¹' C) (preimageSMul C hG)
     (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
   infer_instance
+
+end Augmentation
+
+section Resolution
+
+variable (R : Type w) [CommRing R]
 
 /-- The terms of the lifted cellular chain complex are projective representations: each is free
 over the group ring, with basis one chosen lift of each cell of `C`. -/
@@ -179,5 +194,7 @@ lemma cellularResolution_π [ContractibleSpace (p ⁻¹' C)] :
     (cellularResolution C hG R).π =
       eqToHom (cellularResolution_complex C hG R) ≫ cellularChainComplexRepAugmentation C hG R :=
   (Category.id_comp _).symm
+
+end Resolution
 
 end TauCeti

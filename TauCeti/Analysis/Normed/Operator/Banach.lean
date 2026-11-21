@@ -25,7 +25,10 @@ closed-range theorem. The scalar actions need no compatibility with the norms; o
 and continuity of the map enter the argument.
 
 The file also records the form of the open mapping theorem used to invert operators pointwise:
-a bijective continuous linear map between Banach spaces is invertible.
+a bijective continuous linear map between Banach spaces is invertible. It also identifies
+Mathlib's equivalence `ContinuousLinearMap.coprodSubtypeLEquivOfIsCompl`, which the open mapping
+theorem builds from an injective map and a complement of its range, with the underlying
+coproduct map.
 
 ## Main declarations
 
@@ -34,6 +37,9 @@ a bijective continuous linear map between Banach spaces is invertible.
 * `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure`: if every `y` lies in the closure of
   the image of the closed ball of radius `C * ‖y‖`, then for every `C' > C`, every `y` has a
   preimage of norm at most `C' * ‖y‖`.
+* `ContinuousLinearMap.coe_coprodSubtypeLEquivOfIsCompl`: Mathlib's equivalence
+  `f.coprodSubtypeLEquivOfIsCompl` of `E × G` with `F`, for an injective `f` whose range has
+  the complement `G`, is `f.coprod G.subtypeL` as a continuous linear map.
 * `ContinuousLinearMap.isInvertible_iff_bijective`: by the open mapping theorem, a continuous
   linear map between Banach spaces is invertible exactly when it is bijective.
 * `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of an
@@ -151,6 +157,15 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- The equivalence `f.coprodSubtypeLEquivOfIsCompl h hker` of `E × G` with `F`, given by an
+injective `f` whose range has the complement `G`, is `f.coprod G.subtypeL` as a continuous linear
+map. -/
+@[simp]
+theorem coe_coprodSubtypeLEquivOfIsCompl (f : E →L[𝕜] F) {G : Submodule 𝕜 F}
+    (h : IsCompl f.range G) [CompleteSpace G] (hker : f.ker = ⊥) :
+    (f.coprodSubtypeLEquivOfIsCompl h hker : E × G →L[𝕜] F) = f.coprod G.subtypeL :=
+  ContinuousLinearEquiv.coe_ofBijective _ _ _
 
 /-- By the open mapping theorem, a continuous linear map between Banach spaces is invertible, that
 is, a continuous linear equivalence, exactly when it is bijective. -/
