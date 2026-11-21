@@ -42,7 +42,7 @@ for a real seminormed space `X`, and the complexification of bounded operators, 
   complex dimension the real dimension of the original space.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 

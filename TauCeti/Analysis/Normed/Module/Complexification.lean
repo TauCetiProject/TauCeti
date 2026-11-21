@@ -193,13 +193,13 @@ def imCLM : Complexification X →L[ℝ] X :=
 /-- The real embedding, as a real-linear isometry. -/
 def ofRealLI : X →ₗᵢ[ℝ] Complexification X where
   __ := ofRealLm X
-  norm_map' := norm_ofReal
+  norm_map' x := by rw [ofRealLm_apply, norm_ofReal]
 
 variable {X}
 
-@[simp] theorem reCLM_apply (z : Complexification X) : reCLM X z = z.re := (rfl)
-@[simp] theorem imCLM_apply (z : Complexification X) : imCLM X z = z.im := (rfl)
-@[simp] theorem ofRealLI_apply (x : X) : ofRealLI X x = ofReal x := (rfl)
+@[simp] theorem reCLM_apply (z : Complexification X) : reCLM X z = z.re := by simp [reCLM]
+@[simp] theorem imCLM_apply (z : Complexification X) : imCLM X z = z.im := by simp [imCLM]
+@[simp] theorem ofRealLI_apply (x : X) : ofRealLI X x = ofReal x := ofRealLm_apply x
 
 variable (X)
 
@@ -272,8 +272,10 @@ def equivPi : Complexification (ι → ℝ) ≃L[ℂ] (ι → ℂ) where
   left_inv _ := (rfl)
   right_inv _ := (rfl)
   continuous_toFun := by
-    have hre : Continuous fun z : Complexification (ι → ℝ) ↦ z.re := (reCLM _).continuous
-    have him : Continuous fun z : Complexification (ι → ℝ) ↦ z.im := (imCLM _).continuous
+    have hre : Continuous fun z : Complexification (ι → ℝ) ↦ z.re :=
+      (reCLM _).continuous.congr reCLM_apply
+    have him : Continuous fun z : Complexification (ι → ℝ) ↦ z.im :=
+      (imCLM _).continuous.congr imCLM_apply
     -- Each coordinate is `Complex.equivRealProdCLM.symm (z.re i, z.im i)`.
     exact continuous_pi fun i ↦ Complex.equivRealProdCLM.symm.continuous.comp
       (by fun_prop : Continuous fun z : Complexification (ι → ℝ) ↦ (z.re i, z.im i))
@@ -323,11 +325,13 @@ theorem coe_complexify (T : X →L[ℝ] Y) :
 
 @[simp]
 theorem complexify_apply_re (T : X →L[ℝ] Y) (z : Complexification X) :
-    (T.complexify z).re = T z.re := (rfl)
+    (T.complexify z).re = T z.re :=
+  (T : X →ₗ[ℝ] Y).complexify_apply_re z
 
 @[simp]
 theorem complexify_apply_im (T : X →L[ℝ] Y) (z : Complexification X) :
-    (T.complexify z).im = T z.im := (rfl)
+    (T.complexify z).im = T z.im :=
+  (T : X →ₗ[ℝ] Y).complexify_apply_im z
 
 @[simp]
 theorem complexify_ofReal (T : X →L[ℝ] Y) (x : X) :
@@ -493,9 +497,9 @@ private def homRestriction (T : Complexification X →L[ℂ] Complexification Y)
     (imCLM Y).comp ((T.restrictScalars ℝ).comp (ofRealLI X).toContinuousLinearMap)⟩
 
 private theorem homRestriction_re_apply (T : Complexification X →L[ℂ] Complexification Y)
-    (x : X) : (homRestriction T).re x = (T (ofReal x)).re := (rfl)
+    (x : X) : (homRestriction T).re x = (T (ofReal x)).re := by simp [homRestriction]
 private theorem homRestriction_im_apply (T : Complexification X →L[ℂ] Complexification Y)
-    (x : X) : (homRestriction T).im x = (T (ofReal x)).im := (rfl)
+    (x : X) : (homRestriction T).im x = (T (ofReal x)).im := by simp [homRestriction]
 
 private theorem homExtension_norm_le (u : Complexification (X →L[ℝ] Y)) :
     ‖homExtension u‖ ≤ 2 * ‖u‖ := by
