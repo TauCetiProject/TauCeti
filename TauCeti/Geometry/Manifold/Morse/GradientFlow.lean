@@ -144,7 +144,7 @@ theorem maximalIntegralCurve_neg_mgradient_neg_of_nonpos (hf : ContMDiff I 𝓘(
       funext y
       simp [mgradient_neg]
     rw [h2] at h
-    exact h.mono fun s hs ↦ show l < s * -1 by linarith [mem_Iio.1 hs]
+    exact h.mono fun s hs ↦ by rw [mem_ofPred_eq, mem_Ioi]; linarith [mem_Iio.1 hs]
   have h := (hcurve.mono (Ioo_subset_Iio_self (a := t - 1) (b := -l))).eqOn_maximalIntegralCurve
     (x := x) (contMDiff_neg_mgradient_one (f := -f) hf.neg) ⟨by linarith, by linarith⟩
     (by simp [maximalIntegralCurve_zero])
