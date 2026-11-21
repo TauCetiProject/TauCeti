@@ -36,9 +36,13 @@ exactly the vectors with real coordinates over the image of `A` (`doubleAlongSwa
 double is again trivial (`doubleAlongTrivialIso`); there the involution is
 `(z, v) ↦ (swap z, conj v)`.
 
-No closedness of `A` is needed. For the boundary of a Riemann surface with boundary this is the
-topological doubled bundle over the Schottky double. Smoothness of the double via collars, and
-independence of the choices up to isomorphism, are not treated here.
+No closedness of `A` is needed. For a Riemann surface with boundary `M`, the Schottky double
+`TauCeti.SchottkyDouble M` is the abbreviation `DoubleAlong (borderedInterior M : Set M)ᶜ`.
+After importing `BorderedHolomorphic.SchottkyDouble.Basic`, `C.doubleAlong hC` therefore already
+has type `FiniteRankBundleCore ℂ (TauCeti.SchottkyDouble M)` for a core real along the boundary.
+It is the topological doubled bundle `E_F` of McDuff and Salamon; the sheet isomorphisms, rank
+formula and conjugate-linear involution above apply directly, without a separate wrapper.
+Smoothness of the double via collars and independence of choices are not treated here.
 
 ## References
 
