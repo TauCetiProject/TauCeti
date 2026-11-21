@@ -1,0 +1,349 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import TauCeti.QuantumGroups.QuantumInteger.Binomial
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
+
+/-!
+# Gaussian polynomials and Gaussian binomial coefficients
+
+The Gaussian polynomial `[n k] ∈ ℕ[t]` is defined by the successor recursion
+`[n+1 k+1] = [n k] + t^(k+1) [n k+1]`, with `[n 0] = 1` and `[0 k+1] = 0`, and the Gaussian
+binomial coefficient `[n k]_t` is its evaluation at an element `t` of a semiring. Defining the
+coefficient by evaluating a polynomial with natural coefficients keeps every identity
+denominator-free: it holds over every commutative (semi)ring, in particular at roots of unity, in
+positive characteristic, and at the integer `q` counting the elements of a finite field.
+
+The polynomial identities are proved without division. Over a commutative ring the coefficient
+satisfies `[n k]_t ∏_{i<k} (1 - t^(i+1)) = ∏_{i<k} (1 - t^(n-i))`, and for `k ≤ n` the
+factorial form `[n k]_t (t;t)_k (t;t)_(n-k) = (t;t)_n`. Over a field these give the classical
+quotient formula `[n k]_t = ∏_{i=1}^{k} (1 - t^(n-k+i)) / (1 - t^i)` whenever its denominators
+are nonzero. The factorial form, applied in the domain `ℤ[t]`, gives the symmetry
+`[n n-k] = [n k]`.
+
+The Gaussian coefficient is the non-symmetric normalization of `TauCeti.quantumBinomial`: over a
+field, `[n k]_(q²) = q^(k (n-k)) [n choose k]_q` for `q ≠ 0`. Unlike the symmetric coefficient, it
+needs neither inverses nor a square root of the parameter.
+
+## Main definitions
+
+* `TauCeti.gaussianPoly n k`: the Gaussian polynomial `[n k] ∈ ℕ[t]`.
+* `TauCeti.gaussianBinomial t n k`: the Gaussian binomial coefficient `[n k]_t`, the value of
+  `gaussianPoly n k` at `t`.
+
+## Main results
+
+* `TauCeti.gaussianBinomial_succ_succ`: the successor recursion.
+* `TauCeti.gaussianBinomial_eq_zero_of_lt`, `TauCeti.gaussianBinomial_self`: `[n k]_t = 0` for
+  `n < k`, and `[n n]_t = 1`.
+* `TauCeti.gaussianBinomial_one`: `[n k]_1 = n.choose k`.
+* `TauCeti.gaussianBinomial_symm`: `[n n-k]_t = [n k]_t` for `k ≤ n`.
+* `TauCeti.gaussianBinomial_mul_prod_one_sub_pow` and
+  `TauCeti.gaussianBinomial_mul_prod_mul_prod`: the denominator-free product formulas.
+* `TauCeti.gaussianBinomial_eq_prod_div`: the quotient formula over a field.
+* `TauCeti.prod_one_add_pow_mul_eq_sum_gaussianBinomial`: **Cauchy's `q`-binomial theorem**
+  `∏_{i<n} (1 + t^i z) = ∑_{k ≤ n} t^(k(k-1)/2) [n k]_t z^k` over every commutative semiring.
+* `TauCeti.gaussianBinomial_sq`: the comparison with `TauCeti.quantumBinomial`.
+
+## References
+
+* R. P. Stanley, *Enumerative Combinatorics, Volume 1*, 2nd ed., Section 1.7 (Gaussian
+  coefficients, their recursion and polynomiality) and Section 1.8 (the `q`-binomial theorem).
+* G. Gasper and M. Rahman, *Basic Hypergeometric Series*, 2nd ed., Section 1.3.
+-/
+
+public section
+
+open Finset Polynomial
+
+namespace TauCeti
+
+/-- The **Gaussian polynomial** `[n k] ∈ ℕ[t]`, defined by `[n 0] = 1`, `[0 k+1] = 0` and the
+successor recursion `[n+1 k+1] = [n k] + t^(k+1) [n k+1]`. -/
+noncomputable def gaussianPoly : ℕ → ℕ → ℕ[X]
+  | _, 0 => 1
+  | 0, _ + 1 => 0
+  | n + 1, k + 1 => gaussianPoly n k + X ^ (k + 1) * gaussianPoly n (k + 1)
+
+/-- `[n 0] = 1`. -/
+@[simp]
+theorem gaussianPoly_zero_right (n : ℕ) : gaussianPoly n 0 = 1 := by
+  cases n <;> rfl
+
+/-- `[0 k+1] = 0`. -/
+theorem gaussianPoly_zero_succ (k : ℕ) : gaussianPoly 0 (k + 1) = 0 := (rfl)
+
+/-- The successor recursion `[n+1 k+1] = [n k] + t^(k+1) [n k+1]`. -/
+theorem gaussianPoly_succ_succ (n k : ℕ) :
+    gaussianPoly (n + 1) (k + 1) = gaussianPoly n k + X ^ (k + 1) * gaussianPoly n (k + 1) :=
+  (rfl)
+
+section Semiring
+
+variable {R S : Type*} [Semiring R] [Semiring S]
+
+/-- The **Gaussian binomial coefficient** `[n k]_t`: the Gaussian polynomial `[n k]` evaluated at
+an element `t` of a semiring. -/
+noncomputable def gaussianBinomial (t : R) (n k : ℕ) : R :=
+  aeval t (gaussianPoly n k)
+
+/-- `[n k]_t` is the value of the Gaussian polynomial `[n k]` at `t`. -/
+theorem gaussianBinomial_def (t : R) (n k : ℕ) :
+    gaussianBinomial t n k = aeval t (gaussianPoly n k) :=
+  (rfl)
+
+/-- Evaluating the Gaussian polynomial at the variable returns it. -/
+@[simp]
+theorem gaussianBinomial_X (n k : ℕ) : gaussianBinomial (X : ℕ[X]) n k = gaussianPoly n k :=
+  aeval_X_left_apply _
+
+/-- `[n 0]_t = 1`. -/
+@[simp]
+theorem gaussianBinomial_zero_right (t : R) (n : ℕ) : gaussianBinomial t n 0 = 1 := by
+  simp [gaussianBinomial_def]
+
+/-- `[0 k+1]_t = 0`. -/
+theorem gaussianBinomial_zero_succ (t : R) (k : ℕ) : gaussianBinomial t 0 (k + 1) = 0 := by
+  simp [gaussianBinomial_def, gaussianPoly_zero_succ]
+
+/-- The successor recursion `[n+1 k+1]_t = [n k]_t + t^(k+1) [n k+1]_t`. -/
+theorem gaussianBinomial_succ_succ (t : R) (n k : ℕ) :
+    gaussianBinomial t (n + 1) (k + 1) =
+      gaussianBinomial t n k + t ^ (k + 1) * gaussianBinomial t n (k + 1) := by
+  simp [gaussianBinomial_def, gaussianPoly_succ_succ]
+
+/-- `[n k]_t = 0` for `n < k`. -/
+@[simp]
+theorem gaussianBinomial_eq_zero_of_lt (t : R) {n k : ℕ} (h : n < k) :
+    gaussianBinomial t n k = 0 := by
+  induction n generalizing k with
+  | zero =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero h.ne'
+    exact gaussianBinomial_zero_succ t k
+  | succ n ih =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
+    rw [gaussianBinomial_succ_succ, ih (by omega), ih (by omega), mul_zero, add_zero]
+
+/-- `[n n]_t = 1`. -/
+@[simp]
+theorem gaussianBinomial_self (t : R) (n : ℕ) : gaussianBinomial t n n = 1 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [gaussianBinomial_succ_succ, ih, gaussianBinomial_eq_zero_of_lt t n.lt_succ_self,
+      mul_zero, add_zero]
+
+/-- `[n k] = 0` for `n < k`. -/
+@[simp]
+theorem gaussianPoly_eq_zero_of_lt {n k : ℕ} (h : n < k) : gaussianPoly n k = 0 := by
+  rw [← gaussianBinomial_X, gaussianBinomial_eq_zero_of_lt _ h]
+
+/-- `[n n] = 1`. -/
+@[simp]
+theorem gaussianPoly_self (n : ℕ) : gaussianPoly n n = 1 := by
+  rw [← gaussianBinomial_X, gaussianBinomial_self]
+
+/-- At `t = 1` the Gaussian binomial coefficient is the binomial coefficient. -/
+@[simp]
+theorem gaussianBinomial_one (n k : ℕ) : gaussianBinomial (1 : R) n k = n.choose k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k => simp [gaussianBinomial_succ_succ, ih, Nat.choose_succ_succ]
+
+/-- Semiring homomorphisms commute with Gaussian binomial coefficients. -/
+@[simp]
+theorem map_gaussianBinomial {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F) (t : R)
+    (n k : ℕ) : f (gaussianBinomial t n k) = gaussianBinomial (f t) n k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k => simp [gaussianBinomial_succ_succ, ih]
+
+end Semiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- The denominator-free product formula `[n k]_t ∏_{i<k} (1 - t^(i+1)) = ∏_{i<k} (1 - t^(n-i))`,
+valid for all `n` and `k` over every commutative ring: for `k > n` both sides vanish. -/
+theorem gaussianBinomial_mul_prod_one_sub_pow (t : R) (n k : ℕ) :
+    gaussianBinomial t n k * ∏ i ∈ range k, (1 - t ^ (i + 1)) =
+      ∏ i ∈ range k, (1 - t ^ (n - i)) := by
+  induction n generalizing k with
+  | zero =>
+    cases k with
+    | zero => simp
+    | succ k => simp [prod_range_succ']
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k =>
+      have e₁ := ih k
+      have e₂ := ih (k + 1)
+      rw [prod_range_succ, prod_range_succ] at e₂
+      rw [gaussianBinomial_succ_succ, prod_range_succ, prod_range_succ']
+      simp only [Nat.add_sub_add_right, Nat.sub_zero]
+      rcases le_or_gt k n with hkn | hkn
+      · have hpow : t ^ (k + 1) * t ^ (n - k) = t ^ (n + 1) := by
+          rw [← pow_add]
+          congr 1
+          omega
+        linear_combination (1 - t ^ (k + 1)) * e₁ + t ^ (k + 1) * e₂ -
+          (∏ i ∈ range k, (1 - t ^ (n - i))) * hpow
+      · have hzero : ∏ i ∈ range k, (1 - t ^ (n - i)) = 0 :=
+          prod_eq_zero (mem_range.2 hkn) (by simp)
+        rw [hzero] at e₁ e₂ ⊢
+        linear_combination (1 - t ^ (k + 1)) * e₁ + t ^ (k + 1) * e₂
+
+/-- The factorial form of the product formula: for `k ≤ n`,
+`[n k]_t (t;t)_k (t;t)_(n-k) = (t;t)_n`, where `(t;t)_m = ∏_{i<m} (1 - t^(i+1))`. -/
+theorem gaussianBinomial_mul_prod_mul_prod (t : R) {n k : ℕ} (h : k ≤ n) :
+    gaussianBinomial t n k * (∏ i ∈ range k, (1 - t ^ (i + 1))) *
+        ∏ i ∈ range (n - k), (1 - t ^ (i + 1)) =
+      ∏ i ∈ range n, (1 - t ^ (i + 1)) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [gaussianBinomial_mul_prod_one_sub_pow, Nat.add_sub_cancel_left, add_comm k m,
+    prod_range_add, mul_comm, ← prod_range_reflect (fun i ↦ 1 - t ^ (m + i + 1))]
+  congr 1
+  refine prod_congr rfl fun i hi ↦ ?_
+  rw [mem_range] at hi
+  congr 2
+  omega
+
+/-- The subspace-counting form of the product formula
+`[n k]_t ∏_{i<k} (t^k - t^i) = ∏_{i<k} (t^n - t^i)`; for `k > n` both sides vanish. At the
+cardinality `t = q` of a finite field the products count the linearly independent `k`-tuples in
+spaces of dimensions `k` and `n`. -/
+theorem gaussianBinomial_mul_prod_pow_sub_pow (t : R) (n k : ℕ) :
+    gaussianBinomial t n k * ∏ i ∈ range k, (t ^ k - t ^ i) = ∏ i ∈ range k, (t ^ n - t ^ i) := by
+  rcases lt_or_ge n k with h | h
+  · rw [gaussianBinomial_eq_zero_of_lt t h, zero_mul, prod_eq_zero (mem_range.2 h) (sub_self _)]
+  -- Factor `t^m - t^i = -t^i (1 - t^(m-i))` for `i < k ≤ m`.
+  have hfactor {m : ℕ} (hm : k ≤ m) : ∏ i ∈ range k, (t ^ m - t ^ i) =
+      (∏ i ∈ range k, -t ^ i) * ∏ i ∈ range k, (1 - t ^ (m - i)) := by
+    rw [← prod_mul_distrib]
+    refine prod_congr rfl fun i hi ↦ ?_
+    rw [mem_range] at hi
+    rw [show t ^ m = t ^ i * t ^ (m - i) by rw [← pow_add]; congr 1; omega]
+    ring
+  have hreflect : ∏ i ∈ range k, (1 - t ^ (k - i)) = ∏ i ∈ range k, (1 - t ^ (i + 1)) := by
+    rw [← prod_range_reflect (fun i ↦ 1 - t ^ (i + 1))]
+    refine prod_congr rfl fun i hi ↦ ?_
+    rw [mem_range] at hi
+    congr 2
+    omega
+  rw [hfactor le_rfl, hfactor h, hreflect, mul_left_comm, gaussianBinomial_mul_prod_one_sub_pow]
+
+end CommRing
+
+/-- The Gaussian polynomials are symmetric: `[n n-k] = [n k]` for `k ≤ n`. -/
+theorem gaussianPoly_symm {n k : ℕ} (h : k ≤ n) : gaussianPoly n (n - k) = gaussianPoly n k := by
+  -- Both sides satisfy the factorial form of the product formula in the domain `ℤ[t]`, whose
+  -- factors `1 - t^(i+1)` are nonzero.
+  let φ : ℕ[X] →+* ℤ[X] := mapRingHom (Nat.castRingHom ℤ)
+  have hφ : Function.Injective φ := map_injective _ Nat.cast_injective
+  have hmap (j : ℕ) : φ (gaussianPoly n j) = gaussianBinomial (X : ℤ[X]) n j := by
+    rw [← gaussianBinomial_X, map_gaussianBinomial]
+    simp [φ]
+  have hP (m : ℕ) : ∏ i ∈ range m, (1 - (X : ℤ[X]) ^ (i + 1)) ≠ 0 := by
+    refine prod_ne_zero_iff.2 fun i _ ↦ ?_
+    rw [← neg_sub, neg_ne_zero, ← C_1]
+    exact X_pow_sub_C_ne_zero i.succ_pos 1
+  apply hφ
+  rw [hmap, hmap]
+  have e₁ := gaussianBinomial_mul_prod_mul_prod (X : ℤ[X]) h
+  have e₂ := gaussianBinomial_mul_prod_mul_prod (X : ℤ[X]) (Nat.sub_le n k)
+  rw [Nat.sub_sub_self h] at e₂
+  refine mul_right_cancel₀ (mul_ne_zero (hP k) (hP (n - k))) ?_
+  linear_combination e₂ - e₁
+
+/-- The Gaussian binomial coefficients are symmetric: `[n n-k]_t = [n k]_t` for `k ≤ n`. -/
+theorem gaussianBinomial_symm {R : Type*} [Semiring R] (t : R) {n k : ℕ} (h : k ≤ n) :
+    gaussianBinomial t n (n - k) = gaussianBinomial t n k := by
+  rw [gaussianBinomial_def, gaussianPoly_symm h, gaussianBinomial_def]
+
+/-- The quotient formula `[n k]_t = ∏_{i=1}^{k} (1 - t^(n-k+i)) / (1 - t^i)` over a field, for
+`k ≤ n` and whenever none of the denominators `1 - t^i`, `1 ≤ i ≤ k`, vanishes. -/
+theorem gaussianBinomial_eq_prod_div {K : Type*} [Field K] {t : K} {n k : ℕ} (h : k ≤ n)
+    (ht : ∀ i ∈ range k, t ^ (i + 1) ≠ 1) :
+    gaussianBinomial t n k = ∏ i ∈ range k, (1 - t ^ (n - k + i + 1)) / (1 - t ^ (i + 1)) := by
+  have hden : ∏ i ∈ range k, (1 - t ^ (i + 1)) ≠ 0 :=
+    prod_ne_zero_iff.2 fun i hi ↦ sub_ne_zero.2 (ht i hi).symm
+  rw [prod_div_distrib, eq_div_iff hden, gaussianBinomial_mul_prod_one_sub_pow,
+    ← prod_range_reflect (fun i ↦ 1 - t ^ (n - k + i + 1))]
+  refine prod_congr rfl fun i hi ↦ ?_
+  rw [mem_range] at hi
+  congr 2
+  omega
+
+/-- **Cauchy's `q`-binomial theorem**: over every commutative semiring,
+`∏_{i<n} (1 + t^i z) = ∑_{k ≤ n} t^(k(k-1)/2) [n k]_t z^k`, where `k(k-1)/2 = k.choose 2`. Taking
+the coefficients in a polynomial ring and `z` the variable gives the polynomial identity. -/
+theorem prod_one_add_pow_mul_eq_sum_gaussianBinomial {R : Type*} [CommSemiring R] (t z : R)
+    (n : ℕ) :
+    ∏ i ∈ range n, (1 + t ^ i * z) =
+      ∑ k ∈ range (n + 1), t ^ k.choose 2 * gaussianBinomial t n k * z ^ k := by
+  induction n generalizing z with
+  | zero => simp
+  | succ n ih =>
+    -- Split off the factor `1 + z`; the remaining factors are those for `n` at `t z`.
+    have hprod : ∏ i ∈ range (n + 1), (1 + t ^ i * z) =
+        (1 + z) * ∏ i ∈ range n, (1 + t ^ i * (t * z)) := by
+      rw [prod_range_succ', mul_comm]
+      simp [pow_succ, mul_assoc]
+    have hc (k : ℕ) : (k + 1).choose 2 = k.choose 2 + k := by
+      simp [Nat.choose_succ_succ, add_comm]
+    -- The constant term of `∑_k t^(k choose 2) [n k]_t (t z)^k` is `1`, and its top term vanishes.
+    have hshift : ∑ k ∈ range (n + 1), t ^ k.choose 2 * gaussianBinomial t n k * (t * z) ^ k =
+        1 + ∑ k ∈ range (n + 1),
+          t ^ (k + 1).choose 2 * gaussianBinomial t n (k + 1) * (t * z) ^ (k + 1) := by
+      rw [sum_range_succ' _ n, sum_range_succ _ n,
+        gaussianBinomial_eq_zero_of_lt t n.lt_succ_self]
+      simp [add_comm]
+    rw [hprod, ih, add_mul, one_mul, sum_range_succ' _ (n + 1), mul_sum]
+    nth_rw 1 [hshift]
+    simp only [gaussianBinomial_succ_succ, gaussianBinomial_zero_right, Nat.choose_zero_succ,
+      pow_zero, mul_one]
+    rw [add_assoc, ← sum_add_distrib, add_comm]
+    congr 1
+    refine sum_congr rfl fun k _ ↦ ?_
+    rw [hc k]
+    ring
+
+/-- The Gaussian binomial coefficient is the non-symmetric normalization of the symmetric quantum
+binomial coefficient: `[n k]_(q²) = q^(k (n-k)) [n choose k]_q` for `q ≠ 0` in a field. -/
+theorem gaussianBinomial_sq {K : Type*} [Field K] {q : K} (hq : q ≠ 0) (n k : ℕ) :
+    gaussianBinomial (q ^ 2) n k = q ^ (k * (n - k)) * quantumBinomial q n k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k =>
+      rcases lt_or_ge n k with hnk | hkn
+      · rw [gaussianBinomial_eq_zero_of_lt _ (by omega), quantumBinomial_eq_zero_of_lt _ (by omega),
+          mul_zero]
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hkn
+      rw [gaussianBinomial_succ_succ, quantumBinomial_succ_succ', ih, ih]
+      rcases m with _ | m
+      · simp
+      · simp only [Nat.add_sub_cancel_left, show k + (m + 1) + 1 - (k + 1) = m + 1 by omega,
+          show k + (m + 1) - (k + 1) = m by omega]
+        rw [inv_pow]
+        field_simp
+        ring
+
+end TauCeti
