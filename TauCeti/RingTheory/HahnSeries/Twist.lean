@@ -64,14 +64,19 @@ private theorem coeff_twistFun (χ : Multiplicative Γ →* R) (x : HahnSeries �
     (twistFun χ x).coeff g = χ (.ofAdd g) • x.coeff g :=
   rfl
 
+/-- The support inclusion for `twistFun`, from which `HahnSeries.support_twist_subset` is
+derived. -/
+private theorem support_twistFun_subset (χ : Multiplicative Γ →* R) (x : HahnSeries Γ A) :
+    (twistFun χ x).support ⊆ x.support := fun g hg ↦
+  (mem_support x g).2 fun h ↦ (mem_support _ g).1 hg (by rw [coeff_twistFun, h, smul_zero])
+
 /-- The monomial rule for `twistFun`, from which `HahnSeries.twist_single` is derived. -/
 private theorem twistFun_single (χ : Multiplicative Γ →* R) (g : Γ) (a : A) :
     twistFun χ (single g a) = single g (χ (.ofAdd g) • a) := by
+  classical
   ext h
-  rw [coeff_twistFun]
-  obtain rfl | hne := eq_or_ne h g
-  · rw [coeff_single_same, coeff_single_same]
-  · rw [coeff_single_of_ne hne, coeff_single_of_ne hne, smul_zero]
+  rw [coeff_twistFun, coeff_single, coeff_single, ← Pi.single_apply, ← Pi.single_apply]
+  exact Pi.apply_single (fun i (b : A) ↦ χ (.ofAdd i) • b) (fun _ ↦ smul_zero _) g a h
 
 variable [IsOrderedCancelAddMonoid Γ]
 
@@ -85,12 +90,10 @@ noncomputable def twist (χ : Multiplicative Γ →* R) : HahnSeries Γ A →ₐ
     ext a
     -- Sum both products over the antidiagonal of the untwisted supports: the extra pairs have a
     -- vanishing twisted coefficient.
-    have hsupp (z : HahnSeries Γ A) : (twistFun χ z).support ⊆ z.support :=
-      Function.support_smul_subset_right (fun g ↦ χ (.ofAdd g)) z.coeff
     have hsub := antidiagonal_mono_right (hs := x.isPWO_support) (a := a)
-      (hsupp y) (hu := (twistFun χ y).isPWO_support) (ht := y.isPWO_support)
-    rw [coeff_twistFun, coeff_mul, coeff_mul_left' x.isPWO_support (hsupp x), smul_sum,
-      sum_subset hsub fun ij hij hij' ↦ ?_]
+      (support_twistFun_subset χ y) (hu := (twistFun χ y).isPWO_support) (ht := y.isPWO_support)
+    rw [coeff_twistFun, coeff_mul, coeff_mul_left' x.isPWO_support (support_twistFun_subset χ x),
+      smul_sum, sum_subset hsub fun ij hij hij' ↦ ?_]
     · refine sum_congr rfl fun ij hij ↦ ?_
       rw [coeff_twistFun, coeff_twistFun, ← (mem_antidiagonal.1 hij).2.2, ofAdd_add, map_mul,
         smul_mul_smul_comm]
@@ -114,7 +117,7 @@ theorem coeff_twist (χ : Multiplicative Γ →* R) (x : HahnSeries Γ A) (g : �
 /-- Twisting does not enlarge the support. -/
 theorem support_twist_subset (χ : Multiplicative Γ →* R) (x : HahnSeries Γ A) :
     (twist χ x).support ⊆ x.support :=
-  Function.support_smul_subset_right (fun g ↦ χ (.ofAdd g)) x.coeff
+  support_twistFun_subset χ x
 
 /-- The twist of the monomial `a t ^ g` by `χ` is `χ g a t ^ g`. -/
 @[simp]
