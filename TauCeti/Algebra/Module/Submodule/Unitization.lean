@@ -50,7 +50,7 @@ variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
 private def unitizationSMul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
     SMul (Unitization R A) L where
   smul u x := ⟨u.fst • (x : A) + u.snd * (x : A),
-    L.add_mem (L.smul_mem u.fst x.2) (hmul u.snd x x.2)⟩
+    L.add_mem (L.smul_mem u.fst x.property) (hmul u.snd x x.property)⟩
 
 /-- Left `Unitization R A`-module structure `(r, a) • x = r • x + a * x` on an `R`-submodule
 `L : Submodule R A` closed under left multiplication by `A`. Provided as an `@[instance_reducible]`
@@ -99,7 +99,7 @@ theorem mem_annihilator_unitization_iff (L : Submodule R A) (hmul : ∀ a : A, �
       ∀ x ∈ L, u.fst • x + u.snd * x = 0 := by
   let _ := L.unitizationModule hmul
   rw [Module.mem_annihilator]
-  refine ⟨fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩), fun h x => Subtype.ext (h x x.2)⟩
+  refine ⟨fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩), fun h x => Subtype.ext (h x x.property)⟩
 
 end Semiring
 

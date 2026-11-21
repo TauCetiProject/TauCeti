@@ -71,14 +71,14 @@ def piFan {β : Type v} (f : β → TopCommRingCat.{max u v}) : Fan f :=
 
 /-- The pointwise ring under the product topology is the product in `TopCommRingCat`. -/
 def piFanIsLimit {β : Type v} (f : β → TopCommRingCat.{max u v}) : IsLimit (piFan f) where
-  lift s := ⟨RingHom.pi fun b => (s.π.app ⟨b⟩).val, continuous_pi fun b => (s.π.app ⟨b⟩).2⟩
+  lift s := ⟨RingHom.pi fun b => (s.π.app ⟨b⟩).val, continuous_pi fun b => (s.π.app ⟨b⟩).property⟩
   fac _ _ := rfl
   uniq _ _ h := Subtype.ext <| RingHom.ext fun x => funext fun b => congr($(h ⟨b⟩).val x)
 
 instance {β : Type v} (f : β → TopCommRingCat.{max u v}) : HasProduct f :=
   HasLimit.mk ⟨piFan f, piFanIsLimit f⟩
 
-instance : HasProducts.{v} TopCommRingCat.{max u v} := fun _ =>
+instance : HasProducts.{v} TopCommRingCat.{max u v} := .mk fun _ =>
   ⟨fun _ => hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 variable {R S : TopCommRingCat.{u}} (f g : R ⟶ S)
@@ -88,8 +88,8 @@ variable {R S : TopCommRingCat.{u}} (f g : R ⟶ S)
 @[expose, simps! pt]
 def equalizerFork : Fork f g :=
   Fork.ofι (P := TopCommRingCat.of (RingHom.eqLocus f.val g.val))
-    ⟨(RingHom.eqLocus f.val g.val).subtype, continuous_subtype_val⟩
-    (Subtype.ext (RingHom.ext fun x => x.2))
+    ⟨(RingHom.eqLocus f.val g.val).subtype, continuous_subtypeVal⟩
+    (Subtype.ext (RingHom.ext fun x => x.property))
 
 /-- The inclusion of the equalizer fork is, as a function, the subtype coercion of the
 agreement subring. -/
@@ -102,7 +102,8 @@ theorem coe_equalizerFork_ι :
 `TopCommRingCat`. -/
 def equalizerForkIsLimit : IsLimit (equalizerFork f g) :=
   Fork.IsLimit.mk _
-    (fun s => ⟨s.ι.val.codRestrict _ fun x => congr($(s.condition).val x), s.ι.2.subtype_mk _⟩)
+    (fun s => ⟨s.ι.val.codRestrict _ fun x => congr($(s.condition).val x),
+        s.ι.property.subtype_mk _⟩)
     (fun _ => rfl)
     (fun _ _ h => Subtype.ext <| RingHom.ext fun x => Subtype.ext congr($(h).val x))
 
