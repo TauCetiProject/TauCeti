@@ -85,9 +85,13 @@ families of operators.
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), smoothness in `ξ`
   with the symbol estimates `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), with
-  constants given by a continuous seminorm of `a`, uniformly over the symbols vanishing outside a
-  fixed compact set (`TauCeti.Symbol.exists_norm_fourier_slice_le_seminorm`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), the
+  same at the angular frequency `ξ = 2πζ`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice_smul`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.norm_iteratedFDeriv_fourier_slice_smul_le`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_smul_le`),
+  with constants given by a continuous seminorm of `a`, uniformly over the symbols vanishing
+  outside a fixed compact set (`TauCeti.Symbol.exists_norm_fourier_slice_le_seminorm`,
   `TauCeti.Symbol.exists_norm_coordinateDeriv_fourier_slice_le_seminorm`,
   `TauCeti.Symbol.exists_norm_iteratedFDeriv_fourier_slice_le_seminorm`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
@@ -542,6 +546,51 @@ theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le
   obtain ⟨q, -, hq⟩ :=
     exists_norm_iteratedFDeriv_fourier_slice_le_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ k r
   exact ⟨q a, apply_nonneg _ _, hq a hKa⟩
+
+/-- The rescaled position-Fourier slice `ζ ↦ â(η, 2πζ)` is smooth. -/
+theorem HasCompactSpatialSupport.contDiff_fourier_slice_smul
+    (ha : a.HasCompactSpatialSupport) (η : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun ζ : CoordinateSpace n ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η :=
+  (ha.contDiff_fourier_slice η).comp (contDiff_const_smul _)
+
+/-- The rescaled slice `ζ ↦ â(η, 2πζ)` inherits the derivative bounds of `ξ ↦ â(η, ξ)`: a bound
+`B ⟨ξ⟩ ^ (m - j) ⟨η⟩ ^ (-r)` on the `j`-th derivative gives
+`‖D^j‖ ≤ (2π) ^ j (2π) ^ |m - j| B ⟨ζ⟩ ^ (m - j) ⟨η⟩ ^ (-r)`. -/
+theorem HasCompactSpatialSupport.norm_iteratedFDeriv_fourier_slice_smul_le
+    (ha : a.HasCompactSpatialSupport) {j : ℕ} {r B : ℝ} (hB0 : 0 ≤ B)
+    (hB : ∀ η ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        B * (1 + ‖ξ‖ ^ 2) ^ ((m - j) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2))
+    (η ζ : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ j (fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η) ζ‖ ≤
+      (2 * π) ^ j * (2 * π) ^ |m - j| * B * (1 + ‖ζ‖ ^ 2) ^ ((m - j) / 2) *
+        (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
+  have hw := one_add_norm_smul_sq_rpow_le h2π (m - j) ζ
+  rw [iteratedFDeriv_comp_const_smul (2 * π)
+    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)), norm_smul, norm_pow,
+    Real.norm_of_nonneg (by positivity)]
+  calc (2 * π) ^ j * ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η)
+        ((2 * π) • ζ)‖
+      ≤ (2 * π) ^ j * (B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m - j) / 2) *
+          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by
+        gcongr
+        exact hB η _
+    _ ≤ (2 * π) ^ j * (B * ((2 * π) ^ |m - j| * (1 + ‖ζ‖ ^ 2) ^ ((m - j) / 2)) *
+          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by gcongr
+    _ = _ := by ring
+
+/-- **Fréchet derivatives of the rescaled slice.** For a symbol `a` of order `m` with compact
+spatial support, the slice `ζ ↦ â(η, 2πζ)` at the angular frequency `2πζ` has derivatives
+`‖D^j â(η, 2πζ)‖ ≤ B ⟨ζ⟩ ^ (m - j) ⟨η⟩ ^ (-r)`, for every `j` and `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_smul_le
+    (ha : a.HasCompactSpatialSupport) (j : ℕ) (r : ℝ) :
+    ∃ B, 0 ≤ B ∧ ∀ η ζ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ j (fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η) ζ‖ ≤
+        B * (1 + ‖ζ‖ ^ 2) ^ ((m - j) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_iteratedFDeriv_fourier_slice_le j r
+  exact ⟨(2 * π) ^ j * (2 * π) ^ |m - j| * C, by positivity,
+    ha.norm_iteratedFDeriv_fourier_slice_smul_le hC0 hC⟩
 
 end Decay
 
