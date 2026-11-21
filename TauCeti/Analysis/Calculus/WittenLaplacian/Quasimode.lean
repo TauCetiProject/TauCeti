@@ -276,10 +276,13 @@ private theorem integral_sub_mul_exp_le {a p : ι → ℝ} {c ρ t K : ℝ} (hρ
   refine integral_mono hint ((hA.const_mul t).add hB |>.mul_const _) fun x ↦ ?_
   by_cases hx : x ∈ ball p ρ
   · simp only [hw₁ρ x hx, hw₀ρ x hx, mul_zero, sub_zero, zero_mul, abs_zero, add_zero, le_refl]
+  -- On `ℝ`, the squared coordinate distances are the squared differences.
+  have hsum : c * ρ ^ 2 ≤ ∑ i, |a i| * (x i - p i) ^ 2 := by
+    simpa only [Real.dist_eq, sq_abs] using
+      mul_sq_le_sum_mul_dist_sq_of_notMem_ball hρ.le (fun i ↦ abs_nonneg (a i)) hca hx
   have hexp : Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) ≤
-      Real.exp (-(t * (c * ρ ^ 2))) := Real.exp_le_exp.2
-    (neg_le_neg (mul_le_mul_of_nonneg_left
-      (mul_sq_le_sum_mul_sub_sq_of_notMem_ball hρ (fun i ↦ abs_nonneg (a i)) hca hx) ht))
+      Real.exp (-(t * (c * ρ ^ 2))) :=
+    Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left hsum ht))
   have h₁ : t * w₁ x - w₀ x ≤ t * |w₁ x| + |w₀ x| := by
     nlinarith [le_abs_self (w₁ x), neg_abs_le (w₀ x)]
   calc (t * w₁ x - w₀ x) * (K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)))
@@ -308,8 +311,10 @@ private theorem mul_le_integral_sq_mul_exp {a p : ι → ℝ} {δ ρ t K : ℝ} 
     (setIntegral_le_integral hint (Eventually.of_forall fun x ↦ by positivity))
   rw [hθ1 x (ball_subset_ball hδρ hx), one_pow, one_mul]
   gcongr
-  exact sum_mul_sub_sq_le_mul_sq_of_mem_closedBall (fun i ↦ abs_nonneg (a i))
-    (ball_subset_closedBall hx)
+  -- On `ℝ`, the squared coordinate distances are the squared differences.
+  simpa only [Real.dist_eq, sq_abs] using
+    sum_mul_dist_sq_le_mul_sq_of_mem_closedBall (fun i ↦ abs_nonneg (a i))
+      (ball_subset_closedBall hx)
 
 /-- The weight of `t` in the pointwise energy of a cut-off ground state. -/
 private def weight₁ (a p : ι → ℝ) (θ : (ι → ℝ) → ℝ) (x : ι → ℝ) : ℝ :=
