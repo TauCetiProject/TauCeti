@@ -57,6 +57,10 @@ then raises its regularity one step at a time up to `H^(k+1)`.
 
 * `integral_inner_fun_smul_gaugeFixedAdjoint_eq`: the weak Leibniz rule
   `L_x (w y) = w f + σ(dw) y`.
+* `gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq`,
+  `integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq`: for `w = exp(c ρ)` the commutator is the
+  multiplication of `w y` by the smooth matrix `expWeightCoeff c`, whose entries have bounded
+  derivatives of every order (`exists_norm_iteratedFDeriv_expWeightCoeff_le`).
 * `exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp`: weighted elliptic regularity at a
   smooth field with bounded derivatives, for weak solutions `y` with `exp(c ρ) y ∈ L²`.
 * `exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`: at a
@@ -74,7 +78,8 @@ quantitative form at the lowest order: `exp(c ρ) Q f` is a weak solution of
 `(1 + |c| K₀) ‖exp(c ρ) f‖₂` by the weighted `L²` estimate with constant `K₀`, and the coercive
 estimate of the `H¹` realization of `L_x`
 (`exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add`) turns this into an `H¹` bound. The
-norm estimates `‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)` for `k ≥ 1` are not proved here.
+norm estimates `‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)` of every order are proved in
+`TauCeti.Analysis.PDE.Vortex.EllipticEstimate`.
 
 ## References
 
@@ -126,8 +131,7 @@ theorem integral_inner_fun_smul_gaugeFixedAdjoint_eq (hx : Continuous x) {w : �
   have hwηL : MemLp (fun z ↦ w z • η z) 2 volume :=
     hwη.continuous.memLp_of_hasCompactSupport hwηc
   have hAL : MemLp (gaugeFixedAdjoint x fun t ↦ w t • η t) 2 volume :=
-    (continuous_gaugeFixedAdjoint hx (hwη.of_le h1)).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint hwηc)
+    memLp_gaugeFixedAdjoint hx (hwη.of_le h1) hwηc
   -- Pointwise, both sides differ from the test against `w η` by the pairing of `y` with `S`.
   have hl (z : ℂ) : ⟪w z • y z, gaugeFixedAdjoint x η z⟫ =
       ⟪y z, gaugeFixedAdjoint x (fun t ↦ w t • η t) z⟫ - ⟪y z, S z⟫ := by
@@ -150,37 +154,59 @@ the matrix `(d (e i j))`. -/
 private def symbolDirection : Fin 4 → Fin 4 → ℂ :=
   ![![1, I, 0, 0], ![I, -1, 0, 0], ![0, 0, 1, -I], ![0, 0, I, 1]]
 
-/-- The entries `c ⟪z, e i j⟫ / ρ(z)` of the commutator of `L_x` with the weight `exp(c ρ)`. -/
-private def weightCoeff (c : ℝ) (i j : Fin 4) (z : ℂ) : ℝ :=
+/-- The coefficients of the commutator of `L_x` with the weight `exp(c ρ)`,
+`ρ(z) = √(1 + |z|²)`: the entry `(i, j)` is `c ⟪z, e i j⟫ / ρ(z)`, where `e i j` is the complex
+number with `σ(d) = (d (e i j))` for the principal symbol `σ` of `L_x`. Multiplying a field `v`
+by this matrix gives `σ(d exp(c ρ)) v / exp(c ρ)`
+(`gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq`). -/
+def expWeightCoeff (c : ℝ) (i j : Fin 4) (z : ℂ) : ℝ :=
   inner ℝ z (c • symbolDirection i j) * (1 + ‖z‖ ^ 2) ^ (-(1 / 2) : ℝ)
 
-/-- The coefficients of the commutator are smooth. -/
-private theorem contDiff_weightCoeff (c : ℝ) (i j : Fin 4) : ContDiff ℝ ∞ (weightCoeff c i j) :=
+/-- The coefficients of the commutator with the weight `exp(c ρ)` are smooth. -/
+theorem contDiff_expWeightCoeff (c : ℝ) (i j : Fin 4) : ContDiff ℝ ∞ (expWeightCoeff c i j) :=
   (contDiff_id.inner ℝ contDiff_const).mul (contDiff_one_add_norm_sq_rpow _)
 
-/-- The coefficients of the commutator have bounded derivatives through every order `k`. -/
-private theorem exists_norm_iteratedFDeriv_weightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
-    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (weightCoeff c i j) z‖ ≤ M :=
+/-- The coefficients of the commutator with the weight `exp(c ρ)` have bounded derivatives
+through every order `k`. -/
+theorem exists_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
+    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (expWeightCoeff c i j) z‖ ≤ M :=
   have ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists fun n _ ↦
     exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half
       (c • symbolDirection i j) le_rfl n
   ⟨M, (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM).1, hM⟩
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
-`w v` by the matrix `weightCoeff c`. -/
-private theorem gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt (c : ℝ) (z : ℂ)
+`w v` by the matrix `expWeightCoeff c`. -/
+theorem gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (z : ℂ)
     (v : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedOperatorSymbol (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z) v =
       WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4,
-        weightCoeff c i j z * (Real.exp (c * √(1 + ‖z‖ ^ 2)) • v) j) := by
+        expWeightCoeff c i j z * (Real.exp (c * √(1 + ‖z‖ ^ 2)) • v) j) := by
   have hρ : ((1 + ‖z‖ ^ 2) ^ (-(1 / 2) : ℝ)) = (√(1 + ‖z‖ ^ 2))⁻¹ := by
     rw [Real.rpow_neg (by positivity), Real.sqrt_eq_rpow]
   rw [fderiv_exp_mul_sqrt_add_norm_sq c one_pos]
-  simp only [weightCoeff, hρ]
+  simp only [expWeightCoeff, hρ]
   ext i
   fin_cases i <;>
     simp [gaugeFixedOperatorSymbol_def, symbolDirection, Fin.sum_univ_four, div_eq_mul_inv] <;>
     ring
+
+/-- **The weighted weak equation.** Let `x` be continuous and let `y` be a square-integrable weak
+solution of `L_x y = f` with `f ∈ L²`, tested against smooth compactly supported fields. With
+`ρ(z) = √(1 + |z|²)` and `Y = exp(c ρ) y`, the field `Y` is a weak solution of
+`L_x Y = exp(c ρ) f + A Y`, where `A = expWeightCoeff c` is the matrix of the commutator of `L_x`
+with the weight. -/
+theorem integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq (hx : Continuous x)
+    (hy : MemLp y 2 volume) (hf : MemLp f 2 volume)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) {c : ℝ}
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z, gaugeFixedAdjoint x η z⟫ =
+      ∫ z, ⟪Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4,
+        expWeightCoeff c i j z * (Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) j), η z⟫ := by
+  rw [integral_inner_fun_smul_gaugeFixedAdjoint_eq hx
+    (contDiff_exp_mul_sqrt_add_norm_sq c one_pos) hy hf hweak hη hηc]
+  simp only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq]
 
 /-! ### Weighted regularity -/
 
@@ -197,32 +223,11 @@ theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp (k : ℕ)
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) {c : ℝ}
     (hwy : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume)
     (hwf : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) ∈ sobolevFields k) :
-    (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (k + 1) := by
-  -- `exp(c ρ) y` is a weak solution of `L_x (exp(c ρ) y) = exp(c ρ) f + G`, where `G` is the
-  -- multiplication of `exp(c ρ) y` by the matrix `weightCoeff c`.
-  have hweakY (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
-      (hηc : HasCompactSupport η) :
-      ∫ z, ⟪Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z, gaugeFixedAdjoint x η z⟫ =
-        ∫ z, ⟪Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4,
-          weightCoeff c i j z * (Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) j), η z⟫ := by
-    rw [integral_inner_fun_smul_gaugeFixedAdjoint_eq hx.continuous
-      (contDiff_exp_mul_sqrt_add_norm_sq c one_pos) hy hf hweak hη hηc]
-    simp only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt]
-  -- One step of the bootstrap: `exp(c ρ) y ∈ H^j` gives `exp(c ρ) y ∈ H^(j+1)` for `j ≤ k`.
-  have hstep (j : ℕ) (hj : j ≤ k)
-      (hYj : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields j) :
-      (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (j + 1) := by
-    have hG := mulVec_mem_sobolevFields_natCast j (contDiff_weightCoeff c)
-      (fun i' j' ↦ exists_norm_iteratedFDeriv_weightCoeff_le c i' j' j) hYj
-    exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq j hx
-      (fun i n hn ↦ hbound i n (hn.trans hj)) hwy
-      (add_mem (sobolevFields_mono (by exact_mod_cast hj) hwf) hG) hweakY
-  have hall (j : ℕ) (hj : j ≤ k) :
-      (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (j + 1) := by
-    induction j with
-    | zero => simpa using hstep 0 hj (by simpa using hwy)
-    | succ j ih => exact_mod_cast hstep (j + 1) hj (by exact_mod_cast ih (by omega))
-  exact hall k le_rfl
+    (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (k + 1) :=
+  mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add k hx hbound
+    (contDiff_expWeightCoeff c) (fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k)
+    hwy hwf fun _ hη hηc ↦ integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq hx.continuous hy hf
+      hweak hη hηc
 
 /-- **The right inverse preserves exponential decay on the Sobolev scale.** Let `x` be a smooth
 solution of the plane vortex equation with `|α| → 1` at infinity whose coordinates have bounded
@@ -326,9 +331,10 @@ private theorem memLp_and_lpNorm_gaugeFixedOperatorSymbol_le {c : ℝ}
         |c| * lpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume := by
   have hGL : MemLp (fun z ↦ gaugeFixedOperatorSymbol
       (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z) (y z)) 2 volume := by
-    have h := mulVec_mem_sobolevFields_natCast 0 (contDiff_weightCoeff c)
-      (fun i j ↦ exists_norm_iteratedFDeriv_weightCoeff_le c i j 0) (by simpa using hy)
-    simpa only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt] using memLp_of_mem_sobolevFields h
+    have h := mulVec_mem_sobolevFields_natCast 0 (contDiff_expWeightCoeff c)
+      (fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j 0) (by simpa using hy)
+    simpa only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq] using
+      memLp_of_mem_sobolevFields h
   exact ⟨hGL, lpNorm_le_mul_lpNorm_of_ae_le_mul hGL.aestronglyMeasurable hy
     (.of_forall fun z ↦ norm_gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_le c z (y z))⟩
 

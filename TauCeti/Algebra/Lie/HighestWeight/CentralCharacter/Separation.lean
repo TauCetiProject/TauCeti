@@ -50,9 +50,9 @@ namespace TauCeti
 -- `TauCeti.LieModule` exists in the imports, so the root namespace is named explicitly.
 open LieAlgebra _root_.LieModule Module TauCeti.UniversalEnvelopingAlgebra
 
-universe v w
+universe u v w
 
-variable {K : Type} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   (b : (IsKilling.rootSystem H).Base)
