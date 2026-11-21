@@ -416,7 +416,7 @@ theorem isIntegralClosure_integerRing : IsIntegralClosure 𝒪[M] 𝒪[K] M wher
   isIntegral_iff {x} := by
     have hmem : x ∈ 𝒪[M] ↔ IsIntegral 𝒪[K] x := by
       rw [integerRing_eq_integralClosure K M, Subalgebra.mem_toSubring, mem_integralClosure_iff]
-    exact ⟨fun hx ↦ ⟨⟨x, hmem.mpr hx⟩, rfl⟩, fun ⟨b, hb⟩ ↦ hmem.mp (hb ▸ b.2)⟩
+    exact ⟨fun hx ↦ ⟨⟨x, hmem.mpr hx⟩, rfl⟩, fun ⟨b, hb⟩ ↦ hmem.mp (hb ▸ b.property)⟩
 
 end IntegralClosure
 

@@ -83,7 +83,7 @@ private def liftExactRange {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
     (φ : ModulePontryaginDual R E M₂) (hφ : map (E := E) f φ = 0) :
     LinearMap.range g.toLinearMap →ₗ[R] E :=
-  (LinearMap.ker g.toLinearMap).liftQ φ.1.toLinearMap (by
+  (LinearMap.ker g.toLinearMap).liftQ φ.toContinuousLinearMap.toLinearMap (by
     rw [LinearMap.exact_iff.mp hex]; rintro _ ⟨x, rfl⟩
     simpa [LinearMap.mem_ker, map_apply] using DFunLike.congr_fun hφ x) ∘ₗ
     (LinearMap.quotKerEquivRange g.toLinearMap).symm.toLinearMap
@@ -136,7 +136,7 @@ theorem range_map_mkQL_of_isOpen {N : Type w} [AddCommGroup N] [Module R N] [Top
   have : DiscreteTopology (N ⧸ U) := Submodule.Quotient.discreteTopology_of_isOpen U hU
   refine ⟨fun ⟨ψ, hψ⟩ x hx ↦ by
       rw [← hψ]; simp [LinearMap.mem_ker, (Submodule.Quotient.mk_eq_zero U).mpr hx],
-    fun hle ↦ ⟨⟨⟨U.liftQ φ.1.toLinearMap hle, continuous_of_discreteTopology⟩⟩,
+    fun hle ↦ ⟨⟨⟨U.liftQ φ.toContinuousLinearMap.toLinearMap hle, continuous_of_discreteTopology⟩⟩,
       ext fun x ↦ by simp [map_apply]⟩⟩
 
 /-- **Colimit compatibility over open quotients**: when `E` is discrete, every element of `N^∨`
@@ -144,9 +144,9 @@ lies in the image of `(N ⧸ U)^∨` for some open submodule `U` of `N`. -/
 theorem iSup_range_map_mkQL_eq_top [DiscreteTopology E] {N : Type w} [AddCommGroup N] [Module R N]
     [TopologicalSpace N] [IsTopologicalAddGroup N] :
     ⨆ U : {U : Submodule R N // IsOpen (U : Set N)},
-      LinearMap.range (map (E := E) U.1.mkQL).toLinearMap = ⊤ :=
+      LinearMap.range (map (E := E) U.val.mkQL).toLinearMap = ⊤ :=
   eq_top_iff.mpr fun φ _ ↦
-    Submodule.mem_iSup_of_mem ⟨LinearMap.ker φ.1.toLinearMap, isOpen_ker φ⟩
+    Submodule.mem_iSup_of_mem ⟨LinearMap.ker φ.toContinuousLinearMap.toLinearMap, isOpen_ker φ⟩
       ((range_map_mkQL_of_isOpen _ (isOpen_ker φ) φ).mpr le_rfl)
 
 /-- **Inverse-limit compatibility over finitely generated submodules**: a compatible family of
@@ -154,13 +154,13 @@ elements in `K^∨` for finitely generated submodules `K` of a discrete module `
 unique element of `M^∨`. -/
 theorem existsUnique_forall_restrict_fg_eq {M : Type w} [AddCommGroup M] [Module R M]
     [TopologicalSpace M] [DiscreteTopology M]
-    (φ : ∀ K : {K : Submodule R M // K.FG}, ModulePontryaginDual R E K.1)
-    (hφ : ∀ ⦃K K' : {K : Submodule R M // K.FG}⦄ (h : K.1 ≤ K'.1) (x : K.1),
-      φ K' ⟨x.1, h x.2⟩ = φ K x) :
-    ∃! ψ : ModulePontryaginDual R E M, ∀ K, map (E := E) K.1.subtypeL ψ = φ K := by
+    (φ : ∀ K : {K : Submodule R M // K.FG}, ModulePontryaginDual R E K.val)
+    (hφ : ∀ ⦃K K' : {K : Submodule R M // K.FG}⦄ (h : K.val ≤ K'.val) (x : K.val),
+      φ K' ⟨x.val, h x.property⟩ = φ K x) :
+    ∃! ψ : ModulePontryaginDual R E M, ∀ K, map (E := E) K.val.subtypeL ψ = φ K := by
   let Kx (x : M) : {K : Submodule R M // K.FG} :=
     ⟨Submodule.span R {x}, Submodule.fg_span_singleton x⟩
-  have hwell (K : {K : Submodule R M // K.FG}) (x : M) (hx : x ∈ K.1) :
+  have hwell (K : {K : Submodule R M // K.FG}) (x : M) (hx : x ∈ K.val) :
       φ K ⟨x, hx⟩ = φ (Kx x) ⟨x, Submodule.subset_span rfl⟩ :=
     hφ (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr hx)) ⟨x, Submodule.subset_span rfl⟩
   let f : M →ₗ[R] E :=
@@ -168,14 +168,15 @@ theorem existsUnique_forall_restrict_fg_eq {M : Type w} [AddCommGroup M] [Module
       map_add' := fun x y ↦ by
         let K : {K : Submodule R M // K.FG} :=
           ⟨Submodule.span R {x, y}, Submodule.fg_span (Set.toFinite _)⟩
-        have hx : x ∈ K.1 := Submodule.subset_span (by simp)
-        have hy : y ∈ K.1 := Submodule.subset_span (by simp)
-        rw [← hwell K (x + y) (K.1.add_mem hx hy), ← hwell K x hx, ← hwell K y hy, ← map_add]; rfl
+        have hx : x ∈ K.val := Submodule.subset_span (by simp)
+        have hy : y ∈ K.val := Submodule.subset_span (by simp)
+        rw [← hwell K (x + y) (K.val.add_mem hx hy), ← hwell K x hx, ← hwell K y hy, ← map_add]
+        rfl
       map_smul' := fun r x ↦ by
-        rw [← hwell (Kx x) (r • x) ((Kx x).1.smul_mem r (Submodule.subset_span rfl)),
+        rw [← hwell (Kx x) (r • x) ((Kx x).val.smul_mem r (Submodule.subset_span rfl)),
           RingHom.id_apply, ← map_smul]; rfl }
   refine ⟨(equivLinearMap R E M).symm f,
-    fun K ↦ ext fun x ↦ by simpa [f, map_apply] using (hwell K x.1 x.2).symm,
+    fun K ↦ ext fun x ↦ by simpa [f, map_apply] using (hwell K x.val x.property).symm,
     fun ψ' hψ' ↦ ext fun x ↦ by
       simpa [f, map_apply] using DFunLike.congr_fun (hψ' (Kx x)) ⟨x, Submodule.subset_span rfl⟩⟩
 
@@ -311,24 +312,25 @@ def evalEquivOfCompact {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSp
     exact hφ (by rw [map_sub, sub_eq_zero]; simpa [eval_apply] using DFunLike.congr_fun hxy φ)
   have hsurj : Function.Surjective (eval R E N) := fun Φ ↦ by
     choose xU hxU using fun U : {U : Submodule R N // IsOpen (U : Set N)} ↦
-      show ∃ xU : N ⧸ U.1, ∀ ψ, ψ xU = Φ (map (E := E) U.1.mkQL ψ) by
-        have := Submodule.Quotient.discreteTopology_of_isOpen U.1 U.2
-        have := U.1.finite_quotient_of_isOpen U.2
+      show ∃ xU : N ⧸ U.val, ∀ ψ, ψ xU = Φ (map (E := E) U.val.mkQL ψ) by
+        have := Submodule.Quotient.discreteTopology_of_isOpen U.val U.property
+        have := U.val.finite_quotient_of_isOpen U.property
         obtain ⟨xU, hxU⟩ := (bijective_applyₗ_of_forall_isMaximal hE IsFiniteLength.of_finite).2
-          (Φ.1.toLinearMap ∘ₗ (map (E := E) U.1.mkQL).toLinearMap ∘ₗ
-            (equivLinearMap R E (N ⧸ U.1)).symm.toLinearMap)
+          (Φ.toContinuousLinearMap.toLinearMap ∘ₗ (map (E := E) U.val.mkQL).toLinearMap ∘ₗ
+            (equivLinearMap R E (N ⧸ U.val)).symm.toLinearMap)
         exact ⟨xU, fun ψ ↦ by
           simpa [LinearMap.applyₗ_apply_apply] using
-            LinearMap.congr_fun hxU (equivLinearMap R E (N ⧸ U.1) ψ)⟩
-    have hcompat ⦃U V : {U : Submodule R N // IsOpen (U : Set N)}⦄ (h : U.1 ≤ V.1) :
+            LinearMap.congr_fun hxU (equivLinearMap R E (N ⧸ U.val) ψ)⟩
+    have hcompat ⦃U V : {U : Submodule R N // IsOpen (U : Set N)}⦄ (h : U.val ≤ V.val) :
         Submodule.factor h (xU U) = xU V := by
-      have := Submodule.Quotient.discreteTopology_of_isOpen U.1 U.2
-      have := Submodule.Quotient.discreteTopology_of_isOpen V.1 V.2
+      have := Submodule.Quotient.discreteTopology_of_isOpen U.val U.property
+      have := Submodule.Quotient.discreteTopology_of_isOpen V.val V.property
       refine injective_applyₗ_of_forall_isMaximal (nontrivial_linearMap_of_isMaximal hE) <|
         LinearMap.ext fun f ↦ ?_
-      let ψ := (equivLinearMap R E (N ⧸ V.1)).symm f
-      let fL : (N ⧸ U.1) →L[R] (N ⧸ V.1) := ⟨Submodule.factor h, continuous_of_discreteTopology⟩
-      have hcomp : map (E := E) U.1.mkQL (map (E := E) fL ψ) = map (E := E) V.1.mkQL ψ :=
+      let ψ := (equivLinearMap R E (N ⧸ V.val)).symm f
+      let fL : (N ⧸ U.val) →L[R] (N ⧸ V.val) :=
+        ⟨Submodule.factor h, continuous_of_discreteTopology⟩
+      have hcomp : map (E := E) U.val.mkQL (map (E := E) fL ψ) = map (E := E) V.val.mkQL ψ :=
         ext fun _ ↦ by simp [fL]
       simpa [LinearMap.applyₗ_apply_apply, fL, ψ] using
         (hxU U (map (E := E) fL ψ)).trans
@@ -336,8 +338,8 @@ def evalEquivOfCompact {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSp
     obtain ⟨x, hx, -⟩ := hN.existsUnique_forall_mkQ_eq xU hcompat
     refine ⟨x, ext fun φ ↦ ?_⟩
     let U : {U : Submodule R N // IsOpen (U : Set N)} := ⟨_, isOpen_ker φ⟩
-    obtain ⟨ψ, hψ⟩ := (range_map_mkQL_of_isOpen U.1 U.2 φ).mpr le_rfl
-    have hψ' : map (E := E) U.1.mkQL ψ = φ := hψ
+    obtain ⟨ψ, hψ⟩ := (range_map_mkQL_of_isOpen U.val U.property φ).mpr le_rfl
+    have hψ' : map (E := E) U.val.mkQL ψ = φ := hψ
     rw [eval_apply, ← hψ', map_apply, Submodule.mkQL_apply, hx U, hxU U ψ]
   let e := LinearEquiv.ofBijective (eval R E N) ⟨hinj, hsurj⟩
   let eh := (continuous_eval_of_compact (R := R) (E := E) (M := N)).homeoOfEquivCompactToT2
@@ -428,16 +430,17 @@ def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDu
     let M₀ := Submodule.span R (s : Set M)
     have : Finite M₀ := (Submodule.fg_span s.finite_toSet).finite_of_discrete
     have hker : LinearMap.ker (map (E := E) M₀.subtypeL).toLinearMap ≤
-        LinearMap.ker Φ.1.toLinearMap := fun φ hφ ↦ by
+        LinearMap.ker Φ.toContinuousLinearMap.toLinearMap := fun φ hφ ↦ by
       rw [← SetLike.mem_coe, ← hUeq]
       exact hsub fun m hm ↦ (show φ m = 0 by
-        simpa [map_apply] using DFunLike.congr_fun hφ ⟨m, Submodule.subset_span hm⟩) ▸ (hV m hm).2
+        simpa [map_apply] using DFunLike.congr_fun hφ ⟨m, Submodule.subset_span hm⟩) ▸
+        (hV m hm).right
     let eQ := LinearMap.quotKerEquivOfSurjective (map (E := E) M₀.subtypeL).toLinearMap
       (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
     obtain ⟨x₀, hx₀⟩ := (bijective_applyₗ_of_forall_isMaximal hE IsFiniteLength.of_finite).2
-      ((LinearMap.ker _).liftQ Φ.1.toLinearMap hker ∘ₗ eQ.symm.toLinearMap ∘ₗ
+      ((LinearMap.ker _).liftQ Φ.toContinuousLinearMap.toLinearMap hker ∘ₗ eQ.symm.toLinearMap ∘ₗ
         (equivLinearMap R E M₀).symm.toLinearMap)
-    refine ⟨x₀.1, ext fun φ ↦ ?_⟩
+    refine ⟨x₀.val, ext fun φ ↦ ?_⟩
     have hx := LinearMap.congr_fun hx₀ (equivLinearMap R E M₀ (map (E := E) M₀.subtypeL φ))
     have hq : eQ.symm (map (E := E) M₀.subtypeL φ) = Submodule.Quotient.mk φ :=
       eQ.injective (by simp [eQ])

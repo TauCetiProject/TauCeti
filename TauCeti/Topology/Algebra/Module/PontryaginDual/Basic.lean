@@ -155,14 +155,18 @@ variable {R : Type u} {E : Type v} {M : Type w}
 
 instance : AddCommGroup (ModulePontryaginDual R E M) :=
   letI : Zero (ModulePontryaginDual R E M) := ⟨⟨0⟩⟩
-  letI : Add (ModulePontryaginDual R E M) := ⟨fun φ ψ ↦ ⟨φ.1 + ψ.1⟩⟩
+  letI : Add (ModulePontryaginDual R E M) :=
+    ⟨fun φ ψ ↦ ⟨φ.toContinuousLinearMap + ψ.toContinuousLinearMap⟩⟩
   letI : Neg (ModulePontryaginDual R E M) :=
-    ⟨fun φ ↦ ⟨⟨-φ.1.toLinearMap, (map_continuous φ).neg⟩⟩⟩
+    ⟨fun φ ↦ ⟨⟨-φ.toContinuousLinearMap.toLinearMap, (map_continuous φ).neg⟩⟩⟩
   letI : Sub (ModulePontryaginDual R E M) :=
-    ⟨fun φ ψ ↦ ⟨⟨φ.1.toLinearMap - ψ.1.toLinearMap, (map_continuous φ).sub (map_continuous ψ)⟩⟩⟩
-  letI : SMul ℕ (ModulePontryaginDual R E M) := ⟨fun n φ ↦ ⟨n • φ.1⟩⟩
+    ⟨fun φ ψ ↦ ⟨⟨φ.toContinuousLinearMap.toLinearMap - ψ.toContinuousLinearMap.toLinearMap,
+      (map_continuous φ).sub (map_continuous ψ)⟩⟩⟩
+  letI : SMul ℕ (ModulePontryaginDual R E M) :=
+    ⟨fun n φ ↦ ⟨n • φ.toContinuousLinearMap⟩⟩
   letI : SMul ℤ (ModulePontryaginDual R E M) :=
-    ⟨fun n φ ↦ ⟨⟨n • φ.1.toLinearMap, (continuous_const_smul n).comp (map_continuous φ)⟩⟩⟩
+    ⟨fun n φ ↦ ⟨⟨n • φ.toContinuousLinearMap.toLinearMap,
+      (continuous_const_smul n).comp (map_continuous φ)⟩⟩⟩
   DFunLike.coe_injective.addCommGroup (⇑) rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl)
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 

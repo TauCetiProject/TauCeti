@@ -220,10 +220,10 @@ def traceDualPontryaginEquiv (M : Type*) [AddCommGroup M] [Module 𝒪[L] M] [Mo
     ⟨mulByTraceDualQuotientMap 𝒪[K] K 𝒪[L] L (y i) (hy i), continuous_of_discreteTopology⟩
   let smulCM (i : Fin n) : C(M, M) := ⟨(b i • ·), continuous_const_smul (b i)⟩
   let toF : ModulePontryaginDual 𝒪[L] DL M → ModulePontryaginDual 𝒪[K] DK M := fun φ ↦
-    ⟨⟨e φ.1.toLinearMap, (trCM.continuous.comp (map_continuous φ)).congr fun m ↦
+    ⟨⟨e φ.toContinuousLinearMap.toLinearMap, (trCM.continuous.comp (map_continuous φ)).congr fun m ↦
       (traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L _ m).symm⟩⟩
   let invF : ModulePontryaginDual 𝒪[K] DK M → ModulePontryaginDual 𝒪[L] DL M := fun ψ ↦
-    ⟨⟨e.symm ψ.1.toLinearMap,
+    ⟨⟨e.symm ψ.toContinuousLinearMap.toLinearMap,
       (continuous_finsetSum Finset.univ fun i _ ↦
         (mulCM i).continuous.comp ((map_continuous ψ).comp (smulCM i).continuous)).congr fun m ↦
           (traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum _ m).symm⟩⟩
@@ -238,7 +238,8 @@ def traceDualPontryaginEquiv (M : Type*) [AddCommGroup M] [Module 𝒪[L] M] [Mo
           (show ModulePontryaginDual.toContinuousMap ∘ toF = fun φ ↦ trCM.comp φ.toContinuousMap by
             ext φ m
             simp only [Function.comp_apply, toContinuousMap_apply, ContinuousMap.comp_apply]
-            exact traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L φ.1.toLinearMap m) ▸
+            exact traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L
+              φ.toContinuousLinearMap.toLinearMap m) ▸
           (ContinuousMap.continuous_postcomp trCM).comp
             (continuous_toContinuousMap (R := 𝒪[L]) (E := DL) (M := M)),
       continuous_invFun :=
