@@ -8,7 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Ore
 public import TauCeti.NumberTheory.LocalField.MassFormula.RootCount
-import Mathlib.FieldTheory.IsSepClosed
+import TauCeti.Algebra.BigOperators.Pi
+import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
@@ -33,8 +34,8 @@ and each box is an explicit difference of coordinate ideal-power boxes with norm
   defines a separable polynomial.
 * `TauCeti.mem_eisensteinBox_iff_wildExponent_eq`: `a ∈ eisensteinBox K n j` iff
   `(K⟮x⟯).wildExponent = j` for any root `x` of an Eisenstein polynomial `monicOfCoeff a`.
-* `TauCeti.pairwiseDisjoint_eisensteinBox` and `TauCeti.iUnion_eisensteinBox_eq`: the discriminant
-  boxes partition the separable Eisenstein polynomials.
+* `TauCeti.pairwise_disjoint_on_eisensteinBox` and `TauCeti.iUnion_eisensteinBox_eq`: the
+  discriminant boxes partition the separable Eisenstein polynomials.
 * `TauCeti.measurableSet_eisensteinBox` and `TauCeti.measure_eisensteinBox`: measurability and
   exact normalized Haar volume of the discriminant box.
 
@@ -69,6 +70,10 @@ private abbrev idealBox (K : Type*) [Field K] [ValuativeRel K] [IsDiscreteValuat
 private abbrev idealBoxSdiff (K : Type*) [Field K] [ValuativeRel K] [IsDiscreteValuationRing 𝒪[K]]
     {n : ℕ} (hn : 0 < n) (e : Fin n → ℕ) : Set (Fin n → K) :=
   idealBox K e \ idealBox K (Function.update e ⟨0, hn⟩ 2)
+
+private theorem idealBoxSdiff_eq {n : ℕ} (hn : 0 < n) (e : Fin n → ℕ) :
+    idealBoxSdiff K hn e = (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) \
+      (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update e ⟨0, hn⟩ 2 i)) := rfl
 
 variable (K) in
 /-- The discriminant box in coefficient space `Fin n → K` for degree `n` and wild exponent `j`.
@@ -112,31 +117,10 @@ theorem eisensteinBox_subset_eisensteinSet (n j : ℕ) :
 /-- Every coefficient vector in a discriminant box defines a separable polynomial over `K`,
 including in equal characteristic. -/
 theorem separable_monicOfCoeff_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K}
-    (ha : a ∈ eisensteinBox K n j) : (monicOfCoeff a).Separable := by
-  have hO := ha.1; have hn := hO.pos
-  rw [Polynomial.separable_iff_derivative_ne_zero
-    (irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha.2.1)]
-  intro hder
-  rcases Nat.eq_zero_or_pos (j % n) with hb | hb
-  · have hvn := (isOreAdmissible_iff_of_mod_eq_zero hn hb).1 hO
-    have hnK : (n : K) ≠ 0 := fun h0 ↦ by
-      rw [show (n : 𝒪[K]) = 0 from Subtype.ext (by simpa using h0), addVal_zero] at hvn
-      exact ENat.natCast_ne_top _ hvn
-    have hc := congrArg (fun p : K[X] ↦ p.coeff (n - 1)) hder
-    rw [coeff_derivative, coeff_zero, Nat.sub_add_cancel hn, coeff_monicOfCoeff_self, one_mul,
-      Nat.cast_sub hn, Nat.cast_one, sub_add_cancel] at hc
-    exact hnK hc
-  · have hvb := ((isOreAdmissible_iff_of_mod_pos hn hb).1 hO).1
-    have hbK : ((j % n : ℕ) : K) ≠ 0 := fun h0 ↦ by
-      rw [show ((j % n : ℕ) : 𝒪[K]) = 0 from Subtype.ext (by simpa using h0), addVal_zero] at hvb
-      simp at hvb
-    have hmod := Nat.mod_lt j hn
-    have hab : a ⟨j % n, hmod⟩ ≠ 0 := fun h0 ↦
-      ha.2.2.2 hb hn ⟨0, Ideal.zero_mem _, by simpa using h0.symm⟩
-    have hc := congrArg (fun p : K[X] ↦ p.coeff (j % n - 1)) hder
-    rw [coeff_derivative, coeff_zero, Nat.sub_add_cancel hb, coeff_monicOfCoeff a ⟨j % n, hmod⟩,
-      Nat.cast_sub hb, Nat.cast_one, sub_add_cancel] at hc
-    exact mul_ne_zero hab hbK hc
+    (ha : a ∈ eisensteinBox K n j) : (monicOfCoeff a).Separable :=
+  separable_monicOfCoeff_of_isOreAdmissible
+    (irreducible_monicOfCoeff_of_mem_eisensteinSet ha.1.pos ha.2.1) ha.1
+    fun hb h0 ↦ ha.2.2.2 hb ha.1.pos ⟨0, Ideal.zero_mem _, by simpa using h0.symm⟩
 
 /-- Membership in `idealBoxSdiff` unfolds to coordinate ideal-power bounds plus `a 0 ∉ 𝓂[K] ^ 2`. -/
 private theorem mem_box_sdiff_zero_iff {n : ℕ} (hn : 0 < n) (e : Fin n → ℕ) (a : Fin n → K) :
@@ -172,9 +156,8 @@ private theorem mem_idealBoxSdiff_depth_iff {n j : ℕ} (hn : 0 < n) (a : Fin n 
       ha0⟩, fun i hi ↦ by simpa [e, hi.ne'] using ha i⟩
   · rintro ⟨⟨ha1, ha0⟩, hadepth⟩
     refine ⟨fun i ↦ ?_, ha0⟩
-    by_cases hi : (i : ℕ) = 0
-    · simpa [e, hi] using ha1 i
-    · simpa [e, hi] using hadepth i (Nat.pos_of_ne_zero hi)
+    by_cases hi : (i : ℕ) = 0 <;>
+      [simpa [e, hi] using ha1 i; simpa [e, hi] using hadepth i (Nat.pos_of_ne_zero hi)]
 
 /-- When `IsOreAdmissible K n j` and `j % n = 0`, the discriminant box is a single difference of
 ideal-power boxes. -/
@@ -185,8 +168,7 @@ theorem eisensteinBox_eq_sdiff_of_mod_eq_zero {n j : ℕ} (hO : IsOreAdmissible 
       (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) \
         (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update e ⟨0, hO.pos⟩ 2 i)) := by
   ext a
-  change a ∈ eisensteinBox K n j ↔ a ∈ idealBoxSdiff K hO.pos _
-  rw [mem_eisensteinBox_iff, mem_idealBoxSdiff_depth_iff]
+  rw [← idealBoxSdiff_eq (K := K) hO.pos, mem_eisensteinBox_iff, mem_idealBoxSdiff_depth_iff]
   exact ⟨fun ⟨_, hE, hd, _⟩ ↦ ⟨hE, hd⟩, fun ⟨hE, hd⟩ ↦ ⟨hO, hE, hd, fun h0 _ ↦ absurd hb h0.ne'⟩⟩
 
 /-- When `IsOreAdmissible K n j` and `0 < j % n`, the discriminant box is the difference of two
@@ -207,9 +189,8 @@ theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hO : IsOreAdmissible K n 
   have hn := hO.pos
   have heb : e ib = oreCoefficientDepth K n j (j % n) := by simp [e, ib, hb.ne']
   ext a
-  change a ∈ eisensteinBox K n j ↔ a ∈ idealBoxSdiff K hn e \ idealBoxSdiff K hn e'
-  rw [Set.mem_sdiff, mem_idealBoxSdiff_depth_iff hn, mem_box_sdiff_zero_iff hn e',
-    mem_eisensteinBox_iff]
+  rw [← idealBoxSdiff_eq (K := K) hn e, ← idealBoxSdiff_eq (K := K) hn e', Set.mem_sdiff,
+    mem_idealBoxSdiff_depth_iff hn, mem_box_sdiff_zero_iff hn e', mem_eisensteinBox_iff]
   constructor
   · rintro ⟨-, hE, hd, hab⟩
     refine ⟨⟨hE, hd⟩, fun ⟨hae', _⟩ ↦ hab hb hn ?_⟩
@@ -263,8 +244,7 @@ theorem mem_eisensteinBox_iff_wildExponent_eq {n j : ℕ} {a : Fin n → K} {f :
     cases hv : addVal 𝒪[K] (f.coeff (j % n)) with
     | top => simp [hv] at hlt
     | coe m =>
-      rw [hv] at hle hlt; simp only [Nat.cast_le, Nat.cast_lt] at hle hlt
-      exact_mod_cast (by omega : m = oreCoefficientDepth K n j (j % n))
+      rw [hv] at hle hlt; simp only [Nat.cast_le, Nat.cast_lt] at hle hlt; exact_mod_cast by omega
   · have hge := (hmem_pow ⟨j % n, Nat.mod_lt j hn⟩ _).1 hmem
     rw [heq hb, Nat.cast_le] at hge; omega
 
@@ -276,23 +256,13 @@ theorem wildExponent_adjoin_eq_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.1 ha.2.1
   exact (mem_eisensteinBox_iff_wildExponent_eq he hf hx).1 ha
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- A separable monic polynomial of positive degree over `K` has a root in `SeparableClosure K`. -/
-private theorem exists_root_monicOfCoeff_of_separable {n : ℕ} (hn : 0 < n) {a : Fin n → K}
-    (hsep : (monicOfCoeff a).Separable) :
-    ∃ x : SeparableClosure K, aeval x (monicOfCoeff a) = 0 := by
-  have hcard : ((monicOfCoeff a).aroots (SeparableClosure K)).card = n := by
-    rw [aroots_def, ← (IsSepClosed.splits_codomain _ hsep).natDegree_eq_card_roots,
-      natDegree_map, natDegree_monicOfCoeff]
-  obtain ⟨x, hx⟩ := Multiset.card_pos_iff_exists_mem.1 (hcard.symm ▸ hn)
-  exact ⟨x, (mem_aroots.1 hx).2⟩
-
 /-- The discriminant boxes for distinct wild exponents are pairwise disjoint. -/
-theorem pairwiseDisjoint_eisensteinBox (n : ℕ) :
+theorem pairwise_disjoint_on_eisensteinBox (n : ℕ) :
     Pairwise (Disjoint on fun j ↦ eisensteinBox K n j) := fun _ _ hne ↦
-  Set.disjoint_left.2 fun _ ha₁ ha₂ ↦ hne <| by
-    obtain ⟨x, hx⟩ := exists_root_monicOfCoeff_of_separable ha₁.1.pos
+  Set.disjoint_left.2 fun a ha₁ ha₂ ↦ hne <| by
+    obtain ⟨x, hx⟩ := exists_root_of_separable_of_natDegree_pos
       (separable_monicOfCoeff_of_mem_eisensteinBox ha₁)
+      ((natDegree_monicOfCoeff a).symm ▸ ha₁.1.pos)
     exact (wildExponent_adjoin_eq_of_mem_eisensteinBox ha₁ hx).symm.trans
       (wildExponent_adjoin_eq_of_mem_eisensteinBox ha₂ hx)
 
@@ -305,7 +275,8 @@ theorem iUnion_eisensteinBox_eq {n : ℕ} (hn : 0 < n) :
   refine ⟨fun ⟨_, ha⟩ ↦ ⟨ha.2.1, separable_monicOfCoeff_of_mem_eisensteinBox ha⟩,
     fun ⟨ha, hsep⟩ ↦ ?_⟩
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.1 ha
-  obtain ⟨x, hx⟩ := exists_root_monicOfCoeff_of_separable hn hsep
+  obtain ⟨x, hx⟩ := exists_root_of_separable_of_natDegree_pos hsep
+    ((natDegree_monicOfCoeff a).symm ▸ hn)
   exact ⟨(K⟮x⟯).wildExponent, (mem_eisensteinBox_iff_wildExponent_eq he hf hx).2 rfl⟩
 
 /-- At every point of a discriminant box, the root counts over `σ_K(n)` sum to `n`. -/
@@ -339,7 +310,7 @@ theorem rootCount_eq_zero_of_mem_eisensteinBox_of_wildExponent_ne {n j : ℕ}
     {a : Fin n → K} (ha : a ∈ eisensteinBox K n j) (hne : L.wildExponent ≠ j) :
     L.rootCount a = 0 :=
   rootCount_eq_zero_of_mem_eisensteinSet_of_notMem_eisensteinBox hL ha.2.1
-    fun hmem ↦ Set.disjoint_left.1 (pairwiseDisjoint_eisensteinBox n hne) hmem ha
+    fun hmem ↦ Set.disjoint_left.1 (pairwise_disjoint_on_eisensteinBox n hne) hmem ha
 
 end WildExponent
 
@@ -352,15 +323,11 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 theorem measurableSet_eisensteinBox {n j : ℕ} [MeasurableSpace (Fin n → K)]
     [OpensMeasurableSpace (Fin n → K)] : MeasurableSet (eisensteinBox K n j) := by
   by_cases hO : IsOreAdmissible K n j
-  · rcases Nat.eq_zero_or_pos (j % n) with hb | hb
-    · rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hO hb]
-      exact (measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-        (measurableSet_univ_pi_image_maximalIdeal_pow _)
+  · have hm (d : Fin n → ℕ) := measurableSet_univ_pi_image_maximalIdeal_pow (K := K) d
+    rcases Nat.eq_zero_or_pos (j % n) with hb | hb
+    · rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hO hb]; exact (hm _).diff (hm _)
     · rw [eisensteinBox_eq_sdiff_of_mod_pos hO hb]
-      exact ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-          (measurableSet_univ_pi_image_maximalIdeal_pow _)).diff
-        ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-          (measurableSet_univ_pi_image_maximalIdeal_pow _))
+      exact ((hm _).diff (hm _)).diff ((hm _).diff (hm _))
   · rw [eisensteinBox_eq_empty_of_not_isOreAdmissible hO]; exact MeasurableSet.empty
 
 /-- For `L ∈ σ_K(n)`, the root count `a ↦ L.rootCount a` is almost everywhere measurable on every
@@ -381,34 +348,6 @@ theorem ae_mem_iUnion_eisensteinBox {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin
   filter_upwards [ae_restrict_mem measurableSet_eisensteinSet,
     ae_separable_monicOfCoeff_restrict_eisensteinSet hn μ] with a ha hsep using ⟨ha, hsep⟩
 
-/-- Updating a single coordinate by `+ 1` increases the coordinate sum by `1`. -/
-private theorem sum_update_succ {n : ℕ} (e : Fin n → ℕ) (k : Fin n) :
-    ∑ i, Function.update e k (e k + 1) i = (∑ i, e i) + 1 := by
-  rw [Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sdiff_singleton_eq_erase]
-  have := Finset.add_sum_erase Finset.univ e (Finset.mem_univ k); omega
-
-/-- Measure of `idealBoxSdiff K hn e` when `e 0 = 1`. -/
-private theorem measure_box_sdiff_zero {n : ℕ} (hn : 0 < n) (e : Fin n → ℕ)
-    (he0 : e ⟨0, hn⟩ = 1) [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
-    (μ : Measure (Fin n → K)) [μ.IsAddLeftInvariant] (hμ : μ (integerBox K (Fin n)) = 1) :
-    μ (idealBoxSdiff K hn e) =
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, e i) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  set i₀ : Fin n := ⟨0, hn⟩; set e₂ := Function.update e i₀ 2
-  set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
-  have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := e) (e := e₂)
-    (le_update_iff.2 ⟨by omega, fun _ _ ↦ le_rfl⟩)
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e₂
-  rw [hμ, mul_one] at h₁ h₂
-  rw [show ∑ i, e₂ i = (∑ i, e i) + 1 by simpa [e₂, he0] using sum_update_succ e i₀] at h₂
-  have hq : q ≠ 0 := by simp [q, Nat.card_pos.ne']
-  rw [measure_sdiff hsub (measurableSet_univ_pi_image_maximalIdeal_pow e₂).nullMeasurableSet
-    (h₂ ▸ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)), h₁, h₂]
-  simp only [one_div]
-  rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
-    ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
-      (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
-
 /-- Measure of `idealBoxSdiff K hn e \ idealBoxSdiff K hn (update e ib (e ib + 1))`
 when `e 0 = 1` and `ib ≠ 0`. -/
 private theorem measure_box_sdiff_two {n : ℕ} (hn : 0 < n) (e : Fin n → ℕ)
@@ -420,26 +359,28 @@ private theorem measure_box_sdiff_two {n : ℕ} (hn : 0 < n) (e : Fin n → ℕ)
         (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
   set i₀ : Fin n := ⟨0, hn⟩; set e' := Function.update e ib (e ib + 1)
   set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
-  have he'0 : e' i₀ = 1 := by rw [show e' i₀ = e i₀ from Function.update_of_ne hbi0.symm .., he0]
+  have he'0 : e' i₀ = 1 := by simp [e', i₀, Function.update_of_ne hbi0.symm, he0]
   have hle : e ≤ e' := le_update_iff.2 ⟨Nat.le_succ _, fun _ _ ↦ le_rfl⟩
   have hsub : idealBoxSdiff K hn e' ⊆ idealBoxSdiff K hn e := fun a ha ↦ by
     rw [mem_box_sdiff_zero_iff hn e]; rw [mem_box_sdiff_zero_iff hn e'] at ha
     exact ⟨fun i ↦ Set.image_mono (Ideal.pow_le_pow_right (hle i)) (ha.1 i), ha.2⟩
-  have hS := measure_box_sdiff_zero hn e he0 μ hμ
-  have hS' := measure_box_sdiff_zero hn e' he'0 μ hμ
+  have hS : μ (idealBoxSdiff K hn e) = 1 / q ^ (∑ i, e i) * (1 - 1 / q) := by
+    simpa [idealBoxSdiff, idealBox, he0, one_add_one_eq_two] using
+      measure_univ_pi_image_maximalIdeal_pow_sdiff_update (K := K) μ hμ e i₀
+  have hS' : μ (idealBoxSdiff K hn e') = 1 / q ^ (∑ i, e' i) * (1 - 1 / q) := by
+    simpa [idealBoxSdiff, idealBox, he'0, one_add_one_eq_two] using
+      measure_univ_pi_image_maximalIdeal_pow_sdiff_update (K := K) μ hμ e' i₀
   have hq : q ≠ 0 := by simp [q, Nat.card_pos.ne']
   have hfin (m : ℕ) : 1 / q ^ m * (1 - 1 / q) ≠ ∞ :=
     ENNReal.mul_ne_top (ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq))
       (ENNReal.sub_ne_top ENNReal.one_ne_top)
   rw [measure_sdiff hsub ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
     (measurableSet_univ_pi_image_maximalIdeal_pow _)).nullMeasurableSet (hS' ▸ hfin _),
-    hS, hS', sum_update_succ e ib]
-  rw [show 1 / q ^ ((∑ i, e i) + 1) * (1 - 1 / q) =
-      (1 / q ^ (∑ i, e i) * (1 - 1 / q)) * (1 / q) by
-    simp only [one_div]
-    rw [pow_succ, ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
-      (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]; ring,
-    ENNReal.mul_sub fun _ _ ↦ hfin _, mul_one]
+    hS, hS', Finset.sum_update_add (Finset.mem_univ ib) e 1]
+  have hpow : 1 / q ^ ((∑ i, e i) + 1) * (1 - 1 / q) =
+      (1 / q ^ (∑ i, e i) * (1 - 1 / q)) * (1 / q) := by
+    simp only [one_div, ENNReal.inv_pow]; rw [pow_succ]; ring
+  rw [hpow, ENNReal.mul_sub fun _ _ ↦ hfin _, mul_one]
 
 /-- **Volume of the discriminant box**: for an Ore-admissible wild exponent `j` and a left-invariant
 measure normalized on the integer box, `eisensteinBox K n j` has volume
@@ -454,16 +395,17 @@ theorem measure_eisensteinBox {n j : ℕ} (hO : IsOreAdmissible K n j)
         (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
   have hn := hO.pos
   let e : Fin n → ℕ := fun i ↦ if (i : ℕ) = 0 then 1 else oreCoefficientDepth K n j i
+  have he0 : e ⟨0, hn⟩ = 1 := rfl
   have hsum_e : ∑ i : Fin n, e i = 1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h := by
     rw [Fin.sum_univ_eq_sum_range (fun k ↦ if k = 0 then 1 else oreCoefficientDepth K n j k),
-      show Finset.range n = insert 0 (Finset.Ico 1 n) by
-        ext k; simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ico]; omega,
+      Finset.range_eq_Ico, ← Finset.insert_Ico_add_one_left_eq_Ico hn,
       Finset.sum_insert (by simp), ite_eq_left rfl]
-    congr 1
-    exact Finset.sum_congr rfl fun k hk ↦ ite_eq_right (by have := (Finset.mem_Ico.1 hk).1; omega)
+    exact congrArg (1 + ·) <| Finset.sum_congr rfl fun k hk ↦
+      ite_eq_right (by have := (Finset.mem_Ico.1 hk).1; omega)
   rcases Nat.eq_zero_or_pos (j % n) with hb | hb
-  · rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hO hb, measure_box_sdiff_zero hn e rfl μ hμ,
-      hsum_e, ite_eq_left hb, mul_one]
+  · rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hO hb, ite_eq_left hb, mul_one, ← hsum_e]
+    have hm := measure_univ_pi_image_maximalIdeal_pow_sdiff_update (K := K) μ hμ e ⟨0, hn⟩
+    rw [he0, one_add_one_eq_two] at hm; exact hm
   · have hbi0 : (⟨j % n, Nat.mod_lt j hn⟩ : Fin n) ≠ ⟨0, hn⟩ := fun h ↦ hb.ne' (congrArg Fin.val h)
     rw [eisensteinBox_eq_sdiff_of_mod_pos hO hb, ite_eq_right hb.ne',
       measure_box_sdiff_two hn e rfl hbi0 μ hμ, hsum_e]

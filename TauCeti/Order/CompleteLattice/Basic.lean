@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Order.CompleteLattice.Basic
 public import Mathlib.Algebra.Order.Ring.Int
+public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Data.Finset.Range
 
 import Mathlib.Data.Fin.Basic
+import Mathlib.Data.Fintype.Lattice
 
 /-!
 # Suprema and infima in complete lattices
@@ -29,6 +31,8 @@ This file adds supremum and infimum identities for complete lattices that are no
   the supremum over `i ∈ [k, m]`.
 * `TauCeti.iInf_mem_range_succ_eq_iInf`: for a family with `S j₀ ≤ S j` for all `j ≥ j₀`, the
   infimum of the first `j₀ + 1` members is the infimum of all members.
+* `TauCeti.iInf_eq_iff_of_finite`: on a finite nonempty index type, `⨅ i, t i = d` iff `d` is a
+  lower bound attained at some index.
 -/
 
 public section
@@ -88,5 +92,15 @@ theorem iInf_mem_range_succ_eq_iInf {α : Type*} [CompleteLattice α] (S : ℕ �
   rcases le_total j j₀ with h | h
   · exact iInf₂_le j (Finset.mem_range.2 (by omega))
   · exact (iInf₂_le j₀ (Finset.mem_range.2 (by omega))).trans (hS j h)
+
+/-- On a finite nonempty index type, `⨅ i, t i = d` iff `d` is a lower bound attained at some
+index. -/
+theorem iInf_eq_iff_of_finite {ι α : Type*} [Finite ι] [Nonempty ι]
+    [CompleteLinearOrder α] (t : ι → α) (d : α) :
+    (⨅ i, t i) = d ↔ (∀ i, d ≤ t i) ∧ ∃ i, t i = d := by
+  refine ⟨fun h ↦ ⟨fun i ↦ h ▸ iInf_le t i, ?_⟩, fun ⟨hle, i, hi⟩ ↦
+    le_antisymm (iInf_le_of_le i hi.le) (le_iInf hle)⟩
+  obtain ⟨i, hi⟩ := Finite.exists_min t
+  exact ⟨i, le_antisymm (le_trans (le_iInf hi) h.le) (h ▸ iInf_le t i)⟩
 
 end TauCeti

@@ -15,7 +15,8 @@ public import TauCeti.RingTheory.LaurentSeries.LocalField
 
 Specializes `TauCeti.IsOreAdmissible` and `TauCeti.krasnerCount` to `ℚ_[p]` and `F⸨X⸩` (for a
 finite field `F`), deducing `#σ_{ℚ_[p]}(p) = p * (p - 1) ^ 2 + p ^ 2`, `#σ_{ℚ_[3]}(3) = 21`,
-`#σ_{ℚ_[2]}(4) = 92`, and the Artin–Schreier stratum counts over `F⸨X⸩`.
+`#σ_{ℚ_[2]}(4) = 92`, and wild-exponent stratum counts of degree-`p` extensions over `F⸨X⸩`
+(Artin–Schreier when `p = 2`).
 
 ## Main results
 
@@ -28,7 +29,8 @@ finite field `F`), deducing `#σ_{ℚ_[p]}(p) = p * (p - 1) ^ 2 + p ^ 2`, `#σ_{
 * `TauCeti.isOreAdmissible_laurentSeries_iff`, `TauCeti.krasnerCount_laurentSeries`,
   `TauCeti.ncard_totallyRamifiedOfDegree_wildExponent_eq_laurentSeries`,
   `TauCeti.ncard_totallyRamifiedOfDegree_ringChar_wildExponent_eq_laurentSeries`,
-  `TauCeti.ncard_totallyRamifiedOfDegree_two_laurentSeries_zmodTwo`: equal-characteristic counts.
+  `TauCeti.ncard_totallyRamifiedOfDegree_two_wildExponent_eq_laurentSeries_zmodTwo`:
+  equal-characteristic counts.
 
 ## References
 
@@ -46,19 +48,6 @@ open scoped LaurentSeries
 namespace TauCeti
 
 /-! ### Specialization to `ℚ_[p]` -/
-
-private theorem ringChar_residueField_padic (p : ℕ) [Fact p.Prime] : ringChar 𝓀[ℚ_[p]] = p :=
-  (natCastValuation_ne_zero_iff_ringChar_eq ℚ_[p] Fact.out
-    (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)).1
-    (by rw [Padic.natCastValuation_self]; exact one_ne_zero)
-
-private theorem natCast_ringChar_padic_ne_zero (p : ℕ) [Fact p.Prime] :
-    (ringChar 𝓀[ℚ_[p]] : ℚ_[p]) ≠ 0 := by
-  rw [ringChar_residueField_padic p]; exact Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-
-private theorem natCastValuation_ringChar_padic (p : ℕ) [Fact p.Prime] :
-    natCastValuation ℚ_[p] (ringChar 𝓀[ℚ_[p]]) (natCast_ringChar_padic_ne_zero p) = 1 := by
-  simp only [ringChar_residueField_padic p, Padic.natCastValuation_self]
 
 /-- **Ore's realizability condition over `ℚ_[p]`**: for `0 < n`, `(n, j)` is Ore-admissible iff
 either `n ∣ j` and `j / n = v_p(n)`, or `0 < j % n` and `v_p(j % n) ≤ j / n < v_p(n)`. -/
@@ -83,9 +72,10 @@ theorem isOreAdmissible_padic_iff {p : ℕ} [Fact p.Prime] {n j : ℕ} (hn : 0 <
 theorem krasnerCount_padic_of_mod_eq_zero {p : ℕ} [Fact p.Prime] {n j : ℕ}
     (hO : IsOreAdmissible ℚ_[p] n j) (hb : j % n = 0) :
     krasnerCount ℚ_[p] n j = n * p ^ ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i := by
-  rw [krasnerCount_of_mod_eq_zero_of_natCast_ne_zero (natCast_ringChar_padic_ne_zero p) hO hb,
-    Padic.natCard_residueField, natCastValuation_ringChar_padic p]
-  simp only [ringChar_residueField_padic p, Nat.add_sub_cancel, Nat.div_one]
+  rw [krasnerCount_of_mod_eq_zero_of_natCast_ne_zero
+      (Padic.natCast_ringChar_residueField_ne_zero p) hO hb,
+    Padic.natCard_residueField, Padic.natCastValuation_ringChar_residueField]
+  simp only [Padic.ringChar_residueField p, Nat.add_sub_cancel, Nat.div_one]
 
 /-- **Krasner's count over `ℚ_[p]` (`¬ n ∣ j`)**: for an Ore-admissible `(n, j)` with `0 < j % n`,
 `krasnerCount ℚ_[p] n j = n * (p - 1) * p ^ (∑_{i=1}^{j/n} n / p ^ i + (j % n) / p ^ (j/n + 1))`.
@@ -94,9 +84,10 @@ theorem krasnerCount_padic_of_mod_pos {p : ℕ} [Fact p.Prime] {n j : ℕ}
     (hO : IsOreAdmissible ℚ_[p] n j) (hb : 0 < j % n) :
     krasnerCount ℚ_[p] n j =
       n * (p - 1) * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)) := by
-  rw [krasnerCount_of_mod_pos_of_natCast_ne_zero (natCast_ringChar_padic_ne_zero p) hO hb,
-    Padic.natCard_residueField, natCastValuation_ringChar_padic p]
-  simp only [ringChar_residueField_padic p, Nat.add_sub_cancel, Nat.div_one]
+  rw [krasnerCount_of_mod_pos_of_natCast_ne_zero
+      (Padic.natCast_ringChar_residueField_ne_zero p) hO hb,
+    Padic.natCard_residueField, Padic.natCastValuation_ringChar_residueField]
+  simp only [Padic.ringChar_residueField p, Nat.add_sub_cancel, Nat.div_one]
 
 /-- **Total count of totally ramified degree-`n` extensions of `ℚ_[p]`**:
 `#σ_{ℚ_[p]}(n) = ∑_{j = 0}^{n * v_p(n)} krasnerCount ℚ_[p] n j`. -/
@@ -156,10 +147,9 @@ theorem ncard_totallyRamifiedOfDegree_four_padicTwo :
   have hv4 : padicValNat 2 4 = 2 := by
     rw [Nat.padicValNat_def, show (4 : ℕ) = 2 ^ 2 by rfl, Nat.multiplicity_prime_pow]
   have hv2 : padicValNat 2 2 = 1 := by rw [Nat.padicValNat_def, Nat.multiplicity_self (by decide)]
-  have hv1 : padicValNat 2 1 = 0 := by
-    rw [Nat.padicValNat_def]; exact multiplicity_eq_zero_of_not_dvd (by decide)
-  have hv3 : padicValNat 2 3 = 0 := by
-    rw [Nat.padicValNat_def]; exact multiplicity_eq_zero_of_not_dvd (by decide)
+  have hnd (m : ℕ) (h : ¬ 2 ∣ m) : padicValNat 2 m = 0 := by
+    rw [Nat.padicValNat_def]; exact multiplicity_eq_zero_of_not_dvd h
+  have hv1 := hnd 1 (by decide); have hv3 := hnd 3 (by decide)
   have hpos (j : ℕ) (hb : 0 < j % 4) (h1 : padicValNat 2 (j % 4) ≤ j / 4) (h2 : j / 4 < 2) :
       krasnerCount ℚ_[2] 4 j =
         4 * 2 ^ (∑ i ∈ Finset.Icc 1 (j / 4), 4 / 2 ^ i + (j % 4) / 2 ^ (j / 4 + 1)) :=
@@ -171,18 +161,14 @@ theorem ncard_totallyRamifiedOfDegree_four_padicTwo :
   have hk8 : krasnerCount ℚ_[2] 4 8 = 32 := by
     rw [krasnerCount_padic_of_mod_eq_zero
       ((isOreAdmissible_padic_iff (by norm_num)).2 (Or.inl ⟨by norm_num, by simp [hv4]⟩))
-      (by norm_num), show 8 / 4 = 2 by rfl, show Finset.Icc 1 2 = {1, 2} by decide]
-    norm_num
+      (by norm_num), show 8 / 4 = 2 by rfl, show Finset.Icc 1 2 = {1, 2} by decide]; norm_num
   rw [ncard_totallyRamifiedOfDegree_padic_eq_sum 2 (by norm_num), hv4]
   simp only [show 4 * 2 + 1 = 9 by rfl, Finset.sum_range_succ, Finset.range_zero,
     Finset.sum_empty, zero_add]
   rw [hzero 0 (by simp), hzero 2 (by simp [hv2]), hzero 4 (by simp), hk8,
-    hpos 1 (by norm_num) (by simp [hv1]) (by norm_num),
-    hpos 3 (by norm_num) (by simp [hv3]) (by norm_num),
-    hpos 5 (by norm_num) (by simp [hv1]) (by norm_num),
-    hpos 6 (by norm_num) (by simp [hv2]) (by norm_num),
-    hpos 7 (by norm_num) (by simp [hv3]) (by norm_num)]
-  norm_num
+    hpos 1 (by norm_num) (by simp [hv1]) (by norm_num), hpos 3 (by norm_num) (by simp [hv3])
+    (by norm_num), hpos 5 (by norm_num) (by simp [hv1]) (by norm_num), hpos 6 (by norm_num)
+    (by simp [hv2]) (by norm_num), hpos 7 (by norm_num) (by simp [hv3]) (by norm_num)]; norm_num
 
 /-! ### Specialization to `F⸨X⸩` -/
 
@@ -219,9 +205,9 @@ theorem ncard_totallyRamifiedOfDegree_wildExponent_eq_laurentSeries (F : Type*) 
       n * (Nat.card F - 1) * Nat.card F ^ ((j / n) * (n / ringChar F) + (j % n) / ringChar F) := by
   rw [ncard_totallyRamifiedOfDegree_wildExponent_eq, krasnerCount_laurentSeries F hn hpn hpj]
 
-/-- **Artin–Schreier stratum count over `F⸨X⸩`**: for a finite field `F` of characteristic `p`,
-every wild exponent `j` prime to `p` is realized by `p * (q - 1) * q ^ (j / p)` degree-`p`
-totally ramified extensions of `F⸨X⸩`. -/
+/-- **Wild-exponent stratum count of degree-`p` extensions over `F⸨X⸩`** (Artin–Schreier when
+`p = 2`): for a finite field `F` of characteristic `p`, every wild exponent `j` prime to `p` is
+realized by `p * (q - 1) * q ^ (j / p)` degree-`p` totally ramified extensions of `F⸨X⸩`. -/
 theorem ncard_totallyRamifiedOfDegree_ringChar_wildExponent_eq_laurentSeries (F : Type*)
     [Field F] [Finite F] {j : ℕ} (hpj : ¬ ringChar F ∣ j) :
     {E ∈ totallyRamifiedOfDegree F⸨X⸩ (ringChar F) | E.wildExponent = j}.ncard =
@@ -233,15 +219,12 @@ theorem ncard_totallyRamifiedOfDegree_ringChar_wildExponent_eq_laurentSeries (F 
 /-- **Worked equal-characteristic check**: for `0 < m`, inside a separable closure of
 `(ZMod 2)⸨X⸩` there are `2 ^ m` totally ramified quadratic extensions of wild exponent `2 * m - 1`.
 -/
-theorem ncard_totallyRamifiedOfDegree_two_laurentSeries_zmodTwo {m : ℕ} (hm : 0 < m) :
+theorem ncard_totallyRamifiedOfDegree_two_wildExponent_eq_laurentSeries_zmodTwo {m : ℕ}
+    (hm : 0 < m) :
     {E ∈ totallyRamifiedOfDegree (ZMod 2)⸨X⸩ 2 | E.wildExponent = 2 * m - 1}.ncard = 2 ^ m := by
-  have hrc : ringChar (ZMod 2) = 2 := by rw [ZMod.ringChar_zmod_n]
   have h := ncard_totallyRamifiedOfDegree_ringChar_wildExponent_eq_laurentSeries (ZMod 2)
-    (j := 2 * m - 1) (by rw [hrc]; omega)
-  rw [hrc, Nat.card_zmod] at h
-  rw [h, show (2 * m - 1) / 2 = m - 1 by omega]
-  cases m with
-  | zero => omega
-  | succ k => simp [pow_succ']
+    (j := 2 * m - 1) (by rw [ZMod.ringChar_zmod_n]; omega)
+  rw [ZMod.ringChar_zmod_n, Nat.card_zmod, show (2 * m - 1) / 2 = m - 1 by omega] at h
+  rw [h]; rcases m with _ | k <;> [omega; simp [pow_succ']]
 
 end TauCeti

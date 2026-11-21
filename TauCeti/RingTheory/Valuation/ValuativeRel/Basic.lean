@@ -21,6 +21,8 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
 * `TauCeti.ValuativeRel.vle_of_vle_inv_mul` and
   `TauCeti.ValuativeRel.vle_of_inv_mul_vle` : cancel a unit in valuation comparisons.
+* `TauCeti.natCast_integerRing_eq_zero_iff`: a natural number vanishes in `(valuation K).integer`
+  iff it vanishes in `K`.
 * `TauCeti.natCast_ne_zero_of_isUnit` and `TauCeti.two_ne_zero_of_isUnit_two`: an integer
   that is a unit in the ring of integers is nonzero in the ambient ring.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
@@ -80,6 +82,11 @@ instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
     ValuativeExtension K K := ⟨by intro a b; simp⟩
 
 variable {K : Type*} [Ring K] [ValuativeRel K]
+
+/-- A natural number vanishes in `(valuation K).integer` exactly when it vanishes in `K`. -/
+@[simp, norm_cast]
+theorem natCast_integerRing_eq_zero_iff (m : ℕ) : (m : (valuation K).integer) = 0 ↔ (m : K) = 0 :=
+  ⟨fun h ↦ by simpa using congrArg Subtype.val h, fun h ↦ Subtype.ext (by simpa using h)⟩
 
 /-- A natural number that is a unit in the integer ring is nonzero in the ambient ring. -/
 theorem natCast_ne_zero_of_isUnit {n : ℕ}

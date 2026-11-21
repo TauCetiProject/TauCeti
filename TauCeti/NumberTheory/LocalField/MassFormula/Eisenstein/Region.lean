@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
@@ -210,6 +211,30 @@ theorem measurableSet_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]
     rw [eisensteinSet_eq_sdiff hn]
     exact h₁.diff (measurableSet_univ_pi_image_maximalIdeal_pow _)
 
+/-- For any finite index type `ι`, coordinate `i₀ : ι`, and exponent vector `e : ι → ℕ`, the
+difference between the ideal-power box for `e` and its sub-box raising coordinate `i₀` by `1` has
+volume `q ^ (-∑ i, e i) * (1 - q⁻¹)` under a left-invariant measure normalized on the integer box.
+-/
+theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [MeasurableSpace (ι → K)] [BorelSpace (ι → K)] (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+    (hμ : μ (integerBox K ι) = 1) (e : ι → ℕ) (i₀ : ι) :
+    μ ((Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) \
+        (Set.univ.pi fun i ↦
+          ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update e i₀ (e i₀ + 1) i))) =
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, e i) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
+  set e' : ι → ℕ := Function.update e i₀ (e i₀ + 1)
+  have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := e) (e := e')
+    (le_update_iff.2 ⟨Nat.le_succ _, fun _ _ ↦ le_rfl⟩)
+  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
+  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e'
+  rw [hμ, mul_one] at h₁ h₂
+  rw [Finset.sum_update_add (Finset.mem_univ i₀) e 1] at h₂
+  have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
+  rw [measure_sdiff hsub (measurableSet_univ_pi_image_maximalIdeal_pow e').nullMeasurableSet
+    (h₂ ▸ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)), h₁, h₂]
+  simp only [one_div, ENNReal.inv_pow]
+  rw [pow_succ, ENNReal.mul_sub fun _ _ ↦ ENNReal.pow_ne_top (ENNReal.inv_ne_top.2 hq), mul_one]
+
 /-- **The volume of the Eisenstein region**: for a left-invariant measure on `Fin n → K`
 normalized on the integer box, the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)` for
 `0 < n`, where `q = Nat.card 𝓀[K]`. -/
@@ -218,26 +243,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     (hμ : μ (integerBox K (Fin n)) = 1) :
     μ (eisensteinSet K n) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  set e : Fin n → ℕ := Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2
-  have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := fun _ ↦ 1) (e := e)
-    (le_update_iff.2 ⟨one_le_two, fun _ _ ↦ le_rfl⟩)
-  have he : ∑ i, e i = n + 1 := by
-    simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
-      Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
-    omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ fun _ ↦ 1
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
-  rw [hμ, mul_one] at h₁ h₂
-  simp only [pow_one, Fin.sum_const, smul_eq_mul, mul_one] at hsub h₁
-  rw [he] at h₂
-  have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
-  rw [eisensteinSet_eq_sdiff hn, measure_sdiff hsub
-    (measurableSet_univ_pi_image_maximalIdeal_pow e).nullMeasurableSet
-    (h₂ ▸ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)), h₁, h₂]
-  simp only [one_div]
-  rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
-    ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
-      (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
+  have h := measure_univ_pi_image_maximalIdeal_pow_sdiff_update (K := K) μ hμ
+    (fun (_ : Fin n) ↦ 1) ⟨0, hn⟩
+  simpa [eisensteinSet_eq_sdiff hn, one_add_one_eq_two] using h
 
 /-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
 since it lies in the compact integer box. -/

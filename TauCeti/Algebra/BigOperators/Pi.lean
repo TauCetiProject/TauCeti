@@ -60,6 +60,14 @@ theorem Finset.sum_pi_single_one_eq_card_filter {J : Type*} [DecidableEq ι]
   ext i
   simp [Finset.sum_apply, Pi.single_apply, eq_comm, Finset.card_filter]
 
+/-- Multiplying one coordinate of `f` by `c` multiplies the product over `s` by `c`. -/
+@[to_additive /-- Adding `c` to one coordinate of `f` adds `c` to the sum over `s`. -/]
+theorem Finset.prod_update_mul [DecidableEq ι] {M : Type*} [CommMonoid M]
+    {s : Finset ι} {k : ι} (hk : k ∈ s) (f : ι → M) (c : M) :
+    ∏ i ∈ s, Function.update f k (f k * c) i = (∏ i ∈ s, f i) * c := by
+  rw [Finset.prod_update_of_mem hk, Finset.sdiff_singleton_eq_erase, mul_assoc,
+    mul_comm c, ← mul_assoc, Finset.mul_prod_erase s f hk]
+
 /-- The monomial with exponent vector `Pi.single i a` is the power `f i ^ a`. -/
 theorem Fintype.prod_pow_pi_single [Fintype ι] [DecidableEq ι] {M : Type*} [CommMonoid M]
     (f : ι → M) (i : ι) (a : ℕ) : ∏ j, f j ^ Pi.single (M := fun _ ↦ ℕ) i a j = f i ^ a := by

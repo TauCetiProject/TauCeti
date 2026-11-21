@@ -7,9 +7,12 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
-import Mathlib.FieldTheory.IsSepClosed
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.FieldTheory.Separable
+import TauCeti.Data.ENat.Basic
+import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
+import TauCeti.Order.CompleteLattice.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
@@ -36,8 +39,11 @@ realizability theorem (`TauCeti.exists_mem_totallyRamifiedOfDegree_wildExponent_
 
 * `TauCeti.isOreAdmissible_iff_le_nsmul`, `TauCeti.isOreAdmissible_iff_of_natCast_eq_zero`:
   inequality and equal-characteristic forms of Ore's conditions.
-* `TauCeti.sum_oreCoefficientDepth_le`, `TauCeti.sum_oreCoefficientDepth_add_one_le`: upper bounds
-  on `∑_{h=1}^{n-1} ν_h`.
+* `TauCeti.sum_oreCoefficientDepth_le`, `TauCeti.sum_oreCoefficientDepth_add_one_le`,
+  `TauCeti.sum_oreCoefficientDepth_add_sum_saving`: upper bounds and saving identity on
+  `∑_{h=1}^{n-1} ν_h`.
+* `TauCeti.separable_monicOfCoeff_of_isOreAdmissible`: separability of irreducible
+  `monicOfCoeff a` under Ore admissibility.
 * `TauCeti.wildExponent_adjoin_eq_iff_of_eisenstein`: exact coefficient-valuation characterization
   of `(K⟮x⟯).wildExponent = j` for a root `x` of a monic Eisenstein polynomial.
 * `TauCeti.exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff`: **Ore's realizability theorem**.
@@ -61,11 +67,6 @@ namespace TauCeti
 section DiscreteValuation
 
 variable {K : Type*} [Field K] [ValuativeRel K] [IsDiscreteValuationRing 𝒪[K]]
-
-omit [IsDiscreteValuationRing 𝒪[K]] in
-/-- A natural number vanishes in `𝒪[K]` exactly when it vanishes in `K`. -/
-private theorem natCast_integerRing_eq_zero_iff (m : ℕ) : (m : 𝒪[K]) = 0 ↔ (m : K) = 0 :=
-  ⟨fun h ↦ by simpa using congrArg Subtype.val h, fun h ↦ Subtype.ext (by simpa using h)⟩
 
 /-! ### Ore's conditions -/
 
@@ -153,8 +154,7 @@ theorem isOreAdmissible_iff_le_nsmul {n j : ℕ} (hn : 0 < n) :
     | top => rw [hv, htop] at hr; exact ENat.top_ne_natCast j (top_unique hr).symm
     | coe k =>
       rw [hv, ← Nat.cast_add_one, Nat.cast_le] at h2'
-      rw [hv, nsmul_eq_mul, ← Nat.cast_mul, Nat.cast_le] at hr
-      nlinarith
+      rw [hv, nsmul_eq_mul, ← Nat.cast_mul, Nat.cast_le] at hr; nlinarith
 
 /-! ### Coefficient depths of the discriminant box -/
 
@@ -175,10 +175,6 @@ theorem oreCoefficientDepth_def (n j h : ℕ) :
 
 /-- Every coefficient depth is at least `1`. -/
 theorem one_le_oreCoefficientDepth (n j h : ℕ) : 1 ≤ oreCoefficientDepth K n j h := le_max_left ..
-
-/-- Every coefficient depth is positive. -/
-theorem oreCoefficientDepth_pos (n j h : ℕ) : 0 < oreCoefficientDepth K n j h :=
-  one_le_oreCoefficientDepth n j h
 
 /-- Upper bound on the coefficient depth, obtained by dropping the `- v_K(h)` term. -/
 theorem oreCoefficientDepth_le (n j h : ℕ) :
@@ -226,17 +222,41 @@ theorem addVal_add_oreCoefficientDepth_of_mod_pos {n j : ℕ}
     rw [hdepth, ← Nat.cast_add]
     exact_mod_cast Nat.add_sub_of_le (by omega : r ≤ j / n + 1)
 
+/-- Pointwise saving identity: `ν_h + min (j / n + [h < j % n], v_K(h)) = j / n + 1 + [h < j % n]`.
+-/
+private theorem oreCoefficientDepth_add_saving (n j h : ℕ) :
+    oreCoefficientDepth K n j h +
+        (min ((j / n + if h < j % n then 1 else 0 : ℕ) : ℕ∞)
+          (addVal 𝒪[K] (h : 𝒪[K]))).toNat =
+      j / n + 1 + if h < j % n then 1 else 0 := by
+  rw [oreCoefficientDepth_def]
+  cases addVal 𝒪[K] (h : 𝒪[K]) with
+  | top => simp only [ENat.sub_top, ENat.toNat_zero, min_top_right, ENat.toNat_natCast]; omega
+  | coe v =>
+    rw [ENat.toNat_sub (ENat.natCast_ne_top _), ENat.toNat_natCast, ENat.toNat_natCast,
+      ← ENat.natCast_min, ENat.toNat_natCast]
+    omega
+
+/-- Sum of coefficient depths and valuation savings over `1 ≤ h < n`:
+`∑ ν_h + ∑ min (j / n + [h < j % n], v_K(h)) = (n - 1) * (j / n + 1) + (j % n - 1)`. -/
+theorem sum_oreCoefficientDepth_add_sum_saving {n j : ℕ} (hn : 0 < n) :
+    ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h +
+        ∑ h ∈ Finset.Ico 1 n,
+          (min ((j / n + if h < j % n then 1 else 0 : ℕ) : ℕ∞)
+            (addVal 𝒪[K] (h : 𝒪[K]))).toNat =
+      (n - 1) * (j / n + 1) + (j % n - 1) := by
+  rw [← Finset.sum_add_distrib,
+    Finset.sum_congr rfl fun h _ ↦ oreCoefficientDepth_add_saving n j h,
+    Finset.sum_add_distrib, Finset.sum_const, Nat.card_Ico, smul_eq_mul, Finset.sum_boole,
+    Nat.cast_id, Finset.Ico_filter_lt_of_le_right (Nat.mod_lt j hn).le, Nat.card_Ico]
+
 /-- Unified upper bound on the sum of coefficient depths over `1 ≤ h < n`. -/
 private theorem sum_oreCoefficientDepth_le_aux {n j : ℕ} (hn : 0 < n) :
     ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h ≤
       n + j - 1 - if 0 < j % n then 1 else 0 := by
   have hle : ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h ≤
-      ∑ h ∈ Finset.Ico 1 n, (j / n + 1 + if h < j % n then 1 else 0) :=
-    Finset.sum_le_sum fun h _ ↦ oreCoefficientDepth_le n j h
-  have hcard_lt : (Finset.Ico 1 n).filter (· < j % n) = Finset.Ico 1 (j % n) := by
-    ext h; simp only [Finset.mem_filter, Finset.mem_Ico]; have := Nat.mod_lt j hn; omega
-  rw [Finset.sum_add_distrib, Finset.sum_const, Nat.card_Ico, smul_eq_mul, Finset.sum_boole,
-    Nat.cast_id, hcard_lt, Nat.card_Ico] at hle
+      (n - 1) * (j / n + 1) + (j % n - 1) :=
+    le_self_add.trans_eq (sum_oreCoefficientDepth_add_sum_saving hn)
   have hdiv : n * (j / n) + j % n = j := Nat.div_add_mod j n
   have hmul : (n - 1) * (j / n + 1) ≤ n * (j / n) + (n - 1) := by
     cases n with
@@ -255,9 +275,31 @@ so the Krasner exponent `(n + j - 1) - ∑ ν_h` is at least `1`. -/
 theorem sum_oreCoefficientDepth_add_one_le {n j : ℕ} (hn : 0 < n) (hb : 0 < j % n) :
     ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h + 1 ≤ n + j - 1 := by
   have h := sum_oreCoefficientDepth_le_aux (K := K) (j := j) hn
-  rw [ite_eq_left hb] at h
-  have : 0 < j := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hb
-  omega
+  rw [ite_eq_left hb] at h; have : 0 < j := hb.trans_le (Nat.mod_le j n); omega
+
+/-- An irreducible monic polynomial `monicOfCoeff a` of degree `n` over `K` is separable when
+`(n, j)` is Ore-admissible and, if `0 < j % n`, the coefficient `a ⟨j % n, _⟩` is nonzero. -/
+theorem separable_monicOfCoeff_of_isOreAdmissible {n j : ℕ} {a : Fin n → K}
+    (hirr : Irreducible (monicOfCoeff a)) (hO : IsOreAdmissible K n j)
+    (hb : 0 < j % n → a ⟨j % n, Nat.mod_lt j hO.pos⟩ ≠ 0) :
+    (monicOfCoeff a).Separable := by
+  have hn := hO.pos; rw [Polynomial.separable_iff_derivative_ne_zero hirr]; intro hder
+  rcases Nat.eq_zero_or_pos (j % n) with hb0 | hbpos
+  · have hvn := (isOreAdmissible_iff_of_mod_eq_zero hn hb0).1 hO
+    have hnK : (n : K) ≠ 0 := fun h0 ↦ by
+      rw [(natCast_integerRing_eq_zero_iff n).2 h0, addVal_zero] at hvn
+      exact ENat.natCast_ne_top _ hvn
+    have hc := congrArg (fun p : K[X] ↦ p.coeff (n - 1)) hder
+    rw [coeff_derivative, coeff_zero, Nat.sub_add_cancel hn, coeff_monicOfCoeff_self, one_mul,
+      Nat.cast_sub hn, Nat.cast_one, sub_add_cancel] at hc
+    exact hnK hc
+  · have hvb := ((isOreAdmissible_iff_of_mod_pos hn hbpos).1 hO).1
+    have hbK : ((j % n : ℕ) : K) ≠ 0 := fun h0 ↦ by
+      rw [(natCast_integerRing_eq_zero_iff _).2 h0, addVal_zero] at hvb; simp at hvb
+    have hmod := Nat.mod_lt j hn; have hc := congrArg (fun p : K[X] ↦ p.coeff (j % n - 1)) hder
+    rw [coeff_derivative, coeff_zero, Nat.sub_add_cancel hbpos, coeff_monicOfCoeff a ⟨j % n, hmod⟩,
+      Nat.cast_sub hbpos, Nat.cast_one, sub_add_cancel] at hc
+    exact mul_ne_zero (hb hbpos) hbK hc
 
 end DiscreteValuation
 
@@ -339,15 +381,126 @@ private theorem nsmul_add_eq_iff {n q r i : ℕ} (hi : i < n) (hr : r < n) (v : 
       simpa only [Nat.mul_add_mod, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hr] using this
     exact ⟨hmod, Nat.eq_of_mul_eq_mul_left (by omega : 0 < n) (by omega)⟩
 
-/-- On a finite nonempty index type, `⨅ i, t i = d` iff `d` is a lower bound attained at some
-index. -/
-private theorem iInf_eq_iff_of_finite {ι : Type*} [Finite ι] [Nonempty ι]
-    (t : ι → ℕ∞) (d : ℕ∞) :
-    (⨅ i, t i) = d ↔ (∀ i, d ≤ t i) ∧ ∃ i, t i = d := by
-  refine ⟨fun h ↦ ⟨fun i ↦ h ▸ iInf_le t i, ?_⟩, fun ⟨hle, i, hi⟩ ↦
-    le_antisymm (iInf_le_of_le i hi.le) (le_iInf hle)⟩
-  obtain ⟨i, hi⟩ := Finite.exists_min t
-  exact ⟨i, le_antisymm (le_trans (le_iInf hi) h.le) (h ▸ iInf_le t i)⟩
+/-- Minimum-attainment characterization for `⨅ i : Fin n, n • v i + i = n - 1 + j` in `ℕ∞`.
+Writing `n - 1 + j = n * q + r` with `r < n` (where `r + 1 = j % n` if `0 < j % n` and
+`r + 1 = n` otherwise), the infimum equals `n - 1 + j` iff each `v i` satisfies the shifted
+quotient lower bound and `v r = q`. -/
+private theorem iInf_nsmul_add_eq_sub_add_iff {n j : ℕ} (hn : 0 < n) (v : Fin n → ℕ∞) :
+    (⨅ i : Fin n, n • v i + (i : ℕ)) = ((n - 1 + j : ℕ) : ℕ∞) ↔
+      (∀ i : Fin n, (i : ℕ) + 1 < n →
+        ((j / n + 1 + (if (i : ℕ) + 1 < j % n then 1 else 0) : ℕ) : ℕ∞) ≤ v i) ∧
+      ((j / n + (if 0 < j % n then 1 else 0) : ℕ) : ℕ∞) ≤
+        v ⟨n - 1, Nat.sub_lt hn Nat.one_pos⟩ ∧
+      v ⟨(if 0 < j % n then j % n else n) - 1,
+          by have := Nat.mod_lt j hn; split_ifs <;> omega⟩ =
+        ((j / n + (if 0 < j % n then 1 else 0) : ℕ) : ℕ∞) := by
+  have hdiv : n * (j / n) + j % n = j := Nat.div_add_mod j n
+  have hmod : j % n < n := Nat.mod_lt j hn
+  let q := j / n + if 0 < j % n then 1 else 0; let r := (if 0 < j % n then j % n else n) - 1
+  have hr : r < n := by dsimp [r]; split_ifs <;> omega
+  have hD : n - 1 + j = n * q + r := by
+    dsimp [q, r]; split_ifs <;> [rw [Nat.mul_succ]; simp only [add_zero]] <;> omega
+  have hshift {k : ℕ} (hk : k + 1 < n) :
+      q + (if k < r then 1 else 0) = j / n + 1 + if k + 1 < j % n then 1 else 0 := by
+    dsimp [q, r]; split_ifs <;> omega
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  rw [hD, iInf_eq_iff_of_finite]
+  refine ⟨fun ⟨hle, i, hi⟩ ↦ ?_, fun ⟨hle, htop, heq⟩ ↦ ?_⟩
+  · rw [nsmul_add_eq_iff i.isLt hr] at hi
+    refine ⟨fun k hk ↦ ?_, ?_, ?_⟩
+    · have hkstep := hle k; rw [le_nsmul_add_iff k.isLt hr, hshift hk] at hkstep; exact hkstep
+    · have htopstep := hle ⟨n - 1, Nat.sub_lt hn Nat.one_pos⟩
+      rw [le_nsmul_add_iff (Nat.sub_lt hn Nat.one_pos) hr] at htopstep
+      rwa [ite_eq_right (by omega), add_zero] at htopstep
+    · have hir : i = ⟨r, hr⟩ := Fin.ext hi.1; rw [hir] at hi; simpa [r, q] using hi.2
+  · refine ⟨fun i ↦ ?_, ⟨r, hr⟩, ?_⟩
+    · rw [le_nsmul_add_iff i.isLt hr]
+      rcases lt_or_eq_of_le (Nat.le_sub_one_of_lt i.isLt) with hilt | hieq
+      · rw [hshift (by omega)]; exact hle i (by omega)
+      · rw [ite_eq_right (by omega), add_zero, show i = ⟨n - 1, Nat.sub_lt hn Nat.one_pos⟩ from
+          Fin.ext hieq]; exact htop
+    · rw [nsmul_add_eq_iff hr hr]; exact ⟨rfl, by simpa [r, q] using heq⟩
+
+/-- Helper for Eisenstein polynomials: every lower coefficient has valuation ≥ 1. -/
+private theorem one_le_addVal_coeff_of_eisenstein {f : 𝒪[K][X]}
+    (hfE : f.IsEisensteinAt 𝓂[K]) {h : ℕ} (hh : h < f.natDegree) :
+    1 ≤ addVal 𝒪[K] (f.coeff h) := by
+  have hmem : f.coeff h ∈ 𝓂[K] ^ 1 := by rw [pow_one]; exact hfE.mem hh
+  exact_mod_cast (TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal.1 hmem)
+
+/-- Forward direction of `wildExponent_adjoin_eq_iff_of_eisenstein`: the shifted infimum
+bounds on coefficient valuations force Ore admissibility, all coefficient depths `ν_h`, and
+equality at `h = j % f.natDegree` when `0 < j % f.natDegree`. -/
+private theorem wildExponent_adjoin_eq_mp {j : ℕ} {f : 𝒪[K][X]}
+    (hfM : f.Monic) (hfE : f.IsEisensteinAt 𝓂[K]) (hn : 0 < f.natDegree)
+    (hinf : (⨅ i : Fin f.natDegree, f.natDegree • (addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) +
+      addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K])) + (i : ℕ)) =
+        ((f.natDegree - 1 + j : ℕ) : ℕ∞)) :
+    IsOreAdmissible K f.natDegree j ∧
+      (∀ h : Fin f.natDegree, 0 < (h : ℕ) →
+        (oreCoefficientDepth K f.natDegree j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h)) ∧
+      (0 < j % f.natDegree →
+        addVal 𝒪[K] (f.coeff (j % f.natDegree)) =
+          oreCoefficientDepth K f.natDegree j (j % f.natDegree)) := by
+  have hlead : addVal 𝒪[K] (f.coeff f.natDegree) = 0 := by rw [hfM.coeff_natDegree, addVal_one]
+  obtain ⟨hle, htop, heq⟩ := (iInf_nsmul_add_eq_sub_add_iff hn _).1 hinf
+  have hdepth : ∀ h : Fin f.natDegree, 0 < (h : ℕ) →
+      (oreCoefficientDepth K f.natDegree j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h) := fun h hh0 ↦ by
+    have hstep := hle ⟨(h : ℕ) - 1, by omega⟩ (by dsimp; omega)
+    dsimp only at hstep; rw [Nat.sub_add_cancel hh0] at hstep
+    exact (oreCoefficientDepth_le_addVal_iff (one_le_addVal_coeff_of_eisenstein hfE h.isLt)).2
+      hstep
+  rcases Nat.eq_zero_or_pos (j % f.natDegree) with hb | hb
+  · have hvn : ((j / f.natDegree : ℕ) : ℕ∞) = addVal 𝒪[K] (f.natDegree : 𝒪[K]) := by
+      simp only [hb, lt_self_iff_false, ↓reduceIte, add_zero] at heq
+      rw [Nat.sub_add_cancel hn, hlead, zero_add] at heq; exact heq.symm
+    exact ⟨(isOreAdmissible_iff_of_mod_eq_zero hn hb).2 hvn, hdepth, fun h0 ↦ absurd hb h0.ne'⟩
+  · have hvb_eq : addVal 𝒪[K] (f.coeff (j % f.natDegree)) +
+        addVal 𝒪[K] ((j % f.natDegree : ℕ) : 𝒪[K]) = ((j / f.natDegree + 1 : ℕ) : ℕ∞) := by
+      simpa [hb, Nat.sub_add_cancel hb] using heq
+    have hvb_le : addVal 𝒪[K] ((j % f.natDegree : ℕ) : 𝒪[K]) ≤ ((j / f.natDegree : ℕ) : ℕ∞) := by
+      have h1 : addVal 𝒪[K] ((j % f.natDegree : ℕ) : 𝒪[K]) + 1 ≤
+          ((j / f.natDegree : ℕ) : ℕ∞) + 1 := by
+        rw [add_comm, ← Nat.cast_add_one, ← hvb_eq]
+        exact add_le_add (one_le_addVal_coeff_of_eisenstein hfE (Nat.mod_lt j hn)) le_rfl
+      exact (WithTop.add_le_add_iff_right (by simp : (1 : ℕ∞) ≠ ⊤)).1 h1
+    have hvn_le : ((j / f.natDegree : ℕ) : ℕ∞) + 1 ≤ addVal 𝒪[K] (f.natDegree : 𝒪[K]) := by
+      dsimp only at htop; rw [Nat.sub_add_cancel hn, hlead, zero_add] at htop; simpa [hb] using htop
+    have hO := (isOreAdmissible_iff_of_mod_pos hn hb).2 ⟨hvb_le, hvn_le⟩
+    refine ⟨hO, hdepth, fun _ ↦ ?_⟩
+    have hsum := addVal_add_oreCoefficientDepth_of_mod_pos hO hb; rw [add_comm] at hsum
+    exact WithTop.add_right_cancel (ne_top_of_le_ne_top (ENat.natCast_ne_top _) hvb_le)
+      (hvb_eq.trans hsum.symm)
+
+/-- Backward direction of `wildExponent_adjoin_eq_iff_of_eisenstein`: Ore admissibility, the
+coefficient depth bounds `ν_h`, and equality at `j % f.natDegree` give the shifted infimum. -/
+private theorem wildExponent_adjoin_eq_mpr {j : ℕ} {f : 𝒪[K][X]}
+    (hfM : f.Monic) (hfE : f.IsEisensteinAt 𝓂[K]) (hn : 0 < f.natDegree)
+    (hO : IsOreAdmissible K f.natDegree j)
+    (hdepth : ∀ h : Fin f.natDegree, 0 < (h : ℕ) →
+      (oreCoefficientDepth K f.natDegree j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h))
+    (hbeq : 0 < j % f.natDegree →
+      addVal 𝒪[K] (f.coeff (j % f.natDegree)) =
+        oreCoefficientDepth K f.natDegree j (j % f.natDegree)) :
+    (⨅ i : Fin f.natDegree, f.natDegree • (addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) +
+      addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K])) + (i : ℕ)) =
+        ((f.natDegree - 1 + j : ℕ) : ℕ∞) := by
+  have hlead : addVal 𝒪[K] (f.coeff f.natDegree) = 0 := by rw [hfM.coeff_natDegree, addVal_one]
+  rw [iInf_nsmul_add_eq_sub_add_iff hn]
+  refine ⟨fun i hi ↦ (oreCoefficientDepth_le_addVal_iff
+    (one_le_addVal_coeff_of_eisenstein hfE hi)).1 (hdepth ⟨(i : ℕ) + 1, hi⟩ (Nat.succ_pos _)),
+    ?_, ?_⟩
+  · dsimp only; rw [Nat.sub_add_cancel hn, hlead, zero_add]
+    rcases Nat.eq_zero_or_pos (j % f.natDegree) with hb | hb
+    · simpa [hb] using ((isOreAdmissible_iff_of_mod_eq_zero hn hb).1 hO).le
+    · simpa [hb] using ((isOreAdmissible_iff_of_mod_pos hn hb).1 hO).2
+  · dsimp only
+    rcases Nat.eq_zero_or_pos (j % f.natDegree) with hb | hb
+    · simp only [hb, lt_self_iff_false, ↓reduceIte, add_zero]
+      rw [Nat.sub_add_cancel hn, hlead, zero_add]
+      exact ((isOreAdmissible_iff_of_mod_eq_zero hn hb).1 hO).symm
+    · simp only [hb, ↓reduceIte, Nat.sub_add_cancel hb]
+      rw [hbeq hb, add_comm]; exact_mod_cast addVal_add_oreCoefficientDepth_of_mod_pos hO hb
 
 /-- **Wild exponent of an Eisenstein generator in terms of coefficient valuations**: for a root `x`
 in `SeparableClosure K` of a monic Eisenstein polynomial `f : 𝒪[K][X]` of degree `n`, the
@@ -362,99 +515,22 @@ theorem wildExponent_adjoin_eq_iff_of_eisenstein {n j : ℕ} {f : 𝒪[K][X]}
         (∀ h : Fin n, 0 < (h : ℕ) →
           (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h)) ∧
         (0 < j % n → addVal 𝒪[K] (f.coeff (j % n)) = oreCoefficientDepth K n j (j % n)) := by
+  -- Express `wildExponent = j` as `discriminantExponent = n - 1 + j`, rewrite via the Eisenstein
+  -- `⨅` formula and factor `v_K(f.coeff (i + 1) * (i + 1))`, then delegate to `mp` / `mpr`.
   have hmem := adjoin_mem_totallyRamifiedOfDegree_of_eisenstein hfE hdeg hx
   have hn : 0 < n := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0, totallyRamifiedOfDegree_zero] at hmem
   have hwc := IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hmem
   have hd := natCast_discriminantExponent_adjoin_eq_iInf_of_eisenstein hfE hx
   subst hdeg
-  have hwild_iff : (K⟮x⟯).wildExponent = j ↔
-      (⨅ i : Fin f.natDegree,
-        f.natDegree • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + (i : ℕ)) =
-        ((f.natDegree - 1 + j : ℕ) : ℕ∞) := by rw [← hd, Nat.cast_inj]; omega
-  have : Nonempty (Fin f.natDegree) := ⟨⟨0, hn⟩⟩
-  rw [hwild_iff, iInf_eq_iff_of_finite]
-  have hmul (i : Fin f.natDegree) :
-      addVal 𝒪[K] (f.coeff ((i : ℕ) + 1) * ((i : ℕ) + 1 : 𝒪[K])) =
-        addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) + addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K]) := by
-    rw [addVal_mul, Nat.cast_add, Nat.cast_one]
-  have hlead : addVal 𝒪[K] (f.coeff f.natDegree) = 0 := by rw [hfM.coeff_natDegree, addVal_one]
-  have heis {h : ℕ} (hh : h < f.natDegree) : 1 ≤ addVal 𝒪[K] (f.coeff h) := by
-    have hmem : f.coeff h ∈ 𝓂[K] ^ 1 := by rw [pow_one]; exact hfE.mem hh
-    exact_mod_cast (TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal.1 hmem)
-  have hdiv : f.natDegree * (j / f.natDegree) + j % f.natDegree = j :=
-    Nat.div_add_mod j f.natDegree
-  have hmod : j % f.natDegree < f.natDegree := Nat.mod_lt j hn
-  let q : ℕ := j / f.natDegree + if 0 < j % f.natDegree then 1 else 0
-  let r : ℕ := (if 0 < j % f.natDegree then j % f.natDegree else f.natDegree) - 1
-  have hr : r < f.natDegree := by dsimp [r]; split_ifs <;> omega
-  have hD : f.natDegree - 1 + j = f.natDegree * q + r := by
-    dsimp [q, r]; split_ifs
-    · rw [Nat.mul_succ]; omega
-    · simp only [add_zero]; omega
-  have hshift {k : ℕ} (hk : k + 1 < f.natDegree) :
-      q + (if k < r then 1 else 0) =
-        j / f.natDegree + 1 + if k + 1 < j % f.natDegree then 1 else 0 := by
-    dsimp [q, r]; split_ifs <;> omega
-  rw [hD]
-  constructor
-  · rintro ⟨hle, i, hi⟩
-    rw [hmul, nsmul_add_eq_iff i.isLt hr] at hi
-    have hdepth : ∀ h : Fin f.natDegree, 0 < (h : ℕ) →
-        (oreCoefficientDepth K f.natDegree j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h) := fun h hh0 ↦ by
-      have hstep := hle ⟨(h : ℕ) - 1, by omega⟩
-      rw [hmul, le_nsmul_add_iff (by omega) hr] at hstep; dsimp only at hstep
-      rw [hshift (by omega), show (h : ℕ) - 1 + 1 = h by omega] at hstep
-      exact (oreCoefficientDepth_le_addVal_iff (heis h.isLt)).2 hstep
-    rcases Nat.eq_zero_or_pos (j % f.natDegree) with hb | hb
-    · have hi1 : (i : ℕ) + 1 = f.natDegree := by
-        dsimp [r] at hi; rw [ite_eq_right (by omega)] at hi; omega
-      have hvn : ((j / f.natDegree : ℕ) : ℕ∞) = addVal 𝒪[K] (f.natDegree : 𝒪[K]) := by
-        have hv := hi.2; rw [hi1, hlead, zero_add] at hv; simpa [q, hb] using hv.symm
-      exact ⟨(isOreAdmissible_iff_of_mod_eq_zero hn hb).2 hvn, hdepth, fun h0 ↦ absurd hb h0.ne'⟩
-    · have hi1 : (i : ℕ) + 1 = j % f.natDegree := by
-        dsimp [r] at hi; rw [ite_eq_left hb] at hi; omega
-      have hvb_eq : addVal 𝒪[K] (f.coeff (j % f.natDegree)) +
-          addVal 𝒪[K] ((j % f.natDegree : ℕ) : 𝒪[K]) = ((j / f.natDegree + 1 : ℕ) : ℕ∞) := by
-        simpa [q, hb, hi1] using hi.2
-      have hvb_le : addVal 𝒪[K] ((j % f.natDegree : ℕ) : 𝒪[K]) ≤ ((j / f.natDegree : ℕ) : ℕ∞) := by
-        have h1 : addVal 𝒪[K] ((j % f.natDegree : ℕ) : 𝒪[K]) + 1 ≤
-            ((j / f.natDegree : ℕ) : ℕ∞) + 1 := by
-          rw [add_comm, ← Nat.cast_add_one, ← hvb_eq]; exact add_le_add (heis hmod) le_rfl
-        exact (WithTop.add_le_add_iff_right (by simp : (1 : ℕ∞) ≠ ⊤)).1 h1
-      have hvn_le : ((j / f.natDegree : ℕ) : ℕ∞) + 1 ≤ addVal 𝒪[K] (f.natDegree : 𝒪[K]) := by
-        have htop := hle ⟨f.natDegree - 1, by omega⟩
-        rw [hmul, le_nsmul_add_iff (by omega) hr] at htop; dsimp only at htop
-        rw [ite_eq_right (by omega), add_zero, show f.natDegree - 1 + 1 = f.natDegree by omega,
-          hlead, zero_add] at htop
-        simpa [q, hb] using htop
-      have hO : IsOreAdmissible K f.natDegree j :=
-        (isOreAdmissible_iff_of_mod_pos hn hb).2 ⟨hvb_le, hvn_le⟩
-      refine ⟨hO, hdepth, fun _ ↦ ?_⟩
-      have hsum := addVal_add_oreCoefficientDepth_of_mod_pos hO hb
-      rw [add_comm] at hsum
-      exact WithTop.add_right_cancel (ne_top_of_le_ne_top (ENat.natCast_ne_top _) hvb_le)
-        (hvb_eq.trans hsum.symm)
-  · rintro ⟨hO, hdepth, hbeq⟩
-    refine ⟨fun i ↦ ?_, ⟨r, hr⟩, ?_⟩
-    · rw [hmul, le_nsmul_add_iff i.isLt hr]
-      rcases lt_or_eq_of_le (Nat.le_sub_one_of_lt i.isLt) with hilt | hieq
-      · rw [hshift (by omega)]
-        exact (oreCoefficientDepth_le_addVal_iff (heis (by omega))).1
-          (hdepth ⟨(i : ℕ) + 1, by omega⟩ (Nat.succ_pos _))
-      · rw [ite_eq_right (by omega), add_zero, show (i : ℕ) + 1 = f.natDegree by omega,
-          hlead, zero_add]
-        rcases Nat.eq_zero_or_pos (j % f.natDegree) with hb | hb
-        · simpa [q, hb] using ((isOreAdmissible_iff_of_mod_eq_zero hn hb).1 hO).le
-        · simpa [q, hb] using ((isOreAdmissible_iff_of_mod_pos hn hb).1 hO).2
-    · rw [hmul, nsmul_add_eq_iff hr hr]
-      refine ⟨rfl, ?_⟩
-      rcases Nat.eq_zero_or_pos (j % f.natDegree) with hb | hb
-      · have hr1 : r + 1 = f.natDegree := by dsimp [r]; rw [ite_eq_right (by omega)]; omega
-        rw [hr1, hlead, zero_add]
-        simpa [q, hb] using ((isOreAdmissible_iff_of_mod_eq_zero hn hb).1 hO).symm
-      · have hr1 : r + 1 = j % f.natDegree := by dsimp [r]; rw [ite_eq_left hb]; omega
-        rw [hr1, hbeq hb, add_comm]
-        simpa [q, hb] using addVal_add_oreCoefficientDepth_of_mod_pos hO hb
+  rw [show (K⟮x⟯).wildExponent = j ↔
+      ((K⟮x⟯).discriminantExponent : ℕ∞) = ((f.natDegree - 1 + j : ℕ) : ℕ∞) from
+      by rw [Nat.cast_inj]; omega,
+    hd, show (⨅ i : Fin f.natDegree, f.natDegree • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) +
+      (i : ℕ)) = ⨅ i : Fin f.natDegree, f.natDegree • (addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) +
+        addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K])) + (i : ℕ) from
+      iInf_congr fun i ↦ by rw [addVal_mul, Nat.cast_add, Nat.cast_one]]
+  exact ⟨wildExponent_adjoin_eq_mp hfM hfE hn,
+    fun ⟨hO, hdepth, hbeq⟩ ↦ wildExponent_adjoin_eq_mpr hfM hfE hn hO hdepth hbeq⟩
 
 /-- Every member of `σ_K(n)` has an Ore-admissible wild exponent. -/
 theorem isOreAdmissible_wildExponent {n : ℕ}
@@ -464,76 +540,62 @@ theorem isOreAdmissible_wildExponent {n : ℕ}
     exists_eisenstein_generator_of_mem_totallyRamifiedOfDegree hL
   exact ((wildExponent_adjoin_eq_iff_of_eisenstein hfM hfE hdeg hx).1 rfl).1
 
-/-- **Ore's realizability theorem**: for any degree `n` and wild exponent `j`, some totally ramified
-subextension of degree `n` in `SeparableClosure K` has wild exponent `j` if and only if
-`IsOreAdmissible K n j`. This holds in both mixed and equal characteristic, including at `n = 0`. -/
-theorem exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff (n j : ℕ) :
-    (∃ L ∈ totallyRamifiedOfDegree K n, L.wildExponent = j) ↔ IsOreAdmissible K n j := by
-  refine ⟨fun ⟨L, hL, hLj⟩ ↦ hLj ▸ isOreAdmissible_wildExponent hL, fun hO ↦ ?_⟩
-  have hn := hO.pos
+/-- Witness coefficient vector `c : Fin n → 𝒪[K]` whose monic polynomial `monicOfCoeff c` is
+Eisenstein, achieves the minimal Ore coefficient depths `oreCoefficientDepth K n j h` for all
+`0 < h < n`, and has nonzero `(j % n)`-th coefficient with exact valuation `ν_{j % n}` when
+`0 < j % n`. -/
+private theorem exists_eisenstein_coeff_of_pos {n j : ℕ} (hn : 0 < n) :
+    ∃ c : Fin n → 𝒪[K], (monicOfCoeff c).IsEisensteinAt 𝓂[K] ∧
+      (∀ h : Fin n, 0 < (h : ℕ) →
+        (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (c h)) ∧
+      (0 < j % n → c ⟨j % n, Nat.mod_lt j hn⟩ ≠ 0 ∧
+        addVal 𝒪[K] (c ⟨j % n, Nat.mod_lt j hn⟩) = oreCoefficientDepth K n j (j % n)) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hπm : π ∈ 𝓂[K] := (IsLocalRing.mem_maximalIdeal _).2 hπ.not_isUnit
   have hπm2 : π ∉ 𝓂[K] ^ 2 := by
     rw [TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, addVal_uniformizer hπ]
     simp
-  let c : Fin n → 𝒪[K] := fun i ↦
-    if (i : ℕ) = 0 then π
-    else if 0 < j % n ∧ (i : ℕ) = j % n then π ^ oreCoefficientDepth K n j (j % n)
-    else 0
-  let f : 𝒪[K][X] := monicOfCoeff c
-  have hfM : f.Monic := monic_monicOfCoeff c
-  have hdeg : f.natDegree = n := natDegree_monicOfCoeff c
-  have hfE : f.IsEisensteinAt 𝓂[K] := by
-    refine hfM.isEisensteinAt_of_mem_of_notMem (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top
-      (fun {i} hi ↦ ?_) ?_
-    · rw [hdeg] at hi; rw [show f.coeff i = c ⟨i, hi⟩ from coeff_monicOfCoeff c ⟨i, hi⟩]; dsimp [c]
+  let c : Fin n → 𝒪[K] := fun i ↦ if (i : ℕ) = 0 then π
+    else if 0 < j % n ∧ (i : ℕ) = j % n then π ^ oreCoefficientDepth K n j (j % n) else 0
+  refine ⟨c, ?_, fun h hh0 ↦ ?_, fun hb ↦ ?_⟩
+  · refine (monic_monicOfCoeff c).isEisensteinAt_of_mem_of_notMem
+      (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top (fun {i} hi ↦ ?_) ?_
+    · rw [natDegree_monicOfCoeff] at hi; rw [coeff_monicOfCoeff c ⟨i, hi⟩]; dsimp [c]
       split_ifs
-      · exact hπm
-      · exact Ideal.pow_mem_of_mem _ hπm _ (oreCoefficientDepth_pos ..)
-      · exact Ideal.zero_mem _
-    · rw [show f.coeff 0 = c ⟨0, hn⟩ from coeff_monicOfCoeff c ⟨0, hn⟩]; simpa [c] using hπm2
-  have hirr : Irreducible (f.map (algebraMap 𝒪[K] K)) := by
-    have ha : (fun i : Fin n ↦ (c i : K)) ∈ eisensteinSet K n :=
-      mem_eisensteinSet_iff_exists_isEisensteinAt.2
-        ⟨f, by simp [f, Algebra.algebraMap_ofSubsemiring_apply], hfE⟩
-    simpa [f, Algebra.algebraMap_ofSubsemiring_apply] using
-      irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha
-  have hsep : (f.map (algebraMap 𝒪[K] K)).Separable := by
-    rw [Polynomial.separable_iff_derivative_ne_zero hirr]
-    intro hder
-    rcases Nat.eq_zero_or_pos (j % n) with hb | hb
-    · have hvn := (isOreAdmissible_iff_of_mod_eq_zero hn hb).1 hO
-      have hnK : (n : K) ≠ 0 := fun h0 ↦ by
-        rw [(natCast_integerRing_eq_zero_iff n).2 h0, addVal_zero] at hvn
-        exact ENat.natCast_ne_top _ hvn
-      have hlead : f.coeff n = 1 := hdeg ▸ hfM.coeff_natDegree
-      have hc := congrArg (fun p : K[X] ↦ p.coeff (n - 1)) hder
-      rw [coeff_derivative, coeff_zero, Nat.sub_add_cancel hn, coeff_map, hlead, map_one, one_mul,
-        Nat.cast_sub hn, Nat.cast_one, sub_add_cancel] at hc
-      exact hnK hc
-    · have hvb := ((isOreAdmissible_iff_of_mod_pos hn hb).1 hO).1
-      have hbK : ((j % n : ℕ) : K) ≠ 0 := fun h0 ↦ by
-        rw [(natCast_integerRing_eq_zero_iff _).2 h0, addVal_zero] at hvb; simp at hvb
-      have hc := congrArg (fun p : K[X] ↦ p.coeff (j % n - 1)) hder
-      rw [coeff_derivative, coeff_zero, Nat.sub_add_cancel hb, coeff_map,
-        coeff_monicOfCoeff c ⟨j % n, Nat.mod_lt j hn⟩,
-        show c ⟨j % n, Nat.mod_lt j hn⟩ = π ^ oreCoefficientDepth K n j (j % n) by
-          simp [c, hb, hb.ne'],
-        map_pow, Algebra.algebraMap_ofSubsemiring_apply, Nat.cast_sub hb, Nat.cast_one,
-        sub_add_cancel] at hc
-      exact mul_ne_zero (pow_ne_zero _ (Subtype.coe_ne_coe.2 hπ.ne_zero)) hbK hc
-  have hroots : ((f.map (algebraMap 𝒪[K] K)).aroots (SeparableClosure K)).card = n := by
-    rw [aroots_def, ← (IsSepClosed.splits_codomain _ hsep).natDegree_eq_card_roots, natDegree_map,
-      natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K), hdeg]
-  obtain ⟨x, hx⟩ := Multiset.card_pos_iff_exists_mem.1 (hroots ▸ hn)
-  have hx0 : aeval x (f.map (algebraMap 𝒪[K] K)) = 0 := (mem_aroots.1 hx).2
-  refine ⟨K⟮x⟯, adjoin_mem_totallyRamifiedOfDegree_of_eisenstein hfE hdeg hx0,
-    (wildExponent_adjoin_eq_iff_of_eisenstein hfM hfE hdeg hx0).2 ⟨hO, fun h hh0 ↦ ?_, fun hb ↦ ?_⟩⟩
-  · rw [coeff_monicOfCoeff c h]; dsimp [c]; rw [ite_eq_right hh0.ne']
+      exacts [hπm, Ideal.pow_mem_of_mem _ hπm _ (one_le_oreCoefficientDepth ..), Ideal.zero_mem _]
+    · rw [coeff_monicOfCoeff c ⟨0, hn⟩]; simpa [c] using hπm2
+  · dsimp [c]; rw [ite_eq_right hh0.ne']
     split_ifs with hmatch
     · rw [hmatch.2, addVal_pow, addVal_uniformizer hπ, nsmul_eq_mul, mul_one]
     · simp
-  · rw [coeff_monicOfCoeff c ⟨j % n, Nat.mod_lt j hn⟩]; simp [c, hb, hb.ne', addVal_uniformizer hπ]
+  · exact ⟨by simp [c, hb, hb.ne', pow_ne_zero _ hπ.ne_zero],
+      by simp [c, hb, hb.ne', addVal_uniformizer hπ]⟩
+
+/-- **Ore's realizability theorem**: for any degree `n` and wild exponent `j`, some totally ramified
+subextension of degree `n` in `SeparableClosure K` has wild exponent `j` if and only if
+`IsOreAdmissible K n j`. This holds in both mixed and equal characteristic, including at `n = 0`. -/
+theorem exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff (n j : ℕ) :
+    (∃ L ∈ totallyRamifiedOfDegree K n, L.wildExponent = j) ↔ IsOreAdmissible K n j := by
+  -- Forward direction follows from `isOreAdmissible_wildExponent`. For the converse, build an
+  -- Eisenstein witness via `exists_eisenstein_coeff_of_pos`, deduce separability from Ore
+  -- admissibility, pick a root in `SeparableClosure K`, and apply the valuation criterion.
+  refine ⟨fun ⟨L, hL, hLj⟩ ↦ hLj ▸ isOreAdmissible_wildExponent hL, fun hO ↦ ?_⟩
+  obtain ⟨c, hcE, hdepth, hcmod⟩ := exists_eisenstein_coeff_of_pos (K := K) (j := j) hO.pos
+  let a : Fin n → K := fun i ↦ (c i : K)
+  have hmap : (monicOfCoeff c).map (algebraMap 𝒪[K] K) = monicOfCoeff a := by
+    simp [a, Algebra.algebraMap_ofSubsemiring_apply]
+  have hsep := separable_monicOfCoeff_of_isOreAdmissible
+    (irreducible_monicOfCoeff_of_mem_eisensteinSet hO.pos
+      (mem_eisensteinSet_iff_exists_isEisensteinAt.2 ⟨monicOfCoeff c, hmap, hcE⟩))
+    hO fun hb ↦ Subtype.coe_ne_coe.2 (hcmod hb).1
+  obtain ⟨x, hx⟩ := exists_root_of_separable_of_natDegree_pos hsep
+    ((natDegree_monicOfCoeff a).symm ▸ hO.pos)
+  have hx0 : aeval x ((monicOfCoeff c).map (algebraMap 𝒪[K] K)) = 0 := hmap ▸ hx
+  refine ⟨K⟮x⟯, adjoin_mem_totallyRamifiedOfDegree_of_eisenstein hcE (natDegree_monicOfCoeff c) hx0,
+    (wildExponent_adjoin_eq_iff_of_eisenstein (monic_monicOfCoeff c) hcE
+      (natDegree_monicOfCoeff c) hx0).2 ⟨hO, fun h hh0 ↦ ?_, fun hb ↦ ?_⟩⟩
+  · rw [coeff_monicOfCoeff c h]; exact hdepth h hh0
+  · rw [coeff_monicOfCoeff c ⟨j % n, Nat.mod_lt j hO.pos⟩]; exact (hcmod hb).2
 
 end LocalField
 

@@ -12,7 +12,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 Multiplying (resp. summing) along the fibers of an injective map extends a function by one
 (resp. zero) off the image. This identifies fiber products and sums with `Function.extend`,
-allowing its measurability API to be used.
+allowing its measurability API to be used. Also provides `tprod_subtype_ite` / `tsum_subtype_ite`
+for restricting a subtype infinite product or sum by a predicate guard.
 -/
 
 public section
@@ -33,3 +34,15 @@ theorem Function.Injective.tprod_fiber_eq_extend {α β M : Type*}
   · rw [extend_apply' _ _ _ hy]
     have : IsEmpty (f ⁻¹' {y}) := ⟨fun x ↦ hy ⟨x, x.property⟩⟩
     exact tprod_empty
+
+/-- Restricting a `tprod` over a set `s` by an `if` guard equals the `tprod` over `{x ∈ s | p x}`.
+-/
+@[to_additive /-- Restricting a `tsum` over a set `s` by an `if` guard equals the `tsum` over
+`{x ∈ s | p x}`. -/]
+theorem tprod_subtype_ite {α M : Type*} [CommMonoid M] [TopologicalSpace M]
+    (s : Set α) (p : α → Prop) [DecidablePred p] (f : α → M) :
+    (∏' x : s, if p x.1 then f x.1 else 1) = ∏' x : {x ∈ s | p x}, f x.1 := by
+  classical
+  rw [tprod_subtype s (fun x ↦ if p x then f x else 1), tprod_subtype {x ∈ s | p x} f]
+  refine tprod_congr fun x ↦ ?_
+  by_cases hs : x ∈ s <;> by_cases hp : p x <;> simp [Set.mulIndicator, hs, hp]

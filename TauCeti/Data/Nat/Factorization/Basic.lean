@@ -104,6 +104,24 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
     ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
   simp [hp.factorization_self, Nat.div_self hp.pos]
 
+/-- Number of multiples of `d` in `[1, m)`: `m / d - 1` if `d ∣ m`, and `m / d` otherwise. -/
+theorem card_Ico_one_filter_dvd {m d : ℕ} (hm : 0 < m) (hd : 0 < d) :
+    ((Finset.Ico 1 m).filter (d ∣ ·)).card = m / d - if d ∣ m then 1 else 0 := by
+  rw [show Finset.Ico 1 m = Finset.Ioc 0 (m - 1) by
+    ext h; simp only [Finset.mem_Ico, Finset.mem_Ioc]; omega, Nat.Ioc_filter_dvd_card_eq_div]
+  split_ifs with h
+  · obtain ⟨_ | k, rfl⟩ := h
+    · simp at hm
+    rw [Nat.mul_div_cancel_left _ hd, show d * (k + 1) - 1 = (d - 1) + d * k by
+        rw [Nat.mul_succ]; omega,
+      Nat.add_mul_div_left _ _ hd, Nat.div_eq_of_lt (by omega : d - 1 < d), zero_add,
+      Nat.add_sub_cancel]
+  · have := Nat.div_add_mod m d
+    have := Nat.mod_lt m hd
+    have : 0 < m % d := Nat.pos_of_ne_zero fun h0 ↦ h (Nat.dvd_of_mod_eq_zero h0)
+    rw [show m - 1 = (m % d - 1) + d * (m / d) by omega, Nat.add_mul_div_left _ _ hd,
+      Nat.div_eq_of_lt (by omega : m % d - 1 < d), zero_add, Nat.sub_zero]
+
 end Nat
 
 namespace TauCeti

@@ -67,8 +67,9 @@ characteristic is the absolute ramification index of `K`.
   condition of the deep-unit power lemmas holds at depth `v_K(p) + 1` for every prime.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
-* `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
-  discrete-valuation-ring convention.
+* `TauCeti.IsDiscreteValuationRing.addVal_natCast` and
+  `TauCeti.IsDiscreteValuationRing.addVal_natCast_of_natCast_ringChar_ne_zero`: the same
+  valuation in the discrete-valuation-ring convention.
 
 ## References
 
@@ -354,6 +355,18 @@ variable (K) in
     span_natCast_eq_maximalIdeal_pow K n hn,
     multiplicity_pow_self_of_prime
       (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)]
+
+variable (K) in
+/-- In mixed characteristic (`(ringChar 𝓀[K] : K) ≠ 0`), every positive natural number has additive
+valuation `padicValNat p m * e`. -/
+theorem addVal_natCast_of_natCast_ringChar_ne_zero (hp : (ringChar 𝓀[K] : K) ≠ 0)
+    {m : ℕ} (hm : 0 < m) :
+    _root_.IsDiscreteValuationRing.addVal 𝒪[K] (m : 𝒪[K]) =
+      ((padicValNat (ringChar 𝓀[K]) m * natCastValuation K (ringChar 𝓀[K]) hp : ℕ) : ℕ∞) := by
+  have hmK : (m : K) ≠ 0 := fun h0 ↦
+    hp (((natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd hm).1 h0).1 ▸
+      ringChar.Nat.cast_ringChar (R := K))
+  rw [addVal_natCast K m hmK, natCastValuation_eq_padicValNat_mul K hmK hp]
 
 end IsDiscreteValuationRing
 

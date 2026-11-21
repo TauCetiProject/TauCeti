@@ -54,6 +54,9 @@ its conclusion, so instance search could not find it.
   and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
+* `TauCeti.card_aroots_eq_natDegree_of_separable`,
+  `TauCeti.exists_root_of_separable_of_natDegree_pos`: a separable polynomial over `K` has
+  `p.natDegree` roots in `SeparableClosure K`, and therefore has a root when `0 < p.natDegree`.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 * `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
 -/
@@ -104,6 +107,23 @@ separability over `L`. -/
 theorem isSepClosure_tower_top (K L E : Type*) [Field K] [Field L] [Field E] [Algebra K L]
     [Algebra K E] [Algebra L E] [IsScalarTower K L E] [IsSepClosure K E] : IsSepClosure L E :=
   ⟨IsSepClosure.sep_closed K, Algebra.isSeparable_tower_top_of_isSeparable K L E⟩
+
+/-- A separable polynomial over a field `K` has `p.natDegree` roots (counted with multiplicity)
+in `SeparableClosure K`. -/
+theorem card_aroots_eq_natDegree_of_separable {K : Type*} [Field K] {p : Polynomial K}
+    (hsep : p.Separable) :
+    (p.aroots (SeparableClosure K)).card = p.natDegree := by
+  rw [Polynomial.aroots_def, ← (IsSepClosed.splits_codomain _ hsep).natDegree_eq_card_roots,
+    Polynomial.natDegree_map]
+
+/-- A separable polynomial of positive degree over a field `K` has a root in
+`SeparableClosure K`. -/
+theorem exists_root_of_separable_of_natDegree_pos {K : Type*} [Field K] {p : Polynomial K}
+    (hsep : p.Separable) (hpos : 0 < p.natDegree) :
+    ∃ x : SeparableClosure K, Polynomial.aeval x p = 0 := by
+  obtain ⟨x, hx⟩ := Multiset.card_pos_iff_exists_mem.1
+    ((card_aroots_eq_natDegree_of_separable hsep).symm ▸ hpos)
+  exact ⟨x, (Polynomial.mem_aroots.1 hx).2⟩
 
 end TauCeti
 

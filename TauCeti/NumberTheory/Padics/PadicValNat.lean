@@ -117,4 +117,18 @@ theorem padicValNat_le_log_div_log_two (p n : ℕ) :
   gcongr
   exact_mod_cast hp
 
+/-- Divisibility characterization of `i ≤ padicValNat p h * e`. -/
+theorem le_padicValNat_mul_iff {p h e i : ℕ} (hp : p.Prime) (hh : 0 < h) (he : 0 < e) :
+    i ≤ padicValNat p h * e ↔ p ^ ((i + e - 1) / e) ∣ h := by
+  have hceil : i ≤ padicValNat p h * e ↔ (i + e - 1) / e ≤ padicValNat p h := by
+    have : i + e - 1 + 1 = i + e := by omega
+    refine ⟨fun hle ↦ ?_, fun hle ↦ ?_⟩
+    · have := (Nat.div_lt_iff_lt_mul he).2 (show i + e - 1 < (padicValNat p h + 1) * e by
+        nlinarith)
+      omega
+    · have := Nat.div_add_mod (i + e - 1) e
+      have := Nat.mod_lt (i + e - 1) he
+      nlinarith
+  rw [hceil, Nat.padicValNat_def, Nat.pow_dvd_iff_le_multiplicity hp.ne_one hh.ne']
+
 end TauCeti

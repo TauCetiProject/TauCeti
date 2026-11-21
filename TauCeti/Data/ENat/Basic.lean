@@ -19,11 +19,17 @@ such bounds into equalities.
 * `ENat.le_of_inf_le_of_inf_le`: if `c ⊓ (b + 1) ≤ a` and `c ⊓ (a + 1) ≤ b`, then `c ≤ a`.
 * `ENat.add_succ_eq_of_le_of_le`: the bounds `(b + p) ⊓ (b - 1) ≤ a` and `a + 1 ≤ b` give
   `a + (p + 1) = b + p`.
+* `ENat.natCast_min`: casting `ℕ → ℕ∞` commutes with `min`.
 -/
 
 public section
 
 namespace ENat
+
+/-- Casting `ℕ → ℕ∞` commutes with `min`. -/
+@[simp, norm_cast]
+theorem natCast_min (a b : ℕ) : ((min a b : ℕ) : ℕ∞) = min (a : ℕ∞) b :=
+  Monotone.map_min fun _ _ ↦ ENat.natCast_le_natCast.2
 
 /-- If `c ⊓ (b + 1) ≤ a` and `c ⊓ (a + 1) ≤ b`, then `c ≤ a`. -/
 theorem le_of_inf_le_of_inf_le {a b c : ℕ∞} (ha : c ⊓ (b + 1) ≤ a)
