@@ -13,6 +13,8 @@ import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
 import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -141,11 +143,6 @@ private theorem japaneseBracket_pow_mul_rpow (ξ : CoordinateSpace n) (i : ℕ) 
   ring
 
 omit [CompleteSpace V] in
-private theorem norm_one_clm_le : ‖(1 : V →L[ℂ] V)‖ ≤ 1 := by
-  rw [ContinuousLinearMap.one_def]
-  exact ContinuousLinearMap.norm_id_le
-
-omit [CompleteSpace V] in
 /-- **Dilated symbol estimates.** With `t = ⟨ξ⟩`, the derivatives of order at most `k` at `(0, 0)`
 of `(y, v) ↦ p(x + y, ξ + t v)` are bounded by `S ⟨ξ⟩ ^ d`, uniformly for `x ∈ K`. -/
 private theorem exists_norm_iteratedFDeriv_dilate_le (p : Symbol n V V d)
@@ -199,7 +196,7 @@ private theorem norm_iteratedFDeriv_one_sub_smul_le {E : Type*} [NormedAddCommGr
       ((hP.const_smul r).of_le (by exact_mod_cast le_top)).contDiffAt,
       iteratedFDeriv_const_smul_apply' ((hP.of_le (by exact_mod_cast le_top)).contDiffAt)]
   have hone : ‖iteratedFDeriv ℝ i (fun _ : E => (1 : V →L[ℂ] V)) y‖ ≤ 1 :=
-    (norm_iteratedFDeriv_const_le i _ y).trans norm_one_clm_le
+    (norm_iteratedFDeriv_const_le i _ y).trans ContinuousLinearMap.norm_one_le
   rw [hsub]
   refine (norm_sub_le _ _).trans ?_
   rw [norm_smul]
@@ -269,8 +266,9 @@ private theorem exists_norm_mixedDeriv_pow_mul_inverse_pow_le (hp : p.IsParamete
   have hP := (p.contDiff_coefficient.comp hD).of_le (m := k) (by exact_mod_cast le_top)
   have hG := (hinv.comp hD).of_le (m := k) (by exact_mod_cast le_top)
   have hprod := (hP.pow j).norm_iteratedFDeriv_mul_le_two_pow (hG.pow (j + 1))
-    (hP.norm_iteratedFDeriv_pow_le_two_pow norm_one_clm_le (hS x hx ξ) j)
-    (hG.norm_iteratedFDeriv_pow_le_two_pow norm_one_clm_le (hc x hx ξ r hr) (j + 1)) k le_rfl
+    (hP.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le (hS x hx ξ) j)
+    (hG.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le (hc x hx ξ r hr)
+      (j + 1)) k le_rfl
   -- Undo the dilation: each frequency derivative costs a factor `t = ⟨ξ⟩`.
   have hkey : t ^ β.length * ‖mixedDeriv α β g x ξ‖ ≤ M * (u ^ (d / 2)) ^ j := by
     have h1 := norm_mixedDeriv_le α β ((hg.comp hD).of_le (by exact_mod_cast le_top)) 0 0
@@ -392,32 +390,6 @@ namespace Symbol
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
-/-- `⟨ξ⟩ ^ d ≤ (2π) ^ |d| ⟨ξ / 2π⟩ ^ d`. -/
-private theorem rpow_le_two_pi_rpow_abs_mul_rpow (d : ℝ) (ξ : CoordinateSpace n) :
-    (1 + ‖ξ‖ ^ 2) ^ (d / 2) ≤ (2 * π) ^ |d| * (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (d / 2) := by
-  have hπ : 0 < 2 * π := by positivity
-  have hπ1 : 1 ≤ 2 * π := by linarith [Real.two_le_pi]
-  have hnorm : ‖(2 * π)⁻¹ • ξ‖ = (2 * π)⁻¹ * ‖ξ‖ := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-  rcases le_total 0 d with hd | hd
-  · have hbase : (2 * π)⁻¹ ^ 2 * (1 + ‖ξ‖ ^ 2) ≤ 1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2 := by
-      have h1 : (2 * π)⁻¹ ^ 2 ≤ 1 := pow_le_one₀ (by positivity) (inv_le_one_of_one_le₀ hπ1)
-      rw [hnorm, mul_pow]
-      nlinarith
-    have hle := Real.rpow_le_rpow (by positivity) hbase (by positivity : 0 ≤ d / 2)
-    rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast,
-      ← Real.rpow_mul (by positivity), Real.inv_rpow hπ.le] at hle
-    rw [show (((2 : ℕ) : ℝ) * (d / 2)) = d by push_cast; ring] at hle
-    rw [abs_of_nonneg hd, ← inv_mul_le_iff₀ (Real.rpow_pos_of_pos hπ d)]
-    exact hle
-  · have hbase : 1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2 ≤ 1 + ‖ξ‖ ^ 2 := by
-      have h1 : (2 * π)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hπ1
-      rw [hnorm]
-      gcongr
-      exact mul_le_of_le_one_left (norm_nonneg ξ) h1
-    exact (Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by linarith)).trans
-      (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hπ1 (abs_nonneg d)))
-
 /-- **Scalar symbols are parameter-elliptic on sectors.** A symbol `p(x, ξ) = w(x, ξ) • id` of order
 `d` with a nonnegative real weight `w` that is elliptic, `⟨ξ⟩ ^ d ≤ C w(x, ξ)` for positions in
 each compact set, is parameter-elliptic on every set of reciprocal parameters in a sector
@@ -474,7 +446,10 @@ theorem isParameterElliptic_besselPotential (d : ℝ) {c : ℝ} (hc : c < 1)
     (besselPotential d : Symbol n V V d).IsParameterElliptic R :=
   isParameterElliptic_of_coefficient_eq_smul (coefficient_besselPotential d)
     (fun _ => by positivity)
-    (fun _ _ => ⟨_, fun _ _ ξ => rpow_le_two_pi_rpow_abs_mul_rpow d ξ⟩) hc hR
+    (fun _ _ => ⟨(2 * π) ^ |d|, fun _ _ ξ => one_add_norm_sq_rpow_le_of_norm_eq_mul
+      (by linarith [Real.two_le_pi]) d (by
+        rw [norm_smul, Real.norm_of_nonneg (by positivity), mul_inv_cancel_left₀ (by positivity)])⟩)
+    hc hR
 
 end Symbol
 
