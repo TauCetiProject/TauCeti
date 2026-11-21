@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.MeasureTheory.Function.Lp.Multiplication
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Multiplication of first-order Sobolev fields by smooth functions
@@ -52,17 +53,11 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {mu : Measure E} {Omega : Opens E}
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {ψ : E → ℝ}
 
-private theorem memLp_top_of_contDiffOn (hψ : ContDiffOn ℝ ∞ ψ Omega)
-    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) : MemLp ψ ∞ (mu.restrict Omega) := by
-  obtain ⟨C, hC⟩ := h₀
-  exact memLp_top_of_bound
-    (hψ.continuousOn.aestronglyMeasurable Omega.isOpen.measurableSet) C
-    ((ae_restrict_iff' Omega.isOpen.measurableSet).2 (Filter.Eventually.of_forall hC))
-
 /-- The `L∞` class of `ψ` on `Ω`. -/
 private def linftyClass (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) :
     Lp ℝ ∞ (mu.restrict Omega) :=
-  (memLp_top_of_contDiffOn hψ h₀).toLp ψ
+  (hψ.continuousOn.memLp_top_restrict_of_bound Omega.isOpen.measurableSet _
+    h₀.choose_spec).toLp ψ
 
 /-- Multiplication by the `L∞` class of `ψ` acts by `x ↦ ψ x • g x`. -/
 private theorem multiplicationOperator_linftyClass_ae (G : Type*) [NormedAddCommGroup G]
@@ -71,18 +66,11 @@ private theorem multiplicationOperator_linftyClass_ae (G : Type*) [NormedAddComm
     ⇑(Lp.multiplicationOperator (linftyClass hψ h₀) g)
       =ᵐ[mu.restrict Omega] fun x ↦ ψ x • g x := by
   filter_upwards [Lp.multiplicationOperator_ae (linftyClass hψ h₀) g,
-    (memLp_top_of_contDiffOn (mu := mu) hψ h₀).coeFn_toLp] with x hx hψx
+    (hψ.continuousOn.memLp_top_restrict_of_bound (μ := mu) Omega.isOpen.measurableSet _
+      h₀.choose_spec).coeFn_toLp] with x hx hψx
   rw [hx, linftyClass, hψx]
 
 variable [FiniteDimensional ℝ E]
-
-private theorem memLp_top_fderiv_of_contDiffOn (hψ : ContDiffOn ℝ ∞ ψ Omega)
-    (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C) : MemLp (fderiv ℝ ψ) ∞ (mu.restrict Omega) := by
-  obtain ⟨C, hC⟩ := h₁
-  exact memLp_top_of_bound
-    ((hψ.continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).aestronglyMeasurable
-      Omega.isOpen.measurableSet) C
-    ((ae_restrict_iff' Omega.isOpen.measurableSet).2 (Filter.Eventually.of_forall hC))
 
 /-- The rank-one correction `x ↦ Dψ x ⊗ u x` in `Lᵖ(Ω, E →L F)`, through the `L∞` class of
 `Dψ`. -/
@@ -90,14 +78,17 @@ private def smulRightLp (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C) :
     Lp F p (mu.restrict Omega) →L[ℝ] Lp (E →L[ℝ] F) p (mu.restrict Omega) :=
   (ContinuousLinearMap.smulRightL ℝ E F).holderL (mu.restrict Omega) ∞ p p
-    ((memLp_top_fderiv_of_contDiffOn hψ h₁).toLp (fderiv ℝ ψ))
+    (((hψ.continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).memLp_top_restrict_of_bound
+      Omega.isOpen.measurableSet _ h₁.choose_spec).toLp (fderiv ℝ ψ))
 
 private theorem smulRightLp_ae (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C) (g : Lp F p (mu.restrict Omega)) :
     ⇑(smulRightLp hψ h₁ g) =ᵐ[mu.restrict Omega] fun x ↦ (fderiv ℝ ψ x).smulRight (g x) := by
   filter_upwards [(ContinuousLinearMap.smulRightL ℝ E F).coeFn_holder (r := p)
-    ((memLp_top_fderiv_of_contDiffOn hψ h₁).toLp (fderiv ℝ ψ)) g,
-    (memLp_top_fderiv_of_contDiffOn (mu := mu) hψ h₁).coeFn_toLp] with x hx hψx
+    (((hψ.continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).memLp_top_restrict_of_bound
+      Omega.isOpen.measurableSet _ h₁.choose_spec).toLp (fderiv ℝ ψ)) g,
+    ((hψ.continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).memLp_top_restrict_of_bound
+      (μ := mu) Omega.isOpen.measurableSet _ h₁.choose_spec).coeFn_toLp] with x hx hψx
   rw [smulRightLp, ContinuousLinearMap.holderL_apply_apply, hx, hψx]
   rfl
 
@@ -200,18 +191,6 @@ private theorem norm_weakFDeriv_smulLeftCLM_le (hψ : ContDiffOn ℝ ∞ ψ Omeg
     rw [hx, ContinuousLinearMap.norm_smulRight_apply]
     exact mul_le_mul_of_nonneg_right (hC₁ x hxΩ) (norm_nonneg _)
 
-omit [NormedSpace ℝ E] [BorelSpace E] [FiniteDimensional ℝ E] [CompleteSpace F]
-  [IsFiniteMeasureOnCompacts mu] in
-/-- On an empty domain every class in `Lᵖ(Ω, G)` has norm zero. -/
-private theorem norm_eq_zero_of_coe_eq_empty {G : Type*} [NormedAddCommGroup G]
-    (hΩ : (Omega : Set E) = ∅) (f : Lp G p (mu.restrict Omega)) : ‖f‖ = 0 := by
-  have hnull : ∀ᵐ _ ∂(mu.restrict Omega), False := by
-    rw [hΩ, Measure.restrict_empty]
-    simp
-  refine le_antisymm ?_ (norm_nonneg f)
-  simpa using Lp.norm_le_mul_norm_of_ae_le_mul (c := 0) (f := f) (g := f)
-    (hnull.mono fun _ h ↦ h.elim)
-
 omit [FiniteDimensional ℝ E] in
 /-- On an empty domain every field of `W^{1,p}(Ω, F)` has norm zero. -/
 private theorem norm_weakDerivStep_eq_zero_of_coe_eq_empty (hΩ : (Omega : Set E) = ∅)
@@ -219,7 +198,8 @@ private theorem norm_weakDerivStep_eq_zero_of_coe_eq_empty (hΩ : (Omega : Set E
     ‖u‖ = 0 := by
   have h := norm_le_norm_prev_add_norm_weakFDeriv
     (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u
-  rw [norm_eq_zero_of_coe_eq_empty hΩ, norm_eq_zero_of_coe_eq_empty hΩ, add_zero] at h
+  have h0 : mu.restrict (Omega : Set E) = 0 := by rw [hΩ, Measure.restrict_empty]
+  simp only [Lp.norm_def, h0, eLpNorm_measure_zero, ENNReal.toReal_zero, add_zero] at h
   exact le_antisymm h (norm_nonneg u)
 
 /-- **The norm of multiplication by a smooth function.** If `|ψ| ≤ C₀` and `‖Dψ‖ ≤ C₁` on `Ω`,
