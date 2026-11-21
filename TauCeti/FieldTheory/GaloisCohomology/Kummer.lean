@@ -413,7 +413,9 @@ variable {K n} in
 /-- **`n` kills `H¹(G_K, μₙ)`**, as it kills the coefficients `μₙ`. -/
 theorem nsmul_H1_kummerCoeff_eq_zero (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
     n • x = 0 :=
-  nsmul_H1_eq_zero (fun c ↦ Additive.toMul.injective (Subtype.ext c.toMul.property)) x
+  nsmul_H1_eq_zero (fun c ↦ Additive.toMul.injective <| Subtype.ext <| by
+    rw [toMul_nsmul, SubmonoidClass.coe_pow, toMul_zero, OneMemClass.coe_one]
+    exact (mem_rootsOfUnity _ _).1 c.toMul.property) x
 
 variable {K n} in
 /-- **`H¹` of a cyclic trivial module over a field containing the roots of unity.** Let `K` be a

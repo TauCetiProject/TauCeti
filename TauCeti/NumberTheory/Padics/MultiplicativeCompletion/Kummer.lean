@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 
@@ -100,10 +101,8 @@ equation at every level. -/
 @[simp]
 theorem mem_kummerH1Limit_iff (y : ∀ m : ℕ, H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m))) :
     y ∈ kummerH1Limit p K ↔ ∀ m, kummerH1Transition p K m (y (m + 1)) = y m := by
-  rw [kummerH1Limit, AddSubgroup.mem_iInf]
-  -- Membership in an equalizer `AddMonoidHom.eqLocus f g` is the equation `f y = g y` by
-  -- definition; Mathlib states no membership lemma for it.
-  rfl
+  simp only [kummerH1Limit, AddSubgroup.mem_iInf, AddMonoidHom.mem_eqLocus,
+    AddMonoidHom.comp_apply, Pi.evalAddMonoidHom_apply]
 
 /-- Two elements of the inverse limit agree when all their coordinates agree. -/
 @[ext]
@@ -173,25 +172,17 @@ invertible in `K`: the Kummer class map `TauCeti.kummerClassMap` in every coordi
 (`TauCeti.padicKummerMap_apply_of_eq`). It is bijective (`TauCeti.padicKummerMap_injective`,
 `TauCeti.padicKummerMap_surjective`). -/
 def padicKummerMap (hp : IsUnit (p : K)) :
-    Additive (padicCompletionUnits p K) →+ kummerH1Limit p K where
-  toFun x := ⟨fun m ↦ Multiplicative.toAdd (kummerCoord hp m (x.toMul.val m)), by
-    rw [mem_kummerH1Limit_iff]
-    intro m
-    rw [kummerH1Transition_kummerCoord hp m,
-      (mem_padicCompletionUnits_iff p K x.toMul.val).1 x.toMul.property m]⟩
-  map_zero' := by
-    ext m
-    exact congrArg Multiplicative.toAdd (map_one (kummerCoord hp m))
-  map_add' x y := by
-    ext m
-    exact congrArg Multiplicative.toAdd (map_mul (kummerCoord hp m) _ _)
+    Additive (padicCompletionUnits p K) →+ kummerH1Limit p K :=
+  kummerH1LimitLift p K
+    (fun m ↦ MonoidHom.toAdditiveLeft ((kummerCoord hp m).toMonoidHom.comp
+      ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p K).subtype)))
+    fun m x ↦ by
+      simp only [MonoidHom.coe_toAdditiveLeft, Function.comp_apply, MonoidHom.coe_comp,
+        MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype, Pi.evalMonoidHom_apply]
+      rw [kummerH1Transition_kummerCoord hp m,
+        (mem_padicCompletionUnits_iff p K x.toMul.val).1 x.toMul.property m]
 
 variable {p K}
-
-private theorem padicKummerMap_apply (hp : IsUnit (p : K))
-    (x : Additive (padicCompletionUnits p K)) (m : ℕ) :
-    (padicKummerMap p K hp x).val m = Multiplicative.toAdd (kummerCoord hp m (x.toMul.val m)) :=
-  (rfl)
 
 /-- **The coordinates of the limit Kummer map.** If the `m`-th coordinate of `x ∈ A(K)` is the
 power class of `a ∈ Kˣ`, the `m`-th coordinate of its image is the Kummer class of `a` in
@@ -200,7 +191,7 @@ theorem padicKummerMap_apply_of_eq (hp : IsUnit (p : K))
     {x : Additive (padicCompletionUnits p K)} {m : ℕ} {a : Kˣ} (h : x.toMul.val m = a) :
     (padicKummerMap p K hp x).val m =
       Multiplicative.toAdd (kummerMap K (p ^ m) (Nat.cast_pow (α := K) p m ▸ hp.pow m) a) := by
-  rw [padicKummerMap_apply, h, kummerCoord_mk]
+  simp [padicKummerMap, h, kummerCoord_mk]
 
 /-- The limit Kummer map sends the class of a unit `a ∈ Kˣ` in `A(K)` to the family of its Kummer
 classes in `H¹(G_K, μ_{p^m})`. -/
@@ -215,9 +206,7 @@ theorem padicKummerMap_padicCompletionUnitsOf (hp : IsUnit (p : K)) (a : Kˣ) (m
 theorem padicKummerMap_injective (hp : IsUnit (p : K)) :
     Function.Injective (padicKummerMap p K hp) := fun x y h ↦ by
   refine Additive.toMul.injective (Subtype.ext (funext fun m ↦ ?_))
-  have hm := congrArg (fun z ↦ z.val m) h
-  rw [padicKummerMap_apply, padicKummerMap_apply] at hm
-  exact (kummerCoord hp m).injective (Multiplicative.toAdd.injective hm)
+  simpa [padicKummerMap] using congrArg (fun z ↦ z.val m) h
 
 /-- **The limit Kummer map is surjective.** -/
 theorem padicKummerMap_surjective (hp : IsUnit (p : K)) :
@@ -234,8 +223,7 @@ theorem padicKummerMap_surjective (hp : IsUnit (p : K)) :
     exact (mem_kummerH1Limit_iff p K y.val).1 y.property m
   refine ⟨Additive.ofMul ⟨x, hcompat⟩, ?_⟩
   ext m
-  rw [padicKummerMap_apply, toMul_ofMul]
-  exact congrArg Multiplicative.toAdd (hx m)
+  simp [padicKummerMap, hx m]
 
 /-- **The limit Kummer map is bijective.** -/
 theorem padicKummerMap_bijective (hp : IsUnit (p : K)) :
@@ -307,8 +295,7 @@ theorem padicKummerMap_smul (hp : IsUnit (p : K)) (a : ℤ_[p])
     (x : Additive (padicCompletionUnits p K)) :
     padicKummerMap p K hp (a • x) = a • padicKummerMap p K hp x := by
   ext m
-  rw [padicKummerMap_apply, kummerH1Limit_smul_apply, padicKummerMap_apply,
-    padicCompletionUnits_smul_apply, map_pow, toAdd_pow]
+  simp [padicKummerMap, padicCompletionUnits_smul_apply, map_pow, toAdd_pow]
 
 variable (p K)
 
