@@ -32,9 +32,6 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
 
 * `TauCeti.FiniteField.frobeniusFixedSubalgebra`: the subalgebra fixed by an iterate of the
   Frobenius.
-* `TauCeti.FiniteField.arithmeticFrobenius`, `TauCeti.FiniteField.geometricFrobenius`: the
-  arithmetic Frobenius `x ↦ x ^ Nat.card K` and its inverse, the geometric Frobenius, of an
-  algebraic extension `L / K` of a finite field `K`.
 
 ## Main results
 
@@ -51,9 +48,8 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
   automorphism `x ↦ x ^ p` is an involution.
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (2 n)`, the iterated
   Frobenius `x ↦ x ^ p ^ n` is an involution.
-* `TauCeti.FiniteField.arithmeticFrobenius_pow_apply`,
-  `TauCeti.FiniteField.arithmeticFrobenius_pow_comp_eq_iff`: powers of the arithmetic Frobenius and
-  its exact period on embeddings of any field extension.
+* `TauCeti.FiniteField.frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff`: exact period of the
+  arithmetic Frobenius on embeddings of any field extension.
 
 ## Mathematical context
 
@@ -159,92 +155,70 @@ theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
   simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
     RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
 
-omit [Finite K] in
+end Involutive
+
+variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
+
 /-- On a field of order `p ^ (2 n)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution. For
 the field with `q²` elements, `q = p ^ n`, this is the involution `x ↦ x ^ q`. -/
 theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     Function.Involutive (iterateFrobenius K p n) := by
   have : Finite K := Nat.finite_of_card_ne_zero
-    (by rw [hK]; exact (pow_pos (Fact.out : p.Prime).pos _).ne')
+    (by rw [hK]; exact (pow_pos (expChar_pos K p) _).ne')
   let := Fintype.ofFinite K
   intro x
   rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,
     Nat.card_eq_fintype_card, FiniteField.pow_card]
 
-end Involutive
+/-- An iterate of Frobenius is not the identity on a domain with more than `p ^ n` elements,
+provided `1 < p ^ n`. -/
+theorem exists_iterateFrobenius_ne {K : Type*} [CommRing K] [IsDomain K] {p n : ℕ}
+    [ExpChar K p] (hq : 1 < p ^ n) (hK : p ^ n < Nat.card K) :
+    ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  classical
+  have : Finite K := Nat.finite_of_card_ne_zero (by omega)
+  let := Fintype.ofFinite K
+  by_contra! h
+  have hcard : Nat.card K ≤ p ^ n := by
+    rw [Nat.card_eq_fintype_card, ← Finset.card_univ]
+    refine (Polynomial.card_le_degree_of_subset_roots
+      (p := Polynomial.X ^ (p ^ n) - Polynomial.X) fun s _ ↦ ?_).trans
+      (Polynomial.natDegree_X_pow_sub_X (R := K) hq).le
+    rw [Polynomial.mem_roots (Polynomial.X_pow_sub_X_ne_zero hq)]
+    simpa [Polynomial.IsRoot, sub_eq_zero, iterateFrobenius_def] using h s
+  exact hK.not_ge hcard
 
-/-! ### Arithmetic and geometric Frobenius of an algebraic extension -/
+/-- The quadratic finite-field involution is not the identity. -/
+theorem exists_iterateFrobenius_ne_of_card_eq_sq {n : ℕ}
+    (hK : Nat.card K = (p ^ n) ^ 2) : ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  have : Finite K := Nat.finite_of_card_ne_zero
+    (by rw [hK]; exact (pow_pos (pow_pos (expChar_pos K p) n) 2).ne')
+  have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+  apply exists_iterateFrobenius_ne hq
+  rw [hK]
+  nlinarith
+
+/-! ### Exact period of the arithmetic Frobenius on embeddings -/
 
 section Algebraic
 
-variable (K L : Type*) [Field K] [Finite K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
-
-/-- **The arithmetic Frobenius** of an algebraic extension `L / K` of a finite field `K`: the
-`K`-automorphism `x ↦ x ^ Nat.card K`, packaging Mathlib's
-`FiniteField.frobeniusAlgEquivOfAlgebraic` with a `[Finite K]` hypothesis. -/
-noncomputable def arithmeticFrobenius : Gal(L/K) :=
-  let _ := Fintype.ofFinite K
-  _root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L
-
-/-- The arithmetic Frobenius raises every element to the power `Nat.card K`. -/
-@[simp]
-theorem arithmeticFrobenius_apply (x : L) :
-    arithmeticFrobenius K L x = x ^ Nat.card K := by
-  let _ := Fintype.ofFinite K
-  rw [arithmeticFrobenius, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
-    Nat.card_eq_fintype_card]
-
-/-- **The geometric Frobenius** of an algebraic extension `L / K` of a finite field `K`: the
-inverse of the arithmetic Frobenius `x ↦ x ^ Nat.card K`. -/
-noncomputable def geometricFrobenius : Gal(L/K) :=
-  (arithmeticFrobenius K L).symm
-
-/-- The geometric Frobenius is the inverse of the arithmetic Frobenius in `Gal(L/K)`. -/
-theorem geometricFrobenius_eq_inv :
-    geometricFrobenius K L = (arithmeticFrobenius K L)⁻¹ :=
-  (rfl)
-
-/-- The inverse of the geometric Frobenius is the arithmetic Frobenius. -/
-@[simp]
-theorem geometricFrobenius_inv :
-    (geometricFrobenius K L)⁻¹ = arithmeticFrobenius K L :=
-  inv_inv _
-
-/-- Applying the geometric Frobenius and then raising to the power `Nat.card K` is the identity. -/
-@[simp]
-theorem geometricFrobenius_apply_pow (x : L) :
-    (geometricFrobenius K L x) ^ Nat.card K = x := by
-  rw [← arithmeticFrobenius_apply K L, geometricFrobenius, AlgEquiv.apply_symm_apply]
-
-/-- Raising to the power `Nat.card K` and then applying the geometric Frobenius is the identity. -/
-theorem geometricFrobenius_pow_apply (x : L) :
-    geometricFrobenius K L (x ^ Nat.card K) = x := by
-  rw [← arithmeticFrobenius_apply K L, geometricFrobenius, AlgEquiv.symm_apply_apply]
-
-/-- The `m`-th iterate of `arithmeticFrobenius K L` raises every element to the
-`(Nat.card K) ^ m`-th power. -/
-theorem arithmeticFrobenius_pow_apply (m : ℕ) (x : L) :
-    ((arithmeticFrobenius K L) ^ m) x = x ^ (Nat.card K) ^ m := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [pow_succ', AlgEquiv.mul_apply, arithmeticFrobenius_apply, ih, ← pow_mul, pow_succ]
-
 /-- For any field extension `E / K` of a finite field `K` and any `K`-embedding `φ : E →ₐ[K] L`
 into an algebraic extension `L / K`, postcomposing `φ` with the `m`-th power of
-`arithmeticFrobenius K L` equals `φ` if and only if `[E : K] ∣ m`. -/
-theorem arithmeticFrobenius_pow_comp_eq_iff {E : Type*} [Field E] [Algebra K E]
+`FiniteField.frobeniusAlgEquivOfAlgebraic K L` equals `φ` if and only if `[E : K] ∣ m`. -/
+theorem frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff (K L : Type*) [Field K] [Fintype K] [Field L]
+    [Algebra K L] [Algebra.IsAlgebraic K L] {E : Type*} [Field E] [Algebra K E]
     (φ : E →ₐ[K] L) (m : ℕ) :
-    ((arithmeticFrobenius K L) ^ m).toAlgHom.comp φ = φ ↔ Module.finrank K E ∣ m := by
-  let _ := Fintype.ofFinite K
+    ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) = φ ↔
+      Module.finrank K E ∣ m := by
   by_cases hfin : Module.Finite K E
   · have : Finite E := Module.finite_of_finite K
     rw [AlgHom.ext_iff]
     have hcomp (x : E) :
-        (((arithmeticFrobenius K L) ^ m).toAlgHom.comp φ) x =
+        ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) x =
           φ (((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x) := by
-      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, arithmeticFrobenius_pow_apply,
-        frobeniusAlgHom_pow_apply, map_pow]
+      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
+        _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
+        ← Nat.card_eq_fintype_card, frobeniusAlgHom_pow_apply, map_pow]
     have hinj : Function.Injective φ := φ.toRingHom.injective
     simp_rw [hcomp, hinj.eq_iff]
     have heq : (∀ x : E, ((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x = x) ↔
@@ -257,8 +231,11 @@ theorem arithmeticFrobenius_pow_comp_eq_iff {E : Type*} [Field E] [Algebra K E]
     have hmem (x : E) : x ∈ frobeniusFixedSubalgebra K E m := by
       rw [mem_frobeniusFixedSubalgebra]
       have hx := DFunLike.congr_fun h x
-      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, arithmeticFrobenius_pow_apply,
-        ← map_pow] at hx
+      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
+        _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
+        ← Nat.card_eq_fintype_card] at hx
+      dsimp only at hx
+      rw [← map_pow] at hx
       exact φ.toRingHom.injective hx
     have hfinSub : Finite (frobeniusFixedSubalgebra K E m) := finite_frobeniusFixedSubalgebra hm
     have : Finite E :=

@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsSepClosed
 -- Proof-only: the quadratic formula, which solves the equation once the discriminant is a square.
 import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Separably closed fields
@@ -50,9 +51,6 @@ its conclusion, so instance search could not find it.
 
 * `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
   bottom subalgebra.
-* `IsSepClosed.algHom_mem_range_algebraMap`, `IsSepClosed.algHomEquiv`: algebra homomorphisms from
-  a separable algebra into a domain extending a separably closed field land in, and correspond
-  bijectively to maps into, that separably closed field.
 * `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`: a quadratic `a X² + b X + c` with `a ≠ 0`
   and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
@@ -67,6 +65,15 @@ its conclusion, so instance search could not find it.
 
 public section
 
+/-- A separably closed field is infinite: over a finite field, the separable polynomial
+`X ^ q - X - 1` would have no root. -/
+instance IsSepClosed.infinite (K : Type*) [Field K] [IsSepClosed K] : Infinite K := by
+  refine Infinite.of_not_fintype fun _ ↦ ?_
+  obtain ⟨root, root_eq⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C
+    (1 : K) (-1) (-1) (FiniteField.cast_card_eq_zero K)
+    (Fintype.one_lt_card (α := K)) (by simp)
+  simp [FiniteField.pow_card] at root_eq
+
 /-- A separable element of a domain algebra over a separably closed field belongs to the image
 of the base field. -/
 theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed K]
@@ -75,55 +82,6 @@ theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed 
   rw [Algebra.mem_bot]
   exact minpoly.mem_range_of_degree_eq_one K x <|
     IsSepClosed.degree_eq_one_of_irreducible K (minpoly.irreducible hx.isIntegral) hx
-
-/-- Every `F`-algebra homomorphism from a separable `F`-algebra into a domain extending a
-separably closed field `E` lands in the image of `E`. -/
-theorem IsSepClosed.algHom_mem_range_algebraMap {F K E A : Type*} [Field F] [Ring K]
-    [Algebra F K] [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
-    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A]
-    (f : K →ₐ[F] A) (x : K) :
-    f x ∈ Set.range (algebraMap E A) := by
-  have hF : IsSeparable F (f x) :=
-    (Algebra.IsSeparable.isSeparable F x).of_dvd <|
-      minpoly.dvd F (f x) (by rw [Polynomial.aeval_algHom_apply, minpoly.aeval, map_zero])
-  exact Algebra.mem_bot.mp (hF.tower_top E).mem_bot_of_isSepClosed
-
-/-- Postcomposition with `E →ₐ[F] A` identifies `F`-algebra homomorphisms from a separable
-`F`-algebra `K` into a separably closed field `E` with those into any domain `A` extending `E`. -/
-noncomputable def IsSepClosed.algHomEquiv {F : Type*} (K E A : Type*) [Field F] [Ring K]
-    [Algebra F K] [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
-    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A] :
-    (K →ₐ[F] E) ≃ (K →ₐ[F] A) :=
-  Equiv.ofBijective ((IsScalarTower.toAlgHom F E A).comp ·)
-    ⟨fun _ _ h ↦ AlgHom.ext fun x ↦ (algebraMap E A).injective (DFunLike.congr_fun h x),
-     fun f ↦ by
-      have hinj := (algebraMap E A).injective
-      choose g hg using IsSepClosed.algHom_mem_range_algebraMap (E := E) f
-      refine ⟨{
-        toFun := g
-        map_one' := hinj (by rw [hg, map_one, map_one])
-        map_mul' := fun x y ↦ hinj (by rw [hg, map_mul, map_mul, hg, hg])
-        map_zero' := hinj (by rw [hg, map_zero, map_zero])
-        map_add' := fun x y ↦ hinj (by rw [hg, map_add, map_add, hg, hg])
-        commutes' := fun r ↦ hinj (by rw [hg, f.commutes, ← IsScalarTower.algebraMap_apply])
-      }, AlgHom.ext hg⟩⟩
-
-/-- `IsSepClosed.algHomEquiv` acts by postcomposition with the algebra map `E →ₐ[F] A`. -/
-@[simp]
-theorem IsSepClosed.algHomEquiv_apply {F K E A : Type*} [Field F] [Ring K] [Algebra F K]
-    [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
-    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A] (g : K →ₐ[F] E) (x : K) :
-    IsSepClosed.algHomEquiv K E A g x = algebraMap E A (g x) :=
-  (rfl)
-
-/-- Composing the inverse of `IsSepClosed.algHomEquiv` with `algebraMap E A` recovers the
-original algebra homomorphism. -/
-@[simp]
-theorem IsSepClosed.algebraMap_algHomEquiv_symm_apply {F K E A : Type*} [Field F] [Ring K]
-    [Algebra F K] [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
-    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A] (f : K →ₐ[F] A) (x : K) :
-    algebraMap E A ((IsSepClosed.algHomEquiv K E A).symm f x) = f x :=
-  DFunLike.congr_fun ((IsSepClosed.algHomEquiv K E A).apply_symm_apply f) x
 
 /-- `2` stays nonzero in the separable closure of a field in which it is nonzero, since the
 algebra map is injective. -/

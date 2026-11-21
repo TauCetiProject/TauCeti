@@ -37,7 +37,7 @@ universe u
 
 open CategoryTheory Opposite AlgebraicGeometry Scheme
 
-namespace TauCeti.AlgebraicGeometry.GeometricPoint
+namespace TauCeti.AlgebraicGeometry.Scheme.GeometricPoint
 
 section ComplexReal
 
@@ -266,4 +266,4 @@ theorem not_isIso_ofSepToAlgClosure_ratFunc_zmod (p : ℕ) [Fact p.Prime] :
 
 end ImperfectFunctionField
 
-end TauCeti.AlgebraicGeometry.GeometricPoint
+end TauCeti.AlgebraicGeometry.Scheme.GeometricPoint

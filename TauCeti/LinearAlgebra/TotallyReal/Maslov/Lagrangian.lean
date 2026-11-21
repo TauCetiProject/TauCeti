@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
 
 /-!
 # Deforming loops of totally real subspaces to Lagrangian loops
@@ -23,7 +23,8 @@ continuous frames. Write `Λ t = M t ℝⁿ` (`Matrix.realImage`) for a continuo
 invertible matrices. The closed frame `M` deforms through closed frames to a path `U` of unitary
 matrices, by orthonormalizing its real frames and then contracting the positive factor of their
 polar decomposition (`TauCeti.exists_realImage_homotopy_unitaryGroup`). Homotopy invariance of the
-Maslov index (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_homotopy`) then compares the two loops.
+Maslov index (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy`) then compares the
+two loops.
 
 ## Main declarations
 
@@ -78,23 +79,12 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
   obtain ⟨F, hFc, hF0, hFclosed, hF1⟩ :=
     exists_realImage_homotopy_unitaryGroup hMc (by rw [hMΛ, hMΛ]; exact Λ.toFun_zero_eq_toFun_one)
   have hF1c : Continuous fun t : I ↦ F (1, t) := hFc.comp (Continuous.prodMk_right 1)
-  let Λ' : TotallyRealLoop (EuclideanSpace ℂ n) :=
-    { toFun := fun t ↦ (F (1, t) : Matrix n n ℂ).realImage
-      exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
-        fun t ↦ (F (1, t) : Matrix n n ℂ).toEuclideanCLE (F (1, t)).det_ne_zero,
-        GeneralLinearGroup.continuous_toEuclideanCLE hF1c,
-        fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
-      toFun_zero_eq_toFun_one := hFclosed 1 }
   refine ⟨fun t ↦ ⟨F (1, t), hF1 t⟩, (Units.continuous_val.comp hF1c).subtype_mk _,
-    Λ', fun t ↦ rfl, ?_⟩
-  refine (Λ.maslovIndex_eq_of_homotopy Λ' (L₀ := realSubspace n)
-    (fun p ↦ (F p : Matrix n n ℂ).toEuclideanCLE (F p).det_ne_zero)
-    (GeneralLinearGroup.continuous_toEuclideanCLE hFc) (fun t ↦ ?_) (fun t ↦ ?_)
-    (fun s ↦ ?_)).symm
-  · rw [← realImage_eq_map_toEuclideanCLE, ← hMΛ]
-    exact (hF0 t).symm
-  · rw [← realImage_eq_map_toEuclideanCLE]
-  · rw [← realImage_eq_map_toEuclideanCLE, ← realImage_eq_map_toEuclideanCLE]
-    exact hFclosed s
+    TotallyRealLoop.ofRealImage _ hF1c (hFclosed 1),
+    TotallyRealLoop.ofRealImage_apply _ hF1c (hFclosed 1),
+    (Λ.maslovIndex_eq_of_realImage_homotopy _ F hFc (fun t ↦ ?_)
+      (TotallyRealLoop.ofRealImage_apply _ hF1c (hFclosed 1)) hFclosed).symm⟩
+  rw [← hMΛ]
+  exact (hF0 t).symm
 
 end TauCeti

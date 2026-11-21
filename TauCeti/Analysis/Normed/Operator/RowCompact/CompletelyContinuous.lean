@@ -79,11 +79,11 @@ theorem isRowCompact_of_fg_of_isClosed_of_range_le {L : Submodule R C₀(I, R)} 
     (hu : (u : C₀(J, R) →ₗ[R] C₀(I, R)).range ≤ L) : u.IsRowCompact := by
   obtain ⟨s, rfl⟩ := hL
   have : CompleteSpace (Submodule.span R (s : Set C₀(I, R))) := hLc.completeSpace_coe
-  let v : s → Submodule.span R (s : Set C₀(I, R)) := fun k ↦ ⟨k, Submodule.subset_span k.2⟩
+  let v : s → Submodule.span R (s : Set C₀(I, R)) := fun k ↦ ⟨k, Submodule.subset_span k.property⟩
   have hv : Submodule.span R (Set.range v) = ⊤ := by
     convert Submodule.span_span_coe_preimage (R := R) (s := (s : Set C₀(I, R))) using 2
     ext x
-    exact ⟨by rintro ⟨k, rfl⟩; exact k.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    exact ⟨by rintro ⟨k, rfl⟩; exact k.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
   obtain ⟨C, hC₀, hC⟩ := TauCeti.exists_linearCombination_eq_and_norm_le v hv
   refine isRowCompact_of_apply_single_eq_sum (fun k : s ↦ (k : C₀(I, R))) (B := C * ‖u‖)
     fun j ↦ ?_

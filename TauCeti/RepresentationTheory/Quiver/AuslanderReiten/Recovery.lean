@@ -58,6 +58,7 @@ theorem nonempty_iso_arInverseTranslate_arTranslate
   let : IsNoetherianRing kQ := IsNoetherianRing.of_finite k kQ
   let : IsNoetherianRing kQᵐᵒᵖ := IsNoetherianRing.of_finite k kQᵐᵒᵖ
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
+  have := Module.finitePresentation_of_finite kQ ((E).functor.obj M)
   let P : FiniteProjectivePresentation ((E).functor.obj M) := .minimal
   have hP : IsMinimalProjectivePresentation P.p P.π :=
     FiniteProjectivePresentation.isMinimal_minimal
@@ -69,6 +70,7 @@ theorem nonempty_iso_arInverseTranslate_arTranslate
       (isFinDim_arTranslate.{u, v, w, t} k Q M hM)
   let D := ModuleCat.matlisDualObj k k N
   have : Module.Finite kQᵐᵒᵖ D := Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ D
+  have := Module.finitePresentation_of_finite kQᵐᵒᵖ D
   let R : FiniteProjectivePresentation D := .minimal
   have hR : IsMinimalProjectivePresentation R.p R.π :=
     FiniteProjectivePresentation.isMinimal_minimal

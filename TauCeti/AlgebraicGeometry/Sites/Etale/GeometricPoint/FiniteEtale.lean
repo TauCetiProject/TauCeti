@@ -40,19 +40,19 @@ stalks:
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.GeometricPoint.toSheafOfOverIdStalkEquivFiber`: identifies the stalk
-  at `ofOver (𝟙 (Spec (.of R))) Ω` of `FiniteEtaleScheme.toSheaf` with the geometric fibre at
-  `Spec Ω ⟶ Spec R`.
-* `TauCeti.AlgebraicGeometry.GeometricPoint.toSheafSpecStalkEquiv`: identifies the stalk of
-  `FiniteEtaleScheme.toSheaf` of `Spec B` with `B →ₐ[R] Ω`.
-* `TauCeti.AlgebraicGeometry.GeometricPoint.toSheafFieldStalkEquiv`: identifies the stalk of
-  `FiniteEtaleScheme.toSheaf` of any finite étale `K`-scheme with the `Ω`-points of its coordinate
-  algebra.
-* `TauCeti.AlgebraicGeometry.GeometricPoint.finiteEtaleOfSeparableFieldExt`: packages a finite
-  separable field extension `L / K` as an object of `CommAlgCat.FiniteEtale K`.
-* `TauCeti.AlgebraicGeometry.GeometricPoint.kummerCoverStalkEquiv`,
-  `TauCeti.AlgebraicGeometry.GeometricPoint.kummerCoverStalkEquivRootsOfUnity`: identify the stalk
-  of a Kummer cover with `n`-th roots of `t` and with `rootsOfUnity n Ω`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toSheafOfOverIdStalkEquivFiber`: identifies
+  the stalk at `ofOver (𝟙 (Spec (.of R))) Ω` of `FiniteEtaleScheme.toSheaf` with the geometric
+  fibre at `Spec Ω ⟶ Spec R`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toSheafSpecStalkEquiv`: identifies the stalk
+  of `FiniteEtaleScheme.toSheaf` of `Spec B` with `B →ₐ[R] Ω`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toSheafFieldStalkEquiv`: identifies the stalk
+  of `FiniteEtaleScheme.toSheaf` of any finite étale `K`-scheme with the `Ω`-points of its
+  coordinate algebra.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.finiteEtaleOfSeparableFieldExt`: packages a
+  finite separable field extension `L / K` as an object of `CommAlgCat.FiniteEtale K`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.kummerCoverStalkEquiv`,
+  `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.kummerCoverStalkEquivRootsOfUnity`: identify
+  the stalk of a Kummer cover with `n`-th roots of `t` and with `rootsOfUnity n Ω`.
 
 ## Main results
 
@@ -78,7 +78,7 @@ universe u
 
 open CategoryTheory Limits Opposite AlgebraicGeometry Scheme
 
-namespace TauCeti.AlgebraicGeometry.GeometricPoint
+namespace TauCeti.AlgebraicGeometry.Scheme.GeometricPoint
 
 variable {S : Scheme.{u}}
 
@@ -453,4 +453,4 @@ theorem natCard_kummerCoverStalk (R Ω : Type u) [CommRing R] [Field Ω] [IsSepC
         natCard_toSheafSpecStalk_eq_finrank Ω Ω (FiniteEtaleScheme.kummerAlgebra t' n hn')
     _ = n := (TauCeti.standardTameCover_free Ω (t' : Ω) n hn0).2
 
-end TauCeti.AlgebraicGeometry.GeometricPoint
+end TauCeti.AlgebraicGeometry.Scheme.GeometricPoint

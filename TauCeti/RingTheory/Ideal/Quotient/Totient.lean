@@ -67,7 +67,7 @@ theorem card_units_quotient_pow_mul_card_quotient (P : Ideal R) [P.IsMaximal] {e
   have : Infinite f.toAddMonoidHom.ker :=
     (Nat.card_eq_zero.mp h).resolve_left (not_isEmpty_of_nonempty _)
   have h1 (x : f.toAddMonoidHom.ker) : IsUnit (1 + (x : R ⧸ P ^ e)) := by
-    have hx : f x = 0 := by simpa using AddMonoidHom.mem_ker.mp x.2
+    have hx : f x = 0 := by simpa using AddMonoidHom.mem_ker.mp x.property
     simp [hunit, hx]
   have : Infinite (R ⧸ P ^ e)ˣ := Infinite.of_injective (fun x ↦ (h1 x).unit)
     fun x y hxy ↦ by simpa using congrArg Units.val hxy
