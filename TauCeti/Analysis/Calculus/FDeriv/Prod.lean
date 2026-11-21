@@ -77,6 +77,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
+* `TauCeti.hasDerivAt_fst_slice_left`, `TauCeti.hasDerivAt_snd_slice_left`: the same for the two
+  components of a map into a product.
 * `TauCeti.norm_deriv_slice_right_le`: the partial derivative in a scalar second variable has
   norm at most that of the derivative.
 * `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
@@ -314,6 +316,20 @@ applied to `(1, 0)`. -/
 theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (s, b)) :
     HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s :=
   hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+
+/-- Where `v = (v₁, v₂)` is differentiable, the partial derivative of `v₁` in the first variable is
+the first component of the derivative of `v` applied to `(1, 0)`. -/
+theorem hasDerivAt_fst_slice_left {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {v : 𝕜 × F → G × H} {s : 𝕜} {b : F} (hv : DifferentiableAt 𝕜 v (s, b)) :
+    HasDerivAt (fun s ↦ (v (s, b)).1) (fderiv 𝕜 v (s, b) (1, 0)).1 s :=
+  (ContinuousLinearMap.fst 𝕜 G H).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_slice_left hv)
+
+/-- Where `v = (v₁, v₂)` is differentiable, the partial derivative of `v₂` in the first variable is
+the second component of the derivative of `v` applied to `(1, 0)`. -/
+theorem hasDerivAt_snd_slice_left {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {v : 𝕜 × F → G × H} {s : 𝕜} {b : F} (hv : DifferentiableAt 𝕜 v (s, b)) :
+    HasDerivAt (fun s ↦ (v (s, b)).2) (fderiv 𝕜 v (s, b) (1, 0)).2 s :=
+  (ContinuousLinearMap.snd 𝕜 G H).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_slice_left hv)
 
 /-- Where `u` is differentiable, its derivative applied to `(1, 0)` is its partial derivative in
 the first variable. -/
