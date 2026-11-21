@@ -9,11 +9,9 @@ public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
-import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Algebra.Homology.PrincipalIdealRing
-import TauCeti.AlgebraicTopology.Disk
 import TauCeti.CategoryTheory.GradedObject.Monoidal
-import TauCeti.Geometry.Manifold.ModelTransport.Finrank
+import TauCeti.Geometry.Manifold.Instances.TopCatSphere
 
 /-!
 # The fundamental class of a product of manifolds
@@ -174,23 +172,9 @@ theorem IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomolog
     IsFundamentalClass (M := TopCat.sphere.{w} (d + 1) × N)
       ((TopCat.singularHomologyCross (TopCat.sphere.{w} (d + 1)) (TopCat.of N)
         (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) n (d + 1 + n) rfl).hom
-        (singularHomologyTopCatSphereGenerator k d ⊗ₜ ν)) := by
-  -- `TopCat.sphere (d + 1)` is the lift to `Type w` of the unit sphere of `ℝᵈ⁺²`, a compact
-  -- connected manifold modelled on `ℝᵈ⁺¹`; the model is moved to `Type w` along its dimension.
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (d + 1 + 1))) = d + 1 + 1) := ⟨by simp⟩
-  let e : Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1 ≃ₜ
-      ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1) :=
-    Homeomorph.ulift.symm
-  let : ChartedSpace (EuclideanSpace ℝ (Fin (d + 1)))
-      (ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1)) :=
-    e.chartedSpace
-  let : ChartedSpace (ULift.{w} (Fin (d + 1)) → ℝ)
-      (ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1)) :=
-    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin (d + 1))) _ (by simp)
-  have : ConnectedSpace (ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1)) :=
-    @PathConnectedSpace.connectedSpace _ _ (TopCat.pathConnectedSpace_sphere.{w} d)
-  exact IsFundamentalClass.singularHomologyCross (E := ULift.{w} (Fin (d + 1)) → ℝ)
-    (LinearEquiv.refl k k) (LinearEquiv.refl k k) (by simp) hn
+        (singularHomologyTopCatSphereGenerator k d ⊗ₜ ν)) :=
+  IsFundamentalClass.singularHomologyCross (M := TopCat.sphere.{w} (d + 1))
+    (E := ULift.{w} (Fin (d + 1)) → ℝ) (LinearEquiv.refl k k) (LinearEquiv.refl k k) (by simp) hn
     (isFundamentalClass_singularHomologyTopCatSphereGenerator k d) hν
 
 end Sphere
