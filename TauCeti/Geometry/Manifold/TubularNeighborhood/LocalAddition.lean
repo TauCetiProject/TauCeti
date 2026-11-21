@@ -145,6 +145,15 @@ theorem contDiffAt_starProjection_normalSubspace_comp [IsManifold I (n + 1) M] {
     ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q :=
   contMDiffAt_iff_contDiffAt.mp ((contMDiffAt_normalSubspace_starProjection hf himm).comp q hr)
 
+/-- At a point `f x` whose base point `x` is fixed by the retraction `r`, the orthogonal projection
+onto the normal space of an immersion `f` at `r q` is `C^n` in `q` at `f x`, when `f` is `C^(n + 1)`
+at `x` and `r` is `C^n` at `f x`. -/
+theorem contDiffAt_starProjection_normalSubspace_comp_of_retract [IsManifold I (n + 1) M]
+    {x : M} (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f x) (himm : Injective (mfderiv I 𝓘(ℝ, V) f x))
+    (hr : ContMDiffAt 𝓘(ℝ, V) I n r (f x)) (hrx : r (f x) = x) :
+    ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x) :=
+  contDiffAt_starProjection_normalSubspace_comp (by rwa [hrx]) (by rwa [hrx]) hr
+
 /-- The adapted local addition is jointly `C^n` at `(q, v)` when `f` is a `C^(n + 1)` immersion
 and `r` is `C^n` at `q` and at the moved base point `f (r q) + P_T(r q) v`, the smoothness and
 immersion conditions on `f` being needed only at the images of these two points under `r`. -/
@@ -191,8 +200,8 @@ theorem hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace [IsManifold I (n +
   have hrd : MDifferentiableAt 𝓘(ℝ, V) I r (f x) := hr.mdifferentiableAt hn0
   have hg : DifferentiableAt ℝ (f ∘ r) (f x) :=
     mdifferentiableAt_iff_differentiableAt.mp (hfx.comp _ hrd)
-  have hN := (contDiffAt_starProjection_normalSubspace_comp (by rwa [hrx]) (by rwa [hrx])
-    hr).differentiableAt hn0
+  have hN :=
+    (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr hrx).differentiableAt hn0
   set D := fderiv ℝ (f ∘ r) (f x)
   -- `D` takes values in the tangent space, since it factors through the differential of `f`.
   have hrange (h : V) : D h ∈ (normalSubspace I f x)ᗮ := by
@@ -213,8 +222,15 @@ theorem hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace [IsManifold I (n +
     ((hasFDerivAt_id _).sub hg.hasFDerivAt)).unique
     ((hasFDerivAt_const 0 (f x)).congr_of_eventuallyEq hzero)
   have hnormalD (h : V) : h - D h ∈ normalSubspace I f x := by
+    -- Evaluated at `h`, the derivative is `P_N(x) (h - D h) + N' h (f x - (f ∘ r) (f x)) -
+    -- (h - D h)`, where `N' h` is the derivative of `q ↦ P_N(r q)` along `h`. The middle term
+    -- vanishes, since `(f ∘ r) (f x) = f x`.
+    have hev : (normalSubspace I f (r (f x))).starProjection (h - D h) +
+        fderiv ℝ (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x) h
+          (f x - (f ∘ r) (f x)) - (h - D h) = 0 :=
+      DFunLike.congr_fun hderiv h
     have hP : (normalSubspace I f x).starProjection (h - D h) = h - D h := by
-      simpa [hrx, sub_eq_zero] using DFunLike.congr_fun hderiv h
+      rwa [Function.comp_apply, hrx, sub_self, map_zero, add_zero, sub_eq_zero] at hev
     exact Submodule.starProjection_eq_self_iff.mp hP
   refine hg.hasFDerivAt.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
   calc D h = (normalSubspace I f x)ᗮ.starProjection (D h) +
@@ -247,8 +263,8 @@ theorem hasFDerivAt_adaptedLocalAddition [IsManifold I (n + 1) M]
   have hN :
       DifferentiableAt ℝ (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x + T 0) := by
     rw [hw0]
-    exact (contDiffAt_starProjection_normalSubspace_comp (by rwa [hrx]) (by rwa [hrx])
-      hr).differentiableAt hn0
+    exact (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr
+      hrx).differentiableAt hn0
   refine ((hg.comp 0 hw).add ((hN.hasFDerivAt.comp 0 hw).clm_apply P.hasFDerivAt)).congr_fderiv
     (ContinuousLinearMap.ext fun h ↦ ?_)
   simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply, map_zero, add_zero, hrx,
@@ -276,8 +292,8 @@ theorem eventually_adaptedLocalAddition_mem_image_iff [IsManifold I (n + 1) M]
   have hwc : ContinuousAt (fun v : V ↦ f x + T v) 0 := (T.continuous.const_add (f x)).continuousAt
   have hw0 : f x + T 0 = f x := by simp
   have hNc : ContinuousAt (fun v ↦ N (f x + T v)) 0 :=
-    (contDiffAt_starProjection_normalSubspace_comp (by rwa [hrx]) (by rwa [hrx])
-      hr).continuousAt.comp_of_eq hwc hw0
+    (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr
+      hrx).continuousAt.comp_of_eq hwc hw0
   have hrc : ContinuousAt (fun v ↦ r (f x + T v)) 0 := hr.continuousAt.comp_of_eq hwc hw0
   have hnc : ContinuousAt (fun v ↦ N (f x + T v) (P v)) 0 :=
     hNc.clm_apply P.continuous.continuousAt
