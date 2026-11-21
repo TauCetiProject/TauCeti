@@ -98,6 +98,6 @@ theorem finite_maximalSpectrum_of_isIntegral_of_quasiFinite (R : Type*) {B : Typ
     (fun M ↦
       have := M.isMaximal
       ⟨⟨M.asIdeal.under R, inferInstance⟩, ⟨M.asIdeal, M.isMaximal.isPrime, ⟨rfl⟩⟩⟩)
-    fun M₁ M₂ h ↦ MaximalSpectrum.ext (congrArg (fun x ↦ x.2.1) h)
+    fun M₁ M₂ h ↦ MaximalSpectrum.ext (congrArg (fun x ↦ x.2.val) h)
 
 end TauCeti

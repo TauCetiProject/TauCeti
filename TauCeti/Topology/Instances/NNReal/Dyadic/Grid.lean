@@ -145,12 +145,12 @@ theorem tendsto_approxDyadicNNRat_apply_of_continuousAt {E : Type*} [Topological
     {T : ℝ≥0} {f : ℚ≥0 → E} {g : Iic T → E} {t : Iic T} (hg : ContinuousAt g t)
     (hg_dyad : ∀ n k (hk : (dyadicNNRat n k : ℝ≥0) ≤ T),
       g ⟨(dyadicNNRat n k : ℝ≥0), hk⟩ = f (dyadicNNRat n k)) :
-    Tendsto (fun n ↦ f (approxDyadicNNRat n t.1)) atTop (𝓝 (g t)) := by
-  have hconv : Tendsto (fun n ↦ (⟨(approxDyadicNNRat n t.1 : ℝ≥0),
-      (coe_approxDyadicNNRat_le n t.1).trans t.2⟩ : Iic T)) atTop (𝓝 t) :=
-    tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat t.1)
+    Tendsto (fun n ↦ f (approxDyadicNNRat n t.val)) atTop (𝓝 (g t)) := by
+  have hconv : Tendsto (fun n ↦ (⟨(approxDyadicNNRat n t.val : ℝ≥0),
+      (coe_approxDyadicNNRat_le n t.val).trans t.property⟩ : Iic T)) atTop (𝓝 t) :=
+    tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat t.val)
   refine (hg.tendsto.comp hconv).congr fun n ↦ ?_
   simp only [Function.comp_apply, approxDyadicNNRat_def]
-  exact hg_dyad n ⌊(t.1 : ℝ) * 2 ^ n⌋₊ ((coe_approxDyadicNNRat_le n t.1).trans t.2)
+  exact hg_dyad n ⌊(t.val : ℝ) * 2 ^ n⌋₊ ((coe_approxDyadicNNRat_le n t.val).trans t.property)
 
 end TauCeti

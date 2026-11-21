@@ -83,9 +83,7 @@ jobs:
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
           ZULIP_CHANNEL: Tau Ceti
-          # Its own topic. stuck_alerts.py reconciles "Stuck PRs" by marker and edits the
-          # messages it recognises there, so an unrelated post would sit inside its
-          # bookkeeping.
+          # Its own topic, so these posts stay together and apart from other announcements.
           ZULIP_TOPIC: Toolchain tags
           SHA: ${{ github.sha }}
           WAIT: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.wait }}

@@ -53,7 +53,7 @@ at the generator corresponding to the identity. -/
 lemma freeYonedaHomIso_hom_app (P : Cᵒᵖ ⥤ AddCommGrpCat.{v}) (X : Cᵒᵖ) :
     P.freeYonedaHomIso.hom.app X = AddCommGrpCat.ofHom
       { toFun := fun (f : yoneda.obj X.unop ⋙ AddCommGrpCat.free.{v} ⟶ P) ↦
-          ULift.up (f.app X (FreeAbelianGroup.of (𝟙 X.unop)))
+          ULift.up (f.app X (FreeAddCommGroup.of (𝟙 X.unop)))
         map_zero' := rfl
         map_add' := fun _ _ ↦ rfl } :=
   (rfl)
