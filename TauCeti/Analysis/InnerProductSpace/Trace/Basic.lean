@@ -35,6 +35,8 @@ covariant tensor, making it independent of any choice of basis.
   the basis with its metric dual basis.
 * `LinearMap.BilinMap.metricTrace_eq_sum_inv_gram`: in an arbitrary basis, the metric trace
   contracts the form against the inverse Gram matrix of the basis.
+* `LinearMap.BilinMap.metricTrace_flip`: the metric trace is invariant under transposing the
+  arguments.
 * `LinearMap.BilinMap.metricTrace_compr₂`: the metric trace commutes with a linear map applied to
   the values.
 * `LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv`: the metric trace is invariant
@@ -106,6 +108,11 @@ theorem metricTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
     (B : BilinMap ℝ W N) (b : Module.Basis ι ℝ W) :
     metricTrace B = ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j • B (b i) (b j) := by
   simp only [metricTrace_eq_sum_dualBasis B b, b.dualBasis_innerₗ_eq_sum, map_sum, map_smul]
+
+/-- Transposing the arguments of a bilinear map preserves its metric trace. -/
+@[simp]
+theorem metricTrace_flip (B : BilinMap ℝ W N) : metricTrace B.flip = metricTrace B := by
+  simp only [metricTrace_eq_sum _ (stdOrthonormalBasis ℝ W), LinearMap.flip_apply]
 
 /-- The metric trace commutes with a linear map `f` applied to the values of the form. -/
 @[simp]

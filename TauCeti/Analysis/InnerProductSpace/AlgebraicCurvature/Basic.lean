@@ -566,10 +566,16 @@ theorem ricci_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAdd
     (u v : W) :
     ricci (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) u v =
       ricci r (e u) (e v) := by
-  let b := stdOrthonormalBasis ℝ W
-  rw [ricci_apply_orthonormalBasis b, ricci_apply_orthonormalBasis (b.map e)]
-  simp only [compContinuousLinearMap_apply_vec, OrthonormalBasis.map_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+  -- The slice of the pulled-back tensor is the pullback of the slice.
+  have h : ricciSlice (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap)
+      u v = (ricciSlice r (e u) (e v)).compl₁₂ e.toLinearEquiv.toLinearMap
+        e.toLinearEquiv.toLinearMap :=
+    LinearMap.ext₂ fun x y ↦ by
+      simp only [ricciSlice_apply, LinearMap.compl₁₂_apply, compContinuousLinearMap_apply_vec,
+        LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+        LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  exact (congrArg LinearMap.BilinMap.metricTrace h).trans
+    (LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv _ e)
 
 /-- The scalar contraction of a four-tensor: the metric trace of its Ricci contraction. -/
 def scalar : FourTensor V →ₗ[ℝ] ℝ :=
@@ -590,10 +596,12 @@ theorem scalar_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAd
     [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
     scalar (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       scalar r := by
-  let b := stdOrthonormalBasis ℝ W
-  rw [scalar_apply_orthonormalBasis b, scalar_apply_orthonormalBasis (b.map e)]
-  simp only [compContinuousLinearMap_apply_vec, OrthonormalBasis.map_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+  have h : ricci (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
+      (ricci r).compl₁₂ e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap :=
+    LinearMap.ext₂ fun u v ↦ by
+      rw [ricci_compContinuousLinearMap_linearIsometryEquiv, LinearMap.compl₁₂_apply,
+        LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [scalar_apply, scalar_apply, h, LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv]
 
 /-- The Ricci contraction of the Kulkarni–Nomizu product of `h` with the inner product:
 `Ric(h ⊙ g) = (n - 2) h + (tr h) g`. -/

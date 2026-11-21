@@ -39,16 +39,7 @@ theorem laplaceBeltrami_eq_sum_chartInvGramMatrix_hessian
     (α : M) {x : M} (hx : x ∈ (chartAt H α).source) (f : M → ℝ) :
     laplaceBeltrami I f x = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j *
       hessian I f x (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
-  let A := leviCivitaConnection I M (mgradient I f) x
-  let B : LinearMap.BilinForm ℝ (TangentSpace I x) := ((innerSL ℝ).comp A).toLinearMap₁₂
-  have hB (v w : TangentSpace I x) : B v w = hessian I f x v w := by
-    rw [hessian_def]
-    rfl
-  have ht : LinearMap.BilinMap.metricTrace B = laplaceBeltrami I f x := by
-    rw [LinearMap.BilinMap.metricTrace_eq_sum B (stdOrthonormalBasis ℝ (TangentSpace I x)),
-      laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
-    simp only [hB]
-  rw [← ht, metricTrace_eq_sum_chartInvGramMatrix α hx B]
-  simp only [hB, smul_eq_mul]
+  rw [laplaceBeltrami_eq_metricTrace_hessianForm, metricTrace_eq_sum_chartInvGramMatrix α hx]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hessianForm_apply, smul_eq_mul]
 
 end TauCeti.Manifold

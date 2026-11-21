@@ -17,6 +17,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.OrthonormalBasis
 
 /-!
@@ -260,14 +261,13 @@ variable [FiniteDimensional ℝ V]
 /-- The **flat Dirac operator** `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ` of the connection `d + i b`, defined
 without a basis as the metric contraction of `(v, w) ↦ c(v) ∇_w ψ`. -/
 def flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : W :=
-  TensorProduct.lift (cliffordPairing ρ (covariantDeriv b ψ x))
-    (canonicalCovariantTensor V)
+  LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x))
 
 /-- The flat Dirac operator in an orthonormal basis: `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
 theorem flatDirac_eq_sum {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
     flatDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) := by
-  simp [flatDirac, canonicalCovariantTensor_eq_sum V e, cliffordPairing]
+  simp [flatDirac, LinearMap.BilinMap.metricTrace_eq_sum _ e, cliffordPairing]
 
 /-- The flat Dirac operator of `α u₀` for a constant spinor `u₀`:
 `D (α u₀) = ∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`. On the canonical line this is the flat limiting Dirac

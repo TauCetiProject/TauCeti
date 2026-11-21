@@ -166,18 +166,19 @@ theorem norm_traceL_apply_le (H : E →L[ℝ] E →L[ℝ] F) :
 
 /-- Transposing the arguments of a bilinear map preserves its trace. -/
 @[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
-  simp [traceL_apply]
+  have h : ContinuousLinearMap.toLinearMap₁₂ B.flip = (ContinuousLinearMap.toLinearMap₁₂ B).flip :=
+    LinearMap.ext₂ fun _ _ ↦ by simp
+  rw [traceL_apply_eq_metricTrace, traceL_apply_eq_metricTrace, h,
+    LinearMap.BilinMap.metricTrace_flip]
 
 /-- The trace of the real inner product is the dimension of the space. -/
 @[simp] theorem traceL_innerSL :
     traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
-  rw [traceL_apply]
-  have hterm (i : Fin (Module.finrank ℝ E)) :
-      (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
-    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
-      (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
-  simp_rw [hterm]
-  simp
+  have h : ContinuousLinearMap.toLinearMap₁₂ (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = innerₗ E :=
+    LinearMap.ext₂ fun v w ↦ by
+      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, innerSL_apply_apply,
+        innerₗ_apply_apply]
+  rw [traceL_apply_eq_metricTrace, h, LinearMap.BilinMap.metricTrace_inner]
 
 end traceL
 
@@ -474,19 +475,7 @@ theorem laplacian_norm_sq (x : E) :
       = (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
     rw [fderiv_norm_sq]
     exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ‖y‖ ^ 2)
-    (stdOrthonormalBasis ℝ E)) x]
-  -- Each orthonormal diagonal Hessian entry equals `2`.
-  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ 2) x
-      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] = 2 := by
-    intro i
-    have hself : (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
-      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
-        (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
-    rw [iteratedFDeriv_two_apply, hsnd]
-    simp [hself]
-  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, nsmul_eq_mul, mul_comm]
+  rw [laplacian_eq_traceL, hsnd, map_nsmul, traceL_innerSL, nsmul_eq_mul, Nat.cast_ofNat]
 
 /-- **The Laplacian of a radial function.** For a `C²` function `ρ : ℝ → ℝ`, the Laplacian of
 `x ↦ ρ (‖x‖ ^ 2)` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. -/
@@ -516,19 +505,19 @@ theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDif
   have hid : fderiv ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x =
       (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) :=
     (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
+  -- The inner-product term of the second derivative has trace `2 dim E`; the rank-one term is
+  -- evaluated in the standard orthonormal basis.
+  rw [laplacian_eq_traceL, hfst, fderiv_fun_smul hc hi, hcd, hid, map_add, map_smul, map_nsmul,
+    traceL_innerSL, traceL_apply]
   set b := stdOrthonormalBasis ℝ E
-  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ρ (‖y‖ ^ 2)) b) x]
-  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ρ (‖y‖ ^ 2)) x ![b i, b i] =
-      4 * deriv (deriv ρ) (‖x‖ ^ 2) * ⟪x, b i⟫_ℝ ^ 2 + 2 * deriv ρ (‖x‖ ^ 2) := by
-    intro i
-    rw [iteratedFDeriv_two_apply, hfst, fderiv_fun_smul hc hi, hcd, hid]
-    have hself : (innerSL ℝ (b i)) (b i) = (1 : ℝ) := by
-      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq, b.orthonormal.norm_eq_one, one_pow]
-    simp [hself]
+  have hterm (i) : ((deriv (deriv ρ) (‖x‖ ^ 2) • (2 • innerSL ℝ x)).smulRight
+      (2 • innerSL ℝ x : E →L[ℝ] ℝ) (b i)) (b i) =
+        4 * deriv (deriv ρ) (‖x‖ ^ 2) * ⟪x, b i⟫_ℝ ^ 2 := by
+    simp only [ContinuousLinearMap.smulRight_apply, FunLike.coe_smul, Pi.smul_apply,
+      innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul, Pi.mul_apply, Nat.cast_ofNat, Pi.ofNat_apply]
     ring
-  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, ← Finset.mul_sum,
-    b.sum_sq_inner_left x]
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  rw [Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.mul_sum, b.sum_sq_inner_left x,
+    smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
 open Filter Gradient Topology in
