@@ -198,8 +198,9 @@ theorem domain_anti (h : L ≤ M) : M.domain ≤ L.domain := fun _ ha =>
 noncomputable def toSeminorm : Seminorm ℝ L.domain :=
   Seminorm.of (fun a => (L a).toReal)
     (fun a b => by
-      rw [← ENNReal.toReal_add a.2 b.2]
-      exact ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨a.2, b.2⟩) (L.map_add_le a b))
+      rw [← ENNReal.toReal_add a.property b.property]
+      exact ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨a.property, b.property⟩)
+        (L.map_add_le a b))
     (fun r a => by simp [L.map_smul_eq_mul])
 
 @[simp]
@@ -207,10 +208,10 @@ theorem toSeminorm_apply (a : L.domain) : L.toSeminorm a = (L a).toReal :=
   (rfl)
 
 theorem ofReal_toSeminorm (a : L.domain) : ENNReal.ofReal (L.toSeminorm a) = L a :=
-  ENNReal.ofReal_toReal a.2
+  ENNReal.ofReal_toReal a.property
 
 theorem toSeminorm_eq_zero_iff (a : L.domain) : L.toSeminorm a = 0 ↔ (a : E) ∈ ℝ ∙ e := by
-  simp [ENNReal.toReal_eq_zero_iff, L.mem_domain.1 a.2, L.eq_zero_iff]
+  simp [ENNReal.toReal_eq_zero_iff, L.mem_domain.1 a.property, L.eq_zero_iff]
 
 /-! ### Extension of a seminorm by `∞` -/
 
@@ -291,8 +292,8 @@ theorem domain_ofSeminorm : (ofSeminorm D p he hD hp).domain = D :=
   Submodule.ext fun _ => extendTop_ne_top_iff D p
 
 theorem toSeminorm_ofSeminorm (a : (ofSeminorm D p he hD hp).domain) :
-    (ofSeminorm D p he hD hp).toSeminorm a = p ⟨a, by simpa using a.2⟩ := by
-  simp [ofSeminorm_apply_of_mem (by simpa using a.2 : (a : E) ∈ D)]
+    (ofSeminorm D p he hD hp).toSeminorm a = p ⟨a, by simpa using a.property⟩ := by
+  simp [ofSeminorm_apply_of_mem (by simpa using a.property : (a : E) ∈ D)]
 
 end OfSeminorm
 
