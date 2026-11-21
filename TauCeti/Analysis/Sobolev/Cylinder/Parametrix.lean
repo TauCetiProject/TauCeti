@@ -32,7 +32,7 @@ The proof constructs a two-sided parametrix modulo compact operators, so that At
 regularity theory for weak solutions of the adjoint equation.
 
 * **Cutoffs in `s`.** Multiplication by a `C²` function `β(s)` with `β` and `β'` bounded acts on
-  jets through the coefficient field `TauCeti.CylinderSobolev.cutoffCoeff`,
+  jets through the coefficient field `TauCeti.StripSobolev.cutoffCoeff`,
   `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`, and preserves `W^{1,2}`
   (`TauCeti.CylinderSobolev.jetOperator_cutoffCoeff_mem_H1`).
 * **Compact zeroth-order operators.** A coefficient field that acts on the value of a jet only and
@@ -90,92 +90,12 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 section Cutoff
 
-variable (V) in
-/-- The map `(a, b, c) ↦ (0, a, 0)` on jets, moving the value into the `s`-derivative slot. -/
-private def sSlot : V × V × V →L[ℝ] V × V × V :=
-  (ContinuousLinearMap.inr ℝ V (V × V)).comp
-    ((ContinuousLinearMap.inl ℝ V V).comp (ContinuousLinearMap.fst ℝ V (V × V)))
-
-@[simp]
-private theorem sSlot_apply (v : V × V × V) : sSlot V v = (0, v.1, 0) := by
-  simp [sSlot]
-
-variable (V) in
-/-- The coefficient field of multiplication by a function `β(s)` of the first variable, acting
-on jets: `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`. On the jet of a section `ξ` it is the jet
-of `β(s) ξ` (`TauCeti.CylinderSobolev.jet_smul_fst_eq_cutoffCoeff`). -/
-def cutoffCoeff (β : ℝ → ℝ) (z : ℝ × ℝ) : V × V × V →L[ℝ] V × V × V :=
-  β z.1 • ContinuousLinearMap.id ℝ (V × V × V) + deriv β z.1 • sSlot V
-
-@[simp]
-theorem cutoffCoeff_apply (β : ℝ → ℝ) (z : ℝ × ℝ) (v : V × V × V) :
-    cutoffCoeff V β z v = (β z.1 • v.1, β z.1 • v.2.1 + deriv β z.1 • v.1, β z.1 • v.2.2) := by
-  obtain ⟨a, b, c⟩ := v
-  simp [cutoffCoeff]
-
-/-- Multiplication by `β(s)` followed by multiplication by `γ(s)` is multiplication by
-`β(s) γ(s)`. -/
-theorem cutoffCoeff_comp_cutoffCoeff {β γ : ℝ → ℝ} {z : ℝ × ℝ} (hβ : DifferentiableAt ℝ β z.1)
-    (hγ : DifferentiableAt ℝ γ z.1) :
-    (cutoffCoeff V β z).comp (cutoffCoeff V γ z) = cutoffCoeff V (β * γ) z := by
-  have h : deriv (β * γ) z.1 = deriv β z.1 * γ z.1 + β z.1 * deriv γ z.1 :=
-    (hβ.hasDerivAt.mul hγ.hasDerivAt).deriv
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [ContinuousLinearMap.comp_apply, cutoffCoeff_apply, Pi.mul_apply, h, Prod.mk.injEq]
-  refine ⟨?_, ?_, ?_⟩ <;> module
-
-/-- Multiplication by `β(s)` plus multiplication by `γ(s)` is multiplication by `β(s) + γ(s)`. -/
-theorem cutoffCoeff_add_cutoffCoeff {β γ : ℝ → ℝ} {z : ℝ × ℝ} (hβ : DifferentiableAt ℝ β z.1)
-    (hγ : DifferentiableAt ℝ γ z.1) :
-    cutoffCoeff V β z + cutoffCoeff V γ z = cutoffCoeff V (β + γ) z := by
-  have h : deriv (β + γ) z.1 = deriv β z.1 + deriv γ z.1 :=
-    (hβ.hasDerivAt.add hγ.hasDerivAt).deriv
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [add_apply, cutoffCoeff_apply, Pi.add_apply, h, Prod.mk_add_mk, Prod.mk.injEq]
-  refine ⟨?_, ?_, ?_⟩ <;> module
-
-/-- Multiplication by the constant function `1` is the identity. -/
-@[simp]
-theorem cutoffCoeff_one (z : ℝ × ℝ) :
-    cutoffCoeff V 1 z = ContinuousLinearMap.id ℝ (V × V × V) := by
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [cutoffCoeff, Pi.one_def]
-
-/-- The jet of `β(s) ξ` is `cutoffCoeff V β` applied to the jet of `ξ`. -/
-theorem jet_smul_fst_eq_cutoffCoeff {β : ℝ → ℝ} {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hβ : DifferentiableAt ℝ β z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    jet (fun w ↦ β w.1 • ξ w) z = cutoffCoeff V β z (jet ξ z) := by
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst
-  have h : fderiv ℝ (fun w ↦ β w.1 • ξ w) z = β z.1 • fderiv ℝ ξ z +
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)).smulRight (ξ z) :=
-    (hβ'.smul hξ.hasFDerivAt).fderiv
-  simp only [jet_apply, cutoffCoeff_apply, h]
-  simp [add_comm]
-
 /-- Multiplying a test section by a `C²` function of `s` gives a test section. -/
 theorem smul_fst_mem_testSection {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {ξ : ℝ × ℝ → V}
     (hξ : ξ ∈ testSection V) : (fun z ↦ β z.1 • ξ z) ∈ testSection V := by
   obtain ⟨hξ2, hξp, R, hR⟩ := mem_testSection_iff.1 hξ
   exact mem_testSection_iff.2 ⟨(hβ.comp contDiff_fst).smul hξ2, fun s t ↦ by simp [hξp],
     R, fun s t hs ↦ by simp [hR s t hs]⟩
-
-/-- For a `C¹` function `β` with `β` and `β'` bounded, the coefficient field of multiplication by
-`β(s)` is essentially bounded. -/
-theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
-    (hβ'B : ∀ s, |deriv β s| ≤ B) : MemLp (cutoffCoeff V β) ∞ stripMeasure := by
-  have hc : Continuous (cutoffCoeff V β) :=
-    ((hβ.continuous.comp continuous_fst).smul continuous_const).add
-      (((hβ.continuous_deriv le_rfl).comp continuous_fst).smul continuous_const)
-  refine memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦ ?_)
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
-  · exact (mul_le_of_le_one_right (abs_nonneg _) (ContinuousLinearMap.norm_id_le)).trans (hβB _)
-  · refine (mul_le_of_le_one_right (abs_nonneg _) ?_).trans (hβ'B _)
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
-    simp [Prod.norm_def]
 
 /-- **Multiplication by a function of `s` preserves `W^{1,2}`.** For a `C²` function `β` with `β`
 and `β'` bounded, the operator of the coefficient field `cutoffCoeff V β`, which multiplies a
@@ -392,7 +312,7 @@ private theorem apply_eq_add_sub_apply {L L' : V × V × V →L[ℝ] W}
 private theorem apply_cutoffCoeff {L L' : V × V × V →L[ℝ] W}
     (h : ∀ a b : V, L (0, a, b) = L' (0, a, b)) (β : ℝ → ℝ) (z : ℝ × ℝ) (v : V × V × V) :
     L (cutoffCoeff V β z v) = β z.1 • L' v + errCoeff V (β z.1) (deriv β z.1) L L' v := by
-  simp only [cutoffCoeff, add_apply, smul_apply,
+  simp only [cutoffCoeff_def, add_apply, smul_apply,
     ContinuousLinearMap.id_apply, sSlot_apply, map_add, map_smul]
   rw [apply_eq_add_sub_apply h v, h, errCoeff_apply, smul_add]
   abel
