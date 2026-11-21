@@ -18,11 +18,12 @@ versions: the numerator map as an algebra map (`OreLocalization.numeratorAlgHom`
 of algebra maps out of `OreLocalization S R` (`OreLocalization.algHom_ext`), and the universal lift
 (`OreLocalization.universalAlgHom`) with its uniqueness.
 
-When `R` is nontrivial with no zero divisors and its nonzero elements form a left Ore set,
-`OreLocalization R⁰ R` is Mathlib's division ring of fractions of `R`. An injective `R₀`-algebra
-map from `R` into a division ring sends nonzero elements to units, so it extends uniquely to this
-division ring (`OreLocalization.liftAlgHom`), the noncommutative analogue of
-`IsFractionRing.liftAlgHom`.
+When `R` is a nontrivial ring with no zero divisors and its nonzero elements form a left Ore set,
+`OreLocalization R⁰ R` is Mathlib's division ring of fractions of `R`. More generally, for a
+nontrivial semiring `R` whose non-zero-divisors form a left Ore set, an injective `R₀`-algebra map
+from `R` into a division ring sends non-zero-divisors to units, so it extends uniquely to an
+`R₀`-algebra map out of `OreLocalization R⁰ R` (`OreLocalization.liftAlgHom`), the noncommutative
+analogue of `IsFractionRing.liftAlgHom`.
 -/
 
 public section
