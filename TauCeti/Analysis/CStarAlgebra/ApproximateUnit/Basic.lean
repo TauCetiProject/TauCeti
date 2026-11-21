@@ -36,6 +36,9 @@ that `x * e → x` along an increasing approximate unit of a closed `⋆`-subalg
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`, and
 `TauCeti.CStarAlgebra.norm_sub_mul_le_of_star_mul_self_le`, `‖x - x * e‖ ≤ ‖y - y * e‖` whenever
 `star x * x ≤ star y * y`, drive the quotient C⋆-identity and order-heredity arguments.
+
+`Filter.IsIncreasingApproximateUnit.mono` records that any proper filter finer than an increasing
+approximate unit is again an increasing approximate unit.
 -/
 
 public section
@@ -48,6 +51,15 @@ namespace Filter.IsIncreasingApproximateUnit
 section Uniform
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+
+/-- A proper filter finer than an increasing approximate unit of a (possibly nonunital) C⋆-algebra
+is again an increasing approximate unit. -/
+theorem mono {l l' : Filter A} (hl : l.IsIncreasingApproximateUnit) (hle : l' ≤ l) [l'.NeBot] :
+    l'.IsIncreasingApproximateUnit where
+  tendsto_mul_left m := (hl.tendsto_mul_left m).mono_left hle
+  tendsto_mul_right m := (hl.tendsto_mul_right m).mono_left hle
+  eventually_nonneg := hl.eventually_nonneg.filter_mono hle
+  eventually_norm := hl.eventually_norm.filter_mono hle
 
 /-- Along an increasing approximate unit, two-sided compression `e * a * e` tends to `a`. -/
 theorem tendsto_mul_self {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a : A) :

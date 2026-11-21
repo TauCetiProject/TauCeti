@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import TauCeti.Analysis.CStarAlgebra.Action.Hom
-public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Basic
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.PhragmenLindelof
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing

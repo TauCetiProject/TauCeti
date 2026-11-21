@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sequences
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 import TauCeti.Topology.Sequences.Basic
 
 /-!
@@ -20,6 +21,10 @@ No injectivity of the duality pairing is needed, since the weak topology is indu
 evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
 to closure of `s` under limits of weakly convergent sequences
 (`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
+
+Weak convergence in an indexed product implies coordinatewise weak convergence
+(`TauCeti.tendsto_toWeakSpace_pi_apply`), and for a finite index type the converse holds as well
+(`TauCeti.tendsto_toWeakSpace_pi_iff`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -46,6 +51,37 @@ theorem tendsto_toWeakSpace_iff_forall_eval_tendsto {α : Type*} {l : Filter α}
     Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x)) ↔
       ∀ f : StrongDual 𝕜 E, Tendsto (fun n ↦ f (u n)) l (𝓝 (f x)) :=
   (IsInducing.induced _).tendsto_nhds_iff.trans tendsto_pi_nhds
+
+/-- Weak convergence in a product of topological modules implies coordinatewise weak convergence. -/
+theorem tendsto_toWeakSpace_pi_apply {ι α : Type*} {F : ι → Type*}
+    [∀ i, AddCommMonoid (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
+    {l : Filter α} {u : α → ∀ i, F i} {x : ∀ i, F i}
+    (h : Tendsto (fun n ↦ toWeakSpace 𝕜 (∀ i, F i) (u n)) l (𝓝 (toWeakSpace 𝕜 (∀ i, F i) x)))
+    (i : ι) :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 (F i) (u n i)) l (𝓝 (toWeakSpace 𝕜 (F i) (x i))) := by
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto] at h ⊢
+  intro f
+  exact h (f.comp (ContinuousLinearMap.proj (R := 𝕜) (φ := F) i))
+
+/-- Weak convergence in a finite product of topological modules is equivalent to coordinatewise
+weak convergence. -/
+theorem tendsto_toWeakSpace_pi_iff {ι α : Type*} [Finite ι] {F : ι → Type*}
+    [∀ i, AddCommMonoid (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
+    {l : Filter α} {u : α → ∀ i, F i} {x : ∀ i, F i} :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 (∀ i, F i) (u n)) l (𝓝 (toWeakSpace 𝕜 (∀ i, F i) x)) ↔
+      ∀ i : ι, Tendsto (fun n ↦ toWeakSpace 𝕜 (F i) (u n i)) l (𝓝 (toWeakSpace 𝕜 (F i) (x i))) := by
+  classical
+  have := Fintype.ofFinite ι
+  refine ⟨tendsto_toWeakSpace_pi_apply, fun h ↦ ?_⟩
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto]
+  intro Λ
+  have hcoord : ∀ i : ι,
+      Tendsto (fun n ↦ (Λ.comp (ContinuousLinearMap.single 𝕜 F i)) (u n i)) l
+        (𝓝 ((Λ.comp (ContinuousLinearMap.single 𝕜 F i)) (x i))) := fun i ↦
+    (tendsto_toWeakSpace_iff_forall_eval_tendsto.mp (h i))
+      (Λ.comp (ContinuousLinearMap.single 𝕜 F i))
+  simpa only [ContinuousLinearMap.sum_comp_single] using
+    tendsto_finsetSum Finset.univ fun i _ ↦ hcoord i
 
 /-- Sequential closedness of `toWeakSpace 𝕜 E '' s` in `WeakSpace 𝕜 E` is equivalent to closure of
 `s` under limits of weakly convergent sequences in `E`. -/

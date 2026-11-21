@@ -36,6 +36,10 @@ equivalence of complex vector spaces is real-linear.
 
 * `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
   star-closed subsets.
+* `TauCeti.image_star_range_mul_left`, `TauCeti.image_star_range_mul_right`,
+  `IsSelfAdjoint.image_star_range_mul_left`, `IsSelfAdjoint.image_star_range_mul_right`: `star`
+  maps the left-multiplication range `h * A` onto `A * star h` (and vice versa), swapping `h * A`
+  and `A * h` when `h` is self-adjoint.
 * `StarMemClass.star_mem_centralizer_centralizer`: the double commutant of a star-closed subset
   is star-closed.
 * `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
@@ -61,6 +65,40 @@ theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMu
     [SetLike S A] [StarMemClass S A] {s : S}
     (hmul : ∀ a : A, ∀ x ∈ s, a * x ∈ s) (a : A) {x : A} (hx : x ∈ s) : x * a ∈ s := by
   simpa only [star_mul, star_star] using star_mem (hmul (star a) (star x) (star_mem hx))
+
+/-- In a magma with an antimultiplicative involution, `star` maps `h * A` onto `A * star h`. -/
+theorem TauCeti.image_star_range_mul_left {A : Type*} [Mul A] [StarMul A] (h : A) :
+    star '' Set.range (fun a : A => h * a) = Set.range (fun a : A => a * star h) := by
+  ext x
+  simp only [Set.mem_image, Set.mem_range]
+  constructor
+  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+    exact ⟨star a, (star_mul h a).symm⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨h * star a, ⟨star a, rfl⟩, by rw [star_mul, star_star]⟩
+
+/-- In a magma with an antimultiplicative involution, `star` maps `A * h` onto `star h * A`. -/
+theorem TauCeti.image_star_range_mul_right {A : Type*} [Mul A] [StarMul A] (h : A) :
+    star '' Set.range (fun a : A => a * h) = Set.range (fun a : A => star h * a) := by
+  ext x
+  simp only [Set.mem_image, Set.mem_range]
+  constructor
+  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+    exact ⟨star a, (star_mul a h).symm⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨star a * h, ⟨star a, rfl⟩, by rw [star_mul, star_star]⟩
+
+/-- For a self-adjoint element `h`, `star` maps `h * A` onto `A * h`. -/
+theorem IsSelfAdjoint.image_star_range_mul_left {A : Type*} [Mul A] [StarMul A] {h : A}
+    (hh : IsSelfAdjoint h) :
+    star '' Set.range (fun a : A => h * a) = Set.range (fun a : A => a * h) := by
+  simpa only [hh.star_eq] using TauCeti.image_star_range_mul_left h
+
+/-- For a self-adjoint element `h`, `star` maps `A * h` onto `h * A`. -/
+theorem IsSelfAdjoint.image_star_range_mul_right {A : Type*} [Mul A] [StarMul A] {h : A}
+    (hh : IsSelfAdjoint h) :
+    star '' Set.range (fun a : A => a * h) = Set.range (fun a : A => h * a) := by
+  simpa only [hh.star_eq] using TauCeti.image_star_range_mul_right h
 
 /-- The double commutant `s''` of a subset closed under the involution is closed under the
 involution. -/

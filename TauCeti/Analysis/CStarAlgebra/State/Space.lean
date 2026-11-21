@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convex.KreinMilman
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.LocallyConvex.WeakDual
 public import Mathlib.Analysis.Normed.Module.WeakDual
-public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Basic
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual

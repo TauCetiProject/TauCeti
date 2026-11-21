@@ -23,6 +23,9 @@ of the unitization implementing the same conjugation on `B`.
 
 ## Main declarations
 
+* `Unitization.mul_inr_eq_inr`, `Unitization.inr_mul_eq_inr`: multiplying an embedded element
+  `(a : Unitization R A)` on the left or right by an arbitrary element of `Unitization R A`
+  stays in the embedded copy of `A`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
@@ -38,6 +41,24 @@ of the unitization implementing the same conjugation on `B`.
 public section
 
 namespace Unitization
+
+section MulInr
+
+variable {R A : Type*} [MulZeroClass R] [AddZeroClass A] [Mul A] [SMulWithZero R A]
+
+/-- Left-multiplying an embedded element `a : A` by `x : Unitization R A` yields the embedded
+element `x.fst • a + x.snd * a`. -/
+theorem mul_inr_eq_inr (x : Unitization R A) (a : A) :
+    x * (a : Unitization R A) = ↑(x.fst • a + x.snd * a) :=
+  Unitization.ext (mul_zero x.fst) <| by simp
+
+/-- Right-multiplying an embedded element `a : A` by `x : Unitization R A` yields the embedded
+element `x.fst • a + a * x.snd`. -/
+theorem inr_mul_eq_inr (a : A) (x : Unitization R A) :
+    (a : Unitization R A) * x = ↑(x.fst • a + a * x.snd) :=
+  Unitization.ext (zero_mul x.fst) <| by simp
+
+end MulInr
 
 section Map
 
