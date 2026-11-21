@@ -146,13 +146,15 @@ private theorem toDoubleFactor_comp_freeFactorMap (ψ : Q →* G) (b : Bool) :
     (toDoubleFactor φ ψ b).comp (freeFactorMap φ b) = φ := by
   cases b <;> ext <;> simp [toDoubleFactor]
 
+-- `noncomputable`: compiled code may only use `map` from a public import, and this file imports
+-- `TauCeti.GroupTheory.PushoutI.Map` privately.
 /-- The homomorphism `G ∗_H (H ∗ Q) →* G ∗_H G` to the double of `G` along `φ` that is the identity
 from `G` to the first copy of `G`, and `φ` together with `ψ : Q →* G` from `H ∗ Q` to the second
-copy. -/
-def freeFactorToDouble (ψ : Q →* G) :
+copy: the homomorphism of amalgamated products induced by these maps of the factors. -/
+noncomputable def freeFactorToDouble (ψ : Q →* G) :
     PushoutI (freeFactorMap (Q := Q) φ) →* PushoutI fun _ : Bool => φ :=
-  lift (fun b => (of b).comp (toDoubleFactor φ ψ b)) (base _) fun b => by
-    rw [MonoidHom.comp_assoc, toDoubleFactor_comp_freeFactorMap, of_comp_eq_base]
+  map (toDoubleFactor φ ψ) (.id H) fun b => by
+    rw [toDoubleFactor_comp_freeFactorMap, MonoidHom.comp_id]
 
 variable (ψ : Q →* G)
 
@@ -160,18 +162,20 @@ variable (ψ : Q →* G)
 @[simp]
 theorem freeFactorToDouble_of_false (x : ULift G) :
     freeFactorToDouble φ ψ (no_index (of false x)) = of false x.down := by
-  simp [freeFactorToDouble, toDoubleFactor]
+  rw [freeFactorToDouble, map_of]
+  simp [toDoubleFactor]
 
 @[simp]
 theorem freeFactorToDouble_of_true (x : ULift (H ∗ Q)) :
     freeFactorToDouble φ ψ (no_index (of (φ := freeFactorMap φ) true x)) =
       of true (Coprod.lift φ ψ x.down) := by
-  simp [freeFactorToDouble, toDoubleFactor]
+  rw [freeFactorToDouble, map_of]
+  simp [toDoubleFactor]
 
 @[simp]
 theorem freeFactorToDouble_base (h : H) :
     freeFactorToDouble φ ψ (base (freeFactorMap φ) h) = base _ h := by
-  simp [freeFactorToDouble]
+  rw [freeFactorToDouble, map_base, MonoidHom.id_apply]
 
 end Monoid
 
@@ -180,11 +184,7 @@ injective homomorphism `H ∗ Q →* G`. -/
 theorem freeFactorToDouble_injective [Group G] [Group H] [Group Q] {φ : H →* G} {ψ : Q →* G}
     (hφψ : Function.Injective (Coprod.lift φ ψ)) : Function.Injective (freeFactorToDouble φ ψ) := by
   have hφ : Function.Injective φ := fun a b hab => inl_injective (hφψ (by simpa using hab))
-  -- `freeFactorToDouble φ ψ` is the map of amalgamated products induced by `toDoubleFactor φ ψ`.
-  have heq : freeFactorToDouble φ ψ = map (toDoubleFactor φ ψ) (.id H) fun b => by
-      rw [toDoubleFactor_comp_freeFactorMap, MonoidHom.comp_id] :=
-    hom_ext_nonempty fun b => by ext; simp [freeFactorToDouble]
-  rw [heq]
+  rw [freeFactorToDouble]
   refine map_injective _ (fun _ => hφ) Function.injective_id fun b g ⟨h, hh⟩ => ⟨h, ?_⟩
   cases b
   · simpa [toDoubleFactor, ULift.ext_iff] using hh

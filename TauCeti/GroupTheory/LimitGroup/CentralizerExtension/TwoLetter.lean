@@ -145,7 +145,7 @@ variable (ρ δ : G)
 
 /-- The homomorphism `θ : G ∗ C_G(δ) →* G(ρ, s)` that is the inclusion on `G` and `q ↦ s q s⁻¹` on
 `C_G(δ)`. -/
-private def baseHom : G ∗ centralizer {δ} →* CentralizerExt ρ 1 :=
+private noncomputable def baseHom : G ∗ centralizer {δ} →* CentralizerExt ρ 1 :=
   (equivHNNExtension (u := ρ)).symm.toMonoidHom.comp <| (HNNExtension.ofDouble _).comp <|
     (freeFactorToDouble (centralizer {ρ}).subtype (centralizer {δ}).subtype).comp
       (freeFactorEquiv (centralizer {ρ}).subtype).symm.toMonoidHom
@@ -190,26 +190,28 @@ private noncomputable def hnnEquiv (hδ : δ ≠ 1) :
     centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})} ≃*
       centralizer {(inl δ : G ∗ centralizer {δ})} :=
   (MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ)).trans <|
-    (MonoidHom.rangeEquivRange _ (inl.comp (centralizer {δ}).subtype) inr_injective
-      (inl_injective.comp (centralizer {δ}).subtype_injective)).trans
+    (MonoidHom.rangeEquivRange _ (inl.comp (centralizer {δ}).subtype)
+      (MonoidHom.ker_eq_ker_of_injective inr_injective
+        (inl_injective.comp (centralizer {δ}).subtype_injective))).trans
       (MulEquiv.subgroupCongr (centralizer_inl_delta hδ).symm)
+
+/-- `hnnEquiv` sends `inr q` to `inl q`. -/
+private theorem coe_hnnEquiv_inr (hδ : δ ≠ 1) (q : centralizer {δ})
+    (hq : inr q ∈ centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})}) :
+    (hnnEquiv hδ ⟨inr q, hq⟩ : G ∗ centralizer {δ}) = inl (q : G) := by
+  -- In the range of `inr`, the element `inr q` is `inr.rangeRestrict q`.
+  have h : MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ) ⟨inr q, hq⟩ =
+      (inr : centralizer {δ} →* G ∗ centralizer {δ}).rangeRestrict q :=
+    Subtype.ext (by simp)
+  simp [hnnEquiv, h]
 
 private theorem coe_hnnEquiv (hδ : δ ≠ 1)
     (a : centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})}) :
     (hnnEquiv hδ a : G ∗ centralizer {δ}) =
       inl ((snd (a : G ∗ centralizer {δ}) : centralizer {δ}) : G) := by
-  -- The representative `q ∈ C_G(δ)` of `a` in the free factor, and its image `inl q`.
-  let q := (MonoidHom.ofInjective (inr_injective (M := G) (N := centralizer {δ}))).symm
-    (MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ) a)
-  have ha : (a : G ∗ centralizer {δ}) = inr q :=
-    (MulEquiv.subgroupCongr_apply (centralizer_inr_deltaQ hδ) a).symm.trans
-      (MonoidHom.apply_ofInjective_symm _ _).symm
-  have hq : MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ) a =
-      MonoidHom.ofInjective inr_injective q :=
-    (MulEquiv.apply_symm_apply _ _).symm
-  rw [ha, snd_apply_inr, hnnEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    MulEquiv.subgroupCongr_apply, hq, MonoidHom.rangeEquivRange_ofInjective,
-    MonoidHom.ofInjective_apply, MonoidHom.comp_apply, coe_subtype]
+  obtain ⟨_, ha⟩ := a
+  obtain ⟨q, rfl⟩ := (centralizer_inr_deltaQ hδ).le ha
+  rw [coe_hnnEquiv_inr, Subgroup.coe_mk, snd_apply_inr]
 
 /-- After `baseHom`, the identification of the two copies of `C_G(δ)` is `x ↦ s⁻¹ x s`. -/
 private theorem baseHom_hnnEquiv (hδ : δ ≠ 1)
@@ -225,8 +227,8 @@ private noncomputable def toHNN (hδ : δ ≠ 1) :
     GX G Unit →* HNNExtension (G ∗ centralizer {δ}) _ _ (hnnEquiv hδ) :=
   (HNNExtension.map (.id _) (by rw [comap_id, centralizer_inr_deltaQ hδ])
     fun a => by
-      obtain ⟨q, rfl⟩ := (MonoidHom.ofInjective inr_injective).surjective a
-      simp [coe_hnnEquiv, MonoidHom.ofInjective_apply]).comp
+      obtain ⟨q, rfl⟩ := (inr : centralizer {δ} →* G ∗ centralizer {δ}).rangeRestrict_surjective a
+      simp [coe_hnnEquiv_inr]).comp
       (HNNExtension.equivCoprodFreeGroup (centralizer {δ}).subtype_injective).symm.toMonoidHom
 
 private theorem toHNN_injective (hδ : δ ≠ 1) : Function.Injective (toHNN hδ) :=
@@ -285,8 +287,9 @@ theorem twoLetterHom_injective (hG : IsFullyResiduallyFree G) {ρ δ : G} (h : �
     Function.Injective (twoLetterHom ρ δ) :=
   twoLetterHom_injective_of_injective (hG.coprodLift_subtype_centralizer_injective h)
 
-/-- Let `F = F(a, b)` be the free group on `a` and `b`. The product `s u` of the new letters of
-`F(a, s)(b, u)` is free over `F`. -/
+/-- Let `F = F(a, b)` be the free group on `a` and `b`. Extend the centralizer of `a` in `F` by a
+letter `s`, and then the centralizer of the image of `b` in `F(a, s)` by a letter `u`. The product
+`s u` of the two new letters of `F(a, s)(b, u)` is free over `F`. -/
 example : Function.Injective (twoLetterHom (FreeGroup.of (0 : Fin 2)) (FreeGroup.of 1)) :=
   twoLetterHom_injective isFullyResiduallyFree_of_isFreeGroup fun h =>
     absurd (FreeGroup.eq_of_commute_of_of h) (by decide)

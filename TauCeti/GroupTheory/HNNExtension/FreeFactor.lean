@@ -34,7 +34,7 @@ and `t`, as `q = t⁻¹ ι(q) t`, so the factor `Q` is redundant and the stable 
 public section
 
 open Function Monoid.Coprod
-open MonoidHom (ofInjective ofInjective_apply rangeEquivRange)
+open MonoidHom (ker_eq_ker_of_injective rangeEquivRange)
 
 namespace HNNExtension
 
@@ -43,44 +43,52 @@ variable {G Q : Type*} [Group G] [Group Q] {ι : Q →* G} (hι : Injective ι)
 /-- The homomorphism from the HNN extension of `G ∗ Q` along `inr q ↦ inl (ι q)` to `G ∗ ⟨z⟩`:
 `g ↦ g`, `q ↦ z ι(q) z⁻¹` and `t ↦ z⁻¹`. -/
 private noncomputable def toCoprod :
-    HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι) inr_injective
-      (inl_injective.comp hι)) →* G ∗ FreeGroup Unit :=
+    HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι)
+      (ker_eq_ker_of_injective inr_injective (inl_injective.comp hι))) →* G ∗ FreeGroup Unit :=
   lift (Monoid.Coprod.lift inl
       ((MulAut.conj (inr (FreeGroup.of ()))).toMonoidHom.comp (inl.comp ι)))
     (inr (FreeGroup.of ()))⁻¹ fun a => by
-      obtain ⟨q, rfl⟩ := (ofInjective inr_injective).surjective a
-      simp [ofInjective_apply, mul_assoc]
+      obtain ⟨q, rfl⟩ := (inr : Q →* G ∗ Q).rangeRestrict_surjective a
+      simp [mul_assoc]
 
 /-- The homomorphism from `G ∗ ⟨z⟩` to the HNN extension of `G ∗ Q` along `inr q ↦ inl (ι q)`:
 `g ↦ g` and `z ↦ t⁻¹`. -/
 private noncomputable def ofCoprod : G ∗ FreeGroup Unit →*
-    HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι) inr_injective
-      (inl_injective.comp hι)) :=
+    HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι)
+      (ker_eq_ker_of_injective inr_injective (inl_injective.comp hι))) :=
   Monoid.Coprod.lift (of.comp inl) (FreeGroup.lift fun _ => t⁻¹)
 
 /-- In the HNN extension of `G ∗ Q` along `inr q ↦ inl (ι q)`, the factor `Q` is the conjugate
 `q = t⁻¹ ι(q) t` of its copy in `G`. -/
 private theorem of_inr (q : Q) :
-    (of (inr q) : HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι) inr_injective
-      (inl_injective.comp hι))) = t⁻¹ * of (inl (ι q)) * t := by
-  have h := equiv_symm_eq_conj
-    (φ := rangeEquivRange (inr : Q →* G ∗ Q) (inl.comp ι) inr_injective (inl_injective.comp hι))
-    (ofInjective (f := (inl : G →* G ∗ Q).comp ι) (inl_injective.comp hι) q)
-  rwa [MonoidHom.rangeEquivRange_symm_ofInjective, ofInjective_apply, ofInjective_apply,
-    MonoidHom.comp_apply] at h
+    (of (inr q) : HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι)
+      (ker_eq_ker_of_injective inr_injective (inl_injective.comp hι)))) =
+      t⁻¹ * of (inl (ι q)) * t := by
+  simpa using equiv_symm_eq_conj (φ := rangeEquivRange (inr : Q →* G ∗ Q) (inl.comp ι)
+    (ker_eq_ker_of_injective inr_injective (inl_injective.comp hι)))
+    (((inl : G →* G ∗ Q).comp ι).rangeRestrict q)
 
 /-- **Conjugating a free factor into the other factor.** For an injective `ι : Q →* G`, the HNN
 extension of `G ∗ Q` along the isomorphism `inr q ↦ inl (ι q)` from the factor `Q` onto its copy in
 `G` is the free product of `G` with the infinite cyclic group `FreeGroup Unit` on `z`: `g ↦ g`,
 `t ↦ z⁻¹`, and hence `q ↦ z ι(q) z⁻¹`. -/
 noncomputable def equivCoprodFreeGroup :
-    HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι) inr_injective
-      (inl_injective.comp hι)) ≃* G ∗ FreeGroup Unit :=
+    HNNExtension (G ∗ Q) _ _ (rangeEquivRange inr (inl.comp ι)
+      (ker_eq_ker_of_injective inr_injective (inl_injective.comp hι))) ≃* G ∗ FreeGroup Unit :=
   MonoidHom.toMulEquiv (toCoprod hι) (ofCoprod hι)
     (hom_ext (Monoid.Coprod.hom_ext (by ext; simp [toCoprod, ofCoprod])
       (by ext; simp [toCoprod, ofCoprod, of_inr hι])) (by simp [toCoprod, ofCoprod]))
     (Monoid.Coprod.hom_ext (by ext; simp [toCoprod, ofCoprod])
       (FreeGroup.ext_hom _ _ fun _ => by simp [toCoprod, ofCoprod]))
+
+/-- On the base group `G ∗ Q`, `equivCoprodFreeGroup` is the identity on `G` and conjugation of
+`ι(q)` by `z` on `Q`. -/
+@[simp]
+theorem equivCoprodFreeGroup_comp_of :
+    (MonoidHom.ofClass (equivCoprodFreeGroup hι)).comp of =
+      Monoid.Coprod.lift inl
+        ((MulAut.conj (inr (FreeGroup.of ()))).toMonoidHom.comp (inl.comp ι)) := by
+  ext <;> simp [equivCoprodFreeGroup, toCoprod]
 
 @[simp]
 theorem equivCoprodFreeGroup_of_inl (g : G) :
@@ -101,6 +109,13 @@ theorem equivCoprodFreeGroup_t : equivCoprodFreeGroup hι t = (inr (FreeGroup.of
 theorem equivCoprodFreeGroup_symm_inl (g : G) :
     (equivCoprodFreeGroup hι).symm (inl g) = of (inl g) := by
   simp [equivCoprodFreeGroup, ofCoprod]
+
+/-- On the infinite cyclic factor, the inverse of `equivCoprodFreeGroup` sends `z` to `t⁻¹`. -/
+@[simp]
+theorem equivCoprodFreeGroup_symm_comp_inr :
+    (MonoidHom.ofClass (equivCoprodFreeGroup hι).symm).comp inr =
+      FreeGroup.lift fun _ => t⁻¹ := by
+  ext; simp [equivCoprodFreeGroup, ofCoprod]
 
 @[simp]
 theorem equivCoprodFreeGroup_symm_inr_of (x : Unit) :

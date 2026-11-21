@@ -42,7 +42,7 @@ its fundamental group.
 * `TauCeti.GraphOfGroups.π₁Tree.equivCoprod`: `π₁(segment, T) ≃* A ∗ B` for nonempty `T` and
   trivial edge group.
 * `TauCeti.GraphOfGroups.π₁Tree.equivHNNExtension`: `π₁(loop, ∅) ≃* HNNExtension G (range f)
-  (range g) (f.rangeEquivRange g hf hg)`, along the isomorphism `range f ≃* range g`,
+  (range g) φ`, along the isomorphism `φ = MonoidHom.rangeEquivRange f g _ : range f ≃* range g`,
   `f c ↦ g c`.
 
 ## Main results
@@ -261,6 +261,8 @@ section loop
 variable {G : Type w} {C : Type x} [Group G] [Group C] (f g : C →* G)
   (hf : Function.Injective f) (hg : Function.Injective g)
 
+open MonoidHom (ker_eq_ker_of_injective)
+
 namespace π₁Tree
 
 /-! The vertex `()` and the darts `((), b)` of `SerreGraph.rose Unit` are terms of `Unit` and
@@ -278,7 +280,8 @@ private theorem edge_false_mul_of (c : C) :
 /-- The map `π₁(loop, ∅) →* HNNExtension G (range f) (range g) φ`, the identity on `G`, sending
 the dart `((), true)` to `t⁻¹` and its reverse `((), false)` to `t`. -/
 private noncomputable def toHNN :
-    π₁Tree (loop f g hf hg) ∅ →* HNNExtension G f.range g.range (f.rangeEquivRange g hf hg) :=
+    π₁Tree (loop f g hf hg) ∅ →*
+      HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) :=
   lift (fun _ => HNNExtension.of) (fun e => cond e.2 HNNExtension.t⁻¹ HNNExtension.t)
     (fun _ h => h.elim)
     (fun e => by
@@ -289,14 +292,16 @@ private noncomputable def toHNN :
     (fun e (c : C) => by
       obtain ⟨⟨⟩, _ | _⟩ := e
       · simp only [loop_ω_false, loop_α_false]
-        have h := HNNExtension.equiv_eq_conj (φ := f.rangeEquivRange g hf hg)
-          (MonoidHom.ofInjective hf c)
-        rw [MonoidHom.rangeEquivRange_ofInjective] at h
+        have h := HNNExtension.equiv_eq_conj
+          (φ := f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) (f.rangeRestrict c)
+        rw [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict,
+          MonoidHom.coe_rangeRestrict] at h
         exact h.symm
       · simp only [loop_ω_true, loop_α_true]
-        have h := HNNExtension.equiv_symm_eq_conj (φ := f.rangeEquivRange g hf hg)
-          (MonoidHom.ofInjective hg c)
-        rw [MonoidHom.rangeEquivRange_symm_ofInjective] at h
+        have h := HNNExtension.equiv_symm_eq_conj
+          (φ := f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) (g.rangeRestrict c)
+        rw [MonoidHom.rangeEquivRange_symm_rangeRestrict, MonoidHom.coe_rangeRestrict,
+          MonoidHom.coe_rangeRestrict] at h
         exact h.symm)
 
 private theorem toHNN_of (a : G) : toHNN f g hf hg (of ∅ () a) = HNNExtension.of a :=
@@ -311,10 +316,12 @@ private theorem toHNN_edge_false : toHNN f g hf hg (edge ∅ ((), false)) = HNNE
 /-- The inverse map `HNNExtension G (range f) (range g) φ →* π₁(loop, ∅)`, the identity on `G`,
 sending `t` to the dart `((), false)`. -/
 private noncomputable def ofHNN :
-    HNNExtension G f.range g.range (f.rangeEquivRange g hf hg) →* π₁Tree (loop f g hf hg) ∅ :=
+    HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) →*
+      π₁Tree (loop f g hf hg) ∅ :=
   HNNExtension.lift (of (𝔸 := loop f g hf hg) ∅ ()) (edge ∅ ((), false)) fun a => by
-    obtain ⟨c, rfl⟩ := (MonoidHom.ofInjective hf).surjective a
-    rw [MonoidHom.rangeEquivRange_ofInjective]
+    obtain ⟨c, rfl⟩ := f.rangeRestrict_surjective a
+    rw [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict,
+      MonoidHom.coe_rangeRestrict]
     exact edge_false_mul_of f g hf hg c
 
 private theorem ofHNN_of (a : G) : ofHNN f g hf hg (HNNExtension.of a) = of ∅ () a :=
@@ -324,12 +331,13 @@ private theorem ofHNN_t : ofHNN f g hf hg HNNExtension.t = edge ∅ ((), false) 
   HNNExtension.lift_t ..
 
 /-- The fundamental group of the loop relative to its maximal tree `∅` is the HNN extension of
-the vertex group `G` along `f.rangeEquivRange g hf hg : range f ≃* range g`, `f c ↦ g c`. The
+the vertex group `G` along `MonoidHom.rangeEquivRange f g _ : range f ≃* range g`, `f c ↦ g c`. The
 vertex group maps by the identity and the dart `((), true)`, with `α = f` and `ω = g`, maps to
 `t⁻¹`, so that Mathlib's relation `t f(c) t⁻¹ = g(c)` is the relation `e g(c) e⁻¹ = f(c)` of this
 dart. -/
 noncomputable def equivHNNExtension :
-    π₁Tree (loop f g hf hg) ∅ ≃* HNNExtension G f.range g.range (f.rangeEquivRange g hf hg) :=
+    π₁Tree (loop f g hf hg) ∅ ≃*
+      HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) :=
   MonoidHom.toMulEquiv (toHNN f g hf hg) (ofHNN f g hf hg)
     (hom_ext (fun _ => MonoidHom.ext fun a =>
         (congrArg (ofHNN f g hf hg) (toHNN_of f g hf hg a)).trans (ofHNN_of f g hf hg a))
@@ -368,7 +376,7 @@ noncomputable def equivHNNExtension :
 /-- The vertex group of the loop embeds in its fundamental group relative to the maximal tree
 `∅`: this is the normal form theorem for HNN extensions. -/
 theorem of_injective_loop : Function.Injective (of (𝔸 := loop f g hf hg) ∅ ()) :=
-  fun a a' h => HNNExtension.of_injective (φ := f.rangeEquivRange g hf hg) <|
+  fun a a' h => HNNExtension.of_injective (φ := f.rangeEquivRange g _) <|
     (equivHNNExtension_of f g hf hg a).symm.trans
       ((congrArg _ h).trans (equivHNNExtension_of f g hf hg a'))
 

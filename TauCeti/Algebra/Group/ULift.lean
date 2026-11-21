@@ -27,11 +27,15 @@ namespace MulEquiv
 
 variable {α : Type u} [Mul α]
 
-@[to_additive (attr := simp)]
+/-- The isomorphism `MulEquiv.ulift : ULift α ≃* α` evaluates by `ULift.down`. -/
+@[to_additive (attr := simp) /-- The isomorphism `AddEquiv.ulift : ULift α ≃+ α` evaluates by
+`ULift.down`. -/]
 theorem ulift_apply (x : ULift.{v} α) : MulEquiv.ulift x = x.down :=
   (rfl)
 
-@[to_additive (attr := simp)]
+/-- The inverse of the isomorphism `MulEquiv.ulift : ULift α ≃* α` evaluates by `ULift.up`. -/
+@[to_additive (attr := simp) /-- The inverse of the isomorphism `AddEquiv.ulift : ULift α ≃+ α`
+evaluates by `ULift.up`. -/]
 theorem ulift_symm_apply (x : α) : (MulEquiv.ulift : ULift.{v} α ≃* α).symm x = ULift.up x :=
   (rfl)
 
