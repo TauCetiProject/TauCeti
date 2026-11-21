@@ -84,7 +84,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure)
 
 section General
 
@@ -160,12 +160,12 @@ theorem coeFn_stationarySobolevOperator
 
 /-- For continuous loops `J_t` and `S_t`, the Sobolev realization of the stationary cylinder
 operator is `D ξ` on the jet of a test section `ξ`. -/
-theorem stationarySobolevOperator_jetₗ_ae_eq
+theorem stationarySobolevOperator_jetLp_ae_eq
     (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
     (ξ : testSection V) :
-    stationarySobolevOperator J S ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
-      stationaryCylinderOperator J S ξ := by
-  filter_upwards [jetOperator_jetₗ_ae_eq (memLp_stationaryJetCoeff hJc hSc) ξ] with z hz
+    stationarySobolevOperator J S ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩
+      =ᵐ[stripMeasure] stationaryCylinderOperator J S ξ := by
+  filter_upwards [jetOperator_jetLp_ae_eq (memLp_stationaryJetCoeff hJc hSc) ξ] with z hz
   rw [stationarySobolevOperator_def, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, hz,
     stationaryJetCoeff_jet]
 
@@ -248,7 +248,7 @@ theorem exists_forall_norm_le_mul_norm_stationarySobolevOperator (hJ : ∀ t, ω
   obtain ⟨C', hL2⟩ :=
     exists_integral_norm_sq_le_mul_integral_norm_sq_stationaryCylinderOperator hJ hJc hS hSc hdet
   exact exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
-    (memLp_stationaryJetCoeff hJc hSc) hest fun ξ ↦ by simpa using hL2 ξ ξ.2
+    (memLp_stationaryJetCoeff hJc hSc) hest fun ξ ↦ by simpa using hL2 ξ ξ.property
 
 /-- **The stationary cylinder operator is injective on `W^{1,2}`.** Under the hypotheses of
 `TauCeti.Floer.exists_forall_norm_le_mul_norm_stationarySobolevOperator`, the realization of the
@@ -306,12 +306,12 @@ theorem denseRange_stationarySobolevOperator_ofComplexModule
           ((CircleSobolev.isInvertible_loopOperator_iff_det_ne_zero 1 S).2 (by simpa using hdet)))
         (Lp.memLp η) fun ξ hξ ↦ ?_)
     -- `η` is orthogonal to `D ξ` for every test section `ξ`.
-    have h₀ := (Submodule.mem_orthogonal K η).1 hη (D ⟨jetₗ F ⟨ξ, hξ⟩, jetₗ_mem_H1 _⟩)
-      (LinearMap.mem_range_self _ _)
+    have h₀ := (Submodule.mem_orthogonal K η).1 hη
+      (D ⟨jetLp (testSection F) ⟨ξ, hξ⟩, jetLp_mem_jetClosure _⟩) (LinearMap.mem_range_self _ _)
     rw [MeasureTheory.L2.inner_def] at h₀
     rw [← h₀]
     refine integral_congr_ae ?_
-    filter_upwards [stationarySobolevOperator_jetₗ_ae_eq continuous_const hSc ⟨ξ, hξ⟩] with z hz
+    filter_upwards [stationarySobolevOperator_jetLp_ae_eq continuous_const hSc ⟨ξ, hξ⟩] with z hz
     rw [hz, real_inner_eq_re_inner, RCLike.re_to_complex]
   have hK : Dense (K : Set (Lp F 2 stripMeasure)) :=
     Submodule.dense_iff_topologicalClosure_eq_top.2
@@ -433,7 +433,7 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
