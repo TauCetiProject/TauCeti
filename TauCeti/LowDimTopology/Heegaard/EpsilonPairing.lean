@@ -48,7 +48,7 @@ the first Chern class. This extends
 * `TauCeti.HeegaardRegionSystem.arcPairing`: the pairing `∑_q ∂(c ∩ α)(q) n_q(P)` of a `1`-chain
   `c` on `α ∪ β` with a domain `P`.
 * `TauCeti.HeegaardRegionSystem.CurveHomology.pairing`: the induced pairing on `CurveHomology`,
-  for a domain whose `β`-boundary is a sum of whole `β`-curves.
+  additive in a domain whose `β`-boundary is a sum of whole `β`-curves.
 
 ## Main results
 
@@ -173,47 +173,36 @@ end ArcPairing
 
 section CurveHomology
 
-/-- The pairing of `CurveHomology` with a domain `P` whose `β`-boundary is a sum of whole
-`β`-curves, such as a periodic domain: the class of a cycle `c` pairs to
-`∑_q ∂(c ∩ α)(q) n_q(P)`. The class `ε(x, y)` pairs to `n_y(P) - n_x(P)`
+/-- The pairing of `CurveHomology` with the domains `P` whose `β`-boundary is a sum of whole
+`β`-curves, such as the periodic domains, bundled as an additive map in `P`: the class of a cycle
+`c` pairs to `∑_q ∂(c ∩ α)(q) n_q(P)`. The class `ε(x, y)` pairs to `n_y(P) - n_x(P)`
 (`TauCeti.HeegaardRegionSystem.CurveHomology.pairing_epsilon`). -/
-def CurveHomology.pairing (P : Region → ℤ) (hP : H.betaArcBoundary (H.betaBoundary P) = 0) :
-    H.CurveHomology →+ ℚ :=
-  CurveHomology.lift H ((H.arcPairing P).comp H.arcCycles.subtype) fun _ hc =>
-    H.arcPairing_eq_zero_of_mem_arcRelations hP hc
+def CurveHomology.pairing :
+    (H.betaArcBoundary.comp H.betaBoundary).ker →+ H.CurveHomology →+ ℚ where
+  toFun P := CurveHomology.lift H ((H.arcPairing P).comp H.arcCycles.subtype) fun _ hc =>
+    H.arcPairing_eq_zero_of_mem_arcRelations P.property hc
+  map_zero' := by
+    ext c
+    simp only [AddMonoidHom.coe_comp, Function.comp_apply, CurveHomology.lift_mk,
+      AddSubgroup.coe_zero, map_zero, AddMonoidHom.zero_apply]
+  map_add' P Q := by
+    ext c
+    simp only [AddMonoidHom.coe_comp, Function.comp_apply, CurveHomology.lift_mk,
+      AddSubgroup.coe_add, map_add, AddMonoidHom.add_apply]
 
 @[simp]
-theorem CurveHomology.pairing_mk {P : Region → ℤ} (hP : H.betaArcBoundary (H.betaBoundary P) = 0)
+theorem CurveHomology.pairing_mk (P : (H.betaArcBoundary.comp H.betaBoundary).ker)
     (c : H.arcCycles) :
-    CurveHomology.pairing H P hP (CurveHomology.mk H c) = H.arcPairing P c :=
+    CurveHomology.pairing H P (CurveHomology.mk H c) = H.arcPairing P c :=
   CurveHomology.lift_mk H _ _ c
-
-/-- The pairing with `CurveHomology` is additive in the domain. -/
-theorem CurveHomology.pairing_add {P Q : Region → ℤ}
-    (hP : H.betaArcBoundary (H.betaBoundary P) = 0) (hQ : H.betaArcBoundary (H.betaBoundary Q) = 0)
-    (hPQ : H.betaArcBoundary (H.betaBoundary (P + Q)) = 0) :
-    CurveHomology.pairing H (P + Q) hPQ =
-      CurveHomology.pairing H P hP + CurveHomology.pairing H Q hQ := by
-  ext c
-  simp only [AddMonoidHom.coe_comp, Function.comp_apply, pairing_mk, map_add,
-    AddMonoidHom.add_apply]
-
-/-- Reversing the domain negates the pairing with `CurveHomology`. -/
-theorem CurveHomology.pairing_neg {P : Region → ℤ}
-    (hP : H.betaArcBoundary (H.betaBoundary P) = 0)
-    (hP' : H.betaArcBoundary (H.betaBoundary (-P)) = 0) :
-    CurveHomology.pairing H (-P) hP' = -CurveHomology.pairing H P hP := by
-  ext c
-  simp only [AddMonoidHom.coe_comp, Function.comp_apply, pairing_mk, map_neg,
-    AddMonoidHom.neg_apply]
 
 variable {H}
 
 /-- The class `ε(x, y)` pairs with a domain `P` to `n_y(P) - n_x(P)`. -/
 @[simp]
-theorem CurveHomology.pairing_epsilon {P : Region → ℤ}
-    (hP : H.betaArcBoundary (H.betaBoundary P) = 0) (x y : H.Generator) :
-    CurveHomology.pairing H P hP (H.epsilon x y) =
+theorem CurveHomology.pairing_epsilon (P : (H.betaArcBoundary.comp H.betaBoundary).ker)
+    (x y : H.Generator) :
+    CurveHomology.pairing H P (H.epsilon x y) =
       H.generatorPointMeasure y P - H.generatorPointMeasure x P := by
   obtain ⟨c, hc⟩ := H.exists_isConnectingChain x y
   rw [hc.epsilon_eq, pairing_mk, hc.arcPairing_eq]
@@ -227,10 +216,10 @@ variable {H} [DecidableEq Region] [Fintype Region]
 /-- The change-of-generator law for the Maslov index of a domain `P` whose `β`-boundary is a sum
 of whole `β`-curves: `μ_y(P) = μ_x(P) + 2 ⟨ε(x, y), P⟩`. For a periodic domain on a geometric
 diagram this is the evaluation on `H(P)` of `c₁(s_z(y)) = c₁(s_z(x)) + 2 PD(ε(x, y))`. -/
-theorem maslovIndex_self_eq_add_two_mul_pairing_epsilon (χ : Region → ℤ) {P : Region → ℤ}
-    (hP : H.betaArcBoundary (H.betaBoundary P) = 0) (x y : H.Generator) :
+theorem maslovIndex_self_eq_add_two_mul_pairing_epsilon (χ : Region → ℤ)
+    (P : (H.betaArcBoundary.comp H.betaBoundary).ker) (x y : H.Generator) :
     H.maslovIndex χ y y P =
-      H.maslovIndex χ x x P + 2 * CurveHomology.pairing H P hP (H.epsilon x y) := by
+      H.maslovIndex χ x x P + 2 * CurveHomology.pairing H P (H.epsilon x y) := by
   rw [CurveHomology.pairing_epsilon, maslovIndex_apply, maslovIndex_apply]
   ring
 
@@ -239,26 +228,27 @@ number is a periodic Maslov index at `y` exactly when it is `μ_x(P) + 2 ⟨ε(x
 periodic domain `P`. -/
 theorem mem_periodicMaslovIndices_iff_exists_add_two_mul_pairing_epsilon (χ : Region → ℤ)
     (x y : H.Generator) {q : ℚ} :
-    q ∈ H.periodicMaslovIndices χ y ↔ ∃ P, ∃ hP : P ∈ H.periodicDomains,
-      H.maslovIndex χ x x P +
-        2 * CurveHomology.pairing H P (mem_periodicDomains_iff.mp hP).2.2 (H.epsilon x y) = q := by
-  simp only [mem_periodicMaslovIndices_iff]
-  refine exists_congr fun P => ⟨fun ⟨hP, h⟩ => ⟨hP, ?_⟩, fun ⟨hP, h⟩ => ⟨hP, ?_⟩⟩
-  · rwa [← maslovIndex_self_eq_add_two_mul_pairing_epsilon]
-  · rwa [← maslovIndex_self_eq_add_two_mul_pairing_epsilon] at h
+    q ∈ H.periodicMaslovIndices χ y ↔ ∃ P : (H.betaArcBoundary.comp H.betaBoundary).ker,
+      (P : Region → ℤ) ∈ H.periodicDomains ∧
+        H.maslovIndex χ x x P + 2 * CurveHomology.pairing H P (H.epsilon x y) = q := by
+  simp only [mem_periodicMaslovIndices_iff, ← maslovIndex_self_eq_add_two_mul_pairing_epsilon]
+  exact ⟨fun ⟨P, hP, h⟩ => ⟨⟨P, (mem_periodicDomains_iff.mp hP).2.2⟩, hP, h⟩,
+    fun ⟨P, hP, h⟩ => ⟨P, hP, h⟩⟩
 
 /-- Generators `x`, `y` whose class `ε(x, y)` pairs to zero with every periodic domain have the
 same periodic Maslov indices. -/
 theorem periodicMaslovIndices_eq_of_forall_pairing_epsilon_eq_zero {χ : Region → ℤ}
     {x y : H.Generator}
-    (h : ∀ P, ∀ hP : P ∈ H.periodicDomains,
-      CurveHomology.pairing H P (mem_periodicDomains_iff.mp hP).2.2 (H.epsilon x y) = 0) :
+    (h : ∀ P : (H.betaArcBoundary.comp H.betaBoundary).ker, (P : Region → ℤ) ∈ H.periodicDomains →
+      CurveHomology.pairing H P (H.epsilon x y) = 0) :
     H.periodicMaslovIndices χ x = H.periodicMaslovIndices χ y := by
   ext q
-  simp only [mem_periodicMaslovIndices_iff]
-  refine exists_congr fun P => and_congr_right fun hP => ?_
-  rw [maslovIndex_self_eq_add_two_mul_pairing_epsilon χ (mem_periodicDomains_iff.mp hP).2.2 x y,
-    h P hP, mul_zero, add_zero]
+  rw [mem_periodicMaslovIndices_iff_exists_add_two_mul_pairing_epsilon χ x y,
+    mem_periodicMaslovIndices_iff]
+  refine ⟨fun ⟨P, hP, hq⟩ => ⟨⟨P, (mem_periodicDomains_iff.mp hP).2.2⟩, hP, ?_⟩,
+    fun ⟨P, hP, hq⟩ => ⟨P, hP, ?_⟩⟩
+  · rwa [h _ hP, mul_zero, add_zero]
+  · rwa [h P hP, mul_zero, add_zero] at hq
 
 /-- Generators whose class `ε(x, y)` has finite order have the same periodic Maslov indices. On a
 geometric diagram this is the case of generators whose spin^c structures differ by a torsion
@@ -267,7 +257,7 @@ theorem periodicMaslovIndices_eq_of_isOfFinAddOrder_epsilon {χ : Region → ℤ
     (h : IsOfFinAddOrder (H.epsilon x y)) :
     H.periodicMaslovIndices χ x = H.periodicMaslovIndices χ y :=
   periodicMaslovIndices_eq_of_forall_pairing_epsilon_eq_zero fun P _ =>
-    ((CurveHomology.pairing H P _).isOfFinAddOrder h).eq_zero'
+    ((CurveHomology.pairing H P).isOfFinAddOrder h).eq_zero'
 
 end MaslovIndex
 
