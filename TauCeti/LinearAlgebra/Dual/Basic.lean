@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+public import Mathlib.Data.Fin.VecNotation
 import Mathlib.LinearAlgebra.Span.Basic
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Common kernels and dual coannihilators
@@ -60,10 +63,8 @@ theorem ker_apply_smul_sub_apply_smul {K V : Type*} [Field K] [AddCommGroup V] [
       (f v • g - g v • f).ker = (f.ker ⊓ g.ker) ⊔ K ∙ v := by
     have hmem (x : V) : x ∈ (f v • g - g v • f).ker ↔ f v * g x = g v * f x := by
       simp only [mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, sub_eq_zero]
-    have hline : K ∙ v ≤ (f v • g - g v • f).ker := by
-      apply Submodule.span_le.mpr
-      rintro x (rfl : x = v)
-      exact (hmem _).mpr (mul_comm _ _)
+    have hline : K ∙ v ≤ (f v • g - g v • f).ker :=
+      (Submodule.span_singleton_le_iff_mem _ _).mpr ((hmem v).mpr (mul_comm _ _))
     have hinter : f.ker ⊓ (f v • g - g v • f).ker = f.ker ⊓ g.ker := by
       ext x
       constructor
@@ -82,11 +83,23 @@ theorem ker_apply_smul_sub_apply_smul {K V : Type*} [Field K] [AddCommGroup V] [
       _ = K ∙ v ⊔ f.ker ⊓ (f v • g - g v • f).ker := sup_inf_assoc_of_le _ hline
       _ = _ := by rw [hinter, sup_comm]
   by_cases hf : f v = 0
-  · have hg : g v ≠ 0 := fun hg => hv (Submodule.mem_inf.mpr ⟨hf, hg⟩)
+  · have hg : g v ≠ 0 := fun hg => hv (Submodule.mem_inf.mpr
+      ⟨LinearMap.mem_ker.mpr hf, LinearMap.mem_ker.mpr hg⟩)
     have hswap : g v • f - f v • g = -(f v • g - g v • f) := (neg_sub _ _).symm
     have hs := step g f hg
     rw [hswap, ker_neg, inf_comm] at hs
     exact hs
   · exact step f g hf
+
+/-- Contracting independent functionals at a vector outside their common kernel
+is nonzero. The coefficient ring need not be a field or a domain. -/
+theorem apply_smul_sub_apply_smul_ne_zero {R V : Type*} [CommRing R]
+    [AddCommMonoid V] [Module R V] (f g : V →ₗ[R] R)
+    (hind : LinearIndependent R ![f, g]) {v : V} (hv : v ∉ f.ker ⊓ g.ker) :
+    f v • g - g v • f ≠ 0 := by
+  intro he
+  have hz := hind.eq_zero_of_pair' (sub_eq_zero.mp he).symm
+  exact hv (Submodule.mem_inf.mpr
+    ⟨LinearMap.mem_ker.mpr hz.2, LinearMap.mem_ker.mpr hz.1⟩)
 
 end LinearMap

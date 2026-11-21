@@ -116,7 +116,7 @@ polyhedron need not contain a lattice point.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Joint.lean`, commit
 `bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0; Mei contributors, author Codex). -/
-theorem exists_swept_joint_normal (hP : IsRationalNormalPolyhedron h P)
+theorem exists_swept_direction_normal (hP : IsRationalNormalPolyhedron h P)
     (hne : P.Nonempty)
     (hdim : Module.finrank ℝ (affineSpan ℝ P).direction + 2 = Module.finrank ℝ V)
     (v : N) (hv : i v ∉ (affineSpan ℝ P).direction) :

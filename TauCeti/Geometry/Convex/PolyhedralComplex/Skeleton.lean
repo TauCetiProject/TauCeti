@@ -238,7 +238,7 @@ all other skeleton cells and meets only cells containing it.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Joint.lean`, commit
 `bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0; Mei contributors, author Codex). -/
-theorem exists_ball_transverse_slice (C : FinitePolyhedralComplex h)
+theorem exists_ball_inter_slice_inter_support_eq_singleton (C : FinitePolyhedralComplex h)
     {P : Set V} {k : ℕ} (hP : P ∈ C.cellsOfCodimension k) {x : V}
     (hx : x ∈ intrinsicInterior ℝ P) :
     ∃ r > 0, Disjoint (Metric.ball x r) (intrinsicFrontier ℝ P) ∧

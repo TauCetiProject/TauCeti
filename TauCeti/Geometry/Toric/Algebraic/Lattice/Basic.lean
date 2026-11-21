@@ -240,15 +240,6 @@ theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
 
-/-- The real extension of the contraction of two prescribed integral characters. -/
-theorem IsIntegralLattice.realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
-    (f g : N →+ ℤ) (v : N) :
-    h.realCharacter (f v • g - g v • f) =
-      h.realCharacter f (i v) • h.realCharacter g -
-        h.realCharacter g (i v) • h.realCharacter f := by
-  ext w
-  simp
-
 /-- For prescribed characters, contraction adds a transverse lattice line to their
 common real kernel. No independence or codimension assumption is needed. -/
 theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
@@ -256,8 +247,8 @@ theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsInt
     (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
     (h.realCharacter (f v • g - g v • f)).ker =
       (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ⊔ ℝ ∙ i v := by
-  rw [h.realCharacter_apply_smul_sub_apply_smul]
-  exact LinearMap.ker_apply_smul_sub_apply_smul _ _ hv
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
+    LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
 
 /-- Contracting independent prescribed characters in a direction transverse to their
 common real kernel gives a nonzero integral character. -/
@@ -267,11 +258,10 @@ theorem IsIntegralLattice.apply_smul_sub_apply_smul_ne_zero (h : IsIntegralLatti
     (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
     f v • g - g v • f ≠ 0 := by
   intro he
-  have heq := congrArg h.realCharacter he
-  rw [h.realCharacter_apply_smul_sub_apply_smul, map_zero, sub_eq_zero] at heq
-  have hz := hind.eq_zero_of_pair' heq.symm
-  exact hv (Submodule.mem_inf.mpr
-    ⟨LinearMap.mem_ker.mpr hz.2, LinearMap.mem_ker.mpr hz.1⟩)
+  apply LinearMap.apply_smul_sub_apply_smul_ne_zero
+    (h.realCharacter f) (h.realCharacter g) hind hv
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ, map_zero] using
+    congrArg h.realCharacter he
 
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/
