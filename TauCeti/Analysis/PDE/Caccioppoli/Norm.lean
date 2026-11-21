@@ -81,7 +81,6 @@ theorem exists_norm_gradient_restrictL_ball_le :
   simp only [add_zero] at hbound
   have hlam := hell.pos
   have hLam := hell.upper_nonneg
-  have hgap : 0 < R - ρ := sub_pos.mpr hρR
   apply (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp
   calc
     _ ≤ _ := hbound
