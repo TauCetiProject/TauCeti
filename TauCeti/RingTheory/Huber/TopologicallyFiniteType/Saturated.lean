@@ -140,10 +140,10 @@ private theorem exists_normedIntegerEquiv
     (IsCompleteRankOneBase.equivIntegerWithVal O (FractionRing O)).trans
       (RingEquiv.subringCongr hOK)
   open scoped Valued in
-  refine ⟨e₀, (Continuous.subtype_mk continuous_subtype_val _).comp
+  refine ⟨e₀, (Continuous.subtype_mk continuous_subtypeVal _).comp
       (IsCompleteRankOneBase.continuous_equivIntegerWithVal ϖ _),
     (IsCompleteRankOneBase.continuous_equivIntegerWithVal_symm ϖ _).comp
-      (Continuous.subtype_mk continuous_subtype_val _),
+      (Continuous.subtype_mk continuous_subtypeVal _),
     hcomp, fun a ↦ by simp [e₀]⟩
 
 include ϖ in
@@ -238,7 +238,7 @@ private theorem exists_tate_bridge (n : ℕ) :
   have hj_range (f : T) :
       f ∈ Set.range (algebraMap (restrictedMvPowerSeriesCompletion n O) T) ↔ ‖f‖ ≤ 1 := by
     rw [← Subring.mem_unitClosedBall]
-    refine ⟨by rintro ⟨p, rfl⟩; rw [halg]; exact (e p).2, fun hf ↦ ⟨e.symm ⟨f, hf⟩, ?_⟩⟩
+    refine ⟨by rintro ⟨p, rfl⟩; rw [halg]; exact (e p).property, fun hf ↦ ⟨e.symm ⟨f, hf⟩, ?_⟩⟩
     rw [halg, RingEquiv.apply_symm_apply]
   open scoped Valued in
   have hϖK : algebraMap O (ValuedFractionField O) ϖ ≠ 0 :=
@@ -362,10 +362,10 @@ private theorem exists_finset_pow_smul_mem_and_eq_sum {n : ℕ} {ι : Type} [Fin
     exact ⟨F, fun x hx ↦ ⟨(hF1 x hx).1, (hF1 x hx).2.le⟩, hFgen⟩
   obtain ⟨G, hGN, hGsum⟩ := N.exists_finset_subset_preimage_and_eq_sum_smul hJ_inj
     (fun a ha ↦ (hj_range a).mpr ha) hJ_range hN
-  have hG_clear (g : G) : ∃ s : ℕ, (ϖ ^ s) • g.1 ∈ M := by
+  have hG_clear (g : G) : ∃ s : ℕ, (ϖ ^ s) • g.val ∈ M := by
     obtain ⟨a, ha, hs⟩ :=
       (J.apply_mem_span_image_iff_exists_smul_mem_span hJ_inj
-        (Submonoid.powers (algebraMap O P ϖ))).mp (hGN g.1 g.2)
+        (Submonoid.powers (algebraMap O P ϖ))).mp (hGN g.val g.property)
     obtain ⟨s, rfl⟩ := (Submonoid.mem_powers_iff _ _).mp ha
     rw [M.span_eq, ← map_pow, algebraMap_smul] at hs
     exact ⟨s, hs⟩

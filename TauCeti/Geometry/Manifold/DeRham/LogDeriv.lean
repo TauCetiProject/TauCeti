@@ -297,7 +297,7 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
   obtain ⟨z, rfl⟩ := (H₁AddEquivHomology (.of M)).surjective.comp H₁.mk_surjective c
   refine ⟨chainsDesc N (z : ((singularChains ℤ).obj (.of M)).X 1), ?_⟩
   rw [Function.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, hL]
-  simp [mem_cycles₁_iff.1 z.2, zsmul_eq_mul]
+  simp [mem_cycles₁_iff.1 z.property, zsmul_eq_mul]
 
 /-! ### Periods of smooth circle-valued maps -/
 

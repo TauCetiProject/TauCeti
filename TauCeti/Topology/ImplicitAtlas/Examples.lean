@@ -85,18 +85,18 @@ dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regu
 noncomputable def ofChartedSpace :
     ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
   baseHomeomorph := Homeomorph.refl X
-  kuranishi _ α _ := (IsEmpty.false α.1).elim
-  continuous_kuranishi _ α := (IsEmpty.false α.1).elim
-  kuranishi_act _ α := (IsEmpty.false α.1).elim
+  kuranishi _ α _ := (IsEmpty.false α.val).elim
+  continuous_kuranishi _ α := (IsEmpty.false α.val).elim
+  kuranishi_act _ α := (IsEmpty.false α.val).elim
   regLocus _ := univ
   isOpen_regLocus _ := isOpen_univ
   act_mem_regLocus _ _ _ _ := mem_univ _
-  footprintMap _ _ _ x := x.1
-  continuous_footprintMap _ _ _ := continuous_subtype_val
+  footprintMap _ _ _ x := x.val
+  continuous_footprintMap _ _ _ := continuous_subtypeVal
   footprintMap_act _ _ _ _ _ _ := rfl
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
-  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.1).elim
+  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.val).elim
   isOpen_range_footprintMap _ _ _ := by
     rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
     exact isOpen_univ
@@ -106,18 +106,18 @@ noncomputable def ofChartedSpace :
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
   isQuotientMap_footprintMap I J _ :=
     IsQuotientMap.of_inverse
-      (f := fun y ↦ ⟨y.1, by simp⟩)
-      (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
+      (f := fun y ↦ ⟨y.val, by simp⟩)
+      (continuous_subtypeVal.subtype_mk _) continuous_subtypeVal.rangeFactorization
       fun _ ↦ rfl
   footprintMap_eq_footprintMap_iff _ _ _ x y :=
     ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
   mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
-  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.1).elim
+  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.val).elim
   exists_openPartialHomeomorph I J _ x _ := by
-    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
     refine ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
-      (chartAt (EuclideanSpace ℝ (Fin n)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
-      by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
+      (chartAt (EuclideanSpace ℝ (Fin n)) x.val).transHomeomorph (Homeomorph.prodUnique _ _).symm,
+      by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.val).elim⟩
   exists_footprintMap_eq y :=
     ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
@@ -190,7 +190,7 @@ theorem coe_eq_of_mem_kuranishiZeroSet_pointKuranishi (hs₀ : ∀ y, s y = 0 �
     (hy : y ∈ kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J) : (y : Y) = y₀ := by
   by_cases hJ : () ∈ J
   · exact (hs₀ _).1 (mem_kuranishiZeroSet.1 hy ⟨(), hJ⟩ hI)
-  · exact y.2 (eq_empty_of_notMem hJ)
+  · exact y.property (eq_empty_of_notMem hJ)
 
 /-- If `y₀` is the only zero of `s`, the zero set `Z_∅J` of a single-chart atlas on a point is
 `{y₀}`. -/
@@ -205,19 +205,19 @@ theorem kuranishiZeroSet_pointKuranishi_empty (hs₀ : ∀ y, s y = 0 ↔ y = y�
 private def pointFootprintMap (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit} (_ : I ⊆ J)
     (x : kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J) :
     PointThickening Y y₀ I :=
-  ⟨x.1.1, fun hI ↦ coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ (by simp [hI]) x.2⟩
+  ⟨x.val.val, fun hI ↦ coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ (by simp [hI]) x.property⟩
 
 private theorem coe_pointFootprintMap (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit}
     (h : I ⊆ J) (x : kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J) :
-    (pointFootprintMap hs₀ h x : Y) = x.1.1 :=
+    (pointFootprintMap hs₀ h x : Y) = x.val.val :=
   rfl
 
 /-- A continuous section of `pointFootprintMap`, so that it is onto and a quotient map. -/
 private def pointSection (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit} (h : I ⊆ J)
     (y : PointThickening Y y₀ I) :
     kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J :=
-  ⟨⟨y.1, fun hJ ↦ y.2 (Finset.subset_empty.1 (hJ ▸ h))⟩,
-    mem_kuranishiZeroSet.2 fun _ hα ↦ (hs₀ _).2 (y.2 (eq_empty_of_notMem hα))⟩
+  ⟨⟨y.val, fun hJ ↦ y.property (Finset.subset_empty.1 (hJ ▸ h))⟩,
+    mem_kuranishiZeroSet.2 fun _ hα ↦ (hs₀ _).2 (y.property (eq_empty_of_notMem hα))⟩
 
 private theorem pointFootprintMap_pointSection (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit}
     (h : I ⊆ J) (y : PointThickening Y y₀ I) :
@@ -231,7 +231,7 @@ private theorem range_pointFootprintMap (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I
 variable [TopologicalSpace Y] in
 private theorem continuous_pointSection (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit}
     (h : I ⊆ J) : Continuous (pointSection hs₀ h) :=
-  (continuous_subtype_val.subtype_mk _).subtype_mk _
+  (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 end ZeroSet
 
@@ -267,7 +267,7 @@ private def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
   invFun y := ⟨y, fun h ↦ (hJ.ne_empty h).elim⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val
+  continuous_toFun := continuous_subtypeVal
   continuous_invFun := continuous_id.subtype_mk _
 
 /-- An equivariant map `s` whose only zero is `y₀` forces `y₀` to be a fixed point. -/
@@ -295,22 +295,22 @@ noncomputable def pointAtlas (ρ : Representation ℝ Γ E) (σ : Γ →* (Y ≃
       (pointAct σ (apply_eq_self_of_equivariant hsσ hs₀)) (PointThickening Y y₀ ∅) d where
   baseHomeomorph := Homeomorph.refl _
   kuranishi := pointKuranishi y₀ s
-  continuous_kuranishi _ _ := hs.comp continuous_subtype_val
+  continuous_kuranishi _ _ := hs.comp continuous_subtypeVal
   kuranishi_act J α g y := by
     rw [pointKuranishi_apply, pointKuranishi_apply, coe_pointAct_apply, hsσ,
-      pointComponent_of_mem α.2]
+      pointComponent_of_mem α.property]
   regLocus I := {_y | I.Nonempty}
   isOpen_regLocus _ := isOpen_const
   act_mem_regLocus _ _ _ h := h
   footprintMap _ _ := pointFootprintMap hs₀
   continuous_footprintMap _ _ _ :=
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
   footprintMap_act I J h g x hx := by
     ext
     simp only [coe_pointFootprintMap, coe_pointAct_apply]
     by_cases hI : () ∈ I
     · rw [pointComponent_of_mem (h hI), pointComponent_of_mem hI, Finset.restrict₂_def]
-    · rw [coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI x.2,
+    · rw [coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI x.property,
         apply_eq_self_of_equivariant hsσ hs₀, apply_eq_self_of_equivariant hsσ hs₀]
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
@@ -322,10 +322,10 @@ noncomputable def pointAtlas (ρ : Representation ℝ Γ E) (σ : Γ →* (Y ≃
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp only [range_pointFootprintMap, mem_univ]
   isQuotientMap_footprintMap _ _ h :=
     IsQuotientMap.of_inverse
-      (f := fun y : range (pointFootprintMap (s := s) hs₀ h) ↦ pointSection hs₀ h y.1)
-      ((continuous_pointSection hs₀ h).comp continuous_subtype_val)
-      (((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).rangeFactorization)
-      fun y ↦ Subtype.ext (pointFootprintMap_pointSection hs₀ h y.1)
+      (f := fun y : range (pointFootprintMap (s := s) hs₀ h) ↦ pointSection hs₀ h y.val)
+      ((continuous_pointSection hs₀ h).comp continuous_subtypeVal)
+      (((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).rangeFactorization)
+      fun y ↦ Subtype.ext (pointFootprintMap_pointSection hs₀ h y.val)
   footprintMap_eq_footprintMap_iff I J h x y := by
     refine ⟨fun hxy ↦ ⟨1, funext fun _ ↦ rfl, ?_⟩, fun ⟨g, hg, hgx⟩ ↦ Subtype.ext ?_⟩
     · rw [map_one, Homeomorph.one_apply]
@@ -336,8 +336,8 @@ noncomputable def pointAtlas (ρ : Representation ℝ Γ E) (σ : Γ →* (Y ≃
           rw [pointComponent_of_mem (h hI)]
           simpa [Finset.restrict₂_def] using congrFun hg ⟨(), hI⟩
         rw [← hgx, coe_pointAct_apply, hg₁, map_one, Homeomorph.one_apply]
-      · rw [coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI x.2,
-          coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI y.2]
+      · rw [coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI x.property,
+          coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI y.property]
   mem_regLocus_of_footprintMap_mem _ _ h _ hx := Finset.Nonempty.mono h hx
   eq_one_of_act_eq I J h x hx g hg _ := by
     obtain ⟨⟨⟩, hI⟩ := hx
@@ -346,9 +346,11 @@ noncomputable def pointAtlas (ρ : Representation ℝ Γ E) (σ : Γ →* (Y ≃
   exists_openPartialHomeomorph I J h x hx := by
     have hJ : J.Nonempty := Finset.Nonempty.mono h hx
     obtain rfl : I = Finset.univ := Finset.Nonempty.eq_univ hx
-    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (Finset.mem_univ _)⟩
+    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.property).2
+        (Finset.mem_univ _)⟩
     refine ⟨n, by simpa using hd, (pointThickeningHomeomorph hJ).transOpenPartialHomeomorph
-      ((chartAt (EuclideanSpace ℝ (Fin n)) x.1.1).transHomeomorph (Homeomorph.prodUnique _ _).symm),
+      ((chartAt (EuclideanSpace ℝ (Fin n)) x.val.val).transHomeomorph
+        (Homeomorph.prodUnique _ _).symm),
       by simp [pointThickeningHomeomorph], fun _ _ ↦ Subsingleton.elim _ _⟩
   exists_footprintMap_eq y :=
     ⟨Finset.univ, pointSection hs₀ (Finset.empty_subset _) y, Finset.univ_nonempty, rfl⟩
@@ -676,17 +678,17 @@ be enlarged to all of `X_∅`. -/
 theorem regLocus_empty_eq_empty_of_kuranishi_eq_zero
     (𝒜 : ImplicitAtlas (fun _ : Unit ↦ Γ) E ρ (PointThickening Y y₀) (pointAct σ hσ) X d)
     (h₀ : 𝒜.kuranishi {()} ⟨(), Finset.mem_singleton_self _⟩
-      ⟨y₀, fun h ↦ (Finset.singleton_ne_empty _ h).elim⟩ = 0) :
+      ⟨y₀, fun h ↦ ((Finset.singleton_nonempty _).ne_empty h).elim⟩ = 0) :
     𝒜.regLocus ∅ = ∅ := by
   refine eq_empty_of_forall_notMem fun x hx ↦ ?_
   obtain ⟨g, hg⟩ := exists_ne (1 : Γ)
   let z : kuranishiZeroSet 𝒜.kuranishi ∅ {()} :=
-    ⟨⟨y₀, fun h ↦ (Finset.singleton_ne_empty _ h).elim⟩,
+    ⟨⟨y₀, fun h ↦ ((Finset.singleton_nonempty _).ne_empty h).elim⟩,
       mem_kuranishiZeroSet.2 fun ⟨⟨⟩, _⟩ _ ↦ h₀⟩
   have hz : 𝒜.footprintMap (Finset.empty_subset _) z = x :=
-    Subtype.ext (((𝒜.footprintMap _ z).2 rfl).trans (x.2 rfl).symm)
+    Subtype.ext (((𝒜.footprintMap _ z).property rfl).trans (x.property rfl).symm)
   have h₁ := 𝒜.eq_one_of_act_eq (Finset.empty_subset _) z (hz ▸ hx) (fun _ ↦ g)
-    (funext fun α ↦ (Finset.notMem_empty _ α.2).elim)
+    (funext fun α ↦ (Finset.notMem_empty _ α.property).elim)
     (Subtype.ext (by rw [coe_pointAct_apply]; exact hσ _))
   exact hg (congrFun h₁ ⟨(), Finset.mem_singleton_self _⟩)
 

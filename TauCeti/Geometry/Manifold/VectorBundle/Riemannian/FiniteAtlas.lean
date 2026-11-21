@@ -136,7 +136,7 @@ theorem exists_pos_mem_positiveDefiniteSymmetricSections_of_finiteAtlasSeminorm_
         σ ∈ positiveDefiniteSymmetricSections IB n F V := by
   have hΩ : IsOpen {p : TotalSpace (symmetricBilinearMaps ℝ F ℝ)
       (fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ) |
-      ∀ v : V p.1, v ≠ 0 → 0 < (p.2 : V p.1 →L[ℝ] V p.1 →L[ℝ] ℝ) v v} :=
+      ∀ v : V p.proj, v ≠ 0 → 0 < (p.snd : V p.proj →L[ℝ] V p.proj →L[ℝ] ℝ) v v} :=
     TauCeti.isOpen_setOf_forall_bilinear_bundle_apply_self_pos.preimage
       TauCeti.continuous_totalSpace_coe_symmetricBilinearMaps
   obtain ⟨δ, hδ, hball⟩ := ContMDiffSection.exists_pos_forall_mem_of_isOpen_totalSpace e U hU hK

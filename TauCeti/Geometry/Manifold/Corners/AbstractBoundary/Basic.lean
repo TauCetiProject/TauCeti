@@ -155,7 +155,8 @@ theorem exists_faceGerm_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (hn : n
     {j : ι} (hj : j ∈ S) (hj' : e'.extend J x j = 0) :
     ∃ i ∈ S, e.extend J x i = 0 ∧ J.faceGerm e' j x = J.faceGerm e i x := by
   obtain ⟨σ, hσ, -⟩ := existsUnique_equiv_extend_apply_eq_zero_iff hJ hn he he' hx hx'
-  refine ⟨σ.symm ⟨j, hj, hj'⟩, (σ.symm _).2.1, (σ.symm _).2.2, faceGerm_eq_faceGerm_iff.2 ?_⟩
+  refine ⟨σ.symm ⟨j, hj, hj'⟩, (σ.symm _).property.1, (σ.symm _).property.2,
+      faceGerm_eq_faceGerm_iff.2 ?_⟩
   filter_upwards [hσ] with p hp
   have h := hp (σ.symm ⟨j, hj, hj'⟩)
   rwa [Equiv.apply_symm_apply] at h
@@ -222,10 +223,11 @@ def faceGermEquiv (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (hn : n ≠ 0)
     {i // i ∈ S ∧ e.extend J x i = 0} ≃ J.localFaces x :=
   Equiv.ofBijective
     (fun i ↦ ⟨J.faceGerm e i x,
-      (mem_localFaces_iff_of_mem_maximalAtlas hJ hn he hx).2 ⟨i, i.2.1, i.2.2, rfl⟩⟩)
-    ⟨fun i k h ↦ Subtype.ext (eq_of_faceGerm_eq hJ hx i.2.2 k.2.2 (congrArg Subtype.val h)),
+      (mem_localFaces_iff_of_mem_maximalAtlas hJ hn he hx).2 ⟨i, i.property.1, i.property.2, rfl⟩⟩)
+    ⟨fun i k h ↦ Subtype.ext (eq_of_faceGerm_eq hJ hx i.property.2 k.property.2
+        (congrArg Subtype.val h)),
       fun F ↦ by
-        obtain ⟨i, hi, hix, hF⟩ := (mem_localFaces_iff_of_mem_maximalAtlas hJ hn he hx).1 F.2
+        obtain ⟨i, hi, hix, hF⟩ := (mem_localFaces_iff_of_mem_maximalAtlas hJ hn he hx).1 F.property
         exact ⟨⟨i, hi, hix⟩, Subtype.ext hF.symm⟩⟩
 
 /-- The local face of the vanishing coordinate `i` is the face germ of `e` along `i`. -/
@@ -291,14 +293,14 @@ variable {J M} {S : Set ι}
 
 /-- The points of the abstract boundary over `x` are the local faces through `x`. -/
 def preimagePointEquiv (x : M) : (point : J.AbstractBoundary M → M) ⁻¹' {x} ≃ J.localFaces x where
-  toFun b := ⟨b.2 ▸ b.1.face, by obtain ⟨⟨y, F, hF⟩, rfl : y = x⟩ := b; exact hF⟩
-  invFun F := ⟨⟨x, F.1, F.2⟩, rfl⟩
+  toFun b := ⟨b.property ▸ b.val.face, by obtain ⟨⟨y, F, hF⟩, rfl : y = x⟩ := b; exact hF⟩
+  invFun F := ⟨⟨x, F.val, F.property⟩, rfl⟩
   left_inv b := by obtain ⟨⟨y, F, hF⟩, rfl : y = x⟩ := b; rfl
   right_inv F := rfl
 
 @[simp]
 theorem coe_preimagePointEquiv_symm_apply (x : M) (F : J.localFaces x) :
-    ((preimagePointEquiv x).symm F : J.AbstractBoundary M) = ⟨x, F, F.2⟩ :=
+    ((preimagePointEquiv x).symm F : J.AbstractBoundary M) = ⟨x, F, F.property⟩ :=
   (rfl)
 
 /-! #### Face sections -/
@@ -309,7 +311,7 @@ the abstract boundary over `p` given by this face. -/
 def faceSection {e : OpenPartialHomeomorph M H} (he : e ∈ atlas H M) {i : ι}
     (hi : ∀ z ∈ range J, 0 ≤ z i) (p : {p : M // p ∈ e.source ∧ e.extend J p i = 0}) :
     J.AbstractBoundary M :=
-  ⟨p, J.faceGerm e i p, faceGerm_mem_localFaces he p.2.1 hi p.2.2⟩
+  ⟨p, J.faceGerm e i p, faceGerm_mem_localFaces he p.property.1 hi p.property.2⟩
 
 variable {e e' : OpenPartialHomeomorph M H} {he : e ∈ atlas H M} {he' : e' ∈ atlas H M} {i j : ι}
   {hi : ∀ z ∈ range J, 0 ≤ z i} {hj : ∀ z ∈ range J, 0 ≤ z j}
@@ -348,7 +350,7 @@ theorem exists_faceSection_eq (b : J.AbstractBoundary M) :
 continuous. -/
 instance : TopologicalSpace (J.AbstractBoundary M) :=
   ⨆ (e : atlas H M) (i : {i : ι // ∀ z ∈ range J, 0 ≤ z i}),
-    TopologicalSpace.coinduced (faceSection e.2 i.2) inferInstance
+    TopologicalSpace.coinduced (faceSection e.property i.property) inferInstance
 
 /-- A set of the abstract boundary is open exactly when its preimage under every face section is
 open. -/
@@ -362,13 +364,14 @@ theorem isOpen_iff {U : Set (J.AbstractBoundary M)} :
 theorem continuous_faceSection : Continuous (faceSection he hi) :=
   continuous_iff_coinduced_le.2 <| le_iSup₂_of_le (f := fun (e : atlas H M)
     (i : {i : ι // ∀ z ∈ range J, 0 ≤ z i}) ↦
-      TopologicalSpace.coinduced (faceSection e.2 i.2) inferInstance) ⟨e, he⟩ ⟨i, hi⟩ le_rfl
+      TopologicalSpace.coinduced (faceSection e.property i.property) inferInstance) ⟨e, he⟩ ⟨i,
+          hi⟩ le_rfl
 
 /-- The map from the abstract boundary to `M` is continuous. -/
 @[fun_prop]
 theorem continuous_point : Continuous (point : J.AbstractBoundary M → M) := by
   refine continuous_def.2 fun U hU ↦ isOpen_iff.2 fun e _ i _ ↦ ?_
-  exact hU.preimage continuous_subtype_val
+  exact hU.preimage continuous_subtypeVal
 
 /-- The face sections are injective: a face section remembers its point of `M`. -/
 theorem faceSection_injective : Injective (faceSection he hi) := fun _ _ h ↦
@@ -396,7 +399,7 @@ theorem isOpenMap_faceSection : IsOpenMap (faceSection he hi) := by
         faceSection_eq_faceSection_iff.2 ⟨rfl, h⟩⟩
   rw [hset]
   exact ((hO.inter e.open_source).inter (isOpen_setOf_faceGerm_eq e e' i j)).preimage
-    continuous_subtype_val
+    continuous_subtypeVal
 
 /-- **The faces of a chart are open pieces of the abstract boundary**: every face section is an
 open embedding. -/
@@ -477,7 +480,7 @@ theorem subsingleton_localFaces_modelWithCornersEuclideanHalfSpace (hn : n ≠ 0
     ((𝓡∂ (m + 1)).localFaces x).Subsingleton := by
   have : Subsingleton
       {i // i ∈ ({0} : Set (Fin (m + 1))) ∧ (chartAt _ x).extend (𝓡∂ (m + 1)) x i = 0} :=
-    ⟨fun a b ↦ Subtype.ext (a.2.1.trans b.2.1.symm)⟩
+    ⟨fun a b ↦ Subtype.ext (a.property.1.trans b.property.1.symm)⟩
   exact Set.subsingleton_coe _ |>.1 <| (faceGermEquiv
     (range_modelWithCornersEuclideanHalfSpace_eq _) hn (IsManifold.chart_mem_maximalAtlas x)
     (mem_chart_source _ x)).symm.injective.subsingleton
@@ -507,8 +510,8 @@ theorem isOpenMap_codRestrict_point_modelWithCornersEuclideanHalfSpace (hn : n �
   obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hU.preimage (continuous_faceSection (he := he)
     (hi := hi)))
   -- Near `p`, every boundary point in the chart and in `O` is the image of a point of `U`.
-  refine mem_of_superset ((hO.inter e.open_source).preimage continuous_subtype_val
-    |>.mem_nhds ⟨(hOU ▸ hbU : p ∈ Subtype.val ⁻¹' O), p.2.1⟩) ?_
+  refine mem_of_superset ((hO.inter e.open_source).preimage continuous_subtypeVal
+    |>.mem_nhds ⟨(hOU ▸ hbU : p ∈ Subtype.val ⁻¹' O), p.property.1⟩) ?_
   rintro ⟨y, hy⟩ ⟨hyO, hye⟩
   have hy0 : e.extend (𝓡∂ (m + 1)) y 0 = 0 := by
     simpa [OpenPartialHomeomorph.extend_coe] using

@@ -70,7 +70,7 @@ theorem Bundle.Pullback.range_lift (f : B' → B) :
     exact ⟨z.proj, rfl⟩
   · rintro ⟨x, hx⟩
     refine ⟨⟨x, ?_⟩, ?_⟩
-    · exact cast (congrArg E hx.symm) w.2
+    · exact cast (congrArg E hx.symm) w.snd
     · cases w with | mk b v => cases hx; rfl
 
 /-- If `f` is injective, the canonical lift `Pullback.lift f` on total spaces is injective. -/

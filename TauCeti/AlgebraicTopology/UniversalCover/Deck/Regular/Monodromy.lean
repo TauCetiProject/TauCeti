@@ -54,7 +54,7 @@ theorem isRegular_iff_fiber_isPretransitive [PathConnectedSpace X]
     · intro y
       let γ : Path.Homotopic.Quotient x y :=
         Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y)
-      exact ⟨hp.monodromy γ e, Set.mem_singleton_iff.mp (hp.monodromy γ e).2⟩
+      exact ⟨hp.monodromy γ e, Set.mem_singleton_iff.mp (hp.monodromy γ e).property⟩
     · intro u v
       let γ : Path.Homotopic.Quotient x y :=
         Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y)

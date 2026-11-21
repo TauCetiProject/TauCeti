@@ -49,6 +49,12 @@ the chamber while remaining globally bounded, `2 ε⁻²`-Lipschitz in the supre
 * `TauCeti.Probability.sum_dysonDrift_eq_zero` and `TauCeti.Probability.sum_self_mul_dysonDrift`:
   first- and second-moment identities.
 * `TauCeti.Probability.sum_dysonDrift_sub_mul_sub_nonpos`: monotone dissipativity on the chamber.
+* `TauCeti.Probability.sum_dysonDrift_sub_mul_comp_sub_nonpos` and
+  `TauCeti.Probability.sum_dysonDrift_sub_mul_max_sub_zero_nonpos`: dissipativity against monotone
+  test functions of `x - y`, including the positive part.
+* `TauCeti.Probability.sum_dysonDrift_sub_mul_comp_sub_nonpos_of_pairwise` and
+  `TauCeti.Probability.sum_dysonDrift_sub_mul_sub_nonpos_of_pairwise`: the same dissipativity on
+  any common open Weyl chamber.
 * `TauCeti.Probability.mul_sum_Ioi_sub_inv_le_sum_sub_two_mul_mul_dysonDrift`: entrance-weight lower
   bound.
 * `TauCeti.Probability.sum_dysonDrift_sq`: Calogero–Moser partial-fraction identity.
@@ -142,6 +148,34 @@ theorem dysonDrift_smul (n : ℕ) (c : ℝ) (x : Fin n → ℝ) :
   simp only [dysonDrift, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_inv, ← Finset.mul_sum]
   ring
 
+/-- At any constant configuration `fun _ ↦ c`, `dysonDrift` vanishes identically. -/
+@[simp]
+theorem dysonDrift_fun_const (n : ℕ) (c : ℝ) : dysonDrift n (fun _ ↦ c) = 0 := by
+  ext i; simp [dysonDrift]
+
+/-- Reflecting all coordinates negates `dysonDrift`. -/
+@[simp]
+theorem dysonDrift_neg (n : ℕ) (x : Fin n → ℝ) :
+    dysonDrift n (-x) = -dysonDrift n x := by
+  ext i
+  simp only [dysonDrift, Pi.neg_apply, ← mul_neg, ← Finset.sum_neg_distrib]
+  refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
+  rw [show -x i - -x j = -(x i - x j) by ring, inv_neg]
+
+/-- First coordinate of the two-particle Dyson drift. -/
+theorem dysonDrift_two_zero (x : Fin 2 → ℝ) :
+    dysonDrift 2 x 0 = (2 * (x 0 - x 1))⁻¹ := by
+  have herase : (Finset.univ : Finset (Fin 2)).erase 0 = {1} := by decide
+  rw [dysonDrift, herase, Finset.sum_singleton, mul_inv]
+  norm_num
+
+/-- Second coordinate of the two-particle Dyson drift. -/
+theorem dysonDrift_two_one (x : Fin 2 → ℝ) :
+    dysonDrift 2 x 1 = -(2 * (x 0 - x 1))⁻¹ := by
+  have herase : (Finset.univ : Finset (Fin 2)).erase 1 = {0} := by decide
+  rw [dysonDrift, herase, Finset.sum_singleton, ← neg_sub (x 0) (x 1), inv_neg, mul_neg, mul_inv]
+  norm_num
+
 /-- `dysonDrift n` is continuous at every configuration with pairwise distinct coordinates. -/
 theorem continuousAt_dysonDrift {n : ℕ} {x : Fin n → ℝ} (hx : Function.Injective x) :
     ContinuousAt (dysonDrift n) x :=
@@ -219,6 +253,73 @@ theorem sum_dysonDrift_sub_mul_sub_nonpos {n : ℕ} {x y : Fin n → ℝ}
   have hdx : 0 < x i - x j := sub_pos.2 (hx (Finset.mem_Ioi.1 hj))
   have hdy : 0 < y i - y j := sub_pos.2 (hy (Finset.mem_Ioi.1 hj))
   positivity
+
+/-- **Difference pairing identity against an arbitrary test vector.** Pairing
+`dysonDrift n x - dysonDrift n y` against any `u : Fin n → ℝ` folds onto ordered pairs `i < j`. -/
+theorem sum_dysonDrift_sub_mul_eq_sum_Ioi (n : ℕ) (x y u : Fin n → ℝ) :
+    ∑ i : Fin n, (dysonDrift n x i - dysonDrift n y i) * u i =
+      (n : ℝ)⁻¹ * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i,
+        (u i - u j) * ((x i - x j)⁻¹ - (y i - y j)⁻¹) := by
+  have hrew : ∑ i : Fin n, (dysonDrift n x i - dysonDrift n y i) * u i =
+      (∑ i : Fin n, u i * dysonDrift n x i) - ∑ i : Fin n, u i * dysonDrift n y i := by
+    rw [← Finset.sum_sub_distrib]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  rw [hrew, sum_mul_dysonDrift_eq_sum_Ioi, sum_mul_dysonDrift_eq_sum_Ioi, ← mul_sub,
+    ← Finset.sum_sub_distrib]
+  refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [← Finset.sum_sub_distrib]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
+
+/-- **Monotone-test dissipativity on a common open Weyl chamber.** If `x` and `y` order their
+particles in the same way, that is `(x i - x j) * (y i - y j) > 0` whenever `i ≠ j`, then for any
+monotone `φ : ℝ → ℝ`, testing `dysonDrift n x - dysonDrift n y` against `i ↦ φ (x i - y i)` is
+nonpositive. -/
+theorem sum_dysonDrift_sub_mul_comp_sub_nonpos_of_pairwise {n : ℕ} {x y : Fin n → ℝ}
+    {φ : ℝ → ℝ} (hφ : Monotone φ) (h : Pairwise fun i j ↦ 0 < (x i - x j) * (y i - y j)) :
+    ∑ i : Fin n, (dysonDrift n x i - dysonDrift n y i) * φ (x i - y i) ≤ 0 := by
+  rw [sum_dysonDrift_sub_mul_eq_sum_Ioi n x y fun k ↦ φ (x k - y k)]
+  refine mul_nonpos_of_nonneg_of_nonpos (by positivity)
+    (Finset.sum_nonpos fun i _ ↦ Finset.sum_nonpos fun j hj ↦ ?_)
+  have hab : 0 < (x i - x j) * (y i - y j) := h (Finset.mem_Ioi.1 hj).ne
+  have ha : x i - x j ≠ 0 := left_ne_zero_of_mul hab.ne'
+  have hb : y i - y j ≠ 0 := right_ne_zero_of_mul hab.ne'
+  have hfrac : (φ (x i - y i) - φ (x j - y j)) * ((x i - x j)⁻¹ - (y i - y j)⁻¹) =
+      (φ (x i - y i) - φ (x j - y j)) * ((x j - y j) - (x i - y i)) /
+        ((x i - x j) * (y i - y j)) := by
+    field_simp
+    ring
+  rw [hfrac]
+  refine div_nonpos_of_nonpos_of_nonneg ?_ hab.le
+  rcases le_total (x i - y i) (x j - y j) with hle | hge
+  · exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 (hφ hle)) (sub_nonneg.2 hle)
+  · exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 (hφ hge)) (sub_nonpos.2 hge)
+
+/-- **Dissipativity of the Dyson drift on a common open Weyl chamber.** If `x` and `y` order their
+particles in the same way, that is `(x i - x j) * (y i - y j) > 0` whenever `i ≠ j`, then
+`⟨dysonDrift n x - dysonDrift n y, x - y⟩ ≤ 0`. -/
+theorem sum_dysonDrift_sub_mul_sub_nonpos_of_pairwise {n : ℕ} {x y : Fin n → ℝ}
+    (h : Pairwise fun i j ↦ 0 < (x i - x j) * (y i - y j)) :
+    ∑ i : Fin n, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) ≤ 0 :=
+  sum_dysonDrift_sub_mul_comp_sub_nonpos_of_pairwise monotone_id h
+
+/-- **Monotone-test dissipativity on the open Weyl chamber.** For strictly decreasing `x` and `y`
+and any monotone `φ : ℝ → ℝ`, testing `dysonDrift n x - dysonDrift n y` against
+`i ↦ φ (x i - y i)` is nonpositive. The case `φ = id` is `sum_dysonDrift_sub_mul_sub_nonpos`; the
+positive-part case is `sum_dysonDrift_sub_mul_max_sub_zero_nonpos`. -/
+theorem sum_dysonDrift_sub_mul_comp_sub_nonpos {n : ℕ} {x y : Fin n → ℝ} {φ : ℝ → ℝ}
+    (hφ : Monotone φ) (hx : StrictAnti x) (hy : StrictAnti y) :
+    ∑ i : Fin n, (dysonDrift n x i - dysonDrift n y i) * φ (x i - y i) ≤ 0 := by
+  refine sum_dysonDrift_sub_mul_comp_sub_nonpos_of_pairwise hφ fun i j hij ↦ ?_
+  rcases hij.lt_or_gt with h | h
+  · exact mul_pos (sub_pos.2 (hx h)) (sub_pos.2 (hy h))
+  · exact mul_pos_of_neg_of_neg (sub_neg.2 (hx h)) (sub_neg.2 (hy h))
+
+/-- **One-sided positive-part dissipativity on the open Weyl chamber** (for AGZ Lemma 4.3.6). For
+strictly decreasing `x` and `y`, testing `dysonDrift n x - dysonDrift n y` against
+`i ↦ max (x i - y i) 0` is nonpositive. -/
+theorem sum_dysonDrift_sub_mul_max_sub_zero_nonpos {n : ℕ} {x y : Fin n → ℝ}
+    (hx : StrictAnti x) (hy : StrictAnti y) :
+    ∑ i : Fin n, (dysonDrift n x i - dysonDrift n y i) * max (x i - y i) 0 ≤ 0 :=
+  sum_dysonDrift_sub_mul_comp_sub_nonpos (φ := fun t ↦ max t 0)
+    (fun _ _ h ↦ max_le_max_right 0 h) hx hy
 
 /-- **Rogers–Shi entrance-weight identity.** Pairing `dysonDrift n x` against the linear staircase
 weight `i ↦ n - 1 - 2 i` yields a positive combination of all ordered inverse gaps `(x i - x j)⁻¹`

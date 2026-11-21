@@ -88,7 +88,7 @@ theorem _root_.Module.Baer.of_isIdempotentElem (hA : Module.Baer A A) {e : A}
     { toFun := fun x => ⟨x * e, (hp _).2 (by rw [mul_assoc, he.eq])⟩
       map_add' := fun x y => Subtype.ext (add_mul x y e)
       map_smul' := fun a x => Subtype.ext (by simp [mul_assoc]) }
-    fun m => Subtype.ext ((hp m).1 m.2)
+    fun m => Subtype.ext ((hp m).1 m.property)
 
 end Idempotent
 
@@ -175,7 +175,7 @@ theorem _root_.Function.Bijective.moduleBaer_self (hB : Function.Bijective B.fli
   -- The trace turns `f` into a `k`-linear functional on `I`, which extends to all of `A`.
   obtain ⟨ψ, hψ⟩ : ∃ ψ : A →ₗ[k] k, ∀ (x : A) (hx : x ∈ I), ψ x = B 1 (f ⟨x, hx⟩) := by
     let e : I.restrictScalars k →ₗ[k] I :=
-      { toFun := fun x => ⟨x, x.2⟩
+      { toFun := fun x => ⟨x, x.property⟩
         map_add' := fun _ _ => Subtype.ext rfl
         map_smul' := fun _ _ => Subtype.ext rfl }
     obtain ⟨ψ, hψ⟩ := LinearMap.exists_extend

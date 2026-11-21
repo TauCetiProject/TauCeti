@@ -85,7 +85,7 @@ by `([a'], k') ↦ k⁻¹ k'`. -/
 def prodQuotientMapPreimageEquiv (a : A) (k : K) :
     Γ.prodQuotientMap ⁻¹' {((a, k) : (A × K) ⧸ Γ)} ≃ Γ.map (MonoidHom.snd A K) :=
   Equiv.ofBijective
-    (fun p ↦ ⟨k⁻¹ * p.1.2, by
+    (fun p ↦ ⟨k⁻¹ * p.val.2, by
       obtain ⟨⟨t, k'⟩, hp⟩ := p
       obtain ⟨a', rfl⟩ := QuotientGroup.mk_surjective t
       rw [Set.mem_preimage, Set.mem_singleton_iff, prodQuotientMap_mk, eq_comm,
@@ -109,7 +109,7 @@ def prodQuotientMapPreimageEquiv (a : A) (k : K) :
 @[simp]
 theorem coe_prodQuotientMapPreimageEquiv_apply (a : A) (k : K)
     (p : Γ.prodQuotientMap ⁻¹' {((a, k) : (A × K) ⧸ Γ)}) :
-    (Γ.prodQuotientMapPreimageEquiv a k p : K) = k⁻¹ * p.1.2 :=
+    (Γ.prodQuotientMapPreimageEquiv a k p : K) = k⁻¹ * p.val.2 :=
   (rfl)
 
 /-- **The fibres of `(A ⧸ Λ) × K → (A × K) ⧸ Γ` have the cardinality of the image of `Γ` in
