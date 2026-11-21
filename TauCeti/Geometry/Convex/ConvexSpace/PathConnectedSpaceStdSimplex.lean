@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The parametrization of the standard `1`-simplex by the unit interval
 
 Values of Mathlib's homeomorphism `Convexity.StdSimplex.homeomorphI` between the standard
-`1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), and it sends
+`1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), it sends
 the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
-(`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`).
+(`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`), the barycentric weights of
+`homeomorphI.symm t` are `1 - t` and `t` (`weights_homeomorphI_symm_zero`,
+`weights_homeomorphI_symm_one`), and reversing the vertices of `Fin 2` corresponds to
+`unitInterval.symm` (`map_rev_homeomorphI_symm`).
 -/
 
 public section
@@ -36,5 +40,18 @@ lemma homeomorphI_map_succAbove_zero (w : StdSimplex ℝ (Fin 1)) :
 lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
     homeomorphI (map (Fin.succAbove (1 : Fin 2)) w) = 0 := by
   simp [Subsingleton.elim w (single 0)]
+
+@[simp] lemma weights_homeomorphI_symm_one (t : unitInterval) :
+    (homeomorphI.symm t).weights 1 = (t : ℝ) := by
+  rw [← homeomorphI_apply_coe, Homeomorph.apply_symm_apply]
+@[simp] lemma weights_homeomorphI_symm_zero (t : unitInterval) :
+    (homeomorphI.symm t).weights 0 = 1 - (t : ℝ) :=
+  eq_sub_of_add_eq (by simpa using (homeomorphI.symm t).total_fin_two)
+@[simp] lemma map_rev_homeomorphI_symm (t : unitInterval) :
+    map Fin.rev (homeomorphI.symm t) = homeomorphI.symm (unitInterval.symm t) := by
+  apply homeomorphI.injective; ext
+  have h1 : (1 : Fin 2) = Fin.rev 0 := rfl
+  rw [homeomorphI_apply_coe, Homeomorph.apply_symm_apply, unitInterval.coe_symm_eq, h1,
+    weights_map_apply_of_injective Fin.rev_injective, weights_homeomorphI_symm_zero]
 
 end Convexity.StdSimplex

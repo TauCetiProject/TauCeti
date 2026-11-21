@@ -30,6 +30,7 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
 * `SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`: composition of a homotopy with a map.
 * `SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`: homotopies correspond under the tensor-hom
   adjunction.
+* `SSet.Homotopy.pre`: precomposing mapping spaces `Fun(-, Z)` with a simplicial homotopy.
 * `SSet.Homotopy.ulift`, `SSet.Homotopy.ofUlift`, `SSet.Homotopy.uliftEquiv`: homotopies
   transport bijectively along `SSet.uliftFunctor`.
 * `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
@@ -206,6 +207,28 @@ noncomputable def uncurry {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.
 lemma uncurry_h {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.Homotopy f g) :
     H.uncurry.h = (α_ A X Δ[1]).hom ≫ MonoidalClosed.uncurry H.h :=
   (rfl)
+
+/-- Precomposing mapping spaces `Fun(-, Z)` with a simplicial homotopy `H : Homotopy f g` yields a
+homotopy between `(MonoidalClosed.pre f).app Z` and `(MonoidalClosed.pre g).app Z`. -/
+@[no_expose] noncomputable def pre (H : SSet.Homotopy f g) (Z : SSet.{w}) :
+    SSet.Homotopy ((MonoidalClosed.pre f).app Z) ((MonoidalClosed.pre g).app Z) :=
+  let φ : (ihom Y).obj Z ⊗ Δ[1] ⟶ (ihom X).obj Z :=
+    MonoidalClosed.curry (lift (lift (fst X _) (snd X _ ≫ snd _ _) ≫ H.h)
+      (snd X _ ≫ fst _ _) ≫ (ihom.ev Y).app Z)
+  have hlift (i : Δ[1] _⦋0⦌) : lift (𝟙 _) (SSet.const i) ≫ φ =
+      (MonoidalClosed.pre (lift (𝟙 X) (SSet.const i) ≫ H.h)).app Z := by
+    have hi : X ◁ lift (𝟙 ((ihom Y).obj Z)) (SSet.const i) ≫ lift (fst X _) (snd X _ ≫ snd _ _) =
+        fst X _ ≫ lift (𝟙 X) (SSet.const i) := by ext : 1 <;> simp
+    apply MonoidalClosed.uncurry_injective
+    rw [MonoidalClosed.uncurry_pre, MonoidalClosed.uncurry_natural_left,
+      MonoidalClosed.uncurry_curry]
+    simp only [comp_lift_assoc, reassoc_of% hi, whiskerLeft_snd_assoc, lift_fst,
+      Category.comp_id]; rfl
+  mk' φ (by rw [ι₀, hlift, ← ι₀, H.h₀]) (by rw [ι₁, hlift, ← ι₁, H.h₁])
+
+@[simp] lemma pre_h (H : SSet.Homotopy f g) (Z : SSet.{w}) :
+    (H.pre Z).h = MonoidalClosed.curry (lift (lift (fst X _) (snd X _ ≫ snd _ _) ≫ H.h)
+      (snd X _ ≫ fst _ _) ≫ (ihom.ev Y).app Z) := (rfl)
 
 /-- Lifting a simplicial homotopy along `SSet.uliftFunctor`. -/
 @[no_expose]

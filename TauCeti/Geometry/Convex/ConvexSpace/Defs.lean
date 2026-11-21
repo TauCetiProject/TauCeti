@@ -23,9 +23,11 @@ both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
 
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
-`StdSimplex R (Fin n)` lie between `0` and `1`. Scalar pushforward `StdSimplex.mapRange` along a
-monotone semiring homomorphism applies the homomorphism to each weight and commutes with
-`StdSimplex.map`.
+`StdSimplex R (Fin n)` lie between `0` and `1`. Weighted sums against `x.map f` pull back along
+`f` (`StdSimplex.sum_weights_map_smul`, `StdSimplex.sum_weights_map_mul`), and reversing the
+vertices of `Fin n` is an involution on `StdSimplex R (Fin n)` (`StdSimplex.map_rev_rev`). Scalar
+pushforward `StdSimplex.mapRange` along a monotone semiring homomorphism applies the homomorphism
+to each weight and commutes with `StdSimplex.map`.
 -/
 
 public section
@@ -96,6 +98,23 @@ theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSim
       (by simp),
     Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ by split_ifs <;> simp),
     Finsupp.sum_fintype _ _ (by simp)]
+
+/-- Integrating a function against the weights of a mapped simplex pulls back along the map. -/
+theorem sum_weights_map_smul [Fintype X] [Fintype Y] {M : Type*} [AddCommMonoid M] [Module R M]
+    (f : X → Y) (x : StdSimplex R X) (g : Y → M) :
+    ∑ y : Y, (x.map f).weights y • g y = ∑ a : X, x.weights a • g (f a) := by
+  rw [weights_map,
+    ← Finsupp.sum_fintype (Finsupp.mapDomain f x.weights) (fun y r ↦ r • g y) (by simp),
+    Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ add_smul _ _ _),
+    Finsupp.sum_fintype _ _ (by simp)]
+
+theorem sum_weights_map_mul [Fintype X] [Fintype Y] (f : X → Y) (x : StdSimplex R X) (g : Y → R) :
+    ∑ y : Y, (x.map f).weights y * g y = ∑ a : X, x.weights a * g (f a) :=
+  sum_weights_map_smul f x g
+
+@[simp] theorem map_rev_rev {n : ℕ} (x : StdSimplex R (Fin n)) :
+    (x.map Fin.rev).map Fin.rev = x := by
+  rw [← map_comp]; convert map_id x; exact funext Fin.rev_rev
 
 /-- A point of `StdSimplex R Y` whose weights are supported on the range of an injective map
 `f : X → Y`, pulled back to `StdSimplex R X`: a right inverse of `StdSimplex.map f` on its range

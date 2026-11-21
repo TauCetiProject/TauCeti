@@ -34,8 +34,9 @@ is the constant map (`TauCeti.TopCat.toSSetObjEquiv_yonedaEquiv_const_apply`).
 Dually, the unit of the adjunction `sSetTopAdj` gives every `n`-simplex `x` of a simplicial set `X`
 a continuous map from the standard simplex to the realization `|X|`; its value at the barycentric
 coordinates `w` is the point `SSet.toTopObjMk x w`. These points are natural in `X` and in the
-simplex, and continuous maps out of `|X|` are determined by their values on them
-(`SSet.toTop_hom_ext`). In particular, the singular simplices of the unit interval given by the
+simplex; continuous maps out of `|X|` are determined by their values on them
+(`SSet.toTop_hom_ext`) and constructed from compatible families on standard simplices via
+`SSet.descToTop`. In particular, the singular simplices of the unit interval given by the
 simplices `⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]` through `SSet.stdSimplex.toSSetObjI` are affine in barycentric
 coordinates (`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`).
 -/
@@ -319,6 +320,32 @@ lemma toTop_hom_ext {T : TopCat.{u}} {g₁ g₂ : |X| ⟶ T}
   simp only [TypeCat.Fun.toFun_apply]
   rw [← apply_toTopObjMk, ← apply_toTopObjMk]
   exact h n x w
+
+/-- Construct a continuous map `|X| ⟶ T` from a compatible family on standard simplices. -/
+noncomputable def descToTop {T : TopCat.{u}}
+    (f : ∀ n : ℕ, X _⦋n⦌ → StdSimplex ℝ (Fin (n + 1)) → T)
+    (hf_cont : ∀ n (x : X _⦋n⦌), Continuous (f n x))
+    (hf : ∀ (m n : ℕ) (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (m + 1))),
+      f m (X.map θ.op x) w = f n x (StdSimplex.map θ w)) : |X| ⟶ T :=
+  (sSetTopAdj.homEquiv X T).symm
+    { app n := ↾fun x ↦ (T.toSSetObjEquiv n).symm ⟨f n.unop.len x, hf_cont n.unop.len x⟩
+      naturality := fun ⟨n⟩ ⟨m⟩ θ ↦ by
+        ext x; induction n using SimplexCategory.rec with | _ n
+        induction m using SimplexCategory.rec with | _ m
+        obtain ⟨θ, rfl⟩ : ∃ φ : ⦋m⦌ ⟶ ⦋n⦌, φ.op = θ := ⟨θ.unop, rfl⟩
+        apply (T.toSSetObjEquiv _).injective; ext w : 1
+        simpa [TopCat.toSSetObjEquiv_naturality_apply] using hf m n θ x w }
+
+@[simp] lemma descToTop_toTopObjMk {T : TopCat.{u}}
+    (f : ∀ n : ℕ, X _⦋n⦌ → StdSimplex ℝ (Fin (n + 1)) → T)
+    (hf_cont : ∀ n (x : X _⦋n⦌), Continuous (f n x))
+    (hf : ∀ (m n : ℕ) (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (m + 1))),
+      f m (X.map θ.op x) w = f n x (StdSimplex.map θ w))
+    {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
+    descToTop f hf_cont hf (toTopObjMk x w) = f n x w := by
+  rw [descToTop, apply_toTopObjMk, Equiv.apply_symm_apply]
+  exact congrFun (congrArg DFunLike.coe
+    (Equiv.apply_symm_apply _ (ContinuousMap.mk (f n x) (hf_cont n x)))) w
 
 open Opposite in
 /-- The singular simplex of the unit interval given by an `n`-simplex `α : ⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]`

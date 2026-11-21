@@ -52,7 +52,8 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.prodStdSimplex₁.prism`: the triangulation `Δᵖ × I → |Δ[p] ⊗ Δ[1]|` of the prism, natural
   in `Δ[p]` (`SSet.prodStdSimplex₁.prism_naturality`), with ends `ι₀` and `ι₁`.
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
-* `SSet.Homotopy.toTop`: the realization of a simplicial homotopy.
+* `SSet.Homotopy.toTop`: the realization of a simplicial homotopy, with vertex track given by
+  `SSet.Homotopy.toTop_toTopObjMk_zero`.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
 * `SSet.nonempty_homotopy_iff_homotopic_homEquiv_symm`: maps into a singular simplicial set are
   homotopic exactly when their adjoints are.
@@ -464,6 +465,44 @@ lemma prism_one (s : StdSimplex ℝ (Fin (p + 1))) :
     (funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
       (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
+/-- Over the `0`-dimensional simplex, the prism is the vertical edge `Δ[0] ⊗ Δ[1]` parametrized by
+`StdSimplex.homeomorphI.symm`. -/
+@[simp]
+lemma prism_zero_dim (s : StdSimplex ℝ (Fin 1)) (t : I) :
+    prism.{u} 0 (s, t) =
+      toTopObjMk (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))
+        (StdSimplex.homeomorphI.symm t) := by
+  have hobj : ⇑(prodStdSimplex.objEquiv
+      (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)) : (Δ[0] ⊗ Δ[1] : SSet.{u}) _⦋1⦌)) =
+      fun b ↦ (0, b) := funext fun b ↦
+    Prod.ext (Fin.eq_zero _) ((prodStdSimplex.objEquiv_apply_snd _ b).trans
+      (by fin_cases b <;> rw [verticalEdge_snd] <;> rfl))
+  refine prism_eq _ _ ?_
+  rw [hobj, ← StdSimplex.weights_inj]; ext ⟨i, b⟩
+  obtain rfl : i = 0 := Fin.eq_zero i
+  have htot : prefixSum 1 s.weights = 1 := by
+    rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
+  fin_cases b <;>
+    rw [StdSimplex.weights_map_apply_of_injective (fun _ _ h ↦ congrArg Prod.snd h),
+      prismMeasure_weights, prismWeights]
+  · simp [clamp_zero, htot, min_eq_right (sub_le_self (1 : ℝ) t.property.1),
+      min_eq_left (sub_nonneg.2 t.property.2)]
+  · simp [clamp_one, TauCeti.prefixSum_zero, htot,
+      max_eq_left (sub_le_self (1 : ℝ) t.property.1), max_eq_right (sub_nonneg.2 t.property.2)]
+
+/-- For any `(s, t)` in `Δᵖ × I`, a single pair `α : ⦋n⦌ ⟶ ⦋p⦌`, `β : ⦋n⦌ ⟶ ⦋1⦌` and weights `w`
+represent `prism p (s, t)` simultaneously in two universes `u` and `v`. -/
+lemma exists_prism_eq_toTopObjMk.{v} (p : ℕ) (s : StdSimplex ℝ (Fin (p + 1))) (t : I) :
+    ∃ (n : ℕ) (α : ⦋n⦌ ⟶ ⦋p⦌) (β : ⦋n⦌ ⟶ ⦋1⦌) (w : StdSimplex ℝ (Fin (n + 1))),
+      prism.{u} p (s, t) = toTopObjMk (X := (Δ[p] ⊗ Δ[1] : SSet.{u}))
+        (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β) w ∧
+      prism.{v} p (s, t) = toTopObjMk (X := (Δ[p] ⊗ Δ[1] : SSet.{v}))
+        (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β) w := by
+  obtain ⟨k, hk⟩ := exists_mem_piece (s, t); let x₀ := (nonDegenerateEquiv.{0} k).val
+  refine ⟨p + 1, stdSimplex.objEquiv x₀.1, stdSimplex.objEquiv x₀.2,
+    pieceWeights.{0} k (s, t) hk, ?_, ?_⟩ <;>
+  · refine prism_eq _ _ (by convert map_pieceWeights.{0} k (s, t) hk using 2; ext i : 1; rfl)
+
 end prodStdSimplex₁
 
 /-! ### Realization of the cylinder and of homotopies -/
@@ -520,6 +559,16 @@ lemma toTopCylinder_toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (F
   rw [Equiv.apply_symm_apply] at h
   exact DFunLike.congr_fun h t
 
+@[simp] lemma toTopCylinder_toTopObjMk_zero (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
+    toTopCylinder X (toTopObjMk v w, t) =
+      toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
+  rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_zero_dim, toTop_map_toTopObjMk]
+  refine congrArg (toTopObjMk · _) ((whiskerRight_app_apply (yonedaEquiv.symm v) Δ[1] _).trans
+    (Prod.ext ?_ ((verticalEdge_snd _).trans (verticalEdge_snd v).symm)))
+  simpa [verticalEdge_fst, SimplicialObject.σ, yonedaEquiv_symm_app_objEquiv_symm] using
+    NatTrans.naturality_apply (yonedaEquiv.symm v) (SimplexCategory.σ 0).op
+      (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))
+
 /-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
 family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/
 private lemma toTopCylinder_of_prism {t : I} (j : ∀ {Z : SSet.{u}}, Z ⟶ Z ⊗ Δ[1])
@@ -544,6 +593,17 @@ lemma toTopCylinder_zero (z : |X|) : toTopCylinder X (z, 0) = toTop.map ι₀ z 
 lemma toTopCylinder_one (z : |X|) : toTopCylinder X (z, 1) = toTop.map ι₁ z :=
   toTopCylinder_of_prism ι₁ ι₁_comp (fun _ ↦ prodStdSimplex₁.prism_one) z
 
+lemma toTopCylinder_naturality_apply (f : X ⟶ Y) (z : |X|) (t : I) :
+    toTopCylinder Y (toTop.map f z, t) = toTop.map (f ▷ Δ[1]) (toTopCylinder X (z, t)) := by
+  refine ConcreteCategory.congr_hom (toTop_hom_ext
+    (g₁ := TopCat.ofHom ((toTopCylinder Y).comp ⟨fun z ↦ (toTop.map f z, t), by fun_prop⟩))
+    (g₂ := TopCat.ofHom (((toTop.map (f ▷ Δ[1])).hom.comp (toTopCylinder X)).comp
+      ⟨fun z ↦ (z, t), by fun_prop⟩)) fun n x w ↦ ?_) z
+  simp only [TopCat.hom_ofHom, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
+    toTop_map_toTopObjMk, toTopCylinder_toTopObjMk]
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← MonoidalCategory.comp_whiskerRight,
+    yonedaEquiv_symm_comp]
+
 /-- The realization of a simplicial homotopy `H` between `f` and `g`: the homotopy between `|f|` and
 `|g|` given by the realization of `H.h : X ⊗ Δ[1] ⟶ Y` composed with the triangulation of the
 realized cylinder. -/
@@ -563,6 +623,11 @@ applied to the triangulation of the realized cylinder. -/
 lemma Homotopy.toTop_apply {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (z : |X|) :
     H.toTop (t, z) = SSet.toTop.map H.h (toTopCylinder X (z, t)) :=
   (rfl)
+
+lemma Homotopy.toTop_toTopObjMk_zero {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (v : X _⦋0⦌)
+    (w : StdSimplex ℝ (Fin 1)) : H.toTop (t, toTopObjMk v w) =
+      toTopObjMk (H.h.app (op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
+  rw [Homotopy.toTop_apply, toTopCylinder_toTopObjMk_zero, toTop_map_toTopObjMk]
 
 /-- Two maps from `X` to the singular simplicial set of a space `T` are simplicially homotopic
 exactly when their adjoint maps `|X| ⟶ T` are homotopic. -/
