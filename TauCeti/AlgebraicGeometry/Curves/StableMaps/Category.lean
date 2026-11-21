@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Category
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
 
@@ -25,7 +26,10 @@ its pointed source curve that commute with the map.
 Postcomposition with a morphism of targets over `S`, base change along `g : T ⟶ S` and
 reindexing the markings are functors. Postcomposition is faithful, it is full for a monomorphism
 of targets, and it is an equivalence of categories for an isomorphism of targets: an isomorphism
-of targets over `S` transports prestable maps and their isomorphisms.
+of targets over `S` transports prestable maps and their isomorphisms. In particular, for a
+monomorphism of targets the automorphisms of a prestable map are those of its postcomposition.
+Base change of automorphisms is injective when the projection of source curves is an
+epimorphism, for instance along a flat surjective morphism.
 
 Base change also changes the target, from `q` to `V ×_S T ⟶ T`, so its coherence is stated after
 transporting along the canonical isomorphisms of targets. Base change along the identity and along
@@ -43,6 +47,8 @@ canonically isomorphic to the chosen base change.
 * `TauCeti.AlgebraicGeometry.PrestableMap.autToCurve`: the injective homomorphism from the
   automorphism group of a prestable map to that of its pointed source curve.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompFunctor`: postcomposition as a functor.
+* `TauCeti.AlgebraicGeometry.PrestableMap.postcompAut`: for a monomorphism of targets `h`, the
+  identification `Aut F ≃* Aut (F ≫ h)`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctor`: base change as a functor.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut`: base change of automorphisms.
 * `TauCeti.AlgebraicGeometry.PrestableMap.reindexFunctor`: reindexing as a functor.
@@ -51,6 +57,8 @@ canonically isomorphic to the chosen base change.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackIdIso`,
   `TauCeti.AlgebraicGeometry.PrestableMap.pullbackCompIso`: the canonical isomorphisms for base
   change along the identity and along a composite.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackPostcompIso`: base change commutes with
+  postcomposition.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorId`,
   `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorComp`: the corresponding natural
   isomorphisms of functors.
@@ -67,6 +75,10 @@ canonically isomorphic to the chosen base change.
   pointed source curve comes from the prestable map exactly when it commutes with the map.
 * The instances `(postcompFunctor h hh).Full` for a monomorphism `h` and
   `(postcompFunctor h hh).IsEquivalence` for an isomorphism `h`.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut_injective_of_epi`,
+  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut_injective`: base change is injective on
+  automorphisms when the projection of source curves is an epimorphism, in particular along a
+  flat surjective morphism.
 
 ## Implementation notes
 
@@ -247,6 +259,28 @@ instance {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) [IsIso h] :
   essSurj := Functor.essSurj_of_surj fun G ↦
     ⟨G.postcomp (inv h) (by simp [← hh]), (G.postcomp_postcomp _ _ h hh).trans (by simp)⟩
 
+/-- For a monomorphism of targets `h : V ⟶ W` over `S`, the automorphisms of a prestable map `F`
+are those of its postcomposition `F ≫ h`: an automorphism of the source curve commutes with
+`F ≫ h` exactly when it commutes with `F`. -/
+def postcompAut (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) [Mono h] :
+    Aut F ≃* Aut (F.postcomp h hh) :=
+  (Functor.FullyFaithful.ofFullyFaithful
+    (postcompFunctor (n := n) h hh)).autMulEquivOfFullyFaithful F
+
+/-- `postcompAut` keeps the automorphism of the source curve. -/
+@[simp]
+theorem postcompAut_apply_asIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) [Mono h] (e : Aut F) :
+    (F.postcompAut h hh e).asIso.hom.curve = e.asIso.hom.curve :=
+  (rfl)
+
+/-- The inverse of `postcompAut` keeps the automorphism of the source curve. -/
+@[simp]
+theorem postcompAut_symm_apply_asIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) [Mono h] (e : Aut (F.postcomp h hh)) :
+    ((F.postcompAut h hh).symm e).asIso.hom.curve = e.asIso.hom.curve := by
+  rw [← postcompAut_apply_asIso_hom_curve F h hh, MulEquiv.apply_symm_apply]
+
 /-! ### Base change and reindexing -/
 
 /-- The base change along `g : T ⟶ S` of a morphism of prestable maps to `q`: the base change of
@@ -290,6 +324,28 @@ def pullbackAut (F : PrestableMap q n) (g : T ⟶ S) : Aut F →* Aut (F.pullbac
 theorem pullbackAut_apply_asIso_hom (F : PrestableMap q n) (g : T ⟶ S) (e : Aut F) :
     (F.pullbackAut g e).asIso.hom = pullbackMap g e.asIso.hom :=
   (rfl)
+
+/-- Base change along `g : T ⟶ S` is injective on automorphisms when the projection
+`C ×_S T ⟶ C` of source curves is an epimorphism of schemes: an automorphism of `F` is determined
+by its composite with this projection. -/
+theorem pullbackAut_injective_of_epi (F : PrestableMap q n) (g : T ⟶ S)
+    [Epi (Limits.pullback.fst F.curve.toBase g)] : Function.Injective (F.pullbackAut g) := by
+  intro e e' hee'
+  refine Aut.ext (Iso.ext (hom_ext (PointedPrestableFamily.hom_ext ?_)))
+  rw [← cancel_epi (Limits.pullback.fst F.curve.toBase g),
+    (PointedPrestableFamily.isPullback_pullbackMap_hom g e.asIso.hom.curve).w,
+    (PointedPrestableFamily.isPullback_pullbackMap_hom g e'.asIso.hom.curve).w]
+  have := congr(($hee').asIso.hom.curve.hom ≫ Limits.pullback.fst F.curve.toBase g)
+  simp only [pullbackAut_apply_asIso_hom, pullbackMap_curve] at this
+  exact this
+
+/-- **Base change along a flat surjective morphism is injective on automorphisms.** The
+projection `C ×_S T ⟶ C` of source curves is then flat and surjective, hence an epimorphism of
+schemes. -/
+theorem pullbackAut_injective (F : PrestableMap q n) (g : T ⟶ S) [Flat g] [Surjective g] :
+    Function.Injective (F.pullbackAut g) :=
+  have := Flat.epi_of_flat_of_surjective (Limits.pullback.fst F.curve.toBase g)
+  F.pullbackAut_injective_of_epi g
 
 /-- Reindexing the markings along an injection `e : Fin m ↪ Fin n` as a functor; a morphism of
 prestable maps preserves in particular the reindexed markings. -/
@@ -431,6 +487,34 @@ def pullbackFunctorComp (g : T ⟶ S) (h : U ⟶ T) :
 theorem pullbackFunctorComp_app (g : T ⟶ S) (h : U ⟶ T) (F : PrestableMap q n) :
     (pullbackFunctorComp g h).app F = (pullbackCompIso F g h).symm :=
   (rfl)
+
+/-- Base change commutes with postcomposition: the base change along `x : T ⟶ S` of `F ≫ h` is
+the base change of `F`, postcomposed with the base change `V ×_S T ⟶ W ×_S T` of `h`. The two
+have the same source curve. -/
+def pullbackPostcompIso (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q)
+    (x : T ⟶ S) :
+    (F.postcomp h hh).pullback x ≅
+      (F.pullback x).postcomp
+        (Limits.pullback.map q x r x h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp)) (by simp) :=
+  isoMk (Iso.refl _) (by
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    apply Limits.pullback.hom_ext <;> simp)
+
+/-- `pullbackPostcompIso` is the identity on source curves. -/
+@[simp]
+theorem pullbackPostcompIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) (x : T ⟶ S) :
+    (F.pullbackPostcompIso h hh x).hom.curve = 𝟙 _ := by
+  rw [pullbackPostcompIso]
+  exact isoMk_hom_curve _ _
+
+/-- `pullbackPostcompIso` is the identity on source curves. -/
+@[simp]
+theorem pullbackPostcompIso_inv_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) (x : T ⟶ S) :
+    (F.pullbackPostcompIso h hh x).inv.curve = 𝟙 _ := by
+  rw [pullbackPostcompIso]
+  exact isoMk_inv_curve _ _
 
 end PrestableMap
 

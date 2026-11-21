@@ -275,7 +275,7 @@ theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
 /-- The embedding `G_L → G_K` induced by an embedding of a finite extension is continuous. -/
 theorem continuous_absoluteGaloisGroupExtend : Continuous (absoluteGaloisGroupExtend K L σ) :=
   (absoluteGaloisGroupRestrictEquiv K).symm.continuous_toFun.comp <|
-    continuous_subtype_val.comp <|
+    continuous_subtypeVal.comp <|
       (galoisSubgroupEquiv K L σ).continuous_toFun.comp
         (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
 
@@ -295,7 +295,7 @@ theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K
   refine ⟨?_, fun hg ↦ ?_⟩
   · rintro ⟨τ, rfl⟩
     rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
-    exact (galoisSubgroupEquiv K L σ _).2
+    exact (galoisSubgroupEquiv K L σ _).property
   · refine ⟨(absoluteGaloisGroupRestrictEquiv L).symm
       ((galoisSubgroupEquiv K L σ).symm ⟨absoluteGaloisGroupRestrictEquiv K g, hg⟩),
       (absoluteGaloisGroupRestrictEquiv K).injective ?_⟩
@@ -368,9 +368,9 @@ def absoluteGaloisGroupRestrictSubgroupEquiv {U : Subgroup (Field.absoluteGalois
       AbsoluteGaloisGroup K).subgroupMap U).trans
     (MulEquiv.subgroupCongr (hU ▸ map_range_absoluteGaloisGroupExtend K L σ))
   continuous_toFun :=
-    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtype_val).subtype_mk _
+    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtypeVal).subtype_mk _
   continuous_invFun :=
-    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtype_val).subtype_mk _
+    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- `absoluteGaloisGroupRestrictSubgroupEquiv` is the restriction isomorphism
 `absoluteGaloisGroupRestrictEquiv K`. -/

@@ -51,10 +51,10 @@ variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder 
 /-- On events of small probability, increments of a class DL process between a grid stopping time
 and the end of the grid have small integrals. -/
 private theorem setIntegral_sub_stoppedValue_le
-    (hU : UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.1) 1 μ)
+    (hU : UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.val) 1 μ)
     (hX : ∀ t, Integrable (X t) μ) {δ : ℝ≥0∞} {ε' : ℝ} (hε' : 0 ≤ ε')
     (hδ : ∀ (τ : BoundedStoppingTime ℱ T) (s : Set Ω), μ s ≤ δ →
-      eLpNorm (stoppedValue X τ.1) 1 (μ.restrict s) ≤ .ofReal ε')
+      eLpNorm (stoppedValue X τ.val) 1 (μ.restrict s) ≤ .ofReal ε')
     {g : ℕ → ι} (hg : Monotone g) {N : ℕ} (hgN : g N ≤ T)
     {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ) (hσN : ∀ ω, σ ω ≤ N)
     (hs : μ {ω | σ ω < N} ≤ δ) :
@@ -68,7 +68,7 @@ private theorem setIntegral_sub_stoppedValue_le
   rw [← BoundedStoppingTime.stoppedValue_ofComp hg hgN hσ hσN, integral_sub (hX (g N)).integrableOn
     (memLp_one_iff_integrable.1 (hU.memLp τ)).integrableOn]
   linarith [le_abs_self (∫ ω in {ω | σ ω < N}, X (g N) ω ∂μ),
-    neg_abs_le (∫ ω in {ω | σ ω < N}, stoppedValue X τ.1 ω ∂μ)]
+    neg_abs_le (∫ ω in {ω | σ ω < N}, stoppedValue X τ.val ω ∂μ)]
 
 /-- **Uniform integrability of discrete compensators.** Sample a submartingale `X` of class DL
 along grids `g i` with `g i (N i) ≤ T`. The compensators of the sampled processes, for the
@@ -81,7 +81,7 @@ theorem IsClassDL.uniformIntegrable_predictablePart [IsFiniteMeasure μ]
   have hU := hD.uniformIntegrable T
   have hXi (i : κ) : Submartingale (fun k ↦ X (g i k)) (ℱ.comp (hg i)) μ := hX.comp (hg i)
   -- A uniform bound `K` on the expectations of the values at bounded stopping times.
-  set K := (⨆ τ : BoundedStoppingTime ℱ T, eLpNorm (stoppedValue X τ.1) 1 μ).toReal
+  set K := (⨆ τ : BoundedStoppingTime ℱ T, eLpNorm (stoppedValue X τ.val) 1 μ).toReal
   have hK0 : 0 ≤ K := ENNReal.toReal_nonneg
   have hK (t : ι) (ht : t ≤ T) : |∫ ω, X t ω ∂μ| ≤ K := by
     have h := MeasureTheory.norm_integral_le_of_eLpNorm_one_le (μ := μ) (f := X t) (ε := K)
@@ -89,7 +89,7 @@ theorem IsClassDL.uniformIntegrable_predictablePart [IsFiniteMeasure μ]
     · simpa using h
     rw [ENNReal.ofReal_toReal hU.iSup_eLpNorm_lt.ne,
       ← BoundedStoppingTime.stoppedValue_const (ℱ := ℱ) (X := X) ht]
-    exact le_iSup (fun τ : BoundedStoppingTime ℱ T ↦ eLpNorm (stoppedValue X τ.1) 1 μ)
+    exact le_iSup (fun τ : BoundedStoppingTime ℱ T ↦ eLpNorm (stoppedValue X τ.val) 1 μ)
       (BoundedStoppingTime.const ht)
   refine uniformIntegrable_of_setIntegral_le
     (fun i ↦ integrable_predictablePart (hXi i).integrable _)

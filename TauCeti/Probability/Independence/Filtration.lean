@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
+public import TauCeti.Probability.Process.Filtration.RightCont
+import Mathlib.Topology.Order.IsLUB
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.Probability.Independence.Limit
 import TauCeti.Probability.Independence.Sup
@@ -25,6 +27,8 @@ file derives the consequences that do not depend on the law of the increments.
 
 * `MeasureTheory.Adapted.indep_comap_sub_of_indep_comap_sub`: increments independent of the past
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
+* `MeasureTheory.Adapted.indepFun_sub_sub`: an increment independent of `ℱ u` is independent of
+  any earlier increment ending by time `u`.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
 * `MeasureTheory.Adapted.indep_comap_sub_Ici` and
@@ -66,6 +70,15 @@ theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableSub₂ E]
   rw [← sub_add_sub_cancel (X t) (X u) (X s)]
   exact ((comap_measurable _).mono le_sup_right le_rfl).add
     ((comap_measurable _).mono le_sup_left le_rfl)
+
+/-- Increments of an adapted process over `(s, t]` and `(u, v]` are independent whenever
+`s ≤ u`, `t ≤ u`, and `X v - X u` is independent of `ℱ u`. -/
+theorem indepFun_sub_sub [Sub E] [MeasurableSub₂ E] (hX : Adapted ℱ X) {s t u v : ι}
+    (hsu : s ≤ u) (htu : t ≤ u)
+    (hindep : Indep (.comap (X v - X u) inferInstance) (ℱ u) μ) :
+    IndepFun (X t - X s) (X v - X u) μ :=
+  (IndepFun_iff_Indep _ _ _).mpr <| indep_of_indep_of_le_left hindep.symm
+    ((hX.measurable_le htu).sub (hX.measurable_le hsu)).comap_le
 
 /-- A process adapted to `ℱ` whose increments `X t - X s`, `s ≤ t`, are independent of `ℱ s` has
 independent increments. -/
@@ -176,7 +189,7 @@ private lemma indep_rightCont_pi_sub_of_lt (hX : Adapted ℱ X)
     (ℱ.rightCont_le_of_lt hsu)
   rw [MeasurableSpace.comap_process_pi]
   exact iSup_le fun t ↦
-    le_iSup₂_of_le (t : ι) (Finset.mem_image_of_mem Subtype.val t.2) le_rfl
+    le_iSup₂_of_le (t : ι) (Finset.mem_image_of_mem Subtype.val t.property) le_rfl
 
 variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [FirstCountableTopology ι]
   [TopologicalSpace E] [BorelSpace E] [HasOuterApproxClosed E] [ContinuousSub E]
@@ -195,7 +208,7 @@ theorem indep_comap_sub_Ioi_rightCont (hX : Adapted ℱ X)
     (fun _ _ h ↦ iSup_le_iSup_of_subset h)
   · rcases I.eq_empty_or_nonempty with rfl | hne
     · simpa using indep_bot_left (ℱ.rightCont s)
-    · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).2
+    · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).property
       have hu' : Tendsto u atTop (𝓝[>] s) :=
         tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n ↦ (hu n).1⟩
       have hfin := (indep_comap_process_of_ae_tendsto

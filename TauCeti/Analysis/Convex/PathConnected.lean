@@ -32,10 +32,11 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTop
 
 /-- A convex subset of a real topological vector space is locally path-connected. -/
 theorem Convex.locallyPathConnectedSpace' (hs : Convex ℝ s) : LocallyPathConnectedSpace s := by
-  refine .of_bases (fun x : s ↦ nhds_subtype s x ▸ map_add_left_nhds_zero x.1 ▸
-    ((nhds_basis_balanced ℝ E).map (x.1 + ·)).comap ((↑) : s → E)) fun x W hW ↦ ?_
+  refine .of_bases (fun x : s ↦ nhds_subtype s x ▸ map_add_left_nhds_zero x.val ▸
+    ((nhds_basis_balanced ℝ E).map (x.val + ·)).comap ((↑) : s → E)) fun x W hW ↦ ?_
   rw [← Subtype.preimage_coe_self_inter]
   refine IsPathConnected.preimage_coe ?_ inter_subset_left
-  have hW' : StarConvex ℝ x.1 ((x.1 + ·) '' W) := by
-    simpa only [add_zero] using hW.2.starConvex.add_left x.1
-  exact ((hs.starConvex x.2).inter hW').isPathConnected ⟨x.2, 0, mem_of_mem_nhds hW.1, add_zero _⟩
+  have hW' : StarConvex ℝ x.val ((x.val + ·) '' W) := by
+    simpa only [add_zero] using hW.2.starConvex.add_left x.val
+  exact ((hs.starConvex x.property).inter hW').isPathConnected ⟨x.property, 0, mem_of_mem_nhds hW.1,
+      add_zero _⟩

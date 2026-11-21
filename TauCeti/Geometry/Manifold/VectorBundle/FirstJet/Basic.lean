@@ -621,7 +621,7 @@ trivialization of `V` at `i`. -/
 theorem trivializationAt_apply_snd (i : M)
     (p : TotalSpace (F × (E →L[𝕜] F)) (FirstJetBundle I F V)) :
     (trivializationAt (F × (E →L[𝕜] F)) (FirstJetBundle I F V) i p).2 =
-      coordChange I F V p.1 i p.1 p.2 := (rfl)
+      coordChange I F V p.proj i p.proj p.snd := (rfl)
 
 /-- In the preferred trivialization of `J¹V` at `i`, the first jet of a section differentiable
 at `y` consists of the value and the chart derivative of its local representative at `i`. -/

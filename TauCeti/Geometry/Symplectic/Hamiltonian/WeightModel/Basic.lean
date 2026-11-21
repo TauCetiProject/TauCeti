@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Extreme
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Instances.AddCircle.Defs
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
@@ -75,6 +76,8 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
   the weight-model rotation by `-t` for any representative `t` of `θ`.
 * `TauCeti.weightGenerator θ`: its infinitesimal generator `z_i ↦ i θ_i z_i`.
 * `TauCeti.weightMomentMap α`: the moment map `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i`.
+* `TauCeti.halfSqRadii`: the half squared radii `((q_i² + p_i²) / 2)_i`, through which `μ`
+  factors (`TauCeti.weightMomentMap_eq_linearCombination_comp_halfSqRadii`).
 * `TauCeti.weightModelCoords`: the real coordinates `(q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by
   `ι ⊕ ι`.
 * `TauCeti.weightInfinitesimalAction α z`: the infinitesimal action `ξ ↦ ξ_M(z)` at `z`.
@@ -108,8 +111,11 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
   with `z_i ≠ 0`.
 * `TauCeti.finrank_range_weightInfinitesimalAction`: the orbit through `z` has dimension the rank
   of the weights `α_i` with `z_i ≠ 0`.
-* `TauCeti.weightRotation_eq_id_iff`: the kernel of the rotation action.
-* `TauCeti.exists_weightRotation_apply_eq_iff`: the orbits of the full rotation torus.
+* `TauCeti.weightRotation_eq_id_iff`: the kernel of the rotation action; in particular the
+  rotation by the arguments of `e^{i θ_j}` is the rotation by `θ`
+  (`TauCeti.weightRotation_arg_circleExp`).
+* `TauCeti.exists_weightRotation_apply_eq_iff`: the orbits of the full rotation torus, which
+  preserve the squared radius `‖q‖² + ‖p‖²` (`TauCeti.norm_fst_sq_add_norm_snd_sq_weightRotation`).
 * `TauCeti.torusRotation_add`, `TauCeti.torusRotation_apply_eq_self_iff`,
   `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
   `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`.
@@ -138,7 +144,39 @@ namespace TauCeti
 
 open Real
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+/-- The half squared radii `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of a point `(q, p)` of `ℂ^ι`, that
+is, the halved squared moduli `|z_i|² / 2` of its coordinates `z_i = q_i + i p_i`. -/
+def halfSqRadii (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : ι → ℝ :=
+  fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2
+
+@[simp]
+theorem halfSqRadii_apply (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    halfSqRadii x i = (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
+  (rfl)
+
+/-- The half squared radii lie in the closed orthant. -/
+theorem halfSqRadii_nonneg (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : 0 ≤ halfSqRadii x :=
+  fun i ↦ by rw [Pi.zero_apply, halfSqRadii_apply]; positivity
+
+/-- The half squared radii depend continuously on the point. -/
+@[fun_prop]
+theorem continuous_halfSqRadii : Continuous (halfSqRadii (ι := ι)) :=
+  continuous_pi fun i ↦ by simp only [halfSqRadii_apply]; fun_prop
+
+/-- The half squared radii take every value in the closed orthant. -/
+theorem range_halfSqRadii : Set.range (halfSqRadii (ι := ι)) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 halfSqRadii_nonneg) fun s hs ↦
+    ⟨(WithLp.toLp 2 fun i ↦ √(2 * s i), 0), ?_⟩
+  ext i
+  simp only [halfSqRadii_apply, PiLp.zero_apply]
+  rw [sq_sqrt (mul_nonneg zero_le_two (hs i))]
+  ring
+
+section WeightRotation
+
+variable [Fintype ι]
 
 /-- The rotation `z_i ↦ exp(i θ_i) z_i` of `ℂ^ι`, written in the real coordinates
 `z_i = q_i + i p_i` of `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`. -/
@@ -259,15 +297,14 @@ theorem weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱)
 theorem weightMomentMap_zero (α : ι → StrongDual ℝ 𝔱) : weightMomentMap α 0 = 0 := by
   simp [weightMomentMap]
 
-/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the
+/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
 half squared radii `(q_i² + p_i²) / 2`. -/
-theorem weightMomentMap_eq_linearCombination (α : ι → StrongDual ℝ 𝔱)
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    weightMomentMap α x =
-      Fintype.linearCombination ℝ (-α) fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
-  rw [weightMomentMap_def, Fintype.linearCombination_apply]
+theorem weightMomentMap_eq_linearCombination_comp_halfSqRadii (α : ι → StrongDual ℝ 𝔱) :
+    weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘ halfSqRadii := by
+  ext x : 1
+  rw [weightMomentMap_def, Function.comp_apply, Fintype.linearCombination_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Pi.neg_apply, smul_neg, ← neg_smul]
+  rw [halfSqRadii_apply, Pi.neg_apply, smul_neg, ← neg_smul]
   congr 1
   ring
 
@@ -360,7 +397,7 @@ theorem range_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     exact (neg_smul (1 / 2 * (x.1 i ^ 2 + x.2 i ^ 2)) (α i)).symm
   · rintro ⟨c, rfl⟩
     refine ⟨(WithLp.toLp 2 fun i ↦ √(2 * c i), 0), Finset.sum_congr rfl fun i _ ↦ ?_⟩
-    have h : √(2 * (c i : ℝ)) ^ 2 = 2 * c i := Real.sq_sqrt (mul_nonneg zero_le_two (c i).2)
+    have h : √(2 * (c i : ℝ)) ^ 2 = 2 * c i := Real.sq_sqrt (mul_nonneg zero_le_two (c i).property)
     rw [← Nonneg.coe_smul, Pi.neg_apply, smul_neg, ← neg_smul]
     congr 1
     simp only [PiLp.zero_apply, h]
@@ -463,38 +500,34 @@ theorem mem_ker_weightGenerator_iff (θ : ι → ℝ) (x : EuclideanSpace ℝ ι
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, weightGenerator_apply_eq_zero_iff]
   exact forall_congr' fun i ↦ by tauto
 
-omit [Fintype ι] in
+end WeightRotation
+
 /-- The real coordinates `(q, p) ↦ (q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by `ι ⊕ ι`. -/
 def weightModelCoords :
     (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
   ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).prodCongr (WithLp.linearEquiv 2 ℝ (ι → ℝ))).trans
     (LinearEquiv.sumArrowLequivProdArrow ι ι ℝ ℝ).symm
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_apply_inl (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
     weightModelCoords v (Sum.inl i) = v.1 i :=
   (rfl)
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_apply_inr (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
     weightModelCoords v (Sum.inr i) = v.2 i :=
   (rfl)
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_symm_apply_fst (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).1 i = u (Sum.inl i) :=
   (rfl)
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
   (rfl)
 
-omit [Fintype ι] in
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, a subspace `W` of `ℂ^ι` cut out by `z_i = 0` for
 every `i ∉ s` is spanned by the coordinates of the indices in `s`. -/
 theorem map_weightModelCoords_eq_spanSubset [Finite ι]
@@ -509,7 +542,6 @@ theorem map_weightModelCoords_eq_spanSubset [Finite ι]
   exact ⟨fun h ↦ ⟨fun i hi ↦ (h i hi).1, fun i hi ↦ (h i hi).2⟩,
     fun h i hi ↦ ⟨h.1 i hi, h.2 i hi⟩⟩
 
-omit [Fintype ι] in
 /-- A subspace `W` of `ℂ^ι` cut out by `z_i = 0` for every `i ∉ s` has real dimension twice the
 number of elements of `s`. -/
 theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
@@ -519,6 +551,10 @@ theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
   rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_eq_spanSubset s hW,
     Pi.dim_spanSubset, Set.preimage, Set.ncard_setOf_sumElim id (· ∈ s)]
   simp only [id_eq, Set.ofPred_mem_eq]
+
+section InfinitesimalAction
+
+variable [Fintype ι] {𝔱 : Type*} [NormedAddCommGroup 𝔱] [NormedSpace ℝ 𝔱]
 
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
 angles `θ` is spanned by the coordinates whose angle vanishes. -/
@@ -650,6 +686,16 @@ theorem weightRotation_eq_id_iff (θ : ι → ℝ) :
     rw [h, ContinuousLinearMap.id_apply]
   exact (weightRotation_apply_eq_self_iff θ _).1 hx j (Or.inl (by simp))
 
+/-- The rotation by the arguments of the unit complex numbers `e^{i θ_j}` is the rotation by the
+angles `θ`: rotations only depend on their angles modulo `2π`. -/
+theorem weightRotation_arg_circleExp (θ : ι → ℝ) :
+    weightRotation (fun j ↦ Complex.arg (Circle.exp (θ j))) = weightRotation θ := by
+  have h (j : ι) : ∃ k : ℤ, k * (2 * π) = Complex.arg (Circle.exp (θ j)) - θ j := by
+    obtain ⟨k, hk⟩ := Circle.exp_eq_exp.1 (Circle.exp_arg (Circle.exp (θ j)))
+    exact ⟨k, by linarith⟩
+  rw [← sub_add_cancel (fun j ↦ Complex.arg (Circle.exp (θ j))) θ, weightRotation_add,
+    (weightRotation_eq_id_iff (_ - θ)).2 h, ContinuousLinearMap.id_comp]
+
 /-- **Orbits of the rotation torus.** Some rotation of `ℂ^ι` carries `z` to `w` exactly when
 `|z_j| = |w_j|` for every `j`. -/
 theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
@@ -682,6 +728,15 @@ theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × Eucli
       linear_combination h j
     choose θ hθ using hrot
     exact ⟨θ, by ext j <;> simp [hθ]⟩
+
+/-- Rotations preserve the squared radius `‖q‖² + ‖p‖²` of `ℂ^ι`. -/
+@[simp]
+theorem norm_fst_sq_add_norm_snd_sq_weightRotation (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ‖(weightRotation θ x).1‖ ^ 2 + ‖(weightRotation θ x).2‖ ^ 2 = ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 := by
+  have h := (exists_weightRotation_apply_eq_iff x (weightRotation θ x)).1 ⟨θ, rfl⟩
+  simp only [EuclideanSpace.real_norm_sq_eq]
+  rw [← Finset.sum_add_distrib, ← Finset.sum_congr rfl fun j _ ↦ h j, Finset.sum_add_distrib]
 
 /-- **Fixed points of the weight action.** A point of `ℂ^ι` is fixed by the action of every
 `ξ ∈ 𝔱` exactly when its coordinates `z_j` vanish along the nonzero weights `α_j`. -/
@@ -803,7 +858,13 @@ theorem weightRotation_two_pi_smul_apply_eq_self_iff (α : ι → StrongDual ℝ
   refine forall₂_congr fun j _ ↦ exists_congr fun k ↦ ?_
   rw [map_smul, smul_eq_mul, mul_comm (2 * π), mul_left_inj' two_pi_pos.ne', eq_comm]
 
+end InfinitesimalAction
+
 /-! ### The rotation torus `(ℝ / 2πℤ)^ι` -/
+
+section TorusRotation
+
+variable [Fintype ι]
 
 /-- The rotation `z_j ↦ exp(-i θ_j) z_j` of `ℂ^ι` by angles `θ ∈ (ℝ / 2πℤ)^ι`, in the real
 coordinates `z_j = q_j + i p_j`. On representatives it is `TauCeti.weightRotation (-θ)`
@@ -840,12 +901,17 @@ theorem torusRotation_coe (t : ι → ℝ) :
     torusRotation (fun j ↦ (t j : AddCircle (2 * π))) = weightRotation (-t) := by
   ext x j <;> simp [torusRotation, cos_neg, sin_neg]
 
-omit [Fintype ι] in
+end TorusRotation
+
 /-- Every element of the torus `(ℝ / 2πℤ)^ι` has a representative in `ℝ^ι`. -/
 private theorem exists_coe_eq (θ : ι → AddCircle (2 * π)) :
     ∃ t : ι → ℝ, (fun j ↦ (t j : AddCircle (2 * π))) = θ := by
   choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
   exact ⟨t, funext ht⟩
+
+section TorusRotationProperties
+
+variable [Fintype ι]
 
 @[simp]
 theorem torusRotation_zero :
@@ -921,5 +987,7 @@ theorem continuous_torusRotation :
     ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ?_))
   · exact ((hcos.comp (hθ j)).mul (h1 j)).add ((hsin.comp (hθ j)).mul (h2 j))
   · exact (((hsin.comp (hθ j)).mul (h1 j)).neg).add ((hcos.comp (hθ j)).mul (h2 j))
+
+end TorusRotationProperties
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TotallySplit
+public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 public import TauCeti.RingTheory.Etale.Torsor.Descent
 public import TauCeti.RingTheory.Unramified.Frame
 import TauCeti.RingTheory.Etale.FiniteEtaleSplit.ConstantRank
@@ -60,8 +61,11 @@ closure of `S`: for a finite separable field extension `L / K` of degree `n` wit
   of constant rank `Fintype.card ι` is a finite étale `Perm ι`-torsor.
 * `TauCeti.Algebra.FrameAlgebra.bijective_universalFrame`: the universal frame of a finite étale
   algebra of constant rank `Fintype.card ι` is bijective.
-* `TauCeti.Algebra.FrameAlgebra.isFiniteSplit_tensorProduct`: a finite étale algebra of constant
-  rank `Fintype.card ι` becomes finite split after base change to its frame algebra.
+* `TauCeti.Algebra.FrameAlgebra.isFiniteSplit_tensorProduct`,
+  `TauCeti.Algebra.FrameAlgebra.isTotallySplit_tensorProduct`: a finite étale algebra of constant
+  rank `Fintype.card ι` becomes split after base change to its frame algebra.
+* `TauCeti.Algebra.FrameAlgebra.singleAlgHom_injective_of_etale`: over a nonzero ring, the `|ι|`
+  canonical sections `S →ₐ[R] FrameAlgebra R S ι` are pairwise distinct.
 * `TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor_of_finrank_eq`,
   `TauCeti.Algebra.FrameAlgebra.isFiniteSplit_tensorProduct_of_finrank_eq`,
   `TauCeti.Algebra.FrameAlgebra.finrank_eq_factorial`: specializations over a field.
@@ -183,6 +187,26 @@ theorem isFiniteSplit_tensorProduct {R : Type u} {S : Type*} [CommRing R] [CommR
     (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     Algebra.IsFiniteSplit (FrameAlgebra R S ι) (FrameAlgebra R S ι ⊗[R] S) :=
   .of_algEquiv (universalFrameEquiv h).symm
+
+/-- A finite étale `R`-algebra `S` of constant rank `Fintype.card ι` becomes totally split
+(`TauCeti.Algebra.IsTotallySplit`) after base change to `FrameAlgebra R S ι`. -/
+theorem isTotallySplit_tensorProduct {R : Type u} {S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
+    IsTotallySplit (FrameAlgebra R S ι) (FrameAlgebra R S ι ⊗[R] S) :=
+  have := isFiniteSplit_tensorProduct h
+  .of_isFiniteSplit
+
+/-- Over a nontrivial ring `R`, the `|ι|` canonical sections `S →ₐ[R] FrameAlgebra R S ι` of a
+finite étale algebra `S` of constant rank `Fintype.card ι` are pairwise distinct. -/
+theorem singleAlgHom_injective_of_etale {R : Type u} {S : Type*} [CommRing R] [Nontrivial R]
+    [CommRing S] [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
+    Function.Injective (singleAlgHom R S : ι → (S →ₐ[R] FrameAlgebra R S ι)) := by
+  have := (isFiniteEtaleTorsor h).faithfullyFlat
+  have : Nontrivial (FrameAlgebra R S ι) :=
+    (FaithfulSMul.algebraMap_injective R (FrameAlgebra R S ι)).nontrivial
+  exact singleAlgHom_injective
 
 end ConstantRank
 

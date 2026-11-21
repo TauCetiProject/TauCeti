@@ -271,12 +271,12 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
   target := U ×ˢ univ
   map_source' _ he := ⟨he, mem_univ _⟩
   map_target' q hq := by
-    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.2]
+    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.property]
     exact hq.1
   left_inv' e he := by
     simp only [coe_equivariantSectionFiber he, smul_inv_smul]
   right_inv' q hq := by
-    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.2
+    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.property
     refine Prod.ext hq' (Subtype.ext ?_)
     rw [coe_equivariantSectionFiber (hq'.symm ▸ hq.1 : p (s q.1 • (q.2 : E)) ∈ U), hq',
       inv_smul_smul]
@@ -289,7 +289,7 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
       fun e he ↦ coe_equivariantSectionFiber he
   continuousOn_invFun :=
     (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hq ↦ hq.1).smul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+      (continuous_subtypeVal.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl

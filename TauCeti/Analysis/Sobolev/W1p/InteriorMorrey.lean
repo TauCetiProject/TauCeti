@@ -11,6 +11,7 @@ import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -163,7 +164,7 @@ theorem W1p.exists_dist_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
     refine (W1p.setIntegral_ball_norm_gradient_le u (hzr.trans hBΩ)).trans ?_
     rw [hexp, mul_right_comm]
     gcongr
-    exact W1p.toReal_eLpNorm_gradient_mono u hzr hBΩ
+    exact Lp.toReal_eLpNorm_restrict_mono (W1p.gradient u) hzr hBΩ
   have hx : ∀ r, 0 < r → r ≤ 2 * dist x y →
       ∫ w in ball x r, ‖W1p.gradient u w‖ ∂mu ≤ ω ^ q * N * r ^ ((n : ℝ) - 1 + α) :=
     fun r hr hr' => hgrowth x r hr (ball_subset_ball hr')
@@ -195,7 +196,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative (hp : (finrank ℝ E : ℝ
   refine (hdist u hxy).trans ?_
   rw [Real.coe_toNNReal _ (by positivity)]
   gcongr
-  exact (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
+  exact (Lp.toReal_eLpNorm_restrict_mono (W1p.gradient u) (ball_subset_closedBall.trans hxy)
     subset_rfl).trans_eq (Lp.norm_def _).symm
 
 /-- **Continuity of `W^{1,p}` functions for `p` above the dimension.** If `n < p ≤ ∞`, where `n`
@@ -256,7 +257,7 @@ theorem W1p.exists_dist_preciseRepresentative_le_top :
     Real.rpow_one] at h
   refine h.trans ?_
   gcongr
-  exact (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
+  exact (Lp.toReal_eLpNorm_restrict_mono (W1p.gradient u) (ball_subset_closedBall.trans hxy)
     subset_rfl).trans_eq (Lp.norm_def _).symm
 
 /-- **Morrey's embedding on compact subsets.** If `n < p ≤ ∞`, where `n` is the dimension, the
@@ -284,7 +285,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_isCompact
     gcongr
     refine le_trans ?_ (le_max_left _ _)
     gcongr
-    exact (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
+    exact (Lp.toReal_eLpNorm_restrict_mono (W1p.gradient u) (ball_subset_closedBall.trans hxy)
       subset_rfl).trans_eq (Lp.norm_def _).symm
   · -- Distant points: `|f x - f y| ≤ 2M ≤ 2M (2 |x - y| / R)^α`.
     have hone : 1 ≤ (2 / R * dist x y) ^ (α : ℝ) :=
