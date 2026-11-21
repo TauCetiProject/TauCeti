@@ -268,8 +268,8 @@ theorem contMDiff_verticalFamily :
       (Bundle.contMDiff_proj (TangentSpace (𝓘(ℝ, ℝ × ℝ).prod I)))).clm_bundle_apply contMDiff_id
   refine ((contMDiff_snd.comp contMDiff_equivTangentBundleProd).comp (hJ'.comp hin)).congr ?_
   rintro ⟨c, x, v⟩
-  simp only [Function.comp_apply, equivTangentBundleProd, Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk,
-    zeroSection_proj, zeroSection_snd]
+  simp only [Function.comp_apply, equivTangentBundleProd_apply,
+    equivTangentBundleProd_symm_apply_snd, zeroSection_snd]
   exact congrArg (fun u ↦ (⟨x, u⟩ : TangentBundle I M)) (verticalFamily_apply' hJV (c, x) v)
 
 include hJV in
@@ -365,7 +365,8 @@ private theorem coverStructure_eq_prodFamily :
     · apply F.injective
       simp [map_add, map_smul]
     · simp
-  have h₁ := coverStructure_symm_one_zero hJs p
+  have h₁ : coverStructure J p (e.symm (F.symm (1, 0), 0)) = e.symm (F.symm (0, 1), 0) :=
+    coverStructure_symm_one_zero hJs p
   have h₂ : coverStructure J p (e.symm (F.symm (0, 1), 0)) = -e.symm (F.symm (1, 0), 0) := by
     rw [← h₁, SmoothAlmostComplexStructure.apply_apply]
   have hstd : (AlmostComplexStructure.product ℝ).constSmooth p.1 (F.symm (a, b)) =
@@ -376,10 +377,9 @@ private theorem coverStructure_eq_prodFamily :
       AlmostComplexStructure.product_apply]
   rw [SmoothAlmostComplexStructure.prodFamily_apply, ContinuousLinearEquiv.apply_symm_apply, hstd,
     hw]
-  beta_reduce at h₁ h₂ ⊢
-  have h₃ := coverStructure_symm_zero hJV p v
-  beta_reduce at h₃
-  rw [map_add, map_add, map_smul, map_smul, h₁, h₂, h₃, verticalFamily_apply]
+  have h₃ : coverStructure J p (e.symm (0, v)) = e.symm (0, verticalEndomorphism J p v) :=
+    coverStructure_symm_zero hJV p v
+  simp only [map_add, map_smul, h₁, h₂, h₃, verticalFamily_apply]
   apply e.injective
   simp only [e, F, map_add, map_smul, map_neg, ContinuousLinearEquiv.apply_symm_apply]
   refine Prod.ext ?_ ?_
