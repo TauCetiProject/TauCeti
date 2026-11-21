@@ -168,46 +168,20 @@ theorem serreSpectralSequenceFirstPageXIsoSigma_hom_naturality (hf : f ≫ p' = 
       (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).hom ≫
         Limits.Sigma.map fun j ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R)
           q).obj (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0}) := by
-  -- The first page of the filtered spaces, read on the step `pq.2 ≤ pq.2 + 1`.
-  have nat : (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
-        (monotone_preimageSkeleton (C := C) p) pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl
-        (q + k) ha).inv ≫
-        ((serreSpectralSequenceMapOver C R hf).hom 2 le_rfl).f pq =
-      TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
-          (monotone_preimageSkeleton (C := C) p') f
-          (mapsTo_preimageSkeleton f fun x ↦ ConcreteCategory.congr_hom hf x)
-          (Int.le_add_one le_rfl))
-          (ModuleCat.of R R) (q + k) ≫
-        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
-          (monotone_preimageSkeleton (C := C) p') pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl
-          (q + k) ha).inv := by
-    rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
-    exact filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality _ _ _ _ _ _ _ _ _ _ _ _ _ _
-  -- The identification of the fibres of the pullbacks over the cell with the fibres of `p'`.
-  have cell (j : cell C k) :
-      (cellDiskPullbackPairSingularHomologyIso hp R k q j).inv ≫
-        TopPair.singularHomologyMap (cellDiskPullbackPairHom hf k j) (ModuleCat.of R R) (q + k) =
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-          (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0}) ≫
-        (cellDiskPullbackPairSingularHomologyIso hp' R k q j).inv := by
-    rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
-    exact cellDiskPullbackPairSingularHomologyIso_hom_naturality hp R hp' hf k q j _
-      (fun x ↦ f.coe_preimageMap_apply hf _ x)
-  rw [← cancel_epi (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).inv,
-    Iso.inv_hom_id_assoc]
-  refine Sigma.hom_ext _ _ fun j ↦ ?_
-  -- Expand the inclusion of the summand of the cell `j` into the first page of `p`.
-  rw [ι_serreSpectralSequenceFirstPageXIsoSigma_inv_assoc, Sigma.ι_map]
-  -- Move the morphism past the first-page identification of the filtered spaces (`nat`), and
-  -- read the map of the step `pq.2 ≤ pq.2 + 1` as the map of the pairs of preimages of skeleta.
-  rw [reassoc_of% nat, ← singularHomologyMap_preimagePairMap_comp_eqToHom_assoc hf R k pq.2 hb]
-  -- Commute the map of pairs past the inclusion of the pair over the cell `j`, then past the
-  -- identification of the homology of that pair with the homology of the fibre (`cell j`).
-  rw [← TopPair.singularHomologyMap_comp_assoc, cellDiskPullbackPairMap_comp_preimagePairMap,
-    TopPair.singularHomologyMap_comp_assoc, reassoc_of% (cell j)]
-  -- What remains is the inclusion of the summand of the cell `j` into the first page of `p'`.
-  rw [← ι_serreSpectralSequenceFirstPageXIsoSigma_inv_assoc hp' R k q pq hb ha j,
-    Iso.inv_hom_id, Category.comp_id]
+  -- Move the morphism past the first-page identification of the filtered spaces, then read the
+  -- map of the step `pq.2 ≤ pq.2 + 1` as the map of the pairs of preimages of skeleta.
+  rw [serreSpectralSequenceFirstPageXIsoSigma_hom, serreSpectralSequenceFirstPageXIsoSigma_hom,
+    filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality_assoc, Category.assoc]
+  congr 1
+  rw [← cancel_epi (eqToHom (congrArg
+      (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (q + k))
+      (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (p := p) k pq.2 hb)).symm),
+    ← singularHomologyMap_preimagePairMap_comp_eqToHom_assoc hf R k pq.2 hb,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
+  -- What remains is the naturality of the splitting of the pair into the cells.
+  exact preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality hp R hp' hf k q
+    (fun j ↦ f.preimageMap hf {map k j 0}) (fun j x ↦ f.coe_preimageMap_apply hf _ x)
 
 include hp hp' in
 /-- **The comparison theorem for maps of Serre fibrations.** Let `f` be a map over `B` between
