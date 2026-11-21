@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Topology.Join
 
 import TauCeti.Analysis.Normed.Module.Normalize
@@ -87,8 +86,8 @@ theorem coe_sphereJoinMap_mk (x : sphere (0 : E) 1) (y : sphere (0 : F) 1) (t : 
 theorem sphereJoinMap_injective :
     Function.Injective (sphereJoinMap (E := E) (F := F)) := by
   intro a b hab
-  induction a using Join.ind with | h p => ?_
-  induction b using Join.ind with | h q => ?_
+  induction a using Join.induction with | h p => ?_
+  induction b using Join.induction with | h q => ?_
   obtain ⟨x, y, s⟩ := p
   obtain ⟨x', y', t⟩ := q
   have h := congrArg (fun z : sphere (0 : WithLp 2 (E × F)) 1 => ofLp (z : WithLp 2 (E × F))) hab

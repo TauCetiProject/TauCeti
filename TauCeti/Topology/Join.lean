@@ -78,7 +78,8 @@ variable (X Y) in
 The presentation as a quotient is private to this file and is not part of the public interface:
 points of the join come from `TauCeti.Join.mk`, which points it identifies from
 `TauCeti.Join.mk_eq_mk_iff`, maps out of it from `TauCeti.Join.lift`, equalities of such maps
-from `TauCeti.Join.hom_ext`, and statements about all of its points from `TauCeti.Join.ind`. -/
+from `TauCeti.Join.hom_ext`, and statements about all of its points from
+`TauCeti.Join.induction`. -/
 def Join : Type max u v :=
   Quotient (Setoid.ker (joinNormalize X Y))
 
@@ -121,14 +122,15 @@ theorem mk_surjective : Function.Surjective (mk X Y) :=
 
 /-- Every point of the join is of the form `[x, y, t]`. -/
 @[elab_as_elim]
-theorem ind {p : Join X Y → Prop} (h : ∀ q : X × Y × I, p (mk X Y q)) (z : Join X Y) : p z :=
+protected theorem induction {motive : Join X Y → Prop} (h : ∀ q : X × Y × I, motive (mk X Y q))
+    (z : Join X Y) : motive z :=
   Quotient.ind h z
 
 /-- Two maps out of the join agree as soon as they agree on every point `[x, y, t]`. -/
 @[ext]
 theorem hom_ext {W : Type w} [TopologicalSpace W] {f g : C(Join X Y, W)}
     (h : ∀ q, f (mk X Y q) = g (mk X Y q)) : f = g :=
-  ContinuousMap.ext (ind h)
+  ContinuousMap.ext (Join.induction h)
 
 instance [CompactSpace X] [CompactSpace Y] : CompactSpace (Join X Y) :=
   mk_surjective.compactSpace (mk X Y).continuous
