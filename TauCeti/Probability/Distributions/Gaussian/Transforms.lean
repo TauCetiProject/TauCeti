@@ -192,17 +192,14 @@ theorem integrable_exp_mul_sum_mul_gaussianReal {Ω γ : Type*} {mΩ : Measurabl
     (s : Finset γ) (hLaw : ∀ i ∈ s, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (y : γ → ℝ)
     (r : ℝ) :
     Integrable (fun ω ↦ Real.exp (r * ∑ i ∈ s, y i * X i ω)) P := by
-  classical
-  induction s using Finset.induction_on generalizing r with
-  | empty => simp
-  | insert i s hi ih =>
-    -- The new summand only needs the exponential moments of `X i` and of the previous sum,
-    -- at twice the order.
-    have hXi : Integrable (fun ω ↦ Real.exp (2 * r * (y i * X i ω))) P := by
-      simpa only [mul_assoc] using (hLaw i (Finset.mem_insert_self i s)).integrable_fun_comp
-        (integrable_exp_mul_gaussianReal (2 * r * y i))
-    simpa only [Finset.sum_insert hi] using integrable_exp_mul_add_of_integrable_exp_two_mul hXi
-      (ih (fun j hj ↦ hLaw j (Finset.mem_insert_of_mem hj)) (2 * r))
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  -- Hölder's inequality with every exponent equal to the number of summands.
+  have hcard : (0 : ℝ) < s.card := mod_cast hs.card_pos
+  refine integrable_exp_mul_sum_of_integrable_exp_mul (p := fun _ ↦ (s.card : ℝ))
+    (fun _ _ ↦ hcard) (by simp [hcard.ne']) fun i hi ↦ ?_
+  simpa only [mul_assoc] using (hLaw i hi).integrable_fun_comp
+    (integrable_exp_mul_gaussianReal (s.card * r * y i))
 
 /-- The moment-generating function of a linear form `g ↦ y ⬝ᵥ g` under a finite product of
 real Gaussian laws `gaussianReal (μ l) (v l)`, that is, for a vector of independent Gaussian

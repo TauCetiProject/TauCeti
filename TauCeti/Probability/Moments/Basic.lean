@@ -40,6 +40,9 @@ This file supplements Mathlib's basic moment-generating-function API.
   independent variables from coordinatewise exponential bounds.
 * `TauCeti.ofReal_mgf_sub_integral_le_lintegral`: symmetrization by Jensen's inequality, the
   moment-generating function of `f - 𝔼 f` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`.
+* `TauCeti.integrable_exp_mul_sum_of_integrable_exp_mul`: by Hölder's inequality,
+  `exp (t ∑ i ∈ s, X i)` is integrable when each `exp (p i t X i)` is, for exponents with
+  `∑ i ∈ s, (p i)⁻¹ = 1`, without independence.
 * `TauCeti.integrable_exp_mul_add_of_integrable_exp_two_mul`: `exp (θ (X + Y))` is integrable
   when `exp (2θX)` and `exp (2θY)` are, without independence.
 * `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: AM-GM and
@@ -164,24 +167,55 @@ section AddBounds
 
 open Real
 
+/-- If `exp (p Z)` is integrable for some `p > 0`, then `exp Z` lies in `Lᵖ`. -/
+private lemma memLp_exp_of_integrable_exp_mul {Z : Ω → ℝ} {p : ℝ} (hp : 0 < p)
+    (hZ : Integrable (fun ω ↦ exp (p * Z ω)) μ) :
+    MemLp (fun ω ↦ exp (Z ω)) (ENNReal.ofReal p) μ := by
+  have hmeas : AEStronglyMeasurable (fun ω ↦ exp (Z ω)) μ :=
+    (hZ.1.aemeasurable.pow_const p⁻¹).aestronglyMeasurable.congr (.of_forall fun ω ↦ by
+      dsimp only; rw [← exp_mul, mul_comm p, mul_inv_cancel_right₀ hp.ne'])
+  rw [← integrable_norm_rpow_iff hmeas (by simpa using hp) ENNReal.ofReal_ne_top,
+    ENNReal.toReal_ofReal hp.le]
+  refine hZ.congr (.of_forall fun ω ↦ ?_)
+  dsimp only; rw [norm_of_nonneg (exp_pos _).le, ← exp_mul, mul_comm]
+
+/-- **Exponential integrability of a finite sum** without independence, by Hölder's inequality:
+if `∑ i ∈ s, (p i)⁻¹ = 1` with every `p i > 0`, and `exp (p i * t * X i)` is integrable for each
+`i ∈ s`, then `exp (t * ∑ i ∈ s, X i)` is integrable. Taking every `p i` equal to the cardinality
+of `s` shows that variables with exponential moments of every order have a sum with exponential
+moments of every order. -/
+theorem integrable_exp_mul_sum_of_integrable_exp_mul {ι : Type*} {X : ι → Ω → ℝ} {s : Finset ι}
+    {p : ι → ℝ} {t : ℝ} (hp : ∀ i ∈ s, 0 < p i) (hp_sum : ∑ i ∈ s, (p i)⁻¹ = 1)
+    (hX : ∀ i ∈ s, Integrable (fun ω ↦ exp (p i * t * X i ω)) μ) :
+    Integrable (fun ω ↦ exp (t * ∑ i ∈ s, X i ω)) μ := by
+  have hexp : (∑ i ∈ s, (ENNReal.ofReal (p i))⁻¹)⁻¹ = 1 := by
+    rw [← Finset.sum_congr rfl fun i hi ↦ ENNReal.ofReal_inv_of_pos (hp i hi),
+      ← ENNReal.ofReal_sum_of_nonneg fun i hi ↦ (inv_pos.2 (hp i hi)).le, hp_sum]
+    simp
+  have h := MemLp.fun_prod fun i hi ↦
+    memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ t * X i ω) (hp i hi)
+      (by simpa only [mul_assoc] using hX i hi)
+  rw [hexp, memLp_one_iff_integrable] at h
+  simpa only [Finset.mul_sum, exp_sum] using h
+
 /-- **Exponential integrability of a sum** without independence: if `exp (2θX)` and `exp (2θY)`
 are integrable, then so is `exp (θ (X + Y))`, their pointwise geometric mean. -/
 theorem integrable_exp_mul_add_of_integrable_exp_two_mul {Y : Ω → ℝ} {θ : ℝ}
     (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
     (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ) :
     Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ := by
-  have hsqrt : (fun ω ↦ exp (θ * (X ω + Y ω))) =
-      fun ω ↦ Real.sqrt (exp (2 * θ * X ω) * exp (2 * θ * Y ω)) := funext fun ω ↦ by
-    have hmul_sq : exp (2 * θ * X ω) * exp (2 * θ * Y ω) = exp (θ * (X ω + Y ω)) ^ 2 := by
-      rw [sq, ← exp_add, ← exp_add]; ring_nf
-    rw [hmul_sq, Real.sqrt_sq (exp_pos _).le]
-  refine (hX_int.add hY_int).mono'
-    (hsqrt ▸ continuous_sqrt.comp_aestronglyMeasurable (hX_int.1.mul hY_int.1))
-    (.of_forall fun ω ↦ ?_)
-  rw [Real.norm_of_nonneg (exp_pos _).le, Pi.add_apply]
-  rcases le_total (θ * X ω) (θ * Y ω) with h | h
-  · exact (exp_le_exp.2 (by linarith)).trans (le_add_of_nonneg_left (exp_pos _).le)
-  · exact (exp_le_exp.2 (by linarith)).trans (le_add_of_nonneg_right (exp_pos _).le)
+  have hL2 {Z : Ω → ℝ} (hZ : Integrable (fun ω ↦ exp (2 * θ * Z ω)) μ) :
+      MemLp (fun ω ↦ exp (θ * Z ω)) 2 μ := by
+    simpa using memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ θ * Z ω) two_pos
+      (by simpa only [mul_assoc] using hZ)
+  simpa only [mul_add, exp_add, Pi.mul_def] using (hL2 hX_int).integrable_mul (hL2 hY_int)
+
+/-- The pointwise AM-GM bound behind the moment-generating-function bounds for a sum. -/
+private lemma exp_add_le_exp_two_mul_add_exp_two_mul (u v : ℝ) :
+    exp (u + v) ≤ (exp (2 * u) + exp (2 * v)) / 2 := by
+  have hsq (z : ℝ) : exp (2 * z) = exp z ^ 2 := by rw [sq, ← exp_add, two_mul]
+  rw [exp_add, hsq, hsq]
+  linarith [two_mul_le_add_sq (exp u) (exp v)]
 
 /-- **AM-GM bound for the moment-generating function of a sum** without independence. -/
 theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
@@ -192,9 +226,7 @@ theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
       mgf (fun ω ↦ X ω + Y ω) μ θ ≤ (M₁ + M₂) / 2 := by
   have hint := integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int
   have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2 := by
-    have hsq (z : ℝ) : exp (2 * θ * z) = exp (θ * z) ^ 2 := by rw [sq, ← exp_add]; ring_nf
-    rw [mul_add, exp_add, hsq (X ω), hsq (Y ω)]
-    linarith [two_mul_le_add_sq (exp (θ * X ω)) (exp (θ * Y ω))]
+    simpa only [mul_add, mul_assoc] using exp_add_le_exp_two_mul_add_exp_two_mul (θ * X ω) (θ * Y ω)
   have hdom : Integrable (fun ω ↦ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2) μ :=
     (hX_int.add hY_int).div_const 2
   refine ⟨hint, ?_⟩; rw [mgf]; refine (integral_mono hint hdom hpt).trans ?_
@@ -210,14 +242,14 @@ theorem mgf_add_le_exp_half_add {Y : Ω → ℝ} {θ a b : ℝ}
   have hint := integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int
   have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ exp ((a + b) / 2) / 2 *
       (exp (-a) * exp (2 * θ * X ω) + exp (-b) * exp (2 * θ * Y ω)) := by
-    have hsq (z c : ℝ) : exp (-c) * exp (2 * θ * z) = exp (θ * z - c / 2) ^ 2 := by
-      rw [sq, ← exp_add, ← exp_add]; ring_nf
-    have hsplit : exp (θ * (X ω + Y ω)) =
-        exp ((a + b) / 2) * (exp (θ * X ω - a / 2) * exp (θ * Y ω - b / 2)) := by
-      rw [← exp_add, ← exp_add]; ring_nf
-    rw [hsplit, hsq (X ω) a, hsq (Y ω) b]
-    nlinarith [two_mul_le_add_sq (exp (θ * X ω - a / 2)) (exp (θ * Y ω - b / 2)),
-      exp_pos ((a + b) / 2)]
+    have hshift (z c : ℝ) : exp (2 * (θ * z - c / 2)) = exp (-c) * exp (2 * θ * z) := by
+      rw [← exp_add]; ring_nf
+    calc exp (θ * (X ω + Y ω))
+        = exp ((a + b) / 2) * exp ((θ * X ω - a / 2) + (θ * Y ω - b / 2)) := by
+          rw [← exp_add]; ring_nf
+      _ ≤ exp ((a + b) / 2) * ((exp (2 * (θ * X ω - a / 2)) + exp (2 * (θ * Y ω - b / 2))) / 2) :=
+        mul_le_mul_of_nonneg_left (exp_add_le_exp_two_mul_add_exp_two_mul _ _) (exp_pos _).le
+      _ = _ := by rw [hshift, hshift]; ring
   have hdom : Integrable (fun ω ↦ exp ((a + b) / 2) / 2 *
       (exp (-a) * exp (2 * θ * X ω) + exp (-b) * exp (2 * θ * Y ω))) μ :=
     ((hX_int.const_mul (exp (-a))).add (hY_int.const_mul (exp (-b)))).const_mul _
