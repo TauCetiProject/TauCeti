@@ -37,6 +37,9 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
+* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg_mass`: with a mass term, the restriction
+  of a nonnegative weak supersolution shifted by `δ > 0` is a weak supersolution of the equation
+  with the modified mass coefficient `c u⁺ / (u⁺ + δ)`, still bounded by `|c|`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
@@ -259,6 +262,32 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
     0 ≤ energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
   rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
+
+/-- **Shifted nonnegative supersolutions with a mass coefficient.** Let `u` be a weak
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` on `Ω`, let `U ⊆ Ω` be open of finite measure
+with `u ≥ 0` almost everywhere on `U`, and let `δ > 0`. Then `u|_U + δ` is a weak supersolution
+on `U` of the equation with the mass coefficient `c u⁺ / (u⁺ + δ)`, whose product with `u + δ` is
+`c u`. Unlike `c`, this coefficient depends on `u`, but it is bounded by `|c|`. -/
+theorem energyFormH1_restrictL_add_const_nonneg_mass
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    (hu0 : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x) {δ : ℝ} (hδ : 0 < δ)
+    (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a b (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
+      (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  refine (energyFormH1_restrictL_nonneg hU hu v hv).trans_eq ?_
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ, W1p.value_restrictL_ae hU u,
+    hu0] with x h1 h2 h3
+  have hne : W1p.value u x + δ ≠ 0 := by linarith
+  simp only [energyIntegrand_apply, jetField_apply, W1p.gradient_add_const, massForm_apply, h1,
+    h2, max_eq_left h3]
+  field_simp
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
