@@ -297,6 +297,24 @@ theorem addHaar_setOf_lt_schwarzRearrangement (f : E → ℝ≥0∞) (t : ℝ≥
       exact isOpen_univ.measure_pos μ univ_nonempty
   · exact μ.addHaar_setOf_addHaar_ball_norm_lt _
 
+/-- In a nontrivial finite-dimensional space, a strict superlevel set of the Schwarz
+rearrangement whose original superlevel set has finite measure is a centered open ball of that
+same measure. -/
+theorem exists_setOf_lt_schwarzRearrangement_eq_ball [Nontrivial E] (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (h : μ {y | t < f y} ≠ ∞) :
+    ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r ∧
+      μ (ball 0 r) = μ {y | t < f y} := by
+  obtain ⟨r, hr₀, hr⟩ := μ.exists_nonneg_addHaar_ball_eq h
+  refine ⟨r, hr₀, ?_, hr⟩
+  rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
+
+omit [BorelSpace E] in
+/-- A strict superlevel set of the Schwarz rearrangement whose original superlevel set has infinite
+measure is the whole space. -/
+theorem setOf_lt_schwarzRearrangement_eq_univ (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (h : μ {y | t < f y} = ∞) : {x | t < schwarzRearrangement μ f x} = univ := by
+  simp [setOf_lt_schwarzRearrangement, h, measure_ball_lt_top]
+
 /-- Two superlevel sets of Schwarz rearrangements are concentric, so their intersection has the
 smaller of the two original superlevel measures. No measurability or finiteness hypothesis is
 needed. -/
