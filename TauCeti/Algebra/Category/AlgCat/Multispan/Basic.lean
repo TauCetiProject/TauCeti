@@ -162,20 +162,15 @@ section Maps
 
 variable {I} {I' : MultispanIndex J (AlgCat.{t} R)}
 
-private def mapAlgebraSection (α : I.multispan ⟶ I'.multispan)
-    (s : AlgCat.sectionsSubalgebra I.multispan) : AlgCat.sectionsSubalgebra I'.multispan :=
-  ⟨fun j => (α.app j).hom (s.val j), by
-    intro j k f
-    have h := congrArg (fun g => g.hom (s.val j)) (α.naturality f)
-    exact h.symm.trans (congrArg (α.app k).hom (s.property f))⟩
-
 /-- A map of span diagrams transports compatible families componentwise. -/
 def compatibleAlgebraFamiliesMap (α : I.multispan ⟶ I'.multispan) :
     I.compatibleAlgebraFamilies →ₐ[R] I'.compatibleAlgebraFamilies where
   toFun x := by
     refine ⟨fun b => (α.app (.right b)).hom (x.val b), ?_⟩
     obtain ⟨s, rfl⟩ := I.restrictAlgebraSections_surjective x
-    exact (I'.restrictAlgebraSections (mapAlgebraSection α s)).property
+    let transported := (Functor.sectionsFunctor _).map
+      (Functor.whiskerRight α (forget (AlgCat R))) ⟨s.val, s.property⟩
+    exact (I'.restrictAlgebraSections ⟨transported.val, transported.property⟩).property
   map_zero' := by ext b; exact map_zero (α.app (.right b)).hom
   map_one' := by ext b; exact map_one (α.app (.right b)).hom
   map_add' x y := by ext b; exact map_add (α.app (.right b)).hom _ _
@@ -196,12 +191,18 @@ theorem matchingFamilyAlgEquiv_symm_naturality
     (j : WalkingMultispan J) :
     ((I'.matchingFamilyAlgEquiv hinj').symm (compatibleAlgebraFamiliesMap α x)).val j =
       (α.app j).hom (((I.matchingFamilyAlgEquiv hinj).symm x).val j) := by
-  let s := mapAlgebraSection α ((I.matchingFamilyAlgEquiv hinj).symm x)
+  let source := (I.matchingFamilyAlgEquiv hinj).symm x
+  let transported := (Functor.sectionsFunctor _).map
+    (Functor.whiskerRight α (forget (AlgCat R))) ⟨source.val, source.property⟩
+  let s : AlgCat.sectionsSubalgebra I'.multispan := ⟨transported.val, transported.property⟩
   have hs : (I'.matchingFamilyAlgEquiv hinj').symm (compatibleAlgebraFamiliesMap α x) = s := by
     apply I'.restrictAlgebraSections_injective hinj'
     apply Subtype.ext
     funext b
-    simp [s, mapAlgebraSection]
+    rw [restrictAlgebraSections_apply, restrictAlgebraSections_apply,
+      matchingFamilyAlgEquiv_symm_apply_right, compatibleAlgebraFamiliesMap_apply]
+    change (α.app (.right b)).hom (x.val b) = (α.app (.right b)).hom (source.val (.right b))
+    exact congrArg (α.app (.right b)).hom (I.matchingFamilyAlgEquiv_symm_apply_right hinj x b).symm
   exact congrArg (fun z => z.val j) hs
 
 end Maps
