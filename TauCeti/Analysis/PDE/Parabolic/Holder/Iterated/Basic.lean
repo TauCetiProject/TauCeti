@@ -78,8 +78,9 @@ derivative in `x` of the `r`-th iterated derivative within `[a, b]` in `t`
 * `TauCeti.ParabolicCkHolderSpace.norm_eq`,
   `TauCeti.ParabolicCkHolderSpace.timeEHolderNorm_mixedDerivL_le` and
   `TauCeti.ParabolicCkHolderSpace.norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm`: the
-  norm as a sum of field norms and the two-sided comparison of the time-slice norms with the
-  temporal `(1 + α) / 2`-seminorms.
+  norm as a sum of field norms, over the `TauCeti.parabolicDerivPairs k`, at most `(k + 1)²` pairs
+  (`TauCeti.card_parabolicDerivPairs_le`), and the two-sided comparison of the time-slice norms
+  with the temporal `(1 + α) / 2`-seminorms.
 
 ## References
 
