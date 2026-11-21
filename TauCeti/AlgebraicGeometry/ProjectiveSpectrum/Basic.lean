@@ -276,14 +276,6 @@ section
 variable {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
   {𝒜 : ℕ → σ} [GradedRing 𝒜]
 
-/-- The homogeneous ideal of a point of the scheme `Proj A` is prime. Mathlib's instance
-`ProjectiveSpectrum.isPrime` is stated for points of `ProjectiveSpectrum 𝒜`, and instance search
-does not unfold the underlying type of `Proj A` to find it for the image of a point under a
-morphism of schemes. -/
-instance isPrime_asHomogeneousIdeal_toIdeal (x : Proj 𝒜) :
-    x.asHomogeneousIdeal.toIdeal.IsPrime :=
-  ProjectiveSpectrum.isPrime x
-
 /-- Two morphisms out of the standard charts `D₊(f)` and `D₊(g)` of `Proj A` agree on the overlap
 `D₊(f) ×_{Proj A} D₊(g)` as soon as they agree on the chart `D₊(fg)`, embedded in both through the
 localization maps `A_{(f)} → A_{(fg)}` and `A_{(g)} → A_{(fg)}`. This is the compatibility

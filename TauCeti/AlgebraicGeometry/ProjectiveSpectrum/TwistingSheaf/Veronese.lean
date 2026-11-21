@@ -52,6 +52,8 @@ inclusion `A^{(d)} → A` multiplies degrees by `d`.
 
 * `AlgebraicGeometry.Proj.twistingSheaf.comapVeronese_const`: the pullback of the fraction `r / s`
   is the fraction `r / s`.
+* `AlgebraicGeometry.Proj.twistingSheaf.comapVeronese_toTwistingSheaf`: the section `r / 1` of
+  degree `j` over `A^{(d)}` pulls back to the section `r / 1` of degree `d j` over `A`.
 * `AlgebraicGeometry.Proj.twistingSheaf.bijective_comapVeronese_basicOpen`: for `g ∈ A^{(d)}`
   homogeneous of positive degree, the pullback from `D₊(g) ⊆ Proj A^{(d)}` to its full preimage
   `D₊(g) ⊆ Proj A` is bijective.
@@ -98,6 +100,8 @@ def comapVeronese :
 /-- The value of a pulled-back section at `q` is the image of its value at `q ∩ A^{(d)}`. -/
 @[simp]
 theorem comapVeronese_apply (s : Γ(twistingSheaf (veroneseGrading 𝒜 d) n, U)) (q : V) :
+    letI := ProjectiveSpectrum.isPrime ((veroneseIso 𝒜 d).inv q.val)
+    letI := ProjectiveSpectrum.isPrime q.val
     (comapVeronese hUV s).val q =
       Localization.localRingHom _ _ (veronese 𝒜 d).val.toRingHom
         (toIdeal_asHomogeneousIdeal_veroneseIso_inv 𝒜 d q.val)
@@ -137,17 +141,18 @@ theorem comapVeronese_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : veronese 
           (veroneseIso_inv_preimage_basicOpen 𝒜 d s).le) := by
   refine ext fun (q : V) ↦ ?_
   simp only [comapVeronese_apply, const_apply]
-  exact Localization.localRingHom_mk ..
+  -- `@`: instance search does not find that ideals of points of `Proj` are prime
+  exact @Localization.localRingHom_mk ..
 
-/-- The pullback along the Veronese contraction is multiplicative: the product of sections of
-degrees `m` and `n` over `A^{(d)}` pulls back to the product of their pullbacks, of degrees `d m`
-and `d n` over `A`. The two sides are sections of `𝒪(d (m + n))` and `𝒪(d m + d n)`, so they are
-compared pointwise. -/
-theorem comapVeronese_mul_apply {m : ℤ} (s : Γ(twistingSheaf (veroneseGrading 𝒜 d) m, U))
-    (t : Γ(twistingSheaf (veroneseGrading 𝒜 d) n, U)) (q : V) :
-    (comapVeronese hUV (mul _ U m n s t)).val q =
-      (mul 𝒜 V (d * m) (d * n) (comapVeronese hUV s) (comapVeronese hUV t)).val q := by
-  simp only [comapVeronese_apply, mul_apply, map_mul]
+/-- The section `r / 1` induced by an element `r` of degree `j` of `A^{(d)}` pulls back to the
+section `r / 1` induced by `r` as an element of degree `d j` of `A`. -/
+@[simp]
+theorem comapVeronese_toTwistingSheaf {j : ℕ} (h : (j : ℤ) = n) (r : veroneseGrading 𝒜 d j) :
+    comapVeronese hUV (toTwistingSheaf (veroneseGrading 𝒜 d) h U r) =
+      toTwistingSheaf 𝒜 (j := d * j) (by rw [← h]; push_cast; rfl) V
+        ⟨r, mem_veroneseGrading.mp r.property⟩ := by
+  rw [toTwistingSheaf_eq_const, comapVeronese_const, toTwistingSheaf_eq_const]
+  exact const_ext (by simp)
 
 /-- **Pullback along the Veronese contraction is bijective on standard opens.** For `g ∈ A^{(d)}`
 homogeneous of positive degree, the preimage of `D₊(g) ⊆ Proj A^{(d)}` is `D₊(g) ⊆ Proj A`

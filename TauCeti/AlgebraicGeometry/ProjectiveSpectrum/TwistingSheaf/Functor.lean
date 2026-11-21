@@ -162,8 +162,9 @@ theorem isLocallyFraction_comapFun {φ : C(ProjectiveSpectrum.top ℬ, Projectiv
   refine ⟨W.comap φ ⊓ V, ⟨m, hyV⟩, homOfLE inf_le_right, δ i, δ j, hn i j h,
     ⟨g r, hδ j r.property⟩, ⟨g t, hδ i t.property⟩,
     fun z hz ↦ ht ⟨φ z.val, z.property.1⟩ (by rw [hφ, Ideal.mem_comap]; exact hz), fun z ↦ ?_⟩
-  exact (congrArg (Localization.localRingHom _ _ g (hφ z.val)) (w ⟨_, z.property.1⟩)).trans
-    (Localization.localRingHom_mk ..)
+  exact (comapFun_apply ..).trans <|
+    (congrArg (Localization.localRingHom _ _ g (hφ z.val)) (w ⟨_, z.property.1⟩)).trans
+      (Localization.localRingHom_mk ..)
 
 end ProjectiveSpectrum.TwistingSheaf
 
@@ -191,10 +192,12 @@ def comap : Γ(twistingSheaf 𝒜 n, U) →+ Γ(twistingSheaf ℬ n, V) where
   toFun s := ⟨comapFun (ProjectiveSpectrum.comap f hf) f (fun _ ↦ rfl) hUV s.val,
     isLocallyFraction_comapFun (δ := fun i ↦ i) (fun _ _ ha ↦ Graded.map_mem f ha) (fun _ _ h ↦ h)
       s.property⟩
-  map_zero' := ext fun _ ↦ map_zero _
+  map_zero' := ext fun _ ↦ (comapFun_apply _ _ (fun _ ↦ rfl) hUV ..).trans (map_zero _)
   -- Section addition reduces pointwise here. `add_apply` does not unify with the codomain's
   -- inferred addition through the unexposed localization addition instance.
-  map_add' _ _ := ext fun _ ↦ map_add _ _ _
+  map_add' _ _ := ext fun _ ↦ (comapFun_apply _ _ (fun _ ↦ rfl) hUV ..).trans
+    ((map_add _ _ _).trans (congrArg₂ (· + ·) (comapFun_apply _ _ (fun _ ↦ rfl) hUV ..).symm
+      (comapFun_apply _ _ (fun _ ↦ rfl) hUV ..).symm))
 
 /-- The value of a pulled-back section at `y` is the image of the value at `f⁻¹ y`. -/
 @[simp]
@@ -202,7 +205,7 @@ theorem comap_apply (s : Γ(twistingSheaf 𝒜 n, U)) (y : V) :
     (comap f hf hUV s).val y =
       localizationsMap f hf y.val (s.val (⟨ProjectiveSpectrum.comap f hf y.val,
           hUV y.property⟩ : U)) :=
-  (rfl)
+  comapFun_apply _ _ (fun _ ↦ rfl) hUV ..
 
 /-- The pullback of sections commutes with restriction. -/
 @[simp]
