@@ -680,3 +680,30 @@ theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_appl
   simp
 
 end TwoVariables
+
+section HomFrame
+variable {𝕜 B F G : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V L : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [∀ x, AddCommGroup (L x)] [∀ x, Module 𝕜 (L x)] [∀ x, TopologicalSpace (L x)]
+  [TopologicalSpace (TotalSpace G L)] [FiberBundle G L] [VectorBundle 𝕜 G L]
+  [∀ x, IsTopologicalAddGroup (L x)] [∀ x, ContinuousSMul 𝕜 (L x)]
+
+/-- The native Hom frame is the induced arrow equivalence on original fibres. -/
+theorem Bundle.Trivialization.continuousLinearEquivAt_continuousLinearMap (e : Trivialization F
+  (π F V))
+    [MemTrivializationAtlas e] (d : Trivialization G (π G L))
+    [MemTrivializationAtlas d] {x : B} (hx : x ∈ e.baseSet ∩ d.baseSet) :
+    (e.continuousLinearMap (RingHom.id 𝕜) d).continuousLinearEquivAt 𝕜 x (by simpa using hx) =
+      (e.continuousLinearEquivAt 𝕜 x hx.1).arrowCongr
+        (d.continuousLinearEquivAt 𝕜 x hx.2) := by
+  ext T v
+  simp only [Trivialization.continuousLinearEquivAt_apply,
+    Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.arrowCongr_apply]
+  rw [e.symmL_apply hx.1, Trivialization.continuousLinearEquivAt_symm_apply]
+  simp [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 d hx.2]
+
+end HomFrame

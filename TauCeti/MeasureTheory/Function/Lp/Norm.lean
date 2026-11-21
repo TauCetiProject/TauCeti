@@ -30,6 +30,9 @@ bounds.
 * `MeasureTheory.Lp.normLp`: the pointwise norm `x ↦ ‖f x‖` bundled as an element of `Lp ℝ p μ`.
 * `MeasureTheory.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `MeasureTheory.Lp.ofReal_norm_add_mul_norm` and `MeasureTheory.memLp_of_eLpNorm_add_mul_ne_top`:
+  the cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions in terms of `eLpNorm`, and a pair of
+  functions of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, `t > 0`, lies in `L^{p₀} × L^{p₁}`.
 * `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
   into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
@@ -469,6 +472,24 @@ theorem MemLp.norm_toLp_le_of_ae_bound {α E : Type*} [MeasurableSpace α] [Norm
     (hC : 0 ≤ C) (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
     ‖hf.toLp f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C :=
   Lp.norm_le_of_ae_bound hC (hf.coeFn_toLp.mp (hfC.mono fun _ hx hxy ↦ hxy ▸ hx))
+
+/-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, `t ≥ 0`, in terms of `eLpNorm`. -/
+theorem Lp.ofReal_norm_add_mul_norm {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {p q : ℝ≥0∞} (g : Lp E p μ) (h : Lp E q μ) {t : ℝ} (ht : 0 ≤ t) :
+    ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
+  rw [Lp.norm_def, Lp.norm_def, ENNReal.ofReal_add ENNReal.toReal_nonneg
+    (mul_nonneg ht ENNReal.toReal_nonneg), ENNReal.ofReal_mul ht,
+    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g), ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
+
+/-- A splitting of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, with `t > 0`, is a pair of `L^{p₀}` and
+`L^{p₁}` functions. -/
+theorem memLp_of_eLpNorm_add_mul_ne_top {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {p₀ p₁ : ℝ≥0∞} {f₀ f₁ : α → E} {t : ℝ} (ht : 0 < t)
+    (hfin : eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ ≠ ∞) :
+    MemLp f₀ p₀ μ ∧ MemLp f₁ p₁ μ := by
+  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
+  refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
+  rw [htop, ENNReal.mul_top (by simpa using ht)]
 
 section Restrict
 
