@@ -8,10 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
-import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
 # The pointwise inner product of covariant derivatives
@@ -35,61 +34,16 @@ a chart with the inverse Gram matrix of the chart frame.
   vanishes off the closure of the nonzero locus of `σ`, and of `τ`.
 * `CovariantDerivative.innerCovariantDerivative_self_eq_zero_iff`: `⟪∇σ, ∇σ⟫` vanishes exactly
   where `∇σ` does.
-* `ContMDiff.hilbertSchmidtInner_bundle`: the pointwise inner product of two smooth `V`-valued
-  one-forms is smooth.
 * `CovariantDerivative.contMDiff_innerCovariantDerivative`: `⟪∇σ, ∇τ⟫` is smooth for smooth
   sections.
 -/
 
 public section
 
-open Bundle FiberBundle Riemannian.Tensor
+open Bundle FiberBundle
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 noncomputable section
-
-section HilbertSchmidt
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [IsContMDiffRiemannianBundle I ∞ F V]
-
-/-- The pointwise Hilbert–Schmidt inner product `⟪A, B⟫ = ∑ᵢ ⟪A eᵢ, B eᵢ⟫` of two smooth sections
-`A`, `B` of the bundle `Hom(TM, V)` of `V`-valued one-forms, for any orthonormal basis `eᵢ` of the
-tangent space, is a smooth function. -/
-theorem ContMDiff.hilbertSchmidtInner_bundle {A B : Π x : M, TangentSpace I x →L[ℝ] V x}
-    (hA : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (A x)))
-    (hB : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (B x))) :
-    ContMDiff I 𝓘(ℝ) ∞ fun x ↦ (A x).hilbertSchmidtInner (B x) := by
-  intro x
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hbase : (trivializationAt E (TangentSpace I) x).baseSet ∈ 𝓝 x :=
-    (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds (by simp)
-  have hframe (j) : CMDiffAt ∞ (T% (chartLocalFrame (I := I) x j)) x :=
-    contMDiffAt_chartLocalFrame (I := I) (n := ∞) x j
-  -- On the chart source, the metric trace is read off with the inverse Gram matrix.
-  have heq : (fun y ↦ ∑ i, ∑ j, chartInvGramMatrix (I := I) x y i j *
-      ⟪A y (chartLocalFrame (I := I) x i y), B y (chartLocalFrame (I := I) x j y)⟫)
-      =ᶠ[𝓝 x] fun y ↦ (A y).hilbertSchmidtInner (B y) := by
-    filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
-    simp only [ContinuousLinearMap.hilbertSchmidtInner_def,
-      bilinFormTrace_eq_sum_chartInvGramMatrix x hy, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
-      ContinuousLinearMap.coe_coe]
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ heq.symm
-  refine contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦ ?_
-  exact ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) x i j).contMDiffAt hbase).mul
-    ((ContMDiffAt.clm_bundle_apply (hA x) (hframe i)).inner_bundle
-      (ContMDiffAt.clm_bundle_apply (hB x) (hframe j)))
-
-end HilbertSchmidt
 
 namespace CovariantDerivative
 
@@ -171,8 +125,9 @@ variable [IsManifold I ∞ M]
 /-- The inner product `⟪∇σ, ∇τ⟫` of the covariant derivatives of two smooth sections is a smooth
 function. -/
 theorem contMDiff_innerCovariantDerivative (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) :
-    ContMDiff I 𝓘(ℝ) ∞ (cov.innerCovariantDerivative σ τ) :=
-  (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)).hilbertSchmidtInner_bundle
+    ContMDiff I 𝓘(ℝ) ∞ (cov.innerCovariantDerivative σ τ) := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  exact (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)).hilbertSchmidtInner_bundle
     (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hτ))
 
 end CovariantDerivative

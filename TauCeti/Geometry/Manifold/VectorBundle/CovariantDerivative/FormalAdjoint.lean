@@ -122,7 +122,7 @@ theorem formalAdjoint_eq_sum (α : Π x : M, TangentSpace I x →L[ℝ] V x) (x 
 
 /-- The formal adjoint vanishes at a point where the one-form is not differentiable. -/
 @[simp]
-theorem formalAdjoint_of_not_mdifferentiableAt {x : M}
+theorem formalAdjoint_eq_zero_of_not_mdifferentiableAt {x : M}
     (hα : ¬MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x) :
     cov.formalAdjoint covT α x = 0 := by
@@ -164,8 +164,8 @@ theorem formalAdjoint_const_smul (c : ℝ) (x : M) :
           (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y ((c • α) y)) x := fun h ↦ hα (by
         simpa [smul_smul, inv_mul_cancel₀ hc] using
           (mdifferentiableAt_const (c := c⁻¹)).smul_section h)
-      simp [formalAdjoint_of_not_mdifferentiableAt cov covT hα,
-        formalAdjoint_of_not_mdifferentiableAt cov covT hcα]
+      simp [formalAdjoint_eq_zero_of_not_mdifferentiableAt cov covT hα,
+        formalAdjoint_eq_zero_of_not_mdifferentiableAt cov covT hcα]
 
 /-- The formal adjoint commutes with negation of the one-form. -/
 @[simp]
@@ -313,6 +313,7 @@ private theorem integral_inner_formalAdjoint_of_subset (hcov : cov.IsMetricCompa
     (hB : ∀ y ∉ K, (α y).hilbertSchmidtInner (cov τ y) = 0) :
     ∫ x, ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have hXc : HasCompactSupport (β := E) (pairingField α τ) := .intro' hK hKc hX
   have hBc : HasCompactSupport fun x ↦ (α x).hilbertSchmidtInner (cov τ x) := .intro' hK hKc hB
   have hX1 : ContMDiff I I.tangent 1 (T% (pairingField α τ)) :=
