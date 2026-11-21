@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Residue.Basic
+import TauCeti.Analysis.Meromorphic.PrincipalPart
 
 /-!
 # Canonical Laurent data of a meromorphic function
@@ -291,66 +292,20 @@ Laurent witness, and uniqueness is what lets its resonance constraints transfer 
 canonical polar data. Internally the coefficients are total functions `ℕ → ℂ` summed over
 `Finset.range`, so expansions of different lengths compare after zero-padding. -/
 
-/-- The top coefficient of a finite principal part that agrees with a function continuous at
-`s` vanishes. -/
-private theorem coeff_top_eq_zero_of_eventuallyEq {s : ℂ} {N : ℕ} {c : ℕ → ℂ}
-    {g : ℂ → ℂ} (hg : ContinuousAt g s) (h_eq : ∀ᶠ z in 𝓝[≠] s,
-      ∑ k ∈ Finset.range (N + 1), c k / (z - s) ^ (k + 1) = g z) :
-    c N = 0 := by
-  have h_mul : ∀ᶠ z in 𝓝[≠] s,
-      ∑ k ∈ Finset.range (N + 1), c k * (z - s) ^ (N - k) = g z * (z - s) ^ (N + 1) := by
-    filter_upwards [h_eq, self_mem_nhdsWithin] with z hz hz_ne
-    have hw : z - s ≠ 0 := sub_ne_zero.mpr hz_ne
-    rw [← hz, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun k hk => ?_
-    have hkN : k + 1 ≤ N + 1 := Finset.mem_range.mp hk
-    have h_sub : N + 1 - (k + 1) = N - k := by omega
-    rw [div_mul_eq_mul_div, mul_div_assoc, div_eq_mul_inv ((z - s) ^ (N + 1)),
-      ← pow_sub₀ (z - s) hw hkN, h_sub]
-  have h_lhs : Tendsto (fun z => ∑ k ∈ Finset.range (N + 1), c k * (z - s) ^ (N - k))
-      (𝓝[≠] s) (𝓝 (c N)) := by
-    have h_cont : Tendsto (fun z => ∑ k ∈ Finset.range (N + 1), c k * (z - s) ^ (N - k))
-        (𝓝 s) (𝓝 (∑ k ∈ Finset.range (N + 1), c k * ((s : ℂ) - s) ^ (N - k))) :=
-      (continuous_finsetSum _ fun k _ =>
-        continuous_const.mul ((continuous_id.sub continuous_const).pow _)).tendsto s
-    have h_eval : ∑ k ∈ Finset.range (N + 1), c k * ((s : ℂ) - s) ^ (N - k) = c N := by
-      rw [sub_self, Finset.sum_eq_single N
-        (fun k hk hne => by
-          rw [zero_pow (by
-            have := Finset.mem_range.mp hk
-            omega : N - k ≠ 0), mul_zero])
-        (fun h => absurd (Finset.self_mem_range_succ N) h),
-        Nat.sub_self, pow_zero, mul_one]
-    exact h_eval ▸ h_cont.mono_left nhdsWithin_le_nhds
-  have h_rhs : Tendsto (fun z => g z * (z - s) ^ (N + 1)) (𝓝[≠] s) (𝓝 0) := by
-    have h_sub : Tendsto (fun z : ℂ => z - s) (𝓝 s) (𝓝 0) := by
-      simpa using (continuous_sub_right s).tendsto s
-    have h_pow : Tendsto (fun z : ℂ => (z - s) ^ (N + 1)) (𝓝 s) (𝓝 0) := by
-      simpa [zero_pow (Nat.succ_ne_zero N)] using h_sub.pow (N + 1)
-    have h0 := (hg.tendsto.mul h_pow).mono_left
-      (nhdsWithin_le_nhds (s := {s}ᶜ))
-    simpa using h0
-  exact tendsto_nhds_unique (h_lhs.congr' h_mul) h_rhs
-
 /-- A finite principal part agreeing with a function continuous at `s` is zero: all its
-coefficients vanish. -/
-private theorem laurent_coeff_eq_zero_of_eventuallyEq {s : ℂ} {g : ℂ → ℂ} (hg : ContinuousAt g s) :
-    ∀ {N : ℕ} {c : ℕ → ℂ},
-      (∀ᶠ z in 𝓝[≠] s, ∑ k ∈ Finset.range N, c k / (z - s) ^ (k + 1) = g z) →
-      ∀ k < N, c k = 0 := by
-  intro N
-  induction N with
-  | zero => exact fun _ k hk => absurd hk (Nat.not_lt_zero k)
-  | succ N IH =>
-    intro c h_eq k hk
-    have h_top : c N = 0 := coeff_top_eq_zero_of_eventuallyEq hg h_eq
-    have h_eq' : ∀ᶠ z in 𝓝[≠] s,
-        ∑ k ∈ Finset.range N, c k / (z - s) ^ (k + 1) = g z := by
+coefficients vanish. It is the polynomial `∑ k < N, c k X ^ (k + 1)` in `(z - s)⁻¹`, which
+`TauCeti.eq_zero_of_eval_inv_sub_eventuallyEq` shows to be zero. -/
+private theorem laurent_coeff_eq_zero_of_eventuallyEq {s : ℂ} {g : ℂ → ℂ} (hg : ContinuousAt g s)
+    {N : ℕ} {c : ℕ → ℂ}
+    (h_eq : ∀ᶠ z in 𝓝[≠] s, ∑ k ∈ Finset.range N, c k / (z - s) ^ (k + 1) = g z) :
+    ∀ k < N, c k = 0 := by
+  have hP := eq_zero_of_eval_inv_sub_eventuallyEq
+    (P := ∑ k ∈ Finset.range N, Polynomial.C (c k) * Polynomial.X ^ (k + 1)) (by simp) hg <| by
       filter_upwards [h_eq] with z hz
-      rwa [Finset.sum_range_succ, h_top, zero_div, add_zero] at hz
-    rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk' | rfl
-    · exact IH h_eq' k hk'
-    · exact h_top
+      simp [Polynomial.eval_finsetSum, ← hz, div_eq_mul_inv]
+  intro k hk
+  simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow, hk] using
+    congrArg (·.coeff (k + 1)) hP
 
 /-- A `Fin`-indexed principal-part sum as a `Finset.range` sum of its zero-padding, extended
 to any length `L ≥ N`. -/

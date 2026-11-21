@@ -8,16 +8,14 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.Group.Units.Hom
 
-import Mathlib.Algebra.Group.Commute.Units
-
 /-!
 # Units in monoids
 
 This file lifts units in the range of a local monoid homomorphism to units of its source.
-It also rewrites integer powers of products of units as monomials with consecutive natural
-exponents. These identities
-let bilateral sums over integer powers split into two sums over natural numbers, without
-requiring a zero in the ambient monoid.
+It also rewrites a strictly negative integer power of a product of units as an inverse monomial
+with consecutive natural exponents, which lets the negative half of a bilateral sum over integer
+powers be expressed as a sum over natural numbers without requiring a zero in the ambient monoid.
+The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow` in `TauCeti.Algebra.Group.Pow`.
 
 ## Main results
 
@@ -25,7 +23,9 @@ requiring a zero in the ambient monoid.
   homomorphism exactly when it is the image of a unit under `Units.map`.
 * `Units.eq_of_mul_mul_inv_eq_of_commute`: if the conjugate of `a` by a unit `u` is an element
   commuting with `u`, then `a` equals it.
-* `Units.val_mul_zpow_natCast_mul`: nonnegative product powers give consecutive monomials.
+* `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
+* `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
+  `(l * a)⁻¹ * l⁻¹ * b = 1`.
 * `Units.val_mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
 
@@ -54,12 +54,19 @@ theorem eq_of_mul_mul_inv_eq_of_commute {A : Type*} [Monoid A] {a z : A} (u : A�
   calc a = ↑u⁻¹ * ((u : A) * a * ↑u⁻¹) * u := by simp [mul_assoc]
     _ = z := by rw [h, mul_assoc, hz.eq, Units.inv_mul_cancel_left]
 
-/-- A nonnegative power of the product of two units gives consecutive monomial exponents
-after multiplication by the first unit. -/
-theorem val_mul_zpow_natCast_mul {M : Type*} [DivisionCommMonoid M] (u v : Mˣ) (n : ℕ) :
-    ((u * v : Mˣ) : M) ^ (n : ℤ) * (u : M) = (u : M) ^ (n + 1) * (v : M) ^ n := by
-  simp only [Units.val_mul, zpow_natCast, mul_pow, pow_succ]
-  ac_rfl
+/-- If `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`. -/
+theorem val_inv_mul_mul_mul_eq_one {M : Type*} [Monoid M] (a l : Mˣ) {z : M} (ha : (a : M) = z) :
+    (↑(l * a)⁻¹ : M) * (l : M) * z = 1 := by
+  rw [← ha, mul_assoc, ← Units.val_mul, Units.inv_mul]
+
+/-- If `(a : M) = z` and `l ^ 2 * z = b`, then `(l * a)⁻¹ * l⁻¹ * b = 1`. -/
+theorem val_inv_mul_mul_inv_mul_eq_one {M : Type*} [Monoid M] (a l : Mˣ) {z b : M}
+    (ha : (a : M) = z) (hl : (l : M) ^ 2 * z = b) :
+    (↑(l * a)⁻¹ : M) * (↑l⁻¹ : M) * b = 1 := by
+  have h : (l * a)⁻¹ * l⁻¹ * (l ^ 2 * a) = 1 := by
+    simp [sq, mul_assoc]
+  simpa only [ha, hl, Units.val_mul, Units.val_pow_eq_pow_val, Units.val_one] using
+    congrArg Units.val h
 
 /-- A strictly negative power of the product of two units gives the inverse monomial with
 the consecutive exponents exchanged. -/

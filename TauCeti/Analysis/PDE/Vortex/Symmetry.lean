@@ -40,6 +40,9 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
+Both actions preserve `Cⁿ` fields (`TauCeti.Vortex.contDiff_translateField`,
+`TauCeti.Vortex.contDiff_rotateField`).
+
 These are identities of smooth differential expressions; their Sobolev completions, and the
 induced action on the divisor of a vortex, are not treated here.
 
@@ -94,12 +97,24 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
   funext z
   simp [add_assoc]
 
+/-- Translations preserve `Cⁿ` fields. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
+
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
 theorem fderiv_translateField_apply (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ)
     (i : Fin 4) :
     fderiv ℝ (fun w ↦ translateField a x w i) z = fderiv ℝ (fun w ↦ x w i) (z + a) :=
   fderiv_comp_add_right (f := fun w ↦ x w i) a
+
+/-- Translations preserve the limit at infinity of any pointwise expression in the field. -/
+theorem tendsto_comp_translateField {α : Type*} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {f : EuclideanSpace ℝ (Fin 4) → α} {l : Filter α}
+    (hx : Tendsto (fun z ↦ f (x z)) (cocompact ℂ) l) (a : ℂ) :
+    Tendsto (fun z ↦ f (translateField a x z)) (cocompact ℂ) l :=
+  hx.comp (Homeomorph.addRight a).map_cocompact.le
 
 @[simp]
 theorem sectionValue_translateField (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -273,6 +288,18 @@ theorem rotateField_translateField (u : Circle) (a : ℂ) (x : ℂ → Euclidean
     rw [mul_add, mul_inv_cancel_left₀ (Circle.coe_ne_zero u)]
   ext z i
   fin_cases i <;> simp [h]
+
+/-- Rotations preserve `Cⁿ` fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    (contDiff_euclidean.1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · simpa using (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · simpa using hc 2
+  · simpa using hc 3
 
 /-- The action of a rotation on the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator: the
 gauge-fixing and curvature rows are transported, and the complex `∂bar` row is transported

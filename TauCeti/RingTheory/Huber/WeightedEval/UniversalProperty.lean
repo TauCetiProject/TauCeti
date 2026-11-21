@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.WeightedEval.Continuous
+public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
 # The universal property of `A⟨X⟩_T`
@@ -38,7 +39,15 @@ of open *subgroups*. (`B` carries completeness and `T3Space` besides, as it must
 exist and be determined; the contrast is in the basis condition alone.) That weaker basis
 condition on the target is the one that matters here: a
 nonzero Tate ring has no proper open ideal, so `IsLinearTopology` would exclude the rings this
-construction exists to serve.
+construction exists to serve. When `B` *is* linearly topologised (and complete and Hausdorff),
+open-ideal zero-neighbourhoods make every subset bounded, so the universal property holds for
+arbitrary variable images `b : Fin k → B` with no boundedness hypothesis
+(`weightedEvalAlgHomOfIsLinearTopology`).
+
+## Main definitions
+
+* `weightedEvalAlgHomOfIsLinearTopology`: evaluation of `A⟨X⟩_T` in a complete Hausdorff linearly
+  topologised `A`-algebra at an arbitrary tuple `b : Fin k → B`, as an `A`-algebra homomorphism.
 
 ## Main results
 
@@ -47,10 +56,15 @@ construction exists to serve.
 * `existsUnique_continuous_ringHom_weightedRestrictedSubring_of_isWeightedVarPowerBounded`: the
   same under `IsWeightedVarPowerBounded`, the coordinatewise condition Proposition 5.50 states.
   This is the one to cite as 5.50.
+* `existsUnique_continuous_ringHom_weightedRestrictedSubring_of_isLinearTopology` and
+  `existsUnique_continuous_algHom_weightedRestrictedSubring_of_isLinearTopology`: the universal
+  property into a complete Hausdorff linearly topologised ring or `A`-algebra, with no condition on
+  `b`.
 
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 5.50.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.5.3.
 -/
 
 public section
@@ -95,6 +109,92 @@ theorem existsUnique_continuous_ringHom_weightedRestrictedSubring_of_isWeightedV
       ∀ i, ψ (weightedX T hT i) = b i :=
   existsUnique_continuous_ringHom_weightedRestrictedSubring hT hφ
     (isWeightBounded_of_isWeightedVarPowerBounded hb)
+
+section LinearTopology
+
+variable {k : ℕ} {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+  {T : Fin k → Set A} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsLinearTopology B B]
+  [CompleteSpace B] [T2Space B]
+
+/-- **The universal property of `A⟨X⟩_T` into a complete Hausdorff linearly topologised ring.**
+Any ring homomorphism `φ : A →+* B` continuous at `0` into a complete Hausdorff linearly topologised
+ring extends uniquely to arbitrary variable images `b : Fin k → B`. -/
+theorem existsUnique_continuous_ringHom_weightedRestrictedSubring_of_isLinearTopology
+    (hT : IsWeightFamily T) {φ : A →+* B} (hφ : ContinuousAt φ 0) (b : Fin k → B) :
+    ∃! ψ : weightedRestrictedSubring T hT →+* B,
+      Continuous ψ ∧ (∀ a, ψ (weightedC T hT a) = φ a) ∧ ∀ i, ψ (weightedX T hT i) = b i :=
+  letI := IsLinearTopology.isTopologicalRing (R := B)
+  letI := IsLinearTopology.nonarchimedeanRing B
+  existsUnique_continuous_ringHom_weightedRestrictedSubring hT hφ
+    (isWeightBounded_of_isLinearTopology φ T b)
+
+variable [Algebra A B]
+
+/-- Evaluation of `A⟨X⟩_T` in a complete Hausdorff linearly topologised `A`-algebra (with
+`algebraMap A B` continuous at `0`) at an arbitrary tuple `b : Fin k → B`, bundled as an
+`A`-algebra homomorphism. -/
+noncomputable def weightedEvalAlgHomOfIsLinearTopology (hT : IsWeightFamily T)
+    (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
+    weightedRestrictedSubring T hT →ₐ[A] B :=
+  haveI := IsLinearTopology.isTopologicalRing (R := B)
+  haveI := IsLinearTopology.nonarchimedeanRing B
+  let φ := weightedEvalHom hT hA (isWeightBounded_of_isLinearTopology (algebraMap A B) T b)
+  { __ := φ, toFun := φ,
+    commutes' := fun a ↦ by
+      dsimp only [φ]; rw [algebraMap_weightedRestrictedSubring, weightedEvalHom_weightedC] }
+
+/-- Underlying ring homomorphism of `weightedEvalAlgHomOfIsLinearTopology`. -/
+@[simp]
+theorem coe_weightedEvalAlgHomOfIsLinearTopology (hT : IsWeightFamily T)
+    (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
+    (weightedEvalAlgHomOfIsLinearTopology hT hA b : weightedRestrictedSubring T hT →+* B) =
+      letI := IsLinearTopology.isTopologicalRing (R := B)
+      letI := IsLinearTopology.nonarchimedeanRing B
+      weightedEvalHom hT hA (isWeightBounded_of_isLinearTopology (algebraMap A B) T b) :=
+  RingHom.ext fun _ ↦ rfl
+
+/-- `weightedEvalAlgHomOfIsLinearTopology` agrees with `algebraMap A B` on constant series. -/
+@[simp]
+theorem weightedEvalAlgHomOfIsLinearTopology_weightedC (hT : IsWeightFamily T)
+    (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) (a : A) :
+    weightedEvalAlgHomOfIsLinearTopology hT hA b (weightedC T hT a) = algebraMap A B a :=
+  letI := IsLinearTopology.isTopologicalRing (R := B)
+  letI := IsLinearTopology.nonarchimedeanRing B
+  weightedEvalHom_weightedC hT hA (isWeightBounded_of_isLinearTopology (algebraMap A B) T b) a
+
+/-- `weightedEvalAlgHomOfIsLinearTopology` sends each coordinate variable `Xᵢ` to `bᵢ`. -/
+@[simp]
+theorem weightedEvalAlgHomOfIsLinearTopology_weightedX (hT : IsWeightFamily T)
+    (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) (i : Fin k) :
+    weightedEvalAlgHomOfIsLinearTopology hT hA b (weightedX T hT i) = b i :=
+  letI := IsLinearTopology.isTopologicalRing (R := B)
+  letI := IsLinearTopology.nonarchimedeanRing B
+  weightedEvalHom_weightedX hT hA (isWeightBounded_of_isLinearTopology (algebraMap A B) T b) i
+
+/-- `weightedEvalAlgHomOfIsLinearTopology` is continuous. -/
+theorem continuous_weightedEvalAlgHomOfIsLinearTopology (hT : IsWeightFamily T)
+    (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
+    Continuous (weightedEvalAlgHomOfIsLinearTopology hT hA b) :=
+  letI := IsLinearTopology.isTopologicalRing (R := B)
+  letI := IsLinearTopology.nonarchimedeanRing B
+  continuous_weightedEvalHom hT hA (isWeightBounded_of_isLinearTopology (algebraMap A B) T b)
+
+/-- **Universal property of `weightedRestrictedSubring` for complete Hausdorff linearly topologised
+`A`-algebras** (with `algebraMap A B` continuous at `0`). -/
+theorem existsUnique_continuous_algHom_weightedRestrictedSubring_of_isLinearTopology
+    (hT : IsWeightFamily T) (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
+    ∃! ψ : weightedRestrictedSubring T hT →ₐ[A] B,
+      Continuous ψ ∧ ∀ i, ψ (weightedX T hT i) = b i :=
+  ⟨weightedEvalAlgHomOfIsLinearTopology hT hA b,
+    ⟨continuous_weightedEvalAlgHomOfIsLinearTopology hT hA b,
+      weightedEvalAlgHomOfIsLinearTopology_weightedX hT hA b⟩,
+    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective <|
+      (existsUnique_continuous_ringHom_weightedRestrictedSubring_of_isLinearTopology hT hA b).unique
+        ⟨hψ, fun a ↦ by rw [← algebraMap_weightedRestrictedSubring]; exact ψ.commutes a, hX⟩
+        ⟨continuous_weightedEvalAlgHomOfIsLinearTopology hT hA b, fun a ↦ by simp,
+          weightedEvalAlgHomOfIsLinearTopology_weightedX hT hA b⟩⟩
+
+end LinearTopology
 
 end TauCeti.Huber
 

@@ -45,6 +45,8 @@ Scalar absorption is supplied by `exists_mul_pow_mem_of_isTopologicallyNilpotent
 * `Ideal.isOpen_comap_subtype_iff`: an ideal is open exactly when its trace on an open subring is.
 * `Subring.isLocalizationAway_of_isOpen`: an open subring containing a topologically nilpotent
   unit recovers the ambient ring by inverting that element.
+* `Subring.exists_dvd_pow_of_isTopologicallyNilpotent`: in an open subring, an ambient unit divides
+  a power of every ambient topologically nilpotent element.
 * `Subring.isNoetherianRing_of_isOpen`: a ring with a topologically nilpotent unit and a
   noetherian open subring is noetherian.
 * `Subring.exists_pow_smul_mem`: a power carries an element of the ambient span into a
@@ -86,9 +88,9 @@ in `R` if and only if `p` is open in `B`. -/
 theorem Ideal.isOpen_comap_subtype_iff (p : Ideal B) {R : Subring B} (hR : IsOpen (R : Set B)) :
     IsOpen (p.comap R.subtype : Set R) ↔ IsOpen (p : Set B) := by
   refine ⟨fun h ↦ AddSubgroup.isOpen_of_mem_nhds p.toAddSubgroup (g := 0) ?_,
-    fun h ↦ h.preimage continuous_subtype_val⟩
+    fun h ↦ h.preimage continuous_subtypeVal⟩
   -- the image of the open trace is an open neighbourhood of `0` in `B` contained in `p`
-  refine Filter.mem_of_superset ((hR.isOpenMap_subtype_val _ h).mem_nhds ⟨0, by simp, rfl⟩) ?_
+  refine Filter.mem_of_superset ((hR.isOpenMap_subtypeVal _ h).mem_nhds ⟨0, by simp, rfl⟩) ?_
   rintro _ ⟨x, hx, rfl⟩
   exact hx
 
@@ -121,6 +123,15 @@ theorem isLocalizationAway_of_isOpen (S : Subring A) (hS : IsOpen (S : Set A)) (
   · obtain ⟨n, hn⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hs hS x
     exact ⟨n, ⟨_, hn⟩, rfl⟩
   · exact ⟨0, by simpa using Subtype.ext hab⟩
+
+/-- In an open subring `S`, an element which is a unit of the ambient ring divides some power of
+every element of `S` that is topologically nilpotent in the ambient ring. -/
+theorem exists_dvd_pow_of_isTopologicallyNilpotent (S : Subring A) (hS : IsOpen (S : Set A))
+    {a b : S} (ha : IsUnit (a : A)) (hb : IsTopologicallyNilpotent (b : A)) :
+    ∃ n : ℕ, a ∣ b ^ n := by
+  obtain ⟨u, hu⟩ := ha
+  obtain ⟨n, hn⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hb hS (↑u⁻¹ : A)
+  exact ⟨n, ⟨_, hn⟩, Subtype.ext <| by simp [← hu]⟩
 
 /-- A ring with a topologically nilpotent unit and a noetherian open subring is noetherian.
 Only separate continuity of multiplication is needed; the unit need not lie in the subring. -/

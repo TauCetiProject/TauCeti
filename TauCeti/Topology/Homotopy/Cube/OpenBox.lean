@@ -43,11 +43,11 @@ theorem cubeLiftDen_def (x : I × (N → I)) :
 
 theorem one_le_cubeLiftDen (x : I × (N → I)) : 1 ≤ cubeLiftDen x := by
   rw [cubeLiftDen_def]
-  exact le_max_of_le_left (by linarith [x.1.2.2])
+  exact le_max_of_le_left (by linarith [x.1.property.2])
 
 theorem cubeLiftDen_le_two (x : I × (N → I)) : cubeLiftDen x ≤ 2 := by
   rw [cubeLiftDen_def]
-  exact max_le (by linarith [x.1.2.1]) (by linarith [cubeRadius_le_one x.2])
+  exact max_le (by linarith [x.1.property.1]) (by linarith [cubeRadius_le_one x.2])
 
 /-- Time at which the radial deformation reaches `x`. -/
 def cubeLiftTime (x : I × (N → I)) : ℝ := 2 / cubeLiftDen x - 1
@@ -113,7 +113,7 @@ theorem cubeLiftDeform_one (x : I × (N → I)) : cubeLiftDeform 1 x = x := by
 @[simp]
 theorem cubeLiftDeform_of_mem (s : I) {x : I × (N → I)}
     (hx : x ∈ cylinderExtensionDomain (Cube.boundary N)) : cubeLiftDeform s x = x := by
-  simp [cubeLiftDeform, cubeLiftTime_eq_zero hx, min_eq_left s.2.1]
+  simp [cubeLiftDeform, cubeLiftTime_eq_zero hx, min_eq_left s.property.1]
 
 @[simp]
 theorem cubeLiftDeform_time (x : I × (N → I)) :

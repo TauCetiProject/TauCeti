@@ -78,14 +78,14 @@ and pulls the coordinate expressions of `σ₀` and `σ₁` back to the same for
 `p`, `σ₀` and `σ₁` have the same pullback along `i` near `p`, and `p` is an interior point. -/
 private theorem eventually_contDiffAt_and_compContinuousLinearMap_eq {σ₀ σ₁ : SmoothTwoForm I M}
     {i : Q → M} {p : Q} (hp : J.IsInteriorPoint p) (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
-    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q) :
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q) :
     ∀ᶠ y in 𝓝 (extChartAt J p p),
       ContDiffAt ℝ ∞ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y ∧
       ContinuousAlternatingMap.compContinuousLinearMap
-          (RoughForm.inChartAt σ₁.1 (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
+          (RoughForm.inChartAt σ₁.val (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
           (fderiv ℝ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y) =
         ContinuousAlternatingMap.compContinuousLinearMap
-          (RoughForm.inChartAt σ₀.1 (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
+          (RoughForm.inChartAt σ₀.val (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
           (fderiv ℝ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y) := by
   have hsrc : ∀ᶠ q in 𝓝 p, i q ∈ (extChartAt I (i p)).source :=
     (hi.self_of_nhds.continuousAt).preimage_mem_nhds (extChartAt_source_mem_nhds (i p))
@@ -101,12 +101,12 @@ private theorem eventually_contDiffAt_and_compContinuousLinearMap_eq {σ₀ σ�
   -- through the pullback along `i`.
   have hflat (σ : SmoothTwoForm I M) :
       ContinuousAlternatingMap.compContinuousLinearMap
-          (RoughForm.inChartAt σ.1 (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
+          (RoughForm.inChartAt σ.val (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
           (fderiv ℝ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y) =
-        mpullback 𝓘(ℝ, E') J (extChartAt J p).symm (mpullback J I i σ.1) y := by
+        mpullback 𝓘(ℝ, E') J (extChartAt J p).symm (mpullback J I i σ.val) y := by
     rw [← TauCeti.mpullback_comp_at hψd hid,
-      ← mpullbackWithin_univ (I := 𝓘(ℝ, E')) (i ∘ (extChartAt J p).symm) σ.1,
-      RoughForm.mpullbackWithin_eq_compContinuousLinearMap (f := i ∘ (extChartAt J p).symm) σ.1
+      ← mpullbackWithin_univ (I := 𝓘(ℝ, E')) (i ∘ (extChartAt J p).symm) σ.val,
+      RoughForm.mpullbackWithin_eq_compContinuousLinearMap (f := i ∘ (extChartAt J p).symm) σ.val
         (i p) hφy (hid.comp y hψd).mdifferentiableWithinAt uniqueDiffWithinAt_univ,
       fderivWithin_univ, Function.comp_apply]
   refine ⟨hiy.contDiffAt_extChartAt_comp_extChartAt_symm hy hφy, ?_⟩
@@ -123,10 +123,10 @@ theorem exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint
     {σ₀ σ₁ : SmoothTwoForm I M} (hσ₀ : σ₀.IsClosed) (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q}
     (hp : J.IsInteriorPoint p) (hip : I.IsInteriorPoint (i p))
     (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q) (hinj : Function.Injective (mfderiv J I i p))
-    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q)
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q)
     (hnd₀ : (σ₀.bilinFormAt (i p)).Nondegenerate) (hnd₁ : (σ₁.bilinFormAt (i p)).Nondegenerate) :
     ∃ Φ : PartialDiffeomorph I I M M ∞, i p ∈ Φ.source ∧ (∀ᶠ q in 𝓝 p, Φ (i q) = i q) ∧
-      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.1 x = σ₀.1 x := by
+      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.val x = σ₀.val x := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   -- The preferred charts `φ` at `i p` and `ψ` at `p`, and `i` read in them.
@@ -181,10 +181,10 @@ theorem exists_partialDiffeomorph_fix_immersion_mpullback_eq [BoundarylessManifo
     [BoundarylessManifold J Q] {σ₀ σ₁ : SmoothTwoForm I M} (hσ₀ : σ₀.IsClosed)
     (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q} (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
     (hinj : Function.Injective (mfderiv J I i p))
-    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q)
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q)
     (hnd₀ : (σ₀.bilinFormAt (i p)).Nondegenerate) (hnd₁ : (σ₁.bilinFormAt (i p)).Nondegenerate) :
     ∃ Φ : PartialDiffeomorph I I M M ∞, i p ∈ Φ.source ∧ (∀ᶠ q in 𝓝 p, Φ (i q) = i q) ∧
-      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.1 x = σ₀.1 x :=
+      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.val x = σ₀.val x :=
   exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint hσ₀ hσ₁
     (BoundarylessManifold.isInteriorPoint) (BoundarylessManifold.isInteriorPoint) hi hinj htan
     hnd₀ hnd₁
