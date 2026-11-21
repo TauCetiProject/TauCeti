@@ -330,16 +330,6 @@ theorem exists_darbouxChart_snd_eq [BoundarylessManifold I M]
   exists_darbouxChart_snd_eq_of_isInteriorPoint hσ hF hcomm BoundarylessManifold.isInteriorPoint
     hreg hdim
 
-/-- The standard form `∑ᵢ dqᵢ ∧ dpᵢ` on `(ι → ℝ) × (ι → ℝ)` is nondegenerate: two vectors with
-the same pairing against every vector are equal. -/
-private theorem eq_of_forall_sum_mul_sub_mul_eq {a c : (ι → ℝ) × (ι → ℝ)}
-    (h : ∀ b : (ι → ℝ) × (ι → ℝ), ∑ i, (a.1 i * b.2 i - b.1 i * a.2 i) =
-      ∑ i, (c.1 i * b.2 i - b.1 i * c.2 i)) : a = c := by
-  classical
-  refine Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)
-  · simpa [Pi.single_apply] using h (0, Pi.single i 1)
-  · simpa [Pi.single_apply] using h (Pi.single i 1, 0)
-
 omit [FiniteDimensional ℝ E] in
 /-- **In a Darboux chart, the Hamiltonian vector field of a momentum is the conjugate coordinate
 field.** Let `chart` be a smooth partial diffeomorphism from `M` to `(ι → ℝ) × (ι → ℝ)` pulling the
