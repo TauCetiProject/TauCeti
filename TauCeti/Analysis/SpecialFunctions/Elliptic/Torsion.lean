@@ -44,6 +44,26 @@ theorem nsmul_weierstrassPoint_eq_zero_iff (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = 0 ↔ n • z ∈ L.lattice := by
   rw [← L.weierstrassPoint_nsmul, L.weierstrassPoint_eq_zero_iff]
 
+omit [NeZero N] in
+/-- Division points depend only on their coordinates modulo `N`: if `m ≡ m'` and `n ≡ n'`
+modulo `N`, then `(m ω₁ + n ω₂) / N` and `(m' ω₁ + n' ω₂) / N` give the same point. At `N = 0`,
+both arguments are `0` by Lean’s division-by-zero convention. -/
+theorem weierstrassPoint_div_eq_of_intCast_eq {m n m' n' : ℤ} (hm : (m : ZMod N) = m')
+    (hn : (n : ZMod N) = n') :
+    L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
+      L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) := by
+  obtain ⟨k, hk⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub m m' N).mp hm
+  obtain ⟨l, hl⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub n n' N).mp hn
+  rcases eq_or_ne (N : ℂ) 0 with hN | hN
+  · rw [hN, div_zero, div_zero]
+  rw [weierstrassPoint_eq_weierstrassPoint_iff]
+  convert neg_mem (add_mem (zsmul_mem L.ω₁_mem_lattice k) (zsmul_mem L.ω₂_mem_lattice l)) using 1
+  have hk' : (m' : ℂ) = m + N * k := by exact_mod_cast (by linarith : m' = m + N * k)
+  have hl' : (n' : ℂ) = n + N * l := by exact_mod_cast (by linarith : n' = n + N * l)
+  rw [hk', hl', zsmul_eq_mul, zsmul_eq_mul]
+  field_simp
+  ring
+
 /-- **The zeros of `℘'` are the half-periods**: `℘'(z) = 0` exactly when `2 z ∈ Λ`. This includes
 the periods themselves, where Mathlib's `℘'` takes the value `0`. -/
 theorem derivWeierstrassP_eq_zero_iff (z : ℂ) : ℘'[L] z = 0 ↔ 2 * z ∈ L.lattice := by

@@ -8,14 +8,17 @@ module
 public import Mathlib.Data.ZMod.Units
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
 
 /-!
 # Diamond actions on congruence-subgroup orbit spaces
 
 For any `SL(2, ℤ)`-space `X`, the normalizer action of `Γ₀(N)` on `Γ₁(N) \ X` descends
 along the lower-right-entry map to an action of `(ℤ/Nℤ)ˣ`. The permutation homomorphism
-`TauCeti.gamma1QuotientDiamond` and its scalar action agree on every orbit class.
-`TauCeti.gamma1Quotient_map_of_le_units_smul` expresses compatibility with level change.
+`TauCeti.gamma1QuotientDiamond` and its scalar action agree on every orbit class, and
+`TauCeti.gamma1QuotientDiamond_comp_toHomUnits` states the factorization that characterizes it.
+`TauCeti.gamma1Quotient_map_of_le_units_smul` expresses compatibility with passing to a divisor
+of the level.
 This applies both to the upper half-plane and to boundary orbits, at every level.
 -/
 
@@ -37,6 +40,16 @@ noncomputable def gamma1QuotientDiamond :
       (Subgroup.inclusion (Gamma0_le_normalizer_Gamma1 N)), fun γ hγ ↦
         MulAction.normalizerOrbitRelQuotientPermHom_eq_one_of_mem (Gamma1 N) _
           ((mem_Gamma1_iff_toHomUnits_eq_one γ).mpr hγ)⟩
+
+/-- **The diamond permutations factor the normalizer action**: precomposed with the
+lower-right-entry map, `TauCeti.gamma1QuotientDiamond N` is the normalizer permutation
+representation restricted to `Γ₀(N)`. Since the lower-right-entry map is surjective, this
+characterizes `TauCeti.gamma1QuotientDiamond N`. -/
+theorem gamma1QuotientDiamond_comp_toHomUnits :
+    (gamma1QuotientDiamond N (X := X)).comp (Gamma0Map N).toHomUnits =
+      (MulAction.normalizerOrbitRelQuotientPermHom (X := X) (Gamma1 N)).comp
+        (Subgroup.inclusion (Gamma0_le_normalizer_Gamma1 N)) :=
+  MonoidHom.liftOfRightInverse_comp _ _ _ _
 
 /-- The diamond permutation associated to the lower-right entry of `γ ∈ Γ₀(N)` translates a
 representative by `γ`. -/
@@ -68,22 +81,16 @@ theorem gamma1QuotientDiamond_apply (d : (ZMod N)ˣ)
     gamma1QuotientDiamond N d q = d • q := by
   rw [MulAction.compHom_smul_def, Equiv.Perm.smul_def]
 
-/-- Passing from level `N * M` to level `N` commutes with diamonds, reducing the unit
+/-- Passing from level `L` to a divisor `N` of `L` commutes with diamonds, reducing the unit
 modulo `N`. -/
-theorem gamma1Quotient_map_of_le_units_smul (M : ℕ) (d : (ZMod (N * M))ˣ)
-    (q : MulAction.orbitRel.Quotient (Gamma1 (N * M)) X) :
-    Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le
-        (Gamma1_le_Gamma1_of_dvd (dvd_mul_right N M))) (d • q) =
-      ZMod.unitsMap (dvd_mul_right N M) d •
-        Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le
-          (Gamma1_le_Gamma1_of_dvd (dvd_mul_right N M))) q := by
+@[simp]
+theorem gamma1Quotient_map_of_le_units_smul {L : ℕ} (h : N ∣ L) (d : (ZMod L)ˣ)
+    (q : MulAction.orbitRel.Quotient (Gamma1 L) X) :
+    Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (Gamma1_le_Gamma1_of_dvd h)) (d • q) =
+      ZMod.unitsMap h d •
+        Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (Gamma1_le_Gamma1_of_dvd h)) q := by
   obtain ⟨γ, rfl⟩ := Gamma0Map_toHomUnits_surjective d
-  let γN : Gamma0 N := ⟨γ, Gamma0_le_Gamma0_of_dvd (dvd_mul_right N M) γ.property⟩
-  have hd : ZMod.unitsMap (dvd_mul_right N M) ((Gamma0Map (N * M)).toHomUnits γ) =
-      (Gamma0Map N).toHomUnits γN := by
-    apply Units.ext
-    simp only [ZMod.unitsMap_val, MonoidHom.coe_toHomUnits, Gamma0Map_apply]
-    exact ZMod.cast_intCast (dvd_mul_right N M) _
+  have hd := (Gamma0Map_toHomUnits_of_dvd h γ (Gamma0_le_Gamma0_of_dvd h γ.property)).symm
   induction q using Quotient.inductionOn with
   | h z =>
     rw [units_smul_gamma1Quotient_mk, Setoid.map_of_le_mk, Setoid.map_of_le_mk, hd,

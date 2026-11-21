@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Quotient
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
 /-!
@@ -144,19 +145,14 @@ theorem smul_mk_weierstrassPoint_denom_div (γ : SL(2, ℤ)) (z : ℍ) :
     div_div_cancel_left₀ (denom_ne_zero γ z), one_div]
 
 /-- If `m ≡ c` and `n ≡ d` modulo `N` for the bottom row `(c, d)` of `γ`, then `(m z + n) / N` is
-`(c z + d) / N` modulo `ℤ z + ℤ`, so both give the same point of `E_z`. At `N = 0`, the identity
-uses Lean’s convention that division by zero is zero. -/
+`(c z + d) / N` modulo `ℤ z + ℤ`, so both give the same point of `E_z`. This specializes
+`PeriodPair.weierstrassPoint_div_eq_of_intCast_eq` to the bottom row of `γ`. -/
 private lemma weierstrassPoint_div_eq_weierstrassPoint_denom_div {γ : SL(2, ℤ)} {z : ℍ} {m n : ℤ}
     (hm : ((γ 1 0 : ℤ) : ZMod N) = m) (hn : ((γ 1 1 : ℤ) : ZMod N) = n) :
     z.periodPair.weierstrassPoint ((m * z + n) / N) =
       z.periodPair.weierstrassPoint (denom γ z / N) := by
-  rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
-  convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
-    (b := ![m - γ 1 0, n - γ 1 1]) z (by ext i; fin_cases i <;> simp [hm, hn]) using 1
-  simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  push_cast
-  ring
+  simpa only [periodPair_ω₁, periodPair_ω₂, mul_one, ModularGroup.denom_apply] using
+    (z.periodPair.weierstrassPoint_div_eq_of_intCast_eq N hm hn).symm
 
 /-- If the point of `(m τ + n) / N` on `E_τ` has exact order `N`, then `gcd(m, n)` is prime to `N`:
 for `d = gcd(m, n, N)` the multiple `(N / d) • P` is the point of the period `(m / d) τ + n / d`. -/
@@ -339,6 +335,7 @@ theorem gamma1QuotientEquivExactOrder_mk_smul (γ : Gamma0 N) (z : ℍ) :
 
 /-- The moduli bijection is equivariant for diamonds on arbitrary quotient classes. Over ℂ
 with a chosen primitive `N`-th root, this is precomposition of the μ-marking by the unit. -/
+@[simp]
 theorem gamma1QuotientEquivExactOrder_smul (d : (ZMod N)ˣ)
     (q : MulAction.orbitRel.Quotient (Gamma1 N) ℍ) :
     gamma1QuotientEquivExactOrder N (d • q) = d • gamma1QuotientEquivExactOrder N q := by
@@ -353,6 +350,7 @@ theorem gamma1QuotientEquivExactOrder_smul (d : (ZMod N)ˣ)
 exact order `N M` by `M`. In terms of the embeddings `α : μ_{NM} ↪ E[NM]`, it restricts `α` to
 `μ_N`, forgetting the auxiliary marking, using compatible primitive roots
 `ζ_N = ζ_{NM}^M` (for example `ζ_k = exp(2πi/k)`). -/
+@[simp]
 theorem gamma1QuotientEquivExactOrder_map_of_le (M : ℕ) [NeZero M]
     (q : MulAction.orbitRel.Quotient (Gamma1 (N * M)) ℍ) :
     gamma1QuotientEquivExactOrder N (Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le

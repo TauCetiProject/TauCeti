@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Complex.Liouville
