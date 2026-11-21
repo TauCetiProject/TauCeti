@@ -148,24 +148,26 @@ theorem exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn [IsManifo
   have hloop : ∀ (x : U') (γ : Path x x), continuousPathIntegral φ' γ = 0 := by
     intro x γ
     let C : Set M := connectedComponentIn U x
-    have : SimplyConnectedSpace C := (hUsc x x.2).simplyConnectedSpace
+    have : SimplyConnectedSpace C := (hUsc x x.property).simplyConnectedSpace
     have hmem (t : unitInterval) : (γ t : M) ∈ C := by
       have hsub : range (fun s : unitInterval ↦ (γ s : M)) ⊆ C :=
         (isPreconnected_range
-          (continuous_subtype_val.comp γ.continuous)).subset_connectedComponentIn
-            ⟨0, by simp⟩ (by rintro _ ⟨s, rfl⟩; exact (γ s).2)
+          (continuous_subtypeVal.comp γ.continuous)).subset_connectedComponentIn
+            ⟨0, by simp⟩ (by rintro _ ⟨s, rfl⟩; exact (γ s).property)
       exact hsub ⟨t, rfl⟩
-    let γC : Path (⟨x, mem_connectedComponentIn x.2⟩ : C) ⟨x, mem_connectedComponentIn x.2⟩ :=
+    let γC : Path (⟨x, mem_connectedComponentIn x.property⟩ : C)
+        ⟨x, mem_connectedComponentIn x.property⟩ :=
       { toFun := fun t ↦ ⟨γ t, hmem t⟩
-        continuous_toFun := (continuous_subtype_val.comp γ.continuous).subtype_mk hmem
+        continuous_toFun := (continuous_subtypeVal.comp γ.continuous).subtype_mk hmem
         source' := Subtype.ext (by simp)
         target' := Subtype.ext (by simp) }
-    let incl : C → U' := fun z ↦ ⟨z.1, connectedComponentIn_subset U x z.2⟩
-    have hincl : Continuous incl := continuous_subtype_val.subtype_mk _
+    let incl : C → U' := fun z ↦ ⟨z.val, connectedComponentIn_subset U x z.property⟩
+    have hincl : Continuous incl := continuous_subtypeVal.subtype_mk _
     have hhom : γ.Homotopic (Path.refl x) := by
       have hC : γC.Homotopic (Path.refl _) := SimplyConnectedSpace.paths_homotopic _ _
       have h1 : γC.map hincl = γ := Path.ext (funext fun _ ↦ rfl)
-      have h2 : (Path.refl (⟨x, mem_connectedComponentIn x.2⟩ : C)).map hincl = Path.refl x :=
+      have h2 : (Path.refl (⟨x, mem_connectedComponentIn x.property⟩ : C)).map hincl =
+          Path.refl x :=
         Path.ext (funext fun _ ↦ rfl)
       simpa only [h1, h2] using hC.map ⟨incl, hincl⟩
     rw [continuousPathIntegral_eq_of_homotopic hhom, continuousPathIntegral_refl]
@@ -210,6 +212,6 @@ theorem subsingleton_deRhamCohomology_one_of_simplyConnectedSpace [SimplyConnect
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective _ _ c
   rw [deRhamCohomology.mk_eq_zero_iff, exactForms_one_eq_closedForms_of_simplyConnectedSpace]
-  exact φ.2
+  exact φ.property
 
 end TauCeti

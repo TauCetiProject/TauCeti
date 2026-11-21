@@ -216,9 +216,10 @@ def kerProjHomEquivFundamentalGroup :
     (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≃* FundamentalGroup G 1 :=
   MulEquiv.symm
     { toFun a := ⟨mk 1 a.toPath, mem_ker_projHom.2 rfl⟩
-      invFun z := FundamentalGroup.fromPath (z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm)
+      invFun z := FundamentalGroup.fromPath (z.val.path.cast rfl
+          (mem_ker_projHom.1 z.property).symm)
       left_inv a := CategoryTheory.End.ext (Path.Homotopic.Quotient.cast_rfl_rfl a.toPath)
-      right_inv z := Subtype.ext <| UniversalCover.ext (mem_ker_projHom.1 z.2).symm
+      right_inv z := Subtype.ext <| UniversalCover.ext (mem_ker_projHom.1 z.property).symm
         (Path.Homotopic.Quotient.cast_heq _ _)
       map_mul' a b := Subtype.ext <| UniversalCover.ext (mul_one 1).symm <| by
         rw [← FundamentalGroup.cast_map_prod_mul]
@@ -235,7 +236,8 @@ theorem coe_kerProjHomEquivFundamentalGroup_symm_apply (a : FundamentalGroup G 1
 /-- A point of the universal cover over `1` corresponds to its homotopy class of loops. -/
 theorem kerProjHomEquivFundamentalGroup_apply
     (z : (projHom (G := G) : UniversalCover (1 : G) →* G).ker) :
-    (kerProjHomEquivFundamentalGroup z).toPath = z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm :=
+    (kerProjHomEquivFundamentalGroup z).toPath = z.val.path.cast rfl
+        (mem_ker_projHom.1 z.property).symm :=
   (rfl)
 
 /-- A point of the universal cover lying over the identity is central. No local connectivity of
@@ -466,7 +468,8 @@ the loop `p ∘ γ` at `1`, for any path `γ` from `1` to `x`. -/
 theorem kerMulEquivFundamentalGroup_apply (hp : IsCoveringMap p) (x : (p : E →* G).ker)
     (γ : Path 1 (x : E)) :
     hp.kerMulEquivFundamentalGroup x = FundamentalGroup.fromPath
-      (.mk ((γ.map p.continuous).cast (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm)) := by
+      (.mk ((γ.map p.continuous).cast (map_one p).symm (MonoidHom.mem_ker.mp x.property).symm))
+          := by
   apply UniversalCover.kerProjHomEquivFundamentalGroup.symm.injective
   -- The comparison sends `x` to the endpoint of the lift of `p ∘ γ` starting at `1`.
   have hlift : hp.continuousMulEquivUniversalCover x =
@@ -483,8 +486,9 @@ theorem kerMulEquivFundamentalGroup_apply (hp : IsCoveringMap p) (x : (p : E →
     UniversalCover.coe_kerProjHomEquivFundamentalGroup_symm_apply,
     ContinuousMulEquiv.coe_toMulEquiv]
   rw [hlift, UniversalCover.ofBasedPath_ofPath]
-  exact UniversalCover.ext (by simpa using MonoidHom.mem_ker.mp x.2)
+  exact UniversalCover.ext (by simpa using MonoidHom.mem_ker.mp x.property)
     ((Path.Homotopic.Quotient.cast_heq (map_one p).symm rfl (γ := .mk (γ.map p.continuous))).trans
-      (Path.Homotopic.Quotient.cast_heq (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm).symm)
+      (Path.Homotopic.Quotient.cast_heq (map_one p).symm
+          (MonoidHom.mem_ker.mp x.property).symm).symm)
 
 end IsCoveringMap

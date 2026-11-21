@@ -25,7 +25,7 @@ public section
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-variable {Γ : Type*} [AddCommMonoid Γ] (R : Type) (L : Type*)
+variable {Γ : Type*} [AddCommMonoid Γ] (R : Type*) (L : Type*)
   [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
   (ℒ : Γ → Submodule R L)
 
@@ -42,12 +42,12 @@ theorem totalDegreeSubmodule_le_comap_pbwSymmetrizationMap (n : Γ) :
   apply Submodule.smul_mem
   apply Submodule.sum_mem
   intro σ _
-  have hdeg : ((List.ofFn fun i => l[(σ i).1]).map Sigma.fst).sum = n := by
-    have hperm : (List.ofFn fun i => l[(σ i).1]).Perm l := by
+  have hdeg : ((List.ofFn fun i => l[(σ i).val]).map Sigma.fst).sum = n := by
+    have hperm : (List.ofFn fun i => l[(σ i).val]).Perm l := by
       simpa only [Function.comp_def, List.ofFn_getElem] using
-        σ.ofFn_comp_perm (fun i : Fin l.length => l[i.1])
+        σ.ofFn_comp_perm (fun i : Fin l.length => l[i.val])
     exact (hperm.map Sigma.fst).sum_eq.trans hl
-  have hmem := prod_mem_homogeneousSubmodule ℒ (List.ofFn fun i => l[(σ i).1])
+  have hmem := prod_mem_homogeneousSubmodule ℒ (List.ofFn fun i => l[(σ i).val])
   rw [hdeg] at hmem
   simpa only [List.map_ofFn, Function.comp_def] using hmem
 

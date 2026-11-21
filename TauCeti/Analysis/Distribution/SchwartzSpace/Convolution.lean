@@ -39,6 +39,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.fourierMultiplierCLM_eq_convolution`: the multiplier with symbol `σ` is
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
+* `SchwartzMap.fourier_smulLeftCLM_fourierInv_apply`: the convolution theorem
+  `𝓕 (𝓕 K • 𝓕⁻ φ) y = ∫ x, K (x - y) * φ x` for an integrable kernel `K` and a test function `φ`.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
 * `SchwartzMap.integrable_sub_smul`: for a Schwartz function `f` and `u ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the
   convolution integral `∫ f (x - y) • u y` converges absolutely at every `x`.
@@ -56,7 +58,7 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 
 public section
 
-open scoped FourierTransform SchwartzMap ENNReal
+open scoped FourierTransform SchwartzMap ENNReal RealInnerProductSpace
 open FourierTransform ContinuousLinearMap MeasureTheory
 open scoped Convolution
 
@@ -114,6 +116,36 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
     simp only [lsmul_apply]
   · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF,
       integral_of_not_completeSpace hF]
+
+/-- **The convolution theorem against a test function.** If the symbol `g` of temperate growth is
+the Fourier transform of an integrable kernel `K`, then for every test function `φ`,
+`𝓕 (g • 𝓕⁻ φ) y = ∫ x, K (x - y) * φ x`. -/
+theorem fourier_smulLeftCLM_fourierInv_apply {K : E → ℂ} (hK : Integrable K) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (hgK : 𝓕 K = g) (φ : 𝓢(E, ℂ)) (y : E) :
+    𝓕 (smulLeftCLM ℂ g (𝓕⁻ φ)) y = ∫ x, K (x - y) * φ x := by
+  set ψ := 𝓕⁻ φ
+  calc 𝓕 (smulLeftCLM ℂ g ψ) y
+      = ∫ ξ, 𝓕 K ξ • (𝐞 (-⟪ξ, y⟫) • ψ ξ) := by
+        rw [fourier_coe, Real.fourier_eq]
+        refine integral_congr_ae (.of_forall fun ξ ↦ ?_)
+        dsimp only
+        rw [smulLeftCLM_apply_apply hg, ← hgK, smul_comm]
+    -- The multiplication formula `∫ 𝓕 K • h = ∫ K • 𝓕 h` for integrable `K` and `h`.
+    _ = ∫ z, K z • VectorFourier.fourierIntegral 𝐞 volume (innerₗ E).flip
+          (fun ξ ↦ 𝐞 (-⟪ξ, y⟫) • ψ ξ) z :=
+        VectorFourier.integral_fourierIntegral_smul_eq_flip Real.continuous_fourierChar
+          continuous_inner hK ((Real.fourierIntegral_convergent_iff y).2 ψ.integrable)
+    _ = ∫ z, K z * φ (y + z) := by
+        refine integral_congr_ae (.of_forall fun z ↦ ?_)
+        -- The exponentials combine into the character at `y + z`.
+        have hexp : ∀ ξ, ⟪z, ξ⟫ + ⟪ξ, y⟫ = ⟪ξ, y + z⟫ := fun ξ ↦ by
+          rw [inner_add_right, real_inner_comm ξ z, add_comm]
+        simp only [VectorFourier.fourierIntegral, LinearMap.flip_apply, innerₗ_apply_apply,
+          smul_smul, ← AddChar.map_add_eq_mul, ← neg_add, hexp, smul_eq_mul]
+        rw [← Real.fourier_eq, ← fourier_coe, fourier_fourierInv_eq]
+    _ = ∫ x, K (x - y) * φ x := by
+        rw [← integral_sub_right_eq_self (fun z ↦ K z * φ (y + z)) y]
+        simp only [add_sub_cancel]
 
 /-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
 Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/

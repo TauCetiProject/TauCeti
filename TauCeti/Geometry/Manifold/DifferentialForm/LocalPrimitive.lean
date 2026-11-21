@@ -285,7 +285,7 @@ restricted form on `Subtype.val ⁻¹' V`. -/
 theorem IsPrimitiveOn.mpullback_subtypeVal {U : Opens M} (hg : IsPrimitiveOn φ g V) :
     IsPrimitiveOn (TauCeti.mpullback I I (Subtype.val : U → M) φ) (g ∘ Subtype.val)
       ((Subtype.val : U → M) ⁻¹' V) :=
-  hg.mpullback (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+  hg.mpullback (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
 
 /-- A primitive `g` of the restriction of `φ` to an open submanifold `U` on an open subset
 `V ⊆ U` extends by `0` outside `U` to a primitive of `φ` on `Subtype.val '' V`. -/
@@ -293,7 +293,7 @@ theorem IsPrimitiveOn.of_mpullback_subtypeVal {U : Opens M} {g : U → F} {V : S
     (hg : IsPrimitiveOn (TauCeti.mpullback I I (Subtype.val : U → M) φ) g V) :
     IsPrimitiveOn φ (Function.extend (Subtype.val : U → M) g 0)
       ((Subtype.val : U → M) '' V) := by
-  have hopen : IsOpen ((Subtype.val : U → M) '' V) := U.isOpen.isOpenMap_subtype_val V hg.isOpen
+  have hopen : IsOpen ((Subtype.val : U → M) '' V) := U.isOpen.isOpenMap_subtypeVal V hg.isOpen
   have hloc (y : U) (hy : y ∈ V) :
       ∃ W : Set M, (y : M) ∈ W ∧ IsPrimitiveOn φ (Function.extend (Subtype.val : U → M) g 0) W := by
     have hπ := isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := U) y
@@ -345,7 +345,7 @@ theorem forall_exists_isPrimitiveOn_mpullback_subtypeVal_iff {U : Opens M} (φ :
         IsPrimitiveOn (mpullback I I (Subtype.val : U → M) φ) g V) ↔
       ∀ x ∈ (U : Set M), ∃ (g : M → F) (V : Set M), x ∈ V ∧ IsPrimitiveOn φ g V :=
   ⟨fun h x hx ↦ (exists_isPrimitiveOn_mpullback_subtypeVal_iff φ ⟨x, hx⟩).mp (h ⟨x, hx⟩),
-    fun h x ↦ (exists_isPrimitiveOn_mpullback_subtypeVal_iff φ x).mpr (h x x.2)⟩
+    fun h x ↦ (exists_isPrimitiveOn_mpullback_subtypeVal_iff φ x).mpr (h x x.property)⟩
 
 /-- **Locality of local primitives on an open cover.** A `1`-form `φ` on `M` has local primitives
 iff its restriction to every member of an open cover has local primitives on that open
@@ -483,8 +483,8 @@ theorem IsPrimitiveOn.sub_eq_sub_of_isPreconnected [IsManifold I 1 M] (hg : IsPr
   have hlc : IsLocallyConstant (fun z : U ↦ g z - h z) := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro z
-    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
-      (hg.eventuallyEq_add_const hh z.2 z.2)] with w hw
+    filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
+      (hg.eventuallyEq_add_const hh z.property z.property)] with w hw
     rw [hw]
     abel
   have hxy : g y - h y = g x - h x := hlc.apply_eq_of_preconnectedSpace ⟨y, hy⟩ ⟨x, hx⟩

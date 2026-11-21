@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Curve
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.PiecewisePath
@@ -33,7 +34,9 @@ space it agrees with Mathlib's `curveIntegral`
 
 Line integrals are the basic tool for detecting de Rham cohomology classes in degree one. The
 integral of the differential of a `C¹` function is its endpoint difference
-(`TauCeti.pathIntegral_mextDeriv_ofFunction`, `TauCeti.pathIntegral_mextDeriv`), so exact forms
+(`TauCeti.pathIntegral_mextDeriv_ofFunction`, `TauCeti.pathIntegral_mextDeriv`), as is the
+integral of a form along a differentiable curve inside the domain of a primitive
+(`TauCeti.pathIntegral_eq_sub_of_isPrimitiveOn`), so exact forms
 integrate to zero around closed curves (`TauCeti.pathIntegral_eq_zero_of_mem_exactForms`). The
 integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), changes sign
 when the curve is reversed (`TauCeti.pathIntegral_comp_sub_left`), is additive under
@@ -49,8 +52,9 @@ concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under p
   `TauCeti.IsSmoothForm.continuous_apply_curveVelocity`: the integrand is continuous at every
   parameter where the curve is `C¹` and the form is continuous at the point of the curve, so for
   a continuous form along a `C¹` curve it is continuous.
-* `TauCeti.pathIntegral_mextDeriv_ofFunction` and `TauCeti.pathIntegral_mextDeriv`: the
-  fundamental theorem of calculus for line integrals.
+* `TauCeti.pathIntegral_mextDeriv_ofFunction`, `TauCeti.pathIntegral_mextDeriv`, and
+  `TauCeti.pathIntegral_eq_sub_of_isPrimitiveOn`: the fundamental theorem of calculus for line
+  integrals.
 * `TauCeti.pathIntegral_eq_zero_of_mem_exactForms`: exact `1`-forms integrate to zero around
   closed `C¹` curves.
 * `TauCeti.pathIntegral_eq_sum_of_eqOn`: decomposition into integrable pieces, with
@@ -553,7 +557,7 @@ theorem pathIntegral_eq_zero_of_mem_exactForms [IsManifold I 2 M] {φ : SmoothFo
     (hab : γ a = γ b) : pathIntegral (φ : RoughForm I M ℝ 1) γ a b = 0 := by
   rw [exactForms_succ, LinearMap.mem_range] at hφ
   obtain ⟨g, rfl⟩ := hφ
-  have hg : IsSmoothForm I 1 g.1 :=
+  have hg : IsSmoothForm I 1 g.val :=
     g.isSmoothForm.of_le (by exact_mod_cast le_top)
   rw [mextDerivₗ_apply, pathIntegral_mextDeriv hg hγ, hab, sub_self]
 
@@ -580,6 +584,29 @@ theorem integralTopForm_mpullback_Icc_eq_pathIntegral [IsManifold I 1 M] {a b : 
     exact hφ.intervalIntegrable_apply_curveVelocity hγ a b
   rw [hc, (integralTopForm_mpullback_subtypeVal_Icc _ hi).2,
     pathIntegral_eq_integral_mpullback]
+
+/-! ### Local primitives -/
+
+/-- **Local fundamental theorem of calculus for `IsPrimitiveOn`.** If `g` is a primitive of `φ` on
+an open set `U` containing the curve `c` on `uIcc a b`, `c` is differentiable at every point of
+`uIcc a b`, and the integrand is interval integrable, then
+`pathIntegral φ c a b = g (c b) - g (c a)`. No `C¹` regularity of `g` or `c` is needed. -/
+theorem pathIntegral_eq_sub_of_isPrimitiveOn [CompleteSpace F]
+    {φ : RoughForm I M F 1} {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U)
+    {c : ℝ → M} {a b : ℝ} (hc : ∀ t ∈ uIcc a b, MDifferentiableAt 𝓘(ℝ, ℝ) I c t)
+    (hcU : ∀ t ∈ uIcc a b, c t ∈ U)
+    (hint : IntervalIntegrable (fun t ↦ φ (c t) fun _ ↦ Manifold.curveVelocity I c t)
+      volume a b) :
+    pathIntegral φ c a b = g (c b) - g (c a) := by
+  rw [pathIntegral_def]
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := g ∘ c) (fun t ht ↦ ?_) hint
+  have hgt := (hgU.mdifferentiableOn (c t) (hcU t ht)).mdifferentiableAt
+    (hgU.isOpen.mem_nhds (hcU t ht))
+  have hd : HasDerivAt (g ∘ c) (mextDeriv (RoughForm.ofFunction I g) (c t)
+      fun _ ↦ Manifold.curveVelocity I c t) t := by
+    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+    exact Manifold.hasDerivAt_comp_curve hgt (Manifold.hasMFDerivAt_curveVelocity (hc t ht))
+  rwa [hgU.mextDeriv_eq (c t) (hcU t ht)] at hd
 
 /-! ### Comparison with curve integration -/
 

@@ -106,6 +106,12 @@ end Def
 
 open scoped Matrix Matrix.Norms.Frobenius
 
+/-- The squared Frobenius norm is the sum of the squared entry norms. -/
+theorem frobenius_norm_sq_eq_sum_norm_sq [SeminormedAddCommGroup E] (A : Matrix m n E) :
+    ‖A‖ ^ 2 = ∑ i, ∑ j, ‖A i j‖ ^ 2 := by
+  simp only [frobenius_norm_def, ← Real.sqrt_eq_rpow, Real.rpow_two]
+  exact Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
+
 /-- The Frobenius inner product of matrices over `𝕜` is `∑ i, ∑ j, conj (A i j) * B i j`. -/
 theorem frobenius_inner_eq_sum_conj_mul (A B : Matrix m n 𝕜) :
     ⟪A, B⟫_𝕜 = ∑ i, ∑ j, conj (A i j) * B i j := by
@@ -127,21 +133,19 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
 /-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
 theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :
     ‖A‖ ^ 2 = ∑ i, ∑ j, Complex.normSq (A i j) := by
-  rw [frobenius_norm_def, ← Real.sqrt_eq_rpow,
-    Real.sq_sqrt (Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => by positivity)]
-  simp only [Real.rpow_two, Complex.normSq_eq_norm_sq]
+  simpa only [Complex.normSq_eq_norm_sq] using A.frobenius_norm_sq_eq_sum_norm_sq
 
 /-- Unitary conjugation preserves the squared Frobenius norm. -/
 theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (U A : Matrix ι ι ℂ) (hU : U ∈ Matrix.unitaryGroup ι ℂ) :
+    (U A : Matrix ι ι 𝕜) (hU : U ∈ Matrix.unitaryGroup ι 𝕜) :
     ‖Uᴴ * A * U‖ ^ 2 = ‖A‖ ^ 2 := by
   have hright : U * Uᴴ = 1 := by
     simpa only [star_eq_conjTranspose] using (mem_unitaryGroup_iff.mp hU)
-  have hnorm (B : Matrix ι ι ℂ) : ((‖B‖ ^ 2 : ℝ) : ℂ) = (Bᴴ * B).trace := by
+  have hnorm (B : Matrix ι ι 𝕜) : ((‖B‖ ^ 2 : ℝ) : 𝕜) = (Bᴴ * B).trace := by
     rw [← frobenius_inner_eq_trace_conjTranspose_mul, inner_self_eq_norm_sq_to_K]
     push_cast
-    rfl
-  apply Complex.ofReal_injective
+    ring
+  apply RCLike.ofReal_injective (K := 𝕜)
   rw [hnorm, hnorm]
   have hmul : (Uᴴ * A * U)ᴴ * (Uᴴ * A * U) = Uᴴ * (Aᴴ * A) * U := by
     simp only [conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,

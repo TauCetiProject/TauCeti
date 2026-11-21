@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.Topology.Algebra.Module.Trace
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # The divergence of a test vector field
@@ -37,9 +40,13 @@ total variation of a function and the perimeter of a set are suprema of the pair
   is the translate of its divergence.
 * `TauCeti.integral_divergenceCLM_mul_congr_ae`: the pairing `∫ u div φ` only depends on `u`
   almost everywhere on `Ω`.
+* `TauCeti.smulTestField`: a scalar test function times a vector field smooth on `Ω`.
+* `TauCeti.divergenceCLM_smulTestField`: the divergence product rule for this test field.
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
+* `TauCeti.trace_fderiv_exp_neg_smul`: the weighted divergence
+  `div (e^{−W} φ) = (div φ − DW φ) e^{−W}`.
 * `TauCeti.exists_testFunction_sum_smul_comp_add`: weighting translates of a test vector field
   `φ` by nonnegative smooth functions `ζ k` compactly supported in `Ω` with sum at most one gives
   a test vector field `∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one when `‖φ‖ ≤ 1`, whose
@@ -123,6 +130,21 @@ open scoped ContDiff Distributions
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
 
+omit [FiniteDimensional ℝ E] in
+/-- The test vector field `φ b`, for a test function `φ` and a vector field `b` smooth on `Ω`. -/
+noncomputable def smulTestField {b : E → E} (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ)) :
+    𝓓(Ω, E) :=
+  ⟨fun x ↦ φ x • b x, hb.contDiff_smul_of_tsupport_subset Ω.isOpen φ.contDiff.contDiffOn
+    φ.tsupport_subset, φ.hasCompactSupport.smul_right,
+    (tsupport_smul_subset_left _ _).trans φ.tsupport_subset⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- The test field `φ b` evaluated at a point. -/
+@[simp]
+theorem smulTestField_apply {b : E → E} (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
+    (x : E) : smulTestField hb φ x = φ x • b x :=
+  (rfl)
+
 /-- The divergence of a translated test vector field is the translate of its divergence. -/
 @[simp]
 theorem divergenceCLM_translateTestFunction (hVO : MapsTo (· + h) V Ω) (φ : 𝓓(V, E)) :
@@ -143,6 +165,35 @@ theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : Differe
 theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
     LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
   simpa using trace_fderiv_smul hχ (differentiableAt_const v)
+
+open scoped Gradient InnerProductSpace in
+/-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/
+theorem divergenceCLM_smulTestField {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {Ω : Opens F} {b : F → F}
+    (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
+    {x : F} (hx : x ∈ Ω) :
+    TestFunction.divergenceCLM (smulTestField hb φ) x =
+      φ x * LinearMap.trace ℝ F (fderiv ℝ b x : F →ₗ[ℝ] F) +
+        ⟪∇ (φ : F → ℝ) x, b x⟫_ℝ := by
+  have hcoe : (smulTestField hb φ : F → F) = fun y ↦ φ y • b y := by
+    funext y
+    exact smulTestField_apply hb φ y
+  rw [TestFunction.divergenceCLM_apply, hcoe, trace_fderiv_smul
+      (φ.contDiff.differentiable (by simp) x)
+      ((hb.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)), gradient,
+    InnerProductSpace.toDual_symm_apply]
+
+/-- **The weighted divergence.** For a differentiable weight `W` and vector field `X`,
+`div (e^{−W} X) = (div X − DW X) e^{−W}`, where `div = tr ∘ D`. -/
+theorem trace_fderiv_exp_neg_smul {W : E → ℝ} {X : E → E} {x : E}
+    (hW : DifferentiableAt ℝ W x) (hX : DifferentiableAt ℝ X x) :
+    LinearMap.trace ℝ E (fderiv ℝ (fun y => Real.exp (-W y) • X y) x : E →ₗ[ℝ] E) =
+      (LinearMap.trace ℝ E (fderiv ℝ X x : E →ₗ[ℝ] E) - fderiv ℝ W x (X x)) *
+        Real.exp (-W x) := by
+  have hW' : DifferentiableAt ℝ (fun y => -W y) x := hW.neg
+  rw [trace_fderiv_smul hW'.exp hX, fderiv_exp hW', fderiv_fun_neg]
+  simp only [_root_.smul_apply, _root_.neg_apply, smul_eq_mul]
+  ring
 
 /-- Let `ζ k`, for `k ∈ s`, be nonnegative smooth functions compactly supported in `Ω` whose sum
 is at most one, and `φ` a test vector field on `Ω` with `‖φ‖ ≤ 1`. For any vectors `τ k`, the

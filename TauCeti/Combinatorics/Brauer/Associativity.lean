@@ -360,7 +360,7 @@ private theorem exists_iterate_tripleStep_right (D₁ D₂ D₃ : BrauerDiagram 
 `D₃` matches the outer boundary in the same way as stacking `D₂` above `D₃` and `D₁` above that. -/
 theorem composeDiagram_assoc (D₁ D₂ D₃ : BrauerDiagram k) :
     composeDiagram (composeDiagram D₁ D₂) D₃ = composeDiagram D₁ (composeDiagram D₂ D₃) := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   obtain ⟨m, hm⟩ := exists_iterate_tripleStep_left D₁ D₂ D₃ x
   obtain ⟨n, hn⟩ := exists_iterate_tripleStep_right D₁ D₂ D₃ x
   exact eq_of_iterate_tripleStep D₁ D₂ D₃ hm hn

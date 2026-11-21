@@ -32,6 +32,8 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 ## Main results
 
 * `LinearMap.IsHomogeneous.comp`: degrees add under composition of linear maps.
+* `LinearMap.IsHomogeneous.pow`: the `k`-th power of an endomorphism of degree `q` has degree
+  `k • q`.
 * `LinearMap.IsHomogeneous.restrict_zero`, `LinearMap.IsHomogeneous.restrict_id`, and
   `LinearMap.IsHomogeneous.restrict_comp`: functoriality of `IsHomogeneous.restrict`.
 
@@ -102,6 +104,13 @@ theorem IsHomogeneous.comp {P : Type uP} {σP : Type*} [AddCommMonoid P] [Module
     IsHomogeneous (g.comp f) 𝒜 𝒞 (q + r) := by
   intro p x hx
   simpa only [_root_.LinearMap.comp_apply, add_assoc] using hg (hf hx)
+
+/-- The `k`-th power of an endomorphism of degree `q` has degree `k • q`. -/
+theorem IsHomogeneous.pow {f : Module.End R M} {𝒜 : ι → σM} {q : ι}
+    (hf : IsHomogeneous f 𝒜 𝒜 q) (k : ℕ) : IsHomogeneous (f ^ k) 𝒜 𝒜 (k • q) := by
+  induction k with
+  | zero => simp [Module.End.one_eq_id]
+  | succ k ih => simpa [pow_succ, Module.End.mul_eq_comp, succ_nsmul'] using ih.comp hf
 
 /-- A degree-zero homogeneous linear map restricts to a linear map on each graded piece. -/
 def IsHomogeneous.restrict {g : M →ₗ[R] N} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}

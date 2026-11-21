@@ -337,7 +337,8 @@ theorem perturbed_cstarAction (hP : IsSelfAdjoint P) :
   apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
   rw [coe_perturbed_apply, perturbationCocycle_cstarAction, ← DoubleCentralizer.coe_star,
     ← DoubleCentralizer.coe_mul, ← DoubleCentralizer.coe_mul, DoubleCentralizer.coe_inj]
-  simp only [cstarAction_apply, star_mul, star_exp, star_smul, star_neg, h.2.star_eq, hP.star_eq,
+  simp only [cstarAction_apply, star_mul, star_exp, star_smul, star_neg, h.property.star_eq,
+      hP.star_eq,
     star_add, Complex.star_def, conj_I, conj_ofReal, AddSubgroup.coe_add]
   -- The middle factors `exp (-ith) exp (ith)` cancel.
   have hconj : (t.toAdd : ℂ) * -I = -(I * t.toAdd) := by ring

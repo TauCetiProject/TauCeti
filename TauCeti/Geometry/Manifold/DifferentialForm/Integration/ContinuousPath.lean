@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.Topology
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Lifting
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
@@ -195,17 +194,17 @@ theorem PrimitiveSpace.value_sub_eq_of_isPrimitiveOn
       · rintro ⟨s, hs, rfl⟩
         exact hs
       · intro hr
-        exact ⟨⟨r, uIcc_subset_Icc a.2 b.2 hr⟩, hr, rfl⟩
+        exact ⟨⟨r, uIcc_subset_Icc a.property b.property hr⟩, hr, rfl⟩
     exact (Topology.IsInducing.subtypeVal.isPreconnected_image (s := S)).mp
       (himg.symm ▸ isPreconnected_uIcc)
   have : PreconnectedSpace S := isPreconnected_iff_preconnectedSpace.mp hpre
   let c : F := PrimitiveSpace.value φ (Γ a) - g (γ a)
   let f₁ : S → PrimitiveSpace φ := fun s ↦ Γ s
   let f₂ : S → PrimitiveSpace φ := fun s ↦ PrimitiveSpace.graph φ (fun p ↦ g p + c) (γ s)
-  have hf₁ : Continuous f₁ := hΓ.comp continuous_subtype_val
+  have hf₁ : Continuous f₁ := hΓ.comp continuous_subtypeVal
   have hf₂ : Continuous f₂ :=
     (PrimitiveSpace.continuousOn_graph (hgU.add_const c)).comp_continuous
-      (γ.continuous.comp continuous_subtype_val) (fun s ↦ hγU s s.2)
+      (γ.continuous.comp continuous_subtypeVal) (fun s ↦ hγU s s.property)
   have heq : f₁ = f₂ := hp.eq_of_comp_eq hf₁ hf₂
     (funext fun s ↦ by simp [f₁, f₂, hΓγ]) ⟨a, left_mem_uIcc⟩
     (PrimitiveSpace.ext (by simp [f₁, f₂, hΓγ]) (by simp [f₁, f₂, c]))
@@ -498,28 +497,6 @@ theorem continuousPathIntegral_sub
 
 section Comparison
 
-omit [IsManifold I 1 M] in
-/-- **Local fundamental theorem of calculus for `IsPrimitiveOn`.** If `g` is a primitive of `φ` on
-an open set `U` containing the curve `c` on `uIcc a b`, `c` is differentiable at every point of
-`uIcc a b`, and the integrand is interval integrable, then
-`pathIntegral φ c a b = g (c b) - g (c a)`. No `C¹` regularity of `g` or `c` is needed. -/
-theorem pathIntegral_eq_sub_of_isPrimitiveOn [CompleteSpace F]
-    {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U)
-    {c : ℝ → M} {a b : ℝ} (hc : ∀ t ∈ uIcc a b, MDifferentiableAt 𝓘(ℝ, ℝ) I c t)
-    (hcU : ∀ t ∈ uIcc a b, c t ∈ U)
-    (hint : IntervalIntegrable (fun t ↦ φ (c t) fun _ ↦ Manifold.curveVelocity I c t)
-      volume a b) :
-    pathIntegral φ c a b = g (c b) - g (c a) := by
-  rw [pathIntegral_def]
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := g ∘ c) (fun t ht ↦ ?_) hint
-  have hgt := (hgU.mdifferentiableOn (c t) (hcU t ht)).mdifferentiableAt
-    (hgU.isOpen.mem_nhds (hcU t ht))
-  have hd : HasDerivAt (g ∘ c) (mextDeriv (RoughForm.ofFunction I g) (c t)
-      fun _ ↦ Manifold.curveVelocity I c t) t := by
-    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-    exact Manifold.hasDerivAt_comp_curve hgt (Manifold.hasMFDerivAt_curveVelocity (hc t ht))
-  rwa [hgU.mextDeriv_eq (c t) (hcU t ht)] at hd
-
 /-- **Comparison with smooth path integrals.** For a continuous `1`-form `φ` with local primitives
 and complete coefficients `F`, the continuous path integral along a path `γ` following a `C¹` curve
 `c` agrees with `TauCeti.pathIntegral φ c 0 1`. -/
@@ -539,7 +516,7 @@ theorem continuousPathIntegral_eq_pathIntegral [CompleteSpace F]
       (by simp only [Γ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
       (hgU.add_const (pathIntegral φ c 0 t₀ - g (c t₀)))
       (by simp only [Γ, PrimitiveSpace.proj_graph, hγ]; exact hxU) ?_
-    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+    filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (Metric.ball_mem_nhds (t₀ : ℝ) hδ)] with s hs
     have hsub : uIcc (t₀ : ℝ) s ⊆ c ⁻¹' U := by
       refine (Set.OrdConnected.uIcc_subset ?_ (Metric.mem_ball_self (x := (t₀ : ℝ)) hδ) hs).trans
@@ -581,7 +558,7 @@ theorem continuousPathIntegral_ofSubsingleton_eq_curveIntegral [CompleteSpace F]
 /-- On an open submanifold `U : TopologicalSpace.Opens E` of a real normed space, for a covector
 field `α : E → E →L[ℝ] F` continuous on `U` with local primitives on `U` and complete coefficients,
 `continuousPathIntegral` along a path `γ` in `U` following a `C¹` curve agrees with Mathlib's
-`curveIntegral α (γ.map continuous_subtype_val)`. -/
+`curveIntegral α (γ.map continuous_subtypeVal)`. -/
 theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_curveIntegral
     [CompleteSpace F] {U : TopologicalSpace.Opens E} {α : E → E →L[ℝ] F}
     (hα : ContinuousOn α U)
@@ -596,7 +573,7 @@ theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_curveInteg
         (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E)
           ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
             RoughForm 𝓘(ℝ, E) E F 1)) γ =
-      curveIntegral α (γ.map continuous_subtype_val) := by
+      curveIntegral α (γ.map continuous_subtypeVal) := by
   let ψ : RoughForm 𝓘(ℝ, E) E F 1 :=
     fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)
   have hsmooth : IsSmoothForm 𝓘(ℝ, E) 0 (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E) ψ) := by
@@ -610,13 +587,13 @@ theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_curveInteg
           ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) (U : Set E) :=
         (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
           (0 : Fin 1)).continuous.comp_continuousOn hα
-      exact (contDiffAt_zero.mpr ⟨U, U.isOpen.mem_nhds p.2, hcont⟩).contDiffWithinAt
-    exact hψp.mpullback_form (contMDiff_subtype_val (n := 1) p) le_rfl
+      exact (contDiffAt_zero.mpr ⟨U, U.isOpen.mem_nhds p.property, hcont⟩).contDiffWithinAt
+    exact hψp.mpullback_form (contMDiff_subtypeVal (n := 1) p) le_rfl
   rw [continuousPathIntegral_eq_pathIntegral hφ hsmooth hc hγ,
-    pathIntegral_mpullback ψ (fun _ _ ↦ contMDiff_subtype_val.mdifferentiable one_ne_zero _)
+    pathIntegral_mpullback ψ (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiable one_ne_zero _)
       (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero),
     pathIntegral_ofSubsingleton_eq_curveIntegral α (c := Subtype.val ∘ c)
-      (γ := γ.map continuous_subtype_val) (fun t ↦ congrArg Subtype.val (hγ t))]
+      (γ := γ.map continuous_subtypeVal) (fun t ↦ congrArg Subtype.val (hγ t))]
 
 end Comparison
 

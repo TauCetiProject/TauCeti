@@ -65,7 +65,7 @@ theorem isOpenMap_restrictedProduct_eval (i : ι) :
   -- reference sets, with `i` removed.
   set T : Set ι := {j | x j ∈ A j} \ {i}
   have hT : (cofinite : Filter ι) ≤ 𝓟 T :=
-    le_principal_iff.2 (sdiff_mem x.2 (Set.finite_singleton i).compl_mem_cofinite)
+    le_principal_iff.2 (sdiff_mem x.property (Set.finite_singleton i).compl_mem_cofinite)
   let g : R i → Πʳ j, [R j, A j]_[𝓟 T] := fun y ↦
     ⟨Function.update x i y, eventually_principal.2 fun j hj ↦ by
       rw [Function.update_of_ne hj.2]
@@ -150,7 +150,8 @@ theorem discreteTopology_restrictedProduct_principal {S : Set ι} (hS : Sᶜ.Fin
   · intro h
     ext i
     by_cases hi : i ∈ S
-    · exact hA i hi (eventually_principal.1 y.2 i hi) (eventually_principal.1 x.2 i hi)
+    · exact hA i hi (eventually_principal.1 y.property i hi) (eventually_principal.1 x.property i
+        hi)
     · exact h i hi
   · rintro rfl i _
     rfl
