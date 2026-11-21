@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Torsion
 
@@ -13,16 +12,17 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Torsion
 # The Brauer-valued Weil cup product
 
 Composing the Weil cup product with `H²(K, μ_m) → Br K` gives a bilinear pairing on
-`H¹(K, E[m])` over any field. Likewise, for an isogeny `φ : E₁ → E₂` of degree `n` invertible in
-`K`, composing the isogeny Weil cup product with `H²(K, μ_n) → Br K` gives a bilinear pairing
-`H¹(K, E₁[φ]) × H¹(K, E₂[φ̂]) → Br K`. Their comparisons with the local Tate pairings are proved
-in `WeilPairing.Local`; this module does not require local-field hypotheses.
+`H¹(K, E[m])` over any field. Its comparison with the local Tate pairing is proved in
+`WeilPairing.Local`; this module does not require local-field hypotheses.
 
-## Main definitions
-
-* `WeierstrassCurve.torsionWeilBrauerPairing`: the Brauer-valued Weil cup product on `H¹(K, E[m])`.
-* `TauCeti.Isogeny.kerWeilBrauerPairing`: the Brauer-valued Weil cup product on
-  `H¹(K, E₁[φ]) × H¹(K, E₂[φ̂])`.
+For an isogeny `φ : E₁ → E₂` of degree `n` invertible in a field `K`, the same construction
+gives a bilinear pairing on `H¹(K, E₁[φ]) × H¹(K, E₂[φ̂])` with values killed by `n`.
+The Kummer inclusion is injective, so passage to the Brauer group neither loses nor introduces
+vanishing. This is the global Brauer class whose local invariants enter reciprocity and the
+comparison of the Selmer groups of dual isogenies. Compatibility with inclusion into
+degree-torsion and projection onto the dual kernel identifies it with the multiplication
+Weil cup product when the second class lifts to degree-torsion. No rationality hypothesis is
+needed.
 
 ## References
 
@@ -57,18 +57,34 @@ theorem torsionWeilBrauerPairing_apply
       h2MuToBr m K (muNRepH2Equiv m K (W.torsionH1WeilPairing m hm a b)) :=
   (rfl)
 
+/-- Passage to the Brauer group preserves and reflects vanishing of the Weil cup product. -/
+-- Apply before the simplifier expands the Brauer-valued pairing.
+@[simp↓]
+theorem torsionWeilBrauerPairing_eq_zero_iff
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    W.torsionWeilBrauerPairing m hm a b = 0 ↔ W.torsionH1WeilPairing m hm a b = 0 := by
+  rw [torsionWeilBrauerPairing_apply, map_eq_zero_iff _ (h2MuToBr_injective _ _ hm),
+    AddEquiv.map_eq_zero_iff]
+
+/-- Multiplication by `m` kills every value of the Brauer-valued Weil pairing on `m`-torsion. -/
+-- Apply before the simplifier expands the Brauer-valued pairing.
+@[simp↓]
+theorem nsmul_torsionWeilBrauerPairing
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    m • W.torsionWeilBrauerPairing m hm a b = 0 := by
+  rw [torsionWeilBrauerPairing_apply, nsmul_h2MuToBr]
+
 end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 
-open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory
-open Hom (ofIsogeny)
+open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory Hom
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
 
-/-- The isogeny Weil cup product, followed by the inclusion `H²(K, μ_n) → Br K` for `n = deg φ`.
-It pairs `H¹(K, E₁[φ])` bilinearly with `H¹(K, E₂[φ̂])` into `Br K`. -/
+/-- The cup product along the isogeny Weil pairing, followed by the Kummer inclusion into the
+Brauer group. Its arguments have coefficients in the kernels of `φ` and its dual. -/
 def kerWeilBrauerPairing : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff →+
     H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+ Br K :=
   (AddMonoidHom.compHom ((h2MuToBr φ.degree K).comp
@@ -83,8 +99,27 @@ theorem kerWeilBrauerPairing_apply
       h2MuToBr φ.degree K (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
 
-/-- The Brauer-valued isogeny Weil pairing is compatible with inclusion into degree-torsion and
-projection onto the dual kernel. -/
+/-- Passage to the Brauer group preserves and reflects vanishing of the isogeny Weil cup. -/
+-- Apply before the simplifier expands the Brauer-valued pairing.
+@[simp↓]
+theorem kerWeilBrauerPairing_eq_zero_iff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    φ.kerWeilBrauerPairing hn a b = 0 ↔ φ.kerH1WeilPairing hn a b = 0 := by
+  rw [kerWeilBrauerPairing_apply, map_eq_zero_iff _ (h2MuToBr_injective _ _ hn),
+    AddEquiv.map_eq_zero_iff]
+
+/-- The degree of the isogeny kills every value of its Brauer-valued pairing. -/
+-- Apply before the simplifier expands the Brauer-valued pairing.
+@[simp↓]
+theorem degree_nsmul_kerWeilBrauerPairing
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    φ.degree • φ.kerWeilBrauerPairing hn a b = 0 :=
+  (h2MuToBr_range φ.degree K hn _).mp ⟨_, (φ.kerWeilBrauerPairing_apply hn a b).symm⟩
+
+/-- Projecting a degree-torsion class to the dual kernel turns the Brauer-valued isogeny
+pairing into the multiplication Weil pairing with the first class included in degree-torsion. -/
 theorem kerWeilBrauerPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
     (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
@@ -96,5 +131,3 @@ theorem kerWeilBrauerPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
     kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff]
 
 end TauCeti.Isogeny
-
-end

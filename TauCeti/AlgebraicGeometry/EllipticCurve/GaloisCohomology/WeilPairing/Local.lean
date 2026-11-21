@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
 /-!
@@ -129,15 +128,14 @@ theorem localTateKerWeilPairing_apply (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny
       h2MuEquivZMod K hn (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
 
-/-- The local Tate pairing of an isogeny, embedded in `ℚ/ℤ` by `k ↦ k/deg φ`, is the Brauer
-invariant of the isogeny Weil cup product. The degree need only be invertible in the field, not
-in its residue field. -/
+/-- The local isogeny Tate pairing, embedded in `ℚ/ℤ` by `k ↦ k/n`, is the local invariant
+of the Brauer-valued isogeny Weil cup product. The residue characteristic may divide `n`. -/
 theorem toRatAddCircle_localTateKerWeilPairing
     (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
     ZMod.toRatAddCircle φ.degree (φ.localTateKerWeilPairing hn a b) =
       invMap K (φ.kerWeilBrauerPairing hn a b) := by
-  rw [φ.localTateKerWeilPairing_apply hn, φ.kerWeilBrauerPairing_apply hn]
+  rw [localTateKerWeilPairing_apply, kerWeilBrauerPairing_apply]
   exact toRatAddCircle_h2MuEquivZMod K hn _
 
 /-- The local Tate pairings are compatible with inclusion into degree-torsion and

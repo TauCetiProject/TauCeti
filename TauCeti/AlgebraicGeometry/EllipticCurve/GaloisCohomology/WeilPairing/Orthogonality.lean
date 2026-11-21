@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Unramified
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.KummerComparison
 
 /-!
-# Orthogonality of the isogeny Kummer images
+# Orthogonality of the isogeny Kummer images and unramified cohomology
 
 For an isogeny `φ : E₁ → E₂` of degree `n` invertible in the field `K`, the Kummer images of
 `E₂(K)` in `H¹(K, E₁[φ])` and of `E₁(K)` in `H¹(K, E₂[φ̂])` are orthogonal under the isogeny
@@ -22,11 +23,16 @@ so the result applies over both finite and infinite completions of a number fiel
 Over a nonarchimedean local field, orthogonality descends the local Tate pairing to
 `TauCeti.Isogeny.localTateKerWeilQuotientPairing` on the quotient by the local `φ`-Selmer kernel
 against the local `φ̂`-Selmer kernel.
+Over a nonarchimedean local field, the unramified subgroups `φ.unramifiedKerCohomology` and
+`φ.dual.unramifiedKerCohomology` are likewise orthogonal under both the Weil cup product and local
+Tate duality (`kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology` and
+`localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology`), since `H²(G_K ⧸ I_K, μ_n^{I_K})`
+vanishes (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`).
 Orthogonality is the input needed to identify the two local conditions as exact annihilators;
 equality with the annihilators additionally requires an order calculation.
 
-The proof uses the adjoint inclusion `E₁[φ] → E₁[n]` and projection `E₁[n] → E₂[φ̂]` to reduce
-the cup product to the multiplication-by-`n` Kummer images, whose isotropy is proved in
+The Kummer proof uses the adjoint inclusion `E₁[φ] → E₁[n]` and projection `E₁[n] → E₂[φ̂]` to
+reduce the cup product to the multiplication-by-`n` Kummer images, whose isotropy is proved in
 `WeierstrassCurve.torsionH1WeilPairing_kummerMap_kummerMap_eq_zero`.
 
 ## References
@@ -45,6 +51,8 @@ namespace TauCeti.Isogeny
 
 open WeierstrassCurve TauCeti.ContCohomology
 open Hom (ofIsogeny)
+
+section Kummer
 
 variable {K : Type*} [Field K] [DecidableEq K]
   {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
@@ -132,6 +140,8 @@ theorem kerWeilBrauerPairing_eq_zero_of_mem_ker
     φ.kerWeilBrauerPairing hn a b = 0 := by
   simp only [kerWeilBrauerPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb, map_zero]
 
+end Kummer
+
 section Local
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -196,7 +206,8 @@ def localTateKerWeilQuotientPairing :
     ((φ.localTateKerWeilPairing hn).compl₂
       (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
         continuous_of_discreteTopology).ker.subtype)
-    fun _ ha ↦ AddMonoidHom.ext fun b ↦ φ.localTateKerWeilPairing_eq_zero_of_mem_ker hn ha b.2
+    fun _ ha ↦ AddMonoidHom.ext fun b ↦
+      φ.localTateKerWeilPairing_eq_zero_of_mem_ker hn ha b.property
 
 omit [DecidableEq K] in
 /-- Evaluating `localTateKerWeilQuotientPairing` on a quotient class computes
@@ -211,6 +222,50 @@ theorem localTateKerWeilQuotientPairing_mk
   (rfl)
 
 end Local
+
+section Unramified
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- **Unramified classes of `φ` and `φ̂` are orthogonal for the isogeny Weil cup product.** Only
+invertibility of `deg φ` in `K` is needed; `K` may divide `deg φ` in residue characteristic and no
+good-reduction hypothesis is required. -/
+theorem kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology (hn : IsUnit (φ.degree : K))
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ φ.unramifiedKerCohomology) (hb : b ∈ φ.dual.unramifiedKerCohomology) :
+    φ.kerH1WeilPairing hn a b = 0 := by
+  have := hn.neZero_natCast
+  rw [unramifiedKerCohomology_eq_unramifiedH1] at ha hb
+  rw [φ.kerH1WeilPairing_eq_explicitCup11 hn]
+  exact (φ.kerCoeffWeilPairing hn).explicitCup11_eq_zero_of_mem_unramifiedH1
+    continuous_of_discreteTopology (φ.kerCoeffWeilPairing_smul hn) ha hb
+
+end Unramified
+
+section UnramifiedLocalTate
+
+variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- **Unramified classes of `φ` and `φ̂` are orthogonal under local Tate duality.** Only
+invertibility of `deg φ` in `K` is needed; `K` may divide `deg φ` in residue characteristic and no
+good-reduction hypothesis is required. -/
+theorem localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology
+    (hn : IsUnit (φ.degree : K))
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ φ.unramifiedKerCohomology) (hb : b ∈ φ.dual.unramifiedKerCohomology) :
+    φ.localTateKerWeilPairing hn a b = 0 := by
+  rw [localTateKerWeilPairing_apply,
+    φ.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology hn ha hb, map_zero, map_zero]
+
+end UnramifiedLocalTate
 
 end TauCeti.Isogeny
 

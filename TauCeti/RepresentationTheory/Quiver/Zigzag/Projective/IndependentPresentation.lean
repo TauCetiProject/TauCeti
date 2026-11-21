@@ -40,13 +40,13 @@ variable (k : Type w) {V : Type u} (G : SimpleGraph V) (c : ∀ i : V, G.neighbo
 /-- Independent quadratic relation labels based at `i`: all nonreturning length-two paths and
 one backtrack difference against the chosen neighbour for each other neighbour. -/
 abbrev ZigzagIndependentQuadraticRelationIndex (i : V) :=
-  (Σ j : G.neighborSet i, {l : G.neighborSet j.1 // l.1 ≠ i}) ⊕
+  (Σ j : G.neighborSet i, {l : G.neighborSet j.val // l.val ≠ i}) ⊕
     {j : G.neighborSet i // j ≠ c i}
 
 /-- The endpoint of the relation path, hence the vertex of its projective summand. -/
 abbrev ZigzagIndependentQuadraticRelationIndex.vertex {i : V} :
     ZigzagIndependentQuadraticRelationIndex G c i → V
-  | .inl r => r.2.1.1
+  | .inl r => r.2.val.val
   | .inr _ => i
 
 private theorem eq_of_comp_arrowPath_eq {i j j' l : V}
@@ -63,22 +63,22 @@ def zigzagIndependentQuadraticRelationBasisIndex (i : V) :
     ZigzagIndependentQuadraticRelationIndex G c i →
       quadraticZigzagRelationsBasisIndex G c
   | .inl ⟨j, l⟩ =>
-      ⟨⟨vertex G i, vertex G l.1.1,
-          (arrowPath G ((G.mem_neighborSet i j.1).1 j.2)).comp
-            (arrowPath G ((G.mem_neighborSet j.1 l.1.1).1 l.1.2))⟩,
+      ⟨⟨vertex G i, vertex G l.val.val,
+          (arrowPath G ((G.mem_neighborSet i j.val).1 j.property)).comp
+            (arrowPath G ((G.mem_neighborSet j.val l.val.val).1 l.val.property))⟩,
         by simp,
         by
           intro v h
           have hi : i = v := by
             apply vertex_injective G
             simpa using congrArg Sigma.fst h
-          have hl : l.1.1 = v := by
+          have hl : l.val.val = v := by
             apply vertex_injective G
             simpa using congrArg (fun p : Quiver.TotalPath (DoubledQuiver G) => p.2.1) h
-          exact l.2 (hl.trans hi.symm)⟩
+          exact l.property (hl.trans hi.symm)⟩
   | .inr j =>
       ⟨⟨vertex G i, vertex G i,
-          backtrackPath G ((G.mem_neighborSet i j.1.1).1 j.1.2)⟩,
+          backtrackPath G ((G.mem_neighborSet i j.val.val).1 j.val.property)⟩,
         length_backtrackPath G _,
         by
           intro v h
@@ -87,17 +87,17 @@ def zigzagIndependentQuadraticRelationBasisIndex (i : V) :
             simpa using congrArg Sigma.fst h
           subst v
           simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
-          exact j.2 (Subtype.ext ((backtrackPath_inj G).1 h))⟩
+          exact j.property (Subtype.ext ((backtrackPath_inj G).1 h))⟩
 
 /-- A nonreturning local label selects its two-arrow path in the global relation basis. -/
 @[simp]
 theorem coe_zigzagIndependentQuadraticRelationBasisIndex_nonreturn (i : V)
-    (j : G.neighborSet i) (l : {l : G.neighborSet j.1 // l.1 ≠ i}) :
+    (j : G.neighborSet i) (l : {l : G.neighborSet j.val // l.val ≠ i}) :
     (zigzagIndependentQuadraticRelationBasisIndex G c i (.inl ⟨j, l⟩) :
       Quiver.TotalPath (DoubledQuiver G)) =
-        ⟨vertex G i, vertex G l.1.1,
-          (arrowPath G ((G.mem_neighborSet i j.1).1 j.2)).comp
-            (arrowPath G ((G.mem_neighborSet j.1 l.1.1).1 l.1.2))⟩ :=
+        ⟨vertex G i, vertex G l.val.val,
+          (arrowPath G ((G.mem_neighborSet i j.val).1 j.property)).comp
+            (arrowPath G ((G.mem_neighborSet j.val l.val.val).1 l.val.property))⟩ :=
   by rw [zigzagIndependentQuadraticRelationBasisIndex]
 
 /-- A returning local label selects its backtrack in the global relation basis. -/
@@ -107,7 +107,7 @@ theorem coe_zigzagIndependentQuadraticRelationBasisIndex_backtrack (i : V)
     (zigzagIndependentQuadraticRelationBasisIndex G c i (.inr j) :
       Quiver.TotalPath (DoubledQuiver G)) =
         ⟨vertex G i, vertex G i,
-          backtrackPath G ((G.mem_neighborSet i j.1.1).1 j.1.2)⟩ :=
+          backtrackPath G ((G.mem_neighborSet i j.val.val).1 j.val.property)⟩ :=
   by rw [zigzagIndependentQuadraticRelationBasisIndex]
 
 /-- Distinct independent local relation labels select distinct members of the global quadratic
@@ -133,20 +133,20 @@ theorem zigzagIndependentQuadraticRelationBasisIndex_injective (i : V) :
     rfl
   · have ht := congrArg Subtype.val h
     simp only [zigzagIndependentQuadraticRelationBasisIndex] at ht
-    have hl : r.2.1.1 = i := by
+    have hl : r.2.val.val = i := by
       apply vertex_injective G
       simpa using congrArg (fun p : Quiver.TotalPath (DoubledQuiver G) => p.2.1) ht
-    exact (r.2.2 hl).elim
+    exact (r.2.property hl).elim
   · have ht := congrArg Subtype.val h
     simp only [zigzagIndependentQuadraticRelationBasisIndex] at ht
-    have hl : r'.2.1.1 = i := by
+    have hl : r'.2.val.val = i := by
       apply vertex_injective G
       simpa using congrArg (fun p : Quiver.TotalPath (DoubledQuiver G) => p.2.1) ht.symm
-    exact (r'.2.2 hl).elim
+    exact (r'.2.property hl).elim
   · have ht := congrArg Subtype.val h
     simp only [zigzagIndependentQuadraticRelationBasisIndex] at ht
     simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at ht
-    have hj : j.1.1 = j'.1.1 := (backtrackPath_inj G).1 ht
+    have hj : j.val.val = j'.val.val := (backtrackPath_inj G).1 ht
     exact congrArg Sum.inr (Subtype.ext (Subtype.ext hj))
 
 /-- The chosen local quadratic relations are linearly independent: they are a subfamily of
@@ -163,16 +163,16 @@ theorem linearIndependent_zigzagIndependentQuadraticRelations
 @[simp]
 theorem coe_quadraticZigzagRelationsBasis_independent_nonreturn
     [CommRing k] (i : V) (j : G.neighborSet i)
-    (l : {l : G.neighborSet j.1 // l.1 ≠ i}) :
+    (l : {l : G.neighborSet j.val // l.val ≠ i}) :
     ((quadraticZigzagRelationsBasis k G c
       (zigzagIndependentQuadraticRelationBasisIndex G c i (.inl ⟨j, l⟩)) :
         quadraticZigzagRelations k G) : pathAlgebra k (DoubledQuiver G)) =
-      ofPath ⟨vertex G i, vertex G l.1.1,
-        (arrowPath G ((G.mem_neighborSet i j.1).1 j.2)).comp
-          (arrowPath G ((G.mem_neighborSet j.1 l.1.1).1 l.1.2))⟩ := by
+      ofPath ⟨vertex G i, vertex G l.val.val,
+        (arrowPath G ((G.mem_neighborSet i j.val).1 j.property)).comp
+          (arrowPath G ((G.mem_neighborSet j.val l.val.val).1 l.val.property))⟩ := by
   apply coe_quadraticZigzagRelationsBasis_apply_of_ne
   intro h
-  exact l.2 ((vertex_injective G) h.symm)
+  exact l.property ((vertex_injective G) h.symm)
 
 /-- The basis vector of a returning local label is its backtrack minus the chosen backtrack. -/
 @[simp]
@@ -181,8 +181,8 @@ theorem coe_quadraticZigzagRelationsBasis_independent_backtrack
     ((quadraticZigzagRelationsBasis k G c
       (zigzagIndependentQuadraticRelationBasisIndex G c i (.inr j)) :
         quadraticZigzagRelations k G) : pathAlgebra k (DoubledQuiver G)) =
-      backtrackElem G k ((G.mem_neighborSet i j.1.1).1 j.1.2) -
-        backtrackElem G k ((G.mem_neighborSet i (c i).1).1 (c i).2) := by
+      backtrackElem G k ((G.mem_neighborSet i j.val.val).1 j.val.property) -
+        backtrackElem G k ((G.mem_neighborSet i (c i).val).1 (c i).property) := by
   rw [coe_quadraticZigzagRelationsBasis_apply_of_eq _ _ _ _ rfl,
     coe_zigzagIndependentQuadraticRelationBasisIndex_backtrack,
     vertexEquiv_symm_vertex]
@@ -206,7 +206,7 @@ noncomputable def zigzagProjectiveIndependentQuadraticRelationMap (i : V)
     zigzagProjective k G r.vertex →ₗ[Z] ZigzagNeighborProjectives k G i := by
   rcases r with r | j
   · exact zigzagProjectiveQuadraticRelationMap k G i (.inl r)
-  · exact zigzagProjectiveQuadraticRelationMap k G i (.inr (j.1, c i))
+  · exact zigzagProjectiveQuadraticRelationMap k G i (.inr (j.val, c i))
 
 /-- The independent quadratic differential, assembled from the chosen basis of relations. -/
 noncomputable def zigzagProjectiveIndependentQuadraticDifferential (i : V) :
@@ -229,8 +229,8 @@ theorem zigzagProjectiveIndependentQuadraticDifferential_single (i : V)
 /-- A nonreturning independent relation is the corresponding nonreturning relation map. -/
 @[simp]
 theorem zigzagProjectiveIndependentQuadraticRelationMap_nonreturn (i : V)
-    (r : Σ j : G.neighborSet i, {l : G.neighborSet j.1 // l.1 ≠ i})
-    (x : zigzagProjective k G r.2.1.1) :
+    (r : Σ j : G.neighborSet i, {l : G.neighborSet j.val // l.val ≠ i})
+    (x : zigzagProjective k G r.2.val.val) :
     zigzagProjectiveIndependentQuadraticRelationMap k G c i (.inl r) x =
       zigzagProjectiveQuadraticRelationMap k G i (.inl r) x := by
   rw [zigzagProjectiveIndependentQuadraticRelationMap]
@@ -240,7 +240,7 @@ theorem zigzagProjectiveIndependentQuadraticRelationMap_nonreturn (i : V)
 theorem zigzagProjectiveIndependentQuadraticRelationMap_backtrack (i : V)
     (j : {j : G.neighborSet i // j ≠ c i}) (x : zigzagProjective k G i) :
     zigzagProjectiveIndependentQuadraticRelationMap k G c i (.inr j) x =
-      zigzagProjectiveQuadraticRelationMap k G i (.inr (j.1, c i)) x := by
+      zigzagProjectiveQuadraticRelationMap k G i (.inr (j.val, c i)) x := by
   rw [zigzagProjectiveIndependentQuadraticRelationMap]
 
 /-- The independent quadratic differential followed by the arrow differential is zero. -/
@@ -262,7 +262,7 @@ theorem zigzagProjectiveArrowSum_comp_independentQuadraticDifferential (i : V) :
   · rw [zigzagProjectiveIndependentQuadraticRelationMap_backtrack]
     have h := LinearMap.congr_fun
       (zigzagProjectiveArrowSum_comp_quadraticDifferential k G i)
-      (DFinsupp.single (.inr (j.1, c i)) x)
+      (DFinsupp.single (.inr (j.val, c i)) x)
     simpa only [LinearMap.comp_apply, zigzagProjectiveQuadraticDifferential_single,
       LinearMap.zero_apply] using h
 
@@ -281,7 +281,7 @@ private theorem range_independent_le_range_quadratic (i : V) :
             rw [zigzagProjectiveQuadraticDifferential_single,
               zigzagProjectiveIndependentQuadraticRelationMap_nonreturn]⟩ hy
       · exact (LinearMap.range (zigzagProjectiveQuadraticDifferential k G i)).add_mem
-          ⟨DFinsupp.single (.inr (j.1, c i)) x, by
+          ⟨DFinsupp.single (.inr (j.val, c i)) x, by
             rw [zigzagProjectiveQuadraticDifferential_single,
               zigzagProjectiveIndependentQuadraticRelationMap_backtrack]⟩ hy
 
@@ -340,12 +340,12 @@ theorem range_zigzagProjectiveIndependentQuadraticDifferential (i : V) :
 image is the kernel of the arrow differential. -/
 theorem range_zigzagProjectiveIndependentQuadraticDifferential_eq_ker (i : V)
     (hbranch : ∀ j : G.neighborSet i,
-      (∃ l : G.neighborSet j.1, l.1 ≠ i) ∨ (∃ j' : G.neighborSet i, j' ≠ j)) :
+      (∃ l : G.neighborSet j.val, l.val ≠ i) ∨ (∃ j' : G.neighborSet i, j' ≠ j)) :
     LinearMap.range (zigzagProjectiveIndependentQuadraticDifferential k G c i) =
       LinearMap.ker (zigzagProjectiveArrowSum k G i) := by
   rw [range_zigzagProjectiveIndependentQuadraticDifferential]
   exact range_zigzagProjectiveQuadraticDifferential_eq_ker k G
-    (fun v => ⟨(c v).1, (G.mem_neighborSet v (c v).1).1 (c v).2⟩) i hbranch
+    (fun v => ⟨(c v).val, (G.mem_neighborSet v (c v).val).1 (c v).property⟩) i hbranch
 
 /-- The independent quadratic differential raises every coordinate degree by one.  Shifting its
 source by two and the neighbouring-projective term by one makes it degree zero. -/
@@ -353,7 +353,7 @@ theorem zigzagProjectiveIndependentQuadraticDifferential_mem_grade (i : V) {p : 
     {x : ZigzagIndependentQuadraticRelationProjectives k G c i}
     (hx : ∀ r, x r ∈ zigzagProjectiveGrade k G r.vertex p) (j : G.neighborSet i) :
     zigzagProjectiveIndependentQuadraticDifferential k G c i x j ∈
-      zigzagProjectiveGrade k G j.1 (p + 1) := by
+      zigzagProjectiveGrade k G j.val (p + 1) := by
   classical
   simp only [zigzagProjectiveIndependentQuadraticDifferential, DFinsupp.lsum_apply_apply,
     DFinsupp.sumAddHom_apply, DFinsupp.sum, LinearMap.toAddMonoidHom_coe,
@@ -361,7 +361,7 @@ theorem zigzagProjectiveIndependentQuadraticDifferential_mem_grade (i : V) {p : 
   exact Submodule.sum_mem _ fun r _ =>
     match r with
     | .inl r => zigzagProjectiveQuadraticRelationMap_mem_grade k G i (.inl r) (hx (.inl r)) j
-    | .inr r => zigzagProjectiveQuadraticRelationMap_mem_grade k G i (.inr (r.1, c i))
+    | .inr r => zigzagProjectiveQuadraticRelationMap_mem_grade k G i (.inr (r.val, c i))
         (hx (.inr r)) j
 
 /-- The independent quadratic relation term is projective. -/

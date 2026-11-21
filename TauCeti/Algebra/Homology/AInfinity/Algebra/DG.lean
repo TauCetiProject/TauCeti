@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Unital
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 
 /-!
@@ -360,6 +361,14 @@ theorem toAInfinityStrictUnitalHom_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB
       g.toAInfinityStrictUnitalHom.comp f.toAInfinityStrictUnitalHom := by
   ext a
   simp
+
+/-- The `A∞` morphism underlying a DG algebra morphism is strictly unital. -/
+@[simp]
+theorem isStrictlyUnital_toAInfinityHom (f : DGAlgHom hA hB) :
+    f.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.IsStrictlyUnital
+      hA.strictUnit_one hB.strictUnit_one := by
+  simpa only [← DGAlgHom.toAInfinityStrictHom_toAInfinityStrictUnitalHom] using
+    f.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom
 
 end DGAlgHom
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Probability.Renewal.Measure
-import Mathlib.MeasureTheory.Measure.Sub
 
 /-!
 # The Stieltjes measure of the renewal function
@@ -89,8 +88,7 @@ theorem comap_measure_renewalStieltjes :
     (μ.renewalStieltjes hμ).measure.comap ((↑) : ℝ≥0 → ℝ) =
       μ.renewalMeasure - dirac 0 := by
   rw [measure_renewalStieltjes,
-    NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_map]
-  conv_rhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
+    NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_map, renewalMeasure_sub_dirac]
 
 /-- The atom at zero is the renewal function at zero, not necessarily zero. -/
 theorem measure_renewalStieltjes_singleton_zero :
