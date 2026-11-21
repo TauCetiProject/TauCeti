@@ -100,7 +100,7 @@ def pullbackHomeomorph (f : B' → B) :
   toFun p := ⟨(p.proj, pullbackLift f p), rfl⟩
   -- State the target fibre explicitly so transport uses the fibre-product equation rather
   -- than trying to rewrite through the pullback type synonym.
-  invFun q := ⟨q.1.1, (q.2 ▸ q.1.2.frame : V ≃ₗᵢ[𝕜] E (f q.1.1))⟩
+  invFun q := ⟨q.val.1, (q.property ▸ q.val.2.frame : V ≃ₗᵢ[𝕜] E (f q.val.1))⟩
   left_inv p := by cases p; rfl
   right_inv q := by
     rcases q with ⟨⟨x, ⟨y, φ⟩⟩, h⟩
@@ -113,9 +113,9 @@ def pullbackHomeomorph (f : B' → B) :
   continuous_invFun := by
     refine continuous_iff.2 fun v ↦
       (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.2 ?_
-    refine ((continuous_fst.comp continuous_subtype_val).prodMk
+    refine ((continuous_fst.comp continuous_subtypeVal).prodMk
       ((continuous_totalSpaceMk_frame v).comp
-        (continuous_snd.comp continuous_subtype_val))).congr fun q ↦ ?_
+        (continuous_snd.comp continuous_subtypeVal))).congr fun q ↦ ?_
     rcases q with ⟨⟨x, ⟨y, φ⟩⟩, h⟩
     dsimp only at h
     cases h
@@ -138,15 +138,15 @@ theorem pullbackHomeomorph_symm_mk (f : B' → B) (x : B') (φ : V ≃ₗᵢ[�
 @[simp]
 theorem proj_pullbackHomeomorph_symm (f : B' → B)
     (q : {q : B' × OrthonormalFrameBundle 𝕜 F E V // q.2.proj = f q.1}) :
-    ((pullbackHomeomorph f).symm q).proj = q.1.1 :=
+    ((pullbackHomeomorph f).symm q).proj = q.val.1 :=
   (rfl)
 
 /-- Lifting the frame given by the inverse comparison recovers the original frame. -/
 @[simp]
 theorem pullbackLift_pullbackHomeomorph_symm (f : B' → B)
     (q : {q : B' × OrthonormalFrameBundle 𝕜 F E V // q.2.proj = f q.1}) :
-    pullbackLift f ((pullbackHomeomorph f).symm q) = q.1.2 := by
-  have h := congrArg (fun q ↦ q.1.2) ((pullbackHomeomorph f).apply_symm_apply q)
+    pullbackLift f ((pullbackHomeomorph f).symm q) = q.val.2 := by
+  have h := congrArg (fun q ↦ q.val.2) ((pullbackHomeomorph f).apply_symm_apply q)
   simpa only [pullbackHomeomorph_apply] using h
 
 end TauCeti.OrthonormalFrameBundle

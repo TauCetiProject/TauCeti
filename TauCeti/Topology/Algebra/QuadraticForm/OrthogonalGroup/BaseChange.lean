@@ -50,7 +50,7 @@ theorem continuous_orthogonalGroupBaseChange (hKL : Continuous (algebraMap K L))
     Continuous (orthogonalGroupBaseChange (A := L) Q) := by
   apply continuous_induced_rng.mpr
   exact ((LinearEquiv.continuous_baseChange (V := V) hKL).comp
-    continuous_subtype_val).congr fun g => (coe_orthogonalGroupBaseChange (A := L) Q g).symm
+    continuous_subtypeVal).congr fun g => (coe_orthogonalGroupBaseChange (A := L) Q g).symm
 
 /-- Extension of scalars is continuous on special orthogonal groups when the scalar homomorphism
 is continuous. -/
@@ -61,7 +61,7 @@ theorem continuous_specialOrthogonalGroupBaseChange [Module.Free K V] [Module.Fi
     Continuous (specialOrthogonalGroupBaseChange (A := L) Q) := by
   apply continuous_induced_rng.mpr
   exact ((LinearEquiv.continuous_baseChange (V := V) hKL).comp
-    continuous_subtype_val).congr fun g =>
+    continuous_subtypeVal).congr fun g =>
       (coe_specialOrthogonalGroupBaseChange (A := L) Q g).symm
 
 end QuadraticMap

@@ -77,7 +77,7 @@ theorem card_productOneTriplesIn_eq_sum_conjugacy_generating
     simpa only [Finset.subtype_univ] using
       (Fintype.sum_equiv (Subgroup.MapSubtype.orderIso H).toEquiv
         (fun K ↦ (generatingProductOneTriples C0 C1 Cinf (K.map H.subtype)).card)
-        (fun K ↦ (generatingProductOneTriples C0 C1 Cinf K.1).card)
+        (fun K ↦ (generatingProductOneTriples C0 C1 Cinf K.val).card)
         (fun K ↦ congrArg (fun J ↦ (generatingProductOneTriples C0 C1 Cinf J).card)
           (Subgroup.MapSubtype.orderIso_apply_coe H K).symm)).symm
   have hinvariant (g : H) (K : Subgroup H) :

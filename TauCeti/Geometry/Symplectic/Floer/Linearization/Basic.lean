@@ -21,18 +21,23 @@ independent parameter variations of `K` and `J`. Domain dependence of the coeffi
 allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of endomorphism fields
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
-`floerLinearization` is the map-direction operator with coefficients fixed. On a direction
-multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ` (`floerLinearization_smul_fst`); in
-particular, conjugated by an exponential weight `e^{δ s}` it becomes `floerLinearization - δ`
-(`floerLinearization_exp_smul`). Its value at a point depends only on the germ of the direction
-there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their
-values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
+`floerLinearization` is the map-direction operator with coefficients fixed. For a constant almost
+complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
+(`floerLinearization_const_eq`). On a direction multiplied by a cutoff `β(s)` it acts as
+`β D ξ + β' ξ` (`floerLinearization_smul_fst`); in particular, conjugated by an exponential weight
+`e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at a point
+depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), and
+on the Floer data only through their values at that point (`floerLinearization_congr_data`). For
+`C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
-(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
+(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
+linearized operators differ pointwise by the differences of their coefficients
+(`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
+translates the operator (`floerLinearization_comp_add_right`).
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -71,6 +76,25 @@ theorem floerOperator_def (ω : SymplecticForm V)
         J z (u z) (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) :=
   (rfl)
 
+/-- The Floer operator commutes with translations of the domain: translating the map and the
+data by `v` translates the Floer operator by `v`. -/
+theorem floerOperator_comp_add_right (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerOperator (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) z =
+      ω.floerOperator J Ks Kt u (z + v) := by
+  simp only [floerOperator_def, fderiv_comp_add_right]
+
+/-- The Floer operator is `P(∂s) + J P(∂t)` for the perturbed derivative `P = du - X_K`. -/
+theorem floerOperator_eq_perturbedFDeriv (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerOperator J Ks Kt u z =
+      ω.perturbedFDeriv Ks Kt u z stdComplexLineReal +
+        J z (u z) (ω.perturbedFDeriv Ks Kt u z stdComplexLineImag) := by
+  rw [floerOperator_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag]
+
 /-- For almost complex coefficients, vanishing is complex linearity of `du - X_K`. -/
 theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ)
@@ -81,6 +105,24 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
   rw [floerOperator_def, ω.isComplexLinearMap_perturbedFDeriv_iff]
   -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
+
+/-- **The difference of two Floer operators.** At a point where `u` and `v` are differentiable,
+with `w = u - v`, the difference of their Floer operators is the Cauchy–Riemann operator
+`∂ₛw + J(z, u) ∂ₜw` of `w` for the structure along `u`, corrected by the differences of the
+Hamiltonian vector fields and of the structures at the two values:
+`F(u) - F(v) = ∂ₛw + J(z, u) ∂ₜw - (X_{K_s}(u) - X_{K_s}(v)) - J(z, u) (X_{K_t}(u) - X_{K_t}(v))
+  + (J(z, u) - J(z, v)) (∂ₜv - X_{K_t}(v))`. -/
+theorem floerOperator_sub_floerOperator (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    {u v : ℝ × ℝ → V} {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z) (hv : DifferentiableAt ℝ v z) :
+    ω.floerOperator J Ks Kt u z - ω.floerOperator J Ks Kt v z =
+      fderiv ℝ (u - v) z stdComplexLineReal + J z (u z) (fderiv ℝ (u - v) z stdComplexLineImag) -
+        (ω.hamiltonianVectorField (Ks z) (u z) - ω.hamiltonianVectorField (Ks z) (v z)) -
+        J z (u z) (ω.hamiltonianVectorField (Kt z) (u z) - ω.hamiltonianVectorField (Kt z) (v z)) +
+        (J z (u z) - J z (v z))
+          (fderiv ℝ v z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (v z)) := by
+  simp only [floerOperator_def, fderiv_sub hu hv, _root_.sub_apply, map_sub]
+  abel
 
 /-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
 structure `J_t` independent of `s`, the Floer operator of the translate `w ↦ f(w - (R, 0))` at `z`
@@ -132,6 +174,18 @@ theorem floerLinearization_def (ω : SymplecticForm V)
         J z (u z) (fderiv ℝ ξ z stdComplexLineImag -
           fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) (ξ z)) :=
   (rfl)
+
+/-- **The linearized Floer operator for a constant structure and `K = H dt`.** For a constant
+almost complex structure `J` and an autonomous Hamiltonian `H`, the linearized Floer operator
+along `u` is `D ξ = ∂s ξ + J (∂t ξ - dX_H(u) ξ)`. -/
+theorem floerLinearization_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u ξ z =
+      fderiv ℝ ξ z (1, 0) +
+        J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+  simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
+    stdComplexLineImag_eq]
 
 /-- The linearization is additive on directions differentiable at the domain point. -/
 @[simp]
@@ -209,6 +263,16 @@ theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
 
+/-- **The linearized operator of a translate.** The linearized Floer operator of the data
+`w ↦ (J, K_s, K_t, u) (w + v)` in the direction `w ↦ ξ (w + v)` at `z` is the linearized operator of
+the data `(J, K_s, K_t, u)` in the direction `ξ` at `z + v`. -/
+theorem floerLinearization_comp_add_right (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerLinearization (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) (fun w ↦ ξ (w + v)) z =
+      ω.floerLinearization J Ks Kt u ξ (z + v) := by
+  simp only [floerLinearization_def, fderiv_comp_add_right]
+
 /-- The linearization at `z` depends on the Floer data `J`, `Ks`, `Kt` only through their values
 at `z`, as functions of the target point. -/
 theorem floerLinearization_congr_data (ω : SymplecticForm V)
@@ -246,6 +310,21 @@ theorem floerLinearization_eq_add (ω : SymplecticForm V)
         ω.floerLinearizationCoeff J Ks Kt u z (ξ z) := by
   simp only [floerLinearization_def, floerLinearizationCoeff_apply, map_sub]
   abel
+
+/-- **Comparing two linearized operators at a point.** The linearized Floer operators
+`∂s ξ + J(z, u z) ∂t ξ + C(z) ξ` of two data sets differ at `z` by at most
+`‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t ξ‖ + ‖C(z) - C₁(z)‖ ‖ξ‖`, where `C = floerLinearizationCoeff`. -/
+theorem norm_floerLinearization_sub_floerLinearization_le (ω : SymplecticForm V)
+    (J J₁ : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt Ks₁ Kt₁ : ℝ × ℝ → V → ℝ) (u u₁ ξ : ℝ × ℝ → V)
+    (z : ℝ × ℝ) :
+    ‖ω.floerLinearization J Ks Kt u ξ z - ω.floerLinearization J₁ Ks₁ Kt₁ u₁ ξ z‖ ≤
+      ‖J z (u z) - J₁ z (u₁ z)‖ * ‖fderiv ℝ ξ z stdComplexLineImag‖ +
+        ‖ω.floerLinearizationCoeff J Ks Kt u z - ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z‖ *
+          ‖ξ z‖ := by
+  rw [floerLinearization_eq_add, floerLinearization_eq_add,
+    show ∀ a b c b' c' : V, a + b + c - (a + b' + c') = (b - b') + (c - c') by
+      intro a b c b' c'; abel, ← sub_apply, ← sub_apply]
+  exact (norm_add_le _ _).trans (add_le_add (le_opNorm _ _) (le_opNorm _ _))
 
 /-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
 `C¹` (and the Hamiltonians `C²`) at `(z, u z)`, and `u` is `C¹` at `z`. -/

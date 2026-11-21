@@ -53,6 +53,7 @@ lemma prop_kernel_colimMap (h : ∀ j, P (kernel (α.app j))) : P (kernel (colim
   P.prop_of_iso (PreservesKernel.iso colim α) <| P.prop_colimit _ fun j ↦
     P.prop_of_iso (PreservesKernel.iso ((evaluation J C).obj j) α).symm (h j)
 
+omit [HasExactColimitsOfShape J C] in
 /-- If colimits of shape `J` are exact, the cokernel of the map of colimits induced by a natural
 transformation `α` of `J`-shaped diagrams satisfies a property closed under isomorphisms and
 colimits of shape `J` as soon as the cokernels of all components of `α` do. -/
@@ -75,6 +76,7 @@ lemma prop_kernel_sigmaMap (h : ∀ b, P (kernel (f b))) : P (kernel (Limits.Sig
   P.prop_kernel_colimMap (F := Discrete.functor X) (G := Discrete.functor Y)
     (Discrete.natTrans fun b ↦ f b.as) fun b ↦ h b.as
 
+omit [HasExactColimitsOfShape (Discrete β) C] in
 /-- If coproducts indexed by `β` are exact, the cokernel of a sum of morphisms `∐ X ⟶ ∐ Y`
 satisfies a property closed under isomorphisms and `β`-indexed coproducts as soon as the cokernels
 of all summands do. -/

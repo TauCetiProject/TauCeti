@@ -37,6 +37,11 @@ vector space.
 
 * `TauCeti.IsAdaptedPseudoGradient.mem_Ioo_of_mem_unstableSet_inter_stableSet`: the points of a
   trajectory from `a` to `b` have values strictly between `f b` and `f a`.
+* `TauCeti.IsAdaptedPseudoGradient.mem_Icc_of_mem_unstableSet_inter_stableSet`: the points whose
+  orbits run from `a` to `b`, possibly equal, have values between `f b` and `f a`.
+* `TauCeti.IsAdaptedPseudoGradient.mem_Ioo_of_apply_flow_ne`: the points of a trajectory from `a`
+  to a critical point `b`, possibly equal to `a`, whose value is not `f a` have values strictly
+  between `f b` and `f a`.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet`: a
   trajectory from `a` to `b` crosses each value strictly between `f b` and `f a` exactly once.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
@@ -146,6 +151,29 @@ theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
   have h₂ : f y < f (hX.flow (-1) y) := by
     simpa only [Flow.map_zero_apply] using hanti (neg_lt_zero.2 zero_lt_one)
   exact ⟨hb.trans_lt h₁, h₂.trans_le ha⟩
+
+/-- **Trajectories lie between the critical values of their ends.** A point `y` whose orbit
+converges to `a` in backward time and to `b` in forward time satisfies `f b ≤ f y ≤ f a`. Unlike
+`mem_Ioo_of_mem_unstableSet_inter_stableSet`, this allows `a = b`, where `y = a`. -/
+theorem mem_Icc_of_mem_unstableSet_inter_stableSet
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) : f y ∈ Icc (f b) (f a) :=
+  ⟨Flow.le_of_mem_stableSet_of_antitone hy.2 hX.mdifferentiable.continuous.continuousAt
+    (hX.antitone_flow y),
+    Flow.le_of_mem_unstableSet_of_antitone hy.1 hX.mdifferentiable.continuous.continuousAt
+      (hX.antitone_flow y)⟩
+
+/-- Along a trajectory from a critical point `a` to a critical point `b`, every value of `f` other
+than `f a` lies strictly between `f b` and `f a`. If `a = b` the trajectory is the constant one at
+`a`, so there is no such value. -/
+theorem mem_Ioo_of_apply_flow_ne (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (t : ℝ)
+    (hne : f (hX.flow t y) ≠ f a) : f (hX.flow t y) ∈ Ioo (f b) (f a) := by
+  by_cases hab : a = b
+  · subst hab
+    rw [hX.eq_of_mem_unstableSet_inter_stableSet hy,
+      hX.flow_apply_of_mfderiv_eq_zero (hX.mfderiv_eq_zero_of_mem_stableSet hy.2)] at hne
+    exact (hne rfl).elim
+  · exact hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab
+      (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
 
 /-- **A trajectory crosses each intermediate level exactly once.** Along a trajectory from a
 critical point `a` to a different critical point `b`, the function `f` strictly decreases from
