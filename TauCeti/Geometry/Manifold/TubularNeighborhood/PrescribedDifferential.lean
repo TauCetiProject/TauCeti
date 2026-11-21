@@ -46,7 +46,7 @@ tangent space of `ν` along its zero section, the differentials at `(q, 0)` are
 `d Φ_N = A q ∘ d Φ_M` there. Hence `Φ_N` is a local diffeomorphism along the zero section, and
 since `Φ_N` restricted to the zero section is the embedding `g`, it is injective on a
 neighbourhood of the zero section
-(`IsLocalDiffeomorphOn.exists_partialDiffeomorph_near_section`). The composite
+(`TauCeti.exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt`). The composite
 `Ψ = Φ_N ∘ Φ_M⁻¹` has the required properties.
 
 ## Main results
@@ -285,34 +285,18 @@ private theorem exists_partialDiffeomorph_transportedNormalExp [I.Boundaryless] 
     ChartedSpace.locallyCompactSpace (ModelProd H P) _
   have : MetrizableSpace (TotalSpace P (fun q ↦ i.NormalSpace q hn)) :=
     Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
-  let Z := zeroSection P (fun q ↦ i.NormalSpace q hn)
-  have : Nonempty (TotalSpace P (fun q ↦ i.NormalSpace q hn)) := Nonempty.map Z inferInstance
-  let T := transportedNormalExp (P := P) i hn A
-  let D := transportedNormalExpDomain (P := P) i hn A
-  have hD : IsOpen D := isOpen_transportedNormalExpDomain i hn A hdim hg hA
-  have hTD : ContMDiffOn (I.prod 𝓘(ℝ, P)) K ∞ T D :=
-    contMDiffOn_transportedNormalExp i hn A hdim hg hA
-  -- Restrict to the open set of points near which `T` is a local diffeomorphism.
-  let U := {p | IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) K ∞ T p}
-  have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hp ↦ hp.eventually
-  let S := (U ∩ D) ∩ T ⁻¹' O'
-  have hS : IsOpen S := by
-    simpa only [S, inter_assoc] using hU.inter (hTD.continuousOn.isOpen_inter_preimage hD hO')
-  have hTz (q : Q) : T (Z q) = g q := transportedNormalExp_zeroSection i hn A q
-  have hZS : range Z ⊆ S := by
-    rintro _ ⟨q, rfl⟩
-    refine ⟨⟨isLocalDiffeomorphAt_transportedNormalExp_zeroSection i hn A hdim hg hA hAinv hAi q,
-      zeroSection_mem_transportedNormalExpDomain i hn A q⟩, ?_⟩
-    simpa [hTz q] using hgO' (mem_range_self q)
-  have hlocal : IsLocalDiffeomorphOn (I.prod 𝓘(ℝ, P)) K ∞ T S := fun p ↦ p.property.1.1
-  obtain ⟨Φ, hΦZ, hΦS, hΦtarget, hΦ⟩ := hlocal.exists_partialDiffeomorph_near_section hS hZS
-      (_root_.Bundle.Trivialization.continuous_zeroSection ℝ) (π P (fun q ↦ i.NormalSpace q hn))
-      (FiberBundle.continuous_proj _ _) (fun _ ↦ rfl)
-      ((funext hTz : T ∘ Z = g) ▸ hgi)
-  refine ⟨Φ, fun q ↦ hΦZ (mem_range_self q), ?_, hΦ⟩
-  rw [hΦtarget]
-  rintro _ ⟨p, hp, rfl⟩
-  exact (hΦS hp).2
+  have : Nonempty (TotalSpace P (fun q ↦ i.NormalSpace q hn)) :=
+    Nonempty.map (zeroSection P (fun q ↦ i.NormalSpace q hn)) inferInstance
+  have hTZ : transportedNormalExp i hn A ∘ zeroSection P (fun q ↦ i.NormalSpace q hn) = g :=
+    funext (transportedNormalExp_zeroSection i hn A)
+  obtain ⟨Φ, hΦZ, -, hΦO', -, hΦ⟩ := exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt
+    (isLocalDiffeomorphAt_transportedNormalExp_zeroSection i hn A hdim hg hA hAinv hAi)
+    (isOpen_transportedNormalExpDomain i hn A hdim hg hA)
+    (range_subset_iff.2 (zeroSection_mem_transportedNormalExpDomain i hn A)) hO'
+    (by rw [hTZ]; exact hgO') (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
+    (π P (fun q ↦ i.NormalSpace q hn))
+    (FiberBundle.continuous_proj _ _) (fun _ ↦ rfl) (by rw [hTZ]; exact hgi)
+  exact ⟨Φ, fun q ↦ hΦZ (mem_range_self q), hΦO', hΦ⟩
 
 end Riemannian
 
