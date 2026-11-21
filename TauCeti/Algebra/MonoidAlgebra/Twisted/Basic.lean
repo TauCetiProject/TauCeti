@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -405,6 +406,117 @@ theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
     rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
   simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
     map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
+
+/-- If no pair in the supports of `f` and `g` other than `(a, b)` has product `a * b`, the
+coefficient of `f * g` at `a * b` is
+`(basis k G α).repr f a * (basis k G α).repr g b * α a b`. -/
+theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G}
+    (h : UniqueMul ((basis k G α).repr f).support ((basis k G α).repr g).support a b) :
+    (basis k G α).repr (f * g) (a * b) =
+      (basis k G α).repr f a * (basis k G α).repr g b * (α a b : k) := by
+  classical
+  rw [repr_mul]
+  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
+  rw [← Finset.sum_product']
+  refine (Finset.sum_eq_single (a, b) ?_ ?_).trans (ite_eq_left rfl)
+  · intro p hp hpne
+    rw [Finset.mem_product] at hp
+    exact ite_eq_right fun he ↦ hpne (Prod.ext (h hp.1 hp.2 he).1 (h hp.1 hp.2 he).2)
+  · intro hab
+    simp only [Finset.mem_product, not_and_or] at hab
+    rcases hab with ha | hb
+    · simp [Finsupp.notMem_support_iff.mp ha]
+    · simp [Finsupp.notMem_support_iff.mp hb]
+
+section CancelMonoidCoefficients
+
+variable {R H : Type*} [CommSemiring R] [Monoid H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- The coefficient of right multiplication by a basis element, with its shifted index. -/
+@[simp]
+theorem repr_mul_of_apply [IsRightCancelMul H] (f : twistedMonoidAlgebra R H β) (a b : H) :
+    (basis R H β).repr (f * of b) (a * b) =
+      (basis R H β).repr f a * (β a b : R) := by
+  classical
+  have h : UniqueMul ((basis R H β).repr f).support
+      ((basis R H β).repr (of b)).support a b := by
+    intro x y _ hy hxy
+    have hyb : y = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hy))
+    subst y
+    exact ⟨mul_right_cancel hxy, rfl⟩
+  simpa only [repr_of, Finsupp.single_eq_same, mul_one] using repr_mul_apply_of_uniqueMul h
+
+/-- The coefficient of left multiplication by a basis element, with its shifted index. -/
+@[simp]
+theorem repr_of_mul_apply [IsLeftCancelMul H] (f : twistedMonoidAlgebra R H β) (a b : H) :
+    (basis R H β).repr (of b * f) (b * a) =
+      (basis R H β).repr f a * (β b a : R) := by
+  classical
+  have h : UniqueMul ((basis R H β).repr (of b)).support
+      ((basis R H β).repr f).support b a := by
+    intro x y hx _ hxy
+    have hxb : x = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hx))
+    subst x
+    exact ⟨rfl, mul_left_cancel hxy⟩
+  simpa only [repr_of, Finsupp.single_eq_same, one_mul] using repr_mul_apply_of_uniqueMul h
+
+end CancelMonoidCoefficients
+
+section GroupCoefficients
+
+variable {R H : Type*} [CommSemiring R] [Group H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- The coefficient at a free index after right multiplication by a basis element. -/
+@[simp]
+theorem repr_mul_of_apply_mul_inv (f : twistedMonoidAlgebra R H β) (b c : H) :
+    (basis R H β).repr (f * of b) c =
+      (basis R H β).repr f (c * b⁻¹) * (β (c * b⁻¹) b : R) := by
+  simpa only [inv_mul_cancel_right] using repr_mul_of_apply f (c * b⁻¹) b
+
+/-- The coefficient at a free index after left multiplication by a basis element. -/
+@[simp]
+theorem repr_of_mul_apply_inv_mul (f : twistedMonoidAlgebra R H β) (b c : H) :
+    (basis R H β).repr (of b * f) c =
+      (basis R H β).repr f (b⁻¹ * c) * (β b (b⁻¹ * c) : R) := by
+  simpa only [mul_inv_cancel_left] using repr_of_mul_apply f (b⁻¹ * c) b
+
+end GroupCoefficients
+
+section CancelCommMonoidCoefficients
+
+variable {R H : Type*} [CommSemiring R] [CancelCommMonoid H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- Commutation with a basis element is equality of coefficients weighted by opposite
+factor-set values. -/
+theorem commute_of_iff (f : twistedMonoidAlgebra R H β) (b : H) :
+    Commute f (of b) ↔ ∀ a,
+      (basis R H β).repr f a * (β a b : R) =
+        (basis R H β).repr f a * (β b a : R) := by
+  rw [commute_iff_eq]
+  constructor
+  · intro h a
+    have he := congrArg (fun z ↦ (basis R H β).repr z (a * b)) h
+    rw [repr_mul_of_apply, mul_comm a b, repr_of_mul_apply] at he
+    exact he
+  · intro h
+    apply (basis R H β).repr.injective
+    ext c
+    by_cases hc : c ∈ Set.range (fun a : H ↦ a * b)
+    · obtain ⟨a, rfl⟩ := hc
+      change (basis R H β).repr (f * of b) (a * b) =
+        (basis R H β).repr (of b * f) (a * b)
+      rw [repr_mul_of_apply, mul_comm a b, repr_of_mul_apply]
+      exact h a
+    · have hn : ∀ a : H, a * b ≠ c := fun a he ↦ hc ⟨a, he⟩
+      have hn' : ∀ a : H, b * a ≠ c := fun a ↦ by simpa only [mul_comm b] using hn a
+      simp [repr_mul, repr_of, hn, hn']
+
+end CancelCommMonoidCoefficients
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
