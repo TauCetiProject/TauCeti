@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.Lift.BasicAut
+public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Twist
 import TauCeti.Data.List.ProdOfFn
-import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.Algebra.Group.Action.End
 import Mathlib.GroupTheory.GroupAction.FixedPoints
 import Mathlib.Tactic.Group
 
@@ -16,12 +16,13 @@ import Mathlib.Tactic.Group
 
 Let `G` be a group, `X` a set of variables, `xᵢ`, `yᵢ` (`i = 1, …, n`), `zⱼ` (`j = 1, …, m`) and
 `uₖ` (`k = 1, …, r`) variables, and `cⱼ ∈ G`. [IFT], §7.5, writes a non-orientable quadratic
-equation in a mixed form with commutators and one or two squares, (113) and (114), whose left side
-is the word
-`S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²` (`basicMixedWord`), where `[x, y] = x⁻¹ y⁻¹ x y`. This file
-defines the `G`-automorphisms of the free `G`-group `G[X]` that [IFT], §7.5, adds to the
-orientable basic automorphisms of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`
-(`TauCeti.GroupAlgGeom.Lift.basicWord`). Writing `w^A = A⁻¹ w A`, they are
+equation in a mixed form with commutators and one or two squares, (113) and (114). Its left side
+is `S₁ d` with a constant `d ∈ G`, where
+`S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²` (`TauCeti.GroupAlgGeom.Quadratic.basicMixedWord`) is the
+product of the atoms that carry variables, and `[x, y] = x⁻¹ y⁻¹ x y`. This file defines the
+`G`-automorphisms of the free `G`-group `G[X]` that [IFT], §7.5, adds to the orientable basic
+automorphisms of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]` (`TauCeti.GroupAlgGeom.Lift.basicCoeff` and the
+others). Writing `w^A = A⁻¹ w A`, they are
 * `basicLinkSq`: `zⱼ ↦ zⱼ A`, `uₖ ↦ uₖ^A` with `A = zⱼ⁻¹ cⱼ zⱼ uₖ²`;
 * `basicCommSq`: `xᵢ ↦ A⁻¹ xᵢ`, `yᵢ ↦ yᵢ^A`, `uₖ ↦ uₖ^A` with `A = yᵢ uₖ²`;
 * `basicSqMul`: `uₖ ↦ uₖ A`, `uₖ' ↦ A⁻¹ uₖ'` with `A = uₖ uₖ'`;
@@ -29,15 +30,17 @@ orientable basic automorphisms of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [x�
 
 Each multiplies or conjugates the variables of two atoms of `S₁` by a word `A` that it fixes, so
 it is a twist (`TauCeti.GroupAlgGeom.twist`). Defining it needs `zⱼ ≠ uₖ` for `basicLinkSq`,
-`xᵢ ≠ yᵢ` and `xᵢ ≠ uₖ` for `basicCommSq`, and no condition for `basicSqMul` and `basicSqConj`.
-When the variables of `S₁` are pairwise distinct, as in [IFT], it fixes `S₁` when the two atoms
-are adjacent:
+`xᵢ ≠ yᵢ` and `xᵢ ≠ uₖ` for `basicCommSq`, and no condition for `basicSqMul` and `basicSqConj`,
+which are the identity when `uₖ = uₖ'`. It fixes `S₁` when the two atoms are adjacent and the
+other atoms do not contain the variables it moves:
 `basicLinkSq` when there is no commutator and it links the last coefficient atom with the first
 square, `basicCommSq` when it links the last commutator with the first square, and `basicSqMul`,
-`basicSqConj` for two consecutive squares. In [IFT], §7.5, they are the automorphisms `γₘ`,
-`γₘ₊₁`, `γₘ₊₂` (no commutator) and `γₘ₊₄ₙ`, `γₘ₊₄ₙ₊₁`, `γₘ₊₄ₙ₊₂` (at least one commutator) of
-equation (114). In `γₘ₊₁` and `γₘ₊₄ₙ₊₁` the image `uₖ (uₖ uₖ')` of `uₖ` is a product, not a
-conjugate: only the product makes these maps automorphisms fixing `uₖ² uₖ'²`.
+`basicSqConj` for two consecutive squares. Since it also fixes the coefficients, it then fixes
+the left side `S₁ d` of the equation. In [IFT], §7.5, where the variables are pairwise distinct,
+they are the automorphisms `γₘ`, `γₘ₊₁`, `γₘ₊₂` (no commutator) and `γₘ₊₄ₙ`, `γₘ₊₄ₙ₊₁`,
+`γₘ₊₄ₙ₊₂` (at least one commutator) of equation (114). In `γₘ₊₁` and `γₘ₊₄ₙ₊₁` the image
+`uₖ (uₖ uₖ')` of `uₖ` is a product, not a conjugate: only the product makes these maps
+automorphisms fixing `uₖ² uₖ'²`.
 
 Being twists, their powers are given by the same formulas with `A ^ p` in place of `A`, for
 every integer `p`, as [IFT], Lemma 41, computes the positive powers of the orientable basic
@@ -45,8 +48,6 @@ automorphisms.
 
 ## Main definitions
 
-* `TauCeti.GroupAlgGeom.Lift.sqAtom`: the square `uₖ²` of a variable.
-* `TauCeti.GroupAlgGeom.Lift.basicMixedWord`: the word `S₁`.
 * `TauCeti.GroupAlgGeom.Lift.basicLinkSq`, `basicCommSq`, `basicSqMul`, `basicSqConj`: the basic
   automorphisms of the squares.
 
@@ -62,6 +63,8 @@ automorphisms.
 * `TauCeti.GroupAlgGeom.Lift.basicLinkSq_inl`, `basicLinkSq_inr_of_z` and the lemmas after them:
   the basic automorphisms of the squares, their inverses and their natural and integer powers on
   the coefficients and on the variables.
+* `TauCeti.GroupAlgGeom.Lift.basicSqMul_eq_one`, `basicSqConj_eq_one`: the automorphisms of two
+  squares of the same variable are the identity.
 
 ## References
 
@@ -71,54 +74,12 @@ automorphisms.
 
 public section
 
-open Monoid.Coprod
+open Monoid.Coprod TauCeti.GroupAlgGeom.Quadratic
 open scoped commutatorElement
 
 namespace TauCeti.GroupAlgGeom.Lift
 
 variable {G X : Type*} [Group G] {n m r : ℕ}
-
-/-! ### The word `S₁` -/
-
-section Word
-
-variable (x y : Fin n → X) (z : Fin m → X) (u : Fin r → X) (c : Fin m → G)
-
-/-- The square `uₖ²` of a variable. -/
-def sqAtom (k : Fin r) : GX G X :=
-  inr (.of (u k)) ^ 2
-
-/-- The word `S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²`, the left side of [IFT], §7.5, (113) and
-(114) without its constant. -/
-def basicMixedWord : GX G X :=
-  basicWord x y z c * (List.ofFn (sqAtom (G := G) u)).prod
-
-theorem sqAtom_def (k : Fin r) : sqAtom (G := G) u k = inr (.of (u k)) ^ 2 := (rfl)
-
-theorem basicMixedWord_def :
-    basicMixedWord x y z u c = basicWord x y z c * (List.ofFn (sqAtom (G := G) u)).prod := (rfl)
-
-variable {H : Type*} [Group H] (ι : G →* H) (v : X → H)
-
-@[simp]
-theorem eval_sqAtom (k : Fin r) : eval ι v (sqAtom (G := G) u k) = v (u k) ^ 2 := by
-  simp [sqAtom_def]
-
-/-- The value of the word `S₁` at a point `v`: the value of `S₀` times `∏ₖ v(uₖ)²`. -/
-@[simp]
-theorem eval_basicMixedWord :
-    eval ι v (basicMixedWord x y z u c) =
-      eval ι v (basicWord x y z c) * (List.ofFn fun k => v (u k) ^ 2).prod := by
-  simp [basicMixedWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
-
-end Word
-
-/-! ### Twists fixing the squares -/
-
-/-- A twist whose exponents vanish at `uₖ` fixes the square `uₖ²`. -/
-theorem twistHom_sqAtom_of_eq_zero {u : Fin r → X} {B : GX G X} {e : X → ℤ × ℤ} (k : Fin r)
-    (hk : e (u k) = 0) : twistHom B e (sqAtom u k) = sqAtom u k := by
-  simp [sqAtom_def, hk]
 
 /-! ### The basic automorphisms of the squares -/
 
@@ -217,47 +178,49 @@ theorem basicLinkSq_zpow_inr_of_u (p : ℤ) :
         (coeffAtom z c j * sqAtom u k) ^ p := by
   simp [basicLinkSq, hzu]
 
+@[simp]
 theorem basicLinkSq_zpow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) (p : ℤ) :
     (basicLinkSq c j k hzu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicLinkSq, twist_zpow_apply, twistHom_inr_of]
   simp [hz, hu]
 
+@[simp]
 theorem basicLinkSq_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) :
     basicLinkSq c j k hzu (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicLinkSq_zpow_inr_of_of_ne c j k hzu hz hu 1
 
+@[simp]
 theorem basicLinkSq_symm_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) :
     (basicLinkSq c j k hzu).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicLinkSq_zpow_inr_of_of_ne c j k hzu hz hu (-1)
 
+@[simp]
 theorem basicLinkSq_pow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) (p : ℕ) :
     (basicLinkSq c j k hzu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicLinkSq_zpow_inr_of_of_ne c j k hzu hz hu p
 
-variable (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
-include inj
+variable (hz : ∀ l ≠ j, z l ≠ z j ∧ z l ≠ u k) (hu : ∀ l ≠ k, u l ≠ z j ∧ u l ≠ u k)
+include hz hu
 
-/-- For an equation without commutators whose variables are pairwise distinct, the basic
-automorphism of the last coefficient atom and the first square fixes the word `S₁`. -/
+/-- For an equation without commutators, the basic automorphism of the last coefficient atom and
+the first square fixes the word `S₁` when no other atom contains `zⱼ` or `uₖ`. -/
 theorem basicLinkSq_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0) :
     basicLinkSq c j k hzu (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
-  obtain ⟨⟨-, hz, -⟩, hu, -, hzu'⟩ := inj
   subst hn
   have hS : basicMixedWord x y z u c =
       (List.ofFn (Fin.append (coeffAtom z c) (sqAtom u))).prod := by
-    simp [basicMixedWord_def, basicWord_def, List.ofFn_fin_append]
-  rw [basicLinkSq, twist_apply, hS]
+    simp [basicMixedWord_def, basicMixedAtoms_def, List.ofFn_fin_append]
+  rw [hS]
   refine List.map_prod_ofFn_of_adjacent _ _ (i := Fin.castAdd r j) (i' := Fin.natAdd m k)
     (by simp [hj, hk]) (fun l hl hl' => ?_) ?_
   · induction l using Fin.addCases with
     | left l =>
       have hlj : l ≠ j := fun h => hl (h ▸ rfl)
-      simpa using twistHom_coeffAtom_of_eq_zero c l (by simp [hz.ne hlj, hzu'])
+      simp [coeffAtom_def, hz l hlj]
     | right l =>
       have hlk : l ≠ k := fun h => hl' (h ▸ rfl)
-      simpa using twistHom_sqAtom_of_eq_zero l (by simp [hu.ne hlk, hzu'])
-  · rw [Fin.append_left, Fin.append_right]
+      simp [sqAtom_def, hu l hlk]
+  · rw [Fin.append_left, Fin.append_right, basicLinkSq, twist_apply]
     exact twistHom_linkSqTerm c j k hzu (.refl _)
 
 theorem basicLinkSq_zpow_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0)
@@ -265,16 +228,16 @@ theorem basicLinkSq_zpow_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (h
     (basicLinkSq c j k hzu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicLinkSq_basicMixedWord c j k hzu inj hn hj hk)) p
+    ((MulAut.smul_def _ _).trans (basicLinkSq_basicMixedWord c j k hzu hz hu hn hj hk)) p
 
 theorem basicLinkSq_symm_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0) :
     (basicLinkSq c j k hzu).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicLinkSq_zpow_basicMixedWord c j k hzu inj hn hj hk (-1)
+  simpa using basicLinkSq_zpow_basicMixedWord c j k hzu hz hu hn hj hk (-1)
 
 theorem basicLinkSq_pow_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0)
     (p : ℕ) :
     (basicLinkSq c j k hzu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicLinkSq_zpow_basicMixedWord c j k hzu inj hn hj hk p
+  simpa using basicLinkSq_zpow_basicMixedWord c j k hzu hz hu hn hj hk p
 
 end LinkSq
 
@@ -400,19 +363,23 @@ theorem basicCommSq_zpow_inr_of_u (p : ℤ) :
         (inr (.of (y i)) * sqAtom u k) ^ p := by
   simp [basicCommSq, hxu.symm]
 
+@[simp]
 theorem basicCommSq_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k)
     (p : ℤ) : (basicCommSq i k hxy hxu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicCommSq, twist_zpow_apply, twistHom_inr_of]
   simp [hx, hy, hu]
 
+@[simp]
 theorem basicCommSq_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k) :
     basicCommSq i k hxy hxu (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicCommSq_zpow_inr_of_of_ne i k hxy hxu hx hy hu 1
 
+@[simp]
 theorem basicCommSq_symm_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k) :
     (basicCommSq i k hxy hxu).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicCommSq_zpow_inr_of_of_ne i k hxy hxu hx hy hu (-1)
 
+@[simp]
 theorem basicCommSq_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k)
     (p : ℕ) : (basicCommSq i k hxy hxu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicCommSq_zpow_inr_of_of_ne i k hxy hxu hx hy hu p
@@ -420,57 +387,51 @@ theorem basicCommSq_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (
 private theorem basicCommSq_commAtom_mul_sqAtom :
     basicCommSq i k hxy hxu (commAtom (G := G) x y i * sqAtom u k) =
       commAtom x y i * sqAtom u k := by
-  simp only [basicCommSq, twist_apply, commAtom_def, sqAtom_def, map_mul, map_inv,
-    twistHom_inr_of, hxy.symm, hxu.symm, true_or, or_true, ite_true, ite_false, zpow_one,
-    zpow_neg, zpow_zero, mul_one, sq, commutatorElement_def]
+  simp only [commAtom_def, commutatorElement_def, sqAtom_def, sq, map_mul, map_inv,
+    basicCommSq_inr_of_x, basicCommSq_inr_of_y, basicCommSq_inr_of_u]
   group
 
-variable (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
-include inj
+variable (hz : ∀ l, z l ≠ x i ∧ z l ≠ y i ∧ z l ≠ u k)
+  (hx : ∀ l ≠ i, x l ≠ x i ∧ x l ≠ y i ∧ x l ≠ u k)
+  (hy : ∀ l ≠ i, y l ≠ x i ∧ y l ≠ y i ∧ y l ≠ u k)
+  (hu : ∀ l ≠ k, u l ≠ x i ∧ u l ≠ y i ∧ u l ≠ u k)
+include hz hx hy hu
 
-/-- For an equation whose variables are pairwise distinct, the basic automorphism of the last
-commutator and the first square fixes the word `S₁`. -/
+/-- The basic automorphism of the last commutator and the first square fixes the word `S₁` when
+no other atom contains `xᵢ`, `yᵢ` or `uₖ`. -/
 theorem basicCommSq_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) :
     basicCommSq i k hxy hxu (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
-  obtain ⟨⟨⟨hx, hy, hxy'⟩, -, hxz, hyz⟩, hu, ⟨hxu', hyu⟩, hzu⟩ := inj
   have hS : basicMixedWord x y z u c = (List.ofFn (coeffAtom z c)).prod *
       (List.ofFn (Fin.append (commAtom x y) (sqAtom u))).prod := by
-    simp [basicMixedWord_def, basicWord_def, List.ofFn_fin_append, mul_assoc]
+    simp [basicMixedWord_def, basicMixedAtoms_def, List.ofFn_fin_append]
   rw [hS, map_mul]
   congr 1
-  · refine List.map_prod_ofFn_of_forall _ _ fun l => ?_
-    rw [basicCommSq, twist_apply]
-    exact twistHom_coeffAtom_of_eq_zero c l (by
-      simp [fun a b => Ne.symm (hxz a b), fun a b => Ne.symm (hyz a b), hzu])
+  · exact List.map_prod_ofFn_of_forall _ _ fun l => by simp [coeffAtom_def, hz l]
   refine List.map_prod_ofFn_of_adjacent _ _ (i := Fin.castAdd r i) (i' := Fin.natAdd n k)
     (by simp [hi, hk]) (fun l hl hl' => ?_) ?_
-  · rw [basicCommSq, twist_apply]
-    induction l using Fin.addCases with
+  · induction l using Fin.addCases with
     | left l =>
       have hli : l ≠ i := fun h => hl (h ▸ rfl)
-      simpa using twistHom_commAtom_of_eq_zero l (by simp [hx.ne hli, hxy', hxu'])
-        (by simp [fun a b => Ne.symm (hxy' a b), hy.ne hli, hyu])
+      simp [commAtom_def, commutatorElement_def, hx l hli, hy l hli]
     | right l =>
       have hlk : l ≠ k := fun h => hl' (h ▸ rfl)
-      simpa using twistHom_sqAtom_of_eq_zero l
-        (by simp [fun a b => Ne.symm (hxu' a b), fun a b => Ne.symm (hyu a b), hu.ne hlk])
+      simp [sqAtom_def, hu l hlk]
   · rw [Fin.append_left, Fin.append_right]
     exact basicCommSq_commAtom_mul_sqAtom i k hxy hxu
 
 theorem basicCommSq_zpow_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) (p : ℤ) :
     (basicCommSq i k hxy hxu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
-  exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicCommSq_basicMixedWord c i k hxy hxu inj hi hk)) p
+  exact MulAction.mem_fixedBy_zpow ((MulAut.smul_def _ _).trans
+    (basicCommSq_basicMixedWord c i k hxy hxu hz hx hy hu hi hk)) p
 
 theorem basicCommSq_symm_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) :
     (basicCommSq i k hxy hxu).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicCommSq_zpow_basicMixedWord c i k hxy hxu inj hi hk (-1)
+  simpa using basicCommSq_zpow_basicMixedWord c i k hxy hxu hz hx hy hu hi hk (-1)
 
 theorem basicCommSq_pow_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) (p : ℕ) :
     (basicCommSq i k hxy hxu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicCommSq_zpow_basicMixedWord c i k hxy hxu inj hi hk p
+  simpa using basicCommSq_zpow_basicMixedWord c i k hxy hxu hz hx hy hu hi hk p
 
 end CommSq
 
@@ -568,64 +529,80 @@ theorem basicSqMul_zpow_inr_of_right (h : u k ≠ u k') (p : ℤ) :
       (((inr (.of (u k)) : GX G X) * inr (.of (u k'))) ^ p)⁻¹ * inr (.of (u k')) := by
   simp [basicSqMul, h]
 
+@[simp]
 theorem basicSqMul_zpow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℤ) :
     (basicSqMul u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicSqMul, twist_zpow_apply, twistHom_inr_of]
   simp [hk, hk']
 
+@[simp]
 theorem basicSqMul_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
     basicSqMul u k k' (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicSqMul_zpow_inr_of_of_ne u k k' hk hk' 1
 
+@[simp]
 theorem basicSqMul_symm_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
     (basicSqMul u k k').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicSqMul_zpow_inr_of_of_ne u k k' hk hk' (-1)
 
+@[simp]
 theorem basicSqMul_pow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℕ) :
     (basicSqMul u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicSqMul_zpow_inr_of_of_ne u k k' hk hk' p
 
 open scoped Classical in
+/-- When `uₖ = uₖ'`, the automorphism `basicSqMul u k k'` conjugates `uₖ` by `uₖ²`: it is the
+identity. -/
+@[simp]
+theorem basicSqMul_eq_one (h : u k = u k') : basicSqMul (G := G) u k k' = 1 := by
+  ext w
+  rw [basicSqMul, twist_apply, MulAut.one_apply]
+  refine DFunLike.congr_fun (?_ : _ = MonoidHom.id (GX G X)) w
+  refine Monoid.Coprod.hom_ext (by simp) (FreeGroup.ext_hom _ _ fun v => ?_)
+  simp only [MonoidHom.comp_apply, twistHom_inr_of, MonoidHom.id_apply, ← h]
+  obtain rfl | hv := eq_or_ne v (u k)
+  · simp only [Pi.add_apply, Pi.single_eq_same, Prod.mk_add_mk, zero_add, add_zero, zpow_one,
+      zpow_neg]
+    group
+  · simp [hv]
+
 private theorem basicSqMul_sqAtom_mul_sqAtom (h : u k ≠ u k') :
     basicSqMul (G := G) u k k' (sqAtom u k * sqAtom u k') = sqAtom u k * sqAtom u k' := by
-  simp only [basicSqMul, twist_apply, sqAtom_def, map_mul, twistHom_inr_of, Pi.add_apply,
-    Pi.single_eq_same, Pi.single_eq_of_ne h, Pi.single_eq_of_ne' h, add_zero, zero_add,
-    zpow_zero, zpow_one, zpow_neg, one_mul, mul_one, sq]
+  simp only [sqAtom_def, sq, map_mul, basicSqMul_inr_of_left u k k' h,
+    basicSqMul_inr_of_right u k k' h]
   group
 
-variable {u} (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
-include inj
+variable {u} (hx : ∀ l, x l ≠ u k ∧ x l ≠ u k') (hy : ∀ l, y l ≠ u k ∧ y l ≠ u k')
+  (hz : ∀ l, z l ≠ u k ∧ z l ≠ u k') (hu : ∀ l, l ≠ k → l ≠ k' → u l ≠ u k ∧ u l ≠ u k')
+include hx hy hz hu
 
-/-- For an equation whose variables are pairwise distinct, the basic automorphism
-`uₖ ↦ uₖ (uₖ uₖ₊₁)`, `uₖ₊₁ ↦ (uₖ uₖ₊₁)⁻¹ uₖ₊₁` of two consecutive squares fixes the word `S₁`. -/
+/-- The basic automorphism `uₖ ↦ uₖ (uₖ uₖ₊₁)`, `uₖ₊₁ ↦ (uₖ uₖ₊₁)⁻¹ uₖ₊₁` of two consecutive
+squares fixes the word `S₁` when no other atom contains `uₖ` or `uₖ₊₁`. -/
 theorem basicSqMul_basicMixedWord (hk : (k : ℕ) + 1 = k') :
     basicSqMul u k k' (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
-  obtain ⟨-, hu, ⟨hxu, hyu⟩, hzu⟩ := inj
-  have hne : u k ≠ u k' := hu.ne fun h => by simp [h] at hk
-  rw [basicMixedWord_def, map_mul]
+  obtain h | h := eq_or_ne (u k) (u k')
+  · rw [basicSqMul_eq_one u k k' h, MulAut.one_apply]
+  rw [basicMixedWord_eq_basicWord_mul, map_mul]
   congr 1
   · rw [basicSqMul, twist_apply]
-    exact twistHom_basicWord c (fun _ => by simp [hxu]) (fun _ => by simp [hyu])
-      fun _ => by simp [hzu]
-  refine List.map_prod_ofFn_of_adjacent _ _ hk (fun l hl hl' => ?_)
-    (basicSqMul_sqAtom_mul_sqAtom u k k' hne)
-  rw [basicSqMul, twist_apply]
-  exact twistHom_sqAtom_of_eq_zero l (by simp [hu.ne hl, hu.ne hl'])
+    exact twistHom_basicWord c (fun l => by simp [hx l]) (fun l => by simp [hy l])
+      fun l => by simp [hz l]
+  exact List.map_prod_ofFn_of_adjacent _ _ hk (fun l hl hl' => by simp [sqAtom_def, hu l hl hl'])
+    (basicSqMul_sqAtom_mul_sqAtom u k k' h)
 
 theorem basicSqMul_zpow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℤ) :
     (basicSqMul u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicSqMul_basicMixedWord c k k' inj hk)) p
+    ((MulAut.smul_def _ _).trans (basicSqMul_basicMixedWord c k k' hx hy hz hu hk)) p
 
 theorem basicSqMul_symm_basicMixedWord (hk : (k : ℕ) + 1 = k') :
     (basicSqMul u k k').symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqMul_zpow_basicMixedWord c k k' inj hk (-1)
+  simpa using basicSqMul_zpow_basicMixedWord c k k' hx hy hz hu hk (-1)
 
 theorem basicSqMul_pow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℕ) :
     (basicSqMul u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqMul_zpow_basicMixedWord c k k' inj hk p
+  simpa using basicSqMul_zpow_basicMixedWord c k k' hx hy hz hu hk p
 
 end SqMul
 
@@ -720,52 +697,71 @@ theorem basicSqConj_zpow_inr_of_right (p : ℤ) :
         (sqAtom u k * sqAtom u k') ^ p := by
   simp [basicSqConj]
 
+@[simp]
 theorem basicSqConj_zpow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℤ) :
     (basicSqConj u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicSqConj, twist_zpow_apply, twistHom_inr_of]
   simp [hk, hk']
 
+@[simp]
 theorem basicSqConj_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
     basicSqConj u k k' (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicSqConj_zpow_inr_of_of_ne u k k' hk hk' 1
 
+@[simp]
 theorem basicSqConj_symm_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
     (basicSqConj u k k').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicSqConj_zpow_inr_of_of_ne u k k' hk hk' (-1)
 
+@[simp]
 theorem basicSqConj_pow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℕ) :
     (basicSqConj u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
   simpa using basicSqConj_zpow_inr_of_of_ne u k k' hk hk' p
 
-variable {u} (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
-include inj
+open scoped Classical in
+/-- When `uₖ = uₖ'`, the automorphism `basicSqConj u k k'` conjugates `uₖ` by `uₖ⁴`: it is the
+identity. -/
+@[simp]
+theorem basicSqConj_eq_one (h : u k = u k') : basicSqConj (G := G) u k k' = 1 := by
+  ext w
+  rw [basicSqConj, twist_apply, MulAut.one_apply]
+  refine DFunLike.congr_fun (?_ : _ = MonoidHom.id (GX G X)) w
+  refine Monoid.Coprod.hom_ext (by simp) (FreeGroup.ext_hom _ _ fun v => ?_)
+  simp only [MonoidHom.comp_apply, twistHom_inr_of, MonoidHom.id_apply, ← h, or_self]
+  obtain rfl | hv := eq_or_ne v (u k)
+  · simp only [sqAtom_def, ← h, ite_true, zpow_one, zpow_neg]
+    group
+  · simp [hv]
 
-/-- For an equation whose variables are pairwise distinct, the basic automorphism conjugating two
-consecutive square variables by the product of their squares fixes the word `S₁`. -/
+variable {u} (hx : ∀ l, x l ≠ u k ∧ x l ≠ u k') (hy : ∀ l, y l ≠ u k ∧ y l ≠ u k')
+  (hz : ∀ l, z l ≠ u k ∧ z l ≠ u k') (hu : ∀ l, l ≠ k → l ≠ k' → u l ≠ u k ∧ u l ≠ u k')
+include hx hy hz hu
+
+/-- The basic automorphism conjugating two consecutive square variables by the product of their
+squares fixes the word `S₁` when no other atom contains `uₖ` or `uₖ₊₁`. -/
 theorem basicSqConj_basicMixedWord (hk : (k : ℕ) + 1 = k') :
     basicSqConj u k k' (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
-  obtain ⟨-, hu, ⟨hxu, hyu⟩, hzu⟩ := inj
-  rw [basicSqConj, twist_apply, basicMixedWord_def, map_mul, twistHom_basicWord c
-    (fun _ => by simp [hxu]) (fun _ => by simp [hyu]) fun _ => by simp [hzu]]
+  rw [basicMixedWord_eq_basicWord_mul, map_mul]
   congr 1
-  exact List.map_prod_ofFn_of_adjacent _ _ hk (fun l hl hl' =>
-    twistHom_sqAtom_of_eq_zero l (by simp [hu.ne hl, hu.ne hl']))
-    (twistHom_sqConjTerm u k k' (.refl _))
+  · rw [basicSqConj, twist_apply]
+    exact twistHom_basicWord c (fun l => by simp [hx l]) (fun l => by simp [hy l])
+      fun l => by simp [hz l]
+  exact List.map_prod_ofFn_of_adjacent _ _ hk (fun l hl hl' => by simp [sqAtom_def, hu l hl hl'])
+    (by rw [basicSqConj, twist_apply]; exact twistHom_sqConjTerm u k k' (.refl _))
 
 theorem basicSqConj_zpow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℤ) :
     (basicSqConj u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicSqConj_basicMixedWord c k k' inj hk)) p
+    ((MulAut.smul_def _ _).trans (basicSqConj_basicMixedWord c k k' hx hy hz hu hk)) p
 
 theorem basicSqConj_symm_basicMixedWord (hk : (k : ℕ) + 1 = k') :
     (basicSqConj u k k').symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqConj_zpow_basicMixedWord c k k' inj hk (-1)
+  simpa using basicSqConj_zpow_basicMixedWord c k k' hx hy hz hu hk (-1)
 
 theorem basicSqConj_pow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℕ) :
     (basicSqConj u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqConj_zpow_basicMixedWord c k k' inj hk p
+  simpa using basicSqConj_zpow_basicMixedWord c k k' hx hy hz hu hk p
 
 end SqConj
 

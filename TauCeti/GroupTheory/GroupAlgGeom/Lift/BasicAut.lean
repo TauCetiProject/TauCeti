@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.Twist
-public import Mathlib.Algebra.Group.Commutator
+public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Twist
 import TauCeti.Data.List.ProdOfFn
-import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.Algebra.Group.Action.End
 import Mathlib.GroupTheory.GroupAction.FixedPoints
 import Mathlib.Tactic.Group
 
@@ -18,9 +17,10 @@ import Mathlib.Tactic.Group
 Let `G` be a group and `X` a set of variables containing pairwise distinct variables `xᵢ`, `yᵢ`
 (`i = 1, …, n`) and `zⱼ` (`j = 1, …, m`), and let `cⱼ ∈ G`. Following [IFT], §7.1, this file
 defines `G`-automorphisms of the free `G`-group `G[X]` fixing the word
-`S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`, where `[x, y] = x⁻¹ y⁻¹ x y`. Composing a solution of a
-quadratic equation with products of powers of these automorphisms produces the families of
-solutions that are used to lift equations to the coordinate group of the quadratic equation.
+`S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]` (`TauCeti.GroupAlgGeom.Quadratic.basicWord`), where
+`[x, y] = x⁻¹ y⁻¹ x y`. Composing a solution of a quadratic equation with products of powers of
+these automorphisms produces the families of solutions that are used to lift equations to the
+coordinate group of the quadratic equation.
 
 Each basic automorphism multiplies or conjugates the variables of one or two atoms by a word `A`
 that it fixes, and fixes the other variables. Writing `c^z = z⁻¹ c z`, they are
@@ -40,9 +40,6 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 
 ## Main definitions
 
-* `TauCeti.GroupAlgGeom.Lift.coeffAtom`, `TauCeti.GroupAlgGeom.Lift.commAtom`: the atoms
-  `zⱼ⁻¹ cⱼ zⱼ` and `[xᵢ, yᵢ]`.
-* `TauCeti.GroupAlgGeom.Lift.basicWord`: the word `S₀`.
 * `TauCeti.GroupAlgGeom.Lift.blockExp`: the exponents prescribed on the variables `xᵢ`, `yᵢ`,
   `zⱼ` and zero elsewhere; the exponents of the basic automorphisms as twists.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff`, `basicLink`, `basicY`, `basicX`, `basicComm`: the basic
@@ -55,11 +52,6 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Lift.eval_coeffAtom`, `eval_commAtom`, `eval_basicWord`: the values of
-  the atoms and of `S₀` at a point.
-* `TauCeti.GroupAlgGeom.Lift.twistHom_coeffAtom_of_eq_zero`, `twistHom_commAtom_of_eq_zero`,
-  `twistHom_basicWord`: a twist whose exponents vanish at the variables of an atom, or of `S₀`,
-  fixes it.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff_basicWord`, `basicLink_basicWord`, `basicY_basicWord`,
   `basicX_basicWord`, `basicComm_basicWord`: the basic automorphisms fix `S₀`; so do their
   inverses and their natural and integer powers (`basicY_symm_basicWord`, `basicY_pow_basicWord`,
@@ -78,107 +70,18 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 
 public section
 
-open Monoid.Coprod
+open Monoid.Coprod TauCeti.GroupAlgGeom.Quadratic
 open scoped commutatorElement
 
 namespace TauCeti.GroupAlgGeom.Lift
 
 variable {G X : Type*} [Group G] {n m : ℕ}
 
-/-! ### The word `S₀` and its atoms -/
+/-! ### The word `S₀` as one product -/
 
-section Word
-
-variable (x y : Fin n → X) (z : Fin m → X) (c : Fin m → G)
-
-/-- The conjugate `z_j⁻¹ c_j z_j` of the coefficient `c_j` by the variable `z_j`. -/
-def coeffAtom (j : Fin m) : GX G X :=
-  (inr (.of (z j)))⁻¹ * inl (c j) * inr (.of (z j))
-
-/-- The commutator `[x_i, y_i] = x_i⁻¹ y_i⁻¹ x_i y_i` of two variables. -/
-def commAtom (i : Fin n) : GX G X :=
-  ⁅(inr (.of (x i)) : GX G X)⁻¹, (inr (.of (y i)))⁻¹⁆
-
-/-- The word `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]` of [IFT], §7.1. -/
-def basicWord : GX G X :=
-  (List.ofFn (coeffAtom z c)).prod * (List.ofFn (commAtom (G := G) x y)).prod
-
-theorem coeffAtom_def (j : Fin m) :
-    coeffAtom z c j = (inr (.of (z j)))⁻¹ * inl (c j) * inr (.of (z j)) := (rfl)
-
-theorem commAtom_def (i : Fin n) :
-    commAtom (G := G) x y i = ⁅(inr (.of (x i)) : GX G X)⁻¹, (inr (.of (y i)))⁻¹⁆ := (rfl)
-
-theorem basicWord_def :
-    basicWord x y z c =
-      (List.ofFn (coeffAtom z c)).prod * (List.ofFn (commAtom (G := G) x y)).prod := (rfl)
-
-private theorem basicWord_eq_prod_append :
+private theorem basicWord_eq_prod_append (x y : Fin n → X) (z : Fin m → X) (c : Fin m → G) :
     basicWord x y z c = (List.ofFn (Fin.append (coeffAtom z c) (commAtom x y))).prod := by
   rw [List.ofFn_fin_append, List.prod_append, basicWord_def]
-
-variable {H : Type*} [Group H] (ι : G →* H) (u : X → H)
-
-@[simp]
-theorem eval_coeffAtom (j : Fin m) :
-    eval ι u (coeffAtom z c j) = (u (z j))⁻¹ * ι (c j) * u (z j) := by
-  simp [coeffAtom_def]
-
-@[simp]
-theorem eval_commAtom (i : Fin n) : eval ι u (commAtom x y i) = ⁅(u (x i))⁻¹, (u (y i))⁻¹⁆ := by
-  simp [commAtom_def, map_commutatorElement]
-
-/-- The value of the word `S₀` at a point `u`: `∏ⱼ u(zⱼ)⁻¹ ι(cⱼ) u(zⱼ) ∏ᵢ [u(xᵢ), u(yᵢ)]`. -/
-@[simp]
-theorem eval_basicWord :
-    eval ι u (basicWord x y z c) =
-      (List.ofFn fun j => (u (z j))⁻¹ * ι (c j) * u (z j)).prod *
-        (List.ofFn fun i => ⁅(u (x i))⁻¹, (u (y i))⁻¹⁆).prod := by
-  simp [basicWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
-
-end Word
-
-/-! ### Twists fixing the atoms of `S₀` -/
-
-section TwistHom
-
-variable {x y : Fin n → X} {z : Fin m → X} {B : GX G X} {e : X → ℤ × ℤ} (c : Fin m → G)
-
-private theorem twistHom_coeffAtom (j : Fin m) (hj : (e (z j)).1 = 0) :
-    twistHom B e (coeffAtom z c j) = (B ^ (e (z j)).2)⁻¹ * coeffAtom z c j * B ^ (e (z j)).2 := by
-  simp [coeffAtom, hj, mul_assoc]
-
-private theorem twistHom_commAtom (i : Fin n) :
-    twistHom B e (commAtom x y i) =
-      ⁅(B ^ (e (x i)).1 * inr (.of (x i)) * B ^ (e (x i)).2)⁻¹,
-        (B ^ (e (y i)).1 * inr (.of (y i)) * B ^ (e (y i)).2)⁻¹⁆ := by
-  simp [commAtom, map_commutatorElement]
-
-/-- A twist whose exponents vanish at `z_j` fixes the atom `z_j⁻¹ c_j z_j`. -/
-theorem twistHom_coeffAtom_of_eq_zero (j : Fin m) (hj : e (z j) = 0) :
-    twistHom B e (coeffAtom z c j) = coeffAtom z c j := by
-  simp [twistHom_coeffAtom, hj]
-
-/-- A twist whose exponents vanish at `x_i` and `y_i` fixes the atom `[x_i, y_i]`. -/
-theorem twistHom_commAtom_of_eq_zero (i : Fin n) (hx : e (x i) = 0) (hy : e (y i) = 0) :
-    twistHom B e (commAtom x y i) = commAtom x y i := by
-  rw [twistHom_commAtom, hx, hy]
-  simp [commAtom_def]
-
-theorem twistHom_prod_coeffAtom (hz : ∀ j, e (z j) = 0) :
-    twistHom B e (List.ofFn (coeffAtom z c)).prod = (List.ofFn (coeffAtom z c)).prod :=
-  List.map_prod_ofFn_of_forall _ _ fun j => twistHom_coeffAtom_of_eq_zero c j (hz j)
-
-theorem twistHom_prod_commAtom (hx : ∀ i, e (x i) = 0) (hy : ∀ i, e (y i) = 0) :
-    twistHom B e (List.ofFn (commAtom x y)).prod = (List.ofFn (commAtom (G := G) x y)).prod :=
-  List.map_prod_ofFn_of_forall _ _ fun i => twistHom_commAtom_of_eq_zero i (hx i) (hy i)
-
-/-- A twist whose exponents vanish at the variables of `S₀` fixes `S₀`. -/
-theorem twistHom_basicWord (hx : ∀ i, e (x i) = 0) (hy : ∀ i, e (y i) = 0)
-    (hz : ∀ j, e (z j) = 0) : twistHom B e (basicWord x y z c) = basicWord x y z c := by
-  rw [basicWord_def, map_mul, twistHom_prod_coeffAtom c hz, twistHom_prod_commAtom hx hy]
-
-end TwistHom
 
 /-! ### Exponents of a block of variables -/
 

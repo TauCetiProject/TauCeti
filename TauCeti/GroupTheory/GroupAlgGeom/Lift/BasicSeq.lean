@@ -107,7 +107,7 @@ with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
 
 public section
 
-open Monoid.Coprod
+open Monoid.Coprod TauCeti.GroupAlgGeom.Quadratic
 open scoped commutatorElement
 
 namespace TauCeti.GroupAlgGeom.Lift
@@ -375,7 +375,7 @@ end SeqPhi
 
 section Standard
 
-open Quadratic Quadratic.Standard
+open Quadratic.Standard
 
 variable {x y : Fin n → X} {z : Fin m → X}
 
@@ -730,7 +730,7 @@ end Data
 
 section StandardData
 
-open Quadratic Quadratic.Standard
+open Quadratic.Standard
 
 /-- The twist data of the basic sequence `basicSeq S` of a standard orientable quadratic
 equation. -/

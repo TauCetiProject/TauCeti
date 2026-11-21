@@ -77,7 +77,7 @@ public section
 
 universe u v w
 
-open Monoid.Coprod TauCeti.LimitGroup
+open Monoid.Coprod TauCeti.LimitGroup TauCeti.GroupAlgGeom.Quadratic
 open scoped commutatorElement
 
 namespace TauCeti.GroupAlgGeom.Lift

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.StandardForm
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Word
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
@@ -110,21 +111,15 @@ namespace Standard
 /-- The atoms of the mixed form of [IFT], §7.5, (113) and (114), of a non-orientable standard
 quadratic equation `x₀² ⋯ x²_{N-1} ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`: the conjugates `zⱼ⁻¹ cⱼ zⱼ`, then the
 commutators `[x₂ᵢ, x₂ᵢ₊₁]` for `i < ⌊(N - 1)/2⌋`, then the squares of the one or two remaining
-variables. -/
+variables (`TauCeti.GroupAlgGeom.Quadratic.basicMixedAtoms`). -/
 def mixedAtoms : (S : Standard G X) → ¬S.IsOrientable → List (GX G X)
   | .orientable _ hn _ _ inj, h => (h (isOrientable_orientable hn inj)).elim
   | .orientableCoeff _ _ hnm _ _ _ inj _ hc _ hd, h =>
     (h (isOrientable_orientableCoeff hnm inj hc hd)).elim
   | .nonorientable _ _ x _, _ =>
-    List.ofFn (fun i => ⁅(inr (FreeGroup.of (mixedFst x i)) : GX G X)⁻¹,
-        (inr (FreeGroup.of (mixedSnd x i)))⁻¹⁆) ++
-      List.ofFn fun k => (inr (FreeGroup.of (mixedSq x k)) : GX G X) ^ 2
+    basicMixedAtoms (mixedFst x) (mixedSnd x) Fin.elim0 (mixedSq x) Fin.elim0
   | .nonorientableCoeff _ _ _ x z _ c _ _ _, _ =>
-    List.ofFn (fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-        inr (FreeGroup.of (z j))) ++
-      (List.ofFn (fun i => ⁅(inr (FreeGroup.of (mixedFst x i)) : GX G X)⁻¹,
-          (inr (FreeGroup.of (mixedSnd x i)))⁻¹⁆) ++
-        List.ofFn fun k => (inr (FreeGroup.of (mixedSq x k)) : GX G X) ^ 2)
+    basicMixedAtoms (mixedFst x) (mixedSnd x) z (mixedSq x) c
 
 /-- The left side `r₁ ⋯ r_k d` of the mixed form `r₁ ⋯ r_k d = 1` ([IFT], §7.5, (113), (114)) of a
 non-orientable standard quadratic equation, where `r₁, …, r_k` are its mixed atoms and `d` is its
@@ -140,20 +135,14 @@ variable {n m : ℕ} {x : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : 
 @[simp]
 theorem mixedAtoms_nonorientable (hn : 0 < n) (inj : x.Injective) :
     (nonorientable (G := G) n hn x inj).mixedAtoms (not_isOrientable_nonorientable hn inj) =
-      List.ofFn (fun i => ⁅(inr (FreeGroup.of (mixedFst x i)) : GX G X)⁻¹,
-          (inr (FreeGroup.of (mixedSnd x i)))⁻¹⁆) ++
-        List.ofFn fun k => (inr (FreeGroup.of (mixedSq x k)) : GX G X) ^ 2 := (rfl)
+      basicMixedAtoms (mixedFst x) (mixedSnd x) Fin.elim0 (mixedSq x) Fin.elim0 := (rfl)
 
 @[simp]
 theorem mixedAtoms_nonorientableCoeff (hn : 0 < n) (inj : (Sum.elim x z).Injective)
     (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     (nonorientableCoeff n m hn x z inj c hc d hd).mixedAtoms
         (not_isOrientable_nonorientableCoeff hn inj hc hd) =
-      List.ofFn (fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-          inr (FreeGroup.of (z j))) ++
-        (List.ofFn (fun i => ⁅(inr (FreeGroup.of (mixedFst x i)) : GX G X)⁻¹,
-            (inr (FreeGroup.of (mixedSnd x i)))⁻¹⁆) ++
-          List.ofFn fun k => (inr (FreeGroup.of (mixedSq x k)) : GX G X) ^ 2) := (rfl)
+      basicMixedAtoms (mixedFst x) (mixedSnd x) z (mixedSq x) c := (rfl)
 
 /-- **The mixed form is a change of coordinates of the standard form** ([IFT], §7.5, where a
 non-orientable equation is considered in the form (113) or (114)). For a non-orientable standard
@@ -162,6 +151,12 @@ mixed form to the left side of `S`. -/
 theorem exists_mem_elementaryAut_apply_mixedWord (S : Standard G X) (ho : ¬S.IsOrientable) :
     ∃ f ∈ GX.elementaryAut G X, f (S.mixedWord ho) = S.toWord := by
   classical
+  have hcomm {k : ℕ} (a b : Fin k → X) : List.ofFn (commAtom (G := G) a b) =
+      List.ofFn fun i => ⁅(inr (FreeGroup.of (a i)) : GX G X)⁻¹, (inr (FreeGroup.of (b i)))⁻¹⁆ :=
+    List.ofFn_inj.2 (funext (commAtom_def a b))
+  have hsq {k : ℕ} (a : Fin k → X) : List.ofFn (sqAtom (G := G) a) =
+      List.ofFn fun i => (inr (FreeGroup.of (a i)) : GX G X) ^ 2 :=
+    List.ofFn_inj.2 (funext (sqAtom_def a))
   cases S with
   | orientable n hn x y inj => exact absurd (isOrientable_orientable hn inj) ho
   | orientableCoeff n m hnm x y z inj c hc d hd =>
@@ -169,24 +164,27 @@ theorem exists_mem_elementaryAut_apply_mixedWord (S : Standard G X) (ho : ¬S.Is
   | nonorientable N hN x inj =>
     obtain ⟨f, hf, hfw, -⟩ := GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq
       (G := G) (n := (N - 1) / 2) (r := N - 2 * ((N - 1) / 2)) (by lia) (by lia) inj
-    exact ⟨f, hf, by simpa [mixedWord_def, toWord_def] using hfw⟩
+    exact ⟨f, hf, by simpa [mixedWord_def, toWord_def, basicMixedAtoms_def, hcomm, hsq] using hfw⟩
   | nonorientableCoeff N m hN x z inj c hc d hd =>
     -- the handles and cross-caps become squares, then the product `P` of the conjugated
     -- coefficients moves behind the squares
-    set P : GX G X := (List.ofFn fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-      inr (FreeGroup.of (z j))).prod with hP
+    set P : GX G X := (List.ofFn (coeffAtom z c)).prod with hP
     have hPx (i : Fin N) : P ∈ GX.avoiding (x i) := by
       refine list_prod_mem (List.forall_mem_ofFn_iff.2 fun j => ?_)
       have := GX.inr_of_mem_avoiding (G := G) fun h => (Sum.elim_injective.1 inj).2.2 i j h.symm
-      exact mul_mem (mul_mem (inv_mem this) (GX.inl_mem_avoiding _ _)) this
+      exact (coeffAtom_def z c j).symm ▸
+        mul_mem (mul_mem (inv_mem this) (GX.inl_mem_avoiding _ _)) this
     obtain ⟨f, hf, hfw, hfa⟩ := GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq
       (G := G) (n := (N - 1) / 2) (r := N - 2 * ((N - 1) / 2)) (by lia) (by lia)
       (Sum.elim_injective.1 inj).1
     obtain ⟨κ, hκ, hκw, -⟩ := GX.exists_mem_elementaryAut_apply_mul_prod_sq hPx
     refine ⟨κ * f, mul_mem hκ hf, ?_⟩
-    simp only [mixedWord_def, mixedAtoms_nonorientableCoeff, toWord_def, atoms_nonorientableCoeff,
-      constant_nonorientableCoeff, List.prod_append, ← hP, mixedFst_apply, mixedSnd_apply,
-      mixedSq_apply]
+    have hcoeff : (List.ofFn fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
+        inr (FreeGroup.of (z j))) = List.ofFn (coeffAtom z c) :=
+      List.ofFn_inj.2 (funext fun j => (coeffAtom_def z c j).symm)
+    simp only [mixedWord_def, mixedAtoms_nonorientableCoeff, basicMixedAtoms_def, toWord_def,
+      atoms_nonorientableCoeff, constant_nonorientableCoeff, List.prod_append, hcoeff, ← hP,
+      hcomm, hsq, mixedFst_apply, mixedSnd_apply, mixedSq_apply]
     rw [MulAut.mul_apply, map_mul f, map_mul f, hfa P hPx, hfw, map_mul, hκw,
       GX.apply_inl_of_mem_elementaryAut hf, GX.apply_inl_of_mem_elementaryAut hκ]
 
