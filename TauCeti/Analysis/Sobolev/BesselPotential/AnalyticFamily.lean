@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.ImaginaryOrder
 public import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.Complex.WeaklyHolomorphic
-import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
