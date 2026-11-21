@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Choose.Bounds
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -31,7 +32,8 @@ needed. It is useful for finite-population limits, where one of a population and
 may stay bounded.
 
 When the lower index is a sufficiently small fraction of the upper index, any fixed
-exponential rate bounds the binomial coefficient times a fixed base to the lower index.
+exponential rate bounds the binomial coefficient times a fixed base to the lower index. Every
+tail of the binomial sum, being at most the full sum `2 ^ n`, is at most `exp n`.
 
 ## Main results
 
@@ -41,6 +43,8 @@ exponential rate bounds the binomial coefficient times a fixed base to the lower
   of products of normalized binomial coefficients, as in the hypergeometric-to-binomial limit.
 * `TauCeti.exists_pos_choose_mul_pow_le_exp` — an exponential bound for weighted binomial
   coefficients at small index ratios.
+* `TauCeti.sum_range_choose_add_le_exp` — every tail `∑_{j ≥ c} n.choose j` of the binomial sum
+  is at most `exp n`.
 -/
 
 public section
@@ -144,5 +148,20 @@ theorem exists_pos_choose_mul_pow_le_exp (B : ℝ) {a : ℝ} (ha : 0 < a) :
       have hbudget := mul_le_mul_of_nonneg_right hδb (Nat.cast_nonneg d)
       dsimp only [r] at hbudget ⊢
       nlinarith only [hbk, hbudget]
+
+/-- Every tail `∑_{j ≥ c} n.choose j` of the binomial sum is at most `exp n`: it is at most the
+full sum `2 ^ n`, and `2 ≤ exp 1`. -/
+theorem sum_range_choose_add_le_exp (n c : ℕ) :
+    ∑ j ∈ Finset.range (n + 1 - c), (n.choose (j + c) : ℝ) ≤ Real.exp n := by
+  calc _ = ∑ j ∈ Finset.Ico c (n + 1), (n.choose j : ℝ) := by
+        simp_rw [Finset.sum_Ico_eq_sum_range, add_comm c]
+    _ ≤ ∑ j ∈ Finset.range (n + 1), (n.choose j : ℝ) :=
+        Finset.sum_le_sum_of_subset_of_nonneg
+          (by rw [Finset.range_eq_Ico]; exact Finset.Ico_subset_Ico_left (Nat.zero_le c))
+          fun _ _ _ ↦ by positivity
+    _ = 2 ^ n := by exact_mod_cast Nat.sum_range_choose n
+    _ ≤ Real.exp 1 ^ n :=
+        pow_le_pow_left₀ zero_le_two (by linarith [Real.add_one_le_exp 1]) n
+    _ = Real.exp n := by rw [← Real.exp_natCast_mul, mul_one]
 
 end TauCeti
