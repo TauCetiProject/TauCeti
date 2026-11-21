@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Analysis.Analytic.Within
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.Tactic.Positivity
 
@@ -19,7 +20,10 @@ This kernel is positive in the upper half-plane, so the imaginary part of the tr
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
 away from the real axis, the continuity of the kernel there, the Lipschitz bound
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
-affine covariance under pushforward. No moment assumptions are needed.
+affine covariance under pushforward. Off the real axis the transform is analytic with derivative
+`∫ (x - z)⁻² dμ(x)`, bounded by `|Im z|⁻² μ(ℝ)`, and its first-order Taylor expansion at `z` has
+remainder at most `‖w - z‖² / (|Im z|² |Im w|) · μ(ℝ)`; these bounds are uniform over all
+measures of a given mass. No moment assumptions are needed.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -145,6 +149,73 @@ theorem norm_resolventTransform_sub_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im 
   rw [spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hz x)
     (Complex.mem_resolventSet_real hw x), norm_mul, norm_mul,
     div_eq_mul_inv, mul_inv, mul_comm ‖resolvent z x‖, mul_assoc]
+  gcongr
+  · exact Complex.norm_resolvent_real_le z x hz
+  · exact Complex.norm_resolvent_real_le w x hw
+
+/-- The resolvent identity for the transform of a finite measure off the real axis:
+`m_μ(z) - m_μ(w) = (z - w) ∫ (x - z)⁻¹ (x - w)⁻¹ dμ(x)`. -/
+theorem resolventTransform_sub_resolventTransform {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0) :
+    resolventTransform μ z - resolventTransform μ w =
+      (z - w) * ∫ x, resolvent z x * resolvent w x ∂μ := by
+  rw [resolventTransform_apply, resolventTransform_apply, ← integral_sub
+    (integrable_resolvent_of_im_ne_zero hz) (integrable_resolvent_of_im_ne_zero hw),
+    ← integral_const_mul]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  dsimp only
+  rw [spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hz x)
+    (Complex.mem_resolventSet_real hw x)]
+  ring
+
+/-- Off the real axis the transform of a finite measure is complex differentiable, with
+derivative `∫ (x - z)⁻² dμ(x)`. -/
+theorem hasDerivAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
+    HasDerivAt (resolventTransform μ) (∫ x, resolvent z x ^ 2 ∂μ) z :=
+  hasDerivAt_resolventTransform z fun ⟨x, _, hx⟩ ↦
+    hz (by simpa using (congrArg Complex.im hx).symm)
+
+/-- Off the real axis the transform of a finite measure is analytic. -/
+theorem analyticOnNhd_resolventTransform :
+    AnalyticOnNhd ℂ (resolventTransform μ) {z : ℂ | z.im ≠ 0} :=
+  (IsOpen.analyticOn_iff_analyticOnNhd
+    (isOpen_ne_fun Complex.continuous_im continuous_const)).1 <|
+    analyticOn_resolventTransform.mono fun _ hz ⟨_, _, hx⟩ ↦
+      hz (by simpa using (congrArg Complex.im hx).symm)
+
+/-- A uniform bound for the derivative of the transform of a finite measure away from the real
+axis. -/
+theorem norm_deriv_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
+    ‖deriv (resolventTransform μ) z‖ ≤ (|z.im|⁻¹) ^ 2 * μ.real Set.univ := by
+  rw [(hasDerivAt_resolventTransform_of_im_ne_zero hz).deriv]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  rw [norm_pow]
+  gcongr
+  exact Complex.norm_resolvent_real_le z x hz
+
+/-- The second-order Taylor remainder of the transform of a finite measure off the real axis:
+`‖m_μ(w) - m_μ(z) - (w - z) m_μ'(z)‖ ≤ ‖w - z‖² / (|Im z|² |Im w|) · μ(ℝ)`. -/
+theorem norm_resolventTransform_sub_sub_mul_deriv_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0) :
+    ‖resolventTransform μ w - resolventTransform μ z - (w - z) * deriv (resolventTransform μ) z‖
+      ≤ ‖w - z‖ ^ 2 / (|z.im| ^ 2 * |w.im|) * μ.real Set.univ := by
+  have hrem : resolventTransform μ w - resolventTransform μ z -
+      (w - z) * deriv (resolventTransform μ) z =
+        ∫ x, (w - z) ^ 2 * (resolvent z x ^ 2 * resolvent w x) ∂μ := by
+    rw [(hasDerivAt_resolventTransform_of_im_ne_zero hz).deriv,
+      resolventTransform_sub_resolventTransform hw hz, ← integral_const_mul,
+      ← integral_const_mul, ← integral_sub]
+    · refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+      have h := spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hw x)
+        (Complex.mem_resolventSet_real hz x)
+      linear_combination (w - z) * (resolvent z x) * h
+    · exact ((integrable_resolvent_of_im_ne_zero hz).bdd_mul
+        (continuous_resolvent_real hw).aestronglyMeasurable
+        (ae_of_all _ fun x ↦ Complex.norm_resolvent_real_le w x hw)).const_mul _
+    · simpa only [sq] using ((integrable_resolvent_of_im_ne_zero hz).bdd_mul
+        (continuous_resolvent_real hz).aestronglyMeasurable
+        (ae_of_all _ fun x ↦ Complex.norm_resolvent_real_le z x hz)).const_mul (w - z)
+  rw [hrem]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  rw [norm_mul, norm_mul, norm_pow, norm_pow, div_eq_mul_inv, mul_inv, ← inv_pow]
   gcongr
   · exact Complex.norm_resolvent_real_le z x hz
   · exact Complex.norm_resolvent_real_le w x hw
