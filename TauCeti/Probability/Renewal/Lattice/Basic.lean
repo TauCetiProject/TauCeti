@@ -109,6 +109,14 @@ theorem measure_singleton_zero_lt_one_of_not_isLattice [IsProbabilityMeasure μ]
   filter_upwards [(mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).2 hzero] with x hx
   exact ⟨0, by simp [mem_singleton_iff.1 hx]⟩
 
+/-- A nonnegative random variable with nonlattice law is not almost surely zero. -/
+theorem measure_setOf_eq_zero_lt_one_of_not_isLattice
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+    {T : Ω → ℝ≥0} (hT : AEMeasurable T P) (hNL : ¬ (P.map T).IsLattice) :
+    P {ω | T ω = 0} < 1 := by
+  simpa only [Measure.map_apply_of_aemeasurable hT (measurableSet_singleton 0),
+    preimage_singleton] using measure_singleton_zero_lt_one_of_not_isLattice hNL
+
 /-- An absolutely continuous measure retains every lattice span of the dominating measure. -/
 theorem IsLatticeSpan.of_absolutelyContinuous (h : μ.IsLatticeSpan a) {ν : Measure ℝ≥0}
     (hν : ν ≪ μ) : ν.IsLatticeSpan a :=
