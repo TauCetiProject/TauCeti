@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orthonormal
+public import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Analysis.InnerProductSpace.Complex
 
 /-!
@@ -20,7 +21,9 @@ Consequently, every `𝕜`-orthonormal family is `ℝ`-orthonormal (`Orthonormal
 `ℝ`-orthonormal family `v` is `ℂ`-orthonormal (unitary) if and only if the imaginary parts of its
 complex inner products vanish (`Orthonormal.complex_iff`). Since `Im ⟪x, x⟫_ℂ = 0` holds
 unconditionally by Hermitian symmetry, the imaginary condition may be written either pairwise for
-`i ≠ j` or for all `i, j` (`Orthonormal.complex_iff_forall_im_inner_eq_zero`).
+`i ≠ j` or for all `i, j` (`Orthonormal.complex_iff_forall_im_inner_eq_zero`). For any
+complex-orthonormal family `u`, its underlying real family `(u₀, i • u₀, …)`
+(`TauCeti.complexToRealFamily u`) is real-orthonormal (`TauCeti.orthonormal_complexToRealFamily`).
 
 ## Main results
 
@@ -28,6 +31,8 @@ unconditionally by Hermitian symmetry, the imaginary condition may be written ei
 * `Orthonormal.complex_iff`, `Orthonormal.complex_iff_forall_im_inner_eq_zero`: an `ℝ`-orthonormal
   family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` (pairwise for `i ≠ j`, or for all
   `i, j`).
+* `TauCeti.orthonormal_complexToRealFamily`: the underlying real family `(u₀, i • u₀, …)` of a
+  complex-orthonormal family is real-orthonormal for any compatible real inner product.
 -/
 
 public section
@@ -72,3 +77,24 @@ theorem complex_iff_forall_im_inner_eq_zero {v : ι → E} (hv : Orthonormal ℝ
 end Complex
 
 end Orthonormal
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace
+
+/-- The underlying real family `(u₀, i • u₀, …)` of a complex-orthonormal family is
+real-orthonormal for any compatible real inner product. -/
+theorem orthonormal_complexToRealFamily {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [InnerProductSpace ℂ E] {r : ℕ} {u : Fin r → E}
+    (hu : Orthonormal ℂ u) : Orthonormal ℝ (complexToRealFamily u) := by
+  rw [orthonormal_iff_ite]
+  intro i j
+  obtain ⟨⟨a, p⟩, rfl⟩ := (complexRealIndexEquiv r).surjective i
+  obtain ⟨⟨b, q⟩, rfl⟩ := (complexRealIndexEquiv r).surjective j
+  simp only [complexToRealFamily_complexRealIndexEquiv, TauCeti.inner_real_eq_re_inner ℂ,
+    inner_smul_left, inner_smul_right, (complexRealIndexEquiv r).injective.eq_iff, Prod.mk.injEq]
+  rcases eq_or_ne a b with rfl | hab
+  · fin_cases p <;> fin_cases q <;> simp [hu.1 a]
+  · simp [hab, hu.2 hab]
+
+end TauCeti

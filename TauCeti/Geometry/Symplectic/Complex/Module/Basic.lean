@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Module
-
-import TauCeti.LinearAlgebra.Complex.Orientation
+public import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
 # Almost complex structures as complex module structures
@@ -47,6 +46,8 @@ structure induced from `ofComplexModule` recovers the original complex module st
   complex vector space.
 * `TauCeti.AlmostComplexStructure.span_image_fst_lt_mem_invtSubmodule`: for an adapted basis, the
   span of the first `i` adapted pairs is `J`-invariant.
+* `TauCeti.complexToRealFamily_odd_eq_ofComplexModule`: the real family `complexToRealFamily u`
+  is adapted to `AlmostComplexStructure.ofComplexModule V`.
 -/
 
 public section
@@ -186,6 +187,15 @@ theorem span_image_fst_lt_mem_invtSubmodule (J : AlmostComplexStructure V) {n : 
 end Basis
 
 end AlmostComplexStructure
+
+/-- For any family `u : Fin n → V` in a complex module with compatible real scalars, the underlying
+real family `complexToRealFamily u` is adapted to `AlmostComplexStructure.ofComplexModule V`: each
+odd entry is `ofComplexModule V` applied to the preceding even entry. -/
+theorem complexToRealFamily_odd_eq_ofComplexModule {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [Module ℂ V] [IsScalarTower ℝ ℂ V] {n : ℕ} (u : Fin n → V) (j : Fin n) :
+    complexToRealFamily u ⟨2 * (j : ℕ) + 1, by omega⟩ =
+      AlmostComplexStructure.ofComplexModule V (complexToRealFamily u ⟨2 * (j : ℕ), by omega⟩) := by
+  simp
 
 end TauCeti
 

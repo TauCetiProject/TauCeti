@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
+public import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -27,7 +28,10 @@ symplectic orientation `ω.orientation`
 The construction takes a complex orthonormal basis for the Hermitian metric induced by `J`,
 then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real coordinate
 immediately before its imaginary coordinate. Both constructions preserve the original norm
-and real scalar action.
+and real scalar action. Conversely, any almost complex structure admitting an adapted orthonormal
+basis `(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})` is orthogonal
+(`TauCeti.AlmostComplexStructure.inner_apply_apply_of_adapted`; in dimension four,
+`TauCeti.AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis`).
 
 Conversely, every even-dimensional real inner product space carries an orthogonal almost complex
 structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`. In dimension
@@ -43,6 +47,10 @@ form
   structures exist in even dimension.
 * `TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`: every adapted
   orthonormal basis in dimension `2 * n` induces the symplectic orientation of `ω(v, w) = ⟪J v, w⟫`.
+* `TauCeti.AlmostComplexStructure.inner_apply_apply_of_adapted`: an almost complex structure with
+  an adapted orthonormal basis in dimension `2 * n` is orthogonal.
+* `TauCeti.AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis`: four-dimensional
+  specialization for a unitary frame `J e₀ = e₁`, `J e₂ = e₃`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
@@ -159,6 +167,30 @@ theorem toBasis_orientation_eq_symplecticForm_orientation {n : ℕ} {ω : Symple
   rw [← hre]
   exact hcd.orientation_reindex hdim (Nat.mul_comm n 2)
 
+omit [FiniteDimensional ℝ V] in
+/-- An almost complex structure admitting an adapted orthonormal basis
+`(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})` is orthogonal. -/
+theorem inner_apply_apply_of_adapted {J : AlmostComplexStructure V} {n : ℕ}
+    (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
+    (hb : ∀ j : Fin n, b ⟨2 * (j : ℕ) + 1, by omega⟩ = J (b ⟨2 * (j : ℕ), by omega⟩))
+    (u w : V) : ⟪J u, J w⟫ = ⟪u, w⟫ := by
+  let b₀ : OrthonormalBasis (Fin n × Fin 2) ℝ V := b.reindex (complexRealIndexEquiv n).symm
+  have hb_even (j : Fin n) : J (b₀ (j, 0)) = b₀ (j, 1) := by
+    simp only [b₀, OrthonormalBasis.coe_reindex, Equiv.symm_symm, Function.comp_apply,
+      complexRealIndexEquiv_zero, complexRealIndexEquiv_one]
+    exact (hb j).symm
+  have hb_odd (j : Fin n) : J (b₀ (j, 1)) = -b₀ (j, 0) := by
+    rw [← hb_even j, J.apply_apply]
+  have hbasis (i₁ i₂ : Fin n × Fin 2) : ⟪J (b₀ i₁), J (b₀ i₂)⟫ = ⟪b₀ i₁, b₀ i₂⟫ := by
+    rcases i₁ with ⟨a, p⟩
+    rcases i₂ with ⟨c, q⟩
+    fin_cases p <;> fin_cases q <;>
+      simp [hb_even, hb_odd, orthonormal_iff_ite.mp b₀.orthonormal]
+  conv_lhs => rw [← b₀.sum_repr' u, ← b₀.sum_repr' w]
+  conv_rhs => rw [← b₀.sum_repr' u, ← b₀.sum_repr' w]
+  simp only [map_sum, map_smul, sum_inner, inner_sum, real_inner_smul_left,
+    real_inner_smul_right, hbasis]
+
 end EvenDimension
 
 section DimensionFour
@@ -179,6 +211,14 @@ theorem toBasis_orientation_eq_symplecticForm_orientation_four {ω : SymplecticF
     fin_cases k
     · exact h₀.symm
     · exact h₂.symm
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- An almost complex structure with a unitary frame, `J e₀ = e₁` and `J e₂ = e₃` for an
+orthonormal basis `e`, is orthogonal. -/
+theorem inner_apply_apply_of_orthonormalBasis {e : OrthonormalBasis (Fin 4) ℝ V}
+    {J : AlmostComplexStructure V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (v w : V) : ⟪J v, J w⟫ = ⟪v, w⟫ :=
+  inner_apply_apply_of_adapted (n := 2) e (fun k ↦ by fin_cases k <;> simp [h₀, h₂]) v w
 
 /-- Given an orthogonal almost complex structure `J` on a four-dimensional real inner product space
 `V` and a unit vector `ξ`, there exists a unitary orthonormal basis `e` extending `e 0 = ξ`,

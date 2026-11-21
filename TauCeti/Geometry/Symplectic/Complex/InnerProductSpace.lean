@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Analysis.InnerProductSpace.Complex
 
 /-!
 # The complex inner product of an orthogonal complex structure
@@ -23,7 +24,9 @@ real inner product, `TauCeti.AlmostComplexStructure.inner_apply_left_eq_neg_swap
 parametrization `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
 
 Conversely, multiplication by `i` on a complex inner product space preserves the real inner product
-`Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
+`Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`), and
+more generally any compatible real inner product on a complex inner product space
+(`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -33,7 +36,7 @@ public section
 
 namespace TauCeti.AlmostComplexStructure
 
-open scoped RealInnerProductSpace
+open scoped InnerProductSpace RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
@@ -151,6 +154,14 @@ lemma complexInnerProductSpace_inner (J : AlmostComplexStructure V)
     inner ℂ v w = (inner ℝ v w : ℂ) + Complex.I * (inner ℝ (J v) w : ℂ) := by
   let := J.complexInnerProductSpace hJ
   apply Complex.ext <;> simp <;> rfl
+
+/-- Multiplication by `i` preserves the compatible real inner product on a complex inner product
+space. -/
+theorem real_inner_ofComplexModule_apply_ofComplexModule_apply
+    {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℂ E]
+    [IsScalarTower ℝ ℂ E] (v w : E) :
+    ⟪ofComplexModule E v, ofComplexModule E w⟫_ℝ = ⟪v, w⟫_ℝ := by
+  simp [TauCeti.inner_real_eq_re_inner ℂ, inner_smul_left, inner_smul_right]
 
 /-- Multiplication by `i` preserves the real inner product `Re ⟪·, ·⟫_ℂ` of a complex inner
 product space, so `ofComplexModule E` is an orthogonal complex structure. -/

@@ -44,6 +44,8 @@ while remaining strictly increasing and below `p`.
 * `StrictMono.card_compl_image_eq_of_add_eq`: when `r + k = n`, `#(univ.image p)ᶜ = k`.
 * `StrictMono.exists_update_strictMono`: strictly increasing `p'` at some index preserves
   strict monotonicity, stays below `p`, and reduces `∑ i, (p i - p' i)`.
+* `TauCeti.doubleOrderEmb`: lifts an order embedding `Fin r ↪o Fin n` to consecutive pairs
+  `Fin (2 * r) ↪o Fin (2 * n)` (`i ↦ 2 * e (i / 2) + i % 2`), with even/odd and injectivity lemmas.
 
 The extension is adapted from `cameronfreer/exchangeability`, pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`.
@@ -168,3 +170,59 @@ theorem exists_update_strictMono {p' : Fin r → Fin n} (hp : StrictMono p)
     · rw [Function.update_of_ne hc]; exact hp' hac
 
 end StrictMono
+
+namespace TauCeti
+
+/-- Lifting an order embedding `Fin r ↪o Fin n` to consecutive pairs `Fin (2 * r) ↪o Fin (2 * n)`
+by `i ↦ 2 * e (i / 2) + i % 2`. -/
+@[expose]
+def doubleOrderEmb {n r : ℕ} (e : Fin r ↪o Fin n) : Fin (2 * r) ↪o Fin (2 * n) :=
+  OrderEmbedding.ofStrictMono
+    (fun i ↦ ⟨2 * (e ⟨(i : ℕ) / 2, by omega⟩ : ℕ) + (i : ℕ) % 2, by omega⟩)
+    (fun i j hij ↦ by
+      rw [Fin.mk_lt_mk]
+      have hdiv : (i : ℕ) / 2 ≤ (j : ℕ) / 2 := Nat.div_le_div_right (le_of_lt hij)
+      rcases hdiv.eq_or_lt with heq | hlt
+      · have hfin : (⟨(i : ℕ) / 2, by omega⟩ : Fin r) = ⟨(j : ℕ) / 2, by omega⟩ := Fin.ext heq
+        rw [hfin]
+        omega
+      · have hlt' : (e ⟨(i : ℕ) / 2, by omega⟩ : ℕ) < (e ⟨(j : ℕ) / 2, by omega⟩ : ℕ) :=
+          e.strictMono hlt
+        omega)
+
+/-- The underlying natural number value of `doubleOrderEmb e i`. -/
+@[simp]
+theorem doubleOrderEmb_apply_val {n r : ℕ} (e : Fin r ↪o Fin n) (i : Fin (2 * r)) :
+    (doubleOrderEmb e i : ℕ) = 2 * (e ⟨(i : ℕ) / 2, by omega⟩ : ℕ) + (i : ℕ) % 2 :=
+  rfl
+
+/-- At even index `2 * j`, `doubleOrderEmb e` evaluates to `2 * e j`. -/
+@[simp]
+theorem doubleOrderEmb_even {n r : ℕ} (e : Fin r ↪o Fin n) (j : Fin r) :
+    doubleOrderEmb e ⟨2 * (j : ℕ), by omega⟩ = ⟨2 * (e j : ℕ), by omega⟩ := by
+  apply Fin.ext
+  rw [doubleOrderEmb_apply_val]
+  have h1 : (⟨(2 * (j : ℕ)) / 2, by omega⟩ : Fin r) = j :=
+    Fin.ext (Nat.mul_div_cancel_left (j : ℕ) (by omega))
+  rw [h1, Nat.mul_mod_right, add_zero]
+
+/-- At odd index `2 * j + 1`, `doubleOrderEmb e` evaluates to `2 * e j + 1`. -/
+@[simp]
+theorem doubleOrderEmb_odd {n r : ℕ} (e : Fin r ↪o Fin n) (j : Fin r) :
+    doubleOrderEmb e ⟨2 * (j : ℕ) + 1, by omega⟩ = ⟨2 * (e j : ℕ) + 1, by omega⟩ := by
+  apply Fin.ext
+  rw [doubleOrderEmb_apply_val]
+  have h1 : (⟨(2 * (j : ℕ) + 1) / 2, by omega⟩ : Fin r) = j :=
+    Fin.ext (by dsimp; omega)
+  rw [h1, Nat.mul_add_mod]
+
+/-- Lifting order embeddings to consecutive pairs via `doubleOrderEmb` is injective. -/
+theorem doubleOrderEmb_injective {n r : ℕ} :
+    Function.Injective (doubleOrderEmb (n := n) (r := r)) := by
+  intro e₁ e₂ h
+  ext j
+  have hj := congrArg (fun f : Fin (2 * r) ↪o Fin (2 * n) ↦ (f ⟨2 * (j : ℕ), by omega⟩ : ℕ)) h
+  simp only [doubleOrderEmb_even] at hj
+  omega
+
+end TauCeti

@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+import TauCeti.Algebra.BigOperators.Ring.SquareZero
 
 /-!
 # Further results on exterior powers
@@ -29,7 +31,10 @@ the image of `⋀ⁿ M` under `f` is the `n`th power of the degree-one image of 
 injective map embeds `⋀ⁿ V` with its binomial dimension, with no finiteness assumption since a
 positive exterior power of an infinite-dimensional space is infinite-dimensional. Over a field, an
 exterior product with more factors in a finite-dimensional subspace than its dimension vanishes,
-and moving the remaining factors by vectors of that subspace does not change the product.
+and moving the remaining factors by vectors of that subspace does not change the product. It also
+packages the `r`-th exterior power `exteriorPower.pow x r : ⋀[R]^(k * r) M` of a `k`-vector `x`,
+together with the multinomial / Pfaffian power formulas for sums of weighted decomposable
+two-vectors.
 
 ## Main definitions
 
@@ -37,6 +42,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   exterior power.
 * `LinearEquiv.exteriorPower` is the equivalence of exterior powers induced by a linear
   equivalence.
+* `exteriorPower.pow`: the `r`-th exterior power `x ^ r ∈ ⋀[R]^(k * r) M` of `x ∈ ⋀[R]^k M`,
+  commuting with induced maps (`exteriorPower.map_pow`).
+
 ## Main results
 
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
@@ -73,6 +81,13 @@ and moving the remaining factors by vectors of that subspace does not change the
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
   and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
   degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
+* `TauCeti.ExteriorAlgebra.prod_map_finRange_smul_ιMulti_two`,
+  `TauCeti.ExteriorAlgebra.noncommProd_univ_smul_ιMulti_two`, and
+  `TauCeti.ExteriorAlgebra.pow_sum_smul_ιMulti_two`: products and `r`-th powers of weighted
+  decomposable two-vectors in the exterior algebra.
+* `exteriorPower.pow_sum_smul_ιMulti_two` and
+  `exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_two`: exterior-power and divided-power
+  forms of the weighted two-vector identity.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`; in particular
   that map preserves the exterior degree (`LinearMap.exteriorAlgebra_map_mem_exteriorPower`).
@@ -542,6 +557,95 @@ theorem mem_center_of_mem_of_even {i : ℕ} {x : _root_.ExteriorAlgebra R M} (hx
   | mul a b ha hb => rw [mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
   | add a b ha hb => rw [add_mul, mul_add, ha, hb]
 
+section WeightedTwoVectors
+
+open scoped Function
+
+/-- Any two weighted decomposable two-vectors commute in the exterior algebra. -/
+theorem commute_smul_ιMulti_two (a b : R) (u₁ w₁ u₂ w₂ : M) :
+    Commute (a • _root_.ExteriorAlgebra.ιMulti R 2 ![u₁, w₁])
+      (b • _root_.ExteriorAlgebra.ιMulti R 2 ![u₂, w₂]) := by
+  have hmem : a • _root_.ExteriorAlgebra.ιMulti R 2 ![u₁, w₁] ∈ ⋀[R]^2 M :=
+    Submodule.smul_mem _ _ (exteriorPower.ιMulti R 2 ![u₁, w₁]).property
+  exact Subalgebra.mem_center_iff.mp (mem_center_of_mem_of_even hmem even_two) _ |>.symm
+
+/-- Every weighted decomposable two-vector squares to zero in the exterior algebra. -/
+theorem smul_ιMulti_two_mul_self (a : R) (u w : M) :
+    (a • _root_.ExteriorAlgebra.ιMulti R 2 ![u, w]) *
+        (a • _root_.ExteriorAlgebra.ιMulti R 2 ![u, w]) = 0 := by
+  rw [smul_mul_smul_comm, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
+  have h0 : _root_.ExteriorAlgebra.ιMulti R (2 + 2) (Fin.append ![u, w] ![u, w]) = 0 :=
+    (_root_.ExteriorAlgebra.ιMulti R 4).map_eq_zero_of_eq _ (i := 0) (j := 2) rfl (by decide)
+  rw [h0, smul_zero]
+
+/-- The ordered product along `List.finRange r` of weighted consecutive pairs
+`μ j • (v_{2j} ∧ v_{2j+1})` in the exterior algebra is `(∏ j, μ j) • (v₀ ∧ ⋯ ∧ v_{2r-1})`. -/
+theorem prod_map_finRange_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) → M) :
+    ((List.finRange r).map fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
+        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]).prod =
+      (∏ j : Fin r, μ j) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v := by
+  induction r with
+  | zero =>
+    simp [_root_.ExteriorAlgebra.ιMulti_zero_apply]
+  | succ r ih =>
+    let v' : Fin (2 * r) → M := fun i ↦ v ⟨(i : ℕ), by omega⟩
+    rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
+      List.map_singleton, List.prod_singleton]
+    have hih : ((List.finRange r).map ((fun j : Fin (r + 1) ↦ μ j •
+        _root_.ExteriorAlgebra.ιMulti R 2
+          ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) ∘ Fin.castSucc)).prod =
+        (∏ j : Fin r, μ j.castSucc) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v' :=
+      ih (μ ∘ Fin.castSucc) v'
+    rw [hih, Fin.prod_univ_castSucc, smul_mul_smul_comm, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
+    congr 1
+    apply congrArg (_root_.ExteriorAlgebra.ιMulti R (2 * (r + 1)))
+    ext i
+    by_cases hi : (i : ℕ) < 2 * r
+    · have hcast : i = Fin.castAdd 2 ⟨(i : ℕ), hi⟩ := Fin.ext rfl
+      rw [hcast, Fin.append_left]
+      simp only [v', Fin.castAdd_mk]
+    · have hcast : i = Fin.natAdd (2 * r) ⟨(i : ℕ) - 2 * r, by omega⟩ := Fin.ext (by simp; omega)
+      rw [hcast, Fin.append_right]
+      have hidx : (i : ℕ) - 2 * r = 0 ∨ (i : ℕ) - 2 * r = 1 := by omega
+      rcases hidx with h0 | h1
+      · have hfin : (⟨(i : ℕ) - 2 * r, by omega⟩ : Fin 2) = 0 := Fin.ext h0
+        rw [hfin, Matrix.cons_val_zero]
+        exact congrArg v (Fin.ext (by simp))
+      · have hfin : (⟨(i : ℕ) - 2 * r, by omega⟩ : Fin 2) = 1 := Fin.ext h1
+        rw [hfin, Matrix.cons_val_one]
+        exact congrArg v (Fin.ext (by simp))
+
+/-- The noncommutative product of `r` weighted consecutive pairs `μ j • (v_{2j} ∧ v_{2j+1})` in
+the exterior algebra is `(∏ j, μ j) • (v₀ ∧ ⋯ ∧ v_{2r-1})`. -/
+theorem noncommProd_univ_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) → M)
+    (hcomm : ((Finset.univ : Finset (Fin r)) : Set (Fin r)).Pairwise
+      (Commute on fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
+        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩])) :
+    (Finset.univ : Finset (Fin r)).noncommProd
+        (fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
+          ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) hcomm =
+      (∏ j : Fin r, μ j) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v := by
+  exact ((Finset.noncommProd_congr (List.toFinset_finRange r).symm (fun _ _ ↦ rfl) hcomm).trans
+    (Finset.noncommProd_toFinset _ _ _ (List.nodup_finRange r))).trans
+    (prod_map_finRange_smul_ιMulti_two μ v)
+
+/-- The `r`-th exterior power of a sum of `r` weighted decomposable two-vectors is `r!` times the
+product of the weights times the `2r`-fold wedge product of the frame. -/
+theorem pow_sum_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) → M) :
+    (∑ j : Fin r, μ j • _root_.ExteriorAlgebra.ιMulti R 2
+        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) ^ r =
+      r.factorial • ((∏ j : Fin r, μ j) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v) := by
+  have hcomm : Pairwise (Commute on fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
+      ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) :=
+    fun _ _ _ ↦ commute_smul_ιMulti_two _ _ _ _ _ _
+  rw [Finset.sum_pow_of_pairwise_commute_of_mul_self_eq_zero Finset.univ _ hcomm
+    (fun j _ ↦ smul_ιMulti_two_mul_self _ _ _) r]
+  have hpow : (Finset.univ : Finset (Fin r)).powersetCard r = {Finset.univ} := by
+    simpa using Finset.powersetCard_self (Finset.univ : Finset (Fin r))
+  rw [hpow, Finset.sum_singleton, noncommProd_univ_smul_ιMulti_two]
+
+end WeightedTwoVectors
+
 /-- Left multiplication by a vector raises the exterior degree by one: it carries the `n`-th
 exterior power into the `(n + 1)`-th. -/
 theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : _root_.ExteriorAlgebra R M}
@@ -648,3 +752,69 @@ theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
 end exteriorPower
 
 end TauCeti
+
+/-! ### Exterior powers of a `k`-vector -/
+
+namespace exteriorPower
+
+section Pow
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The `r`-th exterior power `x ^ r` of a `k`-vector `x ∈ ⋀[R]^k M`, packaged as an element of
+`⋀[R]^(k * r) M`. -/
+protected def pow {k : ℕ} (x : ⋀[R]^k M) (r : ℕ) : ⋀[R]^(k * r) M :=
+  ⟨(x : ExteriorAlgebra R M) ^ r, by
+    simpa only [ExteriorAlgebra.exteriorPower, pow_mul] using Submodule.pow_mem_pow _ x.property r⟩
+
+/-- Coercing `exteriorPower.pow x r` to `ExteriorAlgebra R M` yields
+`(x : ExteriorAlgebra R M) ^ r`. -/
+@[simp]
+protected theorem coe_pow {k : ℕ} (x : ⋀[R]^k M) (r : ℕ) :
+    ((exteriorPower.pow x r : ⋀[R]^(k * r) M) : ExteriorAlgebra R M) =
+      (x : ExteriorAlgebra R M) ^ r :=
+  (rfl)
+
+/-- The zeroth exterior power `x ^ 0` is the empty exterior product `ιMulti R 0 ![]`. -/
+@[simp]
+protected theorem pow_zero {k : ℕ} (x : ⋀[R]^k M) :
+    exteriorPower.pow x 0 = ιMulti R 0 ![] :=
+  Subtype.ext (by simp [ExteriorAlgebra.ιMulti_zero_apply])
+
+/-- The `(r + 1)`-st exterior power `x ^ (r + 1)` is the wedge product of `x ^ r` with `x`. -/
+@[simp]
+protected theorem pow_succ {k : ℕ} (x : ⋀[R]^k M) (r : ℕ) :
+    exteriorPower.pow x (r + 1) = wedge R M (k * r) k (exteriorPower.pow x r) x :=
+  Subtype.ext (by simp [_root_.pow_succ])
+
+/-- Induced maps on exterior powers commute with `exteriorPower.pow`. -/
+@[simp]
+protected theorem map_pow {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    {k : ℕ} (x : ⋀[R]^k M) (r : ℕ) :
+    map (k * r) f (exteriorPower.pow x r) = exteriorPower.pow (map k f x) r := by
+  apply Subtype.ext
+  simp [coe_map, _root_.map_pow]
+
+/-- The `r`-th exterior power of a sum of `r` weighted decomposable two-vectors in `⋀² M` is `r!`
+times the product of the weights times the `2r`-fold wedge product of the frame. -/
+theorem pow_sum_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) → M) :
+    exteriorPower.pow (∑ j : Fin r, μ j • ιMulti R 2
+        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) r =
+      r.factorial • ((∏ j : Fin r, μ j) • ιMulti R (2 * r) v) := by
+  apply Subtype.ext
+  simp only [exteriorPower.coe_pow, Submodule.coe_sum, SetLike.val_smul, ιMulti_apply_coe,
+    TauCeti.ExteriorAlgebra.pow_sum_smul_ιMulti_two, AddSubmonoidClass.coe_nsmul]
+
+/-- Over a field of characteristic zero, the divided `r`-th exterior power of a sum of `r`
+weighted decomposable two-vectors in `⋀² V` is `(∏ j, μ j) • (v₀ ∧ ⋯ ∧ v_{2r-1})`. -/
+theorem inv_factorial_smul_pow_sum_smul_ιMulti_two {K V : Type*} [Field K] [CharZero K]
+    [AddCommGroup V] [Module K V] {r : ℕ} (μ : Fin r → K) (v : Fin (2 * r) → V) :
+    (r.factorial : K)⁻¹ • exteriorPower.pow (∑ j : Fin r, μ j • ιMulti K 2
+        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) r =
+      (∏ j : Fin r, μ j) • ιMulti K (2 * r) v := by
+  rw [pow_sum_smul_ιMulti_two, ← Nat.cast_smul_eq_nsmul K, smul_smul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero r)), one_smul]
+
+end Pow
+
+end exteriorPower

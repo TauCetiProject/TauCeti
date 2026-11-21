@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Cons
 
 /-!
-# The real normal form of commuting skew-symmetric maps
+# The real normal form of skew-symmetric maps
 
 Let `E` be a finite-dimensional real inner product space and let `(A i)` be a family of pairwise
 commuting skew-symmetric linear maps of `E`, `⟪A i x, y⟫ = -⟪x, A i y⟫`. Over `ℂ` such a family is
@@ -31,11 +32,15 @@ dimension.
 
 When the family is the image of a linear map `ρ : V → End(E)`, the coefficients are linear in the
 parameter: there are nonzero linear functionals `α_k` on `V` with `ρ X = α_k(X) J_k` on the `k`-th
-plane (`TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`). This is the real form of
-the weight decomposition. For an abelian Lie subalgebra `𝔱` of a Lie algebra `𝔤` with an invariant
-inner product, applied to `ρ = ad|𝔱`, it splits `𝔤` into the centralizer of `𝔱` and the *real root
-planes*, on which `ad H` acts as `α(H) J` for a nonzero root `α`; for the Lie algebra of a maximal
-torus of a compact Lie group, the centralizer is that Lie algebra itself.
+plane (`TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`).
+
+For a single skew-adjoint endomorphism `A : E →ₗ[ℝ] E` in even dimension `2 * r`, pairing the
+nonzero invariant planes with an orthonormal pairing of `ker A` yields a complete orthonormal basis
+`(b (j, 0), b (j, 1))` and nonnegative scalars `μ j` with `A (b (j, 0)) = μ j • b (j, 1)` and
+`A (b (j, 1)) = -(μ j • b (j, 0))` (`LinearMap.exists_orthonormalBasis_skew_normalForm`). The
+odd-dimensional determinant and kernel properties live in
+`TauCeti.Analysis.InnerProductSpace.Adjoint`, and the application to two-vectors and Pfaffian
+powers lives in `TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm`.
 
 ## Main results
 
@@ -43,6 +48,8 @@ torus of a compact Lie group, the centralizer is that Lie algebra itself.
   of skew-symmetric maps.
 * `TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`: the same for a linear family,
   with linear weights.
+* `LinearMap.exists_orthonormalBasis_skew_normalForm`: the real block-diagonal normal form of a
+  skew-adjoint endomorphism in even dimension `2 * r`.
 
 ## References
 
@@ -55,7 +62,7 @@ torus of a compact Lie group, the centralizer is that Lie algebra itself.
 public section
 
 open Module
-open scoped InnerProductSpace Function
+open scoped InnerProductSpace RealInnerProductSpace Function
 
 namespace TauCeti
 
@@ -257,3 +264,123 @@ theorem exists_orthonormal_apply_eq_smul_of_skew_of_linearMap {V : Type*} [AddCo
   exact hX (LinearMap.congr_fun h X)
 
 end TauCeti
+
+namespace LinearMap
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Real normal form of a skew-adjoint endomorphism**: on a `2r`-dimensional real inner product
+space, every skew-adjoint endomorphism `A` is block-diagonal in some orthonormal basis
+`(b (j, 0), b (j, 1))`, with `A (b (j, 0)) = μ j • b (j, 1)` and
+`A (b (j, 1)) = -(μ j • b (j, 0))` for nonnegative scalars `μ j`. -/
+theorem exists_orthonormalBasis_skew_normalForm {r : ℕ}
+    (hdim : finrank ℝ E = 2 * r) (A : E →ₗ[ℝ] E)
+    (hA : ∀ x y, ⟪A x, y⟫ = -⟪x, A y⟫) :
+    ∃ (b : OrthonormalBasis (Fin r × Fin 2) ℝ E) (μ : Fin r → ℝ),
+      (∀ j, 0 ≤ μ j) ∧
+      (∀ j, A (b (j, 0)) = μ j • b (j, 1)) ∧
+      (∀ j, A (b (j, 1)) = -(μ j • b (j, 0))) := by
+  obtain ⟨r₀, q, p, a, hon, hact, _, hker⟩ :=
+    TauCeti.exists_orthonormal_apply_eq_smul_of_skew (fun _ : Unit ↦ A) (fun _ x y ↦ hA x y)
+      (fun _ _ h ↦ (h rfl).elim)
+  let s (k : Fin r₀) : ℝ := if 0 ≤ a k () then 1 else -1
+  have hs_mul_sq (k : Fin r₀) : s k * s k = 1 := by dsimp [s]; split_ifs <;> norm_num
+  have hs_mul_a (k : Fin r₀) : s k * a k () = |a k ()| := by
+    dsimp [s]
+    split_ifs with h
+    · simp [abs_of_nonneg h]
+    · simp [abs_of_neg (not_le.mp h)]
+  have hs_mul_abs (k : Fin r₀) : s k * |a k ()| = a k () := by
+    dsimp [s]
+    split_ifs with h
+    · simp [abs_of_nonneg h]
+    · simp [abs_of_neg (not_le.mp h)]
+  let vP : Fin r₀ × Fin 2 → E := fun ⟨k, t⟩ ↦ if t = 0 then q k else s k • p k
+  have hvP0 (k : Fin r₀) : vP (k, 0) = q k := rfl
+  have hvP1 (k : Fin r₀) : vP (k, 1) = s k • p k := rfl
+  have hon_ite := orthonormal_iff_ite.1 hon
+  have hvP : Orthonormal ℝ vP := by
+    rw [orthonormal_iff_ite]
+    rintro ⟨k₁, t₁⟩ ⟨k₂, t₂⟩
+    rcases (by fin_cases t₁ <;> simp : t₁ = 0 ∨ t₁ = 1) with rfl | rfl <;>
+      rcases (by fin_cases t₂ <;> simp : t₂ = 0 ∨ t₂ = 1) with rfl | rfl
+    · simpa [hvP0] using hon_ite (.inl k₁) (.inl k₂)
+    · simp [hvP0, hvP1, real_inner_smul_right,
+        show ⟪q k₁, p k₂⟫ = 0 by simpa using hon_ite (.inl k₁) (.inr k₂)]
+    · simp [hvP0, hvP1, real_inner_smul_left,
+        show ⟪p k₁, q k₂⟫ = 0 by simpa using hon_ite (.inr k₁) (.inl k₂)]
+    · by_cases hk : k₁ = k₂
+      · subst hk
+        rw [hvP1, real_inner_smul_left, real_inner_smul_right,
+          show ⟪p k₁, p k₁⟫ = 1 by simpa using hon_ite (.inr k₁) (.inr k₁),
+          mul_one, hs_mul_sq]
+        simp
+      · simp [hvP1, hk, real_inner_smul_left, real_inner_smul_right,
+          show ⟪p k₁, p k₂⟫ = 0 by simpa [hk] using hon_ite (.inr k₁) (.inr k₂)]
+  let P : Submodule ℝ E := Submodule.span ℝ (Set.range vP)
+  have hP_eq : P = Submodule.span ℝ (Set.range (Sum.elim q p)) := by
+    refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
+    · rintro _ ⟨⟨k, t⟩, rfl⟩
+      fin_cases t
+      · exact Submodule.subset_span ⟨.inl k, rfl⟩
+      · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨.inr k, rfl⟩)
+    · rintro _ ⟨k | k, rfl⟩
+      · exact Submodule.subset_span ⟨(k, 0), rfl⟩
+      · dsimp only [Sum.elim_inr]
+        have hpk : p k = s k • vP (k, 1) := by
+          simp [hvP1, smul_smul, hs_mul_sq]
+        rw [hpk]
+        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨(k, 1), rfl⟩)
+  have hP_dim : finrank ℝ P = 2 * r₀ := by
+    simpa [mul_comm] using finrank_span_eq_card hvP.linearIndependent
+  have hadd := Submodule.finrank_add_finrank_orthogonal P
+  have hr₀ : r₀ ≤ r := by omega
+  have hK_dim : finrank ℝ Pᗮ = 2 * (r - r₀) := by omega
+  let bP : OrthonormalBasis (Fin r₀ × Fin 2) ℝ P :=
+    (Basis.span hvP.linearIndependent).toOrthonormalBasis (by
+      convert orthonormal_span hvP
+      simp [Basis.span_apply])
+  let bK : OrthonormalBasis (Fin (r - r₀) × Fin 2) ℝ Pᗮ :=
+    (stdOrthonormalBasis ℝ Pᗮ).reindex (Fintype.equivOfCardEq (by simp [hK_dim, mul_comm]))
+  have hker' : Pᗮ = LinearMap.ker A := by simpa [hP_eq] using hker
+  have hbK_ker (j : Fin (r - r₀)) (t : Fin 2) : A (bK (j, t) : E) = 0 :=
+    LinearMap.mem_ker.1 (hker' ▸ (bK (j, t)).property)
+  let eSum : Fin r₀ ⊕ Fin (r - r₀) ≃ Fin r :=
+    finSumFinEquiv.trans (finCongr (Nat.add_sub_of_le hr₀))
+  let e : ((Fin r₀ × Fin 2) ⊕ (Fin (r - r₀) × Fin 2)) ≃ Fin r × Fin 2 :=
+    { toFun := Sum.elim (fun ⟨k, t⟩ ↦ (eSum (.inl k), t)) (fun ⟨j, t⟩ ↦ (eSum (.inr j), t))
+      invFun := fun ⟨i, t⟩ ↦ Sum.elim (fun k ↦ .inl (k, t)) (fun j ↦ .inr (j, t)) (eSum.symm i)
+      left_inv := by rintro (⟨k, t⟩ | ⟨j, t⟩) <;> simp
+      right_inv := fun ⟨i, t⟩ ↦ by
+        obtain ⟨jk, rfl⟩ := eSum.surjective i
+        rcases jk with k | j <;> simp }
+  have he_inl (k : Fin r₀) (t : Fin 2) : e (.inl (k, t)) = (eSum (.inl k), t) := rfl
+  have he_inr (j : Fin (r - r₀)) (t : Fin 2) : e (.inr (j, t)) = (eSum (.inr j), t) := rfl
+  let b : OrthonormalBasis (Fin r × Fin 2) ℝ E :=
+    ((bP.prod bK).map P.orthogonalDecomposition.symm).reindex e
+  have hb_inl (k : Fin r₀) (t : Fin 2) :
+      b (eSum (.inl k), t) = vP (k, t) := by
+    have he' : e.symm (eSum (.inl k), t) = .inl (k, t) := by
+      rw [← he_inl, Equiv.symm_apply_apply]
+    simp [b, he', bP, Basis.span_apply]
+  have hb_inr (j : Fin (r - r₀)) (t : Fin 2) :
+      b (eSum (.inr j), t) = (bK (j, t) : E) := by
+    have he' : e.symm (eSum (.inr j), t) = .inr (j, t) := by
+      rw [← he_inr, Equiv.symm_apply_apply]
+    simp [b, he']
+  let μ₀ : Fin r₀ ⊕ Fin (r - r₀) → ℝ := Sum.elim (fun k ↦ |a k ()|) (fun _ ↦ 0)
+  refine ⟨b, μ₀ ∘ eSum.symm, fun j ↦ ?_, fun j ↦ ?_, fun j ↦ ?_⟩
+  · rcases hj : eSum.symm j with k | j' <;> simp [μ₀, hj]
+  · obtain ⟨jk, rfl⟩ := eSum.surjective j
+    rcases jk with k | j'
+    · simp only [Function.comp_apply, Equiv.symm_apply_apply, μ₀, Sum.elim_inl, hb_inl, hvP0,
+        hvP1, (hact k ()).1, smul_smul, mul_comm |a k ()|, hs_mul_abs]
+    · simp [μ₀, hb_inr, hbK_ker]
+  · obtain ⟨jk, rfl⟩ := eSum.surjective j
+    rcases jk with k | j'
+    · simp only [Function.comp_apply, Equiv.symm_apply_apply, μ₀, Sum.elim_inl, hb_inl, hvP0,
+        hvP1, map_smul, (hact k ()).2]
+      rw [smul_smul, mul_neg, hs_mul_a, neg_smul]
+    · simp [μ₀, hb_inr, hbK_ker]
+
+end LinearMap

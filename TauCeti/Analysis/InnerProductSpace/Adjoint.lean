@@ -85,8 +85,10 @@ If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
 endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), so the determinants
 of an invertible real operator and of the adjoint of its inverse multiply to `1`
-(`ContinuousLinearMap.det_mul_det_adjoint_ringInverse`). For a surjective
-linear map, the orthogonal complement of its kernel has the dimension of the codomain
+(`ContinuousLinearMap.det_mul_det_adjoint_ringInverse`), and a skew-adjoint endomorphism of an
+odd-dimensional real inner product space has determinant zero (`LinearMap.det_eq_zero_of_skew_odd`)
+and a unit vector in its kernel (`LinearMap.exists_norm_eq_one_apply_eq_zero_of_skew_odd`). For a
+surjective linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
 Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
@@ -645,6 +647,35 @@ theorem det_adjoint (f : E →ₗ[𝕜] E) : (adjoint f).det = star f.det := by
   let b := stdOrthonormalBasis 𝕜 E
   rw [← det_toMatrix b.toBasis, ← det_toMatrix b.toBasis, toMatrix_adjoint b b,
     Matrix.det_conjTranspose]
+
+/-- A skew-adjoint endomorphism of an odd-dimensional real inner product space has determinant
+zero, because `A† = -A` forces `det A = (-1)^(dim E) det A = -det A`. -/
+theorem det_eq_zero_of_skew_odd {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] (A : V →ₗ[ℝ] V) (hA : ∀ x y, inner ℝ (A x) y = -inner ℝ x (A y))
+    (hodd : Odd (Module.finrank ℝ V)) :
+    A.det = 0 := by
+  have hadj : -A = A.adjoint := by
+    rw [eq_adjoint_iff]
+    intro x y
+    rw [LinearMap.neg_apply, inner_neg_left]
+    linarith [hA x y]
+  have hdet : A.det = (-A).det := by
+    simpa [← hadj] using (det_adjoint A).symm
+  have hneg : (-A).det = (-1 : ℝ) ^ Module.finrank ℝ V * A.det := by
+    simpa [neg_one_smul] using det_smul (-1 : ℝ) A
+  rw [hneg, hodd.neg_one_pow] at hdet
+  linarith
+
+/-- A skew-adjoint endomorphism of an odd-dimensional real inner product space has a unit vector
+in its kernel. -/
+theorem exists_norm_eq_one_apply_eq_zero_of_skew_odd {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] (A : V →ₗ[ℝ] V)
+    (hA : ∀ x y, inner ℝ (A x) y = -inner ℝ x (A y)) (hodd : Odd (Module.finrank ℝ V)) :
+    ∃ u : V, ‖u‖ = 1 ∧ A u = 0 := by
+  have hker : ker A ≠ ⊥ := det_eq_zero_iff_ker_ne_bot.mp (A.det_eq_zero_of_skew_odd hA hodd)
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hker
+  refine ⟨‖v‖⁻¹ • v, norm_smul_inv_norm hv0, ?_⟩
+  rw [map_smul, mem_ker.mp hv, smul_zero]
 
 /-- If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`, then also `‖C† y‖ ≤ c * ‖y‖` for every `y`. -/
 theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
