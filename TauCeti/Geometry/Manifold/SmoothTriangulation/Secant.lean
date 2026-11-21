@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 
 import TauCeti.Analysis.Convex.Combination
@@ -100,9 +101,10 @@ variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n 
   (K : AbstractSimplicialComplex ι)
 
 /-- The secant map of `f : |K| → E`: the map which agrees with `f` at the vertices of `K` and is
-linear in barycentric coordinates on every closed simplex. -/
+linear in barycentric coordinates on every closed simplex, the linear extension of the values of
+`f` at the vertices. -/
 def secantMap (f : Realization K → E) (x : Realization K) : E :=
-  Finsupp.linearCombination ℝ (fun v => f (vertex K v)) x.val
+  K.linearExtension (fun v => f (vertex K v)) x
 
 variable {K}
 
@@ -110,30 +112,23 @@ variable {K}
 barycentric coordinates as weights, of the values of `f` at the vertices. -/
 theorem secantMap_apply (f : Realization K → E) (x : Realization K) :
     K.secantMap f x = x.val.sum fun v t => t • f (vertex K v) :=
-  Finsupp.linearCombination_apply ℝ x.val
+  (linearExtension_apply _ x).trans (Finsupp.linearCombination_apply ℝ x.val)
 
 /-- The secant map agrees with `f` at every vertex. -/
 @[simp]
 theorem secantMap_vertex (f : Realization K → E) (v : ι) :
-    K.secantMap f (vertex K v) = f (vertex K v) := by
-  simp [secantMap_apply]
+    K.secantMap f (vertex K v) = f (vertex K v) :=
+  linearExtension_vertex _ v
 
 /-- On a closed simplex `σ`, the secant map is the combination of the values of `f` at the
 vertices of `σ`, weighted by the barycentric coordinates. -/
 theorem secantMap_faceInclusion (f : Realization K → E) (σ : Face K) (x : StandardSimplex σ.val) :
-    K.secantMap f (faceInclusion K σ x) = ∑ a : σ.val, x.val a • f (vertex K a) := by
-  rw [secantMap_apply, faceInclusion_val, Finsupp.sum_of_support_subset x.val
-    (StandardSimplex.support_subset x) (fun v t => t • f (vertex K v))
-    fun _ _ => zero_smul ℝ _]
-  exact (Finset.sum_coe_sort σ.val fun a => x.val a • f (vertex K a)).symm
+    K.secantMap f (faceInclusion K σ x) = ∑ a : σ.val, x.val a • f (vertex K a) :=
+  linearExtension_faceInclusion _ σ x
 
 /-- The secant map is continuous. -/
-theorem continuous_secantMap (f : Realization K → E) : Continuous (K.secantMap f) := by
-  refine continuous_iff_faceInclusion.mpr fun σ => ?_
-  have hcoord (a : ι) : Continuous fun x : StandardSimplex σ.val => x.val a :=
-    (continuous_apply a).comp continuous_induced_dom
-  simp_rw [comp_def, secantMap_faceInclusion]
-  exact continuous_finsetSum _ fun a _ => (hcoord a).smul continuous_const
+theorem continuous_secantMap (f : Realization K → E) : Continuous (K.secantMap f) :=
+  continuous_linearExtension _
 
 /-- Taking secant maps is idempotent: the secant map of a secant map is itself. -/
 @[simp]

@@ -1,0 +1,154 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
+
+/-!
+# The vertex scheme of a geometric simplicial complex
+
+A geometric simplicial complex `K` in a module `E` over an ordered ring `𝕜` (Mathlib's
+`Geometry.SimplicialComplex`) determines an abstract simplicial complex, its *vertex scheme*
+`K.vertexScheme`: the vertices are the points of `K.vertices`, and a finite set of vertices is a
+face exactly when it is a face of `K`. The faces of the vertex scheme correspond to the faces of
+`K` (`Geometry.SimplicialComplex.vertexSchemeFaceEquiv`), the vertices of each face are affinely
+independent, and a subcomplex `K ≤ L` induces a simplicial map of vertex schemes along the
+inclusion of vertices.
+
+## Main definitions
+
+* `Geometry.SimplicialComplex.vertexScheme`: the abstract simplicial complex of a geometric one.
+* `Geometry.SimplicialComplex.vertexSchemeFaceEquiv`: the faces of the vertex scheme are the faces
+  of the geometric complex.
+* `Geometry.SimplicialComplex.vertexSchemeInclusion`: the simplicial map of vertex schemes induced
+  by a subcomplex.
+
+## Main results
+
+* `Geometry.SimplicialComplex.mem_faces_iff_exists_mem_vertexScheme`: the faces of `K` are exactly
+  the faces of its vertex scheme.
+* `Geometry.SimplicialComplex.affineIndependent_vertexScheme_face`: the vertices of a face of the
+  vertex scheme are affinely independent.
+
+## References
+
+* C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer (1972),
+  Chapter 2 (simplicial complexes and their vertex schemes).
+* E. H. Spanier, *Algebraic Topology*, McGraw-Hill (1966), Chapter 3, Section 1 (the vertex scheme
+  of a geometric complex).
+-/
+
+public section
+
+open Set Function AbstractSimplicialComplex TauCeti.SetLike
+
+namespace Geometry.SimplicialComplex
+
+variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  (K : SimplicialComplex 𝕜 E)
+
+/-- The *vertex scheme* of a geometric simplicial complex `K`: the abstract simplicial complex on
+the vertices of `K` whose faces are the faces of `K`. -/
+def vertexScheme : AbstractSimplicialComplex K.vertices :=
+  PreAbstractSimplicialComplex.toAbstractSimplicialComplex K.vertices
+    (K.toPreAbstractSimplicialComplex.restrict K.vertices) fun v => by
+      rw [PreAbstractSimplicialComplex.mem_faces,
+        PreAbstractSimplicialComplex.mem_restrict_iff_map, Finset.map_singleton]
+      exact v.property
+
+variable {K}
+
+/-- A finite set of vertices is a face of the vertex scheme exactly when, as a finite set of
+points, it is a face of the geometric complex. -/
+@[simp]
+theorem mem_vertexScheme_iff {σ : Finset K.vertices} :
+    σ ∈ K.vertexScheme ↔ σ.map (Embedding.subtype (· ∈ K.vertices)) ∈ K.faces := by
+  rw [← mem_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.mem_restrict_iff_map _ _ σ
+
+/-- Every point of a face of a geometric complex is a vertex. -/
+theorem mem_vertices_of_mem_faces {s : Finset E} (hs : s ∈ K.faces) {x : E} (hx : x ∈ s) :
+    x ∈ K.vertices :=
+  K.down_closed hs (Finset.singleton_subset_iff.mpr hx) (Finset.singleton_nonempty x)
+
+variable (K) in
+/-- The faces of the vertex scheme of `K` are the faces of `K`, read as finite sets of points. -/
+noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces where
+  toFun σ := ⟨σ.val.map (Embedding.subtype (· ∈ K.vertices)), mem_vertexScheme_iff.mp σ.property⟩
+  invFun s := by
+    classical
+    exact ⟨s.val.subtype (· ∈ K.vertices), by
+      rw [mem_vertexScheme_iff,
+        Finset.subtype_map_of_mem fun _ => mem_vertices_of_mem_faces s.property]
+      exact s.property⟩
+  left_inv σ := by
+    classical
+    exact Subtype.ext (Finset.map_injective (Embedding.subtype (· ∈ K.vertices))
+      (Finset.subtype_map_of_mem fun _ => Finset.property_of_mem_map_subtype σ.val))
+  right_inv s := by
+    classical
+    exact Subtype.ext (Finset.subtype_map_of_mem fun _ => mem_vertices_of_mem_faces s.property)
+
+/-- The face of `K` corresponding to a face of the vertex scheme is its set of points. -/
+@[simp]
+theorem vertexSchemeFaceEquiv_apply_coe (σ : Face K.vertexScheme) :
+    (K.vertexSchemeFaceEquiv σ : Finset E) = σ.val.map (Embedding.subtype (· ∈ K.vertices)) :=
+  (rfl)
+
+/-- The face of the vertex scheme corresponding to a face of `K` has the points of that face. -/
+@[simp]
+theorem map_vertexSchemeFaceEquiv_symm_apply_coe (s : K.faces) :
+    (K.vertexSchemeFaceEquiv.symm s).val.map (Embedding.subtype (· ∈ K.vertices)) = s := by
+  rw [← vertexSchemeFaceEquiv_apply_coe, Equiv.apply_symm_apply]
+
+/-- The faces of a geometric complex are exactly the faces of its vertex scheme, read as finite
+sets of points. -/
+theorem mem_faces_iff_exists_mem_vertexScheme {s : Finset E} :
+    s ∈ K.faces ↔ ∃ σ ∈ K.vertexScheme, σ.map (Embedding.subtype (· ∈ K.vertices)) = s :=
+  ⟨fun hs => ⟨_, (K.vertexSchemeFaceEquiv.symm ⟨s, hs⟩).property,
+      map_vertexSchemeFaceEquiv_symm_apply_coe ⟨s, hs⟩⟩,
+    fun ⟨_, hσ, hs⟩ => hs ▸ mem_vertexScheme_iff.mp hσ⟩
+
+/-- The points of a face of the vertex scheme are the points of the corresponding face of `K`. -/
+theorem range_vertexScheme_face (σ : Face K.vertexScheme) :
+    range (fun a : σ.val => ((a : K.vertices) : E)) =
+      (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
+  ext x
+  simp
+
+/-- The vertices of a face of the vertex scheme are affinely independent points of `E`. -/
+theorem affineIndependent_vertexScheme_face (σ : Face K.vertexScheme) :
+    AffineIndependent 𝕜 fun a : σ.val => ((a : K.vertices) : E) :=
+  (K.indep (mem_vertexScheme_iff.mp σ.property)).comp_embedding
+    ⟨fun a => ⟨a.val.val, Finset.mem_map_of_mem _ a.property⟩, fun a b hab =>
+      Subtype.ext (Subtype.ext (by simpa using congrArg Subtype.val hab))⟩
+
+/-! ### Subcomplexes -/
+
+/-- The vertices of a subcomplex are vertices of the larger complex. -/
+theorem vertices_mono {L : SimplicialComplex 𝕜 E} (h : K ≤ L) : K.vertices ⊆ L.vertices :=
+  fun _ hx => h hx
+
+/-- A subcomplex `K ≤ L` induces the simplicial map of vertex schemes sending each vertex of `K`
+to itself, as a vertex of `L`. -/
+def vertexSchemeInclusion [DecidableEq E] {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
+    PreAbstractSimplicialComplex.SimplicialMap K.vertexScheme.toPreAbstractSimplicialComplex
+      L.vertexScheme.toPreAbstractSimplicialComplex where
+  toFun := inclusion (vertices_mono h)
+  map_face' σ hσ := by
+    rw [mem_toPreAbstractSimplicialComplex] at hσ ⊢
+    rw [mem_vertexScheme_iff, Finset.map_eq_image, Finset.image_image]
+    rw [mem_vertexScheme_iff, Finset.map_eq_image] at hσ
+    exact h hσ
+
+/-- The simplicial map induced by a subcomplex is the inclusion of vertices. -/
+@[simp]
+theorem coe_vertexSchemeInclusion [DecidableEq E] {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
+    ⇑(vertexSchemeInclusion h) = inclusion (vertices_mono h) :=
+  (rfl)
+
+end Geometry.SimplicialComplex
