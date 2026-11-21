@@ -188,7 +188,7 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
   -- `x` is `u₀` plus the primitive of `M x + F` on `(a, b)`, so it has weak derivative `M x + F`.
   have hxg := ((hasWeakLineDerivOn_const (μ := volume) (Ω := ⟨Ioo a b, isOpen_Ioo⟩) (v := 1)
     u₀).add (hasWeakLineDerivOn_intervalIntegral_left
-      (integrableOn_clm_apply_add hM hMK hF hx))).congr_ae
+      (integrableOn_clm_apply_add (Integrable.of_bound hM _ hMK) hF hx))).congr_ae
     ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht ↦
       (hxeq t (Ioo_subset_Icc_self ht)).symm)) |>.congr_ae_deriv (EventuallyEq.of_eq (zero_add _))
   -- Applying `G` gives the weak derivative `G (M x + F) = f - A x` of `G x`.
