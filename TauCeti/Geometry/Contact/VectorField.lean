@@ -52,7 +52,8 @@ the multiplier between the forms, as in `TauCeti.SmoothForm.IsContactForm.jacobi
 ## Main results
 
 * `TauCeti.PreservesDistribution.apply_eq_zero`: a contact vector field tangent to a contact
-  structure near a point vanishes there.
+  structure near a point vanishes there; `TauCeti.PreservesDistributionAt.apply_eq_zero` only
+  assumes that the field preserves the contact structure at that point.
 * `TauCeti.PreservesDistribution.eq_of_forall_mkQ_eq`: a contact vector field is determined by its
   section of the contact line.
 * `TauCeti.SmoothForm.preservesDistribution_kerDistribution_iff_mlieDerivForm`: `X` preserves
@@ -86,15 +87,17 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-! ### Contact vector fields of a contact structure -/
 
-namespace PreservesDistribution
+section ContactDistribution
 
 variable [IsManifold I 2 M] {D : Π x : M, Submodule ℝ (TangentSpace I x)}
 
-/-- **A contact vector field tangent to the contact structure vanishes.** If a vector field `X`
-preserves a smooth contact structure `D`, is differentiable at `x` and is tangent to `D` near `x`,
-then `X x = 0`: the Levi form of `D` pairs `X x` trivially with all of `D x`. -/
-theorem apply_eq_zero (hD : IsContactDistribution I ∞ D) (hX : PreservesDistribution I D X)
-    {x : M} (hXd : MDiffAt (T% X) x) (hXD : ∀ᶠ y in 𝓝 x, X y ∈ D y) : X x = 0 := by
+/-- **A vector field preserving a contact structure at a point and tangent to it there vanishes.**
+If a vector field `X` preserves a smooth contact structure `D` at `x`, is differentiable at `x` and
+is tangent to `D` near `x`, then `X x = 0`: the Levi form of `D` pairs `X x` trivially with all of
+`D x`. -/
+theorem PreservesDistributionAt.apply_eq_zero (hD : IsContactDistribution I ∞ D) {x : M}
+    (hX : PreservesDistributionAt I D X x) (hXd : MDiffAt (T% X) x)
+    (hXD : ∀ᶠ y in 𝓝 x, X y ∈ D y) : X x = 0 := by
   have hDs := hD.isContMDiffDistribution
   -- The Levi form vanishes on `X x`: test it against a smooth extension of each `v ∈ D x`.
   have hL : distributionLeviForm D x ⟨X x, hXD.self_of_nhds⟩ = 0 := by
@@ -103,9 +106,18 @@ theorem apply_eq_zero (hD : IsContactDistribution I ∞ D) (hX : PreservesDistri
     have hWd : MDiffAt (T% W) x := (hW.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt (by simp)
     rw [show v = ⟨W x, hWD x hxU⟩ from Subtype.ext hWx.symm, LinearMap.zero_apply]
     exact (distributionLeviForm_apply_eq_zero_iff hDs (by simp) hXd hWd hXD
-      (eventually_of_mem (hU.mem_nhds hxU) hWD)).2 (preservesDistribution_iff.1 hX hU hW hWD x hxU)
+      (eventually_of_mem (hU.mem_nhds hxU) hWD)).2 (preservesDistributionAt_iff.1 hX hU hxU hW hWD)
   have h := (hD.bijective_distributionLeviForm x).injective (hL.trans (map_zero _).symm)
   exact congrArg Subtype.val h
+
+namespace PreservesDistribution
+
+/-- **A contact vector field tangent to the contact structure vanishes.** If a vector field `X`
+preserves a smooth contact structure `D`, is differentiable at `x` and is tangent to `D` near `x`,
+then `X x = 0`: the Levi form of `D` pairs `X x` trivially with all of `D x`. -/
+theorem apply_eq_zero (hD : IsContactDistribution I ∞ D) (hX : PreservesDistribution I D X)
+    {x : M} (hXd : MDiffAt (T% X) x) (hXD : ∀ᶠ y in 𝓝 x, X y ∈ D y) : X x = 0 :=
+  (hX.preservesDistributionAt x).apply_eq_zero hD hXd hXD
 
 /-- **A contact vector field is determined by its section of the contact line.** Two
 differentiable vector fields preserving a smooth contact structure `D`, whose classes in the
@@ -120,6 +132,8 @@ theorem eq_of_forall_mkQ_eq (hD : IsContactDistribution I ∞ D) (hX : Preserves
     (Eventually.of_forall fun z ↦ (Submodule.Quotient.eq _).1 (h z))
 
 end PreservesDistribution
+
+end ContactDistribution
 
 /-! ### Kernels of one-forms -/
 

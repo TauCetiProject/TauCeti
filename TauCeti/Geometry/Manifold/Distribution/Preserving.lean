@@ -35,9 +35,16 @@ The vector fields preserving `D` form a Lie algebra:
 If `D` is involutive, every differentiable vector field tangent to `D` preserves `D`
 (`TauCeti.IsInvolutiveDistribution.preservesDistribution`).
 
+The condition is pointwise: `X` preserves `D` at `x` (`TauCeti.PreservesDistributionAt I D X x`)
+when its bracket at `x` with every vector field smooth and tangent to `D` near `x` lies in `D x`.
+This only depends on the germ of `X` at `x`, and `X` preserves `D` exactly when it does so at every
+point (`TauCeti.preservesDistribution_iff_forall_preservesDistributionAt`). So vector fields
+preserving `D` near each point can be glued.
+
 ## Main definitions
 
 * `TauCeti.PreservesDistribution I D X`: the vector field `X` preserves the distribution `D`.
+* `TauCeti.PreservesDistributionAt I D X x`: the vector field `X` preserves `D` at the point `x`.
 
 ## References
 
@@ -81,6 +88,57 @@ theorem preservesDistribution_iff : PreservesDistribution I D X ↔
 theorem preservesDistribution_zero : PreservesDistribution I D 0 := fun _ _ _ _ _ x _ ↦ by
   rw [mlieBracket_zero_left]
   exact zero_mem _
+
+/-! ### Preserving a distribution at a point -/
+
+variable (I) in
+/-- A vector field `X` **preserves** the distribution `D` **at** `x` when, for every open set `U`
+containing `x` and every vector field `V` that is smooth and tangent to `D` on `U`, the Lie bracket
+`[X, V]` at `x` lies in `D x`. This condition only depends on the germ of `X` at `x`
+(`TauCeti.PreservesDistributionAt.congr_of_eventuallyEq`), and `X` preserves `D` exactly when it
+preserves `D` at every point (`TauCeti.preservesDistribution_iff_forall_preservesDistributionAt`).
+-/
+def PreservesDistributionAt (D : Π x : M, Submodule 𝕜 (TangentSpace I x))
+    (X : Π x : M, TangentSpace I x) (x : M) : Prop :=
+  ∀ ⦃U : Set M⦄, IsOpen U → x ∈ U → ∀ ⦃V : Π x : M, TangentSpace I x⦄,
+    CMDiff[U] ∞ (T% V) → (∀ y ∈ U, V y ∈ D y) → mlieBracket I X V x ∈ D x
+
+/-- The defining property of a vector field preserving a distribution at a point. -/
+theorem preservesDistributionAt_iff {x : M} : PreservesDistributionAt I D X x ↔
+    ∀ ⦃U : Set M⦄, IsOpen U → x ∈ U → ∀ ⦃V : Π x : M, TangentSpace I x⦄,
+      CMDiff[U] ∞ (T% V) → (∀ y ∈ U, V y ∈ D y) → mlieBracket I X V x ∈ D x :=
+  Iff.rfl
+
+/-- **Preserving a distribution is a pointwise condition.** -/
+theorem preservesDistribution_iff_forall_preservesDistributionAt :
+    PreservesDistribution I D X ↔ ∀ x, PreservesDistributionAt I D X x :=
+  ⟨fun h x _ hU hx _ hV hVD ↦ h hU hV hVD x hx, fun h _ hU _ hV hVD x hx ↦ h x hU hx hV hVD⟩
+
+/-- A vector field preserving `D` preserves `D` at every point. -/
+theorem PreservesDistribution.preservesDistributionAt (h : PreservesDistribution I D X) (x : M) :
+    PreservesDistributionAt I D X x :=
+  preservesDistribution_iff_forall_preservesDistributionAt.1 h x
+
+namespace PreservesDistributionAt
+
+variable {x : M}
+
+/-- Preserving `D` at `x` only depends on the germ of the vector field at `x`. -/
+theorem congr_of_eventuallyEq (h : PreservesDistributionAt I D X x) (hXY : X =ᶠ[𝓝 x] Y) :
+    PreservesDistributionAt I D Y x := fun _ hU hx V hV hVD ↦ by
+  have h' := h hU hx hV hVD
+  rwa [hXY.mlieBracket_vectorField_eq (Filter.EventuallyEq.refl (𝓝 x) V)] at h'
+
+/-- The difference of two vector fields preserving `D` at `x`, both differentiable at `x`,
+preserves `D` at `x`. -/
+theorem sub [IsManifold I 2 M] [CompleteSpace E] (hX : PreservesDistributionAt I D X x)
+    (hY : PreservesDistributionAt I D Y x) (hXd : MDiffAt (T% X) x) (hYd : MDiffAt (T% Y) x) :
+    PreservesDistributionAt I D (X - Y) x := fun _ hU hx _ hV hVD ↦ by
+  rw [sub_eq_add_neg, mlieBracket_add_left hXd (mdifferentiableAt_neg_section hYd),
+    mlieBracket_neg_left, ← sub_eq_add_neg]
+  exact sub_mem (hX hU hx hV hVD) (hY hU hx hV hVD)
+
+end PreservesDistributionAt
 
 namespace PreservesDistribution
 
