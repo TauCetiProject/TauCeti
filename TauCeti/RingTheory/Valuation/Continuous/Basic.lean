@@ -183,7 +183,7 @@ theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation 
   have hcont : Continuous fun y : A ↦ y - a := by
     simpa only [sub_eq_add_neg] using continuous_add_const (-a)
   refine ((hv b).preimage hcont).mem_nhds ?_
-  simpa using zero_lt_iff.mpr hb
+  simpa using pos_iff_ne_zero.mpr hb
 
 /-- **Continuity under refinement.** If `w` is continuous, vanishes only where `v` does, and
 `w a < w b` forces `v a < v b`, then `v` is continuous: around each `x` with `v x < v b`, the
@@ -301,7 +301,7 @@ theorem IsContinuous.isOpen_lt_div [ContinuousConstSMul Aᵐᵒᵖ A] {v : Valua
     (hv : v.IsContinuous)
     (b : A) {c : A} (hc : v c ≠ 0) : IsOpen {a : A | v a < v b / v c} := by
   -- the set is the preimage of `{x | v x < v b}` under multiplication by `c` on the right
-  simpa [lt_div_iff₀ (zero_lt_iff.mpr hc)] using
+  simpa [lt_div_iff₀ (pos_iff_ne_zero.mpr hc)] using
     (hv b).preimage (continuous_const_smul (MulOpposite.op c))
 
 /-- **Wedhorn's quantifier in full, as an equivalence.** Continuity is exactly openness of
@@ -321,7 +321,7 @@ attained-value one under multiplication by `c`. -/
 theorem IsContinuous.isOpen_le_div [SeparatelyContinuousAdd A] [ContinuousConstSMul Aᵐᵒᵖ A]
     {v : Valuation A Γ₀} (hv : v.IsContinuous) {b c : A} (hb : v b ≠ 0) (hc : v c ≠ 0) :
     IsOpen {a : A | v a ≤ v b / v c} := by
-  simpa [le_div_iff₀ (zero_lt_iff.mpr hc)] using
+  simpa [le_div_iff₀ (pos_iff_ne_zero.mpr hc)] using
     (hv.isOpen_le hb).preimage (continuous_const_smul (MulOpposite.op c))
 
 open scoped WithZeroTopology in
@@ -355,7 +355,7 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
     rw [ContinuousAt, ha, WithZeroTopology.tendsto_zero]
     intro γ hγ
     obtain ⟨b, c, hb, hc, hle⟩ := hΓ γ hγ
-    have hpos : (0 : Γ₀) < v b / v c := zero_lt_iff.mpr (div_ne_zero hb hc)
+    have hpos : (0 : Γ₀) < v b / v c := pos_iff_ne_zero.mpr (div_ne_zero hb hc)
     filter_upwards [(hv.isOpen_lt_div b hc).mem_nhds (by simpa [ha] using hpos)] with x hx
     exact hx.trans_le hle
   · -- off the support `v` is locally constant, by the strict triangle equality

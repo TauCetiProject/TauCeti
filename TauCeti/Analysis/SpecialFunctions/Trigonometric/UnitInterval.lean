@@ -38,13 +38,13 @@ namespace TauCeti
 theorem cos_pi_mul_strictAnti : StrictAnti (fun t : I => cos (π * t)) := by
   intro a b hab
   refine strictAntiOn_cos ?_ ?_ (mul_lt_mul_of_pos_left (Subtype.coe_lt_coe.2 hab) pi_pos)
-  · exact ⟨by positivity [a.2.1], mul_le_of_le_one_right pi_pos.le a.2.2⟩
-  · exact ⟨by positivity [b.2.1], mul_le_of_le_one_right pi_pos.le b.2.2⟩
+  · exact ⟨by positivity [a.property.1], mul_le_of_le_one_right pi_pos.le a.property.2⟩
+  · exact ⟨by positivity [b.property.1], mul_le_of_le_one_right pi_pos.le b.property.2⟩
 
 /-- `sin (π t)` is positive on the open unit interval. -/
 theorem sin_pi_mul_pos {t : I} (h0 : t ≠ 0) (h1 : t ≠ 1) : 0 < sin (π * t) := by
-  have ht0 : 0 < (t : ℝ) := lt_of_le_of_ne t.2.1 fun h => h0 (Subtype.ext h.symm)
-  have ht1 : (t : ℝ) < 1 := lt_of_le_of_ne t.2.2 fun h => h1 (Subtype.ext h)
+  have ht0 : 0 < (t : ℝ) := lt_of_le_of_ne t.property.1 fun h => h0 (Subtype.ext h.symm)
+  have ht1 : (t : ℝ) < 1 := lt_of_le_of_ne t.property.2 fun h => h1 (Subtype.ext h)
   exact sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
 
 /-- Every point `(a, b)` of the unit circle is `(cos 2πt, sin 2πt)` for some `t` in the unit

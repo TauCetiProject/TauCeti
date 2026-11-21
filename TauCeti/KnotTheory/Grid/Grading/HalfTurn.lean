@@ -95,7 +95,7 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 @[simp]
 theorem alexanderℤ_rotate_halfTurn (x : GridState n) :
     G.rotate.alexanderℤ x.halfTurn = G.alexanderℤ x := by
-  have h := G.1.alexander_rotate_halfTurn x
+  have h := G.val.alexander_rotate_halfTurn x
   rw [← G.val_rotate, alexander_eq_intCast, alexander_eq_intCast] at h
   exact_mod_cast h
 

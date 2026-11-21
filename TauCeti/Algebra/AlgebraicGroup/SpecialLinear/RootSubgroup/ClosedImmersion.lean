@@ -61,12 +61,12 @@ noncomputable def rootSubgroupClosedSubgroup (hij : i ≠ j) :
 /-- The special-linear root map represents its named closed root subgroup. -/
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup (hij : i ≠ j) :
-    (rootSubgroupClosedSubgroup (R := R) hij).1 = Subobject.mk (rootSubgroup hij) :=
+    (rootSubgroupClosedSubgroup (R := R) hij).val = Subobject.mk (rootSubgroup hij) :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- The closed special-linear root subgroup is canonically isomorphic to `𝔾ₐ`. -/
 noncomputable def rootSubgroupClosedSubgroupIso (hij : i ≠ j) :
-    ((rootSubgroupClosedSubgroup (R := R) hij).1 :
+    ((rootSubgroupClosedSubgroup (R := R) hij).val :
       Grp (Over (Spec (CommRingCat.of R)))) ≅ AdditiveGroup.groupScheme R :=
   ClosedSubgroupScheme.mkIso (rootSubgroup hij)
 
@@ -75,7 +75,7 @@ root map. -/
 @[simp]
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (hij : i ≠ j) :
     (rootSubgroupClosedSubgroupIso (R := R) hij).inv ≫
-        (rootSubgroupClosedSubgroup (R := R) hij).1.arrow = rootSubgroup hij :=
+        (rootSubgroupClosedSubgroup (R := R) hij).val.arrow = rootSubgroup hij :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow _
 
 /-! ### The Hopf ideal of a root subgroup -/
