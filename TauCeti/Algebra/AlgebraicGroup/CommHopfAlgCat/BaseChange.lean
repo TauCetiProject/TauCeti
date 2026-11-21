@@ -247,12 +247,8 @@ bialgebra tower comparison. -/
 lemma baseChangeTowerIso_inv_hom (H : _root_.CommHopfAlgCat.{v} k) :
     (baseChangeTowerIso (E := E) k K H).inv.hom =
       (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k E H K).symm.toBialgHom := by
-  ext x
-  induction x using _root_.TensorProduct.inductionOn with
-  | add a b ha hb => simp only [map_add, ha, hb]
-  | tmul s h =>
-    rw [baseChangeTowerIso_inv_apply, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_coe,
-      TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul]
+  simp only [baseChangeTowerIso, _root_.CommHopfAlgCat.isoMk_inv, _root_.CommHopfAlgCat.hom_ofHom,
+    BialgEquiv.toBialgHom_eq_coe]
 
 end Tower
 

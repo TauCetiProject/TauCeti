@@ -51,7 +51,6 @@ pure tensors over a finite spanning family of the right factor.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
-* `TensorProduct.map_apply_symm_left`: applying `e ⊗ id` after `e.symm ⊗ id` is the identity.
 
 ## References
 
@@ -421,11 +420,5 @@ trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
-
-/-- Applying `e ⊗ id` after `e.symm ⊗ id` on the left factor is the identity on `P ⊗[R] N`. -/
-theorem map_apply_symm_left (e : M ≃ₗ[R] P) (y : P ⊗[R] N) :
-    map e.toLinearMap LinearMap.id (map e.symm.toLinearMap LinearMap.id y) = y := by
-  rw [← LinearMap.comp_apply, ← map_comp, LinearMap.id_comp, LinearEquiv.comp_symm, map_id,
-    LinearMap.id_apply]
 
 end TensorProduct

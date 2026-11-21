@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.Algebra.TensorProduct.Galois
-import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Descent of Hopf ideals
@@ -41,8 +40,6 @@ field, whose algebraic closure is Galois.
   consists of the elements `h` with `1 ⊗ h` in the Galois-stable Hopf ideal.
 * `TauCeti.CommHopfAlgCat.existsUnique_baseChangeHopfIdeal_eq_iff`: along a Galois extension, the
   base-changed Hopf ideals are exactly the Galois-stable ones, each descending uniquely.
-* `TauCeti.CommHopfAlgCat.existsUnique_baseChangeHopfIdeal_eq_iff_mapBaseChangeHopfIdeal`:
-  restates Galois stability directly in terms of `mapBaseChangeHopfIdeal`.
 
 ## References
 
@@ -152,24 +149,6 @@ theorem existsUnique_baseChangeHopfIdeal_eq_iff (I : HopfIdeal L (baseChange (K 
     have hb := b.baseChangeHopfIdeal_coefficientHopfIdeal_of_forall_map_mem I hI
     exact ⟨b.coefficientHopfIdeal I, hb, fun J hJ ↦
       baseChangeHopfIdeal_injective (hJ.trans hb.symm)⟩
-
-/-- Along a Galois extension `L / k`, a Hopf ideal of `L ⊗[k] H` descends uniquely to `H` exactly
-when it is fixed by `mapBaseChangeHopfIdeal σ` for every `σ ∈ Gal(L / k)`. -/
-theorem existsUnique_baseChangeHopfIdeal_eq_iff_mapBaseChangeHopfIdeal
-    (I : HopfIdeal L (baseChange (K := L) H)) :
-    (∃! J : HopfIdeal k H, baseChangeHopfIdeal (K := L) J = I) ↔
-      ∀ σ : L ≃ₐ[k] L, mapBaseChangeHopfIdeal σ I = I := by
-  rw [existsUnique_baseChangeHopfIdeal_eq_iff]
-  refine ⟨fun hI σ ↦ ?_, fun hI σ x hx ↦ ?_⟩
-  · ext y
-    rw [mem_mapBaseChangeHopfIdeal_iff]
-    refine ⟨fun hy ↦ ?_, fun hy ↦ hI σ.symm y hy⟩
-    have hy' : TensorProduct.map σ.toLinearEquiv.toLinearMap LinearMap.id
-        (TensorProduct.map σ.toLinearEquiv.symm.toLinearMap LinearMap.id y) ∈ I :=
-      hI σ _ hy
-    rwa [TensorProduct.map_apply_symm_left] at hy'
-  · rw [← hI σ, mem_mapBaseChangeHopfIdeal_map_iff]
-    exact hx
 
 end Galois
 

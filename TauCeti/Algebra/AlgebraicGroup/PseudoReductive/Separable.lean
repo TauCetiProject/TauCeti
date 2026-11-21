@@ -47,10 +47,6 @@ groups from reductive groups over imperfect fields.
   a pseudo-reductive group remains pseudo-reductive over `K / k` iff the `K`-unipotent radical
   descends to `k`.
 * `TauCeti.pseudoReductiveCommHopfAlgProperty.
-    reductive_iff_baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_eq`:
-  a pseudo-reductive group is reductive iff its geometric unipotent radical equals the base change
-  of its `k`-unipotent radical.
-* `TauCeti.pseudoReductiveCommHopfAlgProperty.
     reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal`:
   a pseudo-reductive group over `k` is reductive iff its geometric unipotent radical descends to
   `k`.
@@ -117,21 +113,6 @@ theorem baseChange_algebraicClosure_iff_reductive
   exact ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj)
       (AlgebraicClosure k),
     geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k) H.obj hc, hr⟩
-
-/-- **Descent obstruction to reductivity.** A pseudo-reductive group over an arbitrary field `k`
-is reductive if and only if the geometric unipotent radical equals the base change of the
-`k`-unipotent radical. -/
-theorem reductive_iff_baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_eq
-    (hH : pseudoReductiveCommHopfAlgProperty k H) :
-    reductiveCommHopfAlgProperty k H ↔
-      CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k)
-          (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H) =
-        FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) := by
-  rw [reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation,
-    hH.unipotentRadicalDefiningIdeal_eq_augmentation,
-    CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
-  exact ⟨fun ⟨_, _, h⟩ ↦ h.symm, fun h ↦ ⟨hH.smooth, hH.geometricallyConnected, h.symm⟩⟩
 
 /-- **Descent obstruction for pseudo-reductive groups.** A pseudo-reductive group over `k` is
 reductive if and only if its geometric unipotent radical over `AlgebraicClosure k` descends to
