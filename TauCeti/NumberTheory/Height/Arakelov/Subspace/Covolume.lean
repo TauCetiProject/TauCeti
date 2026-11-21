@@ -611,10 +611,10 @@ variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Fintype ι] [Line
 
 open scoped Classical in
 /-- **The covolume of the lattice of integral solutions of `A x = 0` over a number field.**
-For any `m × ι` matrix `A` over `K` (without any row-independence assumption), the lattice of
-integral solutions `(LinearMap.ker A.mulVecLin).integerLattice` in the real span of `ker A` has
-covolume `((2⁻¹) ^ nrComplexPlaces K * √|discr K|) ^ finrank K (ker A)` times the `[K : ℚ]`-th
-power of the absolute Euclidean height of the row space of `A`. -/
+For any `m × ι` matrix `A` over `K` (without any row-independence or row-finiteness assumption), the
+lattice of integral solutions `(LinearMap.ker A.mulVecLin).integerLattice` in the real span of
+`ker A` has covolume `((2⁻¹) ^ nrComplexPlaces K * √|discr K|) ^ finrank K (ker A)` times the
+`[K : ℚ]`-th power of the absolute Euclidean height of the row space of `A`. -/
 theorem covolume_integerLattice_ker_mulVecLin (A : Matrix m ι K) :
     ZLattice.covolume (LinearMap.ker A.mulVecLin).integerLattice =
       ((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|discr K|) ^ finrank K (LinearMap.ker A.mulVecLin) *

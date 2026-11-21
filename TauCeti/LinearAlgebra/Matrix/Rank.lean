@@ -47,7 +47,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_eq_card_iff_vecMul_injective` characterizes full row rank by injectivity of right
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
-  matrix-vector multiplication.
+  matrix-vector multiplication, and `Matrix.ker_mulVecLin_ne_bot_of_rank_lt` deduces a nontrivial
+  kernel when the rank is less than the number of columns.
 * `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
   rows.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
@@ -270,6 +271,14 @@ theorem rank_eq_card_iff_mulVec_injective (B : Matrix m n R) :
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
 end FullColumnRank
+
+/-- If a matrix has rank strictly less than its number of columns, its kernel is nontrivial.
+The row index type need not be finite. -/
+theorem ker_mulVecLin_ne_bot_of_rank_lt {R m n : Type*} [CommRing R] [OrzechProperty R]
+    [Nontrivial R] [Fintype n] {A : Matrix m n R} (hA : A.rank < Fintype.card n) :
+    LinearMap.ker A.mulVecLin ≠ ⊥ := by
+  rw [ne_eq, LinearMap.ker_eq_bot, coe_mulVecLin, ← rank_eq_card_iff_mulVec_injective]
+  exact hA.ne
 
 section FiniteRows
 

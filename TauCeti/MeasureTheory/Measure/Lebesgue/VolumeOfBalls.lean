@@ -14,11 +14,12 @@ import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 Mathlib computes the volume of a ball in a finite-dimensional real inner product space as an
 extended nonnegative real (`InnerProductSpace.volume_ball`). This file records the real volume of
-the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimension, which is the
-form used in normalizing constants. It also shows that every finite-dimensional real inner
-product space has a closed ball of volume one about the origin, that a closed ball of
-radius `r` in a one-dimensional space has volume `2 * r`, that a ball of radius `r` in `ℝ × ℝ`, a
-square of side `2 * r` for the sup norm, has real volume `(2 * r) ^ 2`, and that a disc of radius
+the open and closed unit balls in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the
+dimension, which is the form used in normalizing constants. It also shows that every
+finite-dimensional real inner product space has a closed ball of volume one about the origin, that a
+closed ball of radius `r` in a one-dimensional space has volume `2 * r`, that a ball of radius `r`
+in `ℝ × ℝ`, a square of side `2 * r` for the sup norm, has real volume `(2 * r) ^ 2`, and that a
+disc of radius
 `r` in `ℂ` has real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
 -/
 
@@ -42,6 +43,14 @@ theorem volume_real_unitBall :
       (ball (0 : V) 1).Nonempty), finrank_zero_of_subsingleton]
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
     ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
+
+/-- The real volume of the closed unit ball of a real inner product space of dimension `d` is
+`π ^ (d / 2) / Γ(d / 2 + 1)`. -/
+theorem volume_real_unitClosedBall :
+    volume.real (closedBall (0 : V) 1) =
+      π ^ ((finrank ℝ V : ℝ) / 2) / Gamma (finrank ℝ V / 2 + 1) := by
+  rw [measureReal_def, Measure.addHaar_unitClosedBall_eq_addHaar_unitBall, ← measureReal_def,
+    volume_real_unitBall]
 
 /-- There is a closed ball about the origin of volume one. -/
 theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (closedBall (0 : V) ρ) = 1 := by

@@ -31,8 +31,11 @@ In a proper real seminormed space `V`, every closed metric ball `Metric.closedBa
 nonnegative radius `r` is likewise convex, compact, and nonempty, giving `ConvexBody.closedBall`.
 
 The closed unit ball `ConvexBody.closedUnitBall E` has dilates given by closed balls of radius
-`t ≥ 0` and contains the origin in its interior. These facts identify successive minima for the
-closed unit ball with lengths of lattice vectors.
+`t ≥ 0` and contains the origin in its interior. More generally, a set equal to the preimage of
+`Metric.closedBall 0 1` under an injective real linear map from a finite-dimensional Hausdorff real
+topological vector space into a Hausdorff proper real seminormed space is a symmetric convex body
+containing `0` in its interior (`ConvexBody.ofEqPreimageClosedBall`). These facts identify
+successive minima for closed unit balls and their linear slices with norms of lattice vectors.
 
 ## Main definitions
 
@@ -40,6 +43,8 @@ closed unit ball with lengths of lattice vectors.
 * `ConvexBody.closedBall x r hr`: `Metric.closedBall x r` (`0 ≤ r`) as a convex body in a proper
   real seminormed space.
 * `ConvexBody.closedUnitBall E`: the closed unit ball of a proper real normed space.
+* `ConvexBody.ofEqPreimageClosedBall s hf hs`: a set `s = f ⁻¹' Metric.closedBall 0 1` under an
+  injective linear map `f` packaged as a `ConvexBody` with carrier `s`.
 -/
 
 public section
@@ -151,5 +156,84 @@ theorem zero_mem_interior_of_coe_eq_closedBall (hK : (K : Set E) = Metric.closed
   exact mem_interior_iff_mem_nhds.2 (closedBall_mem_nhds 0 one_pos)
 
 end ClosedUnitBall
+
+/-! ### Preimages of the closed unit ball -/
+
+section PreimageClosedBall
+
+open Metric
+
+/-- Package a set `s` equal to the preimage `f ⁻¹' Metric.closedBall 0 1` under an injective real
+linear map `f` from a finite-dimensional Hausdorff real topological vector space into a Hausdorff
+proper real seminormed space as a `ConvexBody` with carrier `s`. -/
+def ofEqPreimageClosedBall {E F : Type*} [TopologicalSpace E] [AddCommGroup E] [Module ℝ E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] [T2Space F] [ProperSpace F] (s : Set E)
+    {f : E →ₗ[ℝ] F} (hf : Function.Injective f) (hs : s = f ⁻¹' Metric.closedBall 0 1) :
+    ConvexBody E where
+  carrier := s
+  convex' := hs ▸ (convex_closedBall 0 1).linear_preimage f
+  isCompact' :=
+    hs ▸ (f.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.2 hf)).isCompact_preimage
+      (isCompact_closedBall 0 1)
+  nonempty' := hs ▸ ⟨0, by simp⟩
+
+/-- The carrier of `ConvexBody.ofEqPreimageClosedBall s hf hs` is `s`. -/
+@[simp, norm_cast]
+theorem coe_ofEqPreimageClosedBall {E F : Type*} [TopologicalSpace E] [AddCommGroup E] [Module ℝ E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] [T2Space F] [ProperSpace F] (s : Set E)
+    {f : E →ₗ[ℝ] F} (hf : Function.Injective f) (hs : s = f ⁻¹' Metric.closedBall 0 1) :
+    (ofEqPreimageClosedBall s hf hs : Set E) = s :=
+  (rfl)
+
+/-- Membership in `ConvexBody.ofEqPreimageClosedBall s hf hs` reduces to membership in `s`. -/
+@[simp]
+theorem mem_ofEqPreimageClosedBall {E F : Type*} [TopologicalSpace E] [AddCommGroup E] [Module ℝ E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] [T2Space F] [ProperSpace F] {s : Set E}
+    {f : E →ₗ[ℝ] F} {hf : Function.Injective f} {hs : s = f ⁻¹' Metric.closedBall 0 1} {x : E} :
+    x ∈ ofEqPreimageClosedBall s hf hs ↔ x ∈ s :=
+  Iff.rfl
+
+/-- A convex body whose carrier is the preimage of `Metric.closedBall 0 1` under a real linear map
+is symmetric about `0`. -/
+theorem neg_mem_of_coe_eq_preimage_closedBall {E F : Type*} [TopologicalSpace E] [AddCommGroup E]
+    [Module ℝ E] [SeminormedAddCommGroup F] [Module ℝ F] {K : ConvexBody E} {f : E →ₗ[ℝ] F}
+    (hK : (K : Set E) = f ⁻¹' Metric.closedBall 0 1) {x : E} :
+    -x ∈ K ↔ x ∈ K := by
+  rw [← SetLike.mem_coe, ← SetLike.mem_coe, hK]
+  simp
+
+/-- In a finite-dimensional Hausdorff real topological vector space, a convex body whose carrier is
+the preimage of `Metric.closedBall 0 1` under a real linear map contains `0` in its interior. -/
+theorem zero_mem_interior_of_coe_eq_preimage_closedBall {E F : Type*} [TopologicalSpace E]
+    [AddCommGroup E] [Module ℝ E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E]
+    [FiniteDimensional ℝ E] [SeminormedAddCommGroup F] [NormedSpace ℝ F] {K : ConvexBody E}
+    {f : E →ₗ[ℝ] F} (hK : (K : Set E) = f ⁻¹' Metric.closedBall 0 1) :
+    0 ∈ interior (K : Set E) := by
+  rw [hK]
+  exact mem_interior_iff_mem_nhds.2 <| Filter.mem_of_superset
+    ((isOpen_ball.preimage f.continuous_of_finiteDimensional).mem_nhds (by simp))
+    (Set.preimage_mono ball_subset_closedBall)
+
+/-- For a convex body `K` whose carrier is the preimage of `Metric.closedBall 0 1` under an
+injective real linear map `f` into a `T₀` real seminormed space and `0 ≤ t`, a point `x` lies in
+`t • K` exactly when `‖f x‖ ≤ t`. -/
+theorem mem_smul_iff_norm_le_of_coe_eq_preimage_closedBall {E F : Type*} [TopologicalSpace E]
+    [AddCommGroup E] [Module ℝ E] [SeminormedAddCommGroup F] [NormedSpace ℝ F] [T0Space F]
+    {K : ConvexBody E} {f : E →ₗ[ℝ] F} (hK : (K : Set E) = f ⁻¹' Metric.closedBall 0 1)
+    (hf : Function.Injective f) {t : ℝ} (ht : 0 ≤ t) {x : E} :
+    x ∈ t • (K : Set E) ↔ ‖f x‖ ≤ t := by
+  rcases ht.eq_or_lt with rfl | ht
+  · let _ : MetricSpace F := .ofT0PseudoMetricSpace F
+    rw [Set.zero_smul_set K.nonempty, Set.mem_zero, ← dist_zero_right, dist_le_zero,
+      map_eq_zero_iff f hf]
+  · rw [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne', hK]
+    simp only [Set.mem_preimage, map_smul, mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs,
+      abs_inv, abs_of_pos ht]
+    exact inv_mul_le_one₀ ht
+
+end PreimageClosedBall
 
 end ConvexBody

@@ -22,7 +22,9 @@ which is closed, this turns bounds on the gauge into membership in a dilate of t
 (`ConvexBody.gauge_le_iff_mem_smul`), which is how successive minima are stated. For such a
 body, the gauge is also positive away from `0` (`ConvexBody.gauge_pos_iff`). The gauge of the
 preimage of a set under a linear map is the gauge of the set at the image point
-(`LinearMap.gauge_preimage`).
+(`LinearMap.gauge_preimage`), so a convex body whose carrier is the preimage of
+`Metric.closedBall 0 1` under `f` has gauge `x ↦ ‖f x‖`
+(`ConvexBody.gauge_of_coe_eq_preimage_closedBall`).
 
 ## References
 
@@ -108,3 +110,11 @@ theorem ConvexBody.gauge_pos_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace
     0 < gauge (K : Set E) x ↔ x ≠ 0 :=
   gauge_pos (absorbent_nhds_zero (mem_interior_iff_mem_nhds.1 hK))
     ((NormedSpace.isVonNBounded_iff ℝ).2 K.isBounded)
+
+/-- For a convex body `K` whose carrier is the preimage of `Metric.closedBall 0 1` under a real
+linear map `f`, the gauge of `K` at `x` is `‖f x‖`. -/
+theorem ConvexBody.gauge_of_coe_eq_preimage_closedBall {E F : Type*} [TopologicalSpace E]
+    [AddCommGroup E] [Module ℝ E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    {K : ConvexBody E} {f : E →ₗ[ℝ] F} (hK : (K : Set E) = f ⁻¹' Metric.closedBall 0 1) (x : E) :
+    gauge (K : Set E) x = ‖f x‖ := by
+  rw [hK, f.gauge_preimage, gauge_closedBall zero_le_one, div_one]
