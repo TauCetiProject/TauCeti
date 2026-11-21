@@ -390,14 +390,14 @@ continuous linear automorphism of `H^s`, for every real `s`; its inverse is mult
 def mulFourierSeriesEquiv (f : AddCircle T → ℂ) (hf : ContDiff ℝ ∞ fun x : ℝ ↦ f x)
     (hf₀ : ∀ x, f x ≠ 0) : CircleSobolev s E ≃L[ℂ] CircleSobolev s E :=
   have hinv : ContDiff ℝ ∞ fun x : ℝ ↦ (f x)⁻¹ := hf.inv fun x ↦ hf₀ x
-  ContinuousLinearEquiv.equivOfInverse (mulFourierSeries (fourierCoeff f))
+  ContinuousLinearEquiv.ofContinuousLinearMap (mulFourierSeries (fourierCoeff f))
     (mulFourierSeries (fourierCoeff fun x ↦ (f x)⁻¹))
-    (fun a ↦ by
-      rw [← ContinuousLinearMap.comp_apply, mulFourierSeries_fourierCoeff_comp hinv hf]
-      simp [inv_mul_cancel₀ (hf₀ _)])
-    (fun a ↦ by
-      rw [← ContinuousLinearMap.comp_apply, mulFourierSeries_fourierCoeff_comp hf hinv]
+    (ContinuousLinearMap.ext fun a ↦ by
+      rw [mulFourierSeries_fourierCoeff_comp hf hinv]
       simp [mul_inv_cancel₀ (hf₀ _)])
+    (ContinuousLinearMap.ext fun a ↦ by
+      rw [mulFourierSeries_fourierCoeff_comp hinv hf]
+      simp [inv_mul_cancel₀ (hf₀ _)])
 
 @[simp]
 theorem coe_mulFourierSeriesEquiv (f : AddCircle T → ℂ) (hf : ContDiff ℝ ∞ fun x : ℝ ↦ f x)
@@ -501,7 +501,7 @@ theorem mulFourierSeries_fourierCoeff_eq_multiplicationOperator {f : C(AddCircle
   refine (toLpₗᵢ T).injective (Lp.ext ?_)
   rw [toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T h₁, toLpₗᵢ_multiplicationOperator,
     toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T h₁]
-  filter_upwards [Lp.multiplicationOperator_ae (E := ℂ) _ _,
+  filter_upwards [Lp.multiplicationOperator_ae (𝕜 := ℂ) (E := ℂ) (p := 2) _ _,
     ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle
       (toContinuousMap T h₁ (mulFourierSeries (fourierCoeff f) (single n x : CircleSobolev 1 ℂ))),
     ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle

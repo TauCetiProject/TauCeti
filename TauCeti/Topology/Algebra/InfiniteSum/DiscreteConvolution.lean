@@ -100,13 +100,13 @@ variable {M R : Type*} [Monoid M]
 -- `a * b = m` and `m * c = x` corresponds to `(a, (b, c))` with `b * c = k` and `a * k = x`.
 @[to_additive]
 private def mulFiberSigmaAssoc (x : M) :
-    (Σ p : mulFiber x, mulFiber p.1.1) ≃ Σ p : mulFiber x, mulFiber p.1.2 where
-  toFun σ := ⟨⟨(σ.2.1.1, σ.2.1.2 * σ.1.1.2), by
-      rw [mem_mulFiber, ← mul_assoc, mem_mulFiber.mp σ.2.2, mem_mulFiber.mp σ.1.2]⟩,
-    ⟨(σ.2.1.2, σ.1.1.2), mem_mulFiber.mpr rfl⟩⟩
-  invFun τ := ⟨⟨(τ.1.1.1 * τ.2.1.1, τ.2.1.2), by
-      rw [mem_mulFiber, mul_assoc, mem_mulFiber.mp τ.2.2, mem_mulFiber.mp τ.1.2]⟩,
-    ⟨(τ.1.1.1, τ.2.1.1), mem_mulFiber.mpr rfl⟩⟩
+    (Σ p : mulFiber x, mulFiber p.val.1) ≃ Σ p : mulFiber x, mulFiber p.val.2 where
+  toFun σ := ⟨⟨(σ.2.val.1, σ.2.val.2 * σ.1.val.2), by
+      rw [mem_mulFiber, ← mul_assoc, mem_mulFiber.mp σ.2.property, mem_mulFiber.mp σ.1.property]⟩,
+    ⟨(σ.2.val.2, σ.1.val.2), mem_mulFiber.mpr rfl⟩⟩
+  invFun τ := ⟨⟨(τ.1.val.1 * τ.2.val.1, τ.2.val.2), by
+      rw [mem_mulFiber, mul_assoc, mem_mulFiber.mp τ.2.property, mem_mulFiber.mp τ.1.property]⟩,
+    ⟨(τ.1.val.1, τ.2.val.1), mem_mulFiber.mpr rfl⟩⟩
   left_inv := by
     rintro ⟨⟨⟨m, c⟩, hm⟩, ⟨⟨a, b⟩, hab⟩⟩
     obtain rfl := mem_mulFiber.mp hab
@@ -128,17 +128,18 @@ variable [NonUnitalSemiring R] [TopologicalSpace R] [IsTopologicalSemiring R] [T
   and `m + c = x`. -/]
 theorem ringConvolution_assoc {f g h : M → R} (hfg : ConvolutionExists (.mul ℕ R) f g)
     (hgh : ConvolutionExists (.mul ℕ R) g h)
-    (hfgh : ∀ x, Summable fun σ : Σ p : mulFiber x, mulFiber p.1.1 ↦
-      f σ.2.1.1 * g σ.2.1.2 * h σ.1.1.2) :
+    (hfgh : ∀ x, Summable fun σ : Σ p : mulFiber x, mulFiber p.val.1 ↦
+      f σ.2.val.1 * g σ.2.val.2 * h σ.1.val.2) :
     (f ⋆ᵣ g) ⋆ᵣ h = f ⋆ᵣ (g ⋆ᵣ h) := by
   ext x
   -- regroup the triple family by `a * (b * c)` instead of `(a * b) * c`
   have hs := (hfgh x).hasSum
-  have hs' : HasSum (fun τ : Σ p : mulFiber x, mulFiber p.1.2 ↦ f τ.1.1.1 * (g τ.2.1.1 * h τ.2.1.2))
-      (∑' σ : Σ p : mulFiber x, mulFiber p.1.1, f σ.2.1.1 * g σ.2.1.2 * h σ.1.1.2) :=
+  have hs' : HasSum (fun τ : Σ p : mulFiber x, mulFiber p.val.2 ↦ f τ.1.val.1 *
+      (g τ.2.val.1 * h τ.2.val.2))
+      (∑' σ : Σ p : mulFiber x, mulFiber p.val.1, f σ.2.val.1 * g σ.2.val.2 * h σ.1.val.2) :=
     (mulFiberSigmaAssoc x).hasSum_iff.mp <| hs.congr_fun fun _ ↦ (mul_assoc _ _ _).symm
   refine (hs.sigma fun p ↦ ?_).tsum_eq.trans (hs'.sigma fun p ↦ ?_).tsum_eq.symm
-  exacts [(hfg p.1.1).hasSum.mul_right (h p.1.2), (hgh p.1.2).hasSum.mul_left (f p.1.1)]
+  exacts [(hfg p.val.1).hasSum.mul_right (h p.val.2), (hgh p.val.2).hasSum.mul_left (f p.val.1)]
 
 end Assoc
 
@@ -150,9 +151,9 @@ variable {M S E E' F R : Type*} [AddGroup M]
 coordinate. -/
 def addFiberEquivSub (x : M) : M ≃ addFiber x where
   toFun y := ⟨(x - y, y), mem_addFiber.2 (sub_add_cancel x y)⟩
-  invFun ab := ab.1.2
+  invFun ab := ab.val.2
   left_inv _ := rfl
-  right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.2)).symm rfl
+  right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.property)).symm rfl
 
 @[simp]
 theorem coe_addFiberEquivSub_apply (x y : M) : (addFiberEquivSub x y : M × M) = (x - y, y) :=
@@ -160,7 +161,7 @@ theorem coe_addFiberEquivSub_apply (x y : M) : (addFiberEquivSub x y : M × M) =
 
 @[simp]
 theorem addFiberEquivSub_symm_apply (x : M) (ab : addFiber x) :
-    (addFiberEquivSub x).symm ab = ab.1.2 :=
+    (addFiberEquivSub x).symm ab = ab.val.2 :=
   (rfl)
 
 /-- On an additive group, the fibre of addition at `x` is parametrised by its second coordinate,
@@ -171,7 +172,7 @@ theorem addConvolution_eq_tsum_sub [CommSemiring S] [AddCommMonoid E] [AddCommMo
     (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
     (f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y) := by
   rw [addConvolution]
-  exact ((addFiberEquivSub x).tsum_eq fun ab ↦ L (f ab.1.1) (g ab.1.2)).symm
+  exact ((addFiberEquivSub x).tsum_eq fun ab ↦ L (f ab.val.1) (g ab.val.2)).symm
 
 /-- On an additive group, when the convolution of `f` and `g` exists at `x`, the series
 `∑' y, L (f (x - y)) (g y)` converges to `(f ⋆₊[L] g) x`. -/
@@ -197,12 +198,12 @@ theorem addConvolution_eq_tsum_neg_add [CommSemiring S] [AddCommMonoid E] [AddCo
     (f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x)) := by
   let e : M ≃ addFiber x :=
     { toFun y := ⟨(y, -y + x), mem_addFiber.2 (add_neg_cancel_left y x)⟩
-      invFun ab := ab.1.1
+      invFun ab := ab.val.1
       left_inv _ := rfl
       right_inv ab :=
-        Subtype.ext <| Prod.ext rfl (eq_neg_add_of_add_eq (mem_addFiber.1 ab.2)).symm }
+        Subtype.ext <| Prod.ext rfl (eq_neg_add_of_add_eq (mem_addFiber.1 ab.property)).symm }
   rw [addConvolution]
-  exact (e.tsum_eq fun ab ↦ L (f ab.1.1) (g ab.1.2)).symm
+  exact (e.tsum_eq fun ab ↦ L (f ab.val.1) (g ab.val.2)).symm
 
 /-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x)`. -/
 theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [TopologicalSpace R]

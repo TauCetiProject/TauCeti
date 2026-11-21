@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Algebra.NonUnitalSubalgebra
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import TauCeti.Order.Filter.Germ
+import Mathlib.Analysis.Calculus.DSlope
 
 /-!
 # Holomorphic germs near a set
@@ -20,20 +21,24 @@ by functions holomorphic on an open neighbourhood of `s`. Its elements remember 
 function near the whole set, not just its values on that set. This is the domain for
 a holomorphic functional calculus near a spectrum, including disconnected spectra.
 
-We construct evaluation and restriction homomorphisms, the nonunital subalgebra
+We construct evaluation, restriction, and composition homomorphisms, the nonunital subalgebra
 `holomorphicGerms.vanishingAt` of germs vanishing at a marked point, and characterize units by
-nonvanishing on `s`. Consequently the spectrum of a represented germ is exactly the
-image of `s`, and the coordinate germ has spectrum `s`. We also record how unital complex-algebra
-homomorphisms out of `holomorphicGerms s` act on polynomial and nonvanishing quotient germs.
-No compactness or nonemptiness is needed; at the empty set the germ algebra is the zero algebra.
+nonvanishing on `s`; the inverse of a unit is represented by the pointwise reciprocal. A germ
+vanishes at a point `x ∈ s` exactly when it is divisible by `z - x`. The spectrum of a
+represented germ is exactly the image of `s`, and the coordinate germ has spectrum `s`. We also
+record how unital complex-algebra homomorphisms out of `holomorphicGerms s` act on polynomial and
+nonvanishing quotient germs. No compactness or nonemptiness is needed; at the empty set the germ
+algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
-and `Filter.Germ` for the quotient and its pointwise operations.
+and `Filter.Germ` (including `Filter.Germ.compTendsto'`) for the quotient, its pointwise
+operations, and germ composition.
 -/
 
 public noncomputable section
 
 open Filter Set Topology
+open scoped Ring
 
 namespace TauCeti
 
@@ -103,6 +108,11 @@ theorem ofFun_add (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
   Subtype.ext (Germ.coe_add f g)
 
 @[simp]
+theorem ofFun_sub (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+    (hg : AnalyticOnNhd ℂ g s) : ofFun (f - g) (hf.sub hg) = ofFun f hf - ofFun g hg :=
+  Subtype.ext (Germ.coe_sub f g)
+
+@[simp]
 theorem ofFun_mul (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) : ofFun (f * g) (hf.mul hg) = ofFun f hf * ofFun g hg :=
   Subtype.ext (Germ.coe_mul f g)
@@ -123,18 +133,11 @@ theorem ofFun_neg (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
     ofFun (-f) hf.neg = -ofFun f hf :=
   Subtype.ext (Germ.coe_neg f)
 
-/-- Differences of analytic representatives correspond to differences of holomorphic germs. -/
-@[simp]
-theorem ofFun_sub (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
-    (hg : AnalyticOnNhd ℂ g s) : ofFun (f - g) (hf.sub hg) = ofFun f hf - ofFun g hg :=
-  Subtype.ext (Germ.coe_sub f g)
-
 /-- Natural-number powers of analytic representatives correspond to powers of holomorphic germs. -/
 @[simp]
 theorem ofFun_pow (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) (n : ℕ) :
     ofFun (f ^ n) (hf.pow n) = ofFun f hf ^ n :=
   Subtype.ext (Germ.coe_pow f n)
-
 /-- Evaluation of a germ at a point of its base set. -/
 noncomputable def eval (x : ℂ) (hx : x ∈ s) : holomorphicGerms s →ₐ[ℂ] ℂ where
   toFun g := Germ.liftOn g.val (fun f ↦ f x)
@@ -186,7 +189,7 @@ theorem restrict_refl : restrict (Subset.rfl : s ⊆ s) = AlgHom.id ℂ (holomor
 
 /-- Successive restrictions are restriction along the composite inclusion. -/
 @[simp]
-theorem restrict_comp {u : Set ℂ} (htu : u ⊆ t) (hst : t ⊆ s) :
+theorem restrict_comp_restrict {u : Set ℂ} (htu : u ⊆ t) (hst : t ⊆ s) :
     (restrict htu).comp (restrict hst) = restrict (htu.trans hst) := by
   ext g
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
@@ -198,6 +201,17 @@ theorem eval_restrict (h : t ⊆ s) (x : ℂ) (hx : x ∈ t) (g : holomorphicGer
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   rfl
 
+/-- A representative with no zero on `s` times its pointwise inverse is the unit germ. -/
+theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
+    (hne : ∀ x ∈ s, f x ≠ 0) :
+    ofFun f hf * ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = 1 := by
+  apply Subtype.ext
+  apply Germ.coe_eq.mpr
+  apply eventually_nhdsSet_iff_forall.mpr
+  intro x hx
+  filter_upwards [(hf x hx).continuousAt.eventually_ne (hne x hx)] with z hz
+  exact mul_inv_cancel₀ hz
+
 /-- A holomorphic germ is a unit exactly when it is nonzero at every point of the set. -/
 theorem isUnit_iff (g : holomorphicGerms s) :
     IsUnit g ↔ ∀ (x : ℂ) (hx : x ∈ s), eval x hx g ≠ 0 := by
@@ -207,14 +221,30 @@ theorem isUnit_iff (g : holomorphicGerms s) :
   · obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
     intro h
     have hne : ∀ x ∈ s, f x ≠ 0 := by simpa using h
-    have hinv : AnalyticOnNhd ℂ (fun z ↦ (f z)⁻¹) s := fun x hx ↦ (hf x hx).inv (hne x hx)
-    refine isUnit_iff_exists_inv.mpr ⟨ofFun (fun z ↦ (f z)⁻¹) hinv, ?_⟩
-    apply Subtype.ext
-    apply Germ.coe_eq.mpr
-    apply eventually_nhdsSet_iff_forall.mpr
-    intro x hx
-    filter_upwards [(hf x hx).continuousAt.eventually_ne (hne x hx)] with z hz
-    exact mul_inv_cancel₀ hz
+    exact IsUnit.of_mul_eq_one _ (ofFun_mul_ofFun_inv hf hne)
+
+/-- The reciprocal of a function with no zero on the base set represents the inverse germ. -/
+@[simp]
+theorem ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
+    ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = (ofFun f hf)⁻¹ʳ := by
+  have h := ofFun_mul_ofFun_inv hf hne
+  rw [← (Ring.inverse_mul_eq_iff_eq_mul _ _ _ (IsUnit.of_mul_eq_one _ h)).mpr h.symm, mul_one]
+
+/-- A holomorphic germ vanishes at a point of the base set exactly when the coordinate minus
+that point divides it. The quotient is represented by the `dslope` of a representative, which
+is holomorphic by `AnalyticOnNhd.dslope`. -/
+theorem dvd_iff_eval_eq_zero {x : ℂ} (hx : x ∈ s) (g : holomorphicGerms s) :
+    ofFun id analyticOnNhd_id - algebraMap ℂ (holomorphicGerms s) x ∣ g ↔ eval x hx g = 0 := by
+  constructor
+  · rintro ⟨h, rfl⟩
+    simp
+  · obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
+    intro hfx
+    rw [eval_ofFun] at hfx
+    refine ⟨ofFun (dslope f x) (hf.dslope x), ?_⟩
+    rw [← ofFun_const, ← ofFun_sub, ← ofFun_mul, ofFun_eq_iff]
+    refine .of_forall fun z ↦ ?_
+    simpa [hfx, smul_eq_mul] using (sub_smul_dslope f x z).symm
 
 /-- The spectrum of a holomorphic germ is its set of values on the base set. -/
 theorem spectrum_eq (g : holomorphicGerms s) :
@@ -269,22 +299,22 @@ theorem coe_ofFunVanishingAt {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f : ℂ →
 /-- The holomorphic germ of a polynomial function `z ↦ p.eval z` equals `Polynomial.aeval` at the
 coordinate germ. -/
 theorem ofFun_eval_polynomial (p : Polynomial ℂ) :
-    ofFun (fun z => p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)) =
+    ofFun (fun z ↦ p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)) =
       Polynomial.aeval (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) p := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq =>
     rw [map_add, ← hp, ← hq, ← ofFun_add, ofFun_eq_iff]
-    exact Eventually.of_forall fun z => Polynomial.eval_add
+    exact Eventually.of_forall fun _ ↦ Polynomial.eval_add
   | monomial n c =>
     rw [Polynomial.aeval_monomial, ← ofFun_const, ← ofFun_pow, ← ofFun_mul, ofFun_eq_iff]
-    exact Eventually.of_forall fun z => by simp [Polynomial.eval_monomial]
+    exact Eventually.of_forall fun _ ↦ by simp [Polynomial.eval_monomial]
 
 /-- Any unital complex-algebra homomorphism on `holomorphicGerms s` sending the coordinate germ to
 `a` agrees with `Polynomial.aeval a` on polynomial germs. -/
 theorem algHom_ofFun_polynomial {A : Type*} [Semiring A] [Algebra ℂ A] {a : A}
     {Φ : holomorphicGerms s →ₐ[ℂ] A}
     (hΦ : Φ (ofFun id analyticOnNhd_id) = a) (p : Polynomial ℂ) :
-    Φ (ofFun (fun z => p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) =
+    Φ (ofFun (fun z ↦ p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) =
       Polynomial.aeval a p := by
   rw [ofFun_eval_polynomial, ← Polynomial.aeval_algHom_apply, hΦ]
 
@@ -293,19 +323,109 @@ theorem algHom_ofFun_polynomial {A : Type*} [Semiring A] [Algebra ℂ A] {a : A}
 theorem algHom_ofFun_div {A : Type*} [Semiring A] [Algebra ℂ A]
     (Φ : holomorphicGerms s →ₐ[ℂ] A) {f g : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) (hg0 : ∀ z ∈ s, g z ≠ 0) :
-    Φ (ofFun (fun z => f z / g z) (hf.div hg hg0)) =
+    Φ (ofFun (fun z ↦ f z / g z) (hf.div hg hg0)) =
       Φ (ofFun f hf) * Ring.inverse (Φ (ofFun g hg)) := by
   have hu : IsUnit (Φ (ofFun g hg)) :=
-    ((isUnit_iff _).mpr fun z hz => by simpa using hg0 z hz).map Φ
+    ((isUnit_iff _).mpr fun z hz ↦ by simpa using hg0 z hz).map Φ
   have hmul :
-      ofFun (fun z => f z / g z) (hf.div hg hg0) * ofFun g hg = ofFun f hf := by
+      ofFun (fun z ↦ f z / g z) (hf.div hg hg0) * ofFun g hg = ofFun f hf := by
     rw [← ofFun_mul, ofFun_eq_iff]
-    refine eventually_nhdsSet_iff_forall.mpr fun z hz => ?_
+    refine eventually_nhdsSet_iff_forall.mpr fun z hz ↦ ?_
     filter_upwards [(hg z hz).continuousAt.eventually_ne (hg0 z hz)] with x hx
     exact div_mul_cancel₀ (f x) hx
   have hΦmul := congrArg Φ hmul
   rw [map_mul] at hΦmul
   rw [← hΦmul, mul_assoc, Ring.mul_inverse_cancel _ hu, mul_one]
+
+/-- A holomorphic germ near `s` whose spectrum lies in `t` tends to `𝓝ˢ t` along `𝓝ˢ s`. -/
+theorem tendsto_nhdsSet (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
+    f.val.Tendsto (𝓝ˢ t) := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  have hst : MapsTo f₀ s t := mapsTo_iff_image_subset.mpr (spectrum_ofFun f₀ hf₀ ▸ hf)
+  exact Filter.Tendsto.germ_tendsto fun V hV ↦ mem_nhdsSet_iff_forall.mpr fun x hx ↦
+    (hf₀ x hx).continuousAt (mem_nhdsSet_iff_forall.mp hV _ (hst hx))
+
+/-- Pullback of holomorphic germs near `t` along a holomorphic germ `f` near `s` whose spectrum
+lies in `t`. -/
+def comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
+    holomorphicGerms t →ₐ[ℂ] holomorphicGerms s :=
+  ((Germ.compTendsto'AlgHom f.val (tendsto_nhdsSet f hf)).comp
+    (holomorphicGerms t).val).codRestrict (holomorphicGerms s) fun g ↦ by
+      obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+      obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+      have hst : MapsTo f₀ s t := mapsTo_iff_image_subset.mpr (spectrum_ofFun f₀ hf₀ ▸ hf)
+      simpa only [AlgHom.comp_apply, Subalgebra.coe_val, Germ.compTendsto'AlgHom_apply, coe_ofFun,
+        Germ.coe_compTendsto', Germ.map_coe, coe_mem_holomorphicGerms_iff]
+        using hg₀.comp hf₀ hst
+
+@[simp]
+theorem coe_comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) (g : holomorphicGerms t) :
+    (comp f hf g : Germ (𝓝ˢ s) ℂ) = g.val.compTendsto' f.val (tendsto_nhdsSet f hf) := by
+  simp [comp]
+
+/-- Composition of represented holomorphic germs is represented by function composition. -/
+@[simp]
+theorem comp_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+    (hst : spectrum ℂ (ofFun f hf) ⊆ t) (g : ℂ → ℂ) (hg : AnalyticOnNhd ℂ g t) :
+    comp (ofFun f hf) hst (ofFun g hg) =
+      ofFun (g ∘ f) (hg.comp hf (mapsTo_iff_image_subset.mpr (spectrum_ofFun f hf ▸ hst))) :=
+  Subtype.ext <| by simp only [coe_comp, coe_ofFun, Germ.coe_compTendsto', Germ.map_coe]
+
+/-- Pulling back the coordinate germ along `f` recovers `f`. -/
+@[simp]
+theorem comp_id (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
+    comp f hf (ofFun id analyticOnNhd_id) = f := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  exact comp_ofFun f₀ hf₀ hf id analyticOnNhd_id
+
+/-- Evaluating a composite germ evaluates the outer germ at the value of the inner germ. -/
+@[simp]
+theorem eval_comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) (g : holomorphicGerms t)
+    (x : ℂ) (hx : x ∈ s) :
+    eval x hx (comp f hf g) =
+      eval (eval x hx f) (hf (by rw [spectrum_eq]; exact ⟨x, hx, rfl⟩)) g := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  simp
+
+/-- Restricting the outer germ's base set before composing does not change the composite germ. -/
+@[simp]
+theorem comp_restrict {u : Set ℂ} (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t)
+    (htu : t ⊆ u) (g : holomorphicGerms u) :
+    comp f hf (restrict htu g) = comp f (hf.trans htu) g := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  simp
+
+/-- Restricting the inner germ's base set commutes with pullback of holomorphic germs. -/
+@[simp]
+theorem restrict_comp {r : Set ℂ} (hrs : r ⊆ s) (f : holomorphicGerms s)
+    (hf : spectrum ℂ f ⊆ t) (g : holomorphicGerms t) :
+    restrict hrs (comp f hf g) =
+      comp (restrict hrs f) ((AlgHom.spectrum_apply_subset (restrict hrs) f).trans hf) g := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  simp
+
+/-- The spectrum of a composite holomorphic germ is the spectrum of the outer germ restricted to
+the spectrum of the inner germ. -/
+@[simp]
+theorem spectrum_comp (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t)
+    (g : holomorphicGerms t) :
+    spectrum ℂ (comp f hf g) = spectrum ℂ (restrict hf g) := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  rw [comp_ofFun, restrict_ofFun, spectrum_ofFun, spectrum_ofFun, spectrum_ofFun, image_comp]
+
+/-- Pullback of holomorphic germs is associative. -/
+theorem comp_comp {u : Set ℂ} (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t)
+    (g : holomorphicGerms t) (hg : spectrum ℂ g ⊆ u) (h : holomorphicGerms u) :
+    comp f hf (comp g hg h) =
+      comp (comp f hf g) ((AlgHom.spectrum_apply_subset (comp f hf) g).trans hg) h := by
+  obtain ⟨f₀, hf₀, rfl⟩ := exists_ofFun_eq f
+  obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
+  obtain ⟨h₀, hh₀, rfl⟩ := exists_ofFun_eq h
+  simp [Function.comp_assoc]
 
 end holomorphicGerms
 

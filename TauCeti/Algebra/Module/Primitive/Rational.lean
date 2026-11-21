@@ -35,7 +35,7 @@ theorem isPrimitive_of_forall_smul_mem {V : Type*} [AddCommGroup V] [Module ℚ 
   have hval : (v : V) = d • (w : V) := congrArg Subtype.val hvw
   have hw : (d : ℚ)⁻¹ • (v : V) = (w : V) := by
     rw [hval, ← Int.cast_smul_eq_zsmul ℚ, smul_smul, inv_mul_cancel₀ hdq, one_smul]
-  obtain ⟨n, hn⟩ := h (d : ℚ)⁻¹ (hw.symm ▸ w.2)
+  obtain ⟨n, hn⟩ := h (d : ℚ)⁻¹ (hw.symm ▸ w.property)
   have hnd : n * d = 1 := by
     exact_mod_cast (show (n : ℚ) * d = 1 by rw [hn, inv_mul_cancel₀ hdq])
   have hd1 : d = 1 := by

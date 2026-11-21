@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Geometry.Polygon.Simple
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
 import TauCeti.Analysis.Green.Polygonal.Fan
-import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 
 /-!
@@ -36,8 +35,6 @@ become a contour cycle.
 * `Polygon.contourCurve poly`: the closed polygonal curve of `poly` on `[0, n]`, given by the
   boundary parametrization `Polygon.boundaryParam`.
 * `Polygon.contourCycle poly`: the corresponding one-generator contour cycle.
-* `TauCeti.Contour.Cycle.ofBalancedSegments`: the contour cycle assembled from a balanced finite
-  family of oriented segments.
 
 ## Main results
 
@@ -46,11 +43,11 @@ become a contour cycle.
   sum of its integrals along the edges.
 * `Polygon.windingNumber_contourCycle`: off the boundary, the winding number is the sum of the
   winding numbers of the edges.
-* `TauCeti.Contour.Cycle.trace_ofBalancedSegments_subset`,
-  `TauCeti.Contour.Cycle.windingNumber_ofBalancedSegments`,
-  `TauCeti.Contour.Cycle.integral_ofBalancedSegments`: a balanced finite family of oriented
-  segments forms a contour cycle with the sums of the segment winding numbers and segment
-  integrals as its winding numbers and integrals.
+* `TauCeti.Contour.Cycle.exists_windingNumber_integral_eq_sum_segments`: a balanced finite family
+  of oriented segments is a contour cycle, with the sums of the segment winding numbers and
+  segment integrals as its winding numbers and integrals.
+* `TauCeti.Contour.Cycle.integral_eq_sum_segments_complex`: lowers the universe level of a
+  segment-sum integration formula from `Type u`-valued continuous functions to `ℂ`-valued ones.
 
 ## References
 
@@ -65,6 +62,8 @@ noncomputable section
 open Set MeasureTheory Function Fin.NatCast
 
 open scoped Finset
+
+universe u
 
 namespace TauCeti.Contour
 
@@ -159,11 +158,11 @@ theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n)
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
 contour cycle. -/
 def _root_.Polygon.contourCycle : Cycle :=
-  FreeAbelianGroup.of poly.contourCurve
+  FreeAddCommGroup.of poly.contourCurve
 
 /-- The cycle of a polygon is the single generator given by its polygonal curve. -/
 theorem _root_.Polygon.contourCycle_def :
-    poly.contourCycle = FreeAbelianGroup.of poly.contourCurve := (rfl)
+    poly.contourCycle = FreeAddCommGroup.of poly.contourCurve := (rfl)
 
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]
@@ -218,109 +217,84 @@ theorem _root_.Polygon.windingNumber_contourCycle {z : ℂ} (hz : z ∉ poly.bou
 
 namespace Cycle
 
-section BalancedSegments
-
-variable {E : Finset (ℂ × ℂ)}
-
-/-- A permutation matching each segment in `E` to one starting at its endpoint, obtained from
-`Function.exists_perm_of_occCount_eq`. -/
-private def balancedPerm (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) :
-    {σ : Equiv.Perm E // (fun e : E ↦ (e : ℂ × ℂ).1) ∘ σ = fun e : E ↦ (e : ℂ × ℂ).2} :=
-  Classical.indefiniteDescription _ <| Function.exists_perm_of_occCount_eq fun x ↦ by
-    classical
-    rw [Function.occCount_eq_sum, Function.occCount_eq_sum,
-      Finset.sum_coe_sort E (fun e ↦ if e.2 = x then 1 else 0),
-      Finset.sum_coe_sort E (fun e ↦ if e.1 = x then 1 else 0),
-      ← Finset.card_filter, ← Finset.card_filter, hE x]
-
-private instance instNeZeroMinimalPeriodBalancedPerm
-    (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
-    NeZero (minimalPeriod (balancedPerm hE).1 e) :=
-  ⟨(minimalPeriod_pos_of_mem_periodicPts ((balancedPerm hE).1.injective.mem_periodicPts e)).ne'⟩
-
-private def balancedOrbitPolygon (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
-    Polygon ℂ (minimalPeriod (balancedPerm hE).1 e) :=
-  ⟨fun i ↦ (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).1⟩
-
-private theorem balancedOrbitPolygon_apply (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    (e : E) (i : Fin (minimalPeriod (balancedPerm hE).1 e)) :
-    balancedOrbitPolygon hE e i = (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).1 := rfl
-
-private theorem balancedOrbitPolygon_succ (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    (e : E) (i : Fin (minimalPeriod (balancedPerm hE).1 e)) :
-    balancedOrbitPolygon hE e (finRotate _ i) = (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).2 := by
-  have hval : ((i + 1 : Fin (minimalPeriod (balancedPerm hE).1 e)) : ℕ) =
-      ((i : ℕ) + 1) % minimalPeriod (balancedPerm hE).1 e := by simp [Fin.val_add]
-  rw [balancedOrbitPolygon_apply, finRotate_apply, hval, iterate_mod_minimalPeriod_eq,
-    iterate_succ_apply']
-  exact congrFun (balancedPerm hE).2 _
-
-private theorem balancedOrbitPolygon_edgePath (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    (e : E) (i : Fin (minimalPeriod (balancedPerm hE).1 e)) :
-    (balancedOrbitPolygon hE e).edgePath ℝ i =
-      AffineMap.lineMap (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).1
-        (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).2 := by
-  rw [Polygon.edgePath, balancedOrbitPolygon_succ, balancedOrbitPolygon_apply]
-
-private theorem balancedOrbitPolygon_boundary_subset
-    (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
-    (balancedOrbitPolygon hE e).boundary ℝ ⊆ ⋃ e ∈ E, segment ℝ e.1 e.2 := by
-  intro z hz
-  obtain ⟨i, hi⟩ := mem_iUnion.1 hz
-  rw [Polygon.edgeSet_eq_image_edgePath, balancedOrbitPolygon_edgePath,
-    ← segment_eq_image_lineMap] at hi
-  exact mem_biUnion ((balancedPerm hE).1^[i] e).2 hi
-
-/-- **The contour cycle of a balanced family of segments.** Given a finite set `E` of oriented
-segments in which every point ends as many segments as it starts, matching incoming and outgoing
-segments decomposes `E` into closed polygonal orbits; `ofBalancedSegments hE` is the sum of the
-corresponding polygon cycles. -/
-def ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) : Cycle := by
+/-- **The cycle of a balanced family of segments.** Let `E` be a finite set of oriented segments,
+the pair `e` standing for the segment from `e.1` to `e.2`, such that every point ends as many
+segments of `E` as it starts. Then the segments of `E` assemble into a contour cycle: its trace
+lies in the union of the segments, its winding number about every point off that union is the sum
+of the winding numbers of the segments, and its integral of every function continuous on that
+union is the sum of the integrals along the segments. -/
+theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
+    (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) :
+    ∃ Γ : Cycle, trace Γ ⊆ ⋃ e ∈ E, segment ℝ e.1 e.2 ∧
+      (∀ z ∉ ⋃ e ∈ E, segment ℝ e.1 e.2, windingNumber z Γ =
+        ∑ e ∈ E, Contour.windingNumber (AffineMap.lineMap (k := ℝ) e.1 e.2) 0 1 z) ∧
+      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+        ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → integral f Γ =
+          ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
   classical
-  exact ∑ q : Quotient (Equiv.Perm.SameCycle.setoid (balancedPerm hE).1),
-    (balancedOrbitPolygon hE q.out).contourCycle
+  -- Pair the segments ending at each point with those starting there: this gives a permutation
+  -- `σ` of the segments such that `σ e` starts where `e` ends.
+  obtain ⟨σ, hσ⟩ : ∃ σ : Equiv.Perm E, ∀ e, (σ e : ℂ × ℂ).1 = (e : ℂ × ℂ).2 := by
+    have hcard (p : ℂ × ℂ → Prop) [DecidablePred p] :
+        Fintype.card {e : E // p e} = #{e ∈ E | p e} := by
+      simp [Fintype.card_subtype, Finset.filter_attach]
+    have hfib (x : ℂ) : {e : E // (e : ℂ × ℂ).2 = x} ≃ {e : E // (e : ℂ × ℂ).1 = x} :=
+      Fintype.equivOfCardEq (by rw [hcard (fun e ↦ e.2 = x), hcard (fun e ↦ e.1 = x), hE x])
+    exact ⟨Equiv.ofFiberEquiv hfib, fun e ↦ Equiv.ofFiberEquiv_map hfib e⟩
+  have hk (e : E) : NeZero (minimalPeriod σ e) :=
+    ⟨(minimalPeriod_pos_of_mem_periodicPts (σ.injective.mem_periodicPts e)).ne'⟩
+  -- Each orbit of `σ` is a closed walk through consecutive segments: a polygon.
+  let P (e : E) : Polygon ℂ (minimalPeriod σ e) := ⟨fun i ↦ ((σ^[i] e : E) : ℂ × ℂ).1⟩
+  have hP (e : E) (i : Fin (minimalPeriod σ e)) : P e i = ((σ^[i] e : E) : ℂ × ℂ).1 := rfl
+  have hPsucc (e : E) (i : Fin (minimalPeriod σ e)) :
+      P e (finRotate _ i) = ((σ^[i] e : E) : ℂ × ℂ).2 := by
+    have hval : ((i + 1 : Fin (minimalPeriod σ e)) : ℕ) = ((i : ℕ) + 1) % minimalPeriod σ e := by
+      simp [Fin.val_add]
+    rw [hP, finRotate_apply, hval, iterate_mod_minimalPeriod_eq, iterate_succ_apply', hσ]
+  have hedge (e : E) (i : Fin (minimalPeriod σ e)) : (P e).edgePath ℝ i =
+      AffineMap.lineMap ((σ^[i] e : E) : ℂ × ℂ).1 ((σ^[i] e : E) : ℂ × ℂ).2 := by
+    rw [Polygon.edgePath, hP, hPsucc]
+  have hbd (e : E) : (P e).boundary ℝ ⊆ ⋃ e ∈ E, segment ℝ e.1 e.2 := by
+    intro z hz
+    obtain ⟨i, hi⟩ := mem_iUnion.1 hz
+    rw [Polygon.edgeSet_eq_image_edgePath, hedge, ← segment_eq_image_lineMap] at hi
+    exact mem_biUnion (σ^[i] e).property hi
+  -- The cycle is the sum of the polygons of the orbits; sums over the segments are computed orbit
+  -- by orbit.
+  refine ⟨∑ q : Quotient (Equiv.Perm.SameCycle.setoid σ), (P q.out).contourCycle,
+    (trace_sum_subset _ _).trans (iUnion₂_subset fun q _ ↦ ?_), fun z hz ↦ ?_, fun hf ↦ ?_⟩
+  · rw [Polygon.trace_contourCycle]
+    exact hbd _
+  · rw [map_sum, ← Finset.sum_coe_sort E, ← Equiv.Perm.sum_quotient_sameCycle_sum_range σ]
+    simp only [Equiv.Perm.coe_pow]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    rw [Polygon.windingNumber_contourCycle _ fun h ↦ hz (hbd _ h), ← Fin.sum_univ_eq_sum_range]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [hedge]
+  · rw [map_sum, ← Finset.sum_coe_sort E, ← Equiv.Perm.sum_quotient_sameCycle_sum_range σ]
+    simp only [Equiv.Perm.coe_pow]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    rw [Polygon.integral_contourCycle _ (hf.mono (hbd _)), ← Fin.sum_univ_eq_sum_range]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [hedge, hPsucc, hP]
 
-/-- The trace of `ofBalancedSegments` lies in the union of the segments of `E`. -/
-theorem trace_ofBalancedSegments_subset (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) :
-    trace (ofBalancedSegments hE) ⊆ ⋃ e ∈ E, segment ℝ e.1 e.2 := by
-  classical
-  refine (trace_sum_subset _ _).trans (iUnion₂_subset fun q _ ↦ ?_)
-  rw [Polygon.trace_contourCycle]
-  exact balancedOrbitPolygon_boundary_subset hE q.out
-
-/-- Off the union of the segments, the winding number of `ofBalancedSegments` is the sum of the
-winding numbers of the segments. -/
-theorem windingNumber_ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    {z : ℂ} (hz : z ∉ ⋃ e ∈ E, segment ℝ e.1 e.2) :
-    windingNumber z (ofBalancedSegments hE) =
-      ∑ e ∈ E, Contour.windingNumber (AffineMap.lineMap (k := ℝ) e.1 e.2) 0 1 z := by
-  classical
-  rw [ofBalancedSegments, map_sum, ← Finset.sum_coe_sort E,
-    ← Equiv.Perm.sum_quotient_sameCycle_sum_range (balancedPerm hE).1]
-  simp only [Equiv.Perm.coe_pow]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  rw [Polygon.windingNumber_contourCycle _ fun h ↦
-      hz (balancedOrbitPolygon_boundary_subset hE q.out h), ← Fin.sum_univ_eq_sum_range]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [balancedOrbitPolygon_edgePath]
-
-/-- The integral over `ofBalancedSegments` of any continuous vector-valued function on the union of
-the segments is the sum of its integrals along the segments, in any universe. -/
-theorem integral_ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F}
-    (hf : ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2)) :
-    integral f (ofBalancedSegments hE) =
-      ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
-  classical
-  rw [ofBalancedSegments, map_sum, ← Finset.sum_coe_sort E,
-    ← Equiv.Perm.sum_quotient_sameCycle_sum_range (balancedPerm hE).1]
-  simp only [Equiv.Perm.coe_pow]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  rw [Polygon.integral_contourCycle _ (hf.mono (balancedOrbitPolygon_boundary_subset hE q.out)),
-    ← Fin.sum_univ_eq_sum_range]
-  exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [balancedOrbitPolygon_edgePath, balancedOrbitPolygon_succ, balancedOrbitPolygon_apply]
-
-end BalancedSegments
+/-- Lowering the universe level of the segment-sum integration formula of a cycle to scalar
+`ℂ`-valued integrands: if `Γ` integrates every continuous function into a `Type u` complex normed
+space as the sum of its segment integrals over `E`, the same formula holds for `ℂ`-valued
+functions. -/
+theorem integral_eq_sum_segments_complex {E : Finset (ℂ × ℂ)} {Γ : Cycle}
+    (hint : ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+      ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → integral f Γ =
+        ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t))
+    {g : ℂ → ℂ} (hg : ContinuousOn g (⋃ e ∈ E, segment ℝ e.1 e.2)) :
+    integral g Γ = ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, g (AffineMap.lineMap e.1 e.2 t) := by
+  let v : PUnit.{u + 1} → ℂ := fun _ ↦ 1
+  have h := hint (F := PUnit.{u + 1} → ℂ) (f := fun z ↦ g z • v) (hg.smul continuousOn_const)
+  rw [integral_smul_const] at h
+  have h0 := congr_fun h PUnit.unit
+  simp only [Pi.smul_apply, smul_eq_mul, mul_one, Finset.sum_apply, v] at h0
+  rw [h0]
+  refine Finset.sum_congr rfl fun e _ ↦ ?_
+  rw [intervalIntegral.integral_smul_const]
+  simp
 
 end Cycle
 

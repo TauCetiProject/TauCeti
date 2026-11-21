@@ -181,7 +181,7 @@ noncomputable def semiDirectSumEquiv (h : IsCompl S.toSubmodule H.toSubmodule) :
 theorem semiDirectSumEquiv_apply (h : IsCompl S.toSubmodule H.toSubmodule)
     (z : ↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) :
     semiDirectSumEquiv S H h z = (z.left : L) + (z.right : L) :=
-  (LieEquiv.ofBijective_toFun _ (semiDirectSumHom_bijective h) z).trans
+  (LieEquiv.ofBijective_apply _ (semiDirectSumHom_bijective h) z).trans
     (semiDirectSumHom_apply S H z)
 
 theorem semiDirectSumEquiv_inl (h : IsCompl S.toSubmodule H.toSubmodule) (s : S) :

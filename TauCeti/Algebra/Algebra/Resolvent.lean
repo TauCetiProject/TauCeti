@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 
-import Mathlib.Algebra.GroupWithZero.Units.Lemmas
-
 /-!
 # Algebraic identities for the resolvent
 
@@ -18,8 +16,8 @@ integrating resolvents: on the resolvent set, multiplication by the scalar `r` g
 `r (r1 - a)⁻¹ = 1 + a (r1 - a)⁻¹`, so that over a field `(r1 - a)⁻¹ - r⁻¹1 = r⁻¹ a (r1 - a)⁻¹`
 for `r ≠ 0`. The first resolvent identity
 `(r1 - a)⁻¹ - (s1 - a)⁻¹ = (s - r) (r1 - a)⁻¹ (s1 - a)⁻¹` turns products of resolvents into
-differences. Every element commuting with `a` commutes with all resolvents of `a`, and every
-algebra homomorphism preserves the resolvent on the resolvent set.
+differences. Every element commuting with `a` commutes with all resolvents of `a`, and unital
+algebra homomorphisms preserve the resolvent on the resolvent set.
 -/
 
 public section
@@ -69,9 +67,9 @@ theorem Commute.resolvent_right {a b : A} (h : Commute b a) (r : R) :
   · rw [Ring.inverse_non_unit _ hu]
     exact Commute.zero_right b
 
-/-- An algebra homomorphism preserves the resolvent at every point of the resolvent set. -/
+/-- A unital algebra homomorphism preserves the resolvent on the resolvent set. -/
 theorem AlgHom.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B]
     [AlgHomClass F R A B] (φ : F) {a : A} {r : R} (hr : r ∈ resolventSet R a) :
     φ (resolvent a r) = resolvent (φ a) r := by
-  simpa only [resolvent, map_sub, AlgHomClass.commutes] using
-    (spectrum.mem_resolventSet_iff.mp hr).map_ringInverse φ
+  rw [resolvent, resolvent, (spectrum.mem_resolventSet_iff.mp hr).map_ringInverse φ,
+    map_sub, AlgHomClass.commutes]
