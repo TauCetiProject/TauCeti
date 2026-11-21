@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -55,7 +54,8 @@ homogeneous counterpart of the construction, for principal symbols, is
 * `TauCeti.Symbol.conicLift`: the lifted symbol `c(ξ) p(P x, P ξ)` of order `m` on `ℝᴺ`, equal
   to `p(P x, P ξ)` on the cone and at bounded frequencies
   (`TauCeti.Symbol.coefficient_conicLift_of_le`,
-  `TauCeti.Symbol.coefficient_conicLift_of_norm_le`).
+  `TauCeti.Symbol.coefficient_conicLift_of_norm_le`), and vanishing near the axis at high
+  frequencies (`TauCeti.Symbol.coefficient_conicLift_eventuallyEq_zero`).
 * `TauCeti.Symbol.exists_norm_mixedDeriv_sub_conicLift_le`: the bound `C ε ^ m ⟨ξ⟩ ^ m` on the
   position derivatives of `p(P x, P ξ) - c(ξ) p(P x, P ξ)`, uniform in `ε` and `R ≥ max 1 ε⁻¹`.
 
@@ -282,7 +282,7 @@ private theorem exists_bound_mixedDeriv_comp_prodMap_of_isCompact (p : Symbol n 
       ‖mixedDeriv α β (p.coefficient ∘ P.prodMap P) x ξ‖ ≤
         D * (1 + ‖P ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   choose C _ hC using fun s t : List (Fin n) ↦ p.exists_bound (P '' K) (hK.image P.continuous) s t
-  obtain ⟨B, hB, hB'⟩ := TauCeti.exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
+  obtain ⟨B, hB, hB'⟩ := exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
     (p.contDiff_coefficient.of_le (mod_cast le_top)) (norm_nonneg P) C m
   exact ⟨B, hB, fun x hx ξ ↦ hB' P P le_rfl le_rfl x (fun s t η ↦ hC s t (P x) ⟨x, hx, rfl⟩ η) ξ⟩
 
@@ -306,6 +306,17 @@ private theorem exists_bound_mixedDeriv_comp_prodMap_of_cone (p : Symbol n V W m
       _ ≤ c * ‖P ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
 
 variable {χ : ConicCutoff} {φ : FrequencyCutoff (CoordinateSpace N)} {ε R : ℝ}
+
+/-- Where the cutoff vanishes near `ξ`, the function `c(ξ) p(P x, P ξ)` vanishes near `(x, ξ)`. -/
+private theorem conicLiftCutoff_smul_eventuallyEq_zero (hε : ε ≠ 0) (hR : 0 < R)
+    (p : Symbol n V W m) (x : CoordinateSpace N) {ξ : CoordinateSpace N} (hξ : 2 * R < ‖ξ‖)
+    (hPξ : ‖P ξ‖ ^ 2 < ε ^ 2 * ‖ξ‖ ^ 2 / 4) :
+    (fun q : CoordinateSpace N × CoordinateSpace N ↦
+      (conicLiftCutoff P χ φ ε R q.2 : ℂ) • p.coefficient (P q.1, P q.2)) =ᶠ[𝓝 (x, ξ)] 0 := by
+  filter_upwards [continuous_snd.continuousAt.eventually
+    (conicLiftCutoff_eventuallyEq_zero hε hR hξ hPξ)] with q hq
+  have hq' : conicLiftCutoff P χ φ ε R q.2 = 0 := hq
+  simp [hq']
 
 /-- **Estimates of the lifted symbol on the cone.** On the cone `ε ‖ξ‖ ≤ 2 ‖P ξ‖` the lifted
 symbol `c(ξ) p(P x, P ξ)` satisfies the estimates of order `m`, by the Leibniz rule for the
@@ -378,13 +389,8 @@ private theorem exists_bound_conicLift (hε : ε ≠ 0) (hR : 1 ≤ R) (p : Symb
     exact le_max_left _ _
   rcases lt_or_ge (‖P ξ‖ ^ 2) (ε ^ 2 * ‖ξ‖ ^ 2 / 4) with hPξ | hPξ
   · -- Near the axis the cutoff, hence the function, vanishes.
-    have hzero : (fun q : CoordinateSpace N × CoordinateSpace N ↦
-        (conicLiftCutoff P χ φ ε R q.2 : ℂ) • p.coefficient (P q.1, P q.2)) =ᶠ[𝓝 (x, ξ)] 0 := by
-      filter_upwards [continuous_snd.continuousAt.eventually
-        (conicLiftCutoff_eventuallyEq_zero hε hR0 hξ hPξ)] with q hq
-      have hq' : conicLiftCutoff P χ φ ε R q.2 = 0 := hq
-      simp [hq']
-    rw [(hzero.mixedDeriv_eq α β).trans (mixedDeriv_zero α β x ξ), norm_zero]
+    rw [((conicLiftCutoff_smul_eventuallyEq_zero P hε hR0 p x hξ hPξ).mixedDeriv_eq α β).trans
+      (mixedDeriv_zero α β x ξ), norm_zero]
     positivity
   · -- On the cone.
     have hcone : |ε| / 2 * ‖ξ‖ ≤ ‖P ξ‖ :=
@@ -429,6 +435,16 @@ theorem coefficient_conicLift_of_norm_le (hε : ε ≠ 0) (hR : 1 ≤ R) (p : Sy
     (p.conicLift P χ φ hε hR).coefficient (x, ξ) = p.coefficient (P x, P ξ) := by
   rw [coefficient_conicLift, conicLiftCutoff_eq_one_of_norm_le (one_pos.trans_le hR) hξ,
     Complex.ofReal_one, one_smul]
+
+/-- Near every frequency with `‖ξ‖ > 2 R` and `‖P ξ‖² < ε² ‖ξ‖² / 4`, close to the axis, the
+lifted symbol vanishes. -/
+theorem coefficient_conicLift_eventuallyEq_zero (hε : ε ≠ 0) (hR : 1 ≤ R) (p : Symbol n V W m)
+    (x : CoordinateSpace N) {ξ : CoordinateSpace N} (hξ : 2 * R < ‖ξ‖)
+    (hPξ : ‖P ξ‖ ^ 2 < ε ^ 2 * ‖ξ‖ ^ 2 / 4) :
+    (p.conicLift P χ φ hε hR).coefficient =ᶠ[𝓝 (x, ξ)] 0 := by
+  rw [show (p.conicLift P χ φ hε hR).coefficient = _ from
+    funext (coefficient_conicLift P hε hR p)]
+  exact conicLiftCutoff_smul_eventuallyEq_zero P hε (one_pos.trans_le hR) p x hξ hPξ
 
 /-- Where `‖P ξ‖² < ε² ‖ξ‖² / 2` and `ε ‖ξ‖ ≥ 1`, the weight `⟨P ξ⟩ ^ m` of order `m ≥ 0` is at
 most `2 ^ (m / 2) ε ^ m ⟨ξ⟩ ^ m`. -/

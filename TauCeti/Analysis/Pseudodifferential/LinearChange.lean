@@ -43,9 +43,9 @@ This file proves the exact formula and that the symbol classes are invariant:
   operator on Schwartz space. For invertible `P` the change of variables is injective and the
   symbol classes are invariant in both directions (`TauCeti.Symbol.isUniform_compProdMap_iff` and
   its analogues).
-* `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap`: the estimates for `a ∘ (P × Q)` hold with
-  one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded too, as needed for families
-  of linear changes of variables such as compact group actions.
+* `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm`: the estimates for
+  `a ∘ (P × Q)` hold with one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded
+  too, as needed for families of linear changes of variables such as compact group actions.
 * `TauCeti.Symbol.compProdMap_symm_adjointEquiv_eq_self_iff`: a pseudodifferential operator
   commutes with the change of coordinates `u ↦ u ∘ A` exactly when its symbol is invariant under
   `(x, ξ) ↦ (A⁻¹ x, Aᵀ ξ)`.
@@ -96,14 +96,14 @@ coefficient `f` satisfies the estimates of order `m` with constants `C α' β'` 
 The constant `B` depends only on `c`, the constants `C` and `(α, β)`, and serves every pair of
 linear maps `P`, `Q` with `‖P‖ ≤ c`, `‖Q‖ ≤ c` and `‖ξ‖ ≤ c ‖Q ξ‖`; the last condition makes
 `⟨Q ξ⟩` and `⟨ξ⟩` comparable. -/
-theorem exists_bound_mixedDeriv_comp_prodMap
+theorem exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm
     {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) {c : ℝ}
     (hc : 1 ≤ c) (C : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) :
     ∃ B, 0 ≤ B ∧ ∀ P Q : CoordinateSpace n →L[ℝ] CoordinateSpace n, ‖P‖ ≤ c → ‖Q‖ ≤ c →
       (∀ ξ, ‖ξ‖ ≤ c * ‖Q ξ‖) → ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
         C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
       ‖mixedDeriv α β (f ∘ P.prodMap Q) x ξ‖ ≤ B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  obtain ⟨B, hB, h⟩ := TauCeti.exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
+  obtain ⟨B, hB, h⟩ := exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
     (hf.of_le (mod_cast le_top)) (zero_le_one.trans hc) C m
   refine ⟨B * c ^ |m - β.length|, by positivity, fun P Q hP hQ hQ' x hC ξ =>
     (h P Q hP hQ x hC ξ).trans ?_⟩
@@ -125,7 +125,7 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
   set c : ℝ := max 1 (max ‖P‖ (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
     ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖))
   obtain ⟨B, hB, h⟩ :=
-    Symbol.exists_bound_mixedDeriv_comp_prodMap (m := m) hf (le_max_left 1 _) C α β
+    exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm (m := m) hf (le_max_left 1 _) C α β
   exact ⟨B, hB, h P Q (le_max_of_le_right (le_max_left _ _))
     (le_max_of_le_right (le_max_of_le_right (le_max_left _ _)))
     fun ξ => (norm_le_norm_symm_mul Q ξ).trans (mul_le_mul_of_nonneg_right
