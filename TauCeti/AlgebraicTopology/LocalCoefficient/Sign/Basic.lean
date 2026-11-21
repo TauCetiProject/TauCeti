@@ -27,7 +27,10 @@ point gives the negative of that identification. Transport along a path sends ev
 point to evaluation at the endpoint of its lift
 (`IsCoveringMap.signLocalSystemObjEquiv_map_apply_monodromy`). Monodromy follows continuous
 sections (`IsCoveringMap.monodromy_section`), so a continuous section of such a double cover
-trivializes the sign local system (`IsCoveringMap.signLocalSystemIsoOfSection`).
+trivializes the sign local system (`IsCoveringMap.signLocalSystemIsoOfSection`). More generally,
+monodromy follows continuous lifts of maps (`IsCoveringMap.monodromy_map_lift`), so a continuous
+lift of a map `g` trivializes the pullback of the sign local system along `g`
+(`IsCoveringMap.signLocalSystemPullbackIsoOfLift`).
 
 For the orientation double cover of a real vector bundle `E` with integral coefficients this is
 the orientation local system `o(E)`: its fibre over `b` is a copy of `ℤ` whose two generators are
@@ -43,6 +46,8 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 * `IsCoveringMap.signLocalSystemObjEquiv`: the fibres of the sign local system are the modules
   `TauCeti.signFiber`.
 * `IsCoveringMap.signLocalSystemIsoOfSection`: the trivialization given by a continuous section.
+* `IsCoveringMap.signLocalSystemPullbackIsoOfLift`: the trivialization of the pullback along a map
+  given by a continuous lift of the map.
 
 ## Main results
 
@@ -70,7 +75,7 @@ noncomputable section
 
 open CategoryTheory
 
-universe u v w
+universe u v w v'
 
 namespace TauCeti
 
@@ -289,6 +294,34 @@ theorem signLocalSystemIsoOfSection_inv_app_apply_fiberMap (x : FundamentalGroup
           ((hp.signLocalSystemIsoOfSection hfix hfib s hs).inv.app x) (ULift.up r)) :
         p ⁻¹' {x.as} → R) (Function.fiberMap σ hσ x.as ⟨s x.as, hs x.as⟩) = -r :=
   TauCeti.signFiberEquiv_symm_apply_fiberMap hfix hfib _ r
+
+/-- A continuous lift `t` of a map `g : Y → X` to a double cover whose sheets are exchanged by `σ`
+trivializes the pullback of the sign local system along `g`: over `y`, the isomorphism with the
+constant system evaluates at `t y`. For `g` the identity this is the trivialization
+`IsCoveringMap.signLocalSystemIsoOfSection` given by a section. -/
+def signLocalSystemPullbackIsoOfLift {Y : TopCat.{v'}} (g : C(Y, X)) (t : C(Y, E))
+    (ht : ∀ y, t y ∈ p ⁻¹' {g y}) :
+    (TauCeti.LocalCoefficientSystem.pullback g).obj (hp.signLocalSystem R σ hσ) ≅
+      (TauCeti.LocalCoefficientSystem.constantFunctor Y).obj (ModuleCat.of R (ULift.{w} R)) :=
+  NatIso.ofComponents
+    (fun y ↦ (hp.signLocalSystemObjEquiv σ hσ ((FundamentalGroupoid.map g).obj y) ≪≫ₗ
+      TauCeti.signFiberEquiv hfix hfib ⟨t y.as, ht y.as⟩ ≪≫ₗ ULift.moduleEquiv.symm).toModuleIso)
+    -- As for `IsCoveringMap.signLocalSystemIsoOfSection`, both sides evaluate `f` at a point of
+    -- the fibre; monodromy along the image of `inv γ` carries `t y'.as` to `t y.as`.
+    fun {y y'} γ ↦ ModuleCat.hom_ext <| LinearMap.ext fun f ↦ ULift.ext <| by
+      have h := hp.monodromy_map_lift g t.continuous ht (inv γ)
+      rw [Functor.map_inv] at h
+      exact congrArg f.val h
+
+/-- The trivialization given by a lift `t` of `g` evaluates at the value of `t`. -/
+theorem signLocalSystemPullbackIsoOfLift_hom_app_apply {Y : TopCat.{v'}} (g : C(Y, X))
+    (t : C(Y, E)) (ht : ∀ y, t y ∈ p ⁻¹' {g y}) (y : FundamentalGroupoid Y)
+    (f : ((TauCeti.LocalCoefficientSystem.pullback g).obj (hp.signLocalSystem R σ hσ)).obj y) :
+    (ModuleCat.Hom.hom (B := ModuleCat.of R (ULift.{w} R))
+        ((hp.signLocalSystemPullbackIsoOfLift hfix hfib g t ht).hom.app y)) f =
+      ULift.up ((hp.signLocalSystemObjEquiv σ hσ ((FundamentalGroupoid.map g).obj y) f :
+        p ⁻¹' {((FundamentalGroupoid.map g).obj y).as} → R) ⟨t y.as, ht y.as⟩) :=
+  (rfl)
 
 end DoubleCover
 

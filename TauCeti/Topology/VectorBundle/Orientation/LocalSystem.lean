@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
-public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
@@ -177,33 +176,25 @@ variable {S : Type (max uB uE uι)} [Ring S] (e : Trivialization F (π F E))
 
 /-- Over the base set of a trivialization `e` of the atlas, the orientation local system is
 trivialized by evaluating at the orientations read by `e` as a fixed orientation `ω` of the model
-fibre: its pullback along a map `g` into the base set is constant. Replacing `ω` by `-ω` negates
+fibre: its pullback along a map `g` into the base set is constant. This is the trivialization
+`IsCoveringMap.signLocalSystemPullbackIsoOfLift` given by the lift of `g` through these
+orientations, with the constant fibre `ULift S` identified with `S`. Replacing `ω` by `-ω` negates
 the trivialization
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemPullbackIsoOfMapsTo_neg_hom`). -/
 def signLocalSystemPullbackIsoOfMapsTo {Y : TopCat.{uY}} (g : C(Y, B))
     (hg : ∀ y, g y ∈ e.baseSet) :
     (LocalCoefficientSystem.pullback g).obj (signLocalSystem F E S hι) ≅
       (LocalCoefficientSystem.constantFunctor Y).obj (ModuleCat.of S S) :=
-  NatIso.ofComponents
-    (fun y ↦ (signLocalSystemObjEquiv hι ((FundamentalGroupoid.map g).obj y) ≪≫ₗ
-      signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-        ⟨⟨g y.as, (e.mapOrientation ι (hg y.as)).symm ω⟩, rfl⟩).toModuleIso)
-    fun {y y'} γ ↦ by
-      have hs : Continuous fun y : Y ↦ (⟨g y, (e.mapOrientation ι (hg y)).symm ω⟩ :
-          VectorBundleOrientationCover F E ι) :=
+  (show (LocalCoefficientSystem.pullback g).obj (signLocalSystem F E S hι) ≅
+      (LocalCoefficientSystem.constantFunctor Y).obj (ModuleCat.of S (ULift.{max uB uE uι} S)) from
+    (isCoveringMap_proj hι).signLocalSystemPullbackIsoOfLift (X := TopCat.of B) (R := S)
+      (hσ := proj_comp_deck)
+      deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g
+      ⟨fun y ↦ ⟨g y, (e.mapOrientation ι (hg y)).symm ω⟩,
         (continuous_mk_mapOrientation_symm hι e ω).comp
-          (g.continuous.subtype_mk hg : Continuous fun y : Y ↦ (⟨g y, hg y⟩ : e.baseSet))
-      refine ModuleCat.hom_ext <| LinearMap.ext fun f ↦ ?_
-      have h := (isCoveringMap_proj hι).monodromy_map_lift g hs (fun _ ↦ rfl) (inv γ)
-      rw [Functor.map_inv] at h
-      -- Both sides evaluate a function on the orientations of a fibre; `change` exposes these
-      -- evaluations behind the coercions of the module category.
-      change signFiberEquiv _ _ _ (signLocalSystemObjEquiv hι _
-          (((signLocalSystem F E S hι).map ((FundamentalGroupoid.map g).map γ)).hom f)) =
-        signFiberEquiv _ _ _ (signLocalSystemObjEquiv hι _ f)
-      rw [signFiberEquiv_apply, signFiberEquiv_apply]
-      exact (signLocalSystemObjEquiv_map_apply hι _ f _).trans
-        (congrArg (fun q ↦ (signLocalSystemObjEquiv hι _ f : _ → S) q) h)
+          (g.continuous.subtype_mk hg : Continuous fun y : Y ↦ (⟨g y, hg y⟩ : e.baseSet))⟩
+      fun _ ↦ by rfl) ≪≫
+    (LocalCoefficientSystem.constantFunctor Y).mapIso ULift.moduleEquiv.toModuleIso
 
 /-- The trivialization read through `e` and `ω` evaluates at the orientation of the fibre which `e`
 reads as `ω`. -/
@@ -216,7 +207,9 @@ theorem signLocalSystemPullbackIsoOfMapsTo_hom_app_apply {Y : TopCat.{uY}} (g : 
         (proj ⁻¹' {((FundamentalGroupoid.map g).obj y).as} :
           Set (VectorBundleOrientationCover F E ι)) → S)
         ⟨⟨g y.as, (e.mapOrientation ι (hg y.as)).symm ω⟩, rfl⟩ :=
-  signFiberEquiv_apply (R := S) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) _ _
+  congrArg ULift.down
+    ((isCoveringMap_proj hι).signLocalSystemPullbackIsoOfLift_hom_app_apply (X := TopCat.of B)
+      (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g _ (fun _ ↦ rfl) y f)
 
 /-- The trivialization along `g`, at the image of a point under a map `k`, is the trivialization
 along `g ∘ k` at that point. -/
@@ -224,8 +217,11 @@ theorem signLocalSystemPullbackIsoOfMapsTo_hom_app_map {Y Z : TopCat.{uY}} (g : 
     (hg : ∀ y, g y ∈ e.baseSet) (k : C(Z, Y)) (z : FundamentalGroupoid Z) :
     (signLocalSystemPullbackIsoOfMapsTo (S := S) hι e ω g hg).hom.app
         ((FundamentalGroupoid.map k).obj z) =
-      (signLocalSystemPullbackIsoOfMapsTo hι e ω (g.comp k) fun z ↦ hg (k z)).hom.app z :=
-  (rfl)
+      (signLocalSystemPullbackIsoOfMapsTo hι e ω (g.comp k) fun z ↦ hg (k z)).hom.app z := by
+  -- Both sides evaluate at the orientation of the fibre over `g (k z)` which `e` reads as `ω`.
+  ext f
+  exact (signLocalSystemPullbackIsoOfMapsTo_hom_app_apply hι e ω g hg _ f).trans
+    (signLocalSystemPullbackIsoOfMapsTo_hom_app_apply hι e ω (g.comp k) (fun z ↦ hg (k z)) z f).symm
 
 /-- Two trivializations of the atlas reading the same orientations along `g` as `ω` and `ω'` give
 the same trivialization of the orientation local system along `g`. -/

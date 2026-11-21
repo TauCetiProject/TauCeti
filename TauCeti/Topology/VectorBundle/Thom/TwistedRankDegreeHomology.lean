@@ -133,6 +133,24 @@ noncomputable abbrev thomPairOverSignHomologyMap {W W' : Set B} (h : W ⊆ W') (
     inter_subset_left inter_subset_left (preimage_mono h)
     (inter_subset_inter_left _ (preimage_mono h))) n
 
+variable (K) in
+/-- The map of twisted homology induced by an inclusion of pairs of subsets of the total space. -/
+private noncomputable abbrev subsetPairSignHomologyMap {A₁ C₁ A₂ C₂ : Set (thomPair F E).fst}
+    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (n : ℕ) :=
+  HomologicalComplex.homologyMap
+    (subsetPairTwistedChainComplexMap (thomPairSignSystem F E hι K) hC₁ hC₂ hA hC) n
+
+/-- The maps induced by inclusions of pairs of subsets compose. -/
+private theorem subsetPairSignHomologyMap_comp {A₁ C₁ A₂ C₂ A₃ C₃ : Set (thomPair F E).fst}
+    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hC₃ : C₃ ⊆ A₃) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂)
+    (hA' : A₂ ⊆ A₃) (hC' : C₂ ⊆ C₃) (n : ℕ) :
+    subsetPairSignHomologyMap hι K hC₁ hC₂ hA hC n ≫
+        subsetPairSignHomologyMap hι K hC₂ hC₃ hA' hC' n =
+      subsetPairSignHomologyMap hι K hC₁ hC₃ (hA.trans hA') (hC.trans hC') n :=
+  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap _ _ _ _ _ _ _ _))
+
 variable (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (ω : Orientation ℝ F ι)
 
 variable (K) in
@@ -207,6 +225,51 @@ theorem thomPairOverSignHomologyIso_neg_inv {W : Set B} (hW : W ⊆ e.baseSet) (
   Iso.inv_ext (by
     rw [thomPairOverSignHomologyIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
 
+/-- The restriction from `W` to `W'` is the change of coefficients identifying the two pullbacks of
+`o(E)` to `E|_W`, followed by the map induced by the inclusion of Thom pairs. -/
+theorem thomPairOverSignHomologyMap_eq {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
+    thomPairOverSignHomologyMap F E hι K h n =
+      (thomPairOver F E W).twistedHomologyCoefficientMap
+          ((pullbackCompIso
+            (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h))).hom
+            (TopCat.ofHom (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).hom).hom.app
+            (thomPairSignSystem F E hι K)) n ≫
+        TopPair.twistedHomologyMap
+          (TopPair.ofHom (X := thomPairOver F E W) (Y := thomPairOver F E W')
+            (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h)))
+            (TopCat.ofHom (ContinuousMap.inclusion
+              (inter_subset_inter_left (zeroSectionCompl F E) (preimage_mono (f := π F E) h))))
+            rfl)
+          (thomPairOverSignSystem F E hι K W') n := by
+  rw [thomPairOverSignHomologyMap, subsetPairTwistedChainComplexMap_def]
+  exact HomologicalComplex.homologyMap_comp _ _ n
+
+/-- The trivializations of the orientation local system over `W ⊆ W'` commute with the
+restriction from `E|_{W'}` to `E|_W`. -/
+theorem thomPairOverSignSystemIso_hom_restrict {W W' : Set B} (h : W ⊆ W')
+    (hW' : W' ⊆ e.baseSet) :
+    (pullbackCompIso
+          (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h))).hom
+          (TopCat.ofHom (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).hom).hom.app
+          (thomPairSignSystem F E hι K) ≫
+        (pullback (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h))).hom).map
+          (thomPairOverSignSystemIso hι K e ω hW').hom ≫
+        (pullbackConstantIso _ _).hom =
+      (thomPairOverSignSystemIso hι K e ω (h.trans hW')).hom := by
+  ext v : 2
+  -- The pulled-back systems are only definitionally whiskered functors (as in
+  -- `pullbackCompIso_hom_app_app`), so their structural components are reached by `erw`.
+  erw [NatTrans.comp_app, NatTrans.comp_app, pullbackCompIso_hom_app_app, Category.id_comp,
+    pullback_map_app, pullbackConstantIso_hom_app, Category.comp_id]
+  erw [Iso.trans_hom, Iso.trans_hom, NatTrans.comp_app, NatTrans.comp_app, Iso.symm_hom,
+    Iso.symm_hom, Iso.app_inv, Iso.app_inv, pullbackCompIso_inv_app_app,
+    pullbackCompIso_inv_app_app]
+  -- Both components are the trivialization along the projection of `E|_W`, the one over `W'`
+  -- written through the inclusion `E|_W ⊆ E|_{W'}`; the identities left over from the
+  -- `pullbackCompIso` components are definitionally trivial.
+  erw [signLocalSystemPullbackIsoOfMapsTo_hom_app_map]
+  rfl
+
 /-- The identifications with untwisted homology over subsets of the base set of `e` commute with
 the restrictions. -/
 theorem thomPairOverSignHomologyMap_comp_iso_hom {W W' : Set B} (h : W ⊆ W')
@@ -215,45 +278,28 @@ theorem thomPairOverSignHomologyMap_comp_iso_hom {W W' : Set B} (h : W ⊆ W')
         (thomPairOverSignHomologyIso hι K e ω hW' n).hom =
       (thomPairOverSignHomologyIso hι K e ω (h.trans hW') n).hom ≫
         TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) n := by
-  have hc : (pullbackCompIso
-          (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h))).hom
-          (TopCat.ofHom (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).hom).hom.app
-          (thomPairSignSystem F E hι K) ≫
-        (pullback (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h))).hom).map
-          (thomPairOverSignSystemIso hι K e ω hW').hom ≫
-        (pullbackConstantIso _ _).hom =
-      (thomPairOverSignSystemIso hι K e ω (h.trans hW')).hom := by
-    ext v : 2
-    -- The pulled-back systems are only definitionally whiskered functors (as in
-    -- `pullbackCompIso_hom_app_app`), so their structural components are reached by `erw`.
-    erw [NatTrans.comp_app, NatTrans.comp_app, pullbackCompIso_hom_app_app, Category.id_comp,
-      pullback_map_app, pullbackConstantIso_hom_app, Category.comp_id]
-    erw [Iso.trans_hom, Iso.trans_hom, NatTrans.comp_app, NatTrans.comp_app, Iso.symm_hom,
-      Iso.symm_hom, Iso.app_inv, Iso.app_inv, pullbackCompIso_inv_app_app,
-      pullbackCompIso_inv_app_app]
-    -- Both components are the trivialization along the projection of `E|_W`, the one over `W'`
-    -- written through the inclusion `E|_W ⊆ E|_{W'}`.
-    erw [signLocalSystemPullbackIsoOfMapsTo_hom_app_map]
-    rfl
-  simp only [thomPairOverSignHomologyMap, thomPairOverSignHomologyIso, Iso.trans_hom, asIso_hom]
-  rw [subsetPairTwistedChainComplexMap_def]
-  erw [HomologicalComplex.homologyMap_comp]
+  rw [thomPairOverSignHomologyMap_eq, thomPairOverSignHomologyIso_hom,
+    thomPairOverSignHomologyIso_hom]
   refine (Category.assoc _ _ _).trans ?_
   let f : thomPairOver F E W ⟶ thomPairOver F E W' :=
-    TopPair.ofHom (X := TopPair.ofInclusion _) (Y := TopPair.ofInclusion _)
+    TopPair.ofHom (X := thomPairOver F E W) (Y := thomPairOver F E W')
       (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono (f := π F E) h)))
       (TopCat.ofHom (ContinuousMap.inclusion
         (inter_subset_inter_left (zeroSectionCompl F E) (preimage_mono (f := π F E) h)))) rfl
   have hf : f = thomPairOverMap F E h := TopPair.hom_ext_of_fst _ (thomPairOverMap_fst F E h).symm
-  have key := TopPair.twistedHomologyMap_naturality_assoc f
-    (thomPairOverSignSystem F E hι K W') (thomPairOverSignSystemIso hι K e ω hW').hom n
-    ((thomPairOver F E W').twistedHomologyConstantIso (ModuleCat.of K K) n).hom
-  erw [key, TopPair.twistedHomologyConstantIso_hom_pair_naturality (ModuleCat.of K K) f n]
+  -- From here on the intermediate homology groups are twisted homology with coefficients in
+  -- systems on `(thomPair F E).fst`, which is `TotalSpace F E` only up to unfolding; `rw` sees the
+  -- goal as ill-typed under reducible transparency, so the remaining rewrites use `erw`.
+  -- Move the trivialization over `W'` past the map of pairs, then compare constant coefficients.
+  erw [TopPair.twistedHomologyMap_naturality_assoc f (thomPairOverSignSystem F E hι K W')
+      (thomPairOverSignSystemIso hι K e ω hW').hom n,
+    TopPair.twistedHomologyConstantIso_hom_pair_naturality (ModuleCat.of K K) f n]
+  -- Collect the three changes of coefficients into one.
   erw [← TopPair.twistedHomologyCoefficientMap_comp_assoc,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc]
   rw [← hf, Category.assoc]
-  have hc' := (Category.assoc _ _ _).trans hc
-  erw [hc']
+  erw [(Category.assoc _ _ _).trans (thomPairOverSignSystemIso_hom_restrict hι e ω h hW')]
+  -- `f` is a `let` whose body is the map of pairs in the goal.
   rfl
 
 variable [FiniteDimensional ℝ F]
@@ -312,18 +358,6 @@ theorem thomPairOverSignFiberClass_neg (x : B) :
   simp only [thomPairOverSignFiberClass, thomPairOverSignHomologyIso_neg_inv, ModuleCat.hom_neg,
     LinearMap.neg_apply]
 
-/-- Isomorphisms of pairs inducing the same map in homology up to a sign `s` have inverses inducing
-the same map up to `s`. -/
-private theorem singularHomologyMap_inv_eq_units_smul {P Q : TopPair.{w}} (φ φ' : P ≅ Q) (n : ℕ)
-    (s : ℤˣ) (h : TopPair.singularHomologyMap φ'.hom (ModuleCat.of K K) n =
-      (s : ℤ) • TopPair.singularHomologyMap φ.hom (ModuleCat.of K K) n) :
-    TopPair.singularHomologyMap φ'.inv (ModuleCat.of K K) n =
-      (s : ℤ) • TopPair.singularHomologyMap φ.inv (ModuleCat.of K K) n :=
-  Iso.inv_ext (f := TopPair.singularHomologyMapIso (ModuleCat.of K K) φ' n) (by
-    rw [TopPair.singularHomologyMapIso_hom, h, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
-      ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id,
-      smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one, one_smul])
-
 /-- Two trivializations whose maps `Hᵣ(E_x, E_x ∖ {0}; K) ⟶ Hᵣ(F, F ∖ {0}; K)` agree up to a sign
 `s` have fibre generators agreeing up to `s`. -/
 private theorem thomPairOverFiberGenerator_eq_units_smul (e' : Trivialization F (π F E))
@@ -334,7 +368,7 @@ private theorem thomPairOverFiberGenerator_eq_units_smul (e' : Trivialization F 
         (ModuleCat.of K K) (finrank ℝ F)) :
     thomPairOverFiberGenerator K e' hx' = (s : ℤ) • thomPairOverFiberGenerator K e hx := by
   rw [thomPairOverFiberGenerator, thomPairOverFiberGenerator,
-    singularHomologyMap_inv_eq_units_smul _ _ _ s h]
+    TopPair.singularHomologyMap_inv_eq_units_smul _ _ _ _ s h]
   simp only [ModuleCat.hom_zsmul, LinearMap.smul_apply, map_zsmul]
 
 omit [FiniteDimensional ℝ F] in
@@ -407,10 +441,8 @@ omit [FiniteDimensional ℝ F] in
 theorem thomPairOverSignHomologyMap_comp {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'')
     (n : ℕ) :
     thomPairOverSignHomologyMap F E hι K h n ≫ thomPairOverSignHomologyMap F E hι K h' n =
-      thomPairOverSignHomologyMap F E hι K (h.trans h') n := by
-  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap _ _ _ _ _ _ _ _))
+      thomPairOverSignHomologyMap F E hι K (h.trans h') n :=
+  subsetPairSignHomologyMap_comp hι _ _ _ _ _ _ _ n
 
 /-- Restricting from `W` to `W'` carries fibre classes to fibre classes. -/
 @[simp]
@@ -421,8 +453,8 @@ theorem thomPairOverSignHomologyMap_thomPairOverSignFiberClassOver {W W' : Set B
   rw [thomPairOverSignFiberClassOver, thomPairOverSignFiberClassOver,
     ← ConcreteCategory.comp_apply, thomPairOverSignHomologyMap_comp]
 
-/-- Over a subset `W` of the base set of the trivialization at `c`, reading the fibre class over
-`x` through the trivialization gives the class of `x` under
+/-- Over a subset `W` of the base set of a trivialization `e` of the atlas, reading the fibre class
+over `x` through `e` and `ω` gives the class of `x` under
 `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
 private theorem singularHomologyMap_thomPairOverIso_thomPairOverSignFiberClassOver {W : Set B}
     (hW : W ⊆ e.baseSet) (x : W) :
@@ -558,25 +590,6 @@ private theorem isIso_thomPairOverSignHomologyFinrankInv_empty :
   Limits.isIso_of_source_target_iso_zero _
     (isZero_singularHomology_of_isEmpty _ _ _).isoZero
     (isZero_thomPairOverSignHomology_empty hι _).isoZero
-
-variable (K) in
-/-- The map of twisted homology induced by an inclusion of pairs of subsets of the total space. -/
-private noncomputable abbrev subsetPairSignHomologyMap {A₁ C₁ A₂ C₂ : Set (thomPair F E).fst}
-    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (n : ℕ) :=
-  HomologicalComplex.homologyMap
-    (subsetPairTwistedChainComplexMap (thomPairSignSystem F E hι K) hC₁ hC₂ hA hC) n
-
-omit [FiniteDimensional ℝ F] in
-/-- The maps induced by inclusions of pairs of subsets compose. -/
-private theorem subsetPairSignHomologyMap_comp {A₁ C₁ A₂ C₂ A₃ C₃ : Set (thomPair F E).fst}
-    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hC₃ : C₃ ⊆ A₃) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂)
-    (hA' : A₂ ⊆ A₃) (hC' : C₂ ⊆ C₃) (n : ℕ) :
-    subsetPairSignHomologyMap hι K hC₁ hC₂ hA hC n ≫
-        subsetPairSignHomologyMap hι K hC₂ hC₃ hA' hC' n =
-      subsetPairSignHomologyMap hι K hC₁ hC₃ (hA.trans hA') (hC.trans hC') n :=
-  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap _ _ _ _ _ _ _ _))
 
 omit [FiniteDimensional ℝ F] in
 /-- Equal pairs of subsets have isomorphic homology. -/
@@ -802,6 +815,15 @@ theorem singularHomology₀Section_thomPairSignHomologyFinrankInv (b : B) :
   -- sides are the image of the fibre class over it in `Hᵣ(E, E₀; o(E))`.
   rfl
 
+/-- The map sends the class of `b` to the fibre class over `b`. -/
+@[simp]
+theorem thomPairSignHomologyFinrankInv_apply_singularHomology₀Section (b : B) :
+    thomPairSignHomologyFinrankInv F E hι K ω
+        (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of B) b 1) =
+      thomPairSignFiberClass F E hι K ω b := by
+  rw [← ConcreteCategory.comp_apply, singularHomology₀Section_thomPairSignHomologyFinrankInv]
+  simp
+
 /-- Over a base covered by finitely many trivializing open sets of the atlas, the map is an
 isomorphism. -/
 theorem isIso_thomPairSignHomologyFinrankInv_of_biUnion (s : Finset B)
@@ -862,9 +884,8 @@ theorem thomPairSignHomologyFinrankIso_inv_apply [CompactSpace B] (b : B) :
     (thomPairSignHomologyFinrankIso F E hι K ω).inv
         (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of B) b 1) =
       thomPairSignFiberClass F E hι K ω b := by
-  rw [thomPairSignHomologyFinrankIso_inv, ← ConcreteCategory.comp_apply,
-    singularHomology₀Section_thomPairSignHomologyFinrankInv]
-  simp
+  rw [thomPairSignHomologyFinrankIso_inv,
+    thomPairSignHomologyFinrankInv_apply_singularHomology₀Section]
 
 end Global
 
