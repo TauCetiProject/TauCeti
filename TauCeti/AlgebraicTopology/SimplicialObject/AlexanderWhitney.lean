@@ -412,7 +412,7 @@ private lemma alexanderWhitney_counit_whiskerRight :
         alexanderWhitneyCounit ▷ (alternatingFaceMapComplex C).obj A := by
   ext n : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, alexanderWhitney_f_eq_sum,
-    leftUnitor_inv_f, leftUnitor'_inv]
+    leftUnitor_inv_f]
   dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj, Monoidal.tensorUnit_obj]
   rw [alternatingFaceMapComplex_map_f, Monoidal.leftUnitor_inv_app]
   congr 1
@@ -431,7 +431,7 @@ private lemma alexanderWhitney_whiskerLeft_counit :
         (alternatingFaceMapComplex C).obj A ◁ alexanderWhitneyCounit := by
   ext n : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, alexanderWhitney_f_eq_sum,
-    rightUnitor_inv_f, rightUnitor'_inv]
+    rightUnitor_inv_f]
   dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj, Monoidal.tensorUnit_obj]
   rw [alternatingFaceMapComplex_map_f, Monoidal.rightUnitor_inv_app]
   congr 1

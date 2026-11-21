@@ -284,12 +284,10 @@ private lemma leftUnitor_inv_truncLE'Unit_truncLE'TensorHom :
       truncLE'Map (λ_ K).inv embeddingDownNat := by
   refine HomologicalComplex.hom_ext _ _ (fun n => ?_)
   rw [← cancel_mono ((𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⊗ K).truncLE'ToX n)]
-  simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX, leftUnitor_inv_f, leftUnitor'_inv,
+  simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX, leftUnitor_inv_f,
     ι_whiskerRight_assoc, ι_truncLE'TensorHom_f_truncLE'ToX, whiskerRight_comp_tensorHom_assoc,
     truncLE'Unit_f_truncLE'ToX, Iso.inv_hom_id_assoc, leftUnitor_inv_comp_tensorHom_assoc,
     singleObjXIsoOfEq_inv_whiskerRight_ι]
-  -- Mathlib states `leftUnitor'_inv` with `tensorUnit`, the definition of `𝟙_`.
-  rfl
 
 omit L in
 private lemma rightUnitor_inv_truncLE'Unit_truncLE'TensorHom :
@@ -299,11 +297,9 @@ private lemma rightUnitor_inv_truncLE'Unit_truncLE'TensorHom :
   refine HomologicalComplex.hom_ext _ _ (fun n => ?_)
   rw [← cancel_mono ((K ⊗ 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).truncLE'ToX n)]
   simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX, rightUnitor_inv_f,
-    rightUnitor'_inv, ι_whiskerLeft_assoc, ι_truncLE'TensorHom_f_truncLE'ToX,
+    ι_whiskerLeft_assoc, ι_truncLE'TensorHom_f_truncLE'ToX,
     whiskerLeft_comp_tensorHom_assoc, truncLE'Unit_f_truncLE'ToX, Iso.inv_hom_id_assoc,
     rightUnitor_inv_comp_tensorHom_assoc, whiskerLeft_singleObjXIsoOfEq_inv_ι]
-  -- Mathlib states `rightUnitor'_inv` with `tensorUnit`, the definition of `𝟙_`.
-  rfl
 
 variable (R) in
 /-- The good truncation `τ_{≥ 0}` from cochain complexes of `R`-modules indexed by `ℤ` to chain
