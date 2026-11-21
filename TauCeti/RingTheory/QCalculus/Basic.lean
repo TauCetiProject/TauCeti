@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import TauCeti.Algebra.Ring.QPochhammer
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Ring.GeomSum
@@ -16,10 +17,11 @@ import Mathlib.Tactic.Ring
 # Finite q-calculus and Jackson derivatives
 
 This file develops the algebraic finite `q`-calculus toolkit over arbitrary commutative
-(semi)rings, without any division or invertibility assumptions:
+(semi)rings, without any division or invertibility assumptions, building on `TauCeti.qFactorial`
+and `TauCeti.qPochhammer` from `TauCeti.Algebra.Ring.QPochhammer`:
 
-* `TauCeti.qFactorial q n`: `[n]_q! = ∏_{i = 1}^n [i]_q`, where `[i]_q = ∑_{j < i} q ^ j`.
-* `TauCeti.qPochhammer x q n`: `(x; q)_n = ∏_{i < n} (1 - x q ^ i)`.
+* Supplementary unit/divisibility/zero-base lemmas for `TauCeti.qFactorial` and
+  `TauCeti.qPochhammer`.
 * `Polynomial.jacksonDeriv q` and `Polynomial.adaptedJacksonDeriv q`:
   `D_q (X ^ n) = [n]_q X ^ (n - 1)` and `D'_q = (1 - q) D_q` on `A[X]`.
 * `PowerSeries.jacksonDeriv q` / `PowerSeries.adaptedJacksonDeriv q`: the same operators on `A⟦X⟧`,
@@ -41,163 +43,55 @@ open scoped Polynomial PowerSeries
 
 namespace TauCeti
 
-/-! ### `q`-factorials -/
+/-! ### Supplementary `q`-factorial lemmas -/
 
 section QFactorial
 
-variable {R S : Type*} [CommSemiring R] [CommSemiring S]
-
-/-- The `q`-factorial `[n]_q! = ∏_{i = 1}^n [i]_q`, where `[i]_q = ∑_{j < i} q ^ j`. -/
-def qFactorial (q : R) (n : ℕ) : R :=
-  ∏ i ∈ range n, ∑ j ∈ range (i + 1), q ^ j
-
-/-- Unfolding definition of `TauCeti.qFactorial`. -/
-theorem qFactorial_def (q : R) (n : ℕ) :
-    qFactorial q n = ∏ i ∈ range n, ∑ j ∈ range (i + 1), q ^ j :=
-  (rfl)
-
-@[simp] theorem qFactorial_zero (q : R) : qFactorial q 0 = 1 := by simp [qFactorial]
-
-@[simp] theorem qFactorial_one (q : R) : qFactorial q 1 = 1 := by simp [qFactorial]
-
-/-- Recursion for the `q`-factorial: `[n + 1]_q! = [n]_q! * [n + 1]_q`. -/
-theorem qFactorial_succ (q : R) (n : ℕ) :
-    qFactorial q (n + 1) = qFactorial q n * ∑ j ∈ range (n + 1), q ^ j :=
-  prod_range_succ _ n
-
-/-- Specializing the `q`-factorial at `q = 1` recovers the ordinary factorial. -/
-@[simp] theorem qFactorial_one_left (n : ℕ) : qFactorial (1 : R) n = (n.factorial : R) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [qFactorial_succ, ih, one_geom_sum, Nat.factorial_succ, Nat.cast_mul, mul_comm]
+variable {R : Type*} [CommSemiring R]
 
 /-- Specializing the `q`-factorial at `q = 0` gives `1`. -/
 @[simp] theorem qFactorial_zero_left (n : ℕ) : qFactorial (0 : R) n = 1 := by
-  simp [qFactorial, zero_geom_sum]
-
-/-- `q`-factorials commute with ring homomorphisms. -/
-theorem map_qFactorial (f : R →+* S) (q : R) (n : ℕ) :
-    f (qFactorial q n) = qFactorial (f q) n := by
-  simp [qFactorial, map_prod, map_sum]
+  simp [qFactorial_def, zero_geom_sum]
 
 /-- If `m ≤ n`, then `[m]_q!` divides `[n]_q!`. -/
 theorem qFactorial_dvd_of_le (q : R) {m n : ℕ} (h : m ≤ n) :
-    qFactorial q m ∣ qFactorial q n :=
-  prod_dvd_prod_of_subset _ _ _ (range_mono h)
+    qFactorial q m ∣ qFactorial q n := by
+  rw [qFactorial_def, qFactorial_def]
+  exact prod_dvd_prod_of_subset _ _ _ (range_mono h)
 
 /-- `[n]_q!` is a unit if and only if `[k]_q` is a unit for all `1 ≤ k ≤ n`. -/
 theorem isUnit_qFactorial_iff (q : R) (n : ℕ) :
     IsUnit (qFactorial q n) ↔ ∀ k < n, IsUnit (∑ j ∈ range (k + 1), q ^ j) := by
-  simp [qFactorial, IsUnit.prod_iff]
+  simp [qFactorial_def, IsUnit.prod_iff]
 
 end QFactorial
 
-/-! ### Finite `q`-Pochhammer symbols -/
+/-! ### Supplementary finite `q`-Pochhammer lemmas -/
 
 section QPochhammer
 
-variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- The finite multiplicative `q`-Pochhammer symbol `(x; q)_n = ∏_{i < n} (1 - x q ^ i)`. -/
-def qPochhammer (x q : R) (n : ℕ) : R :=
-  ∏ i ∈ range n, (1 - x * q ^ i)
-
-/-- Unfolding definition of `TauCeti.qPochhammer`. -/
-theorem qPochhammer_def (x q : R) (n : ℕ) :
-    qPochhammer x q n = ∏ i ∈ range n, (1 - x * q ^ i) :=
-  (rfl)
-
-@[simp] theorem qPochhammer_zero (x q : R) : qPochhammer x q 0 = 1 := by simp [qPochhammer]
-
-@[simp] theorem qPochhammer_one (x q : R) : qPochhammer x q 1 = 1 - x := by simp [qPochhammer]
-
-/-- Splitting off the last factor: `(x; q)_{n + 1} = (x; q)_n (1 - x q ^ n)`. -/
-theorem qPochhammer_succ (x q : R) (n : ℕ) :
-    qPochhammer x q (n + 1) = qPochhammer x q n * (1 - x * q ^ n) :=
-  prod_range_succ _ n
-
-/-- Shift law splitting off the first factor: `(x; q)_{n + 1} = (1 - x) (x q; q)_n`. -/
-theorem qPochhammer_succ' (x q : R) (n : ℕ) :
-    qPochhammer x q (n + 1) = (1 - x) * qPochhammer (x * q) q n := by
-  rw [qPochhammer, prod_range_succ', pow_zero, mul_one, mul_comm, qPochhammer]
-  exact congrArg _ (prod_congr rfl fun i _ ↦ by rw [pow_succ', mul_assoc])
-
-/-- Concatenation law: `(x; q)_{m + n} = (x; q)_m (x q ^ m; q)_n`. -/
-theorem qPochhammer_add (x q : R) (m n : ℕ) :
-    qPochhammer x q (m + n) = qPochhammer x q m * qPochhammer (x * q ^ m) q n := by
-  rw [qPochhammer, prod_range_add, qPochhammer, qPochhammer]
-  exact congrArg _ (prod_congr rfl fun i _ ↦ by rw [pow_add, mul_assoc])
-
-@[simp] theorem qPochhammer_zero_left (q : R) (n : ℕ) : qPochhammer (0 : R) q n = 1 := by
-  simp [qPochhammer]
-
-/-- For `n ≠ 0`, `(1; q)_n = 0`. -/
-theorem qPochhammer_one_left (q : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer (1 : R) q n = 0 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  simp [qPochhammer_succ']
-
-/-- At `q = 1`, `(x; 1)_n = (1 - x) ^ n`. -/
-@[simp] theorem qPochhammer_one_right (x : R) (n : ℕ) : qPochhammer x (1 : R) n = (1 - x) ^ n := by
-  simp [qPochhammer]
+variable {R : Type*} [CommRing R]
 
 /-- At `q = 0` and `n ≠ 0`, `(x; 0)_n = 1 - x`. -/
 theorem qPochhammer_zero_right (x : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer x (0 : R) n = 1 - x := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   simp [qPochhammer_succ']
 
-/-- The self-shifted product `(q; q)_n = ∏_{i < n} (1 - q ^ (i + 1))`. -/
-theorem qPochhammer_self_eq_prod (q : R) (n : ℕ) :
-    qPochhammer q q n = ∏ i ∈ range n, (1 - q ^ (i + 1)) :=
-  prod_congr rfl fun i _ ↦ by rw [pow_succ']
-
-/-- Finite `q`-Pochhammer products commute with ring homomorphisms. -/
-theorem map_qPochhammer (f : R →+* S) (x q : R) (n : ℕ) :
-    f (qPochhammer x q n) = qPochhammer (f x) (f q) n := by
-  simp [qPochhammer, map_prod]
-
 /-- If `m ≤ n`, then `(x; q)_m` divides `(x; q)_n`. -/
 theorem qPochhammer_dvd_of_le (x q : R) {m n : ℕ} (h : m ≤ n) :
-    qPochhammer x q m ∣ qPochhammer x q n :=
-  prod_dvd_prod_of_subset _ _ _ (range_mono h)
+    qPochhammer x q m ∣ qPochhammer x q n := by
+  rw [qPochhammer_def, qPochhammer_def]
+  exact prod_dvd_prod_of_subset _ _ _ (range_mono h)
 
 /-- `(x; q)_n` is a unit if and only if each factor `1 - x q ^ i` (`i < n`) is a unit. -/
 theorem isUnit_qPochhammer_iff (x q : R) (n : ℕ) :
     IsUnit (qPochhammer x q n) ↔ ∀ i < n, IsUnit (1 - x * q ^ i) := by
-  simp [qPochhammer, IsUnit.prod_iff]
+  simp [qPochhammer_def, IsUnit.prod_iff]
 
 /-- `(q; q)_n` is a unit if and only if each `1 - q ^ (i + 1)` (`i < n`) is a unit. -/
 theorem isUnit_qPochhammer_self_iff (q : R) (n : ℕ) :
     IsUnit (qPochhammer q q n) ↔ ∀ i < n, IsUnit (1 - q ^ (i + 1)) := by
-  simp [qPochhammer_self_eq_prod, IsUnit.prod_iff]
-
-/-- Polynomial identity relating `q`-factorials and finite `q`-Pochhammer symbols:
-`(1 - q) ^ n * [n]_q! = (q; q)_n`. -/
-theorem one_sub_pow_mul_qFactorial (q : R) (n : ℕ) :
-    (1 - q) ^ n * qFactorial q n = qPochhammer q q n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, qFactorial_succ, qPochhammer_succ, ← ih, ← pow_succ', ← mul_neg_geom_sum]
-    ring
-
-/-- Inverse-parameter formula for a unit `u : Rˣ`:
-`(u⁻¹; u⁻¹)_n = (-1) ^ n * (u⁻¹) ^ (n (n + 1) / 2) * (u; u)_n`. -/
-theorem qPochhammer_inv_self (u : Rˣ) (n : ℕ) :
-    qPochhammer (↑u⁻¹ : R) (↑u⁻¹ : R) n =
-      (-1) ^ n * (↑u⁻¹ : R) ^ (n * (n + 1) / 2) * qPochhammer (u : R) (u : R) n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have htri : (n + 1) * (n + 1 + 1) / 2 = n * (n + 1) / 2 + (n + 1) := by
-      have h : (n + 1) * (n + 1 + 1) = n * (n + 1) + 2 * (n + 1) := by ring
-      rw [h, Nat.add_mul_div_left _ _ two_pos]
-    have hfac : (1 - (↑u⁻¹ : R) ^ (n + 1)) =
-        (-1) * (↑u⁻¹ : R) ^ (n + 1) * (1 - (u : R) ^ (n + 1)) := by
-      rw [neg_one_mul, neg_mul, mul_sub, mul_one, ← mul_pow, Units.inv_mul, one_pow, neg_sub]
-    rw [qPochhammer_succ, qPochhammer_succ, ← pow_succ', ← pow_succ', ih, hfac, htri, pow_add,
-      pow_succ]
-    ring
+  simp [qPochhammer_self, IsUnit.prod_iff]
 
 end QPochhammer
 

@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.LaurentSeries.Multiplication
+import TauCeti.RingTheory.PowerSeries.Geometric
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -330,7 +331,7 @@ theorem map_plethysticExp (φ : A →+* B) (F : (A⸨X⸩)⟦X⟧) :
 theorem coeff_plethysticExp_eq_of_coeff_eq {F₁ F₂ : (A⸨X⸩)⟦X⟧} {k : ℕ}
     (h : ∀ j, 1 ≤ j → j ≤ k → coeff j F₁ = coeff j F₂) :
     coeff k (plethysticExp F₁) = coeff k (plethysticExp F₂) := by
-  have hdiff : ∀ j ≤ k, coeff j (plethysticLogSum (F₁ - F₂)) = 0 := fun j hj ↦ by
+  have hdiff : ∀ j < k + 1, coeff j (plethysticLogSum (F₁ - F₂)) = 0 := fun j hj ↦ by
     rw [plethysticLogSum_sub, map_sub, sub_eq_zero]
     rcases eq_or_ne j 0 with rfl | hj0
     · simp [coeff_zero_eq_constantCoeff_apply]
@@ -340,28 +341,15 @@ theorem coeff_plethysticExp_eq_of_coeff_eq {F₁ F₂ : (A⸨X⸩)⟦X⟧} {k : 
     · obtain ⟨d, rfl⟩ := hd
       rw [coeff_adamsExpand_mul n.succPNat, coeff_adamsExpand_mul n.succPNat,
         h d (Nat.pos_of_ne_zero (right_ne_zero_of_mul hj0))
-          (le_trans (Nat.le_mul_of_pos_left d n.succPNat.pos) hj)]
+          (le_trans (Nat.le_mul_of_pos_left d n.succPNat.pos) (Nat.lt_succ_iff.mp hj))]
     · rw [coeff_adamsExpand_of_not_dvd n.succPNat F₁ hd,
         coeff_adamsExpand_of_not_dvd n.succPNat F₂ hd]
-  obtain ⟨E', hE'⟩ := X_dvd_iff.mpr (by simp : constantCoeff (PowerSeries.exp A⸨X⸩ - 1) = 0)
-  have hsub : HasSubst (plethysticLogSum (F₁ - F₂)) :=
-    HasSubst.of_constantCoeff_zero' (constantCoeff_plethysticLogSum _)
-  have hpe_sub : plethysticExp (F₁ - F₂) - 1 =
-      plethysticLogSum (F₁ - F₂) * E'.subst (plethysticLogSum (F₁ - F₂)) := by
-    rw [plethysticExp, ← subst_one (R := A⸨X⸩) (a := plethysticLogSum (F₁ - F₂)),
-      ← subst_sub hsub, hE', subst_mul hsub, subst_X hsub]
-  have hpe_zero : ∀ j ≤ k, coeff j (plethysticExp (F₁ - F₂) - 1) = 0 := fun j hj ↦ by
-    rw [hpe_sub, coeff_mul]
-    refine Finset.sum_eq_zero fun x hx ↦ ?_
-    rw [hdiff x.1 (le_trans (Nat.le_of_add_right_le (mem_antidiagonal.mp hx).le) hj), zero_mul]
-  have hsplit : plethysticExp F₁ =
-      plethysticExp F₂ + plethysticExp F₂ * (plethysticExp (F₁ - F₂) - 1) := by
-    rw [mul_sub, mul_one, add_sub_cancel, ← plethysticExp_add, add_sub_cancel]
-  rw [hsplit, map_add, coeff_mul]
-  suffices ∑ x ∈ antidiagonal k, coeff x.1 (plethysticExp F₂) *
-      coeff x.2 (plethysticExp (F₁ - F₂) - 1) = 0 by rw [this, add_zero]
-  exact Finset.sum_eq_zero fun x hx ↦ by
-    rw [hpe_zero x.2 (Nat.le_of_add_left_le (mem_antidiagonal.mp hx).le), mul_zero]
+  rw [plethysticLogSum_sub] at hdiff
+  have hdvd : (X : (A⸨X⸩)⟦X⟧) ^ (k + 1) ∣ plethysticLogSum F₁ - plethysticLogSum F₂ :=
+    X_pow_dvd_iff.mpr hdiff
+  have hexp : (X : (A⸨X⸩)⟦X⟧) ^ (k + 1) ∣ plethysticExp F₁ - plethysticExp F₂ :=
+    X_pow_dvd_subst_sub_subst (constantCoeff_plethysticLogSum F₁) hdvd (PowerSeries.exp A⸨X⸩)
+  exact sub_eq_zero.mp (X_pow_dvd_iff.mp hexp k (Nat.lt_succ_self k))
 
 /-! ### Monomial plethystic formulas -/
 
@@ -447,19 +435,11 @@ private theorem exists_inv_one_sub_single_mul_X_pow (i : ℤ) {j : ℕ} (hj : j 
         plethysticExp (C (single i (1 : ℚ)) * X ^ j) ∧
       ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a U).coeff s = 0 := by
   let ι : ℤ⸨X⸩ →+* ℚ⸨X⸩ := HahnSeries.mapRingHom (Int.castRingHom ℚ)
-  let U : (ℤ⸨X⸩)⟦X⟧ := PowerSeries.expand j hj (PowerSeries.mk fun d ↦ single ((d : ℤ) * i) (1 : ℤ))
+  let U : (ℤ⸨X⸩)⟦X⟧ := PowerSeries.expand j hj (PowerSeries.mk fun d ↦ (single i (1 : ℤ)) ^ d)
   have hU_mul : U * (1 - C (single i (1 : ℤ)) * X ^ j) = 1 := by
-    have h1 : (PowerSeries.mk fun d ↦ single ((d : ℤ) * i) (1 : ℤ)) *
-        (1 - C (single i (1 : ℤ)) * X) = 1 := by
-      apply PowerSeries.ext; rintro (_ | d)
-      · simp
-      · simp only [mul_sub, mul_one, map_sub, mul_left_comm _ (C _), coeff_C_mul, coeff_mk,
-          coeff_one, Nat.succ_ne_zero, ↓reduceIte]
-        rw [mul_comm _ X, coeff_succ_X_mul, coeff_mk, HahnSeries.single_mul_single, one_mul]
-        have : i + (d : ℤ) * i = ((d + 1 : ℕ) : ℤ) * i := by push_cast; ring
-        rw [this, sub_self]
     simpa [U, map_mul, map_sub, (PowerSeries.expand j hj).map_one, expand_C, expand_X] using
-      congrArg (PowerSeries.expand j hj) h1
+      congrArg (PowerSeries.expand j hj)
+        (TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one (single i (1 : ℤ)))
   refine ⟨U, ?_, ?_⟩
   · have hunit : IsUnit (1 - C (single i (1 : ℚ)) * X ^ j) :=
       isUnit_iff_constantCoeff.mpr (by simp [hj])
@@ -471,7 +451,7 @@ private theorem exists_inv_one_sub_single_mul_X_pow (i : ℤ) {j : ℕ} (hj : j 
   · intro a s hs
     rw [coeff_expand]
     split_ifs with hd
-    · rw [coeff_mk, HahnSeries.coeff_single]
+    · rw [coeff_mk, HahnSeries.single_pow, one_pow, nsmul_eq_mul, HahnSeries.coeff_single]
       refine ite_eq_right fun hEq ↦ ?_
       have : ((a / j : ℕ) : ℤ) ≤ a := by exact_mod_cast Nat.div_le_self a j
       nlinarith
@@ -697,9 +677,7 @@ theorem existsUnique_map_eq_plethysticExp {A : Type*} [CommRing A] [Algebra ℚ 
   have hinjZ : Function.Injective (Int.castRingHom A) := by
     rw [← RingHom.eq_intCast' ((algebraMap ℚ A).comp (Int.castRingHom ℚ))]
     exact (RingHom.injective (algebraMap ℚ A)).comp Int.cast_injective
-  apply PowerSeries.ext; intro k
-  exact HahnSeries.mapRingHom_injective hinjZ
-    (by simpa [coeff_map] using congrArg (coeff k) (hG'.trans hG.symm))
+  exact PowerSeries.map_injective _ (HahnSeries.mapRingHom_injective hinjZ) (hG'.trans hG.symm)
 
 end Integrality
 

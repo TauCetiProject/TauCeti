@@ -64,11 +64,13 @@ theorem coeff_mul_eq_sum {R : Type*} [NonUnitalNonAssocSemiring R] {f g : R⸨X�
 theorem coeff_mul_eq_zero_of_lt {R : Type*} [NonUnitalNonAssocSemiring R] {x y : R⸨X⸩}
     {M N r : ℤ} (hx : ∀ i < M, x.coeff i = 0) (hy : ∀ i < N, y.coeff i = 0) (hr : r < M + N) :
     (x * y).coeff r = 0 := by
-  classical
-  rw [coeff_mul_eq_sum
-      (HahnSeries.le_orderTop_iff_forall.mpr fun i hi ↦ hx i (by exact_mod_cast hi))
-      (HahnSeries.le_orderTop_iff_forall.mpr fun i hi ↦ hy i (by exact_mod_cast hi))]
-  exact Finset.sum_eq_zero fun _ h ↦ by simp only [Finset.mem_Icc] at h; omega
+  have hx' : (M : WithTop ℤ) ≤ x.orderTop :=
+    HahnSeries.le_orderTop_iff_forall.mpr fun i hi ↦ hx i (by exact_mod_cast hi)
+  have hy' : (N : WithTop ℤ) ≤ y.orderTop :=
+    HahnSeries.le_orderTop_iff_forall.mpr fun i hi ↦ hy i (by exact_mod_cast hi)
+  exact HahnSeries.coeff_eq_zero_of_lt_orderTop
+    ((WithTop.coe_lt_coe.mpr hr).trans_le
+      ((WithTop.coe_add M N ▸ add_le_add hx' hy').trans HahnSeries.orderTop_add_le_mul))
 
 end LaurentSeries
 

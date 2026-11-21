@@ -114,7 +114,7 @@ theorem map_jacksonExp (φ : A →+* B) {q : A} (hq : ∀ n, IsUnit (∑ i ∈ r
 @[simp] theorem jacksonExp_one {R : Type*} [CommRing R] [Algebra ℚ R] :
     jacksonExp (1 : R) = PowerSeries.exp R := by
   ext n
-  rw [coeff_jacksonExp, coeff_exp, qFactorial_one_left]
+  rw [coeff_jacksonExp, coeff_exp, qFactorial_base_one]
   have hne : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
   have hu : IsUnit (n.factorial : R) := by
     rw [← map_natCast (algebraMap ℚ R)]; exact (Ne.isUnit hne).map _
@@ -184,7 +184,9 @@ theorem coeff_qPochhammerInvSeries_zero (n : ℕ) :
 
 /-- At `q = 0`, `U_0(t) * (1 - t) = 1`. -/
 theorem qPochhammerInvSeries_zero_mul : qPochhammerInvSeries (0 : A) * (1 - X) = 1 := by
-  ext (_ | n) <;> simp [mul_sub]
+  rw [show qPochhammerInvSeries (0 : A) = PowerSeries.mk 1 from
+    PowerSeries.ext fun n ↦ coeff_qPochhammerInvSeries_zero n]
+  exact PowerSeries.mk_one_mul_one_sub_eq_one A
 
 /-- The degree-`1` coefficient of `U_q(t)` is `(1 - q)⁻¹ʳ`. -/
 theorem coeff_one_qPochhammerInvSeries (q : A) :
@@ -199,7 +201,8 @@ theorem coeff_two_qPochhammerSeries (q : A) :
 @[simp] theorem qBinomialSeries_one_left (q : A) : qBinomialSeries (1 : A) q = 1 := by
   ext (_ | n)
   · simp
-  · simp [qPochhammer_one_left q (Nat.succ_ne_zero n)]
+  · simp [qPochhammer_eq_zero_of_mul_pow_eq_one (x := (1 : A)) (q := q) (i := 0)
+      (Nat.succ_pos n) (by simp)]
 
 /-- At `a = 0`, the `q`-binomial series is `U_q(t)`. -/
 @[simp] theorem qBinomialSeries_zero_left (q : A) :
@@ -639,11 +642,7 @@ private theorem neg_X_pow_mul_coeff_qPochhammerSeries_sq (n : ℕ) :
       (X : R⟦X⟧) ^ (n ^ 2) * Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n) := by
   rw [coeff_qPochhammerSeries, neg_eq_neg_one_mul, mul_pow, ← pow_mul]
   have hexp : n + 2 * (n * (n - 1) / 2) = n ^ 2 := by
-    have hdvd : 2 ∣ n * (n - 1) := by
-      rcases Nat.even_or_odd n with ⟨m, rfl⟩ | ⟨m, rfl⟩
-      · exact ⟨m * (m + m - 1), by ring⟩
-      · exact ⟨(2 * m + 1) * m, by rw [Nat.add_sub_cancel]; ring⟩
-    rw [Nat.mul_div_cancel' hdvd]
+    rw [Nat.mul_div_cancel' (Nat.two_dvd_mul_sub_one n)]
     rcases n with _ | m <;> [rfl; (rw [Nat.add_sub_cancel]; ring)]
   have hsign : (-1 : R⟦X⟧) ^ n * (-1 : R⟦X⟧) ^ n = 1 := by rw [← mul_pow]; simp
   rw [← hexp, pow_add]
