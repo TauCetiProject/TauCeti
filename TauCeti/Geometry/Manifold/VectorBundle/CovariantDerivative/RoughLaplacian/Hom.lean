@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Extension
 import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.MaximumPrinciple
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Topology.VectorBundle.DiscSphere
 
 /-!
@@ -25,8 +25,9 @@ covariant derivative of `A s` obeys the Leibniz rule
 
 `∇²(A s)(u, w) = (∇²A)(u, w) s + (∇_u A)(∇_w s) + (∇_w A)(∇_u s) + A ∇²s(u, w)`
 
-(`CovariantDerivative.secondCovariantDerivative_clm_apply`). Taking the metric trace gives the
-rough Laplacian `∇*∇ = -tr ∇²` of `A s`:
+(`CovariantDerivative.secondCovariantDerivative_clm_apply`, in
+`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom`).
+Taking the metric trace gives the rough Laplacian `∇*∇ = -tr ∇²` of `A s`:
 
 `∇*∇(A s) = (∇*∇A) s - 2 ∑ᵢ (∇_{eᵢ} A)(∇_{eᵢ} s) + A ∇*∇s`
 
@@ -39,9 +40,8 @@ For an endomorphism field `A` of a Riemannian bundle `V` with a metric connectio
 
 (`CovariantDerivative.IsMetricCompatible.laplaceBeltrami_inner_clm_apply_of_cov_eq_zero`). If
 moreover `A x` is symmetric with eigenvector `s x` of eigenvalue `c`, and `⟪A s, s⟫ ≥ c |s|²`
-near `x`, then `⟪A s, s⟫ - c |s|²` has a local minimum `0` at `x`, its Laplacian is nonnegative
-there, and the two terms in `∇*∇s` cancel against `c Δ |s|²`. What remains is the sign
-`⟪(∇*∇A) s, s⟫ ≤ 0` at `x`
+near `x` with equality at `x`, then `Δ (c |s|²) ≤ Δ ⟪A s, s⟫` at `x`, and the two terms in
+`∇*∇s` cancel against `c Δ |s|²`. What remains is the sign `⟪(∇*∇A) s, s⟫ ≤ 0` at `x`
 (`CovariantDerivative.IsMetricCompatible.inner_roughLaplacian_hom_apply_nonpos`).
 
 This is the key step of **Hamilton's maximum principle for symmetric tensors**. On a compact
@@ -66,7 +66,6 @@ curvature (`TauCeti.SeibergWitten.norm_smul_sub_hodgeStar_le`).
 
 ## Main results
 
-* `CovariantDerivative.secondCovariantDerivative_clm_apply`: the Leibniz rule for `∇²(A s)`.
 * `CovariantDerivative.roughLaplacian_clm_apply`: the Leibniz rule for `∇*∇(A s)`.
 * `CovariantDerivative.IsMetricCompatible.laplaceBeltrami_inner_clm_apply_of_cov_eq_zero`:
   `Δ ⟪A s, s⟫` at a point where `s` is parallel.
@@ -116,54 +115,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffCovariantDerivative covV ∞] [ContMDiffCovariantDerivative covW ∞]
   (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
   {A : Π x : M, V x →L[ℝ] W x} {s : Π x : M, V x}
-
-/-- **The Leibniz rule for the second covariant derivative of a bundle map applied to a
-section.** For a smooth section `A` of `Hom(V, W)` and a smooth section `s` of `V`,
-`∇²(A s)(u, w) = (∇²A)(u, w) s + (∇_u A)(∇_w s) + (∇_w A)(∇_u s) + A ∇²s(u, w)`, where `A` is
-differentiated with the induced connection on `Hom(V, W)`. The connection `∇ᵀ` on the tangent
-bundle is arbitrary. -/
-theorem secondCovariantDerivative_clm_apply
-    (hA : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞
-      (fun x ↦ TotalSpace.mk' (F →L[ℝ] G) (E := fun y ↦ V y →L[ℝ] W y) x (A x)))
-    (hs : CMDiff ∞ (T% s)) (x : M) (u w : TangentSpace I x) :
-    covW.secondCovariantDerivative covT (fun y ↦ A y (s y)) x u w =
-      (covV.hom covW).secondCovariantDerivative covT A x u w (s x) +
-        covV.hom covW A x u (covV s x w) + covV.hom covW A x w (covV s x u) +
-        A x (covV.secondCovariantDerivative covT s x u w) := by
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
-  have hAs : CMDiff ∞ (T% (fun y ↦ A y (s y))) := hA.clm_bundle_apply hs
-  have hs' : CMDiff (∞ + 1) (T% s) := by simpa using hs
-  have hA' : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) (∞ + 1)
-      (fun x ↦ TotalSpace.mk' (F →L[ℝ] G) (E := fun y ↦ V y →L[ℝ] W y) x (A x)) := by
-    simpa using hA
-  -- The covariant derivative of `A` along `Y`, and that of `s` along `Y`.
-  have hB : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞
-      (fun x ↦ TotalSpace.mk' (F →L[ℝ] G) (E := fun y ↦ V y →L[ℝ] W y) x
-        (covV.hom covW A x (Y x))) :=
-    (covV.hom covW).contMDiff_apply hY hA'
-  have ht : CMDiff ∞ (T% (fun y ↦ covV s y (Y y))) := covV.contMDiff_apply hY hs'
-  have hsplit : (fun y ↦ covW (fun z ↦ A z (s z)) y (Y y)) =
-      (fun y ↦ covV.hom covW A y (Y y) (s y)) + fun y ↦ A y (covV s y (Y y)) := by
-    funext y
-    simp only [Pi.add_apply]
-    rw [hom_apply covV covW ((hA y).mdifferentiableAt (by simp))
-      ((hs y).mdifferentiableAt (by simp))]
-    abel
-  have h1 := hom_apply covV covW ((hB x).mdifferentiableAt (by simp))
-    ((hs x).mdifferentiableAt (by simp)) u
-  have h2 := hom_apply covV covW ((hA x).mdifferentiableAt (by simp))
-    ((ht x).mdifferentiableAt (by simp)) u
-  have h3 := hom_apply covV covW ((hA x).mdifferentiableAt (by simp))
-    ((hs x).mdifferentiableAt (by simp)) (covT Y x u)
-  rw [secondCovariantDerivative_apply covW covT hAs x hY u,
-    secondCovariantDerivative_apply (covV.hom covW) covT hA x hY u,
-    secondCovariantDerivative_apply covV covT hs x hY u, hsplit,
-    covW.isCovariantDerivativeOnUniv.add
-      (((hB.clm_bundle_apply hs) x).mdifferentiableAt (by simp))
-      (((hA.clm_bundle_apply ht) x).mdifferentiableAt (by simp))]
-  simp only [add_apply, sub_apply, map_sub]
-  rw [h1, h2, h3]
-  abel
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
@@ -230,9 +181,8 @@ theorem laplaceBeltrami_inner_clm_apply_of_cov_eq_zero (hcov : cov.IsMetricCompa
       real_inner_comm (s y) (A y (s y))]
     ring
   have hsq : ∀ {σ : Π y : M, V y}, CMDiff ∞ (T% σ) →
-      ContMDiff I 𝓘(ℝ) 2 (fun y ↦ ‖σ y‖ ^ 2) := fun hσ ↦ by
-    simp_rw [← real_inner_self_eq_norm_sq]
-    exact (hσ.inner_bundle hσ).of_le (by simp)
+      ContMDiff I 𝓘(ℝ) 2 (fun y ↦ ‖σ y‖ ^ 2) := fun hσ ↦
+    ((TauCeti.contMDiff_norm_sq_bundle I ∞ F V).comp hσ).of_le (by simp)
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   have hcovt : ∀ i, cov (t + s) x (b i) = cov (t - s) x (b i) := fun i ↦ by
     rw [cov.isCovariantDerivativeOnUniv.add ((ht x).mdifferentiableAt (by simp))
@@ -273,34 +223,24 @@ theorem inner_roughLaplacian_hom_apply_nonpos (hcov : cov.IsMetricCompatible)
     ⟪(cov.hom cov).roughLaplacian (leviCivitaConnection I M) A x (s x), s x⟫ ≤ 0 := by
   have hf : ContMDiff I 𝓘(ℝ) 2 (fun y ↦ ⟪A y (s y), s y⟫) :=
     ((hA.clm_bundle_apply hs).inner_bundle hs).of_le (by simp)
-  have hn : ContMDiff I 𝓘(ℝ) 2 (fun y ↦ ‖s y‖ ^ 2) := by
-    simp_rw [← real_inner_self_eq_norm_sq]
-    exact (hs.inner_bundle hs).of_le (by simp)
+  have hn : ContMDiff I 𝓘(ℝ) 2 (fun y ↦ ‖s y‖ ^ 2) :=
+    ((TauCeti.contMDiff_norm_sq_bundle I ∞ F V).comp hs).of_le (by simp)
   have hcn : ContMDiff I 𝓘(ℝ) 2 (c • fun y ↦ ‖s y‖ ^ 2) :=
     ((contMDiff_const (c := c)).mul hn : ContMDiff I 𝓘(ℝ) 2 fun y ↦ c * ‖s y‖ ^ 2)
-  have hg : ContMDiff I 𝓘(ℝ) 2 ((fun y ↦ ⟪A y (s y), s y⟫) - c • fun y ↦ ‖s y‖ ^ 2) :=
-    hf.sub hcn
-  have hmin : IsLocalMin ((fun y ↦ ⟪A y (s y), s y⟫) - c • fun y ↦ ‖s y‖ ^ 2) x := by
-    have h0 : ((fun y ↦ ⟪A y (s y), s y⟫) - c • fun y ↦ ‖s y‖ ^ 2) x = 0 := by
-      simp [heig, real_inner_smul_left]
-    filter_upwards [hle] with y hy
-    rw [h0]
-    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-    linarith
-  have hlap := TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin (hg x) hmin
+  -- `c ‖s‖²` touches `⟪A s, s⟫` from below at `x`.
+  have hlap := TauCeti.Manifold.laplaceBeltrami_le_of_eventuallyLE_of_eq hcn.contMDiffAt
+    hf.contMDiffAt hle (by simp [heig, real_inner_smul_left])
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [TauCeti.Manifold.laplaceBeltrami_sub I hf hcn,
-    TauCeti.Manifold.laplaceBeltrami_smul I c hn,
-    hcov.laplaceBeltrami_inner_clm_apply_of_cov_eq_zero hA hs hs₀,
-    hcov.laplaceBeltrami_norm_sq hs x b, hs₀] at hlap
+  have h0 : ∑ i, ‖(0 : TangentSpace I x →L[ℝ] V x) (b i)‖ ^ 2 = 0 := by simp
+  rw [TauCeti.Manifold.laplaceBeltrami_smul I c hn, hcov.laplaceBeltrami_norm_sq hs x b, hs₀, h0,
+    hcov.laplaceBeltrami_inner_clm_apply_of_cov_eq_zero hA hs hs₀] at hlap
   set R := cov.roughLaplacian (leviCivitaConnection I M) s x
   -- Since `A x` is symmetric with eigenvector `s x`, both terms in `∇*∇s` are `c ⟪∇*∇s, s⟫`.
   have h1 : ⟪A x R, s x⟫ = c * ⟪R, s x⟫ := by
-    rw [show ⟪A x R, s x⟫ = ⟪R, A x (s x)⟫ from hsym _ _, heig, real_inner_smul_right]
-  rw [heig, real_inner_smul_left, real_inner_comm R (s x)] at hlap
-  simp only [zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, Finset.sum_const_zero, mul_zero, zero_sub] at hlap
-  rw [h1] at hlap
+    have h := hsym R (s x)
+    simp only [ContinuousLinearMap.coe_coe] at h
+    rw [h, heig, real_inner_smul_right]
+  rw [h1, heig, real_inner_smul_left, real_inner_comm R (s x)] at hlap
   linarith
 
 /-- **Hamilton's maximum principle for a field of symmetric endomorphisms of a bundle.** On a
@@ -350,12 +290,12 @@ theorem forall_le_inner_apply_self_of_inner_roughLaplacian_pos [CompactSpace M]
   have hmin : ∀ y (w : V y), m * ‖w‖ ^ 2 ≤ ⟪A y w, w⟫ := fun y w ↦ by
     rcases eq_or_ne w 0 with rfl | hw
     · simp
-    have hw' : (TotalSpace.mk' F y (‖w‖⁻¹ • w)) ∈ S := by
-      simp [S, norm_smul, norm_ne_zero_iff.mpr hw]
-    have h1 : m ≤ ⟪A y (‖w‖⁻¹ • w), ‖w‖⁻¹ • w⟫ := hq₀ hw'
-    rw [map_smul, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← mul_inv, ← sq,
-      le_inv_mul_iff₀ (by positivity)] at h1
-    linarith
+    -- Rescale `w` to the unit vector `‖w‖⁻¹ • w`.
+    have h1 : m ≤ ⟪A y (‖w‖⁻¹ • w), ‖w‖⁻¹ • w⟫ :=
+      hq₀ (by simp [S, norm_smul, norm_ne_zero_iff.mpr hw] : TotalSpace.mk' F y (‖w‖⁻¹ • w) ∈ S)
+    simp only [map_smul, real_inner_smul_left, real_inner_smul_right] at h1
+    calc m * ‖w‖ ^ 2 ≤ ‖w‖⁻¹ * (‖w‖⁻¹ * ⟪A y w, w⟫) * ‖w‖ ^ 2 := by gcongr
+      _ = ⟪A y w, w⟫ := by field_simp
   have hmC : m < -C := by nlinarith [hmin x u, (by positivity : 0 < ‖u‖ ^ 2)]
   -- The minimizing unit vector is an eigenvector, and extends to a section parallel at `x₀`.
   have heig : A x₀ v₀ = m • v₀ := by
