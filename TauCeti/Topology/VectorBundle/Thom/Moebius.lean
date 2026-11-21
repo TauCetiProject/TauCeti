@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.Geometry.Manifold.LocallyContractible
 public import TauCeti.Topology.VectorBundle.Moebius
 public import TauCeti.Topology.VectorBundle.Thom.LineBundle
 
@@ -44,10 +44,6 @@ noncomputable section
 open Bundle CategoryTheory Module
 
 namespace TauCeti
-
-/-- The circle is locally path-connected, being a manifold modelled on `ℝ¹`. -/
-local instance : LocallyPathConnectedSpace Circle :=
-  ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
 
 /-- The orientation of the fibre of the Möbius line bundle over `1` given by the vector `1`. -/
 private def moebiusOrientationOne : Orientation ℝ (moebiusCore.Fiber 1) (Fin 1) :=
