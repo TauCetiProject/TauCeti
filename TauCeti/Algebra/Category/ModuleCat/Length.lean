@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.RingTheory.Length
+public import TauCeti.CategoryTheory.Abelian.Length
 public import TauCeti.CategoryTheory.Abelian.LengthFunction
+import Mathlib.Algebra.Category.ModuleCat.Subobject
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -23,6 +25,9 @@ modules.
 
 * `ModuleCat.isLengthFunction_length`: `M ↦ Module.length A M` is a length function on
   `ModuleCat A`.
+* `ModuleCat.length_eq`: the length `CategoryTheory.length M` of `M` as an object of `ModuleCat A`
+  is `Module.length A M`, as both are the Krull dimension of the lattice of submodules
+  (Mathlib's `ModuleCat.subobjectModule`).
 -/
 
 public section
@@ -39,3 +44,9 @@ theorem ModuleCat.isLengthFunction_length (A : Type u) [Ring A] :
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).mp hS.exact)
   eq_zero_iff M := by
     rw [Module.length_eq_zero_iff, ModuleCat.isZero_iff_subsingleton]
+
+/-- **The length of a module as an object of `ModuleCat A` is its length as a module.** -/
+theorem ModuleCat.length_eq {A : Type u} [Ring A] (M : ModuleCat.{v} A) :
+    length M = Module.length A M :=
+  WithBot.coe_injective (by
+    rw [coe_length, Module.coe_length, Order.krullDim_eq_of_orderIso (subobjectModule M)])
