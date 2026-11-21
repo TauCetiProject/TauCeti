@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 public import Mathlib.RingTheory.Polynomial.Vieta
+import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Algebra.Polynomial.Derivative
+import Mathlib.GroupTheory.Perm.Fin
+import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.RingTheory.MvPolynomial.Rescale
 
 /-!
 # Vieta's formulas for indexed families of roots
@@ -24,10 +30,23 @@ roots, with multiplicity, are the values of `x` on `s` is the product
 `∏ i ∈ s, (X - C (x i))`. When `s` is all of a finite type `σ` this is the product above, so the
 same formula computes its coefficients.
 
+For the universal monic polynomial `Polynomial.freeMonic R m` over `MvPolynomial (Fin m) R`,
+combining Vieta's formulas with the fundamental theorem of symmetric polynomials yields an
+`R`-algebra isomorphism `MvPolynomial.vietaAlgEquiv` onto `symmetricSubalgebra (Fin m) R` (and an
+injective `R`-algebra endomorphism `MvPolynomial.vietaAlgHom`) sending each coefficient variable
+`X i` to `(-1) ^ (m - i) * esymm (Fin m) R (m - i)` and factoring `Polynomial.freeMonic R m` into
+`∏ j, (X - C (X j))`.
+
 ## Main results
 
 * `MvPolynomial.aeval_esymm_eq_coeff_prod_X_sub_C`: the elementary symmetric polynomials at `x`
   are the signed coefficients of `∏ i, (X - C (x i))`.
+* `MvPolynomial.vietaAlgEquiv`, `MvPolynomial.vietaAlgHom`: universal Vieta correspondence
+  identifying `MvPolynomial (Fin m) R` with `symmetricSubalgebra (Fin m) R`.
+* `MvPolynomial.map_vietaAlgHom_freeMonic`: `Polynomial.freeMonic R m` maps along
+  `MvPolynomial.vietaAlgHom R m` to `∏ j, (X - C (X j))`.
+* `MvPolynomial.isUnit_of_isUnit_vietaAlgHom`: over a reduced ring, `MvPolynomial.vietaAlgHom R m`
+  reflects units.
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq`: a monic polynomial whose roots are listed by
   `x` on a finite set `s` is the product of the linear factors `X - C (x i)` over `s`.
 
@@ -67,6 +86,86 @@ theorem aeval_esymm_eq_coeff_prod_X_sub_C (x : σ → S) {k : ℕ} (hk : k ≤ F
     ← Function.comp_def (fun t => Polynomial.X - Polynomial.C t) x, ← Multiset.map_map,
     Multiset.prod_X_sub_C_coeff _ (by simp)]
   simp [Nat.sub_sub_self hk]
+
+/-- Vieta's `R`-algebra isomorphism from the universal coefficient ring `MvPolynomial (Fin m) R`
+onto the symmetric polynomials in `m` root variables, sending `X i` (the degree-`i` coefficient)
+to `(-1) ^ (m - i) * esymm (Fin m) R (m - i)`. -/
+noncomputable def vietaAlgEquiv (R : Type*) [CommRing R] (m : ℕ) :
+    MvPolynomial (Fin m) R ≃ₐ[R] symmetricSubalgebra (Fin m) R :=
+  (renameEquiv R Fin.revPerm).trans
+    ((rescaleEquiv (fun j : Fin m ↦ (-1 : Rˣ) ^ ((j : ℕ) + 1))).trans
+      (esymmAlgEquiv (Fin m) R (Fintype.card_fin m)))
+
+/-- The injective `R`-algebra homomorphism embedding `MvPolynomial (Fin m) R` into the root-variable
+ring `MvPolynomial (Fin m) R` with image `symmetricSubalgebra (Fin m) R`. -/
+noncomputable def vietaAlgHom (R : Type*) [CommRing R] (m : ℕ) :
+    MvPolynomial (Fin m) R →ₐ[R] MvPolynomial (Fin m) R :=
+  (symmetricSubalgebra (Fin m) R).val.comp (vietaAlgEquiv R m).toAlgHom
+
+/-- Applying `MvPolynomial.vietaAlgHom` returns the underlying symmetric polynomial of
+`MvPolynomial.vietaAlgEquiv`. -/
+theorem vietaAlgHom_apply {R : Type*} [CommRing R] {m : ℕ} (p : MvPolynomial (Fin m) R) :
+    vietaAlgHom R m p = (vietaAlgEquiv R m p : MvPolynomial (Fin m) R) := by
+  rfl
+
+/-- `MvPolynomial.vietaAlgHom` is injective. -/
+theorem vietaAlgHom_injective (R : Type*) [CommRing R] (m : ℕ) :
+    Function.Injective (vietaAlgHom R m) :=
+  Subtype.val_injective.comp (vietaAlgEquiv R m).injective
+
+/-- Every polynomial in the image of `MvPolynomial.vietaAlgHom` is symmetric. -/
+theorem isSymmetric_vietaAlgHom {R : Type*} [CommRing R] {m : ℕ}
+    (p : MvPolynomial (Fin m) R) : (vietaAlgHom R m p).IsSymmetric :=
+  (vietaAlgEquiv R m p).2
+
+/-- On variables, `MvPolynomial.vietaAlgHom` sends `X i` to the signed elementary symmetric
+polynomial `(-1) ^ (m - i) * esymm (Fin m) R (m - i)`. -/
+theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
+    vietaAlgHom R m (X i) =
+      (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
+  have hrev : (i.rev : ℕ) + 1 = m - (i : ℕ) := by
+    rw [Fin.val_rev]
+    have := i.2
+    omega
+  simp only [vietaAlgHom, vietaAlgEquiv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    AlgEquiv.trans_apply, renameEquiv_apply, rename_X, Fin.revPerm_apply, rescaleEquiv_apply,
+    rescale_X, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, map_pow, map_neg, map_one,
+    esymmAlgEquiv_apply, esymmAlgHom, map_mul, aeval_X, hrev]
+  rfl
+
+/-- Mapping `Polynomial.freeMonic R m` along `MvPolynomial.vietaAlgHom` factors it into linear
+root factors `∏ j, (Polynomial.X - Polynomial.C (MvPolynomial.X j))`. -/
+theorem map_vietaAlgHom_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
+    (Polynomial.freeMonic R m).map (vietaAlgHom R m).toRingHom =
+      ∏ j : Fin m, (Polynomial.X - Polynomial.C (X j)) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
+  let P : Polynomial (MvPolynomial (Fin m) R) :=
+    ∏ j : Fin m, (Polynomial.X - Polynomial.C (X j))
+  have hmon : P.Monic :=
+    Polynomial.monic_prod_of_monic Finset.univ _ fun j _ ↦ Polynomial.monic_X_sub_C _
+  have hdeg : P.natDegree = m := by
+    simp [P, Polynomial.natDegree_finsetProd_X_sub_C_eq_card]
+  have hv_eq : vietaAlgHom R m = aeval (fun k : Fin m ↦ P.coeff k) := by
+    refine algHom_ext fun k : Fin m ↦ ?_
+    rw [aeval_X, vietaAlgHom_X]
+    have hv := aeval_esymm_eq_coeff_prod_X_sub_C
+      (R := R) (X : Fin m → MvPolynomial (Fin m) R) (k := m - k) (by simp)
+    rw [aeval_X_left, AlgHom.id_apply, Fintype.card_fin, Nat.sub_sub_self k.2.le] at hv
+    rw [hv, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
+    simp [P]
+  rw [hv_eq]
+  exact congrArg Subtype.val
+    ((mapEquivMonic R _ m).apply_symm_apply (.mk P hmon hdeg))
+
+/-- Over a reduced ring, `MvPolynomial.vietaAlgHom R m` reflects units. -/
+theorem isUnit_of_isUnit_vietaAlgHom {R : Type*} [CommRing R] [IsReduced R] {m : ℕ}
+    {b : MvPolynomial (Fin m) R} (hb : IsUnit (vietaAlgHom R m b)) : IsUnit b := by
+  obtain ⟨r, hr, hbC⟩ := isUnit_iff_eq_C_of_isReduced.mp hb
+  have hbeq : b = C r := by
+    apply vietaAlgHom_injective R m
+    rw [hbC, ← algebraMap_eq, AlgHom.commutes]
+  exact hbeq ▸ hr.map C
 
 end MvPolynomial
 

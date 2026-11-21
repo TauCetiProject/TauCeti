@@ -13,7 +13,6 @@ import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Algebra.Prime.Lemmas
 import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import Mathlib.GroupTheory.Perm.Fin
-import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import TauCeti.RingTheory.MvPolynomial.IrreducibleQuadratic
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
@@ -140,67 +139,6 @@ theorem Monic.isWeightedHomogeneous_discr {R σ M : Type*} [CommRing R] [AddComm
 
 section FreeMonicPrime
 
-/-- Vieta's `R`-algebra isomorphism from the universal coefficient ring `MvPolynomial (Fin m) R`
-onto the symmetric polynomials in `m` root variables, sending `X i` (the degree-`i` coefficient)
-to `(-1) ^ (m - i) * esymm (Fin m) R (m - i)`. -/
-private noncomputable def vietaAlgEquiv (R : Type*) [CommRing R] (m : ℕ) :
-    MvPolynomial (Fin m) R ≃ₐ[R] symmetricSubalgebra (Fin m) R :=
-  (renameEquiv R Fin.revPerm).trans
-    ((MvPolynomial.rescaleEquiv (fun j : Fin m ↦ (-1 : Rˣ) ^ ((j : ℕ) + 1))).trans
-      (esymmAlgEquiv (Fin m) R (Fintype.card_fin m)))
-
-/-- The injective `R`-algebra homomorphism embedding `MvPolynomial (Fin m) R` into the root-variable
-ring `MvPolynomial (Fin m) R` with image `symmetricSubalgebra (Fin m) R`. -/
-private noncomputable def vietaAlgHom (R : Type*) [CommRing R] (m : ℕ) :
-    MvPolynomial (Fin m) R →ₐ[R] MvPolynomial (Fin m) R :=
-  (symmetricSubalgebra (Fin m) R).val.comp (vietaAlgEquiv R m).toAlgHom
-
-private theorem vietaAlgHom_injective (R : Type*) [CommRing R] (m : ℕ) :
-    Function.Injective (vietaAlgHom R m) :=
-  Subtype.val_injective.comp (vietaAlgEquiv R m).injective
-
-private theorem isSymmetric_vietaAlgHom {R : Type*} [CommRing R] {m : ℕ}
-    (p : MvPolynomial (Fin m) R) : (vietaAlgHom R m p).IsSymmetric :=
-  (vietaAlgEquiv R m p).2
-
-private theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
-    vietaAlgHom R m (MvPolynomial.X i) =
-      (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
-  have hrev : (i.rev : ℕ) + 1 = m - (i : ℕ) := by
-    rw [Fin.val_rev]
-    have := i.2
-    omega
-  simp only [vietaAlgHom, vietaAlgEquiv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.trans_apply, renameEquiv_apply, rename_X, Fin.revPerm_apply, rescaleEquiv_apply,
-    rescale_X, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, map_pow, map_neg, map_one,
-    esymmAlgEquiv_apply, esymmAlgHom, map_mul, MvPolynomial.aeval_X, hrev]
-  rfl
-
-/-- Mapping `Polynomial.freeMonic R m` along `vietaAlgHom` factors it into linear root factors
-`∏ j, (X - C (MvPolynomial.X j))`. -/
-private theorem map_vietaAlgHom_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
-    (freeMonic R m).map (vietaAlgHom R m).toRingHom =
-      ∏ j : Fin m, (Polynomial.X - Polynomial.C (MvPolynomial.X j)) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · exact Subsingleton.elim _ _
-  let P : (MvPolynomial (Fin m) R)[X] :=
-    ∏ j : Fin m, (Polynomial.X - Polynomial.C (MvPolynomial.X j))
-  have hmon : P.Monic := monic_prod_of_monic univ _ fun j _ ↦ monic_X_sub_C _
-  have hdeg : P.natDegree = m := by
-    simp [P, natDegree_finsetProd_X_sub_C_eq_card]
-  have hv_eq : vietaAlgHom R m = MvPolynomial.aeval (fun k : Fin m ↦ P.coeff k) := by
-    refine MvPolynomial.algHom_ext fun k : Fin m ↦ ?_
-    rw [MvPolynomial.aeval_X, vietaAlgHom_X]
-    have hv := MvPolynomial.aeval_esymm_eq_coeff_prod_X_sub_C
-      (R := R) (MvPolynomial.X : Fin m → MvPolynomial (Fin m) R) (k := m - k) (by simp)
-    rw [MvPolynomial.aeval_X_left, AlgHom.id_apply, Fintype.card_fin,
-      Nat.sub_sub_self k.2.le] at hv
-    rw [hv, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
-    simp [P]
-  rw [hv_eq]
-  exact congrArg Subtype.val
-    ((MvPolynomial.mapEquivMonic R _ m).apply_symm_apply (.mk P hmon hdeg))
-
 /-- The Vandermonde product `∏_{i < j} (X i - X j)` in `MvPolynomial (Fin m) R`. -/
 private noncomputable def vandermonde (R : Type*) [CommRing R] (m : ℕ) :
     MvPolynomial (Fin m) R :=
@@ -241,7 +179,7 @@ theorem isSquare_discr_freeMonic_of_two_eq_zero {R : Type*} [CommRing R] (h2 : (
       rw [neg_eq_neg_one_mul, hneg, one_mul]
   let s : MvPolynomial (Fin m) R := (vietaAlgEquiv R m).symm ⟨vandermonde R m, hsymm⟩
   have hs : vietaAlgHom R m s = vandermonde R m := by
-    simp [s, vietaAlgHom]
+    simp [s, vietaAlgHom_apply]
   refine ⟨s, (vietaAlgHom_injective R m) ?_⟩
   rw [vietaAlgHom_discr_freeMonic, map_mul, ← sq, hs]
 
@@ -322,15 +260,6 @@ private theorem not_isSymmetric_vandermonde_mul_C {R : Type*} [CommRing R] [IsDo
   have hne0 : vandermonde R m * MvPolynomial.C r ≠ 0 :=
     mul_ne_zero (vandermonde_ne_zero m) (by simpa using hr)
   exact h2 (MvPolynomial.C_eq_zero.mp ((mul_eq_zero.mp hzero).resolve_right hne0))
-
-/-- Over a reduced ring, `vietaAlgHom R m` reflects units. -/
-private theorem isUnit_of_isUnit_vietaAlgHom {R : Type*} [CommRing R] [IsReduced R] {m : ℕ}
-    {b : MvPolynomial (Fin m) R} (hb : IsUnit (vietaAlgHom R m b)) : IsUnit b := by
-  obtain ⟨r, hr, hbC⟩ := MvPolynomial.isUnit_iff_eq_C_of_isReduced.mp hb
-  have hbeq : b = MvPolynomial.C r := by
-    apply vietaAlgHom_injective R m
-    rw [hbC, ← MvPolynomial.algebraMap_eq, AlgHom.commutes]
-  exact hbeq ▸ hr.map MvPolynomial.C
 
 /-- **Primality of the generic monic discriminant.** Over any unique factorization domain `R` in
 which `2 ≠ 0`, the discriminant of `Polynomial.freeMonic R m` is prime in `MvPolynomial (Fin m) R`
