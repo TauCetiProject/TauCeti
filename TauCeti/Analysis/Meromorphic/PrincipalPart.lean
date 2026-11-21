@@ -55,8 +55,11 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 * `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
 * `TauCeti.meromorphicGerms.principalPart_eq_iff`: its characterization: `principalPart φ = P`
   exactly when `P` has no constant term and `φ - P((z - a)⁻¹)` has an analytic representative.
-* `TauCeti.meromorphicGerms.principalPart_eq_zero_iff`: the principal part vanishes exactly on the
-  germs of analytic functions.
+* `TauCeti.meromorphicGerms.principalPart_eq_zero_iff`,
+  `TauCeti.meromorphicGerms.principalPart_eq_principalPart_iff`, and
+  `TauCeti.meromorphicGerms.principalPart_mk_eq_principalPart_mk_iff`: the principal part vanishes
+  exactly on the germs of analytic functions, so two meromorphic germs or functions have equal
+  principal parts exactly when their difference agrees on `𝓝[≠] a` with an analytic function.
 * `TauCeti.meromorphicGerms.natDegree_principalPart_mk_le`: a pole bound bounds the degree of the
   principal part.
 * `TauCeti.meromorphicGerms.principalPart_eq_sum_coeff`: the principal part of
@@ -213,7 +216,7 @@ a function analytic at `a`. -/
 private theorem exists_principalPart (φ : meromorphicGerms 𝕜 a) :
     ∃ P : 𝕜[X], P.coeff 0 = 0 ∧ ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧
       ((φ - evalInvSub a P : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g := by
-  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   refine ⟨_, coeff_zero_sum_C_mul_X_pow_sub
     (fun j ↦ (swap dslope a)^[j] (fun z ↦ (z - a) ^ N • f z) a) N, _,
     hN.iterate_dslope (a := a) N, ?_⟩
@@ -304,6 +307,22 @@ analytic at `a`. -/
 theorem principalPart_eq_zero_iff {φ : meromorphicGerms 𝕜 a} :
     principalPart φ = 0 ↔ ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧ (φ : Germ (𝓝[≠] a) 𝕜) = g := by
   simp [principalPart_eq_iff]
+
+/-- Two meromorphic germs at `a` have equal principal parts if and only if their difference is the
+germ of a function analytic at `a`. -/
+theorem principalPart_eq_principalPart_iff {φ ψ : meromorphicGerms 𝕜 a} :
+    principalPart φ = principalPart ψ ↔
+      ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧ ((φ - ψ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g := by
+  rw [← sub_eq_zero, ← map_sub, principalPart_eq_zero_iff]
+
+/-- Two functions meromorphic at `a` have equal principal parts at `a` if and only if their
+difference agrees on `𝓝[≠] a` with a function analytic at `a`. -/
+theorem principalPart_mk_eq_principalPart_mk_iff {f₁ f₂ : 𝕜 → 𝕜}
+    (hf₁ : MeromorphicAt f₁ a) (hf₂ : MeromorphicAt f₂ a) :
+    principalPart (mk f₁ hf₁) = principalPart (mk f₂ hf₂) ↔
+      ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧ f₁ - f₂ =ᶠ[𝓝[≠] a] g := by
+  simp_rw [principalPart_eq_principalPart_iff, AddSubgroupClass.coe_sub, coe_mk,
+    ← Germ.coe_sub, Germ.coe_eq]
 
 /-- The principal part of the germ of a function meromorphic at `a` vanishes exactly when the
 function has nonnegative order at `a`. -/

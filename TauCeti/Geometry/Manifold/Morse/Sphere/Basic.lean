@@ -167,10 +167,10 @@ theorem hessianOperator_stereographicHeight_zero :
     hasFDerivAt_gradient_stereographicHeight_zero
 
 omit [CompleteSpace F] in
-/-- The Hessian quadratic form of the chart height function at the origin is minus the squared
-norm. -/
-theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
-    hessianQuadraticForm stereographicHeight 0 w = -‖w‖ ^ 2 := by
+/-- The second derivative of the chart height function at the origin is minus the inner
+product. -/
+theorem fderiv_fderiv_stereographicHeight_zero :
+    fderiv ℝ (fderiv ℝ stereographicHeight) (0 : F) = -innerSL ℝ := by
   have hfun : fderiv ℝ stereographicHeight =
       fun w : F ↦ (-16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) • innerSL ℝ w :=
     funext fun w ↦ by rw [fderiv_stereographicHeight, div_eq_mul_inv]
@@ -178,10 +178,18 @@ theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
     ((((contDiff_norm_sq ℝ (E := F) (n := 1)).differentiable one_ne_zero) 0).add_const 4).pow 2
   have hc : DifferentiableAt ℝ (fun w : F ↦ -16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) 0 :=
     (hd.inv (by norm_num)).const_mul (-16)
-  have hD := hc.hasFDerivAt.smul (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).hasFDerivAt
-  rw [hessianQuadraticForm_apply, hfun]
-  erw [hD.fderiv]
+  rw [hfun]
+  refine (hc.hasFDerivAt.smul (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).hasFDerivAt).fderiv.trans ?_
+  ext w y
   norm_num
+
+omit [CompleteSpace F] in
+/-- The Hessian quadratic form of the chart height function at the origin is minus the squared
+norm. -/
+theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
+    hessianQuadraticForm stereographicHeight 0 w = -‖w‖ ^ 2 := by
+  simp only [hessianQuadraticForm_apply, fderiv_fderiv_stereographicHeight_zero,
+    neg_apply, neg_inj]
   exact real_inner_self_eq_norm_sq w
 
 /-- The origin is a nondegenerate critical point of the chart height function. -/
@@ -328,7 +336,7 @@ theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
   have hperp : ⟪u, (v : E)⟫ = 0 := by
     have := (Submodule.mem_orthogonal_singleton_iff_inner_left).1
       ((OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
-        (ne_zero_of_mem_unit_sphere (-v))).repr.symm w).2
+        (ne_zero_of_mem_unit_sphere (-v))).repr.symm w).property
     rw [hu]
     simpa [coe_neg_sphere, inner_neg_right] using this
   have hnorm : ‖u‖ = ‖w‖ := by
@@ -352,7 +360,7 @@ omit [Fact (finrank ℝ E = n + 1)] in
 direction `v` is `-stereographicHeight`. -/
 theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ ∙ (v : E))ᗮ) :
     sphereHeight v ((stereographic (norm_eq_of_mem_sphere v)).symm w) = -stereographicHeight w := by
-  have hw : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
+  have hw : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.property
   have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
   have h4 : ‖w‖ ^ 2 + 4 ≠ 0 := by positivity
   rw [sphereHeight_apply, stereographicHeight_apply]
@@ -414,6 +422,17 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
   ext x
   simp
 
+/-- The critical points of index `m` of the height function on the sphere `Sⁿ` are the north pole
+`v` if `m = n` and the south pole `-v` if `m = 0`. -/
+theorem sep_criticalPoints_sphereHeight_manifoldMorseIndex_eq (v : sphere (0 : E) 1) (m : ℕ) :
+    {x ∈ criticalPoints (𝓡 n) (sphereHeight v) | manifoldMorseIndex (𝓡 n) (sphereHeight v) x = m} =
+      (if m = n then {v} else ∅) ∪ (if m = 0 then {-v} else ∅) := by
+  ext x
+  rw [criticalPoints_sphereHeight, mem_sep_iff, mem_insert_iff, mem_singleton_iff, mem_union]
+  constructor
+  · rintro ⟨rfl | rfl, rfl⟩ <;> simp
+  · rintro (h | h) <;> split_ifs at h with hm <;> simp_all
+
 /-- **Every level of the height except the poles is regular.** The only critical points of the
 height function are the poles, where its values are `1` and `-1`. -/
 theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
@@ -436,7 +455,8 @@ theorem ncard_setOf_sphereHeight_eq_zero (hE : finrank ℝ E = 2) (v : sphere (0
     Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere v)
   have : Nontrivial K := Module.nontrivial_of_finrank_eq_succ hK
   obtain ⟨w, hw⟩ := exists_norm_eq K zero_le_one
-  have hwK : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
+  have hwK : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1
+      w.property
   let u : sphere (0 : E) 1 := ⟨w, by simpa using hw⟩
   rw [ncard_eq_two]
   refine ⟨u, -u, ne_neg_of_mem_unit_sphere ℝ u, ?_⟩
@@ -474,15 +494,16 @@ theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphe
     (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   have hS : (sphere (0 : (ℝ ∙ (v : E))ᗮ) 1).Infinite :=
     (isPreconnected_sphere hrank 0 1).infinite_of_nontrivial
-      ⟨w, w.2, ↑(-w), (-w).2, Subtype.coe_injective.ne (ne_neg_of_mem_unit_sphere ℝ w)⟩
+      ⟨w, w.property, ↑(-w), (-w).property, Subtype.coe_injective.ne
+          (ne_neg_of_mem_unit_sphere ℝ w)⟩
   have := hS.to_subtype
   refine Set.infinite_of_injective_forall_mem
     (f := fun y : sphere (0 : (ℝ ∙ (v : E))ᗮ) 1 ↦ (⟨((y : (ℝ ∙ (v : E))ᗮ) : E),
       mem_sphere_zero_iff_norm.2 ((Submodule.norm_coe _).trans
-        (mem_sphere_zero_iff_norm.1 y.2))⟩ : sphere (0 : E) 1))
-    (fun y z h ↦ Subtype.ext (Subtype.ext congr($h.1))) fun y ↦ ?_
+        (mem_sphere_zero_iff_norm.1 y.property))⟩ : sphere (0 : E) 1))
+    (fun y z h ↦ Subtype.ext (Subtype.ext congr(($h).val))) fun y ↦ ?_
   rw [mem_ofPred_eq, sphereHeight_apply]
-  exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).2
+  exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).property
 
 end Sphere
 

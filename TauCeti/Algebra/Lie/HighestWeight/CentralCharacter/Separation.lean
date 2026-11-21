@@ -80,9 +80,10 @@ theorem centerEigenspace_vermaCentralCharacter_eq_isotypicComponent {lam : Dual 
       isotypicComponent K L M (irreducibleQuotient b lam) := by
   -- the centre eigenspaces of the dominant integral central characters are independent
   have hindep : iSupIndep fun mu : {l : Dual K H // IsDominantIntegral b l} ↦
-      centerEigenspace K L M (vermaCentralCharacter b mu.1) :=
+      centerEigenspace K L M (vermaCentralCharacter b mu.val) :=
     (iSupIndep_centerEigenspace (M := M)).comp fun mu nu h ↦ Subtype.ext <|
-      vermaCentralCharacter_injOn_isDominantIntegral b mu.2 nu.2 (DFunLike.coe_injective h)
+      vermaCentralCharacter_injOn_isDominantIntegral b mu.property nu.property
+          (DFunLike.coe_injective h)
   exact congr_fun ((hindep.le_iff_eq_of_iSup_eq_top
     (iSup_isotypicComponent_irreducibleQuotient_eq_top M b)).mp
     fun _ ↦ isotypicComponent_irreducibleQuotient_le_centerEigenspace) ⟨lam, hlam⟩ |>.symm

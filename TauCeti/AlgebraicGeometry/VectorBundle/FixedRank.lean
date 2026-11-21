@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 
@@ -379,6 +380,15 @@ object is the existing inclusion into finite locally free sheaves. -/
 theorem toFixedRankOne_obj_obj (X : Scheme.{u}) (L : InvertibleSheaf X) :
     ((toFixedRankOne X).obj L).obj = (toFiniteLocallyFree X).obj L :=
   (rfl)
+
+/-- Pulling back the finite locally free sheaf underlying an invertible sheaf `L` regarded as a
+fixed-rank object gives the sheaf underlying the pullback of `L`. Not `@[simp]`: `simp` first
+rewrites the left side with `toFixedRankOne_obj_obj`. -/
+theorem pullback_toFixedRankOne_obj_obj {Y : Scheme.{u}} (f : Y ⟶ X) (L : InvertibleSheaf X) :
+    ((FiniteLocallyFreeSheaf.pullback f).obj ((toFixedRankOne X).obj L).obj).obj =
+      ((pullback f).obj L).obj := by
+  rw [FiniteLocallyFreeSheaf.pullback_obj_obj, toFixedRankOne_obj_obj,
+    ObjectProperty.ιOfLE_obj_obj, pullback_obj_obj]
 
 /-- The fixed-rank-one functor acts on morphisms through the existing inclusion of invertible
 sheaves into finite locally free sheaves. -/

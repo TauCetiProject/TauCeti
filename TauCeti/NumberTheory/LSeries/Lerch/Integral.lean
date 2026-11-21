@@ -346,7 +346,7 @@ theorem lerchIntegral_eq_lerchSeries {s z c : ℂ} (hs : 0 < s.re) (hz : ‖z‖
       have hterm (n : ℕ) : F n t =
           ((t : ℂ) ^ (s - 1) * Complex.exp (-(c * t))) * (z * Complex.exp (-t)) ^ n := by
         dsimp only [F]
-        rw [mul_pow, ← Complex.exp_nat_mul,
+        rw [mul_pow, ← Complex.exp_natCast_mul,
           show -(((n : ℂ) + c) * (t : ℂ)) = -(c * t) + (n : ℂ) * (-(t : ℂ)) by ring,
           Complex.exp_add]
         ring

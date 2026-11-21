@@ -16,8 +16,10 @@ A short exact sequence of differential groups `0 → M₁ --u--> M --p--> P → 
 groups with endomorphisms `d₁`, `d` and `dP`, where `d` squares to zero, `u` is injective, `p` is
 surjective, the kernel of `p` is the image of `u`, and `u` and `p` intertwine the differentials
 (`AddMonoidHom.IsShortExactDifferential`). Given a second such sequence
-`0 → N₁ --v--> N --q--> Q → 0`, maps `f₁ : M₁ → N₁`, `f : M → N` and `g : P → Q` with
-`f ∘ u = v ∘ f₁` and `g ∘ p = q ∘ f` form a morphism of short exact sequences. The five lemma for
+`0 → N₁ --v--> N --q--> Q → 0`, functions `f₁ : M₁ → N₁` and `g : P → Q`, and an additive map
+`f : M →+ N` with `f ∘ u = v ∘ f₁` and `g ∘ p = q ∘ f` form a morphism of short exact sequences.
+Their additivity follows from the compatibility equations, injectivity of `v`, and surjectivity of
+`p`. The five lemma for
 the long exact homology sequences
 `H(M₁) --u--> H(M) --p--> H(P) --δ--> H(M₁) --u--> H(M)` and its analogue for `N` transfers
 surjectivity and injectivity on homology from `f₁` and `f` to `g`.
@@ -73,7 +75,7 @@ structure IsShortExactDifferential (u : M₁ →+ M) (p : M →+ P) (d₁ : M₁
   comm_right : ∀ m, p (d m) = dP (p m)
 
 variable {d₁ : M₁ →+ M₁} {d : M →+ M} {dP : P →+ P} {e₁ : N₁ →+ N₁} {e : N →+ N} {eQ : Q →+ Q}
-  {u : M₁ →+ M} {p : M →+ P} {v : N₁ →+ N} {q : N →+ Q} {f₁ : M₁ →+ N₁} {f : M →+ N}
+  {u : M₁ →+ M} {p : M →+ P} {v : N₁ →+ N} {q : N →+ Q} {f₁ : M₁ → N₁} {f : M →+ N}
 
 /-- **Five lemma, surjectivity on homology.** In a morphism `(f₁, f, g)` of short exact sequences
 `0 → M₁ --u--> M --p--> P → 0` and `0 → N₁ --v--> N --q--> Q → 0` of differential groups, suppose
@@ -81,7 +83,7 @@ that every cycle of `e₁` differs from the image under `f₁` of a cycle of `d�
 every cycle of `e` differs from the image under `f` of a cycle of `d` by a boundary, and that a
 cycle of `d` whose image under `f` is a boundary is a boundary. Then every cycle of `eQ` differs
 from the image under `g` of a cycle of `dP` by a boundary. -/
-theorem exists_mem_ker_sub_mem_range_of_exact (g : P →+ Q)
+theorem exists_mem_ker_sub_mem_range_of_exact (g : P → Q)
     (hM : u.IsShortExactDifferential p d₁ d dP) (hN : v.IsShortExactDifferential q e₁ e eQ)
     (hfd : ∀ m, f (d m) = e (f m)) (hfu : ∀ m, f (u m) = v (f₁ m))
     (hgp : ∀ m, g (p m) = q (f m))
@@ -108,7 +110,8 @@ theorem exists_mem_ker_sub_mem_range_of_exact (g : P →+ Q)
   obtain ⟨k, hk⟩ := mem_range.mp hyy'
   refine ⟨p (c' - y'), mem_ker.mpr ?_, mem_range.mpr ⟨-q k, ?_⟩⟩
   · rw [← hM.comm_right, map_sub, hc', mem_ker.mp hy'd, sub_zero, hM.exact.apply_apply_eq_zero]
-  · simp only [map_neg, ← hN.comm_right, hk, hgp, map_sub, map_add, hN.exact.apply_apply_eq_zero]
+  · rw [hgp]
+    simp only [map_neg, ← hN.comm_right, hk, map_sub, map_add, hN.exact.apply_apply_eq_zero]
     abel
 
 /-- **Five lemma, injectivity on homology.** In a morphism `(f₁, f, g)` of short exact sequences
@@ -116,14 +119,16 @@ theorem exists_mem_ker_sub_mem_range_of_exact (g : P →+ Q)
 that every cycle of `e₁` differs from the image under `f₁` of a cycle of `d₁` by a boundary, and
 that a cycle of `d₁` or of `d` whose image under `f₁` or `f` is a boundary is a boundary. Then a
 cycle of `dP` whose image under `g` is a boundary is a boundary. -/
-theorem mem_range_of_map_mem_range_of_exact (g : P →+ Q)
+theorem mem_range_of_map_mem_range_of_exact (g : P → Q)
     (hM : u.IsShortExactDifferential p d₁ d dP) (hN : v.IsShortExactDifferential q e₁ e eQ)
-    (hf₁d : ∀ m, f₁ (d₁ m) = e₁ (f₁ m)) (hfd : ∀ m, f (d m) = e (f m))
+    (hfd : ∀ m, f (d m) = e (f m))
     (hfu : ∀ m, f (u m) = v (f₁ m)) (hgp : ∀ m, g (p m) = q (f m))
     (hsurj₁ : ∀ n ∈ e₁.ker, ∃ m ∈ d₁.ker, n - f₁ m ∈ e₁.range)
     (hinj₁ : ∀ m ∈ d₁.ker, f₁ m ∈ e₁.range → m ∈ d₁.range)
     (hinj : ∀ m ∈ d.ker, f m ∈ e.range → m ∈ d.range) {x : P} (hx : x ∈ dP.ker)
     (hgx : g x ∈ eQ.range) : x ∈ dP.range := by
+  have hf₁d : ∀ m, f₁ (d₁ m) = e₁ (f₁ m) := fun m => hN.injective <| by
+    rw [← hfu, ← hM.comm_left, hfd, hfu, hN.comm_left]
   obtain ⟨c, rfl⟩ := hM.surjective x
   -- The boundary of a lift `c` of `x` is `u w` for a cycle `w` of `d₁`.
   obtain ⟨w, hw⟩ := (hM.exact (d c)).mp (by rw [hM.comm_right, mem_ker.mp hx])

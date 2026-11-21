@@ -18,7 +18,7 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecificLimits.Normed
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The Lerch transcendent: power series, compact convergence, and periodic zeta comparison
@@ -198,11 +198,11 @@ private theorem exists_summable_norm_log_pow_lerchSeries_term_le {K : Set (ℂ �
   set r : ℝ := ‖p₀.2.1‖
   have hr : ‖r‖ < 1 := by rw [Real.norm_of_nonneg (norm_nonneg _)]; exact hKz p₀ hp₀
   have hsum1 : Summable (fun n : ℕ => Real.exp (-S * Real.log δ) * ((n : ℝ) + 1) ^ k * r ^ n) :=
-    ((summable_add_one_pow_mul_geometric_of_norm_lt_one k hr).mul_left
+    ((summable_add_pow_mul_geometric_of_norm_lt_one 1 k hr).mul_left
       (Real.exp (-S * Real.log δ))).congr fun _ => by ring
   have hsum2 : Summable (fun n : ℕ =>
       (C + 1) ^ Nat.ceil S * ((n : ℝ) + 1) ^ (k + Nat.ceil S) * r ^ n) :=
-    ((summable_add_one_pow_mul_geometric_of_norm_lt_one (k + Nat.ceil S) hr).mul_left
+    ((summable_add_pow_mul_geometric_of_norm_lt_one 1 (k + Nat.ceil S) hr).mul_left
       ((C + 1) ^ Nat.ceil S)).congr fun _ => by ring
   exact ⟨_, (hsum1.add hsum2).mul_left
       ((|Real.log δ| + Real.pi + C + 1) ^ k * Real.exp (S * Real.pi)),
@@ -344,7 +344,7 @@ private theorem norm_exp_two_pi_I_mul_le_one {a : ℂ} (ha : 0 ≤ a.im) :
 
 private theorem exp_two_pi_I_mul_pow (a : ℂ) (n : ℕ) :
     Complex.exp (2 * Real.pi * I * a) ^ n = Complex.exp (2 * Real.pi * I * n * a) := by
-  rw [← Complex.exp_nat_mul]; congr 1; ring
+  rw [← Complex.exp_natCast_mul]; congr 1; ring
 
 /-- Periodicity of `lerchZeta` in the phase `a`: adding an integer leaves `lerchZeta s a c`
 unchanged. -/
@@ -794,7 +794,7 @@ theorem expZeta_eq_mul_lerchSeries (a : ℝ) {s : ℂ} (hs : 1 < s.re) :
   rw [lerchSeries_def, ← tsum_mul_left]
   refine tsum_congr fun n => ?_
   have hn1 : ((n + 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
-  rw [div_eq_mul_inv, cpow_def_of_ne_zero hn1, ← Complex.exp_neg, ← Complex.exp_nat_mul,
+  rw [div_eq_mul_inv, cpow_def_of_ne_zero hn1, ← Complex.exp_neg, ← Complex.exp_natCast_mul,
     ← Complex.exp_add, ← Complex.exp_add, ← Complex.exp_add]
   congr 1; push_cast; ring
 
