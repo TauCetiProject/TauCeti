@@ -34,10 +34,6 @@ point of the plane and as an equality of values away from `s = 1`.
   point.
 * `TauCeti.LFunctions.dedekindZetaC_eq_riemannZeta_mul_LFunction`:
   `dedekindZetaC K s = ζ(s) L(s, χ_D)` for every `s ≠ 1`.
-* `TauCeti.LFunctions.analyticOnNhd_dedekindZetaC_compl_singleton`:
-  `dedekindZetaC K` is analytic away from `s = 1`.
-* `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`:
-  `dedekindZetaC K s = dedekindZeta K s` on `Re s > 1`.
 
 ## References
 
@@ -109,20 +105,5 @@ theorem dedekindZetaC_eq_riemannZeta_mul_LFunction {s : ℂ} (hs : s ≠ 1) :
   exact meromorphicContinuation_apply (meromorphic_riemannZeta_mul_LFunction hK)
     (analyticOnNhd_riemannZeta_mul_LFunction hK) (eqOn_riemannZeta_mul_LFunction hK)
     (analyticAt_riemannZeta_mul_LFunction hK hs)
-
-/-- The continued Dedekind zeta function of a quadratic field is analytic away from `s = 1`. -/
-theorem analyticOnNhd_dedekindZetaC_compl_singleton :
-    AnalyticOnNhd ℂ (dedekindZetaC K) {1}ᶜ := by
-  intro s hs
-  refine (analyticAt_riemannZeta_mul_LFunction hK hs).congr ?_
-  filter_upwards [isOpen_compl_singleton.mem_nhds hs] with z hz
-  exact (dedekindZetaC_eq_riemannZeta_mul_LFunction hK hz).symm
-
-/-- On `Re s > 1`, the continued Dedekind zeta function of a quadratic field agrees with
-`NumberField.dedekindZeta K`. -/
-theorem dedekindZetaC_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
-    dedekindZetaC K s = dedekindZeta K s := by
-  rw [dedekindZetaC_eq_riemannZeta_mul_LFunction hK (fun h ↦ by simp [h] at hs),
-    NumberField.dedekindZeta_eq_riemannZeta_mul_LFunction hK hs]
 
 end TauCeti.LFunctions

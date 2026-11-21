@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Meromorphic.Order
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Quadratic
 public import TauCeti.NumberTheory.LSeries.EntireExtension
 import Mathlib.Analysis.Complex.RemovableSingularity
@@ -50,7 +51,8 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
    `Re s ≥ 1`.
 4. Over fields with `[K : ℚ] = 1`, the Dedekind zeta continuation
    `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub` already reaches `Re s > 0`, discharging
-   the `Z` hypothesis unconditionally.
+   the `Z` hypothesis unconditionally; for any cancelling weight `χ`, `continuedLFunctionOfWeight χ`
+   also reaches `Re s > 0`, yielding unconditional nonvanishing on `Re s ≥ 1`.
 5. Finally, the ideal Liouville weight `TauCeti.MultiplicativeIdealWeight.liouville K` satisfies
    `λ_K ^ 2 = 1`, and its `L`-series `ζ_K(2s) / ζ_K(s)` continues holomorphically across `s = 1`
    with a zero at `s = 1`. Thus continuation across `s = 1` alone cannot rule out `L 1 = 0`:
@@ -74,8 +76,10 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
   `ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt`, and
   `meromorphicOrderAt_eq_zero_of_one_le_re_of_isNormTwistOnGood_sq`: full closed half-plane
   `Re s ≥ 1` nonvanishing.
-* `ne_zero_of_one_le_re_of_finrank_eq_one` and `ne_zero_one_of_finrank_eq_one`: unconditional
-  specialization for `[K : ℚ] = 1`.
+* `ne_zero_of_one_le_re_of_finrank_eq_one`, `ne_zero_one_of_finrank_eq_one`,
+  `TauCeti.continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one`, and
+  `TauCeti.continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq_of_finrank_eq_one`:
+  unconditional specializations for `[K : ℚ] = 1`.
 * `exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero`: sharpness test showing that
   continuation across `s = 1` alone does not rule out `L 1 = 0`.
 
@@ -562,6 +566,33 @@ theorem ne_zero_one_of_finrank_eq_one (hK : Module.finrank ℚ K = 1)
     (hLhalf : ContinuousAt L (1 / 2 : ℂ)) : L 1 ≠ 0 := by
   simpa using ne_zero_of_one_le_re_of_finrank_eq_one hK
     ((isNormTwistOnGood_zero_iff _).mpr hχ) hL hLL (by simpa using hLhalf) (s := 1) (by simp)
+
+/-- **Unconditional nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when
+`[K : ℚ] = 1`.** For a degree-`1` field, cancellation continues `L(χ, ·)` holomorphically to
+`Re s > 0`, discharging both continuation hypotheses unconditionally. -/
+theorem _root_.TauCeti.continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one
+    (hK : Module.finrank ℚ K = 1) {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+    {u : ℝ} (hχ₂ : (χ ^ 2).1.IsNormTwistOnGood u) {s : ℂ} (hs : 1 ≤ s.re) :
+    continuedLFunctionOfWeight χ s ≠ 0 := by
+  have hdiff : DifferentiableOn ℂ (continuedLFunctionOfWeight χ) {z | (0 : ℝ) < z.re} := by
+    simpa [hK] using differentiableOn_continuedLFunctionOfWeight hχ
+  have hopen : IsOpen {z : ℂ | (0 : ℝ) < z.re} :=
+    isOpen_lt continuous_const Complex.continuous_re
+  exact ne_zero_of_one_le_re_of_finrank_eq_one hK hχ₂
+    (hdiff.mono fun _ hz ↦ lt_trans (by norm_num : (0 : ℝ) < 1 / 2) hz)
+    (fun z hz ↦ by
+      rw [continuedLFunctionOfWeight_eq_LSeries χ hz,
+        UnitaryIdealWeight.toIdealArithmeticFunction_eq_val])
+    (hdiff.differentiableAt (hopen.mem_nhds (by norm_num))).continuousAt hs
+
+/-- **Unconditional nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when
+`[K : ℚ] = 1` and `(χ ^ 2).1.IsTrivialOnGood`.** -/
+theorem _root_.TauCeti.continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq_of_finrank_eq_one
+    (hK : Module.finrank ℚ K = 1) {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+    (hχ₂ : (χ ^ 2).1.IsTrivialOnGood) {s : ℂ} (hs : 1 ≤ s.re) :
+    continuedLFunctionOfWeight χ s ≠ 0 :=
+  continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one hK hχ
+    ((isNormTwistOnGood_zero_iff _).mpr hχ₂) hs
 
 /-! ### Sharpness test: analytic continuation across `s = 1` alone does not prevent `L 1 = 0` -/
 
