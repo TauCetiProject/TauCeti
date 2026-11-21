@@ -34,7 +34,8 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 
 * `PowerSeries.IsEntire.taylor`: the translate of an entire series is entire.
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
-  entire series.
+  entire series; `PowerSeries.IsEntire.order_taylor_smul` and
+  `PowerSeries.IsEntire.order_taylor_C_mul`: nonzero scalar multiplication preserves Taylor order.
 * `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
@@ -100,6 +101,19 @@ theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
   ext n
   rw [coeff_taylor, map_smul, (hf.hasseDeriv n).evalAt_smul, coeff_smul, coeff_taylor,
     smul_eq_mul]
+
+/-- Multiplying an entire series by a nonzero scalar preserves the order of its Taylor
+translates. -/
+theorem IsEntire.order_taylor_smul [NoZeroDivisors R] (hf : f.IsEntire) {c : R} (hc : c ≠ 0)
+    (a : R) : (taylor a (c • f)).order = (taylor a f).order := by
+  rw [hf.taylor_smul, smul_eq_C_mul, order_mul,
+    not_ne_iff.mp (mt order_ne_zero_iff_constCoeff_eq_zero.mp (by simpa using hc)), zero_add]
+
+/-- Multiplying an entire series on the left by a nonzero constant series preserves the order of
+its Taylor translates. -/
+theorem IsEntire.order_taylor_C_mul [NoZeroDivisors R] (hf : f.IsEntire) {c : R} (hc : c ≠ 0)
+    (a : R) : (taylor a (C c * f)).order = (taylor a f).order := by
+  rw [← smul_eq_C_mul, hf.order_taylor_smul hc a]
 
 /-- Taylor translation is multiplicative on entire series, by the Leibniz rule for Hasse
 derivatives. -/

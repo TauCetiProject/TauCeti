@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.GaussFamily
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Analysis.Normed.Ring.Basic
-import TauCeti.Analysis.Normed.Ring.InfiniteProd
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # The Gauss topology on entire series
@@ -626,9 +626,8 @@ theorem _root_.HasProd.tendsto_gaussNorm_sub_prod {ι : Type*} {f : ι → IsEnt
   refine squeeze_zero (fun t ↦ PowerSeries.gaussNorm_nonneg norm s _ norm_nonneg) (fun t ↦ ?_) hlim
   have hcoe : ((restrict r g - ∏ i ∈ t, restrict r (f i) :
       IsRestricted.subring (R := R) (r : ℝ)) : R⟦X⟧) = (g : R⟦X⟧) - ∏ i ∈ t, (f i : R⟦X⟧) := by
-    simp only [AddSubgroupClass.coe_sub, coe_restrict, ← map_prod,
-      show ((∏ i ∈ t, f i : IsEntire.subring R) : R⟦X⟧) = ∏ i ∈ t, (f i : R⟦X⟧) from
-        map_prod (IsEntire.subring R).subtype f t]
+    rw [AddSubgroupClass.coe_sub, ← map_prod (restrict r), coe_restrict, coe_restrict,
+      ← Subring.coe_subtype (IsEntire.subring R), map_prod]
   rw [dist_eq_norm, TauCeti.PowerSeries.norm_eq_gaussNorm, hcoe]
   refine TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le norm_nonneg hs (by linarith) ?_
   rw [← hcoe]

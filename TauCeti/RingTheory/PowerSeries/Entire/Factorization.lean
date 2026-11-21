@@ -27,7 +27,8 @@ f = ∏ (1 - X / α)
 
 over the zeros of `f`, defined as the limit of its finite subproducts over closed discs. In
 particular two entire series with constant coefficient `1` and the same zeros, counted with
-multiplicity, are equal, and an entire series with only finitely many zeros is a polynomial.
+multiplicity, are equal, any two entire series with the same Taylor orders everywhere agree up to
+a nonzero constant factor, and an entire series with only finitely many zeros is a polynomial.
 
 These statements concern the whole affine line. On a disc of finite radius the zeros may
 accumulate towards the boundary, and the corresponding products need not converge.
@@ -45,8 +46,10 @@ accumulate towards the boundary, and the corresponding products need not converg
 * `PowerSeries.IsEntire.tendsto_gaussNorm_sub_prod_zeroMultiset` and
   `PowerSeries.IsEntire.tendsto_polynomialHom_prod_zeroMultiset`: the product expansion, in each
   Gauss norm and in the topology of entire series.
-* `PowerSeries.IsEntire.eq_of_order_taylor_eq`: an entire series with constant coefficient `1` is
-  determined by the multiplicities of its zeros.
+* `PowerSeries.IsEntire.eq_of_order_taylor_eq` and
+  `PowerSeries.IsEntire.exists_eq_C_mul_of_order_taylor_eq`: an entire series with constant
+  coefficient `1` is determined by the multiplicities of its zeros, and arbitrary entire series
+  with the same zero multiplicities differ by a nonzero constant factor.
 * `PowerSeries.IsEntire.eq_prod_zeroMultiset_of_forall_norm_le` and
   `PowerSeries.IsEntire.exists_polynomial_eq_of_finite`: an entire series with finitely many zeros
   is a polynomial, namely the product over its zeros when `f(0) = 1`.
@@ -223,6 +226,59 @@ theorem eq_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire) (hf0 : constan
     (hf.tendsto_polynomialHom_prod_zeroMultiset hf0)
     (hg.tendsto_polynomialHom_prod_zeroMultiset hg0)
     (hz.mono fun r hr ↦ by simp only [hr]))
+
+/-- **Entire series with the same zero divisor agree up to a nonzero constant.** Over an
+algebraically closed complete ultrametric normed field, two entire series with the same Taylor
+order at every point differ by a nonzero constant factor. -/
+theorem exists_eq_C_mul_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire)
+    (h : ∀ x : K, (_root_.PowerSeries.taylor x f).order = (_root_.PowerSeries.taylor x g).order) :
+    ∃ c : K, c ≠ 0 ∧ f = C c * g := by
+  by_cases hf0 : f = 0
+  · subst hf0
+    have hg0 : g = 0 := by
+      have h0 := h 0
+      simpa [_root_.PowerSeries.taylor_zero, _root_.PowerSeries.order_eq_top] using h0.symm
+    exact ⟨1, one_ne_zero, by simp [hg0]⟩
+  obtain ⟨n, hnf⟩ := hf.exists_isGoodZero hf0 0
+  have hng : g.IsGoodZero 0 n :=
+    _root_.PowerSeries.isGoodZero_iff_order_taylor_eq.mpr
+      ((h 0).symm.trans (_root_.PowerSeries.isGoodZero_iff_order_taylor_eq.mp hnf))
+  obtain ⟨f₁, hf₁, hff₁, hf₁0⟩ := hf.isGoodZero_iff.mp hnf
+  obtain ⟨g₁, hg₁, hgg₁, hg₁0⟩ := hg.isGoodZero_iff.mp hng
+  rw [map_zero, sub_zero] at hff₁ hgg₁
+  simp only [_root_.PowerSeries.evalAt_at_zero, Algebra.algebraMap_self_apply,
+    isUnit_iff_ne_zero] at hf₁0 hg₁0
+  -- Normalise `f₁` and `g₁` to constant coefficient `1`; their Taylor orders agree everywhere.
+  set f₂ := C (constantCoeff f₁)⁻¹ * f₁
+  set g₂ := C (constantCoeff g₁)⁻¹ * g₁
+  have hf₂ : f₂.IsEntire := (isEntire_C _).mul hf₁
+  have hg₂ : g₂.IsEntire := (isEntire_C _).mul hg₁
+  have hord2 (x : K) : (_root_.PowerSeries.taylor x f₂).order =
+      (_root_.PowerSeries.taylor x g₂).order := by
+    have hX : (_root_.PowerSeries.taylor x (X ^ n : PowerSeries K)).order ≠ ⊤ := by
+      rcases eq_or_ne x 0 with rfl | hx0
+      · simp
+      · simp [_root_.PowerSeries.order_taylor_X_pow_of_ne_zero hx0]
+    have hfg1 : (_root_.PowerSeries.taylor x f₁).order =
+        (_root_.PowerSeries.taylor x g₁).order := by
+      have hx := h x
+      rw [hff₁, hgg₁, (isEntire_X.pow n).taylor_mul hf₁,
+        (isEntire_X.pow n).taylor_mul hg₁, _root_.PowerSeries.order_mul,
+        _root_.PowerSeries.order_mul] at hx
+      exact WithTop.add_left_cancel hX hx
+    rw [hf₁.order_taylor_C_mul (inv_ne_zero hf₁0) x,
+      hg₁.order_taylor_C_mul (inv_ne_zero hg₁0) x, hfg1]
+  have heq : f₂ = g₂ :=
+    hf₂.eq_of_order_taylor_eq hg₂ (by simp [f₂, hf₁0]) (by simp [g₂, hg₁0]) hord2
+  refine ⟨constantCoeff f₁ * (constantCoeff g₁)⁻¹, mul_ne_zero hf₁0 (inv_ne_zero hg₁0), ?_⟩
+  have hf₁eq : f₁ = C (constantCoeff f₁) * f₂ := by
+    dsimp [f₂]
+    rw [← mul_assoc, ← map_mul, mul_inv_cancel₀ hf₁0, map_one, one_mul]
+  calc f = X ^ n * (C (constantCoeff f₁) * f₂) := by rw [hff₁, ← hf₁eq]
+    _ = C (constantCoeff f₁ * (constantCoeff g₁)⁻¹) * g := by
+        rw [heq, hgg₁, map_mul]
+        dsimp [g₂]
+        ring
 
 /-- **Finitely many zeros, normalised form.** Let `f` be an entire series with constant coefficient
 `1` over an algebraically closed complete ultrametric normed field. If all zeros of `f` lie in the

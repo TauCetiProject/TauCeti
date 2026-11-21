@@ -61,11 +61,22 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
   `1`-Lipschitz on the unit circle of an ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
-* `TauCeti.norm_mul_sub_one_le` and `TauCeti.norm_prod_sub_one_le`: finite products of elements
-  within `B ≤ 1` of `1` remain within `B` of `1`.
+* `TauCeti.norm_mul_sub_one_le`, `TauCeti.norm_prod_sub_one_le` and
+  `TauCeti.norm_tprod_sub_one_le`: finite and infinite products of elements within `B ≤ 1` of `1`
+  remain within `B` of `1`.
 * `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
   `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
   of `1` remain strictly within `ε` of `1`.
+* `HasProd.norm_sub_one_le` and `HasProd.norm_sub_one_lt`: closed and strict perturbation bounds
+  near `1` for a supplied convergent product, without a Hausdorff hypothesis.
+* `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one`: factors of a convergent product with
+  `‖f i - 1‖ < 1` tend to `1` along `cofinite`.
+* `IsUltrametricDist.multipliable_of_tendsto_cofinite_one` and
+  `IsUltrametricDist.multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one`: in a complete
+  ultrametric seminormed commutative ring, any family tending to `1` cofinitely is unconditionally
+  multipliable, and conversely when every factor satisfies `‖f i - 1‖ < 1`.
+* `Filter.Tendsto.tprod_one_add_eq_tsum_prod`: in the Hausdorff complete ultrametric case, factors
+  `1 + f i` with `f → 0` cofinitely satisfy `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
@@ -360,16 +371,9 @@ theorem norm_mul_sub_one_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/
 theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
-    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε := by
-  calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
-        congr 1
-        simp only [mul_sub, sub_mul, mul_one, one_mul]
-        abel
-    _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
-      (IsUltrametricDist.norm_add_le_max _ _).trans
-        (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
-    _ < ε := max_lt (max_lt ((norm_mul_le _ _).trans_lt
-      ((mul_le_of_le_one_right (norm_nonneg _) (hb.le.trans hε)).trans_lt ha)) ha) hb
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε :=
+  (norm_mul_sub_one_le ((max_le ha.le hb.le).trans hε) (le_max_left _ _)
+    (le_max_right _ _)).trans_lt (max_lt ha hb)
 
 /-- In an ultrametric seminormed ring, a power of an element `x` of norm at most
 one is no farther from `1` than `x` is: `‖x ^ n - 1‖ ≤ ‖x - 1‖`. -/
@@ -410,22 +414,114 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametri
     exact norm_mul_sub_one_lt hε (hf j (Finset.mem_insert_self j s))
       (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
 
+section InfiniteProd
+
+open Filter
+open scoped Topology
+
+/-- In an ultrametric seminormed commutative ring, if `f` has a convergent infinite product and
+every factor satisfies `‖f i - 1‖ < 1`, then `f` tends to `1` along the cofinite filter. Unlike in
+a multiplicative group, this uses `‖f i - 1‖ < 1` so that finite partial products preserve the
+distances `‖f i - 1‖`. -/
+theorem _root_.HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] {f : ι → R} {a : R} (hf : HasProd f a)
+    (h : ∀ i, ‖f i - 1‖ < 1) : Tendsto f cofinite (𝓝 1) := by
+  classical
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hlim : ∀ᶠ s : Finset ι in atTop, dist (∏ j ∈ s, f j) a < ε :=
+    Metric.tendsto_nhds.mp hf ε hε
+  obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp hlim
+  refine Filter.eventually_cofinite.mpr (s₀.finite_toSet.subset fun i hi ↦ ?_)
+  by_contra his₀
+  rw [Finset.mem_coe] at his₀
+  let u : R := ∏ j ∈ s₀, f j
+  have hu : ‖u - 1‖ < 1 := TauCeti.norm_prod_sub_one_lt s₀ f zero_lt_one le_rfl fun j _ ↦ h j
+  have hmul : ‖u * (f i - 1)‖ = ‖f i - 1‖ := by
+    have h1 := TauCeti.norm_one_add_mul_of_norm_lt_one hu (f i - 1)
+    rwa [add_sub_cancel] at h1
+  have hprod : ∏ j ∈ insert i s₀, f j - u = u * (f i - 1) := by
+    rw [Finset.prod_insert his₀]
+    ring
+  have hdist : ‖f i - 1‖ < ε := calc
+    ‖f i - 1‖ = ‖∏ j ∈ insert i s₀, f j - u‖ := by rw [hprod, hmul]
+    _ = ‖(∏ j ∈ insert i s₀, f j - a) + -(u - a)‖ := by congr 1; abel
+    _ ≤ max ‖∏ j ∈ insert i s₀, f j - a‖ ‖u - a‖ := by
+      simpa only [norm_neg] using
+        IsUltrametricDist.norm_add_le_max (∏ j ∈ insert i s₀, f j - a) (-(u - a))
+    _ < ε := max_lt
+      (by simpa only [dist_eq_norm] using hs₀ (insert i s₀) (Finset.subset_insert i s₀))
+      (by simpa only [dist_eq_norm] using hs₀ s₀ Finset.Subset.rfl)
+  exact hi (by simpa only [dist_eq_norm] using hdist)
+
+/-- In an ultrametric seminormed commutative ring, if `f` has product `a` and every factor lies
+within `B ≤ 1` of `1` (`0 ≤ B`), then `‖a - 1‖ ≤ B`. This is the `HasProd` form of
+`TauCeti.norm_tprod_sub_one_le`, which needs no Hausdorff hypothesis. -/
+theorem _root_.HasProd.norm_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {f : ι → R} {a : R} (hf : HasProd f a) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
+    (h : ∀ i, ‖f i - 1‖ ≤ B) : ‖a - 1‖ ≤ B :=
+  le_of_tendsto' (hf.sub_const 1).norm fun s ↦
+    TauCeti.norm_prod_sub_one_le s f hB0 hB1 fun i _ ↦ h i
+
+/-- In an ultrametric seminormed commutative ring, if `f` has product `a` and every factor lies
+strictly within `ε ≤ 1` of `1`, then `‖a - 1‖ < ε`. This is the `HasProd` form of
+`TauCeti.norm_tprod_sub_one_lt`, which needs no Hausdorff hypothesis. -/
+theorem _root_.HasProd.norm_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {f : ι → R} {a : R} (hf : HasProd f a) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
+    (h : ∀ i, ‖f i - 1‖ < ε) : ‖a - 1‖ < ε := by
+  obtain ⟨s₀, hs₀⟩ := (hf.eventually (Metric.ball_mem_nhds a hε0)).exists
+  have h1 : ‖a - ∏ i ∈ s₀, f i‖ < ε := by
+    rw [← dist_eq_norm, dist_comm]
+    exact Metric.mem_ball.mp hs₀
+  calc ‖a - 1‖ = ‖(a - ∏ i ∈ s₀, f i) + ((∏ i ∈ s₀, f i) - 1)‖ := by rw [sub_add_sub_cancel]
+    _ ≤ max ‖a - ∏ i ∈ s₀, f i‖ ‖(∏ i ∈ s₀, f i) - 1‖ := IsUltrametricDist.norm_add_le_max _ _
+    _ < ε := max_lt h1 (TauCeti.norm_prod_sub_one_lt s₀ f hε0 hε fun i _ ↦ h i)
+
+/-- In an ultrametric seminormed commutative ring, an infinite product of elements each within
+`B ≤ 1` of `1` is again within `B` of `1` (for `0 ≤ B`). -/
+theorem norm_tprod_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    (f : ι → R) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
+    (hf : ∀ i, ‖f i - 1‖ ≤ B) : ‖(∏' i, f i) - 1‖ ≤ B := by
+  by_cases hm : Multipliable f
+  · exact hm.hasProd.norm_sub_one_le hB0 hB1 hf
+  · simpa [tprod_eq_one_of_not_multipliable hm] using hB0
+
 /-- In an ultrametric seminormed commutative ring, an infinite product of elements each strictly
 within `ε ≤ 1` of `1` is again strictly within `ε` of `1` (for `0 < ε`). -/
 theorem norm_tprod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
     (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
     (hf : ∀ i, ‖f i - 1‖ < ε) : ‖(∏' i, f i) - 1‖ < ε := by
   by_cases hm : Multipliable f
-  · have ha := hm.hasProd
-    generalize ∏' i, f i = a at ha ⊢
-    obtain ⟨s₀, hs₀⟩ := (ha.eventually (Metric.ball_mem_nhds a hε0)).exists
-    have h1 : ‖a - ∏ i ∈ s₀, f i‖ < ε := by
-      rw [← dist_eq_norm, dist_comm]
-      exact Metric.mem_ball.mp hs₀
-    calc ‖a - 1‖ = ‖(a - ∏ i ∈ s₀, f i) + ((∏ i ∈ s₀, f i) - 1)‖ := by rw [sub_add_sub_cancel]
-      _ ≤ max ‖a - ∏ i ∈ s₀, f i‖ ‖(∏ i ∈ s₀, f i) - 1‖ := IsUltrametricDist.norm_add_le_max _ _
-      _ < ε := max_lt h1 (norm_prod_sub_one_lt s₀ f hε0 hε fun i _ ↦ hf i)
+  · exact hm.hasProd.norm_sub_one_lt hε0 hε hf
   · simpa [tprod_eq_one_of_not_multipliable hm] using hε0
+
+/-- In a complete ultrametric seminormed commutative ring, any family tending to `1` along the
+cofinite filter is unconditionally multipliable, even when some factors are not units. -/
+theorem _root_.IsUltrametricDist.multipliable_of_tendsto_cofinite_one {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
+    (hf : Tendsto f cofinite (𝓝 1)) : Multipliable f := by
+  have h0 : Tendsto (fun i ↦ f i - 1) cofinite (𝓝 0) := by
+    simpa only [sub_self] using hf.sub_const 1
+  simpa only [add_sub_cancel] using
+    _root_.IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero h0
+
+/-- In a complete ultrametric seminormed commutative ring, a family whose factors all satisfy
+`‖f i - 1‖ < 1` is unconditionally multipliable if and only if it tends to `1` along `cofinite`. -/
+theorem _root_.IsUltrametricDist.multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one
+    {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
+    (h : ∀ i, ‖f i - 1‖ < 1) : Multipliable f ↔ Tendsto f cofinite (𝓝 1) :=
+  ⟨fun hf ↦ hf.hasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one h,
+    _root_.IsUltrametricDist.multipliable_of_tendsto_cofinite_one⟩
+
+/-- In a complete Hausdorff ultrametric seminormed commutative ring, if `f → 0` along `cofinite`,
+then `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`. -/
+theorem _root_.Filter.Tendsto.tprod_one_add_eq_tsum_prod {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] [T2Space R] {f : ι → R}
+    (hf : Tendsto f cofinite (𝓝 0)) :
+    ∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i :=
+  tprod_one_add (_root_.IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero hf)
+
+end InfiniteProd
 
 /-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
 their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,
