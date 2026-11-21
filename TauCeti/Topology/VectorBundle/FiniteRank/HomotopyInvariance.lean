@@ -199,13 +199,13 @@ variable {𝕜 : Type v} [RCLike 𝕜]
 
 private def isoFiberEquiv {B : Type*} [TopologicalSpace B] {A D : FiniteRankBundleCore 𝕜 B}
     (e : A ≅ D) (x : B) : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜) :=
-  ContinuousLinearEquiv.equivOfInverse (e.hom.fiberMap x) (e.inv.fiberMap x)
-    (fun v ↦ by
-      have h := congrArg (fun k : A ⟶ A ↦ k.fiberMap x v) e.hom_inv_id
+  ContinuousLinearEquiv.ofContinuousLinearMap (e.hom.fiberMap x) (e.inv.fiberMap x)
+    (ContinuousLinearMap.ext fun v ↦ by
+      have h := congrArg (fun k : D ⟶ D ↦ k.fiberMap x v) e.inv_hom_id
       simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
         ContinuousLinearMap.id_apply] using h)
-    (fun v ↦ by
-      have h := congrArg (fun k : D ⟶ D ↦ k.fiberMap x v) e.inv_hom_id
+    (ContinuousLinearMap.ext fun v ↦ by
+      have h := congrArg (fun k : A ⟶ A ↦ k.fiberMap x v) e.hom_inv_id
       simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
         ContinuousLinearMap.id_apply] using h)
 
@@ -228,22 +228,23 @@ theorem exists_iso_cylinder_of_isClosed [R1Space X] [ParacompactSpace X] {s : Se
     ∃ e : (A.pullback (cylinderSlice X 0)).pullback ContinuousMap.fst ≅ A,
       (∀ x : X, e.hom.fiberMap (x, 0) = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) ∧
       (pullbackFunctor (cylinderSetIncl s)).mapIso e = e₀ := by
-  let Φ₀ : ∀ q : s × I, A.core.Fiber (q.1.1, 0) ≃L[𝕜] A.core.Fiber (q.1.1, q.2) := isoFiberEquiv e₀
+  let Φ₀ : ∀ q : s × I, A.core.Fiber (q.1.val, 0) ≃L[𝕜] A.core.Fiber (q.1.val, q.2) :=
+    isoFiberEquiv e₀
   let eS₀ : (((A.pullback (cylinderSlice X 0)).pullback ContinuousMap.fst).pullback
       (cylinderSetIncl s)).core.TotalSpace ≃ₜ
-      TotalSpace (Fin A.rank → 𝕜) ((fun q : s × I ↦ (q.1.1, (0 : I))) *ᵖ A.core.Fiber) :=
+      TotalSpace (Fin A.rank → 𝕜) ((fun q : s × I ↦ (q.1.val, (0 : I))) *ᵖ A.core.Fiber) :=
     pullbackHomeomorphOfEq A ((cylinderZero X).comp (cylinderSetIncl s))
-      (fun q ↦ (q.1.1, 0)) (funext fun _ ↦ rfl)
+      (fun q ↦ (q.1.val, 0)) (funext fun _ ↦ rfl)
   let eS₁ : (A.pullback (cylinderSetIncl s)).core.TotalSpace ≃ₜ
-      TotalSpace (Fin A.rank → 𝕜) ((fun q : s × I ↦ (q.1.1, q.2)) *ᵖ A.core.Fiber) :=
-    pullbackHomeomorphOfEq A (cylinderSetIncl s) (fun q ↦ (q.1.1, q.2)) (funext fun _ ↦ rfl)
+      TotalSpace (Fin A.rank → 𝕜) ((fun q : s × I ↦ (q.1.val, q.2)) *ᵖ A.core.Fiber) :=
+    pullbackHomeomorphOfEq A (cylinderSetIncl s) (fun q ↦ (q.1.val, q.2)) (funext fun _ ↦ rfl)
   have hΦ₀ : Continuous fun v : TotalSpace (Fin A.rank → 𝕜)
-      ((fun q : s × I ↦ (q.1.1, (0 : I))) *ᵖ A.core.Fiber) ↦
-      TotalSpace.mk' (Fin A.rank → 𝕜) (E := (fun q : s × I ↦ (q.1.1, q.2)) *ᵖ A.core.Fiber)
+      ((fun q : s × I ↦ (q.1.val, (0 : I))) *ᵖ A.core.Fiber) ↦
+      TotalSpace.mk' (Fin A.rank → 𝕜) (E := (fun q : s × I ↦ (q.1.val, q.2)) *ᵖ A.core.Fiber)
         v.proj (Φ₀ v.proj v.snd) :=
     (eS₁.continuous.comp (e₀.hom.continuous_totalSpaceMap.comp eS₀.symm.continuous)).congr
       fun v ↦ congrArg eS₁ (CoordinateHom.totalSpaceMap_mk e₀.hom v.proj (v.snd : Fin A.rank → 𝕜))
-  have hΦ₀0 (x : s) : Φ₀ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (A.core.Fiber (x.1, 0)) :=
+  have hΦ₀0 (x : s) : Φ₀ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (A.core.Fiber (x.val, 0)) :=
     DFunLike.ext _ _ fun (v : Fin A.rank → 𝕜) ↦
       (isoFiberEquiv_apply e₀ (x, 0) v).trans
         (congrArg (fun L : (Fin A.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) ↦ L v) (he₀ x))
