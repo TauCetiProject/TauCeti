@@ -254,19 +254,6 @@ lemma intCast_comp_eq_zero_of_div_mem_lattice_periodPair {N : ℕ} [NeZero N] {b
   ext i
   fin_cases i <;> simpa [ZMod.intCast_zmod_eq_zero_iff_dvd]
 
-/-- A division point `(b₀ z + b₁) / N` lies in the lattice `ℤ z + ℤ` if `b ≡ 0 mod N`. -/
-lemma div_mem_lattice_periodPair_of_intCast_comp_eq_zero {N : ℕ} {b : Fin 2 → ℤ} (z : ℍ)
-    (h : ((↑) : ℤ → ZMod N) ∘ b = 0) : ((b 0 : ℂ) * z + b 1) / N ∈ z.periodPair.lattice := by
-  obtain ⟨k₀, hk₀⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (congrFun h 0)
-  obtain ⟨k₁, hk₁⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (congrFun h 1)
-  rcases eq_or_ne (N : ℂ) 0 with hN | hN
-  · rw [hN, div_zero]
-    exact zero_mem _
-  convert intCast_mul_add_intCast_mem_lattice_periodPair z k₀ k₁ using 1
-  rw [hk₀, hk₁, div_eq_iff hN]
-  push_cast
-  ring
-
 /-- The integer pairs parametrize the lattice of `z.periodPair` by `y ↦ y₀ z + y₁`. -/
 private def latticeEquiv (z : ℍ) : (Fin 2 → ℤ) ≃ z.periodPair.lattice :=
   (finTwoArrowEquiv ℤ).trans z.periodPair.latticeEquivProd.symm.toEquiv

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Quotient
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
@@ -89,47 +90,6 @@ open scoped MatrixGroups
 namespace UpperHalfPlane
 
 variable {N : ℕ}
-
-variable (N) in
-/-- The complex elliptic curve `E_z = ℂ / (ℤ z + ℤ)`, in its Weierstrass model
-`y² = x³ - (g₂ / 4) x - g₃ / 4`, with the point given by `1 / N`. For `N ≠ 0` this point has exact
-order `N` (`UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`). -/
-noncomputable def pointedWeierstrassCurve (z : ℍ) : PointedWeierstrassCurve ℂ :=
-  ⟨z.periodPair.weierstrassCurve, z.periodPair.weierstrassPoint (1 / N)⟩
-
-/-- The defining equation of `UpperHalfPlane.pointedWeierstrassCurve`. -/
-theorem pointedWeierstrassCurve_def (z : ℍ) :
-    z.pointedWeierstrassCurve N =
-      ⟨z.periodPair.weierstrassCurve, z.periodPair.weierstrassPoint (1 / N)⟩ :=
-  (rfl)
-
-@[simp]
-theorem pointedWeierstrassCurve_curve (z : ℍ) :
-    (z.pointedWeierstrassCurve N).curve = z.periodPair.weierstrassCurve :=
-  (rfl)
-
-/-- The point of `1 / N` on `E_z` has exact order `N`. -/
-theorem addOrderOf_weierstrassPoint_one_div [NeZero N] (z : ℍ) :
-    addOrderOf (z.periodPair.weierstrassPoint (1 / N)) = N := by
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  refine (addOrderOf_eq_iff (Nat.pos_of_neZero N)).mpr ⟨?_, fun m hm hm₀ ↦ ?_⟩
-  · rw [PeriodPair.nsmul_weierstrassPoint, mul_one_div_cancel hN,
-      PeriodPair.weierstrassPoint_eq_zero_iff]
-    simpa using z.periodPair.ω₂_mem_lattice
-  · rw [PeriodPair.nsmul_weierstrassPoint, Ne, PeriodPair.weierstrassPoint_eq_zero_iff]
-    intro hmem
-    have h := congrFun (intCast_comp_eq_zero_of_div_mem_lattice_periodPair (N := N) (b := ![0, m])
-      (z := z) (by convert hmem using 1; simp [div_eq_mul_inv])) 1
-    simp only [Function.comp_apply, Matrix.cons_val_one, Matrix.cons_val_fin_one, Int.cast_natCast,
-      Pi.zero_apply, ZMod.natCast_eq_zero_iff] at h
-    exact absurd (Nat.le_of_dvd hm₀ h) (not_le.mpr hm)
-
-/-- The pair `(E_z, P_z)` is an elliptic curve with a point of exact order `N`. -/
-theorem pointedWeierstrassCurve_mem_exactOrder [NeZero N] (z : ℍ) :
-    z.pointedWeierstrassCurve N ∈ PointedWeierstrassCurve.exactOrder ℂ N :=
-  (PointedWeierstrassCurve.mem_exactOrder_iff _).mpr
-    ⟨inferInstanceAs z.periodPair.weierstrassCurve.IsElliptic,
-      addOrderOf_weierstrassPoint_one_div z⟩
 
 variable (N) in
 /-- **Rescaling by `(c z + d)⁻¹` gives `(E_{γ z}, P_{γ z})`**: the change of variables with
@@ -223,7 +183,8 @@ theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
   · rintro ⟨C, hC⟩
     -- The change of variables is a rescaling `u` of the lattices, with `u = c z' + d`.
     have hcurve : C • z.periodPair.weierstrassCurve = z'.periodPair.weierstrassCurve :=
-      congrArg PointedWeierstrassCurve.curve hC
+      by simpa only [PointedWeierstrassCurve.smul_curve, pointedWeierstrassCurve_curve] using
+        congrArg PointedWeierstrassCurve.curve hC
     have hlat := PeriodPair.lattice_eq_smul_of_variableChange_smul_eq hcurve
     rw [PeriodPair.variableChange_eq_mk_of_smul_eq hcurve, pointedWeierstrassCurve_def,
       pointedWeierstrassCurve_def, PeriodPair.smul_mk_weierstrassPoint hlat,
@@ -329,13 +290,15 @@ theorem gamma1QuotientEquivExactOrder_mk_smul (γ : Gamma0 N) (z : ℍ) :
     ⟨⟨(Units.mk0 _ (denom_ne_zero (γ : SL(2, ℤ)) z))⁻¹, 0, 0, 0⟩, Subtype.ext ?_⟩))
   rw [SubMulAction.val_smul, PointedWeierstrassCurve.val_units_smul_of_intCast_eq
     (n := (γ : SL(2, ℤ)) 1 1) _ _ (by rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply])]
-  -- The marked point depends on the curve, so `UpperHalfPlane.pointedWeierstrassCurve_def` cannot
-  -- be rewritten here; it holds by `rfl`.
+  change _ • (⟨(z.pointedWeierstrassCurve N).curve,
+    (γ : SL(2, ℤ)) 1 1 • (z.pointedWeierstrassCurve N).point⟩ : PointedWeierstrassCurve ℂ) =
+      (γ • z).pointedWeierstrassCurve N
+  rw [UpperHalfPlane.pointedWeierstrassCurve_def z]
   exact UpperHalfPlane.smul_mk_zsmul_weierstrassPoint_one_div N γ.property z
 
 /-- The moduli bijection is equivariant for diamonds on arbitrary quotient classes. Over ℂ
 with a chosen primitive `N`-th root, this is precomposition of the μ-marking by the unit. -/
-@[simp]
+@[simp↓]
 theorem gamma1QuotientEquivExactOrder_smul (d : (ZMod N)ˣ)
     (q : MulAction.orbitRel.Quotient (Gamma1 N) ℍ) :
     gamma1QuotientEquivExactOrder N (d • q) = d • gamma1QuotientEquivExactOrder N q := by
@@ -350,7 +313,7 @@ theorem gamma1QuotientEquivExactOrder_smul (d : (ZMod N)ˣ)
 exact order `N M` by `M`. In terms of the embeddings `α : μ_{NM} ↪ E[NM]`, it restricts `α` to
 `μ_N`, forgetting the auxiliary marking, using compatible primitive roots
 `ζ_N = ζ_{NM}^M` (for example `ζ_k = exp(2πi/k)`). -/
-@[simp]
+@[simp↓]
 theorem gamma1QuotientEquivExactOrder_map_of_le (M : ℕ) [NeZero M]
     (q : MulAction.orbitRel.Quotient (Gamma1 (N * M)) ℍ) :
     gamma1QuotientEquivExactOrder N (Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le
@@ -363,8 +326,9 @@ theorem gamma1QuotientEquivExactOrder_map_of_le (M : ℕ) [NeZero M]
       MulActionHom.orbitRelQuotientMap_mk]
     refine congrArg _ (Subtype.ext ?_)
     rw [PointedWeierstrassCurve.val_nsmulExactOrder_apply]
-    -- As above, `UpperHalfPlane.pointedWeierstrassCurve_def` holds by `rfl` but cannot be
-    -- rewritten under the dependent marked point.
+    change z.pointedWeierstrassCurve N =
+      ⟨(z.pointedWeierstrassCurve (N * M)).curve, M • (z.pointedWeierstrassCurve (N * M)).point⟩
+    rw [UpperHalfPlane.pointedWeierstrassCurve_def, UpperHalfPlane.pointedWeierstrassCurve_def]
     apply PointedWeierstrassCurve.mk_inj.mpr
     change z.periodPair.weierstrassPoint (1 / N) =
       M • z.periodPair.weierstrassPoint (1 / (N * M : ℕ))

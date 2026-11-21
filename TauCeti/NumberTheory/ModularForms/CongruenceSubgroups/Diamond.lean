@@ -56,23 +56,15 @@ representative by `γ`. -/
 theorem gamma1QuotientDiamond_apply_mk (γ : Gamma0 N) (z : X) :
     gamma1QuotientDiamond N ((Gamma0Map N).toHomUnits γ) ⟦z⟧ =
       ⟦(γ : SL(2, ℤ)) • z⟧ := by
-  simp only [gamma1QuotientDiamond, MonoidHom.liftOfSurjective,
-    MonoidHom.liftOfRightInverse_comp_apply, MonoidHom.comp_apply,
-    MulAction.normalizerOrbitRelQuotientPermHom_apply, Subgroup.coe_inclusion]
+  have h := congrArg (fun f ↦ f γ ⟦z⟧)
+    (gamma1QuotientDiamond_comp_toHomUnits N (X := X))
+  simpa only [MonoidHom.comp_apply,
+    MulAction.normalizerOrbitRelQuotientPermHom_apply, Subgroup.coe_inclusion] using h
 
 /-- Units modulo `N` act on `Γ₁(N) \ X` by the descended normalizer action. -/
 noncomputable instance instMulActionUnitsZModGamma1Quotient :
     MulAction (ZMod N)ˣ (MulAction.orbitRel.Quotient (Gamma1 N) X) :=
   MulAction.compHom _ (gamma1QuotientDiamond N (X := X))
-
-/-- The diamond action translates representatives by any lift of its unit to `Γ₀(N)`. -/
-@[simp]
-theorem units_smul_gamma1Quotient_mk (γ : Gamma0 N) (z : X) :
-    (Gamma0Map N).toHomUnits γ •
-        (⟦z⟧ : MulAction.orbitRel.Quotient (Gamma1 N) X) =
-      ⟦(γ : SL(2, ℤ)) • z⟧ := by
-  rw [MulAction.compHom_smul_def, Equiv.Perm.smul_def]
-  exact gamma1QuotientDiamond_apply_mk N γ z
 
 /-- The diamond permutation agrees with the unit action on every orbit class. -/
 @[simp]
@@ -81,9 +73,18 @@ theorem gamma1QuotientDiamond_apply (d : (ZMod N)ˣ)
     gamma1QuotientDiamond N d q = d • q := by
   rw [MulAction.compHom_smul_def, Equiv.Perm.smul_def]
 
+/-- The diamond action translates representatives by any lift of its unit to `Γ₀(N)`. -/
+@[simp]
+theorem units_smul_gamma1Quotient_mk (γ : Gamma0 N) (z : X) :
+    (Gamma0Map N).toHomUnits γ •
+        (⟦z⟧ : MulAction.orbitRel.Quotient (Gamma1 N) X) =
+      ⟦(γ : SL(2, ℤ)) • z⟧ := by
+  rw [← gamma1QuotientDiamond_apply]
+  exact gamma1QuotientDiamond_apply_mk N γ z
+
 /-- Passing from level `L` to a divisor `N` of `L` commutes with diamonds, reducing the unit
 modulo `N`. -/
-@[simp]
+@[simp↓]
 theorem gamma1Quotient_map_of_le_units_smul {L : ℕ} (h : N ∣ L) (d : (ZMod L)ˣ)
     (q : MulAction.orbitRel.Quotient (Gamma1 L) X) :
     Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (Gamma1_le_Gamma1_of_dvd h)) (d • q) =

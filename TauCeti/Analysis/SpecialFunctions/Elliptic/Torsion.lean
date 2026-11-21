@@ -52,16 +52,12 @@ theorem weierstrassPoint_div_eq_of_intCast_eq {m n m' n' : ℤ} (hm : (m : ZMod 
     (hn : (n : ZMod N) = n') :
     L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
       L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) := by
-  obtain ⟨k, hk⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub m m' N).mp hm
-  obtain ⟨l, hl⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub n n' N).mp hn
-  rcases eq_or_ne (N : ℂ) 0 with hN | hN
-  · rw [hN, div_zero, div_zero]
   rw [weierstrassPoint_eq_weierstrassPoint_iff]
-  convert neg_mem (add_mem (zsmul_mem L.ω₁_mem_lattice k) (zsmul_mem L.ω₂_mem_lattice l)) using 1
-  have hk' : (m' : ℂ) = m + N * k := by exact_mod_cast (by linarith : m' = m + N * k)
-  have hl' : (n' : ℂ) = n + N * l := by exact_mod_cast (by linarith : n' = n + N * l)
-  rw [hk', hl', zsmul_eq_mul, zsmul_eq_mul]
-  field_simp
+  have h := L.div_mem_lattice_of_intCast_eq_zero
+    (N := N) (m := m - m') (n := n - n')
+    (by simp only [Int.cast_sub, hm, sub_self]) (by simp only [Int.cast_sub, hn, sub_self])
+  convert h using 1
+  push_cast
   ring
 
 /-- **The zeros of `℘'` are the half-periods**: `℘'(z) = 0` exactly when `2 z ∈ Λ`. This includes

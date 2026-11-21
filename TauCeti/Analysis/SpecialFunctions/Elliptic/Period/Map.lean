@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # The period map of a period pair
@@ -36,6 +37,22 @@ noncomputable def periodMap : ℤ × ℤ →ₗ[ℤ] ℂ :=
 
 @[simp] theorem periodMap_apply (x : ℤ × ℤ) : L.periodMap x = x.1 * L.ω₁ + x.2 * L.ω₂ :=
   L.latticeEquiv_symm_apply x
+
+/-- If both integer coordinates vanish modulo `N`, their division point lies in the period
+lattice. At `N = 0` the quotient is zero by Lean's division-by-zero convention. -/
+theorem div_mem_lattice_of_intCast_eq_zero {N : ℕ} {m n : ℤ}
+    (hm : (m : ZMod N) = 0) (hn : (n : ZMod N) = 0) :
+    (m * L.ω₁ + n * L.ω₂) / N ∈ L.lattice := by
+  obtain ⟨k, hk⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hm
+  obtain ⟨l, hl⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hn
+  rcases eq_or_ne (N : ℂ) 0 with hN | hN
+  · rw [hN, div_zero]
+    exact zero_mem _
+  convert add_mem (zsmul_mem L.ω₁_mem_lattice k) (zsmul_mem L.ω₂_mem_lattice l) using 1
+  rw [hk, hl, div_eq_iff hN]
+  push_cast
+  simp only [zsmul_eq_mul]
+  ring
 
 /-- The period map sends `(1, 0)` to the first period. -/
 theorem periodMap_one_zero : L.periodMap (1, 0) = L.ω₁ := by

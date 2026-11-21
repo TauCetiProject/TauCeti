@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Units
 
 /-!
 # Diamond action on isomorphism classes of marked elliptic curves
