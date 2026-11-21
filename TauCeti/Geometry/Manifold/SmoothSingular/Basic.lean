@@ -47,6 +47,9 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.smoothSingularSubcomplex`: the subcomplex of smooth singular simplices.
 * `TauCeti.isIso_smoothSingularSubcomplex_ι_of_subsingleton`: on a subsingleton charted space, the
   inclusion of smooth singular simplices is an isomorphism.
+* `ModelWithCorners.inv_smoothSingularSubcomplex_ι_app_zero`: on `0`-simplices of a subsingleton
+  manifold, the inverse of the smooth-subcomplex inclusion sends each singular `0`-simplex to the
+  corresponding smooth `0`-simplex.
 * `TauCeti.smoothSingularSubcomplex_le_preimage`: smooth maps preserve smooth simplices.
 * `TauCeti.smoothSingularSubcomplex_preimage_inclusion`: a simplex of an open subset is smooth
   exactly when it is smooth in a larger open subset.
@@ -683,3 +686,21 @@ theorem SmoothSimplex.smoothSingularSubcomplexMap_app_ofCurve
   simp
 
 end TauCeti
+
+namespace ModelWithCorners
+
+open TauCeti
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  (I : ModelWithCorners ℝ E H) (P : Type u) [TopologicalSpace P] [ChartedSpace H P]
+
+/-- On `0`-simplices of a subsingleton manifold, `(inv (smoothSingularSubcomplex I P).ι)` sends
+each singular `0`-simplex to the corresponding smooth `0`-simplex. -/
+theorem inv_smoothSingularSubcomplex_ι_app_zero [Subsingleton P]
+    (σ : (TopCat.toSSet.obj (TopCat.of P)) _⦋0⦌) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((inv (smoothSingularSubcomplex I P).ι).app (op ⦋0⦌) σ)) =
+      (SmoothSimplex.equiv₀ I P).symm ((TopCat.of P).toSSetObj₀Equiv σ) :=
+  (SmoothSimplex.equiv₀ I P).injective (Subsingleton.elim _ _)
+
+end ModelWithCorners
