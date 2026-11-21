@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Dual
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import Mathlib.Analysis.Normed.Module.HahnBanach

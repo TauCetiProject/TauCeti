@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Divergence
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.SpecificLimits.Absorption
