@@ -122,6 +122,19 @@ noncomputable def twoWeylVector : M := ∑ i ∈ posRootsFinset P b, P.root i
 lemma twoWeylVector_def : twoWeylVector P b = ∑ i ∈ posRootsFinset P b, P.root i := by
   rw [twoWeylVector]
 
+/-- A based automorphism fixes the sum of the positive roots: its index permutation merely
+reorders the summands. No root-spanning or reducedness assumption is needed. -/
+theorem _root_.RootPairing.weightMap_twoWeylVector (σ : P.Aut)
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) :
+    σ.weightMap (twoWeylVector P b) = twoWeylVector P b := by
+  classical
+  rw [twoWeylVector_def, map_sum]
+  simp only [RootPairing.Hom.root_weightMap_apply]
+  exact Finset.sum_equiv σ.indexEquiv
+    (fun i ↦ by
+      simp only [mem_posRootsFinset, mem_posRoots]
+      exact (b.isPos_indexEquiv_iff hσ i).symm) (fun _ _ ↦ rfl)
+
 section Reduced
 
 variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
