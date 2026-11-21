@@ -43,6 +43,10 @@ long as the order of `N` is prime to the index of one of the two subgroups.
   subgroup `N` whose quotient is cyclic, provided the order of `N` is prime to the index of one of
   the two subgroups. This is the group theory behind Abhyankar's lemma, where `N` is the wild
   inertia group inside the inertia group.
+* `Subgroup.isCyclic_of_finiteIndex` and `Subgroup.isCyclic_of_isFiniteRelIndex`: in a torsion-free
+  commutative group, a finite-index (or finite-relative-index) extension of a cyclic subgroup is
+  cyclic, with `AddSubgroup.isAddCyclic_of_finiteIndex` and
+  `AddSubgroup.isAddCyclic_of_isFiniteRelIndex` their additive forms.
 -/
 
 public section
@@ -179,6 +183,28 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
       show A.index * (s * (B ⊔ N).index) = s * (A.index * (B ⊔ N).index) by ring,
       Nat.mul_div_assoc _ ((Nat.gcd_dvd_left _ _).mul_right _)]
   rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), hmul, ← hcyc, mul_left_comm]
+
+/-- **A torsion-free commutative group with a cyclic subgroup of finite index is cyclic.** -/
+@[to_additive
+/-- **A torsion-free additive commutative group with a cyclic subgroup of finite index is
+cyclic.** -/]
+theorem isCyclic_of_finiteIndex {G : Type*} [CommGroup G] [IsMulTorsionFree G]
+    (H : Subgroup G) [IsCyclic H] [H.FiniteIndex] : IsCyclic G := by
+  -- Raising to the `H.index`-th power lands in `H` and is injective since `G` is torsion-free.
+  let f : G →* H := (powMonoidHom H.index).codRestrict H H.pow_index_mem
+  refine isCyclic_of_injective f fun x y hxy ↦ ?_
+  exact (Commute.all x y).eq_of_pow_eq_pow FiniteIndex.index_ne_zero (congrArg Subtype.val hxy)
+
+/-- **A subgroup of a torsion-free commutative group in which a cyclic subgroup has finite relative
+index is cyclic.** No inclusion `H ≤ K` is needed. -/
+@[to_additive
+/-- **A subgroup of a torsion-free additive commutative group in which a cyclic subgroup has finite
+relative index is cyclic.** No inclusion `H ≤ K` is needed. -/]
+theorem isCyclic_of_isFiniteRelIndex {G : Type*} [CommGroup G] [IsMulTorsionFree G]
+    (H K : Subgroup G) [IsCyclic H] [H.IsFiniteRelIndex K] : IsCyclic K := by
+  have : IsCyclic (H.subgroupOf K) :=
+    isCyclic_of_injective _ (K.subtype.subgroupComap_injective H K.subtype_injective)
+  exact isCyclic_of_finiteIndex (H.subgroupOf K)
 
 /-- **Index of the `m`-th power subgroup of a cyclic group.** In a cyclic commutative group `G`,
 the image of `zpowGroupHom m : G →* G` has index `m.gcd (Nat.card G)`. This holds for both finite
