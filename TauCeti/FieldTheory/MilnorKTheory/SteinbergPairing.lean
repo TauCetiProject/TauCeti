@@ -124,7 +124,8 @@ variable {F A : Type*} [Field F] [AddCommGroup A] {c : Fˣ → Fˣ → A}
 /-- **Steinberg's sign identity**: `c(a, -a) = 0` for every unit `a` of a field. -/
 theorem map_neg_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a (-a) = 0 := by
   by_cases ha : (a : F) = 1
-  · rw [show a = 1 from Units.ext ha, hc.map_one_left]
+  · obtain rfl : a = 1 := Units.ext ha
+    exact hc.map_one_left (-1)
   · let u : Fˣ := Units.mk0 (1 - a) (sub_ne_zero.mpr (Ne.symm ha))
     let v : Fˣ := (-a)⁻¹ * u
     have hav : (a⁻¹ : Fˣ) + (v : F) = 1 := by
@@ -132,20 +133,23 @@ theorem map_neg_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a (-a) = 0 := by
       rw [inv_neg, neg_mul, mul_sub, mul_one, inv_mul_cancel₀ (Units.ne_zero a), neg_sub,
         add_sub_cancel]
     have h2 : c a v = 0 := neg_eq_zero.mp (hc.map_inv_left a v ▸ hc.steinberg a⁻¹ v hav)
+    have huv : (-a) * v = u := by simp [v]
     have h3 : c a (-a) + c a v = 0 := by
-      rw [← hc.map_mul_right, show (-a) * v = u by simp [v], hc.steinberg a u (by simp [u])]
+      rw [← hc.map_mul_right, huv, hc.steinberg a u (by simp [u])]
     rwa [h2, add_zero] at h3
 
 /-- **Skew-symmetry** of Steinberg pairings over a field: `c(a, b) = -c(b, a)`. -/
 theorem map_swap (hc : IsSteinbergPairing c) (a b : Fˣ) : c a b = -c b a := by
   have h := hc.map_neg_self (a * b)
-  rw [hc.map_mul_left, show -(a * b) = (-a) * b by simp, hc.map_mul_right, hc.map_neg_self,
-    zero_add, show (-a) * b = a * (-b) by simp, hc.map_mul_right, hc.map_neg_self, add_zero] at h
+  rw [hc.map_mul_left, ← neg_mul a b, hc.map_mul_right, hc.map_neg_self, zero_add,
+    neg_mul a b, ← mul_neg a b, hc.map_mul_right, hc.map_neg_self, add_zero] at h
   exact eq_neg_of_add_eq_zero_left h
 
 /-- **Diagonal identity** over a field: `c(a, a) = c(a, -1)`. -/
 theorem map_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a a = c a (-1) := by
-  rw [show c a a = c a ((-a) * (-1)) by simp, hc.map_mul_right, hc.map_neg_self, zero_add]
+  have haa : (-a) * (-1) = a := by simp
+  conv_lhs => arg 2; rw [← haa]
+  rw [hc.map_mul_right, hc.map_neg_self, zero_add]
 
 /-- Every diagonal value `c(a, a)` of a Steinberg pairing over a field is `2`-torsion. -/
 theorem two_nsmul_map_self (hc : IsSteinbergPairing c) (a : Fˣ) : 2 • c a a = 0 := by
@@ -154,7 +158,8 @@ theorem two_nsmul_map_self (hc : IsSteinbergPairing c) (a : Fˣ) : 2 • c a a =
 /-- In characteristic two, every Steinberg pairing is alternating: `c(a, a) = 0`. -/
 theorem map_self_eq_zero_of_charTwo [CharP F 2] (hc : IsSteinbergPairing c) (a : Fˣ) :
     c a a = 0 := by
-  rw [hc.map_self, show (-1 : Fˣ) = 1 from Units.ext (by simp [CharTwo.neg_eq]), hc.map_one_right]
+  have hneg1 : (-1 : Fˣ) = 1 := Units.ext (by simp [CharTwo.neg_eq])
+  rw [hc.map_self, hneg1, hc.map_one_right]
 
 end Field
 

@@ -72,7 +72,8 @@ theorem exists_not_isSquare_add_eq_one (F : Type*) [Field F] [Finite F] (h2 : (2
     refine Finset.card_le_card_of_injOn f (fun a ha => ?_) (fun a ha b hb hab => ?_)
     · have ha1 : a ≠ 1 := hne1 ha
       set b : Fˣ := Units.mk0 (1 - a) (sub_ne_zero.mpr fun h => ha1 (Units.ext h.symm))
-      rw [Finset.mem_coe, Finset.mem_erase, show f a = b by simp only [f, ha1, ↓reduceDIte, b]]
+      have hfa : f a = b := by simp only [f, ha1, ↓reduceDIte, b]
+      rw [Finset.mem_coe, Finset.mem_erase, hfa]
       refine ⟨fun h1 => Units.ne_zero a (by simpa [b] using congrArg Units.val h1),
         Finset.mem_filter.mpr ⟨Finset.mem_univ _, by
           by_contra hb; exact hnone a b (Finset.mem_filter.mp ha).2 hb (by simp [b])⟩⟩

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Sign
 public import TauCeti.FieldTheory.MilnorKTheory.Grading
+import TauCeti.Data.List.Swap
 
 /-!
 # Skew-symmetry and graded commutativity of Milnor K-theory
@@ -31,8 +32,6 @@ variable {F : Type*} [Field F]
 
 /-! ### Degree-two field identities in `MilnorK F` -/
 
-theorem two_nsmul_ofUnit_neg_one : 2 • ofUnit (-1 : Fˣ) = 0 := by rw [← ofUnit_pow]; simp
-theorem neg_ofUnit_neg_one : -ofUnit (-1 : Fˣ) = ofUnit (-1 : Fˣ) := by rw [← ofUnit_inv]; simp
 @[simp] theorem ofUnit_mul_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
   isSteinbergPairing_ofUnit_mul.map_neg_self a
 theorem ofUnit_mul_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
@@ -97,51 +96,23 @@ theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : F�
   have hinner : ofUnit a * symbol l₂ * ofUnit b = -(ofUnit b * symbol l₂ * ofUnit a) := by
     rw [ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc, ofUnit_mul_comm a b,
       mul_neg (α := MilnorK F), smul_neg, ← mul_assoc, ← smul_mul_assoc, ← ofUnit_mul_symbol b l₂]
-  simp only [symbol_append, symbol_cons]
-  rw [show symbol l₁ * (ofUnit a * (symbol l₂ * (ofUnit b * symbol l₃))) =
-      symbol l₁ * ((ofUnit a * symbol l₂ * ofUnit b) * symbol l₃) by simp only [mul_assoc],
-    hinner, neg_mul (α := MilnorK F), mul_neg (α := MilnorK F)]
-  simp only [mul_assoc]
-
-/-- Splitting `List.ofFn v` and `List.ofFn (v ∘ Equiv.swap i j)` at indices `i < j`. -/
-private theorem exists_split_ofFn_swap {α : Type*} {n : ℕ} (v : Fin n → α)
-    {i j : Fin n} (hij : i < j) :
-    ∃ l₁ l₂ l₃ : List α,
-      List.ofFn v = l₁ ++ v i :: (l₂ ++ v j :: l₃) ∧
-      List.ofFn (v ∘ Equiv.swap i j) = l₁ ++ v j :: (l₂ ++ v i :: l₃) := by
-  have hsplit (w : Fin n → α) : List.ofFn w = (List.ofFn w).take i ++ w i ::
-      (((List.ofFn w).drop (i + 1)).take (j - i - 1) ++ w j :: (List.ofFn w).drop (j + 1)) := by
-    have h1 : (List.ofFn w).drop i = w i :: (List.ofFn w).drop (i + 1) := by
-      rw [List.drop_eq_getElem_cons (by simp)]; simp
-    have h2 : ((List.ofFn w).drop (i + 1)).drop (j - i - 1) =
-        w j :: (List.ofFn w).drop (j + 1) := by
-      rw [List.drop_drop, show (i : ℕ) + 1 + (j - i - 1) = j by omega,
-        List.drop_eq_getElem_cons (by simp)]; simp
-    rw [← h2, List.take_append_drop, ← h1, List.take_append_drop]
-  have hslice (a b : ℕ) (hab : ∀ k < b, a + k ≠ i.1 ∧ a + k ≠ j.1) :
-      ((List.ofFn (v ∘ Equiv.swap i j)).drop a).take b = ((List.ofFn v).drop a).take b :=
-    List.ext_getElem (by simp) fun k hk _ => by
-      simp only [List.getElem_take, List.getElem_drop, List.getElem_ofFn, Function.comp_apply]
-      have hkb : k < b := by simp at hk; omega
-      have hlt : a + k < n := by simp at hk; omega
-      rw [Equiv.swap_apply_of_ne_of_ne
-        (Fin.val_ne_iff.mp ((hab k hkb).1 : (⟨a + k, hlt⟩ : Fin n).1 ≠ i.1))
-        (Fin.val_ne_iff.mp ((hab k hkb).2 : (⟨a + k, hlt⟩ : Fin n).1 ≠ j.1))]
-  refine ⟨_, _, _, hsplit v, ?_⟩
-  rw [hsplit (v ∘ Equiv.swap i j)]
-  have hdrop : (List.ofFn (v ∘ Equiv.swap i j)).drop (j + 1) = (List.ofFn v).drop (j + 1) := by
-    have h := hslice (j + 1) n (by omega)
-    rwa [List.take_of_length_le (by simp), List.take_of_length_le (by simp)] at h
-  rw [show (List.ofFn (v ∘ Equiv.swap i j)).take i = (List.ofFn v).take i by
-    simpa using hslice 0 i (by omega), hslice (i + 1) (j - i - 1) (by omega), hdrop]; simp
+  calc symbol (l₁ ++ a :: (l₂ ++ b :: l₃))
+      = symbol l₁ * (ofUnit a * symbol l₂ * ofUnit b) * symbol l₃ := by
+        simp only [symbol_append, symbol_cons, mul_assoc]
+    _ = symbol l₁ * -(ofUnit b * symbol l₂ * ofUnit a) * symbol l₃ := by rw [hinner]
+    _ = -symbol (l₁ ++ b :: (l₂ ++ a :: l₃)) := by
+        rw [mul_neg (α := MilnorK F), neg_mul (α := MilnorK F)]
+        simp only [symbol_append, symbol_cons, mul_assoc]
 
 /-- Swapping two distinct entries `i ≠ j` of a Milnor symbol negates it. -/
 theorem symbol_ofFn_comp_swap {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j) :
     symbol (List.ofFn (v ∘ Equiv.swap i j)) = -symbol (List.ofFn v) := by
   rcases lt_or_gt_of_ne hij with hlt | hgt
-  · obtain ⟨_, _, _, hv, hvs⟩ := exists_split_ofFn_swap v hlt; rw [hv, hvs, symbol_swap_middle]
+  · obtain ⟨_, _, _, hv, hvs⟩ := List.exists_split_ofFn_swap v hlt
+    rw [hv, hvs, symbol_swap_middle]
   · rw [Equiv.swap_comm]
-    obtain ⟨_, _, _, hv, hvs⟩ := exists_split_ofFn_swap v hgt; rw [hv, hvs, symbol_swap_middle]
+    obtain ⟨_, _, _, hv, hvs⟩ := List.exists_split_ofFn_swap v hgt
+    rw [hv, hvs, symbol_swap_middle]
 
 /-- **Skew-symmetry of Milnor symbols**: permuting entries multiplies by `sign σ`. -/
 theorem symbol_ofFn_comp_perm {n : ℕ} (v : Fin n → Fˣ) (σ : Equiv.Perm (Fin n)) :
@@ -149,8 +120,9 @@ theorem symbol_ofFn_comp_perm {n : ℕ} (v : Fin n → Fˣ) (σ : Equiv.Perm (Fi
   induction σ using Equiv.Perm.swap_induction_on generalizing v with
   | one => simp
   | swap_mul f i j hij ih =>
-    change symbol (List.ofFn ((v ∘ Equiv.swap i j) ∘ f)) = _
-    rw [ih (v ∘ Equiv.swap i j), symbol_ofFn_comp_swap v hij, smul_neg, map_mul,
+    have hcomp : v ∘ ⇑(Equiv.swap i j * f) = (v ∘ Equiv.swap i j) ∘ f :=
+      funext fun k => congrArg v (Equiv.Perm.mul_apply (Equiv.swap i j) f k)
+    rw [hcomp, ih (v ∘ Equiv.swap i j), symbol_ofFn_comp_swap v hij, smul_neg, map_mul,
       Equiv.Perm.sign_swap hij, Units.val_mul, Units.val_neg, Units.val_one, neg_one_mul, neg_zsmul]
 
 /-! ### Repeated and opposite entries -/
@@ -174,15 +146,16 @@ theorem symbol_neg_self_of_ne {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij :
     have hinner : ofUnit a * symbol l₂ * ofUnit (-a) = 0 := by
       rw [ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc, ofUnit_mul_neg_self,
         mul_zero, smul_zero]
-    simp only [symbol_append, symbol_cons]
-    rw [show symbol l₁ * (ofUnit a * (symbol l₂ * (ofUnit (-a) * symbol l₃))) =
-        symbol l₁ * ((ofUnit a * symbol l₂ * ofUnit (-a)) * symbol l₃) by simp only [mul_assoc],
-      hinner, zero_mul, mul_zero]
+    calc symbol (l₁ ++ a :: (l₂ ++ (-a) :: l₃))
+        = symbol l₁ * (ofUnit a * symbol l₂ * ofUnit (-a)) * symbol l₃ := by
+          simp only [symbol_append, symbol_cons, mul_assoc]
+      _ = 0 := by rw [hinner, mul_zero, zero_mul]
   rcases lt_or_gt_of_ne hij with hlt | hgt
-  · obtain ⟨l₁, l₂, l₃, hv, -⟩ := exists_split_ofFn_swap v hlt
+  · obtain ⟨l₁, l₂, l₃, hv, -⟩ := List.exists_split_ofFn_swap v hlt
     rw [hv, h]; exact hvanish l₁ l₂ l₃ (v i)
-  · obtain ⟨l₁, l₂, l₃, hv, -⟩ := exists_split_ofFn_swap v hgt
-    rw [hv, show v i = -v j by rw [h, neg_neg]]; exact hvanish l₁ l₂ l₃ (v j)
+  · obtain ⟨l₁, l₂, l₃, hv, -⟩ := List.exists_split_ofFn_swap v hgt
+    have hi : v i = -v j := by rw [h, neg_neg]
+    rw [hv, hi]; exact hvanish l₁ l₂ l₃ (v j)
 
 /-- A Milnor symbol with a repeated entry is `2`-torsion. -/
 theorem two_nsmul_symbol_of_duplicate {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j)

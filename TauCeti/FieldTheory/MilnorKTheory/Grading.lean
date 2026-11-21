@@ -118,15 +118,10 @@ theorem degree_addMonoidHom_ext {n : ℕ} {A : Type*} [AddCommGroup A] {f g : de
     (h : ∀ (l : List Rˣ) (hl : l.length = n),
       f ⟨symbol l, symbol_mem_degree_of_length hl⟩ = g ⟨symbol l, symbol_mem_degree_of_length hl⟩) :
     f = g := by
-  refine AddMonoidHom.ext fun ⟨x, hx⟩ => ?_
-  induction ((degree_eq_span R n) ▸ hx) using Submodule.span_induction with
-  | mem _ hy => obtain ⟨l, hl, rfl⟩ := hy; exact h l hl
-  | zero => exact (map_zero f).trans (map_zero g).symm
-  | add y z hy hz ihy ihz =>
-    exact (f.map_add ⟨y, (degree_eq_span R n).symm ▸ hy⟩ ⟨z, (degree_eq_span R n).symm ▸ hz⟩).trans
-      (by rw [ihy, ihz, ← g.map_add]; rfl)
-  | smul k y hy ihy =>
-    exact (map_zsmul f k ⟨y, (degree_eq_span R n).symm ▸ hy⟩).trans (by rw [ihy, ← map_zsmul g])
+  apply AddMonoidHom.toIntLinearMap_injective
+  rw [Submodule.linearMap_eq_iff_of_eq_span _ _ (degree_eq_span R n)]
+  rintro ⟨_, l, hl, rfl⟩
+  exact h l hl
 
 /-- Two `ℤ`-linear maps out of `degree R n` agree if they agree on length-`n` symbols. -/
 theorem degree_linearMap_ext {n : ℕ} {A : Type*} [AddCommGroup A] {f g : degree R n →ₗ[ℤ] A}
@@ -282,9 +277,10 @@ theorem milnorTensorRel_two (R : Type u) [CommSemiring R] :
   have hproj (a b : Rˣ) :
       tensorPowerProjection 2 (ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)) =
         PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b] := by
-    rw [show ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b) =
-      TensorAlgebra.tprod ℤ (Additive Rˣ) 2 ![Additive.ofMul a, Additive.ofMul b] by
-        simp [TensorAlgebra.tprod_apply], TensorAlgebra.tensorPowerProjection_tprod_self]
+    have htprod : ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b) =
+        TensorAlgebra.tprod ℤ (Additive Rˣ) 2 ![Additive.ofMul a, Additive.ofMul b] := by
+      simp [TensorAlgebra.tprod_apply]
+    rw [htprod, TensorAlgebra.tensorPowerProjection_tprod_self]
   rw [milnorTensorRel, milnorRelPiece_two, Submodule.map_span]; congr 1; ext z
   exact ⟨fun ⟨_, ⟨a, b, hab, hx⟩, hz⟩ => ⟨a, b, hab, hz.symm.trans (hx ▸ hproj a b)⟩,
     fun ⟨a, b, hab, hz⟩ => ⟨_, ⟨a, b, hab, rfl⟩, hz ▸ hproj a b⟩⟩
@@ -424,14 +420,15 @@ noncomputable def degreeZeroEquiv : degree R 0 ≃ₗ[ℤ] ℤ :=
       (PiTensorProduct.isEmptyEquiv (Fin 0)))
 
 @[simp] theorem degreeZeroEquiv_one : degreeZeroEquiv R ⟨1, one_mem_degree_zero⟩ = 1 := by
-  rw [show (⟨1, one_mem_degree_zero⟩ : degree R 0) = (degreeEquivQuotient R 0).symm
-    (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ Fin.elim0)) from Subtype.ext (by simp)]
+  have h1 : (⟨1, one_mem_degree_zero⟩ : degree R 0) = (degreeEquivQuotient R 0).symm
+      (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ Fin.elim0)) := Subtype.ext (by simp)
+  rw [h1]
   simp [degreeZeroEquiv]
 @[simp] theorem degreeZeroEquiv_intCast (k : ℤ) :
     degreeZeroEquiv R ⟨(k : MilnorK R), intCast_mem_degree_zero k⟩ = k := by
-  rw [show (⟨(k : MilnorK R), intCast_mem_degree_zero k⟩ : degree R 0) =
-      k • ⟨1, one_mem_degree_zero⟩ from Subtype.ext (by simp [zsmul_eq_mul]),
-    map_zsmul, degreeZeroEquiv_one, smul_eq_mul, mul_one]
+  have hk : (⟨(k : MilnorK R), intCast_mem_degree_zero k⟩ : degree R 0) =
+      k • ⟨1, one_mem_degree_zero⟩ := Subtype.ext (by simp [zsmul_eq_mul])
+  rw [hk, map_zsmul, degreeZeroEquiv_one, smul_eq_mul, mul_one]
 @[simp] theorem degreeZeroEquiv_symm_apply (k : ℤ) :
     ((degreeZeroEquiv R).symm k : MilnorK R) = (k : MilnorK R) :=
   congrArg Subtype.val ((degreeZeroEquiv R).injective
@@ -452,9 +449,10 @@ noncomputable def degreeOneEquiv : degree R 1 ≃ₗ[ℤ] Additive Rˣ :=
 
 @[simp] theorem degreeOneEquiv_ofUnit (a : Rˣ) :
     degreeOneEquiv R ⟨ofUnit a, ofUnit_mem_degree_one a⟩ = Additive.ofMul a := by
-  rw [show (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) = (degreeEquivQuotient R 1).symm
-    (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ fun _ : Fin 1 => Additive.ofMul a)) from
-    Subtype.ext (by simp)]
+  have ha : (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) = (degreeEquivQuotient R 1).symm
+      (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ fun _ : Fin 1 => Additive.ofMul a)) :=
+    Subtype.ext (by simp)
+  rw [ha]
   simp [degreeOneEquiv]
 @[simp] theorem degreeOneEquiv_symm_apply (u : Additive Rˣ) :
     ((degreeOneEquiv R).symm u : MilnorK R) = ofUnit (Additive.toMul u) :=
@@ -497,6 +495,25 @@ private noncomputable def symbolGroupToDegreeTwo (R : Type u) [CommSemiring R] :
       map_mul_right := fun _ _ _ => Subtype.ext (by simp [ofUnit_mul, mul_add])
       steinberg := fun _ _ hab => Subtype.ext (ofUnit_mul_ofUnit_eq_zero hab) }
 
+/-- `degreeEquivQuotient R 2` evaluates `ofUnit a * ofUnit b` to the quotient class of
+`ofMul a ⊗ₜ ofMul b`. -/
+theorem degreeEquivQuotient_ofUnit_mul (a b : Rˣ) :
+    degreeEquivQuotient R 2 ⟨ofUnit a * ofUnit b,
+      mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ =
+      Submodule.Quotient.mk (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b]) := by
+  have h : (⟨ofUnit a * ofUnit b,
+      mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ : degree R 2) =
+      ⟨symbol (List.ofFn ![a, b]), symbol_mem_degree_of_length List.length_ofFn⟩ :=
+    Subtype.ext (by simp [symbol_def])
+  rw [h, degreeEquivQuotient_symbol]
+  refine congrArg (Submodule.Quotient.mk ∘ PiTensorProduct.tprod ℤ) (funext fun i => ?_)
+  fin_cases i <;> rfl
+
+private theorem degreeTwo_symbol_eq_ofUnit_mul (a b : Rˣ) :
+    (⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ : degree R 2) =
+      ⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ :=
+  Subtype.ext (by simp)
+
 variable (R) in
 /-- **Degree-two identification**: `K₂ᴹ(R) ≃ₗ[ℤ] SymbolGroup R`, sending `ofUnit a * ofUnit b`
 to `TauCeti.symbol a b`. -/
@@ -507,30 +524,25 @@ noncomputable def degreeTwoEquiv : degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
     (symbolGroupToDegreeTwo R)
     (SymbolGroup.hom_ext fun a b => by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, symbolGroupToDegreeTwo,
-        SymbolGroup.lift_symbol]
-      rw [show (⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a)
-          (ofUnit_mem_degree_one b)⟩ : degree R 2) =
-          ⟨symbol (List.ofFn ![a, b]), symbol_mem_degree_of_length List.length_ofFn⟩ from
-        Subtype.ext (by simp [symbol_def]), degreeEquivQuotient_symbol]
+        SymbolGroup.lift_symbol, degreeEquivQuotient_ofUnit_mul]
       simp [Submodule.liftQ_apply, tensorPowerTwoToSymbolGroup])
     (degree_linearMap_ext fun l hl => match l, hl with
       | [a, b], _ => by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.id_apply]
-        rw [show (⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ : degree R 2) =
-            ⟨symbol (List.ofFn ![a, b]), symbol_mem_degree_of_length List.length_ofFn⟩ from
-          Subtype.ext (by simp), degreeEquivQuotient_symbol]
+        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.id_apply,
+          degreeTwo_symbol_eq_ofUnit_mul, degreeEquivQuotient_ofUnit_mul]
         simp only [Submodule.liftQ_apply, tensorPowerTwoToSymbolGroup, PiTensorProduct.lift.tprod]
         exact Subtype.ext (by simp [symbolGroupToDegreeTwo]))
 
 @[simp] theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
     degreeTwoEquiv R ⟨ofUnit a * ofUnit b,
       mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ = TauCeti.symbol a b := by
-  rw [show (⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a)
-      (ofUnit_mem_degree_one b)⟩ : degree R 2) = (degreeTwoEquiv R).symm (TauCeti.symbol a b) from
-    Subtype.ext (by simp [degreeTwoEquiv, symbolGroupToDegreeTwo]), LinearEquiv.apply_symm_apply]
+  have hsymm : (⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a)
+      (ofUnit_mem_degree_one b)⟩ : degree R 2) = (degreeTwoEquiv R).symm (TauCeti.symbol a b) :=
+    Subtype.ext (by simp [degreeTwoEquiv, symbolGroupToDegreeTwo])
+  rw [hsymm, LinearEquiv.apply_symm_apply]
 theorem degreeTwoEquiv_symbol (a b : Rˣ) :
     degreeTwoEquiv R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ = TauCeti.symbol a b := by
-  simpa only [symbol_pair] using degreeTwoEquiv_ofUnit_mul a b
+  rw [degreeTwo_symbol_eq_ofUnit_mul, degreeTwoEquiv_ofUnit_mul]
 @[simp] theorem degreeTwoEquiv_symm_symbol (a b : Rˣ) :
     ((degreeTwoEquiv R).symm (TauCeti.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
   simp [degreeTwoEquiv, symbolGroupToDegreeTwo]
@@ -578,21 +590,33 @@ def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
 @[simp] theorem mapDegree_comp (g : S →+* T) (f : R →+* S) (n : ℕ) :
     mapDegree (g.comp f) n = (mapDegree g n).comp (mapDegree f n) := by ext x; simp
 
+@[simp] theorem mapDegree_symbol (f : R →+* S) {n : ℕ} (l : List Rˣ) (hl : l.length = n) :
+    mapDegree f n ⟨symbol l, symbol_mem_degree_of_length hl⟩ =
+      ⟨symbol (l.map (Units.map f.toMonoidHom)),
+        symbol_mem_degree_of_length (by simp [hl])⟩ :=
+  Subtype.ext (by simp)
+
+@[simp] theorem mapDegree_degreeZeroEquiv_symm (f : R →+* S) (k : ℤ) :
+    mapDegree f 0 ((degreeZeroEquiv R).symm k) = (degreeZeroEquiv S).symm k :=
+  Subtype.ext (by simp)
+
+@[simp] theorem mapDegree_degreeOneEquiv_symm (f : R →+* S) (u : Additive Rˣ) :
+    mapDegree f 1 ((degreeOneEquiv R).symm u) =
+      (degreeOneEquiv S).symm (MonoidHom.toAdditive (Units.map f.toMonoidHom) u) :=
+  Subtype.ext (by simp)
+
 /-- Naturality of `degreeZeroEquiv` with respect to ring homomorphisms. -/
 theorem degreeZeroEquiv_mapDegree (f : R →+* S) (x : degree R 0) :
     degreeZeroEquiv S (mapDegree f 0 x) = degreeZeroEquiv R x := by
   obtain ⟨k, rfl⟩ := (degreeZeroEquiv R).symm.surjective x
-  rw [show mapDegree f 0 ((degreeZeroEquiv R).symm k) = (degreeZeroEquiv S).symm k from
-    Subtype.ext (by simp), LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+  simp
 
 /-- Naturality of `degreeOneEquiv` with respect to ring homomorphisms. -/
 theorem degreeOneEquiv_mapDegree (f : R →+* S) (x : degree R 1) :
     degreeOneEquiv S (mapDegree f 1 x) =
       MonoidHom.toAdditive (Units.map f.toMonoidHom) (degreeOneEquiv R x) := by
   obtain ⟨u, rfl⟩ := (degreeOneEquiv R).symm.surjective x
-  rw [show mapDegree f 1 ((degreeOneEquiv R).symm u) =
-      (degreeOneEquiv S).symm (MonoidHom.toAdditive (Units.map f.toMonoidHom) u) from
-    Subtype.ext (by simp), LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+  simp
 
 /-- Naturality of `degreeTwoEquiv` with respect to `SymbolGroup.map`. -/
 theorem degreeTwoEquiv_mapDegree (f : R →+* S) (x : degree R 2) :
@@ -602,10 +626,9 @@ theorem degreeTwoEquiv_mapDegree (f : R →+* S) (x : degree R 2) :
       match l, hl with
       | [a, b], _ => by
         simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-        rw [show mapDegree f 2 ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
-          ⟨symbol [Units.map f.toMonoidHom a, Units.map f.toMonoidHom b],
-            symbol_mem_degree_of_length rfl⟩ from Subtype.ext (by simp),
-          degreeTwoEquiv_symbol, degreeTwoEquiv_symbol, SymbolGroup.map_symbol]) x
+        rw [mapDegree_symbol f (n := 2) [a, b] rfl]
+        simp only [List.map_cons, List.map_nil]
+        rw [degreeTwoEquiv_symbol, degreeTwoEquiv_symbol, SymbolGroup.map_symbol]) x
 
 end Map
 
