@@ -32,8 +32,8 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 theorem adjoint_anti {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
     {A B : H →ₗ.[𝕜] F} (hAB : A ≤ B) (hA : Dense (A.domain : Set H)) : B† ≤ A† :=
   IsFormalAdjoint.le_adjoint hA fun x y => by
-    rw [hAB.2 (x := x) (y := ⟨x, hAB.1 x.2⟩) rfl]
-    exact (adjoint_isFormalAdjoint (hA.mono hAB.1)).symm ⟨x, hAB.1 x.2⟩ y
+    rw [hAB.2 (x := x) (y := ⟨x, hAB.1 x.property⟩) rfl]
+    exact (adjoint_isFormalAdjoint (hA.mono hAB.1)).symm ⟨x, hAB.1 x.property⟩ y
 
 /-- A self-adjoint partial operator has no proper formally self-adjoint extension. -/
 theorem eq_of_le_of_isFormalAdjoint {A B : H →ₗ.[𝕜] H}

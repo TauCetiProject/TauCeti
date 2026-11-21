@@ -23,30 +23,42 @@ in `t`, a section-level differential operator
 `D_u ξ = ∂s ξ + J(z, u z) ∂t ξ + A(z) ξ`,
 
 with zeroth-order part `A = TauCeti.SymplecticForm.floerLinearizationCoeff`. This file realizes
-`D_u` as a bounded operator `W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` and proves that along a Floer
-trajectory between nondegenerate one-periodic orbits it has finite-dimensional kernel and closed
-range: the Fredholm property of `D_u` minus the finiteness of its cokernel.
+`D_u` as a bounded operator `W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` and proves that it has
+finite-dimensional kernel and closed range, the Fredholm property of `D_u` minus the finiteness of
+its cokernel, for Floer data that are cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
+`s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`, with `u` asymptotic to nondegenerate one-periodic
+orbits of `H₋` at `-∞` and of `H₊` at `+∞`. Floer trajectories (`K = H_t dt` with `J_t`
+independent of `s`) are cylindrical near the ends for every `R`, and continuation cylinders are
+treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
 
 * `TauCeti.SymplecticForm.floerJetCoeff` is the coefficient field of `D_u` on jets:
   `(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v`, so that on the jet `(ξ, ∂s ξ, ∂t ξ)` of a section
-  it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`).
+  it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`). At `z` it depends on the data only
+  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`), and it is
+  continuous for data that are `C¹` (with `C²` Hamiltonians `K_s`, `K_t`) along the graph of `u`
+  (`TauCeti.SymplecticForm.continuous_floerJetCoeff`).
 * `TauCeti.SymplecticForm.floerSobolevOperator` is the resulting operator on the Sobolev space
   `TauCeti.CylinderSobolev.H1` (`TauCeti.SymplecticForm.floerSobolevOperator_def`). It acts
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
   the jet of a test section it is `D_u ξ`
-  (`TauCeti.SymplecticForm.floerSobolevOperator_jetₗ_ae_eq`), provided its coefficients are
+  (`TauCeti.SymplecticForm.floerSobolevOperator_jetLp_ae_eq`), provided its coefficients are
   essentially bounded on the cylinder.
-* Along a Floer trajectory of `K = H_t dt`, whose loops and slice defect `∂t u - X_{H_t}(u)`
-  converge uniformly at both ends, the coefficients are bounded
-  (`TauCeti.SymplecticForm.memLp_floerJetCoeff`).
+* For data cylindrical near the ends (`TauCeti.Floer.IsCylindricalNearEnds`), if the loops of `u`
+  converge uniformly at both ends and the slice defects `∂t u - X_{H±_t}(u)` of the end data tend
+  uniformly to zero at the corresponding end, the coefficients are bounded
+  (`TauCeti.SymplecticForm.memLp_floerJetCoeff_of_cylindrical`; for a Floer trajectory,
+  `TauCeti.SymplecticForm.memLp_floerJetCoeff`).
 * If moreover the asymptotic orbits are nondegenerate, the semi-Fredholm estimate
-  `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`
-  holds, and Peetre's argument on the cylinder
+  `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`
+  holds (`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical`),
+  and Peetre's argument on the cylinder
   (`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
   `TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`) gives finite-dimensional
-  kernel (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`) and closed range
-  (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`). Both are proved as the case
-  `c = 0` of the weighted results below.
+  kernel (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator_of_cylindrical`) and
+  closed range (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator_of_cylindrical`). For a
+  Floer trajectory these are `TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`
+  and `TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`. All of these are proved as the
+  case `c = 0` of the weighted results below.
 * At the stationary cylinder `u(s, t) = x(t)` over a nondegenerate orbit `x`, `D_u` is the
   translation-invariant operator `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`, and the spectral gap
   estimate `TauCeti.Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator` bounds
@@ -61,14 +73,18 @@ continuous and equal to constants `δ±` near `±∞`. Multiplication by `e^{κ}
 unweighted spaces, and turns `D_u` into `D_u - c(s)`
 (`TauCeti.SymplecticForm.floerLinearization_exp_neg_smul`), realized on `W^{1,2}` as
 `TauCeti.SymplecticForm.floerWeightedSobolevOperator`, which acts pointwise by the coefficient
-field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperator`); along a Floer
-trajectory, and for a bounded slope, these coefficients are bounded
-(`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`). The weights need not be small: if the
-fields `dX_{H_t}(x±(t)) - δ± J_t(x±(t))` have nondegenerate return maps (for one-periodic `H`, `J`
+field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperator`); these
+coefficients are bounded whenever those of `D_u` are and the slope is bounded
+(`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`). The weights need not be small: for
+data cylindrical near the ends, with `c` constant beyond `±R`, if the fields
+`dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps (for one-periodic `H±`, `J±`
 and `x±`, if `δ±` are not eigenvalues of the asymptotic operators at `x±`), the weighted operator
 has finite-dimensional kernel
-(`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator`) and closed range
-(`TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator`). Here the asymptotic loops
+(`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical`) and
+closed range (`TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator_of_cylindrical`);
+for a Floer trajectory these are
+`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator` and
+`TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator`. Here the asymptotic loops
 need only be continuous, and their nondegeneracy as Hamiltonian orbits is replaced by that of the
 shifted fields.
 
@@ -95,7 +111,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -150,14 +166,39 @@ theorem coeFn_floerSobolevOperator (ω : SymplecticForm V) {J : ℝ × ℝ → V
 
 /-- On the jet of a test section `ξ`, the Sobolev realization of the linearized Floer operator is
 `D_u ξ`, when the coefficients of `D_u` are essentially bounded on the cylinder. -/
-theorem floerSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+theorem floerSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (ξ : testSection V) :
-    ω.floerSobolevOperator J Ks Kt u ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
+    ω.floerSobolevOperator J Ks Kt u
+        ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       ω.floerLinearization J Ks Kt u ξ := by
-  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩, coeFn_jetₗ ξ]
-    with z h₁ h₂
+  filter_upwards [coeFn_floerSobolevOperator ω hM
+      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
+
+/-- The coefficient field of the linearized Floer operator at `z` depends on the Floer data only
+through their values at `z`. -/
+theorem floerJetCoeff_congr_data (ω : SymplecticForm V) {J J' : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hJ : J z = J' z)
+    (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerJetCoeff J Ks Kt u z = ω.floerJetCoeff J' Ks' Kt' u z :=
+  ContinuousLinearMap.ext fun v ↦ by
+    simp only [floerJetCoeff_apply, floerLinearizationCoeff_apply, hJ, hKs, hKt]
+
+/-- The coefficient field of the linearized Floer operator on jets is continuous when the data are
+`C¹` (and the Hamiltonians `C²`) along the graph of a `C¹` map `u`. -/
+theorem continuous_floerJetCoeff (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) :
+    Continuous (ω.floerJetCoeff J Ks Kt u) := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  have hJu : ContinuousAt (fun z ↦ J z (u z)) z :=
+    (hJ z).continuousAt.comp (f := fun z ↦ (z, u z))
+      (continuousAt_id.prodMk hu.continuous.continuousAt)
+  have hA := ω.continuousAt_floerLinearizationCoeff (hJ z) (hKs z) (hKt z) hu.contDiffAt
+  exact (continuousAt_const.add (hJu.clm_comp continuousAt_const)).add
+    (hA.clm_comp continuousAt_const)
 
 /-- The norm of the coefficient field on jets is at most `1 + ‖J(z, u z)‖ + ‖A(z)‖`. -/
 private theorem norm_floerJetCoeff_le (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
@@ -195,25 +236,116 @@ private theorem norm_floerLinearizationCoeff_le (ω : SymplecticForm V) {H : ℝ
         · exact (le_opNorm _ _).trans (by gcongr; exact le_opNorm _ _)
     _ = _ := by ring
 
-/-- For the datum `K = H_t dt` with `H` jointly `C²`, `J_t(y)` a `C¹` family and `u` a `C¹` map,
-the coefficient field of the linearized Floer operator on jets is continuous. -/
-private theorem continuous_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+
+/-- For the datum `K = H_t dt` with `H` jointly `C²` and `J_t(y)` a `C¹` family, the coefficient
+field of the linearized Floer operator on jets is bounded at the points of the strip where `u` and
+its slice defect `∂t u - X_{H_t}(u)` are bounded. -/
+private theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) :
-    Continuous (ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun w ↦ H w.2) u) := by
-  have hJ' : ∀ z, ContDiffAt ℝ 1 (Function.uncurry fun (w : ℝ × ℝ) y ↦
-      (J w.2 y).toLinearMap.toContinuousLinearMap) (z, u z) := fun z ↦
-    (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-  have hHt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry fun w : ℝ × ℝ ↦ H w.2) (z, u z) := fun z ↦
-    (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-  have hA : Continuous (ω.floerLinearizationCoeff
-      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u) :=
-    continuous_iff_continuousAt.2 fun z ↦
-      ω.continuousAt_floerLinearizationCoeff (hJ' z) contDiffAt_const (hHt z) hu.contDiffAt
-  have hJu := hJ.continuous.comp (continuous_snd.prodMk hu.continuous)
-  exact (continuous_const.add (hJu.clm_comp continuous_const)).add (hA.clm_comp continuous_const)
+    (u : ℝ × ℝ → V) (Cu Cδ : ℝ) :
+    ∃ B, ∀ z : ℝ × ℝ, z.2 ∈ Icc (0 : ℝ) 1 → ‖u z‖ ≤ Cu →
+      ‖sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u z‖ ≤ Cδ →
+        ‖ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+          (fun w ↦ H w.2) u z‖ ≤ B := by
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap
+  have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (K := H) hH
+  -- The data as continuous functions of `(t, y)`, bounded on the compact set `K`.
+  have hdJ : Continuous fun p : ℝ × V ↦
+      fderiv ℝ (fun y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap) p.2 :=
+    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap)
+      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+  have hdX : Continuous fun p : ℝ × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2 :=
+    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
+      (hX.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+  set K : Set (ℝ × V) := Icc 0 1 ×ˢ Metric.closedBall 0 Cu
+  have hK : IsCompact K := isCompact_Icc.prod (isCompact_closedBall 0 Cu)
+  obtain ⟨BJ, hBJ⟩ := hK.exists_bound_of_continuousOn hJ.continuous.continuousOn
+  obtain ⟨BdJ, hBdJ⟩ := hK.exists_bound_of_continuousOn hdJ.continuousOn
+  obtain ⟨BdX, hBdX⟩ := hK.exists_bound_of_continuousOn hdX.continuousOn
+  refine ⟨1 + BJ + (BdJ * Cδ + BJ * BdX), fun ⟨s, t⟩ ht huz hδz ↦ ?_⟩
+  have hp : (t, u (s, t)) ∈ K := ⟨ht, mem_closedBall_zero_iff.2 huz⟩
+  have hJb : ‖J' (s, t) (u (s, t))‖ ≤ BJ := hBJ (t, u (s, t)) hp
+  have hdJb : ‖fderiv ℝ (J' (s, t)) (u (s, t))‖ ≤ BdJ := hBdJ (t, u (s, t)) hp
+  have hdXb : ‖fderiv ℝ (ω.hamiltonianVectorField (H t)) (u (s, t))‖ ≤ BdX :=
+    hBdX (t, u (s, t)) hp
+  have hA_le : ‖ω.floerLinearizationCoeff J' (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)‖ ≤
+      BdJ * Cδ + BJ * BdX :=
+    (norm_floerLinearizationCoeff_le ω (H := H) (J := J') (u := u) (s, t)).trans (add_le_add
+      (mul_le_mul hdJb hδz (norm_nonneg _)
+        ((norm_nonneg (fderiv ℝ (J' (s, t)) (u (s, t)))).trans hdJb))
+      (mul_le_mul hJb hdXb (norm_nonneg _) ((norm_nonneg (J' (s, t) (u (s, t)))).trans hJb)))
+  exact (norm_floerJetCoeff_le ω _ _ _ _ (s, t)).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
+
+/-- **The coefficients of the linearized Floer operator are bounded for Floer data cylindrical
+near the ends.** Let the data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) along the graph of a
+`C¹` map `u`, and equal to `(J₋_t, 0, H₋_t)` for `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`,
+for jointly `C²` Hamiltonians `H±` and `C¹` families `J±_t(y)` of almost complex structures, as for
+a continuation cylinder. If the loops of `u` converge uniformly at both ends, and the slice defects
+`∂t u - X_{H±_t}(u)` of the end data tend uniformly to zero at the corresponding end, then the
+coefficient field of the linearized Floer operator on jets is essentially bounded on the
+cylinder. -/
+theorem memLp_floerJetCoeff_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm))
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {xm : ℝ → V} (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp))
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {xp : ℝ → V} (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    MemLp (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
+      stripMeasure := by
+  set M := ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
+    with hM_def
+  have hM : Continuous M := ω.continuous_floerJetCoeff hcyl.contDiffAt_almostComplex
+    hcyl.contDiffAt_hamiltonianS hcyl.contDiffAt_hamiltonianT hu
+  obtain ⟨Cu, hCu⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
+    hu.continuous.continuousOn huxm huxp
+  -- Far out on each end the slice defect of the end data is at most `1`.
+  obtain ⟨Sm, hSm⟩ := eventually_atBot.1 ((Metric.tendstoUniformlyOn_iff.1 hδm) 1 one_pos)
+  obtain ⟨Sp, hSp⟩ := eventually_atTop.1 ((Metric.tendstoUniformlyOn_iff.1 hδp) 1 one_pos)
+  obtain ⟨Bm, hBm⟩ := ω.exists_forall_norm_floerJetCoeff_le hHm hJm u Cu 1
+  obtain ⟨Bp, hBp⟩ := ω.exists_forall_norm_floerJetCoeff_le hHp hJp u Cu 1
+  obtain ⟨B₀, hB₀⟩ := ((isCompact_Icc (a := min Sm (-R)) (b := max Sp R)).prod
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1))).exists_bound_of_continuousOn hM.continuousOn
+  refine memLp_top_of_bound hM.aestronglyMeasurable (max B₀ (max Bm Bp)) ?_
+  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
+  obtain ⟨s, t⟩ := z
+  have ht : t ∈ Icc (0 : ℝ) 1 := hz.2
+  have hδ {H : ℝ → V → ℝ} (h : dist ((0 : ℝ → V) t)
+      (sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) < 1) :
+      ‖sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)‖ ≤ 1 := by
+    rw [Pi.zero_apply, dist_zero_left] at h
+    exact h.le
+  rcases le_or_gt s (min Sm (-R)) with hs | hs
+  · -- Beyond `-R` the coefficient field is that of the end data `(J₋_t, 0, H₋_t)`.
+    have hsR : s ≤ -R := hs.trans (min_le_right _ _)
+    rw [hM_def, ω.floerJetCoeff_congr_data u
+      (J' := fun w y ↦ (Jm w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
+      (Kt' := fun w ↦ Hm w.2) (by simp only [hcyl.almostComplex_eq_of_le_neg (s, t) hsR])
+      (hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.1 (not_lt.2 hsR))
+      (hcyl.hamiltonianT_eq_of_le_neg (s, t) hsR)]
+    exact le_max_of_le_right (le_max_of_le_left (hBm (s, t) ht (hCu s t ht)
+      (hδ (hSm s (hs.trans (min_le_left _ _)) t ht))))
+  rcases le_or_gt (max Sp R) s with hs' | hs'
+  · -- Beyond `R` the coefficient field is that of the end data `(J₊_t, 0, H₊_t)`.
+    have hsR : R ≤ s := (le_max_right _ _).trans hs'
+    rw [hM_def, ω.floerJetCoeff_congr_data u
+      (J' := fun w y ↦ (Jp w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
+      (Kt' := fun w ↦ Hp w.2) (by simp only [hcyl.almostComplex_eq_of_le (s, t) hsR])
+      (hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.2 (not_lt.2 hsR))
+      (hcyl.hamiltonianT_eq_of_le (s, t) hsR)]
+    exact le_max_of_le_right (le_max_of_le_right (hBp (s, t) ht (hCu s t ht)
+      (hδ (hSp s ((le_max_left _ _).trans hs') t ht))))
+  · exact le_max_of_le_left (hB₀ (s, t) ⟨⟨hs.le, hs'.le⟩, ht⟩)
 
 /-- **The coefficients of the linearized Floer operator along a Floer trajectory are bounded.**
 Let `H` be a jointly `C²` Hamiltonian, `J_t(y)` a `C¹` family of almost complex structures and
@@ -233,51 +365,9 @@ theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
     MemLp (ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-      (fun w ↦ H w.2) u) ∞ stripMeasure := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap
-  have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (K := H) hH
-  -- The data as continuous functions of `(t, y)`.
-  have hdJ : Continuous fun p : ℝ × V ↦
-      fderiv ℝ (fun y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap) p.2 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap)
-      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
-  have hdX : Continuous fun p : ℝ × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
-      (hX.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
-  -- The slice defect and the map are bounded on the strip.
-  have hδc : Continuous (sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u) := by
-    have h₁ := (hu.continuous_fderiv one_ne_zero).clm_apply
-      (continuous_const (y := ((0 : ℝ), (1 : ℝ))))
-    rw [show sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u = _ from
-      funext (sliceDefect_def _ u)]
-    exact h₁.sub (hX.continuous.comp (continuous_snd.prodMk hu.continuous))
-  obtain ⟨Cu, hCu⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
-    hu.continuous.continuousOn huxm huxp
-  obtain ⟨Cδ, hCδ⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hδc.continuousOn hδm
-    hδp
-  set K : Set (ℝ × V) := Icc 0 1 ×ˢ Metric.closedBall 0 Cu
-  have hK : IsCompact K := isCompact_Icc.prod (isCompact_closedBall 0 Cu)
-  obtain ⟨BJ, hBJ⟩ := hK.exists_bound_of_continuousOn hJ.continuous.continuousOn
-  obtain ⟨BdJ, hBdJ⟩ := hK.exists_bound_of_continuousOn hdJ.continuousOn
-  obtain ⟨BdX, hBdX⟩ := hK.exists_bound_of_continuousOn hdX.continuousOn
-  have hM := ω.continuous_floerJetCoeff hH hJ hu
-  refine memLp_top_of_bound hM.aestronglyMeasurable (1 + BJ + (BdJ * Cδ + BJ * BdX)) ?_
-  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-  obtain ⟨s, t⟩ := z
-  have ht : t ∈ Icc (0 : ℝ) 1 := hz.2
-  have hp : (t, u (s, t)) ∈ K := ⟨ht, mem_closedBall_zero_iff.2 (hCu s t ht)⟩
-  have hJb : ‖J' (s, t) (u (s, t))‖ ≤ BJ := hBJ (t, u (s, t)) hp
-  have hBJ0 : 0 ≤ BJ := (norm_nonneg _).trans hJb
-  have hdJ : ‖fderiv ℝ (J' (s, t)) (u (s, t))‖ ≤ BdJ := hBdJ (t, u (s, t)) hp
-  have hdX : ‖fderiv ℝ (ω.hamiltonianVectorField (H t)) (u (s, t))‖ ≤ BdX :=
-    hBdX (t, u (s, t)) hp
-  have hBdJ0 : 0 ≤ BdJ := le_trans (norm_nonneg (fderiv ℝ (J' (s, t)) (u (s, t)))) hdJ
-  have hA_le : ‖ω.floerLinearizationCoeff J' (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)‖ ≤
-      BdJ * Cδ + BJ * BdX :=
-    (norm_floerLinearizationCoeff_le ω (H := H) (J := J') (u := u) (s, t)).trans (add_le_add
-      (mul_le_mul hdJ (hCδ s t ht) (norm_nonneg _) hBdJ0)
-      (mul_le_mul hJb hdX (norm_nonneg _) hBJ0))
-  exact (norm_floerJetCoeff_le ω _ _ _ _ (s, t)).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
+      (fun w ↦ H w.2) u) ∞ stripMeasure :=
+  ω.memLp_floerJetCoeff_of_cylindrical
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hH hJ huxm hδm hH hJ huxp hδp
 
 /-! ### The operator on exponentially weighted Sobolev spaces -/
 
@@ -335,68 +425,156 @@ theorem floerWeightedSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V)
   simp only [sub_apply, smul_apply, coe_fst', floerJetCoeff_jet]
   simp only [jet_apply]
 
-/-- **The coefficients of the weighted linearized Floer operator along a Floer trajectory are
-bounded.** Under the hypotheses of `TauCeti.SymplecticForm.memLp_floerJetCoeff`, and for a
-measurable bounded `c : ℝ → ℝ`, the coefficient field of `D_u - c(s)` on jets is essentially bounded
-on the cylinder. -/
-theorem memLp_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
-    {J : ℝ → V → AlmostComplexStructure V}
-    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u)
-    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδm : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
-    (hδp : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
-        (Icc 0 1))
-    {c : ℝ → ℝ} (hc : Measurable c) {B : ℝ} (hB : ∀ s, ‖c s‖ ≤ B) :
-    MemLp (fun z ↦ ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun w ↦ H w.2) u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure := by
-  refine (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp).sub
-    (memLp_top_of_bound ((hc.comp measurable_fst).aestronglyMeasurable.smul
-      aestronglyMeasurable_const) B (Eventually.of_forall fun z ↦ ?_))
+/-- **The coefficients of the weighted linearized Floer operator are bounded.** If the coefficient
+field of `D_u` on jets is essentially bounded on the cylinder, for instance under the hypotheses of
+`TauCeti.SymplecticForm.memLp_floerJetCoeff_of_cylindrical`, then so is that of `D_u - c(s)`, for a
+measurable bounded `c : ℝ → ℝ`. -/
+theorem memLp_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) {c : ℝ → ℝ} (hc : Measurable c)
+    {B : ℝ} (hB : ∀ s, ‖c s‖ ≤ B) :
+    MemLp (fun z ↦ ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure := by
+  refine hM.sub (memLp_top_of_bound ((hc.comp measurable_fst).aestronglyMeasurable.smul
+    aestronglyMeasurable_const) B (Eventually.of_forall fun z ↦ ?_))
   rw [norm_smul]
   exact (mul_le_mul_of_nonneg_left (norm_fst_le ℝ V (V × V)) (norm_nonneg _)).trans
     ((mul_one _).trans_le (hB z.1))
 
-/-- **The weighted semi-Fredholm estimate along a Floer trajectory**, in the form
+/-- **The weighted semi-Fredholm estimate for Floer data cylindrical near the ends**, in the form
 `TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
-the estimate `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add` for the
-coefficient field of `D_u - c(s)` on jets. -/
-theorem exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V} (hxm : Continuous xm)
-    (hxp : Continuous xp) {J : ℝ → V → AlmostComplexStructure V}
-    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJxm : ∀ t, ω.Compatible (J t (xm t))) (hJxp : ∀ t, ω.Compatible (J t (xp t)))
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hJu : ∀ z, ω.Compatible (J z.2 (u z)))
-    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδm : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
-    (hδp : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
-        (Icc 0 1))
-    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
-    (hcp : ∀ s, R ≤ s → c s = δp)
+the estimate
+`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical` for
+the coefficient field of `D_u - c(s)` on jets. -/
+theorem exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical
+    (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ}
+    (hcm : ∀ s ≤ -R, c s = δm) (hcp : ∀ s, R ≤ s → c s = δp)
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V} (hxm : Continuous xm)
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
     (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
-      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xm t) -
-        δm • (J t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V} (hxp : Continuous xp)
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
     (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
-      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xp t) -
-        δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
     ∃ C T : ℝ, HasSemiFredholmEstimate (fun z ↦ ω.floerJetCoeff
-      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u z -
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z -
         c z.1 • fst ℝ V (V × V)) C T := by
   obtain ⟨C, -, T, hest⟩ :=
-    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add hH hxm hxp hJ
-      hJxm hJxp hu hJu huxm huxp hδm hδp hc hcm hcp hdetm hdetp
+    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical
+      hcyl hu hJu hc hcm hcp hHm hxm hJm hJxm hdetm huxm hδm hHp hxp hJp hJxp hdetp huxp hδp
   refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξ hper a b hab hvan ↦ ?_⟩
   simp only [sub_apply, smul_apply, coe_fst', floerJetCoeff_jet]
   simpa only [jet_apply, stdComplexLineReal_eq, stdComplexLineImag_eq] using
     hest hξ hper hab hvan
+
+/-- **The weighted linearized Floer operator for data cylindrical near the ends has
+finite-dimensional kernel.** Let the Floer data be cylindrical near the ends, equal to
+`(J₋_t, 0, H₋_t)` for `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`, and let the loops of `u`
+converge uniformly to continuous loops `xm` at `-∞` and `xp` at `+∞`, with the slice defects of
+the end data tending to zero there, as in
+`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical`. Let
+the slope `c` of the weight be continuous and equal to `δm` for `s ≤ -R` and to `δp` for `s ≥ R`,
+where the shifted fields `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps; for
+one-periodic `H±`, `J±` and `x±` this says that `δ±` are not eigenvalues of the asymptotic
+operators at `x±`. Then the realization `D_u - c(s) : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of `D_u`
+conjugated by the weight `e^{κ(s)}`, `κ' = c`, has finite-dimensional kernel. -/
+theorem finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical
+    (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ}
+    (hcm : ∀ s ≤ -R, c s = δm) (hcp : ∀ s, R ≤ s → c s = δp)
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V} (hxm : Continuous xm)
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V} (hxp : Continuous xp)
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    FiniteDimensional ℝ (ω.floerWeightedSobolevOperator
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u c).ker := by
+  obtain ⟨C, T, hest⟩ :=
+    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical
+      hcyl hu hJu hc hcm hcp hHm hxm hJm hJxm hdetm huxm hδm hHp hxp hJp hJxp hdetp huxp hδp
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
+    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
+  exact finiteDimensional_ker_jetOperator_comp_subtypeL (ω.memLp_floerJetCoeff_sub_smul_fst
+    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp)
+    hc.measurable hB) hest
+
+/-- **The weighted linearized Floer operator for data cylindrical near the ends has closed
+range.** Under the hypotheses of
+`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical`, the
+realization `D_u - c(s) : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of `D_u` conjugated by the weight
+`e^{κ(s)}`, `κ' = c`, has closed range. -/
+theorem isClosed_range_floerWeightedSobolevOperator_of_cylindrical
+    (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ}
+    (hcm : ∀ s ≤ -R, c s = δm) (hcp : ∀ s, R ≤ s → c s = δp)
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V} (hxm : Continuous xm)
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V} (hxp : Continuous xp)
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    IsClosed ((ω.floerWeightedSobolevOperator
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u c).range :
+        Set (Lp V 2 stripMeasure)) := by
+  obtain ⟨C, T, hest⟩ :=
+    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical
+      hcyl hu hJu hc hcm hcp hHm hxm hJm hJxm hdetm huxm hδm hHp hxp hJp hJxp hdetp huxp hδp
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
+    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
+  exact isClosed_range_jetOperator_comp_subtypeL (ω.memLp_floerJetCoeff_sub_smul_fst
+    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp)
+    hc.measurable hB) hest
 
 /-- **The weighted linearized Floer operator along a Floer trajectory has finite-dimensional
 kernel.** Let `u` be a Floer trajectory of `K = H_t dt`, with loops converging uniformly to
@@ -431,13 +609,10 @@ theorem finiteDimensional_ker_floerWeightedSobolevOperator (ω : SymplecticForm 
         δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
     FiniteDimensional ℝ (ω.floerWeightedSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
-        u c).ker := by
-  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst hH hxm hxp hJ
-    hJxm hJxp hu hJu huxm huxp hδm hδp hc hcm hcp hdetm hdetp
-  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
-    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
-  exact finiteDimensional_ker_jetOperator_comp_subtypeL
-    (memLp_floerJetCoeff_sub_smul_fst ω hH hJ hu huxm huxp hδm hδp hc.measurable hB) hest
+        u c).ker :=
+  ω.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := R) u) hu hJu hc hcm hcp hH hxm hJ hJxm hdetm
+    huxm hδm hH hxp hJ hJxp hdetp huxp hδp
 
 /-- **The weighted linearized Floer operator along a Floer trajectory has closed range.** Under
 the hypotheses of `TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator`,
@@ -466,22 +641,155 @@ theorem isClosed_range_floerWeightedSobolevOperator (ω : SymplecticForm V) {H :
         δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
     IsClosed ((ω.floerWeightedSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
-        u c).range : Set (Lp V 2 stripMeasure)) := by
-  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst hH hxm hxp hJ
-    hJxm hJxp hu hJu huxm huxp hδm hδp hc hcm hcp hdetm hdetp
-  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
-    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
-  exact isClosed_range_jetOperator_comp_subtypeL
-    (memLp_floerJetCoeff_sub_smul_fst ω hH hJ hu huxm huxp hδm hδp hc.measurable hB) hest
+        u c).range : Set (Lp V 2 stripMeasure)) :=
+  ω.isClosed_range_floerWeightedSobolevOperator_of_cylindrical
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := R) u) hu hJu hc hcm hcp hH hxm hJ hJxm hdetm
+    huxm hδm hH hxp hJ hJxp hdetp huxp hδp
 
 /-! ### The unweighted operator -/
+
+/-- **The semi-Fredholm estimate for Floer data cylindrical near the ends**, in the form consumed
+by Peetre's argument on the cylinder: under the hypotheses of
+`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`,
+the coefficient field of the linearized Floer operator on jets satisfies
+`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`. This is the case `c = 0` of
+`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical`.
+-/
+theorem exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {Km : ℝ≥0}
+    (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1)) {Kp : ℝ≥0}
+    (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    ∃ C T : ℝ, HasSemiFredholmEstimate
+      (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u) C T := by
+  obtain ⟨C, T, hest⟩ :=
+    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical (c := 0)
+      hcyl hu hJu continuous_const (δm := 0) (δp := 0)
+      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm
+      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
+      hJm hJxm (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXm hHm hxm hndm _) huxm hδm hHp
+      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJp hJxp
+      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXp hHp hxp hndp _) huxp hδp
+  exact ⟨C, T, by simpa only [Pi.zero_apply, zero_smul, sub_zero] using hest⟩
+
+/-- **The linearized Floer operator for data cylindrical near the ends has finite-dimensional
+kernel on `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
+`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`
+(Floer data equal to `(J₋_t, 0, H₋_t)` for `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`, and a map
+`u` asymptotic to nondegenerate one-periodic orbits of `H₋` at `-∞` and of `H₊` at `+∞`), the
+realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator has
+finite-dimensional kernel. This is the case `c = 0` of
+`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical`. -/
+theorem finiteDimensional_ker_floerSobolevOperator_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {Km : ℝ≥0}
+    (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1)) {Kp : ℝ≥0}
+    (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    FiniteDimensional ℝ (ω.floerSobolevOperator
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).ker := by
+  rw [← floerWeightedSobolevOperator_zero]
+  exact ω.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical
+      hcyl hu hJu continuous_const (δm := 0) (δp := 0)
+      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm
+      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
+      hJm hJxm (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXm hHm hxm hndm _) huxm hδm hHp
+      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJp hJxp
+      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXp hHp hxp hndp _) huxp hδp
+
+/-- **The linearized Floer operator for data cylindrical near the ends has closed range on
+`W^{1,2}`.** Under the hypotheses of
+`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator_of_cylindrical`, the realization
+`D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator has closed range.
+This is the case `c = 0` of
+`TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator_of_cylindrical`. -/
+theorem isClosed_range_floerSobolevOperator_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {Km : ℝ≥0}
+    (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1)) {Kp : ℝ≥0}
+    (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    IsClosed ((ω.floerSobolevOperator
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).range :
+        Set (Lp V 2 stripMeasure)) := by
+  rw [← floerWeightedSobolevOperator_zero]
+  exact ω.isClosed_range_floerWeightedSobolevOperator_of_cylindrical
+      hcyl hu hJu continuous_const (δm := 0) (δp := 0)
+      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm
+      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
+      hJm hJxm (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXm hHm hxm hndm _) huxm hδm hHp
+      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJp hJxp
+      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXp hHp hxp hndp _) huxp hδp
 
 /-- **The semi-Fredholm estimate along a Floer trajectory**, in the form
 `TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
 the estimate
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`
-for the coefficient field of the linearized Floer operator on jets. This is the case `c = 0` of
-`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst`. -/
+for the coefficient field of the linearized Floer operator on jets. -/
 theorem exists_hasSemiFredholmEstimate_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
@@ -503,24 +811,17 @@ theorem exists_hasSemiFredholmEstimate_floerJetCoeff (ω : SymplecticForm V) {H 
         (Icc 0 1)) :
     ∃ C T : ℝ, HasSemiFredholmEstimate (ω.floerJetCoeff
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u)
-      C T := by
-  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst hH
-    (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
-    (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJ hJxm hJxp hu hJu huxm huxp
-    hδm hδp continuous_const (R := 0) (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-      hX hH hxm hndm _)
-    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-      hX hH hxp hndp _)
-  exact ⟨C, T, by simpa only [zero_smul, sub_zero] using hest⟩
+      C T :=
+  ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hJu hX hH hxm hndm hJ hJxm huxm
+    hδm hX hH hxp hndp hJ hJxp huxp hδp
 
 /-- **The linearized Floer operator along a Floer trajectory has finite-dimensional kernel on
 `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`
 (a Floer trajectory `u` of `K = H_t dt` between nondegenerate one-periodic orbits `xm` and `xp`),
 the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator has
-finite-dimensional kernel. This is the case `c = 0` of
-`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator`. -/
+finite-dimensional kernel. -/
 theorem finiteDimensional_ker_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
@@ -541,22 +842,15 @@ theorem finiteDimensional_ker_floerSobolevOperator (ω : SymplecticForm V) {H : 
         (Icc 0 1)) :
     FiniteDimensional ℝ (ω.floerSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
-        u).ker := by
-  rw [← floerWeightedSobolevOperator_zero]
-  exact ω.finiteDimensional_ker_floerWeightedSobolevOperator hH
-    (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
-    (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJ hJxm hJxp hu hJu huxm huxp
-    hδm hδp continuous_const (R := 0) (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-      hX hH hxm hndm _)
-    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-      hX hH hxp hndp _)
+        u).ker :=
+  ω.finiteDimensional_ker_floerSobolevOperator_of_cylindrical
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hJu hX hH hxm hndm hJ hJxm huxm
+    hδm hX hH hxp hndp hJ hJxp huxp hδp
 
 /-- **The linearized Floer operator along a Floer trajectory has closed range on `W^{1,2}`.**
 Under the hypotheses of
 `TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`, the realization
-`D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator has closed range.
-This is the case `c = 0` of `TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator`. -/
+`D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator has closed range. -/
 theorem isClosed_range_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
@@ -577,23 +871,17 @@ theorem isClosed_range_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ →
         (Icc 0 1)) :
     IsClosed ((ω.floerSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
-        u).range : Set (Lp V 2 stripMeasure)) := by
-  rw [← floerWeightedSobolevOperator_zero]
-  exact ω.isClosed_range_floerWeightedSobolevOperator hH
-    (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
-    (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJ hJxm hJxp hu hJu huxm huxp
-    hδm hδp continuous_const (R := 0) (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-      hX hH hxm hndm _)
-    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-      hX hH hxp hndp _)
+        u).range : Set (Lp V 2 stripMeasure)) :=
+  ω.isClosed_range_floerSobolevOperator_of_cylindrical
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hJu hX hH hxm hndm hJ hJxm huxm
+    hδm hX hH hxp hndp hJ hJxp huxp hδp
 
 end TauCeti.SymplecticForm
 
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
@@ -671,7 +959,7 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -733,7 +1021,7 @@ private theorem exists_integral_norm_sq_le_mul_integral_floerJetCoeff_stationary
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
   refine ⟨C, fun ξ ↦ ?_⟩
   simp only [floerJetCoeff_jet, floerLinearization_eq_stationaryCylinderOperator ω J H hx]
-  exact hC ξ ξ.2
+  exact hC ξ ξ.property
 
 include hX hH hx hJ hJx in
 /-- **The linearized Floer operator at a nondegenerate orbit is bounded below on `W^{1,2}`.**

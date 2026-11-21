@@ -156,7 +156,7 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
     rw [energyFormH1_zero_left, abs_zero, zero_mul]
   have hmem : (u : W1p mu Omega 2) - u' - 0 ∈ w1p0Submodule mu Omega 2 := by
     rw [sub_zero, ← Submodule.coe_sub, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact (u - u').2
+    exact (u - u').property
   have h := norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff hC
     hlower le_rfl h0 (mul_nonneg (by linarith) (norm_nonneg _)) hD hmem hu hu'
   rw [norm_zero, zero_add, add_zero, ← Submodule.coe_sub, Submodule.norm_coe] at h
@@ -297,7 +297,7 @@ theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
   -- This is the case `g = g' i = 0` and `ℓ = ℓ' i = dirichletForcing f` in `H¹(Ω)`.
   have hmem (v : W1p0 mu Omega 2) : (v : W1p mu Omega 2) - 0 ∈ w1p0Submodule mu Omega 2 := by
     rw [sub_zero, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact v.2
+    exact v.property
   have hℓ : Filter.Tendsto (fun _ : α => ‖dirichletForcing f - dirichletForcing f‖) l (nhds 0) := by
     rw [sub_self (dirichletForcing f), ContinuousLinearMap.opNorm_zero]
     exact tendsto_const_nhds

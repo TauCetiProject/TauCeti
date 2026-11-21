@@ -116,7 +116,7 @@ theorem exists_pos_measure_lt_of_measure_lt [IsFiniteMeasure ν] (h : ν ≪ μ)
       measurableSet_toMeasurable μ (s i)).nullMeasurableSet) ⟨0, measure_ne_top _ _⟩]
     simpa [limsup_eq_iInf_iSup_of_nat] using h (measure_limsup_atTop_eq_zero hsum)
   -- But every tail has `ν`-measure at least `ε`.
-  exact hε (le_zero_iff.1 <| hzero ▸ le_iInf fun n ↦ (hνs n).trans <| measure_mono <|
+  exact hε (nonpos_iff_eq_zero.1 <| hzero ▸ le_iInf fun n ↦ (hνs n).trans <| measure_mono <|
     (subset_toMeasurable μ (s n)).trans <| subset_iUnion₂_of_subset n le_rfl subset_rfl)
 
 end MeasureTheory.Measure.AbsolutelyContinuous

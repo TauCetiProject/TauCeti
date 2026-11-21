@@ -342,14 +342,14 @@ theorem isStrictlyPositive_neg_mul_self_metricChangeTransport (ω : SymplecticFo
   have hR := ContinuousLinearMap.nonneg_iff_isPositive.mp
     (ContinuousLinearMap.isStrictlyPositive_metricChangeTransport hg).nonneg
   -- `R` is invertible, and `R s♯ R` represents the form `(c, d) ↦ ω (R c) (R d)`.
-  let Φ : W ≃L[ℝ] W := ContinuousLinearEquiv.equivOfInverse' R (CFC.sqrt g♯)
+  let Φ : W ≃L[ℝ] W := ContinuousLinearEquiv.ofContinuousLinearMap R (CFC.sqrt g♯)
     (ContinuousLinearMap.metricChangeTransport_mul_sqrt hg)
     (ContinuousLinearMap.sqrt_mul_metricChangeTransport hg)
   refine (ω.transport Φ.toLinearEquiv.symm).isStrictlyPositive_neg_mul_self fun c d ↦ ?_
   rw [transport_apply, LinearEquiv.symm_symm, mul_apply_eq_comp, mul_apply_eq_comp,
     hR.inner_left_eq_inner_right, continuousLinearMapOfBilin_apply, hs]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.equivOfInverse'_apply,
-    Φ, R]
+  simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap, Φ, R]
 
 /-- **Polar normalization in coordinates.** Let `K : V ≃L W` be any linear isomorphism, and read
 the inner product and the symplectic form of `V` through `K` as the bilinear forms `g` and `s`
@@ -374,13 +374,13 @@ theorem conjContinuousAlgEquiv_toContinuousLinearMap_polarComplexStructure
   have hR := ContinuousLinearMap.nonneg_iff_isPositive.mp
     (ContinuousLinearMap.isStrictlyPositive_metricChangeTransport hgpos).nonneg
   -- `Φ = K⁻¹ R` is a linear isometry from `W` onto `V`, with inverse `R⁻¹ K = √(g♯) K`.
-  let Φ₀ : W ≃L[ℝ] W := ContinuousLinearEquiv.equivOfInverse' R (CFC.sqrt g♯)
+  let Φ₀ : W ≃L[ℝ] W := ContinuousLinearEquiv.ofContinuousLinearMap R (CFC.sqrt g♯)
     (ContinuousLinearMap.metricChangeTransport_mul_sqrt hgpos)
     (ContinuousLinearMap.sqrt_mul_metricChangeTransport hgpos)
   let Φ : W ≃ₗᵢ[ℝ] V := (Φ₀.trans K.symm).toLinearEquiv.isometryOfInner fun c d ↦ by
     simp only [ContinuousLinearEquiv.trans_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
       LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+      ContinuousLinearEquiv.coe_ofContinuousLinearMap, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
       ← hg, ContinuousLinearMap.apply_metricChangeTransport_metricChangeTransport hgpos, Φ₀, R]
   have hΦ (c : W) : Φ c = K.symm (R c) := rfl
   have hΦsymm (v : V) : Φ.symm v = CFC.sqrt g♯ (K v) := rfl

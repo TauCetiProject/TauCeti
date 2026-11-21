@@ -100,8 +100,8 @@ theorem apply_eq_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s) (hs : IsOpe
   -- The restriction of `f` to `s` is locally constant, hence constant on the preconnected `s`.
   have hloc : IsLocallyConstant (s.domRestrict f) :=
     (IsLocallyConstant.iff_eventually_eq _).mpr fun z ↦
-      (continuous_subtype_val.tendsto z).eventually
-        (hf.eventuallyEq_const_of_mfderiv_eq_zero hs hzero z.2)
+      (continuous_subtypeVal.tendsto z).eventually
+        (hf.eventuallyEq_const_of_mfderiv_eq_zero hs hzero z.property)
   exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 end MDifferentiableOn

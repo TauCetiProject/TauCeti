@@ -101,7 +101,7 @@ theorem Comodule.isCompletelyReducible_of_corestrict_finiteIndex
       ((Subcomodule.mem_corestrict f.toCoalgHom W m).mpr hm)
   have hπ_comm (n : N) (x : M) :
       π (ρ (n : WithConv (H₁ →ₐ[k] k)) x) = ρ (n : WithConv (H₁ →ₐ[k] k)) (π x) := by
-    obtain ⟨g, hg⟩ := n.2
+    obtain ⟨g, hg⟩ := n.property
     have hcore := congrArg (fun l : M →ₗ[k] M ↦ l x)
       (Comodule.basePointsRepresentation_corestrict (R := k) (M := M) f g)
     have hcore' := congrArg (fun l : M →ₗ[k] M ↦ l (π x))
@@ -146,7 +146,7 @@ theorem Coalgebra.IsLinearlyReductive.of_bialgHom_finiteIndex
   refine Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible k fun M _ _ _ _ ↦ ?_
   refine Comodule.isCompletelyReducible_of_corestrict_finiteIndex f hindex ?_
   let _ : Comodule k H₂ M := Comodule.Corestrict f.toCoalgHom
-  exact hH₂.isCompletelyReducible_sameUniverse k M
+  exact hH₂.isCompletelyReducible_same_universe k M
 
 end Unbundled
 
