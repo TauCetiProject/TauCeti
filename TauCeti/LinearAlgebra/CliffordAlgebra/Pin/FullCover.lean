@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Norm
 
 /-!
-# The Pin group and the even part of the normalized full Clifford cover
+# The Pin group in the normalized full Clifford cover
 
 The normalized full Clifford cover `CliffordAlgebra.cliffordFullCover Q` consists of the Lipschitz
 elements whose reverse norm `reverse x * x` is `1` or `-1`; it is also the set where the `star`

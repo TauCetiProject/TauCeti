@@ -298,16 +298,9 @@ the full-cover action of a nontrivial nondegenerate quadratic space is `{1, -1}`
 theorem card_ker_cliffordFullCoverToOrthogonal [Nontrivial V] (hQ : Q.Nondegenerate)
     (h : ¬IsSquare (-1 : K)) :
     Nat.card (cliffordFullCoverToOrthogonal Q).ker = 2 := by
-  refine Nat.card_eq_two_iff.2 ⟨1,
-    ⟨spinToCliffordFullCover Q (spinGroup.negOne Q hQ.ne_zero),
-      (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h _).2 (Or.inr rfl)⟩, fun h1 ↦ ?_,
-    Set.eq_univ_of_forall fun x ↦ ?_⟩
-  · refine spinGroup.negOne_ne_one Q hQ.ne_zero (spinToCliffordFullCover_injective Q ?_)
-    rw [map_one]
-    exact (congrArg Subtype.val h1).symm
-  · rcases (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h x).1 x.property with hx | hx
-    · exact Or.inl (Subtype.ext hx)
-    · exact Or.inr (Subtype.ext hx)
+  rw [ker_cliffordFullCoverToOrthogonal hQ h,
+    Subgroup.card_map_of_injective (spinToCliffordFullCover_injective Q),
+    ← ker_spinToSpecialOrthogonal, card_ker_spinToSpecialOrthogonal Module.finrank_pos Q hQ]
 
 /-- When `-1` is not a square, the kernel of the full-cover action of a nondegenerate quadratic
 space lies in the Spin group: it is `{±1}` in positive dimension and trivial in dimension zero. -/
