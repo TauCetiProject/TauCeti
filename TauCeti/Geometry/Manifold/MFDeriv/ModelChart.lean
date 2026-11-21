@@ -32,7 +32,7 @@ open set.
 
 * `TauCeti.mfderiv_eq_fderiv_comp_of_eqOn`: `df_y = dh_{e y} ∘ de_y` where `f = h ∘ e`.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
-  invertible.
+  invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`).
 * `TauCeti.mfderiv_eq_of_hasFDerivAt_chartAt_symm`: the differential of a map into a normed space
   is the derivative of its expression in the preferred chart.
 * `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
@@ -106,6 +106,15 @@ theorem isInvertible_mfderiv_chart (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜
   have := isInvertible_mfderiv_extend he hy
   have hext : (e.extend 𝓘(𝕜, E) : M → E) = e := by ext z; simp
   rwa [hext] at this
+
+/-- `isInvertible_mfderivWithin_extend_symm` for a chart of the `C^1` maximal atlas of a manifold
+modelled on its own model space: the derivative of the inverse chart is invertible at every point
+of the chart target. -/
+theorem isInvertible_mfderiv_chart_symm (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
+    {z : E} (hz : z ∈ e.target) : (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e.symm z).IsInvertible := by
+  have := isInvertible_mfderivWithin_extend_symm he (y := z) (by simpa using hz)
+  have hext : ((e.extend 𝓘(𝕜, E)).symm : E → M) = e.symm := by ext w; simp
+  rwa [hext, modelWithCornersSelf_coe, range_id, mfderivWithin_univ] at this
 
 /-- Where `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, the differential of
 `f` vanishes at `y` in the source if and only if the Fréchet derivative of `h` vanishes at `e y`. -/
