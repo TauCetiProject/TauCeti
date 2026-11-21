@@ -476,12 +476,9 @@ theorem nonvanishingLocus_pullbackSections {Y : Scheme.{u}} (g : Y ⟶ X)
     show homOfLE hW = 𝟙 _ from rfl] at hab
   -- The preimage of `⊤` is `⊤` only up to definitional unfolding, so `Functor.map_id` needs `erw`.
   erw [op_id, CategoryTheory.Functor.map_id] at hab
-  have hqc : ((pullback (X.fromSpecResidueField (g y))).obj M).IsQuasicoherent :=
-    TauCeti.AlgebraicGeometry.InvertibleSheaf.isQuasicoherent_obj
-      ⟨(pullback (X.fromSpecResidueField (g y))).obj M, inferInstance⟩
   exact @injective_pullbackSections_SpecMap (X.residueField (g y)) (Y.residueField y)
     inferInstance inferInstance inferInstance (g.residueFieldMap y)
-    ((pullback (X.fromSpecResidueField (g y))).obj M) hqc _ _ hab
+    ((pullback (X.fromSpecResidueField (g y))).obj M) _ _ hab
 
 end Pullback
 

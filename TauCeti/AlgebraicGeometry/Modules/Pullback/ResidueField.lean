@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Stalk
 public import TauCeti.AlgebraicGeometry.ResidueField
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Stalk
+import Mathlib.Algebra.Module.LocalizedModule.Away
+import TauCeti.AlgebraicGeometry.Modules.Localization
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Topology.Sheaves.Presheaf
 
@@ -260,14 +262,37 @@ theorem residueFieldPullbackSectionsEquiv_tmul_germ [M.IsQuasicoherent] {V : X.O
   rw [residueFieldPullbackSectionsEquiv, LinearEquiv.ofBijective_apply, fibreMap,
     LinearMap.liftBaseChange_tmul, fibreStalkMap_germ]
 
+/-- Every module on the spectrum of a field is quasi-coherent: a function on `Spec k` is zero or a
+unit, so its basic open is empty or everything. -/
+private lemma isQuasicoherent_Spec_field {k : Type u} [Field k] (N : (Spec (.of k)).Modules) :
+    N.IsQuasicoherent := by
+  have hk : IsField Γ(Spec (.of k), ⊤) :=
+    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField
+      (Field.toIsField k)
+  refine N.isQuasicoherent_of_isLocalizedModule (fun _ : Unit ↦ ⊤) (fun _ ↦ isAffineOpen_top _)
+    iSup_const fun _ f ↦ ?_
+  obtain rfl | hf := eq_or_ne f 0
+  · exact .mk_of_addCommGroup (N.isUnit_algebraMap_end_basicOpen 0)
+      (fun _ ↦ ⟨1, 0, by simp⟩) fun _ _ ↦ ⟨1, by simp⟩
+  have hU := Scheme.basicOpen_of_isUnit (X := Spec (.of k)) (by let := hk.toField; exact hf.isUnit)
+  have : IsIso (homOfLE ((Spec (.of k)).basicOpen_le f)).op :=
+    ⟨(homOfLE hU.ge).op, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  have hbij : Function.Bijective (N.basicOpenRestrict f) := by
+    rw [show ⇑(N.basicOpenRestrict f) = _ from funext (N.basicOpenRestrict_apply f)]
+    exact ConcreteCategory.bijective_of_isIso (N.presheaf.map _)
+  exact .mk_of_addCommGroup (N.isUnit_algebraMap_end_basicOpen f)
+    (fun x ↦ ⟨0, (hbij.2 x).imp fun _ hy ↦ by simpa using hy.symm⟩)
+    fun x hx ↦ ⟨0, by simpa using hbij.1 (hx.trans (map_zero _).symm)⟩
+
 -- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
 -- commit efa6fc8f3735.
-/-- Pulling back global sections of a quasi-coherent module from the spectrum of a field to
+/-- Pulling back global sections of a module from the spectrum of a field to
 the spectrum of a nonzero algebra is injective. In particular this applies to residue-field
 extensions. -/
 theorem injective_pullbackSections_SpecMap {k K : Type u} [Field k] [CommRing K] [Nontrivial K]
-    (φ : CommRingCat.of k ⟶ CommRingCat.of K) (N : (Spec (.of k)).Modules)
-    [N.IsQuasicoherent] : Function.Injective (Scheme.Hom.pullbackSections (Spec.map φ) N ⊤) := by
+    (φ : CommRingCat.of k ⟶ CommRingCat.of K) (N : (Spec (.of k)).Modules) :
+    Function.Injective (Scheme.Hom.pullbackSections (Spec.map φ) N ⊤) := by
+  have := isQuasicoherent_Spec_field N
   have hk : IsField Γ(Spec (.of k), ⊤) :=
     (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField
       (Field.toIsField k)
