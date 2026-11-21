@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Module.Rat
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Algebra.Polynomial.Semiconj
-import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.Binomial
 import Mathlib.Tactic.NoncommRing
 
@@ -357,32 +356,42 @@ end UniversalEnveloping
 scales `v` by `Ring.choose μ j`. -/
 theorem dividedPower_e_apply_dividedPower_f_apply_of_eq_zero
     {V : Type*} [AddCommGroup V] [Module ℚ V] {H E F : Module.End ℚ V}
-    (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E) (hhf : H * F - F * H = -(2 • F))
+    (hef : E * F - F * E = H) (hhf : H * F - F * H = -(2 • F))
     {v : V} {μ : ℚ} (hEv : E v = 0) (hHv : H v = μ • v) (j : ℕ) :
     (dividedPower j E) ((dividedPower j F) v) = Ring.choose μ j • v := by
-  have hpow_zero : ∀ {m : ℕ}, m ≠ 0 → (dividedPower m E) v = 0 := by
-    rintro (_ | m) hm
-    · exact (hm rfl).elim
-    · rw [dividedPower_def, LinearMap.smul_apply, pow_succ, mul_apply_eq_comp, hEv, map_zero,
-        smul_zero]
-  rw [← mul_apply_eq_comp, dividedPower_e_mul_dividedPower_f hef hhe hhf j j, min_self,
-    LinearMap.sum_apply, Finset.sum_range_succ, Finset.sum_eq_zero]
-  · simp only [zero_add, tsub_self, dividedPower_zero, one_mul, mul_one]
-    have harg : (H - (j + j : ℕ) + (2 * j : ℕ) : Module.End ℚ V) = H := by
-      rw [two_mul, sub_add_cancel]
-    rw [harg, TauCeti.ringChoose_end_apply_of_apply_eq_smul hHv j]
-  · intro k hk
-    have hjk : j - k ≠ 0 := Nat.sub_ne_zero_of_lt (Finset.mem_range.mp hk)
-    rw [mul_apply_eq_comp, hpow_zero hjk, map_zero]
+  let := HasUniqueDiv.of_module_rat V
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    apply (nsmul_right_inj (n := j + 1) (by omega)).mp
+    have hstep : E ((dividedPower (j + 1) F) v) = (μ - (j : ℚ)) • (dividedPower j F) v := by
+      have hcomm := congrArg (· v) (e_mul_dividedPower_succ_f hef hhf j)
+      simp only [mul_apply_eq_comp, LinearMap.add_apply, hEv, map_zero, zero_add] at hcomm
+      have hsub : (H - (j : Module.End ℚ V)) v = (μ - (j : ℚ)) • v := by
+        simp only [LinearMap.sub_apply, hHv, sub_smul]
+        congr 1
+        simp [Nat.cast_smul_eq_nsmul ℚ]
+      rw [hcomm, hsub, map_smul]
+    have hleft :
+        (j + 1) • ((dividedPower (j + 1) E) ((dividedPower (j + 1) F) v)) =
+          (dividedPower j E) (E ((dividedPower (j + 1) F) v)) := by
+      have hrec := congrArg (· ((dividedPower (j + 1) F) v)) (dividedPower_mul_self j E)
+      simpa only [mul_apply_eq_comp, LinearMap.smul_apply] using hrec.symm
+    have hchoose : ((j + 1 : ℕ) : ℚ) * Ring.choose μ (j + 1) = (μ - (j : ℚ)) * Ring.choose μ j := by
+      have h := Ring.choose_smul_choose μ (n := j + 1) (k := j) (Nat.le_succ j)
+      rw [Nat.choose_succ_self_right, Nat.add_sub_cancel_left, Ring.choose_one_right,
+        ← Nat.cast_smul_eq_nsmul ℚ, smul_eq_mul, mul_comm (Ring.choose μ j)] at h
+      exact h
+    rw [hleft, hstep, map_smul, ih, smul_smul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, hchoose]
 
 /-- On an `sl₂` highest-weight vector `v` (`E v = 0`) of natural Cartan weight `n` (`H v = n • v`),
 lowering by the `n`-th divided power `F⁽ⁿ⁾` and raising back by `E⁽ⁿ⁾` recovers `v`. -/
 theorem dividedPower_e_apply_dividedPower_f_apply_eq_self_of_eq_zero
     {V : Type*} [AddCommGroup V] [Module ℚ V] {H E F : Module.End ℚ V}
-    (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E) (hhf : H * F - F * H = -(2 • F))
+    (hef : E * F - F * E = H) (hhf : H * F - F * H = -(2 • F))
     {v : V} {n : ℕ} (hEv : E v = 0) (hHv : H v = (n : ℚ) • v) :
     (dividedPower n E) ((dividedPower n F) v) = v := by
-  rw [dividedPower_e_apply_dividedPower_f_apply_of_eq_zero hef hhe hhf hEv hHv n,
+  rw [dividedPower_e_apply_dividedPower_f_apply_of_eq_zero hef hhf hEv hHv n,
     Ring.choose_natCast, Nat.choose_self, Nat.cast_one, one_smul]
 
 end TauCeti.Sl2

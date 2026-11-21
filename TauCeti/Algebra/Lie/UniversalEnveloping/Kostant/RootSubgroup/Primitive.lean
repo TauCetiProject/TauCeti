@@ -91,7 +91,7 @@ private theorem exists_pow_kostantRootOperator_eq_factorial_smul
     rw [dividedPower_def, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul ℚ,
       smul_inv_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero N))]
   rw [hdiv, TauCeti.Sl2.dividedPower_e_apply_dividedPower_f_apply_eq_self_of_eq_zero
-    hsl2.lie_e_f hsl2.lie_h_e_nsmul hsl2.lie_h_f_nsmul hEj
+    hsl2.lie_e_f hsl2.lie_h_f_nsmul hEj
     (by rw [hwt j, ← hN_eq, Int.cast_natCast])]
 
 /-- If `e i` and `e opp` act on a Kostant-stable lattice `M` with spanning basis `b` as the

@@ -77,6 +77,7 @@ theorem commute_torusPoints_rootSubgroupPoints_ofAdd_one_iff (γ : Fin t.numRoot
 
 /-- A torus point of any Chevalley datum centralizes the generated group if and only if all root
 characters are trivial on it. No point-generation theorem is assumed. -/
+@[simp]
 theorem torusPoints_mem_centralizer_rootTorusSubgroup_iff (s : Fin t.rank → Aˣ) :
     D.torusPoints A s ∈ Subgroup.centralizer (D.rootTorusSubgroup A : Set (D.points A)) ↔
       ∀ γ, torusCharacter s (D.coordinateRoot γ) = 1 := by
@@ -149,21 +150,7 @@ theorem torusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk
 
 end ChevalleyDatum
 
-variable (t ht)
-
-/-- For the simply connected datum over any commutative ring, a torus point centralizes the
-root-and-torus-generated group exactly when all root characters are trivial. -/
-@[simp]
-theorem scChevalleyDatum_torusPoints_mem_centralizer_rootTorusSubgroup_iff
-    (s : Fin t.rank → Aˣ) :
-    (t.scChevalleyDatum ht).torusPoints A s ∈
-        Subgroup.centralizer ((t.scChevalleyDatum ht).rootTorusSubgroup A :
-          Set ((t.scChevalleyDatum ht).points A)) ↔
-      ∀ γ, torusCharacter s ((t.simplyConnectedRootDatum ht).root γ) = 1 := by
-  simpa only [scChevalleyDatum_coordinateRoot] using
-    (t.scChevalleyDatum ht).torusPoints_mem_centralizer_rootTorusSubgroup_iff s
-
-variable (A)
+variable (t ht A)
 
 /-- Unit-valued characters of `P / Q` identify with the simply connected torus points
 centralizing the root-and-torus-generated group, over any commutative ring. Here `P` and `Q`
