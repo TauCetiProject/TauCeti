@@ -34,6 +34,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Scheme.natCast_residueField_basicOpen_ne_zero`: on the basic open `D(N)`
+  where `N` is inverted, `N` is invertible in every residue field.
 * `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
   separably closed field is separably closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
@@ -75,8 +77,8 @@ neighbourhoods to be refined without splitting their distinguished points.
 The pullback arguments use Mathlib's `Scheme.Pullback.Triplet.tensor` description of the points
 over a pair as the spectrum of the tensor product of their residue fields.
 
-The two results on natural numbers only use that a ring homomorphism between fields, such as
-Mathlib's `Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
+The results on natural numbers only use that a ring homomorphism between fields, such as Mathlib's
+`Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
 -/
 
 public section
@@ -100,6 +102,16 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
   rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
+
+/-- On the basic open `D(N)` where a natural number `N` is inverted, `N` is nonzero in every
+residue field. -/
+theorem Scheme.natCast_residueField_basicOpen_ne_zero (X : Scheme.{u}) (N : ℕ)
+    (x : X.basicOpen (N : Γ(X, ⊤))) :
+    (N : (X.basicOpen (N : Γ(X, ⊤))).toScheme.residueField x) ≠ 0 := by
+  let U := X.basicOpen (N : Γ(X, ⊤))
+  have hx : U.ι x ∈ U := by simpa only [Scheme.Opens.ι_apply] using x.property
+  refine Scheme.Hom.natCast_residueField_ne_zero U.ι ?_
+  simpa only [map_natCast] using (X.evaluation_ne_zero_iff_mem_basicOpen (U.ι x) trivial _).mpr hx
 
 /-- The residue field of the spectrum of a separably closed field is separably closed: it is the
 field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.LevelThreeNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # The universal level-three normal form over a scheme
@@ -66,6 +67,9 @@ over its copy `ULift.{u} ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`
 * `TauCeti.AlgebraicGeometry.UniversalLevelThree.firstPointHom_left_comp_mulBy_three_left`,
   `TauCeti.AlgebraicGeometry.UniversalLevelThree.secondPointHom_left_ne_firstPointHom_left` and
   their siblings: the universal basis satisfies the conditions.
+* `WeierstrassCurve.UniversalLevelThree.smoothOfRelativeDimension_terminal_from` and
+  `WeierstrassCurve.UniversalLevelThree.smooth_terminal_from`: the base
+  `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is smooth of relative dimension `1` over `Spec ℤ`.
 
 ## References
 
@@ -227,6 +231,19 @@ theorem secondPoint_ne_firstPoint (s) : secondPoint.{u} s ≠ firstPoint.{u} s :
 theorem secondPoint_ne_firstPoint_projModelNeg (s) :
     secondPoint.{u} s ≠ (firstPoint.{u} ≫ curveULift.projModelNeg) s :=
   (basis_conditions.2.2.2.2 s).2
+
+/-! ### Smoothness of the base -/
+
+/-- The base `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is smooth of
+relative dimension `1` over `Spec ℤ`, the terminal scheme. -/
+instance smoothOfRelativeDimension_terminal_from :
+    SmoothOfRelativeDimension 1 (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.terminal_from_Spec_ulift 1
+
+/-- The base `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is smooth
+over `Spec ℤ`, the terminal scheme. -/
+instance smooth_terminal_from : Smooth (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.smooth 1 _
 
 end WeierstrassCurve.UniversalLevelThree
 

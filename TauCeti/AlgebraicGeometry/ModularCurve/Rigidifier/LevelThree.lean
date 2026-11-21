@@ -53,6 +53,9 @@ representable, affine, rigid moduli problem is representable (KM 4.7.0).
 
 * `TauCeti.AlgebraicGeometry.EllObj.existsUnique_hom_universalLevelThree`: the universal property
   of the universal level-three normal form in `Ell/B`.
+* `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_universalLevelThree_structureMap`:
+  the fine moduli scheme of naive full level three over `B` is smooth of relative dimension `1`
+  over `B`.
 * `ModuliProblem.naiveLevelEquiv_gammaNaiveThreeRepresentableBy_homEquiv_fst` and
   `ModuliProblem.naiveLevelEquiv_gammaNaiveThreeRepresentableBy_homEquiv_snd`: the naive
   `[Γ(3)]`-structure attached to an arrow `k` is the pullback of the universal basis along `k`.
@@ -164,6 +167,19 @@ theorem existsUnique_hom_universalLevelThree
     exact hgQ
   · simpa using (pointsPullback_prodCurvePoint_eq_iff _ _ _).mp hfg.1
   · simpa using (pointsPullback_prodCurvePoint_eq_iff _ _ _).mp hfg.2
+
+variable (B) in
+/-- The fine moduli scheme `B × Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of naive full level-three
+structures over `B` is smooth of relative dimension `1` over `B`. -/
+instance smoothOfRelativeDimension_universalLevelThree_structureMap :
+    SmoothOfRelativeDimension 1 (universalLevelThree B).structureMap :=
+  MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
+
+variable (B) in
+/-- The fine moduli scheme `B × Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of naive full level-three
+structures over `B` is smooth over `B`. -/
+instance smooth_universalLevelThree_structureMap : Smooth (universalLevelThree B).structureMap :=
+  SmoothOfRelativeDimension.smooth 1 _
 
 end EllObj
 

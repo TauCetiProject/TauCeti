@@ -57,10 +57,13 @@ over every point is the spectrum of an algebra of dimension `n²` over its resid
 
 ## Main results
 
-* `WeierstrassCurve.projModelMulBy_eq`: it is multiplication by `n` on `toEllipticCurveGeom W`.
-* `WeierstrassCurve.projModelMulBy_comp_of_isPullback` and
-  `WeierstrassCurve.comp_projModelMulBy_of_isPullback`: `[n]` commutes with pointed base changes
-  from and to the projective model.
+* `WeierstrassCurve.projModelMulBy_eq`, `WeierstrassCurve.projModelMulBy_one`, and
+  `WeierstrassCurve.projModelMulBy_mul`: `[n]` is multiplication by `n` on `toEllipticCurveGeom W`,
+  satisfies `[1] = 𝟙 _` and `[m * n] = [n] ≫ [m]`.
+* `WeierstrassCurve.projModelMulBy_comp_of_isPullback`,
+  `WeierstrassCurve.comp_projModelMulBy_of_isPullback`, and
+  `WeierstrassCurve.projModelMulBy_projModelBaseChange`: `[n]` commutes with pointed base changes
+  from and to the projective model, and with base change of projective Weierstrass models.
 * `WeierstrassCurve.isFinite_projModelMulBy`: for `n ≠ 0`, `[n]` is finite.
 * `WeierstrassCurve.comp_projModelMulBy_eq_homMk_zpow_left`: for a section `P` of the projective
   model, `nP` is the `n`-th power of `P` bundled as a morphism of `Over (Spec R)`.
@@ -73,6 +76,8 @@ over every point is the spectrum of an algebra of dimension `n²` over its resid
   `WeierstrassCurve.projModelPoint_projModelMulBy_of_zsmul_some` and
   `WeierstrassCurve.projModelPoint_projModelMulBy_of_zsmul_eq_zero` state this on the point with
   homogeneous coordinates `[x : y : 1]`, according as `n • (x, y)` is affine or zero.
+* `WeierstrassCurve.projModelAffinePoint_projModelMulBy_two_eq_projModelZero_iff`: over a
+  commutative ring, the point `[x : y : 1]` is killed by `2` if and only if `ψ₂(x, y) = 0`.
 * `WeierstrassCurve.projModelAffinePoint_projModelMulBy_ne_projModelZero_iff` and
   `WeierstrassCurve.isUnit_evalEval_ψ_iff`: over a commutative ring, the `n`-th multiple of the
   point `[x : y : 1]` misses the zero section over a point `s` of the base exactly when `ψₙ(x, y)`
@@ -140,6 +145,19 @@ theorem projModelMulBy_eq (n : ℤ) :
   rw [← toEllipticCurveGeomOverIso_hom_left, ← Over.comp_left, h, Over.comp_left,
     toEllipticCurveGeomOverIso_hom_left, Iso.inv_hom_id_assoc, projModelMulBy]
 
+/-- Multiplication by `1` on the projective model is the identity. -/
+@[simp]
+theorem projModelMulBy_one : W.projModelMulBy 1 = 𝟙 W.projModel := by
+  simp [projModelMulBy]
+
+/-- Multiplication by a product `m * n` on the projective model is multiplication by `n` followed
+by multiplication by `m`. -/
+@[reassoc]
+theorem projModelMulBy_mul (m n : ℤ) :
+    W.projModelMulBy (m * n) = W.projModelMulBy n ≫ W.projModelMulBy m := by
+  simp only [projModelMulBy_eq, EllipticCurveGeom.mulBy_mul, Over.comp_left, Category.assoc,
+    Iso.hom_inv_id_assoc]
+
 /-- **Multiplication by `n` commutes with a pointed base change from the projective model.** Let
 `a : projModel W ⟶ E` be a morphism to an elliptic curve `E` over a scheme `S`, forming a pullback
 square over a morphism `b : Spec R ⟶ S` and carrying the zero section to the zero section. Then `a`
@@ -176,6 +194,22 @@ theorem comp_projModelMulBy_of_isPullback {S : Scheme.{u}} {E : EllipticCurveGeo
     (by simp [reassoc_of% h₀, ← zero_toEllipticCurveGeomIso_hom]) n
   rw [projModelMulBy_eq]
   simpa using (this =≫ (toEllipticCurveGeomIso W).hom).symm
+
+/-- Multiplication by `n` commutes with the base change morphism of projective Weierstrass
+models. -/
+@[reassoc]
+theorem projModelMulBy_projModelBaseChange {R' : Type u} [CommRing R'] (f : R →+* R') (n : ℤ) :
+    (W.map f).projModelMulBy n ≫ W.projModelBaseChange f =
+      W.projModelBaseChange f ≫ W.projModelMulBy n := by
+  have hpb : IsPullback ((toEllipticCurveGeomIso (W.map f)).hom ≫ W.projModelBaseChange f)
+      (toEllipticCurveGeom (W.map f)).structureMap W.projModelOver
+      (Spec.map (CommRingCat.ofHom f)) := by
+    simpa using (IsPullback.of_horiz_isIso (fst := (toEllipticCurveGeomIso (W.map f)).hom)
+      (snd := (toEllipticCurveGeom (W.map f)).structureMap) (f := (W.map f).projModelOver)
+      (g := 𝟙 _) ⟨by simp⟩).paste_horiz (W.isPullback_projModelBaseChange f)
+  have h := comp_projModelMulBy_of_isPullback W hpb (by simp) n
+  simp only [Category.assoc] at h
+  rw [(W.map f).projModelMulBy_eq, Category.assoc, Category.assoc, ← h, Iso.inv_hom_id_assoc]
 
 /-- Multiplication by a nonzero integer on the projective Weierstrass model is finite, being
 multiplication by `n` on the elliptic curve `toEllipticCurveGeom W`
@@ -352,6 +386,20 @@ section Multiples
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic] {x y : R}
   (h : W.toAffine.Equation x y)
+
+/-- **Points killed by `2`.** Let `W` be an elliptic Weierstrass curve over a commutative ring `R`
+and `(x, y)` a solution of its affine equation over `R`. The point `[x : y : 1]` of the projective
+model with values in `R` is killed by multiplication by `2`, as a morphism `Spec R ⟶ projModel W`,
+if and only if `ψ₂(x, y) = 2y + a₁x + a₃ = 0`. -/
+theorem projModelAffinePoint_projModelMulBy_two_eq_projModelZero_iff :
+    W.projModelAffinePoint h ≫ W.projModelMulBy 2 = W.projModelZero ↔
+      W.ψ₂.evalEval x y = 0 := by
+  rw [← one_add_one_eq_two,
+    comp_projModelMulBy_add_one_eq_projModelZero_iff (projModelAffinePoint_projModelOver h),
+    projModelMulBy_one, Category.comp_id, projModelAffinePoint_projModelNeg,
+    projModelAffinePoint_inj]
+  simp only [true_and, Affine.negY, ψ₂, Affine.evalEval_polynomialY]
+  exact ⟨fun hy ↦ by linear_combination hy, fun hψ ↦ by linear_combination hψ⟩
 
 /-- **The `n`-th multiple of `[x : y : 1]` over a point of the base.** Over a point `s` of
 `Spec R`, the `n`-th multiple of the point `[x : y : 1]` misses the zero section exactly when the

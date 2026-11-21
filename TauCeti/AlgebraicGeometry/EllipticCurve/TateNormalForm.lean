@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Smooth.Basic
+public import Mathlib.RingTheory.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 
 /-!
@@ -43,7 +44,12 @@ Finally, `WeierstrassCurve.UniversalTate.curve` is the Tate normal form with ind
 coefficients over `ℤ[A, B][Δ⁻¹]`. It is elliptic, and every elliptic Tate normal form over a
 commutative ring is its base change along exactly one ring homomorphism
 (`WeierstrassCurve.UniversalTate.map_lift`, `WeierstrassCurve.UniversalTate.eq_lift`), naturally in
-the base ring (`WeierstrassCurve.UniversalTate.comp_lift`).
+the base ring (`WeierstrassCurve.UniversalTate.comp_lift`). Specialising to `a = 1` gives the
+one-parameter family `Y² + XY + bY = X³ + bX²` with discriminant `b⁴(1 - 16b)`
+(`WeierstrassCurve.tateNormalForm_one_Δ`), whose universal parameter ring
+`ℤ[B, (B(1 - 16B))⁻¹]` (`WeierstrassCurve.UniversalGammaOneFour.Ring`) is standard smooth of
+relative dimension `1` over `ℤ`
+(`WeierstrassCurve.UniversalGammaOneFour.isStandardSmoothOfRelativeDimension`).
 
 ## Main definitions
 
@@ -57,10 +63,17 @@ the base ring (`WeierstrassCurve.UniversalTate.comp_lift`).
 * `WeierstrassCurve.UniversalTate.curveULift`: the universal elliptic Tate normal form over the copy
   `ULift.{u} ℤ[A, B][Δ⁻¹]` of `ℤ[A, B][Δ⁻¹]` in `Type u`, over which it is read in schemes of
   universe `u`.
+* `WeierstrassCurve.UniversalGammaOneFour.Ring`, `WeierstrassCurve.UniversalGammaOneFour.curve`:
+  the ring `ℤ[B, (B(1 - 16B))⁻¹]` and the universal elliptic Tate normal form with `a = 1`.
 
 ## Main results
 
 * `WeierstrassCurve.tateNormalForm_Δ`: the discriminant of the Tate normal form.
+* `WeierstrassCurve.tateNormalForm_one_Δ`, `WeierstrassCurve.isUnit_tateNormalForm_one_Δ_iff`: the
+  discriminant `b⁴(1 - 16b)` and ellipticity criterion for the `a = 1` specialization.
+* `WeierstrassCurve.equation_tateNormalForm_neg_mul_sub_one`,
+  `WeierstrassCurve.evalEval_ψ₂_tateNormalForm_neg_mul_sub_one`: the point `(-b, b(a - 1))` lies on
+  the Tate normal form and has `ψ₂(-b, b(a - 1)) = b(a - 1)`.
 * `WeierstrassCurve.toTateNormalForm_smul`: the change of variables produces a Tate normal form,
   with explicit coefficients.
 * `WeierstrassCurve.eq_toTateNormalForm`: it is the only change of variables doing so that sends
@@ -70,6 +83,8 @@ the base ring (`WeierstrassCurve.UniversalTate.comp_lift`).
   variables exists exactly when `(x, y)` lies on `W` and `ψ₂` and `Ψ₃` are units there.
 * The instance `Algebra.Smooth ℤ WeierstrassCurve.UniversalTate.Ring`: the ring `ℤ[A, B][Δ⁻¹]` is
   smooth over `ℤ`.
+* `WeierstrassCurve.UniversalGammaOneFour.isStandardSmoothOfRelativeDimension`: the ring
+  `ℤ[B, (B(1 - 16B))⁻¹]` is standard smooth of relative dimension `1` over `ℤ`.
 
 ## Provenance
 
@@ -88,7 +103,8 @@ its lemmas `specializeElliptic_comp_algebraMap`, `specializeElliptic_algebraMap`
   normal form is written `y² + (1 - c)xy - by = x³ - bx²`; it is the present one with
   `a = 1 - c` and `b` replaced by `-b`.
 * D. S. Kubert, *Universal bounds on the torsion of elliptic curves*, Proc. London Math. Soc. (3)
-  33 (1976), 193–237.
+  33 (1976), 193–237, Table 3 (`X₁(4)`).
+* D. Loeffler, *Modular Curves*, lecture notes, §3.3.
 -/
 
 public section
@@ -147,9 +163,30 @@ theorem isUnit_of_isUnit_tateNormalForm_Δ {a b : R} (h : IsUnit (tateNormalForm
   rw [tateNormalForm_Δ] at h
   exact (isUnit_pow_iff three_ne_zero).mp (isUnit_of_mul_isUnit_left h)
 
+/-- The discriminant of the specialized Tate normal form `Y² + XY + bY = X³ + bX²` is
+`b⁴(1 - 16b)`. -/
+theorem tateNormalForm_one_Δ (b : R) :
+    (tateNormalForm 1 b).Δ = b ^ 4 * (1 - 16 * b) := by
+  rw [tateNormalForm_Δ]
+  ring
+
+/-- The specialized Tate normal form `Y² + XY + bY = X³ + bX²` is elliptic if and only if
+`b(1 - 16b)` is a unit. -/
+theorem isUnit_tateNormalForm_one_Δ_iff {b : R} :
+    IsUnit (tateNormalForm 1 b).Δ ↔ IsUnit (b * (1 - 16 * b)) := by
+  rw [tateNormalForm_one_Δ, IsUnit.mul_iff, IsUnit.mul_iff, isUnit_pow_iff four_ne_zero]
+
 /-- The point `(0, 0)` lies on the Tate normal form. -/
 theorem equation_tateNormalForm_zero : (tateNormalForm a b).toAffine.Equation 0 0 :=
   Affine.equation_zero.mpr (tateNormalForm_a₆ a b)
+
+/-- The point `(-b, b(a - 1))` lies on the Tate normal form `Y² + aXY + bY = X³ + bX²`. -/
+theorem equation_tateNormalForm_neg_mul_sub_one :
+    (tateNormalForm a b).toAffine.Equation (-b) (b * (a - 1)) := by
+  rw [Affine.equation_iff]
+  simp only [tateNormalForm_a₁, tateNormalForm_a₂, tateNormalForm_a₃, tateNormalForm_a₄,
+    tateNormalForm_a₆]
+  ring
 
 /-- The point `(0, 0)` of the Tate normal form is nonsingular when `b ≠ 0`. -/
 theorem nonsingular_tateNormalForm_zero {b : R} (hb : b ≠ 0) :
@@ -170,6 +207,14 @@ variable (W : WeierstrassCurve R)
 @[simp]
 theorem evalEval_ψ₂_tateNormalForm_zero : (tateNormalForm a b).ψ₂.evalEval 0 0 = b := by
   simp [ψ₂]
+
+/-- On the Tate normal form `Y² + aXY + bY = X³ + bX²`, the `2`-division polynomial `ψ₂` takes the
+value `b(a - 1)` at `(-b, b(a - 1))`. -/
+@[simp]
+theorem evalEval_ψ₂_tateNormalForm_neg_mul_sub_one :
+    (tateNormalForm a b).ψ₂.evalEval (-b) (b * (a - 1)) = b * (a - 1) := by
+  simp only [ψ₂, Affine.evalEval_polynomialY, tateNormalForm_a₁, tateNormalForm_a₃]
+  ring
 
 /-- On the Tate normal form, the `3`-division polynomial `Ψ₃` takes the value `b³` at `0`. -/
 @[simp]
@@ -490,5 +535,126 @@ instance : curveULift.{u}.IsElliptic := by
   infer_instance
 
 end UniversalTate
+
+/-! ### The universal Tate normal form with `4 • (0, 0) = 0` -/
+
+namespace UniversalGammaOneFour
+
+open MvPolynomial (X)
+
+/-- The polynomial `B(1 - 16B)` in `ℤ[B]`, inverted to form the base ring of `Y₁(4)`. -/
+noncomputable abbrev discrFactor : MvPolynomial (Fin 1) ℤ :=
+  X 0 * (1 - 16 * X 0)
+
+/-- The coordinate ring `ℤ[B, (B(1 - 16B))⁻¹]` of `Y₁(4)`: a localization of the polynomial ring
+in one variable over `ℤ`. -/
+abbrev Ring : Type :=
+  Localization.Away discrFactor
+
+/-- The ring `ℤ[B, (B(1 - 16B))⁻¹]` is standard smooth of relative dimension `1` over `ℤ`. -/
+instance isStandardSmoothOfRelativeDimension :
+    Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ Ring := by
+  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (MvPolynomial (Fin 1) ℤ) Ring :=
+    Algebra.IsStandardSmoothOfRelativeDimension.localization_away discrFactor
+  exact Algebra.IsStandardSmoothOfRelativeDimension.trans 1 0 ℤ (MvPolynomial (Fin 1) ℤ) Ring
+
+/-- The parameter `B` in `ℤ[B, (B(1 - 16B))⁻¹]`. -/
+noncomputable def param : Ring :=
+  algebraMap (MvPolynomial (Fin 1) ℤ) Ring (X 0)
+
+/-- Two ring homomorphisms out of `ℤ[B, (B(1 - 16B))⁻¹]` are equal as soon as they agree on `B`. -/
+@[ext high]
+theorem Ring.ringHom_ext {S : Type*} [Semiring S] {f g : Ring →+* S}
+    (h : f param = g param) : f = g :=
+  IsLocalization.ringHom_ext (.powers discrFactor) <|
+    MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) <| Fin.forall_fin_one.mpr h
+
+/-- The universal elliptic Tate normal form `Y² + XY + BY = X³ + BX²` with `4 • (0, 0) = 0`, over
+`ℤ[B, (B(1 - 16B))⁻¹]`. -/
+noncomputable def curve : WeierstrassCurve Ring :=
+  tateNormalForm 1 param
+
+/-- The curve `Y² + XY + BY = X³ + BX²` over `ℤ[B, (B(1 - 16B))⁻¹]` is elliptic. -/
+instance isElliptic_curve : curve.IsElliptic where
+  isUnit := isUnit_tateNormalForm_one_Δ_iff.mpr <| by
+    simpa [param, discrFactor, map_ofNat] using
+      IsLocalization.Away.algebraMap_isUnit (S := Ring) discrFactor
+
+/-- The classifying homomorphism `ℤ[B, (B(1 - 16B))⁻¹] →+* R` sending `B` to `b`, for `b : R` with
+`tateNormalForm 1 b` elliptic. -/
+noncomputable def lift {R : Type*} [CommRing R] {b : R} (h : IsUnit (tateNormalForm 1 b).Δ) :
+    Ring →+* R :=
+  IsLocalization.Away.lift discrFactor
+    (g := MvPolynomial.eval₂Hom (Int.castRingHom R) ![b]) <| by
+    simpa only [discrFactor, map_mul, map_sub, map_one, map_ofNat, MvPolynomial.eval₂Hom_X',
+      Matrix.cons_val_zero] using isUnit_tateNormalForm_one_Δ_iff.mp h
+
+/-- `lift h` maps the parameter `B` to `b`. -/
+@[simp]
+theorem lift_param {R : Type*} [CommRing R] {b : R} (h : IsUnit (tateNormalForm 1 b).Δ) :
+    lift h param = b := by
+  simp [lift, param]
+
+/-- Every elliptic Tate normal form with `a = 1` is the base change of `UniversalGammaOneFour.curve`
+along `lift h`. -/
+@[simp]
+theorem map_lift {R : Type*} [CommRing R] {b : R} (h : IsUnit (tateNormalForm 1 b).Δ) :
+    curve.map (lift h) = tateNormalForm 1 b := by
+  simp [curve]
+
+/-- The homomorphism `ℤ[A, B][Δ⁻¹] →+* ℤ[B, (B(1 - 16B))⁻¹]` specializing the universal Tate normal
+form to `A = 1`, `B = param`. -/
+noncomputable def toUniversalTate : UniversalTate.Ring →+* Ring :=
+  UniversalTate.lift curve.isUnit_Δ
+
+/-- `toUniversalTate` sends the first parameter `A` of the universal Tate normal form to `1`. -/
+@[simp]
+theorem toUniversalTate_X_zero :
+    toUniversalTate (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 0)) = 1 :=
+  UniversalTate.lift_algebraMap_X_zero _
+
+/-- `toUniversalTate` sends the second parameter `B` of the universal Tate normal form to
+`param`. -/
+@[simp]
+theorem toUniversalTate_X_one :
+    toUniversalTate (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 1)) = param :=
+  UniversalTate.lift_algebraMap_X_one _
+
+/-- Composing `lift h` with `toUniversalTate` recovers `UniversalTate.lift h`. -/
+@[simp]
+theorem lift_comp_toUniversalTate {R : Type*} [CommRing R] {b : R}
+    (h : IsUnit (tateNormalForm 1 b).Δ) :
+    (lift h).comp toUniversalTate = UniversalTate.lift h := by
+  ext <;> simp
+
+universe u
+
+/-- The ring homomorphism `ULift ℤ[A, B][Δ⁻¹] →+* ULift ℤ[B, (B(1 - 16B))⁻¹]` specializing `A` to
+`1` and `B` to `param`. -/
+noncomputable def toUniversalTateULift :
+    ULift.{u} UniversalTate.Ring →+* ULift.{u} Ring :=
+  ULift.ringEquiv.symm.toRingHom.comp (toUniversalTate.comp ULift.ringEquiv.toRingHom)
+
+/-- `toUniversalTateULift` applies `toUniversalTate` to the underlying element. -/
+@[simp]
+theorem toUniversalTateULift_apply (x : ULift.{u} UniversalTate.Ring) :
+    toUniversalTateULift.{u} x = .up (toUniversalTate x.down) := by
+  simp [toUniversalTateULift, ULift.ringEquiv]
+
+/-- `toUniversalTateULift` maps the coefficient `a₁` of `UniversalTate.curveULift` to `1`. -/
+theorem toUniversalTateULift_a₁ :
+    toUniversalTateULift.{u} UniversalTate.curveULift.a₁ = 1 := by
+  rw [toUniversalTateULift_apply, UniversalTate.curveULift_a₁]
+  ext
+  simp [baseChange]
+
+/-- `toUniversalTateULift` maps the coefficient `a₃` of `UniversalTate.curveULift` to `param`. -/
+theorem toUniversalTateULift_a₃ :
+    toUniversalTateULift.{u} UniversalTate.curveULift.a₃ = .up param := by
+  rw [toUniversalTateULift_apply, UniversalTate.curveULift_a₃]
+  ext
+  simp [baseChange]
+
+end UniversalGammaOneFour
 
 end WeierstrassCurve
