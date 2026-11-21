@@ -32,8 +32,6 @@ orbit-scheme theory along this isomorphism shows that for a reduced finite-type 
 
 ## Main declarations
 
-* `TauCeti.SchemeAction.surjective_orbitMap_iff_orbit_eq_univ`: surjectivity of the orbit
-  morphism is equivalent to `orbit G x = Set.univ`.
 * `TauCeti.SchemeAction.orbit_eq_univ_iff_closedPoints_subset`: over a field, a finite-type orbit
   covers `X` iff it contains every closed point of `X`.
 * `TauCeti.SchemeAction.orbit_eq_univ_iff_forall_exists_smul`: over an algebraically closed field,
@@ -57,36 +55,6 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicG
 namespace TauCeti.SchemeAction
 
 universe u
-
-section GeneralBase
-
-variable {S : Scheme.{u}} (G : Over S) {X : Over S} [MonObj G] [ModObj G X]
-
-/-- The orbit morphism is surjective on underlying points if and only if the geometric orbit is
-all of `X`. -/
-theorem surjective_orbitMap_iff_orbit_eq_univ (x : 𝟙_ (Over S) ⟶ X) :
-    Surjective (orbitMap G x).left ↔ orbit G x = Set.univ :=
-  ⟨fun ⟨h⟩ ↦ orbit_def G x ▸ Set.range_eq_univ.mpr h,
-    fun h ↦ ⟨Set.range_eq_univ.mp (orbit_def G x ▸ h)⟩⟩
-
-/-- The orbit morphism is locally of finite type when `G` is locally of finite type over the
-base. -/
-theorem locallyOfFiniteType_orbitMap [LocallyOfFiniteType G.hom] (x : 𝟙_ (Over S) ⟶ X) :
-    LocallyOfFiniteType (orbitMap G x).left := by
-  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
-    rw [Over.w]
-    infer_instance
-  exact locallyOfFiniteType_of_comp _ X.hom
-
-/-- The orbit morphism is locally of finite presentation when `G` is locally of finite type over
-the base and `X` is locally Noetherian. -/
-theorem locallyOfFinitePresentation_orbitMap [LocallyOfFiniteType G.hom]
-    [IsLocallyNoetherian X.left] (x : 𝟙_ (Over S) ⟶ X) :
-    LocallyOfFinitePresentation (orbitMap G x).left := by
-  have : LocallyOfFiniteType (orbitMap G x).left := locallyOfFiniteType_orbitMap G x
-  infer_instance
-
-end GeneralBase
 
 section Field
 

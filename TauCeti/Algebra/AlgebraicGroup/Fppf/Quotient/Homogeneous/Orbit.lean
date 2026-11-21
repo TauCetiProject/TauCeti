@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
-public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Representable
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Classification
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Quotient
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Homogeneous
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
@@ -72,187 +70,12 @@ When `R = k` is an algebraically closed field and `H` is reduced and of finite t
 public noncomputable section
 
 open CategoryTheory AlgebraicGeometry Opposite MonoidalCategory CartesianMonoidalCategory
+open TauCeti.CommHopfAlgCat
 open scoped CategoryTheory.MonObj
 
 namespace TauCeti.SchemeAction
 
 universe u
-
-section HopfPointsBridge
-
-variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R)
-
-/-- Identify the convolution `A`-points of `H` with morphisms `Spec A ⟶ Spec H` over `Spec R`
-into `((hopfSpec (CommRingCat.of R)).obj (op H)).X`, preserving group multiplication. -/
-def hopfPointMulEquiv (A : CommAlgCat.{u} R) :
-    HopfAlgebra.points (R := R) (H := H) A ≃*
-      ((algSpec (CommRingCat.of R)).obj (op A) ⟶
-        ((hopfSpec (CommRingCat.of R)).obj (op H)).X) :=
-  ((_root_.CommHopfAlgCat.pointsFunctorIsoAlgebraPointsFunctor H).app A).groupIsoToMulEquiv
-
-/-- `hopfPointMulEquiv` agrees with Mathlib's `Spec.mapMulEquiv`. -/
-theorem hopfPointMulEquiv_apply (A : CommAlgCat.{u} R)
-    (g : HopfAlgebra.points (R := R) (H := H) A) :
-    hopfPointMulEquiv H A g = AlgebraicGeometry.Spec.mapMulEquiv g :=
-  _root_.CommHopfAlgCat.pointsFunctorIsoAlgebraPointsFunctor_hom_app_apply H A g
-
-/-- The underlying scheme morphism of `hopfPointMulEquiv H A g` is `Spec.map g`. -/
-theorem hopfPointMulEquiv_left (A : CommAlgCat.{u} R)
-    (g : HopfAlgebra.points (R := R) (H := H) A) :
-    (hopfPointMulEquiv H A g).left =
-      Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) := by
-  rw [hopfPointMulEquiv_apply, AlgHom.toRingHom_eq_coe]
-  exact TauCeti.CommHopfAlgCat.mapMulEquiv_left g
-
-/-- The natural isomorphism identifying the universe-lifted convolution points presheaf of `H` with
-the underlying presheaf of `CommAlgCat.pointsSheaf (Spec H)`. -/
-def hopfPointsPresheafIsoPointsSheaf :
-    HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ≅
-      (TauCeti.CommAlgCat.pointsSheaf ((hopfSpec (CommRingCat.of R)).obj (op H)).X).obj :=
-  Functor.isoWhiskerRight
-    (TauCeti.CommHopfAlgCat.pointsPresheafIsoSchemePointsPresheaf H)
-    uliftFunctor.{u + 1, u}
-
-/-- Evaluating `hopfPointsPresheafIsoPointsSheaf` on a lifted convolution `A`-point converts it via
-`hopfPointMulEquiv`. -/
-theorem hopfPointsPresheafIsoPointsSheaf_hom_app_apply
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
-    (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    (hopfPointsPresheafIsoPointsSheaf H).hom.app A (ULift.up g) =
-      ULift.up (hopfPointMulEquiv H A.unop.unop g) :=
-  congrArg ULift.up
-    ((TauCeti.CommHopfAlgCat.pointsPresheafIsoSchemePointsPresheaf_hom_app_apply H A g).trans
-      (hopfPointMulEquiv_apply H A.unop.unop g).symm)
-
-/-- Push a scheme morphism `Spec H ⟶ Y` over `Spec R` forward to a morphism from the convolution
-points presheaf of `H` to the affine fppf points sheaf of `Y`. -/
-def hopfPointsToPointsSheaf {Y : Over (Spec (CommRingCat.of R))}
-    (f : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y) :
-    HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (TauCeti.CommAlgCat.pointsSheaf Y).obj :=
-  (hopfPointsPresheafIsoPointsSheaf H).hom ≫ (TauCeti.CommAlgCat.pointsSheafMap f).hom
-
-/-- On `A`-valued convolution points, `hopfPointsToPointsSheaf H f` converts `g` via
-`hopfPointMulEquiv` and postcomposes with `f`. -/
-theorem hopfPointsToPointsSheaf_app_apply {Y : Over (Spec (CommRingCat.of R))}
-    (f : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y)
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
-    (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    (hopfPointsToPointsSheaf H f).app A (ULift.up g) =
-      ULift.up (hopfPointMulEquiv H A.unop.unop g ≫ f) := by
-  rw [hopfPointsToPointsSheaf, NatTrans.comp_app, types_comp_apply,
-    hopfPointsPresheafIsoPointsSheaf_hom_app_apply,
-    TauCeti.CommAlgCat.pointsSheafMap_hom_app_apply]
-
-/-- Two convolution `A`-points have the same image under `hopfPointsToPointsSheaf H f` if and only
-if their corresponding scheme points have the same postcomposition with `f`. -/
-theorem hopfPointsToPointsSheaf_app_eq_iff {Y : Over (Spec (CommRingCat.of R))}
-    (f : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y)
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
-    (g g' : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    (hopfPointsToPointsSheaf H f).app A (ULift.up g) =
-        (hopfPointsToPointsSheaf H f).app A (ULift.up g') ↔
-      hopfPointMulEquiv H A.unop.unop g ≫ f = hopfPointMulEquiv H A.unop.unop g' ≫ f := by
-  rw [hopfPointsToPointsSheaf_app_apply, hopfPointsToPointsSheaf_app_apply]
-  exact ULift.up_inj
-
-/-- `hopfPointsToPointsSheaf` is functorial in postcomposition on the target scheme. -/
-@[simp]
-theorem hopfPointsToPointsSheaf_comp {Y Z : Over (Spec (CommRingCat.of R))}
-    (f : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y) (h : Y ⟶ Z) :
-    hopfPointsToPointsSheaf H (f ≫ h) =
-      hopfPointsToPointsSheaf H f ≫ (TauCeti.CommAlgCat.pointsSheafMap h).hom := by
-  rw [hopfPointsToPointsSheaf, hopfPointsToPointsSheaf, TauCeti.CommAlgCat.pointsSheafMap_comp,
-    ObjectProperty.FullSubcategory.comp_hom, Category.assoc]
-
-/-- Recover a scheme morphism `Spec H ⟶ Y` over `Spec R` from a natural transformation out of the
-convolution points presheaf of `H` into the affine fppf points sheaf of `Y`. -/
-def pointsSheafHomOfHopfPoints {Y : Over (Spec (CommRingCat.of R))}
-    (α : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (TauCeti.CommAlgCat.pointsSheaf Y).obj) :
-    ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y :=
-  TauCeti.CommAlgCat.pointsSheafHomEquiv.symm
-    ⟨(hopfPointsPresheafIsoPointsSheaf H).inv ≫ α⟩
-
-/-- Converting a points map to a scheme morphism and back recovers the original points map. -/
-@[simp]
-theorem hopfPointsToPointsSheaf_pointsSheafHomOfHopfPoints {Y : Over (Spec (CommRingCat.of R))}
-    (α : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (TauCeti.CommAlgCat.pointsSheaf Y).obj) :
-    hopfPointsToPointsSheaf H (pointsSheafHomOfHopfPoints H α) = α := by
-  unfold hopfPointsToPointsSheaf pointsSheafHomOfHopfPoints
-  rw [TauCeti.CommAlgCat.pointsSheafMap_pointsSheafHomEquiv_symm]
-  exact Iso.hom_inv_id_assoc (hopfPointsPresheafIsoPointsSheaf H) α
-
-/-- Converting a scheme morphism to a points map and back recovers the original scheme morphism. -/
-@[simp]
-theorem pointsSheafHomOfHopfPoints_hopfPointsToPointsSheaf {Y : Over (Spec (CommRingCat.of R))}
-    (f : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y) :
-    pointsSheafHomOfHopfPoints H (hopfPointsToPointsSheaf H f) = f := by
-  apply TauCeti.CommAlgCat.pointsSheafMap_injective
-  unfold pointsSheafHomOfHopfPoints hopfPointsToPointsSheaf
-  rw [TauCeti.CommAlgCat.pointsSheafMap_pointsSheafHomEquiv_symm]
-  ext1
-  exact Iso.inv_hom_id_assoc (hopfPointsPresheafIsoPointsSheaf H)
-    (TauCeti.CommAlgCat.pointsSheafMap f).hom
-
-/-- Two morphisms `Spec H ⟶ Y` over `Spec R` agree if they induce the same map on convolution
-points. -/
-theorem hopfPointsToPointsSheaf_injective {Y : Over (Spec (CommRingCat.of R))}
-    {f g : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y}
-    (h : hopfPointsToPointsSheaf H f = hopfPointsToPointsSheaf H g) :
-    f = g := by
-  rw [← pointsSheafHomOfHopfPoints_hopfPointsToPointsSheaf H f,
-    ← pointsSheafHomOfHopfPoints_hopfPointsToPointsSheaf H g, h]
-
-/-- Pushing a locally surjective scheme morphism forward along `hopfPointsToPointsSheaf` preserves
-fppf local surjectivity. -/
-instance isLocallySurjective_hopfPointsToPointsSheaf {Y : Over (Spec (CommRingCat.of R))}
-    (f : ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Y)
-    [Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology R)
-      (TauCeti.CommAlgCat.pointsSheafMap f).hom] :
-    Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology R)
-      (hopfPointsToPointsSheaf H f) :=
-  Presheaf.isLocallySurjective_comp (TauCeti.CommAlgCat.fppfTopology R)
-    (hopfPointsPresheafIsoPointsSheaf H).hom (TauCeti.CommAlgCat.pointsSheafMap f).hom
-
-/-- The quotient morphism `Spec H ⟶ Q` induced by an fppf sheaf isomorphism identifying `G / N`
-with the points sheaf of a representing scheme `Q`. -/
-def quotientMapOfRep (I : HopfIdeal R H) {Q : Over (Spec (CommRingCat.of R))}
-    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ TauCeti.CommAlgCat.pointsSheaf Q) :
-    ((hopfSpec (CommRingCat.of R)).obj (op H)).X ⟶ Q :=
-  pointsSheafHomOfHopfPoints H
-    (_root_.CommHopfAlgCat.fppfHomogeneousQuotientProjection H I ≫ e.hom.hom)
-
-/-- On convolution points, `quotientMapOfRep` agrees with the fppf quotient projection composed
-with the representing isomorphism. -/
-@[simp]
-theorem hopfPointsToPointsSheaf_quotientMapOfRep (I : HopfIdeal R H)
-    {Q : Over (Spec (CommRingCat.of R))}
-    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ TauCeti.CommAlgCat.pointsSheaf Q) :
-    hopfPointsToPointsSheaf H (quotientMapOfRep H I e) =
-      _root_.CommHopfAlgCat.fppfHomogeneousQuotientProjection H I ≫ e.hom.hom :=
-  hopfPointsToPointsSheaf_pointsSheafHomOfHopfPoints H _
-
-/-- The scheme quotient morphism induced by any representing model of `G / N` is fppf locally
-surjective on affine points sheaves. -/
-instance isLocallySurjective_quotientMapOfRep (I : HopfIdeal R H)
-    {Q : Over (Spec (CommRingCat.of R))}
-    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ TauCeti.CommAlgCat.pointsSheaf Q) :
-    Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology R)
-      (TauCeti.CommAlgCat.pointsSheafMap (quotientMapOfRep H I e)).hom := by
-  unfold quotientMapOfRep pointsSheafHomOfHopfPoints
-  rw [TauCeti.CommAlgCat.pointsSheafMap_pointsSheafHomEquiv_symm]
-  have : IsIso e.hom.hom :=
-    ((sheafToPresheaf (TauCeti.CommAlgCat.fppfTopology R) (Type (u + 1))).mapIso e).isIso_hom
-  have : Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology R)
-      (_root_.CommHopfAlgCat.fppfHomogeneousQuotientProjection H I ≫ e.hom.hom) :=
-    Presheaf.isLocallySurjective_comp (TauCeti.CommAlgCat.fppfTopology R) _ _
-  exact Presheaf.isLocallySurjective_comp (TauCeti.CommAlgCat.fppfTopology R)
-    (hopfPointsPresheafIsoPointsSheaf H).inv
-    (_root_.CommHopfAlgCat.fppfHomogeneousQuotientProjection H I ≫ e.hom.hom)
-
-end HopfPointsBridge
 
 section StabilizerIdeal
 
@@ -315,11 +138,7 @@ spectrum `Spec (H ⧸ stabilizerHopfIdeal H x)` with the scheme-theoretic stabil
 def quotientSpecStabilizerHopfIdealIso :
     TauCeti.CommHopfAlgCat.quotientSpec H (stabilizerHopfIdeal H x) ≅
       Grp.mk (stabilizer ((hopfSpec (CommRingCat.of R)).obj (op H)).X x) :=
-  (Subobject.underlyingIso
-      (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x))).symm ≪≫
-    Subobject.underlying.mapIso
-      (eqToIso (subobject_quotientSpecι_eq_stabilizerInclGrpHom H x)) ≪≫
-    Subobject.underlyingIso (stabilizerInclGrpHom H x)
+  Subobject.isoOfMkEqMk _ _ (subobject_quotientSpecι_eq_stabilizerInclGrpHom H x)
 
 /-- The isomorphism `quotientSpecStabilizerHopfIdealIso` intertwines the stabilizer inclusion
 with the quotient closed-subgroup immersion. -/
@@ -327,32 +146,7 @@ with the quotient closed-subgroup immersion. -/
 theorem quotientSpecStabilizerHopfIdealIso_hom_comp :
     (quotientSpecStabilizerHopfIdealIso H x).hom ≫ stabilizerInclGrpHom H x =
       TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x) := by
-  have h1 : (Subobject.underlyingIso (stabilizerInclGrpHom H x)).hom ≫ stabilizerInclGrpHom H x =
-      (Subobject.mk (stabilizerInclGrpHom H x)).arrow :=
-    Subobject.underlyingIso_hom_comp_eq_mk (stabilizerInclGrpHom H x)
-  have h2 : Subobject.underlying.map
-        (eqToHom (subobject_quotientSpecι_eq_stabilizerInclGrpHom H x)) ≫
-      (Subobject.mk (stabilizerInclGrpHom H x)).arrow =
-      (Subobject.mk (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x))).arrow := by
-    rw [eqToHom_map]
-    exact Subobject.arrow_congr _ _ (subobject_quotientSpecι_eq_stabilizerInclGrpHom H x)
-  calc
-    (quotientSpecStabilizerHopfIdealIso H x).hom ≫ stabilizerInclGrpHom H x
-        = (Subobject.underlyingIso
-            (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x))).inv ≫
-          Subobject.underlying.map
-            (eqToHom (subobject_quotientSpecι_eq_stabilizerInclGrpHom H x)) ≫
-          (Subobject.underlyingIso (stabilizerInclGrpHom H x)).hom ≫
-          stabilizerInclGrpHom H x := by
-            simp only [quotientSpecStabilizerHopfIdealIso, Iso.trans_hom, Iso.symm_hom,
-              Functor.mapIso_hom, eqToIso.hom, Category.assoc]
-    _ = (Subobject.underlyingIso
-            (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x))).inv ≫
-          (Subobject.mk
-            (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x))).arrow := by
-            rw [h1, h2]
-    _ = TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x) :=
-          Subobject.underlyingIso_arrow _
+  rw [quotientSpecStabilizerHopfIdealIso, Subobject.isoOfMkEqMk_hom, Subobject.ofMkLEMk_comp]
 
 /-- The inverse of `quotientSpecStabilizerHopfIdealIso` intertwines the quotient closed-subgroup
 immersion with the stabilizer inclusion. -/
@@ -376,27 +170,6 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff
   let e := quotientSpecStabilizerHopfIdealIso H x
   rw [← stabilizer.exists_lift_iff, TauCeti.CommHopfAlgCat.quotientPointsSubgroup,
     MonoidHom.mem_range]
-  have hdom : ∀ q : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A,
-      hopfPointMulEquiv H A (TauCeti.CommHopfAlgCat.quotientPointsHom H I A q) =
-        hopfPointMulEquiv (_root_.CommHopfAlgCat.quotient H I) A q ≫
-          (TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom := fun q ↦ by
-    apply Over.OverMorphism.ext
-    have hleft : ((TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom).left =
-        Spec.map (CommRingCat.ofHom
-          (_root_.CommHopfAlgCat.mkQuotient H I).hom.toAlgHom.toRingHom) := by
-      rw [TauCeti.CommHopfAlgCat.quotientSpecι_def]
-      rfl
-    have hring : CommRingCat.ofHom
-        (TauCeti.CommHopfAlgCat.quotientPointsHom H I A q).ofConv.toRingHom =
-        CommRingCat.ofHom (_root_.CommHopfAlgCat.mkQuotient H I).hom.toAlgHom.toRingHom ≫
-          CommRingCat.ofHom q.ofConv.toRingHom := by
-      rw [← CommRingCat.ofHom_comp]
-      congr 1
-      ext a
-      rw [TauCeti.CommHopfAlgCat.quotientPointsHom_apply]
-      rfl
-    rw [Over.comp_left, hopfPointMulEquiv_left, hopfPointMulEquiv_left, hleft]
-    exact (congrArg Spec.map hring).trans (Spec.map_comp _ _)
   constructor
   · rintro ⟨q, rfl⟩
     refine ⟨hopfPointMulEquiv (_root_.CommHopfAlgCat.quotient H I) A q ≫ e.hom.hom.hom, ?_⟩
@@ -405,12 +178,12 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff
         stabilizer.incl ((hopfSpec (CommRingCat.of R)).obj (op H)).X x =
         (TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom :=
       congrArg (fun f ↦ f.hom.hom) (quotientSpecStabilizerHopfIdealIso_hom_comp H x)
-    rw [hcomp, ← hdom q]
+    rw [hcomp, ← hopfPointMulEquiv_quotientPointsHom H I A q]
   · rintro ⟨s, hs⟩
     let q : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A :=
       (hopfPointMulEquiv (_root_.CommHopfAlgCat.quotient H I) A).symm (s ≫ e.inv.hom.hom)
     refine ⟨q, (hopfPointMulEquiv H A).injective ?_⟩
-    rw [hdom q, MulEquiv.apply_symm_apply, Category.assoc]
+    rw [hopfPointMulEquiv_quotientPointsHom H I A q, MulEquiv.apply_symm_apply, Category.assoc]
     have hcomp : e.inv.hom.hom ≫
         (TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom =
         stabilizer.incl ((hopfSpec (CommRingCat.of R)).obj (op H)).X x :=
@@ -665,11 +438,11 @@ theorem quotientMapOfRep_comp_representedQuotientIsoOrbitOver_hom [_root_.IsRedu
     {Q : Over (Spec (.of k))}
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q) :
-    quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
+    _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
         (representedQuotientIsoOrbitOver H x e).hom =
       orbitProjection ((hopfSpec (CommRingCat.of k)).obj (op H)).X x := by
   apply hopfPointsToPointsSheaf_injective H
-  rw [hopfPointsToPointsSheaf_comp, hopfPointsToPointsSheaf_quotientMapOfRep]
+  rw [hopfPointsToPointsSheaf_comp, _root_.CommHopfAlgCat.hopfPointsToPointsSheaf_quotientMapOfRep]
   have hmap :
       (TauCeti.CommAlgCat.pointsSheafMap
           (representedQuotientIsoOrbitOver H x e).hom).hom =
@@ -692,14 +465,14 @@ theorem isModHom_representedQuotientIsoOrbitOver_hom [_root_.IsReduced H]
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q)
     (hq : μ[((hopfSpec (CommRingCat.of k)).obj (op H)).X] ≫
-        quotientMapOfRep H (stabilizerHopfIdeal H x) e =
+        _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e =
       ((hopfSpec (CommRingCat.of k)).obj (op H)).X ◁
-          quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
+          _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
         γ[((hopfSpec (CommRingCat.of k)).obj (op H)).X,Q]) :
     IsModHom ((hopfSpec (CommRingCat.of k)).obj (op H)).X
       (representedQuotientIsoOrbitOver H x e).hom := by
   refine TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_mul_comp
-    (quotientMapOfRep H (stabilizerHopfIdeal H x) e) hq
+    (_root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e) hq
     (representedQuotientIsoOrbitOver H x e).hom ?_
   rw [quotientMapOfRep_comp_representedQuotientIsoOrbitOver_hom]
   exact mul_orbitProjection _ x
@@ -712,8 +485,8 @@ def representedQuotientIsoOfOrbitEqUniv [_root_.IsReduced H] [IsReduced X.left]
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q) :
     Q ≅ X :=
-  TauCeti.CommAlgCat.pointsSheafIsoEquiv.symm
-    (e.symm ≪≫ fppfHomogeneousQuotientIsoPointsSheaf H x h)
+  representedQuotientIsoOrbitOver H x e ≪≫
+    orbitInclusionIso ((hopfSpec (CommRingCat.of k)).obj (op H)).X x h
 
 /-- The scheme isomorphism `representedQuotientIsoOfOrbitEqUniv` intertwines the quotient map
 `Spec H ⟶ Q` with the orbit morphism `Spec H ⟶ X`. -/
@@ -724,24 +497,12 @@ theorem quotientMapOfRep_comp_representedQuotientIsoOfOrbitEqUniv_hom [_root_.Is
     {Q : Over (Spec (.of k))}
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q) :
-    quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
+    _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
         (representedQuotientIsoOfOrbitEqUniv H x h e).hom =
       orbitMap ((hopfSpec (CommRingCat.of k)).obj (op H)).X x := by
-  apply hopfPointsToPointsSheaf_injective H
-  rw [hopfPointsToPointsSheaf_comp, hopfPointsToPointsSheaf_quotientMapOfRep]
-  have hmap :
-      (TauCeti.CommAlgCat.pointsSheafMap
-          (representedQuotientIsoOfOrbitEqUniv H x h e).hom).hom =
-        e.inv.hom ≫ (fppfHomogeneousQuotientToPointsSheaf H x).hom :=
-    congrArg (fun α : TauCeti.CommAlgCat.pointsSheaf Q ⟶ _ ↦ α.hom)
-      (TauCeti.CommAlgCat.pointsSheafMap_pointsSheafIsoEquiv_symm_hom
-        (e.symm ≪≫ fppfHomogeneousQuotientIsoPointsSheaf H x h))
-  rw [hmap, Category.assoc, ← Category.assoc e.hom.hom]
-  have he : e.hom.hom ≫ e.inv.hom = 𝟙 _ :=
-    congrArg (fun α : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ⟶
-        _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ↦ α.hom)
-      e.hom_inv_id
-  rw [he, Category.id_comp, fppfHomogeneousQuotientProjection_comp_toPointsSheaf]
+  rw [representedQuotientIsoOfOrbitEqUniv, Iso.trans_hom, ← Category.assoc,
+    quotientMapOfRep_comp_representedQuotientIsoOrbitOver_hom, orbitInclusionIso_hom,
+    orbitProjection_inclusion]
 
 /-- When a representing quotient scheme `Q` carries a `G`-action making the quotient map
 equivariant, the isomorphism `Q ≅ X` onto a reduced homogeneous scheme `X` is `G`-equivariant. -/
@@ -753,23 +514,25 @@ theorem isModHom_representedQuotientIsoOfOrbitEqUniv_hom [_root_.IsReduced H]
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q)
     (hq : μ[((hopfSpec (CommRingCat.of k)).obj (op H)).X] ≫
-        quotientMapOfRep H (stabilizerHopfIdeal H x) e =
+        _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e =
       ((hopfSpec (CommRingCat.of k)).obj (op H)).X ◁
-          quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
+          _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x) e ≫
         γ[((hopfSpec (CommRingCat.of k)).obj (op H)).X,Q]) :
     IsModHom ((hopfSpec (CommRingCat.of k)).obj (op H)).X
       (representedQuotientIsoOfOrbitEqUniv H x h e).hom := by
-  refine TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_mul_comp
-    (quotientMapOfRep H (stabilizerHopfIdeal H x) e) hq
-    (representedQuotientIsoOfOrbitEqUniv H x h e).hom ?_
-  rw [quotientMapOfRep_comp_representedQuotientIsoOfOrbitEqUniv_hom]
-  exact mul_orbitMap _ x
+  have : IsModHom ((hopfSpec (CommRingCat.of k)).obj (op H)).X
+      (representedQuotientIsoOrbitOver H x e).hom :=
+    isModHom_representedQuotientIsoOrbitOver_hom H x e hq
+  rw [representedQuotientIsoOfOrbitEqUniv, Iso.trans_hom]
+  infer_instance
 
 section ProjectiveOrbitComparison
 
 attribute [local instance] Comodule.exteriorPower
 
-private def projectiveOrbitPointsSheafIsoPointsSheaf
+/-- Identify the projective-orbit points sheaf with `CommAlgCat.pointsSheaf` of the projective
+orbit scheme over `Spec k`. -/
+def projectiveOrbitPointsSheafIsoPointsSheaf
     {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
     (m : M) (hm : Module.IsUnimodular k m) :
     Comodule.projectiveOrbitPointsSheaf (H := H) m hm ≅
@@ -777,46 +540,29 @@ private def projectiveOrbitPointsSheafIsoPointsSheaf
   (fullyFaithfulSheafToPresheaf (TauCeti.CommAlgCat.fppfTopology k) (Type (u + 1))).preimageIso
     (eqToIso (Comodule.projectiveOrbitPointsSheaf_obj (H := H) m hm))
 
-omit [LocallyOfFiniteType X.hom] [CompactSpace X.left] in
-private theorem quotientMapOfRep_projectiveOrbit_left
+/-- Lift the projective-orbit map `Comodule.toProjectiveOrbit` to a morphism over `Spec k` out of
+the underlying scheme of `hopfSpec H`. -/
+def toProjectiveOrbitOver
     {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-    [_root_.IsReduced H] (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          TauCeti.CommHopfAlgCat.quotientPointsSubgroup H (stabilizerHopfIdeal H x) A) =
-        QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (Comodule.matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (Comodule.matrixCoefficient (C := H) φ m)) :
-    (quotientMapOfRep H (stabilizerHopfIdeal H x)
-        (Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-            (stabilizerHopfIdeal H x) m hm hcoset ≪≫
-          projectiveOrbitPointsSheafIsoPointsSheaf H m hm)).left =
-      eqToHom (hopfSpec_obj_X_left k H) ≫ Comodule.toProjectiveOrbit (H := H) m hm := by
-  let p : ((hopfSpec (CommRingCat.of k)).obj (op H)).X ⟶
+    (m : M) (hm : Module.IsUnimodular k m) :
+    ((hopfSpec (CommRingCat.of k)).obj (op H)).X ⟶
       Over.mk (Comodule.projectiveOrbitToSpec (H := H) m hm) :=
-    Over.homMk (eqToHom (hopfSpec_obj_X_left k H) ≫ Comodule.toProjectiveOrbit (H := H) m hm) (by
-      rw [Category.assoc]
-      exact (congrArg (eqToHom (hopfSpec_obj_X_left k H) ≫ ·)
-        (Comodule.toProjectiveOrbit_projectiveOrbitToSpec (H := H) m hm)).trans
-        (hopfSpec_obj_X_hom k H).symm)
-  suffices h : quotientMapOfRep H (stabilizerHopfIdeal H x)
-      (Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-          (stabilizerHopfIdeal H x) m hm hcoset ≪≫
-        projectiveOrbitPointsSheafIsoPointsSheaf H m hm) = p from congrArg Over.Hom.left h
-  apply hopfPointsToPointsSheaf_injective H
-  rw [hopfPointsToPointsSheaf_quotientMapOfRep, Iso.trans_hom,
-    Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom]
-  have hcomp :
-      _root_.CommHopfAlgCat.fppfHomogeneousQuotientProjection H (stabilizerHopfIdeal H x) ≫
-          (Comodule.fppfHomogeneousQuotientToProjectiveOrbitPoints
-              (stabilizerHopfIdeal H x) m hm hcoset ≫
-            (projectiveOrbitPointsSheafIsoPointsSheaf H m hm).hom).hom =
-        Comodule.toProjectiveOrbitPoints (H := H) m hm ≫
-          (projectiveOrbitPointsSheafIsoPointsSheaf H m hm).hom.hom := by
-    rw [ObjectProperty.FullSubcategory.comp_hom, ← Category.assoc,
-      Comodule.fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints]
-  rw [hcomp]
+  Over.homMk (eqToHom (hopfSpec_obj_X_left k H) ≫ Comodule.toProjectiveOrbit (H := H) m hm) (by
+    rw [Category.assoc]
+    exact (congrArg (eqToHom (hopfSpec_obj_X_left k H) ≫ ·)
+      (Comodule.toProjectiveOrbit_projectiveOrbitToSpec (H := H) m hm)).trans
+      (hopfSpec_obj_X_hom k H).symm)
+
+omit [LocallyOfFiniteType X.hom] [CompactSpace X.left] in
+/-- On convolution points, `Comodule.toProjectiveOrbitPoints` transported along
+`projectiveOrbitPointsSheafIsoPointsSheaf` agrees with `hopfPointsToPointsSheaf` applied to
+`toProjectiveOrbitOver`. -/
+theorem toProjectiveOrbitPoints_comp_projectiveOrbitPointsSheafIsoPointsSheaf_hom
+    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+    (m : M) (hm : Module.IsUnimodular k m) :
+    Comodule.toProjectiveOrbitPoints (H := H) m hm ≫
+        (projectiveOrbitPointsSheafIsoPointsSheaf H m hm).hom.hom =
+      hopfPointsToPointsSheaf H (toProjectiveOrbitOver H m hm) := by
   ext A ⟨g⟩
   let g' : HopfAlgebra.points (R := k) (H := H) A.unop.unop := g
   let y : (((algSpec (CommRingCat.of k)).op ⋙
@@ -848,12 +594,41 @@ private theorem quotientMapOfRep_projectiveOrbit_left
         (projectiveOrbitPointsSheafIsoPointsSheaf H m hm).hom.hom).app A (ULift.up g') = y := by
     rw [NatTrans.comp_app, types_comp_apply]
     exact hcast
-  have hrhs : y = ULift.up (hopfPointMulEquiv H A.unop.unop g' ≫ p) := by
+  have hrhs : y = ULift.up (hopfPointMulEquiv H A.unop.unop g' ≫ toProjectiveOrbitOver H m hm) := by
     refine congrArg ULift.up (Over.OverMorphism.ext ?_)
     rw [Over.comp_left, hopfPointMulEquiv_left]
     exact congrArg (Spec.map (CommRingCat.ofHom g'.ofConv.toRingHom) ≫ ·)
       (Category.id_comp (Comodule.toProjectiveOrbit (H := H) m hm)).symm
-  exact (hlhs.trans hrhs).trans (hopfPointsToPointsSheaf_app_apply H p A g').symm
+  exact (hlhs.trans hrhs).trans
+    (hopfPointsToPointsSheaf_app_apply H (toProjectiveOrbitOver H m hm) A g').symm
+
+omit [LocallyOfFiniteType X.hom] [CompactSpace X.left] in
+private theorem quotientMapOfRep_projectiveOrbit_left
+    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+    [_root_.IsReduced H] (m : M) (hm : Module.IsUnimodular k m)
+    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+          TauCeti.CommHopfAlgCat.quotientPointsSubgroup H (stabilizerHopfIdeal H x) A) =
+        QuotientGroup.mk h ↔
+        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
+          h.ofConv (Comodule.matrixCoefficient (C := H) φ m) =
+            c * g.ofConv (Comodule.matrixCoefficient (C := H) φ m)) :
+    (_root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x)
+        (Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
+            (stabilizerHopfIdeal H x) m hm hcoset ≪≫
+          projectiveOrbitPointsSheafIsoPointsSheaf H m hm)).left =
+      eqToHom (hopfSpec_obj_X_left k H) ≫ Comodule.toProjectiveOrbit (H := H) m hm := by
+  suffices h : _root_.CommHopfAlgCat.quotientMapOfRep H (stabilizerHopfIdeal H x)
+      (Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints
+          (stabilizerHopfIdeal H x) m hm hcoset ≪≫
+        projectiveOrbitPointsSheafIsoPointsSheaf H m hm) =
+      toProjectiveOrbitOver H m hm from congrArg Over.Hom.left h
+  apply hopfPointsToPointsSheaf_injective H
+  rw [_root_.CommHopfAlgCat.hopfPointsToPointsSheaf_quotientMapOfRep, Iso.trans_hom,
+    Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom,
+    ObjectProperty.FullSubcategory.comp_hom, ← Category.assoc,
+    Comodule.fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints,
+    toProjectiveOrbitPoints_comp_projectiveOrbitPointsSheafIsoPointsSheaf_hom]
 
 /-- **Every orbit scheme is isomorphic to Chevalley's projective-orbit quotient model.** For a
 reduced finite-type affine group `Spec H` acting on a finite-type scheme over an algebraically

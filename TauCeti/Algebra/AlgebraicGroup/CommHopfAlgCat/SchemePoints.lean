@@ -64,6 +64,10 @@ along relative spectrum.
   between convolution points and relative-spectrum points.
 * `TauCeti.CommHopfAlgCat.pointsPresheafIsoSchemePointsPresheaf`: the natural comparison between
   convolution points and relative-spectrum points.
+* `TauCeti.CommHopfAlgCat.hopfPointMulEquiv`: the multiplicative equivalence between
+  convolution `A`-points of `H` and morphisms `Spec A ⟶ Spec H` over `Spec R`.
+* `TauCeti.CommHopfAlgCat.hopfPointMulEquiv_mapPointsFunctor`: contravariant naturality of
+  `hopfPointMulEquiv` in the coordinate Hopf algebra.
 -/
 
 public section
@@ -586,5 +590,42 @@ theorem pointsPresheafIsoSchemePointsPresheaf_inv_app_apply
     (pointsPresheafIsoSchemePointsPresheaf H).inv.app A p =
       AlgebraicGeometry.Spec.mapMulEquiv.symm p :=
   (rfl)
+
+/-- Identify the convolution `A`-points of `H` with morphisms `Spec A ⟶ Spec H` over `Spec R`
+into `((hopfSpec (CommRingCat.of R)).obj (Opposite.op H)).X`, preserving group multiplication. -/
+noncomputable def hopfPointMulEquiv (H : _root_.CommHopfAlgCat.{u} R) (A : CommAlgCat.{u} R) :
+    HopfAlgebra.points (R := R) (H := H) A ≃*
+      ((algSpec (CommRingCat.of R)).obj (Opposite.op A) ⟶
+        ((hopfSpec (CommRingCat.of R)).obj (Opposite.op H)).X) :=
+  ((_root_.CommHopfAlgCat.pointsFunctorIsoAlgebraPointsFunctor H).app A).groupIsoToMulEquiv
+
+/-- `hopfPointMulEquiv` agrees with Mathlib's `Spec.mapMulEquiv`. -/
+theorem hopfPointMulEquiv_apply (H : _root_.CommHopfAlgCat.{u} R) (A : CommAlgCat.{u} R)
+    (g : HopfAlgebra.points (R := R) (H := H) A) :
+    hopfPointMulEquiv H A g = AlgebraicGeometry.Spec.mapMulEquiv g :=
+  _root_.CommHopfAlgCat.pointsFunctorIsoAlgebraPointsFunctor_hom_app_apply H A g
+
+/-- The underlying scheme morphism of `hopfPointMulEquiv H A g` is `Spec.map g`. -/
+theorem hopfPointMulEquiv_left (H : _root_.CommHopfAlgCat.{u} R) (A : CommAlgCat.{u} R)
+    (g : HopfAlgebra.points (R := R) (H := H) A) :
+    (hopfPointMulEquiv H A g).left =
+      Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) := by
+  rw [hopfPointMulEquiv_apply, AlgHom.toRingHom_eq_coe]
+  exact mapMulEquiv_left g
+
+/-- `hopfPointMulEquiv` is contravariantly natural in the coordinate Hopf algebra: pulling back
+an `A`-point along `φ : H ⟶ K` corresponds to postcomposition with `hopfSpec.map φ.op`. -/
+theorem hopfPointMulEquiv_mapPointsFunctor
+    {H K : _root_.CommHopfAlgCat.{u} R} (A : CommAlgCat.{u} R) (φ : H ⟶ K)
+    (q : HopfAlgebra.points (R := R) (H := K) A) :
+    hopfPointMulEquiv H A ((_root_.CommHopfAlgCat.Hom.mapPointsFunctor φ).app A q) =
+      hopfPointMulEquiv K A q ≫
+        ((hopfSpec (CommRingCat.of R)).map φ.op).hom.hom := by
+  have h := mapMulEquiv_mapDomain A φ.hom q
+  rw [BialgHom.mapDomain_apply] at h
+  rw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    hopfPointMulEquiv_apply, hopfPointMulEquiv_apply]
+  refine h.trans (congrArg (_ ≫ ·) (Over.OverMorphism.ext ?_))
+  rfl
 
 end TauCeti.CommHopfAlgCat
