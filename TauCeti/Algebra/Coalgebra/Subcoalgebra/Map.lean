@@ -24,6 +24,7 @@ coalgebra morphisms.
 * `TauCeti.Subcoalgebra.map`: the image of a subcoalgebra under a coalgebra morphism.
 * `TauCeti.Subcoalgebra.mem_map`: membership in an image subcoalgebra.
 * `TauCeti.Subcoalgebra.map_finite`: finite generation is preserved by image.
+* `CoalgHom.range`: the image of a coalgebra morphism as a subcoalgebra of its codomain.
 
 ## References
 
@@ -155,3 +156,50 @@ theorem map_finite (f : C →ₗc[R] D) (A : Subcoalgebra R C)
 end Subcoalgebra
 
 end TauCeti
+
+namespace CoalgHom
+
+open TauCeti
+
+universe u v w
+
+variable {R : Type u} {C : Type v} {D : Type w}
+variable [CommSemiring R]
+variable [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
+variable [AddCommMonoid D] [Module R D] [CoalgebraStruct R D]
+
+/-- The image of a coalgebra morphism as a subcoalgebra of the codomain. -/
+@[expose] def range (f : C →ₗc[R] D) : Subcoalgebra R D :=
+  (⊤ : Subcoalgebra R C).map f
+
+/-- The underlying submodule of the range of a coalgebra morphism is its linear range. -/
+@[simp]
+theorem range_toSubmodule (f : C →ₗc[R] D) :
+    f.range.toSubmodule = LinearMap.range f.toLinearMap :=
+  Subcoalgebra.map_top_toSubmodule f
+
+/-- Membership in the range of a coalgebra morphism. -/
+@[simp]
+theorem mem_range {f : C →ₗc[R] D} {d : D} : d ∈ f.range ↔ ∃ c, f c = d := by
+  rw [← Subcoalgebra.mem_toSubmodule, range_toSubmodule]
+  rfl
+
+/-- A coalgebra morphism lands in its range. -/
+theorem mem_range_self (f : C →ₗc[R] D) (c : C) : f c ∈ f.range :=
+  mem_range.2 ⟨c, rfl⟩
+
+/-- The range of a coalgebra morphism is contained in `B` exactly when each value of the
+morphism belongs to `B`. -/
+theorem range_le_iff {f : C →ₗc[R] D} {B : Subcoalgebra R D} :
+    f.range ≤ B ↔ ∀ c, f c ∈ B := by
+  rw [range, Subcoalgebra.map_le_iff]
+  simp
+
+/-- The range of a coalgebra morphism out of a finitely generated module is finitely generated
+as an `R`-module. -/
+theorem range_finite (f : C →ₗc[R] D) [Module.Finite R C] :
+    Module.Finite R f.range.toSubmodule := by
+  rw [range_toSubmodule]
+  infer_instance
+
+end CoalgHom
