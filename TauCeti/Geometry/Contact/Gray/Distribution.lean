@@ -39,7 +39,9 @@ jointly smooth in time and point
 point where the hyperplane does not move with time
 (`TauCeti.IsContactDistributionFamily.distributionGrayVectorField_eq_zero`). For the kernels of a
 smooth family of contact forms on `M` it is the Gray vector field of the forms
-(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`).
+(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`). Its flow carries `ξ_s` to `ξ_t`
+(`TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`, in
+`TauCeti.Geometry.Contact.Gray.Stability`).
 
 ## Main definitions
 
