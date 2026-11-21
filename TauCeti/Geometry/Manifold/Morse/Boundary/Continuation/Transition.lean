@@ -224,12 +224,9 @@ before `b`, then for `a < b` the curve `u ↦ φ_{τ, u} x` of its time-dependen
 `a`, the orbit of `φ_{τ, a} x` under the flow of `X`, shifted by `a`. -/
 theorem eqOn_timeDependentFlowOf_flow_of_lt (hYX : ∀ u < b, Y u = X) (hab : a < b) :
     EqOn (fun u ↦ timeDependentFlowOf Y τ u x)
-      (fun u ↦ hX.flow (u - a) (timeDependentFlowOf Y τ a x)) (Iic a) := fun u (hu : u ≤ a) ↦
-  hX.eqOn_flow_of_isMIntegralCurveOn
-    ((isMIntegralCurveOn_timeDependentFlowOf
-      (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY
-      (T := Iio b) hYX).mono Ioo_subset_Iio_self)
-    (a := u - 1) ⟨by linarith, hab⟩ ⟨by linarith, hu.trans_lt hab⟩
+      (fun u ↦ hX.flow (u - a) (timeDependentFlowOf Y τ a x)) (Iic a) :=
+  hX.eqOn_flow_of_isMIntegralCurveOn_Iio (isMIntegralCurveOn_timeDependentFlowOf
+    (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY (T := Iio b) hYX) hab
 
 /-- **After a time `a` from which on a time-dependent field is `X`, its flow follows the flow of
 `X`.** If the `C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times after
@@ -237,12 +234,9 @@ theorem eqOn_timeDependentFlowOf_flow_of_lt (hYX : ∀ u < b, Y u = X) (hab : a 
 the orbit of `φ_{τ, b} x` under the flow of `X`, shifted by `b`. -/
 theorem eqOn_timeDependentFlowOf_flow_of_gt (hYX : ∀ u > a, Y u = X) (hab : a < b) :
     EqOn (fun u ↦ timeDependentFlowOf Y τ u x)
-      (fun u ↦ hX.flow (u - b) (timeDependentFlowOf Y τ b x)) (Ici b) := fun u (hu : b ≤ u) ↦
-  hX.eqOn_flow_of_isMIntegralCurveOn
-    ((isMIntegralCurveOn_timeDependentFlowOf
-      (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY
-      (T := Ioi a) hYX).mono Ioo_subset_Ioi_self)
-    (b := u + 1) ⟨hab, by linarith⟩ ⟨hab.trans_le hu, by linarith⟩
+      (fun u ↦ hX.flow (u - b) (timeDependentFlowOf Y τ b x)) (Ici b) :=
+  hX.eqOn_flow_of_isMIntegralCurveOn_Ioi (isMIntegralCurveOn_timeDependentFlowOf
+    (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY (T := Ioi a) hYX) hab
 
 /-- **A time-dependent trajectory through the slab enters it along the unstable manifold.** Let
 the `C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times before `b`, let
