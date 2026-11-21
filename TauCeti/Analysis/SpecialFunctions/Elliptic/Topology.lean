@@ -47,6 +47,19 @@ open scoped Topology
 
 namespace PeriodPair
 
+/-- A nonsingular representative of the Weierstrass point `L.weierstrassPoint z` (as an affine
+point) represents its projective point. -/
+private theorem mk_eq_weierstrassPoint_toProjective (L : PeriodPair) {z : ℂ} {P : Fin 3 → ℂ}
+    (hn : L.weierstrassCurve.toProjective.Nonsingular P)
+    (hP : Projective.Point.toAffine L.weierstrassCurve.toProjective P = L.weierstrassPoint z) :
+    Projective.Point.mk ((Projective.nonsingularLift_iff P).mpr hn) =
+      (L.weierstrassPoint z).toProjective := by
+  apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
+  rw [Projective.Point.toAffineAddEquiv_apply, Projective.Point.toAffineLift_eq, hP]
+  simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
+    ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
+      (L.weierstrassPoint z)).symm
+
 /-- Near every `z₀`, the projective point `(℘(z), ℘'(z) / 2)`, the point at infinity for
 `z ∈ Λ`, is the point of nonsingular homogeneous coordinates depending holomorphically on `z`. -/
 theorem exists_analyticAt_mk_eq_weierstrassPoint_toProjective (L : PeriodPair) (z₀ : ℂ) :
@@ -55,35 +68,19 @@ theorem exists_analyticAt_mk_eq_weierstrassPoint_toProjective (L : PeriodPair) (
         Projective.Point.mk ((Projective.nonsingularLift_iff (P z)).mpr h) =
           (L.weierstrassPoint z).toProjective := by
   obtain ⟨P, hP, h⟩ := L.exists_analyticAt_toAffine_eq_weierstrassPoint z₀
-  refine ⟨P, hP, ?_⟩
-  filter_upwards [h] with z hz
-  refine ⟨hz.1, ?_⟩
-  apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
-  rw [Projective.Point.toAffineAddEquiv_apply, Projective.Point.toAffineLift_eq, hz.2]
-  simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
-    ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
-      (L.weierstrassPoint z)).symm
+  exact ⟨P, hP, h.mono fun z hz ↦ ⟨hz.1, L.mk_eq_weierstrassPoint_toProjective hz.1 hz.2⟩⟩
 
-/-- Near a lattice point `l₀`, the projective point `(℘(z), ℘'(z) / 2)` has the nonsingular
-homogeneous coordinates `[2 ℘(z) / ℘'(z) : 1 : 2 / ℘'(z)]` of the chart at infinity. -/
+/-- Near a lattice point `l₀`, the Weierstrass point map (the affine point `(℘(z), ℘'(z) / 2)`
+off the lattice, and the point at infinity on it) has the nonsingular homogeneous coordinates
+`[2 ℘(z) / ℘'(z) : 1 : 2 / ℘'(z)]` of the chart at infinity. -/
 theorem eventually_mk_eq_weierstrassPoint_toProjective (L : PeriodPair) {l₀ : ℂ}
     (hl₀ : l₀ ∈ L.lattice) :
     ∀ᶠ z in 𝓝 l₀, ∃ h : L.weierstrassCurve.toProjective.Nonsingular
         ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹],
       Projective.Point.mk ((Projective.nonsingularLift_iff _).mpr h) =
-        (L.weierstrassPoint z).toProjective := by
-  filter_upwards [eventually_nhdsWithin_iff.mp (L.eventually_derivWeierstrassP_ne_zero hl₀)]
-    with z hz
-  obtain ⟨hn, hP⟩ := L.nonsingular_toAffine_chartAtInfinity <| by
-    rcases eq_or_ne z l₀ with h | hne
-    · exact .inr (h ▸ hl₀)
-    · exact .inl (hz hne)
-  refine ⟨hn, ?_⟩
-  apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
-  rw [Projective.Point.toAffineAddEquiv_apply, Projective.Point.toAffineLift_eq, hP]
-  simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
-    ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
-      (L.weierstrassPoint z)).symm
+        (L.weierstrassPoint z).toProjective :=
+  (L.eventually_nonsingular_toAffine_chartAtInfinity hl₀).mono fun _ hz ↦
+    ⟨hz.1, L.mk_eq_weierstrassPoint_toProjective hz.1 hz.2⟩
 
 /-- The Weierstrass point map, including its extension at lattice points, is continuous in the
 analytic topology on the native projective curve. -/

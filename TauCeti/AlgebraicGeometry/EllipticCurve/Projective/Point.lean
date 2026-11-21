@@ -49,6 +49,8 @@ projective points given by the matrix `C.toMatrix` on homogeneous coordinates.
 * `WeierstrassCurve.Projective.Point.addEquivVariableChange`: over a field, the change of
   variables `C` as a group isomorphism from the projective points of `C • W` to those of `W`,
   given on homogeneous coordinates by `C.toMatrix` (`Point.addEquivVariableChange_mk`).
+* `WeierstrassCurve.Projective.Point.toAffineAddEquiv_addEquivVariableChange`: it corresponds to
+  the change of variables on affine points.
 -/
 
 public section
@@ -219,6 +221,19 @@ theorem Point.addEquivVariableChange_symm_mk (hP : W.toProjective.NonsingularLif
           ← nonsingularLift_iff]))) := by
   rw [AddEquiv.symm_apply_eq, Point.addEquivVariableChange_mk, Point.ext_iff]
   simp only [mulVec_mulVec, VariableChange.toMatrix_mul_toMatrix_inv, one_mulVec]
+
+/-- The change of variables `C` on projective points corresponds to the change of variables on
+affine points under the projective-affine comparison `Point.toAffineAddEquiv`. -/
+theorem Point.toAffineAddEquiv_addEquivVariableChange [DecidableEq F]
+    (P : (C • W).toProjective.Point) :
+    Point.toAffineAddEquiv _ (Point.addEquivVariableChange W C P) =
+      Affine.Point.addEquivVariableChange W C (Point.toAffineAddEquiv _ P) := by
+  -- The affine group law, and so `Affine.Point.addEquivVariableChange`, depends on the
+  -- decidability instance; `Point.addEquivVariableChange` is built from the classical one.
+  obtain rfl : ‹DecidableEq F› = fun a b ↦ Classical.propDecidable (a = b) := Subsingleton.elim _ _
+  classical
+  rw [Point.addEquivVariableChange, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    AddEquiv.apply_symm_apply]
 
 end VariableChange
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.ComplexManifold
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
 
 /-!
@@ -18,10 +17,12 @@ It vanishes at the origin `O = [0 : 1 : 0]`, and near `O` it is the standard loc
 `(1 + O(z)) dz`. It is the coordinate of the formal group of the curve. On the points with `Y = 0`
 the formula takes the junk value `0`.
 
-This parameter fixes the tangent coordinate at the origin canonically: the charts of the complex
-manifold structure of `E(ℂ)` at `O` are only determined up to a linear change of coordinates, while
-`-X / Y` is intrinsic to the Weierstrass equation. Over `ℂ` it is holomorphic at `O`
-(`WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`).
+Unlike a chart of the complex manifold `E(ℂ)` at `O`, the parameter `-X / Y` is intrinsic to the
+Weierstrass equation. Over `ℂ` it is holomorphic near `O`
+(`WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`), and its differential at `O`
+is a coordinate on the tangent space there. The tangent-space exponential of `E(ℂ)` is canonical,
+but expressing its domain as `ℂ` requires such a tangent coordinate; this one normalizes the
+exponential `WeierstrassCurve.Projective.exp`.
 
 ## Main definitions
 
@@ -33,8 +34,6 @@ manifold structure of `E(ℂ)` at `O` are only determined up to a linear change 
 * `WeierstrassCurve.Projective.Point.localParameter_addEquivVariableChange_mk` and
   `WeierstrassCurve.Projective.Point.localParameter_addEquivVariableChange_symm_mk`: its value
   after a change of variables.
-* `WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`: over `ℂ` it is holomorphic
-  at the origin.
 
 ## References
 
@@ -45,7 +44,6 @@ manifold structure of `E(ℂ)` at `O` are only determined up to a linear change 
 public section
 
 open Matrix
-open scoped Manifold ContDiff
 
 namespace WeierstrassCurve.Projective.Point
 
@@ -91,29 +89,5 @@ theorem localParameter_addEquivVariableChange_symm_mk (hP : W.toProjective.Nonsi
         ((C⁻¹.u : F) ^ 2 * C⁻¹.s * P 0 + (C⁻¹.u : F) ^ 3 * P 1 + C⁻¹.t * P 2)) := by
   simp [addEquivVariableChange_symm_mk, VariableChange.toMatrix_def, dotProduct,
     Fin.sum_univ_three]
-
-end WeierstrassCurve.Projective.Point
-
-namespace WeierstrassCurve.Projective.Point
-
-variable {W : Projective ℂ} [W.IsElliptic]
-
-/-- **The local parameter at the origin is holomorphic there.** Near the origin it is
-`-X / Y` for holomorphic homogeneous coordinates with `Y ≠ 0`. -/
-theorem contMDiffAt_localParameter_zero (r : ℕ∞ω) :
-    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) 0 := by
-  obtain ⟨s, hs, h⟩ := exists_contMDiffAt_mk_eq (0 : W.Point)
-  -- The coordinates `s 0` represent `[0 : 1 : 0]`, so their `Y`-coordinate is nonzero.
-  have hY : s 0 1 ≠ 0 := by
-    obtain ⟨_, h₀⟩ := h.self_of_nhds
-    obtain ⟨u, hu⟩ := Quotient.exact (congrArg Point.point h₀)
-    rw [← hu]
-    simp [Units.smul_def]
-  have hd : ContDiffAt ℂ r (fun v : Fin 3 → ℂ ↦ -(v 0 / v 1)) (s 0) :=
-    ((contDiffAt_apply ℂ (fun _ ↦ ℂ) _ _).div (contDiffAt_apply ℂ (fun _ ↦ ℂ) _ _) hY).neg
-  refine (hd.comp_contMDiffAt (hs.of_le le_top)).congr_of_eventuallyEq ?_
-  filter_upwards [h] with P ⟨hP, hPs⟩
-  conv_lhs => rw [← hPs]
-  rw [localParameter_mk, Function.comp_apply]
 
 end WeierstrassCurve.Projective.Point

@@ -467,7 +467,7 @@ private lemma nonsingular_toAffine_affineChart {z : ℂ} (hz : z ∉ L.lattice) 
 
 /-- The projective coordinates `[2 ℘ / ℘' : 1 : 2 / ℘']` of the point map in the chart at
 infinity are nonsingular and represent the point map on the domain of that chart. -/
-lemma nonsingular_toAffine_chartAtInfinity {z : ℂ} (h : ℘'[L] z ≠ 0 ∨ z ∈ L.lattice) :
+private lemma nonsingular_toAffine_chartAtInfinity {z : ℂ} (h : ℘'[L] z ≠ 0 ∨ z ∈ L.lattice) :
     L.weierstrassCurve.toProjective.Nonsingular
         ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹] ∧
       Projective.Point.toAffine L.weierstrassCurve.toProjective
@@ -487,6 +487,20 @@ lemma nonsingular_toAffine_chartAtInfinity {z : ℂ} (h : ℘'[L] z ≠ 0 ∨ z 
       simp [L.weierstrassP_coe ⟨z, hz⟩, L.derivWeierstrassP_coe ⟨z, hz⟩]
     rw [he, Projective.Point.toAffine_zero, L.weierstrassPoint_of_mem hz]
     exact ⟨Projective.nonsingular_zero, rfl⟩
+
+/-- Near a lattice point `l₀`, the projective coordinates `[2 ℘ / ℘' : 1 : 2 / ℘']` of the point
+map in the chart at infinity are nonsingular and represent the point map. -/
+lemma eventually_nonsingular_toAffine_chartAtInfinity (hl₀ : l₀ ∈ L.lattice) :
+    ∀ᶠ z in 𝓝 l₀, L.weierstrassCurve.toProjective.Nonsingular
+        ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹] ∧
+      Projective.Point.toAffine L.weierstrassCurve.toProjective
+        ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹] = L.weierstrassPoint z := by
+  filter_upwards [eventually_nhdsWithin_iff.mp (L.eventually_derivWeierstrassP_ne_zero hl₀)]
+    with z hz
+  refine L.nonsingular_toAffine_chartAtInfinity ?_
+  rcases eq_or_ne z l₀ with rfl | hne
+  · exact .inr hl₀
+  · exact .inl (hz hne)
 
 /-- A triple of functions holomorphic at `z₀` is holomorphic at `z₀` as a map to `Fin 3 → ℂ`. -/
 private lemma analyticAt_vecCons₃ {f g h : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀)
@@ -510,12 +524,7 @@ theorem exists_analyticAt_toAffine_eq_weierstrassPoint (z₀ : ℂ) :
     · exact analyticAt_vecCons₃
         (analyticAt_const.mul (L.analyticAt_weierstrassP_div_derivWeierstrassP (.inr hz₀)))
         analyticAt_const (analyticAt_const.mul (L.analyticAt_inv_derivWeierstrassP (.inr hz₀)))
-    · filter_upwards [eventually_nhdsWithin_iff.mp (L.eventually_derivWeierstrassP_ne_zero hz₀)]
-        with z hz
-      refine L.nonsingular_toAffine_chartAtInfinity ?_
-      rcases eq_or_ne z z₀ with rfl | hne
-      · exact .inr hz₀
-      · exact .inl (hz hne)
+    · exact L.eventually_nonsingular_toAffine_chartAtInfinity hz₀
   · refine ⟨fun z ↦ ![℘[L] z, ℘'[L] z / 2, 1], ?_, ?_⟩
     · exact analyticAt_vecCons₃ (L.analyticOnNhd_weierstrassP z₀ hz₀)
         ((L.analyticOnNhd_derivWeierstrassP z₀ hz₀).div_const) analyticAt_const
