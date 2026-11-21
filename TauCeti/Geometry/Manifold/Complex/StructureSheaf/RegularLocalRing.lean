@@ -38,10 +38,8 @@ the native complex-smooth sheaf stalks through their canonical comparison with h
 
 ## Main declarations
 
-* `OpenPartialHomeomorph.isRegularLocalRing_holomorphicStalk`,
-  `OpenPartialHomeomorph.ringKrullDim_holomorphicStalk`,
-  `OpenPartialHomeomorph.spanFinrank_maximalIdeal_holomorphicStalk`: chart-local regularity,
-  Krull dimension, and maximal-ideal generator count.
+* `OpenPartialHomeomorph.spanFinrank_maximalIdeal_holomorphicStalk`: chart-local maximal-ideal
+  generator count.
 * `TauCeti.holomorphicStructureSheaf.spanFinrank_maximalIdeal_stalk`,
   `TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_stalk`: the minimal number of
   generators of the maximal ideal and the embedding dimension equal `Module.finrank ℂ E`.
@@ -75,33 +73,6 @@ section Boundaryless
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
   {X : Type} [TopologicalSpace X] [ChartedSpace H X]
-
-/-- Identifies the holomorphic stalk at a point of a chart with a stalk on `Fin d → ℂ`. -/
-private def holomorphicStalkEquivFin (e : OpenPartialHomeomorph X H)
-    (he : e ∈ IsManifold.maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) :
-    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+*
-      (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ)
-        (Fin (Module.finrank ℂ E) → ℂ)).presheaf.stalk
-        ((ContinuousLinearEquiv.ofFinrankEq (by simp) :
-          E ≃L[ℂ] Fin (Module.finrank ℂ E) → ℂ) (e.extend I x)) :=
-  e.holomorphicStalkEquivModelSpace (V := Fin (Module.finrank ℂ E) → ℂ) he x hx
-    (ContinuousLinearEquiv.ofFinrankEq (by simp))
-
-/-- The holomorphic stalk at any point in the domain of a holomorphic chart is a regular local
-ring, with no global manifold assumption beyond the chart itself. -/
-theorem isRegularLocalRing_holomorphicStalk (e : OpenPartialHomeomorph X H)
-    (he : e ∈ IsManifold.maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) :
-    IsRegularLocalRing ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
-  IsRegularLocalRing.of_ringEquiv (e.holomorphicStalkEquivFin he hx).symm
-
-/-- The Krull dimension of the holomorphic stalk at any point in the domain of a holomorphic chart
-equals `Module.finrank ℂ E`. -/
-theorem ringKrullDim_holomorphicStalk (e : OpenPartialHomeomorph X H)
-    (he : e ∈ IsManifold.maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) :
-    ringKrullDim ((holomorphicStructureSheaf I X).presheaf.stalk x) =
-      Module.finrank ℂ E := by
-  rw [(e.holomorphicStalkEquivFin he hx).ringKrullDim, ringKrullDim_stalk]
-  simp
 
 /-- The minimal number of generators of the maximal ideal of the holomorphic stalk at any point in
 the domain of a holomorphic chart equals `Module.finrank ℂ E`. -/
