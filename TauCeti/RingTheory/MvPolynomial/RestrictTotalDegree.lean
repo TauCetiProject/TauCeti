@@ -41,6 +41,10 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   polynomials of total degree at most `m`.
 * `MvPolynomial.basisRestrictTotalDegree`: the monomial basis of the polynomials of total degree
   at most `m`, whose coordinates are the coefficients.
+* `MvPolynomial.map_restrictTotalDegree_uniqueAlgEquiv`,
+  `MvPolynomial.uniqueAlgEquiv_mem_degreeLT_iff_mem_restrictTotalDegree`,
+  `MvPolynomial.restrictTotalDegreeEquivDegreeLT`: in one variable, `uniqueAlgEquiv` identifies
+  `restrictTotalDegree σ R d` with `Polynomial.degreeLT R (d + 1)`.
 * `MvPolynomial.boundedCoefficientEquiv`: monomial coefficients as finite coordinates on tuples of
   bounded-degree polynomials.
 * `MvPolynomial.tupleEvaluation`, `MvPolynomial.tupleEvaluation_injective`: evaluation of tuples
@@ -129,6 +133,45 @@ theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degr
   -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
   -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
   exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
+
+/-- In one variable, `uniqueAlgEquiv` maps `restrictTotalDegree σ R d` onto
+`Polynomial.degreeLT R (d + 1)`. -/
+theorem map_restrictTotalDegree_uniqueAlgEquiv [Unique σ] (d : ℕ) :
+    (restrictTotalDegree σ R d).map (uniqueAlgEquiv R σ).toLinearMap =
+      Polynomial.degreeLT R (d + 1) := by
+  have hset : {μ : σ →₀ ℕ | μ.degree ≤ d} = {μ : σ →₀ ℕ | μ default < d + 1} := by
+    ext μ
+    simp [Finsupp.degree_eq_sum]
+  rw [restrictTotalDegree_eq_restrictSupport, hset, map_restrictSupport_uniqueAlgEquiv]
+
+/-- In one variable, the image of a polynomial under `uniqueAlgEquiv` has degree below `d + 1` if
+and only if the polynomial lies in `restrictTotalDegree σ R d`. -/
+theorem uniqueAlgEquiv_mem_degreeLT_iff_mem_restrictTotalDegree [Unique σ] {d : ℕ}
+    {p : MvPolynomial σ R} :
+    uniqueAlgEquiv R σ p ∈ Polynomial.degreeLT R (d + 1) ↔
+      p ∈ restrictTotalDegree σ R d := by
+  rw [← map_restrictTotalDegree_uniqueAlgEquiv (σ := σ), ← AlgEquiv.toLinearEquiv_toLinearMap,
+    Submodule.mem_map_equiv]
+  exact iff_of_eq (congrArg (· ∈ _) ((uniqueAlgEquiv R σ).symm_apply_apply p))
+
+variable (σ R) in
+/-- In one variable, `uniqueAlgEquiv` restricts to an `R`-linear equivalence between
+`restrictTotalDegree σ R d` and `Polynomial.degreeLT R (d + 1)`. -/
+noncomputable def restrictTotalDegreeEquivDegreeLT [Unique σ] (d : ℕ) :
+    restrictTotalDegree σ R d ≃ₗ[R] Polynomial.degreeLT R (d + 1) :=
+  (uniqueAlgEquiv R σ).toLinearEquiv.ofSubmodules _ _
+    (map_restrictTotalDegree_uniqueAlgEquiv d)
+
+@[simp]
+theorem coe_restrictTotalDegreeEquivDegreeLT_apply [Unique σ] (d : ℕ)
+    (p : restrictTotalDegree σ R d) :
+    (restrictTotalDegreeEquivDegreeLT σ R d p : Polynomial R) = uniqueAlgEquiv R σ p.val := (rfl)
+
+@[simp]
+theorem coe_restrictTotalDegreeEquivDegreeLT_symm_apply [Unique σ] (d : ℕ)
+    (q : Polynomial.degreeLT R (d + 1)) :
+    ((restrictTotalDegreeEquivDegreeLT σ R d).symm q : MvPolynomial σ R) =
+      (uniqueAlgEquiv R σ).symm q.val := (rfl)
 
 section Coordinates
 
