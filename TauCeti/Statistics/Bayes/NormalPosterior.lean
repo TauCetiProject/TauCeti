@@ -57,7 +57,8 @@ theorem normalPosterior_def (prior : ℝ → ℝ) (v : ℝ≥0) (n : ℕ) (m : �
     normalPosterior prior v n m =
       (∫⁻ θ, ENNReal.ofReal (prior θ * exp (-n * (θ - m) ^ 2 / (2 * v))))⁻¹ •
         volume.withDensity fun θ ↦ ENNReal.ofReal (prior θ * exp (-n * (θ - m) ^ 2 / (2 * v))) := by
-  rw [normalPosterior, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+  simp only [normalPosterior]
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
 
 /-- The posterior of a normal location is a probability measure when its unnormalized density
 has positive finite integral. -/
@@ -82,7 +83,7 @@ theorem gaussianPDFReal_mul_exp_eq_mul_gaussianPDFReal (μ₀ m : ℝ) {τ : ℝ
   set a : ℝ := n / v with ha
   have hτ' : (τ : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hτ
   have hP : 0 < a + (τ : ℝ)⁻¹ := add_pos_of_nonneg_of_pos (by positivity)
-    (inv_pos.2 (lt_of_le_of_ne τ.2 (Ne.symm hτ')))
+    (inv_pos.2 (lt_of_le_of_ne τ.coe_nonneg (Ne.symm hτ')))
   have hσ : (((n / v + τ⁻¹)⁻¹ : ℝ≥0) : ℝ) = (a + (τ : ℝ)⁻¹)⁻¹ := by push_cast; rfl
   have hs : √(2 * π * (a + (τ : ℝ)⁻¹)⁻¹) ≠ 0 :=
     (Real.sqrt_pos.2 (mul_pos (by positivity) (inv_pos.2 hP))).ne'
@@ -129,7 +130,8 @@ theorem normalPosterior_gaussianPDFReal (μ₀ m : ℝ) {τ : ℝ≥0} (hτ : τ
       rfl
     rw [funext hpt, gaussianReal_of_var_ne_zero _ hσ,
       withDensity_smul _ (measurable_gaussianPDF _ _)]
-  rw [normalPosterior, hν, smul_apply, measure_univ, smul_eq_mul, mul_one, smul_smul,
+  simp only [normalPosterior, hν]
+  rw [smul_apply, measure_univ, smul_eq_mul, mul_one, smul_smul,
     ENNReal.inv_mul_cancel (ENNReal.ofReal_pos.2 hC).ne' ENNReal.ofReal_ne_top, one_smul]
 
 end TauCeti

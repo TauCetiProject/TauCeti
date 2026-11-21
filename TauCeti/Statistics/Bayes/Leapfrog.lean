@@ -59,7 +59,7 @@ def momentumFlip [Neg E] (z : E × E) : E × E := (z.1, -z.2)
 @[simp]
 theorem momentumFlip_apply [Neg E] (z : E × E) : momentumFlip z = (z.1, -z.2) := (rfl)
 
-@[simp]
+/-- Flipping the momentum twice gives back the state. -/
 theorem momentumFlip_momentumFlip [InvolutiveNeg E] (z : E × E) :
     momentumFlip (momentumFlip z) = z := by
   simp
