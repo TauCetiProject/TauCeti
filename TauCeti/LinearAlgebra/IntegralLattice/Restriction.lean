@@ -34,7 +34,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.restrict`: restriction in the submodule's own rational ambient space.
+* `TauCeti.IntegralLattice.restrict`: restriction in the submodule's own rational ambient space,
+  identified with `ofIntegralForm` by `TauCeti.IntegralLattice.restrict_eq_ofIntegralForm`.
 * `TauCeti.IntegralLattice.restrictCarrierEquiv`: the canonical integral carrier equivalence.
 * `TauCeti.IntegralLattice.isEven_restrict_iff`: evenness characterized on the chosen submodule.
 * `TauCeti.IntegralLattice.restrictMap`: the rational extension of the inclusion, characterized by
@@ -71,6 +72,13 @@ ambient space. Every such submodule is finite free over `ℤ`. -/
 noncomputable def restrict (L : IntegralLattice V) (S : Submodule ℤ L) :
     IntegralLattice (ℚ ⊗[ℤ] S) :=
   ofIntegralForm (L.integralForm.restrict S) (L.isSymm_integralForm.restrict S)
+
+/-- Unfolding `L.restrict S` as `ofIntegralForm` of the restricted integral form. Under the Lean
+module system both `restrict` and `ofIntegralForm` are unexposed outside this file, so this
+definitional equality is exposed explicitly as a theorem. -/
+theorem restrict_eq_ofIntegralForm (L : IntegralLattice V) (S : Submodule ℤ L) :
+    L.restrict S = ofIntegralForm (L.integralForm.restrict S) (L.isSymm_integralForm.restrict S) :=
+  (rfl)
 
 /-- The form of a restricted lattice is the rational extension of the restricted integral form. -/
 @[simp]

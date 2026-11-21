@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
 /-!
 # Orthogonal sums of integral lattices
@@ -16,13 +17,13 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 The orthogonal sum has product carrier and block-diagonal form, the product
 `LinearMap.BilinForm.prod` of the two ambient forms. This file constructs the lattice,
 its canonical carrier maps and product bases, and proves several invariant laws: rank is additive,
-Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness
-and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice isometries and
-are associative and commutative up to canonical lattice isometry, and the product of the isometry
-groups `O(L) × O(M)` embeds in `O(L ⊕ M)`, acting componentwise. This embedding need not be onto:
-when the ambient space of `L` is nonzero, the factor swap of `L ⊕ L` is a self-isometry of `L ⊕ L`
-outside the range of `O(L) × O(L) → O(L ⊕ L)`. The radical is the product of the component
-radicals, and the signature is componentwise additive.
+Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness,
+unimodularity, and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice
+isometries and are associative and commutative up to canonical lattice isometry, and the product of
+the isometry groups `O(L) × O(M)` embeds in `O(L ⊕ M)`, acting componentwise. This embedding need
+not be onto: when the ambient space of `L` is nonzero, the factor swap of `L ⊕ L` is a
+self-isometry of `L ⊕ L` outside the range of `O(L) × O(L) → O(L ⊕ L)`. The radical is the product
+of the component radicals, and the signature is componentwise additive.
 
 ## Main definitions
 
@@ -38,13 +39,18 @@ radicals, and the signature is componentwise additive.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSum`: the product of two lattice isometries.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumComm`: the canonical commutativity isometry.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumAssoc`: the canonical associativity isometry.
+* `TauCeti.IntegralLattice.Isometry.orthogonalSumSubsingletonRight`: the canonical right unit
+  isometry `L ≅ L ⊕ M` for subsingleton `W`.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumHom`: the embedding `O(L) × O(M) →* O(L ⊕ M)`.
 
 ## Main statements
 
-* `TauCeti.IntegralLattice.isEven_orthogonalSum_iff`,
-  `TauCeti.IntegralLattice.nondegenerate_orthogonalSum_iff`: evenness and nondegeneracy of an
-  orthogonal sum are componentwise.
+* `TauCeti.IntegralLattice.isUnimodular_orthogonalSum_iff`,
+  `TauCeti.IntegralLattice.isEven_orthogonalSum_iff`,
+  `TauCeti.IntegralLattice.nondegenerate_orthogonalSum_iff`: unimodularity, evenness, and
+  nondegeneracy of an orthogonal sum are componentwise.
+* `TauCeti.IntegralLattice.orthogonalSum_transport_prodComm`: transporting an orthogonal sum along
+  `LinearEquiv.prodComm` swaps the summands.
 * `TauCeti.IntegralLattice.radical_orthogonalSum`: the radical is the product of the radicals.
 * `TauCeti.IntegralLattice.signature_orthogonalSum`: signature is additive componentwise.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumHom_injective`: `O(L) × O(M)` embeds in
@@ -319,6 +325,11 @@ theorem discriminant_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
     (L.orthogonalSum M).discriminant = L.discriminant * M.discriminant := by
   rw [discriminant_def, determinant_orthogonalSum, Int.natAbs_mul, discriminant_def,
     discriminant_def]
+
+/-- An orthogonal sum is unimodular if and only if both summands are unimodular. -/
+theorem isUnimodular_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
+    (L.orthogonalSum M).IsUnimodular ↔ L.IsUnimodular ∧ M.IsUnimodular := by
+  simp only [isUnimodular_iff_discriminant_eq_one, discriminant_orthogonalSum, mul_eq_one]
 
 /-- An orthogonal sum is even exactly when both summands are even. -/
 @[simp]
@@ -630,6 +641,38 @@ theorem orthogonalSumAssoc_naturality {L : IntegralLattice V} {M : IntegralLatti
   intro p
   simp only [Isometry.trans_apply, Isometry.orthogonalSum_apply, orthogonalSumAssoc_apply]
 
+/-- Adding a lattice on a subsingleton ambient space on the right does not change a lattice up
+to canonical isometry. -/
+noncomputable def orthogonalSumSubsingletonRight [Subsingleton W]
+    (L : IntegralLattice V) (M : IntegralLattice W) :
+    Isometry L (L.orthogonalSum M) := by
+  letI : Unique W := uniqueOfSubsingleton 0
+  refine
+    { toLinearEquiv := (LinearEquiv.prodUnique (R := ℚ) (M := V) (M₂ := W)).symm
+      map_app' := fun x y ↦ by
+        simp [orthogonalSum_form, LinearMap.BilinForm.prod_apply,
+          Subsingleton.elim (default : W) 0]
+      map_carrier := Submodule.ext fun p ↦ ?_ }
+  rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_symm,
+    LinearEquiv.prodUnique_apply, orthogonalSum_carrier, Submodule.mem_prod]
+  exact ⟨fun h ↦ ⟨h, Subsingleton.elim p.2 0 ▸ M.carrier.zero_mem⟩, fun h ↦ h.1⟩
+
+/-- The right-subsingleton orthogonal-sum isometry sends `x` to `(x, 0)`. -/
+@[simp]
+theorem orthogonalSumSubsingletonRight_apply [Subsingleton W]
+    (L : IntegralLattice V) (M : IntegralLattice W) (x : V) :
+    orthogonalSumSubsingletonRight L M x = (x, 0) :=
+  Prod.ext rfl (Subsingleton.elim _ 0)
+
+/-- The inverse right-subsingleton orthogonal-sum isometry projects onto the first coordinate. -/
+@[simp]
+theorem orthogonalSumSubsingletonRight_symm_apply [Subsingleton W]
+    (L : IntegralLattice V) (M : IntegralLattice W) (p : V × W) :
+    (orthogonalSumSubsingletonRight L M).symm p = p.1 := by
+  rw [Isometry.coe_symm]
+  apply (LinearEquiv.symm_apply_eq _).2
+  exact Prod.ext rfl (Subsingleton.elim p.2 _)
+
 /-- The product of the isometry groups `O(L) × O(M)` acts componentwise on the orthogonal sum:
 the group homomorphism `O(L) × O(M) →* O(L ⊕ M)`. -/
 def orthogonalSumHom (L : IntegralLattice V) (M : IntegralLattice W) :
@@ -675,5 +718,13 @@ theorem orthogonalSumComm_notMem_range_orthogonalSumHom (L : IntegralLattice V) 
 end Isometry
 
 end Isometry
+
+/-- Transporting an orthogonal sum along `LinearEquiv.prodComm` swaps the summands. -/
+@[simp]
+theorem orthogonalSum_transport_prodComm (L : IntegralLattice V) (M : IntegralLattice W) :
+    (M.orthogonalSum L).transport (LinearEquiv.prodComm ℚ W V) = L.orthogonalSum M := by
+  have heq : LinearEquiv.prodComm ℚ W V = (Isometry.orthogonalSumComm M L).toLinearEquiv :=
+    LinearEquiv.ext fun p ↦ (Isometry.orthogonalSumComm_apply M L p).symm
+  exact heq ▸ (Isometry.orthogonalSumComm M L).transport_eq
 
 end TauCeti.IntegralLattice
