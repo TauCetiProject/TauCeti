@@ -146,6 +146,7 @@ def ComplexityBounded (b : ℕ) : Prop :=
 
 variable {C} {b : ℕ} in
 /-- Unfolded form of `TriadicComplex3.ComplexityBounded`. -/
+@[simp]
 theorem complexityBounded_iff : C.ComplexityBounded b ↔ C.complexity ≤ b :=
   Iff.rfl
 
