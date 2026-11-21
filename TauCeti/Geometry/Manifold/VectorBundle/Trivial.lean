@@ -14,15 +14,15 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 # Smooth maps into trivial bundles
 
 The trivial bundle `Bundle.Trivial B F` has the single global trivialization
-`Bundle.Trivial.trivialization B F`, so a map into its total space is smooth exactly when its base
-map and its fibre map into `F` are smooth, a section is differentiable at a point exactly when its
-fibre map is (`Bundle.Trivial.mdifferentiableAt_section_iff`), and `Bundle.Trivial.homeomorphProd`
-upgrades to a `C^n` diffeomorphism `Bundle.Trivial.diffeomorphProd` between
-`TotalSpace F (Bundle.Trivial B F)` and `B × F`. When the fibre `W` is instead a
-finite-dimensional Hausdorff topological module over a complete nontrivially normed field `𝕜`
-without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies `Fin (Module.finrank 𝕜 W) → 𝕜` as a
-nominal coordinate model fibre equipping `Bundle.Trivial B W` with a `C^n` vector bundle structure
-without `AddCommGroup` diamonds on `W`.
+`Bundle.Trivial.trivialization B F`, so a map into its total space is smooth (or differentiable at
+a point) exactly when its base map and its fibre map into `F` are; in particular its constant
+sections are smooth, and a section is differentiable at a point exactly when its fibre map is
+(`Bundle.Trivial.mdifferentiableAt_section_iff`). `Bundle.Trivial.homeomorphProd` upgrades to a
+`C^n` diffeomorphism `Bundle.Trivial.diffeomorphProd` between `TotalSpace F (Bundle.Trivial B F)`
+and `B × F`. When the fibre `W` is instead a finite-dimensional Hausdorff topological module over a
+complete nontrivially normed field `𝕜` without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies
+`Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model fibre equipping `Bundle.Trivial B W`
+with a `C^n` vector bundle structure without `AddCommGroup` diamonds on `W`.
 
 The topology, fibre bundle, vector bundle, and `C^n` vector bundle instances for
 `TauCeti.TrivialModel` directly adapt Mathlib's `Bundle.Trivial.fiberBundle`
@@ -73,6 +73,30 @@ theorem mdifferentiableAt_section_iff {σ : B → F} {x : B} :
       MDifferentiableAt I 𝓘(𝕜, F) σ x := by
   rw [mdifferentiableAt_section]
   simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_apply]
+
+/-- A map into the trivial bundle is differentiable at a point exactly when its base map and its
+fibre map are differentiable there. -/
+theorem mdifferentiableAt_mk_iff {b : M → B} {f : M → F} {x : M} :
+    MDifferentiableAt J (I.prod 𝓘(𝕜, F))
+        (fun y ↦ TotalSpace.mk' F (E := Trivial B F) (b y) (f y)) x ↔
+      MDifferentiableAt J I b x ∧ MDifferentiableAt J 𝓘(𝕜, F) f x := by
+  rw [mdifferentiableAt_totalSpace]
+  simp
+
+/-- A constant section of the trivial bundle is smooth. -/
+theorem contMDiff_mk_const (c : F) :
+    ContMDiff I (I.prod 𝓘(𝕜, F)) n (fun y : B ↦ TotalSpace.mk' F (E := Trivial B F) y c) :=
+  contMDiff_mk_iff.2 ⟨contMDiff_id, contMDiff_const⟩
+
+/-- A constant section of the trivial bundle is differentiable. -/
+theorem mdifferentiableAt_mk_const (c : F) {x : B} :
+    MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun y : B ↦ TotalSpace.mk' F (E := Trivial B F) y c) x :=
+  mdifferentiableAt_mk_iff.2 ⟨mdifferentiableAt_id, mdifferentiableAt_const⟩
+
+omit [TopologicalSpace B] in
+/-- On the trivial line bundle, a function times the constant section `1` is the function. -/
+protected theorem smul_one (σ : B → 𝕜) : (σ • (1 : B → 𝕜) : Π y : B, Trivial B 𝕜 y) = σ :=
+  funext fun _ ↦ mul_one _
 
 section Diffeomorph
 

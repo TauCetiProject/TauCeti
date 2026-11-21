@@ -37,6 +37,8 @@ the starting point of Bernstein's inequalities.
   symbol is the transpose of the multiplier on Schwartz functions, `(T_g u) f = u (T_g f)`.
 * `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
   Fourier multipliers.
+* `TemperedDistribution.fourierMultiplierCLM_fourierInv_delta`: a Fourier multiplier with symbol
+  `g` acts on the plane wave `𝓕⁻ δ_ξ` as multiplication by `g(ξ)`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
   a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
@@ -106,6 +108,14 @@ theorem lineDerivOp_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGro
   rw [lineDeriv_eq_fourierMultiplierCLM, lineDeriv_eq_fourierMultiplierCLM, map_smul,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hg hinner,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hinner hg, mul_comm g]
+
+omit [NormedAddCommGroup F] [NormedSpace ℂ F] in
+/-- **Fourier multipliers act on plane waves by their symbol.** The Fourier multiplier with symbol
+`g` of temperate growth multiplies the plane wave `𝓕⁻ δ_ξ` by `g ξ`. -/
+theorem fourierMultiplierCLM_fourierInv_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
+    fourierMultiplierCLM ℂ g (𝓕⁻ (delta ξ)) = g ξ • 𝓕⁻ (delta ξ) := by
+  rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_delta hg,
+    FourierTransform.fourierInv_smul]
 
 /-- **Differentiation does not enlarge the spectrum.** If the Fourier transform of `u` vanishes on
 `s`, so does that of `∂_m u`. -/

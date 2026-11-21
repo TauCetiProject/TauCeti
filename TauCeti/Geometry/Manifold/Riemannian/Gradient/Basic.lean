@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -35,6 +36,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.inner_mgradient`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
+* `IsMIntegralCurve.comp_neg_neg_mgradient`: reversing time turns a negative gradient
+  trajectory of `f` into one of `-f`.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
   differential does, and `TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv`: it has the same
   length as the differential.
@@ -200,6 +203,17 @@ theorem norm_sq_mgradient_add_smul {g : M → ℝ} (hf : MDifferentiable I 𝓘(
 theorem mgradient_neg : mgradient I (-f) x = -mgradient I f x := by
   rw [mgradient, mgradient, mvfderiv_neg]
   exact (rieszDual (I := I) x).toLinearEquiv.map_neg _
+
+/-- **Reversing time in a negative gradient trajectory.** If `γ` is an integral curve of `-grad f`,
+then `t ↦ γ (-t)` is an integral curve of `-grad (-f)`. -/
+theorem _root_.IsMIntegralCurve.comp_neg_neg_mgradient {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (-mgradient I f)) :
+    IsMIntegralCurve (fun t ↦ γ (-t)) (-mgradient I (-f)) := by
+  convert hγ.comp_mul (-1) using 1
+  · funext t
+    simp only [Function.comp_apply, mul_neg_one]
+  · funext y
+    simp only [Pi.neg_apply, Pi.smul_apply, mgradient_neg, neg_neg, neg_smul, one_smul]
 
 variable {s : Set M}
 

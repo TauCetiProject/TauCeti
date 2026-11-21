@@ -36,6 +36,8 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
   `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
+* `TauCeti.exists_abs_one_add_rpow_sub_sum_le` — the remainder of the real binomial series of
+  `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` as `u → 0`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
   `1` in every normed algebra over `ℝ` or `ℂ`.
 * `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
@@ -123,6 +125,19 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+/-- The remainder of the binomial series of `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` for
+small `u`. -/
+theorem exists_abs_one_add_rpow_sub_sum_le (r : ℝ) (K : ℕ) :
+    ∃ A ε, 0 < ε ∧ ∀ u : ℝ, |u| < ε →
+      |(1 + u) ^ r - ∑ k ∈ Finset.range K, Ring.choose r k * u ^ k| ≤ A * |u| ^ K := by
+  obtain ⟨A, hA⟩ := (Real.one_add_rpow_hasFPowerSeriesAt_zero (a := r)).isBigO_sub_partialSum_pow
+    K |>.bound
+  obtain ⟨ε, hε, hεA⟩ := Metric.eventually_nhds_iff.1 hA
+  refine ⟨A, ε, hε, fun u huε ↦ ?_⟩
+  have hbound := hεA (y := u) (by simpa using huε)
+  simpa only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
+    List.prod_replicate, smul_eq_mul, Real.norm_eq_abs, abs_pow, abs_abs] using hbound
 
 section NormedAlgebra
 
