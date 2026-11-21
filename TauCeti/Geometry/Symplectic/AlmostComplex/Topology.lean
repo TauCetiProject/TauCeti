@@ -33,6 +33,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
   structures is continuity of their endomorphisms in the operator norm.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_mul_self`: in the operator-norm algebra a
   complex structure squares to `-1`.
+* `TauCeti.AlmostComplexStructure.isUnit_toContinuousLinearMap`: so it is a unit there, with
+  inverse `-J`.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
@@ -83,6 +85,13 @@ theorem toContinuousLinearMap_mul_self (J : AlmostComplexStructure V) :
       -1 := by
   ext v
   simp
+
+/-- An almost complex structure is a unit of the operator-norm algebra, with inverse `-J`. -/
+theorem isUnit_toContinuousLinearMap (J : AlmostComplexStructure V) :
+    IsUnit (LinearMap.toContinuousLinearMap J.toLinearMap) :=
+  isUnit_iff_exists.2 ⟨-LinearMap.toContinuousLinearMap J.toLinearMap,
+    by rw [mul_neg, toContinuousLinearMap_mul_self, neg_neg],
+    by rw [neg_mul, toContinuousLinearMap_mul_self, neg_neg]⟩
 
 /-- In operator-norm coordinates, the Cayley transform is the rational expression
 `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`, with the junk
