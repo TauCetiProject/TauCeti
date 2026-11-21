@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -46,11 +48,13 @@ The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
-Two integers whose images in `ℂ` are at distance less than `1` are equal, and the natural numbers
-embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`). For a closed set `s ⊆ ℝ`
-avoiding `w₀.re`, an open ball around `w₀` avoids `s` in real part and preserves strict order
-against every element of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`). Negating `x + y * I`
-reflects both real coordinates (`Complex.neg_ofReal_add_mul_I`).
+Two integers whose images in `ℂ` are at distance less than `1` are equal, the natural numbers
+embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`), and the complement
+`{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers is connected
+(`Complex.isConnected_setOf_forall_ne_neg_natCast`). For a closed set `s ⊆ ℝ` avoiding `w₀.re`,
+an open ball around `w₀` avoids `s` in real part and preserves strict order against every element
+of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`). Negating `x + y * I` reflects both real
+coordinates (`Complex.neg_ofReal_add_mul_I`).
 
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
 (`Complex.add_im_ne_zero_of_abs_im_lt`).
@@ -356,6 +360,16 @@ theorem isClosed_range_natCast : IsClosed (Set.range ((↑) : ℕ → ℂ)) := b
       exact ⟨k, by simp⟩
   rw [h]
   exact isClosed_range_intCast.inter (isClosed_le continuous_const continuous_re)
+
+/-- The complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers is
+connected. -/
+theorem isConnected_setOf_forall_ne_neg_natCast :
+    IsConnected {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
+  have heq : {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} = (Set.range fun n : ℕ => -(n : ℂ))ᶜ := by
+    ext w; simp [eq_comm]
+  rw [heq]
+  exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
+    (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
 
 /-- Negating a complex number written as `x + y * I` reflects both real coordinates:
 `-(x + y * I) = (-x : ℝ) + (-y : ℝ) * I`. -/

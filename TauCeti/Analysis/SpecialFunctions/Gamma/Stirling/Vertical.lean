@@ -644,10 +644,12 @@ theorem exists_norm_Gamma_add_mul_I_le (R : ℝ) {ε : ℝ} (hε : 0 < ε) :
     simpa [s] using (abs_abs_sub_abs_le_abs_sub (w.im + y) y).trans (by simpa using hwimM)
   have hyT : max T 1 + M + 1 ≤ |y| := (le_max_right _ _).trans hy
   have hs_im_ge : 1 ≤ |s.im| := by linarith [(abs_le.1 hs_im_sub).1, le_max_right T 1]
+  -- Compare Stirling's formula at `s = w + i y` against the bound on `|Im s|`.
   have hmain := hST s hs_re (by linarith [(abs_le.1 hs_im_sub).1, le_max_left T 1])
   have hdiv : C / |s.im| ≤ |C| := (le_abs_self _).trans (by
     rw [abs_div, abs_of_pos (zero_lt_one.trans_le hs_im_ge)]
     exact div_le_self (abs_nonneg C) hs_im_ge)
+  -- Bound `|(Re s - 1/2) log |Im s|| ≤ ε |y| + const` using `η = ε / (M + 1)`.
   have hlog_le : |(s.re - 1 / 2) * Real.log (|s.im|)| ≤
       ε * |y| + ε * M - (M + 1) * Real.log η := by
     have hlog_ge : 0 ≤ Real.log |s.im| := Real.log_nonneg hs_im_ge
@@ -667,6 +669,7 @@ theorem exists_norm_Gamma_add_mul_I_le (R : ℝ) {ε : ℝ} (hε : 0 < ε) :
   have hpos : 0 < ‖Complex.Gamma s‖ := norm_pos_iff.2 (Complex.Gamma_ne_zero fun n hn => by
     have him0 : s.im = 0 := by simp [hn]
     rw [him0, abs_zero] at hs_im_ge; linarith)
+  -- Exponentiate the upper and lower log-norm bounds for `Γ` and `Γ⁻¹`.
   refine ⟨?_, ?_⟩
   · rw [← Real.exp_log hpos]; refine Real.exp_le_exp.2 ?_; dsimp only [A]
     linarith [(abs_le.1 hmain).2, (abs_le.1 hlog_le).2, (abs_le.1 hpi).1,

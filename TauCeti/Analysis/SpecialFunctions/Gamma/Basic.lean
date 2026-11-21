@@ -10,9 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
-import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Measurability, reciprocal bounds, and ratio asymptotics of the Gamma function
@@ -59,8 +57,6 @@ valid including at positive integers where both sides vanish.
 * `Complex.ne_neg_natCast_of_re_pos`, `Complex.Gamma_ne_zero_of_im_ne_zero` — parameters with
   positive real part or nonzero imaginary part avoid `−ℕ`, so `Complex.Gamma` does not vanish off
   the real axis.
-* `Complex.isConnected_setOf_forall_ne_neg_natCast` — the complement `{w : ℂ | ∀ n : ℕ, w ≠ -n}`
-  of the nonpositive integers is connected.
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
   `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`, valid at every `s`.
@@ -312,16 +308,6 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
         ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
-
-/-- The complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers (the domain of
-holomorphy of `Complex.Gamma`) is connected. -/
-theorem isConnected_setOf_forall_ne_neg_natCast :
-    IsConnected {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
-  have heq : {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} = (Set.range fun n : ℕ => -(n : ℂ))ᶜ := by
-    ext w; simp [eq_comm]
-  rw [heq]
-  exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
-    (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
 
 /-- For every complex `s` and natural `n`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, where
 `(s)_n = (ascPochhammer ℂ n).eval s`. Unlike `Complex.Gamma_add_nat_div_Gamma_eq`, this holds at

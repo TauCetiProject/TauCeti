@@ -130,7 +130,7 @@ private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
     (hx : 0 < x) (ht : t ∈ Ioo (0 : ℝ) 1) (hσ : σ < 0) (haσ : 0 < a.re + σ) :
     ∫ y : ℝ, mellinBarnesFubiniKernel a b c x σ t y =
       2 * π * Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
-        (1 - (t : ℂ) * (-(x : ℂ))) ^ (-a)) := by
+        (1 - (-(x : ℂ)) * (t : ℂ)) ^ (-a)) := by
   have hpoint (y : ℝ) : mellinBarnesFubiniKernel a b c x σ t y =
       ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) *
         (((x * t : ℝ) : ℂ) ^ ((σ : ℂ) + y * I) *
@@ -150,7 +150,7 @@ private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
     rw [hpt, neg_neg, ← sub_eq_add_neg]
   simp_rw [hneg]
   rw [integral_cpow_neg_mul_Gamma_mul_Gamma_sub (by linarith) (by linarith) (mul_pos hx ht.1)]
-  simp only [ofReal_mul, mul_neg, sub_neg_eq_add, mul_comm (t : ℂ) (x : ℂ)]
+  simp only [ofReal_mul, neg_mul, sub_neg_eq_add]
   ring
 
 private theorem integral_mellinBarnesFubiniKernel_t {a b c : ℂ} {x σ : ℝ} (y : ℝ)
@@ -187,7 +187,11 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral {a b c : ℂ} {
         integral_mellinBarnesFubiniKernel_y hx ht hσ haσ,
       integral_const_mul, setIntegral_congr_set Ioo_ae_eq_Ioc,
       ← intervalIntegral.integral_of_le zero_le_one, eulerIntegral_def]
-    field_simp [hGb, hGcb]; simp_rw [mul_comm (x : ℂ)]
+    have hcoeff : 2 * (π : ℂ) * Gamma a =
+        2 * π * Gamma (c - b) * (Gamma a * Gamma b * (Gamma b * Gamma (c - b))⁻¹) := by
+      field_simp [hGb, hGcb]
+    rw [hcoeff]
+    ring
   have hrhs : (∫ y : ℝ, ∫ t in Ioo (0 : ℝ) 1, mellinBarnesFubiniKernel a b c x σ t y) =
       Gamma (c - b) * ∫ y : ℝ, mellinBarnesIntegrand a b c (-(x : ℂ)) (σ + y * I) := by
     simp_rw [integral_mellinBarnesFubiniKernel_t _ hbσ hbc, integral_const_mul]
@@ -195,9 +199,17 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral {a b c : ℂ} {
   have h2pi : (2 * (π : ℂ)) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.2 Real.pi_ne_zero)
   rw [mellinBarnesIntegral_of_neg_re_lt c (by linarith) (by linarith) hσ
     (by simpa using ofReal_mem_slitPlane.2 hx : -(-(x : ℂ)) ∈ slitPlane)]
-  apply mul_left_cancel₀ h2pi; apply mul_left_cancel₀ hGcb
-  linear_combination hswap + Gamma (c - b) *
-    (∫ y : ℝ, mellinBarnesIntegrand a b c (-(x : ℂ)) (σ + y * I)) * (mul_inv_cancel₀ h2pi).symm
+  have hcancel : (2 * (π : ℂ) * Gamma (c - b))⁻¹ * Gamma (c - b) = (2 * π : ℂ)⁻¹ := by
+    field_simp [h2pi, hGcb]
+  calc Gamma a * Gamma b * eulerIntegral a b c (-(x : ℂ))
+      = (2 * π * Gamma (c - b))⁻¹ *
+          (2 * π * Gamma (c - b) * (Gamma a * Gamma b * eulerIntegral a b c (-(x : ℂ)))) := by
+        rw [← mul_assoc, inv_mul_cancel₀ (mul_ne_zero h2pi hGcb), one_mul]
+    _ = (2 * π * Gamma (c - b))⁻¹ *
+          (Gamma (c - b) * ∫ y : ℝ, mellinBarnesIntegrand a b c (-(x : ℂ)) (σ + y * I)) := by
+        rw [hswap]
+    _ = (2 * π : ℂ)⁻¹ * ∫ y : ℝ, mellinBarnesIntegrand a b c (-(x : ℂ)) (σ + y * I) := by
+        rw [← mul_assoc, hcancel]
 
 private theorem analyticAt_regularizedGaussHGFun_comp {f : ℂ → ℂ × ℂ × ℂ × ℂ}
     (hf : Differentiable ℂ f) {w : ℂ} (hz : ‖(f w).2.2.2‖ < 1) :

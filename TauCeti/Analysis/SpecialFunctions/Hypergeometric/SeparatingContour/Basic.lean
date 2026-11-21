@@ -9,6 +9,7 @@ public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import TauCeti.Analysis.Contour.Residue.Basic
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Complex.Rectangle
 import TauCeti.Analysis.Contour.Curve.Rectangle
 import TauCeti.Analysis.Contour.Residue.Cycle
 import TauCeti.Analysis.Contour.Residue.SimplePole
@@ -104,16 +105,20 @@ theorem mellinBarnesLeftPoles_symm (a b : ℂ) (σ : ℝ) :
     mellinBarnesLeftPoles a b σ = mellinBarnesLeftPoles b a σ := by
   ext t; simp [or_comm]
 
-/-- When `-Re a ≤ σ` and `-Re b ≤ σ`, no left-family pole lies strictly to the right of
-`Re t = σ`. -/
+/-- No left-family pole lies strictly to the right of `Re t = σ` if and only if `-Re a ≤ σ` and
+`-Re b ≤ σ`. -/
 @[simp]
-theorem mellinBarnesLeftPoles_eq_empty_of_neg_re_le {a b : ℂ} {σ : ℝ}
-    (ha : -a.re ≤ σ) (hb : -b.re ≤ σ) :
-    mellinBarnesLeftPoles a b σ = ∅ := by
+theorem mellinBarnesLeftPoles_eq_empty_iff {a b : ℂ} {σ : ℝ} :
+    mellinBarnesLeftPoles a b σ = ∅ ↔ -a.re ≤ σ ∧ -b.re ≤ σ := by
   rw [Finset.eq_empty_iff_forall_notMem]
-  intro t ht
-  rcases mem_mellinBarnesLeftPoles.1 ht with ⟨hσ, ⟨k, rfl⟩ | ⟨k, rfl⟩⟩ <;>
-    · simp only [sub_re, neg_re, natCast_re] at hσ; linarith [k.cast_nonneg (α := ℝ)]
+  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨ha, hb⟩ t ht => ?_⟩
+  · by_contra! ha
+    exact h (-a) (mem_mellinBarnesLeftPoles.2 ⟨by simpa using ha, Or.inl ⟨0, by simp⟩⟩)
+  · by_contra! hb
+    exact h (-b) (mem_mellinBarnesLeftPoles.2 ⟨by simpa using hb, Or.inr ⟨0, by simp⟩⟩)
+  · rcases mem_mellinBarnesLeftPoles.1 ht with ⟨hσ, ⟨k, rfl⟩ | ⟨k, rfl⟩⟩
+    · simp only [sub_re, neg_re, natCast_re] at hσ; linarith [ha, k.cast_nonneg (α := ℝ)]
+    · simp only [sub_re, neg_re, natCast_re] at hσ; linarith [hb, k.cast_nonneg (α := ℝ)]
 
 /-- The separating-contour Mellin–Barnes functional at abscissa `σ`, representing
 `Γ(a) Γ(b) 𝐅(a, b; c; z)` (hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`): the vertical-line
@@ -143,7 +148,8 @@ theorem mellinBarnesSeparatingIntegral_of_neg_re_le {a b : ℂ} (c z : ℂ) {σ 
     (ha : -a.re ≤ σ) (hb : -b.re ≤ σ) :
     mellinBarnesSeparatingIntegral a b c z σ =
       (2 * π : ℂ)⁻¹ * ∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I) := by
-  simp [mellinBarnesSeparatingIntegral_def, mellinBarnesLeftPoles_eq_empty_of_neg_re_le ha hb]
+  rw [mellinBarnesSeparatingIntegral_def, mellinBarnesLeftPoles_eq_empty_iff.2 ⟨ha, hb⟩,
+    Finset.sum_empty, add_zero]
 
 /-! ### Section 2: Meromorphy, regular points, and simple-pole residues -/
 
@@ -288,17 +294,33 @@ theorem exists_norm_mellinBarnesIntegrand_vertical_le {R r₁ r₂ δ : ℝ}
     _ = Real.exp (4 * A + R * Mz) * Real.exp (-δ * |y|) := by
         simp only [← Real.exp_add]; congr 1; ring
 
+private theorem exists_norm_mellinBarnesIntegrand_tail_le (a b c : ℂ) {z : ℂ}
+    (hz : -z ∈ slitPlane) (σ₁ σ₂ : ℝ) :
+    ∃ B Y₀ δ : ℝ, 0 ≤ B ∧ 1 ≤ Y₀ ∧ 0 < δ ∧
+      Integrable (fun y : ℝ => B * Real.exp (-δ * |y|)) ∧
+      ∀ x ∈ Icc σ₁ σ₂, ∀ y : ℝ, Y₀ ≤ |y| →
+        ‖mellinBarnesIntegrand a b c z (x + y * I)‖ ≤ B * Real.exp (-δ * |y|) := by
+  let R : ℝ := max (max ‖a‖ ‖b‖) (max ‖c‖ (max |σ₁| |σ₂|)) + 1
+  let δ : ℝ := (π - |(-z).arg|) / 2
+  have hδ : 0 < δ := by dsimp [δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz]
+  obtain ⟨B, Y₀, hB, hY₀, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
+    (r₂ := ‖z‖) (by positivity) (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz))) hδ
+  refine ⟨B, Y₀, δ, hB, hY₀, hδ, hdom, fun x hx y hy => ?_⟩
+  have hxR : |x| ≤ R := (abs_le_max_abs_abs hx.1 hx.2).trans
+    ((le_max_right _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))
+  exact htail a b c z x y
+    ((le_max_left _ _).trans ((le_max_left _ _).trans (by dsimp [R]; linarith)))
+    ((le_max_right _ _).trans ((le_max_left _ _).trans (by dsimp [R]; linarith)))
+    ((le_max_left _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))
+    le_rfl le_rfl (by dsimp [δ]; linarith) hxR hy
+
 /-- Along any vertical line `Re t = σ` avoiding the poles `-Re a - ℕ`, `-Re b - ℕ`, and `ℕ`, the
 Barnes integrand is vertically integrable for every `-z ∈ slitPlane`. -/
 theorem verticalIntegrable_mellinBarnesIntegrand {a b : ℂ} (c : ℂ) {z : ℂ} {σ : ℝ}
     (ha : ∀ k : ℕ, a.re + σ ≠ -k) (hb : ∀ k : ℕ, b.re + σ ≠ -k) (hσ : ∀ m : ℕ, σ ≠ m)
     (hz : -z ∈ slitPlane) :
     VerticalIntegrable (mellinBarnesIntegrand a b c z) σ := by
-  let R : ℝ := max (max ‖a‖ ‖b‖) (max ‖c‖ |σ|) + 1
-  let δ : ℝ := (π - |(-z).arg|) / 2
-  have hδ : 0 < δ := by dsimp [δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz]
-  obtain ⟨B, Y₀, _, _, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
-    (r₂ := ‖z‖) (by positivity) (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz))) hδ
+  obtain ⟨B, Y₀, _, _, _, _, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_tail_le a b c hz σ σ
   have hcont : Continuous fun y : ℝ => mellinBarnesIntegrand a b c z (σ + y * I) :=
     continuous_iff_continuousAt.2 fun y =>
       (analyticAt_mellinBarnesIntegrand a b c z
@@ -310,19 +332,10 @@ theorem verticalIntegrable_mellinBarnesIntegrand {a b : ℂ} (c : ℂ) {z : ℂ}
       (Icc (-Y₀) Y₀)ᶜ := by
     refine hdom.integrableOn.mono' hcont.aestronglyMeasurable ?_
     filter_upwards [ae_restrict_mem measurableSet_Icc.compl] with y hy
-    exact htail a b c z σ y
-      ((le_max_left _ _).trans ((le_max_left _ _).trans (by dsimp [R]; linarith)))
-      ((le_max_right _ _).trans ((le_max_left _ _).trans (by dsimp [R]; linarith)))
-      ((le_max_left _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))
-      le_rfl le_rfl (by dsimp [δ]; linarith)
-      ((le_max_right _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))
+    exact htail σ (left_mem_Icc.2 le_rfl) y
       (le_of_lt (not_le.1 (mt abs_le.1 (by simpa [mem_Icc] using hy))))
   rw [VerticalIntegrable, ← integrableOn_univ, ← union_compl_self (Icc (-Y₀) Y₀)]
   exact hcont.integrableOn_Icc.union hout
-
-private theorem rectangle_mellinBarnes_eq {σ₁ σ₂ T : ℝ} (h12 : σ₁ < σ₂) (hT : 0 < T) :
-    Rectangle ((σ₁ : ℂ) - T * I) ((σ₂ : ℂ) + T * I) = Icc σ₁ σ₂ ×ℂ Icc (-T) T := by
-  simp [Rectangle, uIcc_of_le h12.le, uIcc_of_le (by linarith : -T ≤ T)]
 
 private theorem im_mem_Ioo_of_leftPole {a b s : ℂ} {T : ℝ} (hTim : max |a.im| |b.im| < T)
     (h : (∃ k : ℕ, s = -a - k) ∨ (∃ k : ℕ, s = -b - k)) : s.im ∈ Ioo (-T) T :=
@@ -341,8 +354,9 @@ private theorem sum_windingNumber_rect_mellinBarnes {a b : ℂ} {σ₁ σ₂ T :
   have hT_pos : 0 < T := (abs_nonneg a.im).trans_lt ((le_max_left _ _).trans_lt hTim)
   set zL : ℂ := (σ₁ : ℂ) - T * I
   set wR : ℂ := (σ₂ : ℂ) + T * I
-  have hRect_eq : Rectangle zL wR = Icc σ₁ σ₂ ×ℂ Icc (-T) T :=
-    rectangle_mellinBarnes_eq h12 hT_pos
+  have hRect_eq : Rectangle zL wR = Icc σ₁ σ₂ ×ℂ Icc (-T) T := by
+    simpa [zL, wR] using rectangle_eq_reProdIm (z := zL) (w := wR)
+      (by simp [zL, wR, h12.le]) (by simp [zL, wR]; linarith)
   have hsub : mellinBarnesLeftPoles a b σ₂ ⊆ mellinBarnesLeftPoles a b σ₁ := fun s hs => by
     rw [mem_mellinBarnesLeftPoles] at hs ⊢; exact ⟨h12.trans hs.1, hs.2⟩
   have hP₁S : mellinBarnesLeftPoles a b σ₁ ⊆ mellinBarnesLeftPoles a b (σ₁ - 1) := fun s hs => by
@@ -418,7 +432,10 @@ private theorem rectBoundary_mellinBarnesIntegrand_eq {a b c z : ℂ} {σ₁ σ�
   set zL : ℂ := (σ₁ : ℂ) - T * I
   set wR : ℂ := (σ₂ : ℂ) + T * I
   have hRectU : Rectangle zL wR ⊆ U := fun t ht => by
-    rw [rectangle_mellinBarnes_eq h12 hT_pos] at ht
+    have hRect_eq : Rectangle zL wR = Icc σ₁ σ₂ ×ℂ Icc (-T) T := by
+      simpa [zL, wR] using rectangle_eq_reProdIm (z := zL) (w := wR)
+        (by simp [zL, wR, h12.le]) (by simp [zL, wR]; linarith)
+    rw [hRect_eq] at ht
     exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩
   have hfr_notS := frontier_rectangle_notMem_mellinBarnesLeftPoles hTim ha₁ hb₁ ha₂ hb₂
   have hres := TauCeti.Contour.classicalResidueTheorem_nullHomologous hU hg_diff
@@ -437,11 +454,8 @@ private theorem tendsto_horizontal_mellinBarnesIntegrand_zero (a b c : ℂ) {z :
     (h12 : σ₁ < σ₂) (hz : -z ∈ slitPlane) {sgn : ℝ} (hsgn : |sgn| = 1) :
     Tendsto (fun T : ℝ => ∫ x : ℝ in σ₁..σ₂, mellinBarnesIntegrand a b c z (x + (sgn * T) * I))
       atTop (𝓝 0) := by
-  let R : ℝ := max (max ‖a‖ ‖b‖) (max ‖c‖ (max |σ₁| |σ₂|)) + 1
-  let δ : ℝ := (π - |(-z).arg|) / 2
-  have hδ : 0 < δ := by dsimp [δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz]
-  obtain ⟨B, Y₀, _, hY₀, _, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
-    (r₂ := ‖z‖) (by positivity) (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz))) hδ
+  obtain ⟨B, Y₀, δ, _, hY₀, hδ, _, htail⟩ :=
+    exists_norm_mellinBarnesIntegrand_tail_le a b c hz σ₁ σ₂
   have hexp : Tendsto (fun T : ℝ => B * Real.exp (-δ * T) * (σ₂ - σ₁)) atTop (𝓝 0) := by
     simpa using ((Real.tendsto_exp_atBot.comp
       (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hδ))).const_mul B).mul_const (σ₂ - σ₁)
@@ -453,13 +467,7 @@ private theorem tendsto_horizontal_mellinBarnesIntegrand_zero (a b c : ℂ) {z :
   refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := B * Real.exp (-δ * T))
     fun x hx => ?_).trans (by rw [abs_of_pos (sub_pos.2 h12)])
   rw [uIoc_of_le h12.le] at hx
-  have hxR : |x| ≤ R := (abs_le_max_abs_abs hx.1.le hx.2).trans
-    ((le_max_right _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))
-  simpa only [habs, ofReal_mul] using htail a b c z x (sgn * T)
-    ((le_max_left _ _).trans ((le_max_left _ _).trans (by dsimp [R]; linarith)))
-    ((le_max_right _ _).trans ((le_max_left _ _).trans (by dsimp [R]; linarith)))
-    ((le_max_left _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))
-    le_rfl le_rfl (by dsimp [δ]; linarith) hxR (habs.symm ▸ hT)
+  simpa only [habs, ofReal_mul] using htail x (Ioc_subset_Icc_self hx) (sgn * T) (habs.symm ▸ hT)
 
 private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (c : ℂ) {z : ℂ}
     {σ₁ σ₂ : ℝ} (h12 : σ₁ < σ₂) (hσ₂ : σ₂ < 0)
