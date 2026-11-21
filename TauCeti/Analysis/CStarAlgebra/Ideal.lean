@@ -50,6 +50,12 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
 * `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
+<<<<<<< HEAD
+  `NonUnitalCStarAlgebra` on its subtype carrier (inheriting `StarOrderedRing` via
+  `TwoSidedIdeal.instStarOrderedRing`), with canonical isometric `⋆`-monomorphism
+  `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A` and `⋆`-isomorphism
+  `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`.
+=======
   `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
   `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`, `⋆`-isomorphism
   `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`, and
@@ -61,6 +67,7 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 * `TauCeti.isFull_iff_closure_span_mul_eq_univ` and `TauCeti.isFull_star`: C⋆-algebra
   characterizations of full elements (`TauCeti.IsFull`, defined in
   `TauCeti.Topology.Algebra.Ring.TwoSidedIdeal`).
+>>>>>>> origin/main
 * `NonUnitalStarSubalgebra.multiplierHom`: the canonical contractive star-algebra homomorphism
   `A →⋆ₙₐ[𝕜] 𝓜(𝕜, I)` attached to a star ideal `I` of `A`, with action formulas
   `multiplierHom_fst_apply` and `multiplierHom_snd_apply`, inclusion compatibility
@@ -272,6 +279,28 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+/-- Every closed two-sided ideal of an ordered C⋆-algebra inherits `StarOrderedRing` for the
+subtype partial order, transported from `Subtype.starOrderedRing I.toNonUnitalStarSubalgebra`. -/
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I where
+  le_iff x y := by
+    let e := I.toNonUnitalStarSubalgebraEquiv
+    have hle : x ≤ y ↔ e x ≤ e y := by
+      simp only [← Subtype.coe_le_coe, e, coe_toNonUnitalStarSubalgebraEquiv_apply]
+    have hcl : ∀ {R S : Type _} [NonUnitalSemiring R] [StarMul R] [Module ℂ R]
+        [NonUnitalSemiring S] [StarMul S] [Module ℂ S] (f : R →⋆ₙₐ[ℂ] S) {p : R},
+        p ∈ AddSubmonoid.closure (Set.range fun s : R => star s * s) →
+        f p ∈ AddSubmonoid.closure (Set.range fun s : S => star s * s) := by
+      intro R S _ _ _ _ _ _ f p hp
+      exact AddSubmonoid.closure_induction
+        (by rintro _ ⟨s, rfl⟩; rw [map_mul, map_star]; exact AddSubmonoid.subset_closure ⟨f s, rfl⟩)
+        (map_zero f ▸ AddSubmonoid.zero_mem _)
+        (fun _ _ _ _ ha hb => map_add f _ _ ▸ AddSubmonoid.add_mem _ ha hb) hp
+    rw [hle, StarOrderedRing.le_iff]
+    exact ⟨fun ⟨p, hp, hpy⟩ => ⟨e.symm p, hcl e.symm.toNonUnitalStarAlgHom hp,
+        by simpa [map_add] using congrArg e.symm hpy⟩,
+      fun ⟨p, hp, hpy⟩ => ⟨e p, hcl e.toNonUnitalStarAlgHom hp,
+        by simpa [map_add] using congrArg e hpy⟩⟩
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/
