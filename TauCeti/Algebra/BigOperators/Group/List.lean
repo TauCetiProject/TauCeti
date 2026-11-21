@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.GroupTheory.Submonoid.Center
+import Mathlib.Data.List.OfFn
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Products along lists in a noncommutative monoid
@@ -30,6 +33,10 @@ replicated list to a `Finset.range` product (`List.prod_get_replicate`), and dec
 of replicated blocks along `List.range n` by block offsets
 (`List.prod_get_flatMap_replicate_range`).
 
+The ordered product `b₀ ⋯ bₙ₋₁` of a tuple (`List.prod (List.ofFn b)`) is the product of the
+ordered products of its first `k` and its last `n - k` entries, and is unchanged when two adjacent
+entries are multiplied together first (`Fin.contractNth`), by associativity.
+
 ## Main results
 
 * `List.prod_map_mem_of_isChain`: along a nonempty `r`-chain `x :: l`, the product of the `f y`
@@ -42,6 +49,10 @@ of replicated blocks along `List.range n` by block offsets
 * `List.prod_get_append`, `List.prod_get_replicate`, `List.prod_get_flatMap_replicate_range` (and
   their additive counterparts): position-indexed products over appended, replicated, and
   block-replicated lists.
+* `List.prod_ofFn_mul_prod_ofFn`: the ordered product of a tuple splits after its first `k`
+  entries.
+* `List.prod_ofFn_contractNth`: contracting two adjacent entries of a tuple by multiplication does
+  not change its ordered product.
 -/
 
 public section
@@ -173,5 +184,28 @@ theorem prod_get_flatMap_replicate_range (n : ℕ) (d : ℕ → ℕ) (val : ℕ 
       using prod_get_replicate (d m) (val m) fun x r ↦ f x (xs.length + r)
 
 end Indexed
+
+section OfFn
+
+variable {M : Type*} [Monoid M]
+
+/-- **The ordered product of a tuple splits** after its first `k` entries:
+`(b₀ ⋯ bₖ₋₁) (bₖ ⋯ bₙ₋₁) = b₀ ⋯ bₙ₋₁`. -/
+theorem prod_ofFn_mul_prod_ofFn {n k : ℕ} (hk : k ≤ n) (b : Fin n → M) :
+    (ofFn fun l : Fin k => b ⟨l, by omega⟩).prod *
+        (ofFn fun l : Fin (n - k) => b ⟨k + l, by omega⟩).prod = (ofFn b).prod := by
+  rw [← prod_take_mul_prod_drop (ofFn b) k]
+  congr 2 <;> apply ext_getElem <;> simp [hk]
+
+/-- **Contracting two adjacent entries does not change the ordered product**:
+`b₀ ⋯ (bₗ bₗ₊₁) ⋯ bₙ = b₀ ⋯ bₙ`. This is `Fin.partialProd_contractNth_castSucc` for the final
+partial products. -/
+@[simp]
+theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
+    (ofFn (Fin.contractNth l.castSucc (· * ·) b)).prod = (ofFn b).prod := by
+  rw [← Fin.partialProd_last_eq_prod_ofFn, ← Fin.partialProd_last_eq_prod_ofFn,
+    Fin.partialProd_contractNth_castSucc]
+
+end OfFn
 
 end List

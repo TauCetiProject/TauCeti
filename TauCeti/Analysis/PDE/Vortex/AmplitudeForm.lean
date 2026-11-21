@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import TauCeti.Analysis.PDE.Vortex.EndFraming
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Algebra.Polynomial.BigOperators
 
 /-!
 # Every framed plane vortex is a reconstructed amplitude field
@@ -36,7 +37,8 @@ smooth solution (`TauCeti.Vortex.exists_equation_eq_zero_iff_exists_laplacian_eq
 
 The argument compares the vortex `x` with the field of section `f` and zero connection. Their
 sections have the same zero multiplicities, so `α_x = h f` for a smooth nowhere-vanishing `h`
-(`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Off the zeros of `f`, the scalar equations
+(`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul_prod_sub`, from
+`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Off the zeros of `f`, the scalar equations
 `Δ log |α|² = (|α|² - 1) / 4` for `x` and `Δ log |f|² = 0` give the regularized equation for
 `u = log |h|` (`TauCeti.Vortex.laplacian_log_norm_eq`); it extends across the finitely many zeros
 by continuity (`TauCeti.Vortex.laplacian_log_norm_eq_of_dense`). Hence `amplitudeField u f` is a
@@ -91,6 +93,35 @@ theorem eq_of_framedGaugeGroup_smul_amplitudeField_eq {u u' : ℂ → ℝ} (hu :
     (exp_mul_norm_eq_norm_sectionValue rfl z).symm
   exact mul_right_cancel₀ hfz.ne' this
 
+/-- **The section is a smooth unit times the divisor polynomial.** Let `x` have `Cᵏ` connection
+coefficients, `k ≥ 1`, differentiable section, vanishing holomorphicity rows and zero divisor `D`.
+Then `α = h ∏_{a ∈ D} (w - a)` for a nowhere-vanishing function `h` of class `Cᵏ`. -/
+theorem exists_contDiff_sectionValue_eq_mul_prod_sub {x : ℂ → EuclideanSpace ℝ (Fin 4)} {k : ℕ∞}
+    (hk : 1 ≤ k) (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) :
+    ∃ h : ℂ → ℂ, ContDiff ℝ k h ∧ (∀ z, h z ≠ 0) ∧
+      ∀ z, sectionValue x z = h z * (D.map fun a ↦ z - a).prod := by
+  set f : ℂ → ℂ := fun w ↦ (D.map fun a ↦ w - a).prod
+  have hfd : Differentiable ℂ f := by
+    have hPf : (D.map fun a ↦ X - C a).prod.eval = f := funext (eval_multiset_prod_X_sub_C D)
+    exact hPf ▸ Polynomial.differentiable _
+  -- Compare `x` with the field reconstructed from `f` and the zero amplitude.
+  set y := amplitudeField (fun _ ↦ 0) f
+  have hy : ContDiff ℝ ∞ y :=
+    contDiff_amplitudeField contDiff_const ((hfd.contDiff (n := ∞)).restrict_scalars ℝ)
+  have hyi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ y w i := (contDiff_piLp 2).1 hy i
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul hk hb₁ hb₂ hp hq hhol
+    ((hyi 0).of_le (by exact_mod_cast le_top)) ((hyi 1).of_le (by exact_mod_cast le_top))
+    ((hyi 2).differentiable (by simp)) ((hyi 3).differentiable (by simp))
+    (fun w ↦ equation_amplitudeField_apply_one_eq_zero_and_apply_two_eq_zero
+      (differentiableAt_const _) (hfd w))
+    (isZeroMultiplicity_iff.1 hD)
+    (isZeroMultiplicity_iff.1 (isZeroMultiplicity_sectionValue_amplitudeField_prod_sub
+      continuous_const D))
+  exact ⟨h, hh, hh₀, fun z ↦ by simpa [y, sectionValue_amplitudeField] using hα z⟩
+
 /-- **Every framed vortex is a reconstructed amplitude field.** Let `x` be a smooth solution of
 the vortex equation on the plane with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, and let
 `D` be its zero divisor. Put `f(w) = ∏_{a ∈ D} (w - a)`. Then there is a smooth solution `u` of the
@@ -116,19 +147,8 @@ theorem exists_framedGaugeGroup_smul_amplitudeField_eq {x : ℂ → EuclideanSpa
   have hd {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g) : Differentiable ℝ g := hg.differentiable (by simp)
   have hxhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hsol w]
   -- The vortex section is `h f` for a smooth nowhere-vanishing factor `h`.
-  set y := amplitudeField (fun _ ↦ 0) f
-  have hy : ContDiff ℝ ∞ y := contDiff_amplitudeField contDiff_const hfs
-  have hyi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ y w i := (contDiff_piLp 2).1 hy i
-  have hyhol (w : ℂ) : equation y w 1 = 0 ∧ equation y w 2 = 0 :=
-    equation_amplitudeField_apply_one_eq_zero_and_apply_two_eq_zero (differentiableAt_const _)
-      (hfd w)
-  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
-    (hd (hxi 2)) (hd (hxi 3)) hxhol (hyi 0) (hyi 1) (hd (hyi 2)) (hd (hyi 3)) hyhol
-    (isZeroMultiplicity_iff.1 hD)
-    (isZeroMultiplicity_iff.1 (isZeroMultiplicity_sectionValue_amplitudeField_prod_sub
-      continuous_const D))
-  have hα' (z : ℂ) : sectionValue x z = h z * f z := by
-    simpa [y, sectionValue_amplitudeField] using hα z
+  obtain ⟨h, hh, hh₀, hα'⟩ := exists_contDiff_sectionValue_eq_mul_prod_sub (k := ⊤) le_top (hxi 0)
+    (hxi 1) (hd (hxi 2)) (hd (hxi 3)) hxhol hD
   -- The amplitude `u = log |h|` is smooth and solves the regularized scalar equation.
   set u : ℂ → ℝ := fun z ↦ Real.log ‖h z‖
   have hu : ContDiff ℝ ∞ u := (hh.norm ℝ hh₀).log fun z ↦ norm_ne_zero_iff.2 (hh₀ z)

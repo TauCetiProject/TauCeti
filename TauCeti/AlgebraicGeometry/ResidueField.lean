@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.AlgebraicGeometry.ResidueDegree
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # Residue fields of schemes and their behaviour under base change
@@ -32,6 +34,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
+  separably closed field is separably closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -96,6 +100,12 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
   rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
+
+/-- The residue field of the spectrum of a separably closed field is separably closed: it is the
+field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/
+instance Spec.isSepClosed_residueField {K : Type u} [Field K] [IsSepClosed K]
+    (s : Spec (.of K)) : IsSepClosed ((Spec (.of K)).residueField s) :=
+  IsSepClosed.of_ringEquiv (Scheme.Spec.residueFieldIsoOfField s).symm.commRingCatIsoToRingEquiv
 
 section residueFieldCongr
 
