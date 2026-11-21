@@ -251,7 +251,7 @@ private noncomputable def jetMap (f : ℝ → E → ℝ) (P : Λ →ₗ[ℝ] E �
 private theorem contDiffAt_jetMap {t : ℝ} {x v : E} (hf : ContDiffAt ℝ 4 (uncurry f) (t, x))
     (hP : ContDiff ℝ 4 fun q : Λ × E ↦ P q.1 q.2) (p : Λ) :
     ContDiffAt ℝ 1 (jetMap f P) ((t, x, v), p) := by
-  have h1 := (contDiffAt_sub_of_contDiffAt_uncurry hf (hP.contDiffAt (x := (p, x)))).fderiv_slice
+  have h1 := (hf.sub_uncurry_prod (hP.contDiffAt (x := (p, x)))).fderiv_slice
     (m := 3) (by norm_num)
   have h2 := h1.fderiv_slice (m := 2) (by norm_num)
   have h3 := h2.fderiv_slice (m := 1) (by norm_num)
@@ -295,7 +295,7 @@ private theorem fderiv_jetMap_apply_coeff {t : ℝ} {x v : E} {p : Λ}
       -(fderiv ℝ (P q) x, fderiv ℝ (fderiv ℝ (P q)) x v,
         fderiv ℝ (fderiv ℝ (fderiv ℝ (P q))) x v v v) := by
   have hu : ContDiffAt ℝ 3 (fun y ↦ f t y - P p y) x :=
-    ((contDiffAt_sub_of_contDiffAt_uncurry hf (hP.contDiffAt (x := (p, x)))).comp x
+    ((hf.sub_uncurry_prod (hP.contDiffAt (x := (p, x)))).comp x
       (contDiffAt_const.prodMk contDiffAt_id)).of_le (by norm_num)
   have hw : ContDiff ℝ 3 (P q) :=
     (hP.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)

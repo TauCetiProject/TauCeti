@@ -121,19 +121,6 @@ private theorem fderiv_sub_eq_of_contDiffAt {s : ℝ} {y : E}
     (hf.comp y ((contDiffAt_const (c := s)).prodMk contDiffAt_id)).differentiableAt one_ne_zero
   simpa using fderiv_fun_sub hd a.differentiableAt
 
-/-- Subtracting the members `P p` of a family of functions that is jointly `C^n` in the parameter
-`p` and the point keeps a family jointly `C^n`, now also in `p`. -/
-theorem contDiffAt_sub_of_contDiffAt_uncurry {Λ : Type*} [NormedAddCommGroup Λ]
-    [NormedSpace ℝ Λ] {n : WithTop ℕ∞} {P : Λ → E → ℝ} {p : Λ}
-    (hf : ContDiffAt ℝ n (uncurry f) (t, x))
-    (hP : ContDiffAt ℝ n (fun q : Λ × E ↦ P q.1 q.2) (p, x)) :
-    ContDiffAt ℝ n (fun q : (ℝ × Λ) × E ↦ f q.1.1 q.2 - P q.1.2 q.2) ((t, p), x) := by
-  have h1 : ContDiffAt ℝ n (fun q : (ℝ × Λ) × E ↦ f q.1.1 q.2) ((t, p), x) :=
-    hf.comp ((t, p), x) (contDiffAt_fst.fst.prodMk contDiffAt_snd)
-  have h2 : ContDiffAt ℝ n (fun q : (ℝ × Λ) × E ↦ P q.1.2 q.2) ((t, p), x) :=
-    hP.comp ((t, p), x) (contDiffAt_fst.snd.prodMk contDiffAt_snd)
-  exact h1.sub h2
-
 /-- **The derivative of the parametrized differential** `(t, x) ↦ d(f t)_x` at `(t, x)` sends
 `(τ, ξ)` to `τ • ∂ₜ (d(f t)_x) + Hess(f t)_x ξ`. -/
 theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ × E) :
@@ -213,7 +200,7 @@ theorem ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq {Λ : 
   -- `G` is `C²` at the points over `W`.
   have hGc : ∀ w ∈ U, ContDiffAt ℝ 2 G w := by
     rintro ⟨⟨t, x⟩, p⟩ hw
-    exact ((contDiffAt_sub_of_contDiffAt_uncurry (hf (t, x) hw) hP.contDiffAt).fderiv_slice
+    exact (((hf (t, x) hw).sub_uncurry_prod hP.contDiffAt).fderiv_slice
       (m := 2) le_rfl).comp ((t, x), p)
         ((contDiffAt_fst.fst.prodMk contDiffAt_snd).prodMk contDiffAt_fst.snd)
   -- Its derivative in the direction of the coefficients is onto.
@@ -221,7 +208,7 @@ theorem ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq {Λ : 
     rintro ⟨⟨t, x⟩, p⟩ hw - a
     obtain ⟨q, hq⟩ := hjet (t, x) hw (-a)
     have hu : DifferentiableAt ℝ (fun y ↦ f t y - P p y) x :=
-      ((contDiffAt_sub_of_contDiffAt_uncurry (hf (t, x) hw) hP.contDiffAt).comp x
+      (((hf (t, x) hw).sub_uncurry_prod hP.contDiffAt).comp x
         (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by norm_num)
     have hw' : DifferentiableAt ℝ (P q) x :=
       (hP.comp (contDiff_const.prodMk contDiff_id)).differentiable (by norm_num) x
