@@ -30,6 +30,8 @@ equivalence, so is `MooreLoopSpace.toPath` in the other direction
 
 * `Path.transMoorePath_eq_rescale`: `p.toMoorePath.trans q.toMoorePath` is
   `(p.trans q).toMoorePath` reparametrized to length two.
+* `Path.toUnitPath_trans_toMoorePath`: on the unit interval, `p.toMoorePath.trans q.toMoorePath`
+  is `p.trans q`.
 * `Path.transMoorePathHomotopy`: the homotopy from `(p.trans q).toMoorePath` to
   `p.toMoorePath.trans q.toMoorePath`, continuous in `(p, q)`, through paths from `x` to `z`
   (`transMoorePathHomotopy_source`, `transMoorePathHomotopy_target`).
@@ -79,6 +81,13 @@ theorem _root_.Path.transMoorePath_eq_rescale (p : Path x y) (q : Path y z) :
     rw [MoorePath.trans_apply_of_length_le _ _ _ ht', Path.extend_trans_of_half_le _ _ h2, h3,
       Path.toMoorePath_apply,
       Path.length_toMoorePath, NNReal.coe_sub ht, NNReal.coe_one]
+
+/-- On the unit interval, the concatenation of the Moore paths of `p` and `q` is `p.trans q`. -/
+@[simp]
+theorem _root_.Path.toUnitPath_trans_toMoorePath (p : Path x y) (q : Path y z) :
+    (p.toMoorePath.trans q.toMoorePath (by simp)).toUnitPath = (p.trans q).toContinuousMap := by
+  rw [Path.transMoorePath_eq_rescale, MoorePath.toUnitPath_rescale _ two_ne_zero,
+    Path.toUnitPath_toMoorePath]
 
 end TauCeti
 

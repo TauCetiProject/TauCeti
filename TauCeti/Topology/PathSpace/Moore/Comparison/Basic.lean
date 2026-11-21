@@ -179,6 +179,16 @@ theorem ofUnitPath_toUnitPath_apply (γ : MoorePath X) (t : ℝ≥0) :
     ofUnitPath γ.toUnitPath t = γ (γ.length * min t 1) := by
   rw [ofUnitPath_apply, toUnitPath_apply, toNNReal_projIcc, Real.toNNReal_coe]
 
+/-- Reparametrizing a Moore path to a nonzero length does not change its path on the unit
+interval. -/
+@[simp]
+theorem toUnitPath_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) :
+    (γ.rescale ℓ).toUnitPath = γ.toUnitPath :=
+  ContinuousMap.ext fun s ↦ by
+    simp only [toUnitPath_apply, rescale_apply, length_rescale]
+    congr 1
+    field_simp
+
 /-- Sending a Moore path to the unit interval and back reparametrizes it to length one. -/
 theorem ofUnitPath_toUnitPath (γ : MoorePath X) : ofUnitPath γ.toUnitPath = γ.rescale 1 := by
   refine ext (by rw [length_ofUnitPath, length_rescale]) fun t ↦ ?_
@@ -368,6 +378,18 @@ theorem _root_.Path.target_toMoorePath (p : Path x y) : p.toMoorePath.target = y
 theorem _root_.Path.continuous_toMoorePath :
     Continuous (Path.toMoorePath : Path x y → MoorePath X) :=
   MoorePath.continuous_ofUnitPath.comp continuous_induced_dom
+
+/-- The Moore path of a path is `MoorePath.ofUnitPath` of its underlying continuous map. -/
+theorem _root_.Path.toMoorePath_def (p : Path x y) :
+    p.toMoorePath = MoorePath.ofUnitPath p.toContinuousMap :=
+  (rfl)
+
+/-- A path on the unit interval, sent to the Moore paths and back to the unit interval, is
+unchanged. -/
+@[simp]
+theorem _root_.Path.toUnitPath_toMoorePath (p : Path x y) :
+    p.toMoorePath.toUnitPath = p.toContinuousMap := by
+  rw [Path.toMoorePath_def, MoorePath.toUnitPath_ofUnitPath]
 
 namespace MoorePath
 

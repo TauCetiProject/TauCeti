@@ -20,6 +20,11 @@ this is exactly the native compact-open path space, and hence at equal endpoints
 the native loop space. In particular, this identification does not presume that
 an endpoint fibre is nonempty.
 
+Loops at `k` act on the mapping-path fibre by concatenation on the unit interval,
+`(b, γ) ↦ (b, γ.trans ℓ)` (`MappingPathFiber.transLoop`), continuously in both variables
+(`MappingPathFiber.continuous_transLoop`). Since concatenation on the unit interval is associative
+only up to reparametrization, this is not a monoid action.
+
 The fibre of the source projection over `b` is the space of paths from `f b` to `k`. It is
 empty exactly when `f b` and `k` lie in different path components
 (`MappingPathFiber.isEmpty_projFiber_iff`). A chosen reference path `α` from `f b` to `k`
@@ -196,6 +201,46 @@ theorem projFiberHomotopyEquivLoopSpace_symm_apply (b : B) (α : Path (f b) k) (
       (projFiberHomeomorphPath f k b).symm (α.trans ℓ) :=
   -- Mathlib's `HomotopyEquiv.trans` and `symm` unfold to the composite of the inverse maps.
   congrArg (projFiberHomeomorphPath f k b).symm (Path.prependHomotopyEquiv_apply α ℓ)
+
+/-! ### Concatenation with loops -/
+
+/-- The path from `f b` to `k` of a point `(b, γ)` of the mapping-path fibre. -/
+def toPath (p : MappingPathFiber f k) : Path (f p.val.1) k where
+  toContinuousMap := p.val.2
+  source' := p.property.1
+  target' := p.property.2
+
+@[simp]
+theorem coe_toPath (p : MappingPathFiber f k) : ⇑(toPath f k p) = p.val.2 := (rfl)
+
+@[simp]
+theorem toContinuousMap_toPath (p : MappingPathFiber f k) :
+    (toPath f k p).toContinuousMap = p.val.2 := (rfl)
+
+/-- Concatenation of a point `(b, γ)` of the mapping-path fibre with a loop `ℓ` at `k` on the unit
+interval: the point `(b, γ.trans ℓ)`. Concatenation on the unit interval is associative only up to
+reparametrization, so this is not an action of the monoid `Path k k`. -/
+noncomputable def transLoop (p : MappingPathFiber f k) (ℓ : Path k k) : MappingPathFiber f k :=
+  ⟨(p.val.1, ((toPath f k p).trans ℓ).toContinuousMap), Path.source _, Path.target _⟩
+
+@[simp]
+theorem transLoop_val_fst (p : MappingPathFiber f k) (ℓ : Path k k) :
+    (transLoop f k p ℓ).val.1 = p.val.1 := (rfl)
+
+@[simp]
+theorem transLoop_val_snd (p : MappingPathFiber f k) (ℓ : Path k k) :
+    (transLoop f k p ℓ).val.2 = ((toPath f k p).trans ℓ).toContinuousMap := (rfl)
+
+/-- Concatenation with loops is continuous in both variables. -/
+theorem continuous_transLoop :
+    Continuous fun q : MappingPathFiber f k × Path k k ↦ transLoop f k q.1 q.2 := by
+  refine ((continuous_subtypeVal.comp continuous_fst).fst.prodMk
+    (ContinuousMap.continuous_of_continuous_uncurry _ ?_)).subtype_mk _
+  exact Path.trans_continuous_family (fun q : MappingPathFiber f k × Path k k ↦ toPath f k q.1)
+    (continuous_eval.comp ((continuous_subtypeVal.comp (continuous_fst.comp continuous_fst)).snd
+      |>.prodMk continuous_snd))
+    (fun q ↦ q.2) (continuous_eval.comp ((continuous_snd.comp continuous_fst).prodMk
+      continuous_snd))
 
 end MappingPathFiber
 
