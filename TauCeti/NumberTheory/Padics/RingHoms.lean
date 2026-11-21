@@ -68,6 +68,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   hence by `p` for `n ≠ 0`), `appr x n` reduces modulo `p` to `toZMod x`, `p ^ m` divides
   `appr x n` exactly when `p ^ m` divides `x`, and `appr x n` is coprime to `p` exactly when `x`
   is a unit.
+* `PadicInt.exists_int_isCoprime_and_pow_dvd_sub`: every unit of `ℤ_p` admits an integer lift
+  coprime to `p` and congruent modulo `p ^ max k 1`.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
   `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
   number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
@@ -360,6 +362,13 @@ theorem dvd_appr_iff (x : ℤ_[p]) {n : ℕ} (hn : n ≠ 0) : p ∣ x.appr n ↔
 theorem coprime_appr_iff (x : ℤ_[p]) {n : ℕ} (hn : n ≠ 0) :
     p.Coprime (x.appr n) ↔ IsUnit x := by
   rw [hp.out.coprime_iff_not_dvd, dvd_appr_iff x hn, ← not_isUnit_iff_dvd, not_not]
+
+/-- Any unit of `ℤ_p` admits an integer lift coprime to `p` and congruent modulo `p ^ max k 1`. -/
+theorem exists_int_isCoprime_and_pow_dvd_sub {x : ℤ_[p]} (hx : IsUnit x) (k : ℕ) :
+    ∃ a : ℤ, IsCoprime (p : ℤ) a ∧ (p : ℤ_[p]) ^ max k 1 ∣ x - a := by
+  refine ⟨(x.appr (max k 1) : ℤ), ?_, ?_⟩
+  · exact ((x.coprime_appr_iff (n := max k 1) (by simp)).mpr hx).isCoprime
+  · simpa only [Int.cast_natCast] using x.dvd_sub_appr (max k 1)
 
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are

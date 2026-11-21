@@ -44,25 +44,6 @@ namespace TauCeti.FiniteQuadraticModule
 
 variable (A : FiniteQuadraticModule)
 
-/-- Canonical quadratic isometry identifying the orthogonal family product
-`FiniteQuadraticModule.pi` of the prime-primary restrictions of `A` with `A.primaryComponents`. -/
-private noncomputable def piPrimaryComponentsIsometry :
-    Isometry
-      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.val))
-      A.primaryComponents where
-  toLinearEquiv :=
-    { toFun := fun x p ↦ ⟨(x p).val, (x p).property⟩
-      invFun := fun y p ↦ ⟨(y p).val, (y p).property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  map_app' x :=
-    (A.primaryComponents_quadratic (fun p ↦ ⟨(x p).val, (x p).property⟩)).trans <|
-      (Finset.sum_congr rfl fun p _ ↦
-        (A.restrict_quadratic (primaryComponent A p.val) ⟨(x p).val, (x p).property⟩).symm).trans
-        (pi_quadratic _ x).symm
-
 /-- The Gauss-sum invariant of `A.primaryComponents` is the sum of the Gauss-sum invariants of the
 prime-primary restrictions of `A`. -/
 theorem gaussSign_primaryComponents (hA : A.IsNondegenerate) :

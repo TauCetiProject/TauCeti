@@ -34,6 +34,8 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
   cardinality formula.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup`: the discriminant-group cardinality is the
   lattice discriminant.
+* `TauCeti.IntegralLattice.discriminant_eq_of_addEquiv`: additively equivalent discriminant
+  groups come from lattices of equal discriminant.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_ofGramMatrix`: the formula for a lattice
   constructed from an integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
@@ -107,6 +109,13 @@ theorem natCard_discriminantGroup (L : IntegralLattice V) :
   classical
   rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
     L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
+
+/-- Integral lattices with additively equivalent discriminant groups have the same discriminant. -/
+theorem discriminant_eq_of_addEquiv {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W}
+    (e : L.DiscriminantGroup ≃+ M.DiscriminantGroup) :
+    L.discriminant = M.discriminant := by
+  simpa only [natCard_discriminantGroup] using Nat.card_congr e.toEquiv
 
 /-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
 `p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. -/

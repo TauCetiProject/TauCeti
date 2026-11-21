@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.GroupTheory.Rank
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
-import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.GroupTheory.FiniteAbelian.PrimePowerRank
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Additive structure of the `p`-primary discriminant group from a diagonal Jordan form
@@ -27,9 +28,11 @@ generator count `AddGroup.rank (A_L)_p = #{i | kᵢ ≠ 0}`
 * `TauCeti.IntegralLattice.diagonalDualVec` and
   `TauCeti.IntegralLattice.localizationDualToCompletion_diagonalDualVec`: the chosen `p`-adic
   dual basis vectors representing `p^{-kᵢ} bᵢ`.
-* `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent` and
-  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_intCast`: additive equivalence
-  `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p` and its evaluation on integer tuples.
+* `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`,
+  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_intCast`, and
+  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_symm_mk`: additive equivalence
+  `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p`, its evaluation on integer tuples, and its inverse on a dual
+  representative.
 * `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`: generator count
   `AddGroup.rank (A_L)_p = #{i | kᵢ ≠ 0}`.
 -/
@@ -112,13 +115,25 @@ private theorem pow_nsmul_eq_localCarrierToDual
     ← Nat.cast_smul_eq_nsmul ℚ_[p], smul_smul, Nat.cast_pow, mul_inv_cancel₀ (pow_ne_zero _ hp),
     one_smul]
 
-/-- The classes of the dual vectors `p^{-kᵢ} bᵢ` generate the discriminant group of `L_p`. -/
-private theorem exists_mk_eq_sum_nsmul [Fintype ι] (hb : (L.localIntegralForm p).iIsOrtho b)
+omit [L.IsNondegenerate] in
+/-- The local discriminant class of `p^{-kᵢ} bᵢ` is killed by `pᵏⁱ`. -/
+private theorem pow_nsmul_mkQ_eq_zero
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (i : ι) :
+    p ^ k i • (LinearMap.range (L.localCarrierToDual p)).mkQ (y i) = 0 := by
+  rw [← map_nsmul, pow_nsmul_eq_localCarrierToDual hy, Submodule.mkQ_apply,
+    Submodule.Quotient.mk_eq_zero]
+  exact LinearMap.mem_range_self _ (b i)
+
+/-- Every class in the local discriminant group decomposes in the basis classes `[p^{-kᵢ} bᵢ]`
+with coefficients given by truncating `B(z, bᵢ) uᵢ⁻¹` modulo `pᵏⁱ`. -/
+private theorem mkQ_eq_sum_appr_nsmul [Fintype ι] (hb : (L.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
     (hy : ∀ i, L.localizationDualToCompletion p (y i) =
       ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (z : L.LocalDualCarrier p) :
-    ∃ n : ι → ℕ, (Submodule.Quotient.mk z : L.LocalDiscriminantGroup p) =
-      ∑ i, n i • Submodule.Quotient.mk (y i) := by
+    (LinearMap.range (L.localCarrierToDual p)).mkQ z =
+      ∑ i, (L.localDualPairingEquiv p z (b i) * ↑(u i)⁻¹).appr (k i) •
+        (LinearMap.range (L.localCarrierToDual p)).mkQ (y i) := by
   classical
   -- The coordinates of `z` in the basis `p^{-kᵢ} bᵢ` are `B(z, bᵢ) uᵢ⁻¹`.
   set c : ι → ℤ_[p] := fun i ↦ L.localDualPairingEquiv p z (b i) * ↑(u i)⁻¹
@@ -131,17 +146,17 @@ private theorem exists_mk_eq_sum_nsmul [Fintype ι] (hb : (L.localIntegralForm p
     rw [mul_assoc, Units.inv_mul, mul_one]
   -- Reduce each coordinate modulo `pᵏⁱ`; the remainders contribute vectors of `L_p`.
   choose t ht using fun i ↦ Ideal.mem_span_singleton'.mp (PadicInt.appr_spec (k i) (c i))
-  refine ⟨fun i ↦ (c i).appr (k i), ?_⟩
   have hc i : c i = ((c i).appr (k i) : ℤ_[p]) + t i * (p : ℤ_[p]) ^ k i := by
     rw [ht i, add_sub_cancel]
-  rw [hz, ← Submodule.mkQ_apply, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have h0 : (Submodule.Quotient.mk ((p : ℤ_[p]) ^ k i • y i) : L.LocalDiscriminantGroup p) = 0 := by
-    rw [← Nat.cast_pow, Nat.cast_smul_eq_nsmul, pow_nsmul_eq_localCarrierToDual hy]
-    exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨b i, rfl⟩
-  rw [Submodule.mkQ_apply, hc i, add_smul, mul_smul, Submodule.Quotient.mk_add,
-    Submodule.Quotient.mk_smul _ (t i), h0, smul_zero, add_zero, Nat.cast_smul_eq_nsmul,
-    Submodule.Quotient.mk_smul]
+  have hp_smul i :
+      ((p : ℤ_[p]) ^ k i) • (LinearMap.range (L.localCarrierToDual p)).mkQ (y i) = 0 := by
+    rw [← Nat.cast_pow, Nat.cast_smul_eq_nsmul, pow_nsmul_mkQ_eq_zero hy i]
+  have hterm i : (LinearMap.range (L.localCarrierToDual p)).mkQ (c i • y i) =
+      (c i).appr (k i) • (LinearMap.range (L.localCarrierToDual p)).mkQ (y i) := by
+    conv_lhs => rw [hc i, add_smul, mul_smul]
+    simp only [map_add, map_smul, map_nsmul, hp_smul, smul_zero, add_zero, Nat.cast_smul_eq_nsmul]
+  conv_lhs => rw [hz, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ hterm i
 
 /-! ### The additive equivalence `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p` -/
 
@@ -151,8 +166,7 @@ theorem pow_nsmul_symm_mk_eq_zero
       ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (i : ι) :
     p ^ k i • (L.primaryComponentEquivLocalDiscriminantGroup p).symm
       (Submodule.Quotient.mk (y i)) = 0 := by
-  rw [← map_nsmul, ← Submodule.Quotient.mk_smul, pow_nsmul_eq_localCarrierToDual hy,
-    (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.mem_range_self _ (b i)), map_zero]
+  rw [← map_nsmul, ← Submodule.mkQ_apply, pow_nsmul_mkQ_eq_zero hy i, map_zero]
 
 /-- The additive homomorphism `(cᵢ) ↦ ∑ᵢ cᵢ [p^{-kᵢ} bᵢ]` from `∏ᵢ ℤ/pᵏⁱ` to `(A_L)_p`. -/
 private noncomputable def piZModPowHom [Fintype ι]
@@ -175,6 +189,30 @@ private theorem piZModPowHom_intCast [Fintype ι]
   have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
   simp [piZModPowHom, ZMod.lift_coe]
 
+/-- Evaluating `piZModPowHom` at the residues `toZModPow (k i) (B(z, bᵢ) uᵢ⁻¹)` recovers the
+`p`-primary discriminant class of `z`. -/
+private theorem piZModPowHom_toZModPow [Fintype ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (z : L.LocalDualCarrier p) :
+    piZModPowHom hy
+        (fun i ↦ PadicInt.toZModPow (k i)
+          (L.localDualPairingEquiv p z (b i) * (↑(u i)⁻¹ : ℤ_[p]))) =
+      (L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk z) := by
+  apply (L.primaryComponentEquivLocalDiscriminantGroup p).injective
+  have hcast :
+      (fun i ↦ PadicInt.toZModPow (k i)
+          (L.localDualPairingEquiv p z (b i) * (↑(u i)⁻¹ : ℤ_[p]))) =
+        fun i ↦ (((L.localDualPairingEquiv p z (b i) * (↑(u i)⁻¹ : ℤ_[p])).appr (k i) : ℤ) :
+          ZMod (p ^ k i)) :=
+    funext fun i ↦ by rw [Int.cast_natCast, ← PadicInt.toZModPow_eq_natCast_appr]
+  rw [hcast, piZModPowHom_intCast,
+    (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply]
+  simp only [map_sum, natCast_zsmul, map_nsmul,
+    (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply, ← Submodule.mkQ_apply]
+  exact (mkQ_eq_sum_appr_nsmul hb hbu hy z).symm
+
 private theorem bijective_piZModPowHom [Fintype ι]
     (hb : (L.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
@@ -187,14 +225,13 @@ private theorem bijective_piZModPowHom [Fintype ι]
   · have hc_val : c = fun i ↦ (((c i).val : ℤ) : ZMod (p ^ k i)) :=
       funext fun i ↦ by rw [Int.cast_natCast, ZMod.natCast_zmod_val]
     rw [hc_val, piZModPowHom_intCast] at hc
-    have hmk : (Submodule.Quotient.mk (∑ i, (c i).val • y i) : L.LocalDiscriminantGroup p) = 0 := by
+    have hmk : (LinearMap.range (L.localCarrierToDual p)).mkQ (∑ i, (c i).val • y i) = 0 := by
       have hmap := congrArg (L.primaryComponentEquivLocalDiscriminantGroup p) hc
-      rw [map_zero, map_sum] at hmap
-      rw [← Submodule.mkQ_apply, map_sum]
-      refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans hmap
-      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_smul, ← natCast_zsmul, map_zsmul,
-        (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply, natCast_zsmul]
-    obtain ⟨x, hx⟩ := (Submodule.Quotient.mk_eq_zero _).mp hmk
+      simpa only [map_zero, map_sum, natCast_zsmul, map_nsmul,
+        (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply,
+        Submodule.mkQ_apply] using hmap
+    obtain ⟨x, hx⟩ := (Submodule.Quotient.mk_eq_zero (LinearMap.range (L.localCarrierToDual p))).mp
+      (by simpa only [Submodule.mkQ_apply] using hmk)
     ext j
     have hpair := congrArg (fun w ↦ L.localDualPairingEquiv p w (b j)) hx
     simp only [localDualPairingEquiv_localCarrierToDual, (L.isSymm_localIntegralForm p).eq x (b j),
@@ -209,11 +246,10 @@ private theorem bijective_piZModPowHom [Fintype ι]
         ((PadicInt.pow_p_dvd_natCast_iff _ _).mp hdvd)
   · obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _
       (L.primaryComponentEquivLocalDiscriminantGroup p c)
-    obtain ⟨n, hn⟩ := exists_mk_eq_sum_nsmul hb hbu hy z
-    refine ⟨fun i ↦ ((n i : ℤ) : ZMod (p ^ k i)),
-      (L.primaryComponentEquivLocalDiscriminantGroup p).injective ?_⟩
-    rw [piZModPowHom_intCast, map_sum, ← hz, hn]
-    simp
+    refine ⟨fun i ↦ PadicInt.toZModPow (k i)
+      (L.localDualPairingEquiv p z (b i) * (↑(u i)⁻¹ : ℤ_[p])), ?_⟩
+    rw [piZModPowHom_toZModPow hb hbu hy, hz,
+      (L.primaryComponentEquivLocalDiscriminantGroup p).symm_apply_apply]
 
 /-- **Additive structure of `(A_L)_p` from a diagonal Jordan form.** For any prime `p` (including
 `p = 2`) and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the dual
@@ -235,6 +271,21 @@ theorem piZModPowEquivPrimaryComponent_intCast [Fintype ι]
       ∑ i, n i • (L.primaryComponentEquivLocalDiscriminantGroup p).symm
         (Submodule.Quotient.mk (diagonalDualVec hb hbu i)) :=
   piZModPowHom_intCast (localizationDualToCompletion_diagonalDualVec hb hbu) n
+
+/-- The inverse of `piZModPowEquivPrimaryComponent` recovers the `i`-th coordinate of the
+`p`-primary class of a dual vector `z` by reducing `L.localDualPairingEquiv p z (b i) * ↑(u i)⁻¹`
+modulo `p ^ k i`. -/
+@[simp]
+theorem piZModPowEquivPrimaryComponent_symm_mk [Fintype ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    (z : L.LocalDualCarrier p) (i : ι) :
+    (L.piZModPowEquivPrimaryComponent hb hbu).symm
+        ((L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk z)) i =
+      PadicInt.toZModPow (k i) (L.localDualPairingEquiv p z (b i) * (↑(u i)⁻¹ : ℤ_[p])) := by
+  have h := (L.piZModPowEquivPrimaryComponent hb hbu).symm_apply_eq.mpr
+    (piZModPowHom_toZModPow hb hbu (localizationDualToCompletion_diagonalDualVec hb hbu) z).symm
+  exact congrFun h i
 
 /-- **Generator count (`AddGroup.rank`) of `(A_L)_p` from a diagonal Jordan form.** For any prime
 `p` and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the rank of

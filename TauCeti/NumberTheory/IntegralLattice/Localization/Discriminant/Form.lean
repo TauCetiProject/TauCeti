@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Genus
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
+import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
@@ -48,6 +50,8 @@ discriminant bilinear form replaces the quadratic one.
   agree up to `ℤ_p`.
 * `TauCeti.IntegralLattice.primaryDiscriminantBilinearIsometry`: an isometry `L_p ≃ M_p` induces
   an isometry of the `p`-primary components of the discriminant bilinear modules.
+* `TauCeti.IntegralLattice.evenSublatticePrimaryBilinearIsometry`: odd-prime specialization
+  identifying the `p`-primary discriminant bilinear module of `L.evenSublattice` with that of `L`.
 * `TauCeti.IntegralLattice.primaryDiscriminantQuadraticIsometry`: for even lattices, it induces an
   isometry of the `p`-primary components of the discriminant quadratic modules.
 * `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`: lattices in one
@@ -384,6 +388,21 @@ theorem localizationDualToCompletion_sub_mem_range_of_primaryDiscriminantBilinea
   refine ⟨m, ?_⟩
   rw [hm, map_add, completedIsometryEquiv_localizationDualToCompletion,
     localizationDualToCompletion_localCarrierToDual, add_sub_cancel_left]
+
+omit [M.IsNondegenerate] in
+/-- At an odd prime `p`, the `p`-primary component of the discriminant bilinear module of
+`L.evenSublattice` is isometric to that of `L`. -/
+noncomputable def evenSublatticePrimaryBilinearIsometry
+    (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime] (hp : Odd p) :
+    FiniteBilinearModule.Isometry
+      (L.evenSublattice.discriminantBilinearModule.restrict
+        (primaryComponent L.evenSublattice.discriminantBilinearModule p))
+      (L.discriminantBilinearModule.restrict
+        (primaryComponent L.discriminantBilinearModule p)) :=
+  primaryDiscriminantBilinearIsometry
+    (L.evenSublattice.localInclusionIsometryEquiv L p L.evenSublattice_form
+      L.evenSublattice_carrier_le
+      (L.not_dvd_relIndex_evenSublattice_of_odd hp (Fact.out : p.Prime).ne_one))
 
 /-- **The `p`-primary discriminant quadratic form is local.** An isometry `φ : L_p ≃ M_p` of the
 localizations at `p` of two even nondegenerate integral lattices induces an isometry between the

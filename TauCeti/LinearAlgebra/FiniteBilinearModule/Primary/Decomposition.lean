@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Primary.Decomposition
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 
 /-!
@@ -25,6 +26,8 @@ orthogonality and finite-sum identities proved in
 
 * `TauCeti.FiniteBilinearModule.primaryDecomposition`: the canonical primary decomposition as a
   bilinear isometry.
+* `TauCeti.FiniteQuadraticModule.piPrimaryComponentsIsometry`: canonical quadratic isometry
+  between `FiniteQuadraticModule.pi` of the prime-primary restrictions and `primaryComponents`.
 * `TauCeti.FiniteQuadraticModule.primaryDecomposition`: the canonical primary decomposition as a
   quadratic isometry.
 * `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponents` and
@@ -191,6 +194,25 @@ theorem primaryComponents_quadratic (x : A.primaryComponents) :
   apply Finset.sum_congr rfl
   intro p _
   rfl
+
+/-- Canonical quadratic isometry identifying the orthogonal family product
+`FiniteQuadraticModule.pi` of the prime-primary restrictions of `A` with `A.primaryComponents`. -/
+noncomputable def piPrimaryComponentsIsometry :
+    Isometry
+      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.val))
+      A.primaryComponents where
+  toLinearEquiv :=
+    { toFun := fun x p ↦ ⟨(x p).val, (x p).property⟩
+      invFun := fun y p ↦ ⟨(y p).val, (y p).property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  map_app' x :=
+    (A.primaryComponents_quadratic (fun p ↦ ⟨(x p).val, (x p).property⟩)).trans <|
+      (Finset.sum_congr rfl fun p _ ↦
+        (A.restrict_quadratic (primaryComponent A p.val) ⟨(x p).val, (x p).property⟩).symm).trans
+        (pi_quadratic _ x).symm
 
 /-- The canonical primary decomposition is a quadratic isometry. -/
 noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
