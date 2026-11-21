@@ -33,8 +33,9 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
   `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant_iff`:
   `fundamentalDiscriminant d` is a fundamental discriminant if and only if `d` is squarefree.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_injective`,
-  `TauCeti.Multiquadratic.fundamentalDiscriminant_inj`: `fundamentalDiscriminant` is injective on
-  `ℤ`.
+  `TauCeti.Multiquadratic.fundamentalDiscriminant_inj`,
+  `TauCeti.Multiquadratic.fundamentalDiscriminant_eq_one_iff`: `fundamentalDiscriminant` is
+  injective on `ℤ` and takes the value `1` only at `1`.
 * `Int.IsFundamentalDiscr.squarefree_ite`, `Int.IsFundamentalDiscr.fundamentalDiscriminant_ite`,
   `Int.IsFundamentalDiscr.existsUnique_squarefree_fundamentalDiscriminant_eq`,
   `TauCeti.Multiquadratic.isFundamentalDiscr_iff_exists_squarefree`: every fundamental discriminant
@@ -85,6 +86,11 @@ theorem fundamentalDiscriminant_injective : Function.Injective fundamentalDiscri
 @[simp] theorem fundamentalDiscriminant_inj {d₁ d₂ : ℤ} :
     fundamentalDiscriminant d₁ = fundamentalDiscriminant d₂ ↔ d₁ = d₂ :=
   fundamentalDiscriminant_injective.eq_iff
+
+/-- `fundamentalDiscriminant d = 1` if and only if `d = 1`. -/
+@[simp] theorem fundamentalDiscriminant_eq_one_iff {d : ℤ} :
+    fundamentalDiscriminant d = 1 ↔ d = 1 :=
+  fundamentalDiscriminant_injective.eq_iff' fundamentalDiscriminant_one
 
 /-- `fundamentalDiscriminant d` is `d` or `4 * d`. Implementation helper for
 `exists_sq_mul_eq_fundamentalDiscriminant`. -/

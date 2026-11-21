@@ -58,7 +58,7 @@ theorem ae_forall_apply_mem_of_dense [MeasurableSpace C(T, E)] {η : Measure C(T
     (hDc : D.Countable) (hDd : Dense D) {F : Set E} (hF : IsClosed F)
     (h : ∀ t ∈ D, ∀ᵐ γ ∂η, γ t ∈ F) : ∀ᵐ γ ∂η, ∀ t, γ t ∈ F := by
   filter_upwards [(ae_ball_iff hDc).2 h] with γ hγ t
-  exact hDd.denseRange_val.induction_on t (hF.preimage γ.continuous) fun s ↦ hγ s s.2
+  exact hDd.denseRange_subtypeVal.induction_on t (hF.preimage γ.continuous) fun s ↦ hγ s s.property
 
 /-- A law on paths `C(T, E)` that is concentrated, at the times of a countable dense set `D`, on
 the range of a closed embedding `g : C(X, E)` is concentrated on the paths obtained by
@@ -124,16 +124,16 @@ theorem basedMap_measure_ext_of_forall_finset_map_restrict_eq
     [MeasurableSpace E] [BorelSpace E] {t₀ : T} {x₀ : E}
     {ν ρ : Measure (BasedMap T E t₀ x₀)} [IsFiniteMeasure ρ]
     (h : ∀ I : Finset T,
-      ν.map (fun γ ↦ I.restrict (γ.1 : T → E)) =
-        ρ.map (fun γ ↦ I.restrict (γ.1 : T → E))) : ν = ρ := by
+      ν.map (fun γ ↦ I.restrict (γ.val : T → E)) =
+        ρ.map (fun γ ↦ I.restrict (γ.val : T → E))) : ν = ρ := by
   have heq : ν.map Subtype.val = ρ.map Subtype.val := by
     apply continuousMap_measure_ext_of_forall_finset_map_restrict_eq
     intro I
-    simpa only [Measure.map_map (ContinuousMap.measurable_finsetRestrict I) measurable_subtype_coe,
+    simpa only [Measure.map_map (ContinuousMap.measurable_finsetRestrict I) measurable_subtypeVal,
       Function.comp_def] using h I
   ext A hA
   obtain ⟨B, hB, rfl⟩ := hA
-  rw [← Measure.map_apply measurable_subtype_coe hB,
-    ← Measure.map_apply measurable_subtype_coe hB, heq]
+  rw [← Measure.map_apply measurable_subtypeVal hB,
+    ← Measure.map_apply measurable_subtypeVal hB, heq]
 
 end TauCeti

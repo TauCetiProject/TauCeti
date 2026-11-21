@@ -17,7 +17,7 @@ import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Henselian
 import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Normalization
-import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
 import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 import TauCeti.RingTheory.Etale.IntegralClosure

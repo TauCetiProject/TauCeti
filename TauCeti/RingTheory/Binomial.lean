@@ -522,8 +522,9 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
 * `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
-* `TauCeti.Ring.multichoose_eq_ascPochhammer_eval_div`: in a field of characteristic zero,
-  `r multichoose n = (r)ₙ / n!`.
+* `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
+  `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
+  division semiring.
 
 ## References
 
@@ -591,13 +592,14 @@ theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing
   simp only [_root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
     Polynomial.ascPochhammer_smeval_eq_eval, ascPochhammer_succ_eval]
 
-/-- In a field of characteristic zero, the generalized multichoose number is the rising factorial
-divided by the factorial: `Ring.multichoose r n = (r)ₙ / n!`. -/
-theorem multichoose_eq_ascPochhammer_eval_div {K : Type*} [Field K] [CharZero K] (r : K)
-    (n : ℕ) : _root_.Ring.multichoose r n = (ascPochhammer K n).eval r / n.factorial := by
-  have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer r n
+/-- Over a division semiring of characteristic zero, `Ring.multichoose x n` equals
+`(n!)⁻¹ * (ascPochhammer R n).eval x`. -/
+theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [DivisionSemiring R]
+    [CharZero R] (x : R) (n : ℕ) :
+    _root_.Ring.multichoose x n = (n.factorial : R)⁻¹ * (ascPochhammer R n).eval x := by
+  have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
   rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-  rw [← h, mul_div_cancel_left₀ _ (by exact_mod_cast n.factorial_ne_zero)]
+  rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
 
 /-! ## Negating the argument -/
 

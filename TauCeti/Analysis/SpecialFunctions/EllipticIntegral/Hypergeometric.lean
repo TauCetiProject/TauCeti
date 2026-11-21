@@ -94,8 +94,8 @@ theorem integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric {a m : �
   ext n
   simp_rw [mul_pow, ← pow_mul]
   rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_sin_pow_even_eq_ascPochhammer, Ring.multichoose_eq_ascPochhammer_eval_div,
-    ascPochhammer_eval_one, smul_eq_mul]
+    integral_sin_pow_even_eq_ascPochhammer,
+    Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, ascPochhammer_eval_one, smul_eq_mul]
   field_simp
 
 /-- For every real `a`, the integral `∫₀^{π/2} (1 - m sin² θ)^(-a) dθ` is a real-analytic function

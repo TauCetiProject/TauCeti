@@ -87,7 +87,7 @@ theorem rationalComponentMap_apply (I : HopfIdeal k H)
       FiniteTypeCommHopfAlgCat.rationalComponentMap (quotient H I)
         (CommHopfAlgCat.liftQuotientPoint H.obj I (CommAlgCat.of k k) n
           ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff H.obj I _
-            (n : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))).mp n.2)) :=
+            (n : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))).mp n.property)) :=
   congrArg (FiniteTypeCommHopfAlgCat.rationalComponentMap (quotient H I))
     (CommHopfAlgCat.quotientPointsSubgroupIso_inv_apply H.obj I _ n)
 
@@ -213,7 +213,7 @@ theorem componentGroupInclusion_rationalComponentMap (I : HopfIdeal k H)
     mapComponentGroup_rationalComponentMap]
   have h := CommHopfAlgCat.quotientPointsHom_liftQuotientPoint H.obj I (CommAlgCat.of k k)
     (n : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
-    ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff H.obj I _ _).mp n.2)
+    ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff H.obj I _ _).mp n.property)
   rw [CommHopfAlgCat.quotientPointsHom_apply] at h
   rw [BialgHom.mapDomain_apply]
   exact congrArg _ h
@@ -238,7 +238,7 @@ theorem componentGroupConjugationEquiv_rationalComponentMap (I J : HopfIdeal k H
     (n : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
     componentGroupConjugationEquiv I J g hJ (I.rationalComponentMap n) =
       J.rationalComponentMap ⟨g * n * g⁻¹,
-        hJ ▸ (CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff I g n).mpr n.2⟩ := by
+        hJ ▸ (CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff I g n).mpr n.property⟩ := by
   rw [componentGroupConjugationEquiv, mapComponentGroupMulEquiv_apply]
   -- `gng⁻¹` is the point `n ∘ conj g`, which is what the coordinate isomorphism pulls back to.
   exact mapComponentGroup_rationalComponentMap_of_mk _ (HopfAlgebra.pointConjugationAlgHom g)
@@ -294,7 +294,7 @@ theorem componentGroupMap_rationalComponentMap (I : HopfIdeal k H) (J : HopfIdea
     componentGroupMap I J f h (J.rationalComponentMap c) =
       I.rationalComponentMap
         ⟨BialgHom.mapDomain (A := k) (toBialgHom f) c,
-          CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_of_map_le f.hom h _ c.2⟩ :=
+          CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_of_map_le f.hom h _ c.property⟩ :=
   mapComponentGroup_rationalComponentMap_of_mk _ (toBialgHom f) (quotientMap_mk I J f h) _ _
     (BialgHom.mapDomain_apply _ _)
 
@@ -337,7 +337,7 @@ theorem componentGroupMap_surjective (I : HopfIdeal k H) (J : HopfIdeal k K) (f 
   have hcJ : c ∈ CommHopfAlgCat.quotientPointsSubgroup K.obj J (CommAlgCat.of k k) := by
     rw [← h, CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff f.hom,
       CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hc]
-    exact n.2
+    exact n.property
   refine ⟨J.rationalComponentMap ⟨c, hcJ⟩, ?_⟩
   rw [componentGroupMap_rationalComponentMap]
   exact congrArg _ (Subtype.ext hmap)

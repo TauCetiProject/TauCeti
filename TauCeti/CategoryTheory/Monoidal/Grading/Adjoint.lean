@@ -133,6 +133,8 @@ private theorem Occurs.whiskerLeft {U X : C} {Y Y' : C} [Simple Y] (h : Occurs U
   obtain ⟨g, hg⟩ := h'
   exact ⟨_, comp_whiskerLeft_ne_zero hf hg⟩
 
+section Preadditive
+
 variable [MonoidalPreadditive C]
 
 /-- A simple constituent of `X ⊗ Y` is a constituent of `W ⊗ Y` for some simple constituent `W`
@@ -155,9 +157,9 @@ private theorem Occurs.exists_right {U X Y : C} (h : Occurs U (X ⊗ Y)) :
     Occurs.of_iso_right (whiskerLeftIso X (SimpleClasses.classOfReprIso W).symm) ⟨g, hg⟩,
     Occurs.of_iso_left (SimpleClasses.classOfReprIso W) ⟨j, hj⟩⟩
 
-variable [RigidCategory C]
+end Preadditive
 
-omit [MonoidalPreadditive C] in
+variable [RigidCategory C] in
 /-- Frobenius reciprocity for constituents: if `U` is a constituent of `X ⊗ Y` with `U` simple,
 then `X` maps nontrivially to `U ⊗ Yᘁ`. -/
 private theorem Occurs.tensorRightHom {U X Y : C} [Simple U] (h : Occurs U (X ⊗ Y)) :
@@ -165,6 +167,7 @@ private theorem Occurs.tensorRightHom {U X Y : C} [Simple U] (h : Occurs U (X �
   obtain ⟨f, hf⟩ := h
   exact exists_nonzero_to_tensor_rightDual_of_nonzero_from_simple hf
 
+variable [MonoidalPreadditive C] [RigidCategory C] in
 /-- Right duality preserves constituents. -/
 private theorem Occurs.rightDual {U Y : C} [Simple U] (h : Occurs U Y) : Occurs Uᘁ Yᘁ := by
   obtain ⟨f, hf⟩ := h
@@ -176,26 +179,25 @@ end AdjointGrading
 
 open AdjointGrading
 
-variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
-  [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
+variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
 
 namespace AdjointGrading
 
-omit [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C] in
+variable [Simple (𝟙_ C)] in
 /-- A simple class is a constituent of its tensor product with the unit class on the right. -/
 private theorem occurs_tensor_classOf_unit (U : SimpleClasses C) :
     Occurs U.repr (U.repr ⊗ (SimpleClasses.classOf (𝟙_ C)).repr) :=
   (occurs_self _).of_iso_right
     ((ρ_ _).symm ≪≫ whiskerLeftIso _ (SimpleClasses.classOfReprIso _).symm)
 
-omit [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C] in
+variable [Simple (𝟙_ C)] in
 /-- A simple class is a constituent of its tensor product with the unit class on the left. -/
 private theorem occurs_classOf_unit_tensor (U : SimpleClasses C) :
     Occurs U.repr ((SimpleClasses.classOf (𝟙_ C)).repr ⊗ U.repr) :=
   (occurs_self _).of_iso_right
     ((λ_ _).symm ≪≫ whiskerRightIso (SimpleClasses.classOfReprIso _).symm _)
 
-omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
+variable [RigidCategory C] [Simple (𝟙_ C)] in
 /-- The unit class is a constituent of `X ⊗ Xᘁ` for a nonzero `X`, through the coevaluation. -/
 private theorem occurs_classOf_unit_tensor_rightDual {X : C} (hX : ¬IsZero X) :
     Occurs (SimpleClasses.classOf (𝟙_ C)).repr (X ⊗ Xᘁ) :=
@@ -205,12 +207,16 @@ end AdjointGrading
 
 namespace SimpleClasses
 
-omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
+variable [RigidCategory C] [Simple (𝟙_ C)] in
 /-- The tensor unit is adjoint, as a constituent of `X ⊗ Xᘁ` for `X = 𝟙_ C`. -/
 @[simp]
 theorem isAdjoint_classOf_unit : (classOf (𝟙_ C)).IsAdjoint := by
   obtain ⟨f, hf⟩ := occurs_classOf_unit_tensor_rightDual (Simple.not_isZero (classOf (𝟙_ C)).repr)
   exact .of_tensor_rightDual _ _ f hf
+
+section Dual
+
+variable [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 
 /-- Every simple constituent of `Xᘁ ⊗ X`, for `X` simple, is adjoint. Indeed `X ≅ Xᘁᘁ`, so
 `Xᘁ ⊗ X` is `Xᘁ ⊗ Xᘁᘁ`, one of the generators. -/
@@ -244,6 +250,8 @@ theorem IsAdjoint.dual {U : SimpleClasses C} (hU : U.IsAdjoint) : U.dual.IsAdjoi
 theorem isAdjoint_dual_iff {U : SimpleClasses C} : U.dual.IsAdjoint ↔ U.IsAdjoint :=
   ⟨fun h ↦ by simpa only [dual_dual] using h.dual, IsAdjoint.dual⟩
 
+end Dual
+
 end SimpleClasses
 
 open SimpleClasses
@@ -252,19 +260,24 @@ namespace AdjointGrading
 
 /-! ### Right cosets of the adjoint subcategory -/
 
+variable [RigidCategory C] in
 /-- `S` lies in the right coset of `T`: it is a constituent of `T ⊗ A` for an adjoint `A`. -/
 private def CosetRel (S T : SimpleClasses C) : Prop :=
   ∃ A : SimpleClasses C, A.IsAdjoint ∧ Occurs S.repr (T.repr ⊗ A.repr)
 
-omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
+variable [RigidCategory C] [Simple (𝟙_ C)] in
 private theorem cosetRel_refl (S : SimpleClasses C) : CosetRel S S :=
   ⟨_, isAdjoint_classOf_unit, occurs_tensor_classOf_unit S⟩
 
+section Coset
+
+variable [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C]
+
+variable [Simple (𝟙_ C)] in
 private theorem CosetRel.symm {S T : SimpleClasses C} (h : CosetRel S T) : CosetRel T S := by
   obtain ⟨A, hA, h⟩ := h
   exact ⟨A.dual, hA.dual, h.tensorRightHom.of_iso_right (whiskerLeftIso _ (dualReprIso A).symm)⟩
 
-omit [Simple (𝟙_ C)] in
 private theorem CosetRel.trans {S T V : SimpleClasses C} (h : CosetRel S T) (h' : CosetRel T V) :
     CosetRel S V := by
   obtain ⟨A, hA, h⟩ := h
@@ -272,6 +285,8 @@ private theorem CosetRel.trans {S T V : SimpleClasses C} (h : CosetRel S T) (h' 
   obtain ⟨W, hW, hWBA⟩ := (h.whiskerRight h').of_iso_right (α_ _ _ _) |>.exists_right
   obtain ⟨f, hf⟩ := hWBA
   exact ⟨W, .of_tensor _ _ _ f hB hA hf, hW⟩
+
+variable [Simple (𝟙_ C)]
 
 private def cosetSetoid : Setoid (SimpleClasses C) where
   r := CosetRel
@@ -362,11 +377,13 @@ private theorem actHom_degree_mk_unit (S : SimpleClasses C) :
   rw [actHom, universalGradingGroup.lift_degree]
   exact act_mk (occurs_tensor_classOf_unit S)
 
+end Coset
+
 end AdjointGrading
 
 namespace universalGradingGroup
 
-omit [IsFiniteSemisimpleCategory C] in
+variable [MonoidalPreadditive C] [RigidCategory C] [Simple (𝟙_ C)] in
 /-- Adjoint simple classes have neutral universal degree. -/
 theorem _root_.TauCeti.SimpleClasses.IsAdjoint.degree_eq_one {U : SimpleClasses C}
     (hU : U.IsAdjoint) : degree U = 1 := by
@@ -376,6 +393,10 @@ theorem _root_.TauCeti.SimpleClasses.IsAdjoint.degree_eq_one {U : SimpleClasses 
       Occurs.of_iso_right (whiskerLeftIso _ (dualReprIso X).symm) ⟨f, hf⟩
     rw [degree_mul _ _ _ g hg, degree_dual, mul_inv_cancel]
   | of_tensor A B U f _ _ hf hA hB => rw [degree_mul _ _ _ f hf, hA, hB, mul_one]
+
+section DegreeCharacterization
+
+variable [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 
 /-- Two simple classes have the same universal degree exactly when they lie in the same right
 coset of the adjoint subcategory: `S` is a constituent of `T ⊗ A` for an adjoint simple `A`. -/
@@ -401,6 +422,8 @@ theorem degree_eq_one_iff (S : SimpleClasses C) : degree S = 1 ↔ S.IsAdjoint :
   have hg : g ≠ 0 := fun h ↦ hf (by simpa [g] using h =≫ ((λ_ _).inv ≫ (classOfReprIso _).inv ▷ _))
   have := isIso_of_hom_simple hg
   rwa [(eq_iff_nonempty_iso S A).2 ⟨asIso g⟩]
+
+end DegreeCharacterization
 
 end universalGradingGroup
 

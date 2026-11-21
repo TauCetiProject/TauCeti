@@ -85,8 +85,8 @@ of the generalized multichoose numbers `(a)ₙ / n!` and `(b)ₙ / n!`. -/
 theorem ordinaryHypergeometricCoefficient_one_eq_multichoose_mul {K : Type*} [Field K] [CharZero K]
     (a b : K) (n : ℕ) :
     ordinaryHypergeometricCoefficient a b 1 n = Ring.multichoose a n * Ring.multichoose b n := by
-  rw [ordinaryHypergeometricCoefficient, Ring.multichoose_eq_ascPochhammer_eval_div,
-    Ring.multichoose_eq_ascPochhammer_eval_div, ascPochhammer_eval_one]
+  rw [ordinaryHypergeometricCoefficient, Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
+    Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, ascPochhammer_eval_one]
   ring
 
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]

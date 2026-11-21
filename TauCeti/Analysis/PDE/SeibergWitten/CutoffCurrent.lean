@@ -20,6 +20,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
@@ -131,7 +132,8 @@ The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differen
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.covariantDeriv b α`: the covariant derivative `dα + i b α`.
+* `TauCeti.SeibergWitten.covariantDeriv b α`: the covariant derivative `dα + i b α`, for `α`
+  valued in any complex normed space.
 * `TauCeti.SeibergWitten.covariantPhaseForm b α`: the phase form `τ = Im (α⁻¹ dα) + b`.
 * `TauCeti.SeibergWitten.cutoffPhaseForm χ b α`: the one-form `χ(|α|²) τ`.
 * `TauCeti.SeibergWitten.cutoffCurrent χ b α`: the two-form `Θ = -db + d(χ(|α|²) τ)`.
@@ -162,17 +164,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### The covariant derivative and the covariant phase form -/
 
-/-- The covariant derivative `∇_a α = dα + i b α` of a section `α` of the trivial line for the
+/-- The covariant derivative `∇_a α = dα + i b α` of a section `α` of the trivial bundle with
+fibre a complex normed space `W`, such as the trivial line `W = ℂ` or a spinor bundle, for the
 imaginary connection form `a = i b`. -/
-def covariantDeriv (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) : E →L[ℝ] ℂ :=
-  fderiv ℝ α x + ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I * α x)
+def covariantDeriv {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → W) (x : E) : E →L[ℝ] W :=
+  fderiv ℝ α x + ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I • α x)
 
-/-- The covariant derivative evaluated on a vector. -/
+/-- The covariant derivative evaluated on a vector: `∇_v α = dα(v) + b(v) i α`. -/
 @[simp]
-theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
-    covariantDeriv b α x v = fderiv ℝ α x v + I * b x (fun _ ↦ v) * α x := by
+theorem covariantDeriv_apply {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → W) (x v : E) :
+    covariantDeriv b α x v = fderiv ℝ α x v + b x (fun _ ↦ v) • I • α x := by
   simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
-  ring
 
 /-- The covariant derivative of a `C¹` section for a continuous connection form is
 continuous. -/
@@ -180,6 +184,19 @@ theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) 
     Continuous (covariantDeriv b α) := by
   unfold covariantDeriv
   fun_prop
+
+/-- The covariant derivative at a point depends continuously on the `1`-jet of the section and on
+the value of the connection form there: if `α i y`, `fderiv ℝ (α i) y` and `b i y` tend to the
+corresponding data of `(b₀, α₀)`, then `∇_{b i} (α i)` at `y` tends to `∇_{b₀} α₀` at `y`. -/
+theorem tendsto_covariantDeriv {ι : Type*} {l : Filter ι} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {α : ι → E → ℂ} {b₀ : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α₀ : E → ℂ} {y : E}
+    (hb : Tendsto (fun i ↦ b i y) l (𝓝 (b₀ y))) (hα : Tendsto (fun i ↦ α i y) l (𝓝 (α₀ y)))
+    (hdα : Tendsto (fun i ↦ fderiv ℝ (α i) y) l (𝓝 (fderiv ℝ α₀ y))) :
+    Tendsto (fun i ↦ covariantDeriv (b i) (α i) y) l (𝓝 (covariantDeriv b₀ α₀ y)) := by
+  have hg : Continuous fun p : (E →L[ℝ] ℂ) × (E [⋀^Fin 1]→L[ℝ] ℝ) × ℂ ↦
+      p.1 + ((ofSubsingletonLIE (0 : Fin 1)).symm p.2.1).smulRight (I * p.2.2) := by
+    fun_prop
+  exact (hg.tendsto _).comp (hdα.prodMk_nhds (hb.prodMk_nhds hα))
 
 /-- The derivative of `|α|²` is `2 Re (conj α ∇_a α)`, for every connection form `a = i b`: the
 connection term contributes `Re (conj α · i b α) = Re (i b |α|²) = 0`. This is the modulus
@@ -190,8 +207,8 @@ theorem fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (hα : Differentiable
     fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x v = 2 * (conj (α x) * covariantDeriv b α x v).re := by
   rw [hα.hasFDerivAt.norm_sq.fderiv, covariantDeriv_apply]
   simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
-    nsmul_eq_mul, Nat.cast_ofNat, mul_add, add_re, mul_re, mul_im, conj_re, conj_im, I_re, I_im,
-    ofReal_re, ofReal_im]
+    nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, real_smul, mul_add, add_re, mul_re, mul_im,
+    conj_re, conj_im, I_re, I_im, ofReal_re, ofReal_im]
   ring
 
 /-- The derivative of `|α|²` is bounded by `2 |α| |∇_a α|`, for every connection form. -/
@@ -236,7 +253,6 @@ theorem norm_fderiv_le_norm_covariantDeriv_add (b : E → E [⋀^Fin 1]→L[ℝ]
       ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I * α x) := by
     ext v
     simp [covariantDeriv_apply]
-    ring
   rw [h]
   refine (norm_sub_le _ _).trans (add_le_add_right ?_ _)
   rw [ContinuousLinearMap.norm_smulRight_apply, LinearIsometryEquiv.norm_map, norm_mul, norm_I,
@@ -259,8 +275,8 @@ theorem covariantPhaseForm_apply_eq_div (h : α x ≠ 0) (v : E) :
   have hn := (normSq_pos.2 h).ne'
   rw [covariantPhaseForm_apply, ContinuousAlternatingMap.add_apply, phaseForm_apply,
     covariantDeriv_apply]
-  simp only [add_re, add_im, mul_im, mul_re, conj_re, conj_im, ofReal_re, ofReal_im, I_re, I_im,
-    inv_re, inv_im]
+  simp only [smul_eq_mul, real_smul, add_re, add_im, mul_im, mul_re, conj_re, conj_im, ofReal_re,
+    ofReal_im, I_re, I_im, inv_re, inv_im]
   field_simp
   rw [normSq_apply]
   ring
@@ -295,7 +311,7 @@ theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1
     rw [← hw, mul_inv_cancel_left₀ hu0]
   simp only [covariantDeriv_apply, fderiv_mul hud hα, Pi.sub_apply,
     ContinuousAlternatingMap.sub_apply, phaseForm_apply, _root_.add_apply, _root_.smul_apply,
-    smul_eq_mul, Pi.mul_apply, ofReal_sub]
+    smul_eq_mul, Pi.mul_apply, real_smul, ofReal_sub]
   generalize ((u x)⁻¹ * fderiv ℝ u x v).im = c at hdu ⊢
   rw [hdu]
   ring
@@ -472,6 +488,18 @@ theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContD
   ext v
   simp
 
+/-- **The covariant derivative under an affine dilation.** Pulling a pair `(b, α)` back along
+`z ↦ x₀ + c • z`, which turns the connection form into `z ↦ c • b (x₀ + c • z)`, multiplies the
+covariant derivative by `c`. No differentiability is needed. -/
+theorem covariantDeriv_comp_add_smul (x₀ : E) (c : ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (y : E) :
+    covariantDeriv (fun z ↦ c • b (x₀ + c • z)) (fun z ↦ α (x₀ + c • z)) y =
+      c • covariantDeriv b α (x₀ + c • y) := by
+  ext v
+  simp only [covariantDeriv_apply, fderiv_comp_add_smul, FunLike.coe_smul, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, Complex.real_smul, smul_eq_mul, Complex.ofReal_mul]
+  ring
+
 end Pullback
 
 /-! ### The flux through a disc -/
@@ -552,7 +580,7 @@ theorem cutoffCurrent_apply_pair (hα : ContDiffAt ℝ 2 α x) (hb : Differentia
     have hn := (normSq_pos.2 h).ne'
     simp only [ContinuousAlternatingMap.smul_apply, ContinuousLinearMap.smulRight_apply,
       _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
-      smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, covariantPhaseForm_apply_eq_div h,
+      smul_eq_mul, real_smul, nsmul_eq_mul, Nat.cast_ofNat, covariantPhaseForm_apply_eq_div h,
       covariantDeriv_apply, mul_re, mul_im, add_re, add_im, conj_re, conj_im, ofReal_re,
       ofReal_im, I_re, I_im]
     field_simp
@@ -776,7 +804,7 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     hd.fderiv, covariantDBar_apply, J.apply_apply, map_neg, cutoffPhaseForm_apply,
     ContinuousAlternatingMap.smul_apply, covariantPhaseForm_apply, phaseForm_apply,
     _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
-    covariantDeriv_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
+    covariantDeriv_apply, smul_eq_mul, real_smul, nsmul_eq_mul, Nat.cast_ofNat]
   by_cases h : α x = 0
   · simp [h, hχ]
   · have hn := (normSq_pos.2 h).ne'
@@ -814,7 +842,7 @@ theorem covariantDBar_mul {h : E → ℂ} (b' : E → E [⋀^Fin 1]→L[ℝ] ℝ
       α x • covariantDBar J (b - b') h x + h x • covariantDBar J b' α x := by
   ext v
   simp only [covariantDBar_apply, covariantDeriv_apply, fderiv_mul hh hα, Pi.mul_apply,
-    _root_.add_apply, _root_.smul_apply, smul_eq_mul, Pi.sub_apply,
+    _root_.add_apply, _root_.smul_apply, smul_eq_mul, real_smul, Pi.sub_apply,
     ContinuousAlternatingMap.sub_apply, ofReal_sub]
   ring
 

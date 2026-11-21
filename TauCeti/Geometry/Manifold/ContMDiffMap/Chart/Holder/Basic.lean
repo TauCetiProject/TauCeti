@@ -216,7 +216,7 @@ theorem holderWith_restrict_chartIteratedFDeriv_of_tendsto {β : Type*} {l : Fil
     (hC : ∀ᶠ b in l, chartHolderNorm x K k hk α (u b) ≤ C) :
     HolderWith C α ⇑((chartIteratedFDeriv g x k hk).restrict K) :=
   HolderWith.of_tendsto (u := fun b ↦ ⇑((chartIteratedFDeriv (u b) x k hk).restrict K))
-    (fun z ↦ hu z z.2) ((hmem.and hC).mono fun _ hb ↦ hb.1.holderWith.mono hb.2)
+    (fun z ↦ hu z z.property) ((hmem.and hC).mono fun _ hb ↦ hb.1.holderWith.mono hb.2)
 
 /-- A pointwise limit on `K` of `k`th coordinate derivatives that are eventually `α`-Hölder on `K`
 with bounded seminorms is `α`-Hölder on `K`. -/
@@ -313,7 +313,7 @@ theorem toContMDiffMap_injective :
 theorem memChartHolder (f : A.CkHolderSpace k α F) (i : A.ι) :
     ContMDiffMap.MemChartHolder (A.center i) (A.piece i) k le_rfl α
       (toContMDiffMap A k α F f) :=
-  f.2 i
+  f.property i
 
 /-- An element of `C^{k,α}(M, F)` from a `C^k` map whose `k`th coordinate derivatives are
 `α`-Hölder on the pieces. -/
