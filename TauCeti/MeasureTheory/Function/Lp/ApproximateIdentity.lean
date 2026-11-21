@@ -308,9 +308,8 @@ theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l 
   rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
 
 open scoped Pointwise in
-/-- The error of mollifying a continuous compactly supported `k`, multiplied by a continuous
-operator field `b`, tends to zero in `Lᵖ`: once `rOut ≤ 1` the error is supported in the compact
-set `closedBall 0 1 + tsupport k`, where `b` is bounded. -/
+/-- The error of mollifying a continuous compactly supported `k`, after applying a continuous
+operator field `b`, tends to zero in `Lᵖ`. -/
 theorem tendsto_eLpNorm_apply_normed_convolution_sub [CompleteSpace F] {F' : Type*}
     [NormedAddCommGroup F'] [NormedSpace ℝ F'] (hp : p ≠ ∞) {b : E → F →L[ℝ] F'}
     (hb : Continuous b) {k : E → F} (hkc : HasCompactSupport k) (hk : Continuous k) {I : Type*}
@@ -318,6 +317,8 @@ theorem tendsto_eLpNorm_apply_normed_convolution_sub [CompleteSpace F] {F' : Typ
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) :
     Tendsto (fun i ↦ eLpNorm (fun x ↦ b x (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] k) x - k x)) p mu)
       l (nhds 0) := by
+  -- Once `rOut ≤ 1` the error is supported in the compact set `closedBall 0 1 + tsupport k`,
+  -- where `b` is bounded.
   set K' := closedBall (0 : E) 1 + tsupport k
   obtain ⟨C, hC⟩ :=
     ((isCompact_closedBall 0 1).add hkc).exists_bound_of_continuousOn hb.continuousOn

@@ -140,8 +140,9 @@ variable [MeasurableSpace E] {μ : Measure E}
 operator field `a : E → (F →L[ℝ] F')` and a direction `v`, the function
 `x ↦ ∂ᵥ (ρ ⋆ (a g)) x - a x (∂ᵥ (ρ ⋆ g) x)`. It is the commutator `[∂ᵥ (ρ ⋆ ·), a]` of
 `g ↦ ∂ᵥ (ρ ⋆ g)` with multiplication by `a`, which has both derivatives on the smooth side.
-It equals `[ρ ⋆ ·, a ∂ᵥ] g + ρ ⋆ ((∂ᵥ a) g)`, the commutator of mollification with `a ∂ᵥ` plus
-the mollification of `(∂ᵥ a) g`, which is why its limit is `(∂ᵥ a) g` rather than `0`. -/
+For `C¹` `g`, it equals `[ρ ⋆ ·, a ∂ᵥ] g + ρ ⋆ ((∂ᵥ a) g)`, the commutator of mollification
+with `a ∂ᵥ` plus the mollification of `(∂ᵥ a) g`, which is why its limit is `(∂ᵥ a) g` rather
+than `0`. -/
 def mollifierCommutator (μ : Measure E) (ρ : E → ℝ) (a : E → F →L[ℝ] F') (v : E) (g : E → F) :
     E → F' :=
   fun x ↦ fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦ a y (g y)) x v -
@@ -339,10 +340,6 @@ private theorem sum_apply_fderiv_convolution_eq {ρ : E → ℝ} (hρc : HasComp
       (ρ ⋆[lsmul ℝ ℝ, μ] f) x + ∑ j ∈ s, ((ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦
         fderiv ℝ (a j) y (w j) (g y)) x - mollifierCommutator μ ρ (a j) (w j) g x) := by
   have hρ1 : ContDiff ℝ 1 ρ := hρ.of_le (by exact_mod_cast le_top)
-  -- Convolutions at `x` are integrals against the test function `y ↦ ρ (x - y)`.
-  have hconv (k : E → ℝ) (u : E → F') : (k ⋆[lsmul ℝ ℝ, μ] u) x = ∫ y, k (x - y) • u y ∂μ := by
-    rw [convolution_def, ← integral_sub_left_eq_self _ μ x]
-    simp
   have hint {k : E → ℝ} {u : E → F'} (hkc : HasCompactSupport k) (hk : Continuous k)
       (hu : LocallyIntegrable u μ) : Integrable (fun y ↦ k (x - y) • u y) μ := by
     simpa using ((hkc.convolutionExists_left (lsmul ℝ ℝ) hk hu x).integrable).comp_sub_left x
@@ -373,8 +370,8 @@ private theorem sum_apply_fderiv_convolution_eq {ρ : E → ℝ} (hρc : HasComp
       (ρ ⋆[lsmul ℝ ℝ, μ] f) x + ∑ j ∈ s, (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦
         fderiv ℝ (a j) y (w j) (g y)) x := by
     rw [Finset.sum_congr rfl fun j hj ↦ by
-      rw [hρc.fderiv_convolution_left_apply _ hρ1 (hagj j hj), hconv], hconv,
-      Finset.sum_congr rfl fun j _ ↦ hconv ρ _, ← hw]
+      rw [hρc.fderiv_convolution_left_apply _ hρ1 (hagj j hj), convolution_lsmul_swap],
+      convolution_lsmul_swap, Finset.sum_congr rfl fun j _ ↦ convolution_lsmul_swap, ← hw]
     simp only [integral_neg, Finset.sum_add_distrib, Finset.sum_neg_distrib, neg_add, neg_neg]
     abel
   simp only [mollifierCommutator_apply, Finset.sum_sub_distrib, h3]

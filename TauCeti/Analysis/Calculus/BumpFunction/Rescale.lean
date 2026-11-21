@@ -134,9 +134,7 @@ theorem lintegral_eNorm_mul_eNorm_fderiv_normed_apply_eq [MeasurableSpace E] [Bo
     measurable_eNorm.mul
       ((ψ.contDiff_normed (n := 1)).continuous_fderiv_apply_const one_ne_zero _).eNorm.measurable
   have hone : ‖c ^ n‖ₑ * ENNReal.ofReal |(c ^ n)⁻¹| = 1 := by
-    rw [Real.eNorm_of_nonneg (pow_pos hc n).le, ← ENNReal.ofReal_mul (pow_pos hc n).le,
-      abs_of_pos (inv_pos.2 (pow_pos hc n)), mul_inv_cancel₀ (pow_pos hc n).ne',
-      ENNReal.ofReal_one]
+    simp [Real.eNorm_eq_ofReal_abs, ENNReal.mul_inv_cancel, hc.ne']
   rw [← lintegral_map hmeas (measurable_const_smul c), hmap, lintegral_smul_measure, smul_eq_mul,
     ← mul_assoc, hone, one_mul]
 
