@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Order.Filter.Extr
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The EM algorithm at fixed observed data
@@ -23,20 +23,29 @@ given the observed data is `ρ` weighted by the density `f θ / L(θ)`. The EM c
 `Q(θ | θ')` is the integral of `log f θ` under the conditional law at `θ'`, and an EM step from
 `θ'` over a parameter set `Θ` is a maximizer of `Q(· | θ')` over `Θ`.
 
-All of these are Bochner integrals and so take the junk value `0` off integrability: when `f θ`
-is not integrable `L(θ) = 0`, and then the conditional law at `θ` is the zero measure. The
-definitions below are these totalized quantities. They have their statistical meaning only under
-side conditions: `missingLaw ρ f θ'` is the conditional law of the missing part when it is a
-probability measure (for instance when `f θ'` is integrable, almost everywhere positive, and
-`ρ ≠ 0`); `Q(θ | θ')` is the conditional expectation of the complete-data log-likelihood only when
-moreover `log f θ` is integrable under `missingLaw ρ f θ'`; and an EM step is the statistical EM
-step only when this holds for every candidate `θ ∈ Θ`. Otherwise an EM step maximizes the
-totalized criterion, junk values `0` included.
+There are two separate junk values. The integrals are Bochner integrals and so take the value `0`
+off integrability: when `f θ` is not integrable `L(θ) = 0`, and then the conditional law at `θ` is
+the zero measure. Independently, Lean's `Real.log` is totalized by `Real.log 0 = 0`, so `log f θ`
+is `0`, not `-∞`, where `f θ` vanishes, and `log L(θ)` is `0` both when the likelihood is
+genuinely zero and when it is the Bochner fallback. The definitions below are these totalized
+quantities. They have their statistical meaning only under side conditions:
+
+* `missingLaw ρ f θ'` is the conditional law of the missing part when `f θ'` is a density slice:
+  almost everywhere nonnegative and integrable with positive integral `L(θ')` (for instance when
+  `f θ'` is integrable, almost everywhere positive, and `ρ ≠ 0`); it is then a probability
+  measure.
+* `Q(θ | θ')` is the conditional expectation of the complete-data log-likelihood only when
+  moreover `0 < f θ` almost everywhere under `missingLaw ρ f θ'` and `log f θ` is integrable
+  under it. Integrability alone is not enough: if `f θ` vanishes on a set of positive
+  conditional probability, the statistical criterion is `-∞`, while the totalized `Q(θ | θ')`
+  may still be a finite integral of an integrable function.
+* An EM step is the statistical EM step only when these conditions hold for every candidate
+  `θ ∈ Θ`. Otherwise an EM step maximizes the totalized criterion, junk values included.
 
 ## Main definitions
 
 * `MeasureTheory.Measure.obsLikelihood ρ f θ`: the observed-data likelihood `∫ f θ dρ`.
-* `MeasureTheory.Measure.obsLogLikelihood ρ f θ`: its logarithm.
+* `MeasureTheory.Measure.obsLogLikelihood ρ f θ`: its logarithm, with `Real.log 0 = 0`.
 * `MeasureTheory.Measure.missingLaw ρ f θ`: the conditional law `ρ.withDensity (f θ / L(θ))` of
   the missing part given the observed data.
 * `MeasureTheory.Measure.emQ ρ f θ θ'`: the EM criterion `Q(θ | θ') = ∫ log f θ d(missingLaw θ')`.
@@ -85,23 +94,30 @@ variable (f : E → Z → ℝ)
 observed data, integrated over the missing part. -/
 def obsLikelihood (θ : E) : ℝ := ∫ z, f θ z ∂ρ
 
-/-- The **observed-data log-likelihood** `log L(θ)`. -/
+/-- The **observed-data log-likelihood** `log L(θ)`. It is the statistical log-likelihood when
+`0 < L(θ)`. When `L(θ) = 0`, whether the likelihood is genuinely zero (statistically `-∞`) or
+`f θ` is not integrable (the Bochner fallback), it is the junk value `Real.log 0 = 0`. -/
 def obsLogLikelihood (θ : E) : ℝ := Real.log (ρ.obsLikelihood f θ)
 
 /-- The **conditional law of the missing part** given the observed data, at the parameter `θ`:
-the reference measure weighted by the density `f θ / L(θ)`. -/
+the reference measure weighted by the density `f θ / L(θ)`. It is the conditional law when `f θ`
+is a density slice, almost everywhere nonnegative and integrable with `0 < L(θ)`; for other real
+inputs it is only a totalized measure (the zero measure when `L(θ) = 0`). -/
 def missingLaw (θ : E) : Measure Z :=
   ρ.withDensity fun z ↦ ENNReal.ofReal (f θ z / ρ.obsLikelihood f θ)
 
-/-- The **EM criterion** `Q(θ | θ') = ∫ log f θ d(missingLaw θ')`, a totalized Bochner integral.
-When `missingLaw ρ f θ'` is a probability measure and `log f θ` is integrable under it, this is the
-conditional expectation of the complete-data log-likelihood at `θ` given the observed data, under
-the parameter `θ'`; otherwise it may be the junk value `0`. -/
+/-- The **EM criterion** `Q(θ | θ') = ∫ log f θ d(missingLaw θ')`, a totalized Bochner integral
+of the totalized `Real.log`. When `f θ'` is a density slice (almost everywhere nonnegative and
+integrable with `0 < L(θ')`), `0 < f θ` almost everywhere under `missingLaw ρ f θ'`, and `log f θ`
+is integrable under it, this is the conditional expectation of the complete-data log-likelihood
+at `θ` given the observed data, under the parameter `θ'`. Otherwise it need not be: it may be the
+junk value `0`, or a finite value where the statistical criterion is `-∞`. -/
 def emQ (θ θ' : E) : ℝ := ∫ z, Real.log (f θ z) ∂ρ.missingLaw f θ'
 
 /-- `θ''` is an **EM step** from `θ'` over the parameter set `Θ`: `θ'' ∈ Θ` maximizes the
-totalized criterion `Q(· | θ')` over `Θ`. It is the statistical EM step when `missingLaw ρ f θ'` is
-a probability measure and `log f θ` is integrable under it for every `θ ∈ Θ`. -/
+totalized criterion `Q(· | θ')` over `Θ`. It is the statistical EM step when `f θ'` is a density
+slice (almost everywhere nonnegative and integrable with `0 < L(θ')`) and, for every `θ ∈ Θ`,
+`0 < f θ` almost everywhere under `missingLaw ρ f θ'` and `log f θ` is integrable under it. -/
 def IsEMStep (Θ : Set E) (f : E → Z → ℝ) (θ' θ'' : E) : Prop :=
   θ'' ∈ Θ ∧ ∀ θ ∈ Θ, ρ.emQ f θ θ' ≤ ρ.emQ f θ'' θ'
 
@@ -171,7 +187,7 @@ is needed: off integrability both sides are `0`. -/
 theorem integral_missingLaw (h : 0 ≤ᵐ[ρ] f θ) (g : Z → F) :
     ∫ z, g z ∂ρ.missingLaw f θ = (ρ.obsLikelihood f θ)⁻¹ • ∫ z, f θ z • g z ∂ρ := by
   by_cases hi : Integrable (f θ) ρ
-  · rw [missingLaw_def, TauCeti.Probability.integral_withDensity_ofReal
+  · rw [missingLaw_def, TauCeti.MeasureTheory.integral_withDensity_ofReal
       (hi.aemeasurable.div_const _) (h.mono fun z hz ↦ div_nonneg hz (obsLikelihood_nonneg h)),
       ← integral_smul]
     simp_rw [div_eq_inv_mul, mul_smul]
