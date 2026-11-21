@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import Mathlib.Analysis.Complex.Tietze
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
 import TauCeti.Topology.Separation.InvFunOn
@@ -460,19 +461,6 @@ variable [T2Space M] [BoundarylessManifold I M]
 
 include hH hC
 
-omit [FiniteDimensional ℝ F] hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hC in
-/-- Nondegeneracy of a `C²` Hamiltonian vector field isolates orbits at time `0` in any subset
-`P ⊆ periodicSolutions`. -/
-private theorem iso_of_nondegenerate {P : Set (ℝ → M)} (hP : P ⊆ Orbits(ω, H))
-    {x : ℝ → M} (hx : x ∈ P) (hnd : NondegenAt(I, ω, H, x)) :
-    ∀ᶠ p in 𝓝 (x 0), ∀ y ∈ P, y 0 = p → y = x := by
-  have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-    (hH.of_le (by norm_num))
-  exact (eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX
-    (hP hx) (s := 0) (T := 1)
-    (by simpa only [zero_add] using hnd.eventually_not_isFixedPt)).mono
-    fun _ hp y hy hyp ↦ hp y (hP hy) hyp
-
 /-- **Convergence of a contractible Floer half-cylinder to a nondegenerate contractible orbit.**
 Corollary for a `C²` Hamiltonian assuming nondegeneracy only on `contractiblePeriodicSolutions`. -/
 theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
@@ -481,8 +469,9 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
     ∃ x ∈ ContrOrbits(ω, H), (∀ t, x t ∈ K) ∧ CylLim(e, u, x) :=
   hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_isCompact_of_eventually
     hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE (hH.of_le one_le_two) hnull hC
-    fun x hx hxK _ ↦ (iso_of_nondegenerate hω hH contractiblePeriodicSolutions_subset hx
-      (hnd x hx hxK)).mono fun _ hp y hy _ _ hyp ↦ hp y hy hyp
+    fun x hx hxK _ ↦ (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH
+      (contractiblePeriodicSolutions_subset hx) (hnd x hx hxK)).mono
+      fun _ hp y hy _ _ hyp ↦ hp y (contractiblePeriodicSolutions_subset hy) hyp
 
 end Nondegenerate
 
@@ -636,20 +625,12 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-    (hH.of_le (by norm_num))
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map, so it is
-  -- isolated among the orbits.
-  have hiso (x) (hx : x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1) :
-      ∀ᶠ p in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
-        y 0 = p → y = x :=
-    eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hx
-      (by simpa only [zero_add] using (hnd x hx).eventually_not_isFixedPt)
   obtain ⟨x, hx, -, h⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
       (hH.of_le one_le_two) hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper
       (fun _ _ _ ↦ mem_univ _) J hc hJc hfloer hE hC fun x hx _ ↦
-        (hiso x hx).mono fun _ hp y hy _ ↦ hp y hy
+        (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH hx
+          (hnd x hx)).mono fun _ hp y hy _ ↦ hp y hy
   exact ⟨x, hx, h⟩
 
 end SmoothTwoForm

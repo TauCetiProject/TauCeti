@@ -727,6 +727,18 @@ theorem tendstoUniformly_comp_positiveEndChart {α : Type*} [UniformSpace α] {u
   rw [funext hloop]
   exact h.comp _
 
+/-- Uniform convergence of `t ↦ u(φ'_q(r i, t))` to `x` transports to uniform convergence of
+`t ↦ u(φ_q(±r i, t))` to `t ↦ x(±t)`. -/
+theorem tendstoUniformly_endChart_of_positiveEndChart {α ι : Type*} [UniformSpace α]
+    {l : Filter ι} {u : ℝ × ℝ → α} {q : Puncture} {r : ι → ℝ} {x : ℝ → α}
+    (h : TendstoUniformly (fun i t ↦ u (positiveEndChart q (r i, t))) x l) :
+    TendstoUniformly (fun i t ↦ u (endChart q (q.endSign * r i, t)))
+      (fun t ↦ x (q.endSign * t)) l := by
+  have hloop : (fun i t ↦ u (endChart q (q.endSign * r i, t))) =
+      fun i ↦ (fun t ↦ u (positiveEndChart q (r i, t))) ∘ fun t ↦ q.endSign * t := by
+    funext i t; simp only [comp_apply, endChart_eq_positiveEndChart]
+  exact hloop ▸ h.comp fun t ↦ q.endSign * t
+
 /-- The positive end chart is `1`-periodic in the angular coordinate. -/
 theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
     positiveEndChart q (s, t + 1) = positiveEndChart q (s, t) := by
