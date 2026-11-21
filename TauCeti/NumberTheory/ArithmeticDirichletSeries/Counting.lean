@@ -138,40 +138,40 @@ theorem two_le_absNorm_asIdeal_real (v : HeightOneSpectrum (𝓞 K)) :
 
 /-- The absolute norm of a prime-power ideal is at least `2`, as a real number. -/
 theorem two_le_absNorm_idealPrimePower_real (A : IdealPrimePower K) :
-    (2 : ℝ) ≤ Ideal.absNorm (A.1 : Ideal (𝓞 K)) := by
-  have hne_zero : Ideal.absNorm (A.1 : Ideal (𝓞 K)) ≠ 0 :=
-    Ideal.absNorm_ne_zero_of_nonZeroDivisors A.1
-  have hne_one : Ideal.absNorm (A.1 : Ideal (𝓞 K)) ≠ 1 := fun h ↦
+    (2 : ℝ) ≤ Ideal.absNorm (A.val : Ideal (𝓞 K)) := by
+  have hne_zero : Ideal.absNorm (A.val : Ideal (𝓞 K)) ≠ 0 :=
+    Ideal.absNorm_ne_zero_of_nonZeroDivisors A.val
+  have hne_one : Ideal.absNorm (A.val : Ideal (𝓞 K)) ≠ 1 := fun h ↦
     A.property.not_isUnit (Ideal.isUnit_iff.mpr (Ideal.absNorm_eq_one_iff.mp h))
-  have hnorm : 2 ≤ Ideal.absNorm (A.1 : Ideal (𝓞 K)) := by omega
+  have hnorm : 2 ≤ Ideal.absNorm (A.val : Ideal (𝓞 K)) := by omega
   exact_mod_cast hnorm
 
 /-! ### The prime base and the exponent of a prime-power ideal -/
 
 /-- The **exponent** of a prime-power ideal `A`: the unique `k ≥ 1` with `A = 𝔭 ^ k`. -/
 noncomputable def primePowerExponent (A : IdealPrimePower K) : ℕ :=
-  A.2.choose_spec.choose
+  A.property.choose_spec.choose
 
 /-- The **prime base** of a prime-power ideal `A`: the unique height-one prime `𝔭` with
 `A = 𝔭 ^ k` for some `k ≥ 1`. -/
 noncomputable def primePowerBase (A : IdealPrimePower K) : HeightOneSpectrum (𝓞 K) where
-  asIdeal := A.2.choose
-  isPrime := Ideal.isPrime_of_prime A.2.choose_spec.choose_spec.1
-  ne_bot := A.2.choose_spec.choose_spec.1.ne_zero
+  asIdeal := A.property.choose
+  isPrime := Ideal.isPrime_of_prime A.property.choose_spec.choose_spec.1
+  ne_bot := A.property.choose_spec.choose_spec.1.ne_zero
 
 /-- The ideal underlying the prime base of a prime-power ideal is prime. -/
 theorem prime_primePowerBase (A : IdealPrimePower K) : Prime (primePowerBase A).asIdeal :=
-  A.2.choose_spec.choose_spec.1
+  A.property.choose_spec.choose_spec.1
 
 omit [NumberField K] in
 /-- The exponent of a prime-power ideal is positive. -/
 theorem primePowerExponent_pos (A : IdealPrimePower K) : 0 < primePowerExponent A :=
-  A.2.choose_spec.choose_spec.2.1
+  A.property.choose_spec.choose_spec.2.1
 
 /-- The defining factorization of a prime-power ideal. -/
 theorem primePowerBase_pow_primePowerExponent (A : IdealPrimePower K) :
     (primePowerBase A).asIdeal ^ primePowerExponent A = (A : Ideal (𝓞 K)) :=
-  A.2.choose_spec.choose_spec.2.2
+  A.property.choose_spec.choose_spec.2.2
 
 /-- The prime base is determined by any factorization of `A` as a power of a prime. -/
 theorem primePowerBase_asIdeal_eq {A : IdealPrimePower K} {P : Ideal (𝓞 K)} (hP : Prime P)
@@ -344,7 +344,7 @@ theorem idealsLE_filter_dvd (P : (Ideal (𝓞 K))⁰) (x : ℝ) :
   · rintro ⟨hle, J, hJ⟩
     have hJ0 : J ≠ 0 := by
       rintro rfl
-      exact mem_nonZeroDivisors_iff_ne_zero.mp I.2 (by simpa using hJ)
+      exact mem_nonZeroDivisors_iff_ne_zero.mp I.property (by simpa using hJ)
     refine ⟨⟨J, mem_nonZeroDivisors_of_ne_zero hJ0⟩, ?_, Subtype.ext hJ.symm⟩
     rw [le_div_iff₀ hP]
     calc (Ideal.absNorm J : ℝ) * Ideal.absNorm (P : Ideal (𝓞 K))
@@ -386,7 +386,7 @@ theorem card_primesLE_le_card_idealsLE (x : ℝ) : (primesLE K x).card ≤ (idea
 theorem card_primePowersLE_le_card_idealsLE (x : ℝ) :
     (primePowersLE K x).card ≤ (idealsLE K x).card := by
   refine Finset.card_le_card_of_injOn
-    (fun A : IdealPrimePower K => (A.1 : (Ideal (𝓞 K))⁰))
+    (fun A : IdealPrimePower K => (A.val : (Ideal (𝓞 K))⁰))
     (fun A hA => ?_) (fun A _ B _ h => ?_)
   · simpa using (mem_normLE _).mp hA
   · apply Subtype.ext
@@ -499,7 +499,7 @@ theorem idealSummatory_ite_dvd {M : Type*} [AddCommMonoid M] (P : (Ideal (𝓞 K
       idealSummatory K (fun J ↦ w (P * J)) (x / Ideal.absNorm (P : Ideal (𝓞 K))) := by
   rw [idealSummatory_apply, ← Finset.sum_filter, idealsLE_filter_dvd, idealSummatory_apply,
     Finset.sum_image fun a _ b _ h ↦
-      Subtype.ext (mul_left_cancel₀ (mem_nonZeroDivisors_iff_ne_zero.mp P.2)
+      Subtype.ext (mul_left_cancel₀ (mem_nonZeroDivisors_iff_ne_zero.mp P.property)
         (by simpa using congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ (I : Ideal (𝓞 K))) h))]
 
 variable {K}
@@ -605,7 +605,7 @@ theorem idealSummatory_eq_primePowerSummatory {M : Type*} [AddCommMonoid M]
       I ∈ (primePowersLE K x).image (fun A : IdealPrimePower K ↦ (A : (Ideal (𝓞 K))⁰)) ↔
         IsPrimePow (I : Ideal (𝓞 K)) ∧ (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x := by
     simp only [Finset.mem_image, mem_normLE]
-    exact ⟨fun ⟨A, hA, hAI⟩ ↦ ⟨hAI ▸ A.2, hAI ▸ hA⟩, fun ⟨h, hI⟩ ↦ ⟨⟨I, h⟩, hI, rfl⟩⟩
+    exact ⟨fun ⟨A, hA, hAI⟩ ↦ ⟨hAI ▸ A.property, hAI ▸ hA⟩, fun ⟨h, hI⟩ ↦ ⟨⟨I, h⟩, hI, rfl⟩⟩
   rw [idealSummatory_apply, primePowerSummatory_apply]
   calc ∑ I ∈ idealsLE K x, v I
       = ∑ I ∈ (primePowersLE K x).image

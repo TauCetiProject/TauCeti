@@ -27,7 +27,8 @@ statement about a quotient, such as a group modulo a kernel, is pulled back to t
 
 A continuous injection out of a weakly locally compact space into a Hausdorff space is a
 topological embedding on an open neighbourhood of any compact set
-(`Continuous.exists_opens_isEmbedding_restrict`).
+(`Continuous.exists_opens_isEmbedding_restrict`). Removing a point from a locally compact `T₁`
+space yields a locally compact subspace (`Subtype.instLocallyCompactSpaceNe`).
 
 In a locally compact Hausdorff space, let `q` be continuous, above `a` off a compact set `Z`, and
 such that every point is joined to `Z` by a preconnected set on which `q` does not increase. Then
@@ -54,7 +55,7 @@ theorem locallyCompactSpace_of_forall_exists_mem_nhds {X : Type*} [TopologicalSp
   rw [← hmap] at hW ⊢
   obtain ⟨K, hKx, hKW, hKc⟩ := local_compact_nhds hW
   exact ⟨(↑) '' K, Filter.image_mem_map hKx, image_subset_iff.mpr hKW,
-    hKc.image continuous_subtype_val⟩
+    hKc.image continuous_subtypeVal⟩
 
 /-- Let `q` be a continuous function which is above `a` off a compact set `Z`, and suppose every
 point `x` lies in a preconnected set meeting `Z` on which `q ≤ q x`. Then for every open
@@ -128,6 +129,11 @@ theorem Continuous.exists_opens_isEmbedding_restrict {X Y : Type*} [TopologicalS
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
   have : CompactSpace L := isCompact_iff_compactSpace.mp hL
   have h : IsEmbedding fun q : L => f q :=
-    ((hf.comp continuous_subtype_val).isClosedEmbedding
+    ((hf.comp continuous_subtypeVal).isClosedEmbedding
       (hinj.comp Subtype.val_injective)).isEmbedding
   exact ⟨⟨interior L, isOpen_interior⟩, hKL, h.comp (IsEmbedding.inclusion interior_subset)⟩
+
+/-- Removing a point from a locally compact `T₁` space yields a locally compact subspace. -/
+instance Subtype.instLocallyCompactSpaceNe {X : Type*} [TopologicalSpace X] [LocallyCompactSpace X]
+    [T1Space X] {x₀ : X} : LocallyCompactSpace {x : X // x ≠ x₀} :=
+  isClosed_singleton.isOpen_compl.locallyCompactSpace

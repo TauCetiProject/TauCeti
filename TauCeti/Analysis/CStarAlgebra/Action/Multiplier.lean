@@ -59,6 +59,11 @@ theorem multiplier_apply_snd (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (
     (α.multiplier g m).snd a = α g (m.snd (α g⁻¹ a)) := by
   simp [multiplier_apply]
 
+/-- Successive applications of the induced action compose by group multiplication. -/
+theorem multiplier_apply_multiplier_apply (α : CStarAction G A) (g h : G) (m : 𝓜(ℂ, A)) :
+    α.multiplier g (α.multiplier h m) = α.multiplier (g * h) m := by
+  rw [map_mul, StarAlgEquiv.mul_apply]
+
 /-- The inverse of an automorphism of the induced action is the action of the inverse element. -/
 @[simp]
 theorem multiplier_symm_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) :
