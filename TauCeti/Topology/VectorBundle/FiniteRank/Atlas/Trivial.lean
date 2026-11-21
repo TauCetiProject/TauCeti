@@ -187,6 +187,25 @@ private theorem continuous_snd_charts_of_subsingleton (A : FiniteRankAtlas 𝕜 
   refine (continuous_snd.comp hc).congr fun p => ?_
   rw [Function.comp_apply, Subsingleton.elim i p.proj, (A.charts n).localTrivAt_apply p]
 
+/-- Over a subsingleton base, a map into a stratum core total space is continuous exactly when its
+coordinate vector is: every point lies over the only base point, so the map factors through the
+fibre inclusion `FiberBundle.totalSpaceMk` there. -/
+private theorem continuous_charts_iff_of_subsingleton (A : FiniteRankAtlas 𝕜 X) (n : ℕ)
+    {Y : Type*} [TopologicalSpace Y] {f : Y → (A.charts n).TotalSpace} :
+    Continuous f ↔ Continuous (fun y => ((f y).snd : Fin n → 𝕜)) := by
+  refine ⟨(continuous_snd_charts_of_subsingleton A n).comp, fun hf => ?_⟩
+  rcases isEmpty_or_nonempty {x : X // A.rank x = n} with h | hne
+  · exact continuous_of_const fun y => (h.false (f y).proj).elim
+  obtain ⟨i⟩ := hne
+  refine ((FiberBundle.continuous_totalSpaceMk (Fin n → 𝕜) (A.charts n).Fiber i).comp hf).congr
+    fun y => ?_
+  change TotalSpace.mk' (Fin n → 𝕜) i (f y).snd = f y
+  generalize f y = p
+  obtain ⟨b, v⟩ := p
+  obtain rfl : i = b := Subsingleton.elim _ _
+  -- both sides are the point `⟨i, v⟩` of the fibre over `i`
+  rfl
+
 /-- Over a subsingleton base, every variable-rank atlas is isomorphic to the trivial atlas of the
 same rank, by the identity on every fibre. -/
 def isoTrivialOfSubsingleton (A : FiniteRankAtlas 𝕜 X) : A ≅ trivial 𝕜 X A.rank :=
@@ -195,16 +214,9 @@ def isoTrivialOfSubsingleton (A : FiniteRankAtlas 𝕜 X) : A ≅ trivial 𝕜 X
       (continuous_snd_charts_of_subsingleton A n).comp
         ((A.continuous_mk_iff_rankStrata A.continuous_proj fun p => p.snd).1 continuous_id n))
     ((A.continuous_mk_iff_rankStrata (trivial 𝕜 X A.rank).continuous_proj fun p => p.snd).2
-      fun n => by
-        rcases isEmpty_or_nonempty {x : X // A.rank x = n} with h | hne
-        · exact continuous_of_const fun p => (h.false ⟨p.val.proj, p.property⟩).elim
-        obtain ⟨i⟩ := hne
-        refine ((FiberBundle.continuous_totalSpaceMk (Fin n → 𝕜) (A.charts n).Fiber i).comp
-          ((continuous_mk_trivial_iff (trivial 𝕜 X A.rank).continuous_proj
-            fun p => p.snd).1 continuous_id n)).congr fun ⟨⟨b, v⟩, hb⟩ => ?_
-        subst hb
-        obtain rfl : i = ⟨b, rfl⟩ := Subsingleton.elim _ _
-        rfl)
+      fun n => (continuous_charts_iff_of_subsingleton A n).2
+        ((continuous_mk_trivial_iff (trivial 𝕜 X A.rank).continuous_proj fun p => p.snd).1
+          continuous_id n))
 
 @[simp] theorem fiberMap_isoTrivialOfSubsingleton_hom (A : FiniteRankAtlas 𝕜 X) (x : X) :
     (isoTrivialOfSubsingleton A).hom.fiberMap x = LinearMap.id :=

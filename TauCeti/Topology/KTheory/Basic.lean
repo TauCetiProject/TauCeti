@@ -14,11 +14,12 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Biproduct
 For a topological space `X` and a nontrivially normed field `𝕜`, `TauCeti.TopologicalKZero 𝕜 X`
 is the Grothendieck group of finite-rank `𝕜`-vector bundles over `X` under Whitney sum: the split
 Grothendieck group `TauCeti.SplitK0` of the category `TauCeti.FiniteRankAtlas 𝕜 X` of
-variable-rank bundle atlases, whose binary biproduct is the Whitney sum. For `𝕜 = ℂ` this is the
-complex `K⁰(X)` and for `𝕜 = ℝ` the real `KO⁰(X)`. The rank of a bundle is only required to be
-locally constant, so it may be unbounded on a noncompact or disconnected base, and no compactness
-or separation hypothesis is placed on `X`. Over real or complex scalars the group lives in the
-universe of `X`.
+variable-rank bundle atlases, whose binary biproduct is the Whitney sum. For a compact Hausdorff
+`X` this is the usual complex `K⁰(X)` when `𝕜 = ℂ` and the real `KO⁰(X)` when `𝕜 = ℝ`. Here `X` is
+an arbitrary topological space, with no compactness or separation hypothesis; over such a base
+the Grothendieck group of bundles need not agree with other descriptions of `K⁰(X)`. The rank of a
+bundle is only required to be locally constant, so it may be unbounded on a noncompact or
+disconnected base. Over real or complex scalars the group lives in the universe of `X`.
 
 The general theory of split `K₀` applies verbatim: every class is a difference `[E] - [F]`
 (`TauCeti.SplitK0.exists_eq_sub`), additive homomorphisms out of `K⁰` are the isomorphism-invariant
@@ -49,7 +50,8 @@ completion of the monoid of isomorphism classes of bundles
 ## References
 
 * A. Hatcher, *Vector Bundles and K-Theory*, version 2.2 (2017), §2.1, pp. 39–40, for the pair
-  description of `K(X)` and its equality criterion by a common summand.
+  description of `K(X)` over a compact Hausdorff base and its equality criterion by a common
+  trivial summand; over an arbitrary base the criterion here uses an arbitrary common summand.
 * M. F. Atiyah, *K-Theory*, W. A. Benjamin (1967), §2.1, for `K(X)` as the group completion of the
   monoid of isomorphism classes of bundles under Whitney sum.
 -/
@@ -66,8 +68,8 @@ variable (𝕜 : Type v) [NontriviallyNormedField 𝕜] (X : Type u) [Topologica
 
 /-- The topological `K⁰` of `X` with scalars `𝕜`: the split Grothendieck group of finite-rank
 `𝕜`-vector bundles over `X`, presented by the variable-rank atlases `FiniteRankAtlas 𝕜 X`, with
-`[E ⊕ F] = [E] + [F]` for the Whitney sum. For `𝕜 = ℂ` it is `K⁰(X)` and for `𝕜 = ℝ` it is
-`KO⁰(X)`. -/
+`[E ⊕ F] = [E] + [F]` for the Whitney sum. For a compact Hausdorff `X` it is the usual `K⁰(X)`
+when `𝕜 = ℂ` and `KO⁰(X)` when `𝕜 = ℝ`. -/
 abbrev TopologicalKZero : Type (max u v) :=
   SplitK0.{max u v} (FiniteRankAtlas 𝕜 X)
 
@@ -97,7 +99,10 @@ theorem of_eq_of_iff {A D : FiniteRankAtlas 𝕜 X} :
 theorem of_sub_of_eq_of_sub_of_iff {E F E' F' : FiniteRankAtlas 𝕜 X} :
     (SplitK0.of E - SplitK0.of F : TopologicalKZero 𝕜 X) = SplitK0.of E' - SplitK0.of F' ↔
       ∃ G, Nonempty (whitneySum (whitneySum E F') G ≅ whitneySum (whitneySum E' F) G) := by
-  rw [sub_eq_sub_iff_add_eq_add, ← of_whitneySum, ← of_whitneySum, of_eq_of_iff]
+  have e (A D G : FiniteRankAtlas 𝕜 X) : (A ⊞ D) ⊞ G ≅ whitneySum (whitneySum A D) G :=
+    biprodIsoWhitneySum _ G ≪≫ whitneyMapIso (biprodIsoWhitneySum A D) (Iso.refl G)
+  rw [SplitK0.of_sub_of_eq_of_sub_of_iff]
+  exact exists_congr fun G => ((e E F' G).isoCongr (e E' F G)).nonempty_congr
 
 section Rank
 
