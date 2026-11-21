@@ -11,17 +11,21 @@ public import TauCeti.RingTheory.Unramified.AlgEquiv
 /-!
 # Transport between isomorphic number-field extensions
 
-This file records how properties of primes of rings of integers transport along an isomorphism
-of field extensions.
+This file records how properties of primes of rings of integers transport along isomorphisms of
+field extensions.
 
 ## Main results
 
 * `AlgEquiv.forall_isUnramifiedAt_iff`: unramifiedness above a base prime is invariant under an
-  isomorphism of extensions.
+  isomorphism of extensions over a fixed base.
+* `RingEquiv.forall_heightOneSpectrum_ringOfIntegers_isUnramifiedAt_iff`: unramifiedness at every
+  height-one prime of the ring of integers is invariant under a commuting square of field
+  isomorphisms.
 -/
 
 public section
 
+open IsDedekindDomain
 open scoped NumberField
 
 namespace AlgEquiv
@@ -42,3 +46,30 @@ theorem forall_isUnramifiedAt_iff (e : L ≃ₐ[K] L') (𝔭 : Ideal (𝓞 K)) :
       (Ideal.comap_of_equiv ψ.toRingEquiv).symm).2 (h _)
 
 end AlgEquiv
+
+namespace RingEquiv
+
+variable {K L K' L' : Type*} [Field K] [Field L] [Algebra K L]
+  [Field K'] [Field L'] [Algebra K' L']
+
+/-- **Unramifiedness at every height-one prime of the ring of integers transports across compatible
+field isomorphisms.** -/
+theorem forall_heightOneSpectrum_ringOfIntegers_isUnramifiedAt_iff
+    (eK : K ≃+* K') (eL : L ≃+* L')
+    (he : (algebraMap K' L').comp (eK : K →+* K') = (eL : L →+* L').comp (algebraMap K L)) :
+    (∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal) ↔
+      ∀ w : HeightOneSpectrum (𝓞 L'), Algebra.IsUnramifiedAt (𝓞 K') w.asIdeal := by
+  refine forall_heightOneSpectrum_isUnramifiedAt_iff
+    (NumberField.RingOfIntegers.mapRingEquiv eK)
+    (NumberField.RingOfIntegers.mapRingEquiv eL) (RingHom.ext fun x ↦ ?_)
+  apply NumberField.RingOfIntegers.coe_injective
+  simp only [RingHom.comp_apply, RingHom.coe_coe,
+    ← IsScalarTower.algebraMap_apply (𝓞 K') (𝓞 L') L',
+    IsScalarTower.algebraMap_apply (𝓞 K') K' L',
+    NumberField.RingOfIntegers.mapRingEquiv_apply,
+    NumberField.RingOfIntegers.coe_eq_algebraMap,
+    ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 L) L,
+    IsScalarTower.algebraMap_apply (𝓞 K) K L]
+  exact RingHom.congr_fun he _
+
+end RingEquiv
