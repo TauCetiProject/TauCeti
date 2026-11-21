@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
+public import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
 # Smooth morphisms of pure relative dimension
@@ -75,6 +76,22 @@ theorem exists_smoothOfRelativeDimension_ι_comp {Y S : Scheme.{u}} (f : Y ⟶ S
 
 end AlgebraicGeometry.Smooth
 
+namespace AlgebraicGeometry.SmoothOfRelativeDimension
+
+universe u
+
+/-- A morphism is smooth of relative dimension `n` if every point of its source has an open
+neighbourhood on which it is smooth of relative dimension `n`. This is
+`IsZariskiLocalAtSource.of_forall_exists_ι_comp`, with the locality of
+`SmoothOfRelativeDimension n` supplied explicitly: instance search does not find it. -/
+theorem of_forall_exists_ι_comp {n : ℕ} {X Y : Scheme.{u}} (f : X ⟶ Y)
+    (H : ∀ x : X, ∃ V : X.Opens, x ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f)) :
+    SmoothOfRelativeDimension n f :=
+  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @SmoothOfRelativeDimension n)
+  IsZariskiLocalAtSource.of_forall_exists_ι_comp H
+
+end AlgebraicGeometry.SmoothOfRelativeDimension
+
 namespace TauCeti.AlgebraicGeometry
 
 universe u
@@ -92,10 +109,7 @@ theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
     have : Nonempty V := ⟨⟨x, hx⟩⟩
     obtain rfl := PureRelativeDimension.unique (d := k) (e := n) (V.ι ≫ f)
     exact ⟨V, hx, hk⟩
-  choose V hV h using key
-  exact @IsZariskiLocalAtSource.of_iSup_eq_top _ (HasRingHomProperty.instIsZariskiLocalAtSource
-    (P := @SmoothOfRelativeDimension n)) _ _ _ _ V
-    (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hV x⟩) h
+  exact SmoothOfRelativeDimension.of_forall_exists_ι_comp f key
 
 end TauCeti.AlgebraicGeometry
 
@@ -121,16 +135,16 @@ universe u
 
 /-- **Relative dimension descends along smooth surjections.** Let `g : X ⟶ Y` be surjective and
 smooth of relative dimension `m`, and let `f : Y ⟶ S` be locally of finite presentation. If
-`g ≫ f` is smooth of relative dimension `m + n`, then `f` is smooth of relative dimension `n`.
-Smoothness of `f` itself descends along the flat surjection `g` (`Smooth.of_comp_surjective`);
-near a point of `Y` its relative dimension `k` is read off a standard smooth chart, and on the
-nonempty preimage of the chart `g ≫ f` is smooth of both relative dimensions `m + k` and `m + n`. -/
+`g ≫ f` is smooth of relative dimension `m + n`, then `f` is smooth of relative dimension `n`. -/
 theorem of_comp_surjective {m n : ℕ} {X Y S : Scheme.{u}} (g : X ⟶ Y) (f : Y ⟶ S)
     [SmoothOfRelativeDimension m g] [Surjective g] [LocallyOfFinitePresentation f]
     [SmoothOfRelativeDimension (m + n) (g ≫ f)] : SmoothOfRelativeDimension n f := by
   have : Smooth g := SmoothOfRelativeDimension.smooth m g
   have : Smooth (g ≫ f) := SmoothOfRelativeDimension.smooth (m + n) (g ≫ f)
+  -- smoothness of `f` descends along the flat surjection `g`
   have : Smooth f := Smooth.of_comp_surjective g f
+  -- near a point of `Y`, `f` has the relative dimension `k` of a standard smooth chart; on the
+  -- nonempty preimage of the chart, `g ≫ f` has both relative dimensions `m + k` and `m + n`
   have key (y : Y) : ∃ V : Y.Opens, y ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f) := by
     obtain ⟨V, k, hy, hk⟩ := Smooth.exists_smoothOfRelativeDimension_ι_comp f y
     obtain ⟨x, rfl⟩ := g.surjective y
@@ -148,9 +162,6 @@ theorem of_comp_surjective {m n : ℕ} {X Y S : Scheme.{u}} (g : X ⟶ Y) (f : Y
         (P := @SmoothOfRelativeDimension (m + n))) _ _ _ _ ‹_› W.ι _
     have hkn : m + k = m + n := PureRelativeDimension.unique (W.ι ≫ g ≫ f)
     exact ⟨V, hy, Nat.add_left_cancel hkn ▸ hk⟩
-  choose V hV h using key
-  exact @IsZariskiLocalAtSource.of_iSup_eq_top _ (HasRingHomProperty.instIsZariskiLocalAtSource
-    (P := @SmoothOfRelativeDimension n)) _ _ _ _ V
-    (eq_top_iff.mpr fun y _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨y, hV y⟩) h
+  exact of_forall_exists_ι_comp f key
 
 end AlgebraicGeometry.SmoothOfRelativeDimension

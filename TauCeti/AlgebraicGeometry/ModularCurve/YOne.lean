@@ -451,15 +451,14 @@ section Classifying
 variable {B} {X : EllObj B}
 
 /-- **The universal property of the universal Tate normal form in `Ell/B`.** Let `X = (E/S)` be an
-object of `Ell/B` and `P` an `S`-point of `E` such that none of `P`, `2P` and `3P` meets the zero
-section over any point of `S`. Then there is exactly one arrow `k : X ⟶ universalTate B` of `Ell/B`
-along which the point `(0, 0)` pulls back to `P`. -/
+object of `Ell/B` and `P` a Tate point of `E`: none of `P`, `2P` and `3P` meets the zero section
+over any point of `S`. Then there is exactly one arrow `k : X ⟶ universalTate B` of `Ell/B` along
+which the point `(0, 0)` pulls back to `P`. -/
 theorem existsUnique_hom_universalTate (P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap)
-    (h₁ : ∀ s, P.left s ≠ X.curve.zero s)
-    (h₂ : ∀ s, (P.left ≫ (X.curve.mulBy 2).left) s ≠ X.curve.zero s)
-    (h₃ : ∀ s, (P.left ≫ (X.curve.mulBy 3).left) s ≠ X.curve.zero s) :
+    (hP : X.curve.IsTatePoint P) :
     ∃! k : X ⟶ universalTate B,
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (universalTatePoint B) = P := by
+  obtain ⟨h₁, h₂, h₃⟩ := EllipticCurveGeom.isTatePoint_iff.mp hP
   -- arrows into `universalTate B` are the classifying pairs of the Tate normal form
   refine (homProdCurveEquiv X).existsUnique_congr_left.mpr ?_
   obtain ⟨⟨f, g⟩, ⟨hg, h₀, hgP⟩, huniq⟩ :=
@@ -612,14 +611,12 @@ private theorem naiveLevelEquiv_map_yOneStructure {X : EllObj B} (k : X ⟶ yOne
     naiveLevelEquiv_structureOfPoint]
   exact (EllipticCurveGeom.pointsPullback_comp _ _ _ _ _).symm
 
--- For `N ≥ 4`, the point `P` of a naive `[Γ₁(N)]`-structure satisfies the three conditions of the
--- Tate normal form: `P`, `2P` and `3P` miss the zero section everywhere.
+-- For `N ≥ 4`, the point `P` of a naive `[Γ₁(N)]`-structure is a Tate point: `P`, `2P` and `3P`
+-- miss the zero section everywhere.
 private theorem tate_conditions (h4 : 4 ≤ N) {X : EllObj B}
     {φ : Multiplicative (ZMod N) →* (𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap)}
-    (hφ : X.curve.IsFiberwiseInjective φ) :
-    (∀ s, (φ (.ofAdd 1)).left s ≠ X.curve.zero s) ∧
-      (∀ s, ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy 2).left) s ≠ X.curve.zero s) ∧
-        ∀ s, ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy 3).left) s ≠ X.curve.zero s := by
+    (hφ : X.curve.IsFiberwiseInjective φ) : X.curve.IsTatePoint (φ (.ofAdd 1)) := by
+  rw [EllipticCurveGeom.isTatePoint_iff]
   have h := EllipticCurveGeom.isFiberwiseInjective_zmod_iff.mp hφ
   have hn (n : ℕ) (hn : 0 < n) (hnN : n < N) (s : X.base) :
       ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy n).left) s ≠ X.curve.zero s := by
@@ -632,7 +629,7 @@ private theorem tate_conditions (h4 : 4 ≤ N) {X : EllObj B}
 private theorem isTatePoint_yOnePoint (h4 : 4 ≤ N) : (yOne B N).curve.IsTatePoint yOnePoint := by
   have h := tate_conditions h4 (ModuliProblem.naiveLevelEquiv _ (yOneStructure (B := B))).property
   rw [yOneStructure, naiveLevelEquiv_structureOfPoint] at h
-  exact EllipticCurveGeom.isTatePoint_iff.mpr h
+  exact h
 
 -- Pulling back the universal naive `[Γ₁(N)]`-structure is a bijection from arrows into `Y₁(N)`.
 private theorem bijective_map_yOneStructure (h4 : 4 ≤ N) (X : EllObj B) :
@@ -644,19 +641,18 @@ private theorem bijective_map_yOneStructure (h4 : 4 ≤ N) (X : EllObj B) :
     intro k k' h
     have hp := congrArg (fun α ↦ (ModuliProblem.naiveLevelEquiv X α).val (.ofAdd 1)) h
     simp only [naiveLevelEquiv_map_yOneStructure] at hp
-    obtain ⟨h₁, h₂, h₃⟩ := tate_conditions h4
+    have hP := tate_conditions h4
       (ModuliProblem.naiveLevelEquiv X ((ModuliProblem.gammaOneNaive B N).map k.op
         yOneStructure)).property
-    rw [naiveLevelEquiv_map_yOneStructure] at h₁ h₂ h₃
+    rw [naiveLevelEquiv_map_yOneStructure] at hP
     have hk : k ≫ yOneι B N = k' ≫ yOneι B N :=
-      (existsUnique_hom_universalTate _ h₁ h₂ h₃).unique rfl hp.symm
+      (existsUnique_hom_universalTate _ hP).unique rfl hp.symm
     refine EllObj.hom_ext_of_comp (yOneι B N) hk ?_
     rw [← cancel_mono (yOneι B N).base, ← comp_base, hk, comp_base]
   · -- the arrow classifying `(X, P)` lands in `Y₁(N)` because `P` has naive exact order `N`
     intro α
     have hα := (ModuliProblem.naiveLevelEquiv X α).property
-    obtain ⟨h₁, h₂, h₃⟩ := tate_conditions h4 hα
-    obtain ⟨k₀, hk₀, -⟩ := existsUnique_hom_universalTate _ h₁ h₂ h₃
+    obtain ⟨k₀, hk₀, -⟩ := existsUnique_hom_universalTate _ (tate_conditions h4 hα)
     obtain ⟨l, hl⟩ := (EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff N
       (universalTatePoint B) (Z := Over.mk k₀.base)
       (x := EllipticCurveGeom.pointsBaseChangeEquiv k₀.isPullback k₀.zero_total _) (by
@@ -737,12 +733,10 @@ private theorem bijective_map_universalTateStructure (X : EllObj B) :
   refine ⟨fun k k' h ↦ ?_, fun α ↦ ?_⟩
   · have hk := congrArg (fun α ↦ (tatePointEquiv X α).val) h
     simp only [tatePointEquiv_map_universalTateStructure] at hk
-    obtain ⟨h₁, h₂, h₃⟩ := EllipticCurveGeom.isTatePoint_iff.mp
-      (tatePointEquiv X ((tatePoint B).map k.op (universalTateStructure B))).property
-    rw [tatePointEquiv_map_universalTateStructure] at h₁ h₂ h₃
-    exact (EllObj.existsUnique_hom_universalTate _ h₁ h₂ h₃).unique rfl hk.symm
-  · obtain ⟨h₁, h₂, h₃⟩ := EllipticCurveGeom.isTatePoint_iff.mp (tatePointEquiv X α).property
-    obtain ⟨k, hk, -⟩ := EllObj.existsUnique_hom_universalTate _ h₁ h₂ h₃
+    have hP := (tatePointEquiv X ((tatePoint B).map k.op (universalTateStructure B))).property
+    rw [tatePointEquiv_map_universalTateStructure] at hP
+    exact (EllObj.existsUnique_hom_universalTate _ hP).unique rfl hk.symm
+  · obtain ⟨k, hk, -⟩ := EllObj.existsUnique_hom_universalTate _ (tatePointEquiv X α).property
     refine ⟨k, (tatePointEquiv X).injective (Subtype.ext ?_)⟩
     rw [tatePointEquiv_map_universalTateStructure, hk]
 

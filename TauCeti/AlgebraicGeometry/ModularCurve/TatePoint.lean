@@ -180,14 +180,20 @@ noncomputable def tateLocusEquiv (T : Over X.base) :
     (T ⟶ tateLocusOver X) ≃ (tatePoint B).obj (op (X.baseChangeFunctor.obj T)) :=
   Equiv.ofBijective _ (bijective_tateLocusPoint T)
 
+/-- The correspondence `tateLocusEquiv` sends a point `y` of the Tate locus to
+`tateLocusPoint y`. -/
+@[simp]
+theorem tateLocusEquiv_apply {T : Over X.base} (y : T ⟶ tateLocusOver X) :
+    tateLocusEquiv T y = tateLocusPoint y :=
+  (rfl)
+
 /-- The correspondence `tateLocusEquiv` is natural in the scheme `T` over `S`. -/
 theorem tateLocusEquiv_comp {T' T : Over X.base} (f : T' ⟶ T) (y : T ⟶ tateLocusOver X) :
     tateLocusEquiv T' (f ≫ y) =
       (tatePoint B).map (X.baseChangeFunctor.map f).op (tateLocusEquiv T y) := by
   refine (tatePointEquiv _).injective (Subtype.ext ?_)
   apply (X.baseChangePointsEquiv T').injective
-  simp only [tateLocusEquiv, Equiv.ofBijective_apply, baseChangePointsEquiv_tateLocusPoint,
-    tatePointEquiv_map]
+  simp only [tateLocusEquiv_apply, baseChangePointsEquiv_tateLocusPoint, tatePointEquiv_map]
   rw [EllObj.baseChangePointsEquiv_pointsPullback, baseChangePointsEquiv_tateLocusPoint,
     Category.assoc]
 
@@ -207,6 +213,17 @@ noncomputable def tatePointRelRepData : (tatePoint B).RelRepData where
 theorem tatePointRelRepData_rep (X : EllObj B) :
     (tatePointRelRepData B).rep X = tateLocusOver X :=
   (rfl)
+
+/-- The Tate point of `E_T` attached to a point `y` of the representing scheme is
+`tateLocusPoint y`, after identifying the representing scheme with the Tate locus through
+`tatePointRelRepData_rep`; it corresponds to the point `y ≫ tateLocusι X` of `E`
+(`baseChangePointsEquiv_tateLocusPoint`). -/
+@[simp]
+theorem tatePointRelRepData_homEquiv (X : EllObj B) {T : Over X.base}
+    (y : T ⟶ (tatePointRelRepData B).rep X) :
+    ((tatePointRelRepData B).representableBy X).homEquiv y =
+      tateLocusPoint (y ≫ eqToHom (tatePointRelRepData_rep X)) :=
+  congrArg tateLocusPoint (Category.comp_id y).symm
 
 /-- **The Tate point problem is smooth of relative dimension one over `Ell/B`**: each representing
 scheme is an open subscheme of an elliptic curve. -/

@@ -22,13 +22,13 @@ the universal Tate normal form
 over `Spec ℤ[A, B][Δ⁻¹]`, with its point `(0, 0)`, along exactly one morphism
 `S ⟶ Spec ℤ[A, B][Δ⁻¹]`, and by exactly one cartesian morphism from `E` carrying the zero section
 to the zero section and `P` to `(0, 0)` (`EllipticCurveGeom.existsUnique_tateNormalForm`).
-Conversely, a section which is such a pullback of `(0, 0)` satisfies the three conditions
-(`EllipticCurveGeom.exists_tateNormalForm_iff`). So `Spec ℤ[A, B][Δ⁻¹]` is a fine moduli scheme
-for elliptic curves with a section `P` such that `P`, `2P` and `3P` are nowhere the zero section,
-with universal family the projective model of the universal Tate normal form. No hypothesis on `S`
-is needed; in particular `S` may be nonreduced or non-affine. By the uniqueness of the classifying
-morphism, an automorphism of `E` over `S` fixing the zero section and `P` is the identity
-(`EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq`).
+Conversely, a point which is such a pullback of `(0, 0)` satisfies the three conditions: it is a
+Tate point (`EllipticCurveGeom.exists_tateNormalForm_iff`). So `Spec ℤ[A, B][Δ⁻¹]` is a fine moduli
+scheme for elliptic curves with a section `P` such that `P`, `2P` and `3P` are nowhere the zero
+section, with universal family the projective model of the universal Tate normal form. No hypothesis
+on `S` is needed; in particular `S` may be nonreduced or non-affine. By the uniqueness of the
+classifying morphism, an automorphism of `E` over `S` fixing the zero section and `P` is the
+identity (`EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq`).
 
 The sections to which the Tate normal form applies are the **Tate points**
 (`EllipticCurveGeom.IsTatePoint`): those lying at every point of `S` in the **Tate locus**
@@ -59,7 +59,7 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
   that `P`, `2P` and `3P` miss the zero section everywhere is the pullback of `(0, 0)` along a
   unique cartesian pointed morphism to the universal Tate normal form.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_tateNormalForm_iff`: such a morphism exists
-  exactly when `P`, `2P` and `3P` miss the zero section everywhere.
+  exactly when `P` is a Tate point, that is, `P`, `2P` and `3P` miss the zero section everywhere.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq`: an automorphism
   of `E` over `S` fixing such a section `P` is the identity.
 
@@ -659,38 +659,6 @@ theorem eq_id_of_isPullback_of_comp_eq {τ : E.carrier ⟶ E.carrier}
 
 end Classifying
 
-section
-
-variable (E)
-
-include hP
-
-/-- **The conditions of the Tate normal form are necessary.** A section `P` of an elliptic curve `E`
-over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form along a cartesian
-morphism from `E` carrying the zero section to the zero section exactly when none of `P`, `2P` and
-`3P` meets the zero section over any point of `S`. -/
-theorem exists_tateNormalForm_iff :
-    (∃ (f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (g : E.carrier ⟶ curveULift.projModel),
-      IsPullback g E.structureMap curveULift.projModelOver f ∧
-        E.zero ≫ g = f ≫ curveULift.projModelZero ∧ P ≫ g = f ≫ point) ↔
-      (∀ s, P s ≠ E.zero s) ∧ (∀ s, (P ≫ (E.mulBy 2).left) s ≠ E.zero s) ∧
-        ∀ s, (P ≫ (E.mulBy 3).left) s ≠ E.zero s := by
-  refine ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ ?_, fun ⟨h₁, h₂, h₃⟩ ↦
-    let ⟨⟨f, g⟩, h, _⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃; ⟨f, g, h⟩⟩
-  -- `g` carries `P`, `2P` and `3P` to the corresponding multiples of `(0, 0)`, which satisfy the
-  -- conditions, and multiplication by `n` commutes with `g`
-  have hn (n : ℤ) (s : S) (hs : (P ≫ (E.mulBy n).left) s = E.zero s) :
-      (point ≫ curveULift.projModelMulBy n) (f s) = curveULift.projModelZero (f s) := by
-    simpa only [← Scheme.Hom.comp_apply, Category.assoc,
-      ← curveULift.comp_projModelMulBy_of_isPullback hg h₀, reassoc_of% hgP, h₀] using
-      congrArg g hs
-  exact ⟨fun s hs ↦ point_ne_projModelZero (f s) (by
-      simpa only [← Scheme.Hom.comp_apply, hgP, h₀] using congrArg g hs),
-    fun s hs ↦ point_projModelMulBy_two_ne_projModelZero (f s) (hn 2 s hs),
-    fun s hs ↦ point_projModelMulBy_three_ne_projModelZero (f s) (hn 3 s hs)⟩
-
-end
-
 /-! ### The Tate locus -/
 
 section TateLocus
@@ -764,6 +732,31 @@ theorem isTatePoint_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
     simp only [Scheme.Hom.comp_apply] at h₂ h₃
     exact ⟨h₁ s, h₂ s, h₃ s⟩
 
+/-- **The conditions of the Tate normal form are necessary.** An `S`-point `P` of an elliptic curve
+`E` over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form along a
+cartesian morphism from `E` carrying the zero section to the zero section exactly when it is a
+Tate point. -/
+theorem exists_tateNormalForm_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
+    (∃ (f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (g : E.carrier ⟶ curveULift.projModel),
+      IsPullback g E.structureMap curveULift.projModelOver f ∧
+        E.zero ≫ g = f ≫ curveULift.projModelZero ∧ P.left ≫ g = f ≫ point) ↔
+      E.IsTatePoint P := by
+  rw [isTatePoint_iff]
+  refine ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ ?_, fun ⟨h₁, h₂, h₃⟩ ↦
+    let ⟨⟨f, g⟩, h, _⟩ := E.existsUnique_tateNormalForm (left_comp_structureMap P) h₁ h₂ h₃
+    ⟨f, g, h⟩⟩
+  -- `g` carries `P`, `2P` and `3P` to the corresponding multiples of `(0, 0)`, which satisfy the
+  -- conditions, and multiplication by `n` commutes with `g`
+  have hn (n : ℤ) (s : S) (hs : (P.left ≫ (E.mulBy n).left) s = E.zero s) :
+      (point ≫ curveULift.projModelMulBy n) (f s) = curveULift.projModelZero (f s) := by
+    simpa only [← Scheme.Hom.comp_apply, Category.assoc,
+      ← curveULift.comp_projModelMulBy_of_isPullback hg h₀, reassoc_of% hgP, h₀] using
+      congrArg g hs
+  exact ⟨fun s hs ↦ point_ne_projModelZero (f s) (by
+      simpa only [← Scheme.Hom.comp_apply, hgP, h₀] using congrArg g hs),
+    fun s hs ↦ point_projModelMulBy_two_ne_projModelZero (f s) (hn 2 s hs),
+    fun s hs ↦ point_projModelMulBy_three_ne_projModelZero (f s) (hn 3 s hs)⟩
+
 section BaseChange
 
 variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
@@ -821,8 +814,7 @@ theorem isTatePoint_pointHom : curveGeom.{u}.IsTatePoint pointHom := by
   have hiso : IsPullback (toEllipticCurveGeomIso curveULift.{u}).hom curveGeom.structureMap
       curveULift.projModelOver (𝟙 _) :=
     IsPullback.of_horiz_isIso ⟨by rw [toEllipticCurveGeomIso_hom_projModelOver, Category.comp_id]⟩
-  rw [EllipticCurveGeom.isTatePoint_iff]
-  exact (curveGeom.exists_tateNormalForm_iff (EllipticCurveGeom.left_comp_structureMap pointHom)).mp
+  exact curveGeom.exists_tateNormalForm_iff.mp
     ⟨𝟙 _, (toEllipticCurveGeomIso curveULift).hom, hiso, by simp, by simp⟩
 
 end UniversalTate
