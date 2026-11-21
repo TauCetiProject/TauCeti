@@ -697,6 +697,18 @@ theorem weightRotation_arg_circleExp (θ : ι → ℝ) :
   rw [← sub_add_cancel (fun j ↦ Complex.arg (Circle.exp (θ j))) θ, weightRotation_add,
     (weightRotation_eq_id_iff (_ - θ)).2 h, ContinuousLinearMap.id_comp]
 
+/-- **Stabilizers of the rotation by unit complex numbers.** The rotation `z_j ↦ u_j z_j` by unit
+complex numbers `u_j` fixes `z` exactly when `u_j = 1` for every coordinate `z_j = q_j + i p_j`
+that is nonzero. -/
+theorem weightRotation_arg_apply_eq_self_iff (u : ι → Circle)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (fun j ↦ Complex.arg (u j : ℂ)) x = x ↔
+      ∀ j, (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → u j = 1 := by
+  rw [weightRotation_apply_eq_self_iff]
+  refine forall_congr' fun j ↦ imp_congr_right fun _ ↦ ?_
+  conv_rhs => rw [← Circle.exp_arg (u j), Circle.exp_eq_one]
+  exact exists_congr fun k ↦ eq_comm
+
 /-- **Orbits of the rotation torus.** Some rotation of `ℂ^ι` carries `z` to `w` exactly when
 `|z_j| = |w_j|` for every `j`. -/
 theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
