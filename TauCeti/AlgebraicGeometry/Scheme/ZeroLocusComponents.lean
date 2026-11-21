@@ -51,6 +51,9 @@ points of the total space at which the uniformizer vanishes.
   Noetherian scheme;
 * `TauCeti.AlgebraicGeometry.Scheme.genericPoint_notMem_zeroLocus`: a nonzero global function on
   an integral scheme does not vanish at the generic point;
+* `TauCeti.AlgebraicGeometry.Scheme.coheight_le_one_of_maximal_mem_zeroLocus`: on a locally
+  Noetherian scheme, a maximal point of the zero locus of a global function has coheight at most
+  one;
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_of_maximal_mem_zeroLocus`: a maximal point
   of the zero locus of a nonzero global function has coheight one;
 * `TauCeti.AlgebraicGeometry.Scheme.maximal_mem_zeroLocus_iff`: the maximal points of that zero
@@ -177,13 +180,11 @@ theorem exists_maximal_mem_zeroLocus_specializes {a : Γ(X, ⊤)} {x : X}
   have h := coheight_strictAnti hlt (coheight_lt_top z)
   exact hy (coheight z) ⟨z, ⟨hzZ, hzy.trans hyx⟩, rfl⟩ h
 
-variable [IsIntegral X]
-
 /-- **Krull's principal ideal theorem on a scheme.** A maximal point of the zero locus of a
-nonzero global function on an integral locally Noetherian scheme, that is, the generic point of
-an irreducible component of that zero locus, has coheight one. -/
-theorem coheight_eq_one_of_maximal_mem_zeroLocus {a : Γ(X, ⊤)} (ha : a ≠ 0) {x : X}
-    (hx : Maximal (· ∈ X.zeroLocus {a}) x) : coheight x = 1 := by
+global function on a locally Noetherian scheme, that is, the generic point of an irreducible
+component of that zero locus, has coheight at most one. -/
+theorem coheight_le_one_of_maximal_mem_zeroLocus {a : Γ(X, ⊤)} {x : X}
+    (hx : Maximal (· ∈ X.zeroLocus {a}) x) : coheight x ≤ 1 := by
   -- Krull's principal ideal theorem bounds the dimension of the local ring by one.
   have h₁ : (IsLocalRing.maximalIdeal (X.presheaf.stalk x)).height ≤ 1 :=
     Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ _
@@ -191,11 +192,20 @@ theorem coheight_eq_one_of_maximal_mem_zeroLocus {a : Γ(X, ⊤)} (ha : a ≠ 0)
   have h₁' : ((IsLocalRing.maximalIdeal (X.presheaf.stalk x)).height : WithBot ℕ∞) ≤ 1 := by
     exact_mod_cast h₁
   rw [IsLocalRing.maximalIdeal_height_eq_ringKrullDim, ringKrullDim_stalk_eq_coheight] at h₁'
-  have hle : coheight x ≤ 1 := by exact_mod_cast h₁'
+  exact_mod_cast h₁'
+
+variable [IsIntegral X]
+
+/-- A maximal point of the zero locus of a nonzero global function on an integral locally
+Noetherian scheme, that is, the generic point of an irreducible component of that zero locus, has
+coheight one. -/
+theorem coheight_eq_one_of_maximal_mem_zeroLocus {a : Γ(X, ⊤)} (ha : a ≠ 0) {x : X}
+    (hx : Maximal (· ∈ X.zeroLocus {a}) x) : coheight x = 1 := by
   -- The generic point of `X` is not in the zero locus, so `x` is not the generic point.
   have hmax : ¬ IsMax x := fun h ↦
     genericPoint_notMem_zeroLocus ha (eq_genericPoint_of_isMax h ▸ hx.prop)
-  exact le_antisymm hle (Order.one_le_iff_pos.mpr (coheight_pos.mpr hmax))
+  exact le_antisymm (coheight_le_one_of_maximal_mem_zeroLocus hx)
+    (Order.one_le_iff_pos.mpr (coheight_pos.mpr hmax))
 
 /-- The maximal points of the zero locus of a nonzero global function on an integral locally
 Noetherian scheme are exactly the codimension-one points of the scheme lying in it. -/
