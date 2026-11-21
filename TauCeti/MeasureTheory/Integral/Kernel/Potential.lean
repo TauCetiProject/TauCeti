@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.Topology.MetricSpace.ProperSpace
 import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.MeasureTheory.Group.Arithmetic
@@ -20,6 +23,13 @@ integrable weights. Almost everywhere convergence of the shifts and `L¹` conver
 weights imply `L¹` convergence of these potentials. A quantitative estimate
 separates the weight error from the kernel translation error. The convergence results hold along
 any filter with a countable basis; the quantitative estimates need no topology on the shift group.
+
+A kernel `G x y` on a bounded set `s` that is dominated by a translation kernel, `|G x y| ≤
+|K (x - y)| + C` with `K` only locally integrable, still integrates against integrable weights:
+`(x, y) ↦ G x y * g y` is integrable on `s × s`
+(`MeasureTheory.LocallyIntegrable.integrable_uncurry_mul_of_abs_le`). Green kernels of bounded
+domains are dominated in this way by the fundamental solution, which is locally integrable but not
+integrable.
 -/
 
 public section
@@ -237,4 +247,81 @@ theorem tendsto_integral_norm_kernel_potential_sub [NormedRing K] [NormedSpace �
 end Convergence
 
 end Integrable
+
+/-! ### Kernels dominated by a locally integrable translation kernel -/
+
+namespace LocallyIntegrable
+
+open Metric
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
+  {μ : Measure E} [μ.IsAddRightInvariant] [IsFiniteMeasureOnCompacts μ] [NullSingletonClass μ]
+
+omit [ProperSpace E] [IsFiniteMeasureOnCompacts μ] in
+/-- The row integrals over a bounded set `s` of a kernel dominated by `|K (x - y)| + C` off the
+diagonal are bounded uniformly in `y ∈ s`. -/
+private theorem setLIntegral_enorm_le_of_abs_le {K : E → ℝ} {s : Set E} (hs : MeasurableSet s)
+    {R C : ℝ} (hsR : s ⊆ closedBall 0 R) {G : E → E → ℝ}
+    (hG : ∀ x ∈ s, ∀ y ∈ s, x ≠ y → |G x y| ≤ |K (x - y)| + C) {y : E} (hy : y ∈ s) :
+    ∫⁻ x in s, ‖G x y‖ₑ ∂μ ≤ (∫⁻ w in closedBall 0 (2 * R), ‖K w‖ₑ ∂μ) + ‖C‖ₑ * μ s := by
+  have hsing : ∀ᵐ x ∂μ, x ≠ y := ae_iff.2 (by simp)
+  calc ∫⁻ x in s, ‖G x y‖ₑ ∂μ
+      ≤ ∫⁻ x in s, ((closedBall 0 (2 * R)).indicator (fun w ↦ ‖K w‖ₑ) (x - y) + ‖C‖ₑ) ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [ae_restrict_mem hs, ae_restrict_of_ae hsing] with x hx hxy
+        have hxR := mem_closedBall_zero_iff.1 (hsR hx)
+        have hyR := mem_closedBall_zero_iff.1 (hsR hy)
+        have hxy' : x - y ∈ closedBall (0 : E) (2 * R) :=
+          mem_closedBall_zero_iff.2 ((norm_sub_le x y).trans (by linarith))
+        rw [Set.indicator_of_mem hxy', ← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
+          ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _)]
+        refine ENNReal.ofReal_le_ofReal ?_
+        simp only [Real.norm_eq_abs]
+        linarith [hG x hx y hy hxy, le_abs_self C]
+      _ = (∫⁻ x in s, (closedBall 0 (2 * R)).indicator (fun w ↦ ‖K w‖ₑ) (x - y) ∂μ) +
+          ‖C‖ₑ * μ s := by
+        rw [lintegral_add_right _ measurable_const, setLIntegral_const]
+      _ ≤ _ := by
+        refine add_le_add_left ?_ _
+        calc _ ≤ ∫⁻ x, (closedBall 0 (2 * R)).indicator (fun w ↦ ‖K w‖ₑ) (x - y) ∂μ :=
+              setLIntegral_le_lintegral _ _
+          _ = _ := by
+            rw [lintegral_sub_right_eq_self _ y, lintegral_indicator measurableSet_closedBall]
+
+/-- **Integral operators with a locally integrable singularity on a bounded set.** Let `s` be a
+bounded measurable set and let the kernel `G` satisfy `|G x y| ≤ |K (x - y)| + C` at distinct
+points `x, y` of `s`, where `K` is locally integrable. Then `(x, y) ↦ G x y * g y` is integrable
+on `s × s` for every `g` integrable on `s`. -/
+theorem integrable_uncurry_mul_of_abs_le {K : E → ℝ} (hK : LocallyIntegrable K μ) {s : Set E}
+    (hs : MeasurableSet s) (hsb : Bornology.IsBounded s) {C : ℝ} {G : E → E → ℝ}
+    (hGm : AEStronglyMeasurable (Function.uncurry G) ((μ.restrict s).prod (μ.restrict s)))
+    (hG : ∀ x ∈ s, ∀ y ∈ s, x ≠ y → |G x y| ≤ |K (x - y)| + C) {g : E → ℝ}
+    (hg : IntegrableOn g s μ) :
+    Integrable (Function.uncurry fun x y ↦ G x y * g y) ((μ.restrict s).prod (μ.restrict s)) := by
+  obtain ⟨R, hR⟩ := hsb.subset_closedBall 0
+  set M := (∫⁻ w in closedBall 0 (2 * R), ‖K w‖ₑ ∂μ) + ‖C‖ₑ * μ s
+  have hM : M < ⊤ :=
+    ENNReal.add_lt_top.2 ⟨(hK.integrableOn_isCompact (isCompact_closedBall _ _)).2,
+      ENNReal.mul_lt_top eNorm_lt_top hsb.measure_lt_top⟩
+  have hmeas : AEStronglyMeasurable (Function.uncurry fun x y ↦ G x y * g y)
+      ((μ.restrict s).prod (μ.restrict s)) :=
+    hGm.mul hg.aestronglyMeasurable.comp_snd
+  refine ⟨hmeas, ?_⟩
+  rw [HasFiniteIntegral, lintegral_prod_symm _ hmeas.eNorm]
+  calc ∫⁻ y in s, ∫⁻ x in s, ‖G x y * g y‖ₑ ∂μ ∂μ
+      = ∫⁻ y in s, (∫⁻ x in s, ‖G x y‖ₑ ∂μ) * ‖g y‖ₑ ∂μ := by
+        refine lintegral_congr fun y ↦ ?_
+        simp_rw [eNorm_mul]
+        exact lintegral_mul_const' _ _ eNorm_ne_top
+    _ ≤ ∫⁻ y in s, M * ‖g y‖ₑ ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [ae_restrict_mem hs] with y hy
+        gcongr
+        exact setLIntegral_enorm_le_of_abs_le hs hR hG hy
+    _ < ⊤ := by
+        rw [lintegral_const_mul' _ _ hM.ne]
+        exact ENNReal.mul_lt_top hM hg.2
+
+end LocallyIntegrable
+
 end MeasureTheory

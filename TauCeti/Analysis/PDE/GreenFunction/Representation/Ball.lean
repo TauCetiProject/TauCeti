@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
+public import TauCeti.Analysis.PDE.GreenFunction.Representation.Basic
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 
 /-!
 # Green's representation formula on the unit ball
@@ -47,20 +48,12 @@ Green potential with the weak solution
 
 ## Data in `L²(B)`
 
-For general `f ∈ L²(B)` the argument is by duality. The Green kernel is symmetric, and off the
-diagonal of the ball `|G(x, y)| ≤ |Φ(y - x)| + |Φ(z)|` with `‖z‖ = 2`
-(`TauCeti.abs_ballGreenKernel_le`). As `Φ` is locally integrable, the integrals of `|G|` over the
-ball in either variable are bounded uniformly, so the Green operator acts on `L¹(B)`
-(`TauCeti.integrable_ballGreenKernel_mul`) and Fubini's theorem applies to
-`(x, y) ↦ f(x) G(x, y) ψ(y)` for a test function `ψ`. Let `w` be the weak solution with datum
-`ψ`, which by the smooth case is the Green potential of `ψ`. Testing the equation of `w` with `u`
-and that of `u` with `w`, and using the symmetry of the Dirichlet form,
-
-`∫_B ψ u = a(w, u) = a(u, w) = ∫_B f w = ∫_B f(x) ∫_B G(x, y) ψ(y) dy dx`,
-
-and by Fubini's theorem and the symmetry of `G` the last integral is
-`∫_B ψ(y) ∫_B G(y, x) f(x) dx dy`. As `ψ` ranges over the test functions on `B`, `u` agrees
-almost everywhere with the Green potential of `f`.
+For general `f ∈ L²(B)` the argument is by duality
+(`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_setIntegral_mul_of_forall_contDiff`). The Green
+kernel is symmetric, and off the diagonal of the ball `|G(x, y)| ≤ |Φ(y - x)| + |Φ(z)|` with
+`‖z‖ = 2` (`TauCeti.abs_ballGreenKernel_le`). As `Φ` is locally integrable, the Green operator
+acts on `L¹(B)` (`TauCeti.integrable_ballGreenKernel_mul`), and the representation for smooth data
+extends to `L²(B)`.
 
 As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in `B` is
 `(1 - ‖x‖²) / (2n)`, so `∫_B G(x, y) dy = (1 - ‖x‖²) / (2n)` for almost every `x ∈ B`
@@ -94,7 +87,7 @@ public section
 namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory Metric Set Filter Topology
-open scoped Convolution ENNReal
+open scoped Convolution
 
 /-! ### The Green operator on `L¹` of the ball -/
 
@@ -102,92 +95,19 @@ section Integrals
 
 variable {n : ℕ}
 
-/-- Translating the unit ball by a point of the ball stays inside the ball of radius `2`, so the
-integral of `‖Φ(· - y)‖ₑ` over the unit ball is at most that of `‖Φ‖ₑ` over the ball of radius
-`2`. -/
-private theorem setLIntegral_enorm_newtonianKernel_sub_le {y : EuclideanSpace ℝ (Fin (n + 1))}
-    (hy : ‖y‖ < 1) :
-    ∫⁻ x in ball 0 1, ‖newtonianKernel (n + 1) (x - y)‖ₑ ≤
-      ∫⁻ w in ball 0 2, ‖newtonianKernel (n + 1) w‖ₑ := by
-  calc ∫⁻ x in ball 0 1, ‖newtonianKernel (n + 1) (x - y)‖ₑ
-      ≤ ∫⁻ x, (ball 0 2).indicator (fun w => ‖newtonianKernel (n + 1) w‖ₑ) (x - y) := by
-        rw [← lintegral_indicator measurableSet_ball]
-        refine lintegral_mono fun x => ?_
-        by_cases hx : x ∈ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1
-        · have hx2 : x - y ∈ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 2 := by
-            rw [mem_ball_zero_iff] at hx ⊢
-            calc ‖x - y‖ ≤ ‖x‖ + ‖y‖ := norm_sub_le x y
-              _ < 2 := by linarith
-          rw [indicator_of_mem hx, indicator_of_mem hx2]
-        · rw [indicator_of_notMem hx]
-          exact bot_le
-    _ = ∫⁻ w in ball 0 2, ‖newtonianKernel (n + 1) w‖ₑ := by
-        rw [lintegral_sub_right_eq_self
-          (fun x => (ball 0 2).indicator (fun w => ‖newtonianKernel (n + 1) w‖ₑ) x) y,
-          lintegral_indicator measurableSet_ball]
-
-/-- The integrals of the Green kernel over the unit ball in its first variable are bounded
-uniformly in the second variable. -/
-private theorem exists_setLIntegral_enorm_ballGreenKernel_le :
-    ∃ M : ℝ≥0∞, M < ∞ ∧ ∀ y ∈ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1,
-      ∫⁻ x in ball 0 1, ‖ballGreenKernel (n + 1) x y‖ₑ ≤ M := by
-  obtain ⟨z, hz⟩ : ∃ z : EuclideanSpace ℝ (Fin (n + 1)), ‖z‖ = 2 :=
-    ⟨EuclideanSpace.single 0 2, by simp⟩
-  have hloc := locallyIntegrable_newtonianKernel (n + 1)
-  have hΦ : ∫⁻ w in ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 2,
-      ‖newtonianKernel (n + 1) w‖ₑ < ∞ :=
-    ((hloc.integrableOn_isCompact (isCompact_closedBall 0 2)).mono_set
-      ball_subset_closedBall).2
-  refine ⟨(∫⁻ w in ball 0 2, ‖newtonianKernel (n + 1) w‖ₑ) +
-      ‖newtonianKernel (n + 1) z‖ₑ * volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1),
-    ENNReal.add_lt_top.2 ⟨hΦ, ENNReal.mul_lt_top eNorm_lt_top measure_ball_lt_top⟩,
-    fun y hy => ?_⟩
-  have hy' : ‖y‖ < 1 := mem_ball_zero_iff.1 hy
-  have hmeas : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) =>
-      ‖newtonianKernel (n + 1) (x - y)‖ₑ :=
-    by fun_prop
-  calc ∫⁻ x in ball 0 1, ‖ballGreenKernel (n + 1) x y‖ₑ
-      ≤ ∫⁻ x in ball 0 1, (‖newtonianKernel (n + 1) (x - y)‖ₑ + ‖newtonianKernel (n + 1) z‖ₑ) := by
-        refine setLIntegral_mono_ae (hmeas.add measurable_const).aemeasurable ?_
-        have hsing : ∀ᵐ x ∂(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))), x ≠ y :=
-          ae_iff.2 (by simp)
-        filter_upwards [hsing] with x hxy hx
-        rw [ballGreenKernel_comm]
-        have := abs_ballGreenKernel_le hy' (mem_ball_zero_iff.1 hx) hxy hz
-        rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
-          ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _)]
-        exact ENNReal.ofReal_le_ofReal (by simpa only [Real.norm_eq_abs] using this)
-    _ = (∫⁻ x in ball 0 1, ‖newtonianKernel (n + 1) (x - y)‖ₑ) +
-        ‖newtonianKernel (n + 1) z‖ₑ * volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
-        rw [lintegral_add_right _ measurable_const, setLIntegral_const]
-    _ ≤ _ := add_le_add_left (setLIntegral_enorm_newtonianKernel_sub_le hy') _
-
 /-- **The Green operator on `L¹` of the unit ball.** For `g` integrable on the unit ball, the
 function `(x, y) ↦ G(x, y) g(y)` is integrable on the square of the ball. -/
 theorem integrable_ballGreenKernel_mul {g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hg : IntegrableOn g (ball 0 1)) :
     Integrable (Function.uncurry fun x y => ballGreenKernel (n + 1) x y * g y)
       ((volume.restrict (ball 0 1)).prod (volume.restrict (ball 0 1))) := by
-  obtain ⟨M, hM, hbound⟩ := exists_setLIntegral_enorm_ballGreenKernel_le (n := n)
-  have hmeas : AEStronglyMeasurable (Function.uncurry fun x y => ballGreenKernel (n + 1) x y * g y)
-      ((volume.restrict (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).prod
-        (volume.restrict (ball 0 1))) :=
-    (measurable_ballGreenKernel (n + 1)).aestronglyMeasurable.mul hg.aestronglyMeasurable.comp_snd
-  refine ⟨hmeas, ?_⟩
-  rw [HasFiniteIntegral, lintegral_prod_symm _ hmeas.eNorm]
-  calc ∫⁻ y in ball 0 1, ∫⁻ x in ball 0 1, ‖ballGreenKernel (n + 1) x y * g y‖ₑ
-      = ∫⁻ y in ball 0 1, (∫⁻ x in ball 0 1, ‖ballGreenKernel (n + 1) x y‖ₑ) * ‖g y‖ₑ := by
-        refine lintegral_congr fun y => ?_
-        simp_rw [eNorm_mul]
-        exact lintegral_mul_const' _ _ eNorm_ne_top
-    _ ≤ ∫⁻ y in ball 0 1, M * ‖g y‖ₑ := by
-        refine lintegral_mono_ae ?_
-        filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
-        gcongr
-        exact hbound y hy
-    _ < ∞ := by
-        rw [lintegral_const_mul' _ _ hM.ne]
-        exact ENNReal.mul_lt_top hM hg.2
+  obtain ⟨z, hz⟩ : ∃ z : EuclideanSpace ℝ (Fin (n + 1)), ‖z‖ = 2 :=
+    ⟨EuclideanSpace.single 0 2, by simp⟩
+  refine (locallyIntegrable_newtonianKernel (n + 1)).integrable_uncurry_mul_of_abs_le
+    measurableSet_ball isBounded_ball (C := |newtonianKernel (n + 1) z|)
+    (measurable_ballGreenKernel _).aestronglyMeasurable (fun x hx y hy hxy => ?_) hg
+  rw [newtonianKernel_sub_comm _ x y]
+  exact abs_ballGreenKernel_le (mem_ball_zero_iff.1 hx) (mem_ball_zero_iff.1 hy) hxy.symm hz
 
 end Integrals
 
@@ -239,33 +159,15 @@ theorem continuousOn_integral_ballGreenCorrector_mul (hf : Continuous f)
 ball, `x ↦ ∫ φ(x, y) f(y) dy` is harmonic in the open unit ball. -/
 theorem harmonicOnNhd_integral_ballGreenCorrector_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
-    HarmonicOnNhd (fun x => ∫ y, ballGreenCorrector n x y * f y) (ball 0 1) := by
-  have hK : IsCompact (tsupport f) := hasCompactSupport_of_tsupport_subset_ball hsupp
-  have hKm : MeasurableSet (tsupport f) := (isClosed_tsupport f).measurableSet
-  have : CompactSpace (tsupport f) := isCompact_iff_compactSpace.1 hK
-  -- The integral over `ℝⁿ` is an integral over the compact parameter space `tsupport f`.
-  have hrestr : ∀ x, ∫ y, ballGreenCorrector n x y * f y =
-      ∫ y : tsupport f, f y • ballGreenCorrector n x y ∂volume.comap Subtype.val := fun x => by
-    rw [integral_subtype_comap hKm fun y => f y • ballGreenCorrector n x y,
-      ← setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy =>
-        ballGreenCorrector_mul_eq_zero hy]
-    simp only [smul_eq_mul, mul_comm (f _)]
-  have hg : Integrable (fun y : tsupport f => f y) (volume.comap Subtype.val) :=
-    (MeasurableEmbedding.subtypeVal hKm).integrable_map_iff.1
-      (by rw [map_comap_subtypeVal hKm]; exact hf.continuousOn.integrableOn_compact hK)
-  have hUW : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, ∀ y : tsupport f,
-      (x, (y : EuclideanSpace ℝ (Fin n))) ∈ {p : EuclideanSpace ℝ (Fin n) ×
-        EuclideanSpace ℝ (Fin n) | ‖p.1‖ * ‖p.2‖ ≠ 1} := fun x hx y =>
-    ((mul_le_of_le_one_left (norm_nonneg _) (mem_ball_zero_iff.1 hx).le).trans_lt
-      (mem_ball_zero_iff.1 (hsupp y.property))).ne
-  have hharm : ∀ y : tsupport f,
-      HarmonicOnNhd (fun x => ballGreenCorrector n x y) (ball 0 1) := fun y => by
-    simp_rw [ballGreenCorrector_comm _ (y : EuclideanSpace ℝ (Fin n))]
-    exact harmonicOnNhd_ballGreenCorrector (mem_ball_zero_iff.1 (hsupp y.property)).le
-  simp_rw [hrestr]
-  exact harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtypeVal
-    (isOpen_ne_fun (by fun_prop) continuous_const) contDiffOn_ballGreenCorrector isOpen_ball
-    hUW hharm
+    HarmonicOnNhd (fun x => ∫ y, ballGreenCorrector n x y * f y) (ball 0 1) :=
+  harmonicOnNhd_integral_mul_of_contDiffOn (F := fun p => ballGreenCorrector n p.1 p.2) hf
+    (hasCompactSupport_of_tsupport_subset_ball hsupp) (isOpen_ne_fun (by fun_prop)
+      continuous_const) contDiffOn_ballGreenCorrector isOpen_ball
+    (fun x hx y hy => ((mul_le_of_le_one_left (norm_nonneg _) (mem_ball_zero_iff.1 hx).le).trans_lt
+      (mem_ball_zero_iff.1 (hsupp hy))).ne)
+    fun y hy => by
+      simp_rw [ballGreenCorrector_comm _ y]
+      exact harmonicOnNhd_ballGreenCorrector (mem_ball_zero_iff.1 (hsupp hy)).le
 
 /-- **Boundary values of the harmonic correction.** On the unit sphere the corrector is the
 Newtonian kernel, so the harmonic correction equals the Newtonian potential `Φ ⋆ f` there. -/
@@ -335,73 +237,6 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_integral_ballGreenKernel_mul (hn : n
   rw [hΩ, mem_ball_zero_iff] at hx
   exact (integral_ballGreenKernel_mul_eq_sub hf.continuous hsupp hx.le).symm
 
-/-- **Fubini's theorem for the Green kernel.** For `f` integrable on the unit ball and `ψ`
-continuous with `tsupport ψ` inside the ball,
-`∫_B f(x) ∫ G(x, y) ψ(y) dy dx = ∫_B ψ(y) ∫_B G(y, x) f(x) dx dy`. -/
-private theorem setIntegral_mul_integral_ballGreenKernel_mul_comm
-    {f ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hf : IntegrableOn f (ball 0 1))
-    (hψ : Continuous ψ) (hψsupp : tsupport ψ ⊆ ball 0 1) :
-    ∫ x in ball 0 1, f x * ∫ y, ballGreenKernel (n + 1) x y * ψ y =
-      ∫ y in ball 0 1, ψ y * ∫ x in ball 0 1, ballGreenKernel (n + 1) y x * f x := by
-  obtain ⟨C, hC⟩ :=
-    hψ.bounded_above_of_compact_support (hasCompactSupport_of_tsupport_subset_ball hψsupp)
-  have hψ0 := Function.support_subset_iff'.1 ((subset_tsupport ψ).trans hψsupp)
-  have hprod : Integrable (Function.uncurry fun x y => f x * (ballGreenKernel (n + 1) x y * ψ y))
-      ((volume.restrict (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).prod
-        (volume.restrict (ball 0 1))) := by
-    refine ((integrable_ballGreenKernel_mul hf).swap.mul_bdd (c := C)
-      hψ.aestronglyMeasurable.comp_snd (Eventually.of_forall fun p => hC p.2)).congr
-      (Eventually.of_forall fun ⟨x, y⟩ => ?_)
-    simp only [Function.comp_apply, Prod.swap_prod_mk, Function.uncurry_apply_pair,
-      ballGreenKernel_comm x y]
-    ring
-  calc ∫ x in ball 0 1, f x * ∫ y, ballGreenKernel (n + 1) x y * ψ y
-      = ∫ x in ball 0 1, ∫ y in ball 0 1, f x * (ballGreenKernel (n + 1) x y * ψ y) := by
-        refine setIntegral_congr_fun measurableSet_ball fun x _ => ?_
-        rw [integral_const_mul, setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy => by
-          rw [hψ0 y hy, mul_zero]]
-    _ = ∫ y in ball 0 1, ∫ x in ball 0 1, f x * (ballGreenKernel (n + 1) x y * ψ y) :=
-        integral_integral_swap hprod
-    _ = _ := by
-        refine setIntegral_congr_fun measurableSet_ball fun y _ => ?_
-        rw [← integral_const_mul]
-        refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-        simp only [ballGreenKernel_comm x y]
-        ring
-
-/-- **The duality identity.** If `u` is the weak solution of `-Δu = f` on the unit ball and `ψ`
-is a test function on the ball, then `∫_B ψ u = ∫_B f(x) ∫ G(x, y) ψ(y) dy dx`: test the equation
-of `u` with the weak solution `w` of `-Δw = ψ`, which is the Green potential of `ψ`, and the
-equation of `w` with `u`. -/
-private theorem IsWeakSolutionDirichlet.setIntegral_mul_value_eq (hn : n ≠ 1)
-    (hΩ : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball 0 1)
-    {f : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))}
-    {u : W1p0 volume Omega 2} (hu : IsWeakSolutionDirichlet (fun _ => 1) 0 0 f u)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψ : ContDiff ℝ 2 ψ)
-    (hψsupp : tsupport ψ ⊆ ball 0 1) :
-    ∫ x in ball 0 1, ψ x * W1p.value (u : W1p volume Omega 2) x =
-      ∫ x in ball 0 1, f x * ∫ y, ballGreenKernel (n + 1) x y * ψ y := by
-  have hψL2 : MemLp ψ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    (hψ.continuous.memLp_of_hasCompactSupport
-      (hasCompactSupport_of_tsupport_subset_ball hψsupp)).restrict _
-  obtain ⟨w, hw, -⟩ := existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
-    (z := 0) (R := 1) hΩ.le (hψL2.toLp ψ)
-  have hwG := hw.value_ae_eq_integral_ballGreenKernel_mul hn hψ hψsupp hΩ hψL2.coeFn_toLp
-  have h1 := (isWeakSolutionDirichlet_iff _ _).1 hw u
-  have h2 := (isWeakSolutionDirichlet_iff _ _).1 hu w
-  rw [← hΩ]
-  calc ∫ x in Omega, ψ x * W1p.value (u : W1p volume Omega 2) x
-      = ∫ x in Omega, hψL2.toLp ψ x * W1p.value (u : W1p volume Omega 2) x := by
-        refine integral_congr_ae ?_
-        filter_upwards [hψL2.coeFn_toLp] with x hx
-        rw [hx]
-    _ = ∫ x in Omega, f x * W1p.value (w : W1p volume Omega 2) x := by
-        rw [← h1, energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ => Matrix.isSymm_one), h2]
-    _ = _ := by
-        refine integral_congr_ae ?_
-        filter_upwards [hwG] with x hx
-        rw [hx]
-
 /-- **Green's representation formula.** Let `n ≠ 1`, so that the dimension `n + 1` is `1` or at
 least `3`, and let `B` be the unit ball. For every `f ∈ L²(B)`, the weak solution `u ∈ H¹₀(B)`
 of `-Δu = f` in `B`, `u = 0` on `∂B`, is the Green potential of `f`:
@@ -414,47 +249,16 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_setIntegral_ballGreenKernel_mul (hn 
     W1p.value (u : W1p volume Omega 2)
       =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
         fun x => ∫ y in ball 0 1, ballGreenKernel (n + 1) x y * f y := by
-  have hfin : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+  have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 (hΩ ▸ measure_ball_lt_top.ne)
-  have hint : ∀ v : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))),
-      IntegrableOn v (ball 0 1) := fun v => hΩ ▸ (Lp.memLp v).integrable one_le_two
-  have hGf : IntegrableOn (fun x => ∫ y in ball 0 1, ballGreenKernel (n + 1) x y * f y)
-      (ball 0 1) := (integrable_ballGreenKernel_mul (hint f)).integral_prod_left
-  obtain ⟨D, hD⟩ : ∃ D : EuclideanSpace ℝ (Fin (n + 1)) → ℝ, D = fun x =>
-      W1p.value (u : W1p volume Omega 2) x - ∫ y in ball 0 1, ballGreenKernel (n + 1) x y * f y :=
-    ⟨_, rfl⟩
-  suffices h : ∀ᵐ x ∂(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))),
-      x ∈ ball 0 1 → D x = 0 by
-    refine (ae_restrict_iff' Omega.isOpen.measurableSet).2 (h.mono fun x hx hxΩ => ?_)
-    have hx' := hx (hΩ ▸ hxΩ)
-    rw [hD] at hx'
-    exact sub_eq_zero.1 hx'
-  have hDint : IntegrableOn D (ball 0 1) := by
-    rw [hD]
-    exact (hint _).sub hGf
-  refine isOpen_ball.ae_eq_zero_of_integral_contDiff_smul_eq_zero hDint.locallyIntegrableOn
-    fun ψ hψ hψc hψsupp => ?_
-  obtain ⟨C, hC⟩ := hψ.continuous.bounded_above_of_compact_support hψc
-  have hψmeas : AEStronglyMeasurable ψ (volume.restrict (ball 0 1)) :=
-    hψ.continuous.aestronglyMeasurable
-  have hψ0 := Function.support_subset_iff'.1 ((subset_tsupport ψ).trans hψsupp)
-  calc ∫ x, ψ x • D x
-      = ∫ x in ball 0 1, ψ x * W1p.value (u : W1p volume Omega 2) x -
-          ψ x * ∫ y in ball 0 1, ballGreenKernel (n + 1) x y * f y := by
-        rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-          rw [hψ0 x hx, zero_smul]]
-        exact setIntegral_congr_fun measurableSet_ball fun x _ => by rw [hD, smul_eq_mul, mul_sub]
-    _ = (∫ x in ball 0 1, ψ x * W1p.value (u : W1p volume Omega 2) x) -
-          ∫ x in ball 0 1, ψ x * ∫ y in ball 0 1, ballGreenKernel (n + 1) x y * f y :=
-        integral_sub ((hint _).bdd_mul hψmeas (Eventually.of_forall hC))
-          (hGf.bdd_mul hψmeas (Eventually.of_forall hC))
-    -- The duality identity, then Fubini's theorem.
-    _ = (∫ x in ball 0 1, f x * ∫ y, ballGreenKernel (n + 1) x y * ψ y) -
-          ∫ y in ball 0 1, ψ y * ∫ x in ball 0 1, ballGreenKernel (n + 1) y x * f x := by
-        rw [hu.setIntegral_mul_value_eq hn hΩ (hψ.of_le (by simp)) hψsupp]
-    _ = 0 := by
-        rw [setIntegral_mul_integral_ballGreenKernel_mul_comm (hint f) hψ.continuous hψsupp,
-          sub_self]
+  have hf : IntegrableOn f (ball 0 1) := by
+    rw [← hΩ]
+    exact (Lp.memLp f).integrable one_le_two
+  have hGf := integrable_ballGreenKernel_mul hf
+  rw [← hΩ] at hGf ⊢
+  exact hu.value_ae_eq_setIntegral_mul_of_forall_contDiff hΩ.le ballGreenKernel_comm
+    (fun ψ hψ _ hψsupp g hg w hw => hw.value_ae_eq_integral_ballGreenKernel_mul hn
+      (hψ.of_le (by simp)) (hΩ ▸ hψsupp) hΩ hg) hGf
 
 end Weak
 

@@ -29,6 +29,9 @@ Dirichlet problem for its own Laplacian.
 
 ## Main declarations
 
+* `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_sub_of_laplacian_eq_neg`: the weak solution on
+  a ball is `v - h` for every classical solution `v` of `-Δv = f` in the ball and every harmonic
+  `h` with the boundary values of `v`; this is the form used for kernels other than `Gₙ`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub`: the weak
   solution on a ball is `Gₙ ⋆ f - h` for every harmonic `h` with boundary values `Gₙ ⋆ f`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq`: such an `h` exists.
@@ -55,6 +58,40 @@ variable {n : ℕ} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {z : Euclidean
   {g : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))}
   {u : W1p0 volume Omega 2}
 
+/-- **The weak solution of Poisson's equation on a ball is a corrected classical solution.** Let
+`v` be of class `C²` on the ball `B = B(z, R)` and continuous on its closure, with `-Δv = f` in `B`,
+and let `h` be harmonic on `B`, continuous on its closure and equal to `v` on the sphere. If
+`u ∈ H¹₀(B)` is the weak solution of `-Δu = f` in `B`, `u = 0` on `∂B`, then `u = v - h` almost
+everywhere on `B`. The function `v` is typically a Newtonian potential of `f`. -/
+theorem IsWeakSolutionDirichlet.value_ae_eq_sub_of_laplacian_eq_neg
+    {v h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : ContDiffOn ℝ 2 v (ball z R))
+    (hvc : ContinuousOn v (closedBall z R)) (hΔ : ∀ x ∈ ball z R, Δ v x = -f x)
+    (hh : HarmonicOnNhd h (ball z R)) (hhc : ContinuousOn h (closedBall z R))
+    (hhv : EqOn h v (sphere z R))
+    (hΩ : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball z R)
+    (hg : g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))] f)
+    (hu : IsWeakSolutionDirichlet (fun _ => 1) 0 0 g u) :
+    W1p.value (u : W1p volume Omega 2)
+      =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))] v - h := by
+  rcases le_or_gt R 0 with hR | hR
+  · -- The ball is empty, and there is nothing to prove.
+    refine (ae_restrict_iff' Omega.isOpen.measurableSet).2 (ae_of_all _ fun x hx => ?_)
+    rw [hΩ, ball_eq_empty.2 hR] at hx
+    exact absurd hx (notMem_empty x)
+  have hΔ' : ∀ x ∈ ball z R, Δ (v - h) x = -f x := fun x hx => by
+    rw [(hv.contDiffAt (isOpen_ball.mem_nhds hx)).laplacian_sub (hh x hx).1, hΔ x hx,
+      (hh x hx).2.eq_of_nhds, Pi.zero_apply, sub_zero]
+  refine hu.value_ae_eq_of_contDiffOn hΩ.le ?_ ?_ ?_ ?_
+  · rw [hΩ]
+    exact hv.sub fun x hx => (hh x hx).1.contDiffWithinAt
+  · rw [hΩ, closure_ball z hR.ne']
+    exact hvc.sub hhc
+  · intro x hx
+    rw [hΩ, frontier_ball z hR.ne'] at hx
+    rw [Pi.sub_apply, hhv hx, sub_self]
+  · filter_upwards [hg, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+    rw [hx, Pi.neg_apply, hΔ' x (hΩ ▸ hxΩ), neg_neg]
+
 /-- **The weak solution of Poisson's equation on a ball is the corrected Newtonian potential.**
 Let `n ≠ 1`, so that the dimension `n + 1` is `1` or at least `3`, let `f` be of class `C²` with
 compact support on `ℝ^{n+1}`, and let `h` be harmonic on the ball `B(z, R)`, continuous on its
@@ -70,25 +107,10 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub (hn 
     W1p.value (u : W1p volume Omega 2)
       =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
         newtonianKernel (n + 1) ⋆ f - h := by
-  rcases le_or_gt R 0 with hR | hR
-  · -- The ball is empty, and there is nothing to prove.
-    refine (ae_restrict_iff' Omega.isOpen.measurableSet).2 (ae_of_all _ fun x hx => ?_)
-    rw [hΩ, ball_eq_empty.2 hR] at hx
-    exact absurd hx (notMem_empty x)
   have hv := contDiff_newtonianKernel_convolution (n := n + 1) hf hc
-  have hΔ : ∀ x ∈ ball z R, Δ (newtonianKernel (n + 1) ⋆ f - h) x = -f x := fun x hx => by
-    rw [hv.contDiffAt.laplacian_sub (hh x hx).1, laplacian_newtonianKernel_convolution
-      (by omega) (by omega) hf hc, (hh x hx).2.eq_of_nhds, Pi.zero_apply, sub_zero, Pi.neg_apply]
-  refine hu.value_ae_eq_of_contDiffOn hΩ.le ?_ ?_ ?_ ?_
-  · rw [hΩ]
-    exact hv.contDiffOn.sub fun x hx => (hh x hx).1.contDiffWithinAt
-  · rw [hΩ, closure_ball z hR.ne']
-    exact hv.continuous.continuousOn.sub hhc
-  · intro x hx
-    rw [hΩ, frontier_ball z hR.ne'] at hx
-    rw [Pi.sub_apply, hhG hx, sub_self]
-  · filter_upwards [hg, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
-    rw [hx, Pi.neg_apply, hΔ x (hΩ ▸ hxΩ), neg_neg]
+  exact hu.value_ae_eq_sub_of_laplacian_eq_neg hv.contDiffOn hv.continuous.continuousOn
+    (fun x _ => congrFun (laplacian_newtonianKernel_convolution (by omega) (by omega) hf hc) x)
+    hh hhc hhG hΩ hg
 
 /-- **The Dirichlet problem for Poisson's equation on a ball.** Let `n ≠ 1`, so that the dimension
 `n + 1` is `1` or at least `3`, and let `f` be of class `C²` with compact support on `ℝ^{n+1}`.
