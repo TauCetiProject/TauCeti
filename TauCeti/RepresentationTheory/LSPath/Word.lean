@@ -106,6 +106,15 @@ theorem raiseWord_append (v w : List ι) (π : PLPath 𝕜 V) :
   unfold raiseWord
   exact List.foldlM_append
 
+/-- Raising along a word is lowering along the same word conjugated by path reversal. -/
+theorem raiseWord_eq_map_lowerWord_reverse (w : List ι) (π : PLPath 𝕜 V) :
+    raiseWord F x w π = (lowerWord F x w π.reverse).map reverse := by
+  induction w generalizing π with
+  | nil => simp
+  | cons i w ih =>
+    simp only [raiseWord_cons, lowerWord_cons, raise_def, Option.bind_map,
+      Option.map_bind, ih, Function.comp_def, reverse_reverse]
+
 /-- Lowering along a word and raising along its reversal are partial inverses. -/
 theorem lowerWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
     lowerWord F x w π = some ρ ↔ raiseWord F x w.reverse ρ = some π := by

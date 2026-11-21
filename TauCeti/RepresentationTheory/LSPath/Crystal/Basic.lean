@@ -623,6 +623,21 @@ end AmbientCrystal
 
 /-! ### Lattice-endpoint paths need not be integral -/
 
+/-- Any two-segment excursion `straight 𝕜 (-v) * straight 𝕜 v` whose height `F i v` lies strictly
+between `0` and `1` has non-integral minimum `i`-coroot height `-F i v`, hence is not an integral
+path. -/
+theorem not_isIntegralPath_straight_neg_mul_straight (i : b.support) {v : V}
+    (hv0 : 0 < F i v) (hv1 : F i v < 1) :
+    ¬ IsIntegralPath b f F (straight 𝕜 (-v) * straight 𝕜 v) := by
+  intro hπ
+  obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
+  rw [minHeight_straight_neg_mul_straight, min_eq_right (by linarith)] at hz
+  have hz0 : (z : 𝕜) < 0 := by linarith
+  have hz1 : (-1 : 𝕜) < z := by linarith
+  have hlt0 : z < 0 := by exact_mod_cast hz0
+  have hgt : (-1 : ℤ) < z := by exact_mod_cast hz1
+  omega
+
 /-- **Not every path with lattice endpoint is integral**: as soon as `b.support` is nonempty, the
 two-segment excursion `-(1/4) α_i` followed by `(1/4) α_i` has endpoint `0 ∈ f(X)` and minimum
 coroot height `-1/2 ∉ ℤ`. -/
@@ -631,19 +646,12 @@ theorem exists_endpoint_eq_zero_and_not_isIntegralPath [Nonempty b.support]
     ∃ π : PLPath 𝕜 V, π.endpoint = 0 ∧ ¬ IsIntegralPath b f F π := by
   obtain ⟨i⟩ := ‹Nonempty b.support›
   let u := (4 : 𝕜)⁻¹ • f (P.root i)
-  let π : PLPath 𝕜 V := straight 𝕜 (-u) * straight 𝕜 u
-  refine ⟨π, by simp [π], fun hπ ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
-  have hmin : π.minHeight (F i) = -(2 : 𝕜)⁻¹ := by
-    rw [minHeight_straight_neg_mul_straight]
+  have hFu : F i u = (2 : 𝕜)⁻¹ := by
     simp only [u, map_smul, smul_eq_mul, apply_root_eq_two hF i]
     norm_num
-  rw [hmin] at hz
-  have h2z : ((2 * z : ℤ) : 𝕜) = -1 := by
-    push_cast
-    linarith
-  have : (2 * z : ℤ) = -1 := by exact_mod_cast h2z
-  omega
+  exact ⟨straight 𝕜 (-u) * straight 𝕜 u, by simp,
+    not_isIntegralPath_straight_neg_mul_straight i
+      (hFu ▸ by norm_num) (hFu ▸ by norm_num)⟩
 
 end Realization
 

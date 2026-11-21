@@ -68,6 +68,10 @@ of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.Strin
   concatenation.
 * `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
   the cap is at most the minimal height.
+* `TauCeti.PLPath.reflectRecords_of_apply_sum_le`,
+  `TauCeti.PLPath.reflectRecords_of_listMinHeight_eq_apply_sum`: capping above the final height
+  agrees with capping at the final height, and record reflection fixes any list whose minimal
+  height equals its final height.
 * `TauCeti.PLPath.ofSegments_reflectRecords_of_forall_nonneg`: capped reflection, up to the final
   height, of a path whose segments all have nonnegative height reflects the whole path.
 * `TauCeti.PLPath.lower_ofSegments`: the lowering operator may be computed on any presentation.
@@ -526,6 +530,38 @@ theorem reflectRecords_of_le_listMinHeight (h : c ≤ listMinHeight f l) :
     rw [listMinHeight_cons] at h
     rw [reflectRecords_cons_of_nonpos (min_le_of_right_le (h.trans (min_le_left _ _))),
       ih (by linarith [min_le_right 0 (f v + listMinHeight f l)])]
+
+/-- Any cap at or above the final height reflects the same records as the final height itself. -/
+theorem reflectRecords_of_apply_sum_le (hc : f l.sum ≤ c) :
+    reflectRecords f x c l = reflectRecords f x (f l.sum) l := by
+  induction l generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have hle : f v + listMinHeight f l ≤ f (v :: l).sum := by
+      rw [List.sum_cons, map_add]
+      exact add_le_add_right (listMinHeight_le_apply_sum l) (f v)
+    have hmin : min (f v + listMinHeight f l) c =
+        min (f v + listMinHeight f l) (f (v :: l).sum) := by
+      rw [min_eq_left (hle.trans hc), min_eq_left hle]
+    have htail : f l.sum ≤ c - f v := by
+      rw [List.sum_cons, map_add] at hc
+      exact le_sub_iff_add_le'.mpr hc
+    have hsum : f (v :: l).sum - f v = f l.sum := by
+      rw [List.sum_cons, map_add, add_sub_cancel_left]
+    by_cases h : 0 < min (f v + listMinHeight f l) c
+    · rw [reflectRecords_cons_of_pos h, reflectRecords_cons_of_pos (hmin ▸ h), hmin, ih htail,
+        hsum]
+    · rw [reflectRecords_cons_of_nonpos (not_lt.mp h),
+        reflectRecords_cons_of_nonpos (hmin ▸ not_lt.mp h), ih htail, hsum]
+
+/-- When the minimal height equals the final height, no record strictly increases, so record
+reflection leaves the segment list unchanged for every cap. -/
+theorem reflectRecords_of_listMinHeight_eq_apply_sum (c : 𝕜)
+    (hl : listMinHeight f l = f l.sum) :
+    reflectRecords f x c l = l := by
+  rcases le_total c (f l.sum) with hc | hc
+  · exact reflectRecords_of_le_listMinHeight (hc.trans_eq hl.symm)
+  · rw [reflectRecords_of_apply_sum_le hc, ← hl, reflectRecords_of_le_listMinHeight le_rfl]
 
 /-- Capped reflection of a path with nonnegative segment heights, up to its final height, reflects
 the whole path. -/

@@ -94,6 +94,42 @@ theorem eq_of_highest_of_exists_fWord_eq_some {h x : B} (hx : ∀ i, c.e i x = n
   exact ((c.eWord_eq_some_iff_of_highest hx w.reverse).mp
     (c.fWord_eq_some_iff.mp hw)).2
 
+/-- An element that generates the whole crystal by lowering words is automatically a highest
+element, since simple roots are `ℤ`-linearly independent. No finiteness assumption is needed. -/
+theorem e_eq_none_of_forall_exists_fWord_eq_some {h : B}
+    (hgen : ∀ x, ∃ w : List b.support, c.fWord w h = some x) (i : b.support) :
+    c.e i h = none := by
+  by_contra hne
+  obtain ⟨y, hy⟩ := Option.ne_none_iff_exists'.mp hne
+  obtain ⟨w, hw⟩ := hgen y
+  have hsum : ((i :: w).map fun j : b.support ↦ P.root j).sum = 0 := by
+    have h1 := c.wt_of_e_eq_some hy
+    have h2 := c.wt_of_fWord_eq_some hw
+    rw [List.map_cons, List.sum_cons]
+    have hsub : c.wt h + P.root i = c.wt h - (w.map fun j : b.support ↦ P.root j).sum :=
+      h1.symm.trans h2
+    have hadd : c.wt h + (P.root i + (w.map fun j : b.support ↦ P.root j).sum) = c.wt h := by
+      rw [← add_assoc, hsub, sub_add_cancel]
+    exact add_left_cancel (hadd.trans (add_zero (c.wt h)).symm)
+  let g : b.support →₀ ℤ := ((i :: w).map fun j : b.support ↦ Finsupp.single j (1 : ℤ)).sum
+  have hlc : Finsupp.linearCombination ℤ (fun j : b.support ↦ P.root j) g = 0 := by
+    simpa only [g, map_list_sum, List.map_map, Function.comp_def,
+      Finsupp.linearCombination_single, one_smul] using hsum
+  have hg0 : g = 0 := linearIndependent_iff.mp b.linearIndepOn_root g hlc
+  have htail_nonneg : ∀ l : List b.support,
+      0 ≤ ((l.map fun j : b.support ↦ Finsupp.single j (1 : ℤ)).sum) i := by
+    intro l
+    induction l with
+    | nil => simp
+    | cons j l ih =>
+      rw [List.map_cons, List.sum_cons, Finsupp.add_apply]
+      exact add_nonneg (by classical rw [Finsupp.single_apply]; split_ifs <;> omega) ih
+  have hgi : g i = 1 + ((w.map fun j : b.support ↦ Finsupp.single j (1 : ℤ)).sum) i := by
+    simp [g]
+  have h0 : g i = 0 := by simp [hg0]
+  have := htail_nonneg w
+  omega
+
 /-- For a finite normal crystal, generation from a given element is equivalent to that
 element being the only possible highest element. -/
 theorem forall_exists_fWord_eq_some_iff [Finite ι] [P.IsReduced] [Finite B] (h : B) :

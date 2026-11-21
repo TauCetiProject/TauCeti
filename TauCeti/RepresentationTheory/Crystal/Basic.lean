@@ -262,6 +262,14 @@ def eIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.e i)
 /-- The `n`-fold lowering operator `f i ^ n`, as a partial map. -/
 def fIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.f i)
 
+/-- `eIter i` is `Option.iterate (c.e i)`. -/
+theorem eIter_eq_iterate (i : b.support) (n : ℕ) (x : B) :
+    c.eIter i n x = Option.iterate (c.e i) n x := (rfl)
+
+/-- `fIter i` is `Option.iterate (c.f i)`. -/
+theorem fIter_eq_iterate (i : b.support) (n : ℕ) (x : B) :
+    c.fIter i n x = Option.iterate (c.f i) n x := (rfl)
+
 variable {i : b.support} {n : ℕ} {x y : B}
 
 @[simp]
