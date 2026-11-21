@@ -97,9 +97,9 @@ product `p₁^* U₁ ⌣ p₂^* U₂` of the normalized classes `U₁`, `U₂` o
 (`TauCeti.thomPairCup`). For coefficient modules isomorphic to `K` and isomorphism pairings `u`, `μ`
 (in particular scalar coefficients `ModuleCat.of K K` with the standard unitor pairings), when `g₁`
 and `g₂` generate the local cohomology over `K`, so does their product
-(`TauCeti.span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso`,
-`TauCeti.span_complSingletonPairCross_eq_top_iff`), giving the Whitney product formula for Thom
-classes
+(`TauCeti.span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso`,
+`TauCeti.span_singleton_complSingletonPairCross_eq_top_iff`), giving the Whitney product formula
+for Thom classes
 (`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso`,
 `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod`). -/
 theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
@@ -200,7 +200,7 @@ theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
         (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
   (o₁.prod o₂ hm hn).isThomClass_thomClassOfModel _ (ω₁.prod ω₂ hm hn)
-    ((span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂
+    ((span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂
       Module.finrank_prod.symm g₁ g₂).2 ⟨hg₁, hg₂⟩)
 
 /-- **The normalized product class of an oriented direct sum is a Thom class** over any commutative

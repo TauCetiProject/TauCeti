@@ -34,8 +34,9 @@ for the target pairs `(W₁, {y₁}ᶜ)` and `(W₂, {y₂}ᶜ)` (or `(W₁, {0}
   of singletons.
 * `TauCeti.complSingletonPairHomologyCross_naturality`: naturality in continuous maps preserving
   singleton complements.
-* `TauCeti.singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHomologyCross`:
-  naturality at the origin under products of continuous linear equivalences.
+* `singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHomologyCross` (in
+  `ContinuousLinearEquiv`): naturality at the origin under products of continuous linear
+  equivalences.
 
 ## References
 
@@ -50,8 +51,6 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicT
 
 universe w v u
 
-namespace TauCeti
-
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
@@ -60,6 +59,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
   [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft X)]
   [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight X)]
   {R S T : C}
+
+namespace TauCeti
 
 section Basic
 
@@ -166,6 +167,12 @@ theorem complSingletonPairHomologyCross_naturality
       ((Category.assoc _ _ _).trans (whisker_eq _ hmap))))).trans
       ((Category.assoc _ _ _).trans (whisker_eq _ (Category.assoc _ _ _))).symm
 
+end TauCeti
+
+namespace ContinuousLinearEquiv
+
+open TauCeti (complSingletonPairHomologyCross complSingletonPairHomologyCross_naturality)
+
 /-- **Naturality of `complSingletonPairHomologyCross` at the origin** under products of continuous
 linear equivalences `f₁ : V₁ ≃L W₁` and `f₂ : V₂ ≃L W₂`. -/
 @[reassoc]
@@ -208,4 +215,4 @@ theorem singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHom
   exact complSingletonPairHomologyCross_naturality g₁ g₂ f₁.mapsTo_compl_zero f₂.mapsTo_compl_zero
     v p q n h
 
-end TauCeti
+end ContinuousLinearEquiv

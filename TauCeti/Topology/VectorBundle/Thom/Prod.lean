@@ -301,10 +301,11 @@ theorem isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso
   refine forall_congr' fun b ↦ ?_
   have := FiberBundle.t1Space F₁ E₁ b; have := FiberBundle.t1Space F₂ E₂ b
   rw [singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross]
-  exact span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
+  exact (
+span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
     eR₁ eR₂ eM₁ eM₂ (FiberBundle.homeomorphAt F₁ E₁ b).toOpenPartialHomeomorph
     (mem_univ (0 : E₁ b)) (FiberBundle.homeomorphAt F₂ E₂ b).toOpenPartialHomeomorph
-    (mem_univ (0 : E₂ b)) Module.finrank_prod.symm _ _
+    (mem_univ (0 : E₂ b)) Module.finrank_prod.symm _ _)
 
 /-- **The product of Thom pair classes is a Thom class iff both factors are Thom classes**, for
 standard unitor pairings of `ModuleCat K`. -/
