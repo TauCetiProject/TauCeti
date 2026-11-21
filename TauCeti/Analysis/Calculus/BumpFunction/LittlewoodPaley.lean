@@ -161,6 +161,7 @@ section HasContDiffBump
 variable [HasContDiffBump E] (φ : ContDiffBump (0 : E))
 
 /-- The dilation of `φ` by `c` is `φ` evaluated at `c⁻¹ • ξ`. -/
+@[simp]
 theorem dilate_apply {c : ℝ} (hc : 0 < c) (ξ : E) : φ.dilate hc ξ = φ (c⁻¹ • ξ) := by
   have h₁ : (φ.dilate hc).rOut / (φ.dilate hc).rIn = φ.rOut / φ.rIn := by
     rw [dilate_rOut, dilate_rIn, mul_div_mul_left _ _ hc.ne']
@@ -365,11 +366,12 @@ theorem inhomogeneousLittlewoodPaley_neg (j : ℕ) (ξ : E) :
 
 /-- The pieces of the inhomogeneous partition of the dilation of `φ` by `c` are the pieces of the
 partition of `φ` evaluated at `c⁻¹ • ξ`. -/
+@[simp]
 theorem inhomogeneousLittlewoodPaley_dilate {c : ℝ} (hc : 0 < c) (j : ℕ) (ξ : E) :
     (φ.dilate hc).inhomogeneousLittlewoodPaley j ξ =
       φ.inhomogeneousLittlewoodPaley j (c⁻¹ • ξ) := by
   rcases j with _ | j
-  · simp [dilate_apply]
+  · simp
   · simp only [inhomogeneousLittlewoodPaley_succ_apply, dilate_apply, smul_comm c⁻¹]
 
 /-- Each piece of the inhomogeneous partition is smooth. -/

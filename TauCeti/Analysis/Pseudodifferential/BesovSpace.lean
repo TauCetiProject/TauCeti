@@ -13,7 +13,6 @@ import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Pseudodifferential operators on Besov spaces
