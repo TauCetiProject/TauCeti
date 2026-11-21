@@ -81,6 +81,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   linear functional.
 * `TauCeti.traceL_apply_eq_metricTrace`: it is the metric trace
   `LinearMap.BilinMap.metricTrace` of the underlying bilinear map.
+* `TauCeti.norm_traceL_apply_le`: `‖traceL H‖ ≤ dim E * ‖H‖`.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
@@ -121,7 +122,18 @@ open Filter InnerProductSpace Laplacian Topology
 variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+section traceL
+
+variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The metric trace of a continuous bilinear map is bounded by the dimension times its norm. This
+is the bound making `TauCeti.traceL` continuous; use `TauCeti.norm_traceL_apply_le`. -/
+private theorem norm_metricTrace_toLinearMap₁₂_le (H : E →L[ℝ] E →L[ℝ] F) :
+    ‖LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H)‖ ≤
+      Module.finrank ℝ E * ‖H‖ := by
+  simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using
+    H.norm_sum_apply_apply_le Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
 
 /-- The metric trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous linear
 functional: `LinearMap.BilinMap.metricTrace` of the underlying bilinear map, which is bounded by
@@ -129,9 +141,7 @@ the dimension of `E` times the norm of `H`. The Laplacian is the trace of the se
 derivative (`TauCeti.laplacian_eq_traceL`). -/
 noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
   (LinearMap.BilinMap.metricTrace ∘ₗ ContinuousLinearMap.toLinearMap₁₂).mkContinuous
-    (Module.finrank ℝ E) fun H : E →L[ℝ] E →L[ℝ] F ↦ by
-      simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using
-        H.norm_sum_apply_apply_le Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+    (Module.finrank ℝ E) fun H : E →L[ℝ] E →L[ℝ] F ↦ norm_metricTrace_toLinearMap₁₂_le H
 
 /-- The continuous trace of a bilinear map is the metric trace of the underlying bilinear map. -/
 theorem traceL_apply_eq_metricTrace (H : E →L[ℝ] E →L[ℝ] F) :
@@ -145,6 +155,17 @@ theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
   rw [traceL_apply_eq_metricTrace,
     LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)]
   simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+
+/-- The trace of a continuous bilinear map is bounded by the dimension of `E` times its norm:
+`‖traceL H‖ ≤ dim E * ‖H‖`. -/
+theorem norm_traceL_apply_le (H : E →L[ℝ] E →L[ℝ] F) :
+    ‖traceL H‖ ≤ Module.finrank ℝ E * ‖H‖ := by
+  rw [traceL_apply_eq_metricTrace]
+  exact norm_metricTrace_toLinearMap₁₂_le H
+
+end traceL
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
@@ -163,17 +184,16 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
-  simpa [laplacian_eq_traceL, traceL_apply] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
-    Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+  rw [laplacian_eq_traceL]
+  exact norm_traceL_apply_le _
 
 /-- Differences of the Laplacian are bounded by the dimension times the differences of the second
 Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. -/
 theorem norm_laplacian_sub_laplacian_le (f : E → F) (x y : E) :
     ‖Δ f x - Δ f y‖ ≤
       Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y‖ := by
-  rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub, traceL_apply]
-  simpa using (fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y).norm_sum_apply_apply_le
-    Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+  rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub]
+  exact norm_traceL_apply_le _
 
 /-- The Laplacian of a function of class `C²` on an open set is continuous there. -/
 theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf : ContDiffOn ℝ 2 f s)

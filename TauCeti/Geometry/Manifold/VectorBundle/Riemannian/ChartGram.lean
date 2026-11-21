@@ -376,22 +376,6 @@ theorem chartGramMatrix_mul_chartInvGramMatrix (α : M) {x : M}
   exact Matrix.mul_nonsing_inv _ hdet_unit
 
 /-- On the chart domain, the metric trace of a bilinear map `B` with values in a real vector space
-`N` is the contraction `gⁱʲ B(eᵢ, eⱼ)` of its coefficients in the chart-local frame `eᵢ` at `α`
-against the inverse Gram matrix. The frame need not be orthonormal. -/
-theorem metricTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
-    (hx : x ∈ (chartAt H α).source) {N : Type*} [AddCommMonoid N] [Module ℝ N]
-    (B : LinearMap.BilinMap ℝ (TangentSpace I x) N) :
-    LinearMap.BilinMap.metricTrace B = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j •
-      B (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
-  have hx' : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'
-  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) α i x :=
-    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hx i).symm
-  rw [LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ b, hb, ← chartGramMatrix,
-    ← chartInvGramMatrix_def]
-
-/-- On the chart domain, the metric trace of a bilinear map `B` with values in a real vector space
 `N` is `∑ᵢ B(Fᵢ, Dᵢ)`, where `Fᵢ` is the chart-local frame at `α` and `Dᵢ` its metric-dual frame. -/
 theorem metricTrace_eq_sum_chartDualFrame (α : M) {x : M}
     (hx : x ∈ (chartAt H α).source) {N : Type*} [AddCommMonoid N] [Module ℝ N]
@@ -403,6 +387,17 @@ theorem metricTrace_eq_sum_chartDualFrame (α : M) {x : M}
   rw [LinearMap.BilinMap.metricTrace_eq_sum_dualBasis _
     ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx')]
   simp only [dualBasis_basisAt_eq_chartDualFrame, chartLocalFrame_apply_of_mem_chart_source α hx]
+
+/-- On the chart domain, the metric trace of a bilinear map `B` with values in a real vector space
+`N` is the contraction `gⁱʲ B(eᵢ, eⱼ)` of its coefficients in the chart-local frame `eᵢ` at `α`
+against the inverse Gram matrix. The frame need not be orthonormal. -/
+theorem metricTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) {N : Type*} [AddCommMonoid N] [Module ℝ N]
+    (B : LinearMap.BilinMap ℝ (TangentSpace I x) N) :
+    LinearMap.BilinMap.metricTrace B = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j •
+      B (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
+  rw [metricTrace_eq_sum_chartDualFrame α hx B]
+  simp only [chartDualFrame_apply, map_sum, map_smul]
 
 /-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
 matrix. -/

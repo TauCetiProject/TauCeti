@@ -37,6 +37,8 @@ covariant tensor, making it independent of any choice of basis.
   contracts the form against the inverse Gram matrix of the basis.
 * `LinearMap.BilinMap.metricTrace_compr₂`: the metric trace commutes with a linear map applied to
   the values.
+* `LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv`: the metric trace is invariant
+  under pulling the form back along a linear isometric equivalence.
 * `LinearMap.BilinMap.metricTrace_inner`: the metric trace of the inner product is the real
   dimension.
 -/
@@ -79,7 +81,7 @@ noncomputable def metricTrace : BilinMap ℝ W N →ₗ[ℝ] N :=
 theorem metricTrace_apply (B : BilinMap ℝ W N) :
     metricTrace B = TensorProduct.lift B (InnerProductSpace.canonicalCovariantTensor W) := by
   have h : TensorProduct.uncurry (.id ℝ) W W N B = TensorProduct.lift B :=
-    TensorProduct.ext' fun m n ↦ by rw [TensorProduct.uncurry_apply, TensorProduct.lift.tmul]
+    TensorProduct.lift.unique fun m n ↦ TensorProduct.uncurry_apply B m n
   rw [metricTrace, LinearMap.comp_apply, h, LinearMap.applyₗ_apply_apply]
 
 /-- In an orthonormal basis, the metric trace is the sum of the diagonal values. -/
@@ -110,6 +112,18 @@ theorem metricTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
 theorem metricTrace_compr₂ {P : Type*} [AddCommMonoid P] [Module ℝ P] (B : BilinMap ℝ W N)
     (f : N →ₗ[ℝ] P) : metricTrace (B.compr₂ f) = f (metricTrace B) := by
   rw [metricTrace_apply, metricTrace_apply, TensorProduct.lift_compr₂, LinearMap.comp_apply]
+
+/-- The metric trace is invariant under pulling the form back along a linear isometric
+equivalence `e : W ≃ₗᵢ[ℝ] W'`. -/
+@[simp]
+theorem metricTrace_compl₁₂_linearIsometryEquiv {W' : Type*} [NormedAddCommGroup W']
+    [InnerProductSpace ℝ W'] [FiniteDimensional ℝ W'] (B : BilinMap ℝ W' N) (e : W ≃ₗᵢ[ℝ] W') :
+    metricTrace (B.compl₁₂ e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap) =
+      metricTrace B := by
+  let b := stdOrthonormalBasis ℝ W
+  rw [metricTrace_eq_sum _ b, metricTrace_eq_sum B (b.map e)]
+  simp only [LinearMap.compl₁₂_apply, OrthonormalBasis.map_apply]
+  rfl
 
 /-- The metric trace of the inner product is the real dimension. -/
 @[simp]
