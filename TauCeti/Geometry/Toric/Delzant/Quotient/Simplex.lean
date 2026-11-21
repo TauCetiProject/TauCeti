@@ -152,7 +152,7 @@ theorem mem_ker_facetTorusHom_simplex_iff {θ : Option κ → AddCircle (2 * π)
 
 /-- On the level of the simplex of size `a > 0`, the complex coordinates `q_o + i p_o`
 (`TauCeti.complexEuclideanEquivRealProd`) do not all vanish. -/
-theorem complex_ne_zero_of_mem_delzantLevel_simplex (ha : 0 < a)
+theorem complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex (ha : 0 < a)
     {x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)}
     (hx : x ∈ delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) :
     ⇑((complexEuclideanEquivRealProd (Option κ)).symm x) ≠ 0 := by
@@ -178,11 +178,14 @@ namespace DelzantQuotient
 
 /-- Two points of the level of the simplex span the same complex line exactly when they lie in
 the same orbit of the diagonal circle. -/
-private theorem mk_eq_mk_iff_mk_complex_eq (ha : 0 < a)
+private theorem mk_eq_mk_iff_mk_complexEuclideanEquivRealProd_symm_eq (ha : 0 < a)
     {x y : delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)} :
     mk x = mk y ↔
-      Projectivization.mk ℂ _ (complex_ne_zero_of_mem_delzantLevel_simplex ha x.property) =
-        Projectivization.mk ℂ _ (complex_ne_zero_of_mem_delzantLevel_simplex ha y.property) := by
+      Projectivization.mk ℂ _
+          (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha x.property) =
+        Projectivization.mk ℂ _
+          (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha
+            y.property) := by
   rw [mk_eq_mk_iff, Projectivization.mk_eq_mk_iff']
   constructor
   · -- The diagonal circle multiplies the complex coordinates by a unit scalar.
@@ -218,9 +221,12 @@ private theorem mk_eq_mk_iff_mk_complex_eq (ha : 0 < a)
 
 /-- Every complex line of `ℂ^(Option κ)` meets the level of the simplex of size `a > 0`, the sphere
 `‖z‖² = 2a`. -/
-private theorem exists_mk_complex_eq (ha : 0 < a) (p : ℙ ℂ (Option κ → ℂ)) :
+private theorem exists_mk_complexEuclideanEquivRealProd_symm_eq (ha : 0 < a)
+    (p : ℙ ℂ (Option κ → ℂ)) :
     ∃ x : delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a),
-      Projectivization.mk ℂ _ (complex_ne_zero_of_mem_delzantLevel_simplex ha x.property) = p := by
+      Projectivization.mk ℂ _
+          (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha
+            x.property) = p := by
   -- Rescale a representative `v` of the line `p` to the sphere `‖z‖² = 2a`.
   set v := p.rep
   have hv : v ≠ 0 := p.rep_ne_zero
@@ -255,17 +261,21 @@ def simplexHomeomorph (ha : 0 < a) :
   have hf : ∀ θ ∈ (facetTorusHom ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (2 * π)).ker,
       ∀ x : delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a),
         Projectivization.mk ℂ _
-            (complex_ne_zero_of_mem_delzantLevel_simplex ha (θ +ᵥ x).property) =
-          Projectivization.mk ℂ _ (complex_ne_zero_of_mem_delzantLevel_simplex ha x.property) :=
-    fun θ hθ x ↦ (mk_eq_mk_iff_mk_complex_eq ha).1 (mk_vadd_of_mem_ker hθ x)
+            (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha
+              (θ +ᵥ x).property) =
+          Projectivization.mk ℂ _
+            (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha
+              x.property) :=
+    fun θ hθ x ↦
+      (mk_eq_mk_iff_mk_complexEuclideanEquivRealProd_symm_eq ha).1 (mk_vadd_of_mem_ker hθ x)
   Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective (lift _ hf)
     ⟨fun q q' h ↦ by
       induction q using DelzantQuotient.inductionOn with | h x =>
       induction q' using DelzantQuotient.inductionOn with | h y =>
       rw [lift_mk, lift_mk] at h
-      exact (mk_eq_mk_iff_mk_complex_eq ha).2 h,
+      exact (mk_eq_mk_iff_mk_complexEuclideanEquivRealProd_symm_eq ha).2 h,
     fun p ↦ by
-      obtain ⟨x, hx⟩ := exists_mk_complex_eq ha p
+      obtain ⟨x, hx⟩ := exists_mk_complexEuclideanEquivRealProd_symm_eq ha p
       exact ⟨mk x, (lift_mk _ _ x).trans hx⟩⟩)
     (continuous_lift hf (Projectivization.continuous_mk (by fun_prop) _))
 
@@ -275,7 +285,7 @@ theorem simplexHomeomorph_mk (ha : 0 < a)
     (x : delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) :
     simplexHomeomorph ha (mk x) =
       Projectivization.mk ℂ ⇑((complexEuclideanEquivRealProd (Option κ)).symm x)
-        (complex_ne_zero_of_mem_delzantLevel_simplex ha x.property) :=
+        (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha x.property) :=
   lift_mk _ _ x
 
 /-- **The moment map of `ℂPⁿ`.** Under `simplexHomeomorph`, the reduced moment map of the residual
