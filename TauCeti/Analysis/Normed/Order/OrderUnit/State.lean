@@ -206,8 +206,9 @@ theorem convex_stateSpace (e : E) : Convex ℝ (stateSpace e) := by
   refine ⟨fun a b hab => ?_, ?_⟩
   · exact add_le_add (mul_le_mul_of_nonneg_left (hφ.1 hab) hs)
       (mul_le_mul_of_nonneg_left (hψ.1 hab) ht)
-  · change s * φ e + t * ψ e = 1
-    rw [hφ.2, hψ.2, mul_one, mul_one, hst]
+  · rw [← WeakDual.toStrongDual_apply, map_add, map_smul, map_smul, add_apply, smul_apply,
+      smul_apply, WeakDual.toStrongDual_apply, WeakDual.toStrongDual_apply, smul_eq_mul,
+      smul_eq_mul, hφ.2, hψ.2, mul_one, mul_one, hst]
 
 /-- The order-unit state space is weak-star closed in `WeakDual ℝ E`. -/
 theorem isClosed_stateSpace (e : E) : IsClosed (stateSpace e) := by
@@ -258,8 +259,8 @@ def statePullback {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hunit :
     (φ : stateSpace f) : stateSpace e :=
   ⟨WeakDual.toStrongDual.symm ((WeakDual.toStrongDual φ.1).comp T),
     fun _ _ hab => φ.2.1 (hT hab), by
-      change φ.1 (T e) = 1
-      rw [hunit, φ.2.2]⟩
+      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, ContinuousLinearMap.comp_apply,
+        WeakDual.toStrongDual_apply, hunit, φ.2.2]⟩
 
 @[simp]
 theorem statePullback_apply {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hunit : T e = f)
@@ -379,7 +380,7 @@ theorem stateSpace_nonempty {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 
       map_add' := fun r s => add_smul r s e
       map_smul' := fun r s => mul_smul r s e
       norm_map' := fun r => by
-        change ‖r • e‖ = ‖r‖
+        simp only [LinearMap.coe_mk, AddHom.coe_mk]
         rw [he.norm_smul_self, Real.norm_eq_abs] }
   let idState : WeakDual ℝ ℝ := WeakDual.toStrongDual.symm (ContinuousLinearMap.id ℝ ℝ)
   have hid : idState ∈ OrderUnit.stateSpace (1 : ℝ) := ⟨monotone_id, rfl⟩
@@ -404,15 +405,18 @@ def stateHomeomorph {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
   let invFun : OrderUnit.stateSpace e → OrderUnit.stateSpace (coe he e) := fun φ =>
     ⟨WeakDual.toStrongDual.symm (extend he (WeakDual.toStrongDual φ.1)),
       monotone_extend φ.2.1, by
-        change extend he (WeakDual.toStrongDual φ.1) (coe he e) = 1
-        rw [extend_coe, WeakDual.toStrongDual_apply, φ.2.2]⟩
+        rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, extend_coe,
+          WeakDual.toStrongDual_apply, φ.2.2]⟩
   have hleft : Function.LeftInverse invFun toFun := by
     intro φ
     apply Subtype.ext
     apply WeakDual.toStrongDual.injective
-    change extend he ((WeakDual.toStrongDual φ.1).comp (coe he).toContinuousLinearMap) =
-      WeakDual.toStrongDual φ.1
-    exact (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun _ => rfl).symm
+    dsimp only [invFun]
+    rw [WeakDual.toStrongDual.apply_symm_apply]
+    refine (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun a => ?_).symm
+    rw [WeakDual.toStrongDual_apply, WeakDual.toStrongDual_apply]
+    exact (OrderUnit.statePullback_apply (coe he).toContinuousLinearMap
+      (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl φ a).symm
   have hright : Function.RightInverse invFun toFun := fun φ =>
     Subtype.ext (DFunLike.ext _ _ fun a => extend_coe (WeakDual.toStrongDual φ.1) a)
   exact Continuous.homeoOfEquivCompactToT2
@@ -462,10 +466,15 @@ theorem le_iff_forall_state_le {a b : E} :
   · let φ : WeakDual ℝ E := WeakDual.toStrongDual.symm ((f e)⁻¹ • f)
     have hφ : φ ∈ OrderUnit.stateSpace e := by
       refine ⟨fun x y hxy => ?_, ?_⟩
-      · exact mul_le_mul_of_nonneg_left (hf hxy) (inv_nonneg.mpr hpos.le)
-      · change (f e)⁻¹ * f e = 1
+      · simp only [φ, WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply,
+          smul_apply, smul_eq_mul]
+        exact mul_le_mul_of_nonneg_left (hf hxy) (inv_nonneg.mpr hpos.le)
+      · simp only [φ, WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply,
+          smul_apply, smul_eq_mul]
         exact inv_mul_cancel₀ hpos.ne'
-    have hle : (f e)⁻¹ * f a ≤ (f e)⁻¹ * f b := h φ hφ
+    have hle := h φ hφ
+    simp only [φ, WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply,
+      smul_apply, smul_eq_mul] at hle
     exact le_of_mul_le_mul_left hle (inv_pos.mpr hpos)
 
 /-- **Positivity detection by states:** `0 ≤ a` if and only if `0 ≤ φ a` for every state `φ`. -/
@@ -541,22 +550,24 @@ def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : s
     { toFun := fun a => (ψ.1 a).re
       map_add' := fun a b => by simp
       map_smul' := fun r a => by
-        change (ψ.1 (r • (a : A))).re = r * (ψ.1 a).re
-        rw [← Complex.coe_smul, map_smul, smul_eq_mul, Complex.mul_re, Complex.ofReal_re,
-          Complex.ofReal_im, zero_mul, sub_zero]
+        rw [selfAdjoint.val_smul, ← Complex.coe_smul, map_smul, smul_eq_mul, Complex.mul_re,
+          Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero, RingHom.id_apply, smul_eq_mul]
       cont := Complex.continuous_re.comp ((WeakDual.toStrongDual ψ.1).continuous.comp
         continuous_subtype_val) }
+  -- Local helper lemma unfolding the evaluation of the local `ContinuousLinearMap` literal `f`.
+  have hf (x : selfAdjoint A) : f x = (ψ.1 x).re := rfl
   ⟨WeakDual.toStrongDual.symm f,
     fun a b hab => by
       have hsub : 0 ≤ (b : A) - (a : A) := sub_nonneg.mpr hab
       have hpos : 0 ≤ ψ.1 ((b : A) - (a : A)) := map_nonneg_of_mem_stateSpace ψ.2 hsub
       have hre : 0 ≤ (ψ.1 b - ψ.1 a).re := by
         simpa [map_sub] using (Complex.le_def.mp hpos).1
-      change (ψ.1 a).re ≤ (ψ.1 b).re
+      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, StrongDual.toWeakDual_apply,
+        hf, hf]
       exact sub_nonneg.mp (by simpa using hre),
     by
-      change (ψ.1 (1 : A)).re = 1
-      rw [map_one_of_mem_stateSpace ψ.2, Complex.one_re]⟩
+      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, hf, selfAdjoint.val_one,
+        map_one_of_mem_stateSpace ψ.2, Complex.one_re]⟩
 
 @[simp]
 theorem cstarStateRestrict_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :
@@ -579,23 +590,24 @@ def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) : TauCeti.s
         (Complex.continuous_ofReal.comp ((WeakDual.toStrongDual φ.1).continuous.comp hre)).add
           (continuous_const.mul (Complex.continuous_ofReal.comp
             ((WeakDual.toStrongDual φ.1).continuous.comp him))) }
+  -- Local helper lemma unfolding the evaluation of the local `ContinuousLinearMap` literal `g`.
+  have hg (x : A) : g x = (φ.1 (ℜ x) : ℂ) + Complex.I * (φ.1 (ℑ x) : ℂ) := rfl
   ⟨WeakDual.toStrongDual.symm g,
     mem_stateSpace_iff_map_one.mpr ⟨fun a ha => by
       have hsa : IsSelfAdjoint a := ha.isSelfAdjoint
       have him : ℑ a = 0 := hsa.imaginaryPart
       have hre : 0 ≤ ℜ a := by
-        change (0 : A) ≤ (ℜ a : A)
-        rwa [hsa.coe_realPart]
-      change 0 ≤ (φ.1 (ℜ a) : ℂ) + Complex.I * (φ.1 (ℑ a) : ℂ)
-      rw [him, map_zero, Complex.ofReal_zero, mul_zero, add_zero]
+        rw [← Subtype.coe_le_coe, hsa.coe_realPart, ZeroMemClass.coe_zero]
+        exact ha
+      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, hg, him, map_zero,
+        Complex.ofReal_zero, mul_zero, add_zero]
       exact Complex.le_def.mpr ⟨by simpa using stateSpace_apply_nonneg φ.2 hre, by simp⟩,
     by
-      change (φ.1 (ℜ (1 : A)) : ℂ) + Complex.I * (φ.1 (ℑ (1 : A)) : ℂ) = 1
+      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, hg]
       have hre : ℜ (1 : A) = (1 : selfAdjoint A) :=
         selfAdjoint.realPart_coe (x := (1 : selfAdjoint A))
       have him : ℑ (1 : A) = 0 := selfAdjoint.imaginaryPart_coe (x := (1 : selfAdjoint A))
-      rw [hre, him, φ.2.2, map_zero, Complex.ofReal_one, Complex.ofReal_zero, mul_zero,
-        add_zero]⟩⟩
+      rw [hre, him, φ.2.2, map_zero, Complex.ofReal_one, Complex.ofReal_zero, mul_zero, add_zero]⟩⟩
 
 @[simp]
 theorem cstarStateExtend_apply (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) (a : A) :
@@ -615,23 +627,25 @@ def cstarStateSpaceHomeomorph :
     let ψp : A →ₚ[ℂ] ℂ :=
       PositiveLinearMap.mk₀ (WeakDual.toStrongDual ψ.1 : A →ₗ[ℂ] ℂ)
         fun _ ha => map_nonneg_of_mem_stateSpace ψ.2 ha
+    -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `ψ.1` by definition.
+    have hψp (y : A) : ψp y = ψ.1 y := rfl
     have him_sa : ∀ x : selfAdjoint A, (ψ.1 x).im = 0 := fun x => by
       have h : star (ψp x) = ψp x := by rw [← map_star ψp, x.2.star_eq]
-      change (ψp x).im = 0
-      simpa [Complex.star_def, Complex.conj_eq_iff_im] using h
+      rw [hψp] at h
+      exact Complex.conj_eq_iff_im.mp (by simpa [Complex.star_def] using h)
     have hreal : ∀ x : selfAdjoint A, ((ψ.1 x).re : ℂ) = ψ.1 x := fun x =>
       Complex.ext rfl (by simp [him_sa x])
-    change ((ψ.1 (ℜ a)).re : ℂ) + Complex.I * ((ψ.1 (ℑ a)).re : ℂ) = ψ.1 a
-    rw [hreal (ℜ a), hreal (ℑ a)]
+    rw [cstarStateExtend_apply, cstarStateRestrict_apply, cstarStateRestrict_apply,
+      hreal (ℜ a), hreal (ℑ a)]
     conv_rhs => rw [← realPart_add_I_smul_imaginaryPart a]
     simp [map_add, map_smul]
   right_inv φ := by
     apply Subtype.ext
     apply DFunLike.ext
     intro a
-    change ((φ.1 (ℜ (a : A)) : ℂ) + Complex.I * (φ.1 (ℑ (a : A)) : ℂ)).re = φ.1 a
-    rw [selfAdjoint.realPart_coe, selfAdjoint.imaginaryPart_coe, map_zero, Complex.ofReal_zero,
-      mul_zero, add_zero, Complex.ofReal_re]
+    rw [cstarStateRestrict_apply, cstarStateExtend_apply, selfAdjoint.realPart_coe,
+      selfAdjoint.imaginaryPart_coe, map_zero, Complex.ofReal_zero, mul_zero, add_zero,
+      Complex.ofReal_re]
   continuous_toFun := by
     refine Continuous.subtype_mk (WeakDual.continuous_of_continuous_eval fun a => ?_) _
     exact Complex.continuous_re.comp ((WeakDual.eval_continuous (a : A)).comp

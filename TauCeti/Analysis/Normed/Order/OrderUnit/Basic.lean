@@ -487,6 +487,8 @@ theorem archimedean {a : E} (h : ∀ ε : ℝ, 0 < ε → a ≤ ε • e) : a �
     simpa [norm_neg, sub_neg_eq_add, add_comm] using hnorm
   exact neg_nonneg.mp ((he.nonneg_iff_norm_sub_le (-a)).mpr hneg)
 
+/-- An order-compatible seminorm supplies a nonzero Archimedean order unit `e` in an ordered real
+vector space. -/
 theorem isArchimedeanOrderUnit : IsArchimedeanOrderUnit e where
   ne_zero := he.ne_zero
   orderUnit a := ⟨‖a‖ + 1, by positivity,
@@ -683,8 +685,7 @@ theorem selfAdjoint_one {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra �
     [NormOneClass A] :
     IsOrderUnitNorm (1 : selfAdjoint A) where
   norm_e := by
-    change ‖((1 : selfAdjoint A) : A)‖ = 1
-    simp
+    rw [AddSubgroup.coe_norm, selfAdjoint.val_one, norm_one]
   norm_le_iff a r hr := by
     have ha : IsSelfAdjoint (a : A) := a.2
     rw [AddSubgroup.coe_norm, ha.norm_le_iff_spectrum_subset_Icc hr]

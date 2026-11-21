@@ -105,7 +105,7 @@ theorem norm_toCompletion (x : OrderUnitCompletion he) : ‖x.toCompletion‖ = 
 
 instance : NormedSpace ℝ (OrderUnitCompletion he) where
   norm_smul_le r x := by
-    change ‖r • x.toCompletion‖ ≤ ‖r‖ * ‖x.toCompletion‖
+    rw [← norm_toCompletion (r • x), toCompletion_smul, ← norm_toCompletion x]
     exact norm_smul_le r x.toCompletion
 
 /-- The canonical linear isometry equivalence `OrderUnitCompletion he ≃ₗᵢ[ℝ] Completion E`. -/
@@ -147,7 +147,9 @@ private theorem norm_le_of_mem_closure_nonneg (he : IsOrderUnitNorm e)
   have ha_lim : Tendsto (fun n => (a n : UniformSpace.Completion E)) atTop (𝓝 x) := by
     have h := (hv_lim.sub hu_lim).const_smul (2⁻¹ : ℝ)
     have hmid : (2⁻¹ : ℝ) • ((x + y) - (y - x)) = x := by
-      rw [show (x + y) - (y - x) = (2 : ℝ) • x by rw [two_smul]; abel, smul_smul]; norm_num
+      have hdiff : (x + y) - (y - x) = (2 : ℝ) • x := by rw [two_smul]; abel
+      rw [hdiff, smul_smul]
+      norm_num
     rw [hmid] at h
     exact h.congr fun n => by
       simp [a, hu'_eq n, hv'_eq n, UniformSpace.Completion.coe_smul,
@@ -155,7 +157,9 @@ private theorem norm_le_of_mem_closure_nonneg (he : IsOrderUnitNorm e)
   have hs_lim : Tendsto (fun n => (s n : UniformSpace.Completion E)) atTop (𝓝 y) := by
     have h := (hv_lim.add hu_lim).const_smul (2⁻¹ : ℝ)
     have hmid : (2⁻¹ : ℝ) • ((x + y) + (y - x)) = y := by
-      rw [show (x + y) + (y - x) = (2 : ℝ) • y by rw [two_smul]; abel, smul_smul]; norm_num
+      have hsum : (x + y) + (y - x) = (2 : ℝ) • y := by rw [two_smul]; abel
+      rw [hsum, smul_smul]
+      norm_num
     rw [hmid] at h
     exact h.congr fun n => by
       simp [s, hu'_eq n, hv'_eq n, UniformSpace.Completion.coe_smul,
@@ -219,19 +223,20 @@ def coe (he : IsOrderUnitNorm e) : E →ₗᵢ[ℝ] OrderUnitCompletion he :=
 theorem toCompletion_coe (a : E) : (coe he a).toCompletion = (a : UniformSpace.Completion E) :=
   (rfl)
 
+/-- The canonical embedding `coe he : E →ₗᵢ[ℝ] OrderUnitCompletion he` has dense range. -/
 theorem denseRange_coe (he : IsOrderUnitNorm e) : DenseRange (coe he) :=
   (toCompletionₗᵢ he).symm.toHomeomorph.surjective.denseRange.comp
     UniformSpace.Completion.denseRange_coe (toCompletionₗᵢ he).symm.continuous
 
+/-- The canonical embedding `coe he` preserves and reflects the order:
+`coe he a ≤ coe he b ↔ a ≤ b`. -/
 @[simp]
 theorem coe_le_coe_iff (a b : E) : coe he a ≤ coe he b ↔ a ≤ b := by
   rw [le_iff, toCompletion_coe, toCompletion_coe, ← UniformSpace.Completion.coe_sub]
   have hind := (UniformSpace.Completion.isDenseInducing_coe (α := E)).isInducing
   have hcl := hind.closure_eq_preimage_closure_image {c : E | 0 ≤ c}
   rw [he.isClosed_nonneg.closure_eq] at hcl
-  change b - a ∈ UniformSpace.Completion.coe' ⁻¹'
-    closure (UniformSpace.Completion.coe' '' {c : E | 0 ≤ c}) ↔ a ≤ b
-  rw [← hcl]
+  rw [← Set.mem_preimage (f := ((↑) : E → UniformSpace.Completion E)), ← hcl]
   simp [sub_nonneg]
 
 private theorem le_norm_smul_coe (x : OrderUnitCompletion he) : x ≤ ‖x‖ • coe he e := by
@@ -294,11 +299,14 @@ def extend (he : IsOrderUnitNorm e) {F : Type*} [NormedAddCommGroup F] [NormedSp
 @[simp]
 theorem extend_coe {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) (a : E) : extend he T (coe he a) = T a := by
-  change (T.extend (UniformSpace.Completion.toComplL : E →L[ℝ] UniformSpace.Completion E))
-    ((UniformSpace.Completion.toComplL : E →L[ℝ] UniformSpace.Completion E) a) = T a
+  rw [extend, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, toCompletionₗᵢ_apply, toCompletion_coe,
+    ← UniformSpace.Completion.coe_toComplL (S := ℝ)]
   exact ContinuousLinearMap.extend_eq T UniformSpace.Completion.denseRange_coe
     (UniformSpace.Completion.isUniformInducing_coe E) a
 
+/-- Uniqueness of continuous linear extension: any continuous linear map
+`S : OrderUnitCompletion he →L[ℝ] F` agreeing with `T` on `coe he` equals `extend he T`. -/
 theorem extend_unique {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) {S : OrderUnitCompletion he →L[ℝ] F}
     (hS : ∀ a : E, S (coe he a) = T a) : S = extend he T := by
@@ -306,6 +314,8 @@ theorem extend_unique {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Co
   exact congr_fun (DenseRange.equalizer (denseRange_coe he) S.continuous (extend he T).continuous
     (funext fun a => (hS a).trans (extend_coe T a).symm)) x
 
+/-- Continuous linear extension to `OrderUnitCompletion he` preserves the operator norm:
+`‖extend he T‖ = ‖T‖`. -/
 theorem opNorm_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) : ‖extend he T‖ = ‖T‖ := by
   refine le_antisymm ?_ ?_
