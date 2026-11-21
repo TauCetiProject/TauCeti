@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.LinearAlgebra.Transvection.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -665,36 +666,18 @@ theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [IsTopologicalRing 
     (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1))) :
     ∃ e : (ι → R) ≃L[R] (ι → R),
       (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
-  obtain ⟨u, hu⟩ := hα
-  set f : (ι → R) →L[R] (ι → R) := pi fun m : ι ↦ if m = i then α else proj m
-  -- The inverse keeps the coordinates `m ≠ i` and solves `α v = w i` for the coordinate `i`.
-  let g : (ι → R) →L[R] (ι → R) :=
-    pi fun m : ι ↦ if m = i then proj i + (proj i - α).smulRight (↑u⁻¹ : R) else proj m
-  -- Both maps change only the coordinate `i`, by a multiple of `Pi.single i 1`.
-  have hf (v : ι → R) : f v = v + (α v - v i) • Pi.single i 1 := by
-    ext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp [f, pi_apply]
-    · simp [f, pi_apply, hm]
-  have hg (w : ι → R) : g w = w + ((w i - α w) * ↑u⁻¹) • Pi.single i 1 := by
-    ext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp [g, pi_apply]
-    · simp [g, pi_apply, hm]
-  have hgf (v : ι → R) : g (f v) = v := by
-    rw [hg, hf, add_assoc, ← add_smul, add_eq_left]
-    refine (congrArg (· • _) ?_).trans (zero_smul R _)
-    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul,
-      ← hu, mul_one, add_sub_cancel, sub_add_cancel_left, neg_mul, Units.mul_inv_cancel_right,
-      add_neg_cancel]
-  have hfg (w : ι → R) : f (g w) = w := by
-    rw [hf, hg, add_assoc, ← add_smul, add_eq_left]
-    refine (congrArg (· • _) ?_).trans (zero_smul R _)
-    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul,
-      ← hu, mul_one, Units.inv_mul_cancel_right]
-    abel
-  exact ⟨.ofContinuousLinearMap f g (ext hfg) (ext hgf),
-    ContinuousLinearEquiv.toContinuousLinearMap_ofContinuousLinearMap ..⟩
+  -- The update is the dilatransvection `v ↦ v + (α v - v i) • Pi.single i 1`, whose
+  -- dilation factor `1 + (α - proj i) (Pi.single i 1)` is the coefficient of `α`.
+  set β : (ι → R) →L[R] R := α - proj i
+  have h : IsUnit (1 + (β : Module.Dual R (ι → R)) (Pi.single i 1)) := by simpa [β] using hα
+  have hcont (w : ι → R) : Continuous (LinearMap.transvection (β : Module.Dual R (ι → R)) w) := by
+    have : Continuous fun v ↦ v + β v • w := continuous_id.add (β.continuous.smul continuous_const)
+    exact this.congr fun v ↦ (LinearMap.transvection.apply _ _ v).symm
+  refine ⟨⟨LinearEquiv.dilatransvection h, hcont _, hcont _⟩, ?_⟩
+  ext v m
+  rcases eq_or_ne m i with rfl | hm
+  · simp [LinearEquiv.dilatransvection.apply, β, pi_apply]
+  · simp [LinearEquiv.dilatransvection.apply, β, pi_apply, hm]
 
 end Coordinates
 
