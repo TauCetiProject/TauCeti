@@ -122,9 +122,9 @@ theorem baire_descent_of_countable
       ∀ (g : Γ) (i j : ι), (ρ g : Matrix ι ι L) i j ∈ E := by
   let S := {E : IntermediateField K L | FiniteDimensional K E}
   have : Countable S := hcount.to_subtype
-  let H (E : S) : Subgroup Γ := entriesSubgroup (ρ : Γ →* GL ι L) E.1
+  let H (E : S) : Subgroup Γ := entriesSubgroup (ρ : Γ →* GL ι L) E.val
   have hHclosed (E : S) : IsClosed (H E : Set Γ) :=
-    isClosed_entriesSubgroup ρ (hclosed E.1 E.2)
+    isClosed_entriesSubgroup ρ (hclosed E.val E.property)
   have hcover : (⋃ E : S, (H E : Set Γ)) = Set.univ := by
     refine Set.eq_univ_iff_forall.mpr fun g ↦ ?_
     let s : Set L := Set.range fun p : ι × ι ↦ (ρ g : Matrix ι ι L) p.1 p.2
@@ -142,23 +142,23 @@ theorem baire_descent_of_countable
   let T : Set L := Set.range fun p : (Γ ⧸ H E₀) × ι × ι ↦
     (ρ (Quotient.out p.1) : Matrix ι ι L) p.2.1 p.2.2
   have : Finite T := Set.finite_range _
-  have : FiniteDimensional K E₀.1 := E₀.2
+  have : FiniteDimensional K E₀.val := E₀.property
   have : FiniteDimensional K (IntermediateField.adjoin K T) :=
     IntermediateField.finiteDimensional_adjoin fun y _ ↦
       (Algebra.IsAlgebraic.isAlgebraic y).isIntegral
-  let E : IntermediateField K L := K₀ ⊔ E₀.1 ⊔ IntermediateField.adjoin K T
+  let E : IntermediateField K L := K₀ ⊔ E₀.val ⊔ IntermediateField.adjoin K T
   refine ⟨E, le_sup_of_le_left le_sup_left, inferInstance, fun g i j ↦ ?_⟩
   let q : Γ ⧸ H E₀ := QuotientGroup.mk g
   let r : Γ := Quotient.out q
   have hrg : r⁻¹ * g ∈ H E₀ := by
     rw [← QuotientGroup.eq]
     exact Quotient.out_eq q
-  have hrg' := (mem_entriesSubgroup_iff (ρ : Γ →* GL ι L) E₀.1 (r⁻¹ * g)).mp hrg
+  have hrg' := (mem_entriesSubgroup_iff (ρ : Γ →* GL ι L) E₀.val (r⁻¹ * g)).mp hrg
   rw [← mul_inv_cancel_left r g, map_mul, Units.val_mul, Matrix.mul_apply]
   refine E.sum_mem fun k _ ↦ E.mul_mem ?_ ?_
   · exact (le_sup_right : IntermediateField.adjoin K T ≤ E)
       (IntermediateField.subset_adjoin K T ⟨(q, i, k), rfl⟩)
-  · exact (le_sup_of_le_left le_sup_right : E₀.1 ≤ E) (hrg' k j)
+  · exact (le_sup_of_le_left le_sup_right : E₀.val ≤ E) (hrg' k j)
 
 /-- **Coefficient-field descent from `PadicAlgCl ℓ`.** Every continuous matrix representation
 `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` of a compact Baire group has entries in a single finite extension

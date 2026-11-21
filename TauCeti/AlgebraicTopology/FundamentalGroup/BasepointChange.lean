@@ -621,7 +621,7 @@ lemma basepointChangeNormalizerQuotientEquiv_mk_coe (γ : Path x₀ x₁)
               rw [← Subgroup.normalizerEquivMap_apply_coe H
                 (fundamentalGroupMulEquivOfPath γ) g]
               exact (Subgroup.normalizerEquivMap H
-                (fundamentalGroupMulEquivOfPath γ) g).2⟩ :
+                (fundamentalGroupMulEquivOfPath γ) g).property⟩ :
             Subgroup.normalizer
               ((H.map ((fundamentalGroupMulEquivOfPath γ) :
                 FundamentalGroup X x₀ →* FundamentalGroup X x₁)) :

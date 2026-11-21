@@ -89,7 +89,7 @@ theorem algebraicExtensionNormedField_norm_eq (E : IntermediateField ℚ_[p] (Pa
       ‖(x : PadicAlgCl p)‖ := by
   have hnorm (y : E) : NormedField.toAbsoluteValue E y = ‖(y : PadicAlgCl p)‖ := by
     rw [NormedField.toAbsoluteValue_apply,
-      ← isometry_subtype_coe.norm_map_of_map_zero (ZeroMemClass.coe_zero E)]
+      ← isometry_subtypeVal.norm_map_of_map_zero (ZeroMemClass.coe_zero E)]
   have h := TauCeti.algebraicExtensionNormedField_norm_unique (K := ℚ_[p]) (M := E)
     (f := NormedField.toAbsoluteValue E) (fun a ↦ ?_) x
   · rw [← h, hnorm]

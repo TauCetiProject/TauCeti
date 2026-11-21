@@ -110,7 +110,7 @@ theorem exists_isAlgebraic_adjoin_simple_eq (E : IntermediateField K L)
     rw [IsSeparable, ← IntermediateField.coe_val, minpoly.algHom_eq E.val E.val.injective α]
     exact Algebra.IsSeparable.isSeparable K α
   have hE : K⟮(α : L)⟯ = E := by
-    refine le_antisymm (adjoin_simple_le_iff.mpr α.2) fun y hy ↦ ?_
+    refine le_antisymm (adjoin_simple_le_iff.mpr α.property) fun y hy ↦ ?_
     have hmem : y ∈ (K⟮α⟯).map E.val := ⟨⟨y, hy⟩, hα.symm ▸ mem_top, rfl⟩
     simpa [IntermediateField.adjoin_map] using hmem
   obtain ⟨β, hβ, hβEq⟩ := hα_sep.exists_isAlgebraic_adjoin_simple_eq hk

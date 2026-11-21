@@ -120,8 +120,8 @@ theorem IntertwiningMap.exists_descent_of_baseChange
     exact IntermediateField.finiteDimensional_adjoin fun x _ ↦
       (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
   let f₀ : (E' ⊗[E] V) →ₗ[E'] (E' ⊗[E] W) :=
-    ∑ p ∈ s.attach, (⟨p.1.1, IntermediateField.subset_adjoin E _
-      ⟨p.1, Finset.mem_coe.mpr p.2, rfl⟩⟩ : E') • p.1.2.baseChange E'
+    ∑ p ∈ s.attach, (⟨p.val.1, IntermediateField.subset_adjoin E _
+      ⟨p.val, Finset.mem_coe.mpr p.property, rfl⟩⟩ : E') • p.val.2.baseChange E'
   have hcompat : ∀ x : L ⊗[E'] (E' ⊗[E] V),
       AlgebraTensorModule.cancelBaseChange E E' L L W (f₀.baseChange L x) =
         f (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
