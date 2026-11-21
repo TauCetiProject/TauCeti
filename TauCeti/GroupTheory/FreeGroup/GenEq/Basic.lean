@@ -1058,6 +1058,43 @@ theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     List.length_singleton] at this
   omega
 
+/-- Two boundaries whose positions in the words of a solution differ by one are adjacent: every
+item carries a nonempty word. -/
+private theorem eq_add_one_of_prefixLength_eq {i j : ℕ} (hj : j ≤ Ω.numItems)
+    (h : U.prefixLength j = U.prefixLength i + 1) : j = i + 1 := by
+  have hlt : i < j := by
+    by_contra hc
+    have := U.prefixLength_mono (not_lt.1 hc)
+    omega
+  have := U.prefixLength_add_le hlt.le hj
+  omega
+
+/-- Let the boundaries `q` and `q'` lie, in the words of a solution, at the positions of the two
+end-points of the item of a constant base `b`, in the sense of the boundary equations of
+`(b, μ, q)` and `(b + 1, μ, q')` (`TauCeti.GenEq.Solution.prefixLength_boundary`). Then `q` and
+`q'` are adjacent: the item carries a word of one letter. -/
+theorem adjacent_of_prefixLength_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
+    (hb : b ∈ Ω.constBases) {μ : Fin Ω.numBases} {q q' : Fin (Ω.numItems + 1)}
+    (e : if Ω.sign μ = Ω.sign (Ω.dual μ) then
+        U.prefixLength b.1.castSucc + U.prefixLength (Ω.left (Ω.dual μ)) =
+          U.prefixLength q + U.prefixLength (Ω.left μ)
+      else
+        U.prefixLength b.1.castSucc + U.prefixLength q =
+          U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ))
+    (e' : if Ω.sign μ = Ω.sign (Ω.dual μ) then
+        U.prefixLength b.1.succ + U.prefixLength (Ω.left (Ω.dual μ)) =
+          U.prefixLength q' + U.prefixLength (Ω.left μ)
+      else
+        U.prefixLength b.1.succ + U.prefixLength q' =
+          U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ)) :
+    (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q := by
+  have hsucc := U.prefixLength_succ_of_mem_constBases hb
+  simp only [Fin.val_castSucc, Fin.val_succ] at e e'
+  -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
+  split_ifs at e e'
+  · exact Or.inl (U.eq_add_one_of_prefixLength_eq q'.is_le (by omega)).symm
+  · exact Or.inr (U.eq_add_one_of_prefixLength_eq q.is_le (by omega)).symm
+
 include U in
 private theorem connections_adjacent (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.constBases)
     (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)) (hc : c ∈ Ω.connections)
@@ -1069,24 +1106,8 @@ private theorem connections_adjacent (b : Fin Ω.numItems × (A × Bool)) (hb : 
   obtain rfl : μ = μ' := hμ
   simp only at hp hp' ⊢
   subst hp hp'
-  have hsucc := U.prefixLength_succ_of_mem_constBases hb
-  have e := U.prefixLength_boundary hc
-  have e' := U.prefixLength_boundary hc'
-  simp only [Fin.val_castSucc, Fin.val_succ] at e e'
-  -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
-  split_ifs at e e'
-  · have hlt : (q : ℕ) < q' := by
-      by_contra h
-      have := U.prefixLength_mono (not_lt.1 h)
-      omega
-    have := U.prefixLength_add_le hlt.le q'.is_le
-    omega
-  · have hlt : (q' : ℕ) < q := by
-      by_contra h
-      have := U.prefixLength_mono (not_lt.1 h)
-      omega
-    have := U.prefixLength_add_le hlt.le q.is_le
-    omega
+  exact U.adjacent_of_prefixLength_of_mem_constBases hb (U.prefixLength_boundary hc)
+    (U.prefixLength_boundary hc')
 
 include U in
 /-- **Kharlampovich–Myasnikov, Lemma 12(1).** A generalised equation with a solution is formally

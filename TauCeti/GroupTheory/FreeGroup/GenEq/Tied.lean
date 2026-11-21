@@ -459,32 +459,15 @@ theorem Solution.prefixLength_of_isTiedTo (U : Ω.Solution) (h : Ω.IsTiedTo μ 
   · exact U.prefixLength_boundary h
   all_goals split_ifs <;> lia
 
-/-- Two boundaries whose positions in the words of a solution differ by one are adjacent: every
-item carries a nonempty word. -/
-private theorem Solution.eq_add_one_of_prefixLength_eq (U : Ω.Solution) {i j : ℕ}
-    (hj : j ≤ Ω.numItems) (h : U.prefixLength j = U.prefixLength i + 1) : j = i + 1 := by
-  have hlt : i < j := by
-    by_contra hc
-    have := U.prefixLength_mono (not_lt.1 hc)
-    lia
-  have := U.prefixLength_add_le hlt.le hj
-  lia
-
 /-- In a generalised equation with a solution, the boundaries to which the two end-points of a
 constant item are tied through the same base are adjacent: the item carries a word of one letter.
 For ties by boundary connections this is condition 5 of formal consistency; here the end-points of
 the base are allowed as well. -/
 theorem Solution.adjacent_of_mem_constBases (U : Ω.Solution) {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) (hq : Ω.IsTiedTo μ b.1.castSucc q)
-    (hq' : Ω.IsTiedTo μ b.1.succ q') : (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q := by
-  have h₁ := U.prefixLength_of_isTiedTo hq
-  have h₂ := U.prefixLength_of_isTiedTo hq'
-  have hP := U.prefixLength_succ_of_mem_constBases hb
-  simp only [Fin.val_castSucc, Fin.val_succ] at h₁ h₂
-  -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
-  split_ifs at h₁ h₂
-  · exact Or.inl (U.eq_add_one_of_prefixLength_eq q'.is_le (by lia)).symm
-  · exact Or.inr (U.eq_add_one_of_prefixLength_eq q.is_le (by lia)).symm
+    (hq' : Ω.IsTiedTo μ b.1.succ q') : (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q :=
+  U.adjacent_of_prefixLength_of_mem_constBases hb (U.prefixLength_of_isTiedTo hq)
+    (U.prefixLength_of_isTiedTo hq')
 
 /-! ### Examples -/
 

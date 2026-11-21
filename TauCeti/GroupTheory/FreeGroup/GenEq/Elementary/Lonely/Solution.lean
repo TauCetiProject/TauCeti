@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Elementary.Lonely.Basic
 import all TauCeti.GroupTheory.FreeGroup.GenEq.Elementary.Lonely.Basic
+import all TauCeti.GroupTheory.FreeGroup.GenEq.Tied
 import Mathlib.Data.Fin.VecNotation
 
 /-!
@@ -101,27 +102,6 @@ private theorem isReduced_substituteVars_coeffEquation {W : Fin Ω.numItems → 
     FreeGroup.substituteVars_singleton_inr]
   exact ⟨hW b.1, .singleton⟩
 
-/-- A factor `W[i, j]` of a word `W[a, b]` reduced as written is reduced as written. -/
-private theorem isReduced_substituteVars_segment_of_isReduced {W : Fin Ω.numItems → List (A × Bool)}
-    {a b i j : ℕ} (hred : FreeGroup.IsReduced (substituteVars W (Ω.segment a b true))) (hi : a ≤ i)
-    (hj : j ≤ b) : FreeGroup.IsReduced (substituteVars W (Ω.segment i j true)) :=
-  hred.infix
-    (((Ω.segment_prefix_segment hj).isInfix.trans (Ω.segment_suffix_segment hi).isInfix).flatMap _)
-
-/-- The word of `Ω′` at the former place of `Δ(μ)`, read in the items of `Ω`, is the word of
-`Δ(μ)`. -/
-private theorem restoreWord_segment_dual :
-    restoreWord (Ω.baseItems μ) ((Ω.removeLonely μ h).segment
-      ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
-      ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true) =
-        Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true := by
-  have hS : Disjoint (((Ω.moveConstBases μ).removePair μ).sectionItems (Ω.left (Ω.dual μ))
-      (Ω.right (Ω.dual μ))) (Ω.baseItems μ) :=
-    Finset.disjoint_left.2 fun l hl ↦ Finset.disjoint_left.1 (h.disjoint _ h.dual_ne)
-      (Ω.mem_baseItems.2 (((Ω.moveConstBases μ).removePair μ).mem_sectionItems.1 hl))
-  simpa only [segment_removeBases, segment_moveConstBases] using
-    restoreWord_segment_deleteItems h.disjoint_baseItems_removePair hS true
-
 /-! ### The substitution `π` at a point -/
 
 /-- `π` evaluated at the point of a solution of `Ω′` substitutes its words into the word
@@ -133,23 +113,13 @@ private theorem wordMap_removeLonelyWord_point (U : (Ω.removeLonely μ h).Solut
   rw [wordMap_removeLonelyWord_apply, MonoidHom.coe_id, Function.id_comp,
     ← EqIneqSystem.eval_eq_lift, Solution.eval_point_mk]
 
-/-- A point of `Ω′*` sent by `π` to `v` is the restriction of `v` to the items outside `μ`. -/
-private theorem eq_comp_of_wordMap_removeLonelyWord_eq {H : Type*} [Group H] {ι : FreeGroup A →* H}
-    {v' : Fin (Ω.removeLonely μ h).numItems → H} {v : Fin Ω.numItems → H}
-    (hv : wordMap ι (Ω.removeLonelyWord μ h) v' = v) :
-    v' = v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl :=
-  funext fun j ↦ by rw [← hv, Function.comp_apply, wordMap_removeLonelyWord_orderEmbOfFin]
-
 /-- The restriction of the point of a solution of `Ω` to the items outside `μ` is a point of
 `Ω′*`. -/
 private theorem point_comp_mem_V (U : Ω.Solution) :
     (fun j ↦ FreeGroup.mk (U.word ((Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j))) ∈
       V (MonoidHom.id (FreeGroup A)) (Ω.removeLonely μ h).toSystem := by
-  -- It is the preimage of the point of `U` under `π`.
-  obtain ⟨v', hv', hv⟩ :=
-    (bijOn_wordMap_removeLonely h U.isFormallyConsistent _).surjOn U.point_mem_V
-  rw [eq_comp_of_wordMap_removeLonelyWord_eq h hv] at hv'
-  simpa only [Function.comp_def, Solution.point_apply] using hv'
+  simpa only [Function.comp_def, Solution.point_apply] using
+    comp_mem_V_removeLonely h U.isFormallyConsistent U.point_mem_V
 
 /-! ### The forward transfer -/
 
@@ -189,13 +159,11 @@ end Solution
 private theorem wordMap_point_removeLonely (U : Ω.Solution) :
     wordMap (MonoidHom.id (FreeGroup A)) (Ω.removeLonelyWord μ h) (U.removeLonely h).point =
       U.point := by
-  obtain ⟨v', -, hv⟩ :=
-    (bijOn_wordMap_removeLonely h U.isFormallyConsistent _).surjOn U.point_mem_V
-  rw [← hv, eq_comp_of_wordMap_removeLonelyWord_eq h hv]
-  congr 1
-  funext j
-  rw [Function.comp_apply, Solution.point_apply, Solution.point_apply,
-    Solution.removeLonely_word]
+  have : (U.removeLonely h).point = U.point ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl :=
+    funext fun j ↦ by
+      rw [Function.comp_apply, Solution.point_apply, Solution.point_apply,
+        Solution.removeLonely_word]
+  rw [this, wordMap_removeLonelyWord_comp h U.isFormallyConsistent U.point_mem_V]
 
 /-- **ET4 transfers solutions.** The homomorphism `F_{R(Ω′)} → F(A)` of the restriction of a
 solution `U` of `Ω` to `Ω′ = Ω.removeLonely μ h`, composed with the isomorphism
@@ -265,11 +233,11 @@ private theorem isReduced_substituteVars_segment_of_mem_pair {W : Fin Ω.numItem
   · -- The word of `μ` is the word of `Δ(μ)` or its formal inverse.
     have hμ := substituteVars_segment_left_eq h hΩ hW (Ω.left_lt_right ν).le le_rfl
     rw [tiedBoundary_right] at hμ
-    refine isReduced_substituteVars_segment_of_isReduced ?_ hi hj
+    refine Ω.isReduced_substituteVars_segment_of_le_of_le ?_ hi hj
     split_ifs at hμ <;> rw [hμ]
     exacts [hred, hred.invRev]
   · rw [Finset.mem_singleton.1 hν] at hi hj
-    exact isReduced_substituteVars_segment_of_isReduced hred hi hj
+    exact Ω.isReduced_substituteVars_segment_of_le_of_le hred hi hj
 
 include hΩ in
 /-- Words for the items of `Ω` that restrict to a solution of `Ω′`, give each item of `μ` the word
@@ -351,7 +319,7 @@ private theorem isReduced_liftWord_dual (hU : FreeGroup.IsReduced (substituteVar
       ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true))) :
     FreeGroup.IsReduced (substituteVars (liftWord h U)
       (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)) := by
-  rwa [substituteVars_eq_liftWord, restoreWord_segment_dual] at hU
+  rwa [substituteVars_eq_liftWord, restoreWord_segment_removeLonely h le_rfl le_rfl] at hU
 
 variable {U} in
 /-- The lifted words are reduced: the word of an item of `μ` is a factor of the word of `Δ(μ)`. -/
@@ -361,7 +329,7 @@ private theorem isReduced_liftWord (hU : FreeGroup.IsReduced (substituteVars U.w
     FreeGroup.IsReduced (liftWord h U k) := by
   by_cases hk : k ∈ Ω.baseItems μ
   · rw [liftWord_of_mem h U hk, tiedSegment, isReduced_substituteVars_segment_iff]
-    exact isReduced_substituteVars_segment_of_isReduced (isReduced_liftWord_dual h hU)
+    exact Ω.isReduced_substituteVars_segment_of_le_of_le (isReduced_liftWord_dual h hU)
       (tiedSegment_bounds h hk).1 (tiedSegment_bounds h hk).2
   · obtain ⟨j, rfl⟩ : ∃ j, (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j = k :=
       ⟨_, Finset.orderEmbOfFin_collapse hk⟩
@@ -409,7 +377,7 @@ noncomputable def solutionEquivRemoveLonely :
   toFun U := ⟨U.removeLonely h, by
     have hw : (U.removeLonely h).word = U.word ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl :=
       funext (Solution.removeLonely_word h U)
-    rw [hw, ← substituteVars_restoreWord, restoreWord_segment_dual]
+    rw [hw, ← substituteVars_restoreWord, restoreWord_segment_removeLonely h le_rfl le_rfl]
     exact U.isReduced_substituteVars_segment _⟩
   invFun U := Solution.ofMemV (liftWord h U.val) (isReduced_liftWord h U.property)
     (liftWord_ne_nil h hΩ U.val)
@@ -462,16 +430,11 @@ example (U' : (equalItems.removeLonely 0 isLonely_equalItems).Solution) :
     ∃ U : equalItems.Solution, U.removeLonely isLonely_equalItems = U' := by
   have hΩ : equalItems.IsFormallyConsistent :=
     isFormallyConsistent_of_sign_eq (fun _ ↦ rfl) rfl rfl
-  have hS : equalItems.baseItems 0 = {0} := by
-    ext k
-    rw [mem_baseItems, Finset.mem_singleton]
-    revert k
-    decide
   have h₁ : (equalItems.baseItems 0).collapse (equalItems.left (equalItems.dual 0)) = 0 := by
-    rw [hS, Finset.collapse_def]
+    rw [baseItems_equalItems, Finset.collapse_def]
     decide
   have h₂ : (equalItems.baseItems 0).collapse (equalItems.right (equalItems.dual 0)) = 0 + 1 := by
-    rw [hS, Finset.collapse_def]
+    rw [baseItems_equalItems, Finset.collapse_def]
     decide
   have hn : 0 < (equalItems.removeLonely 0 isLonely_equalItems).numItems := by
     rw [numItems_removeLonely_equalItems]
@@ -483,24 +446,8 @@ example (U' : (equalItems.removeLonely 0 isLonely_equalItems).Solution) :
     exact U'.isReduced_word _
   · rw [← solutionEquivRemoveLonely_apply_coe _ hΩ, Equiv.apply_symm_apply]
 
-/-- The generalised equation `h₀h₁ = h₂h₃`, `h₀ = h₂` over `F(a, b)`: the dual bases `μ = [0, 2]`
-and `Δ(μ) = [2, 4]` with the boundary connection `(1, μ, 3)`. -/
-private abbrev tiedPair : GenEq (Fin 2) where
-  numItems := 4
-  numBases := 2
-  left := ![0, 2]
-  right := ![2, 4]
-  left_lt_right := by decide
-  sign _ := true
-  dual := ![1, 0]
-  dual_involutive := by unfold Function.Involutive; decide
-  constBases := ∅
-  connections := {(1, 0, 3), (3, 1, 1)}
-  bounds_of_mem_connections := by decide
-  dual_mem_connections := by decide
-
 /-- The base `μ = [0, 2]` of `h₀h₁ = h₂h₃`, `h₀ = h₂` is lonely. -/
-private theorem isLonely_tiedPair : tiedPair.IsLonely 0 where
+private theorem isLonely_tiedExample : (tiedExample true).IsLonely 0 where
   dual_ne := by decide
   disjoint ν hν := Finset.disjoint_left.2 fun k hk hk' ↦ by
     rw [mem_baseItems] at hk hk'
@@ -508,7 +455,7 @@ private theorem isLonely_tiedPair : tiedPair.IsLonely 0 where
     decide
   tied p hp := by
     obtain rfl : p = 1 := by
-      have := tiedPair.crosses_iff.1 hp
+      have := (tiedExample true).crosses_iff.1 hp
       revert p
       decide
     exact ⟨3, by decide⟩
@@ -518,16 +465,16 @@ private theorem isLonely_tiedPair : tiedPair.IsLonely 0 where
 removing `μ` from `h₀h₁ = h₂h₃`, `h₀ = h₂` leaves two unconstrained items, and their words `a`,
 `a⁻¹` form a solution of the result which is not the restriction of a solution, as `aa⁻¹` is not
 reduced. -/
-example : ∃ U' : (tiedPair.removeLonely 0 isLonely_tiedPair).Solution,
-    ∀ U : tiedPair.Solution, U.removeLonely isLonely_tiedPair ≠ U' := by
-  have hS : tiedPair.baseItems 0 = {0, 1} := by
+example : ∃ U' : ((tiedExample true).removeLonely 0 isLonely_tiedExample).Solution,
+    ∀ U : (tiedExample true).Solution, U.removeLonely isLonely_tiedExample ≠ U' := by
+  have hS : (tiedExample true).baseItems 0 = {0, 1} := by
     ext k
     rw [mem_baseItems]
     revert k
     decide
-  have hn : 1 < (tiedPair.removeLonely 0 isLonely_tiedPair).numItems := by
+  have hn : 1 < ((tiedExample true).removeLonely 0 isLonely_tiedExample).numItems := by
     simp [hS, Finset.card_compl]
-  have hc : (tiedPair.removeLonely 0 isLonely_tiedPair).constBases = ∅ :=
+  have hc : ((tiedExample true).removeLonely 0 isLonely_tiedExample).constBases = ∅ :=
     Finset.eq_empty_of_forall_notMem fun b hb ↦ by
       rw [mem_constBases_deleteItems] at hb
       simp at hb
@@ -535,20 +482,24 @@ example : ∃ U' : (tiedPair.removeLonely 0 isLonely_tiedPair).Solution,
     (fun j ↦ if (j : ℕ) = 0 then [(0, true)] else [(0, false)])
     (fun j ↦ by split_ifs <;> exact .singleton) (fun j ↦ by split_ifs <;> simp)
   refine ⟨U', fun U hU ↦ ?_⟩
-  have h₁ : (tiedPair.baseItems 0).collapse (tiedPair.left (tiedPair.dual 0)) = 0 := by
+  have h₁ : ((tiedExample true).baseItems 0).collapse
+      ((tiedExample true).left ((tiedExample true).dual 0)) = 0 := by
     rw [hS, Finset.collapse_def]
     decide
-  have h₂ : (tiedPair.baseItems 0).collapse (tiedPair.right (tiedPair.dual 0)) = 0 + 1 + 1 := by
+  have h₂ : ((tiedExample true).baseItems 0).collapse
+      ((tiedExample true).right ((tiedExample true).dual 0)) = 0 + 1 + 1 := by
     rw [hS, Finset.collapse_def]
     decide
   -- The restriction of `U` makes the word `h₂h₃` of the former place of `Δ(μ)` reduced.
-  have := (solutionEquivRemoveLonely isLonely_tiedPair (by decide) U).property
+  have := (solutionEquivRemoveLonely isLonely_tiedExample (isFormallyConsistent_tiedExample true)
+    U).property
   rw [solutionEquivRemoveLonely_apply_coe, hU, h₁, h₂,
-    ← (tiedPair.removeLonely 0 isLonely_tiedPair).segment_append (j := 0 + 1) (Nat.zero_le _)
-      (Nat.le_succ _),
-    (tiedPair.removeLonely 0 isLonely_tiedPair).segment_succ ⟨0, one_pos.trans hn⟩,
-    (tiedPair.removeLonely 0 isLonely_tiedPair).segment_succ ⟨0 + 1, hn⟩, substituteVars_append,
-    FreeGroup.substituteVars_singleton_inl, FreeGroup.substituteVars_singleton_inl] at this
+    ← ((tiedExample true).removeLonely 0 isLonely_tiedExample).segment_append (j := 0 + 1)
+      (Nat.zero_le _) (Nat.le_succ _),
+    ((tiedExample true).removeLonely 0 isLonely_tiedExample).segment_succ ⟨0, one_pos.trans hn⟩,
+    ((tiedExample true).removeLonely 0 isLonely_tiedExample).segment_succ ⟨0 + 1, hn⟩,
+    substituteVars_append, FreeGroup.substituteVars_singleton_inl,
+    FreeGroup.substituteVars_singleton_inl] at this
   simp [U'] at this
 
 end GenEq
