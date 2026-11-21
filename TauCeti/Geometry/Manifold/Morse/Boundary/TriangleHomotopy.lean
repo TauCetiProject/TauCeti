@@ -186,7 +186,9 @@ variable (f₀) in
 /-- **The mod-two triangle homotopy** along a vector field `W` on `M × ℝ²`, from the mod-two Morse
 chains of `f₀` to those of the Morse function `f₂`. It sends a critical point `p` of `f₀` to the
 sum of the critical points `r` of `f₂` with `ind r = ind p + 1`, each weighted by the number of
-trajectories of `W` from `(p, (0, 0))` to `(r, (1, 1))` over the ordered triangle modulo two. -/
+trajectories of `W` from `(p, (0, 0))` to `(r, (1, 1))` over the ordered triangle modulo two. As for
+`morseTriangleCoeff`, this is the trajectory count only when the slice `morseTriangleSlice W p r`
+is finite; an infinite slice contributes `0`. -/
 noncomputable def morseTriangleMap (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
     (W : (z : M × WithLp 2 (ℝ × ℝ)) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, WithLp 2 (ℝ × ℝ))) z) :
     (criticalPoints 𝓘(ℝ, E) f₀ →₀ ZMod 2) →ₗ[ZMod 2] (criticalPoints 𝓘(ℝ, E) f₂ →₀ ZMod 2) :=
@@ -343,26 +345,23 @@ theorem morseTriangleMap_morseBoundary_single_apply (p : criticalPoints 𝓘(ℝ
     (r : criticalPoints 𝓘(ℝ, E) f₂) (hfin : (morseSourceBrokenTriangleSet f₂ W hX₀ p r).Finite) :
     morseTriangleMap f₀ hf₂ W (h₀.morseBoundary hf₀ (Finsupp.single p 1)) r =
       ((morseSourceBrokenTriangleSet f₂ W hX₀ p r).ncard : ZMod 2) := by
-  classical
   have := hf₀.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₀)
+  rw [morseTriangleMap_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
+    morseSourceBrokenTriangleSet]
   -- Sort the broken trajectories by their intermediate critical point `p'`. The index conditions
   -- and slice families are named because unification cannot read them off `hfin`.
-  rw [morseSourceBrokenTriangleSet, ncard_setOf_and_and_mem_and_mem
-      (P := fun p' : criticalPoints 𝓘(ℝ, E) f₀ ↦
-        manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ p' + 1)
-      (Q := fun p' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₂ r = manifoldMorseIndex 𝓘(ℝ, E) f₀ p' + 1)
-      (A := (hX₀.morseTrajectorySlice p ·)) (B := (morseTriangleSlice W · r)) hfin,
-    Nat.cast_sum, Finset.sum_filter, morseTriangleMap_apply,
-    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  refine Finset.sum_congr rfl fun p' _ ↦ ?_
-  rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_single_apply, one_mul]
-  split_ifs with hind
-  · rw [h₀.morseBoundaryCoeff_eq_ncard hf₀ hind.1, morseTriangleCoeff_eq_ncard hind.2,
-      Nat.cast_mul]
-  · rcases not_and_or.mp hind with hpp' | hp'r
-    · simp [hpp']
-    · simp [hp'r]
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun p' : criticalPoints 𝓘(ℝ, E) f₀ ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ p' + 1)
+    (Q := fun p' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₂ r = manifoldMorseIndex 𝓘(ℝ, E) f₀ p' + 1)
+    (A := (hX₀.morseTrajectorySlice p ·)) (B := (morseTriangleSlice W · r)) (fun p' hind ↦ ?_)
+    (fun p' hind ↦ ?_) (fun _ ↦ morseTriangleCoeff_eq_ncard)
+    (fun _ ↦ morseTriangleCoeff_eq_zero_of_manifoldMorseIndex_ne_add_one) hfin).symm
+  · rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_single_apply, one_mul,
+      h₀.morseBoundaryCoeff_eq_ncard hf₀ hind]
+  · rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_single_apply, one_mul,
+      h₀.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf₀ hind]
 
 include h₂ in
 /-- **`∂₂ ∘ H` counts triangle trajectories broken at the target.** When they are finitely many,
@@ -372,25 +371,21 @@ theorem morseBoundary_morseTriangleMap_single_apply (p : criticalPoints 𝓘(ℝ
     (r : criticalPoints 𝓘(ℝ, E) f₂) (hfin : (morseTargetBrokenTriangleSet f₀ W hX₂ p r).Finite) :
     h₂.morseBoundary hf₂ (morseTriangleMap f₀ hf₂ W (Finsupp.single p 1)) r =
       ((morseTargetBrokenTriangleSet f₀ W hX₂ p r).ncard : ZMod 2) := by
-  classical
   have := hf₂.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₂)
+  rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_apply,
+    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _, morseTargetBrokenTriangleSet]
   -- Sort the broken trajectories by their intermediate critical point `r'`.
-  rw [morseTargetBrokenTriangleSet, ncard_setOf_and_and_mem_and_mem
-      (P := fun r' : criticalPoints 𝓘(ℝ, E) f₂ ↦
-        manifoldMorseIndex 𝓘(ℝ, E) f₂ r' = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1)
-      (Q := fun r' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₂ r' = manifoldMorseIndex 𝓘(ℝ, E) f₂ r + 1)
-      (A := (morseTriangleSlice W p ·)) (B := (hX₂.morseTrajectorySlice · r)) hfin,
-    Nat.cast_sum, Finset.sum_filter, IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_apply,
-    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  refine Finset.sum_congr rfl fun r' _ ↦ ?_
-  rw [morseTriangleMap_single_apply, one_mul]
-  split_ifs with hind
-  · rw [morseTriangleCoeff_eq_ncard hind.1, h₂.morseBoundaryCoeff_eq_ncard hf₂ hind.2,
-      Nat.cast_mul]
-  · rcases not_and_or.mp hind with hpr' | hr'r
-    · simp [hpr']
-    · simp [hr'r]
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun r' : criticalPoints 𝓘(ℝ, E) f₂ ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f₂ r' = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1)
+    (Q := fun r' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₂ r' = manifoldMorseIndex 𝓘(ℝ, E) f₂ r + 1)
+    (A := (morseTriangleSlice W p ·)) (B := (hX₂.morseTrajectorySlice · r)) (fun r' hind ↦ ?_)
+    (fun r' hind ↦ ?_) (fun _ ↦ h₂.morseBoundaryCoeff_eq_ncard hf₂)
+    (fun _ ↦ h₂.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf₂) hfin).symm
+  · rw [morseTriangleMap_single_apply, one_mul, morseTriangleCoeff_eq_ncard hind]
+  · rw [morseTriangleMap_single_apply, one_mul,
+      morseTriangleCoeff_eq_zero_of_manifoldMorseIndex_ne_add_one hind]
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **`F₁₂ ∘ F₀₁` counts triangle trajectories broken at the corner.** When they are finitely
@@ -402,25 +397,21 @@ theorem morseContinuationMap_morseContinuationMap_single_apply (p : criticalPoin
     (hfin : (morseCornerBrokenTriangleSet f₀ f₁ f₂ V₀₁ V₁₂ p r).Finite) :
     morseContinuationMap f₁ hf₂ V₁₂ (morseContinuationMap f₀ hf₁ V₀₁ (Finsupp.single p 1)) r =
       ((morseCornerBrokenTriangleSet f₀ f₁ f₂ V₀₁ V₁₂ p r).ncard : ZMod 2) := by
-  classical
   have := hf₁.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₁)
+  rw [morseContinuationMap_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
+    morseCornerBrokenTriangleSet]
   -- Sort the broken trajectories by their intermediate critical point `q'`.
-  rw [morseCornerBrokenTriangleSet, ncard_setOf_and_and_mem_and_mem
-      (P := fun q' : criticalPoints 𝓘(ℝ, E) f₁ ↦
-        manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q')
-      (Q := fun q' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₂ r)
-      (A := (morseContinuationSlice V₀₁ p ·)) (B := (morseContinuationSlice V₁₂ · r)) hfin,
-    Nat.cast_sum, Finset.sum_filter, morseContinuationMap_apply,
-    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  refine Finset.sum_congr rfl fun q' _ ↦ ?_
-  rw [morseContinuationMap_single_apply, one_mul]
-  split_ifs with hind
-  · rw [morseContinuationCoeff_eq_ncard hind.1, morseContinuationCoeff_eq_ncard hind.2,
-      Nat.cast_mul]
-  · rcases not_and_or.mp hind with hpq' | hq'r
-    · simp [hpq']
-    · simp [hq'r]
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun q' : criticalPoints 𝓘(ℝ, E) f₁ ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q')
+    (Q := fun q' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₂ r)
+    (A := (morseContinuationSlice V₀₁ p ·)) (B := (morseContinuationSlice V₁₂ · r))
+    (fun q' hind ↦ ?_) (fun q' hind ↦ ?_) (fun _ ↦ morseContinuationCoeff_eq_ncard)
+    (fun _ ↦ morseContinuationCoeff_eq_zero_of_manifoldMorseIndex_ne) hfin).symm
+  · rw [morseContinuationMap_single_apply, one_mul, morseContinuationCoeff_eq_ncard hind]
+  · rw [morseContinuationMap_single_apply, one_mul,
+      morseContinuationCoeff_eq_zero_of_manifoldMorseIndex_ne hind]
 
 include h₀ hf₀ h₂ in
 /-- The triangle identity at the coefficient of `r` in the image of `p`: under the finiteness
@@ -523,8 +514,10 @@ variable (f₀) in
 /-- **The graded mod-two triangle homotopy.** The `ZMod 2`-linear map from the free module on the
 critical points of `f₀` of index `i` to the free module on the critical points of `f₂` of index `j`
 sending `p` to the sum of the critical points `r`, each weighted by the number of triangle
-trajectories of `W` from `(p, (0, 0))` to `(r, (1, 1))` modulo two. It is the restriction of
-`morseTriangleMap`, and it vanishes unless `j = i + 1` (`TauCeti.morseTriangleMapAt_eq_zero`). -/
+trajectories of `W` from `(p, (0, 0))` to `(r, (1, 1))` modulo two. As for `morseTriangleCoeff`,
+this is the trajectory count only when the slice `morseTriangleSlice W p r` is finite; an infinite
+slice contributes `0`. It is the restriction of `morseTriangleMap`, and it vanishes unless
+`j = i + 1` (`TauCeti.morseTriangleMapAt_eq_zero`). -/
 noncomputable def morseTriangleMapAt (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
     (W : (z : M × WithLp 2 (ℝ × ℝ)) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, WithLp 2 (ℝ × ℝ))) z)
     (i j : ℕ) :
@@ -693,8 +686,14 @@ noncomputable def morseTriangleHomotopy
   hom i j := ModuleCat.ofHom (morseTriangleMapAt f₀ hf₂ W i j)
   zero i j hij := by
     rw [morseTriangleMapAt_eq_zero hf₂ fun h ↦ hij (by simp [h]), ModuleCat.ofHom_zero]
+    -- Both sides are the zero morphism; they differ only in how the terms are written.
     rfl
   comm i := by
+    -- The components `ModuleCat.ofHom (morseTriangleMapAt ...)` have source and target
+    -- `ModuleCat.of (ZMod 2) (... →₀ ZMod 2)`, while `dNext` and `prevD` expect the terms
+    -- `(morseComplex _).X i` of the Morse complexes; these agree only up to unfolding
+    -- `morseComplex` (`IsAdaptedPseudoGradient.IsMorseSmale.morseComplex_X`), so plain `rw`
+    -- cannot match them and `erw` is needed.
     rcases i with _ | n
     · erw [Homotopy.dNext_zero_chainComplex, Homotopy.prevD_chainComplex]
       rw [zero_add, h₂.morseComplex_d hf₂, HomologicalComplex.comp_f, morseContinuationHom_f,
