@@ -26,11 +26,15 @@ operator from this graph space to `Lᵖ((a, b), H)`, for every `1 ≤ p ≤ ∞`
 (`TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_compLpL`). This is the case of the
 Aubin–Lions lemma in which the derivative is measured in the same space `H` as the values: no
 compactness in time is assumed, and it comes from the bound on the derivative. Neither space needs
-to be finite dimensional, in contrast with the Rellich theorem
-`TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL`, which is the case `D = H` finite
-dimensional. It supplies the compact error term in the semi-Fredholm estimate of the operator
-`∂ₛ + A(s)` on the line, whose domain is this graph space for `Ω = ℝ`, `p = 2` and a compactly
-embedded common domain `D`.
+to be finite dimensional. The Rellich theorem
+`TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL` is different: it needs a
+finite-dimensional target, but holds over any finite-dimensional domain, for any preceding
+operator `base`, and for restriction to any compactly contained open subset. The result here
+instead needs the domain to be `ℝ`, the restriction to be to an interval and
+`base = ι.compLpL p _` with `ι` compact, but lets both `D` and `H` be infinite dimensional. It
+supplies the compact error term in the semi-Fredholm estimate of the operator `∂ₛ + A(s)` on the
+line, whose domain is this graph space for `Ω = ℝ`, `p = 2` and a compactly embedded common
+domain `D`.
 
 ## Proof
 
@@ -83,6 +87,15 @@ private theorem node_succ (N k : ℕ) : node a b N (k + 1) = node a b N k + (b -
   push_cast
   ring
 
+private theorem node_zero (N : ℕ) : node a b N 0 = a := by
+  simp [node]
+
+private theorem node_self {N : ℕ} (hN : N ≠ 0) : node a b N N = b := by
+  have : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hN
+  simp only [node]
+  field_simp
+  ring
+
 private theorem node_le_node (hab : a ≤ b) (N : ℕ) {j k : ℕ} (hjk : j ≤ k) :
     node a b N j ≤ node a b N k := by
   have : 0 ≤ (b - a) / N := div_nonneg (sub_nonneg.2 hab) N.cast_nonneg
@@ -98,10 +111,9 @@ private abbrev pieceIoo (a b : ℝ) (N k : ℕ) : Set ℝ := Ioo (node a b N k) 
 private theorem pieceIoo_subset_Ioo (hab : a ≤ b) {N : ℕ} {k : ℕ} (hk : k < N) :
     pieceIoo a b N k ⊆ Ioo a b := by
   refine Ioo_subset_Ioo ?_ ?_
-  · simpa [node] using node_le_node hab N (Nat.zero_le k)
-  · have hN : (N : ℝ) ≠ 0 := by exact_mod_cast (Nat.zero_le k).trans_lt hk |>.ne'
-    have hb : node a b N N = b := by simp only [node]; field_simp; ring
-    exact (node_le_node hab N (Nat.succ_le_of_lt hk)).trans_eq hb
+  · exact (node_zero N).symm.trans_le (node_le_node hab N (Nat.zero_le k))
+  · exact (node_le_node hab N (Nat.succ_le_of_lt hk)).trans_eq
+      (node_self ((Nat.zero_le k).trans_lt hk).ne')
 
 private theorem pairwise_disjoint_piece (hab : a ≤ b) (N : ℕ) :
     Pairwise (Function.onFun Disjoint fun k : Fin N ↦ piece a b N k) := by
@@ -118,14 +130,13 @@ private theorem pairwise_disjoint_piece (hab : a ≤ b) (N : ℕ) :
 private theorem iUnion_piece (hab : a < b) {N : ℕ} (hN : 0 < N) :
     ⋃ k : Fin N, piece a b N k = Ico a b := by
   have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
-  have hb : node a b N N = b := by
-    simp only [node]; field_simp [(Nat.cast_pos.2 hN).ne']; ring
+  have hb : node a b N N = b := node_self hN.ne'
   ext t
   simp only [mem_iUnion, mem_Ico]
   constructor
   · rintro ⟨k, hk₁, hk₂⟩
     refine ⟨?_, ?_⟩
-    · simpa [node] using (node_le_node hab.le N (Nat.zero_le k)).trans hk₁
+    · exact (node_zero N).symm.trans_le ((node_le_node hab.le N (Nat.zero_le k)).trans hk₁)
     · exact hb ▸ hk₂.trans_le (node_le_node hab.le N k.isLt)
   · rintro ⟨ht₁, ht₂⟩
     -- The index of the piece containing `t` is `⌊(t - a) / h⌋₊`.
@@ -166,6 +177,21 @@ private def pieceIndicator (a b : ℝ) (N k : ℕ) : H →L[ℝ] Lp H p (volume.
   indicatorConstLpL ℝ p (measurableSet_Ico (a := node a b N k) (b := node a b N (k + 1)))
     ((Measure.restrict_apply_le _ _).trans_lt measure_Ico_lt_top).ne
 
+omit [CompleteSpace H] in
+/-- On `(a, b)`, `pieceIndicator a b N k c` is the indicator of the `k`-th piece with value `c`. -/
+private theorem pieceIndicator_coeFn (a b : ℝ) (N k : ℕ) (c : H) :
+    ⇑(pieceIndicator (p := p) a b N k c) =ᵐ[volume.restrict (Ioo a b)]
+      (piece a b N k).indicator fun _ ↦ c := by
+  rw [pieceIndicator, indicatorConstLpL_apply]
+  exact indicatorConstLp_coeFn
+
+/-- `pieceMean a b N k u` is the average of `u` over the interior of the `k`-th piece. -/
+private theorem pieceMean_apply {N k : ℕ} (hΩ : pieceIoo a b N k ⊆ Omega)
+    (u : Lp D p (volume.restrict (Omega : Set ℝ))) :
+    pieceMean a b N k u = ⨍ s in pieceIoo a b N k, u s := by
+  rw [pieceMean, smul_apply, Set.setIntegralLp_apply, setAverage_eq,
+    Measure.restrict_restrict measurableSet_Ioo, inter_eq_left.2 hΩ]
+
 /-- The step approximation of `ι ∘ u` on `(a, b)` by its means over the `N` pieces. -/
 private def stepApprox (a b : ℝ) (N : ℕ) :
     Lp D p (volume.restrict (Omega : Set ℝ)) →L[ℝ] Lp H p (volume.restrict (Ioo a b)) :=
@@ -198,19 +224,15 @@ private theorem stepApprox_ae_eq (hΩ : Ioo a b ⊆ Omega) (hab : a < b) {N : �
     simp only [stepApprox, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply]
   have hsum := Lp.coeFn_finsetSum Finset.univ
     fun j : Fin N ↦ pieceIndicator (p := p) a b N j (ι (pieceMean a b N j u))
-  have hind := ae_all_iff.2 fun j : Fin N ↦ indicatorConstLp_coeFn (μ := volume.restrict (Ioo a b))
-    (p := p) (hs := measurableSet_Ico (a := node a b N j) (b := node a b N (j + 1)))
-    (hμs := ((Measure.restrict_apply_le _ _).trans_lt measure_Ico_lt_top).ne)
-    (c := ι (pieceMean (Omega := Omega) a b N j u))
+  have hind := ae_all_iff.2 fun j : Fin N ↦
+    pieceIndicator_coeFn (p := p) a b N j (ι (pieceMean (Omega := Omega) a b N j u))
   rw [happ]
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hsub hsum,
     ae_restrict_of_ae_restrict_of_subset hsub hind, ae_restrict_mem measurableSet_Ioo]
     with t hs hi ht
   rw [hs, Finset.sum_apply, Finset.sum_eq_single k]
-  · rw [pieceIndicator, indicatorConstLpL_apply, hi k, indicator_of_mem (Ioo_subset_Ico_self ht),
-      pieceMean, smul_apply, Set.setIntegralLp_apply, map_smul, setAverage_eq,
-      Measure.restrict_restrict measurableSet_Ioo, inter_eq_left.2 (hsub.trans hΩ),
-      ← ι.integral_comp_comm]
+  · rw [hi k, indicator_of_mem (Ioo_subset_Ico_self ht), pieceMean_apply (hsub.trans hΩ),
+      setAverage_eq, setAverage_eq, map_smul, ← ι.integral_comp_comm]
     · refine congrArg _ (integral_congr_ae ?_)
       exact ae_restrict_of_ae_restrict_of_subset (hsub.trans hΩ) (ι.coeFn_compLpL u).symm
     · have hm := (Lp.memLp u).restrict (pieceIoo a b N k)
@@ -219,7 +241,7 @@ private theorem stepApprox_ae_eq (hΩ : Ioo a b ⊆ Omega) (hab : a < b) {N : �
         isFiniteMeasure_restrict.2 measure_Ioo_lt_top.ne
       exact hm.integrable Fact.out
   · intro j _ hjk
-    rw [pieceIndicator, indicatorConstLpL_apply, hi j, indicator_of_notMem]
+    rw [hi j, indicator_of_notMem]
     exact fun htj ↦ Set.disjoint_left.1 (pairwise_disjoint_piece hab.le N hjk) htj
       (Ioo_subset_Ico_self ht)
   · exact fun h ↦ absurd (Finset.mem_univ k) h
