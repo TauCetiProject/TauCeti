@@ -24,8 +24,9 @@ continuous linear equivalence it is an isomorphism, with inverse given by `e⁻�
 
 * `TauCeti.ParabolicC2HolderSpace.compSpatialL`: the change of spatial variables
   `u ↦ u ∘ (e × id)`, with its four fields and operator-norm bound.
-* `TauCeti.ParabolicC2HolderSpace.compSpatialCLE`: the change of variables by a continuous linear
-  equivalence, as an isomorphism.
+* `TauCeti.ParabolicC2HolderSpace.compSpatialCLE`, `TauCeti.ParabolicC2HolderSpace.compSpatialLIE`:
+  the change of variables by a continuous linear equivalence or a linear isometric equivalence, as
+  an isomorphism or a linear isometric equivalence.
 
 ## References
 
@@ -227,6 +228,12 @@ theorem norm_compSpatialL_le_of_norm_le {e : E →L[ℝ] E'} {K : ℝ} (hK : 1 �
       (Real.rpow_le_rpow (by positivity) (max_le he hK) (by positivity))
       (by positivity) (by positivity))
 
+variable (α F hab) in
+/-- If `‖e‖ ≤ 1`, the change of spatial variables by `e` has operator norm at most `1`. -/
+theorem norm_compSpatialL_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1) :
+    ‖compSpatialL α F hab e‖ ≤ 1 :=
+  (norm_compSpatialL_le_of_norm_le α F hab le_rfl he).trans (by norm_num)
+
 /-- The change of spatial variables by the identity does nothing. -/
 @[simp]
 theorem compSpatialL_id (u : ParabolicC2HolderSpace α E F hab) :
@@ -261,6 +268,45 @@ theorem compSpatialCLE_apply (e : E ≃L[ℝ] E') (u : ParabolicC2HolderSpace α
 theorem compSpatialCLE_symm_apply (e : E ≃L[ℝ] E') (v : ParabolicC2HolderSpace α E F hab) :
     (compSpatialCLE α F hab e).symm v = compSpatialL α F hab (e.symm : E' →L[ℝ] E) v :=
   (rfl)
+
+private theorem norm_compSpatialL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
+    (u : ParabolicC2HolderSpace α E' F hab) :
+    ‖compSpatialL α F hab e u‖ ≤ ‖u‖ := by
+  rw [compSpatialL_eq_compSpatial]
+  refine (norm_compSpatial_le e u).trans ?_
+  rw [max_eq_right he]
+  norm_num
+
+variable (α F hab) in
+/-- The change of spatial variables `u ↦ u ∘ (e × id)` by a linear isometric equivalence
+`e : E ≃ₗᵢ[ℝ] E'`, as a linear isometric equivalence between order-two parabolic Hölder spaces.
+Its inverse is the change of variables by `e⁻¹`. -/
+def compSpatialLIE (e : E ≃ₗᵢ[ℝ] E') :
+    ParabolicC2HolderSpace α E' F hab ≃ₗᵢ[ℝ] ParabolicC2HolderSpace α E F hab :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap
+      invFun := compSpatialL α F hab e.symm.toLinearIsometry.toContinuousLinearMap
+      map_add' u v := by ext p; simp
+      map_smul' c u := by ext p; simp
+      left_inv u := by ext p; simp
+      right_inv v := by ext p; simp }
+    (norm_compSpatialL_apply_le_of_norm_le_one e.toLinearIsometry.norm_toContinuousLinearMap_le)
+    (norm_compSpatialL_apply_le_of_norm_le_one
+      e.symm.toLinearIsometry.norm_toContinuousLinearMap_le)
+
+/-- Applying `compSpatialLIE` agrees with `compSpatialL` on the underlying continuous linear
+map. -/
+@[simp]
+theorem compSpatialLIE_apply (e : E ≃ₗᵢ[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab) :
+    compSpatialLIE α F hab e u = compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap u :=
+  (rfl)
+
+/-- The inverse of `compSpatialLIE α F hab e` is `compSpatialLIE α F hab e.symm`. -/
+@[simp]
+theorem compSpatialLIE_symm (e : E ≃ₗᵢ[ℝ] E') :
+    (compSpatialLIE α F hab e).symm = compSpatialLIE α F hab e.symm := by
+  ext u p
+  rfl
 
 end ParabolicC2HolderSpace
 

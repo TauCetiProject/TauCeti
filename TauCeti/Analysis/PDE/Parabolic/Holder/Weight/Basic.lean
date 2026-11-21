@@ -68,6 +68,9 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
   exactly when `w v` is a classical solution of `P u = w g`.
 * `TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq`: the weight `1 + exp x` on the line
   satisfies the hypotheses of the conjugation identity.
+* `TauCeti.sigmoidHolder`, `TauCeti.logOneAddExpGrad`, and `TauCeti.logOneAddExpHess`: the
+  logistic function and the gradient and Hessian of `log (1 + exp x)` as bounded `α`-Hölder fields
+  on `ℝ`.
 
 ## References
 
@@ -749,14 +752,23 @@ local instance lineNormedAddCommGroupHessian :
 /-- A local shortcut for scalar operations on Hessians on the line. -/
 local instance lineNormedSpaceHessian : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] F) := inferInstance
 
-/-- The gradient `x ↦ sigmoid x` of `log (1 + exp x)`, as a bounded `α`-Hölder field of covectors
-on `ℝ`. -/
-def logOneAddExpGrad : HolderSpace α ℝ (ℝ →L[ℝ] ℝ) :=
-  (smulRightL ℝ ℝ ℝ ℝ ℝ).compHolder₂ (.const 1) <| HolderSpace.ofBoundedContinuousFunction
+/-- The logistic function `x ↦ sigmoid x`, as a bounded `α`-Hölder function on `ℝ` (`α ≤ 1`). -/
+def sigmoidHolder : HolderSpace α ℝ ℝ :=
+  HolderSpace.ofBoundedContinuousFunction
     (BoundedContinuousFunction.ofNormedAddCommGroup sigmoid continuous_sigmoid 1 fun x ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (sigmoid_nonneg x)]
       exact sigmoid_le_one x)
     (by simpa using memHolder_iteratedDeriv_sigmoid 0 hα)
+
+/-- Evaluation of `sigmoidHolder` at a real point gives `sigmoid`. -/
+@[simp]
+theorem sigmoidHolder_apply (x : ℝ) : sigmoidHolder hα x = sigmoid x := by
+  simp [sigmoidHolder]
+
+/-- The gradient `x ↦ sigmoid x` of `log (1 + exp x)`, as a bounded `α`-Hölder field of covectors
+on `ℝ`. -/
+def logOneAddExpGrad : HolderSpace α ℝ (ℝ →L[ℝ] ℝ) :=
+  (smulRightL ℝ ℝ ℝ ℝ ℝ).compHolder₂ (.const 1) (sigmoidHolder hα)
 
 /-- The Hessian `x ↦ sigmoid x (1 - sigmoid x)` of `log (1 + exp x)`, as a bounded `α`-Hölder
 field of bilinear forms on `ℝ`. -/

@@ -14,9 +14,10 @@ import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 A bounded parabolic Hölder map `u(y,t)` represents a price of linear growth by
 `C(s,t) = (1+s) u(log s,t)` for positive spot. `weightedLogSpotPrice` performs this
-reconstruction, using the canonical clamped extension in time. It preserves continuity
-on the closed time slab and twice continuous spatial differentiability, and has explicit
-linear-growth bounds for both the price and its dollar delta `s C_s`.
+reconstruction, using the canonical clamped extension in time. It preserves joint continuity
+of both the price and its spot derivative on `(0, ∞) × [a, b]`, twice continuous spatial
+differentiability, interior ordinary time differentiability, and explicit linear-growth bounds
+for both the price and its dollar delta `s C_s`.
 
 The pricing-operator identity transports the backward equation for the bounded map to
 the financial pricing equation. This is a change-of-variables result, not an existence
@@ -114,6 +115,34 @@ theorem deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ h
       u (slabMk (log s) t) + (1 + s) / s * spatialFDerivL u (slabMk (log s) t) 1 :=
   (hasDerivAt_weightedLogSpotPrice_spot u hs t).deriv
 
+/-- The spot derivative `(s, t) ↦ ∂ₛC(s, t)` of `C = weightedLogSpotPrice u` is jointly continuous
+on `(0, ∞) × [a, b]`. -/
+theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+      (Ioi 0 ×ˢ Icc a b) := by
+  let g : ℝ × ℝ → ℝ := fun p ↦
+    timeExtension hab.le u (log p.1) p.2 +
+      (1 + p.1) / p.1 * timeExtension hab.le (spatialFDerivL u) (log p.1) p.2 1
+  have hu : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le u q.2 q.1 :=
+    continuous_timeExtension hab.le (valueL u).continuous
+  have hdu : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le (spatialFDerivL u) q.2 q.1 1 :=
+    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
+      (continuous_timeExtension hab.le (spatialFDerivL u).continuous)
+  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) := by
+    intro p hp
+    have hlog : ContinuousAt (fun q : ℝ × ℝ ↦ (q.2, log q.1)) p :=
+      continuous_snd.continuousAt.prodMk
+        ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt)
+    exact (ContinuousAt.add (hu.continuousAt.comp hlog)
+      (((continuous_const.add continuous_fst).continuousAt.div continuous_fst.continuousAt
+        hp.1.ne').mul (hdu.continuousAt.comp hlog))).continuousWithinAt
+  refine hg.congr fun p hp ↦ ?_
+  rw [deriv_weightedLogSpotPrice_spot u hp.1 ⟨p.2, hp.2⟩]
+  have ht1 := timeExtension_of_mem hab.le (valueL u) (log p.1) ⟨p.2, hp.2⟩
+  have ht2 := timeExtension_of_mem hab.le (spatialFDerivL u) (log p.1) ⟨p.2, hp.2⟩
+  dsimp only [g, Subtype.coe_mk] at *
+  rw [ht1, ht2]
+
 /-- The second spot derivative in terms of the spatial gradient and Hessian fields. -/
 theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     {s : ℝ} (hs : 0 < s) (t : Icc a b) :
@@ -174,6 +203,23 @@ theorem abs_mul_deriv_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ
       gcongr
     _ ≤ _ := by nlinarith [norm_nonneg (valueL u)]
 
+/-- Both the reconstructed price and its dollar-delta exposure `s ∂ₛC(s, t)` are controlled by the
+parabolic `C^{2+α,1+α/2}` norm of `u`, uniformly on `(0, ∞) × [a, b]`. -/
+theorem abs_weightedLogSpotPrice_add_abs_mul_deriv_le (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Icc a b) :
+    |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
+      2 * ‖u‖ * (1 + s) := by
+  have h₁ := abs_weightedLogSpotPrice_le u hs.le t
+  have h₂ := abs_mul_deriv_weightedLogSpotPrice_le u hs ⟨t, ht'⟩
+  have hnorm : ‖valueL u‖ + ‖spatialFDerivL u‖ ≤ ‖u‖ := by
+    rw [ParabolicC2HolderSpace.norm_eq, HolderSpace.norm_eq_holderNorm,
+      HolderSpace.norm_eq_holderNorm]
+    exact le_add_of_nonneg_right (add_nonneg (holderNorm_nonneg _) (holderNorm_nonneg _))
+  calc |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s|
+      ≤ ‖u‖ * (1 + s) + ‖u‖ * (1 + s) :=
+        add_le_add h₁ (h₂.trans (mul_le_mul_of_nonneg_right hnorm (by positivity)))
+    _ = 2 * ‖u‖ * (1 + s) := by ring
+
 /-- The time derivative within the closed slab, including its one-sided endpoint values. -/
 theorem hasDerivWithinAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     (s : ℝ) (t : Icc a b) :
@@ -191,6 +237,29 @@ theorem derivWithin_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ
       (1 + s) * timeDerivL u (slabMk (log s) t) :=
   (hasDerivWithinAt_weightedLogSpotPrice_time u s t).derivWithin
     (uniqueDiffOn_Icc hab t t.property)
+
+/-- At an interior time `t ∈ (a, b)`, the reconstructed spot price `weightedLogSpotPrice u s` has
+ordinary time derivative `(1 + s) ∂ₜu(log s, t)`. -/
+theorem hasDerivAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s : ℝ)
+    {t : ℝ} (ht' : t ∈ Ioo a b) :
+    HasDerivAt (weightedLogSpotPrice u s)
+      ((1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩)) t :=
+  (hasDerivWithinAt_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht'⟩).hasDerivAt
+    (Icc_mem_nhds ht'.1 ht'.2)
+
+/-- At an interior time `t ∈ (a, b)`, `weightedLogSpotPrice u s` is differentiable in time. -/
+theorem differentiableAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s : ℝ)
+    {t : ℝ} (ht' : t ∈ Ioo a b) :
+    DifferentiableAt ℝ (weightedLogSpotPrice u s) t :=
+  (hasDerivAt_weightedLogSpotPrice_time u s ht').differentiableAt
+
+/-- At an interior time `t ∈ (a, b)`, the ordinary time derivative of `weightedLogSpotPrice u s`
+equals `(1 + s) ∂ₜu(log s, t)`. -/
+theorem deriv_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s : ℝ)
+    {t : ℝ} (ht' : t ∈ Ioo a b) :
+    deriv (weightedLogSpotPrice u s) t =
+      (1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) :=
+  (hasDerivAt_weightedLogSpotPrice_time u s ht').deriv
 
 /-- Terminal data in weighted log-spot coordinates become the specified payoff. -/
 theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab)
