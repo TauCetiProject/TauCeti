@@ -111,6 +111,13 @@ theorem coe_realOrthonormalize (M : GL n ℂ) :
       M * (((M : Matrix n n ℂ)ᴴ * M).map Complex.re ^ (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
   rw [realOrthonormalize, Units.val_mul, IsUnit.unit_spec]
 
+/-- The real orthonormalization of `M` is `M` times a positive definite real matrix. In particular
+it changes the determinant of `M` by a positive real factor. -/
+theorem exists_posDef_coe_realOrthonormalize (M : GL n ℂ) :
+    ∃ P : Matrix n n ℝ, P.PosDef ∧
+      (realOrthonormalize M : Matrix n n ℂ) = M * P.map ((↑) : ℝ → ℂ) :=
+  ⟨_, posDef_gramNormalizer M, coe_realOrthonormalize M⟩
+
 /-- The real orthonormalization of `M` spans the same real subspace `M ℝⁿ` as `M`. -/
 @[simp]
 theorem realImage_realOrthonormalize (M : GL n ℂ) :

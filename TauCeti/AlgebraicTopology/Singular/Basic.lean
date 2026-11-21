@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
@@ -18,7 +19,9 @@ It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
-(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
+(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`),
+and the vanishing of the singular homology of the empty space
+(`TauCeti.isZero_singularHomology_of_isEmpty`).
 A commuting square of continuous maps gives a commuting square of homology maps
 (`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
 -/
@@ -102,6 +105,16 @@ lemma ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_ho
   -- The constant-set isomorphism evaluates a simplex at an arbitrary point of the topological
   -- `0`-simplex, which is the unique point there.
   exact congrArg _ (congrArg (TopCat.toSSetObjEquiv X _ σ) (Subsingleton.elim _ _))
+
+/-- **The singular homology of the empty space vanishes** in every degree, for arbitrary
+coefficients: there are no singular simplices, so the singular chain complex is zero. -/
+theorem isZero_singularHomology_of_isEmpty [CategoryWithHomology C] (X : TopCat.{w}) [IsEmpty X]
+    (n : ℕ) : IsZero (((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X) := by
+  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
+    ((TopCat.toSSet.obj X).isZero_chainComplex R)
 
 end TauCeti
 
