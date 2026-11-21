@@ -19,7 +19,6 @@ import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
@@ -72,9 +71,8 @@ smooth structure on the quotient is constructed here.
 A continuous field lying in `A_m^k` for every `k` is smooth
 (`contDiff_of_forall_mem_framedFieldSpace`). Conversely, a smooth field all of whose derivatives
 of `x - x_ref` are `O(exp (-c |z|))` at infinity, for some `c > 0`, lies in `A_m^s` for every `s`
-(`mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`), by the classical
-description of `H^k`
-(`TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv`).
+(`mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`), via Schwartz-space embedding
+(`TemperedDistribution.mem_realSobolevFunctions_of_isBigO_iteratedFDeriv_exp`).
 
 ## References
 
@@ -650,15 +648,12 @@ theorem mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField
     (hdec : ∀ n : ℕ, iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖))) (s : ℝ) :
     x ∈ framedFieldSpace f m s := by
-  obtain ⟨k, hk⟩ := exists_nat_ge s
-  refine framedFieldSpace_mono f m hk (mem_framedFieldSpace.2 (mem_sobolevFields.2 fun i ↦ ?_))
+  refine mem_framedFieldSpace.2 (mem_sobolevFields.2 fun i ↦ ?_)
   have hy : ContDiff ℝ ∞ (x - referenceField f m) := hx.sub (contDiff_referenceField f m)
-  have hyi : ContDiff ℝ ∞ fun z ↦ (x - referenceField f m) z i :=
-    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
-  refine TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv
-    (by norm_num) (by norm_num) (hyi.of_le (by exact_mod_cast le_top)) fun n _ ↦ ?_
-  exact (hyi.continuous_iteratedFDeriv (by exact_mod_cast le_top)).memLp_of_isBigO_exp_neg_mul_norm
-    hc ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).isBigO_iteratedFDeriv_comp_left
-      hy (by exact_mod_cast le_top) (hdec n)) 2
+  exact TemperedDistribution.mem_realSobolevFunctions_of_isBigO_iteratedFDeriv_exp
+    ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy) hc
+    (fun n ↦
+      (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).isBigO_iteratedFDeriv_comp_left
+        hy (by exact_mod_cast le_top) (hdec n)) s
 
 end TauCeti.Vortex

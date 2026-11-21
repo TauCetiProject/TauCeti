@@ -17,8 +17,9 @@ import TauCeti.Topology.Separation.InvFunOn
 
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
 ultrafilters of families eventually in a compact set, families whose values tend to the
-cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
-valid near each point of a compact set to one constant valid on all of it.
+cocompact filter (whose images therefore lie in no fixed compact set), passing from constants
+valid near each point of a compact set to one constant valid on all of it, and neighborhood
+eventualities along `coclosedCompact` and `cocompact`.
 
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
@@ -280,6 +281,21 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
+
+/-- A predicate holds eventually on neighborhoods along `coclosedCompact X` if and only if it holds
+eventually along `coclosedCompact X`, since every closed compact set is already closed. -/
+@[simp]
+theorem eventually_coclosedCompact_nhds {P : X → Prop} :
+    (∀ᶠ x in coclosedCompact X, ∀ᶠ y in 𝓝 x, P y) ↔ ∀ᶠ x in coclosedCompact X, P x := by
+  simp only [eventually_iff, ← mem_interior_iff_mem_nhds, ofPred_mem_eq, mem_coclosedCompact_iff,
+    ← closure_compl, closure_closure]
+
+/-- In an `R₁` space, a predicate holds eventually on neighborhoods along `cocompact X` if and only
+if it holds eventually along `cocompact X`. -/
+@[simp]
+theorem eventually_cocompact_nhds [R1Space X] {P : X → Prop} :
+    (∀ᶠ x in cocompact X, ∀ᶠ y in 𝓝 x, P y) ↔ ∀ᶠ x in cocompact X, P x := by
+  simp only [← coclosedCompact_eq_cocompact, eventually_coclosedCompact_nhds]
 
 end TauCeti
 

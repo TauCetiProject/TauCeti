@@ -71,6 +71,8 @@ constructed here, and neither continuity nor smoothness of the action is asserte
   `s > k + 1`.
 * `TauCeti.Vortex.differentiable_of_mem_sobolevGaugeGroup`: elements of `G_s` are differentiable
   for `s > 2`.
+* `TauCeti.Vortex.mem_framedGaugeGroup_of_mem_sobolevGaugeGroup_of_contDiff_gaugeTransform`: an
+  element of `G_s`, `s > 2`, carrying one smooth field to another belongs to `framedGaugeGroup`.
 * `TauCeti.Vortex.gaugeForm_apply_mem_realSobolevFunctions`: for a gauge in `G_(s+1)`,
   `Im (u⁻¹ du)` has coefficients in `H^s`.
 * `TauCeti.Vortex.gaugeLinearAction_mem_sobolevFields_iff`: the linear action of `G_s` preserves
@@ -244,6 +246,19 @@ theorem differentiable_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} (h2 : 2 <
     {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) : Differentiable ℝ (fun z ↦ (u z : ℂ)) :=
   (contDiff_of_mem_sobolevGaugeGroup (k := 1) (by push_cast; linarith) hu).differentiable
     one_ne_zero
+
+/-- **Sobolev gauges carrying one smooth field to another are smooth framed gauges.** For `s > 2`,
+an element `u ∈ G_s` is differentiable (`differentiable_of_mem_sobolevGaugeGroup`); if both `x` and
+`gaugeTransform u x` are smooth, then `u` is smooth by `contDiff_coe_of_contDiff_gaugeTransform`
+and hence belongs to `framedGaugeGroup`. -/
+theorem mem_framedGaugeGroup_of_mem_sobolevGaugeGroup_of_contDiff_gaugeTransform
+    {s : ℝ} {hs : 1 < s} (h2 : 2 < s) {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
+    (hux : ContDiff ℝ ∞ (gaugeTransform u x)) :
+    u ∈ framedGaugeGroup :=
+  mem_framedGaugeGroup_of_mem_sobolevGaugeGroup hu <| by
+    simpa using contDiff_coe_of_contDiff_gaugeTransform
+      (differentiable_of_mem_sobolevGaugeGroup h2 hu) (n := ⊤) hx hux
 
 /-- **The connection increment of a Sobolev gauge.** For `s > 1` and a gauge `u ∈ G_(s+1)`, which
 is `C¹` by `contDiff_of_mem_sobolevGaugeGroup`, the real one-form `Im (u⁻¹ du)` has coefficients in

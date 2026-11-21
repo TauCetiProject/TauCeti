@@ -33,7 +33,9 @@ element of `G_(k+1)` is unique, since the action is free. In the bundled action 
 `TauCeti.Vortex.sobolevVortexDivisor_eq_sobolevVortexDivisor_iff`: the divisor is a complete
 invariant of the `G_(k+1)`-orbit. A smooth vortex of `A_m^k` has the divisor of the smooth framed
 moduli `TauCeti.Vortex.framedVortexModuliEquiv`
-(`TauCeti.Vortex.sobolevVortexDivisor_eq_framedVortexDivisor`).
+(`TauCeti.Vortex.sobolevVortexDivisor_eq_framedVortexDivisor`), while off-shell smooth fields of
+`A_m^k` are related by a smooth framed gauge if and only if they are related by an element of
+`G_(k+1)` (`TauCeti.Vortex.exists_framedGaugeGroup_smul_eq_iff_exists_sobolevGaugeGroup_smul_eq`).
 
 For `k ≥ 4` the elements of `G_(k+1)` are `C³`, so they preserve the `C²` vortices of `A_m^k`
 (`TauCeti.Vortex.smul_mem_sobolevVortices`), which form a sub-action
@@ -45,9 +47,11 @@ not be preserved by `G_(k+1)`, and the classification is the orbit statement abo
 That every point of `Sym ℂ m` is the divisor of a vortex of `A_m^k` needs, beyond Taubes's
 existence theorem for smooth framed vortices (`TauCeti.Vortex.framedVortexDivisor_surjective`),
 a smooth framed gauge moving each smooth framed vortex into `A_m^k`. This is
-`TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`, which gives
-`TauCeti.Vortex.sobolevVortexDivisor_surjective` and the identification
-`TauCeti.Vortex.sobolevVortexModuliEquiv` of the Sobolev moduli with `Sym ℂ m`.
+`TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace` in
+`TauCeti/Analysis/PDE/Vortex/FramedGauge/Moduli.lean`, which gives
+`TauCeti.Vortex.sobolevVortexDivisor_surjective`, the identification
+`TauCeti.Vortex.sobolevVortexModuliEquiv` of the Sobolev moduli with `Sym ℂ m`, and the comparison
+`TauCeti.Vortex.sobolevVortexModuliEquivFramedVortexModuli` with the smooth framed moduli.
 
 ## Main definitions
 
@@ -123,6 +127,7 @@ variable (f m) in
 def sobolevVortices (k : ℕ) : Set (framedFieldSpace f m k) :=
   {x | ContDiff ℝ 2 (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∧ ∀ z, equation x z = 0}
 
+/-- Membership in `sobolevVortices f m k`: `C²` regularity and vanishing of `equation`. -/
 @[simp]
 theorem mem_sobolevVortices {k : ℕ} {x : framedFieldSpace f m k} :
     x ∈ sobolevVortices f m k ↔
@@ -224,6 +229,7 @@ def sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
   carrier := sobolevVortices f m k
   smul_mem' u _ hx := smul_mem_sobolevVortices hk u hx
 
+/-- Membership in `sobolevVortexSubMulAction` reduces to membership in `sobolevVortices`. -/
 @[simp]
 theorem mem_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     {x : framedFieldSpace f m k} :
