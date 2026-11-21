@@ -87,6 +87,14 @@ private theorem add_mul_le_max_one_mul {a H c : ℝ} (ha : 0 ≤ a) (hH : 0 ≤ 
   exact add_le_add (le_mul_of_one_le_left ha (le_max_left _ _))
     (mul_le_mul_of_nonneg_right (le_max_right _ _) hH)
 
+/-- The scalar inequality behind the bound `3` on the exponent inclusions: if the top seminorm is
+replaced by `max (2 s) H`, with `s` a part of the sum `a`, the sum `a + H` grows by at most the
+factor `3`. -/
+private theorem add_max_le_three_mul {a s H : ℝ} (hs : 0 ≤ s) (hsa : s ≤ a) (hH : 0 ≤ H) :
+    a + max (2 * s) H ≤ 3 * (a + H) := by
+  have := max_le_add_of_nonneg (by positivity : 0 ≤ 2 * s) hH
+  linarith
+
 namespace HolderSpace
 
 variable {α β : ℝ≥0} {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
@@ -122,9 +130,8 @@ private theorem norm_le_three_mul (hβα : β ≤ α) (f : HolderSpace α X Y)
   have h := NNReal.coe_le_coe.2 (nnHolderNorm_le_max hβα f)
   rw [NNReal.coe_max, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm] at h
   rw [norm_def, norm_def f, hg, coe_toBoundedContinuousFunction]
-  have hH : (0 : ℝ) ≤ nnHolderNorm α (f : X → Y) := NNReal.coe_nonneg _
-  have := max_le_add_of_nonneg (by positivity : 0 ≤ 2 * ‖f.toBoundedContinuousFunction‖) hH
-  linarith [norm_nonneg f.toBoundedContinuousFunction]
+  exact (add_le_add_right h _).trans
+    (add_max_le_three_mul (norm_nonneg _) le_rfl (NNReal.coe_nonneg _))
 
 /-- **The inclusion of Hölder spaces.** A bounded `α`-Hölder function is `β`-Hölder for every
 `β ≤ α`, and the inclusion is a bounded linear map, of norm at most `3` on every space
@@ -307,14 +314,11 @@ private theorem norm_le_three_mul (hβα : β ≤ α) (f : CkHolderSpaceOn k α 
     (M := fun i ↦ ‖f.iteratedFDeriv i‖) (fun i ↦ norm_nonneg (f.iteratedFDeriv i))
     (fun i x ↦ by rw [hg]; exact (f.iteratedFDeriv i).norm_coe_le_norm x)
     (by rw [hfun]; exact hH)).trans ?_
-  have hsum : ∑ i, ‖f.iteratedFDeriv i‖ +
-      nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) = ‖f‖ :=
-    (norm_eq f).symm
-  have hk := f.norm_iteratedFDeriv_le (Fin.last k)
-  have hmax := max_le_add_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * ‖f.iteratedFDeriv (Fin.last k)‖)
-    (NNReal.coe_nonneg (nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F)))
+  rw [norm_eq f]
   push_cast
-  linarith [norm_nonneg f]
+  exact add_max_le_three_mul (norm_nonneg _)
+    (Finset.single_le_sum (fun i _ ↦ norm_nonneg (f.iteratedFDeriv i)) (Finset.mem_univ _))
+    (NNReal.coe_nonneg _)
 
 /-- **The exponent inclusion of Hölder spaces on an open set.** For `β ≤ α`, every element of
 `C^{k,α}(Ω)` lies in `C^{k,β}(Ω)`, and the inclusion is a continuous linear map, of norm at most
@@ -333,8 +337,7 @@ def inclusionL (hβα : β ≤ α) : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolde
           exact funext fun x ↦ f.iteratedFDeriv_extend (Fin.last k) x)
       map_add' f g := by ext x; simp
       map_smul' c f := by ext x; simp }
-    3 fun f ↦ norm_le_three_mul hβα f _ fun i x ↦ by
-      rw [LinearMap.coe_mk, AddHom.coe_mk, iteratedFDeriv_ofContDiffOn, iteratedFDeriv_extend]
+    3 fun f ↦ norm_le_three_mul hβα f _ fun i x ↦ by simp [iteratedFDeriv_extend]
 
 /-- The exponent inclusion does not change values. -/
 @[simp]
@@ -346,8 +349,7 @@ theorem inclusionL_apply (hβα : β ≤ α) (f : CkHolderSpaceOn k α Ω F) (x 
 @[simp]
 theorem iteratedFDeriv_inclusionL (hβα : β ≤ α) (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1))
     (x : Ω) : (inclusionL hβα f).iteratedFDeriv i x = f.iteratedFDeriv i x := by
-  rw [inclusionL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    iteratedFDeriv_ofContDiffOn, iteratedFDeriv_extend]
+  simp [inclusionL, iteratedFDeriv_extend]
 
 /-- The exponent inclusion is injective. -/
 theorem inclusionL_injective (hβα : β ≤ α) :
@@ -398,14 +400,11 @@ private theorem norm_le_three_mul (hβα : β ≤ α) (f : CkHolderSpace k α E 
   have hH := NNReal.coe_le_coe.2 (f.iteratedFDerivHolder.nnHolderNorm_le_max hβα)
   simp only [toBoundedContinuousFunction_iteratedFDerivHolder, coe_iteratedFDerivHolder,
     NNReal.coe_max, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm] at hH
-  have hk := f.norm_iteratedFDeriv_le (Fin.last k)
-  have hmax := max_le_add_of_nonneg
-    (by positivity : (0 : ℝ) ≤ 2 * ‖f.iteratedFDeriv (Fin.last k)‖)
-    (NNReal.coe_nonneg (nnHolderNorm α (_root_.iteratedFDeriv ℝ k f)))
-  have hf := norm_eq f
-  rw [norm_eq, hg]
+  rw [norm_eq, norm_eq f, hg]
   simp only [hfield]
-  linarith [norm_nonneg f]
+  exact (add_le_add_right hH _).trans (add_max_le_three_mul (norm_nonneg _)
+    (Finset.single_le_sum (fun i _ ↦ norm_nonneg (f.iteratedFDeriv i)) (Finset.mem_univ _))
+    (NNReal.coe_nonneg _))
 
 /-- **The exponent inclusion of bounded Hölder spaces.** For `β ≤ α`, every bounded `C^{k,α}` map
 on `E` is a bounded `C^{k,β}` map, and the inclusion is a continuous linear map of norm at most
