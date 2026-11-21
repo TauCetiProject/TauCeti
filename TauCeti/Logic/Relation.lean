@@ -21,12 +21,17 @@ The class of a point under the equivalence relation `Relation.EqvGen r` only dep
 of `r` at the points of that class: two relations with the same edges, in either direction, at
 every point of the class generate the same class (`Relation.eqvGen_iff_of_forall_symmGen_iff`).
 
+Successively applying partial maps `g i : α → Option α` along a word reaches exactly the points
+joined by a chain of single defined steps (`List.exists_foldlM_eq_some_iff_reflTransGen`).
+
 ## Main results
 
 * `Relation.forall_reflTransGen_iff`: totality of `Relation.ReflTransGen r` is exactly the absence
   of a nonempty proper subset with no outgoing edge.
 * `Relation.eqvGen_iff_of_forall_symmGen_iff`: relations agreeing at every point of an
   equivalence class of one of them generate the same class.
+* `List.exists_foldlM_eq_some_iff_reflTransGen`: a defined word of partial maps is a chain of
+  single defined steps.
 -/
 
 public section
@@ -81,3 +86,25 @@ theorem eqvGen_iff_of_forall_symmGen_iff {α : Type*} {r r' : α → α → Prop
     | tail _ hbc ih => exact ih.tail ((h _ ih _).2 hbc)
 
 end Relation
+
+/-- **Words of partial maps are chains of single steps.** Folding a word of partial maps
+`g i : α → Option α` from `a` reaches `b` for some word exactly when `b` is joined to `a` by a
+chain of single defined steps. -/
+theorem List.exists_foldlM_eq_some_iff_reflTransGen {ι α : Type*} {g : ι → α → Option α}
+    {a b : α} :
+    (∃ w : List ι, w.foldlM (fun p i ↦ g i p) a = some b) ↔
+      Relation.ReflTransGen (fun p q ↦ ∃ i, g i p = some q) a b := by
+  constructor
+  · rintro ⟨w, hw⟩
+    induction w generalizing a with
+    | nil => exact Option.some.inj hw ▸ .refl
+    | cons i w ih =>
+      obtain ⟨c, hc, hb⟩ := Option.bind_eq_some_iff.mp hw
+      exact .head ⟨i, hc⟩ (ih hb)
+  · intro h
+    induction h with
+    | refl => exact ⟨[], rfl⟩
+    | tail _ hstep ih =>
+      obtain ⟨w, hw⟩ := ih
+      obtain ⟨i, hi⟩ := hstep
+      exact ⟨w ++ [i], by simp [List.foldlM_append, hw, hi]⟩

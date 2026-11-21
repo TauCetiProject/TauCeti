@@ -127,7 +127,7 @@ theorem exists_lowerWord_straight_eq_some_iff (q : PLPath 𝕜 V) :
     exact hy ▸ y.property
   · rintro ⟨π, rfl⟩
     obtain ⟨w, hw⟩ := exists_normalCrystal_fWord_straight_eq_some hlam hf hF ⟨_, π, rfl⟩
-    exact ⟨w, by rw [← h w, hw]; rfl⟩
+    exact ⟨w, by rw [← h w, hw]; simp⟩
 
 /-- **Every LS path is reached from the straight path by lowering.** For a dominant shape `λ`, the
 realized path of every Lakshmibai–Seshadri path of shape `λ` is obtained from the realized
