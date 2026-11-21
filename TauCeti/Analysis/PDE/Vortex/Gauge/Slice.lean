@@ -304,13 +304,12 @@ theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 
       (∀ z, gaugeAdjoint x (phaseGauge y F) z = gaugeAdjoint x y z) → F = 0 := by
   have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hxc
   obtain ⟨C, hC⟩ := exists_forall_sq_add_sq_le hxc hlim
-  have hV := memLp_top_sq_add_sq hxc hlim
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  obtain ⟨R, hV, hV₀, hVa⟩ := exists_memLp_top_sq_add_sq_and_le hxc hlim
   set V : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hV0 (z : ℂ) : 0 ≤ V z := by positivity
   obtain ⟨ε₀, hε₀, huniq⟩ :=
-    exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero hV
-      (ae_of_all _ hV0) (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ fun z hz ↦ (hR z hz).le)
+    exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero hV hV₀
+      (by norm_num : (0 : ℝ) < 1 / 8) hVa
   -- A bound `M` for the section coordinates of `x`.
   set M := C + 1
   have hC0 : 0 ≤ C := (hV0 0).trans (hC 0)

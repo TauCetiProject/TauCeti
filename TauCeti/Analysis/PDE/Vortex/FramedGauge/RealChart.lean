@@ -156,10 +156,6 @@ def ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) 
   continuous' := (contDiff_referenceField f m).continuous.add
     (contDiff_continuousRepField (n := 0) (by simpa using hs) u).continuous
 
-private theorem coe_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
-    ⇑(ofRealSubRef (f := f) (m := m) hs u) = referenceField f m + continuousRepField u :=
-  (rfl)
-
 /-- The `j`-th coordinate of `ofRealSubRef hs u` at `z` is `x_m(z)ⱼ` plus the continuous
 representative of `u j` at `z`. -/
 @[simp]
@@ -212,12 +208,8 @@ theorem coe_realSubRefHomeomorph_symm (hs : 1 < s) {h : 0 ≤ s} :
   (rfl)
 
 /-- **Fields of `A_m^s` are `Cⁿ` above the threshold** `s > n + 1`. -/
-theorem contDiff {n : ℕ} (hs : n + 1 < s) (x : SobolevFieldSpace f m s) : ContDiff ℝ n x := by
-  have hs₁ : 1 < s := by linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
-  have h : (0 : ℝ) ≤ s := zero_le_one.trans hs₁.le
-  rw [← ofRealSubRef_realSubRef hs₁ (h := h) x, coe_ofRealSubRef]
-  exact ((contDiff_referenceField f m).of_le (by exact_mod_cast le_top)).add
-    (contDiff_continuousRepField hs _)
+theorem contDiff {n : ℕ} (hs : n + 1 < s) (x : SobolevFieldSpace f m s) : ContDiff ℝ n x :=
+  contDiff_of_mem_framedFieldSpace hs x.continuous x.mem_framedFieldSpace
 
 end SobolevFieldSpace
 

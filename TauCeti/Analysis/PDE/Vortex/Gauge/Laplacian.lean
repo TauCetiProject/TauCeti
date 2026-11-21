@@ -106,13 +106,6 @@ open scoped Laplacian ContDiff Distributions
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- At a continuous field, the potential `p² + q²` of the gauge Laplacian is continuous. -/
-private theorem continuous_sq_add_sq (hcont : Continuous x) :
-    Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-  have _ : Continuous fun z ↦ x z 2 := by fun_prop
-  have _ : Continuous fun z ↦ x z 3 := by fun_prop
-  fun_prop
-
 /-- At a field of `A_m^n`, `n > 1`, multiplication by the potential `p² + q²` of the gauge
 Laplacian preserves `H^n(ℂ)`. -/
 theorem sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {n : ℕ} (hn : 1 < n)
@@ -146,11 +139,10 @@ theorem ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq {s : ℝ} (hs : 1 <
     (hw₂ : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, u₂ z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z) :
     u₁ =ᵐ[volume] u₂ := by
-  have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hcont
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  exact ae_eq_of_integral_mul_neg_laplacian_add_mul_eq (memLp_top_sq_add_sq hcont hlim)
-    (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8)
-    (ae_of_all _ fun z hz ↦ (hR z hz).le) hu₁ hu₂
+  obtain ⟨R, hV, hV₀, hVa⟩ := exists_memLp_top_sq_add_sq_and_le hcont
+    (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont)
+  exact ae_eq_of_integral_mul_neg_laplacian_add_mul_eq hV hV₀ (by norm_num : (0 : ℝ) < 1 / 8) hVa
+    hu₁ hu₂
     (fun φ hφ hc ↦ by rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)),
       hw₁ φ hφ hc])
     (fun φ hφ hc ↦ by rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)),
@@ -211,13 +203,10 @@ theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection
     {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ j 2) :
     ∃ u ∈ realSobolevFunctions ℂ (j + 2) 2, ∀ φ : ℂ → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
       ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
-  have hlim := tendsto_normSq_of_mem_framedFieldSpace (by exact_mod_cast hk) hx hcont
-  have hV := memLp_top_sq_add_sq hcont hlim
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  obtain ⟨R, hV, hV₀, hVa⟩ := exists_memLp_top_sq_add_sq_and_le hcont
+    (tendsto_normSq_of_mem_framedFieldSpace (by exact_mod_cast hk) hx hcont)
   obtain ⟨u, hu, heq⟩ := exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq
-    hV (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8)
-    (ae_of_all _ fun z hz ↦ (hR z hz).le)
-    (memLp_of_mem_realSobolevFunctions hg)
+    hV hV₀ (by norm_num : (0 : ℝ) < 1 / 8) hVa (memLp_of_mem_realSobolevFunctions hg)
   have hweak (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
       ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
     rw [integral_mul_gaugeAdjoint_gaugeDirection hφ, heq φ hφ hc]

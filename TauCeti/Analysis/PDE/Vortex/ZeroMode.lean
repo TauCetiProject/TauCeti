@@ -280,10 +280,7 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
         ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) + h z) *
           ((Δ φ z - (x z 2 ^ 2 + x z 3 ^ 2) * φ z : ℝ) : ℂ) = 0 := by
   set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
-  have hP := memLp_top_sq_add_sq hx hlim
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  have hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z := ae_of_all _ fun z ↦ by positivity
-  have hPa : ∀ᵐ z ∂volume, R < ‖z‖ → 1 / 8 ≤ P z := ae_of_all _ fun z hz ↦ (hR z hz).le
+  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_sq_add_sq_and_le hx hlim
   set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k)
   set g : ℂ → ℂ := fun z ↦ Δ η₀ z - P z * η₀ z
   have hg2 : MemLp g 2 volume := memLp_laplacian_sub_mul_principalPart hx hα hρ hρc hρa c
@@ -443,12 +440,10 @@ private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
       (fun z ↦ (h z).im) ∈ realSobolevFunctions ℂ 2 2 ∧
       ∀ z, Δ h z = ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) * h z - g z := by
   have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.mp hx i
-  have hP := memLp_top_sq_add_sq hx.continuous hlim
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_sq_add_sq_and_le hx.continuous hlim
   obtain ⟨h, hhs, hh₁, hh₂, he⟩ :=
     exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq
-      (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP (ae_of_all _ fun z ↦ by positivity)
-      (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ fun z hz ↦ (hR z hz).le) hgs hg2
+      (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP hP₀ (by norm_num : (0 : ℝ) < 1 / 8) hPa hgs hg2
   exact ⟨h, hhs, hh₁, hh₂, fun z ↦ by linear_combination -he z⟩
 
 /-- The potential `P = |α|² / 4` in terms of the section `α`. -/
