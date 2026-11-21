@@ -173,6 +173,14 @@ end ArcPairing
 
 section CurveHomology
 
+omit [Fintype Point] in
+/-- A periodic domain has `β`-boundary a sum of whole `β`-curves, so it lies in the domain group of
+`TauCeti.HeegaardRegionSystem.CurveHomology.pairing`. -/
+theorem periodicDomains_le_ker :
+    H.periodicDomains ≤ (H.betaArcBoundary.comp H.betaBoundary).ker := fun P hP => by
+  obtain ⟨-, -, hβ⟩ := mem_periodicDomains_iff.mp hP
+  rwa [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply]
+
 /-- The pairing of `CurveHomology` with the domains `P` whose `β`-boundary is a sum of whole
 `β`-curves, such as the periodic domains, bundled as an additive map in `P`: the class of a cycle
 `c` pairs to `∑_q ∂(c ∩ α)(q) n_q(P)`. The class `ε(x, y)` pairs to `n_y(P) - n_x(P)`
@@ -180,7 +188,8 @@ section CurveHomology
 def CurveHomology.pairing :
     (H.betaArcBoundary.comp H.betaBoundary).ker →+ H.CurveHomology →+ ℚ where
   toFun P := CurveHomology.lift H ((H.arcPairing P).comp H.arcCycles.subtype) fun _ hc =>
-    H.arcPairing_eq_zero_of_mem_arcRelations P.property hc
+    H.arcPairing_eq_zero_of_mem_arcRelations
+      (by simpa only [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply] using P.property) hc
   map_zero' := by
     ext c
     simp only [AddMonoidHom.coe_comp, Function.comp_apply, CurveHomology.lift_mk,
@@ -228,27 +237,26 @@ number is a periodic Maslov index at `y` exactly when it is `μ_x(P) + 2 ⟨ε(x
 periodic domain `P`. -/
 theorem mem_periodicMaslovIndices_iff_exists_add_two_mul_pairing_epsilon (χ : Region → ℤ)
     (x y : H.Generator) {q : ℚ} :
-    q ∈ H.periodicMaslovIndices χ y ↔ ∃ P : (H.betaArcBoundary.comp H.betaBoundary).ker,
-      (P : Region → ℤ) ∈ H.periodicDomains ∧
-        H.maslovIndex χ x x P + 2 * CurveHomology.pairing H P (H.epsilon x y) = q := by
-  simp only [mem_periodicMaslovIndices_iff, ← maslovIndex_self_eq_add_two_mul_pairing_epsilon]
-  exact ⟨fun ⟨P, hP, h⟩ => ⟨⟨P, (mem_periodicDomains_iff.mp hP).2.2⟩, hP, h⟩,
-    fun ⟨P, hP, h⟩ => ⟨P, hP, h⟩⟩
+    q ∈ H.periodicMaslovIndices χ y ↔ ∃ P : H.periodicDomains,
+      H.maslovIndex χ x x P + 2 * CurveHomology.pairing H
+        (AddSubgroup.inclusion H.periodicDomains_le_ker P) (H.epsilon x y) = q := by
+  have key (P : H.periodicDomains) := maslovIndex_self_eq_add_two_mul_pairing_epsilon χ
+    (AddSubgroup.inclusion H.periodicDomains_le_ker P) x y
+  simp only [AddSubgroup.coe_inclusion] at key
+  simp only [← key]
+  simp only [mem_periodicMaslovIndices_iff, Subtype.exists, exists_prop]
 
 /-- Generators `x`, `y` whose class `ε(x, y)` pairs to zero with every periodic domain have the
 same periodic Maslov indices. -/
 theorem periodicMaslovIndices_eq_of_forall_pairing_epsilon_eq_zero {χ : Region → ℤ}
     {x y : H.Generator}
-    (h : ∀ P : (H.betaArcBoundary.comp H.betaBoundary).ker, (P : Region → ℤ) ∈ H.periodicDomains →
-      CurveHomology.pairing H P (H.epsilon x y) = 0) :
+    (h : ∀ P : H.periodicDomains,
+      CurveHomology.pairing H (AddSubgroup.inclusion H.periodicDomains_le_ker P) (H.epsilon x y) =
+        0) :
     H.periodicMaslovIndices χ x = H.periodicMaslovIndices χ y := by
   ext q
-  rw [mem_periodicMaslovIndices_iff_exists_add_two_mul_pairing_epsilon χ x y,
-    mem_periodicMaslovIndices_iff]
-  refine ⟨fun ⟨P, hP, hq⟩ => ⟨⟨P, (mem_periodicDomains_iff.mp hP).2.2⟩, hP, ?_⟩,
-    fun ⟨P, hP, hq⟩ => ⟨P, hP, ?_⟩⟩
-  · rwa [h _ hP, mul_zero, add_zero]
-  · rwa [h P hP, mul_zero, add_zero] at hq
+  simp only [mem_periodicMaslovIndices_iff_exists_add_two_mul_pairing_epsilon χ x y, h, mul_zero,
+    add_zero, mem_periodicMaslovIndices_iff, Subtype.exists, exists_prop]
 
 /-- Generators whose class `ε(x, y)` has finite order have the same periodic Maslov indices. On a
 geometric diagram this is the case of generators whose spin^c structures differ by a torsion
@@ -256,8 +264,8 @@ class. -/
 theorem periodicMaslovIndices_eq_of_isOfFinAddOrder_epsilon {χ : Region → ℤ} {x y : H.Generator}
     (h : IsOfFinAddOrder (H.epsilon x y)) :
     H.periodicMaslovIndices χ x = H.periodicMaslovIndices χ y :=
-  periodicMaslovIndices_eq_of_forall_pairing_epsilon_eq_zero fun P _ =>
-    ((CurveHomology.pairing H P).isOfFinAddOrder h).eq_zero'
+  periodicMaslovIndices_eq_of_forall_pairing_epsilon_eq_zero fun _ =>
+    ((CurveHomology.pairing H _).isOfFinAddOrder h).eq_zero'
 
 end MaslovIndex
 
