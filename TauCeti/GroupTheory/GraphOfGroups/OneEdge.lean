@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
-public import TauCeti.GroupTheory.GraphOfGroups.Presentation
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.PushoutI.TrivialBase
-public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.HNNExtension
 
 /-!
@@ -37,10 +34,6 @@ at either vertex `a` and `π₁(loop, ())` is the HNN extension. Along these iso
 group at the base vertex maps to its factor, or to the base group, by the identity; for the
 segment so does the vertex group at the other end, conjugated into `π₁(𝔸, a)` along the dart.
 
-Through these isomorphisms `A ∗_C B` and the HNN extension act on the Bass–Serre trees of the
-segment and of the loop, and each vertex stabilizer is a conjugate of a vertex group: in `A ∗_C B`
-a conjugate of `A` or of `B`, in the HNN extension a conjugate of the base group `G`.
-
 These comparisons transport the normal form theorems of `Monoid.PushoutI` and `HNNExtension` to
 one-edge graphs of groups; in particular the vertex groups of a one-edge graph of groups embed in
 its fundamental group.
@@ -64,18 +57,11 @@ its fundamental group.
 * `TauCeti.GraphOfGroups.π₁Tree.of_injective_segment` and
   `TauCeti.GraphOfGroups.π₁Tree.of_injective_loop`: the vertex groups of a one-edge graph of
   groups embed in its fundamental group.
-* `TauCeti.GraphOfGroups.exists_map_stabilizer_eq_segment`,
-  `TauCeti.GraphOfGroups.exists_map_stabilizer_eq_loop`: each vertex stabilizer of the
-  Bass–Serre tree is a conjugate of a factor of `A ∗_C B`, or of the base group of the HNN
-  extension.
 
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §1.1 and §5.1.
 * V. Guirardel, G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.1.
-* I. Kapovich, R. Weidmann and A. Myasnikov, *Foldings, graphs of groups and the membership
-  problem*, Internat. J. Algebra Comput. 15 (2005), §2, Definition 2.5 and the paragraph after it
-  (the vertex stabilizers of the Bass–Serre tree).
 -/
 
 public section
@@ -284,17 +270,6 @@ namespace π₁
 
 variable {f g hf hg}
 
-/- Relative to the set of all darts of the segment, which is a spanning tree since the segment is a
-tree, reading the letters of closed `𝔸`-paths is a bijection. -/
-private theorem toπ₁Tree_univ_bijective (a : SerreGraph.segment.V) :
-    Function.Bijective (toπ₁Tree (segment f g hf hg) a Set.univ) := by
-  obtain ⟨T, hT⟩ := SerreGraph.exists_spanningTree_superset _
-    SerreGraph.segment_isTree.connected Set.univ (fun _ _ => Set.mem_univ _)
-    ((SerreGraph.isAcyclic_restrict_iff _ _ _).mpr fun _ p hp _ =>
-      SerreGraph.segment_isTree.eq_nil_of_isReduced _ p hp)
-  rw [← Set.univ_subset_iff.mp hT]
-  exact toπ₁Tree_bijective _ a T
-
 variable (f g hf hg) in
 /-- The group `π₁(𝔸, a)` of closed `𝔸`-paths of the segment `𝔸`, at either vertex `a`, is the
 amalgamated product `A ∗_C B`. Reading the letters of a closed path in `π₁(𝔸, T)`, for the set `T`
@@ -302,7 +277,9 @@ of all darts of the segment, is an isomorphism because `T` is a spanning tree, a
 `A ∗_C B` by `π₁Tree.equivPushoutI`. -/
 noncomputable def equivPushoutI (a : SerreGraph.segment.V) :
     π₁ (segment f g hf hg) a ≃* Monoid.PushoutI (segmentMaps f g hf hg) :=
-  (MulEquiv.ofBijective _ (toπ₁Tree_univ_bijective a)).trans
+  (MulEquiv.ofBijective (toπ₁Tree (segment f g hf hg) a Set.univ) (by
+    have h := toπ₁Tree_bijective (segment f g hf hg) a SerreGraph.segment_isTree.spanningTree
+    rwa [SerreGraph.IsTree.spanningTree_darts] at h)).trans
     (π₁Tree.equivPushoutI f g hf hg ⟨false, Set.mem_univ _⟩)
 
 /-- The vertex group at the base vertex `a` maps to the factor `A_a` by the identity. -/
@@ -332,33 +309,6 @@ noncomputable def equivPushoutI (a : SerreGraph.segment.V) :
   exact π₁Tree.equivPushoutI_of _ b x
 
 end π₁
-
-/-! #### Vertex stabilizers of the Bass–Serre tree -/
-
-variable {f g hf hg}
-
-/-- Each vertex stabilizer of the Bass–Serre tree of the segment is, in `A ∗_C B`, a conjugate of
-one of the two factors. -/
-theorem exists_map_stabilizer_eq_segment {a : SerreGraph.segment.V}
-    (y : (bassSerreTree (segment f g hf hg) a).V) :
-    ∃ (b : SerreGraph.segment.V) (w : Monoid.PushoutI (segmentMaps f g hf hg)),
-      (MulAction.stabilizer (π₁ (segment f g hf hg) a) y).map
-          (π₁.equivPushoutI f g hf hg a).toMonoidHom =
-        (Monoid.PushoutI.of b).range.map (MulAut.conj w).toMonoidHom := by
-  obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective y
-  -- A path `q` from `a` to `b` along which `A_b` maps identically onto its factor: the empty path
-  -- if `b = a`, the dart from `a` to `b` otherwise.
-  obtain ⟨q, hq⟩ : ∃ q : (segment f g hf hg).Path ⟨a⟩ ⟨b⟩, ∀ x,
-      π₁.equivPushoutI f g hf hg a (π₁.vertexHom q x) = Monoid.PushoutI.of b x := by
-    obtain rfl | rfl := Bool.eq_or_eq_not b a
-    · exact ⟨.nil, fun x => by simp⟩
-    · exact ⟨Path.ofDart (SerreGraph.segment.dart a), π₁.equivPushoutI_vertexHom_ofDart _⟩
-  refine ⟨b, π₁.equivPushoutI f g hf hg a (π₁.mk (p.comp q.reverse)), ?_⟩
-  rw [stabilizer_bassSerreVertex, π₁.vertexHom_eq_conj_comp q p, MonoidHom.map_range,
-    MonoidHom.map_range]
-  congr 1
-  ext x
-  simp [hq, MulAut.conj_apply]
 
 end segment
 
@@ -541,40 +491,6 @@ to the stable letter `t`. -/
   (MulEquiv.symm_apply_eq _).2 (equivHNNExtension_mk_ofDart_false v).symm
 
 end π₁
-
-/-! #### Vertex stabilizers of the Bass–Serre tree -/
-
-variable {f g hf hg}
-
-/-- Each vertex stabilizer of the Bass–Serre tree of the loop is, in the HNN extension, a conjugate
-of the base group. -/
-theorem exists_map_stabilizer_eq_loop {v : (SerreGraph.rose Unit).V}
-    (y : (bassSerreTree (loop f g hf hg) v).V) :
-    ∃ w : HNNExtension G f.range g.range (loopEquiv f g hf hg),
-      (MulAction.stabilizer (π₁ (loop f g hf hg) v) y).map
-          (π₁.equivHNNExtension f g hf hg v).toMonoidHom =
-        (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range.map
-          (MulAut.conj w).toMonoidHom := by
-  obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective y
-  -- The rose has a single vertex.
-  obtain rfl : b = v := Subsingleton.elim _ _
-  let P := HNNExtension G f.range g.range (loopEquiv f g hf hg)
-  let e : π₁ (loop f g hf hg) b →* P := (π₁.equivHNNExtension f g hf hg b).toMonoidHom
-  let m := π₁.mk (p.comp Quiver.Path.nil.reverse)
-  refine ⟨e m, ?_⟩
-  -- `π₁.vertexHom_eq_conj_comp` states the conjugation as a coercion to a monoid homomorphism.
-  have hconj : e.comp ((MulAut.conj m : π₁ (loop f g hf hg) b →* π₁ (loop f g hf hg) b).comp
-      (π₁.vertexHom .nil)) =
-      (MulAut.conj (e m)).toMonoidHom.comp (e.comp (π₁.vertexHom .nil)) := by
-    ext x
-    simp [MulAut.conj_apply]
-  have hnil : e.comp (π₁.vertexHom .nil) = (HNNExtension.of : G →* P) :=
-    MonoidHom.ext fun x => (congrArg _ (π₁.vertexHom_nil_apply x)).trans
-      (π₁.equivHNNExtension_mk_ofVertex (hf := hf) (hg := hg) b x)
-  rw [stabilizer_bassSerreVertex, π₁.vertexHom_eq_conj_comp .nil p, MonoidHom.map_range,
-    MonoidHom.map_range, hconj, hnil]
-  -- The two sides differ only in the implicit domain of `comp`: `G` and the vertex group `G`.
-  rfl
 
 end loop
 

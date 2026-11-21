@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
+public import TauCeti.GroupTheory.GraphOfGroups.BassSerre.OneEdge
 public import TauCeti.GroupTheory.PushoutI.DehnTwist
 public import TauCeti.GroupTheory.HNNExtension.DehnTwist
 
