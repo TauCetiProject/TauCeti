@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.PGroup
+public import TauCeti.GroupTheory.PGroup.Basic
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic

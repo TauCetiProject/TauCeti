@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action

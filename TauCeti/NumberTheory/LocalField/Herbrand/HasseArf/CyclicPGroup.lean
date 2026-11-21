@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Conductor
 import TauCeti.FieldTheory.Galois.Hilbert90
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction

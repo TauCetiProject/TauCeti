@@ -51,8 +51,8 @@ character group ring of the set of all characters is `O[G]` itself.
 
 * `MonoidAlgebra.charEval_one_apply` and `MonoidHom.charEval_one`: the trivial character
   evaluates by the augmentation.
-* `MonoidHom.charEval_mapDomain` and `MonoidHom.charEval_mapDomain_subtype`: functoriality of
-  character evaluation under `MonoidAlgebra.mapDomain`.
+* `MonoidHom.charEval_mapDomain`: functoriality of character evaluation under
+  `MonoidAlgebra.mapDomain`.
 * `MonoidHom.charEval_subgroupCharSum_of_le_ker` and
   `MonoidHom.charEval_subgroupCharSum_eq_zero`: the evaluation of a character sum over a finite
   subgroup `H`, which is `#H` or `0` (row orthogonality); the norm element `∑_{h ∈ H} h` is the
@@ -120,22 +120,9 @@ at the restricted character `ψ.comp f`. -/
 @[simp]
 theorem charEval_mapDomain {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G)
     (y : MonoidAlgebra O H) :
-    ψ.charEval (MonoidAlgebra.mapDomain f y) = (ψ.comp f).charEval y :=
-  MonoidAlgebra.lift_mapDomain ((Units.coeHom O).comp ψ) f y
-
-/-- Evaluating at `ψ : G →* Oˣ` after embedding `O[H]` along `Subtype.val : H → G` agrees with
-evaluating at the restricted character `ψ.comp H.subtype`. -/
-@[simp]
-theorem charEval_mapDomain_subtype {H : Subgroup G} (ψ : G →* Oˣ) (y : MonoidAlgebra O H) :
-    ψ.charEval (MonoidAlgebra.mapDomain (Subtype.val : H → G) y) = (ψ.comp H.subtype).charEval y :=
-  charEval_mapDomain ψ H.subtype y
-
-/-- Evaluating at `ψ : G →* Oˣ` after pushing `O[H]` forward along `f : H →* G` agrees with
-evaluating at the restricted character `ψ.comp f`. -/
-theorem charEval_mapDomainAlgHom {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G)
-    (y : MonoidAlgebra O H) :
-    ψ.charEval (MonoidAlgebra.mapDomainAlgHom O O f y) = (ψ.comp f).charEval y := by
-  simp
+    ψ.charEval (MonoidAlgebra.mapDomain f y) = (ψ.comp f).charEval y := by
+  simpa only [MonoidHom.charEval, TauCeti.DiagonalizableGroup.point, MonoidHom.comp_assoc] using
+    MonoidAlgebra.lift_mapDomain ((Units.coeHom O).comp ψ) f y
 
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
 `H` is `#H` when `χ ψ` is trivial on `H`. -/
@@ -344,8 +331,7 @@ theorem nonempty_of_nontrivial [Nontrivial Ψ.charGroupRing] : Ψ.Nonempty := by
 `evalAlgHom hψ`. -/
 instance [Nonempty Ψ] : IsLocalHom (algebraMap O Ψ.charGroupRing) := by
   obtain ⟨ψ, hψ⟩ := ‹Nonempty Ψ›
-  refine ⟨fun a ha ↦ ?_⟩
-  simpa [(evalAlgHom hψ).commutes a] using ha.map (evalAlgHom hψ)
+  exact isLocalHom_of_leftInverse (evalAlgHom hψ) (fun a ↦ (evalAlgHom hψ).commutes a)
 
 /-- When `R_Ψ` is nontrivial, `Ψ` is nonempty and hence `algebraMap O R_Ψ` is a local
 homomorphism. -/

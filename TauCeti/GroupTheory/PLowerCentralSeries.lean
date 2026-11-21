@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.GroupTheory.PGroup
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # The lower `p`-central series of a subgroup

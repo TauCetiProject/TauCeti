@@ -107,7 +107,7 @@ theorem IsPrecomplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLoc
   have : IsPrecomplete (IsLocalRing.maximalIdeal R) S := .of_finite _ _
   have : IsPrecomplete ((IsLocalRing.maximalIdeal R).map (algebraMap R S)) S :=
     IsPrecomplete.map_algebraMap_iff.mpr inferInstance
-  obtain ⟨n, hn⟩ := TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
+  obtain ⟨n, -, hn⟩ := TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
   exact IsPrecomplete.of_pow_le_of_pow_le (l := 1) hn (by
     rw [pow_one]
     exact Ideal.map_le_iff_le_comap.mpr

@@ -99,7 +99,7 @@ theorem mem_range_algebraMap_of_pow_eq_of_isUnit [IsNoetherianRing R] [Module.Fi
       rw [this, pow_succ]
       exact Ideal.mul_mem_mul ht hc₁
   -- The class of `s` in `S ⧸ R` lies in every `𝔪(R)ᵏ (S ⧸ R)`, so it vanishes by Krull.
-  obtain ⟨N, hN⟩ := exists_maximalIdeal_pow_le_map (R := R) (S := S)
+  obtain ⟨N, -, hN⟩ := exists_maximalIdeal_pow_le_map (R := R) (S := S)
   set P := LinearMap.range (Algebra.linearMap R S)
   have hmem : P.mkQ s ∈ (⨅ k : ℕ, maximalIdeal R ^ k • ⊤ : Submodule R (S ⧸ P)) := by
     refine Submodule.mem_iInf _ |>.mpr fun k ↦ ?_

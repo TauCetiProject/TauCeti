@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Subgroup.Prod
 public import TauCeti.GroupTheory.Complement.Local
+import Mathlib.GroupTheory.NoncommCoprod
 
 /-!
 # Global, local, and product decompositions for complementary subgroups
@@ -21,8 +22,8 @@ products:
    in `G × G'` (or a local complement in `H.prod ⊥`) if and only if `N` has a global complement in
    `G` (or a local complement in `H`), and similarly for `⊥.prod N`. No normality, commutativity,
    or finiteness assumptions are required.
-2. **Product isomorphism and character extension (`P × H ≃* G`)**: Given complementary subgroups
-   `P` and `H` (`P.IsComplement' H`) of a commutative group `G`:
+2. **Product isomorphism and character extension (`P × H ≃* G`)**: Given normal complementary
+   subgroups `P` and `H` (`P.IsComplement' H`, `[P.Normal]`, `[H.Normal]`) of a group `G`:
    * `Subgroup.IsComplement'.prodMulEquiv`: the canonical multiplicative isomorphism `P × H ≃* G`
      sending `(p, h)` to `(p : G) * (h : G)`.
    * `Subgroup.IsComplement'.extendChar`: given any commutative monoid `O` and homomorphisms
@@ -173,21 +174,24 @@ namespace Subgroup.IsComplement'
 
 section ProdMulEquiv
 
-variable {G : Type*} [CommGroup G] {P H : Subgroup G}
+variable {G : Type*} [Group G] {P H : Subgroup G} [P.Normal] [H.Normal]
 
-/-- The multiplicative isomorphism `P × H ≃* G` induced by complementary subgroups
-`P.IsComplement' H` in a commutative group `G`. -/
+/-- The multiplicative isomorphism `P × H ≃* G` induced by normal complementary subgroups
+`P.IsComplement' H` in a group `G`. -/
 noncomputable def prodMulEquiv (hPH : P.IsComplement' H) : P × H ≃* G :=
-  MulEquiv.ofBijective (P.subtype.coprod H.subtype) <| by
+  MulEquiv.ofBijective
+    (P.subtype.noncommCoprod H.subtype fun p h ↦
+      Subgroup.commute_of_normal_of_disjoint P H ‹_› ‹_› hPH.disjoint
+        p h p.property h.property) <| by
     convert (Subgroup.isComplement_iff_bijective P H).mp hPH using 1
     ext ⟨p, h⟩
-    simp [MonoidHom.coprod_apply]
+    exact MonoidHom.noncommCoprod_apply P.subtype H.subtype _ (p, h)
 
 /-- `prodMulEquiv` sends `(p, h)` to `(p : G) * (h : G)`. -/
 @[simp]
 theorem prodMulEquiv_apply (hPH : P.IsComplement' H) (p : P) (h : H) :
     hPH.prodMulEquiv (p, h) = (p : G) * (h : G) := by
-  simp [prodMulEquiv]
+  simpa [prodMulEquiv] using MonoidHom.noncommCoprod_apply P.subtype H.subtype _ (p, h)
 
 /-- The inverse of `prodMulEquiv` sends `(p : G) * (h : G)` to `(p, h)`. -/
 @[simp]
@@ -199,9 +203,9 @@ end ProdMulEquiv
 
 section ExtendChar
 
-variable {O G : Type*} [CommMonoid O] [CommGroup G] {P H : Subgroup G}
+variable {O G : Type*} [CommMonoid O] [Group G] {P H : Subgroup G} [P.Normal] [H.Normal]
 
-/-- Given complementary subgroups `P` and `H` of a commutative group `G`, combine characters
+/-- Given normal complementary subgroups `P` and `H` of a group `G`, combine characters
 `φ : P →* Oˣ` and `χ : H →* Oˣ` into the unique character `G →* Oˣ` sending `p * h ↦ φ(p) χ(h)`. -/
 noncomputable def extendChar (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) : G →* Oˣ :=
   (φ.coprod χ).comp hPH.prodMulEquiv.symm.toMonoidHom

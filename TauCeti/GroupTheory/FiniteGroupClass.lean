@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Group.Shrink
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.Solvable
 import TauCeti.Algebra.Group.Equiv.Pi
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # Classes of finite groups

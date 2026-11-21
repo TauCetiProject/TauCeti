@@ -111,6 +111,15 @@ theorem charIdempotent_eq_sum (χ : H →* Oˣ) :
   rw [charIdempotent, subgroupCharSum_eq_sum_of_eq_top _ _ rfl]
   simp
 
+/-- The character idempotent `e_χ` is `(#H)⁻¹` times the character sum `TauCeti.subgroupCharSum`
+of `χ⁻¹` over the whole group `⊤ : Subgroup H`. -/
+theorem charIdempotent_eq_smul_subgroupCharSum [Fintype (⊤ : Subgroup H)] (χ : H →* Oˣ) :
+    charIdempotent χ =
+      Ring.inverse (Nat.card H : O) •
+        subgroupCharSum ((Units.coeHom O).comp χ⁻¹) (⊤ : Subgroup H) := by
+  rw [charIdempotent_eq_sum, subgroupCharSum_eq_sum_of_eq_top _ _ rfl]
+  simp
+
 /-- The coefficient of `a` in the character idempotent `e_χ` is `(#H)⁻¹ χ(a)⁻¹`. -/
 @[simp]
 theorem coeff_charIdempotent (χ : H →* Oˣ) (a : H) :

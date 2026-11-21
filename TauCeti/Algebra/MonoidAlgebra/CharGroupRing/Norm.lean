@@ -83,12 +83,12 @@ theorem ker_proj_eq_span_norm (I : Subgroup G) [Fintype I] :
   refine le_antisymm (fun x hx ↦ ?_) (span_norm_le_ker_proj I)
   rw [RingHom.mem_ker, proj_eq_zero_iff] at hx
   rw [TauCeti.mem_span_subgroupCharSum_one_iff]
-  intro h hh
+  intro ⟨h, hh⟩
   refine TauCeti.eq_of_forall_charEval_eq fun ψ ↦ ?_
   by_cases hI : I ≤ ψ.ker
   · rw [map_mul, TauCeti.DiagonalizableGroup.point_single_one, MonoidHom.mem_ker.mp (hI hh),
-      Units.val_one, one_mul]
-  · rw [map_mul, hx ψ hI, mul_zero]
+      Units.val_one, mul_one]
+  · rw [map_mul, hx ψ hI, zero_mul]
 
 /-- **The `O`-algebra isomorphism `O[G] / (N_I) ≃ₐ[O] R_Ψ`** (Dasgupta–Kakde, Lemma 2.2), where
 `N_I = ∑_{σ ∈ I} σ` and `Ψ = {ψ : G →* Oˣ | ¬ I ≤ ψ.ker}` is the set of characters nontrivial on

@@ -23,7 +23,7 @@ import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Irreducible
 -- Non-public: `IsPGroup.exists_pow_pow_eq_one_map` is what gives the operators of a representation
 -- of a `p`-group their `p`-power order.
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # Fixed vectors of a finite-dimensional representation of `p`-power order in characteristic `p`
