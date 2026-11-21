@@ -12,10 +12,10 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 
 This file supplements `Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict` with density
 properties of codomain restrictions of continuous semilinear maps, and with the restriction of an
-`R`-linear map to submodules over a larger ring `S` of scalars. Mathlib's
-`ContinuousLinearMap.restrict` needs `R`-submodules; restricting to `Submodule.restrictScalars R`
-would forget the `S`-module structure of the restricted spaces, for example the complex structure
-of complex subspaces for a real-linear map.
+`R`-linear map to submodules over a larger ring `S` of scalars. It is Mathlib's
+`ContinuousLinearMap.restrict` between the `R`-submodules `Submodule.restrictScalars R`, stated
+with the `S`-submodules themselves as domain and codomain, so that their `S`-module structure, for
+example the complex structure of complex subspaces for a real-linear map, is directly available.
 
 ## Main definitions
 
@@ -52,11 +52,8 @@ variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
 submodule `q`, as an `R`-linear map `p →L[R] q`. The submodules may be over a larger ring `S` of
 scalars, whose module structure on `p` and `q` is kept. -/
 def restrictOfTower (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
-    (h : ∀ x ∈ p, f x ∈ q) : p →L[R] q where
-  toFun x := ⟨f x, h x x.property⟩
-  map_add' x y := Subtype.ext (f.map_add x y)
-  map_smul' c x := Subtype.ext (f.map_smul c (x : M))
-  cont := (f.continuous.comp continuous_subtypeVal).subtype_mk _
+    (h : ∀ x ∈ p, f x ∈ q) : p →L[R] q :=
+  f.restrict (p := p.restrictScalars R) (q := q.restrictScalars R) h
 
 @[simp]
 theorem coe_restrictOfTower_apply (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}

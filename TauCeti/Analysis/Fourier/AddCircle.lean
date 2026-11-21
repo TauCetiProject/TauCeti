@@ -16,6 +16,7 @@ public import TauCeti.MeasureTheory.Function.Lp.PiLp
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -175,11 +176,8 @@ theorem fourier_neg_one_coe_apply (t : ℝ) :
 /-- At the half period `T / 2` the Fourier monomial of frequency `n` is `(-1) ^ n`. -/
 theorem fourier_coe_half_period (hT : T ≠ 0) (n : ℤ) :
     fourier n ((T / 2 : ℝ) : AddCircle T) = (-1) ^ n := by
-  have hT' : (T : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hT
-  rw [fourier_coe_apply, ← Complex.exp_pi_mul_I, ← Complex.exp_intCast_mul]
-  congr 1
-  push_cast
-  field_simp
+  rw [fourier_apply, toCircle_zsmul, toCircle_half_period hT, Circle.coe_zpow, Circle.coe_neg,
+    Circle.coe_one]
 
 /-- The Fourier monomials take values in the unit circle, so they vanish nowhere. -/
 theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 := by
