@@ -456,6 +456,9 @@ theorem exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_ze
   have hval := W1p.integral_value_sq_eq_norm_value_sq_top (mu := volume) w
   have hnorm := W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq w
   have hgap := hgap w
+  -- The Poincaré-type inequality `hgap` forces `w` to vanish: by `hPQ`, `hw0`, `hval` and
+  -- `hnorm`, `c ‖w‖² ≤ ‖∇w‖² + ∫ P w² ≤ ‖∇w‖² + ∫ Q w² + (c / 2) ‖w‖₂² = (c / 2) ‖w‖₂²`, and
+  -- `‖w‖₂² ≤ ‖w‖²`, so `(c / 2) ‖w‖² ≤ 0`.
   have hw_zero : w = 0 := by
     have hsq : ‖w‖ ^ 2 = 0 := le_antisymm (by nlinarith [sq_nonneg ‖W1p.gradient w‖])
       (sq_nonneg _)
