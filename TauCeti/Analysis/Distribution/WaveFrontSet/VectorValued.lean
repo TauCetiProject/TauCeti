@@ -115,7 +115,9 @@ theorem vectorWaveFrontSet_eq_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
   refine (iUnion_subset fun ℓ ↦ ?_).antisymm ?_
   · rw [mapCLM_restrictScalars_eq_smul]
     exact waveFrontSet_smul_subset _ T
-  · exact mapCLM_restrictScalars_id T ▸ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
+  -- `(ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ` is `ContinuousLinearMap.id ℝ ℂ` by definition.
+  · exact (mapCLM_id T : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T) ▸
+      waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
 
 /-! ### Linear maps of the values -/
 

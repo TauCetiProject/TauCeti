@@ -50,10 +50,9 @@ continuous linear maps of the values act functorially.
 * `Distribution.mapCLM_id`, `Distribution.mapCLM_mapCLM`: continuous linear maps of the values
   act functorially.
 * `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
-  `Distribution.mapCLM_restrictScalars_id`, `Distribution.mapCLM_restrictScalars_symm_mapCLM`:
-  complex-linear maps of the values; on complex distributions they are scalar multiplications,
-  they commute with complex scalar multiples, and complex isomorphisms are undone by their
-  inverses.
+  `Distribution.mapCLM_restrictScalars_symm_mapCLM`: complex-linear maps of the values; on
+  complex distributions they are scalar multiplications, they commute with complex scalar
+  multiples, and complex isomorphisms are undone by their inverses.
 
 ## References
 
@@ -258,18 +257,12 @@ theorem mapCLM_restrictScalars_eq_smul (ℓ : ℂ →L[ℂ] ℂ) (T : 𝓓'^{n}(
   ext φ
   simpa [mul_comm] using ℓ.map_smul (T φ) (1 : ℂ)
 
-/-- The complex identity of the values acts trivially on `T`. -/
-@[simp]
-theorem mapCLM_restrictScalars_id (T : 𝓓'^{n}(Ω, F)) :
-    mapCLM ((ContinuousLinearMap.id ℂ F).restrictScalars ℝ) T = T := by
-  ext φ
-  simp
-
 /-- Applying a complex isomorphism `A` of the values and then its inverse gives back `T`. -/
 @[simp]
 theorem mapCLM_restrictScalars_symm_mapCLM (A : F ≃L[ℂ] F') (T : 𝓓'^{n}(Ω, F)) :
     mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
       (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
+  rw [mapCLM_mapCLM]
   ext φ
   simp
 

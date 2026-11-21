@@ -142,7 +142,8 @@ theorem vectorSobolevWaveFrontSet_eq_sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω
   refine (iUnion_subset fun ℓ ↦ ?_).antisymm ?_
   · rw [mapCLM_restrictScalars_eq_smul]
     exact sobolevWaveFrontSet_smul_subset s _ T
-  · exact mapCLM_restrictScalars_id T ▸
+  -- `(ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ` is `ContinuousLinearMap.id ℝ ℂ` by definition.
+  · exact (mapCLM_id T : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T) ▸
       sobolevWaveFrontSet_mapCLM_subset_vectorSobolevWaveFrontSet s (.id ℂ ℂ) T
 
 /-! #### Linear maps of the values and scalar multiples -/
