@@ -75,7 +75,7 @@ theorem cod_comp_le (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom
     (g.comp f h).cod ≤ g.cod := by
   intro p hp
   obtain ⟨y, rfl⟩ := (mem_cod_comp g f h).1 hp
-  exact (g.toEquiv _).2
+  exact (g.toEquiv _).property
 
 /-- When the codomain of the first partial equivalence is the domain of the second, the composite
 has the codomain of the second. -/
@@ -83,7 +83,7 @@ theorem cod_comp_of_eq (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.
     (g.comp f h).cod = g.cod := by
   refine le_antisymm (cod_comp_le g f h) fun p hp => (mem_cod_comp g f h).2 ?_
   let z := g.toEquiv.symm ⟨p, hp⟩
-  exact ⟨⟨z, he.ge z.2⟩, by simp [z, Substructure.inclusion]⟩
+  exact ⟨⟨z, he.ge z.property⟩, by simp [z, Substructure.inclusion]⟩
 
 /-- Composition of partial equivalences is monotone in both arguments. -/
 theorem comp_le_comp {f f' : M ≃ₚ[L] N} {g g' : N ≃ₚ[L] P} (hf : f ≤ f') (hg : g ≤ g')
@@ -98,7 +98,7 @@ theorem comp_le_comp {f f' : M ≃ₚ[L] N} {g g' : N ≃ₚ[L] P} (hf : f ≤ f
   simp only [Embedding.comp_apply, Equiv.coe_toEmbedding, Substructure.coe_subtype, comp_apply]
   -- Both sides apply `g'` and `g` to the same value of `f`.
   refine (congrArg (fun y : g'.dom => (g'.toEquiv y : P)) (Subtype.ext ?_)).trans
-    (toEquiv_apply_of_le hg (h (f.toEquiv ⟨x, hx'⟩).2))
+    (toEquiv_apply_of_le hg (h (f.toEquiv ⟨x, hx'⟩).property))
   simpa using hf'
 
 end FirstOrder.Language.PartialEquiv
@@ -113,12 +113,12 @@ open PartialEquiv
 member extends within the family to one whose domain contains a given finitely generated
 substructure. -/
 theorem FGEquiv.exists_le_and_le_dom_of_fg {T : Set (L.FGEquiv M N)}
-    (hT : ∀ g ∈ T, ∀ m : M, ∃ g' ∈ T, m ∈ g'.1.dom ∧ g ≤ g') {g : L.FGEquiv M N} (hg : g ∈ T)
-    {A : L.Substructure M} (hA : A.FG) : ∃ g' ∈ T, A ≤ g'.1.dom ∧ g ≤ g' := by
+    (hT : ∀ g ∈ T, ∀ m : M, ∃ g' ∈ T, m ∈ g'.val.dom ∧ g ≤ g') {g : L.FGEquiv M N} (hg : g ∈ T)
+    {A : L.Substructure M} (hA : A.FG) : ∃ g' ∈ T, A ≤ g'.val.dom ∧ g ≤ g' := by
   classical
   obtain ⟨s, rfl⟩ := hA
   -- Extend one generator at a time.
-  suffices ∃ g' ∈ T, (s : Set M) ⊆ g'.1.dom ∧ g ≤ g' from
+  suffices ∃ g' ∈ T, (s : Set M) ⊆ g'.val.dom ∧ g ≤ g' from
     let ⟨g', hg', hs, hgg'⟩ := this; ⟨g', hg', Substructure.closure_le.2 hs, hgg'⟩
   induction s using Finset.induction_on with
   | empty => exact ⟨g, hg, by simp, le_rfl⟩

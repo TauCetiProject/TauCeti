@@ -24,6 +24,11 @@ that the restarted increment path `t ↦ X (τ + t) - X τ` of an almost-surely 
 process into a pseudo-metrizable Borel group whose shifted increment paths are a.e.-measurable is
 almost-everywhere measurable in the product σ-algebra on path space
 (`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue_add_const_sub_stoppedValue`).
+The same approximation shows that a process with measurable coordinates and pseudo-metrizable
+Borel values is almost-everywhere measurable at any stopping time when its paths are almost surely
+right-continuous at the finite stopped time
+(`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue`), without adaptation or a
+finite-measure assumption.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
@@ -290,5 +295,25 @@ theorem aemeasurable_stoppedValue_add_const_sub_stoppedValue {E : Type*} [Topolo
   · exact (indicator_of_notMem (fun h : ω ∈ G ↦ h.2 hτω) _).trans
       (stoppedValue_add_const_sub_stoppedValue_of_eq_top (u := X) t hτω).symm
   · exact indicator_of_mem (⟨hωN, hτω⟩ : ω ∈ G) _
+
+/-- A process with measurable coordinates evaluated at a stopping time is almost everywhere
+measurable if its paths are almost surely right-continuous at the finite stopped time.
+No adaptation, finiteness of the stopping time, or usual conditions on the filtration are needed. -/
+theorem aemeasurable_stoppedValue {β : Type*} [MeasurableSpace β] [TopologicalSpace β]
+    [TopologicalSpace.PseudoMetrizableSpace β] [BorelSpace β] {P : Measure Ω} {U : ℝ≥0 → Ω → β}
+    (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (U s))
+    (hrc : ∀ᵐ ω ∂P, τ ω ≠ ⊤ →
+      ContinuousWithinAt (fun u => U u ω) (Ici (τ ω).untopA) (τ ω).untopA) :
+    AEMeasurable (stoppedValue U τ) P := by
+  apply aemeasurable_of_tendsto_metrizable_ae'
+    (f := fun n => stoppedValue U (fun ω => TauCeti.dyadicCeilTime n (τ ω)))
+    (fun n => ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm).aemeasurable)
+  filter_upwards [hrc] with ω hω
+  by_cases hfin : τ ω = ⊤
+  · simpa only [stoppedValue, hfin, TauCeti.dyadicCeilTime_top] using
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => U (⊤ : WithTop ℝ≥0).untopA ω)
+        atTop (𝓝 (U (⊤ : WithTop ℝ≥0).untopA ω)))
+  · exact TauCeti.tendsto_stoppedValue_dyadicCeilTime U τ ω hfin (hω hfin)
 
 end MeasureTheory.IsStoppingTime

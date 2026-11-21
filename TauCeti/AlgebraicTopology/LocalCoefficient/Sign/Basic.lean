@@ -120,7 +120,7 @@ private theorem signFiber_eval_bijective {x : X} (e : p ⁻¹' {x}) :
       ((Function.fiberMap_apply_coe σ hσ x e').symm.trans (congrArg Subtype.val h)))
     (fun e' ↦ ?_) fun _ ↦ mem_signFiber_iff
   -- Every point of the fibre is `e` or `σ e`.
-  rcases hfib e e' (e'.2.trans e.2.symm) with h | h
+  rcases hfib e e' (e'.property.trans e.property.symm) with h | h
   · exact .inl (Subtype.ext h)
   · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
 
@@ -140,7 +140,7 @@ priority so that `simp` applies it before unfolding the evaluation by `signFiber
 @[simp high]
 theorem signFiberEquiv_fiberMap {x : X} (e : p ⁻¹' {x}) (f : signFiber R σ hσ x) :
     signFiberEquiv hfix hfib (Function.fiberMap σ hσ x e) f = -signFiberEquiv hfix hfib e f := by
-  simp [mem_signFiber_iff.1 f.2]
+  simp [mem_signFiber_iff.1 f.property]
 
 /-- The function changing sign under `σ` with value `r` at `e`, evaluated at `e`. -/
 @[simp]
@@ -154,7 +154,7 @@ the fibre. -/
 theorem signFiberEquiv_symm_apply_fiberMap {x : X} (e : p ⁻¹' {x}) (r : R) :
     ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r : p ⁻¹' {x} → R)
       (Function.fiberMap σ hσ x e) = -r := by
-  rw [mem_signFiber_iff.1 ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r).2,
+  rw [mem_signFiber_iff.1 ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r).property,
     signFiberEquiv_symm_apply_self]
 
 include hfix in
@@ -178,7 +178,7 @@ theorem mem_signFiber_of_sum_eq_zero {x : X} [Fintype (p ⁻¹' {x})] {g : p ⁻
   have huniv : (Finset.univ : Finset (p ⁻¹' {x})) = {e, Function.fiberMap σ hσ x e} := by
     ext e'
     simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    rcases hfib e e' (e'.2.trans e.2.symm) with h | h
+    rcases hfib e e' (e'.property.trans e.property.symm) with h | h
     · exact .inl (Subtype.ext h)
     · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
   rw [huniv, Finset.sum_pair (Function.fiberMap_ne_self hfix hσ x e).symm] at hg
@@ -210,11 +210,11 @@ def signLocalSystem (hp : IsCoveringMap p) (σ : C(E, E)) (hσ : p ∘ σ = p) :
   map_id x := by
     ext f e
     simp only [IsIso.inv_id]
-    exact congrArg f.1 (congrFun hp.monodromy_refl e)
+    exact congrArg f.val (congrFun hp.monodromy_refl e)
   map_comp {x y z} γ δ := by
     ext f e
     simp only [IsIso.inv_comp]
-    exact congrArg f.1 (hp.monodromy_trans_apply (inv δ) (inv γ) e)
+    exact congrArg f.val (hp.monodromy_trans_apply (inv δ) (inv γ) e)
 
 variable {R} (hp : IsCoveringMap p) (σ : C(E, E)) (hσ : p ∘ σ = p)
 
@@ -260,7 +260,7 @@ def signLocalSystemIsoOfSection :
     -- Both sides evaluate `f` at a point of the fibre over `x`, by definition of the transport
     -- and of `TauCeti.signFiberEquiv`; monodromy along `inv γ` carries `s y.as` to `s x.as`.
     fun {x y} γ ↦ ModuleCat.hom_ext <| LinearMap.ext fun f ↦ ULift.ext <| by
-      exact congrArg f.1 (hp.monodromy_section s.continuous hs (inv γ))
+      exact congrArg f.val (hp.monodromy_section s.continuous hs (inv γ))
 
 @[simp]
 theorem signLocalSystemIsoOfSection_hom_app_apply (x : FundamentalGroupoid X)
@@ -320,7 +320,7 @@ theorem monodromyRepresentation_signLocalSystem_eq_neg_one {x : X} {g : Fundamen
   apply ((hp.signLocalSystemObjEquiv σ hσ _).trans (TauCeti.signFiberEquiv hfix hfib e)).injective
   have h := hp.signLocalSystemObjEquiv_map_apply_monodromy σ hσ g.asHom f e
   -- The value at `σ e` of a function changing sign under `σ` is minus its value at `e`.
-  rw [he, TauCeti.mem_signFiber_iff.1 (hp.signLocalSystemObjEquiv σ hσ _ _).2] at h
+  rw [he, TauCeti.mem_signFiber_iff.1 (hp.signLocalSystemObjEquiv σ hσ _ _).property] at h
   simpa [neg_eq_iff_eq_neg] using h
 
 /-- Every loop at `x` acts by `1` or by `-1` on the sign local system of a double cover. -/
@@ -332,7 +332,8 @@ theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one {x : X}
   · -- Over an empty fibre the sign module is zero.
     refine .inl (LinearMap.ext fun f ↦ (hp.signLocalSystemObjEquiv σ hσ _).injective
       (Subtype.ext (funext fun e ↦ (IsEmpty.false e).elim)))
-  rcases hfib e (hp.monodromy g.asHom e) ((hp.monodromy g.asHom e).2.trans e.2.symm) with h | h
+  rcases hfib e (hp.monodromy g.asHom e) ((hp.monodromy g.asHom e).property.trans e.property.symm)
+      with h | h
   · exact .inl (hp.monodromyRepresentation_signLocalSystem_eq_one hfix hfib (Subtype.ext h))
   · exact .inr (hp.monodromyRepresentation_signLocalSystem_eq_neg_one hfix hfib
       (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm)))

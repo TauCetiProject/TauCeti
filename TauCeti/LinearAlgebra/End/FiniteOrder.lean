@@ -176,7 +176,8 @@ theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
   have hrestrict : (f ^ m).restrict (mapsTo_pow_eigenspace f μ m) = μ ^ m • LinearMap.id := by
     ext x
     refine (LinearMap.coe_restrict_apply _ x).trans ?_
-    simpa using End.aeval_apply_of_mem_apply_eq_smul (p := X ^ m) (End.mem_eigenspace_iff.1 x.2)
+    simpa using End.aeval_apply_of_mem_apply_eq_smul (p := X ^ m)
+        (End.mem_eigenspace_iff.1 x.property)
   rw [hrestrict, map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
 
 variable [IsAlgClosed k]

@@ -19,7 +19,9 @@ jointly continuous in the parameter and the position-frequency variables. The sy
 on each compact set of positions must have constants independent of the parameter.
 
 Mixed coordinate derivatives commute with this coefficient integral
-(`TauCeti.Symbol.mixedDeriv_integral_of_continuous_jets`). If the seminorm `p_{K,α,β}` of every
+(`TauCeti.Symbol.mixedDeriv_integral_of_continuous_jets`), so a pointwise estimate with a
+constant `C` for every member gives the estimate with constant `μ.real Set.univ * C` for the
+integral (`TauCeti.Symbol.norm_mixedDeriv_integral_le`). If the seminorm `p_{K,α,β}` of every
 member of the family is at most `C ≥ 0`, the integral has that seminorm at most
 `μ.real Set.univ * C` (`TauCeti.Symbol.seminorm_integral_le`), as does any symbol whose
 coefficient is that pointwise integral (`TauCeti.Symbol.seminorm_le_of_coefficient_eq_integral`).
@@ -144,7 +146,10 @@ theorem mixedDeriv_integral_of_continuous_jets (α β : List (Fin n))
   exact Filter.Eventually.of_forall fun y ↦
     (mixedDeriv_eq_iteratedFDeriv α β ((a y).contDiff_coefficient.of_le (by simp)) x ξ).symm
 
-private theorem norm_mixedDeriv_integral_le (α β : List (Fin n)) (x ξ : CoordinateSpace n)
+/-- A symbol estimate at `(x, ξ)` with constant `C` for every member of a compact family with
+jointly continuous spatial jets gives the estimate with constant `μ.real univ * C` for the
+coefficient integral. -/
+theorem norm_mixedDeriv_integral_le (α β : List (Fin n)) (x ξ : CoordinateSpace n)
     {C : ℝ} (hC : ∀ y, ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
     ‖mixedDeriv α β (fun p ↦ ∫ y, (a y).coefficient p ∂μ) x ξ‖ ≤

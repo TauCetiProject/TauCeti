@@ -126,7 +126,8 @@ theorem existsUnique_algHom_extend_fixedPoints
   refine Algebra.IsPushout.algHom_ext (R := A) (S := B) (R' := FixedPoints.subalgebra A C G)
     (S' := C) ?_ ?_
   · ext x
-    simp [FixedPoints.mem_subalgebra.mp x.2 g, hf, FixedPoints.mem_subalgebra.mp (φ x).2 g]
+    simp [FixedPoints.mem_subalgebra.mp x.property g, hf, FixedPoints.mem_subalgebra.mp
+        (φ x).property g]
   · ext b
     simp [Algebra.algebraMap_eq_smul_one, smul_distrib_smul]
 

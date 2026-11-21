@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 import Mathlib.Data.Fin.Parity
 import Mathlib.Tactic.Abel
 import Mathlib.Topology.CompactOpen
+import TauCeti.Data.Fin.FaceSwap
 
 /-!
 # Unnormalized cubical chains
@@ -162,25 +163,6 @@ theorem boundary_single {n : ℕ} (c : SingularCube X (n + 1)) (a : M) :
         (single (face j 0 c) a - single (face j 1 c) a) := by
   simp [boundary]
 
-/-- The involution on pairs of face indices behind `∂ ∘ ∂ = 0`: `(i, j)` goes to
-`(i.succAbove j, j.predAbove i)`. -/
-def faceSwap {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : Fin (n + 2) × Fin (n + 1) :=
-  (p.1.succAbove p.2, p.2.predAbove p.1)
-
-/-- The coordinate formula for the face-index involution `faceSwap`. -/
-theorem faceSwap_def {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) :
-    faceSwap p = (p.1.succAbove p.2, p.2.predAbove p.1) :=
-  (rfl)
-
-theorem faceSwap_faceSwap {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : faceSwap (faceSwap p) = p := by
-  obtain ⟨i, j⟩ := p
-  simp [faceSwap, Fin.succAbove_succAbove_predAbove, Fin.predAbove_predAbove_succAbove]
-
-theorem faceSwap_ne {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : faceSwap p ≠ p := by
-  obtain ⟨i, j⟩ := p
-  intro h
-  exact Fin.succAbove_ne i j (congrArg Prod.fst h)
-
 /-- The cubical boundary squares to zero for arbitrary module coefficients. -/
 theorem boundary_boundary (n : ℕ) : boundary X R M n ∘ₗ boundary X R M (n + 1) = 0 := by
   apply lhom_ext
@@ -188,11 +170,11 @@ theorem boundary_boundary (n : ℕ) : boundary X R M n ∘ₗ boundary X R M (n 
   simp only [LinearMap.comp_apply, boundary_single, LinearMap.zero_apply,
     map_sum, map_zsmul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
   rw [← Finset.sum_product']
-  refine Finset.sum_involution (fun p _ ↦ faceSwap p) (fun p _ ↦ ?_)
-    (fun p _ _ ↦ faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
-    (fun p _ ↦ faceSwap_faceSwap p)
+  refine Finset.sum_involution (fun p _ ↦ Fin.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ Fin.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ Fin.faceSwap_faceSwap p)
   obtain ⟨i, j⟩ := p
-  simp only [faceSwap_def, ← face_face, smul_sub, smul_smul,
+  simp only [Fin.faceSwap_def, ← face_face, smul_sub, smul_smul,
     ← pow_add, Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
   abel
 

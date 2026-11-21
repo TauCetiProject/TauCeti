@@ -143,7 +143,7 @@ with `p ∈ D⁰_x` to `(x, p)`. The model-fibre parameter `P` of `Bundle.TotalS
 role. -/
 def annihilatorInclusion (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
     CotangentBundle I M :=
-  ⟨z.proj, z.2⟩
+  ⟨z.proj, z.snd⟩
 
 @[simp]
 theorem annihilatorInclusion_proj (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
@@ -151,10 +151,10 @@ theorem annihilatorInclusion_proj (z : TotalSpace P fun x ↦ annihilatorSpace I
 
 @[simp]
 theorem annihilatorInclusion_snd (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
-    (annihilatorInclusion I D P z).2 = (z.2 : TangentSpace I z.proj →L[𝕜] 𝕜) := (rfl)
+    (annihilatorInclusion I D P z).snd = (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) := (rfl)
 
 theorem annihilatorInclusion_apply (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
-    annihilatorInclusion I D P z = ⟨z.proj, z.2⟩ := (rfl)
+    annihilatorInclusion I D P z = ⟨z.proj, z.snd⟩ := (rfl)
 
 @[simp]
 theorem annihilatorInclusion_mk' (x : M) (p : annihilatorSpace I D x) :
@@ -172,9 +172,9 @@ theorem annihilatorInclusion_zeroSection (x : M) :
 base points. -/
 @[simp]
 theorem range_annihilatorInclusion :
-    range (annihilatorInclusion I D P) = {w | w.2 ∈ annihilatorSpace I D w.proj} := by
+    range (annihilatorInclusion I D P) = {w | w.snd ∈ annihilatorSpace I D w.proj} := by
   ext ⟨x, p⟩
-  exact ⟨by rintro ⟨⟨y, q⟩, h⟩; cases h; exact q.2, fun hp ↦ ⟨⟨x, ⟨p, hp⟩⟩, rfl⟩⟩
+  exact ⟨by rintro ⟨⟨y, q⟩, h⟩; cases h; exact q.property, fun hp ↦ ⟨⟨x, ⟨p, hp⟩⟩, rfl⟩⟩
 
 /-- The annihilator inclusion is injective. -/
 theorem annihilatorInclusion_injective : Injective (annihilatorInclusion I D P) :=

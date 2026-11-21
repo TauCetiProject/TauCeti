@@ -60,8 +60,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
   centred at `c` exactly when `2 < m p`.
-* `IsCompact.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`: `‖x‖⁻¹` is
-  `Lʳ` on compact sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
+* `Bornology.IsBounded.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`:
+  `‖x‖⁻¹` is `Lʳ` on bounded sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -400,24 +400,42 @@ section Inverse
 
 open scoped ENNReal
 
-/-- On a compact set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
-theorem _root_.IsCompact.memLp_norm_inv_restrict {K : Set E} (hK : IsCompact K) {r : ℝ≥0∞}
-    (hr : r < Module.finrank ℝ E) : MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict K) := by
+/-- On a bounded set, `‖x‖ ^ s` is `Lʳ` for every finite exponent `r` with `-dim E < s r`. -/
+theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict {K : Set E}
+    (hK : Bornology.IsBounded K) {s : ℝ} {r : ℝ≥0∞} (hr : r ≠ ∞)
+    (hs : -(Module.finrank ℝ E : ℝ) < s * r.toReal) :
+    MemLp (fun x : E => ‖x‖ ^ s) r (mu.restrict K) := by
+  have hm : Measurable fun x : E => ‖x‖ ^ s := by fun_prop
   rcases eq_or_ne r 0 with rfl | hr0
-  · exact memLp_zero_iff_aestronglyMeasurable.2 (by fun_prop)
-  obtain ⟨R, hR⟩ := hK.isBounded.subset_ball 0
-  have hrtop : r ≠ ∞ := (hr.trans_le le_top).ne
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm.aestronglyMeasurable
+  obtain ⟨R, hR⟩ := hK.subset_ball 0
   refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
-  rw [← integrable_norm_rpow_iff (by fun_prop) hr0 hrtop]
-  have heq : (fun x : E => ‖‖x‖⁻¹‖ ^ r.toReal) = fun x => ‖x‖ ^ (-r.toReal) := by
+  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr]
+  have heq : (fun x : E => ‖‖x‖ ^ s‖ ^ r.toReal) = fun x => ‖x‖ ^ (s * r.toReal) := by
     funext x
-    rw [Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x)), Real.inv_rpow (norm_nonneg x),
-      Real.rpow_neg (norm_nonneg x)]
+    rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), ← Real.rpow_mul (norm_nonneg x)]
   rw [heq]
-  refine integrableOn_norm_rpow_ball ?_
-  have : r.toReal < Module.finrank ℝ E := by
+  exact integrableOn_norm_rpow_ball hs
+
+/-- On a bounded set, a function dominated by `C ‖x‖ ^ s` is `Lʳ` for every finite exponent `r`
+with `-dim E < s r`. -/
+theorem _root_.Bornology.IsBounded.memLp_of_norm_le_mul_norm_rpow {F : Type*}
+    [NormedAddCommGroup F] {K : Set E} (hK : Bornology.IsBounded K) {f : E → F} {s C : ℝ}
+    {r : ℝ≥0∞} (hr : r ≠ ∞) (hs : -(Module.finrank ℝ E : ℝ) < s * r.toReal)
+    (hf : AEStronglyMeasurable f (mu.restrict K)) (hle : ∀ x, ‖f x‖ ≤ C * ‖x‖ ^ s) :
+    MemLp f r (mu.restrict K) :=
+  ((hK.memLp_norm_rpow_restrict hr hs).const_mul C).of_le hf <|
+    Filter.Eventually.of_forall fun x => (hle x).trans (Real.le_norm_self _)
+
+/-- On a bounded set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
+theorem _root_.Bornology.IsBounded.memLp_norm_inv_restrict {K : Set E}
+    (hK : Bornology.IsBounded K) {r : ℝ≥0∞}
+    (hr : r < Module.finrank ℝ E) : MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict K) := by
+  have hrtop : r ≠ ∞ := (hr.trans_le le_top).ne
+  have hlt : r.toReal < Module.finrank ℝ E := by
     simpa using (ENNReal.toReal_lt_toReal hrtop (by simp)).2 hr
-  linarith
+  simpa only [Real.rpow_neg_one] using
+    hK.memLp_norm_rpow_restrict (mu := mu) (s := -1) hrtop (by linarith)
 
 /-- On a nontrivial space, `‖x‖⁻¹` is not `Lʳ` on a closed ball of positive radius about the
 origin when `dim E ≤ r`. -/

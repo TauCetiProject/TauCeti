@@ -455,11 +455,11 @@ degenerate restricted pairing. -/
 abbrev restrict (H : AddSubgroup A) : FiniteBilinearModule where
   carrier := H
   pairing := (A.pairing.comp H.subtype).compl₂ H.subtype
-  pairing_comm x y := A.pairing_comm x.1 y.1
+  pairing_comm x y := A.pairing_comm x.val y.val
 
 /-- The restricted pairing pairs elements of the subgroup as elements of the whole module. -/
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
-    (restrict A H).pairing x y = A.pairing x.1 y.1 := (rfl)
+    (restrict A H).pairing x y = A.pairing x.val y.val := (rfl)
 
 /-- The inclusion of a restricted finite bilinear module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
@@ -592,7 +592,7 @@ theorem radical_restrict (S : AddSubgroup A) :
   ext x
   rw [mem_radical_iff, AddSubgroup.mem_addSubgroupOf, A.mem_orthogonalComplement_iff]
   exact ⟨fun hx y hy ↦ by simpa only [A.restrict_pairing S] using hx ⟨y, hy⟩,
-    fun hx y ↦ by simpa only [A.restrict_pairing S] using hx y.1 y.2⟩
+    fun hx y ↦ by simpa only [A.restrict_pairing S] using hx y.val y.property⟩
 
 /-- Orthogonal complements reverse inclusions. -/
 theorem orthogonalComplement_anti {H K : AddSubgroup A} (h : H ≤ K) :

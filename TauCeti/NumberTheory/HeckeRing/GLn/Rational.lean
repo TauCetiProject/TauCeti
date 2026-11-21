@@ -277,7 +277,7 @@ noncomputable def rationalToFullRingEquiv (R : Type*) [Semiring R] :
       𝕋 (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) R :=
   HeckeCosetModule.mapSubgroupRingEquiv R (SLnZ_eq_GLnZ_inf_glpos n) le_top le_rfl
     (fun δ' ↦ exists_mem_GLnZ_mul_mem_glpos n (δ' : GL (Fin n) ℚ))
-    (fun g _ hu ↦ exists_mem_SLnZ_inv_mul_mem_conj_GLnZ n g.2 hu)
+    (fun g _ hu ↦ exists_mem_SLnZ_inv_mul_mem_conj_GLnZ n g.property hu)
 
 /-- The rational-to-full Hecke ring isomorphism over `ℤ`. -/
 noncomputable abbrev rationalToFullEquiv : RationalHeckeRing n ≃+* FullHeckeRing n :=
@@ -340,7 +340,7 @@ theorem transposeRationalAntiInvolution_onHeckeCoset_eq_self
     (transposeRationalAntiInvolution n).onHeckeCoset D = D := by
   induction D using HeckeCoset.induction with | h g =>
   rw [(transposeRationalAntiInvolution n).onHeckeCoset_mk]
-  obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+  obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.property
   have hbar_int := (transposeAntiInvolution n).bar_mem_doubleCoset_self
     (transposeAntiInvolution_onHeckeCoset_eq_self n) ⟨natDiagGL n (fun _ ↦ c) * g, hcg⟩
   rw [transposeAntiInvolution_bar] at hbar_int
@@ -413,7 +413,7 @@ theorem single_mul_natDiagGL_const (g : (Matrix.GLPos (Fin n) ℚ).toSubmonoid) 
         (HeckeCoset.mk (SLnZ n) (SLnZ n)
           ⟨natDiagGL n (fun _ ↦ c), posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _)⟩) 1 =
       HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n)
-        ⟨(g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c), (Matrix.GLPos (Fin n) ℚ).mul_mem g.2
+        ⟨(g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c), (Matrix.GLPos (Fin n) ℚ).mul_mem g.property
           (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _))⟩) 1 :=
   HeckeCosetModule.single_mul_single_of_mem_normalizer_right (x := g)
     (y := ⟨natDiagGL n (fun _ ↦ c), posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _)⟩) ℤ
@@ -513,7 +513,7 @@ theorem exists_mul_mem_scalarSubmonoid_eq (z : RationalHeckeRing n) :
       rw [← HeckeCosetModule.smul_single_one ℤ D m]
       refine sat.zsmul_mem ?_ m
       induction D using HeckeCoset.induction with | h g =>
-      obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+      obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.property
       have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
         natDiagGL_const_comm n c g ▸ hcg
       refine Subalgebra.mem_toSubring.mpr (Subalgebra.mem_saturation_iff.mpr

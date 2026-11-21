@@ -114,10 +114,10 @@ pieces of the specialized complexes blocking `i` and `G.O i`.
 Not a simp lemma: the chain-piece membership criterion is already a simp lemma. -/
 theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff {g : ℤ × ℤ}
     {c : GridChainHat R n i} :
-    G.1.simplyBlockedTransposeEquiv R i c ∈
-        G.transpose.bigradedChainHatPiece R (G.1.O i) g ↔
+    G.val.simplyBlockedTransposeEquiv R i c ∈
+        G.transpose.bigradedChainHatPiece R (G.val.O i) g ↔
       c ∈ G.bigradedChainHatPiece R i g :=
-  mem_bigradedChainHatPiece_iff_of_rename (φ := GridState.transpose) (κ := G.1.O.toPerm)
+  mem_bigradedChainHatPiece_iff_of_rename (φ := GridState.transpose) (κ := G.val.O.toPerm)
     (fun x => ⟨x.transpose, GridState.transpose_transpose x⟩) G.bidegree_transpose
     (fun x => by rw [GridDiagram.simplyBlockedTransposeEquiv_apply, GridState.transpose_transpose])
 

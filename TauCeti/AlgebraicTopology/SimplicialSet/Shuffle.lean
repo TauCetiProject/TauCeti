@@ -62,6 +62,8 @@ map is a morphism of chain complexes.
   simplex, its boundary formula `SSet.shuffleChain_d_succ_succ`,
   `SSet.shuffleChain_d_succ_zero` and `SSet.shuffleChain_d_zero_succ`, and its naturality in the
   coefficient object.
+* `SSet.shuffleChain_chainComplexMap_braiding`: the swap `Δ[p] ⊗ Δ[q] ⟶ Δ[q] ⊗ Δ[p]` sends the
+  shuffle chain of `Δ[p] ⊗ Δ[q]` to `(-1)^(p * q)` times that of `Δ[q] ⊗ Δ[p]`.
 * `SSet.shuffle`: the shuffle map, a morphism of chain complexes.
 * `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f`: its value on the summand of a pair of
   simplices, `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero` in degree zero,
@@ -306,6 +308,12 @@ private lemma whiskerLeft_app_prodCone {p q : ℕ} (k : Fin (q + 1)) {m : ℕ}
       prodCone (((Δ[p] : SSet.{w}) ◁ stdSimplex.δ k.succ).app _ x) :=
   -- a whiskered map acts on the components of a simplex of a product separately
   Prod.ext rfl (map_cone (SimplexCategory.δ k.succ) (Fin.succ_succAbove_zero k) x.2)
+
+private lemma braiding_hom_app_prodCone {p q m : ℕ} (x : ((Δ[p] : SSet.{w}) ⊗ Δ[q]) _⦋m⦌) :
+    (β_ (Δ[p] : SSet.{w}) Δ[q]).hom.app _ (prodCone x) =
+      prodCone ((β_ (Δ[p] : SSet.{w}) Δ[q]).hom.app _ x) :=
+  -- the swap of simplicial sets exchanges the two components of a simplex of the product
+  rfl
 
 /-- The step adding a first horizontal edge: the face `δ 0` in the first factor followed by the
 cone from `(0, 0)`. -/
@@ -581,20 +589,6 @@ private lemma prodCone_vertical_top (p : ℕ) (f : (Δ[p] : SSet.{w}) ⟶ Δ[0])
       rw [hi]
       simp [Fin.lt_def, SimplexCategory.coe_δ]
 
-/-- The native shuffle of a simplex and a vertex is the single product simplex. -/
-lemma shuffleChain_zero_right (p : ℕ) (h : p + 0 = p)
-    (f : (Δ[p] : SSet.{w}) ⟶ Δ[0]) :
-    shuffleChain T p 0 p h = ((Δ[p] : SSet.{w}) ⊗ Δ[0]).ιChainComplex
-      (yonedaEquiv (CartesianMonoidalCategory.lift (𝟙 _) f)) := by
-  induction p with
-  | zero => exact shuffleChain_zero_zero T h _
-  | succ p ih =>
-    rw [shuffleChain_succ_zero, ih _ (stdSimplex.δ 0 ≫ f),
-      ι_chainComplexMap_f_assoc (Δ[p] ⊗ Δ[0]), stdSimplex.ιChainComplex_prodConeChain]
-    congr 1
-    exact Prod.ext (stdSimplex.cone_δ_zero_yonedaEquiv_id p)
-      (stdSimplex.ext _ _ fun _ ↦ Subsingleton.elim (α := Fin 1) _ _)
-
 /-- **The shuffle chain of a vertex and a simplex**: the shuffle chain of `Δ[0] ⊗ Δ[q]` is the
 single `q`-simplex whose first component is the constant simplex of `Δ[0]` and whose second
 component is the top simplex of `Δ[q]`. Here it is written as the simplex classified by the map
@@ -612,6 +606,81 @@ lemma shuffleChain_zero_left (q : ℕ) (h : 0 + q = q) (f : (Δ[q] : SSet.{w}) �
     congr 1
     exact Prod.ext (stdSimplex.ext _ _ fun _ ↦ Subsingleton.elim (α := Fin 1) _ _)
       (stdSimplex.cone_δ_zero_yonedaEquiv_id q)
+
+/-- The swap `Δ[p] ⊗ Δ[q] ⟶ Δ[q] ⊗ Δ[p]` commutes with the cones from `(0, 0)`. -/
+@[reassoc]
+private lemma prodConeChain_chainComplexMap_braiding (p q m : ℕ) :
+    prodConeChain p q T m ≫ (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f (m + 1) =
+      (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f m ≫ prodConeChain q p T m :=
+  (chainComplexMap_f_prodConeChain T _ (fun _ x ↦ braiding_hom_app_prodCone x) m).symm
+
+/-- The swap turns the first horizontal edge into the first vertical edge. -/
+@[reassoc]
+private lemma chainComplexMap_whiskerRight_braiding (p q n : ℕ) :
+    (chainComplexMap (stdSimplex.δ 0 ▷ (Δ[q] : SSet.{w})) T).f n ≫
+        (chainComplexMap (β_ (Δ[p + 1] : SSet.{w}) Δ[q]).hom T).f n =
+      (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f n ≫
+        (chainComplexMap ((Δ[q] : SSet.{w}) ◁ stdSimplex.δ 0) T).f n := by
+  rw [chainComplexMap_f_comp, chainComplexMap_f_comp, BraidedCategory.braiding_naturality_left]
+
+/-- The swap turns the first vertical edge into the first horizontal edge. -/
+@[reassoc]
+private lemma chainComplexMap_whiskerLeft_braiding (p q n : ℕ) :
+    (chainComplexMap ((Δ[p] : SSet.{w}) ◁ stdSimplex.δ 0) T).f n ≫
+        (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q + 1]).hom T).f n =
+      (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f n ≫
+        (chainComplexMap (stdSimplex.δ 0 ▷ (Δ[p] : SSet.{w})) T).f n := by
+  rw [chainComplexMap_f_comp, chainComplexMap_f_comp, BraidedCategory.braiding_naturality_right]
+
+/-- **The shuffle chain is graded symmetric**: the swap `Δ[p] ⊗ Δ[q] ⟶ Δ[q] ⊗ Δ[p]` sends the
+shuffle chain of `Δ[p] ⊗ Δ[q]` to `(-1)^(p * q)` times the shuffle chain of `Δ[q] ⊗ Δ[p]`. The swap
+exchanges the horizontal and vertical steps of a lattice path, and the sign counts the pairs of a
+horizontal and a vertical step. -/
+@[reassoc]
+lemma shuffleChain_chainComplexMap_braiding : ∀ (p q n : ℕ) (h : p + q = n),
+    shuffleChain T p q n h ≫ (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f n =
+      (-1 : ℤ) ^ (p * q) • shuffleChain T q p n (by omega)
+  | 0, 0, 0, h => by
+    rw [shuffleChain_zero_zero T h vertex, ι_chainComplexMap_f, Nat.mul_zero, pow_zero, one_smul]
+    exact congrArg _ (eq_vertex _)
+  | p + 1, 0, n + 1, h => by
+    rw [shuffleChain_succ_zero, Category.assoc, Category.assoc,
+      prodConeChain_chainComplexMap_braiding, chainComplexMap_whiskerRight_braiding_assoc,
+      reassoc_of% (shuffleChain_chainComplexMap_braiding p 0 n (by omega)),
+      shuffleChain_zero_succ]
+    simp only [Nat.mul_zero, pow_zero, one_smul]
+  | 0, q + 1, n + 1, h => by
+    rw [shuffleChain_zero_succ, Category.assoc, Category.assoc,
+      prodConeChain_chainComplexMap_braiding, chainComplexMap_whiskerLeft_braiding_assoc,
+      reassoc_of% (shuffleChain_chainComplexMap_braiding 0 q n (by omega)),
+      shuffleChain_succ_zero]
+    simp only [Nat.zero_mul, pow_zero, one_smul]
+  | p + 1, q + 1, n + 1, h => by
+    rw [shuffleChain_succ_succ, shuffleChain_succ_succ, Preadditive.add_comp,
+      Preadditive.zsmul_comp, Category.assoc, Category.assoc, Category.assoc, Category.assoc,
+      prodConeChain_chainComplexMap_braiding, chainComplexMap_whiskerRight_braiding_assoc,
+      chainComplexMap_whiskerLeft_braiding_assoc,
+      reassoc_of% (shuffleChain_chainComplexMap_braiding p (q + 1) n (by omega)),
+      reassoc_of% (shuffleChain_chainComplexMap_braiding (p + 1) q n (by omega))]
+    simp only [Preadditive.zsmul_comp, smul_add, smul_smul, ← pow_add]
+    -- both sides are the same two cones, with signs of the same parities
+    have hs : (-1 : ℤ) ^ ((p + 1) * (q + 1) + (q + 1)) = (-1) ^ (p * (q + 1)) := by
+      simp [show (p + 1) * (q + 1) + (q + 1) = p * (q + 1) + 2 * (q + 1) by ring, pow_add, pow_mul]
+    rw [show p + 1 + (p + 1) * q = (p + 1) * (q + 1) by ring, hs]
+    exact add_comm _ _
+  | 0, 0, _ + 1, h | _ + 1, _, 0, h | 0, _ + 1, 0, h => absurd h (by omega)
+
+/-- The native shuffle of a simplex and a vertex is the single product simplex. -/
+lemma shuffleChain_zero_right (p : ℕ) (h : p + 0 = p)
+    (f : (Δ[p] : SSet.{w}) ⟶ Δ[0]) :
+    shuffleChain T p 0 p h = ((Δ[p] : SSet.{w}) ⊗ Δ[0]).ιChainComplex
+      (yonedaEquiv (CartesianMonoidalCategory.lift (𝟙 _) f)) := by
+  have hswap := shuffleChain_chainComplexMap_braiding T 0 p p (Nat.zero_add p)
+  rw [shuffleChain_zero_left T p (Nat.zero_add p) f] at hswap
+  simp only [Nat.zero_mul, pow_zero, one_smul] at hswap
+  rw [ι_chainComplexMap_f, ← yonedaEquiv_comp,
+    CartesianMonoidalCategory.lift_braiding_hom] at hswap
+  exact hswap.symm
 
 /-- The faces of the shuffle chain in the first factor. -/
 private def xFace : (p q n : ℕ) → p + q = n + 1 →
