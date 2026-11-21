@@ -45,7 +45,8 @@ A real bilinear map `B` on the real test functions `𝓓(Ω, ℝ) × 𝓓(O, ℝ
 Banach space `G`, under the same estimate, has a unique kernel `T ∈ 𝓓'(Ω × O, G)` with
 `T (φ ⊗ ψ) = B φ ψ` (`LinearMap.existsUnique_schwartzKernel_prodSMulCLM`). It is the real part of
 the kernel of the complex-bilinear extension of `B` with values in the complexification of `G`
-(`LinearMap.complexifyTestFunction`).
+(`LinearMap.complexifyTestFunction`). If `B` is continuous in each variable it satisfies the
+estimate (`LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous`).
 
 ## Operators and their kernels
 
@@ -62,8 +63,8 @@ operator has a kernel: for a real Banach space `G`, a linear map `A : 𝓓(O, �
 with every `ψ ↦ A ψ φ` continuous is `kernelOperator hV K` for exactly one `K ∈ 𝓓'(Ω × O, G)`
 (`LinearMap.existsUnique_kernelOperator_eq`), in particular every continuous linear map
 `𝓓(O, ℝ) →L[ℝ] 𝓓'(Ω, G)` (`ContinuousLinearMap.existsUnique_kernelOperator_eq`). For the proof,
-the real bilinear map `(φ, ψ) ↦ ⟨A ψ, φ⟩` is continuous in each variable, hence satisfies the
-estimate of `LinearMap.existsUnique_schwartzKernel_prodSMulCLM`, which supplies `K`.
+the real bilinear map `(φ, ψ) ↦ ⟨A ψ, φ⟩` is continuous in each variable, so
+`LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous` supplies `K`.
 
 In the same way a continuous linear map `T : 𝓓(O, ℂ) → 𝓓'(Ω, ℂ)` on complex test functions has a
 unique kernel `K ∈ 𝓓'(Ω × O, ℂ)` with
@@ -496,20 +497,21 @@ theorem existsUnique_schwartzKernel_prodSMulCLM {G : Type*} [NormedAddCommGroup 
 
 section Continuous
 
-omit [CompleteSpace F] in
-variable (B) in
-/-- A bilinear map on complex test functions which is continuous in each variable satisfies the
-estimate of the Schwartz kernel theorem: for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C` and
-`k` give `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for `φ` supported in `K₁` and `ψ` supported in `K₂`. This is
-`LinearMap.exists_bound_supportedIn_of_continuous` for the restriction of `B` to such functions. -/
-private theorem exists_bound_ofSupportedIn_of_continuous (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ)
+/-- A bilinear map on real or complex test functions which is continuous in each variable
+satisfies the estimate of the Schwartz kernel theorem: for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O`
+some `C` and `k` give `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for `φ` supported in `K₁` and `ψ` supported in
+`K₂`. This is `LinearMap.exists_bound_supportedIn_of_continuous` for the restriction of `B` to such
+functions. -/
+private theorem exists_bound_ofSupportedIn_of_continuous {𝕜 G : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (B : 𝓓(Ω, 𝕜) →ₗ[𝕜] 𝓓(O, 𝕜) →ₗ[𝕜] G)
+    (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ)
     (h₂ : ∀ φ, Continuous (B φ)) (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ))
     (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω) (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O) :
     ∃ (C : ℝ) (k : ℕ), ∀ φ ψ, ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
-      C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
-        ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ :=
+      C * ContDiffMapSupportedIn.supSeminorm 𝕜 _ 𝕜 ⊤ K₁ k φ *
+        ContDiffMapSupportedIn.supSeminorm 𝕜 _ 𝕜 ⊤ K₂ k ψ :=
   exists_bound_supportedIn_of_continuous
-    (B.compl₁₂ (ofSupportedInCLM ℂ hK₁).toLinearMap (ofSupportedInCLM ℂ hK₂).toLinearMap)
+    (B.compl₁₂ (ofSupportedInCLM 𝕜 hK₁).toLinearMap (ofSupportedInCLM 𝕜 hK₂).toLinearMap)
     (fun _ ↦ (h₁ _).comp (continuous_ofSupportedIn hK₁))
     (fun _ ↦ (h₂ _).comp (continuous_ofSupportedIn hK₂))
 
@@ -538,6 +540,18 @@ theorem existsUnique_schwartzKernel_distribution_of_continuous
     ∃! K : 𝓓'(V, ℂ), ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
       K.complexPairing (φ.tensor ψ hV.symm.subset) = B φ ψ :=
   existsUnique_schwartzKernel_distribution B (exists_bound_ofSupportedIn_of_continuous B h₁ h₂) hV
+
+/-- **The Schwartz kernel theorem for separately continuous bilinear maps, for real test
+functions.** A real bilinear map on the real test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`,
+with values in a real Banach space `G`, which is continuous in each variable is given by a unique
+`G`-valued distribution `T` on `V = Ω × O` with `T (φ ⊗ ψ) = B φ ψ` for all `φ` and `ψ`. -/
+theorem existsUnique_schwartzKernel_prodSMulCLM_of_continuous {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] (B : 𝓓(Ω, ℝ) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] G)
+    (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ))
+    {V : Opens ((a → ℝ) × (b → ℝ))}
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    ∃! T : 𝓓'(V, G), ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), T (prodSMulCLM ψ hV.symm.subset φ) = B φ ψ :=
+  existsUnique_schwartzKernel_prodSMulCLM B (exists_bound_ofSupportedIn_of_continuous B h₁ h₂) hV
 
 end Continuous
 
@@ -614,21 +628,12 @@ theorem existsUnique_kernelOperator_eq (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, G
     (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ)
     (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
     ∃! K : 𝓓'(V, G), kernelOperator hV.symm.subset K = A := by
-  -- The bilinear map `(φ, ψ) ↦ ⟨A ψ, φ⟩` is continuous in each variable, so it satisfies the
-  -- estimate of the Schwartz kernel theorem.
+  -- The bilinear map `(φ, ψ) ↦ ⟨A ψ, φ⟩` is continuous in each variable.
   let B : 𝓓(Ω, ℝ) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] G :=
     LinearMap.mk₂ ℝ (fun φ ψ ↦ A ψ φ) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
       (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
-  have hB (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ)) (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω)
-      (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O) : ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
-        ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
-          C * ContDiffMapSupportedIn.supSeminorm ℝ _ ℝ ⊤ K₁ k φ *
-            ContDiffMapSupportedIn.supSeminorm ℝ _ ℝ ⊤ K₂ k ψ :=
-    exists_bound_supportedIn_of_continuous
-      (B.compl₁₂ (ofSupportedInCLM ℝ hK₁).toLinearMap (ofSupportedInCLM ℝ hK₂).toLinearMap)
-      (fun ψ ↦ (A _).continuous.comp (continuous_ofSupportedIn hK₁))
-      (fun φ ↦ (hA _).comp (continuous_ofSupportedIn hK₂))
-  obtain ⟨K, hK, -⟩ := existsUnique_schwartzKernel_prodSMulCLM B hB hV
+  obtain ⟨K, hK, -⟩ := existsUnique_schwartzKernel_prodSMulCLM_of_continuous B
+    (fun ψ ↦ (A ψ).continuous) hA hV
   have hKA : kernelOperator hV.symm.subset K = A := by
     ext ψ φ
     rw [kernelOperator_apply, hK, LinearMap.mk₂_apply]
