@@ -294,6 +294,18 @@ lemma singularChainComplexπ_ofSubsetMap_naturality_assoc {X Y : TopCat.{w}} (g 
     ((eq_whisker (singularChainComplexπ_ofSubsetMap_naturality g hB M) h).trans
       (Category.assoc _ _ _))
 
+/-- A map of pairs `(X, A) ⟶ (X, B)` given by the identity of `X` carries the quotient map to the
+relative singular chains of `(X, A)` to the quotient map to those of `(X, B)`. -/
+@[reassoc]
+lemma singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id {X A B : TopCat.{w}}
+    {i : A ⟶ X} {j : B ⟶ X} {hi : Topology.IsEmbedding i} {hj : Topology.IsEmbedding j}
+    (f : TopPair.of i hi ⟶ TopPair.of j hj) (hf : Hom.fst f = 𝟙 X) :
+    (TopPair.of i hi).singularChainComplexπ R ≫ singularChainComplexMap f R =
+      (TopPair.of j hj).singularChainComplexπ R := by
+  rw [← singularChainComplexπ_pair_naturality, hf]
+  exact (congrArg (· ≫ _) ((TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R).map_id X)).trans
+    (Category.id_comp _)
+
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
 @[reassoc]
