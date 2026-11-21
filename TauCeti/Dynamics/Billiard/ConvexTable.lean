@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import TauCeti.Dynamics.Billiard.Circle
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Analysis.Calculus.DerivativeTest
@@ -17,7 +18,6 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.Circle
-import TauCeti.Dynamics.Billiard.Circle
 import TauCeti.Topology.JordanCurve.Interval
 
 /-!
@@ -452,6 +452,22 @@ theorem coe_toStrictConvexBilliardTable : ⇑T.toStrictConvexBilliardTable = T :
 
 @[simp]
 theorem toStrictConvexBilliardTable_period : T.toStrictConvexBilliardTable.period = ℓ := (rfl)
+
+/-- The convex table `circle R` is the circle billiard table
+`TauCeti.StrictConvexBilliardTable.circle`. -/
+@[simp]
+theorem toStrictConvexBilliardTable_circle {R : ℝ} [Fact (0 < 2 * Real.pi * R)] (hR : 0 < R) :
+    (circle R).toStrictConvexBilliardTable = StrictConvexBilliardTable.circle hR := by
+  -- Both tables have the parametrization `s ↦ circleMap 0 R (s / R)` and the period `2πR`.
+  have key : ∀ χ χ' : StrictConvexBilliardTable Complex.orientation,
+      χ.toFun = χ'.toFun → χ.period = χ'.period → χ = χ' := by
+    rintro ⟨⟩ ⟨⟩ h₁ h₂
+    cases h₁
+    cases h₂
+    rfl
+  refine key _ _ (funext fun s => ?_) ?_
+  · exact (circle_apply R s).trans (StrictConvexBilliardTable.circle_apply s).symm
+  · exact StrictConvexBilliardTable.period_circle.symm
 
 end ConvexTable
 
