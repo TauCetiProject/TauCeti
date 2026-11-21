@@ -11,6 +11,8 @@ import Mathlib.Probability.Kernel.Composition.MeasureComp
 /-!
 # The second marginal of a composition-product of kernels
 
+Composing a kernel `κ` with the Dirac measure at `a` gives `κ a`.
+
 For a kernel `κ : Kernel α β` and an s-finite kernel `η : Kernel (α × β) γ`, the second marginal
 of the composition-product `κ ⊗ₖ η` is the composition of `η` with `Kernel.id ×ₖ κ`: integrating
 `η (a, b)` against `κ a` and forgetting `b` is the same as integrating `η` against the measure
@@ -20,6 +22,7 @@ kernels: drawing `b` from `κ a`, then `c` from `η (a, b)`, and keeping `c`. Ma
 
 ## Main statements
 
+* `MeasureTheory.Measure.comp_dirac` — `κ ∘ₘ Measure.dirac a = κ a`.
 * `ProbabilityTheory.Kernel.snd_compProd_eq_comp_id_prod` —
   `(κ ⊗ₖ η).snd = η ∘ₖ (Kernel.id ×ₖ κ)`.
 -/
@@ -28,21 +31,33 @@ public section
 
 open MeasureTheory
 
-namespace ProbabilityTheory.Kernel
-
 variable {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
 
+namespace MeasureTheory.Measure
+
+open ProbabilityTheory
+
+/-- Composing a kernel with the Dirac measure at `a` gives the kernel's measure at `a`. -/
+@[simp]
+theorem comp_dirac (κ : Kernel α β) (a : α) : κ ∘ₘ Measure.dirac a = κ a :=
+  Measure.dirac_bind κ.measurable a
+
+end MeasureTheory.Measure
+
+namespace ProbabilityTheory.Kernel
+
 /-- The second marginal of a composition-product `κ ⊗ₖ η` with `η` s-finite is
-`η ∘ₖ (Kernel.id ×ₖ κ)`. This is Mathlib's `Measure.comp_compProd_comm` at the Dirac measures. -/
+`η ∘ₖ (Kernel.id ×ₖ κ)`. When `κ` is not s-finite, both sides vanish. -/
 @[simp low]
 theorem snd_compProd_eq_comp_id_prod (κ : Kernel α β) (η : Kernel (α × β) γ)
     [IsSFiniteKernel η] : (κ ⊗ₖ η).snd = η ∘ₖ (Kernel.id ×ₖ κ) := by
   by_cases hκ : IsSFiniteKernel κ; swap
   · simp [compProd_of_not_isSFiniteKernel_left _ _ hκ, prod_of_not_isSFiniteKernel_right _ hκ]
   ext1 a
+  -- Mathlib's `Measure.comp_compProd_comm` at the Dirac measure at `a`.
   have h := Measure.comp_compProd_comm (μ := Measure.dirac a) (κ := κ) (η := η)
-  rw [Measure.compProd_eq_comp_prod, Measure.comp_assoc, Measure.dirac_bind (by fun_prop),
-    Measure.dirac_bind (by fun_prop)] at h
+  rw [Measure.compProd_eq_comp_prod, Measure.comp_assoc] at h
+  simp only [Measure.comp_dirac] at h
   rw [h, snd_apply, Measure.snd]
 
 end ProbabilityTheory.Kernel
