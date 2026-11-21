@@ -103,7 +103,7 @@ private lemma exists_natDiagGL_mul_eq_mul_shiftPrimeRep (hp : p.Prime) (hpN : p.
         ξ 1 0 = g 1 0 ∧ ξ 1 1 = p * g 1 1 :=
       ⟨.mk !![a, g 0 1; g 1 0, p * g 1 1] (by
         rw [Matrix.det_fin_two_of]
-        linear_combination hg - g 1 1 * ha), rfl, rfl, rfl, rfl⟩
+        linear_combination hg - g 1 1 * ha), by simp, by simp, by simp, by simp⟩
     refine ⟨ξ, none, Units.ext ?_⟩
     have haQ : ((g 0 0 : ℤ) : ℚ) = p * a := by exact_mod_cast ha
     rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp.pos, coe_mapGL_int_rat_fin_two,
@@ -121,7 +121,7 @@ private lemma exists_natDiagGL_mul_eq_mul_shiftPrimeRep (hp : p.Prime) (hpN : p.
         ξ 1 0 = p * g 1 0 ∧ ξ 1 1 = g 1 1 - g 1 0 * N * c :=
       ⟨.mk !![g 0 0, t; p * g 1 0, g 1 1 - g 1 0 * N * c] (by
         rw [Matrix.det_fin_two_of]
-        linear_combination hg + g 1 0 * ht), rfl, rfl, rfl, rfl⟩
+        linear_combination hg + g 1 0 * ht), by simp, by simp, by simp, by simp⟩
     refine ⟨ξ, some c, Units.ext ?_⟩
     have htQ : ((g 0 1 : ℤ) : ℚ) - (c : ℚ) * ((g 0 0 : ℤ) * N) = p * t := by exact_mod_cast ht
     rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp.pos, coe_mapGL_int_rat_fin_two,

@@ -86,8 +86,9 @@ private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k
   rw [CharIndex.card_four]
   split_ifs with hk₂
   · -- The cusp `1/2 = α • ∞` is the third representative.
-    let α : SL(2, ℤ) := .mk !![1, 0; 2, 1] (by norm_num [Matrix.det_fin_two_of])
-    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
+    let α : SL(2, ℤ) := Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) 2
+    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := by
+      simp [α, Matrix.SpecialLinearGroup.transvection_coe]
     simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
         h.elim (fun h ↦ .inl ⟨1, h⟩)

@@ -536,13 +536,15 @@ variable {N : ℕ}
 
 /-- The integral matrix representing the divisor cusp `1/d` of `Γ₀(N)`. -/
 def divisorCuspRep (d : N.divisors) : SL(2, ℤ) :=
-  .mk !![1, 0; (d.val : ℤ), 1] (by simp)
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (d.val : ℤ)
 
 /-- The matrix entries of the representative of the divisor cusp `1/d`. -/
 @[simp]
 theorem coe_divisorCuspRep (d : N.divisors) :
-    (divisorCuspRep d : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; (d.val : ℤ), 1] :=
-  (rfl)
+    (divisorCuspRep d : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; (d.val : ℤ), 1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [divisorCuspRep, Matrix.SpecialLinearGroup.transvection_coe]
 
 variable [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 

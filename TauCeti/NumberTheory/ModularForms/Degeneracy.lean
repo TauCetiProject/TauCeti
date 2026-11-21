@@ -698,7 +698,8 @@ lemma mem_gamma1Conj_of_mem_Gamma1 [NeZero q] {γ : SL(2, ℤ)} (hγ : γ ∈ Ga
   obtain ⟨δ, hδ⟩ : ∃ δ : SL(2, ℤ),
       (δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, b; q * γ 1 0, γ 1 1] :=
     ⟨.mk !![γ 0 0, b; q * γ 1 0, γ 1 1] (by
-      rw [Matrix.det_fin_two_of]; rw [hb] at hdet; linear_combination hdet), rfl⟩
+      rw [Matrix.det_fin_two_of]; rw [hb] at hdet; linear_combination hdet),
+      Matrix.SpecialLinearGroup.coe_mk _⟩
   have hc : δ 1 0 = q * γ 1 0 := by rw [hδ]; simp
   have hδN : δ ∈ Gamma1 N := mem_Gamma1_of_dvd_lowerRow (by rw [hc]; exact h10.mul_left _)
     (by rw [hδ]; simpa using h11)

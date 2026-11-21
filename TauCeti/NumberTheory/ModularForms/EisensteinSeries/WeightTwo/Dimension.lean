@@ -102,8 +102,9 @@ private theorem exists_cuspOrbitOfSL2Z_Gamma1_reps (hN : ¬(2 < N ∧ N ≠ 4)) 
       fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_two γ).elim (fun h ↦ ⟨0, h⟩) fun h ↦ ⟨1, h⟩⟩
   · rw [CharIndex.card_four, ite_eq_left even_two]
     -- The cusp `1/2 = α • ∞` is the third representative.
-    let α : SL(2, ℤ) := .mk !![1, 0; 2, 1] (by norm_num [Matrix.det_fin_two_of])
-    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
+    let α : SL(2, ℤ) := Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) 2
+    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := by
+      simp [α, Matrix.SpecialLinearGroup.transvection_coe]
     exact ⟨![1, ModularGroup.S, α], fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ ⟨0, h⟩)
       fun h ↦ h.elim (fun h ↦ ⟨1, h⟩)
         fun h ↦ ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩⟩

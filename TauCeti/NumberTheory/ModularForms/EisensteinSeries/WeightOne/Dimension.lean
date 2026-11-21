@@ -284,7 +284,7 @@ end Profile
 
 /-- The matrix `!![1, 0; c, 1]`, which represents the cusp `1 / c`. -/
 private def lowerUnipotent (c : ℕ) : SL(2, ℤ) :=
-  .mk !![1, 0; (c : ℤ), 1] (by simp [Matrix.det_fin_two_of])
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (c : ℤ)
 
 /-- The constant term of `E₁^{ψ,φ,t}` at the cusp `1 / c` in terms of the two profiles. -/
 private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZero u] [NeZero v]
@@ -297,8 +297,10 @@ private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZer
           (((u : ℂ) * v)⁻¹ * ∑ j : ZMod (u * v), ψ⁻¹ (j.val : ZMod u) * φ (j.val : ZMod v) *
             (π * cot (π * (j.val / (u * v))))) * profile φ ψ t c := by
   rw [constantTermAt_charE1MFRaise ψ φ hψ hφ htuv]
-  have h10 : (lowerUnipotent c) 1 0 = c := rfl
-  have h00 : (lowerUnipotent c) 0 0 = 1 := rfl
+  have h10 : (lowerUnipotent c) 1 0 = c := by
+    simp [lowerUnipotent, Matrix.SpecialLinearGroup.transvection_coe]
+  have h00 : (lowerUnipotent c) 0 0 = 1 := by
+    simp [lowerUnipotent, Matrix.SpecialLinearGroup.transvection_coe]
   simp only [h10, h00, mul_one, Int.gcd_natCast_natCast, ← Int.natCast_div,
     Int.natCast_dvd_natCast, Int.cast_natCast, Int.cast_neg, profile]
   have hφ1 (x : ZMod v) : φ x = φ (-1) * φ (-x) := by
