@@ -29,10 +29,10 @@ chart pullback (`TauCeti.holomorphicStructureSheaf.stalk_induction`) then transf
 arbitrary finite-dimensional complex manifolds without boundary, as well as to Mathlib's native
 complex-smooth structure sheaf via `TauCeti.holomorphicStructureSheaf.smoothStalkIso`.
 
-As immediate consequences of the Rückert hypotheses and factoriality, a distinguished polynomial
-`P ∈ (𝒪_{E, x₀})[X]` generates a prime ideal, is prime, or is irreducible in `(𝒪_{E, x₀})[X]` if
-and only if `evalVertical x₀ w₀ P` has the corresponding property in `𝒪_{E × ℂ, (x₀, w₀)}`, and the
-same holds for any germ admitting `P` as its Weierstrass polynomial.
+As an immediate consequence of the Rückert hypotheses and factoriality, any germ admitting a
+Weierstrass factorization `f = evalVertical x₀ w₀ P * u` is irreducible in `𝒪_{E × ℂ, (x₀, w₀)}`
+if and only if `P` is irreducible in `(𝒪_{E, x₀})[X]`
+(`TauCeti.holomorphicStructureSheaf.irreducible_iff_of_weierstrassPreparation`).
 
 ## Main declarations
 
@@ -40,13 +40,7 @@ same holds for any germ admitting `P` as its Weierstrass polynomial.
   unique factorisation domains.
 * `TauCeti.holomorphicStructureSheaf.smoothStalkUniqueFactorizationMonoid`: so are the stalks of
   Mathlib's complex-smooth structure sheaf.
-* `TauCeti.holomorphicStructureSheaf.isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.prime_evalVertical_iff_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.irreducible_evalVertical_iff_of_isDistinguishedAt`:
-  primality and irreducibility of a distinguished polynomial agree in `(𝒪_{E, x₀})[X]` and in
-  `𝒪_{E × ℂ, (x₀, w₀)}`.
-* `TauCeti.holomorphicStructureSheaf.prime_iff_of_weierstrassPreparation`,
-  `TauCeti.holomorphicStructureSheaf.irreducible_iff_of_weierstrassPreparation`: the same
+* `TauCeti.holomorphicStructureSheaf.irreducible_iff_of_weierstrassPreparation`: irreducibility
   comparison for any Weierstrass factorization `f = evalVertical x₀ w₀ P * u`.
 
 ## References
@@ -88,50 +82,9 @@ instance smoothStalkUniqueFactorizationMonoid (x : X) :
 
 end Manifold
 
-section Primality
+section Irreducibility
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-
-/-- A distinguished polynomial `P ∈ (𝒪_{E, x₀})[X]` generates a prime ideal after vertical
-evaluation in `𝒪_{E × ℂ, (x₀, w₀)}` if and only if it generates a prime ideal in `(𝒪_{E, x₀})[X]`.
--/
-theorem isPrime_span_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime :=
-  (isRueckert_evalVertical x₀ w₀).isPrime_span_apply_iff hP
-
-/-- A distinguished polynomial `P ∈ (𝒪_{E, x₀})[X]` becomes a prime germ under vertical evaluation
-if and only if it is prime in `(𝒪_{E, x₀})[X]`. -/
-theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    Prime (evalVertical x₀ w₀ P) ↔ Prime P :=
-  (isRueckert_evalVertical x₀ w₀).prime_apply_iff hP
-
-/-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, the germ `f` is prime in
-`𝒪_{E × ℂ, (x₀, w₀)}` if and only if the distinguished polynomial `P` is prime in
-`(𝒪_{E, x₀})[X]`. -/
-theorem prime_iff_of_weierstrassPreparation {x₀ : E} {w₀ : ℂ}
-    {f u : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
-    (hu : IsUnit u) (hf : f = evalVertical x₀ w₀ P * u) :
-    Prime f ↔ Prime P := by
-  rw [hf, prime_mul_iff, or_iff_left (fun h ↦ h.2.not_isUnit hu),
-    and_iff_left hu, prime_evalVertical_iff_of_isDistinguishedAt hP]
-
-/-- A distinguished polynomial `P ∈ (𝒪_{E, x₀})[X]` is irreducible in `𝒪_{E × ℂ, (x₀, w₀)}` after
-vertical evaluation if and only if it is irreducible in `(𝒪_{E, x₀})[X]`. -/
-theorem irreducible_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    Irreducible (evalVertical x₀ w₀ P) ↔ Irreducible P :=
-  (isRueckert_evalVertical x₀ w₀).irreducible_apply_iff hP
 
 /-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, the germ `f` is irreducible in
 `𝒪_{E × ℂ, (x₀, w₀)}` if and only if its distinguished polynomial `P` is irreducible in
@@ -143,10 +96,9 @@ theorem irreducible_iff_of_weierstrassPreparation {x₀ : E} {w₀ : ℂ}
       (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
     (hu : IsUnit u) (hf : f = evalVertical x₀ w₀ P * u) :
     Irreducible f ↔ Irreducible P := by
-  rw [UniqueFactorizationMonoid.irreducible_iff_prime,
-    UniqueFactorizationMonoid.irreducible_iff_prime,
-    prime_iff_of_weierstrassPreparation hP hu hf]
+  rw [hf, irreducible_mul_isUnit hu]
+  exact (isRueckert_evalVertical x₀ w₀).irreducible_apply_iff hP
 
-end Primality
+end Irreducibility
 
 end TauCeti.holomorphicStructureSheaf

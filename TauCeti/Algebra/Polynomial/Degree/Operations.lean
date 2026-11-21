@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Polynomial.Degree.Domain
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 
 /-!
 # Degrees of polynomial sums and products
@@ -33,7 +34,8 @@ that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree.
 `Polynomial.sub_C_ne_zero` records that a nonconstant polynomial differs from every constant
 polynomial, and `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
 of `p`; in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
-most one.
+most one. `Polynomial.Monic.eq_X_pow_of_dvd_X_pow` shows that over a semiring without zero
+divisors, every monic divisor of `X ^ n` is a power of `X`.
 -/
 
 public section
@@ -138,5 +140,21 @@ theorem _root_.Polynomial.natDegree_X_pow_add_C_mul_X_add_C [Nontrivial R] (a b 
 theorem _root_.Polynomial.natDegree_comp_C_mul_X_add_C [NoZeroDivisors R] {a : R} (ha : a ≠ 0)
     (b : R) (p : R[X]) : (p.comp (C a * X + C b)).natDegree = p.natDegree := by
   rw [natDegree_comp, natDegree_linear ha, mul_one]
+
+/-- A monic divisor of `X ^ n` over a semiring without zero divisors is a power of `X`. -/
+theorem _root_.Polynomial.Monic.eq_X_pow_of_dvd_X_pow [NoZeroDivisors R] {p : R[X]} {n : ℕ}
+    (hp : p.Monic) (hdvd : p ∣ X ^ n) : p = X ^ p.natDegree := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  obtain ⟨q, hq⟩ := hdvd
+  have hp0 : p ≠ 0 := hp.ne_zero
+  have hq0 : q ≠ 0 := fun h ↦ (monic_X_pow (R := R) n).ne_zero (by rw [hq, h, mul_zero])
+  have hdeg : p.natDegree + q.natDegree = n := by
+    rw [← natDegree_mul hp0 hq0, ← hq, natDegree_X_pow]
+  have htdeg : p.natTrailingDegree + q.natTrailingDegree = n := by
+    rw [← natTrailingDegree_mul hp0 hq0, ← hq, natTrailingDegree_X_pow]
+  have hp_le := natTrailingDegree_le_natDegree p
+  have hq_le := natTrailingDegree_le_natDegree q
+  exact hp.eq_X_pow_iff_natTrailingDegree_eq_natDegree.2 (by omega)
 
 end TauCeti

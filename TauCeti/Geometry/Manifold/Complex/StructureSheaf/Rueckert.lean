@@ -40,6 +40,8 @@ unique factorisation from `𝒪_{E, x₀}` to `𝒪_{E × ℂ, (x₀, w₀)}`
 
 * `TauCeti.holomorphicStructureSheaf.isRueckert_evalVertical`: vertical polynomial evaluation at
   `(x₀, w₀)` satisfies the Rückert hypotheses for distinguished polynomials.
+* `TauCeti.holomorphicStructureSheaf.prime_iff_of_weierstrassPreparation`: for a Weierstrass
+  factorization `f = evalVertical x₀ w₀ P * u`, `f` is prime if and only if `P` is prime.
 
 ## References
 
@@ -128,5 +130,18 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
     obtain ⟨⟨q, r⟩, ⟨_, hdiv⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
     exact ⟨r, ⟨q, by linear_combination hdiv⟩⟩
   exists_mul_eq hb := exists_aut_mul_eq_evalVertical x₀ w₀ hb
+
+/-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, the germ `f` is prime in
+`𝒪_{E × ℂ, (x₀, w₀)}` if and only if the distinguished polynomial `P` is prime in
+`(𝒪_{E, x₀})[X]`. -/
+theorem prime_iff_of_weierstrassPreparation {x₀ : E} {w₀ : ℂ}
+    {f u : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
+    (hu : IsUnit u) (hf : f = evalVertical x₀ w₀ P * u) :
+    Prime f ↔ Prime P := by
+  rw [hf, prime_mul_isUnit hu]
+  exact (isRueckert_evalVertical x₀ w₀).prime_apply_iff hP
 
 end TauCeti.holomorphicStructureSheaf

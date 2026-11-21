@@ -85,6 +85,14 @@ theorem Ideal.ofList_eq_span_range_getElem (rs : List R) :
     Ideal.ofList rs = Ideal.span (Set.range fun i : Fin rs.length ↦ rs[i]) := by
   simpa using Ideal.ofList_ofFn fun i : Fin rs.length ↦ rs[(i : ℕ)]
 
+/-- If a list `l` contains every index of `ι`, then `l.map f` generates the span of the range of
+`f`. -/
+theorem Ideal.ofList_map_eq_span_range {ι : Type*} {l : List ι} (hl : ∀ i : ι, i ∈ l)
+    (f : ι → R) : Ideal.ofList (l.map f) = Ideal.span (Set.range f) :=
+  congrArg Ideal.span <| Set.ext fun _ ↦ by
+    simp only [Set.mem_ofPred_eq, List.mem_map, Set.mem_range]
+    exact ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, hi⟩, fun ⟨i, hi⟩ ↦ ⟨i, hl i, hi⟩⟩
+
 end OfList
 
 

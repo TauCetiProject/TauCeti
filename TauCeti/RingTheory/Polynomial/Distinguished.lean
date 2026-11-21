@@ -10,7 +10,6 @@ public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 import Mathlib.RingTheory.IntegralClosure.GoingDown
 
-import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 import Mathlib.RingTheory.Ideal.Operations
 
 /-!
@@ -34,8 +33,7 @@ For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`,
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
 polynomials at `I` are closed under finite products, including the empty product `1`, are monotone
 in `I`, and—when `I` is radical—are closed under taking monic factors
-(`Polynomial.IsDistinguishedAt.of_dvd`). Over a semiring without zero divisors, any monic divisor
-of `X ^ n` is a power of `X` (`Polynomial.Monic.eq_X_pow_of_dvd_X_pow`).
+(`Polynomial.IsDistinguishedAt.of_dvd`).
 
 ## Main results
 
@@ -44,8 +42,6 @@ of `X ^ n` is a power of `X` (`Polynomial.Monic.eq_X_pow_of_dvd_X_pow`).
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
   distinguished at every ideal containing `p`.
-* `Polynomial.Monic.eq_X_pow_of_dvd_X_pow`: a monic divisor of `X ^ n` over a semiring without
-  zero divisors equals `X ^ p.natDegree`.
 * `Polynomial.IsWeaklyEisensteinAt.mono`, `Polynomial.IsDistinguishedAt.mono`: monotonicity in the
   ideal.
 * `Polynomial.Monic.isDistinguishedAt_iff_map_eq_X_pow`: a monic polynomial is distinguished at `I`
@@ -111,22 +107,6 @@ end Polynomial
 end TauCeti
 
 namespace Polynomial
-
-/-- A monic divisor of `X ^ n` over a semiring without zero divisors is a power of `X`. -/
-theorem Monic.eq_X_pow_of_dvd_X_pow {R : Type*} [Semiring R] [NoZeroDivisors R] {p : R[X]}
-    {n : ℕ} (hp : p.Monic) (hdvd : p ∣ X ^ n) : p = X ^ p.natDegree := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Subsingleton.elim _ _
-  obtain ⟨q, hq⟩ := hdvd
-  have hp0 : p ≠ 0 := hp.ne_zero
-  have hq0 : q ≠ 0 := fun h ↦ (monic_X_pow (R := R) n).ne_zero (by rw [hq, h, mul_zero])
-  have hdeg : p.natDegree + q.natDegree = n := by
-    rw [← hp.natDegree_mul' hq0, ← hq, natDegree_X_pow]
-  have htdeg : p.natTrailingDegree + q.natTrailingDegree = n := by
-    rw [← natTrailingDegree_mul hp0 hq0, ← hq, natTrailingDegree_X_pow]
-  have hp_le := natTrailingDegree_le_natDegree p
-  have hq_le := natTrailingDegree_le_natDegree q
-  exact hp.eq_X_pow_iff_natTrailingDegree_eq_natDegree.2 (by omega)
 
 /-- Weakly Eisenstein polynomials are preserved when enlarging the ideal. -/
 theorem IsWeaklyEisensteinAt.mono {R : Type*} [CommSemiring R] {f : R[X]} {I J : Ideal R}
