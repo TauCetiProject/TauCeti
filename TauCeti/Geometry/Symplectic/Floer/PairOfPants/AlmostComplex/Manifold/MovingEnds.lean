@@ -322,19 +322,6 @@ theorem puncturedSphereAlmostComplex_eq_pairOfPantsAlmostComplex
     funext i
     fin_cases i <;> simp
 
-omit [FiniteDimensional ℝ E] in
-/-- On a tangent fiber, end families with one family replaced by the base structure are the
-fiberwise end families with that family replaced by the fiberwise base structure. -/
-private theorem almostComplexStructureAt_update
-    (K : Puncture → ℝ → SmoothAlmostComplexStructure I M) (q : Puncture) (x : M) :
-    (fun p t (_ : Unit) => (update K q (fun _ => J₀) p t).almostComplexStructureAt x) =
-      update (fun p t (_ : Unit) => (K p t).almostComplexStructureAt x) q
-        (fun _ _ => J₀.almostComplexStructureAt x) := by
-  funext p t u
-  rcases eq_or_ne p q with rfl | hp
-  · simp
-  · simp [update_of_ne hp]
-
 /-- On a tangent fiber, the plumbed structure with the structures of the two glued ends replaced by
 `J₀` is the linear structure on the sphere with the three input ends of the composition. -/
 private theorem almostComplexStructureAt_plumbedAlmostComplex_update_base
@@ -356,14 +343,14 @@ private theorem almostComplexStructureAt_plumbedAlmostComplex_update_base
     (Floer.plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex (h₀.compatibleAt x)
       (Ja := fun p t (_ : Unit) => (Ja p t).almostComplexStructureAt x)
       (Jb := fun p t (_ : Unit) => (Jb p t).almostComplexStructureAt x) hq hrq hr hL
-      (by simpa [← almostComplexStructureAt_update] using
+      (by simpa [← SmoothAlmostComplexStructure.almostComplexStructureAt_update] using
         fun p t (_ : Unit) => h₀.isNondegenerate.tames_iff.mp (hJa p t) x)
-      (by simpa [← almostComplexStructureAt_update] using
+      (by simpa [← SmoothAlmostComplexStructure.almostComplexStructureAt_update] using
         fun p t (_ : Unit) => h₀.isNondegenerate.tames_iff.mp (hJb p t) x)) w) ()
   rw [almostComplexStructureAt_plumbedAlmostComplex]
   convert key using 2
-  · exact almostComplexStructureAt_update Ja inf x
-  · exact almostComplexStructureAt_update Jb q x
+  · exact SmoothAlmostComplexStructure.almostComplexStructureAt_update Ja inf _ x
+  · exact SmoothAlmostComplexStructure.almostComplexStructureAt_update Jb q _ x
 
 /-- **With the neck structure switched off, the plumbed sphere has moving input ends.** Plumb the
 output end of a pair of pants with end structures `Ja` into the input end `q ≠ ∞` of one with end
