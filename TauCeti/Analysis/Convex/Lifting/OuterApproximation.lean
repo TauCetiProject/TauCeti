@@ -513,7 +513,8 @@ theorem exists_affine_coordinate_comparison_not_monotone :
     rw [mem_singleton_iff.1 hj]
     simp [componentRow_apply, g, a, Dg0]
   have hc : ∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j) := fun j hj => by
-    fin_cases j <;> first | exact (hj rfl).elim | simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)
+    rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
+    simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)
   have hhc : ConvexOn ℝ Set.univ h := by
     let p0 : (Fin 2 → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj 0
     let p1 : (Fin 2 → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj 1
@@ -522,7 +523,8 @@ theorem exists_affine_coordinate_comparison_not_monotone :
   have hD : ∀ _ : Fin 1, ∀ v : Fin 2 → ℝ,
       0 ≤ v → (∀ j ∈ ({0} : Set (Fin 2)), v j = 0) → 0 ≤ Dh0 v :=
     fun _ => (forall_map_nonneg_of_eq_zero_iff Dh0 {0}).2 fun j hj => by
-      fin_cases j <;> first | exact (hj rfl).elim | norm_num [Dh0]
+      rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
+      norm_num [Dh0]
   have hcmp := affine_coordinate_comparison (J := ({0} : Set (Fin 2))) 2 (mapsTo_univ g Set.univ)
     (fun i x _ j hj => haff i x j hj) hc hhc (fun _ => mem_univ _) hg hh hD
   exact ⟨g, h, a, fun _ => Dg0, fun _ => Dh0, haff, hc, hhc, hg, hh, hD,

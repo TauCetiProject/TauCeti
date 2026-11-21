@@ -26,9 +26,10 @@ yields the first-order tangent-support inequality for a differentiable convex fu
 interior-point or open-domain assumption. This is also the first-order condition used for
 transport costs `h (x - y)` with `h` convex but not differentiable, as in Gangbo and McCann.
 
-Both results hold for functions on a real topological vector space with values in an ordered real
-vector space (carrying an order-closed vector space topology for the second); the case of
-real-valued functions is the one of interest.
+All results hold for functions on a real topological vector space with values in an ordered real
+vector space. `ConvexOn.add_le_of_isLocalMinOn_sub` and the two first-order tangent-support
+corollaries also require an order-closed vector space topology on the codomain; real-valued
+functions are the case of interest.
 
 ## References
 

@@ -252,12 +252,6 @@ theorem mem_fst_image_sharedOA_sum_iff_forall_choice [Nonempty κ] {D : Set X}
       simpa only [outerRow_sum] using (hrow (Classical.arbitrary κ)).2
     exact ⟨hxD, fun choice => (sum_le_sum fun j _ => (hrow (choice j)).1 j).trans hsum⟩
   · rintro ⟨hxD, hall⟩
-    by_cases hι : IsEmpty ι
-    · refine ⟨(x, 0), mem_sharedOA.2 ⟨hxD, Set.mem_univ _, fun _ =>
-        ⟨fun j => (hι.false j).elim, ?_⟩⟩, rfl⟩
-      rw [outerRow_sum]
-      simpa using hall fun j => (hι.false j).elim
-    have : Nonempty ι := not_isEmpty_iff.1 hι
     let r : ι → κ → ℝ := fun j i => componentRow g (a i) (Dg i) x j
     let i₀ : κ := Classical.arbitrary κ
     have hbdd : ∀ j, BddAbove (range (r j)) := fun j => by
@@ -272,29 +266,20 @@ theorem mem_fst_image_sharedOA_sum_iff_forall_choice [Nonempty κ] {D : Set X}
     refine ⟨(x, y), mem_sharedOA.2 ⟨hxD, Set.mem_univ _, fun i =>
       ⟨fun j => le_ciSup (hbdd j) i, ?_⟩⟩, rfl⟩
     rw [outerRow_sum]
-    by_contra hlt
-    have hlt : b < ∑ j, y j := lt_of_not_ge hlt
-    have hcard : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
-    let ε : ℝ := (∑ j, y j - b) / Fintype.card ι
-    have hε : 0 < ε := div_pos (sub_pos.2 hlt) hcard
-    have hex : ∀ j, ∃ i, y j - ε < r j i := fun j => exists_lt_of_lt_ciSup (sub_lt_self (y j) hε)
-    choose choice hchoice using hex
-    have hsum_lt : ∑ j, (y j - ε) < ∑ j, r j (choice j) :=
-      sum_lt_sum_of_nonempty Finset.univ_nonempty fun j _ => hchoice j
-    have hlhs : ∑ j, (y j - ε) = b := by
-      rw [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_div_cancel₀ _ hcard.ne',
-        sub_sub_cancel]
-    linarith [hall choice]
+    exact (sum_ciSup_le_iff_forall_choice r hbdd b).2 hall
 
 end SumOuterCorrespondence
 
 section Separation
 
-/-- Strict separation of original feasible set, shared-height projection (`sharedRows`), and direct
-outer approximation (`independentRows`): for `g x j = x j ^ 2` and `h y = ∑ j, y j` on the box
-`[-1, 1]²` with anchors `(1, 1)` and `(-1, -1)` and budget `1 / 2`, the matched actual-derivative
-outer approximations satisfy `{x ∈ D | h (g x) ≤ 1 / 2} ⊂ Prod.fst '' sharedOA ⊂ directOA`,
-witnessed by `(1, 1 / 4)` and `(1, -1)`. -/
+/-- Strict separation of the original feasible set, shared-height projection
+(`Prod.fst '' sharedOA`), and direct outer approximation (`directOA`) — bridged to `sharedRows`
+and `independentRows` by `sharedOA_sum_eq_sharedRows` and
+`directOA_sum_eq_fst_image_independentRows`: for `g x j = x j ^ 2` and `h y = ∑ j, y j` on the
+box `[-1, 1]²` with anchors `(1, 1)` and `(-1, -1)` and budget `1 / 2`, the matched
+actual-derivative outer approximations satisfy
+`{x ∈ D | h (g x) ≤ 1 / 2} ⊂ Prod.fst '' sharedOA ⊂ directOA`, witnessed by `(1, 1 / 4)` and
+`(1, -1)`. -/
 theorem exists_strict_sharedOA_ssubset_directOA :
     ∃ (D : Set (Fin 2 → ℝ)) (g : (Fin 2 → ℝ) → Fin 2 → ℝ) (h : (Fin 2 → ℝ) → ℝ)
       (a : Fin 2 → Fin 2 → ℝ) (Dg : Fin 2 → (Fin 2 → ℝ) →L[ℝ] (Fin 2 → ℝ))
@@ -307,19 +292,18 @@ theorem exists_strict_sharedOA_ssubset_directOA :
   let D : Set (Fin 2 → ℝ) := Set.pi Set.univ fun _ => Set.Icc (-1) 1
   let g : (Fin 2 → ℝ) → Fin 2 → ℝ := fun x j => x j ^ 2
   let h : (Fin 2 → ℝ) → ℝ := fun y => ∑ j, y j
-  let a : Fin 2 → Fin 2 → ℝ := ![![1, 1], ![-1, -1]]
+  let a : Fin 2 → Fin 2 → ℝ := fun i _ => if i = 0 then 1 else -1
   let Dg : Fin 2 → (Fin 2 → ℝ) →L[ℝ] (Fin 2 → ℝ) :=
-    ![(2 : ℝ) • ContinuousLinearMap.id ℝ _, (-2 : ℝ) • ContinuousLinearMap.id ℝ _]
+    fun i => (2 * a i 0) • ContinuousLinearMap.id ℝ _
   let Dh : Fin 2 → (Fin 2 → ℝ) →L[ℝ] ℝ := fun _ => ∑ j, ContinuousLinearMap.proj (R := ℝ) j
-  have ha : ∀ i, a i ∈ D := fun i j _ => by fin_cases i <;> fin_cases j <;> norm_num [a]
+  have ha : ∀ i, a i ∈ D := fun i _ _ => by by_cases hi : i = 0 <;> simp [a, hi]
   have hg : ∀ i, HasFDerivAt g (Dg i) (a i) := fun i => hasFDerivAt_pi'.2 fun j => by
-    have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (if i = 0 then (2 : ℝ) else -2) (a i j) := by
-      have hp := hasDerivAt_pow 2 (a i j); fin_cases i <;> fin_cases j <;> simpa [a] using hp
+    have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (2 * a i j) (a i j) := by
+      simpa using hasDerivAt_pow 2 (a i j)
     have hL : (ContinuousLinearMap.proj (R := ℝ) j).comp (Dg i) =
-        (if i = 0 then (2 : ℝ) else -2) • ContinuousLinearMap.proj (R := ℝ) j := by
-      ext x; fin_cases i <;> simp [Dg]
-    rw [hL]
-    exact hpow.comp_hasFDerivAt (a i) (hasFDerivAt_apply (𝕜 := ℝ) j (a i))
+        (2 * a i j) • ContinuousLinearMap.proj (R := ℝ) j := by
+      simp only [Dg, ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id, a]
+    rw [hL]; exact hpow.comp_hasFDerivAt (a i) (hasFDerivAt_apply (𝕜 := ℝ) j (a i))
   have hh : ∀ i, HasFDerivAt h (Dh i) (g (a i)) := fun i =>
     HasFDerivAt.fun_sum fun j _ => hasFDerivAt_apply (𝕜 := ℝ) j (g (a i))
   have hhc : ConvexOn ℝ Set.univ h := by
@@ -336,7 +320,9 @@ theorem exists_strict_sharedOA_ssubset_directOA :
       {x ∈ D | h (g x) ≤ 1 / 2} := fun hsub => by
     have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA.2 ⟨fun j _ => by
         fin_cases j <;> norm_num, Set.mem_univ _, fun i => ⟨fun j => by
-          fin_cases i <;> fin_cases j <;> norm_num [componentRow_apply, g, a, Dg],
+          fin_cases i <;> fin_cases j <;>
+            norm_num [componentRow_apply, g, a, Dg, Matrix.vecTail, Matrix.vecHead,
+              Function.comp_def],
         by simp only [h, Dh]; rw [outerRow_sum]; norm_num [Fin.sum_univ_two]⟩⟩, rfl⟩).2
     norm_num [h, g, Fin.sum_univ_two] at horig
   have hstrict2 : ¬ directOA D g h a Dg Dh (1 / 2) ⊆
@@ -344,9 +330,11 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g h a Dg Dh (1 / 2) :=
       mem_directOA.2 ⟨fun j _ => by fin_cases j <;> norm_num, fun i => by
         simp only [h, Dh]; rw [directRow_sum]
-        fin_cases i <;> norm_num [Fin.sum_univ_two, componentRow_apply, g, a, Dg]⟩
+        fin_cases i <;> norm_num [Fin.sum_univ_two, componentRow_apply, g, a, Dg,
+          Matrix.vecTail, Matrix.vecHead, Function.comp_def]⟩
     have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
-    norm_num [Fin.sum_univ_two, componentRow_apply, g, a, Dg] at hsh
+    norm_num [Fin.sum_univ_two, componentRow_apply, g, a, Dg,
+      Matrix.vecTail, Matrix.vecHead, Function.comp_def] at hsh
   exact ⟨D, g, h, a, Dg, Dh, 1 / 2, ha, hg, hh,
     ssubset_iff_subset_ne.2 ⟨hcmp.1, fun heq => hstrict1 heq.symm.subset⟩,
     ssubset_iff_subset_ne.2 ⟨hcmp.2, fun heq => hstrict2 heq.symm.subset⟩⟩

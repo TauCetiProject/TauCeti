@@ -32,7 +32,7 @@ collisions.
 
 * `ContinuousAffineMap.hasFDerivAtFilter_tvs`, `ContinuousAffineMap.hasFDerivAt_tvs`: a
   continuous affine map between topological vector spaces has derivative `f.contLinear`.
-* `ContinuousLinearMap.comp_hasFDerivAtFilter`, `ContinuousLinearMap.comp_hasFDerivAt`:
+* `ContinuousLinearMap.comp_hasFDerivAtFilter_tvs`, `ContinuousLinearMap.comp_hasFDerivAt_tvs`:
   postcomposing a differentiable map with a continuous linear map composes the derivative, with no
   continuity hypotheses on addition or scalar multiplication.
 * `HasFDerivAtFilter.proj`, `HasFDerivAt.proj`: coordinatewise Fréchet derivative for maps into
@@ -70,8 +70,8 @@ theorem ContinuousAffineMap.hasFDerivAt_tvs [IsTopologicalAddTorsor E] [IsTopolo
 /-- Postcomposing a function with Fréchet derivative `f'` along `L` by a continuous linear map `A`
 has Fréchet derivative `A.comp f'` along `L`, requiring no continuity assumptions on addition or
 scalar multiplication. -/
-theorem ContinuousLinearMap.comp_hasFDerivAtFilter (A : F →L[𝕜] G) {f : E → F} {f' : E →L[𝕜] F}
-    {L : Filter (E × E)} (hf : HasFDerivAtFilter f f' L) :
+theorem ContinuousLinearMap.comp_hasFDerivAtFilter_tvs (A : F →L[𝕜] G) {f : E → F}
+    {f' : E →L[𝕜] F} {L : Filter (E × E)} (hf : HasFDerivAtFilter f f' L) :
     HasFDerivAtFilter (A ∘ f) (A.comp f') L :=
   .of_isLittleOTVS <| (A.isBigOTVS_comp.trans_isLittleOTVS hf.isLittleOTVS).congr_left fun p => by
     simp only [Function.comp_apply, map_sub, ContinuousLinearMap.comp_apply]
@@ -79,10 +79,10 @@ theorem ContinuousLinearMap.comp_hasFDerivAtFilter (A : F →L[𝕜] G) {f : E �
 /-- Postcomposing a function with Fréchet derivative `f'` at `x` by a continuous linear map `A` has
 Fréchet derivative `A.comp f'` at `x`, requiring no continuity assumptions on addition or scalar
 multiplication. -/
-theorem ContinuousLinearMap.comp_hasFDerivAt (A : F →L[𝕜] G) {f : E → F} {f' : E →L[𝕜] F}
+theorem ContinuousLinearMap.comp_hasFDerivAt_tvs (A : F →L[𝕜] G) {f : E → F} {f' : E →L[𝕜] F}
     {x : E} (hf : HasFDerivAt f f' x) :
     HasFDerivAt (A ∘ f) (A.comp f') x :=
-  A.comp_hasFDerivAtFilter hf
+  A.comp_hasFDerivAtFilter_tvs hf
 
 /-- If `g : E → ∀ i, F i` has Fréchet derivative `g'` along `L`, then its `j`-th coordinate has
 Fréchet derivative `(ContinuousLinearMap.proj j).comp g'` along `L`, for arbitrary (possibly
@@ -92,7 +92,7 @@ theorem HasFDerivAtFilter.proj {ι : Type*} {F : ι → Type*}
     {g : E → ∀ i, F i} {g' : E →L[𝕜] ∀ i, F i} {L : Filter (E × E)}
     (hg : HasFDerivAtFilter g g' L) (j : ι) :
     HasFDerivAtFilter (fun z => g z j) ((ContinuousLinearMap.proj (R := 𝕜) j).comp g') L :=
-  (ContinuousLinearMap.proj (R := 𝕜) (φ := F) j).comp_hasFDerivAtFilter hg
+  (ContinuousLinearMap.proj (R := 𝕜) (φ := F) j).comp_hasFDerivAtFilter_tvs hg
 
 /-- If `g : E → ∀ i, F i` has Fréchet derivative `g'` at `x`, then its `j`-th coordinate has
 Fréchet derivative `(ContinuousLinearMap.proj j).comp g'` at `x`, for arbitrary (possibly infinite)
