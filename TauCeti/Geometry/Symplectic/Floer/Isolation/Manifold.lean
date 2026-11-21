@@ -18,7 +18,7 @@ symplectic manifold, and let `H : ℝ → M → ℝ` be a `C²` Hamiltonian, `1`
 `φ : M ⊇ U → V` be a symplectic chart: a smooth partial diffeomorphism onto an open subset of a
 symplectic vector space `(V, ω₀)` with `ω_y(v, w) = ω₀(dφ_y v, dφ_y w)` on its source. Darboux's
 theorem (`TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart`) supplies such a chart around
-every point of a boundaryless symplectic manifold whose model space is an inner product space.
+every point of a finite-dimensional boundaryless symplectic manifold.
 
 This file proves the manifold counterpart of `TauCeti.SymplecticForm.exists_pos_forall_eq_of_floer`
 for a `1`-periodic orbit of `H` whose image lies in the source of the chart. Write `x : ℝ → V` for
