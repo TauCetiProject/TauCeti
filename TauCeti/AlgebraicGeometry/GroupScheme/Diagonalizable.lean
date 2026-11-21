@@ -112,7 +112,10 @@ theorem diagonalizableMap_comp (φ : N →+ M) (ψ : P →+ N) :
 
 /-- `D_S(M)` is a commutative group scheme. -/
 instance isCommMonObj_diagonalizable : IsCommMonObj (diagonalizable S M).X :=
-  ((Over.pullback _).mapCommMon.obj (.mk _)).comm
+  -- `mapGrp` equips `F.obj X` with the group structure `Functor.obj.instGrpObj`, whose monoid
+  -- structure is the one `Functor.isCommMonObj_obj` shows commutative for a braided `F`.
+  Functor.isCommMonObj_obj (F := Over.pullback (specULiftZIsTerminal.from S))
+    (M := (DiagonalizableGroup.groupScheme (ULift.{u} ℤ) (FGCommGrpCat.of (Multiplicative M))).X)
 
 /-- A property of morphisms stable under base change holds for `D_S(M) ⟶ S` as soon as it holds
 for `D(M) ⟶ Spec ℤ`. -/
@@ -147,19 +150,11 @@ section BaseChange
 
 variable {S} {S' : Scheme.{u}} (f : S' ⟶ S)
 
-/-- Base change along `S ⟶ Spec ℤ` followed by base change along `f : S' ⟶ S` is base change along
-`S' ⟶ Spec ℤ`, as functors on group schemes over `Spec ℤ`. -/
-private noncomputable def mapGrpPullbackFromCompIso :
-    (Over.pullback (specULiftZIsTerminal.from S)).mapGrp ⋙ (Over.pullback f).mapGrp ≅
-      (Over.pullback (specULiftZIsTerminal.from S')).mapGrp :=
-  (Over.mapGrpPullbackComp f (specULiftZIsTerminal.from S)).symm ≪≫
-    Functor.mapGrpNatIso (eqToIso (by congr 1; exact specULiftZIsTerminal.hom_ext _ _))
-
 /-- The formation of `D_S(M)` commutes with base change: pulling `D_S(M)` back along
 `f : S' ⟶ S` gives `D_{S'}(M)`. -/
 noncomputable def diagonalizableBaseChangeIso :
     (Over.pullback f).mapGrp.obj (diagonalizable S M) ≅ diagonalizable S' M :=
-  (mapGrpPullbackFromCompIso f).app _
+  (Over.mapGrpPullbackCompOfEq f (specULiftZIsTerminal.hom_ext _ _)).app _
 
 variable {M N} in
 /-- The base-change isomorphism `diagonalizableBaseChangeIso` is natural in the character
@@ -169,7 +164,7 @@ theorem diagonalizableBaseChangeIso_hom_naturality (φ : N →+ M) :
     (Over.pullback f).mapGrp.map (diagonalizableMap S φ) ≫
         (diagonalizableBaseChangeIso N f).hom =
       (diagonalizableBaseChangeIso M f).hom ≫ diagonalizableMap S' φ :=
-  (mapGrpPullbackFromCompIso f).hom.naturality _
+  (Over.mapGrpPullbackCompOfEq f (specULiftZIsTerminal.hom_ext _ _)).hom.naturality _
 
 end BaseChange
 
@@ -177,19 +172,14 @@ section Spec
 
 variable (R : Type u) [CommRing R]
 
-/-- Over `Spec R`, base change from `Spec ℤ` is base change along the spectrum of any ring map
-`ℤ → R`, by terminality of `Spec ℤ`. -/
-private theorem pullback_specULiftZIsTerminal_from_spec [Algebra (ULift.{u} ℤ) R] :
-    Over.pullback (specULiftZIsTerminal.from (Spec (CommRingCat.of R))) =
-      Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap (ULift.{u} ℤ) R))) := by
-  congr 1
-  exact specULiftZIsTerminal.hom_ext _ _
-
 /-- The comparison of `D_{Spec R}(M)` with `Spec R[M]`, for a chosen ring map `ℤ → R`. -/
 private noncomputable def diagonalizableSpecIsoOfAlgebra [Algebra (ULift.{u} ℤ) R] :
     diagonalizable (Spec (CommRingCat.of R)) M ≅
       DiagonalizableGroup.groupScheme R (FGCommGrpCat.of (Multiplicative M)) :=
-  (Functor.mapGrpNatIso (eqToIso (pullback_specULiftZIsTerminal_from_spec R))).app _ ≪≫
+  -- Over `Spec R`, base change from `Spec ℤ` is base change along `Spec` of the ring map `ℤ → R`,
+  -- by terminality of `Spec ℤ`.
+  (Functor.mapGrpNatIso (eqToIso (congrArg (fun g ↦ Over.pullback g)
+      (specULiftZIsTerminal.hom_ext _ (Spec.map (CommRingCat.ofHom (algebraMap _ R))))))).app _ ≪≫
     eqToIso (by rw [DiagonalizableGroup.groupScheme_def]) ≪≫
     AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
       (DiagonalizableGroup.coordinateRing (ULift.{u} ℤ) (FGCommGrpCat.of (Multiplicative M))).obj ≪≫

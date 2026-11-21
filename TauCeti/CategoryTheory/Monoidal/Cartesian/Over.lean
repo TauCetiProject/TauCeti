@@ -23,7 +23,7 @@ projection in `Over R`, then the restriction of `f.left` to the fibre of
 
 Finally, `CategoryTheory.Over.mapGrpPullbackComp` lifts Mathlib's `Over.pullbackComp` to group
 objects: base change of group objects along `f ≫ g` is base change along `g` followed by base change
-along `f`.
+along `f`. `CategoryTheory.Over.mapGrpPullbackCompOfEq` restates it for any `b` with `f ≫ g = b`.
 -/
 
 public section
@@ -113,15 +113,29 @@ component of `Over.pullbackComp`. -/
 @[simp]
 theorem mapGrpPullbackComp_hom_app_hom_hom {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
     (G : Grp (Over Z)) :
-    ((mapGrpPullbackComp f g).hom.app G).hom.hom = (Over.pullbackComp f g).hom.app G.X :=
-  Category.comp_id _
+    ((mapGrpPullbackComp f g).hom.app G).hom.hom = (Over.pullbackComp f g).hom.app G.X := by
+  -- `Functor.mapGrpCompIso` has identity components, which remain composed on the right.
+  simp only [mapGrpPullbackComp, Iso.trans_hom, NatTrans.comp_app, Grp.comp', Mon.comp_hom',
+    Functor.mapGrpNatIso_hom_app_hom_hom, Functor.mapGrpCompIso_hom_app_hom_hom]
+  exact Category.comp_id _
 
 /-- The morphism in `Over X` underlying a component of the inverse of `mapGrpPullbackComp` is the
 corresponding component of the inverse of `Over.pullbackComp`. -/
 @[simp]
 theorem mapGrpPullbackComp_inv_app_hom_hom {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
     (G : Grp (Over Z)) :
-    ((mapGrpPullbackComp f g).inv.app G).hom.hom = (Over.pullbackComp f g).inv.app G.X :=
-  Category.id_comp _
+    ((mapGrpPullbackComp f g).inv.app G).hom.hom = (Over.pullbackComp f g).inv.app G.X := by
+  -- `Functor.mapGrpCompIso` has identity components, which remain composed on the left.
+  simp only [mapGrpPullbackComp, Iso.trans_inv, NatTrans.comp_app, Grp.comp', Mon.comp_hom',
+    Functor.mapGrpCompIso_inv_app_hom_hom, Functor.mapGrpNatIso_inv_app_hom_hom]
+  exact Category.id_comp _
+
+/-- Base change of group objects along `a : Y ⟶ Z` followed by base change along `f : X ⟶ Y` is
+base change along any `b : X ⟶ Z` with `f ≫ a = b`. For instance, when `Z` is terminal, this
+compares base changes of group objects over `Z` along the unique maps to `Z`. -/
+noncomputable def mapGrpPullbackCompOfEq {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z} {b : X ⟶ Z}
+    (h : f ≫ a = b) :
+    (Over.pullback a).mapGrp ⋙ (Over.pullback f).mapGrp ≅ (Over.pullback b).mapGrp :=
+  (mapGrpPullbackComp f a).symm ≪≫ Functor.mapGrpNatIso (eqToIso (by congr 1))
 
 end CategoryTheory.Over
