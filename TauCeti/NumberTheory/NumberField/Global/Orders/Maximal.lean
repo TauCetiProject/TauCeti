@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.ClassGroup.Equiv
 public import TauCeti.NumberTheory.NumberField.Global.Orders.NarrowPic
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Basic
@@ -33,9 +34,13 @@ send the class of a fractional ideal to the class of the fractional ideal with t
   `maximalOrderUnitsEquiv` to invertible ideals, which preserves principal ideals
   (`maximalOrderUnitsEquiv_toPrincipalIdeal`).
 * `TauCeti.GlobalNumberFields.maximalOrderPicEquiv`: the wide Picard group of the maximal order
-  is the class group of `𝓞 K`, via Mathlib's `ClassGroup.mulEquiv`.
+  is the class group of `𝓞 K`, via Mathlib's `ClassGroup.mulEquiv`; its order is `classNumber K`
+  (`card_pic_maximalNumberFieldOrder`), so it is trivial iff `𝓞 K` is a principal ideal domain
+  (`subsingleton_pic_maximalNumberFieldOrder_iff`).
 * `TauCeti.GlobalNumberFields.maximalOrderNarrowPicEquiv`: the narrow Picard group of the maximal
-  order is the narrow class group of `K`.
+  order is the narrow class group of `K`, preserving cardinality and triviality
+  (`card_narrowPic_maximalNumberFieldOrder`,
+  `subsingleton_narrowPic_maximalNumberFieldOrder_iff`).
 * `TauCeti.GlobalNumberFields.toClassGroup_comp_maximalOrderNarrowPicEquiv`: under these
   equivalences, `NumberFieldOrder.narrowToPic` becomes `NumberField.NarrowClassGroup.toClassGroup`.
 
@@ -214,5 +219,42 @@ theorem toClassGroup_maximalOrderNarrowPicEquiv (c : NarrowPic (maximalNumberFie
     NarrowClassGroup.toClassGroup (maximalOrderNarrowPicEquiv K c) =
       maximalOrderPicEquiv K ((maximalNumberFieldOrder K).narrowToPic c) :=
   DFunLike.congr_fun (toClassGroup_comp_maximalOrderNarrowPicEquiv K) c
+
+variable (K) in
+/-- **The wide Picard group of the maximal order has `classNumber K` elements.** -/
+@[simp]
+theorem card_pic_maximalNumberFieldOrder :
+    Nat.card (Pic (maximalNumberFieldOrder K)) = NumberField.classNumber K := by
+  rw [Nat.card_congr (maximalOrderPicEquiv K).toEquiv, Nat.card_eq_fintype_card,
+    NumberField.classNumber]
+
+variable (K) in
+/-- **The wide Picard group of the maximal order is trivial iff `𝓞 K` is a principal ideal
+domain.** -/
+theorem subsingleton_pic_maximalNumberFieldOrder_iff :
+    Subsingleton (Pic (maximalNumberFieldOrder K)) ↔ IsPrincipalIdealRing (𝓞 K) := by
+  rw [← NumberField.classNumber_eq_one_iff, ← card_pic_maximalNumberFieldOrder,
+    Nat.card_eq_one_iff_unique]
+  exact ⟨fun h ↦ ⟨h, inferInstance⟩, And.left⟩
+
+variable (K) in
+/-- When `𝓞 K` is a principal ideal domain, the wide Picard group of the maximal order is
+trivial. -/
+theorem subsingleton_pic_maximalNumberFieldOrder [IsPrincipalIdealRing (𝓞 K)] :
+    Subsingleton (Pic (maximalNumberFieldOrder K)) :=
+  (subsingleton_pic_maximalNumberFieldOrder_iff K).2 ‹_›
+
+variable (K) in
+/-- **The narrow Picard group of the maximal order has the same order as `Cl⁺(K)`.** -/
+@[simp]
+theorem card_narrowPic_maximalNumberFieldOrder :
+    Nat.card (NarrowPic (maximalNumberFieldOrder K)) = Nat.card (NarrowClassGroup K) :=
+  Nat.card_congr (maximalOrderNarrowPicEquiv K).toEquiv
+
+variable (K) in
+/-- **The narrow Picard group of the maximal order is trivial iff `Cl⁺(K)` is trivial.** -/
+theorem subsingleton_narrowPic_maximalNumberFieldOrder_iff :
+    Subsingleton (NarrowPic (maximalNumberFieldOrder K)) ↔ Subsingleton (NarrowClassGroup K) :=
+  (maximalOrderNarrowPicEquiv K).toEquiv.subsingleton_congr
 
 end TauCeti.GlobalNumberFields
