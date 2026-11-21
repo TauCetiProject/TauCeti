@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn
-import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
 /-!

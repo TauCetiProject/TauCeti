@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import Mathlib.Topology.MetricSpace.HausdorffDistance
-import Mathlib.Topology.Order.Compact
 
 /-!
 # Bounded bilinear maps and bounded scalar actions over a normed ring
@@ -21,12 +19,6 @@ scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuou
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
 
-Since the invertible operators from a Banach space form an open set, invertibility at the zeros of
-a map `d` is uniform on a compact set: if `A x` is invertible wherever `d x = 0` on a compact `K`,
-with `d` and `A` continuous on `K`, then every operator close to `A x` at a point `x ∈ K` where
-`d x` is small is invertible (`IsCompact.exists_pos_forall_isInvertible_of_norm_le`). This drives
-the persistence of nondegenerate critical points and fixed points under small perturbations.
-
 Bounded operators act jointly continuously on their domain for the operator norm topology
 (`ContinuousLinearMap.instContinuousSMulApply`), and so does every submonoid of them, such as a
 unitary group.
@@ -34,7 +26,7 @@ unitary group.
 
 public section
 
-open Filter Metric Set Topology
+open Filter Topology
 open scoped NNReal
 
 variable {R : Type*} [SeminormedCommRing R]
@@ -76,46 +68,6 @@ theorem ContinuousAt.tendsto_prodMk_clm_apply {𝕜 X E F : Type*} [Nontrivially
     (he.comp (f := Prod.fst) (x := (a, (0 : E))) continuousAt_fst).clm_apply continuousAt_snd
   simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
 
-/-- **Invertibility near the zeros of a map is uniform on a compact set.**
-
-Let `d` and `A` be continuous on a compact set `K`, where `A` takes values in the operators from a
-Banach space, and let `A x` be invertible at every zero `x ∈ K` of `d`. Then there is `δ > 0` such
-that, at every point `x ∈ K` with `‖d x‖ ≤ δ`, every operator within `δ` of `A x` is invertible. -/
-theorem IsCompact.exists_pos_forall_isInvertible_of_norm_le {𝕜 X F E G : Type*}
-    [NontriviallyNormedField 𝕜] [TopologicalSpace X] [NormedAddCommGroup F] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {K : Set X}
-    (hK : IsCompact K) {d : X → F} {A : X → E →L[𝕜] G} (hd : ContinuousOn d K)
-    (hA : ContinuousOn A K) (h : ∀ x ∈ K, d x = 0 → (A x).IsInvertible) :
-    ∃ δ > 0, ∀ x ∈ K, ∀ T : E →L[𝕜] G, ‖d x‖ ≤ δ → ‖T - A x‖ ≤ δ → T.IsInvertible := by
-  -- The non-invertible operators form a closed set `S`; if it is empty there is nothing to prove.
-  set S : Set (E →L[𝕜] G) := {T | ¬T.IsInvertible}
-  have hS : IsClosed S := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
-  rcases S.eq_empty_or_nonempty with hSe | hSne
-  · refine ⟨1, one_pos, fun x _ T _ _ ↦ ?_⟩
-    by_contra hT
-    exact hSe.subset (mem_ofPred.2 hT)
-  -- `φ x` is positive on `K`: at a zero of `d` the operator `A x` lies outside `S`.
-  set φ : X → ℝ := fun x ↦ ‖d x‖ + infDist (A x) S
-  have hφ : ContinuousOn φ K := hd.norm.add ((continuous_infDist_pt S).comp_continuousOn hA)
-  have hpos (x : X) (hx : x ∈ K) : 0 < φ x := by
-    by_cases h₀ : d x = 0
-    · have hx' := (hS.notMem_iff_infDist_pos hSne).1 fun hxS ↦ hxS (h x hx h₀)
-      simpa [φ, h₀] using hx'
-    · exact add_pos_of_pos_of_nonneg (norm_pos_iff.2 h₀) infDist_nonneg
-  -- By compactness, `φ` has a positive lower bound `m` on `K`.
-  obtain ⟨m, hm, hmK⟩ : ∃ m > 0, ∀ x ∈ K, m ≤ φ x := by
-    rcases K.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨1, one_pos, by simp⟩
-    obtain ⟨x₀, hx₀, hmin⟩ := hK.exists_isMinOn hne hφ
-    exact ⟨φ x₀, hpos x₀ hx₀, fun x hx ↦ hmin hx⟩
-  -- If `‖d x‖ ≤ m / 3`, then `A x` is at distance at least `2m / 3` from `S`, so an operator in
-  -- `S` cannot lie within `m / 3` of it.
-  refine ⟨m / 3, by positivity, fun x hx T hdx hT ↦ ?_⟩
-  by_contra hTS
-  have hinf : infDist (A x) S ≤ ‖T - A x‖ :=
-    (infDist_le_dist_of_mem (mem_ofPred.2 hTS : T ∈ S)).trans_eq (dist_comm _ _ |>.trans
-      (dist_eq_norm _ _))
-  linarith [hmK x hx]
 
 /-- Bounded operators act jointly continuously on their domain, for the operator norm topology. -/
 instance ContinuousLinearMap.instContinuousSMulApply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]

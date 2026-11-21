@@ -15,7 +15,7 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn
-import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.Analysis.Normed.Operator.CompactFamily
 
 /-!
 # Persistence of nondegenerate fixed points under small `C¹` perturbations
