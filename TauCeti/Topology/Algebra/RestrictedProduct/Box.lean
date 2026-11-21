@@ -511,15 +511,16 @@ theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ᶠ i in cofinite, I
         ∃ (S : Finset ι) (U : ∀ i : S, Set (R i)),
           (∀ i ∉ S, IsOpen (A i)) ∧ (∀ i : S, U i ∈ b i.val) ∧
           s = box fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i} := by
-  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
+  refine (isTopologicalBasis_cofiniteOpenBoxes hA).isTopologicalBasis_of_exists_subset ?_ ?_
   · rintro _ ⟨S, U, hS, hU, rfl⟩
     refine isOpen_box_of_eventually_eq (fun i ↦ ?_) ?_
     · split_ifs with hi
       exacts [(hb i).isOpen (hU ⟨i, hi⟩), hS i hi]
     · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
       exact dite_eq_right (fun hi' ↦ absurd hi' hi)
-  · intro x V hxV hV
-    obtain ⟨C, hxC, hCopen, hCA, hCV⟩ := exists_open_box_subset_of_isOpen hA hxV hV
+  · intro s hs x hx
+    obtain ⟨C, hCopen, hCA, rfl⟩ := mem_cofiniteOpenBoxes_iff.mp hs
+    have hxC : ∀ i, x i ∈ C i := mem_box.mp hx
     let S : Finset ι := (mem_cofinite.mp (hCA.and hA)).toFinset
     have hS : ∀ i ∉ S, C i = A i ∧ IsOpen (A i) := fun i hi ↦
       Classical.byContradiction fun hne ↦ hi ((Set.Finite.mem_toFinset _).mpr hne)
@@ -528,7 +529,7 @@ theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ᶠ i in cofinite, I
     choose U hUb hxU hUC using hU_ex
     refine ⟨box fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i,
       ⟨S, U, fun i hi ↦ (hS i hi).2, hUb, rfl⟩,
-      mem_box.mpr fun i ↦ ?_, (box_mono fun i ↦ ?_).trans hCV⟩
+      mem_box.mpr fun i ↦ ?_, box_mono fun i ↦ ?_⟩
     · split_ifs with hi
       · exact hxU ⟨i, hi⟩
       · simpa [(hS i hi).1] using hxC i

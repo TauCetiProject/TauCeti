@@ -210,24 +210,6 @@ theorem isOpenEmbedding_levelMonoidHom [hBopen : Fact (∀ i, IsOpen (B i : Set 
     IsOpenEmbedding (levelMonoidHom B T) :=
   isOpenEmbedding_levelMonoidHom_of_isOpen B T fun i _ ↦ hBopen.out i
 
-/-- For any family of sets `C : ∀ i, Set (G i)` agreeing with `B i` outside `T`, the image of
-`(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under `levelMonoidHom B T` is `box C`. -/
-@[to_additive image_levelAddMonoidHom_pi_prod_univ /-- For any family of sets `C : ∀ i, Set (G i)`
-agreeing with `B i` outside `T`, the image of `(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under
-`levelAddMonoidHom B T` is `box C`. -/]
-theorem image_levelMonoidHom_pi_prod_univ {C : ∀ i, Set (G i)} (hCB : ∀ i ∉ T, C i = B i) :
-    levelMonoidHom B T '' ((univ.pi fun i : T ↦ C i.val) ×ˢ univ) =
-      (box C : Set (Πʳ i, [G i, B i])) := by
-  ext x
-  simp only [mem_image, mem_prod, Set.mem_pi, mem_univ, forall_true_left, and_true, mem_box]
-  refine ⟨?_, fun hx ↦
-    ⟨((fun i : T ↦ x i.val), fun i ↦ ⟨x i.val, by simpa [hCB i.val i.property] using hx i.val⟩),
-    fun i ↦ hx i.val, by ext i; by_cases hi : i ∈ T <;> simp [hi]⟩⟩
-  rintro ⟨p, hp, rfl⟩ i
-  by_cases hi : i ∈ T
-  · simpa [hi] using hp ⟨i, hi⟩
-  · rw [levelMonoidHom_apply_of_notMem B T p hi, hCB i hi]; exact (p.2 ⟨i, hi⟩).property
-
 /-- The preimage of a coordinate box `box C` under `levelMonoidHom B T` is the product of the
 finite box over `T` and the tail box outside `T`. -/
 @[to_additive /-- The preimage of a coordinate box `box C` under `levelAddMonoidHom B T` is the
@@ -245,6 +227,25 @@ theorem preimage_levelMonoidHom_box (C : ∀ i, Set (G i)) :
   rw [← preimage_coe_univ_pi, ← Set.preimage_comp, hcomp, Set.preimage_comp,
     Equiv.preimage_piEquivPiSubtypeProd_symm_pi, Set.preimage_prod_map_prod,
     Set.preimage_id, Set.preimage_pi]
+
+/-- For any family of sets `C : ∀ i, Set (G i)` agreeing with `B i` outside `T`, the image of
+`(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under `levelMonoidHom B T` is `box C`. -/
+@[to_additive image_levelAddMonoidHom_pi_prod_univ /-- For any family of sets `C : ∀ i, Set (G i)`
+agreeing with `B i` outside `T`, the image of `(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under
+`levelAddMonoidHom B T` is `box C`. -/]
+theorem image_levelMonoidHom_pi_prod_univ {C : ∀ i, Set (G i)} (hCB : ∀ i ∉ T, C i = B i) :
+    levelMonoidHom B T '' ((univ.pi fun i : T ↦ C i.val) ×ˢ univ) =
+      (box C : Set (Πʳ i, [G i, B i])) := by
+  have hpre : levelMonoidHom B T ⁻¹' (box C : Set (Πʳ i, [G i, B i])) =
+      (univ.pi fun i : T ↦ C i.val) ×ˢ univ := by
+    rw [preimage_levelMonoidHom_box]
+    congr 1
+    ext f
+    simp [fun j : {i // i ∉ T} ↦ hCB j.val j.property]
+  have hsub : (box C : Set (Πʳ i, [G i, B i])) ⊆ Set.range (levelMonoidHom B T) := by
+    rw [range_levelMonoidHom]
+    exact fun x hx i hi ↦ by simpa [hCB i hi] using mem_box.mp hx i
+  rw [← hpre, Set.image_preimage_eq_of_subset hsub]
 
 end Monoid
 

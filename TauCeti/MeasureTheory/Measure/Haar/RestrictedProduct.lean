@@ -421,13 +421,10 @@ theorem comap_levelOpenSubgroup_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T
   let he := e.toHomeomorph.toMeasurableEquiv
   have hmu : MeasurableEmbedding ((↑) : U → Πʳ i, [G i, B i]) :=
     MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
-  have hcomap : ((restrictedHaar B μ hμB).comap ((↑) : U → Πʳ i, [G i, B i])).comap he =
-      restrictedPrincipalPieceMeasure B T μ := by
-    rw [hmu.comap_comap]
-    change (restrictedHaar B μ hμB).comap (((↑) : U → Πʳ i, [G i, B i]) ∘ e) = _
-    rw [coe_comp_levelOpenSubgroupEquiv, comap_levelMonoidHom_restrictedHaar B μ hμB hT]
   change _ = (restrictedPrincipalPieceMeasure B T μ).map he
-  rw [← hcomap, he.measurableEmbedding.map_comap, EquivLike.range_eq_univ he, Measure.restrict_univ]
+  rw [eq_comm, he.map_apply_eq_iff_map_symm_apply_eq, he.map_symm, hmu.comap_comap]
+  change _ = (restrictedHaar B μ hμB).comap (((↑) : U → Πʳ i, [G i, B i]) ∘ e)
+  rw [coe_comp_levelOpenSubgroupEquiv, comap_levelMonoidHom_restrictedHaar B μ hμB hT]
 
 /-- Value of `restrictedHaar` on a coordinate box `box C` agreeing with `B i` outside a finite set
 `T` on whose complement `μ i (B i) = 1`. No measurability assumption on `C i` is needed. -/

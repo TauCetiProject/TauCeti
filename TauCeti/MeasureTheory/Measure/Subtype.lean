@@ -109,18 +109,13 @@ theorem isProbabilityMeasure_comap_subtype {p : α → Prop} (μ : Measure α) :
     IsProbabilityMeasure (μ.comap (Subtype.val : Subtype p → α)) ↔
       NullMeasurableSet {x | p x} μ ∧ μ {x | p x} = 1 := by
   refine ⟨fun h ↦ ?_, fun ⟨hp, hμ⟩ ↦ ?_⟩
-  · have hne : μ.comap (Subtype.val : Subtype p → α) ≠ 0 := by
-      intro h0
-      have := h.measure_univ
-      simp [h0] at this
-    have himg : ∀ t : Set (Subtype p), MeasurableSet t →
-        NullMeasurableSet ((Subtype.val : Subtype p → α) '' t) μ :=
-      Classical.byContradiction fun hnot ↦
-        hne (comap_undef fun ⟨_, ht⟩ ↦ hnot ht)
-    have hrange : (Subtype.val : Subtype p → α) '' univ = {x | p x} := by ext; simp
-    refine ⟨hrange ▸ himg univ .univ, ?_⟩
-    exact hrange ▸ (comap_apply₀ _ μ Subtype.coe_injective himg .univ).symm.trans
-      (isProbabilityMeasure_iff.mp h)
+  · have hp : NullMeasurableSet {x | p x} μ := by
+      rw [← Subtype.coe_image_univ {x | p x}]
+      exact Classical.byContradiction fun hnot ↦
+        IsProbabilityMeasure.ne_zero _ (comap_undef fun h ↦ hnot (h.2 univ .univ))
+    let : MeasureSpace α := ⟨μ⟩
+    let : MeasureSpace (Subtype p) := Measure.Subtype.measureSpace
+    exact ⟨hp, (Measure.Subtype.volume_univ hp).symm.trans measure_univ⟩
   · let : MeasureSpace α := ⟨μ⟩
     let : MeasureSpace (Subtype p) := Measure.Subtype.measureSpace
     exact ⟨(Measure.Subtype.volume_univ hp).trans hμ⟩
