@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Commute
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Manifold.Algebra.TypeTags
@@ -105,6 +106,8 @@ nonempty `dim G ≤ dim M` (`TauCeti.finrank_le_of_properSMul_of_isCancelSMul`,
   `ProperSMul.existsUnique_contMDiff_comp_quotientMk_eq`,
   `ProperSMul.contMDiff_orbitRelQuotientMap` (and their `ProperVAdd.*` counterparts): smooth
   descent, universal property, and functoriality for `m ≤ ∞`.
+* `ProperSMul.contMDiffSMul_orbitRelQuotient`: a smooth action commuting with that of `G` descends
+  to a smooth action on `M ⧸ G`.
 
 ## References
 
@@ -662,6 +665,30 @@ theorem existsUnique_contMDiff_comp_quotientMk_eq (hm : m ≤ ∞) {f : M → N}
   rintro x y hxy
   obtain ⟨g, rfl⟩ := _root_.MulAction.orbitRel_apply.1 (Quotient.exact hxy)
   exact hf_inv g y
+
+/-- **Commuting actions descend smoothly to the orbit manifold.** For a free proper smooth Lie
+group action of `G` on `M` and `m ≤ ∞`, a `C^m` action of a monoid `L` on `M` commuting with that
+of `G` induces a `C^m` action `l • [x] = [l • x]` on `M ⧸ G`
+(`MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`), for a manifold `L` with
+boundaryless model. -/
+theorem contMDiffSMul_orbitRelQuotient (hm : m ≤ ∞) {EL HL L : Type*} [NormedAddCommGroup EL]
+    [NormedSpace ℝ EL] [TopologicalSpace HL] {IL : ModelWithCorners ℝ EL HL} [IL.Boundaryless]
+    [TopologicalSpace L] [ChartedSpace HL L] [IsManifold IL ∞ L] [Monoid L] [MulAction L M]
+    [SMulCommClass L G M] [ContMDiffSMul IL I' m L M] :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ContMDiffSMul IL 𝓘(ℝ, QuotientModelSpace E E') m L
+      (_root_.MulAction.orbitRel.Quotient G M) := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
+  refine ⟨((IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
+    (surjective_id.prodMap Quotient.mk_surjective) hm).1 ?_⟩
+  -- On representatives the action is that of `L` on `M`, followed by the projection.
+  have hcomp : (fun p : L × _root_.MulAction.orbitRel.Quotient G M ↦ p.1 • p.2) ∘
+      Prod.map id (Quotient.mk (_root_.MulAction.orbitRel G M)) =
+      Quotient.mk (_root_.MulAction.orbitRel G M) ∘ fun p : L × M ↦ p.1 • p.2 :=
+    funext fun p ↦ _root_.MulAction.orbitRel.Quotient.smul_mk p.1 p.2
+  rw [hcomp]
+  exact (hπ.contMDiff.of_le hm).comp ContMDiffSMul.contMDiff_smul
 
 variable (I) in
 /-- **Canonical `C^m` diffeomorphism with any `C^m` orbit submersion.** For a free proper smooth
