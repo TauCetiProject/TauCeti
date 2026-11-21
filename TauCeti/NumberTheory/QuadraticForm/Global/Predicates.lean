@@ -28,7 +28,8 @@ at least two, representation of regular forms is controlled only by dimension, a
 of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`
 makes this omission explicit.
 
-If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic.
+If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic; for a
+regular form, the converse holds as well.
 
 -/
 
@@ -141,6 +142,58 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.2 w)
       (by simpa using ha)
     simp
+
+/-- If `⟨-a⟩ ⊥ Q` becomes isotropic after scalar extension to a field `A` and `Q` is regular on a
+finite-dimensional space with `a ≠ 0`, then `Q ⊗ A` represents the image of `a`. -/
+private theorem represents_baseChange_of_not_anisotropic_smul_sq_prod
+    {A : Type*} [Field A] [Algebra K A] [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K W} (hQ : Q.Nondegenerate) {a : K} (ha : a ≠ 0)
+    (h : ¬(QuadraticForm.baseChange A
+      (((-a) • (QuadraticMap.sq : _root_.QuadraticForm K K)).prod Q)).Anisotropic) :
+    QuadraticMap.Represents (Q.baseChange A) (algebraMap K A a) := by
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let L : _root_.QuadraticForm K K := (-a) • QuadraticMap.sq
+  let eL : (L.baseChange A).IsometryEquiv
+      ((-algebraMap K A a) • (QuadraticMap.sq : _root_.QuadraticForm A A)) :=
+    { toLinearEquiv := TensorProduct.AlgebraTensorModule.rid K A A
+      map_app' := fun y => by
+        set t := TensorProduct.AlgebraTensorModule.rid K A A y
+        have hy : y = t ⊗ₜ (1 : K) :=
+          (TensorProduct.AlgebraTensorModule.rid K A A).injective (by simp [t])
+        rw [hy, baseChange_tmul]
+        simp [L, t, Algebra.smul_def] }
+  let e : (QuadraticForm.baseChange A (L.prod Q)).IsometryEquiv
+      ((Q.baseChange A).prod ((-algebraMap K A a) • QuadraticMap.sq)) :=
+    (baseChangeProd (A := A) L Q).trans <|
+      (QuadraticMap.IsometryEquiv.prodComm _ _).trans <|
+        (QuadraticMap.IsometryEquiv.refl _).prod eL
+  have hiso : ¬((Q.baseChange A).prod ((-algebraMap K A a) • QuadraticMap.sq)).Anisotropic := by
+    rwa [← QuadraticMap.Equivalent.anisotropic_iff ⟨e⟩]
+  have hau : algebraMap K A a ≠ 0 := by simpa using ha
+  have hunit : (Units.mk0 (algebraMap K A a) hau : A) = algebraMap K A a := rfl
+  simpa only [QuadraticMap.mem_unitValueSet, hunit] using
+    (QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod (Q.baseChange A)
+      (Nondegenerate.baseChange hQ) (Units.mk0 (algebraMap K A a) hau)).mpr hiso
+
+/-- For a regular quadratic form on a finite-dimensional space over a number field and any scalar
+`a`, adjoining `⟨-a⟩` produces a locally isotropic form if and only if the form locally represents
+`a`. -/
+theorem isLocallyIsotropic_smul_sq_prod_iff [FiniteDimensional K W]
+    (Q : _root_.QuadraticForm K W) (hQ : Q.Nondegenerate) (a : K) :
+    IsLocallyIsotropic (((-a) • (QuadraticMap.sq : _root_.QuadraticForm K K)).prod Q) ↔
+      Q.LocallyRepresentsScalar a := by
+  refine ⟨fun h => ?_, LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod⟩
+  by_cases ha : a = 0
+  · subst ha
+    exact (locallyRepresentsScalar_iff Q 0).mpr ⟨fun _ => by simp, fun _ => by simp⟩
+  refine (locallyRepresentsScalar_iff Q a).mpr ⟨fun v => ?_, fun w => ?_⟩
+  · rw [atFinitePlace_def]
+    exact represents_baseChange_of_not_anisotropic_smul_sq_prod hQ ha
+      (by simpa only [atFinitePlace_def] using ((isLocallyIsotropic_iff _).mp h).1 v)
+  · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    rw [atRealPlace_def]
+    exact represents_baseChange_of_not_anisotropic_smul_sq_prod hQ ha
+      (by simpa only [atRealPlace_def] using ((isLocallyIsotropic_iff _).mp h).2 w)
 
 /-- Two quadratic forms over a number field are locally equivalent if their localizations are
 equivalent at every finite and real place. -/
@@ -329,6 +382,21 @@ theorem QuadraticMap.Equivalent.locallyRepresents_congr
       fun place ↦ ((hQlocal.2 place).isRepresentedBy_congr
         (hRlocal.2 place)).mpr (h.2 place)⟩
 
+/-- Scaling a locally isotropic quadratic form by any scalar produces a locally isotropic form. -/
+theorem isLocallyIsotropic_smul {Q : _root_.QuadraticForm K V} (c : K) (h : Q.IsLocallyIsotropic) :
+    (c • Q).IsLocallyIsotropic := by
+  refine (isLocallyIsotropic_iff _).mpr ⟨fun v hani ↦ ?_, fun w hani ↦ ?_⟩
+  · refine ((isLocallyIsotropic_iff _).mp h).1 v fun x hx ↦ hani x ?_
+    rw [atFinitePlace_smul, _root_.smul_apply, hx, smul_zero]
+  · refine ((isLocallyIsotropic_iff _).mp h).2 w fun x hx ↦ hani x ?_
+    rw [atRealPlace_smul, _root_.smul_apply, hx, smul_zero]
+
+/-- Scaling a quadratic form by a nonzero scalar preserves local isotropy. -/
+theorem isLocallyIsotropic_smul_iff {Q : _root_.QuadraticForm K V} {c : K} (hc : c ≠ 0) :
+    (c • Q).IsLocallyIsotropic ↔ Q.IsLocallyIsotropic :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using isLocallyIsotropic_smul c⁻¹ h,
+    isLocallyIsotropic_smul c⟩
+
 /-- Locally equivalent quadratic forms have the same global rank. -/
 theorem LocallyEquivalent.finrank_eq
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
@@ -346,5 +414,20 @@ theorem LocallyRepresents.finrank_le [FiniteDimensional K W]
   obtain ⟨f, hf, -⟩ := hp
   simpa only [Module.finrank_baseChange] using
     LinearMap.finrank_le_finrank_of_injective hf
+
+/-- A quadratic space locally represented by a finite-dimensional quadratic space over a number
+field is itself finite-dimensional. -/
+theorem finiteDimensional_of_locallyRepresents [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyRepresents R) : FiniteDimensional K V := by
+  let v : HeightOneSpectrum (𝓞 K) := Classical.arbitrary _
+  obtain ⟨f, hf, -⟩ :=
+    (QuadraticMap.isRepresentedBy_iff _ _).mp (((locallyRepresents_iff Q R).mp h).1 v)
+  have : Module.Finite (v.adicCompletion K) (v.adicCompletion K ⊗[K] V) :=
+    Module.Finite.of_injective f hf
+  let b := Module.Basis.ofVectorSpace K V
+  have : Finite (Module.Basis.ofVectorSpaceIndex K V) :=
+    Module.Finite.finite_basis (b.baseChange (v.adicCompletion K))
+  exact Module.Finite.of_basis b
 
 end QuadraticForm
