@@ -36,9 +36,12 @@ instance isClosedUnderFiniteProducts_inverseImage {C D : Type*} [Category* C] [C
 isomorphisms.** An isomorphism `e : X ≅ Y` exhibits `Y` as a product of the terminal object with
 `X`, the second projection being `e.inv`.
 
-Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderBinaryProducts.closedUnderIsomorphisms` is
-the same argument, but it assumes `HasTerminal C` and closure under the empty limit, which a
-property known to hold for *one* terminal object does not supply before repleteness is known. -/
+Here `hT` exhibits one terminal object `T`, and `hTP` asks for the property at that `T` only, not at
+every terminal object. Mathlib's
+`CategoryTheory.ObjectProperty.IsClosedUnderBinaryProducts.closedUnderIsomorphisms` is the same
+argument, but it assumes `HasTerminal C` together with closure under the empty limit, which says
+that the property holds at every limit of the empty diagram, that is, at every terminal object.
+Before repleteness is known, the property at one terminal object does not give this. -/
 theorem isClosedUnderIsomorphisms_of_isTerminal {C : Type*} [Category* C]
     (P : ObjectProperty C) [P.IsClosedUnderBinaryProducts] {T : C} (hT : IsTerminal T)
     (hTP : P T) : P.IsClosedUnderIsomorphisms where

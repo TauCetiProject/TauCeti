@@ -13,8 +13,10 @@ public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 This file contains general lemmas about object properties: transporting them along an
 equivalence, comparing Mathlib's closure type classes with one another in the presence of a
-terminal object and of binary biproducts, smallness of full subcategories, and additivity of the
-standard functors between full subcategories.
+zero object and of binary biproducts, smallness of full subcategories, and additivity of the
+standard functors between full subcategories. The more general form of the zero-object result, for
+a terminal object, is `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal` in
+`TauCeti.CategoryTheory.ObjectProperty.FiniteProducts`.
 
 ## Main declarations
 
@@ -30,8 +32,6 @@ standard functors between full subcategories.
   conclusion.
 * `CategoryTheory.ObjectProperty.homMk_eta` and `CategoryTheory.ObjectProperty.homMk_comp`:
   `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
-* `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor `G` with `G ⋙ P.ι = F` acts on
-  morphisms as `F`, up to the identifications of objects.
 * `CategoryTheory.ObjectProperty.essSurj_lift_iff`: a lift through a full subcategory is
   essentially surjective exactly when the property is contained in the essential image.
 * `CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`: every property in an essentially
@@ -127,16 +127,6 @@ theorem homMk_comp {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
     homMk (f ≫ g) = homMk f ≫ homMk g :=
   rfl
 
-/-- A functor `G` lifting `F` through a full subcategory, in the sense that `G ⋙ P.ι = F`, acts
-on morphisms as `F`, up to the identifications of the underlying objects. This applies in
-particular to `G = P.lift F hF`, through `lift_comp_ι`, and to a functor defined as such a lift. -/
-theorem lift_map_hom_of_eq {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
-    {P : ObjectProperty D} {F : C ⥤ D} {G : C ⥤ P.FullSubcategory}
-    (hG : G ⋙ P.ι = F) {A B : C} (f : A ⟶ B) (hA : (G.obj A).obj = F.obj A)
-    (hB : (G.obj B).obj = F.obj B) :
-    (G.map f).hom = eqToHom hA ≫ F.map f ≫ eqToHom hB.symm :=
-  Functor.congr_hom hG f
-
 /-- The lift of a functor through a full subcategory is essentially surjective exactly when every
 object satisfying the property lies in the essential image of the original functor. -/
 theorem essSurj_lift_iff {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
@@ -187,9 +177,10 @@ functor, up to the identifications of `congrFullSubcategory_functor_obj_obj`. -/
 theorem congrFullSubcategory_functor_map_hom {X Y : P.FullSubcategory} (f : X ⟶ Y) :
     ((e.congrFullSubcategory h).functor.map f).hom =
       eqToHom (e.congrFullSubcategory_functor_obj_obj h X) ≫ e.functor.map f.hom ≫
-        eqToHom (e.congrFullSubcategory_functor_obj_obj h Y).symm :=
-  ObjectProperty.lift_map_hom_of_eq (e.congrFullSubcategory_functor_comp_ι h) f
-    (e.congrFullSubcategory_functor_obj_obj h X) (e.congrFullSubcategory_functor_obj_obj h Y)
+        eqToHom (e.congrFullSubcategory_functor_obj_obj h Y).symm := by
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    ObjectProperty.map_hom_of_comp_ι_eq (e.congrFullSubcategory_functor_comp_ι h) f
+      (e.congrFullSubcategory_functor_obj_obj h X) (e.congrFullSubcategory_functor_obj_obj h Y)
 
 /-- The inverse functor on corresponding full subcategories acts on objects as the original
 inverse. Not a simp lemma: `congrFullSubcategory_inverse` already unfolds the left-hand side. -/
@@ -201,9 +192,10 @@ inverse, up to the identifications of `congrFullSubcategory_inverse_obj_obj`. -/
 theorem congrFullSubcategory_inverse_map_hom {X Y : Q.FullSubcategory} (f : X ⟶ Y) :
     ((e.congrFullSubcategory h).inverse.map f).hom =
       eqToHom (e.congrFullSubcategory_inverse_obj_obj h X) ≫ e.inverse.map f.hom ≫
-        eqToHom (e.congrFullSubcategory_inverse_obj_obj h Y).symm :=
-  ObjectProperty.lift_map_hom_of_eq (e.congrFullSubcategory_inverse_comp_ι h) f
-    (e.congrFullSubcategory_inverse_obj_obj h X) (e.congrFullSubcategory_inverse_obj_obj h Y)
+        eqToHom (e.congrFullSubcategory_inverse_obj_obj h Y).symm := by
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    ObjectProperty.map_hom_of_comp_ι_eq (e.congrFullSubcategory_inverse_comp_ι h) f
+      (e.congrFullSubcategory_inverse_obj_obj h X) (e.congrFullSubcategory_inverse_obj_obj h Y)
 
 end Evaluation
 
