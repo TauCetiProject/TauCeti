@@ -50,17 +50,19 @@ theorem exists_smul_eq_add_of_commute {g h : G} {c : ℤ → T.V}
     (hgc : ∀ n, g • c n = c (n + t)) (hgh : Commute g h) : ∃ k : ℤ, ∀ n, h • c n = c (n + k) := by
   have hinj := SerreGraph.injective_of_dist_eq_natAbs hc
   have hrange := (axis_eq_range_of_smul_eq_add hc ht hgc).symm
-  -- `h` maps the axis into itself, so `h • c n = c (φ n)` for an isometry `φ` of `ℤ`.
-  choose φ hφ using fun n => show h • c n ∈ Set.range c by
+  -- `h` maps the axis `Set.range c` of `g` into itself, so `h • c n = c (φ n)` for an isometry
+  -- `φ` of `ℤ`.
+  have hmem (n : ℤ) : h • c n ∈ Set.range c := by
     rw [hrange, smul_mem_axis_iff_of_commute hgh, ← hrange]
     exact Set.mem_range_self n
+  choose φ hφ using hmem
   have hiso (m n : ℤ) : (φ m - φ n).natAbs = (m - n).natAbs := by
     rw [← hc, hφ, hφ, dist_smul, hc]
   -- Since `h` commutes with `g`, the isometry `φ` commutes with the translation by `t`, which
   -- rules out a reflection.
-  have hper : φ (0 + t) = φ 0 + t := hinj <| by
-    rw [hφ, ← hgc, smul_smul, ← hgh.eq, mul_smul, ← hφ, hgc]
-  rw [zero_add] at hper
+  have hcomm : g • h • c 0 = h • g • c 0 := by rw [smul_smul, hgh.eq, mul_smul]
+  simp only [← hφ, hgc, zero_add] at hcomm
+  have hper := hinj hcomm
   refine ⟨φ 0, fun n => ?_⟩
   have h₁ := hiso 1 0
   have ht₁ := hiso t 1

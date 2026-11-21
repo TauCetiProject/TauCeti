@@ -75,8 +75,9 @@ theorem stabilizer_bassSerreDart_inf_stabilizer_smul_eq_bot {b c : Γ.V} (p : �
   obtain ⟨hk, hk'⟩ := Subgroup.mem_inf.1 hk
   rw [stabilizer_bassSerreDart] at hk
   obtain ⟨y, hy, rfl⟩ := hk
-  have h : π₁.vertexHom p (g⁻¹ * y * g) • bassSerreDart p e = bassSerreDart p e := by
-    rw [map_mul, map_mul, map_inv, mul_smul, mul_smul, mem_stabilizer_iff.1 hk', inv_smul_smul]
+  -- Translating back by `p g⁻¹ p⁻¹`, the element `p g⁻¹ y g p⁻¹` fixes the dart `p α_e(A_e)`.
+  have h := congrArg ((π₁.vertexHom p g)⁻¹ • ·) (mem_stabilizer_iff.1 hk')
+  simp only [smul_smul, ← map_inv, ← map_mul, ← mul_assoc, inv_mul_cancel, map_one, one_smul] at h
   rw [vertexHom_smul_bassSerreDart_eq_self_iff] at h
   rw [hT.eq_one (inv_mem_iff.not.2 hg) hy (by rwa [inv_inv]), map_one]
 
@@ -99,6 +100,17 @@ theorem stabilizer_bassSerreDart_inf_stabilizer_bassSerreDart_eq_bot {b c : Γ.V
 
 section segment
 
+/-- A vertex `b` of the segment has a single dart leaving it, so every dart of the Bass–Serre tree
+of a segment of groups leaving `p A_b` over a dart `e : b ⟶ c` lies over `segmentArrow b`. -/
+private theorem bassSerreDart_eq_segmentArrow {𝔸 : GraphOfGroups.{0, 0, w, x} SerreGraph.segment}
+    {a b c : SerreGraph.segment.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
+    bassSerreDart p e = bassSerreDart p (SerreGraph.segmentArrow b) := by
+  have he : e.val = b := (SerreGraph.segment_src _).symm.trans e.property.1
+  obtain rfl : c = SerreGraph.segment.tgt b := e.property.2.symm.trans (congrArg _ he)
+  obtain rfl : e = SerreGraph.segmentArrow b :=
+    Subtype.ext (he.trans (SerreGraph.segmentArrow_val b).symm)
+  rfl
+
 variable {A B : Type w} {C : Type x} [Group A] [Group B] [Group C] {f : C →* A} {g : C →* B}
   {hf : Function.Injective f} {hg : Function.Injective g} {a : SerreGraph.segment.V}
 
@@ -117,15 +129,7 @@ theorem bassSerreTree_segment_stabilizer_inf_stabilizer_eq_bot {b : SerreGraph.s
   subst hb
   rw [src_bassSerreDart, src_bassSerreDart] at hsrc
   obtain rfl : b₁ = b₂ := by simpa using congrArg (bassSerreProjection _ a).mapV hsrc.symm
-  -- A vertex of the segment has a single dart leaving it.
-  have he : e.val = b₁ := (SerreGraph.segment_src _).symm.trans e.property.1
-  have he' : e'.val = b₁ := (SerreGraph.segment_src _).symm.trans e'.property.1
-  obtain rfl : c₁ = SerreGraph.segment.tgt b₁ := e.property.2.symm.trans (congrArg _ he)
-  obtain rfl : c₂ = SerreGraph.segment.tgt b₁ := e'.property.2.symm.trans (congrArg _ he')
-  obtain rfl : e = SerreGraph.segmentArrow b₁ :=
-    Subtype.ext (he.trans (SerreGraph.segmentArrow_val b₁).symm)
-  obtain rfl : e' = SerreGraph.segmentArrow b₁ :=
-    Subtype.ext (he'.trans (SerreGraph.segmentArrow_val b₁).symm)
+  rw [bassSerreDart_eq_segmentArrow p, bassSerreDart_eq_segmentArrow q] at hne ⊢
   exact stabilizer_bassSerreDart_inf_stabilizer_bassSerreDart_eq_bot
     (by rwa [αArrow_segmentArrow]) hsrc hne
 
@@ -135,20 +139,13 @@ private theorem exists_bassSerreProjection_mapV_eq {c : ℤ → (bassSerreTree (
     (hc : ∀ m n, (bassSerreTree (segment f g hf hg) a).dist (c m) (c n) = (m - n).natAbs)
     (b : SerreGraph.segment.V) : ∃ n, (bassSerreProjection _ a).mapV (c n) = b := by
   obtain ⟨d, hs, ht⟩ := SerreGraph.exists_src_eq_and_tgt_eq_of_dist_eq_one (hc 0 1)
-  -- In the segment, the source of the dart `x` is `x` and its target is `!x`.
-  have h₀ : ((bassSerreProjection _ a).mapE d : Bool) = (bassSerreProjection _ a).mapV (c 0) := by
-    rw [← hs]
-    exact (bassSerreProjection _ a).map_src d
-  have h₁ : (!((bassSerreProjection _ a).mapE d : Bool)) =
-      (bassSerreProjection _ a).mapV (c 1) := by
-    rw [← ht]
-    exact (bassSerreProjection _ a).map_tgt _ d
-  rw [h₀] at h₁
-  by_cases h : (bassSerreProjection _ a).mapV (c 0) = b
+  set π := bassSerreProjection (segment f g hf hg) a
+  have h₀ : SerreGraph.segment.src (π.mapE d) = π.mapV (c 0) := hs ▸ π.map_src d
+  have h₁ : SerreGraph.segment.tgt (π.mapE d) = π.mapV (c 1) := ht ▸ π.map_tgt _ d
+  by_cases h : π.mapV (c 0) = b
   · exact ⟨0, h⟩
-  · refine ⟨1, ?_⟩
-    rw [← h₁, Bool.eq_not_of_ne h]
-    cases b <;> rfl
+  · -- The source of the dart `π d` is the vertex `π (c 0) ≠ b`, so its target is `b`.
+    exact ⟨1, h₁ ▸ SerreGraph.segment_tgt_eq_of_ne (h₀.trans_ne h)⟩
 
 /-- **Geodesic lines have trivial pointwise stabilizers** in the Bass–Serre tree of `A ∗_C B`
 when `C` is malnormal in one of the factors: only the identity fixes every vertex of a geodesic

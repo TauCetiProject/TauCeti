@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.PushoutI.TrivialBase
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.HNNExtension
+import TauCeti.GroupTheory.PushoutI.Map
 
 /-!
 # One-edge graphs of groups: amalgamated products and HNN extensions
@@ -21,7 +23,11 @@ fundamental group is Mathlib's amalgamated product or HNN extension respectively
   set `T` of darts (for instance the maximal tree, which is the whole segment) is the amalgamated
   product `A ∗_C B`, Mathlib's `Monoid.PushoutI` indexed by the two vertices. The isomorphism is
   the identity on `A` and on `B` and kills both darts. When the edge group `C` is trivial this
-  is the free product `A ∗ B`, Mathlib's `Monoid.Coprod A B`.
+  is the free product `A ∗ B`, Mathlib's `Monoid.Coprod A B`. For a `Bool`-indexed family of
+  monomorphisms `φ b : C →* G b`, the amalgamated product of the vertex groups of the segment of
+  `φ false` and `φ true` is the amalgamated product `Monoid.PushoutI φ` of the family. In the
+  group `π₁(𝔸, v₀)` of closed paths, the class of `q y q⁻¹`, for any edge path `q` from `v₀` to a
+  vertex `b`, reads as `y ∈ A_b` in `π₁(𝔸, T)`: every dart of the segment lies in its tree.
 * For the loop `GraphOfGroups.loop f g hf hg` with vertex group `G`, edge group `C` and
   monomorphisms `f g : C →* G`, the group `π₁(𝔸, ∅)` relative to the empty maximal tree is the
   HNN extension `HNNExtension G (range f) (range g) φ` with `φ (f c) = g c`. The isomorphism is
@@ -40,6 +46,8 @@ its fundamental group.
 * `TauCeti.GraphOfGroups.π₁Tree.equivPushoutI`: `π₁(segment, T) ≃* A ∗_C B` for nonempty `T`.
 * `TauCeti.GraphOfGroups.π₁Tree.equivCoprod`: `π₁(segment, T) ≃* A ∗ B` for nonempty `T` and
   trivial edge group.
+* `TauCeti.GraphOfGroups.segmentPushoutIEquiv`: the amalgam of the vertex groups of the segment
+  of a `Bool`-indexed family `φ` is `Monoid.PushoutI φ`.
 * `TauCeti.GraphOfGroups.loopEquiv`: the isomorphism `range f ≃* range g`, `f c ↦ g c`, along
   which the HNN extension of the loop is taken.
 * `TauCeti.GraphOfGroups.π₁Tree.equivHNNExtension`: `π₁(loop, ∅) ≃* HNNExtension G (range f)
@@ -47,6 +55,8 @@ its fundamental group.
 
 ## Main results
 
+* `TauCeti.GraphOfGroups.π₁Equiv_segment_vertexHom_mapPath`: in `π₁(segment, T)`, the class of
+  `q y q⁻¹` is `y` for every edge path `q`.
 * `TauCeti.GraphOfGroups.π₁Tree.of_injective_segment` and
   `TauCeti.GraphOfGroups.π₁Tree.of_injective_loop`: the vertex groups of a one-edge graph of
   groups embed in its fundamental group.
@@ -252,7 +262,97 @@ end Coprod
 
 end π₁Tree
 
+variable {f g hf hg} in
+/-- Every dart of the segment lies in its spanning tree, so for any edge path `q` from `v₀` to `b`
+the class of `q y q⁻¹` in `π₁(𝔸, v₀)` corresponds to `y ∈ A_b` in `π₁(𝔸, T)`. -/
+theorem π₁Equiv_segment_vertexHom_mapPath {v₀ b : SerreGraph.segment.V}
+    (q : SerreGraph.segment.Path v₀ b) (y : (segment f g hf hg).vertexGroup b) :
+    π₁Equiv _ v₀ SerreGraph.segment_isTree.spanningTree
+        (π₁.vertexHom ((dartPrefunctor _).mapPath q) y) =
+      π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b y := by
+  have hq : q.weight (fun {a b : SerreGraph.segment.V} (_ : a ⟶ b) =>
+      (1 : π₁Tree (segment f g hf hg) SerreGraph.segment_isTree.spanningTree.darts)) = 1 :=
+    SerreGraph.Path.weight_eq_one _ q (f := fun _ => 1) fun _ _ => rfl
+  simp [π₁Equiv_apply, hq]
+
 end segment
+
+/-! ### The segment of a `Bool`-indexed family -/
+
+section bool
+
+variable {C : Type x} {G : Bool → Type w} [Group C] [∀ b, Group (G b)] (φ : ∀ b, C →* G b)
+  (hφ : ∀ b, Function.Injective (φ b))
+
+-- The vertices of the segment are the elements of `Bool` only up to unfolding: the indices
+-- `id b` below keep the types `Bool` and `SerreGraph.segment.V` apart syntactically, so that
+-- instance search finds the group structures of `G (id b)`. For the whole family over
+-- `SerreGraph.segment.V`, which `Monoid.PushoutI.map` needs, instance search fails, and a local
+-- instance supplies these structures.
+
+/-- The vertex groups of the segment of `φ false` and `φ true` are the groups `G b`. -/
+private def segmentVertexEquiv : ∀ b : SerreGraph.segment.V,
+    (segment (φ false) (φ true) (hφ false) (hφ true)).vertexGroup b ≃* G (id b)
+  | false => MulEquiv.refl (G false)
+  | true => MulEquiv.refl (G true)
+
+/-- Homomorphisms of amalgamated products induced by factorwise left inverse homomorphisms, over
+the identity of the amalgamated monoid, are left inverse. -/
+private theorem map_comp_map_eq_id {ι : Type*} {M N : ι → Type*} {K : Type*}
+    [∀ i, Monoid (M i)] [∀ i, Monoid (N i)] [Monoid K] {μ : ∀ i, K →* M i}
+    {ν : ∀ i, K →* N i} {f : ∀ i, M i →* N i} {g : ∀ i, N i →* M i}
+    (hf : ∀ i, (f i).comp (μ i) = (ν i).comp (.id K))
+    (hg : ∀ i, (g i).comp (ν i) = (μ i).comp (.id K)) (hgf : ∀ i x, g i (f i x) = x) :
+    (Monoid.PushoutI.map g (.id K) hg).comp (Monoid.PushoutI.map f (.id K) hf) = .id _ :=
+  Monoid.PushoutI.hom_ext (fun i => MonoidHom.ext fun x => by simp [hgf]) (by ext; simp)
+
+/-- For a `Bool`-indexed family of monomorphisms `φ b : C →* G b`, the amalgamated product of the
+vertex groups of the segment of `φ false` and `φ true` is the amalgamated product
+`G false ∗_C G true` of the family, `Monoid.PushoutI φ`. Both are amalgams of the same groups;
+they differ only in their index types, the vertices of the segment and `Bool`. -/
+noncomputable def segmentPushoutIEquiv :
+    Monoid.PushoutI (segmentMaps (φ false) (φ true) (hφ false) (hφ true)) ≃* Monoid.PushoutI φ :=
+  letI (b : SerreGraph.segment.V) : Group (G (id b)) := ‹∀ b : Bool, Group (G b)› b
+  MonoidHom.toMulEquiv
+    (Monoid.PushoutI.map (ι := SerreGraph.segment.V) (G' := fun b => G (id b))
+      (φ := segmentMaps (φ false) (φ true) (hφ false) (hφ true)) (φ' := φ)
+      (fun b => (segmentVertexEquiv φ hφ b).toMonoidHom) (.id C) fun b => by cases b <;> rfl)
+    (Monoid.PushoutI.map (ι := SerreGraph.segment.V) (G := fun b => G (id b))
+      (φ := φ) (φ' := segmentMaps (φ false) (φ true) (hφ false) (hφ true))
+      (fun b => (segmentVertexEquiv φ hφ b).symm.toMonoidHom) (.id C) fun b => by cases b <;> rfl)
+    (map_comp_map_eq_id _ _ fun b _ => by cases b <;> rfl)
+    (map_comp_map_eq_id _ _ fun b _ => by cases b <;> rfl)
+
+private theorem segmentPushoutIEquiv_of (b : SerreGraph.segment.V)
+    (y : (segment (φ false) (φ true) (hφ false) (hφ true)).vertexGroup b) :
+    segmentPushoutIEquiv φ hφ (Monoid.PushoutI.of b y) =
+      Monoid.PushoutI.of (φ := φ) (id b) (segmentVertexEquiv φ hφ b y) :=
+  letI (b : SerreGraph.segment.V) : Group (G (id b)) := ‹∀ b : Bool, Group (G b)› b
+  Monoid.PushoutI.map_of ..
+
+@[simp] theorem segmentPushoutIEquiv_of_false (y : G false) :
+    segmentPushoutIEquiv φ hφ
+        (Monoid.PushoutI.of (φ := segmentMaps (φ false) (φ true) (hφ false) (hφ true)) false y) =
+      Monoid.PushoutI.of false y :=
+  segmentPushoutIEquiv_of φ hφ false y
+
+@[simp] theorem segmentPushoutIEquiv_of_true (y : G true) :
+    segmentPushoutIEquiv φ hφ
+        (Monoid.PushoutI.of (φ := segmentMaps (φ false) (φ true) (hφ false) (hφ true)) true y) =
+      Monoid.PushoutI.of true y :=
+  segmentPushoutIEquiv_of φ hφ true y
+
+@[simp] theorem segmentPushoutIEquiv_symm_of_false (y : G false) :
+    (segmentPushoutIEquiv φ hφ).symm (Monoid.PushoutI.of false y) =
+      Monoid.PushoutI.of (φ := segmentMaps (φ false) (φ true) (hφ false) (hφ true)) false y :=
+  (MulEquiv.symm_apply_eq _).2 (segmentPushoutIEquiv_of_false φ hφ y).symm
+
+@[simp] theorem segmentPushoutIEquiv_symm_of_true (y : G true) :
+    (segmentPushoutIEquiv φ hφ).symm (Monoid.PushoutI.of true y) =
+      Monoid.PushoutI.of (φ := segmentMaps (φ false) (φ true) (hφ false) (hφ true)) true y :=
+  (MulEquiv.symm_apply_eq _).2 (segmentPushoutIEquiv_of_true φ hφ y).symm
+
+end bool
 
 /-! ### The loop: HNN extensions -/
 

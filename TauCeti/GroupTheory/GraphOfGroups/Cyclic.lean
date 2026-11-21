@@ -564,10 +564,6 @@ end π₁Tree
 
 namespace π₁
 
-private theorem segment_spanningTree_darts_nonempty :
-    SerreGraph.segment_isTree.spanningTree.darts.Nonempty :=
-  ⟨true, by rw [SerreGraph.IsTree.spanningTree_darts]; exact Set.mem_univ _⟩
-
 variable (v₀ : SerreGraph.segment.V)
 
 /-- The fundamental group at any vertex `v₀` of the segment of infinite cyclic groups with
@@ -578,21 +574,16 @@ boundary maps `(· ^ m)` and `(· ^ n)` is the amalgam `⟨x, y ∣ x ^ m = y ^ 
 noncomputable def cyclicAmalgamEquiv :
     π₁ (cyclicAmalgam m n hm hn) v₀ ≃* PresentedGroup {cyclicAmalgamRelator m n} :=
   (π₁Equiv _ v₀ SerreGraph.segment_isTree.spanningTree).trans
-    (π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty)
+    (π₁Tree.cyclicAmalgamEquiv m n hm hn (SerreGraph.segment_spanningTree_darts_nonempty _))
 
 /-- The image of the class of `q c q⁻¹`, for an edge path `q` from `v₀` to `b`, is the image of
 `c` under `A_b → π₁(𝔸, T)`. -/
 private theorem cyclicAmalgamEquiv_vertexHom_mapPath {b : SerreGraph.segment.V}
     (q : SerreGraph.segment.Path v₀ b) (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
     cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
-      π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty
-        (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c) := by
-  -- Every dart of the segment lies in its tree, so it reads as `1` in `π₁(𝔸, T)`, and so does
-  -- the edge path `q`.
-  have hq : q.weight (fun {a b : SerreGraph.segment.V} (_ : a ⟶ b) =>
-      (1 : π₁Tree (cyclicAmalgam m n hm hn) SerreGraph.segment_isTree.spanningTree.darts)) = 1 :=
-    SerreGraph.Path.weight_eq_one _ q (f := fun _ => 1) fun _ _ => rfl
-  simp [cyclicAmalgamEquiv, π₁Equiv_apply, hq]
+      π₁Tree.cyclicAmalgamEquiv m n hm hn (SerreGraph.segment_spanningTree_darts_nonempty _)
+        (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c) :=
+  congrArg (π₁Tree.cyclicAmalgamEquiv m n hm hn _) (π₁Equiv_segment_vertexHom_mapPath ..)
 
 @[simp] theorem cyclicAmalgamEquiv_vertexHom_false (q : SerreGraph.segment.Path v₀ false)
     (c : Multiplicative ℤ) :
@@ -649,8 +640,8 @@ private theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom (hmn : IsCoprime m
     {b : SerreGraph.segment.V} (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨b⟩)
     (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
     cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn (Group.Abelianization.of (vertexHom p c)) =
-      π₁Tree.cyclicAmalgamAbelianizationEquiv m n hm hn hmn segment_spanningTree_darts_nonempty
-        (Group.Abelianization.of
+      π₁Tree.cyclicAmalgamAbelianizationEquiv m n hm hn hmn
+        (SerreGraph.segment_spanningTree_darts_nonempty _) (Group.Abelianization.of
           (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c)) := by
   simp [cyclicAmalgamAbelianizationEquiv, π₁Tree.cyclicAmalgamAbelianizationEquiv,
     cyclicAmalgamEquiv, π₁Equiv_apply]

@@ -491,6 +491,11 @@ vertices crosses the edge. -/
   · exact T.mem_of_mem_darts_path he
   · exact T.rev_mem _ (T.mem_of_mem_darts_path he)
 
+/-- Every spanning tree of the segment has a dart. -/
+theorem segment_spanningTree_darts_nonempty (T : segment.SpanningTree) : T.darts.Nonempty := by
+  rw [segment_spanningTree_darts]
+  exact Set.univ_nonempty (α := Bool)
+
 /-- A rose has exactly one spanning tree, the one with no darts. -/
 instance (α : Type*) : Unique (rose α).SpanningTree where
   default := roseTree α
