@@ -341,6 +341,13 @@ theorem isLatticeSpan_iff_exists_nat_mul_eq {g : ℝ≥0}
 theorem isLatticeSpan_dirac {c : ℝ≥0} (hc : 0 < c) : (dirac c).IsLatticeSpan c :=
   ⟨hc, by simpa [ae_dirac_eq] using ⟨1, by simp⟩⟩
 
+/-- Every Dirac measure `δ_c` on `ℝ≥0` is lattice. -/
+@[simp]
+theorem isLattice_dirac (c : ℝ≥0) : (dirac c).IsLattice := by
+  rcases eq_zero_or_pos c with rfl | hc
+  · exact ⟨1, zero_lt_one, by simp [ae_dirac_eq]⟩
+  · exact (isLatticeSpan_dirac hc).isLattice
+
 /-- The deterministic law `δ_c` with `c > 0` has greatest span `c`. -/
 theorem isGreatest_setOf_isLatticeSpan_dirac {c : ℝ≥0} (hc : 0 < c) :
     IsGreatest {b | (dirac c).IsLatticeSpan b} c :=
@@ -352,6 +359,22 @@ theorem not_isLattice [NullSingletonClass μ] (hμ : μ ≠ 0) : ¬ μ.IsLattice
   refine hμ (measure_univ_eq_zero.1 ?_)
   rw [← union_compl_self (range fun n : ℕ ↦ (n : ℝ≥0) * a)]
   exact measure_union_null ((countable_range _).measure_zero μ) ha.measure_compl_range
+
+/-- For a zero or probability measure `ν` whose pushforward under `X` is nonlattice, the event
+`{ω | X ω = 0}` has mass strictly below one. No measurability hypothesis on `X` is needed, because
+a non-a.e.-measurable map pushes a nonzero measure forward to a Dirac mass, which is lattice. -/
+theorem measure_setOf_eq_zero_lt_one_of_not_isLattice
+    {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω} [IsZeroOrProbabilityMeasure ν]
+    {X : Ω → ℝ≥0} (hNL : ¬ (ν.map X).IsLattice) :
+    ν {ω | X ω = 0} < 1 := by
+  rcases eq_zero_or_isProbabilityMeasure ν with rfl | hν
+  · simp
+  · have hX : AEMeasurable X ν := by
+      by_contra h
+      rw [map_of_not_aemeasurable_of_ne_zero h (IsProbabilityMeasure.ne_zero ν)] at hNL
+      exact hNL (isLattice_dirac _)
+    have hF := measure_singleton_zero_lt_one_of_not_isLattice hNL
+    rwa [map_apply_of_aemeasurable hX (measurableSet_singleton 0), preimage_singleton] at hF
 
 /-- `μ` has span `a > 0` exactly when its image in `ℝ` is concentrated on the integer multiples of
 `a`. -/
