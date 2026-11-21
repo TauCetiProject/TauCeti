@@ -225,9 +225,7 @@ theorem hamiltonianVectorField_lagrangianEnergy_comp_snd_sub
     ((Prod.snd_add _ _).trans ((zero_add _).trans ?_))
   -- On a normed space `mvfderiv` is `fderiv`, read through the identification of `T_q E` with `E`.
   have hV : mvfderiv 𝓘(ℝ, E) V v.proj = fderiv ℝ V v.proj :=
-    ContinuousLinearMap.ext fun u ↦ by
-      rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
-      exact congrArg (fderiv ℝ V v.proj) (NormedSpace.fromTangentSpace_apply v.proj u)
+    ContinuousLinearMap.ext (mvfderiv_eq_fderiv_apply V v.proj)
   exact congrArg (fun φ ↦ -(fderiv ℝ (fderiv ℝ f) v.snd).inverse φ) hV
 
 end VectorSpace
