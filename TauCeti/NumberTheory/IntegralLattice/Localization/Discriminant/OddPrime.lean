@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
+import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -19,9 +20,9 @@ import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
-import TauCeti.NumberTheory.LocalField.QuadraticForm.OddResidue.Padic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.NumberTheory.Padics.SquareClasses
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -281,10 +282,9 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModul
     ((Fact.out : p.Prime).odd_of_ne_two hp)
   rw [L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp,
     FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
-    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
-    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
-    L.discriminantQuadraticModule_toFiniteBilinearModule hL,
-    M.discriminantQuadraticModule_toFiniteBilinearModule hM]
+    L.restrict_discriminantQuadraticModule_toFiniteBilinearModule hL,
+    M.restrict_discriminantQuadraticModule_toFiniteBilinearModule hM]
+  rfl
 
 /-! ### Minimal-rank uniqueness at odd primes (Nikulin Theorem 1.9.1) -/
 
@@ -352,9 +352,8 @@ theorem localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_rank
     ((Fact.out : p.Prime).odd_of_ne_two hp)
   rw [L.localIntegralForm_equivalent_iff_of_finrank_eq_rank M hp hLrank hMrank,
     FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
-    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
-    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
-    L.discriminantQuadraticModule_toFiniteBilinearModule hL,
-    M.discriminantQuadraticModule_toFiniteBilinearModule hM]
+    L.restrict_discriminantQuadraticModule_toFiniteBilinearModule hL,
+    M.restrict_discriminantQuadraticModule_toFiniteBilinearModule hM]
+  rfl
 
 end TauCeti.IntegralLattice

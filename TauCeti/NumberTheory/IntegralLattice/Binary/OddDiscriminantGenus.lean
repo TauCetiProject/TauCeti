@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Basic
+public import TauCeti.NumberTheory.IntegralLattice.Binary.Examples
 public import TauCeti.NumberTheory.IntegralLattice.DiscriminantGenus
-import Mathlib.Tactic.FinCases
 import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Operations
 import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Discriminant
-import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 
 /-!
@@ -29,9 +28,6 @@ classification of `TauCeti.NumberTheory.IntegralLattice.DiscriminantGenus`:
 
 ## Main results
 
-* `TauCeti.IntegralLattice.binaryDeterminantFive`: the positive definite odd binary lattice on
-  `Fin 2 → ℚ` with Gram matrix `!![2, 1; 1, 3]`, together with its carrier, form, determinant,
-  non-evenness, and positive-definiteness characterizations.
 * `TauCeti.IntegralLattice.not_sameGenus_rankOne_one_five_binaryDeterminantFive`: `⟨1⟩ ⊕ ⟨5⟩` and
   `binaryDeterminantFive` lie in distinct genera.
 * `TauCeti.IntegralLattice.sameGenus_rankOne_one_thirtyNine_three_thirteen` and
@@ -48,85 +44,6 @@ classification of `TauCeti.NumberTheory.IntegralLattice.DiscriminantGenus`:
 public section
 
 namespace TauCeti.IntegralLattice
-
-private def binaryFiveMatrix : Matrix (Fin 2) (Fin 2) ℤ := !![2, 1; 1, 3]
-
-private theorem binaryFiveMatrix_isSymm : binaryFiveMatrix.IsSymm := by
-  apply Matrix.IsSymm.ext
-  intro i j
-  fin_cases i <;> fin_cases j <;> rfl
-
-/-- The positive definite odd binary integral lattice on `Fin 2 → ℚ` with Gram matrix
-`!![2, 1; 1, 3]` and determinant `5`. -/
-noncomputable def binaryDeterminantFive : IntegralLattice (Fin 2 → ℚ) :=
-  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) binaryFiveMatrix binaryFiveMatrix_isSymm
-
-/-- `binaryDeterminantFive` is the standard-coordinate lattice of the Gram matrix
-`!![2, 1; 1, 3]`. -/
-theorem binaryDeterminantFive_eq_ofGramMatrix
-    (hG : (!![2, 1; 1, 3] : Matrix (Fin 2) (Fin 2) ℤ).IsSymm) :
-    binaryDeterminantFive = ofGramMatrix (Pi.basisFun ℚ (Fin 2)) !![2, 1; 1, 3] hG := by
-  rfl
-
-/-- A rational vector belongs to `binaryDeterminantFive` exactly when both coordinates are
-integers. -/
-@[simp]
-theorem mem_binaryDeterminantFive_carrier_iff (x : Fin 2 → ℚ) :
-    x ∈ binaryDeterminantFive.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i :=
-  mem_ofGramMatrix_basisFun_carrier_iff binaryFiveMatrix binaryFiveMatrix_isSymm x
-
-/-- Coordinate formula for the bilinear form of `binaryDeterminantFive`. -/
-@[simp]
-theorem binaryDeterminantFive_form_apply (x y : Fin 2 → ℚ) :
-    binaryDeterminantFive.form x y =
-      2 * x 0 * y 0 + x 0 * y 1 + x 1 * y 0 + 3 * x 1 * y 1 := by
-  rw [binaryDeterminantFive, form_ofGramMatrix_basisFun_apply]
-  simp only [Fin.sum_univ_two, binaryFiveMatrix, Matrix.of_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Int.cast_ofNat, Int.cast_one]
-  ring
-
-/-- The signed determinant of `binaryDeterminantFive` is `5`. -/
-@[simp]
-theorem binaryDeterminantFive_determinant : binaryDeterminantFive.determinant = 5 := by
-  rw [binaryDeterminantFive, determinant_ofGramMatrix]
-  norm_num [binaryFiveMatrix, Matrix.det_fin_two]
-
-/-- The lattice `binaryDeterminantFive` is nondegenerate. -/
-instance : binaryDeterminantFive.IsNondegenerate :=
-  ⟨binaryDeterminantFive.determinant_ne_zero_iff.mp (by simp)⟩
-
-/-- The lattice `binaryDeterminantFive` is odd: its second basis vector has norm `3`. -/
-@[simp]
-theorem not_isEven_binaryDeterminantFive : ¬binaryDeterminantFive.IsEven := by
-  intro he
-  dsimp only [binaryDeterminantFive] at he
-  let b := ofGramMatrix.basis (Pi.basisFun ℚ (Fin 2)) binaryFiveMatrix binaryFiveMatrix_isSymm
-  have h1 := ((ofGramMatrix (Pi.basisFun ℚ (Fin 2)) binaryFiveMatrix
-    binaryFiveMatrix_isSymm).isEven_iff_basis b).mp he 1
-  rw [integralNorm_apply, ← gramMatrix_apply, gramMatrix_ofGramMatrix] at h1
-  exact (by decide : ¬Even (binaryFiveMatrix 1 1)) h1
-
-/-- The lattice `binaryDeterminantFive` is positive definite. -/
-theorem binaryDeterminantFive_isPosDef : binaryDeterminantFive.IsPosDef := by
-  rw [binaryDeterminantFive.isPosDef_iff]
-  intro x hx
-  rw [binaryDeterminantFive_form_apply]
-  have hx' : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
-    by_contra! h
-    apply hx
-    ext i
-    fin_cases i <;> simp [h]
-  rcases hx' with h | h
-  · have := sq_pos_iff.mpr h
-    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 1)]
-  · have := sq_pos_iff.mpr h
-    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 0)]
-
-private theorem zsmul_val_rankOneDiscriminantEquiv_rankOneClass (a : ℤ) [NeZero a]
-    (c : (rankOne a).DiscriminantGroup) :
-    ((rankOneDiscriminantEquiv a c).val : ℤ) • rankOneClass a = c := by
-  apply (rankOneDiscriminantEquiv a).injective
-  rw [rankOneDiscriminantEquiv_zsmul_rankOneClass, Int.cast_natCast, ZMod.natCast_zmod_val]
 
 private theorem subsingleton_discriminantBilinearModule_rankOne_one :
     Subsingleton (rankOne 1).discriminantBilinearModule := by
@@ -146,11 +63,14 @@ theorem not_sameGenus_rankOne_one_five_binaryDeterminantFive :
   obtain ⟨f⟩ := h.symm.nonempty_isometry_discriminantBilinearModule
   let v_vec : Fin 2 → ℚ := ![3 / 5, -1 / 5]
   have hv_dual : v_vec ∈ binaryDeterminantFive.dualCarrier := by
-    rw [binaryDeterminantFive, mem_ofGramMatrix_basisFun_dualCarrier_iff]
-    intro i
-    fin_cases i
-    · exact ⟨1, by simp [v_vec, binaryFiveMatrix, Fin.sum_univ_two]; norm_num⟩
-    · exact ⟨0, by simp [v_vec, binaryFiveMatrix, Fin.sum_univ_two]; norm_num⟩
+    rw [LinearMap.BilinForm.mem_dualSubmodule]
+    intro y hy
+    obtain ⟨m, hm⟩ := (mem_binaryDeterminantFive_carrier_iff y).mp hy 0
+    obtain ⟨n, hn⟩ := (mem_binaryDeterminantFive_carrier_iff y).mp hy 1
+    refine Submodule.mem_one.mpr ⟨m, ?_⟩
+    rw [eq_intCast, binaryDeterminantFive_form_apply, ← hm, ← hn]
+    simp only [v_vec, Matrix.cons_val_zero, Matrix.cons_val_one]
+    ring
   let c : binaryDeterminantFive.discriminantBilinearModule :=
     Submodule.Quotient.mk ⟨v_vec, hv_dual⟩
   have hpair_c : binaryDeterminantFive.discriminantBilinearModule.pairing c c =

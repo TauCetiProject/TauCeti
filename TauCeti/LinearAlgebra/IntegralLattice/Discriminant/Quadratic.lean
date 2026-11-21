@@ -203,6 +203,14 @@ theorem discriminantQuadraticModule_toFiniteBilinearModule (L : IntegralLattice 
       L.discriminantBilinearModule :=
   rfl
 
+/-- Restricting the discriminant quadratic module to a subgroup `H` has polar finite bilinear
+module equal to the restriction of the discriminant bilinear module to `H`. -/
+theorem restrict_discriminantQuadraticModule_toFiniteBilinearModule (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) (H : AddSubgroup (L.discriminantQuadraticModule hL)) :
+    ((L.discriminantQuadraticModule hL).restrict H).toFiniteBilinearModule =
+      L.discriminantBilinearModule.restrict H :=
+  rfl
+
 /-- The cardinality of the discriminant quadratic module is that of the discriminant group. -/
 @[simp]
 theorem natCard_discriminantQuadraticModule (L : IntegralLattice V)

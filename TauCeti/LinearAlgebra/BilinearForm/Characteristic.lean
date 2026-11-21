@@ -223,36 +223,18 @@ theorem IsSymm.exists_apply_eq_apply_self_zmod_two [Module (ZMod 2) M] [Module.F
   obtain ⟨w, hw⟩ := hmem
   exact ⟨w, fun x ↦ LinearMap.congr_fun hw x⟩
 
-/-- **Existence of characteristic vectors on finite free modules.** If `c ^ 2 ≡ c` modulo `2` for
-every `c : R`, then every symmetric bilinear form on a finite free `R`-module has a characteristic
-vector. -/
-theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] (hB : B.IsSymm)
-    (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c) : ∃ w, B.IsCharacteristic w := by
+/-- For a symmetric finite matrix `G` over a commutative ring `S` satisfying `2 = 0` and
+`a * a = a` for every `a` (a Boolean ring), there exist coefficients `c i : S` representing the
+diagonal of `G` as `∑ i, c i * G i j = G j j`. -/
+private theorem exists_sum_mul_eq_diag_of_isSymm {S ι : Type*} [CommRing S] [Fintype ι]
+    (h2S : ((2 : ℕ) : S) = 0) (hmul_self : ∀ a : S, a * a = a)
+    {G : Matrix ι ι S} (hG : G.IsSymm) :
+    ∃ c : ι → S, ∀ j, ∑ i, c i * G i j = G j j := by
   classical
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · exact ⟨0, fun x ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-  let b := Free.chooseBasis R M
-  have : Finite (Free.ChooseBasisIndex R M) := Module.Finite.finite_basis b
-  let _ : Fintype (Free.ChooseBasisIndex R M) := Fintype.ofFinite _
-  -- Reduce modulo `(2)`: `S = R ⧸ (2)` satisfies `a * a = a` and `2 = 0`.
-  let I : Ideal R := Ideal.span {(2 : R)}
-  let S := R ⧸ I
-  have h2_mem : (2 : R) ∈ I := Ideal.subset_span (Set.mem_singleton _)
-  have h2S : ((2 : ℕ) : S) = 0 := by
-    rw [Nat.cast_ofNat, ← map_ofNat (Ideal.Quotient.mk I) 2]
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr h2_mem
-  have hmul_self (a : S) : a * a = a := by
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective a
-    rw [← map_mul, ← sub_eq_zero, ← map_sub]
-    refine Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr ?_)
-    simpa [sq] using h2 r
   let toS : ZMod 2 →+* S := ZMod.castHom (ringChar.dvd h2S) S
-  -- Partition `1 : S` into orthogonal idempotents over subsets `T` of the Gram entries `X`,
+  -- Partition `1 : S` into orthogonal idempotents over subsets `T` of the matrix entries `X`,
   -- reducing each piece to a symmetric system over `ℤ/2ℤ`.
-  let G : Free.ChooseBasisIndex R M → Free.ChooseBasisIndex R M → S :=
-    fun i j ↦ Ideal.Quotient.mk I (B (b i) (b j))
-  let X : Finset S :=
-    Finset.univ.image fun p : Free.ChooseBasisIndex R M × Free.ChooseBasisIndex R M ↦ G p.1 p.2
+  let X : Finset S := Finset.univ.image fun p : ι × ι ↦ G p.1 p.2
   have hG_mem (i j) : G i j ∈ X :=
     Finset.mem_image.mpr ⟨(i, j), Finset.mem_univ _, rfl⟩
   let e : Finset S → S := fun T ↦ (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)
@@ -278,11 +260,10 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] 
         (∏ y ∈ T, y) * ((1 - x) * ∏ y ∈ (X \ T).erase x, (1 - y)) * x
             = (∏ y ∈ T, y) * (∏ y ∈ (X \ T).erase x, (1 - y)) * ((1 - x) * x) := by ring
         _ = 0 := by rw [h1x, mul_zero]
-  have hsol (T : Finset S) : ∃ c : Free.ChooseBasisIndex R M → ZMod 2,
+  have hsol (T : Finset S) : ∃ c : ι → ZMod 2,
       ∀ j, ∑ i, c i * (if G i j ∈ T then 1 else 0) = if G j j ∈ T then 1 else 0 := by
-    let A : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) (ZMod 2) :=
-      Matrix.of fun i j ↦ if G i j ∈ T then 1 else 0
-    have hA : A.IsSymm := Matrix.ext fun i j ↦ by simp [A, G, hB.eq (b i) (b j)]
+    let A : Matrix ι ι (ZMod 2) := Matrix.of fun i j ↦ if G i j ∈ T then 1 else 0
+    have hA : A.IsSymm := Matrix.ext fun i j ↦ by simp [A, hG.apply i j]
     obtain ⟨c, hc⟩ :=
       (Matrix.isSymm_toBilin'_iff_isSymm.mpr hA).exists_apply_eq_apply_self_zmod_two
     refine ⟨c, fun j ↦ ?_⟩
@@ -292,15 +273,7 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] 
       Finset.mem_univ, ↓reduceIte] at hj
     simpa only [A, Matrix.of_apply] using hj
   choose c hc using hsol
-  -- Recombine the `ℤ/2ℤ` solutions via `e T` and lift the coefficients from `S` back to `R`.
-  choose r hr using fun i ↦ Ideal.Quotient.mk_surjective (I := I)
-    (∑ T ∈ X.powerset, toS (c T i) * e T)
-  let w : M := ∑ i, r i • b i
-  refine ⟨w, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun j ↦ ?_⟩
-  refine Ideal.mem_span_singleton.mp ((Ideal.Quotient.eq_zero_iff_mem (I := I)).mp ?_)
-  rw [map_sub, sub_eq_zero]
-  simp only [w, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
-    map_mul, hr]
+  refine ⟨fun i ↦ ∑ T ∈ X.powerset, toS (c T i) * e T, fun j ↦ ?_⟩
   calc
     ∑ i, (∑ T ∈ X.powerset, toS (c T i) * e T) * G i j
         = ∑ T ∈ X.powerset, ∑ i, toS (c T i) * (e T * G i j) := by
@@ -321,6 +294,38 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] 
           exact (he_mul T (G j j) (hG_mem j j)).symm
     _ = G j j := by
           rw [← Finset.sum_mul, hsum_e, one_mul]
+
+/-- **Existence of characteristic vectors on finite free modules.** If `c ^ 2 ≡ c` modulo `2` for
+every `c : R`, then every symmetric bilinear form on a finite free `R`-module has a characteristic
+vector. -/
+theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] (hB : B.IsSymm)
+    (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c) : ∃ w, B.IsCharacteristic w := by
+  classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact ⟨0, fun x ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+  let b := Free.chooseBasis R M
+  have : Finite (Free.ChooseBasisIndex R M) := Module.Finite.finite_basis b
+  let _ : Fintype (Free.ChooseBasisIndex R M) := Fintype.ofFinite _
+  let I : Ideal R := Ideal.span {(2 : R)}
+  let S := R ⧸ I
+  have h2S : ((2 : ℕ) : S) = 0 := by
+    rw [Nat.cast_ofNat, ← map_ofNat (Ideal.Quotient.mk I) 2]
+    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
+  have hmul_self (a : S) : a * a = a := by
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective a
+    rw [← map_mul, ← sub_eq_zero, ← map_sub]
+    refine Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr ?_)
+    simpa [sq] using h2 r
+  let G : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) S :=
+    Matrix.of fun i j ↦ Ideal.Quotient.mk I (B (b i) (b j))
+  have hG : G.IsSymm := Matrix.ext fun i j ↦ congrArg (Ideal.Quotient.mk I) (hB.eq (b j) (b i))
+  obtain ⟨c, hc⟩ := exists_sum_mul_eq_diag_of_isSymm h2S hmul_self hG
+  choose r hr using fun i ↦ Ideal.Quotient.mk_surjective (I := I) (c i)
+  refine ⟨∑ i, r i • b i, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun j ↦ ?_⟩
+  refine Ideal.mem_span_singleton.mp ((Ideal.Quotient.eq_zero_iff_mem (I := I)).mp ?_)
+  rw [map_sub, sub_eq_zero]
+  simpa [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, map_mul, hr,
+    G] using hc j
 
 /-- Every symmetric bilinear form on a finite free module over a ring in which every element
 satisfies `c ^ 2 = c` has a vector `w` satisfying `B w x = B x x` for every `x`. -/

@@ -207,6 +207,32 @@ theorem relIndex_evenSublattice_eq_one_or_two :
   have hle := L.relIndex_evenSublattice_le_two
   omega
 
+/-- The even sublattice has index `1` in `L` if and only if `L` is even. -/
+theorem relIndex_evenSublattice_eq_one_iff :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 1 ↔ L.IsEven := by
+  rw [AddSubgroup.relIndex_eq_one]
+  constructor
+  · intro h
+    rw [L.isEven_iff_forall_norm]
+    intro x
+    exact (L.even_integralNorm_iff x).mp ((L.mem_evenSublattice_carrier_iff x).mp (h x.property))
+  · intro h x hx
+    exact (L.mem_evenSublattice_carrier_iff ⟨x, hx⟩).mpr
+      ((L.even_integralNorm_iff ⟨x, hx⟩).mpr (L.isEven_iff_forall_norm.mp h ⟨x, hx⟩))
+
+/-- The even sublattice has index `2` in `L` if and only if `L` is not even. -/
+theorem relIndex_evenSublattice_eq_two_iff :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 2 ↔ ¬L.IsEven := by
+  rcases L.relIndex_evenSublattice_eq_one_or_two with h | h
+  · have hL : L.IsEven := L.relIndex_evenSublattice_eq_one_iff.mp h
+    rw [h]
+    simp [hL]
+  · have hL : ¬L.IsEven := fun he ↦ by
+      have h1 := L.relIndex_evenSublattice_eq_one_iff.mpr he
+      omega
+    rw [h]
+    simp [hL]
+
 /-- No odd number greater than `1` divides the index of `L.evenSublattice` in `L`. -/
 theorem not_dvd_relIndex_evenSublattice_of_odd {n : ℕ} (hn : Odd n) (hn1 : n ≠ 1) :
     ¬n ∣ L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by

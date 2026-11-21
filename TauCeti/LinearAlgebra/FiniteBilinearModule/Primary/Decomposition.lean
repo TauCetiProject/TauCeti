@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Primary.Decomposition
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 
 /-!
@@ -27,6 +28,9 @@ orthogonality and finite-sum identities proved in
   bilinear isometry.
 * `TauCeti.FiniteQuadraticModule.primaryDecomposition`: the canonical primary decomposition as a
   quadratic isometry.
+* `TauCeti.FiniteQuadraticModule.piPrimaryComponentsIsometry`: canonical quadratic isometry
+  identifying the orthogonal family product of the prime-primary restrictions with
+  `A.primaryComponents`.
 * `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponents` and
   `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponents`: nondegeneracy is equivalent
   to nondegeneracy of the orthogonal product.
@@ -221,6 +225,25 @@ finite quadratic module is nondegenerate. -/
 theorem isNondegenerate_primaryComponents :
     A.primaryComponents.IsNondegenerate ↔ A.IsNondegenerate :=
   A.primaryDecomposition.isNondegenerate_iff
+
+/-- Canonical quadratic isometry identifying the orthogonal family product
+`FiniteQuadraticModule.pi` of the prime-primary restrictions of `A` with `A.primaryComponents`. -/
+noncomputable def piPrimaryComponentsIsometry :
+    Isometry
+      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.val))
+      A.primaryComponents where
+  toLinearEquiv :=
+    { toFun := fun x p ↦ ⟨(x p).val, (x p).property⟩
+      invFun := fun y p ↦ ⟨(y p).val, (y p).property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  map_app' x :=
+    (A.primaryComponents_quadratic (fun p ↦ ⟨(x p).val, (x p).property⟩)).trans <|
+      (Finset.sum_congr rfl fun p _ ↦
+        (A.restrict_quadratic (primaryComponent A p.val) ⟨(x p).val, (x p).property⟩).symm).trans
+        (pi_quadratic _ x).symm
 
 /-- **Primary components decide isometry.** Two finite quadratic modules are isometric as soon as,
 at every prime `p`, their `p`-primary components are isometric. -/

@@ -8,6 +8,8 @@ public import TauCeti.NumberTheory.IntegralLattice.Binary.NormForm
 public import TauCeti.LinearAlgebra.IntegralLattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 
@@ -22,6 +24,9 @@ one and two. Thus the sublattice index alone does not determine binary content.
 The existing hyperbolic plane has norm `2xy`, content two, primitive norm form `xy`,
 and primitive discriminant one. The calculations use actual embedded lattice carriers
 and their integral bases.
+
+This file also defines `TauCeti.IntegralLattice.binaryDeterminantFive`, the positive definite odd
+binary lattice with Gram matrix `!![2, 1; 1, 3]` and determinant `5`.
 
 ## References
 
@@ -333,5 +338,78 @@ theorem hyperbolicPlane_binaryNormForm_primPart :
   rw [binaryContent_eq_content_binaryNormForm _ (unitLatticeBasis (Fin 2)),
     unitLattice_binaryNormForm]
   norm_num [BinaryQuadraticForm.content_def]
+
+private def binaryFiveMatrix : Matrix (Fin 2) (Fin 2) ℤ := !![2, 1; 1, 3]
+
+private theorem binaryFiveMatrix_isSymm : binaryFiveMatrix.IsSymm := by
+  apply Matrix.IsSymm.ext
+  intro i j
+  fin_cases i <;> fin_cases j <;> rfl
+
+/-- The positive definite odd binary integral lattice on `Fin 2 → ℚ` with Gram matrix
+`!![2, 1; 1, 3]` and determinant `5`. -/
+noncomputable def binaryDeterminantFive : IntegralLattice (Fin 2 → ℚ) :=
+  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) binaryFiveMatrix binaryFiveMatrix_isSymm
+
+/-- `binaryDeterminantFive` is the standard-coordinate lattice of the Gram matrix
+`!![2, 1; 1, 3]`. -/
+theorem binaryDeterminantFive_eq_ofGramMatrix
+    (hG : (!![2, 1; 1, 3] : Matrix (Fin 2) (Fin 2) ℤ).IsSymm) :
+    binaryDeterminantFive = ofGramMatrix (Pi.basisFun ℚ (Fin 2)) !![2, 1; 1, 3] hG := by
+  rfl
+
+/-- A rational vector belongs to `binaryDeterminantFive` exactly when both coordinates are
+integers. -/
+@[simp]
+theorem mem_binaryDeterminantFive_carrier_iff (x : Fin 2 → ℚ) :
+    x ∈ binaryDeterminantFive.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i :=
+  mem_ofGramMatrix_basisFun_carrier_iff binaryFiveMatrix binaryFiveMatrix_isSymm x
+
+/-- Coordinate formula for the bilinear form of `binaryDeterminantFive`. -/
+@[simp]
+theorem binaryDeterminantFive_form_apply (x y : Fin 2 → ℚ) :
+    binaryDeterminantFive.form x y =
+      2 * x 0 * y 0 + x 0 * y 1 + x 1 * y 0 + 3 * x 1 * y 1 := by
+  rw [binaryDeterminantFive, form_ofGramMatrix_basisFun_apply]
+  simp only [Fin.sum_univ_two, binaryFiveMatrix, Matrix.of_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Int.cast_ofNat, Int.cast_one]
+  ring
+
+/-- The signed determinant of `binaryDeterminantFive` is `5`. -/
+@[simp]
+theorem binaryDeterminantFive_determinant : binaryDeterminantFive.determinant = 5 := by
+  rw [binaryDeterminantFive, determinant_ofGramMatrix]
+  norm_num [binaryFiveMatrix, Matrix.det_fin_two]
+
+/-- The lattice `binaryDeterminantFive` is nondegenerate. -/
+instance : binaryDeterminantFive.IsNondegenerate :=
+  ⟨binaryDeterminantFive.determinant_ne_zero_iff.mp (by simp)⟩
+
+/-- The lattice `binaryDeterminantFive` is odd: its second basis vector has norm `3`. -/
+@[simp]
+theorem not_isEven_binaryDeterminantFive : ¬binaryDeterminantFive.IsEven := by
+  intro he
+  dsimp only [binaryDeterminantFive] at he
+  let b := ofGramMatrix.basis (Pi.basisFun ℚ (Fin 2)) binaryFiveMatrix binaryFiveMatrix_isSymm
+  have h1 := ((ofGramMatrix (Pi.basisFun ℚ (Fin 2)) binaryFiveMatrix
+    binaryFiveMatrix_isSymm).isEven_iff_basis b).mp he 1
+  rw [integralNorm_apply, ← gramMatrix_apply, gramMatrix_ofGramMatrix] at h1
+  exact (by decide : ¬Even (binaryFiveMatrix 1 1)) h1
+
+/-- The lattice `binaryDeterminantFive` is positive definite. -/
+theorem binaryDeterminantFive_isPosDef : binaryDeterminantFive.IsPosDef := by
+  rw [binaryDeterminantFive.isPosDef_iff]
+  intro x hx
+  rw [binaryDeterminantFive_form_apply]
+  have hx' : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
+    by_contra! h
+    apply hx
+    ext i
+    fin_cases i <;> simp [h]
+  rcases hx' with h | h
+  · have := sq_pos_iff.mpr h
+    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 1)]
+  · have := sq_pos_iff.mpr h
+    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 0)]
 
 end TauCeti.IntegralLattice

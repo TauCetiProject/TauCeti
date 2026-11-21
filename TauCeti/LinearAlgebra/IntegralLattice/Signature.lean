@@ -160,6 +160,15 @@ theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
   rw [discriminant_def, Int.natCast_natAbs, h1, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg,
     one_pow, one_mul]
 
+/-- Integral lattices with equal signatures and equal discriminants have equal signed
+determinants. -/
+theorem determinant_eq_of_signature_eq_of_discriminant_eq {M : IntegralLattice W}
+    (hsig : L.signature = M.signature) (hdisc : L.discriminant = M.discriminant) :
+    L.determinant = M.determinant := by
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
+  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, hdisc]
+
 /-- An integral lattice is positive-definite when its quadratic form is positive on every nonzero
 vector. -/
 abbrev IsPosDef : Prop := L.form.toQuadraticMap.PosDef
