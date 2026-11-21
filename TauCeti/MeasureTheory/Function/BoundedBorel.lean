@@ -141,6 +141,11 @@ theorem coe_injective : Function.Injective
 /-- Function coercion preserves natural powers. -/
 @[simp] theorem coe_pow (f : BoundedBorelFunction X) (n : ℕ) : ⇑(f ^ n) = ⇑f ^ n := (rfl)
 
+/-- Function coercion preserves finite sums. -/
+@[simp] theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → BoundedBorelFunction X) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (⟨⟨DFunLike.coe, coe_zero⟩, coe_add⟩ : BoundedBorelFunction X →+ X → ℂ) f s
+
 /-- Algebra scalars coerce to constant functions. -/
 @[simp] theorem coe_algebraMap (c : ℂ) :
     ⇑(algebraMap ℂ (BoundedBorelFunction X) c) = fun _ => c := (rfl)
@@ -240,6 +245,11 @@ def ofFunction (f : X → ℂ) (hf : Measurable f)
 /-- Evaluation of the star operation is complex conjugation. -/
 @[simp] theorem star_apply (f : BoundedBorelFunction X) (x : X) :
     (star f) x = star (f x) := (rfl)
+
+/-- Evaluation of a finite sum. -/
+@[simp] theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → BoundedBorelFunction X) (x : X) :
+    (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  rw [coe_sum, Finset.sum_apply]
 
 variable {Y Z : Type*} [MeasurableSpace Y] [MeasurableSpace Z]
 

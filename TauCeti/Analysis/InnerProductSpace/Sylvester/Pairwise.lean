@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Sylvester.Basic
+import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.Fourier.HaagerupZsido.Fourier
 import TauCeti.Analysis.Fourier.HaagerupZsido.Mass
 import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
@@ -192,23 +193,6 @@ theorem mul_norm_sum_sum_inv_sub_mul_inner_le {u : ι → E} {v : κ → F}
               (norm_sum_sum_sin_sub_mul_inner_le hu hv _ _ C) (abs_nonneg _))
     _ = π / 2 * K := by rw [integral_mul_const, integral_abs_realKernel]
 
-/-- In a family of operators with pairwise zero products summing to the identity, each member is
-idempotent, so it absorbs a combination of the family as a scalar:
-`Rᵢ (∑ₖ cₖ Rₖ) = (∑ₖ cₖ Rₖ) Rᵢ = cᵢ Rᵢ`. -/
-private theorem mul_sum_smul_eq_smul_and_sum_smul_mul_eq_smul {M γ : Type*}
-    [NormedAddCommGroup M] [NormedSpace 𝕜 M] {u : Finset γ} {R : γ → M →L[𝕜] M}
-    (hRR : (u : Set γ).Pairwise fun i j ↦ R i * R j = 0) (hR1 : ∑ i ∈ u, R i = 1) (c : γ → 𝕜)
-    {i : γ} (hi : i ∈ u) :
-    R i * ∑ k ∈ u, c k • R k = c i • R i ∧ (∑ k ∈ u, c k • R k) * R i = c i • R i := by
-  have hRi : R i * R i = R i := by
-    conv_rhs => rw [← mul_one (R i), ← hR1, mul_sum]
-    exact (sum_eq_single_of_mem i hi fun k hk hki ↦ hRR hi hk hki.symm).symm
-  constructor
-  · rw [mul_sum, sum_eq_single_of_mem i hi fun k hk hki ↦ by rw [mul_smul_comm,
-      hRR hi hk hki.symm, smul_zero], mul_smul_comm, hRi]
-  · rw [sum_mul, sum_eq_single_of_mem i hi fun k hk hki ↦ by rw [smul_mul_assoc,
-      hRR hk hi hki, smul_zero], smul_mul_assoc, hRi]
-
 /-- **The pairwise Sylvester bound for finite spectral decompositions.** Let
 `A = ∑ᵢ αᵢ Pᵢ` and `B = ∑ⱼ βⱼ Qⱼ` be finite real combinations of symmetric operators `Pᵢ` and `Qⱼ`
 with pairwise zero products, each family summing to the identity, so that `Pᵢ` and `Qⱼ` are
@@ -236,11 +220,11 @@ theorem mul_norm_le_pi_div_two_mul_norm_sum_smul_sylvester_sum_smul_apply {P : �
       ⟪P i x, C (Q j y)⟫_𝕜 = ((α i - β j : ℝ) : 𝕜) * ⟪P i x, X (Q j y)⟫_𝕜 := by
     have hA : ⟪P i x, A (X (Q j y))⟫_𝕜 = (α i : 𝕜) * ⟪P i x, X (Q j y)⟫_𝕜 := by
       rw [hsym i hi, ← mul_apply_eq_comp,
-        (mul_sum_smul_eq_smul_and_sum_smul_mul_eq_smul hPP hP1 (fun k ↦ (α k : 𝕜)) hi).1,
+        mul_sum_smul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one hPP hP1 (fun k ↦ (α k : 𝕜)) hi,
         smul_apply, inner_smul_right, hsym i hi]
     have hB : ⟪P i x, X (B (Q j y))⟫_𝕜 = (β j : 𝕜) * ⟪P i x, X (Q j y)⟫_𝕜 := by
       rw [← mul_apply_eq_comp B,
-        (mul_sum_smul_eq_smul_and_sum_smul_mul_eq_smul hQQ hQ1 (fun k ↦ (β k : 𝕜)) hj).2,
+        sum_smul_mul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one hQQ hQ1 (fun k ↦ (β k : 𝕜)) hj,
         smul_apply, map_smul, inner_smul_right]
     rw [show C = A ∘L X - X ∘L B from sylvester_apply A B X, sub_apply, comp_apply, comp_apply,
       inner_sub_right, hA, hB]

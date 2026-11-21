@@ -288,16 +288,11 @@ theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : Measurable
 fibres partition `X`. -/
 theorem sum_proj_preimage_singleton (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
     ∑ c ∈ s.range, P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) = 1 := by
-  have hcoe (t : Finset ℂ) (f : ℂ → BoundedBorelFunction X) :
-      ⇑(∑ c ∈ t, f c) = ∑ c ∈ t, ⇑(f c) := by
-    induction t using Finset.cons_induction with
-    | empty => simp
-    | cons a t ha ih => rw [Finset.sum_cons, Finset.sum_cons, BoundedBorelFunction.coe_add, ih]
   -- The indicators of the fibres sum to the constant symbol `1`.
   have h : ∑ c ∈ s.range, BoundedBorelFunction.indicator (s ⁻¹' {c}) (s.measurableSet_fiber c) 1
       = 1 := by
     ext x
-    rw [hcoe, Finset.sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
+    rw [BoundedBorelFunction.sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
     · simp
     · intro c _ hc
       simp [Ne.symm hc]
