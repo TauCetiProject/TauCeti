@@ -36,16 +36,15 @@ itself. -/
 theorem mapsTo_add_smul_of_halfSpace {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {s : Set E} {ν τ : E} {c : ℝ}
     (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) (hτ : ⟪τ, ν⟫_ℝ = 0) (t : ℝ) :
-    Set.MapsTo (· + t • τ) s s := fun x hx => by
-  have hx' := (hΩ x).1 hx
-  exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
+    Set.MapsTo (· + t • τ) s s := fun x hx =>
+  (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using (hΩ x).1 hx)
 
 /-- The half-space `{x | c < ⟪x, ν⟫}` is convex. -/
 theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     {s : Set E} {ν : E} {c : ℝ} (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) : Convex ℝ s := by
-  have h : s = {x | c < innerSL ℝ ν x} := Set.ext fun x => by simp [hΩ x, real_inner_comm]
-  rw [h]
-  exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
+  obtain rfl : s = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hΩ
+  exact convex_halfSpace_gt
+    ⟨fun x y => inner_add_left x y ν, fun r x => real_inner_smul_left x ν r⟩ c
 
 /-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
 theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -58,46 +57,46 @@ theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerP
 `⟪w, ν⟫ + r * ‖ν‖ < c`. -/
 theorem closedBall_subset_setOf_inner_lt {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {w ν : E} {r c : ℝ} (h : ⟪w, ν⟫_ℝ + r * ‖ν‖ < c) :
-    Metric.closedBall w r ⊆ {y | ⟪y, ν⟫_ℝ < c} := by
-  intro y hy
-  have hyw : ‖y - w‖ ≤ r := by rwa [Metric.mem_closedBall, dist_eq_norm] at hy
-  have hcs : ⟪y - w, ν⟫_ℝ ≤ r * ‖ν‖ :=
-    (real_inner_le_norm (y - w) ν).trans (mul_le_mul_of_nonneg_right hyw (norm_nonneg ν))
-  have hsplit : ⟪y, ν⟫_ℝ = ⟪w, ν⟫_ℝ + ⟪y - w, ν⟫_ℝ := by
-    rw [← inner_add_left, add_sub_cancel]
+    Metric.closedBall w r ⊆ {y | ⟪y, ν⟫_ℝ < c} := fun y hy => by
+  have hyw := (real_inner_le_norm (y - w) ν).trans
+    (mul_le_mul_of_nonneg_right (mem_closedBall_iff_norm.1 hy) (norm_nonneg ν))
+  rw [inner_sub_left] at hyw
   exact Set.mem_ofPred.2 (by linarith)
 
 /-- A closed ball `Metric.closedBall w r` lies in the open half-space `{y | c < ⟪y, ν⟫}` whenever
 `c + r * ‖ν‖ < ⟪w, ν⟫`. -/
 theorem closedBall_subset_setOf_lt_inner {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {w ν : E} {r c : ℝ} (h : c + r * ‖ν‖ < ⟪w, ν⟫_ℝ) :
-    Metric.closedBall w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := by
-  have h' : ⟪w, -ν⟫_ℝ + r * ‖-ν‖ < -c := by
-    rw [inner_neg_right, norm_neg]
-    linarith
-  intro y hy
-  have hy' := closedBall_subset_setOf_inner_lt h' hy
-  rw [Set.mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff] at hy'
-  exact hy'
+    Metric.closedBall w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := fun y hy => by
+  have hyw := neg_le_of_abs_le <| (abs_real_inner_le_norm (y - w) ν).trans
+    (mul_le_mul_of_nonneg_right (mem_closedBall_iff_norm.1 hy) (norm_nonneg ν))
+  rw [inner_sub_left] at hyw
+  exact Set.mem_ofPred.2 (by linarith)
 
 /-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` is orthogonal
-to `ν`. It is the explicit form of `z - (ℝ ∙ ν).starProjection z`, by
+to `ν`. In a normed space it is the explicit form of `z - (ℝ ∙ ν).starProjection z`, by
 `Submodule.starProjection_singleton`. -/
-theorem real_inner_sub_div_norm_sq_smul_self_eq_zero {E : Type*} [NormedAddCommGroup E]
+theorem real_inner_sub_div_norm_sq_smul_self_eq_zero {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] (z ν : E) : ⟪z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
-  rcases eq_or_ne ν 0 with rfl | hν
-  · simp
+  rcases eq_or_ne ‖ν‖ 0 with hν | hν
+  · -- A vector of seminorm zero is orthogonal to everything, by Cauchy-Schwarz.
+    have h := abs_real_inner_le_norm z ν
+    rw [hν, mul_zero, abs_nonpos_iff] at h
+    simp [h, hν]
   rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
-    div_mul_cancel₀ _ (pow_pos (norm_pos_iff.2 hν) 2).ne', sub_self]
+    div_mul_cancel₀ _ (pow_ne_zero 2 hν), sub_self]
 
 /-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` does not increase
 norms. -/
-theorem norm_sub_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
+theorem norm_sub_div_norm_sq_smul_self_le {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] (z ν : E) : ‖z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ≤ ‖z‖ := by
-  have h := Submodule.starProjection_singleton ℝ (v := ν) z
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h
-  rw [real_inner_comm, ← h, ← Submodule.starProjection_orthogonal_val]
-  exact Submodule.norm_starProjection_apply_le _ z
+  -- Pythagoras for `z = (z - a • ν) + a • ν`, whose two summands are orthogonal.
+  have h := norm_add_sq_eq_norm_sq_add_norm_sq_real (x := z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)
+    (y := (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)
+    (by rw [real_inner_smul_right, real_inner_sub_div_norm_sq_smul_self_eq_zero, mul_zero])
+  rw [sub_add_cancel] at h
+  rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
+  exact le_add_of_nonneg_right (mul_self_nonneg _)
 
 end TauCeti
 
