@@ -296,24 +296,18 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
       (1 + ‖η‖) ^ N * ‖v.toDistr (χ.fourierAtomMulSchwartzMap η)‖ ≤ C) :
     (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).IsMicrolocallySmoothAt x₀ ξ := by
   -- `b = ψ a` vanishes outside `K`, and `a - b` vanishes on `V₀`.
-  have hψs : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ :=
-    (ofRealCLM.contDiff.comp hψ).smul contDiff_const
-  set Fψ := ofSpatial (fun x ↦ (ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ) hψs with hFψ
-  set b := Fψ.comp a with hbdef
-  have hb : b.HasCompactSpatialSupport := ha.comp_left Fψ
-  have hbψ (x ξ : CoordinateSpace n) : b.coefficient (x, ξ) =
-      ((ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ).comp (a.coefficient (x, ξ)) := by
-    rw [hbdef, coefficient_comp, hFψ, coefficient_ofSpatial]
+  set b := smulLeft (ofRealCLM.contDiff.comp hψ) a
+  have hbψ (x ξ : CoordinateSpace n) : b.coefficient (x, ξ) = (ψ x : ℂ) • a.coefficient (x, ξ) :=
+    coefficient_smulLeft _ a (x, ξ)
+  have hb : b.HasCompactSpatialSupport := ha.smulLeft _
   have hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
     rw [hbψ, hψK x hx]
     simp
-  set a' := Symbol.inclusion (le_of_eq (zero_add m).symm) a
-  have ha' : a'.HasCompactSpatialSupport := ha.of_coefficient_eq (coefficient_inclusion _ _)
-  have hab : (a' - b).HasCompactSpatialSupport := ha'.sub hb
-  have hdsupp : x₀ ∉ dsupport (toDistribution ⊤ ((a' - b).quantizeSobolev hab t v).toDistr) :=
+  have hab : (a - b).HasCompactSpatialSupport := ha.sub hb
+  have hdsupp : x₀ ∉ dsupport (toDistribution ⊤ ((a - b).quantizeSobolev hab t v).toDistr) :=
     fun h ↦ (dsupport_toDistribution_quantizeSobolev_subset hab hV₀.isClosed_compl
       (fun x hx ξ ↦ by
-        rw [coefficient_sub, Pi.sub_apply, coefficient_inclusion, hbψ, hψ1 x (not_not.1 hx)]
+        rw [coefficient_sub, Pi.sub_apply, hbψ, hψ1 x (not_not.1 hx)]
         simp) t v h) hx₀
   -- `Op(b) v = Op(b) (χ v) + Op(e) v` with `e` smoothing.
   obtain ⟨e, he, hesm, hbe⟩ :=
@@ -323,9 +317,8 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
       toDistribution ⊤ (b.quantizeSobolev hb t
         (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ) v)).toDistr +
         toDistribution ⊤ (e.quantizeSobolev he t v).toDistr +
-        toDistribution ⊤ ((a' - b).quantizeSobolev hab t v).toDistr := by
-    rw [toDistr_quantizeSobolev_sub_apply ha' hb hab,
-      toDistr_quantizeSobolev_congr (coefficient_inclusion _ a) ha' ha rfl, hbe t v]
+        toDistribution ⊤ ((a - b).quantizeSobolev hab t v).toDistr := by
+    rw [toDistr_quantizeSobolev_sub_apply ha hb hab, hbe t v]
     simp only [map_sub, map_add]
     abel
   -- The three pieces are microlocally smooth at `(x₀, ξ)`.

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Operator.CompactFamily
+import TauCeti.Analysis.Pseudodifferential.Symbol.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Geometry.Manifold.Diffeomorph.InnerProductSpace
 
@@ -82,30 +83,19 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-! ### Two auxiliary operations -/
+/-! ### An auxiliary operation -/
 
 private theorem contDiff_apply_apply
     {f : CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n} (hf : ContDiff ℝ ∞ f)
     (v : CoordinateSpace n) (k : Fin n) : ContDiff ℝ ∞ fun y ↦ f y v k :=
   (contDiff_piLp 2).1 (hf.clm_apply contDiff_const) k
 
-/-- Multiplication `f(x) a(x, ξ)` of a symbol by a smooth real function of the position. -/
-private def smulSpatial (f : CoordinateSpace n → ℝ) (hf : ContDiff ℝ ∞ f) (a : Symbol n V W m) :
-    Symbol n V W m :=
-  inclusion (zero_add m).le ((ofSpatial (fun y ↦ (f y : ℂ) • ContinuousLinearMap.id ℂ W)
-    ((Complex.ofRealCLM.contDiff.comp hf).smul contDiff_const)).comp a)
-
-private theorem coefficient_smulSpatial (f : CoordinateSpace n → ℝ) (hf : ContDiff ℝ ∞ f)
-    (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
-    (smulSpatial f hf a).coefficient p = f p.1 • a.coefficient p := by
-  simp [smulSpatial, coefficient_comp, Complex.coe_smul]
-
 /-- The derivative `∑ₖ (N(x) ξ)ₖ ∂_{ξₖ} a(x, ξ)` of a symbol in the frequency along `N(x) ξ`, for a
 smooth family `N(x)` of linear maps, a symbol of the order of `a`. -/
 private def eulerTerm (N : CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (hN : ContDiff ℝ ∞ N) (a : Symbol n V W m) : Symbol n V W m :=
-  ∑ k, ∑ l, smulSpatial (fun y ↦ N y (EuclideanSpace.single l 1) k)
-    (contDiff_apply_apply hN _ k)
+  ∑ k, ∑ l, smulLeft
+    (Complex.ofRealCLM.contDiff.comp (contDiff_apply_apply hN (EuclideanSpace.single l 1) k))
     (inclusion (by linarith) ((ofInner (EuclideanSpace.single l 1)).comp (frequencyDeriv k a)))
 
 private theorem coefficient_eulerTerm
@@ -113,13 +103,14 @@ private theorem coefficient_eulerTerm
     (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
     (eulerTerm N hN a).coefficient (x, ξ) =
       ∑ k, N x ξ k • (frequencyDeriv k a).coefficient (x, ξ) := by
-  simp only [eulerTerm, coefficient_sum, Finset.sum_apply, coefficient_smulSpatial,
-    coefficient_inclusion, coefficient_comp, coefficient_ofInner, EuclideanSpace.inner_single_right]
+  simp only [eulerTerm, coefficient_sum, Finset.sum_apply, coefficient_smulLeft_ofReal,
+    coefficient_inclusion, coefficient_comp, coefficient_ofInner, Complex.coe_smul,
+    EuclideanSpace.inner_single_right]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   have h : N x ξ k = ∑ l, ξ l * N x (EuclideanSpace.single l 1) k := by
     rw [(N x).apply_eq_sum_single ξ]
     simp
-  simp [h, Finset.sum_smul, smul_smul, Complex.coe_smul, mul_comm]
+  simp [h, Finset.sum_smul, smul_smul, mul_comm]
 
 /-! ### Symbol estimates from derivative rules -/
 
@@ -194,9 +185,9 @@ private theorem contDiff_coreCoeff (hL : ContDiff ℝ ∞ L) (a : Symbol n V W m
 `∑ᵢ vᵢ ∂_{y_i} a(y, η) + ∑ₖ (DL(y)(v) L(y)⁻¹ η)ₖ ∂_{η_k} a(y, η)`. -/
 private def coreSpatial (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv) (j : Fin n)
     (a : Symbol n V W m) : Symbol n V W m :=
-  (∑ i, smulSpatial (fun y ↦ fderiv ℝ κ (κ.symm y) (EuclideanSpace.single j 1) i)
-      ((contDiff_piLp 2).1 ((κ.contDiff_fderiv_comp_symm (m := ∞) le_rfl).clm_apply
-        contDiff_const) i) (spatialDeriv i a)) +
+  (∑ i, smulLeft (Complex.ofRealCLM.contDiff.comp ((contDiff_piLp 2).1
+      ((κ.contDiff_fderiv_comp_symm (m := ∞) le_rfl).clm_apply
+        (contDiff_const (c := EuclideanSpace.single j 1))) i)) (spatialDeriv i a)) +
     eulerTerm (fun y ↦ (fderiv ℝ L y (fderiv ℝ κ (κ.symm y) (EuclideanSpace.single j 1))).comp
       (Linv y)) (((hL.fderiv_right (m := ∞) le_rfl).clm_apply
         ((κ.contDiff_fderiv_comp_symm (m := ∞) le_rfl).clm_apply contDiff_const)).clm_comp hLinv) a
@@ -205,7 +196,8 @@ private def coreSpatial (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv
 `∂_{ξ_j}` of `a(κ x, L(κ x) ξ)`, namely `∑ₖ (L(y) e_j)ₖ ∂_{η_k} a(y, L(y) ξ)` at `y = κ x`. -/
 private def coreFrequency (hL : ContDiff ℝ ∞ L) (j : Fin n) (a : Symbol n V W m) :
     Symbol n V W (m - 1) :=
-  ∑ k, smulSpatial (fun y ↦ L y (EuclideanSpace.single j 1) k) (contDiff_apply_apply hL _ k)
+  ∑ k, smulLeft
+    (Complex.ofRealCLM.contDiff.comp (contDiff_apply_apply hL (EuclideanSpace.single j 1) k))
     (frequencyDeriv k a)
 
 variable {κ}
@@ -229,7 +221,7 @@ private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv :
   have hξ : Linv (κ x) (L (κ x) ξ) = ξ := DFunLike.congr_fun (hLL _) _
   simp only [coreSpatial, coefficient_add, Pi.add_apply, coefficient_sum, Finset.sum_apply]
   rw [coefficient_eulerTerm]
-  simp [coefficient_smulSpatial, coefficient_spatialDeriv, coefficient_frequencyDeriv, hξ]
+  simp [coefficient_spatialDeriv, coefficient_frequencyDeriv, hξ]
 
 private theorem coordinateDeriv_coreCoeff_snd (hL : ContDiff ℝ ∞ L) (a : Symbol n V W m)
     (j : Fin n) (x ξ : CoordinateSpace n) :
@@ -242,7 +234,7 @@ private theorem coordinateDeriv_coreCoeff_snd (hL : ContDiff ℝ ∞ L) (a : Sym
   have h : HasFDerivAt (fun η ↦ a.coefficient (κ x, L (κ x) η)) _ ξ := ha.hasFDerivAt.comp ξ hη
   simp only [coordinateDeriv_cons, coordinateDeriv_nil, coreCoeff]
   rw [h.fderiv, ContinuousLinearMap.comp_apply, fderiv_apply_eq_sum_coordinateDeriv ha]
-  simp [coreFrequency, coefficient_sum, coefficient_smulSpatial, coefficient_frequencyDeriv]
+  simp [coreFrequency, coefficient_sum, coefficient_frequencyDeriv]
 
 /-- On a compact set of positions, `a(κ x, L(κ x) ξ)` is bounded by `C ⟨ξ⟩ ^ m`: on the compact set
 `κ '' K` the norms of `L` and of its left inverse are bounded, so `⟨L(κ x) ξ⟩` and `⟨ξ⟩` are

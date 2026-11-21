@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Symbol.SmulLeft
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.SmoothSeries
@@ -23,7 +24,7 @@ composition symbol `TauCeti.Symbol.sharp` or the left symbol `TauCeti.Symbol.ofR
 quantization, do not apply to it directly. Cutting `a` by the integer translates of a bump
 function gives pieces `aⱼ(x, ξ) = χ(x - j) a(x, ξ)`, `j ∈ ℤⁿ`, which vanish outside the balls of a
 fixed radius about the lattice points and whose estimates do not depend on `j`
-(`TauCeti.Symbol.isBallFamily_latticeBump_comp`). This file develops the two ends of this
+(`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). This file develops the two ends of this
 argument: such families of pieces, and sums of series of symbols.
 
 * `TauCeti.Symbol.IsBallFamily`: families of symbols supported in balls of a fixed radius, with
@@ -212,7 +213,7 @@ variable {ι : Type*}
 /-- A family of symbols `c i` of order `m`, each vanishing at the positions outside the closed
 ball of radius `r` about `z i`, whose symbol estimates hold with constants independent of the
 position and of `i`. Cutting a uniform symbol by the lattice translates of a bump function gives
-such a family (`TauCeti.Symbol.isBallFamily_latticeBump_comp`). -/
+such a family (`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). -/
 structure IsBallFamily (z : ι → CoordinateSpace n) (r : ℝ) (c : ι → Symbol n V W m) :
     Prop where
   /-- Each member vanishes at the positions at distance more than `r` from its centre. -/
@@ -349,13 +350,11 @@ theorem IsBallFamily.comp_coordSubSymbol (hc : IsBallFamily z r c) (j : Fin n) :
 /-- Cutting a uniform symbol off by smooth functions `φᵢ`, vanishing outside the closed balls of
 radius `r` about the points `zᵢ` and with derivatives bounded independently of `i`, gives a ball
 family. -/
-theorem isBallFamily_ofSpatial_comp (z : ι → CoordinateSpace n) (r : ℝ)
+theorem isBallFamily_smulLeft (z : ι → CoordinateSpace n) (r : ℝ)
     (φ : ι → CoordinateSpace n → ℝ) (hφ : ∀ i, ContDiff ℝ ∞ (φ i))
     (hφB : ∀ k : ℕ, ∃ B, ∀ i x, ‖iteratedFDeriv ℝ k (φ i) x‖ ≤ B)
     (hφz : ∀ i x, r < dist x (z i) → φ i x = 0) {a : Symbol n V W m} (ha : a.IsUniform) :
-    IsBallFamily z r fun i ↦
-      (ofSpatial (fun x ↦ φ i x • ContinuousLinearMap.id ℂ W) ((hφ i).smul contDiff_const)).comp
-        a := by
+    IsBallFamily z r fun i ↦ smulLeft (Complex.ofRealCLM.contDiff.comp (hφ i)) a := by
   refine ⟨fun i x ξ hx ↦ by simp [hφz i x hx], fun α β ↦ ?_⟩
   choose B hB using hφB
   choose D _ hD using isUniform_iff.1 ha
@@ -367,18 +366,24 @@ theorem isBallFamily_ofSpatial_comp (z : ι → CoordinateSpace n) (r : ℝ)
       (ContinuousLinearMap.norm_id_le (𝕜 := ℂ) (E := W)) (norm_nonneg t)
   set K := (β.sublists'.revzip.map fun t =>
     (α.sublists'.revzip.map fun s => max (B s.1.length) 0 * D s.2 t.2).sum).sum
-  refine ⟨max K 0, fun i x ξ ↦ norm_mixedDeriv_comp_le_of_coefficient_eq
-    (f := fun y ↦ L (φ i y)) (B := fun s ↦ max (B s.length) 0) (fun p ↦ by simp [L]) a
-    (fun _ ↦ le_max_right _ _) (fun s ↦ ?_) (fun s t ↦ hD s t x ξ) α β⟩
+  refine ⟨max K 0, fun i x ξ ↦ ?_⟩
   have hLφ : ContDiff ℝ ∞ (L ∘ φ i) := L.contDiff.comp (hφ i)
-  calc ‖coordinateDeriv s (fun y ↦ L (φ i y)) x‖
-      ≤ ‖iteratedFDeriv ℝ s.length (L ∘ φ i) x‖ :=
-        norm_coordinateDeriv_le s (hLφ.of_le (by exact_mod_cast le_top)) x
-    _ ≤ ‖L‖ * ‖iteratedFDeriv ℝ s.length (φ i) x‖ :=
-        L.norm_iteratedFDeriv_comp_left (hφ i).contDiffAt (by exact_mod_cast le_top)
-    _ ≤ 1 * max (B s.length) 0 := mul_le_mul hL ((hB _ i x).trans (le_max_left _ _))
-        (norm_nonneg _) zero_le_one
-    _ = _ := one_mul _
+  have hf (s : List (Fin n)) : ‖coordinateDeriv s (fun y ↦ L (φ i y)) x‖ ≤ max (B s.length) 0 :=
+    calc ‖coordinateDeriv s (fun y ↦ L (φ i y)) x‖
+        ≤ ‖iteratedFDeriv ℝ s.length (L ∘ φ i) x‖ :=
+          norm_coordinateDeriv_le s (hLφ.of_le (by exact_mod_cast le_top)) x
+      _ ≤ ‖L‖ * ‖iteratedFDeriv ℝ s.length (φ i) x‖ :=
+          L.norm_iteratedFDeriv_comp_left (hφ i).contDiffAt (by exact_mod_cast le_top)
+      _ ≤ 1 * max (B s.length) 0 := mul_le_mul hL ((hB _ i x).trans (le_max_left _ _))
+          (norm_nonneg _) zero_le_one
+      _ = _ := one_mul _
+  -- `φᵢ a` has the coefficient of the composition of `a` with the cutoff symbol of `φᵢ`.
+  have hc : (smulLeft (Complex.ofRealCLM.contDiff.comp (hφ i)) a).coefficient =
+      ((cutoff W (hφ i)).comp a).coefficient := funext fun p ↦ by
+    simp [ContinuousLinearMap.smul_comp]
+  simpa only [hc, zero_add] using norm_mixedDeriv_comp_le_of_coefficient_eq
+    (f := fun y ↦ L (φ i y)) (B := fun s ↦ max (B s.length) 0) (fun p ↦ by simp [L]) a
+    (fun _ ↦ le_max_right _ _) hf (fun s t ↦ hD s t x ξ) α β
 
 end BallFamily
 
@@ -481,11 +486,10 @@ end Decay
 
 /-- The cut-off pieces `χ(x - j) a(x, ξ)` of a uniform symbol `a` form a ball family centred at
 the lattice points, with radius `√n`. -/
-theorem isBallFamily_latticeBump_comp {a : Symbol n V W m} (ha : a.IsUniform) :
+theorem isBallFamily_smulLeft_latticeBump {a : Symbol n V W m} (ha : a.IsUniform) :
     IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n fun j ↦
-      (ofSpatial (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-        ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a :=
-  isBallFamily_ofSpatial_comp _ _ (fun j y ↦ latticeBump n (y - latticePoint j))
+      smulLeft (Complex.ofRealCLM.contDiff.comp (contDiff_latticeBump_sub j)) a :=
+  isBallFamily_smulLeft _ _ (fun j y ↦ latticeBump n (y - latticePoint j))
     contDiff_latticeBump_sub exists_norm_iteratedFDeriv_latticeBump_sub_le
     (fun _ _ hx ↦ by_contra fun h ↦ (mem_closedBall.1
       (mem_closedBall_of_latticeBump_sub_ne_zero h)).not_gt hx) ha
