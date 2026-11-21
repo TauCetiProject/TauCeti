@@ -470,17 +470,6 @@ private theorem sub_apply_evalZero_add_endpointMap_eq_zero (S : C(AddCircle T, E
   rw [one_smul] at key
   rw [h0, key, ← hend, map_neg, neg_add_cancel]
 
-/-- A stabilization of `L_S` by continuous loops: a linear map `σ'` into the continuous loops
-whose endpoint values for `S` invert it. -/
-private theorem exists_endpointMap_comp_eq_id (S : C(AddCircle T, E →L[ℝ] E)) :
-    ∃ σ' : E →ₗ[ℝ] C(AddCircle T, E), endpointMap S ∘ₗ σ' = LinearMap.id := by
-  let b := Module.finBasis ℝ E
-  choose f hf using fun i ↦ endpointMap_surjective S (b i)
-  refine ⟨∑ i, (b.coord i).smulRight (f i), LinearMap.ext fun w ↦ ?_⟩
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.sum_apply,
-    LinearMap.smulRight_apply, map_sum, map_smul, hf, Module.Basis.coord_apply, LinearMap.id_apply]
-  exact b.sum_repr w
-
 omit hT in
 /-- The return-map endomorphism `1 - Ψₓ(T)` of a continuous family of coefficient loops is
 continuous in the parameter. -/
@@ -501,7 +490,8 @@ private theorem isDetLineCoherentWithinAt_detLineLoopOperatorEquiv_symm {X : Typ
     IsDetLineCoherentWithinAt (fun x ↦ loopOperator T (S x))
       (fun x ↦ (detLineLoopOperatorEquiv T (S x)).symm
         (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S x t) T) : E →ₗ[ℝ] E)).detLineEndGenerator) s x₀ := by
-  obtain ⟨σ', hσ'⟩ := exists_endpointMap_comp_eq_id (S x₀)
+  obtain ⟨σ', hσ'⟩ := (endpointMap (S x₀)).exists_rightInverse_of_surjective
+    (LinearMap.range_eq_top.2 (endpointMap_surjective (S x₀)))
   obtain ⟨σ, hσ⟩ : ∃ σ : E →L[ℝ] CircleSobolev 0 E, ∀ w, σ w = ofContinuousMap T (σ' w) :=
     ⟨LinearMap.toContinuousLinearMap ((((ofContinuousMap (E := E) T).restrictScalars ℝ :
       C(AddCircle T, E) →L[ℝ] CircleSobolev 0 E) : C(AddCircle T, E) →ₗ[ℝ] CircleSobolev 0 E) ∘ₗ
