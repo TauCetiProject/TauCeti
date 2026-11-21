@@ -82,6 +82,29 @@ def segmentMaps : ∀ b : SerreGraph.segment.V, C →* (segment f g hf hg).verte
 
 @[simp] theorem segmentMaps_true : segmentMaps f g hf hg true = g := (rfl)
 
+theorem segmentMaps_injective (b : SerreGraph.segment.V) :
+    Function.Injective (segmentMaps f g hf hg b) := by
+  cases b
+  · exact hf
+  · exact hg
+
+/-- The boundary map `α_e` of a dart `e` of the segment is the edge map into the vertex group at
+the source of `e`. -/
+theorem segment_α_eq_segmentMaps (e : SerreGraph.segment.E) :
+    (segment f g hf hg).α e = segmentMaps f g hf hg (SerreGraph.segment.src e) := by
+  cases e
+  · exact segment_α_false f g hf hg
+  · exact segment_α_true f g hf hg
+
+/-- The boundary map of the dart leaving the vertex `b` of the segment is the edge map into the
+vertex group at `b`. -/
+@[simp] theorem αArrow_segmentArrow (b : SerreGraph.segment.V) :
+    (segment f g hf hg).αArrow (SerreGraph.segmentArrow b) = segmentMaps f g hf hg b := by
+  -- `segmentArrow b` is the arrow `⟨b, rfl, rfl⟩` of the dart `b`, the argument of `αArrow_mk`.
+  have h : SerreGraph.segmentArrow b = ⟨b, rfl, rfl⟩ := Subtype.ext (SerreGraph.segmentArrow_val b)
+  rw [h]
+  exact ((segment f g hf hg).αArrow_mk b).trans (segment_α_eq_segmentMaps f g hf hg b)
+
 namespace π₁Tree
 
 variable {f g hf hg} {T : Set SerreGraph.segment.E}
@@ -162,12 +185,8 @@ theorem equivPushoutI_edge (hT : T.Nonempty) (e : SerreGraph.segment.E) :
 of darts: this is the normal form theorem for amalgamated products. -/
 theorem of_injective_segment (hT : T.Nonempty) (b : SerreGraph.segment.V) :
     Function.Injective (of (𝔸 := segment f g hf hg) T b) := by
-  have hφ : ∀ b, Function.Injective (segmentMaps f g hf hg b) := fun b => by
-    cases b
-    · exact hf
-    · exact hg
   intro a a' h
-  refine Monoid.PushoutI.of_injective hφ b ?_
+  refine Monoid.PushoutI.of_injective (segmentMaps_injective f g hf hg) b ?_
   rw [← equivPushoutI_of hT, ← equivPushoutI_of hT, h]
 
 /-! #### Trivial edge group: free products -/

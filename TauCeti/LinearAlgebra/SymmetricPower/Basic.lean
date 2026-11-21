@@ -62,9 +62,9 @@ public section
 
 open scoped TensorProduct
 
-universe u v
+universe u v w
 
-variable {R ι : Type u} {M : Type v}
+variable {R : Type u} {ι : Type w} {M : Type v}
 
 namespace SymmetricPower
 

@@ -66,6 +66,10 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 `finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
 the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
+**Nonzero products.** A finite product of nonzero σ-finite measures is nonzero, since its total
+mass is the product of the nonzero total masses of the factors. Mathlib has no such `NeZero`
+instance for `Measure.pi`.
+
 **Extensionality from boxes.** A finite measure on a finite product space, which need not be a
 product measure, is determined by its values on measurable boxes `Set.univ.pi s`, because boxes
 form a π-system generating the product σ-algebra and contain the whole space. The same holds on
@@ -100,6 +104,8 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 * `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
   on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
   product measures.
+* `MeasureTheory.Measure.instNeZeroPi` — a finite product of nonzero σ-finite measures is
+  nonzero;
 * `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
   measurable boxes are equal;
 * `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
@@ -448,6 +454,13 @@ end FinArrow
 end TauCeti
 
 namespace MeasureTheory.Measure
+
+/-- A finite product of nonzero σ-finite measures is nonzero: its total mass is the product of the
+total masses of the factors, none of which vanishes. -/
+instance instNeZeroPi {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    {μ : ∀ i, Measure (α i)} [∀ i, SigmaFinite (μ i)] [∀ i, NeZero (μ i)] :
+    NeZero (Measure.pi μ) :=
+  ⟨measure_univ_ne_zero.1 <| by simp [pi_univ, Finset.prod_ne_zero_iff, NeZero.ne]⟩
 
 variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 

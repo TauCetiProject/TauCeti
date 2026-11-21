@@ -29,8 +29,6 @@ of Fourier-weighted norms in `TauCeti.Analysis.Distribution.SchwartzSpace.Recipr
 
 ## Main declarations
 
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_iff`: the `H^{-s}` norm of a Schwartz function
-  `v` is the dual norm of `u ↦ ∫ ⟪u, v⟫` with respect to the `H^s` norm.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_le_of_integral_inner_eq`: if
   `‖A u‖_{H^r} ≤ C ‖u‖_{H^s}` for every `u`, then `‖A' v‖_{H^{-s}} ≤ C ‖v‖_{H^{-r}}` for every `v`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_le_of_integral_mul_eq`: the same bound for a transpose
@@ -66,15 +64,6 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
 
 namespace SchwartzMap
-
-/-- **`H^{-s}` is the dual of `H^s` for the `L²` pairing.** For `M ≥ 0`, a Schwartz function `v`
-has `‖v‖_{H^{-s}} ≤ M` exactly when `‖∫ ⟪u, v⟫‖ ≤ M ‖u‖_{H^s}` for every Schwartz function `u`. -/
-theorem norm_toBesselPotentialSpaceCLM_neg_le_iff {s M : ℝ} (hM : 0 ≤ M) (v : 𝓢(E, F)) :
-    ‖toBesselPotentialSpaceCLM (-s) 2 v‖ ≤ M ↔
-      ∀ u : 𝓢(E, F), ‖∫ x, ⟪u x, v x⟫_ℂ‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
-  simp only [norm_toBesselPotentialSpaceCLM]
-  exact eLpNorm_smul_fourier_le_iff_forall_norm_integral_inner_le (by fun_prop) (by fun_prop)
-    (TauCeti.one_add_norm_sq_rpow_neg_mul_rpow · s) hM v
 
 /-- **Transpose bound with the same constant.** Let `A'` be a formal adjoint of `A`,
 `∫ ⟪A u, v⟫ = ∫ ⟪u, A' v⟫`. If `‖A u‖_{H^r} ≤ C ‖u‖_{H^s}` for every Schwartz function `u`, then
