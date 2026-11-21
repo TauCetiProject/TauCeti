@@ -54,13 +54,16 @@ The subrepresentations whose underlying submodule is finitely generated form a j
 (`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
 they can index a filtered colimit.
 
-Restriction along a surjective monoid homomorphism identifies the lattices of invariant
-submodules, keeping the underlying submodule in both directions. In particular it preserves
-irreducibility, as does restriction along a monoid isomorphism.
+Restriction along any monoid homomorphism reflects irreducibility
+(`Representation.IsIrreducible.of_comp`). Restriction along a surjective monoid homomorphism
+identifies the lattices of invariant submodules, keeping the underlying submodule in both
+directions; in particular it preserves irreducibility, as does restriction along a monoid
+isomorphism.
 
 ## Main results
 
 * `MonoidHom.resSubrepresentationOrderIso`
+* `Representation.IsIrreducible.of_comp`
 * `MonoidHom.isIrreducible_comp_surjective_iff`
 * `MulEquiv.isIrreducible_comp_equiv_iff`
 * `Subrepresentation.mem_toSubmodule`
@@ -416,6 +419,21 @@ section Irreducible
 
 variable {k : Type*} [Field k] {H K : Type*} [Monoid H] [Monoid K]
   {V : Type*} [AddCommGroup V] [Module k V]
+
+/-- If `ρ.comp f` is irreducible for a monoid homomorphism `f : H →* K`, then `ρ` is
+irreducible. -/
+theorem Representation.IsIrreducible.of_comp {f : H →* K} {ρ : Representation k K V}
+    (h : Representation.IsIrreducible (ρ.comp f)) : ρ.IsIrreducible := by
+  have : Nontrivial (Subrepresentation ρ) :=
+    ⟨⟨⊥, ⊤, fun hbot => h.bot_ne_top <| Subrepresentation.toSubmodule_injective <| by
+      simpa using congrArg Subrepresentation.toSubmodule hbot⟩⟩
+  refine ⟨fun S => ?_⟩
+  rcases h.eq_bot_or_eq_top
+      ⟨S.toSubmodule, fun g _ hm => S.apply_mem_toSubmodule (f g) hm⟩ with hT | hT
+  · exact Or.inl <| Subrepresentation.toSubmodule_injective <| by
+      simpa using congrArg Subrepresentation.toSubmodule hT
+  · exact Or.inr <| Subrepresentation.toSubmodule_injective <| by
+      simpa using congrArg Subrepresentation.toSubmodule hT
 
 /-- Restriction along a surjective monoid homomorphism preserves irreducibility: irreducibility is
 simplicity of the lattice of invariant subspaces, and `MonoidHom.resSubrepresentationOrderIso`

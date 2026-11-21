@@ -48,7 +48,8 @@ pure tensors over a finite spanning family of the right factor.
   multiplication.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
-* `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
+* `TensorProduct.nontrivial_left` and `TensorProduct.nontrivial_right`: both factors are
+  nontrivial when the tensor product is.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
 
@@ -414,6 +415,12 @@ theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) 
     induction y using TensorProduct.inductionOn with
     | add y y' h h' => simp only [map_add, tmul_add, h, h']
     | tmul p q => simp
+
+/-- If `M ⊗[R] N` is nontrivial then so is `M`: were `M` trivial, the tensor product would be
+trivial too (`TensorProduct.uniqueLeft`). -/
+theorem nontrivial_left [Nontrivial (M ⊗[R] N)] : Nontrivial M :=
+  not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (M ⊗[R] N) uniqueLeft.instSubsingleton
 
 /-- If `M ⊗[R] N` is nontrivial then so is `N`: were `N` trivial, the tensor product would be
 trivial too (`TensorProduct.uniqueRight`). -/
