@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Algebra.MvPolynomial.Funext
+public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
@@ -55,6 +56,10 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   polynomials in a bounded-degree space extends their coordinates by zero.
 * `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
   not raise the total degree.
+* `MvPolynomial.killCompl_mem_restrictTotalDegree`: discarding variables outside an injective
+  renaming does not raise the total degree.
+* `MvPolynomial.restrictTotalDegreeEquivDegreeLT`: in one variable, `restrictTotalDegree σ R d`
+  is linearly equivalent to `Polynomial.degreeLT R (d + 1)`.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
   in the separate variables lie in the span of the products of the original family.
 * `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
@@ -272,6 +277,36 @@ theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R
     (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
   rw [mem_restrictTotalDegree] at hp ⊢
   exact (totalDegree_bind₁_le hf p).trans ((mul_one _).trans_le hp)
+
+/-- Discarding variables outside the range of an injective renaming does not raise the total
+degree. -/
+theorem killCompl_mem_restrictTotalDegree {τ : Type*} {g : τ → σ} (hg : Function.Injective g)
+    {m : ℕ} {f : MvPolynomial σ R} (hf : f ∈ restrictTotalDegree σ R m) :
+    killCompl hg f ∈ restrictTotalDegree τ R m := by
+  classical
+  refine aeval_mem_restrictTotalDegree (fun j ↦ ?_) hf
+  split_ifs
+  · exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+  · simp
+
+/-- In one variable, `MvPolynomial.uniqueAlgEquiv` identifies the polynomials of total degree at
+most `d` with `Polynomial.degreeLT R (d + 1)`. -/
+noncomputable def restrictTotalDegreeEquivDegreeLT (σ R : Type*) [CommSemiring R] [Unique σ]
+    (d : ℕ) :
+    restrictTotalDegree σ R d ≃ₗ[R] Polynomial.degreeLT R (d + 1) :=
+  (LinearEquiv.ofEq _ _ (by
+    rw [restrictTotalDegree_eq_restrictSupport]
+    congr 1
+    ext μ
+    simp [Finsupp.degree_eq_sum])).trans <|
+    ((uniqueAlgEquiv R σ).toLinearEquiv.submoduleMap _).trans
+      (LinearEquiv.ofEq _ _ (map_restrictSupport_uniqueAlgEquiv (d + 1)))
+
+@[simp]
+theorem coe_restrictTotalDegreeEquivDegreeLT_apply [Unique σ] (d : ℕ)
+    (f : restrictTotalDegree σ R d) :
+    (restrictTotalDegreeEquivDegreeLT σ R d f : Polynomial R) = uniqueAlgEquiv R σ f.val := by
+  simp [restrictTotalDegreeEquivDegreeLT]
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products

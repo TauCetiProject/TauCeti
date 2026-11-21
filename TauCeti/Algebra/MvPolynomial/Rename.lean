@@ -37,6 +37,8 @@ it kills are exactly the multiples of `X a`.
   along the induced map of exponents.
 * `MvPolynomial.killCompl_X_of_notMem_range`: a variable outside the range of an injective
   renaming is killed by `killCompl`.
+* `MvPolynomial.eval_killCompl`: evaluating `killCompl hf p` at `x ∘ f` agrees with evaluating `p`
+  at `x` when `x` vanishes outside the range of `f`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
 * `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
@@ -81,6 +83,20 @@ theorem killCompl_X_of_notMem_range (ha : a ∉ Set.range f) :
   rw [X]
   exact killCompl_monomial_eq_zero_of_notMem_range hf (s := Finsupp.single a 1) 1
     (a := a) (by simp) ha
+
+/-- Evaluating `killCompl hf p` at `x ∘ f` equals evaluating `p` at `x`, provided `x` vanishes
+outside the range of `f`. -/
+theorem eval_killCompl {x : τ → R} (hx : ∀ a ∉ Set.range f, x a = 0) (p : MvPolynomial τ R) :
+    eval (x ∘ f) (killCompl (R := R) hf p) = eval x p := by
+  classical
+  rw [← aeval_eq_eval, ← aeval_eq_eval, killCompl, comp_aeval_apply]
+  congr 1
+  ext i
+  simp only [aeval_X]
+  split_ifs with hi
+  · obtain ⟨s, rfl⟩ := hi
+    simp [Equiv.ofInjective_symm_apply]
+  · simp [hx i hi]
 
 /-- When the range of an injective renaming is the complement of a single variable `X a`,
 discarding the variables outside the range kills exactly the multiples of `X a`. -/

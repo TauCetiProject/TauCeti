@@ -93,6 +93,8 @@ interpolation over arbitrary commutative rings and fields (`Polynomial.hermiteJe
   `Polynomial.ordinaryHermiteJet_bijective_iff`, and
   `Polynomial.ordinaryHermiteJet_bijective_iff_ne`: exact `↔` characterizations of when Hasse
   and ordinary-derivative Hermite interpolation are bijective over commutative rings and fields.
+* `Polynomial.finrank_range_hermiteJet_degreeLT`: over a field with injective nodes, the image
+  of `hasseJet a m` on polynomials of degree below `N` has dimension `min N (∑ i, m i)`.
 
 ## References
 
@@ -741,6 +743,31 @@ theorem ordinaryHermiteJet_bijective (ha : Injective a) (m : ι → ℕ)
     (hm : ∀ i, ∀ k < m i, IsUnit (k ! : K)) : Bijective (ordinaryHermiteJet a m) :=
   ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub
     (fun _ _ hij => (sub_ne_zero.2 (ha.ne hij)).isUnit) m hm
+
+/-- Over a field with injective nodes, the image of `hasseJet a m` on polynomials of degree below
+`N` has dimension `min N (∑ i, m i)`. -/
+theorem finrank_range_hermiteJet_degreeLT (ha : Injective a) (m : ι → ℕ) (N : ℕ) :
+    Module.finrank K (LinearMap.range ((hasseJet a m).comp (degreeLT K N).subtype)) =
+      min N (∑ i, m i) := by
+  let L : degreeLT K N →ₗ[K] ∀ i, Fin (m i) → K := (hasseJet a m).comp (degreeLT K N).subtype
+  rcases le_total N (∑ i, m i) with hle | hge
+  · have hcomp : L = hermiteJet a m ∘ₗ Submodule.inclusion (degreeLT_mono hle) := by
+      ext f i r
+      simp [L]
+    have hinj : Injective L := by
+      rw [hcomp]
+      exact (hermiteJet_injective ha m).comp (Submodule.inclusion_injective _)
+    rw [min_eq_left hle, (LinearEquiv.ofInjective L hinj).finrank_eq.symm]
+    simp [(degreeLTEquiv K N).finrank_eq]
+  · have hcomp : L ∘ₗ Submodule.inclusion (degreeLT_mono hge) = hermiteJet a m := by
+      ext f i r
+      simp [L]
+    have hsurj : Surjective L := fun y ↦ by
+      obtain ⟨f, hf⟩ := (hermiteJet_bijective ha m).surjective y
+      refine ⟨Submodule.inclusion (degreeLT_mono hge) f, ?_⟩
+      simpa using (LinearMap.congr_fun hcomp f).trans hf
+    rw [min_eq_right hge, LinearMap.range_eq_top.2 hsurj, finrank_top]
+    simp [Module.finrank_pi_fintype]
 
 end Field
 

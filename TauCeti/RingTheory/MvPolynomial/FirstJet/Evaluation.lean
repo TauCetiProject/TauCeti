@@ -18,8 +18,7 @@ import Mathlib.Tactic.NormNum
 
 This file complements `TauCeti.RingTheory.MvPolynomial.JetInterpolation` with:
 * Identification of the coordinates of `TauCeti.firstJetMap` with `TauCeti.jetAlgebra` and its
-  kernel with `TauCeti.doubleIdeal` (`TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal_of_pairwise`,
-  `TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal`,
+  kernel with `TauCeti.doubleIdeal` (`TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal`,
   `TauCeti.wellPoised_iff_surjective_quotientMk`).
 * Base-change naturality (`TauCeti.firstJetMap_map`, `TauCeti.firstJetMatrix_map`),
   `LinearMap.toMatrix` representation (`TauCeti.toMatrix_firstJetMap`), reindexing of
@@ -132,16 +131,10 @@ theorem rank_firstJetMatrix_eq_finrank_range [Finite σ] {d : ℕ} (P : ι → �
   exact (eCod.submoduleMap (LinearMap.range (firstJetMatrix P d).mulVecLin)).finrank_eq
 
 /-- Reindexing points along an equivalence preserves the rank of `firstJetMatrix`. -/
-theorem rank_firstJetMatrix_comp_equiv [Finite σ] {d : ℕ} (P : ι → σ → R) (e : κ ≃ ι) :
+theorem rank_firstJetMatrix_comp_equiv {d : ℕ} (P : ι → σ → R) (e : κ ≃ ι) :
     (firstJetMatrix (P ∘ e) d).rank = (firstJetMatrix P d).rank := by
-  rw [rank_firstJetMatrix_eq_finrank_range, rank_firstJetMatrix_eq_finrank_range]
-  let eCod : (ι → Option σ → R) ≃ₗ[R] (κ → Option σ → R) :=
-    LinearEquiv.funCongrLeft R (Option σ → R) e
-  have hcomp : firstJetMap (P ∘ e) d = eCod.toLinearMap ∘ₗ firstJetMap P d := by
-    rw [firstJetMap_comp]
-    rfl
-  rw [hcomp, LinearMap.range_comp]
-  exact (eCod.submoduleMap (LinearMap.range (firstJetMap P d))).finrank_eq.symm
+  rw [firstJetMatrix_comp_equiv]
+  exact Matrix.rank_submatrix _ (e.prodCongr (Equiv.refl _)) (Equiv.refl _)
 
 end Basic
 
@@ -151,11 +144,11 @@ variable {σ ι R : Type*} [CommRing R]
 
 /-- For a finite family of points with pairwise comaximal evaluation ideals, a bounded polynomial
 lies in the kernel of `firstJetMap P d` if and only if it lies in `doubleIdeal P`. -/
-theorem mem_ker_firstJetMap_iff_mem_doubleIdeal_of_pairwise [Finite ι] {P : ι → σ → R}
+theorem mem_ker_firstJetMap_iff_mem_doubleIdeal [Finite ι] {P : ι → σ → R}
     (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) {d : ℕ}
     {f : restrictTotalDegree σ R d} :
     f ∈ LinearMap.ker (firstJetMap P d) ↔ (f : MvPolynomial σ R) ∈ doubleIdeal P := by
-  rw [mem_ker_firstJetMap, mem_doubleIdeal_iff_of_pairwise hP]
+  rw [mem_ker_firstJetMap, mem_doubleIdeal_iff hP]
 
 end CommRing
 
@@ -166,7 +159,7 @@ variable {σ ι κ R : Type*} [CommSemiring R]
 /-- For pairwise comaximal point ideals in finitely many variables, well-poisedness in degree `d`
 is equivalent to surjectivity of the quotient map
 `MvPolynomial σ R → MvPolynomial σ R ⧸ doubleIdeal P` restricted to `restrictTotalDegree σ R d`. -/
-theorem wellPoised_iff_surjective_quotientMk_of_pairwise {R : Type*} [CommRing R]
+theorem wellPoised_iff_surjective_quotientMk {R : Type*} [CommRing R]
     [Finite σ] [Finite ι] {P : ι → σ → R}
     (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) (d : ℕ) :
     WellPoised P d ↔
@@ -174,29 +167,25 @@ theorem wellPoised_iff_surjective_quotientMk_of_pairwise {R : Type*} [CommRing R
         ((Ideal.Quotient.mkₐ R (doubleIdeal P)).toLinearMap ∘ₗ
           (restrictTotalDegree σ R d).subtype) := by
   classical
+  let e0 : TrivSqZeroExt R (σ → R) ≃ₗ[R] R × (σ → R) :=
+    { toEquiv := Equiv.refl _
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
   let e : (ι → TrivSqZeroExt R (σ → R)) ≃ₗ[R] (ι → Option σ → R) :=
-    { toFun := fun v i z ↦ z.elim (v i).fst (v i).snd
-      invFun := fun y i ↦ TrivSqZeroExt.inl (y i none) + TrivSqZeroExt.inr fun j ↦ y i (some j)
-      left_inv := fun v ↦ _root_.funext fun i ↦ by ext <;> simp
-      right_inv := fun y ↦ _root_.funext fun i ↦ _root_.funext fun z ↦ by cases z <;> simp
-      map_add' := fun _ _ ↦ _root_.funext fun _ ↦ _root_.funext fun z ↦ by cases z <;> rfl
-      map_smul' := fun _ _ ↦ _root_.funext fun _ ↦ _root_.funext fun z ↦ by cases z <;> rfl }
+    LinearEquiv.piCongrRight fun _ ↦
+      e0.trans (LinearEquiv.piOptionEquivProd R (M := fun _ : Option σ ↦ R)).symm
+  have he0 (x : TrivSqZeroExt R (σ → R)) : e0 x = (x.fst, x.snd) := rfl
   have hcomp : firstJetMap P d =
-      e.toLinearMap ∘ₗ (doublePointQuotientEquivOfPairwise hP).toLinearMap ∘ₗ
+      e.toLinearMap ∘ₗ (doublePointQuotientEquiv hP).toLinearMap ∘ₗ
         (Ideal.Quotient.mkₐ R (doubleIdeal P)).toLinearMap ∘ₗ
         (restrictTotalDegree σ R d).subtype := by
     ext f i z
-    cases z <;> simp [e]
+    cases z <;> simp [e, he0, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
   rw [wellPoised_iff, hcomp]
   refine ⟨fun hs y ↦ ?_,
-    fun hs ↦ e.surjective.comp ((doublePointQuotientEquivOfPairwise hP).surjective.comp hs)⟩
-  obtain ⟨f, hf⟩ := hs (e (doublePointQuotientEquivOfPairwise hP y))
-  exact ⟨f, (doublePointQuotientEquivOfPairwise hP).injective (e.injective hf)⟩
-
-/-- Reindexing a point tuple along an equivalence preserves well-poisedness. -/
-theorem WellPoised.comp_equiv {P : ι → σ → R} {d : ℕ} (h : WellPoised P d) (e : κ ≃ ι) :
-    WellPoised (P ∘ e) d :=
-  h.comp_injective e.injective
+    fun hs ↦ e.surjective.comp ((doublePointQuotientEquiv hP).surjective.comp hs)⟩
+  obtain ⟨f, hf⟩ := hs (e (doublePointQuotientEquiv hP y))
+  exact ⟨f, (doublePointQuotientEquiv hP).injective (e.injective hf)⟩
 
 /-- Over a nontrivial commutative semiring, a well-poised tuple must consist of distinct points. -/
 theorem WellPoised.injective [Nontrivial R] {P : ι → σ → R} {d : ℕ} (h : WellPoised P d) :
@@ -222,26 +211,6 @@ section Field
 
 variable {σ ι k : Type*} [Field k]
 
-/-- Over a field, for a finite injective tuple `P`, a bounded polynomial lies in the kernel of
-`firstJetMap P d` if and only if it lies in `doubleIdeal P`. -/
-theorem mem_ker_firstJetMap_iff_mem_doubleIdeal [Finite ι] {P : ι → σ → k}
-    (hP : Function.Injective P) {d : ℕ} {f : restrictTotalDegree σ k d} :
-    f ∈ LinearMap.ker (firstJetMap P d) ↔ (f : MvPolynomial σ k) ∈ doubleIdeal P :=
-  mem_ker_firstJetMap_iff_mem_doubleIdeal_of_pairwise
-    (fun _ _ hij ↦ isCoprime_ker_eval (hP.ne hij))
-
-/-- Over a field, a finite injective tuple `P` is well poised in degree `d` if and only if the
-quotient map `MvPolynomial σ k → MvPolynomial σ k ⧸ doubleIdeal P` is surjective on
-`restrictTotalDegree σ k d`. -/
-theorem wellPoised_iff_surjective_quotientMk [Finite σ] [Finite ι] {P : ι → σ → k}
-    (hP : Function.Injective P) (d : ℕ) :
-    WellPoised P d ↔
-      Function.Surjective
-        ((Ideal.Quotient.mkₐ k (doubleIdeal P)).toLinearMap ∘ₗ
-          (restrictTotalDegree σ k d).subtype) :=
-  wellPoised_iff_surjective_quotientMk_of_pairwise
-    (fun _ _ hij ↦ isCoprime_ker_eval (hP.ne hij)) d
-
 /-- The rank of `firstJetMatrix P d` is bounded above by the minimum of the source polynomial
 dimension `(d + r choose r)` and the target jet dimension `n * (r + 1)`. -/
 theorem rank_firstJetMatrix_le [Fintype σ] [Fintype ι] {d : ℕ} (P : ι → σ → k) :
@@ -252,24 +221,13 @@ theorem rank_firstJetMatrix_le [Fintype σ] [Fintype ι] {d : ℕ} (P : ι → �
   have : Module.Finite k (restrictTotalDegree σ k d) :=
     Module.Finite.of_basis (basisRestrictTotalDegree σ k d)
   rw [rank_firstJetMatrix_eq_finrank_range]
-  refine le_min ?_ ?_
-  · have hrn := LinearMap.finrank_range_add_finrank_ker (firstJetMap P d)
-    have hdom : Module.finrank k (restrictTotalDegree σ k d) =
-        (d + Fintype.card σ).choose (Fintype.card σ) :=
-      TauCeti.finrank_restrictTotalDegree σ k d
-    omega
-  · calc
-      Module.finrank k (LinearMap.range (firstJetMap P d))
-        ≤ Module.finrank k (ι → Option σ → k) := Submodule.finrank_le _
-      _ = Fintype.card ι * (Fintype.card σ + 1) := by
-        simp [Module.finrank_pi_fintype, Fintype.card_option]
-
-/-- **Full row rank criterion.** Over a field, `firstJetMap P d` is surjective if and only if
-`firstJetMatrix P d` has rank `Fintype.card ι * (Fintype.card σ + 1)`. -/
-theorem surjective_firstJetMap_iff_rank_eq [Fintype σ] [Fintype ι] {d : ℕ} (P : ι → σ → k) :
-    Function.Surjective (firstJetMap P d) ↔
-      (firstJetMatrix P d).rank = Fintype.card ι * (Fintype.card σ + 1) := by
-  rw [← wellPoised_iff, wellPoised_iff_rank]
+  refine le_min
+    ((LinearMap.finrank_range_le _).trans_eq (TauCeti.finrank_restrictTotalDegree σ k d)) ?_
+  calc
+    Module.finrank k (LinearMap.range (firstJetMap P d))
+      ≤ Module.finrank k (ι → Option σ → k) := Submodule.finrank_le _
+    _ = Fintype.card ι * (Fintype.card σ + 1) := by
+      simp [Module.finrank_pi_fintype, Fintype.card_option]
 
 /-- **Full column rank criterion.** Over a field, `firstJetMap P d` is injective if and only if
 `firstJetMatrix P d` has rank `(d + Fintype.card σ).choose (Fintype.card σ)`. -/

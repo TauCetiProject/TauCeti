@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # First jets of multivariate polynomials
@@ -22,26 +24,27 @@ so everything holds in every characteristic. A single directional derivative is 
 evaluation at a dual-number point by `MvPolynomial.aeval_inl_add_inr`; the first jet records all
 partial derivatives at once.
 
-For finitely many variables over a commutative ring the first jet at `P` is surjective, and its
-kernel is the square `𝔪_P²` of the ideal `𝔪_P = ker (eval P)` of polynomials vanishing at `P`:
-a polynomial lies in `𝔪_P²` exactly when its value and all its first partial derivatives vanish
-at `P`. This rests on the first-order Taylor expansion
-`f ≡ f(P) + ∑ⱼ ∂ⱼ f (P) (Xⱼ - Pⱼ) mod 𝔪_P²`.
-So `R[X] ⧸ 𝔪_P²` is the ring of first jets at `P`, the coordinate ring of the double point
-at `P`. Over a field, the ideals of distinct points, and their squares, are coprime.
+Over any commutative ring, the kernel of the first jet at `P` is the square `𝔪_P²` of the ideal
+`𝔪_P = ker (eval P)` of polynomials vanishing at `P`: a polynomial lies in `𝔪_P²` exactly when its
+value and all its first partial derivatives vanish at `P`. For finitely many variables, the first
+jet at `P` is surjective, identifying `R[X] ⧸ 𝔪_P²` with `TrivSqZeroExt R (σ → R)`
+(`TauCeti.jetAlgebraEquiv`), the coordinate ring of the double point at `P`. Over a field, the
+ideals of distinct points, and their squares, are coprime.
 
 ## Main definitions
 
 * `TauCeti.jetAlgebra P`: the first jet at `P`, as an algebra homomorphism to
   `TrivSqZeroExt R (σ → R)`.
+* `TauCeti.jetAlgebraEquiv P`: for finitely many variables over a commutative ring, the algebra
+  equivalence `MvPolynomial σ R ⧸ RingHom.ker (eval P) ^ 2 ≃ₐ[R] TrivSqZeroExt R (σ → R)`.
 
 ## Main results
 
 * `TauCeti.fst_jetAlgebra`, `TauCeti.snd_jetAlgebra_apply`: the first jet consists of the value
   and the partial derivatives at `P`.
 * `TauCeti.sub_sum_mem_ker_eval_sq`: the first-order Taylor expansion modulo `𝔪_P²`.
-* `TauCeti.jetAlgebra_surjective`, `TauCeti.ker_jetAlgebra`: the first jet is surjective with
-  kernel `𝔪_P²`.
+* `TauCeti.jetAlgebra_surjective`, `TauCeti.ker_jetAlgebra`: the first jet is surjective (in
+  finitely many variables) with kernel `𝔪_P²`.
 * `TauCeti.isCoprime_ker_eval`, `TauCeti.isCoprime_ker_eval_sq`: the ideals of two distinct points
   over a field, and their squares, are coprime.
 
@@ -118,12 +121,7 @@ variable {k : Type*} [Field k]
 theorem isCoprime_ker_eval {P Q : σ → k} (h : P ≠ Q) :
     IsCoprime (RingHom.ker (eval P)) (RingHom.ker (eval Q)) := by
   obtain ⟨j, hj⟩ := Function.ne_iff.1 h
-  rw [Ideal.isCoprime_iff_sup_eq]
-  refine Ideal.eq_top_of_isUnit_mem _ (x := C (Q j - P j)) ?_
-    ((isUnit_iff_ne_zero.2 (sub_ne_zero.2 hj.symm)).map C)
-  rw [show C (Q j - P j) = (X j - C (P j)) - (X j - C (Q j)) by simp [map_sub]]
-  exact Ideal.sub_mem _ (Ideal.mem_sup_left (X_sub_C_mem_ker_eval P j))
-    (Ideal.mem_sup_right (X_sub_C_mem_ker_eval Q j))
+  exact isCoprime_ker_eval_of_isUnit_sub (isUnit_iff_ne_zero.2 (sub_ne_zero.2 hj))
 
 /-- Over a field, the squares of the ideals of two distinct points are coprime. -/
 theorem isCoprime_ker_eval_sq {P Q : σ → k} (h : P ≠ Q) :
@@ -199,19 +197,38 @@ theorem jetAlgebra_surjective [Finite σ] (P : σ → R) : Function.Surjective (
   · simp [Pi.single_apply]
 
 /-- The kernel of the first jet at `P` is the square of the ideal of `P`: a polynomial lies in
-`𝔪_P²` exactly when its value and first partial derivatives vanish at `P`. -/
-theorem ker_jetAlgebra [Finite σ] (P : σ → R) :
+`𝔪_P²` exactly when its value and first partial derivatives vanish at `P`. This holds over any
+commutative ring and in arbitrarily many variables. -/
+theorem ker_jetAlgebra (P : σ → R) :
     RingHom.ker (jetAlgebra P) = RingHom.ker (eval P) ^ 2 := by
-  cases nonempty_fintype σ
-  apply le_antisymm
-  · intro f hf
-    obtain ⟨h0, h1⟩ := (jetAlgebra_eq_zero_iff P f).1 hf
-    simpa [h0, h1] using sub_sum_mem_ker_eval_sq P f
-  · rw [sq, Ideal.mul_le]
-    intro f hf g hg
-    rw [RingHom.mem_ker] at hf hg ⊢
-    rw [map_mul, jetAlgebra_apply, jetAlgebra_apply, hf, hg]
-    simp
+  ext f
+  rw [RingHom.mem_ker, jetAlgebra_eq_zero_iff, pow_ker_eval_eq_comap_taylor, Ideal.mem_comap,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, mem_pow_idealOfVars_iff']
+  constructor
+  · rintro ⟨h0, h1⟩ m hm
+    obtain hdeg0 | hdeg1 : m.degree = 0 ∨ m.degree = 1 := by omega
+    · rw [(Finsupp.degree_eq_zero_iff m).1 hdeg0, ← constantCoeff_eq, constantCoeff_taylor, h0]
+    · obtain ⟨j, rfl⟩ := (Finsupp.sum_eq_one_iff m).1
+        (by simpa [Finsupp.degree_apply, Finsupp.sum] using hdeg1)
+      rw [coeff_single_one_taylor, h1 j]
+  · intro h
+    refine ⟨?_, fun j ↦ ?_⟩
+    · rw [← constantCoeff_taylor, constantCoeff_eq]
+      exact h 0 (by simp)
+    · rw [← coeff_single_one_taylor]
+      exact h (Finsupp.single j 1) (by simp)
+
+/-- For finitely many variables over a commutative ring, the quotient by `RingHom.ker (eval P) ^ 2`
+is isomorphic as an `R`-algebra to the trivial square-zero extension `TrivSqZeroExt R (σ → R)`. -/
+noncomputable def jetAlgebraEquiv [Finite σ] (P : σ → R) :
+    (MvPolynomial σ R ⧸ RingHom.ker (eval P) ^ 2) ≃ₐ[R] TrivSqZeroExt R (σ → R) :=
+  (Ideal.quotientEquivAlgOfEq R (ker_jetAlgebra P).symm).trans
+    (Ideal.quotientKerAlgEquivOfSurjective (jetAlgebra_surjective P))
+
+@[simp]
+theorem jetAlgebraEquiv_mk [Finite σ] (P : σ → R) (f : MvPolynomial σ R) :
+    jetAlgebraEquiv P (Ideal.Quotient.mk _ f) = jetAlgebra P f := by
+  simp [jetAlgebraEquiv]
 
 end JetAlgebra
 
