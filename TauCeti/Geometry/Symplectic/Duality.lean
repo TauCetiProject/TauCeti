@@ -126,10 +126,18 @@ noncomputable def leftAdjointL (ω : SymplecticForm V) : (V →L[ℝ] V) →L[�
         simp only [LinearMap.coe_toContinuousLinearMap', smul_apply, map_smul, LinearMap.smul_apply,
           RingHom.id_apply, apply_leftAdjointOfNondegenerate_apply] }
 
+/-- The `ω`-transpose of `L` is Mathlib's `LinearMap.BilinForm.leftAdjointOfNondegenerate` of `L`
+for `ω`, as a continuous linear map. This holds by definition of `leftAdjointL`. -/
+theorem leftAdjointL_apply (ω : SymplecticForm V) (L : V →L[ℝ] V) :
+    ω.leftAdjointL L = LinearMap.toContinuousLinearMap
+      (ω.toBilinForm.leftAdjointOfNondegenerate ω.nondegenerate (L : V →ₗ[ℝ] V)) := by
+  rw [leftAdjointL, LinearMap.coe_toContinuousLinearMap', LinearMap.coe_mk, AddHom.coe_mk]
+
 @[simp]
 theorem apply_leftAdjointL_apply (ω : SymplecticForm V) (L : V →L[ℝ] V) (v w : V) :
-    ω (ω.leftAdjointL L v) w = ω v (L w) :=
-  ω.toBilinForm.isAdjointPairLeftAdjointOfNondegenerate ω.nondegenerate _ v w
+    ω (ω.leftAdjointL L v) w = ω v (L w) := by
+  rw [leftAdjointL_apply, LinearMap.coe_toContinuousLinearMap',
+    apply_leftAdjointOfNondegenerate_apply]
 
 /-- For a complex structure `J` preserving `ω`, the `ω`-transpose of `J` is `-J`. -/
 theorem Invariant.leftAdjointL_eq_neg {ω : SymplecticForm V} {J : AlmostComplexStructure V}
