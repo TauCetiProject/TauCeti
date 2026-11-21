@@ -250,7 +250,7 @@ theorem hattoriStallingsTrace_balancedExtension_map {S : Type*} [Ring S] (φ : R
   rw [hattoriStallingsTrace_eq_of_retract (Pi.basisFun S (Fin n)) i' r' hr',
     hattoriStallingsTrace_eq_of_retract (Pi.basisFun R (Fin n)) i r hr,
     Basis.hattoriStallingsTrace_apply, Basis.hattoriStallingsTrace_apply,
-    TauCeti.cyclicQuotientRingHomMap_mkQ]
+    Submodule.mkQ_apply, Submodule.mkQ_apply, TauCeti.cyclicQuotientRingHomMap_mk]
   congr 1; rw [map_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   have hsymm : e.symm (Pi.single k 1) = TauCeti.BalancedExtension.tmul φ 1 (Pi.single k 1) := by
@@ -275,12 +275,9 @@ theorem hattoriStallingsTrace_eq_map (j : M ≃ₛₗ[σ] M') {T : M →ₗ[R] M
     (h : ∀ x, T' (j x) = j (T x)) :
     LinearMap.hattoriStallingsTrace S M' T' =
       TauCeti.cyclicQuotientRingHomMap σ (LinearMap.hattoriStallingsTrace R M T) := by
-  let inv := (TauCeti.BalancedExtension.includeRight σ M).comp j.symm.toLinearMap
-  let e : TauCeti.BalancedExtension σ M ≃ₗ[S] M' :=
-    LinearEquiv.ofLinearMap (TauCeti.BalancedExtension.lift j.toLinearMap) inv
-      (by ext y; simp [inv]) (TauCeti.BalancedExtension.hom_ext fun m ↦ by simp [inv])
+  let e := TauCeti.BalancedExtension.equivOfSemilinearEquiv j
   have hconj : e.conjRingEquiv (TauCeti.BalancedExtension.map σ T) = T' := by
-    ext y; simpa [e, inv] using (h (j.symm y)).symm
+    ext y; simpa [e] using (h (j.symm y)).symm
   rw [← hconj, LinearMap.hattoriStallingsTrace_conj,
     LinearMap.hattoriStallingsTrace_balancedExtension_map]
 
@@ -313,32 +310,10 @@ theorem hattoriStallingsTrace_baseChange {S : Type*} [Ring S] [Algebra R S]
     (f : Module.End R M) :
     hattoriStallingsTrace S (TensorProduct R S M) (f.baseChange S) =
       TauCeti.cyclicQuotientRingHomMap (algebraMap R S) (hattoriStallingsTrace R M f) := by
-  let φ := algebraMap R S
-  let _ : Module R (BalancedExtension φ M) := Module.compHom _ φ
-  have : IsScalarTower R S (BalancedExtension φ M) :=
-    ⟨fun r s x ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
-  let toFun : BalancedExtension φ M →ₗ[S] TensorProduct R S M :=
-    BalancedExtension.lift
-      { toFun := fun m ↦ (1 : S) ⊗ₜ[R] m, map_add' := TensorProduct.tmul_add 1,
-        map_smul' := fun r m ↦ by rw [TensorProduct.tmul_smul, algebraMap_smul] }
-  let invFun : TensorProduct R S M →ₗ[S] BalancedExtension φ M :=
-    TensorProduct.AlgebraTensorModule.lift
-      { toFun := fun s ↦
-          { toFun := BalancedExtension.tmul φ s, map_add' := BalancedExtension.tmul_add s,
-            map_smul' := fun r m ↦ by
-              rw [BalancedExtension.tmul_smul, ← Algebra.commutes]
-              exact (BalancedExtension.smul_tmul (φ r) s m).symm }
-        map_add' := fun s₁ s₂ ↦ LinearMap.ext (BalancedExtension.add_tmul s₁ s₂)
-        map_smul' := fun s₁ s₂ ↦ LinearMap.ext fun m ↦ (BalancedExtension.smul_tmul s₁ s₂ m).symm }
-  let e : BalancedExtension φ M ≃ₗ[S] TensorProduct R S M :=
-    LinearEquiv.ofLinearMap toFun invFun
-      (LinearMap.ext fun x ↦ x.inductionOn
-        (fun s m ↦ by simp [toFun, invFun, TensorProduct.smul_tmul'])
-        fun _ _ hx hy ↦ by rw [map_add, map_add, hx, hy])
-      (BalancedExtension.hom_ext fun m ↦ by simp [toFun, invFun])
-  have hconj : e.conjRingEquiv (BalancedExtension.map φ f) = f.baseChange S :=
+  let e := BalancedExtension.tensorProductEquiv R S M
+  have hconj : e.conjRingEquiv (BalancedExtension.map (algebraMap R S) f) = f.baseChange S :=
     LinearMap.ext fun x ↦ x.inductionOn
-      (fun s m ↦ by simp [e, toFun, invFun, TensorProduct.smul_tmul'])
+      (fun s m ↦ by simp [e])
       fun _ _ hx hy ↦ by rw [map_add, map_add, hx, hy]
   rw [← hconj, hattoriStallingsTrace_conj, hattoriStallingsTrace_balancedExtension_map]
 

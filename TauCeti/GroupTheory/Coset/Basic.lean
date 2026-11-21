@@ -53,7 +53,8 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
 read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
 `Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
-`n ≠ 0`.
+`n ≠ 0`, and `Subgroup.sum_twisted_eq_card_nsmul` reindexes a sum of `g ↦ f ((σ g)⁻¹ * g)` over
+the right cosets of a subgroup fixed pointwise by `σ`.
 -/
 
 public section
@@ -203,6 +204,28 @@ theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} 
     rw [hz, mul_smul, mul_smul, hm _ (hKH z.property), hm _ k.out.property]
   simp only [key, Finset.sum_const, Finset.card_univ, Finset.sum_nsmul, relIndex, index_eq_card,
     Nat.card_eq_fintype_card]
+
+/-- **Reindexing a `σ`-twisted sum over right cosets.** For a group endomorphism `σ : G →* G` and
+a subgroup `H ≤ G` fixed pointwise by `σ`, the function `g ↦ f ((σ g)⁻¹ * g)` is constant on
+right cosets of `H`, so summing over `G` gives `Nat.card H` copies of the sum over `G ⧸ H`
+evaluated at the right-coset representatives `q.out⁻¹`. -/
+theorem sum_twisted_eq_card_nsmul {G : Type*} [Group G] [Fintype G] (H : Subgroup G)
+    [Fintype (G ⧸ H)] (σ : G →* G) (hH : ∀ h ∈ H, σ h = h) {M : Type*} [AddCommMonoid M]
+    (f : G → M) :
+    ∑ g : G, f ((σ g)⁻¹ * g) =
+      Nat.card H • ∑ q : G ⧸ H, f ((σ q.out⁻¹)⁻¹ * q.out⁻¹) := by
+  classical
+  let _ : Fintype H := Fintype.ofFinite H
+  let eCoset : (G ⧸ H) × H ≃ G :=
+    (Equiv.prodCongr (Equiv.refl _) (Equiv.inv H)).trans
+      (groupEquivQuotientProdSubgroup.symm.trans (Equiv.inv G))
+  have hinv (q : G ⧸ H) (z : H) :
+      (σ (eCoset (q, z)))⁻¹ * eCoset (q, z) = (σ q.out⁻¹)⁻¹ * q.out⁻¹ := by
+    have he : eCoset (q, z) = (z : G) * q.out⁻¹ := by
+      simp [eCoset, groupEquivQuotientProdSubgroup_symm_apply]
+    rw [he, map_mul, hH _ z.property, mul_inv_rev, mul_assoc, inv_mul_cancel_left]
+  rw [← eCoset.sum_comp, Fintype.sum_prod_type_right]
+  simp only [hinv, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card]
 
 /-- **An isomorphism carries a transversal to a transversal.** If `e : G ≃* G'` carries `H`
 onto `H'`, then the images under `e` of the chosen representatives of the cosets of `H` represent

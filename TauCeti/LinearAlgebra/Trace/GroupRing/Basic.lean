@@ -47,21 +47,6 @@ noncomputable section
 
 namespace MonoidAlgebra
 
-section CoeffOne
-
-variable (Λ G : Type*) [Ring Λ] [One G]
-
-/-- Extracting the coefficient at `1 : G` as a `ℤ`-linear map `Λ[G] →ₗ[ℤ] Λ`. -/
-def coeffOneIntLinearMap : Λ[G] →ₗ[ℤ] Λ where
-  toFun x := x.coeff 1
-  map_add' x y := by simp
-  map_smul' n x := by rw [RingHom.id_apply, coeff_smul, Finsupp.smul_apply]
-
-@[simp] theorem coeffOneIntLinearMap_apply (x : Λ[G]) :
-    coeffOneIntLinearMap Λ G x = x.coeff 1 := by rfl
-
-end CoeffOne
-
 section CyclicCoeffOne
 
 variable (Λ G : Type*) [Ring Λ] [Group G]
@@ -94,7 +79,8 @@ theorem coeff_one_mem_commutatorSubmodule {x : Λ[G]}
     (hx : x ∈ TauCeti.commutatorSubmodule ℤ Λ[G]) :
     x.coeff 1 ∈ TauCeti.commutatorSubmodule ℤ Λ := by
   have hle : TauCeti.commutatorSubmodule ℤ Λ[G] ≤
-      LinearMap.ker ((TauCeti.commutatorSubmodule ℤ Λ).mkQ.comp (coeffOneIntLinearMap Λ G)) :=
+      LinearMap.ker ((TauCeti.commutatorSubmodule ℤ Λ).mkQ.comp
+        ((Finsupp.lapply (1 : G)).comp (coeffLinearEquiv ℤ).toLinearMap)) :=
     (TauCeti.commutatorSubmodule_le_ker_iff _).2 fun _ _ ↦
       commutatorSubmodule_mkQ_coeff_one_mul_comm _ _
   simpa [Submodule.Quotient.mk_eq_zero] using LinearMap.mem_ker.1 (hle hx)
@@ -103,14 +89,11 @@ theorem coeff_one_mem_commutatorSubmodule {x : Λ[G]}
 `ε : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project, Section 64.15, Lemma 64.15.1). -/
 def cyclicCoeffOne : TauCeti.cyclicQuotient ℤ Λ[G] →ₗ[ℤ] TauCeti.cyclicQuotient ℤ Λ :=
   Submodule.mapQ (TauCeti.commutatorSubmodule ℤ Λ[G]) (TauCeti.commutatorSubmodule ℤ Λ)
-    (coeffOneIntLinearMap Λ G) fun _ hx ↦ coeff_one_mem_commutatorSubmodule hx
+    ((Finsupp.lapply (1 : G)).comp (coeffLinearEquiv ℤ).toLinearMap)
+    fun _ hx ↦ coeff_one_mem_commutatorSubmodule hx
 
 @[simp] theorem cyclicCoeffOne_mk (x : Λ[G]) :
     cyclicCoeffOne Λ G (Submodule.Quotient.mk x) = Submodule.Quotient.mk (x.coeff 1) := by rfl
-
-theorem cyclicCoeffOne_mkQ (x : Λ[G]) :
-    cyclicCoeffOne Λ G ((TauCeti.commutatorSubmodule ℤ Λ[G]).mkQ x) =
-      (TauCeti.commutatorSubmodule ℤ Λ).mkQ (x.coeff 1) := by rfl
 
 variable {Λ G}
 
@@ -203,7 +186,7 @@ variable {Λ G : Type*} [Ring Λ] [Group G]
     hattoriStallingsGroupTrace Λ G Λ[G] u = Submodule.Quotient.mk ((u 1).coeff 1) := by
   rw [hattoriStallingsGroupTrace_apply,
     hattoriStallingsTrace_eq_of_basis (Module.Basis.singleton Unit Λ[G]),
-    Module.Basis.hattoriStallingsTrace_apply, cyclicCoeffOne_mkQ]; simp
+    Module.Basis.hattoriStallingsTrace_apply, Submodule.mkQ_apply, cyclicCoeffOne_mk]; simp
 
 /-- **Induction along an injective group homomorphism** (Stacks Project, Section 64.15,
 Lemma 64.15.3): `Tr_Λ^G(Λ[G] ⊗_{Λ[H]} u) = Tr_Λ^H(u)`. -/
@@ -244,28 +227,6 @@ section Restriction
 
 variable {Λ G : Type*} [Ring Λ] [Group G]
 
-/-- Reindexing `∑ g : G, y.coeff ((σ g)⁻¹ * g)` over right cosets of
-`Z = σ.toMonoidHom.eqLocus (.id G)` gives `|Z|` copies of the sum over `G ⧸ Z`. -/
-private theorem sum_coeff_twisted_eq_card_nsmul (σ : G ≃* G) [Fintype G]
-    [Fintype (G ⧸ (σ.toMonoidHom.eqLocus (.id G)).subtype.range)] (y : Λ[G]) :
-    ∑ g : G, y.coeff ((σ g)⁻¹ * g) =
-      Nat.card (σ.toMonoidHom.eqLocus (.id G)) •
-        ∑ q : G ⧸ (σ.toMonoidHom.eqLocus (.id G)).subtype.range,
-          y.coeff ((σ q.out⁻¹)⁻¹ * q.out⁻¹) := by
-  let Z := σ.toMonoidHom.eqLocus (.id G); let _ : Fintype Z := Fintype.ofFinite Z
-  let eCoset : (G ⧸ Z.subtype.range) × Z ≃ G :=
-    (Equiv.prodCongr (Equiv.refl _)
-      ((Equiv.inv Z).trans (MonoidHom.ofInjective Z.subtype_injective).toEquiv)).trans
-        (Subgroup.groupEquivQuotientProdSubgroup.symm.trans (Equiv.inv G))
-  have hinv (q : G ⧸ Z.subtype.range) (z : Z) :
-      (σ (eCoset (q, z)))⁻¹ * eCoset (q, z) = (σ q.out⁻¹)⁻¹ * q.out⁻¹ := by
-    have he : eCoset (q, z) = (z : G) * q.out⁻¹ := by
-      simp [eCoset, Subgroup.groupEquivQuotientProdSubgroup_symm_apply, MonoidHom.ofInjective_apply]
-    have hz : σ (z : G) = (z : G) := MonoidHom.mem_eqLocusM.1 z.property
-    rw [he, map_mul, hz, mul_inv_rev, mul_assoc, inv_mul_cancel_left]
-  rw [← eCoset.sum_comp, Fintype.sum_prod_type_right]
-  simp only [hinv, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, Z]
-
 variable {P : Type*} [AddCommGroup P] [Module Λ[G] P]
 
 /-- Evaluating `hattoriStallingsGroupTrace Λ H P u_H` on a `Λ[G]`-free retract `(π, i)` of `P` via
@@ -296,7 +257,7 @@ theorem hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract (H : Subgroup G)
   rw [hattoriStallingsGroupTrace_apply,
     hattoriStallingsTrace_eq_of_retract bPi i_H π_H
       (LinearMap.ext fun p ↦ LinearMap.congr_fun hπi p),
-    Module.Basis.hattoriStallingsTrace_apply, cyclicCoeffOne_mkQ]
+    Module.Basis.hattoriStallingsTrace_apply, Submodule.mkQ_apply, cyclicCoeffOne_mk]
   congr 1; simp only [coeff_sum, Finsupp.finsetSum_apply, Fintype.sum_sigma]
   refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
   have hπ : π_H (bPi ⟨k, q⟩) =
@@ -322,7 +283,9 @@ theorem hattoriStallingsGroupTrace_eq_index_nsmul (H : Subgroup G)
     rw [hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract H hP π i hπi u_H,
       hattoriStallingsGroupTrace_apply,
       hattoriStallingsTrace_eq_of_retract (Pi.basisFun Λ[G] (Fin r)) i π hπi,
-      Module.Basis.hattoriStallingsTrace_apply, cyclicCoeffOne_mkQ, ← map_nsmul, ← hcard]
+      Module.Basis.hattoriStallingsTrace_apply, Submodule.mkQ_apply, Submodule.mkQ_apply,
+      cyclicCoeffOne_mk, ← hcard]
+    simp only [← (TauCeti.commutatorSubmodule ℤ Λ).mkQ_apply, ← map_nsmul]
     congr 1; simp only [coeff_sum, Finsupp.finsetSum_apply, Finset.smul_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     have hq (q : G ⧸ H.subtype.range) :
@@ -381,7 +344,10 @@ theorem hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocu
             π (Pi.single k 1))) k).coeff q.out⁻¹ = yk.coeff ((σ q.out⁻¹)⁻¹ * q.out⁻¹) := by
       rw [hφZ, himg, coeff_single_mul_apply, one_mul]
     simp only [hLHS, hRHS, ← Finset.smul_sum]
-    exact sum_coeff_twisted_eq_card_nsmul σ yk
+    have hcard : Nat.card Z.subtype.range = Nat.card Z := by rw [Subgroup.range_subtype]
+    exact (Subgroup.sum_twisted_eq_card_nsmul Z.subtype.range σ.toMonoidHom
+      (by rintro _ ⟨z, rfl⟩; exact MonoidHom.mem_eqLocusM.1 z.property) yk.coeff).trans
+      (by rw [hcard]; rfl)
   · have := TauCeti.MonoidAlgebra.subsingleton_of_infinite_group Λ G P; simp
 
 /-- **Forgetting a group action multiplies the group-ring trace by `|G|`** (Stacks Project,
@@ -466,8 +432,8 @@ end TwoModules
   obtain ⟨n, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective A[G] P
   simp only [projectiveGroupTrace_apply, hattoriStallingsGroupTrace_apply,
     hattoriStallingsTrace_eq_of_retract (Pi.basisFun A[G] (Fin n)) i π hπi,
-    Module.Basis.hattoriStallingsTrace_apply, cyclicCoeffOne_mkQ,
-    TauCeti.cyclicQuotientEquivOfComm_mkQ, coeff_sum, Finsupp.finsetSum_apply, Finset.mul_sum]
+    Module.Basis.hattoriStallingsTrace_apply, Submodule.mkQ_apply, cyclicCoeffOne_mk,
+    TauCeti.cyclicQuotientEquivOfComm_mk, coeff_sum, Finsupp.finsetSum_apply, Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ ↦ by simp
 
 /-- Scalar extension of `projectiveGroupTrace` along `φ : A →+* B`. -/

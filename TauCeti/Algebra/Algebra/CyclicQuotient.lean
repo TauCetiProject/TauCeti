@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.Quotient.Basic
-import Mathlib.Algebra.Algebra.NonUnitalHom
 
 /-!
 # The cyclic quotient of an algebra
@@ -189,11 +189,18 @@ def cyclicQuotientMap (f : F) : cyclicQuotient k A →ₗ[k] cyclicQuotient k B 
 theorem cyclicQuotientMap_mk (f : F) (x : A) :
     cyclicQuotientMap k f (Submodule.Quotient.mk x) = Submodule.Quotient.mk (f x) := by rfl
 
-theorem cyclicQuotientMap_mkQ (f : F) (x : A) :
-    cyclicQuotientMap k f ((commutatorSubmodule k A).mkQ x) = (commutatorSubmodule k B).mkQ (f x) :=
-  by rfl
-
 end Map
+
+@[simp]
+theorem cyclicQuotientMap_id (k : Type*) {A : Type*} [Ring k] [NonUnitalNonAssocRing A]
+    [Module k A] :
+    cyclicQuotientMap k (NonUnitalAlgHom.id k A) = LinearMap.id := by ext x; rfl
+
+theorem cyclicQuotientMap_comp (k : Type*) {A B C : Type*} [Ring k] [NonUnitalNonAssocRing A]
+    [NonUnitalNonAssocRing B] [NonUnitalNonAssocRing C] [Module k A] [Module k B] [Module k C]
+    (g : B →ₙₐ[k] C) (f : A →ₙₐ[k] B) :
+    cyclicQuotientMap k (g.comp f) =
+      (cyclicQuotientMap k g).comp (cyclicQuotientMap k f) := by ext x; rfl
 
 section RingHom
 
@@ -210,10 +217,6 @@ def cyclicQuotientRingHomMap (φ : F) : cyclicQuotient ℤ R →ₗ[ℤ] cyclicQ
 @[simp]
 theorem cyclicQuotientRingHomMap_mk (φ : F) (x : R) :
     cyclicQuotientRingHomMap φ (Submodule.Quotient.mk x) = Submodule.Quotient.mk (φ x) := by rfl
-
-theorem cyclicQuotientRingHomMap_mkQ (φ : F) (x : R) :
-    cyclicQuotientRingHomMap φ ((commutatorSubmodule ℤ R).mkQ x) =
-      (commutatorSubmodule ℤ S).mkQ (φ x) := by rfl
 
 @[simp]
 theorem cyclicQuotientRingHomMap_id {R : Type*} [NonUnitalNonAssocRing R] :
@@ -248,9 +251,6 @@ def cyclicQuotientEquivOfComm : cyclicQuotient k B ≃ₗ[k] B :=
 @[simp]
 theorem cyclicQuotientEquivOfComm_mk (x : B) :
     cyclicQuotientEquivOfComm k B (Submodule.Quotient.mk x) = x := by rfl
-
-theorem cyclicQuotientEquivOfComm_mkQ (x : B) :
-    cyclicQuotientEquivOfComm k B ((commutatorSubmodule k B).mkQ x) = x := by rfl
 
 @[simp]
 theorem cyclicQuotientEquivOfComm_symm_apply (x : B) :
