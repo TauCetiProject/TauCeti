@@ -539,8 +539,7 @@ noncomputable def intervalBaseTimeCoordinate (t : ℝ) : ℝ :=
 theorem intervalBaseTimeCoordinate_apply (t : ℝ) :
     intervalBaseTimeCoordinate t = Real.log t - Real.log (1 - t ^ 2) / 2 := (rfl)
 
-/-- The time coordinate is even, since `Real.log` is: `U(-t) = U(t)`, so it is the time coordinate
-`log |t| - (1 / 2) log (1 - t²)` of the flow on `(-1, 0)` as well. -/
+/-- The time coordinate is even: `U(-t) = U(t)`. -/
 @[simp]
 theorem intervalBaseTimeCoordinate_neg (t : ℝ) :
     intervalBaseTimeCoordinate (-t) = intervalBaseTimeCoordinate t := by

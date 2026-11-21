@@ -14,8 +14,10 @@ Let `p ≠ q` be critical points of the Euclidean quartic `TauCeti.quarticWellSu
 `q` obtained from `p` by replacing some zero coordinates by `±1`. The time-shift chart
 `TauCeti.quarticTrajectoryPoint p q` parametrizes the points of the cube `[-1, 1]^ι` on
 trajectories from `p` to `q`, and the flow translates the time shifts along the diagonal
-(`TauCeti.Analysis.Calculus.Morse.Quartic.Trajectory`). This file shows that the unparametrized
-trajectories from `p` to `q` are also the points of any level slice between the critical values.
+(`TauCeti.Analysis.Calculus.Morse.Quartic.Trajectory`). This file shows that each trajectory from
+`p` to `q` crosses each level strictly between the critical values exactly once. This is the fact
+underlying the description of the unparametrized trajectories as the points of a level slice,
+which is not formalized here.
 
 * **Free action.** The flow fixes no point of a trajectory from `p` to `q` for a nonzero time
   (`TauCeti.quarticWellSumFlow_quarticTrajectoryPoint_eq_self_iff`).
@@ -49,8 +51,7 @@ theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_self_iff
     (hne : p ≠ q) {s : ℝ} {τ : {i // p i ≠ q i} → ℝ} :
     quarticWellSumFlow s (quarticTrajectoryPoint p q τ) = quarticTrajectoryPoint p q τ ↔
       s = 0 := by
-  have hp := forall_eq_neg_one_or_eq_zero_or_eq_one_left hq hpq
-  rw [quarticWellSumFlow_quarticTrajectoryPoint hp hq hpq,
+  rw [quarticWellSumFlow_quarticTrajectoryPoint hq hpq,
     (quarticTrajectoryPoint_injective hq hpq).eq_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hne
@@ -63,11 +64,7 @@ private theorem intervalBasePotential_quarticTrajectoryPoint_coe
     (τ : {i // p i ≠ q i} → ℝ) (j : {i // p i ≠ q i}) :
     intervalBasePotential 1 (quarticTrajectoryPoint p q τ j) =
       Real.sigmoid (-(2 * 1 * τ j)) ^ 2 / 4 := by
-  have hqj : q j = -1 ∨ q j = 1 := by
-    rcases hq j with h | h | h
-    · exact .inl h
-    · exact absurd (by rw [hpq j j.property, h]) j.property
-    · exact .inr h
+  have hqj := eq_neg_one_or_eq_one_of_ne hq hpq j.property
   have hsq : quarticTrajectoryPoint p q τ j ^ 2 = intervalBaseOrbit 1 (τ j) ^ 2 := by
     rw [quarticTrajectoryPoint_apply_coe]
     rcases hqj with h | h <;> rw [h] <;> ring
@@ -81,9 +78,8 @@ theorem strictAnti_quarticWellSum_quarticWellSumFlow_quarticTrajectoryPoint
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0)
     (hne : p ≠ q) (τ : {i // p i ≠ q i} → ℝ) :
     StrictAnti fun s ↦ quarticWellSum (quarticWellSumFlow s (quarticTrajectoryPoint p q τ)) := by
-  have hp := forall_eq_neg_one_or_eq_zero_or_eq_one_left hq hpq
   intro s r hsr
-  simp only [quarticWellSumFlow_quarticTrajectoryPoint hp hq hpq, quarticWellSum_def]
+  simp only [quarticWellSumFlow_quarticTrajectoryPoint hq hpq, quarticWellSum_def]
   -- On a moving coordinate the summand `σ(-2 (s + τ j))² / 4` decreases strictly.
   have hlt : ∀ j : {i // p i ≠ q i},
       intervalBasePotential 1 (quarticTrajectoryPoint p q (fun j ↦ r + τ j) j) <
@@ -101,20 +97,18 @@ theorem strictAnti_quarticWellSum_quarticWellSumFlow_quarticTrajectoryPoint
   · exact (hlt ⟨i, hi⟩).le
 
 /-- **Level slices of the trajectory spaces.** The quartic takes along each trajectory from `p`
-to `q` exactly the values strictly between its values at `q` and at `p`, each exactly once. So
-every such level slices the trajectory space from `p` to `q`, and its points on that space are the
-unparametrized trajectories from `p` to `q`. -/
+to `q` exactly the values strictly between its values at `q` and at `p`, each exactly once. This
+also holds for `p = q`, where both sides are false. -/
 theorem existsUnique_quarticWellSum_quarticWellSumFlow_eq_iff
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0)
     (τ : {i // p i ≠ q i} → ℝ) {c : ℝ} :
     (∃! s, quarticWellSum (quarticWellSumFlow s (quarticTrajectoryPoint p q τ)) = c) ↔
       c ∈ Ioo (quarticWellSum q) (quarticWellSum p) := by
-  have hp := forall_eq_neg_one_or_eq_zero_or_eq_one_left hq hpq
   set g := fun s ↦ quarticWellSum (quarticWellSumFlow s (quarticTrajectoryPoint p q τ))
   obtain rfl | hne := eq_or_ne p q
   · -- For `p = q` the trajectory is constant, so no level is crossed exactly once.
     have hconst : ∀ s, g s = g 0 := fun s ↦ by
-      simp only [g, quarticWellSumFlow_quarticTrajectoryPoint hp hq hpq]
+      simp only [g, quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
       congr 2
       funext j
       exact (j.property rfl).elim
@@ -125,7 +119,7 @@ theorem existsUnique_quarticWellSum_quarticWellSumFlow_eq_iff
   have hanti : StrictAnti g :=
     strictAnti_quarticWellSum_quarticWellSumFlow_quarticTrajectoryPoint hq hpq hne τ
   obtain ⟨hmem, hlimbot, hlimtop⟩ :=
-    mem_quarticConnectingSet.1 (quarticTrajectoryPoint_mem_quarticConnectingSet hp hq hpq τ)
+    mem_quarticConnectingSet.1 (quarticTrajectoryPoint_mem_quarticConnectingSet hq hpq τ)
   have hbot : Tendsto g atBot (𝓝 (quarticWellSum p)) :=
     (continuous_quarticWellSum.tendsto p).comp hlimbot
   have htop : Tendsto g atTop (𝓝 (quarticWellSum q)) :=
