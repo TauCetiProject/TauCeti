@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Topology.MappingSpace.Evaluation
 
 /-!
 # Manifolds covered by diffeomorphisms
@@ -207,13 +208,15 @@ theorem isCoveredByDiffeomorphisms_neg {x₀ : M} {ℓ : ℤ} :
 homotopic, so they induce the same map on homology. -/
 theorem isCoveredByDiffeomorphisms_iff_of_joined {x₀ x₁ : M} (hx : Joined x₀ x₁) {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
+  have H : (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀).Homotopy
+      (Diffeomorph.evalAt x₁) :=
+    hx.somePath.evalHomotopy (Diffeomorph.evalAt_apply x₀) (Diffeomorph.evalAt_apply x₁)
   have heq : ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀)) =
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
         (TopCat.ofHom (Diffeomorph.evalAt x₁)) :=
-    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-      (Diffeomorph.evalAtHomotopy (n := n) (J := 𝓘(ℝ, E)) hx.somePath) _ d
+    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ) H _ d
   simp only [IsCoveredByDiffeomorphisms, heq]
 
 /-- On a path-connected manifold, covering by diffeomorphisms does not depend on the base

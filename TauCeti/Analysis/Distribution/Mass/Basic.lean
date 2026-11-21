@@ -247,6 +247,23 @@ theorem enorm_apply_le_mul_mass_of_forall_norm_le (T : 𝓕) {b : ℝ≥0} (h : 
   rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
   exact ENNReal.ofReal_le_ofReal ((BoundedContinuousFunction.norm_le b.coe_nonneg).2 h)
 
+/-- **Mass of a precomposition with a sup-bounded map.** If `P` sends every test of sup norm at most
+one to a test of sup norm at most `c`, then `M(T ∘ P) ≤ c M(T)`. The map `P` need not be linear
+and may enlarge supports. -/
+theorem mass_comp_le_of_norm_apply_le {E' G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω' : Opens E'} {m : ℕ∞} (T : 𝓕)
+    {P : 𝓓^{m}(Ω', G) → 𝓓^{n}(Ω, F)} {c : ℝ} (hc : 0 ≤ c)
+    (hP : ∀ ψ : 𝓓^{m}(Ω', G), (∀ y, ‖ψ y‖ ≤ 1) → ∀ x, ‖P ψ x‖ ≤ c) :
+    mass (T ∘ P) ≤ ENNReal.ofReal c * mass T := by
+  refine mass_le_iff.2 fun ψ hψ => ?_
+  have hb : ‖(P ψ : E →ᵇ F)‖ ≤ c := (BoundedContinuousFunction.norm_le hc).2 (hP ψ hψ)
+  calc ‖T (P ψ)‖ₑ ≤ mass T * ‖(P ψ : E →ᵇ F)‖ₑ := enorm_apply_le_mass_mul T _
+    _ ≤ mass T * ENNReal.ofReal c := by
+        gcongr
+        rw [← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal hb
+    _ = ENNReal.ofReal c * mass T := mul_comm _ _
+
 /-- A finite mass bound controls each evaluation by the supremum norm of the test. -/
 theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
     (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ := by

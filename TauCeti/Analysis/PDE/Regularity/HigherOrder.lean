@@ -81,9 +81,14 @@ lies in `W^{k+3,2}(V)` (`TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivO
   moves from the solution to the test function across the constant-coefficient energy form.
 * `TauCeti.PDE.energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn`: a weak derivative of a weak
   solution of a constant-coefficient equation solves the differentiated equation.
+* `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_sub_of_contDiffOn`:
+  for `C¹` coefficients and `L²` data, each first derivative of a weak solution lies in `H¹` on
+  compactly contained open sets and solves the equation differentiated in the sense of
+  distributions.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_setIntegral`:
-  for `L²` data, each first derivative of a weak solution lies in `H¹` on compactly contained open
-  sets and solves the equation with the distributional derivative of the data.
+  its constant-coefficient case: for `L²` data, each first derivative of a weak solution lies in
+  `H¹` on compactly contained open sets and solves the equation with the distributional derivative
+  of the data.
 * `TauCeti.PDE.exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn`: for
   `C^{k+2}` coefficients, `u ∈ H^{k+2}` and data in `W^{k+1,2}`, each first derivative of a weak
   solution solves an equation with data in `W^{k,2}`.
@@ -166,6 +171,90 @@ theorem energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn {f g : Lp ℝ 2 (mu.re
   rw [neg_eq_iff_eq_neg]
   simpa only [mul_comm] using hfφ
 
+/-- **The differentiated equation with `C¹` coefficients.** Let `u` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, where the entries of `a` are `C¹` on `Ω`, let `V ≤ Ω` and let `d ∈ H¹(V)`
+be the weak derivative of `u` in a direction `e` on `V`. Then
+`a(d, φ) = -∫_V f ∂ₑφ - ∫_V ⟨∇φ, (∂ₑa) ∇u⟩` for every test function `φ` on `V`. -/
+private theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral
+    {V : Opens (EuclideanSpace ℝ ι)} (hVΩ : V ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega) {f : EuclideanSpace ℝ ι → ℝ}
+    {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    {e : EuclideanSpace ℝ ι} {d : W1p mu V 2}
+    (hd : HasWeakLineDerivOn mu V (W1p.value (W1p.restrictL hVΩ u)) (W1p.value d) e)
+    (φ : 𝓓(V, ℝ)) :
+    energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ mu V 2 φ) =
+      -(∫ x in V, f x * lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x e ∂mu) -
+        ∫ x in V, matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e)
+          (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (W1p.gradient u x) ∂mu := by
+  -- `u` solves the equation on `V`, tested against `∂ₑφ`.
+  have h₁ : energyFormH1 a 0 0 (W1p.restrictL hVΩ u) (W1p.ofTestFunctionₗ mu V 2 (∂_{e} φ)) =
+      ∫ x in V, f x * lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x e ∂mu :=
+    (energyFormH1_restrictL_eq_setIntegral hVΩ hu
+      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule (∂_{e} φ)⟩).trans <| integral_congr_ae <| by
+        filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 (∂_{e} φ)] with x hx
+        rw [W1p.value_ofTestFunctionₗ, hx, TestFunction.lineDerivOp_apply]
+  -- The gradient of the restriction of `u` is that of `u`.
+  have h₂ : energyFormH1 (fun x => Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e) 0 0
+      (W1p.restrictL hVΩ u) (W1p.ofTestFunctionₗ mu V 2 φ) =
+      ∫ x in V, matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e)
+        (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (W1p.gradient u x) ∂mu := by
+    rw [energyFormH1_zero_zero_eq_setIntegral]
+    refine integral_congr_ae ?_
+    filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ,
+      W1p.gradient_restrictL_ae hVΩ u] with x hx hux
+    rw [W1p.gradient_ofTestFunctionₗ, hx, hux]
+  -- The derivative moves onto the test function.
+  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
+      (fun i j => (ha i j).mono (SetLike.coe_subset_coe.mpr hVΩ)) hd, h₁, h₂]
+
+/-- **The derivative of a weak solution with `C¹` coefficients and `L²` data.** Let `a` be
+uniformly elliptic on `Ω` with entries `C¹` on `Ω`, let `f ∈ L²(Ω)`, and let `u ∈ H¹(Ω)` be a weak
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, in the sense that `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every
+`v ∈ H¹₀(Ω)`. Let `V` be open with compact closure contained in `Ω`. Then in every direction `e`
+the weak derivative `d = ∂ₑu` lies in `H¹(V)` and satisfies
+
+`∫_V ⟨∇φ, a ∇d⟩ = -∫_V f ∂ₑφ - ∫_V ⟨∇φ, (∂ₑa) ∇u⟩`
+
+for every test function `φ` on `V`: it is a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼd) = ∂ₑf + ∂ᵢ((∂ₑaⁱʲ) ∂ⱼu)` in `V`, with both derivatives on the right taken in the
+sense of distributions.
+
+No regularity of `f` beyond `L²` and no regularity of `∂Ω` is assumed. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_sub_of_contDiffOn
+    [DecidableEq ι]
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (hell : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega) {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : MemLp f 2 (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    {V : Opens (EuclideanSpace ℝ ι)} (hV : IsCompact (closure (V : Set (EuclideanSpace ℝ ι))))
+    (hVΩ : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega) (e : EuclideanSpace ℝ ι) :
+    ∃ d : W1p mu V 2, HasWeakLineDerivOn mu V (W1p.value u) (W1p.value d) e ∧
+      ∀ φ : 𝓓(V, ℝ), energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ mu V 2 φ) =
+        -(∫ x in V, f x * lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x e ∂mu) -
+          ∫ x in V, matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e)
+            (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (W1p.gradient u x) ∂mu := by
+  have hVΩ' : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)
+  have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, hf.toLp f x * W1p.value (v : W1p mu Omega 2) x ∂mu := fun v => by
+    rw [hu v]
+    refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp] with x hx
+    rw [hx]
+  -- Interior `H²` regularity puts `u` in `H²(V)`, so `∂ₑu` lies in `H¹(V)`.
+  obtain ⟨U, hU⟩ := hell.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
+    (locallyLipschitzOn_matrixBilinearForm_of_contDiffOn Omega.isOpen ha) MemLp.zero MemLp.zero
+    hu' hV hVΩ
+  have hUv : Wkp.value 2 U = W1p.value (W1p.restrictL hVΩ' u) := by
+    rw [Wkp.value_succ, Wkp.value_one, hU]
+  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U e
+  rw [hUv, Wkp.value_one] at hd
+  exact ⟨d, hd.congr_ae (W1p.value_restrictL_ae hVΩ' u),
+    energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral hVΩ' ha hu hd⟩
+
 /-- **The derivative of a weak solution with `L²` data.** Let `A` be a constant, uniformly
 elliptic matrix, `f ∈ L²(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` in
 `Ω`, in the sense that `∫_Ω ⟨∇v, A ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. Let `V` be open with
@@ -174,7 +263,8 @@ compact closure contained in `Ω`. Then in every direction `e` the weak derivati
 a weak solution of `-∂ᵢ(Aⁱʲ ∂ⱼ∂ₑu) = ∂ₑf` in `V`, with the derivative of the data taken in the
 sense of distributions.
 
-No regularity of `f` beyond `L²` and no regularity of `∂Ω` is assumed. -/
+No regularity of `f` beyond `L²` and no regularity of `∂Ω` is assumed. This is the constant case of
+`UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_sub_of_contDiffOn`. -/
 theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_setIntegral
     {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
@@ -186,29 +276,14 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
     ∃ d : W1p mu V 2, HasWeakLineDerivOn mu V (W1p.value u) (W1p.value d) e ∧
       ∀ φ : 𝓓(V, ℝ), energyFormH1 (fun _ => A) 0 0 d (W1p.ofTestFunctionₗ mu V 2 φ) =
         -∫ x in V, f x * lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x e ∂mu := by
-  have hVΩ' : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)
-  -- Interior `H²` regularity puts `u` in `H²(V)`, so `∂ₑu` lies in `H¹(V)`.
-  have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 (fun _ => A) 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, hf.toLp f x * W1p.value (v : W1p mu Omega 2) x ∂mu := fun v => by
-    rw [hu v]
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨U, hU⟩ := UniformlyEllipticOn.exists_lowerOrder_eq_restrictL hlam hA
-    MemLp.zero MemLp.zero hu' hV hVΩ
-  have hUv : Wkp.value 2 U = W1p.value (W1p.restrictL hVΩ' u) := by
-    rw [Wkp.value_succ, Wkp.value_one, hU]
-  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U e
-  rw [hUv, Wkp.value_one] at hd
-  refine ⟨d, hd.congr_ae (W1p.value_restrictL_ae hVΩ' u), fun φ => ?_⟩
-  -- The derivative moves onto the test function, and `u` solves the equation on `V`.
-  rw [energyFormH1_ofTestFunctionₗ_eq_neg_of_hasWeakLineDerivOn hd,
-    energyFormH1_restrictL_eq_setIntegral hVΩ' hu
-      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule (∂_{e} φ)⟩]
-  congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 (∂_{e} φ)] with x hx
-  rw [W1p.value_ofTestFunctionₗ, hx, TestFunction.lineDerivOp_apply]
+  classical
+  obtain ⟨d, hd, hdeq⟩ :=
+    UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_sub_of_contDiffOn
+      (uniformlyEllipticOn_const _ hlam hA) (fun _ _ => contDiffOn_const) hf hu hV hVΩ e
+  refine ⟨d, hd, fun φ => ?_⟩
+  -- The derivative of the constant field vanishes, and so does its energy density.
+  rw [hdeq φ]
+  simp [matrixBilinearForm_apply, Matrix.mulVec, dotProduct]
 
 /-! ### Differentiating the equation with differentiable coefficients -/
 
