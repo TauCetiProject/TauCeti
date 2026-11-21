@@ -228,15 +228,8 @@ theorem polarFactor_unitary_conj {u : E →L[𝕜] E} (hu : u ∈ unitary (E →
 /-- A unitary endomorphism commuting with `T` also commutes with its polar factor. -/
 theorem commute_polarFactor_of_mem_unitary {u T : E →L[𝕜] E} (hu : u ∈ unitary (E →L[𝕜] E))
     (h : Commute u T) : Commute u T.polarFactor := by
-  have hconj : u * T * star u = T := by
-    rw [h.eq, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one]
-  have hp := polarFactor_unitary_conj hu T
-  rw [hconj] at hp
-  rw [commute_iff_eq]
-  calc u * T.polarFactor
-    _ = u * T.polarFactor * (star u * u) := by rw [Unitary.star_mul_self_of_mem hu, mul_one]
-    _ = (u * T.polarFactor * star u) * u := by simp only [mul_assoc]
-    _ = T.polarFactor * u := by rw [← hp]
+  rw [commute_unitary_iff_star_right_conjugate hu, ← polarFactor_unitary_conj hu T,
+    (commute_unitary_iff_star_right_conjugate hu).1 h]
 
 /-- The polar factor of the zero operator is zero. -/
 @[simp]

@@ -68,10 +68,6 @@ namespace VonNeumannAlgebra
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-private theorem span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s ⊆ M) :
-    (Submodule.span ℂ s : Set (H →L[ℂ] H)) ⊆ M :=
-  Set.Subset.trans (Submodule.span_mono hs) (Submodule.coe_span_eq_self M).subset
-
 section Representation
 
 variable {K : Type*} [TopologicalSpace K] [CompactSpace K] [T2Space K] [MeasurableSpace K]
@@ -137,7 +133,9 @@ theorem adjoin_ofRepresentation_proj (π : C(K, ℂ) →⋆ₐ[ℂ] (H →L[ℂ]
     have hmem := (ProjValMeasure.ofRepresentation π).integral_mem_closure_span_proj
       (BoundedBorelFunction.ofContinuousMap g)
     rw [ProjValMeasure.integral_ofRepresentation_ofContinuousMap] at hmem
-    exact closure_minimal (span_subset (subset_adjoin S)) (adjoin S).isClosed hmem
+    exact closure_minimal
+      ((Submodule.span_le (p := (adjoin S).toStarSubalgebra.toSubmodule)).mpr (subset_adjoin S))
+      (adjoin S).isClosed hmem
 
 end Representation
 
@@ -197,8 +195,9 @@ theorem adjoin_spectralPVM_proj :
     rintro _ ⟨B, hB, rfl⟩
     exact spectralPVM_proj_mem_adjoin a hB
   · rw [adjoin_le_iff, Set.singleton_subset_iff]
-    exact closure_minimal (span_subset (subset_adjoin S)) (adjoin S).isClosed
-      a.mem_closure_span_spectralPVM_proj
+    exact closure_minimal
+      ((Submodule.span_le (p := (adjoin S).toStarSubalgebra.toSubmodule)).mpr (subset_adjoin S))
+      (adjoin S).isClosed a.mem_closure_span_spectralPVM_proj
 
 end Normal
 
@@ -222,7 +221,10 @@ theorem closure_span_isStarProjection (M : VonNeumannAlgebra H) :
   set P : Submodule ℂ (H →L[ℂ] H) :=
     Submodule.span ℂ {p : H →L[ℂ] H | p ∈ M ∧ IsStarProjection p}
   refine Set.Subset.antisymm
-    (closure_minimal (span_subset fun _ hp => hp.1) M.isClosed) fun x hx => ?_
+    (closure_minimal
+      ((Submodule.span_le (p := M.toStarSubalgebra.toSubmodule)).mpr fun _ hp => hp.1)
+      M.isClosed)
+    fun x hx => ?_
   -- Decompose `x ∈ M` into its self-adjoint real and imaginary parts, each of which lies in the
   -- closed submodule `P.topologicalClosure`.
   have hre_mem : (ℜ x : H →L[ℂ] H) ∈ M := by
@@ -249,7 +251,9 @@ theorem adjoin_isStarProjection (M : VonNeumannAlgebra H) :
   intro x hx
   have hx' : x ∈ closure (Submodule.span ℂ S : Set (H →L[ℂ] H)) := by
     rwa [M.closure_span_isStarProjection]
-  exact closure_minimal (span_subset (subset_adjoin S)) (adjoin S).isClosed hx'
+  exact closure_minimal
+    ((Submodule.span_le (p := (adjoin S).toStarSubalgebra.toSubmodule)).mpr (subset_adjoin S))
+    (adjoin S).isClosed hx'
 
 /-- An operator lies in the commutant of `M` if and only if it commutes with every star projection
 in `M`. -/

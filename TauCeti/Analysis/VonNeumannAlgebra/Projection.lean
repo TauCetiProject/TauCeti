@@ -18,7 +18,7 @@ import Mathlib.Analysis.InnerProductSpace.StarOrder
 
 An orthogonal projection `U.starProjection` onto a closed subspace `U ≤ H` belongs to a concrete von
 Neumann algebra `M` if and only if `U` is invariant under `M.commutant`
-(`VonNeumannAlgebra.starProjection_mem_iff`). Since `M.commutant` is closed under adjoints, its
+(`VonNeumannAlgebra.IsStarProjection.mem_iff`). Since `M.commutant` is closed under adjoints, its
 invariant subspaces are closed under orthogonal complements, arbitrary intersections, arbitrary
 spans, and topological closures (`U.topologicalClosure = Uᗮᗮ`). Consequently, the bundled star
 projections `M.Projection` in `M` form a complete ortholattice ordered by the Loewner order —
@@ -49,21 +49,20 @@ via its polar factor, and establish **Kaplansky's parallelogram law**
 
 ## Main declarations
 
-* `VonNeumannAlgebra.starProjection_mem_iff`, `VonNeumannAlgebra.starProjection_iInf_mem`,
-  `VonNeumannAlgebra.starProjection_topologicalClosure_iSup_mem`: invariance characterization and
-  lattice closure of orthogonal projections in `M`.
+* `VonNeumannAlgebra.starProjection_iInf_mem`,
+  `VonNeumannAlgebra.starProjection_topologicalClosure_iSup_mem`: lattice closure of orthogonal
+  projections in `M`.
 * `VonNeumannAlgebra.Projection`: bundled star projections in `M`, with `CompleteLattice` and
   `Compl` instances, De Morgan laws, and strong convergence of monotone/antitone families.
 * `VonNeumannAlgebra.centralSupportProjection`, `VonNeumannAlgebra.centralSupport`: central support
   of an operator in `M`, its geometric span formula
   `VonNeumannAlgebra.centralSupport_eq_starProjection_closure_span`, and the kernel theorem
   `VonNeumannAlgebra.commutant_mul_eq_zero_iff_mul_centralSupport_eq_zero`.
-* `VonNeumannAlgebra.ProjectionEquivalent`: Murray–von Neumann equivalence of projections in `M`,
-  with reflexivity, symmetry, transitivity, orthogonal additivity, central-support invariance,
-  polar equivalence
+* `VonNeumannAlgebra.ProjectionEquivalent`, `VonNeumannAlgebra.projectionEquivalent_iff`:
+  Murray–von Neumann equivalence of projections in `M`, with reflexivity, symmetry, transitivity,
+  orthogonal additivity, central-support invariance, polar equivalence
   `VonNeumannAlgebra.projectionEquivalent_orthogonal_ker_topologicalClosure_range`, and Kaplansky's
-  parallelogram laws `VonNeumannAlgebra.parallelogram_projectionEquivalent` and
-  `VonNeumannAlgebra.parallelogram_projectionEquivalent'`.
+  parallelogram law `VonNeumannAlgebra.parallelogram_projectionEquivalent`.
 
 ## References
 
@@ -85,14 +84,6 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 
 section SubspaceProjections
 
-/-- The orthogonal projection onto a closed subspace `U` belongs to `M` if and only if `U` is
-invariant under every operator in `M.commutant`. -/
-theorem starProjection_mem_iff {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
-    [U.HasOrthogonalProjection] :
-    U.starProjection ∈ M ↔ ∀ y ∈ M.commutant, U ∈ Module.End.invtSubmodule y := by
-  simpa only [Submodule.range_starProjection] using
-    IsStarProjection.mem_iff (isStarProjection_starProjection (U := U)) M
-
 /-- If a subspace `U` is invariant under `M.commutant`, then so is its orthogonal complement `Uᗮ`.
 -/
 theorem orthogonal_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
@@ -103,13 +94,6 @@ theorem orthogonal_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H} {U : Su
     rw [← ContinuousLinearMap.star_eq_adjoint]
     exact hU (star y) (star_mem hy)
   exact y.orthogonal_mem_invtSubmodule hstar
-
-/-- If a subspace `U` is invariant under `M.commutant`, then so is its topological closure. -/
-theorem topologicalClosure_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H}
-    {U : Submodule ℂ H} (hU : ∀ y ∈ M.commutant, U ∈ Module.End.invtSubmodule y) :
-    ∀ y ∈ M.commutant, U.topologicalClosure ∈ Module.End.invtSubmodule y := by
-  rw [← U.orthogonal_orthogonal_eq_closure]
-  exact orthogonal_mem_invtSubmodule_commutant (orthogonal_mem_invtSubmodule_commutant hU)
 
 /-- If `U.starProjection ∈ M`, then `Uᗮ.starProjection ∈ M`. -/
 theorem starProjection_orthogonal_mem {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
@@ -131,37 +115,45 @@ again lies in `M`. -/
 theorem starProjection_iInf_mem {ι : Sort*} {M : VonNeumannAlgebra H} (U : ι → ClosedSubmodule ℂ H)
     (hU : ∀ i, (U i).toSubmodule.starProjection ∈ M) :
     (⨅ i, U i : ClosedSubmodule ℂ H).toSubmodule.starProjection ∈ M := by
-  rw [starProjection_mem_iff]
+  rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection,
+    ClosedSubmodule.toSubmodule_iInf]
   intro y hy
-  rw [ClosedSubmodule.toSubmodule_iInf, Module.End.mem_invtSubmodule_iff_forall_mem_of_mem]
+  rw [Module.End.mem_invtSubmodule_iff_forall_mem_of_mem]
   intro ξ hξ
   rw [Submodule.mem_iInf] at hξ ⊢
-  exact fun i => (starProjection_mem_iff.1 (hU i) y hy) (hξ i)
+  intro i
+  have hi := (IsStarProjection.mem_iff isStarProjection_starProjection M).1 (hU i) y hy
+  rw [Submodule.range_starProjection] at hi
+  exact hi (hξ i)
 
 /-- The orthogonal projection onto the intersection of two closed subspaces whose projections lie in
 `M` again lies in `M`. -/
 theorem starProjection_inf_mem {M : VonNeumannAlgebra H} {U V : ClosedSubmodule ℂ H}
     (hU : U.toSubmodule.starProjection ∈ M) (hV : V.toSubmodule.starProjection ∈ M) :
     (U ⊓ V : ClosedSubmodule ℂ H).toSubmodule.starProjection ∈ M := by
-  rw [starProjection_mem_iff]
+  rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection]
   intro y hy
-  exact Module.End.invtSubmodule.inf_mem
-    (starProjection_mem_iff.1 hU y hy) (starProjection_mem_iff.1 hV y hy)
+  have hUy := (IsStarProjection.mem_iff isStarProjection_starProjection M).1 hU y hy
+  have hVy := (IsStarProjection.mem_iff isStarProjection_starProjection M).1 hV y hy
+  rw [Submodule.range_starProjection] at hUy hVy
+  exact Module.End.invtSubmodule.inf_mem hUy hVy
 
 /-- The orthogonal projection onto the closed span of a family of closed subspaces whose projections
 lie in `M` again lies in `M`. -/
 theorem starProjection_topologicalClosure_iSup_mem {ι : Sort*} {M : VonNeumannAlgebra H}
     (U : ι → ClosedSubmodule ℂ H) (hU : ∀ i, (U i).toSubmodule.starProjection ∈ M) :
     (⨆ i, U i : ClosedSubmodule ℂ H).toSubmodule.starProjection ∈ M := by
-  rw [starProjection_mem_iff, ClosedSubmodule.toSubmodule_iSup]
+  rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection,
+    ClosedSubmodule.toSubmodule_iSup]
   -- `ClosedSubmodule.toSubmodule_iSup` unfolds to `(⨆ i, (U i).toSubmodule).closure`.
   change ∀ y ∈ M.commutant,
     (⨆ i, (U i).toSubmodule).topologicalClosure ∈ Module.End.invtSubmodule y
-  refine topologicalClosure_mem_invtSubmodule_commutant fun y hy => ?_
+  refine fun y hy => Submodule.topologicalClosure_mem_invtSubmodule ?_
   rw [Module.End.mem_invtSubmodule_iff_map_le, Submodule.map_iSup]
-  exact iSup_le fun i =>
-    ((Module.End.mem_invtSubmodule_iff_map_le _).1 (starProjection_mem_iff.1 (hU i) y hy)).trans
-      (le_iSup (fun j => (U j).toSubmodule) i)
+  refine iSup_le fun i => ?_
+  have hi := (IsStarProjection.mem_iff isStarProjection_starProjection M).1 (hU i) y hy
+  rw [Submodule.range_starProjection, Module.End.mem_invtSubmodule_iff_map_le] at hi
+  exact hi.trans (le_iSup (fun j => (U j).toSubmodule) i)
 
 /-- The orthogonal projection onto the closed span of two closed subspaces whose projections lie in
 `M` again lies in `M`. -/
@@ -169,13 +161,16 @@ theorem starProjection_topologicalClosure_sup_mem {M : VonNeumannAlgebra H}
     {U V : ClosedSubmodule ℂ H}
     (hU : U.toSubmodule.starProjection ∈ M) (hV : V.toSubmodule.starProjection ∈ M) :
     (U ⊔ V : ClosedSubmodule ℂ H).toSubmodule.starProjection ∈ M := by
-  rw [starProjection_mem_iff, ClosedSubmodule.toSubmodule_sup]
+  rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection,
+    ClosedSubmodule.toSubmodule_sup]
   -- `ClosedSubmodule.toSubmodule_sup` unfolds to `(U.toSubmodule ⊔ V.toSubmodule).closure`.
   change ∀ y ∈ M.commutant,
     (U.toSubmodule ⊔ V.toSubmodule).topologicalClosure ∈ Module.End.invtSubmodule y
-  exact topologicalClosure_mem_invtSubmodule_commutant fun y hy =>
-    Module.End.invtSubmodule.sup_mem
-      (starProjection_mem_iff.1 hU y hy) (starProjection_mem_iff.1 hV y hy)
+  refine fun y hy => Submodule.topologicalClosure_mem_invtSubmodule ?_
+  have hUy := (IsStarProjection.mem_iff isStarProjection_starProjection M).1 hU y hy
+  have hVy := (IsStarProjection.mem_iff isStarProjection_starProjection M).1 hV y hy
+  rw [Submodule.range_starProjection] at hUy hVy
+  exact Module.End.invtSubmodule.sup_mem hUy hVy
 
 end SubspaceProjections
 
@@ -249,19 +244,19 @@ theorem toSubmodule_closedRange (p : M.Projection) :
     p.closedRange.toSubmodule = (p : H →L[ℂ] H).range :=
   (rfl)
 
-theorem starProjection_closedRange (p : M.Projection) :
-    p.closedRange.toSubmodule.starProjection = (p : H →L[ℂ] H) :=
-  p.starProjection_range
-
 theorem starProjection_closedRange_mem (p : M.Projection) :
     p.closedRange.toSubmodule.starProjection ∈ M := by
-  rw [p.starProjection_closedRange]
+  have h : p.closedRange.toSubmodule.starProjection = (p : H →L[ℂ] H) := by
+    rw [← p.starProjection_range]
+    exact Submodule.starProjection_inj.2 rfl
+  rw [h]
   exact p.coe_mem
 
 theorem closedRange_injective :
     Function.Injective (closedRange : M.Projection → ClosedSubmodule ℂ H) :=
   fun p q h => Projection.ext <| by
-    rw [← p.starProjection_closedRange, ← q.starProjection_closedRange, h]
+    rw [← p.starProjection_range, ← q.starProjection_range]
+    exact Submodule.starProjection_inj.2 (congrArg ClosedSubmodule.toSubmodule h)
 
 /-- Build a bundled projection in `M` from a closed subspace whose orthogonal projection lies in
 `M`. -/
@@ -372,41 +367,14 @@ theorem closedRange_sInf (S : Set M.Projection) :
     (sInf S).closedRange = sInf (closedRange '' S) :=
   closedRange_ofClosedSubmodule _ _
 
-noncomputable instance : CompleteLattice M.Projection where
-  sup := (· ⊔ ·)
-  le_sup_left p q := le_iff_closedRange_le.2 (by rw [closedRange_sup]; exact le_sup_left)
-  le_sup_right p q := le_iff_closedRange_le.2 (by rw [closedRange_sup]; exact le_sup_right)
-  sup_le p q r hp hq := le_iff_closedRange_le.2 <| by
-    rw [closedRange_sup]
-    exact sup_le (le_iff_closedRange_le.1 hp) (le_iff_closedRange_le.1 hq)
-  inf := (· ⊓ ·)
-  inf_le_left p q := le_iff_closedRange_le.2 (by rw [closedRange_inf]; exact inf_le_left)
-  inf_le_right p q := le_iff_closedRange_le.2 (by rw [closedRange_inf]; exact inf_le_right)
-  le_inf p q r hp hq := le_iff_closedRange_le.2 <| by
-    rw [closedRange_inf]
-    exact le_inf (le_iff_closedRange_le.1 hp) (le_iff_closedRange_le.1 hq)
-  sSup := sSup
-  isLUB_sSup S :=
-    ⟨fun p hp => le_iff_closedRange_le.2 <| by
-        rw [closedRange_sSup]
-        exact le_sSup (Set.mem_image_of_mem _ hp),
-      fun r hr => le_iff_closedRange_le.2 <| by
-        rw [closedRange_sSup, sSup_le_iff]
-        rintro _ ⟨p, hp, rfl⟩
-        exact le_iff_closedRange_le.1 (hr hp)⟩
-  sInf := sInf
-  isGLB_sInf S :=
-    ⟨fun p hp => le_iff_closedRange_le.2 <| by
-        rw [closedRange_sInf]
-        exact sInf_le (Set.mem_image_of_mem _ hp),
-      fun r hr => le_iff_closedRange_le.2 <| by
-        rw [closedRange_sInf, le_sInf_iff]
-        rintro _ ⟨p, hp, rfl⟩
-        exact le_iff_closedRange_le.1 (hr hp)⟩
-  top := ⊤
-  le_top p := le_iff_closedRange_le.2 (by rw [closedRange_top]; exact le_top)
-  bot := ⊥
-  bot_le p := le_iff_closedRange_le.2 (by rw [closedRange_bot]; exact bot_le)
+noncomputable instance : CompleteLattice M.Projection :=
+  closedRange_injective.completeLattice closedRange
+    (fun {p q} => le_iff_closedRange_le.symm)
+    (fun {p q} => by simp only [lt_iff_le_not_ge, le_iff_closedRange_le])
+    closedRange_sup closedRange_inf
+    (fun S => by rw [closedRange_sSup, sSup_image])
+    (fun S => by rw [closedRange_sInf, sInf_image])
+    closedRange_top closedRange_bot
 
 @[simp]
 theorem closedRange_iSup {ι : Sort*} (p : ι → M.Projection) :
@@ -439,16 +407,17 @@ intersection of their closed ranges. -/
 theorem coe_iInf {ι : Sort*} (p : ι → M.Projection) :
     ((⨅ i, p i : M.Projection) : H →L[ℂ] H) =
       (⨅ i, (p i).closedRange).toSubmodule.starProjection := by
-  rw [← starProjection_closedRange (⨅ i, p i), closedRange_iInf]
+  rw [← (⨅ i, p i).starProjection_range]
+  exact Submodule.starProjection_inj.2 (by rw [← toSubmodule_closedRange, closedRange_iInf])
 
 /-- The join of an indexed family of projections in `M` is the orthogonal projection onto the closed
 span of their ranges. -/
 theorem coe_iSup {ι : Sort*} (p : ι → M.Projection) :
     ((⨆ i, p i : M.Projection) : H →L[ℂ] H) =
       (⨆ i, (p i : H →L[ℂ] H).range).topologicalClosure.starProjection := by
-  rw [← starProjection_closedRange (⨆ i, p i)]
+  rw [← (⨆ i, p i).starProjection_range]
   refine Submodule.starProjection_inj.2 ?_
-  rw [closedRange_iSup, ClosedSubmodule.toSubmodule_iSup]
+  rw [← toSubmodule_closedRange, closedRange_iSup, ClosedSubmodule.toSubmodule_iSup]
   rfl
 
 /-! #### Orthocomplement and De Morgan's laws -/
@@ -566,24 +535,6 @@ end Projection
 
 section CentralSupport
 
-/-- For a star projection `z` and bounded operator `a`, `z * a = a` holds iff `range a ≤ range z`.
--/
-private theorem starProjection_mul_eq_self_iff {z a : H →L[ℂ] H} (hz : IsStarProjection z) :
-    z * a = a ↔ a.range ≤ z.range := by
-  have : z.range.HasOrthogonalProjection :=
-    ContinuousLinearMap.IsIdempotentElem.hasOrthogonalProjection_range hz.isIdempotentElem
-  have hz_eq : z = z.range.starProjection :=
-    (isStarProjection_iff_eq_starProjection_range.1 hz).2
-  constructor
-  · intro h
-    rintro _ ⟨ξ, rfl⟩
-    exact ⟨a ξ, congr($h ξ)⟩
-  · intro h
-    ext ξ
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, hz_eq,
-      Submodule.starProjection_eq_self_iff]
-    exact h ⟨ξ, rfl⟩
-
 /-- The **central support** of `a : H →L[ℂ] H` relative to `M`, bundled as a projection in the
 center `M ⊓ M.commutant`: the smallest central projection `z` satisfying `z * a = a`. -/
 noncomputable def centralSupportProjection (M : VonNeumannAlgebra H) (a : H →L[ℂ] H) :
@@ -615,13 +566,19 @@ theorem centralSupport_mem_commutant (M : VonNeumannAlgebra H) (a : H →L[ℂ] 
 @[simp]
 theorem centralSupport_mul_self (M : VonNeumannAlgebra H) (a : H →L[ℂ] H) :
     M.centralSupport a * a = a := by
-  rw [← coe_centralSupportProjection,
-    starProjection_mul_eq_self_iff (M.centralSupportProjection a).isStarProjection,
+  rw [← coe_centralSupportProjection, ← ContinuousLinearMap.coe_inj]
+  change (M.centralSupportProjection a : H →L[ℂ] H).toLinearMap.comp a.toLinearMap =
+    a.toLinearMap
+  rw [LinearMap.IsIdempotentElem.comp_eq_right_iff (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+      (M.centralSupportProjection a).isStarProjection.isIdempotentElem),
     ← Projection.toSubmodule_closedRange, centralSupportProjection, Projection.closedRange_sInf,
     sInf_image, ClosedSubmodule.toSubmodule_iInf]
   refine le_iInf fun z => ?_
   rw [ClosedSubmodule.toSubmodule_iInf]
-  exact le_iInf fun hz => (starProjection_mul_eq_self_iff z.isStarProjection).1 hz
+  exact le_iInf fun hz =>
+    (LinearMap.IsIdempotentElem.comp_eq_right_iff (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+      z.isStarProjection.isIdempotentElem) a.toLinearMap).1
+      (congrArg ContinuousLinearMap.toLinearMap hz)
 
 theorem mul_centralSupport_self {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} (ha : a ∈ M) :
     a * M.centralSupport a = a := by
@@ -635,9 +592,16 @@ theorem centralSupportProjection_le_iff {M : VonNeumannAlgebra H} {a : H →L[�
     M.centralSupportProjection a ≤ z ↔ (z : H →L[ℂ] H) * a = a :=
   ⟨fun h => by
       have hrange : a.range ≤ (z : H →L[ℂ] H).range :=
-        ((starProjection_mul_eq_self_iff (M.isStarProjection_centralSupport a)).1
-          (M.centralSupport_mul_self a)).trans (Projection.le_iff_range_le.1 h)
-      exact (starProjection_mul_eq_self_iff z.isStarProjection).2 hrange,
+        ((LinearMap.IsIdempotentElem.comp_eq_right_iff
+          (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+            (M.isStarProjection_centralSupport a).isIdempotentElem) a.toLinearMap).1
+            (congrArg ContinuousLinearMap.toLinearMap
+              (M.centralSupport_mul_self a))).trans (Projection.le_iff_range_le.1 h)
+      exact ContinuousLinearMap.coe_inj.1
+        ((LinearMap.IsIdempotentElem.comp_eq_right_iff
+          (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+            z.isStarProjection.isIdempotentElem) a.toLinearMap).2
+          hrange),
     fun hz => sInf_le hz⟩
 
 /-- Universal property of `M.centralSupport`: for a central projection `z` of `M`,
@@ -692,16 +656,21 @@ theorem centralSupport_eq_starProjection_closure_span {M : VonNeumannAlgebra H} 
     rw [Module.End.mem_invtSubmodule, Submodule.span_le]
     rintro _ ⟨x, hx, ξ, rfl⟩
     exact Submodule.subset_span ⟨m * x, mul_mem hm hx, ξ, rfl⟩
-  have hKM : K.starProjection ∈ M :=
-    starProjection_mem_iff.2 (topologicalClosure_mem_invtSubmodule_commutant hW_comm)
+  have hKM : K.starProjection ∈ M := by
+    rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection]
+    exact fun y hy => Submodule.topologicalClosure_mem_invtSubmodule (hW_comm y hy)
   have hKC : K.starProjection ∈ M.commutant := by
-    rw [starProjection_mem_iff]
-    exact topologicalClosure_mem_invtSubmodule_commutant (M := M.commutant)
-      (by simpa only [M.commutant_commutant] using hW_M)
+    rw [IsStarProjection.mem_iff isStarProjection_starProjection M.commutant,
+      Submodule.range_starProjection]
+    exact fun m hm => Submodule.topologicalClosure_mem_invtSubmodule
+      (hW_M m (by simpa only [M.commutant_commutant] using hm))
   -- Step 2: `K.starProjection * a = a` since `a ξ = 1 (a ξ) ∈ W ≤ K`.
   have hKa : K.starProjection * a = a := by
-    rw [starProjection_mul_eq_self_iff isStarProjection_starProjection,
-      Submodule.range_starProjection]
+    refine ContinuousLinearMap.coe_inj.1 <|
+      (LinearMap.IsIdempotentElem.comp_eq_right_iff
+        (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+          (isStarProjection_starProjection (U := K)).isIdempotentElem) a.toLinearMap).2 ?_
+    rw [Submodule.range_starProjection]
     rintro _ ⟨ξ, rfl⟩
     exact W.le_topologicalClosure (Submodule.subset_span ⟨1, one_mem M, ξ, rfl⟩)
   -- Step 3: Every central projection `z` with `z * a = a` contains `W`, hence `K`, in its range.
@@ -759,6 +728,13 @@ def ProjectionEquivalent (M : VonNeumannAlgebra H) (p q : H →L[ℂ] H) : Prop 
   IsStarProjection p ∧ IsStarProjection q ∧ p ∈ M ∧ q ∈ M ∧
   ∃ v : H →L[ℂ] H, v ∈ M ∧ star v * v = p ∧ v * star v = q
 
+/-- Characterization of Murray–von Neumann equivalence `VonNeumannAlgebra.ProjectionEquivalent`. -/
+theorem projectionEquivalent_iff {M : VonNeumannAlgebra H} {p q : H →L[ℂ] H} :
+    ProjectionEquivalent M p q ↔
+      IsStarProjection p ∧ IsStarProjection q ∧ p ∈ M ∧ q ∈ M ∧
+        ∃ v : H →L[ℂ] H, v ∈ M ∧ star v * v = p ∧ v * star v = q :=
+  Iff.rfl
+
 namespace ProjectionEquivalent
 
 variable {M : VonNeumannAlgebra H} {p q r : H →L[ℂ] H}
@@ -774,6 +750,28 @@ theorem mem_left (h : ProjectionEquivalent M p q) : p ∈ M :=
 
 theorem mem_right (h : ProjectionEquivalent M p q) : q ∈ M :=
   h.2.2.2.1
+
+/-- Recover an implementing operator `v ∈ M` for a Murray–von Neumann equivalence
+`ProjectionEquivalent M p q`. -/
+theorem exists_mem (h : ProjectionEquivalent M p q) :
+    ∃ v : H →L[ℂ] H, v ∈ M ∧ star v * v = p ∧ v * star v = q :=
+  h.2.2.2.2
+
+private theorem witness_mul_left_eq_self {p q v : H →L[ℂ] H} (hp : IsStarProjection p)
+    (hvp : star v * v = p) (hvq : v * star v = q) : q * v = v := by
+  have hv_pi : v.IsPartialIsometry := by
+    rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
+      ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hvp]
+    exact hp
+  rw [← hvq, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
+    ContinuousLinearMap.star_eq_adjoint]
+  exact hv_pi.comp_adjoint_comp
+
+private theorem witness_mul_right_eq_self {p q v : H →L[ℂ] H} (hp : IsStarProjection p)
+    (hvp : star v * v = p) (hvq : v * star v = q) : v * p = v := by
+  calc v * p
+    _ = (v * star v) * v := by rw [← hvp, mul_assoc]
+    _ = v := by rw [hvq, witness_mul_left_eq_self hp hvp hvq]
 
 /-- Reflexivity of Murray–von Neumann equivalence on star projections in `M`. -/
 theorem refl (hp : IsStarProjection p) (hpM : p ∈ M) : ProjectionEquivalent M p p :=
@@ -819,30 +817,10 @@ theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (
     ProjectionEquivalent M (p₁ + p₂) (q₁ + q₂) := by
   obtain ⟨hp₁, hq₁, hp₁M, hq₁M, v₁, hv₁M, hv₁p, hv₁q⟩ := h₁
   obtain ⟨hp₂, hq₂, hp₂M, hq₂M, v₂, hv₂M, hv₂p, hv₂q⟩ := h₂
-  have hv₁_pi : v₁.IsPartialIsometry := by
-    rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
-      ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hv₁p]
-    exact hp₁
-  have hv₂_pi : v₂.IsPartialIsometry := by
-    rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
-      ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hv₂p]
-    exact hp₂
-  have hqv₁ : q₁ * v₁ = v₁ := by
-    rw [← hv₁q, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.star_eq_adjoint]
-    exact hv₁_pi.comp_adjoint_comp
-  have hqv₂ : q₂ * v₂ = v₂ := by
-    rw [← hv₂q, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.star_eq_adjoint]
-    exact hv₂_pi.comp_adjoint_comp
-  have hv₁p_r : v₁ * p₁ = v₁ := by
-    calc v₁ * p₁
-      _ = (v₁ * star v₁) * v₁ := by rw [← hv₁p, mul_assoc]
-      _ = v₁ := by rw [hv₁q, hqv₁]
-  have hv₂p_r : v₂ * p₂ = v₂ := by
-    calc v₂ * p₂
-      _ = (v₂ * star v₂) * v₂ := by rw [← hv₂p, mul_assoc]
-      _ = v₂ := by rw [hv₂q, hqv₂]
+  have hqv₁ : q₁ * v₁ = v₁ := witness_mul_left_eq_self hp₁ hv₁p hv₁q
+  have hqv₂ : q₂ * v₂ = v₂ := witness_mul_left_eq_self hp₂ hv₂p hv₂q
+  have hv₁p_r : v₁ * p₁ = v₁ := witness_mul_right_eq_self hp₁ hv₁p hv₁q
+  have hv₂p_r : v₂ * p₂ = v₂ := witness_mul_right_eq_self hp₂ hv₂p hv₂q
   have hcross₁ : star v₁ * v₂ = 0 := by
     calc star v₁ * v₂
       _ = star (q₁ * v₁) * (q₂ * v₂) := by rw [hqv₁, hqv₂]
@@ -873,14 +851,7 @@ theorem centralSupport_eq (h : ProjectionEquivalent M p q) :
   intro e₁ e₂ ⟨he₁, _, _, _, v, hvM, hv₁, hv₂⟩
   rw [centralSupportProjection_le_iff]
   set z := M.centralSupport e₂
-  have hv_pi : v.IsPartialIsometry := by
-    rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
-      ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hv₁]
-    exact he₁
-  have hqv : e₂ * v = v := by
-    rw [← hv₂, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.star_eq_adjoint]
-    exact hv_pi.comp_adjoint_comp
+  have hqv : e₂ * v = v := witness_mul_left_eq_self he₁ hv₁ hv₂
   have hzv : z * star v = star v * z :=
     (mem_commutant_iff.1 (M.centralSupport_mem_commutant e₂) (star v) (star_mem hvM)).symm
   calc z * e₁
@@ -928,10 +899,10 @@ private theorem starProjection_orthogonal_ker_one_sub_mul {M : VonNeumannAlgebra
     rw [eq_comm (a := (q : H →L[ℂ] H) ξ), ← p.starProjection_range,
       Submodule.starProjection_eq_self_iff]
     rw [eq_comm (a := (q : H →L[ℂ] H) ξ), Projection.coe_inf]
-    have hle : (p.closedRange ⊓ q.closedRange).toSubmodule ≤ q.closedRange.toSubmodule :=
+    have hle : (p.closedRange ⊓ q.closedRange).toSubmodule ≤ (q : H →L[ℂ] H).range :=
       inf_le_right
     have hcomp := DFunLike.congr_fun (Submodule.starProjection_comp_starProjection_of_le hle) ξ
-    rw [ContinuousLinearMap.comp_apply, q.starProjection_closedRange] at hcomp
+    rw [ContinuousLinearMap.comp_apply, q.starProjection_range] at hcomp
     rw [← hcomp, Submodule.starProjection_eq_self_iff, ClosedSubmodule.toSubmodule_inf,
       p.toSubmodule_closedRange, q.toSubmodule_closedRange, Submodule.mem_inf]
     exact (and_iff_left (LinearMap.mem_range_self _ ξ)).symm
@@ -969,13 +940,6 @@ theorem parallelogram_projectionEquivalent {M : VonNeumannAlgebra H} (p q : M.Pr
         abel
   rw [← hfinal, ← hinit]
   exact (projectionEquivalent_orthogonal_ker_topologicalClosure_range hx).symm
-
-/-- Symmetric form of **Kaplansky's parallelogram law** with `p` and `q` interchanged:
-`(p ⊔ q) - q` and `p - (p ⊓ q)` are Murray–von Neumann equivalent in `M`. -/
-theorem parallelogram_projectionEquivalent' {M : VonNeumannAlgebra H} (p q : M.Projection) :
-    ProjectionEquivalent M ((p ⊔ q : M.Projection) - q) (p - (p ⊓ q : M.Projection)) := by
-  rw [sup_comm, inf_comm]
-  exact parallelogram_projectionEquivalent q p
 
 end Equivalence
 
