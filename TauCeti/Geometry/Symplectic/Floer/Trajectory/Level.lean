@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -496,20 +497,12 @@ theorem exists_eq_comp_add_of_tendstoLocallyUniformly (hH : ContDiff ℝ 1 (uncu
     have h := hT (u k) (J k) (hu k) (hper k) (huK k) (hJc k) (hJM k) (hfloer k) (hL k)
     exact ⟨by linarith [h _ _ (hσ' k).1 (hσ k).2], h _ _ (hσ k).1 (hσ' k).2⟩
   obtain ⟨δ, -, φ, hφ, hδ⟩ := isCompact_Icc.tendsto_subseq hd
-  refine ⟨δ, fun z ↦ ?_⟩
   have hat {f : ℕ → ℝ × ℝ → V} {F : ℝ × ℝ → V} (hF : TendstoLocallyUniformly f F atTop)
       (y : ℝ × ℝ) : Tendsto (fun k ↦ f (φ k) y) atTop (𝓝 (F y)) :=
     ((hF.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ y)).comp hφ.tendsto_atTop
-  -- Along the subsequence, the translate at `σ'` is within `L |σ' - σ - δ|` of the translate of
-  -- the one at `σ` by `δ`.
-  refine tendsto_nhds_unique (hat hg' z) ((hat hg (z + (δ, 0))).congr_dist ?_)
-  have hδ' : Tendsto (fun k ↦ (L : ℝ) * |σ' (φ k) - σ (φ k) - δ|) atTop (𝓝 0) := by
-    simpa using (((continuous_sub_right δ).abs.tendsto δ).comp hδ).const_mul (L : ℝ)
-  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun k ↦ ?_) hδ'
-  have hdist : dist (z + (δ, 0) + (σ (φ k), 0)) (z + (σ' (φ k), 0)) =
-      |σ' (φ k) - σ (φ k) - δ| := by
-    rw [dist_comm]
-    simp [Prod.dist_eq, Real.dist_eq, sub_add_eq_sub_sub, sub_right_comm _ δ]
-  exact hdist ▸ (hL (φ k)).dist_le_mul _ _
+  -- Along the subsequence, the shifts `(σ' k, 0) - (σ k, 0)` converge to `(δ, 0)`.
+  exact ⟨δ, apply_eq_apply_add_of_tendsto_sub (u := fun k ↦ u (φ k)) (fun k ↦ hL (φ k))
+    (σ := fun k ↦ (σ (φ k), 0)) (σ' := fun k ↦ (σ' (φ k), 0))
+    (by simpa using hδ.prodMk_nhds (tendsto_const_nhds (x := (0 : ℝ)))) (hat hg) (hat hg')⟩
 
 end TauCeti.SymplecticForm

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Data.Finset.Sort
 import Mathlib.Order.Filter.AtTopBot.Field
 import Mathlib.Topology.Algebra.Module.Cardinality
 
@@ -22,6 +23,13 @@ choose the offset `t` outside the countable set `C - hℤ`, so that no grid poin
 For the critical values of a function this is a sequence of regular values whose consecutive
 bands each contain at most one critical value; the sublevels at these values filter the space by
 its critical levels.
+
+Between two points `a₀ < a₁` of `C` there is also a finite version with exactly one point of `C`
+in each band: the midpoints `b 0 < ⋯ < b m` of consecutive points of `C ∩ [a₀, a₁]` avoid `C`, and
+`[a₀, b 0]`, each `[b i, b (i + 1)]` and `[b m, a₁]` contain exactly one point of `C`
+(`Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton`). For the actions of the periodic
+orbits of a Hamiltonian, these are the values at which a breaking sequence of Floer trajectories is
+normalized, one between each pair of consecutive orbit actions.
 -/
 
 public section
@@ -61,3 +69,88 @@ theorem Set.Finite.exists_strictMono_notMem_subsingleton_inter_Icc {C : Set ℝ}
     have := hsep x hx y hy hxy
     have : |x - y| ≤ h := abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
     linarith
+
+/-- The points of a finite set `C ⊆ ℝ` in `[a₀, a₁]`, for `a₀ < a₁` in `C`, listed in increasing
+order `a₀ = d 0 < d 1 < ⋯ < d (m + 1) = a₁`: no point of `C` lies strictly between two consecutive
+ones. -/
+private theorem Set.Finite.exists_strictMono_fin_consecutive {C : Set ℝ} (hC : C.Finite)
+    {a₀ a₁ : ℝ} (h₀ : a₀ ∈ C) (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
+    ∃ m : ℕ, ∃ d : Fin (m + 2) → ℝ, StrictMono d ∧ (∀ j, d j ∈ C) ∧ d 0 = a₀ ∧
+      d (Fin.last (m + 1)) = a₁ ∧
+      ∀ (i : Fin (m + 1)) {x : ℝ}, x ∈ C → d i.castSucc < x → x < d i.succ → False := by
+  set s := (hC.inter_of_left (Icc a₀ a₁)).toFinset with hs
+  have hmem {x : ℝ} : x ∈ s ↔ x ∈ C ∧ x ∈ Icc a₀ a₁ := by simp [hs]
+  have hcard : 2 ≤ s.card := by
+    have hsub : ({a₀, a₁} : Finset ℝ) ⊆ s := by
+      intro x hx
+      rcases Finset.mem_insert.1 hx with rfl | hx
+      · exact hmem.2 ⟨h₀, le_rfl, h.le⟩
+      · rw [Finset.mem_singleton.1 hx]
+        exact hmem.2 ⟨h₁, h.le, le_rfl⟩
+    simpa [Finset.card_pair h.ne] using Finset.card_le_card hsub
+  obtain ⟨m, hm⟩ : ∃ m, s.card = m + 2 := ⟨s.card - 2, by omega⟩
+  set d := s.orderEmbOfFin hm
+  have hdI (j : Fin (m + 2)) : d j ∈ Icc a₀ a₁ := (hmem.1 (s.orderEmbOfFin_mem hm j)).2
+  -- Every point of `C` in `[a₀, a₁]` is some `d j`.
+  have hd {x : ℝ} (hx : x ∈ C) (hxI : x ∈ Icc a₀ a₁) : ∃ j, d j = x := by
+    have hx' : x ∈ Set.range d := by
+      rw [Finset.range_orderEmbOfFin]
+      exact hmem.2 ⟨hx, hxI⟩
+    exact hx'
+  refine ⟨m, d, d.strictMono, fun j ↦ (hmem.1 (s.orderEmbOfFin_mem hm j)).1, ?_, ?_,
+    fun i x hx hx₁ hx₂ ↦ ?_⟩
+  · obtain ⟨j, hj⟩ := hd h₀ ⟨le_rfl, h.le⟩
+    exact le_antisymm (hj ▸ d.monotone (Fin.zero_le j)) (hdI 0).1
+  · obtain ⟨j, hj⟩ := hd h₁ ⟨h.le, le_rfl⟩
+    exact le_antisymm (hdI _).2 (hj ▸ d.monotone (Fin.le_last j))
+  · obtain ⟨j, rfl⟩ := hd hx ⟨(hdI _).1.trans hx₁.le, hx₂.le.trans (hdI _).2⟩
+    have h₁ := d.lt_iff_lt.1 hx₁
+    have h₂ := d.lt_iff_lt.1 hx₂
+    rw [Fin.lt_def, Fin.val_castSucc] at h₁
+    rw [Fin.lt_def, Fin.val_succ] at h₂
+    omega
+
+/-- **Finitely many points separating a finite set between two of its points.** Let `C ⊆ ℝ` be
+finite and let `a₀ < a₁` be two of its points. There are strictly increasing reals
+`b 0 < ⋯ < b m` in `(a₀, a₁)`, none of them in `C`, such that `a₀` is the only point of `C` in
+`[a₀, b 0]`, `a₁` is the only point of `C` in `[b m, a₁]`, and each `[b i, b (i + 1)]` contains
+exactly one point of `C`. -/
+theorem Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton {C : Set ℝ} (hC : C.Finite)
+    {a₀ a₁ : ℝ} (h₀ : a₀ ∈ C) (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
+    ∃ m : ℕ, ∃ b : Fin (m + 1) → ℝ, StrictMono b ∧ (∀ i, b i ∉ C) ∧ a₀ < b 0 ∧
+      b (Fin.last m) < a₁ ∧ C ∩ Icc a₀ (b 0) = {a₀} ∧ C ∩ Icc (b (Fin.last m)) a₁ = {a₁} ∧
+      ∀ i : Fin m, ∃ c, C ∩ Icc (b i.castSucc) (b i.succ) = {c} := by
+  -- The points of `C` in `[a₀, a₁]`, in increasing order `a₀ = d 0 < d 1 < ⋯ < d (m + 1) = a₁`.
+  obtain ⟨m, d, hdm, hdC, hd0, hdl, hgap⟩ := hC.exists_strictMono_fin_consecutive h₀ h₁ h
+  have hlt (i : Fin (m + 1)) : d i.castSucc < d i.succ := hdm Fin.castSucc_lt_succ
+  -- `b i` is the midpoint of `d i` and `d (i + 1)`.
+  set b : Fin (m + 1) → ℝ := fun i ↦ (d i.castSucc + d i.succ) / 2 with hb
+  have hbl (i : Fin (m + 1)) : d i.castSucc < b i := by simp only [hb]; linarith [hlt i]
+  have hbu (i : Fin (m + 1)) : b i < d i.succ := by simp only [hb]; linarith [hlt i]
+  have hb0 : a₀ < b 0 := by simpa [hd0] using hbl 0
+  have hbm : b (Fin.last m) < a₁ := by simpa [hdl] using hbu (Fin.last m)
+  refine ⟨m, b, Fin.strictMono_iff_lt_succ.2 fun i ↦ ?_, fun i hi ↦ hgap i hi (hbl i) (hbu i),
+    hb0, hbm, ?_, ?_, fun i ↦ ?_⟩
+  · have h₁ := hbu i.castSucc
+    have h₂ := hbl i.succ
+    rw [Fin.succ_castSucc] at h₁
+    linarith
+  · refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨h₀, le_rfl, hb0.le⟩, fun x ⟨hx, hx₁, hx₂⟩ ↦ ?_⟩
+    by_contra hne
+    exact hgap 0 hx (by simpa [hd0] using lt_of_le_of_ne hx₁ (Ne.symm hne))
+      (hx₂.trans_lt (hbu 0))
+  · refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨h₁, hbm.le, le_rfl⟩, fun x ⟨hx, hx₁, hx₂⟩ ↦ ?_⟩
+    by_contra hne
+    exact hgap (Fin.last m) hx ((hbl _).trans_le hx₁)
+      (by simpa [hdl] using lt_of_le_of_ne hx₂ hne)
+  · -- The only point of `C` in `[b i, b (i + 1)]` is `d (i + 1)`.
+    have h₁ := hbu i.castSucc
+    have h₂ := hbl i.succ
+    rw [Fin.succ_castSucc] at h₁
+    refine ⟨d i.succ.castSucc, Set.eq_singleton_iff_unique_mem.2
+      ⟨⟨hdC _, h₁.le, h₂.le⟩, fun x ⟨hx, hx₁, hx₂⟩ ↦ ?_⟩⟩
+    rcases lt_trichotomy x (d i.succ.castSucc) with hlt' | heq | hgt
+    · exact (hgap i.castSucc hx ((hbl _).trans_le hx₁)
+        (by rw [Fin.succ_castSucc]; exact hlt')).elim
+    · exact heq
+    · exact (hgap i.succ hx hgt (hx₂.trans_lt (hbu _))).elim

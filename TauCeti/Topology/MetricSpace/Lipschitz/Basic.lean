@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
+import Mathlib.Analysis.Normed.Group.Continuity
 import TauCeti.Algebra.Order.Field.Basic
 
 /-!
@@ -19,6 +21,9 @@ This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
 * A `K`-Lipschitz map with `1 ≤ K` scales the bounded-metric gauge `d / (1 + d)` by at most `K`,
   and a `K`-Lipschitz binary map on a product pseudometric space bounds the output gauge by `K`
   times the sum of the component gauges.
+* For uniformly `K`-Lipschitz maps `u i` on a seminormed group, pointwise limits of the translates
+  `z ↦ u i (z + σ i)` and `z ↦ u i (z + σ' i)` are translates of each other when `σ' i - σ i`
+  converges.
 
 ## Main results
 
@@ -29,6 +34,8 @@ This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
   with `1 ≤ K`.
 * `LipschitzWith.dist_div_one_add_dist_prod_le`: bounded-gauge estimate for a `K`-Lipschitz binary
   map `α × β → γ` with `1 ≤ K`.
+* `TauCeti.apply_eq_apply_add_of_tendsto_sub`: limits of translates of uniformly Lipschitz maps
+  along shifts with convergent difference are translates of each other.
 
 ## References
 
@@ -40,6 +47,30 @@ public section
 open scoped NNReal
 
 namespace TauCeti
+
+open Filter Topology in
+/-- **Limits of translates of uniformly Lipschitz maps.** Let `u i` be `K`-Lipschitz maps on a
+seminormed additive group, and let `σ i`, `σ' i` be shifts whose difference `σ' i - σ i` tends to
+`δ`. If the translates `z ↦ u i (z + σ i)` converge pointwise to `g` and the translates
+`z ↦ u i (z + σ' i)` converge pointwise to `g'`, then `g'` is the translate `z ↦ g (z + δ)`. -/
+theorem apply_eq_apply_add_of_tendsto_sub {ι E F : Type*} [SeminormedAddCommGroup E]
+    [MetricSpace F] {l : Filter ι} [l.NeBot] {u : ι → E → F} {K : ℝ≥0}
+    (hu : ∀ i, LipschitzWith K (u i)) {σ σ' : ι → E} {δ : E}
+    (hδ : Tendsto (fun i ↦ σ' i - σ i) l (𝓝 δ)) {g g' : E → F}
+    (hg : ∀ z, Tendsto (fun i ↦ u i (z + σ i)) l (𝓝 (g z)))
+    (hg' : ∀ z, Tendsto (fun i ↦ u i (z + σ' i)) l (𝓝 (g' z))) (z : E) :
+    g' z = g (z + δ) := by
+  refine tendsto_nhds_unique (hg' z) ((hg (z + δ)).congr_dist ?_)
+  -- The points `z + δ + σ i` and `z + σ' i` are `‖σ' i - σ i - δ‖` apart.
+  have h : Tendsto (fun i ↦ (K : ℝ) * ‖σ' i - σ i - δ‖) l (𝓝 0) := by
+    simpa using (tendsto_iff_norm_sub_tendsto_zero.1 hδ).const_mul (K : ℝ)
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_) h
+  calc dist (u i (z + δ + σ i)) (u i (z + σ' i))
+      ≤ K * dist (z + δ + σ i) (z + σ' i) := (hu i).dist_le_mul _ _
+    _ = K * ‖σ' i - σ i - δ‖ := by
+      rw [dist_eq_norm, ← norm_neg]
+      congr 2
+      abel
 
 /-- The shifted positive part `t ↦ max (t - k) 0` is `1`-Lipschitz on the real line. -/
 theorem lipschitzWith_max_sub_const_zero (k : ℝ) :
