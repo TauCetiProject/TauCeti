@@ -393,15 +393,15 @@ noncomputable def stripReparam (F : (M × M) ≃ₘ^n⟮J.prod J, J.prod J⟯ (M
         ((contMDiff_stripReparam hU hK hKU hρ hρK F.symm.contMDiff hF').comp
           (contMDiff_fst.prodMk contMDiff_snd))) }
   fst_apply _ := rfl
-  snd_apply_zero' x :=
-    (by rw [hρ₀, stripReparam_id hF, F.apply_symm_apply] :
-      TauCeti.stripReparam U (ρ 0) F (F.symm x) = x)
+  snd_apply_zero' x := by
+    rw [← Diffeomorph.coe_toEquiv, Equiv.coe_fn_mk, hρ₀, stripReparam_id hF, F.apply_symm_apply]
 
 variable (F : (M × M) ≃ₘ^n⟮J.prod J, J.prod J⟯ (M × M)) (hF : PreservesStripLeaves U F)
   (hF' : PreservesStripLeaves U F.symm) (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U)
   (hρ : ContMDiff ((𝓡∂ 1).prod J) J n fun q : I × M ↦ ρ q.1 q.2)
   (hρK : ∀ t, ∀ x ∉ K, ρ t x = x) (hρU : ∀ t, MapsTo (ρ t) U U) (hρ₀ : ρ 0 = id)
 
+@[simp]
 theorem stripReparam_apply (p : I × (M × M)) :
     stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀ p =
       TauCeti.stripReparam U (ρ p.1) F (F.symm p.2) :=
