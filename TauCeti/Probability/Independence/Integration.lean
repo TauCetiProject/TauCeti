@@ -184,8 +184,9 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
   hY.integral_fun_prod_comp_fiberwise_of_maps_to (fun _ _ ↦ Finset.mem_univ _)
     (fun j _ ↦ mY j) (fun i _ ↦ hφ i)
 
-/-- A product of functions of independent variables has expectation zero when one variable is
-read exactly once and its sole factor has expectation zero. -/
+/-- The totalized Bochner integral of a product of functions of independent variables is zero
+when one variable is read exactly once and its sole factor has integral zero. In particular,
+the product has expectation zero whenever it is integrable. -/
 theorem integral_fun_prod_comp_eq_zero_of_singleton_fiber
     {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [Fintype ι]
     {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) (mY : ∀ j, AEMeasurable (Y j) P)

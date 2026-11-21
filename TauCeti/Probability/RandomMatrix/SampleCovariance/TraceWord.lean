@@ -20,18 +20,18 @@ column indices `v : Fin k → n` (`Matrix.trace_mul_conjTranspose_pow_eq_sum_pro
 the entry `X (u t) (v t)` and the conjugate entry `star (X (u (t + 1)) (v t))` for each `t`; the
 positions it reads are `TauCeti.bipartiteEdge u v`.
 
-When the entries are independent and centred, a word reading some position exactly once has
-expectation zero: that entry, or its conjugate, is independent of all the other factors and has
-mean zero. Consequently only the words reading each of their positions at least twice contribute
-to the expected moment. Such a word visits at most `k + 1` row and column indices
+When the entries are independent and have zero integrals, the totalized Bochner integral of a
+word reading some position exactly once vanishes. For integrable word products this gives
+expectation zero, so only the words reading each position at least twice contribute to the
+expected moment. Such a word visits at most `k + 1` row and column indices
 (`TauCeti.card_image_add_card_image_le_add_one_of_no_singleton_edge`), which is what makes the
 words with fewer indices negligible after normalization. Neither identical distribution nor any
 moment condition beyond integrability of the products is needed for this reduction.
 
 ## Main results
 
-* `TauCeti.Probability.integral_prod_apply_mul_star_apply_eq_zero`: for independent centred
-  entries, a bipartite word reading some position exactly once has expectation zero.
+* `TauCeti.Probability.integral_prod_apply_mul_star_apply_eq_zero`: for independent entries with
+  zero integrals, a bipartite word reading some position exactly once has integral zero.
 * `TauCeti.Probability.integrable_prod_apply_mul_star_apply`: for entries in `L²ᵏ`, the product
   along a bipartite word of half-length `k` is integrable.
 * `TauCeti.Probability.integral_trace_mul_conjTranspose_pow`: for independent centred entries in
@@ -78,9 +78,10 @@ private theorem prod_mul_star_eq_prod_readFactor {k : ℕ} (A : Matrix p n 𝕜)
   simp [Fintype.prod_sum_type, readFactor, Finset.prod_mul_distrib]
 
 /-- **Singleton positions vanish.** Let the entries of a random rectangular matrix `X` be
-independent and centred. If a bipartite word `u, v` reads some position at exactly one of its
-steps, then the product of the entries `X (u t) (v t)` and conjugate entries
-`star (X (u (t + 1)) (v t))` along the word has expectation zero. -/
+independent with zero Bochner integrals. If a bipartite word `u, v` reads some position exactly
+once, then the product of the entries `X (u t) (v t)` and conjugate entries
+`star (X (u (t + 1)) (v t))` along the word has totalized Bochner integral zero.
+In particular, an integrable word product has expectation zero. -/
 theorem integral_prod_apply_mul_star_apply_eq_zero
     (hXm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P)
     (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
