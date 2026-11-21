@@ -7,31 +7,40 @@ module
 
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
 # Minimal primes and localization
 
-This file collects two facts about the localization of a commutative semiring `A` at a prime `m`
-and the minimal primes below `m`.
+This file collects facts about the localization of a commutative ring or semiring and its minimal
+primes:
 
-If the localization `A_m` is a domain, as it is when `A_m` is a regular local ring, then the
-kernel of `A → A_m` is a prime contained in every prime `q ≤ m`, so it is the only minimal prime
-of `A` contained in `m`. Consequently every prime `q ≤ m` contains every minimal prime `P ≤ m`:
-the primes below `m` all lie on the single irreducible component `V(P)` of `Spec A` through `m`.
-This is what makes the height of `m` a lower bound for the dimension of that component.
-
-If `m` is minimal over a radical ideal `I`, then `I` generates the maximal ideal of `A_m`. For a
-principal ideal `I = (f)` with `A ⧸ (f)` reduced, this says that `f` generates the maximal ideal
-of the localization at every prime minimal over `f`.
+* If the localization `A_m` is a domain, as it is when `A_m` is a regular local ring, then the
+  kernel of `A → A_m` is a prime contained in every prime `q ≤ m`, so it is the only minimal prime
+  of `A` contained in `m`. Consequently every prime `q ≤ m` contains every minimal prime `P ≤ m`:
+  the primes below `m` all lie on the single irreducible component `V(P)` of `Spec A` through `m`.
+  This is what makes the height of `m` a lower bound for the dimension of that component.
+* If `m` is minimal over a radical ideal `I`, then `I` generates the maximal ideal of `A_m`. For a
+  principal ideal `I = (f)` with `A ⧸ (f)` reduced, this says that `f` generates the maximal ideal
+  of the localization at every prime minimal over `f`. For `I = ⊥` in a reduced ring, the maximal
+  ideal of `A_P` is zero at every minimal prime `P`, so `P.ResidueField` is itself a localization
+  of `A` at `P`.
+* Every prime ideal `q` contains a minimal prime `p` disjoint from any submonoid `M` of
+  non-zero-divisors, so `p` extends to a prime of `M⁻¹ A` contracting back to `p`.
 
 ## Main results
 
 * `TauCeti.le_of_mem_minimalPrimes_of_isDomain_localization`: if `A_m` is a domain, a minimal
   prime `P ≤ m` lies below every prime `q ≤ m`.
+* `TauCeti.exists_minimalPrime_le_and_map_isPrime`: every prime `q` contains a minimal prime `p`
+  disjoint from a submonoid `M` of non-zero-divisors, extending to a prime of `M⁻¹ A` that
+  contracts back to `p`.
 * `TauCeti.isCoprime_of_mem_minimalPrimes_of_isDomain_localization`: distinct minimal primes
   are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
   radical ideal `I`, then `I` generates the maximal ideal of `A_m`.
+* `TauCeti.isLocalization_atPrime_residueField_of_mem_minimalPrimes`: at a minimal prime `P` of a
+  reduced ring `B`, `P.ResidueField` is a localization of `B` at `P`.
 * `IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero`: in a localization at
   non-zero-divisors of Krull dimension zero, such as an Artinian total ring of fractions, every
   prime contracts to a minimal prime.
@@ -54,6 +63,22 @@ theorem le_of_mem_minimalPrimes_of_isDomain_localization {A : Type*} [CommSemiri
     exact (‹q'.IsPrime›.mem_or_mem (hsa ▸ q'.zero_mem)).resolve_left fun h ↦ hs (hq' h)
   have := hP.1.1
   exact (hP.2 ⟨RingHom.ker_isPrime _, bot_le⟩ (hker hPm)).trans (hker hqm)
+
+open scoped nonZeroDivisors in
+/-- Every prime ideal `q` of `A` contains a minimal prime `p` that is disjoint from any submonoid
+`M` of non-zero-divisors; hence `p` extends to a prime of `M⁻¹ A` contracting back to `p`. -/
+theorem exists_minimalPrime_le_and_map_isPrime {A B : Type*} [CommRing A] [CommRing B]
+    [Algebra A B] (M : Submonoid A) [IsLocalization M B] (hM : M ≤ A⁰) (q : Ideal A) [q.IsPrime] :
+    ∃ p : Ideal A, p ∈ minimalPrimes A ∧ p ≤ q ∧ Disjoint (M : Set A) p ∧
+      (p.map (algebraMap A B)).IsPrime ∧
+      (p.map (algebraMap A B)).comap (algebraMap A B) = p := by
+  obtain ⟨p, hp, hpq⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ q)
+  have hp_prime : p.IsPrime := hp.1.1
+  have hdisj : Disjoint (M : Set A) p :=
+    (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp).symm.mono_left hM
+  exact ⟨p, hp, hpq, hdisj,
+    IsLocalization.isPrime_of_isPrime_disjoint M B p hp_prime hdisj,
+    IsLocalization.under_map_of_isPrime_disjoint M B hp_prime hdisj⟩
 
 /-- Over a semiring whose localizations at maximal ideals are domains, distinct minimal primes are
 coprime: a maximal ideal containing both would contain two minimal primes of a local domain. -/
@@ -86,6 +111,28 @@ theorem map_eq_maximalIdeal_of_mem_minimalPrimes {R : Type*} [CommSemiring R] {I
     ← IsLocalization.map_radical q.primeCompl A, hI.radical]
 
 end IsLocalization.AtPrime
+
+namespace TauCeti
+
+/-- At a minimal prime `P` of a reduced ring `B`, the residue field `P.ResidueField` is a
+localization of `B` at `P`. -/
+theorem isLocalization_atPrime_residueField_of_mem_minimalPrimes {B : Type*} [CommRing B]
+    [IsReduced B] {P : Ideal B} (hP : P ∈ minimalPrimes B) :
+    letI := hP.1.1
+    IsLocalization.AtPrime P.ResidueField P := by
+  have : P.IsPrime := hP.1.1
+  have hmax : IsLocalRing.maximalIdeal (Localization.AtPrime P) = ⊥ := by
+    have h := IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes
+      (Localization.AtPrime P) (Ideal.isRadical_bot (R := B)) hP
+    rwa [Ideal.map_bot, eq_comm] at h
+  have hbij : Function.Bijective
+      (IsScalarTower.toAlgHom B (Localization.AtPrime P) P.ResidueField) := by
+    rw [IsScalarTower.coe_toAlgHom', IsLocalRing.ResidueField.algebraMap_eq]
+    exact ⟨(RingHom.injective_iff_ker_eq_bot _).mpr (IsLocalRing.ker_residue.trans hmax),
+      IsLocalRing.residue_surjective⟩
+  exact IsLocalization.isLocalization_of_algEquiv P.primeCompl (AlgEquiv.ofBijective _ hbij)
+
+end TauCeti
 
 namespace IsLocalization
 

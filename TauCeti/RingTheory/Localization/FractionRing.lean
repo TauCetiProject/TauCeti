@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
+import Mathlib.RingTheory.Localization.Ideal
 
 /-!
 # A fraction ring of a localization is a fraction ring of the base
@@ -19,6 +20,10 @@ This lets a statement about the fraction field of a localization of a domain be 
 fraction field of the domain itself. The non-zero-divisor hypothesis holds whenever a domain is
 localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`, in
 `TauCeti.RingTheory.Localization.Defs`).
+
+Similarly, if `S` is a localization of `B` at a submonoid `M` disjoint from a prime `P`, then any
+fraction ring `F` of `B ⧸ P` receiving a compatible `S ⧸ P S`-algebra structure is a fraction ring
+of `S ⧸ P S` (`TauCeti.IsFractionRing.quotient_map_of_isLocalization`).
 -/
 
 public section
@@ -39,5 +44,41 @@ theorem of_isLocalization_of_isFractionRing [IsLocalization M S] [IsFractionRing
     (nonZeroDivisors S) T fun _ hx ↦ hx.mem_nonZeroDivisors
   rwa [le_antisymm (comap_nonZeroDivisors_le_of_injective (IsLocalization.injective S hM))
     (IsLocalization.nonZeroDivisors_le_comap M S)] at this
+
+/-- If `B → F` factors through both `B ⧸ P` and a `B`-algebra `S`, then `P.map (algebraMap B S)`
+lies in the kernel of `algebraMap S F`. -/
+theorem map_le_ker_of_isScalarTower_quotient {B S F : Type*} [CommRing B] {P : Ideal B}
+    [CommRing S] [Algebra B S] [CommRing F] [Algebra B F] [Algebra (B ⧸ P) F]
+    [IsScalarTower B (B ⧸ P) F] [Algebra S F] [IsScalarTower B S F] :
+    P.map (algebraMap B S) ≤ RingHom.ker (algebraMap S F) :=
+  Ideal.map_le_iff_le_comap.mpr fun _ hy ↦ by
+    rw [Ideal.mem_comap, RingHom.mem_ker, ← IsScalarTower.algebraMap_apply B S F,
+      IsScalarTower.algebraMap_apply B (B ⧸ P) F, Ideal.Quotient.algebraMap_eq,
+      Ideal.Quotient.eq_zero_iff_mem.mpr hy, map_zero]
+
+open scoped nonZeroDivisors in
+/-- If `P` is a prime of `B` disjoint from `M`, `S` is a localization of `B` at `M`, and `F` is a
+fraction ring of `B ⧸ P` with compatible `S`- and `(S ⧸ P S)`-algebra structures, then `F` is a
+fraction ring of `S ⧸ P S`. -/
+theorem quotient_map_of_isLocalization {B S F : Type*} [CommRing B] {P : Ideal B} [P.IsPrime]
+    (M : Submonoid B) (hdisj : Disjoint (M : Set B) P) [CommRing S] [Algebra B S]
+    [IsLocalization M S] [CommRing F] [Algebra B F] [Algebra (B ⧸ P) F]
+    [IsScalarTower B (B ⧸ P) F] [IsFractionRing (B ⧸ P) F] [Algebra S F] [IsScalarTower B S F]
+    [Algebra (S ⧸ P.map (algebraMap B S)) F] [IsScalarTower S (S ⧸ P.map (algebraMap B S)) F] :
+    IsFractionRing (S ⧸ P.map (algebraMap B S)) F := by
+  have : IsScalarTower (B ⧸ P) (S ⧸ P.map (algebraMap B S)) F := .of_algebraMap_eq fun x ↦ by
+    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [Ideal.Quotient.algebraMap_quotient_map_quotient,
+      ← Ideal.Quotient.algebraMap_eq (I := P.map (algebraMap B S)),
+      ← IsScalarTower.algebraMap_apply S (S ⧸ P.map (algebraMap B S)) F,
+      ← IsScalarTower.algebraMap_apply B S F, IsScalarTower.algebraMap_apply B (B ⧸ P) F,
+      Ideal.Quotient.algebraMap_eq]
+  have hM : Algebra.algebraMapSubmonoid (B ⧸ P) M ≤ (B ⧸ P)⁰ := by
+    rintro _ ⟨m, hm, rfl⟩
+    rw [mem_nonZeroDivisors_iff_ne_zero, Ideal.Quotient.algebraMap_eq, ne_eq,
+      Ideal.Quotient.eq_zero_iff_mem]
+    exact Set.disjoint_left.mp hdisj hm
+  exact _root_.IsFractionRing.isFractionRing_of_isLocalization
+    (Algebra.algebraMapSubmonoid (B ⧸ P) M) (S ⧸ P.map (algebraMap B S)) F hM
 
 end TauCeti.IsFractionRing

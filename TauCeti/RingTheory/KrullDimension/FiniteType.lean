@@ -17,6 +17,8 @@ import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Fiber
+import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -71,6 +73,8 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `TauCeti.finiteRingKrullDim_of_finiteType` and `TauCeti.ringKrullDim_lt_top_of_finiteType`: a
   nontrivial finitely generated algebra over a field has finite Krull dimension, and every finitely
   generated algebra over a field has Krull dimension strictly below `⊤`.
+* `TauCeti.exists_finite_aeval_of_krullDimLE_one`: a finite-type algebra of Krull dimension at most
+  `1` over a field `k` is module-finite over `k[X]` along `Polynomial.aeval x₀` for some `x₀`.
 * `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
   `dim (K ⊗[k] A) = dim K + dim A` for a Noetherian `k`-algebra `K`.
 * `TauCeti.ringKrullDim_tensorProduct_field_of_finiteType`: `dim (K ⊗[k] A) = dim A` for a field
@@ -79,6 +83,11 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   its transcendence degree over `k`.
 * `TauCeti.ringKrullDim_eq_toNat_trdeg_of_isFractionRing`: a finitely generated domain over `k` has
   Krull dimension the transcendence degree of its fraction field.
+* `TauCeti.trdeg_eq_of_ringKrullDim_eq_of_isFractionRing`: a finite-type `k`-domain of Krull
+  dimension `n` has fraction field of transcendence degree `n` over `k`.
+* `TauCeti.krullDimLE_of_forall_minimalPrimes_trdeg_le`: if every minimal prime of a finite-type
+  `k`-algebra `B` has residue field of transcendence degree at most `n`, then `B` has Krull
+  dimension at most `n`.
 * `TauCeti.ringKrullDim_eq_of_isAlgebraic`: an algebraic extension of finitely generated domains
   over `k` preserves the Krull dimension; `TauCeti.ringKrullDim_localization_away` is the case of
   `A[1/f]` with `f ≠ 0`.
@@ -515,3 +524,81 @@ theorem topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_resid
     Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
 
 end PrimeSpectrum
+
+namespace TauCeti
+
+variable {k : Type*} [Field k]
+
+open scoped Polynomial in
+/-- **One-dimensional Noether normalization.** Every finite-type algebra `A₀` of Krull dimension at
+most `1` over a field `k` is module-finite over `k[X]` via `Polynomial.aeval x₀` for some
+`x₀ : A₀`. -/
+theorem exists_finite_aeval_of_krullDimLE_one (k A₀ : Type*) [Field k] [CommRing A₀]
+    [Algebra k A₀] [Algebra.FiniteType k A₀] [Ring.KrullDimLE 1 A₀] :
+    ∃ x₀ : A₀, (Polynomial.aeval (R := k) x₀).toRingHom.Finite := by
+  rcases subsingleton_or_nontrivial A₀ with _ | _
+  · refine ⟨0, ?_⟩
+    rw [RingHom.Finite]
+    let : Module k[X] A₀ := RingHom.toModule (Polynomial.aeval (R := k) (0 : A₀)).toRingHom
+    infer_instance
+  · obtain ⟨s, g, hinj, hfin⟩ := exists_finite_inj_algHom_of_fg k A₀
+    have hdim : ringKrullDim A₀ = s := by
+      simpa using
+        ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hfin.to_isIntegral
+    have hs : s ≤ 1 := by
+      have hle : (s : WithBot ℕ∞) ≤ (1 : ℕ) := hdim ▸ Ring.krullDimLE_iff.mp ‹_›
+      exact mod_cast hle
+    have : Subsingleton (Fin s) := ⟨fun a b ↦ Fin.ext (by omega)⟩
+    obtain ⟨φ, hφ⟩ := MvPolynomial.exists_surjective_algHom_of_subsingleton k (Fin s)
+    refine ⟨g (φ Polynomial.X), ?_⟩
+    have heq : Polynomial.aeval (R := k) (g (φ Polynomial.X)) = g.comp φ := by
+      ext
+      simp
+    rw [heq]
+    exact RingHom.Finite.comp hfin (RingHom.Finite.of_surjective _ hφ)
+
+variable (k) in
+/-- If `D` is a finite-type `k`-domain of Krull dimension `n` and `F` is a fraction field of `D`,
+then `Algebra.trdeg k F = n`. -/
+theorem trdeg_eq_of_ringKrullDim_eq_of_isFractionRing {D F : Type*} [CommRing D]
+    [Algebra k D] [Algebra.FiniteType k D] [Field F] [Algebra k F] [Algebra D F]
+    [IsScalarTower k D F] [IsFractionRing D F] {n : ℕ} (hdim : ringKrullDim D = n) :
+    Algebra.trdeg k F = n := by
+  have : IsDomain D := (IsFractionRing.injective D F).isDomain _
+  have htrNat : (Algebra.trdeg k F).toNat = n := by
+    have h := ringKrullDim_eq_toNat_trdeg_of_isFractionRing k D F
+    rw [hdim] at h
+    exact mod_cast h.symm
+  have : FaithfulSMul D F :=
+    (faithfulSMul_iff_algebraMap_injective D F).mpr (IsFractionRing.injective D F)
+  have ht := lift_trdeg_add_eq k D F
+  rw [trdeg_eq_zero_iff.mpr (IsFractionRing.comap_isAlgebraic_iff.mpr
+    (inferInstance : Algebra.IsAlgebraic F F)), Cardinal.lift_zero, add_zero] at ht
+  have hlt : Algebra.trdeg k F < Cardinal.aleph0 :=
+    Cardinal.lift_lt_aleph0.mp
+      (ht ▸ Cardinal.lift_lt_aleph0.mpr (trdeg_lt_aleph0_of_finiteType (R := k) (S := D)))
+  rw [← Cardinal.cast_toNat_of_lt_aleph0 hlt, htrNat]
+
+variable (k) in
+/-- If every minimal-prime residue field of a finite-type `k`-algebra `B` has transcendence degree
+at most `n` over `k`, then `B` has Krull dimension at most `n`. -/
+theorem krullDimLE_of_forall_minimalPrimes_trdeg_le {B : Type*} [CommRing B] [Algebra k B]
+    [Algebra.FiniteType k B] {n : ℕ}
+    (h : ∀ (P : Ideal B) (hP : P ∈ minimalPrimes B), haveI := hP.1.1;
+      Algebra.trdeg k P.ResidueField ≤ n) :
+    Ring.KrullDimLE n B := by
+  rw [Ring.krullDimLE_iff, ringKrullDim, Order.krullDim_eq_iSup_coheight]
+  refine iSup_le fun q ↦ (PrimeSpectrum.coheight_eq_ringKrullDim_quotient q).trans_le ?_
+  obtain ⟨P, hP, hPq⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ q.asIdeal)
+  have : P.IsPrime := hP.1.1
+  have hle : (Algebra.trdeg k P.ResidueField).toNat ≤ n := by
+    rw [← Cardinal.toNat_natCast n]
+    exact Cardinal.toNat_le_toNat (h P hP) Cardinal.natCast_lt_aleph0
+  calc ringKrullDim (B ⧸ q.asIdeal)
+      ≤ ringKrullDim (B ⧸ P) :=
+        ringKrullDim_le_of_surjective _ (Ideal.Quotient.factor_surjective hPq)
+    _ = (Algebra.trdeg k P.ResidueField).toNat :=
+        ringKrullDim_eq_toNat_trdeg_of_isFractionRing k (B ⧸ P) P.ResidueField
+    _ ≤ n := mod_cast hle
+
+end TauCeti

@@ -7,10 +7,17 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.AlgebraicGeometry.Normalization
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.RingTheory.UniversallyJapanese
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+
+import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
+import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+import TauCeti.RingTheory.IntegralClosure.DiscreteValuationRing
 
 /-!
 # Finiteness of the relative normalization
@@ -30,6 +37,11 @@ when the rings `Γ(Y, U)` are N-1. This supplies the finiteness hypothesis of re
 by normalization (`TauCeti.AlgebraicGeometry.isRegular_normalization_of_field`) for integral
 schemes of dimension one locally of finite type over a field.
 
+Over an arbitrary discrete valuation ring `R` with fraction field `K` (not assumed Japanese or
+excellent), if `X` is locally of finite type over `Spec R` and its generic fibre `C` is smooth of
+relative dimension `1` over `Spec K`, then the normalization of `X` in `C` is finite over `X`
+(`TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_isPullback`, Stacks Lemma 55.8.3 / 0C2U).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.isFinite_fromNormalization_iff`: the normalization of `Y` in `X` is
@@ -42,6 +54,9 @@ schemes of dimension one locally of finite type over a field.
   every nonempty affine open of an integral scheme `Y` is Japanese, the normalization of `Y` in a
   finite extension of its function field is finite over `Y` (Stacks, Lemma 29.54.14 (0AVK), with
   the hypothesis on every affine open).
+* `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_isPullback`: for a scheme `X` locally of
+  finite type over a discrete valuation ring `R` whose generic fibre `C` is smooth of relative
+  dimension `1` over `Frac(R)`, the normalization of `X` in `C` is finite over `X`.
 * `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_locallyOfFiniteType` and
   `isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType`:
   if `Y` is an integral scheme locally of finite type over `Spec R` for a universally Japanese ring
@@ -54,6 +69,8 @@ schemes of dimension one locally of finite type over a field.
 * [Stacks Project, Proposition 10.162.16](https://stacks.math.columbia.edu/tag/0335).
 * [Stacks Project, Tag 035H](https://stacks.math.columbia.edu/tag/035H), for the relative
   normalization over affine opens.
+* [Stacks Project, Lemma 55.8.3](https://stacks.math.columbia.edu/tag/0C2U), for finiteness of
+  normalization of one-dimensional schemes over arbitrary discrete valuation rings.
 -/
 
 public section
@@ -147,6 +164,61 @@ theorem isFinite_fromNormalization_of_isJapanese
   · -- Over an open missing the generic point, the sections of `Spec L` are the zero ring.
     have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
     infer_instance
+
+open Limits Opposite in
+/-- **Finiteness of normalization in a smooth generic fibre of relative dimension one.** Let `R` be
+a discrete valuation ring with fraction field `K`, let `X` be a scheme locally of finite type over
+`Spec R`, and let `C` be its generic fibre over `Spec K`, with projection `g : C ⟶ X`. If `C` is
+smooth of relative dimension `1` over `Spec K`, then the normalization of `X` in `C` along `g` is
+finite over `X`. No excellence or Japanese hypothesis on `R` and no flatness hypothesis on `X` are
+needed. -/
+@[stacks 0C2U]
+theorem isFinite_fromNormalization_of_isPullback
+    {R K : Type u} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
+    [Field K] [Algebra R K] [IsFractionRing R K]
+    {X C : Scheme.{u}} {toBase : X ⟶ Spec (.of R)} [LocallyOfFiniteType toBase]
+    {toK : C ⟶ Spec (.of K)} [SmoothOfRelativeDimension 1 toK] {g : C ⟶ X}
+    (H : IsPullback g toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+    haveI : IsAffineHom g := MorphismProperty.of_isPullback (P := @IsAffineHom) H.flip inferInstance
+    IsFinite g.fromNormalization := by
+  have : IsAffineHom g := MorphismProperty.of_isPullback (P := @IsAffineHom) H.flip inferInstance
+  refine g.isFinite_fromNormalization_iff.mpr fun U hU ↦ ?_
+  let : X.Over (Spec (.of R)) := ⟨toBase⟩
+  let : C.Over (Spec (.of K)) := ⟨toK⟩
+  have : LocallyOfFiniteType (X ↘ Spec (.of R)) := inferInstanceAs (LocallyOfFiniteType toBase)
+  have hV : IsAffineOpen (g ⁻¹ᵁ U) := hU.preimage g
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Algebra K Γ(C, g ⁻¹ᵁ U) :=
+    ((C.baseRingToStructurePresheaf K).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  let : Algebra Γ(X, U) Γ(C, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
+  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R K))
+      (CommRingCat.ofHom (algebraMap R Γ(X, U)))
+      (CommRingCat.ofHom (algebraMap K Γ(C, g ⁻¹ᵁ U)))
+      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(C, g ⁻¹ᵁ U))) :=
+    Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
+  let : Algebra R Γ(C, g ⁻¹ᵁ U) := ((algebraMap K Γ(C, g ⁻¹ᵁ U)).comp (algebraMap R K)).toAlgebra
+  have : IsScalarTower R K Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have hw := congrArg CommRingCat.Hom.hom hpush.w
+  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
+  have : IsScalarTower R Γ(X, U) Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+  have : Algebra.IsPushout R Γ(X, U) K Γ(C, g ⁻¹ᵁ U) :=
+    Algebra.IsPushout.symm (CommRingCat.isPushout_iff_isPushout.mp hpush)
+  have : Algebra.FiniteType R Γ(X, U) := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+  have hsm : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
+      (toK.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom :=
+    HasRingHomProperty.appLE (P := @SmoothOfRelativeDimension 1)
+      (Q := RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1))
+      (f := toK) ‹_› ⟨⊤, isAffineOpen_top _⟩ ⟨g ⁻¹ᵁ U, hV⟩ le_top
+  have hloc : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
+      (algebraMap K Γ(C, g ⁻¹ᵁ U)) := by
+    rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE,
+      CommRingCat.hom_comp]
+    exact (RingHom.locally_respectsIso
+      (RingHom.isStandardSmoothOfRelativeDimension_respectsIso (n := 1))).right _
+      (Scheme.ΓSpecIso (.of K)).symm.commRingCatIsoToRingEquiv hsm
+  open TauCeti.IsDiscreteValuationRing in
+  exact finite_integralClosure_of_locally_isStandardSmoothOfRelativeDimension_one
+    (R := R) (K := K) hloc
 
 section UniversallyJapanese
 

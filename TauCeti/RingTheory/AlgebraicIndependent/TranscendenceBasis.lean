@@ -22,6 +22,8 @@ tower inequality `lift_trdeg_add_le` for towers of commutative rings.
   middle ring, at least its transcendence degree over the bottom ring, then the middle ring is
   algebraic over the bottom ring; `TauCeti.isAlgebraic_of_trdeg_eq_one` is the case of
   transcendence degree one.
+* `AlgebraicIndependent.natCard_le_toNat_trdeg`: an algebraically independent family in a
+  finite-type algebra over a domain has cardinality at most `(Algebra.trdeg R A).toNat`.
 -/
 
 public section
@@ -73,3 +75,13 @@ theorem isAlgebraic_of_trdeg_eq_one (h : Algebra.trdeg R A = 1) (h' : Algebra.tr
   exact isAlgebraic_of_trdeg_le (h.trans h'.symm).le (h' ▸ Cardinal.one_lt_aleph0)
 
 end TauCeti
+
+/-- An algebraically independent family in a finite-type algebra over a domain has cardinality at
+most `(Algebra.trdeg R A).toNat`. -/
+theorem AlgebraicIndependent.natCard_le_toNat_trdeg {R A ι : Type*}
+    [CommRing R] [IsDomain R] [CommRing A] [Algebra R A] [Algebra.FiniteType R A]
+    {x : ι → A} (hx : AlgebraicIndependent R x) :
+    Nat.card ι ≤ (Algebra.trdeg R A).toNat := by
+  rw [Nat.card, ← Cardinal.toNat_lift, ← Cardinal.toNat_lift (Algebra.trdeg R A)]
+  exact Cardinal.toNat_le_toNat hx.lift_cardinalMk_le_trdeg
+    (Cardinal.lift_lt_aleph0.mpr (trdeg_lt_aleph0_of_finiteType (R := R) (S := A)))

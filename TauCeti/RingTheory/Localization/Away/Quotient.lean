@@ -18,7 +18,8 @@ of `B` away from `b`.
 
 In the other direction, localization away from an element commutes with quotients: if `S` is a
 localization of `R` away from `f`, then `S ⧸ I S` is a localization of `R ⧸ I` away from the
-image of `f`.
+image of `f`. Moreover, if `A → B` is a localization at `M` factoring through `A ⧸ I`, then `B` is
+a localization of `A ⧸ I` at the image of `M`.
 
 ## Main results
 
@@ -26,6 +27,9 @@ image of `f`.
   of `b` is a localization of `B` away from `b`.
 * `IsLocalization.Away.quotient`: `S ⧸ I S` is a localization of `R ⧸ I` away from the image of
   `f` whenever `S` is a localization of `R` away from `f`.
+* `IsLocalization.of_quotient` and `IsLocalization.Away.of_quotient`: if a localization `B` of `A`
+  at `M` (or away from `r`) factors through `A ⧸ I`, then `B` is a localization of `A ⧸ I` at the
+  image of `M` (or away from the image of `r`).
 -/
 
 public section
@@ -57,3 +61,35 @@ instance IsLocalization.Away.quotient {R S : Type*} [CommRing R] [CommRing S] [A
   have := (inferInstance : IsLocalization
     (Algebra.algebraMapSubmonoid (R ⧸ I) (Submonoid.powers f)) (S ⧸ I.map (algebraMap R S)))
   rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers] at this
+
+/-- If `B` is a localization of `A` at `M` and `A → B` factors through `A ⧸ I`, then `B` is a
+localization of `A ⧸ I` at the image of `M`. -/
+theorem IsLocalization.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    (M : Submonoid A) [IsLocalization M B] (I : Ideal A) [Algebra (A ⧸ I) B]
+    [IsScalarTower A (A ⧸ I) B] :
+    IsLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) M) B := by
+  refine ⟨⟨?_, ?_, ?_⟩⟩
+  · rintro ⟨_, m, hm, rfl⟩
+    rw [← IsScalarTower.algebraMap_apply A (A ⧸ I) B]
+    exact IsLocalization.map_units B ⟨m, hm⟩
+  · intro b
+    obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M b
+    refine ⟨⟨algebraMap A (A ⧸ I) a, algebraMap A (A ⧸ I) m, m, m.property, rfl⟩, ?_⟩
+    simpa only [← IsScalarTower.algebraMap_apply A (A ⧸ I) B] using ha
+  · intro x y hxy
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply A (A ⧸ I) B,
+      ← IsScalarTower.algebraMap_apply A (A ⧸ I) B] at hxy
+    obtain ⟨m, hm⟩ := IsLocalization.exists_of_eq (M := M) hxy
+    refine ⟨⟨algebraMap A (A ⧸ I) m, m, m.property, rfl⟩, ?_⟩
+    simpa only [← map_mul, Ideal.Quotient.algebraMap_eq] using congrArg (Ideal.Quotient.mk I) hm
+
+/-- If `B` is a localization of `A` away from `r` and `A → B` factors through `A ⧸ I`, then `B` is
+a localization of `A ⧸ I` away from the image of `r`. -/
+theorem IsLocalization.Away.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    (r : A) [IsLocalization.Away r B] (I : Ideal A) [Algebra (A ⧸ I) B]
+    [IsScalarTower A (A ⧸ I) B] :
+    IsLocalization.Away (Ideal.Quotient.mk I r) B := by
+  have h := IsLocalization.of_quotient (Submonoid.powers r) I (B := B)
+  rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers, Ideal.Quotient.algebraMap_eq] at h

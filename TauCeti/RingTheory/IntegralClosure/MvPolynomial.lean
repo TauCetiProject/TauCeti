@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.Japanese
 -- case and the transfer lemmas).
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.RingTheory.Adjoin.Polynomial.Transcendental
+import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.IntegralClosure.PurelyInseparable
 import TauCeti.RingTheory.IntegralClosure.Transfer
 
@@ -37,6 +38,11 @@ domain such as `P` the purely inseparable extensions are the only ones that need
 (`TauCeti.Ring.IsJapanese.of_isPurelyInseparable`, Stacks, Lemma 10.161.12 (032N)). So `P` is
 Japanese.
 
+When `R` is only a Noetherian domain with `R[X]` N-1 (for example, any integrally closed
+Noetherian domain, without assuming `R` is Japanese), the integral closure of `R[X]` in a field `F`
+over `K = Frac(R)` is still finite over `R[X]` whenever `X` maps to a separating transcendence
+basis of `F / K` (`TauCeti.finite_integralClosure_polynomial_of_isSeparable`).
+
 ## Main results
 
 * `TauCeti.Ring.IsJapanese.mvPolynomial`: a polynomial ring in finitely many variables over a
@@ -50,6 +56,9 @@ Japanese.
   element `x` of a field, with `k(x)` as fraction field.
 * `TauCeti.finiteType_integralClosure_adjoin`: the integral closure of `k[x]` in a finite
   extension of `k(x)` is a finitely generated `k`-algebra.
+* `TauCeti.finite_integralClosure_polynomial_of_isSeparable`: over a Noetherian domain `R` with
+  `R[X]` N-1, if `X` maps to a separating transcendence basis of `F` over `Frac(R)`, then
+  `integralClosure R[X] F` is finite over `R[X]`.
 
 ## References
 
@@ -219,5 +228,39 @@ theorem finiteType_integralClosure_adjoin {k F : Type*} [Field k] [Field F] [Alg
   exact .trans (S := Algebra.adjoin k {x}) inferInstance inferInstance
 
 end FiniteType
+
+section Separable
+
+open scoped _root_.IntermediateField
+
+/-- Over a Noetherian domain `R` with `R[X]` N-1 and fraction field `K`, if `F` is a field over
+`K` and an `R[X]`-algebra (compatible over `R`) such that `y = algebraMap R[X] F X` is
+transcendental over `K` with `F / K⟮y⟯` finite separable, then `integralClosure R[X] F` is a
+finite `R[X]`-module. -/
+theorem finite_integralClosure_polynomial_of_isSeparable {R K F : Type*} [CommRing R]
+    [IsNoetherianRing R] [Ring.IsN1 R[X]] [Field K] [Algebra R K] [IsFractionRing R K]
+    [Field F] [Algebra R F] [Algebra K F] [IsScalarTower R K F]
+    [Algebra R[X] F] [IsScalarTower R R[X] F]
+    (hX : Transcendental K (algebraMap R[X] F Polynomial.X))
+    [FiniteDimensional K⟮algebraMap R[X] F Polynomial.X⟯ F]
+    [Algebra.IsSeparable K⟮algebraMap R[X] F Polynomial.X⟯ F] :
+    Module.Finite R[X] (integralClosure R[X] F) := by
+  set y : F := algebraMap R[X] F Polynomial.X
+  have : IsScalarTower R K⟮y⟯ F := .of_algebraMap_eq fun r ↦ by
+    rw [IsScalarTower.algebraMap_apply R K F, IsScalarTower.algebraMap_apply K K⟮y⟯ F,
+      ← IsScalarTower.algebraMap_apply R K K⟮y⟯]
+  let : Algebra R[X] K⟮y⟯ :=
+    (Polynomial.aeval (R := R) (IntermediateField.AdjoinSimple.gen K y)).toRingHom.toAlgebra
+  have : IsScalarTower R[X] K⟮y⟯ F := .of_algebraMap_eq fun p ↦ by
+    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      ← IsScalarTower.coe_toAlgHom' R K⟮y⟯ F, ← Polynomial.aeval_algHom_apply,
+      IsScalarTower.coe_toAlgHom', IntermediateField.AdjoinSimple.algebraMap_gen]
+    dsimp only [y]
+    rw [← IsScalarTower.coe_toAlgHom' R R[X] F, Polynomial.aeval_algHom_apply,
+      Polynomial.aeval_X_left_apply]
+  have : IsFractionRing R[X] K⟮y⟯ := isFractionRing_polynomial_adjoin hX
+  exact Ring.finite_integralClosure_of_isSeparable K⟮y⟯ K⟮y⟯ F
+
+end Separable
 
 end TauCeti
