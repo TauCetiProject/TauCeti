@@ -130,7 +130,7 @@ theorem hasDerivAt_weierstrassZeta {z : ℂ} (hz : z ∉ L.lattice) :
   simpa only [Pi.neg_apply, Finset.sum_neg_distrib] using
     (HasDerivAt.fun_sum fun (l : L.lattice) (_ : l ∈ s) ↦
       hasDerivAt_weierstrassZeta_term
-        (l := (l : ℂ)) (z := w) (fun h ↦ hw (h ▸ l.2)))
+        (l := (l : ℂ)) (z := w) (fun h ↦ hw (h ▸ l.property)))
 
 /-- `ζ` is holomorphic away from the lattice. -/
 theorem differentiableOn_weierstrassZeta :
@@ -146,7 +146,9 @@ theorem weierstrassZeta_neg (z : ℂ) : L.weierstrassZeta (-z) = -L.weierstrassZ
   rw [neg_sub_neg, ← neg_sub, inv_neg]
   ring
 
-/-- `ζ(0) = 0`, as `ζ` is odd. -/
+/-- `ζ(0) = 0`, as `ζ` is odd. The point `0` is a pole of `ζ`, so this is a junk value: the term
+of the defining series at `l = 0` is `1 / 0 + 1 / 0 + 0 / 0 ^ 2 = 0`. It is also the constant term
+of the Laurent expansion of `ζ` at `0`, as `ζ(z) - 1 / z` is odd. -/
 @[simp]
 theorem weierstrassZeta_zero : L.weierstrassZeta 0 = 0 :=
   CharZero.eq_neg_self_iff.mp (by simpa using L.weierstrassZeta_neg 0)
@@ -177,16 +179,12 @@ def quasiPeriod : L.lattice →+ ℂ where
     simp only [Submodule.coe_add, ← add_assoc, L.weierstrassZeta_add_coe_eq_add]
     ring
 
-private lemma quasiPeriod_apply (l : L.lattice) :
-    L.quasiPeriod l = L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2) :=
-  (rfl)
-
 /-- **The value of `ζ` at a lattice point is the quasi-period**: `ζ(l) = η(l)`. The lattice
 points are the poles of `ζ`, so this is a junk value (compare `PeriodPair.weierstrassP_coe`); it
 is the constant term of the Laurent expansion of `ζ` at `l`. -/
 @[simp]
 theorem weierstrassZeta_coe (l : L.lattice) : L.weierstrassZeta l = L.quasiPeriod l := by
-  rw [quasiPeriod_apply, L.weierstrassZeta_add_coe_eq_add, add_sub_cancel_left]
+  simp [quasiPeriod, L.weierstrassZeta_add_coe_eq_add]
 
 /-- **The quasi-periodicity of `ζ`**: `ζ(z + l) = ζ(z) + η(l)` for every `z` and `l ∈ Λ`. -/
 @[simp]

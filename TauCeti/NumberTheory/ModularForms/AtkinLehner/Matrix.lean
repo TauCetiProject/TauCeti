@@ -415,7 +415,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (h : IsAtkinLehnerMatrix 
     rw [hG, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_ne (by decide), hc]
     simp only [smul_eq_mul, sub_zero]
     ring⟩
-  refine ⟨⟨G, hdetG⟩, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
+  refine ⟨.mk G hdetG, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
   rw [Matrix.SpecialLinearGroup.coe_mk, ← sq, Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two,
     htr, h.det_eq, hG, smul_sub, smul_smul]
 

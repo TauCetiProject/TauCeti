@@ -492,7 +492,7 @@ theorem weightSpaceDirectSumEquiv_lof [DecidableEq κ] (μ : Dual K H) (j : κ)
     weightSpaceDirectSumEquiv (R := R) (P := P) μ
         ⟨DirectSum.lof K κ P j v, by
           rw [DirectSum.lof_eq_of K, ← DirectSum.lof_eq_of (Enveloping R)]
-          exact map_weightSpace_le (DirectSum.lof (Enveloping R) κ P j) μ ⟨v, v.2, rfl⟩⟩ =
+          exact map_weightSpace_le (DirectSum.lof (Enveloping R) κ P j) μ ⟨v, v.property, rfl⟩⟩ =
       DirectSum.lof K κ (fun j ↦ weightSpace R (P j) μ) j v := by
   apply (weightSpaceDirectSumEquiv (R := R) (P := P) μ).symm.injective
   rw [LinearEquiv.symm_apply_apply]
@@ -709,9 +709,9 @@ theorem IsCategoryO.of_injective (hN : IsCategoryO R N) {f : M →ₗ[Enveloping
   finiteDimensional_weightSpace μ := by
     have := hN.finiteDimensional_weightSpace μ
     let g : weightSpace R M μ →ₗ[K] weightSpace R N μ :=
-      { toFun := fun x ↦ ⟨f x.1, map_weightSpace_le f μ ⟨x.1, x.2, rfl⟩⟩
-        map_add' := fun x y ↦ Subtype.ext (map_add f x.1 y.1)
-        map_smul' := fun c x ↦ Subtype.ext ((f.restrictScalars K).map_smul c x.1) }
+      { toFun := fun x ↦ ⟨f x.val, map_weightSpace_le f μ ⟨x.val, x.property, rfl⟩⟩
+        map_add' := fun x y ↦ Subtype.ext (map_add f x.val y.val)
+        map_smul' := fun c x ↦ Subtype.ext ((f.restrictScalars K).map_smul c x.val) }
     exact FiniteDimensional.of_injective g fun x y hxy ↦
       Subtype.ext (hf (congrArg Subtype.val hxy))
   exists_finset_rootLE := by
@@ -761,7 +761,7 @@ theorem IsCategoryO.prod (hM : IsCategoryO R M) (hN : IsCategoryO R N) :
     have hor : weightSpace R M μ ≠ ⊥ ∨ weightSpace R N μ ≠ ⊥ := by
       by_contra! hboth
       apply hμ
-      rw [weightSpace_prod, hboth.1, hboth.2]
+      rw [weightSpace_prod, hboth.left, hboth.right]
       ext ⟨x, y⟩
       simp
     rcases hor with h₁ | h₂

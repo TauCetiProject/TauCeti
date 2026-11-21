@@ -114,9 +114,40 @@ structure WeightedClosedWalk (Q : V → V → Type v) (K : Type w) where
   /-- The weight of the closed walk. -/
   weight : K
 
-section AddCommMonoid
+/-- Two weighted walks are equal when their endpoints, walks after transporting those endpoints,
+and weights are equal. -/
+@[ext (iff := false)]
+theorem WeightedWalk.ext {p₁ p₂ : WeightedWalk Q K}
+    (hsource : p₁.source = p₂.source) (htarget : p₁.target = p₂.target)
+    (hwalk : @Quiver.Path.cast V ⟨Q⟩ _ _ _ _ hsource htarget p₁.walk = p₂.walk)
+    (hweight : p₁.weight = p₂.weight) : p₁ = p₂ := by
+  obtain ⟨s₁, t₁, p₁, q₁⟩ := p₁
+  obtain ⟨s₂, t₂, p₂, q₂⟩ := p₂
+  dsimp at hsource htarget hwalk hweight
+  cases hsource
+  cases htarget
+  cases hwalk
+  cases hweight
+  rfl
 
-variable [AddCommMonoid K]
+/-- Two weighted closed walks are equal when their bases, walks after transporting those bases,
+and weights are equal. -/
+@[ext (iff := false)]
+theorem WeightedClosedWalk.ext {c₁ c₂ : WeightedClosedWalk Q K}
+    (hbase : c₁.base = c₂.base)
+    (hwalk : @Quiver.Path.cast V ⟨Q⟩ _ _ _ _ hbase hbase c₁.walk = c₂.walk)
+    (hweight : c₁.weight = c₂.weight) : c₁ = c₂ := by
+  obtain ⟨s₁, p₁, q₁⟩ := c₁
+  obtain ⟨s₂, p₂, q₂⟩ := c₂
+  dsimp at hbase hwalk hweight
+  cases hbase
+  cases hwalk
+  cases hweight
+  rfl
+
+section AddMonoid
+
+variable [AddMonoid K]
 
 /-- The assignment of a weighted walk: its walk weighted by its weight. -/
 noncomputable def WeightedWalk.assignment (p : WeightedWalk Q K) : Assignment Q K :=
@@ -134,7 +165,7 @@ theorem WeightedClosedWalk.assignment_def (c : WeightedClosedWalk Q K) :
     c.assignment = walkAssignment c.walk c.weight :=
   (rfl)
 
-end AddCommMonoid
+end AddMonoid
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
@@ -256,6 +287,13 @@ theorem assignment_apply_of_mem_arrows {p : WeightedWalk Q K} (hp : p ∈ D.path
   rw [WeightedWalk.assignment_def]
   exact walkAssignment_eq_of_mem (D.isPath_walk p hp).nodup_arrows _ he
 
+/-- A cycle component of a decomposition places its weight on each of its arrows. -/
+theorem assignment_apply_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K}
+    (hc : c ∈ D.cycles) {x y : V} {e : Q x y} (he : ⟨x, y, e⟩ ∈ c.walk.arrows) :
+    c.assignment e = c.weight := by
+  rw [WeightedClosedWalk.assignment_def]
+  exact walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ he
+
 /-- A decomposition of a circulation has no path components. -/
 theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun p hp ↦
@@ -263,10 +301,17 @@ theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
 
 /-- A path component of a decomposition is nonnegative. -/
 theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
-    0 ≤ p.assignment := fun x y e ↦ by
-  by_cases he : ⟨x, y, e⟩ ∈ p.walk.arrows
-  · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
-  · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
+    0 ≤ p.assignment := by
+  have hq := (D.weight_pos_of_mem_paths p hp).le
+  rw [WeightedWalk.assignment_def]
+  exact walkAssignment_nonneg_of_nodup (D.isPath_walk p hp).nodup_arrows hq
+
+/-- A cycle component of a decomposition is nonnegative. -/
+theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
+    0 ≤ c.assignment := by
+  have hq := (D.weight_pos_of_mem_cycles c hc).le
+  rw [WeightedClosedWalk.assignment_def]
+  exact walkAssignment_nonneg_of_nodup (D.isCycle_walk c hc).nodup_arrows hq
 
 end Preorder
 
@@ -274,10 +319,6 @@ section PartialOrder
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
   (D : PathCycleDecomposition f)
-
-theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
-    0 ≤ c.assignment :=
-  walkAssignment_nonneg _ (D.weight_pos_of_mem_cycles c hc).le
 
 theorem pathAssignment_nonneg : 0 ≤ D.pathAssignment :=
   List.sum_nonneg <| by simpa using fun p hp ↦ D.assignment_nonneg_of_mem_paths hp
@@ -318,8 +359,7 @@ theorem assignment_le_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.c
 theorem pos_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles)
     {a : Σ x y, Q x y} (ha : a ∈ c.walk.arrows) : 0 < f a.2.2 := by
   have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
-  rw [WeightedClosedWalk.assignment_def,
-    walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
+  rw [D.assignment_apply_of_mem_arrows_of_mem_cycles hc ha] at hle
   exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
 
 /-- A decomposition has no components exactly when it decomposes the zero assignment. -/
@@ -353,18 +393,18 @@ theorem source_eq_of_mem_paths [Preorder K] {f : Flow cap s t} (D : PathCycleDec
   · exact (f.conserve _ h ht).ge
 
 /-- Every path of a decomposition of an ordinary `s`–`t` flow ends at `t`. -/
-theorem target_eq_of_mem_paths [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem target_eq_of_mem_paths [Preorder K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
     p.target = t := by
-  by_contra h
-  refine D.target_ne_of_mem_paths hp ?_ rfl
-  by_cases hs : p.target = s
-  · rw [hs, f.excessAt_source]
-    exact neg_nonpos.2 f.val_nonneg
-  · exact (f.conserve _ hs h).le
+  by_contra ht
+  have hs : p.target ≠ s := by
+    intro hs
+    have h : p.target = p.source := hs.trans (D.source_eq_of_mem_paths hp).symm
+    exact lt_asymm (D.excessAt_source_neg p hp) (h ▸ D.excessAt_target_pos p hp)
+  exact (D.excessAt_target_pos p hp).ne' (f.conserve _ hs ht)
 
 /-- The path weights of a decomposition of an ordinary `s`–`t` flow add up to its value. -/
-theorem sum_weight_paths_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem sum_weight_paths_eq_val [Preorder K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) : (D.paths.map WeightedWalk.weight).sum = f.val := by
   classical
   have hs : (D.paths.filter fun p ↦ p.source = t) = [] :=

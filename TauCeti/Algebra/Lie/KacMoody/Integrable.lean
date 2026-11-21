@@ -337,16 +337,16 @@ theorem IsIntegrable.prod (hM : IsIntegrable R M) (hN : IsIntegrable R N) :
     IsIntegrable R (M × N) where
   isWeightModule := hM.isWeightModule.prod hN.isWeightModule
   locallyNilpotent_positiveAction i x := by
-    obtain ⟨k₁, hk₁⟩ := hM.locallyNilpotent_positiveAction i x.1
-    obtain ⟨k₂, hk₂⟩ := hN.locallyNilpotent_positiveAction i x.2
+    obtain ⟨k₁, hk₁⟩ := hM.locallyNilpotent_positiveAction i x.fst
+    obtain ⟨k₂, hk₂⟩ := hN.locallyNilpotent_positiveAction i x.snd
     refine ⟨max k₁ k₂, Prod.ext ?_ ?_⟩
     · have h1 := map_positiveAction_pow (LinearMap.fst (Enveloping R) M N) i (max k₁ k₂) x
       exact h1.trans (Module.End.pow_map_zero_of_le (le_max_left k₁ k₂) hk₁)
     · have h2 := map_positiveAction_pow (LinearMap.snd (Enveloping R) M N) i (max k₁ k₂) x
       exact h2.trans (Module.End.pow_map_zero_of_le (le_max_right k₁ k₂) hk₂)
   locallyNilpotent_negativeAction i x := by
-    obtain ⟨k₁, hk₁⟩ := hM.locallyNilpotent_negativeAction i x.1
-    obtain ⟨k₂, hk₂⟩ := hN.locallyNilpotent_negativeAction i x.2
+    obtain ⟨k₁, hk₁⟩ := hM.locallyNilpotent_negativeAction i x.fst
+    obtain ⟨k₂, hk₂⟩ := hN.locallyNilpotent_negativeAction i x.snd
     refine ⟨max k₁ k₂, Prod.ext ?_ ?_⟩
     · have h1 := map_negativeAction_pow (LinearMap.fst (Enveloping R) M N) i (max k₁ k₂) x
       exact h1.trans (Module.End.pow_map_zero_of_le (le_max_left k₁ k₂) hk₁)

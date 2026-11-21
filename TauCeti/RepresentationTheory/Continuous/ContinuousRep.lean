@@ -15,14 +15,15 @@ public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 /-!
 # Jointly continuous representations
 
-A *continuous representation* of a topological monoid `Γ` on a topological `A`-module `M`, in the
-sense used for Galois representations, is a linear representation `Γ →* End_A M` whose action map
-`Γ × M → M` is jointly continuous. This is stronger than asking each operator to be continuous,
-which is what Mathlib's `ContRepresentation` records: for instance the multiplication action of
-`ℤ_ℓˣ` on `ℚ_ℓ` with the discrete topology has continuous operators but is not jointly
+A *continuous representation* of a monoid `Γ` with a topology on an `A`-module `M` with a topology,
+in the sense used for Galois representations, is a linear representation `Γ →* End_A M` whose
+action map `Γ × M → M` is jointly continuous. This is stronger than asking each operator to be
+continuous, which is what Mathlib's `ContRepresentation` records: for instance the multiplication
+action of `ℤ_ℓˣ` on `ℚ_ℓ` with the discrete topology has continuous operators but is not jointly
 continuous. This file packages such an action as `TauCeti.ContinuousRep Γ A M` and develops the
 elementary operations needed to build integral models of `ℓ`-adic representations: isomorphisms,
-the line attached to a continuous character, and extension of scalars.
+invariant submodules and quotients, the line attached to a continuous character, and extension
+of scalars.
 
 The typical module is a finite module `M` over a topological ring `A`, carrying its module
 topology (`IsModuleTopology A M`). Over such modules every linear map is continuous, so an
@@ -37,6 +38,10 @@ on which the action is an explicit continuous formula.
 * `TauCeti.ContinuousRep Γ A M`: a representation of `Γ` on `M` whose action is jointly
   continuous.
 * `TauCeti.ContinuousRep.toContRepresentation`: the underlying Mathlib `ContRepresentation`.
+* `TauCeti.ContinuousRep.subrepresentation`: restriction to an invariant submodule with the
+  subspace topology.
+* `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
+  quotient topology.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
   and `trans`.
 * `TauCeti.ContinuousRep.ofCharacter`: the rank-one representation of a continuous character
@@ -66,6 +71,17 @@ The topology on a base change `B ⊗[A] M` is an instance argument together with
 `moduleTopology B (B ⊗[A] M)` or any topology known to coincide with it. Only finiteness of `M`
 is needed for the base-changed action to be continuous; projectivity plays no role here.
 
+When the target ring is `B = ℤ`, whatever `A` is, this runs into Mathlib's `ℤ`-module diamond on
+tensor products: written in a statement, `[IsModuleTopology ℤ (ℤ ⊗[A] M)]` elaborates with the
+additive group's `ℤ`-action, while `TauCeti.ContinuousRep.baseChange` asks for it with the tensor
+product's left action `TensorProduct.leftHasSMul`. The two actions agree, but not at instance
+transparency, so `ρ.baseChange ℤ` fails to synthesize the hypothesis, and so does every declaration
+here that extends scalars to `ℤ`, such as `baseChangeSelfIso` for `A = ℤ`. The same happens when
+the topology is given as `moduleTopology ℤ (ℤ ⊗[A] M)`. Installing `TensorProduct.leftHasSMul` as
+a local `SMul ℤ (ℤ ⊗[A] M)` instance before forming `moduleTopology ℤ (ℤ ⊗[A] M)` or stating
+`[IsModuleTopology ℤ (ℤ ⊗[A] M)]` avoids this. Extending scalars from `A = ℤ` to another ring,
+such as `ℚ`, does not meet this diamond.
+
 ## References
 
 * H. Darmon, F. Diamond and R. Taylor, *Fermat's Last Theorem*, §2.1.
@@ -77,8 +93,10 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- **A jointly continuous representation.** A linear representation of the topological monoid
-`Γ` on the topological `A`-module `M` whose action map `Γ × M → M` is continuous. -/
+/-- **A jointly continuous representation.** A linear representation of the monoid `Γ` with a
+topology on the `A`-module `M` with a topology, whose action map `Γ × M → M` is continuous. The
+structure assumes no further compatibility of the topologies with the algebraic structure
+(`A` carries no topology here); the declarations that need more state it themselves. -/
 structure ContinuousRep (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
     [AddCommMonoid M] [Module A M] [TopologicalSpace M] where
   /-- The underlying linear representation. -/
@@ -139,6 +157,51 @@ theorem continuous_apply (ρ : ContinuousRep Γ A M) (g : Γ) : Continuous (ρ g
 @[fun_prop]
 theorem continuous_orbit (ρ : ContinuousRep Γ A M) (x : M) : Continuous fun g => ρ g x := by
   fun_prop
+
+section Subquotient
+
+/-- Restriction to an invariant submodule, with its inherited topology. -/
+def subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ A W where
+  toRepresentation := ρ.toRepresentation.subrepresentation W hW
+  continuous_action := (ρ.continuous_action.comp
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
+
+@[simp]
+theorem toRepresentation_subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) :
+    (ρ.subrepresentation W hW).toRepresentation = ρ.toRepresentation.subrepresentation W hW :=
+  (rfl)
+
+@[simp]
+theorem coe_subrepresentation_apply (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) (g : Γ) (x : W) :
+    (ρ.subrepresentation W hW g x : M) = ρ g x :=
+  (rfl)
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
+
+/-- Descent to the quotient by an invariant submodule, with its quotient topology. -/
+def quotient [ContinuousAdd V] (ρ : ContinuousRep Γ R V) (W : Submodule R V)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ R (V ⧸ W) where
+  toRepresentation := ρ.toRepresentation.quotient W hW
+  continuous_action := by
+    rw [← (IsOpenQuotientMap.id.prodMap W.isOpenQuotientMap_mkQ).continuous_comp_iff]
+    exact W.continuous_mkQ.comp ρ.continuous_action
+
+@[simp]
+theorem toRepresentation_quotient [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
+    (W : Submodule R V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) :
+    (ρ.quotient W hW).toRepresentation = ρ.toRepresentation.quotient W hW :=
+  (rfl)
+
+@[simp]
+theorem quotient_apply_mk [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
+    (W : Submodule R V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) (g : Γ) (x : V) :
+    ρ.quotient W hW g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (ρ g x) :=
+  (rfl)
+
+end Subquotient
 
 section ContRepresentation
 
