@@ -232,6 +232,7 @@ theorem ae_mem_subdifferential_fenchelConjugate_map_swap {u : E → EReal}
   simpa only [flip_innerₗ, Prod.fst_swap, Prod.snd_swap] using
     mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) hz
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- For a coupling `π` of finite measures with finite second moments concentrated on the
 subdifferential graph of `u`, the real representatives of `u` and of its conjugate `v` are
 integrable for the marginals: on the support of `π` each is squeezed between an affine function and
@@ -281,6 +282,7 @@ private theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFinite
       linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) hz.1 hy₀,
         innerₗ_apply_apply z.1 y₀, hz.2.2]
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- A plan concentrated on the subdifferential graph of a function `u`, such that `u` and its
 Legendre–Fenchel conjugate are measurable, has the largest correlation among the couplings of its
 marginals, provided these have finite second moments. -/
@@ -330,17 +332,17 @@ private theorem IsCoupling.integral_inner_le_of_ae_mem_subdifferential [IsFinite
         rw [← kantorovichDualValue_eq_integral hσ hφ hψ, kantorovichDualValue_eq_integral hπ hφ hψ]
     _ = ∫ z, ⟪z.1, z.2⟫ ∂π := integral_congr_ae (hgraph.mono fun z hz => hz.2.2)
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **Plans on cyclically monotone sets are optimal for the quadratic cost.** Let `μ` and `ν`
 be finite measures with finite second moments on a real inner product space. A coupling `π` of
 `μ` and `ν` concentrated on a `c`-cyclically monotone set for the cost `‖x - y‖ ^ 2 / 2` is an
 optimal plan for that cost. -/
 theorem IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two
-    [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
+    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν)
     {S : Set (E × E)} (hS : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) S)
     (h : ∀ᵐ z ∂π, z ∈ S) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν := by
-  have : OpensMeasurableSpace E := OpensMeasurableSpace.of_prod_left (Y := E)
   -- By Rockafellar's theorem `S` lies in the subdifferential graph of a conjugate `u = g⋆`; both
   -- `u` and `u⋆` are lower semicontinuous, hence measurable.
   obtain ⟨g, hg⟩ := hS.exists_fenchelConjugate_innerₗ_subset_subdifferential
@@ -352,48 +354,62 @@ theorem IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two
   exact ENNReal.ofReal_le_ofReal (sub_le_sub_left
     (hπ.integral_inner_le_of_ae_mem_subdifferential hσ hμ hν hu hv (h.mono fun _ hz => hg hz)) _)
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **Plans on subdifferential graphs are optimal for the quadratic cost.** Let `μ` and `ν` be
 finite measures with finite second moments on a real inner product space, and `u : E → EReal`
 any function. A coupling `π` of `μ` and `ν` such that `y ∈ ∂u(x)` for `π`-almost every
 `(x, y)` is an optimal plan for the cost `‖x - y‖ ^ 2 / 2`. -/
 theorem IsCoupling.isOptimalCoupling_of_ae_mem_subdifferential
-    [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
+    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν)
     {u : E → EReal} (h : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
   hπ.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two hμ hν
     (isCyclicallyMonotone_norm_sub_sq_div_two_subdifferential u) h
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **Subgradient selections are optimal transport maps for the quadratic cost.** Let `μ` and `ν`
 be finite measures with finite second moments on a real inner product space, `u : E → EReal` any
 function, and `T` a transport map from `μ` to `ν` with `T x ∈ ∂u(x)` for `μ`-almost every `x`.
 Then `T` is an optimal transport map for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich
 value. -/
 theorem isKantorovichOptimalTransportMap_of_ae_mem_subdifferential
-    [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν)
+    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν)
     {T : E → E} (hT : HasLaw T ν μ)
     {u : E → EReal} (h : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) u x) :
     IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
       μ ν T := by
-  -- The diagonal of `E` is closed, hence measurable, as `TauCeti.ae_snd_eq_graphPlan` requires.
-  have : MeasurableEq E := ⟨isClosed_diagonal.measurableSet⟩
   have hγ := isCoupling_graphPlan hT
+  -- Measurability on `E × E` comes from the marginals, pulled back along the projections.
+  have h₁ : AEStronglyMeasurable (fun z : E × E => z.1) (graphPlan T μ) :=
+    hμ.aestronglyMeasurable.comp_measurePreserving hγ.measurePreserving_fst
+  have h₂ : AEStronglyMeasurable (fun z : E × E => z.2) (graphPlan T μ) :=
+    hν.aestronglyMeasurable.comp_measurePreserving hγ.measurePreserving_snd
+  have hT₁ : AEStronglyMeasurable (fun z : E × E => T z.1) (graphPlan T μ) :=
+    ((hT.map_eq ▸ hν.aestronglyMeasurable).comp_aemeasurable hT.aemeasurable).comp_measurePreserving
+      hγ.measurePreserving_fst
   refine (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hT
-    continuous_ofReal_norm_sub_sq_div_two.measurable.aemeasurable).2
+    (continuous_ofReal_norm_sub_sq_div_two.comp_aestronglyMeasurable
+      (h₁.prodMk h₂)).aemeasurable).2
     (hγ.isOptimalCoupling_of_ae_mem_subdifferential hμ hν (u := u) ?_)
+  -- The graph plan is carried by the graph of `T`, a null-measurable set.
+  have hgraph : ∀ᵐ z ∂graphPlan T μ, z.2 = T z.1 := by
+    rw [ae_iff, graphPlan_def, Measure.map_apply₀ (aemeasurable_prodMk_self hT.aemeasurable)
+      (graphPlan_def T μ ▸ (h₂.nullMeasurableSet_eq_fun hT₁).compl)]
+    simp
   rw [← hγ.measurePreserving_fst.map_eq] at h
-  filter_upwards [ae_of_ae_map measurable_fst.aemeasurable h,
-    ae_snd_eq_graphPlan hT.aemeasurable] with z hz hz'
+  filter_upwards [ae_of_ae_map measurable_fst.aemeasurable h, hgraph] with z hz hz'
   rwa [hz']
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **Gradients of convex functions are optimal transport maps for the quadratic cost.** Let `μ`
 and `ν` be finite measures with finite second moments on a real Hilbert space, and let
 `u : E → EReal` be convex, never `⊥`, and finite with differentiable real representative at
 `μ`-almost every point. If the gradient `∇ u` pushes `μ` to `ν`, it is an optimal transport map
 for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich value. This is the converse of Brenier's
 theorem `TauCeti.exists_isKantorovichOptimalTransportMap_gradient`. -/
-theorem isKantorovichOptimalTransportMap_gradient [CompleteSpace E] [IsFiniteMeasure μ]
-    (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) {u : E → EReal}
+theorem isKantorovichOptimalTransportMap_gradient [OpensMeasurableSpace E] [CompleteSpace E]
+    [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) {u : E → EReal}
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
     (hdiff : ∀ᵐ x ∂μ, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
     (hT : HasLaw (∇ fun x => (u x).toReal) ν μ) :
@@ -412,6 +428,7 @@ theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ↔
       ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
         (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+  have : OpensMeasurableSpace E := OpensMeasurableSpace.of_prod_left (Y := E)
   refine ⟨fun h => ?_, fun ⟨_, _, _, _, _, hu⟩ =>
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ hν hu⟩
   have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
@@ -503,23 +520,13 @@ theorem IsOptimalCoupling.unique_of_forall_convex_ae_differentiableAt [IsFiniteM
     (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
     (h' : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π' μ ν)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
-    π = π' := by
-  -- The sum `π + π'` is an optimal plan between `μ + μ` and `ν + ν`, so it is carried by the
-  -- graph of a single map, and so are `π` and `π'`, which lie below it.
-  have hsum := h.add h'
-  have hfin' : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      (μ + μ) (ν + ν) ≠ ∞ := by
-    rw [← hsum.lintegral_eq, lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq]
-    exact ENNReal.add_ne_top.2 ⟨hfin, hfin⟩
-  obtain ⟨u, -, -, -, -, hgraph⟩ :=
-    hsum.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt
-      (fun u hu hbot => ae_add_measure_iff.2 ⟨hμ_diff u hu hbot, hμ_diff u hu hbot⟩) hfin'
-  have hT := measurable_gradient fun x => (u x).toReal
-  have hae : ∀ᵐ z ∂(π + π'), z.2 = ∇ (fun x => (u x).toReal) z.1 :=
-    hgraph ▸ ae_snd_eq_graphPlan hT.aemeasurable
-  rw [eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_right le_rfl) hae),
-    eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_left le_rfl) hae),
-    h.fst_eq, h'.fst_eq]
+    π = π' :=
+  h.eq_of_add_eq_graphPlan h' fun hsum => by
+    obtain ⟨u, -, -, -, -, hgraph⟩ :=
+      hsum.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt
+        (fun u hu hbot => ae_add_measure_iff.2 ⟨hμ_diff u hu hbot, hμ_diff u hu hbot⟩)
+        (ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hfin, hfin⟩) (transportCost_add_le _ _ _ _ _))
+    exact ⟨_, (measurable_gradient _).aemeasurable, hgraph⟩
 
 /-- **Brenier's theorem** on a finite-dimensional real inner product space whenever `μ` sees every
 convex `u : E → EReal` (never `⊥`) finite on a neighbourhood and differentiable almost everywhere
@@ -547,21 +554,16 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_of_forall_convex_ae_dif
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩ :=
     hπ.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt hμ_diff hfin
   have hT := measurable_gradient fun x => (u x).toReal
-  have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
-    (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
-  have hiff : ∀ S : E → E, HasLaw S ν μ →
-      (IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-        μ ν S ↔ IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-          (graphPlan S μ) μ ν) := fun S hS =>
-    isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hS
-      hc.measurable.aemeasurable
-  refine ⟨u, hconv, hlsc, hbot, hdiff, (hiff _ hlaw).2 (hgraph ▸ hπ),
-    fun σ => ⟨fun hσ => (hσ.unique_of_forall_convex_ae_differentiableAt hμ_diff hπ hfin).trans
-      hgraph, fun hσ => hσ ▸ hgraph ▸ hπ⟩,
-    fun S hS => ?_⟩
-  exact (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT.aemeasurable).1
-    ((((hiff S hS.toHasLaw).1 hS).unique_of_forall_convex_ae_differentiableAt
-      hμ_diff hπ hfin).trans hgraph)
+  have hopt_T : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      (graphPlan (∇ fun x => (u x).toReal) μ) μ ν := hgraph ▸ hπ
+  refine ⟨u, hconv, hlsc, hbot, hdiff,
+    isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan hT.aemeasurable
+      hc.measurable.aemeasurable hopt_T,
+    fun σ => ⟨fun hσ => hσ.unique_of_forall_convex_ae_differentiableAt hμ_diff hopt_T hfin,
+      fun hσ => hσ ▸ hopt_T⟩,
+    fun S hS => hS.ae_eq_of_isOptimalCoupling_eq_graphPlan hT.aemeasurable
+      hc.measurable.aemeasurable fun hS_opt =>
+        hS_opt.unique_of_forall_convex_ae_differentiableAt hμ_diff hopt_T hfin⟩
 
 /-- **Brenier's theorem for the cost `edist ^ 2`** on a finite-dimensional real inner product space
 under an almost-everywhere differentiability hypothesis for convex functions along `μ`. -/
@@ -789,15 +791,11 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
     exact hcs ▸ hπ.swap
   have hT := measurable_gradient fun x => (u x).toReal
   have hS := measurable_gradient fun y => (fenchelConjugate (innerₗ E) u y).toReal
-  have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
-    (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
-  have hlaw' : HasLaw (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) μ ν :=
-    (isCoupling_graphPlan_iff hS.aemeasurable).1 (hgraph' ▸ hπ.toIsCoupling.swap)
   refine ⟨u, hconv, hlsc, hbot, hdiff, hdiff',
-    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw
-      hc.measurable.aemeasurable).2 (hgraph ▸ hπ),
-    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw'
-      hc.measurable.aemeasurable).2 (hgraph' ▸ hswap),
+    isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan hT.aemeasurable
+      hc.measurable.aemeasurable (hgraph ▸ hπ),
+    isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan hS.aemeasurable
+      hc.measurable.aemeasurable (hgraph' ▸ hswap),
     hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id hμ hν hconv hlsc hsub',
     hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id hμ hν hconv hlsc hsub'⟩
 

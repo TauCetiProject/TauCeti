@@ -136,7 +136,7 @@ theorem splitAt_injective (n k : ℕ) (hk : k ≤ n) :
 theorem splitAt_tprod (n k : ℕ) (hk : k ≤ n) (x : Fin n → M) :
     splitAt R M n k hk (PiTensorProduct.tprod R x) =
       PiTensorProduct.tprod R (fun i : Fin k ↦ x (Fin.castLE hk i)) ⊗ₜ[R]
-        PiTensorProduct.tprod R (fun j : Fin (n - k) ↦ x ⟨k + j.1, by omega⟩) := by
+        PiTensorProduct.tprod R (fun j : Fin (n - k) ↦ x ⟨k + j.val, by omega⟩) := by
   apply mulEquiv.injective
   rw [mulEquiv_splitAt, cast_tprod, ← gMul_def,
     tprod_mul_tprod]

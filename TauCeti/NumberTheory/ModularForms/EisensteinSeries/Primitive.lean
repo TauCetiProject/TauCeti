@@ -60,7 +60,7 @@ namespace TauCeti.EisensteinSeries
 variable {N : ℕ} {k : ℤ}
 
 private lemma primitive_row_tsum (a : Fin 2 → ZMod N) :
-    (∑' x : gammaSet N 1 a, if x.1 0 = 0 then (x.1 1 : ℂ) ^ (-k) else 0) =
+    (∑' x : gammaSet N 1 a, if x.val 0 = 0 then (x.val 1 : ℂ) ^ (-k) else 0) =
       (if a = ![0, 1] then 1 else 0) +
         (if a = ![0, -1] then (-1 : ℂ) ^ k else 0) := by
   classical
@@ -130,19 +130,19 @@ theorem tendsto_eisensteinSeries_atImInfty (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
     (eisensteinSeriesMF hk a) hN (by simp)
   rw [coe_eisensteinSeriesMF] at hlim
   have hrow : Tendsto (fun t : ℝ ↦ eisensteinSeries a k (ofComplex (I * t))) atTop
-      (𝓝 (∑' x : gammaSet N 1 a, if x.1 0 = 0 then (x.1 1 : ℂ) ^ (-k) else 0)) := by
+      (𝓝 (∑' x : gammaSet N 1 a, if x.val 0 = 0 then (x.val 1 : ℂ) ^ (-k) else 0)) := by
     simp only [eisensteinSeries]
     refine tendsto_tsum_of_dominated_convergence
       (bound := fun x : gammaSet N 1 a ↦ r ⟨⟨0, 1⟩, one_pos⟩ ^ (-k : ℝ) *
-        ‖x.1‖ ^ (-k : ℝ))
+        ‖x.val‖ ^ (-k : ℝ))
       (((summable_one_div_norm_rpow hk').subtype _).mul_left _)
-      (fun x ↦ tendsto_eisSummand_ofComplex_I_mul hkpos x.1) ?_
+      (fun x ↦ tendsto_eisSummand_ofComplex_I_mul hkpos x.val) ?_
     filter_upwards [eventually_ge_atTop 1] with t ht x
     have hz : (ofComplex (I * t) : ℍ) ∈ verticalStrip 0 1 := by
       rw [ofComplex_apply_of_im_pos (by simpa using zero_lt_one.trans_le ht)]
       simpa [verticalStrip] using ht
     simpa only [eisSummand, one_div, ← _root_.zpow_neg, norm_zpow, ← Real.rpow_intCast,
-      Int.cast_neg] using summand_bound_of_mem_verticalStrip (by positivity) x.1 one_pos hz
+      Int.cast_neg] using summand_bound_of_mem_verticalStrip (by positivity) x.val one_pos hz
   rw [primitive_row_tsum a] at hrow
   have hvalue := tendsto_nhds_unique hrow
     (hlim.comp tendsto_ofComplex_I_mul_atTop_atImInfty)

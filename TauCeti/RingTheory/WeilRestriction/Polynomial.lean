@@ -103,7 +103,7 @@ theorem one_tmul_fixedPointQuotientPolynomialAlgEquiv_symm
     (hΓ : IsUnit (Nat.card Γ : A)) (p : A[X]) :
     (1 : B) ⊗ₜ[A] (fixedPointQuotientPolynomialAlgEquiv A B Γ hΓ).symm p =
       (fixedPointQuotientHomEquiv (MulSemiringAction.toAlgAut Γ A B)
-        (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp) _ (AlgHom.id A _)).1
+        (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp) _ (AlgHom.id A _)).val
         (Polynomial.map (algebraMap A B) p) := by
   let I₁ := fixedPointIdealOfInduced (MulSemiringAction.toAlgAut Γ A B)
     (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp)
@@ -138,7 +138,7 @@ Not `@[simp]` because `one_tmul_fixedPointQuotientPolynomialAlgEquiv_symm` alrea
 theorem one_tmul_fixedPointQuotientPolynomialAlgEquiv_symm_X (hΓ : IsUnit (Nat.card Γ : A)) :
     (1 : B) ⊗ₜ[A] (fixedPointQuotientPolynomialAlgEquiv A B Γ hΓ).symm X =
       (fixedPointQuotientHomEquiv (MulSemiringAction.toAlgAut Γ A B)
-        (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp) _ (AlgHom.id A _)).1 X := by
+        (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp) _ (AlgHom.id A _)).val X := by
   simp
 
 /-- `(fixedPointQuotientPolynomialAlgEquiv A B Γ hΓ).symm` sends constants `C a` to scalars. -/

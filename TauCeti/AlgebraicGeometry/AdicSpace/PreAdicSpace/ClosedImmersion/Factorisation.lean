@@ -116,15 +116,15 @@ theorem existsUnique_comp_presentationLimitPreAdicSpaceQuotientComap_eq
   have : Mono i' := SheafyPreAdicSpace.mono_of_isClosedImmersion i'
     (isClosedImmersion_presentationLimitPreAdicSpaceQuotientComap S P hS J hsheafJ hJ)
   -- on each open affinoid subspace `U ≅ Spa(B, B⁺)`, the restriction of `f` factors through `i`
-  have hloc (U : X.affinoidOpens) : ∃ g : X.restrict U.1.isOpenEmbedding ⟶ Z.obj,
-      g ≫ i = X.ofRestrict U.1.isOpenEmbedding ≫ f := by
+  have hloc (U : X.affinoidOpens) : ∃ g : X.restrict U.val.isOpenEmbedding ⟶ Z.obj,
+      g ≫ i = X.ofRestrict U.val.isOpenEmbedding ≫ f := by
     obtain ⟨B, _, _, _, _, _, _, _, T, P', hT, ⟨e⟩⟩ := (isAffinoid_iff_exists_complete _).mp
-      ((mem_propOpens_iff _).mp U.2)
+      ((mem_propOpens_iff _).mp U.property)
     have hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
         (presentationLimitPresheaf P' T.plus) :=
       ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict _ hX.isSheafy)
     have hf' : J ≤ RingHom.ker (presentationLimitHomPairHom P P' S T hS hT
-        ((e.inv ≫ X.ofRestrict U.1.isOpenEmbedding) ≫ f)).toRingHom := by
+        ((e.inv ≫ X.ofRestrict U.val.isOpenEmbedding) ≫ f)).toRingHom := by
       rw [presentationLimitHomPairHom_toRingHom, ker_presentationLimitHomRingHom]
       exact hf.trans (ker_presentationLimitAppTop_le_comp P S.plus _ hS _ f)
     obtain ⟨g, hg⟩ := exists_comp_presentationLimitPreAdicSpaceQuotientComap_eq P P' S T hS hT J
@@ -133,7 +133,7 @@ theorem existsUnique_comp_presentationLimitPreAdicSpaceQuotientComap_eq
   choose g hg using hloc
   -- the local factorisations glue, since `i` is a monomorphism of sheafy pre-adic spaces
   obtain ⟨g', hg'⟩ := SheafyPreAdicSpace.exists_comp_eq_of_iSup_eq_top i'
-    (ObjectProperty.homMk f : X' ⟶ Y) (fun U : X.affinoidOpens ↦ U.1)
+    (ObjectProperty.homMk f : X' ⟶ Y) (fun U : X.affinoidOpens ↦ U.val)
     ((sSup_eq_iSup' _).symm.trans ((isLocallyAffinoid_iff_sSup_eq_top X).mp hX.isLocallyAffinoid))
     g hg
   refine ⟨g'.hom, congrArg InducedCategory.Hom.hom hg', fun g'' hg'' ↦ ?_⟩

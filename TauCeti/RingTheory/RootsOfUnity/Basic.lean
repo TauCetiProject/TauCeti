@@ -66,8 +66,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
 * `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
-  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables, and
-  `IsPrimitiveRoot.sum_zpow_pow_eq` for an integral exponent `e` in a field.
+  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables, together with
+  `IsPrimitiveRoot.sum_zpow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_mul_inv_pow_eq` in a field.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
@@ -164,7 +164,7 @@ theorem _root_.rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R]
     (ζ : rootsOfUnity 2 R) :
     ζ = 1 ∨ ζ = negOneRootsOfUnity := by
   have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
-    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
+    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.property
   rcases h with h | h
   · exact Or.inl (Subtype.ext (Units.ext h))
   · exact Or.inr (Subtype.ext (Units.ext h))
@@ -258,6 +258,36 @@ theorem _root_.IsPrimitiveRoot.sum_prod_pow_pow_eq [IsDomain R] {ι : Type*} [Fi
     ∑ j : ι → Fin m, ∏ i, (ζ ^ e i) ^ (j i : ℕ) = ∏ i, if m ∣ e i then (m : R) else 0 := by
   simp only [← hζ.sum_pow_pow_eq, Fintype.prod_sum]
 
+/-- **Orthogonality of characters on `{0, …, m - 1} ^ ι`.** In a field, for a primitive `m`-th root
+of unity `ζ` and multi-indices `α, β : ι → ℕ` with all entries strictly less than `m`, summing
+`∏ i, (ζ ^ β i * (ζ⁻¹) ^ α i) ^ (j i : ℕ)` over `j : ι → Fin m` equals `m ^ card ι` when `β = α`
+and `0` otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_prod_pow_mul_inv_pow_eq {K : Type*} [Field K] {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {ζ : K} {m : ℕ} (hζ : IsPrimitiveRoot ζ m) {α β : ι → ℕ}
+    (hα : ∀ i, α i < m) (hβ : ∀ i, β i < m) :
+    ∑ j : ι → Fin m, ∏ i, (ζ ^ β i * (ζ⁻¹) ^ α i) ^ (j i : ℕ) =
+      if β = α then (m : K) ^ Fintype.card ι else 0 := by
+  rcases eq_or_ne m 0 with rfl | hm0
+  · rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+    · simp [Subsingleton.elim β α]
+    · exact absurd (hα i) (Nat.not_lt_zero _)
+  have hζ0 : ζ ≠ 0 := hζ.ne_zero hm0
+  have hpow (i : ι) : ζ ^ β i * (ζ⁻¹) ^ α i = ζ ^ ((β i : ℤ) - α i) := by
+    rw [zpow_sub₀ hζ0, zpow_natCast, zpow_natCast, div_eq_mul_inv, inv_pow]
+  simp_rw [hpow]
+  rw [← Fintype.prod_sum (fun i (t : Fin m) ↦ (ζ ^ ((β i : ℤ) - α i)) ^ (t : ℕ))]
+  simp_rw [hζ.sum_zpow_pow_eq]
+  have hdvd (i : ι) : ((m : ℤ) ∣ (β i : ℤ) - α i) ↔ β i = α i := by
+    refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+    have habs : |(β i : ℤ) - α i| < (m : ℤ) :=
+      abs_sub_lt_iff.2 ⟨by have := hβ i; omega, by have := hα i; omega⟩
+    exact_mod_cast sub_eq_zero.1 (Int.eq_zero_of_abs_lt_dvd h habs)
+  simp_rw [hdvd]
+  split_ifs with hβα
+  · simp [hβα]
+  · obtain ⟨i, hi⟩ := Function.ne_iff.1 hβα
+    exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi])
+
 /-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
 `n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,
 and the `n`-th roots of unity of a domain form a cyclic group. For instance, every field extension
@@ -304,13 +334,13 @@ theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Pri
 `n`-th roots of unity, written additively. -/
 def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
     Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ) ≃+ Additive (rootsOfUnity n M) where
-  toFun x := Additive.ofMul ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 <| by
-    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.2)
+  toFun x := Additive.ofMul ⟨x.val.toMul, (mem_rootsOfUnity _ _).2 <| by
+    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.property)
     rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx⟩
   invFun ζ := ⟨Additive.ofMul (ζ.toMul : Mˣ), (Submodule.mem_torsionBy_iff _ _).2 <|
     Additive.toMul.injective <| by
       rw [natCast_zsmul, toMul_nsmul, toMul_ofMul, toMul_zero]
-      exact (mem_rootsOfUnity _ _).1 ζ.toMul.2⟩
+      exact (mem_rootsOfUnity _ _).1 ζ.toMul.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -318,7 +348,7 @@ def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
 @[simp]
 theorem coe_torsionByUnitsEquivRootsOfUnity_apply {M : Type*} [CommMonoid M] (n : ℕ)
     (x : Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :
-    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.1.toMul :=
+    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.val.toMul :=
   (rfl)
 
 @[simp]
@@ -385,7 +415,7 @@ theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k
     [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
     ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
-  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.property⟩,
     IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
 
 /-- The power transition at a nonzero order is the identity. -/
