@@ -382,6 +382,7 @@ theorem not_isDelta_compl_iterate_jump_of_le (hmn : m ≤ n + 1) :
   not_isDelta_succ_compl_iterate_jump (h.of_le hmn)
 
 /-- Exact `Σ⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Σ⁰ₘ(Z)` if and only if `n ≤ m`. -/
+@[simp]
 theorem isSigma_iterate_jump_iff : IsSigma Z m (· ∈ Set.jump^[n] Z) ↔ n ≤ m := by
   constructor
   · intro h
@@ -393,17 +394,22 @@ theorem isSigma_iterate_jump_iff : IsSigma Z m (· ∈ Set.jump^[n] Z) ↔ n ≤
     | zero => exact (isSigma_zero_mem_iff_turingReducible.2 .rfl).of_le hnm
     | succ k => exact isSigma_succ_iterate_jump.of_le hnm
 
-/-- Exact `Π⁰` level of a positive iterated jump: for `0 < n`, `Z⁽ⁿ⁾ ∈ Π⁰ₘ(Z)` if and only if
-`n < m`. -/
-theorem isPi_iterate_jump_iff (hn : 0 < n) : IsPi Z m (· ∈ Set.jump^[n] Z) ↔ n < m := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-  refine ⟨fun h => not_le.1 fun hmk => not_isPi_iterate_jump_of_le hmk h,
-    fun hkm => isSigma_succ_iterate_jump.pi_succ.of_le hkm⟩
+/-- Exact `Π⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Π⁰ₘ(Z)` if and only if `n = 0 ∨ n < m`. -/
+@[simp]
+theorem isPi_iterate_jump_iff : IsPi Z m (· ∈ Set.jump^[n] Z) ↔ n = 0 ∨ n < m := by
+  cases n with
+  | zero =>
+    simp [(isPi_zero_iff.2 (isSigma_zero_mem_iff_turingReducible.2 .rfl)).of_le (Nat.zero_le m)]
+  | succ k =>
+    refine ⟨fun h => Or.inr (not_le.1 fun hmk => not_isPi_iterate_jump_of_le hmk h), ?_⟩
+    rintro (h | hkm)
+    · exact absurd h (Nat.succ_ne_zero k)
+    · exact isSigma_succ_iterate_jump.pi_succ.of_le hkm
 
-/-- Exact `Δ⁰` level of a positive iterated jump: for `0 < n`, `Z⁽ⁿ⁾ ∈ Δ⁰ₘ(Z)` if and only if
-`n < m`. -/
-theorem isDelta_iterate_jump_iff (hn : 0 < n) : IsDelta Z m (· ∈ Set.jump^[n] Z) ↔ n < m := by
-  rw [isDelta_iff, isSigma_iterate_jump_iff, isPi_iterate_jump_iff hn]
+/-- Exact `Δ⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Δ⁰ₘ(Z)` if and only if `n = 0 ∨ n < m`. -/
+@[simp]
+theorem isDelta_iterate_jump_iff : IsDelta Z m (· ∈ Set.jump^[n] Z) ↔ n = 0 ∨ n < m := by
+  rw [isDelta_iff, isSigma_iterate_jump_iff, isPi_iterate_jump_iff]
   omega
 
 /-- Exact `Π⁰` level of the complement of the `n`-th jump: `(Z⁽ⁿ⁾)ᶜ ∈ Π⁰ₘ(Z)` if and only if
@@ -413,19 +419,19 @@ theorem isPi_compl_iterate_jump_iff : IsPi Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ 
   exact ⟨fun h => isPi_not_iff.1 (h.of_eq fun _ => Set.mem_compl_iff _ _),
     fun h => (isPi_not_iff.2 h).of_eq fun _ => (Set.mem_compl_iff _ _).symm⟩
 
-/-- Exact `Σ⁰` level of the complement of a positive iterated jump: for `0 < n`,
-`(Z⁽ⁿ⁾)ᶜ ∈ Σ⁰ₘ(Z)` if and only if `n < m`. -/
-theorem isSigma_compl_iterate_jump_iff (hn : 0 < n) :
-    IsSigma Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n < m := by
-  rw [← isPi_iterate_jump_iff (Z := Z) (m := m) hn]
+/-- Exact `Σ⁰` level of the complement of the `n`-th jump: `(Z⁽ⁿ⁾)ᶜ ∈ Σ⁰ₘ(Z)` if and only if
+`n = 0 ∨ n < m`. -/
+theorem isSigma_compl_iterate_jump_iff :
+    IsSigma Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n = 0 ∨ n < m := by
+  rw [← isPi_iterate_jump_iff (Z := Z) (m := m) (n := n)]
   exact ⟨fun h => isSigma_not_iff.1 (h.of_eq fun _ => Set.mem_compl_iff _ _),
     fun h => (isSigma_not_iff.2 h).of_eq fun _ => (Set.mem_compl_iff _ _).symm⟩
 
-/-- Exact `Δ⁰` level of the complement of a positive iterated jump: for `0 < n`,
-`(Z⁽ⁿ⁾)ᶜ ∈ Δ⁰ₘ(Z)` if and only if `n < m`. -/
-theorem isDelta_compl_iterate_jump_iff (hn : 0 < n) :
-    IsDelta Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n < m := by
-  rw [isDelta_iff, isSigma_compl_iterate_jump_iff hn, isPi_compl_iterate_jump_iff]
+/-- Exact `Δ⁰` level of the complement of the `n`-th jump: `(Z⁽ⁿ⁾)ᶜ ∈ Δ⁰ₘ(Z)` if and only if
+`n = 0 ∨ n < m`. -/
+theorem isDelta_compl_iterate_jump_iff :
+    IsDelta Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n = 0 ∨ n < m := by
+  rw [isDelta_iff, isSigma_compl_iterate_jump_iff, isPi_compl_iterate_jump_iff]
   omega
 
 /-- The parity join of `Z⁽ⁿ⁺¹⁾` with its complement is `Δ⁰_{n+2}` relative to `Z`. -/
