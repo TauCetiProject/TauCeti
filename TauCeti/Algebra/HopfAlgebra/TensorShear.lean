@@ -119,9 +119,10 @@ noncomputable def tensorShearMulRightBaseChange :
     | tmul a h => simp [tensorShearMulRightBaseChangeAux]
     | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
 
-/-- On pure tensors the scalar-extended shear fixes the first coordinate and multiplies the
-middle one into the comultiplication of the last: after reassociation it sends
-`(a ⊗ g) ⊗ h` to `a ⊗ ((g ⊗ 1) * Δ(h))`. -/
+/-- The scalar-extended shear is pullback along the point map `(x, u, v) ↦ (x, u, uv)`. On a
+pure tensor this sends `(a ⊗ g) ⊗ h` to `a ⊗ ((g ⊗ 1) * Δ(h))`, up to reassociation: the first
+tensor factor is fixed, and the last factor `h` is replaced by its comultiplication, multiplied
+by `g` in the middle factor. -/
 @[simp]
 theorem tensorShearMulRightBaseChange_tmul (a : A) (g h : H) :
     tensorShearMulRightBaseChange A ((a ⊗ₜ[R] g) ⊗ₜ[R] h) =
@@ -129,9 +130,9 @@ theorem tensorShearMulRightBaseChange_tmul (a : A) (g h : H) :
         (a ⊗ₜ[R] ((g ⊗ₜ[R] 1) * Coalgebra.comul (R := R) h)) := by
   simp [tensorShearMulRightBaseChange, tensorShearMulRightBaseChangeAux]
 
-/-- On pure tensors the inverse scalar-extended shear fixes the first coordinate and divides the
-last by the middle one: after reassociation it sends `(a ⊗ g) ⊗ h` to
-`a ⊗ ((g ⊗ 1) * (S ⊗ id)(Δ(h)))`. -/
+/-- The inverse scalar-extended shear is pullback along the point map `(x, u, v) ↦ (x, u, u⁻¹v)`.
+On a pure tensor this sends `(a ⊗ g) ⊗ h` to `a ⊗ ((g ⊗ 1) * (S ⊗ id)(Δ(h)))`, up to
+reassociation, where `S` is the antipode. -/
 @[simp]
 theorem tensorShearMulRightBaseChange_symm_tmul (a : A) (g h : H) :
     (tensorShearMulRightBaseChange A).symm ((a ⊗ₜ[R] g) ⊗ₜ[R] h) =

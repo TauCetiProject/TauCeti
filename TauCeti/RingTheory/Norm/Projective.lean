@@ -131,7 +131,7 @@ theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A]
     [Algebra R A'] (φ : A →ₐ[R] A') (x : A ⊗[R] S) :
     projectiveNorm A' (Algebra.TensorProduct.rTensor S φ x) = φ (projectiveNorm A x) := by
   let := φ.toRingHom.toAlgebra
-  have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
+  have : IsScalarTower R A A' := .of_algHom φ
   have hφ : IsScalarTower.toAlgHom R A A' = φ := AlgHom.ext fun a ↦ by
     rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
       AlgHom.coe_toRingHom]

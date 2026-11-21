@@ -61,8 +61,8 @@ theorem coeff_projectiveCharpolyRev_lmul_coact_mem_coinvariants (a : A) (i : ℕ
   have h :=
     (HopfAlgebra.tensorShearMulRightBaseChange (R := R) (H := H) A).projectiveCharpolyRev_lmul
     (Algebra.TensorProduct.rTensor H (includeLeft : A →ₐ[R] A ⊗[R] H) (Comodule.coact a))
-  rw [orbitShear_coact, AlgHom.projectiveCharpolyRev_lmul_rTensor,
-    AlgHom.projectiveCharpolyRev_lmul_rTensor] at h
+  rw [orbitShear_coact, Algebra.coe_lmul_eq_mul, AlgHom.projectiveCharpolyRev_lmul_rTensor,
+    AlgHom.projectiveCharpolyRev_lmul_rTensor, ← Algebra.coe_lmul_eq_mul] at h
   apply mem_coinvariants.mpr
   simpa only [coeff_map, AlgHom.coe_toRingHom, coactAlgHom_apply, includeLeft_apply] using
     congrArg (fun p ↦ p.coeff i) h

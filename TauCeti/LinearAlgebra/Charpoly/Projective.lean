@@ -400,13 +400,16 @@ variable {R S A A' : Type*} [CommRing R] [Ring S] [Algebra R S]
 
 /-- The reversed characteristic polynomial of multiplication on a scalar extension commutes
 with an arbitrary map of the scalar algebra. The norm analogue is
-`Algebra.projectiveNorm_rTensor`. -/
+`Algebra.projectiveNorm_rTensor`. It is stated with `LinearMap.mul`, the simp normal form of
+`Algebra.lmul`. -/
+@[simp]
 theorem projectiveCharpolyRev_lmul_rTensor (φ : A →ₐ[R] A') (x : A ⊗[R] S) :
     LinearMap.projectiveCharpolyRev
-        (Algebra.lmul A' (A' ⊗[R] S) (Algebra.TensorProduct.rTensor S φ x)) =
-      (LinearMap.projectiveCharpolyRev (Algebra.lmul A (A ⊗[R] S) x)).map φ := by
+        (LinearMap.mul A' (A' ⊗[R] S) (Algebra.TensorProduct.rTensor S φ x)) =
+      (LinearMap.projectiveCharpolyRev (LinearMap.mul A (A ⊗[R] S) x)).map φ := by
+  rw [← Algebra.coe_lmul_eq_mul, ← Algebra.coe_lmul_eq_mul]
   let := φ.toRingHom.toAlgebra
-  have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
+  have : IsScalarTower R A A' := .of_algHom φ
   have hφ : IsScalarTower.toAlgHom R A A' = φ := AlgHom.ext fun a ↦ by
     rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
       AlgHom.coe_toRingHom]
@@ -421,7 +424,7 @@ end AlgHom
 
 namespace RingHom
 
-variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [Module.Finite A B]
+variable {A B : Type*} [CommRing A] [Ring B] [Algebra A B] [Module.Finite A B]
   [Module.Projective A B]
 
 /-- **Integrality from invariant characteristic coefficients.** Let `B` be a finite projective
