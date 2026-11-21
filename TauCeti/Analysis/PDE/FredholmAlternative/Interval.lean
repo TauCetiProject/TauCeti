@@ -27,25 +27,29 @@ in it is explicit, because the Dirichlet spectrum of `-Δ` is the set of numbers
 
 * **Away from resonance**, when `κ` is none of the `κ_k`, the problem has exactly one weak
   solution for every `ℓ ∈ H⁻¹(a, b)`, and at an eigenvalue uniqueness fails
-  (`TauCeti.PDE.forall_existsUnique_forall_energyFormH1_eq_iff`). This holds although the form is
-  not coercive once `κ ≥ κ₁` (`TauCeti.PDE.not_isCoercive_energyFormH1L0_of_le`).
+  (`TauCeti.PDE.forall_existsUnique_forall_energyFormH1_eq_iff_intervalDomain`). This holds
+  although the form is not coercive once `κ ≥ κ₁`
+  (`TauCeti.PDE.not_isCoercive_energyFormH1L0_intervalDomain_of_le`).
 * **At resonance**, `κ = κ_k`, the homogeneous problem has the one-dimensional solution space
-  spanned by `s_k` (`TauCeti.PDE.forall_energyFormH1_eq_zero_iff_exists_value_ae_eq`). The form is
+  spanned by `s_k`
+  (`TauCeti.PDE.forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain`). The form is
   symmetric, so this is also the adjoint kernel, and the problem with forcing `f ∈ L²(a, b)` is
   solvable exactly when `∫ f s_k = 0`
-  (`TauCeti.PDE.exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero`).
+  (`TauCeti.PDE.exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero_intervalDomain`).
 * **Forcing by another mode** `f = s_m`, `m ≠ k`, at resonance `κ = κ_k`: the problem is solvable
-  (`TauCeti.PDE.exists_isWeakSolutionDirichlet_of_ae_eq_sin`), and its weak solutions are exactly
-  `s_m / (κ_m - κ_k) + t s_k`, `t ∈ ℝ`
-  (`TauCeti.PDE.isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin`).
+  (`TauCeti.PDE.exists_isWeakSolutionDirichlet_intervalDomain_of_ae_eq_sin`), and its weak
+  solutions are exactly `s_m / (κ_m - κ_k) + t s_k`, `t ∈ ℝ`
+  (`TauCeti.PDE.isWeakSolutionDirichlet_iff_exists_value_ae_eq_intervalDomain_of_ae_eq_sin`).
 
 The interval `(0, π)` with `κ = 1` gives the standard examples: `-u'' - u = 1` has no weak
 solution, since `∫_0^π sin x dx = 2`
-(`TauCeti.PDE.not_exists_isWeakSolutionDirichlet_neg_one_of_ae_eq_one`), while the weak solutions
-of `-u'' - u = sin 2x` are exactly the functions `sin (2x) / 3 + t sin x`
-(`TauCeti.PDE.isWeakSolutionDirichlet_neg_one_iff_of_ae_eq_sin_two_mul`). With `κ = 2`, which is
-not a square of an integer, the problem `-u'' - 2u = ℓ` is uniquely solvable for every `ℓ`
-(`TauCeti.PDE.existsUnique_forall_energyFormH1_neg_two_eq`), although its form is not coercive.
+(`TauCeti.PDE.not_exists_isWeakSolutionDirichlet_neg_one_intervalDomain_zero_pi_of_ae_eq_one`),
+while the weak solutions of `-u'' - u = sin 2x` are exactly the functions `sin (2x) / 3 + t sin x`
+(`TauCeti.PDE.isWeakSolutionDirichlet_neg_one_iff_intervalDomain_zero_pi_of_ae_eq_sin_two_mul`).
+With `κ = 2`, which is not a square of an integer, the problem `-u'' - 2u = ℓ` is uniquely
+solvable for every `ℓ`
+(`TauCeti.PDE.existsUnique_forall_energyFormH1_neg_two_eq_intervalDomain_zero_pi`), although its
+form is not coercive.
 
 ## References
 
@@ -212,7 +216,7 @@ private theorem exists_inner_eq_mul_inner_self
 solutions `u ∈ H¹₀(a, b)` of the homogeneous problem `-u'' - κ u = 0` are exactly the multiples of
 the sine mode `x ↦ sin (k π (x - a) / (b - a))`. For `k = 0` the sine mode vanishes and the
 statement says that `-u'' = 0` has only the trivial solution. -/
-theorem forall_energyFormH1_eq_zero_iff_exists_value_ae_eq (hab : a < b) (k : ℕ)
+theorem forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain (hab : a < b) (k : ℕ)
     (u : W1p0 volume (intervalDomain a b) 2) :
     (∀ v : W1p0 volume (intervalDomain a b) 2,
         energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
@@ -292,7 +296,8 @@ private theorem setIntegral_mul_value_eq_mul_setIntegral {k : ℕ}
 `κ = (k π / (b - a))²`, the problem `-u'' - κ u = f` in `(a, b)`, `u(a) = u(b) = 0`, with
 `f ∈ L²(a, b)` has a weak solution exactly when `f` is orthogonal to the sine mode
 `x ↦ sin (k π (x - a) / (b - a))`, which spans the adjoint kernel. -/
-theorem exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero (hab : a < b) (k : ℕ)
+theorem exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero_intervalDomain (hab : a < b)
+    (k : ℕ)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))) :
     (∃ u : W1p0 volume (intervalDomain a b) 2,
         IsWeakSolutionDirichlet (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2) f u) ↔
@@ -305,9 +310,11 @@ theorem exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero (hab : a 
     filter_upwards [hs] with x hx
     rw [hx, one_mul]
   refine ⟨fun h ↦ ?_, fun h w hw ↦ ?_⟩
-  · have h1 := h s ((forall_energyFormH1_eq_zero_iff_exists_value_ae_eq hab k s).2 ⟨1, hs1⟩)
+  · have h1 :=
+      h s ((forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain hab k s).2 ⟨1, hs1⟩)
     rwa [setIntegral_mul_value_eq_mul_setIntegral f hs1, one_mul] at h1
-  · obtain ⟨t, ht⟩ := (forall_energyFormH1_eq_zero_iff_exists_value_ae_eq hab k w).1 hw
+  · obtain ⟨t, ht⟩ :=
+      (forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain hab k w).1 hw
     rw [setIntegral_mul_value_eq_mul_setIntegral f ht, h, mul_zero]
 
 /-- The `k`-th Dirichlet eigenfunction of `-Δ` on `(a, b)`. Restating
@@ -366,7 +373,7 @@ private theorem isDirichletEigenvalue_of_ne_zero (κ : ℝ) {u : W1p0 volume (in
 `-u'' - κ u = ℓ` in `(a, b)`, `u(a) = u(b) = 0`, has exactly one weak solution `u ∈ H¹₀(a, b)` for
 every `ℓ ∈ H⁻¹(a, b)` if and only if `κ` is not a Dirichlet eigenvalue `(k π / (b - a))²`,
 `k ≥ 1`. -/
-theorem forall_existsUnique_forall_energyFormH1_eq_iff (hab : a < b) (κ : ℝ) :
+theorem forall_existsUnique_forall_energyFormH1_eq_iff_intervalDomain (hab : a < b) (κ : ℝ) :
     (∀ ℓ : StrongDual ℝ (W1p0 volume (intervalDomain a b) 2),
       ∃! u : W1p0 volume (intervalDomain a b) 2, ∀ v : W1p0 volume (intervalDomain a b) 2,
         energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) (u : W1p volume (intervalDomain a b) 2)
@@ -384,8 +391,10 @@ theorem forall_existsUnique_forall_energyFormH1_eq_iff (hab : a < b) (κ : ℝ) 
 `κ ≥ (π / (b - a))²`, the first Dirichlet eigenvalue of `-Δ` on `(a, b)`, the energy form of
 `-u'' - κ u` is not coercive on `H¹₀(a, b)`: it is nonpositive on the first sine mode. So
 Lax–Milgram does not apply, and away from the eigenvalues unique solvability comes from the
-Fredholm alternative instead (`TauCeti.PDE.forall_existsUnique_forall_energyFormH1_eq_iff`). -/
-theorem not_isCoercive_energyFormH1L0_of_le (hab : a < b) {κ : ℝ} (hκ : (π / (b - a)) ^ 2 ≤ κ)
+Fredholm alternative instead
+(`TauCeti.PDE.forall_existsUnique_forall_energyFormH1_eq_iff_intervalDomain`). -/
+theorem not_isCoercive_energyFormH1L0_intervalDomain_of_le (hab : a < b) {κ : ℝ}
+    (hκ : (π / (b - a)) ^ 2 ≤ κ)
     (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x)
       ((0 : EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin 1)) x)
       ((fun _ ↦ -κ : EuclideanSpace ℝ (Fin 1) → ℝ) x)) ⊤
@@ -481,9 +490,9 @@ private theorem value_sub_smul_ae_eq (u s : W1p0 volume (intervalDomain a b) 2) 
 `s_m(x) = sin (m π (x - a) / (b - a))` with `m ≠ k`. The weak solutions of `-u'' - κ_k u = f`
 with `u(a) = u(b) = 0` are exactly the functions `s_m / (κ_m - κ_k) + t s_k`, `t ∈ ℝ`: the
 solution is unique only modulo the kernel `span s_k`. Such solutions exist
-(`TauCeti.PDE.exists_isWeakSolutionDirichlet_of_ae_eq_sin`). -/
-theorem isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin (hab : a < b) {k m : ℕ}
-    (hmk : m ≠ k)
+(`TauCeti.PDE.exists_isWeakSolutionDirichlet_intervalDomain_of_ae_eq_sin`). -/
+theorem isWeakSolutionDirichlet_iff_exists_value_ae_eq_intervalDomain_of_ae_eq_sin (hab : a < b)
+    {k m : ℕ} (hmk : m ≠ k)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (hf : f =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
       fun x ↦ Real.sin (m * π * (x 0 - a) / (b - a)))
@@ -500,7 +509,7 @@ theorem isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin (hab : a < b
   rw [forall_energyFormH1_eq_iff_forall_sub_eq_zero _
       (isWeakSolutionDirichlet_of_coe_eq hab hmk hsmeq (u := ((m * π / (b - a)) ^ 2 -
         (k * π / (b - a)) ^ 2)⁻¹ • sm) (Submodule.coe_smul _ _)),
-    forall_energyFormH1_eq_zero_iff_exists_value_ae_eq hab k]
+    forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain hab k]
   have h0 := value_sub_smul_ae_eq u sm (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹) hsm
   refine exists_congr fun t ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · filter_upwards [h, h0] with x h1 h2
@@ -510,7 +519,8 @@ theorem isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin (hab : a < b
 
 /-- At the Dirichlet eigenvalue `κ_k`, the problem `-u'' - κ_k u = s_m` with a sine mode `s_m`,
 `m ≠ k`, has a weak solution, since `s_m` is orthogonal to the kernel `span s_k`. -/
-theorem exists_isWeakSolutionDirichlet_of_ae_eq_sin (hab : a < b) {k m : ℕ} (hmk : m ≠ k)
+theorem exists_isWeakSolutionDirichlet_intervalDomain_of_ae_eq_sin (hab : a < b) {k m : ℕ}
+    (hmk : m ≠ k)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (hf : f =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
       fun x ↦ Real.sin (m * π * (x 0 - a) / (b - a))) :
@@ -518,7 +528,7 @@ theorem exists_isWeakSolutionDirichlet_of_ae_eq_sin (hab : a < b) {k m : ℕ} (h
       IsWeakSolutionDirichlet (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2) f u := by
   obtain ⟨sk, hsk, hskeq⟩ := exists_value_ae_eq_sin hab k
   obtain ⟨sm, hsm, hsmeq⟩ := exists_value_ae_eq_sin hab m
-  rw [exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero hab,
+  rw [exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero_intervalDomain hab,
     setIntegral_mul_sin_eq_inner _ hsk, show f = W1p.value (sm : W1p volume (intervalDomain a b) 2)
       from Lp.ext (hf.trans hsm.symm)]
   exact inner_value_eq_zero_of_energyFormH1_eq_of_ne ae_isSymm_one
@@ -542,13 +552,14 @@ private theorem sq_one_mul_pi_div : (((1 : ℕ) : ℝ) * π / (π - 0)) ^ 2 = 1 
 
 /-- **`-u'' - u = 1` has no weak solution on `(0, π)`.** The constant forcing `1` is not
 orthogonal to the kernel `span (sin x)`, since `∫_0^π sin x dx = 2`. -/
-theorem not_exists_isWeakSolutionDirichlet_neg_one_of_ae_eq_one
+theorem not_exists_isWeakSolutionDirichlet_neg_one_intervalDomain_zero_pi_of_ae_eq_one
     (f : Lp ℝ 2 (volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))))
     (hf : f =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
       fun _ ↦ 1) :
     ¬∃ u : W1p0 volume (intervalDomain 0 π) 2,
       IsWeakSolutionDirichlet (fun _ ↦ 1) 0 (fun _ ↦ -1) f u := by
-  have h := exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero Real.pi_pos 1 f
+  have h :=
+    exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero_intervalDomain Real.pi_pos 1 f
   simp only [sq_one_mul_pi_div, sin_one_mul_pi_div] at h
   rw [h, integral_congr_ae (g := fun x ↦ Real.sin (x 0)),
     setIntegral_intervalDomain Real.pi_pos.le Real.sin, integral_sin]
@@ -572,9 +583,10 @@ private theorem sq_two_mul_pi_div : (((2 : ℕ) : ℝ) * π / (π - 0)) ^ 2 = 4 
 
 /-- **The resonant problem `-u'' - u = sin 2x` on `(0, π)`.** The forcing `sin 2x` is orthogonal
 to the kernel `span (sin x)`, so the problem is solvable
-(`TauCeti.PDE.exists_isWeakSolutionDirichlet_of_ae_eq_sin`), and its weak solutions are exactly
-the functions `sin (2x) / 3 + t sin x`, `t ∈ ℝ`: uniqueness holds only modulo the kernel. -/
-theorem isWeakSolutionDirichlet_neg_one_iff_of_ae_eq_sin_two_mul
+(`TauCeti.PDE.exists_isWeakSolutionDirichlet_intervalDomain_of_ae_eq_sin`), and its weak solutions
+are exactly the functions `sin (2x) / 3 + t sin x`, `t ∈ ℝ`: uniqueness holds only modulo the
+kernel. -/
+theorem isWeakSolutionDirichlet_neg_one_iff_intervalDomain_zero_pi_of_ae_eq_sin_two_mul
     (f : Lp ℝ 2 (volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))))
     (hf : f =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
       fun x ↦ Real.sin (2 * x 0))
@@ -583,7 +595,7 @@ theorem isWeakSolutionDirichlet_neg_one_iff_of_ae_eq_sin_two_mul
       ∃ t : ℝ, W1p.value (u : W1p volume (intervalDomain 0 π) 2)
         =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
           fun x ↦ Real.sin (2 * x 0) / 3 + t * Real.sin (x 0) := by
-  have h := isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin Real.pi_pos
+  have h := isWeakSolutionDirichlet_iff_exists_value_ae_eq_intervalDomain_of_ae_eq_sin Real.pi_pos
     (k := 1) (m := 2) (by norm_num) f (by simpa only [sin_two_mul_pi_div] using hf) u
   simp only [sq_one_mul_pi_div, sq_two_mul_pi_div, sin_one_mul_pi_div, sin_two_mul_pi_div] at h
   rwa [show (4 : ℝ) - 1 = 3 by norm_num] at h
@@ -592,13 +604,14 @@ theorem isWeakSolutionDirichlet_neg_one_iff_of_ae_eq_sin_two_mul
 the squares `k²`, and `2` is not one of them, so the homogeneous problem has only the trivial
 solution and the problem has exactly one weak solution for every `ℓ ∈ H⁻¹(0, π)`. This holds
 although the form is not coercive, since `2` exceeds the first eigenvalue `1`
-(`TauCeti.PDE.not_isCoercive_energyFormH1L0_of_le`). -/
-theorem existsUnique_forall_energyFormH1_neg_two_eq
+(`TauCeti.PDE.not_isCoercive_energyFormH1L0_intervalDomain_of_le`). -/
+theorem existsUnique_forall_energyFormH1_neg_two_eq_intervalDomain_zero_pi
     (ℓ : StrongDual ℝ (W1p0 volume (intervalDomain 0 π) 2)) :
     ∃! u : W1p0 volume (intervalDomain 0 π) 2, ∀ v : W1p0 volume (intervalDomain 0 π) 2,
       energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) (u : W1p volume (intervalDomain 0 π) 2)
         (v : W1p volume (intervalDomain 0 π) 2) = ℓ v := by
-  refine (forall_existsUnique_forall_energyFormH1_eq_iff Real.pi_pos 2).2 (fun k hk0 hk ↦ ?_) ℓ
+  refine (forall_existsUnique_forall_energyFormH1_eq_iff_intervalDomain Real.pi_pos 2).2
+    (fun k hk0 hk ↦ ?_) ℓ
   rw [sub_zero, mul_div_cancel_right₀ _ Real.pi_ne_zero] at hk
   have hk' : k ^ 2 = 2 := by exact_mod_cast hk.symm
   have : k ≤ 1 := by nlinarith
