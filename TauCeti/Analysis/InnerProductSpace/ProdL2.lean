@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # Isometric embeddings into the `L²` direct sum `WithLp 2 (E × F)`
@@ -18,6 +20,13 @@ of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inr
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`).
+
+An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
+`WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`. Block operators
+multiply as matrices (`WithLp.blockL2_mul_blockL2`), their adjoint is the conjugate transpose
+(`WithLp.adjoint_blockL2`), and a block operator with compact entries is compact
+(`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the block sums
+`ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
 -/
 
 public section
@@ -83,5 +92,109 @@ variable [CompleteSpace E] [CompleteSpace F]
   rw [← adjoint_sndL, ContinuousLinearMap.adjoint_adjoint]
 
 end Adjoint
+
+/-! ### Block operators -/
+
+section Block
+
+variable {𝕜 E F}
+
+/-- The operator on `WithLp 2 (E × F)` with the block matrix `[[a, b], [c, d]]`, that is
+`(x, y) ↦ (a x + b y, c x + d y)`. -/
+def blockL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F) (d : F →L[𝕜] F) :
+    WithLp 2 (E × F) →L[𝕜] WithLp 2 (E × F) :=
+  inlL2 𝕜 E F ∘L (a ∘L WithLp.fstL 2 𝕜 E F + b ∘L WithLp.sndL 2 𝕜 E F) +
+    inrL2 𝕜 E F ∘L (c ∘L WithLp.fstL 2 𝕜 E F + d ∘L WithLp.sndL 2 𝕜 E F)
+
+@[simp]
+theorem blockL2_apply (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F) (d : F →L[𝕜] F)
+    (z : WithLp 2 (E × F)) :
+    blockL2 a b c d z = WithLp.toLp 2 (a z.fst + b z.snd, c z.fst + d z.snd) := by
+  simp [blockL2, ← WithLp.toLp_add]
+
+/-- Two operators on `WithLp 2 (E × F)` agree when their four blocks do. -/
+theorem blockL2_injective (a a' : E →L[𝕜] E) (b b' : F →L[𝕜] E) (c c' : E →L[𝕜] F)
+    (d d' : F →L[𝕜] F) (h : blockL2 a b c d = blockL2 a' b' c' d') :
+    a = a' ∧ b = b' ∧ c = c' ∧ d = d' := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> ext x
+  · simpa using congr(($h (WithLp.toLp 2 (x, 0))).fst)
+  · simpa using congr(($h (WithLp.toLp 2 (0, x))).fst)
+  · simpa using congr(($h (WithLp.toLp 2 (x, 0))).snd)
+  · simpa using congr(($h (WithLp.toLp 2 (0, x))).snd)
+
+@[simp]
+theorem blockL2_inj {a a' : E →L[𝕜] E} {b b' : F →L[𝕜] E} {c c' : E →L[𝕜] F}
+    {d d' : F →L[𝕜] F} :
+    blockL2 a b c d = blockL2 a' b' c' d' ↔ a = a' ∧ b = b' ∧ c = c' ∧ d = d' :=
+  ⟨blockL2_injective a a' b b' c c' d d', by rintro ⟨rfl, rfl, rfl, rfl⟩; rfl⟩
+
+/-- A block operator with zero off-diagonal blocks is the block sum of its diagonal blocks. -/
+@[simp]
+theorem blockL2_zero_zero (a : E →L[𝕜] E) (d : F →L[𝕜] F) :
+    blockL2 a 0 0 d = a.withLpProdMap 2 d :=
+  ContinuousLinearMap.ext fun _ => by simp
+
+/-- Block operators multiply as `2 × 2` matrices. -/
+theorem blockL2_mul_blockL2 (a a' : E →L[𝕜] E) (b b' : F →L[𝕜] E) (c c' : E →L[𝕜] F)
+    (d d' : F →L[𝕜] F) :
+    blockL2 a b c d * blockL2 a' b' c' d' =
+      blockL2 (a ∘L a' + b ∘L c') (a ∘L b' + b ∘L d') (c ∘L a' + d ∘L c')
+        (c ∘L b' + d ∘L d') :=
+  ContinuousLinearMap.ext fun _ => by
+    simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, blockL2_apply,
+      WithLp.toLp_fst, WithLp.toLp_snd, map_add, add_apply]
+    congr 2 <;> abel
+
+theorem blockL2_add_blockL2 (a a' : E →L[𝕜] E) (b b' : F →L[𝕜] E) (c c' : E →L[𝕜] F)
+    (d d' : F →L[𝕜] F) :
+    blockL2 a b c d + blockL2 a' b' c' d' = blockL2 (a + a') (b + b') (c + c') (d + d') :=
+  ContinuousLinearMap.ext fun _ => by
+    simp only [add_apply, blockL2_apply, ← WithLp.toLp_add, Prod.mk_add_mk]
+    congr 2 <;> abel
+
+theorem blockL2_sub_blockL2 (a a' : E →L[𝕜] E) (b b' : F →L[𝕜] E) (c c' : E →L[𝕜] F)
+    (d d' : F →L[𝕜] F) :
+    blockL2 a b c d - blockL2 a' b' c' d' = blockL2 (a - a') (b - b') (c - c') (d - d') :=
+  ContinuousLinearMap.ext fun _ => by
+    simp only [sub_apply, blockL2_apply, ← WithLp.toLp_sub, Prod.mk_sub_mk]
+    congr 2 <;> abel
+
+theorem neg_blockL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F) (d : F →L[𝕜] F) :
+    -blockL2 a b c d = blockL2 (-a) (-b) (-c) (-d) :=
+  ContinuousLinearMap.ext fun _ => by
+    simp only [neg_apply, blockL2_apply, ← WithLp.toLp_neg, Prod.neg_mk]
+    congr 2 <;> abel
+
+/-- A block operator whose four blocks are compact is compact. -/
+theorem isCompactOperator_blockL2 {a : E →L[𝕜] E} {b : F →L[𝕜] E} {c : E →L[𝕜] F}
+    {d : F →L[𝕜] F} (ha : IsCompactOperator a) (hb : IsCompactOperator b)
+    (hc : IsCompactOperator c) (hd : IsCompactOperator d) :
+    IsCompactOperator (blockL2 a b c d) := by
+  simp only [blockL2, FunLike.coe_add, ContinuousLinearMap.coe_comp]
+  exact (((ha.comp_clm _).add (hb.comp_clm _)).clm_comp _).add
+    (((hc.comp_clm _).add (hd.comp_clm _)).clm_comp _)
+
+section Adjoint
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- The adjoint of a block operator is its conjugate transpose. -/
+@[simp]
+theorem adjoint_blockL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F) (d : F →L[𝕜] F) :
+    (blockL2 a b c d).adjoint = blockL2 a.adjoint c.adjoint b.adjoint d.adjoint := by
+  simp only [blockL2, map_add, ContinuousLinearMap.adjoint_comp, adjoint_inlL2, adjoint_inrL2,
+    adjoint_fstL, adjoint_sndL, ContinuousLinearMap.comp_add,
+    ContinuousLinearMap.comp_assoc]
+  abel
+
+/-- The star of a block operator is its conjugate transpose. -/
+@[simp]
+theorem star_blockL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F) (d : F →L[𝕜] F) :
+    star (blockL2 a b c d) = blockL2 (star a) c.adjoint b.adjoint (star d) := by
+  simp only [ContinuousLinearMap.star_eq_adjoint, adjoint_blockL2]
+
+end Adjoint
+
+end Block
 
 end WithLp
