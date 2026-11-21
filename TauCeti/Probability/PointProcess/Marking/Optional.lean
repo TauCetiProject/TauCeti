@@ -7,10 +7,16 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ProductKernel
 public import TauCeti.MeasureTheory.Measure.Measurability
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import Mathlib.Probability.Kernel.Composition.Prod
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import Mathlib.Probability.Kernel.MeasurableLIntegral
+import TauCeti.MeasureTheory.Integral.Lebesgue.ExpNeg
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
+import TauCeti.Probability.RandomMeasure.AeEq
 
 /-!
 # Independent marking of optional occurrence sequences
@@ -248,5 +254,75 @@ theorem optionalTupleMarking_deterministic {ι : Type*} [Countable ι] {g : X �
       Measure.dirac_prod_dirac, Measure.map_dirac' Measure.measurable_dirac]
   simp only [optionalTupleMarking_apply, hc, Measure.infinitePi_dirac,
     Measure.map_dirac' hs]
+
+/-- Exponential-integral form of the Laplace functional of optional tuple marking, expressed as an
+integral against the ground counting measure of the present occurrences. -/
+theorem lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral {ι : Type*} [Countable ι]
+    (x : ι → Option X) {f : X × E → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ μ, (ENNReal.expNeg (∫⁻ p, f p ∂μ) : ℝ≥0∞) ∂κ.optionalTupleMarking ι x =
+      (ENNReal.expNeg (∫⁻ a,
+        (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
+        ∂Measure.sum (fun i => (x i).elim 0 Measure.dirac)) : ℝ≥0∞) := by
+  rw [lintegral_expNeg_optionalTupleMarking κ x hf, lintegral_sum_measure, ENNReal.coe_expNeg_tsum]
+  refine tprod_congr fun i => ?_
+  cases x i with
+  | none => simp
+  | some a =>
+    simp only [Option.elim_some]
+    rw [lintegral_dirac' a ?_]
+    · exact (ENNReal.coe_expNeg_toENNReal_neg_log
+        (TauCeti.lintegral_coe_expNeg_le_one (μ := κ a) fun e => f (a, e))).symm
+    · fun_prop
+
+/-- Under optional tuple marking, the ground projection on any measurable set almost surely equals
+the counting-measure mass of the present entries. No assumption on the ground measurable space is
+required. -/
+theorem ae_map_fst_apply_optionalTupleMarking {ι : Type*} [Countable ι]
+    (x : ι → Option X) {A : Set X} (hA : MeasurableSet A) :
+    ∀ᵐ μ ∂κ.optionalTupleMarking ι x,
+      μ.map Prod.fst A = (Measure.sum fun i => (x i).elim 0 Measure.dirac) A :=
+  ae_of_ae_map (Measure.measurable_map _ measurable_fst).aemeasurable
+    (map_map_fst_optionalTupleMarking κ x ▸ ae_eq_dirac' (Measure.measurable_coe hA))
+
+/-- Setwise ground-projection recovery for optional tuple marking of an arbitrary random measure:
+if `e` is a measurable optional occurrence enumeration of `N` almost everywhere under `P`, then on
+any fixed measurable set `A`, projecting the marked realization back to `X` almost surely recovers
+`N z.1 A`. Neither s-finiteness of `P`, measurability of `N`, nor any Poisson assumption is
+required. -/
+theorem ae_map_fst_apply_compProd_optionalTupleMarking {Ω ι : Type*} [MeasurableSpace Ω]
+    [Countable ι] {P : Measure Ω} {N : Ω → Measure X}
+    {e : Ω → ι → Option X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => (e ω i).elim 0 Measure.dirac))
+    {A : Set X} (hA : MeasurableSet A) :
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst A = N z.1 A := by
+  let η := (κ.optionalTupleMarking ι).comap e he
+  let S : Ω → Measure X := fun ω => Measure.sum fun i => (e ω i).elim 0 Measure.dirac
+  have hS : Measurable S :=
+    TauCeti.MeasureTheory.measurable_measure_sum.comp <|
+      Measurable.of_eval fun i =>
+        (Option.measurable_elim _ Measure.measurable_dirac).comp ((measurable_pi_apply i).comp he)
+  have h₁ : ∀ᵐ z ∂(P ⊗ₘ η), z.2.map Prod.fst A = S z.1 A := by
+    refine Measure.ae_compProd_of_ae_ae ?_ (ae_of_all _ fun ω => ?_)
+    · exact measurableSet_eq_fun
+        ((Measure.measurable_coe hA).comp
+          ((Measure.measurable_map _ measurable_fst).comp measurable_snd))
+        ((Measure.measurable_coe hA).comp (hS.comp measurable_fst))
+    · simpa only [η, Kernel.comap_apply] using κ.ae_map_fst_apply_optionalTupleMarking (e ω) hA
+  filter_upwards [h₁, (Measure.quasiMeasurePreserving_fst_compProd P η).ae hae] with z hz₁ hz₂
+  rw [hz₁, hz₂]
+
+/-- Measure-level ground-projection recovery for optional tuple marking on a countably generated
+ground space: if `N` is almost surely finite on each piece of a countable measurable cover of `X`,
+projecting the marked realization onto the first coordinate recovers `N z.1` almost surely. -/
+theorem ae_map_fst_compProd_optionalTupleMarking [MeasurableSpace.CountablyGenerated X]
+    {Ω ι ι' : Type*} [MeasurableSpace Ω] [Countable ι] [Countable ι']
+    {P : Measure Ω} {N : Ω → Measure X}
+    {e : Ω → ι → Option X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => (e ω i).elim 0 Measure.dirac))
+    {s : ι' → Set X} (hs : ∀ j, MeasurableSet (s j)) (hcover : ⋃ j, s j = Set.univ)
+    (hfin : ∀ j, ∀ᵐ ω ∂P, N ω (s j) ≠ ∞) :
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
+  Measure.ae_eq_compProd_of_forall_ae_eq_of_cover hs hcover hfin fun _ hA =>
+    κ.ae_map_fst_apply_compProd_optionalTupleMarking he hae hA
 
 end ProbabilityTheory.Kernel

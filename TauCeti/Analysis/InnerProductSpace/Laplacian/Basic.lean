@@ -72,6 +72,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_toEuclideanCLE_apply`: for an invertible matrix `T`, the Laplacian of
   `u ∘ T` is the constant-coefficient operator with matrix `T Tᵀ` applied to `u`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
+* `TauCeti.laplacian_comp_sub_left`: invariance of `Δ` under the point reflection `y ↦ a - y`.
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
@@ -350,6 +351,13 @@ theorem laplacian_comp_affineIsometryEquiv_right (e : E ≃ᵃⁱ[ℝ] E') (f : 
   have hx : e x = e.linearIsometryEquiv x + e 0 := by
     simpa using e.map_vadd (0 : E) x
   simp [Function.comp_apply, hx]
+
+/-- **Invariance of the Laplacian under point reflections.** Reflecting the argument through a
+point, `y ↦ a - y`, commutes with the Laplacian:
+`Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y)`. No differentiability hypothesis is needed. -/
+theorem laplacian_comp_sub_left (f : E → F) (a : E) :
+    Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y) :=
+  laplacian_comp_affineIsometryEquiv_right (AffineIsometryEquiv.constVSub ℝ a) f
 
 /-- **Scaling law for the Laplacian under origin-centered dilation.**
 
