@@ -184,6 +184,27 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
   hY.integral_fun_prod_comp_fiberwise_of_maps_to (fun _ _ ↦ Finset.mem_univ _)
     (fun j _ ↦ mY j) (fun i _ ↦ hφ i)
 
+/-- A product of functions of independent variables has expectation zero when one variable is
+read exactly once and its sole factor has expectation zero. -/
+theorem integral_fun_prod_comp_eq_zero_of_singleton_fiber
+    {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [Fintype ι]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) (mY : ∀ j, AEMeasurable (Y j) P)
+    (e : ι → κ) {φ : ι → β → 𝕜}
+    (hφ : ∀ i, AEStronglyMeasurable (φ i) (P.map (Y (e i))))
+    {a : ι} (ha : ∀ b, e b = e a → b = a)
+    (hzero : ∫ ω, φ a (Y (e a) ω) ∂P = 0) :
+    (∫ ω, ∏ i, φ i (Y (e i) ω) ∂P) = 0 := by
+  classical
+  let s := Finset.univ.image e
+  rw [hY.integral_fun_prod_comp_fiberwise_of_maps_to
+    (t := s) (fun i hi ↦ Finset.mem_image_of_mem e hi) (fun j _ ↦ mY j) (fun i _ ↦ hφ i)]
+  refine Finset.prod_eq_zero (Finset.mem_image_of_mem e (Finset.mem_univ a)) ?_
+  have hfiber : (Finset.univ.filter fun b ↦ e b = e a) = {a} := by
+    ext b
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
+    exact ⟨ha b, fun h ↦ h ▸ rfl⟩
+  simp only [hfiber, Finset.prod_singleton, hzero]
+
 end ProbabilityTheory.iIndepFun
 
 open ProbabilityTheory Matrix

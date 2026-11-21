@@ -89,15 +89,8 @@ theorem integral_prod_apply_mul_star_apply_eq_zero
     ∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P = 0 := by
   classical
   simp_rw [prod_mul_star_eq_prod_readFactor]
-  rw [hindep.integral_fun_prod_comp_fiberwise_of_maps_to
-    (t := Finset.univ.image (bipartiteEdge u v))
-    (fun i hi ↦ Finset.mem_image_of_mem _ hi) (fun ij _ ↦ hXm ij.1 ij.2)
-    (fun s _ ↦ (measurable_readFactor s).aestronglyMeasurable)]
-  refine Finset.prod_eq_zero (Finset.mem_image_of_mem _ (Finset.mem_univ a)) ?_
-  have hfiber : ({b | bipartiteEdge u v b = bipartiteEdge u v a} : Finset _) = {a} := by
-    ext b
-    simpa using ⟨ha b, fun h ↦ h ▸ rfl⟩
-  simp only [hfiber, Finset.prod_singleton]
+  refine hindep.integral_fun_prod_comp_eq_zero_of_singleton_fiber (fun ij ↦ hXm ij.1 ij.2)
+    (bipartiteEdge u v) (fun s ↦ (measurable_readFactor s).aestronglyMeasurable) ha ?_
   cases a with
   | inl t => exact hX _ _
   | inr t =>
