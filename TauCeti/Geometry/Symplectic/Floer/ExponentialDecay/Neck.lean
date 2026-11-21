@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
-import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Exponential decay along a long Floer neck near a nondegenerate orbit
@@ -139,16 +138,12 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_mul_exp_add_exp
   -- Hence the positive part of `g` doubles forwards and its negative part doubles backwards.
   have hstep (s : ℝ) (hs : a ≤ s) (hsK : s + K ≤ b) :
       2 * g s ≤ g (s + K) ∧ g s ≤ 2 * g (s + K) := by
-    have hR : IntegrableOn e (Icc s (s + K) ×ˢ Icc 0 1) :=
-      ((ω.continuousOn_floerEnergyDensity hU (hu.of_le (by norm_num)) contDiffOn_const
-        (contDiff_uncurry_cylindrical hH1).contDiffOn).mono (hrect hs hsK)).integrableOn_compact
-        (isCompact_Icc.prod isCompact_Icc)
+    obtain ⟨hint, heq⟩ := ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 hU hu
+      (by linarith : s ≤ s + K) (hrect hs hsK) fun r hr ↦ hper r ⟨hs.trans hr.1, hr.2.trans hsK⟩
     simpa only [sub_zero] using two_mul_sub_le_and_sub_le_two_mul_of_abs_sub_le_mul (a₀ := 0)
       (σ := fun r ↦ ∫ t in Icc (0 : ℝ) 1, e (r, t)) hK (hmono.mono (Icc_subset_Icc hs hsK))
-      (fun r hr ↦ by simpa only [sub_zero] using hg r ⟨hs.trans hr.1, hr.2.trans hsK⟩)
-      (integrableOn_setIntegral_slice hR)
-      ((setIntegral_setIntegral_slice_eq_setIntegral_rect hR).trans
-        (henergy hs (by linarith) hsK))
+      (fun r hr ↦ by simpa only [sub_zero] using hg r ⟨hs.trans hr.1, hr.2.trans hsK⟩) hint
+      (heq.trans (by simp only [g]; ring))
   have hab' : a ≤ b := h₁.trans (h₁₂.trans h₂)
   rw [henergy h₁ h₁₂ h₂, henergy le_rfl hab' le_rfl]
   exact sub_le_mul_exp_add_exp_of_two_mul_le hmono hstep h₁ h₁₂ h₂

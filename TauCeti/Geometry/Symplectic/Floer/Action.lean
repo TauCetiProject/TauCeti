@@ -13,7 +13,6 @@ import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # The Hamiltonian action and the energy of cylindrical Floer solutions
