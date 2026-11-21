@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Basic
+public import TauCeti.Algebra.Module.LinearMap.Equivariant
 
 /-!
 # Modules over the smash product
@@ -31,9 +32,9 @@ and `A # H`-linear maps are `A`-linear maps that commute with the `H`-action.
 * `TauCeti.LeftModuleAlgebra.SmashProduct.CompatibleActionData` and
   `TauCeti.LeftModuleAlgebra.SmashProduct.moduleEquiv`: bijection between `R`-compatible
   `Module μ.SmashProduct M` structures and compatible `(Module A M, Module H M)` pairs.
-* `TauCeti.LeftModuleAlgebra.SmashProduct.equivariantLinearMaps` and
-  `TauCeti.LeftModuleAlgebra.SmashProduct.linearMapEquiv`: `R`-linear isomorphism between
-  `M →ₗ[μ.SmashProduct] N` and the submodule of `H`-equivariant `A`-linear maps `M →ₗ[A] N`.
+* `TauCeti.LeftModuleAlgebra.SmashProduct.linearMapEquiv`: `R`-linear isomorphism between
+  `M →ₗ[μ.SmashProduct] N` and the submodule `TauCeti.equivariantLinearMaps R H A M N` of
+  `H`-equivariant `A`-linear maps `M →ₗ[A] N`.
 
 ## References
 
@@ -414,34 +415,6 @@ end ModuleEquivalence
 
 section LinearMaps
 
-section EquivariantSubmodule
-
-omit [Bialgebra R H]
-
-variable (R H A) (M : Type x) (N : Type y)
-  [AddCommMonoid M] [Module A M] [Module H M]
-  [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N]
-  [Module H N] [SMulCommClass R H N]
-
-/-- The `R`-submodule of `M →ₗ[A] N` consisting of `H`-equivariant `A`-linear maps. -/
-def equivariantLinearMaps : Submodule R (M →ₗ[A] N) where
-  carrier := { f : M →ₗ[A] N | ∀ (h : H) (m : M), f (h • m) = h • f m }
-  zero_mem' _ _ := by simp
-  add_mem' hf hg h m := by simp [hf h m, hg h m, smul_add]
-  smul_mem' r _ hf h m := by simp [hf h m, smul_comm r h]
-
-@[simp]
-theorem mem_equivariantLinearMaps {R : Type u} {H : Type v} {A : Type w}
-    [CommSemiring R] [Semiring H] [Semiring A] [Algebra R A]
-    {M : Type x} {N : Type y}
-    [AddCommMonoid M] [Module A M] [Module H M]
-    [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N]
-    [Module H N] [SMulCommClass R H N] (f : M →ₗ[A] N) :
-    f ∈ equivariantLinearMaps R H A M N ↔ ∀ (h : H) (m : M), f (h • m) = h • f m :=
-  Iff.rfl
-
-end EquivariantSubmodule
-
 variable {μ : LeftModuleAlgebra R H A} {M : Type x} {N : Type y}
   [AddCommMonoid M] [Module A M] [Module H M] [Module μ.SmashProduct M] [μ.IsSmashModule M]
   [AddCommMonoid N] [Module A N] [Module H N] [Module μ.SmashProduct N] [μ.IsSmashModule N]
@@ -488,8 +461,9 @@ variable (R μ M N) in
 def linearMapEquiv [Module R N] [IsScalarTower R A N] [SMulCommClass R H N]
     [IsScalarTower R μ.SmashProduct N] :
     (M →ₗ[μ.SmashProduct] N) ≃ₗ[R] equivariantLinearMaps R H A M N where
-  toFun f := ⟨restrictScalarsLinearMapA f, map_smulH_of_smashLinear f⟩
-  invFun f := mkLinearMap f.1 f.2
+  toFun f := ⟨restrictScalarsLinearMapA f,
+    (mem_equivariantLinearMaps _).2 (map_smulH_of_smashLinear f)⟩
+  invFun f := mkLinearMap f.1 ((mem_equivariantLinearMaps _).1 f.2)
   left_inv _ := LinearMap.ext fun _ => rfl
   right_inv _ := Subtype.ext <| LinearMap.ext fun _ => rfl
   map_add' _ _ := Subtype.ext <| LinearMap.ext fun _ => rfl
