@@ -35,6 +35,10 @@ degree:
   symbol is elliptic exactly when the symbol is.
 * `HomogeneousSymbol.isElliptic_ofSphere_iff`: the homogeneous extension `ofSphere m g` of a map
   `g` from the unit sphere of frequencies is elliptic exactly when `g` is invertible there.
+* `HomogeneousSymbol.isElliptic_normRpow`: the powers `‖ξ‖ ^ m Id` of the frequency norm are
+  elliptic.
+* `HomogeneousSymbol.IsElliptic.compProdMap` and `HomogeneousSymbol.isElliptic_compProdMap_iff`:
+  linear changes of variables preserve ellipticity, and invertible ones do not change it.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -106,6 +110,21 @@ theorem isElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) {a : HomogeneousSymbol X E 
 theorem isElliptic_castDegree_iff (h : m = m') {a : HomogeneousSymbol X E V W m} :
     (a.castDegree h).IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_castDegree]
+
+/-- A linear change of variables `(x, ξ) ↦ (P x, Q ξ)` preserves ellipticity. -/
+theorem IsElliptic.compProdMap {X' E' : Type*} [NormedAddCommGroup X'] [NormedSpace ℝ X']
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] {a : HomogeneousSymbol X E V W m}
+    (ha : a.IsElliptic) (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E) : (a.compProdMap P Q).IsElliptic :=
+  fun x ξ hξ ↦ by simpa using ha (P x) (Q ξ) (by simpa using hξ)
+
+/-- An invertible linear change of variables does not change ellipticity. -/
+@[simp]
+theorem isElliptic_compProdMap_iff {X' E' : Type*} [NormedAddCommGroup X'] [NormedSpace ℝ X']
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] (P : X' ≃L[ℝ] X) (Q : E' ≃L[ℝ] E)
+    {a : HomogeneousSymbol X E V W m} :
+    (a.compProdMap (P : X' →L[ℝ] X) Q).IsElliptic ↔ a.IsElliptic := by
+  refine ⟨fun h x ξ hξ ↦ ?_, fun h ↦ h.compProdMap _ Q⟩
+  simpa using h (P.symm x) (Q.symm ξ) (by simpa using hξ)
 
 /-- The zero symbol is not elliptic as soon as there is a nonzero frequency and a nonzero
 vector. -/
@@ -262,6 +281,18 @@ theorem isElliptic_ofSphere_iff {E : Type*} [NormedAddCommGroup E] [InnerProduct
     rw [coefficient_ofSphere_of_ne_zero g hg hξ, ← Complex.coe_smul,
       ContinuousLinearMap.isInvertible_smul_iff (by exact_mod_cast (Real.rpow_pos_of_pos hn m).ne')]
     exact h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)
+
+/-! ### Powers of the frequency norm -/
+
+variable (X) in
+/-- The powers `‖ξ‖ ^ m Id` of the frequency norm are elliptic. -/
+theorem isElliptic_normRpow (E V : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℂ V] (m : ℝ) : (normRpow X E V m).IsElliptic :=
+  fun _ ξ hξ ↦ by
+    rw [coefficient_normRpow_of_ne_zero _ _ _ hξ]
+    exact ContinuousLinearMap.isInvertible_iff_isUnit.2
+      (ContinuousLinearMap.isUnit_smul_id_of_ne_zero
+        (Real.rpow_pos_of_pos (norm_pos_iff.2 hξ) m).ne')
 
 end HomogeneousSymbol
 

@@ -69,8 +69,9 @@ orientations, and the antipodal map has orientation sign `(-1)^(n+1)` for every 
   circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
   `Re z Im w - Im z Re w > 0`.
 * `TauCeti.circleTangentBasis`: a positively oriented tangent basis of the unit circle of `ℂ`.
-* `TauCeti.isOrientationReversingAt_conjSphere`: complex conjugation reverses the orientation of
-  the unit circle.
+* `TauCeti.isOrientationReversingAt_conjSphere`, `TauCeti.orientationSign_conjSphere`,
+  `TauCeti.degreeAtRegularValue_conjSphere`, `TauCeti.degree_conjSphere`: complex conjugation
+  reverses the orientation of the unit circle and has orientation sign and mapping degree `-1`.
 * `Orientation.sphereOrientation_neg`: reversing `o` reverses the outward-normal orientation.
 * `TauCeti.orientable_sphere`: the unit sphere is orientable.
 * `Orientation.isOrientationPreservingAt_neg_sphere`,
@@ -128,7 +129,7 @@ inclusion. -/
 @[simp]
 theorem _root_.Orientation.sphereVolumeForm_apply (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) (v : Fin n → TangentSpace (𝓡 n) u) :
-    o.sphereVolumeForm.1 u v = o.volumeForm
+    o.sphereVolumeForm.val u v = o.volumeForm
       (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
   rw [Orientation.sphereVolumeForm, SmoothForm.mpullback_apply]
   -- The radial form is `curryLeft` of the volume form, `Matrix.vecCons` is `Fin.cons`, and
@@ -138,7 +139,7 @@ theorem _root_.Orientation.sphereVolumeForm_apply (o : Orientation ℝ E (Fin (n
 
 /-- The volume form of the unit sphere vanishes nowhere. -/
 theorem _root_.Orientation.sphereVolumeForm_apply_ne_zero (o : Orientation ℝ E (Fin (n + 1)))
-    (u : sphere (0 : E) 1) : o.sphereVolumeForm.1 u ≠ 0 := by
+    (u : sphere (0 : E) 1) : o.sphereVolumeForm.val u ≠ 0 := by
   let b := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 n) u) (finrank_euclideanSpace_fin (𝕜 := ℝ))
   intro h
   have hb := DFunLike.congr_fun h ⇑b
@@ -160,7 +161,7 @@ space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is posi
 (`Orientation.orientation_eq_orientationAt_sphereOrientation_iff`). -/
 def _root_.Orientation.sphereOrientation (o : Orientation ℝ E (Fin (n + 1))) :
     Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n) :=
-  Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin o.sphereVolumeForm.1
+  Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin o.sphereVolumeForm.val
     (o.sphereVolumeForm.isSmoothForm.of_le zero_le) o.sphereVolumeForm_apply_ne_zero
 
 /-- A tangent basis `v` of the unit sphere at `u` is positive for the outward-normal orientation
@@ -185,7 +186,8 @@ theorem _root_.Orientation.orientation_eq_neg_orientationAt_sphereOrientation_if
     v.orientation = -o.sphereOrientation.orientationAt u ↔
       o.volumeForm
         (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) < 0 := by
-  rw [← Orientation.ne_iff_eq_neg _ _ (o.sphereOrientation.finrank_tangentSpace_eq u).symm, Ne,
+  rw [← Orientation.ne_iff_eq_neg _ _
+      (Nat.card_eq_fintype_card.trans (o.sphereOrientation.finrank_tangentSpace_eq u).symm), Ne,
     o.orientation_eq_orientationAt_sphereOrientation_iff, not_lt]
   exact (Orientation.volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_mvfderiv_coe_sphere u v.linearIndependent)).le_iff_lt
@@ -196,7 +198,8 @@ sphere. -/
 theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n + 1))) :
     (-o).sphereOrientation = -o.sphereOrientation := by
   ext u
-  have hcard := ((-o).sphereOrientation.finrank_tangentSpace_eq u).symm
+  have hcard :=
+    Nat.card_eq_fintype_card.trans ((-o).sphereOrientation.finrank_tangentSpace_eq u).symm
   let v := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 n) u) (finrank_euclideanSpace_fin (𝕜 := ℝ))
   -- A tangent basis is positive for `-o` exactly when it is negative for `o`.
   have h : v.orientation = (-o).sphereOrientation.orientationAt u ↔
@@ -219,8 +222,8 @@ theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n 
 the point and, read in `E`, on the tangent vectors. -/
 theorem _root_.Orientation.mpullback_unitSphereEquiv_sphereVolumeForm
     (o : Orientation ℝ E (Fin (n + 1))) (e : E ≃ₗᵢ[ℝ] E) (u : sphere (0 : E) 1) :
-    mpullback (𝓡 n) (𝓡 n) e.unitSphereEquiv o.sphereVolumeForm.1 u =
-      LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E) • o.sphereVolumeForm.1 u := by
+    mpullback (𝓡 n) (𝓡 n) e.unitSphereEquiv o.sphereVolumeForm.val u =
+      LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E) • o.sphereVolumeForm.val u := by
   ext v
   rw [mpullback_apply, Orientation.sphereVolumeForm_apply, ContinuousAlternatingMap.smul_apply,
     Orientation.sphereVolumeForm_apply, LinearIsometryEquiv.coe_unitSphereEquiv_apply,
@@ -255,8 +258,8 @@ sphere back to `(-1)^(n+1)` times itself: it is the restriction of `-1`, of dete
 `(-1)^(n+1)`. -/
 theorem _root_.Orientation.mpullback_neg_sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) :
-    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.1 u =
-      ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.1 u := by
+    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.val u =
+      ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.val u := by
   have hneg : (fun y : sphere (0 : E) 1 ↦ -y) = (LinearIsometryEquiv.neg ℝ).unitSphereEquiv :=
     funext fun y ↦ Subtype.ext (by simp)
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
@@ -389,6 +392,44 @@ theorem isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
   rw [h]
   exact Complex.orientation.isOrientationReversingAt_unitSphereEquiv
     (by rw [Complex.det_conjLIE]; exact neg_one_lt_zero) z
+
+/-- Complex conjugation `conjSphere` on `sphere (0 : ℂ) 1` has orientation sign `-1` at every
+point, for either orientation `o` of the circle. -/
+@[simp]
+theorem orientationSign_conjSphere
+    (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) (z : sphere (0 : ℂ) 1) :
+    Manifold.Orientation.orientationSign o o conjSphere z = -1 := by
+  have := connectedSpace_sphere (E := ℂ) 1
+  have hstd : Manifold.Orientation.orientationSign Complex.orientation.sphereOrientation
+      Complex.orientation.sphereOrientation conjSphere z = -1 :=
+    Manifold.Orientation.orientationSign_of_isOrientationReversingAt
+      (isOrientationReversingAt_conjSphere z)
+  rcases o.eq_or_eq_neg Complex.orientation.sphereOrientation with rfl | rfl
+  · exact hstd
+  · rw [Manifold.Orientation.orientationSign_neg_left,
+      Manifold.Orientation.orientationSign_neg_right, neg_neg, hstd]
+
+/-- Complex conjugation `conjSphere` on `sphere (0 : ℂ) 1` has degree `-1` at every value. -/
+@[simp]
+theorem degreeAtRegularValue_conjSphere
+    (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) (y : sphere (0 : ℂ) 1) :
+    degreeAtRegularValue o o conjSphere y = -1 := by
+  rw [degreeAtRegularValue_eq_sum (s := {conjSphere y}) fun x ↦ by
+    rw [Finset.mem_singleton]
+    exact ⟨fun h ↦ by rw [h, conjSphere_conjSphere],
+      fun h ↦ by rw [← h, conjSphere_conjSphere]⟩,
+    Finset.sum_singleton, orientationSign_conjSphere]
+
+/-- **Degree of complex conjugation on `S¹`.** On `sphere (0 : ℂ) 1`, complex conjugation
+`z ↦ conj z` has smooth mapping degree `-1` for every orientation `o`. -/
+@[simp]
+theorem degree_conjSphere (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) :
+    degree o o conjSphere = -1 := by
+  have hreg (y : sphere (0 : ℂ) 1) : IsRegularValue (𝓡 1) (𝓡 1) conjSphere y :=
+    isRegularValue_iff.2 fun z _ ↦ (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <|
+      not_not.1 <| Manifold.Orientation.orientationSign_eq_zero_iff (o := o) (o' := o).not.1 <|
+        (orientationSign_conjSphere o z).trans_ne (by decide)
+  rw [degree_eq_degreeAtRegularValue_choose ⟨⟨1, by simp⟩, hreg _⟩, degreeAtRegularValue_conjSphere]
 
 end Circle
 

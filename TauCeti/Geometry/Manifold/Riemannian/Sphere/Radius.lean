@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
+import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # The round sphere of radius `r`
@@ -34,10 +36,9 @@ multiplies its sectional curvature by `c⁻¹`, so `Sⁿ(r)` has constant sectio
 * `TauCeti.isConstantCurvatureTensor_sphereRoundMetricOfRadius` and
   `TauCeti.hasConstantSectionalCurvature_sphereRoundMetricOfRadius`: the round sphere of radius
   `r` has constant sectional curvature `1 / r²`.
-* `TauCeti.ricciTensor_sphereRoundMetricOfRadius`: the round `n`-sphere of radius `r` has Ricci
-  tensor `(n - 1) / r²` times its metric.
 * `TauCeti.scalarCurvature_sphereRoundMetricOfRadius`: the round `n`-sphere of radius `r` has
   scalar curvature `n (n - 1) / r²`.
+* `TauCeti.ricciTensor_sphereRoundMetricOfRadius`: it is Einstein with constant `(n - 1) / r²`.
 * `TauCeti.hasPositiveScalarCurvature_sphereRoundMetricOfRadius_iff`: the round `n`-sphere of
   radius `r` has positive scalar curvature if and only if `2 ≤ n`.
 
@@ -115,16 +116,6 @@ theorem hasConstantSectionalCurvature_sphereRoundMetricOfRadius (hr : 0 < r) :
     (ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq _ _
       (isConstantCurvatureTensor_sphereRoundMetricOfRadius hr))
 
-/-- **Ricci tensor of the round sphere.** The round `n`-sphere of radius `r` is Einstein: its Ricci
-tensor is `(n - 1) / r²` times its metric. -/
-theorem ricciTensor_sphereRoundMetricOfRadius (hr : 0 < r) (p : sphere (0 : E) 1) :
-    letI : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-      ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
-    (CovariantDerivative.leviCivitaConnection (𝓡 n) (sphere (0 : E) 1)).ricciTensor p =
-      (((n : ℝ) - 1) / r ^ 2) • innerₗ (TangentSpace (𝓡 n) p) :=
-  ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul
-    (fun _ ↦ by ext; simp [sphereRoundMetricOfRadius]) (ricciTensor_sphereRoundMetric_ofLE p)
-
 /-- **Scalar curvature of the round sphere.** The round `n`-sphere of radius `r` has scalar
 curvature `n (n - 1) / r²`. -/
 @[simp]
@@ -134,6 +125,24 @@ theorem scalarCurvature_sphereRoundMetricOfRadius (hr : 0 < r) (p : sphere (0 : 
   rw [sphereRoundMetricOfRadius, ContMDiffRiemannianMetric.scalarCurvature_rescale_const,
     scalarCurvature_sphereRoundMetric_ofLE, inv_mul_eq_div]
   exact pow_pos hr 2
+
+/-- The round `n`-sphere of radius `r` is Einstein with constant `(n - 1) / r²`. -/
+theorem ricciTensor_sphereRoundMetricOfRadius (hr : 0 < r) (p : sphere (0 : E) 1)
+    (u v : TangentSpace (𝓡 n) p) :
+    (letI : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+      ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection (𝓡 n) (sphere (0 : E) 1)).ricciTensor p u v) =
+    (((n : ℝ) - 1) / r ^ 2) * (sphereRoundMetricOfRadius r hr).inner p u v := by
+  let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+    ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
+  have hdim : finrank ℝ (TangentSpace (𝓡 n) p) = n := by
+    rw [TauCeti.finrank_tangentSpace, finrank_euclideanSpace_fin]
+  rw [CovariantDerivative.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub _ p (r ^ 2)⁻¹
+    (ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq _ _
+      (isConstantCurvatureTensor_sphereRoundMetricOfRadius hr) p), hdim]
+  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul,
+    ContMDiffRiemannianMetric.inner_riemannianBundle]
+  rw [div_eq_mul_inv]
 
 /-- The round `n`-sphere of radius `r` has positive scalar curvature if and only if `2 ≤ n`. -/
 @[simp]

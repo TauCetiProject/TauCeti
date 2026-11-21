@@ -181,7 +181,7 @@ variable (R Γ k)
 
 /-- The first `sturmLength Γ k` coefficients at `∞` of an integral form, as elements of `R`. -/
 private noncomputable def truncCoeffs : integralAtCusps R Γ k →ₗ[ℤ] Fin (sturmLength Γ k) → R where
-  toFun f i := ⟨(qExpansionAt 1 (f : ModularForm Γ k)).coeff i, f.2 1 i⟩
+  toFun f i := ⟨(qExpansionAt 1 (f : ModularForm Γ k)).coeff i, f.property 1 i⟩
   map_add' f g := by
     ext i
     simp [-qExpansionAt_one]

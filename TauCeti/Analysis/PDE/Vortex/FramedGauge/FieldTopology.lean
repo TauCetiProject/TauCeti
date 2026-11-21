@@ -46,14 +46,15 @@ for the gauge theory of `A_m^k` follow from the locally uniform statements alrea
   This is the Hausdorff property of the quotient `A_m^k / G_(k+1)` once the quotient map is
   known to be open.
 
-Continuity of the gauge action on `A_m^k`, the slice theorem and the openness of the quotient map
-are not treated here.
+The continuity of the gauge action on `A_m^k` and the resulting Hausdorff quotient are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient`; the slice theorem is not treated here.
 
 ## Main definitions
 
 * `TauCeti.Vortex.SobolevFieldSpace f m s`: the continuous fields of `A_m^s`, with the topology
   of `A_m^s`.
-* `TauCeti.Vortex.SobolevFieldSpace.subRef`: the coordinates of `x - x_m` in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevFieldSpace.subRef`: the coordinates of `x - x_m` in `H^s(ℂ)`, each
+  determined by its `L²` function (`TauCeti.Vortex.SobolevFieldSpace.subRef_eq_iff`).
 * `TauCeti.Vortex.SobolevFieldSpace.toFramedFieldSpace`: a continuous field as an element of
   `A_m^s`.
 
@@ -194,6 +195,16 @@ theorem coeFn_toLp_inclusion_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) 
   rw [← hux, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
 
+/-- **The coordinate `subRef x j` is characterized by its `L²` function**: for `s ≥ 0`, an element
+`e ∈ H^s(ℂ)` is the coordinate `j` of `x - x_m` exactly when its `L²` function is almost
+everywhere the complexification of `z ↦ x(z)ⱼ - x_m(z)ⱼ`. -/
+theorem subRef_eq_iff (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) (e : H^{s}(ℂ)) :
+    subRef x j = e ↔
+      ⇑(inclusion h e).toLp =ᵐ[volume] fun z ↦ ((x z j - referenceField f m z j : ℝ) : ℂ) := by
+  refine ⟨fun hxe ↦ hxe ▸ coeFn_toLp_inclusion_subRef h x j, fun he ↦ ?_⟩
+  rw [subRef_eq_toBesselPotentialSpace x j (memSobolev_toLp_inclusion h e) he]
+  exact toBesselPotentialSpace_memSobolev_toLp_inclusion h e
+
 /-- For `s ≥ 0`, a continuous field of `A_m^s` is determined by the coordinates of `x - x_m` in
 `H^s(ℂ)`. -/
 theorem subRef_injective (h : 0 ≤ s) :
@@ -287,10 +298,10 @@ theorem isClosed_setOf_exists_gaugeTransform_eq {k : ℕ} (hk : 2 < k) :
       (hq : Continuous q) :
       TendstoLocallyUniformly (fun i : S ↦ ⇑(q i)) (q p) l :=
     (tendstoUniformly_of_tendsto hs ((hq.tendsto p).comp hl)).tendstoLocallyUniformly
-  choose us hus hxy using fun i : S ↦ i.2
+  choose us hus hxy using fun i : S ↦ i.property
   obtain ⟨⟨v, hvG⟩, hv⟩ := mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly hk
-    (xs := fun i : S ↦ (i : S).1.1.toFramedFieldSpace)
-    (ys := fun i : S ↦ (i : S).1.2.toFramedFieldSpace)
+    (xs := fun i : S ↦ (i : S).val.1.toFramedFieldSpace)
+    (ys := fun i : S ↦ (i : S).val.2.toFramedFieldSpace)
     (x := p.1.toFramedFieldSpace) (y := p.2.toFramedFieldSpace)
     (fun i ↦ ⟨⟨us i, hus i⟩, Subtype.ext (hxy i)⟩)
     (hconv Prod.fst continuous_fst) (hconv Prod.snd continuous_snd) p.1.continuous p.2.continuous

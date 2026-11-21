@@ -143,7 +143,7 @@ theorem SmoothForm.contMDiff_mpullback_prodMk [IsManifold J ∞ N]
     ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
       (fun p : N × M ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
         (E := fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) p.2
-        ((mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).1 p.2)) := by
+        ((mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).val p.2)) := by
   simpa only [coe_mpullback] using contMDiff_mpullback_prodMk_form α.contMDiff
 
 /-- **Exterior derivatives of slices are jointly smooth.** For a smooth form `α` on `N × M`, the
@@ -154,7 +154,7 @@ theorem SmoothForm.contMDiff_mextDeriv_mpullback_prodMk [IsManifold I 2 M] [IsMa
     ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
       (fun p : N × M ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F)
         (E := fun y : M ↦ TangentSpace I y [⋀^Fin (k + 1)]→L[ℝ] Trivial M F y) p.2
-        (mextDeriv (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).1 p.2)) := by
+        (mextDeriv (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).val p.2)) := by
   -- The exterior derivative of a slice is the slice of the exterior derivative.
   convert contMDiff_mpullback_prodMk_form (contMDiff_mextDeriv α) using 3 with p
   rw [← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback, mextDerivₗ_apply]

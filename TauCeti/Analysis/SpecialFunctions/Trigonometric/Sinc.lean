@@ -9,7 +9,9 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# The scaled sinc function `t ↦ t sinc (ω t)`
+# The sinc function: nonnegativity and the scaled function `t ↦ t sinc (ω t)`
+
+`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`.
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
@@ -40,5 +42,15 @@ theorem hasDerivAt_mul_sinc_mul (ω t : ℝ) :
   · simp_rw [mul_sinc_mul_of_ne_zero hω]
     convert ((hasDerivAt_id' t).const_mul ω).sin.div_const ω using 1
     field_simp
+
+/-- The function `sinc` is nonnegative on `[-π, π]`. -/
+theorem sinc_nonneg {x : ℝ} (hx : |x| ≤ π) : 0 ≤ sinc x := by
+  wlog hx₀ : 0 ≤ x generalizing x
+  · rw [← sinc_neg]
+    exact this (by rwa [abs_neg]) (by linarith)
+  rcases hx₀.eq_or_lt with rfl | hx₀
+  · simp
+  rw [sinc_of_ne_zero hx₀.ne']
+  exact div_nonneg (sin_nonneg_of_nonneg_of_le_pi hx₀.le (abs_le.1 hx).2) hx₀.le
 
 end Real
