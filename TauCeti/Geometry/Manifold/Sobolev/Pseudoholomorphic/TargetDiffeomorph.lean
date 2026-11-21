@@ -6,194 +6,178 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
-import TauCeti.Geometry.Manifold.MFDeriv.Basic
-import TauCeti.Geometry.Manifold.PullbackGroupoid
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Pullback
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
-# Invariance of the weak pseudoholomorphic equation under diffeomorphisms of the target
+# Invariance of weak pseudoholomorphic maps under diffeomorphisms of the target
 
-Let `X` be a Riemann surface and `Ψ : M → M'` a smooth diffeomorphism between manifolds on a
-common boundaryless model `I`. A domain-dependent almost complex structure `J` on `M` and an
-inhomogeneous term `ν` for it are carried by `Ψ` to `J'` and `ν'` on `M'` when the differential of
-`Ψ` intertwines them:
+Let `X` be a Riemann surface and `g : M → N` a smooth diffeomorphism between manifolds modelled
+on the same boundaryless model `I`. A map `g ∘ u : X → N` is weakly pseudoholomorphic for a
+domain-dependent structure `J` on `N` and an inhomogeneous term `ν` exactly when `u : X → M` is
+weakly pseudoholomorphic for the pulled-back structure `g^* J` and term `g^* ν`
+(`TauCeti.isWeakPseudoholomorphicOn_diffeomorph_comp_iff` on a set,
+`TauCeti.isWeakPseudoholomorphic_diffeomorph_comp_iff` on the whole surface). This is the
+invariance of the weak equation under diffeomorphisms of the target, with `J` and `ν`
+transported along. As a Check, `z ↦ 2 z` solves the equation on `ℂ` for the structure `i`, since
+`i` pulls back to itself along `z ↦ 2 z` and the identity solves it
+(`TauCeti.isWeakPseudoholomorphic_two_mul`).
 
-`dΨ_y ∘ J(x, y) = J'(x, Ψ y) ∘ dΨ_y` and `dΨ_y (ν(x, y) w) = ν'(x, Ψ y) w`.
-
-Then `Ψ ∘ u` is weakly pseudoholomorphic on `s` for `(J', ν')` exactly when `u` is weakly
-pseudoholomorphic on `s` for `(J, ν)`
-(`Diffeomorph.isWeakPseudoholomorphicOn_diffeomorph_comp_iff`).
-
-## Main results
-
-* `Diffeomorph.isWeakPseudoholomorphicOn_diffeomorph_comp_iff`,
-  `Diffeomorph.isWeakPseudoholomorphic_diffeomorph_comp_iff`: **Invariance under diffeomorphisms of
-  the target.**
+The predicate tests every chart `ψ` of the maximal atlas of `M` and every chart `χ` of that of
+`N`, and `ψ ↦ g⁻¹ ≫ ψ`, `χ ↦ g ≫ χ` match these charts so that `ψ = χ ∘ g`. In matched
+charts the two coordinate equations are the same: the coordinate expressions `ψ ∘ u ∘ φ⁻¹` and
+`χ ∘ (g ∘ u) ∘ φ⁻¹` are equal, and `g^* J` and `g^* ν` read in `ψ` are `J` and `ν` read in `χ`
+(`TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback`,
+`TauCeti.InhomogeneousTerm.chartTerm_pullback`). The Sobolev class follows from continuity and
+the coordinate equations
+(`TauCeti.isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn`), and composition
+with the homeomorphism `g` preserves continuity, so `s` need not be open. No comparison of the
+equation in two charts of the same manifold is needed.
 
 ## Implementation notes
 
-The two sides are compared chart by chart. A chart `ψ'` of the maximal atlas of `M'`
-precomposed with `Ψ` is a chart `ψ = ψ' ∘ Ψ` of the maximal atlas of `M`
-(`Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas`), and every chart `ψ` of `M` arises
-in this way from `ψ' = ψ ∘ Ψ⁻¹`. For such a pair the coordinate expressions `ψ ∘ u ∘ φ⁻¹` and
-`ψ' ∘ (Ψ ∘ u) ∘ φ⁻¹` are equal, on equal domains. The chain rule `dψ_y = dψ'_{Ψ y} ∘ dΨ_y`
-then shows that `J` read in `ψ` is `J'` read in `ψ'`
-(`TauCeti.ContMDiffAlmostComplexStructure.chartPushforward_eq_of_eventuallyEq_comp`), and likewise
-for the inhomogeneous terms, so the two coordinate equations coincide.
+Both manifolds carry the same model `I`, so that `g⁻¹ ≫ ψ` is a chart of `N` for every chart `ψ`
+of `M`. The structures are pulled back along a smooth `g`, so `J` and `ν` keep their regularity
+`ℓ`. The boundary condition of the equation is not treated here.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Sections 2.1 and 3.1 and Appendix B.4.
+  Section 2.2 and Appendix B.4.
 -/
 
 public section
 
-open Set Filter MeasureTheory
+open Set Filter TopologicalSpace MeasureTheory
 open scoped Manifold ContDiff Topology TauCeti.ComplexManifold
 
 noncomputable section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I ∞ M']
-
-/-! ### Corresponding charts -/
-
-section Charts
-
-variable {Ψ : M ≃ₘ⟮I, I⟯ M'} {ψ : OpenPartialHomeomorph M H} {ψ' : OpenPartialHomeomorph M' H}
-
-omit [IsManifold I ∞ M] [IsManifold I ∞ M'] in
-/-- Near a point of the source of a chart `ψ = ψ' ∘ Ψ`, the chart `ψ` read in `E` is the chart `ψ'`
-read in `E`, composed with `Ψ`. -/
-private theorem extendTrans_eventuallyEq_comp (happly : ∀ y ∈ ψ.source, ψ y = ψ' (Ψ y)) {y : M}
-    (hy : y ∈ ψ.source) :
-    (ψ.extendTrans I (Homeomorph.refl E) : M → E) =ᶠ[𝓝 y]
-      ψ'.extendTrans I (Homeomorph.refl E) ∘ Ψ :=
-  eventually_of_mem (ψ.open_source.mem_nhds hy) fun w hw ↦ by simp [happly w hw]
-
-end Charts
-
-/-! ### Invariance of the weak equation -/
-
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X] {ℓ : ℕ∞}
-  {J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ}
-  {J' : ContMDiffAlmostComplexStructureFamily I M' 𝓘(ℝ, ℂ) X ℓ}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N] {ℓ : ℕ∞}
+  {J : ContMDiffAlmostComplexStructureFamily I N 𝓘(ℝ, ℂ) X ℓ}
   {ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J}
-  {ν' : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J'}
   {p : ENNReal} {u : X → M} {s : Set X}
 
-/-- **The coordinate equations of `Ψ ∘ u` and of `u` agree in corresponding charts.** If the
-differential of `Ψ` intertwines `(J, ν)` with `(J', ν')` and `ψ = ψ' ∘ Ψ` on the source of `ψ`,
-the preimage of the source of `ψ'`, then `Ψ ∘ u` solves the coordinate equation in the charts `φ`
-and `ψ'` exactly when `u` solves it in the charts `φ` and `ψ`. -/
-private theorem isWeakCauchyRiemannOn_diffeomorph_comp_iff (Ψ : M ≃ₘ⟮I, I⟯ M')
-    (hJ : ∀ (x : X) (y : M) (v : TangentSpace I y),
-      mfderiv I I Ψ y (J.freeze x y v) = J'.freeze x (Ψ y) (mfderiv I I Ψ y v))
-    (hν : ∀ (x : X) (y : M) (w : TangentSpace 𝓘(ℝ, ℂ) x),
-      mfderiv I I Ψ y (ν.val.tangentHom (x, y) w) = ν'.val.tangentHom (x, Ψ y) w)
-    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M)
-    {ψ' : OpenPartialHomeomorph M' H} (hψ' : ψ' ∈ IsManifold.maximalAtlas I ∞ M')
-    (hsource : ψ.source = Ψ ⁻¹' ψ'.source) (happly : ∀ y ∈ ψ.source, ψ y = ψ' (Ψ y))
-    (φ : OpenPartialHomeomorph X ℂ) :
-    IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ (Ψ ∘ u) ⁻¹' ψ'.source))
-        (J'.chartField φ (ψ'.extendTrans I (Homeomorph.refl E)))
-        (ν'.chartTerm φ (ψ'.extendTrans I (Homeomorph.refl E)))
-        (ψ'.extendTrans I (Homeomorph.refl E) ∘ (Ψ ∘ u) ∘ φ.symm) ↔
+/-- The coordinate equations of `g ∘ u` for `(J, ν)` in charts `φ` and `χ` and of `u` for
+`(g^* J, g^* ν)` in charts `φ` and `ψ` agree when `ψ = χ ∘ g`. -/
+private theorem isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N)
+    {ψ : OpenPartialHomeomorph M H} {χ : OpenPartialHomeomorph N H}
+    (hsrc : ψ.source = g ⁻¹' χ.source) (hfun : ∀ x, ψ x = χ (g x))
+    (hsymm : ∀ w, ψ.symm w = g.symm (χ.symm w)) (φ : OpenPartialHomeomorph X ℂ) :
+    IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ (g ∘ u) ⁻¹' χ.source))
+        (J.chartField φ (χ.extendTrans I (Homeomorph.refl E)))
+        (ν.chartTerm φ (χ.extendTrans I (Homeomorph.refl E)))
+        (χ.extendTrans I (Homeomorph.refl E) ∘ (g ∘ u) ∘ φ.symm) ↔
       IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
-        (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
-        (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
+        ((J.pullback g le_top).chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
+        ((ν.pullback g le_top).chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
         (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) := by
-  set χ := ψ.extendTrans I (Homeomorph.refl E)
-  set χ' := ψ'.extendTrans I (Homeomorph.refl E)
-  set D := φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)
-  -- The two domains of the coordinate equations coincide.
-  have hD : φ.target ∩ φ.symm ⁻¹' (s ∩ (Ψ ∘ u) ⁻¹' ψ'.source) = D := by
-    simp only [D, hsource, preimage_comp]
-  -- On the common domain, `χ' ∘ Ψ` is `χ`.
-  have hval {y : M} (hy : y ∈ ψ.source) : χ' (Ψ y) = χ y := by simp [χ, χ', happly y hy]
-  rw [hD, isWeakCauchyRiemannOn_congr (U := D) (u := χ' ∘ (Ψ ∘ u) ∘ φ.symm)
-    (v := χ ∘ u ∘ φ.symm) fun z (hz : z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) ↦
-      hval hz.2.2]
-  -- The structures and the terms read in the two charts agree on the common domain.
-  refine isWeakCauchyRiemannOn_congr_ae ?_ ?_ <;>
-    filter_upwards [ae_restrict_mem measurableSet_interior] with z hz
-  all_goals
-    have hzD : z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source) := interior_subset hz
-    have hy : u (φ.symm z) ∈ ψ.source := hzD.2.2
-    have hΨy : Ψ (u (φ.symm z)) ∈ ψ'.source := hsource.subset hy
-  · simp only [ContMDiffAlmostComplexStructureFamily.chartField_apply, Function.comp_apply]
-    exact ((J.freeze (φ.symm z)).chartPushforward_eq_of_eventuallyEq_comp (J'.freeze (φ.symm z))
-      (by simpa [χ] using hy) (by simpa [χ'] using hΨy) (extendTrans_eventuallyEq_comp happly hy)
-      (Ψ.mdifferentiable (by simp) _)
-      ((ψ'.contMDiffAt_extendTrans hψ' contDiff_id hΨy).mdifferentiableAt (by simp))
-      ((ψ.contMDiffAt_extendTrans_symm hψ contDiff_id
-        (χ.map_source (by simpa [χ] using hy))).mdifferentiableAt (by simp))
-      ((ψ'.contMDiffAt_extendTrans_symm hψ' contDiff_id
-        (χ'.map_source (by simpa [χ'] using hΨy))).mdifferentiableAt (by simp))
-      (hJ (φ.symm z) _)).symm
-  · set y := u (φ.symm z)
-    have hχy : y ∈ χ.source := by simpa [χ] using hy
-    have hχ'y : Ψ y ∈ χ'.source := by simpa [χ'] using hΨy
-    have hs : χ.symm (χ y) = y := χ.left_inv hχy
-    have hs' : χ'.symm (χ y) = Ψ y := by rw [← hval hy]; exact χ'.left_inv hχ'y
-    simp only [InhomogeneousTerm.chartTerm_apply, Function.comp_apply]
-    -- Generalize the two base points, so that the tangent spaces can be identified.
-    have key : ∀ y₁ y₂, y₁ = Ψ y → y₂ = y →
-        (2 : ℝ) • mvfderiv I χ' y₁
-            (ν'.val.tangentHom (φ.symm z, y₁) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ))) =
-          (2 : ℝ) • mvfderiv I χ y₂
-            (ν.val.tangentHom (φ.symm z, y₂) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ))) := by
-      rintro _ _ rfl rfl
-      congr 1
-      rw [← hν]
-      exact mfderiv_apply_mfderiv_of_eventuallyEq_comp
-        (extendTrans_eventuallyEq_comp happly hy).symm
-        ((ψ'.contMDiffAt_extendTrans hψ' contDiff_id hΨy).mdifferentiableAt (by simp))
-        (Ψ.mdifferentiable (by simp) y) _
-    exact key _ _ hs' hs
+  have hfun' : ⇑(ψ.extendTrans I (Homeomorph.refl E)) = χ.extendTrans I (Homeomorph.refl E) ∘ g :=
+    funext fun x ↦ by simp [OpenPartialHomeomorph.extendTrans_apply, hfun]
+  have hsymm' : ⇑(ψ.extendTrans I (Homeomorph.refl E)).symm =
+      g.symm ∘ (χ.extendTrans I (Homeomorph.refl E)).symm :=
+    funext fun w ↦ by simp [OpenPartialHomeomorph.extendTrans_symm_apply, hsymm]
+  rw [J.chartField_pullback g le_top φ hfun' hsymm', ν.chartTerm_pullback g le_top φ hfun' hsymm',
+    hfun', hsrc, preimage_comp]
+  rfl
 
-/-- **Invariance under diffeomorphisms of the target.** Let `Ψ : M → M'` be a smooth
-diffeomorphism whose differential intertwines the domain-dependent structures and inhomogeneous
-terms, `dΨ_y ∘ J(x, y) = J'(x, Ψ y) ∘ dΨ_y` and `dΨ_y ∘ ν(x, y) = ν'(x, Ψ y)`. Then `Ψ ∘ u` is
-weakly pseudoholomorphic on `s` for `(J', ν')` exactly when `u` is weakly pseudoholomorphic on `s`
-for `(J, ν)`. -/
-theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_diffeomorph_comp_iff (Ψ : M ≃ₘ⟮I, I⟯ M')
-    (hJ : ∀ (x : X) (y : M) (v : TangentSpace I y),
-      mfderiv I I Ψ y (J.freeze x y v) = J'.freeze x (Ψ y) (mfderiv I I Ψ y v))
-    (hν : ∀ (x : X) (y : M) (w : TangentSpace 𝓘(ℝ, ℂ) x),
-      mfderiv I I Ψ y (ν.val.tangentHom (x, y) w) = ν'.val.tangentHom (x, Ψ y) w) :
-    IsWeakPseudoholomorphicOn J' ν' p (Ψ ∘ u) s ↔ IsWeakPseudoholomorphicOn J ν p u s := by
+/-- **Invariance under diffeomorphisms of the target.** For a diffeomorphism `g : M → N`, the
+map `g ∘ u` is weakly pseudoholomorphic on `s` for `J` and `ν` exactly when `u` is weakly
+pseudoholomorphic on `s` for the pulled-back structure `g^* J` and term `g^* ν`. -/
+theorem isWeakPseudoholomorphicOn_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) :
+    IsWeakPseudoholomorphicOn J ν p (g ∘ u) s ↔
+      IsWeakPseudoholomorphicOn (J.pullback g le_top) (ν.pullback g le_top) p u s := by
   simp only [isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn]
-  refine and_congr ?_ ⟨fun h φ hφ ψ hψ ↦ ?_, fun h φ hφ ψ' hψ' ↦ ?_⟩
-  · -- Continuity transfers along the homeomorphism `Ψ`.
-    exact Ψ.toHomeomorph.comp_continuousOn_iff u s
-  · -- Transport the chart `ψ` of `M` to the chart `ψ ∘ Ψ⁻¹` of `M'`.
-    have hψ' := Ψ.symm.transOpenPartialHomeomorph_mem_maximalAtlas hψ
-    refine (isWeakCauchyRiemannOn_diffeomorph_comp_iff Ψ hJ hν hψ hψ' ?_ (fun y _ ↦ ?_) φ).1
-      (h φ hφ _ hψ')
-    · ext y
+  refine and_congr (g.toHomeomorph.comp_continuousOn_iff u s)
+    ⟨fun h φ hφ ψ hψ ↦ ?_, fun h φ hφ χ hχ ↦ ?_⟩
+  · -- Test `g ∘ u` in the chart `g⁻¹ ≫ ψ` of `N`.
+    refine (isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff g ?_ (fun x ↦ ?_) (fun w ↦ ?_)
+      φ).1
+      (h φ hφ _ (g.symm.toPartialDiffeomorph.trans_mem_maximalAtlas hψ))
+    · ext x
       simp
     · simp
-  · -- Transport the chart `ψ'` of `M'` to the chart `ψ' ∘ Ψ` of `M`.
-    have hψ := Ψ.transOpenPartialHomeomorph_mem_maximalAtlas hψ'
-    exact (isWeakCauchyRiemannOn_diffeomorph_comp_iff Ψ hJ hν hψ hψ' (by simp)
-      (fun y _ ↦ by simp) φ).2 (h φ hφ _ hψ)
+    · simp
+  · -- Test `u` in the chart `g ≫ χ` of `M`.
+    refine (isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff g ?_ (fun x ↦ ?_) (fun w ↦ ?_)
+      φ).2 (h φ hφ _ (g.toPartialDiffeomorph.trans_mem_maximalAtlas hχ))
+    · ext x
+      simp
+    · simp
+    · simp
 
-/-- **Invariance under diffeomorphisms of the target**, on the whole surface: if the differential
-of the smooth diffeomorphism `Ψ : M → M'` intertwines `(J, ν)` with `(J', ν')`, then `Ψ ∘ u` is
-weakly pseudoholomorphic for `(J', ν')` exactly when `u` is weakly pseudoholomorphic for
-`(J, ν)`. -/
-theorem _root_.Diffeomorph.isWeakPseudoholomorphic_diffeomorph_comp_iff (Ψ : M ≃ₘ⟮I, I⟯ M')
-    (hJ : ∀ (x : X) (y : M) (v : TangentSpace I y),
-      mfderiv I I Ψ y (J.freeze x y v) = J'.freeze x (Ψ y) (mfderiv I I Ψ y v))
-    (hν : ∀ (x : X) (y : M) (w : TangentSpace 𝓘(ℝ, ℂ) x),
-      mfderiv I I Ψ y (ν.val.tangentHom (x, y) w) = ν'.val.tangentHom (x, Ψ y) w) :
-    IsWeakPseudoholomorphic J' ν' p (Ψ ∘ u) ↔ IsWeakPseudoholomorphic J ν p u := by
-  rw [← isWeakPseudoholomorphicOn_univ, ← isWeakPseudoholomorphicOn_univ]
-  exact Ψ.isWeakPseudoholomorphicOn_diffeomorph_comp_iff hJ hν
+/-- **Invariance under diffeomorphisms of the target.** For a diffeomorphism `g : M → N`, the
+map `g ∘ u` is weakly pseudoholomorphic for `J` and `ν` exactly when `u` is weakly
+pseudoholomorphic for the pulled-back structure `g^* J` and term `g^* ν`. -/
+theorem isWeakPseudoholomorphic_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) :
+    IsWeakPseudoholomorphic J ν p (g ∘ u) ↔
+      IsWeakPseudoholomorphic (J.pullback g le_top) (ν.pullback g le_top) p u := by
+  simp only [← isWeakPseudoholomorphicOn_univ,
+    isWeakPseudoholomorphicOn_diffeomorph_comp_iff g]
+
+/-! ### Checks -/
+
+section Checks
+
+/-- The map `z ↦ 2 z` of `ℂ`, as a diffeomorphism. -/
+private noncomputable def twoSMulDiffeomorph : ℂ ≃ₘ⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ ℂ :=
+  (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv.toDiffeomorph
+
+/-- The structure `i` of `ℂ` pulls back to itself along `z ↦ 2 z`. -/
+private theorem pullback_twoSMulDiffeomorph_ofComplexManifold {ℓ : ℕ∞} :
+    ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ).pullback
+      twoSMulDiffeomorph le_top =
+      (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ := by
+  refine ((ContMDiffAlmostComplexStructure.eq_pullback_iff twoSMulDiffeomorph
+    ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ) le_top).2
+      fun x v ↦ ?_).symm
+  beta_reduce
+  rw [SmoothAlmostComplexStructure.toContMDiff_toEndomorphism_apply,
+    SmoothAlmostComplexStructure.toContMDiff_toEndomorphism_apply,
+    SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold,
+    SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
+  have hD : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) twoSMulDiffeomorph x =
+      ((2 : ℝ) • ContinuousLinearMap.id ℝ ℂ : ℂ →L[ℝ] ℂ) := by
+    have hg : ⇑twoSMulDiffeomorph = ⇑((2 : ℝ) • ContinuousLinearMap.id ℝ ℂ) := by
+      funext z
+      simp [twoSMulDiffeomorph]
+    rw [hg, ContinuousLinearMap.mfderiv_eq]
+  have key (D : ℂ →L[ℝ] ℂ) (hD : D = (2 : ℝ) • ContinuousLinearMap.id ℝ ℂ) (w : ℂ) :
+      D ((Complex.I • ContinuousLinearMap.id ℝ ℂ) w) =
+        (Complex.I • ContinuousLinearMap.id ℝ ℂ) (D w) := by
+    subst hD
+    simp only [smul_apply, ContinuousLinearMap.id_apply]
+    rw [smul_comm]
+  exact key _ hD v
+
+/-- **Check.** On `X = M = N = ℂ` with the structure `i`, the map `z ↦ 2 z` is weakly
+pseudoholomorphic: it is `g ∘ id` for the diffeomorphism `g = (2 ·)`, along which `i` pulls back
+to itself, and the identity solves the equation. -/
+theorem isWeakPseudoholomorphic_two_mul {ℓ : ℕ∞} {p : ENNReal} :
+    IsWeakPseudoholomorphic (ContMDiffAlmostComplexStructureFamily.const
+      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)) 0 p
+      (fun z : ℂ ↦ 2 * z) := by
+  have hJ : ContMDiffAlmostComplexStructureFamily.const (IP := 𝓘(ℝ, ℂ)) (P := ℂ)
+      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ) =
+      (ContMDiffAlmostComplexStructureFamily.const
+        ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)).pullback
+        twoSMulDiffeomorph le_top := by
+    rw [ContMDiffAlmostComplexStructureFamily.pullback_const,
+      pullback_twoSMulDiffeomorph_ofComplexManifold]
+  have hid := (isWeakPseudoholomorphic_ofEq (ν := 0) rfl hJ).2
+    (isWeakPseudoholomorphic_id (X := ℂ) (ℓ := ℓ) (p := p))
+  rw [InhomogeneousTerm.ofEq_zero, ← InhomogeneousTerm.pullback_zero twoSMulDiffeomorph le_top,
+    ← isWeakPseudoholomorphic_diffeomorph_comp_iff] at hid
+  convert hid using 1
+  funext z
+  simp [twoSMulDiffeomorph, two_mul, two_smul]
+
+end Checks
 
 end TauCeti

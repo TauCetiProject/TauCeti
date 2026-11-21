@@ -120,11 +120,11 @@ theorem tilde_map_app_injective {M N : ModuleCat.{u} R} (f : M ⟶ N)
     simp only [StructureSheaf.Localizations.comapFun_mk, LocalizedModule.mk_eq,
       Submonoid.smul_def] at hab ⊢
     obtain ⟨c, hc⟩ := hab
-    refine ⟨⟨c.1, c.2⟩, hf ?_⟩
+    refine ⟨⟨c.val, c.property⟩, hf ?_⟩
     rw [map_smul, map_smul, map_smul, map_smul]
     exact hc
   intro s t hst
-  exact Subtype.ext (funext fun p ↦ hloc p.1 (congr_arg (fun x ↦ x.1 p) hst))
+  exact Subtype.ext (funext fun p ↦ hloc p.val (congr_arg (fun x ↦ x.val p) hst))
 
 /-- The functor `M ↦ M~` sends monomorphisms of `R`-modules to monomorphisms of
 `𝒪_{Spec R}`-modules. -/
@@ -190,12 +190,12 @@ private lemma pushforwardCompModulesSpecToSheafIso_hom_app_top_apply
     (N : (Spec S).Modules)
     (x : (modulesSpecToSheaf.obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N)).obj.obj
       (.op ⊤)) :
-    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).1.app (.op ⊤) x = x := rfl
+    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).hom.app (.op ⊤) x = x := rfl
 
 private lemma pushforwardCompModulesSpecToSheafIso_inv_app_top_apply
     (N : (Spec S).Modules)
     (x : ((modulesSpecToSheaf.obj N).obj.obj (.op ⊤))) :
-    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).1.app (.op ⊤) x = x := rfl
+    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).hom.app (.op ⊤) x = x := rfl
 
 /-- `pushforwardCompModuleSpecΓFunctorIso` is the identity on global sections. -/
 @[simp]
@@ -258,6 +258,45 @@ theorem tildeFunctorCompPullbackIso_hom_app_unit_toOpen (M : ModuleCat.{u} R) (m
       tilde.toOpen ((ModuleCat.extendScalars φ.hom).obj M) ⊤ ((1 : S) ⊗ₜ[R,φ.hom] m)) := by
   -- The global-section functors and restriction of scalars retain the underlying functions.
   exact ConcreteCategory.congr_hom (unit_tildeFunctorCompPullbackIso_hom_app φ M) m
+
+/-- Global sections of an associated-sheaf morphism send the section of `m` to that of its
+image. -/
+@[simp]
+theorem moduleSpecΓFunctor_map_tilde_map {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
+    (ψ : M ⟶ N) (m : M) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    moduleSpecΓFunctor.map (tilde.map ψ) (tilde.toTildeΓNatIso.hom.app M m) =
+      tilde.toTildeΓNatIso.hom.app N (ψ m) :=
+  (ConcreteCategory.congr_hom (tilde.toTildeΓNatIso.hom.naturality ψ) m).symm
+
+/-- On global sections, the affine pullback comparison takes the pulled-back associated
+section of `m` to that of `1 ⊗ m`. -/
+@[simp]
+theorem moduleSpecΓFunctor_map_tildeFunctorCompPullbackIso_hom_app
+    (M : ModuleCat.{u} R) (m : M) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    moduleSpecΓFunctor.map ((tildeFunctorCompPullbackIso φ).hom.app M)
+      (moduleSpecΓFunctor.map
+        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M))
+        (tilde.toTildeΓNatIso.hom.app M m)) =
+      tilde.toTildeΓNatIso.hom.app ((ModuleCat.extendScalars φ.hom).obj M)
+        ((1 : S) ⊗ₜ[R, φ.hom] m) :=
+  tildeFunctorCompPullbackIso_hom_app_unit_toOpen φ M m
+
+/-- On associated global sections, affine pullback followed by a tilde morphism sends
+`m` to the associated section of the image of `1 ⊗ m`. -/
+theorem moduleSpecΓFunctor_map_comp_tilde_map {R' S' : CommRingCat.{u}} (φ : R' ⟶ S')
+    {M : ModuleCat.{u} R'} {N : ModuleCat.{u} S'} (ψ : (ModuleCat.extendScalars φ.hom).obj M ⟶ N)
+    (m : M) :
+    moduleSpecΓFunctor.map ((tildeFunctorCompPullbackIso φ).hom.app M ≫ tilde.map ψ)
+        (moduleSpecΓFunctor.map
+          ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M))
+          (tilde.toTildeΓNatIso.hom.app M m)) =
+      tilde.toTildeΓNatIso.hom.app N (ψ ((1 : S') ⊗ₜ[R', φ.hom] m)) :=
+  (ConcreteCategory.congr_hom (Functor.map_comp moduleSpecΓFunctor _ _) _).trans <|
+    (congrArg (moduleSpecΓFunctor.map (tilde.map ψ)).hom
+      (moduleSpecΓFunctor_map_tildeFunctorCompPullbackIso_hom_app φ M m)).trans
+        (moduleSpecΓFunctor_map_tilde_map ψ _)
 
 end BaseChange
 

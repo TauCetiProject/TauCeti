@@ -364,7 +364,7 @@ private theorem eventually_forall_mem_of_isOpen_totalSpace_piece
   have hcoord : Continuous (fun p : F × (extChartAt I (c i)).target ↦
       (((extChartAt I (c i)).symm p.2 : M),
         (e i).frameCoordinates (hU i) s₀ ((extChartAt I (c i)).symm p.2) + p.1)) :=
-    (continuous_subtype_val.comp (hq.comp continuous_snd)).prodMk
+    (continuous_subtypeVal.comp (hq.comp continuous_snd)).prodMk
       ((hf₀.comp (hq.comp continuous_snd)).add continuous_fst)
   have htot : Continuous (fun p : F × (extChartAt I (c i)).target ↦
       (⟨((extChartAt I (c i)).symm p.2 : M),
@@ -372,7 +372,7 @@ private theorem eventually_forall_mem_of_isOpen_totalSpace_piece
           ((e i).frameCoordinates (hU i) s₀ ((extChartAt I (c i)).symm p.2) + p.1)⟩ :
         TotalSpace F V)) :=
     (e i).continuousOn_symm.comp_continuous hcoord
-      fun p ↦ ⟨hU i ((extChartAt I (c i)).symm p.2).2, mem_univ _⟩
+      fun p ↦ ⟨hU i ((extChartAt I (c i)).symm p.2).property, mem_univ _⟩
   refine (K i).isCompact.eventually_forall_of_forall_eventually fun z _ ↦
     (hΩ.preimage htot).mem_nhds ?_
   rw [mem_preimage]
@@ -380,7 +380,7 @@ private theorem eventually_forall_mem_of_isOpen_totalSpace_piece
       ((e i).frameCoordinates (hU i) s₀ ((extChartAt I (c i)).symm z) + 0) =
       s₀ ((extChartAt I (c i)).symm z : M) := by
     rw [add_zero, Trivialization.frameCoordinates_apply,
-      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).2)]
+      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).property)]
   rw [h0]
   exact hs₀ _
 
@@ -419,7 +419,7 @@ theorem exists_pos_forall_mem_of_isOpen_totalSpace
       s ((extChartAt I (c i)).symm z : M) := by
     rw [map_sub, ContMDiffMap.coe_sub, Pi.sub_apply, add_sub_cancel,
       Trivialization.frameCoordinates_apply,
-      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).2)]
+      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).property)]
   rw [hsum] at hmem
   have hpt : ((extChartAt I (c i)).symm z : M) = y :=
     congrArg Subtype.val ((extChartAt I (c i)).left_inv hy)
@@ -446,14 +446,15 @@ include hK in
 theorem withSeminorms_finiteAtlasSeminorm_subtype :
     letI := frameTopology (I := I) (n := n) e U hU
     WithSeminorms
-      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
+      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
+          := by
   let _ := frameTopology (I := I) (n := n) e U hU
   have hp := withSeminorms_frameSeminormFamily (I := I) (n := n) e U hU
   let _ := hp.isTopologicalAddGroup
   refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
   · intro k
     obtain ⟨s, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _
-      (continuous_finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2)
+      (continuous_finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
     exact ⟨s, C, by simpa only [Seminorm.comp_id] using hbound⟩
   · rintro ⟨i, x, ⟨m, hm⟩, L⟩
     obtain ⟨C, -, hbound⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (n := n) e U hU hK
@@ -472,7 +473,8 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover [LocallyCompactSpace 
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
     letI := frameTopology (I := I) (n := n) e' U' hU'
     WithSeminorms
-      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
+      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
+          := by
   have heq : frameTopology (I := I) (n := n) e' U' hU' =
       frameTopology (I := I) (n := n) e U hU :=
     frameTopology_eq_of_covers e' U' hU' hcover' e U hU (TauCeti.cover_of_extChartAt_cover hK)
@@ -491,14 +493,15 @@ variable (k : ℕ) [ContMDiffVectorBundle k F V I] [IsManifold I k M]
 
 private theorem withSeminorms_unit_of_subtype [TopologicalSpace Cₛ^k⟮I; F, V⟯]
     (hp : WithSeminorms
-      (fun m : {m : ℕ // (m : ℕ∞ω) ≤ k} ↦ finiteAtlasSeminorm (n := k) e U hU c K m.1 m.2)) :
+      (fun m : {m : ℕ // (m : ℕ∞ω) ≤ k} ↦ finiteAtlasSeminorm (n := k) e U hU c K m.val m.property))
+          :
     WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
   refine hp.congr ?_ ?_
   · exact fun _ ↦ ⟨{⟨k, le_rfl⟩}, 1, by
       simpa only [Finset.sup_singleton, one_smul, Seminorm.comp_id] using le_rfl⟩
   · exact fun m ↦ ⟨{()}, 1, by
       simpa only [Finset.sup_singleton, one_smul, Seminorm.comp_id] using
-        finiteAtlasSeminorm_le_of_le (n := k) e U hU c K (Nat.cast_le.mp m.2) le_rfl⟩
+        finiteAtlasSeminorm_le_of_le (n := k) e U hU c K (Nat.cast_le.mp m.property) le_rfl⟩
 
 variable (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
   ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,

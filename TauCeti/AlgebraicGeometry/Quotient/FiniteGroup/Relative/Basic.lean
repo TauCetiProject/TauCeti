@@ -291,13 +291,13 @@ instance : IsIntegralHom (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @IsIntegralHom).mpr fun U ↦ ?_
   exact IsIntegralHom.SpecMap_iff.mpr
-    (algebraMap_isIntegral_iff.mpr (isIntegral_invariantSections ρ U.1))
+    (algebraMap_isIntegral_iff.mpr (isIntegral_invariantSections ρ U.val))
 
 /-- The quotient projection is surjective. -/
 instance : Surjective (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
   refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @Surjective).mpr fun U ↦ ?_
-  have := isIntegral_invariantSections ρ U.1
-  exact ⟨Algebra.IsIntegral.comap_surjective (invariantSections ρ U.1) Γ(A.X, U.1)⟩
+  have := isIntegral_invariantSections ρ U.val
+  exact ⟨Algebra.IsIntegral.comap_surjective (invariantSections ρ U.val) Γ(A.X, U.val)⟩
 
 /-- The quotient projection is finite when `Spec_X(A)` is locally of finite type over `X`. -/
 instance isFinite_invariantSubalgebraPresheaf_relativeSpecπ
