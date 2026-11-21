@@ -76,11 +76,11 @@ theorem bellSeries_normCoeff_one_mul_prod_one_sub_X_pow (K : Type*) [Field K] [N
     have : 𝔭.IsPrime := hmem.1
     have : 𝔭.LiesOver (span {(p : ℤ)}) := hmem.2
     TauCeti.NumberField.heightOneSpectrumOfLiesOver p 𝔭
-  have htoH1_asIdeal (q : {𝔭 // 𝔭 ∈ T}) : (toH1 q).asIdeal = q.1 := by
-    have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.2
-    have : q.1.IsPrime := hmem.1
-    have : q.1.LiesOver (span {(p : ℤ)}) := hmem.2
-    exact TauCeti.NumberField.heightOneSpectrumOfLiesOver_asIdeal p q.1
+  have htoH1_asIdeal (q : {𝔭 // 𝔭 ∈ T}) : (toH1 q).asIdeal = q.val := by
+    have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
+    have : q.val.IsPrime := hmem.1
+    have : q.val.LiesOver (span {(p : ℤ)}) := hmem.2
+    exact TauCeti.NumberField.heightOneSpectrumOfLiesOver_asIdeal p q.val
   have hinj : Function.Injective toH1 := fun q₁ q₂ h ↦
     Subtype.ext (by rw [← htoH1_asIdeal q₁, ← htoH1_asIdeal q₂, h])
   let S : Finset (HeightOneSpectrum (𝓞 K)) := T.attach.image toH1
@@ -94,11 +94,11 @@ theorem bellSeries_normCoeff_one_mul_prod_one_sub_X_pow (K : Type*) [Field K] [N
     isMultiplicative_one hp S hS_cover,
     Finset.prod_image (fun _ _ _ _ h ↦ hinj h), ← Finset.prod_attach T, ← Finset.prod_mul_distrib]
   refine Finset.prod_eq_one fun q _ ↦ ?_
-  have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.2
-  have : q.1.IsPrime := hmem.1
-  have : q.1.LiesOver (span {(p : ℤ)}) := hmem.2
-  rw [localArithmeticFactor_def, localPowerSeries_one, htoH1_asIdeal, ← pow_inertiaDeg p q.1]
+  have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
+  have : q.val.IsPrime := hmem.1
+  have : q.val.LiesOver (span {(p : ℤ)}) := hmem.2
+  rw [localArithmeticFactor_def, localPowerSeries_one, htoH1_asIdeal, ← pow_inertiaDeg p q.val]
   exact ArithmeticFunction.bellSeries_ofPowerSeries_mk_one_mul_one_sub_X_pow hp
-    (Ideal.inertiaDeg_pos q.1 ℤ).ne'
+    (Ideal.inertiaDeg_pos q.val ℤ).ne'
 
 end TauCeti.IdealArithmeticFunction

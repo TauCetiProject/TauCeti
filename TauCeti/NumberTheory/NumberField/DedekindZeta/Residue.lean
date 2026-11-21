@@ -7,14 +7,16 @@ module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # Reading off the residue of a Dedekind zeta function from a factorization
 
 When the Dedekind zeta function `ζ_K` of a number field `K` factors as `ζ_K(s) = ζ(s) g(s)` near
 `1` along the real ray `s > 1`, multiplying by `s - 1` and passing to the limit `s → 1⁺` matches
-Mathlib's `NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT` against `riemannZeta_residue_one`
-and identifies `NumberField.dedekindZeta_residue K` with the right-hand limit of `g` at `1`.
+Mathlib's `NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT` against
+`TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT` and identifies `NumberField.dedekindZeta_residue K`
+with the right-hand limit of `g` at `1`.
 
 ## Main results
 
@@ -38,12 +40,9 @@ theorem dedekindZeta_residue_eq_of_eventuallyEq_riemannZeta_mul
     (hfac : (fun s : ℝ ↦ dedekindZeta K s) =ᶠ[𝓝[>] 1] fun s : ℝ ↦ riemannZeta s * g s)
     (hg : Tendsto g (𝓝[>] 1) (𝓝 c)) :
     (dedekindZeta_residue K : ℂ) = c := by
-  have hζ : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * riemannZeta s) (𝓝[>] 1) (𝓝 1) :=
-    riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun s hs ↦ by simpa using (Set.mem_Ioi.mp hs).ne')
   have hF : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * dedekindZeta K s) (𝓝[>] 1) (𝓝 c) :=
-    (one_mul c ▸ hζ.mul hg).congr' (hfac.mono fun s hs ↦ by dsimp only at hs ⊢; rw [hs, mul_assoc])
+    (one_mul c ▸ TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT.mul hg).congr'
+      (hfac.mono fun s hs ↦ by dsimp only at hs ⊢; rw [hs, mul_assoc])
   exact tendsto_nhds_unique (tendsto_sub_one_mul_dedekindZeta_nhdsGT K) hF
 
 end TauCeti.NumberField

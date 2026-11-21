@@ -5,223 +5,266 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
-public import Mathlib.NumberTheory.LSeries.Convolution
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.DirichletCharacter.Polynomial
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.BellSeries
+import TauCeti.Algebra.GroupWithZero.Divisibility
+import TauCeti.Data.ZMod.OrderOf
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
-import TauCeti.NumberTheory.DirichletCharacter.BellSeries
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 import TauCeti.NumberTheory.LSeries.Convolution
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
-import TauCeti.NumberTheory.NumberField.DedekindZeta.Residue
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # The Dedekind zeta function of a cyclotomic field
 
-Let `K` be an `n`-th cyclotomic field over `ℚ` (`n ≠ 0`). This file proves the cyclotomic
-factorization of the Dedekind zeta function of `K` at the coefficient level, on the half-plane
-`Re s > 1` of absolute convergence (in both primitive and imprimitive level-`n` forms), and for
-the residue at `s = 1`:
+Let `K` be an `n`-th cyclotomic field over `ℚ` (`n ≠ 0`). This file proves the
+Dirichlet-coefficient, local Euler-factor, convergent `Re s > 1`, and residue-at-`1` identities
+factoring the Dedekind zeta function `ζ_K` into Dirichlet `L`-functions attached to the primitive
+characters `χ.primitiveCharacter` of the characters `χ : DirichletCharacter ℂ n`:
 
-* `normCoeff K 1 = ∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·)`,
-* `ζ_K(s) = ∏ χ : DirichletCharacter ℂ n, L(s, χ*)` for `Re s > 1`, where
-  `χ* = χ.primitiveCharacter`,
-* `ζ_K(s) = ζ(s) ∏_{χ ≠ 1} L(s, χ*)` for `Re s > 1`,
-* `ζ_K(s) ∏_χ ∏_{p ∣ n} (1 - χ*(p) p^(-s)) = ∏_χ L(s, χ)` for `Re s > 1`,
-* `dedekindZeta_residue K = ∏_{χ ≠ 1} L(1, χ*)`.
-
-At the coefficient level both sides are multiplicative arithmetic functions, so by
-`ArithmeticFunction.IsMultiplicative.eq_iff_forall_bellSeries_eq` it suffices to equate their Bell
-series at every rational prime `p`. Write `n = p ^ k * m` with `m = ordCompl[p] n`,
-`f = orderOf (p : ZMod m)`, and `g = φ(m) / f`. By the cyclotomic splitting law
-(`TauCeti.NumberField.inertiaDegIn_eq_orderOf`,
-`TauCeti.NumberField.ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul`), there are `g` primes
-of `𝓞 K` above `p`, each of inertia degree `f`, so by
-`TauCeti.IdealArithmeticFunction.bellSeries_normCoeff_one_mul_prod_one_sub_X_pow` the Bell series of
-`normCoeff K 1` at `p` is the formal inverse of `(1 - X ^ f) ^ g`. On the character side,
-`DirichletCharacter.bellSeries_prod_toArithmeticFunction_primitiveCharacter_mul_pow_one_sub` shows
-that the character-product Bell series is also the formal inverse of `(1 - X ^ f) ^ g`. Since both
-Bell series multiply with `(1 - X ^ f) ^ g` to `1`, they coincide. This proof handles all levels
-`n ≠ 0` uniformly, including ramified primes and levels `n ≡ 2 mod 4`.
+* **Local Euler factors** (`prod_primesOverFinset_one_sub_absNorm_cpow_neg`): at every rational
+  prime `p` (including ramified primes dividing `n`),
+  `∏ P | p, (1 - N(P) ^ (-s)) = ∏ χ, (1 - χ.primitiveCharacter p * p ^ (-s))`.
+* **Dirichlet coefficients** (`normCoeff_one_eq_prod_primitiveCharacter`,
+  `dedekindZetaCoeff_eq_prod_primitiveCharacter`): the ideal-counting arithmetic function
+  `normCoeff K 1` is the Dirichlet convolution
+  `∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·)`.
+* **Convergent factorization** (`dedekindZeta_eq_prod_LFunction_primitiveCharacter`,
+  `dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter`): on `Re s > 1`,
+  `ζ_K(s) = ∏ χ, L(s, χ.primitiveCharacter) = ζ(s) ∏_{χ ≠ 1} L(s, χ.primitiveCharacter)`.
+* **Level-`n` imprimitive comparison** (`dedekindZeta_mul_prod_eq_prod_LFunction`): multiplying
+  `ζ_K(s)` by `∏ χ, ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * p ^ (-s))` recovers the
+  product `∏ χ : DirichletCharacter ℂ n, L(s, χ)` of level-`n` `L`-functions.
+* **Residue at `s = 1`** (`dedekindZeta_residue_eq_prod_LFunction_one`): the residue of `ζ_K` at
+  `1` is `∏_{χ ≠ 1} L(1, χ.primitiveCharacter)`.
 
 ## Main results
 
-* `TauCeti.NumberField.normCoeff_one_eq_prod_toArithmeticFunction_primitiveCharacter`: the
-  ideal-counting coefficients of `ζ_K` equal the Dirichlet convolution of the primitive characters
-  inducing the characters modulo `n`.
-* `TauCeti.NumberField.dedekindZetaCoeff_eq_prod_toArithmeticFunction_primitiveCharacter_apply`:
-  pointwise form for `dedekindZetaCoeff K k` (`k ≠ 0`).
-* `TauCeti.NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter`:
-  `ζ_K(s) = ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s` for `Re s > 1`.
-* `TauCeti.NumberField.dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter`:
-  the same with the principal factor `riemannZeta s` separated.
-* `TauCeti.NumberField.dedekindZeta_mul_prod_one_sub_eq_prod_LFunction`: the imprimitive level-`n`
-  form on `Re s > 1`.
-* `TauCeti.NumberField.dedekindZeta_residue_eq_prod_LFunction_primitiveCharacter_one`:
-  `(dedekindZeta_residue K : ℂ) = ∏ χ ≠ 1, χ.primitiveCharacter.LFunction 1`.
+* `TauCeti.NumberField.absNorm_eq_pow_orderOf`: for `n = p ^ k * m` with `¬ p ∣ m`, every prime `P`
+  of `𝓞 K` above `p` has norm `p ^ orderOf (p : ZMod m)`.
+* `TauCeti.NumberField.card_primesOverFinset_eq_totient_div_orderOf`: there are
+  `m.totient / orderOf (p : ZMod m)` primes of `𝓞 K` above `p`.
+* `TauCeti.NumberField.prod_primesOverFinset_one_sub_absNorm_cpow_neg`,
+  `TauCeti.NumberField.prod_primesOverFinset_inv_one_sub_absNorm_cpow_neg`: local Euler-factor
+  identity at every rational prime `p`.
+* `TauCeti.NumberField.normCoeff_one_eq_prod_primitiveCharacter`,
+  `TauCeti.NumberField.dedekindZetaCoeff_eq_prod_primitiveCharacter`: Dirichlet-coefficient
+  factorization of `ζ_K`.
+* `TauCeti.NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter`,
+  `TauCeti.NumberField.dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter`,
+  `TauCeti.NumberField.dedekindZeta_mul_prod_eq_prod_LFunction`: factorization of `dedekindZeta K s`
+  for `1 < s.re`.
+* `TauCeti.NumberField.dedekindZeta_residue_eq_prod_LFunction_one`: residue of `ζ_K` at `s = 1`.
 
 ## References
 
 * L. C. Washington, *Introduction to Cyclotomic Fields*, Theorem 4.3.
-* J. Neukirch, *Algebraic Number Theory*, Chapter VII, §10.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VII, Corollary 5.11.
 -/
 
 public section
 
-open Filter Ideal IsDedekindDomain NumberField TauCeti.IdealArithmeticFunction
+open Filter Ideal IsDedekindDomain NumberField
+open TauCeti.IdealArithmeticFunction
 open scoped NumberField Topology
 
 namespace TauCeti.NumberField
 
-variable (K : Type*) [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### Local Bell-series comparison at a rational prime -/
+/-! ### Prime-ideal norms and local Euler factors -/
 
 section Local
 
-variable (n : ℕ) [NeZero n] [IsCyclotomicExtension {n} ℚ K]
+variable {n p k m : ℕ} [hp : Fact p.Prime] [IsCyclotomicExtension {n} ℚ K]
 
-/-- For every rational prime `p`, the Bell series of `normCoeff K 1` at `p` equals the Bell series
-of the Dirichlet convolution of the primitive characters inducing the characters modulo `n`. -/
-private theorem bellSeries_normCoeff_one_eq_bellSeries_prod_primitiveCharacter {p : ℕ}
-    (hp : p.Prime) :
-    ArithmeticFunction.bellSeries p hp (normCoeff K 1) =
-      ArithmeticFunction.bellSeries p hp
-        (∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·)) := by
-  have : Fact p.Prime := ⟨hp⟩
+/-- **Norm of a prime ideal in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`, every prime
+ideal `P` of `𝓞 K` lying over `p` has absolute norm `p ^ orderOf (p : ZMod m)`. -/
+theorem absNorm_eq_pow_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal (𝓞 K))
+    [P.IsPrime] [P.LiesOver (span {(p : ℤ)})] :
+    absNorm P = p ^ orderOf (p : ZMod m) := by
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
-  set m := ordCompl[p] n
-  have hn_eq : n = p ^ n.factorization p * m := (Nat.ordProj_mul_ordCompl_eq_self n p).symm
-  have hm_ndvd : ¬ p ∣ m := Nat.not_dvd_ordCompl hp (NeZero.ne n)
-  have : NeZero m := ⟨(Nat.ordCompl_pos p (NeZero.ne n)).ne'⟩
-  have hcop : p.Coprime m := Nat.coprime_ordCompl hp (NeZero.ne n)
-  set f := orderOf (p : ZMod m)
-  set g := m.totient / f
-  have hf_pos : 0 < f := by
-    have hord : orderOf (ZMod.unitOfCoprime p hcop) = f := by
-      rw [← orderOf_units, ZMod.coe_unitOfCoprime]
-    rw [← hord]
-    exact orderOf_pos _
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.ne_zero
-  -- Every prime `𝔭` above `p` in `𝓞 K` has inertia degree `f`, and there are `g` such primes.
-  have hprod :
-      ∏ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K),
-          (1 - (PowerSeries.X : PowerSeries ℂ) ^ 𝔭.inertiaDeg ℤ) =
-        (1 - PowerSeries.X ^ f) ^ g := by
-    have hinert : ∀ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K), 𝔭.inertiaDeg ℤ = f := by
-      intro 𝔭 h𝔭
-      have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp h𝔭
-      have : 𝔭.IsPrime := hmem.1
-      have : 𝔭.LiesOver (span {(p : ℤ)}) := hmem.2
-      rw [← Ideal.inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) 𝔭 (K ≃ₐ[ℚ] K)]
-      exact inertiaDegIn_eq_orderOf (K := K) hn_eq hm_ndvd
-    rw [Finset.prod_congr rfl fun 𝔭 h𝔭 ↦ by rw [hinert 𝔭 h𝔭], Finset.prod_const]
-    congr 1
-    have hmul : (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).card * f = m.totient := by
-      rw [← Set.ncard_coe_finset, coe_primesOverFinset hp0]
-      exact ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (K := K) hn_eq hm_ndvd
-    exact Nat.eq_div_of_mul_eq_left hf_pos.ne' hmul
-  have hzeta_inv :
-      ArithmeticFunction.bellSeries p hp (normCoeff K 1) * (1 - PowerSeries.X ^ f) ^ g = 1 := by
-    simpa only [hprod] using bellSeries_normCoeff_one_mul_prod_one_sub_X_pow K hp
-  have hchar_inv :
-      ArithmeticFunction.bellSeries p hp
-        (∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·)) *
-        (1 - PowerSeries.X ^ f) ^ g = 1 :=
-    DirichletCharacter.bellSeries_prod_toArithmeticFunction_primitiveCharacter_mul_pow_one_sub hp
-  exact inv_unique ((mul_comm _ _).trans hzeta_inv) ((mul_comm _ _).trans hchar_inv)
+  rw [← pow_inertiaDeg p P, ← inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) P Gal(K/ℚ),
+    inertiaDegIn_eq_orderOf hn hm]
+
+/-- **Cardinality of `primesOverFinset` in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`,
+the number of primes of `𝓞 K` above `p` is `m.totient / orderOf (p : ZMod m)`. -/
+theorem card_primesOverFinset_eq_totient_div_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) :
+    (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).card = m.totient / orderOf (p : ZMod m) := by
+  rw [← Set.ncard_coe_finset, coe_primesOverFinset (span_singleton_natCast_ne_bot hp.out.ne_zero),
+    ← ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (K := K) hn hm,
+    Nat.mul_div_cancel _ (ZMod.orderOf_natCast_pos_of_not_dvd hp.out hm)]
+
+/-- **Local polynomial Euler-factor identity at a rational prime.** In an `n`-th cyclotomic field
+over `ℚ` (`n ≠ 0`), at any rational prime `p` and any `s : ℂ`, the product of `1 - N(P) ^ (-s)` over
+the primes `P` of `𝓞 K` above `p` equals the product of `1 - χ.primitiveCharacter p * p ^ (-s)` over
+all Dirichlet characters `χ` modulo `n`. -/
+theorem prod_primesOverFinset_one_sub_absNorm_cpow_neg [NeZero n] (s : ℂ) :
+    ∏ P ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K), (1 - (absNorm P : ℂ) ^ (-s)) =
+      ∏ χ : DirichletCharacter ℂ n, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
+  obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.out.ne_one
+  have := NeZero.of_not_dvd_right hm
+  have : NeZero (Monoid.exponent (ZMod m)ˣ) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  rw [DirichletCharacter.prod_one_sub_primitiveCharacter_prime_mul hp.out hn hm ((p : ℂ) ^ (-s)),
+    ← card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm, ← Finset.prod_const]
+  refine Finset.prod_congr rfl fun P hP ↦ ?_
+  obtain ⟨_, _⟩ :=
+    (mem_primesOverFinset_iff (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)).mp hP
+  rw [absNorm_eq_pow_orderOf hn hm P, Nat.cast_pow,
+    ← Complex.natCast_cpow_natCast_mul p (orderOf (p : ZMod m)) (-s),
+    Complex.cpow_nat_mul (p : ℂ) (orderOf (p : ZMod m)) (-s)]
+
+/-- **Local Euler-factor identity at a rational prime.** Inverted form of
+`prod_primesOverFinset_one_sub_absNorm_cpow_neg`. -/
+theorem prod_primesOverFinset_inv_one_sub_absNorm_cpow_neg [NeZero n] (s : ℂ) :
+    ∏ P ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K), (1 - (absNorm P : ℂ) ^ (-s))⁻¹ =
+      ∏ χ : DirichletCharacter ℂ n, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s))⁻¹ := by
+  rw [Finset.prod_inv_distrib, Finset.prod_inv_distrib,
+    prod_primesOverFinset_one_sub_absNorm_cpow_neg (n := n)]
+
+/-- Prime-power evaluation of `normCoeff K 1` in a cyclotomic field: the `g` primes of `𝓞 K` above
+`p` each contribute `ArithmeticFunction.ofPowerSeries (p ^ f) (PowerSeries.mk 1)`. -/
+private theorem normCoeff_one_apply_prime_pow (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (r : ℕ) :
+    normCoeff K 1 (p ^ r) =
+      ((ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
+          (PowerSeries.mk 1 : PowerSeries ℂ)) ^
+        (m.totient / orderOf (p : ZMod m))) (p ^ r) := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
+  let Pset := primesOverFinset (span {(p : ℤ)}) (𝓞 K)
+  let mkH (P : {P // P ∈ Pset}) : {Q : HeightOneSpectrum (𝓞 K) // Q.asIdeal = P.val} :=
+    haveI : P.val.IsPrime := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.property).1
+    haveI : P.val.LiesOver (span {(p : ℤ)}) := ((mem_primesOverFinset_iff hp0
+        (𝓞 K)).mp P.property).2
+    ⟨heightOneSpectrumOfLiesOver p P.val, heightOneSpectrumOfLiesOver_asIdeal p P.val⟩
+  let toH : {P // P ∈ Pset} ↪ HeightOneSpectrum (𝓞 K) :=
+    { toFun := fun P ↦ (mkH P).val
+      inj' := fun P₁ P₂ h ↦ Subtype.ext <|
+        (mkH P₁).property.symm.trans ((congrArg HeightOneSpectrum.asIdeal h).trans
+            (mkH P₂).property) }
+  have hasIdeal (P : {P // P ∈ Pset}) : (toH P).asIdeal = P.val := (mkH P).property
+  have hmem : ∀ Q : HeightOneSpectrum (𝓞 K),
+      Q.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → Q ∈ Pset.attach.map toH :=
+    fun Q hQ ↦ Finset.mem_map.mpr ⟨⟨Q.asIdeal, (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ⟩,
+      Finset.mem_attach _ _, HeightOneSpectrum.ext (hasIdeal _)⟩
+  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
+    (Pset.attach.map toH) (mem_of_natCast_mem_asIdeal hmem) r, Finset.prod_map]
+  have hloc : ∀ P ∈ Pset.attach,
+      (1 : IdealArithmeticFunction K).localArithmeticFactor (toH P) =
+        ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
+          (PowerSeries.mk 1 : PowerSeries ℂ) := by
+    intro P _
+    obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.property
+    have hps : (1 : IdealArithmeticFunction K).localPowerSeries (toH P) = PowerSeries.mk 1 := by
+      ext i; simp
+    rw [localArithmeticFactor_def, hps, hasIdeal P, absNorm_eq_pow_orderOf hn hm P.val]
+  rw [Finset.prod_congr rfl hloc, Finset.prod_const, Finset.card_attach,
+    card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm]
 
 end Local
 
-/-! ### Cyclotomic factorization of `ζ_K` and its residue -/
+/-! ### Global Dirichlet-coefficient, `L`-series, and residue factorizations -/
 
-variable (n : ℕ) [NeZero n] [IsCyclotomicExtension {n} ℚ K]
+section Global
 
-/-- **Dirichlet-coefficient factorization of `ζ_K` for a cyclotomic field.** If `K` is an `n`-th
-cyclotomic field over `ℚ` (`n ≠ 0`), the ideal-counting function `normCoeff K 1` equals the
-Dirichlet convolution of the primitive characters inducing the characters modulo `n`. -/
-theorem normCoeff_one_eq_prod_toArithmeticFunction_primitiveCharacter :
+variable {n : ℕ} [NeZero n] [IsCyclotomicExtension {n} ℚ K]
+
+/-- **Dirichlet-coefficient factorization of `ζ_K` for a cyclotomic field.** In an `n`-th cyclotomic
+field over `ℚ` (`n ≠ 0`), the ideal-counting arithmetic function `normCoeff K 1` equals the
+Dirichlet convolution of `toArithmeticFunction (χ.primitiveCharacter ·)` over all characters
+`χ : DirichletCharacter ℂ n`. -/
+theorem normCoeff_one_eq_prod_primitiveCharacter :
     normCoeff K 1 =
       ∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·) := by
-  have hmult : (∏ χ : DirichletCharacter ℂ n,
-      toArithmeticFunction (χ.primitiveCharacter ·)).IsMultiplicative :=
-    ArithmeticFunction.isMultiplicative_finsetProd _ _ fun χ _ ↦
-      DirichletCharacter.isMultiplicative_toArithmeticFunction χ.primitiveCharacter
-  exact (isMultiplicative_one.normCoeff.eq_iff_forall_bellSeries_eq hmult).mpr fun _ hp ↦
-    bellSeries_normCoeff_one_eq_bellSeries_prod_primitiveCharacter K n hp
+  refine (ArithmeticFunction.IsMultiplicative.eq_iff_eq_on_prime_powers _
+    isMultiplicative_one.normCoeff _
+    (ArithmeticFunction.isMultiplicative_finsetProd _ _ fun χ _ ↦
+      χ.primitiveCharacter.isMultiplicative_toArithmeticFunction)).mpr fun p r hp ↦ ?_
+  have := Fact.mk hp
+  obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.ne_one
+  have := NeZero.of_not_dvd_right hm
+  have : NeZero (Monoid.exponent (ZMod m)ˣ) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  rw [normCoeff_one_apply_prime_pow (K := K) hn hm r,
+    DirichletCharacter.prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow hp hn hm r]
 
-/-- **Pointwise coefficient factorization of `ζ_K` for a cyclotomic field.** For `k ≠ 0`, the
-number `dedekindZetaCoeff K k` of integral ideals of `𝓞 K` of norm `k` equals the `k`-th
-coefficient of the Dirichlet convolution of the primitive characters inducing the characters
-modulo `n`. -/
-theorem dedekindZetaCoeff_eq_prod_toArithmeticFunction_primitiveCharacter_apply
-    {k : ℕ} (hk : k ≠ 0) :
+/-- **Ideal-counting coefficients of `ζ_K` for a cyclotomic field.** For every `k ≠ 0`, the number
+`dedekindZetaCoeff K k` of integral ideals of `𝓞 K` of norm `k` equals the `k`-th coefficient of
+`∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·)`. -/
+theorem dedekindZetaCoeff_eq_prod_primitiveCharacter {k : ℕ} (hk : k ≠ 0) :
     (dedekindZetaCoeff K k : ℂ) =
       (∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·)) k := by
-  have h := congr($(normCoeff_one_eq_prod_toArithmeticFunction_primitiveCharacter K n) k)
+  have h := congr($(normCoeff_one_eq_prod_primitiveCharacter (K := K) (n := n)) k)
   simpa [normCoeff_one_apply, hk] using h
 
-/-- **Cyclotomic factorization of `ζ_K` on `Re s > 1` (primitive form).** If `K` is an `n`-th
-cyclotomic field over `ℚ` (`n ≠ 0`), then for `Re s > 1`,
-`ζ_K(s) = ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s`. -/
+/-- **Factorization of `ζ_K` on `Re s > 1` into primitive Dirichlet `L`-functions.** For an `n`-th
+cyclotomic field `K` over `ℚ` (`n ≠ 0`) and `1 < s.re`,
+`dedekindZeta K s = ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s`. -/
 theorem dedekindZeta_eq_prod_LFunction_primitiveCharacter {s : ℂ} (hs : 1 < s.re) :
     dedekindZeta K s =
       ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s := by
-  rw [dedekindZeta_eq_LSeries_normCoeff_one,
-    normCoeff_one_eq_prod_toArithmeticFunction_primitiveCharacter K n]
-  exact (ArithmeticFunction.LSeriesHasSum_finsetProd
-    (f := fun χ : DirichletCharacter ℂ n ↦ toArithmeticFunction (χ.primitiveCharacter ·))
-    fun χ _ ↦ DirichletCharacter.LSeriesHasSum_toArithmeticFunction
-      χ.primitiveCharacter hs).LSeries_eq
+  rw [dedekindZeta_eq_LSeries_normCoeff_one, normCoeff_one_eq_prod_primitiveCharacter (n := n)]
+  exact (ArithmeticFunction.LSeriesHasSum_prod
+    (fun χ _ ↦ χ.primitiveCharacter.LSeriesHasSum_toArithmeticFunction hs)).LSeries_eq
 
-/-- **Cyclotomic factorization of `ζ_K` on `Re s > 1` with `ζ(s)` separated.** Separating the
-principal character from the primitive-character factorization gives
-`ζ_K(s) = ζ(s) * ∏ χ ≠ 1, χ.primitiveCharacter.LFunction s` on `Re s > 1`. -/
-theorem dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter
-    [DecidableEq (DirichletCharacter ℂ n)] {s : ℂ} (hs : 1 < s.re) :
+open scoped Classical in
+/-- **Factorization of `ζ_K` on `Re s > 1` with `riemannZeta` separated.** For an `n`-th cyclotomic
+field `K` over `ℚ` (`n ≠ 0`) and `1 < s.re`,
+`dedekindZeta K s = riemannZeta s * ∏ χ ≠ 1, χ.primitiveCharacter.LFunction s`. -/
+theorem dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter {s : ℂ} (hs : 1 < s.re) :
     dedekindZeta K s =
       riemannZeta s *
-        ∏ χ ∈ Finset.univ.erase (1 : DirichletCharacter ℂ n),
-          χ.primitiveCharacter.LFunction s := by
-  rw [dedekindZeta_eq_prod_LFunction_primitiveCharacter K n hs,
-    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ (1 : DirichletCharacter ℂ n)),
-    DirichletCharacter.LFunction_primitiveCharacter_one]
+        ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction s := by
+  rw [dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs,
+    DirichletCharacter.prod_LFunction_primitiveCharacter_eq_riemannZeta_mul]
 
-/-- **Cyclotomic factorization of `ζ_K` on `Re s > 1` (imprimitive level-`n` form).** Passing from
-primitive characters to level-`n` characters introduces the factors `1 - χ*(p) p^(-s)` at primes
-dividing `n` on the `ζ_K` side. -/
-theorem dedekindZeta_mul_prod_one_sub_eq_prod_LFunction {s : ℂ} (hs : 1 < s.re) :
+/-- **Imprimitive level-`n` comparison for `ζ_K` on `Re s > 1`.** Multiplying `dedekindZeta K s` by
+the Euler factors missing at primes dividing `n` gives the product of the level-`n` Dirichlet
+`L`-functions `χ.LFunction s`. -/
+theorem dedekindZeta_mul_prod_eq_prod_LFunction {s : ℂ} (hs : 1 < s.re) :
     dedekindZeta K s *
-        ∏ χ : DirichletCharacter ℂ n, ∏ p ∈ n.primeFactors,
-          (1 - χ.primitiveCharacter (p : ZMod χ.conductor) * (p : ℂ) ^ (-s)) =
+        (∏ χ : DirichletCharacter ℂ n,
+          ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s))) =
       ∏ χ : DirichletCharacter ℂ n, χ.LFunction s := by
-  have hs1 : s ≠ 1 := fun h ↦ by simp [h] at hs
-  rw [dedekindZeta_eq_prod_LFunction_primitiveCharacter K n hs, ← Finset.prod_mul_distrib]
-  exact Finset.prod_congr rfl fun χ _ ↦
-    (DirichletCharacter.LFunction_eq_LFunction_primitiveCharacter_mul χ (.inr hs1)).symm
+  rw [dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs,
+    DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction n
+      (fun h ↦ by simp [h] at hs)]
 
-/-- **The residue of the Dedekind zeta function of a cyclotomic field.** For an `n`-th cyclotomic
-field `K` over `ℚ` (`n ≠ 0`), Mathlib's `dedekindZeta_residue K` equals the product of
-`L(1, χ.primitiveCharacter)` over all nonprincipal characters `χ` modulo `n`. -/
-theorem dedekindZeta_residue_eq_prod_LFunction_primitiveCharacter_one
-    [DecidableEq (DirichletCharacter ℂ n)] :
+open scoped Classical in
+/-- **Residue of `ζ_K` at `s = 1` for a cyclotomic field.** The residue `dedekindZeta_residue K` of
+the Dedekind zeta function of an `n`-th cyclotomic field over `ℚ` (`n ≠ 0`) equals the product of
+`χ.primitiveCharacter.LFunction 1` over all nonprincipal characters `χ` modulo `n`. -/
+theorem dedekindZeta_residue_eq_prod_LFunction_one :
     (dedekindZeta_residue K : ℂ) =
-      ∏ χ ∈ Finset.univ.erase (1 : DirichletCharacter ℂ n),
-        χ.primitiveCharacter.LFunction 1 := by
-  refine dedekindZeta_residue_eq_of_eventuallyEq_riemannZeta_mul K
-    (eventually_nhdsWithin_of_forall fun s hs ↦
-      dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter K n (s := s)
-        (by simpa using hs)) ?_
-  refine tendsto_finsetProd _ fun χ hχ ↦ ?_
-  have hne : χ ≠ 1 := (Finset.mem_erase.mp hχ).1
-  exact (((DirichletCharacter.differentiable_LFunction_primitiveCharacter hne).continuous.comp
-    Complex.continuous_ofReal).tendsto' 1 _ (by simp)).mono_left nhdsWithin_le_nhds
+      ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction 1 := by
+  have hζ : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * riemannZeta s) (𝓝[>] 1) (𝓝 1) :=
+    riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).mono_left nhdsWithin_le_nhds)
+      (eventually_nhdsWithin_of_forall fun s hs ↦ by simpa using (Set.mem_Ioi.mp hs).ne')
+  have hcont := (DirichletCharacter.differentiable_prod_LFunction_primitiveCharacter_ne_one
+    n).continuous
+  have hL : Tendsto
+      (fun s : ℝ ↦ ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction s)
+      (𝓝[>] 1)
+      (𝓝 (∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction 1)) :=
+    ((hcont.comp Complex.continuous_ofReal).tendsto' 1 _ (by simp)).mono_left nhdsWithin_le_nhds
+  have hF : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * dedekindZeta K s) (𝓝[>] 1)
+      (𝓝 (∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction 1)) := by
+    refine (one_mul
+      (∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction 1) ▸
+      hζ.mul hL).congr' (eventually_nhdsWithin_of_forall fun s hs ↦ ?_)
+    dsimp only
+    rw [dedekindZeta_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter (n := n) (s := s)
+      (by simpa using hs), mul_assoc]
+  exact tendsto_nhds_unique (tendsto_sub_one_mul_dedekindZeta_nhdsGT K) hF
+
+end Global
 
 end TauCeti.NumberField

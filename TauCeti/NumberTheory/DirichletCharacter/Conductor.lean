@@ -7,21 +7,16 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.GCD.BigOperators
+import TauCeti.Algebra.GroupWithZero.Divisibility
 
 /-!
 # Dirichlet character conductors
 
-The conductor of a character of nonzero level is nonzero, a primitive character of nonzero level is
-principal exactly when its level is one (`DirichletCharacter.IsPrimitive.eq_one_iff`), and a
-character of nonzero level is trivial exactly when its primitive character is trivial (equivalently,
-when its conductor is one).
-
-Primitive characters are determined by their lifts to a common nonzero level
-(`DirichletCharacter.IsPrimitive.changeLevel_eq_changeLevel_iff`), which in particular identifies
-any primitive lift of `χ` with `χ.primitiveCharacter`
-(`DirichletCharacter.IsPrimitive.exists_eq_primitiveCharacter_of_changeLevel_eq`). A prime `p`
-fails to divide `χ.conductor` if and only if `χ` factors through the prime-to-`p` part
-`ordCompl[p] N` (`DirichletCharacter.not_dvd_conductor_iff_factorsThrough_ordCompl`), and lifting a
+Inversion preserves primitivity, and a primitive character is trivial exactly at level one;
+accordingly `χ.primitiveCharacter = 1 ↔ χ = 1`, while `χ.primitiveCharacter` vanishes at every
+prime dividing `χ.conductor`. Writing `n = p ^ k * m` with `p` prime and `¬ p ∣ m`, a character
+modulo `n` factors through `m` iff `p` does not divide its conductor; at prime-power level `p ^ k`,
+`p ∣ χ.conductor ↔ χ ≠ 1`, so every nonprincipal character of prime level is primitive. Lifting a
 character from level `M` to a nonzero multiple level `N` and taking its primitive character
 preserves evaluation at integers coprime to `M`
 (`DirichletCharacter.primitiveCharacter_changeLevel_apply_of_isCoprime`).
@@ -29,6 +24,29 @@ preserves evaluation at integers coprime to `M`
 An injective change of coefficient ring preserves factorization through a lower level, hence the
 conductor and primitivity of a Dirichlet character. The conductor of a product of Dirichlet
 characters with pairwise coprime conductors is the product of their conductors.
+
+## Main results
+
+* `DirichletCharacter.instNeZeroConductor`: `NeZero χ.conductor` when `[NeZero n]`.
+* `DirichletCharacter.IsPrimitive.eq_one_iff`, `DirichletCharacter.primitiveCharacter_eq_one_iff`:
+  a primitive character at nonzero level is principal iff the level is `1`, and
+  `χ.primitiveCharacter = 1 ↔ χ = 1`.
+* `DirichletCharacter.primitiveCharacter_apply_prime_eq_zero`: `χ.primitiveCharacter p = 0` when
+  `p` is prime and `p ∣ χ.conductor`.
+* `DirichletCharacter.factorsThrough_iff_not_dvd_conductor`: for `n = p ^ k * m` with `p` prime and
+  `¬ p ∣ m`, `χ.FactorsThrough m ↔ ¬ p ∣ χ.conductor`.
+* `DirichletCharacter.dvd_conductor_iff_ne_one_of_prime_pow`: for `χ` modulo `p ^ k`,
+  `p ∣ χ.conductor ↔ χ ≠ 1`.
+* `DirichletCharacter.isPrimitive_of_ne_one_of_prime`: every nonprincipal character modulo a prime
+  `p` is primitive.
+* `DirichletCharacter.primitiveCharacter_changeLevel_apply_of_isCoprime`: lifting from level `M` to
+  a nonzero multiple level `N` and taking `primitiveCharacter` preserves evaluation at integers
+  coprime to `M`.
+* `DirichletCharacter.conductor_ringHomComp`, `DirichletCharacter.isPrimitive_ringHomComp_iff`:
+  injective ring homomorphisms preserve conductor and primitivity.
+* `DirichletCharacter.conductor_mul_of_coprime`,
+  `DirichletCharacter.conductor_prod_of_pairwise_coprime`: multiplicativity of conductors across
+  coprime products.
 -/
 
 public section
@@ -45,49 +63,60 @@ theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZ
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
   rw [eq_one_iff_conductor_eq_one, (isPrimitive_def _).mp hχ]
 
-/-- The primitive character of a character of nonzero level is principal if and only if the
-character itself is principal. -/
+/-- The primitive character associated to `χ` is principal if and only if `χ` is principal. -/
 @[simp]
-theorem primitiveCharacter_eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
-    {χ : DirichletCharacter R n} : χ.primitiveCharacter = 1 ↔ χ = 1 := by
-  rw [χ.primitiveCharacter_isPrimitive.eq_one_iff, ← eq_one_iff_conductor_eq_one]
+theorem primitiveCharacter_eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ}
+    (χ : DirichletCharacter R n) :
+    χ.primitiveCharacter = 1 ↔ χ = 1 := by
+  obtain rfl | _ := eq_zero_or_neZero n
+  · have hinj {d : ℕ} (hd : d ∣ 0) (hc : d = 0) : Function.Injective (changeLevel hd (R := R)) := by
+      subst hc
+      intro _ _ h
+      simpa only [changeLevel_self] using h
+    rw [← (hinj χ.conductor_dvd_level (conductor_eq_zero_iff_level_eq_zero.mpr rfl)).eq_iff,
+      χ.changeLevel_primitiveCharacter, map_one]
+  · exact χ.primitiveCharacter_isPrimitive.eq_one_iff.trans χ.eq_one_iff_conductor_eq_one.symm
 
-/-- Two primitive characters have equal lifts to a common nonzero level exactly when their levels
-and characters agree. The existential equality transports the first character to the second
-level. -/
-theorem IsPrimitive.changeLevel_eq_changeLevel_iff {R : Type*} [CommMonoidWithZero R]
-    {N M L : ℕ} [NeZero L] {χ : DirichletCharacter R N} {ψ : DirichletCharacter R M}
-    (hχ : χ.IsPrimitive) (hψ : ψ.IsPrimitive) (hN : N ∣ L) (hM : M ∣ L) :
-    changeLevel hN χ = changeLevel hM ψ ↔ ∃ h : N = M, h ▸ χ = ψ := by
-  constructor
-  · intro h
-    have hlevel : N = M := by
-      simpa only [conductor_changeLevel, (isPrimitive_def χ).mp hχ,
-        (isPrimitive_def ψ).mp hψ] using congrArg conductor h
-    subst M
-    exact ⟨rfl, changeLevel_injective hN h⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
+/-- The primitive character associated to `χ` vanishes at every prime dividing `χ.conductor`. -/
+theorem primitiveCharacter_apply_prime_eq_zero {R : Type*} [CommMonoidWithZero R] {n p : ℕ}
+    (χ : DirichletCharacter R n) (hp : p.Prime) (h : p ∣ χ.conductor) :
+    χ.primitiveCharacter p = 0 :=
+  χ.primitiveCharacter.map_nonunit fun hu ↦ (ZMod.isUnit_prime_iff_not_dvd hp).mp hu h
 
-/-- If a primitive character `ψ` lifts to `χ` at a nonzero multiple level, then the level of `ψ`
-equals the conductor of `χ` and `ψ` equals `χ.primitiveCharacter` after transporting along the
-level equality. -/
-theorem IsPrimitive.exists_eq_primitiveCharacter_of_changeLevel_eq
-    {R : Type*} [CommMonoidWithZero R] {M N : ℕ} [NeZero N]
-    {ψ : DirichletCharacter R M} {χ : DirichletCharacter R N}
-    (hψ : ψ.IsPrimitive) (hMN : M ∣ N) (hχ : changeLevel hMN ψ = χ) :
-    ∃ h : M = χ.conductor, h ▸ ψ = χ.primitiveCharacter :=
-  (hψ.changeLevel_eq_changeLevel_iff χ.primitiveCharacter_isPrimitive
-    hMN χ.conductor_dvd_level).mp (hχ.trans χ.changeLevel_primitiveCharacter.symm)
+/-- **Factoring through the prime-to-`p` part of the level.** If `n = p ^ k * m` with `p` prime and
+`¬ p ∣ m`, a Dirichlet character `χ` modulo `n` factors through `m` if and only if `p` does not
+divide its conductor. -/
+theorem factorsThrough_iff_not_dvd_conductor {R : Type*} [CommMonoidWithZero R] {n p k m : ℕ}
+    (hp : p.Prime) (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (χ : DirichletCharacter R n) :
+    χ.FactorsThrough m ↔ ¬ p ∣ χ.conductor := by
+  have := NeZero.of_not_dvd_right hm
+  have : NeZero n := ⟨hn ▸ mul_ne_zero (pow_ne_zero k hp.ne_zero) (NeZero.ne m)⟩
+  have hmn : m ∣ n := ⟨p ^ k, by rw [hn, mul_comm]⟩
+  rw [← mem_conductorSet_iff, mem_conductorSet_iff_conductor_dvd χ hmn]
+  exact ⟨fun hdvd hpc ↦ hm (hpc.trans hdvd), fun hnpc ↦
+    ((hp.coprime_iff_not_dvd.mpr hnpc).pow_left k).symm.dvd_of_dvd_mul_left
+      (hn ▸ χ.conductor_dvd_level)⟩
 
-/-- For a prime `p` and a nonzero level `N`, `p` fails to divide the conductor of `χ` if and only
-if `χ` factors through the prime-to-`p` part `ordCompl[p] N` of `N`. -/
-theorem not_dvd_conductor_iff_factorsThrough_ordCompl {R : Type*} [CommMonoidWithZero R]
-    {N : ℕ} [NeZero N] (χ : DirichletCharacter R N) {p : ℕ} (hp : p.Prime) :
-    ¬ p ∣ χ.conductor ↔ χ.FactorsThrough (ordCompl[p] N) := by
-  rw [← mem_conductorSet_iff, mem_conductorSet_iff_conductor_dvd χ (Nat.ordCompl_dvd N p)]
-  exact ⟨Nat.dvd_ordCompl_of_dvd_not_dvd χ.conductor_dvd_level,
-    fun h hd ↦ Nat.not_dvd_ordCompl hp (NeZero.ne N) (hd.trans h)⟩
+/-- **Prime-power conductor dichotomy.** For a prime `p` and a character `χ` modulo `p ^ k`, the
+prime `p` divides `χ.conductor` if and only if `χ` is nonprincipal. -/
+theorem dvd_conductor_iff_ne_one_of_prime_pow {R : Type*} [CommMonoidWithZero R] {p k : ℕ}
+    (hp : p.Prime) (χ : DirichletCharacter R (p ^ k)) :
+    p ∣ χ.conductor ↔ χ ≠ 1 := by
+  have : NeZero (p ^ k) := ⟨pow_ne_zero k hp.ne_zero⟩
+  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).mp χ.conductor_dvd_level
+  rw [Ne, eq_one_iff_conductor_eq_one, hj]
+  rcases eq_or_ne j 0 with rfl | hj0
+  · simp [hp.not_dvd_one]
+  · exact ⟨fun _ ↦ (one_lt_pow₀ hp.one_lt hj0).ne', fun _ ↦ dvd_pow_self p hj0⟩
+
+/-- Every nonprincipal Dirichlet character of prime level is primitive. -/
+theorem isPrimitive_of_ne_one_of_prime {R : Type*} [CommMonoidWithZero R] {p : ℕ} (hp : p.Prime)
+    {χ : DirichletCharacter R p} (hχ : χ ≠ 1) : χ.IsPrimitive := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  rw [isPrimitive_def]
+  rcases hp.eq_one_or_self_of_dvd _ χ.conductor_dvd_level with h1 | hp'
+  · exact absurd (eq_one_iff_conductor_eq_one.mpr h1) hχ
+  · exact hp'
 
 /-- Lifting a character `ψ` from level `M` to a nonzero multiple level `N` and taking its
 primitive character preserves evaluation at any integer coprime to `M`. -/

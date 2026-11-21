@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 public import Mathlib.Data.Fintype.EquivFin
 
@@ -19,7 +20,8 @@ and the type of closed paths at `a` is infinite.
 That last statement is what arguments of the form *an oriented cycle makes something infinite*
 rest on. In `TauCeti.RepresentationTheory.Quiver.Acyclic.FinitePaths` it is what turns finiteness
 of the path space into acyclicity, and through the path basis it is what makes the path algebra
-of a quiver with an oriented cycle infinite-dimensional.
+of a quiver with an oriented cycle infinite-dimensional. Conversely, a cyclic family of arrows
+indexed by `Fin m` (`m ≠ 0`) concatenates into a closed path of length `m`.
 
 ## Main definitions
 
@@ -35,6 +37,8 @@ of a quiver with an oriented cycle infinite-dimensional.
 * `Quiver.Path.infinite_of_ne_nil`: **a nontrivial closed path forces infinitely many closed
   paths**, and `Quiver.Path.eq_nil_of_finite` is the contrapositive: at a vertex carrying finitely
   many closed paths, the trivial path is the only one.
+* `TauCeti.exists_path_length_eq_of_step`: iterating a `Fin m`-indexed family of arrows around a
+  cycle produces a closed path of length `m` at `u 0`.
 
 ## Implementation notes
 
@@ -119,3 +123,38 @@ theorem eq_nil_of_finite [Finite (Quiver.Path a a)] (p : Quiver.Path a a) :
   exact (Quiver.Path.infinite_of_ne_nil hp).false
 
 end Quiver.Path
+
+namespace TauCeti
+
+universe u v
+
+/-- Iterating a family of arrows `u r ⟶ u (r + 1)` around `Fin m` yields a closed path of length
+`m` at `u 0`. -/
+theorem exists_path_length_eq_of_step {Q : Type u} [_root_.Quiver.{v} Q] {m : ℕ} [NeZero m]
+    (u : Fin m → Q) (step : ∀ r : Fin m, u r ⟶ u (r + 1)) :
+    ∃ p : _root_.Quiver.Path (u 0) (u 0), p.length = m := by
+  let f (n : ℕ) : Fin m := ⟨n % m, Nat.mod_lt n (Nat.pos_of_ne_zero (NeZero.ne m))⟩
+  have hf0 : f 0 = 0 := Fin.ext (by simp [f])
+  have hfm : f m = 0 := Fin.ext (by simp [f])
+  have hfsucc (n : ℕ) : f (n + 1) = f n + 1 := Fin.ext (by simp [f, Fin.val_add])
+  have walk : ∀ n : ℕ, ∃ p : _root_.Quiver.Path (u 0) (u (f n)), p.length = n := by
+    intro n
+    induction n with
+    | zero =>
+      rw [hf0]
+      exact ⟨_root_.Quiver.Path.nil, rfl⟩
+    | succ n ih =>
+      obtain ⟨p, hp⟩ := ih
+      have key_step : ∀ r : Fin m, r = f n + 1 → (u (f n) ⟶ u r) := by
+        rintro _ rfl
+        exact step (f n)
+      exact ⟨p.cons (key_step (f (n + 1)) (hfsucc n)),
+        by rw [_root_.Quiver.Path.length_cons, hp]⟩
+  obtain ⟨p, hp⟩ := walk m
+  have key_end : ∀ r : Fin m, r = 0 → ∀ p : _root_.Quiver.Path (u 0) (u r), p.length = m →
+      ∃ q : _root_.Quiver.Path (u 0) (u 0), q.length = m := by
+    rintro _ rfl p hp
+    exact ⟨p, hp⟩
+  exact key_end (f m) hfm p hp
+
+end TauCeti

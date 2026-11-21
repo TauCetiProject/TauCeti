@@ -121,7 +121,7 @@ theorem finprod_one_sub_C_mul_X_rootsOfUnity [IsDomain R] {ζ : R} {n : ℕ}
       Equiv.subtypeEquivRight fun _ ↦ (mem_nthRoots hpos).trans (mem_nthRootsFinset hpos 1).symm
   rw [finprod_eq_prod_of_fintype,
     Fintype.prod_equiv e (fun μ : rootsOfUnity n R ↦ 1 - C ((μ : Rˣ) : R) * X)
-      (fun μ : nthRootsFinset n (1 : R) ↦ 1 - C μ.1 * X) (fun _ ↦ rfl),
+      (fun μ : nthRootsFinset n (1 : R) ↦ 1 - C μ.val * X) (fun _ ↦ rfl),
     Finset.prod_coe_sort (nthRootsFinset n (1 : R)) (fun μ ↦ 1 - C μ * X)]
   exact prod_one_sub_C_mul_X_nthRootsFinset hpos hζ
 

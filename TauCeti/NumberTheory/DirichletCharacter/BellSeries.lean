@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Convolution
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.ArithmeticFunction.BellSeries
 import Mathlib.RingTheory.PowerSeries.Basic
-import TauCeti.NumberTheory.DirichletCharacter.Primitive
+import TauCeti.NumberTheory.DirichletCharacter.Polynomial
 
 /-!
 # Bell series of Dirichlet characters
@@ -19,8 +19,8 @@ Since a Dirichlet character `χ` is completely multiplicative on positive intege
 at a prime `p` is the geometric series `∑ χ(p) ^ k X ^ k`, which is the formal reciprocal of
 `1 - χ(p) X` in `PowerSeries R`.
 
-Combining this with `DirichletCharacter.prod_one_sub_C_mul_X_primitiveCharacter` identifies the
-Bell series at `p` of the Dirichlet convolution
+Combining this with `DirichletCharacter.prod_one_sub_C_primitiveCharacter_prime_mul_X` identifies
+the Bell series at `p` of the Dirichlet convolution
 `∏ χ : DirichletCharacter R N, toArithmeticFunction (χ.primitiveCharacter ·)` as the formal
 reciprocal of `(1 - X ^ f) ^ (φ(m) / f)`, where `m = ordCompl[p] N` and
 `f = orderOf (p : ZMod m)`.
@@ -70,7 +70,8 @@ theorem bellSeries_prod_toArithmeticFunction_primitiveCharacter_mul_pow_one_sub
         (1 - PowerSeries.X ^ orderOf (p : ZMod (ordCompl[p] N))) ^
           ((ordCompl[p] N).totient / orderOf (p : ZMod (ordCompl[p] N))) := by
     have h := congrArg (Polynomial.coeToPowerSeries.ringHom (R := R))
-      (prod_one_sub_C_mul_X_primitiveCharacter (R := R) (N := N) hp)
+      (prod_one_sub_C_primitiveCharacter_prime_mul_X (R := R) hp
+        (Nat.ordProj_mul_ordCompl_eq_self N p).symm (Nat.not_dvd_ordCompl hp (NeZero.ne N)))
     simpa [map_prod, map_pow, _root_.map_sub, _root_.map_one, _root_.map_mul] using h
   rw [map_prod, ← hpoly, ← Finset.prod_mul_distrib]
   exact Finset.prod_eq_one fun χ _ ↦
