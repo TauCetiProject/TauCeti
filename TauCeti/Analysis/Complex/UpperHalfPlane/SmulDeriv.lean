@@ -230,7 +230,7 @@ theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, �
           W ((q • ofComplex y : ℍ) : ℂ) = W y := by
         rwa [ofComplex_apply, inv_smul_smul]
       filter_upwards [hg.continuousAt.eventually hW',
-        isOpen_upperHalfPlaneSet.mem_nhds (q • z).2] with u hu hu'
+        isOpen_upperHalfPlaneSet.mem_nhds (q • z).coe_im_pos] with u hu hu'
       simp only [Function.comp_apply]
       rw [ofComplex_apply, smul_inv_smul, ofComplex_apply_of_im_pos hu'] at hu
       rw [ofComplex_apply_of_im_pos hu']
@@ -245,7 +245,7 @@ theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z =
     Algebra.algebraMap_self_apply, coe_dilation, Matrix.of_apply, Matrix.cons_val',
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Complex.ofReal_zero,
     zero_mul, zero_add]
-  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_nat_mul,
+  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_natCast_mul,
     ← Real.exp_neg]
   congr 1
   push_cast

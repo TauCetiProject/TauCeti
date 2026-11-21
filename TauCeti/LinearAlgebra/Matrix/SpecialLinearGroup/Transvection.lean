@@ -80,10 +80,10 @@ theorem transpose_coe_transvection {n R : Type*} [DecidableEq n] [Fintype n] [Co
 
 private lemma transvection_mul_entry {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (σ : SpecialLinearGroup (Fin m) ℤ) (a b : Fin m) :
-    (transvection hij c * σ).1 a b =
-    if a = i then σ.1 i b + c * σ.1 j b else σ.1 a b := by
+    (transvection hij c * σ).val a b =
+    if a = i then σ.val i b + c * σ.val j b else σ.val a b := by
   -- definitional: the matrix underlying the `SL` transvection is `Matrix.transvection`
-  have hval : (transvection hij c * σ).1 = _root_.Matrix.transvection i j c * σ.1 := rfl
+  have hval : (transvection hij c * σ).val = _root_.Matrix.transvection i j c * σ.val := rfl
   rw [hval]
   split_ifs with hai
   · subst hai; rw [_root_.Matrix.transvection_mul_apply_same]
@@ -91,10 +91,10 @@ private lemma transvection_mul_entry {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c 
 
 private lemma transvection_mul_right_entry {m : ℕ} (i j : Fin m) (hij : i ≠ j)
     (c : ℤ) (σ : SpecialLinearGroup (Fin m) ℤ) (a b : Fin m) :
-    (σ * transvection hij c).1 a b =
-    if b = j then σ.1 a j + c * σ.1 a i else σ.1 a b := by
+    (σ * transvection hij c).val a b =
+    if b = j then σ.val a j + c * σ.val a i else σ.val a b := by
   -- definitional: the matrix underlying the `SL` transvection is `Matrix.transvection`
-  have hval : (σ * transvection hij c).1 = σ.1 * _root_.Matrix.transvection i j c := rfl
+  have hval : (σ * transvection hij c).val = σ.val * _root_.Matrix.transvection i j c := rfl
   rw [hval]
   split_ifs with hbj
   · subst hbj; rw [_root_.Matrix.mul_transvection_apply_same]
@@ -117,47 +117,47 @@ private lemma prod_map_inv {m : ℕ} (T : List (TransvectionStruct (Fin m) ℤ))
 
 /-- The sum of the absolute values of the entries in the first column. -/
 private def col0Sum {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ) : ℕ :=
-  ∑ i : Fin (m + 1), (σ.1 i 0).natAbs
+  ∑ i : Fin (m + 1), (σ.val i 0).natAbs
 
 private lemma col0_ne_zero {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ) :
-    ∃ i, σ.1 i 0 ≠ 0 := by
+    ∃ i, σ.val i 0 ≠ 0 := by
   by_contra! h
-  exact absurd (Matrix.det_eq_zero_of_column_eq_zero 0 (fun i ↦ h i)) (by rw [σ.2]; norm_num)
+  exact absurd (Matrix.det_eq_zero_of_column_eq_zero 0 (fun i ↦ h i)) (by rw [σ.property]; norm_num)
 
 /-- The number of nonzero entries in the first column. -/
 private def nzCount {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ) : ℕ :=
-  (Finset.univ.filter fun i : Fin (m + 1) ↦ σ.1 i 0 ≠ 0).card
+  (Finset.univ.filter fun i : Fin (m + 1) ↦ σ.val i 0 ≠ 0).card
 
 private lemma exists_two_nz {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ)
     (h : 2 ≤ nzCount σ) :
-    ∃ (i j : Fin (m + 1)), i ≠ j ∧ σ.1 i 0 ≠ 0 ∧ σ.1 j 0 ≠ 0 := by
+    ∃ (i j : Fin (m + 1)), i ≠ j ∧ σ.val i 0 ≠ 0 ∧ σ.val j 0 ≠ 0 := by
   simp only [nzCount] at h
-  have h1 : 1 < (Finset.univ.filter fun i : Fin (m + 1) ↦ σ.1 i 0 ≠ 0).card := by omega
+  have h1 : 1 < (Finset.univ.filter fun i : Fin (m + 1) ↦ σ.val i 0 ≠ 0).card := by omega
   obtain ⟨i, hi, j, hj, hij⟩ := Finset.one_lt_card.mp h1
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi hj
   exact ⟨i, j, hij, hi, hj⟩
 
 private lemma col0_euclidean_step_aux {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (i j : Fin (m + 1)) (hij : i ≠ j) (hj : σ.1 j 0 ≠ 0)
-    (hle : (σ.1 j 0).natAbs ≤ (σ.1 i 0).natAbs) :
-    col0Sum (transvection hij (-(σ.1 i 0 / σ.1 j 0)) * σ) < col0Sum σ := by
-  set q := σ.1 i 0 / σ.1 j 0
-  have h_new : (transvection hij (-q) * σ).1 i 0 = σ.1 i 0 % σ.1 j 0 := by
+    (i j : Fin (m + 1)) (hij : i ≠ j) (hj : σ.val j 0 ≠ 0)
+    (hle : (σ.val j 0).natAbs ≤ (σ.val i 0).natAbs) :
+    col0Sum (transvection hij (-(σ.val i 0 / σ.val j 0)) * σ) < col0Sum σ := by
+  set q := σ.val i 0 / σ.val j 0
+  have h_new : (transvection hij (-q) * σ).val i 0 = σ.val i 0 % σ.val j 0 := by
     rw [transvection_mul_entry]; simp only [ite_true]
-    linarith [(Int.mul_ediv_add_emod (σ.1 i 0) (σ.1 j 0)).symm]
-  have h_oth : ∀ a, a ≠ i → (transvection hij (-q) * σ).1 a 0 = σ.1 a 0 :=
+    linarith [(Int.mul_ediv_add_emod (σ.val i 0) (σ.val j 0)).symm]
+  have h_oth : ∀ a, a ≠ i → (transvection hij (-q) * σ).val a 0 = σ.val a 0 :=
     fun a ha ↦ by rw [transvection_mul_entry]; simp [ha]
-  have h_rem : (σ.1 i 0 % σ.1 j 0).natAbs < (σ.1 j 0).natAbs := by
-    have h1 := Int.emod_nonneg (σ.1 i 0) hj
-    have h2 : σ.1 i 0 % σ.1 j 0 < |σ.1 j 0| := by
+  have h_rem : (σ.val i 0 % σ.val j 0).natAbs < (σ.val j 0).natAbs := by
+    have h1 := Int.emod_nonneg (σ.val i 0) hj
+    have h2 : σ.val i 0 % σ.val j 0 < |σ.val j 0| := by
       rw [← Int.emod_abs]; exact Int.emod_lt_of_pos _ (abs_pos.mpr hj)
     simpa only [Int.natAbs_abs] using Int.natAbs_lt_natAbs_of_nonneg_of_lt h1 h2
   simp only [col0Sum]
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i),
       ← Finset.add_sum_erase _ _ (Finset.mem_univ i)]
   have h_rest : ∑ k ∈ Finset.univ.erase i,
-      ((transvection hij (-q) * σ).1 k 0).natAbs =
-      ∑ k ∈ Finset.univ.erase i, (σ.1 k 0).natAbs :=
+      ((transvection hij (-q) * σ).val k 0).natAbs =
+      ∑ k ∈ Finset.univ.erase i, (σ.val k 0).natAbs :=
     Finset.sum_congr rfl fun k hk ↦ by rw [h_oth k (Finset.mem_erase.mp hk).1]
   rw [h_rest, h_new]; linarith [Nat.lt_of_lt_of_le h_rem hle]
 
@@ -166,12 +166,12 @@ private lemma col0_euclidean_step {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1
     ∃ t : TransvectionStruct (Fin (m + 1)) ℤ,
       col0Sum (t.toSpecialLinearGroup * σ) < col0Sum σ := by
   obtain ⟨i₀, j₀, hij₀, hi₀, hj₀⟩ := exists_two_nz σ h
-  by_cases hge : (σ.1 j₀ 0).natAbs ≤ (σ.1 i₀ 0).natAbs
-  · exact ⟨⟨i₀, j₀, hij₀, -(σ.1 i₀ 0 / σ.1 j₀ 0)⟩, by
+  by_cases hge : (σ.val j₀ 0).natAbs ≤ (σ.val i₀ 0).natAbs
+  · exact ⟨⟨i₀, j₀, hij₀, -(σ.val i₀ 0 / σ.val j₀ 0)⟩, by
       rw [TransvectionStruct.toSpecialLinearGroup_mk]
       exact col0_euclidean_step_aux σ i₀ j₀ hij₀ hj₀ hge⟩
   · push Not at hge
-    exact ⟨⟨j₀, i₀, hij₀.symm, -(σ.1 j₀ 0 / σ.1 i₀ 0)⟩, by
+    exact ⟨⟨j₀, i₀, hij₀.symm, -(σ.val j₀ 0 / σ.val i₀ 0)⟩, by
       rw [TransvectionStruct.toSpecialLinearGroup_mk]
       exact col0_euclidean_step_aux σ j₀ i₀ hij₀.symm hi₀ hge.le⟩
 
@@ -231,31 +231,31 @@ private def blockLift {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ) :
 
 private lemma blockLift_entry {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ) (a b : Fin (m + 1)) :
-    (blockLift i j hij c * τ).1 a b =
-    if a = i.succ then τ.1 i.succ b + c * τ.1 j.succ b else τ.1 a b := by
+    (blockLift i j hij c * τ).val a b =
+    if a = i.succ then τ.val i.succ b + c * τ.val j.succ b else τ.val a b := by
   unfold blockLift; exact transvection_mul_entry i.succ j.succ _ c τ a b
 
 private lemma blockLift_row0 {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ) (b : Fin (m + 1)) :
-    (blockLift i j hij c * τ).1 0 b = τ.1 0 b := by
+    (blockLift i j hij c * τ).val 0 b = τ.val 0 b := by
   rw [blockLift_entry]; split_ifs with h
   · exact absurd h.symm (Fin.succ_ne_zero i)
   · rfl
 
 private lemma blockLift_col0 {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (hcol : ∀ k : Fin (m + 1), k ≠ 0 → τ.1 k 0 = 0) (a : Fin (m + 1)) :
-    (blockLift i j hij c * τ).1 a 0 = τ.1 a 0 := by
+    (hcol : ∀ k : Fin (m + 1), k ≠ 0 → τ.val k 0 = 0) (a : Fin (m + 1)) :
+    (blockLift i j hij c * τ).val a 0 = τ.val a 0 := by
   rw [blockLift_entry]; split_ifs with ha
   · subst ha; rw [hcol j.succ (Fin.succ_ne_zero j), mul_zero, add_zero]
   · rfl
 
 private lemma det_lowerRight {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (h00 : τ.1 0 0 = 1) (h0j : ∀ j : Fin (m + 1), j ≠ 0 → τ.1 0 j = 0) :
-    (Matrix.of fun (i : Fin m) (j : Fin m) ↦ τ.1 i.succ j.succ).det = 1 := by
+    (h00 : τ.val 0 0 = 1) (h0j : ∀ j : Fin (m + 1), j ≠ 0 → τ.val 0 j = 0) :
+    (Matrix.of fun (i : Fin m) (j : Fin m) ↦ τ.val i.succ j.succ).det = 1 := by
   -- definitional: the `Matrix.of` matrix is the submatrix along `Fin.succ`
-  change (τ.1.submatrix Fin.succ Fin.succ).det = 1
-  have hdet : τ.1.det = 1 := τ.2
+  change (τ.val.submatrix Fin.succ Fin.succ).det = 1
+  have hdet : τ.val.det = 1 := τ.property
   rw [Matrix.det_succ_row_zero, Finset.sum_eq_single (0 : Fin (m + 1))
     (fun j _ hj ↦ by simp [h0j j hj])
     (fun h ↦ absurd (Finset.mem_univ _) h)] at hdet
@@ -263,15 +263,15 @@ private lemma det_lowerRight {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) �
 
 /-- The lower-right special-linear block after the first row and column have been cleared. -/
 private def extractBlock {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (h00 : τ.1 0 0 = 1) (h0j : ∀ j : Fin (m + 1), j ≠ 0 → τ.1 0 j = 0)
-    (_hi0 : ∀ i : Fin (m + 1), i ≠ 0 → τ.1 i 0 = 0) :
+    (h00 : τ.val 0 0 = 1) (h0j : ∀ j : Fin (m + 1), j ≠ 0 → τ.val 0 j = 0)
+    (_hi0 : ∀ i : Fin (m + 1), i ≠ 0 → τ.val i 0 = 0) :
     SpecialLinearGroup (Fin m) ℤ :=
-  ⟨Matrix.of fun i j ↦ τ.1 i.succ j.succ, det_lowerRight τ h00 h0j⟩
+  ⟨Matrix.of fun i j ↦ τ.val i.succ j.succ, det_lowerRight τ h00 h0j⟩
 
 private lemma extractBlock_blockLift {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (h00 : τ.1 0 0 = 1) (h0j : ∀ j, j ≠ 0 → τ.1 0 j = 0)
-    (hi0 : ∀ i, i ≠ 0 → τ.1 i 0 = 0) :
+    (h00 : τ.val 0 0 = 1) (h0j : ∀ j, j ≠ 0 → τ.val 0 j = 0)
+    (hi0 : ∀ i, i ≠ 0 → τ.val i 0 = 0) :
     extractBlock (blockLift i j hij c * τ)
       (by rw [blockLift_row0]; exact h00)
       (by intro k hk; rw [blockLift_row0]; exact h0j k hk)
@@ -280,53 +280,53 @@ private lemma extractBlock_blockLift {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c 
   have : NeZero m := ⟨by rintro rfl; exact i.elim0⟩
   apply Subtype.ext; ext a b
   -- definitional: both sides are entries of the `Fin.succ` submatrix
-  change (blockLift i j hij c * τ).1 a.succ b.succ =
-    (transvection hij c * extractBlock τ h00 h0j hi0).1 a b
+  change (blockLift i j hij c * τ).val a.succ b.succ =
+    (transvection hij c * extractBlock τ h00 h0j hi0).val a b
   rw [blockLift_entry i j hij c τ a.succ b.succ,
       transvection_mul_entry i j hij c (extractBlock τ h00 h0j hi0) a b]
   simp only [Fin.succ_inj, extractBlock, Matrix.of_apply]
 
 /-- The sum of the absolute values of the off-diagonal entries in the first row. -/
 private def row0Sum {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ) : ℕ :=
-  ∑ j : Fin (m + 1), if (j : ℕ) = 0 then 0 else (σ.1 0 j).natAbs
+  ∑ j : Fin (m + 1), if (j : ℕ) = 0 then 0 else (σ.val 0 j).natAbs
 
 private lemma row0Sum_eq_zero_imp_cleared {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (hzero : row0Sum σ = 0) (j : Fin (m + 1)) (hj : j ≠ 0) : σ.1 0 j = 0 := by
-  have h_le : (if (j : ℕ) = 0 then 0 else (σ.1 0 j).natAbs) ≤ row0Sum σ :=
+    (hzero : row0Sum σ = 0) (j : Fin (m + 1)) (hj : j ≠ 0) : σ.val 0 j = 0 := by
+  have h_le : (if (j : ℕ) = 0 then 0 else (σ.val 0 j).natAbs) ≤ row0Sum σ :=
     Finset.single_le_sum
-      (f := fun (j : Fin (m + 1)) ↦ if (j : ℕ) = 0 then 0 else (σ.1 0 j).natAbs)
+      (f := fun (j : Fin (m + 1)) ↦ if (j : ℕ) = 0 then 0 else (σ.val 0 j).natAbs)
       (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ j)
   simp only [hzero, Fin.val_eq_zero_iff.not.mpr hj, ↓reduceIte] at h_le
   exact Int.natAbs_eq_zero.mp (Nat.eq_zero_of_le_zero h_le)
 
 private lemma row0_clear_step {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (hσ00 : σ.1 0 0 = 1) (hσi0 : ∀ i, i ≠ 0 → σ.1 i 0 = 0) (hzero : row0Sum σ ≠ 0) :
+    (hσ00 : σ.val 0 0 = 1) (hσi0 : ∀ i, i ≠ 0 → σ.val i 0 = 0) (hzero : row0Sum σ ≠ 0) :
     ∃ t : TransvectionStruct (Fin (m + 1)) ℤ,
-      (σ * t.toSpecialLinearGroup).1 0 0 = 1 ∧
-      (∀ i, i ≠ 0 → (σ * t.toSpecialLinearGroup).1 i 0 = 0) ∧
+      (σ * t.toSpecialLinearGroup).val 0 0 = 1 ∧
+      (∀ i, i ≠ 0 → (σ * t.toSpecialLinearGroup).val i 0 = 0) ∧
       row0Sum (σ * t.toSpecialLinearGroup) < row0Sum σ := by
   have ⟨j₀, hj₀_nz⟩ : ∃ j : Fin (m + 1),
-      (if (j : ℕ) = 0 then 0 else (σ.1 0 j).natAbs) ≠ 0 := by
+      (if (j : ℕ) = 0 then 0 else (σ.val 0 j).natAbs) ≠ 0 := by
     by_contra h; push Not at h
     exact hzero (Finset.sum_eq_zero (fun j _ ↦ h j))
   have hj₀ : j₀ ≠ 0 := fun h ↦ by subst h; simp at hj₀_nz
   have hj₀_val : (j₀ : ℕ) ≠ 0 := Fin.val_eq_zero_iff.not.mpr hj₀
-  refine ⟨⟨(0 : Fin (m + 1)), j₀, hj₀.symm, -σ.1 0 j₀⟩, ?_⟩
+  refine ⟨⟨(0 : Fin (m + 1)), j₀, hj₀.symm, -σ.val 0 j₀⟩, ?_⟩
   rw [TransvectionStruct.toSpecialLinearGroup_mk]
-  set E := transvection hj₀.symm (-σ.1 0 j₀) with hE_def
+  set E := transvection hj₀.symm (-σ.val 0 j₀) with hE_def
   refine ⟨?_, ?_, ?_⟩
   · rw [hE_def, transvection_mul_right_entry]; simp [hj₀.symm, hσ00]
   · intro i hi; rw [hE_def, transvection_mul_right_entry]; simp [hj₀.symm, hσi0 i hi]
-  · have hclear : (σ * E).1 0 j₀ = 0 := by
+  · have hclear : (σ * E).val 0 j₀ = 0 := by
       rw [hE_def, transvection_mul_right_entry]; simp [hσ00]
-    have hother : ∀ k, k ≠ j₀ → (σ * E).1 0 k = σ.1 0 k := fun k hk ↦ by
+    have hother : ∀ k, k ≠ j₀ → (σ * E).val 0 k = σ.val 0 k := fun k hk ↦ by
       rw [hE_def, transvection_mul_right_entry]; simp [hk]
     simp only [row0Sum]
     rw [← Finset.add_sum_erase _ _ (Finset.mem_univ j₀),
         ← Finset.add_sum_erase _ _ (Finset.mem_univ j₀)]
     have h_rest : ∑ k ∈ Finset.univ.erase j₀,
-        (if (k : ℕ) = 0 then 0 else ((σ * E).1 0 k).natAbs) =
-        ∑ k ∈ Finset.univ.erase j₀, (if (k : ℕ) = 0 then 0 else (σ.1 0 k).natAbs) :=
+        (if (k : ℕ) = 0 then 0 else ((σ * E).val 0 k).natAbs) =
+        ∑ k ∈ Finset.univ.erase j₀, (if (k : ℕ) = 0 then 0 else (σ.val 0 k).natAbs) :=
       Finset.sum_congr rfl fun k hk ↦ by
         by_cases h0 : (k : ℕ) = 0 <;> simp [h0, hother k (Finset.mem_erase.mp hk).1]
     rw [h_rest, hclear]
@@ -334,21 +334,21 @@ private lemma row0_clear_step {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) �
     omega
 
 private lemma row0_clear {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (h00 : τ.1 0 0 = 1) (hi0 : ∀ i : Fin (m + 1), i ≠ 0 → τ.1 i 0 = 0) :
+    (h00 : τ.val 0 0 = 1) (hi0 : ∀ i : Fin (m + 1), i ≠ 0 → τ.val i 0 = 0) :
     ∃ T : List (TransvectionStruct (Fin (m + 1)) ℤ),
-      (τ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).1 0 0 = 1 ∧
+      (τ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).val 0 0 = 1 ∧
       (∀ j : Fin (m + 1), j ≠ 0 →
-        (τ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).1 0 j = 0) ∧
+        (τ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).val 0 j = 0) ∧
       (∀ i : Fin (m + 1), i ≠ 0 →
-        (τ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).1 i 0 = 0) := by
+        (τ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).val i 0 = 0) := by
   suffices key : ∀ (k : ℕ) (σ : SpecialLinearGroup (Fin (m + 1)) ℤ),
-      σ.1 0 0 = 1 → (∀ i, i ≠ 0 → σ.1 i 0 = 0) → row0Sum σ ≤ k →
+      σ.val 0 0 = 1 → (∀ i, i ≠ 0 → σ.val i 0 = 0) → row0Sum σ ≤ k →
       ∃ T : List (TransvectionStruct (Fin (m + 1)) ℤ),
-        (σ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).1 0 0 = 1 ∧
+        (σ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).val 0 0 = 1 ∧
         (∀ j, j ≠ 0 →
-          (σ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).1 0 j = 0) ∧
+          (σ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).val 0 j = 0) ∧
         (∀ i, i ≠ 0 →
-          (σ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).1 i 0 = 0) from
+          (σ * (T.map TransvectionStruct.toSpecialLinearGroup).prod).val i 0 = 0) from
     key (row0Sum τ) τ h00 hi0 le_rfl
   intro k; induction k using Nat.strongRecOn with
   | _ k ihk =>
@@ -370,8 +370,8 @@ private lemma row0_clear {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
 
 private lemma nzCount_le_one_unique_nonzero {m : ℕ}
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (i₀ : Fin (m + 1)) (hi₀ : τ.1 i₀ 0 ≠ 0) (h_nz : nzCount τ ≤ 1) :
-    ∀ k, k ≠ i₀ → τ.1 k 0 = 0 := by
+    (i₀ : Fin (m + 1)) (hi₀ : τ.val i₀ 0 ≠ 0) (h_nz : nzCount τ ≤ 1) :
+    ∀ k, k ≠ i₀ → τ.val k 0 = 0 := by
   intro k hk; by_contra hne
   have h2 : 2 ≤ nzCount τ := calc
     2 = ({i₀, k} : Finset _).card := (Finset.card_pair hk.symm).symm
@@ -382,10 +382,10 @@ private lemma nzCount_le_one_unique_nonzero {m : ℕ}
   omega
 
 private lemma sole_nonzero_col0_is_unit {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (i₀ : Fin (m + 1)) (h_others : ∀ k, k ≠ i₀ → τ.1 k 0 = 0) :
-    τ.1 i₀ 0 = 1 ∨ τ.1 i₀ 0 = -1 := by
-  set M := τ.1
-  have hdet : M.det = 1 := τ.2
+    (i₀ : Fin (m + 1)) (h_others : ∀ k, k ≠ i₀ → τ.val k 0 = 0) :
+    τ.val i₀ 0 = 1 ∨ τ.val i₀ 0 = -1 := by
+  set M := τ.val
+  have hdet : M.det = 1 := τ.property
   rw [← Int.isUnit_iff]; apply isUnit_of_dvd_one; rw [← hdet, Matrix.det_apply]
   apply Finset.dvd_sum; intro σ _
   -- definitional: the summand of `det_apply` is the signed product over the permutation
@@ -396,8 +396,8 @@ private lemma sole_nonzero_col0_is_unit {m : ℕ} (τ : SpecialLinearGroup (Fin 
   · rw [h_others (σ 0) hσ, zero_mul, mul_zero]; exact dvd_zero _
 
 private lemma block_form_transvec_lift {m : ℕ} (M : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (H00 : M.1 0 0 = 1) (H0j : ∀ j, j ≠ 0 → M.1 0 j = 0)
-    (Hi0 : ∀ i, i ≠ 0 → M.1 i 0 = 0)
+    (H00 : M.val 0 0 = 1) (H0j : ∀ j, j ≠ 0 → M.val 0 j = 0)
+    (Hi0 : ∀ i, i ≠ 0 → M.val i 0 = 0)
     (T : List (TransvectionStruct (Fin m) ℤ))
     (hT_eq : extractBlock M H00 H0j Hi0 =
       (T.map TransvectionStruct.toSpecialLinearGroup).prod) :
@@ -425,11 +425,11 @@ private lemma block_form_transvec_lift {m : ℕ} (M : SpecialLinearGroup (Fin (m
     obtain ⟨i, j, hij, c⟩ := t
     simp only [List.map_cons, List.prod_cons,
       TransvectionStruct.toSpecialLinearGroup_mk] at hT_eq
-    have H00' : (blockLift i j hij (-c) * M).1 0 0 = 1 := by
+    have H00' : (blockLift i j hij (-c) * M).val 0 0 = 1 := by
       rw [blockLift_row0]; exact H00
-    have H0j' : ∀ k, k ≠ 0 → (blockLift i j hij (-c) * M).1 0 k = 0 := by
+    have H0j' : ∀ k, k ≠ 0 → (blockLift i j hij (-c) * M).val 0 k = 0 := by
       intro k hk; rw [blockLift_row0]; exact H0j k hk
-    have Hi0' : ∀ k, k ≠ 0 → (blockLift i j hij (-c) * M).1 k 0 = 0 := by
+    have Hi0' : ∀ k, k ≠ 0 → (blockLift i j hij (-c) * M).val k 0 = 0 := by
       intro k hk; rw [blockLift_col0 _ _ _ _ _ Hi0]; exact Hi0 k hk
     have hext' : extractBlock (blockLift i j hij (-c) * M) H00' H0j' Hi0' =
         (T'.map TransvectionStruct.toSpecialLinearGroup).prod :=
@@ -446,31 +446,31 @@ private lemma block_form_transvec_lift {m : ℕ} (M : SpecialLinearGroup (Fin (m
 /-- Column-clearing for a `-1` pivot at the `(0,0)` position in dimension `≥ 2`:
 three transvections turn the first column into the first standard basis vector. -/
 private lemma column_pivot_of_neg_one_at_zero {m' : ℕ}
-    (τ : SpecialLinearGroup (Fin (m' + 2)) ℤ) (h_neg1 : τ.1 0 0 = -1)
-    (h_others : ∀ k, k ≠ 0 → τ.1 k 0 = 0) :
+    (τ : SpecialLinearGroup (Fin (m' + 2)) ℤ) (h_neg1 : τ.val 0 0 = -1)
+    (h_others : ∀ k, k ≠ 0 → τ.val k 0 = 0) :
     ∃ T : List (TransvectionStruct (Fin (m' + 2)) ℤ),
-      ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).1 0 0 = 1 ∧
+      ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).val 0 0 = 1 ∧
       (∀ i, i ≠ 0 →
-        ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).1 i 0 = 0) := by
+        ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).val i 0 = 0) := by
   have h10 : (1 : Fin (m' + 2)) ≠ 0 := by simp
   have h01 : (0 : Fin (m' + 2)) ≠ 1 := h10.symm
   set σ₁ := transvection h10 1 * τ with hσ₁_def
-  have hσ₁_00 : σ₁.1 0 0 = -1 := by
+  have hσ₁_00 : σ₁.val 0 0 = -1 := by
     rw [hσ₁_def, transvection_mul_entry]; simp [h01, h_neg1]
-  have hσ₁_10 : σ₁.1 1 0 = -1 := by
+  have hσ₁_10 : σ₁.val 1 0 = -1 := by
     rw [hσ₁_def, transvection_mul_entry]; simp [h_neg1, h_others 1 h10]
-  have hσ₁_i0 : ∀ i, i ≠ 0 → i ≠ 1 → σ₁.1 i 0 = 0 := fun i hi0 hi1 ↦ by
+  have hσ₁_i0 : ∀ i, i ≠ 0 → i ≠ 1 → σ₁.val i 0 = 0 := fun i hi0 hi1 ↦ by
     rw [hσ₁_def, transvection_mul_entry]; simp [hi1, h_others i hi0]
   set σ₂ := transvection h01 (-2) * σ₁ with hσ₂_def
-  have hσ₂_00 : σ₂.1 0 0 = 1 := by
+  have hσ₂_00 : σ₂.val 0 0 = 1 := by
     rw [hσ₂_def, transvection_mul_entry]; simp [hσ₁_00, hσ₁_10]
-  have hσ₂_10 : σ₂.1 1 0 = -1 := by
+  have hσ₂_10 : σ₂.val 1 0 = -1 := by
     rw [hσ₂_def, transvection_mul_entry]; simp [h10, hσ₁_10]
-  have hσ₂_i0 : ∀ i, i ≠ 0 → i ≠ 1 → σ₂.1 i 0 = 0 := fun i hi0 hi1 ↦ by
+  have hσ₂_i0 : ∀ i, i ≠ 0 → i ≠ 1 → σ₂.val i 0 = 0 := fun i hi0 hi1 ↦ by
     rw [hσ₂_def, transvection_mul_entry]; simp [hi0, hσ₁_i0 i hi0 hi1]
-  have hσ₃_00 : (transvection h10 1 * σ₂).1 0 0 = 1 := by
+  have hσ₃_00 : (transvection h10 1 * σ₂).val 0 0 = 1 := by
     rw [transvection_mul_entry]; simp [h01, hσ₂_00]
-  have hσ₃_i0 : ∀ i, i ≠ 0 → (transvection h10 1 * σ₂).1 i 0 = 0 := fun i hi ↦ by
+  have hσ₃_i0 : ∀ i, i ≠ 0 → (transvection h10 1 * σ₂).val i 0 = 0 := fun i hi ↦ by
     rw [transvection_mul_entry]
     rcases eq_or_ne i 1 with rfl | hi1
     · simp [hσ₂_00, hσ₂_10]
@@ -485,24 +485,24 @@ private lemma column_pivot_of_neg_one_at_zero {m' : ℕ}
 two transvections turn the first column into the first standard basis vector. -/
 private lemma column_pivot_of_unit_off_diagonal {m : ℕ}
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ) (i₀ : Fin (m + 1)) (hi₀_zero : i₀ ≠ 0)
-    (h_others : ∀ k, k ≠ i₀ → τ.1 k 0 = 0) (h_unit : τ.1 i₀ 0 = 1 ∨ τ.1 i₀ 0 = -1) :
+    (h_others : ∀ k, k ≠ i₀ → τ.val k 0 = 0) (h_unit : τ.val i₀ 0 = 1 ∨ τ.val i₀ 0 = -1) :
     ∃ T : List (TransvectionStruct (Fin (m + 1)) ℤ),
-      ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).1 0 0 = 1 ∧
+      ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).val 0 0 = 1 ∧
       (∀ i, i ≠ 0 →
-        ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).1 i 0 = 0) := by
+        ((T.map TransvectionStruct.toSpecialLinearGroup).prod * τ).val i 0 = 0) := by
   have hi₀0 : (0 : Fin (m + 1)) ≠ i₀ := fun h ↦ hi₀_zero h.symm
-  set v := τ.1 i₀ 0 with hv_def
+  set v := τ.val i₀ 0 with hv_def
   have hv2 : v * v = 1 := by rcases h_unit with h | h <;> simp [v, h]
   set σ₁ := transvection hi₀0 v * τ with hσ₁_def
-  have hσ₁_00 : σ₁.1 0 0 = 1 := by
+  have hσ₁_00 : σ₁.val 0 0 = 1 := by
     rw [hσ₁_def, transvection_mul_entry]; simp [h_others 0 hi₀0, ← hv_def, hv2]
-  have hσ₁_i₀0 : σ₁.1 i₀ 0 = v := by
+  have hσ₁_i₀0 : σ₁.val i₀ 0 = v := by
     rw [hσ₁_def, transvection_mul_entry]; simp [hi₀_zero, ← hv_def]
-  have hσ₁_other : ∀ k, k ≠ 0 → k ≠ i₀ → σ₁.1 k 0 = 0 := fun k hk0 hki₀ ↦ by
+  have hσ₁_other : ∀ k, k ≠ 0 → k ≠ i₀ → σ₁.val k 0 = 0 := fun k hk0 hki₀ ↦ by
     rw [hσ₁_def, transvection_mul_entry]; simp [hk0, h_others k hki₀]
-  have hσ₂_00 : (transvection hi₀_zero (-v) * σ₁).1 0 0 = 1 := by
+  have hσ₂_00 : (transvection hi₀_zero (-v) * σ₁).val 0 0 = 1 := by
     rw [transvection_mul_entry]; simp [hi₀0, hσ₁_00]
-  have hσ₂_i0 : ∀ i, i ≠ 0 → (transvection hi₀_zero (-v) * σ₁).1 i 0 = 0 := fun i hi ↦ by
+  have hσ₂_i0 : ∀ i, i ≠ 0 → (transvection hi₀_zero (-v) * σ₁).val i 0 = 0 := fun i hi ↦ by
     rw [transvection_mul_entry]
     rcases eq_or_ne i i₀ with rfl | hne
     · simp [hσ₁_i₀0, hσ₁_00, add_neg_cancel]
@@ -514,21 +514,21 @@ private lemma column_pivot_of_unit_off_diagonal {m : ℕ}
   · exact fun i hi ↦ hσ₂_i0 i hi
 
 private lemma to_block_form {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
-    (i₀ : Fin (m + 1)) (hi₀ : τ.1 i₀ 0 ≠ 0) (h_others : ∀ k, k ≠ i₀ → τ.1 k 0 = 0)
-    (h_unit : τ.1 i₀ 0 = 1 ∨ τ.1 i₀ 0 = -1) :
+    (i₀ : Fin (m + 1)) (hi₀ : τ.val i₀ 0 ≠ 0) (h_others : ∀ k, k ≠ i₀ → τ.val k 0 = 0)
+    (h_unit : τ.val i₀ 0 = 1 ∨ τ.val i₀ 0 = -1) :
     ∃ T_left T_right : List (TransvectionStruct (Fin (m + 1)) ℤ),
       ((T_left.map TransvectionStruct.toSpecialLinearGroup).prod * τ *
-        (T_right.map TransvectionStruct.toSpecialLinearGroup).prod).1 0 0 = 1 ∧
+        (T_right.map TransvectionStruct.toSpecialLinearGroup).prod).val 0 0 = 1 ∧
       (∀ j : Fin (m + 1), j ≠ 0 →
         ((T_left.map TransvectionStruct.toSpecialLinearGroup).prod * τ *
-          (T_right.map TransvectionStruct.toSpecialLinearGroup).prod).1 0 j = 0) ∧
+          (T_right.map TransvectionStruct.toSpecialLinearGroup).prod).val 0 j = 0) ∧
       (∀ i : Fin (m + 1), i ≠ 0 →
         ((T_left.map TransvectionStruct.toSpecialLinearGroup).prod * τ *
-          (T_right.map TransvectionStruct.toSpecialLinearGroup).prod).1 i 0 = 0) := by
+          (T_right.map TransvectionStruct.toSpecialLinearGroup).prod).val i 0 = 0) := by
   suffices h_col : ∃ T₁ : List (TransvectionStruct (Fin (m + 1)) ℤ),
-      ((T₁.map TransvectionStruct.toSpecialLinearGroup).prod * τ).1 0 0 = 1 ∧
+      ((T₁.map TransvectionStruct.toSpecialLinearGroup).prod * τ).val 0 0 = 1 ∧
       (∀ i, i ≠ 0 →
-        ((T₁.map TransvectionStruct.toSpecialLinearGroup).prod * τ).1 i 0 = 0) by
+        ((T₁.map TransvectionStruct.toSpecialLinearGroup).prod * τ).val i 0 = 0) by
     obtain ⟨T₁, h₁_00, h₁_i0⟩ := h_col
     obtain ⟨T₂, h₂_00, h₂_0j, h₂_i0⟩ :=
       row0_clear ((T₁.map TransvectionStruct.toSpecialLinearGroup).prod * τ) h₁_00 h₁_i0
@@ -539,8 +539,8 @@ private lemma to_block_form {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ
     · exact ⟨[], by simp [h1], fun i hi ↦ by simpa using h_others i hi⟩
     rcases m with _ | m'
     · -- in dimension one the determinant is the unique entry, `-1`, contradicting `det = 1`
-      have hdet_neg : τ.1.det = -1 := by simp [Matrix.det_unique, h_neg1]
-      exact absurd hdet_neg (by rw [τ.2]; norm_num)
+      have hdet_neg : τ.val.det = -1 := by simp [Matrix.det_unique, h_neg1]
+      exact absurd hdet_neg (by rw [τ.property]; norm_num)
     · exact column_pivot_of_neg_one_at_zero τ h_neg1 h_others
   · exact column_pivot_of_unit_off_diagonal τ i₀ hi₀_zero h_others h_unit
 
@@ -586,14 +586,14 @@ theorem exists_list_transvec_prod (σ : SpecialLinearGroup ι ℤ) :
       σ = (T.map TransvectionStruct.toSpecialLinearGroup).prod := by
   set e := Fintype.equivFin ι
   set σ' : SpecialLinearGroup (Fin (Fintype.card ι)) ℤ :=
-    ⟨σ.1.submatrix e.symm e.symm, by rw [Matrix.det_submatrix_equiv_self]; exact σ.2⟩
+    ⟨σ.val.submatrix e.symm e.symm, by rw [Matrix.det_submatrix_equiv_self]; exact σ.property⟩
     with hσ'_def
   obtain ⟨T', hT'⟩ := exists_list_transvec_prod_fin (Fintype.card ι) σ'
   refine ⟨T'.map (TransvectionStruct.reindexEquiv e.symm), Subtype.ext ?_⟩
-  have hprod : (T'.map TransvectionStruct.toMatrix).prod = σ'.1 := by
+  have hprod : (T'.map TransvectionStruct.toMatrix).prod = σ'.val := by
     rw [← coe_list_prod, ← hT']
   calc (σ : Matrix ι ι ℤ)
-      = (Matrix.reindexAlgEquiv ℤ ℤ e.symm) σ'.1 := by
+      = (Matrix.reindexAlgEquiv ℤ ℤ e.symm) σ'.val := by
         simp [hσ'_def, Matrix.submatrix_submatrix]
     _ = ((T'.map (TransvectionStruct.toMatrix ∘ TransvectionStruct.reindexEquiv e.symm))).prod
         := by rw [TransvectionStruct.toMatrix_reindexEquiv_prod, hprod]

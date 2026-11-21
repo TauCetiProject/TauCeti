@@ -356,9 +356,9 @@ def primitiveForms (D : ℤ) :
 
 /-- The primitive part of any positive definite form has strictly negative discriminant. -/
 theorem discrim_primPart_neg_of_posDef {n : ℕ} [NeZero n] (f : posDef n) :
-    f.1.primPart.discrim < 0 :=
-  (discrim_primPart_lt_zero_iff f.1).mpr
-    ((mem_posDef.mp f.2).1 ▸ Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n)))
+    f.val.primPart.discrim < 0 :=
+  (discrim_primPart_lt_zero_iff f.val).mpr
+    ((mem_posDef.mp f.property).1 ▸ Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n)))
 
 /-- The proper equivalence classes of primitive positive definite forms of discriminant `-n`. -/
 abbrev PosDefProperClass (n : ℕ) [NeZero n] :=

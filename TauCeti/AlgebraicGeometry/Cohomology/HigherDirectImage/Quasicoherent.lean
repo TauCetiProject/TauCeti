@@ -204,9 +204,10 @@ instance isQuasicoherent_higherDirectImage :
   (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso
     ((f.higherDirectImagePresheafSheafificationIso n).app M)
     (Scheme.Modules.isQuasicoherent_sheafification_of_isLocalizedModule _
-      (fun V : Y.affineOpens ↦ V.1) (fun V ↦ V.2) (iSup_affineOpens_eq_top Y) fun V s ↦
+      (fun V : Y.affineOpens ↦ V.val) (fun V ↦ V.property) (iSup_affineOpens_eq_top Y) fun V s ↦
         f.isLocalizedModule_higherDirectImagePresheaf_map_basicOpen M n
-          (f.isCompact_preimage V.2.isCompact) (f.isQuasiSeparated_preimage V.2.isQuasiSeparated)
+          (f.isCompact_preimage V.property.isCompact)
+              (f.isQuasiSeparated_preimage V.property.isQuasiSeparated)
           s)
 
 end QuasiCompactQuasiSeparated

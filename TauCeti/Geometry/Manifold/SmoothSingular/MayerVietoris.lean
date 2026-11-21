@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologySequenceLemmas
-public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex
-public import TauCeti.CategoryTheory.Subfunctor.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Subdivision
-public import TauCeti.Order.CompleteLattice.MulticoequalizerDiagram
 
 /-!
 # The Mayer–Vietoris sequence of smooth singular chains
@@ -34,9 +30,10 @@ simplex of `U` (`TauCeti.range_smoothSingularSubcomplexMap_inclusion_ι`). The i
 smooth square into the singular square is a map of Mayer–Vietoris short exact sequences of chain
 complexes. By hypothesis it is a quasi-isomorphism on the first two terms
 (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE`), hence on the third,
-the chains of simplices lying in `U` or in `V`. The small-chain theorems, for singular chains and
-for the affinely stable subcomplex `S`, identify the homology of those chains with the singular and
-the smooth singular homology of `W`
+the chains of simplices lying in `U` or in `V`
+(`SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq`). The small-chain theorems, for singular
+chains and for the affinely stable subcomplex `S`, identify the homology of those chains with the
+singular and the smooth singular homology of `W`
 (`TauCeti.quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex`), which gives the
 conclusion.
 
@@ -155,41 +152,23 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup (U V : Opens M)
     (hUV : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(U ⊓ V)).ι R)) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(U ⊔ V)).ι R) := by
   let S := smoothSingularSubcomplex I ↥(U ⊔ V)
-  have sq₂ := TopCat.bicartSq_range_toSSet_map_inclusion U V
-  -- Intersecting the square of singular simplices with `S` gives the square of smooth simplices.
-  have sq₁ : SSet.Subcomplex.BicartSq _ _ _ _ := sq₂.inf_left S
-  have hc {A B C D : (TopCat.toSSet.obj (TopCat.of ↥(U ⊔ V))).Subcomplex} (h₁ : A ≤ B)
-      (h₂ : B ≤ D) (h₃ : A ≤ C) (h₄ : C ≤ D) :
-      SSet.Subcomplex.homOfLE h₁ ≫ SSet.Subcomplex.homOfLE h₂ =
-        SSet.Subcomplex.homOfLE h₃ ≫ SSet.Subcomplex.homOfLE h₄ := by
-    simp only [SSet.Subcomplex.homOfLE_comp]
-  -- The inclusion of the smooth square into the singular square is a map of Mayer–Vietoris short
-  -- exact sequences, a quasi-isomorphism on the first two terms by hypothesis.
-  have h₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃
-    (SSet.mayerVietorisShortComplexMap R sq₁.isPushout sq₂.isPushout
-      (φ₁ := SSet.Subcomplex.homOfLE inf_le_right) (φ₂ := SSet.Subcomplex.homOfLE inf_le_right)
-      (φ₃ := SSet.Subcomplex.homOfLE inf_le_right) (φ₄ := SSet.Subcomplex.homOfLE inf_le_right)
-      (hc _ _ _ _) (hc _ _ _ _) (hc _ _ _ _) (hc _ _ _ _))
-    (SSet.shortExact_mayerVietorisShortComplex R sq₁.isPushout)
-    (SSet.shortExact_mayerVietorisShortComplex R sq₂.isPushout)
-    (by
-      rw [SSet.mayerVietorisShortComplexMap_τ₁]
-      exact (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I _ R).1 hUV)
-    (by
-      rw [SSet.mayerVietorisShortComplexMap_τ₂]
-      have := (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I
-        (le_sup_left : U ≤ U ⊔ V) R).1 hU
-      have := (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I
-        (le_sup_right : V ≤ U ⊔ V) R).1 hV
-      exact HomologicalComplex.quasiIso_biprod_map _ _)
-  rw [SSet.mayerVietorisShortComplexMap_τ₃] at h₃
+  -- Intersecting the bicartesian square of singular simplices lying in `U ∩ V`, `U`, `V` and
+  -- `U` or `V` with `S` gives the square of smooth simplices, and comparing their Mayer–Vietoris
+  -- sequences gives a quasi-isomorphism on the chains of simplices lying in `U` or in `V`.
+  have h₃ := SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq (S := S) R
+    (TopCat.bicartSq_range_toSSet_map_inclusion U V)
+    ((quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I _ R).1 hUV)
+    ((quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I
+      (le_sup_left : U ≤ U ⊔ V) R).1 hU)
+    ((quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I
+      (le_sup_right : V ≤ U ⊔ V) R).1 hV)
   -- By the small-chain theorems, this is the conclusion.
   have hcov : ⋃ i, ![{x : ↥(U ⊔ V) | (x : M) ∈ U}, {x | (x : M) ∈ V}] i = Set.univ := by
     rw [Set.iUnion_vecCons_pair]
-    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.2
+    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.property
   exact (quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex R S _
-    (IsOpen.vecCons (U.isOpen.preimage continuous_subtype_val)
-      (V.isOpen.preimage continuous_subtype_val)) hcov).2 h₃
+    (IsOpen.vecCons (U.isOpen.preimage continuous_subtypeVal)
+      (V.isOpen.preimage continuous_subtypeVal)) hcov).2 h₃
 
 end MayerVietoris
 
@@ -249,7 +228,7 @@ def toSmallSmoothSingularSubcomplex {ι : Type*} (S : ι → Set M) {V : Opens M
       rintro n _ ⟨σ, rfl⟩
       rw [mem_smallSmoothSingularSubcomplex_iff]
       refine ⟨(mem_smoothSingularSubcomplex_iff _).1
-        (smoothSingularSubcomplex_le_preimage (contMDiff_subtype_val (I := I)) n σ.2), ?_⟩
+        (smoothSingularSubcomplex_le_preimage (contMDiff_subtypeVal (I := I)) n σ.property), ?_⟩
       rw [NatTrans.comp_app, ConcreteCategory.comp_apply, Subfunctor.ι_app, TypeCat.ofHom_apply,
         TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp]
       exact ⟨i, (Set.image_subset_range _ _).trans (Subtype.range_coe.trans_subset h)⟩)
@@ -271,7 +250,7 @@ theorem toSmallSmoothSingularSubcomplex_homOfLE_left {ι : Type*} (S : ι → Se
     {i : ι} (h : (V : Set M) ⊆ S i) :
     toSmallSmoothSingularSubcomplex I S h ≫
         homOfLE (smallSmoothSingularSubcomplex_le_smoothSingularSubcomplex I S) =
-      smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I)) := by
+      smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I)) := by
   rw [← cancel_mono (smoothSingularSubcomplex I M).ι, Category.assoc, homOfLE_ι,
     toSmallSmoothSingularSubcomplex_ι, smoothSingularSubcomplexMap_subtypeVal_ι]
 
@@ -359,8 +338,8 @@ theorem commSq_smoothSingularSubcomplexMap_inter (I : ModelWithCorners ℝ E H) 
         (contMDiff_inclusion (I := I) _))
       (smoothSingularSubcomplexMap (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
         (contMDiff_inclusion (I := I) _))
-      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
-      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) where
+      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I))) where
   w := by
     rw [← cancel_mono (smoothSingularSubcomplex I M).ι]
     simp only [Category.assoc, smoothSingularSubcomplexMap_subtypeVal_ι,
@@ -458,8 +437,8 @@ private lemma smoothMayerVietorisFromBiprod_comp_homologyMap
         (homOfLE (smallSmoothSingularSubcomplex_le_smoothSingularSubcomplex I
           ![(U : Set M), (V : Set M)])) R n =
     SSet.mayerVietorisFromBiprod R
-      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
-      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) n := by
+      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I))) n := by
   ext <;> simp [← SSet.homologyMap_comp]
 
 /-- Composing `smoothMayerVietorisδ` with the inclusion difference into `Hₘ^∞(U) ⊞ Hₘ^∞(V)` is
@@ -479,8 +458,8 @@ zero. -/
 @[reassoc (attr := simp)]
 theorem smoothMayerVietorisFromBiprod_δ (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 1 = n := by lia) :
     SSet.mayerVietorisFromBiprod R
-        (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
-        (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) n ≫
+        (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+        (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I))) n ≫
       smoothMayerVietorisδ I R hUV n m h = 0 := by
   rw [← smoothMayerVietorisFromBiprod_comp_homologyMap I R
       (by simp) (by simp), Category.assoc,

@@ -59,7 +59,7 @@ theorem finite_primaryComponent_of_injective (U : AddSubgroup G) [U.FiniteIndex]
     (hU : Function.Injective (fun x : U ↦ n • x)) :
     Finite (AddCommGroup.primaryComponent G n) := by
   refine Finite.of_injective (fun x ↦ ((x : G) : G ⧸ U)) fun x y h ↦ ?_
-  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp (sub_mem x.2 y.2)
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp (sub_mem x.property y.property)
   have : (⟨(x : G) - y, QuotientAddGroup.eq_iff_sub_mem.mp h⟩ : U) = 0 :=
     (smul_iterate (α := U) n k ▸ hU.iterate k) (Subtype.ext (by simpa using hk))
   exact Subtype.ext (sub_eq_zero.mp (congrArg Subtype.val this))

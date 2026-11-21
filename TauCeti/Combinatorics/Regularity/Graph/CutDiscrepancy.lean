@@ -151,7 +151,7 @@ theorem steppedCount_top (A B : Finset V) :
 /-- The stepped prediction of `P`, written over the subtype of parts. -/
 theorem steppedCount_eq_sum_subtype (A B : Finset V) :
     G.steppedCount P A B = ∑ C : P.parts, ∑ D : P.parts,
-      (G.edgeDensity C.1 D.1 : ℝ) * #(A ∩ C.1) * #(B ∩ D.1) := by
+      (G.edgeDensity C.val D.val : ℝ) * #(A ∩ C.val) * #(B ∩ D.val) := by
   rw [steppedCount_def, ← sum_coe_sort P.parts]
   exact sum_congr rfl fun C _ ↦ (sum_coe_sort _ _).symm
 
@@ -178,8 +178,8 @@ edge density between their coarse parents times their trace masses. -/
 theorem steppedCount_eq_sum_refinementParent {Q : Finpartition (univ : Finset V)} (h : Q ≤ P)
     (A B : Finset V) :
     G.steppedCount P A B = ∑ C : Q.parts, ∑ D : Q.parts,
-      (G.edgeDensity (Finpartition.refinementParent h C).1
-        (Finpartition.refinementParent h D).1 : ℝ) * #(A ∩ C.1) * #(B ∩ D.1) := by
+      (G.edgeDensity (Finpartition.refinementParent h C).val
+        (Finpartition.refinementParent h D).val : ℝ) * #(A ∩ C.val) * #(B ∩ D.val) := by
   rw [Finpartition.sum_sum_eq_sum_sum_fiber h, steppedCount_eq_sum_subtype]
   refine sum_congr rfl fun C' _ ↦ sum_congr rfl fun D' _ ↦ ?_
   -- The trace of `A` on a coarse part is the sum of its traces on the fine parts below it.

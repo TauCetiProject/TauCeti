@@ -162,7 +162,7 @@ theorem not_isRegular_comap_freeGroupNorm_subtype_closure {a b c : α} (hbc : b 
     ⟨of a * of b, Subgroup.subset_closure (by simp)⟩
     ⟨of a * of c, Subgroup.subset_closure (by simp)⟩
   have heven : Even (norm (u : FreeGroup α)) :=
-    even_norm_of_mem_closure (by rintro _ (rfl | rfl) <;> simp [even_norm_mul_iff]) u.2
+    even_norm_of_mem_closure (by rintro _ (rfl | rfl) <;> simp [even_norm_mul_iff]) u.property
   rw [gromovProduct_comap, Subgroup.coe_subtype,
     gromovProduct_freeGroupNorm_of_mul_of_of_mul_of hbc] at hu
   have hu' : norm (u : FreeGroup α) = 1 := by simpa using hu

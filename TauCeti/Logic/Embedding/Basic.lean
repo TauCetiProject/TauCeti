@@ -38,7 +38,7 @@ right and `e₂` on the left. -/
 theorem subtypeInjectiveCongr_apply {α₁ α₂ β₁ β₂ : Sort*} (e₁ : α₁ ≃ α₂) (e₂ : β₁ ≃ β₂)
     (f : {f : α₁ → β₁ // Function.Injective f}) :
     subtypeInjectiveCongr e₁ e₂ f =
-      ⟨e₂ ∘ f.1 ∘ e₁.symm, e₂.injective.comp (f.2.comp e₁.symm.injective)⟩ :=
+      ⟨e₂ ∘ f.val ∘ e₁.symm, e₂.injective.comp (f.property.comp e₁.symm.injective)⟩ :=
   Subtype.ext rfl
 
 /-- The inverse of `subtypeInjectiveCongr e₁ e₂` is `subtypeInjectiveCongr e₁.symm e₂.symm`. -/

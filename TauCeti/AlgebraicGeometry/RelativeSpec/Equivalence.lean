@@ -41,17 +41,17 @@ variable {X : Scheme.{u}} (A : CommMon X.Modules) [A.X.IsQuasicoherent]
 /-- On an affine open, the unit on section rings, preceded by the inverse identification of
 pushforward sections, is the usual map of functions along the relative-spectrum chart. -/
 private lemma sections_relativeSpecPushforwardIso (U : X.AffineZariskiSite) :
-    A.relativeSpecToBase.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1) ≫
-        CommRingCat.ofHom (sectionsAlgHom A.relativeSpecPushforwardIso.hom U.1).toRingHom =
+    A.relativeSpecToBase.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val) ≫
+        CommRingCat.ofHom (sectionsAlgHom A.relativeSpecPushforwardIso.hom U.val).toRingHom =
       (A.relativeSpecCover.f U).appLE _ ⊤ (A.top_le_preimage_relativeSpecToBase U) ≫
-        (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, U.1))).hom := by
+        (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, U.val))).hom := by
   apply ConcreteCategory.hom_ext
   intro x
   rw [Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app]
   -- Section-ring objects and presheaf components have different bundled presentations.
   -- Evaluation identifies their coercions before using the public chart formula.
-  change sectionsAlgHom A.relativeSpecPushforwardIso.hom U.1
-      ((A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv U.1).symm x) = _
+  change sectionsAlgHom A.relativeSpecPushforwardIso.hom U.val
+      ((A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv U.val).symm x) = _
   rw [sectionsAlgHom_relativeSpecPushforwardIso_hom_apply,
     relativeSpecCoverFunctionAlgebraSectionsRingEquiv_apply, RingEquiv.apply_symm_apply]
   rfl
@@ -64,15 +64,15 @@ lemma relativeSpecMap_relativeSpecPushforwardIso_hom_comp :
         A.relativeSpecToBase.relativeSpecFunctionsToScheme = 𝟙 A.relativeSpec := by
   apply A.relativeSpec_hom_ext
   intro U
-  let ι : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let hU := U.2.preimage A.relativeSpecToBase
+  let ι : Spec (CommRingCat.of Γ(A.X, U.val)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let hU := U.property.preimage A.relativeSpecToBase
   have hchart := IsAffineOpen.SpecMap_appLE_fromSpec ι hU (isAffineOpen_top _)
     (A.top_le_preimage_relativeSpecToBase U)
   have hring := sections_relativeSpecPushforwardIso A U
-  let fU := CommRingCat.ofHom (sectionsAlgHom A.relativeSpecPushforwardIso.hom U.1).toRingHom
-  let k : CommRingCat.of Γ(A.relativeSpec, A.relativeSpecToBase ⁻¹ᵁ U.1) ⟶
-      CommRingCat.of Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.1) :=
-    A.relativeSpecToBase.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)
+  let fU := CommRingCat.ofHom (sectionsAlgHom A.relativeSpecPushforwardIso.hom U.val).toRingHom
+  let k : CommRingCat.of Γ(A.relativeSpec, A.relativeSpecToBase ⁻¹ᵁ U.val) ⟶
+      CommRingCat.of Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.val) :=
+    A.relativeSpecToBase.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val)
   have hc : Spec.map fU ≫ (Spec.map k ≫ hU.fromSpec) = ι := by
     -- The affine-site wrapper and section-ring carriers require full transparency here.
     -- The first calculation is functoriality of Spec; the last is the affine unit/counit law.

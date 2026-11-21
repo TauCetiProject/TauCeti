@@ -125,7 +125,8 @@ theorem negPow_add (s t : ℝ≥0) : A.negPow hA h (s + t) = A.negPow hA h s * A
 /-- Powers of negative powers: `(A^{-s})^t = A^{-s t}`. -/
 theorem negPow_rpow (s : ℝ≥0) (t : ℝ≥0) : A.negPow hA h s ^ (t : ℝ) = A.negPow hA h (s * t) := by
   simp only [negPow_def, NNReal.coe_mul]
-  exact CFC.rpow_rpow_of_exponent_nonneg _ _ _ s.2 t.2 (greenOperator_nonneg hA h hpos)
+  exact CFC.rpow_rpow_of_exponent_nonneg _ _ _ s.property t.property
+      (greenOperator_nonneg hA h hpos)
 
 /-- Natural powers: `A^{-n} = G ^ n`. -/
 theorem negPow_natCast (n : ℕ) : A.negPow hA h n = A.greenOperator hA h ^ n := by
@@ -144,7 +145,7 @@ theorem negPow_apply_of_apply_eq_smul (s : ℝ≥0) (u : A.domain) {lam : ℝ} (
   rw [negPow_def, CFC.rpow_eq_cfc_real hG]
   refine ((A.isCompactOperator_greenOperator hA h).cfc_apply_of_apply_eq_smul
     (fun x : ℝ ↦ x ^ (s : ℝ)) (inv_ne_zero hlam.ne') hGu
-    (Real.continuous_rpow_const s.2).continuousOn hG.isSelfAdjoint).trans ?_
+    (Real.continuous_rpow_const s.property).continuousOn hG.isSelfAdjoint).trans ?_
   rw [Real.inv_rpow hlam.le, Real.rpow_neg hlam.le]
 
 /-- The negative powers of a strictly positive operator are injective. -/
@@ -331,7 +332,7 @@ end PosPow
 section Commute
 
 variable {hA h} {U : H →L[ℂ] H} (hUdom : ∀ u ∈ A.domain, U u ∈ A.domain)
-  (hUA : ∀ u : A.domain, A ⟨U u, hUdom u u.2⟩ = U (A u))
+  (hUA : ∀ u : A.domain, A ⟨U u, hUdom u u.property⟩ = U (A u))
 include hUA
 
 /-- **Equivariance of the negative powers.** A bounded operator commuting with a strictly

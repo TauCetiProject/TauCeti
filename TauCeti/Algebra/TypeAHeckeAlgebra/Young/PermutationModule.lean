@@ -374,7 +374,7 @@ theorem youngPermutationModuleEquiv_Tw_smul (μ : YoungDiagram) (σ : Equiv.Perm
       youngPermutationModule (R := R) (1 : Rˣ) (shapePartition μ) :=
     { toFun := (Tw (1 : Rˣ) (permCoxeterSystem μ.card) σ • ·)
       map_add' := smul_add _
-      map_smul' := fun r x => Subtype.ext (mul_smul_comm r _ x.1) }
+      map_smul' := fun r x => Subtype.ext (mul_smul_comm r _ x.val) }
   let lhs : youngPermutationModule (R := R) (1 : Rˣ) (shapePartition μ) →ₗ[R]
       (TauCeti.permutationModule (R := R) (shapePartition μ)).V :=
     (youngPermutationModuleEquiv (R := R) μ).toLinearMap.comp smulLin

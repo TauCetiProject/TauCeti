@@ -154,9 +154,9 @@ lemma fiberMap_mem_orbit_subgroup_map (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
       MulAction.orbit (H.map ((conjMulEquiv h hpq : deck p ≃* deck q) : deck p →* deck q))
         (fiberMap h hpq b e') := by
   rcases hee' with ⟨φ, hφ⟩
-  refine ⟨⟨conjMulEquiv h hpq φ.1, ⟨φ.1, φ.2, rfl⟩⟩, ?_⟩
+  refine ⟨⟨conjMulEquiv h hpq φ.val, ⟨φ.val, φ.property, rfl⟩⟩, ?_⟩
   rw [← hφ]
-  exact (fiberMap_smul h hpq φ.1 e').symm
+  exact (fiberMap_smul h hpq φ.val e').symm
 
 /-- Membership in a subgroup fibre-orbit is preserved by an over-base homeomorphism, with the
 subgroup conjugated along the induced deck-group isomorphism. -/
@@ -168,10 +168,10 @@ lemma mem_orbit_fiberMap_subgroup_map_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e)
       e ∈ MulAction.orbit H e' := by
   constructor
   · rintro ⟨ψ, hψ⟩
-    rcases ψ.2 with ⟨φ, hφH, hφψ⟩
+    rcases ψ.property with ⟨φ, hφH, hφψ⟩
     refine ⟨⟨φ, hφH⟩, ?_⟩
     apply (fiberMap h hpq b).injective
-    have hψ' : (ψ.1 : deck q) • fiberMap h hpq b e' = fiberMap h hpq b e := by
+    have hψ' : (ψ.val : deck q) • fiberMap h hpq b e' = fiberMap h hpq b e := by
       simpa [Subgroup.smul_def] using hψ
     have hφ' : (conjMulEquiv h hpq φ) • fiberMap h hpq b e' =
         fiberMap h hpq b e := by
@@ -366,7 +366,7 @@ lemma subgroupFiberOrbitMapOfLE_bot_eq_iff (H : Subgroup (deck p))
     rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply]
     constructor
     · rintro ⟨φ, hφ⟩
-      exact ⟨φ.1, hφ⟩
+      exact ⟨φ.val, hφ⟩
     · rintro ⟨φ, hφ⟩
       exact ⟨⟨φ, trivial⟩, hφ⟩
 

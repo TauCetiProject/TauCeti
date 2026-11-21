@@ -107,7 +107,8 @@ theorem isEmbedding_subtype_adicModuleTopology_of_exists_inf_pow_smul_le
   refine ((I.hasBasis_nhds_zero_adicModule (M := M)).comap P.subtype).le_basis_iff
     (I.hasBasis_nhds_zero_adicModule (M := P)) |>.mpr ?_
   intro n _
-  exact ⟨n + k, trivial, fun x hx ↦ (Submodule.mem_smul_top_iff (I ^ n) P x).mpr (hk n ⟨x.2, hx⟩)⟩
+  exact ⟨n + k, trivial, fun x hx ↦ (Submodule.mem_smul_top_iff (I ^ n) P x).mpr (hk n ⟨x.property,
+      hx⟩)⟩
 
 /-- Artin–Rees makes the adic topology of a submodule of a finite module over a noetherian
 ring equal to its subspace topology. No completeness or separatedness is required. -/
@@ -141,7 +142,7 @@ theorem isClosed_adicModuleTopology_of_exists_inf_pow_smul_le
   let z (n : ℕ) : P := y (n + k)
   have hcauchy {m n : ℕ} (hmn : m ≤ n) : z m ≡ z n [SMOD (I ^ m • ⊤ : Submodule R P)] := by
     rw [SModEq.sub_mem, Submodule.mem_smul_top_iff]
-    refine hk m ⟨(z m - z n).2, ?_⟩
+    refine hk m ⟨(z m - z n).property, ?_⟩
     have hm : (z m : M) - x ∈ (I ^ (m + k) • ⊤ : Submodule R M) := hy (m + k)
     have hn : (z n : M) - x ∈ (I ^ (m + k) • ⊤ : Submodule R M) :=
       Submodule.smul_mono_left (Ideal.pow_le_pow_right (Nat.add_le_add_right hmn k)) (hy (n + k))
@@ -156,7 +157,7 @@ theorem isClosed_adicModuleTopology_of_exists_inf_pow_smul_le
     have hzm : (z m : M) - x ∈ (I ^ m • ⊤ : Submodule R M) :=
       Submodule.smul_mono_left (Ideal.pow_le_pow_right (Nat.le_add_right m k)) (hy (m + k))
     simpa [sub_sub_sub_cancel_left] using sub_mem hzm hLm
-  exact hLx ▸ L.2
+  exact hLx ▸ L.property
 
 /-- The quotient of a module by an `I`-adically closed submodule is `I`-adically Hausdorff. -/
 theorem isHausdorff_quotient_of_isClosed_adicModuleTopology (P : Submodule R M) (I : Ideal R)
