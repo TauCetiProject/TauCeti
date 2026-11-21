@@ -96,7 +96,8 @@ theorem hasDerivAt_of_periodic_of_sub_eq_integral {E : Type*} [NormedAddCommGrou
     [NormedSpace ℝ E] [CompleteSpace E] {x Y : ℝ → E} {T : ℝ} (hT : 0 < T)
     (hxper : Function.Periodic x T) (hY : Continuous Y) (hYper : Function.Periodic Y T)
     (hint : ∀ t ∈ Icc 0 T, x t - x 0 = ∫ τ in 0..t, Y τ) (t : ℝ) : HasDerivAt x (Y t) t := by
-  refine hasDerivAt_of_periodic_of_hasDerivWithinAt hT hxper hYper (fun s hs ↦ ?_) t
+  refine hasDerivAt_of_periodic_of_hasDerivWithinAt hT hxper hYper 0 (fun s hs ↦ ?_) t
+  rw [zero_add] at hs ⊢
   -- On `[0, T]`, `x` agrees with `x 0 + ∫₀ᵗ Y`, which has derivative `Y` by FTC-1.
   exact ((_root_.intervalIntegral.integral_hasDerivAt_right (hY.intervalIntegrable 0 s)
     (hY.stronglyMeasurableAtFilter _ _) hY.continuousAt).const_add (x 0)).hasDerivWithinAt
