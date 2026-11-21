@@ -40,8 +40,8 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
   `TauCeti.circleCosTwoMax_ne_circleCosTwoMin`: the four labelled angles are distinct.
 * `TauCeti.exists_circleCosTwoMax_eq`, `TauCeti.exists_circleCosTwoMin_eq`: every lifted maximum
   `r + j π` and minimum `r + π / 2 + j π`, `j ∈ ℤ`, is one of them.
-* `TauCeti.circleCosTwoMax_add_coe`, `TauCeti.circleCosTwoMin_add_coe`: rotating the function
-  moves the labelled points with it.
+* `TauCeti.circleCosTwoMax_add_coe`, `TauCeti.circleCosTwoMin_add_coe`,
+  `TauCeti.circleCosTwoMax_sub_coe`: rotating the function moves the labelled points with it.
 * `TauCeti.circleCosTwoMax_add_pi`, `TauCeti.circleCosTwoMin_add_pi`: rotating the function by `π`
   exchanges the labels.
 * `TauCeti.circleCosTwoMaxCrit`, `TauCeti.circleCosTwoMinCrit`: the same points as elements of
@@ -208,6 +208,11 @@ theorem exists_circleCosTwoMin_eq (r : ℝ) (m : ℤ) :
 theorem circleCosTwoMax_add_coe (r c : ℝ) (j : Fin 2) :
     circleCosTwoMax r j + (c : AddCircle (2 * π)) = circleCosTwoMax (r + c) j := by
   rw [circleCosTwoMax_def, circleCosTwoMax_def, ← coe_add, add_right_comm]
+
+/-- Rotating the function by `-c` moves its maxima by `-c`, keeping their labels. -/
+theorem circleCosTwoMax_sub_coe (r c : ℝ) (j : Fin 2) :
+    circleCosTwoMax r j - (c : AddCircle (2 * π)) = circleCosTwoMax (r - c) j := by
+  rw [sub_eq_add_neg, ← coe_neg, circleCosTwoMax_add_coe, sub_eq_add_neg]
 
 /-- Rotating the function by `c` moves its minima by `c`, keeping their labels. -/
 theorem circleCosTwoMin_add_coe (r c : ℝ) (j : Fin 2) :

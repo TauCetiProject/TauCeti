@@ -99,7 +99,8 @@ private theorem hasDerivAt_add_int_mul_two_pi
     (hΘ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) (m : ℤ) :
     ∀ t ∈ Ioo 0 1, HasDerivAt (fun t ↦ Θ t + m * (2 * π))
       (circleContinuationSlope δ r t (Θ t + m * (2 * π))) t := fun t ht ↦ by
-  rw [circleContinuationSlope_add_int_mul_two_pi]
+  rw [show Θ t + m * (2 * π) = Θ t + ((2 * m : ℤ) : ℝ) * π by push_cast; ring,
+    circleContinuationSlope_add_int_mul_pi]
   exact (hΘ t ht).add_const _
 
 /-- The image in the circle of a limit of a lift. -/
@@ -127,6 +128,21 @@ private theorem exists_tendsto_nhdsLT_one_of_tendsto_coe
       ⟨Ioo c 1, Ioo_mem_nhdsLT hc, hcu, isPreconnected_Ioo⟩)
     (Ioo_mem_nhdsLT one_pos) (fun t ht ↦ (hΘ t ht).continuousAt.continuousWithinAt) h
 
+/-- The hypothesis of `Basin.lean` on the labels for a source minimum `i` and the target minimum
+`i - n`. -/
+private theorem abs_add_mul_pi_sub_add_sub_mul_pi_add_lt {D : ℝ} {n : ℤ}
+    (hn : |r₁ - r₀ - n * π| + D < π / 2) (i : ℤ) :
+    |r₀ + i * π - (r₁ + ((i - n : ℤ) : ℝ) * π)| + D < π / 2 := by
+  rwa [show r₀ + i * π - (r₁ + ((i - n : ℤ) : ℝ) * π) = -(r₁ - r₀ - n * π) by push_cast; ring,
+    abs_neg]
+
+/-- The hypothesis of `Basin.lean` on the labels for a source maximum `i + n` and the target
+maximum `i`. -/
+private theorem abs_add_mul_pi_sub_add_add_mul_pi_add_lt {D : ℝ} {n : ℤ}
+    (hn : |r₁ - r₀ - n * π| + D < π / 2) (i : ℤ) :
+    |r₁ + i * π - (r₀ + ((i + n : ℤ) : ℝ) * π)| + D < π / 2 := by
+  rwa [show r₁ + i * π - (r₀ + ((i + n : ℤ) : ℝ) * π) = r₁ - r₀ - n * π by push_cast; ring]
+
 /-! ### Counting the index-preserving trajectories on the circle -/
 
 section Counts
@@ -150,10 +166,8 @@ theorem tendsto_coe_circleCosTwoMin_add_of_hasDerivAt_circleContinuationSlope
   rw [circleCosTwoMin_def] at hlim ⊢
   obtain ⟨m, hm⟩ := exists_tendsto_nhdsGT_zero_of_tendsto_coe hΘ hlim
   have h := tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope hδ ha
-    hab hb hr₀ hr₁ hΘ (j := (j : ℕ) + 2 * m) (k := (j : ℕ) + 2 * m - n) (by
-      rw [show r₀ + (((j : ℕ) + 2 * m : ℤ) : ℝ) * π - (r₁ + (((j : ℕ) + 2 * m - n : ℤ) : ℝ) * π) =
-        -(r₁ - r₀ - n * π) by push_cast; ring, abs_neg]
-      exact hn)
+    hab hb hr₀ hr₁ hΘ (j := (j : ℕ) + 2 * m) (k := (j : ℕ) + 2 * m - n)
+    (abs_add_mul_pi_sub_add_sub_mul_pi_add_lt hn _)
     (by convert hm using 2; push_cast; ring)
   rw [← coe_add]
   convert tendsto_coe h using 2
@@ -171,10 +185,8 @@ theorem tendsto_coe_circleCosTwoMax_sub_of_hasDerivAt_circleContinuationSlope
   rw [circleCosTwoMax_def] at hlim ⊢
   obtain ⟨m, hm⟩ := exists_tendsto_nhdsLT_one_of_tendsto_coe hΘ hlim
   have h := tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope hδ ha
-    hab hb hr₀ hr₁ hΘ (j := (k : ℕ) + 2 * m + n) (k := (k : ℕ) + 2 * m) (by
-      rw [show r₁ + (((k : ℕ) + 2 * m : ℤ) : ℝ) * π - (r₀ + (((k : ℕ) + 2 * m + n : ℤ) : ℝ) * π) =
-        r₁ - r₀ - n * π by push_cast; ring]
-      exact hn)
+    hab hb hr₀ hr₁ hΘ (j := (k : ℕ) + 2 * m + n) (k := (k : ℕ) + 2 * m)
+    (abs_add_mul_pi_sub_add_add_mul_pi_add_lt hn _)
     (by convert hm using 2; push_cast; ring)
   rw [← coe_sub]
   convert tendsto_coe h using 2
@@ -244,10 +256,8 @@ theorem exists_hasDerivAt_circleContinuationSlope_tendsto_coe_circleCosTwoMin (h
     ∃ Θ : ℝ → ℝ, (∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) ∧
       Tendsto (fun t ↦ (Θ t : AddCircle (2 * π))) (𝓝[>] 0) (𝓝 (circleCosTwoMin r₀ j)) := by
   obtain ⟨Θ, hΘ, h₀, -⟩ := exists_hasDerivAt_circleContinuationSlope_tendsto_add_pi_div_two hδ ha
-    hab hb hr hr₀ hr₁ (j := (j : ℕ)) (k := (j : ℕ) - n) (by
-      rw [show r₀ + (((j : ℕ) : ℤ) : ℝ) * π - (r₁ + (((j : ℕ) - n : ℤ) : ℝ) * π) =
-        -(r₁ - r₀ - n * π) by push_cast; ring, abs_neg]
-      exact hn)
+    hab hb hr hr₀ hr₁ (j := (j : ℕ)) (k := (j : ℕ) - n)
+    (abs_add_mul_pi_sub_add_sub_mul_pi_add_lt hn _)
   refine ⟨Θ, hΘ, ?_⟩
   rw [circleCosTwoMin_def]
   exact_mod_cast tendsto_coe h₀
@@ -263,10 +273,8 @@ theorem exists_hasDerivAt_circleContinuationSlope_tendsto_coe_circleCosTwoMax (h
     ∃ Θ : ℝ → ℝ, (∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) ∧
       Tendsto (fun t ↦ (Θ t : AddCircle (2 * π))) (𝓝[<] 1) (𝓝 (circleCosTwoMax r₁ k)) := by
   obtain ⟨Θ, hΘ, -, h₁⟩ := exists_hasDerivAt_circleContinuationSlope_tendsto_add_int_mul_pi hδ ha
-    hab hb hr hr₀ hr₁ (j := (k : ℕ) + n) (k := (k : ℕ)) (by
-      rw [show r₁ + (((k : ℕ) : ℤ) : ℝ) * π - (r₀ + (((k : ℕ) + n : ℤ) : ℝ) * π) =
-        r₁ - r₀ - n * π by push_cast; ring]
-      exact hn)
+    hab hb hr hr₀ hr₁ (j := (k : ℕ) + n) (k := (k : ℕ))
+    (abs_add_mul_pi_sub_add_add_mul_pi_add_lt hn _)
   refine ⟨Θ, hΘ, ?_⟩
   rw [circleCosTwoMax_def]
   exact_mod_cast tendsto_coe h₁
@@ -408,8 +416,8 @@ theorem tendsto_coe_circleCosTwoMax_iff_of_add_pi_div_three
   have hc : r₀ + π / 3 - r₀ - ((0 : ℤ) : ℝ) * π = π / 3 := by push_cast; ring
   rw [tendsto_coe_circleCosTwoMax_iff_of_hasDerivAt_circleContinuationSlope hδ
     (by norm_num) (by norm_num) (by norm_num) (rotation_eq_left h0 _) (rotation_eq_right h1 _) hΘ
-    (by rw [hc, abs_of_pos (by positivity)]; linarith [pi_pos]) hlim, hc, sub_eq_add_neg,
-    ← coe_neg, circleCosTwoMax_add_coe, add_neg_cancel_right, circleCosTwoMax_inj]
+    (by rw [hc, abs_of_pos (by positivity)]; linarith [pi_pos]) hlim, hc]
+  simp [circleCosTwoMax_sub_coe]
 
 /-- The concatenation of the third-turns `r₀ + (π / 3) ρ` and `r₀ + π / 3 + (π / 3) ρ`, run at
 double speed on `[0, 1/2]` and `[1/2, 1]`, is `r₀` on `(0, 1/6]` and `r₀ + 2 π / 3` on
@@ -449,8 +457,8 @@ theorem tendsto_coe_circleCosTwoMin_add_two_mul_pi_div_three_iff
   rw [tendsto_coe_circleCosTwoMin_iff_of_hasDerivAt_circleContinuationSlope hδ
     (by norm_num) (by norm_num) (by norm_num) hr₀ hr₁ hΘ
     (by rw [hc, abs_neg, abs_of_pos (by positivity)]; linarith [pi_pos]) hlim, hc,
-    circleCosTwoMin_add_coe, show r₀ + 2 * π / 3 = r₀ + -(π / 3) + π by ring,
-    circleCosTwoMin_add_pi, circleCosTwoMin_inj]
+    circleCosTwoMin_add_coe, show r₀ + 2 * π / 3 = r₀ + -(π / 3) + π by ring]
+  simp only [circleCosTwoMin_add_pi, circleCosTwoMin_inj]
   fin_cases j <;> fin_cases k <;> decide
 
 /-- **The concatenation of two third-turns is the exchange, on maxima.** Under the hypotheses of
@@ -472,10 +480,9 @@ theorem tendsto_coe_circleCosTwoMax_iff_of_add_two_mul_pi_div_three
   have hc : r₀ + 2 * π / 3 - r₀ - ((1 : ℤ) : ℝ) * π = -(π / 3) := by push_cast; ring
   rw [tendsto_coe_circleCosTwoMax_iff_of_hasDerivAt_circleContinuationSlope hδ
     (by norm_num) (by norm_num) (by norm_num) hr₀ hr₁ hΘ
-    (by rw [hc, abs_neg, abs_of_pos (by positivity)]; linarith [pi_pos]) hlim, hc, coe_neg,
-    sub_neg_eq_add,
-    circleCosTwoMax_add_coe, show r₀ + 2 * π / 3 + π / 3 = r₀ + π by ring,
-    circleCosTwoMax_add_pi, circleCosTwoMax_inj]
+    (by rw [hc, abs_neg, abs_of_pos (by positivity)]; linarith [pi_pos]) hlim, hc,
+    circleCosTwoMax_sub_coe, show r₀ + 2 * π / 3 - -(π / 3) = r₀ + π by ring]
+  simp
 
 end Examples
 

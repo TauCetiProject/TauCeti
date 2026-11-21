@@ -455,13 +455,12 @@ theorem circleContinuationSlope_eq_zero {δ : ℝ} {r : ℝ → ℝ} {t θ : ℝ
     (h : sin (2 * (θ - r t)) = 0) : circleContinuationSlope δ r t θ = 0 := by
   simp [circleContinuationSlope_def, h]
 
-/-- The slope is `2π`-periodic in the angle, so translating a solution by a multiple of `2π` gives
-a solution: the equation descends to the circle. -/
-theorem circleContinuationSlope_add_int_mul_two_pi (δ : ℝ) (r : ℝ → ℝ) (t θ : ℝ) (m : ℤ) :
-    circleContinuationSlope δ r t (θ + m * (2 * π)) = circleContinuationSlope δ r t θ := by
+/-- The slope is `π`-periodic in the angle, so translating a solution by a multiple of `π` gives
+a solution: in particular, the equation descends to the circle. -/
+theorem circleContinuationSlope_add_int_mul_pi (δ : ℝ) (r : ℝ → ℝ) (t θ : ℝ) (m : ℤ) :
+    circleContinuationSlope δ r t (θ + m * π) = circleContinuationSlope δ r t θ := by
   rw [circleContinuationSlope_def, circleContinuationSlope_def,
-    show 2 * (θ + m * (2 * π) - r t) = 2 * (θ - r t) + ((2 * m : ℤ) : ℝ) * (2 * π) by
-      push_cast; ring, sin_add_int_mul_two_pi]
+    show 2 * (θ + m * π - r t) = 2 * (θ - r t) + m * (2 * π) by ring, sin_add_int_mul_two_pi]
 
 /-- The constant angle `m` solves the slope equation at the parameters where
 `sin (2 (m - r t)) = 0`. -/
