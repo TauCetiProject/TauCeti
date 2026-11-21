@@ -144,7 +144,7 @@ theorem contDiff_of_iteratedFDeriv_norm_rpow_bound {f : E → F} {k : ℕ} {p : 
       simp [h0]
     | succ j ih =>
       obtain ⟨C, hC⟩ := hb j (by omega)
-      have hder := hasFDerivAt_zero_of_norm_rpow_bound (ih (by omega)) hC (by
+      have hder := hasFDerivAt_zero_of_norm_rpow_bound (𝕜 := ℝ) (ih (by omega)) hC (by
         have : (j : ℝ) + 1 ≤ k := by exact_mod_cast hj
         linarith : 1 < p - j)
       rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, hder.fderiv]

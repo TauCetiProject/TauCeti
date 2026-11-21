@@ -17,7 +17,7 @@ A function that is `C¹` on a punctured neighbourhood of a point, has a derivati
 and whose derivative converges to it along the punctured neighbourhoods, is `C¹` at the point
 (`TauCeti.contDiffAt_one_of_tendsto_fderiv`).
 
-A map between real normed spaces vanishing at `0` which is `O(‖x‖ ^ p)` on a punctured
+A map between normed spaces vanishing at `0` which is `O(‖x‖ ^ p)` on a punctured
 neighbourhood of `0`, for some `p > 1`, is differentiable at `0` with derivative `0`
 (`TauCeti.hasFDerivAt_zero_of_isBigO_rpow`), in particular under a global bound
 `‖f x‖ ≤ C ‖x‖ ^ p` (`TauCeti.hasFDerivAt_zero_of_norm_rpow_bound`).
@@ -50,19 +50,12 @@ theorem contDiffAt_one_of_tendsto_fderiv (hf : ∀ᶠ y in 𝓝[≠] x, ContDiff
     · rwa [hx.fderiv]
     · exact ((hfu y hy hyx).differentiableAt one_ne_zero).hasFDerivAt
 
-end General
-
-section Real
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
-
 /-- A map vanishing at zero which is `O(‖x‖ ^ p)` on a punctured neighbourhood of zero, for some
 `p > 1`, has zero derivative there. Neither the source nor the target needs finite dimensionality
 or completeness. -/
-theorem hasFDerivAt_zero_of_isBigO_rpow {f : E → F} {p : ℝ} (h0 : f 0 = 0)
+theorem hasFDerivAt_zero_of_isBigO_rpow {p : ℝ} (h0 : f 0 = 0)
     (hf : f =O[𝓝[≠] 0] fun x ↦ ‖x‖ ^ p) (hp : 1 < p) :
-    HasFDerivAt f (0 : E →L[ℝ] F) 0 := by
+    HasFDerivAt f (0 : E →L[𝕜] F) 0 := by
   rw [hasFDerivAt_iff_isLittleO_nhds_zero]
   simp only [zero_add, h0, sub_zero, zero_apply]
   rw [← nhdsNE_sup_pure]
@@ -82,13 +75,13 @@ theorem hasFDerivAt_zero_of_isBigO_rpow {f : E → F} {p : ℝ} (h0 : f 0 = 0)
 
 /-- A map vanishing at zero with a norm bound of degree greater than one has zero derivative
 there. Neither the source nor the target needs finite dimensionality or completeness. -/
-theorem hasFDerivAt_zero_of_norm_rpow_bound {f : E → F} {p C : ℝ} (h0 : f 0 = 0)
+theorem hasFDerivAt_zero_of_norm_rpow_bound {p C : ℝ} (h0 : f 0 = 0)
     (hb : ∀ x ≠ 0, ‖f x‖ ≤ C * ‖x‖ ^ p) (hp : 1 < p) :
-    HasFDerivAt f (0 : E →L[ℝ] F) 0 :=
+    HasFDerivAt f (0 : E →L[𝕜] F) 0 :=
   hasFDerivAt_zero_of_isBigO_rpow h0 (IsBigO.of_bound C (eventually_nhdsWithin_of_forall
     fun x hx ↦ by rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) p)]; exact hb x hx))
     hp
 
-end Real
+end General
 
 end TauCeti
