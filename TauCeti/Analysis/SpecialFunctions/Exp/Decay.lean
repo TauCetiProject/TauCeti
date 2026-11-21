@@ -16,6 +16,7 @@ subsets of the real line. Its norm is the real exponential with rate `a.re`.
 
 ## Main results
 
+* `Complex.norm_exp_neg_mul_ofReal`: `‖exp (-(a r))‖ = exp (-(a.re r))` for real `r`.
 * `TauCeti.cexp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: two-sided decay with a
   complex rate of positive real part.
 -/
@@ -23,6 +24,11 @@ subsets of the real line. Its norm is the real exponential with rate `a.re`.
 public section
 
 open Filter Asymptotics
+
+/-- For real `r`, the norm of `exp (-(a r))` is the real exponential `exp (-(a.re r))`. -/
+theorem Complex.norm_exp_neg_mul_ofReal (a : ℂ) (r : ℝ) :
+    ‖Complex.exp (-(a * r))‖ = Real.exp (-(a.re * r)) := by
+  simp only [Complex.norm_exp, Complex.neg_re, Complex.re_mul_ofReal]
 
 namespace TauCeti
 
@@ -40,7 +46,7 @@ theorem cexp_neg_mul_abs_isLittleO_abs_rpow_cocompact
     (fun x : ℝ => Complex.exp (-(a * |x|)))
       =o[cocompact ℝ] (fun x : ℝ => |x| ^ s) := by
   apply IsLittleO.of_norm_left
-  simpa only [Complex.norm_exp, Complex.neg_re, Complex.re_mul_ofReal] using
+  simpa only [Complex.norm_exp_neg_mul_ofReal] using
     (exp_neg_mul_abs_isLittleO_abs_rpow_cocompact ha s)
 
 end TauCeti

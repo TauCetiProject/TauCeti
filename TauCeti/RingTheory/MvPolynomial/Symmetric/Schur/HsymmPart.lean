@@ -203,9 +203,9 @@ theorem hsymmPart_eq_sum_kostkaNumber_smul_schurPoly (σ : Type*) [Fintype σ] [
     hsymmPart σ R ν = ∑ μ : n.Partition, (kostkaNumber μ ν : R) • schurPoly σ R μ := by
   -- Expand along the row lengths `l` of the shape of `ν`.
   set l := (ofPartition ν).rowLens with hl
-  have hl_apply (i : Fin l.length) : rowLenWeight l.length (ofPartition ν) i = l[i.1] := by
+  have hl_apply (i : Fin l.length) : rowLenWeight l.length (ofPartition ν) i = l[i.val] := by
     rw [rowLenWeight_apply, ← YoungDiagram.getD_rowLens]
-    exact List.getD_eq_getElem l 0 i.2
+    exact List.getD_eq_getElem l 0 i.isLt
   have hdeg : (rowLenWeight l.length (ofPartition ν)).degree = n := by
     rw [Finsupp.degree_eq_sum]
     simp only [hl_apply]
@@ -229,7 +229,8 @@ theorem coeff_hsymmPart {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ} (ν
       ∑ μ : n.Partition, (kostkaNumber μ ν * diagramKostkaNumber (ofPartition μ)
         (Finsupp.mapDomain (fun x => (Fintype.equivFin σ x : ℕ)) d) : R) := by
   rw [hsymmPart_eq_sum_kostkaNumber_smul_schurPoly, coeff_sum]
-  exact sum_congr rfl fun μ _ => by rw [coeff_smul, coeff_schurPoly, smul_eq_mul]
+  exact sum_congr rfl fun μ _ => by
+    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_schurPoly, smul_eq_mul]
 
 /-- **The coefficients of `h_ν` at partitions**: the coefficient of the monomial recording the parts
 of `ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`.  The row bound is what makes the monomial record all of

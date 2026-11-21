@@ -98,9 +98,9 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
   let Ω : Opens ℂ := ⟨⋃ i, U i, isOpen_iUnion hU⟩
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   let V : ι → Set Ω := fun i ↦ Subtype.val ⁻¹' U i
-  have hVopen : ∀ i, IsOpen (V i) := fun i ↦ (hU i).preimage continuous_subtype_val
+  have hVopen : ∀ i, IsOpen (V i) := fun i ↦ (hU i).preimage continuous_subtypeVal
   have hVcover : (univ : Set Ω) ⊆ ⋃ i, V i := fun x _ ↦ by
-    obtain ⟨i, hi⟩ := mem_iUnion.1 x.2
+    obtain ⟨i, hi⟩ := mem_iUnion.1 x.property
     exact mem_iUnion.2 ⟨i, hi⟩
   obtain ⟨ρ, hρ⟩ :=
     SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, ℂ) isClosed_univ V hVopen hVcover

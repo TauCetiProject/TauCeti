@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Prod
--- Read the inherited global model-space charts in the coordinate calculation.
-import all TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Basic
 
 /-!
 # Isometries of `SL₂ℝ~` over the identity of the hyperbolic plane
@@ -37,54 +35,34 @@ namespace TauCeti.SL2Tilde
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
-private def coordinateMap (Φ : Isom J SL2Tilde) : P → P :=
-  toProd ∘ Φ ∘ toProd.symm
-
-private theorem differentiable_coordinateMap (Φ : Isom J SL2Tilde) :
-    Differentiable ℝ (coordinateMap Φ) := by
-  -- SL2Tilde has exactly the charts of P; its coordinate equivalence is the identity.
-  exact Φ.toDiffeomorph.contMDiff.contDiff.differentiable (by simp)
-
--- This coordinate calculation follows the inherited-chart method of
--- TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Connection.
-private theorem coordinate_derivative (Φ : Isom J SL2Tilde) (p u : P) :
-    tangentSpaceCastModel J (Φ (toProd.symm p))
-      (mfderiv J J Φ (toProd.symm p)
-        ((tangentSpaceCastModel J (toProd.symm p)).symm u)) =
-      fderiv ℝ (coordinateMap Φ) p u := by
-  have h := DFunLike.congr_fun (mfderiv_eq_fderiv (𝕜 := ℝ) (f := coordinateMap Φ) (x := p)) u
-  -- The inherited atlas makes both tangent identifications the identity on coordinates.
-  convert h using 1 <;> rfl
-
-private theorem metric_coordinateMap (Φ : Isom J SL2Tilde) (p u v : P) :
-    exp (-2 * (coordinateMap Φ p).2.1) * (fderiv ℝ (coordinateMap Φ) p u).1 *
-        (fderiv ℝ (coordinateMap Φ) p v).1 +
-      (fderiv ℝ (coordinateMap Φ) p u).2.1 * (fderiv ℝ (coordinateMap Φ) p v).2.1 +
-      ((fderiv ℝ (coordinateMap Φ) p u).2.2 +
-          exp (-(coordinateMap Φ p).2.1) * (fderiv ℝ (coordinateMap Φ) p u).1) *
-        ((fderiv ℝ (coordinateMap Φ) p v).2.2 +
-          exp (-(coordinateMap Φ p).2.1) * (fderiv ℝ (coordinateMap Φ) p v).1) =
+private theorem metric_toProd_conj (Φ : Isom J SL2Tilde) (p u v : P) :
+    exp (-2 * (toProd.conj Φ p).2.1) * (fderiv ℝ (toProd.conj Φ) p u).1 *
+        (fderiv ℝ (toProd.conj Φ) p v).1 +
+      (fderiv ℝ (toProd.conj Φ) p u).2.1 * (fderiv ℝ (toProd.conj Φ) p v).2.1 +
+      ((fderiv ℝ (toProd.conj Φ) p u).2.2 +
+          exp (-(toProd.conj Φ p).2.1) * (fderiv ℝ (toProd.conj Φ) p u).1) *
+        ((fderiv ℝ (toProd.conj Φ) p v).2.2 +
+          exp (-(toProd.conj Φ p).2.1) * (fderiv ℝ (toProd.conj Φ) p v).1) =
       exp (-2 * p.2.1) * u.1 * v.1 + u.2.1 * v.2.1 +
         (u.2.2 + exp (-p.2.1) * u.1) * (v.2.2 + exp (-p.2.1) * v.1) := by
   have h := Φ.inner_mfderiv (toProd.symm p)
     ((tangentSpaceCastModel J (toProd.symm p)).symm u)
     ((tangentSpaceCastModel J (toProd.symm p)).symm v)
-  rw [inner_def, inner_def] at h
-  -- The model-space atlas identifies the manifold derivative and the coordinate derivative.
-  rw [coordinate_derivative, coordinate_derivative] at h
-  simpa only [ContinuousLinearEquiv.apply_symm_apply, y_toProd_symm,
-    coordinateMap, Function.comp_apply, fst_snd_toProd] using h
+  rw [inner_def, inner_def, ← fderiv_toProd_conj_apply Φ, ← fderiv_toProd_conj_apply Φ] at h
+  simpa only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply, y_toProd_symm,
+    Equiv.conj_apply, fst_snd_toProd] using h
 
 private theorem coordinate_derivative_base (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (p u : P) :
-    (fderiv ℝ (coordinateMap Φ) p u).1 = u.1 ∧
-      (fderiv ℝ (coordinateMap Φ) p u).2.1 = u.2.1 := by
-  have hdx := ((differentiable_coordinateMap Φ p).hasFDerivAt.fst)
-  have hdy := ((differentiable_coordinateMap Φ p).hasFDerivAt.snd.fst)
-  have hfx : (fun q => (coordinateMap Φ q).1) = fun q => q.1 :=
-    funext fun q => hx (toProd.symm q)
-  have hfy : (fun q => (coordinateMap Φ q).2.1) = fun q => q.2.1 :=
-    funext fun q => hy (toProd.symm q)
+    (fderiv ℝ (toProd.conj Φ) p u).1 = u.1 ∧
+      (fderiv ℝ (toProd.conj Φ) p u).2.1 = u.2.1 := by
+  have hΦ : ContDiff ℝ ∞ (toProd.conj Φ) := contMDiff_iff_contDiff_toProd_conj.mp Φ.contMDiff
+  have hdx := (hΦ.differentiable (by simp) p).hasFDerivAt.fst
+  have hdy := (hΦ.differentiable (by simp) p).hasFDerivAt.snd.fst
+  have hfx : (fun q => (toProd.conj Φ q).1) = fun q => q.1 :=
+    funext fun q => by simp [hx]
+  have hfy : (fun q => (toProd.conj Φ q).2.1) = fun q => q.2.1 :=
+    funext fun q => by simp [hy]
   rw [hfx] at hdx
   rw [hfy] at hdy
   exact ⟨DFunLike.congr_fun (hdx.unique hasFDerivAt_fst) u,
@@ -93,17 +71,18 @@ private theorem coordinate_derivative_base (Φ : Isom J SL2Tilde)
 
 private theorem coordinate_derivative_y (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (p : P) :
-    (fderiv ℝ (coordinateMap Φ) p (0, 1, 0)).2.2 = 0 := by
-  have h := metric_coordinateMap Φ p (0, 1, 0) (0, 1, 0)
+    (fderiv ℝ (toProd.conj Φ) p (0, 1, 0)).2.2 = 0 := by
+  have h := metric_toProd_conj Φ p (0, 1, 0) (0, 1, 0)
   obtain ⟨h₁, h₂⟩ := coordinate_derivative_base Φ hx hy p (0, 1, 0)
   simp only [h₁, h₂, mul_zero, zero_add, mul_one, add_zero] at h
-  nlinarith [sq_nonneg ((fderiv ℝ (coordinateMap Φ) p (0, 1, 0)).2.2)]
+  nlinarith [sq_nonneg ((fderiv ℝ (toProd.conj Φ) p (0, 1, 0)).2.2)]
 
-private theorem coordinateMap_z_independent_y (Φ : Isom J SL2Tilde)
+private theorem toProd_conj_z_independent_y (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (a b c : ℝ) :
-    (coordinateMap Φ (a, b, c)).2.2 = (coordinateMap Φ (a, 0, c)).2.2 := by
-  have hd (t : ℝ) : HasDerivAt (fun t => (coordinateMap Φ (a, t, c)).2.2) 0 t := by
-    have h := ((differentiable_coordinateMap Φ (a, t, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
+    (toProd.conj Φ (a, b, c)).2.2 = (toProd.conj Φ (a, 0, c)).2.2 := by
+  have hΦ : ContDiff ℝ ∞ (toProd.conj Φ) := contMDiff_iff_contDiff_toProd_conj.mp Φ.contMDiff
+  have hd (t : ℝ) : HasDerivAt (fun t => (toProd.conj Φ (a, t, c)).2.2) 0 t := by
+    have h := ((hΦ.differentiable (by simp) (a, t, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
       ((hasDerivAt_const t a).prodMk ((hasDerivAt_id t).prodMk (hasDerivAt_const t c)))
     simpa only [Function.comp_def, id_eq, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.coe_snd', coordinate_derivative_y Φ hx hy] using h
@@ -112,29 +91,30 @@ private theorem coordinateMap_z_independent_y (Φ : Isom J SL2Tilde)
 
 private theorem coordinate_derivative_x_independent_y (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (a b c : ℝ) :
-    (fderiv ℝ (coordinateMap Φ) (a, b, c) (1, 0, 0)).2.2 =
-      (fderiv ℝ (coordinateMap Φ) (a, 0, c) (1, 0, 0)).2.2 := by
-  have hd (b t : ℝ) : HasDerivAt (fun t => (coordinateMap Φ (t, b, c)).2.2)
-      (fderiv ℝ (coordinateMap Φ) (t, b, c) (1, 0, 0)).2.2 t := by
+    (fderiv ℝ (toProd.conj Φ) (a, b, c) (1, 0, 0)).2.2 =
+      (fderiv ℝ (toProd.conj Φ) (a, 0, c) (1, 0, 0)).2.2 := by
+  have hΦ : ContDiff ℝ ∞ (toProd.conj Φ) := contMDiff_iff_contDiff_toProd_conj.mp Φ.contMDiff
+  have hd (b t : ℝ) : HasDerivAt (fun t => (toProd.conj Φ (t, b, c)).2.2)
+      (fderiv ℝ (toProd.conj Φ) (t, b, c) (1, 0, 0)).2.2 t := by
     simpa only [Function.comp_def, id_eq, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.coe_snd'] using
-      ((differentiable_coordinateMap Φ (t, b, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
+      ((hΦ.differentiable (by simp) (t, b, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
         ((hasDerivAt_id t).prodMk ((hasDerivAt_const t b).prodMk (hasDerivAt_const t c)))
-  have heq : (fun t => (coordinateMap Φ (t, b, c)).2.2) =
-      (fun t => (coordinateMap Φ (t, 0, c)).2.2) :=
-    funext fun t => coordinateMap_z_independent_y Φ hx hy t b c
+  have heq : (fun t => (toProd.conj Φ (t, b, c)).2.2) =
+      (fun t => (toProd.conj Φ (t, 0, c)).2.2) :=
+    funext fun t => toProd_conj_z_independent_y Φ hx hy t b c
   exact ((heq ▸ hd b a).unique (hd 0 a))
 
 private theorem coordinate_derivative_x (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (p : P) :
-    (fderiv ℝ (coordinateMap Φ) p (1, 0, 0)).2.2 = 0 := by
-  have hnorm (b : ℝ) := metric_coordinateMap Φ (p.1, b, p.2.2) (1, 0, 0) (1, 0, 0)
+    (fderiv ℝ (toProd.conj Φ) p (1, 0, 0)).2.2 = 0 := by
+  have hnorm (b : ℝ) := metric_toProd_conj Φ (p.1, b, p.2.2) (1, 0, 0) (1, 0, 0)
   have hbase (b : ℝ) := coordinate_derivative_base Φ hx hy (p.1, b, p.2.2) (1, 0, 0)
-  have hheight (b : ℝ) : (coordinateMap Φ (p.1, b, p.2.2)).2.1 = b :=
-    hy (toProd.symm (p.1, b, p.2.2))
+  have hheight (b : ℝ) : (toProd.conj Φ (p.1, b, p.2.2)).2.1 = b := by
+    simp [hy]
   have hsq (b : ℝ) :
-      (fderiv ℝ (coordinateMap Φ) (p.1, 0, p.2.2) (1, 0, 0)).2.2 ^ 2 +
-        2 * exp (-b) * (fderiv ℝ (coordinateMap Φ) (p.1, 0, p.2.2) (1, 0, 0)).2.2 = 0 := by
+      (fderiv ℝ (toProd.conj Φ) (p.1, 0, p.2.2) (1, 0, 0)).2.2 ^ 2 +
+        2 * exp (-b) * (fderiv ℝ (toProd.conj Φ) (p.1, 0, p.2.2) (1, 0, 0)).2.2 = 0 := by
     have h := hnorm b
     rw [hheight b, (hbase b).1, (hbase b).2,
       coordinate_derivative_x_independent_y Φ hx hy] at h
@@ -150,9 +130,9 @@ private theorem coordinate_derivative_x (Φ : Isom J SL2Tilde)
 
 private theorem coordinate_derivative_z (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (p : P) :
-    (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2 = 1 := by
-  have h := metric_coordinateMap Φ p (1, 0, 0) (0, 0, 1)
-  have hy' : (coordinateMap Φ p).2.1 = p.2.1 := hy (toProd.symm p)
+    (fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).2.2 = 1 := by
+  have h := metric_toProd_conj Φ p (1, 0, 0) (0, 0, 1)
+  have hy' : (toProd.conj Φ p).2.1 = p.2.1 := by simp [hy]
   rw [hy', (coordinate_derivative_base Φ hx hy p (1, 0, 0)).1,
     (coordinate_derivative_base Φ hx hy p (1, 0, 0)).2,
     (coordinate_derivative_base Φ hx hy p (0, 0, 1)).1,
@@ -163,7 +143,7 @@ private theorem coordinate_derivative_z (Φ : Isom J SL2Tilde)
 
 private theorem coordinate_derivative_eq_id (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (p : P) :
-    fderiv ℝ (coordinateMap Φ) p = ContinuousLinearMap.id ℝ P := by
+    fderiv ℝ (toProd.conj Φ) p = ContinuousLinearMap.id ℝ P := by
   apply ContinuousLinearMap.ext
   intro u
   apply Prod.ext (coordinate_derivative_base Φ hx hy p u).1
@@ -182,13 +162,12 @@ theorem eq_translate_of_base_eq (Φ : Isom J SL2Tilde)
     Φ = translate 0 0 (Φ (mk 0 0 0)).z := by
   let c := (Φ (mk 0 0 0)).z
   have hg : Differentiable ℝ (fun p : P => p + (0, 0, c)) := by fun_prop
-  have hzero : coordinateMap Φ (0, 0, 0) = (0, 0, 0) + (0, 0, c) := by
-    apply Prod.ext
-    · simpa [coordinateMap, mk] using hx (mk 0 0 0)
-    · apply Prod.ext
-      · simpa [coordinateMap, mk] using hy (mk 0 0 0)
-      · simp [coordinateMap, c, mk]
-  have heq := eq_of_fderiv_eq (differentiable_coordinateMap Φ) hg (fun p => by
+  have h0 : toProd.symm (0, 0, 0) = mk 0 0 0 := by
+    ext <;> simp
+  have hzero : toProd.conj Φ (0, 0, 0) = (0, 0, 0) + (0, 0, c) := by
+    ext <;> simp [h0, hx, hy, c]
+  have hΦ : ContDiff ℝ ∞ (toProd.conj Φ) := contMDiff_iff_contDiff_toProd_conj.mp Φ.contMDiff
+  have heq := eq_of_fderiv_eq (hΦ.differentiable (by simp)) hg (fun p => by
     simp only [coordinate_derivative_eq_id Φ hx hy,
       fderiv_add_const, fderiv_fun_id]) (0, 0, 0) hzero
   apply RiemannianIsometry.ext
@@ -197,7 +176,7 @@ theorem eq_translate_of_base_eq (Φ : Isom J SL2Tilde)
   · simp [hx]
   · simp [hy]
   · have h := congrArg (fun q : P => q.2.2) (congrFun heq (toProd p))
-    simpa only [coordinateMap, Function.comp_apply, Equiv.symm_apply_apply,
+    simpa only [Equiv.conj_apply, Equiv.symm_apply_apply,
       snd_snd_toProd, Prod.snd_add, c, z_translate] using h
 
 /-- The isometries over the identity of the hyperbolic plane are exactly the fibre translations,

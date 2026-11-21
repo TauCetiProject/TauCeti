@@ -112,7 +112,7 @@ theorem torsion_eq_torsionBy_X_pow (hd : d ≠ 0)
   let T := Submodule.torsion k[X] M
   have hT : Module.IsTorsion' T (Submonoid.powers (X : k[X])) := by
     intro x
-    have hx : (x : M) ∈ Submodule.torsion k[X] M := x.2
+    have hx : (x : M) ∈ Submodule.torsion k[X] M := x.property
     rw [torsion_eq_torsion'_powers_X hd hX, Submodule.mem_torsion'_iff] at hx
     obtain ⟨a, ha⟩ := hx
     exact ⟨a, Subtype.ext ha⟩

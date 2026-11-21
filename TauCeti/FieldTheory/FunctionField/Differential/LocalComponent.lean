@@ -136,7 +136,7 @@ private theorem exists_finset_repartitionDualComponent {D : Divisor k F}
       (Function.support fun P ↦ repartitionDualComponent ω P ((a : Place k F → F) P)) ⊆ s ∧
         ω a = ∑ P ∈ s, repartitionDualComponent ω P ((a : Place k F → F) P) := by
   classical
-  obtain ⟨E, hE⟩ := exists_mem_adeleFiltration a.2
+  obtain ⟨E, hE⟩ := exists_mem_adeleFiltration a.property
   have hbound : ∀ P ∉ (E - D).support,
       P.valuation ((a : Place k F → F) P) ≤ WithZero.exp (D.coeff P) := by
     intro P hP

@@ -75,7 +75,7 @@ Not `@[simp]`: `mpullback_apply` and `Manifold.mfderiv_subtype_val` already simp
 left-hand side. -/
 theorem mpullback_subtype_val_complexDx_apply (z : U)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.1 z v =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.val z v =
       (NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z (v 0))).re := by
   rw [mpullback_apply, SmoothForm.complexDx_apply]
   simp [Manifold.mfderiv_subtype_val]
@@ -85,7 +85,7 @@ Not `@[simp]`: `mpullback_apply` and `Manifold.mfderiv_subtype_val` already simp
 left-hand side. -/
 theorem mpullback_subtype_val_complexDy_apply (z : U)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.1 z v =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.val z v =
       (NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z (v 0))).im := by
   rw [mpullback_apply, SmoothForm.complexDy_apply]
   simp [Manifold.mfderiv_subtype_val]
@@ -95,7 +95,7 @@ Not `@[simp]`: `mpullback_apply` and `Manifold.mfderiv_subtype_val` already simp
 left-hand side. -/
 theorem mpullback_subtype_val_complexDz_apply (z : U)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.1 z v =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val z v =
       NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z (v 0)) := by
   rw [mpullback_apply, SmoothForm.complexDz_apply]
   simp [Manifold.mfderiv_subtype_val]
@@ -105,7 +105,7 @@ Not `@[simp]`: `mpullback_apply` and `Manifold.mfderiv_subtype_val` already simp
 left-hand side. -/
 theorem mpullback_subtype_val_complexDzBar_apply (z : U)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.1 z v =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.val z v =
       conj (NormedSpace.fromTangentSpace (z : ℂ)
         (Manifold.tangentSpaceOpenEquiv z (v 0))) := by
   rw [mpullback_apply, SmoothForm.complexDzBar_apply]
@@ -115,7 +115,7 @@ theorem mpullback_subtype_val_complexDzBar_apply (z : U)
 theorem mpullback_subtype_val_complexDx_wedge_complexDy_apply (z : U)
     (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
     mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-        (RoughForm.wedge SmoothForm.complexDx.1 SmoothForm.complexDy.1) z ![v, w] =
+        (RoughForm.wedge SmoothForm.complexDx.val SmoothForm.complexDy.val) z ![v, w] =
       (NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z v)).re *
           (NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z w)).im -
         (NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z w)).re *
@@ -127,8 +127,8 @@ theorem mpullback_subtype_val_complexDx_wedge_complexDy_apply (z : U)
 theorem mpullback_subtype_val_complexDz_wedgeWith_complexDzBar_apply (z : U)
     (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
     mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-        (RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ) SmoothForm.complexDz.1
-          SmoothForm.complexDzBar.1) z ![v, w] =
+        (RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ) SmoothForm.complexDz.val
+          SmoothForm.complexDzBar.val) z ![v, w] =
       (-2 * Complex.I) *
         (((NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z v)).re *
             (NormedSpace.fromTangentSpace (z : ℂ) (Manifold.tangentSpaceOpenEquiv z w)).im -
@@ -141,67 +141,67 @@ theorem mpullback_subtype_val_complexDz_wedgeWith_complexDzBar_apply (z : U)
 
 /-- On an open subset `U ⊆ ℂ`, the pullback of `dx` is `d(Re ∘ ι)`. -/
 theorem mpullback_subtype_val_complexDx_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.1 =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ (z : ℂ).re) := by
   rw [SmoothForm.complexDx_eq_mextDeriv]
   exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     ((contMDiff_iff_contDiff.2 (Complex.reCLM.contDiff (n := 1))).mdifferentiable one_ne_zero)
 
 /-- On an open subset `U ⊆ ℂ`, the pullback of `dy` is `d(Im ∘ ι)`. -/
 theorem mpullback_subtype_val_complexDy_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.1 =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ (z : ℂ).im) := by
   rw [SmoothForm.complexDy_eq_mextDeriv]
   exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     ((contMDiff_iff_contDiff.2 (Complex.imCLM.contDiff (n := 1))).mdifferentiable one_ne_zero)
 
 /-- On an open subset `U ⊆ ℂ`, the pullback of `dz` is `d ι`. -/
 theorem mpullback_subtype_val_complexDz_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.1 =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)) := by
   rw [SmoothForm.complexDz_eq_mextDeriv]
   exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtype_val.mdifferentiable one_ne_zero) mdifferentiable_id
+    (contMDiff_subtypeVal.mdifferentiable one_ne_zero) mdifferentiable_id
 
 /-- On an open subset `U ⊆ ℂ`, the pullback of `dbar z` is `d(conj ∘ ι)`. -/
 theorem mpullback_subtype_val_complexDzBar_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.1 =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ conj (z : ℂ)) := by
   rw [SmoothForm.complexDzBar_eq_mextDeriv]
   exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     ((contMDiff_iff_contDiff.2
       ((Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff (n := 1))).mdifferentiable one_ne_zero)
 
 @[simp]
 theorem mextDeriv_mpullback_subtype_val_complexDx :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.1) =
+    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.val) =
       0 :=
   (SmoothForm.complexDx.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDx contMDiff_subtype_val
+    SmoothForm.mextDeriv_complexDx contMDiff_subtypeVal
 
 @[simp]
 theorem mextDeriv_mpullback_subtype_val_complexDy :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.1) =
+    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.val) =
       0 :=
   (SmoothForm.complexDy.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDy contMDiff_subtype_val
+    SmoothForm.mextDeriv_complexDy contMDiff_subtypeVal
 
 @[simp]
 theorem mextDeriv_mpullback_subtype_val_complexDz :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.1) =
+    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val) =
       0 :=
   (SmoothForm.complexDz.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDz contMDiff_subtype_val
+    SmoothForm.mextDeriv_complexDz contMDiff_subtypeVal
 
 @[simp]
 theorem mextDeriv_mpullback_subtype_val_complexDzBar :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.1) =
+    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.val) =
       0 :=
   (SmoothForm.complexDzBar.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDzBar contMDiff_subtype_val
+    SmoothForm.mextDeriv_complexDzBar contMDiff_subtypeVal
 
 end OpenCoords
 
@@ -219,11 +219,11 @@ theorem mextDeriv_ofFunction_opens_complex_real_eq {U : Opens ℂ} {F : Type*}
     mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) v) =
       RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
           (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ fderiv ℝ v' z 1)
-          (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.1) +
+          (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.val) +
         RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
           (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ fderiv ℝ v' z Complex.I)
           (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-            SmoothForm.complexDy.1) := by
+            SmoothForm.complexDy.val) := by
   ext z w
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     Pi.add_apply, ContinuousAlternatingMap.add_apply, RoughForm.wedgeWith_apply',
@@ -250,11 +250,11 @@ theorem mextDeriv_ofFunction_opens_complex_eq_wirtinger {U : Opens ℂ} {W : Typ
       RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
           (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ wirtingerDeriv u' z 1)
           (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-            SmoothForm.complexDz.1) +
+            SmoothForm.complexDz.val) +
         RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
           (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ conjWirtingerDeriv u' z 1)
           (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-            SmoothForm.complexDzBar.1) := by
+            SmoothForm.complexDzBar.val) := by
   ext z w
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     Pi.add_apply, ContinuousAlternatingMap.add_apply, RoughForm.wedgeWith_apply',
@@ -339,7 +339,7 @@ theorem roughForm_two_eq_wedgeWith_complexDx_wedge_complexDy {U : Opens ℂ} {F 
     η = RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
       (RoughForm.ofFunction 𝓘(ℝ, ℂ) (planarTwoFormCoeff η))
       (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-        (RoughForm.wedge SmoothForm.complexDx.1 SmoothForm.complexDy.1)) := by
+        (RoughForm.wedge SmoothForm.complexDx.val SmoothForm.complexDy.val)) := by
   funext z
   apply ContinuousAlternatingMap.toAlternatingMap_injective
   let b : Module.Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) z) :=
@@ -384,7 +384,7 @@ theorem planarTwoFormCoeff_wedgeWith_complexDx_wedge_complexDy {U : Opens ℂ} {
       (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
         (RoughForm.ofFunction 𝓘(ℝ, ℂ) h)
         (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-          (RoughForm.wedge SmoothForm.complexDx.1 SmoothForm.complexDy.1))) z = h z := by
+          (RoughForm.wedge SmoothForm.complexDx.val SmoothForm.complexDy.val))) z = h z := by
   rw [planarTwoFormCoeff_eq_apply_symm, RoughForm.wedgeWith_apply',
     ContinuousAlternatingMap.pairedWedge_apply_zero_left]
   simp only [RoughForm.ofFunction_apply, ContinuousLinearMap.flip_apply,
@@ -410,7 +410,7 @@ theorem planarTwoFormCoeff_wedgeWith_complexDz_wedgeWith_complexDzBar {U : Opens
         (RoughForm.ofFunction 𝓘(ℝ, ℂ) h)
         (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
           (RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ)
-            SmoothForm.complexDz.1 SmoothForm.complexDzBar.1))) z = (-2 * Complex.I) • h z := by
+            SmoothForm.complexDz.val SmoothForm.complexDzBar.val))) z = (-2 * Complex.I) • h z := by
   rw [planarTwoFormCoeff_eq_apply_symm, RoughForm.wedgeWith_apply',
     ContinuousAlternatingMap.pairedWedge_apply_zero_left]
   simp only [RoughForm.ofFunction_apply, ContinuousLinearMap.flip_apply,
@@ -428,7 +428,7 @@ theorem roughForm_two_eq_wedgeWith_complexDz_wedgeWith_complexDzBar {U : Opens �
         (-2 * Complex.I)⁻¹ • planarTwoFormCoeff η z)
       (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
         (RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ)
-          SmoothForm.complexDz.1 SmoothForm.complexDzBar.1)) := by
+          SmoothForm.complexDz.val SmoothForm.complexDzBar.val)) := by
   apply planarTwoFormCoeff_injective
   funext z
   rw [planarTwoFormCoeff_wedgeWith_complexDz_wedgeWith_complexDzBar, smul_smul,
@@ -471,7 +471,7 @@ private theorem mdifferentiableAt_mpullback_subtype_val {U : Opens ℂ} {G : Typ
     MDifferentiableAt 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ [⋀^Fin 1]→L[ℝ] G))
       (fun y : U ↦ Bundle.TotalSpace.mk' (ℂ [⋀^Fin 1]→L[ℝ] G) y
         (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) α y)) z :=
-  ((hα.mpullback (contMDiff_subtype_val (n := ∞))).contMDiff z).mdifferentiableAt (by simp)
+  ((hα.mpullback (contMDiff_subtypeVal (n := ∞))).contMDiff z).mdifferentiableAt (by simp)
 
 private theorem differentiableWithinAt_inChartAt_wedgeWith_ofFunction {U : Opens ℂ}
     {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
@@ -506,7 +506,7 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDz {U : Opens ℂ} {W : Ty
       (mextDeriv (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
         (RoughForm.ofFunction 𝓘(ℝ, ℂ) g)
         (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-          SmoothForm.complexDz.1))) z =
+          SmoothForm.complexDz.val))) z =
       (2 * Complex.I) • conjWirtingerDeriv g' z 1 := by
   rw [planarTwoFormCoeff_eq_apply_symm,
     mextDeriv_wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip (mdifferentiableAt_ofFunction hg)
@@ -533,7 +533,7 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDzBar {U : Opens ℂ} {W :
       (mextDeriv (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
         (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
         (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-          SmoothForm.complexDzBar.1))) z =
+          SmoothForm.complexDzBar.val))) z =
       (-2 * Complex.I) • wirtingerDeriv f' z 1 := by
   rw [planarTwoFormCoeff_eq_apply_symm,
     mextDeriv_wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip (mdifferentiableAt_ofFunction hf)
@@ -563,11 +563,11 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDx_add_complexDy {U : Open
         (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) a)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-              SmoothForm.complexDx.1) +
+              SmoothForm.complexDx.val) +
           RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) b)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-              SmoothForm.complexDy.1))) z =
+              SmoothForm.complexDy.val))) z =
       fderiv ℝ b' z 1 - fderiv ℝ a' z Complex.I := by
   rw [planarTwoFormCoeff_eq_apply_symm,
     mextDeriv_add
@@ -610,11 +610,11 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_add_eq_zero {U : Opens �
         (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) g)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-              SmoothForm.complexDz.1) +
+              SmoothForm.complexDz.val) +
           RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-              SmoothForm.complexDzBar.1)) = 0 := by
+              SmoothForm.complexDzBar.val)) = 0 := by
   let f' : ℂ → W := Subtype.val.extend f 0
   have hf'_eq (z : U) : f' z = f z := Subtype.val_injective.extend_apply f 0 z
   have hf' : ContDiffOn ℝ n f' (U : Set ℂ) := hf.contDiffOn_extend_subtypeVal 0
@@ -638,7 +638,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_add_eq_zero {U : Opens �
         SmoothForm.complexDzBar.isSmoothForm),
     ContinuousAlternatingMap.add_apply, ← planarTwoFormCoeff_apply, ← planarTwoFormCoeff_apply,
     planarTwoFormCoeff_mextDeriv_wedgeWith_complexDz (g := g) (g' := g') (fun _ ↦ rfl) hgd,
-    planarTwoFormCoeff_mextDeriv_wedgeWith_complexDzBar hf'_eq hfd, hsol z z.2, ← add_smul]
+    planarTwoFormCoeff_mextDeriv_wedgeWith_complexDzBar hf'_eq hfd, hsol z z.property, ← add_smul]
   simp
 
 /-- **Form-level closed completion (scalar `ℂ` multiplication pairing).** For any `C^n`
@@ -653,11 +653,11 @@ theorem exists_contMDiff_mextDeriv_mul_complexDz_add_eq_zero {U : Opens ℂ} {m 
         (RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ)
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) g)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-              SmoothForm.complexDz.1) +
+              SmoothForm.complexDz.val) +
           RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ)
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-              SmoothForm.complexDzBar.1)) = 0 := by
+              SmoothForm.complexDzBar.val)) = 0 := by
   have hmul :
       (ContinuousLinearMap.lsmul ℝ ℂ (E := ℂ)).flip = ContinuousLinearMap.mul ℝ ℂ := by
     ext a b
@@ -675,7 +675,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_eq {U : Opens ℂ} {W : T
         (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
           (RoughForm.ofFunction 𝓘(ℝ, ℂ) g)
           (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-            SmoothForm.complexDz.1)) = η := by
+            SmoothForm.complexDz.val)) = η := by
   let h : U → W := fun z ↦ (2 * Complex.I)⁻¹ • planarTwoFormCoeff η z
   have hh : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, W) n h :=
     (contMDiff_iff_contDiff.2
@@ -694,7 +694,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_eq {U : Opens ℂ} {W : T
   have hgd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) g z :=
     (hg z).mdifferentiableAt (by exact_mod_cast (zero_lt_one.trans_le hn).ne')
   rw [planarTwoFormCoeff_mextDeriv_wedgeWith_complexDz (g := g) (g' := g') (fun _ ↦ rfl) hgd,
-    hsol z z.2, hh'_eq z]
+    hsol z z.property, hh'_eq z]
   have hne : (2 * Complex.I : ℂ) ≠ 0 := by simp [Complex.I_ne_zero]
   simp only [h, smul_smul, mul_inv_cancel₀ hne, one_smul]
 
@@ -709,14 +709,14 @@ theorem exists_isSmoothForm_mextDeriv_eq_of_opens_complex {U : Opens ℂ} {F : T
   obtain ⟨g, hg, hdg⟩ :=
     exists_contMDiff_mextDeriv_wedgeWith_complexDz_eq (W := Complexification F) hn
       (hη.mapCoeff (Complexification.ofRealLI F).toContinuousLinearMap)
-  set dz := mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.1
+  set dz := mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val
   let βℂ : RoughForm 𝓘(ℝ, ℂ) U (Complexification F) 1 :=
     RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
       (RoughForm.ofFunction 𝓘(ℝ, ℂ) g) dz
   have hβℂ : IsSmoothForm 𝓘(ℝ, ℂ) n βℂ := by
     have hdz : IsSmoothForm 𝓘(ℝ, ℂ) n dz :=
       (SmoothForm.complexDz.isSmoothForm.mpullback
-        (contMDiff_subtype_val (n := ∞))).of_le (by simp)
+        (contMDiff_subtypeVal (n := ∞))).of_le (by simp)
     exact (isSmoothForm_ofFunction_iff.2 hg).wedgeWith _ hdz
   refine ⟨RoughForm.mapCoeff (Complexification.reCLM F) βℂ, hβℂ.mapCoeff _, ?_⟩
   rw [mextDeriv_mapCoeff _ (hβℂ.of_le (by exact_mod_cast hn)), hdg]

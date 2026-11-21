@@ -86,7 +86,7 @@ private theorem directed_carrier {c : Set (PartialLift K L B)} (hc : IsChain (·
 private theorem emb_compat {c : Set (PartialLift K L B)} (hc : IsChain (· ≤ ·) c) (i j : c)
     (h : i.val.carrier.toSubalgebra ≤ j.val.carrier.toSubalgebra) :
     i.val.emb = j.val.emb.comp (Subalgebra.inclusion h) :=
-  AlgHom.ext fun x ↦ (hc.total i.2 j.2).elim (fun hij ↦ (hij.snd x).symm) fun hji ↦ by
+  AlgHom.ext fun x ↦ (hc.total i.property j.property).elim (fun hij ↦ (hij.snd x).symm) fun hji ↦ by
     rw [AlgHom.comp_apply, ← inclusion, ← hji.snd (inclusion h x), inclusion_inclusion,
       inclusion_self, AlgHom.id_apply x]
 
@@ -106,16 +106,16 @@ private theorem union_emb_of_mem {c : Set (PartialLift K L B)} (hc : IsChain (·
 
 private theorem le_union {c : Set (PartialLift K L B)} (hc : IsChain (· ≤ ·) c) [Nonempty c]
     {φ : PartialLift K L B} (hφ : φ ∈ c) : φ ≤ union c hc :=
-  ⟨le_iSup (fun i : c ↦ i.val.carrier) ⟨φ, hφ⟩, fun x ↦ union_emb_of_mem hc _ hφ x.2⟩
+  ⟨le_iSup (fun i : c ↦ i.val.carrier) ⟨φ, hφ⟩, fun x ↦ union_emb_of_mem hc _ hφ x.property⟩
 
 /-- Every point of the union of a chain lies in the domain of one of its members. -/
 private theorem exists_mem_of_mem_union {c : Set (PartialLift K L B)} (hc : IsChain (· ≤ ·) c)
     [Nonempty c] (x : (union c hc).carrier) : ∃ φ ∈ c, (x : L) ∈ φ.carrier := by
   have hx : (x : L) ∈ ⋃ i : c, (i.val.carrier : Set L) := by
     rw [← coe_iSup_of_directed (directed_carrier hc)]
-    exact x.2
+    exact x.property
   obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hx
-  exact ⟨i, i.2, hi⟩
+  exact ⟨i, i.property, hi⟩
 
 /-- A partial lift defined at `a ^ p`, but not at `a`, extends to `a`, with any value `b` such
 that `b ^ p` is the value at `a ^ p`. -/
@@ -130,7 +130,7 @@ private theorem exists_le_of_pow_mem (p : ℕ) [Fact p.Prime] [CharP L p] (φ : 
     _root_.irreducible_X_pow_sub_C_of_prime Fact.out fun c hc ↦ ha <| by
       have hc' : (c : L) ^ p = a ^ p := congrArg Subtype.val hc
       rw [← frobenius_def p, ← frobenius_def p] at hc'
-      exact frobenius_inj L p hc' ▸ c.2
+      exact frobenius_inj L p hc' ▸ c.property
   have hroot : aeval a (X ^ p - C (⟨a ^ p, hap⟩ : M)) = 0 := by simp
   have hint : IsIntegral M a := ⟨_, monic_X_pow_sub_C _ (Fact.out : p.Prime).ne_zero, by
     rwa [← aeval_def]⟩
@@ -229,7 +229,7 @@ private theorem exists_comp_eq_of_charP [CharP L p] (f : L →ₐ[K] B ⧸ I) :
   have htop : φ.carrier = ⊤ := by
     refine eq_top_iff.mpr fun a _ ↦ by_contra fun ha ↦ ?_
     let ap := iterateFrobeniusEquivPowers K L p 1 a
-    have hap : a ^ p ∈ φ.carrier := by simpa [ap] using hφ.prop.1.1 ap.2
+    have hap : a ^ p ∈ φ.carrier := by simpa [ap] using hφ.prop.1.1 ap.property
     obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (f a)
     have hbp : φ.emb ⟨a ^ p, hap⟩ = b ^ p := by
       have h : (⟨a ^ p, hap⟩ : φ.carrier) = inclusion hφ.prop.1.1 ap := Subtype.ext (by simp [ap])

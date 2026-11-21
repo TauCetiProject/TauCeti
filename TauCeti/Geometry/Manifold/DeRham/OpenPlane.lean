@@ -68,7 +68,7 @@ theorem subsingleton_deRhamCohomology_two_opens_complex (U : Opens ℂ) :
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective 𝓘(ℝ, ℂ) 2 c
   rw [deRhamCohomology.mk_eq_zero_iff, exactForms_two_eq_closedForms_opens_complex]
-  exact φ.2
+  exact φ.property
 
 /-- **De Rham cohomology of an open subset of `ℂ` vanishes in all degrees `k ≥ 2`.** -/
 theorem subsingleton_deRhamCohomology_opens_complex_of_two_le (U : Opens ℂ) {k : ℕ}
