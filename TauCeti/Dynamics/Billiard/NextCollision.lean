@@ -124,6 +124,22 @@ theorem injOn_Ico (s : ℝ) : InjOn χ (Ico s (s + χ.period)) :=
 theorem apply_ne_of_mem_Ioo {s t : ℝ} (ht : t ∈ Ioo s (s + χ.period)) : χ t ≠ χ s := fun h ↦
   ht.1.ne' (χ.injOn_Ico s ⟨ht.1.le, ht.2⟩ ⟨le_rfl, by linarith [χ.period_pos]⟩ h)
 
+/-- **Reversing the orientation never gives a table**: no strictly convex billiard table for the
+same orientation `o` is parametrized by `s ↦ χ'(-s)`. At `s = 0` and half a period of `χ` the
+defining area forms of the two have opposite signs. -/
+theorem coe_ne_comp_neg (χ' : StrictConvexBilliardTable o) : ⇑χ ≠ χ' ∘ Neg.neg := by
+  intro h
+  have hp := χ.period_pos
+  have hne : χ (χ.period / 2) ≠ χ 0 := χ.apply_ne_of_mem_Ioo ⟨by linarith, by linarith⟩
+  have hd : deriv χ 0 = -deriv χ' 0 := by
+    rw [h, show χ' ∘ Neg.neg = fun s ↦ χ' (-s) from rfl, deriv_comp_neg, neg_zero]
+  have h₁ := χ.areaForm_pos _ _ hne
+  have hne' : χ' (-(χ.period / 2)) ≠ χ' (-0) := by simpa [h] using hne
+  have h₂ := χ'.areaForm_pos _ _ hne'
+  rw [hd, h] at h₁
+  simp only [Function.comp_apply, map_neg, LinearMap.neg_apply, neg_zero] at h₁ h₂
+  linarith
+
 /-! ### The outgoing velocity -/
 
 /-- The unit velocity `v χ'(s) + √(1 - v ^ 2) J χ'(s)` of a ball leaving `χ(s)` into the table
