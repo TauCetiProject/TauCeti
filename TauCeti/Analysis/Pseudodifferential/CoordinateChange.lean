@@ -65,7 +65,8 @@ becomes `ρ(M(x, y) ξ / t)`, whose position derivatives are bounded uniformly i
 
 * `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`: the transported operator is the
   quantization of the amplitude `g(x, y) • a(κ x, M(x, y) ξ)` (`TauCeti.Symbol.compAmplitude`),
-  for data `M` and `g` with `g(x, x) = ψ(x)` and `M(x, x) = (Dκ(x)*)⁻¹` on the diagonal.
+  for data `M` and `g` with `g(x, x) = ψ(x)` wherever `κ x ∈ K`, and `M(x, x) = (Dκ(x)*)⁻¹`
+  wherever also `x ∈ tsupport ψ`.
 * `TauCeti.Symbol.exists_quantizeSchwartzValue_comp_eq`: the transported operator is `Op(b)` for a
   symbol `b` of order `m` with `b(x, ξ) - ψ(x) a(κ x, (Dκ(x)*)⁻¹ ξ)` of order `m - 1`.
 * `TauCeti.ClassicalSymbol.exists_quantizeSchwartzValue_comp_eq`: if `a` is classical, so is `b`,
