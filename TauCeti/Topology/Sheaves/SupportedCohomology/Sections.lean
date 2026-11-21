@@ -272,6 +272,22 @@ instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :
   exact inferInstanceAs ((supportedSubmoduleFunctor S ⋙
     (sheafSections _ (ModuleCat.{u} R)).obj (op W)).Additive)
 
+/-- The inclusion of supported sections into all sections on an open, natural in coefficients. -/
+def supportedSubmoduleSectionsι (W : Opens X) :
+    supportedSubmoduleSectionsFunctor (R := R) S W ⟶
+      (sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj (op W) where
+  app F := (F.supportedSubmoduleι S).hom.app (op W)
+  naturality {F G} f := congrArg (fun g : F.supportedSubmoduleSheaf S ⟶ G ↦
+    g.hom.app (op W)) (supportedSubmoduleFunctor_map_ι S f)
+
+-- Rewrite before evaluation simplifies the bundled section objects.
+@[simp↓]
+lemma supportedSubmoduleSectionsι_app_apply (W : Opens X)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (s : F.supportedSubmodule S W) :
+    (supportedSubmoduleSectionsι S W).app F s = s.val :=
+  F.supportedSubmoduleι_hom_app_apply S (op W) s
+
 /-- Restriction of supported sections, natural in the coefficient sheaf. -/
 def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
     supportedSubmoduleSectionsFunctor (R := R) S W ⟶
