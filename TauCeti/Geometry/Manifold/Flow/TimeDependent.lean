@@ -105,6 +105,12 @@ the initial position of the submanifold to the later ones.
   the endpoint.
 * `TauCeti.isCompleteVectorField_timeDependentSuspensionField`: a time-dependent field vanishing
   outside a fixed compact set has a complete suspension.
+* `TauCeti.isCompleteVectorField_timeDependentSuspensionField_of_compactSpace`: on a compact
+  manifold every `C¹` time-dependent field has a complete suspension.
+* `TauCeti.hasMFDerivAt_timeDependentFlowOf_of_compactSpace`: on a compact manifold the curves of
+  the flow solve `γ' u = X u (γ u)` at all times.
+* `TauCeti.isMIntegralCurveOn_timeDependentFlowOf`: for a complete suspension, on the times where
+  `X` is an autonomous field `v`, the curves of the flow are integral curves of `v`.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf_comp`: a map moved by the flow at a varying time,
   `y ↦ timeDependentFlowOf X s (τ y) (v y)`, has derivative `dφ ∘ dv + dτ ⊗ X`.
 
@@ -726,6 +732,21 @@ theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsC
     (hK.insert x) fun _ hu ↦ timeDependentFlowOf_mem_insert hX hXK hu.1
   rwa [mem_timeDependentFlowDomain, add_sub_cancel_left, mem_flowDomain] at h
 
+/-- **On a compact manifold every `C¹` time-dependent field has a complete suspension.** -/
+theorem isCompleteVectorField_timeDependentSuspensionField_of_compactSpace [CompactSpace M] :
+    IsCompleteVectorField (timeDependentSuspensionField X) :=
+  isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ fun _ _ hy ↦
+    absurd (mem_univ _) hy
+
+/-- **On a compact manifold the curves of the time-dependent flow solve the equation at all
+times.** For every `s` and `x`, the curve `u ↦ timeDependentFlowOf X s u x` has velocity
+`X t (timeDependentFlowOf X s t x)` at every time `t`. -/
+theorem hasMFDerivAt_timeDependentFlowOf_of_compactSpace [CompactSpace M] :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ timeDependentFlowOf X s u x) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (timeDependentFlowOf X s t x))) :=
+  hasMFDerivAt_timeDependentFlowOf hX
+    ((isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX).mem_flowDomain _ _)
+
 omit [CompleteSpace E] in
 /-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then
 the flow from `t` back to `s` is defined at its endpoint and returns it to `x`. -/
@@ -1065,6 +1086,19 @@ theorem timeDependentFlowOf_trans [T2Space M] [IsManifold I 1 M] [BoundarylessMa
     timeDependentFlowOf X s t (timeDependentFlowOf X r s x) = timeDependentFlowOf X r t x :=
   (timeDependentFlowOf_trans_of_mem hX (hcomplete.mem_flowDomain _ _)
     (hcomplete.mem_flowDomain _ _)).2
+
+/-- If the suspension is complete, then on the times where the time-dependent field `X` is an
+autonomous field `v`, the curves of its time-dependent flow are integral curves of `v`. -/
+theorem isMIntegralCurveOn_timeDependentFlowOf [T2Space M] [IsManifold I 1 M]
+    [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {v : (x : M) → TangentSpace I x} {T : Set ℝ} (hT : ∀ u ∈ T, X u = v) :
+    IsMIntegralCurveOn (fun u ↦ timeDependentFlowOf X s u x) v T := fun u hu ↦ by
+  have h := hasMFDerivAt_timeDependentFlowOf hX (s := s) (t := u) (x := x)
+    (hcomplete.mem_flowDomain _ _)
+  rw [hT u hu] at h
+  exact h.hasMFDerivWithinAt
 
 variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
   {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]

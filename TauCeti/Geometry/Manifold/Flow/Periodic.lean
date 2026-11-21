@@ -571,8 +571,7 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
       IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s)) :
     (periodicSolutions X T).Finite := by
   -- On a compact manifold the flow is defined everywhere, so the return map is continuous.
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
-    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
     ((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
       ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).continuous
@@ -613,8 +612,7 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
   let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   -- On a compact manifold the flow is defined everywhere and is continuous.
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
-    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   have hflow := (contMDiff_timeDependentFlowOf hcomplete le_rfl hX).continuous
   let e := periodicSolutionsEquivFixedPoints hX hT hT0.ne' s
   -- A periodic solution is contractible exactly when its loop over `[s, s + T]` is

@@ -53,7 +53,7 @@ whose trajectories are those of the gradient itself up to increasing changes of 
 curve `γ` of such a field which meets the open slab:
 
 * the time component is a translate of the base trajectory `q = TauCeti.intervalBaseOrbit C`
-  (`TauCeti.IsContinuationField.exists_snd_eq_intervalBaseOrbit`), so `γ` stays in the open slab
+  (`TauCeti.exists_snd_eq_intervalBaseOrbit`), so `γ` stays in the open slab
   and runs from `t = 0` to `t = 1`;
 * near `-∞` the space component is an orbit of the flow of `X₀`, and near `+∞` one of `X₁`
   (`TauCeti.IsContinuationField.eventually_atBot_eqOn_flow`,
@@ -94,11 +94,13 @@ is the identity**
   `TauCeti.isContinuationField_continuationRescaling_smul`: the constant continuation field and
   the rescaled continuation field of a large-constant potential are continuation fields.
 * `TauCeti.disjoint_morseContinuationSlice`: the slices of distinct pairs are disjoint.
+* `TauCeti.exists_snd_eq_intervalBaseOrbit`: for any field whose time component in the open slab
+  is `C t (1 - t²)`, the time component of a trajectory through the slab is a translate of the
+  base trajectory.
 
 In the namespace `TauCeti.IsContinuationField`:
 
-* `exists_snd_eq_intervalBaseOrbit`, `snd_mem_Ioo`: the time component of a trajectory through the
-  slab is a translate of the base trajectory.
+* `snd_mem_Ioo`: a trajectory through the slab stays in it.
 * `eventually_atBot_eqOn_flow`, `eventually_atTop_eqOn_flow`: near its ends a trajectory through
   the slab follows the flows of `X₀` and `X₁`.
 * `tendsto_atBot_iff`, `tendsto_atTop_iff`, `exists_tendsto_atBot`, `exists_tendsto_atTop`: its
@@ -384,6 +386,22 @@ end IsAdaptedPseudoGradient.IsMorseSmale
 
 /-! ### Trajectories of continuation fields -/
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- **The time component of a trajectory through the slab is a translate of `q`.** For `C ≠ 0`,
+along an integral curve of a field on `M × ℝ` whose time component in the open slab is
+`C t (1 - t²)`, and which meets the open slab, the time component is `s ↦ q(s + τ)` for the base
+trajectory `q = TauCeti.intervalBaseOrbit C` and a shift `τ`. -/
+theorem exists_snd_eq_intervalBaseOrbit {V : (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}
+    {γ : ℝ → M × ℝ} {s₀ : ℝ}
+    (hsnd : ∀ z : M × ℝ, z.2 ∈ Ioo 0 1 → (V z : E × ℝ).2 = C * z.2 * (1 - z.2 ^ 2))
+    (hγ : IsMIntegralCurve γ V) (h₀ : (γ s₀).2 ∈ Ioo 0 1) (hC : C ≠ 0) :
+    ∃ τ, ∀ s, (γ s).2 = intervalBaseOrbit C (s + τ) := by
+  have hd := hγ.hasDerivAt_snd
+  obtain ⟨τ, hτ⟩ := exists_eq_intervalBaseOrbit_of_hasDerivAt hC
+    (continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt)
+    (fun s hs ↦ (hd s).congr_deriv (hsnd (γ s) hs)) h₀
+  exact ⟨τ, congrFun hτ⟩
+
 namespace IsContinuationField
 
 variable {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x}
@@ -396,21 +414,9 @@ variable (hV : IsContinuationField X₀ X₁ C V) (hγ : IsMIntegralCurve γ V)
 include hV hγ h₀
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- **The time component of a trajectory through the slab is a translate of `q`.** For `C ≠ 0`,
-along an integral curve of a continuation field which meets the open slab, the time component is
-`s ↦ q(s + τ)` for the base trajectory `q = TauCeti.intervalBaseOrbit C` and a shift `τ`. -/
-theorem exists_snd_eq_intervalBaseOrbit (hC : C ≠ 0) :
-    ∃ τ, ∀ s, (γ s).2 = intervalBaseOrbit C (s + τ) := by
-  have hd := hγ.hasDerivAt_snd
-  obtain ⟨τ, hτ⟩ := exists_eq_intervalBaseOrbit_of_hasDerivAt hC
-    (continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt)
-    (fun s hs ↦ (hd s).congr_deriv (hV.snd_eq (γ s) hs)) h₀
-  exact ⟨τ, congrFun hτ⟩
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- **A trajectory meeting the open slab stays in it.** -/
 theorem snd_mem_Ioo (hC : C ≠ 0) (s : ℝ) : (γ s).2 ∈ Ioo 0 1 := by
-  obtain ⟨τ, hτ⟩ := hV.exists_snd_eq_intervalBaseOrbit hγ h₀ hC
+  obtain ⟨τ, hτ⟩ := exists_snd_eq_intervalBaseOrbit hV.snd_eq hγ h₀ hC
   rw [hτ]
   exact intervalBaseOrbit_mem_Ioo C _
 
@@ -418,7 +424,7 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] 
 /-- For `C > 0`, the time component of a trajectory through the slab tends to `0` from above at
 `-∞`. -/
 theorem tendsto_snd_atBot (hC : 0 < C) : Tendsto (fun s ↦ (γ s).2) atBot (𝓝[>] 0) := by
-  obtain ⟨τ, hτ⟩ := hV.exists_snd_eq_intervalBaseOrbit hγ h₀ hC.ne'
+  obtain ⟨τ, hτ⟩ := exists_snd_eq_intervalBaseOrbit hV.snd_eq hγ h₀ hC.ne'
   refine tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall fun s ↦ (hV.snd_mem_Ioo hγ h₀ hC.ne' s).1⟩
   rw [funext hτ]
   exact (tendsto_intervalBaseOrbit_atBot hC).comp (tendsto_atBot_add_const_right _ τ tendsto_id)
@@ -427,7 +433,7 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] 
 /-- For `C > 0`, the time component of a trajectory through the slab tends to `1` from below at
 `+∞`. -/
 theorem tendsto_snd_atTop (hC : 0 < C) : Tendsto (fun s ↦ (γ s).2) atTop (𝓝[<] 1) := by
-  obtain ⟨τ, hτ⟩ := hV.exists_snd_eq_intervalBaseOrbit hγ h₀ hC.ne'
+  obtain ⟨τ, hτ⟩ := exists_snd_eq_intervalBaseOrbit hV.snd_eq hγ h₀ hC.ne'
   refine tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall fun s ↦ (hV.snd_mem_Ioo hγ h₀ hC.ne' s).2⟩
   rw [funext hτ]
   exact (tendsto_intervalBaseOrbit_atTop hC).comp (tendsto_atTop_add_const_right _ τ tendsto_id)
@@ -451,9 +457,8 @@ theorem eventually_atBot_eqOn_flow :
   have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X₀ (Iio b) :=
     (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
       fun s hs ↦ by rw [mfderiv_fst]; exact hb s (le_of_lt hs) (γ s).1
-  filter_upwards [eventually_lt_atBot b] with a hab s (hs : s ≤ a)
-  exact hX₀.eqOn_flow_of_isMIntegralCurveOn (hc.mono Ioo_subset_Iio_self) (a := s - 1)
-    ⟨by linarith, hab⟩ ⟨by linarith, hs.trans_lt hab⟩
+  filter_upwards [eventually_lt_atBot b] with a hab
+  exact hX₀.eqOn_flow_of_isMIntegralCurveOn_Iio hc hab
 
 include hV hX₁ hC hγ h₀ in
 /-- **Near `+∞` a trajectory through the slab follows `X₁`.** For `C > 0`, along an integral curve
@@ -466,9 +471,8 @@ theorem eventually_atTop_eqOn_flow :
   have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X₁ (Ioi a) :=
     (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
       fun s hs ↦ by rw [mfderiv_fst]; exact ha s (le_of_lt hs) (γ s).1
-  filter_upwards [eventually_gt_atTop a] with b hab s (hs : b ≤ s)
-  exact hX₁.eqOn_flow_of_isMIntegralCurveOn (hc.mono Ioo_subset_Ioi_self) (b := s + 1)
-    ⟨hab, by linarith⟩ ⟨hab.trans_le hs, by linarith⟩
+  filter_upwards [eventually_gt_atTop a] with b hab
+  exact hX₁.eqOn_flow_of_isMIntegralCurveOn_Ioi hc hab
 
 include hV hX₀ hC hγ h₀ in
 /-- **The backward limit of a trajectory through the slab.** For `C > 0`, an integral curve `γ`
