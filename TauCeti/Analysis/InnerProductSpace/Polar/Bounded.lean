@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Modulus
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The polar decomposition of a bounded operator
@@ -27,8 +28,10 @@ with `V |T| = T` that vanishes on `ker T`.
 The adjoint of the polar factor inverts it on the modulus, `U† T = |T|`, and conjugates the two
 moduli into each other, `|T†| = T U† = U |T| U†`. Consequently the polar factor of `T†` is `U†`,
 and `T = |T†| U` is the left polar decomposition. When `T` is injective the polar factor is an
-isometry, and when `|T|` is invertible it is `T |T|⁻¹`, so that it then depends continuously
-on `T`.
+isometry, and when `T` is injective with dense range (in particular when `T` is invertible) the
+polar factor is a linear isometric equivalence `E ≃ₗᵢ[𝕜] F`; for invertible endomorphisms it
+coincides with the continuous-functional-calculus polar unitary `Units.polarUnitary`. When `|T|`
+is invertible, `U = T |T|⁻¹`, so `U` depends continuously on `T`.
 
 ## Main declarations
 
@@ -43,6 +46,14 @@ on `T`.
 * `ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor_of_injective`,
   `ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor_of_denseRange`: `U` is an isometry
   when `T` is injective, and a coisometry when `T` has dense range.
+* `ContinuousLinearMap.polarLinearIsometryEquiv`,
+  `ContinuousLinearMap.IsInvertible.polarLinearIsometryEquiv`,
+  `ContinuousLinearEquiv.polarLinearIsometryEquiv`: `U` bundled as a linear isometric equivalence
+  `E ≃ₗᵢ[𝕜] F` for injective dense-range operators, invertible operators, and continuous linear
+  equivalences, giving `TauCeti.nonempty_linearIsometryEquiv_iff_continuousLinearEquiv`.
+* `ContinuousLinearMap.polarFactor_mem_unitary`, `Units.coe_polarUnitary_eq_polarFactor`:
+  `T.polarFactor` is unitary for injective dense-range endomorphisms and coincides with the CFC
+  polar unitary `g.polarUnitary` for `g : (E →L[𝕜] E)ˣ`.
 * `ContinuousLinearMap.eq_polarFactor_iff`: uniqueness of the polar factor.
 * `ContinuousLinearMap.polarFactor_smul`: the polar factor of `c T` is `(c / ‖c‖) U`.
 * `ContinuousLinearMap.modulus_adjoint`: `|T†| = T U†`.
@@ -172,6 +183,132 @@ theorem polarFactor_comp_adjoint_polarFactor_of_denseRange (hT : DenseRange T) :
   have h : (T.range : Submodule 𝕜 F).topologicalClosure = ⊤ :=
     Submodule.dense_iff_topologicalClosure_eq_top.mp (by rw [LinearMap.coe_range]; exact hT)
   simp [polarFactor_comp_adjoint_polarFactor, h, Submodule.starProjection_top']
+
+/-! ### Unitary polar factors of equivalences -/
+
+/-- When a bounded operator `T : E →L[𝕜] F` between Hilbert spaces is injective and has dense range,
+its canonical polar partial isometry `T.polarFactor` is a linear isometric equivalence
+`E ≃ₗᵢ[𝕜] F` with inverse `T.polarFactor†`. -/
+def polarLinearIsometryEquiv {T : E →L[𝕜] F}
+    (hinj : Function.Injective T) (hdense : DenseRange T) : E ≃ₗᵢ[𝕜] F where
+  toLinearMap := T.polarFactor.toLinearMap
+  invFun := T.polarFactor†
+  left_inv x := congr($(adjoint_polarFactor_comp_polarFactor_of_injective hinj) x)
+  right_inv y := congr($(polarFactor_comp_adjoint_polarFactor_of_denseRange hdense) y)
+  norm_map' := T.norm_polarFactor_apply_of_injective hinj
+
+/-- Coercing `T.polarLinearIsometryEquiv hinj hdense` to `E →L[𝕜] F` recovers `T.polarFactor`. -/
+@[simp]
+theorem toContinuousLinearMap_polarLinearIsometryEquiv {T : E →L[𝕜] F}
+    (hinj : Function.Injective T) (hdense : DenseRange T) :
+    (T.polarLinearIsometryEquiv hinj hdense : E →L[𝕜] F) = T.polarFactor :=
+  (rfl)
+
+/-- Applying `T.polarLinearIsometryEquiv hinj hdense` to `x` gives `T.polarFactor x`. -/
+@[simp]
+theorem polarLinearIsometryEquiv_apply {T : E →L[𝕜] F}
+    (hinj : Function.Injective T) (hdense : DenseRange T) (x : E) :
+    T.polarLinearIsometryEquiv hinj hdense x = T.polarFactor x :=
+  (rfl)
+
+/-- The inverse of `T.polarLinearIsometryEquiv hinj hdense` coerces to `T.polarFactor†`. -/
+theorem toContinuousLinearMap_polarLinearIsometryEquiv_symm {T : E →L[𝕜] F}
+    (hinj : Function.Injective T) (hdense : DenseRange T) :
+    ((T.polarLinearIsometryEquiv hinj hdense).symm : F →L[𝕜] E) = T.polarFactor† :=
+  (rfl)
+
+/-- Applying `(T.polarLinearIsometryEquiv hinj hdense).symm` to `y` gives `(T.polarFactor†) y`. -/
+@[simp]
+theorem polarLinearIsometryEquiv_symm_apply {T : E →L[𝕜] F}
+    (hinj : Function.Injective T) (hdense : DenseRange T) (y : F) :
+    (T.polarLinearIsometryEquiv hinj hdense).symm y = (T.polarFactor†) y :=
+  (rfl)
+
+/-- The canonical polar factor of an invertible bounded operator `T : E →L[𝕜] F` between Hilbert
+spaces, bundled as a linear isometric equivalence `E ≃ₗᵢ[𝕜] F`. -/
+def IsInvertible.polarLinearIsometryEquiv {T : E →L[𝕜] F} (hT : T.IsInvertible) : E ≃ₗᵢ[𝕜] F :=
+  T.polarLinearIsometryEquiv hT.injective hT.surjective.denseRange
+
+/-- Coercing `hT.polarLinearIsometryEquiv` to `E →L[𝕜] F` gives `T.polarFactor`. -/
+@[simp]
+theorem IsInvertible.toContinuousLinearMap_polarLinearIsometryEquiv {T : E →L[𝕜] F}
+    (hT : T.IsInvertible) :
+    (hT.polarLinearIsometryEquiv : E →L[𝕜] F) = T.polarFactor :=
+  (rfl)
+
+/-- Applying `hT.polarLinearIsometryEquiv` to `x` gives `T.polarFactor x`. -/
+@[simp]
+theorem IsInvertible.polarLinearIsometryEquiv_apply {T : E →L[𝕜] F}
+    (hT : T.IsInvertible) (x : E) :
+    hT.polarLinearIsometryEquiv x = T.polarFactor x :=
+  (rfl)
+
+/-- Applying `hT.polarLinearIsometryEquiv.symm` to `y` gives `(T.polarFactor†) y`. -/
+@[simp]
+theorem IsInvertible.polarLinearIsometryEquiv_symm_apply {T : E →L[𝕜] F}
+    (hT : T.IsInvertible) (y : F) :
+    hT.polarLinearIsometryEquiv.symm y = (T.polarFactor†) y :=
+  (rfl)
+
+/-- Coercing `hT.polarLinearIsometryEquiv.symm` to `F →L[𝕜] E` gives `T.polarFactor†`. -/
+theorem IsInvertible.toContinuousLinearMap_polarLinearIsometryEquiv_symm {T : E →L[𝕜] F}
+    (hT : T.IsInvertible) :
+    (hT.polarLinearIsometryEquiv.symm : F →L[𝕜] E) = T.polarFactor† :=
+  (rfl)
+
+/-- For an injective endomorphism `T : E →L[𝕜] E` with dense range, `T.polarFactor` belongs to
+`unitary (E →L[𝕜] E)`. -/
+theorem polarFactor_mem_unitary {T : E →L[𝕜] E}
+    (hinj : Function.Injective T) (hdense : DenseRange T) :
+    T.polarFactor ∈ unitary (E →L[𝕜] E) :=
+  Unitary.mem_iff.2 ⟨adjoint_polarFactor_comp_polarFactor_of_injective hinj,
+    polarFactor_comp_adjoint_polarFactor_of_denseRange hdense⟩
+
+/-- The canonical polar factor of a continuous linear equivalence `e : E ≃L[𝕜] F` between Hilbert
+spaces, bundled as a linear isometric equivalence `E ≃ₗᵢ[𝕜] F`. -/
+def _root_.ContinuousLinearEquiv.polarLinearIsometryEquiv (e : E ≃L[𝕜] F) : E ≃ₗᵢ[𝕜] F :=
+  (ContinuousLinearMap.isInvertible_equiv (f := e)).polarLinearIsometryEquiv
+
+/-- Coercing `e.polarLinearIsometryEquiv` to `E →L[𝕜] F` gives `(e : E →L[𝕜] F).polarFactor`. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.toContinuousLinearMap_polarLinearIsometryEquiv
+    (e : E ≃L[𝕜] F) :
+    (e.polarLinearIsometryEquiv : E →L[𝕜] F) = (e : E →L[𝕜] F).polarFactor :=
+  (rfl)
+
+/-- Applying `e.polarLinearIsometryEquiv` to `x` gives `(e : E →L[𝕜] F).polarFactor x`. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.polarLinearIsometryEquiv_apply (e : E ≃L[𝕜] F) (x : E) :
+    e.polarLinearIsometryEquiv x = (e : E →L[𝕜] F).polarFactor x :=
+  (rfl)
+
+/-- Applying `e.polarLinearIsometryEquiv.symm` to `y` gives `((e : E →L[𝕜] F).polarFactor†) y`. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.polarLinearIsometryEquiv_symm_apply (e : E ≃L[𝕜] F) (y : F) :
+    e.polarLinearIsometryEquiv.symm y = ((e : E →L[𝕜] F).polarFactor†) y :=
+  (rfl)
+
+/-- Two Hilbert spaces over `RCLike 𝕜` are linearly isometrically equivalent if and only if they are
+continuously linearly equivalent: the polar factor upgrades any topological isomorphism to a
+unitary equivalence. -/
+theorem _root_.TauCeti.nonempty_linearIsometryEquiv_iff_continuousLinearEquiv :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔ Nonempty (E ≃L[𝕜] F) :=
+  ⟨fun ⟨e⟩ ↦ ⟨e.toContinuousLinearEquiv⟩, fun ⟨e⟩ ↦ ⟨e.polarLinearIsometryEquiv⟩⟩
+
+/-- For an invertible endomorphism `g : (E →L[𝕜] E)ˣ`, the continuous-functional-calculus polar
+unitary `g.polarUnitary` agrees with the Hilbert-space polar factor `(g : E →L[𝕜] E).polarFactor`,
+under any compatible real algebra structure on `E →L[𝕜] E`. -/
+theorem _root_.Units.coe_polarUnitary_eq_polarFactor [Algebra ℝ (E →L[𝕜] E)]
+    [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] (g : (E →L[𝕜] E)ˣ) :
+    (g.polarUnitary : E →L[𝕜] E) = (g : E →L[𝕜] E).polarFactor := by
+  have hg : (g : E →L[𝕜] E).IsInvertible :=
+    ContinuousLinearMap.isInvertible_iff_isUnit.2 g.isUnit
+  let v : unitary (E →L[𝕜] E) :=
+    ⟨(g : E →L[𝕜] E).polarFactor,
+      ContinuousLinearMap.polarFactor_mem_unitary hg.injective hg.surjective.denseRange⟩
+  exact congrArg Subtype.val <|
+    g.polarUnitary_eq_of_mul_eq' (g : E →L[𝕜] E).modulus_nonneg (v := v)
+      (g : E →L[𝕜] E).polarFactor_comp_modulus
 
 variable {T} in
 /-- **Uniqueness of the polar factor.** A bounded operator `V` with `V |T| = T` that vanishes on

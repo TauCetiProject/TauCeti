@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Nonunits
 public import Mathlib.RingTheory.Jacobson.Radical
+public import Mathlib.Topology.Connected.PathConnected
 
 /-!
 # Units and the Jacobson radical of normed rings
@@ -15,7 +16,10 @@ public import Mathlib.RingTheory.Jacobson.Radical
 In a normed ring with summable geometric series, `Ring.inverse` is continuous at every unit
 (`NormedRing.inverse_continuousAt`), but it jumps to `0` at the boundary of the open set of units.
 When the nonunits also form an open set, as in a complete discretely valued ring such as `ℤ_p`,
-there is no such boundary and `Ring.inverse` is continuous everywhere.
+there is no such boundary and `Ring.inverse` is continuous everywhere. Since
+`Units.val : Rˣ → R` is an open embedding onto `{r : R | IsUnit r}`, the subset of invertible
+elements is path-connected if and only if the topological group `Rˣ` is
+(`TauCeti.isPathConnected_isUnit_iff`).
 
 The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ - 1 + (1 - ‖x‖)⁻¹` when
 `‖x‖ < 1`, and `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit `u` with
@@ -123,7 +127,21 @@ theorem isUnit_one_sub_mul_add_and_norm_inverse_le {a w d : R} {M : ℝ}
 
 end NormedRing
 
-namespace TauCeti.Ring
+namespace TauCeti
+
+/-- In a normed ring `R` with summable geometric series (in particular any complete normed ring),
+the set `{r : R | IsUnit r}` of invertible elements is path-connected if and only if the
+topological group `Rˣ` is path-connected. -/
+theorem isPathConnected_isUnit_iff {R : Type*} [NormedRing R] [HasSummableGeomSeries R] :
+    IsPathConnected {r : R | IsUnit r} ↔ PathConnectedSpace Rˣ := by
+  have hrange : Set.range (Units.val : Rˣ → R) = {r : R | IsUnit r} := by
+    ext r
+    exact ⟨fun ⟨u, hu⟩ ↦ hu ▸ u.isUnit, fun hr ↦ ⟨hr.unit, hr.unit_spec⟩⟩
+  let e := (Units.isOpenEmbedding_val (R := R)).isEmbedding.toHomeomorph
+  rw [← hrange, isPathConnected_iff_pathConnectedSpace]
+  exact ⟨fun _ ↦ e.symm.pathConnectedSpace, fun _ ↦ e.pathConnectedSpace⟩
+
+namespace Ring
 
 /-- The Jacobson radical of a normed ring with summable geometric series is closed. -/
 theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
@@ -133,4 +151,6 @@ theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
     have : Ideal.IsMaximal I := hI
     exact Ideal.IsMaximal.isClosed
 
-end TauCeti.Ring
+end Ring
+
+end TauCeti

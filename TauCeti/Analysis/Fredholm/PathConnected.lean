@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Fredholm.IndexRange
-public import TauCeti.Analysis.InnerProductSpace.UnitaryPath
 import Mathlib.Tactic.Abel
+import TauCeti.Analysis.InnerProductSpace.Polar.Connected
 
 /-!
 # Norm-path classification of Fredholm operators
@@ -127,14 +129,12 @@ theorem ContinuousLinearMap.IsFredholm.exists_path_of_index_eq {T₀ T₁ : E �
       map_sub]
     abel
   have hpath₀ := hT₀.joinedIn_of_isCompactOperator_sub hdiff
-  obtain ⟨γC, hγC⟩ := hC.exists_path_to_id
+  obtain ⟨γC, hγC⟩ := hC.joinedIn (T := ContinuousLinearMap.id ℂ E)
+    ⟨ContinuousLinearEquiv.refl ℂ E, rfl⟩
   let γ₁ : Path (T₁.comp C) T₁ :=
     (γC.map (f := fun A ↦ T₁.comp A)
       (continuous_const.clm_comp continuous_id)).cast rfl T₁.comp_id.symm
-  have hγ₁ : ∀ t, (γ₁ t).IsFredholm := by
-    intro t
-    simpa only [γ₁, Path.cast_coe, Path.map_coe, Function.comp_apply] using
-      hT₁.comp (hγC t).isFredholm
+  have hγ₁ : ∀ t, (γ₁ t).IsFredholm := fun t ↦ hT₁.comp (hγC t).isFredholm
   exact hpath₀.trans ⟨γ₁, hγ₁⟩
 
 /-- Two elements of the Fredholm locus are connected by a norm-continuous path precisely

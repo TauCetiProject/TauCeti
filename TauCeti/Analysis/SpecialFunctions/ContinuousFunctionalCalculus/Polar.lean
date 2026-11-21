@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Algebra.Algebra.StrictPositivity
 
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import Mathlib.Analysis.Normed.Ring.Units
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
 # The polar decomposition of an invertible element
@@ -28,7 +31,9 @@ The factorization is unique in the strongest sense: if `a = p * v` with `p ≥ 0
 then `p = √(a a⋆)` and `v = Units.polarUnitary a`, and likewise for `a = v * p`. Consequently
 the polar decomposition is equivariant for unitary multiplication on either side: for unitaries
 `v`, `w`, the positive factor of `v a w` is the conjugate `v √(a a⋆) v⋆`, and its unitary factor
-is `v u w`. The unitary factor of `a⋆` is `u⋆`.
+is `v u w`. The unitary factor of `a⋆` is `u⋆`. When `A` is a complete normed real algebra with an
+isometric real continuous functional calculus, `Units.polarUnitary : Aˣ → unitary A` is continuous
+(`Units.continuous_polarUnitary`).
 
 For matrices, this is the decomposition of an invertible real matrix into a positive-definite
 symmetric matrix times an orthogonal one, and of an invertible complex matrix into a
@@ -53,6 +58,8 @@ abstract algebra, where invertibility makes the factor an element of the unitary
   `Units.sqrt_star_mul_eq`: the two positive factors are conjugate by the unitary factor.
 * `Units.polarUnitary_unitary_mul_mul_unitary`, `Units.sqrt_unitary_mul_mul_unitary`: unitary
   equivariance.
+* `Units.continuous_polarUnitary`: continuity of `a ↦ a.polarUnitary` under an isometric real
+  continuous functional calculus.
 
 ## References
 
@@ -283,3 +290,29 @@ theorem sqrt_unitary_mul_mul_unitary (v w : unitary A) :
     (unitary_mul_mul_unitary_eq a v w)
 
 end Units
+
+section Continuity
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+  [PartialOrder A] [StarOrderedRing A] [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
+  [NonnegSpectrumClass ℝ A] [ContinuousStar A]
+
+namespace Units
+
+/-- The polar unitary factor `a.polarUnitary` of a unit depends continuously on the unit. -/
+theorem continuous_polarUnitary : Continuous fun a : Aˣ ↦ a.polarUnitary := by
+  refine Continuous.subtype_mk ?_ _
+  have hsqrt : Continuous fun a : Aˣ ↦ CFC.sqrt ((a : A) * star (a : A)) :=
+    CFC.continuousOn_sqrt.comp_continuous (continuous_val.mul continuous_val.star)
+      fun a ↦ mul_star_self_nonneg (a : A)
+  have hinv : Continuous fun a : Aˣ ↦ (CFC.sqrt ((a : A) * star (a : A)))⁻¹ʳ :=
+    continuous_iff_continuousAt.2 fun a ↦ by
+      have h : ContinuousAt Ring.inverse (CFC.sqrt ((a : A) * star (a : A))) := by
+        simpa only [IsUnit.unit_spec] using
+          NormedRing.inverse_continuousAt a.isStrictlyPositive_sqrt_mul_star.isUnit.unit
+      exact h.comp (x := a) hsqrt.continuousAt
+  exact (hinv.mul continuous_val).congr fun a ↦ (coe_polarUnitary a).symm
+
+end Units
+
+end Continuity

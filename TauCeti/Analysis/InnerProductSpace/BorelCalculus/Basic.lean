@@ -42,6 +42,8 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.spectralPVM a`: the spectral measure of a normal operator `a`.
 * `ContinuousLinearMap.borelCalculus a`: the Borel functional calculus of `a`, the integral
   against `a.spectralPVM`.
+* `ContinuousLinearMap.continuous_borelCalculus`, `ContinuousLinearMap.norm_borelCalculus_le_norm`:
+  continuity and contractivity of `a.borelCalculus` for the supremum norm on symbols.
 * `ContinuousLinearMap.borelCalculus_ofContinuousMap`: the Borel calculus extends `cfcHom`.
 * `ContinuousLinearMap.borelCalculus_restrict_id`: the coordinate function recovers `a`.
 * `ContinuousLinearMap.borelCalculus_indicator`: indicators give the spectral projections.
@@ -88,6 +90,12 @@ def borelCalculus : BoundedBorelFunction (spectrum ℂ a) →⋆ₐ[ℂ] (H →L
 @[simp]
 theorem integral_spectralPVM : a.spectralPVM.integral = a.borelCalculus :=
   (rfl)
+
+/-- The Borel functional calculus of a normal operator is continuous for the supremum norm on
+symbols and the operator norm on `H →L[ℂ] H`. -/
+@[fun_prop]
+theorem continuous_borelCalculus : Continuous a.borelCalculus :=
+  a.spectralPVM.continuous_integral
 
 /-- The spectral measure is the projection-valued measure of `cfcHom`. -/
 theorem spectralPVM_eq_ofRepresentation :
@@ -144,6 +152,11 @@ theorem norm_sq_borelCalculus_apply (f : BoundedBorelFunction (spectrum ℂ a)) 
 theorem norm_borelCalculus_le {f : BoundedBorelFunction (spectrum ℂ a)} {M : ℝ} (hM : 0 ≤ M)
     (hf : ∀ x, ‖f x‖ ≤ M) : ‖a.borelCalculus f‖ ≤ M :=
   a.spectralPVM.norm_integral_le hM hf
+
+/-- The operator norm of `f(a)` is at most the supremum norm `‖f‖`. -/
+theorem norm_borelCalculus_le_norm (f : BoundedBorelFunction (spectrum ℂ a)) :
+    ‖a.borelCalculus f‖ ≤ ‖f‖ :=
+  a.norm_borelCalculus_le (norm_nonneg f) f.norm_coe_le_norm
 
 /-- A bound `‖f x‖ ≤ M` on the spectrum gives `‖f(a) ξ‖ ≤ M ‖ξ‖` for every vector `ξ`. -/
 theorem norm_borelCalculus_apply_le {f : BoundedBorelFunction (spectrum ℂ a)} {M : ℝ}

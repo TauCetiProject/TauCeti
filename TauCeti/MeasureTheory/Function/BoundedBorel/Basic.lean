@@ -44,6 +44,12 @@ isometric for the two supremum norms, and is compatible with pullback along cont
 maps. It is how a Borel functional calculus is compared with a continuous one, for instance with
 a star representation of `C(X, ℂ)` or with Mathlib's continuous functional calculus `cfcHom`.
 
+Pointwise evaluation at `x : X` is a continuous unital star algebra homomorphism
+`evalStarAlgHom x : BoundedBorelFunction X →⋆ₐ[ℂ] ℂ`. Self-adjointness is pointwise
+(`isSelfAdjoint_iff`), and every bounded measurable real-valued function bundles as a self-adjoint
+symbol `ofRealFunction`, which factors as `star s * s` whenever it is nonnegative
+(`exists_star_mul_self_ofRealFunction`).
+
 An arbitrary measurable complex function `f : X → ℂ` restricts on each norm sublevel
 `{x | ‖f x‖ ≤ M}` to a bounded Borel symbol (`BoundedBorelFunction.truncate`). As `M` increases,
 these level-set truncations have monotone extended norms and converge pointwise to `f`, providing
@@ -240,6 +246,77 @@ def ofFunction (f : X → ℂ) (hf : Measurable f)
 /-- Evaluation of the star operation is complex conjugation. -/
 @[simp] theorem star_apply (f : BoundedBorelFunction X) (x : X) :
     (star f) x = star (f x) := (rfl)
+
+/-- Pointwise evaluation at `x : X`, as a unital star algebra homomorphism on bounded Borel
+symbols. -/
+def evalStarAlgHom (x : X) : BoundedBorelFunction X →⋆ₐ[ℂ] ℂ where
+  toFun f := f x
+  map_one' := (rfl)
+  map_mul' _ _ := (rfl)
+  map_zero' := (rfl)
+  map_add' _ _ := (rfl)
+  commutes' _ := (rfl)
+  map_star' _ := (rfl)
+
+/-- Evaluating `evalStarAlgHom x` on a symbol evaluates the symbol at `x`. -/
+@[simp]
+theorem evalStarAlgHom_apply (x : X) (f : BoundedBorelFunction X) :
+    evalStarAlgHom x f = f x :=
+  (rfl)
+
+/-- Pointwise evaluation at `x` is continuous for the supremum norm. -/
+@[fun_prop]
+theorem continuous_eval (x : X) : Continuous fun f : BoundedBorelFunction X ↦ f x :=
+  (continuous_apply x).comp (lp.uniformContinuous_coe.continuous.comp continuous_subtypeVal)
+
+/-- A bounded Borel symbol is self-adjoint iff each of its values is fixed by complex conjugation.
+-/
+theorem isSelfAdjoint_iff {f : BoundedBorelFunction X} :
+    IsSelfAdjoint f ↔ ∀ x, star (f x) = f x := by
+  simp [IsSelfAdjoint, BoundedBorelFunction.ext_iff]
+
+/-- Bundle a bounded measurable real-valued function as a bounded Borel symbol. -/
+def ofRealFunction (g : X → ℝ) (hg : Measurable g)
+    (hbound : ∃ M : ℝ, 0 ≤ M ∧ ∀ x, |g x| ≤ M) : BoundedBorelFunction X :=
+  ofFunction (fun x ↦ (g x : ℂ)) (Complex.measurable_ofReal.comp hg) <|
+    let ⟨M, hM, hgM⟩ := hbound
+    ⟨M, hM, fun x ↦ by simpa only [Complex.norm_real, Real.norm_eq_abs] using hgM x⟩
+
+/-- Evaluating `ofRealFunction` at `x` gives `(g x : ℂ)`. -/
+@[simp]
+theorem ofRealFunction_apply (g : X → ℝ) (hg : Measurable g) (hbound) (x : X) :
+    ofRealFunction g hg hbound x = g x := by
+  simp [ofRealFunction]
+
+/-- Coercing `ofRealFunction` gives the real-to-complex cast of the underlying function. -/
+theorem coe_ofRealFunction (g : X → ℝ) (hg : Measurable g) (hbound) :
+    ⇑(ofRealFunction g hg hbound) = fun x ↦ (g x : ℂ) :=
+  funext (ofRealFunction_apply g hg hbound)
+
+/-- Every real-valued bounded Borel symbol is self-adjoint. -/
+theorem isSelfAdjoint_ofRealFunction (g : X → ℝ) (hg : Measurable g) (hbound) :
+    IsSelfAdjoint (ofRealFunction g hg hbound) :=
+  isSelfAdjoint_iff.2 fun x ↦ by simp
+
+/-- A nonnegative constant bounds the norm of `ofRealFunction g` iff it bounds `|g x|` everywhere.
+-/
+theorem norm_ofRealFunction_le {g : X → ℝ} {hg : Measurable g} {hbound} {C : ℝ} (hC : 0 ≤ C) :
+    ‖ofRealFunction g hg hbound‖ ≤ C ↔ ∀ x, |g x| ≤ C := by
+  rw [norm_le hC]
+  simp
+
+/-- A nonnegative real-valued bounded Borel symbol is a square `star s * s` of a real-valued
+bounded Borel symbol, namely its pointwise square root. -/
+theorem exists_star_mul_self_ofRealFunction {g : X → ℝ} (hg : Measurable g) (hbound)
+    (h0 : ∀ x, 0 ≤ g x) :
+    ∃ s : BoundedBorelFunction X, ofRealFunction g hg hbound = star s * s := by
+  obtain ⟨M, _, hgM⟩ := id hbound
+  refine ⟨ofRealFunction (fun x ↦ √(g x)) hg.sqrt
+    ⟨√M, Real.sqrt_nonneg M, fun x ↦ ?_⟩, ?_⟩
+  · rw [abs_of_nonneg (Real.sqrt_nonneg _)]
+    exact Real.sqrt_le_sqrt ((le_abs_self _).trans (hgM x))
+  · ext x
+    simp [← Complex.ofReal_mul, Real.mul_self_sqrt (h0 x)]
 
 variable {Y Z : Type*} [MeasurableSpace Y] [MeasurableSpace Z]
 
