@@ -147,6 +147,19 @@ theorem exists_forall_approxProd_le_imp (Sinf : Finset (InfinitePlace K))
   rw [mul_smul, ← hH]
   exact hmem
 
+omit [NumberField K] [Fintype ι] in
+/-- The kernels of a finite family of nonzero linear forms are proper subspaces covering every
+point at which one of the forms vanishes. -/
+private lemma exists_finset_ker_cover [Finite ι] {P : Type*} (s : Finset P)
+    (f : P → ι → Dual K (ι → K)) (hf : ∀ v ∈ s, ∀ i, f v i ≠ 0) :
+    ∃ U : Finset (Submodule K (ι → K)), (∀ W ∈ U, W ≠ ⊤) ∧
+      ∀ x : ι → K, ∀ v ∈ s, ∀ i, f v i x = 0 → ∃ W ∈ U, x ∈ W := by
+  classical
+  have := Fintype.ofFinite ι
+  exact ⟨image₂ (fun v i ↦ LinearMap.ker (f v i)) s univ,
+    forall_mem_image₂.mpr fun v hv i _ ↦ LinearMap.ker_eq_top.not.mpr (hf v hv i),
+    fun x v hv i hx ↦ ⟨_, mem_image₂_of_mem hv (mem_univ i), LinearMap.mem_ker.mpr hx⟩⟩
+
 /-- **Reduction of the Subspace Theorem to approximation domains, with the remaining solutions
 covered by subspaces** (Bombieri–Gubler, Theorem 7.2.6 and 7.5.6). Let `ι` have at least two
 elements, let `L v i` be linear forms, linearly independent at each place of `Sinf` and `Sfin`,
@@ -184,37 +197,36 @@ theorem exists_finset_submodule_forall_mem_or_smul_mem_approxDomain [Nontrivial 
     by_cases hv' : v ∈ Sfin
     · exact hfin v hv' ▸ hLFin v hv'
     · exact (funext (hfin' v hv hv')).symm ▸ Module.Dual.linearIndependent_proj K ι
+  obtain ⟨UInf, hUInf, hcovInf⟩ := exists_finset_ker_cover (univ : Finset (InfinitePlace K))
+    (fun v ↦ L' v.val) fun v _ ↦ (hindInf v).ne_zero
+  obtain ⟨UFin, hUFin, hcovFin⟩ := exists_finset_ker_cover S₀ (fun v : FinitePlace K ↦ L' v.val)
+    fun v hv ↦ (hindFin v hv).ne_zero
   refine ⟨S₀, L', T, hindInf, hindFin, hT, fun Q₀ ↦ ?_⟩
   -- the lines through the points of height at most `max Q₀ Q₁`, and the kernels of the forms at
   -- the infinite places and the places of `S₀`
-  obtain ⟨T₁, hT₁, hlines⟩ := exists_finset_finrank_eq_one_of_mulHeight_le (K := K) (ι := ι)
-    (max Q₀ Q₁)
-  refine ⟨T₁ ∪ (univ ×ˢ univ).image (fun p : InfinitePlace K × ι ↦
-    LinearMap.ker (L' p.1.val p.2)) ∪ (S₀ ×ˢ univ).image (fun p : FinitePlace K × ι ↦
-    LinearMap.ker (L' p.1.val p.2)), fun W hW ↦ ?_, fun x hx happrox ↦ ?_⟩
-  · simp only [mem_union, mem_image, mem_product, mem_univ, and_true, true_and,
-      Prod.exists] at hW
-    rcases hW with (hW | ⟨v, i, rfl⟩) | ⟨v, i, hv, rfl⟩
-    · -- a line is proper because `ι` has at least two elements
-      intro h
-      have h1 := hT₁ W hW
-      rw [h, finrank_top, Module.finrank_fintype_fun_eq_card] at h1
-      exact (Fintype.one_lt_card (α := ι)).ne' h1
-    · exact LinearMap.ker_eq_top.not.mpr ((hindInf v).ne_zero i)
-    · exact LinearMap.ker_eq_top.not.mpr ((hindFin v hv).ne_zero i)
+  obtain ⟨T₁, hT₁, hlines⟩ :=
+    exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le (K := K) (ι := ι) (max Q₀ Q₁)
+  refine ⟨T₁ ∪ UInf ∪ UFin, fun W hW ↦ ?_, fun x hx happrox ↦ ?_⟩
+  · rcases mem_union.mp hW with hW | hW
+    · rcases mem_union.mp hW with hW | hW
+      · -- a line is proper because `ι` has at least two elements
+        refine (Submodule.lt_top_of_finrank_lt_finrank ?_).ne
+        rw [hT₁ W hW, Module.finrank_fintype_fun_eq_card]
+        exact Fintype.one_lt_card
+      · exact hUInf W hW
+    · exact hUFin W hW
   by_cases hQ : mulHeight x ≤ max Q₀ Q₁
   · obtain ⟨W, hW, hxW⟩ := hlines x hx hQ
     exact Or.inl ⟨W, mem_union_left _ (mem_union_left _ hW), hxW⟩
   rw [not_le, max_lt_iff] at hQ
   by_cases hInf : ∃ (v : InfinitePlace K) (i : ι), L' v.val i x = 0
   · obtain ⟨v, i, hvi⟩ := hInf
-    refine Or.inl ⟨LinearMap.ker (L' v.val i), mem_union_left _ (mem_union_right _ ?_),
-      LinearMap.mem_ker.mpr hvi⟩
-    exact mem_image.mpr ⟨(v, i), mem_product.mpr ⟨mem_univ v, mem_univ i⟩, rfl⟩
+    obtain ⟨W, hW, hxW⟩ := hcovInf x v (mem_univ v) i hvi
+    exact Or.inl ⟨W, mem_union_left _ (mem_union_right _ hW), hxW⟩
   by_cases hFin : ∃ v ∈ S₀, ∃ i : ι, L' v.val i x = 0
   · obtain ⟨v, hv, i, hvi⟩ := hFin
-    exact Or.inl ⟨LinearMap.ker (L' v.val i), mem_union_right _
-      (mem_image.mpr ⟨(v, i), mem_product.mpr ⟨hv, mem_univ i⟩, rfl⟩), LinearMap.mem_ker.mpr hvi⟩
+    obtain ⟨W, hW, hxW⟩ := hcovFin x v hv i hvi
+    exact Or.inl ⟨W, mem_union_right _ hW, hxW⟩
   push Not at hInf hFin
   exact Or.inr ⟨hQ.1.le, hsol x hx hQ.2.le hInf hFin happrox⟩
 

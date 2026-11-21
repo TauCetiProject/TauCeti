@@ -19,8 +19,9 @@ The instances allow callers to use `Northcott.finite_le` and `Northcott.exists_m
 Over a number field the scalar hypothesis follows from Mathlib's number-field instance.
 
 As a consequence, the nonzero tuples of bounded height lie on finitely many lines
-(`Height.exists_finset_finrank_eq_one_of_mulHeight_le`). This is how points of small height are
-disposed of in finiteness statements about subspaces, such as the Subspace Theorem.
+(`TauCeti.exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le`). This is how points of
+small height are disposed of in finiteness statements about subspaces, such as the Subspace
+Theorem.
 
 Normalizing a nonzero coordinate to `1` bounds the scalar height of every coordinate of the
 representative by the projective height. Such representatives form a finite product of finite
@@ -75,15 +76,19 @@ instance instNorthcottLogHeight [Northcott (mulHeight (K := K) (ι := ι))] :
 
 end Projectivization
 
-namespace Height
+namespace TauCeti
+
+open Height
 
 variable {K : Type*} [Field K] [AdmissibleAbsValues K] {ι : Type*} [Finite ι]
 
-/-- The nonzero tuples of bounded height lie on finitely many lines: if the scalar height has the
-Northcott property, for instance over a number field, then for every `B` there are finitely many
-one-dimensional subspaces of `ι → K` such that every nonzero `x` with `mulHeight x ≤ B` lies in one
-of them. -/
-theorem exists_finset_finrank_eq_one_of_mulHeight_le [Northcott (mulHeight₁ (K := K))] (B : ℝ) :
+/-- The nonzero tuples of bounded height lie on finitely many lines: if the projective height has
+the Northcott property, then for every `B` there are finitely many one-dimensional subspaces of
+`ι → K` such that every nonzero `x` with `mulHeight x ≤ B` lies in one of them. The instance
+`Projectivization.instNorthcottMulHeight` supplies the Northcott property from that of the scalar
+height, for instance over a number field. -/
+theorem exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le
+    [Northcott (Projectivization.mulHeight (K := K) (ι := ι))] (B : ℝ) :
     ∃ T : Finset (Submodule K (ι → K)), (∀ W ∈ T, Module.finrank K W = 1) ∧
       ∀ x : ι → K, x ≠ 0 → mulHeight x ≤ B → ∃ W ∈ T, x ∈ W := by
   classical
@@ -96,4 +101,4 @@ theorem exists_finset_finrank_eq_one_of_mulHeight_le [Northcott (mulHeight₁ (K
   · exact ⟨Projectivization.mk K x hx, by rwa [Set.mem_ofPred_eq, Projectivization.mulHeight_mk],
       Projectivization.submodule_mk x hx⟩
 
-end Height
+end TauCeti
