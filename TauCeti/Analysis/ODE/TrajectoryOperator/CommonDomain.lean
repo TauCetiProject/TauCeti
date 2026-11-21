@@ -210,24 +210,28 @@ operator `domainTrajectoryOperator ι A₀`. -/
       domainTrajectoryOperator ι A₀ :=
   familyDomainTrajectoryOperator_of_ae_eq_const ι (memLp_top_const A₀).coeFn_toLp
 
+omit [CompleteSpace H] [IsFiniteMeasureOnCompacts mu] in
+/-- The constant coefficient `A` acts almost everywhere as `A` along any path `x`. -/
+private theorem toLp_const_apply_ae (A : D →L[ℝ] H) (x : ℝ → D) :
+    (fun s ↦ (memLp_top_const (μ := μΩ) A).toLp _ s (x s)) =ᵐ[μΩ] fun s ↦ A (x s) := by
+  filter_upwards [(memLp_top_const (μ := μΩ) A).coeFn_toLp] with s hs
+  rw [hs]
+
 /-- Pointwise almost-everywhere formula for `domainTrajectoryOperator`. -/
 theorem domainTrajectoryOperator_apply_ae (ι A : D →L[ℝ] H)
     (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
     domainTrajectoryOperator ι A u =ᵐ[μΩ]
       fun s ↦ weakFDeriv (ι.compLpL p μΩ) u s 1 + A (prev (ι.compLpL p μΩ) u s) := by
   rw [← familyDomainTrajectoryOperator_toLp_const]
-  filter_upwards [familyDomainTrajectoryOperator_apply_ae ι _ u,
-    (memLp_top_const (μ := μΩ) A).coeFn_toLp] with s hs hA
-  rw [hs, hA]
+  exact (familyDomainTrajectoryOperator_apply_ae ι _ u).trans
+    (EventuallyEq.rfl.add (toLp_const_apply_ae A _))
 
 /-- The operator norm of `domainTrajectoryOperator ι A` is at most `1 + ‖A‖`. -/
 theorem norm_domainTrajectoryOperator_le (ι A : D →L[ℝ] H) :
     ‖domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A‖ ≤ 1 + ‖A‖ := by
   rw [← familyDomainTrajectoryOperator_toLp_const]
-  refine (norm_familyDomainTrajectoryOperator_le ι _).trans (add_le_add_right
-    (Lp.norm_le_of_ae_bound_top (norm_nonneg A) ?_) 1)
-  filter_upwards [(memLp_top_const (μ := μΩ) A).coeFn_toLp] with s hs
-  rw [hs]
+  exact (norm_familyDomainTrajectoryOperator_le ι _).trans
+    (add_le_add_right (Lp.norm_toLp_memLp_top_const_le A) 1)
 
 /-- Subtracting two operators over the same domain embedding cancels the derivative part. -/
 theorem domainTrajectoryOperator_sub (ι A B : D →L[ℝ] H) :
@@ -244,9 +248,7 @@ theorem norm_domainTrajectoryOperator_sub_le (ι A B : D →L[ℝ] H) :
   rw [← familyDomainTrajectoryOperator_toLp_const, ← familyDomainTrajectoryOperator_toLp_const]
   refine (norm_familyDomainTrajectoryOperator_sub_le ι _ _).trans ?_
   rw [← MemLp.toLp_sub]
-  refine Lp.norm_le_of_ae_bound_top (norm_nonneg _) ?_
-  filter_upwards [((memLp_top_const (μ := μΩ) A).sub (memLp_top_const B)).coeFn_toLp] with s hs
-  rw [hs, Pi.sub_apply]
+  exact Lp.norm_toLp_memLp_top_const_le (A - B)
 
 /-- `domainTrajectoryOperator ι` is `1`-Lipschitz in its zero-order operator `A`. -/
 theorem lipschitzWith_domainTrajectoryOperator (ι : D →L[ℝ] H) :
@@ -266,12 +268,11 @@ theorem domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn (ι A : D →L[ℝ] H
     domainTrajectoryOperator ι A u = f ↔ HasWeakLineDerivOn mu Omega
       (ι.compLpL p μΩ (prev (ι.compLpL p μΩ) u))
       (fun s ↦ f s - A (prev (ι.compLpL p μΩ) u s)) 1 := by
-  have hc : ∀ᵐ s ∂μΩ, (memLp_top_const (μ := μΩ) A).toLp _ s = A :=
-    (memLp_top_const A).coeFn_toLp
+  have hc := (EventuallyEq.refl _ (f : ℝ → H)).sub
+    (toLp_const_apply_ae (mu := mu) (Omega := Omega) A ⇑(prev (ι.compLpL p μΩ) u))
   rw [← familyDomainTrajectoryOperator_toLp_const,
     familyDomainTrajectoryOperator_eq_iff_hasWeakLineDerivOn]
-  exact ⟨fun h ↦ h.congr_ae_deriv (by filter_upwards [hc] with s hs; rw [hs]),
-    fun h ↦ h.congr_ae_deriv (by filter_upwards [hc] with s hs; rw [hs])⟩
+  exact ⟨fun h ↦ h.congr_ae_deriv hc, fun h ↦ h.congr_ae_deriv hc.symm⟩
 
 /-- If `x ∈ Lᵖ(Ω, D)` solves `(ι ∘ x)' = f - A ∘ x` weakly on `Ω`, `x` lifts to `u` with
 `domainTrajectoryOperator ι A u = f`. -/
@@ -281,10 +282,8 @@ theorem exists_prev_eq_and_domainTrajectoryOperator_eq_of_hasWeakLineDerivOn (ι
     ∃ u : WeakDerivStep mu Omega p (ι.compLpL p μΩ),
       prev (ι.compLpL p μΩ) u = x ∧ domainTrajectoryOperator ι A u = f := by
   rw [← familyDomainTrajectoryOperator_toLp_const]
-  refine exists_prev_eq_and_familyDomainTrajectoryOperator_eq_of_hasWeakLineDerivOn ι _
-    (h.congr_ae_deriv ?_)
-  filter_upwards [(memLp_top_const (μ := μΩ) A).coeFn_toLp] with s hs
-  rw [hs]
+  exact exists_prev_eq_and_familyDomainTrajectoryOperator_eq_of_hasWeakLineDerivOn ι _
+    (h.congr_ae_deriv (EventuallyEq.rfl.sub (toLp_const_apply_ae A x)).symm)
 
 end Banach
 
