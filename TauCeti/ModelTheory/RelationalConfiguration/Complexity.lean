@@ -128,43 +128,34 @@ theorem IsExistential.isGδ_setOf_realize_alls [Countable V] {ψ : L.BoundedForm
   simp only [realize_alls, Set.ofPred_forall]
   exact .iInter_of_isOpen fun xs => hψ.isOpen_setOf_realize v xs
 
-/-- The model class of a first-order sentence is the set of configurations realizing it at the
-empty valuations. -/
-private theorem modelsOf_toInf_eq_setOf_realize {ι : Type uι} (φ : L.Sentence) :
-    modelsOf (V := V) (φ.toInf (ι := ι)) =
-      {c | @BoundedFormula.Realize L V c.toStructure Empty 0 φ default default} := by
-  ext c
-  simp only [mem_modelsOf, SentenceInf.realize_def, FormulaInf.realize_def, realize_toInf,
-    Set.mem_ofPred_eq, Subsingleton.elim Empty.elim (default : Empty → V)]
-
 /-- In a relational language, the model class of a quantifier-free first-order sentence is clopen,
 on every carrier. -/
 theorem IsQF.isClopen_modelsOf_toInf {ι : Type uι} {φ : L.Sentence} (hφ : φ.IsQF) :
     IsClopen (modelsOf (V := V) (φ.toInf (ι := ι))) := by
-  rw [modelsOf_toInf_eq_setOf_realize]
-  exact hφ.isClopen_setOf_realize _ _
+  convert hφ.isClopen_setOf_realize default default using 1
+  exact Set.ext fun _ => mem_modelsOf_toInf
 
 /-- In a relational language, the model class of a universal first-order sentence is closed, on
 every carrier. -/
 theorem IsUniversal.isClosed_modelsOf_toInf {ι : Type uι} {φ : L.Sentence} (hφ : φ.IsUniversal) :
     IsClosed (modelsOf (V := V) (φ.toInf (ι := ι))) := by
-  rw [modelsOf_toInf_eq_setOf_realize]
-  exact hφ.isClosed_setOf_realize _ _
+  convert hφ.isClosed_setOf_realize default default using 1
+  exact Set.ext fun _ => mem_modelsOf_toInf
 
 /-- In a relational language, the model class of an existential first-order sentence is open, on
 every carrier. -/
 theorem IsExistential.isOpen_modelsOf_toInf {ι : Type uι} {φ : L.Sentence}
     (hφ : φ.IsExistential) : IsOpen (modelsOf (V := V) (φ.toInf (ι := ι))) := by
-  rw [modelsOf_toInf_eq_setOf_realize]
-  exact hφ.isOpen_setOf_realize _ _
+  convert hφ.isOpen_setOf_realize default default using 1
+  exact Set.ext fun _ => mem_modelsOf_toInf
 
 /-- In a relational language, on a countable carrier, the model class of a `∀∃` sentence, the
 universal closure `ψ.alls` of an existential formula `ψ`, is a Gδ set of configurations. -/
 theorem IsExistential.isGδ_modelsOf_toInf_alls [Countable V] {ι : Type uι}
     {ψ : L.BoundedFormula Empty n} (hψ : ψ.IsExistential) :
     IsGδ (modelsOf (V := V) (ψ.alls.toInf (ι := ι))) := by
-  rw [modelsOf_toInf_eq_setOf_realize]
-  exact hψ.isGδ_setOf_realize_alls _
+  convert hψ.isGδ_setOf_realize_alls (V := V) default using 1
+  exact Set.ext fun _ => mem_modelsOf_toInf
 
 end FirstOrder.Language.BoundedFormula
 
