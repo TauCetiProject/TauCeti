@@ -13,32 +13,34 @@ public import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 /-!
 # Roots of monic polynomials under power-multiplicative seminorms
 
-Let `f` be a nonarchimedean, power-multiplicative ring seminorm on a ring `R`, and let `x : R` be
-a root of a monic polynomial `p = X ^ d + ∑_{i < d} aᵢ X ^ i` over `R` itself. Then `f x` is
-controlled by the coefficients: over every ring,
+Let `f : R → ℝ` be a nonnegative, submultiplicative, power-multiplicative and nonarchimedean
+function on a ring `R` with `f 0 = 0`, such as a nonarchimedean power-multiplicative ring
+seminorm, and let `x : R` be a root of a monic polynomial `p = X ^ d + ∑_{i < d} aᵢ X ^ i` over `R`
+itself. Then `f x` is controlled by the coefficients: over every ring,
 
 `f x ≤ max_{i < d} f aᵢ ^ (1 / (d - i))`.
 
 Over the zero ring, `d = 0` and the maximum is `0`. Over a nontrivial ring this follows from
 `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`, which gives some `i < d`
-with `f x ^ (d - i) ≤ f aᵢ`. The bound only uses that `f` is nonnegative, submultiplicative,
-power-multiplicative and nonarchimedean, with `f 0 = 0`.
+with `f x ^ (d - i) ≤ f aᵢ`.
 
 This is the ring-seminorm form of the bound of the norm of a root by the spectral value of a
 polynomial, `norm_root_le_spectralValue`, which treats coefficients in a normed field and roots in
 an algebra over it. Here the coefficients and the root live in the same ring, as in the integral
 equations used to bound supremum seminorms of affinoid algebras.
 
-Conversely, if `p` has `d` roots in a domain, counted with multiplicity, then each coefficient is
-bounded by the largest root: `f aᵢ ≤ M ^ (d - i)` whenever `f a ≤ M` for every root `a`. Together
-the two bounds identify `max_{i < d} f aᵢ ^ (1 / (d - i))` with the largest value of `f` on the
-roots of a split monic polynomial. This adapts the second half of the proof of Mathlib's
+Conversely, for a nonarchimedean ring seminorm `f` with `f 1 ≤ 1`, if `p` has `d` roots in a
+domain, counted with multiplicity, then each coefficient is bounded by the largest root:
+`f aᵢ ≤ M ^ (d - i)` whenever `f a ≤ M` for every root `a`. For a power-multiplicative such `f`,
+the two bounds together identify `max_{i < d} f aᵢ ^ (1 / (d - i))` with the largest value of `f`
+on the roots of a split monic polynomial. This adapts the second half of the proof of Mathlib's
 `max_norm_root_eq_spectralValue` ([BGR] §3.1.2, Proposition 1(2)) to ring seminorms.
 
 ## Main results
 
 * `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero`: over every ring,
-  `f x ≤ ⨆ i < d, f aᵢ ^ (1 / (d - i))`, for real-valued `f` with `f 0 = 0`.
+  `f x ≤ ⨆ i < d, f aᵢ ^ (1 / (d - i))`, for every `f : R → ℝ` as above (nonnegative,
+  submultiplicative, power-multiplicative and nonarchimedean, with `f 0 = 0`).
 * `Multiset.apply_esymm_le_pow`: `f (s.esymm k) ≤ M ^ k` when `f a ≤ M` on `s` and `k ≤ card s`.
 * `Polynomial.Monic.apply_coeff_le_pow_of_card_roots`: `f aᵢ ≤ M ^ (d - i)` when `p` has `d` roots,
   all with `f`-value at most `M`.
@@ -57,8 +59,8 @@ variable {R : Type*} [Ring R] {f : R → ℝ} {p : R[X]} {x : R}
 
 /-- **Root bound for monic polynomials.** A root `x` of a monic polynomial `p` of degree `d` over
 any ring satisfies `f x ≤ ⨆ i < d, f (p.coeff i) ^ (1 / (d - i))`, for every nonarchimedean,
-power-multiplicative, nonnegative, submultiplicative function `f` with `f 0 = 0`, such as a
-nonarchimedean power-multiplicative ring seminorm. -/
+power-multiplicative, nonnegative, submultiplicative real-valued function `f : R → ℝ` with
+`f 0 = 0`, such as a nonarchimedean power-multiplicative ring seminorm. -/
 theorem apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero (hp : p.Monic) (hf0 : f 0 = 0)
     (hf_nn : ∀ a, 0 ≤ f a) (hf_mul : ∀ a b, f (a * b) ≤ f a * f b) (hf_pm : IsPowMul f)
     (hf_na : IsNonarchimedean f) (hx : p.eval x = 0) :
