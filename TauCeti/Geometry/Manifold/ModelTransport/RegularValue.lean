@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Geometry.Manifold.RegularValue.Diffeomorph
 
 /-!
 # Regular points and values under boundaryless model transport

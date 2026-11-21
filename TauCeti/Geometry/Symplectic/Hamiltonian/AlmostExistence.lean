@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.RegularValue.Diffeomorph
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import TauCeti.Topology.Homotopy.AddCircle
 

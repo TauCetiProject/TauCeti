@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
-public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.Orientation.Boundaryless
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Data.SignType.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
@@ -69,6 +69,8 @@ preserves them.
 * `OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationOfOrientedChart`: a map whose
   expression in two charts has invertible derivative carries the local orientation selected by the
   first chart to the sign of its Jacobian times the one selected by the second.
+* `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart_eq_sign_det_smul`: the
+  unrestricted form for a continuous map with singleton fibre `f ⁻¹' {f a} ⊆ {a}`.
 * `OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul`: changing the chart
   multiplies the selected local orientation by the sign of the Jacobian of the transition map.
 * `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart`: a continuous map which
@@ -79,7 +81,8 @@ preserves them.
   `localOrientationOfManifoldOrientation_eq`.
 * `TauCeti.Manifold.Orientation.toHomologicalOrientation`: the homological orientation of a smooth
   orientation, with `toHomologicalOrientation_apply`, `toHomologicalOrientation_neg`,
-  `toHomologicalOrientation_injective`, and `comap_toHomologicalOrientation`.
+  `toHomologicalOrientation_injective`, `comap_toHomologicalOrientation`, and
+  `localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation`.
 
 ## References
 
@@ -587,6 +590,26 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
   refine e₂.trans ?_
   rw [← hχ, map_zsmul, smul_smul, hs, one_smul]
 
+/-- **Oriented charts and maps with invertible derivative and singleton fibre.** Let `f : C(M, N)`
+be continuous with `f ⁻¹' {f a} ⊆ {a}`, `φ` a chart of `M` at `a` and `χ` a chart of `N` at `f a`,
+and suppose that `χ ∘ f ∘ φ.symm` has a derivative `f'` of nonzero determinant at `φ a`. Then `f`
+carries the local orientation of `M` at `a` selected by an orientation `ω` of the model in `φ` to
+`sign (det f')` times the local orientation of `N` at `f a` selected by `ω` in `χ`. -/
+theorem
+    _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart_eq_sign_det_smul
+    (φ : OpenPartialHomeomorph M E) (χ : OpenPartialHomeomorph N E) (f : C(M, N)) {a : M}
+    (haφ : a ∈ φ.source) (haχ : f a ∈ χ.source) (hf_inj : f ⁻¹' {f a} ⊆ {a})
+    {f' : E →L[ℝ] E} (hf : HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ a)) (hdet : f'.det ≠ 0) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) f hf_inj (n + 1)
+        (φ.localOrientationOfOrientedChart haφ ω hE).val =
+      (SignType.sign f'.det : ℤ) • (χ.localOrientationOfOrientedChart haχ ω hE).val := by
+  have hU := φ.localHomologyMap_restrict_localOrientationOfOrientedChart ω hE χ f haφ haχ
+    isOpen_univ (mem_univ a) (fun _ _ hz ↦ hf_inj hz) hf hdet
+  have huniv := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
+    ⟨a, mem_univ a⟩ (φ.localOrientationOfOrientedChart haφ ω hE) fun _ hz ↦ Subtype.ext hz
+  rw [← huniv, ← ConcreteCategory.comp_apply]
+  exact (ConcreteCategory.congr_hom (localHomologyMap_comp _ _ f _ hf_inj (n + 1)) _).trans hU
+
 /-- **Change of oriented chart.** For two charts `φ` and `χ` at `a` whose transition map
 `χ ∘ φ.symm` has an invertible derivative `f'` at `φ a`, the local orientations of `M` at `a`
 selected by an orientation `ω` of the model in the two charts differ by the sign of `det f'`. -/
@@ -595,19 +618,16 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
     {f' : E →L[ℝ] E} (hf : HasFDerivAt (χ ∘ φ.symm) f' (φ a)) (hdet : f'.det ≠ 0) :
     (χ.localOrientationOfOrientedChart haχ ω hE).val =
       (SignType.sign f'.det : ℤ) • (φ.localOrientationOfOrientedChart haφ ω hE).val := by
-  -- The identity, restricted to the open set `univ`, is the inclusion of `univ`.
-  have h := φ.localHomologyMap_restrict_localOrientationOfOrientedChart ω hE χ (.id M) haφ haχ
-    isOpen_univ (mem_univ a) (fun _ _ hz ↦ hz) hf hdet
-  have hj : (ContinuousMap.id M).restrict univ =
-      ⟨Subtype.val, isOpen_univ.isOpenEmbedding_subtypeVal.continuous⟩ :=
-    ContinuousMap.ext fun _ ↦ rfl
-  have h' := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
-    ⟨a, mem_univ a⟩ (φ.localOrientationOfOrientedChart haφ ω hE) fun _ hz ↦ Subtype.ext hz
-  have e : (φ.localOrientationOfOrientedChart haφ ω hE).val =
-      (SignType.sign f'.det : ℤ) • (χ.localOrientationOfOrientedChart haχ ω hE).val :=
-    h'.symm.trans ((ConcreteCategory.congr_hom
-      (localHomologyMap_congr (ModuleCat.of ℤ (ULift.{w} ℤ)) hj _ (n + 1)) _).symm.trans h)
-  rw [e, smul_smul, coe_sign_mul_coe_sign_of_ne_zero hdet, one_smul]
+  have hm := (localHomologyMap_id (ModuleCat.of ℤ (ULift.{w} ℤ)) (S := {a}) (T := {a})
+      subset_rfl (n + 1)).trans (localHomologyRestriction_refl _ {a} (n + 1))
+  have h : (φ.localOrientationOfOrientedChart haφ ω hE).val =
+      (SignType.sign f'.det : ℤ) • (χ.localOrientationOfOrientedChart haχ ω hE).val := by
+    have h1 := (ConcreteCategory.congr_hom hm _).symm.trans
+      (φ.localHomologyMap_localOrientationOfOrientedChart_eq_sign_det_smul ω hE χ
+        (.id M) haφ haχ (fun _ hz ↦ hz) hf hdet)
+    rw [ModuleCat.id_apply] at h1
+    exact h1
+  rw [h, smul_smul, coe_sign_mul_coe_sign_of_ne_zero hdet, one_smul]
 
 end ChartChange
 
@@ -629,8 +649,6 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOriented
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
         (φ.localOrientationOfOrientedChart ha ω hE).val =
       (ψ.localOrientationOfOrientedChart hja ω hE).val := by
-  -- `j` read in the charts is the identity near `φ a`, so this is the sign-one case of
-  -- `OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationOfOrientedChart` on `univ`.
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   have hf : HasFDerivAt (ψ ∘ j ∘ φ.symm) (ContinuousLinearMap.id ℝ E) (φ a) := by
     refine (hasFDerivAt_id (φ a)).congr_of_eventuallyEq ?_
@@ -638,14 +656,8 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOriented
       with y hy hy'
     exact hy.trans hy'
   have hdet : (ContinuousLinearMap.id ℝ E).det = 1 := LinearMap.det_id
-  have key := φ.localHomologyMap_restrict_localOrientationOfOrientedChart ω hE ψ j ha hja
-    isOpen_univ (mem_univ a) (fun _ _ hz ↦ h hz) hf (hdet ▸ one_ne_zero)
-  rw [hdet, sign_one, SignType.coe_one, one_smul] at key
-  -- The restriction of `j` to `univ` is `j` after the inclusion of `univ`.
-  have h' := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
-    ⟨a, mem_univ a⟩ (φ.localOrientationOfOrientedChart ha ω hE) fun _ hz ↦ Subtype.ext hz
-  rw [← h', ← ConcreteCategory.comp_apply]
-  exact (ConcreteCategory.congr_hom (localHomologyMap_comp _ _ j _ h (n + 1)) _).trans key
+  simpa [hdet] using φ.localHomologyMap_localOrientationOfOrientedChart_eq_sign_det_smul ω hE
+    ψ j ha hja h hf (hdet ▸ one_ne_zero)
 
 end ChartNaturality
 
@@ -1205,28 +1217,28 @@ theorem comap_toHomologicalOrientation
   set f' : E →L[ℝ] E := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x
   have he' : (e' : E →L[ℝ] E) = f' := he
   have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ E := by simp [hE]
+  have hcast_out (v : E) :
+      tangentSpaceCastModel 𝓘(ℝ, E) (j x) v = v := rfl
+  have hcast_mf (v : E) :
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x ((tangentSpaceCastModel 𝓘(ℝ, E) x).symm v) = f' v := rfl
+  have hf' : (tangentSpaceCastModel 𝓘(ℝ, E) (j x) : TangentSpace 𝓘(ℝ, E) (j x) →L[ℝ] E) ∘L
+        mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x ∘L
+        ((tangentSpaceCastModel 𝓘(ℝ, E) x).symm : E →L[ℝ] TangentSpace 𝓘(ℝ, E) x) = f' := by
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hcast_out, hcast_mf]
   have hfd : HasFDerivAt (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) f' (chartAt E x x) := by
     have h :=
       (mdifferentiableAt_of_isInvertible_mfderiv (hj' x).isInvertible_mfderiv).hasMFDerivAt.right
-    simp only [writtenInExtChartAt, hasFDerivWithinAt_univ, ModelWithCorners.range_eq_univ] at h
-    exact h
+    simpa only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
+      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.id_comp, Function.comp_id,
+      range_id, hasFDerivWithinAt_univ, hf'] using h
   have hdet : f'.det ≠ 0 := by
     rw [← he']
     exact (LinearEquiv.isUnit_det' e'.toLinearEquiv).ne_zero
   let jC : C(M, N) := ⟨j, hj.continuous⟩
-  have hU := (chartAt E x).localHomologyMap_restrict_localOrientationOfOrientedChart
+  have hmap := (chartAt E x).localHomologyMap_localOrientationOfOrientedChart_eq_sign_det_smul
     oM hE (chartAt E (j x)) jC (mem_chart_source E x) (mem_chart_source E (j x))
-    isOpen_univ (mem_univ x) (fun _ _ hz ↦ hj.injective hz) hfd hdet
-  have huniv := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
-    ⟨x, mem_univ x⟩ ((chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x) oM hE)
-    fun _ hz ↦ Subtype.ext hz
-  have hmap : localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) jC
-        (by rw [ContinuousMap.coe_mk, ← image_singleton, hj.injective.preimage_image]) (n + 1)
-        ((chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x) oM hE).val =
-      (SignType.sign f'.det : ℤ) • ((chartAt E (j x)).localOrientationOfOrientedChart
-        (mem_chart_source E (j x)) oM hE).val := by
-    rw [← huniv, ← ConcreteCategory.comp_apply]
-    exact (ConcreteCategory.congr_hom (localHomologyMap_comp _ _ jC _ _ (n + 1)) _).trans hU
+    (by rw [ContinuousMap.coe_mk, ← image_singleton, hj.injective.preimage_image]) hfd hdet
   rw [hmap]
   rcases _root_.Orientation.eq_or_eq_neg oN oM (by simp [hE]) with ho | ho
   · have hpos : 0 < f'.det := by
@@ -1240,6 +1252,54 @@ theorem comap_toHomologicalOrientation
       OpenPartialHomeomorph.localOrientationOfOrientedChart_neg, LocalOrientation.coe_neg]
 
 end Comap
+
+section Rechart
+
+open scoped ContDiff
+
+variable {M E F : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace M] [T2Space M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ}
+
+/-- Pushing forward the local orientation of `o` at `x` along the linear-isometry recharting
+diffeomorphism `BoundarylessModel.diffeomorphTransContinuousLinearEquiv` yields the local
+orientation of `(o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel` at
+`Φ x`. -/
+theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation
+    (hE : finrank ℝ E = n + 1) (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
+    (f : E ≃ₗᵢ[ℝ] F) (k : ℕ∞ω) (x : M) :
+    let Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
+      f.toContinuousLinearEquiv k
+    let hF : finrank ℝ F = n + 1 := (LinearEquiv.finrank_eq f.toLinearEquiv).symm.trans hE
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (Φ.toHomeomorph : C(M, _))
+        (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
+          Φ.toHomeomorph.injective.preimage_image]) (n + 1)
+        (localOrientationOfManifoldOrientation o hE x).val =
+      (localOrientationOfManifoldOrientation
+        (o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel
+        hF (Φ.toHomeomorph x)).val := by
+  intro Φ hF
+  rw [localOrientationOfManifoldOrientation_eq, localOrientationOfManifoldOrientation_eq]
+  exact (chartAt E x).localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv
+    (chartAt F (Φ.toHomeomorph x)) hE f
+    (Φ.toHomeomorph : C(M, _)) (mem_chart_source E x)
+    (fun z hz ↦ by
+      rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_source]
+      simpa only [Φ, mem_preimage, ContinuousMap.coe_ofClass, Diffeomorph.coe_toHomeomorph,
+        BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv,
+        Homeomorph.symm_apply_apply] using hz)
+    (fun z _ ↦ by
+      rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_apply]
+      simp only [Φ, ContinuousMap.coe_ofClass, Diffeomorph.coe_toHomeomorph,
+        BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Homeomorph.symm_apply_apply,
+        ModelWithCorners.coe_transContinuousLinearEquiv, Function.comp_apply,
+        modelWithCornersSelf_coe, id_eq, LinearIsometryEquiv.coe_toContinuousLinearEquiv])
+    (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
+      Φ.toHomeomorph.injective.preimage_image])
+    (o.orientationAt x) _
+    (orientationAt_toBoundarylessModel_transContinuousLinearEquiv o f.toContinuousLinearEquiv k x)
+
+end Rechart
 
 end Manifold.Orientation
 

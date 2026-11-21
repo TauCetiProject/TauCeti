@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Degree.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Boundaryless
 public import TauCeti.Geometry.Manifold.Orientation.LinearEquiv
+import TauCeti.Geometry.Manifold.Degree.Diffeomorph
 
 /-!
 # Invariance of smooth mapping degree under source model changes

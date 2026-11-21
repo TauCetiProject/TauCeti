@@ -41,9 +41,10 @@ When a change of model vector space `L : E ≃L[ℝ] F` is also needed, compose 
   `TauCeti.Manifold.Orientation.toBoundarylessModel_inj`: compatibility with negation and
   injectivity.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv`
-  (and `isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm`): recharting
-  `BoundarylessModel` along `e : E ≃L[ℝ] F` preserves orientation to
-  `(o.transContinuousLinearEquiv e).toBoundarylessModel`.
+  (and `isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm`,
+  `orientationAt_toBoundarylessModel_transContinuousLinearEquiv`): recharting `BoundarylessModel`
+  along `e : E ≃L[ℝ] F` preserves orientation to
+  `(o.transContinuousLinearEquiv e).toBoundarylessModel` and pushes forward tangent orientations.
 -/
 
 public section
@@ -178,5 +179,66 @@ theorem isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv
     x).comp (o.isOrientationPreservingAt_id_transContinuousLinearEquiv e x)
 
 end TransContinuousLinearEquiv
+
+end TauCeti.Manifold.Orientation
+
+namespace TauCeti.Manifold.Orientation
+
+section SelfModelTransContinuousLinearEquiv
+
+variable {E F M ι : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+  [Fintype ι]
+
+/-- For a continuous linear equivalence `e : E ≃L[ℝ] F` on a self-modelled `C¹` manifold
+`(M, 𝓘(ℝ, E))`, the tangent orientation of `(o.transContinuousLinearEquiv e).toBoundarylessModel`
+at `BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) e k x` is the pushforward of
+`o.orientationAt x` along `e`. -/
+theorem orientationAt_toBoundarylessModel_transContinuousLinearEquiv
+    (o : Manifold.Orientation 𝓘(ℝ, E) M ι) (e : E ≃L[ℝ] F) (k : ℕ∞ω) (x : M) :
+    _root_.Orientation.map ι e.toLinearEquiv
+        (o.orientationAt x : _root_.Orientation ℝ E ι) =
+      (((o.transContinuousLinearEquiv e).toBoundarylessModel).orientationAt
+        (BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) e k x) :
+        _root_.Orientation ℝ F ι) := by
+  set I' := 𝓘(ℝ, E).transContinuousLinearEquiv e
+  set Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M) e k
+  have hcoe : (Φ : M → BoundarylessModel I' M) = BoundarylessModel.homeomorph I' M ∘ id := by
+    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Function.comp_id]
+  have hpres := o.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv e k x
+  change IsOrientationPreservingAt o (o.transContinuousLinearEquiv e).toBoundarylessModel
+    (Φ : M → BoundarylessModel I' M) x at hpres
+  rw [hcoe] at hpres
+  set e' : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ]
+      TangentSpace 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x) :=
+    ((tangentSpaceCastModel 𝓘(ℝ, E) x).trans e).trans
+      (tangentSpaceCastModel 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x)).symm
+  have hmf : (e' : TangentSpace 𝓘(ℝ, E) x →L[ℝ]
+        TangentSpace 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x)) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) (BoundarylessModel.homeomorph I' M ∘ id) x := by
+    rw [BoundarylessModel.mfderiv_target I' 𝓘(ℝ, E) id x,
+      ModelWithCorners.mfderiv_id_transContinuousLinearEquiv 𝓘(ℝ, E) e x]
+    ext v
+    have hcast_Φ (w : TangentSpace I' x) :
+        tangentSpaceCastModel I' (id x) w = tangentSpaceCastModel I' x w := rfl
+    simp only [e', I', Function.comp_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply, hcast_Φ,
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hcast_in (v : TangentSpace 𝓘(ℝ, E) x) : tangentSpaceCastModel 𝓘(ℝ, E) x v = v := rfl
+  have hcast_out (w : F) :
+      (tangentSpaceCastModel 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x)).symm w = w := rfl
+  have he' : (e'.toLinearEquiv : E ≃ₗ[ℝ] F) = e.toLinearEquiv := by
+    ext v
+    simp only [e', ContinuousLinearEquiv.trans_toLinearEquiv, LinearEquiv.trans_apply,
+      ContinuousLinearEquiv.coe_toLinearEquiv, hcast_in, hcast_out]
+    rfl
+  have h := (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ e' hmf).1 hpres
+  rw [← hcoe] at h
+  rw [← he']
+  exact h
+
+end SelfModelTransContinuousLinearEquiv
 
 end TauCeti.Manifold.Orientation

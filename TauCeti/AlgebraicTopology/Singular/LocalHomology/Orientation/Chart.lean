@@ -371,27 +371,6 @@ variable {M E F : Type w} [TopologicalSpace M] [T1Space M]
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-/-- Applying a linear isometry equivalence followed by radial projection about `e p` is radial
-projection about `p` followed by the restriction of `e` to the unit spheres. -/
-private theorem snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere
-    (p : E) (e : E ≃ₗᵢ[ℝ] F) :
-    TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
-        (TopCat.ofHom ⟨e, e.continuous⟩) (B := {p}ᶜ) (B' := {e p}ᶜ)
-        (fun _ hy h ↦ hy (e.injective h))) ≫
-      TopCat.ofHom (complSingletonHomotopyEquivSphere (e p)).toFun =
-    TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
-      TopCat.ofHom ⟨e.toLinearIsometry.unitSphereMap,
-        e.toLinearIsometry.continuous_unitSphereMap⟩ := by
-  ext z
-  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
-  refine (coe_complSingletonHomotopyEquivSphere_apply (e p) _).trans ?_
-  -- Unfold `TopPair.ofSubset` on the subspace component to apply `TopPair.ofSubsetMap_snd_apply`.
-  erw [TopPair.ofSubsetMap_snd_apply]
-  simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk, LinearIsometry.coe_unitSphereMap_apply,
-    LinearIsometryEquiv.coe_toLinearIsometry, ← map_sub, e.norm_map, ← map_smul]
-  exact (congrArg e (coe_complSingletonHomotopyEquivSphere_apply p z)).symm
-
 /-- Composing a chart with a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` and transporting the
 orientation of `E` along `e` preserves the oriented local homology isomorphism. -/
 theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv
@@ -406,20 +385,24 @@ theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIso
   ext : 1
   have hF' : (LinearEquiv.finrank_eq e.toLinearEquiv).symm.trans hE = hF := Subsingleton.elim _ _
   subst hF'
-  rw [singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
+  have he : (e.toHomeomorph : C(E, F)) ⁻¹' {(φ.transHomeomorph e.toHomeomorph) x} ⊆ {φ x} :=
+    fun _ hy ↦ e.injective (by simpa [OpenPartialHomeomorph.transHomeomorph_apply] using hy)
+  have hchart : TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
+          (TopCat.ofHom ⟨e.toHomeomorph, e.toHomeomorph.continuous⟩)
+          (B := {φ x}ᶜ) (B' := {(φ.transHomeomorph e.toHomeomorph) x}ᶜ)
+          (fun _ hy h ↦ hy (e.toHomeomorph.injective h))) R (n + 1) =
+      localHomologyMap R (e.toHomeomorph : C(E, F)) he (n + 1) := by
+    rw [localHomologyMap_def]
+  rw [singularHomologyComplSingletonIsoOfOrientation_hom_eq R (φ.transHomeomorph e.toHomeomorph)
+      hx' (OpenPartialHomeomorph.mem_refl_source _),
     singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom R φ hx e.toHomeomorph hx' (n + 1),
-    singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom]
-  simp only [Category.assoc]
-  congr 1
-  -- Unfold `(φ.transHomeomorph e.toHomeomorph) x` to `e (φ x)` for naturality of `δ`.
-  erw [← TopPair.reducedSingularHomologyδ_naturality_assoc]
-  congr 1
-  -- Unfold the subspace of `TopPair.ofSubset` and `transHomeomorph` to compose `TopCat` morphisms.
-  erw [← Functor.map_comp_assoc,
-    snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere (φ x) e,
-    Functor.map_comp_assoc,
-    reducedSingularHomologySphereIsoOfOrientation_hom_naturality R o
-      (o.map (Fin (n + 1)) e.toLinearEquiv) e rfl hE]
+    hchart, Category.assoc,
+    singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality R hE e
+      (OpenPartialHomeomorph.mem_refl_source _) (OpenPartialHomeomorph.mem_refl_source _)
+      (by simp [OpenPartialHomeomorph.transHomeomorph_apply]) o
+      (o.map (Fin (n + 1)) e.toLinearEquiv) rfl he,
+    ← singularHomologyComplSingletonIsoOfOrientation_hom_eq]
 
 /-- Composing a chart with a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` and transporting the
 orientation of `E` along `e` selects the same local orientation of `M` at `x`. -/

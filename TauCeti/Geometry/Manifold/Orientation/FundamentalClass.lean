@@ -8,9 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
-public import TauCeti.Geometry.Manifold.ModelTransport.Interior
 public import TauCeti.Geometry.Manifold.Orientation.Interior
-import TauCeti.Geometry.Manifold.Orientation.Boundaryless
 
 /-!
 # The integral fundamental class of a compact oriented smooth manifold
@@ -155,16 +153,13 @@ private theorem fundamentalClassSelf_eq (o : Manifold.Orientation 𝓘(ℝ, E) M
         ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
           e 1).symm.toHomeomorph :
           C(BoundarylessModel (𝓘(ℝ, E).transContinuousLinearEquiv e) M, M)) := by
-  have hid : (Homeomorph.refl M : C(M, M)).comp
+  have hrefl : (Homeomorph.refl M : C(M, M)) = ContinuousMap.id M := Homeomorph.coe_refl
+  rw [fundamentalClassSelf,
+    ← ContinuousMap.id_comp (f :=
       ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
         o.modelEquivEuclidean 1).symm.toHomeomorph :
-        C(BoundarylessModel (𝓘(ℝ, E).transContinuousLinearEquiv o.modelEquivEuclidean) M, M)) =
-      ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
-        o.modelEquivEuclidean 1).symm.toHomeomorph :
-        C(BoundarylessModel (𝓘(ℝ, E).transContinuousLinearEquiv o.modelEquivEuclidean) M, M)) := by
-    ext z
-    rfl
-  rw [fundamentalClassSelf, ← hid]
+        C(BoundarylessModel (𝓘(ℝ, E).transContinuousLinearEquiv o.modelEquivEuclidean) M, M))),
+    ← hrefl]
   exact map_fundamentalClassSelf_of_homeomorph o o o.modelEquivEuclidean e (Homeomorph.refl M)
     (isOrientationPreservingAt_id o)
 
@@ -196,76 +191,6 @@ variable {E M : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   [TopologicalSpace M] [T2Space M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M] [CompactSpace M]
   {n : ℕ}
 
-omit [T2Space M] [CompactSpace M] in
-/-- For a linear isometry `f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))`, the tangent orientation
-of `(o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel` at `Φ x` is the
-pushforward of `o.orientationAt x` along `f`. -/
-private theorem orientationAt_toBoundarylessModel_transContinuousLinearEquiv_linearIsometryEquiv
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
-    (f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (x : M) :
-    _root_.Orientation.map (Fin (n + 1)) f.toLinearEquiv
-        (o.orientationAt x : _root_.Orientation ℝ E (Fin (n + 1))) =
-      (((o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel).orientationAt
-        (BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E)
-          f.toContinuousLinearEquiv 1 x) :
-        _root_.Orientation ℝ (EuclideanSpace ℝ (Fin (n + 1))) (Fin (n + 1))) := by
-  set I' := 𝓘(ℝ, E).transContinuousLinearEquiv f.toContinuousLinearEquiv
-  have hmf : (f.toContinuousLinearEquiv : E →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
-        (BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E)
-          f.toContinuousLinearEquiv 1) x := by
-    have hcoe : (BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
-          f.toContinuousLinearEquiv 1 : M → BoundarylessModel I' M) =
-        BoundarylessModel.homeomorph I' M ∘ id := by
-      rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Function.comp_id]
-    rw [hcoe, BoundarylessModel.mfderiv_target I' 𝓘(ℝ, E) id x,
-      ModelWithCorners.mfderiv_id_transContinuousLinearEquiv 𝓘(ℝ, E) f.toContinuousLinearEquiv x]
-    ext v
-    simp only [ContinuousLinearEquiv.coe_coe]
-    -- `tangentSpaceCastModel` on `𝓘(ℝ, E)` and `𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))` is `id`.
-    rfl
-  exact (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ f.toContinuousLinearEquiv hmf).1
-    (o.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv f.toContinuousLinearEquiv
-      1 x)
-
-omit [CompactSpace M] in
-/-- Pushing forward the local orientation of `o` at `x` along the linear-isometry recharting
-diffeomorphism `BoundarylessModel.diffeomorphTransContinuousLinearEquiv` yields the local
-orientation of `(o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel` at
-`Φ x`. -/
-private theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation
-    (hE : finrank ℝ E = n + 1) (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
-    (f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (x : M) :
-    let Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
-      f.toContinuousLinearEquiv 1
-    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (Φ.toHomeomorph : C(M, _))
-        (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
-          Φ.toHomeomorph.injective.preimage_image]) (n + 1)
-        (localOrientationOfManifoldOrientation o hE x).val =
-      (localOrientationOfManifoldOrientation
-        (o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel
-        finrank_euclideanSpace_fin (Φ.toHomeomorph x)).val := by
-  intro Φ
-  rw [localOrientationOfManifoldOrientation_eq, localOrientationOfManifoldOrientation_eq]
-  exact (chartAt E x).localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv
-    (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (Φ.toHomeomorph x)) hE f
-    (Φ.toHomeomorph : C(M, _)) (mem_chart_source E x)
-    (fun z hz ↦ by
-      rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_source]
-      simpa only [Φ, mem_preimage, ContinuousMap.coe_ofClass, Diffeomorph.coe_toHomeomorph,
-        BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv,
-        Homeomorph.symm_apply_apply] using hz)
-    (fun z _ ↦ by
-      rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_apply]
-      simp only [Φ, ContinuousMap.coe_ofClass, Diffeomorph.coe_toHomeomorph,
-        BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Homeomorph.symm_apply_apply,
-        ModelWithCorners.coe_transContinuousLinearEquiv, Function.comp_apply,
-        modelWithCornersSelf_coe, id_eq, LinearIsometryEquiv.coe_toContinuousLinearEquiv])
-    (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
-      Φ.toHomeomorph.injective.preimage_image])
-    (o.orientationAt x) _
-    (orientationAt_toBoundarylessModel_transContinuousLinearEquiv_linearIsometryEquiv o f x)
-
 private theorem fundamentalClassSelf_eq_toHomologicalOrientation
     (hE : finrank ℝ E = n + 1) (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
     o.fundamentalClassSelf = (o.toHomologicalOrientation hE).fundamentalClass hE := by
@@ -292,7 +217,7 @@ private theorem fundamentalClassSelf_eq_toHomologicalOrientation
     HomologicalOrientation.localHomologyRestriction_fundamentalClassOn
       (hx := mem_univ (Φ.toHomeomorph x)),
     toHomologicalOrientation_apply, toHomologicalOrientation_apply,
-    ← localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation hE o f x,
+    ← o.localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation hE f 1 x,
     ← ConcreteCategory.comp_apply, localHomologyMap_comp]
   have hid : (Φ.symm.toHomeomorph : C(BoundarylessModel I' M, M)).comp
       (Φ.toHomeomorph : C(M, BoundarylessModel I' M)) = ContinuousMap.id M := by
@@ -387,10 +312,9 @@ theorem mapFundamentalClass_eq_of_homotopic
     (o : Manifold.Orientation I M (Fin (n + 1))) {X : Type} [TopologicalSpace X]
     {f g : C(M, X)} (h : f.Homotopic g) :
     o.mapFundamentalClass f = o.mapFundamentalClass g := by
-  rw [mapFundamentalClass_def, mapFundamentalClass_def]
-  congr 2
-  exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-    (f := TopCat.ofHom f) (g := TopCat.ofHom g) h.some _ (n + 1)
+  rw [mapFundamentalClass_def, mapFundamentalClass_def,
+    ContinuousMap.singularHomologyFunctor_map_eq_of_homotopic (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1)
+      h]
 
 end Model
 

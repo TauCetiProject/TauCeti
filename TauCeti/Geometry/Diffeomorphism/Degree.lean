@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Covered
 public import TauCeti.Geometry.Manifold.Degree.Homological
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
+import TauCeti.Geometry.Manifold.RegularValue.Diffeomorph
 
 /-!
 # Covering a manifold by diffeomorphisms of prescribed smooth degree

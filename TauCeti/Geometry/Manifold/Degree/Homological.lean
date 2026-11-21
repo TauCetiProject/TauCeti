@@ -7,20 +7,15 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Degree.Boundaryless
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.Orientation.FundamentalClass
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.Degree.Diffeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
-import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 import TauCeti.Geometry.Manifold.ModelTransport.RegularValue
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
-import TauCeti.Geometry.Manifold.Orientation.Boundaryless
-import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.RegularValue.Diffeomorph
 import TauCeti.Topology.Maps.Proper.Basic
 
