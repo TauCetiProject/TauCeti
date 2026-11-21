@@ -144,7 +144,7 @@ theorem coevaluation_comp_simpleOppositeExactPairing_evaluation :
     η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
       leftDim X ≫ rightDim X := by
   rw [← squaredNorm_simpleDoubleDualIso,
-    squaredNorm_congr k (bijective_algebraMap_end_of_simple k X) _ (pivotalIsoApp X),
+    squaredNorm_congr k (bijective_algebraMap_end_of_simple k X).surjective _ (pivotalIsoApp X),
     squaredNorm_pivotalIsoApp]
 
 section Scalar

@@ -56,8 +56,8 @@ lemma mapsTo_cechIntersection (s : CechIndex ι) :
 def cechMap (s : CechIndex ι) :
     (cechTopDiagram U).obj s ⟶ (cechTopDiagram V).obj ((CechIndex.map r).obj s) :=
   TopCat.ofHom
-    { toFun := fun x ↦ ⟨f x.1, mapsTo_cechIntersection U V f r hf s x.2⟩
-      continuous_toFun := (f.hom.continuous.comp continuous_subtype_val).subtype_mk _ }
+    { toFun := fun x ↦ ⟨f x.val, mapsTo_cechIntersection U V f r hf s x.property⟩
+      continuous_toFun := (f.hom.continuous.comp continuous_subtypeVal).subtype_mk _ }
 
 /-- Maps between Cech intersections commute with their inclusions into the ambient spaces. -/
 @[reassoc]
@@ -72,7 +72,7 @@ lemma cechMap_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
     eqToHom (cechTopDiagram_obj V ((CechIndex.map r).obj s))
         (cechMap U V f r hf s
           (eqToHom (cechTopDiagram_obj U s).symm x)) =
-      ⟨f x.1, mapsTo_cechIntersection U V f r hf s x.2⟩ := by
+      ⟨f x.val, mapsTo_cechIntersection U V f r hf s x.property⟩ := by
   apply Subtype.ext
   have hinv {A B : TopCat} (h : A = B) (y : A) : eqToHom h.symm (eqToHom h y) = y := by
     rw [← ConcreteCategory.comp_apply, eqToHom_trans, eqToHom_refl, ConcreteCategory.id_apply]

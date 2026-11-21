@@ -10,6 +10,7 @@ public import TauCeti.Probability.Distributions.Stable.Smooth
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Dirac
 import TauCeti.Probability.Distributions.Stable.Support
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Cumulative distribution functions of scalar stable laws
@@ -62,10 +63,10 @@ theorem cdf_stableMeasure_eq_integral (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) 
   let _ := isProbabilityMeasure_stableMeasure hα hβ s m
   have hμ := stableMeasure_eq_withDensity_ofReal α β hs m
   rw [cdf_eq_real, hμ]
-  exact measureReal_withDensity_ofReal
+  exact MeasureTheory.measureReal_withDensity_ofReal
     (ae_restrict_of_ae (ae_of_all volume fun y ↦ stablePDFReal_nonneg α β s m y))
-    measurableSet_Iic
-    (integrable_stablePDFReal α β s m).integrableOn
+    nullMeasurableSet_Iic
+    (measurable_stablePDFReal α β s m).aemeasurable
 
 /-- The cdf of a positive-scale stable law is differentiable at every point, with derivative its
 Fourier-inversion density. -/

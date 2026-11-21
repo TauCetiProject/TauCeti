@@ -80,17 +80,6 @@ variable {K L M I : CurvedDGRightModuleCat.{u, u, u} h}
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
   (hfg : f ≫ g = 0)
 
-/-- The differential on the three components of a totalization. -/
-private theorem totalization_differential (x : K) (y : L) (z : M) :
-    (cone (coneDesc f g hfg)).differential ((x, y), z) =
-      ((K.differential x, -closedHom f x - L.differential y),
-        closedHom g y + M.differential z) := by
-  rw [cone_differential_apply, cone_differential_apply, closedHom_coneDesc]
-  -- Cone carriers have componentwise product operations; expose their projections here.
-  change ((- -K.differential x, -(closedHom f x + L.differential y)),
-    closedHom g y + M.differential z) = _
-  simp only [neg_neg, neg_add, sub_eq_add_neg]
-
 /-- The three homogeneous components of a closed map out of a totalization. -/
 private theorem totalization_map_components
     (φ : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone (coneDesc f g hfg)) ⟶
@@ -98,9 +87,9 @@ private theorem totalization_map_components
     ∃ a : dgRightModuleCochains (R := R) (A := A) (ℳ := K.grading) (ℳN := I.grading) (-2),
       ∃ b : dgRightModuleCochains (R := R) (A := A) (ℳ := L.grading) (ℳN := I.grading) (-1),
       ∃ c : M →ₗ[Aᵐᵒᵖ] I,
-        (∀ x y z, closedHom φ ((x, y), z) = a.1 x + b.1 y + c z) ∧
-        (∀ x, I.differential (a.1 x) = a.1 (K.differential x) - b.1 (closedHom f x)) ∧
-        (∀ y, I.differential (b.1 y) = -b.1 (L.differential y) + c (closedHom g y)) := by
+        (∀ x y z, closedHom φ ((x, y), z) = a.val x + b.val y + c z) ∧
+        (∀ x, I.differential (a.val x) = a.val (K.differential x) - b.val (closedHom f x)) ∧
+        (∀ y, I.differential (b.val y) = -b.val (L.differential y) + c (closedHom g y)) := by
   let F := closedHom φ
   let a : K →ₗ[Aᵐᵒᵖ] I := F.comp
     ((LinearMap.inl Aᵐᵒᵖ (cone f) M).comp (LinearMap.inl Aᵐᵒᵖ K L))
@@ -132,14 +121,14 @@ private theorem totalization_map_components
       exact ⟨⟨Submodule.zero_mem _, hx⟩, Submodule.zero_mem _⟩)
   refine ⟨⟨a, ha⟩, ⟨b, hb⟩, c, hsplit, fun x ↦ ?_, fun y ↦ ?_⟩
   · have hd := differential_closedHom φ ((x, 0), 0)
-    rw [totalization_differential] at hd
+    rw [cone_coneDesc_differential_apply] at hd
     rw [ha_apply]
     exact hd.trans (by
       simp only [map_zero, sub_zero, add_zero]
       rw [hsplit, map_neg, map_zero, add_zero]
       exact (sub_eq_add_neg _ _).symm)
   · have hd := differential_closedHom φ ((0, y), 0)
-    rw [totalization_differential] at hd
+    rw [cone_coneDesc_differential_apply] at hd
     rw [hb_apply]
     exact hd.trans (by
       simp only [map_zero, neg_zero, zero_sub, add_zero]
@@ -152,15 +141,15 @@ include hS
 map, with its degree unchanged. -/
 private theorem descend_cochain {p : ℤ}
     (b : dgRightModuleCochains (R := R) (A := A) (ℳ := L.grading) (ℳN := I.grading) p)
-    (hb : ∀ x, b.1 (closedHom f x) = 0) :
+    (hb : ∀ x, b.val (closedHom f x) = 0) :
     ∃ c : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := I.grading) p,
-      ∀ x, c.1 (closedHom g x) = b.1 x := by
+      ∀ x, c.val (closedHom g x) = b.val x := by
   let T := (ShortComplex.mk f g hfg).map (forgetDifferential (h := h))
   have hT : T.ShortExact := hS.map_of_exact _
   have := hT.epi_g
   let b' : toGradedModuleCat L ⟶ (toGradedModuleCat I).shiftObj (-p) :=
-    GradedModuleCat.ofHom b.1
-      ((mem_dgRightModuleCochains_iff_isHomogeneous_shiftObj b.1).1 b.2)
+    GradedModuleCat.ofHom b.val
+      ((mem_dgRightModuleCochains_iff_isHomogeneous_shiftObj b.val).1 b.property)
   have hz : T.f ≫ b' = 0 := GradedModuleCat.hom_ext (LinearMap.ext hb)
   let c := hT.exact.desc b' hz
   refine ⟨⟨c.hom, ?_⟩, fun x ↦ congrArg (fun a : T.X₂ ⟶ _ ↦ a.hom x)
@@ -173,12 +162,12 @@ variable [Injective (toGradedModuleCat I)]
 private theorem extend_cochain {p : ℤ}
     (a : dgRightModuleCochains (R := R) (A := A) (ℳ := K.grading) (ℳN := I.grading) p) :
     ∃ b : dgRightModuleCochains (R := R) (A := A) (ℳ := L.grading) (ℳN := I.grading) p,
-      ∀ x, b.1 (closedHom f x) = a.1 x := by
+      ∀ x, b.val (closedHom f x) = a.val x := by
   have : Mono ((forgetDifferential (h := h)).map f) :=
     (hS.map_of_exact (forgetDifferential (h := h))).mono_f
   obtain ⟨b, hb, hba⟩ := GradedModuleCat.exists_isHomogeneous_comp_eq_of_mono
-    (toGradedModuleCat I) ((forgetDifferential (h := h)).map f) (p := p) a.1
-    ((isHomogeneous_toGradedModuleCat_iff a.1).2 a.2)
+    (toGradedModuleCat I) ((forgetDifferential (h := h)).map f) (p := p) a.val
+    ((isHomogeneous_toGradedModuleCat_iff a.val).2 a.property)
   refine ⟨⟨b, ?_⟩, fun x ↦ congrArg (fun l ↦ l x) hba⟩
   exact (isHomogeneous_toGradedModuleCat_iff b).1 hb
 
@@ -193,7 +182,7 @@ private theorem totalization_map_eq_zero
   let δe : dgRightModuleCochains (R := R) (A := A) (ℳ := L.grading) (ℳN := I.grading) (-1) :=
     dgRightModuleCochains.curvedDifferential
       (hM := L.isCurvedDGRightModule) (hN := I.isCurvedDGRightModule) (-2) e
-  have hδe (x : L) : δe.1 x = I.differential (e.1 x) - e.1 (L.differential x) := by
+  have hδe (x : L) : δe.val x = I.differential (e.val x) - e.val (L.differential x) := by
     simpa only [show (-2 : ℤ).negOnePow = 1 from by decide, one_smul] using
       (dgRightModuleCochains.curvedDifferential_apply
         (hM := L.isCurvedDGRightModule) (hN := I.isCurvedDGRightModule) (-2) e x)
@@ -201,11 +190,11 @@ private theorem totalization_map_eq_zero
     simp only [Submodule.coe_add, LinearMap.add_apply, hδe]
     rw [he, differential_closedHom f, he, hda]
     abel)
-  have hv' (x : L) : v.1 (closedHom g x) =
-      b.1 x + I.differential (e.1 x) - e.1 (L.differential x) := by
+  have hv' (x : L) : v.val (closedHom g x) =
+      b.val x + I.differential (e.val x) - e.val (L.differential x) := by
     simpa only [Submodule.coe_add, LinearMap.add_apply, hδe, add_sub_assoc] using hv x
   -- The last component equation follows after precomposition with the surjection `g`.
-  have hdv (x : M) : I.differential (v.1 x) + v.1 (M.differential x) = c x := by
+  have hdv (x : M) : I.differential (v.val x) + v.val (M.differential x) = c x := by
     have hg : Function.Surjective (closedHom g) :=
       (GradedModuleCat.epi_iff_surjective _).1
         (hS.map_of_exact (forgetDifferential (h := h))).epi_g
@@ -216,9 +205,9 @@ private theorem totalization_map_eq_zero
     abel
   -- On `(K[2] × L[1]) × M` the contracting homotopy is `(x,y,z) ↦ -e(y) + v(z)`.
   let H : cone (coneDesc f g hfg) →ₗ[Aᵐᵒᵖ] I :=
-    -(e.1.comp ((LinearMap.snd Aᵐᵒᵖ K L).comp (LinearMap.fst Aᵐᵒᵖ (cone f) M))) +
-      v.1.comp (LinearMap.snd Aᵐᵒᵖ (cone f) M)
-  have hH (x : cone (coneDesc f g hfg)) : H x = -e.1 x.1.2 + v.1 x.2 := rfl
+    -(e.val.comp ((LinearMap.snd Aᵐᵒᵖ K L).comp (LinearMap.fst Aᵐᵒᵖ (cone f) M))) +
+      v.val.comp (LinearMap.snd Aᵐᵒᵖ (cone f) M)
+  have hH (x : cone (coneDesc f g hfg)) : H x = -e.val x.1.2 + v.val x.2 := rfl
   have hH_mem : H ∈ dgRightModuleCochains (R := R) (A := A)
       (ℳ := (cone (coneDesc f g hfg)).grading) (ℳN := I.grading) (-1) := by
     rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
@@ -232,7 +221,7 @@ private theorem totalization_map_eq_zero
   rw [← (dgClosedToHomotopy R).map_zero, quotient_map_eq_iff_exists_homotopy]
   refine ⟨⟨H, hH_mem⟩, fun x ↦ ?_⟩
   rcases x with ⟨⟨x, y⟩, z⟩
-  rw [closedHom_zero, LinearMap.zero_apply, sub_zero, hH, totalization_differential, hH,
+  rw [closedHom_zero, LinearMap.zero_apply, sub_zero, hH, cone_coneDesc_differential_apply, hH,
     hsplit]
   simp only [map_neg, map_add, map_sub, neg_sub, he, hv']
   rw [← hdv z]

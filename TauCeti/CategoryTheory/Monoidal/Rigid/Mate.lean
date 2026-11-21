@@ -47,6 +47,7 @@ morphism.
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
 * `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
+* `CategoryTheory.Iso.leftAdjointMate`: the isomorphism `ᘁY ≅ ᘁX` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` (and its
   whiskered form `CategoryTheory.ExactPairing.whiskerRight_rightMate_evaluation`) and
@@ -82,7 +83,9 @@ morphism.
   comparison between two duals is an identity;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: the opposite-handed mate of the
-  inverse comparison between two duals is the comparison between the two opposite-handed duals.
+  inverse comparison between two duals is the comparison between the two opposite-handed duals;
+* `TauCeti.rightAdjointMate_whiskerRight_comp_evaluation_of_unit`: evaluating the right adjoint mate
+  of a morphism into the tensor unit.
 
 ## References
 
@@ -542,6 +545,27 @@ theorem Iso.rightAdjointMate_inv {X Y : C} [HasRightDual X] [HasRightDual Y] (e 
     e.rightAdjointMate.inv = e.invᘁ :=
   (rfl)
 
+/-- An isomorphism `X ≅ Y` induces an isomorphism `ᘁY ≅ ᘁX` of left duals, whose components are
+the left adjoint mates of those of `X ≅ Y`. -/
+def Iso.leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    (ᘁY : C) ≅ (ᘁX : C) where
+  hom := ᘁe.hom
+  inv := ᘁe.inv
+  hom_inv_id := by rw [← comp_leftAdjointMate, e.inv_hom_id, leftAdjointMate_id]
+  inv_hom_id := by rw [← comp_leftAdjointMate, e.hom_inv_id, leftAdjointMate_id]
+
+/-- The component of `Iso.leftAdjointMate e` is the left adjoint mate of that of `e`. -/
+@[simp]
+theorem Iso.leftAdjointMate_hom {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    e.leftAdjointMate.hom = ᘁe.hom :=
+  (rfl)
+
+/-- The inverse of `Iso.leftAdjointMate e` is the left adjoint mate of the inverse of `e`. -/
+@[simp]
+theorem Iso.leftAdjointMate_inv {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    e.leftAdjointMate.inv = ᘁe.inv :=
+  (rfl)
+
 end CategoryTheory
 
 namespace TauCeti
@@ -559,5 +583,16 @@ theorem leftAdjointMate_eq_leftMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (f
     (ᘁf) = ExactPairing.leftMate HasLeftDual.exact HasLeftDual.exact f :=
   ExactPairing.leftDualHom_ext (Y := X) (by
     rw [leftAdjointMate_comp_evaluation, ExactPairing.leftMate_comp_evaluation])
+
+/-- Evaluating the right adjoint mate of a unit-target morphism `f : X ⟶ 𝟙_ C` against `X`
+recovers `f` up to the left unitor. -/
+@[reassoc]
+theorem rightAdjointMate_whiskerRight_comp_evaluation_of_unit {X : C} [HasRightDual X]
+    (f : X ⟶ 𝟙_ C) :
+    fᘁ ▷ X ≫ ε_ X Xᘁ = (λ_ X).hom ≫ f := by
+  rw [rightAdjointMate_comp_evaluation]
+  -- `hasRightDualUnit` gives `(𝟙_ C)ᘁ = 𝟙_ C` with pairing `exactPairingUnit`.
+  dsimp only [HasRightDual.rightDual, hasRightDualUnit]
+  rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
 
 end TauCeti

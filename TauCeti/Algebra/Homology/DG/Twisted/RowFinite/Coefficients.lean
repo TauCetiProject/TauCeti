@@ -159,7 +159,7 @@ theorem coefficientDifferential_single_sub_apply_of_m_eq_zero (x : P) (α : M) {
   induction α using DirectSum.Decomposition.inductionOn ℳ with
   | zero => simp
   | @homogeneous q α =>
-    rw [m.coefficientDifferential_single hM x α.2, add_sub_cancel_left, Units.smul_def,
+    rw [m.coefficientDifferential_single hM x α.property, add_sub_cancel_left, Units.smul_def,
       Finsupp.smul_apply, Finsupp.sum_apply,
       Finsupp.sum_eq_single z (fun y _ hyz ↦ by simp [hyz]) (by simp)]
     simp [hz]
@@ -252,9 +252,10 @@ theorem coefficientDifferential_mapRange (f : DGRightModuleHom hM hN) (g : P →
     induction α using DirectSum.Decomposition.inductionOn ℳ with
     | zero => simp
     | @homogeneous q α =>
-      have hfα : f α ∈ 𝒩 q := f.map_mem' α.2
+      have hfα : f α ∈ 𝒩 q := f.map_mem' α.property
       rw [hF, m.coefficientDifferential_single hN x hfα,
-        m.coefficientDifferential_single hM x α.2, map_add, hF, Units.smul_def, Units.smul_def,
+        m.coefficientDifferential_single hM x α.property, map_add, hF, Units.smul_def,
+            Units.smul_def,
         map_zsmul, Finsupp.sum, Finsupp.sum, map_sum]
       simp only [hF, map_smul, DGRightModuleHom.map_d]
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
@@ -285,9 +286,7 @@ def coefficientCochainComplexMap (f : DGRightModuleHom hM hN) :
     m.coefficientCochainComplex hM ⟶ m.coefficientCochainComplex hN :=
   gradedCochainComplexHom (Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R))
     (f.isHomogeneous_mapRange (ind := ind))
-    (LinearMap.ext fun g ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply]
-      exact m.coefficientDifferential_mapRange hM hN f g)
+    fun _ g ↦ m.coefficientDifferential_mapRange hM hN f g
 
 /-- In the identifications of the complex terms with the total-degree pieces, the coefficient map
 applies `f` to every coefficient. -/
@@ -360,6 +359,26 @@ theorem coefficientCochainComplexXEquiv_d (n : ℤ) (x : (m.coefficientCochainCo
       m.coefficientDifferential hM (m.coefficientCochainComplexXEquiv hM n x) :=
   gradedCochainComplexXEquiv_d n x
 
+section CoefficientMap
+
+variable {N : Type uM} [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+  {𝒩 : ℤ → Submodule R N} [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒩]
+  {dN : N →ₗ[R] N} (hN : IsDGRightModule hA 𝒩 dN)
+
+/-- Under `coefficientCochainComplexXEquiv`, the components of the coefficient map of a morphism of
+DG right modules apply the morphism to every coefficient. -/
+@[simp]
+theorem coefficientCochainComplexXEquiv_coefficientCochainComplexMap_f_apply
+    (f : DGRightModuleHom hM hN) (n : ℤ) (x : (m.coefficientCochainComplex hM).X n) :
+    (m.coefficientCochainComplexXEquiv hN n
+        (((m.coefficientCochainComplexMap hM hN f).f n).hom x) : P →₀ N) =
+      Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R)
+        (m.coefficientCochainComplexXEquiv hM n x) :=
+  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
+
+end CoefficientMap
+
 /-- For finite `P`, the finite-support/function equivalence intertwines the coefficient
 differential with the original finite twisted differential. -/
 theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀ M) :
@@ -374,8 +393,8 @@ theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀
     induction α using DirectSum.Decomposition.inductionOn ℳ with
     | zero => simp
     | @homogeneous q α =>
-      rw [m.coefficientDifferential_single hM x α.2, Finsupp.linearEquivFunOnFinite_single,
-        twistedDifferential_single (fun x y ↦ m.m x y) dM x α.2]
+      rw [m.coefficientDifferential_single hM x α.property, Finsupp.linearEquivFunOnFinite_single,
+        twistedDifferential_single (fun x y ↦ m.m x y) dM x α.property]
       ext y
       simp [Finsupp.single_apply, Pi.single_apply, Finsupp.sum_fintype, eq_comm]
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
@@ -390,7 +409,7 @@ def coefficientCochainComplexHom (Φ : (P →₀ M) →ₗ[R] (Q →₀ M))
     (hΦ : LinearMap.IsHomogeneous Φ (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ indQ) 0)
     (hcomm : mQ.coefficientDifferential hM ∘ₗ Φ = Φ ∘ₗ m.coefficientDifferential hM) :
     m.coefficientCochainComplex hM ⟶ mQ.coefficientCochainComplex hM :=
-  gradedCochainComplexHom Φ hΦ hcomm
+  gradedCochainComplexHom Φ hΦ fun _ x ↦ LinearMap.congr_fun hcomm x
 
 /-- The components of the morphism of a linear map are that linear map. -/
 @[simp]
@@ -402,7 +421,8 @@ theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHom_f_apply
     (mQ.coefficientCochainComplexXEquiv hM n
         (((coefficientCochainComplexHom hM Φ hΦ hcomm).f n).hom x) : Q →₀ M) =
       Φ (m.coefficientCochainComplexXEquiv hM n x) :=
-  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply Φ hΦ hcomm n x
+  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply Φ hΦ
+    (fun _ x ↦ LinearMap.congr_fun hcomm x) n x
 
 /-- Two morphisms of coefficient complexes agree when their components agree on coefficient
 vectors. -/
@@ -426,7 +446,8 @@ def coefficientCochainComplexHomotopy {Φ Ψ : (P →₀ M) →ₗ[R] (Q →₀ 
     (hΦΨ : Φ = mQ.coefficientDifferential hM ∘ₗ H + H ∘ₗ m.coefficientDifferential hM + Ψ) :
     Homotopy (coefficientCochainComplexHom hM Φ hΦ hcommΦ)
       (coefficientCochainComplexHom hM Ψ hΨ hcommΨ) :=
-  gradedCochainComplexHomotopy hΦ hΨ hcommΦ hcommΨ H hH hΦΨ
+  gradedCochainComplexHomotopy hΦ hΨ (fun _ x ↦ LinearMap.congr_fun hcommΦ x)
+    (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH fun _ x ↦ LinearMap.congr_fun hΦΨ x
 
 /-- The components of the homotopy of a linear map `H` are `H`. -/
 theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_apply
@@ -444,8 +465,9 @@ theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_ap
         (((coefficientCochainComplexHomotopy hM hΦ hΨ hcommΦ hcommΨ H hH hΦΨ).hom p q).hom x) :
         Q →₀ M) =
       H (m.coefficientCochainComplexXEquiv hM p x) :=
-  gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hΦ hΨ hcommΦ hcommΨ H hH
-    hΦΨ p q hpq x
+  gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hΦ hΨ
+    (fun _ x ↦ LinearMap.congr_fun hcommΦ x) (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH
+    (fun _ x ↦ LinearMap.congr_fun hΦΨ x) p q hpq x
 
 end RowFiniteTwistingCocycle
 

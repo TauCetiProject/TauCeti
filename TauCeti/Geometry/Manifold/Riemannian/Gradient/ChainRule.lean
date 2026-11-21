@@ -99,6 +99,15 @@ theorem mgradient_comp (hg : MDifferentiableAt I' 𝓘(ℝ) g (φ x))
 
 end Composition
 
+/-- The inner product with the gradient of a continuous linear functional `ℓ` applied to a map
+`g` into a vector space is `ℓ` applied to the derivative of `g`. -/
+theorem _root_.ContinuousLinearMap.inner_mgradient_comp {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (ℓ : F →L[ℝ] ℝ) {g : M → F} (hg : MDifferentiableAt I 𝓘(ℝ, F) g x)
+    (v : TangentSpace I x) :
+    inner ℝ (mgradient I (fun y ↦ ℓ (g y)) x) v = ℓ (mvfderiv I g x v) := by
+  rw [inner_mgradient]
+  exact ℓ.mvfderiv_comp_apply hg v
+
 /-- Scalar postcomposition multiplies the relative gradient by the scalar derivative.
 The outer derivative may itself be taken within a subset of the real line. -/
 theorem mgradientWithin_comp_hasDerivWithinAt {g : ℝ → ℝ} {g' : ℝ} {t : Set ℝ}

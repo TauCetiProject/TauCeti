@@ -222,10 +222,10 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 6 ⊕ Fin
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
           (baseChangeDefiningIdeal A) ≫
         rootSubgroupToBaseChangeCoordinateMap A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
         (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis A k := by
+        rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) matrixBasis A := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
@@ -400,20 +400,20 @@ noncomputable def generatorCoordinateMap (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     GeneralLinear.coordinateHopfAlgebra A 54 ⟶ generatorCoordinateAlgebra A j :=
   match j with
   | .inl i =>
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
         (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis A i
+        rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) matrixBasis A
   | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A matrixWeight
 
 /-- The root branch of the generator family is the transported root-subgroup map. -/
 @[simp]
 theorem generatorCoordinateMap_inl (i : Fin 6 ⊕ Fin 6) :
     generatorCoordinateMap A (.inl i) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
         (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis A i := by
+        rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) matrixBasis A := by
   simp [generatorCoordinateMap]
 
 /-- The torus branch of the generator family is the transported weight-torus map. -/

@@ -17,7 +17,7 @@ after a change of generators of a finitely generated algebra.
 ## Main results
 
 * `MvPolynomial.totalDegree_bind₁_le`: if every `f i` has total degree at most `D`, then
-  `bind₁ f p` has total degree at most `p.totalDegree * D`.
+  `aeval f p` has total degree at most `p.totalDegree * D`.
 -/
 
 public section
@@ -30,11 +30,11 @@ variable {σ τ R : Type*} [CommSemiring R]
 degree by at most `D`. -/
 theorem totalDegree_bind₁_le {f : σ → MvPolynomial τ R} {D : ℕ}
     (hf : ∀ i, (f i).totalDegree ≤ D) (p : MvPolynomial σ R) :
-    (bind₁ f p).totalDegree ≤ p.totalDegree * D := by
+    (aeval f p).totalDegree ≤ p.totalDegree * D := by
   conv_lhs => rw [p.as_sum]
   rw [map_sum]
   refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
-  rw [bind₁_monomial]
+  rw [aeval_monomial, algebraMap_eq, Finsupp.prod]
   refine (totalDegree_mul _ _).trans ?_
   rw [totalDegree_C, zero_add]
   refine (totalDegree_finsetProd _ _).trans ?_

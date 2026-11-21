@@ -8,7 +8,6 @@ module
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction
 public import TauCeti.CategoryTheory.Semisimple.OppositePairing
 public import TauCeti.CategoryTheory.Semisimple.Rigid
-import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 
 /-!
 # The left adjunction for induction into the Drinfeld centre
@@ -39,8 +38,8 @@ fail in `M₂(Vec_k)`, where `inductionObj E₁₂ = 0`).
   `CategoryTheory.Center.instIsLeftAdjointInduction`, with unit/counit formulas
   `inductionForgetAdjunction_unit_app` and `ι_comp_inductionForgetAdjunction_counit_app_f`;
 * `inductionForgetAdjunction_unit_app_comp_forgetInductionAdjunction_counit_app`,
-  `instIsSplitMonoInductionForgetAdjunctionUnitApp`,
-  `instIsSplitEpiForgetInductionAdjunctionCounitApp`, and `instFaithfulInduction`.
+  `instIsSplitMonoInductionForgetAdjunctionUnitApp`, and
+  `instIsSplitEpiForgetInductionAdjunctionCounitApp`.
 
 ## References
 
@@ -252,13 +251,6 @@ private theorem rightAdjointMate_whiskerRight_comp_inductionMate (S : SimpleClas
       (λ_ S.reprᘁ).hom := by
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
   refine ExactPairing.rightHom_ext (X := S.repr) ?_
-  have hmate : (u₀.hom)ᘁ ▷ (SimpleClasses.classOf (𝟙_ C)).repr ≫
-        ε_ (SimpleClasses.classOf (𝟙_ C)).repr _ =
-      (λ_ (SimpleClasses.classOf (𝟙_ C)).repr).hom ≫ u₀.hom := by
-    rw [rightAdjointMate_comp_evaluation]
-    -- `hasRightDualUnit` gives `(𝟙_ C)ᘁ = 𝟙_ C` with pairing `exactPairingUnit`.
-    dsimp only [HasRightDual.rightDual, hasRightDualUnit]
-    rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
   calc ((u₀.hom)ᘁ ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ▷ S.repr ≫
           ε_ S.repr S.reprᘁ
       = (𝟙 _ ⊗≫ ((u₀.hom)ᘁ ▷ (S.reprᘁ ⊗ S.repr) ≫
@@ -270,7 +262,8 @@ private theorem rightAdjointMate_whiskerRight_comp_inductionMate (S : SimpleClas
             ε_ (SimpleClasses.classOf (𝟙_ C)).repr _) := by
         rw [← whisker_exchange]; monoidal
     _ = (λ_ S.reprᘁ).hom ▷ S.repr ≫ ε_ S.repr S.reprᘁ := by
-        rw [hmate, leftUnitor_naturality_assoc, Category.assoc, u₀.inv_hom_id, Category.comp_id]
+        rw [rightAdjointMate_whiskerRight_comp_evaluation_of_unit, leftUnitor_naturality_assoc,
+          Category.assoc, u₀.inv_hom_id, Category.comp_id]
         monoidal
 
 private theorem left_triangle_self (X : C) (S : SimpleClasses C) :
@@ -631,11 +624,6 @@ instance instIsSplitEpiForgetInductionAdjunctionCounitApp (X : C) :
   IsSplitEpi.mk'
     { section_ := (inductionForgetAdjunction k C).unit.app X
       id := inductionForgetAdjunction_unit_app_comp_forgetInductionAdjunction_counit_app k C X }
-
-/-- In a fusion category `C` over an algebraically closed field `k`, the induction functor
-`Center.induction k C : C ⥤ Center C` is faithful. -/
-instance instFaithfulInduction : (induction k C).Faithful :=
-  (inductionForgetAdjunction k C).faithful_L_of_mono_unit_app
 
 end Fusion
 

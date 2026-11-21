@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
-public import TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm
 public import TauCeti.CategoryTheory.Semisimple.Basic
 
 /-!
@@ -159,12 +159,8 @@ theorem simpleOppositeExactPairing_coevaluation_of_iso_unit {X : C} [Simple X] (
   let s : 𝟙_ C ⟶ Xᘁ ⊗ X := (λ_ (𝟙_ C)).inv ≫ ((u.hom)ᘁ ⊗ₘ u.inv)
   have : IsIso s := by dsimp only [s]; rw [← Iso.rightAdjointMate_hom u]; infer_instance
   have hs : s ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
-    have hmate : (u.hom)ᘁ ▷ X ≫ ε_ X Xᘁ = (λ_ X).hom ≫ u.hom := by
-      rw [rightAdjointMate_comp_evaluation]
-      -- `hasRightDualUnit` gives `(𝟙_ C)ᘁ = 𝟙_ C` with pairing `exactPairingUnit`.
-      dsimp only [HasRightDual.rightDual, hasRightDualUnit]
-      rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
-    rw [Category.assoc, tensorHom_def', Category.assoc, hmate, ← Category.assoc,
+    rw [Category.assoc, tensorHom_def', Category.assoc,
+      rightAdjointMate_whiskerRight_comp_evaluation_of_unit, ← Category.assoc,
       ← leftUnitor_inv_naturality, Category.assoc, Iso.inv_hom_id_assoc, u.inv_hom_id]
   have hεs : ε_ X Xᘁ ≫ s = 𝟙 (Xᘁ ⊗ X) := by rw [← cancel_epi s, reassoc_of% hs, Category.comp_id]
   rw [← Category.comp_id (@ExactPairing.coevaluation C _ _ Xᘁ X (simpleOppositeExactPairing X)),
