@@ -87,7 +87,7 @@ private lemma existsUnique_involutive_perm_root_conj (hR' : 0 < R') (hn : n ≠ 
     (fun b hb ↦ (hr b hb).1) hroot (hκ.mono hST) hκS hκS
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
-    ⟨(x₀, t₀), x₀.2, t₀.2⟩
+    ⟨(x₀, t₀), x₀.property, t₀.property⟩
 
 /-- Construct nonmonic Puiseux branches with global Laurent difference units respecting
 conjugation. The unique conjugation permutation preserves the difference exponents and
@@ -146,7 +146,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit_conj
           w (σ i) (σ j) (σ.injective.ne hij) b =
             conj (w i j hij (τ b.1, conj b.2)) := by
     obtain ⟨x₀⟩ : Nonempty U := inferInstance
-    refine AnalyticOnNhd.laurent_eq_of_conj hU hR' ⟨x₀, x₀.2⟩ hτ hτU
+    refine AnalyticOnNhd.laurent_eq_of_conj hU hR' ⟨x₀, x₀.property⟩ hτ hτU
       ((hwa _ _ _).restrictScalars (𝕜 := ℝ)) (hw0 _ _ _) ((hwa i j hij).restrictScalars (𝕜 := ℝ))
       (hw0 i j hij) fun b hb ↦ ?_
     rw [← hwform (σ i) (σ j) (σ.injective.ne hij) b hb,

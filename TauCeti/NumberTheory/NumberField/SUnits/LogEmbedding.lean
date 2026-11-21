@@ -51,8 +51,8 @@ values. -/
 def logEmbedding (S : Finset (HeightOneSpectrum (𝓞 K))) :
     Additive ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) →+ logSpace S where
   toFun x := Sum.elim
-    (fun w ↦ w.1.mult * Real.log (w.1 (x.toMul : Kˣ)))
-    (fun v ↦ Real.log (FinitePlace.mk v.1 (x.toMul : Kˣ)))
+    (fun w ↦ w.val.mult * Real.log (w.val (x.toMul : Kˣ)))
+    (fun v ↦ Real.log (FinitePlace.mk v.val (x.toMul : Kˣ)))
   map_zero' := by
     classical
     ext i
@@ -67,14 +67,14 @@ theorem logEmbedding_apply_inl (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
     (w : {w : InfinitePlace K // w ≠ w₀}) :
     logEmbedding S (Additive.ofMul x) (Sum.inl w) =
-      w.1.mult * Real.log (w.1 (x : Kˣ)) :=
+      w.val.mult * Real.log (w.val (x : Kˣ)) :=
   (rfl)
 
 @[simp]
 theorem logEmbedding_apply_inr (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : (S : Set (HeightOneSpectrum (𝓞 K))).unit K) (v : S) :
     logEmbedding S (Additive.ofMul x) (Sum.inr v) =
-      Real.log (FinitePlace.mk v.1 (x : Kˣ)) :=
+      Real.log (FinitePlace.mk v.val (x : Kˣ)) :=
   (rfl)
 
 private theorem normalizedAbsValue_inl_eq_one_of_notMem
@@ -92,7 +92,7 @@ theorem sum_mult_mul_log_add_sum_log_finitePlace
     (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
     (∑ w : InfinitePlace K, w.mult * Real.log (w ((x : Kˣ) : K))) +
-        ∑ v : S, Real.log (FinitePlace.mk v.1 ((x : Kˣ) : K)) = 0 := by
+        ∑ v : S, Real.log (FinitePlace.mk v.val ((x : Kˣ) : K)) = 0 := by
   classical
   have hx : ((x : Kˣ) : K) ≠ 0 := (x : Kˣ).ne_zero
   have hsupp : Function.mulSupport
@@ -109,18 +109,18 @@ theorem sum_mult_mul_log_add_sum_log_finitePlace
   have hfinprod :
       ∏ᶠ v : HeightOneSpectrum (𝓞 K),
           GlobalNumberFields.normalizedAbsValue (Sum.inl v) ((x : Kˣ) : K) =
-        ∏ v : S, FinitePlace.mk v.1 ((x : Kˣ) : K) := by
+        ∏ v : S, FinitePlace.mk v.val ((x : Kˣ) : K) := by
     rw [finprod_eq_prod_of_mulSupport_subset _ hsupp]
     rw [← Finset.prod_coe_sort]
-    exact Fintype.prod_congr _ _ fun v ↦ hfinite v.1
+    exact Fintype.prod_congr _ _ fun v ↦ hfinite v.val
   have hprod :
-      (∏ v : S, FinitePlace.mk v.1 ((x : Kˣ) : K)) *
+      (∏ v : S, FinitePlace.mk v.val ((x : Kˣ) : K)) *
           ∏ w : InfinitePlace K, w ((x : Kˣ) : K) ^ w.mult = 1 := by
     have h := GlobalNumberFields.finprod_normalizedAbsValue_eq_one hx
     rw [finprod_sum_type (fun v ↦ GlobalNumberFields.normalizedAbsValue v ((x : Kˣ) : K))
       (S.finite_toSet.subset hsupp) (Set.toFinite _), hfinprod, finprod_eq_prod_of_fintype] at h
     simpa only [Function.comp_apply, GlobalNumberFields.normalizedAbsValue_inr] using h
-  have hposFinite (v : S) : 0 < FinitePlace.mk v.1 ((x : Kˣ) : K) :=
+  have hposFinite (v : S) : 0 < FinitePlace.mk v.val ((x : Kˣ) : K) :=
     FinitePlace.pos_iff.mpr hx
   have hposInfinite (w : InfinitePlace K) : 0 < w ((x : Kˣ) : K) :=
     InfinitePlace.pos_iff.mpr hx
@@ -183,7 +183,7 @@ theorem logEmbedding_unitOfUnits (S : Finset (HeightOneSpectrum (𝓞 K))) (u : 
       simp only [logEmbedding_apply_inr, Sum.elim_inr, Pi.zero_apply]
       rw [val_unitOfUnits,
         FinitePlace.mk_apply,
-        (FinitePlace.norm_eq_one_iff_notMem K v.1 (u : 𝓞 K)).mpr
-          (v.1.asIdeal.notMem_of_isUnit u.isUnit), Real.log_one]
+        (FinitePlace.norm_eq_one_iff_notMem K v.val (u : 𝓞 K)).mpr
+          (v.val.asIdeal.notMem_of_isUnit u.isUnit), Real.log_one]
 
 end TauCeti.NumberField.SUnit

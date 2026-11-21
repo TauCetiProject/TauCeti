@@ -11,8 +11,10 @@ import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Complex.Finrank
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Complex orientations of real determinant lines
@@ -46,7 +48,12 @@ complex vector spaces and complex-linear maps:
   (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`), also when the sequence is
   isomorphic to the real restriction of a complex one through real isomorphisms of the first,
   second and fourth terms and the identity of the third
-  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr`).
+  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr`);
+* for an exact sequence `0 → B₁ → ⋯ → B₆ → 0` of real vector spaces isomorphic to the real
+  restriction of a complex one, the isomorphism
+  `det B₂ ⊗ (det B₅)^* ≃ (det B₁ ⊗ (det B₄)^*) ⊗ (det B₃ ⊗ (det B₆)^*)`
+  (`TauCeti.detLineSixTermEquiv`) sends complex positive elements to tensor products of complex
+  positive elements (`TauCeti.exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul`).
 
 No sign corrections enter, because complex vector spaces have even real dimension. The second
 statement is the form needed for Fredholm operators. A stabilization `D₂ : Λ → F` of a
@@ -93,6 +100,8 @@ likewise for `(det E)^*` and `det E ⊗ (det F)^*`.
   sequences.
 * `TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`: compatibility with four-term exact
   sequences, hence with stabilizations of complex-linear Fredholm operators.
+* `TauCeti.exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul`: compatibility
+  with six-term exact sequences, hence with compositions of complex-linear maps.
 
 ## References
 
@@ -241,6 +250,14 @@ theorem isComplexPositive_ιMulti_complexToRealFamily (b : Basis (Fin n) ℂ E)
     (h : finrank ℝ E = 2 * n) :
     IsComplexPositive (exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑b ∘ Fin.cast h)) :=
   ⟨n, b, 1, one_pos, by simp⟩
+
+omit [IsScalarTower ℝ ℂ E] in
+/-- The determinant line of the zero complex vector space is oriented by its generator, the empty
+exterior product, which is complex positive. -/
+theorem isComplexPositive_ιMulti_of_subsingleton [Subsingleton E]
+    (v : Fin (finrank ℝ E) → E) : IsComplexPositive (exteriorPower.ιMulti ℝ _ v) := by
+  have h : finrank ℝ E = 2 * 0 := finrank_zero_of_subsingleton
+  convert isComplexPositive_ιMulti_complexToRealFamily (Basis.empty E : Basis (Fin 0) ℂ E) h
 
 /-- The exterior product of the image under a complex-linear map `f` of the real family underlying
 a family `v` is complex positive in `det F` when `f ∘ v` is a complex basis `b` of `F`. -/
@@ -615,7 +632,7 @@ theorem isComplexPositive_detLineShortExactEquiv_tmul
   have hgC : Function.Surjective g := hg
   have : FiniteDimensional ℂ U := Module.Finite.of_restrictScalars_finite ℝ ℂ U
   have : FiniteDimensional ℂ W := Module.Finite.of_restrictScalars_finite ℝ ℂ W
-  have : FiniteDimensional ℂ V := finiteDimensional_of_exact hfgC
+  have : FiniteDimensional ℂ V := hfgC.moduleFinite
   -- Lift a basis of `W` to `V`; with the image of a basis of `U` it is a basis of `V`.
   obtain ⟨v, bV, hv, hbV⟩ := Basis.exists_coe_eq_append_lift hfC hfgC hgC (finBasis ℂ U)
     (finBasis ℂ W)
@@ -664,7 +681,7 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   have : FiniteDimensional ℂ A := Module.Finite.of_restrictScalars_finite ℝ ℂ A
   have : FiniteDimensional ℂ C := Module.Finite.of_restrictScalars_finite ℝ ℂ C
   have : FiniteDimensional ℂ D := Module.Finite.of_surjective h hhC
-  have : FiniteDimensional ℂ B := finiteDimensional_of_exact hfgC
+  have : FiniteDimensional ℂ B := hfgC.moduleFinite
   have : FiniteDimensional ℝ D := Module.Finite.trans ℂ D
   -- Complex bases of `A`, of `range g` and of `D`, lifts of the last two to `B` and `C`, and the
   -- complex bases of `B` and of `C` they give, adapted to the exact sequence.
@@ -676,16 +693,13 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   obtain ⟨z, bC, hz, hbC⟩ := Basis.exists_coe_eq_append_lift (LinearMap.range g).injective_subtype
     hghC.range_subtype hhC bR bD
   have hv' : g ∘ v = (LinearMap.range g).subtype ∘ bR := by
-    rw [← hv, ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict]
+    rw [← hv, LinearMap.subtype_comp_rangeRestrict_comp]
   rw [← hv'] at hbC
   have hB : finrank ℂ B = _ := (finrank_eq_card_basis bB).trans (Fintype.card_fin _)
   have hC : finrank ℂ C = _ := (finrank_eq_card_basis bC).trans (Fintype.card_fin _)
   -- Real dimensions are twice the complex ones.
   have hA₂ := finrank_real_eq_two_mul_finrank_complex (V := A)
-  have hR₂ : finrank ℝ (LinearMap.range (g.restrictScalars ℝ)) =
-      2 * finrank ℂ (LinearMap.range g) := by
-    rw [LinearMap.range_restrictScalars]
-    exact finrank_real_eq_two_mul_finrank_complex (V := (LinearMap.range g).restrictScalars ℝ)
+  have hR₂ := g.finrank_range_restrictScalars_eq_two_mul
   have hB₂ := finrank_real_eq_two_mul_finrank_complex (V := B)
   have hC₂ := finrank_real_eq_two_mul_finrank_complex (V := C)
   have hD₂ := finrank_real_eq_two_mul_finrank_complex (V := D)
@@ -759,5 +773,199 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr
   exact isComplexPositiveTMulDual_detLineFourTermEquiv hf hfg hgh hh ht
 
 end FourTerm
+
+section SixTerm
+
+variable {E' F' : Type*} [AddCommGroup E'] [Module ℝ E'] [AddCommGroup F'] [Module ℝ F']
+
+/-- The exterior product of the image under `g` of `e ∘ u`, followed by `e' ∘ v`, is carried by
+`e'⁻¹` to a complex positive element when `(f ∘ u, v)` is a complex basis, for real isomorphisms
+`e` and `e'` intertwining the complex-linear `f` with the real-linear `g`. This is a complex
+positive element of the determinant line of the middle term of an exact sequence, transported
+from a complex sequence to an isomorphic real one. -/
+private theorem isComplexPositive_detLineCongr_symm_ιMulti_append {m n a b : ℕ}
+    {f : E →ₗ[ℂ] F} {g : E' →ₗ[ℝ] F'} (e : E ≃ₗ[ℝ] E') (e' : F ≃ₗ[ℝ] F')
+    (h : g ∘ₗ e.toLinearMap = e'.toLinearMap ∘ₗ f.restrictScalars ℝ) {u : Fin m → E}
+    {v : Fin n → F} (bF : Basis (Fin (m + n)) ℂ F) (hbF : ⇑bF = Fin.append (f ∘ u) v)
+    (ha : a = 2 * m) (hb : b = 2 * n) (hab : finrank ℝ F' = a + b) :
+    IsComplexPositive (e'.symm.detLineCongr (exteriorPower.ιMulti ℝ _
+      (Fin.append (g ∘ e ∘ complexToRealFamily u ∘ Fin.cast ha)
+        (e' ∘ complexToRealFamily v ∘ Fin.cast hb) ∘ Fin.cast hab))) := by
+  have hp (z : E) : g (e z) = e' (f z) := LinearMap.congr_fun h z
+  refine isComplexPositive_of_coe_eq_smul_ιMulti_append f bF hbF ha hb one_pos ?_
+  rw [one_smul, LinearEquiv.coe_detLineCongr, exteriorPower.ιMulti_apply_coe,
+    ExteriorAlgebra.ιMulti_comp_cast, ExteriorAlgebra.map_apply_ιMulti]
+  congr 1
+  funext i
+  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) i <;> simp [hp]
+
+/-- The exterior product of `g ∘ e ∘ u` is carried by `e'⁻¹` to a complex positive element when
+`f ∘ u` is a complex basis, for real isomorphisms `e` and `e'` intertwining the complex-linear `f`
+with the real-linear `g`. This is the case of `isComplexPositive_detLineCongr_symm_ιMulti_append`
+with an empty second family `v`. -/
+private theorem isComplexPositive_detLineCongr_symm_ιMulti_comp {n : ℕ} {f : E →ₗ[ℂ] F}
+    {g : E' →ₗ[ℝ] F'} (e : E ≃ₗ[ℝ] E') (e' : F ≃ₗ[ℝ] F')
+    (h : g ∘ₗ e.toLinearMap = e'.toLinearMap ∘ₗ f.restrictScalars ℝ) {u : Fin n → E}
+    (b : Basis (Fin n) ℂ F) (hu : f ∘ u = b) (hn : finrank ℝ F' = 2 * n) :
+    IsComplexPositive (e'.symm.detLineCongr (exteriorPower.ιMulti ℝ _
+      (g ∘ e ∘ complexToRealFamily u ∘ Fin.cast hn))) := by
+  have hp (z : E) : g (e z) = e' (f z) := LinearMap.congr_fun h z
+  have hF : finrank ℝ F = 2 * n := e'.finrank_eq.trans hn
+  convert isComplexPositive_ιMulti_comp_complexToRealFamily f b hu hF using 1
+  rw [LinearEquiv.detLineCongr_ιMulti]
+  congr 1
+  funext i
+  simp [hp]
+
+
+variable {A₁ A₂ A₃ A₄ A₅ A₆ : Type*}
+  [AddCommGroup A₁] [Module ℂ A₁] [Module ℝ A₁] [IsScalarTower ℝ ℂ A₁]
+  [AddCommGroup A₂] [Module ℂ A₂] [Module ℝ A₂] [IsScalarTower ℝ ℂ A₂]
+  [AddCommGroup A₃] [Module ℂ A₃] [Module ℝ A₃] [IsScalarTower ℝ ℂ A₃]
+  [AddCommGroup A₄] [Module ℂ A₄] [Module ℝ A₄] [IsScalarTower ℝ ℂ A₄]
+  [AddCommGroup A₅] [Module ℂ A₅] [Module ℝ A₅] [IsScalarTower ℝ ℂ A₅]
+  [AddCommGroup A₆] [Module ℂ A₆] [Module ℝ A₆] [IsScalarTower ℝ ℂ A₆]
+  {f₁ : A₁ →ₗ[ℂ] A₂} {f₂ : A₂ →ₗ[ℂ] A₃} {f₃ : A₃ →ₗ[ℂ] A₄} {f₄ : A₄ →ₗ[ℂ] A₅}
+  {f₅ : A₅ →ₗ[ℂ] A₆}
+  {B₁ B₂ B₃ B₄ B₅ B₆ : Type*} [AddCommGroup B₁] [Module ℝ B₁] [AddCommGroup B₂] [Module ℝ B₂]
+  [AddCommGroup B₃] [Module ℝ B₃] [AddCommGroup B₄] [Module ℝ B₄] [AddCommGroup B₅]
+  [Module ℝ B₅] [AddCommGroup B₆] [Module ℝ B₆]
+  [FiniteDimensional ℝ B₁] [FiniteDimensional ℝ B₃] [FiniteDimensional ℝ B₅]
+  {g₁ : B₁ →ₗ[ℝ] B₂} {g₂ : B₂ →ₗ[ℝ] B₃} {g₃ : B₃ →ₗ[ℝ] B₄} {g₄ : B₄ →ₗ[ℝ] B₅}
+  {g₅ : B₅ →ₗ[ℝ] B₆}
+
+/-- **Six-term exact sequences isomorphic to complex ones respect complex orientations.** Let
+`0 → B₁ → B₂ → B₃ → B₄ → B₅ → B₆ → 0` be an exact sequence of real vector spaces, isomorphic
+through real isomorphisms `eᵢ : Aᵢ ≃ Bᵢ` to the real restriction of an exact sequence
+`0 → A₁ → ⋯ → A₆ → 0` of complex vector spaces and complex-linear maps. Then the identification
+`det B₂ ⊗ (det B₅)^* ≃ (det B₁ ⊗ (det B₄)^*) ⊗ (det B₃ ⊗ (det B₆)^*)`
+(`TauCeti.detLineSixTermEquiv`) sends the transport of a complex positive element of
+`det A₂ ⊗ (det A₅)^*` to the tensor product of the transports of complex positive elements of
+`det A₁ ⊗ (det A₄)^*` and of `det A₃ ⊗ (det A₆)^*`. With all `eᵢ` the identity, this says that
+`TauCeti.detLineSixTermEquiv` respects complex orientations for exact sequences of complex vector
+spaces. -/
+theorem exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
+    (hg₁ : Function.Injective g₁) (hg₁₂ : Function.Exact g₁ g₂) (hg₂₃ : Function.Exact g₂ g₃)
+    (hg₃₄ : Function.Exact g₃ g₄) (hg₄₅ : Function.Exact g₄ g₅) (hg₅ : Function.Surjective g₅)
+    (e₁ : A₁ ≃ₗ[ℝ] B₁) (e₂ : A₂ ≃ₗ[ℝ] B₂) (e₃ : A₃ ≃ₗ[ℝ] B₃) (e₄ : A₄ ≃ₗ[ℝ] B₄) (e₅ : A₅ ≃ₗ[ℝ] B₅)
+    (e₆ : A₆ ≃ₗ[ℝ] B₆) (he₁ : g₁ ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f₁.restrictScalars ℝ)
+    (he₂ : g₂ ∘ₗ e₂.toLinearMap = e₃.toLinearMap ∘ₗ f₂.restrictScalars ℝ)
+    (he₃ : g₃ ∘ₗ e₃.toLinearMap = e₄.toLinearMap ∘ₗ f₃.restrictScalars ℝ)
+    (he₄ : g₄ ∘ₗ e₄.toLinearMap = e₅.toLinearMap ∘ₗ f₄.restrictScalars ℝ)
+    (he₅ : g₅ ∘ₗ e₅.toLinearMap = e₆.toLinearMap ∘ₗ f₅.restrictScalars ℝ)
+    {t : detLine ℝ A₂ ⊗[ℝ] Dual ℝ (detLine ℝ A₅)} (ht : IsComplexPositiveTMulDual t) :
+    ∃ s₁ s₂, IsComplexPositiveTMulDual s₁ ∧ IsComplexPositiveTMulDual s₂ ∧
+      detLineSixTermEquiv hg₁ hg₁₂ hg₂₃ hg₃₄ hg₄₅ hg₅
+          (TensorProduct.congr e₂.detLineCongr e₅.detLineCongr.symm.dualMap t) =
+        TensorProduct.congr e₁.detLineCongr e₄.detLineCongr.symm.dualMap s₁ ⊗ₜ
+          TensorProduct.congr e₃.detLineCongr e₆.detLineCongr.symm.dualMap s₂ := by
+  -- Exactness and finite dimensionality of the complex sequence, transported from the real one.
+  have h₁₂ : Function.Exact f₁ f₂ := (Function.Exact.iff_of_ladder_linearEquiv he₁ he₂).1 hg₁₂
+  have h₂₃ : Function.Exact f₂ f₃ := (Function.Exact.iff_of_ladder_linearEquiv he₂ he₃).1 hg₂₃
+  have h₃₄ : Function.Exact f₃ f₄ := (Function.Exact.iff_of_ladder_linearEquiv he₃ he₄).1 hg₃₄
+  have h₄₅ : Function.Exact f₄ f₅ := (Function.Exact.iff_of_ladder_linearEquiv he₄ he₅).1 hg₄₅
+  have hp₁ (a : A₁) : g₁ (e₁ a) = e₂ (f₁ a) := LinearMap.congr_fun he₁ a
+  have hp₅ (a : A₅) : g₅ (e₅ a) = e₆ (f₅ a) := LinearMap.congr_fun he₅ a
+  have hf₁ : Function.Injective f₁ := fun a b hab ↦ e₁.injective (hg₁ (by rw [hp₁, hp₁, hab]))
+  have hf₅ : Function.Surjective f₅ := fun c ↦ by
+    obtain ⟨b, hb⟩ := hg₅ (e₆ c)
+    exact ⟨e₅.symm b, e₆.injective (by rw [← hp₅, LinearEquiv.apply_symm_apply, hb])⟩
+  have : FiniteDimensional ℝ A₁ := Module.Finite.equiv e₁.symm
+  have : FiniteDimensional ℝ A₃ := Module.Finite.equiv e₃.symm
+  have : FiniteDimensional ℝ A₅ := Module.Finite.equiv e₅.symm
+  have : FiniteDimensional ℂ A₁ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₁
+  have : FiniteDimensional ℂ A₃ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₃
+  have : FiniteDimensional ℂ A₅ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₅
+  have : FiniteDimensional ℂ A₂ := h₁₂.moduleFinite
+  have : FiniteDimensional ℂ A₄ := h₃₄.moduleFinite
+  have : FiniteDimensional ℂ A₆ := Module.Finite.of_surjective f₅ hf₅
+  -- Complex bases of `A₁`, of the ranges of `f₂`, `f₃`, `f₄` and of `A₆`, lifts `v`, `w`, `x`,
+  -- `y` of the last four, and the complex bases of `A₂`, …, `A₅` they give.
+  set b₁ := finBasis ℂ A₁
+  set b₆ := finBasis ℂ A₆
+  obtain ⟨v, c₂, hv, hc₂⟩ := Basis.exists_coe_eq_append_lift hf₁ h₁₂.rangeRestrict
+    f₂.surjective_rangeRestrict b₁ (finBasis ℂ (LinearMap.range f₂))
+  obtain ⟨w, c₃, hw, hc₃⟩ := Basis.exists_coe_eq_append_lift
+    (LinearMap.range f₂).injective_subtype h₂₃.range_subtype.rangeRestrict
+    f₃.surjective_rangeRestrict (finBasis ℂ (LinearMap.range f₂)) (finBasis ℂ (LinearMap.range f₃))
+  obtain ⟨x, c₄, hx, hc₄⟩ := Basis.exists_coe_eq_append_lift
+    (LinearMap.range f₃).injective_subtype h₃₄.range_subtype.rangeRestrict
+    f₄.surjective_rangeRestrict (finBasis ℂ (LinearMap.range f₃)) (finBasis ℂ (LinearMap.range f₄))
+  obtain ⟨y, c₅, hy, hc₅⟩ := Basis.exists_coe_eq_append_lift
+    (LinearMap.range f₄).injective_subtype h₄₅.range_subtype hf₅
+    (finBasis ℂ (LinearMap.range f₄)) b₆
+  rw [← hv, LinearMap.subtype_comp_rangeRestrict_comp] at hc₃
+  rw [← hw, LinearMap.subtype_comp_rangeRestrict_comp] at hc₄
+  rw [← hx, LinearMap.subtype_comp_rangeRestrict_comp] at hc₅
+  -- Real dimensions of the terms of the real sequence and of the ranges of its maps.
+  have hB₁ : finrank ℝ B₁ = 2 * finrank ℂ A₁ :=
+    e₁.finrank_eq.symm.trans finrank_real_eq_two_mul_finrank_complex
+  have hB₆ : finrank ℝ B₆ = 2 * finrank ℂ A₆ :=
+    e₆.finrank_eq.symm.trans finrank_real_eq_two_mul_finrank_complex
+  have hR₂ := LinearMap.finrank_range_eq_two_mul_of_comp_eq e₂ e₃ he₂
+  have hR₃ := LinearMap.finrank_range_eq_two_mul_of_comp_eq e₃ e₄ he₃
+  have hR₄ := LinearMap.finrank_range_eq_two_mul_of_comp_eq e₄ e₅ he₄
+  have hB₂ := e₂.finrank_eq_two_mul_of_basis c₂
+  have hB₃ := e₃.finrank_eq_two_mul_of_basis c₃
+  have hB₄ := e₄.finrank_eq_two_mul_of_basis c₄
+  have hB₅ := e₅.finrank_eq_two_mul_of_basis c₅
+  -- The real families and exterior products entering `TauCeti.detLineSixTermEquiv_tmul`.
+  set u' := e₁ ∘ complexToRealFamily b₁ ∘ Fin.cast hB₁
+  set v' := e₂ ∘ complexToRealFamily v ∘ Fin.cast hR₂
+  set w' := e₃ ∘ complexToRealFamily w ∘ Fin.cast hR₃
+  set x' := e₄ ∘ complexToRealFamily x ∘ Fin.cast hR₄
+  set y' := e₅ ∘ complexToRealFamily y ∘ Fin.cast hB₆
+  set β : detLine ℝ B₂ := exteriorPower.ιMulti ℝ _ (Fin.append (g₁ ∘ u') v' ∘ Fin.cast (by omega))
+  set γ : detLine ℝ B₃ := exteriorPower.ιMulti ℝ _ (Fin.append (g₂ ∘ v') w' ∘ Fin.cast (by omega))
+  set δ : detLine ℝ B₄ := exteriorPower.ιMulti ℝ _ (Fin.append (g₃ ∘ w') x' ∘ Fin.cast (by omega))
+  set ε : detLine ℝ B₅ := exteriorPower.ιMulti ℝ _ (Fin.append (g₄ ∘ x') y' ∘ Fin.cast (by omega))
+  -- Their transports to the complex sequence are complex positive.
+  have hβ := isComplexPositive_detLineCongr_symm_ιMulti_append e₁ e₂ he₁ c₂ hc₂ hB₁ hR₂
+    (by omega)
+  have hγ := isComplexPositive_detLineCongr_symm_ιMulti_append e₂ e₃ he₂ c₃ hc₃ hR₂ hR₃
+    (by omega)
+  have hδ := isComplexPositive_detLineCongr_symm_ιMulti_append e₃ e₄ he₃ c₄ hc₄ hR₃ hR₄
+    (by omega)
+  have hε := isComplexPositive_detLineCongr_symm_ιMulti_append e₄ e₅ he₄ c₅ hc₅ hR₄ hB₆
+    (by omega)
+  have hα : IsComplexPositive (e₁.symm.detLineCongr (exteriorPower.ιMulti ℝ _ u')) := by
+    rw [LinearEquiv.detLineCongr_ιMulti]
+    convert isComplexPositive_ιMulti_complexToRealFamily b₁
+      finrank_real_eq_two_mul_finrank_complex using 2
+    funext i
+    simp [u']
+  have hζ := isComplexPositive_detLineCongr_symm_ιMulti_comp e₅ e₆ he₅ b₆ hy hB₆
+  -- Functionals normalized at `δ` and at the exterior product of `g₅ ∘ y'`.
+  obtain ⟨ψ, hψ⟩ := Projective.exists_dual_eq_one ℝ hδ.ne_zero
+  obtain ⟨χ, hχ⟩ := Projective.exists_dual_eq_one ℝ hζ.ne_zero
+  -- Compute the image of `t`, a positive multiple of `e₂⁻¹ β ⊗ φ` for a complex positive `φ`.
+  obtain ⟨φ, hφ⟩ := exists_isComplexPositiveDual (E := A₅)
+  obtain ⟨c, hc, rfl⟩ := (hβ.isComplexPositiveTMulDual_tmul hφ).exists_pos_smul_eq ht
+  refine ⟨(c * φ (e₅.symm.detLineCongr ε)) • (e₁.symm.detLineCongr
+      (exteriorPower.ιMulti ℝ _ u') ⊗ₜ ψ), e₃.symm.detLineCongr γ ⊗ₜ χ,
+    (hα.smul (mul_pos hc (hε.isComplexPositiveDual_iff.1 hφ))).isComplexPositiveTMulDual_tmul
+      (hδ.isComplexPositiveDual_of_apply_eq_one hψ),
+    hγ.isComplexPositiveTMulDual_tmul (hζ.isComplexPositiveDual_of_apply_eq_one hχ), ?_⟩
+  have hβ' : (β : ExteriorAlgebra ℝ B₂) = ExteriorAlgebra.ιMulti ℝ _ (Fin.append (g₁ ∘ u') v') := by
+    simp [β]
+  have hγ' : (γ : ExteriorAlgebra ℝ B₃) = ExteriorAlgebra.ιMulti ℝ _ (Fin.append (g₂ ∘ v') w') := by
+    simp [γ]
+  have hδ' : (δ : ExteriorAlgebra ℝ B₄) = ExteriorAlgebra.ιMulti ℝ _ (Fin.append (g₃ ∘ w') x') := by
+    simp [δ]
+  have hε' : (ε : ExteriorAlgebra ℝ B₅) = ExteriorAlgebra.ιMulti ℝ _ (Fin.append (g₄ ∘ x') y') := by
+    simp [ε]
+  have hψ' : e₄.detLineCongr.symm.dualMap ψ δ = 1 := by
+    rwa [LinearEquiv.dualMap_apply, LinearEquiv.detLineCongr_symm]
+  have hχ' : e₆.detLineCongr.symm.dualMap χ (exteriorPower.ιMulti ℝ _ (g₅ ∘ y')) = 1 := by
+    rwa [LinearEquiv.dualMap_apply, LinearEquiv.detLineCongr_symm]
+  rw [map_smul, map_smul, TensorProduct.congr_tmul, ← LinearEquiv.detLineCongr_symm e₂,
+    LinearEquiv.apply_symm_apply,
+    detLineSixTermEquiv_tmul hg₁ hg₁₂ hg₂₃ hg₃₄ hg₄₅ hg₅ u' v' w' x' y' hβ' hγ' hδ' hε' _ hψ' hχ',
+    ← LinearEquiv.detLineCongr_symm e₁, ← LinearEquiv.detLineCongr_symm e₃,
+    ← LinearEquiv.detLineCongr_symm e₅]
+  simp only [TensorProduct.congr_tmul, map_smul, LinearEquiv.apply_symm_apply,
+    LinearEquiv.dualMap_apply, TensorProduct.smul_tmul', smul_smul]
+
+end SixTerm
 
 end TauCeti

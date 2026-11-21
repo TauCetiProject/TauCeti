@@ -29,7 +29,9 @@ real eigenvalues bounded away from `0` when the loop is nondegenerate, and that 
 symplectic loop becomes nondegenerate after some real shift `S - δ J₀`.
 
 * **Symmetry.** For the real inner product of `H⁰`, `⟪A a, b⟫ = ⟪a, A b⟫` for `a, b ∈ H¹(F)`
-  (`CircleSobolev.real_inner_I_smul_loopOperator_comm`). The derivative term is symmetric by
+  (`CircleSobolev.real_inner_I_smul_loopOperator_comm`), and shifting `S` by a real multiple of the
+  constant loop `J₀` preserves infinitesimal symplecticity
+  (`CircleSobolev.im_inner_sub_smul_const_I_add_eq_zero`). The derivative term is symmetric by
   integration by parts on the circle (`CircleSobolev.inner_derivative_inclusion`), since `J₀ d/dt`
   multiplies the `n`-th Fourier coefficient by the real number `-2πn/T`. The zero-order term
   `-J₀ S_t` is a pointwise symmetric multiplication operator, and Parseval's identity
@@ -78,6 +80,29 @@ namespace TauCeti
 
 namespace CircleSobolev
 
+/-- Shifting an infinitesimally symplectic loop `S` by a real multiple of `I • id` preserves
+infinitesimal symplecticity for `ω₀(v, w) = Im ⟪v, w⟫`. -/
+theorem im_inner_sub_smul_const_I_add_eq_zero (T : ℝ) {F : Type u} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (δ : ℝ)
+    (t : AddCircle T) (v w : F) :
+    (inner ℂ
+        ((S - δ • ContinuousMap.const (AddCircle T) (I • ContinuousLinearMap.id ℝ F)) t v) w).im +
+      (inner ℂ v
+        ((S - δ • ContinuousMap.const (AddCircle T) (I • ContinuousLinearMap.id ℝ F)) t w)).im =
+      0 := by
+  simp only [ContinuousMap.sub_apply, ContinuousMap.smul_apply, ContinuousMap.const_apply,
+    sub_apply, smul_apply, ContinuousLinearMap.id_apply,
+    inner_sub_left, inner_sub_right, Complex.sub_im]
+  have h1 : (inner ℂ (δ • I • v) w).im = -δ * (inner ℂ v w).re := by
+    rw [← Complex.coe_smul, inner_smul_left, inner_smul_left]
+    simp
+  have h2 : (inner ℂ v (δ • I • w)).im = δ * (inner ℂ v w).re := by
+    rw [← Complex.coe_smul, inner_smul_right, inner_smul_right]
+    simp
+  rw [h1, h2]
+  linarith [hS t v w]
+
 variable (T : ℝ) [hT : Fact (0 < T)] {F : Type u} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [FiniteDimensional ℂ F] (S : C(AddCircle T, F →L[ℝ] F))
 
@@ -108,6 +133,17 @@ theorem real_inner_I_smul_loopOperator_comm
       inner_smul_left, inner_smul_right, conj_I, neg_mul, neg_re, mul_re, I_re, I_im, zero_mul,
       one_mul, zero_sub]
     linarith [hS x (toContinuousMap T (by norm_num) a x) (toContinuousMap T (by norm_num) b x)]
+
+omit hT [FiniteDimensional ℂ F] in
+/-- Real multiples of an infinitesimally symplectic loop are infinitesimally symplectic. -/
+theorem inner_smul_apply_im_add_inner_smul_apply_im_eq_zero
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (τ : ℝ) :
+    ∀ t v w, (inner ℂ ((τ • S) t v) w).im + (inner ℂ v ((τ • S) t w)).im = 0 := by
+  intro t v w
+  simp only [ContinuousMap.smul_apply, smul_apply, ← Complex.coe_smul,
+    inner_smul_left, inner_smul_right, Complex.conj_ofReal, Complex.mul_im, Complex.ofReal_re,
+    Complex.ofReal_im, zero_mul, add_zero]
+  linear_combination τ * hS t v w
 
 /-- **The orthonormal eigenbasis of the asymptotic operator at a nondegenerate loop.** Let every
 `S_t` be infinitesimally symplectic for `ω₀ = Im ⟪·, ·⟫`, and let `ζ ↦ ζ' - S ζ` be invertible
@@ -153,7 +189,7 @@ theorem exists_isInvertible_loopOperator_sub_smul_const_I_id
     ((injective_iff_map_eq_zero _).2 fun a ha ↦ by_contra fun ha0 ↦ hδ ⟨a, ha0, sub_eq_zero.1 ?_⟩)
     (index_loopOperator T _)⟩
   simpa only [smul_apply, sub_apply, ha, smul_zero] using
-    (congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I_id T S δ)).symm
+    (congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I T S δ)).symm
 
 /-- **Eigenvectors of the asymptotic operator are classical eigenfunctions.** An element `a` of
 `H¹` with continuous representative `ζ` satisfies `A a = λ a` for `A = J₀ (d/dt - S_t)` exactly
@@ -168,7 +204,7 @@ theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 F) (lam : ℝ) :
   set S' : C(AddCircle T, F →L[ℝ] F) :=
     S - lam • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F) with hS'
   have hshift : I • loopOperator T S' a = I • loopOperator T S a - lam • inclusion zero_le_one a :=
-    congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I_id T S lam)
+    congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I T S lam)
   rw [← sub_eq_zero, ← hshift, smul_eq_zero, or_iff_right I_ne_zero, loopOperator_eq_zero_iff]
   simp [hS']
 

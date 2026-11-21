@@ -19,25 +19,27 @@ The trajectory operator
 
 `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)`
 
-(`TauCeti.WeakDerivStep.trajectoryOperator`, for an `L∞` class of `A`) is controlled on Sobolev
-paths by any estimate it satisfies on compactly supported `C¹` paths. An estimate
+(`TauCeti.WeakDerivStep.trajectoryOperator`, for an `L∞` class of `A`), on a real Hilbert space `E`
+of any dimension, is controlled on Sobolev paths by any estimate it satisfies on compactly
+supported `C¹` paths. An estimate
 
 `a ∫ ‖u'‖² + b ∫ ‖u‖² ≤ c ∫ ‖u' + A u‖² + d ∫_{[-R, R]} ‖u‖²`
 
 on such paths extends to `W^{1,2}(ℝ, E)`, with the last term replaced by the squared norm of the
 restriction to a slightly larger interval, because those paths are dense
 (`TauCeti.WeakDerivStep.dense_setOf_exists_contDiff_hasCompactSupport`) and both sides are
-continuous. Restriction from `W^{1,2}(ℝ, E)` to `L²(-R, R)` is compact (Rellich), so an estimate
-with `a, b > 0` is an estimate with a compact error term, the input of Peetre's lemma. This is how
-the Fredholm property of `D_A` is proved in `TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov`.
+continuous. When `E` is finite-dimensional, restriction from `W^{1,2}(ℝ, E)` to `L²(-R, R)` is
+compact (Rellich), so an estimate with `a, b > 0` is an estimate with a compact error term, the
+input of Peetre's lemma. This is how the Fredholm property of `D_A` is proved in
+`TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov`.
 
 When `A` is a `C¹` family of symmetric operators with a spectral gap and a small derivative on the
 whole line, rather than only near its limits, the coercive estimate for test paths
 `TauCeti.integral_norm_deriv_sq_add_mul_integral_norm_sq_le` has no error term, so `D_A` is
-injective. This applies in particular to a constant invertible symmetric coefficient; for any
-constant symmetric coefficient `A₀`, the derivative term vanishes identically and the energy
-identity extends by density to the exact Pythagorean identity
-`‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` on `W^{1,2}(ℝ, E)`.
+injective. This applies in particular to a constant invertible symmetric coefficient, also on an
+infinite-dimensional Hilbert space; for any constant symmetric coefficient `A₀`, the derivative
+term vanishes identically and the energy identity extends by density to the exact Pythagorean
+identity `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` on `W^{1,2}(ℝ, E)`.
 
 ## Main declarations
 
@@ -73,7 +75,7 @@ open scoped ENNReal Topology
 
 namespace TauCeti.WeakDerivStep
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {A : ℝ → E →L[ℝ] E}
 
 /-! ### Restriction of a path with a smooth compactly supported representative -/

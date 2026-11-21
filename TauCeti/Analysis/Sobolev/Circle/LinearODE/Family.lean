@@ -48,7 +48,7 @@ theorem exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le
       (loopOperator T (S p - δ • J p)).IsInvertible ∧
         ‖(loopOperator T (S p - δ • J p)).inverse‖ ≤ C := by
   let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
-  exact hK.exists_pos_isInvertible_sub_smul_norm_inverse_le (loopOperator T)
-    (continuous_loopOperator T) S J hS hJ hinv
+  exact hK.exists_pos_isInvertible_map_sub_smul_norm_inverse_le (continuous_loopOperator T)
+    S J hS hJ hinv
 
 end TauCeti.CircleSobolev

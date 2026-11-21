@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.ExponentialConvergence
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 
 /-!
@@ -197,7 +198,7 @@ private theorem one_add_sphereHeight_maximalIntegralCurve_neg_mgradient_eq (hx :
     1 + sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) =
       (1 + sphereHeight v x) / (1 - sphereHeight v x) * Real.exp (-t) ^ 2 *
         (1 - sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t)) := by
-  rw [← Real.exp_nat_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
+  rw [← Real.exp_natCast_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
     ← one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (n := n) hx ht,
     div_mul_cancel₀ _
       (sub_pos.2 (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one hx ht)).ne']
@@ -212,8 +213,9 @@ theorem exists_riemannianEDist_le_mul_exp_neg_maximalIntegralCurve_neg_mgradient
         (-v) ≤ ENNReal.ofReal (C * Real.exp (-t)) := by
   set γ := maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x
   set R := (1 + sphereHeight v x) / (1 - sphereHeight v x)
+  have hp := isManifoldNondegenerateCriticalPoint_sphereHeight_neg (n := n) v
   obtain ⟨K, hK0, hK⟩ := exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
-    (isManifoldNondegenerateCriticalPoint_sphereHeight_neg v)
+    hp.mem_criticalPoints hp.exists_mul_abs_sub_le_norm_mgradient_sq
     (tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight hx)
     (contMDiff_sphereHeight (n := n) v)
   refine ⟨K * √(2 * R), ?_⟩
@@ -279,24 +281,12 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
   obtain ⟨c, hc, hlow⟩ :=
     exists_mul_exp_neg_le_riemannianEDist_maximalIntegralCurve_neg_mgradient_sphereHeight
       (n := n) hx hx'
-  -- `C exp (-(μ - 1) t)` tends to `0`, so it eventually drops below `c`.
-  have hlim : Tendsto (fun t ↦ C * Real.exp (-((μ - 1) * t))) atTop (𝓝 0) := by
-    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      (tendsto_id.const_mul_atTop (sub_pos.2 hμ))).const_mul C
-  obtain ⟨t, hCt, ht0, hsmall⟩ :=
-    (hC.and ((eventually_ge_atTop 0).and (hlim.eventually (gt_mem_nhds hc)))).exists
-  rcases (ENNReal.ofReal_le_ofReal_iff'.1 ((hlow t ht0).trans hCt)) with h | h
-  · have hct : c ≤ C * Real.exp (-((μ - 1) * t)) :=
-      calc c = c * Real.exp (-t) * Real.exp t := by
-            rw [mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one]
-        _ ≤ C * Real.exp (-(μ * t)) * Real.exp t :=
-            mul_le_mul_of_nonneg_right h (Real.exp_pos t).le
-        _ = C * Real.exp (-((μ - 1) * t)) := by
-            rw [mul_assoc, ← Real.exp_add]
-            congr 2
-            ring
-    exact hsmall.not_ge hct
-  · exact h.not_gt (by positivity)
+  -- Enlarging `C` to `max C 1` keeps the bound and makes the constant positive.
+  refine not_exists_ofReal_mul_exp_le_mul_exp hc hμ ⟨max C 1, lt_max_of_lt_right one_pos, ?_⟩
+  filter_upwards [hC, eventually_ge_atTop 0] with t hCt ht0
+  rw [one_mul]
+  exact (hlow t ht0).trans (hCt.trans (ENNReal.ofReal_le_ofReal
+    (mul_le_mul_of_nonneg_right (le_max_left C 1) (Real.exp_pos _).le)))
 
 end Round
 

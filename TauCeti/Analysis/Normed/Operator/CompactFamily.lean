@@ -17,10 +17,14 @@ remains invertible on a common neighborhood of that slice, with a uniform operat
 on its inverses. Only the domain of the operators needs to be complete.
 
 In a pseudometric parameter space, continuity on `K ×ˢ univ` upgrades this to a uniform positive
-radius around `y₀` (`IsCompact.exists_pos_isInvertible_norm_inverse_le`). In particular, for a
-continuous operator-valued map `Φ` on a topological real vector space and families `A, B`
-continuous on `K`, invertibility of `Φ (A x)` on `K` persists to `Φ (A x - δ • B x)` on a uniform
-closed interval `|δ| ≤ ε` (`IsCompact.exists_pos_isInvertible_sub_smul_norm_inverse_le`).
+radius around `z₀` (`IsCompact.exists_pos_isInvertible_norm_inverse_le`). In particular, for a
+continuous operator-valued map `Φ` on a topological real vector space and families `S, J`
+continuous on `K`, invertibility of `Φ (S x)` on `K` persists to `Φ (S x - δ • J x)` on a uniform
+closed interval `|δ| ≤ ε` (`IsCompact.exists_pos_isInvertible_map_sub_smul_norm_inverse_le`).
+
+A continuous family of bounded operators with a continuous family of left inverses moves norms
+by a uniformly bounded factor in both directions on a compact parameter set
+(`IsCompact.exists_norm_apply_le_and_norm_le`).
 -/
 
 public section
@@ -76,30 +80,59 @@ theorem exists_pos_isInvertible_norm_inverse_le {Z : Type*} [PseudoMetricSpace Z
     ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ z : Z, dist z z₀ ≤ ε →
       (L (x, z)).IsInvertible ∧ ‖(L (x, z)).inverse‖ ≤ C := by
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  have hL' : Continuous (fun p : K × Z ↦ L (p.1, p.2)) :=
-    hL.comp_continuous (continuous_subtype_val.prodMap continuous_id) fun p ↦ ⟨p.1.2, mem_univ _⟩
+  have hL' : Continuous (fun p : K × Z ↦ L (p.fst, p.snd)) :=
+    hL.comp_continuous (continuous_subtypeVal.prodMap continuous_id)
+      fun p ↦ ⟨p.fst.property, mem_univ _⟩
   obtain ⟨V, hV, C, hC, hbound⟩ := isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le
-    (fun p : K × Z ↦ L (p.1, p.2)) z₀ (fun _ _ ↦ hL'.continuousAt) (fun x _ ↦ hinv x x.2)
+    (fun p : K × Z ↦ L (p.fst, p.snd)) z₀ (fun _ _ ↦ hL'.continuousAt)
+    (fun x _ ↦ hinv x x.property)
   obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
   exact ⟨r / 2, by positivity, C, hC, fun x hx z hz ↦
     hbound ⟨x, hx⟩ (mem_univ _) z (hrV (Metric.mem_ball.2 (hz.trans_lt (half_lt_self hr))))⟩
 
-/-- For a continuous map `Φ` from a topological real vector space into bounded operators and
-families `A, B` continuous on a compact set `K`, invertibility of `Φ (A x)` on `K` persists to
-`Φ (A x - δ • B x)` on a uniform closed interval `|δ| ≤ ε` with uniformly bounded inverses. -/
-theorem exists_pos_isInvertible_sub_smul_norm_inverse_le
-    {G : Type*} [TopologicalSpace G] [AddCommGroup G] [Module ℝ G]
-    [IsTopologicalAddGroup G] [ContinuousSMul ℝ G]
-    {K : Set X} (hK : IsCompact K) (Φ : G → E →L[𝕜] F) (hΦ : Continuous Φ)
-    (A B : X → G) (hA : ContinuousOn A K) (hB : ContinuousOn B K)
-    (hinv : ∀ x ∈ K, (Φ (A x)).IsInvertible) :
+/-- On a compact parameter set `K` where `Φ (S x)` is invertible, if `Φ` is continuous and `S` and
+`J` are continuous on `K`, then `Φ (S x - δ • J x)` remains invertible with uniformly bounded
+inverses for all sufficiently small real weights `δ`. -/
+theorem exists_pos_isInvertible_map_sub_smul_norm_inverse_le
+    {M : Type*} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [Module ℝ M] [ContinuousSMul ℝ M]
+    {K : Set X} (hK : IsCompact K) {Φ : M → E →L[𝕜] F} (hΦ : Continuous Φ)
+    (S J : X → M) (hS : ContinuousOn S K) (hJ : ContinuousOn J K)
+    (hinv : ∀ x ∈ K, (Φ (S x)).IsInvertible) :
     ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ δ : ℝ, |δ| ≤ ε →
-      (Φ (A x - δ • B x)).IsInvertible ∧ ‖(Φ (A x - δ • B x)).inverse‖ ≤ C := by
-  have hcont : ContinuousOn (fun z : X × ℝ ↦ Φ (A z.1 - z.2 • B z.1)) (K ×ˢ Set.univ) :=
-    hΦ.comp_continuousOn <| (hA.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1).sub
-      (continuousOn_snd.smul (hB.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1))
+      (Φ (S x - δ • J x)).IsInvertible ∧ ‖(Φ (S x - δ • J x)).inverse‖ ≤ C := by
+  have hcont : ContinuousOn (fun z : X × ℝ ↦ Φ (S z.1 - z.2 • J z.1)) (K ×ˢ Set.univ) :=
+    hΦ.comp_continuousOn <| (hS.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1).sub
+      (continuousOn_snd.smul (hJ.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1))
   obtain ⟨ε, hε, C, hC, hbound⟩ := hK.exists_pos_isInvertible_norm_inverse_le _ 0 hcont
     fun x hx ↦ by simpa only [zero_smul, sub_zero] using hinv x hx
   exact ⟨ε, hε, C, hC, fun x hx δ hδ ↦ hbound x hx δ (by simpa [Real.dist_eq] using hδ)⟩
+
+end IsCompact
+
+namespace IsCompact
+
+variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a compact parameter set, a continuous family of operators `L x` with a continuous family of
+left inverses `Linv x` changes norms by a uniformly bounded factor: `‖L x v‖` and `‖v‖` are
+comparable uniformly in `x`, since the norms of `L` and `Linv` are bounded there. -/
+theorem exists_norm_apply_le_and_norm_le {K : Set X} (hK : IsCompact K) {L : X → E →L[𝕜] F}
+    {Linv : X → F →L[𝕜] E} (hL : ContinuousOn L K) (hLinv : ContinuousOn Linv K)
+    (hLL : ∀ x ∈ K, (Linv x).comp (L x) = ContinuousLinearMap.id 𝕜 E) :
+    ∃ c, 1 ≤ c ∧ ∀ x ∈ K, ∀ v, ‖L x v‖ ≤ c * ‖v‖ ∧ ‖v‖ ≤ c * ‖L x v‖ := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hL.norm
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hLinv.norm
+  refine ⟨max 1 (max A B), le_max_left _ _, fun x hx v ↦ ⟨?_, ?_⟩⟩
+  · have hAx : ‖L x‖ ≤ max 1 (max A B) :=
+      (by simpa using hA _ hx : ‖L x‖ ≤ A).trans ((le_max_left A B).trans (le_max_right 1 _))
+    exact ((L x).le_opNorm v).trans (mul_le_mul_of_nonneg_right hAx (norm_nonneg _))
+  · have hBx : ‖Linv x‖ ≤ max 1 (max A B) :=
+      (by simpa using hB _ hx : ‖Linv x‖ ≤ B).trans ((le_max_right A B).trans (le_max_right 1 _))
+    calc ‖v‖ = ‖Linv x (L x v)‖ := by
+          rw [← ContinuousLinearMap.comp_apply, hLL x hx, ContinuousLinearMap.id_apply]
+      _ ≤ ‖Linv x‖ * ‖L x v‖ := (Linv x).le_opNorm _
+      _ ≤ max 1 (max A B) * ‖L x v‖ := mul_le_mul_of_nonneg_right hBx (norm_nonneg _)
 
 end IsCompact

@@ -80,7 +80,7 @@ exponent `p : ℝ≥0∞`. -/
 @[simp]
 theorem compLp_innerSL_compLp_toSpanSingleton {p : ℝ≥0∞} (v w : E) (f : Lp 𝕜 p μ) :
     (innerSL 𝕜 v).compLp ((toSpanSingleton 𝕜 w).compLp f) = ⟪v, w⟫_𝕜 • f := by
-  rw [← comp_compLp, show (innerSL 𝕜 v).comp (toSpanSingleton 𝕜 w) =
+  rw [compLp_compLp, show (innerSL 𝕜 v).comp (toSpanSingleton 𝕜 w) =
     ⟪v, w⟫_𝕜 • ContinuousLinearMap.id 𝕜 𝕜 by ext; simp, smul_compLp, id_compLp]
 
 /-- Operator-level projection identity on `Lᵖ`: composing `(innerSL 𝕜 v).compLpL p μ` with

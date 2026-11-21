@@ -126,7 +126,7 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
   let ψ := (LieIdeal.ad I).comp H'.incl
   -- The representation `σ` of `T`, read on the ideal `I` of `T'`.
   let ι : I →ₗ⁅K⁆ T :=
-    { toFun := fun y ↦ ⟨((y : T') : L), hmemI.mp y.2⟩
+    { toFun := fun y ↦ ⟨((y : T') : L), hmemI.mp y.property⟩
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl
       map_lie' := fun {_ _} ↦ rfl }
@@ -136,7 +136,7 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
     (σ.comp ι) (fun s hs ↦ hσN _ (hNI.mp hs))
     fun h s ↦ hNI.mpr (by
       simp only [ψ, LieHom.comp_apply, LieIdeal.ad_apply_apply]
-      exact (hHT _ h.2 _ (hmemI.mp s.2)).2)
+      exact (hHT _ h.property _ (hmemI.mp s.property)).2)
   have he (z : T') (hz : (z : L) ∈ T) :
       e.symm z = LieAlgebra.SemiDirectSum.inl ψ ⟨z, hmemI.mpr hz⟩ :=
     LieIdeal.semiDirectSumEquiv_symm_of_mem_left I H' hc (hmemI.mpr hz)
@@ -158,11 +158,11 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
         -- restrict the `ad`-nilpotence of `r` in `T'` to the ideal `I`
         obtain ⟨n, hn⟩ := LieSubmodule.toEnd_restrict_eq_toEnd I (H'.incl r) ▸
           Module.End.isNilpotent.restrict _ (T'.isNilpotent_ad_of_isNilpotent_ad
-            (LieAlgebra.isNilpotent_ad_of_mem_nilradical (hN _ (hHT' r.2))))
+            (LieAlgebra.isNilpotent_ad_of_mem_nilradical (hN _ (hHT' r.property))))
         have hψr : (ψ r).toLinearMap = LieModule.toEnd K T' I (H'.incl r) :=
           LinearMap.ext fun s ↦ LieIdeal.ad_apply_apply I _ s
         exact ⟨n, by rw [hψr]; exact LinearMap.congr_fun hn s⟩
-      exact hall (fun s ↦ hσN _ (hN _ (hTT' ((ι s).2)))) _ fun s ↦ hloc _ s
+      exact hall (fun s ↦ hσN _ (hN _ (hTT' ((ι s).property)))) _ fun s ↦ hloc _ s
 
 /-- **A codimension-one step of the Ado flag.** An Ado stage at `T` extends to the Lie span
 `K ∙ x ⊔ T` of `x` and `T`, for an element `x ∉ T` whose brackets with `T` lie in `T ⊓ N`, provided

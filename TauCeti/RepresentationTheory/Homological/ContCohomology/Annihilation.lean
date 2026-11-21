@@ -130,7 +130,7 @@ private noncomputable def resolutionHomotopy : (n : ℕ) →
   | n + 1 =>
     { toFun F := ⟨fun x ↦ F (w x) x - resolutionHomotopy n (F (w x)), by
         have hFw : Continuous fun x : G ↦ (F : C(G, C(G, (resolutionX X n).V))) (w x) :=
-          F.continuous.comp (continuous_subtype_val.comp w.continuous)
+          F.continuous.comp (continuous_subtypeVal.comp w.continuous)
         exact (hFw.eval continuous_id).sub ((resolutionHomotopy n).continuous.comp hFw)⟩
       map_add' F F' := by ext x; simp; abel
       map_smul' c F := by ext x; simp [smul_sub]
@@ -139,7 +139,7 @@ private noncomputable def resolutionHomotopy : (n : ℕ) →
         refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
         have hFw : Continuous fun p : (resolutionX X (n + 2)).V × G ↦
             (p.1 : C(G, C(G, (resolutionX X n).V))) (w p.2) :=
-          continuous_fst.eval (continuous_subtype_val.comp (w.continuous.comp continuous_snd))
+          continuous_fst.eval (continuous_subtypeVal.comp (w.continuous.comp continuous_snd))
         exact (hFw.eval continuous_snd).sub ((resolutionHomotopy n).continuous.comp hFw) }
 
 private theorem resolutionHomotopy_zero : resolutionHomotopy X w 0 = 0 :=
@@ -303,13 +303,13 @@ theorem index_nsmul_eq_zero_of_res_eq_zero (hU : IsOpen (U : Set G)) [U.FiniteIn
     exact h.symm.trans hx
   obtain ⟨v, hv⟩ := (KU.homologyπ_eq_zero_iff (n + 1) (m := n) (by simp)).1 hz
   set F := K.iCycles (n + 1) z
-  have hdF : (d X (n + 2)).hom F.1 = 0 := by
+  have hdF : (d X (n + 2)).hom F.val = 0 := by
     have h := ConcreteCategory.congr_hom (K.iCycles_d (n + 1) (n + 2)) z
     simp only [ConcreteCategory.comp_apply] at h
     exact (homogeneousCochains.d_apply X (n + 1) F).symm.trans (congrArg Subtype.val h)
   have hrF : (resolutionMap (ContinuousMonoidHom.subgroupSubtype U)
-      (𝟙 (TopRep.res (U.subtype : U →* G) X)) (n + 2)).hom F.1 =
-      (d (TopRep.res (U.subtype : U →* G) X) (n + 1)).hom v.1 := by
+      (𝟙 (TopRep.res (U.subtype : U →* G) X)) (n + 2)).hom F.val =
+      (d (TopRep.res (U.subtype : U →* G) X) (n + 1)).hom v.val := by
     have h₁ := ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i φ (n + 1)) z
     have h₂ := ConcreteCategory.congr_hom (KU.toCycles_i n (n + 1)) v
     simp only [ConcreteCategory.comp_apply] at h₁ h₂
@@ -317,9 +317,9 @@ theorem index_nsmul_eq_zero_of_res_eq_zero (hU : IsOpen (U : Set G)) [U.FiniteIn
     exact (congrArg Subtype.val (h₁.symm.trans h₂)).trans (homogeneousCochains.d_apply _ n v)
   -- so `F = d W` for a `U`-invariant `W`, and the coset sum of `W` is a primitive of `[G : U] • F`
   obtain ⟨W, hWinv, hW⟩ := exists_d_eq_of_resolutionMap_subgroupSubtype_eq_d X
-    (w := ⟨w, hwc⟩) hw n F.2 hdF v.2 hrF
+    (w := ⟨w, hwc⟩) hw n F.property hdF v.property hrF
   let : Fintype (G ⧸ U) := Fintype.ofFinite _
-  obtain ⟨hB, hdB⟩ := sum_out_mem_invariants_and_d_eq X n hWinv F.2 hW
+  obtain ⟨hB, hdB⟩ := sum_out_mem_invariants_and_d_eq X n hWinv F.property hW
   have hb : K.toCycles n (n + 1) ⟨_, hB⟩ = U.index • z := by
     refine K.iCycles_injective (n + 1) (Subtype.ext ?_)
     have h := ConcreteCategory.congr_hom (K.toCycles_i n (n + 1)) ⟨_, hB⟩

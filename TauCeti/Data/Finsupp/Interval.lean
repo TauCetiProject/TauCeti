@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.Data.Finsupp.Antidiagonal
 public import Mathlib.Data.Finsupp.Interval
+public import Mathlib.Data.Pi.Interval
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.Interval.Finset.Nat
 
@@ -21,11 +23,17 @@ partial degrees `degreeOf i P ≤ r i` are counted.
 
 Since the boxes `Iic m` are finite, subtracting a fixed multi-index has finite fibres.
 
+In finitely many variables, a sum over the antidiagonal of `m`, the pairs `(a, b)` with
+`a + b = m`, is a sum over the box `Iic m` of the corresponding functions `σ → ℕ`. This
+translates Cauchy products of formal power series into multi-index sums over boxes.
+
 ## Main results
 
 * `Finsupp.card_le_prod_of_forall_le`: `#s ≤ ∏ᵢ (rᵢ + 1)`.
 * `Finsupp.sum_le_prod_mul_of_forall_le`: `∑ m ∈ s, f m ≤ ∏ᵢ (rᵢ + 1) C` when `f ≤ C` on `s`.
 * `Finsupp.tendsto_sub_cofinite`: `n ↦ n - d` maps the cofinite filter into itself.
+* `Finsupp.sum_antidiagonal_eq_sum_Iic_coe`: a sum over the antidiagonal of `m` is the sum over
+  `Iic ⇑m` of the corresponding pairs of functions.
 -/
 
 public section
@@ -59,6 +67,26 @@ theorem sum_le_prod_mul_of_forall_le {R : Type*} [CommSemiring R] [PartialOrder 
   rw [nsmul_eq_mul]
   gcongr
   simpa using Nat.mono_cast (α := R) (card_le_prod_of_forall_le hs)
+
+/-- In finitely many variables, a sum over the antidiagonal of a multi-index `m` is the sum over
+the box `Iic ⇑m` of functions `σ → ℕ`, the second index being `⇑m - b`. -/
+theorem sum_antidiagonal_eq_sum_Iic_coe {M : Type*} [AddCommMonoid M] [DecidableEq σ]
+    (F : (σ → ℕ) → (σ → ℕ) → M) (m : σ →₀ ℕ) :
+    ∑ p ∈ antidiagonal m, F p.1 p.2 = ∑ b ∈ Iic (m : σ → ℕ), F b (m - b) := by
+  refine sum_nbij' (fun p ↦ p.1) (fun b ↦ (equivFunOnFinite.symm b, m - equivFunOnFinite.symm b))
+    (fun p hp ↦ ?_) (fun b hb ↦ ?_) (fun p hp ↦ ?_) (fun b _ ↦ by simp) (fun p hp ↦ ?_)
+  · rw [mem_antidiagonal] at hp
+    simp [← hp]
+  · rw [mem_Iic] at hb
+    rw [mem_antidiagonal]
+    exact add_tsub_cancel_of_le fun i ↦ by simpa using hb i
+  · rw [mem_antidiagonal] at hp
+    simp [← hp]
+  · rw [mem_antidiagonal] at hp
+    rw [← hp]
+    congr 1
+    ext i
+    simp
 
 end Finsupp
 
