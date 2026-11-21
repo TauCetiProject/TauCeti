@@ -53,7 +53,7 @@ def orthogonalGroup.restrict (g : orthogonalGroup Q) (hW : W.map (g : M ≃ₗ[R
   ⟨(g : M ≃ₗ[R] M).ofSubmodules W W hW,
     mem_orthogonalGroup_iff.mpr fun u ↦ by
       simp only [QuadraticMap.restrict_apply, LinearEquiv.ofSubmodules_apply]
-      exact map_app_of_mem_orthogonalGroup g.2 u⟩
+      exact map_app_of_mem_orthogonalGroup g.property u⟩
 
 @[simp]
 theorem orthogonalGroup.coe_restrict_apply (g : orthogonalGroup Q)

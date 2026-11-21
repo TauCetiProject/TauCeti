@@ -275,7 +275,7 @@ theorem one_div_add_one_le_sum_distErr_mul_inv_of_not_exists (E : Finset (V × V
       (single_le_sum (f := fun e => distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹))
         (fun _ _ => distErr_nonneg _ _) he₀)
   · have hE : E.Nonempty := by
-      rw [nonempty_iff_ne_empty]
+      rw [← ne_empty_iff_nonempty]
       rintro rfl
       exact hncob ⟨1, by simp⟩
     rcases hE with ⟨e₀, he₀⟩

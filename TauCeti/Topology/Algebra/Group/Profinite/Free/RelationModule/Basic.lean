@@ -344,7 +344,7 @@ private theorem continuous_schreierCocycle : Continuous (schreierCocycle p hg) :
 /-- The Schreier element of `R` at `1 ∈ G` and `r ∈ R` is `r` itself. -/
 private theorem toKer_sec_one_mul (r : (lift g : freeProfiniteGroup ι →* G).ker) :
     toKer hg (sec hg 1⁻¹ * r) = r := by
-  have hr : lift g r = 1 := MonoidHom.mem_ker.1 r.2
+  have hr : lift g r = 1 := MonoidHom.mem_ker.1 r.property
   exact Subtype.ext (by simp [toKer, sec_one, hr])
 
 section
@@ -376,13 +376,13 @@ private noncomputable def foxHom :
   toFun r := ofAdd fun k ↦ (foxDerivative p g r k.1).coeff k.2
   map_one' := by simp; rfl
   map_mul' r r' := by
-    simp only [Subgroup.coe_mul, foxDerivative_mul_of_mem_ker p g r.2, ← ofAdd_add]
+    simp only [Subgroup.coe_mul, foxDerivative_mul_of_mem_ker p g r.property, ← ofAdd_add]
     congr 1
 
 private theorem continuous_foxHom : Continuous (foxHom p (g := g)) :=
   continuous_ofAdd.comp (continuous_pi fun k ↦ (continuous_apply k.2).comp
     ((continuous_apply k.1).comp
-      ((continuous_coeff_foxDerivative p g).comp continuous_subtype_val)))
+      ((continuous_coeff_foxDerivative p g).comp continuous_subtypeVal)))
 
 /-- The Fox derivative factors through `R^ab(p)`. -/
 private noncomputable def abelianFoxHom :
@@ -439,7 +439,7 @@ private theorem foxAddHom_mem
     foxAddHom p a ∈ MonoidAlgebra.relationModule ℤ_[p] G g := by
   obtain ⟨r, hr⟩ := abelianizationProPMk_surjective p _ _ a.toMul
   rw [← ofMul_toMul a, ← hr, foxAddHom_ofMul_mk]
-  exact foxDerivative_mem_relationModule p g r.2
+  exact foxDerivative_mem_relationModule p g r.property
 
 end
 
@@ -569,7 +569,7 @@ noncomputable def abelianizationProPEquivRelationModule :
     rw [← ofMul_toMul a, ← hr]
     dsimp only
     rw [foxAddHom_ofMul_mk, schreierSum_foxDerivative]
-  right_inv m := Subtype.ext (foxAddHom_schreierSum p hg m.2)
+  right_inv m := Subtype.ext (foxAddHom_schreierSum p hg m.property)
   map_add' a b := Subtype.ext (map_add (foxAddHom p) a b)
 
 /-- Lyndon's isomorphism sends the class of `r ∈ R` to the Fox derivative of `r`. -/
@@ -627,7 +627,7 @@ theorem abelianizationProPEquivRelationModule_smul (f : freeProfiniteGroup ι)
   ext1
   rw [Submodule.coe_smul, coe_abelianizationProPEquivRelationModule_ofMul,
     coe_abelianizationProPEquivRelationModule_ofMul, MulAut.conjNormal_apply,
-    foxDerivative_conj p g r.2]
+    foxDerivative_conj p g r.property]
 
 end Lyndon
 

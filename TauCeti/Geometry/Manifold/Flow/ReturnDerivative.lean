@@ -71,6 +71,11 @@ the generalized eigenspaces of `DP_p` and `DP_q` for every nonzero eigenvalue an
 multiplicities of the nonzero eigenvalues do not depend on the section or the base point
 (`TauCeti.finrank_genEigenspace_returnDerivative_eq`).
 
+The linearized and normal return maps depend only on the field near the orbit: if `w` agrees
+with `v` on an open set containing the trajectory of `p` up to time `T₀`, they are the same for
+`v` and `w` (`TauCeti.returnDerivative_eq_of_eqOn`, `TauCeti.normalReturnDerivative_eq_of_eqOn`),
+so the orbit is nondegenerate for `w` exactly when it is for `v`.
+
 As in `TauCeti.Geometry.Manifold.Flow.Transition`, `T₀` need not be the least period, and the
 return branch need not be the first return to the section.
 
@@ -119,6 +124,8 @@ return branch need not be the first return to the section.
   return derivative of the time-`0` transition and of an iterate.
 * `TauCeti.charpoly_normalReturnDerivative_pow_eq`: the characteristic polynomial of every power of
   the normal return derivative is independent of the section and the base point.
+* `TauCeti.returnDerivative_eq_of_eqOn`, `TauCeti.normalReturnDerivative_eq_of_eqOn`: the
+  linearized and normal return maps depend only on the field near the orbit.
 
 ## References
 
@@ -424,7 +431,8 @@ theorem normalReturnDerivative_zero (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
     normalReturnDerivative v g 0 p h = 1 := by
   ext w
   rw [coe_normalReturnDerivative_apply, returnDerivative_apply, one_apply_eq_self]
-  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
+  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv
+      (LinearMap.mem_ker.1 w.property)
 
 /-- **The normal return derivative of an iterate.** The return branch at time `k * T₀` is the
 `k`-fold iterate of the return branch at time `T₀`, and its normal derivative is the `k`-th power
@@ -586,9 +594,10 @@ theorem exists_linearEquiv_comp_normalReturnDerivative
   refine ⟨LinearEquiv.ofLinearMap f f' ?_ ?_, fun w ↦ rfl, ?_⟩
   · refine LinearMap.ext fun u ↦ Subtype.ext ?_
     exact mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_zero hv hneg hback hg'
-      hg'v hg hgv (neg_add_cancel T) u.2
+      hg'v hg hgv (neg_add_cancel T) u.property
   · refine LinearMap.ext fun w ↦ Subtype.ext ?_
-    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v w.2
+    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v
+        w.property
   · refine LinearMap.ext fun w ↦ Subtype.ext ?_
     exact LinearMap.congr_fun
       (returnDerivative_comp_mfderiv_flowTransition hv hT hq hP hp hg hgv hg' hg'v) w
@@ -717,5 +726,42 @@ theorem hasEigenvalue_normalReturnDerivative_iff_of_flowOf
     charpoly_normalReturnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v]
 
 end Return
+
+section Locality
+
+variable {w : (x : M) → TangentSpace I x} {U : Set M}
+  (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hU : IsOpen U) (hvw : EqOn w v U)
+  (hT : (T, p) ∈ flowDomain v) (hTU : MapsTo (fun s ↦ flowOf v s p) (uIcc 0 T) U)
+  (hg : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v T p))
+  (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0)
+include hw hU hvw hT hTU hg hgv
+
+/-- **Linearized return maps depend only on the field near the orbit.** If `w` agrees with `v` on
+an open set containing the trajectory of `p` under `v` from time `0` to time `T`, then the
+derivatives at `p` of the transitions to a section through `flowOf v T p` agree. For a closed
+orbit, `flowOf v T p = p`, these are the linearized return maps, so the orbit is nondegenerate for
+`w` exactly when it is for `v`. -/
+theorem returnDerivative_eq_of_eqOn : returnDerivative w g T p = returnDerivative v g T p := by
+  ext u
+  -- The cast between the tangent spaces at the two equal values of the transitions is the
+  -- identity.
+  have h := flowTransition_eventuallyEq_of_eqOn hv hw hU hvw hT hTU hg hgv
+  rw [returnDerivative_apply, returnDerivative_apply]
+  exact DFunLike.congr_fun (h.mfderiv_eq (I := I) (I' := I)) u
+
+/-- **Normal return maps depend only on the field near the orbit.** The normal return derivatives
+of `v` and `w` at `p` agree when `w` agrees with `v` on an open set containing the trajectory of
+`p` under `v` from time `0` to time `T`. -/
+theorem normalReturnDerivative_eq_of_eqOn
+    {hrw : LinearMap.range (returnDerivative w g T p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {hrv : LinearMap.range (returnDerivative v g T p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
+    normalReturnDerivative w g T p hrw = normalReturnDerivative v g T p hrv := by
+  ext u
+  simp only [coe_normalReturnDerivative_apply,
+    returnDerivative_eq_of_eqOn hv hw hU hvw hT hTU hg hgv]
+
+end Locality
 
 end TauCeti

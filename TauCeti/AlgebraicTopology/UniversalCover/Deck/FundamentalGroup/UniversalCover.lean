@@ -56,7 +56,7 @@ def loopDeck (g : FundamentalGroup X x₀) :
 /-- The deck transformation induced by a loop class acts by the fundamental-group action. -/
 @[simp]
 lemma loopDeck_apply (g : FundamentalGroup X x₀) (p : UniversalCover x₀) :
-    (loopDeck x₀ g).1 p = g • p :=
+    (loopDeck x₀ g).val p = g • p :=
   (rfl)
 
 /-- The identity loop class induces the identity deck transformation. -/
@@ -125,7 +125,7 @@ lemma deckFundamentalGroupEquiv_symm_op
   -- named monodromy calculation from `UniversalCover.Action` applies without unfolding either
   -- wrapper.
   change ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) :
-    UniversalCover x₀) = (loopDeck x₀ g⁻¹).1 (basepointLift x₀)
+    UniversalCover x₀) = (loopDeck x₀ g⁻¹).val (basepointLift x₀)
   simpa only [deck.smul_eq_apply, loopDeck_apply] using monodromy_basepointLift x₀ g
 
 end TauCeti.UniversalCover

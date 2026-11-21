@@ -24,6 +24,7 @@ separately is not stated there.
 * `Real.abs_arctan_sub_self_le`: `|arctan x - x| ≤ |x| ^ 3`, the cubic remainder of the first-order
   Taylor approximation `arctan x ≈ x`, with constant `1`.
 * `Real.arctan_div_add_arctan_div`: the quotient form of the complementary-angle law.
+* `Real.sin_two_mul_arctan`: `sin (2 arctan x) = 2 x / (1 + x²)`.
 * `Real.tendsto_arctan_div_nhdsGT_zero`: `arctan (c / η) → (π / 2) * sign c` as `η → 0⁺`.
 * `TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I`: the four corner angles of a rectangle straddling
   the imaginary axis sum to a full turn.
@@ -40,6 +41,13 @@ namespace Real
 /-- The arctangent is bounded in absolute value by `π / 2`. -/
 theorem abs_arctan_lt_pi_div_two (x : ℝ) : |arctan x| < π / 2 :=
   abs_lt.2 (arctan_mem_Ioo x)
+
+/-- The sine of twice the arctangent: `sin (2 arctan x) = 2 x / (1 + x²)`. -/
+theorem sin_two_mul_arctan (x : ℝ) : sin (2 * arctan x) = 2 * x / (1 + x ^ 2) := by
+  rw [sin_two_mul, sin_arctan, cos_arctan]
+  calc 2 * (x / √(1 + x ^ 2)) * (1 / √(1 + x ^ 2)) = 2 * x / (√(1 + x ^ 2) * √(1 + x ^ 2)) := by
+        ring
+    _ = 2 * x / (1 + x ^ 2) := by rw [mul_self_sqrt (by positivity)]
 
 /-- `arctan x = x + O(|x| ^ 3)` with constant `1`: `|arctan x - x| ≤ |x| ^ 3`. By the mean value
 theorem, since `|arctan' u - 1| = u ^ 2 / (1 + u ^ 2) ≤ x ^ 2` for `|u| ≤ |x|`. -/

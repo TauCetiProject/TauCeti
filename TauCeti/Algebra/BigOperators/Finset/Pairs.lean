@@ -9,10 +9,13 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Order.Sym2
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # Sums and products over pairs
@@ -40,10 +43,18 @@ sign of the permutation.
   over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi`: an off-diagonal pairing against an antisymmetric
+  kernel, folded onto the strictly increasing pairs `i < j`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
   pairs separates into the strictly increasing pairs and the diagonal.
+* `Finset.prod_prod_Iio_eq_prod_prod_Ioi`: transposes a double product from strictly decreasing to
+  strictly increasing index pairs (`Finset.sum_sum_Iio_eq_sum_sum_Ioi` additively).
+* `Finset.prod_erase_univ_eq_prod_Ioi_mul_prod_Iio`: splits the product over `univ.erase i` into
+  the indices above `i` and below `i` (`Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio` additively).
+* `Finset.sum_mul_sum_Ioi_sub_sum_Iio`: folds a weighted antisymmetric difference of upper and
+  lower sums onto strictly increasing index pairs.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
 * `TauCeti.prod_prod_Ioi_three` and `TauCeti.prod_prod_Ioi_four`: the products over the increasing
@@ -72,6 +83,35 @@ theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
     (∏ i ∈ s, ∏ j ∈ Ici i, f i j) = (∏ i ∈ s, ∏ j ∈ Ioi i, f i j) * ∏ i ∈ s, f i i := by
   simp_rw [← prod_Ioi_mul_eq_prod_Ici]
   exact prod_mul_distrib
+
+/-- Transposing a double product from strictly decreasing to strictly increasing index pairs. -/
+@[to_additive /-- Transposing a double sum from strictly decreasing to strictly increasing index
+pairs. -/]
+theorem prod_prod_Iio_eq_prod_prod_Ioi {ι M : Type*} [Fintype ι] [Preorder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) :
+    (∏ i, ∏ j ∈ Iio i, f i j) = ∏ i, ∏ j ∈ Ioi i, f j i := by
+  rw [prod_sigma', prod_sigma']
+  exact prod_nbij' (fun p ↦ ⟨p.2, p.1⟩) (fun p ↦ ⟨p.2, p.1⟩)
+    (by simp) (by simp) (by simp) (by simp) (by simp)
+
+/-- Splitting the product over all indices other than `i` into the indices above `i` and below
+`i`. -/
+@[to_additive /-- Splitting the sum over all indices other than `i` into the indices above `i` and
+below `i`. -/]
+theorem prod_erase_univ_eq_prod_Ioi_mul_prod_Iio {ι M : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (i : ι) (f : ι → M) :
+    (∏ j ∈ univ.erase i, f j) = (∏ j ∈ Ioi i, f j) * ∏ j ∈ Iio i, f j := by
+  rw [← compl_singleton, ← Ioi_disjUnion_Iio, prod_disjUnion]
+
+/-- Pairing a weight `w` against the antisymmetric difference `(∑_{j > i} g i j) - ∑_{j < i} g j i`
+folds onto strictly increasing index pairs as `∑_{i < j} (w i - w j) * g i j`. -/
+theorem sum_mul_sum_Ioi_sub_sum_Iio {ι R : Type*} [Fintype ι] [Preorder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [NonUnitalNonAssocRing R]
+    (w : ι → R) (g : ι → ι → R) :
+    (∑ i, w i * ((∑ j ∈ Ioi i, g i j) - ∑ j ∈ Iio i, g j i)) =
+      ∑ i, ∑ j ∈ Ioi i, (w i - w j) * g i j := by
+  simp_rw [mul_sub, mul_sum, sum_sub_distrib,
+    sum_sum_Iio_eq_sum_sum_Ioi (fun i j ↦ w i * g j i), ← sum_sub_distrib, sub_mul]
 
 end Finset
 
@@ -318,15 +358,15 @@ namespace Equiv
 `{p : α × α // p.1 < p.2}`. -/
 private def sym2NotIsDiagEquivLt (α : Type*) [LinearOrder α] :
     {s : Sym2 α // ¬ s.IsDiag} ≃ {p : α × α // p.1 < p.2} where
-  toFun s := ⟨(Sym2.sortEquiv s.1).1,
-    lt_of_le_of_ne (Sym2.sortEquiv s.1).2 fun h => s.2 <| by
-      rw [← Sym2.sortEquiv.symm_apply_apply s.1]
-      change s((Sym2.sortEquiv s.1).1.1, (Sym2.sortEquiv s.1).1.2).IsDiag
+  toFun s := ⟨(Sym2.sortEquiv s.val).val,
+    lt_of_le_of_ne (Sym2.sortEquiv s.val).property fun h => s.property <| by
+      rw [← Sym2.sortEquiv.symm_apply_apply s.val]
+      change s((Sym2.sortEquiv s.val).val.1, (Sym2.sortEquiv s.val).val.2).IsDiag
       rwa [Sym2.mk_isDiag_iff]⟩
-  invFun p := ⟨Sym2.sortEquiv.symm ⟨p.1, p.2.le⟩, by
-    simpa [Sym2.mk_isDiag_iff] using p.2.ne⟩
-  left_inv s := Subtype.ext (Sym2.sortEquiv.symm_apply_apply s.1)
-  right_inv p := Subtype.ext (by simp [p.2.le])
+  invFun p := ⟨Sym2.sortEquiv.symm ⟨p.val, p.property.le⟩, by
+    simpa [Sym2.mk_isDiag_iff] using p.property.ne⟩
+  left_inv s := Subtype.ext (Sym2.sortEquiv.symm_apply_apply s.val)
+  right_inv p := Subtype.ext (by simp [p.property.le])
 
 /-- Pulling back an off-diagonally symmetric function along an arbitrary bijection `e : V ≃ W`
 between finite linear orders preserves its product over strictly increasing pairs, even when `e` is
@@ -340,30 +380,27 @@ theorem prod_filter_lt_of_symm {V W M : Type*} [Fintype V] [LinearOrder V]
     (∏ p : V × V with p.1 < p.2, f (e p.1) (e p.2)) =
       ∏ q : W × W with q.1 < q.2, f q.1 q.2 := by
   let mapNotDiag : {s : Sym2 V // ¬ s.IsDiag} ≃ {t : Sym2 W // ¬ t.IsDiag} :=
-    { toFun := fun s => ⟨Sym2.map e s.1, by simpa [Sym2.isDiag_map e.injective] using s.2⟩
-      invFun := fun t => ⟨Sym2.map e.symm t.1,
-        by simpa [Sym2.isDiag_map e.symm.injective] using t.2⟩
-      left_inv := fun s => Subtype.ext (by simp [Sym2.map_map])
-      right_inv := fun t => Subtype.ext (by simp [Sym2.map_map]) }
+    (Sym2.equivCongr e).subtypeEquiv fun p => by
+      rw [Sym2.equivCongr_apply, Sym2.isDiag_map e.injective]
   let eqv : {p : V × V // p.1 < p.2} ≃ {q : W × W // q.1 < q.2} :=
     (sym2NotIsDiagEquivLt V).symm.trans (mapNotDiag.trans (sym2NotIsDiagEquivLt W))
   let F : Sym2 W → M :=
     Sym2.lift ⟨f, fun u v => if h : u = v then by subst h; rfl else (hf u v h).symm⟩
   have hL : (∏ p : V × V with p.1 < p.2, f (e p.1) (e p.2)) =
-      ∏ p : {p : V × V // p.1 < p.2}, F (Sym2.map e s(p.1.1, p.1.2)) := by
+      ∏ p : {p : V × V // p.1 < p.2}, F (Sym2.map e s(p.val.1, p.val.2)) := by
     rw [← Finset.prod_subtype (Finset.univ.filter fun p : V × V => p.1 < p.2)
       (by simp) (fun p => F (Sym2.map e s(p.1, p.2)))]
     simp [F]
   have hR : (∏ q : W × W with q.1 < q.2, f q.1 q.2) =
-      ∏ q : {q : W × W // q.1 < q.2}, F s(q.1.1, q.1.2) := by
+      ∏ q : {q : W × W // q.1 < q.2}, F s(q.val.1, q.val.2) := by
     rw [← Finset.prod_subtype (Finset.univ.filter fun q : W × W => q.1 < q.2)
       (by simp) (fun q => F s(q.1, q.2))]
     simp [F]
   rw [hL, hR]
   refine Fintype.prod_equiv eqv _ _ fun p => ?_
-  dsimp only [eqv, Equiv.trans_apply, sym2NotIsDiagEquivLt, mapNotDiag, Equiv.coe_fn_symm_mk,
-    Equiv.coe_fn_mk, Sym2.sortEquiv_symm_apply]
-  exact congrArg F (Sym2.sortEquiv.symm_apply_apply (Sym2.map e s(p.1.1, p.1.2))).symm
+  simp only [eqv, Equiv.trans_apply, sym2NotIsDiagEquivLt, mapNotDiag, Equiv.subtypeEquiv_apply,
+    Sym2.equivCongr_apply, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk, Sym2.sortEquiv_symm_apply]
+  exact congrArg F (Sym2.sortEquiv.symm_apply_apply (Sym2.map e s(p.val.1, p.val.2))).symm
 
 end Equiv
 
@@ -390,5 +427,24 @@ theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
     _ = ∏ x ∈ univ.sigma Ioi, f x.1 x.2 :=
         (prod_equiv (Equiv.sigmaEquivProd ι ι) (fun ⟨_, _⟩ => by simp) fun _ _ => rfl).symm
     _ = ∏ i, ∏ j ∈ Ioi i, f i j := (prod_sigma' _ _ _).symm
+
+/-- **An off-diagonal pairing against an antisymmetric kernel, folded onto increasing pairs.**
+Summing `u i * ∑ j ∈ univ.erase i, k i j` folds onto strictly increasing pairs `i < j` as
+`∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j`. Only off-diagonal antisymmetry (`i < j → k j i = -k i j`)
+is required, since the diagonal is excluded from `univ.erase i`. -/
+theorem sum_mul_sum_erase_eq_sum_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderTop ι] [NonUnitalNonAssocRing R]
+    (u : ι → R) (k : ι → ι → R) (hk : ∀ ⦃i j : ι⦄, i < j → k j i = -k i j) :
+    ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j := by
+  let : LocallyFiniteOrderBot ι :=
+    { finsetIio := fun a ↦ univ.filter (· < a)
+      finsetIic := fun a ↦ univ.filter (· ≤ a)
+      finset_mem_Iic := fun _ _ ↦ by simp
+      finset_mem_Iio := fun _ _ ↦ by simp }
+  have hpull : ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ {i}ᶜ, u i * k i j :=
+    sum_congr rfl fun i _ ↦ by rw [compl_singleton, mul_sum]
+  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
+  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
+  rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
 
 end TauCeti

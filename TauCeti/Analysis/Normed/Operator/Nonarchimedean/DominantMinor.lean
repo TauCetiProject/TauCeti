@@ -58,7 +58,7 @@ theorem norm_le_rowNorm_of_norm_principalMinor_eq_one {n : ℕ} {C : ℝ}
     · simpa [r, hin] using hb i (by grind) j
   have hle : ‖u.matrixCoeff.principalMinor (range (n + 1))‖ ≤ ∏ i ∈ range (n + 1), r i := by
     rw [Matrix.principalMinor_def, ← prod_coe_sort]
-    exact Matrix.norm_det_le_prod_of_norm_le fun i j ↦ hr i j i.2
+    exact Matrix.norm_det_le_prod_of_norm_le fun i j ↦ hr i j i.property
   have hprod : ∏ i ∈ range (n + 1), r i = (∏ i ∈ range n, ‖d i‖) * u.rowNorm n := by
     rw [prod_range_succ, prod_congr rfl fun i hi ↦ Function.update_of_ne
       (mem_range.1 hi).ne _ _]

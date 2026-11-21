@@ -90,7 +90,7 @@ theorem mem_range_explicitRes0_iff (x : H0 N M) :
   constructor
   · rintro ⟨y, rfl⟩ g
     rw [coe_explicitRes0]
-    exact y.2 g
+    exact y.property g
   · intro hx
     exact ⟨⟨x, fun g => hx g⟩, Subtype.ext (coe_explicitRes0 G M N _)⟩
 
@@ -147,7 +147,7 @@ theorem explicitRes1_explicitCor1_of_normal (t : G ⧸ N → G)
     refine Subtype.ext (funext fun n => ?_)
     rw [AddSubgroup.val_finsetSum, Finset.sum_apply, cocyclesMap1_apply, AddMonoidHom.id_apply,
       ContinuousMonoidHom.subgroupSubtype_apply, coe_cocyclesCor1,
-      cochainsCor1_apply_of_mem G M N t ht _ n.2]
+      cochainsCor1_apply_of_mem G M N t ht _ n.property]
     refine Finset.sum_congr rfl fun u _ => ?_
     rw [cocyclesMap1_apply, DistribSMul.toAddMonoidHom_apply,
       Subgroup.inverseConjugationHom_apply]
@@ -195,7 +195,7 @@ theorem explicitResConj1_bijective_of_coprime (N : Subgroup G) [N.Normal] [N.Fin
     refine ⟨x, Subtype.ext ((nsmul_right_bijective_of_coprime
       (nsmul_H1_eq_zero (G := N) he) hcop).injective ?_)⟩
     simp only [coe_explicitResConj1, ← map_nsmul, hx,
-      explicitRes1_explicitCor1_of_mem_H1ConjInvariants G M N hN y.2]
+      explicitRes1_explicitCor1_of_mem_H1ConjInvariants G M N hN y.property]
 
 end Cohomology
 
@@ -235,7 +235,7 @@ noncomputable def h1CoprimeDescentEquiv [N.FiniteIndex] (hopen : IsOpen (N : Set
         congrArg Subtype.val hxy
     · intro y
       let z : H1ConjInvariants G A N :=
-        ⟨y, (AddSubgroup.mem_toZModSubmodule n).1 y.2⟩
+        ⟨y, (AddSubgroup.mem_toZModSubmodule n).1 y.property⟩
       obtain ⟨x, hx⟩ := hb.surjective z
       refine ⟨x, Subtype.ext ?_⟩
       have hx' := congrArg Subtype.val hx
