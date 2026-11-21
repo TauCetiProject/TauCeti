@@ -41,6 +41,8 @@ to `F₂` keeping `(1, b)` nontrivial makes the images of `(a, 1)` and `(b, 1)` 
   discrimination and separation survive restriction of the coefficients.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.prod`: a product of groups separated by `H` is separated by
   `H`, through the two projections.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.isMulCommutative_centralizer`: in a group separated by
+  `H`, a coefficient whose image in `H` has an abelian centralizer has an abelian centralizer.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.isMulTorsionFree`: a group separated by a torsion-free
   group is torsion-free, so a nontrivial finite group is not separated by a torsion-free group
   (`TauCeti.GroupAlgGeom.not_isSeparatedBy_of_finite`); for instance `ℤ/2` is not separated by `ℤ`
@@ -223,6 +225,25 @@ theorem isMulTorsionFree [IsMulTorsionFree H] {ιK : G →* K} {ιH : G →* H}
   .of_not_isOfFinOrder fun k hk hfin =>
     let ⟨φ, hφ⟩ := h k hk
     not_isOfFinOrder_of_isMulTorsionFree hφ (MonoidHom.isOfFinOrder (φ : K →* H) hfin)
+
+/-- If `K` is separated by `H` over `G` and the image of a coefficient `c` in `H` has an abelian
+centralizer, then so has its image in `K`. For instance, when `H` is commutative transitive, the
+image in `K` of every coefficient that is not sent to `1` in `H` has an abelian centralizer. -/
+theorem isMulCommutative_centralizer {ιK : G →* K} {ιH : G →* H} (h : IsSeparatedBy ιK ιH) {c : G}
+    (hc : IsMulCommutative (Subgroup.centralizer {ιH c})) :
+    IsMulCommutative (Subgroup.centralizer {ιK c}) := by
+  -- Every homomorphism over `G` maps the centralizer of `ιK c` into that of `ιH c`.
+  have hφ (φ : GHom ιK ιH) {x : K} (hx : x ∈ Subgroup.centralizer {ιK c}) :
+      φ x ∈ Subgroup.centralizer {ιH c} := by
+    simpa using Subgroup.map_centralizer_le_centralizer_image _ (φ : K →* H)
+      (Subgroup.mem_map_of_mem _ hx)
+  refine .of_setLike_mul_comm fun a ha b hb => ?_
+  rw [← commutatorElement_eq_one_iff_mul_comm]
+  by_contra hab
+  obtain ⟨φ, hφab⟩ := h _ hab
+  refine hφab ?_
+  rw [map_commutatorElement, commutatorElement_eq_one_iff_mul_comm]
+  exact setLike_mul_comm (hφ φ ha) (hφ φ hb)
 
 /-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
 theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}

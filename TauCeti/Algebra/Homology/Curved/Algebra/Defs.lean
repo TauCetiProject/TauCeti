@@ -101,7 +101,7 @@ theorem map_decompose (h : IsCurvedDGAlgebra 𝒜 d w) (p : ℤ) (a : A) :
 arbitrary left factor, without a homogeneity hypothesis. -/
 theorem leibniz_of_map_eq_zero (h : IsCurvedDGAlgebra 𝒜 d w) (a : A) {b : A} (hb : d b = 0) :
     d (a * b) = d a * b :=
-  map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
+  map_mul_of_leibniz_of_map_eq_zero (𝒜 := 𝒜) h.leibniz a hb
 
 /-- The Leibniz rule against the curvature in the right factor: the curvature is a cycle. -/
 theorem map_mul_curvature (h : IsCurvedDGAlgebra 𝒜 d w) (a : A) : d (a * w) = d a * w :=

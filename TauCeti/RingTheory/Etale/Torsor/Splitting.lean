@@ -49,6 +49,10 @@ Shrinking `S` to the universe of `A` (`Shrink`) and indexing frames by `ULift (F
   a finite étale torsor.
 * `TauCeti.Algebra.exists_isFiniteEtaleTorsor_isTotallySplit`: every finite étale `A`-algebra `S`
   becomes totally split after base change to a finite étale torsor over `A`.
+* `TauCeti.Algebra.exists_perm_isFiniteEtaleTorsor_isFiniteSplit`,
+  `TauCeti.Algebra.exists_perm_isFiniteEtaleTorsor_isFiniteSplit_of_preconnectedSpace`,
+  `TauCeti.Algebra.exists_perm_isFiniteEtaleTorsor_isTotallySplit`: the same statements with the
+  splitting group exhibited explicitly as `Equiv.Perm (Fin n)`.
 
 ## References
 
@@ -130,5 +134,66 @@ theorem exists_isFiniteEtaleTorsor_isTotallySplit (A : Type u) (S : Type*) [Comm
   have htot : IsTotallySplit P (P ⊗[A] (S × Π j, A ⧸ Ideal.span {1 - e j})) := .of_isFiniteSplit
   exact ⟨G, _, _, P, _, _, _, _, hP,
     (htot.of_algEquiv (Algebra.TensorProduct.prodRight A P P _ _)).of_prod_fst⟩
+
+section Perm
+
+/-- **A finite étale algebra of constant rank `n` is finite split by a `Perm (Fin n)`-torsor.** If
+`S` is a finite étale `A`-algebra of constant stalk rank `n`, there is a finite étale
+`Equiv.Perm (Fin n)`-torsor `P` over `A`, in the universe of `A`, such that `P ⊗[A] S` is finite
+split over `P`. -/
+theorem exists_perm_isFiniteEtaleTorsor_isFiniteSplit (A : Type u) (S : Type*) [CommRing A]
+    [CommRing S] [Algebra A S] [Algebra.Etale A S] [Module.Finite A S] {n : ℕ}
+    (h : Module.rankAtStalk (R := A) S = n) :
+    ∃ (P : Type u) (_ : CommRing P) (_ : Algebra A P)
+      (_ : MulSemiringAction (Equiv.Perm (Fin n)) P)
+      (_ : SMulCommClass (Equiv.Perm (Fin n)) A P),
+      IsFiniteEtaleTorsor (Equiv.Perm (Fin n)) A P ∧ Algebra.IsFiniteSplit P (P ⊗[A] S) := by
+  have : Small.{u} S := Module.Finite.small A S
+  let S₀ : Type u := Shrink.{u} S
+  let e : S₀ ≃ₐ[A] S := Shrink.algEquiv A S
+  have : Algebra.Etale A S₀ := .of_equiv e.symm
+  have : Module.Finite A S₀ := .equiv e.symm.toLinearEquiv
+  have hι : Module.rankAtStalk (R := A) S₀ = Fintype.card (Fin n) := by
+    rw [Module.rankAtStalk_eq_of_equiv e.toLinearEquiv, h, Fintype.card_fin]
+  let P : Type u := FrameAlgebra A S₀ (Fin n)
+  let f : P ⊗[A] S ≃ₐ[P] (Fin n → P) :=
+    (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) e.symm).trans
+      (FrameAlgebra.universalFrameEquiv hι)
+  exact ⟨P, inferInstance, inferInstance, inferInstance, inferInstance,
+    FrameAlgebra.isFiniteEtaleTorsor hι, ⟨n, ⟨f⟩⟩⟩
+
+/-- Over a ring `A` with preconnected prime spectrum, every finite étale `A`-algebra `S` becomes
+finite split after base change to a finite étale `Equiv.Perm (Fin n)`-torsor `P` over `A`, in the
+universe of `A`. -/
+theorem exists_perm_isFiniteEtaleTorsor_isFiniteSplit_of_preconnectedSpace (A : Type u)
+    (S : Type*) [CommRing A] [PreconnectedSpace (PrimeSpectrum A)] [CommRing S] [Algebra A S]
+    [Algebra.Etale A S] [Module.Finite A S] :
+    ∃ (n : ℕ) (P : Type u) (_ : CommRing P) (_ : Algebra A P)
+      (_ : MulSemiringAction (Equiv.Perm (Fin n)) P)
+      (_ : SMulCommClass (Equiv.Perm (Fin n)) A P),
+      IsFiniteEtaleTorsor (Equiv.Perm (Fin n)) A P ∧ Algebra.IsFiniteSplit P (P ⊗[A] S) := by
+  have : Module.FinitePresentation A S := .of_finite_of_finitePresentation A S
+  obtain ⟨n, hn⟩ :=
+    (Module.isLocallyConstant_rankAtStalk (R := A) (M := S)).exists_eq_const
+  exact ⟨n, exists_perm_isFiniteEtaleTorsor_isFiniteSplit A S hn⟩
+
+/-- **Every finite étale algebra is totally split by a symmetric-group torsor.** For every finite
+étale `A`-algebra `S`, there is a finite étale `Equiv.Perm (Fin n)`-torsor `P` over `A`, in the
+universe of `A`, such that `P ⊗[A] S` is totally split over `P`. -/
+theorem exists_perm_isFiniteEtaleTorsor_isTotallySplit (A : Type u) (S : Type*) [CommRing A]
+    [CommRing S] [Algebra A S] [Algebra.Etale A S] [Module.Finite A S] :
+    ∃ (n : ℕ) (P : Type u) (_ : CommRing P) (_ : Algebra A P)
+      (_ : MulSemiringAction (Equiv.Perm (Fin n)) P)
+      (_ : SMulCommClass (Equiv.Perm (Fin n)) A P),
+      IsFiniteEtaleTorsor (Equiv.Perm (Fin n)) A P ∧ IsTotallySplit P (P ⊗[A] S) := by
+  -- Pad `S` to constant rank `n`, split the padded algebra over its frame torsor, and project
+  -- back to the factor `P ⊗[A] S`.
+  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq A S
+  obtain ⟨P, _, _, _, _, hP, _⟩ := exists_perm_isFiniteEtaleTorsor_isFiniteSplit A _ hrank
+  have htot : IsTotallySplit P (P ⊗[A] (S × Π j, A ⧸ Ideal.span {1 - e j})) := .of_isFiniteSplit
+  exact ⟨n, P, _, _, _, _, hP,
+    (htot.of_algEquiv (Algebra.TensorProduct.prodRight A P P _ _)).of_prod_fst⟩
+
+end Perm
 
 end TauCeti.Algebra

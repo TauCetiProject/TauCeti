@@ -129,8 +129,10 @@ theorem markovChainLaw_parallelComp (μ : Measure α) (ν : Measure β)
     ext z
     simp only [Set.mem_ofPred_eq, Set.mem_prod, Prod.ext_iff, forall_and]
   rw [hevent, Measure.prod_prod]
-  rw [← prefixLaw_singleton_eq_measure (fun i => (measurable_pi_apply i).aemeasurable),
-    ← prefixLaw_singleton_eq_measure (fun i => (measurable_pi_apply i).aemeasurable),
+  rw [← prefixLaw_singleton_eq_measure (X := fun i (z : ℕ → α) => z i)
+      (fun i => (measurable_pi_apply i.val).aemeasurable),
+    ← prefixLaw_singleton_eq_measure (X := fun i (z : ℕ → β) => z i)
+      (fun i => (measurable_pi_apply i.val).aemeasurable),
     markovChainLaw_prefixLaw_singleton, markovChainLaw_prefixLaw_singleton]
   simp only [Kernel.parallelComp_apply]
   rw [← Set.singleton_prod_singleton, Measure.prod_prod, mul_mul_mul_comm,

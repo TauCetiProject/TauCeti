@@ -64,6 +64,9 @@ the generic point, and a dominant one by its pullback of rational functions.
   at the generic point is an isomorphism (for instance an open immersion), `f^*` is an isomorphism.
 * `AlgebraicGeometry.isDominant_fromSpecStalk_genericPoint`: the canonical morphism `Spec K(X) ⟶ X`
   is dominant.
+* `AlgebraicGeometry.isDominant_of_isOpenImmersion` and
+  `AlgebraicGeometry.isIso_functionFieldMap_of_isOpenImmersion`: a nonempty open immersion into an
+  irreducible scheme is dominant and induces an isomorphism of generic stalks.
 * `AlgebraicGeometry.Scheme.Hom.ext_of_functionFieldMap_eq`: dominant morphisms from a reduced
   irreducible scheme to a separated scheme agree as soon as their pullbacks of rational functions
   agree.
@@ -112,6 +115,11 @@ instance Scheme.Hom.nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X �
     [IsDominant f] (U : Y.Opens) [Nonempty U] : Nonempty (f ⁻¹ᵁ U) := by
   obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.is_open' ⟨_, (Classical.arbitrary U).property⟩
   exact ⟨⟨x, hx⟩⟩
+
+/-- An open immersion from a nonempty scheme into a preirreducible scheme is dominant. -/
+instance isDominant_of_isOpenImmersion {U X : Scheme.{u}} [PreirreducibleSpace X] [Nonempty U]
+    (j : U ⟶ X) [IsOpenImmersion j] : IsDominant j :=
+  ⟨j.isOpenEmbedding.isOpenMap.denseRange_of_isPreirreducibleSpace⟩
 
 variable {X Y Z : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
 
@@ -269,5 +277,18 @@ instance isIso_functionFieldMap_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersio
   infer_instance
 
 end Scheme.Hom
+
+/-- An open immersion between irreducible schemes induces an isomorphism on generic stalks
+(function fields when the schemes are integral). -/
+instance isIso_functionFieldMap_of_isOpenImmersion (j : X ⟶ Y) [IsOpenImmersion j] :
+    IsIso j.functionFieldMap := by
+  rw [Scheme.Hom.functionFieldMap]
+  have hIso : ∀ {x y : Y} (h : x = y),
+      IsIso (Y.presheaf.stalkSpecializes (specializes_of_eq h)) := by
+    rintro x _ rfl
+    rw [TopCat.Presheaf.stalkSpecializes_refl]
+    infer_instance
+  have := hIso j.genericPoint_eq_of_isDominant
+  infer_instance
 
 end AlgebraicGeometry

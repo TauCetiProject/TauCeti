@@ -57,18 +57,20 @@ valuation ring are carried by the statements that use them, not by the definitio
 * `AlgebraicGeometry.Scheme.Hom.isUnramifiedInCodimOne_of_isOpenImmersion`: if the codimension
   one points outside `U` have regular local rings, every open subscheme of `U`, for instance the
   trivial cover `𝟙 U`, is unramified over `X` in codimension one.
+
+For `f : Y ⟶ U` formally unramified and locally of finite type and `g : X' ⟶ X` mapping
+codimension-one points `ξ' ∉ g⁻¹ U` to codimension-one points `g ξ'` of `X` with `𝒪_{X,g ξ'}` and
+`𝒪_{X',ξ'}` regular local rings:
+
 * `AlgebraicGeometry.Scheme.Hom.baseChange_inCodimOne_of_stalk_baseChange`: any predicate on a
   local ring and an overfield that is stable under base change of discrete valuation rings along
-  surjective maps `K' ⊗[K] L → L'` is preserved in codimension one under base change along
-  `g : X' ⟶ X`.
+  surjective maps `K' ⊗[K] L → L'` is preserved in codimension one under base change along `g`.
 * `AlgebraicGeometry.Scheme.Hom.IsUnramifiedInCodimOne.baseChange`: being unramified in
-  codimension one is stable under base change along `g : X' ⟶ X`, if `g` maps the
-  codimension-one points of `X'` outside `g⁻¹ U` to codimension-one points of `X`, and the local
-  rings at these points are discrete valuation rings (Stacks, Lemma 58.31.1 (0EYD), the
+  codimension one is stable under base change along `g` (Stacks, Lemma 58.31.1 (0EYD), the
   unramified case).
 * `AlgebraicGeometry.Scheme.Hom.IsTamelyRamifiedInCodimOne.baseChange`: being tamely ramified in
-  codimension one is stable under base change along `g : X' ⟶ X` under the same hypotheses
-  (Stacks, Lemma 58.31.1 (0EYD), the tamely ramified case).
+  codimension one is stable under base change along `g` (Stacks, Lemma 58.31.1 (0EYD), the
+  tamely ramified case).
 
 The base change theorems reduce to the base change of unramified and tamely ramified extensions of
 discrete valuation rings, `TauCeti.Algebra.IsUnramifiedWRT.baseChange` and
