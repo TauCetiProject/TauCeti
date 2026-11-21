@@ -414,24 +414,16 @@ of vanishing mean oscillation need not be bounded. -/
 theorem not_memLp_top_log_one_add_posLog_norm_inv [μ.IsOpenPosMeasure] [NullSingletonClass μ] :
     ¬ MemLp (fun x : E => Real.log (1 + Real.posLog ‖x‖⁻¹)) ∞ μ := by
   intro h
-  set M := eLpNormEssSup (fun x : E => Real.log (1 + Real.posLog ‖x‖⁻¹)) μ
-  have hM : M ≠ ∞ := by
-    have h' := h.eLpNorm_lt_top
-    rw [eLpNorm_exponent_top] at h'
-    · exact h'.ne
-    · exact h.aestronglyMeasurable
-  -- On a punctured neighbourhood of the origin the function exceeds its essential supremum.
+  obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1
+    (eLpNorm_exponent_top h.aestronglyMeasurable ▸ h.eLpNorm_lt_top)
+  -- On a punctured neighbourhood of the origin the function exceeds the essential bound `C`.
   obtain ⟨o, ho, h0o, hos⟩ := mem_nhdsWithin.1
-    ((tendsto_log_one_add_posLog_norm_inv (E := E)).eventually_gt_atTop M.toReal)
+    ((tendsto_log_one_add_posLog_norm_inv (E := E)).eventually_gt_atTop (C : ℝ))
   have hpos : 0 < μ (o \ {0}) := by
     rw [measure_sdiff_null (measure_singleton _)]
     exact ho.measure_pos μ ⟨0, h0o⟩
-  have hsub : o \ {0} ⊆ {x | ¬ ‖Real.log (1 + Real.posLog ‖x‖⁻¹)‖ₑ ≤ M} := fun y hy => by
-    have hlt : M.toReal < Real.log (1 + Real.posLog ‖y‖⁻¹) := hos ⟨hy.1, hy.2⟩
-    simp only [mem_ofPred_eq, not_le]
-    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal hM]
-    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg).2
-      (hlt.trans_le (le_abs_self _))
-  exact hpos.ne' (measure_mono_null hsub ae_le_eLpNormEssSup)
+  refine hpos.ne' (measure_mono_null (fun y hy => ?_) (ae_iff.1 (eventually_map.1 hC)))
+  rw [mem_ofPred_eq, not_le, ← NNReal.coe_lt_coe, coe_nnNorm, Real.norm_eq_abs]
+  exact (hos ⟨hy.1, hy.2⟩).trans_le (le_abs_self _)
 
 end TauCeti
