@@ -21,9 +21,11 @@ image of the tensor product of the pullbacks of `x` and `y`, and the identificat
 `g^* 𝒪_X ≅ 𝒪_Y` sends the pullback of a function `r` to `g^♯ r`. These make pullback of sections
 multiplicative on sections of algebras.
 Along the inclusion `U.ι` of an open, pulling back sections over `U` is a bijection onto the global
-sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`). A morphism out of a
-pullback is determined by its values on pulled-back sections (`Scheme.Modules.pullback_hom_ext`),
-with its adjunction transpose evaluated by
+sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`). More generally, along
+an open immersion the comparison of restriction with pullback sends a restricted section to the
+pulled-back section (`Scheme.Modules.restrictFunctorIsoPullback_hom_app_restrictAppIso_inv`).
+A morphism out of a pullback is determined by its values on pulled-back sections
+(`Scheme.Modules.pullback_hom_ext`), with its adjunction transpose evaluated by
 `Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply` and composite morphisms out of
 iterated pullbacks evaluated by `Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections`.
 -/
@@ -204,6 +206,27 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι 
   rw [h₃]
   exact (ConcreteCategory.bijective_of_isIso _).comp
     ((ConcreteCategory.bijective_of_isIso _).comp (ConcreteCategory.bijective_of_isIso _))
+
+/-- Along an open immersion `j`, the comparison `N|_Z ≅ j^* N` sends the restriction of a section
+`s` of `N` over `j(U)` to the pullback of `s` restricted to `U`. -/
+theorem
+    _root_.AlgebraicGeometry.Scheme.Modules.restrictFunctorIsoPullback_hom_app_restrictAppIso_inv
+    (j : Z ⟶ Y) [IsOpenImmersion j] (N : Y.Modules) (U : Z.Opens) (s : Γ(N, j ''ᵁ U)) :
+    ((restrictFunctorIsoPullback j).hom.app N).app U ((N.restrictAppIso j U).inv s) =
+      j.pullbackSectionsLE N (j ''ᵁ U) U (j.preimage_image_eq U).ge s := by
+  have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction j)
+    (pullbackPushforwardAdjunction j) N
+  have hn := PresheafOfModules.naturality_apply ((restrictFunctorIsoPullback j).hom.app N).val
+    (homOfLE (j.preimage_image_eq U).ge).op (((restrictAdjunction j).unit.app N).app (j ''ᵁ U) s)
+  rw [pullbackSectionsLE_apply, pullbackSections_apply, ← hu]
+  refine Eq.trans ?_ (hn.trans rfl)
+  refine congrArg (((restrictFunctorIsoPullback j).hom.app N).app U) ?_
+  -- Both sides are `s`, the right one restricted from `j(U)` to `j(j⁻¹(j(U)))` and back.
+  rw [restrictAdjunction_unit_app_app]
+  change s = N.presheaf.map _ (N.presheaf.map _ s)
+  rw [← N.presheaf.map_comp_apply]
+  refine Eq.trans ?_ (congrArg (fun i ↦ N.presheaf.map i s) (Subsingleton.elim (𝟙 _) _))
+  rw [N.presheaf.map_id, ConcreteCategory.id_apply]
 
 /-- For `h : f ≫ g = gf`, pulling a global section back along `gf` and identifying
 `gf^* M ≅ f^* g^* M` gives its iterated pullback along `g` and then `f`. -/

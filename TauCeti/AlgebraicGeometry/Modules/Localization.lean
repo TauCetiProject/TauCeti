@@ -10,6 +10,7 @@ public import Mathlib.Topology.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.Algebra.Group.Action.Pow
+import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 
 /-!
 # Sections of quasi-coherent modules over basic opens
@@ -62,6 +63,8 @@ morphisms.
   quasi-coherent if these restriction maps are localizations on the members of an affine open
   cover; `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedModule` is the
   resulting characterization.
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_Spec_field`: every module on the spectrum of a
+  field is quasi-coherent.
 
 ## References
 
@@ -292,6 +295,34 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedM
   ⟨fun _ _ hU f ↦ M.isLocalizedModule_basicOpenRestrict hU f, fun h ↦
     M.isQuasicoherent_of_isLocalizedModule (fun U : X.affineOpens ↦ U.val) (fun U ↦ U.property)
       (iSup_affineOpens_eq_top X) fun U ↦ h U.val U.property⟩
+
+/-- Every module on the spectrum of a field is quasi-coherent: a function on `Spec k` is zero or a
+unit, so its basic open is empty or everything. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_Spec_field {k : Type u} [Field k]
+    (N : (Spec (.of k)).Modules) : N.IsQuasicoherent := by
+  have hk : IsField Γ(Spec (.of k), ⊤) :=
+    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField (Field.toIsField k)
+  refine N.isQuasicoherent_of_isLocalizedModule (fun _ : Unit ↦ ⊤) (fun _ ↦ isAffineOpen_top _)
+    iSup_const fun _ f ↦ ?_
+  obtain rfl | hf := eq_or_ne f 0
+  · exact .mk_of_addCommGroup (N.isUnit_algebraMap_end_basicOpen 0)
+      (fun _ ↦ ⟨1, 0, by simp⟩) fun _ _ ↦ ⟨1, by simp⟩
+  have hfu : IsUnit f := by
+    let := hk.toField
+    exact hf.isUnit
+  -- The basic open of a unit is everything, so restricting to it is bijective.
+  have : IsIso (homOfLE ((Spec (.of k)).basicOpen_le f)) :=
+    homOfLE_isIso_of_eq _ (Scheme.basicOpen_of_isUnit _ hfu)
+  have he : ⇑(N.basicOpenRestrict f) =
+      N.presheaf.map (homOfLE ((Spec (.of k)).basicOpen_le f)).op :=
+    funext (N.basicOpenRestrict_apply f)
+  have hbij : Function.Bijective (N.basicOpenRestrict f) := by
+    rw [he]
+    exact ConcreteCategory.bijective_of_isIso _
+  rw [IsLocalizedModule.Away, ← LinearMap.id_comp (N.basicOpenRestrict f),
+    IsLocalizedModule.comp_iff_of_bijective_right _ _ hbij]
+  exact Function.Bijective.isLocalizedModule_id_powers
+    (hfu.smul_bijective (β := Γ(N, (Spec (.of k)).basicOpen f)))
 
 open Scheme.Modules in
 /-- **Sections over a basic open extend after multiplication by a power of the function.** For a

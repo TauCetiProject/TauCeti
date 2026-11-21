@@ -71,7 +71,7 @@ theorem tmulRight_apply {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
 /-- Under the identification of the monoidal tensor product with the sheafification of the
 sectionwise tensor product, `s ⊗ t` is the image of the pure tensor under sheafification. -/
 theorem tensorUnderlyingIso_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
-    (F.tensorUnderlyingIso L).hom.val.app (op U) (tmulRight F e t) =
+    Hom.app (X := X) (F.tensorUnderlyingIso L).hom U (tmulRight F e t) =
       (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
         (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
   have h := TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf)

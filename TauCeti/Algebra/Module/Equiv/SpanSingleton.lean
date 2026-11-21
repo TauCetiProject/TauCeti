@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.RingTheory.Ideal.Span
 
 /-!
@@ -27,6 +28,8 @@ unit of `K` and `a ↦ a • x` is bijective.
   generators.
 * `LinearEquiv.span_singleton_eq_top_iff_isUnit`: an element of a module isomorphic to the base
   ring generates it exactly when its image is a unit.
+* `LinearEquiv.span_singleton_tmul_eq_top_iff`: a pure tensor generates a tensor product of two
+  modules isomorphic to the base ring exactly when both factors generate.
 * `LinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top`: any two generators of a module
   isomorphic to the base ring differ by a unit.
 * `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a commutative semiring whose
@@ -103,6 +106,19 @@ theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMo
     (Units.mulRight (e.isUnit_apply_of_apply_eq_one Ψ hx).unit).bijective using 1
   funext a
   simp [← smul_eq_mul]
+
+open scoped TensorProduct in
+/-- **A pure tensor generates a tensor product of modules isomorphic to the base ring exactly when
+both factors generate.** For `eM : M ≃ₗ[R] R` and `eN : N ≃ₗ[R] R`, the pure tensor `x ⊗ y` spans
+`M ⊗[R] N` if and only if `x` spans `M` and `y` spans `N`. -/
+theorem span_singleton_tmul_eq_top_iff {R M N : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] (eM : M ≃ₗ[R] R) (eN : N ≃ₗ[R] R) {x : M}
+    {y : N} :
+    Submodule.span R {x ⊗ₜ[R] y} = ⊤ ↔
+      Submodule.span R {x} = ⊤ ∧ Submodule.span R {y} = ⊤ := by
+  rw [span_singleton_eq_top_iff_isUnit ((TensorProduct.congr eM eN).trans (TensorProduct.lid R R)),
+    span_singleton_eq_top_iff_isUnit eM, span_singleton_eq_top_iff_isUnit eN]
+  simp [IsUnit.mul_iff]
 
 end LinearEquiv
 

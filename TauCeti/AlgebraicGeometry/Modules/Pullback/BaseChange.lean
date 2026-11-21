@@ -61,6 +61,10 @@ statements.
 
 * `AlgebraicGeometry.Scheme.Hom.span_singleton_pullbackSections_eq_top`: over affine opens, the
   pullback of a generator of the sections generates the sections of the pullback.
+* `AlgebraicGeometry.Scheme.Hom.pullbackSections_injective`: over affine opens with faithfully
+  flat coordinate-ring map, pulling back sections is injective;
+  `AlgebraicGeometry.Scheme.Modules.pullbackSections_SpecMap_injective` is the case of a nonzero
+  algebra over a field.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`: base change of sections over an
   affine open, along any base-ring map.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSectionsLE`: for affine opens `U` and
@@ -254,6 +258,39 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.span_singleton_pullbackSections_eq_t
       (M := .of Γ(X, U) Γ(M, U)) h).ge (Submodule.mem_top (x := y)))
   exact ⟨b, (((g.pullbackSectionsEquiv M hU hV).map_smul b _).trans
     (congrArg (b • ·) (g.pullbackSectionsEquiv_one_tmul M hU hV m₀))).symm⟩
+include hU hV in
+-- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
+-- commit efa6fc8f3735.
+/-- If `U` and `g⁻¹ U` are affine and `g^♯ : Γ(X, U) → Γ(Y, g⁻¹ U)` is faithfully flat, pulling
+back sections of a quasi-coherent module over `U` is injective. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackSections_injective
+    (h : (g.app U).hom.FaithfullyFlat) : Function.Injective (g.pullbackSections M U) := by
+  let := (g.app U).hom.toAlgebra
+  have : Module.FaithfullyFlat Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := h
+  intro s t hst
+  rw [← g.pullbackSectionsEquiv_one_tmul M hU hV, ← g.pullbackSectionsEquiv_one_tmul M hU hV]
+    at hst
+  exact Module.FaithfullyFlat.tensorProduct_mk_injective (A := Γ(X, U)) (B := Γ(Y, g ⁻¹ᵁ U))
+    Γ(M, U) ((g.pullbackSectionsEquiv M hU hV).injective hst)
+end AlgebraicGeometry.Scheme.Modules
+namespace AlgebraicGeometry.Scheme.Modules
+/-- Pulling back global sections of a module from the spectrum of a field to the spectrum of a
+nonzero algebra is injective. In particular this applies to residue-field extensions. -/
+theorem pullbackSections_SpecMap_injective {k K : Type u} [Field k] [CommRing K] [Nontrivial K]
+    (N : (Spec (.of k)).Modules) (φ : CommRingCat.of k ⟶ CommRingCat.of K) :
+    Function.Injective ((Spec.map φ).pullbackSections N ⊤) := by
+  have := N.isQuasicoherent_Spec_field
+  have hk : IsField Γ(Spec (.of k), ⊤) :=
+    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField (Field.toIsField k)
+  let := ((Spec.map φ).app ⊤).hom.toAlgebra
+  have : Nontrivial Γ(Spec (.of K), Spec.map φ ⁻¹ᵁ ⊤) :=
+    (Scheme.ΓSpecIso (.of K)).commRingCatIsoToRingEquiv.nontrivial
+  -- A nonzero algebra over a field is faithfully flat.
+  have : Module.FaithfullyFlat Γ(Spec (.of k), ⊤) Γ(Spec (.of K), Spec.map φ ⁻¹ᵁ ⊤) := by
+    let := hk.toField
+    infer_instance
+  exact (Spec.map φ).pullbackSections_injective N (isAffineOpen_top _)
+    ((isAffineOpen_top _).preimage _) this
 end AlgebraicGeometry.Scheme.Modules
 namespace AlgebraicGeometry.Scheme.Hom
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
