@@ -24,8 +24,8 @@ every `x` with `hammingNorm (WithLp.ofLp x) ≤ s` (Foucart–Rauhut, Def 6.1).
 
 * `Matrix.HasRIP.mono`: the restricted isometry property passes to smaller orders and larger
   constants.
-* `Matrix.injOn_of_forall_mul_norm_sq_le`: a positive lower bound `c ‖x‖² ≤ ‖A x‖²` on
-  `2s`-sparse vectors makes `A` injective on `s`-sparse vectors.
+* `Matrix.toEuclideanLin_injOn_of_forall_mul_norm_sq_le`: a positive lower bound
+  `c ‖x‖² ≤ ‖A x‖²` on `2s`-sparse vectors makes `A` injective on `s`-sparse vectors.
 * `Matrix.HasRIP.injOn`: with a constant `δ < 1` at order `2s`, the matrix is injective on
   `s`-sparse vectors (Foucart–Rauhut, Thm 2.13).
 
@@ -62,7 +62,8 @@ theorem hasRIP_def (A : Matrix m ι ℝ) (s : ℕ) (δ : ℝ) :
 
 /-- A matrix with a lower bound `c ‖x‖² ≤ ‖A x‖²`, `c > 0`, on every `2s`-sparse vector is
 injective on `s`-sparse vectors. -/
-theorem injOn_of_forall_mul_norm_sq_le {A : Matrix m ι ℝ} {s : ℕ} {c : ℝ} (hc : 0 < c)
+theorem toEuclideanLin_injOn_of_forall_mul_norm_sq_le (A : Matrix m ι ℝ) {s : ℕ} {c : ℝ}
+    (hc : 0 < c)
     (hA : ∀ x : EuclideanSpace ℝ ι, hammingNorm (WithLp.ofLp x) ≤ 2 * s →
       c * ‖x‖ ^ 2 ≤ ‖toEuclideanLin A x‖ ^ 2) :
     Set.InjOn (toEuclideanLin A) {x | hammingNorm (WithLp.ofLp x) ≤ s} := by
@@ -102,7 +103,7 @@ theorem mono (hA : A.HasRIP s δ) {s' : ℕ} {δ' : ℝ} (hs : s' ≤ s) (hδ : 
 injective on `s`-sparse vectors. -/
 theorem injOn (hA : A.HasRIP (2 * s) δ) (hδ : δ < 1) :
     Set.InjOn (toEuclideanLin A) {x | hammingNorm (WithLp.ofLp x) ≤ s} :=
-  injOn_of_forall_mul_norm_sq_le (sub_pos.2 hδ) fun _ hx ↦ hA.le_norm_sq hx
+  A.toEuclideanLin_injOn_of_forall_mul_norm_sq_le (sub_pos.2 hδ) fun _ hx ↦ hA.le_norm_sq hx
 
 end HasRIP
 

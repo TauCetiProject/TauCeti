@@ -26,8 +26,8 @@ Benjamini–Hochberg procedure rejects the hypotheses whose p-values are at most
 * `TauCeti.benjaminiHochbergCount_le`: the count is at most `m`.
 * `TauCeti.le_benjaminiHochbergCount`, `TauCeti.benjaminiHochbergCount_le_iff`: lower bounds
   from a qualifying `k`, and upper bounds from the failure of every larger `j`.
-* `TauCeti.monotone_benjaminiHochbergCount`: the count is monotone in `α`.
-* `TauCeti.antitone_benjaminiHochbergCount`: the count is antitone in the p-values.
+* `TauCeti.benjaminiHochbergCount_right_monotone`: the count is monotone in `α`.
+* `TauCeti.benjaminiHochbergCount_left_antitone`: the count is antitone in the p-values.
 * `TauCeti.card_filter_eq_benjaminiHochbergCount`: for `0 ≤ α`, exactly `k` p-values are at
   most `k α / m`, where `k` is the count, so the procedure rejects exactly `k` hypotheses. For
   negative `α` there can be more.
@@ -65,10 +65,12 @@ theorem le_benjaminiHochbergCount (p : Fin m → ℝ) (α : ℝ) {k : ℕ}
   Nat.le_findGreatest (h.trans ((card_le_univ _).trans_eq (Fintype.card_fin m))) h
 
 /-- The Benjamini–Hochberg count is at most the number of p-values. -/
+@[grind! .]
 theorem benjaminiHochbergCount_le (p : Fin m → ℝ) (α : ℝ) : benjaminiHochbergCount p α ≤ m :=
   Nat.findGreatest_le m
 
 /-- At least `k` p-values are at most `k α / m`, where `k` is the Benjamini–Hochberg count. -/
+@[grind! .]
 theorem benjaminiHochbergCount_le_card_filter (p : Fin m → ℝ) (α : ℝ) :
     benjaminiHochbergCount p α ≤ #{i | p i ≤ benjaminiHochbergCount p α * α / m} :=
   Nat.findGreatest_spec (P := fun k ↦ k ≤ #{i | p i ≤ k * α / m}) (Nat.zero_le m)
@@ -83,37 +85,35 @@ theorem benjaminiHochbergCount_le_iff (p : Fin m → ℝ) (α : ℝ) {k : ℕ} :
   · exact absurd (benjaminiHochbergCount_le_card_filter p α) (not_le.2 (h _ hk))
 
 /-- The Benjamini–Hochberg count is monotone in the level `α`. -/
-theorem monotone_benjaminiHochbergCount (p : Fin m → ℝ) :
+theorem benjaminiHochbergCount_right_monotone (p : Fin m → ℝ) :
     Monotone (benjaminiHochbergCount p) := by
   intro α α' hαα'
-  refine le_benjaminiHochbergCount p α'
-    ((benjaminiHochbergCount_le_card_filter p α).trans (card_le_card fun i hi ↦ ?_))
-  simp only [mem_filter, mem_univ, true_and] at hi ⊢
-  exact hi.trans (div_le_div_of_nonneg_right
-    (mul_le_mul_of_nonneg_left hαα' (Nat.cast_nonneg _)) (Nat.cast_nonneg _))
+  rw [benjaminiHochbergCount_def, benjaminiHochbergCount_def]
+  refine Nat.findGreatest_mono_left (fun k hk ↦
+    hk.trans (card_le_card (monotone_filter_right _ fun i _ hi ↦ hi.trans ?_))) m
+  exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hαα' (Nat.cast_nonneg _))
+    (Nat.cast_nonneg _)
 
 /-- The Benjamini–Hochberg count is antitone in the p-values. -/
-theorem antitone_benjaminiHochbergCount (α : ℝ) :
+theorem benjaminiHochbergCount_left_antitone (α : ℝ) :
     Antitone fun p : Fin m → ℝ ↦ benjaminiHochbergCount p α := by
   intro p q hpq
-  refine le_benjaminiHochbergCount p α
-    ((benjaminiHochbergCount_le_card_filter q α).trans (card_le_card fun i hi ↦ ?_))
-  simp only [mem_filter, mem_univ, true_and] at hi ⊢
-  exact (hpq i).trans hi
+  dsimp only
+  rw [benjaminiHochbergCount_def, benjaminiHochbergCount_def]
+  exact Nat.findGreatest_mono_left (fun k hk ↦
+    hk.trans (card_le_card (monotone_filter_right _ fun i _ hi ↦ (hpq i).trans hi))) m
 
 /-- For a nonnegative level `α`, exactly `k` p-values are at most `k α / m`, where `k` is the
 Benjamini–Hochberg count: the Benjamini–Hochberg procedure rejects exactly `k` hypotheses. -/
 theorem card_filter_eq_benjaminiHochbergCount (p : Fin m → ℝ) {α : ℝ} (hα : 0 ≤ α) :
     #{i | p i ≤ benjaminiHochbergCount p α * α / m} = benjaminiHochbergCount p α := by
   set k := benjaminiHochbergCount p α
-  set j := #{i | p i ≤ k * α / m}
-  refine le_antisymm ?_ (benjaminiHochbergCount_le_card_filter p α)
+  have hkj : k ≤ #{i | p i ≤ k * α / m} := benjaminiHochbergCount_le_card_filter p α
+  refine le_antisymm ?_ hkj
   -- The number `j` of p-values at most `k α / m` itself qualifies, since `k ≤ j`.
-  have hkj : k ≤ j := benjaminiHochbergCount_le_card_filter p α
-  refine le_benjaminiHochbergCount p α (card_le_card fun i hi ↦ ?_)
-  simp only [mem_filter, mem_univ, true_and] at hi ⊢
-  refine hi.trans (div_le_div_of_nonneg_right
-    (mul_le_mul_of_nonneg_right ?_ hα) (Nat.cast_nonneg _))
-  exact_mod_cast hkj
+  refine le_benjaminiHochbergCount p α
+    (card_le_card (monotone_filter_right _ fun i _ hi ↦ hi.trans ?_))
+  exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_right (by exact_mod_cast hkj) hα)
+    (Nat.cast_nonneg _)
 
 end TauCeti
