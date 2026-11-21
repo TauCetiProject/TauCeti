@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpringSystem.Tetrahedron.Character
 public import TauCeti.GroupTheory.Perm.PointStabilizer
+import Mathlib.GroupTheory.Perm.Fin
 import TauCeti.RepresentationTheory.CharacterTable.Determined
 import TauCeti.RepresentationTheory.Induction.Permutation
 
@@ -42,38 +43,27 @@ noncomputable def tetrahedronVertexRestriction (i : Fin 4) :
   tetrahedronDisplacementRep.comp
     ((MulAction.stabilizer (Perm (Fin 4)) i).subtype.comp i.permStabilizerEquiv.toMonoidHom)
 
+/-- The restriction is precomposition with the labelled point-stabilizer inclusion. -/
+theorem tetrahedronVertexRestriction_def (i : Fin 4) :
+    tetrahedronVertexRestriction i = tetrahedronDisplacementRep.comp
+      ((MulAction.stabilizer (Perm (Fin 4)) i).subtype.comp i.permStabilizerEquiv.toMonoidHom) :=
+  (rfl)
+
 /-- The restricted action is the original displacement action of the permutation fixing `i`. -/
 @[simp]
-theorem tetrahedronVertexRestriction_apply (i : Fin 4) (σ : Perm (Fin 3))
-    (u : Fin 4 × Fin 3 → ℝ) :
-    tetrahedronVertexRestriction i σ u =
-      tetrahedronDisplacementRep (i.permStabilizerEquiv σ) u := (rfl)
+theorem tetrahedronVertexRestriction_apply (i : Fin 4) (σ : Perm (Fin 3)) :
+    tetrahedronVertexRestriction i σ = tetrahedronDisplacementRep (i.permStabilizerEquiv σ) :=
+  (rfl)
 
 /-- If a permutation of the other three vertices fixes `f` of them, the displacement character
 is `(f + 1) f`: the distinguished vertex supplies one additional fixed point. -/
 theorem char_tetrahedronVertexRestriction (i : Fin 4) (σ : Perm (Fin 3)) :
     (tetrahedronVertexRestriction i).character σ =
       ((Nat.card {j : Fin 3 // σ j = j} : ℝ) + 1) * Nat.card {j : Fin 3 // σ j = j} := by
-  classical
-  have hcycle : (i.permStabilizerEquiv σ : Perm (Fin 4)).cycleType = σ.cycleType := by
-    rw [Fin.coe_permStabilizerEquiv]
-    exact Perm.cycleType_extendDomain _
-  have h4 := (i.permStabilizerEquiv σ : Perm (Fin 4)).card_fixedPoints
-  have h3 := σ.card_fixedPoints
-  have hle := σ.sum_cycleType_le
-  rw [← Nat.card_eq_fintype_card] at h4 h3
-  simp only [Fintype.card_fin] at h4 h3 hle
-  rw [hcycle] at h4
-  dsimp only [Function.fixedPoints, Function.IsFixedPt, Set.coe_ofPred] at h4 h3
-  have hc : Nat.card {j : Fin 4 // (i.permStabilizerEquiv σ : Perm (Fin 4)) j = j} =
-      Nat.card {j : Fin 3 // σ j = j} + 1 := by
-    rw [h4, h3]
-    omega
-  -- The character of restriction is the trace of the same operator.
   have h := char_tetrahedronDisplacementRep (i.permStabilizerEquiv σ)
-  rw [hc, Nat.cast_add, Nat.cast_one] at h
-  simpa only [Representation.character, tetrahedronVertexRestriction, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype, add_sub_cancel_right] using h
+  rw [i.card_fixedPoints_permStabilizerEquiv σ, Nat.cast_add, Nat.cast_one] at h
+  simpa only [Representation.character, tetrahedronVertexRestriction_apply,
+    add_sub_cancel_right] using h
 
 /-- On a vertex stabilizer, the character is `3 · 1 + sgn + 4 · χ_std`. -/
 theorem char_tetrahedronVertexRestriction_eq (i : Fin 4) (σ : Perm (Fin 3)) :
@@ -102,14 +92,21 @@ theorem char_tetrahedronVertexRestriction_swap (i : Fin 4) {a b : Fin 3} (hab : 
   norm_num
 
 /-- A three-cycle in a vertex stabilizer has displacement character zero. -/
+theorem char_tetrahedronVertexRestriction_of_isThreeCycle (i : Fin 4) {σ : Perm (Fin 3)}
+    (hσ : σ.IsThreeCycle) : (tetrahedronVertexRestriction i).character σ = 0 := by
+  have hc : Nat.card {j : Fin 3 // σ j = j} = 0 := by
+    rw [Nat.card_eq_fintype_card]
+    -- Use the fixed-point set notation of the cycle-type counting formula.
+    change Fintype.card (Function.fixedPoints σ) = 0
+    simp [σ.card_fixedPoints, hσ.cycleType]
+  rw [char_tetrahedronVertexRestriction, hc, Nat.cast_zero, mul_zero]
+
+/-- The rotation `finRotate 3` in a vertex stabilizer has displacement character zero. -/
 @[simp]
 theorem char_tetrahedronVertexRestriction_finRotate (i : Fin 4) :
-    (tetrahedronVertexRestriction i).character (finRotate 3) = 0 := by
-  rw [char_tetrahedronVertexRestriction]
-  have hc : Nat.card {j : Fin 3 // finRotate 3 j = j} = 0 := by
-    rw [Nat.card_eq_fintype_card]
-    decide
-  norm_num [hc]
+    (tetrahedronVertexRestriction i).character (finRotate 3) = 0 :=
+  char_tetrahedronVertexRestriction_of_isThreeCycle i (by
+    rw [Perm.IsThreeCycle, cycleType_finRotate])
 
 /-- The restriction to any vertex stabilizer is `1³ ⊕ sgn ⊕ std⁴` as a real representation.
 Character recognition gives existence of an equivalence, without choosing bases of multiplicity
