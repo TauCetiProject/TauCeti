@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.CondVar
 
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.Indicator
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
@@ -34,6 +35,11 @@ the specialization `m₁ = ⊥` corresponds to Mathlib's scalar law of total var
   almost everywhere, for a square-integrable `X` and an arbitrary measure.
 * `ProbabilityTheory.condVar_ae_eq_condExp_condVar_add_condVar_condExp`: the conditional law of
   total variance for nested σ-algebras and a square-integrable `X`.
+
+## References
+
+* R. J. A. Little and D. B. Rubin, *Statistical Analysis with Missing Data*, 3rd ed., Wiley, 2019,
+  equations (10.9)–(10.10), p. 233 (the specialization to observed and complete data).
 -/
 
 public section
@@ -46,35 +52,40 @@ variable {Ω : Type*} {m m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure[m₀
 
 /-- The conditional variance of a square-integrable `X` is the conditional second moment minus the
 square of the conditional mean, `μ`-almost everywhere, for an arbitrary measure `μ`. This is
-Mathlib's `condVar_ae_eq_condExp_sq_sub_sq_condExp` without its finiteness assumption on `μ`. -/
+Mathlib's `condVar_ae_eq_condExp_sq_sub_sq_condExp` without its finiteness assumption on `μ`,
+obtained from it on the finite-measure restrictions to the spanning sets of `μ.trim hm`. -/
 theorem condVar_ae_eq_condExp_sq_sub_sq_condExp' (hm : m ≤ m₀) (hX : MemLp X 2 μ) :
     Var[X; μ | m] =ᵐ[μ] μ[X ^ 2 | m] - μ[X | m] ^ 2 := by
   by_cases hσ : SigmaFinite (μ.trim hm); swap
   · simp [condVar_of_not_sigmaFinite hσ, condExp_of_not_sigmaFinite hm hσ]
   by_cases hXi : Integrable X μ; swap
   · simp [condVar, condExp_of_not_integrable hXi]
-  calc
-    Var[X; μ | m]
-    _ = μ[X ^ 2 - 2 * X * μ[X | m] + μ[X | m] ^ 2 | m] := by rw [condVar, sub_sq]
-    _ =ᵐ[μ] μ[X ^ 2 | m] - 2 * μ[X | m] ^ 2 + μ[X | m] ^ 2 := by
-      have aux₀ : Integrable (X ^ 2) μ := hX.integrable_sq
-      have aux₁ : Integrable (2 * X * μ[X | m]) μ := by
-        rw [mul_assoc]
-        exact (memLp_one_iff_integrable.1 <| hX.mul (hX.condExp one_le_two)).const_mul _
-      have aux₂ : Integrable (μ[X | m] ^ 2) μ := (hX.condExp one_le_two).integrable_sq
-      filter_upwards [condExp_add (m := m) (aux₀.sub aux₁) aux₂, condExp_sub (m := m) aux₀ aux₁,
-        condExp_mul_of_stronglyMeasurable_right stronglyMeasurable_condExp aux₁
-          (hXi.const_mul _), condExp_ofNat (m := m) 2 X]
-        with ω hω₀ hω₁ hω₂ hω₃
-      simp [hω₀, hω₁, hω₂, hω₃,
-        condExp_of_stronglyMeasurable hm (stronglyMeasurable_condExp.pow _) aux₂]
-      simp [mul_assoc, sq]
-    _ = μ[X ^ 2 | m] - μ[X | m] ^ 2 := by ring
+  -- On each finite-measure spanning set of `μ.trim hm`, apply Mathlib's finite-measure identity.
+  have hsq : Integrable ((X - μ[X | m]) ^ 2) μ := (hX.sub (hX.condExp one_le_two)).integrable_sq
+  refine (isCountablySpanning_spanningSets (μ.trim hm)).null_of_forall_restrict_null ?_ ?_ <;>
+    rintro - ⟨n, rfl⟩
+  · exact hm _ (measurableSet_spanningSets (μ.trim hm) n)
+  set s := spanningSets (μ.trim hm) n
+  have hs : MeasurableSet[m] s := measurableSet_spanningSets _ n
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2
+    ((le_trim hm).trans_lt (measure_spanningSets_lt_top (μ.trim hm) n)).ne
+  have hmean := condExp_restrict_ae_eq_restrict hm hs hXi
+  have hvar : Var[X; μ.restrict s | m] =ᵐ[μ.restrict s] Var[X; μ | m] := by
+    simp only [condVar]
+    exact (condExp_congr_ae (hmean.mono fun ω hω ↦ by simp [hω])).trans
+      (condExp_restrict_ae_eq_restrict hm hs hsq)
+  filter_upwards [condVar_ae_eq_condExp_sq_sub_sq_condExp hm (hX.restrict s), hmean, hvar,
+    condExp_restrict_ae_eq_restrict (f := X ^ 2) hm hs hX.integrable_sq] with ω h₁ h₂ h₃ h₄
+  simp_all
 
 /-- **Conditional law of total variance**: for nested σ-algebras `m₁ ≤ m₂ ≤ m₀` and a
 square-integrable `X`, `μ`-almost everywhere, the conditional variance given `m₁` is the
 conditional expectation given `m₁` of the conditional variance given `m₂`, plus the conditional
-variance given `m₁` of the conditional expectation given `m₂`. The measure `μ` is arbitrary. -/
+variance given `m₁` of the conditional expectation given `m₂`. The measure `μ` is arbitrary.
+
+With `m₂` the complete-data and `m₁` the observed-data σ-algebra of a missing-data model, this is
+the variance decomposition of Little and Rubin, *Statistical Analysis with Missing Data*, 3rd ed.,
+equations (10.9)–(10.10), p. 233; the Lean proof does not follow theirs. -/
 theorem condVar_ae_eq_condExp_condVar_add_condVar_condExp
     (h₁₂ : m₁ ≤ m₂) (h₂₀ : m₂ ≤ m₀) (hX : MemLp X 2 μ) :
     Var[X; μ | m₁] =ᵐ[μ] μ[Var[X; μ | m₂] | m₁] + Var[μ[X | m₂]; μ | m₁] := by

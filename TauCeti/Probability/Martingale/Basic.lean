@@ -9,6 +9,7 @@ public import Mathlib.Probability.Martingale.Basic
 public import TauCeti.Probability.Process.Filtration.Comp
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
+import TauCeti.Probability.Moments.CondVar
 
 /-!
 # Martingale closure properties, division by a process, norms, and submartingale bounds
@@ -216,6 +217,7 @@ theorem Martingale.norm_rpow (hX : Martingale X ℱ μ) {p : ℝ} (hp : 1 ≤ p)
     Submartingale (fun t ω ↦ ‖X t ω‖ ^ p) ℱ μ :=
   hX.norm.rpow (fun _ ↦ .of_forall fun _ ↦ norm_nonneg _) hp hint
 
+open scoped ProbabilityTheory in
 /-- The conditional square of a square-integrable real martingale value is
 the current square plus the conditional square of the future increment. -/
 theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
@@ -223,32 +225,16 @@ theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
     μ[fun ω ↦ Y j ω ^ 2 | ℱ i] =ᵐ[μ]
       fun ω ↦ Y i ω ^ 2 + μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] ω := by
   have hc := hY.condExp_ae_eq hij
-  by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
-  · have hi := (hj.condExp (m := ℱ i) one_le_two).ae_eq hc
-    have hmul : Integrable (Y i * Y j) μ := memLp_one_iff_integrable.mp (hi.mul hj)
-    have hexpand : (fun ω ↦ (Y j ω - Y i ω) ^ 2) =
-        (Y j) ^ 2 - (2 : ℝ) • (Y i * Y j) + (Y i) ^ 2 := by
-      ext ω
-      simp only [Pi.sub_apply, Pi.add_apply, Pi.pow_apply, Pi.smul_apply, smul_eq_mul,
-        Pi.mul_apply]
-      ring
-    rw [hexpand]
-    filter_upwards [condExp_add (m := ℱ i) (hj.integrable_sq.sub (hmul.const_mul 2))
-        hi.integrable_sq,
-      condExp_sub (m := ℱ i) hj.integrable_sq (hmul.const_mul 2),
-      condExp_smul (m := ℱ i) (2 : ℝ) (Y i * Y j),
-      condExp_mul_of_stronglyMeasurable_left (hY.stronglyAdapted i) hmul (hY.integrable j),
-      hc] with ω hadd hsub hscale hpull hmart
-    simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
-      Pi.mul_apply, Pi.pow_def, Pi.smul_def, Pi.mul_def] at hadd hsub hscale hpull ⊢
-    rw [hadd, hsub, hscale, hpull, hmart,
-      condExp_of_stronglyMeasurable (f := fun ω ↦ Y i ω ^ 2)
-        (ℱ.le i) ((hY.stronglyAdapted i).pow 2)
-        hi.integrable_sq]
-    ring
-  · simp only [condExp_of_not_sigmaFinite (ℱ.le i) hμ, Pi.zero_apply] at hc ⊢
-    filter_upwards [hc] with ω hω
-    simp [← hω]
+  -- The conditional variance of `Y j` given `ℱ i`, centred at `μ[Y j | ℱ i] = Y i`.
+  have hvar : Var[Y j; μ | ℱ i] =ᵐ[μ] μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] := by
+    simp only [ProbabilityTheory.condVar]
+    exact condExp_congr_ae (hc.mono fun ω hω ↦ by simp [hω])
+  filter_upwards [ProbabilityTheory.condVar_ae_eq_condExp_sq_sub_sq_condExp' (ℱ.le i) hj, hvar, hc]
+    with ω h₁ h₂ h₃
+  change μ[Y j ^ 2 | ℱ i] ω = _
+  simp only [Pi.sub_apply, Pi.pow_apply] at h₁
+  rw [← h₂, h₁, h₃]
+  ring
 
 /-- A nonnegative position known at time `i` preserves a submartingale's expectation inequality
 between `i` and `j`, provided its products with both values are integrable. -/
