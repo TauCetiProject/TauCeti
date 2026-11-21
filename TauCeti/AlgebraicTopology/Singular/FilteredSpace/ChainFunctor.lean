@@ -36,8 +36,11 @@ from `TauCeti.Algebra.Homology.SpectralSequence.Filtered`, which uses cochain co
 * **First page.** The object at `(p, q)` on the first page (numbered `2` in the indexing of
   `CochainComplex.spectralSequence`) is the homology in degree `n` of that cokernel for the pair
   `(X (q + 1), X q)`, with `p + q = -n` (`TauCeti.chainFiltrationSpectralSequenceFirstPageXIso`).
-* **Convergence.** The abutment in degree `-n` is `Hₙ(F Y)` (`TauCeti.chainFiltrationAbutmentIso`).
-  When `X a = ∅`, `F` vanishes on empty spaces and `X b = Y`, the filtration is finite and the
+* **Convergence.** The abutment in degree `-n` is `Hₙ(F Y)`
+  (`TauCeti.chainFiltrationAbutmentIso`), and the `q`th piece of its filtration is the image of
+  `Hₙ(F (X q)) ⟶ Hₙ(F Y)`
+  (`TauCeti.chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom`). When
+  `X a = ∅`, `F` vanishes on empty spaces and `X b = Y`, the filtration is finite and the
   spectral sequence converges strongly
   (`TauCeti.chainFiltrationSpectralSequencePageXIsoGradedOfFinite`).
 * **Maps.** A natural transformation `α : F ⟶ G` together with a map of filtered spaces induces a
@@ -310,6 +313,52 @@ lemma chainFiltrationAbutmentIso_eq (n : ℕ) :
       CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
         extendHomologyIso _ ComplexShape.embeddingDownNat rfl :=
   (rfl)
+
+/-- The epimorphism from the homology `Hₙ(F (X q))` of the chains of `X q` onto the `q`th piece of
+the filtration of the abutment in degree `-n`. Through `TauCeti.chainFiltrationAbutmentIso` it is
+the map `Hₙ(F (X q)) ⟶ Hₙ(F Y)` induced by the inclusion of `X q`
+(`TauCeti.chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom`),
+so that piece is the image of this map. -/
+def chainFiltrationToAbutmentFiltration (q : ℤ) (n : ℕ) :
+    (F.obj (TopPair.ofSubset (X q)).snd).homology n ⟶
+      (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration F hX))).abutmentFiltration q (-n) :=
+  (extendHomologyIso _ ComplexShape.embeddingDownNat rfl).inv ≫
+    homologyMap (chainFiltrationIso F X q).inv (-n) ≫
+      CochainComplex.toFiltrationAbutmentFiltration _ (monotone_chainFiltration F hX) q (-n)
+
+instance (q : ℤ) (n : ℕ) : Epi (chainFiltrationToAbutmentFiltration F hX q n) := by
+  rw [chainFiltrationToAbutmentFiltration]
+  infer_instance
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
+identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(F Y)`,
+the embedding of the `q`th piece of its filtration, precomposed with the epimorphism
+`TauCeti.chainFiltrationToAbutmentFiltration`, is the map `Hₙ(F (X q)) ⟶ Hₙ(F Y)` induced by the
+inclusion of `X q`. -/
+@[reassoc (attr := simp)]
+theorem chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom
+    (q : ℤ) (n : ℕ) :
+    chainFiltrationToAbutmentFiltration F hX q n ≫
+        (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+          (monotone_chainFiltration F hX))).abutmentFiltrationι q (-n) ≫
+          (chainFiltrationAbutmentIso F hX n).hom =
+      homologyMap (F.map (TopPair.ofSubset (X q)).map) n := by
+  have h := extendHomologyIso_hom_naturality (F.map (TopPair.ofSubset (X q)).map)
+    ComplexShape.embeddingDownNat (j := n) rfl
+  rw [← Iso.inv_comp_eq, ← chainFiltrationι_def] at h
+  have h₂ := CochainComplex.toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom
+    (chainFiltration F X) (monotone_chainFiltration F hX) q (-n)
+  rw [chainFiltrationToAbutmentFiltration, chainFiltrationAbutmentIso_eq, Iso.trans_hom]
+  simp only [Category.assoc]
+  -- `chainFiltrationAbutmentIso` indexes the abutment by `ComplexShape.embeddingDownNat.f n`,
+  -- which is `-n` only up to unfolding, so `h₂` is rewritten up to that unfolding.
+  erw [reassoc_of% h₂]
+  rw [← homologyMap_comp_assoc, ← chainFiltrationIso_hom_comp_chainFiltrationι,
+    Iso.inv_hom_id_assoc]
+  -- The codomain of the map induced by the inclusion is `Y` only up to unfolding
+  -- `TopPair.ofSubset`, which `exact` performs.
+  exact h
 
 /-- **Strong convergence of the spectral sequence of a finite filtration of a space.** If `F`
 vanishes on empty spaces, `X a = ∅` and `X b` is all of `Y`, then on every page `r ≥ 2` with
