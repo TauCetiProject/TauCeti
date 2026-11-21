@@ -61,7 +61,7 @@ variable (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 /-- The equivalence with one-dimensional subspaces retains the underlying line. -/
 @[simp]
 theorem coe_equivSubmodule (p : Projectivization K V) :
-    (equivSubmodule K V p).1 = p.submodule :=
+    (equivSubmodule K V p).val = p.submodule :=
   -- Mathlib has no equivSubmodule_apply lemma; its forward map is definitionally submodule.
   (rfl)
 

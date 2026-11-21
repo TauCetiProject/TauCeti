@@ -15,8 +15,9 @@ For finite-dimensional Hausdorff topological vector spaces over a complete nontr
 field, automatic continuity identifies continuous intertwiners and equivalences with their
 algebraic counterparts. The object and character side is already supplied by the
 universe-polymorphic `FDRep.ofShrink`,
-`FDRep.ofShrinkEquiv`, and `FDRep.character_ofShrink`; this file adds only the missing intertwiner
-side.
+`FDRep.ofShrinkEquiv`, and `FDRep.character_ofShrink`; this file adds the missing intertwiner
+side, together with the passage from an algebraic representation on such a space to a continuous
+one.
 
 ## Main declarations
 
@@ -26,6 +27,10 @@ side.
   algebraic intertwiners.
 * `ContRepresentation.nonempty_equiv_iff`: continuous and algebraic representation equivalence
   agree.
+* `Representation.toContRepresentation`: a representation on a finite-dimensional space as a
+  continuous representation, with `Representation.toContRepresentation_toRepresentation` recovering
+  the original representation and `ContRepresentation.toRepresentation_toContRepresentation`
+  recovering a continuous one.
 
 The file also records that continuous intertwiners between finite-dimensional representations form
 a finite-dimensional space, over any field and without completeness.
@@ -190,3 +195,38 @@ theorem nonempty_equiv_iff :
 end Equivalence
 
 end ContRepresentation
+
+namespace Representation
+
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
+  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [ContinuousSMul 𝕜 V] [T2Space V] [FiniteDimensional 𝕜 V]
+
+/-- A representation on a finite-dimensional Hausdorff topological vector space over a complete
+field, as a continuous representation: each operator `ρ g` is equipped with its automatic
+continuity. -/
+noncomputable def toContRepresentation (ρ : Representation 𝕜 G V) : ContRepresentation 𝕜 G V :=
+  .ofMonoidHom
+    { toFun g := LinearMap.toContinuousLinearMap (ρ g)
+      map_one' := by ext; simp
+      map_mul' g h := by ext; simp }
+
+/-- The continuous representation built from `ρ` acts on vectors as `ρ` does. -/
+@[simp]
+theorem toContRepresentation_apply (ρ : Representation 𝕜 G V) (g : G) (v : V) :
+    ρ.toContRepresentation g v = ρ g v :=
+  (rfl)
+
+/-- Forgetting continuity of `ρ.toContRepresentation` recovers `ρ`. -/
+@[simp]
+theorem toContRepresentation_toRepresentation (ρ : Representation 𝕜 G V) :
+    ρ.toContRepresentation.toRepresentation = ρ :=
+  (rfl)
+
+/-- Equipping the underlying representation of `π` with its automatic continuity recovers `π`. -/
+@[simp]
+theorem _root_.ContRepresentation.toRepresentation_toContRepresentation
+    (π : ContRepresentation 𝕜 G V) : π.toRepresentation.toContRepresentation = π :=
+  DFunLike.ext _ _ fun _ ↦ ContinuousLinearMap.ext fun _ ↦ rfl
+
+end Representation

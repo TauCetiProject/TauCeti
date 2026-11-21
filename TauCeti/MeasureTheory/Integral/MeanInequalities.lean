@@ -34,9 +34,6 @@ For conjugate exponents `p'` and `p` and `(γ - 1) p' = q`, Hölder's inequality
 method that bounds the gradient of a power `w ^ γ` of a truncation through the `Lᵖ` norm of the
 gradient of the original function.
 
-On a finite measure space, the three-exponent Hölder inequality for `1/p + 1/q = 1/r` and `1 ≤ r`
-bounds `∫⁻ ‖f‖ₑ ‖g‖ₑ` by `‖f‖_{Lᵖ} ‖g‖_{L^q}` times a power of the total measure.
-
 The file also records the weighted Young inequality for a pairing,
 `∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²` for a nonnegative weight `w` and `δ > 0`,
 which absorbs a pairing into a coercive term in energy estimates.
@@ -59,8 +56,6 @@ expected products without any independence assumption.
 * `TauCeti.lintegral_mul_le_rpow_mul_eLpNorm`: uniform `1 < p ≤ ∞` Hölder bound
   `∫⁻ k g ≤ (∫⁻ k ^ (1 - 1/p)⁻¹) ^ (1 - 1/p) * ‖g‖_p`.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
-* `TauCeti.lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ`:
-  `∫⁻ ‖f‖ₑ ‖g‖ₑ ≤ ‖f‖_{Lᵖ} ‖g‖_{L^q} μ(univ) ^ (1 - 1/r)` for a Hölder triple `(p, q, r)`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
@@ -165,32 +160,6 @@ theorem lintegral_ofReal_rpow_mul_eNorm_le {F : Type*} [NormedAddCommGroup F] {w
     (ENNReal.toReal_pos_iff.1 hp).2.ne hg]
   refine h.trans_eq ?_
   simp_rw [← ENNReal.rpow_mul, hγp', one_div]
-
-/-- **Hölder's inequality for the lower integral of a product.** For a Hölder triple
-`1/p + 1/q = 1/r` with `1 ≤ r`,
-
-`∫⁻ ‖f‖ₑ ‖g‖ₑ ≤ ‖f‖_{Lᵖ} ‖g‖_{L^q} μ(univ) ^ (1 - 1/r)`.
-
-The factor `μ(univ) ^ (1 - 1/r)` compares the `L¹` and `Lʳ` seminorms of the product. -/
-theorem lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ {E F : Type*}
-    [NormedAddCommGroup E] [NormedAddCommGroup F] {p q r : ℝ≥0∞} [ENNReal.HolderTriple p q r]
-    (hr : 1 ≤ r) {f : β → E} {g : β → F} (hf : AEStronglyMeasurable f ν)
-    (hg : AEStronglyMeasurable g ν) :
-    ∫⁻ x, ‖f x‖ₑ * ‖g x‖ₑ ∂ν ≤
-      eLpNorm f p ν * eLpNorm g q ν * ν Set.univ ^ (1 - 1 / r.toReal) := by
-  have hm : AEStronglyMeasurable (fun x => ‖f x‖ * ‖g x‖) ν := hf.norm.mul hg.norm
-  have hH := eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (μ := ν) (p := p) (q := q) (r := r)
-    (fun (a : E) (b : F) => ‖a‖ * ‖b‖) (1 : NNReal)
-    ((continuous_norm.comp continuous_fst).mul (continuous_norm.comp continuous_snd)) hf hg
-    (Filter.Eventually.of_forall fun x => by simp)
-  simp only [ENNReal.coe_one, one_mul] at hH
-  calc ∫⁻ x, ‖f x‖ₑ * ‖g x‖ₑ ∂ν = eLpNorm (fun x => ‖f x‖ * ‖g x‖) 1 ν := by
-        rw [eLpNorm_one_eq_lintegral_eNorm hm]
-        refine lintegral_congr fun x => ?_
-        simp
-    _ ≤ eLpNorm (fun x => ‖f x‖ * ‖g x‖) r ν * ν Set.univ ^ (1 - 1 / r.toReal) := by
-        simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ hr hm
-    _ ≤ _ := by gcongr
 
 /-- **Weighted Young inequality for a pairing.** For a nonnegative weight `w` and `δ > 0`,
 

@@ -398,7 +398,7 @@ variable {α β : Type*} {G H : Graph α β}
 /-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
 actual vertex of `H` to itself. -/
 def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
-  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
+  toFun z := ⟨z, hHG.vertexSet_mono z.property⟩
   map_rel' hzw :=
     ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
 
@@ -594,7 +594,7 @@ theorem toSubgraph_toSimpleGraph_mapLe_le {x y : α} (hx : x ∈ S.verts)
 bijectively to edge-labelled walks in `S.toGraph`. -/
 def walkToGraphEquiv (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α) :
     {p : H.Walk x y // p.toSubgraph ≤ S} ≃ S.toGraph.Walk x y where
-  toFun p := S.walkToGraph p.1 p.2
+  toFun p := S.walkToGraph p.val p.property
   invFun q := ⟨(q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph,
     S.toSubgraph_toSimpleGraph_mapLe_le hx q⟩
   left_inv _ := Subtype.ext (by simp)
@@ -602,7 +602,7 @@ def walkToGraphEquiv (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α) :
 
 @[simp] theorem walkToGraphEquiv_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
     (p : {p : H.Walk x y // p.toSubgraph ≤ S}) :
-    S.walkToGraphEquiv hx y p = S.walkToGraph p.1 p.2 := (rfl)
+    S.walkToGraphEquiv hx y p = S.walkToGraph p.val p.property := (rfl)
 
 @[simp] theorem coe_walkToGraphEquiv_symm_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
     (q : S.toGraph.Walk x y) :
