@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DysonSeries
+public import TauCeti.Analysis.ODE.FrameTrivialization
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
@@ -14,6 +15,8 @@ public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -87,14 +90,16 @@ shows that a solution of `D ξ = 0` which decays at both ends together with `∂
 
 These are statements in a symplectic vector space with a constant form, matching the
 local-coordinate linearization `TauCeti.SymplecticForm.floerLinearization`. When the vector space
-is a finite-dimensional complex space, the loop operator `ζ ↦ ζ' - S_t ζ`, of which `A` is the
+is a finite-dimensional complex space, or along a differentiable one-periodic invertible frame from
+one via `TauCeti.trivializedCoeff`, the loop operator `ζ ↦ ζ' - S_t ζ`, of which `A` is the
 composite with the pointwise invertible `J_t`, has the Sobolev realization
 `TauCeti.CircleSobolev.loopOperator : H¹ → H⁰`, a Fredholm operator of index zero. Along a
-nondegenerate orbit it is invertible
-(`SymplecticForm.isInvertible_loopOperator_of_isNondegenerateFixedPt`), and so are the loop
-operators of the weighted shifts `A - δ` for all small weights `δ`
-(`SymplecticForm.eventually_isInvertible_loopOperator_sub_smul`). The Sobolev realization of the
-cylinder operator `D` is not treated here. For an actual orbit,
+one-periodic orbit it is invertible if and only if the orbit is nondegenerate
+(`SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff` and its
+identity-frame case `SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt`), and at
+a nondegenerate orbit so are the loop operators of the weighted shifts `A - δ` for all small
+weights `δ` (`SymplecticForm.eventually_isInvertible_loopOperator_sub_smul`). The Sobolev
+realization of the cylinder operator `D` is not treated here. For an actual orbit,
 the continuity hypothesis on `S` is
 `TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`. The model case of a
 constant orthogonal complex structure on an inner product space is the operator
@@ -984,26 +989,71 @@ theorem eventually_isInvertible_loopOperator_sub_smul (ω : SymplecticForm E) {H
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
   exact congrFun h0 t
 
-/-- **The loop operator at a nondegenerate orbit is invertible.** Along a nondegenerate
-one-periodic orbit `x`, the loop operator `ζ ↦ ζ' - S_t ζ` of the linearized Hamiltonian vector
-field `S_t = dX_{H_t}(x(t))` is a continuous linear isomorphism `H¹ → H⁰` of one-periodic loops. -/
-theorem isInvertible_loopOperator_of_isNondegenerateFixedPt (ω : SymplecticForm E)
+/-- Along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally
+Lipschitz suspended vector field, in a differentiable `1`-periodic invertible frame `Φ` trivializing
+`dX_{H_t}(x(t))` as `S`, `CircleSobolev.loopOperator 1 S` is invertible iff `x(0)` is a
+nondegenerate fixed point of the time-one flow. -/
+theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    {Φ : ℝ → E →L[ℝ] V} (hΦd : Differentiable ℝ Φ) (hΦp : Periodic Φ 1)
+    (hΦ : ∀ t, (Φ t).IsInvertible) {S : C(AddCircle (1 : ℝ), E →L[ℝ] E)} (hS : ∀ t : ℝ, S t =
+      trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t) :
+    (CircleSobolev.loopOperator 1 S).IsInvertible ↔
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
+  obtain ⟨e₀, _⟩ := hΦ 0
+  let J₀ : AlmostComplexStructure V :=
+    (AlmostComplexStructure.ofComplexModule E).transport e₀.toLinearEquiv
+  rw [CircleSobolev.isInvertible_loopOperator_iff,
+    ω.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero hX hH hHp hx hxp
+      fun _ ↦ J₀]
+  refine ⟨fun hloop ξ hξd hξp hA ↦ ?_, fun hnd ζ hζ ↦ ?_⟩
+  · have hΦinv : Differentiable ℝ fun t ↦ (Φ t).inverse := fun t ↦
+      (((hΦ t).contDiffAt_map_inverse (n := 1)).differentiableAt one_ne_zero).comp t (hΦd t)
+    set ζ₀ : ℝ → E := fun t ↦ (Φ t).inverse (ξ t)
+    have hζ₀d : Differentiable ℝ ζ₀ := hΦinv.clm_apply hξd
+    have hζ₀p : Periodic ζ₀ 1 := fun t ↦ by simp only [ζ₀, hΦp t, hξp t]
+    let ζ : C(AddCircle (1 : ℝ), E) :=
+      ⟨hζ₀p.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hζ₀d.continuous⟩
+    have hζeq (t : ℝ) : ζ t = (Φ t).inverse (ξ t) := by simp [ζ, ζ₀]
+    have hfun : (fun r ↦ Φ r (ζ₀ r)) = ξ := funext fun r ↦ (hΦ r).self_apply_inverse (ξ r)
+    have h0 := hloop ζ fun t ↦ by
+      rw [funext hζeq, hS t]
+      refine (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζ₀d t)).1 ?_
+      simpa only [hfun, ζ₀, (hΦ t).self_apply_inverse] using
+        (Floer.asymptoticOperator_eq_zero_iff (hξd t)).1 (hA t)
+    funext t
+    rw [Pi.zero_apply, ← (hΦ t).self_apply_inverse (ξ t), ← hζeq t, h0, ContinuousMap.zero_apply,
+      map_zero]
+  · have hζd : Differentiable ℝ fun y : ℝ ↦ ζ y := fun y ↦ (hζ y).differentiableAt
+    have hξd : Differentiable ℝ fun t ↦ Φ t (ζ t) := hΦd.clm_apply hζd
+    have hξp : Periodic (fun t ↦ Φ t (ζ t)) 1 := fun t ↦ by simp [hΦp t]
+    have h0 := hnd (fun t ↦ Φ t (ζ t)) hξd hξp fun t ↦
+      (Floer.asymptoticOperator_eq_zero_iff (hξd t)).2 <|
+        (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζd t)).2
+          (by simpa only [hS t] using hζ t)
+    ext θ; obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    exact (hΦ t).injective (by simpa using congrFun h0 t)
+
+/-- **The loop operator is invertible if and only if the orbit is nondegenerate.** Along a
+one-periodic orbit `x` of a one-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
+suspended vector field, `loopOperator 1 S` (`S_t = dX_{H_t}(x(t))`) is invertible iff `x(0)` is a
+nondegenerate fixed point of the time-one flow. -/
+theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm E)
     {H : ℝ → E → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → E}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {S : C(AddCircle (1 : ℝ), E →L[ℝ] E)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) :
-    (CircleSobolev.loopOperator 1 S).IsInvertible := by
-  -- Any family of almost complex structures may be used, for instance multiplication by `i`.
-  let J₀ : AlmostComplexStructure E :=
-    ⟨(Complex.I • LinearMap.id : E →ₗ[ℂ] E).restrictScalars ℝ, by ext v; simp [smul_smul]⟩
-  have h := (eventually_isInvertible_loopOperator_sub_smul ω hX hH hHp hx hxp hnd hS
-    (J := fun _ ↦ J₀) (Jc := ContinuousMap.const _ (LinearMap.toContinuousLinearMap J₀.toLinearMap))
-    fun _ ↦ rfl).self_of_nhds
-  convert h using 2
-  ext θ : 1
-  simp
+    (CircleSobolev.loopOperator 1 S).IsInvertible ↔
+      IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) :=
+  ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
+    (Φ := fun _ ↦ ContinuousLinearMap.id ℝ E) hX hH hHp hx hxp (differentiable_const _)
+    (fun _ ↦ rfl) (fun _ ↦ ContinuousLinearMap.isInvertible_equiv (f := .refl ℝ E))
+    fun t ↦ by simp [hS t]
 
 end Sobolev
 
