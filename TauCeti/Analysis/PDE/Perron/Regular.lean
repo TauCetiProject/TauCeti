@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Barrier
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
+import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Topology.Closure
 
 /-!
 # Regular boundary points
@@ -38,6 +41,18 @@ hence subharmonic (`ConvexOn.subharmonicOn`), so the comparison principle gives
 open sets on which the Dirichlet problem is solvable for all continuous data
 (`TauCeti.forall_mem_frontier_exists_isBarrier_iff`).
 
+**Isolated boundary points.** In dimension at least two, a point `ξ` with a punctured
+neighbourhood inside `Ω` admits no barrier (`TauCeti.not_isBarrier_of_mem_nhdsNE`). A barrier `w`
+has a positive minimum `m` on a small sphere about `ξ`, and since a single point does not affect
+the maximum principle (`TauCeti.SubharmonicOn.le_of_le_frontier_of_isBoundedUnder`), the
+superharmonic `w` stays above `m` on the punctured ball, so `w ξ ≥ m > 0` by continuity.
+Consequently the Dirichlet problem on a bounded open set with an isolated boundary point is not
+solvable for some continuous boundary datum
+(`TauCeti.exists_continuousOn_frontier_not_exists_harmonicOnNhd_eqOn_frontier`). In dimension one
+the opposite holds: `x ↦ ‖x - ξ‖` is a barrier at every point `ξ ∉ Ω`
+(`TauCeti.isBarrier_norm_sub_of_finrank_eq_one`), so every boundary point of every open subset of
+a line is regular.
+
 ## Main declarations
 
 * `TauCeti.IsBarrier.exists_isBarrier_of_inter`: a local barrier yields a barrier.
@@ -47,11 +62,20 @@ open sets on which the Dirichlet problem is solvable for all continuous data
 * `TauCeti.forall_mem_frontier_exists_isBarrier_iff`: **the Dirichlet problem on a bounded open
   set is solvable for all continuous boundary data exactly when every boundary point is
   regular.**
+* `TauCeti.not_isBarrier_of_mem_nhdsNE`: in dimension at least two, an isolated boundary point
+  is irregular.
+* `TauCeti.exists_continuousOn_frontier_not_exists_harmonicOnNhd_eqOn_frontier`: the Dirichlet
+  problem on a bounded open set with an isolated boundary point is not solvable for some
+  continuous boundary datum.
+* `TauCeti.isBarrier_norm_sub_of_finrank_eq_one`: in dimension one, every point outside `Ω` is
+  regular.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 2.8, the remarks following Lemma 2.13 and Theorem 2.14.
+* S. Axler, P. Bourdon, W. Ramey, *Harmonic Function Theory*, 2nd ed., Springer GTM 137,
+  Chapter 2 (bounded isolated singularities of harmonic functions are removable).
 -/
 
 public section
@@ -169,5 +193,82 @@ theorem forall_mem_frontier_exists_isBarrier_iff (hΩ : IsOpen Ω) (hb : Bornolo
     fun h ξ hξ ↦ ?_⟩
   obtain ⟨u, hu, huc, hug⟩ := h (dist · ξ) (continuous_id.dist continuous_const).continuousOn
   exact ⟨u, hu.isBarrier hΩ hb huc hξ hug⟩
+
+/-! ### Isolated boundary points -/
+
+/-- **An isolated boundary point is irregular.** In dimension at least two, if `Ω` contains a
+punctured neighbourhood of `ξ`, then no function is a barrier at `ξ` relative to `Ω`. -/
+theorem not_isBarrier_of_mem_nhdsNE (hE : 2 ≤ Module.finrank ℝ E) (hΩ : Ω ∈ 𝓝[≠] ξ)
+    (w : E → ℝ) : ¬IsBarrier Ω ξ w := by
+  intro hw
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨r, hr, hrΩ⟩ := Metric.mem_nhdsWithin_iff.1 hΩ
+  have hξ : ξ ∈ closure Ω := mem_closure_of_mem_nhdsNE hΩ
+  -- The closed ball of radius `r / 2` lies in `closure Ω`, its punctured part in `Ω`.
+  set ρ := r / 2
+  have hρ : 0 < ρ := half_pos hr
+  have hpunct : closedBall ξ ρ \ {ξ} ⊆ Ω := fun x hx ↦
+    hrΩ ⟨closedBall_subset_ball (half_lt_self hr) hx.1, hx.2⟩
+  have hcl : closedBall ξ ρ ⊆ closure Ω := fun x hx ↦ by
+    rcases eq_or_ne x ξ with rfl | hxξ
+    · exact hξ
+    · exact subset_closure (hpunct ⟨hx, hxξ⟩)
+  -- The barrier attains a minimum `m > 0` on the sphere of radius `ρ`.
+  obtain ⟨z, hz, hmin⟩ := (isCompact_sphere ξ ρ).exists_isMinOn
+    (NormedSpace.sphere_nonempty.2 hρ.le)
+    (hw.continuousOn.mono (sphere_subset_closedBall.trans hcl))
+  have hm : 0 < w z :=
+    hw.pos z (hcl (sphere_subset_closedBall hz)) (ne_of_mem_sphere hz hρ.ne')
+  -- By the maximum principle with an exceptional point, `w ≥ w z` on the punctured ball.
+  have hclb : closure (ball ξ ρ) \ {ξ} ⊆ closedBall ξ ρ \ {ξ} := by rw [closure_ball ξ hρ.ne']
+  have hle := SubharmonicOn.le_of_le_frontier_of_isBoundedUnder hE isOpen_ball isBounded_ball
+    (u := fun _ ↦ w z) ((harmonicOnNhd_const _).subharmonicOn) continuousOn_const
+    (hw.subharmonicOn_neg.mono ((sdiff_subset_sdiff_left ball_subset_closedBall).trans hpunct))
+    (hw.continuousOn.mono ((hclb.trans sdiff_subset).trans hcl))
+    (IsBoundedUnder.mono (g := 𝓝[≠] ξ) (nhdsWithin_mono ξ fun _ hx ↦ hx.2) <|
+      isBoundedUnder_of_eventually_le (a := w z) <| by
+        filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
+        have := hw.pos x (hcl (ball_subset_closedBall hx.2)) hx.1
+        simp only [Pi.sub_apply]
+        linarith)
+    (fun x hx _ ↦ hmin (frontier_ball ξ hρ.ne' ▸ hx))
+  have hge : ∀ᶠ x in 𝓝[≠] ξ, w z ≤ w x := by
+    filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
+    exact hle x ⟨subset_closure hx.2, hx.1⟩
+  -- By continuity at `ξ`, `w ξ ≥ w z > 0`, contradicting `w ξ = 0`.
+  have htend : Tendsto w (𝓝[≠] ξ) (𝓝 (w ξ)) :=
+    (hw.continuousOn ξ hξ).tendsto.mono_left
+      ((nhdsWithin_le_of_mem hΩ).trans (nhdsWithin_mono ξ subset_closure))
+  have := ge_of_tendsto htend hge
+  rw [hw.apply_self] at this
+  linarith
+
+/-- **The Dirichlet problem fails at an isolated boundary point.** In dimension at least two, let
+`Ω` be a bounded open set containing a punctured neighbourhood of a point `ξ ∉ Ω`. Then there is a
+boundary datum `g`, continuous on `frontier Ω`, for which no function harmonic in `Ω` and
+continuous on `closure Ω` equals `g` on `frontier Ω`. -/
+theorem exists_continuousOn_frontier_not_exists_harmonicOnNhd_eqOn_frontier
+    (hE : 2 ≤ Module.finrank ℝ E) (hΩo : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    (hΩ : Ω ∈ 𝓝[≠] ξ) (hξΩ : ξ ∉ Ω) :
+    ∃ g : E → ℝ, ContinuousOn g (frontier Ω) ∧
+      ¬∃ u, HarmonicOnNhd u Ω ∧ ContinuousOn u (closure Ω) ∧ EqOn u g (frontier Ω) := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  by_contra! h
+  have hξ : ξ ∈ frontier Ω := hΩo.frontier_eq ▸ ⟨mem_closure_of_mem_nhdsNE hΩ, hξΩ⟩
+  obtain ⟨w, hw⟩ := (forall_mem_frontier_exists_isBarrier_iff hΩo hb).2 h ξ hξ
+  exact not_isBarrier_of_mem_nhdsNE hE hΩ w hw
+
+/-- **In dimension one every point is regular.** If `E` is one-dimensional and `ξ ∉ Ω`, then
+`x ↦ ‖x - ξ‖` is a barrier at `ξ` relative to `Ω`: it is affine, hence harmonic, on each side of
+`ξ`. -/
+theorem isBarrier_norm_sub_of_finrank_eq_one (hE : Module.finrank ℝ E = 1) (hξ : ξ ∉ Ω) :
+    IsBarrier Ω ξ fun x ↦ ‖x - ξ‖ := by
+  have hH : HarmonicOnNhd (fun x ↦ ‖x - ξ‖) {ξ}ᶜ := by
+    have := harmonicOnNhd_norm_sub_rpow_two_sub_finrank (E := E) ξ
+    norm_num [hE] at this
+    exact this
+  refine ⟨(hH.neg.mono fun x hx h ↦ hξ (mem_singleton_iff.1 h ▸ hx)).subharmonicOn,
+    (continuous_norm.comp (continuous_id.sub continuous_const)).continuousOn, by simp,
+    fun x _ hx ↦ norm_pos_iff.2 (sub_ne_zero.2 hx)⟩
 
 end TauCeti
