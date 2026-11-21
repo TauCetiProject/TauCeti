@@ -600,6 +600,9 @@ theorem comul_quantumDividedPower_f (i : ι) (n : ℕ) :
     (quantumFactorial_ne_zero
       ((Fact.out : IsGenericQuantumParameter q).pow (D.symmetrizer_pos i)) n)
 
+/-- Under the canonical generic `instBialgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+the Chevalley involution is a coalgebra anti-automorphism reversing the coproduct (swapping tensor
+factors): `Δ(ω x) = (ω ⊗ ω)(swap(Δ x))`. -/
 theorem comul_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
     Coalgebra.comul (R := K) (chevalleyInvolution D q x) =
       TensorProduct.map (chevalleyInvolution D q).toLinearMap
@@ -624,6 +627,8 @@ theorem counit_normalizedE (i : ι) :
 theorem counit_normalizedF (i : ι) :
     Coalgebra.counit (R := K) (normalizedF D q i) = 0 := by
   rw [counit_eq, counitAlgHom_normalizedF]
+/-- Under the canonical generic `instBialgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+the Chevalley involution preserves the counit: `ε(ω x) = ε x`. -/
 theorem counit_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
     Coalgebra.counit (R := K) (chevalleyInvolution D q x) = Coalgebra.counit (R := K) x := by
   rw [counit_eq, counit_eq, counitAlgHom_chevalleyInvolution]
@@ -747,6 +752,9 @@ theorem antipode_chevalleyInvolution_antipode (x : QuantizedEnvelopingAlgebra D 
       chevalleyInvolution D q x := by
   rw [antipode_eq, antipode_eq, antipodeLinearEquiv_chevalleyInvolution_antipodeLinearEquiv]
 
+/-- A morphism of Cartan data induces an algebra homomorphism `map φ q` that commutes with the
+canonical generic antipodes (`instHopfAlgebra`), requiring no explicit Serre-factorial proof
+(unlike `mapBialgHom`). -/
 theorem map_antipode {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
     {D' : CartanDatum ι X' Y'} (φ : CartanDatum.Hom D D') (x : QuantizedEnvelopingAlgebra D q) :
     map φ q (HopfAlgebra.antipode K x) = HopfAlgebra.antipode K (map φ q x) := by
