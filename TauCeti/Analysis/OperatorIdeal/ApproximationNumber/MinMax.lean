@@ -115,9 +115,12 @@ theorem le_singularValue_of_lt_rank (T : E →L[𝕜] F) {n : ℕ} {V : Submodul
   lift c to ℝ≥0 using h.le
   refine NNReal.coe_le_coe.mpr (le_singularValue_iff.mpr fun R hR ↦ ?_)
   -- Since `rank R ≤ n < rank V`, the map `R` kills a nonzero vector of `V`.
-  obtain ⟨x, hxV, hRx, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt
-    (f := (R : E →ₗ[𝕜] F)) hV hR
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hRx
+  obtain ⟨x, hxV, hRx, hx0⟩ : ∃ x ∈ V, R x = 0 ∧ x ≠ 0 := by
+    by_contra! h
+    have hle := (Submodule.lift_rank_le_of_disjoint_ker (Submodule.disjoint_def.mpr h)).trans
+      (Cardinal.lift_le.mpr hR)
+    rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+    exact hV.not_ge hle
   have hx : 0 < ‖x‖ := norm_pos_iff.mpr hx0
   refine NNReal.coe_le_coe.mp (le_of_mul_le_mul_right ?_ hx)
   calc (c : ℝ) * ‖x‖ ≤ ‖T x‖ := hc x hxV
