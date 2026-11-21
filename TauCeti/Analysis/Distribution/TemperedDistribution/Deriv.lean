@@ -33,6 +33,13 @@ iterated directional derivatives are those of the Schwartz function.
 * `TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq`: iterated directional
   derivatives of a Schwartz function viewed as a tempered distribution.
 
+For a real `Lᵖ` function `u`, the directional derivative `∂_v u` of its complexified tempered
+distribution pairs with a real Schwartz function `φ` as `-∫ ∂_v φ u`, the usual definition of a weak
+derivative.
+
+* `MeasureTheory.Lp.lineDerivOp_toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM`:
+  `(∂_v u) φ = -∫ ∂_v φ u` for real `u ∈ Lᵖ` and real Schwartz `φ`.
+
 On the Fourier side a directional derivative is multiplication by `2πi ⟪ξ, v⟫`
 (`TemperedDistribution.fourier_lineDerivOp_eq`). For `L²` functions, whose Fourier transforms are
 again `L²` functions, this becomes an identity of functions almost everywhere. Its use is to turn a
@@ -97,6 +104,17 @@ open scoped SchwartzMap LineDeriv FourierTransform InnerProductSpace ContDiff
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
+
+omit [FiniteDimensional ℝ E] in
+/-- The derivative in the direction `v` of the complex tempered distribution of a real `Lᵖ`
+function `u`, evaluated at a real Schwartz function `φ`, is `-∫ ∂_v φ u`. -/
+theorem lineDerivOp_toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM {μ : Measure E}
+    [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)] (u : Lp ℝ p μ) (v : E) (φ : 𝓢(E, ℝ)) :
+    (∂_{v} ((Complex.ofRealCLM.compLp u : Lp ℂ p μ) : 𝓢'(E, ℂ))) (φ.postcompCLM Complex.ofRealCLM) =
+      -((∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ : ℝ) : ℂ) := by
+  rw [TemperedDistribution.lineDerivOp_apply_apply, map_neg, TauCeti.lineDerivOp_postcompCLM,
+    toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM]
+  simp only [SchwartzMap.lineDerivOp_apply]
 
 /-- Pairing an `L²` function `f` with `∂_v` of the Fourier transform of a Schwartz function `φ`
 is pairing `𝓕 f` with `-2πi ⟪·, v⟫ φ`. -/

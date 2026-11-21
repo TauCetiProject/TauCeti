@@ -10,12 +10,10 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Matrix.Order
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
@@ -42,9 +40,8 @@ map `T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √
 ## Main declarations
 
 * `TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`: an elliptic constant-coefficient
-  operator is the Laplacian after a linear change of variables with controlled condition number.
-* `TauCeti.PDE.exists_continuousLinearEquiv_norm_sq_eq_toQuadraticForm'`: the quadratic form of an
-  elliptic matrix is a squared Euclidean norm in suitable linear coordinates.
+  operator is the Laplacian after a linear change of variables with controlled condition number,
+  in which its quadratic form is the squared Euclidean norm.
 * `TauCeti.PDE.harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero`: after such a change of
   variables, a `C²` solution on an open set becomes a harmonic function.
 * `TauCeti.PDE.harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero`: so does the
@@ -71,18 +68,19 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGr
 
 /-- **A constant-coefficient operator is the Laplacian in suitable linear coordinates.** Let `A`
 be a square matrix whose quadratic form satisfies `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`. Then
-there is a continuous linear automorphism `e` of `EuclideanSpace ℝ ι`, with
-`‖e⁻¹ x‖ ≤ ‖x‖ / √λ` and `‖e y‖ ≤ √Λ ‖y‖`, such that
+there is a continuous linear automorphism `e` of `EuclideanSpace ℝ ι`, with `‖e y‖² = yᵀ A y`, so
+that `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` and `‖e y‖ ≤ √Λ ‖y‖`, such that
 
 `Δ (u ∘ e) y = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu (e y)`
 
 for every `u` twice continuously differentiable near `e y`. So `u` solves `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0`
-exactly when `u ∘ e` is harmonic. One can take `e` to be the square root of the symmetric part of
-`A`; only the symmetric part matters, since the second derivative of `u` is symmetric. -/
+exactly when `u ∘ e` is harmonic, and on the Fourier side the symbol `ξᵀ A ξ` of the operator
+becomes `‖e ξ‖²`. One can take `e` to be the square root of the symmetric part of `A`; only the
+symmetric part matters, since the second derivative of `u` is symmetric. -/
 theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {lam Lam : ℝ}
     (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) :
-    ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι,
+    ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι, (∀ y, ‖e y‖ ^ 2 = A.toQuadraticForm' y) ∧
       (∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) ∧ (∀ y, ‖e y‖ ≤ √Lam * ‖y‖) ∧
       ∀ (u : EuclideanSpace ℝ ι → F) (y : EuclideanSpace ℝ ι), ContDiffAt ℝ 2 u (e y) →
         Δ (u ∘ e) y = ∑ i, ∑ j, A i j •
@@ -114,7 +112,7 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     rw [Matrix.toEuclideanCLE_apply, ← real_inner_self_eq_norm_sq, ← hSq, ← hTT]
     simpa [Matrix.toQuadraticForm'_apply, EuclideanSpace.inner_eq_star_dotProduct, hTt,
       dotProduct_comm] using h
-  refine ⟨e, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
+  refine ⟨e, hnorm, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
   · exact e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => (hnorm y).symm ▸ hA y) x
   · exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y) ((hnorm y).le.trans (hA' y))
   · -- Only the symmetric part of `A` enters, because the second derivative is symmetric.
@@ -130,40 +128,6 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [hsymm (EuclideanSpace.single j 1), ← add_smul]
     ring_nf
-
-/-- **An elliptic quadratic form is a squared norm in suitable linear coordinates.** Let `A` be a
-square matrix whose quadratic form satisfies `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`. Then there is
-a continuous linear automorphism `e` of `EuclideanSpace ℝ ι` with `‖e y‖² = yᵀ A y` for every `y`,
-so that `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` and `‖e y‖ ≤ √Λ ‖y‖`. Only the symmetric part of `A` enters. On the
-Fourier side this turns the symbol `ξᵀ A ξ` of a constant-coefficient operator into `‖e ξ‖²`. -/
-theorem exists_continuousLinearEquiv_norm_sq_eq_toQuadraticForm' {A : Matrix ι ι ℝ} {lam Lam : ℝ}
-    (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) :
-    ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι,
-      (∀ y, ‖e y‖ ^ 2 = A.toQuadraticForm' y) ∧ (∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) ∧
-        ∀ y, ‖e y‖ ≤ √Lam * ‖y‖ := by
-  -- The operator `S` representing the symmetric part of the form, `⟪S v, w⟫ = vᵀ A_sym w`.
-  set B := matrixBilinearForm (coefficientSymmetricPart A)
-  set S := InnerProductSpace.continuousLinearMapOfBilin (𝕜 := ℝ) B
-  have hS : ∀ v w, ⟪S v, w⟫_ℝ = B v w := fun v w =>
-    InnerProductSpace.continuousLinearMapOfBilin_apply B v w
-  have hBq : ∀ ξ, B ξ ξ = A.toQuadraticForm' ξ := fun ξ => by
-    rw [matrixBilinearForm_self, toQuadraticForm'_coefficientSymmetricPart]
-  have hsymm : (S : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι).IsSymmetric := fun x y => by
-    simp only [ContinuousLinearMap.coe_coe]
-    rw [hS, real_inner_comm, hS, matrixBilinearForm_coefficientSymmetricPart_apply,
-      matrixBilinearForm_coefficientSymmetricPart_apply, add_comm]
-  have hpos : ∀ v, v ≠ 0 → 0 < RCLike.re ⟪S v, v⟫_ℝ := fun v hv => by
-    rw [RCLike.re_to_real, hS, hBq]
-    exact (mul_pos hlam (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hA v)
-  obtain ⟨e', he'⟩ := TauCeti.exists_continuousLinearEquiv_inner_map_map S hsymm hpos
-  have hnorm : ∀ y, ‖e'.symm y‖ ^ 2 = A.toQuadraticForm' y := fun y => by
-    have h := he' (e'.symm y) (e'.symm y)
-    rw [ContinuousLinearEquiv.apply_symm_apply, hS, hBq] at h
-    rw [← real_inner_self_eq_norm_sq, ← h]
-  refine ⟨e'.symm, hnorm, fun x => ?_, fun y => ?_⟩
-  · exact e'.symm.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => (hnorm y).symm ▸ hA y) x
-  · exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg _) ((hnorm y).le.trans (hA' y))
 
 variable {A : Matrix ι ι ℝ}
 

@@ -9,13 +9,12 @@ public import TauCeti.Analysis.Fourier.MihlinHormander
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
-import TauCeti.Analysis.InnerProductSpace.Positive.Definite
-import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # The `W^{1,p}` estimate for constant-coefficient divergence-form equations
@@ -32,9 +31,9 @@ with `G ∈ L²(ℝⁿ; ℝⁿ)`. This file proves the Calderón–Zygmund estim
 with `C` depending only on `n` and `p`
 (`TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq`). It covers the whole range
 `1 < p < ∞`, on both sides of `p = 2`, and assumes no integrability of `∇u` beyond `L²`. For
-`A = 1` it is the boundedness on `Lᵖ` of the matrix `(Rᵢ Rⱼ)` of Riesz transforms, which maps `G`
-to `∇u`. It is the constant-coefficient case of the `W^{1,p}` theory for coefficients of small or
-vanishing mean oscillation, whose a priori estimate for `p > 2` is
+`A = 1` it is the boundedness on `Lᵖ` of the matrix `-(Rᵢ Rⱼ)` of Riesz transforms, which maps `G`
+to `∇u`: `∂ᵢu = -∑ⱼ Rᵢ Rⱼ Gⱼ`. It is the constant-coefficient case of the `W^{1,p}` theory for
+coefficients of small or vanishing mean oscillation, whose a priori estimate for `p > 2` is
 `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`; the frozen
 operators there are of the form treated here.
 
@@ -51,7 +50,7 @@ operators there are of the form treated here.
   (`TauCeti.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`) bounds `T_{mᵢⱼ}` on
   `Lᵖ`. To make the constant uniform in `A`, write `ξᵀ A ξ = ‖e ξ‖²` for a linear automorphism
   `e` with `‖e‖ ≤ √Λ` and `‖e⁻¹‖ ≤ 1 / √λ`
-  (`TauCeti.PDE.exists_continuousLinearEquiv_norm_sq_eq_toQuadraticForm'`). Then
+  (`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`). Then
   `mᵢⱼ(ξ) = ⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²` for vectors with `‖a‖ ‖b‖ ≤ 1 / λ`, and the derivatives of
   the single map `η ↦ (a, b ↦ ⟪η, a⟫ ⟪η, b⟫ / ‖η‖²)` are estimated once and for all
   (`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`); the change of variables costs the
@@ -96,7 +95,7 @@ private theorem inner_lineProj_apply (η a b : E) :
 private theorem contDiffOn_lineProj : ContDiffOn ℝ ∞ (lineProj (E := E)) {0}ᶜ := by
   have h₂ : ContDiffOn ℝ ∞ (fun η : E => (‖η‖ ^ 2)⁻¹) {0}ᶜ :=
     (contDiff_norm_sq ℝ).contDiffOn.inv fun η hη => by
-      simpa using (show η ≠ 0 from hη)
+      simpa using Set.mem_compl_singleton_iff.1 hη
   exact (h₂.smul (innerSL ℝ (E := E)).contDiff.contDiffOn).smulRight contDiffOn_id
 
 private theorem lineProj_smul {t : ℝ} (ht : 0 < t) (η : E) :
@@ -137,7 +136,8 @@ private theorem exists_norm_iteratedFDeriv_lineProj_comp_le [FiniteDimensional �
   have heξ : e ξ ≠ 0 := (map_ne_zero_iff e e.injective).2 hξ
   have hg : ContDiffAt ℝ ∞ (lineProj ∘ e) ξ :=
     ((contDiffOn_lineProj (E := E)).contDiffAt
-      (isOpen_compl_singleton.mem_nhds heξ)).comp ξ e.contDiff.contDiffAt
+      (isOpen_compl_singleton.mem_nhds (Set.mem_compl_singleton_iff.2 heξ))).comp ξ
+        e.contDiff.contDiffAt
   have hcomp : (fun ξ => ((⟪b, lineProj (e ξ) a⟫_ℝ : ℝ) : ℂ)) = L ∘ (lineProj ∘ e) := by
     ext ξ
     simp [L]
@@ -174,19 +174,6 @@ open Matrix
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 omit [DecidableEq ι] in
-/-- The derivative in the direction `v` of the complexified tempered distribution of a real `L²`
-function `f`, evaluated at a real Schwartz function `φ`, is `-∫ ∂_v φ f`. -/
-private theorem lineDerivOp_toTemperedDistribution_ofReal_apply
-    (f : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι))) (v : EuclideanSpace ℝ ι)
-    (φ : 𝓢(EuclideanSpace ℝ ι, ℝ)) :
-    (∂_{v} (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp f)))
-        (φ.postcompCLM Complex.ofRealCLM) =
-      -((∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v * f x : ℝ) : ℂ) := by
-  rw [TemperedDistribution.lineDerivOp_apply_apply, map_neg, lineDerivOp_postcompCLM,
-    Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM]
-  simp only [SchwartzMap.lineDerivOp_apply]
-
-omit [DecidableEq ι] in
 /-- A directional derivative of a compactly supported Schwartz function times an `L²` function is
 integrable. -/
 private theorem integrable_lineDeriv_mul {φ : 𝓢(EuclideanSpace ℝ ι, ℝ)} (hφ : HasCompactSupport φ)
@@ -202,18 +189,6 @@ private theorem integrable_lineDeriv_mul {φ : 𝓢(EuclideanSpace ℝ ι, ℝ)}
     exact hφ.fderiv_apply (𝕜 := ℝ) _
   exact ((Lp.memLp f).locallyIntegrable (by norm_num)).integrable_smul_left_of_hasCompactSupport
     hcont hsupp
-
-omit [DecidableEq ι] in
-/-- The real inner product of a vector field with the gradient of a test function, expanded in the
-standard basis: `⟪G, ∇φ⟫ = ∑ⱼ ∂ⱼφ Gⱼ`. -/
-private theorem inner_gradient_eq_sum {φ : EuclideanSpace ℝ ι → ℝ} (hφ : Differentiable ℝ φ)
-    (g x : EuclideanSpace ℝ ι) :
-    ⟪g, ∇ φ x⟫_ℝ = ∑ j, lineDeriv ℝ φ x (EuclideanSpace.basisFun ι ℝ j) *
-      ⟪g, EuclideanSpace.basisFun ι ℝ j⟫_ℝ := by
-  conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr' (∇ φ x)]
-  simp only [inner_sum, inner_smul_right, (hφ x).lineDeriv_eq_fderiv]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [real_inner_comm, gradient, InnerProductSpace.toDual_symm_apply]
 
 omit [DecidableEq ι] in
 /-- **The weak equation as an identity of tempered distributions.** If `u ∈ H¹(ℝⁿ)` solves
@@ -237,7 +212,7 @@ private theorem sum_lineDerivOp_eq_of_forall_energyFormH1_eq {A : Matrix ι ι �
         (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp (Gc j))) := by
   apply TemperedDistribution.ext_real
   intro φ hφ
-  simp only [sum_apply, lineDerivOp_toTemperedDistribution_ofReal_apply,
+  simp only [sum_apply, Lp.lineDerivOp_toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
     Finset.sum_neg_distrib, ← Complex.ofReal_sum, neg_inj, Complex.ofReal_inj]
   set ψ : 𝓓((⊤ : TopologicalSpace.Opens (EuclideanSpace ℝ ι)), ℝ) :=
     φ.toTestFunction hφ (by simp)
@@ -258,24 +233,11 @@ private theorem sum_lineDerivOp_eq_of_forall_energyFormH1_eq {A : Matrix ι ι �
   rw [Finset.sum_congr rfl fun j _ => hl j, h, ← integral_finsetSum _ fun j _ => hint j]
   refine integral_congr_ae ?_
   filter_upwards [ae_all_iff.2 hGc] with x hx
-  rw [inner_gradient_eq_sum φ.differentiable (G x) x]
-  simp [hx]
-  
-omit [DecidableEq ι] in
-/-- `∑ⱼ ⟪ξ, cⱼ⟫ ξⱼ = ξᵀ A ξ`, where `cⱼ` is the `j`-th column of `A`. -/
-private theorem sum_inner_transpose_mul_inner (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
-    ∑ j, ⟪ξ, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * ⟪ξ, EuclideanSpace.basisFun ι ℝ j⟫_ℝ =
-      PDE.matrixBilinearForm A ξ ξ := by
-  classical
-  have h₁ : ∀ j, ⟪ξ, WithLp.toLp 2 (Aᵀ j)⟫_ℝ =
-      PDE.matrixBilinearForm A ξ (EuclideanSpace.basisFun ι ℝ j) := fun j => by
-    simp [PDE.matrixBilinearForm_apply, EuclideanSpace.inner_eq_star_dotProduct, dotProduct,
-      mulVec, mul_comm]
-  calc ∑ j, ⟪ξ, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * ⟪ξ, EuclideanSpace.basisFun ι ℝ j⟫_ℝ
-      = PDE.matrixBilinearForm A ξ
-          (∑ j, ⟪EuclideanSpace.basisFun ι ℝ j, ξ⟫_ℝ • EuclideanSpace.basisFun ι ℝ j) := by
-        simp only [h₁, map_sum, map_smul, smul_eq_mul, real_inner_comm ξ, mul_comm]
-    _ = PDE.matrixBilinearForm A ξ ξ := by rw [(EuclideanSpace.basisFun ι ℝ).sum_repr' ξ]
+  -- Expand `G x` in the standard basis: `⟪G, ∇φ⟫ = ∑ⱼ ∂ⱼφ Gⱼ`.
+  conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr' (G x)]
+  simp only [sum_inner, real_inner_smul_left, φ.differentiableAt.lineDeriv_eq_fderiv, hx]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [real_inner_comm (∇ _ _), inner_gradient_left, mul_comm, real_inner_comm (G x)]
 
 /-- The symbol `ξ ↦ ⟪ξ, v⟫ ⟪ξ, w⟫ / ξᵀ A ξ` of the operator `∂_v ∂_w (div A ∇)⁻¹`, homogeneous of
 degree `0` and bounded for elliptic `A`. -/
@@ -295,9 +257,11 @@ private theorem memLp_divergenceSymbol {A : Matrix ι ι ℝ} {lam Lam : ℝ}
   have hq : lam * ‖ξ‖ ^ 2 ≤ PDE.matrixBilinearForm A ξ ξ := by
     rw [PDE.matrixBilinearForm_self]
     exact hA.lower_bound (Set.mem_univ ξ) ξ
-  have hpos : 0 < lam * ‖ξ‖ ^ 2 := mul_pos hA.pos (pow_pos (norm_pos_iff.2 hξ) 2)
+  have hpos : 0 < PDE.matrixBilinearForm A ξ ξ := by
+    rw [PDE.matrixBilinearForm_self]
+    exact hA.quadraticForm_pos (Set.mem_univ ξ) hξ
   simp only [divergenceSymbol, Complex.norm_real, Real.norm_eq_abs, abs_div, abs_mul]
-  rw [abs_of_pos (hpos.trans_le hq), div_le_div_iff₀ (hpos.trans_le hq) hA.pos]
+  rw [abs_of_pos hpos, div_le_div_iff₀ hpos hA.pos]
   calc |⟪ξ, v⟫_ℝ| * |⟪ξ, w⟫_ℝ| * lam ≤ (‖ξ‖ * ‖v‖) * (‖ξ‖ * ‖w‖) * lam := by
         gcongr
         · exact hA.pos.le
@@ -319,8 +283,8 @@ private theorem exists_divergenceSymbol_eq_lineProj {A : Matrix ι ι ℝ} {lam 
   have hlam := hA.pos
   have hsqlam : 0 < √lam := Real.sqrt_pos.2 hlam
   -- Write `ξᵀ A ξ = ‖e ξ‖²` for a linear automorphism `e`.
-  obtain ⟨e, hnorm, hsymm, hbound⟩ :=
-    PDE.exists_continuousLinearEquiv_norm_sq_eq_toQuadraticForm' hlam
+  obtain ⟨e, hnorm, hsymm, hbound, -⟩ :=
+    PDE.exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam
       (hA.lower_bound (Set.mem_univ 0)) (hA.toQuadraticForm'_le (Set.mem_univ 0))
   set T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι := ↑e.symm
   have hT : ‖T.adjoint‖ ≤ (√lam)⁻¹ := by
@@ -365,7 +329,8 @@ private theorem exists_norm_iteratedFDeriv_divergenceSymbol_le (N : ℕ) :
   refine ⟨?_, fun k hk ξ hξ => (hA₀ e a b (Real.sqrt_pos.2 hlam) hlow k hk ξ hξ).trans ?_⟩
   · have h₁ : ContDiffOn ℝ ∞ (fun ξ => lineProj (e ξ)) {0}ᶜ :=
       (contDiffOn_lineProj (E := EuclideanSpace ℝ ι)).comp e.contDiff.contDiffOn
-        fun ξ hξ => (map_ne_zero_iff e e.injective).2 hξ
+        fun ξ hξ => Set.mem_compl_singleton_iff.2
+          ((map_ne_zero_iff e e.injective).2 (Set.mem_compl_singleton_iff.1 hξ))
     exact Complex.ofRealCLM.contDiff.comp_contDiffOn
       (contDiffOn_const.inner ℝ (h₁.clm_apply contDiffOn_const))
   -- `(‖e‖ / √λ) ^ k ≤ √(Λ / λ) ^ N`, since `√(Λ / λ) ≥ 1` and `k ≤ N`.
@@ -435,7 +400,7 @@ private theorem eq_sum_divergenceSymbol_mul {A : Matrix ι ι ℝ} {ξ : Euclide
   -- The transformed equation reads `2πi (ξᵀ A ξ) U = ∑ⱼ ξⱼ Hⱼ`.
   have h3 : 2 * Real.pi * Complex.I * PDE.matrixBilinearForm A ξ ξ * U =
       ∑ j, (⟪ξ, EuclideanSpace.basisFun ι ℝ j⟫_ℝ : ℂ) * H j := by
-    rw [← hsum, ← sum_inner_transpose_mul_inner A ξ]
+    rw [← hsum, PDE.matrixBilinearForm_eq_sum_inner_transpose]
     push_cast
     simp only [hD, Finset.mul_sum, Finset.sum_mul]
     exact Finset.sum_congr rfl fun j _ => by ring
@@ -489,29 +454,9 @@ private theorem coeFn_fourier_gradient_ae_eq [Nonempty ι] {A : Matrix ι ι ℝ
   filter_upwards [ae_all_iff.2 hF1, hF2, Measure.ae_ne volume 0] with ξ h1 h2 hξ
   have hq : PDE.matrixBilinearForm A ξ ξ ≠ 0 := by
     rw [PDE.matrixBilinearForm_self]
-    exact ((mul_pos hA.pos (pow_pos (norm_pos_iff.2 hξ) 2)).trans_le
-      (hA.lower_bound (Set.mem_univ ξ) ξ)).ne'
+    exact (hA.quadraticForm_pos (Set.mem_univ ξ) hξ).ne'
   simp only [h1, smul_eq_mul] at h2 ⊢
   exact eq_sum_divergenceSymbol_mul hq (fun j => rfl) h2 i
-
-omit [DecidableEq ι] in
-/-- The pointwise bound `‖v‖ ≤ ∑ᵢ |⟪v, eᵢ⟫|` in `Lᵖ`: the norm of the gradient is controlled by
-the norms of its components. -/
-private theorem eLpNorm_le_sum_eLpNorm_inner {p : ℝ≥0∞} (hp : 1 ≤ p)
-    {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : AEStronglyMeasurable g volume)
-    {D : ι → Lp ℂ 2 (volume : Measure (EuclideanSpace ℝ ι))}
-    (hD : ∀ i, ∀ᵐ x ∂volume, ‖D i x‖ = |⟪g x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ|) :
-    eLpNorm g p volume ≤ ∑ i, eLpNorm (D i) p volume := by
-  refine (eLpNorm_mono_ae (p := p) hg (g := fun x => ∑ i, ‖D i x‖) ?_).trans ?_
-  · filter_upwards [ae_all_iff.2 hD] with x hx
-    rw [Real.norm_of_nonneg (Finset.sum_nonneg fun i _ => norm_nonneg _)]
-    conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr' (g x)]
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
-    rw [hx i, norm_smul, OrthonormalBasis.norm_eq_one, mul_one, real_inner_comm,
-      Real.norm_eq_abs]
-  · rw [← Finset.sum_fn]
-    refine (eLpNorm_sum_le hp).trans (Finset.sum_le_sum fun i _ => ?_)
-    exact (eLpNorm_norm _ (Lp.aestronglyMeasurable _)).le
 
 /-- **From the Fourier identity to the `Lᵖ` bound.** If `𝓕 D = ∑ⱼ mᵢⱼ 𝓕 gⱼ` with the divergence
 symbols `mᵢⱼ(ξ) = ξᵢ ξⱼ / ξᵀ A ξ`, then `D = ∑ⱼ T_{mᵢⱼ} gⱼ`, and any bound on the multipliers
@@ -561,6 +506,16 @@ private theorem norm_ofRealCLM_compLp_ae_eq {g : EuclideanSpace ℝ ι → Eucli
   filter_upwards [Complex.ofRealCLM.coeFn_compLp f, hf] with x h1 h2
   rw [h1, Complex.ofRealCLM_apply, Complex.norm_real, h2, Real.norm_eq_abs]
 
+omit [DecidableEq ι] in
+/-- The components `x ↦ ⟪g x, eⱼ⟫` of a vector field `g ∈ L²` in the standard basis have real
+`L²` representatives. -/
+private theorem exists_forall_coeFn_ae_eq_inner_basisFun
+    {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 volume) :
+    ∃ D : ι → Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι)), ∀ j,
+      (D j : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume] fun x => ⟪g x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ :=
+  ⟨fun j => (((innerSL ℝ).flip (EuclideanSpace.basisFun ι ℝ j)).comp_memLp' hg).toLp _,
+    fun _ => MemLp.coeFn_toLp _⟩
+
 end Equation
 
 namespace PDE
@@ -578,8 +533,8 @@ test function `φ`, with `G ∈ L²`. Then
 `‖∇u‖_{Lᵖ} ≤ C √(Λ / λ) ^ N / λ ‖G‖_{Lᵖ}`, `N = ⌊n / 2⌋ + 1`.
 
 Here `p` may lie on either side of `2`, and no integrability of `∇u` beyond `L²` is assumed: if
-`G ∉ Lᵖ` the right-hand side is infinite. For `A = 1` the components of `∇u` are the compositions
-`Rⱼ Rₖ Gₖ` of Riesz transforms, so this is the Calderón–Zygmund estimate for the operator
+`G ∉ Lᵖ` the right-hand side is infinite. For `A = 1` the components of `∇u` are given by Riesz
+transforms, `∂ⱼu = -∑ₖ Rⱼ Rₖ Gₖ`, so this is the Calderón–Zygmund estimate for the operator
 `G ↦ ∇ Δ⁻¹ div G`. -/
 theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq {p : ℝ≥0∞}
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
@@ -607,22 +562,14 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq {p : ℝ≥0∞}
   -- Real `L²` representatives of `u`, of the components of `∇u` and of those of `G`.
   have hgrad : MemLp (W1p.gradient u : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) 2 volume := by
     simpa using Lp.memLp (W1p.gradient u)
-  obtain ⟨U, hU⟩ : ∃ f : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι)),
-      (f : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume] W1p.value u :=
-    ⟨_, MemLp.coeFn_toLp (W1p.memLp_value u)⟩
-  choose D hD using fun j => (⟨_, MemLp.coeFn_toLp
-    (((innerSL ℝ (E := EuclideanSpace ℝ ι)).flip (e j)).comp_memLp' hgrad)⟩ :
-    ∃ f : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι)), (f : EuclideanSpace ℝ ι → ℝ)
-      =ᵐ[volume] fun x => ⟪(W1p.gradient u : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x, e j⟫_ℝ)
-  choose Gc hGc using fun j => (⟨_, MemLp.coeFn_toLp
-    (((innerSL ℝ (E := EuclideanSpace ℝ ι)).flip (e j)).comp_memLp' hG)⟩ :
-    ∃ f : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι)), (f : EuclideanSpace ℝ ι → ℝ)
-      =ᵐ[volume] fun x => ⟪G x, e j⟫_ℝ)
+  have hU := MemLp.coeFn_toLp (W1p.memLp_value u)
+  obtain ⟨D, hD⟩ := exists_forall_coeFn_ae_eq_inner_basisFun hgrad
+  obtain ⟨Gc, hGc⟩ := exists_forall_coeFn_ae_eq_inner_basisFun hG
   -- Each component of `G`, and then each component of `∇u`, is bounded in `Lᵖ`.
   have hGle : ∀ j, eLpNorm (Complex.ofRealCLM.compLp (Gc j)) p volume ≤ eLpNorm G p volume :=
     fun j => eLpNorm_mono_ae (Lp.aestronglyMeasurable _) <|
       (norm_ofRealCLM_compLp_ae_eq (hGc j)).mono fun x hx =>
-        hx.trans_le ((abs_real_inner_le_norm _ _).trans (by simp [e]))
+        hx.trans_le ((abs_real_inner_le_norm _ _).trans (by simp))
   have hDle : ∀ i, eLpNorm (Complex.ofRealCLM.compLp (D i)) p volume ≤
       Fintype.card ι * (C₀ * ENNReal.ofReal X * eLpNorm G p volume) := fun i => by
     refine (eLpNorm_le_sum_of_coeFn_fourier_ae_eq hA hp.le (fun v w => hC₀ hA v w) i
@@ -632,10 +579,18 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq {p : ℝ≥0∞}
           Finset.sum_le_sum fun j _ => by gcongr; exact hGle j
       _ = _ := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   -- Summing over the components.
+  have : Fact (1 ≤ p) := ⟨hp.le⟩
   calc eLpNorm (W1p.gradient u : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) p volume
-      ≤ ∑ i, eLpNorm (Complex.ofRealCLM.compLp (D i)) p volume :=
-        eLpNorm_le_sum_eLpNorm_inner hp.le hgrad.aestronglyMeasurable
-          fun i => norm_ofRealCLM_compLp_ae_eq (hD i)
+      ≤ ∑ i, eLpNorm (Complex.ofRealCLM.compLp (D i)) p volume := by
+        -- The gradient is controlled by its coordinates in the orthonormal basis `e`.
+        refine (e.toBasis.eLpNorm_le_sum_enorm_mul_eLpNorm_coord
+          hgrad.aestronglyMeasurable).trans_eq (Finset.sum_congr rfl fun i _ => ?_)
+        rw [e.coe_toBasis, ← ofReal_norm (e i), e.orthonormal.1 i, ENNReal.ofReal_one, one_mul]
+        refine eLpNorm_congr_norm_ae ((e.toBasis.coord i).continuous_of_finiteDimensional
+          |>.comp_aestronglyMeasurable hgrad.aestronglyMeasurable) (Lp.aestronglyMeasurable _) ?_
+        filter_upwards [norm_ofRealCLM_compLp_ae_eq (hD i)] with x hx
+        rw [hx, Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+          OrthonormalBasis.repr_apply_apply, real_inner_comm, Real.norm_eq_abs]
     _ ≤ ∑ _i : ι, (Fintype.card ι : ℝ≥0∞) * (C₀ * ENNReal.ofReal X * eLpNorm G p volume) :=
         Finset.sum_le_sum fun i _ => hDle i
     _ = ((Fintype.card ι : ℝ≥0) ^ 2 * C₀ : ℝ≥0) * ENNReal.ofReal X * eLpNorm G p volume := by
