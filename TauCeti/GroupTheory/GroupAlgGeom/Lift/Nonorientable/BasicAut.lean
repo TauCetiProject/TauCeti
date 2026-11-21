@@ -14,10 +14,10 @@ import Mathlib.Tactic.Group
 /-!
 # Basic automorphisms of a non-orientable quadratic word
 
-Let `G` be a group and `X` a set of variables containing pairwise distinct variables `xᵢ`, `yᵢ`
-(`i = 1, …, n`), `zⱼ` (`j = 1, …, m`) and `uₖ` (`k = 1, …, r`), and let `cⱼ ∈ G`. [IFT], §7.5,
-writes a non-orientable quadratic equation in a mixed form with commutators and one or two
-squares, (113) and (114), whose left side is the word
+Let `G` be a group, `X` a set of variables, `xᵢ`, `yᵢ` (`i = 1, …, n`), `zⱼ` (`j = 1, …, m`) and
+`uₖ` (`k = 1, …, r`) variables, and `cⱼ ∈ G`. [IFT], §7.5, writes a non-orientable quadratic
+equation in a mixed form with commutators and one or two squares, (113) and (114), whose left side
+is the word
 `S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²` (`basicMixedWord`), where `[x, y] = x⁻¹ y⁻¹ x y`. This file
 defines the `G`-automorphisms of the free `G`-group `G[X]` that [IFT], §7.5, adds to the
 orientable basic automorphisms of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`
@@ -28,7 +28,10 @@ orientable basic automorphisms of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [x�
 * `basicSqConj`: `uₖ ↦ uₖ^A`, `uₖ' ↦ uₖ'^A` with `A = uₖ² uₖ'²`.
 
 Each multiplies or conjugates the variables of two atoms of `S₁` by a word `A` that it fixes, so
-it is a twist (`TauCeti.GroupAlgGeom.twist`), and it fixes `S₁` when the two atoms are adjacent:
+it is a twist (`TauCeti.GroupAlgGeom.twist`). Defining it needs `zⱼ ≠ uₖ` for `basicLinkSq`,
+`xᵢ ≠ yᵢ` and `xᵢ ≠ uₖ` for `basicCommSq`, and no condition for `basicSqMul` and `basicSqConj`.
+When the variables of `S₁` are pairwise distinct, as in [IFT], it fixes `S₁` when the two atoms
+are adjacent:
 `basicLinkSq` when there is no commutator and it links the last coefficient atom with the first
 square, `basicCommSq` when it links the last commutator with the first square, and `basicSqMul`,
 `basicSqConj` for two consecutive squares. In [IFT], §7.5, they are the automorphisms `γₘ`,
@@ -117,157 +120,129 @@ theorem twistHom_sqAtom_of_eq_zero {u : Fin r → X} {B : GX G X} {e : X → ℤ
     (hk : e (u k) = 0) : twistHom B e (sqAtom u k) = sqAtom u k := by
   simp [sqAtom_def, hk]
 
-/-! ### Exponents at the variables of `S₁` -/
-
-section BlockExp
-
-variable {x y : Fin n → X} {z : Fin m → X} {u : Fin r → X}
-  {e : ((Fin n ⊕ Fin n) ⊕ Fin m) ⊕ Fin r → ℤ × ℤ}
-  (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
-include inj
-
-private theorem blockExp_x (i : Fin n) :
-    blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u) e (x i) = e (.inl (.inl (.inl i))) :=
-  blockExp_apply inj (.inl (.inl (.inl i)))
-
-private theorem blockExp_y (i : Fin n) :
-    blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u) e (y i) = e (.inl (.inl (.inr i))) :=
-  blockExp_apply inj (.inl (.inl (.inr i)))
-
-private theorem blockExp_z (j : Fin m) :
-    blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u) e (z j) = e (.inl (.inr j)) :=
-  blockExp_apply inj (.inl (.inr j))
-
-private theorem blockExp_u (k : Fin r) :
-    blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u) e (u k) = e (.inr k) :=
-  blockExp_apply inj (.inr k)
-
-end BlockExp
-
 /-! ### The basic automorphisms of the squares -/
 
 section Families
 
-variable {x y : Fin n → X} {z : Fin m → X} {u : Fin r → X}
-  (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective) (c : Fin m → G)
-include inj
+variable {x y : Fin n → X} {z : Fin m → X} {u : Fin r → X} (c : Fin m → G)
 
 section LinkSq
 
-variable (j : Fin m) (k : Fin r)
+variable (j : Fin m) (k : Fin r) (hzu : z j ≠ u k)
+include hzu
 
+open scoped Classical in
 private theorem twistHom_linkSqTerm {B : GX G X} (hB : Commute B (coeffAtom z c j * sqAtom u k)) :
-    twistHom B (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-        (Sum.elim (Sum.elim 0 (Pi.single j (0, 1))) (Pi.single k (-1, 1))))
+    twistHom B (Pi.single (z j) (0, 1) + Pi.single (u k) (-1, 1))
       (coeffAtom z c j * sqAtom u k) = coeffAtom z c j * sqAtom u k := by
   calc _ = B⁻¹ * (coeffAtom z c j * sqAtom u k) * B := by
         simp only [coeffAtom_def, sqAtom_def, map_mul, map_inv, twistHom_inl, twistHom_inr_of,
-          blockExp_z inj, blockExp_u inj, Sum.elim_inl, Sum.elim_inr, Pi.single_eq_same, zpow_zero,
-          zpow_one, zpow_neg, one_mul, sq]
+          Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne hzu, Pi.single_eq_of_ne' hzu,
+          add_zero, zero_add, zpow_zero, zpow_one, zpow_neg, one_mul, sq]
         group
     _ = _ := hB.inv_mul_cancel
 
-/-- The basic automorphism `zⱼ ↦ zⱼ A`, `uₖ ↦ A⁻¹ uₖ A` of `G[X]`, where `A = zⱼ⁻¹ cⱼ zⱼ uₖ²`;
-the other variables are fixed. For the last coefficient atom and the first square of an equation
-without commutators it is the automorphism `γₘ` of [IFT], §7.5. -/
+open scoped Classical in
+/-- The basic automorphism `zⱼ ↦ zⱼ A`, `uₖ ↦ A⁻¹ uₖ A` of `G[X]`, where `A = zⱼ⁻¹ cⱼ zⱼ uₖ²`,
+for distinct variables `zⱼ` and `uₖ`; the other variables are fixed. For the last coefficient
+atom and the first square of an equation without commutators it is the automorphism `γₘ` of
+[IFT], §7.5. -/
 noncomputable def basicLinkSq : MulAut (GX G X) :=
-  twist (coeffAtom z c j * sqAtom u k)
-    (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-      (Sum.elim (Sum.elim 0 (Pi.single j (0, 1))) (Pi.single k (-1, 1))))
-    (twistHom_linkSqTerm inj c j k (Commute.refl _))
-    (twistHom_linkSqTerm inj c j k (Commute.refl _).inv_left)
+  twist (coeffAtom z c j * sqAtom u k) (Pi.single (z j) (0, 1) + Pi.single (u k) (-1, 1))
+    (twistHom_linkSqTerm c j k hzu (Commute.refl _))
+    (twistHom_linkSqTerm c j k hzu (Commute.refl _).inv_left)
 
 @[simp]
-theorem basicLinkSq_inl (g : G) : basicLinkSq inj c j k (inl g) = inl g := by
+theorem basicLinkSq_inl (g : G) : basicLinkSq c j k hzu (inl g) = inl g := by
   simp [basicLinkSq]
 
 @[simp]
-theorem basicLinkSq_symm_inl (g : G) : (basicLinkSq inj c j k).symm (inl g) = inl g := by
+theorem basicLinkSq_symm_inl (g : G) : (basicLinkSq c j k hzu).symm (inl g) = inl g := by
   simp [basicLinkSq]
 
 @[simp]
-theorem basicLinkSq_pow_inl (p : ℕ) (g : G) : (basicLinkSq inj c j k ^ p) (inl g) = inl g := by
+theorem basicLinkSq_pow_inl (p : ℕ) (g : G) : (basicLinkSq c j k hzu ^ p) (inl g) = inl g := by
   simp [basicLinkSq]
 
 @[simp]
-theorem basicLinkSq_zpow_inl (p : ℤ) (g : G) : (basicLinkSq inj c j k ^ p) (inl g) = inl g := by
+theorem basicLinkSq_zpow_inl (p : ℤ) (g : G) : (basicLinkSq c j k hzu ^ p) (inl g) = inl g := by
   simp [basicLinkSq]
 
 @[simp]
 theorem basicLinkSq_inr_of_z :
-    basicLinkSq inj c j k (inr (.of (z j))) = inr (.of (z j)) * (coeffAtom z c j * sqAtom u k) := by
-  simp [basicLinkSq, blockExp_z inj]
+    basicLinkSq c j k hzu (inr (.of (z j))) = inr (.of (z j)) * (coeffAtom z c j * sqAtom u k) := by
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_symm_inr_of_z :
-    (basicLinkSq inj c j k).symm (inr (.of (z j))) =
+    (basicLinkSq c j k hzu).symm (inr (.of (z j))) =
       inr (.of (z j)) * (coeffAtom z c j * sqAtom u k)⁻¹ := by
-  simp [basicLinkSq, blockExp_z inj]
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_pow_inr_of_z (p : ℕ) :
-    (basicLinkSq inj c j k ^ p) (inr (.of (z j))) =
+    (basicLinkSq c j k hzu ^ p) (inr (.of (z j))) =
       inr (.of (z j)) * (coeffAtom z c j * sqAtom u k) ^ p := by
-  simp [basicLinkSq, blockExp_z inj]
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_zpow_inr_of_z (p : ℤ) :
-    (basicLinkSq inj c j k ^ p) (inr (.of (z j))) =
+    (basicLinkSq c j k hzu ^ p) (inr (.of (z j))) =
       inr (.of (z j)) * (coeffAtom z c j * sqAtom u k) ^ p := by
-  simp [basicLinkSq, blockExp_z inj]
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_inr_of_u :
-    basicLinkSq inj c j k (inr (.of (u k))) =
+    basicLinkSq c j k hzu (inr (.of (u k))) =
       (coeffAtom z c j * sqAtom u k)⁻¹ * inr (.of (u k)) * (coeffAtom z c j * sqAtom u k) := by
-  simp [basicLinkSq, blockExp_u inj]
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_symm_inr_of_u :
-    (basicLinkSq inj c j k).symm (inr (.of (u k))) =
+    (basicLinkSq c j k hzu).symm (inr (.of (u k))) =
       (coeffAtom z c j * sqAtom u k) * inr (.of (u k)) * (coeffAtom z c j * sqAtom u k)⁻¹ := by
-  simp [basicLinkSq, blockExp_u inj]
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_pow_inr_of_u (p : ℕ) :
-    (basicLinkSq inj c j k ^ p) (inr (.of (u k))) =
+    (basicLinkSq c j k hzu ^ p) (inr (.of (u k))) =
       ((coeffAtom z c j * sqAtom u k) ^ p)⁻¹ * inr (.of (u k)) *
         (coeffAtom z c j * sqAtom u k) ^ p := by
-  simp [basicLinkSq, blockExp_u inj]
+  simp [basicLinkSq, hzu]
 
 @[simp]
 theorem basicLinkSq_zpow_inr_of_u (p : ℤ) :
-    (basicLinkSq inj c j k ^ p) (inr (.of (u k))) =
+    (basicLinkSq c j k hzu ^ p) (inr (.of (u k))) =
       ((coeffAtom z c j * sqAtom u k) ^ p)⁻¹ * inr (.of (u k)) *
         (coeffAtom z c j * sqAtom u k) ^ p := by
-  simp [basicLinkSq, blockExp_u inj]
+  simp [basicLinkSq, hzu]
 
 theorem basicLinkSq_zpow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) (p : ℤ) :
-    (basicLinkSq inj c j k ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicLinkSq, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero (by
-    rintro (((l | l) | l) | l) rfl
-    · rfl
-    · rfl
-    · exact Pi.single_eq_of_ne (fun h => hz (congrArg z h)) _
-    · exact Pi.single_eq_of_ne (fun h => hu (congrArg u h)) _)]
-  simp
+    (basicLinkSq c j k hzu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  rw [basicLinkSq, twist_zpow_apply, twistHom_inr_of]
+  simp [hz, hu]
 
 theorem basicLinkSq_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) :
-    basicLinkSq inj c j k (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicLinkSq_zpow_inr_of_of_ne inj c j k hz hu 1
+    basicLinkSq c j k hzu (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicLinkSq_zpow_inr_of_of_ne c j k hzu hz hu 1
 
 theorem basicLinkSq_symm_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) :
-    (basicLinkSq inj c j k).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicLinkSq_zpow_inr_of_of_ne inj c j k hz hu (-1)
+    (basicLinkSq c j k hzu).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicLinkSq_zpow_inr_of_of_ne c j k hzu hz hu (-1)
 
 theorem basicLinkSq_pow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hu : v ≠ u k) (p : ℕ) :
-    (basicLinkSq inj c j k ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicLinkSq_zpow_inr_of_of_ne inj c j k hz hu p
+    (basicLinkSq c j k hzu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicLinkSq_zpow_inr_of_of_ne c j k hzu hz hu p
 
-/-- For an equation without commutators, the basic automorphism of the last coefficient atom and
-the first square fixes the word `S₁`. -/
+variable (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
+include inj
+
+/-- For an equation without commutators whose variables are pairwise distinct, the basic
+automorphism of the last coefficient atom and the first square fixes the word `S₁`. -/
 theorem basicLinkSq_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0) :
-    basicLinkSq inj c j k (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    basicLinkSq c j k hzu (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
+  obtain ⟨⟨-, hz, -⟩, hu, -, hzu'⟩ := inj
   subst hn
   have hS : basicMixedWord x y z u c =
       (List.ofFn (Fin.append (coeffAtom z c) (sqAtom u))).prod := by
@@ -278,186 +253,187 @@ theorem basicLinkSq_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (
   · induction l using Fin.addCases with
     | left l =>
       have hlj : l ≠ j := fun h => hl (h ▸ rfl)
-      simpa using twistHom_coeffAtom_of_eq_zero c l (by simp [blockExp_z inj, hlj])
+      simpa using twistHom_coeffAtom_of_eq_zero c l (by simp [hz.ne hlj, hzu'])
     | right l =>
       have hlk : l ≠ k := fun h => hl' (h ▸ rfl)
-      simpa using twistHom_sqAtom_of_eq_zero l (by simp [blockExp_u inj, hlk])
+      simpa using twistHom_sqAtom_of_eq_zero l (by simp [hu.ne hlk, hzu'])
   · rw [Fin.append_left, Fin.append_right]
-    exact twistHom_linkSqTerm inj c j k (.refl _)
+    exact twistHom_linkSqTerm c j k hzu (.refl _)
 
 theorem basicLinkSq_zpow_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0)
     (p : ℤ) :
-    (basicLinkSq inj c j k ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    (basicLinkSq c j k hzu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicLinkSq_basicMixedWord inj c j k hn hj hk)) p
+    ((MulAut.smul_def _ _).trans (basicLinkSq_basicMixedWord c j k hzu inj hn hj hk)) p
 
 theorem basicLinkSq_symm_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0) :
-    (basicLinkSq inj c j k).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicLinkSq_zpow_basicMixedWord inj c j k hn hj hk (-1)
+    (basicLinkSq c j k hzu).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicLinkSq_zpow_basicMixedWord c j k hzu inj hn hj hk (-1)
 
 theorem basicLinkSq_pow_basicMixedWord (hn : n = 0) (hj : (j : ℕ) + 1 = m) (hk : (k : ℕ) = 0)
     (p : ℕ) :
-    (basicLinkSq inj c j k ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicLinkSq_zpow_basicMixedWord inj c j k hn hj hk p
+    (basicLinkSq c j k hzu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicLinkSq_zpow_basicMixedWord c j k hzu inj hn hj hk p
 
 end LinkSq
 
 section CommSq
 
-variable (i : Fin n) (k : Fin r)
+variable (i : Fin n) (k : Fin r) (hxy : x i ≠ y i) (hxu : x i ≠ u k)
+include hxy hxu
 
+open scoped Classical in
 private theorem twistHom_commSqTerm {B : GX G X} (hB : Commute B (inr (.of (y i)) * sqAtom u k)) :
-    twistHom B (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-        (Sum.elim (Sum.elim (Sum.elim (Pi.single i (-1, 0)) (Pi.single i (-1, 1))) 0)
-          (Pi.single k (-1, 1))))
+    twistHom B (fun v => if v = x i then (-1, 0) else if v = y i ∨ v = u k then (-1, 1) else 0)
       (inr (.of (y i)) * sqAtom u k) = inr (.of (y i)) * sqAtom u k := by
   calc _ = B⁻¹ * (inr (.of (y i)) * sqAtom u k) * B := by
-        simp only [sqAtom_def, map_mul, twistHom_inr_of, blockExp_y inj, blockExp_u inj,
-          Sum.elim_inl, Sum.elim_inr, Pi.single_eq_same, zpow_one, zpow_neg, sq]
+        simp only [sqAtom_def, map_mul, twistHom_inr_of, hxy.symm, hxu.symm, true_or, or_true,
+          ite_true, ite_false, zpow_one, zpow_neg, sq]
         group
     _ = _ := hB.inv_mul_cancel
 
+open scoped Classical in
 /-- The basic automorphism `xᵢ ↦ A⁻¹ xᵢ`, `yᵢ ↦ A⁻¹ yᵢ A`, `uₖ ↦ A⁻¹ uₖ A` of `G[X]`, where
-`A = yᵢ uₖ²`; the other variables are fixed. For the last commutator and the first square it is
-the automorphism `γₘ₊₄ₙ` of [IFT], §7.5. -/
+`A = yᵢ uₖ²`, for a variable `xᵢ` distinct from `yᵢ` and `uₖ`; the other variables are fixed.
+For the last commutator and the first square it is the automorphism `γₘ₊₄ₙ` of [IFT], §7.5. -/
 noncomputable def basicCommSq : MulAut (GX G X) :=
   twist (inr (.of (y i)) * sqAtom u k)
-    (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-      (Sum.elim (Sum.elim (Sum.elim (Pi.single i (-1, 0)) (Pi.single i (-1, 1))) 0)
-        (Pi.single k (-1, 1))))
-    (twistHom_commSqTerm inj i k (Commute.refl _))
-    (twistHom_commSqTerm inj i k (Commute.refl _).inv_left)
+    (fun v => if v = x i then (-1, 0) else if v = y i ∨ v = u k then (-1, 1) else 0)
+    (twistHom_commSqTerm i k hxy hxu (Commute.refl _))
+    (twistHom_commSqTerm i k hxy hxu (Commute.refl _).inv_left)
 
 @[simp]
-theorem basicCommSq_inl (g : G) : basicCommSq inj i k (inl g) = inl g := by
+theorem basicCommSq_inl (g : G) : basicCommSq i k hxy hxu (inl g) = inl g := by
   simp [basicCommSq]
 
 @[simp]
-theorem basicCommSq_symm_inl (g : G) : (basicCommSq inj i k).symm (inl g) = inl g := by
+theorem basicCommSq_symm_inl (g : G) : (basicCommSq i k hxy hxu).symm (inl g) = inl g := by
   simp [basicCommSq]
 
 @[simp]
-theorem basicCommSq_pow_inl (p : ℕ) (g : G) : (basicCommSq inj i k ^ p) (inl g) = inl g := by
+theorem basicCommSq_pow_inl (p : ℕ) (g : G) : (basicCommSq i k hxy hxu ^ p) (inl g) = inl g := by
   simp [basicCommSq]
 
 @[simp]
-theorem basicCommSq_zpow_inl (p : ℤ) (g : G) : (basicCommSq inj i k ^ p) (inl g) = inl g := by
+theorem basicCommSq_zpow_inl (p : ℤ) (g : G) :
+    (basicCommSq i k hxy hxu ^ p) (inl g) = inl g := by
   simp [basicCommSq]
 
 @[simp]
 theorem basicCommSq_inr_of_x :
-    basicCommSq inj i k (inr (.of (x i))) =
+    basicCommSq i k hxy hxu (inr (.of (x i))) =
       (inr (.of (y i)) * sqAtom (G := G) u k)⁻¹ * inr (.of (x i)) := by
-  simp [basicCommSq, blockExp_x inj]
+  simp [basicCommSq]
 
 @[simp]
 theorem basicCommSq_symm_inr_of_x :
-    (basicCommSq inj i k).symm (inr (.of (x i))) =
+    (basicCommSq i k hxy hxu).symm (inr (.of (x i))) =
       (inr (.of (y i)) * sqAtom (G := G) u k) * inr (.of (x i)) := by
-  simp [basicCommSq, blockExp_x inj]
+  simp [basicCommSq]
 
 @[simp]
 theorem basicCommSq_pow_inr_of_x (p : ℕ) :
-    (basicCommSq inj i k ^ p) (inr (.of (x i))) =
+    (basicCommSq i k hxy hxu ^ p) (inr (.of (x i))) =
       ((inr (.of (y i)) * sqAtom (G := G) u k) ^ p)⁻¹ * inr (.of (x i)) := by
-  simp [basicCommSq, blockExp_x inj]
+  simp [basicCommSq]
 
 @[simp]
 theorem basicCommSq_zpow_inr_of_x (p : ℤ) :
-    (basicCommSq inj i k ^ p) (inr (.of (x i))) =
+    (basicCommSq i k hxy hxu ^ p) (inr (.of (x i))) =
       ((inr (.of (y i)) * sqAtom (G := G) u k) ^ p)⁻¹ * inr (.of (x i)) := by
-  simp [basicCommSq, blockExp_x inj]
+  simp [basicCommSq]
 
 @[simp]
 theorem basicCommSq_inr_of_y :
-    basicCommSq inj i k (inr (.of (y i))) =
+    basicCommSq i k hxy hxu (inr (.of (y i))) =
       (inr (.of (y i)) * sqAtom (G := G) u k)⁻¹ * inr (.of (y i)) *
         (inr (.of (y i)) * sqAtom u k) := by
-  simp [basicCommSq, blockExp_y inj]
+  simp [basicCommSq, hxy.symm]
 
 @[simp]
 theorem basicCommSq_symm_inr_of_y :
-    (basicCommSq inj i k).symm (inr (.of (y i))) =
+    (basicCommSq i k hxy hxu).symm (inr (.of (y i))) =
       (inr (.of (y i)) * sqAtom (G := G) u k) * inr (.of (y i)) *
         (inr (.of (y i)) * sqAtom u k)⁻¹ := by
-  simp [basicCommSq, blockExp_y inj]
+  simp [basicCommSq, hxy.symm]
 
 @[simp]
 theorem basicCommSq_pow_inr_of_y (p : ℕ) :
-    (basicCommSq inj i k ^ p) (inr (.of (y i))) =
+    (basicCommSq i k hxy hxu ^ p) (inr (.of (y i))) =
       ((inr (.of (y i)) * sqAtom (G := G) u k) ^ p)⁻¹ * inr (.of (y i)) *
         (inr (.of (y i)) * sqAtom u k) ^ p := by
-  simp [basicCommSq, blockExp_y inj]
+  simp [basicCommSq, hxy.symm]
 
 @[simp]
 theorem basicCommSq_zpow_inr_of_y (p : ℤ) :
-    (basicCommSq inj i k ^ p) (inr (.of (y i))) =
+    (basicCommSq i k hxy hxu ^ p) (inr (.of (y i))) =
       ((inr (.of (y i)) * sqAtom (G := G) u k) ^ p)⁻¹ * inr (.of (y i)) *
         (inr (.of (y i)) * sqAtom u k) ^ p := by
-  simp [basicCommSq, blockExp_y inj]
+  simp [basicCommSq, hxy.symm]
 
 @[simp]
 theorem basicCommSq_inr_of_u :
-    basicCommSq inj i k (inr (.of (u k))) =
+    basicCommSq i k hxy hxu (inr (.of (u k))) =
       (inr (.of (y i)) * sqAtom (G := G) u k)⁻¹ * inr (.of (u k)) *
         (inr (.of (y i)) * sqAtom u k) := by
-  simp [basicCommSq, blockExp_u inj]
+  simp [basicCommSq, hxu.symm]
 
 @[simp]
 theorem basicCommSq_symm_inr_of_u :
-    (basicCommSq inj i k).symm (inr (.of (u k))) =
+    (basicCommSq i k hxy hxu).symm (inr (.of (u k))) =
       (inr (.of (y i)) * sqAtom (G := G) u k) * inr (.of (u k)) *
         (inr (.of (y i)) * sqAtom u k)⁻¹ := by
-  simp [basicCommSq, blockExp_u inj]
+  simp [basicCommSq, hxu.symm]
 
 @[simp]
 theorem basicCommSq_pow_inr_of_u (p : ℕ) :
-    (basicCommSq inj i k ^ p) (inr (.of (u k))) =
+    (basicCommSq i k hxy hxu ^ p) (inr (.of (u k))) =
       ((inr (.of (y i)) * sqAtom (G := G) u k) ^ p)⁻¹ * inr (.of (u k)) *
         (inr (.of (y i)) * sqAtom u k) ^ p := by
-  simp [basicCommSq, blockExp_u inj]
+  simp [basicCommSq, hxu.symm]
 
 @[simp]
 theorem basicCommSq_zpow_inr_of_u (p : ℤ) :
-    (basicCommSq inj i k ^ p) (inr (.of (u k))) =
+    (basicCommSq i k hxy hxu ^ p) (inr (.of (u k))) =
       ((inr (.of (y i)) * sqAtom (G := G) u k) ^ p)⁻¹ * inr (.of (u k)) *
         (inr (.of (y i)) * sqAtom u k) ^ p := by
-  simp [basicCommSq, blockExp_u inj]
+  simp [basicCommSq, hxu.symm]
 
-theorem basicCommSq_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k) (p : ℤ) :
-    (basicCommSq inj i k ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicCommSq, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero (by
-    rintro (((l | l) | l) | l) rfl
-    · exact Pi.single_eq_of_ne (fun h => hx (congrArg x h)) _
-    · exact Pi.single_eq_of_ne (fun h => hy (congrArg y h)) _
-    · rfl
-    · exact Pi.single_eq_of_ne (fun h => hu (congrArg u h)) _)]
-  simp
+theorem basicCommSq_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k)
+    (p : ℤ) : (basicCommSq i k hxy hxu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  rw [basicCommSq, twist_zpow_apply, twistHom_inr_of]
+  simp [hx, hy, hu]
 
 theorem basicCommSq_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k) :
-    basicCommSq inj i k (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicCommSq_zpow_inr_of_of_ne inj i k hx hy hu 1
+    basicCommSq i k hxy hxu (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicCommSq_zpow_inr_of_of_ne i k hxy hxu hx hy hu 1
 
 theorem basicCommSq_symm_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k) :
-    (basicCommSq inj i k).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicCommSq_zpow_inr_of_of_ne inj i k hx hy hu (-1)
+    (basicCommSq i k hxy hxu).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicCommSq_zpow_inr_of_of_ne i k hxy hxu hx hy hu (-1)
 
-theorem basicCommSq_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k) (p : ℕ) :
-    (basicCommSq inj i k ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicCommSq_zpow_inr_of_of_ne inj i k hx hy hu p
+theorem basicCommSq_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hu : v ≠ u k)
+    (p : ℕ) : (basicCommSq i k hxy hxu ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicCommSq_zpow_inr_of_of_ne i k hxy hxu hx hy hu p
 
 private theorem basicCommSq_commAtom_mul_sqAtom :
-    basicCommSq inj i k (commAtom (G := G) x y i * sqAtom u k) = commAtom x y i * sqAtom u k := by
-  simp only [basicCommSq, twist_apply, commAtom_def, sqAtom_def, map_mul,
-    map_inv, twistHom_inr_of, blockExp_x inj, blockExp_y inj, blockExp_u inj, Sum.elim_inl,
-    Sum.elim_inr, Pi.single_eq_same, zpow_one, zpow_neg, zpow_zero, mul_one, sq,
-    commutatorElement_def]
+    basicCommSq i k hxy hxu (commAtom (G := G) x y i * sqAtom u k) =
+      commAtom x y i * sqAtom u k := by
+  simp only [basicCommSq, twist_apply, commAtom_def, sqAtom_def, map_mul, map_inv,
+    twistHom_inr_of, hxy.symm, hxu.symm, true_or, or_true, ite_true, ite_false, zpow_one,
+    zpow_neg, zpow_zero, mul_one, sq, commutatorElement_def]
   group
 
-/-- The basic automorphism of the last commutator and the first square fixes the word `S₁`. -/
+variable (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
+include inj
+
+/-- For an equation whose variables are pairwise distinct, the basic automorphism of the last
+commutator and the first square fixes the word `S₁`. -/
 theorem basicCommSq_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) :
-    basicCommSq inj i k (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    basicCommSq i k hxy hxu (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
+  obtain ⟨⟨⟨hx, hy, hxy'⟩, -, hxz, hyz⟩, hu, ⟨hxu', hyu⟩, hzu⟩ := inj
   have hS : basicMixedWord x y z u c = (List.ofFn (coeffAtom z c)).prod *
       (List.ofFn (Fin.append (commAtom x y) (sqAtom u))).prod := by
     simp [basicMixedWord_def, basicWord_def, List.ofFn_fin_append, mul_assoc]
@@ -465,332 +441,331 @@ theorem basicCommSq_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0)
   congr 1
   · refine List.map_prod_ofFn_of_forall _ _ fun l => ?_
     rw [basicCommSq, twist_apply]
-    exact twistHom_coeffAtom_of_eq_zero c l (by simp [blockExp_z inj])
+    exact twistHom_coeffAtom_of_eq_zero c l (by
+      simp [fun a b => Ne.symm (hxz a b), fun a b => Ne.symm (hyz a b), hzu])
   refine List.map_prod_ofFn_of_adjacent _ _ (i := Fin.castAdd r i) (i' := Fin.natAdd n k)
     (by simp [hi, hk]) (fun l hl hl' => ?_) ?_
   · rw [basicCommSq, twist_apply]
     induction l using Fin.addCases with
     | left l =>
       have hli : l ≠ i := fun h => hl (h ▸ rfl)
-      simpa using twistHom_commAtom_of_eq_zero l (by simp [blockExp_x inj, hli])
-        (by simp [blockExp_y inj, hli])
+      simpa using twistHom_commAtom_of_eq_zero l (by simp [hx.ne hli, hxy', hxu'])
+        (by simp [fun a b => Ne.symm (hxy' a b), hy.ne hli, hyu])
     | right l =>
       have hlk : l ≠ k := fun h => hl' (h ▸ rfl)
-      simpa using twistHom_sqAtom_of_eq_zero l (by simp [blockExp_u inj, hlk])
+      simpa using twistHom_sqAtom_of_eq_zero l
+        (by simp [fun a b => Ne.symm (hxu' a b), fun a b => Ne.symm (hyu a b), hu.ne hlk])
   · rw [Fin.append_left, Fin.append_right]
-    exact basicCommSq_commAtom_mul_sqAtom inj i k
+    exact basicCommSq_commAtom_mul_sqAtom i k hxy hxu
 
 theorem basicCommSq_zpow_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) (p : ℤ) :
-    (basicCommSq inj i k ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    (basicCommSq i k hxy hxu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicCommSq_basicMixedWord inj c i k hi hk)) p
+    ((MulAut.smul_def _ _).trans (basicCommSq_basicMixedWord c i k hxy hxu inj hi hk)) p
 
 theorem basicCommSq_symm_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) :
-    (basicCommSq inj i k).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicCommSq_zpow_basicMixedWord inj c i k hi hk (-1)
+    (basicCommSq i k hxy hxu).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicCommSq_zpow_basicMixedWord c i k hxy hxu inj hi hk (-1)
 
 theorem basicCommSq_pow_basicMixedWord (hi : (i : ℕ) + 1 = n) (hk : (k : ℕ) = 0) (p : ℕ) :
-    (basicCommSq inj i k ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicCommSq_zpow_basicMixedWord inj c i k hi hk p
+    (basicCommSq i k hxy hxu ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicCommSq_zpow_basicMixedWord c i k hxy hxu inj hi hk p
 
 end CommSq
 
 section SqMul
 
-variable (k k' : Fin r)
+variable (u) (k k' : Fin r)
 
+open scoped Classical in
 private theorem twistHom_sqMulTerm {B : GX G X}
     (hB : Commute B (inr (.of (u k)) * inr (.of (u k')))) :
-    twistHom B (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-        (Sum.elim 0 (Pi.single k (0, 1) + Pi.single k' (-1, 0))))
+    twistHom B (Pi.single (u k) (0, 1) + Pi.single (u k') (-1, 0))
       (inr (.of (u k)) * inr (.of (u k'))) = inr (.of (u k)) * inr (.of (u k')) := by
-  rw [map_mul, twistHom_inr_of, twistHom_inr_of, blockExp_u inj, blockExp_u inj, Sum.elim_inr,
-    Sum.elim_inr]
-  by_cases hkk : k = k'
-  · subst hkk
+  rw [map_mul, twistHom_inr_of, twistHom_inr_of]
+  by_cases huk : u k = u k'
+  · rw [← huk] at hB ⊢
     simp only [Pi.add_apply, Pi.single_eq_same, Prod.mk_add_mk, zero_add, add_zero, zpow_one,
       zpow_neg]
     calc _ = B⁻¹ * (inr (.of (u k)) * inr (.of (u k))) * B := by group
       _ = _ := hB.inv_mul_cancel
-  · simp only [Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne hkk,
-      Pi.single_eq_of_ne (Ne.symm hkk), add_zero, zero_add, zpow_zero, zpow_one, zpow_neg]
+  · simp only [Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne huk, Pi.single_eq_of_ne' huk,
+      add_zero, zero_add, zpow_zero, zpow_one, zpow_neg]
     group
 
+open scoped Classical in
 /-- The basic automorphism `uₖ ↦ uₖ A`, `uₖ' ↦ A⁻¹ uₖ'` of `G[X]`, where `A = uₖ uₖ'`, for
-`k ≠ k'` (for `k = k'` it conjugates `uₖ` by `A = uₖ²`, which fixes it); the other variables are
-fixed. For the two squares of [IFT], (114), it is the automorphism `γₘ₊₁`, respectively
-`γₘ₊₄ₙ₊₁`, of [IFT], §7.5. -/
+distinct variables `uₖ` and `uₖ'` (when `uₖ = uₖ'` it conjugates `uₖ` by `A = uₖ²`, which fixes
+it); the other variables are fixed. For the two squares of [IFT], (114), it is the automorphism
+`γₘ₊₁`, respectively `γₘ₊₄ₙ₊₁`, of [IFT], §7.5. -/
 noncomputable def basicSqMul : MulAut (GX G X) :=
-  twist (inr (.of (u k)) * inr (.of (u k')))
-    (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-      (Sum.elim 0 (Pi.single k (0, 1) + Pi.single k' (-1, 0))))
-    (twistHom_sqMulTerm inj k k' (Commute.refl _))
-    (twistHom_sqMulTerm inj k k' (Commute.refl _).inv_left)
+  twist (inr (.of (u k)) * inr (.of (u k'))) (Pi.single (u k) (0, 1) + Pi.single (u k') (-1, 0))
+    (twistHom_sqMulTerm u k k' (Commute.refl _))
+    (twistHom_sqMulTerm u k k' (Commute.refl _).inv_left)
 
 @[simp]
-theorem basicSqMul_inl (g : G) : basicSqMul inj k k' (inl g) = inl g := by
+theorem basicSqMul_inl (g : G) : basicSqMul u k k' (inl g) = inl g := by
   simp [basicSqMul]
 
 @[simp]
-theorem basicSqMul_symm_inl (g : G) : (basicSqMul inj k k').symm (inl g) = inl g := by
+theorem basicSqMul_symm_inl (g : G) : (basicSqMul u k k').symm (inl g) = inl g := by
   simp [basicSqMul]
 
 @[simp]
-theorem basicSqMul_pow_inl (p : ℕ) (g : G) : (basicSqMul inj k k' ^ p) (inl g) = inl g := by
+theorem basicSqMul_pow_inl (p : ℕ) (g : G) : (basicSqMul u k k' ^ p) (inl g) = inl g := by
   simp [basicSqMul]
 
 @[simp]
-theorem basicSqMul_zpow_inl (p : ℤ) (g : G) : (basicSqMul inj k k' ^ p) (inl g) = inl g := by
+theorem basicSqMul_zpow_inl (p : ℤ) (g : G) : (basicSqMul u k k' ^ p) (inl g) = inl g := by
   simp [basicSqMul]
 
 @[simp]
-theorem basicSqMul_inr_of_left (h : k ≠ k') :
-    basicSqMul inj k k' (inr (.of (u k))) =
+theorem basicSqMul_inr_of_left (h : u k ≠ u k') :
+    basicSqMul u k k' (inr (.of (u k))) =
       (inr (.of (u k)) : GX G X) * (inr (.of (u k)) * inr (.of (u k'))) := by
-  simp [basicSqMul, blockExp_u inj, h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_symm_inr_of_left (h : k ≠ k') :
-    (basicSqMul inj k k').symm (inr (.of (u k))) =
+theorem basicSqMul_symm_inr_of_left (h : u k ≠ u k') :
+    (basicSqMul u k k').symm (inr (.of (u k))) =
       (inr (.of (u k)) : GX G X) * (inr (.of (u k)) * inr (.of (u k')))⁻¹ := by
-  simp [basicSqMul, blockExp_u inj, h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_pow_inr_of_left (h : k ≠ k') (p : ℕ) :
-    (basicSqMul inj k k' ^ p) (inr (.of (u k))) =
+theorem basicSqMul_pow_inr_of_left (h : u k ≠ u k') (p : ℕ) :
+    (basicSqMul u k k' ^ p) (inr (.of (u k))) =
       (inr (.of (u k)) : GX G X) * (inr (.of (u k)) * inr (.of (u k'))) ^ p := by
-  simp [basicSqMul, blockExp_u inj, h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_zpow_inr_of_left (h : k ≠ k') (p : ℤ) :
-    (basicSqMul inj k k' ^ p) (inr (.of (u k))) =
+theorem basicSqMul_zpow_inr_of_left (h : u k ≠ u k') (p : ℤ) :
+    (basicSqMul u k k' ^ p) (inr (.of (u k))) =
       (inr (.of (u k)) : GX G X) * (inr (.of (u k)) * inr (.of (u k'))) ^ p := by
-  simp [basicSqMul, blockExp_u inj, h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_inr_of_right (h : k ≠ k') :
-    basicSqMul inj k k' (inr (.of (u k'))) =
+theorem basicSqMul_inr_of_right (h : u k ≠ u k') :
+    basicSqMul u k k' (inr (.of (u k'))) =
       ((inr (.of (u k)) : GX G X) * inr (.of (u k')))⁻¹ * inr (.of (u k')) := by
-  simp [basicSqMul, blockExp_u inj, Ne.symm h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_symm_inr_of_right (h : k ≠ k') :
-    (basicSqMul inj k k').symm (inr (.of (u k'))) =
+theorem basicSqMul_symm_inr_of_right (h : u k ≠ u k') :
+    (basicSqMul u k k').symm (inr (.of (u k'))) =
       ((inr (.of (u k)) : GX G X) * inr (.of (u k'))) * inr (.of (u k')) := by
-  simp [basicSqMul, blockExp_u inj, Ne.symm h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_pow_inr_of_right (h : k ≠ k') (p : ℕ) :
-    (basicSqMul inj k k' ^ p) (inr (.of (u k'))) =
+theorem basicSqMul_pow_inr_of_right (h : u k ≠ u k') (p : ℕ) :
+    (basicSqMul u k k' ^ p) (inr (.of (u k'))) =
       (((inr (.of (u k)) : GX G X) * inr (.of (u k'))) ^ p)⁻¹ * inr (.of (u k')) := by
-  simp [basicSqMul, blockExp_u inj, Ne.symm h]
+  simp [basicSqMul, h]
 
 @[simp]
-theorem basicSqMul_zpow_inr_of_right (h : k ≠ k') (p : ℤ) :
-    (basicSqMul inj k k' ^ p) (inr (.of (u k'))) =
+theorem basicSqMul_zpow_inr_of_right (h : u k ≠ u k') (p : ℤ) :
+    (basicSqMul u k k' ^ p) (inr (.of (u k'))) =
       (((inr (.of (u k)) : GX G X) * inr (.of (u k'))) ^ p)⁻¹ * inr (.of (u k')) := by
-  simp [basicSqMul, blockExp_u inj, Ne.symm h]
+  simp [basicSqMul, h]
 
 theorem basicSqMul_zpow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℤ) :
-    (basicSqMul inj k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicSqMul, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero (by
-    rintro (l | l) rfl
-    · rfl
-    · simp [show l ≠ k from fun h => hk (congrArg u h),
-        show l ≠ k' from fun h => hk' (congrArg u h)])]
-  simp
+    (basicSqMul u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  rw [basicSqMul, twist_zpow_apply, twistHom_inr_of]
+  simp [hk, hk']
 
 theorem basicSqMul_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
-    basicSqMul inj k k' (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicSqMul_zpow_inr_of_of_ne inj k k' hk hk' 1
+    basicSqMul u k k' (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicSqMul_zpow_inr_of_of_ne u k k' hk hk' 1
 
 theorem basicSqMul_symm_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
-    (basicSqMul inj k k').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicSqMul_zpow_inr_of_of_ne inj k k' hk hk' (-1)
+    (basicSqMul u k k').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicSqMul_zpow_inr_of_of_ne u k k' hk hk' (-1)
 
 theorem basicSqMul_pow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℕ) :
-    (basicSqMul inj k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicSqMul_zpow_inr_of_of_ne inj k k' hk hk' p
+    (basicSqMul u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicSqMul_zpow_inr_of_of_ne u k k' hk hk' p
 
-private theorem basicSqMul_sqAtom_mul_sqAtom (h : k ≠ k') :
-    basicSqMul (G := G) inj k k' (sqAtom u k * sqAtom u k') = sqAtom u k * sqAtom u k' := by
-  simp only [basicSqMul, twist_apply, sqAtom_def, map_mul, twistHom_inr_of, blockExp_u inj,
-    Sum.elim_inr, Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne h,
-    Pi.single_eq_of_ne (Ne.symm h), add_zero, zero_add, zpow_zero, zpow_one, zpow_neg, one_mul,
-    mul_one, sq]
+open scoped Classical in
+private theorem basicSqMul_sqAtom_mul_sqAtom (h : u k ≠ u k') :
+    basicSqMul (G := G) u k k' (sqAtom u k * sqAtom u k') = sqAtom u k * sqAtom u k' := by
+  simp only [basicSqMul, twist_apply, sqAtom_def, map_mul, twistHom_inr_of, Pi.add_apply,
+    Pi.single_eq_same, Pi.single_eq_of_ne h, Pi.single_eq_of_ne' h, add_zero, zero_add,
+    zpow_zero, zpow_one, zpow_neg, one_mul, mul_one, sq]
   group
 
-/-- The basic automorphism `uₖ ↦ uₖ (uₖ uₖ₊₁)`, `uₖ₊₁ ↦ (uₖ uₖ₊₁)⁻¹ uₖ₊₁` of two consecutive
-squares fixes the word `S₁`. -/
+variable {u} (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
+include inj
+
+/-- For an equation whose variables are pairwise distinct, the basic automorphism
+`uₖ ↦ uₖ (uₖ uₖ₊₁)`, `uₖ₊₁ ↦ (uₖ uₖ₊₁)⁻¹ uₖ₊₁` of two consecutive squares fixes the word `S₁`. -/
 theorem basicSqMul_basicMixedWord (hk : (k : ℕ) + 1 = k') :
-    basicSqMul inj k k' (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  have hne : k ≠ k' := fun h => by simp [h] at hk
+    basicSqMul u k k' (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
+  obtain ⟨-, hu, ⟨hxu, hyu⟩, hzu⟩ := inj
+  have hne : u k ≠ u k' := hu.ne fun h => by simp [h] at hk
   rw [basicMixedWord_def, map_mul]
   congr 1
   · rw [basicSqMul, twist_apply]
-    exact twistHom_basicWord c (fun _ => by simp [blockExp_x inj])
-      (fun _ => by simp [blockExp_y inj]) fun _ => by simp [blockExp_z inj]
+    exact twistHom_basicWord c (fun _ => by simp [hxu]) (fun _ => by simp [hyu])
+      fun _ => by simp [hzu]
   refine List.map_prod_ofFn_of_adjacent _ _ hk (fun l hl hl' => ?_)
-    (basicSqMul_sqAtom_mul_sqAtom inj k k' hne)
+    (basicSqMul_sqAtom_mul_sqAtom u k k' hne)
   rw [basicSqMul, twist_apply]
-  exact twistHom_sqAtom_of_eq_zero l (by simp [blockExp_u inj, hl, hl'])
+  exact twistHom_sqAtom_of_eq_zero l (by simp [hu.ne hl, hu.ne hl'])
 
 theorem basicSqMul_zpow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℤ) :
-    (basicSqMul inj k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    (basicSqMul u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicSqMul_basicMixedWord inj c k k' hk)) p
+    ((MulAut.smul_def _ _).trans (basicSqMul_basicMixedWord c k k' inj hk)) p
 
 theorem basicSqMul_symm_basicMixedWord (hk : (k : ℕ) + 1 = k') :
-    (basicSqMul inj k k').symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqMul_zpow_basicMixedWord inj c k k' hk (-1)
+    (basicSqMul u k k').symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicSqMul_zpow_basicMixedWord c k k' inj hk (-1)
 
 theorem basicSqMul_pow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℕ) :
-    (basicSqMul inj k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqMul_zpow_basicMixedWord inj c k k' hk p
+    (basicSqMul u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicSqMul_zpow_basicMixedWord c k k' inj hk p
 
 end SqMul
 
 section SqConj
 
-variable (k k' : Fin r)
+variable (u) (k k' : Fin r)
 
+open scoped Classical in
 private theorem twistHom_sqConjTerm {B : GX G X} (hB : Commute B (sqAtom u k * sqAtom u k')) :
-    twistHom B (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-        (Sum.elim 0 fun l => if l = k ∨ l = k' then (-1, 1) else 0))
+    twistHom B (fun v => if v = u k ∨ v = u k' then (-1, 1) else 0)
       (sqAtom u k * sqAtom u k') = sqAtom u k * sqAtom u k' := by
   calc _ = B⁻¹ * (sqAtom u k * sqAtom u k') * B := by
-        simp only [sqAtom_def, map_mul, twistHom_inr_of, blockExp_u inj, Sum.elim_inr, true_or,
-          or_true,
-          ite_true, zpow_one, zpow_neg, sq]
+        simp only [sqAtom_def, map_mul, twistHom_inr_of, true_or, or_true, ite_true, zpow_one,
+          zpow_neg, sq]
         group
     _ = _ := hB.inv_mul_cancel
 
+open scoped Classical in
 /-- The basic automorphism `uₖ ↦ A⁻¹ uₖ A`, `uₖ' ↦ A⁻¹ uₖ' A` of `G[X]`, where `A = uₖ² uₖ'²`;
 the other variables are fixed. For the two squares of [IFT], (114), it is the automorphism
 `γₘ₊₂`, respectively `γₘ₊₄ₙ₊₂`, of [IFT], §7.5. -/
 noncomputable def basicSqConj : MulAut (GX G X) :=
-  twist (sqAtom u k * sqAtom u k')
-    (blockExp (Sum.elim (Sum.elim (Sum.elim x y) z) u)
-      (Sum.elim 0 fun l => if l = k ∨ l = k' then (-1, 1) else 0))
-    (twistHom_sqConjTerm inj k k' (Commute.refl _))
-    (twistHom_sqConjTerm inj k k' (Commute.refl _).inv_left)
+  twist (sqAtom u k * sqAtom u k') (fun v => if v = u k ∨ v = u k' then (-1, 1) else 0)
+    (twistHom_sqConjTerm u k k' (Commute.refl _))
+    (twistHom_sqConjTerm u k k' (Commute.refl _).inv_left)
 
 @[simp]
-theorem basicSqConj_inl (g : G) : basicSqConj inj k k' (inl g) = inl g := by
+theorem basicSqConj_inl (g : G) : basicSqConj u k k' (inl g) = inl g := by
   simp [basicSqConj]
 
 @[simp]
-theorem basicSqConj_symm_inl (g : G) : (basicSqConj inj k k').symm (inl g) = inl g := by
+theorem basicSqConj_symm_inl (g : G) : (basicSqConj u k k').symm (inl g) = inl g := by
   simp [basicSqConj]
 
 @[simp]
-theorem basicSqConj_pow_inl (p : ℕ) (g : G) : (basicSqConj inj k k' ^ p) (inl g) = inl g := by
+theorem basicSqConj_pow_inl (p : ℕ) (g : G) : (basicSqConj u k k' ^ p) (inl g) = inl g := by
   simp [basicSqConj]
 
 @[simp]
-theorem basicSqConj_zpow_inl (p : ℤ) (g : G) : (basicSqConj inj k k' ^ p) (inl g) = inl g := by
+theorem basicSqConj_zpow_inl (p : ℤ) (g : G) : (basicSqConj u k k' ^ p) (inl g) = inl g := by
   simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_inr_of_left :
-    basicSqConj inj k k' (inr (.of (u k))) =
+    basicSqConj u k k' (inr (.of (u k))) =
       (sqAtom (G := G) u k * sqAtom u k')⁻¹ * inr (.of (u k)) * (sqAtom u k * sqAtom u k') := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_symm_inr_of_left :
-    (basicSqConj inj k k').symm (inr (.of (u k))) =
+    (basicSqConj u k k').symm (inr (.of (u k))) =
       (sqAtom (G := G) u k * sqAtom u k') * inr (.of (u k)) * (sqAtom u k * sqAtom u k')⁻¹ := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_pow_inr_of_left (p : ℕ) :
-    (basicSqConj inj k k' ^ p) (inr (.of (u k))) =
+    (basicSqConj u k k' ^ p) (inr (.of (u k))) =
       ((sqAtom (G := G) u k * sqAtom u k') ^ p)⁻¹ * inr (.of (u k)) *
         (sqAtom u k * sqAtom u k') ^ p := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_zpow_inr_of_left (p : ℤ) :
-    (basicSqConj inj k k' ^ p) (inr (.of (u k))) =
+    (basicSqConj u k k' ^ p) (inr (.of (u k))) =
       ((sqAtom (G := G) u k * sqAtom u k') ^ p)⁻¹ * inr (.of (u k)) *
         (sqAtom u k * sqAtom u k') ^ p := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_inr_of_right :
-    basicSqConj inj k k' (inr (.of (u k'))) =
+    basicSqConj u k k' (inr (.of (u k'))) =
       (sqAtom (G := G) u k * sqAtom u k')⁻¹ * inr (.of (u k')) * (sqAtom u k * sqAtom u k') := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_symm_inr_of_right :
-    (basicSqConj inj k k').symm (inr (.of (u k'))) =
+    (basicSqConj u k k').symm (inr (.of (u k'))) =
       (sqAtom (G := G) u k * sqAtom u k') * inr (.of (u k')) * (sqAtom u k * sqAtom u k')⁻¹ := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_pow_inr_of_right (p : ℕ) :
-    (basicSqConj inj k k' ^ p) (inr (.of (u k'))) =
+    (basicSqConj u k k' ^ p) (inr (.of (u k'))) =
       ((sqAtom (G := G) u k * sqAtom u k') ^ p)⁻¹ * inr (.of (u k')) *
         (sqAtom u k * sqAtom u k') ^ p := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 @[simp]
 theorem basicSqConj_zpow_inr_of_right (p : ℤ) :
-    (basicSqConj inj k k' ^ p) (inr (.of (u k'))) =
+    (basicSqConj u k k' ^ p) (inr (.of (u k'))) =
       ((sqAtom (G := G) u k * sqAtom u k') ^ p)⁻¹ * inr (.of (u k')) *
         (sqAtom u k * sqAtom u k') ^ p := by
-  simp [basicSqConj, blockExp_u inj]
+  simp [basicSqConj]
 
 theorem basicSqConj_zpow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℤ) :
-    (basicSqConj inj k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicSqConj, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero (by
-    rintro (l | l) rfl
-    · rfl
-    · simp [show l ≠ k from fun h => hk (congrArg u h),
-        show l ≠ k' from fun h => hk' (congrArg u h)])]
-  simp
+    (basicSqConj u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  rw [basicSqConj, twist_zpow_apply, twistHom_inr_of]
+  simp [hk, hk']
 
 theorem basicSqConj_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
-    basicSqConj inj k k' (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicSqConj_zpow_inr_of_of_ne inj k k' hk hk' 1
+    basicSqConj u k k' (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicSqConj_zpow_inr_of_of_ne u k k' hk hk' 1
 
 theorem basicSqConj_symm_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') :
-    (basicSqConj inj k k').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicSqConj_zpow_inr_of_of_ne inj k k' hk hk' (-1)
+    (basicSqConj u k k').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicSqConj_zpow_inr_of_of_ne u k k' hk hk' (-1)
 
 theorem basicSqConj_pow_inr_of_of_ne {v : X} (hk : v ≠ u k) (hk' : v ≠ u k') (p : ℕ) :
-    (basicSqConj inj k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  simpa using basicSqConj_zpow_inr_of_of_ne inj k k' hk hk' p
+    (basicSqConj u k k' ^ p) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicSqConj_zpow_inr_of_of_ne u k k' hk hk' p
 
-/-- The basic automorphism conjugating two consecutive square variables by the product of their
-squares fixes the word `S₁`. -/
+variable {u} (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective)
+include inj
+
+/-- For an equation whose variables are pairwise distinct, the basic automorphism conjugating two
+consecutive square variables by the product of their squares fixes the word `S₁`. -/
 theorem basicSqConj_basicMixedWord (hk : (k : ℕ) + 1 = k') :
-    basicSqConj inj k k' (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    basicSqConj u k k' (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simp only [Sum.elim_injective, Sum.forall, Sum.elim_inl, Sum.elim_inr, ne_eq] at inj
+  obtain ⟨-, hu, ⟨hxu, hyu⟩, hzu⟩ := inj
   rw [basicSqConj, twist_apply, basicMixedWord_def, map_mul, twistHom_basicWord c
-    (fun _ => by simp [blockExp_x inj]) (fun _ => by simp [blockExp_y inj])
-    fun _ => by simp [blockExp_z inj]]
+    (fun _ => by simp [hxu]) (fun _ => by simp [hyu]) fun _ => by simp [hzu]]
   congr 1
   exact List.map_prod_ofFn_of_adjacent _ _ hk (fun l hl hl' =>
-    twistHom_sqAtom_of_eq_zero l (by simp [blockExp_u inj, hl, hl']))
-    (twistHom_sqConjTerm inj k k' (.refl _))
+    twistHom_sqAtom_of_eq_zero l (by simp [hu.ne hl, hu.ne hl']))
+    (twistHom_sqConjTerm u k k' (.refl _))
 
 theorem basicSqConj_zpow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℤ) :
-    (basicSqConj inj k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+    (basicSqConj u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
   rw [← MulAut.smul_def]
   exact MulAction.mem_fixedBy_zpow
-    ((MulAut.smul_def _ _).trans (basicSqConj_basicMixedWord inj c k k' hk)) p
+    ((MulAut.smul_def _ _).trans (basicSqConj_basicMixedWord c k k' inj hk)) p
 
 theorem basicSqConj_symm_basicMixedWord (hk : (k : ℕ) + 1 = k') :
-    (basicSqConj inj k k').symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqConj_zpow_basicMixedWord inj c k k' hk (-1)
+    (basicSqConj u k k').symm (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicSqConj_zpow_basicMixedWord c k k' inj hk (-1)
 
 theorem basicSqConj_pow_basicMixedWord (hk : (k : ℕ) + 1 = k') (p : ℕ) :
-    (basicSqConj inj k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
-  simpa using basicSqConj_zpow_basicMixedWord inj c k k' hk p
+    (basicSqConj u k k' ^ p) (basicMixedWord x y z u c) = basicMixedWord x y z u c := by
+  simpa using basicSqConj_zpow_basicMixedWord c k k' inj hk p
 
 end SqConj
 
