@@ -261,6 +261,12 @@ lemma mem_preimageSkeleton_iff (f : E → X) (q : ℤ) (x : E) :
 lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) :=
   fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
 
+/-- A map over `X` carries each stage of the skeletal filtration into the corresponding stage. -/
+lemma mapsTo_preimageSkeleton {E' : Type*} {f : E → X} {f' : E' → X} (g : E → E')
+    (hg : ∀ x, f' (g x) = f x) (q : ℤ) :
+    Set.MapsTo g (preimageSkeleton C f q) (preimageSkeleton C f' q) := fun x hx ↦ by
+  rwa [mem_preimageSkeleton_iff, hg]
+
 /-- Below degree `0` the skeletal filtration is the preimage of the base. -/
 @[simp]
 lemma preimageSkeleton_of_neg (f : E → X) {q : ℤ} (hq : q < 0) :

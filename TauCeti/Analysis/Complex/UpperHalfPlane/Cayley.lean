@@ -67,6 +67,11 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
 * `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
   two maps are analytic away from their poles `-ζ` and `-i`.
+* `Complex.inverseCayleyCoord`: the inverse transform `w ↦ i (1 + w) / (1 - w)` read as a real
+  number, which inverts the transform (`Complex.inverseCayleyCoord_cayley`,
+  `Complex.cayley_inverseCayleyCoord`) and agrees with the complex expression on the unit circle
+  (`Complex.ofReal_inverseCayleyCoord`), where it is `w ↦ -Im w / (1 - Re w)`
+  (`Complex.inverseCayleyCoord_eq_neg_im_div`).
 
 The real inverse coordinate API is adapted from Kitware DKPS
 `ForTauCeti/Analysis/InnerProductSpace/LinearPMap/SpectralMeasure/Construction.lean`
@@ -526,5 +531,29 @@ theorem cayley_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) (h1 : w ≠ 1) :
   have hreal : (z.re : ℂ) = z := by
     apply Complex.ext <;> simp [him]
   rw [← hzw, inverseCayleyCoord_cayley, hreal]
+
+/-- On the unit circle the inverse Cayley coordinate is real:
+`inverseCayleyCoord w = i (1 + w) / (1 - w)`. -/
+theorem ofReal_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) :
+    (inverseCayleyCoord w : ℂ) = I * (1 + w) / (1 - w) := by
+  have him : (I * (1 + w) / (1 - w)).im = 0 := by
+    simpa [normSq_eq_norm_sq, hw, sub_eq_add_neg] using TauCeti.im_I_mul_sub_div_add 1 (-w)
+  exact Complex.ext (by simp [inverseCayleyCoord_def]) (by simp [him])
+
+/-- On the unit circle the inverse Cayley coordinate is `w ↦ -Im w / (1 - Re w)`. -/
+theorem inverseCayleyCoord_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) :
+    inverseCayleyCoord w = -w.im / (1 - w.re) := by
+  have hre : w.re ^ 2 + w.im ^ 2 = 1 := by
+    have := normSq_eq_norm_sq w
+    rw [hw, normSq_apply] at this
+    nlinarith
+  rw [inverseCayleyCoord_def]
+  simp only [div_re, mul_re, mul_im, I_re, I_im, add_re, add_im, sub_re, sub_im, one_re, one_im,
+    normSq_apply]
+  by_cases h1 : 1 - w.re = 0
+  · have : w.im = 0 := by nlinarith
+    simp [this, show w.re = 1 by linarith]
+  · field_simp
+    linear_combination w.im * hre
 
 end Complex
