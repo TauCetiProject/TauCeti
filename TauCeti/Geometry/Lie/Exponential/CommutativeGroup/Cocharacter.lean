@@ -21,9 +21,10 @@ circle period `2π` of `Circle.exp t = e^{it}`, its **coweight** is the Lie-alge
 
 `ψ (Circle.exp t) = exp (t X_ψ)`
 
-(`ContinuousMonoidHom.apply_circleExp`, `ContinuousMonoidHom.eq_lieCoweight`), so a cocharacter is
-determined by its coweight (`ContinuousMonoidHom.lieCoweight_injective`). Coweights are natural:
-the coweight of `f ∘ ψ` is `df(X_ψ)`.
+(`ContinuousMonoidHom.apply_circleExp_eq_lieExp_lieCoweight`,
+`ContinuousMonoidHom.eq_lieCoweight`), so a cocharacter is determined by its coweight
+(`ContinuousMonoidHom.lieCoweight_injective`). Coweights are natural: the coweight of `f ∘ ψ` is
+`df(X_ψ)`.
 
 **Characters pair integrally with cocharacters.** For a character `χ : G → Circle` with real
 weight `α_χ = (1/i) dχ` (`ContinuousMonoidHom.lieWeight`), the composite `χ ∘ ψ` is a continuous
@@ -62,8 +63,8 @@ with the integral functionals on the cocharacters.
 
 ## Main results
 
-* `ContinuousMonoidHom.apply_circleExp`, `ContinuousMonoidHom.eq_lieCoweight`: the identity
-  `ψ (Circle.exp t) = exp (t X_ψ)`, and uniqueness of a vector satisfying it.
+* `ContinuousMonoidHom.apply_circleExp_eq_lieExp_lieCoweight`, `ContinuousMonoidHom.eq_lieCoweight`:
+  the identity `ψ (Circle.exp t) = exp (t X_ψ)`, and uniqueness of a vector satisfying it.
 * `ContinuousMonoidHom.lieCoweight_comp`: naturality of coweights.
 * `ContinuousMonoidHom.lieCoweight_one`, `ContinuousMonoidHom.lieCoweight_eq_add_of_apply_eq_mul`,
   `ContinuousMonoidHom.lieCoweight_eq_neg_of_apply_eq_inv`,
@@ -114,7 +115,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The **coweight** `X_ψ = dψ(∂_θ)` of a cocharacter `ψ : Circle → G`: the image under the Lie map
 of `ψ` of the generator of `Circle.exp`. It is characterized by
-`ψ (Circle.exp t) = exp (t X_ψ)` (`ContinuousMonoidHom.apply_circleExp`). -/
+`ψ (Circle.exp t) = exp (t X_ψ)` (`ContinuousMonoidHom.apply_circleExp_eq_lieExp_lieCoweight`). -/
 def lieCoweight (ψ : Circle →ₜ* G) : LeftInvariantDerivation I G :=
   lieMap (I := 𝓡 1) (I' := I) ψ circleExpGenerator
 
@@ -171,7 +172,7 @@ theorem lieWeight_lieCoweight_eq_intCast_iff (χ : G →ₜ* Circle) (ψ : Circl
 variable [T2Space G] [BoundarylessManifold I G]
 
 /-- **The defining identity of the coweight**: `ψ (Circle.exp t) = exp (t X_ψ)`. -/
-theorem apply_circleExp (ψ : Circle →ₜ* G) (t : ℝ) :
+theorem apply_circleExp_eq_lieExp_lieCoweight (ψ : Circle →ₜ* G) (t : ℝ) :
     ψ (Circle.exp t) = lieExp (I := I) (t • lieCoweight ψ) := by
   rw [← lieExp_circleExpGenerator, map_lieExp (I := 𝓡 1) (I' := I), map_smul, lieCoweight_def]
 
@@ -182,13 +183,15 @@ theorem eq_lieCoweight {ψ : Circle →ₜ* G} {X : LeftInvariantDerivation I G}
   apply oneParameterSubgroup_injective (I := I) (G := G)
   refine DFunLike.ext _ _ fun t ↦ ?_
   rw [← ofAdd_toAdd t, oneParameterSubgroup_apply, oneParameterSubgroup_apply, ← h,
-    apply_circleExp (I := I)]
+    apply_circleExp_eq_lieExp_lieCoweight (I := I)]
 
 /-- **Cocharacters are determined by their coweights.** -/
 theorem lieCoweight_injective :
     Function.Injective (lieCoweight (I := I) : (Circle →ₜ* G) → LeftInvariantDerivation I G) := by
   intro ψ φ h
-  exact ext_circleExp fun t ↦ by rw [apply_circleExp (I := I), apply_circleExp (I := I), h]
+  exact ext_circleExp fun t ↦ by
+    rw [apply_circleExp_eq_lieExp_lieCoweight (I := I),
+      apply_circleExp_eq_lieExp_lieCoweight (I := I), h]
 
 /-- The trivial cocharacter has coweight zero. -/
 @[simp]
@@ -198,15 +201,34 @@ theorem lieCoweight_one : lieCoweight (I := I) (1 : Circle →ₜ* G) = 0 :=
 /-- The coweight of the pointwise inverse of a cocharacter is the negative of its coweight. -/
 theorem lieCoweight_eq_neg_of_apply_eq_inv {ψ φ : Circle →ₜ* G} (h : ∀ z, φ z = (ψ z)⁻¹) :
     lieCoweight (I := I) φ = -lieCoweight ψ :=
-  (eq_lieCoweight fun t ↦ by rw [h, apply_circleExp (I := I), smul_neg, lieExp_neg]).symm
+  (eq_lieCoweight fun t ↦ by
+    rw [h, apply_circleExp_eq_lieExp_lieCoweight (I := I), smul_neg, lieExp_neg]).symm
 
 /-- The coweight of the pointwise `n`-th power of a cocharacter is `n` times its coweight. -/
 theorem lieCoweight_eq_zsmul_of_apply_eq_zpow {ψ φ : Circle →ₜ* G} {n : ℤ}
     (h : ∀ z, φ z = ψ z ^ n) :
     lieCoweight (I := I) φ = n • lieCoweight ψ :=
   (eq_lieCoweight fun t ↦ by
-    rw [h, ← map_zpow, ← Circle.exp_zsmul, apply_circleExp (I := I), smul_assoc,
-      smul_comm n t]).symm
+    rw [h, ← map_zpow, ← Circle.exp_zsmul, apply_circleExp_eq_lieExp_lieCoweight (I := I),
+      smul_assoc, smul_comm n t]).symm
+
+/-- The coweight of a pointwise product of cocharacters is the sum of their coweights. -/
+theorem lieCoweight_eq_add_of_apply_eq_mul {ψ₁ ψ₂ ψ : Circle →ₜ* G}
+    (h : ∀ z, ψ z = ψ₁ z * ψ₂ z) :
+    lieCoweight (I := I) ψ = lieCoweight ψ₁ + lieCoweight ψ₂ := by
+  -- Expanding `ψ (z * z)` in two ways shows that `ψ₁ z` and `ψ₂ z` commute.
+  have hc : ∀ z, Commute (ψ₁ z) (ψ₂ z) := fun z ↦ by
+    have hzz := h (z * z)
+    rw [map_mul, map_mul, map_mul, h z, mul_assoc, mul_assoc] at hzz
+    have := mul_left_cancel hzz
+    rw [← mul_assoc, ← mul_assoc] at this
+    exact (mul_right_cancel this).symm
+  refine (eq_lieCoweight fun t ↦ ?_).symm
+  rw [h, apply_circleExp_eq_lieExp_lieCoweight (I := I),
+    apply_circleExp_eq_lieExp_lieCoweight (I := I), smul_add, lieExp_add_of_commute fun s ↦ ?_]
+  rw [smul_smul, smul_smul, ← apply_circleExp_eq_lieExp_lieCoweight (I := I),
+    ← apply_circleExp_eq_lieExp_lieCoweight (I := I)]
+  exact hc _
 
 /-! ### Cocharacters of commutative Lie groups -/
 
@@ -219,14 +241,6 @@ preservation of period lattices by `ψ`, applied to the generator of `Circle.exp
 theorem lieCoweight_mem_periodLattice (ψ : Circle →ₜ* G) :
     lieCoweight (I := I) ψ ∈ periodLattice I G :=
   lieMap_mem_periodLattice (I := 𝓡 1) (I' := I) ψ circleExpGenerator_mem_periodLattice
-
-/-- For commutative `G`, the coweight of a pointwise product of cocharacters is the sum of their
-coweights. -/
-theorem lieCoweight_eq_add_of_apply_eq_mul {ψ₁ ψ₂ ψ : Circle →ₜ* G}
-    (h : ∀ z, ψ z = ψ₁ z * ψ₂ z) :
-    lieCoweight (I := I) ψ = lieCoweight ψ₁ + lieCoweight ψ₂ :=
-  (eq_lieCoweight fun t ↦ by
-    rw [h, apply_circleExp (I := I), apply_circleExp (I := I), smul_add, lieExp_add]).symm
 
 end Commutative
 
@@ -253,7 +267,7 @@ def periodLatticeEquivCocharacter : periodLattice I G ≃ (Circle →ₜ* G) whe
   left_inv X := Subtype.ext (eq_lieCoweight fun t ↦ by
     rw [circleLift_circleExp, oneParameterSubgroup_apply]).symm
   right_inv ψ := (circleLift_unique _ _ fun t ↦ by
-    rw [oneParameterSubgroup_apply, apply_circleExp (I := I)]).symm
+    rw [oneParameterSubgroup_apply, apply_circleExp_eq_lieExp_lieCoweight (I := I)]).symm
 
 /-- The cocharacter of an element `X` of the period lattice sends `Circle.exp t` to `exp (t X)`. -/
 @[simp]

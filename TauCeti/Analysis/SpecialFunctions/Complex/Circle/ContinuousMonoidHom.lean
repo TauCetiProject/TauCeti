@@ -20,8 +20,8 @@ real line onto the circle with kernel `2πℤ`, and a quotient map. So a continu
 
 ## Main declarations
 
-* `Circle.isQuotientMap_exp`, `Circle.isQuotientMap_expContinuousMonoidHom`: `Circle.exp` and its
-  packaging as a continuous homomorphism are quotient maps.
+* `Circle.isQuotientMap_expContinuousMonoidHom`: `Circle.exp`, packaged as a continuous
+  homomorphism, is a quotient map.
 * `ContinuousMonoidHom.ext_circleExp`: continuous homomorphisms out of the circle agreeing on
   every `Circle.exp t` are equal.
 * `ContinuousMonoidHom.circleLift`: the continuous homomorphism `Circle →ₜ* G` induced by a
@@ -38,16 +38,12 @@ open Real
 
 namespace Circle
 
-/-- `Circle.exp` is a quotient map from the real line onto the circle. -/
-theorem isQuotientMap_exp : Topology.IsQuotientMap exp :=
-  isCoveringMap_exp.isQuotientMap exp_surjective
-
 /-- `Circle.expContinuousMonoidHom` is a quotient map from the real line onto the circle. -/
 theorem isQuotientMap_expContinuousMonoidHom :
     Topology.IsQuotientMap expContinuousMonoidHom := by
   rw [show ⇑expContinuousMonoidHom = exp ∘ Multiplicative.toAdd from
     funext expContinuousMonoidHom_apply]
-  exact isQuotientMap_exp.comp
+  exact isAddQuotientCoveringMap_exp.toIsQuotientMap.comp
     (isOpenMap_toAdd.isQuotientMap continuous_toAdd Multiplicative.toAdd.surjective)
 
 end Circle
@@ -69,9 +65,8 @@ induces the continuous homomorphism `Circle.exp t ↦ f t` from the circle
 def circleLift (f : Multiplicative ℝ →ₜ* G) (hf : f (.ofAdd (2 * π)) = 1) : Circle →ₜ* G :=
   liftOfIsQuotientMap Circle.expContinuousMonoidHom Circle.isQuotientMap_expContinuousMonoidHom f
     fun t ht ↦ by
-      change Circle.expContinuousMonoidHom t = 1 at ht
-      change f t = 1
-      rw [Circle.expContinuousMonoidHom_apply] at ht
+      rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass, Circle.expContinuousMonoidHom_apply] at ht
+      rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass]
       obtain ⟨n, hn⟩ := Circle.exp_eq_one.1 ht
       have hper : Function.Periodic (fun s : ℝ ↦ f (.ofAdd s)) (2 * π) := fun s ↦ by
         beta_reduce
