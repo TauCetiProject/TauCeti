@@ -73,6 +73,22 @@ theorem eWord_singleton (i : b.support) (x : B) : c.eWord [i] x = c.e i x := by
 theorem fWord_singleton (i : b.support) (x : B) : c.fWord [i] x = c.f i x := by
   simp [fWord_cons]
 
+/-- Raising along the constant word `List.replicate n i` is the `n`-fold iterate `eIter i n`. -/
+@[simp]
+theorem eWord_replicate (n : ℕ) (i : b.support) (x : B) :
+    c.eWord (List.replicate n i) x = c.eIter i n x := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, eWord_cons, eIter_succ, ih]
+
+/-- Lowering along the constant word `List.replicate n i` is the `n`-fold iterate `fIter i n`. -/
+@[simp]
+theorem fWord_replicate (n : ℕ) (i : b.support) (x : B) :
+    c.fWord (List.replicate n i) x = c.fIter i n x := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, fWord_cons, fIter_succ, ih]
+
 @[simp]
 theorem dual_eWord (w : List b.support) (x : B) : c.dual.eWord w x = c.fWord w x := by
   simp only [eWord, fWord, dual_e]
@@ -122,20 +138,6 @@ theorem eWord_eq_some_iff_of_highest {x y : B} (hx : ∀ i, c.e i x = none)
   cases w with
   | nil => simp
   | cons i w => simp [eWord_cons, hx]
-
-/-- Raising along `n` copies of `i` is the `n`-fold iterated raising operator `eIter i n`. -/
-@[simp]
-theorem eWord_replicate (n : ℕ) (i : b.support) (x : B) :
-    c.eWord (List.replicate n i) x = c.eIter i n x := by
-  rw [eIter_eq_iterate]
-  exact Option.foldlM_replicate (fun x i ↦ c.e i x) n i x
-
-/-- Lowering along `n` copies of `i` is the `n`-fold iterated lowering operator `fIter i n`. -/
-@[simp]
-theorem fWord_replicate (n : ℕ) (i : b.support) (x : B) :
-    c.fWord (List.replicate n i) x = c.fIter i n x := by
-  rw [fIter_eq_iterate]
-  exact Option.foldlM_replicate (fun x i ↦ c.f i x) n i x
 
 namespace StrictHom
 

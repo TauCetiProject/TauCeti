@@ -294,12 +294,12 @@ theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x :=
 theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x :=
   Option.iterate_one (c.f i) x
 
-/-- Concatenating two runs of `e i` composes them via `Option.bind`. -/
+/-- Concatenating two runs of the raising operator `e i`. -/
 theorem eIter_add (m n : ℕ) (x : B) :
     c.eIter i (m + n) x = (c.eIter i m x).bind (c.eIter i n) :=
   Option.iterate_add (c.e i) m n x
 
-/-- Concatenating two runs of `f i` composes them via `Option.bind`. -/
+/-- Concatenating two runs of the lowering operator `f i`. -/
 theorem fIter_add (m n : ℕ) (x : B) :
     c.fIter i (m + n) x = (c.fIter i m x).bind (c.fIter i n) :=
   Option.iterate_add (c.f i) m n x

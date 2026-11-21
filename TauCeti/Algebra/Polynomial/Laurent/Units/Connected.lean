@@ -62,7 +62,7 @@ theorem isClopen_basicOpen_coeff_of_isUnit (f : R[T;T⁻¹]) (hf : IsUnit f) (n 
     intro p hn hp
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hp
     obtain ⟨j, _, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
-    exact i.2 ((huniq i ((PrimeSpectrum.mem_basicOpen _ _).mp hi)).trans
+    exact i.property ((huniq i ((PrimeSpectrum.mem_basicOpen _ _).mp hi)).trans
       (huniq n ((PrimeSpectrum.mem_basicOpen _ _).mp hn)).symm)
 
 /-- Over a ring with preconnected spectrum, a Laurent unit has a unit coefficient and all

@@ -159,10 +159,11 @@ private theorem affineHom_smul (U : X.AffineZariskiSite) (r : Γ(X, U.toOpens))
   refine Eq.trans ?_ (congrArg _ (π_app_affineHom A h U a)).symm
   have hv (x : chartPreimage A U) :
       (((colimit.ι A.relativeProjGluingData.functor U ≫ A.relativeProjToBase).app U.toOpens
-        r).1 x).val =
+        r).val x).val =
         Localization.mk (algebraMap Γ(X, U.toOpens) (⨁ n, Γ(A.X n, U.toOpens)) r) 1 := by
     rw [Scheme.Hom.app_eq_appLE]
-    exact Proj.val_appLE_apply U.2 _ _ (A.relativeProjCover_f_relativeProjToBase U) le_rfl r x
+    exact Proj.val_appLE_apply U.property _ _ (A.relativeProjCover_f_relativeProjToBase U) le_rfl r
+        x
   refine Proj.twistingSheaf.ext fun x ↦ (Proj.toTwistingSheaf_apply_apply ..).trans
     (Eq.trans ?_ (Proj.twistingSheaf.smul_apply
       ((colimit.ι A.relativeProjGluingData.functor U ≫ A.relativeProjToBase).app U.toOpens r) _

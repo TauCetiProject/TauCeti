@@ -7,10 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.LinearMap
 public import TauCeti.RepresentationTheory.LSPath.StringLength
-
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Reflection
 
 /-!
@@ -22,35 +18,13 @@ keeping equal-height excursions. It is the presentation-independent version of
 when the lowering operator is defined.
 
 Positive dilation multiplies all heights and caps by the same scalar, leaving the relative
-cut positions unchanged (`PLPath.cappedReflection_map_smul`). For a normalized root-coroot pair
-`f x = 2`, two successive capped reflections compose into a single capped reflection
-(`PLPath.cappedReflection_cappedReflection`): reflecting up to `c₁` and then up to `c₂` reflects up
-to the larger of `c₁` and `c₂` shifted by twice the first record increase.
-
-Combining `PLPath.lower_eq_some_cappedReflection` with `PLPath.cappedReflection_cappedReflection`
-identifies every iterate `PLPath.lowerIter f x n p` with a single capped reflection at
-`p.minHeight f + n` when `(n : 𝕜) ≤ f p.endpoint - p.minHeight f`, and `none` otherwise
-(`PLPath.lowerIter_eq_some_cappedReflection`, `PLPath.lowerIter_eq_ite_cappedReflection`). Together
-with `PLPath.cappedReflection_map_smul`, this yields Littelmann's positive-scalar dilation
-similarity identities for `lowerIter` and `raiseIter` without any integrality assumption
-(`PLPath.lowerIter_map_smul`, `PLPath.raiseIter_map_smul`), together with their positive-integer
-dilation and fractional-contraction specializations. Word-level and Lakshmibai–Seshadri
-applications are developed in `TauCeti.RepresentationTheory.LSPath.Similarity`.
-
-## Main results
-
-* `TauCeti.PLPath.cappedReflection_map_smul`: positive dilation commutes with capped reflection.
-* `TauCeti.PLPath.cappedReflection_cappedReflection`,
-  `TauCeti.PLPath.cappedReflection_cappedReflection_minHeight_add`: composition of two successive
-  capped reflections.
-* `TauCeti.PLPath.lowerIter_eq_some_cappedReflection`,
-  `TauCeti.PLPath.lowerIter_eq_ite_cappedReflection`: `n`-fold lowering is capped reflection at
-  `p.minHeight f + n`.
-* `TauCeti.PLPath.lowerIter_map_smul`, `TauCeti.PLPath.raiseIter_map_smul`: general positive-scalar
-  similarity when `(m : 𝕜) = a * n`, with positive-integer dilation
-  (`TauCeti.PLPath.lowerIter_map_natCast_smul`, `TauCeti.PLPath.raiseIter_map_natCast_smul`) and
-  fractional-contraction (`TauCeti.PLPath.lower_map_inv_natCast_smul`,
-  `TauCeti.PLPath.raise_map_inv_natCast_smul`) specializations.
+cut positions unchanged (`PLPath.cappedReflection_map_smul`). For a normalized root-coroot
+pair `f x = 2`, composing two capped reflections gives a single capped reflection whose cap
+records the cumulative height drop (`PLPath.cappedReflection_cappedReflection`), and the
+`n`-fold lowering operator `lowerIter f x n` is a single capped reflection up to
+`p.minHeight f + n` (`PLPath.lowerIter_eq_some_cappedReflection`). Positive-scalar and
+positive-integer stretching similarity is deduced from these two results in
+`TauCeti.RepresentationTheory.LSPath.Similarity`.
 
 ## References
 
@@ -151,6 +125,254 @@ theorem lower_eq_some_cappedReflection (p : PLPath 𝕜 V)
   rw [lower_ofSegments, listLower_def, ite_eq_left hp, Option.map_some,
     cappedReflection_ofSegments, minHeight_ofSegments]
 
+/-! ## Composition of record reflections -/
+
+/-- When the first positive cap `c₁` is reached strictly inside the initial segment `v`, the tail
+`l` is untouched by the first reflection and a second reflection either leaves `v`'s kept part
+alone (when `c₂ + c₁ ≤ 0`) or cuts it further along the same reflected ray. -/
+private theorem normalize_reflectRecords_reflectRecords_cons_of_lt (hx : f x = 2)
+    {v : V} {l : List V} {c₁ c₂ : 𝕜} (hc₁ : 0 < c₁) (hlt : c₁ < f v + listMinHeight f l) :
+    normalize 𝕜 (reflectRecords f x c₂ (reflectRecords f x c₁ (v :: l))) =
+      normalize 𝕜 (reflectRecords f x (max c₁ (c₂ + 2 * c₁)) (v :: l)) := by
+  have hm_nonpos := listMinHeight_nonpos (f := f) l
+  have hfv : 0 < f v := by linarith
+  have hsub : 0 < f v - c₁ := by linarith
+  have hr₁ : min (f v + listMinHeight f l) c₁ = c₁ := min_eq_right hlt.le
+  have htail₁ : reflectRecords f x (c₁ - f v) l = l :=
+    reflectRecords_of_le_listMinHeight (by linarith)
+  have hu₁ : f (preReflection x f ((c₁ / f v) • v)) = -c₁ := by
+    rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hfv.ne']
+  have hu₂ : f ((1 - c₁ / f v) • v) = f v - c₁ := by
+    rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hfv.ne']
+  rw [reflectRecords_cons_of_pos (hr₁.symm ▸ hc₁), hr₁, htail₁]
+  -- The reflected initial piece descends by `c₁`, so the second reflection never cuts it.
+  rw [reflectRecords_cons_of_nonpos (le_trans (min_le_left _ _)
+    (by linarith [hu₁, listMinHeight_nonpos (f := f) ((1 - c₁ / f v) • v :: l)])),
+    hu₁, sub_neg_eq_add]
+  by_cases hc₂ : 0 < c₂ + c₁
+  · set r₂ := min (f v - c₁ + listMinHeight f l) (c₂ + c₁)
+    have hr₂_pos : 0 < r₂ := lt_min (by linarith) hc₂
+    have hmax : max c₁ (c₂ + 2 * c₁) = c₂ + 2 * c₁ := max_eq_right (by linarith)
+    have hR : min (f v + listMinHeight f l) (c₂ + 2 * c₁) = c₁ + r₂ := by
+      have h₁ : f v + listMinHeight f l = c₁ + (f v - c₁ + listMinHeight f l) := by ring
+      have h₂ : c₂ + 2 * c₁ = c₁ + (c₂ + c₁) := by ring
+      rw [h₁, h₂, min_add_add_left]
+    have hw₁ : (r₂ / (f v - c₁)) • ((1 - c₁ / f v) • v) = (r₂ / f v) • v := by
+      rw [smul_smul]
+      congr 1
+      field_simp [hfv.ne', hsub.ne']
+    have hw₂ : (1 - r₂ / (f v - c₁)) • ((1 - c₁ / f v) • v) = (1 - (c₁ + r₂) / f v) • v := by
+      rw [smul_smul]
+      congr 1
+      field_simp [hfv.ne', hsub.ne']
+      ring
+    have hray : SameRay 𝕜 (preReflection x f ((c₁ / f v) • v))
+        (preReflection x f ((r₂ / f v) • v)) := by
+      rw [map_smul, map_smul]
+      exact (SameRay.sameRay_nonneg_smul_left _ (div_nonneg hc₁.le hfv.le)).nonneg_smul_right
+        (div_nonneg hr₂_pos.le hfv.le)
+    have hadd : preReflection x f ((c₁ / f v) • v) + preReflection x f ((r₂ / f v) • v) =
+        preReflection x f (((c₁ + r₂) / f v) • v) := by
+      rw [← map_add, ← add_smul, add_div]
+    have hshift : c₂ + c₁ - (f v - c₁) = c₂ + 2 * c₁ - f v := by ring
+    rw [reflectRecords_cons_of_pos (by simpa only [hu₂] using hr₂_pos), hu₂, hw₁, hw₂,
+      hshift, hmax, reflectRecords_cons_of_pos (by linarith [hR]), hR]
+    simp only [normalize_cons, consMerge_consMerge hray, hadd]
+  · rw [not_lt] at hc₂
+    have hmax : max c₁ (c₂ + 2 * c₁) = c₁ := max_eq_left (by linarith)
+    rw [reflectRecords_cons_of_nonpos (min_le_of_right_le hc₂), hu₂,
+      reflectRecords_of_le_listMinHeight (by linarith),
+      hmax, reflectRecords_cons_of_pos (hr₁.symm ▸ hc₁), hr₁, htail₁]
+
+/-- When `0 < f v + listMinHeight f l ≤ c₁`, the first reflection reflects the entire record prefix
+of `v` up to the tail minimum, leaving a nonpositive-height remainder before recursing on `l`. -/
+private theorem normalize_reflectRecords_reflectRecords_cons_of_le (hx : f x = 2)
+    {v : V} {l : List V} {c₁ c₂ : 𝕜} (hpos_vm : 0 < f v + listMinHeight f l)
+    (hle : f v + listMinHeight f l ≤ c₁)
+    (ih : ∀ c₁ c₂ : 𝕜, normalize 𝕜 (reflectRecords f x c₂ (reflectRecords f x c₁ l)) =
+      normalize 𝕜 (reflectRecords f x
+        (max c₁ (c₂ + 2 * (min (f l.sum) c₁ - min (listMinHeight f l) c₁))) l)) :
+    normalize 𝕜 (reflectRecords f x c₂ (reflectRecords f x c₁ (v :: l))) =
+      normalize 𝕜 (reflectRecords f x
+        (max c₁ (c₂ + 2 * (min (f (v :: l).sum) c₁ - min (listMinHeight f (v :: l)) c₁)))
+        (v :: l)) := by
+  set m := listMinHeight f l
+  set δ := min (f l.sum) (c₁ - f v) - min m (c₁ - f v)
+  have hm_nonpos : m ≤ 0 := listMinHeight_nonpos (f := f) l
+  have hδ_nonneg : 0 ≤ δ := sub_nonneg.mpr (min_le_min_right _ (listMinHeight_le_apply_sum l))
+  have hc₁_pos : 0 < c₁ := hpos_vm.trans_le hle
+  have hfv : 0 < f v := by linarith
+  have hr₁ : min (f v + m) c₁ = f v + m := min_eq_left hle
+  have hδ_all : min (f (v :: l).sum) c₁ - min (listMinHeight f (v :: l)) c₁ = f v + m + δ := by
+    rw [List.sum_cons, map_add, listMinHeight_cons, min_eq_left hpos_vm.le, min_eq_left hc₁_pos.le]
+    simp only [δ, m, min_def]
+    split_ifs <;> linarith
+  have hu₁ : f (preReflection x f (((f v + m) / f v) • v)) = -(f v + m) := by
+    rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hfv.ne']
+  have hu₂ : f ((1 - (f v + m) / f v) • v) = -m := by
+    rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hfv.ne']
+    ring
+  have htail_nonpos :
+      listMinHeight f ((1 - (f v + m) / f v) • v :: reflectRecords f x (c₁ - f v) l) ≤ 0 :=
+    listMinHeight_nonpos _
+  have hR : min (f v + m) (max c₁ (c₂ + 2 * (f v + m + δ))) = f v + m :=
+    min_eq_left (hle.trans (le_max_left _ _))
+  have hshift : c₂ + (f v + m) - -m = c₂ + 2 * (f v + m) - f v := by ring
+  rw [hδ_all, reflectRecords_cons_of_pos (hr₁.symm ▸ hpos_vm), hr₁,
+    reflectRecords_cons_of_nonpos (le_trans (min_le_left _ _) (by linarith)),
+    hu₁, sub_neg_eq_add,
+    reflectRecords_cons_of_nonpos (le_trans (min_le_left _ _)
+      (by rw [hu₂, listMinHeight_reflectRecords hx]; linarith)),
+    hu₂, reflectRecords_cons_of_pos (hR.symm ▸ hpos_vm), hR]
+  simp only [normalize_cons]
+  congr 2
+  rw [hshift, ih]
+  congr 2
+  simp only [δ, m, max_def]
+  split_ifs <;> linarith
+
+/-- **Composition of capped record reflections on segment lists.** When `f x = 2`, reflecting
+records up to `c₁` and then up to `c₂` presents the same normalized path as reflecting records
+once up to `max c₁ (c₂ + 2 * (min (f l.sum) c₁ - min (listMinHeight f l) c₁))`. -/
+theorem normalize_reflectRecords_reflectRecords (hx : f x = 2) (c₁ c₂ : 𝕜) (l : List V) :
+    normalize 𝕜 (reflectRecords f x c₂ (reflectRecords f x c₁ l)) =
+      normalize 𝕜 (reflectRecords f x
+        (max c₁ (c₂ + 2 * (min (f l.sum) c₁ - min (listMinHeight f l) c₁))) l) := by
+  induction l generalizing c₁ c₂ with
+  | nil => simp
+  | cons v l ih =>
+    set m := listMinHeight f l
+    set s := f l.sum
+    have hms : m ≤ s := listMinHeight_le_apply_sum (f := f) l
+    set δ := min s (c₁ - f v) - min m (c₁ - f v)
+    have hδ_nonneg : 0 ≤ δ := sub_nonneg.mpr (min_le_min_right _ hms)
+    by_cases hr₁ : 0 < min (f v + m) c₁
+    · have hpos_vm : 0 < f v + m := hr₁.trans_le (min_le_left _ _)
+      have hc₁_pos : 0 < c₁ := hr₁.trans_le (min_le_right _ _)
+      rcases lt_or_ge c₁ (f v + m) with hlt | hle
+      · have hcap_eq : min (f (v :: l).sum) c₁ - min (listMinHeight f (v :: l)) c₁ = c₁ := by
+          rw [List.sum_cons, map_add, listMinHeight_cons, min_eq_left hpos_vm.le,
+            min_eq_left hc₁_pos.le, min_eq_right (by linarith : c₁ ≤ f v + s), sub_zero]
+        rw [hcap_eq]
+        exact normalize_reflectRecords_reflectRecords_cons_of_lt hx hc₁_pos hlt
+      · exact normalize_reflectRecords_reflectRecords_cons_of_le hx hpos_vm hle ih
+    · rw [not_lt] at hr₁
+      rcases le_or_gt (f v + m) 0 with hvm | hvm
+      · have hδ_all :
+            min (f (v :: l).sum) c₁ - min (listMinHeight f (v :: l)) c₁ = δ := by
+          rw [List.sum_cons, map_add, listMinHeight_cons, min_eq_right hvm]
+          simp only [δ, min_def]
+          split_ifs <;> linarith
+        rw [hδ_all, reflectRecords_cons_of_nonpos hr₁,
+          reflectRecords_cons_of_nonpos (le_trans (min_le_left _ _)
+            (by rw [listMinHeight_reflectRecords hx]; linarith)),
+          reflectRecords_cons_of_nonpos (min_le_of_left_le hvm)]
+        simp only [normalize_cons]
+        congr 1
+        rw [ih]
+        congr 2
+        simp only [max_def]
+        split_ifs <;> linarith
+      · have hc₁_nonpos : c₁ ≤ 0 := by
+          rcases min_le_iff.mp hr₁ with h | h <;> linarith
+        have hδ_all :
+            min (f (v :: l).sum) c₁ - min (listMinHeight f (v :: l)) c₁ = 0 := by
+          rw [List.sum_cons, map_add, listMinHeight_cons, min_eq_left hvm.le,
+            min_eq_right hc₁_nonpos, min_eq_right (by linarith : c₁ ≤ f v + s), sub_self]
+        have htail : reflectRecords f x (c₁ - f v) l = l :=
+          reflectRecords_of_le_listMinHeight (by linarith)
+        rw [hδ_all, mul_zero, add_zero, reflectRecords_cons_of_nonpos hr₁, htail]
+        rcases le_total c₁ c₂ with hc | hc
+        · rw [max_eq_right hc]
+        · have hm_cons : listMinHeight f (v :: l) = 0 := by
+            rw [listMinHeight_cons, min_eq_left hvm.le]
+          have hc₂_le : c₂ ≤ listMinHeight f (v :: l) := hm_cons ▸ hc.trans hc₁_nonpos
+          have hc₁_le : c₁ ≤ listMinHeight f (v :: l) := hm_cons ▸ hc₁_nonpos
+          rw [max_eq_left hc, reflectRecords_of_le_listMinHeight hc₂_le,
+            reflectRecords_of_le_listMinHeight hc₁_le]
+
+/-- **Composition of capped reflections.** For `f x = 2`, applying `cappedReflection` at cap `c₁`
+and then at cap `c₂` equals a single `cappedReflection` at cap
+`max c₁ (c₂ + 2 * (min (f p.endpoint) c₁ - min (p.minHeight f) c₁))`. -/
+theorem cappedReflection_cappedReflection (hx : f x = 2) (c₁ c₂ : 𝕜) (p : PLPath 𝕜 V) :
+    cappedReflection f x c₂ (cappedReflection f x c₁ p) =
+      cappedReflection f x
+        (max c₁ (c₂ + 2 * (min (f p.endpoint) c₁ - min (p.minHeight f) c₁))) p := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  apply PLPath.ext
+  simp only [cappedReflection_ofSegments, endpoint_ofSegments, minHeight_ofSegments,
+    segments_ofSegments, normalize_reflectRecords_reflectRecords hx]
+
+/-- Successive capped reflections measured relative to the running minimum height add their steps:
+if `0 ≤ a ≤ f p.endpoint - p.minHeight f` and `0 ≤ b`, reflecting up to `p.minHeight f + a` and
+then up to `q.minHeight f + b` equals reflecting once up to `p.minHeight f + a + b`. -/
+theorem cappedReflection_minHeight_add_cappedReflection (hx : f x = 2) (p : PLPath 𝕜 V)
+    {a b : 𝕜} (ha₀ : 0 ≤ a) (ha₁ : a ≤ f p.endpoint - p.minHeight f) (hb : 0 ≤ b) :
+    cappedReflection f x ((cappedReflection f x (p.minHeight f + a) p).minHeight f + b)
+        (cappedReflection f x (p.minHeight f + a) p) =
+      cappedReflection f x (p.minHeight f + a + b) p := by
+  rw [cappedReflection_cappedReflection hx, minHeight_cappedReflection hx]
+  have hmin₁ : min (f p.endpoint) (p.minHeight f + a) = p.minHeight f + a :=
+    min_eq_right (by linarith)
+  have hmin₂ : min (p.minHeight f) (p.minHeight f + a) = p.minHeight f :=
+    min_eq_left (by linarith)
+  rw [hmin₁, hmin₂, max_eq_right (by linarith)]
+  congr 1
+  ring
+
+/-! ## Iterated root operators as capped reflections -/
+
+/-- Single-step lowering as a conditional capped reflection at `p.minHeight f + 1`. -/
+theorem lower_eq_ite_cappedReflection (p : PLPath 𝕜 V) :
+    lower f x p = if 1 ≤ f p.endpoint - p.minHeight f then
+      some (cappedReflection f x (p.minHeight f + 1) p) else none := by
+  split_ifs with hp
+  · exact lower_eq_some_cappedReflection p hp
+  · exact lower_eq_none_iff.mpr (lt_of_not_ge hp)
+
+/-- **Iterated lowering as a single capped reflection.** When `f x = 2` and `n` lowering steps are
+defined (`(n : 𝕜) ≤ f p.endpoint - p.minHeight f`), `lowerIter f x n p` reflects the increasing
+records of `p` once up to `p.minHeight f + n`. -/
+theorem lowerIter_eq_some_cappedReflection (hx : f x = 2) {n : ℕ} (p : PLPath 𝕜 V)
+    (hp : (n : 𝕜) ≤ f p.endpoint - p.minHeight f) :
+    lowerIter f x n p = some (cappedReflection f x (p.minHeight f + n) p) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hn : (n : 𝕜) ≤ f p.endpoint - p.minHeight f :=
+      le_trans (Nat.cast_le.mpr (Nat.le_succ n)) hp
+    set q := cappedReflection f x (p.minHeight f + n) p
+    have hq : lowerIter f x n p = some q := ih hn
+    have hrem : 1 ≤ f q.endpoint - q.minHeight f := by
+      rw [endpoint_of_lowerIter_eq_some hq, minHeight_of_lowerIter_eq_some hx hq,
+        map_sub, map_nsmul, hx, nsmul_eq_mul]
+      push_cast at hp ⊢
+      linarith
+    rw [lowerIter_succ', hq, Option.bind_some, lower_eq_some_cappedReflection q hrem,
+      Option.some.injEq, cappedReflection_minHeight_add_cappedReflection hx p
+        (Nat.cast_nonneg n) hn zero_le_one, Nat.cast_succ, ← add_assoc]
+
+/-- Conditional capped-reflection formula for `lowerIter f x n p` on every path `p`. -/
+theorem lowerIter_eq_ite_cappedReflection (hx : f x = 2) (n : ℕ) (p : PLPath 𝕜 V) :
+    lowerIter f x n p = if (n : 𝕜) ≤ f p.endpoint - p.minHeight f then
+      some (cappedReflection f x (p.minHeight f + n) p) else none := by
+  split_ifs with hp
+  · exact lowerIter_eq_some_cappedReflection hx p hp
+  · exact (lowerIter_eq_none_iff hx).mpr (lt_of_not_ge hp)
+
+/-- **Iterated raising via capped reflection on the reversed path.** When `f x = 2` and `n` raising
+steps are defined (`(n : 𝕜) ≤ -p.minHeight f`), `raiseIter f x n p` reflects the increasing records
+of `p.reverse` up to `p.minHeight f - f p.endpoint + n` and reverses the result. -/
+theorem raiseIter_eq_some_reverse_cappedReflection_reverse (hx : f x = 2) {n : ℕ} (p : PLPath 𝕜 V)
+    (hp : (n : 𝕜) ≤ -p.minHeight f) :
+    raiseIter f x n p =
+      some (cappedReflection f x (p.minHeight f - f p.endpoint + n) p.reverse).reverse := by
+  have hrev : (n : 𝕜) ≤ f p.reverse.endpoint - p.reverse.minHeight f := by
+    rw [endpoint_reverse, map_neg, minHeight_reverse]
+    linarith
+  rw [raiseIter_eq_map_lowerIter_reverse, lowerIter_eq_some_cappedReflection hx p.reverse hrev,
+    minHeight_reverse, Option.map_some]
+
 /-! ## Positive dilation -/
 
 /-- Dilation by a positive scalar preserves every cut fraction in capped record reflection.
@@ -190,7 +412,7 @@ theorem cappedReflection_map_smul {a : 𝕜} (ha : 0 < a) (c : 𝕜) (p : PLPath
     Pi.smul_def, LinearMap.id_apply] using
     congrArg (ofSegments 𝕜) (reflectRecords_map_smul (f := f) ha c l)
 
-/-! ## Composition of capped reflections -/
+/-! ## Special cases of capped reflection -/
 
 /-- Any cap at or above the endpoint height gives the same capped reflection as capping at the
 endpoint height. -/
@@ -230,305 +452,5 @@ theorem cappedReflection_straight_of_pos (c : 𝕜) {v : V} (hv : 0 < f v) :
   · have hmax : max 0 (min (f v) c) = 0 := max_eq_left (min_le_of_right_le (not_lt.mp hc))
     simpa [hmax] using
       cappedReflection_eq_self (straight 𝕜 v) (by simpa [min_eq_left hv.le] using not_lt.mp hc)
-
-private theorem cappedReflection_straight_cap_sum {fv c₁ c₂ : 𝕜} (hfv : 0 < fv)
-    (hr₁_lt : max 0 (min fv c₁) < fv) :
-    let r₁ := max 0 (min fv c₁)
-    r₁ + max 0 (min (fv - r₁) (c₂ + r₁)) = max 0 (min fv (max c₁ (c₂ + 2 * r₁))) := by
-  intro r₁
-  have hc₁_lt : c₁ < fv := by
-    by_contra hc₁_ge
-    exact hr₁_lt.ne' (by simp only [min_eq_left (not_lt.mp hc₁_ge), max_eq_right hfv.le])
-  rcases le_or_gt c₁ 0 with hc₁ | hc₁
-  · have hr₁0 : r₁ = 0 := max_eq_left (min_le_of_right_le hc₁)
-    rw [hr₁0, zero_add]
-    simp only [sub_zero, add_zero, mul_zero, min_def, max_def]
-    split_ifs <;> linarith
-  · have hr₁c : r₁ = c₁ := by simp only [r₁, min_eq_right hc₁_lt.le, max_eq_right hc₁.le]
-    simp only [hr₁c, min_def, max_def]
-    split_ifs <;> linarith
-
-private theorem cappedReflection_cappedReflection_straight (hx : f x = 2) (c₁ c₂ : 𝕜) (v : V) :
-    cappedReflection f x c₂ (cappedReflection f x c₁ (straight 𝕜 v)) =
-      cappedReflection f x
-        (max c₁ (c₂ + 2 * (min (f (straight 𝕜 v).endpoint) c₁ -
-          min ((straight 𝕜 v).minHeight f) c₁)))
-        (straight 𝕜 v) := by
-  rcases le_or_gt (f v) 0 with hv | hv
-  · simp [cappedReflection_straight_of_nonpos _ hv]
-  set r₁ := max 0 (min (f v) c₁) with hr₁_def
-  have hr₁_nonneg : 0 ≤ r₁ := le_max_left _ _
-  have hr₁_le : r₁ ≤ f v := max_le hv.le (min_le_left _ _)
-  have hΔ : min (f (straight 𝕜 v).endpoint) c₁ - min ((straight 𝕜 v).minHeight f) c₁ = r₁ := by
-    simp only [endpoint_straight, minHeight_straight, min_eq_left hv.le, r₁, min_def, max_def]
-    split_ifs <;> linarith
-  set C := max c₁ (c₂ + 2 * r₁)
-  rw [hΔ, cappedReflection_straight_of_pos c₁ hv, ← hr₁_def, cappedReflection_mul]
-  have hp₁ : f (preReflection x f ((r₁ / f v) • v)) = -r₁ := by
-    rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hv.ne']
-  rw [cappedReflection_straight_of_nonpos _ (by linarith : f _ ≤ 0), endpoint_straight, hp₁,
-    sub_neg_eq_add]
-  rcases hr₁_le.eq_or_lt with hr₁_eq | hr₁_lt
-  · have hfc₁ : f v ≤ c₁ := by
-      simp only [r₁, min_def, max_def] at hr₁_eq
-      split_ifs at hr₁_eq <;> linarith
-    have hrC : max 0 (min (f v) C) = f v := by
-      rw [min_eq_left (hfc₁.trans (le_max_left _ _)), max_eq_right hv.le]
-    rw [cappedReflection_straight_of_pos C hv, hrC, hr₁_eq]
-    simp [hv.ne']
-  · have hfv₂ : 0 < f v - r₁ := sub_pos.mpr hr₁_lt
-    have hp₂ : f ((1 - r₁ / f v) • v) = f v - r₁ := by
-      rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hv.ne']
-    rw [cappedReflection_straight_of_pos (c₂ + r₁) (hp₂ ▸ hfv₂),
-      cappedReflection_straight_of_pos C hv, hp₂]
-    set r₂ := max 0 (min (f v - r₁) (c₂ + r₁))
-    have hcut₁ : (r₂ / (f v - r₁)) • (1 - r₁ / f v) • v = (r₂ / f v) • v := by
-      rw [smul_smul]; congr 1; field_simp [hv.ne', hfv₂.ne']
-    have hcut₂ : (1 - r₂ / (f v - r₁)) • (1 - r₁ / f v) • v = (1 - (r₁ + r₂) / f v) • v := by
-      rw [smul_smul]; congr 1; field_simp [hv.ne', hfv₂.ne']; ring
-    rw [hcut₁, hcut₂, ← mul_assoc, map_smul, map_smul,
-      straight_smul_mul_straight_smul (div_nonneg hr₁_nonneg hv.le)
-        (div_nonneg (le_max_left _ _) hv.le),
-      ← add_div, ← map_smul, cappedReflection_straight_cap_sum hv hr₁_lt]
-
-private theorem cappedReflection_comp_delta_left {ep hp hq c₁ : 𝕜} (hq0 : hq ≤ 0) :
-    let c₁' := min c₁ (ep + hq)
-    min ep c₁' - min hp c₁' = c₁' - min (min hp (ep + hq)) c₁ := by
-  intro c₁'
-  have hc₁'_ep : min ep c₁' = c₁' := min_eq_right ((min_le_right _ _).trans (by linarith))
-  have hc₁'_hp : min hp c₁' = min (min hp (ep + hq)) c₁ := by
-    simp only [c₁']
-    ac_rfl
-  rw [hc₁'_ep, hc₁'_hp]
-
-private theorem cappedReflection_comp_cap_left {ep hp eq hq c₁ c₂ : 𝕜}
-    (hq0 : hq ≤ 0) (hqe : hq ≤ eq) :
-    let c₁' := min c₁ (ep + hq)
-    let Δp := min ep c₁' - min hp c₁'
-    let Δq := min eq (c₁ - ep) - min hq (c₁ - ep)
-    let Δ := min (ep + eq) c₁ - min (min hp (ep + hq)) c₁
-    max c₁' (min c₂ (ep - 2 * Δp + (hq - Δq)) + 2 * Δp) =
-      min (max c₁ (c₂ + 2 * Δ)) (ep + hq) := by
-  intro c₁' Δp Δq Δ
-  have hΔp : Δp = c₁' - min (min hp (ep + hq)) c₁ := cappedReflection_comp_delta_left hq0
-  have hΔq_nonneg : 0 ≤ Δq := by
-    simp only [Δq, min_def]
-    split_ifs <;> linarith
-  rcases le_total c₁ (ep + hq) with hc₁ | hc₁
-  · have hΔq0 : Δq = 0 := by
-      have h1 : c₁ - ep ≤ hq := by linarith
-      simp only [Δq]
-      rw [min_eq_right (h1.trans hqe), min_eq_right h1, sub_self]
-    have hc₁' : c₁' = c₁ := min_eq_left hc₁
-    have hΔ_eq : Δ = Δp := by
-      rw [hΔp, hc₁']
-      simp only [Δ]
-      rw [min_eq_right (hc₁.trans (by linarith))]
-    rw [hΔq0, sub_zero, hΔ_eq, hc₁']
-    simp only [min_def, max_def]
-    split_ifs <;> linarith
-  · have hc₁' : c₁' = ep + hq := min_eq_right hc₁
-    have h1 : min c₂ (ep - 2 * Δp + (hq - Δq)) + 2 * Δp ≤ ep + hq := by
-      have := min_le_right c₂ (ep - 2 * Δp + (hq - Δq))
-      linarith
-    rw [hc₁', max_eq_left h1, min_eq_right (hc₁.trans (le_max_left _ _))]
-
-private theorem cappedReflection_comp_cap_right {ep hp eq hq c₁ c₂ : 𝕜} (hq0 : hq ≤ 0) :
-    let c₁' := min c₁ (ep + hq)
-    let Δp := min ep c₁' - min hp c₁'
-    let Δq := min eq (c₁ - ep) - min hq (c₁ - ep)
-    let Δ := min (ep + eq) c₁ - min (min hp (ep + hq)) c₁
-    max (c₁ - ep) (c₂ - (ep - 2 * Δp) + 2 * Δq) =
-      max c₁ (c₂ + 2 * Δ) - ep := by
-  intro c₁' Δp Δq Δ
-  have hΔp : Δp = c₁' - min (min hp (ep + hq)) c₁ := cappedReflection_comp_delta_left hq0
-  have hΔq : Δq = min (ep + eq) c₁ - c₁' := by
-    simp only [Δq, c₁', min_def]
-    split_ifs <;> linarith
-  have hsum : Δp + Δq = Δ := by
-    rw [hΔp, hΔq]
-    simp only [Δ]
-    ring
-  have hshift : c₂ - (ep - 2 * Δp) + 2 * Δq = c₂ + 2 * Δ - ep := by
-    rw [← hsum]
-    ring
-  rw [hshift]
-  simp only [max_def]
-  split_ifs <;> linarith
-
-/-- **Composition of capped record reflections**: for a normalized root-coroot pair `f x = 2`,
-applying `cappedReflection` up to `c₁` and then up to `c₂` is a single `cappedReflection` whose cap
-is the larger of `c₁` and `c₂` shifted up by twice the first record increase
-`min (f p.endpoint) c₁ - min (p.minHeight f) c₁`. -/
-theorem cappedReflection_cappedReflection (hx : f x = 2) (c₁ c₂ : 𝕜) (p : PLPath 𝕜 V) :
-    cappedReflection f x c₂ (cappedReflection f x c₁ p) =
-      cappedReflection f x
-        (max c₁ (c₂ + 2 * (min (f p.endpoint) c₁ - min (p.minHeight f) c₁))) p := by
-  obtain ⟨l, rfl⟩ := ofSegments_surjective p
-  induction l generalizing c₁ c₂ with
-  | nil => simp
-  | cons v l ih =>
-    rw [ofSegments_cons]
-    set p := straight 𝕜 v
-    set q := ofSegments 𝕜 l
-    rw [cappedReflection_mul, cappedReflection_mul,
-      cappedReflection_cappedReflection_straight hx, ih, cappedReflection_mul]
-    simp only [endpoint_cappedReflection, minHeight_cappedReflection hx, endpoint_mul, map_add,
-      minHeight_mul, map_sub, map_smul, smul_eq_mul, hx, mul_comm _ (2 : 𝕜)]
-    rw [cappedReflection_comp_cap_left (minHeight_nonpos q) (minHeight_le_apply_endpoint q),
-      cappedReflection_comp_cap_right (minHeight_nonpos q)]
-
-/-- Raw segment-list form of `PLPath.cappedReflection_cappedReflection`: two successive record
-reflections normalize to a single record reflection. -/
-theorem normalize_reflectRecords_reflectRecords (hx : f x = 2) (c₁ c₂ : 𝕜) (l : List V) :
-    normalize 𝕜 (reflectRecords f x c₂ (reflectRecords f x c₁ l)) =
-      normalize 𝕜 (reflectRecords f x
-        (max c₁ (c₂ + 2 * (min (f l.sum) c₁ - min (listMinHeight f l) c₁))) l) := by
-  have h := congrArg PLPath.segments
-    (cappedReflection_cappedReflection hx c₁ c₂ (ofSegments 𝕜 l))
-  simpa only [cappedReflection_ofSegments, endpoint_ofSegments, minHeight_ofSegments,
-    segments_ofSegments] using h
-
-/-- Reflecting up to `p.minHeight f + a` (for `0 ≤ a`) and then reflecting up to the new minimum
-height plus `b` (`0 ≤ b`) equals a single capped reflection up to `p.minHeight f + (a + b)`. -/
-theorem cappedReflection_cappedReflection_minHeight_add (hx : f x = 2) {a b : 𝕜}
-    (ha : 0 ≤ a) (hb : 0 ≤ b) (p : PLPath 𝕜 V) :
-    cappedReflection f x
-        ((cappedReflection f x (p.minHeight f + a) p).minHeight f + b)
-        (cappedReflection f x (p.minHeight f + a) p) =
-      cappedReflection f x (p.minHeight f + (a + b)) p := by
-  rcases le_total (p.minHeight f + a) (f p.endpoint) with hap | hap
-  · have hmin₁ : min (f p.endpoint) (p.minHeight f + a) = p.minHeight f + a :=
-      min_eq_right hap
-    have hmin₂ : min (p.minHeight f) (p.minHeight f + a) = p.minHeight f :=
-      min_eq_left (by linarith)
-    rw [cappedReflection_cappedReflection hx, minHeight_cappedReflection hx, hmin₁, hmin₂]
-    congr 1
-    have hshift : p.minHeight f - (p.minHeight f + a - p.minHeight f) + b +
-        2 * (p.minHeight f + a - p.minHeight f) = p.minHeight f + (a + b) := by ring
-    rw [hshift, max_eq_right (by linarith)]
-  · rw [cappedReflection_cappedReflection hx]
-    exact (cappedReflection_eq_of_apply_endpoint_le p (hap.trans (le_max_left _ _))).trans
-      (cappedReflection_eq_of_apply_endpoint_le p (by linarith)).symm
-
-/-! ## Iterated root operators and positive-scalar similarity -/
-
-/-- For `f x = 2`, applying `lower f x` `n` times is capped reflection at `p.minHeight f + n`,
-whenever `(n : 𝕜) ≤ f p.endpoint - p.minHeight f`. -/
-theorem lowerIter_eq_some_cappedReflection (hx : f x = 2) {n : ℕ} (p : PLPath 𝕜 V)
-    (hp : (n : 𝕜) ≤ f p.endpoint - p.minHeight f) :
-    lowerIter f x n p = some (cappedReflection f x (p.minHeight f + n) p) := by
-  induction n generalizing p with
-  | zero =>
-    simp
-  | succ n ih =>
-    have hp₁ : 1 ≤ f p.endpoint - p.minHeight f := by
-      push_cast at hp
-      linarith [Nat.cast_nonneg (α := 𝕜) n]
-    have hlow := lower_eq_some_cappedReflection (x := x) p hp₁
-    set q := cappedReflection f x (p.minHeight f + 1) p
-    have hqn : (n : 𝕜) ≤ f q.endpoint - q.minHeight f := by
-      have hstep := apply_endpoint_sub_minHeight_of_lower_eq_some hx hlow
-      push_cast at hp
-      linarith
-    rw [lowerIter_succ, hlow, Option.bind_some, ih q hqn,
-      cappedReflection_cappedReflection_minHeight_add hx zero_le_one (Nat.cast_nonneg n) p]
-    congr 2
-    push_cast
-    ring
-
-/-- Closed-form description of `n`-fold lowering as a single capped reflection. -/
-theorem lowerIter_eq_ite_cappedReflection (hx : f x = 2) (n : ℕ) (p : PLPath 𝕜 V) :
-    lowerIter f x n p =
-      if (n : 𝕜) ≤ f p.endpoint - p.minHeight f then
-        some (cappedReflection f x (p.minHeight f + n) p)
-      else none := by
-  split_ifs with hp
-  · exact lowerIter_eq_some_cappedReflection hx p hp
-  · exact (lowerIter_eq_none_iff hx).mpr (lt_of_not_ge hp)
-
-/-- **Dilation similarity for iterated lowering** (Littelmann): for `f x = 2`, `0 < a`, and
-`(m : 𝕜) = a * n`, `m`-fold lowering on the `a`-dilated path equals the `a`-dilation of `n`-fold
-lowering on the original path. No integrality of the path is needed. -/
-theorem lowerIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
-    (hmn : (m : 𝕜) = a * n) (p : PLPath 𝕜 V) :
-    lowerIter f x m (p.map (a • LinearMap.id)) =
-      (lowerIter f x n p).map (fun q ↦ q.map (a • LinearMap.id)) := by
-  have hdiff :
-      f (p.map (a • LinearMap.id)).endpoint - (p.map (a • LinearMap.id)).minHeight f =
-        a * (f p.endpoint - p.minHeight f) := by
-    rw [endpoint_map, LinearMap.smul_apply, LinearMap.id_apply, map_smul, smul_eq_mul,
-      minHeight_map_smul ha.le, mul_sub]
-  have hcond :
-      ((m : 𝕜) ≤
-          f (p.map (a • LinearMap.id)).endpoint - (p.map (a • LinearMap.id)).minHeight f) ↔
-        (n : 𝕜) ≤ f p.endpoint - p.minHeight f := by
-    rw [hdiff, hmn, mul_le_mul_iff_right₀ ha]
-  rw [lowerIter_eq_ite_cappedReflection hx, lowerIter_eq_ite_cappedReflection hx]
-  by_cases hn : (n : 𝕜) ≤ f p.endpoint - p.minHeight f
-  · rw [ite_eq_left (hcond.mpr hn), ite_eq_left hn, Option.map_some, minHeight_map_smul ha.le,
-      hmn, ← mul_add, cappedReflection_map_smul ha]
-  · rw [ite_eq_right (mt hcond.mp hn), ite_eq_right hn, Option.map_none]
-
-/-- **Dilation similarity for iterated raising** (Littelmann): for `f x = 2`, `0 < a`, and
-`(m : 𝕜) = a * n`, `m`-fold raising on the `a`-dilated path equals the `a`-dilation of `n`-fold
-raising on the original path. -/
-theorem raiseIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
-    (hmn : (m : 𝕜) = a * n) (p : PLPath 𝕜 V) :
-    raiseIter f x m (p.map (a • LinearMap.id)) =
-      (raiseIter f x n p).map (fun q ↦ q.map (a • LinearMap.id)) := by
-  rw [raiseIter_eq_map_lowerIter_reverse, raiseIter_eq_map_lowerIter_reverse, ← map_reverse,
-    lowerIter_map_smul hx ha hmn, Option.map_map, Option.map_map]
-  congr 1
-  funext q
-  exact (map_reverse q (a • LinearMap.id)).symm
-
-/-- For `0 < n`, lowering `k * n` times on the `n`-dilated path equals the `n`-dilation of
-lowering `k` times on the original path. -/
-theorem lowerIter_mul_map_natCast_smul (hx : f x = 2) (k : ℕ) {n : ℕ} (hn : 0 < n)
-    (p : PLPath 𝕜 V) :
-    lowerIter f x (k * n) (p.map ((n : 𝕜) • LinearMap.id)) =
-      (lowerIter f x k p).map (fun q ↦ q.map ((n : 𝕜) • LinearMap.id)) :=
-  lowerIter_map_smul hx (Nat.cast_pos.mpr hn) (by push_cast; ring) p
-
-/-- For `0 < n`, raising `k * n` times on the `n`-dilated path equals the `n`-dilation of raising
-`k` times on the original path. -/
-theorem raiseIter_mul_map_natCast_smul (hx : f x = 2) (k : ℕ) {n : ℕ} (hn : 0 < n)
-    (p : PLPath 𝕜 V) :
-    raiseIter f x (k * n) (p.map ((n : 𝕜) • LinearMap.id)) =
-      (raiseIter f x k p).map (fun q ↦ q.map ((n : 𝕜) • LinearMap.id)) :=
-  raiseIter_map_smul hx (Nat.cast_pos.mpr hn) (by push_cast; ring) p
-
-/-- Lowering `n` times (`0 < n`) on the `n`-dilated path equals the `n`-dilation of lowering once
-on the original path. -/
-theorem lowerIter_map_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
-    lowerIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
-      (lower f x p).map (fun q ↦ q.map ((n : 𝕜) • LinearMap.id)) := by
-  simpa using lowerIter_mul_map_natCast_smul hx 1 hn p
-
-/-- Raising `n` times (`0 < n`) on the `n`-dilated path equals the `n`-dilation of raising once on
-the original path. -/
-theorem raiseIter_map_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
-    raiseIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
-      (raise f x p).map (fun q ↦ q.map ((n : 𝕜) • LinearMap.id)) := by
-  simpa using raiseIter_mul_map_natCast_smul hx 1 hn p
-
-/-- Fractional contraction form of similarity (Littelmann, Lemma 2.1(d)): for `0 < n`, lowering
-once on `(n : 𝕜)⁻¹ • p` equals contracting `n`-fold lowering on `p`. -/
-theorem lower_map_inv_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
-    lower f x (p.map ((n : 𝕜)⁻¹ • LinearMap.id)) =
-      (lowerIter f x n p).map (fun q ↦ q.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
-  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  simpa using lowerIter_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
-    (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) p
-
-/-- Fractional contraction form of similarity for raising: for `0 < n`, raising once on
-`(n : 𝕜)⁻¹ • p` equals contracting `n`-fold raising on `p`. -/
-theorem raise_map_inv_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
-    raise f x (p.map ((n : 𝕜)⁻¹ • LinearMap.id)) =
-      (raiseIter f x n p).map (fun q ↦ q.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
-  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  simpa using raiseIter_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
-    (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) p
 
 end TauCeti.PLPath

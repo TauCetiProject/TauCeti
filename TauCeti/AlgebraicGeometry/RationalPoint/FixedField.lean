@@ -20,7 +20,7 @@ a family `S` of ring endomorphisms of `L`. For every scheme `X`, composition wit
 values in a field is a point `y` of `X` together with an embedding of the residue field `κ(y)`
 (`AlgebraicGeometry.Scheme.SpecToEquivOfField`), and such an embedding into `L` is fixed by `S`
 exactly when it lands in the image of `F`. Injectivity uses that `Spec L ⟶ Spec F` is an
-epimorphism (`RingHom.epi_SpecMap_ofHom`).
+epimorphism (`AlgebraicGeometry.Scheme.Hom.epi_of_codomain_Spec_field`).
 
 The relative form over a base ring `k` (`AlgHom.fromSpecOverEquivOfRangeEq`) keeps track of the
 structure morphism `X ⟶ Spec k`. Its main instance is Galois descent for a single automorphism:

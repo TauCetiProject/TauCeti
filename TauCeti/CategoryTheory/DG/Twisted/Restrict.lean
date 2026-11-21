@@ -108,7 +108,7 @@ theorem dgDifferential_restrictTwist
     simp only [↓dgHomEquiv_restrictTwist]
     rw [← DGAdditiveClosure.dgHomEquiv_dgDifferential, dgDifferential_twist,
       DGAdditiveClosure.dgHomEquiv_dgComp, ← Fintype.sum_subtype_add_sum_subtype q, add_eq_left]
-    exact Finset.sum_eq_zero fun k _ ↦ hq i j k i.2 j.2 k.2
+    exact Finset.sum_eq_zero fun k _ ↦ hq i j k i.property j.property k.property
 
 /-- The **restriction** of a twisted object `(⊕ᵢ Xᵢ, δ)` of the additive closure to the summands
 satisfying `q`: the twisted object `(⊕_{q i} Xᵢ, δ|_q)` with the restricted twisting matrix.  It
@@ -280,7 +280,7 @@ theorem dgDifferential_toExtensionRestrict : dgDifferential R 0 (toExtensionRest
         ↓dgHomEquiv_twist_restrict, ↓DGAdditiveClosure.dgDifferential_dgHomEquiv_dgId,
         ↓DGAdditiveClosure.sum_dgComp_dgHomEquiv_dgId, Int.negOnePow_zero, one_smul, zero_add]
       -- The vanishing block from `P` to `Q` consists of entries of `δ`, by `hp`.
-      rw [Finset.sum_congr rfl fun x _ ↦ by rw [← hp x j x.2 j.2],
+      rw [Finset.sum_congr rfl fun x _ ↦ by rw [← hp x j x.property j.property],
         Fintype.sum_subtype_add_sum_subtype p fun m ↦ dgComp R
           (matrixEquiv R _ _ 0 (dgId R T.obj) i m) (matrixEquiv R _ _ 1 T.twist m j) (zero_add 1),
         DGAdditiveClosure.sum_dgHomEquiv_dgId_dgComp, sub_self]
@@ -312,9 +312,9 @@ theorem dgComp_ofExtensionRestrict_toExtensionRestrict :
         ↓DGAdditiveClosure.sum_dgHomEquiv_dgId_dgComp]
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inl, DGAdditiveClosure.dgHomEquiv_dgId_subtype]
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inr]
-      exact DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ fun h ↦ j'.2 (h ▸ j.2)
+      exact DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ fun h ↦ j'.property (h ▸ j.property)
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inl]
-      exact DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ fun h ↦ j.2 (h ▸ j'.2)
+      exact DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ fun h ↦ j.property (h ▸ j'.property)
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inr, DGAdditiveClosure.dgHomEquiv_dgId_subtype]
 
 /-- The regrouping morphism `P ⊕ Q ⟶ T` is closed, as the inverse of a closed morphism. -/

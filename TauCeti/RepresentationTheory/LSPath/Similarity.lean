@@ -5,77 +5,267 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Crystal.Similarity
 public import TauCeti.RepresentationTheory.LSPath.CappedReflection
+public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
+public import TauCeti.RepresentationTheory.LSPath.RationalChain
 public import TauCeti.RepresentationTheory.LSPath.Subdivision
 public import TauCeti.RepresentationTheory.LSPath.Word
+import TauCeti.Data.Option.Basic
 
 /-!
-# Word-level dilation similarity and stretched Lakshmibai–Seshadri paths
+# Littelmann's path similarity under positive-integer dilation and stretching
 
-From the single-root dilation similarity identities in
-`TauCeti.RepresentationTheory.LSPath.CappedReflection` (`PLPath.lowerIter_map_smul` and
-`PLPath.raiseIter_map_smul`), this file deduces word-level dilation similarity on piecewise-linear
-paths without any integrality assumption: for any `0 < a` in `𝕜` and natural numbers `m, n` with
-`(m : 𝕜) = a * n`, applying a lowering or raising word replicated `m` times per letter on the
-`a`-dilated path equals the `a`-dilation of applying the word replicated `n` times per letter on
-the original path (`PLPath.lowerWord_flatMap_replicate_map_smul`,
-`PLPath.raiseWord_flatMap_replicate_map_smul`).
+Fix a vector `x : V` and a linear form `f : Dual 𝕜 V` with `f x = 2`. Combining the single
+capped-reflection formula for `lowerIter f x n` (`TauCeti.PLPath.lowerIter_eq_ite_cappedReflection`)
+with positive scalar equivariance of capped reflection (`TauCeti.PLPath.cappedReflection_map_smul`)
+yields Littelmann's **path similarity theorem** (`TauCeti.PLPath.lowerIter_map_natCast_smul`,
+`TauCeti.PLPath.raiseIter_map_natCast_smul`): for every positive integer `n` and every
+piecewise-linear path `p` (with no integrality assumption on `p`), dilating `p` by `n` intertwines
+each single root operator `lower f x`, `raise f x` with its `n`-fold iterate `lowerIter f x n`,
+`raiseIter f x n`.
 
-Specializing to `a = (n : 𝕜)` (`0 < n`) intertwines each root word `w` on `π` with the
-letter-replicated word `w.flatMap (List.replicate n)` on the `n`-dilated path, while
-`a = (n : 𝕜)⁻¹` recovers the fractional-contraction identity intertwining `w` on `(n : 𝕜)⁻¹ • π`
-with `w.flatMap (List.replicate n)` on `π`.
+Because nonzero scalar dilation acts injectively on `PLPath 𝕜 V`
+(`TauCeti.PLPath.map_smul_id_injective`), positive-integer dilation both preserves and reflects
+defined root operators and root-operator words
+(`TauCeti.PLPath.lowerIter_map_natCast_smul_eq_some_iff`,
+`TauCeti.PLPath.lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff`). On crystal-admissible
+sets of paths and connected path components, positive-integer dilation assembles into injective
+similarity morphisms of normal crystals (`TauCeti.PLPath.dilationSimilarityHom`,
+`TauCeti.PLPath.componentDilationSimilarityHom`), and in particular embeds every integral
+straight-path component `B(π_λ)` into `B(π_{n λ})`
+(`TauCeti.PLPath.straightComponentDilationSimilarityHom`,
+`TauCeti.PLPath.simpleRootStringDilationSimilarityHom`). Finally, specializing to
+Lakshmibai–Seshadri paths connects `LSPath.stretch` and the denominator-clearing construction
+`LSPath.ofBruhatChain` for rational Bruhat-chain paths with iterated root operators and
+`n`-replicated words.
 
-Applied to `LSPath.stretch` and `LSPath.subdivisionWord`, stretching a Lakshmibai–Seshadri path by
-`n` (and, when `n` clears segment durations, realizing it as a concatenation of `n` straight
-Weyl-orbit paths) intertwines root operators and words on the original realization with `n`-fold
-iterated operators and letter-replicated words on the stretched realization.
+## Main definitions
+
+* `TauCeti.PLPath.dilationSimilarityHom`: positive-integer dilation as a
+  `TauCeti.NormalCrystal.SimilarityHom` between normal crystals on crystal-admissible path sets.
+* `TauCeti.PLPath.componentDilationSimilarityHom`,
+  `TauCeti.PLPath.straightComponentDilationSimilarityHom`,
+  `TauCeti.PLPath.simpleRootStringDilationSimilarityHom`: Kashiwara–Littelmann similarity embeddings
+  on connected path components, integral straight-path components `B(π_λ) ↪ B(π_{n λ})`, and
+  isolated simple-root strings.
 
 ## Main results
 
-* `TauCeti.PLPath.lowerWord_flatMap_replicate_map_smul`,
-  `TauCeti.PLPath.raiseWord_flatMap_replicate_map_smul`: general positive-scalar word similarity
-  when `(m : 𝕜) = a * n`.
-* `TauCeti.PLPath.lowerWord_flatMap_replicate_map_natCast_smul`,
-  `TauCeti.PLPath.raiseWord_flatMap_replicate_map_natCast_smul`: word-level similarity under
-  positive-integer dilation.
-* `TauCeti.PLPath.lowerWord_map_inv_natCast_smul`,
-  `TauCeti.PLPath.raiseWord_map_inv_natCast_smul`: word-level similarity under fractional
-  `(n : 𝕜)⁻¹` contraction.
-* `TauCeti.LSPath.lowerIter_toPLPath_stretch`, `TauCeti.LSPath.raiseIter_toPLPath_stretch`,
-  `TauCeti.LSPath.lowerWord_flatMap_replicate_prod_subdivisionWord`,
-  `TauCeti.LSPath.raiseWord_flatMap_replicate_prod_subdivisionWord`: intertwining `LSPath.stretch`
-  and integral straight-path subdivisions with iterated root operators and letter-replicated words.
+* `TauCeti.PLPath.lowerIter_map_natCast_smul`, `TauCeti.PLPath.raiseIter_map_natCast_smul`:
+  Littelmann's path similarity theorem on arbitrary piecewise-linear paths.
+* `TauCeti.PLPath.lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff`,
+  `TauCeti.PLPath.raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff`: dilation by `n > 0`
+  intertwines words of root operators with their `n`-fold letterwise replications.
+* `TauCeti.PLPath.reflTransGen_rootStep_map_natCast_smul`,
+  `TauCeti.PLPath.IsIntegralPath.map_natCast_smul_of_reflTransGen_rootStep`: dilation by
+  any `n : ℕ` preserves finite sequences of simple-root steps and transports integrality
+  along root-step walks.
+* `TauCeti.LSPath.lowerIter_toPLPath_stretch`, `TauCeti.LSPath.lowerIter_toPLPath_ofBruhatChain`,
+  `TauCeti.LSPath.lowerWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff`: root-operator
+  similarity for stretched LS paths and cleared rational Bruhat-chain paths.
 
 ## References
 
 * P. Littelmann, *Paths and root operators in representation theory*, Ann. of Math. 142 (1995),
-  §§1–2, 5 (Lemma 2.1(d) and Theorem 5.1).
+  499--525, §§1, 5.
+* M. Kashiwara, *Similarity of crystal bases*, Duke Math. J. 84 (1996), 251--277, §3.
 -/
 
 public section
 
 namespace TauCeti.PLPath
 
-open Module
+open Module Relation
+
+/-! ### Littelmann's path similarity theorem -/
+
+section DilationSimilarity
 
 variable {ι 𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V]
+  [AddCommGroup V] [Module 𝕜 V] {f : Dual 𝕜 V} {x : V}
 
-/-! ### Word-level similarity on piecewise-linear paths -/
+/-- **Dilation similarity for iterated lowering** (Littelmann): for `f x = 2`, `0 < a`, and
+`(m : 𝕜) = a * n`, `m`-fold lowering on the `a`-dilated path equals the `a`-dilation of `n`-fold
+lowering on the original path. No integrality of the path is needed. -/
+theorem lowerIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
+    (hmn : (m : 𝕜) = a * n) (p : PLPath 𝕜 V) :
+    lowerIter f x m (p.map (a • LinearMap.id)) =
+      (lowerIter f x n p).map (·.map (a • LinearMap.id)) := by
+  have hdiff :
+      f (p.map (a • LinearMap.id)).endpoint - (p.map (a • LinearMap.id)).minHeight f =
+        a * (f p.endpoint - p.minHeight f) := by
+    rw [endpoint_map, LinearMap.smul_apply, LinearMap.id_apply, map_smul, smul_eq_mul,
+      minHeight_map_smul ha.le, mul_sub]
+  have hcond :
+      ((m : 𝕜) ≤
+          f (p.map (a • LinearMap.id)).endpoint - (p.map (a • LinearMap.id)).minHeight f) ↔
+        (n : 𝕜) ≤ f p.endpoint - p.minHeight f := by
+    rw [hdiff, hmn, mul_le_mul_iff_right₀ ha]
+  rw [lowerIter_eq_ite_cappedReflection hx, lowerIter_eq_ite_cappedReflection hx]
+  by_cases hn : (n : 𝕜) ≤ f p.endpoint - p.minHeight f
+  · rw [ite_eq_left (hcond.mpr hn), ite_eq_left hn, Option.map_some, minHeight_map_smul ha.le,
+      hmn, ← mul_add, cappedReflection_map_smul ha]
+  · rw [ite_eq_right (mt hcond.mp hn), ite_eq_right hn, Option.map_none]
 
-section Words
+/-- **Dilation similarity for iterated raising** (Littelmann): for `f x = 2`, `0 < a`, and
+`(m : 𝕜) = a * n`, `m`-fold raising on the `a`-dilated path equals the `a`-dilation of `n`-fold
+raising on the original path. -/
+theorem raiseIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
+    (hmn : (m : 𝕜) = a * n) (p : PLPath 𝕜 V) :
+    raiseIter f x m (p.map (a • LinearMap.id)) =
+      (raiseIter f x n p).map (·.map (a • LinearMap.id)) := by
+  rw [raiseIter_eq_map_lowerIter_reverse, raiseIter_eq_map_lowerIter_reverse, ← map_reverse,
+    lowerIter_map_smul hx ha hmn, Option.map_map, Option.map_map]
+  congr 1
+  funext q
+  exact (map_reverse q (a • LinearMap.id)).symm
 
-variable {F : ι → Dual 𝕜 V} {x : ι → V}
+/-- Fractional contraction form of similarity (Littelmann, Lemma 2.1(d)): for `0 < n`, lowering
+once on `(n : 𝕜)⁻¹ • p` equals contracting `n`-fold lowering on `p`. -/
+theorem lower_map_inv_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
+    lower f x (p.map ((n : 𝕜)⁻¹ • LinearMap.id)) =
+      (lowerIter f x n p).map (·.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
+  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  simpa using lowerIter_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
+    (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) p
+
+/-- Fractional contraction form of similarity for raising: for `0 < n`, raising once on
+`(n : 𝕜)⁻¹ • p` equals contracting `n`-fold raising on `p`. -/
+theorem raise_map_inv_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
+    raise f x (p.map ((n : 𝕜)⁻¹ • LinearMap.id)) =
+      (raiseIter f x n p).map (·.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
+  have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  simpa using raiseIter_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
+    (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) p
+
+/-- **Littelmann's path similarity theorem (lowering)**: for `f x = 2` and any positive integer `n`,
+dilating a piecewise-linear path `p` by `n` intertwines `lower f x` with the `n`-fold iterate
+`lowerIter f x n`. No integrality assumption on `p` is required. -/
+theorem lowerIter_map_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
+    lowerIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
+      (lower f x p).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  have hn' : (0 : 𝕜) < n := Nat.cast_pos.mpr hn
+  have hbound : ((n : 𝕜) ≤ f (p.map ((n : 𝕜) • LinearMap.id)).endpoint -
+      (p.map ((n : 𝕜) • LinearMap.id)).minHeight f) ↔ 1 ≤ f p.endpoint - p.minHeight f := by
+    rw [endpoint_map, LinearMap.smul_apply, LinearMap.id_apply, map_smul, smul_eq_mul,
+      minHeight_map_smul hn'.le, ← mul_sub]
+    simpa only [mul_one] using
+      mul_le_mul_iff_right₀ (a := (n : 𝕜)) (b := 1) (c := f p.endpoint - p.minHeight f) hn'
+  rw [lowerIter_eq_ite_cappedReflection hx, lower_eq_ite_cappedReflection]
+  by_cases hp : 1 ≤ f p.endpoint - p.minHeight f
+  · rw [ite_eq_left (hbound.mpr hp), ite_eq_left hp, Option.map_some,
+      minHeight_map_smul hn'.le, ← mul_add_one, cappedReflection_map_smul hn']
+  · rw [ite_eq_right (mt hbound.mp hp), ite_eq_right hp, Option.map_none]
+
+/-- **Littelmann's path similarity theorem (raising)**: for `f x = 2` and any positive integer `n`,
+dilating a piecewise-linear path `p` by `n` intertwines `raise f x` with the `n`-fold iterate
+`raiseIter f x n`. -/
+theorem raiseIter_map_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (p : PLPath 𝕜 V) :
+    raiseIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
+      (raise f x p).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  rw [raiseIter_eq_map_lowerIter_reverse, ← map_reverse, lowerIter_map_natCast_smul hx hn,
+    raise_def, Option.map_map, Option.map_map]
+  congr 1
+  funext q
+  exact (map_reverse q _).symm
+
+/-- Dilation by `n > 0` intertwines `lowerIter f x k` with `lowerIter f x (n * k)`. -/
+theorem lowerIter_mul_map_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (k : ℕ)
+    (p : PLPath 𝕜 V) :
+    lowerIter f x (n * k) (p.map ((n : 𝕜) • LinearMap.id)) =
+      (lowerIter f x k p).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  induction k generalizing p with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.mul_succ, Nat.add_comm, lowerIter_add, lowerIter_map_natCast_smul hx hn, lowerIter_succ]
+    cases lower f x p <;> simp [ih]
+
+/-- Dilation by `n > 0` intertwines `raiseIter f x k` with `raiseIter f x (n * k)`. -/
+theorem raiseIter_mul_map_natCast_smul (hx : f x = 2) {n : ℕ} (hn : 0 < n) (k : ℕ)
+    (p : PLPath 𝕜 V) :
+    raiseIter f x (n * k) (p.map ((n : 𝕜) • LinearMap.id)) =
+      (raiseIter f x k p).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  induction k generalizing p with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.mul_succ, Nat.add_comm, raiseIter_add, raiseIter_map_natCast_smul hx hn, raiseIter_succ]
+    cases raise f x p <;> simp [ih]
+
+/-- Positive-integer dilation preserves and reflects single-step lowering via `lowerIter f x n`. -/
+theorem lowerIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 < n)
+    {p q : PLPath 𝕜 V} :
+    lowerIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
+        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
+      lower f x p = some q := by
+  rw [lowerIter_map_natCast_smul hx hn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
+
+/-- Positive-integer dilation preserves and reflects single-step raising via `raiseIter f x n`. -/
+theorem raiseIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 < n)
+    {p q : PLPath 𝕜 V} :
+    raiseIter f x n (p.map ((n : 𝕜) • LinearMap.id)) =
+        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
+      raise f x p = some q := by
+  rw [raiseIter_map_natCast_smul hx hn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
+
+/-- Lowering along a word commutes with positive-integer dilation upon repeating each letter `n`
+times. -/
+theorem lowerWord_flatMap_replicate_map_natCast_smul {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) (p : PLPath 𝕜 V) :
+    lowerWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
+      (lowerWord F x w p).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  induction w generalizing p with
+  | nil => simp
+  | cons i w ih =>
+    rw [List.flatMap_cons, lowerWord_append, lowerWord_replicate,
+      lowerIter_map_natCast_smul (hx i) hn, lowerWord_cons]
+    cases lower (F i) (x i) p <;> simp [ih]
+
+/-- Raising along a word commutes with positive-integer dilation upon repeating each letter `n`
+times. -/
+theorem raiseWord_flatMap_replicate_map_natCast_smul {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) (p : PLPath 𝕜 V) :
+    raiseWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
+      (raiseWord F x w p).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  induction w generalizing p with
+  | nil => simp
+  | cons i w ih =>
+    rw [List.flatMap_cons, raiseWord_append, raiseWord_replicate,
+      raiseIter_map_natCast_smul (hx i) hn, raiseWord_cons]
+    cases raise (F i) (x i) p <;> simp [ih]
+
+/-- Dilation by `n > 0` preserves and reflects lowering along any word via `n`-fold letter
+replication. -/
+theorem lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) {p q : PLPath 𝕜 V} :
+    lowerWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
+        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
+      lowerWord F x w p = some q := by
+  rw [lowerWord_flatMap_replicate_map_natCast_smul hx hn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
+
+/-- Dilation by `n > 0` preserves and reflects raising along any word via `n`-fold letter
+replication. -/
+theorem raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) {p q : PLPath 𝕜 V} :
+    raiseWord F x (w.flatMap fun i ↦ List.replicate n i) (p.map ((n : 𝕜) • LinearMap.id)) =
+        some (q.map ((n : 𝕜) • LinearMap.id)) ↔
+      raiseWord F x w p = some q := by
+  rw [raiseWord_flatMap_replicate_map_natCast_smul hx hn, Option.map_eq_some_iff]
+  simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
 
 /-- **Dilation similarity for lowering words**: for `F i (x i) = 2`, `0 < a`, and
-`(m : 𝕜) = a * n`, lowering along `w.flatMap (List.replicate m)` on the `a`-dilated path equals
-the `a`-dilation of lowering along `w.flatMap (List.replicate n)` on the original path. -/
-theorem lowerWord_flatMap_replicate_map_smul (hx : ∀ i, F i (x i) = 2) {a : 𝕜} (ha : 0 < a)
-    {m n : ℕ} (hmn : (m : 𝕜) = a * n) (w : List ι) (π : PLPath 𝕜 V) :
-    lowerWord F x (w.flatMap (List.replicate m)) (π.map (a • LinearMap.id)) =
-      (lowerWord F x (w.flatMap (List.replicate n)) π).map
-        (fun ρ ↦ ρ.map (a • LinearMap.id)) := by
+`(m : 𝕜) = a * n`, lowering along `w.flatMap fun i ↦ List.replicate m i` on the `a`-dilated path
+equals the `a`-dilation of lowering along `w.flatMap fun i ↦ List.replicate n i` on the original
+path. -/
+theorem lowerWord_flatMap_replicate_map_smul {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ} (hmn : (m : 𝕜) = a * n)
+    (w : List ι) (π : PLPath 𝕜 V) :
+    lowerWord F x (w.flatMap fun i ↦ List.replicate m i) (π.map (a • LinearMap.id)) =
+      (lowerWord F x (w.flatMap fun i ↦ List.replicate n i) π).map
+        (·.map (a • LinearMap.id)) := by
   induction w generalizing π with
   | nil => simp
   | cons i w ih =>
@@ -84,145 +274,462 @@ theorem lowerWord_flatMap_replicate_map_smul (hx : ∀ i, F i (x i) = 2) {a : �
     cases lowerIter (F i) (x i) n π <;> simp [ih]
 
 /-- **Dilation similarity for raising words**: for `F i (x i) = 2`, `0 < a`, and
-`(m : 𝕜) = a * n`, raising along `w.flatMap (List.replicate m)` on the `a`-dilated path equals the
-`a`-dilation of raising along `w.flatMap (List.replicate n)` on the original path. -/
-theorem raiseWord_flatMap_replicate_map_smul (hx : ∀ i, F i (x i) = 2) {a : 𝕜} (ha : 0 < a)
-    {m n : ℕ} (hmn : (m : 𝕜) = a * n) (w : List ι) (π : PLPath 𝕜 V) :
-    raiseWord F x (w.flatMap (List.replicate m)) (π.map (a • LinearMap.id)) =
-      (raiseWord F x (w.flatMap (List.replicate n)) π).map
-        (fun ρ ↦ ρ.map (a • LinearMap.id)) := by
+`(m : 𝕜) = a * n`, raising along `w.flatMap fun i ↦ List.replicate m i` on the `a`-dilated path
+equals the `a`-dilation of raising along `w.flatMap fun i ↦ List.replicate n i` on the original
+path. -/
+theorem raiseWord_flatMap_replicate_map_smul {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ} (hmn : (m : 𝕜) = a * n)
+    (w : List ι) (π : PLPath 𝕜 V) :
+    raiseWord F x (w.flatMap fun i ↦ List.replicate m i) (π.map (a • LinearMap.id)) =
+      (raiseWord F x (w.flatMap fun i ↦ List.replicate n i) π).map
+        (·.map (a • LinearMap.id)) := by
   rw [raiseWord_eq_map_lowerWord_reverse, raiseWord_eq_map_lowerWord_reverse, ← map_reverse,
     lowerWord_flatMap_replicate_map_smul hx ha hmn, Option.map_map, Option.map_map]
   congr 1
   funext ρ
   exact (map_reverse ρ (a • LinearMap.id)).symm
 
-private theorem flatMap_replicate_one {α : Type*} (w : List α) :
-    w.flatMap (List.replicate 1) = w := by
-  induction w with
-  | nil => rfl
-  | cons _ _ ih => simp [ih]
-
-/-- Lowering along the `n`-fold letter-replicated word on an `n`-dilated path equals the
-`n`-dilation of lowering along the original word. -/
-theorem lowerWord_flatMap_replicate_map_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ}
-    (hn : 0 < n) (w : List ι) (π : PLPath 𝕜 V) :
-    lowerWord F x (w.flatMap (List.replicate n)) (π.map ((n : 𝕜) • LinearMap.id)) =
-      (lowerWord F x w π).map (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
-  simpa only [flatMap_replicate_one] using
-    lowerWord_flatMap_replicate_map_smul hx (Nat.cast_pos.mpr hn) (m := n) (n := 1) (by simp) w π
-
-/-- Raising along the `n`-fold letter-replicated word on an `n`-dilated path equals the
-`n`-dilation of raising along the original word. -/
-theorem raiseWord_flatMap_replicate_map_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ}
-    (hn : 0 < n) (w : List ι) (π : PLPath 𝕜 V) :
-    raiseWord F x (w.flatMap (List.replicate n)) (π.map ((n : 𝕜) • LinearMap.id)) =
-      (raiseWord F x w π).map (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
-  simpa only [flatMap_replicate_one] using
-    raiseWord_flatMap_replicate_map_smul hx (Nat.cast_pos.mpr hn) (m := n) (n := 1) (by simp) w π
-
 /-- Lowering along `w` on the contracted path `(n : 𝕜)⁻¹ • π` equals contracting lowering along the
 `n`-fold letter-replicated word on `π`. -/
-theorem lowerWord_map_inv_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n)
-    (w : List ι) (π : PLPath 𝕜 V) :
+theorem lowerWord_map_inv_natCast_smul {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) (π : PLPath 𝕜 V) :
     lowerWord F x w (π.map ((n : 𝕜)⁻¹ • LinearMap.id)) =
-      (lowerWord F x (w.flatMap (List.replicate n)) π).map
-        (fun ρ ↦ ρ.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
+      (lowerWord F x (w.flatMap fun i ↦ List.replicate n i) π).map
+        (·.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
   have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  simpa only [flatMap_replicate_one] using
-    lowerWord_flatMap_replicate_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
-      (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) w π
+  simpa using lowerWord_flatMap_replicate_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
+    (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) w π
 
 /-- Raising along `w` on the contracted path `(n : 𝕜)⁻¹ • π` equals contracting raising along the
 `n`-fold letter-replicated word on `π`. -/
-theorem raiseWord_map_inv_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n)
-    (w : List ι) (π : PLPath 𝕜 V) :
+theorem raiseWord_map_inv_natCast_smul {F : ι → Dual 𝕜 V} {x : ι → V}
+    (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn : 0 < n) (w : List ι) (π : PLPath 𝕜 V) :
     raiseWord F x w (π.map ((n : 𝕜)⁻¹ • LinearMap.id)) =
-      (raiseWord F x (w.flatMap (List.replicate n)) π).map
-        (fun ρ ↦ ρ.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
+      (raiseWord F x (w.flatMap fun i ↦ List.replicate n i) π).map
+        (·.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
   have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  simpa only [flatMap_replicate_one] using
-    raiseWord_flatMap_replicate_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
-      (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) w π
+  simpa using raiseWord_flatMap_replicate_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
+    (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) w π
 
-end Words
+end DilationSimilarity
+
+/-! ### Root-step walks and path-crystal similarity morphisms -/
+
+section CrystalSimilarity
+
+variable {ι X Y 𝕜 V : Type*} [AddCommGroup X] [AddCommGroup Y]
+  {P : RootDatum ι X Y} {b : P.Base}
+  [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
+  {f : X →+ V} {F : b.support → Dual 𝕜 V}
+
+/-- Dilation by any natural number `n` (including `n = 0`, which sends both paths to `1`) preserves
+finite sequences of simple-root raising and lowering steps. -/
+theorem reflTransGen_rootStep_map_natCast_smul
+    (hx : ∀ i : b.support, F i (f (P.root i)) = 2) (n : ℕ) {π π' : PLPath 𝕜 V}
+    (h : ReflTransGen (RootStep b f F) π π') :
+    ReflTransGen (RootStep b f F) (π.map ((n : 𝕜) • LinearMap.id))
+      (π'.map ((n : 𝕜) • LinearMap.id)) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp only [Nat.cast_zero, zero_smul, map_zero_linearMap]
+    exact .refl
+  induction h with
+  | refl => exact .refl
+  | tail _ hstep ih =>
+    obtain ⟨i, hstep | hstep⟩ := rootStep_iff.mp hstep
+    · exact ih.trans <| reflTransGen_rootStep_of_raiseIter_eq_some <| by
+        rw [raiseIter_map_natCast_smul (hx i) hn, hstep, Option.map_some]
+    · exact ih.trans <| reflTransGen_rootStep_of_lowerIter_eq_some <| by
+        rw [lowerIter_map_natCast_smul (hx i) hn, hstep, Option.map_some]
+
+private theorem normalCrystalOn_wt_of_val_eq_map_natCast_smul {S T : Set (PLPath 𝕜 V)}
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    {n : ℕ} {π : S} {π' : T} (hπ' : π'.val = π.val.map ((n : 𝕜) • LinearMap.id)) :
+    (normalCrystalOn hf hF hT).wt π' = n • (normalCrystalOn hf hF hS).wt π :=
+  hf <| by
+    rw [apply_normalCrystalOn_wt, hπ', map_nsmul, apply_normalCrystalOn_wt, endpoint_map,
+      LinearMap.smul_apply, LinearMap.id_apply, Nat.cast_smul_eq_nsmul]
+
+private theorem normalCrystalOn_ε_of_val_eq_map_natCast_smul {S T : Set (PLPath 𝕜 V)}
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (i : b.support) {n : ℕ} {π : S} {π' : T}
+    (hπ' : π'.val = π.val.map ((n : 𝕜) • LinearMap.id)) :
+    (normalCrystalOn hf hF hT).ε i π' = n * (normalCrystalOn hf hF hS).ε i π :=
+  Nat.cast_injective (R := 𝕜) <| by
+    rw [cast_normalCrystalOn_ε, hπ', Nat.cast_mul, cast_normalCrystalOn_ε,
+      minHeight_map_smul (Nat.cast_nonneg n), mul_neg]
+
+private theorem unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul {S T : Set (PLPath 𝕜 V)}
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (i : b.support) {n : ℕ} (hn : 0 < n) {π : S} {π' : T}
+    (hπ' : π'.val = π.val.map ((n : 𝕜) • LinearMap.id)) :
+    ((normalCrystalOn hf hF hT).eIter i n π').unattach =
+      (((normalCrystalOn hf hF hS).e i π).unattach).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  rw [unattach_normalCrystalOn_eIter, hπ', unattach_normalCrystalOn_e,
+    raiseIter_map_natCast_smul (apply_root_eq_two hF i) hn]
+
+/-- Positive-integer dilation between crystal-admissible sets of paths assembles into a similarity
+morphism of normal crystals. -/
+noncomputable def dilationSimilarityHom {S T : Set (PLPath 𝕜 V)} (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) :
+    NormalCrystal.SimilarityHom n (normalCrystalOn hf hF hS) (normalCrystalOn hf hF hT) where
+  toFun π := ⟨π.val.map ((n : 𝕜) • LinearMap.id), hST π.property⟩
+  wt_toFun _ := normalCrystalOn_wt_of_val_eq_map_natCast_smul hf hF hS hT rfl
+  ε_toFun i _ := normalCrystalOn_ε_of_val_eq_map_natCast_smul hf hF hS hT i rfl
+  eIter_toFun i _ := Option.unattach_inj.mp <| by
+    simpa only [Option.unattach_map, Option.map_unattach_eq_map_val] using
+      unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF hS hT i hn rfl
+
+@[simp]
+theorem dilationSimilarityHom_apply {S T : Set (PLPath 𝕜 V)} (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) (π : S) :
+    (dilationSimilarityHom hf hF hS hT hn hST π).val = π.val.map ((n : 𝕜) • LinearMap.id) := (rfl)
+
+/-- Positive-integer dilation of crystal-admissible path sets is injective. -/
+theorem dilationSimilarityHom_injective {S T : Set (PLPath 𝕜 V)} (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) :
+    Function.Injective (dilationSimilarityHom hf hF hS hT hn hST) := fun _ _ h ↦
+  Subtype.ext <| map_smul_id_injective (Nat.cast_pos.mpr hn).ne' <| congrArg Subtype.val h
+
+/-- If the `n`-dilation of `π₀` is an integral path, then the `n`-dilation of every path reachable
+from `π₀` by simple-root steps is also an integral path. -/
+theorem IsIntegralPath.map_natCast_smul_of_reflTransGen_rootStep
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {n : ℕ} {π₀ π : PLPath 𝕜 V}
+    (h₀ : IsIntegralPath b f F (π₀.map ((n : 𝕜) • LinearMap.id)))
+    (hwalk : ReflTransGen (RootStep b f F) π₀ π) :
+    IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id)) :=
+  h₀.of_reflTransGen_rootStep
+    (reflTransGen_rootStep_map_natCast_smul (apply_root_eq_two hF) n hwalk)
+
+private theorem reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {n : ℕ} {x x' y : {π : PLPath 𝕜 V | IsIntegralPath b f F π}}
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val)
+    (hy : y ∈ (normalCrystal hf hF).graph.connectedComponentMk x) :
+    ReflTransGen (RootStep b f F) x'.val (y.val.map ((n : 𝕜) • LinearMap.id)) :=
+  hx' ▸ reflTransGen_rootStep_map_natCast_smul (apply_root_eq_two hF) n
+    ((mem_supp_connectedComponentMk_normalCrystalOn_iff x y).mp hy)
+
+/-- **Component similarity morphism on integral-path components**: whenever the `n`-dilation of an
+integral path `x` equals an integral path `x'` (`n > 0`), positive-integer dilation embeds the
+connected path crystal component `normalCrystalComponent hf hF x` into
+`normalCrystalComponent hf hF x'` as an injective similarity morphism of scale factor `n`. -/
+noncomputable def componentDilationSimilarityHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {x x' : {π : PLPath 𝕜 V | IsIntegralPath b f F π}} {n : ℕ} (hn : 0 < n)
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val) :
+    NormalCrystal.SimilarityHom n
+      (normalCrystalComponent hf hF x) (normalCrystalComponent hf hF x') where
+  toFun y :=
+    have hwalk := reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul hf hF hx'
+        y.property
+    ⟨⟨y.val.val.map ((n : 𝕜) • LinearMap.id), x'.property.of_reflTransGen_rootStep hwalk⟩,
+      (mem_supp_connectedComponentMk_normalCrystalOn_iff x' _).mpr hwalk⟩
+  wt_toFun _ := by
+    rw [NormalCrystal.component_wt, NormalCrystal.component_wt]
+    exact normalCrystalOn_wt_of_val_eq_map_natCast_smul hf hF _ _ rfl
+  ε_toFun i _ := by
+    rw [NormalCrystal.component_ε, NormalCrystal.component_ε]
+    exact normalCrystalOn_ε_of_val_eq_map_natCast_smul hf hF _ _ i rfl
+  eIter_toFun i y := Option.unattach_inj.mp <| Option.unattach_inj.mp <| by
+    rw [NormalCrystal.unattach_component_eIter,
+      unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF
+        isCrystalSet_setOf_isIntegralPath _ i hn (π := y.val) rfl,
+      ← NormalCrystal.unattach_component_e]
+    simp only [Option.unattach_map, Option.map_unattach_eq_map_val]
+
+@[simp]
+theorem componentDilationSimilarityHom_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {x x' : {π : PLPath 𝕜 V | IsIntegralPath b f F π}} {n : ℕ} (hn : 0 < n)
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val)
+    (y : (normalCrystal hf hF).graph.connectedComponentMk x) :
+    (componentDilationSimilarityHom hf hF hn hx' y).val.val = y.val.val.map ((n : 𝕜) • LinearMap.id)
+        :=
+  (rfl)
+
+theorem componentDilationSimilarityHom_injective (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {x x' : {π : PLPath 𝕜 V | IsIntegralPath b f F π}} {n : ℕ} (hn : 0 < n)
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val) :
+    Function.Injective (componentDilationSimilarityHom hf hF hn hx') :=
+  fun _ _ h ↦ Subtype.ext <| Subtype.ext <|
+    map_smul_id_injective (Nat.cast_pos.mpr hn).ne' <|
+      congrArg (fun z ↦ z.val.val) h
+
+/-- **Kashiwara–Littelmann similarity embedding `B(π_λ) ↪ B(π_{n λ})`** on straight-path crystal
+components: for every integral straight path `straight 𝕜 (f lam)` and every `n > 0`, dilating paths
+by `n` gives an injective similarity morphism of scale factor `n` from the connected component of
+`straight 𝕜 (f lam)` to that of `straight 𝕜 (f (n • lam))`. -/
+noncomputable def straightComponentDilationSimilarityHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {lam : X} (hlam : IsIntegralPath b f F (straight 𝕜 (f lam))) {n : ℕ} (hn : 0 < n) :
+    NormalCrystal.SimilarityHom n
+      (normalCrystalComponent hf hF ⟨straight 𝕜 (f lam), hlam⟩)
+      (normalCrystalComponent hf hF ⟨straight 𝕜 (f (n • lam)), hlam.straight_nsmul hF n⟩) :=
+  componentDilationSimilarityHom hf hF hn <| by
+    dsimp only
+    rw [map_straight, LinearMap.smul_apply, LinearMap.id_apply, map_nsmul, Nat.cast_smul_eq_nsmul]
+
+@[simp]
+theorem straightComponentDilationSimilarityHom_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {lam : X} (hlam : IsIntegralPath b f F (straight 𝕜 (f lam))) {n : ℕ} (hn : 0 < n)
+    (y : (normalCrystal hf hF).graph.connectedComponentMk ⟨straight 𝕜 (f lam), hlam⟩) :
+    (straightComponentDilationSimilarityHom hf hF hlam hn y).val.val =
+      y.val.val.map ((n : 𝕜) • LinearMap.id) :=
+  (rfl)
+
+theorem straightComponentDilationSimilarityHom_injective (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {lam : X} (hlam : IsIntegralPath b f F (straight 𝕜 (f lam))) {n : ℕ} (hn : 0 < n) :
+    Function.Injective (straightComponentDilationSimilarityHom hf hF hlam hn) :=
+  componentDilationSimilarityHom_injective hf hF hn _
+
+/-- Unconditional similarity embedding of scale factor `n > 0` on the connected path crystal
+component of `straight 𝕜 (f (P.root i))` for any isolated simple node `i` (in particular on any
+rank-one root datum), sending the length-`2` simple-root string into a string of length `2 n`. -/
+noncomputable def simpleRootStringDilationSimilarityHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0)
+    {n : ℕ} (hn : 0 < n) :
+    NormalCrystal.SimilarityHom n
+      (normalCrystalComponent hf hF
+        ⟨straight 𝕜 (f (P.root i)), isIntegralPath_straight_root hF i hi⟩)
+      (normalCrystalComponent hf hF
+        ⟨straight 𝕜 (f (n • P.root i)),
+          (isIntegralPath_straight_root hF i hi).straight_nsmul hF n⟩) :=
+  straightComponentDilationSimilarityHom hf hF (isIntegralPath_straight_root hF i hi) hn
+
+@[simp]
+theorem simpleRootStringDilationSimilarityHom_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0)
+    {n : ℕ} (hn : 0 < n)
+    (y : (normalCrystal hf hF).graph.connectedComponentMk
+      ⟨straight 𝕜 (f (P.root i)), isIntegralPath_straight_root hF i hi⟩) :
+    (simpleRootStringDilationSimilarityHom hf hF i hi hn y).val.val =
+      y.val.val.map ((n : 𝕜) • LinearMap.id) :=
+  (rfl)
+
+theorem simpleRootStringDilationSimilarityHom_injective (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0)
+    {n : ℕ} (hn : 0 < n) :
+    Function.Injective (simpleRootStringDilationSimilarityHom hf hF i hi hn) :=
+  straightComponentDilationSimilarityHom_injective hf hF
+    (isIntegralPath_straight_root hF i hi) hn
+
+end CrystalSimilarity
 
 end TauCeti.PLPath
 
+/-! ### Stretching similarity for Lakshmibai–Seshadri and cleared Bruhat-chain paths -/
+
 namespace TauCeti.LSPath
 
-open Module RootPairing
+open RootPairing
 
-variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
-  (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
+  {lam μ : M} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
 
-/-- Stretching an LS path by `n` multiplies every linear-form minimum height of its realization by
-`n`. -/
+section Stretch
+
+variable (𝕜) (f : M →+ V)
+
+/-- Stretching an LS path by `n > 0` multiplies its minimum height under any linear form by `n`. -/
 @[simp]
-theorem minHeight_toPLPath_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) (g : Dual 𝕜 V) :
-    ((π.stretch n hn).toPLPath 𝕜 f).minHeight g = (n : 𝕜) * (π.toPLPath 𝕜 f).minHeight g := by
+theorem minHeight_toPLPath_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
+    (F : Module.Dual 𝕜 V) :
+    ((π.stretch n hn).toPLPath 𝕜 f).minHeight F = (n : 𝕜) * (π.toPLPath 𝕜 f).minHeight F := by
   rw [toPLPath_stretch, PLPath.minHeight_map_smul (Nat.cast_nonneg n)]
 
-/-- Stretching an LS path by `n` intertwines single lowering on `π.toPLPath 𝕜 f` with `n`-fold
-lowering on `(π.stretch n hn).toPLPath 𝕜 f`. -/
-theorem lowerIter_toPLPath_stretch (π : LSPath P b lam) {g : Dual 𝕜 V} {x : V} (hx : g x = 2)
-    {n : ℕ} (hn : 0 < n) :
-    PLPath.lowerIter g x n ((π.stretch n hn).toPLPath 𝕜 f) =
-      (PLPath.lower g x (π.toPLPath 𝕜 f)).map (fun q ↦ q.map ((n : 𝕜) • LinearMap.id)) := by
+/-- Applying `lowerIter F x n` to a stretched LS path dilates the result of `lower F x` on the
+original LS path. -/
+theorem lowerIter_toPLPath_stretch {F : Module.Dual 𝕜 V} {x : V} (hx : F x = 2)
+    (π : LSPath P b lam) {n : ℕ} (hn : 0 < n) :
+    PLPath.lowerIter F x n ((π.stretch n hn).toPLPath 𝕜 f) =
+      (PLPath.lower F x (π.toPLPath 𝕜 f)).map (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_stretch, PLPath.lowerIter_map_natCast_smul hx hn]
 
-/-- Stretching an LS path by `n` intertwines single raising on `π.toPLPath 𝕜 f` with `n`-fold
-raising on `(π.stretch n hn).toPLPath 𝕜 f`. -/
-theorem raiseIter_toPLPath_stretch (π : LSPath P b lam) {g : Dual 𝕜 V} {x : V} (hx : g x = 2)
-    {n : ℕ} (hn : 0 < n) :
-    PLPath.raiseIter g x n ((π.stretch n hn).toPLPath 𝕜 f) =
-      (PLPath.raise g x (π.toPLPath 𝕜 f)).map (fun q ↦ q.map ((n : 𝕜) • LinearMap.id)) := by
+/-- Applying `raiseIter F x n` to a stretched LS path dilates the result of `raise F x` on the
+original LS path. -/
+theorem raiseIter_toPLPath_stretch {F : Module.Dual 𝕜 V} {x : V} (hx : F x = 2)
+    (π : LSPath P b lam) {n : ℕ} (hn : 0 < n) :
+    PLPath.raiseIter F x n ((π.stretch n hn).toPLPath 𝕜 f) =
+      (PLPath.raise F x (π.toPLPath 𝕜 f)).map (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_stretch, PLPath.raiseIter_map_natCast_smul hx hn]
 
-/-- Stretching an LS path by `n` intertwines lowering words on `π.toPLPath 𝕜 f` with `n`-fold
-letter-replicated lowering words on `(π.stretch n hn).toPLPath 𝕜 f`. -/
-theorem lowerWord_flatMap_replicate_toPLPath_stretch (π : LSPath P b lam) {α : Type*}
-    {F : α → Dual 𝕜 V} {x : α → V} (hx : ∀ a, F a (x a) = 2) {n : ℕ} (hn : 0 < n)
-    (w : List α) :
-    PLPath.lowerWord F x (w.flatMap (List.replicate n)) ((π.stretch n hn).toPLPath 𝕜 f) =
-      (PLPath.lowerWord F x w (π.toPLPath 𝕜 f)).map (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
+/-- `n`-fold lowering links the realizations of two stretched LS paths if and only if single-step
+lowering links the realizations of the unstretched paths. -/
+theorem lowerIter_toPLPath_stretch_eq_some_iff {F : Module.Dual 𝕜 V} {x : V} (hx : F x = 2)
+    (π : LSPath P b lam) (ρ : LSPath P b μ) {n : ℕ} (hn : 0 < n) :
+    PLPath.lowerIter F x n ((π.stretch n hn).toPLPath 𝕜 f) =
+        some ((ρ.stretch n hn).toPLPath 𝕜 f) ↔
+      PLPath.lower F x (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f) := by
+  rw [toPLPath_stretch, toPLPath_stretch, PLPath.lowerIter_map_natCast_smul_eq_some_iff hx hn]
+
+/-- `n`-fold raising links the realizations of two stretched LS paths if and only if single-step
+raising links the realizations of the unstretched paths. -/
+theorem raiseIter_toPLPath_stretch_eq_some_iff {F : Module.Dual 𝕜 V} {x : V} (hx : F x = 2)
+    (π : LSPath P b lam) (ρ : LSPath P b μ) {n : ℕ} (hn : 0 < n) :
+    PLPath.raiseIter F x n ((π.stretch n hn).toPLPath 𝕜 f) =
+        some ((ρ.stretch n hn).toPLPath 𝕜 f) ↔
+      PLPath.raise F x (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f) := by
+  rw [toPLPath_stretch, toPLPath_stretch, PLPath.raiseIter_map_natCast_smul_eq_some_iff hx hn]
+
+/-- Lowering a stretched LS path along an `n`-replicated word dilates lowering the original LS path
+along the un-replicated word. -/
+theorem lowerWord_flatMap_replicate_toPLPath_stretch {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2)
+    (w : List α) (π : LSPath P b lam) {n : ℕ} (hn : 0 < n) :
+    PLPath.lowerWord F x (w.flatMap fun i ↦ List.replicate n i)
+        ((π.stretch n hn).toPLPath 𝕜 f) =
+      (PLPath.lowerWord F x w (π.toPLPath 𝕜 f)).map (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_stretch, PLPath.lowerWord_flatMap_replicate_map_natCast_smul hx hn]
 
-/-- Stretching an LS path by `n` intertwines raising words on `π.toPLPath 𝕜 f` with `n`-fold
-letter-replicated raising words on `(π.stretch n hn).toPLPath 𝕜 f`. -/
-theorem raiseWord_flatMap_replicate_toPLPath_stretch (π : LSPath P b lam) {α : Type*}
-    {F : α → Dual 𝕜 V} {x : α → V} (hx : ∀ a, F a (x a) = 2) {n : ℕ} (hn : 0 < n)
-    (w : List α) :
-    PLPath.raiseWord F x (w.flatMap (List.replicate n)) ((π.stretch n hn).toPLPath 𝕜 f) =
-      (PLPath.raiseWord F x w (π.toPLPath 𝕜 f)).map (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
+/-- Raising a stretched LS path along an `n`-replicated word dilates raising the original LS path
+along the un-replicated word. -/
+theorem raiseWord_flatMap_replicate_toPLPath_stretch {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2)
+    (w : List α) (π : LSPath P b lam) {n : ℕ} (hn : 0 < n) :
+    PLPath.raiseWord F x (w.flatMap fun i ↦ List.replicate n i)
+        ((π.stretch n hn).toPLPath 𝕜 f) =
+      (PLPath.raiseWord F x w (π.toPLPath 𝕜 f)).map (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_stretch, PLPath.raiseWord_flatMap_replicate_map_natCast_smul hx hn]
 
-/-- When `n` clears the segment durations of `π`, lowering along `w.flatMap (List.replicate n)` on
-the straight-orbit-path concatenation of `π.subdivisionWord m` equals the `n`-dilation of lowering
-along `w` on `π.toPLPath 𝕜 f`. -/
-theorem lowerWord_flatMap_replicate_prod_subdivisionWord (π : LSPath P b lam) {α : Type*}
-    {F : α → Dual 𝕜 V} {x : α → V} (hx : ∀ a, F a (x a) = 2) {n : ℕ} (hn : 0 < n)
-    (m : Fin (π.length + 1) → ℕ) (hm : ∀ j, (m j : ℚ) = (n : ℚ) * π.duration j) (w : List α) :
-    PLPath.lowerWord F x (w.flatMap (List.replicate n))
-        (((π.subdivisionWord m).map fun σ ↦ PLPath.straight 𝕜 (f (σ • lam))).prod) =
-      (PLPath.lowerWord F x w (π.toPLPath 𝕜 f)).map
-        (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
-  rw [← π.toPLPath_stretch_eq_prod_subdivisionWord 𝕜 f n hn m hm,
-    π.lowerWord_flatMap_replicate_toPLPath_stretch 𝕜 f hx hn w]
+/-- Lowering along an `n`-replicated word links two stretched LS paths if and only if lowering along
+the original word links the unstretched paths. -/
+theorem lowerWord_flatMap_replicate_toPLPath_stretch_eq_some_iff {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2)
+    (w : List α) (π : LSPath P b lam) (ρ : LSPath P b μ) {n : ℕ} (hn : 0 < n) :
+    PLPath.lowerWord F x (w.flatMap fun i ↦ List.replicate n i)
+        ((π.stretch n hn).toPLPath 𝕜 f) = some ((ρ.stretch n hn).toPLPath 𝕜 f) ↔
+      PLPath.lowerWord F x w (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f) := by
+  rw [toPLPath_stretch, toPLPath_stretch,
+    PLPath.lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff hx hn]
 
-/-- When `n` clears the segment durations of `π`, raising along `w.flatMap (List.replicate n)` on
-the straight-orbit-path concatenation of `π.subdivisionWord m` equals the `n`-dilation of raising
-along `w` on `π.toPLPath 𝕜 f`. -/
-theorem raiseWord_flatMap_replicate_prod_subdivisionWord (π : LSPath P b lam) {α : Type*}
-    {F : α → Dual 𝕜 V} {x : α → V} (hx : ∀ a, F a (x a) = 2) {n : ℕ} (hn : 0 < n)
-    (m : Fin (π.length + 1) → ℕ) (hm : ∀ j, (m j : ℚ) = (n : ℚ) * π.duration j) (w : List α) :
-    PLPath.raiseWord F x (w.flatMap (List.replicate n))
+/-- Raising along an `n`-replicated word links two stretched LS paths if and only if raising along
+the original word links the unstretched paths. -/
+theorem raiseWord_flatMap_replicate_toPLPath_stretch_eq_some_iff {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2)
+    (w : List α) (π : LSPath P b lam) (ρ : LSPath P b μ) {n : ℕ} (hn : 0 < n) :
+    PLPath.raiseWord F x (w.flatMap fun i ↦ List.replicate n i)
+        ((π.stretch n hn).toPLPath 𝕜 f) = some ((ρ.stretch n hn).toPLPath 𝕜 f) ↔
+      PLPath.raiseWord F x w (π.toPLPath 𝕜 f) = some (ρ.toPLPath 𝕜 f) := by
+  rw [toPLPath_stretch, toPLPath_stretch,
+    PLPath.raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff hx hn]
+
+/-- When `n` clears the segment durations of `π`, lowering along
+`w.flatMap fun i ↦ List.replicate n i` on the straight-orbit-path concatenation of
+`π.subdivisionWord m` equals the `n`-dilation of lowering along `w` on `π.toPLPath 𝕜 f`. -/
+theorem lowerWord_flatMap_replicate_prod_subdivisionWord {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2)
+    (w : List α) (π : LSPath P b lam) {n : ℕ} (hn : 0 < n)
+    (m : Fin (π.length + 1) → ℕ) (hm : ∀ j, (m j : ℚ) = (n : ℚ) * π.duration j) :
+    PLPath.lowerWord F x (w.flatMap fun i ↦ List.replicate n i)
         (((π.subdivisionWord m).map fun σ ↦ PLPath.straight 𝕜 (f (σ • lam))).prod) =
-      (PLPath.raiseWord F x w (π.toPLPath 𝕜 f)).map
-        (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
+      (PLPath.lowerWord F x w (π.toPLPath 𝕜 f)).map (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [← π.toPLPath_stretch_eq_prod_subdivisionWord 𝕜 f n hn m hm,
-    π.raiseWord_flatMap_replicate_toPLPath_stretch 𝕜 f hx hn w]
+    lowerWord_flatMap_replicate_toPLPath_stretch 𝕜 f hx w π hn]
+
+/-- When `n` clears the segment durations of `π`, raising along
+`w.flatMap fun i ↦ List.replicate n i` on the straight-orbit-path concatenation of
+`π.subdivisionWord m` equals the `n`-dilation of raising along `w` on `π.toPLPath 𝕜 f`. -/
+theorem raiseWord_flatMap_replicate_prod_subdivisionWord {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2)
+    (w : List α) (π : LSPath P b lam) {n : ℕ} (hn : 0 < n)
+    (m : Fin (π.length + 1) → ℕ) (hm : ∀ j, (m j : ℚ) = (n : ℚ) * π.duration j) :
+    PLPath.raiseWord F x (w.flatMap fun i ↦ List.replicate n i)
+        (((π.subdivisionWord m).map fun σ ↦ PLPath.straight 𝕜 (f (σ • lam))).prod) =
+      (PLPath.raiseWord F x w (π.toPLPath 𝕜 f)).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  rw [← π.toPLPath_stretch_eq_prod_subdivisionWord 𝕜 f n hn m hm,
+    raiseWord_flatMap_replicate_toPLPath_stretch 𝕜 f hx w π hn]
+
+end Stretch
+
+section RationalChain
+
+variable {l : ℕ}
+  (dir : Fin (l + 1) →
+    {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+  (hdir : ∀ j : Fin l,
+    (weylCoxeterSystem P b).BruhatLE (dir j.succ).val (dir j.castSucc).val)
+  (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
+  (time : Fin (l + 2) → ℚ) (hzero : time 0 = 0) (hlast : time (Fin.last _) = 1)
+  (htime : StrictMono time) (n : ℕ) (hn : 0 < n)
+  (hden : ∀ j : Fin l, (time j.castSucc.succ).den ∣ n)
+  (𝕜) (f : M →+ V)
+
+/-- Applying `lowerIter F x n` to the LS path `ofBruhatChain` obtained by clearing break
+denominators dilates single-step lowering on the original rational Bruhat-chain path. -/
+theorem lowerIter_toPLPath_ofBruhatChain {F : Module.Dual 𝕜 V} {x : V} (hx : F x = 2) :
+    PLPath.lowerIter F x n
+        ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) =
+      (PLPath.lower F x (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam)))).map
+          (·.map ((n : 𝕜) • LinearMap.id)) := by
+  rw [toPLPath_ofBruhatChain, PLPath.lowerIter_map_natCast_smul hx hn]
+
+/-- Applying `raiseIter F x n` to `ofBruhatChain` dilates single-step raising on the original
+rational Bruhat-chain path. -/
+theorem raiseIter_toPLPath_ofBruhatChain {F : Module.Dual 𝕜 V} {x : V} (hx : F x = 2) :
+    PLPath.raiseIter F x n
+        ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) =
+      (PLPath.raise F x (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam)))).map
+          (·.map ((n : 𝕜) • LinearMap.id)) := by
+  rw [toPLPath_ofBruhatChain, PLPath.raiseIter_map_natCast_smul hx hn]
+
+/-- The denominator-cleared LS path `ofBruhatChain` is obtained from `straight (n • lam)` by
+lowering along an `n`-replicated word if and only if the original rational Bruhat-chain path is
+obtained from `PLPath.straight 𝕜 (f lam)` by lowering along the un-replicated word. -/
+theorem lowerWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2) (w : List α) :
+    PLPath.lowerWord F x (w.flatMap fun i ↦ List.replicate n i)
+        ((straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f) =
+      some ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) ↔
+    PLPath.lowerWord F x w (PLPath.straight 𝕜 (f lam)) =
+      some (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam))) := by
+  have hstr : (straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f =
+      (PLPath.straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id) := by
+    rw [← stretch_straight lam n hn, toPLPath_stretch, toPLPath_straight]
+  rw [hstr, toPLPath_ofBruhatChain,
+    PLPath.lowerWord_flatMap_replicate_map_natCast_smul_eq_some_iff hx hn]
+
+/-- Dual raising criterion for `ofBruhatChain`: raising `ofBruhatChain` along an `n`-replicated
+word reaches `straight (n • lam)` if and only if raising the original rational Bruhat-chain path
+along the un-replicated word reaches `PLPath.straight 𝕜 (f lam)`. -/
+theorem raiseWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff {α : Type*}
+    {F : α → Module.Dual 𝕜 V} {x : α → V} (hx : ∀ i, F i (x i) = 2) (w : List α) :
+    PLPath.raiseWord F x (w.flatMap fun i ↦ List.replicate n i)
+        ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) =
+      some ((straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f) ↔
+    PLPath.raiseWord F x w (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam))) =
+      some (PLPath.straight 𝕜 (f lam)) := by
+  have hstr : (straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f =
+      (PLPath.straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id) := by
+    rw [← stretch_straight lam n hn, toPLPath_stretch, toPLPath_straight]
+  rw [hstr, toPLPath_ofBruhatChain,
+    PLPath.raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff hx hn]
+
+end RationalChain
 
 end TauCeti.LSPath

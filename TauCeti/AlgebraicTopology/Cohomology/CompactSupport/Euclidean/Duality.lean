@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Euclidean
-public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality
+public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Basic
 public import TauCeti.Analysis.Convex.Topology
 
 /-!

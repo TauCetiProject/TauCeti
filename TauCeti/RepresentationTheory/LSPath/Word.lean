@@ -78,6 +78,22 @@ theorem raiseWord_singleton (i : ι) (π : PLPath 𝕜 V) :
     raiseWord F x [i] π = raise (F i) (x i) π := by
   simp [raiseWord_cons]
 
+/-- Lowering along the constant word `List.replicate n i` is `lowerIter (F i) (x i) n`. -/
+@[simp]
+theorem lowerWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    lowerWord F x (List.replicate n i) π = lowerIter (F i) (x i) n π := by
+  induction n generalizing π with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, lowerWord_cons, lowerIter_succ, ih]
+
+/-- Raising along the constant word `List.replicate n i` is `raiseIter (F i) (x i) n`. -/
+@[simp]
+theorem raiseWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    raiseWord F x (List.replicate n i) π = raiseIter (F i) (x i) n π := by
+  induction n generalizing π with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, raiseWord_cons, raiseIter_succ, ih]
+
 /-- Concatenating words composes their partial lowering actions. -/
 theorem lowerWord_append (v w : List ι) (π : PLPath 𝕜 V) :
     lowerWord F x (v ++ w) π = (lowerWord F x v π).bind (lowerWord F x w) := by
@@ -89,20 +105,6 @@ theorem raiseWord_append (v w : List ι) (π : PLPath 𝕜 V) :
     raiseWord F x (v ++ w) π = (raiseWord F x v π).bind (raiseWord F x w) := by
   unfold raiseWord
   exact List.foldlM_append
-
-/-- Lowering along `n` copies of `i` is `lowerIter (F i) (x i) n`. -/
-@[simp]
-theorem lowerWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
-    lowerWord F x (List.replicate n i) π = lowerIter (F i) (x i) n π := by
-  rw [lowerIter_eq_iterate]
-  exact Option.foldlM_replicate (fun π i ↦ lower (F i) (x i) π) n i π
-
-/-- Raising along `n` copies of `i` is `raiseIter (F i) (x i) n`. -/
-@[simp]
-theorem raiseWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
-    raiseWord F x (List.replicate n i) π = raiseIter (F i) (x i) n π := by
-  rw [raiseIter_eq_iterate]
-  exact Option.foldlM_replicate (fun π i ↦ raise (F i) (x i) π) n i π
 
 /-- Raising along a word is lowering along the same word conjugated by path reversal. -/
 theorem raiseWord_eq_map_lowerWord_reverse (w : List ι) (π : PLPath 𝕜 V) :
