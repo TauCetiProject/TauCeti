@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.FreeProbability.FreeProduct.Reduced
 public import TauCeti.Probability.FreeProbability.Law.Basic
 public import TauCeti.Probability.FreeProbability.WeakClosure
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
@@ -41,6 +42,7 @@ states.
 ## Main results
 
 * `TauCeti.FreeLawRealization.denseRange_algebra_vacuum`,
+  `TauCeti.FreeLawRealization.factor_injective`,
   `TauCeti.FreeLawRealization.topologicalClosure_iSup_range_factor`,
   `TauCeti.FreeLawRealization.topologicalClosure_starAlgebra_adjoin_range_generator`,
   `TauCeti.FreeLawRealization.starAlgHom_ext`,
@@ -85,11 +87,6 @@ private def factorCoordinate (i : ι) : C((μ i).support, ℂ) :=
 
 private theorem isSelfAdjoint_factorCoordinate (i : ι) : IsSelfAdjoint (factorCoordinate μ i) :=
   ContinuousMap.isSelfAdjoint_realToRCLike ℂ
-
-private theorem spectrum_factorCoordinate_subset_support (i : ι) :
-    spectrum ℝ (factorCoordinate μ i) ⊆ (μ i).support := by
-  rintro r hr; rw [ContinuousMap.spectrum_eq_preimage_range] at hr
-  rcases hr with ⟨x, hx⟩; exact (Complex.ofReal_injective hx : x.val = r) ▸ x.property
 
 variable [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
@@ -212,20 +209,33 @@ theorem topologicalClosure_iSup_range_factor :
     exact (ReducedFreeProduct.denseRange_ofAlgebraic (factorFunctional μ)
       (factorFunctional_one μ)).closure_eq
 
-/-- Continuous `⋆`-algebra homomorphisms out of `algebra μ` are determined by their restrictions to
-the canonical factors `factor μ i`. -/
-theorem starAlgHom_ext {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
-    [TopologicalSpace B] [T2Space B] {f g : algebra μ →⋆ₐ[ℂ] B}
-    (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ i a, f (factor μ i a) = g (factor μ i a)) : f = g :=
-  ReducedFreeProduct.starAlgHom_ext (factorFunctional μ) (factorFunctional_one μ) hf hg h
-
 /-- Evaluating `state μ` on the `i`-th factor integrates against `μ i` on `(μ i).support`. -/
 @[simp] theorem state_factor (i : ι) (x : C((μ i).support, ℂ)) :
     state μ (factor μ i x) = ∫ t, x t ∂(μ i).comap ((↑) : (μ i).support → ℝ) :=
   (ReducedFreeProduct.state_factor (factorFunctional μ) (factorFunctional_one μ) i x).trans
     ((StarPositiveFunctional.ofPositiveLinearMap_apply _ _).trans
       (ContinuousMap.integralPositiveLinearMap_apply _ x))
+
+/-- Each canonical factor `⋆`-homomorphism `factor μ i` is injective. -/
+theorem factor_injective (i : ι) : Function.Injective (factor μ i) := by
+  rw [injective_iff_map_eq_zero]
+  intro f hf
+  have hstate : state μ (factor μ i (star f * f)) = 0 := by
+    rw [map_mul, map_star, hf, star_zero, zero_mul, map_zero]
+  rw [state_factor] at hstate
+  have hfun : (fun t : (μ i).support => (star f * f) t) = fun t => ((‖f t‖ ^ 2 : ℝ) : ℂ) := by
+    ext t
+    simp [Complex.conj_mul']
+  rw [show (∫ t, (star f * f) t ∂(μ i).comap ((↑) : (μ i).support → ℝ)) =
+      ∫ t, ((‖f t‖ ^ 2 : ℝ) : ℂ) ∂(μ i).comap ((↑) : (μ i).support → ℝ) from
+    integral_congr_ae (Filter.Eventually.of_forall fun t => congrFun hfun t),
+    integral_complex_ofReal, Complex.ofReal_eq_zero] at hstate
+  refine ContinuousMap.ext fun t => by_contra fun ht => ?_
+  have hpos : 0 < ∫ x, ‖f x‖ ^ 2 ∂(μ i).comap ((↑) : (μ i).support → ℝ) :=
+    integral_pos_of_integrable_nonneg_ne_zero (f.continuous.norm.pow 2)
+      ((f.continuous.norm.pow 2).integrable_of_hasCompactSupport (.of_compactSpace _))
+      (fun _ => sq_nonneg _) (pow_ne_zero 2 (norm_ne_zero_iff.mpr ht))
+  exact hpos.ne' hstate
 
 /-- The canonical factor subalgebras in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependent_factor :
@@ -258,11 +268,14 @@ theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) :=
   exact (state_factor μ i x).trans (ContinuousMap.integralPositiveLinearMap_apply _ x).symm
 
 /-- The real spectrum of `generator μ i` equals `(μ i).support`. -/
-@[simp] theorem spectrum_generator (i : ι) : spectrum ℝ (generator μ i) = (μ i).support :=
-  Set.Subset.antisymm
-    ((AlgHom.spectrum_apply_subset ((factor μ i).toAlgHom.restrictScalars ℝ)
-      (factorCoordinate μ i)).trans (spectrum_factorCoordinate_subset_support μ i))
+@[simp] theorem spectrum_generator (i : ι) : spectrum ℝ (generator μ i) = (μ i).support := by
+  refine Set.Subset.antisymm ?_
     (law_generator μ i ▸ PositiveLinearMap.support_law_subset_spectrum (state μ) (generator μ i))
+  refine (AlgHom.spectrum_apply_subset ((factor μ i).toAlgHom.restrictScalars ℝ)
+    (factorCoordinate μ i)).trans ?_
+  rw [factorCoordinate, ContinuousMap.spectrum_realToRCLike, ContinuousMap.spectrum_eq_range]
+  rintro _ ⟨x, rfl⟩
+  exact x.property
 
 /-- The canonical generators in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependentElements_generator :
@@ -296,6 +309,23 @@ theorem topologicalClosure_starAlgebra_adjoin_range_generator :
     rw [← topologicalClosure_iSup_range_factor μ]
     exact Subalgebra.topologicalClosure_minimal (iSup_le hfactor) S.isClosed_topologicalClosure
   exact StarSubalgebra.toSubalgebra_injective (top_le_iff.mp htop)
+
+/-- Continuous `⋆`-algebra homomorphisms out of `algebra μ` are determined by their values on the
+canonical generators `generator μ i`. -/
+theorem starAlgHom_ext {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
+    [TopologicalSpace B] [T2Space B] {f g : algebra μ →⋆ₐ[ℂ] B}
+    (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ i, f (generator μ i) = g (generator μ i)) : f = g := by
+  let E : StarSubalgebra ℂ (algebra μ) :=
+    { toSubalgebra := AlgHom.equalizer f.toAlgHom g.toAlgHom
+      star_mem' := fun {a} (ha : f a = g a) => by
+        change f (star a) = g (star a)
+        rw [map_star, map_star, ha] }
+  have hle : (StarAlgebra.adjoin ℂ (Set.range (generator μ))).topologicalClosure ≤ E :=
+    StarSubalgebra.topologicalClosure_minimal
+      (StarAlgebra.adjoin_le <| by rintro _ ⟨i, rfl⟩; exact h i) (isClosed_eq hf hg)
+  rw [topologicalClosure_starAlgebra_adjoin_range_generator μ] at hle
+  exact DFunLike.ext f g fun x => hle trivial
 
 /-! #### Concrete von Neumann algebra realization -/
 

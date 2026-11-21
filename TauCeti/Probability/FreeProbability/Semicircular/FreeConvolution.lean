@@ -43,7 +43,7 @@ namespace TauCeti.Probability
 
 /-- **Free additive convolution of Wigner semicircle laws.** Both centres and variances add, for all
 `m₁, m₂ : ℝ` and `v₁, v₂ : ℝ≥0` (including the degenerate zero-variance Dirac cases). -/
-theorem semicircleReal_freeConv_semicircleReal (m₁ m₂ : ℝ) (v₁ v₂ : ℝ≥0) :
+@[simp] theorem semicircleReal_freeConv_semicircleReal (m₁ m₂ : ℝ) (v₁ v₂ : ℝ≥0) :
     (semicircleReal m₁ v₁).freeConv (semicircleReal m₂ v₂) =
       semicircleReal (m₁ + m₂) (v₁ + v₂) := by
   have hcentred : (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) =
@@ -64,7 +64,7 @@ theorem semicircleReal_freeConv_semicircleReal (m₁ m₂ : ℝ) (v₁ v₂ : �
     hcentred, ← hshift (m₁ + m₂) (v₁ + v₂)]
 
 /-- **Free convolution powers of Wigner semicircle laws.** -/
-theorem semicircleReal_freeConvolutionPower (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+@[simp] theorem semicircleReal_freeConvolutionPower (m : ℝ) (v : ℝ≥0) (n : ℕ) :
     (semicircleReal m v).freeConvolutionPower n = semicircleReal (n * m) (n • v) := by
   induction n with
   | zero => simp

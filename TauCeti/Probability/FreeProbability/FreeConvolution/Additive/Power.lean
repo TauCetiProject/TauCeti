@@ -68,6 +68,16 @@ theorem isCompact_support_fold_freeConv (μ : ι → Measure ℝ) :
   · rw [← Finset.insert_erase hi, Finset.fold_insert (Finset.notMem_erase i s)]
     exact isCompact_support_freeConv _ _
 
+/-- Folding `freeConv` with base `Measure.dirac 0` always yields either `0` or a probability
+measure (hence a finite measure). -/
+instance isZeroOrProbabilityMeasure_fold_freeConv (μ : ι → Measure ℝ) :
+    IsZeroOrProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) := by
+  classical
+  rcases s.eq_empty_or_nonempty with rfl | ⟨i, hi⟩
+  · simp only [Finset.fold_empty]; infer_instance
+  · rw [← Finset.insert_erase hi, Finset.fold_insert (Finset.notMem_erase i s)]
+    infer_instance
+
 /-- Folding `freeConv` with base `Measure.dirac 0` yields a probability measure iff every indexed
 measure in `s` is a compactly supported probability measure (including when `s = ∅`). -/
 theorem isProbabilityMeasure_fold_freeConv_iff :
@@ -81,6 +91,18 @@ theorem isProbabilityMeasure_fold_freeConv_iff :
   | @insert i s hi ih =>
       rw [Finset.fold_insert hi, isProbabilityMeasure_freeConv_iff,
         and_iff_left (isCompact_support_fold_freeConv s μ), ih, Finset.forall_mem_insert]
+
+/-- Folding `freeConv` with base `Measure.dirac 0` yields `0` iff some indexed measure in `s` is
+not a compactly supported probability measure. -/
+theorem fold_freeConv_eq_zero_iff :
+    s.fold freeConv (Measure.dirac 0) μ = 0 ↔
+      ∃ i ∈ s, ¬(IsProbabilityMeasure (μ i) ∧ IsCompact (μ i).support) := by
+  have h : s.fold freeConv (Measure.dirac 0) μ = 0 ↔
+      ¬IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) :=
+    ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
+      fun hnp => (eq_zero_or_isProbabilityMeasure _).resolve_right hnp⟩
+  rw [isProbabilityMeasure_fold_freeConv_iff, not_forall] at h
+  simpa only [not_imp, exists_prop] using h
 
 /-- Folding `freeConv` with base `Measure.dirac 0` over compactly supported probability measures
 yields a probability measure (including when `s = ∅`). -/
@@ -249,6 +271,16 @@ theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : �
       exact not_isProbabilityMeasure_zero (freeConvolutionPower_eq_zero_of_not hn h ▸ hp),
       fun ⟨_, hμ⟩ => isProbabilityMeasure_freeConvolutionPower hμ n⟩
 
+/-- `μ.freeConvolutionPower n` equals `0` iff `n ≠ 0` and `μ` is not a compactly supported
+probability measure. -/
+theorem freeConvolutionPower_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
+    μ.freeConvolutionPower n = 0 ↔
+      n ≠ 0 ∧ ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support) := by
+  have h : μ.freeConvolutionPower n = 0 ↔ ¬IsProbabilityMeasure (μ.freeConvolutionPower n) :=
+    ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
+      fun hnp => (eq_zero_or_isProbabilityMeasure _).resolve_right hnp⟩
+  rwa [isProbabilityMeasure_freeConvolutionPower_iff, not_or] at h
+
 /-- The first free convolution power of a compactly supported probability measure is itself. -/
 theorem freeConvolutionPower_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) : μ.freeConvolutionPower 1 = μ := dirac_zero_freeConv hμ
@@ -274,16 +306,11 @@ theorem freeConvolutionPower_succ' (μ : Measure ℝ) (n : ℕ) :
     μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n) := freeConv_comm _ _
 
 /-- Free convolution powers of a Dirac mass add its atom `n` times. -/
-theorem freeConvolutionPower_dirac (a : ℝ) (n : ℕ) :
+@[simp] theorem freeConvolutionPower_dirac (a : ℝ) (n : ℕ) :
     (Measure.dirac a).freeConvolutionPower n = Measure.dirac (n • a) := by
   induction n with
   | zero => simp
   | succ n ih => rw [freeConvolutionPower_succ, ih, dirac_freeConv_dirac, succ_nsmul]
-
-/-- Every free convolution power of `Measure.dirac 0` is `Measure.dirac 0`. -/
-@[simp] theorem freeConvolutionPower_dirac_zero (n : ℕ) :
-    (Measure.dirac (0 : ℝ)).freeConvolutionPower n = Measure.dirac 0 := by
-  simpa using freeConvolutionPower_dirac 0 n
 
 /-- Iterated free convolution powers multiply exponents, unconditionally for all measures on `ℝ`. -/
 theorem freeConvolutionPower_mul (μ : Measure ℝ) (m n : ℕ) :

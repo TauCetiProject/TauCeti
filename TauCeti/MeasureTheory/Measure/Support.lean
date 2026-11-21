@@ -40,6 +40,9 @@ global continuity is unnecessary for this inclusion.
 * `MeasureTheory.Measure.isProbabilityMeasure_comap_support` — in a hereditarily Lindelöf space
   with measurable open sets, pulling a probability measure back to its support gives a probability
   measure.
+* `MeasureTheory.Measure.isOpenPosMeasure_comap_support` — in a hereditarily Lindelöf space with
+  measurable open sets, pulling a measure back to its support yields a measure positive on nonempty
+  open sets.
 * `MeasureTheory.Measure.isCompact_support_cond` and
   `MeasureTheory.Measure.compactSpace_support_cond` — Boolean selection between compactly
   supported measures preserves compact support.
@@ -152,6 +155,20 @@ instance isProbabilityMeasure_comap_support {X : Type*} [TopologicalSpace X]
   (MeasurableEmbedding.subtypeVal
     (Measure.isClosed_support (μ := μ)).measurableSet).isProbabilityMeasure_comap
       (by simpa using Measure.support_mem_ae (μ := μ))
+
+/-- In a hereditarily Lindelöf space with measurable open sets, pulling a measure back to its
+topological support yields a measure positive on nonempty open sets. -/
+instance isOpenPosMeasure_comap_support {X : Type*} [TopologicalSpace X]
+    [HereditarilyLindelofSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    (μ : Measure X) : (μ.comap ((↑) : μ.support → X)).IsOpenPosMeasure where
+  open_pos U hU := by
+    rintro ⟨x, hx⟩
+    obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU
+    rw [(MeasurableEmbedding.subtypeVal
+        (Measure.isClosed_support (μ := μ)).measurableSet).comap_apply,
+      Subtype.image_preimage_coe, Set.inter_comm,
+      measure_inter_conull (Measure.measure_compl_support (μ := μ))]
+    exact ((mem_support_iff_forall (x : X)).mp x.property O (hO.mem_nhds hx)).ne'
 
 /-- Selecting between two compactly supported measures via `cond` yields a compactly supported
 measure. -/

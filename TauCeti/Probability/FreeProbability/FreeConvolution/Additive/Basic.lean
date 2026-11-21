@@ -140,6 +140,17 @@ theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
   ⟨fun hp => by by_contra h; exact not_isProbabilityMeasure_zero (freeConv_eq_zero_of_not h ▸ hp),
     fun ⟨⟨_, hμc⟩, ⟨_, hνc⟩⟩ => isProbabilityMeasure_freeConv hμc hνc⟩
 
+/-- `μ.freeConv ν` equals `0` iff at least one of `μ` or `ν` is not a compactly supported
+probability measure. -/
+theorem freeConv_eq_zero_iff {μ ν : Measure ℝ} :
+    μ.freeConv ν = 0 ↔
+      ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support) ∨
+        ¬(IsProbabilityMeasure ν ∧ IsCompact ν.support) := by
+  have h : μ.freeConv ν = 0 ↔ ¬IsProbabilityMeasure (μ.freeConv ν) :=
+    ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
+      fun hnp => (eq_zero_or_isProbabilityMeasure (μ.freeConv ν)).resolve_right hnp⟩
+  rwa [isProbabilityMeasure_freeConv_iff, not_and_or] at h
+
 /-- **Binary C⋆-probability realization of `μ`, `ν`, and `μ.freeConv ν`.** -/
 theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure ℝ}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
