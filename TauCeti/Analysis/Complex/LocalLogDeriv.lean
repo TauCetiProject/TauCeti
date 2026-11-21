@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.CanonicalFactor
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.JensenFormula
 import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.Meromorphic.FactorizedRational
 
 /-!
 # Landau's local logarithmic-derivative lemma
@@ -55,7 +56,7 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
 
 ## Implementation notes
 
-`AnalyticOnNhd.exists_eq_finprod_zpow_mul` writes `f = P G`, removing the inner-disc zeros.
+`AnalyticOnNhd.finprod_zpow_factorization` writes `f = P G`, removing the inner-disc zeros.
 For arbitrary radii, multiply `G` by the numerators of `Complex.canonicalFactor`; their circle
 norm agrees with that of `P`, and their central norm dominates it. The maximum modulus principle
 transfers the relative bound to this product.
@@ -109,13 +110,15 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
       logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ) =
         logDeriv G z := by
   classical
-  have hr : 0 < r := (norm_nonneg _).trans_lt hz
-  have hR : 0 < R := hr.trans_le hrR
   have hzb : z ∈ ball z₀ r := by rwa [mem_ball, dist_eq_norm]
   have hzR : z ∈ ball z₀ R := ball_subset_ball hrR hzb
-  obtain ⟨G, hG, hG0, hfG⟩ := hf.exists_eq_finprod_zpow_mul hR hrR
-    ⟨z, ball_subset_closedBall hzR, hfz⟩
   let D := divisor f (closedBall z₀ r)
+  let G := toMeromorphicNFOn ((∏ᶠ ρ, (· - ρ) ^ D ρ)⁻¹ • f) D.support
+  obtain ⟨hG, hG0, hglobal, _⟩ := hf.finprod_zpow_factorization hrR
+    ⟨z, ball_subset_closedBall hzR, hfz⟩
+  have hfG : ∀ w ∈ closedBall z₀ R,
+      f w = (∏ᶠ ρ, (· - ρ) ^ D ρ) w * G w := fun w _ ↦ by
+    exact congrFun hglobal w
   have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
   have hD (ρ : ℂ) : 0 ≤ D ρ := (hf.mono (closedBall_subset_closedBall hrR)).divisor_nonneg ρ
   refine ⟨G, hfin, hD, Function.FactorizedRational.finprod_apply_eq_prod hfin, hG, hG0, hfG, ?_⟩
@@ -123,9 +126,8 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
   have hDz : D z = 0 := (hf z (ball_subset_closedBall hzR)).divisor_apply_eq_zero hfz
   have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero hDz
   have hlogf : logDeriv f z = logDeriv P z + logDeriv G z := by
-    have hfPG : f =ᶠ[𝓝 z] P * G := eventuallyEq_of_mem (isOpen_ball.mem_nhds hzR)
-      fun w hw ↦ hfG w (ball_subset_closedBall hw)
-    rw [(logDeriv_congr_nhds hfPG).eq_of_nhds,
+    have hfPG : f = P * G := funext fun w ↦ congrFun hglobal w
+    rw [hfPG,
       logDeriv_mul z hPz (hG0 z (ball_subset_closedBall hzb))
         (Function.FactorizedRational.analyticAt (hD z)).differentiableAt
         (hG z (ball_subset_closedBall hzR)).differentiableAt]
