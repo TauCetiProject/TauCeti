@@ -306,6 +306,40 @@ theorem tateSeries.renameAlgHom_X {M : ℕ} (e : Fin N ↪ Fin M) (i : Fin N) :
     (S := fun _ : Fin M ↦ ({1} : Set A)) (hT := isWeightFamily_one_weight)
     (hS := isWeightFamily_one_weight) e (fun _ ↦ subset_rfl) i
 
+/-- **The identity law:** renaming along `Function.Embedding.refl` is the identity algebra
+homomorphism. -/
+@[simp]
+theorem tateSeries.renameAlgHom_id :
+    tateSeries.renameAlgHom (A := A) (Function.Embedding.refl (Fin N)) =
+      AlgHom.id A (tateSeries N A) := by
+  refine AlgHom.ext fun f ↦ Subtype.ext ?_
+  rw [tateSeries.coe_renameAlgHom, AlgHom.id_apply]
+  exact MvPowerSeries.rename_id_apply _
+
+theorem tateSeries.renameAlgHom_id_apply (f : tateSeries N A) :
+    tateSeries.renameAlgHom (Function.Embedding.refl (Fin N)) f = f := by
+  simp
+
+/-- **The composition law:** composing two variable renamings equals renaming along the composite
+embedding. -/
+@[simp]
+theorem tateSeries.renameAlgHom_comp {M K : ℕ} (e₁ : Fin N ↪ Fin M) (e₂ : Fin M ↪ Fin K) :
+    (tateSeries.renameAlgHom (A := A) e₂).comp (tateSeries.renameAlgHom e₁) =
+      tateSeries.renameAlgHom (e₁.trans e₂) := by
+  refine AlgHom.ext fun f ↦ Subtype.ext ?_
+  rw [AlgHom.comp_apply, tateSeries.coe_renameAlgHom, tateSeries.coe_renameAlgHom,
+    tateSeries.coe_renameAlgHom]
+  exact MvPowerSeries.rename_rename (⇑e₁) (⇑e₂) _
+
+/-- Applying two variable renamings in succession equals renaming along the composite
+embedding. -/
+@[simp]
+theorem tateSeries.renameAlgHom_renameAlgHom {M K : ℕ} (e₁ : Fin N ↪ Fin M)
+    (e₂ : Fin M ↪ Fin K) (f : tateSeries N A) :
+    tateSeries.renameAlgHom e₂ (tateSeries.renameAlgHom e₁ f) =
+      tateSeries.renameAlgHom (e₁.trans e₂) f := by
+  rw [← AlgHom.comp_apply, tateSeries.renameAlgHom_comp]
+
 /-- Variable renaming along `e : Fin N ↪ Fin M` preserves `tateSeriesPlus`. -/
 theorem tateSeries.renameAlgHom_mem_tateSeriesPlus {M : ℕ} (e : Fin N ↪ Fin M)
     {Aplus : Subring A} {f : tateSeries N A} (hf : f ∈ tateSeriesPlus N A Aplus) :
@@ -399,6 +433,45 @@ theorem tateSeries.mapRingHom_algebraMap (hφ : Continuous φ) (a : A) :
 theorem tateSeries.mapRingHom_X (hφ : Continuous φ) (i : Fin N) :
     tateSeries.mapRingHom hφ (tateSeries.X N A i) = tateSeries.X N B i :=
   Subtype.ext (by simp)
+
+/-- **The identity law:** the map induced by `RingHom.id A` is the identity ring homomorphism. -/
+@[simp]
+theorem tateSeries.mapRingHom_id :
+    tateSeries.mapRingHom (N := N) (φ := RingHom.id A)
+        (by simpa only [RingHom.coe_id] using continuous_id) =
+      RingHom.id (tateSeries N A) := by
+  refine RingHom.ext fun f ↦ Subtype.ext ?_
+  rw [tateSeries.coe_mapRingHom, MvPowerSeries.map_id]
+  rfl
+
+theorem tateSeries.mapRingHom_id_apply (f : tateSeries N A) :
+    tateSeries.mapRingHom (φ := RingHom.id A)
+        (by simpa only [RingHom.coe_id] using continuous_id) f = f := by
+  simp
+
+/-- **The composition law:** composing two coefficientwise maps equals the map induced by the
+composite ring homomorphism. -/
+@[simp]
+theorem tateSeries.mapRingHom_comp {C : Type*} [CommRing C] [TopologicalSpace C]
+    [NonarchimedeanRing C] {ψ : B →+* C} (hφ : Continuous φ) (hψ : Continuous ψ) :
+    (tateSeries.mapRingHom (N := N) hψ).comp (tateSeries.mapRingHom hφ) =
+      tateSeries.mapRingHom (φ := ψ.comp φ)
+        (by simpa only [RingHom.coe_comp] using hψ.comp hφ) := by
+  refine RingHom.ext fun f ↦ Subtype.ext ?_
+  rw [RingHom.comp_apply, tateSeries.coe_mapRingHom, tateSeries.coe_mapRingHom,
+    tateSeries.coe_mapRingHom, MvPowerSeries.map_comp]
+  rfl
+
+/-- Applying two coefficientwise maps in succession equals applying the map induced by the
+composite ring homomorphism. -/
+@[simp]
+theorem tateSeries.mapRingHom_mapRingHom {C : Type*} [CommRing C] [TopologicalSpace C]
+    [NonarchimedeanRing C] {ψ : B →+* C} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (f : tateSeries N A) :
+    tateSeries.mapRingHom hψ (tateSeries.mapRingHom hφ f) =
+      tateSeries.mapRingHom (φ := ψ.comp φ)
+        (by simpa only [RingHom.coe_comp] using hψ.comp hφ) f := by
+  rw [← RingHom.comp_apply, tateSeries.mapRingHom_comp]
 
 /-- If `φ` maps `Aplus` into `Bplus`, then `tateSeries.mapRingHom hφ` maps
 `tateSeriesPlus N A Aplus` into `tateSeriesPlus N B Bplus`. -/
