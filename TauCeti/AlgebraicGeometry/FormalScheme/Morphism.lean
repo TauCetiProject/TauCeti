@@ -117,6 +117,13 @@ noncomputable def ofSpfMap (φ : A →+* B) (hφ : Continuous φ) : ofSpf B ⟶ 
 
 @[simp] theorem forgetToLocallyRingedSpace_map_ofSpfMap (φ : A →+* B) (hφ : Continuous φ) :
     forgetToLocallyRingedSpace.map (ofSpfMap φ hφ) = Spf.map φ hφ := (rfl)
+@[simp] theorem ofSpfMap_id : ofSpfMap (RingHom.id A) continuous_id = 𝟙 (ofSpf A) :=
+  InducedCategory.hom_ext Spf.map_id
+@[reassoc] theorem ofSpfMap_comp {C : Type u} [CommRing C] [TopologicalSpace C]
+    [IsTopologicalRing C] [IsAdicRing C] (φ : B →+* C) (hφ : Continuous φ) (ψ : A →+* B)
+    (hψ : Continuous ψ) :
+    ofSpfMap (φ.comp ψ) (hφ.comp hψ) = ofSpfMap φ hφ ≫ ofSpfMap ψ hψ :=
+  InducedCategory.hom_ext (Spf.map_comp φ hφ ψ hψ)
 
 /-- Ring homomorphism `A →+* Γ(X, ⊤)` induced on global sections by `f : X ⟶ ofSpf A`. -/
 noncomputable def sectionsHom (f : X ⟶ ofSpf A) : A →+* X.presheaf.obj (op ⊤) :=
