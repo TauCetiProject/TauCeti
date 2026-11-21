@@ -227,6 +227,77 @@ theorem energyIntegrand_reflectPrincipal_zero_zero
     simp [driftForm_apply, massForm_apply]
   · rw [reflectPrincipal_of_le (not_lt.1 hx)]
 
+/-- Below the hyperplane, the bilinear form of the reflected principal coefficient is that of `a`
+at the reflected point `ρ x`, evaluated on vectors reflected by the linear part `R` of `ρ`:
+`a'(x) = R a(ρ x) R`. -/
+theorem matrixBilinearForm_reflectPrincipal_of_lt (hx : ⟪x, ν⟫_ℝ < c₀) (η ξ : EuclideanSpace ℝ ι) :
+    matrixBilinearForm (reflectPrincipal ν c₀ a x) η ξ =
+      matrixBilinearForm (a (hyperplaneReflection ν c₀ x)) ((ℝ ∙ ν)ᗮ.reflection η)
+        ((ℝ ∙ ν)ᗮ.reflection ξ) := by
+  have h := energyIntegrand_pullback_hyperplaneReflection (a := a)
+    (b := (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) (c := (0 : EuclideanSpace ℝ ι → ℝ))
+    (ν := ν) (c₀ := c₀) (x := x) (0, ξ) (0, η)
+  rw [reflectPrincipal_of_lt hx]
+  simpa only [energyIntegrand_apply, driftForm_apply, massForm_apply, pullbackDrift_apply,
+    pullbackDensity_apply, Pi.zero_apply, map_zero, inner_zero_left, inner_zero_right, mul_zero,
+    zero_mul, add_zero, smul_zero, zero_apply] using h
+
+/-- **The reflected coefficient stays close to a reflection-invariant matrix.** Let `A` be a
+constant matrix invariant under the reflection, `A = R A R` with `R` the linear part of `ρ`. If
+the bilinear form of `a` is within `δ` of that of `A`, in operator norm, at every point of the
+closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, then so is that of the reflected coefficient at every
+point. -/
+theorem norm_matrixBilinearForm_reflectPrincipal_sub_le (hν : ν ≠ 0) {A : Matrix ι ι ℝ}
+    (hA : ∀ η ξ, matrixBilinearForm A ((ℝ ∙ ν)ᗮ.reflection η) ((ℝ ∙ ν)ᗮ.reflection ξ) =
+      matrixBilinearForm A η ξ) {δ : ℝ}
+    (ha : ∀ y, c₀ ≤ ⟪y, ν⟫_ℝ → ‖matrixBilinearForm (a y) - matrixBilinearForm A‖ ≤ δ)
+    (x : EuclideanSpace ℝ ι) :
+    ‖matrixBilinearForm (reflectPrincipal ν c₀ a x) - matrixBilinearForm A‖ ≤ δ := by
+  by_cases hx : c₀ ≤ ⟪x, ν⟫_ℝ
+  · rw [reflectPrincipal_of_le hx]
+    exact ha x hx
+  -- Below the hyperplane, the difference is the difference at `ρ x` on reflected vectors, and the
+  -- linear part of the reflection is an isometry.
+  have hρ : c₀ ≤ ⟪hyperplaneReflection ν c₀ x, ν⟫_ℝ := by
+    rw [inner_hyperplaneReflection hν]
+    linarith [not_le.1 hx]
+  have hδ := ha _ hρ
+  have hδ0 : 0 ≤ δ := le_trans (by positivity) hδ
+  refine ContinuousLinearMap.opNorm_le_bound₂ _ hδ0 fun η ξ => ?_
+  have h : (matrixBilinearForm (reflectPrincipal ν c₀ a x) - matrixBilinearForm A) η ξ =
+      (matrixBilinearForm (a (hyperplaneReflection ν c₀ x)) - matrixBilinearForm A)
+        ((ℝ ∙ ν)ᗮ.reflection η) ((ℝ ∙ ν)ᗮ.reflection ξ) := by
+    simp only [FunLike.coe_sub, Pi.sub_apply,
+      matrixBilinearForm_reflectPrincipal_of_lt (not_le.1 hx), hA]
+  rw [h]
+  calc _ ≤ ‖matrixBilinearForm (a (hyperplaneReflection ν c₀ x)) - matrixBilinearForm A‖ *
+        ‖(ℝ ∙ ν)ᗮ.reflection η‖ * ‖(ℝ ∙ ν)ᗮ.reflection ξ‖ := ContinuousLinearMap.le_opNorm₂ _ _ _
+    _ ≤ δ * ‖η‖ * ‖ξ‖ := by
+      rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
+      gcongr
+
+/-- **The reflected coefficient keeps the bound of `a`.** If the bilinear form of `a` has operator
+norm at most `Λ` at every point of the closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, then so has that of
+the reflected coefficient at every point. -/
+theorem norm_matrixBilinearForm_reflectPrincipal_le (hν : ν ≠ 0) {Lam : ℝ}
+    (ha : ∀ y, c₀ ≤ ⟪y, ν⟫_ℝ → ‖matrixBilinearForm (a y)‖ ≤ Lam) (x : EuclideanSpace ℝ ι) :
+    ‖matrixBilinearForm (reflectPrincipal ν c₀ a x)‖ ≤ Lam := by
+  by_cases hx : c₀ ≤ ⟪x, ν⟫_ℝ
+  · rw [reflectPrincipal_of_le hx]
+    exact ha x hx
+  -- Below the hyperplane, the form is the form at `ρ x` on reflected vectors.
+  have hρ : c₀ ≤ ⟪hyperplaneReflection ν c₀ x, ν⟫_ℝ := by
+    rw [inner_hyperplaneReflection hν]
+    linarith [not_le.1 hx]
+  have hLam := ha _ hρ
+  refine ContinuousLinearMap.opNorm_le_bound₂ _ (le_trans (by positivity) hLam) fun η ξ => ?_
+  rw [matrixBilinearForm_reflectPrincipal_of_lt (not_le.1 hx)]
+  calc _ ≤ ‖matrixBilinearForm (a (hyperplaneReflection ν c₀ x))‖ *
+        ‖(ℝ ∙ ν)ᗮ.reflection η‖ * ‖(ℝ ∙ ν)ᗮ.reflection ξ‖ := ContinuousLinearMap.le_opNorm₂ _ _ _
+    _ ≤ Lam * ‖η‖ * ‖ξ‖ := by
+      rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
+      gcongr
+
 @[simp]
 theorem reflectDrift_zero :
     reflectDrift ν c₀ (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) = 0 := by

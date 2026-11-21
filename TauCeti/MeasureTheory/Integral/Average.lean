@@ -106,6 +106,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
 * `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of
   `TauCeti.norm_setAverage_sub_le_of_subset`.
+* `TauCeti.norm_setAverage_le_of_norm_le_const`: an average of a function bounded in norm by `C`
+  on a set of finite measure is bounded in norm by `C`.
 * `TauCeti.enorm_setAverage_sub_le_setLAverage`: on a set of finite positive measure, the average
   differs from a constant `c` by at most the average of `‖f - c‖ₑ`, with no integrability
   assumption.
@@ -688,6 +690,19 @@ theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht 
     exact ⟨fun h => hs (measure_mono_null hst h), hs'⟩
   rw [setLAverage_eq, htop, ENNReal.top_div_of_ne_top ht, ENNReal.mul_top hts]
   exact le_top
+
+omit [CompleteSpace F] in
+/-- The average of a function bounded in norm by `C` on a set of finite measure is bounded in
+norm by `C`. This is the average form of `MeasureTheory.norm_setIntegral_le_of_norm_le_const`. -/
+theorem norm_setAverage_le_of_norm_le_const {C : ℝ} (hC : 0 ≤ C) (hs : μ s < ⊤)
+    (hf : ∀ x ∈ s, ‖f x‖ ≤ C) : ‖⨍ x in s, f x ∂μ‖ ≤ C := by
+  rw [setAverage_eq, norm_smul, norm_inv, Real.norm_of_nonneg measureReal_nonneg]
+  rcases eq_or_ne (μ.real s) 0 with h0 | h0
+  · simpa [h0] using hC
+  calc (μ.real s)⁻¹ * ‖∫ x in s, f x ∂μ‖ ≤ (μ.real s)⁻¹ * (C * μ.real s) := by
+        gcongr
+        exact norm_setIntegral_le_of_norm_le_const hs hf
+    _ = C := by field_simp
 
 /-- On a set of finite positive measure, the average of an almost everywhere strongly measurable
 `f` differs from a constant `c` by at most the average of `‖f - c‖ₑ`. No integrability is assumed:

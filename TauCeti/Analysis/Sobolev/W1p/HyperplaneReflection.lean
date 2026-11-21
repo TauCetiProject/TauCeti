@@ -60,6 +60,8 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `TauCeti.W1p.value_restrictL_sub_compHyperplaneReflectionL_ae` and
   `TauCeti.W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae`: the value of
   `(u - u ∘ ρ)|_{U ∩ H}` is `u - u ∘ ρ`, and its gradient is `∇u - R (∇u ∘ ρ)`.
+* `TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae_eq`: the gradient of the odd reflection
+  `u - u ∘ ρ` is `∇u - R (∇u ∘ ρ)`.
 * `TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_restrictL_ae`: on a reflection-invariant
   open `V ⊆ U`, the odd reflection of `u|_V` has the gradient of the odd reflection of `u`.
 * `TauCeti.W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL`: integrating a
@@ -530,6 +532,19 @@ theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_inner_lt (hH : ∀ x, x �
       hx fun hxH => hxK ((hH x).1 hxH).le)] with x hx hlt
   exact hx (not_le.2 hlt)
 
+/-- **The gradient of the odd reflection.** For `u ∈ W^{1,p}(U)`, the weak gradient of the odd
+reflection `u - u ∘ ρ` is `∇u - R (∇u ∘ ρ)` almost everywhere on `U`, where `R` is the linear part
+of the reflection `ρ`. -/
+theorem W1p.gradient_sub_compHyperplaneReflectionL_ae_eq (hp : p ≠ ⊤)
+    (hU : MapsTo (hyperplaneReflection ν c) U U) (u : W1p mu U p) :
+    W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) =ᵐ[mu.restrict U]
+      fun x => W1p.gradient u x -
+        (ℝ ∙ ν)ᗮ.reflection (W1p.gradient u (hyperplaneReflection ν c x)) := by
+  filter_upwards [Lp.coeFn_sub (W1p.gradient u)
+      (W1p.gradient (W1p.compHyperplaneReflectionL hp ν c hU u)),
+    W1p.gradient_compHyperplaneReflectionL_ae hp hU u] with x h1 h2
+  rw [W1p.gradient_sub, h1, Pi.sub_apply, h2]
+
 /-- **The gradient of the odd reflection is odd.** For `u ∈ W^{1,p}(U)`, the weak gradient of
 the odd reflection `w = u - u ∘ ρ` satisfies `∇w ∘ ρ = -R ∘ ∇w` almost everywhere on `U`, where
 `R` is the linear part of the reflection `ρ`. -/
@@ -538,12 +553,7 @@ theorem W1p.gradient_sub_compHyperplaneReflectionL_hyperplaneReflection_ae (hp :
     ∀ᵐ x ∂mu.restrict U,
       W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) (hyperplaneReflection ν c x) =
         -(ℝ ∙ ν)ᗮ.reflection (W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) x) := by
-  have hgw : ∀ᵐ x ∂mu.restrict U, W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) x =
-      W1p.gradient u x - (ℝ ∙ ν)ᗮ.reflection (W1p.gradient u (hyperplaneReflection ν c x)) := by
-    filter_upwards [Lp.coeFn_sub (W1p.gradient u)
-        (W1p.gradient (W1p.compHyperplaneReflectionL hp ν c hU u)),
-      W1p.gradient_compHyperplaneReflectionL_ae hp hU u] with x h1 h2
-    rw [W1p.gradient_sub, h1, Pi.sub_apply, h2]
+  have hgw := W1p.gradient_sub_compHyperplaneReflectionL_ae_eq hp hU u
   filter_upwards [hgw, (measurePreserving_restrict_hyperplaneReflection hU
     U.isOpen.measurableSet).quasiMeasurePreserving.ae hgw] with x h1 h2
   rw [h2, h1, hyperplaneReflection_hyperplaneReflection, map_sub, Submodule.reflection_reflection,
