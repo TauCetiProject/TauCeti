@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import Mathlib.MeasureTheory.Function.Holder
@@ -340,12 +341,10 @@ theorem tendsto_eLpNorm_apply_normed_convolution_sub [CompleteSpace F] {F' : Typ
   · -- Off `K'` both `k` and its mollification vanish.
     have h0 : k x = 0 := image_eq_zero_of_notMem_tsupport fun hxk ↦
       hx ⟨0, mem_closedBall_self zero_le_one, x, hxk, zero_add x⟩
-    have h0' : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] k) x = 0 := by
-      refine Function.notMem_support.1 fun hx' ↦ hx ?_
-      obtain ⟨y, hy, z, hz, rfl⟩ := support_convolution_subset (lsmul ℝ ℝ) hx'
-      rw [(phi i).support_normed_eq] at hy
-      exact ⟨y, closedBall_subset_closedBall hi (ball_subset_closedBall hy), z,
-        subset_tsupport _ hz, rfl⟩
+    have h0' : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] k) x = 0 :=
+      image_eq_zero_of_notMem_tsupport fun hx' ↦ hx <| Set.add_subset_add
+        (closedBall_subset_closedBall hi) subset_rfl
+        ((phi i).tsupport_normed_convolution_subset hx')
     simp [h0, h0']
 
 /-- **Mollification converges in `L¹`.** For an integrable `f` and normalized smooth bumps
