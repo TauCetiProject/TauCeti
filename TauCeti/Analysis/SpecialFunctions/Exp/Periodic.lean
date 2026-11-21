@@ -30,6 +30,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   `x` is an integer `k` and `exp (π x i) = (-1) ^ k`.
 * `Complex.exp_add_int_mul_pi_mul_I`: `exp (z + k * (π * I)) = (-1) ^ k * exp z` for an
   integer `k`.
+* `Complex.neg_one_zpow_mul_exp_add_int_mul_pi_mul_I`: `(-1) ^ k * exp (z + k * (π * I)) = exp z`
+  for an integer `k`.
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
@@ -71,6 +73,12 @@ theorem exists_int_eq_of_exp_pi_mul_I_eq {x : ℝ} {u : ℤ} (h : cexp (↑(π *
 theorem exp_add_int_mul_pi_mul_I (z : ℂ) (k : ℤ) :
     cexp (z + k * (π * I)) = (-1 : ℂ) ^ k * cexp z :=
   k.cast_negOnePow ℂ ▸ exp_antiperiodic.add_int_mul_eq k
+
+/-- `(-1) ^ k * exp (z + k * (π * I)) = exp z` for an integer `k`. -/
+theorem neg_one_zpow_mul_exp_add_int_mul_pi_mul_I (z : ℂ) (k : ℤ) :
+    (-1 : ℂ) ^ k * cexp (z + k * (π * I)) = cexp z := by
+  rw [exp_add_int_mul_pi_mul_I, ← mul_assoc, ← mul_zpow, neg_one_mul, neg_neg, one_zpow,
+    one_mul]
 
 /-- `e(z + k) = e(z)` for `e(z) = exp (2 π i z)` and an integer `k`. -/
 @[simp]

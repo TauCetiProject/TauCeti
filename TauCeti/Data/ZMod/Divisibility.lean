@@ -50,6 +50,8 @@ and the name places the divisibility in Mathlib's operand order.
   along `d ∣ N` have `ZMod.val`s congruent modulo `d`, as integers.
 * `ZMod.intCast_lcm_eq_of_eq_of_eq`: one residue modulo `lcm a b` from the residues modulo `a`
   and `b` — the Chinese remainder theorem for a single integer.
+* `ZMod.intCast_mul_eq_zero_of_dvd`: if `m ∣ a` and `n ∣ b`, then `a * b` casts to zero in
+  `ZMod (m * n)`.
 * `ZMod.natCast_natAbs_eq_of_mul_nonneg`: congruent integers with nonnegative product have
   congruent absolute values.
 * `ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd`: a residue modulo `n` is determined by its
@@ -128,6 +130,12 @@ theorem intCast_lcm_eq_of_eq_of_eq {a b : ℕ} {x y : ℤ} (ha : (x : ZMod a) = 
   have hlcm : (↑(Nat.lcm a b) : ℤ) = ↑(Int.lcm (a : ℤ) (b : ℤ)) := by simp [Int.lcm, Nat.lcm]
   rw [hlcm, ← Int.modEq_and_modEq_iff_modEq_lcm]
   exact ⟨ha, hb⟩
+
+/-- If `m ∣ a` and `n ∣ b`, then `a * b` casts to zero in `ZMod (m * n)`. -/
+theorem intCast_mul_eq_zero_of_dvd {m n : ℕ} {a b : ℤ} (ha : (m : ℤ) ∣ a) (hb : (n : ℤ) ∣ b) :
+    ((a * b : ℤ) : ZMod (m * n)) = 0 :=
+  (ZMod.intCast_zmod_eq_zero_iff_dvd _ (m * n)).mpr
+    (by simpa [Nat.cast_mul] using mul_dvd_mul ha hb)
 
 /-- **Congruent integers with nonnegative product have congruent absolute values.** If
 `z * w ≥ 0` and `z ≡ w` modulo `m`, then `|z| ≡ |w|` modulo `m`. -/

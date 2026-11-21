@@ -76,12 +76,15 @@ theorem induction_on_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) {P : SL(2, ℤ
     induction n using Int.induction_on with
     | zero => simp
     | succ k ih =>
-      rw [zpow_add_one, ← mul_assoc, h_T _ (by rw [coe_mul_T_zpow]; simpa using hδ), ih]
+      rw [zpow_add_one, ← mul_assoc,
+        h_T _ (by rw [TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero]; exact hδ), ih]
     | pred k ih =>
       have hsub : δ * T ^ (-(k : ℤ) - 1) * T = δ * T ^ (-(k : ℤ)) := by
         rw [mul_assoc, ← zpow_add_one]
         simp
-      rw [← h_T (δ * T ^ (-(k : ℤ) - 1)) (by rw [coe_mul_T_zpow]; simpa using hδ), hsub, ih]
+      rw [← h_T (δ * T ^ (-(k : ℤ) - 1))
+          (by rw [TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero]; exact hδ),
+        hsub, ih]
   suffices ∀ n : ℕ, ∀ γ : SL(2, ℤ), 0 < γ 1 0 → (γ 1 0).toNat = n → P γ from
     this (γ 1 0).toNat γ hc rfl
   intro n
@@ -92,9 +95,10 @@ theorem induction_on_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) {P : SL(2, ℤ
     · exact h_one γ h1
     set q : ℤ := γ 1 1 / γ 1 0
     set γ' : SL(2, ℤ) := γ * T ^ (-q)
-    have hγ'_c : γ' 1 0 = γ 1 0 := by dsimp only [γ']; rw [coe_mul_T_zpow]; simp
+    have hγ'_c : γ' 1 0 = γ 1 0 := TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero γ (-q) 1
     have hγ'_d : γ' 1 1 = γ 1 1 % γ 1 0 := by
-      have hval : γ' 1 1 = γ 1 0 * (-q) + γ 1 1 := by dsimp only [γ']; rw [coe_mul_T_zpow]; simp
+      have hval : γ' 1 1 = γ 1 0 * (-q) + γ 1 1 :=
+        TauCeti.ModularGroup.mul_T_zpow_apply_apply_one γ (-q) 1
       rw [hval, Int.emod_def]
       ring
     have hd_nonneg : 0 ≤ γ' 1 1 := hγ'_d ▸ Int.emod_nonneg _ hc.ne'
@@ -107,7 +111,7 @@ theorem induction_on_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) {P : SL(2, ℤ
       have := Int.le_of_dvd one_pos hdvd
       omega
     have hd_pos : 0 < γ' 1 1 := lt_of_le_of_ne hd_nonneg hd_ne.symm
-    have hS_c : (γ' * S) 1 0 = γ' 1 1 := by rw [coe_mul_S]; simp
+    have hS_c : (γ' * S) 1 0 = γ' 1 1 := TauCeti.ModularGroup.mul_S_apply_apply_zero γ' 1
     have hPS : P (γ' * S) := ih (γ' 1 1).toNat (by omega) (γ' * S) (by omega) (by rw [hS_c])
     have hγ_eq : γ = γ' * T ^ q := by simp [γ', mul_assoc]
     rw [hγ_eq, h_Tzpow γ' (by omega) q]

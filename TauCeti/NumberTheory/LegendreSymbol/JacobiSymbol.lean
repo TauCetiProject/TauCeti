@@ -39,6 +39,7 @@ part.
   both statements can be lowered to `|a|`.
 * `TauCeti.jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one`: `J(a | b) = J(b | |a|)` for
   `a ≡ 1 (mod 4)` and odd `b`.
+* `TauCeti.jacobiSym_neg_left_eq_negOnePow`: `J(-a | b) = (-1) ^ (b / 2) * J(a | b)` for odd `b`.
 * `TauCeti.jacobiSym_sq_mul_of_isCoprime`: `J(x² y | b) = J(y | b)` for `x` prime to `b`, and
   `TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime`, its form `J(s x^(2k) y | b) = J(s y | b)`.
 * `TauCeti.exists_prime_jacobiSym_eq_neg_one`: a nonsquare integer is a quadratic nonresidue
@@ -127,6 +128,12 @@ theorem jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one {a : ℤ} (ha : a % 4 
       jacobiSym.quadratic_reciprocity hodd hb, pow_mul,
       Odd.neg_one_pow (Nat.odd_iff.mpr (by omega)), χ₄_eq_neg_one_pow (Nat.odd_iff.mp hb)]
     simp [← mul_assoc, ← mul_pow]
+
+/-- Negating the numerator of a Jacobi symbol with odd denominator `b` multiplies by
+`(-1) ^ (b / 2)`. -/
+theorem jacobiSym_neg_left_eq_negOnePow (a : ℤ) {b : ℕ} (hb : Odd b) :
+    jacobiSym (-a) b = (((b / 2 : ℕ) : ℤ).negOnePow : ℤ) * jacobiSym a b := by
+  rw [jacobiSym.neg _ hb, χ₄_eq_neg_one_pow (Nat.odd_iff.mp hb), ← Int.coe_negOnePow_natCast]
 
 /-- For `a ≡ 0 (mod 4)`, the Jacobi symbol `J(a | b)` at odd `b` depends only on `b` modulo `|a|`,
 not merely modulo `4 |a|` as in `jacobiSym.mod_right`: the factor `J(4 | b) = 1` may be dropped. -/
