@@ -26,7 +26,7 @@ Concrete checks of the constants and normalisations in
   evaluates to `4, 3, 2`.
 * On `Fin 2 → ℂ`, the bilinear monomial `F z = z 0 * z 1`, represented by the unsymmetrised
   series with single nonzero term `p 2 (u, v) = u 0 * v 1`, has `p.mvCoeff ![1, 1] = 1` and
-  satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ < 2` (tight as `ρ → 2`).
+  satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ ≤ 2` (attained at `ρ = 2`).
 -/
 
 public section
@@ -171,8 +171,8 @@ private theorem norm_prodCoord_le_four {y : Fin 2 → ℂ} (hy : y ∈ ball (0 :
     _ ≤ 2 * 2 := mul_le_mul h0 h1 (norm_nonneg _) (by norm_num)
     _ = 4 := by norm_num
 
--- Multi-index Cauchy inequality on `Fin 2 → ℂ`: `‖mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for `0 ≤ ρ < 2`.
-example {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ < 2) :
+-- Multi-index Cauchy inequality on `Fin 2 → ℂ`: `‖mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for `0 ≤ ρ ≤ 2`.
+example {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ ≤ 2) :
     ‖prodCoordSeries.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4 := by
   simpa using hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1] hρ0 (by simpa using hρ)
@@ -181,7 +181,7 @@ example {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ < 2) :
 example :
     ‖prodCoordSeries.mvCoeff ![1, 1]‖ * (2 : ℝ) ^ (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) ≤ 4 ∧
       ‖prodCoordSeries.mvCoeff ![1, 1]‖ * (2 : ℝ) ^ (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 4 := by
-  refine ⟨hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le_of_le
+  refine ⟨hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1] (by positivity)
     (by norm_num), ?_⟩
   have hdeg : (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 2 := by decide

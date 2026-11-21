@@ -34,8 +34,7 @@ This file proves **Cauchy's inequality for multi-index coefficients** and the re
 * Combining the discrete Fourier extraction with `HasFPowerSeriesOnBall.norm_apply_le_of_norm_le`
   gives Cauchy's inequality `‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i ≤ M` on a polydisc for unequal
   polyradii `0 ≤ ρ i ≤ R` (`HasFPowerSeriesOnBall.norm_mvCoeff_mul_prod_pow_le`), as well as the
-  equal-radius forms `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le_of_le` (`0 ≤ ρ ≤ R`) and
-  `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le` (`0 ≤ ρ < R`).
+  equal-radius form `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le` (`0 ≤ ρ ≤ R`).
 * Combining `HasFPowerSeriesOnBall.norm_add_sub_partialSum_le` with
   `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff` bounds `‖f (x + z)‖` on a smaller closed
   polydisc `‖z‖ ≤ r < R` by `(1 + T) * M * (r / R) ^ T` plus
@@ -176,20 +175,15 @@ theorem torusIntegral_cauchyCoeff_eq_mvCoeff [CompleteSpace V] {n : ℕ} {f : (F
         p (∑ i, α i) (fun j ↦ Pi.single (a j) 1) := by
     rw [p.mvCoeff_eq_sum rfl]
     congr!
-  rcases n.eq_zero_or_pos with rfl | hn
-  · exact (hf.torusIntegral_cauchyCoeff (s := 0) hf.r_pos hR (fun i ↦ Fin.elim0 i) α).trans hm.symm
-  · have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-    let s : ℝ≥0 := univ.sup' univ_nonempty fun i ↦ (R i).toNNReal
-    have hs : (s : ℝ≥0∞) < r := by
-      have hsup : (s : ℝ≥0∞) = univ.sup' univ_nonempty fun i ↦ ((R i).toNNReal : ℝ≥0∞) :=
-        Finset.apply_sup'_eq_sup'_comp univ_nonempty _ fun _ _ ↦ ENNReal.coe_max _ _
-      rw [hsup, Finset.sup'_lt_iff]
-      intro i _
-      simpa [ENNReal.ofReal] using hRr i
-    have hRs (i : Fin n) : R i ≤ s := by
-      have hi : (R i).toNNReal ≤ s := Finset.le_sup' (fun j ↦ (R j).toNNReal) (mem_univ i)
-      exact (Real.coe_toNNReal (R i) (hR i).le).symm.trans_le (NNReal.coe_le_coe.2 hi)
-    exact (hf.torusIntegral_cauchyCoeff hs hR hRs α).trans hm.symm
+  let s : ℝ≥0 := univ.sup fun i ↦ (R i).toNNReal
+  have hs : (s : ℝ≥0∞) < r := by
+    rw [ENNReal.coe_finset_sup, Finset.sup_lt_iff hf.r_pos]
+    intro i _
+    simpa [ENNReal.ofReal] using hRr i
+  have hRs (i : Fin n) : R i ≤ s := by
+    have hi : (R i).toNNReal ≤ s := Finset.le_sup (f := fun j ↦ (R j).toNNReal) (mem_univ i)
+    exact (Real.coe_toNNReal (R i) (hR i).le).symm.trans_le (NNReal.coe_le_coe.2 hi)
+  exact (hf.torusIntegral_cauchyCoeff hs hR hRs α).trans hm.symm
 
 /-- **Cauchy's inequality on a polydisc (unequal polyradii)**: if `f` has the power series `p` on
 `Metric.ball x R` in `ι → ℂ` and `‖f‖ ≤ M` there, then `‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i ≤ M` for
@@ -203,17 +197,6 @@ theorem norm_mvCoeff_mul_prod_pow_le {f : (ι → ℂ) → V}
   refine p.norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_eq α hρ0 fun z hz ↦ ?_
   exact hf.norm_apply_le_of_norm_le hM _
     ((pi_norm_le_iff_of_nonneg R.coe_nonneg).2 fun i ↦ (hz i).le.trans (hρ i))
-
-/-- **Cauchy's inequality on a polydisc (closed radius)**: if `f` has the power series `p` on
-`Metric.ball x R` in `ι → ℂ` and `‖f‖ ≤ M` there, then `‖p.mvCoeff α‖ * ρ ^ (∑ i, α i) ≤ M` for
-every `α : ι → ℕ` and every `0 ≤ ρ ≤ R`. -/
-theorem norm_mvCoeff_mul_pow_le_of_le {f : (ι → ℂ) → V}
-    {p : FormalMultilinearSeries ℂ (ι → ℂ) V} {x : ι → ℂ} {R : ℝ≥0}
-    (hf : HasFPowerSeriesOnBall f p x R) {M : ℝ} (hM : ∀ y ∈ Metric.ball x R, ‖f y‖ ≤ M)
-    (α : ι → ℕ) {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ ≤ R) :
-    ‖p.mvCoeff α‖ * ρ ^ (∑ i, α i) ≤ M := by
-  simpa [Finset.prod_pow_eq_pow_sum] using
-    hf.norm_mvCoeff_mul_prod_pow_le hM α (fun _ ↦ hρ0) (fun _ ↦ hρ)
 
 /-- **Cauchy's inequality on a polydisc** (`Metric.eball` form): if `f` has the power series `p`
 on `Metric.eball x r` in `ι → ℂ` and `‖f‖ ≤ M` there, then
@@ -231,13 +214,14 @@ theorem norm_mvCoeff_mul_pow_le_of_forall_mem_eball {f : (ι → ℂ) → V}
 
 /-- **Cauchy's inequality on a polydisc**: if `f` has the power series `p` on `Metric.ball x R`
 in `ι → ℂ` and `‖f‖ ≤ M` there, then `‖p.mvCoeff α‖ * ρ ^ (∑ i, α i) ≤ M` for every `α : ι → ℕ`
-and every `0 ≤ ρ < R`. -/
+and every `0 ≤ ρ ≤ R`. -/
 theorem norm_mvCoeff_mul_pow_le {f : (ι → ℂ) → V}
     {p : FormalMultilinearSeries ℂ (ι → ℂ) V} {x : ι → ℂ} {R : ℝ≥0}
     (hf : HasFPowerSeriesOnBall f p x R) {M : ℝ} (hM : ∀ y ∈ Metric.ball x R, ‖f y‖ ≤ M)
-    (α : ι → ℕ) {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ < R) :
-    ‖p.mvCoeff α‖ * ρ ^ (∑ i, α i) ≤ M :=
-  hf.norm_mvCoeff_mul_pow_le_of_le hM α hρ0 hρ.le
+    (α : ι → ℕ) {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ ≤ R) :
+    ‖p.mvCoeff α‖ * ρ ^ (∑ i, α i) ≤ M := by
+  simpa [Finset.prod_pow_eq_pow_sum] using
+    hf.norm_mvCoeff_mul_prod_pow_le hM α (fun _ ↦ hρ0) (fun _ ↦ hρ)
 
 /-- **Truncated Taylor bound on a polydisc** about an arbitrary centre `x`: if `f` has the power
 series `p` on `Metric.ball x R` in `ι → ℂ` and `‖f‖ ≤ M` there, then for `‖z‖ ≤ r < R`,

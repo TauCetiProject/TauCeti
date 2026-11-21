@@ -30,7 +30,9 @@ operator norm (`HasFPowerSeriesOnBall.compLinearIsometry`,
 `HasFPowerSeriesWithinOnBall.compLinearIsometry`).
 
 Restricting a function with a power series on `eball c r` to an affine line `w ↦ c + w • u` yields
-a one-variable power series at `0` on `eball 0 (r / ‖u‖ₑ)` (`HasFPowerSeriesOnBall.comp_add_smul`).
+a one-variable power series at `0` on `eball 0 (r / ‖u‖ₑ)` (`HasFPowerSeriesOnBall.comp_add_smul`),
+whose evaluation at `1` recovers the directional homogeneous terms
+(`FormalMultilinearSeries.compContinuousLinearMap_toSpanSingleton_apply_one`).
 
 In one variable, pointwise evaluation `z ↦ A z (v z)` of a continuous-linear-map-valued series on a
 vector-valued series, scalar multiplication `f • g` over a normed algebra, and multiplication
@@ -125,6 +127,27 @@ theorem Finset.hasFPowerSeriesOnBall_sum {ι : Type*} {f : ι → E → F}
 end FinsetSum
 
 section AffineLine
+
+section
+
+variable {𝕜 E F : Type*} [Semiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜]
+  [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+  [ContinuousConstSMul 𝕜 F]
+
+/-- Evaluating the pullback of `p` along `ContinuousLinearMap.toSpanSingleton 𝕜 u` at the
+all-ones tuple recovers `p n (fun _ ↦ u)`. -/
+theorem FormalMultilinearSeries.compContinuousLinearMap_toSpanSingleton_apply_one
+    (p : FormalMultilinearSeries 𝕜 E F) (u : E) (n : ℕ) :
+    p.compContinuousLinearMap (ContinuousLinearMap.toSpanSingleton 𝕜 u) n (fun _ ↦ 1) =
+      p n (fun _ ↦ u) := by
+  rw [FormalMultilinearSeries.compContinuousLinearMap_apply]
+  congr 1
+  ext
+  exact ContinuousLinearMap.toSpanSingleton_apply_one 𝕜 u
+
+end
 
 open scoped ENNReal
 

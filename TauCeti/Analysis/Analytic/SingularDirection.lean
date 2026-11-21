@@ -131,22 +131,18 @@ theorem eventually_apply_add_smul_eq_zero_iff {p : FormalMultilinearSeries 𝕜 
     (hf : HasFPowerSeriesAt f p x) :
     (∀ᶠ ξ in 𝓝 (0 : 𝕜), f (x + ξ • v) = 0) ↔ ∀ n, p n (fun _ ↦ v) = 0 := by
   obtain ⟨r, hr⟩ := hf
-  let u : 𝕜 →L[𝕜] E := ContinuousLinearMap.toSpanSingleton 𝕜 v
-  have hline : HasFPowerSeriesAt (fun ξ : 𝕜 ↦ f (x + ξ • v)) (p.compContinuousLinearMap u) 0 :=
+  have hline : HasFPowerSeriesAt (fun ξ : 𝕜 ↦ f (x + ξ • v))
+      (p.compContinuousLinearMap (ContinuousLinearMap.toSpanSingleton 𝕜 v)) 0 :=
     (hr.comp_add_smul v).hasFPowerSeriesAt
-  have hcoeff (n : ℕ) : p.compContinuousLinearMap u n (fun _ ↦ 1) = p n (fun _ ↦ v) := by
-    rw [FormalMultilinearSeries.compContinuousLinearMap_apply]
-    congr 1
-    ext
-    simp [u]
   refine ⟨fun h n ↦ ?_, fun h ↦ ?_⟩
-  · rw [← hcoeff, hline.eq_zero_of_eventually h]
+  · rw [← p.compContinuousLinearMap_toSpanSingleton_apply_one v n, hline.eq_zero_of_eventually h]
     simp
-  · have hzero : p.compContinuousLinearMap u = 0 := by
+  · have hzero : p.compContinuousLinearMap (ContinuousLinearMap.toSpanSingleton 𝕜 v) = 0 := by
       ext n : 1
-      rw [← ContinuousMultilinearMap.mkPiRing_apply_one_eq_self (p.compContinuousLinearMap u n)]
+      rw [← ContinuousMultilinearMap.mkPiRing_apply_one_eq_self
+        (p.compContinuousLinearMap (ContinuousLinearMap.toSpanSingleton 𝕜 v) n)]
       ext
-      simp [hcoeff, h]
+      simp [p.compContinuousLinearMap_toSpanSingleton_apply_one, h]
     exact (hzero ▸ hline).eventually_eq_zero
 
 end HasFPowerSeriesAt

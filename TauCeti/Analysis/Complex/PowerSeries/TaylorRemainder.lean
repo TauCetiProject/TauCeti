@@ -93,8 +93,11 @@ theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSe
       (hd.hasFPowerSeriesOnBall zero_lt_one).hasFPowerSeriesAt
   have happly : ‖p n (fun _ ↦ y)‖ = ‖cauchyPowerSeries g 0 (1 : ℝ≥0) n (fun _ ↦ 1)‖ := by
     have hval := congr_arg (fun q : FormalMultilinearSeries ℂ ℂ ℂ ↦ q n (fun _ ↦ 1)) heq
-    simpa [-FormalMultilinearSeries.apply_eq_prod_smul_coeff, Function.comp_def, hℓv] using
-      congr_arg norm hval
+    rw [FormalMultilinearSeries.compContinuousLinearMap_toSpanSingleton_apply_one,
+      ContinuousLinearMap.compFormalMultilinearSeries_apply,
+      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply, hℓv] at hval
+    have hnorm := congr_arg norm hval
+    simpa only [RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _)] using hnorm
   rw [happly, cauchyPowerSeries_apply]
   refine (circleIntegral.norm_two_pi_i_inv_smul_integral_le_of_norm_le_const
     (by positivity) (C := M) fun ζ hζ ↦ ?_).trans (by simp)
