@@ -30,24 +30,26 @@ public section
 
 namespace TauCeti.Toric
 
-/-- The trivial group fixes every cone of the affine-line fan. -/
-theorem affineRayFan_map_mem_of_mem_bot ⦃g : (Fin 1 → ℝ) ≃ₗ[ℝ] (Fin 1 → ℝ)⦄
-    (hg : g ∈ (⊥ : Subgroup ((Fin 1 → ℝ) ≃ₗ[ℝ] (Fin 1 → ℝ))))
-    ⦃σ : PointedCone ℝ (Fin 1 → ℝ)⦄ (hσ : σ ∈ affineRayFan.cones) :
-    σ.map (g : (Fin 1 → ℝ) →ₗ[ℝ] (Fin 1 → ℝ)) ∈ affineRayFan.cones :=
-  affineRayFan.map_mem_of_forall_map_eq (fun g hg σ _ ↦ by simp [Subgroup.mem_bot.1 hg]) hg hσ
-
 /-- The faces of the positive ray, as an arithmetic cone system for the trivial group, the open
 positive ray as positivity cone, and any rational closure `Cstar` containing the closed ray. -/
-abbrev affineRayArithmeticFan {Cstar : Set (Fin 1 → ℝ)} (h : (affineRayCone : Set _) ⊆ Cstar) :
+def affineRayArithmeticFan {Cstar : Set (Fin 1 → ℝ)} (h : (affineRayCone : Set _) ⊆ Cstar) :
     ArithmeticFan ((Int.castAddHom ℝ).compLeft (Fin 1)) ⊥ {x | 0 < x 0} Cstar :=
-  affineRayFan.toArithmeticFan affineRayFan_map_mem_of_mem_bot (support_affineRayFan ▸ h)
+  affineRayFan.toArithmeticFan affineRayFan.map_mem_of_mem_bot (support_affineRayFan ▸ h)
+
+/-- The cones of the positive-ray system are the faces of the positive ray. -/
+@[simp]
+theorem affineRayArithmeticFan_cones {Cstar : Set (Fin 1 → ℝ)}
+    (h : (affineRayCone : Set _) ⊆ Cstar) :
+    (affineRayArithmeticFan h).cones = affineRayFan.cones :=
+  Fan.toArithmeticFan_cones ..
 
 /-- The support of the positive-ray system is the closed positive ray. -/
 theorem support_affineRayArithmeticFan {Cstar : Set (Fin 1 → ℝ)}
     (h : (affineRayCone : Set _) ⊆ Cstar) :
     (affineRayArithmeticFan h).support = affineRayCone := by
-  rw [Fan.support_toArithmeticFan, support_affineRayFan]
+  rw [← support_affineRayFan]
+  ext
+  simp only [ArithmeticFan.mem_support, affineRayArithmeticFan_cones, Fan.mem_support]
 
 /-- The positive-ray system is complete exactly when the rational closure of the positivity cone
 is the closed positive ray. In particular it is complete for `Cstar = ℝ_{≥0}`, and not complete

@@ -68,8 +68,11 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] [Topolog
 the lattice `i : N →+ V`, the group `Γ` of linear automorphisms of `V`, the open positivity cone
 `C` and its rational closure `Cstar`. It is a possibly infinite set of toric cones contained in
 `Cstar`, closed under passing to faces, any two of which meet in a face of each, stable under
-`Γ`, with finitely many `Γ`-orbits, and locally finite on compact subsets of `C`. -/
-structure ArithmeticFan (i : N →+ V) (Γ : Subgroup (V ≃ₗ[ℝ] V)) (C Cstar : Set V) where
+`Γ`, with finitely many `Γ`-orbits, and locally finite on compact subsets of `C`. The topology
+on `V` is a Hausdorff topological vector space topology; since `V` is finite-dimensional by
+`IsIntegralLattice`, it is the Euclidean topology. -/
+structure ArithmeticFan [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] (i : N →+ V)
+    (Γ : Subgroup (V ≃ₗ[ℝ] V)) (C Cstar : Set V) where
   /-- The ambient map of integral vectors is an integral lattice. -/
   lattice : IsIntegralLattice i
   /-- The cones of the system. -/
@@ -91,6 +94,8 @@ structure ArithmeticFan (i : N →+ V) (Γ : Subgroup (V ≃ₗ[ℝ] V)) (C Csta
   /-- Only finitely many cones of the system meet a compact subset of the positivity cone. -/
   finite_setOf_inter_nonempty : ∀ ⦃K : Set V⦄, IsCompact K → K ⊆ C →
     {σ | σ ∈ cones ∧ ((σ : Set V) ∩ K).Nonempty}.Finite
+
+variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
 
 namespace ArithmeticFan
 
@@ -119,14 +124,19 @@ theorem inf_mem (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) : σ ⊓ τ ∈ 
 theorem bot_mem (hσ : σ ∈ Φ.cones) : (⊥ : PointedCone ℝ V) ∈ Φ.cones :=
   Φ.mem_of_isFaceOf hσ (Φ.isToricCone hσ).salient.bot_isFaceOf
 
+omit [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] in
+/-- Mapping a cone by a product of linear automorphisms maps it by each factor in turn. -/
+private theorem map_mul (σ : PointedCone ℝ V) (g h : V ≃ₗ[ℝ] V) :
+    σ.map ((g * h : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V) = (σ.map (h : V →ₗ[ℝ] V)).map (g : V →ₗ[ℝ] V) := by
+  rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, PointedCone.map_map]
+
 /-- A cone belongs to the system exactly when one of its `Γ`-translates does. -/
 @[simp]
 theorem map_mem_iff {g : V ≃ₗ[ℝ] V} (hg : g ∈ Γ) :
     σ.map (g : V →ₗ[ℝ] V) ∈ Φ.cones ↔ σ ∈ Φ.cones := by
   refine ⟨fun h ↦ ?_, fun h ↦ Φ.map_mem hg h⟩
   have h' := Φ.map_mem (inv_mem hg) h
-  rwa [PointedCone.map_map, show ((g⁻¹ : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V) ∘ₗ (g : V →ₗ[ℝ] V) =
-    LinearMap.id from LinearMap.ext fun x ↦ by simp, PointedCone.map_id] at h'
+  rwa [← map_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one, PointedCone.map_id] at h'
 
 /-! ### Local finiteness -/
 
@@ -172,7 +182,7 @@ theorem image_support {g : V ≃ₗ[ℝ] V} (hg : g ∈ Γ) : g '' Φ.support = 
   · rintro ⟨y, ⟨σ, hσ, hyσ⟩, rfl⟩
     exact ⟨σ.map (g : V →ₗ[ℝ] V), Φ.map_mem hg hσ, PointedCone.mem_map.2 ⟨y, hyσ, rfl⟩⟩
   · rintro ⟨σ, hσ, hxσ⟩
-    refine ⟨g.symm x, ⟨σ.map ((g⁻¹ : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V), Φ.map_mem (inv_mem hg) hσ,
+    refine ⟨g⁻¹ x, ⟨σ.map ((g⁻¹ : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V), Φ.map_mem (inv_mem hg) hσ,
       PointedCone.mem_map.2 ⟨x, hxσ, rfl⟩⟩, by simp⟩
 
 /-- An arithmetic cone system is *complete* when its support is the whole rational closure
@@ -184,6 +194,7 @@ theorem isComplete_def : Φ.IsComplete ↔ Φ.support = Cstar :=
   Iff.rfl
 
 /-- Completeness, spelled pointwise: every point of `Cstar` lies in a cone of the system. -/
+@[simp]
 theorem isComplete_iff : Φ.IsComplete ↔ ∀ x ∈ Cstar, ∃ σ ∈ Φ.cones, x ∈ σ := by
   refine ⟨fun h x hx ↦ Φ.mem_support.1 (by rwa [Φ.isComplete_def.1 h]), fun h ↦ ?_⟩
   exact Φ.support_subset.antisymm fun x hx ↦ Φ.mem_support.2 (h x hx)
@@ -238,11 +249,11 @@ theorem isComplete_bot_iff (hi : IsIntegralLattice i) (h0 : (0 : V) ∈ Cstar) :
 zero, every complete arithmetic cone system consists of the zero cone alone. -/
 theorem IsComplete.cones_eq_singleton_bot {Φ : ArithmeticFan i Γ C Cstar} (hΦ : Φ.IsComplete)
     (h : Cstar = {0}) : Φ.cones = {⊥} := by
-  obtain ⟨σ, hσ, -⟩ := Φ.isComplete_iff.1 hΦ 0 (h ▸ rfl)
+  obtain ⟨σ, hσ, -⟩ := Φ.isComplete_iff.1 hΦ 0 (h ▸ Set.mem_singleton 0)
   refine Set.eq_singleton_iff_unique_mem.2 ⟨Φ.bot_mem hσ, fun τ hτ ↦ ?_⟩
   refine eq_bot_iff.2 fun x hx ↦ ?_
   have := h ▸ Φ.coe_subset hτ hx
-  exact (Submodule.mem_bot _).2 this
+  exact (Submodule.mem_bot _).2 (Set.mem_singleton_iff.1 this)
 
 /-! ### Finite systems are fans -/
 
@@ -304,7 +315,7 @@ theorem support_toArithmeticFan :
   ext
   simp
 
-omit [TopologicalSpace V] in
+omit [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] in
 /-- Every group element fixing each cone of a fan permutes its cones. In particular the trivial
 group, and any group acting trivially on the cones, satisfies the hypothesis of
 `TauCeti.Toric.Fan.toArithmeticFan`. -/
@@ -312,6 +323,13 @@ theorem map_mem_of_forall_map_eq (h : ∀ ⦃g⦄, g ∈ Γ → ∀ ⦃σ⦄, σ
     σ.map (g : V →ₗ[ℝ] V) = σ) ⦃g : V ≃ₗ[ℝ] V⦄ (hg : g ∈ Γ) ⦃σ : PointedCone ℝ V⦄
     (hσ : σ ∈ Φ.cones) : σ.map (g : V →ₗ[ℝ] V) ∈ Φ.cones :=
   (h hg hσ).symm ▸ hσ
+
+omit [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] in
+/-- Every element of the trivial group maps each cone of a fan to a cone of the fan, so every
+finite fan satisfies the hypothesis of `TauCeti.Toric.Fan.toArithmeticFan` for `Γ = ⊥`. -/
+theorem map_mem_of_mem_bot ⦃g : V ≃ₗ[ℝ] V⦄ (hg : g ∈ (⊥ : Subgroup (V ≃ₗ[ℝ] V)))
+    ⦃σ : PointedCone ℝ V⦄ (hσ : σ ∈ Φ.cones) : σ.map (g : V →ₗ[ℝ] V) ∈ Φ.cones :=
+  Φ.map_mem_of_forall_map_eq (fun g hg σ _ ↦ by simp [Subgroup.mem_bot.1 hg]) hg hσ
 
 /-- Viewing a finite fan as an arithmetic cone system and taking its finite fan recovers the
 original fan. -/
@@ -356,9 +374,7 @@ private theorem exists_finite_orbit_representatives_of_isFiniteRelIndex
     group
   refine ⟨τ.map ((((QuotientGroup.mk g⁻¹ : Γ ⧸ H).out⁻¹ : Γ) : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V),
     Set.mem_biUnion hτ ⟨_, rfl⟩, (h : Γ), Subgroup.mem_subgroupOf.1 h.property, ?_⟩
-  conv_rhs => rw [hgh]
-  rw [Subgroup.coe_mul, LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp,
-    PointedCone.map_map]
+  rw [← map_mul, ← Subgroup.coe_mul, ← hgh]
 
 /-- An arithmetic cone system for `Γ` is one for every subgroup `Γ'` of finite index in `Γ`, with
 the same cones: each `Γ`-orbit splits into finitely many `Γ'`-orbits. -/
@@ -388,7 +404,6 @@ theorem support_restrict : (Φ.restrict Γ' hle).support = Φ.support :=
   (rfl)
 
 /-- Restricting to a subgroup of finite index preserves and reflects completeness. -/
-@[simp]
 theorem isComplete_restrict_iff : (Φ.restrict Γ' hle).IsComplete ↔ Φ.IsComplete :=
   Iff.rfl
 
