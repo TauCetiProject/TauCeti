@@ -193,6 +193,22 @@ theorem isUnit_coeff_one_formalSeries_iff_isSeparable :
       Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField := by
   rw [isUnit_iff_ne_zero, coeff_one_formalSeries_ne_zero_iff_isSeparable]
 
+/-- **The `ℕ`-valued order of an isogeny's formal series equals its inseparable degree.** -/
+theorem toNat_order_formalSeries : φ.formalSeries.order.toNat = φ.inseparableDegree := by
+  rw [order_formalSeries, ENat.toNat_natCast]
+
+/-- **The leading coefficient of `φ.formalSeries` sits in degree `φ.inseparableDegree`.** -/
+theorem coeff_inseparableDegree_formalSeries_ne_zero :
+    PowerSeries.coeff φ.inseparableDegree φ.formalSeries ≠ 0 := by
+  have h := PowerSeries.coeff_order φ.formalSeries_ne_zero
+  rwa [toNat_order_formalSeries] at h
+
+/-- **All coefficients of `φ.formalSeries` strictly below `φ.inseparableDegree` vanish.** -/
+theorem coeff_formalSeries_eq_zero_of_lt_inseparableDegree {n : ℕ}
+    (hn : n < φ.inseparableDegree) :
+    PowerSeries.coeff n φ.formalSeries = 0 :=
+  PowerSeries.coeff_of_lt_order n (by rw [order_formalSeries]; exact Nat.cast_lt.mpr hn)
+
 end Elliptic
 
 end TauCeti.Isogeny

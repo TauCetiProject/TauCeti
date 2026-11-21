@@ -5,18 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.RingTheory.LaurentSeries.Basic
 import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Expansion
+import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Pullback of the invariant differential along the formal series of an isogeny
 
-Let `φ : W₁ → W₂` be an isogeny of elliptic curves over a field `K`. By
+Let `φ : W₁ → W₂` be an isogeny of elliptic curves over a field `K`. Expanding `φ^*η` at infinity
+in the local parameter `z₁ = -x₁ / y₁` obeys the Laurent chain rule
+(`TauCeti.Isogeny.differentialLaurentSeries_pullbackDifferential`). By
 `TauCeti.Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul`, `φ` pulls back
 the invariant differential `ω₂` of `W₂` to `c • ω₁` for a unique constant `c ∈ K`. Expanding both
 sides at the point at infinity via `WeierstrassCurve.functionFieldLaurentExpansion` and comparing
@@ -31,6 +35,8 @@ separable.
 
 ## Main results
 
+* `TauCeti.Isogeny.differentialLaurentSeries_pullbackDifferential`: Laurent chain rule for
+  pulled-back Kähler differentials.
 * `TauCeti.Isogeny.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul` and
   `TauCeti.Isogeny.pullbackDifferential_invariantDifferential_eq_smul`: `φ^* ω₂ = c • ω₁` with
   `c = PowerSeries.coeff 1 φ.formalSeries`.
@@ -59,6 +65,31 @@ variable {K : Type*} [Field K]
 section Differential
 
 variable {W₁ W₂ : WeierstrassCurve K}
+
+/-- **Laurent chain rule for pulled-back Kähler differentials**: expanding `φ^*η` at infinity
+substitutes `φ.formalSeries` into the expansion of `η` and multiplies by `(φ.formalSeries)'`. -/
+theorem differentialLaurentSeries_pullbackDifferential
+    (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (η : KaehlerDifferential K W₂.toAffine.FunctionField) :
+    W₁.differentialLaurentSeries (φ.pullbackDifferential η) =
+      LaurentSeries.substAlgHom φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
+        (W₂.differentialLaurentSeries η) *
+        _root_.LaurentSeries.derivative K (φ.formalSeries : K⸨X⸩) := by
+  have hmem : η ∈ Submodule.span W₂.toAffine.FunctionField
+      (Set.range (KaehlerDifferential.D K W₂.toAffine.FunctionField)) := by
+    rw [KaehlerDifferential.span_range_derivation]
+    exact Submodule.mem_top
+  induction hmem using Submodule.span_induction with
+  | mem _ h =>
+    rcases h with ⟨f, rfl⟩
+    rw [pullbackDifferential_D, differentialLaurentSeries_D, differentialLaurentSeries_D,
+      φ.functionFieldLaurentExpansion_fieldPullback, LaurentSeries.derivative_substAlgHom]
+  | zero => simp
+  | add _ _ _ _ h₁ h₂ => simp [h₁, h₂, add_mul]
+  | smul f _ _ h =>
+    rw [pullbackDifferential_smul, differentialLaurentSeries_smul,
+      differentialLaurentSeries_smul, map_mul, mul_assoc, h,
+      φ.functionFieldLaurentExpansion_fieldPullback]
 
 private theorem neg_two_add_formalSeries_ne_zero [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
