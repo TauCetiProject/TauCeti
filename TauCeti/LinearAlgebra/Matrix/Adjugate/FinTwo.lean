@@ -22,6 +22,9 @@ The product characterization also identifies adjugation in each factor of `M₂ 
 
 For complex matrices, composing adjugation with conjugate transpose gives a real-algebra
 endomorphism. This packages the multiplicative map used by real low-rank matrix models.
+
+When `A * A = 1` and `det A = 1`, adjugation fixes `A`, so `2 • A = trace A • 1`; over a domain
+away from characteristic two, every `2 × 2` involution of determinant one is therefore `±1`.
 -/
 
 public section
@@ -152,5 +155,48 @@ theorem eq_adjugate_prod_of_antimultiplicative_of_exists_add_eq_smul_one
   simp only [Prod.mk_add_mk, add_zero, zero_add, Prod.mk.eta] at h
   rw [h]
   exact Prod.ext (by simp [hfirst, hzero1]) (by simp [hsecond, hzero2])
+
+/-- For a `2 × 2` matrix `A` with `A * A = 1` and `det A = 1`, twice `A` is `trace A` times the
+identity: its inverse `A` equals its adjugate `trace A • 1 - A`. -/
+theorem two_smul_eq_trace_smul_one_of_mul_self_eq_one_of_det_eq_one
+    {A : Matrix (Fin 2) (Fin 2) K} (hA : A * A = 1) (hdet : A.det = 1) :
+    (2 : K) • A = A.trace • 1 := by
+  have hadj : adjugate A = A := by
+    rw [adjugate_eq_det_smul_of_mul_eq_one hA, hdet, one_smul]
+  rw [adjugate_fin_two_eq_trace_smul_one_sub, sub_eq_iff_eq_add] at hadj
+  simpa [two_smul] using hadj.symm
+
+/-- **Every `2 × 2` involution of determinant one over a domain away from characteristic two is
+`1` or `-1`.** Both hypotheses on `K` are sharp: over `ℚ × ℚ` the scalar matrix `(1, -1) • 1` has
+square `1` and determinant `1` without being `±1`, and over `𝔽₂` the transvection `!![1, 1; 0, 1]`
+has square `1` and determinant `1` without being scalar. -/
+theorem eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one [NoZeroDivisors K]
+    (h2 : (2 : K) ≠ 0) {A : Matrix (Fin 2) (Fin 2) K} (hA : A * A = 1) (hdet : A.det = 1) :
+    A = 1 ∨ A = -1 := by
+  have h2A := two_smul_eq_trace_smul_one_of_mul_self_eq_one_of_det_eq_one hA hdet
+  -- Squaring `2 • A = trace A • 1` and reading the `(0, 0)` entry gives `trace A ^ 2 = 4`.
+  have hsq : ((2 : K) • A) * ((2 : K) • A) = (A.trace • (1 : Matrix (Fin 2) (Fin 2) K)) *
+      (A.trace • 1) := congrArg (fun M => M * M) h2A
+  simp only [smul_mul_smul_comm, hA, one_mul] at hsq
+  have htr : (2 : K) * 2 = A.trace * A.trace := by
+    simpa [smul_smul] using congrFun (congrFun hsq 0) 0
+  have htr' : (A.trace - 2) * (A.trace + 2) = 0 := by
+    calc (A.trace - 2) * (A.trace + 2) = A.trace * A.trace - 2 * 2 := by ring
+      _ = 0 := sub_eq_zero.mpr htr.symm
+  rcases mul_eq_zero.mp htr' with h | h
+  · left
+    rw [sub_eq_zero.mp h] at h2A
+    ext i j
+    exact mul_left_cancel₀ h2 (by simpa [smul_eq_mul] using congrFun (congrFun h2A i) j)
+  · right
+    rw [eq_neg_of_add_eq_zero_left h, neg_smul, ← smul_neg] at h2A
+    ext i j
+    exact mul_left_cancel₀ h2 (by simpa [smul_eq_mul] using congrFun (congrFun h2A i) j)
+
+/-- **Power form of `Matrix.eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one`.** -/
+theorem eq_one_or_eq_neg_one_of_sq_eq_one_of_det_eq_one [NoZeroDivisors K]
+    (h2 : (2 : K) ≠ 0) {A : Matrix (Fin 2) (Fin 2) K} (hA : A ^ 2 = 1) (hdet : A.det = 1) :
+    A = 1 ∨ A = -1 :=
+  eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one h2 (by rwa [← sq]) hdet
 
 end Matrix

@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Table
+public import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
+import Mathlib.RepresentationTheory.Equiv
 import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
+import TauCeti.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
-import TauCeti.RepresentationTheory.Maschke
-import Mathlib.RepresentationTheory.Equiv
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -72,6 +71,9 @@ non-isomorphic.
   multiplicities are congruent modulo `p`.
 * `Representation.intrinsicMultiplicity_leftRegular`: `Zᵢ` occurs in the left regular
   representation with multiplicity its degree.
+* `TauCeti.SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm` and
+  `TauCeti.finrank_eq_sum_multiplicity_mul_finrank`: compatibility with
+  `SimpleFDRepClasses.multiplicity` and the dimension decomposition into simple classes.
 
 ## References
 
@@ -304,5 +306,26 @@ theorem intrinsicMultiplicity_leftRegular (i : Fin (Nat.card (ConjClasses G))) :
   have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [intrinsicMultiplicity_def, finrank_intertwiningMap_comm,
     (leftRegularMapEquiv (irreducibleRepresentation k i)).finrank_eq, finrank_fin_fun]
+
+/-- `SimpleFDRepClasses.multiplicity` at row `i` of `equivFinCardConjClasses` agrees with
+`Representation.intrinsicMultiplicity`. -/
+theorem _root_.TauCeti.SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm
+    (W : FDRep k G) (i : Fin (Nat.card (ConjClasses G))) :
+    ((SimpleFDRepClasses.equivFinCardConjClasses k G).symm i).multiplicity W =
+      intrinsicMultiplicity W.ρ i := by
+  rw [SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.multiplicity_mk,
+    FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom]
+
+/-- **Dimension decomposition into simple classes.** Every `W : FDRep k G` has dimension
+`∑ c, c.multiplicity W * c.finrank`. -/
+theorem _root_.TauCeti.finrank_eq_sum_multiplicity_mul_finrank
+    [Fintype (SimpleFDRepClasses k G)] (W : FDRep k G) :
+    finrank k W = ∑ c : SimpleFDRepClasses k G, c.multiplicity W * c.finrank := by
+  rw [finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree W.ρ]
+  refine Finset.sum_equiv (SimpleFDRepClasses.equivFinCardConjClasses k G).symm
+    (s := Finset.univ) (t := Finset.univ) (fun _ ↦ by simp) fun i _ ↦ ?_
+  rw [SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm,
+    SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.finrank_mk,
+    FDRep.finrank_of, finrank_fin_fun]
 
 end Representation
