@@ -17,12 +17,14 @@ orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
 A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
 
-It also expands the value of a continuous linear map in a Hilbert basis,
-`T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
-linear map vanishing on all but finitely many vectors of a Hilbert basis has finite rank, since
-every vector is the sum of its basis expansion, and that continuous (semi)linear maps, linear
-isometries, and linear isometric equivalences out of `E` are determined by their values on a
-Hilbert basis (`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`,
+It also expands the value of a continuous linear map in a Hilbert basis: the series
+`∑ᵢ ⟪bᵢ, x⟫ T bᵢ` converges to `T x` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a
+continuous linear map into a T1 topological module vanishing on all but finitely many vectors of a
+Hilbert basis has finite rank (`HilbertBasis.hasFiniteRange_of_apply_eq_zero`), since the partial
+sums of each expansion are then eventually constant. It also records that continuous
+(semi)linear maps into a Hausdorff topological module, linear isometries, and linear isometric
+equivalences out of `E` are determined by their values on a Hilbert basis
+(`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`,
 `HilbertBasis.ext_linearIsometryEquiv`), hence a continuous (semi)linear map between spaces with
 Hilbert bases by its matrix entries in those bases (`HilbertBasis.ext_inner_apply`).
 
@@ -90,16 +92,18 @@ theorem ext_inner_apply {𝕜' κ F : Type*} [RCLike 𝕜'] [NormedAddCommGroup 
   b.ext_continuousLinearMap fun j ↦ c.repr.injective <| lp.ext <| funext fun i ↦ by
     simp only [HilbertBasis.repr_apply_apply, h]
 
-/-- **Expansion of an operator in a Hilbert basis.** `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ`. -/
+/-- **Expansion of an operator in a Hilbert basis.** The series `∑ᵢ ⟪bᵢ, x⟫ T bᵢ` converges
+to `T x`. No separation is assumed on the target, so this limit need not be unique. -/
 theorem hasSum_inner_smul_apply {F : Type*} [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
     (b : HilbertBasis ι 𝕜 E) (T : E →L[𝕜] F) (x : E) :
     HasSum (fun i ↦ ⟪b i, x⟫_𝕜 • T (b i)) (T x) := by
   simpa only [map_smul, b.repr_apply_apply] using T.hasSum (b.hasSum_repr x)
 
-/-- A continuous linear map that vanishes on every vector of a Hilbert basis outside a finite set
-of indices has finite rank: its range is spanned by the images of the remaining basis vectors. -/
+/-- A continuous linear map into a T1 topological module that vanishes on every vector of a
+Hilbert basis outside a finite set of indices has finite rank: its range is spanned by the images
+of the remaining basis vectors. -/
 theorem hasFiniteRange_of_apply_eq_zero {F : Type*}
-    [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F] [T2Space F]
+    [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F] [T1Space F]
     (b : HilbertBasis ι 𝕜 E) (T : E →L[𝕜] F) (s : Finset ι) (hT : ∀ i ∉ s, T (b i) = 0) :
     (T : E →ₗ[𝕜] F).HasFiniteRange := by
   suffices h : (T : E →ₗ[𝕜] F).range = Submodule.span 𝕜 ((fun i ↦ T (b i)) '' s) by
@@ -107,8 +111,12 @@ theorem hasFiniteRange_of_apply_eq_zero {F : Type*}
     exact Submodule.fg_span (s.finite_toSet.image _)
   apply le_antisymm
   · rintro _ ⟨x, rfl⟩
-    rw [ContinuousLinearMap.coe_coe, (b.hasSum_inner_smul_apply T x).unique
-      (hasSum_sum_of_ne_finset_zero fun i hi ↦ by rw [hT i hi, smul_zero])]
+    -- The partial sums are eventually constant, so in a T1 space their limit is that constant.
+    have hx : ∑ i ∈ s, ⟪b i, x⟫_𝕜 • T (b i) = T x := by
+      refine tendsto_const_nhds_iff.1 (Filter.Tendsto.congr' ?_ (b.hasSum_inner_smul_apply T x))
+      filter_upwards [Filter.eventually_ge_atTop s] with t ht
+      exact (Finset.sum_subset ht fun i _ hi ↦ by rw [hT i hi, smul_zero]).symm
+    rw [ContinuousLinearMap.coe_coe, ← hx]
     exact Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
   · rw [Submodule.span_le]
     rintro _ ⟨i, -, rfl⟩
