@@ -24,6 +24,8 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_trans_trans_symm`: it is invariant under conjugation by an
+  isomorphism `E' ≃ E`.
 * `ContinuousLinearEquiv.normalizedDet_conjₛₗ`: conjugating by a conjugate-linear automorphism
   inverts the normalized determinant.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
@@ -82,6 +84,18 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 @[simp]
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
+
+/-- The normalized determinant is invariant under conjugation: transporting an automorphism `A` of
+`E` along an isomorphism `L : E' ≃ E` does not change it. -/
+@[simp]
+theorem normalizedDet_trans_trans_symm {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    (L : E' ≃L[ℂ] E) (A : E ≃L[ℂ] E) :
+    (L.trans (A.trans L.symm)).normalizedDet = A.normalizedDet := by
+  have hdet : LinearMap.det ((L.trans (A.trans L.symm)).toLinearEquiv : E' →ₗ[ℂ] E') =
+      LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) :=
+    LinearMap.det_conj (A.toLinearEquiv : E →ₗ[ℂ] E) L.symm.toLinearEquiv
+  ext1
+  simp only [coe_normalizedDet, hdet]
 
 /-- **Conjugation by a conjugate-linear automorphism.** Conjugating `A` by a conjugate-linear
 automorphism `K` conjugates its determinant, so it inverts its normalized determinant. -/

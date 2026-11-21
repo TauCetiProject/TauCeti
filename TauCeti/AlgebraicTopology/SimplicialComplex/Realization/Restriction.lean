@@ -44,24 +44,24 @@ variable (K : AbstractSimplicialComplex ι) (s : Set ι)
 /-- Realizing a vertex restriction identifies it with the subspace of points supported on
 the chosen vertices. -/
 def restrictRealizationHomeomorph :
-    Realization (K.restrict s) ≃ₜ {x : Realization K // (x.1.support : Set ι) ⊆ s} := by
+    Realization (K.restrict s) ≃ₜ {x : Realization K // (x.val.support : Set ι) ⊆ s} := by
   let P := (K.restrict s).toPreAbstractSimplicialComplex
   have hmap : P.map (Function.Embedding.subtype (· ∈ s)) ≤
       K.toPreAbstractSimplicialComplex := fun σ hσ => (mem_map_restrict_iff K s σ).mp hσ |>.1
   let e := P.relabelingHomeomorph (Function.Embedding.subtype (· ∈ s)) le_rfl hmap
-  let a : {x : Realization (K.restrict s) // x.1.support ∈ P} ≃ₜ
+  let a : {x : Realization (K.restrict s) // x.val.support ∈ P} ≃ₜ
       Realization (K.restrict s) :=
-    (Homeomorph.setCongr (s := {x : Realization (K.restrict s) | x.1.support ∈ P})
+    (Homeomorph.setCongr (s := {x : Realization (K.restrict s) | x.val.support ∈ P})
       (Set.eq_univ_of_forall (support_mem (K.restrict s)))).trans
       (Homeomorph.Set.univ _)
   exact a.symm.trans (e.trans (Homeomorph.setCongr
-    (s := {x : Realization K | x.1.support ∈ P.map (Function.Embedding.subtype (· ∈ s))})
-    (t := {x : Realization K | (x.1.support : Set ι) ⊆ s}) (Set.ext fun x =>
-    (mem_map_restrict_iff K s x.1.support).trans (and_iff_right (support_mem K x)))))
+    (s := {x : Realization K | x.val.support ∈ P.map (Function.Embedding.subtype (· ∈ s))})
+    (t := {x : Realization K | (x.val.support : Set ι) ⊆ s}) (Set.ext fun x =>
+    (mem_map_restrict_iff K s x.val.support).trans (and_iff_right (support_mem K x)))))
 
 private theorem restrictRealizationHomeomorph_val (x : Realization (K.restrict s)) :
-    (K.restrictRealizationHomeomorph s x).1.1 =
-      Finsupp.mapDomain (Subtype.val : s → ι) x.1 := by
+    (K.restrictRealizationHomeomorph s x).val.val =
+      Finsupp.mapDomain (Subtype.val : s → ι) x.val := by
   -- The equal-set homeomorphisms retype the point without changing its coordinates.
   convert (K.restrict s).toPreAbstractSimplicialComplex.relabelingHomeomorph_val
     (Function.Embedding.subtype (· ∈ s)) le_rfl
@@ -72,7 +72,7 @@ private theorem restrictRealizationHomeomorph_val (x : Realization (K.restrict s
 realization of the vertex inclusion. -/
 @[simp]
 theorem restrictRealizationHomeomorph_apply (x : Realization (K.restrict s)) :
-    (K.restrictRealizationHomeomorph s x).1 = (K.restrictInclusion s).realizationMap x := by
+    (K.restrictRealizationHomeomorph s x).val = (K.restrictInclusion s).realizationMap x := by
   apply Subtype.ext
   simp only [restrictRealizationHomeomorph_val,
     PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val, coe_restrictInclusion]
@@ -81,21 +81,21 @@ theorem restrictRealizationHomeomorph_apply (x : Realization (K.restrict s)) :
 vertex inclusion. -/
 @[simp]
 theorem restrictRealizationHomeomorph_symm_val
-    (x : {x : Realization K // (x.1.support : Set ι) ⊆ s}) :
-    ((K.restrictRealizationHomeomorph s).symm x).1 =
-      Finsupp.comapDomain (Subtype.val : s → ι) x.1.1 Subtype.val_injective.injOn := by
+    (x : {x : Realization K // (x.val.support : Set ι) ⊆ s}) :
+    ((K.restrictRealizationHomeomorph s).symm x).val =
+      Finsupp.comapDomain (Subtype.val : s → ι) x.val.val Subtype.val_injective.injOn := by
   have h : Finsupp.mapDomain (Subtype.val : s → ι)
-      ((K.restrictRealizationHomeomorph s).symm x).1 = x.1.1 := by
+      ((K.restrictRealizationHomeomorph s).symm x).val = x.val.val := by
     simpa only [restrictRealizationHomeomorph_apply,
       PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val, coe_restrictInclusion] using
-      congrArg (fun y => y.1.1) ((K.restrictRealizationHomeomorph s).apply_symm_apply x)
+      congrArg (fun y => y.val.val) ((K.restrictRealizationHomeomorph s).apply_symm_apply x)
   rw [← h]
   exact (Finsupp.comapDomain_mapDomain _ Subtype.val_injective _).symm
 
 /-- The realized vertex inclusion is a closed embedding, for arbitrary vertex subsets. -/
 theorem isClosedEmbedding_restrictInclusion_realizationMap :
     IsClosedEmbedding (K.restrictInclusion s).realizationMap := by
-  have hclosed : IsClosed {x : Realization K | (x.1.support : Set ι) ⊆ s} := by
+  have hclosed : IsClosed {x : Realization K | (x.val.support : Set ι) ⊆ s} := by
     have hmap : (K.restrict s).toPreAbstractSimplicialComplex.map
         (Function.Embedding.subtype (· ∈ s)) ≤ K.toPreAbstractSimplicialComplex :=
       fun σ hσ => (mem_map_restrict_iff K s σ).mp hσ |>.1
@@ -112,11 +112,11 @@ vertices. -/
 -- Normalize to support containment before `Set.mem_range` expands the existential.
 @[simp 1100]
 theorem mem_range_restrictInclusion_realizationMap (x : Realization K) :
-    x ∈ range (K.restrictInclusion s).realizationMap ↔ (x.1.support : Set ι) ⊆ s := by
+    x ∈ range (K.restrictInclusion s).realizationMap ↔ (x.val.support : Set ι) ⊆ s := by
   constructor
   · rintro ⟨y, rfl⟩
     rw [← restrictRealizationHomeomorph_apply]
-    exact (K.restrictRealizationHomeomorph s y).2
+    exact (K.restrictRealizationHomeomorph s y).property
   · intro hx
     refine ⟨(K.restrictRealizationHomeomorph s).symm ⟨x, hx⟩, ?_⟩
     rw [← restrictRealizationHomeomorph_apply, Homeomorph.apply_symm_apply]
@@ -124,7 +124,7 @@ theorem mem_range_restrictInclusion_realizationMap (x : Realization K) :
 /-- Points supported on a finite set of vertices form a compact subpolyhedron, even when the
 ambient complex has infinitely many faces. -/
 theorem isCompact_setOf_support_subset (hs : s.Finite) :
-    IsCompact {x : Realization K | (x.1.support : Set ι) ⊆ s} := by
+    IsCompact {x : Realization K | (x.val.support : Set ι) ⊆ s} := by
   let : Finite s := hs.to_subtype
   convert isCompact_range (K.restrictInclusion s).realizationMap.continuous using 1
   ext x
@@ -138,7 +138,7 @@ theorem exists_finite_restrict_factorization {X : Type*} [TopologicalSpace X]
       (K.restrictInclusion (V : Set ι)).realizationMap.comp g = f := by
   obtain ⟨V, hV⟩ := exists_finset_support_subset_of_isCompact hf
   let e := K.restrictRealizationHomeomorph (V : Set ι)
-  let h : C(X, {x : Realization K // (x.1.support : Set ι) ⊆ (V : Set ι)}) :=
+  let h : C(X, {x : Realization K // (x.val.support : Set ι) ⊆ (V : Set ι)}) :=
     ⟨fun x => ⟨f x, hV (f x) (mem_range_self x)⟩,
       f.continuous.subtype_mk (fun x => hV (f x) (mem_range_self x))⟩
   refine ⟨V, ⟨fun x => e.symm (h x), e.symm.continuous.comp h.continuous⟩, ?_⟩

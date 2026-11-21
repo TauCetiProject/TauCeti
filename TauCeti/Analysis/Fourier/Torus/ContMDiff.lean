@@ -67,7 +67,7 @@ def contMDiffMapEquiv :
   toFun σ := ⟨σ ∘ prodEquiv, contMDiff_iff_comp_prodEquiv_mem_smoothFunctions.1 σ.contMDiff⟩
   invFun f := ⟨f ∘ prodEquiv.symm, contMDiff_iff_comp_prodEquiv_mem_smoothFunctions.2 (by
     rw [Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id]
-    exact f.2)⟩
+    exact f.property)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv σ := by
@@ -75,7 +75,7 @@ def contMDiffMapEquiv :
     simp
   right_inv f := by
     ext y
-    exact congrArg f.1 (prodEquiv.symm_apply_apply y)
+    exact congrArg f.val (prodEquiv.symm_apply_apply y)
 
 @[simp]
 theorem coe_contMDiffMapEquiv_apply

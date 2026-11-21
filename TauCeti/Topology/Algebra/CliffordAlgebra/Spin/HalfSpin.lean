@@ -64,7 +64,7 @@ theorem continuous_halfSpinRep_apply_const (ψ : eigenspace (ρ (chirality Q o))
   apply continuous_induced_rng.mpr
   simpa [Function.comp_def, coe_halfSpinRep_apply] using
     (continuous_algHom_apply ρ (ψ : W)).comp
-    (continuous_subtype_val : Continuous (fun s : spinGroup Q ↦ s.val))
+    (continuous_subtypeVal : Continuous (fun s : spinGroup Q ↦ s.val))
 
 /-- The Spin half-spin representation varies continuously in operator norm. -/
 @[fun_prop]

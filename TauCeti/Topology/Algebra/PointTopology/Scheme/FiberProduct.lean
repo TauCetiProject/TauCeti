@@ -68,15 +68,15 @@ noncomputable def pointsEquivOfIsPullback :
       {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2} where
   toFun x := ⟨(map p₁ hp₁ x, map p₂ (hP.toCommSq.snd_comp_eq_of_fst_comp_eq hg₁ hg₂ hp₁) x),
     Subtype.ext (by simp [hP.w])⟩
-  invFun p := ⟨hP.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2), by
-    rw [← hp₁, IsPullback.lift_fst_assoc, p.1.1.property]⟩
+  invFun p := ⟨hP.lift p.val.1.val p.val.2.val (by simpa using congrArg Subtype.val p.property), by
+    rw [← hp₁, IsPullback.lift_fst_assoc, p.val.1.property]⟩
   left_inv x := Subtype.ext (hP.hom_ext (by simp) (by simp))
   right_inv p := Subtype.ext (Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp)))
 
 /-- The fibre-product comparison sends a point to its two projections. -/
 @[simp]
 theorem pointsEquivOfIsPullback_apply_coe (x : Points (R := R) fP) :
-    (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).1 =
+    (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).val =
       (map p₁ hp₁ x, map p₂ (hP.toCommSq.snd_comp_eq_of_fst_comp_eq hg₁ hg₂ hp₁) x) :=
   (rfl)
 
@@ -86,7 +86,7 @@ universal property. -/
 theorem pointsEquivOfIsPullback_symm_apply_val
     (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
     ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p).val =
-      hP.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2) :=
+      hP.lift p.val.1.val p.val.2.val (by simpa using congrArg Subtype.val p.property) :=
   (rfl)
 
 /-- The first projection of the inverse fibre-product comparison is the first point of the
@@ -94,7 +94,7 @@ pair. -/
 @[simp]
 theorem map_fst_pointsEquivOfIsPullback_symm
     (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
-    map p₁ hp₁ ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.1.1 :=
+    map p₁ hp₁ ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.val.1 :=
   Subtype.ext (by simp)
 
 /-- The second projection of the inverse fibre-product comparison is the second point of the
@@ -102,7 +102,7 @@ pair. -/
 @[simp]
 theorem map_snd_pointsEquivOfIsPullback_symm (h : p₂ ≫ fY = fP)
     (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
-    map p₂ h ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.1.2 :=
+    map p₂ h ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.val.2 :=
   Subtype.ext (by simp)
 
 include hP hp₁ hg₁ hg₂ in
@@ -114,7 +114,7 @@ theorem range_prodMk_map_of_isPullback (hp₂ : p₂ ≫ fY = fP) :
   ext p
   refine ⟨?_, fun hp ↦ ⟨(pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm ⟨p, hp⟩, by simp⟩⟩
   rintro ⟨x, rfl⟩
-  exact (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).2
+  exact (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).property
 
 section TensorProductChart
 
@@ -139,7 +139,7 @@ of its restrictions to the two factors. -/
 theorem pointsEquivOfIsPullback_chartPoint (hiA : iA ≫ fX = Spec.algebraMap k A)
     (hiB : iB ≫ fY = Spec.algebraMap k B) (x : CommAlgCat.of k (A ⊗[C] B) →ₐ[k] R) :
     (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ (chartPoint fP (CommAlgCat.of k (A ⊗[C] B))
-        (tensorProductChart hP hA hB) (tensorProductChart_comp hP hp₁ hA hB hiA) x)).1 =
+        (tensorProductChart hP hA hB) (tensorProductChart_comp hP hp₁ hA hB hiA) x)).val =
       (chartPoint fX A iA hiA (x.comp Algebra.TensorProduct.includeLeft),
         chartPoint fY B iB hiB
           (x.comp (Algebra.TensorProduct.includeRight.restrictScalars k))) := by
@@ -228,8 +228,8 @@ theorem continuous_pointsEquivOfIsPullback_symm :
   have hcompat := map_chartPoint_eq_map_chartPoint_iff (R := R) hg₁ hg₂ hA hB hiA hiB hiC
   let τ : c ⁻¹' S → {q : (A →ₐ[k] R) × (B →ₐ[k] R) //
       q.1.comp (IsScalarTower.toAlgHom k C A) = q.2.comp (IsScalarTower.toAlgHom k C B)} :=
-    fun q ↦ ⟨q.1, (hcompat q.1.1 q.1.2).1 q.2⟩
-  have hτ : Continuous τ := continuous_subtype_val.subtype_mk _
+    fun q ↦ ⟨q.val, (hcompat q.val.1 q.val.2).1 q.property⟩
+  have hτ : Continuous τ := continuous_subtypeVal.subtype_mk _
   -- On compatible pairs of chart points, the inverse comparison is read in the chart.
   have key : (pointsEquivOfIsPullback (R := R) hP hp₁ hg₁ hg₂).symm ∘ S.restrictPreimage c =
       chartPoint fP (CommAlgCat.of k (A ⊗[C] B)) (tensorProductChart hP hA hB)
@@ -375,7 +375,7 @@ inversion on the units, the product comparison of points is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_pointsProdEquivOfIsPullback [ContinuousMul R] :
     Continuous (pointsProdEquivOfIsPullback (R := R) hXY hp₁) :=
-  continuous_subtype_val.comp (continuous_pointsEquivOfIsPullback hXY hp₁ _ _)
+  continuous_subtypeVal.comp (continuous_pointsEquivOfIsPullback hXY hp₁ _ _)
 
 variable [IsTopologicalRing R]
 

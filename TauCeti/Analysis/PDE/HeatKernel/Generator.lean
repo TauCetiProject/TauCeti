@@ -323,7 +323,7 @@ theorem generator_heatSemigroup_eq_weakLaplacianLp (hp : p ≠ ∞) :
   obtain ⟨f, rfl⟩ := (LinearPMap.mem_graph_iff' _).1 hfg
   have hf : (f : Lp F p (volume : Measure E)) ∈ (heatSemigroup hp).domain := by
     rw [← StronglyContinuousSemigroup.generator_domain]
-    exact f.2
+    exact f.property
   have hlim := (heatSemigroup (E := E) (F := F) hp).generator_tendsto ⟨f, hf⟩
   exact mem_graph_weakLaplacianLp_iff.2 (integral_laplacian_smul_eq_of_tendsto hp hlim)
 

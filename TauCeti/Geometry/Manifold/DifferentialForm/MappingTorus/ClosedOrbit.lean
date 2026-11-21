@@ -93,7 +93,7 @@ theorem mpullback_closedOrbit_fiberForm (hk : k ≠ 0) :
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   rw [TauCeti.mpullback_apply, mfderiv_const, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
     Pi.zero_apply]
-  exact (σ.1 x).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
+  exact (σ.val x).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
 
 /-- Every fiber form of positive degree, pulled back to `(ℝ / ℤ) × Y_φ`, vanishes on the orbit
 torus. -/
