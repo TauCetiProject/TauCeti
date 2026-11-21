@@ -84,7 +84,7 @@ noncomputable def normalEquiv (hL : IsMaximalTotallyReal J L)
 theorem normalEquiv_apply (hL : IsMaximalTotallyReal J L)
     (hJ : Function.Injective (J.domRestrict L)) (v : L) :
     hL.normalEquiv hJ v = Submodule.Quotient.mk (J v) := by
-  simp [normalEquiv, Submodule.quotientEquivOfIsCompl]
+  simp [normalEquiv]
 
 /-- The normal space of a maximal totally real submodule has the dimension of the submodule. -/
 theorem finrank_quotient (hL : IsMaximalTotallyReal J L)
