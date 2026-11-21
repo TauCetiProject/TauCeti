@@ -34,6 +34,8 @@ The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the tria
 
 * `Finset.Nat.prod_antidiagonal_prod_antidiagonal_fst`: associativity of the antidiagonal
   convolution.
+* `Finset.Nat.prod_antidiagonal_prod_antidiagonal_fst_swap`: commutativity of the last two indices
+  of a product over the triples `(a + b) + c = n`.
 * `Finset.Nat.natCast_add_one_smul_sum_antidiagonal_succ`: the weighted split of a sum over
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
@@ -56,6 +58,18 @@ theorem prod_antidiagonal_prod_antidiagonal_fst {M : Type*} [CommMonoid M] (n : 
   -- reindex the triples: `((a + b, c), (a, b)) ↦ ((a, b + c), (b, c))`
   apply prod_nbij' (fun x => ⟨(x.2.1, x.2.2 + x.1.2), (x.2.2, x.1.2)⟩)
     (fun x => ⟨(x.1.1 + x.2.1, x.2.2), (x.1.1, x.2.1)⟩) <;> aesop (add simp [add_assoc])
+
+/-- A product over the triples `a + b + c = n`, bracketed as `(a + b) + c`, is unchanged by
+swapping the roles of `b` and `c`. -/
+@[to_additive /-- A sum over the triples `a + b + c = n`, bracketed as `(a + b) + c`, is unchanged
+by swapping the roles of `b` and `c`. -/]
+theorem prod_antidiagonal_prod_antidiagonal_fst_swap {M : Type*} [CommMonoid M] (n : ℕ)
+    (f : ℕ → ℕ → ℕ → M) :
+    ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.1, f q.1 q.2 p.2 =
+      ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.1, f q.1 p.2 q.2 := by
+  rw [prod_antidiagonal_prod_antidiagonal_fst n f,
+    prod_antidiagonal_prod_antidiagonal_fst n fun a b c ↦ f a c b]
+  exact prod_congr rfl fun p _ ↦ (prod_antidiagonal_swap (f := fun q ↦ f p.1 q.1 q.2)).symm
 
 variable {M : Type*}
 
