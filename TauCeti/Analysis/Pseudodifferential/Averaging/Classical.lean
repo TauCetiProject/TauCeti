@@ -37,10 +37,12 @@ file shows that averaging preserves the classical symbols, termwise.
 * `TauCeti.ClassicalSymbol.average`: **the average of a classical symbol of order `m` is
   classical of order `m`**. Its full symbol is the average of the full symbol
   (`TauCeti.ClassicalSymbol.toSymbol_average`), so its quantization is the average of the
-  conjugated operators and is equivariant; its homogeneous terms are the averages of the
-  homogeneous terms (`TauCeti.ClassicalSymbol.term_average`), and its principal symbol is the
-  average of the principal symbol (`TauCeti.ClassicalSymbol.principal_average`). In particular,
-  for a probability measure, **averaging keeps an invariant principal symbol**
+  conjugated operators (`TauCeti.Symbol.quantizeSchwartzValue_average`), and for a
+  left-invariant measure it is equivariant
+  (`TauCeti.Symbol.quantizeSchwartzValue_average_transport`); its homogeneous terms are the
+  averages of the homogeneous terms (`TauCeti.ClassicalSymbol.term_average`), and its principal
+  symbol is the average of the principal symbol (`TauCeti.ClassicalSymbol.principal_average`).
+  In particular, for a probability measure, **averaging keeps an invariant principal symbol**
   (`TauCeti.ClassicalSymbol.principal_average_of_forall_transport_eq`), while the lower-order
   terms may change. The average is invariant for a left-invariant measure
   (`TauCeti.ClassicalSymbol.transport_average`) and fixes invariant classical symbols for a
