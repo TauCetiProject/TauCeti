@@ -45,8 +45,8 @@ variable (F) in
 /-- Finite places above `v` correspond to absolute values restricting to `v` exactly, by taking
 the reciprocal local-degree power of the finite place. -/
 noncomputable def placesOverEquivAbsValues (v : FinitePlace K) :
-    v.placesOver F ≃ {w : AbsoluteValue F ℝ // w.LiesOver v.1} := by
-  let f : v.placesOver F → {w : AbsoluteValue F ℝ // w.LiesOver v.1} := fun w ↦
+    v.placesOver F ≃ {w : AbsoluteValue F ℝ // w.LiesOver v.val} := by
+  let f : v.placesOver F → {w : AbsoluteValue F ℝ // w.LiesOver v.val} := fun w ↦
     ⟨w.val.relativeAbsValue K, by
       have : w.val.LiesOver v := mem_placesOver.mp w.property
       infer_instance⟩
@@ -55,7 +55,7 @@ noncomputable def placesOverEquivAbsValues (v : FinitePlace K) :
   · intro w u h
     exact Subtype.ext (relativeAbsValue_injective (congrArg Subtype.val h))
   · intro u
-    have : u.val.LiesOver (mk v.maximalIdeal).1 := by
+    have : u.val.LiesOver (mk v.maximalIdeal).val := by
       simpa only [v.mk_maximalIdeal] using u.property
     obtain ⟨P, hP, hroot⟩ :=
       (NumberField.existsUnique_finitePlace_rpow_inv_eq_of_liesOver
@@ -76,16 +76,16 @@ theorem placesOverEquivAbsValues_apply (v : FinitePlace K) (w : v.placesOver F) 
 local degree. This holds at every element of the extension, not only at base-field elements. -/
 @[simp]
 theorem placesOverEquivAbsValues_symm_apply_pow (v : FinitePlace K)
-    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.1}) (y : F) :
+    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.val}) (y : F) :
     w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.localDegree K =
       ((placesOverEquivAbsValues F v).symm w).val y := by
-  have h := congrArg (fun u : {w : AbsoluteValue F ℝ // w.LiesOver v.1} ↦ u.val y)
+  have h := congrArg (fun u : {w : AbsoluteValue F ℝ // w.LiesOver v.val} ↦ u.val y)
     ((placesOverEquivAbsValues F v).apply_symm_apply w)
   rw [placesOverEquivAbsValues_apply] at h
   rw [← h, relativeAbsValue_pow_localDegree]
 
 /-- The fibre of absolute values above a finite place is finite. -/
-instance (v : FinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.1} :=
+instance (v : FinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.val} :=
   Finite.of_equiv _ (placesOverEquivAbsValues F v)
 
 attribute [local instance] Fintype.ofFinite
@@ -94,7 +94,7 @@ open scoped Classical in
 /-- A local-degree weighted product over the absolute values above `v` is the unweighted
 product over the finite places above `v`. -/
 theorem prod_apply_pow_localDegree (v : FinitePlace K) (y : F) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.localDegree K) =
         ∏ w ∈ (v.placesOver F).toFinset, w y := by
   classical
@@ -108,7 +108,7 @@ open scoped Classical in
 values above a finite place, weighted by their local degrees, is the base absolute value to
 the degree of the extension. -/
 theorem prod_algebraMap_pow_localDegree (v : FinitePlace K) (x : K) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val (algebraMap K F x) ^ ((placesOverEquivAbsValues F v).symm w).val.localDegree K) =
         v x ^ Module.finrank K F := by
   classical
@@ -127,7 +127,7 @@ theorem prod_algebraMap_pow_localDegree (v : FinitePlace K) (x : K) :
 recover it. The formula also includes the zero element of the base. -/
 
 example (v : FinitePlace K) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val (algebraMap K F 0) ^
         ((placesOverEquivAbsValues F v).symm w).val.localDegree K) = 0 := by
   rw [prod_algebraMap_pow_localDegree, map_zero, zero_pow Module.finrank_pos.ne']
@@ -151,8 +151,8 @@ variable (F) in
 /-- Infinite places of `F` above `v` correspond bijectively to absolute values of `F` restricting
 to `v`, via their underlying absolute values. -/
 noncomputable def placesOverEquivAbsValues (v : InfinitePlace K) :
-    v.placesOver F ≃ {w : AbsoluteValue F ℝ // w.LiesOver v.1} := by
-  refine Equiv.ofBijective (fun w ↦ ⟨w.val.1, mem_placesOver.mp w.property⟩) ⟨?_, ?_⟩
+    v.placesOver F ≃ {w : AbsoluteValue F ℝ // w.LiesOver v.val} := by
+  refine Equiv.ofBijective (fun w ↦ ⟨w.val.val, mem_placesOver.mp w.property⟩) ⟨?_, ?_⟩
   · intro w u h
     exact Subtype.ext (Subtype.ext (Subtype.mk.inj h))
   · intro u
@@ -164,28 +164,28 @@ noncomputable def placesOverEquivAbsValues (v : InfinitePlace K) :
 value. -/
 @[simp]
 theorem placesOverEquivAbsValues_apply (v : InfinitePlace K) (w : v.placesOver F) :
-    (placesOverEquivAbsValues F v w).val = w.val.1 :=
+    (placesOverEquivAbsValues F v w).val = w.val.val :=
   (rfl)
 
 /-- The inverse correspondence recovers an infinite place whose underlying absolute value is `w`. -/
 @[simp]
 theorem placesOverEquivAbsValues_symm_apply_val (v : InfinitePlace K)
-    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.1}) :
-    ((placesOverEquivAbsValues F v).symm w).val.1 = w.val :=
+    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.val}) :
+    ((placesOverEquivAbsValues F v).symm w).val.val = w.val :=
   congrArg Subtype.val ((placesOverEquivAbsValues F v).apply_symm_apply w)
 
 /-- Applying the inverse correspondence to the underlying absolute value of an infinite place
 recovers that infinite place. -/
 @[simp]
 theorem placesOverEquivAbsValues_symm_mk (v : InfinitePlace K) (u : InfinitePlace F)
-    (hu : u.1.LiesOver v.1) :
-    ((placesOverEquivAbsValues F v).symm ⟨u.1, hu⟩).val = u :=
-  Subtype.ext (placesOverEquivAbsValues_symm_apply_val v ⟨u.1, hu⟩)
+    (hu : u.val.LiesOver v.val) :
+    ((placesOverEquivAbsValues F v).symm ⟨u.val, hu⟩).val = u :=
+  Subtype.ext (placesOverEquivAbsValues_symm_apply_val v ⟨u.val, hu⟩)
 
 /-- Evaluating the infinite place recovered by `(placesOverEquivAbsValues F v).symm` gives `w`. -/
 @[simp]
 theorem placesOverEquivAbsValues_symm_apply_val_apply (v : InfinitePlace K)
-    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.1}) (y : F) :
+    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.val}) (y : F) :
     ((placesOverEquivAbsValues F v).symm w).val y = w.val y :=
   congrArg (fun u : AbsoluteValue F ℝ ↦ u y) (placesOverEquivAbsValues_symm_apply_val v w)
 
@@ -193,8 +193,8 @@ theorem placesOverEquivAbsValues_symm_apply_val_apply (v : InfinitePlace K)
 multiplicity-weighted product over the absolute values of `F` above `v` is the
 multiplicity-weighted product over the infinite places of `F` above `v`. -/
 theorem prod_apply_pow_mult (v : InfinitePlace K)
-    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] [Fintype (v.placesOver F)] (y : F) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.val}] [Fintype (v.placesOver F)] (y : F) :
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.mult) =
         ∏ w ∈ (v.placesOver F).toFinset, w y ^ w.mult := by
   simp only [← placesOverEquivAbsValues_symm_apply_val_apply]
@@ -209,7 +209,7 @@ section Finite
 variable {K F : Type*} [Field K] [Field F] [Algebra K F] [Module.Finite K F]
 
 /-- The fibre of absolute values of a finite field extension above an infinite place is finite. -/
-instance (v : InfinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.1} :=
+instance (v : InfinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.val} :=
   (NumberField.finite_setOf_liesOver_infinitePlace F v).to_subtype
 
 end Finite
@@ -224,8 +224,8 @@ element `x : K`, the product over all absolute values of `F` above an infinite p
 by their multiplicities `w.mult`, equals the normalized base value `v x ^ v.mult` raised to
 `[F : K]`. -/
 theorem prod_algebraMap_pow_mult (v : InfinitePlace K)
-    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] (x : K) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.val}] (x : K) :
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val (algebraMap K F x) ^ ((placesOverEquivAbsValues F v).symm w).val.mult) =
         (v x ^ v.mult) ^ Module.finrank K F := by
   rw [prod_apply_pow_mult]
@@ -242,8 +242,8 @@ theorem prod_algebraMap_pow_mult (v : InfinitePlace K)
 is the square of `v ^ v.mult` on the base, whereas `w` itself restricts to `v` without a power. -/
 
 example [NumberField K] (v : InfinitePlace K)
-    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.val}] :
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val (algebraMap K F 0) ^
         ((placesOverEquivAbsValues F v).symm w).val.mult) = 0 := by
   rw [prod_algebraMap_pow_mult, map_zero, zero_pow v.mult_ne_zero,

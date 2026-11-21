@@ -44,7 +44,7 @@ namespace NumberField
 private theorem exists_finset_prod_max_apply_one_pow_mult_le
     {K F : Type*} [Field K] [Field F] [Algebra K F]
     (Sinf : Finset (InfinitePlace K)) (winf : InfinitePlace K → AbsoluteValue F ℝ)
-    (hwinf : ∀ v ∈ Sinf, (winf v).LiesOver v.1) (x : F) :
+    (hwinf : ∀ v ∈ Sinf, (winf v).LiesOver v.val) (x : F) :
     ∃ T : Finset (InfinitePlace F),
       ∏ v ∈ Sinf, max (winf v x) 1 ^ v.mult ≤ ∏ v ∈ T, max (v x) 1 ^ v.mult := by
   classical
@@ -69,7 +69,7 @@ variable {K F : Type*} [Field K] [Field F] [NumberField F] [Algebra K F]
 over distinct infinite places of `K` is at most the relative height in `F`. -/
 theorem prod_max_apply_one_pow_mult_le_mulHeight₁_of_liesOver
     (S : Finset (InfinitePlace K)) (w : InfinitePlace K → AbsoluteValue F ℝ)
-    (hw : ∀ v ∈ S, (w v).LiesOver v.1) (x : F) :
+    (hw : ∀ v ∈ S, (w v).LiesOver v.val) (x : F) :
     ∏ v ∈ S, max (w v x) 1 ^ v.mult ≤ mulHeight₁ x := by
   obtain ⟨T, hT⟩ := exists_finset_prod_max_apply_one_pow_mult_le S w hw x
   exact hT.trans (by simpa using prod_max_apply_one_le_mulHeight₁ T (∅ : Finset (FinitePlace F)) x)
@@ -78,7 +78,7 @@ theorem prod_max_apply_one_pow_mult_le_mulHeight₁_of_liesOver
 over distinct infinite places of `K` is at least the reciprocal relative height of `x ≠ 0`. -/
 theorem inv_mulHeight₁_le_prod_min_one_apply_pow_mult_of_liesOver
     (S : Finset (InfinitePlace K)) (w : InfinitePlace K → AbsoluteValue F ℝ)
-    (hw : ∀ v ∈ S, (w v).LiesOver v.1) {x : F} (hx : x ≠ 0) :
+    (hw : ∀ v ∈ S, (w v).LiesOver v.val) {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ ∏ v ∈ S, min 1 (w v x) ^ v.mult := by
   have h := prod_max_apply_one_pow_mult_le_mulHeight₁_of_liesOver S w hw x⁻¹
   have hinv (u : AbsoluteValue F ℝ) : max (u x⁻¹) 1 = (min 1 (u x))⁻¹ := by
@@ -90,7 +90,7 @@ theorem inv_mulHeight₁_le_prod_min_one_apply_pow_mult_of_liesOver
 /-- At an absolute value above an infinite place `v`, the `v.mult`-weighted upper truncated factor
 is at most the relative height in the extension. -/
 theorem InfinitePlace.max_apply_one_pow_mult_le_mulHeight₁_of_liesOver (v : InfinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] (x : F) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] (x : F) :
     max (w x) 1 ^ v.mult ≤ mulHeight₁ x := by
   simpa using prod_max_apply_one_pow_mult_le_mulHeight₁_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) x
@@ -98,7 +98,7 @@ theorem InfinitePlace.max_apply_one_pow_mult_le_mulHeight₁_of_liesOver (v : In
 /-- An absolute value lying over an infinite place of the base is bounded by the relative height
 in the extension. -/
 theorem InfinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : InfinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] (x : F) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] (x : F) :
     max (w x) 1 ≤ mulHeight₁ x :=
   (le_self_pow₀ (le_max_right _ _) v.mult_ne_zero).trans
     (v.max_apply_one_pow_mult_le_mulHeight₁_of_liesOver w x)
@@ -106,7 +106,7 @@ theorem InfinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : InfinitePla
 /-- At an absolute value above an infinite place `v`, the `v.mult`-weighted lower truncated factor
 of a nonzero element is at least its reciprocal relative height. -/
 theorem InfinitePlace.inv_mulHeight₁_le_min_one_apply_pow_mult_of_liesOver (v : InfinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] {x : F} (hx : x ≠ 0) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ min 1 (w x) ^ v.mult := by
   simpa using inv_mulHeight₁_le_prod_min_one_apply_pow_mult_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) hx
@@ -114,7 +114,7 @@ theorem InfinitePlace.inv_mulHeight₁_le_min_one_apply_pow_mult_of_liesOver (v 
 /-- At an absolute value above an infinite place, the lower truncated factor of a nonzero element
 is bounded below by its reciprocal relative height. -/
 theorem InfinitePlace.inv_mulHeight₁_le_min_one_apply_of_liesOver (v : InfinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] {x : F} (hx : x ≠ 0) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ min 1 (w x) :=
   (v.inv_mulHeight₁_le_min_one_apply_pow_mult_of_liesOver w hx).trans
     (pow_le_of_le_one (by positivity) (min_le_left _ _) v.mult_ne_zero)
@@ -131,7 +131,7 @@ lying over distinct infinite places `Sinf` (weighted by `v.mult`) and distinct f
 theorem prod_max_apply_one_pow_mult_mul_prod_le_mulHeight₁_of_liesOver
     (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
     (winf : InfinitePlace K → AbsoluteValue F ℝ) (wfin : FinitePlace K → AbsoluteValue F ℝ)
-    (hwinf : ∀ v ∈ Sinf, (winf v).LiesOver v.1) (hwfin : ∀ v ∈ Sfin, (wfin v).LiesOver v.1)
+    (hwinf : ∀ v ∈ Sinf, (winf v).LiesOver v.val) (hwfin : ∀ v ∈ Sfin, (wfin v).LiesOver v.val)
     (x : F) :
     (∏ v ∈ Sinf, max (winf v x) 1 ^ v.mult) * ∏ v ∈ Sfin, max (wfin v x) 1 ≤ mulHeight₁ x := by
   classical
@@ -155,7 +155,7 @@ distinct finite places `Sfin` of `K`, the product of the lower truncated local f
 theorem inv_mulHeight₁_le_prod_min_one_apply_pow_mult_mul_prod_of_liesOver
     (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
     (winf : InfinitePlace K → AbsoluteValue F ℝ) (wfin : FinitePlace K → AbsoluteValue F ℝ)
-    (hwinf : ∀ v ∈ Sinf, (winf v).LiesOver v.1) (hwfin : ∀ v ∈ Sfin, (wfin v).LiesOver v.1)
+    (hwinf : ∀ v ∈ Sinf, (winf v).LiesOver v.val) (hwfin : ∀ v ∈ Sfin, (wfin v).LiesOver v.val)
     {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤
       (∏ v ∈ Sinf, min 1 (winf v x) ^ v.mult) * ∏ v ∈ Sfin, min 1 (wfin v x) := by
@@ -173,7 +173,7 @@ theorem inv_mulHeight₁_le_prod_min_one_apply_pow_mult_mul_prod_of_liesOver
 finite places of the base is at most the relative height in the extension. -/
 theorem prod_max_apply_one_le_mulHeight₁_of_liesOver
     (S : Finset (FinitePlace K)) (w : FinitePlace K → AbsoluteValue F ℝ)
-    (hw : ∀ v ∈ S, (w v).LiesOver v.1) (x : F) :
+    (hw : ∀ v ∈ S, (w v).LiesOver v.val) (x : F) :
     ∏ v ∈ S, max (w v x) 1 ≤ mulHeight₁ x := by
   classical
   simpa using prod_max_apply_one_pow_mult_mul_prod_le_mulHeight₁_of_liesOver
@@ -183,7 +183,7 @@ theorem prod_max_apply_one_le_mulHeight₁_of_liesOver
 finite places of the base is at least the reciprocal relative height of a nonzero element. -/
 theorem inv_mulHeight₁_le_prod_min_one_apply_of_liesOver
     (S : Finset (FinitePlace K)) (w : FinitePlace K → AbsoluteValue F ℝ)
-    (hw : ∀ v ∈ S, (w v).LiesOver v.1) {x : F} (hx : x ≠ 0) :
+    (hw : ∀ v ∈ S, (w v).LiesOver v.val) {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ ∏ v ∈ S, min 1 (w v x) := by
   classical
   simpa using inv_mulHeight₁_le_prod_min_one_apply_pow_mult_mul_prod_of_liesOver
@@ -192,7 +192,7 @@ theorem inv_mulHeight₁_le_prod_min_one_apply_of_liesOver
 /-- An absolute value lying over a finite place of the base is bounded by the relative height
 in the extension, even when it is not itself a finite place. -/
 theorem FinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : FinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] (x : F) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] (x : F) :
     max (w x) 1 ≤ mulHeight₁ x := by
   simpa using prod_max_apply_one_le_mulHeight₁_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) x
@@ -200,7 +200,7 @@ theorem FinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : FinitePlace K
 /-- At an absolute value above a finite place, the lower truncated factor of a nonzero element
 is bounded below by its reciprocal relative height. -/
 theorem FinitePlace.inv_mulHeight₁_le_min_one_apply_of_liesOver (v : FinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] {x : F} (hx : x ≠ 0) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ min 1 (w x) := by
   simpa using inv_mulHeight₁_le_prod_min_one_apply_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) hx

@@ -144,7 +144,7 @@ theorem isCompact_closure_iff_exists_stable_lattice (K : Subgroup (V ≃ₗ[E] V
     have hρ (x : V) : Continuous fun g : H => ρ g x :=
       (IsModuleTopology.continuous_of_linearMap
         (LinearMap.applyₗ x : Module.End E V →ₗ[E] V)).comp
-        (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+        (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
     obtain ⟨L, hL, hρL⟩ := ρ.exists_stable_lattice hρ
     exact ⟨L, hL, fun k hk => hρL ⟨k, K.le_topologicalClosure hk⟩⟩
   · rintro ⟨L, hL, hKL⟩

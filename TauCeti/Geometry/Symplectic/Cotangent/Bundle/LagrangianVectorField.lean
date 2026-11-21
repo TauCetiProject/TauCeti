@@ -124,12 +124,12 @@ theorem mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm (hL : ContMDiff I.tangent �
     {v : TangentBundle I M} (hv : (fiberHessian L v).IsInvertible) {X : TangentSpace I.tangent v}
     (hX : ∀ w, SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X w =
       mvfderiv I.tangent (lagrangianEnergy L) v w) :
-    mfderiv I.tangent I (π E (TangentSpace I)) v X = v.2 := by
+    mfderiv I.tangent I (π E (TangentSpace I)) v X = v.snd := by
   -- Pair `X` with the vertical vector of direction `u`: both sides of `ι_X ω_L = dE_L` give the
   -- fibre Hessian applied to `u`, on `dπ X` and on `v` respectively.
   have key : ∀ u : TangentSpace I v.proj,
       fiberHessian L v u (mfderiv I.tangent I (π E (TangentSpace I)) v X) =
-        fiberHessian L v u v.2 := by
+        fiberHessian L v u v.snd := by
     intro u
     let Y : TangentSpace I.tangent v :=
       ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj u)
@@ -173,7 +173,7 @@ Hamiltonian vector field `X` of the energy for the Cartan two-form satisfies `d�
 theorem mfderiv_proj_eq_snd_of_isHamiltonianVectorField
     (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
     (v : TangentBundle I M) :
-    mfderiv I.tangent I (π E (TangentSpace I)) v (X v) = v.2 :=
+    mfderiv I.tangent I (π E (TangentSpace I)) v (X v) = v.snd :=
   mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm hL (isRegularLagrangian_iff.1 hreg v)
     (SmoothTwoForm.isHamiltonianVectorField_iff.1 hX v)
 
@@ -208,7 +208,7 @@ finite-dimensional boundaryless manifold, the Hamiltonian vector field `X_E` of 
 symplectic Cartan two-form satisfies `dπ (X_E v) = v`. -/
 theorem mfderiv_proj_hamiltonianVectorField_lagrangianEnergy (v : TangentBundle I M) :
     mfderiv I.tangent I (π E (TangentSpace I)) v
-      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L) v) = v.2 :=
+      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L) v) = v.snd :=
   hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL
     ((hreg.isSymplectic_cartanTwoForm hL).isNondegenerate
       |>.isHamiltonianVectorField_hamiltonianVectorField _) v

@@ -96,7 +96,7 @@ component of `χ.unitaryPart` on any uniformizer.** -/
 theorem unitaryIdealWeight_apply_prime (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞 K))
     (hv : ¬ v.asIdeal ∣ χ.finiteConductor) (u : (v.adicCompletion K)ˣ)
     (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
-    χ.unitaryIdealWeight.1 v.asIdeal = χ.unitaryPart.finiteComponent v u := by
+    χ.unitaryIdealWeight.val v.asIdeal = χ.unitaryPart.finiteComponent v u := by
   let 𝔣 : Modulus K := ⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩
   have hv' : v ∉ 𝔣.support := (𝔣.mem_support_iff v).not.mpr (by simpa [𝔣] using hv)
   have hgood : Ideal.IsPrimeTo v.asIdeal 𝔣.support := Ideal.isPrimeTo_asIdeal_iff.mpr hv'
@@ -109,21 +109,21 @@ theorem unitaryIdealWeight_apply_prime (χ : HeckeCharacter K) (v : HeightOneSpe
 /-- **A prime is bad for `χ.unitaryIdealWeight` exactly when it divides `χ.finiteConductor`.** -/
 theorem mem_badPrimes_unitaryIdealWeight_iff (χ : HeckeCharacter K)
     (v : HeightOneSpectrum (𝓞 K)) :
-    v ∈ χ.unitaryIdealWeight.1.badPrimes ↔ v.asIdeal ∣ χ.finiteConductor := by
+    v ∈ χ.unitaryIdealWeight.val.badPrimes ↔ v.asIdeal ∣ χ.finiteConductor := by
   simp [unitaryIdealWeight]
 
 /-- The unitary ideal weight vanishes at every prime dividing `χ.finiteConductor`. -/
 theorem unitaryIdealWeight_apply_of_dvd (χ : HeckeCharacter K) {v : HeightOneSpectrum (𝓞 K)}
     (hv : v.asIdeal ∣ χ.finiteConductor) :
-    χ.unitaryIdealWeight.1 v.asIdeal = 0 :=
+    χ.unitaryIdealWeight.val v.asIdeal = 0 :=
   MultiplicativeIdealWeight.mem_badPrimes.mp ((χ.mem_badPrimes_unitaryIdealWeight_iff v).mpr hv)
 
 /-- The unitary ideal weight vanishes on every ideal not prime to the prime divisors of
 `χ.finiteConductor`. -/
 theorem unitaryIdealWeight_apply_of_not_isPrimeTo (χ : HeckeCharacter K) {I : Ideal (𝓞 K)}
     (hI : ¬ Ideal.IsPrimeTo I {v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ χ.finiteConductor}) :
-    χ.unitaryIdealWeight.1 I = 0 := by
-  refine (χ.unitaryIdealWeight.1.apply_eq_zero_iff_not_isGood I).mpr fun hg ↦ hI ?_
+    χ.unitaryIdealWeight.val I = 0 := by
+  refine (χ.unitaryIdealWeight.val.apply_eq_zero_iff_not_isGood I).mpr fun hg ↦ hI ?_
   convert hg using 1
   ext v
   exact (χ.mem_badPrimes_unitaryIdealWeight_iff v).symm

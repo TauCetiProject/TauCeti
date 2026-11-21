@@ -95,7 +95,7 @@ theorem explicitCoeff1_weilPairingCoeff_mem_unramifiedOutsideKummerCohomology [W
   -- the image of `T` in `E(K_v)[m]`
   let T' : AddSubgroup.torsionBy (W⁄(v.adicCompletion K)).toAffine.Point m :=
     ⟨W.toAffine.pointMap _ T, AddSubgroup.torsionBy.nsmul_iff.2 <| by
-      rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 T.2, map_zero]⟩
+      rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 T.property, map_zero]⟩
   -- restriction to `K_v` commutes with `e_m(·, T)`, and a coefficient map over `G_{K_v}`
   -- preserves unramified classes
   have hcv := mem_unramifiedOutsideTorsionCohomology_iff.1 hc v hv

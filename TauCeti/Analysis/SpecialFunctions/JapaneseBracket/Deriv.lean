@@ -56,6 +56,14 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `O(R ^ m / R ^ k)` in its `k`-th derivative.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the derivative bounds for the
   bracket power `(1 + ‖c x‖ ^ 2) ^ r` of a rescaled argument.
+* `TauCeti.exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow`,
+  `TauCeti.exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow`: symbol estimates of orders
+  `a` and `b` give estimates of order `a + b` for products and `N a` for `N`-th powers, uniformly
+  in a parameter.
+* `TauCeti.hasFDerivAt_norm_smul_sq_rpow`: the derivative of `(‖c ξ‖ ^ 2) ^ μ` away from `0`.
+* `TauCeti.hasFDerivAt_one_add_norm_smul_sq_rpow`: the derivative of `(1 + ‖c ξ‖ ^ 2) ^ r`.
+* `TauCeti.contDiff_norm_smul_sq_rpow_smul`: `(‖c ξ‖ ^ 2) ^ μ` times a smooth function vanishing
+  near `0` is smooth.
 
 ## References
 
@@ -187,6 +195,73 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
   gcongr
   exact Finset.single_le_sum (fun k hk ↦ hS0 hk) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
 
+/-- **Symbol estimates for products, uniformly in a parameter.** If the first `k` derivatives of
+two families of `C^k` functions with values in a normed algebra satisfy the symbol estimates
+`‖D^i f t x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((a - i) / 2)` and `‖D^i g t x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((b - i) / 2)`
+of orders `a` and `b`, with constants independent of the parameter `t`, then by the Leibniz rule
+the `k`-th derivative of the product `f t * g t` satisfies the estimate of order `a + b`, again
+uniformly in `t`. -/
+theorem exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℝ 𝔸] {f g : ι → E → 𝔸} {k : ℕ} (hf : ∀ t, ContDiff ℝ k (f t))
+    (hg : ∀ t, ContDiff ℝ k (g t)) {a b : ℝ}
+    (hfk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (hgk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (g t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((b - i) / 2)) :
+    ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x * g t x) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+  choose! A hA using hfk
+  choose! B hB using hgk
+  refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * |A i| * |B (k - i)|, fun t x ↦ ?_⟩
+  refine (norm_iteratedFDeriv_mul_le (hf t) (hg t) x le_rfl).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  -- The `i`-th Leibniz term carries `D^i f` and `D^(k - i) g`, whose orders add up to
+  -- `a + b - k`.
+  have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  have hexp : (1 + ‖x‖ ^ 2) ^ ((a - i) / 2) * (1 + ‖x‖ ^ 2) ^ ((b - (k - i : ℕ)) / 2) =
+      (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+    rw [← Real.rpow_add hw, Nat.cast_sub hik]
+    ring_nf
+  calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (f t) x‖ * ‖iteratedFDeriv ℝ (k - i) (g t) x‖
+      ≤ k.choose i * (|A i| * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2)) *
+          (|B (k - i)| * (1 + ‖x‖ ^ 2) ^ ((b - (k - i : ℕ)) / 2)) := by
+        gcongr
+        · exact (hA i hik t x).trans (by gcongr; exact le_abs_self _)
+        · exact (hB (k - i) (Nat.sub_le k i) t x).trans (by gcongr; exact le_abs_self _)
+    _ = k.choose i * |A i| * |B (k - i)| * (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+        rw [← hexp]
+        ring
+
+/-- **Symbol estimates for powers, uniformly in a parameter.** If the first `k` derivatives of a
+family of `C^k` functions with values in a normed algebra satisfy the symbol estimates of order
+`a`, with constants independent of the parameter `t`, then the `k`-th derivative of their `N`-th
+powers satisfies the estimate of order `N a`. -/
+theorem exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
+    [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] {f : ι → E → 𝔸} {k : ℕ} (hf : ∀ t, ContDiff ℝ k (f t))
+    {a : ℝ}
+    (hfk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (N : ℕ) :
+    ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x ^ N) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((N * a - k) / 2) := by
+  induction N generalizing k with
+  | zero =>
+    refine ⟨1, fun t x ↦ ?_⟩
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp
+    · simp only [pow_zero, iteratedFDeriv_const_of_ne hk, Pi.zero_apply, norm_zero, one_mul]
+      positivity
+  | succ N ih =>
+    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow
+      (fun t ↦ (hf t).pow N) hf
+      (fun i hi ↦ ih (fun t ↦ (hf t).of_le (mod_cast hi)) fun i' hi' ↦ hfk i' (hi'.trans hi))
+      hfk
+    refine ⟨C, fun t x ↦ ?_⟩
+    simp only [pow_succ]
+    refine (hC t x).trans_eq ?_
+    congr 2
+    push_cast
+    ring
+
 end NormedSpace
 
 variable [InnerProductSpace ℝ E]
@@ -212,6 +287,49 @@ theorem hasStrictFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
   ext v
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
+
+/-- The derivative of the power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, away from `c ξ = 0`, is
+`μ (‖c ξ‖ ^ 2) ^ (μ - 1)` times `2 c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_norm_smul_sq_rpow {c : ℝ} {ξ : E} (hcξ : c • ξ ≠ 0) (μ : ℝ) :
+    HasFDerivAt (fun ξ : E ↦ (‖c • ξ‖ ^ 2) ^ μ)
+      ((μ * (‖c • ξ‖ ^ 2) ^ (μ - 1)) • ((2 * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := ((hasStrictFDerivAt_norm_sq (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)).rpow_const (p := μ)
+      (Or.inl (pow_ne_zero 2 (norm_ne_zero_iff.2 hcξ)))
+  refine h.congr_fderiv ?_
+  ext v
+  simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, innerSL_apply_apply, inner_smul_left, inner_smul_right,
+    smul_eq_mul, nsmul_eq_mul, RCLike.conj_to_real]
+  ring
+
+/-- The derivative of the bracket power `(1 + ‖c ξ‖ ^ 2) ^ r` of a rescaled argument is
+`(1 + ‖c ξ‖ ^ 2) ^ (r - 1)` times `2 r c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_one_add_norm_smul_sq_rpow {c : ℝ} (r : ℝ) (ξ : E) :
+    HasFDerivAt (fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r)
+      ((1 + ‖c • ξ‖ ^ 2) ^ (r - 1) • ((2 * r * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := (hasStrictFDerivAt_one_add_norm_sq_rpow r (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)
+  refine h.congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+open Topology in
+/-- A power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, homogeneous of degree `2μ`, times a smooth
+function vanishing near `0` is smooth, for `c ≠ 0` and every real `μ`. -/
+theorem contDiff_norm_smul_sq_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {c : ℝ} (hc : c ≠ 0) {n : WithTop ℕ∞} {g : E → F} (hg : ContDiff ℝ n g)
+    (hg0 : g =ᶠ[𝓝 0] 0) (μ : ℝ) :
+    ContDiff ℝ n fun ξ ↦ (‖c • ξ‖ ^ 2) ^ μ • g ξ := by
+  refine contDiff_iff_contDiffAt.2 fun ξ ↦ ?_
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+    filter_upwards [hg0] with η hη
+    simp [hη]
+  · have hne : ‖c • ξ‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (smul_ne_zero hc hξ))
+    exact ((((contDiff_norm_sq ℝ).comp (contDiff_const_smul c)).contDiffAt.rpow_const_of_ne
+      hne).smul hg.contDiffAt)
 
 /-- **Derivative bounds for powers of the Japanese bracket.** For every real `r` and every `k`,
 `‖D^k (1 + ‖x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`: each derivative of

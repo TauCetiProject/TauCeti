@@ -226,8 +226,8 @@ variable [TopologicalSpace Y]
 private theorem isOpen_image_preimage_compl_closedBall [T2Space X] [FiniteDimensional ℝ E]
     (hj : IsOpenEmbedding j) :
     IsOpen (j '' (Subtype.val ⁻¹' ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ)) :=
-  hj.isOpenMap _ (((isCompact_closedBall _ _).image (continuous_subtype_val.comp
-    eU.symm.continuous)).isClosed.isOpen_compl.preimage continuous_subtype_val)
+  hj.isOpenMap _ (((isCompact_closedBall _ _).image (continuous_subtypeVal.comp
+    eU.symm.continuous)).isClosed.isOpen_compl.preimage continuous_subtypeVal)
 
 end
 

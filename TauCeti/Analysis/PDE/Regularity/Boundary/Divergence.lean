@@ -308,7 +308,7 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
     filter_upwards [hmval, hεv] with x h1 h2 using h1 ▸ le_min (le_max_right _ _) h2
   have hmD : m ∈ w1p0Submodule mu D 2 :=
     W1p.mem_w1p0Submodule_of_nonneg_of_le (u := ε • (v : W1p mu D 2)) (by norm_num)
-      ((w1p0Submodule mu D 2).toSubmodule.smul_mem ε v.2) hm0
+      ((w1p0Submodule mu D 2).toSubmodule.smul_mem ε v.property) hm0
       (by
         filter_upwards [hmval, W1p.value_smul_ae ε (v : W1p mu D 2)] with x h1 h2
         rw [h1, h2, Pi.smul_apply, smul_eq_mul]

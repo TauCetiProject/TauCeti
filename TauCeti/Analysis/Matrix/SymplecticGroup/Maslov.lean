@@ -262,7 +262,7 @@ theorem maslovIndex_scalarRotationLoop :
     (by fun_prop) (fun t ↦ ?_) (by simp only [Set.Icc.coe_one, Set.Icc.coe_zero]; push_cast; ring)
   apply Circle.ext
   simp only [Path.map_coe, Function.comp_apply, coe_detCircle, coe_scalarRotationLoop_apply,
-    det_smul, det_one, mul_one, Circle.coe_exp, ← Complex.exp_nat_mul]
+    det_smul, det_one, mul_one, Circle.coe_exp, ← Complex.exp_natCast_mul]
   push_cast
   ring_nf
 

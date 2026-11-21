@@ -225,7 +225,7 @@ theorem signLocalSystemToPermutation_comp_augmentation :
   -- `rw` or `simp`. `change` states the goal through the component of the definition.
   change ∑ e, hp.signLocalSystemToPermutationApp R hσ hfin x f e = (0 : R)
   simp only [signLocalSystemToPermutationApp_apply]
-  exact TauCeti.sum_eq_zero_of_mem_signFiber hfix hσσ (hp.signLocalSystemObjEquiv σ hσ x f).2
+  exact TauCeti.sum_eq_zero_of_mem_signFiber hfix hσσ (hp.signLocalSystemObjEquiv σ hσ x f).property
 
 /-- The short complex `sign ⟶ R[p⁻¹ b] ⟶ R` of local systems of a covering with finite fibres and
 a fixed-point-free involution `σ` over the base: functions changing sign under `σ`, read as formal

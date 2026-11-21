@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 /-!
 # Scalar formal multilinear series
@@ -30,7 +31,9 @@ higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at leas
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
 `hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Every one-variable scalar-valued formal
 multilinear series is `ofScalars` of its `coeff` sequence
-(`FormalMultilinearSeries.ofScalars_coeff`).
+(`FormalMultilinearSeries.ofScalars_coeff`). Over a topological field `𝕜`, the scalar series
+`FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
+(`TauCeti.mkPiRingSeries_eq_ofScalars`).
 
 Over any nontrivially normed field, if `∑ aₛ zˢ` converges for all `z` near `0`, the tail
 `∑_{s ≥ n} aₛ zˢ` is `O(zⁿ)` as `z → 0` (`TauCeti.tsum_tail_isBigO_pow`, DLMF 2.1.8). It is the
@@ -213,9 +216,10 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       have hk := hC k
       rw [ofScalars_norm] at hk
       rw [Nat.mul_div_cancel_left _ hm]
-      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.2 hρ1 (Nat.le_mul_of_pos_left k hm))
+      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.property hρ1
+          (Nat.le_mul_of_pos_left k hm))
         (norm_nonneg _)).trans hk
-    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
+    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.property 0)).trans (hC 0)
   · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : A) r := by
@@ -285,6 +289,15 @@ theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [Nontrivially
     convert hasSum_choose_mul_geometric_of_norm_lt_one' k hy using 1
     ext n
     rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
+
+/-- Over any topological field `𝕜`, the one-variable series `TauCeti.mkPiRingSeries 𝕜 c` coincides
+with `FormalMultilinearSeries.ofScalars 𝕜 c`. -/
+theorem mkPiRingSeries_eq_ofScalars {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
+    [IsTopologicalRing 𝕜] (c : ℕ → 𝕜) :
+    mkPiRingSeries 𝕜 c = FormalMultilinearSeries.ofScalars 𝕜 c := by
+  ext1 n
+  rw [mkPiRingSeries_def, ← (FormalMultilinearSeries.ofScalars 𝕜 c n).mkPiRing_apply_one_eq_self]
+  simp [FormalMultilinearSeries.ofScalars]
 
 section Tail
 

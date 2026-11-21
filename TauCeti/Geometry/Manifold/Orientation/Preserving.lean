@@ -213,13 +213,14 @@ theorem isOrientationPreservingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I'
   have hmap : _root_.Orientation.map ι e.toLinearEquiv b.orientation = b'.orientation := by
     rw [← Module.Basis.orientation_map, hbe]
   rw [isOrientationPreservingAt_iff_of_coe_eq o o' f x e he]
-  rcases (o.orientationAt x).eq_or_eq_neg b.orientation (o.finrank_tangentSpace_eq x).symm with
-    h | h
+  rcases (o.orientationAt x).eq_or_eq_neg b.orientation
+    (Nat.card_eq_fintype_card.trans (o.finrank_tangentSpace_eq x).symm) with h | h
   · rw [h, hmap, iff_true_left rfl]
   · rw [h, _root_.Orientation.map_neg, hmap,
       neg_eq_iff_eq_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
       iff_false_left (Module.Ray.ne_neg_self _),
-      ← _root_.Orientation.ne_iff_eq_neg _ _ (o'.finrank_tangentSpace_eq (f x)).symm, Ne]
+      ← _root_.Orientation.ne_iff_eq_neg _ _
+        (Nat.card_eq_fintype_card.trans (o'.finrank_tangentSpace_eq (f x)).symm), Ne]
 
 /-- Given a continuous linear equivalence representing the derivative, every map is either
 orientation-preserving or orientation-reversing at the point. -/
@@ -228,8 +229,8 @@ theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
     (f : M → M') (x : M) (e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
     (he : (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x) :
     IsOrientationPreservingAt o o' f x ∨ IsOrientationReversingAt o o' f x := by
-  have hcard : Fintype.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
-    simpa only [TauCeti.finrank_tangentSpace] using o'.card_eq
+  have hcard : Nat.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
+    simpa only [Nat.card_eq_fintype_card, TauCeti.finrank_tangentSpace] using o'.card_eq
   rcases _root_.Orientation.eq_or_eq_neg
     (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x))
     (o'.orientationAt (f x)) hcard with h | h

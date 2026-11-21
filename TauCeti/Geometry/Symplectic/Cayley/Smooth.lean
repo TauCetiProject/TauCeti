@@ -298,7 +298,7 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => LinearMap.toContinuousLinearMap
       (h₀.cayleyEquiv.symm ⟨(C y).toLinearMap, hC y⟩).val.toLinearMap) p :=
   h₀.tames.contMDiffAt_of_eventually_cayley_eq (Filter.Eventually.of_forall fun _ =>
-    (h₀.cayleyEquiv.symm _).2) hCs (Filter.Eventually.of_forall fun y => by
+    (h₀.cayleyEquiv.symm _).property) hCs (Filter.Eventually.of_forall fun y => by
       rw [← h₀.cayleyEquiv_apply_coe, Equiv.apply_symm_apply])
 
 /-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an

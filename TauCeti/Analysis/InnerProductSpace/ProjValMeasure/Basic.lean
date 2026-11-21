@@ -38,7 +38,8 @@ from the structure's laws.
   `inner_proj` between them and `proj`, the normalization `proj_univ : P(X) = 1`, and the
   multiplicativity law `proj_inter`.
 * `proj_idem`, `isSelfAdjoint_proj`, `isPositive_proj`, `proj_mul_eq_left_of_subset`,
-  `range_proj_mono`, `proj_union`, `proj_compl`, `norm_proj_apply_le`:
+  `range_proj_mono`, `proj_eq_zero_iff_range_eq_bot`, `proj_union`, `proj_compl`,
+  `norm_proj_apply_le`:
   the classical PVM laws, recovered from the structure.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
@@ -221,6 +222,13 @@ theorem range_proj_mono (P : ProjValMeasure X H) {B C : Set X}
     (P.proj B hB).range ≤ (P.proj C hC).range := by
   rw [← P.proj_mul_eq_right_of_subset hBC hB hC]
   exact LinearMap.range_comp_le_range _ _
+
+/-- A spectral projection vanishes iff its range is trivial. -/
+theorem proj_eq_zero_iff_range_eq_bot (P : ProjValMeasure X H) {B : Set X}
+    (hB : MeasurableSet B) :
+    P.proj B hB = 0 ↔ LinearMap.range (P.proj B hB : H →ₗ[ℂ] H) = ⊥ := by
+  rw [LinearMap.range_eq_bot, ← ContinuousLinearMap.toLinearMap_zero,
+    ContinuousLinearMap.coe_inj]
 
 /-- For disjoint measurable sets, the projection of their union is the sum of
 their projections. -/
