@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Descent
 import TauCeti.Data.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
@@ -378,6 +379,58 @@ theorem exists_diffeomorph_iff (a : CoordinateHom Z W) :
   rw [totalSpaceMap_def] at hΦ
   exact TauCeti.bijective_totalSpace_map_iff (E₁ := Z.Fiber) (E₂ := W.Fiber)
     (ϕ := fun x ↦ a.fiberMap x) |>.1 (hΦ ▸ Φ.bijective)
+
+omit [FiniteDimensional 𝕜 F] in
+/-- Pushing a nowhere-vanishing `C^n` section forward along a `C^n` fibrewise-injective cocycle
+morphism transfers a global compatible `C^n` trivialization between rank-one `C^n` cores. -/
+theorem exists_trivialization_baseSet_eq_univ_of_injective
+    (hF : Module.finrank 𝕜 F = 1) (hG : Module.finrank 𝕜 G = 1)
+    (a : CoordinateHom Z W) (hinj : ∀ x, Function.Injective (a.fiberMap x))
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
+    (hZ : ∃ (e : Trivialization F (π F Z.Fiber)) (_ : e.IsLinear 𝕜),
+      e.toOpenPartialHomeomorph ∈
+        (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F Z.Fiber) ∧
+        e.baseSet = univ) :
+    ∃ (e : Trivialization G (π G W.Fiber)) (_ : e.IsLinear 𝕜),
+      e.toOpenPartialHomeomorph ∈
+        (contMDiffFiberwiseLinear B G IB n).maximalAtlas (TotalSpace G W.Fiber) ∧
+        e.baseSet = univ := by
+  let : TopologicalSpace (TotalSpace F Z.Fiber) := Z.toTopologicalSpace
+  let : TopologicalSpace (TotalSpace G W.Fiber) := W.toTopologicalSpace
+  exact ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_of_injective
+    (V := Z.Fiber) (W := W.Fiber) hF hG
+    (fun x ↦ a.fiberMap x) (fun x ↦ map_zero (a.fiberMap x)) hinj
+    (ha.congr fun p ↦ (a.totalSpaceMap_mk p.proj p.snd).symm) hZ
+
+omit [FiniteDimensional 𝕜 F] in
+/-- Mutually inverse `C^n` cocycle morphisms between rank-one `C^n` cores preserve the existence of
+a global compatible `C^n` trivialization. -/
+theorem exists_trivialization_baseSet_eq_univ_iff_of_inv
+    (hF : Module.finrank 𝕜 F = 1) (hG : Module.finrank 𝕜 G = 1)
+    (a : CoordinateHom Z W) (b : CoordinateHom W Z)
+    (hba : b.comp a = id Z) (hab : a.comp b = id W)
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
+    (hb : ContMDiff (IB.prod 𝓘(𝕜, G)) (IB.prod 𝓘(𝕜, F)) n b.totalSpaceMap) :
+    (∃ (e : Trivialization F (π F Z.Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F Z.Fiber) ∧
+          e.baseSet = univ) ↔
+      ∃ (e : Trivialization G (π G W.Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear B G IB n).maximalAtlas (TotalSpace G W.Fiber) ∧
+          e.baseSet = univ := by
+  have hinj_a : ∀ x, Function.Injective (a.fiberMap x) := fun x ↦
+    Function.HasLeftInverse.injective ⟨b.fiberMap x, fun v ↦ by
+      have h := DFunLike.congr_fun (congrFun (congrArg fiberMap hba) x) v
+      simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.id_apply] using h⟩
+  have hinj_b : ∀ x, Function.Injective (b.fiberMap x) := fun x ↦
+    Function.HasLeftInverse.injective ⟨a.fiberMap x, fun v ↦ by
+      have h := DFunLike.congr_fun (congrFun (congrArg fiberMap hab) x) v
+      simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.id_apply] using h⟩
+  exact ⟨exists_trivialization_baseSet_eq_univ_of_injective hF hG a hinj_a ha,
+    exists_trivialization_baseSet_eq_univ_of_injective hG hF b hinj_b hb⟩
 
 end CoordinateHom
 

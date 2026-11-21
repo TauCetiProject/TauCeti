@@ -524,4 +524,55 @@ theorem exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero (hF : finrank �
         ∀ x, σ x ≠ 0 := by
   simpa [contMDiffOn_univ] using exists_trivialization_baseSet_eq_iff_exists_ne_zero hF isOpen_univ
 
+section Transport
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {W : B → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)] [FiberBundle G W]
+  [VectorBundle 𝕜 G W] [ContMDiffVectorBundle n G W IB]
+
+/-- Pushing a nowhere-vanishing `C^n` section forward along a `C^n` fibrewise-injective map
+sending zero to zero transfers a global compatible `C^n` trivialization between rank-one `C^n`
+vector bundles. -/
+theorem exists_trivialization_baseSet_eq_univ_of_injective
+    (hF : finrank 𝕜 F = 1) (hG : finrank 𝕜 G = 1)
+    (ϕ : ∀ x, V x → W x) (hϕ0 : ∀ x, ϕ x 0 = 0) (hinj : ∀ x, Function.Injective (ϕ x))
+    (hϕ : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n
+      (fun p : TotalSpace F V ↦ TotalSpace.mk' G p.proj (ϕ p.proj p.snd)))
+    (hV : ∃ (e : Trivialization F (π F V)) (_ : e.IsLinear 𝕜),
+      e.toOpenPartialHomeomorph ∈
+        (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V) ∧
+        e.baseSet = univ) :
+    ∃ (e : Trivialization G (π G W)) (_ : e.IsLinear 𝕜),
+      e.toOpenPartialHomeomorph ∈
+        (contMDiffFiberwiseLinear B G IB n).maximalAtlas (TotalSpace G W) ∧
+        e.baseSet = univ := by
+  rw [exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero hF] at hV
+  rw [exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero hG]
+  obtain ⟨σ, hσ, hσ₀⟩ := hV
+  exact ⟨fun x ↦ ϕ x (σ x), hϕ.comp hσ, fun x h0 ↦ hσ₀ x <| (hinj x) (h0.trans (hϕ0 x).symm)⟩
+
+/-- A pair of `C^n` fibrewise-injective maps between rank-one `C^n` vector bundles preserves the
+existence of a global compatible `C^n` trivialization. -/
+theorem exists_trivialization_baseSet_eq_univ_iff_of_injective
+    (hF : finrank 𝕜 F = 1) (hG : finrank 𝕜 G = 1)
+    (ϕ : ∀ x, V x → W x) (hϕ0 : ∀ x, ϕ x 0 = 0) (hinjϕ : ∀ x, Function.Injective (ϕ x))
+    (hϕ : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n
+      (fun p : TotalSpace F V ↦ TotalSpace.mk' G p.proj (ϕ p.proj p.snd)))
+    (ψ : ∀ x, W x → V x) (hψ0 : ∀ x, ψ x 0 = 0) (hinjψ : ∀ x, Function.Injective (ψ x))
+    (hψ : ContMDiff (IB.prod 𝓘(𝕜, G)) (IB.prod 𝓘(𝕜, F)) n
+      (fun p : TotalSpace G W ↦ TotalSpace.mk' F p.proj (ψ p.proj p.snd))) :
+    (∃ (e : Trivialization F (π F V)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V) ∧
+          e.baseSet = univ) ↔
+      ∃ (e : Trivialization G (π G W)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear B G IB n).maximalAtlas (TotalSpace G W) ∧
+          e.baseSet = univ :=
+  ⟨exists_trivialization_baseSet_eq_univ_of_injective hF hG ϕ hϕ0 hinjϕ hϕ,
+    exists_trivialization_baseSet_eq_univ_of_injective hG hF ψ hψ0 hinjψ hψ⟩
+
+end Transport
+
 end ContMDiffVectorBundle

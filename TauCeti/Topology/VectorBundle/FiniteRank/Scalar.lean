@@ -39,33 +39,42 @@ section ScalarCore
 
 variable (Z : VectorBundleCore 𝕜 B 𝕜 ι)
 
--- Expose the rank projection so the dependent fibre model reduces to `Fin 1 → 𝕜`.
+/-- Point-indexed cocycle on `Fin 1 → 𝕜` underlying `ofScalarCore Z`, obtained by restricting
+`Z` along `Z.indexAt` and conjugating transitions by
+`ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜`. -/
+noncomputable def ofScalarCoreBase : VectorBundleCore 𝕜 B (Fin 1 → 𝕜) B :=
+  let e := ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜
+  { baseSet x := Z.baseSet (Z.indexAt x)
+    isOpen_baseSet x := Z.isOpen_baseSet (Z.indexAt x)
+    indexAt := id
+    mem_baseSet_at x := Z.mem_baseSet_at x
+    coordChange x y z :=
+      e.symm.toContinuousLinearMap.comp
+        ((Z.coordChange (Z.indexAt x) (Z.indexAt y) z).comp e.toContinuousLinearMap)
+    coordChange_self x z hz v := by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        Z.coordChange_self (Z.indexAt x) z hz, ContinuousLinearEquiv.symm_apply_apply]
+    continuousOn_coordChange x y :=
+      continuousOn_const.clm_comp
+        ((Z.continuousOn_coordChange (Z.indexAt x) (Z.indexAt y)).clm_comp continuousOn_const)
+    coordChange_comp x y w z hz v := by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        ContinuousLinearEquiv.apply_symm_apply,
+        Z.coordChange_comp (Z.indexAt x) (Z.indexAt y) (Z.indexAt w) z hz] }
+
+/-- Preferred chart index at `x` for `ofScalarCoreBase Z` is `x` itself. -/
+theorem ofScalarCoreBase_indexAt (x : B) : (ofScalarCoreBase Z).indexAt x = x := (rfl)
+
+-- Expose only the rank-one wrapper so `(ofScalarCore Z).rank` reduces to `1` while the cocycle
+-- construction in `ofScalarCoreBase` remains unexposed.
 /-- Present a scalar line-bundle core `Z : VectorBundleCore 𝕜 B 𝕜 ι` as a point-indexed core of
 rank one, using the preferred chart `Z.indexAt x` at each base point `x` and identifying
 `Fin 1 → 𝕜` with `𝕜` by evaluation at `0`. -/
 @[expose]
 noncomputable def ofScalarCore : FiniteRankBundleCore 𝕜 B where
   rank := 1
-  core :=
-    let e := ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜
-    { baseSet x := Z.baseSet (Z.indexAt x)
-      isOpen_baseSet x := Z.isOpen_baseSet (Z.indexAt x)
-      indexAt := id
-      mem_baseSet_at x := Z.mem_baseSet_at x
-      coordChange x y z :=
-        e.symm.toContinuousLinearMap.comp
-          ((Z.coordChange (Z.indexAt x) (Z.indexAt y) z).comp e.toContinuousLinearMap)
-      coordChange_self x z hz v := by
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-          Z.coordChange_self (Z.indexAt x) z hz, ContinuousLinearEquiv.symm_apply_apply]
-      continuousOn_coordChange x y :=
-        continuousOn_const.clm_comp
-          ((Z.continuousOn_coordChange (Z.indexAt x) (Z.indexAt y)).clm_comp continuousOn_const)
-      coordChange_comp x y w z hz v := by
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-          ContinuousLinearEquiv.apply_symm_apply,
-          Z.coordChange_comp (Z.indexAt x) (Z.indexAt y) (Z.indexAt w) z hz] }
-  indexAt_eq _ := rfl
+  core := ofScalarCoreBase Z
+  indexAt_eq := ofScalarCoreBase_indexAt Z
 
 @[simp] theorem rank_ofScalarCore : (ofScalarCore Z).rank = 1 := (rfl)
 
@@ -76,11 +85,20 @@ theorem baseSet_ofScalarCore (x : B) : (ofScalarCore Z).core.baseSet x = Z.baseS
 @[simp] theorem localTriv_baseSet_ofScalarCore (x : B) :
     ((ofScalarCore Z).core.localTriv x).baseSet = Z.baseSet (Z.indexAt x) := (rfl)
 
+/-- Each transition of `ofScalarCore Z` is the preferred transition of `Z` conjugated by the
+canonical identification `ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜`. -/
+theorem coordChange_ofScalarCore (x y z : B) :
+    (ofScalarCore Z).core.coordChange x y z =
+      (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm.toContinuousLinearMap.comp
+        ((Z.coordChange (Z.indexAt x) (Z.indexAt y) z).comp
+          (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).toContinuousLinearMap) :=
+  (rfl)
+
 @[simp] theorem coordChange_ofScalarCore_apply (x y z : B) (v : Fin (ofScalarCore Z).rank → 𝕜)
     (k : Fin (ofScalarCore Z).rank) :
     (ofScalarCore Z).core.coordChange x y z v k =
       Z.coordChange (Z.indexAt x) (Z.indexAt y) z (v (0 : Fin 1)) := by
-  dsimp +instances only [ofScalarCore] at v k ⊢
+  dsimp +instances only [ofScalarCore, ofScalarCoreBase] at v k ⊢
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_funUnique, ContinuousLinearEquiv.coe_funUnique_symm,
     Function.const_apply, Function.eval, Fin.default_eq_zero]
