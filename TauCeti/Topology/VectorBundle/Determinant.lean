@@ -164,8 +164,8 @@ theorem chartCoord_ιMulti (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (hx
     chartCoord e hx ((linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ v)) =
       (Module.finBasis 𝕜 F).det (fun i ↦ (e ⟨x, v i⟩).2) := by
   simp only [chartCoord_apply, LinearEquiv.apply_symm_apply,
-    LinearEquiv.exteriorPower_apply_ιMulti, Module.Basis.exteriorPowerTopEquiv_apply_ιMulti]
-  congr 1
+    LinearEquiv.exteriorPower_apply_ιMulti, Module.Basis.exteriorPowerTopEquiv_apply_ιMulti,
+    Function.comp_def, Trivialization.linearEquivAt_apply]
 
 /-- **The transitions of the determinant line.** Passing from the chart coordinate of `e` to that
 of `e'` multiplies by the determinant of the coordinate change of `E` from `e` to `e'`. -/
@@ -275,7 +275,7 @@ private theorem exists_continuousOn_coordChange (e e' : Trivialization F (π F E
   obtain ⟨hx, hx'⟩ : x ∈ e.baseSet ∧ x ∈ e'.baseSet := hx
   rw [pretrivialization_symm_apply e hx, pretrivialization_apply_mk e' hx',
     chartCoord_chartCoord_symm]
-  rfl
+  simp only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
 
 variable (𝕜 F E) in
 /-- **The determinant line as a vector prebundle.** Its atlas consists of the pretrivializations
@@ -494,7 +494,7 @@ def congrHomeomorph (e : ∀ x, E x ≃L[𝕜] E' x)
     (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd))) :
     TotalSpace 𝕜 (DetBundle 𝕜 F E) ≃ₜ TotalSpace 𝕜 (DetBundle 𝕜 F E') :=
   bundleHomeomorph (congrEquiv e) <| by
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
+    refine TauCeti.continuous_totalSpace_of_forall_exists_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
     obtain ⟨s, hs, hs'⟩ := continuousAt_chartCoord_congrEquiv e he p.proj
     refine ⟨trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj,
       trivializationAt 𝕜 (DetBundle 𝕜 F E') p.proj, fun x c ↦ s x * c,
@@ -599,7 +599,7 @@ def pullbackHomeomorph :
     TotalSpace 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E)) ≃ₜ
       TotalSpace 𝕜 (DetBundle 𝕜 F ((f : B' → B) *ᵖ E)) :=
   bundleHomeomorph (pullbackEquiv (f : B' → B)) <| by
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
+    refine TauCeti.continuous_totalSpace_of_forall_exists_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
     refine ⟨trivializationAt 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E)) p.proj,
       trivializationAt 𝕜 (DetBundle 𝕜 F ((f : B' → B) *ᵖ E)) p.proj, fun _ c ↦ c,
       mem_baseSet_trivializationAt 𝕜 _ p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
@@ -674,7 +674,7 @@ def ofBundleDetHomeomorph :
       TotalSpace 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) :=
   bundleHomeomorph (ofBundleDetFiberEquiv E) <| by
     set A := FiniteRankBundleCore.ofBundle 𝕜 n E
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
+    refine TauCeti.continuous_totalSpace_of_forall_exists_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
     refine ⟨A.det.core.localTriv p.proj,
       trivializationAt 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) p.proj, fun _ ↦ detCoord A,
       A.det.mem_baseSet_self p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
@@ -688,10 +688,10 @@ def ofBundleDetHomeomorph :
     have hsmul (c : 𝕜) (w : Fin A.det.rank → 𝕜) :
         detCoord A ((c • ContinuousLinearMap.id 𝕜 _) w) = c * detCoord A w := by
       simp
-    -- Reconstructed-core fibres are aliases of the model; expose them for the coordinate formula.
-    erw [trivialization_apply_mk _ hx', VectorBundleCore.localTriv_apply, A.det.indexAt_eq,
-      FiniteRankBundleCore.coordChange_det_ofBundle, hsmul, ofBundleDetFiberEquiv_apply,
-      chartCoord_chartCoord_symm]
+    -- The public core-chart formula aligns the reconstructed fibre alias with its model.
+    erw [trivialization_apply_mk _ hx', FiniteRankBundleCore.localTriv_det_ofBundle_apply]
+    erw [hsmul]
+    rw [ofBundleDetFiberEquiv_apply, chartCoord_chartCoord_symm]
 
 @[simp]
 theorem ofBundleDetHomeomorph_apply

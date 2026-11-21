@@ -35,7 +35,8 @@ In low degrees the exterior powers are identified explicitly:
 In the top degree, the rank `r` of `A`, the exterior power is the determinant line
 `FiniteRankBundleCore.det A = ⋀^r A`. It has rank one (`FiniteRankBundleCore.rank_det`), and its
 transitions are multiplication by the determinants of the transitions of `A`
-(`FiniteRankBundleCore.coordChange_det`).
+(`FiniteRankBundleCore.coordChange_det`). The preferred-chart formula on the actual reconstructed
+determinant core is `FiniteRankBundleCore.localTriv_det_ofBundle_apply`.
 
 These are the bundle operations whose classes form the coefficients of `λ_t(E) = Σ [⋀^j E] tʲ`
 in topological K-theory.
@@ -271,6 +272,22 @@ theorem coordChange_det_ofBundle (n : ℕ) (E : B → Type*)
         (trivializationAt (Fin n → 𝕜) E i') x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
         ContinuousLinearMap.id 𝕜 _ := by
   rw [coordChange_det, core_ofBundle, pointIndexedCore_coordChange]
+
+
+/-- The native chart of the reconstructed determinant core acts by the determinant of the
+original bundle's preferred-chart transition times the model identity operator. The formula
+uses the actual core total space and model coordinates, including rank zero. -/
+theorem localTriv_det_ofBundle_apply (n : ℕ) (E : B → Type*)
+    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (Bundle.TotalSpace (Fin n → 𝕜) E)]
+    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (i : B)
+    (p : (ofBundle 𝕜 n E).det.core.TotalSpace) :
+    (ofBundle 𝕜 n E).det.core.localTriv i p =
+      (p.proj, ((((trivializationAt (Fin n → 𝕜) E p.proj).coordChangeL 𝕜
+        (trivializationAt (Fin n → 𝕜) E i) p.proj : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
+          ContinuousLinearMap.id 𝕜 (Fin (ofBundle 𝕜 n E).det.rank → 𝕜)) p.snd)) := by
+  rw [VectorBundleCore.localTriv_apply, (ofBundle 𝕜 n E).det.indexAt_eq,
+    coordChange_det_ofBundle]
 
 /-! ### Pullback -/
 

@@ -33,7 +33,7 @@ fibre is a bijection onto the base.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
-* `FiberBundle.continuous_of_forall_trivialization`: chart formulas continuous at each point give
+* `TauCeti.continuous_totalSpace_of_forall_exists_trivialization`: continuous chart formulas give
   continuity of a map of total spaces over the identity.
 * `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
   trivial.
@@ -165,24 +165,12 @@ theorem continuous_of_forall_exists_trivialization {B F Z : Type*} [TopologicalS
     obtain ⟨e, he⟩ := h (p z)
     exact e.continuousAt_proj (e.mem_source.2 he)
 
-end TauCeti
-
-namespace FiberBundle
-
-variable {B F : Type*} [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
-  [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-
-variable (F E) in
-/-- The projection of a fibre bundle is locally trivial, through the trivializations at the points
-of the base. -/
-theorem exists_trivialization_mem_baseSet (b : B) :
-    ∃ e : Trivialization F (π F E), b ∈ e.baseSet :=
-  ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
 
 /-- A map of total spaces over the identity is continuous if, near each point, source and target
 trivializations express it by a coordinate formula continuous at that point. Neither total space
 needs a pre-existing fibre-bundle instance or topological structures on its individual fibres. -/
-theorem continuous_of_forall_trivialization {F₁ F₂ : Type*} [TopologicalSpace F₁]
+theorem continuous_totalSpace_of_forall_exists_trivialization {B : Type*}
+    [TopologicalSpace B] {F₁ F₂ : Type*} [TopologicalSpace F₁]
     [TopologicalSpace F₂] {E₁ E₂ : B → Type*} [TopologicalSpace (TotalSpace F₁ E₁)]
     [TopologicalSpace (TotalSpace F₂ E₂)]
     (Φ : TotalSpace F₁ E₁ → TotalSpace F₂ E₂) (hΦ : ∀ p, (Φ p).proj = p.proj)
@@ -203,6 +191,21 @@ theorem continuous_of_forall_trivialization {F₁ F₂ : Type*} [TopologicalSpac
   refine (e₂.tendsto_nhds_iff (e₂.mem_source.2 (by rw [hΦ]; exact hp₂))).2
     ⟨?_, (hψ.congr_of_eventuallyEq hev).tendsto⟩
   simpa only [Function.comp_def, hΦ] using hπ.tendsto
+
+end TauCeti
+
+namespace FiberBundle
+
+variable {B F : Type*} [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+
+variable (F E) in
+/-- The projection of a fibre bundle is locally trivial, through the trivializations at the points
+of the base. -/
+theorem exists_trivialization_mem_baseSet (b : B) :
+    ∃ e : Trivialization F (π F E), b ∈ e.baseSet :=
+  ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
+
 
 end FiberBundle
 
