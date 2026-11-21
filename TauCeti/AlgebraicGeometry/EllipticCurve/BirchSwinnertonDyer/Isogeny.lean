@@ -70,7 +70,7 @@ unconditionally preserved.
   Kummer ratios.
 * `TauCeti.Isogeny.bsdQuotient_mul_card_selmerGroup_dual`: the Selmer-and-`Sha`-image form of the
   relation for any family `τ` of embeddings of separable closures over the places of `ℚ`.
-* `TauCeti.Isogeny.bsdQuotient_eq_of_card_selmerGroup_and_card_range_shafarevichTateMap`:
+* `TauCeti.Isogeny.bsdQuotient_eq_of_card_selmerGroup_and_card_range_shaMap`:
   reduction of `E₁.bsdQuotient = E₂.bsdQuotient` to the global Selmer ratio and equality of image
   orders on `Sha`.
 * `TauCeti.Isogeny.birchSwinnertonDyer_iff_of_bsdQuotient_eq`: reduction of
@@ -155,18 +155,17 @@ theorem bsdQuotient_mul_card_selmerGroup_dual [Finite E₁.sha] [Finite E₂.sha
     E₁.bsdQuotient *
         (Nat.card (φ.dual.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
           (φ.kummerRatioProduct : ℝ)) *
-        Nat.card ((Hom.ofIsogeny φ.dual).shafarevichTateMap τ).range =
+        Nat.card (Hom.ofIsogeny φ.dual).shaMap.range =
       E₂.bsdQuotient *
         (Nat.card (φ.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker) *
-        Nat.card ((Hom.ofIsogeny φ).shafarevichTateMap τ).range := by
+        Nat.card (Hom.ofIsogeny φ).shaMap.range := by
   have hbase := φ.bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
   have hsha₁ : (Nat.card E₁.sha : ℝ) =
-      Nat.card (φ.shafarevichTateGroupKer τ) *
-        Nat.card ((Hom.ofIsogeny φ).shafarevichTateMap τ).range := by
+      Nat.card (φ.shafarevichTateGroupKer τ) * Nat.card (Hom.ofIsogeny φ).shaMap.range := by
     exact_mod_cast φ.card_sha_eq_card_shafarevichTateGroupKer_mul τ
   have hsha₂ : (Nat.card E₂.sha : ℝ) =
       Nat.card (φ.dual.shafarevichTateGroupKer τ) *
-        Nat.card ((Hom.ofIsogeny φ.dual).shafarevichTateMap τ).range := by
+        Nat.card (Hom.ofIsogeny φ.dual).shaMap.range := by
     exact_mod_cast φ.dual.card_sha_eq_card_shafarevichTateGroupKer_mul τ
   have hsel₁ : (Nat.card (φ.selmerGroup τ) : ℝ) =
       (Hom.ofIsogeny φ).pointMapHom.range.index * Nat.card (φ.shafarevichTateGroupKer τ) := by
@@ -191,15 +190,15 @@ theorem bsdQuotient_mul_card_selmerGroup_dual [Finite E₁.sha] [Finite E₂.sha
 `E₁.bsdQuotient = E₂.bsdQuotient` follows from the global Selmer ratio formula and the equality of
 image orders `#φ(Sha(E₁)) = #φ̂(Sha(E₂))` for any family `τ` of embeddings of separable closures
 over the places of `ℚ`. -/
-theorem bsdQuotient_eq_of_card_selmerGroup_and_card_range_shafarevichTateMap
+theorem bsdQuotient_eq_of_card_selmerGroup_and_card_range_shaMap
     [Finite E₁.sha] [Finite E₂.sha] (φ : Isogeny E₁.toAffine E₂.toAffine)
     (τ : ∀ v : GlobalNumberFields.Place ℚ,
       SeparableClosure ℚ →ₐ[ℚ] SeparableClosure v.Completion)
     (hsel : (Nat.card (φ.selmerGroup τ) : ℚ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker =
       Nat.card (φ.dual.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
         φ.kummerRatioProduct)
-    (hsha : Nat.card ((Hom.ofIsogeny φ).shafarevichTateMap τ).range =
-      Nat.card ((Hom.ofIsogeny φ.dual).shafarevichTateMap τ).range) :
+    (hsha : Nat.card (Hom.ofIsogeny φ).shaMap.range =
+      Nat.card (Hom.ofIsogeny φ.dual).shaMap.range) :
     E₁.bsdQuotient = E₂.bsdQuotient := by
   have h := φ.bsdQuotient_mul_card_selmerGroup_dual τ
   have hselR :
@@ -210,13 +209,10 @@ theorem bsdQuotient_eq_of_card_selmerGroup_and_card_range_shafarevichTateMap
   have : Finite (φ.selmerGroup τ) := φ.finite_selmerGroup_place τ
   have : Finite (Hom.ofIsogeny φ.dual).pointMapHom.ker :=
     (Hom.ofIsogeny φ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ.dual)
-  have : Finite (E₂.shafarevichTateGroup τ) := by
-    rwa [← E₂.sha_eq_shafarevichTateGroup τ]
   have hpos₁ :
       (0 : ℝ) < Nat.card (φ.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker :=
     mul_pos (Nat.cast_pos.2 Nat.card_pos) (Nat.cast_pos.2 Nat.card_pos)
-  have hpos₂ :
-      (0 : ℝ) < Nat.card ((Hom.ofIsogeny φ).shafarevichTateMap τ).range :=
+  have hpos₂ : (0 : ℝ) < Nat.card (Hom.ofIsogeny φ).shaMap.range :=
     Nat.cast_pos.2 Nat.card_pos
   rw [← hselR, ← hsha] at h
   exact mul_right_cancel₀ hpos₁.ne' (mul_right_cancel₀ hpos₂.ne' h)

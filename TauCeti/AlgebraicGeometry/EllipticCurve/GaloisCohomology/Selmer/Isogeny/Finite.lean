@@ -39,6 +39,8 @@ Cassels' isogeny formula.
 * `TauCeti.Isogeny.finite_selmerGroup_of_finite_torsionBy`: finiteness from the degree-torsion
   of Sha and finite generation of the target point group.
 * `TauCeti.Isogeny.finite_selmerGroup_place`: unconditional finiteness over a number field.
+* `TauCeti.Isogeny.card_shafarevichTateGroup_eq_card_shafarevichTateGroupKer_mul`: factoring
+  `#Sha(W₁)` into kernel and image orders of `φ` for any family of local conditions.
 * `TauCeti.Isogeny.card_sha_eq_card_shafarevichTateGroupKer_mul`: factoring `#Sha(W₁/K)` into
   kernel and image orders of `φ` over a number field.
 
@@ -74,6 +76,16 @@ theorem finite_shafarevichTateGroupKer
     simpa only [Hom.degree_ofIsogeny] using
       (inferInstance : Finite (AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) φ.degree))
   exact (ofIsogeny φ).finite_ker_shafarevichTateMap τ
+
+/-- **Factoring `#Sha(W₁)` into kernel and image orders of an isogeny**: for any family `τ` of
+embeddings into separable closures of field extensions, `#Sha(W₁) = #Sha(W₁)[φ] · #φ(Sha(W₁))`.
+This `Nat.card` identity also holds when a term is infinite. -/
+theorem card_shafarevichTateGroup_eq_card_shafarevichTateGroupKer_mul :
+    Nat.card (W₁.shafarevichTateGroup τ) =
+      Nat.card (φ.shafarevichTateGroupKer τ) *
+        Nat.card ((ofIsogeny φ).shafarevichTateMap τ).range := by
+  rw [shafarevichTateGroupKer_eq_ker_shafarevichTateMap]
+  exact (AddSubgroup.card_ker_mul_card_range ((ofIsogeny φ).shafarevichTateMap τ)).symm
 
 section Separable
 
@@ -136,10 +148,10 @@ theorem card_sha_eq_card_shafarevichTateGroupKer_mul
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     Nat.card W₁.sha =
-      Nat.card (φ.shafarevichTateGroupKer τ) *
-        Nat.card ((ofIsogeny φ).shafarevichTateMap τ).range := by
-  rw [W₁.sha_eq_shafarevichTateGroup τ, shafarevichTateGroupKer_eq_ker_shafarevichTateMap]
-  exact (AddSubgroup.card_ker_mul_card_range ((ofIsogeny φ).shafarevichTateMap τ)).symm
+      Nat.card (φ.shafarevichTateGroupKer τ) * Nat.card (ofIsogeny φ).shaMap.range := by
+  rw [(ofIsogeny φ).card_range_shaMap τ,
+    ← φ.card_shafarevichTateGroup_eq_card_shafarevichTateGroupKer_mul τ,
+    W₁.sha_eq_shafarevichTateGroup τ]
 
 end NumberField
 
