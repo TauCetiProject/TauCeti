@@ -9,8 +9,9 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Compactness
+import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.Calculus.ContDiff.Pi
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
-import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -275,139 +276,6 @@ open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart realChart_inject
 open scoped NNReal Real
 open TauCeti.MeasureTheory
 
-/-- The plumbing map `ψ_L` of the end at `1` carries every point of the inserted plane outside the
-circle `s_∞ = -L/2` of its end into the capped plane `ℂ ∖ {0}`: points of the pole disc
-`‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of the capped puncture `1`, and the
-other points land in the plumbed four-punctured sphere. -/
-private theorem plumbingMap_one_ne_zero {L : ℝ} (hL : 4 < L) {w : ℂ}
-    (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 := by
-  by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
-  · intro h0
-    have h := (norm_sub_endCenter_div_plumbingFactor_le_iff (q := one) (by simp) L 1).1
-      (by rwa [plumbingMap_sub_endCenter_div_plumbingFactor, mul_one])
-    rw [h0, endCenter_one, zero_sub, norm_neg, norm_one] at h
-    have hexp : Real.exp (-(2 * π * (L - 1))) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    linarith
-  · have h1 : (1 : ℝ) ≤ 2 * Real.exp (2 * π) := by
-      linarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
-    exact (plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (q := one) (by simp)
-      (by linarith) ⟨fun h ↦ hw (by rw [h, norm_zero]; positivity),
-        fun h ↦ hw (by rw [h, norm_one]; exact h1)⟩ hwL).1.1
-
-omit [FiniteDimensional ℝ V] in
-/-- At the image under `ψ_L` of a point of the inserted plane outside the circle `s_∞ = -L/2`, the
-capped datum is differentiable in the target point. -/
-private theorem differentiableAt_plumbedPerturbation_single_inf_realChart
-    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) {L : ℝ}
-    (hL : 4 < L) {w : ℝ × ℝ}
-    (hwL : inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (equivRealProdCLM.symm (realChart (one.plumbingMap L) w)) y v) x := by
-  have h := (contDiffAt_uncurry_plumbedPerturbation_single_inf (n := 1) (q := one) (by simp) hHb
-    hHbs hL
-    (y := realChart (one.plumbingMap L) w) (by
-      rw [equivRealProdCLM_symm_realChart]
-      exact eq_endCenter_one_or_of_ne_zero (plumbingMap_one_ne_zero hL hwL)) x v).differentiableAt
-    one_ne_zero
-  exact h.comp x ((differentiableAt_const _).prodMk differentiableAt_id)
-
-/-- **The inserted plane solves its Floer equation.** Let `u` solve the Floer equation
-`(du - X_K)^{0,1} = 0` of the capping datum `K` with neck length `L > 4` at the image `ψ_L(w)` of a
-point `w` of the inserted plane outside the circle `s_∞ = -L/2` of its end, where `ψ_L` is the
-plumbing chart of the end at `1`. Then `u ∘ ψ_L` solves the Floer equation of the negative plane
-datum of `Hb 1` at `w`, for the same almost complex structure, because the plumbing map is
-holomorphic. This includes the pole `0` of the plane and the point `1`, which the capping fills
-in. -/
-theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf
-    (ω : SymplecticForm V) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) {L : ℝ} (hL : 4 < L) {w : ℝ × ℝ}
-    (hwL : inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2) {u : ℝ × ℝ → V}
-    (hu : DifferentiableAt ℝ u (realChart (one.plumbingMap L) w)) {J : AlmostComplexStructure V}
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
-      (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-        (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-        (equivRealProdCLM.symm z) x I)
-      u (realChart (one.plumbingMap L) w) : ℝ × ℝ →ₗ[ℝ] V)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
-      (fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x I)
-      (u ∘ realChart (one.plumbingMap L)) w : ℝ × ℝ →ₗ[ℝ] V) := by
-  have htgt (v : ℂ) := differentiableAt_plumbedPerturbation_single_inf_realChart hHb hHbs hL hwL
-    (u (realChart (one.plumbingMap L) w)) v
-  have h' := ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
-    ((contDiff_realChart_plumbingMap one L (n := 1)).differentiable one_ne_zero w) hu (htgt 1)
-    (htgt I) (isComplexLinearMap_fderiv_realChart (one.hasDerivAt_plumbingMap L _)) h
-  -- The pulled-back datum is the negative plane datum.
-  rwa [ω.perturbedFDeriv_congr
-    (Ks' := fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x 1)
-    (Kt' := fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x I) _
-    (funext fun x ↦ by
-      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf (by simp) hL hwL,
-        equivRealProdCLM_symm_stdComplexLineReal])
-    (funext fun x ↦ by
-      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf (by simp) hL hwL,
-        equivRealProdCLM_symm_stdComplexLineImag])] at h'
-
-/-- **The energy along the plumbing chart of the capping family.** On a measurable set `B` of the
-inserted plane outside the circle `s_∞ = -L/2` of its end, which may contain the pole `0` and the
-point `1`, the energy of a map `u`, differentiable on the capped plane `ℂ ∖ {0}`, over `ψ_L(B)` for
-the capping datum with neck length `L > 4` is the energy of `u ∘ ψ_L` over `B` for the negative
-plane datum of `Hb 1`, where `ψ_L` is the plumbing chart of the end at `1`. -/
-theorem integral_floerEnergyDensity_image_plumbingMap_single_inf (ω : SymplecticForm V)
-    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) {L : ℝ}
-    (hL : 4 < L) {B : Set (ℝ × ℝ)} (hBm : MeasurableSet B)
-    (hB : ∀ w ∈ B, inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2)
-    {u : ℝ × ℝ → V} (hu : DifferentiableOn ℝ u {z | equivRealProdCLM.symm z ≠ 0}) :
-    ∫ z in realChart (one.plumbingMap L) '' B, ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-          (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-          (equivRealProdCLM.symm z) x I) u z =
-      ∫ w in B, ω.floerEnergyDensity
-        (fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x I)
-        (u ∘ realChart (one.plumbingMap L)) w := by
-  have hpb (v : ℂ) {w : ℝ × ℝ} (hw : w ∈ B) (a : ℝ × ℝ) (ha : equivRealProdCLM.symm a = v) :
-      perturbationPullback (realChart (one.plumbingMap L))
-          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-            (equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-            (equivRealProdCLM.symm z) x I) a w =
-        fun x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm w) x v :=
-    funext fun x ↦ by
-      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf (by simp) hL (hB w hw),
-        ha]
-  have hψ {w : ℝ × ℝ} (hw : w ∈ B) :
-      realChart (one.plumbingMap L) w ∈ {z : ℝ × ℝ | equivRealProdCLM.symm z ≠ 0} := by
-    rw [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
-    exact plumbingMap_one_ne_zero hL (hB w hw)
-  have hP : IsOpen {z : ℝ × ℝ | equivRealProdCLM.symm z ≠ 0} :=
-    isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
-  rw [ω.integral_floerEnergyDensity_image hBm
-    (realChart_injective (one.plumbingMap_injective _)).injOn
-    (fun w _ ↦ (contDiff_realChart_plumbingMap one L (n := 1)).differentiable one_ne_zero w)
-    (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg one _ w)
-    (fun w hw ↦ (hu _ (hψ hw)).differentiableAt (hP.mem_nhds (hψ hw)))
-    (fun w hw ↦ differentiableAt_plumbedPerturbation_single_inf_realChart hHb hHbs hL (hB w hw) _ 1)
-    fun w hw ↦ differentiableAt_plumbedPerturbation_single_inf_realChart hHb hHbs hL (hB w hw) _ I]
-  exact setIntegral_congr_fun hBm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
-    (hpb 1 hw _ equivRealProdCLM_symm_stdComplexLineReal)
-    (hpb I hw _ equivRealProdCLM_symm_stdComplexLineImag)
-
-omit [FiniteDimensional ℝ V] in
-/-- The plane is a pair of pants whose input Hamiltonians vanish: the family `Pi.single inf H` of
-end Hamiltonians is period-one and `C^n` when `H` is. -/
-private theorem periodic_single_inf_and_contDiff {n : ℕ∞} {H : ℝ → V → ℝ} (hH : Periodic H 1)
-    (hHs : ContDiff ℝ n (uncurry H)) (r : Puncture) :
-    Periodic ((Pi.single inf H : Puncture → ℝ → V → ℝ) r) 1 ∧
-      ContDiff ℝ n (uncurry ((Pi.single inf H : Puncture → ℝ → V → ℝ) r)) := by
-  rcases eq_or_ne r inf with rfl | hr
-  · simpa using ⟨hH, hHs⟩
-  · rw [Pi.single_eq_of_ne hr]
-    exact ⟨fun _ ↦ rfl, contDiff_const⟩
-
 /-- **The plane piece at the long-neck end of the capping family.** Let `Hb` be period-one `C³`
 Hamiltonians, and let `K_L` be the capping datum obtained by plumbing the negative plane with
 Hamiltonian `Hb 1` into the input end at `1` of the pair of pants with Hamiltonians `Hb`, along a
@@ -555,12 +423,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_lo
         ContinuousOn v' (Ω' \ ↑Z') ∧ MapsTo v' (Ω' \ ↑Z') K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n) ∘ realChart (one.plumbingMap (L (φ n)))) v'
           atTop (Ω' \ ↑Z') := by
-  have hHa := periodic_single_inf_and_contDiff (hHb one) (hHbs one)
   -- On the receiving pair of pants, the plumbed theorem applies with no inserted window.
   obtain ⟨δ₁, hδ₁, hconv₁⟩ :=
     ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPerturbation
-      (Ha := Pi.single inf (Hb one)) (q := one) (by simp) (fun r ↦ (hHa r).1) hHb
-      (fun r ↦ (hHa r).2) hHbs (by simp) R hK hJ hJt hJ hJt
+      (Ha := Pi.single inf (Hb one)) (q := one) (by simp) (fun r ↦ (hHb one).piSingle_apply inf r)
+      hHb (fun r ↦ (hHbs one).uncurry_piSingle_apply inf r) hHbs (by simp) R hK hJ hJt hJ hJt
   obtain ⟨δ₂, hδ₂, hconv₂⟩ :=
     ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_plane hHb hHbs hD' hD'ρ
       hK hJ' hJ't
