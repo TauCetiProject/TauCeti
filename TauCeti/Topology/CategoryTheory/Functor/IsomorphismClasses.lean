@@ -83,14 +83,18 @@ theorem isQuotientMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
       (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
     IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
-  rw [isomorphismClasses_map_comp]
+  change IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+    (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F.toCatHom ≫ G.toCatHom))
+  rw [isomorphismClasses.map_comp]
   exact hG.comp hF
 
 /-- The identity functor induces a proper map on isomorphism classes. -/
 theorem isProperMap_isomorphismClasses_map_id :
     IsProperMap (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom) := by
-  rw [isomorphismClasses_map_id]
+  change IsProperMap (X := Quotient (isIsomorphicSetoid C))
+    (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟙 (Cat.of C)))
+  rw [isomorphismClasses.map_id]
   exact isProperMap_id
 
 /-- Composing functors whose induced maps on isomorphism classes are proper gives a proper map on
@@ -102,7 +106,9 @@ theorem isProperMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
       (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
     IsProperMap (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
-  rw [isomorphismClasses_map_comp]
+  change IsProperMap (X := Quotient (isIsomorphicSetoid C))
+    (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F.toCatHom ≫ G.toCatHom))
+  rw [isomorphismClasses.map_comp]
   exact hG.comp hF
 
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, whose object
@@ -232,15 +238,9 @@ map on isomorphism classes, without requiring surjectivity on objects. -/
 theorem isOpenMap_isomorphismClasses_map (F : C ⥤ D) (hFo : IsOpenMap F.obj)
     (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
     IsOpenMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
-  set φ : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
-    ⇑(isomorphismClasses.map F.toCatHom)
-  have hcomp : φ ∘ Quotient.mk (isIsomorphicSetoid C) =
-      Quotient.mk (isIsomorphicSetoid D) ∘ F.obj := F.isomorphismClasses_map_comp_mk
-  intro U hU
-  rw [← (Quotient.mk_surjective (s := isIsomorphicSetoid C)).image_preimage U,
-    ← Set.image_comp, hcomp, Set.image_comp]
-  exact hq _ (hFo _ (hU.preimage continuous_quotient_mk'))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  IsOpenMap.of_comp continuous_quotient_mk' (Quotient.mk_surjective (s := isIsomorphicSetoid C))
+    (F.isomorphismClasses_map_comp_mk.symm ▸ hq.comp hFo)
 
 /-- A full functor reflecting isomorphisms whose object map is continuous and open, into a target
 with open quotient projection, induces an open embedding on isomorphism classes. -/

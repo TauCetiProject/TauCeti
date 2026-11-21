@@ -12,11 +12,11 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Basic
 # Functors on isomorphism classes
 
 Mathlib's `CategoryTheory.isomorphismClasses` already supplies the action of functors on
-isomorphism classes. Here we record its representative formula, identity and composition laws,
-invariance under natural isomorphism, injectivity for full functors reflecting isomorphisms, such
-as fully faithful functors or full functors out of groupoids, and surjectivity for essentially
-surjective functors. These facts allow comparisons of presentations to descend to their spaces of
-objects up to isomorphism.
+isomorphism classes. Here we record its representative formula, invariance under natural
+isomorphism, injectivity for full functors reflecting isomorphisms, such as fully faithful
+functors or full functors out of groupoids, and surjectivity for essentially surjective functors.
+These facts allow comparisons of presentations to descend to their spaces of objects up to
+isomorphism.
 -/
 
 public section
@@ -25,7 +25,7 @@ universe v u
 
 namespace CategoryTheory.Functor
 
-variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
+variable {C D : Type u} [Category.{v} C] [Category.{v} D]
 
 -- The representative formula records the defining computation of Mathlib's bundled `Quot.map`.
 /-- The map on isomorphism classes sends an object's class to the class of its image. -/
@@ -44,23 +44,6 @@ theorem isomorphismClasses_map_comp_mk (F : C ⥤ D) :
       Quotient.mk (isIsomorphicSetoid D) ∘ F.obj := by
   funext x
   exact F.isomorphismClasses_map_mk x
-
-/-- The identity functor induces the identity morphism on isomorphism classes. -/
-@[simp]
-theorem isomorphismClasses_map_id :
-    isomorphismClasses.map (𝟭 C).toCatHom = 𝟙 (isomorphismClasses.obj (Cat.of C)) := by
-  have hid : (𝟭 C).toCatHom = 𝟙 (Cat.of C) :=
-    Cat.Hom.ext (Cat.Hom.id_toFunctor (C := Cat.of C)).symm
-  rw [hid, isomorphismClasses.map_id]
-
-/-- Composing functors composes their induced morphisms on isomorphism classes. -/
-@[simp]
-theorem isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E) :
-    isomorphismClasses.map (F ⋙ G).toCatHom =
-      isomorphismClasses.map F.toCatHom ≫ isomorphismClasses.map G.toCatHom := by
-  have hcomp : (F ⋙ G).toCatHom = F.toCatHom ≫ G.toCatHom :=
-    Cat.Hom.ext (Cat.Hom.comp_toFunctor F.toCatHom G.toCatHom).symm
-  rw [hcomp, isomorphismClasses.map_comp]
 
 /-- Naturally isomorphic functors induce the same map on isomorphism classes. -/
 theorem isomorphismClasses_map_eq_of_iso (F : C ⥤ D) {G : C ⥤ D} (e : F ≅ G) :
