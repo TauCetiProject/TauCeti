@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.MvPolynomial.PowerSubstitution
 
+import Mathlib.Data.ZMod.Basic
 import TauCeti.Data.Finsupp.Weight
 
 /-!
@@ -153,14 +154,18 @@ theorem polynomialGraph_fin_two (h : MvPolynomial (Fin 2) R) :
   funext i
   fin_cases i <;> simp
 
+/-- Graph substitution commutes with change of coefficients as an equality of ring maps. -/
+theorem polynomialGraph_comp_map {S : Type*} [CommSemiring S] (f : R →+* S) :
+    (polynomialGraph S m B).comp (map f) =
+      (Polynomial.mapRingHom f).comp (polynomialGraph R m B) := by
+  ext <;> simp
+
 /-- The substitution commutes with a ring map applied to the coefficients. -/
 @[simp]
 theorem polynomialGraph_map {S : Type*} [CommSemiring S] (f : R →+* S)
     (h : MvPolynomial (Fin m) R) :
-    polynomialGraph S m B (map f h) = Polynomial.map f (polynomialGraph R m B h) := by
-  induction h using MvPolynomial.induction_on' with
-  | monomial d a => simp
-  | add p q hp hq => simp [hp, hq, Polynomial.map_add]
+    polynomialGraph S m B (map f h) = Polynomial.map f (polynomialGraph R m B h) :=
+  RingHom.congr_fun (polynomialGraph_comp_map f) h
 
 /-- For `m ≥ 2` the substitution is not injective over a nontrivial ring: `X_1` and `X_0 ^ B` both
 map to `T ^ B`. -/
@@ -195,6 +200,15 @@ theorem polynomialGraph_eq_zero_iff {h : MvPolynomial (Fin m) R}
   refine ⟨fun h0 ↦ injOn_polynomialGraph ((mem_restrictSupport_iff (R := R)).mpr fun d hd ↦ hh d hd)
     (Submodule.zero_mem _) (by rw [h0, map_zero]), fun h0 ↦ by rw [h0, map_zero]⟩
 
+/-- For a nonzero polynomial `h`, some base `B ≥ 2` exceeds every exponent in the support of `h`
+and gives a nonzero image under the graph substitution. -/
+theorem exists_polynomialGraph_ne_zero (h : MvPolynomial (Fin m) R) (hh : h ≠ 0) :
+    ∃ B, 2 ≤ B ∧ (∀ d ∈ h.support, ∀ i, d i < B) ∧ polynomialGraph R m B h ≠ 0 := by
+  have hB : ∀ d ∈ h.support, ∀ i, d i < h.totalDegree + 2 := fun d hd i ↦ by
+    have := (monomial_le_degreeOf i hd).trans (degreeOf_le_totalDegree h i)
+    omega
+  exact ⟨h.totalDegree + 2, by omega, hB, (polynomialGraph_eq_zero_iff hB).not.mpr hh⟩
+
 /-- For `m ≠ 0` the substitution is surjective, for every base `B`: the polynomial `∑ a_j T ^ j`
 is the image of `∑ a_j X_0 ^ j`. -/
 theorem polynomialGraph_surjective [NeZero m] : Function.Surjective (polynomialGraph R m B) :=
@@ -203,5 +217,20 @@ theorem polynomialGraph_surjective [NeZero m] : Function.Surjective (polynomialG
     simp⟩
 
 end CommSemiring
+
+-- The first coordinate stays T, even at base zero.
+example : polynomialGraph ℤ 1 0 (X 0) = Polynomial.X := by simp
+
+-- At base zero the second coordinate misses the origin.
+example : polynomialGraph ℤ 2 0 (X 1) = 1 := by simp
+
+-- A non-strict exponent bound would allow this collision.
+example : polynomialGraph (ZMod 2) 2 2 (X 1 - X 0 ^ 2) = 0 := by simp
+
+-- The nonlinear graph succeeds over F₂ even where all rational lines fail.
+example : polynomialGraph (ZMod 2) 2 3 (X 0 ^ 2 * X 1 - X 0 * X 1 ^ 2) ≠ 0 := by
+  intro h
+  have hc := congrArg (fun p : Polynomial (ZMod 2) ↦ p.coeff 5) h
+  norm_num [map_sub, map_mul, map_pow, polynomialGraph_X, ← pow_mul, ← pow_add] at hc
 
 end MvPolynomial
