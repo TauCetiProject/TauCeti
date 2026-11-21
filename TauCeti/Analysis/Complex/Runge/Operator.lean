@@ -8,14 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import Mathlib.Topology.MetricSpace.Thickening
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Complex.Pompeiu.Basic
-import TauCeti.Analysis.Complex.Quadrature
-import TauCeti.Analysis.Complex.Runge.SimpleFraction
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Topology.Compactness.LocallyCompact
+import TauCeti.Analysis.Complex.Runge.Rational
 import TauCeti.Analysis.Normed.Module.Basic
-import TauCeti.MeasureTheory.MeasurableSpace.Metric
 
 /-!
 # The finite-rank Runge approximation operator
@@ -24,24 +21,18 @@ A **Runge compact pair** `TauCeti.IsRungeCompactPair Ω K` consists of an open s
 compact subset `K ⊆ Ω` that is filled in `Ω` (`TauCeti.IsFilledIn K Ω`, meaning no connected
 component of `Ω \ K` is relatively compact in `Ω`).
 
-For any Runge compact pair `(Ω, K)` and any open neighbourhood `U ⊇ K`, this file shows that there
-exists a compact neighbourhood `L` of `K` with `K ⊆ interior L ⊆ L ⊆ U ∩ Ω` such that, for every
-`ε > 0`, one can choose finitely many nodes `ζ j ∈ interior L`, weights `w j`, and `Ω`-holomorphic
-functions `g j` — all independent of `f` — satisfying
-
-`sup_{z ∈ K} ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B`
-
-for every `U`-holomorphic function `f` and every upper bound `B ≥ 0` of `‖f‖` on `L`
-(`TauCeti.exists_finite_rank_runge_operator`). Choosing `ζ j`, `w j`, and `g j` independently of
-`f` makes `f ↦ ∑ j, w j * f (ζ j) * g j` a finite-rank linear evaluation operator, so applying it
-fiberwise preserves continuous, smooth, or holomorphic dependence on external parameters in
-addition to yielding scalar uniform Runge approximation
-(`TauCeti.Analysis.Complex.Runge.Approximation`).
+Via rational Runge approximation (`TauCeti.Analysis.Complex.Runge.Rational`), this file establishes
+the vector-valued finite-rank Runge operator (`TauCeti.IsFilledIn.exists_norm_sub_sum_smul_le`)
+without requiring `Ω` to be open, and derives the domain-relative operator
+(`TauCeti.exists_finite_rank_runge_operator`) for any Runge compact pair `(Ω, K)` and open
+neighbourhood `U ⊇ K` on a compact neighbourhood `L` of `K` inside `U ∩ Ω`.
 
 ## Main declarations and results
 
 * `TauCeti.IsRungeCompactPair`: predicate asserting `IsOpen Ω`, `IsCompact K`, `K ⊆ Ω`, and
   `TauCeti.IsFilledIn K Ω`, with projection eliminators and `@[simp]` empty-set normal forms.
+* `TauCeti.IsFilledIn.exists_norm_sub_sum_smul_le`: vector-valued finite-rank Runge operator for
+  compact sets filled in an arbitrary `Ω ⊆ ℂ`.
 * `TauCeti.exists_finite_rank_runge_operator`: existence of the compact neighbourhood `L ⊆ U ∩ Ω`
   and `f`-independent finite-rank evaluation approximants with operator norm bound `ε * B`.
 
@@ -54,8 +45,9 @@ addition to yielding scalar uniform Runge approximation
 
 public section
 
-open Complex MeasureTheory Metric Set Topology
-open scoped ContDiff
+open Set
+
+universe u
 
 namespace TauCeti
 
@@ -107,6 +99,28 @@ theorem isRungeCompactPair_empty_left {K : Set ℂ} :
   ⟨fun h => subset_empty_iff.mp h.subset,
     fun h => h ▸ isRungeCompactPair_empty_right.mpr isOpen_empty⟩
 
+/-- **Finite-rank Runge approximation operator.** Let `K` be a compact set filled in `Ω ⊆ ℂ`
+(without requiring `Ω` to be open), and let `V ⊆ ℂ` be an open neighbourhood of `K`. For every
+`ε > 0` there are finitely many evaluation points `ζ i ∈ V \ K` and functions `g i : ℂ → ℂ`
+holomorphic on `Ω` such that every `f : ℂ → F` into a complex normed space, holomorphic on `V` and
+bounded by `M` there, satisfies `‖f w - ∑ i, g i w • f (ζ i)‖ ≤ ε * M` for all `w ∈ K`.
+
+The points `ζ i` and holomorphic kernels `g i` depend only on `K`, `Ω`, `V`, and `ε`, not on `f`
+or `F`. The resulting operator `f ↦ ∑ i, g i · • f (ζ i)` is linear in `f`, takes values in
+functions holomorphic on `Ω`, and has finite rank for scalar `f`. -/
+theorem IsFilledIn.exists_norm_sub_sum_smul_le {K Ω V : Set ℂ} (hfill : IsFilledIn K Ω)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hV : IsOpen V) (hKV : K ⊆ V) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (N : ℕ) (ζ : Fin N → ℂ) (g : Fin N → ℂ → ℂ),
+      (∀ i, ζ i ∈ V \ K) ∧ (∀ i, DifferentiableOn ℂ (g i) Ω) ∧
+      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] (f : ℂ → F) (M : ℝ),
+        DifferentiableOn ℂ f V → (∀ z ∈ V, ‖f z‖ ≤ M) →
+        ∀ w ∈ K, ‖f w - ∑ i, g i w • f (ζ i)‖ ≤ ε * M := by
+  obtain ⟨N, ζ, p, q, hζ, -, hqΩ, hop⟩ := exists_rational_norm_sub_sum_smul_le.{u} hK hV hKV
+    (fun _ hx => hfill.compl_inter_connectedComponentIn_nonempty hK.isClosed hKΩ hx) hε
+  refine ⟨N, ζ, fun i w => (p i).eval w / (q i).eval w, hζ, fun i =>
+    (p i).differentiable.differentiableOn.div (q i).differentiable.differentiableOn
+      fun z hz h0 => (hqΩ i z h0).1 hz, hop⟩
+
 /-- **Finite-rank Runge operator.** For a Runge compact pair `(Ω, K)` and an open neighbourhood
 `U ⊇ K`, there exists a compact neighbourhood `L` of `K` inside `U ∩ Ω` such that for every
 `ε > 0` there are finitely many nodes `ζ j ∈ interior L`, weights `w j`, and `Ω`-holomorphic
@@ -125,131 +139,12 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
                 ∀ z ∈ K,
                   ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B := by
   obtain ⟨hΩ, hK, hKΩ, hfill⟩ := hRunge
-  rcases K.eq_empty_or_nonempty with rfl | _
-  · exact ⟨∅, isCompact_empty, by simp, empty_subset _, fun _ _ =>
-      ⟨0, Fin.elim0, Fin.elim0, Fin.elim0, fun j => j.elim0, fun j => j.elim0,
-        fun _ _ _ _ _ _ hz => hz.elim⟩⟩
-  -- Step 1: Compact neighbourhood `L = closure W₂`, smooth cutoff `α`, and support shell `K₁`.
-  obtain ⟨W₂, hW₂, hKW₂, hW₂UO, hW₂c⟩ :=
-    exists_open_between_and_isCompact_closure hK (hU.inter hΩ) (subset_inter hKU hKΩ)
-  let L : Set ℂ := closure W₂
-  have hKL : K ⊆ interior L := hKW₂.trans (hW₂.subset_interior_iff.mpr subset_closure)
-  obtain ⟨V, hV, hKV, hVW₂, hVc⟩ := exists_open_between_and_isCompact_closure hK hW₂ hKW₂
-  obtain ⟨α, hα, -, hα_one, hα_cpt, hα_W₂⟩ := hVc.exists_contDiff_cutoff hW₂ hVW₂
-  let K₁ : Set ℂ := tsupport α \ V
-  have hK₁ : IsCompact K₁ := hα_cpt.isCompact.diff hV
-  have hK₁L : K₁ ⊆ interior L :=
-    sdiff_subset.trans (hα_W₂.trans (hW₂.subset_interior_iff.mpr subset_closure))
-  have hK₁U : tsupport α ⊆ U := hα_W₂.trans (subset_closure.trans (hW₂UO.trans inter_subset_left))
-  have hα_eq_one : EqOn α 1 V := fun y hy => by
-    simpa using interior_subset (hα_one (subset_closure hy))
-  have hdisj : Disjoint K K₁ := disjoint_left.mpr fun z hzK hzK₁ => hzK₁.2 (hKV hzK)
-  obtain ⟨r₀, hr₀, hthick₀⟩ := hK₁.exists_thickening_subset_open isOpen_interior hK₁L
-  have hball₀ : ∀ z ∈ K₁, ball z r₀ ⊆ interior L := fun z hz =>
-    (ball_subset_thickening hz r₀).trans hthick₀
-  -- Step 2: Uniform continuity and norm bound for the kernel `κ` on `K ×ˢ K₁`.
-  let β : ℂ → ℂ := fun z => conjWirtingerDeriv (fun y => (α y : ℂ)) z 1
-  let κ : ℂ → ℂ → ℂ := fun w z => (Real.pi : ℂ)⁻¹ * (w - z)⁻¹ * β z
-  have hβ_cont : Continuous β :=
-    ((Complex.ofRealCLM.contDiff.comp hα).of_le (by simp)).continuous_conjWirtingerDeriv_apply 1
-  have hκ_cont : ContinuousOn (fun p : ℂ × ℂ => κ p.1 p.2) (K ×ˢ K₁) := by
-    refine ContinuousOn.mul (ContinuousOn.mul continuousOn_const ?_)
-      (hβ_cont.comp continuous_snd).continuousOn
-    refine ContinuousOn.inv₀ (continuous_fst.sub continuous_snd).continuousOn ?_
-    rintro ⟨w, z⟩ ⟨hw, hz⟩
-    exact sub_ne_zero.mpr (hdisj.ne_of_mem hw hz)
-  have hκ_uc : UniformContinuousOn (fun p : ℂ × ℂ => κ p.1 p.2) (K ×ˢ K₁) :=
-    (hK.prod hK₁).uniformContinuousOn_of_continuous hκ_cont
-  obtain ⟨Mκ₀, hMκ₀⟩ := (hK.prod hK₁).bddAbove_image hκ_cont.norm
-  let Mκ : ℝ := max Mκ₀ 1
-  have hMκ : ∀ w ∈ K, ∀ z ∈ K₁, ‖κ w z‖ ≤ Mκ := fun w hw z hz =>
-    (hMκ₀ ⟨(w, z), ⟨hw, hz⟩, rfl⟩).trans (le_max_left _ _)
-  -- Step 3: Measurable small-ball partition of `K₁` and simple-fraction approximants `g j`.
-  refine ⟨L, hW₂c, hKL, hW₂UO, fun ε hε => ?_⟩
-  let V₁ : ℝ := max (volume.real K₁) 1
-  have hV₁ : 0 < V₁ := zero_lt_one.trans_le (le_max_right _ _)
-  let η : ℝ := ε / 2 / V₁
-  have hη : 0 < η := by positivity
-  obtain ⟨δ₁, hδ₁, huc₁⟩ := Metric.uniformContinuousOn_iff.mp hκ_uc (η / 2) (half_pos hη)
-  let δ : ℝ := min r₀ (min δ₁ (η / 2 * r₀ / (2 * Mκ)))
-  have hδ : 0 < δ := lt_min hr₀ (lt_min hδ₁ (by positivity))
-  obtain ⟨N, ζ, A, hζK₁, hAm, hAs, hAdisj, hAunion⟩ :=
-    hK₁.totallyBounded.exists_measurable_partition_ball hK₁.isClosed.measurableSet hδ
-  have hAK₁ : ∀ j, A j ⊆ K₁ := fun j => (hAs j).trans inter_subset_left
-  have hAball : ∀ j, A j ⊆ ball (ζ j) δ := fun j => (hAs j).trans inter_subset_right
-  let w : Fin N → ℂ := fun j => (volume.real (A j) : ℂ) * (Real.pi : ℂ)⁻¹ * β (ζ j)
-  let W : ℝ := max (∑ i, ‖w i‖) 1
-  have hW : 0 < W := zero_lt_one.trans_le (le_max_right _ _)
-  have happrox : ∀ j : Fin N, ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧
-      ∀ z ∈ K, ‖(z - ζ j)⁻¹ - g z‖ < ε / 2 / W := fun j =>
-    hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ
-      (fun hj => hdisj.le_bot ⟨hj, hζK₁ j⟩) (by positivity)
-  choose g hg_diff hg_lt using happrox
-  refine ⟨N, ζ, w, g, fun j => hK₁L (hζK₁ j), hg_diff, fun f hf B hB hLf z hz => ?_⟩
-  -- Step 4: Cutoff Cauchy–Pompeiu representation and partition quadrature bound on `K₁`.
-  have hrep : f z = ∫ y in K₁, κ z y • f y := by
-    rw [eq_pi_inv_smul_setIntegral_of_differentiableOn hV hU (hα.of_le (by simp)) hα_cpt
-      hα_eq_one hK₁U hf (hKV hz), ← integral_smul]
-    refine setIntegral_congr_fun ((isClosed_tsupport α).measurableSet.diff hV.measurableSet)
-      fun y _ => ?_
-    simp only [κ, β, smul_eq_mul]
-    ring
-  have hκf_int : IntegrableOn (fun y => κ z y • f y) K₁ := by
-    have hz_cont : ContinuousOn (fun y => κ z y) K₁ :=
-      hκ_cont.comp (continuous_const.prodMk continuous_id).continuousOn fun y hy => ⟨hz, hy⟩
-    have hf_cont : ContinuousOn f K₁ :=
-      hf.continuousOn.mono (hK₁L.trans (interior_subset.trans (hW₂UO.trans inter_subset_left)))
-    exact (hz_cont.smul hf_cont).integrableOn_compact hK₁
-  have herr₁ : ‖f z - ∑ j, w j * f (ζ j) * (z - ζ j)⁻¹‖ ≤ (ε / 2) * B := by
-    have hsum_eq : ∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ =
-        ∑ j, volume.real (A j) • (κ z (ζ j) • f (ζ j)) := by
-      refine Finset.sum_congr rfl fun j _ => ?_
-      simp only [w, κ, Complex.real_smul, smul_eq_mul]
-      ring
-    have hquad := norm_setIntegral_smul_sub_sum_measureReal_smul_le
-      hK₁.measure_lt_top hAm hAdisj hAunion hAball (min_le_left _ _) hκf_int
-      (fun j y hy => by
-        have hpd : dist (z, y) (z, ζ j) < δ₁ := by
-          rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
-          exact (mem_ball.mp (hAball j hy)).trans_le (min_le_of_right_le (min_le_left _ _))
-        rw [← dist_eq_norm]
-        exact (huc₁ (z, y) ⟨hz, hAK₁ j hy⟩ (z, ζ j) ⟨hz, hζK₁ j⟩ hpd).le)
-      (fun j => hMκ z hz (ζ j) (hζK₁ j))
-      (fun j => hf.mono ((hball₀ (ζ j) (hζK₁ j)).trans
-        (interior_subset.trans (hW₂UO.trans inter_subset_left))))
-      (fun j u hu => hLf u (interior_subset (hball₀ (ζ j) (hζK₁ j) hu)))
-    have hδ_le : δ ≤ η / 2 * r₀ / (2 * Mκ) := (min_le_right _ _).trans (min_le_right _ _)
-    have hterm : 2 * Mκ * δ / r₀ ≤ η / 2 := calc
-      2 * Mκ * δ / r₀
-          ≤ 2 * Mκ * (η / 2 * r₀ / (2 * Mκ)) / r₀ := by gcongr
-        _ = η / 2 := by
-            rw [mul_div_cancel₀ _ (by positivity), mul_div_cancel_right₀ _ hr₀.ne']
-    rw [hrep, hsum_eq]
-    refine hquad.trans ?_
-    calc volume.real K₁ * ((η / 2 + 2 * Mκ * δ / r₀) * B)
-        ≤ V₁ * ((η / 2 + η / 2) * B) := by
-          have hKV₁ : volume.real K₁ ≤ V₁ := le_max_left _ _
-          gcongr
-      _ = (ε / 2) * B := by
-          rw [add_halves, ← mul_assoc, mul_div_cancel₀ _ hV₁.ne']
-  -- Step 5: Replace the Cauchy kernels `(z - ζ j)⁻¹` by their `Ω`-holomorphic approximants `g j`.
-  have herr₂ : ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖ ≤ (ε / 2) * B := by
-    calc ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖
-        ≤ (∑ i, ‖w i‖) * (B * (ε / 2 / W)) := by
-          have hsub := norm_sum_smul_sub_smul_le (s := Finset.univ) (a := w)
-            (u := fun j => f (ζ j) * (z - ζ j)⁻¹) (v := fun j => f (ζ j) * g j z) fun j _ => by
-              rw [← mul_sub, norm_mul]
-              exact mul_le_mul (hLf (ζ j) (interior_subset (hK₁L (hζK₁ j)))) (hg_lt j z hz).le
-                (norm_nonneg _) hB
-          simpa only [smul_eq_mul, mul_assoc] using hsub
-      _ ≤ W * (B * (ε / 2 / W)) :=
-          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-      _ = (ε / 2) * B := by rw [← mul_assoc, mul_right_comm, mul_div_cancel₀ _ hW.ne']
-  calc ‖f z - ∑ j, w j * f (ζ j) * g j z‖
-      ≤ ‖f z - ∑ j, w j * f (ζ j) * (z - ζ j)⁻¹‖ +
-          ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖ :=
-        norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ (ε / 2) * B + (ε / 2) * B := add_le_add herr₁ herr₂
-    _ = ε * B := by ring
+  obtain ⟨L, hL, hKL, hLUO⟩ := exists_compact_between hK (hU.inter hΩ) (subset_inter hKU hKΩ)
+  refine ⟨L, hL, hKL, hLUO, fun ε hε => ?_⟩
+  obtain ⟨N, ζ, g, hζ, hg, hop⟩ := hfill.exists_norm_sub_sum_smul_le hK hKΩ isOpen_interior hKL hε
+  refine ⟨N, ζ, fun _ => 1, g, fun j => (hζ j).1, hg, fun f hf B _ hLf z hz => ?_⟩
+  have hbound := hop f B (hf.mono (interior_subset.trans (hLUO.trans inter_subset_left)))
+    (fun y hy => hLf y (interior_subset hy)) z hz
+  simpa only [one_mul, mul_comm (g _ z), smul_eq_mul] using hbound
 
 end TauCeti

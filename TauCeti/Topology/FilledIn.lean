@@ -200,6 +200,14 @@ theorem IsFilledIn.not_connectedComponentIn_subset (hfill : IsFilledIn K Ω) (hK
     ⟨(mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
       (closure_mono hCD), (closure_mono hCD).trans hclD⟩
 
+/-- If a closed set `K ⊆ Ω` is filled in `Ω`, then every bounded connected component of `Kᶜ`
+meets `Ωᶜ` (without requiring `Ω` to be open). -/
+theorem IsFilledIn.compl_inter_connectedComponentIn_nonempty (hfill : IsFilledIn K Ω)
+    (hK : IsClosed K) (hKΩ : K ⊆ Ω) {x : X} (hx : x ∈ filledHull K \ K) :
+    (Ωᶜ ∩ connectedComponentIn Kᶜ x).Nonempty :=
+  (not_subset.mp (hfill.not_connectedComponentIn_subset hK hKΩ hx.1 hx.2)).imp fun _ h =>
+    ⟨h.2, h.1⟩
+
 /-- **Filledness through the filled hull.** For a closed set `K` inside an open set `Ω` of a proper,
 locally connected metric space, `K` is filled in `Ω` exactly when no bounded connected component
 of `Kᶜ` lies in `Ω`, i.e. every bounded component of `Kᶜ` meets `Ωᶜ`. -/

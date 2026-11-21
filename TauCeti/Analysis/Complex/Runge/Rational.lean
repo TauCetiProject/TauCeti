@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledHull
 import Mathlib.Algebra.Polynomial.Degree.Operations
 import Mathlib.Algebra.Polynomial.Eval.Degree
-import Mathlib.Algebra.Polynomial.Monic
+import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Normed.Algebra.Spectrum
@@ -259,87 +259,75 @@ theorem exists_rational_norm_sub_lt {K U A : Set ℂ} (hK : IsCompact K) (hU : I
 
 /-! ### Homogenization and Riemann-sphere rational Runge approximation -/
 
-/-- The degree-`d` homogenization of `P` in `(X - C a₀)`, satisfying
-`(homogShift a₀ d P).eval z = (z - a₀)^d * P.eval (z - a₀)⁻¹` for `z ≠ a₀` and `P.natDegree ≤ d`. -/
-private noncomputable def homogShift (a₀ : ℂ) (d : ℕ) (P : ℂ[X]) : ℂ[X] :=
-  ∑ k ∈ Finset.range (d + 1), C (P.coeff k) * (X - C a₀) ^ (d - k)
-
-private theorem eval_homogShift {a₀ z : ℂ} {d : ℕ} {P : ℂ[X]} (hP : P.natDegree ≤ d)
-    (hz : z ≠ a₀) : (homogShift a₀ d P).eval z = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by
+private theorem eval_reflect_comp_X_sub_C {a₀ z : ℂ} {d : ℕ} {P : ℂ[X]}
+    (hP : P.natDegree ≤ d) (hz : z ≠ a₀) :
+    ((P.reflect d).comp (X - C a₀)).eval z = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by
   have hu : z - a₀ ≠ 0 := sub_ne_zero.mpr hz
-  rw [homogShift, ← coe_evalRingHom, map_sum,
-    P.eval_eq_sum_range' (Nat.lt_succ_of_le hP), Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
-  have hkd : k ≤ d := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-  simp only [coe_evalRingHom, eval_mul, eval_C, eval_pow, eval_sub, eval_X]
-  calc P.coeff k * (z - a₀) ^ (d - k)
-      = P.coeff k * ((z - a₀) ^ (d - k) * ((z - a₀) * (z - a₀)⁻¹) ^ k) := by
-          rw [mul_inv_cancel₀ hu, one_pow, mul_one]
-    _ = (z - a₀) ^ d * (P.coeff k * ((z - a₀)⁻¹) ^ k) := by
-          rw [mul_pow, ← mul_assoc ((z - a₀) ^ (d - k)), ← pow_add, Nat.sub_add_cancel hkd]; ring
+  let : Invertible (z - a₀)⁻¹ := invertibleOfNonzero (inv_ne_zero hu)
+  have h := eval₂_reflect_mul_pow (RingHom.id ℂ) (z - a₀)⁻¹ d P hP
+  simp only [eval₂_id, invOf_eq_inv, inv_inv] at h
+  rw [eval_comp, eval_sub, eval_X, eval_C]
+  calc (P.reflect d).eval (z - a₀)
+      = ((P.reflect d).eval (z - a₀) * ((z - a₀)⁻¹) ^ d) * (z - a₀) ^ d := by
+        rw [mul_assoc, ← mul_pow, inv_mul_cancel₀ hu, one_pow, mul_one]
+    _ = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by rw [h, mul_comm]
 
-private theorem natDegree_homogShift_le (a₀ : ℂ) (d : ℕ) (P : ℂ[X]) :
-    (homogShift a₀ d P).natDegree ≤ d := by
-  refine (natDegree_sum_le _ _).trans (Finset.sup_le fun k _ ↦ ?_)
-  refine (natDegree_C_mul_le _ _).trans ?_
-  rw [natDegree_pow, natDegree_X_sub_C, mul_one]
-  exact Nat.sub_le d k
+private theorem natDegree_reflect_comp_X_sub_C_le (a₀ : ℂ) {d : ℕ} {P : ℂ[X]}
+    (hP : P.natDegree ≤ d) : ((P.reflect d).comp (X - C a₀)).natDegree ≤ d := by
+  refine natDegree_comp_le.trans ?_
+  rw [natDegree_X_sub_C, mul_one]
+  exact natDegree_reflect_le.trans (max_le le_rfl hP)
 
-private theorem coeff_homogShift_self (a₀ : ℂ) (d : ℕ) (P : ℂ[X]) :
-    (homogShift a₀ d P).coeff d = P.eval 0 := by
-  rw [homogShift, ← lcoeff_apply (R := ℂ) d, map_sum, Finset.sum_eq_single 0]
-  · simp only [lcoeff_apply, Nat.sub_zero, coeff_C_mul]
-    have hmon : ((X - C a₀) ^ d).Monic := (monic_X_sub_C a₀).pow d
-    have hdeg : ((X - C a₀) ^ d).natDegree = d := by
-      rw [natDegree_pow, natDegree_X_sub_C, mul_one]
-    have hcoeff : ((X - C a₀) ^ d).coeff d = 1 :=
-      (congrArg ((X - C a₀) ^ d).coeff hdeg).symm.trans hmon.coeff_natDegree
-    rw [hcoeff, mul_one, coeff_zero_eq_eval_zero]
-  · intro k hk hk0
-    have hlt : (C (P.coeff k) * (X - C a₀) ^ (d - k)).natDegree < d := by
-      refine (natDegree_C_mul_le _ _).trans_lt ?_
-      rw [natDegree_pow, natDegree_X_sub_C, mul_one]
-      have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk0
-      have hd1 : 1 ≤ d := hk1.trans (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
-      omega
-    exact coeff_eq_zero_of_natDegree_lt hlt
-  · intro h0
-    exact (h0 (Finset.mem_range.mpr (Nat.succ_pos d))).elim
+private theorem coeff_reflect_comp_X_sub_C_of_eval_zero_ne (a₀ : ℂ) {d : ℕ} {Q : ℂ[X]}
+    (hQ : Q.natDegree ≤ d) (hQ0 : Q.eval 0 ≠ 0) :
+    ((Q.reflect d).comp (X - C a₀)).coeff d = Q.eval 0 := by
+  have hcoeff : (Q.reflect d).coeff d = Q.eval 0 := by
+    rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self, coeff_zero_eq_eval_zero]
+  have hdeg : (Q.reflect d).natDegree = d := le_antisymm
+    (natDegree_reflect_le.trans (max_le le_rfl hQ))
+    (le_natDegree_of_ne_zero (hcoeff.symm ▸ hQ0))
+  have hX : (X - C a₀).natDegree = 1 := natDegree_X_sub_C a₀
+  calc ((Q.reflect d).comp (X - C a₀)).coeff d
+      = ((Q.reflect d).comp (X - C a₀)).coeff
+          ((Q.reflect d).natDegree * (X - C a₀).natDegree) := by
+        rw [hdeg, hX, mul_one]
+    _ = (Q.reflect d).leadingCoeff * (X - C a₀).leadingCoeff ^ (Q.reflect d).natDegree :=
+        coeff_comp_degree_mul_degree (by rw [hX]; exact one_ne_zero)
+    _ = Q.eval 0 := by
+        rw [leadingCoeff, hdeg, hcoeff, leadingCoeff_X_sub_C, one_pow, mul_one]
 
 /-- For an unbounded set `D ⊆ ℂ`, the image of `D \ {a₀}` under `z ↦ (z - a₀)⁻¹` accumulates at
 `0`. -/
 private theorem zero_mem_closure_inv_sub_image {D : Set ℂ} {a₀ : ℂ} (hD : ¬ IsBounded D) :
     (0 : ℂ) ∈ closure ((fun z ↦ (z - a₀)⁻¹) '' (D \ {a₀})) := by
-  rw [Metric.mem_closure_iff]
-  intro r hr
-  have hnot : ¬ D ⊆ closedBall a₀ r⁻¹ := fun h ↦ hD (isBounded_closedBall.subset h)
-  obtain ⟨z, hzD, hzR⟩ := not_subset.mp hnot
-  rw [mem_closedBall, dist_eq_norm, not_le] at hzR
-  have hza : z ≠ a₀ := fun h ↦ by
-    rw [h, sub_self, norm_zero] at hzR
-    exact (inv_pos.mpr hr).not_ge hzR.le
-  refine ⟨(z - a₀)⁻¹, ⟨z, ⟨hzD, hza⟩, rfl⟩, ?_⟩
-  rw [dist_zero_left, norm_inv]
-  exact (inv_lt_comm₀ (norm_pos_iff.mpr (sub_ne_zero.mpr hza)) hr).mpr hzR
+  have hne : (cobounded ℂ ⊓ Filter.principal (D \ {a₀})).NeBot := by
+    rw [Filter.inf_principal_neBot_iff]
+    intro s hs
+    by_contra hemp
+    have hsub : D \ {a₀} ⊆ sᶜ := fun z hz hzs ↦ hemp ⟨z, hzs, hz⟩
+    have hbd : IsBounded sᶜ := isBounded_def.mpr (by simpa using hs)
+    exact hD ((hbd.subset hsub).insert a₀ |>.subset fun z hz ↦ by
+      by_cases hza : z = a₀ <;> simp [hz, hza])
+  exact mem_closure_of_tendsto
+    ((Filter.tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded a₀)).mono_left inf_le_left)
+    (Filter.eventually_inf_principal.mpr (Filter.Eventually.of_forall fun z hz ↦ ⟨z, hz, rfl⟩))
 
 /-- If `D` is open around `a₀`, then any set containing `(fun z ↦ (z - a₀)⁻¹) '' (D \ {a₀})` is
 unbounded. -/
 private theorem not_isBounded_of_inv_sub_image_subset {D S : Set ℂ} {a₀ : ℂ} (hD : IsOpen D)
     (ha₀ : a₀ ∈ D) (hsub : (fun z ↦ (z - a₀)⁻¹) '' (D \ {a₀}) ⊆ S) : ¬ IsBounded S := by
-  intro hbd
-  obtain ⟨R, hR⟩ := hbd.subset_closedBall 0
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp hD a₀ ha₀
-  set t : ℝ := min (r / 2) (max R 1 + 1)⁻¹
-  have ht : 0 < t := lt_min (half_pos hr) (by positivity)
-  set z : ℂ := a₀ + (t : ℂ)
-  have hzD : z ∈ D := hball (by
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, Complex.norm_real, Real.norm_of_nonneg ht.le]
-    exact (min_le_left _ _).trans_lt (half_lt_self hr))
-  have hza : z ≠ a₀ := fun h ↦ ht.ne' (Complex.ofReal_eq_zero.mp (by simpa [z] using h))
-  have hle := mem_closedBall.mp (hR (hsub ⟨z, ⟨hzD, hza⟩, rfl⟩))
-  rw [dist_zero_right, norm_inv, show ‖z - a₀‖ = t by simp [z, Real.norm_of_nonneg ht.le]] at hle
-  have hinv : max R 1 + 1 ≤ t⁻¹ := (le_inv_comm₀ (by positivity) ht).mpr (min_le_right _ _)
-  linarith [le_max_left R 1]
+  intro hS
+  have ht : Filter.Tendsto (fun z : ℂ ↦ (z - a₀)⁻¹) (𝓝[≠] a₀) (cobounded ℂ) :=
+    Filter.tendsto_inv₀_nhdsNE_zero.comp <|
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        (((continuous_id.sub continuous_const).tendsto a₀ |>.mono_left nhdsWithin_le_nhds).trans
+          (by simp))
+        (eventually_nhdsWithin_of_forall fun _ hz ↦ sub_ne_zero.mpr hz)
+  have h1 : ∀ᶠ z in 𝓝[≠] a₀, (z - a₀)⁻¹ ∉ S := ht (isBounded_def.mp hS)
+  have h2 : ∀ᶠ z in 𝓝[≠] a₀, z ∈ D \ {a₀} :=
+    Filter.inter_mem (nhdsWithin_le_nhds (hD.mem_nhds ha₀)) self_mem_nhdsWithin
+  obtain ⟨z, hzD, hznS⟩ := (h2.and h1).exists
+  exact hznS (hsub ⟨z, hzD, rfl⟩)
 
 /-- Under inversion `z ↦ (z - a₀)⁻¹` about a point `a₀` in the unbounded complementary component of
 a compact set `K ⊆ ℂ`, the image of `connectedComponentIn Kᶜ a₀ \ {a₀}` lies in the unbounded
@@ -461,19 +449,23 @@ theorem exists_rational_natDegree_le_norm_sub_lt {K U A : Set ℂ} (hK : IsCompa
     obtain ⟨b, ⟨-, hba⟩, hb0⟩ := (hQA' 0 h0).1
     exact inv_ne_zero (sub_ne_zero.mpr hba) hb0
   set d := max P.natDegree Q.natDegree
-  refine ⟨homogShift a₀ d P, homogShift a₀ d Q, ?_, ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  refine ⟨(P.reflect d).comp (X - C a₀), (Q.reflect d).comp (X - C a₀),
+    ?_, ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · intro hq0
-    exact hQ0 (by rw [← coeff_homogShift_self a₀ d Q, hq0, coeff_zero])
-  · exact (natDegree_homogShift_le a₀ d P).trans
-      (le_natDegree_of_ne_zero (by rwa [coeff_homogShift_self]))
+    exact hQ0 (by
+      rw [← coeff_reflect_comp_X_sub_C_of_eval_zero_ne a₀ (le_max_right _ _) hQ0, hq0, coeff_zero])
+  · exact (natDegree_reflect_comp_X_sub_C_le a₀ (le_max_left _ _)).trans
+      (le_natDegree_of_ne_zero (by
+        rwa [coeff_reflect_comp_X_sub_C_of_eval_zero_ne a₀ (le_max_right _ _) hQ0]))
   · by_cases hza : z = a₀
     · exact hza ▸ ⟨ha₀A, ha₀K⟩
-    · rw [eval_homogShift (le_max_right _ _) hza, mul_eq_zero] at hz
+    · rw [eval_reflect_comp_X_sub_C (le_max_right _ _) hza, mul_eq_zero] at hz
       have hQz : Q.eval (φ z) = 0 := hz.resolve_left (pow_ne_zero d (sub_ne_zero.mpr hza))
       obtain ⟨⟨b, ⟨hbA, -⟩, hbz⟩, hzK'⟩ := hQA' (φ z) hQz
       exact ⟨sub_left_injective (inv_injective hbz) ▸ hbA, fun hzK ↦ hzK' ⟨z, hzK, rfl⟩⟩
   · have hza : z ≠ a₀ := fun h ↦ ha₀K (h ▸ hz)
-    rw [eval_homogShift (le_max_left _ _) hza, eval_homogShift (le_max_right _ _) hza,
+    rw [eval_reflect_comp_X_sub_C (le_max_left _ _) hza,
+      eval_reflect_comp_X_sub_C (le_max_right _ _) hza,
       mul_div_mul_left _ _ (pow_ne_zero d (sub_ne_zero.mpr hza))]
     simpa [φ, ψ] using happrox (φ z) ⟨z, hz, rfl⟩
 
