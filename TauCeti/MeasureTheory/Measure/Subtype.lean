@@ -28,7 +28,8 @@ of `μ.comap (↑)`:
   or injectivity assumption on `f` (`MeasureTheory.Measure.comap_preimage_le`).
 * For `s ⊆ t` with `t` measurable, pulling back from `α` to `t` and then along
   `Set.inclusion hst` to `s` recovers the direct pullback to `s`.
-* Pulling `μ` back to a null-measurable subtype of `μ`-mass `1` yields a probability measure
+* Pulling `μ` back to a subtype `{x // p x}` yields a probability measure if and only if
+  `{x | p x}` is null-measurable and has `μ`-mass `1`
   (`MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`).
 * Local finiteness and finiteness on compact sets pass from `μ` to `μ.comap (Subtype.val)` for
   every subtype `Subtype p`, with no measurability or separation assumptions; in particular, if `s`
@@ -49,8 +50,8 @@ of `μ.comap (↑)`:
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
-* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`: pulling `μ` back to a
-  null-measurable subtype of `μ`-mass `1` yields a probability measure.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`: characterization of when pulling
+  `μ` back to a subtype yields a probability measure.
 * `MeasureTheory.Measure.isFiniteMeasure_comap_subtype_coe`: finiteness of `μ.comap ((↑) : s → α)`
   when `μ s < ∞`.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
@@ -102,14 +103,27 @@ theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) 
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
   (MeasurableEmbedding.subtypeVal ht).comap_comap (Set.inclusion hst) μ
 
-/-- Pulling a measure `μ` back to a null-measurable subtype `{x // p x}` of mass `1` yields a
-probability measure. -/
-theorem isProbabilityMeasure_comap_subtype {p : α → Prop} (μ : Measure α)
-    (hp : NullMeasurableSet {x | p x} μ) (hμ : μ {x | p x} = 1) :
-    IsProbabilityMeasure (μ.comap (Subtype.val : Subtype p → α)) :=
-  letI : MeasureSpace α := ⟨μ⟩
-  letI : MeasureSpace (Subtype p) := Measure.Subtype.measureSpace
-  ⟨(Measure.Subtype.volume_univ hp).trans hμ⟩
+/-- Pulling a measure `μ` back to a subtype `{x // p x}` yields a probability measure if and only
+if `{x | p x}` is null-measurable and has `μ`-mass `1`. -/
+theorem isProbabilityMeasure_comap_subtype {p : α → Prop} (μ : Measure α) :
+    IsProbabilityMeasure (μ.comap (Subtype.val : Subtype p → α)) ↔
+      NullMeasurableSet {x | p x} μ ∧ μ {x | p x} = 1 := by
+  refine ⟨fun h ↦ ?_, fun ⟨hp, hμ⟩ ↦ ?_⟩
+  · have hne : μ.comap (Subtype.val : Subtype p → α) ≠ 0 := by
+      intro h0
+      have := h.measure_univ
+      simp [h0] at this
+    have himg : ∀ t : Set (Subtype p), MeasurableSet t →
+        NullMeasurableSet ((Subtype.val : Subtype p → α) '' t) μ :=
+      Classical.byContradiction fun hnot ↦
+        hne (comap_undef fun ⟨_, ht⟩ ↦ hnot ht)
+    have hrange : (Subtype.val : Subtype p → α) '' univ = {x | p x} := by ext; simp
+    refine ⟨hrange ▸ himg univ .univ, ?_⟩
+    exact hrange ▸ (comap_apply₀ _ μ Subtype.coe_injective himg .univ).symm.trans
+      (isProbabilityMeasure_iff.mp h)
+  · let : MeasureSpace α := ⟨μ⟩
+    let : MeasureSpace (Subtype p) := Measure.Subtype.measureSpace
+    exact ⟨(Measure.Subtype.volume_univ hp).trans hμ⟩
 
 /-- Pulling `μ` back to a subtype `s` of finite measure yields a finite measure, with no
 measurability assumption on `s`. -/

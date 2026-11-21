@@ -36,9 +36,8 @@ declaration has an additive counterpart via `@[to_additive]`.
 * `TauCeti.image_levelMonoidHom_pi_prod_univ`, `TauCeti.preimage_levelMonoidHom_box`: image and
   box-preimage formulas for `levelMonoidHom`.
 * `TauCeti.levelOpenSubgroup`, `TauCeti.levelOpenSubgroupEquiv`,
-  `TauCeti.coe_comp_levelOpenSubgroupEquiv`, `TauCeti.preimage_coe_comp_levelOpenSubgroupEquiv_box`:
-  level open subgroup of elements integral outside `S`, its topological group chart, inclusion
-  identity, and box-preimage formula.
+  `TauCeti.coe_comp_levelOpenSubgroupEquiv`: level open subgroup of elements integral outside `S`,
+  its topological group chart, and inclusion identity.
 
 ## References
 
@@ -291,15 +290,6 @@ theorem levelOpenSubgroup_mono (B : ∀ i, K i) {S T : Finset ι} (hST : S ⊆ T
   fun x hx ↦ (mem_levelOpenSubgroup B T hBT x).mpr fun i hi ↦
     (mem_levelOpenSubgroup B S hBS x).mp hx i fun h ↦ hi (hST h)
 
-/-- At `S = ∅`, the level open subgroup consists of the everywhere-integral elements. -/
-@[to_additive /-- At `S = ∅`, the level open additive subgroup consists of the everywhere-integral
-elements. -/]
-theorem coe_levelOpenSubgroup_empty (B : ∀ i, K i)
-    (hB : ∀ i ∉ (∅ : Finset ι), IsOpen (B i : Set (G i))) :
-    (levelOpenSubgroup B ∅ hB : Set (Πʳ i, [G i, B i])) = {x | ∀ i, x i ∈ B i} := by
-  ext x
-  simp
-
 /-- The topological group isomorphism identifying the product
 `(Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)` with the level open subgroup
 `levelOpenSubgroup B S hB`. -/
@@ -309,12 +299,8 @@ theorem coe_levelOpenSubgroup_empty (B : ∀ i, K i)
 def levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
     ((Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) ≃ₜ* levelOpenSubgroup B S hB :=
-  let φ := (levelMonoidHom B S).rangeRestrict
-  ContinuousMulEquiv.mk'
-    (((Topology.IsEmbedding.of_comp_iff (f := φ) .subtypeVal).mp
-      (isEmbedding_levelMonoidHom B S)).toHomeomorphOfSurjective
-      (levelMonoidHom B S).rangeRestrict_surjective)
-    (map_mul φ)
+  ContinuousMulEquiv.mk' (isEmbedding_levelMonoidHom B S).toHomeomorph
+    (map_mul (levelMonoidHom B S).rangeRestrict)
 
 /-- Composing `levelOpenSubgroupEquiv B S hB` with the subtype inclusion into `Πʳ i, [G i, B i]`
 recovers `levelMonoidHom B S`. -/
@@ -328,31 +314,13 @@ theorem coe_comp_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
 
 /-- Applying `levelOpenSubgroupEquiv B S hB` and coercing to `Πʳ i, [G i, B i]` agrees with
 `levelMonoidHom B S`. -/
-@[to_additive /-- Applying `levelOpenAddSubgroupEquiv B S hB` and coercing to `Πʳ i, [G i, B i]`
-agrees with `levelAddMonoidHom B S`. -/]
+@[to_additive (attr := simp) /-- Applying `levelOpenAddSubgroupEquiv B S hB` and coercing to
+`Πʳ i, [G i, B i]` agrees with `levelAddMonoidHom B S`. -/]
 theorem coe_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
     (p : (Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) :
     (levelOpenSubgroupEquiv B S hB p : Πʳ i, [G i, B i]) = levelMonoidHom B S p := by
   rfl
-
-/-- On an index `i ∈ S`, `levelOpenSubgroupEquiv` reads from the first factor. -/
-@[to_additive (attr := simp) /-- On an index `i ∈ S`, `levelOpenAddSubgroupEquiv` reads from the
-first factor. -/]
-theorem levelOpenSubgroupEquiv_apply_of_mem (B : ∀ i, K i) (S : Finset ι)
-    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
-    (p : (Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) {i : ι} (hi : i ∈ S) :
-    (levelOpenSubgroupEquiv B S hB p : Πʳ j, [G j, B j]) i = p.1 ⟨i, hi⟩ :=
-  levelMonoidHom_apply_of_mem B S p hi
-
-/-- On an index `i ∉ S`, `levelOpenSubgroupEquiv` reads from the second factor. -/
-@[to_additive (attr := simp) /-- On an index `i ∉ S`, `levelOpenAddSubgroupEquiv` reads from the
-second factor. -/]
-theorem levelOpenSubgroupEquiv_apply_of_notMem (B : ∀ i, K i) (S : Finset ι)
-    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
-    (p : (Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) {i : ι} (hi : i ∉ S) :
-    (levelOpenSubgroupEquiv B S hB p : Πʳ j, [G j, B j]) i = (p.2 ⟨i, hi⟩ : G i) :=
-  levelMonoidHom_apply_of_notMem B S p hi
 
 /-- The first coordinate of `(levelOpenSubgroupEquiv B S hB).symm` evaluates on `S`. -/
 @[to_additive (attr := simp) /-- The first coordinate of `(levelOpenAddSubgroupEquiv B S hB).symm`
@@ -360,7 +328,7 @@ evaluates on `S`. -/]
 theorem levelOpenSubgroupEquiv_symm_fst (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) (i : S) :
     ((levelOpenSubgroupEquiv B S hB).symm u).1 i = (u : Πʳ j, [G j, B j]) i.val := by
-  rw [← levelOpenSubgroupEquiv_apply_of_mem B S hB _ i.property,
+  rw [← levelMonoidHom_apply_of_mem B S _ i.property, ← coe_levelOpenSubgroupEquiv B S hB,
     (levelOpenSubgroupEquiv B S hB).apply_symm_apply]
 
 /-- The second coordinate of `(levelOpenSubgroupEquiv B S hB).symm` evaluates outside `S`. -/
@@ -371,22 +339,8 @@ theorem levelOpenSubgroupEquiv_symm_snd (B : ∀ i, K i) (S : Finset ι)
     (j : {i // i ∉ S}) :
     (((levelOpenSubgroupEquiv B S hB).symm u).2 j : G j.val) =
       (u : Πʳ k, [G k, B k]) j.val := by
-  rw [← levelOpenSubgroupEquiv_apply_of_notMem B S hB _ j.property,
+  rw [← levelMonoidHom_apply_of_notMem B S _ j.property, ← coe_levelOpenSubgroupEquiv B S hB,
     (levelOpenSubgroupEquiv B S hB).apply_symm_apply]
-
-/-- The preimage of a coordinate box `box C` under the inclusion of a level open subgroup composed
-with `levelOpenSubgroupEquiv` is the product of the finite box over `S` and the tail box outside
-`S`. -/
-@[to_additive /-- The preimage of a coordinate box `box C` under the inclusion of a level open
-additive subgroup composed with `levelOpenAddSubgroupEquiv` is the product of the finite box over
-`S` and the tail box outside `S`. -/]
-theorem preimage_coe_comp_levelOpenSubgroupEquiv_box (B : ∀ i, K i) (S : Finset ι)
-    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (C : ∀ i, Set (G i)) :
-    (((↑) : levelOpenSubgroup B S hB → Πʳ i, [G i, B i]) ∘ levelOpenSubgroupEquiv B S hB) ⁻¹'
-      (box C : Set (Πʳ i, [G i, B i])) =
-      (univ.pi fun i : S ↦ C i.val) ×ˢ
-        (univ.pi fun j : {i // i ∉ S} ↦ ((↑) : B j.val → G j.val) ⁻¹' C j.val) := by
-  rw [coe_comp_levelOpenSubgroupEquiv, preimage_levelMonoidHom_box]
 
 end OpenSubgroup
 
