@@ -57,7 +57,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
 /-- The inclusion of an open ball into its ambient manifold is `C^n`. -/
 theorem contMDiff_subtypeVal_ball :
     ContMDiff I I n (Subtype.val : Metric.ball c r → M) :=
-  contMDiff_subtype_val (U := ⟨Metric.ball c r, Metric.isOpen_ball⟩)
+  contMDiff_subtypeVal (U := ⟨Metric.ball c r, Metric.isOpen_ball⟩)
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N]
