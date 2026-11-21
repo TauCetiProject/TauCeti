@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
 # Ky Fan sums of singular values
@@ -527,8 +528,7 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
     exact sum_comm
   -- Extend eigenvalues and weights by zero to `ℕ` and compare there.
   have hmass : ∑ j ∈ Finset.range n, (if h : j < n then c ⟨j, h⟩ else 0) = Fintype.card ι := by
-    rw [← sum_fin_eq_sum_range, hc, sum_comm]
-    simp [(hT.eigenvectorBasis hn).sum_sq_norm_inner_right, hw.1]
+    rw [← sum_fin_eq_sum_range, hc, hw.sum_sum_sq_norm_inner_eq_card]
   rw [hsum, sum_fin_eq_sum_range]
   calc _ = ∑ j ∈ Finset.range n, (if h : j < n then hT.eigenvalues hn ⟨j, h⟩ else 0) *
         (if h : j < n then c ⟨j, h⟩ else 0) :=
@@ -538,8 +538,8 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
           (fun j _ hj ↦ by simp only [hj, dite_true, hc]; positivity)
           (fun j hj ↦ by
             have hj : j < n := hj.trans_le hk
-            simpa [hj, hc, norm_inner_symm] using
-              hw.sum_inner_products_le (s := univ) (hT.eigenvectorBasis hn ⟨j, hj⟩))
+            simpa [hj, hc] using
+              hw.sum_sq_norm_inner_le_one ((hT.eigenvectorBasis hn).orthonormal.1 ⟨j, hj⟩))
           hmass fun j hj ↦ by
             simpa [hj, (by omega : j < n)] using hT.eigenvalues_antitone hn
               (Fin.mk_le_mk.mpr (Nat.le_succ j))

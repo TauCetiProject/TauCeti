@@ -141,7 +141,9 @@ theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U
 omit [Fintype ι] in
 /-- **Bessel's identity**: subtracting from `x` its components `⟪vᵢ, x⟫ vᵢ` along finitely many
 members of an orthonormal family removes their squared lengths `‖⟪vᵢ, x⟫‖²` from `‖x‖²`. This is
-the identity behind Mathlib's Bessel inequality `Orthonormal.sum_inner_products_le`. -/
+the identity behind Mathlib's Bessel inequality `Orthonormal.sum_inner_products_le`, and the proof
+is the computation inside the proof of that lemma in
+`Mathlib/Analysis/InnerProductSpace/Orthonormal.lean`. -/
 theorem norm_sub_sum_inner_smul_sq (hv : Orthonormal 𝕜 v) (s : Finset ι) (x : E) :
     ‖x - ∑ i ∈ s, ⟪v i, x⟫_𝕜 • v i‖ ^ 2 = ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪v i, x⟫_𝕜‖ ^ 2 := by
   have h₂ : (∑ i ∈ s, ∑ j ∈ s, ⟪v i, x⟫_𝕜 * ⟪x, v j⟫_𝕜 * ⟪v j, v i⟫_𝕜) =
@@ -155,6 +157,19 @@ theorem norm_sub_sum_inner_smul_sq (hv : Orthonormal 𝕜 v) (s : Finset ι) (x 
   simp only [inner_smul_right, two_mul, inner_smul_left, inner_conj_symm, ← mul_assoc, h₂,
     add_sub_cancel_right, sub_right_inj]
   simp only [map_sum, ← inner_conj_symm x, ← h₃]
+
+/-- Bessel's inequality against a unit vector: the squared lengths `‖⟪x, vᵢ⟫‖²` of the components
+of a unit vector `x` along an orthonormal family add up to at most `1`. -/
+theorem sum_sq_norm_inner_le_one (hv : Orthonormal 𝕜 v) {x : E} (hx : ‖x‖ = 1) :
+    ∑ i, ‖⟪x, v i⟫_𝕜‖ ^ 2 ≤ 1 := by
+  simpa [norm_inner_symm, hx] using hv.sum_inner_products_le (s := Finset.univ) (x := x)
+
+/-- The squared lengths `‖⟪bⱼ, vᵢ⟫‖²` of the coordinates of the members of an orthonormal family
+`v` in an orthonormal basis `b` add up to the number of members of `v`. -/
+theorem sum_sum_sq_norm_inner_eq_card {κ : Type*} [Fintype κ] (hv : Orthonormal 𝕜 v)
+    (b : OrthonormalBasis κ 𝕜 E) : ∑ j, ∑ i, ‖⟪b j, v i⟫_𝕜‖ ^ 2 = Fintype.card ι := by
+  rw [Finset.sum_comm]
+  simp [b.sum_sq_norm_inner_right, hv.1]
 
 /-- **Parseval's identity** on the span `U` of a finite orthonormal family: the orthogonal
 projection of `x` onto `U` has squared norm `∑ᵢ ‖⟪vᵢ, x⟫‖²`. -/

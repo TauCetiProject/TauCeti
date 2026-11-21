@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Spectral.KyFanGap
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
 import TauCeti.Analysis.Matrix.EntrywiseOpNorm
 
 /-!
@@ -186,9 +187,6 @@ theorem fderiv_prefixSum_eigenvalues₀_apply (hM : ∀ x, (M x).IsHermitian)
         RCLike.re (star ⇑(u j) ⬝ᵥ (of (fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v) *ᵥ ⇑(u j))) := by
   rw [(hasFDerivAt_prefixSum_eigenvalues₀ hM hMd hkn hgap u hu).fderiv,
     ContinuousLinearMap.comp_apply, RCLike.reCLM_apply, _root_.sum_apply, map_sum]
-  refine sum_congr rfl fun j _ ↦ congrArg RCLike.re ?_
-  simp only [_root_.sum_apply, _root_.smul_apply, smul_eq_mul,
-    dotProduct, mulVec, Pi.star_apply, of_apply, mul_sum]
-  exact sum_congr rfl fun a _ ↦ sum_congr rfl fun b _ ↦ by ring
+  exact sum_congr rfl fun j _ ↦ congrArg RCLike.re (sum_sum_smul_apply _ _ v)
 
 end Matrix

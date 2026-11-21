@@ -35,9 +35,9 @@ bound, let `w₀, …, wₖ₋₁` be leading eigenvectors of `S`, so that `κ�
 
 `∑ᵢ re ⟪T wᵢ, wᵢ⟫ + δ d ≤ κₖ(T)`
 
-(`LinearMap.sum_re_inner_apply_add_mul_le_prefixSum`), so a family that nearly attains `κₖ(T)`
+(`LinearMap.sum_re_inner_apply_self_add_mul_le_prefixSum`), so a family that nearly attains `κₖ(T)`
 nearly spans the leading eigenspace; at `d = 0` this is the uniqueness of the maximizing subspace
-(`LinearMap.inner_eq_zero_of_sum_re_inner_apply_eq_prefixSum`). On the other hand, the diagonal
+(`LinearMap.inner_eq_zero_of_sum_re_inner_apply_self_eq_prefixSum`). On the other hand, the diagonal
 sums of `H = S - T` along `w` and along `b₀, …, bₖ₋₁` differ by inner products against the
 components of the two families orthogonal to each other's span, whose squared norms add up to `d`
 on each side; with `2 C x ≤ δ x² + C² / δ` the difference is at most `δ d + k C² / δ`. The two
@@ -45,12 +45,12 @@ on each side; with `2 C x ≤ δ x² + C² / δ` the difference is at most `δ d
 
 ## Main results
 
-* `LinearMap.sum_re_inner_apply_add_mul_le_prefixSum`: Ky Fan's maximum principle sharpened by a
-  spectral gap.
-* `LinearMap.inner_eq_zero_of_sum_re_inner_apply_eq_prefixSum`: an orthonormal family attaining
+* `LinearMap.sum_re_inner_apply_self_add_mul_le_prefixSum`: Ky Fan's maximum principle sharpened
+  by a spectral gap.
+* `LinearMap.inner_eq_zero_of_sum_re_inner_apply_self_eq_prefixSum`: an orthonormal family attaining
   the sum of the `k` leading eigenvalues lies in the span of the leading eigenvectors.
-* `LinearMap.IsSymmetric.prefixSum_add_sum_re_inner_le_prefixSum_eigenvalues`: the lower bound
-  `μ₀ + ⋯ + μₖ₋₁ + ∑_{j < k} re ⟪(S - T) bⱼ, bⱼ⟫ ≤ κₖ(S)`, which needs no gap.
+* `LinearMap.IsSymmetric.prefixSum_add_sum_re_inner_apply_self_le_prefixSum_eigenvalues`: the
+  lower bound `μ₀ + ⋯ + μₖ₋₁ + ∑_{j < k} re ⟪(S - T) bⱼ, bⱼ⟫ ≤ κₖ(S)`, which needs no gap.
 * `LinearMap.IsSymmetric.prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_add`: the upper
   bound with the quadratic remainder `k C² / δ`.
 * `LinearMap.IsSymmetric.abs_prefixSum_eigenvalues_sub_le`: both bounds together.
@@ -73,30 +73,34 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
-/-- The weights `cⱼ = ∑ᵢ ‖⟪bⱼ, wᵢ⟫‖²` of an orthonormal family `w` against an orthonormal basis `b`
-lie in `[0, 1]` and add up to the number of members of `w`. -/
-private theorem weights_le_one_and_sum_eq (b : OrthonormalBasis (Fin n) 𝕜 E) {k : ℕ}
-    {w : Fin k → E} (hw : Orthonormal 𝕜 w) :
-    (∀ j, ∑ i, ‖⟪b j, w i⟫‖ ^ 2 ≤ 1) ∧ ∑ j, ∑ i, ‖⟪b j, w i⟫‖ ^ 2 = k := by
-  refine ⟨fun j ↦ ?_, ?_⟩
-  · simpa [norm_inner_symm, b.orthonormal.1 j] using
-      hw.sum_inner_products_le (s := univ) (x := b j)
-  · rw [sum_comm]
-    simp [b.sum_sq_norm_inner_right, hw.1]
+/-- An orthonormal family with `k` members in a space with an orthonormal basis indexed by `Fin n`
+has `k ≤ n`. -/
+private theorem le_of_orthonormal (b : OrthonormalBasis (Fin n) 𝕜 E) {k : ℕ} {w : Fin k → E}
+    (hw : Orthonormal 𝕜 w) : k ≤ n := by
+  simpa using (hw.sum_sum_sq_norm_inner_eq_card b).symm.trans_le
+    (sum_le_card_nsmul _ _ 1 fun j _ ↦ hw.sum_sq_norm_inner_le_one (b.orthonormal.1 j))
+
+/-- For `k ≤ n`, exactly `k` indices `j : Fin n` satisfy `j < k`. -/
+private theorem card_filter_val_lt_eq {k : ℕ} (hkn : k ≤ n) :
+    (#{j : Fin n | j.val < k} : ℝ) = k := by
+  simp [Fin.card_filter_val_lt, hkn]
 
 /-- **Ky Fan's maximum principle sharpened by a spectral gap.** Let `b` be an orthonormal eigenbasis
 of `T` with eigenvalues `μ`, whose first `k` eigenvalues exceed the others by at least `δ`. For an
 orthonormal family `w` with `k` members, the diagonal sum `∑ᵢ re ⟪T wᵢ, wᵢ⟫` falls short of
 `μ₀ + ⋯ + μₖ₋₁` by at least `δ` times the mass `∑ᵢ ∑_{j ≥ k} ‖⟪bⱼ, wᵢ⟫‖²` of `w` outside the
 leading eigenvectors. -/
-theorem sum_re_inner_apply_add_mul_le_prefixSum (T : E →ₗ[𝕜] E)
+theorem sum_re_inner_apply_self_add_mul_le_prefixSum (T : E →ₗ[𝕜] E)
     (b : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ} (hb : ∀ j, T (b j) = (μ j : 𝕜) • b j)
     {k : ℕ} {δ : ℝ} (hgap : ∀ i j : Fin n, (i : ℕ) < k → k ≤ (j : ℕ) → μ j + δ ≤ μ i)
     {w : Fin k → E} (hw : Orthonormal 𝕜 w) :
     ∑ i, RCLike.re ⟪T (w i), w i⟫ + δ * ∑ i, ∑ j : Fin n with k ≤ j.val, ‖⟪b j, w i⟫‖ ^ 2 ≤
       prefixSum k μ := by
-  obtain ⟨hc1, hmass⟩ := weights_le_one_and_sum_eq b hw
-  have hkn : k ≤ n := by simpa using hmass.symm.trans_le (sum_le_card_nsmul _ _ 1 fun j _ ↦ hc1 j)
+  have hkn := le_of_orthonormal b hw
+  have hc1 (j : Fin n) : ∑ i, ‖⟪b j, w i⟫‖ ^ 2 ≤ 1 :=
+    hw.sum_sq_norm_inner_le_one (b.orthonormal.1 j)
+  have hmass := hw.sum_sum_sq_norm_inner_eq_card b
+  rw [Fintype.card_fin] at hmass
   set c : Fin n → ℝ := fun j ↦ ∑ i, ‖⟪b j, w i⟫‖ ^ 2 with hc
   have hc0 (j : Fin n) : 0 ≤ c j := by positivity
   have hsum : ∑ i, RCLike.re ⟪T (w i), w i⟫ = ∑ j, μ j * c j := by
@@ -112,8 +116,6 @@ theorem sum_re_inner_apply_add_mul_le_prefixSum (T : E →ₗ[𝕜] E)
   · simp [hc]
   obtain ⟨i₀, hi₀, hmin⟩ := (univ.filter fun j : Fin n ↦ (j : ℕ) < k).exists_min_image μ
     ⟨⟨0, hk0.trans_le hkn⟩, by simpa using hk0⟩
-  have hcard : ∑ j : Fin n with j.val < k, (1 : ℝ) = k := by
-    simp [Fin.card_filter_val_lt, hkn]
   have h₁ : ∑ j : Fin n with j.val < k, μ i₀ * (1 - c j) ≤
       ∑ j : Fin n with j.val < k, μ j * (1 - c j) :=
     sum_le_sum fun j hj ↦ mul_le_mul_of_nonneg_right (hmin j hj) (sub_nonneg.2 (hc1 j))
@@ -122,7 +124,7 @@ theorem sum_re_inner_apply_add_mul_le_prefixSum (T : E →ₗ[𝕜] E)
     sum_le_sum fun j hj ↦ mul_le_mul_of_nonneg_right
       (hgap i₀ j (mem_filter.1 hi₀).2 (mem_filter.1 hj).2) (hc0 j)
   have hconst : ∑ j : Fin n with j.val < k, μ i₀ = μ i₀ * k := by
-    rw [← hcard, mul_sum, mul_one]
+    rw [sum_const, nsmul_eq_mul, card_filter_val_lt_eq hkn, mul_comm]
   simp only [mul_sub, mul_one, sum_sub_distrib, add_mul, sum_add_distrib, ← mul_sum, hconst]
     at h₁ h₂
   have hm := congrArg (fun t ↦ μ i₀ * t) hmass
@@ -135,14 +137,14 @@ of `T` along an orthonormal eigenbasis `b` exceed the others by some `δ > 0`, t
 family `w` with `k` members whose diagonal sum `∑ᵢ re ⟪T wᵢ, wᵢ⟫` attains `μ₀ + ⋯ + μₖ₋₁` is
 orthogonal to every `bⱼ` with `j ≥ k`, that is, it lies in the span of the leading eigenvectors
 `b₀, …, bₖ₋₁`. -/
-theorem inner_eq_zero_of_sum_re_inner_apply_eq_prefixSum (T : E →ₗ[𝕜] E)
+theorem inner_eq_zero_of_sum_re_inner_apply_self_eq_prefixSum (T : E →ₗ[𝕜] E)
     (b : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ} (hb : ∀ j, T (b j) = (μ j : 𝕜) • b j)
     {k : ℕ} {δ : ℝ} (hδ : 0 < δ)
     (hgap : ∀ i j : Fin n, (i : ℕ) < k → k ≤ (j : ℕ) → μ j + δ ≤ μ i)
     {w : Fin k → E} (hw : Orthonormal 𝕜 w)
     (hmax : ∑ i, RCLike.re ⟪T (w i), w i⟫ = prefixSum k μ) (i : Fin k) {j : Fin n}
     (hj : k ≤ (j : ℕ)) : ⟪b j, w i⟫ = 0 := by
-  have h := sum_re_inner_apply_add_mul_le_prefixSum T b hb hgap hw
+  have h := sum_re_inner_apply_self_add_mul_le_prefixSum T b hb hgap hw
   rw [hmax, add_le_iff_nonpos_right] at h
   have hd : ∑ i, ∑ j : Fin n with k ≤ j.val, ‖⟪b j, w i⟫‖ ^ 2 = 0 :=
     le_antisymm (nonpos_of_mul_nonpos_right h hδ) (by positivity)
@@ -177,34 +179,40 @@ private theorem sum_sq_norm_components_eq (b : OrthonormalBasis (Fin n) 𝕜 E) 
         ∑ i, ∑ j : Fin n with k ≤ j.val, ‖⟪b j, w i⟫‖ ^ 2 ∧
       ∑ j : Fin n with j.val < k, ‖b j - ∑ i, ⟪w i, b j⟫ • w i‖ ^ 2 =
         ∑ i, ∑ j : Fin n with k ≤ j.val, ‖⟪b j, w i⟫‖ ^ 2 := by
-  obtain ⟨hc1, hmass⟩ := weights_le_one_and_sum_eq b hw
-  have hkn : k ≤ n := by simpa using hmass.symm.trans_le (sum_le_card_nsmul _ _ 1 fun j _ ↦ hc1 j)
   refine ⟨sum_congr rfl fun i _ ↦ ?_, ?_⟩
   · rw [b.orthonormal.norm_sub_sum_inner_smul_sq, ← b.sum_sq_norm_inner_right (w i),
       ← sum_filter_add_sum_filter_not univ (fun j : Fin n ↦ (j : ℕ) < k)]
     simp
-  · have hcard : ∑ j : Fin n with j.val < k, (1 : ℝ) = k := by
-      simp [Fin.card_filter_val_lt, hkn]
+  · have hmass := hw.sum_sum_sq_norm_inner_eq_card b
+    rw [Fintype.card_fin] at hmass
     have h₁ (j : Fin n) : ‖b j - ∑ i, ⟪w i, b j⟫ • w i‖ ^ 2 = 1 - ∑ i, ‖⟪b j, w i⟫‖ ^ 2 := by
       simp only [hw.norm_sub_sum_inner_smul_sq, b.orthonormal.1 j, one_pow, norm_inner_symm]
-    rw [sum_congr rfl fun j _ ↦ h₁ j, sum_sub_distrib, hcard]
+    rw [sum_congr rfl fun j _ ↦ h₁ j, sum_sub_distrib, sum_const, nsmul_one,
+      card_filter_val_lt_eq (le_of_orthonormal b hw)]
     conv_rhs => rw [sum_comm]
     rw [← sum_filter_add_sum_filter_not univ (fun j : Fin n ↦ (j : ℕ) < k)] at hmass
     simp only [not_lt] at hmass
     linarith
 
+/-- A pairing `z = ⟪p, q⟫` with `‖p‖ ‖q‖ ≤ a C` satisfies `2 |re z| ≤ δ a² + C² / δ`: the
+per-component bound in the exchange estimate. -/
+private theorem two_mul_abs_re_inner_le {p q : E} {a C δ : ℝ} (hδ : 0 < δ)
+    (h : ‖p‖ * ‖q‖ ≤ a * C) : 2 * |RCLike.re ⟪p, q⟫| ≤ δ * a ^ 2 + δ⁻¹ * C ^ 2 := by
+  refine le_trans ?_ (two_mul_le_add_mul_sq hδ)
+  rw [mul_assoc]
+  gcongr
+  exact ((RCLike.abs_re_le_norm _).trans (norm_inner_le_norm _ _)).trans h
+
 /-- The diagonal sums of `H` along an orthonormal family `w` with `k` members and along the first
 `k` members of an orthonormal basis `b` differ by at most `δ d + k C² / δ`, where `C` bounds `H` and
 `d = ∑ᵢ ∑_{j ≥ k} ‖⟪bⱼ, wᵢ⟫‖²` is the mass of `w` outside the span of `b₀, …, bₖ₋₁`. -/
-private theorem sum_re_inner_apply_le_add (H : E →ₗ[𝕜] E) (b : OrthonormalBasis (Fin n) 𝕜 E)
+private theorem sum_re_inner_apply_self_le_add (H : E →ₗ[𝕜] E) (b : OrthonormalBasis (Fin n) 𝕜 E)
     {k : ℕ} {w : Fin k → E} (hw : Orthonormal 𝕜 w) {C δ : ℝ} (hδ : 0 < δ)
     (hC : ∀ x, ‖H x‖ ≤ C * ‖x‖) :
     ∑ i, RCLike.re ⟪H (w i), w i⟫ ≤ ∑ j : Fin n with j.val < k, RCLike.re ⟪H (b j), b j⟫ +
       δ * ∑ i, ∑ j : Fin n with k ≤ j.val, ‖⟪b j, w i⟫‖ ^ 2 + k * C ^ 2 / δ := by
-  obtain ⟨hc1, hmass⟩ := weights_le_one_and_sum_eq b hw
-  have hkn : k ≤ n := by simpa using hmass.symm.trans_le (sum_le_card_nsmul _ _ 1 fun j _ ↦ hc1 j)
   obtain ⟨hnr, hns⟩ := sum_sq_norm_components_eq b hw
-  set L := univ.filter fun j : Fin n ↦ (j : ℕ) < k with hL
+  set L := univ.filter fun j : Fin n ↦ (j : ℕ) < k
   -- `rᵢ` is the component of `wᵢ` off `b₀, …, bₖ₋₁`, and `sⱼ` the component of `bⱼ` off the `wᵢ`.
   set r : Fin k → E := fun i ↦ w i - ∑ j ∈ L, ⟪b j, w i⟫ • b j
   set s : Fin n → E := fun j ↦ b j - ∑ i, ⟪w i, b j⟫ • w i
@@ -212,25 +220,15 @@ private theorem sum_re_inner_apply_le_add (H : E →ₗ[𝕜] E) (b : Orthonorma
   rw [show (fun i ↦ ‖w i - ∑ j ∈ L, ⟪b j, w i⟫ • b j‖ ^ 2) = fun i ↦ ‖r i‖ ^ 2 from rfl] at hnr
   rw [show (fun j ↦ ‖b j - ∑ i, ⟪w i, b j⟫ • w i‖ ^ 2) = fun j ↦ ‖s j‖ ^ 2 from rfl] at hns
   -- Each component `x` contributes at most `C ‖x‖ ≤ (δ ‖x‖² + δ⁻¹ C²) / 2`.
-  have hri (i : Fin k) : 2 * RCLike.re ⟪H (r i), w i⟫ ≤ δ * ‖r i‖ ^ 2 + δ⁻¹ * C ^ 2 := by
-    refine le_trans ?_ (two_mul_le_add_mul_sq hδ)
-    rw [mul_assoc]
-    gcongr
-    calc RCLike.re ⟪H (r i), w i⟫ ≤ ‖⟪H (r i), w i⟫‖ := RCLike.re_le_norm _
-      _ ≤ ‖H (r i)‖ * ‖w i‖ := norm_inner_le_norm _ _
-      _ ≤ ‖r i‖ * C := by rw [hw.1 i, mul_one, mul_comm]; exact hC _
-  have hsj (j : Fin n) : 2 * -RCLike.re ⟪H (b j), s j⟫ ≤ δ * ‖s j‖ ^ 2 + δ⁻¹ * C ^ 2 := by
-    refine le_trans ?_ (two_mul_le_add_mul_sq hδ)
-    rw [mul_assoc]
-    gcongr
-    calc -RCLike.re ⟪H (b j), s j⟫ ≤ ‖⟪H (b j), s j⟫‖ :=
-          (neg_le_abs _).trans (RCLike.abs_re_le_norm _)
-      _ ≤ ‖H (b j)‖ * ‖s j‖ := norm_inner_le_norm _ _
-      _ ≤ ‖s j‖ * C := by
-          rw [mul_comm]
-          gcongr
-          simpa [b.orthonormal.1 j] using hC (b j)
-  have hcardL : (#L : ℝ) = k := by simp [hL, Fin.card_filter_val_lt, hkn]
+  have hri (i : Fin k) : 2 * RCLike.re ⟪H (r i), w i⟫ ≤ δ * ‖r i‖ ^ 2 + δ⁻¹ * C ^ 2 :=
+    le_trans (by gcongr; exact le_abs_self _) <| two_mul_abs_re_inner_le hδ <| by
+      rw [hw.1 i, mul_one, mul_comm]; exact hC _
+  have hsj (j : Fin n) : 2 * -RCLike.re ⟪H (b j), s j⟫ ≤ δ * ‖s j‖ ^ 2 + δ⁻¹ * C ^ 2 :=
+    le_trans (by gcongr; exact neg_le_abs _) <| two_mul_abs_re_inner_le hδ <| by
+      rw [mul_comm]
+      gcongr
+      simpa [b.orthonormal.1 j] using hC (b j)
+  have hcardL : (#L : ℝ) = k := card_filter_val_lt_eq (le_of_orthonormal b hw)
   have hR := sum_le_sum fun i (_ : i ∈ univ) ↦ hri i
   have hS := sum_le_sum fun j (_ : j ∈ L) ↦ hsj j
   simp only [sum_add_distrib, ← mul_sum, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul,
@@ -249,7 +247,7 @@ variable [FiniteDimensional 𝕜 E] {S T : E →ₗ[𝕜] E}
 /-- **The tangent lower bound for Ky Fan sums.** If `b` is an orthonormal eigenbasis of `T` with
 eigenvalues `μ`, then for every symmetric `S` the sum of the `k` largest eigenvalues of `S` is at
 least `μ₀ + ⋯ + μₖ₋₁ + ∑_{j < k} re ⟪(S - T) bⱼ, bⱼ⟫`. No spectral gap is needed. -/
-theorem prefixSum_add_sum_re_inner_le_prefixSum_eigenvalues (hS : S.IsSymmetric)
+theorem prefixSum_add_sum_re_inner_apply_self_le_prefixSum_eigenvalues (hS : S.IsSymmetric)
     (hn : finrank 𝕜 E = n) (b : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
     (hb : ∀ j, T (b j) = (μ j : 𝕜) • b j) {k : ℕ} (hkn : k ≤ n) :
     prefixSum k μ + ∑ j : Fin n with j.val < k, RCLike.re ⟪(S - T) (b j), b j⟫ ≤
@@ -290,8 +288,8 @@ theorem prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_add (hS : S.IsSymmet
     refine sum_congr rfl fun i _ ↦ ?_
     rw [← map_add, ← inner_add_left, ← LinearMap.add_apply, add_sub_cancel, hw,
       hS.re_inner_apply_eigenvectorBasis hn]
-  have hA := sum_re_inner_apply_add_mul_le_prefixSum T b hb hgap hwo
-  have hB := sum_re_inner_apply_le_add (S - T) b hwo hδ hC
+  have hA := sum_re_inner_apply_self_add_mul_le_prefixSum T b hb hgap hwo
+  have hB := sum_re_inner_apply_self_le_add (S - T) b hwo hδ hC
   rw [hκ]
   linarith
 
@@ -307,7 +305,7 @@ theorem abs_prefixSum_eigenvalues_sub_le (hS : S.IsSymmetric) (hn : finrank 𝕜
     (hC : ∀ x, ‖(S - T) x‖ ≤ C * ‖x‖) :
     |prefixSum k (hS.eigenvalues hn) - prefixSum k μ -
         ∑ j : Fin n with j.val < k, RCLike.re ⟪(S - T) (b j), b j⟫| ≤ k * C ^ 2 / δ := by
-  have h₁ := hS.prefixSum_add_sum_re_inner_le_prefixSum_eigenvalues hn b hb hkn
+  have h₁ := hS.prefixSum_add_sum_re_inner_apply_self_le_prefixSum_eigenvalues hn b hb hkn
   have h₂ := hS.prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_add hn b hb hkn hδ hgap hC
   rw [abs_le]
   constructor <;> linarith [show 0 ≤ k * C ^ 2 / δ by positivity]
