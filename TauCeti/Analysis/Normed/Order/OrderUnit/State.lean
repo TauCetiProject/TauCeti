@@ -270,14 +270,17 @@ theorem continuous_statePullback {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monot
 @[simp]
 theorem statePullback_id {e : E} (φ : stateSpace e) :
     statePullback (ContinuousLinearMap.id ℝ E) monotone_id rfl φ = φ :=
-  Subtype.ext (DFunLike.ext _ _ fun _ => rfl)
+  Subtype.ext (DFunLike.ext _ _ fun a => by
+    simpa using statePullback_apply (ContinuousLinearMap.id ℝ E) monotone_id rfl φ a)
 
 theorem statePullback_comp {e : E} {f : F} {g : G}
     (S : F →L[ℝ] G) (hS : Monotone S) (hSu : S f = g)
     (T : E →L[ℝ] F) (hT : Monotone T) (hTu : T e = f) (φ : stateSpace g) :
     statePullback (S.comp T) (hS.comp hT) (by simp [hTu, hSu]) φ =
       statePullback T hT hTu (statePullback S hS hSu φ) :=
-  Subtype.ext (DFunLike.ext _ _ fun _ => rfl)
+  Subtype.ext (DFunLike.ext _ _ fun a => by
+    simpa [statePullback_apply] using
+      statePullback_apply (S.comp T) (hS.comp hT) (by simp [hTu, hSu]) φ a)
 
 end Pullback
 
@@ -310,8 +313,7 @@ theorem mem_stateSpace_iff_opNorm_eq_one [IsOrderedAddMonoid E] (he : IsOrderUni
   refine ⟨fun h => ⟨he.opNorm_eq_one_of_mem_stateSpace h, h.2⟩, fun ⟨hnorm, he1⟩ => ?_⟩
   refine ⟨(he.monotone_iff_opNorm_eq_one (φ := WeakDual.toStrongDual φ) he1).mpr hnorm, he1⟩
 
-/-- The state space embeds via `WeakDual.toStrongDual` into the closed unit ball of
-`StrongDual ℝ E`. -/
+/-- Every state has a strong-dual representative in the closed unit ball of `StrongDual ℝ E`. -/
 theorem stateSpace_subset_closedBall (he : IsOrderUnitNorm e) :
     OrderUnit.stateSpace e ⊆
       WeakDual.toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual ℝ E) 1 := by
@@ -350,10 +352,9 @@ theorem exists_state_extension_linearIsometry {E F : Type*} [SeminormedAddCommGr
     (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) {ψ : WeakDual ℝ E}
     (hψ : ψ ∈ OrderUnit.stateSpace e) :
     ∃ φ ∈ OrderUnit.stateSpace f, ∀ a : E, φ (i a) = ψ a := by
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun _ => he.eq_zero_of_norm_eq_zero
   obtain ⟨g, hg_comp, hg_norm⟩ :=
-    @LinearIsometry.exists_extension_norm_eq ℝ E F _ _
-      (NormedAddCommGroup.ofSeparation fun _ => he.eq_zero_of_norm_eq_zero)
-      _ _ _ i (WeakDual.toStrongDual ψ)
+    LinearIsometry.exists_extension_norm_eq i (WeakDual.toStrongDual ψ)
   have hg_apply : ∀ a : E, g (i a) = ψ a := fun a => DFunLike.congr_fun hg_comp a
   have hg_one : g f = 1 := by rw [← hunit, hg_apply, hψ.2]
   have hg_norm_one : ‖g‖ = 1 := hg_norm.trans (he.opNorm_eq_one_of_mem_stateSpace hψ)
@@ -398,9 +399,10 @@ def stateHomeomorph {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
     OrderUnit.stateSpace (coe he e) ≃ₜ OrderUnit.stateSpace e := by
   haveI : CompactSpace (OrderUnit.stateSpace (coe he e)) :=
     isCompact_iff_compactSpace.mp (isOrderUnitNorm he).isCompact_stateSpace
+  have hmono : Monotone (coe he).toContinuousLinearMap := fun _ _ h => (coe_le_coe_iff _ _).mpr h
+  have hunit : (coe he).toContinuousLinearMap e = coe he e := rfl
   let toFun : OrderUnit.stateSpace (coe he e) → OrderUnit.stateSpace e :=
-    OrderUnit.statePullback (coe he).toContinuousLinearMap
-      (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl
+    OrderUnit.statePullback (coe he).toContinuousLinearMap hmono hunit
   let invFun : OrderUnit.stateSpace e → OrderUnit.stateSpace (coe he e) := fun φ =>
     ⟨WeakDual.toStrongDual.symm (extend he (WeakDual.toStrongDual φ.1)),
       monotone_extend φ.2.1, by simp [φ.2.2]⟩
@@ -410,13 +412,14 @@ def stateHomeomorph {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
     apply WeakDual.toStrongDual.injective
     dsimp only [invFun]
     rw [WeakDual.toStrongDual.apply_symm_apply]
-    exact (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun _ => rfl).symm
+    exact (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun a => by
+      simp [toFun, OrderUnit.statePullback_apply]).symm
   have hright : Function.RightInverse invFun toFun := fun φ =>
-    Subtype.ext (DFunLike.ext _ _ fun a => extend_coe (WeakDual.toStrongDual φ.1) a)
+    Subtype.ext (DFunLike.ext _ _ fun a => by
+      simp [toFun, invFun, OrderUnit.statePullback_apply, extend_coe])
   exact Continuous.homeoOfEquivCompactToT2
     (f := { toFun := toFun, invFun := invFun, left_inv := hleft, right_inv := hright })
-    (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap
-      (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl)
+    (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap hmono hunit)
 
 @[simp]
 theorem stateHomeomorph_apply {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
