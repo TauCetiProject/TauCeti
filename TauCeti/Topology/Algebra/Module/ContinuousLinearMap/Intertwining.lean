@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.LinearAlgebra.End.Aeval
 import Mathlib.Algebra.Polynomial.Div
@@ -25,6 +26,8 @@ an endomorphism along a continuous linear retract; no complement is needed.
   up to continuous errors again intertwine `T` up to a continuous error.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
+* `ContinuousLinearMap.comp_lift_iff`: intertwining joint representations amounts to
+  intertwining the constituent actions.
 -/
 
 public section
@@ -127,5 +130,30 @@ theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
       Module.End.aeval_comp_of_comp_eq hr Q
   simp only [map_mul, Polynomial.aeval_X, mul_def, comp_assoc]
   rw [← hQ]
+
+open scoped TensorProduct in
+open Algebra.TensorProduct in
+/-- A continuous linear map intertwines two lifts to the algebraic tensor product if and only if
+it intertwines the actions of each factor. -/
+theorem comp_lift_iff {A B : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+    (T : M →L[R] N) (π : A →ₐ[R] M →L[R] M) (σ : B →ₐ[R] M →L[R] M)
+    (π' : A →ₐ[R] N →L[R] N) (σ' : B →ₐ[R] N →L[R] N)
+    (h : ∀ a b, Commute (π a) (σ b)) (h' : ∀ a b, Commute (π' a) (σ' b)) :
+    (∀ z, T.comp (lift π σ h z) = (lift π' σ' h' z).comp T) ↔
+      (∀ a, T.comp (π a) = (π' a).comp T) ∧
+      (∀ b, T.comp (σ b) = (σ' b).comp T) := by
+  constructor
+  · intro hz
+    exact ⟨fun a => by simpa using hz (a ⊗ₜ[R] (1 : B)),
+      fun b => by simpa using hz ((1 : A) ⊗ₜ[R] b)⟩
+  · rintro ⟨hπ, hσ⟩ z
+    induction z using TensorProduct.inductionOn with
+    | tmul a b =>
+      simp only [lift_tmul, mul_def]
+      calc
+        T.comp ((π a).comp (σ b)) = (T.comp (π a)).comp (σ b) := (comp_assoc ..).symm
+        _ = (π' a).comp (T.comp (σ b)) := by rw [hπ, comp_assoc]
+        _ = ((π' a).comp (σ' b)).comp T := by rw [hσ, comp_assoc]
+    | add z w hz hw => simp only [map_add, comp_add, add_comp, hz, hw]
 
 end ContinuousLinearMap
