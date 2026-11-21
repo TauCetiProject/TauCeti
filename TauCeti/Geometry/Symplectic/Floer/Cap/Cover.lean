@@ -219,6 +219,7 @@ def capCoverSubgroup (x : X) :
 
 /-- A class of `π₁(𝓛₀X, x)` lies in the subgroup of the cap cover exactly when its period class
 vanishes. -/
+@[simp]
 theorem mem_capCoverSubgroup_iff (x : X)
     (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
     g ∈ capCoverSubgroup ω c x ↔
@@ -267,12 +268,11 @@ variable [PathConnectedSpace X] [LocallyPathConnectedSpace (contractibleLoops X)
 variable (ω c) in
 /-- **The deck group of the cap cover is the spherical period group** `Γ`: the period
 homomorphism `π₁(𝓛₀X, x) → Γ` is onto with kernel `capCoverSubgroup ω c x`, and the deck group of
-the cover attached to the kernel of a homomorphism is its range. -/
+the cover attached to a normal subgroup is the quotient by it. -/
 def capCoverDeckEquiv (x : X) :
     Multiplicative (SphericalPeriodGroup ω c) ≃* deck (capCoverProj ω c x) :=
-  ((deckSubgroupQuotientProjKerEquivRange _ (fundamentalGroupPeriodHom x)).trans
-    ((MulEquiv.subgroupCongr (MonoidHom.range_eq_top_of_surjective _
-      (fundamentalGroupPeriodHom_surjective x))).trans Subgroup.topEquiv)).symm
+  ((deckSubgroupQuotientProjEquivOfNormal _ (fundamentalGroupPeriodHom x).ker).symm.trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (fundamentalGroupPeriodHom_surjective x))).symm
 
 /-- The deck transformation of the period class of a loop `a` of contractible free loops acts on
 the cap cover through the action of `a` on the universal cover of `𝓛₀X`. -/
@@ -284,18 +284,14 @@ theorem capCoverDeckEquiv_ofContractibleLoopsHomotopyGroup_apply_mk (x : X)
         (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a)))).val
         (Quotient.mk'' e) =
       Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  have hr : ((MulEquiv.subgroupCongr (MonoidHom.range_eq_top_of_surjective _
-      (fundamentalGroupPeriodHom_surjective (ω := ω) (c := c) x))).trans Subgroup.topEquiv).symm
-        (Multiplicative.ofAdd
-          (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a))) =
-      (fundamentalGroupPeriodHom x).rangeRestrict
-        (HomotopyGroup.pi1MulEquivFundamentalGroup a) := by
-    rw [MulEquiv.symm_apply_eq, MulEquiv.trans_apply, Subgroup.topEquiv_apply,
-      MulEquiv.subgroupCongr_apply, MonoidHom.coe_rangeRestrict,
-      fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup]
-  unfold capCoverDeckEquiv capCoverProj CapCover capCoverSubgroup
-  rw [MulEquiv.symm_trans_apply, hr,
-    deckSubgroupQuotientProjKerEquivRange_symm_rangeRestrict_apply_mk]
+  have h := deckSubgroupQuotientProjEquivOfNormal_mk_apply _
+    (fundamentalGroupPeriodHom (ω := ω) (c := c) x).ker (pi1MulEquivFundamentalGroup a) e
+  rw [← TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply _
+      (fundamentalGroupPeriodHom_surjective x),
+    fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup] at h
+  -- `capCoverDeckEquiv` is the inverse of the composite of the two equivalences in `h`, and
+  -- `capCoverSubgroup` is by definition the kernel of `fundamentalGroupPeriodHom x`
+  exact h
 
 /-- The spherical period group `Γ` acts on the cap cover through its deck group. -/
 noncomputable instance instAddActionCapCover :
