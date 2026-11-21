@@ -28,7 +28,10 @@ with unique derivatives) with `F (·, ξ q)` for a map `F` that is `C^n` at `(z�
 continuous parameter map `ξ`, its iterated derivatives within `s` through order `n` are jointly
 continuous at `(q₀, z₀)` (`ContDiffAt.continuousAt_iteratedFDerivWithin_partial`). Joint
 continuity of these partial derivatives is the hypothesis for differentiating under an integral
-over a compact parameter space without differentiable structure.
+over a compact parameter space without differentiable structure, and gives uniform bounds on all
+partial derivatives up to a given order over compact subsets
+(`ContDiffOn.exists_pos_bound_iteratedFDeriv_partial`,
+`ContDiffOn.exists_pos_bound_iteratedFDeriv_partial_prod`).
 
 The within-set versions require unique derivatives only on the product,
 so they also handle coordinate domains of manifolds with boundary or corners.
@@ -320,6 +323,40 @@ theorem ContDiffOn.continuousOn_iteratedFDeriv_partial {G : Type v} [NormedAddCo
   simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
     TauCeti.continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG : eG →L[𝕜] G))
       continuousOn_const hFp (ContDiffOn.continuousOn_iteratedFDeriv_partial_aux k hF' hW)
+
+/-- **Uniform bound on partial iterated derivatives.** If `F : E × P → G` is `C^n` on an open
+set `W ⊆ E × P` and `K ⊆ W` is compact, then for any `j ≤ n` there is `M > 0` bounding
+`‖iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1‖ ≤ M` for all `k ≤ j` and `p ∈ K`. -/
+theorem ContDiffOn.exists_pos_bound_iteratedFDeriv_partial {G : Type v} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {F : E × P → G} {n : WithTop ℕ∞} (hF : ContDiffOn 𝕜 n F W) (hW : IsOpen W)
+    {K : Set (E × P)} (hK : IsCompact K) (hKW : K ⊆ W) {j : ℕ} (hj : (j : WithTop ℕ∞) ≤ n) :
+    ∃ M : ℝ, 0 < M ∧ ∀ k ≤ j, ∀ p ∈ K,
+      ‖iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1‖ ≤ M := by
+  have hcont (k : Fin (j + 1)) : ∃ B : ℝ, ∀ p ∈ K,
+      ‖iteratedFDeriv 𝕜 k.val (fun x ↦ F (x, p.2)) p.1‖ ≤ B :=
+    hK.exists_bound_of_continuousOn
+      ((hF.continuousOn_iteratedFDeriv_partial hW
+        (le_trans (by exact_mod_cast Nat.le_of_lt_succ k.isLt) hj)).mono hKW)
+  choose B hB using hcont
+  refine ⟨1 + ∑ i : Fin (j + 1), max 0 (B i), by positivity, fun k hk p hp ↦ ?_⟩
+  let idx : Fin (j + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
+  calc
+    ‖iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1‖ ≤ B idx := hB idx p hp
+    _ ≤ max 0 (B idx) := le_max_right _ _
+    _ ≤ ∑ i : Fin (j + 1), max 0 (B i) :=
+      Finset.single_le_sum (fun i _ ↦ le_max_left 0 (B i)) (Finset.mem_univ idx)
+    _ ≤ 1 + ∑ i : Fin (j + 1), max 0 (B i) := le_add_of_nonneg_left zero_le_one
+
+/-- **Uniform bound on partial iterated derivatives over a compact product.** Specialization of
+`ContDiffOn.exists_pos_bound_iteratedFDeriv_partial` to a compact product `D ×ˢ L ⊆ W`. -/
+theorem ContDiffOn.exists_pos_bound_iteratedFDeriv_partial_prod {G : Type v}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {F : E × P → G} {n : WithTop ℕ∞}
+    (hF : ContDiffOn 𝕜 n F W) (hW : IsOpen W) {D : Set E} {L : Set P} (hD : IsCompact D)
+    (hL : IsCompact L) (hDL : D ×ˢ L ⊆ W) {j : ℕ} (hj : (j : WithTop ℕ∞) ≤ n) :
+    ∃ M : ℝ, 0 < M ∧ ∀ k ≤ j, ∀ x ∈ D, ∀ y ∈ L,
+      ‖iteratedFDeriv 𝕜 k (fun x' ↦ F (x', y)) x‖ ≤ M := by
+  obtain ⟨M, hM0, hM⟩ := hF.exists_pos_bound_iteratedFDeriv_partial hW (hD.prod hL) hDL hj
+  exact ⟨M, hM0, fun k hk x hx y hy ↦ hM k hk (x, y) ⟨hx, hy⟩⟩
 
 open scoped Topology in
 /-- If a family `g : Q → E → G` indexed by a topological space `Q` agrees near `(q₀, z₀)` on

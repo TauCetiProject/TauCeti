@@ -42,6 +42,9 @@ reverses products, fixes the identity, and tends to the identity as `B₀` stays
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+
+Evaluating a `𝕜`-linear operator `f : E →L[𝕜] G` at `v : E` is also continuous and `𝕜'`-linear
+in `f` whenever `𝕜` and `𝕜'` commute on `G` (`ContinuousLinearMap.applyMixed`).
 -/
 
 public section
@@ -227,6 +230,34 @@ theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H}
   simpa only [hB₀.pairingAdjoint_one] using h.tendsto
 
 end Tendsto
+
+section MixedScalar
+
+/-- Evaluation of a `𝕜`-linear continuous map `E →L[𝕜] G` at `v : E`, as a continuous `𝕜'`-linear
+map `(E →L[𝕜] G) →L[𝕜'] G` when `𝕜` and `𝕜'` commute on `G`. -/
+def applyMixed (𝕜 𝕜' : Type*) [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+    {E : Type*} (G : Type*) [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [SMulCommClass 𝕜 𝕜' G]
+    (v : E) :
+    (E →L[𝕜] G) →L[𝕜'] G :=
+  LinearMap.mkContinuous
+    { toFun := fun L ↦ L v
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+    ‖v‖ fun L ↦ by
+      rw [LinearMap.coe_mk, AddHom.coe_mk, mul_comm]
+      exact L.le_opNorm v
+
+/-- Evaluation of `ContinuousLinearMap.applyMixed`. -/
+@[simp]
+theorem applyMixed_apply {𝕜 𝕜' E G : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜'] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [SMulCommClass 𝕜 𝕜' G]
+    (v : E) (L : E →L[𝕜] G) :
+    applyMixed 𝕜 𝕜' G v L = L v :=
+  (rfl)
+
+end MixedScalar
 
 end ContinuousLinearMap
 

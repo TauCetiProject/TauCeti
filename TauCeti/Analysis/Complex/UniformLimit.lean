@@ -37,10 +37,12 @@ produced by Montel's theorem in several variables.
   holomorphic.
 * `TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`: on a locally compact
   complex normed space, a locally uniform limit of holomorphic maps on an open set is holomorphic.
-* `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the telescoping step in exhaustion proofs of
-  the `\bar∂`-lemma. Local solutions `h k` on growing balls whose consecutive differences are
-  holomorphic, corrected by entire approximations `P k` of these differences, converge to a
-  function that is `h m` plus a holomorphic function on the `m`-th ball.
+* `TauCeti.exists_differentiableOn_eqOn_add_tsum` and
+  `TauCeti.exists_differentiableOn_eqOn_add_tsum_exhaustion`: the telescoping step in exhaustion
+  proofs of the `\bar∂`-lemma, for growing balls or general monotone exhaustions. Local solutions
+  `h k` whose consecutive differences are holomorphic, corrected by global approximations `P k` /
+  `g k` of these differences, converge to a function that is `h m` plus a holomorphic function on
+  the `m`-th stage.
 
 ## References
 
@@ -163,6 +165,40 @@ theorem exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {h P : ℕ → V
   · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
       .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
     have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
+      simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
+    simp only [Pi.add_apply]
+    rw [← hs.sum_add_tsum_nat_add m, htel]
+    abel
+
+/-- **Telescoping step along an exhaustion.** If consecutive differences `h (k + 1) - h k` are
+holomorphic on `interior (C (k + 1))` along a monotone exhaustion `C` of `Ω ⊆ V` and are
+approximated within `2⁻ᵏ` on `C k` by functions `g k` holomorphic on `Ω`, then on `interior (C m)`
+the corrected limit `h 0 + ∑' k, (h (k + 1) - h k - g k)` equals `h m` plus a holomorphic
+function. -/
+theorem exists_differentiableOn_eqOn_add_tsum_exhaustion [CompleteSpace E] {Ω : Set V}
+    {C : ℕ → Set V} {h g : ℕ → V → E} (hC_mono : Monotone C) (hC_sub : ∀ j, C j ⊆ Ω)
+    (hg : ∀ k, DifferentiableOn ℂ (g k) Ω)
+    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (interior (C (k + 1))))
+    (hg_lt : ∀ k, ∀ z ∈ C k, ‖(h (k + 1) - h k) z - g k z‖ < (1 / 2 : ℝ) ^ k) (m : ℕ) :
+    ∃ K : V → E, DifferentiableOn ℂ K (interior (C m)) ∧
+      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - g k) z) (h m + K) (interior (C m)) := by
+  set e : ℕ → V → E := fun k ↦ h (k + 1) - h k - g k
+  have he_le {k : ℕ} (hmk : m ≤ k) {z : V} (hz : z ∈ interior (C m)) :
+      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
+    (hg_lt k z (hC_mono hmk (interior_subset hz))).le
+  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
+    (summable_nat_add_iff m).2 summable_geometric_two
+  refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, g k z, ?_, fun z hz ↦ ?_⟩
+  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦
+      (hg k).mono (interior_subset.trans (hC_sub m)))
+    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ he_le (Nat.le_add_left m k) hz)
+      |>.differentiableOn (.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_)
+      isOpen_interior
+    exact ((hdiff (k + m)).mono (interior_mono (hC_mono (by omega)))).sub
+      ((hg (k + m)).mono (interior_subset.trans (hC_sub m)))
+  · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
+      .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
+    have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, g k z := by
       simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
     simp only [Pi.add_apply]
     rw [← hs.sum_add_tsum_nat_add m, htel]

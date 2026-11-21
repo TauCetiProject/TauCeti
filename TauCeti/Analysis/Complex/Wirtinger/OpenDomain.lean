@@ -47,13 +47,14 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
    `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param`. Then
    `v j` is jointly smooth on `s ×ˢ univ`, holomorphic in `q`, and for `j ≥ 1` holomorphic in `w`
    off `tsupport (χ j)` (in particular near `C j`).
-3. For `j ≥ 1`, apply the finite-rank Runge approximation operator
-   (`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`) on `C j ⊆ Ω` to approximate `v j` by a
-   finite linear combination `a j x w = ∑ i, (c i * g i w) • v j x (ζ i)` with `g i` holomorphic on
-   `Ω`. Because the nodes `ζ i`, weights `c i`, and functions `g i` are independent of `(x, F)`,
-   applying the same finite-rank operator simultaneously shrinks all parameter derivatives
-   `iteratedFDeriv ℝ k (fun x' ↦ (v j - a j) x' w) x` for `k ≤ j` to at most `2⁻ʲ` on `D j ×ˢ C j`,
-   while preserving `q`-holomorphy and leaving `bar∂_z` unchanged on `Ω`.
+3. For `j ≥ 1`, apply the parametric finite-rank Runge approximation operator
+   (`TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`) on `C j ⊆ Ω` to
+   approximate `v j` by a finite linear combination `a j x w = ∑ i, (c i * g i w) • v j x (ζ i)`
+   with `g i` holomorphic on `Ω`. Because the nodes `ζ i`, weights `c i`, and functions `g i` are
+   independent of `(x, F)`, applying the same finite-rank operator simultaneously shrinks all
+   parameter derivatives `iteratedFDeriv ℝ k (fun x' ↦ (v j - a j) x' w) x` for `k ≤ j` to at most
+   `2⁻ʲ` on `D j ×ˢ C j`, while preserving joint smoothness and `q`-holomorphy and leaving
+   `bar∂_z` unchanged on `Ω`.
 4. Put `u 0 = v 0` (i.e. `a 0 = 0`) and `u j = v j - a j` for `j ≥ 1`, and set
    `U x w = ∑' j, u j x w`. On any local box `ball x₀ ρ ×ˢ ball z₀ r` inside
    `D (m + 1) ×ˢ interior (C (m + 1))`, the Cauchy bound
@@ -97,64 +98,7 @@ section RungeCorrection
 
 variable {P : Type uP} [NormedAddCommGroup P] [NormedSpace ℝ P]
   {Q : Type uQ} [NormedAddCommGroup Q] [NormedSpace ℂ Q]
-  {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- Uniform bound on all parameter derivatives of `v` up to order `j` over a compact product
-`D ×ˢ L ⊆ s ×ˢ univ`. -/
-private theorem exists_pos_bound_iteratedFDeriv_prod_left {v : P × Q → ℂ → F} {s : Set (P × Q)}
-    {D : Set (P × Q)} {L : Set ℂ} (hs : IsOpen s) (hD : IsCompact D) (hDs : D ⊆ s)
-    (hL : IsCompact L) (hv : ContDiffOn ℝ ∞ ↿v (s ×ˢ univ)) (j : ℕ) :
-    ∃ M : ℝ, 0 < M ∧ ∀ k ≤ j, ∀ x ∈ D, ∀ w ∈ L,
-      ‖iteratedFDeriv ℝ k (fun x' ↦ v x' w) x‖ ≤ M := by
-  have hcont (k : Fin (j + 1)) : ∃ B : ℝ, ∀ p ∈ D ×ˢ L,
-      ‖iteratedFDeriv ℝ k.val (fun x' ↦ v x' p.2) p.1‖ ≤ B :=
-    (hD.prod hL).exists_bound_of_continuousOn
-      ((hv.continuousOn_iteratedFDeriv_partial (hs.prod isOpen_univ) (by simp)).mono
-        (prod_mono hDs (subset_univ L)))
-  choose B hB using hcont
-  refine ⟨1 + ∑ i : Fin (j + 1), max 0 (B i), by positivity, fun k hk x hx w hw ↦ ?_⟩
-  let idx : Fin (j + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
-  calc
-    ‖iteratedFDeriv ℝ k (fun x' ↦ v x' w) x‖ ≤ B idx := hB idx (x, w) ⟨hx, hw⟩
-    _ ≤ max 0 (B idx) := le_max_right _ _
-    _ ≤ ∑ i : Fin (j + 1), max 0 (B i) :=
-      Finset.single_le_sum (fun i _ ↦ le_max_left 0 (B i)) (Finset.mem_univ idx)
-    _ ≤ 1 + ∑ i : Fin (j + 1), max 0 (B i) := le_add_of_nonneg_left zero_le_one
-
-/-- Applying a fixed finite-rank Runge operator commutes with parameter differentiation, shrinking
-the `k`-th parameter derivative of `v - a` uniformly on `D ×ˢ K`. -/
-private theorem norm_iteratedFDeriv_sub_rungeSum_le {N : ℕ} {ζ c : Fin N → ℂ} {g : Fin N → ℂ → ℂ}
-    {s D : Set (P × Q)} {K L : Set ℂ} {v : P × Q → ℂ → F} {M ε : ℝ}
-    (hs : IsOpen s) (hDs : D ⊆ s) (hv_cd : ContDiffOn ℝ ∞ ↿v (s ×ˢ univ))
-    (hv_hol : ∀ x ∈ s, DifferentiableOn ℂ (v x) (interior L)) (hM0 : 0 < M)
-    (happrox : ∀ {G : Type max uP uQ uF} [NormedAddCommGroup G] [NormedSpace ℂ G]
-      (φ : ℂ → G) (B : ℝ), DifferentiableOn ℂ φ (interior L) → (∀ z ∈ interior L, ‖φ z‖ ≤ B) →
-      ∀ w ∈ K, ‖φ w - ∑ i, (c i * g i w) • φ (ζ i)‖ ≤ (ε / M) * B)
-    {k : ℕ} {x : P × Q} (hx : x ∈ D) (hM : ∀ z ∈ L, ‖iteratedFDeriv ℝ k (fun x' ↦ v x' z) x‖ ≤ M)
-    {w : ℂ} (hw : w ∈ K) :
-    ‖iteratedFDeriv ℝ k (fun x' ↦ v x' w - ∑ i : Fin N, (c i * g i w) • v x' (ζ i)) x‖ ≤ ε := by
-  let φ : ℂ → (P × Q) [×k]→L[ℝ] F := fun z ↦ iteratedFDeriv ℝ k (fun x' ↦ v x' z) x
-  have hφ_hol : DifferentiableOn ℂ φ (interior L) :=
-    differentiableOn_iteratedFDeriv_prod_left k hs isOpen_interior
-      ((hv_cd.mono (prod_mono Subset.rfl (subset_univ _))).of_le (by simp)) hv_hol (hDs hx)
-  have hslice (z : ℂ) : ContDiffAt ℝ k (fun x' ↦ v x' z) x :=
-    ((hv_cd.contDiffAt ((hs.prod isOpen_univ).mem_nhds ⟨hDs hx, mem_univ z⟩)).of_le
-      (by simp)).comp x (contDiffAt_id.prodMk contDiffAt_const)
-  have hcomm : iteratedFDeriv ℝ k
-      (fun x' ↦ v x' w - ∑ i : Fin N, (c i * g i w) • v x' (ζ i)) x =
-      φ w - ∑ i : Fin N, (c i * g i w) • φ (ζ i) := by
-    have ha_cd : ContDiffAt ℝ k (fun x' ↦ ∑ i : Fin N, (c i * g i w) • v x' (ζ i)) x :=
-      ContDiffAt.sum fun i _ ↦ (hslice (ζ i)).const_smul (c i * g i w)
-    have hsub_eq : (fun x' ↦ v x' w - ∑ i : Fin N, (c i * g i w) • v x' (ζ i)) =
-        (fun x' ↦ v x' w) - (fun x' ↦ ∑ i : Fin N, (c i * g i w) • v x' (ζ i)) := rfl
-    rw [hsub_eq, iteratedFDeriv_sub_apply (hslice w) ha_cd,
-      iteratedFDeriv_fun_sum_apply fun i _ ↦ (hslice (ζ i)).const_smul (c i * g i w)]
-    simp only [φ, iteratedFDeriv_const_smul_apply' (hslice _)]
-  rw [hcomm]
-  have hle := happrox φ M hφ_hol (fun z hz ↦ hM z (interior_subset hz)) w hw
-  rwa [div_mul_cancel₀ _ hM0.ne'] at hle
-
-variable [CompleteSpace F]
+  {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
 /-- For any shell cutoff `χ` supported in `Ω` and vanishing near a filled compact `K ⊆ Ω`,
 subtracting a finite-rank Runge approximant from the cut-off Cauchy transform yields a smooth
@@ -177,28 +121,21 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
     exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param
       (by simp) hs hΩ hχ hχc hχΩ hf hfq
   obtain ⟨L, hL, hKL, hLχ⟩ := exists_compact_between hK (isClosed_tsupport χ).isOpen_compl hKχ
-  obtain ⟨M, hM0, hM⟩ := exists_pos_bound_iteratedFDeriv_prod_left hs hD hDs hL hv_cd j
-  obtain ⟨N, ζ, c, g, -, hg, happrox⟩ :=
-    hfill.exists_norm_sub_sum_mul_smul_le.{max uP uQ uF} hΩ hK hKΩ isOpen_interior hKL
+  obtain ⟨M, hM0, hM⟩ := hv_cd.exists_pos_bound_iteratedFDeriv_partial_prod (hs.prod isOpen_univ)
+    hD hL (prod_mono hDs (subset_univ L)) (by simp)
+  obtain ⟨N, ζ, c, g, -, hg, ha_cd_of, ha_q_of, happrox⟩ :=
+    hfill.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le hΩ hK hKΩ isOpen_interior hKL
       (div_pos hε hM0)
   let a : P × Q → ℂ → F := fun x w ↦ ∑ i : Fin N, (c i * g i w) • v x (ζ i)
   let u : P × Q → ℂ → F := fun x w ↦ v x w - a x w
   have ha_hol (x : P × Q) : DifferentiableOn ℂ (a x) Ω :=
     DifferentiableOn.fun_sum fun i _ ↦ ((hg i).const_mul (c i)).smul_const (v x (ζ i))
   refine ⟨u, ?_, ?_, ?_, ?_, ?_⟩
-  · have ha_cd : ContDiffOn ℝ ∞ ↿a (s ×ˢ Ω) := by
-      have ha_eq : ↿a = fun p : (P × Q) × ℂ ↦ ∑ i : Fin N, (c i * g i p.2) • v p.1 (ζ i) := rfl
-      rw [ha_eq]
-      refine ContDiffOn.sum fun i _ ↦ ?_
-      have hg_cd : ContDiffOn ℝ ∞ (fun p : (P × Q) × ℂ ↦ c i * g i p.2) (s ×ˢ Ω) :=
-        ((((hg i).const_mul (c i)).contDiffOn hΩ).restrict_scalars ℝ).comp contDiffOn_snd
-          fun _ hp ↦ hp.2
-      have hv_ζ : ContDiffOn ℝ ∞ (fun p : (P × Q) × ℂ ↦ v p.1 (ζ i)) (s ×ˢ Ω) :=
-        hv_cd.comp (contDiffOn_fst.prodMk contDiffOn_const) fun _ hp ↦ ⟨hp.1, mem_univ _⟩
-      exact hg_cd.smul hv_ζ
+  · have ha_cd : ContDiffOn ℝ ∞ ↿a (s ×ˢ Ω) :=
+      ha_cd_of (hv_cd.mono (prod_mono Subset.rfl (subset_univ _)))
     exact (hv_cd.mono (prod_mono Subset.rfl (subset_univ Ω))).sub ha_cd
   · intro x hx w _
-    exact (hv_q x hx w).sub (DifferentiableAt.fun_sum fun i _ ↦ (hv_q x hx (ζ i)).const_smul _)
+    exact (hv_q x hx w).sub (ha_q_of fun i ↦ hv_q x hx (ζ i))
   · intro x hx w hw
     have hvd : DifferentiableAt ℝ (v x) w :=
       ((hv_cd.contDiffAt ((hs.prod isOpen_univ).mem_nhds ⟨hx, mem_univ w⟩)).comp w
@@ -210,9 +147,12 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
     simpa only [had.conjWirtingerDeriv_eq_zero, sub_apply, zero_apply, sub_zero,
       hv_dbar x hx w] using hsub
   · exact fun x hx ↦ ((hv_hol x hx).mono inter_subset_left).sub ((ha_hol x).mono inter_subset_right)
-  · exact fun k hk x hx w hw ↦ norm_iteratedFDeriv_sub_rungeSum_le hs hDs hv_cd
-      (fun x' hx' ↦ (hv_hol x' hx').mono (interior_subset.trans hLχ)) hM0 happrox hx
-      (fun z hz ↦ hM k hk x hx z hz) hw
+  · intro k hk x hx w hw
+    have hle := happrox hs v k M
+      ((hv_cd.mono (prod_mono Subset.rfl (subset_univ _))).of_le (by simp))
+      (fun x' hx' ↦ (hv_hol x' hx').mono (interior_subset.trans hLχ))
+      x (hDs hx) (fun z hz ↦ hM k hk x hx z (interior_subset hz)) w hw
+    rwa [div_mul_cancel₀ _ hM0.ne'] at hle
 
 /-- Assemble the full sequence `u j` of shell solutions along compact exhaustions `D` of `s` and
 filled `C` of `Ω`: `u 0` is the raw cut-off Cauchy transform, while `u (n + 1)` is Runge-corrected
@@ -264,28 +204,6 @@ end RungeCorrection
 /-! ### Local convergence lemmas for the shell series -/
 
 section SeriesConvergence
-
-/-- Given exhaustions `D` of `s` and `C` of `Ω` with `D j ⊆ interior (D (j + 1))` and
-`C j ⊆ interior (C (j + 1))`, every `(x₀, z₀) ∈ s ×ˢ Ω` lies inside a product box
-`ball x₀ ρ ×ˢ closedBall z₀ (2 * r)` contained in `D (m + 1) ×ˢ interior (C (m + 1))`. -/
-private theorem exists_local_exhaustion_box {X : Type*} [PseudoMetricSpace X]
-    {s : Set X} {Ω : Set ℂ} {D : ℕ → Set X} {C : ℕ → Set ℂ}
-    (hD_step : ∀ j, D j ⊆ interior (D (j + 1))) (hD_uni : ⋃ j, D j = s)
-    (hC_step : ∀ j, C j ⊆ interior (C (j + 1))) (hC_uni : ⋃ j, C j = Ω)
-    {x₀ : X} (hx₀ : x₀ ∈ s) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) :
-    ∃ (m : ℕ) (ρ r : ℝ), 0 < ρ ∧ 0 < r ∧
-      ball x₀ ρ ⊆ D (m + 1) ∧ closedBall z₀ (2 * r) ⊆ interior (C (m + 1)) := by
-  have hD_mono : Monotone D := monotone_nat_of_le_succ fun j ↦ (hD_step j).trans interior_subset
-  have hC_mono : Monotone C := monotone_nat_of_le_succ fun j ↦ (hC_step j).trans interior_subset
-  obtain ⟨m₁, hm₁⟩ := mem_iUnion.1 (hD_uni.symm ▸ hx₀)
-  obtain ⟨m₂, hm₂⟩ := mem_iUnion.1 (hC_uni.symm ▸ hz₀)
-  let m := max m₁ m₂
-  have hx' : x₀ ∈ interior (D (m + 1)) := hD_step m (hD_mono (le_max_left m₁ m₂) hm₁)
-  have hz' : z₀ ∈ interior (C (m + 1)) := hC_step m (hC_mono (le_max_right m₁ m₂) hm₂)
-  obtain ⟨ρ, hρ, hball_x⟩ := Metric.isOpen_iff.1 isOpen_interior x₀ hx'
-  obtain ⟨R, hR, hball_z⟩ := Metric.isOpen_iff.1 isOpen_interior z₀ hz'
-  refine ⟨m, ρ, R / 4, hρ, by positivity, hball_x.trans interior_subset, ?_⟩
-  exact (closedBall_subset_ball (by linarith)).trans hball_z
 
 variable {P : Type uP} [NormedAddCommGroup P] [NormedSpace ℝ P]
   {Q : Type uQ} [NormedAddCommGroup Q] [NormedSpace ℂ Q]
@@ -461,26 +379,25 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_param
     exists_shell_sequence hs hΩ hD_cpt hD_sub hC_cpt hC_sub hC_fill hχ_cd hχ_cpt hχ_Ω hχ_disj hf hfq
   refine ⟨fun x w ↦ ∑' j, u j x w, ?_, ?_, ?_⟩
   · rintro ⟨x₀, z₀⟩ ⟨hx₀, hz₀⟩
-    obtain ⟨m, ρ, r, hρ, hr, hball_x, hball_z⟩ :=
-      exists_local_exhaustion_box hD_step hD_uni hC_step hC_uni hx₀ hz₀
+    obtain ⟨m, ρ, R, hρ, hR, hball_x, hball_z⟩ :=
+      exists_ball_subset_interior_exhaustion_pair hD_step hD_uni hC_step hC_uni hx₀ hz₀
+    let r := R / 4
+    have hr : 0 < r := by positivity
     exact (contDiffOn_shell_series_box hD_mono hC_mono hD_sub hC_sub hu_cd hu_hol hu_bd hr
-      hball_x hball_z).contDiffAt
+      (hball_x.trans interior_subset)
+      ((closedBall_subset_ball (by dsimp [r]; linarith)).trans hball_z)).contDiffAt
       ((isOpen_ball.prod isOpen_ball).mem_nhds ⟨mem_ball_self hρ, mem_ball_self hr⟩)
       |>.contDiffWithinAt
   · intro x₀ hx₀ z₀ hz₀
-    obtain ⟨m, ρ, r, hρ, hr, hball_x, hball_z⟩ :=
-      exists_local_exhaustion_box hD_step hD_uni hC_step hC_uni hx₀ hz₀
-    have hball_C : ball z₀ r ⊆ interior (C (m + 1)) :=
-      (ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))).trans hball_z
+    obtain ⟨m, ρ, R, hρ, hR, hball_x, hball_z⟩ :=
+      exists_ball_subset_interior_exhaustion_pair hD_step hD_uni hC_step hC_uni hx₀ hz₀
     exact conjWirtingerDeriv_shell_series hs hΩ hD_mono hC_mono hχ_sum hu_cd hu_dbar hu_hol hu_bd
-      hx₀ hz₀ hr (hball_x (mem_ball_self hρ)) hball_C
+      hx₀ hz₀ hR (interior_subset (hball_x (mem_ball_self hρ))) hball_z
   · intro x₀ hx₀ z₀ hz₀
-    obtain ⟨m, ρ, r, hρ, hr, hball_x, hball_z⟩ :=
-      exists_local_exhaustion_box hD_step hD_uni hC_step hC_uni hx₀ hz₀
-    have hz_C : z₀ ∈ C (m + 1) :=
-      interior_subset (hball_z (mem_closedBall_self (by positivity)))
+    obtain ⟨m, ρ, R, hρ, hR, hball_x, hball_z⟩ :=
+      exists_ball_subset_interior_exhaustion_pair hD_step hD_uni hC_step hC_uni hx₀ hz₀
     exact differentiableAt_shell_series_param hD_mono hC_mono hD_sub hu_q hu_bd hx₀ hz₀ hρ
-      hball_x hz_C
+      (hball_x.trans interior_subset) (interior_subset (hball_z (mem_ball_self hR)))
 
 /-- **Global `bar∂` solver on arbitrary open plane domains with smooth parameters.** Let `s ⊆ P`
 be an open subset of a proper real normed space, let `Ω ⊆ ℂ` be open, and let `f : P → ℂ → F` be
@@ -508,39 +425,6 @@ end GlobalSolver
 section ParameterFree
 
 variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-
-/-- Telescoping step along an exhaustion `C` of `Ω ⊆ ℂ`: if consecutive differences
-`h (k + 1) - h k` are holomorphic on `interior (C (k + 1))` and approximated within `2⁻ᵏ` on `C k`
-by functions `g k` holomorphic on `Ω`, then on `interior (C m)` the corrected series
-`h 0 + ∑' k, (h (k + 1) - h k - g k)` equals `h m` plus a holomorphic function. -/
-private theorem exists_differentiableOn_eqOn_add_tsum_exhaustion {Ω : Set ℂ} {C : ℕ → Set ℂ}
-    {h g : ℕ → ℂ → F} (hC_mono : Monotone C) (hC_sub : ∀ j, C j ⊆ Ω)
-    (hg : ∀ k, DifferentiableOn ℂ (g k) Ω)
-    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (interior (C (k + 1))))
-    (hg_lt : ∀ k, ∀ z ∈ C k, ‖(h (k + 1) - h k) z - g k z‖ < (1 / 2 : ℝ) ^ k) (m : ℕ) :
-    ∃ K : ℂ → F, DifferentiableOn ℂ K (interior (C m)) ∧
-      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - g k) z) (h m + K) (interior (C m)) := by
-  set e : ℕ → ℂ → F := fun k ↦ h (k + 1) - h k - g k
-  have he_le {k : ℕ} (hmk : m ≤ k) {z : ℂ} (hz : z ∈ interior (C m)) :
-      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
-    (hg_lt k z (hC_mono hmk (interior_subset hz))).le
-  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
-    (summable_nat_add_iff m).2 summable_geometric_two
-  refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, g k z, ?_, fun z hz ↦ ?_⟩
-  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦
-      (hg k).mono (interior_subset.trans (hC_sub m)))
-    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ he_le (Nat.le_add_left m k) hz)
-      |>.differentiableOn (.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_)
-      isOpen_interior
-    exact ((hdiff (k + m)).mono (interior_mono (hC_mono (by omega)))).sub
-      ((hg (k + m)).mono (interior_subset.trans (hC_sub m)))
-  · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
-      .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
-    have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, g k z := by
-      simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
-    simp only [Pi.add_apply]
-    rw [← hs.sum_add_tsum_nat_add m, htel]
-    abel
 
 /-- **Global `bar∂` solver on an arbitrary open set in `ℂ`.** Every `C^n` function `f : ℂ → F`
 (`1 ≤ n`) on an open set `Ω ⊆ ℂ` with values in a complex Banach space `F` satisfies `bar∂ u = f`

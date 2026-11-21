@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Complex.Runge.SimpleFraction
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Complex.MixedDeriv
 import TauCeti.Analysis.Complex.Pompeiu.Discretization
 
 /-!
@@ -24,8 +28,10 @@ into any complex normed space, holomorphic on `V` and bounded by `M` there, sati
 with `K ⊆ interior L` inside an open neighbourhood `U ⊇ K` on which `f` is holomorphic specializes
 the estimate to `sup_K ‖f - A f‖ ≤ ε * sup_L ‖f‖` with `ζ i ∈ interior L \ K`. Because `ζ`, `c`,
 and `g` depend only on `K`, `V`, `Ω`, and `ε` — neither on `f` nor on the target space `F` — the
-resulting linear operator `A` commutes with differentiation in external smooth parameters and
-preserves holomorphic dependence on external complex parameters.
+resulting linear operator `A` commutes with differentiation in external smooth parameters
+(`TauCeti.iteratedFDeriv_sub_sum_mul_smul`), preserves joint smoothness and holomorphic dependence
+on external complex parameters, and yields the corresponding `ε * M` error estimate for every
+iterated parameter derivative (`TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`).
 
 The proof combines the discretized Cauchy–Pompeiu formula
 (`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`), which approximates `f` uniformly on `K` by
@@ -39,6 +45,11 @@ approximation theorem for holomorphic maps into any complex normed space
 
 * `TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`: the finite-rank Runge operator with
   uniform error bound `ε * M`, independent of the target space `F`.
+* `TauCeti.iteratedFDeriv_sub_sum_mul_smul`: commutation of `iteratedFDeriv ℝ k` with finite-rank
+  Runge approximation.
+* `TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`: parametric finite-rank Runge
+  approximation preserving joint smoothness and parameter holomorphy and bounding all iterated
+  parameter derivatives uniformly by `ε * M`.
 * `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`: Runge's approximation theorem for
   holomorphic functions with values in a complex normed space.
 
@@ -53,7 +64,7 @@ public section
 
 open Set
 
-universe u
+universe u uX uQ uF
 
 namespace TauCeti
 
@@ -108,6 +119,80 @@ theorem IsFilledIn.exists_norm_sub_sum_mul_smul_le {K V Ω : Set ℂ} (hfill : I
           ‖∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖ := norm_add_le _ _
     _ ≤ ε / 2 * M + ε / 2 * M := add_le_add (hdisc f M hf hM w hw) htail
     _ = ε * M := by ring
+
+/-- **Parameter-derivative commutation for finite-rank Runge sums.** Forming a finite linear
+combination with fixed `w`-dependent scalar weights `c i * g i w` evaluated at fixed nodes `ζ i`
+commutes with the `k`-th Fréchet derivative in the external parameter `x`. -/
+theorem iteratedFDeriv_sub_sum_mul_smul {X F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [NormedAddCommGroup F] [NormedSpace ℂ F] {N : ℕ} (ζ c : Fin N → ℂ) (g : Fin N → ℂ → ℂ)
+    {f : X → ℂ → F} {k : ℕ} {x : X} {w : ℂ}
+    (hw : ContDiffAt ℝ k (fun x' ↦ f x' w) x)
+    (hζ : ∀ i, ContDiffAt ℝ k (fun x' ↦ f x' (ζ i)) x) :
+    iteratedFDeriv ℝ k (fun x' ↦ f x' w - ∑ i, (c i * g i w) • f x' (ζ i)) x =
+      iteratedFDeriv ℝ k (fun x' ↦ f x' w) x -
+        ∑ i, (c i * g i w) • iteratedFDeriv ℝ k (fun x' ↦ f x' (ζ i)) x := by
+  have ha_cd : ContDiffAt ℝ k (fun x' ↦ ∑ i : Fin N, (c i * g i w) • f x' (ζ i)) x :=
+    ContDiffAt.sum fun i _ ↦ (hζ i).const_smul (c i * g i w)
+  have hsub_eq : (fun x' ↦ f x' w - ∑ i : Fin N, (c i * g i w) • f x' (ζ i)) =
+      (fun x' ↦ f x' w) - (fun x' ↦ ∑ i : Fin N, (c i * g i w) • f x' (ζ i)) := rfl
+  rw [hsub_eq, iteratedFDeriv_sub_apply hw ha_cd,
+    iteratedFDeriv_fun_sum_apply fun i _ ↦ (hζ i).const_smul (c i * g i w)]
+  simp only [iteratedFDeriv_const_smul_apply' (hζ _)]
+
+/-- **Parametric finite-rank Runge operator.** Let `K` be a compact subset filled in an open set
+`Ω ⊆ ℂ`, and let `V ⊇ K` be open. For every `ε > 0` there are finitely many evaluation points
+`ζ i ∈ V \ K`, weights `c i : ℂ`, and functions `g i : ℂ → ℂ` holomorphic on `Ω` (depending only
+on `K`, `V`, `Ω`, and `ε`) such that the finite-rank operator
+`A f x w = ∑ i, (c i * g i w) • f x (ζ i)`:
+1. preserves joint `C^n` smoothness on `s ×ˢ V` to `s ×ˢ Ω`;
+2. preserves complex differentiability with respect to an external complex parameter;
+3. approximates every `k`-th parameter derivative of a `C^(k+1)` family `f : X → ℂ → F`
+   holomorphic in the second variable on `V` within `ε * M` on `K`. -/
+theorem IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le {K V Ω : Set ℂ}
+    (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hV : IsOpen V)
+    (hKV : K ⊆ V) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (N : ℕ) (ζ : Fin N → ℂ) (c : Fin N → ℂ) (g : Fin N → ℂ → ℂ),
+      (∀ i, ζ i ∈ V \ K) ∧ (∀ i, DifferentiableOn ℂ (g i) Ω) ∧
+      (∀ {X : Type uX} [NormedAddCommGroup X] [NormedSpace ℝ X]
+        {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F]
+        {s : Set X} {n : WithTop ℕ∞} {f : X → ℂ → F},
+        ContDiffOn ℝ n (Function.uncurry f) (s ×ˢ V) →
+        ContDiffOn ℝ n (fun p : X × ℂ ↦ ∑ i, (c i * g i p.2) • f p.1 (ζ i)) (s ×ˢ Ω)) ∧
+      (∀ {Q : Type uQ} [NormedAddCommGroup Q] [NormedSpace ℂ Q]
+        {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F]
+        {f : Q → ℂ → F} {q₀ : Q} {w : ℂ},
+        (∀ i, DifferentiableAt ℂ (fun q ↦ f q (ζ i)) q₀) →
+        DifferentiableAt ℂ (fun q ↦ ∑ i, (c i * g i w) • f q (ζ i)) q₀) ∧
+      ∀ {X : Type uX} [NormedAddCommGroup X] [NormedSpace ℝ X]
+        {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F]
+        {s : Set X}, IsOpen s → ∀ (f : X → ℂ → F) (k : ℕ) (M : ℝ),
+        ContDiffOn ℝ (k + 1 : ℕ) (Function.uncurry f) (s ×ˢ V) →
+        (∀ x ∈ s, DifferentiableOn ℂ (f x) V) →
+        ∀ x ∈ s, (∀ z ∈ V, ‖iteratedFDeriv ℝ k (fun x' ↦ f x' z) x‖ ≤ M) →
+        ∀ w ∈ K,
+          ‖iteratedFDeriv ℝ k (fun x' ↦ f x' w - ∑ i, (c i * g i w) • f x' (ζ i)) x‖ ≤
+            ε * M := by
+  obtain ⟨N, ζ, c, g, hζ, hg, happrox⟩ :=
+    hfill.exists_norm_sub_sum_mul_smul_le.{max uX uF} hΩ hK hKΩ hV hKV hε
+  refine ⟨N, ζ, c, g, hζ, hg, ?_, ?_, ?_⟩
+  · intro X _ _ F _ _ s n f hf
+    refine ContDiffOn.sum fun i _ ↦ ?_
+    have hg_cd : ContDiffOn ℝ n (fun p : X × ℂ ↦ c i * g i p.2) (s ×ˢ Ω) :=
+      (((((hg i).const_mul (c i)).contDiffOn hΩ).restrict_scalars ℝ).of_le le_top).comp
+        contDiffOn_snd fun _ hp ↦ hp.2
+    have hf_ζ : ContDiffOn ℝ n (fun p : X × ℂ ↦ f p.1 (ζ i)) (s ×ˢ Ω) :=
+      hf.comp (contDiffOn_fst.prodMk contDiffOn_const) fun _ hp ↦ ⟨hp.1, (hζ i).1⟩
+    exact hg_cd.smul hf_ζ
+  · exact fun hfq ↦ DifferentiableAt.fun_sum fun i _ ↦ (hfq i).const_smul _
+  · intro X _ _ F _ _ s hs f k M hf_cd hf_hol x hx hM w hw
+    let φ : ℂ → X [×k]→L[ℝ] F := fun z ↦ iteratedFDeriv ℝ k (fun x' ↦ f x' z) x
+    have hφ_hol : DifferentiableOn ℂ φ V :=
+      differentiableOn_iteratedFDeriv_prod_left k hs hV hf_cd hf_hol hx
+    have hslice (z : ℂ) (hz : z ∈ V) : ContDiffAt ℝ k (fun x' ↦ f x' z) x :=
+      ((hf_cd.contDiffAt ((hs.prod hV).mem_nhds ⟨hx, hz⟩)).of_le
+        (by exact_mod_cast Nat.le_succ k)).comp x (contDiffAt_id.prodMk contDiffAt_const)
+    rw [iteratedFDeriv_sub_sum_mul_smul ζ c g (hslice w (hKV hw)) fun i ↦ hslice (ζ i) (hζ i).1]
+    exact happrox φ M hφ_hol hM w hw
 
 /-- **Runge's approximation theorem** for functions into a complex normed space. If a compact set
 `K` is filled in an open set `Ω ⊆ ℂ` and `f : ℂ → F` is holomorphic on an open neighbourhood `V`

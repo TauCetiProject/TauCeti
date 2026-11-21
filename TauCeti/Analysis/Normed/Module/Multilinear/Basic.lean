@@ -16,7 +16,9 @@ A continuous multilinear map `D` on `E × F` in `j + l` variables, evaluated on 
 of variables are estimated by a full Fréchet derivative.
 
 Postcomposition with a continuous linear map `g` is Lipschitz on continuous multilinear maps,
-with constant `‖g‖`.
+with constant `‖g‖`. For a normed `𝕜`-algebra `𝕜'` and scalar towers `𝕜 / 𝕜' / G / G'`,
+postcomposing a `𝕜`-multilinear map with a continuous `𝕜'`-linear map is itself a continuous
+bilinear map over `𝕜'` (`ContinuousLinearMap.compContinuousMultilinearMapMixedL`).
 
 ## Main declarations
 
@@ -24,6 +26,8 @@ with constant `‖g‖`.
   `Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))`.
 * `ContinuousLinearMap.norm_compContinuousMultilinearMap_sub_le`: the Lipschitz bound for
   postcomposition with a continuous linear map.
+* `ContinuousLinearMap.compContinuousMultilinearMapMixedL`: mixed-scalar postcomposition of a
+  continuous multilinear map with a continuous linear map, as a continuous bilinear map.
 -/
 
 public section
@@ -63,5 +67,38 @@ theorem norm_compContinuousMultilinearMap_sub_le (g : G →L[𝕜] G')
     simp
   rw [this]
   exact g.norm_compContinuousMultilinearMap_le _
+
+/-- Postcomposition of a continuous `𝕜`-multilinear map with a continuous `𝕜'`-linear map over a
+normed `𝕜`-algebra `𝕜'`, bundled as a continuous `𝕜'`-bilinear map. -/
+noncomputable def compContinuousMultilinearMapMixedL (𝕜 𝕜' : Type*) {ι : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Fintype ι]
+    (E : ι → Type*) [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+    (G G' : Type*) [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G]
+    [IsScalarTower 𝕜 𝕜' G] [SeminormedAddCommGroup G'] [NormedSpace 𝕜 G'] [NormedSpace 𝕜' G']
+    [IsScalarTower 𝕜 𝕜' G'] :
+    (G →L[𝕜'] G') →L[𝕜'] ContinuousMultilinearMap 𝕜 E G →L[𝕜']
+      ContinuousMultilinearMap 𝕜 E G' :=
+  LinearMap.mkContinuous₂
+    { toFun := fun L ↦
+        { toFun := fun Φ ↦ (L.restrictScalars 𝕜).compContinuousMultilinearMap Φ
+          map_add' := fun _ _ ↦ by ext; simp
+          map_smul' := fun _ _ ↦ by ext; simp }
+      map_add' := fun _ _ ↦ by ext; simp
+      map_smul' := fun _ _ ↦ by ext; simp }
+    1 fun L Φ ↦ by
+      rw [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, one_mul]
+      simpa using (L.restrictScalars 𝕜).norm_compContinuousMultilinearMap_le Φ
+
+/-- Evaluation of `ContinuousLinearMap.compContinuousMultilinearMapMixedL`. -/
+@[simp]
+theorem compContinuousMultilinearMapMixedL_apply {𝕜 𝕜' ι : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Fintype ι] {E : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] {G G' : Type*}
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G]
+    [SeminormedAddCommGroup G'] [NormedSpace 𝕜 G'] [NormedSpace 𝕜' G'] [IsScalarTower 𝕜 𝕜' G']
+    (L : G →L[𝕜'] G') (Φ : ContinuousMultilinearMap 𝕜 E G) :
+    compContinuousMultilinearMapMixedL 𝕜 𝕜' E G G' L Φ =
+      (L.restrictScalars 𝕜).compContinuousMultilinearMap Φ :=
+  (rfl)
 
 end ContinuousLinearMap
