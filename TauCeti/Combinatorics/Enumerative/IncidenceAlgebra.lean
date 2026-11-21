@@ -48,8 +48,8 @@ open Finset IncidenceAlgebra
 namespace OrderIso
 
 variable {𝕜 α β : Type*} [AddCommGroup 𝕜] [One 𝕜]
-  [PartialOrder α] [LocallyFiniteOrder α] [DecidableEq α]
-  [PartialOrder β] [LocallyFiniteOrder β] [DecidableEq β]
+  [Preorder α] [LocallyFiniteOrder α] [DecidableEq α]
+  [Preorder β] [LocallyFiniteOrder β] [DecidableEq β]
 
 /-- The Möbius function is invariant under order isomorphisms. -/
 @[simp]
