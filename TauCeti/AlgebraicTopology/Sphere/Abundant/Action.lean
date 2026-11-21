@@ -93,6 +93,13 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   {G : Type} [TopologicalSpace G] [Group G] [IsTopologicalGroup G] [MulAction G M]
   [ContinuousSMul G M]
 
+omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [ContinuousSMul G M] in
+/-- Right translation by an element of the stabilizer of `x₀` does not change the orbit map
+`g ↦ g • x₀`. -/
+private theorem comp_mulRight_eq_of_mem_stabilizer {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
+    {h : G} (hh : h ∈ MulAction.stabilizer G x₀) : π.comp (ContinuousMap.mulRight h) = π :=
+  ContinuousMap.ext fun g ↦ by simp [hπ, mul_smul, MulAction.mem_stabilizer_iff.1 hh]
+
 omit [CompactSpace M] [ContinuousSMul G M] in
 /-- **Right translation along the stabilizer, on the fibre.** The orbit map `π`, `g ↦ g • x₀`, is
 a Serre fibration whose fibre over `x₀` is the stabilizer `H`. For `y ∈ H`, the identification
@@ -102,35 +109,25 @@ private theorem singularHomology₀Section_comp_singularHomologyComplFiberIso_in
     (π : C(G, M)) (hπ : ∀ g, π g = g • x₀) (hp : TopCat.serreFibrations (TopCat.ofHom π))
     {ε : ℝ} (hε : Metric.ball (chartAt V x₀ x₀) ε ⊆ (chartAt V x₀).target) (hε₀ : 0 < ε)
     (h0 : 0 + finrank ℝ V = d)
-    (y : TopCat.of ((TopCat.ofHom π : TopCat.of G ⟶ TopCat.of M) ⁻¹' {x₀})) :
-    ∃ (_ : (y : G) ∈ MulAction.stabilizer G x₀)
-      (hyS : ContinuousMap.mulRight (y : G) ⁻¹' (π ⁻¹' {x₀}) ⊆ π ⁻¹' {x₀}),
-      singularHomology₀Section (ModuleCat.of ℤ (ULift.{0} ℤ)) y ≫
-          (TopCat.singularHomologyComplFiberIso _ (chartAt V x₀) (mem_chart_source V x₀) hε hε₀ hp
-            0 d h0).inv =
-        singularHomology₀Section (ModuleCat.of ℤ (ULift.{0} ℤ))
-            (X := TopCat.of ((TopCat.ofHom π : TopCat.of G ⟶ TopCat.of M) ⁻¹' {x₀}))
-            ⟨1, by simp [hπ]⟩ ≫
-          (TopCat.singularHomologyComplFiberIso _ (chartAt V x₀) (mem_chart_source V x₀) hε hε₀ hp
-            0 d h0).inv ≫
-          localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.mulRight (y : G)) hyS
-            d := by
+    (y : TopCat.of ((TopCat.ofHom π : TopCat.of G ⟶ TopCat.of M) ⁻¹' {x₀}))
+    (hy : (y : G) ∈ MulAction.stabilizer G x₀)
+    (hyS : ContinuousMap.mulRight (y : G) ⁻¹' (π ⁻¹' {x₀}) ⊆ π ⁻¹' {x₀}) :
+    singularHomology₀Section (ModuleCat.of ℤ (ULift.{0} ℤ)) y ≫
+        (TopCat.singularHomologyComplFiberIso _ (chartAt V x₀) (mem_chart_source V x₀) hε hε₀ hp
+          0 d h0).inv =
+      singularHomology₀Section (ModuleCat.of ℤ (ULift.{0} ℤ))
+          (X := TopCat.of ((TopCat.ofHom π : TopCat.of G ⟶ TopCat.of M) ⁻¹' {x₀}))
+          ⟨1, by simp [hπ]⟩ ≫
+        (TopCat.singularHomologyComplFiberIso _ (chartAt V x₀) (mem_chart_source V x₀) hε hε₀ hp
+          0 d h0).inv ≫
+        localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.mulRight (y : G)) hyS d := by
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   let p : TopCat.of G ⟶ TopCat.of M := TopCat.ofHom π
   let fib := TopCat.singularHomologyComplFiberIso R (chartAt V x₀) (mem_chart_source V x₀) hε hε₀
     hp 0 d h0
   let one : p ⁻¹' {x₀} := ⟨1, by simp [p, hπ]⟩
-  have hy : (y : G) ∈ MulAction.stabilizer G x₀ := by
-    have h := y.property
-    rw [Set.mem_preimage, Set.mem_singleton_iff] at h
-    exact MulAction.mem_stabilizer_iff.2 ((hπ _).symm.trans h)
   let f : TopCat.of G ⟶ TopCat.of G := TopCat.ofHom (ContinuousMap.mulRight (y : G))
-  have hf : f ≫ p = p := by
-    ext g
-    simp [f, p, hπ, mul_smul, MulAction.mem_stabilizer_iff.1 hy]
-  have hyS : ContinuousMap.mulRight (y : G) ⁻¹' (π ⁻¹' {x₀}) ⊆ π ⁻¹' {x₀} := fun g hg ↦ by
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, ContinuousMap.coe_mulRight] at hg ⊢
-    rwa [hπ, mul_smul, MulAction.mem_stabilizer_iff.1 hy, ← hπ] at hg
+  have hf : f ≫ p = p := TopCat.hom_ext (comp_mulRight_eq_of_mem_stabilizer π hπ hy)
   -- Right translation by `y` on the fibre carries the point `1` to `y`.
   have hsec : singularHomology₀Section R y = singularHomology₀Section R one ≫
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj R).map
@@ -148,7 +145,7 @@ private theorem singularHomology₀Section_comp_singularHomologyComplFiberIso_in
       R (chartAt V x₀) (mem_chart_source V x₀) hε hε₀ hp hp hf 0 d _, Category.assoc,
       Iso.hom_inv_id,
       Category.comp_id, localHomologyMap_def]
-  exact ⟨hy, hyS, by rw [hsec, Category.assoc, hnat]⟩
+  rw [hsec, Category.assoc, hnat]
 
 omit [CompactSpace M] in
 include hd in
@@ -197,19 +194,23 @@ private theorem exists_forall_apply_eq_zsmul {x₀ : M} (π : C(G, M)) (hπ : �
   have key : fib.inv ≫ Q = ε₀ ≫ ModuleCat.ofHom ((LinearMap.toSpanSingleton ℤ T (Q c₁)).comp
       (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toLinearMap) := by
     refine singularHomology₀_hom_ext R fun y ↦ ?_
-    obtain ⟨hy, hyS, hsec⟩ :=
+    have hy : (y : G) ∈ MulAction.stabilizer G x₀ := by
+      have h := y.property
+      rw [Set.mem_preimage, Set.mem_singleton_iff] at h
+      exact MulAction.mem_stabilizer_iff.2 ((hπ _).symm.trans h)
+    have hyS : ContinuousMap.mulRight (y : G) ⁻¹' (π ⁻¹' {x₀}) ⊆ π ⁻¹' {x₀} := by
+      rw [← preimage_comp, ← ContinuousMap.coe_comp, comp_mulRight_eq_of_mem_stabilizer π hπ hy]
+    have hsec : singularHomology₀Section R y ≫ fib.inv = singularHomology₀Section R one ≫
+        fib.inv ≫ localHomologyMap R (ContinuousMap.mulRight (y : G)) hyS d :=
       singularHomology₀Section_comp_singularHomologyComplFiberIso_inv π hπ hp hε hε₀
-        (by rw [zero_add, hd]) y
+        (by rw [zero_add, hd]) y hy hyS
     rw [singularHomology₀Section_singularHomology₀ε_assoc, reassoc_of% hsec, hQ ⟨y, hy⟩]
     ext r
     obtain ⟨r⟩ := r
     have hr : (ULift.up r : ULift.{0} ℤ) = r • ULift.up 1 := ULift.ext (by simp)
-    rw [hr, map_zsmul, map_zsmul]
-    simp [c₁, ULift.moduleEquiv_apply, -LinearMap.toSpanSingleton_apply,
+    rw [hr, map_zsmul, map_zsmul, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.hom_ofHom,
+      LinearMap.comp_apply, LinearEquiv.coe_coe, ULift.moduleEquiv_apply,
       LinearMap.toSpanSingleton_apply_one]
-    -- The two sides differ only in unfolding `fib`, `one` and `R`, and in applying morphisms of
-    -- `ModuleCat` through `ModuleCat.Hom.hom` or `ConcreteCategory.hom`, which agree by definition.
-    rfl
   have := ConcreteCategory.congr_hom key (fib.hom c)
   rw [ConcreteCategory.comp_apply, Iso.hom_inv_id_apply] at this
   rw [this, ConcreteCategory.comp_apply]
@@ -352,6 +353,15 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_mulRight {B 
       ((congrArg Φloc.hom (singularHomologyCrossRel_tmul_homologyMap R R act rfl c α)).symm.trans
         (congrArg (fun a ↦ Φloc.hom (cross.hom (c ⊗ₜ a))) hfix)))
 
+/-- Tensoring on the right with a fixed element `α`, `c ↦ c ⊗ₜ α`, is the inverse right unitor
+followed by whiskering with the map `ℤ → Y`, `n ↦ n • α`. -/
+private theorem rightUnitor_inv_whiskerLeft_toSpanSingleton_apply {X Y : ModuleCat.{0} ℤ} (α : Y)
+    (c : X) :
+    ((ρ_ X).inv ≫ (X ◁ ModuleCat.ofHom (LinearMap.toSpanSingleton ℤ Y α))) c = c ⊗ₜ α := by
+  rw [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.ofHom_apply,
+    LinearMap.toSpanSingleton_apply_one]
+
 omit [CompactSpace M] in
 include o hd in
 /-- **The image of `c × α` for a class `c` of the stabilizer covering `ℓ • [M]`.** Let `s : U → G`
@@ -400,20 +410,15 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_eq_zsmul {B 
   let αmap : 𝟙_ (ModuleCat.{0} ℤ) ⟶ (TopCat.toSSet.obj (TopCat.of F)).homology R k :=
     ModuleCat.ofHom (LinearMap.toSpanSingleton ℤ _ α)
   let P : localHomology (A := ModuleCat.{0} ℤ) R (π ⁻¹' {(x₀ : M)}) d ⟶ _ :=
-    (ρ_ _).inv ≫ (_ ◁ αmap) ≫ cross ≫ Φloc
-  have hPapply : ∀ c, P c = Φloc.hom (cross.hom (c ⊗ₜ α)) := fun c ↦ by
-    simp only [P, ModuleCat.comp_apply]
-    -- The unitor and whiskering lemmas are stated on `ModuleCat.Hom.hom`, while the composite
-    -- unfolds through `ConcreteCategory.hom` on the same carriers, so they only match up to `erw`.
-    erw [ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
-      ModuleCat.MonoidalCategory.whiskerLeft_apply, LinearMap.toSpanSingleton_apply, one_smul]
-    exact ConcreteCategory.comp_apply cross Φloc _
-  have hπρ (h : MulAction.stabilizer G (x₀ : M)) :
-      π.comp (ContinuousMap.mulRight (h : G)) = π :=
-    ContinuousMap.ext fun g ↦ by simp [hπ, mul_smul, MulAction.mem_stabilizer_iff.1 h.property]
+    ((ρ_ _).inv ≫ (_ ◁ αmap)) ≫ cross ≫ Φloc
+  have hPapply : ∀ c, P c = Φloc.hom (cross.hom (c ⊗ₜ α)) := fun c ↦
+    (ConcreteCategory.comp_apply _ (cross ≫ Φloc) c).trans
+      ((congrArg (cross ≫ Φloc) (rightUnitor_inv_whiskerLeft_toSpanSingleton_apply α c)).trans
+        (ConcreteCategory.comp_apply cross Φloc _))
   have hLπ : ∀ (h : MulAction.stabilizer G (x₀ : M)) hh,
       localHomologyMap R (ContinuousMap.mulRight (h : G)) hh d ≫ Lπ = Lπ :=
-    fun h hh ↦ (localHomologyMap_comp R _ π hh _ d).trans (localHomologyMap_congr R (hπρ h) _ d)
+    fun h hh ↦ (localHomologyMap_comp R _ π hh _ d).trans
+      (localHomologyMap_congr R (comp_mulRight_eq_of_mem_stabilizer π hπ h.property) _ d)
   have hP : ∀ (h : MulAction.stabilizer G (x₀ : M)) hh,
       localHomologyMap R (ContinuousMap.mulRight (h : G)) hh d ≫ P = P := by
     intro h hh
