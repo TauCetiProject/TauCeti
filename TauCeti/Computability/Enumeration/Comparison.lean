@@ -143,27 +143,24 @@ theorem computableIn_stageCompare_get {α : Type*} [Primcodable α] {G : Set (�
     ComputableIn G fun p : α × ℕ => (stageCompare (A p.1) (B p.1) p.2).get (hdom p.1 p.2) :=
   (recursiveIn_stageCompare hA hB).of_eq_tot fun p => Part.get_mem (hdom p.1 p.2)
 
-/-- Two directed oracle-computable enumerations with the same limiting set admit total
-oracle-computable stage-comparison maps witnessing both inclusions `A s ⊆ B (f s)` and
-`B s ⊆ A (g s)`. -/
-theorem exists_computableIn_stage_comparison {G : Set (ℕ →. ℕ)} {A B : ℕ → Finset ℕ}
-    (hA_dir : Directed (· ⊆ ·) A) (hB_dir : Directed (· ⊆ ·) B)
-    (hA : ComputableIn G fun s => Finset.equivBitIndices.symm (A s))
-    (hB : ComputableIn G fun s => Finset.equivBitIndices.symm (B s))
-    (heq : stageLimit A = stageLimit B) :
-    ∃ f g : ℕ → ℕ, ComputableIn G f ∧ ComputableIn G g ∧
-      (∀ s, A s ⊆ B (f s)) ∧ (∀ s, B s ⊆ A (g s)) := by
-  have hdomAB : ∀ (_ : Unit) s, (stageCompare A B s).Dom :=
-    fun _ s => stageCompare_dom_of_stageLimit_subset hB_dir heq.le s
-  have hdomBA : ∀ (_ : Unit) s, (stageCompare B A s).Dom :=
-    fun _ s => stageCompare_dom_of_stageLimit_subset hA_dir heq.ge s
-  have hf := (computableIn_stageCompare_get (A := fun _ : Unit => A) (B := fun _ : Unit => B)
-    (hA.comp ComputableIn.snd) (hB.comp ComputableIn.snd) hdomAB).comp
-    ((ComputableIn.const ()).pair ComputableIn.id)
-  have hg := (computableIn_stageCompare_get (A := fun _ : Unit => B) (B := fun _ : Unit => A)
-    (hB.comp ComputableIn.snd) (hA.comp ComputableIn.snd) hdomBA).comp
-    ((ComputableIn.const ()).pair ComputableIn.id)
-  exact ⟨_, _, hf, hg, fun s => subset_of_mem_stageCompare (Part.get_mem (hdomAB () s)),
-    fun s => subset_of_mem_stageCompare (Part.get_mem (hdomBA () s))⟩
+/-- Uniformly oracle-computable families of directed enumerations with equal limiting sets admit
+jointly oracle-computable stage-comparison maps witnessing both inclusions
+`A a s ⊆ B a (f (a, s))` and `B a s ⊆ A a (g (a, s))`. -/
+theorem exists_computableIn_stage_comparison {α : Type*} [Primcodable α] {G : Set (ℕ →. ℕ)}
+    {A B : α → ℕ → Finset ℕ}
+    (hA_dir : ∀ a, Directed (· ⊆ ·) (A a)) (hB_dir : ∀ a, Directed (· ⊆ ·) (B a))
+    (hA : ComputableIn G fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2))
+    (hB : ComputableIn G fun p : α × ℕ => Finset.equivBitIndices.symm (B p.1 p.2))
+    (heq : ∀ a, stageLimit (A a) = stageLimit (B a)) :
+    ∃ f g : α × ℕ → ℕ, ComputableIn G f ∧ ComputableIn G g ∧
+      (∀ a s, A a s ⊆ B a (f (a, s))) ∧ (∀ a s, B a s ⊆ A a (g (a, s))) := by
+  have hdomAB : ∀ a s, (stageCompare (A a) (B a) s).Dom :=
+    fun a s => stageCompare_dom_of_stageLimit_subset (hB_dir a) (heq a).le s
+  have hdomBA : ∀ a s, (stageCompare (B a) (A a) s).Dom :=
+    fun a s => stageCompare_dom_of_stageLimit_subset (hA_dir a) (heq a).ge s
+  exact ⟨_, _, computableIn_stageCompare_get hA hB hdomAB,
+    computableIn_stageCompare_get hB hA hdomBA,
+    fun a s => subset_of_mem_stageCompare (Part.get_mem (hdomAB a s)),
+    fun a s => subset_of_mem_stageCompare (Part.get_mem (hdomBA a s))⟩
 
 end TauCeti.Enumeration

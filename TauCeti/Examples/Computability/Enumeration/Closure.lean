@@ -90,14 +90,20 @@ example :
     simp only [mem_stageLimit, Finset.mem_range]
     exact ⟨fun ⟨s, hs⟩ => ⟨2 * s, hs⟩, fun ⟨s, hs⟩ => ⟨s, by omega⟩⟩
   have hA : ComputableIn (∅ : Set (ℕ →. ℕ))
-      fun s => Finset.equivBitIndices.symm (Finset.range (2 * s)) :=
+      fun p : Unit × ℕ => Finset.equivBitIndices.symm (Finset.range (2 * p.2)) :=
     (Primrec.equivBitIndices_symm_range.comp
-      (Primrec.nat_mul.comp (Primrec.const 2) Primrec.id)).computableIn
+      (Primrec.nat_mul.comp (Primrec.const 2) Primrec.snd)).computableIn
   have hB : ComputableIn (∅ : Set (ℕ →. ℕ))
-      fun s => Finset.equivBitIndices.symm (Finset.range s) :=
-    Primrec.equivBitIndices_symm_range.computableIn
+      fun p : Unit × ℕ => Finset.equivBitIndices.symm (Finset.range p.2) :=
+    (Primrec.equivBitIndices_symm_range.comp Primrec.snd).computableIn
+  obtain ⟨f, g, hf, hg, hfg, hgf⟩ := exists_computableIn_stage_comparison
+    (A := fun (_ : Unit) s => Finset.range (2 * s)) (B := fun (_ : Unit) => Finset.range)
+    (fun _ => hmono₁.directed_le) (fun _ => hmono₂.directed_le) hA hB (fun _ => hlim)
   refine ⟨fun s => mem_stageCompare.2 ⟨Finset.Subset.rfl, fun t ht hsub => ?_⟩,
-    exists_computableIn_stage_comparison hmono₁.directed_le hmono₂.directed_le hA hB hlim⟩
+    fun s => f ((), s), fun s => g ((), s),
+    hf.comp ((ComputableIn.const ()).pair ComputableIn.id),
+    hg.comp ((ComputableIn.const ()).pair ComputableIn.id),
+    hfg (), hgf ()⟩
   have : 2 * s ≤ t := Finset.range_subset_range.1 hsub
   omega
 

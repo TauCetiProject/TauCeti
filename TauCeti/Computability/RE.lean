@@ -25,9 +25,9 @@ computable pieces:
 * `REPred.and`, `REPred.or`, `REPred.forall_mem_finset`, `REPred.exists_mem_finset`,
   `REPred.exists`: closure of c.e. predicates under binary and finite conjunction/disjunction and
   existential quantification over any primitive-codable type;
-* `Partrec.rePred_mem_ran`, `Partrec.rePred_mem_image`, `Partrec.rePred_mem_preimage`,
-  `Computable.rePred_mem_range`, `Computable.rePred_mem_image`: ranges, partial images, and
-  partial preimages of c.e. sets are c.e.;
+* `Partrec.rePred_mem_eval`, `Partrec.rePred_mem_ran`, `Partrec.rePred_mem_image`,
+  `Partrec.rePred_mem_preimage`, `Computable.rePred_mem_range`, `Computable.rePred_mem_image`:
+  graphs, ranges, partial images, and partial preimages of c.e. sets are c.e.;
 * `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`: membership in a finite set is
   computable, so every noncomputable set is infinite.
 
@@ -142,40 +142,37 @@ protected theorem «exists» {β : Type*} [Primcodable β] {r : α × β → Pro
   obtain ⟨c, hc⟩ := Nat.Partrec.Code.exists_code.1 hg
   have hdec : ∀ (x : α) (y : β), r (x, y) ↔ (c.eval (encode (x, y))).Dom := fun x y => by
     simp [hc, encodek, Part.dom_iff_mem]
-  let test : α → ℕ → Bool := fun x k =>
-    (decode (α := β) k.unpair.1).elim false fun y =>
-      (c.evaln k.unpair.2 (encode (x, y))).isSome
   have heval : Computable fun p : (α × ℕ) × β =>
       (c.evaln p.1.2.unpair.2 (encode (p.1.1, p.2))).isSome :=
     Primrec.option_isSome.to_comp.comp <| Nat.Partrec.Code.primrec_evaln.to_comp.comp <|
       ((Computable.snd.comp (Computable.unpair.comp (Computable.snd.comp Computable.fst))).pair
         (Computable.const c)).pair
         (Computable.encode.comp ((Computable.fst.comp Computable.fst).pair Computable.snd))
-  have htest : Computable fun q : α × ℕ => test q.1 q.2 :=
-    (Computable.option_casesOn
+  have htest : ComputablePred fun q : α × ℕ =>
+      ∃ y : β, decode (α := β) q.2.unpair.1 = some y ∧
+        (c.evaln q.2.unpair.2 (encode (q.1, y))).isSome = true :=
+    ComputablePred.exists_eq_some_and
       (Computable.decode.comp (Computable.fst.comp (Computable.unpair.comp Computable.snd)))
-      (Computable.const false) heval.to₂).of_eq fun q => by
-        cases hd : decode (α := β) q.2.unpair.1 <;> simp [test, hd]
+      heval.computablePred
   refine (ComputablePred.rePred_exists
-    (p := fun x k => test x k = true) htest.computablePred).of_eq fun x => ?_
+    (p := fun x k => ∃ y : β, decode (α := β) k.unpair.1 = some y ∧
+      (c.evaln k.unpair.2 (encode (x, y))).isSome = true) htest).of_eq fun x => ?_
   constructor
-  · rintro ⟨k, hk⟩
-    cases hd : decode (α := β) k.unpair.1 with
-    | none => simp [test, hd] at hk
-    | some y =>
-      obtain ⟨z, hz⟩ := Option.isSome_iff_exists.1 (by simpa [test, hd] using hk)
-      exact ⟨y, (hdec x y).2 (Part.dom_iff_mem.2 ⟨z, Nat.Partrec.Code.evaln_sound hz⟩)⟩
+  · rintro ⟨k, y, -, hk⟩
+    obtain ⟨z, hz⟩ := Option.isSome_iff_exists.1 hk
+    exact ⟨y, (hdec x y).2 (Part.dom_iff_mem.2 ⟨z, Nat.Partrec.Code.evaln_sound hz⟩)⟩
   · rintro ⟨y, hy⟩
     obtain ⟨z, hz⟩ := Part.dom_iff_mem.1 ((hdec x y).1 hy)
     obtain ⟨s, hs⟩ := Nat.Partrec.Code.evaln_complete.1 hz
-    refine ⟨Nat.pair (encode y) s, ?_⟩
-    simpa [test, Nat.unpair_pair, encodek] using Option.isSome_iff_exists.2 ⟨z, hs⟩
+    exact ⟨Nat.pair (encode y) s, y, by simp [encodek],
+      by simpa using Option.isSome_iff_exists.2 ⟨z, hs⟩⟩
 
 end REPred
 
 namespace Partrec
 
-private theorem rePred_mem_eval {β : Type*} [Primcodable β] {f : α →. β} (hf : Partrec f) :
+/-- The graph relation `y ∈ f x` of a partial computable function is c.e. -/
+theorem rePred_mem_eval {β : Type*} [Primcodable β] {f : α →. β} (hf : Partrec f) :
     REPred fun p : β × α => p.1 ∈ f p.2 := by
   let : DecidableEq β := Encodable.decidableEqOfEncodable β
   have heq : REPred fun p : β × β => p.1 = p.2 :=

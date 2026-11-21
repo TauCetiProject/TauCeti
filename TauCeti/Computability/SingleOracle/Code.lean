@@ -343,6 +343,34 @@ theorem eval_comp (cf cg : Code) (n : ℕ) :
     eval O (comp cf cg) n = eval O cg n >>= eval O cf :=
   (rfl)
 
+/-- Evaluation of a composed program is partial-function composition. -/
+theorem eval_comp_eq (O : ℕ →. ℕ) (cf cg : Code) :
+    eval O (comp cf cg) = (eval O cf).comp (eval O cg) :=
+  funext fun x => (eval_comp cf cg x).trans (PFun.comp_apply (eval O cf) (eval O cg) x).symm
+
+/-- The domain of a paired program is the intersection of the two domains, relative to every
+partial oracle. -/
+@[simp]
+theorem dom_eval_pair (O : ℕ →. ℕ) (cf cg : Code) :
+    (eval O (pair cf cg)).Dom = (eval O cf).Dom ∩ (eval O cg).Dom := by
+  ext x
+  simp [PFun.Dom, Seq.seq]
+
+/-- The domain of a composed program is the partial preimage of the outer domain under the inner
+program, relative to every partial oracle. -/
+@[simp]
+theorem dom_eval_comp (O : ℕ →. ℕ) (cf cg : Code) :
+    (eval O (comp cf cg)).Dom = (eval O cg).preimage (eval O cf).Dom := by
+  rw [eval_comp_eq, PFun.dom_comp]
+
+/-- When the inner program computes a total function `f`, the domain of `comp cf cg` is the usual
+set-theoretic preimage of the domain of `cf` under `f`. -/
+theorem dom_eval_comp_total {O : ℕ →. ℕ} {cf cg : Code} {f : ℕ → ℕ}
+    (hf : ∀ x, eval O cg x = Part.some (f x)) :
+    (eval O (comp cf cg)).Dom = f ⁻¹' (eval O cf).Dom := by
+  have hcg : eval O cg = (f : ℕ →. ℕ) := funext fun x => (hf x).trans (PFun.coe_val f x).symm
+  rw [dom_eval_comp, hcg, PFun.coe_preimage]
+
 /-- Primitive recursion at zero. -/
 @[simp]
 theorem eval_prec_zero (cf cg : Code) (a : ℕ) :

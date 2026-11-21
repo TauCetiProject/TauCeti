@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.Colex
 public import Mathlib.Computability.RE
 public import TauCeti.Computability.Enumeration.Stage
+public import TauCeti.Computability.FiniteSet
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -155,14 +156,6 @@ namespace TauCeti
 namespace Enumeration
 
 open Nat.Partrec
-
-/-- Membership in finite stages is computable, uniformly in the stage and the number, when their
-binary finite-set codes are computable. -/
-theorem computablePred_mem_of_computable_equivBitIndices {A : ℕ → Finset ℕ}
-    (hA : Computable fun s => Finset.equivBitIndices.symm (A s)) :
-    ComputablePred fun p : ℕ × ℕ => p.2 ∈ A p.1 :=
-  (Primrec.mem_equivBitIndices.comp Primrec.fst Primrec.snd).decide.to_comp.comp
-    ((hA.comp Computable.fst).pair Computable.snd) |>.computablePred.of_eq fun p => by simp
 
 /-- The limit of finite stages is c.e. when membership in the stages is computable, uniformly in
 the stage and the number. -/

@@ -131,15 +131,9 @@ theorem exists_code_dom_iff_exists_answers {p : ℕ × ℕ × List ℕ → Bool}
       (eval (O : ℕ →. ℕ) c n).Dom ↔ ∃ k, p (n, k, (List.range k).map O) = true := by
   obtain ⟨c, hc⟩ := exists_code_rfind_answers hp
   refine ⟨c, fun O n => ?_⟩
-  rw [hc, Part.dom_iff_mem]
-  constructor
-  · rintro ⟨k, hk⟩
-    exact ⟨k, (Part.mem_some_iff.1 (Nat.mem_rfind.1 hk).1).symm⟩
-  · intro hex
-    refine ⟨Nat.find hex, Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec hex).symm,
-      fun hm => Part.mem_some_iff.2 ?_⟩⟩
-    have hmin := Nat.find_min hex hm
-    cases h : p (n, _, (List.range _).map O) <;> simp_all
+  rw [hc]
+  exact (Nat.rfind_dom (p := fun k =>
+    (Part.some (p (n, k, (List.range k).map O)) : Part Bool))).trans (by simp)
 
 /-- The run searched for by the universal program: on `(n, k, l)`, the run of the program numbered
 by the first coordinate of `n` on its second coordinate, with fuel `k`, against the oracle
@@ -188,15 +182,22 @@ private theorem exists_universal : ∃ u : Code, ∀ (O : ℕ → ℕ) (e x : �
     exact mem_eval_iff_exists_evaln_range_map.2 ⟨k, d, hd, hy.symm⟩
   · intro h
     obtain ⟨k, d, hd, rfl⟩ := mem_eval_iff_exists_evaln_range_map.1 h
-    have hex : ∃ k, (R k).isSome := ⟨k, by simp only [hR, hd, Option.isSome_some]⟩
-    obtain ⟨d₀, hd₀⟩ := Option.isSome_iff_exists.1 (Nat.find_spec hex)
+    have hdom : (eval (O : ℕ →. ℕ) s (Nat.pair e x)).Dom := by
+      rw [hsearch]
+      exact (Nat.rfind_dom (p := fun k => (Part.some (R k).isSome : Part Bool))).2
+        ⟨k, by simp only [Part.mem_some_iff, hR]; exact (Option.isSome_iff_exists.2 ⟨d, hd⟩).symm,
+          fun _ => trivial⟩
+    have hk₀ := Part.get_mem hdom
+    have hk₀_rfind : (eval (O : ℕ →. ℕ) s (Nat.pair e x)).get hdom ∈
+        Nat.rfind fun k => (Part.some (R k).isSome : Part Bool) := by
+      simpa only [hsearch] using hk₀
+    obtain ⟨hk₀_spec, -⟩ := Nat.mem_rfind.1 hk₀_rfind
+    obtain ⟨d₀, hd₀⟩ := Option.isSome_iff_exists.1 (Part.mem_some_iff.1 hk₀_spec).symm
     have h₀ : d₀.output = d.output := Part.mem_unique
       (mem_eval_iff_exists_evaln_range_map.2 ⟨_, d₀, hd₀, rfl⟩) h
-    refine Part.mem_bind (mem_eval_pair.2 ⟨_, by rw [hid]; exact Part.mem_some _, _,
-      hsearch ▸ Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec hex).symm, fun hj =>
-        Part.mem_some_iff.2 (by simpa using Nat.find_min hex hj)⟩, rfl⟩) ?_
-    · rw [hout, hd₀]
-      simp [h₀]
+    refine Part.mem_bind (mem_eval_pair.2 ⟨_, by rw [hid]; exact Part.mem_some _, _, hk₀, rfl⟩) ?_
+    rw [hout, hd₀]
+    simp [h₀]
 
 /-- A **universal program**: relative to every total oracle `O`, on the input `Nat.pair e x` it
 computes the value of the program numbered `e` on `x`. -/

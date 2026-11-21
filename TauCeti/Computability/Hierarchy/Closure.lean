@@ -229,6 +229,31 @@ theorem IsSigma.exists_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α �
     exact ((hp i (Finset.mem_insert_self i s)).or
       (ih fun j hj => hp j (Finset.mem_insert_of_mem hj))).of_eq fun x => by simp
 
+/-- Universal pointclasses are closed under finite conjunctions, including the empty family. -/
+theorem IsPi.forall_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
+    (hp : ∀ i ∈ s, IsPi Z n (p i)) : IsPi Z n fun x => ∀ i ∈ s, p i x := by
+  classical
+  exact isSigma_not_iff.1
+    ((IsSigma.exists_mem_finset fun i hi => isSigma_not_iff.2 (hp i hi)).of_eq fun _ => by simp)
+
+/-- Universal pointclasses are closed under finite disjunctions, including the empty family. -/
+theorem IsPi.exists_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
+    (hp : ∀ i ∈ s, IsPi Z n (p i)) : IsPi Z n fun x => ∃ i ∈ s, p i x :=
+  isSigma_not_iff.1
+    ((IsSigma.forall_mem_finset fun i hi => isSigma_not_iff.2 (hp i hi)).of_eq fun _ => by simp)
+
+/-- Intersection pointclasses are closed under finite conjunctions, including the empty family. -/
+theorem IsDelta.forall_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
+    (hp : ∀ i ∈ s, IsDelta Z n (p i)) : IsDelta Z n fun x => ∀ i ∈ s, p i x :=
+  isDelta_iff.2 ⟨IsSigma.forall_mem_finset fun i hi => (isDelta_iff.1 (hp i hi)).1,
+    IsPi.forall_mem_finset fun i hi => (isDelta_iff.1 (hp i hi)).2⟩
+
+/-- Intersection pointclasses are closed under finite disjunctions, including the empty family. -/
+theorem IsDelta.exists_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
+    (hp : ∀ i ∈ s, IsDelta Z n (p i)) : IsDelta Z n fun x => ∃ i ∈ s, p i x :=
+  isDelta_iff.2 ⟨IsSigma.exists_mem_finset fun i hi => (isDelta_iff.1 (hp i hi)).1,
+    IsPi.exists_mem_finset fun i hi => (isDelta_iff.1 (hp i hi)).2⟩
+
 /-- At a positive existential level, an existential quantifier over any primitive-codable type can
 be contracted into the leading quantifier. -/
 theorem IsSigma.exists {β : Type*} [Primcodable β] {r : α × β → Prop} (hr : IsSigma Z (n + 1) r) :

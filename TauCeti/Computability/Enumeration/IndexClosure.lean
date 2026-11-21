@@ -56,29 +56,6 @@ namespace TauCeti.Oracle.Single.Code
 
 /-! ### Direct domain combinators for partial oracles -/
 
-/-- The domain of a paired program is the intersection of the two domains, relative to every
-partial oracle. -/
-@[simp]
-theorem dom_eval_pair (O : ℕ →. ℕ) (cf cg : Code) :
-    (eval O (pair cf cg)).Dom = (eval O cf).Dom ∩ (eval O cg).Dom := by
-  ext x
-  simp [PFun.Dom, Seq.seq]
-
-/-- The domain of a composed program is the partial preimage of the outer domain under the inner
-program, relative to every partial oracle. -/
-@[simp]
-theorem dom_eval_comp (O : ℕ →. ℕ) (cf cg : Code) :
-    (eval O (comp cf cg)).Dom = (eval O cg).preimage (eval O cf).Dom := by
-  have h : eval O (comp cf cg) = (eval O cf).comp (eval O cg) := funext (eval_comp cf cg)
-  rw [h, PFun.dom_comp]
-
-/-- When the inner program computes a total function `f`, the domain of `comp cf cg` is the usual
-set-theoretic preimage of the domain of `cf` under `f`. -/
-theorem dom_eval_comp_total {O : ℕ →. ℕ} {cf cg : Code} {f : ℕ → ℕ}
-    (hf : ∀ x, eval O cg x = Part.some (f x)) :
-    (eval O (comp cf cg)).Dom = f ⁻¹' (eval O cf).Dom := by
-  rw [dom_eval_comp, show eval O cg = (f : ℕ →. ℕ) from funext hf, PFun.coe_preimage]
-
 /-- Uniform finite-intersection compiler for a list of oracle programs. -/
 def interList (cs : List Code) : Code :=
   cs.foldr pair zero
@@ -154,8 +131,9 @@ theorem dom_eval_restrictId (O : ℕ →. ℕ) (c : Code) :
 @[simp]
 theorem ran_eval_restrictId (O : ℕ →. ℕ) (c : Code) :
     (eval O (restrictId c)).ran = (eval O c).Dom := by
-  rw [show eval O (restrictId c) = fun x => (eval O c x).map fun _ => x from
-    funext (eval_restrictId O c), PFun.ran_map_const]
+  have hrestrict : eval O (restrictId c) = fun x => (eval O c x).map fun _ => x :=
+    funext (eval_restrictId O c)
+  rw [hrestrict, PFun.ran_map_const]
 
 /-! ### Uniform dovetailing compilers for total oracles -/
 
@@ -295,11 +273,10 @@ domain of `c` under `f`. -/
 theorem dom_eval_imageDom (O : ℕ → ℕ) (f c : Code) :
     (eval (O : ℕ →. ℕ) (imageDom f c)).Dom =
       (eval (O : ℕ →. ℕ) f).image (eval (O : ℕ →. ℕ) c).Dom := by
-  rw [imageDom, dom_eval_rangeDom,
-    show eval (O : ℕ →. ℕ) (comp f (restrictId c)) =
-        PFun.comp (eval (O : ℕ →. ℕ) f) fun x => (eval (O : ℕ →. ℕ) c x).map fun _ => x from
-      funext fun x => by rw [eval_comp, eval_restrictId]; rfl,
-    PFun.ran_comp_map_const]
+  have hrestrict : eval (O : ℕ →. ℕ) (restrictId c) =
+      fun x => (eval (O : ℕ →. ℕ) c x).map fun _ => x :=
+    funext (eval_restrictId (O : ℕ →. ℕ) c)
+  rw [imageDom, dom_eval_rangeDom, eval_comp_eq, hrestrict, PFun.ran_comp_map_const]
 
 /-- Uniform existential-projection compiler: relative to every total oracle `O`, `x` lies in the
 domain of `projDom c` iff `Nat.pair x y` lies in the domain of `c` for some `y`. -/
@@ -331,120 +308,68 @@ end TauCeti.Oracle.Single.Code
 
 namespace Nat.Partrec.Code
 
-private theorem eval_zero_oracle_eq (c : TauCeti.Oracle.Single.Code) :
-    TauCeti.Oracle.Single.Code.eval (((fun _ : ℕ => 0) : ℕ → ℕ) : ℕ →. ℕ) c =
-      c.toPartrecCode.eval :=
-  TauCeti.Oracle.Single.Code.eval_toPartrecCode (fun _ => rfl) c
+@[local simp]
+private theorem eval_toPartrecCode_zero (c : TauCeti.Oracle.Single.Code) :
+    c.toPartrecCode.eval =
+      TauCeti.Oracle.Single.Code.eval (((fun _ : ℕ => 0) : ℕ → ℕ) : ℕ →. ℕ) c :=
+  (TauCeti.Oracle.Single.Code.eval_toPartrecCode (fun _ => rfl) c).symm
 
-/-- The domain of a paired ordinary code is the intersection of the two domains. -/
-@[simp]
-theorem dom_eval_pair (cf cg : Code) :
-    (pair cf cg).eval.Dom = cf.eval.Dom ∩ cg.eval.Dom := by
-  have hpair : pair cf cg =
-      (TauCeti.Oracle.Single.Code.pair
-        cf.toSingleOracleCode cg.toSingleOracleCode).toPartrecCode := by
-    simp
-  rw [hpair, ← eval_zero_oracle_eq, TauCeti.Oracle.Single.Code.dom_eval_pair,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
-
-/-- The domain of a composed ordinary code is the partial preimage of the outer domain under the
-inner code. -/
-@[simp]
-theorem dom_eval_comp (cf cg : Code) :
-    (comp cf cg).eval.Dom = cg.eval.preimage cf.eval.Dom := by
-  have hcomp : comp cf cg =
-      (TauCeti.Oracle.Single.Code.comp
-        cf.toSingleOracleCode cg.toSingleOracleCode).toPartrecCode := by
-    simp
-  rw [hcomp, ← eval_zero_oracle_eq, TauCeti.Oracle.Single.Code.dom_eval_comp,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
-
-/-- When `cg` computes a total function `f`, the domain of `comp cf cg` is `f ⁻¹' cf.eval.Dom`. -/
-theorem dom_eval_comp_total {cf cg : Code} {f : ℕ → ℕ}
-    (hf : ∀ x, cg.eval x = Part.some (f x)) :
-    (comp cf cg).eval.Dom = f ⁻¹' cf.eval.Dom := by
-  rw [dom_eval_comp, show cg.eval = (f : ℕ →. ℕ) from funext hf, PFun.coe_preimage]
-
-/-- Finite-intersection compiler for a list of ordinary codes. -/
+/-- Finite-intersection compiler for a list of ordinary codes, specialized from the uniform
+oracle-program compiler at the constant-zero oracle. -/
 def interList (cs : List Code) : Code :=
-  cs.foldr pair zero
+  (TauCeti.Oracle.Single.Code.interList (cs.map toSingleOracleCode)).toPartrecCode
 
 /-- The empty intersection of ordinary codes is `zero`. -/
 @[simp]
-theorem interList_nil : interList [] = zero :=
-  (rfl)
+theorem interList_nil : interList [] = zero := by
+  simp [interList]
 
 /-- Consing an ordinary code intersects its domain with the rest of the list. -/
 @[simp]
 theorem interList_cons (c : Code) (cs : List Code) :
-    interList (c :: cs) = pair c (interList cs) :=
-  (rfl)
-
-/-- Finite intersection on ordinary codes commutes with translation to and from oracle programs. -/
-theorem toPartrecCode_interList (cs : List Code) :
-    (TauCeti.Oracle.Single.Code.interList (cs.map toSingleOracleCode)).toPartrecCode =
-      interList cs := by
-  induction cs with
-  | nil => simp [interList]
-  | cons c cs ih => simp [interList, ih]
+    interList (c :: cs) = pair c (interList cs) := by
+  simp [interList]
 
 /-- Finite intersection of ordinary code lists is primitive recursive. -/
 theorem primrec_interList : _root_.Primrec interList :=
-  (TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
+  TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
     TauCeti.Oracle.Single.Code.primrec_interList.comp <|
       _root_.Primrec.list_map _root_.Primrec.id
-        (_root_.Primrec₂.mk (primrec_toSingleOracleCode.comp _root_.Primrec.snd))).of_eq
-    toPartrecCode_interList
+        (_root_.Primrec₂.mk (primrec_toSingleOracleCode.comp _root_.Primrec.snd))
 
 /-- The domain of `interList cs` is the intersection of the domains of its entries. -/
 @[simp]
 theorem dom_eval_interList (cs : List Code) :
     (interList cs).eval.Dom = ⋂ c ∈ cs, c.eval.Dom := by
-  rw [← toPartrecCode_interList, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_interList]
   ext x
-  simp
+  simp [interList]
 
-/-- Restrict the identity function on `ℕ` to the domain of an ordinary code `c`. -/
+/-- Restrict the identity function on `ℕ` to the domain of an ordinary code `c`, specialized from
+the uniform oracle-program compiler at the constant-zero oracle. -/
 def restrictId (c : Code) : Code :=
-  comp left (pair (pair left right) c)
-
-/-- Identity restriction on ordinary codes commutes with translation from oracle programs. -/
-theorem toPartrecCode_restrictId (c : Code) :
-    (TauCeti.Oracle.Single.Code.restrictId c.toSingleOracleCode).toPartrecCode = restrictId c := by
-  rw [TauCeti.Oracle.Single.Code.restrictId, restrictId]
-  simp
+  (TauCeti.Oracle.Single.Code.restrictId c.toSingleOracleCode).toPartrecCode
 
 /-- Domain restriction of the identity is primitive recursive on ordinary codes. -/
 theorem primrec_restrictId : _root_.Primrec restrictId :=
-  (TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
-    TauCeti.Oracle.Single.Code.primrec_restrictId.comp primrec_toSingleOracleCode).of_eq
-    toPartrecCode_restrictId
+  TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
+    TauCeti.Oracle.Single.Code.primrec_restrictId.comp primrec_toSingleOracleCode
 
 /-- `restrictId c` outputs its input `x` whenever `c` halts on `x`, and diverges otherwise. -/
 theorem eval_restrictId (c : Code) (x : ℕ) :
     (restrictId c).eval x = (c.eval x).map fun _ => x := by
-  rw [← toPartrecCode_restrictId, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.eval_restrictId,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [restrictId, TauCeti.Oracle.Single.Code.eval_restrictId]
 
 /-- `restrictId c` has the same domain as `c`. -/
 @[simp]
 theorem dom_eval_restrictId (c : Code) :
     (restrictId c).eval.Dom = c.eval.Dom := by
-  rw [← toPartrecCode_restrictId, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_restrictId,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [restrictId]
 
 /-- The range of `restrictId c` is the domain of `c`. -/
 @[simp]
 theorem ran_eval_restrictId (c : Code) :
     (restrictId c).eval.ran = c.eval.Dom := by
-  rw [← toPartrecCode_restrictId, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.ran_eval_restrictId,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [restrictId]
 
 /-- Finite-union compiler on lists of ordinary codes, specialized from the uniform oracle-program
 compiler at the constant-zero oracle. -/
@@ -462,38 +387,26 @@ theorem primrec_unionList : _root_.Primrec unionList :=
 @[simp]
 theorem dom_eval_unionList (cs : List Code) :
     (unionList cs).eval.Dom = ⋃ c ∈ cs, c.eval.Dom := by
-  rw [unionList, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_unionList (fun _ => 0)]
   ext x
-  simp
+  simp [unionList]
 
-/-- Binary-union compiler on ordinary codes. -/
+/-- Binary-union compiler on ordinary codes, specialized from the uniform oracle-program compiler
+at the constant-zero oracle. -/
 noncomputable def union (cf cg : Code) : Code :=
-  unionList [cf, cg]
-
-/-- Binary union on ordinary codes commutes with translation from oracle programs. -/
-theorem toPartrecCode_union (cf cg : Code) :
-    (TauCeti.Oracle.Single.Code.union cf.toSingleOracleCode cg.toSingleOracleCode).toPartrecCode =
-      union cf cg := by
-  rw [TauCeti.Oracle.Single.Code.union, union, unionList]
-  simp
+  (TauCeti.Oracle.Single.Code.union cf.toSingleOracleCode cg.toSingleOracleCode).toPartrecCode
 
 /-- Binary union of ordinary codes is primitive recursive. -/
 theorem primrec₂_union : Primrec₂ union :=
-  (TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
+  TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
     TauCeti.Oracle.Single.Code.primrec₂_union.comp
       (primrec_toSingleOracleCode.comp _root_.Primrec.fst)
-      (primrec_toSingleOracleCode.comp _root_.Primrec.snd)).of_eq fun p =>
-    toPartrecCode_union p.1 p.2
+      (primrec_toSingleOracleCode.comp _root_.Primrec.snd)
 
 /-- The domain of `union cf cg` is the union of the domains of `cf` and `cg`. -/
 @[simp]
 theorem dom_eval_union (cf cg : Code) :
     (union cf cg).eval.Dom = cf.eval.Dom ∪ cg.eval.Dom := by
-  rw [← toPartrecCode_union, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_union (fun _ => 0),
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [union]
 
 /-- Range-to-domain compiler on ordinary codes, specialized from the uniform oracle-program
 compiler at the constant-zero oracle. -/
@@ -509,62 +422,41 @@ theorem primrec_rangeDom : _root_.Primrec rangeDom :=
 @[simp]
 theorem dom_eval_rangeDom (f : Code) :
     (rangeDom f).eval.Dom = f.eval.ran := by
-  rw [rangeDom, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_rangeDom (fun _ => 0),
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [rangeDom]
 
-/-- Partial-image compiler on ordinary codes. -/
+/-- Partial-image compiler on ordinary codes, specialized from the uniform oracle-program
+compiler at the constant-zero oracle. -/
 noncomputable def imageDom (f c : Code) : Code :=
-  rangeDom (comp f (restrictId c))
-
-/-- Partial-image compilation on ordinary codes commutes with translation from oracle programs. -/
-theorem toPartrecCode_imageDom (f c : Code) :
-    (TauCeti.Oracle.Single.Code.imageDom f.toSingleOracleCode c.toSingleOracleCode).toPartrecCode =
-      imageDom f c := by
-  rw [TauCeti.Oracle.Single.Code.imageDom, imageDom, rangeDom,
-    TauCeti.Oracle.Single.Code.restrictId, restrictId]
-  simp
+  (TauCeti.Oracle.Single.Code.imageDom f.toSingleOracleCode c.toSingleOracleCode).toPartrecCode
 
 /-- Partial-image compilation is primitive recursive on ordinary codes. -/
 theorem primrec₂_imageDom : Primrec₂ imageDom :=
-  (TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
+  TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
     TauCeti.Oracle.Single.Code.primrec₂_imageDom.comp
       (primrec_toSingleOracleCode.comp _root_.Primrec.fst)
-      (primrec_toSingleOracleCode.comp _root_.Primrec.snd)).of_eq fun p =>
-    toPartrecCode_imageDom p.1 p.2
+      (primrec_toSingleOracleCode.comp _root_.Primrec.snd)
 
 /-- The domain of `imageDom f c` is the partial image of `c.eval.Dom` under `f`. -/
 @[simp]
 theorem dom_eval_imageDom (f c : Code) :
     (imageDom f c).eval.Dom = f.eval.image c.eval.Dom := by
-  rw [← toPartrecCode_imageDom, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_imageDom (fun _ => 0),
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [imageDom]
 
-/-- Existential-projection compiler on ordinary codes. -/
+/-- Existential-projection compiler on ordinary codes, specialized from the uniform oracle-program
+compiler at the constant-zero oracle. -/
 noncomputable def projDom (c : Code) : Code :=
-  imageDom left c
-
-/-- Existential projection on ordinary codes commutes with translation from oracle programs. -/
-theorem toPartrecCode_projDom (c : Code) :
-    (TauCeti.Oracle.Single.Code.projDom c.toSingleOracleCode).toPartrecCode = projDom c := by
-  rw [TauCeti.Oracle.Single.Code.projDom, projDom, ← toPartrecCode_imageDom]
-  simp
+  (TauCeti.Oracle.Single.Code.projDom c.toSingleOracleCode).toPartrecCode
 
 /-- Existential projection on ordinary codes is primitive recursive. -/
 theorem primrec_projDom : _root_.Primrec projDom :=
-  (TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
-    TauCeti.Oracle.Single.Code.primrec_projDom.comp primrec_toSingleOracleCode).of_eq
-    toPartrecCode_projDom
+  TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
+    TauCeti.Oracle.Single.Code.primrec_projDom.comp primrec_toSingleOracleCode
 
 /-- The domain of `projDom c` is the first-coordinate projection of `c.eval.Dom` under Cantor
 pairing. -/
 @[simp]
 theorem dom_eval_projDom (c : Code) :
     (projDom c).eval.Dom = {x | ∃ y, Nat.pair x y ∈ c.eval.Dom} := by
-  rw [← toPartrecCode_projDom, ← eval_zero_oracle_eq,
-    TauCeti.Oracle.Single.Code.dom_eval_projDom (fun _ => 0),
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  simp [projDom]
 
 end Nat.Partrec.Code

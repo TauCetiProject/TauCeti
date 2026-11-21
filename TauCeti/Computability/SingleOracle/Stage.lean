@@ -193,6 +193,14 @@ theorem primrec_evalStage {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ)
       Primrec.ite (nat_lt.comp (Halt.primrec_output.comp snd) (hs.comp fst))
         (option_some.comp snd) (const none)) (const none)
 
+/-- Halting of bounded oracle simulation is primitive recursive in any primitive-recursive family
+of oracle answers, the program, the stage, and the input. -/
+theorem primrec₂_evalStage_isSome {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
+    Primrec₂ fun (p : α × Code × ℕ) x => (evalStage (σ p.1) p.2.2 p.2.1 x).isSome :=
+  option_isSome.comp <| (primrec_evalStage hσ).comp <|
+    (fst.comp fst).pair <| (snd.comp (snd.comp fst)).pair <|
+      (fst.comp (snd.comp fst)).pair snd
+
 /-- Normalized evaluation on finite strings is primitive recursive. Missing answers are not
 replaced by zero. -/
 theorem primrec_evalStage_list :

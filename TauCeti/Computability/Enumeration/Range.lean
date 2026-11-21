@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Computability.Enumeration.Domain
 import Mathlib.Data.Set.Finite.Basic
-import TauCeti.Computability.RE
+import TauCeti.Computability.Enumeration.Closure
 
 /-!
 # Total, partial-range, and injective enumerations of c.e. sets
@@ -191,21 +191,8 @@ computable function `ℕ →. α`. Unlike `REPred.exists_computable_range`, this
 set as well. -/
 theorem rePred_iff_exists_partrec_ran {α : Type*} [Primcodable α] {S : Set α} :
     REPred (· ∈ S) ↔ ∃ f : ℕ →. α, Partrec f ∧ f.ran = S := by
-  refine ⟨fun hS => ?_, fun ⟨f, hf, hran⟩ => hran ▸ hf.rePred_mem_ran⟩
-  let f : ℕ →. α := fun n =>
-    (Part.ofOption (Encodable.decode (α := α) n)).bind fun x =>
-      (Part.assert (x ∈ S) fun _ => Part.some ()).map fun _ => x
-  have hf : Partrec f :=
-    Computable.decode.ofOption.bind
-      ((hS.comp Computable.snd).map (Computable.snd.comp Computable.fst).to₂).to₂
-  refine ⟨f, hf, Set.ext fun y => ?_⟩
-  simp only [PFun.ran, Set.mem_ofPred_eq, f, Part.mem_bind_iff, Part.mem_ofOption]
-  constructor
-  · rintro ⟨n, x, _, hy⟩
-    obtain ⟨_, hxS, rfl⟩ := (Part.mem_map_iff _).1 hy
-    exact (Part.mem_assert_iff.1 hxS).1
-  · intro hy
-    exact ⟨Encodable.encode y, y, Encodable.encodek y,
-      (Part.mem_map_iff _).2 ⟨(), Part.mem_assert_iff.2 ⟨hy, Part.mem_some ()⟩, rfl⟩⟩
+  simpa [TauCeti.ArithmeticalHierarchy.isSigma_one_empty_iff_rePred] using
+    TauCeti.ArithmeticalHierarchy.isSigma_one_iff_exists_recursiveIn_ran (Z := (∅ : Set ℕ))
+      (S := S)
 
 end TauCeti.Enumeration

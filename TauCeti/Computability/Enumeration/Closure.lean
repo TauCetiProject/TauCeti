@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Computability.Enumeration.IndexClosure
 public import TauCeti.Computability.Hierarchy.One
-import TauCeti.Data.PFun.Basic
 
 /-!
 # Semantic closure properties for relative Σ⁰₁ sets
@@ -50,10 +49,9 @@ theorem isSigma_one_mem_ran {f : α →. β} (hf : RecursiveIn {Z.oracle} f) :
     IsSigma Z 1 (· ∈ f.ran) := by
   unfold RecursiveIn at hf
   obtain ⟨c, hc⟩ := Code.exists_code.1 hf
-  have hor : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext Z.oracle_apply
   have heq : ∀ y : β, encode y ∈ (Code.eval Z.oracle (Code.rangeDom c)).Dom ↔ y ∈ f.ran := by
     intro y
-    rw [hor, Code.dom_eval_rangeDom, ← hor, hc]
+    rw [Set.oracle_eq_indicator Z, Code.dom_eval_rangeDom, ← Set.oracle_eq_indicator Z, hc]
     simp only [PFun.ran, Set.mem_ofPred_eq, Part.mem_bind_iff, Part.mem_map_iff]
     constructor
     · rintro ⟨n, x, _, y', hy', heq⟩
@@ -72,11 +70,11 @@ theorem isSigma_one_mem_image {f : α →. β} {S : Set α} (hf : RecursiveIn {Z
   obtain ⟨g, hg, hSdom⟩ := hS.exists_recursiveIn_domain
   unfold RecursiveIn at hg
   obtain ⟨cg, hcg⟩ := Code.exists_code.1 hg
-  have hor : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext Z.oracle_apply
   have heq : ∀ y : β, encode y ∈ (Code.eval Z.oracle (Code.imageDom cf cg)).Dom ↔
       y ∈ f.image S := by
     intro y
-    rw [hor, Code.dom_eval_imageDom, ← hor, PFun.mem_image, PFun.mem_image, hcf, hcg]
+    rw [Set.oracle_eq_indicator Z, Code.dom_eval_imageDom, ← Set.oracle_eq_indicator Z,
+      PFun.mem_image, PFun.mem_image, hcf, hcg]
     constructor
     · rintro ⟨n, hnS, hnf⟩
       obtain ⟨x, hx, hy⟩ := Part.mem_bind_iff.1 hnf
