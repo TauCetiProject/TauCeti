@@ -39,8 +39,10 @@ multiplication.
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
-* `Matrix.transpose_map_op_mul`, `Matrix.transpose_map_unop_mul`, `Matrix.op_comp_mulVec`:
-  opposite-entry transpose reverses matrix multiplication and intertwines `mulVec` with `vecMul`.
+* `Matrix.transpose_map_op_mul`, `Matrix.transpose_map_unop_mul`, `Matrix.op_comp_mulVec`,
+  `Matrix.transpose_map_op_map_ringHom_op`: opposite-entry transpose reverses matrix
+  multiplication, intertwines `mulVec` with `vecMul`, and commutes with entrywise ring
+  homomorphisms.
 -/
 
 public section
@@ -155,6 +157,12 @@ theorem op_comp_mulVec [NonUnitalNonAssocSemiring R] [Fintype n]
     op ∘ (M *ᵥ v) = (op ∘ v) ᵥ* M.transpose.map op := by
   ext i
   simp [mulVec, vecMul, dotProduct]
+
+/-- Applying `RingHom.op f` entrywise to `Mᵀ.map op` commutes with `(·)ᵀ.map op`. -/
+theorem transpose_map_op_map_ringHom_op {S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    (M : Matrix m n R) (f : R →+* S) :
+    (M.transpose.map op).map (RingHom.op f) = (M.map f).transpose.map op :=
+  rfl
 
 end Matrix
 

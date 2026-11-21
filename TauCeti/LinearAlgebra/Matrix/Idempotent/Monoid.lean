@@ -11,8 +11,6 @@ public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Equivalence
 public import TauCeti.RingTheory.Idempotents.Matrix
 
-import Mathlib.Algebra.Module.Equiv.Opposite
-
 /-!
 # The commutative monoid of idempotent matrices up to rectangular equivalence
 
@@ -76,20 +74,16 @@ section MatrixLemmas
 has right `R`-rank `Fintype.card m`. -/
 theorem Matrix.finrank_range_mulVecBilin_one (R : Type*) [Semiring R] [StrongRankCondition Rᵐᵒᵖ]
     (m : Type*) [Fintype m] [DecidableEq m] :
-    Module.finrank Rᵐᵒᵖ (range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) = Fintype.card m := by
-  let e : range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] (m → Rᵐᵒᵖ) :=
-    (rangeMulVecBilinOneEquiv m R).trans (LinearEquiv.piCongrRight fun _ ↦ opLinearEquiv Rᵐᵒᵖ)
-  exact e.finrank_eq.trans (Module.finrank_fintype_fun_eq_card Rᵐᵒᵖ)
+    Module.finrank Rᵐᵒᵖ (range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) = Fintype.card m :=
+  (rangeMulVecBilinOneEquiv m R).finrank_eq.trans (Module.finrank_fintype_fun_eq_card Rᵐᵒᵖ)
 
 /-- Whenever `Rᵐᵒᵖ` satisfies the strong rank condition, the column range of any diagonal matrix
 unit `Eᵢᵢ` has right `R`-rank `1`. -/
 theorem Matrix.finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R]
     [StrongRankCondition Rᵐᵒᵖ] {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
-    Module.finrank Rᵐᵒᵖ (range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 := by
-  have heq := isAlgebraicEquivalent_single_one_one (R := R) i
-  obtain ⟨ψ⟩ := (isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin
-    (isIdempotentElem_single_one i) IsIdempotentElem.one).mp heq
-  exact ψ.finrank_eq.trans (finrank_range_mulVecBilin_one R (Fin 1))
+    Module.finrank Rᵐᵒᵖ (range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=
+  (isAlgebraicEquivalent_single_one_one (R := R) i).finrank_range_mulVecBilin_eq.trans
+    (finrank_range_mulVecBilin_one R (Fin 1))
 
 end MatrixLemmas
 
@@ -166,6 +160,13 @@ theorem induction_on {motive : IdempotentMonoid R → Prop} (x : IdempotentMonoi
   refine Quotient.inductionOn x fun a ↦ ?_
   rw [mk_eq_of]
   exact of a.1 a.2.val a.2.property
+
+/-- Two functions out of `IdempotentMonoid R` that agree on every `Fin n` representative are
+equal. -/
+theorem fun_ext {α : Sort*} {f g : IdempotentMonoid R → α}
+    (h : ∀ (n : ℕ) (e : Matrix (Fin n) (Fin n) R) (he : IsIdempotentElem e),
+      f (of e he) = g (of e he)) : f = g :=
+  funext fun x ↦ induction_on x h
 
 /-- Descend a function on `Fin n`-indexed idempotent matrices that is invariant under rectangular
 algebraic equivalence to `IdempotentMonoid R`. -/
@@ -300,6 +301,14 @@ noncomputable instance [Subsingleton R] : Unique (IdempotentMonoid R) where
     induction x using induction_on with | of n e he =>
     exact of_eq_zero_iff.mpr (Subsingleton.elim e 0)
 
+/-- Two additive monoid homomorphisms out of `IdempotentMonoid R` that agree on every `Fin n`
+representative are equal. -/
+@[ext]
+theorem hom_ext {M : Type*} [AddZeroClass M] {f g : IdempotentMonoid R →+ M}
+    (h : ∀ (n : ℕ) (e : Matrix (Fin n) (Fin n) R) (he : IsIdempotentElem e),
+      f (of e he) = g (of e he)) : f = g :=
+  DFunLike.coe_injective (fun_ext h)
+
 section Map
 
 variable {S T F G : Type*} [NonUnitalSemiring S] [NonUnitalSemiring T]
@@ -341,16 +350,14 @@ theorem map_of {ι : Type*} [Fintype ι] [FunLike F R S] [NonUnitalRingHomClass 
 @[simp]
 theorem map_nonUnitalRingHom_id :
     map (NonUnitalRingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
-  ext x
-  induction x using induction_on with | of n e he =>
+  ext n e he
   rw [map_of, AddMonoidHom.id_apply]
   exact of_congr_matrix _ _ (by ext; simp)
 
 theorem map_comp [FunLike F R S] [NonUnitalRingHomClass F R S] [FunLike G S T]
     [NonUnitalRingHomClass G S T] (φ : F) (ψ : G) :
     (map ψ).comp (map φ) = map ((ψ : S →ₙ+* T).comp (φ : R →ₙ+* S)) := by
-  ext x
-  induction x using induction_on with | of n e he =>
+  ext n e he
   rw [AddMonoidHom.comp_apply, map_of, map_of, map_of]
   exact of_congr_matrix _ _ (by ext; rfl)
 
@@ -361,13 +368,15 @@ noncomputable def congr (e : R ≃+* S) :
   invFun := map e.symm.toNonUnitalRingHom
   map_add' := map_add (map e.toNonUnitalRingHom)
   left_inv x := by
-    induction x using induction_on with | of n M hM =>
-    rw [map_of, map_of]
-    exact of_congr_matrix _ _ (by ext; simp)
+    have hcomp := (map_comp e.toNonUnitalRingHom e.symm.toNonUnitalRingHom).trans
+      (congrArg map (NonUnitalRingHom.ext (fun a ↦ e.symm_apply_apply a) :
+        _ = NonUnitalRingHom.id R))
+    exact DFunLike.congr_fun (hcomp.trans map_nonUnitalRingHom_id) x
   right_inv y := by
-    induction y using induction_on with | of n M hM =>
-    rw [map_of, map_of]
-    exact of_congr_matrix _ _ (by ext; simp)
+    have hcomp := (map_comp e.symm.toNonUnitalRingHom e.toNonUnitalRingHom).trans
+      (congrArg map (NonUnitalRingHom.ext (fun a ↦ e.apply_symm_apply a) :
+        _ = NonUnitalRingHom.id S))
+    exact DFunLike.congr_fun (hcomp.trans map_nonUnitalRingHom_id) y
 
 @[simp]
 theorem congr_of {ι : Type*} [Fintype ι] (φ : R ≃+* S)
@@ -388,11 +397,8 @@ namespace IdempotentMonoid
 variable {R : Type u} [Semiring R]
 
 @[simp]
-theorem map_id : map (RingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
-  ext x
-  induction x using induction_on with | of n e he =>
-  rw [map_of, AddMonoidHom.id_apply]
-  exact of_congr_matrix _ _ (by ext; simp)
+theorem map_id : map (RingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) :=
+  (DFunLike.coe_injective rfl).trans map_nonUnitalRingHom_id
 
 /-- Conjugating an idempotent matrix by an invertible matrix preserves its class in
 `IdempotentMonoid R`. -/
@@ -449,23 +455,13 @@ namespace IdempotentMonoid
 
 variable (D : Type u) [DivisionRing D]
 
-private theorem finrank_range_mulVecBilin_congr {ι κ : Type*} [Fintype ι] [Fintype κ]
-    {e : Matrix ι ι D} {f : Matrix κ κ D} (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (h : e.IsAlgebraicEquivalent f) :
-    Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) =
-      Module.finrank Dᵐᵒᵖ (range (f.mulVecBilin D Dᵐᵒᵖ)) := by
-  obtain ⟨ψ⟩ := (isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin he hf).mp h
-  exact ψ.finrank_eq
-
 private noncomputable def finrankFun : IdempotentMonoid D → ℕ :=
   lift (fun _ e _ ↦ Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)))
-    fun _ _ _ _ he hg h ↦ finrank_range_mulVecBilin_congr D he hg h
+    fun _ _ _ _ _ _ h ↦ h.finrank_range_mulVecBilin_eq
 
 private theorem finrankFun_of {ι : Type*} [Fintype ι] (e : Matrix ι ι D) (he : IsIdempotentElem e) :
     finrankFun D (of e he) = Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) :=
-  finrank_range_mulVecBilin_congr D
-    (he.isAlgebraicEquivalent_reindex (Fintype.equivFin ι)).isIdempotentElem_left he
-    (he.isAlgebraicEquivalent_reindex (Fintype.equivFin ι))
+  (he.isAlgebraicEquivalent_reindex (Fintype.equivFin ι)).finrank_range_mulVecBilin_eq
 
 /-- Right column-range dimension as an additive monoid homomorphism `IdempotentMonoid D →+ ℕ`. -/
 private noncomputable def finrankHom : IdempotentMonoid D →+ ℕ where

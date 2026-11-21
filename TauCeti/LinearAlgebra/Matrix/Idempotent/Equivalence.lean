@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.InvariantBasisNumber
 public import TauCeti.Algebra.Module.StableEquivalent
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 
-import Mathlib.Algebra.Module.Equiv.Opposite
 import TauCeti.Data.Matrix.Block
 import TauCeti.Data.Matrix.Mul
 
@@ -57,9 +56,10 @@ This file establishes the calculus of rectangular algebraic equivalence:
 * `Matrix.isAlgebraicEquivalent_one_iff`, `Matrix.not_isAlgebraicEquivalent_single_one_zero`, and
   `Matrix.not_isAlgebraicEquivalent_single_one_one`: size invariance of identity matrices and
   separation of rank-one matrix units `Eᵢᵢ` from `0` and `1` under invariant basis number.
-* `Matrix.isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin` and
-  `Matrix.isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_vecMulLinear`: equivalence matches
-  isomorphism of column right-modules and of row left-modules.
+* `Matrix.isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin`,
+  `Matrix.isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_vecMulLinear`, and
+  `Matrix.IsAlgebraicEquivalent.finrank_range_mulVecBilin_eq`: equivalence matches isomorphism of
+  column right-modules and of row left-modules, and preserves column-range rank.
 * `Matrix.isAlgebraicEquivalent_iff_exists_units_conj_fromBlocks_zero`: algebraic equivalence of an
   idempotent `e` with `f` is unit conjugacy of `e ⊕ 0` and `0 ⊕ f`.
 * `Matrix.stableEquivalent_range_mulVecBilin_iff` and
@@ -153,20 +153,7 @@ matrix. -/
 theorem _root_.IsIdempotentElem.isAlgebraicEquivalent_reindex [Fintype m] [Fintype m']
     [Mul R] [AddCommMonoid R] {e : Matrix m m R} (he : IsIdempotentElem e) (σ : m ≃ m') :
     (e.reindex σ σ).IsAlgebraicEquivalent e := by
-  have he' (a b : m) : ∑ k, e a k * e k b = e a b := congrFun (congrFun he.eq a) b
-  refine ⟨e.submatrix σ.symm _root_.id, e.submatrix _root_.id σ.symm, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · ext i j; simp [Matrix.mul_apply, he']
-  · ext i j
-    simp only [Matrix.mul_apply, submatrix_apply, id_eq]
-    exact (σ.symm.sum_comp fun x ↦ e i x * e x j).trans (he' i j)
-  · ext i j
-    simp only [Matrix.mul_apply, reindex_apply, submatrix_apply, id_eq]
-    exact (σ.symm.sum_comp fun x ↦ e (σ.symm i) x * e x j).trans (he' (σ.symm i) j)
-  · ext i j; simp [Matrix.mul_apply, he']
-  · ext i j; simp [Matrix.mul_apply, he']
-  · ext i j
-    simp only [Matrix.mul_apply, reindex_apply, submatrix_apply, id_eq]
-    exact (σ.symm.sum_comp fun x ↦ e i x * e x (σ.symm j)).trans (he' i (σ.symm j))
+  simpa using he.isAlgebraicEquivalent_self.reindex σ (Equiv.refl m)
 
 end Defs
 
@@ -447,6 +434,16 @@ theorem isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin [Fintyp
     fun ⟨ψ⟩ ↦ ⟨e.rangeMulVecBilinEquivRangeVecMulLinear.symm.trans
       (ψ.trans f.rangeMulVecBilinEquivRangeVecMulLinear)⟩⟩
 
+/-- Rectangularly algebraically equivalent matrices have equal right `R`-rank on their column
+ranges. -/
+theorem IsAlgebraicEquivalent.finrank_range_mulVecBilin_eq [Fintype m] [Fintype n]
+    {e : Matrix m m R} {f : Matrix n n R} (h : e.IsAlgebraicEquivalent f) :
+    Module.finrank Rᵐᵒᵖ (range (e.mulVecBilin R Rᵐᵒᵖ)) =
+      Module.finrank Rᵐᵒᵖ (range (f.mulVecBilin R Rᵐᵒᵖ)) := by
+  obtain ⟨ψ⟩ := (isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin
+    h.isIdempotentElem_left h.isIdempotentElem_right).mp h
+  exact ψ.finrank_eq
+
 /-- **Stable equivalence of column ranges in matrix form.** For idempotent matrices `e` and `f`,
 their column ranges are stably equivalent right `R`-modules if and only if `e ⊕ 1ₖ` and `f ⊕ 1ₖ`
 are algebraically equivalent for some `k : ℕ`. -/
@@ -461,14 +458,10 @@ theorem stableEquivalent_range_mulVecBilin_iff [Fintype m] [Fintype n]
   rw [isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin
     (he.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.one)
     (hf.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.one)]
-  let freeEq : range ((1 : Matrix (Fin k) (Fin k) R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ]
-      (Fin k → Rᵐᵒᵖ) :=
-    (rangeMulVecBilinOneEquiv (Fin k) R).trans
-      (LinearEquiv.piCongrRight fun _ ↦ opLinearEquiv Rᵐᵒᵖ)
   let eqLeft := (rangeMulVecBilinFromBlocksEquiv e (1 : Matrix (Fin k) (Fin k) R)).trans
-    ((LinearEquiv.refl Rᵐᵒᵖ _).prodCongr freeEq)
+    ((LinearEquiv.refl Rᵐᵒᵖ _).prodCongr (rangeMulVecBilinOneEquiv (Fin k) R))
   let eqRight := (rangeMulVecBilinFromBlocksEquiv f (1 : Matrix (Fin k) (Fin k) R)).trans
-    ((LinearEquiv.refl Rᵐᵒᵖ _).prodCongr freeEq)
+    ((LinearEquiv.refl Rᵐᵒᵖ _).prodCongr (rangeMulVecBilinOneEquiv (Fin k) R))
   exact ⟨fun ⟨ψ⟩ ↦ ⟨eqLeft.trans (ψ.trans eqRight.symm)⟩,
     fun ⟨ψ⟩ ↦ ⟨eqLeft.symm.trans (ψ.trans eqRight)⟩⟩
 
