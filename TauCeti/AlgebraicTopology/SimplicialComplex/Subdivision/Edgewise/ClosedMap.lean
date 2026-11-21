@@ -41,20 +41,21 @@ variable {ι : Type*} [LinearOrder ι] {K : AbstractSimplicialComplex ι} {k : �
 /-- In the canonical edgewise barycentric formula, every tuple in the source support has all
 its entries in the target support. This uses nonnegativity, not injectivity of the map. -/
 theorem edgewiseVertex_entries_mem_support_of_formula
-    (hformula : ∀ x, (f x).1 = Finsupp.linearCombination ℝ
-      (fun u : K.toPreAbstractSimplicialComplex.EdgewiseVertex k => TauCeti.edgewisePoint u.1) x.1)
+    (hformula : ∀ x, (f x).val = Finsupp.linearCombination ℝ
+      (fun u : K.toPreAbstractSimplicialComplex.EdgewiseVertex k => TauCeti.edgewisePoint u.val)
+          x.val)
     (x : Realization (K.toPreAbstractSimplicialComplex.edgewiseSubdivision k))
-    {u : K.toPreAbstractSimplicialComplex.EdgewiseVertex k} (hu : u ∈ x.1.support)
-    (l : Fin k) : u.1 l ∈ (f x).1.support := by
-  have hxpos : 0 < x.1 u := lt_of_le_of_ne
+    {u : K.toPreAbstractSimplicialComplex.EdgewiseVertex k} (hu : u ∈ x.val.support)
+    (l : Fin k) : u.val l ∈ (f x).val.support := by
+  have hxpos : 0 < x.val u := lt_of_le_of_ne
     (Realization.nonneg _ x u) (Ne.symm (Finsupp.mem_support_iff.mp hu))
   have hnonneg (w : K.toPreAbstractSimplicialComplex.EdgewiseVertex k) (i : ι) :
-      0 ≤ TauCeti.edgewisePoint w.1 i := by
+      0 ≤ TauCeti.edgewisePoint w.val i := by
     rw [TauCeti.edgewisePoint_apply]
     positivity
-  have hupos : 0 < TauCeti.edgewisePoint u.1 (u.1 l) :=
+  have hupos : 0 < TauCeti.edgewisePoint u.val (u.val l) :=
     lt_of_le_of_ne (hnonneg u _) (Ne.symm (Finsupp.mem_support_iff.mp
-      (TauCeti.support_edgewisePoint u.1 ▸ Finset.mem_image.mpr ⟨l, mem_univ l, rfl⟩)))
+      (TauCeti.support_edgewisePoint u.val ▸ Finset.mem_image.mpr ⟨l, mem_univ l, rfl⟩)))
   apply Finsupp.mem_support_iff.mpr
   apply ne_of_gt
   rw [hformula, Finsupp.linearCombination_apply]
@@ -66,16 +67,16 @@ theorem edgewiseVertex_entries_mem_support_of_formula
 /-- A continuous map with the canonical edgewise barycentric formula is closed for the weak
 realization topologies, including for infinite complexes. -/
 theorem isClosedMap_of_edgewisePoint_formula (hf : Continuous f)
-    (hformula : ∀ x, (f x).1 = Finsupp.linearCombination ℝ
+    (hformula : ∀ x, (f x).val = Finsupp.linearCombination ℝ
       (fun u : K.toPreAbstractSimplicialComplex.EdgewiseVertex k =>
-        TauCeti.edgewisePoint u.1) x.1) :
+        TauCeti.edgewisePoint u.val) x.val) :
     IsClosedMap f := by
   apply isClosedMap_of_isCompact_preimage_faceInclusion hf
   intro σ
   have hclosed : IsClosed (f ⁻¹' range (faceInclusion K σ)) :=
     (isCompact_range (continuous_faceInclusion K σ)).isClosed.preimage hf
   have hc := (K.toPreAbstractSimplicialComplex.edgewiseSubdivision k).isCompact_setOf_support_subset
-    _ (K.toPreAbstractSimplicialComplex.finite_edgewiseVertex_entries_subset k σ.1)
+    _ (K.toPreAbstractSimplicialComplex.finite_edgewiseVertex_entries_subset k σ.val)
   apply hc.of_isClosed_subset hclosed
   rintro x ⟨y, hy⟩ u hu l
   have hmem := edgewiseVertex_entries_mem_support_of_formula hformula x hu l

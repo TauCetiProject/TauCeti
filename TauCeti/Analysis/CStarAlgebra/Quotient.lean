@@ -35,6 +35,7 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `TwoSidedIdeal.Quotient.nonUnitalCStarAlgebra` and `TwoSidedIdeal.Quotient.cstarAlgebra`: C⋆-norm
   and C⋆-algebra instances on `A ⧸ I` for a closed two-sided ideal `I : TwoSidedIdeal A`.
 * `TwoSidedIdeal.Quotient.mkStarAlgHom`, `TwoSidedIdeal.Quotient.liftStarAlgHom`,
+<<<<<<< HEAD
   `TwoSidedIdeal.Quotient.factorStarAlgHom`, `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`, and
   `TwoSidedIdeal.Quotient.opStarAlgEquiv`: universal `⋆`-homomorphisms and `⋆`-equivalences on
   C⋆-quotients. `mkStarAlgHom` and `liftStarAlgHom` have unital counterparts
@@ -42,6 +43,16 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `NonUnitalStarAlgHom.isClosed_range`, `StarAlgHom.isClosed_range`,
   `TwoSidedIdeal.isClosed_map_mk`, and `TwoSidedIdeal.isClosed_sup`: `⋆`-homomorphism ranges,
   images of closed ideals in quotients, and sums `I ⊔ J` of closed ideals are automatically closed.
+=======
+  `TwoSidedIdeal.Quotient.factorStarAlgHom`, and `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`:
+  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
+  `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
+  `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
+* `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
+  `⋆`-algebra homomorphism between C⋆-algebras is closed.
+* `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
+  of another is dominated by it in norm.
+>>>>>>> origin/main
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
   and `NonUnitalStarAlgHom.surjective_of_denseRange` (plus `StarAlgHom` counterparts): isometric
   first `⋆`-isomorphism theorem and surjectivity from dense range.
@@ -149,7 +160,7 @@ instance instCStarRing : CStarRing (A ⧸ I) where
     -- `TauCeti.CStarAlgebra.norm_sub_mul_sq_le` for the positive contraction `e`.
     have hmk_eq : mk I a = mk I (a - a * (e : A)) := by
       rw [map_sub, eq_zero_iff_mem.mpr
-        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.2)), sub_zero]
+        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.property)), sub_zero]
     calc
       ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
         rw [hmk_eq]
@@ -260,19 +271,25 @@ theorem factorStarAlgHom_surjective {I J : TwoSidedIdeal A} [IsClosed (I : Set A
   liftStarAlgHom_surjective_of_surjective _ (mkStarAlgHom_surjective J)
 
 @[simp]
-theorem factorStarAlgHom_refl (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
-    factorStarAlgHom (le_refl I) = NonUnitalStarAlgHom.id ℂ (A ⧸ I) := by
-  refine NonUnitalStarAlgHom.ext fun x => ?_
-  obtain ⟨a, rfl⟩ := mk_surjective I x
-  simp
+theorem factorStarAlgHom_refl {I : TwoSidedIdeal A} [IsClosed (I : Set A)] :
+    factorStarAlgHom (le_refl I) = NonUnitalStarAlgHom.id ℂ (A ⧸ I) :=
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
 
 @[simp]
 theorem factorStarAlgHom_comp {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) :
-    (factorStarAlgHom h₂).comp (factorStarAlgHom h₁) = factorStarAlgHom (h₁.trans h₂) := by
-  refine NonUnitalStarAlgHom.ext fun x => ?_
-  obtain ⟨a, rfl⟩ := mk_surjective I x
-  simp
+    (factorStarAlgHom h₂).comp (factorStarAlgHom h₁) = factorStarAlgHom (h₁.trans h₂) :=
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
+
+@[simp]
+theorem factorStarAlgHom_comp_apply {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) (x : A ⧸ I) :
+    factorStarAlgHom h₂ (factorStarAlgHom h₁ x) = factorStarAlgHom (h₁.trans h₂) x :=
+  DFunLike.congr_fun (factorStarAlgHom_comp h₁ h₂) x
 
 /-- Isometric `⋆`-algebra equivalence between C⋆-quotients by equal closed two-sided ideals. -/
 noncomputable def quotStarAlgEquivOfEq {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
@@ -295,10 +312,8 @@ theorem quotStarAlgEquivOfEq_mk {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem quotStarAlgEquivOfEq_symm {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] (h : I = J) :
-    (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm := by
-  ext x
-  obtain ⟨a, rfl⟩ := mk_surjective J x
-  exact (factorStarAlgHom_mk h.ge a).trans (quotStarAlgEquivOfEq_mk h.symm a).symm
+    (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm :=
+  (rfl)
 
 /-- Canonical isometric `⋆`-algebra isomorphism `(A ⧸ I)ᵐᵒᵖ ≃⋆ₐ[ℂ] Aᵐᵒᵖ ⧸ I.op` identifying the
 opposite of a C⋆-quotient with the quotient of `Aᵐᵒᵖ` by `I.op`. -/
@@ -372,12 +387,16 @@ theorem mkUnitalStarAlgHom_apply (a : A) : mkUnitalStarAlgHom I a = mk I a :=
 
 @[simp]
 theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
-    (mkUnitalStarAlgHom I).toNonUnitalStarAlgHom = mkStarAlgHom I := by
-  ext a
-  rfl
+    (mkUnitalStarAlgHom I).toNonUnitalStarAlgHom = mkStarAlgHom I :=
+  (rfl)
 
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
+
+@[simp]
+theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I := by
+  ext a
+  simp [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/
@@ -410,9 +429,8 @@ theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (h
 @[simp]
 theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
     (liftUnitalStarAlgHom I f hf).toNonUnitalStarAlgHom =
-      liftStarAlgHom I f.toNonUnitalStarAlgHom hf := by
-  ext x
-  rfl
+      liftStarAlgHom I f.toNonUnitalStarAlgHom hf :=
+  (rfl)
 
 end Unital
 
@@ -445,13 +463,9 @@ theorem isometry_quotientKerHom : Isometry φ.quotientKerHom :=
 
 @[simp]
 theorem range_quotientKerHom : Set.range φ.quotientKerHom = Set.range φ := by
-  ext b
-  constructor
-  · rintro ⟨x, rfl⟩
-    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) x
-    exact ⟨a, (φ.quotientKerHom_mk a).symm⟩
-  · rintro ⟨a, rfl⟩
-    exact ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a, φ.quotientKerHom_mk a⟩
+  simpa only [Function.comp_def, φ.quotientKerHom_mk] using
+    ((TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ)).range_comp
+      φ.quotientKerHom).symm
 
 /-- Every `⋆`-algebra homomorphism between C⋆-algebras has closed range as a subset of `B`. -/
 theorem isClosed_setRange : IsClosed (Set.range φ) := by
@@ -509,6 +523,30 @@ theorem isClosed_image_ideal (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     simp [Set.mem_image, Set.mem_range]
   rw [hrange]
   exact (φ.comp I.starAlgHom).isClosed_setRange
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {F G A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C] [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+  [FunLike G A C] [NonUnitalAlgHomClass G ℂ A C] [StarHomClass G A C]
+
+/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
+`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
+theorem norm_apply_le_norm_apply_of_ker_le {φ : F} {ψ : G}
+    (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) : ‖ψ a‖ ≤ ‖φ a‖ := by
+  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
+  let φ' : A →⋆ₙₐ[ℂ] B := ofClass φ
+  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ') (ofClass ψ) fun b hb =>
+    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
+  -- `ofClass φ` and `ofClass ψ` agree with `φ` and `ψ` definitionally
+  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ :=
+        congrArg norm (TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ (ofClass ψ) _ a).symm
+    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ') a‖ :=
+        NonUnitalStarAlgHom.norm_apply_le q _
+    _ = ‖φ a‖ := (φ'.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _) _).symm.trans
+        (congrArg norm (φ'.quotientKerHom_mk a))
 
 end NonUnitalStarAlgHom
 

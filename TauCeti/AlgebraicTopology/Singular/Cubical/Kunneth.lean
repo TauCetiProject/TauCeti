@@ -261,7 +261,8 @@ theorem cubicalHomologyKunneth_comp_cubicalHomologyToTor (m : ℕ) :
     cubicalHomologyKunneth k X Y (m + 1) ≫ cubicalHomologyToTor k X Y m = 0 := by
   rw [cubicalHomologyToTor_def, cubicalHomologyKunneth_def, Category.assoc,
     IsIso.hom_inv_id_assoc]
-  exact homologyKunneth_comp_homologyToTor _ _ m
+  exact homologyKunneth_comp_homologyToTor ((normalizedCubicalChainComplex k).obj X)
+    ((normalizedCubicalChainComplex k).obj Y) m
 
 /-- The Künneth short complex of cubical homology,
 `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`,

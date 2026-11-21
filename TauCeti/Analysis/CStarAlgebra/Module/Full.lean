@@ -457,7 +457,7 @@ theorem innerIdeal_innerIdeal : innerIdeal (innerIdeal A E) E = ⊤ := by
   ext z
   simp only [TwoSidedIdeal.mem_top, iff_true]
   rw [mem_innerIdeal_iff, closure_subtype, image_coe_innerSubmodule_innerIdeal, ← coe_innerIdeal]
-  exact z.2
+  exact z.property
 
 /-- Every Hilbert C⋆-module `E` is full as a Hilbert module over `innerIdeal A E`. -/
 theorem isFull_innerIdeal : IsFull (innerIdeal A E) E :=
@@ -527,7 +527,7 @@ theorem rightInnerIdeal_rightInnerIdeal :
   ext z
   simp only [TwoSidedIdeal.mem_top, iff_true]
   rw [← SetLike.mem_coe, coe_rightInnerIdeal, closure_subtype, himg, ← coe_rightInnerIdeal]
-  exact z.2
+  exact z.property
 
 /-- Every right Hilbert `A`-module `E` is full over `rightInnerIdeal A E`. -/
 theorem isFull_rightInnerIdeal : IsFull (rightInnerIdeal A E)ᵐᵒᵖ E :=

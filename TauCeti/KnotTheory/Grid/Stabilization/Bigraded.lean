@@ -42,11 +42,11 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 /-- The stabilization comparison on chains preserves both gradings. -/
 theorem stabilizeXChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
     {c : GridChainMinus R (n + 1)} (hc : c ∈ bigradedChainMinusPiece
-      ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-        (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g) :
-    G.1.stabilizeXChainMap s R c ∈ G.bigradedChainMinusPiece R g := by
-  have hG' : G.stabilizeX s = ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-      (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ := Subtype.ext (G.val_stabilizeX s)
+      ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+        (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g) :
+    G.val.stabilizeXChainMap s R c ∈ G.bigradedChainMinusPiece R g := by
+  have hG' : G.stabilizeX s = ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+      (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ := Subtype.ext (G.val_stabilizeX s)
   rw [← hG'] at hc
   rw [GridDiagram.stabilizeXChainMap_apply]
   exact G.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece s R hc
@@ -55,11 +55,11 @@ variable [CharP R 2]
 
 /-- The stabilization comparison on homology preserves both O-Maslov and Alexander degrees. -/
 theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
-    {y : (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomology R}
+    {y : (G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomology R}
     (hy : y ∈ bigradedUnblockedHomologyPiece
-      ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-        (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g) :
-    G.1.stabilizeXHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g := by
+      ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+        (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g) :
+    G.val.stabilizeXHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g := by
   obtain ⟨z, hz, rfl⟩ := (mem_bigradedUnblockedHomologyPiece_iff _ R).mp hy
   rw [GridDiagram.stabilizeXHomologyMap_unblockedHomologyClass]
   exact G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R
@@ -68,14 +68,14 @@ theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ
 /-- The comparison reflects homology bidegrees as well as preserving them. -/
 @[simp]
 theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece_iff (g : ℤ × ℤ)
-    (y : (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomology R) :
-    G.1.stabilizeXHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g ↔
+    (y : (G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomology R) :
+    G.val.stabilizeXHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g ↔
       y ∈ bigradedUnblockedHomologyPiece
-        ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-          (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g := by
-  let G' : OddComponentGridDiagram (n + 1) := ⟨G.1.stabilizeX s.castSucc
-    (G.1.X s).castSucc s, (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩
-  have he : LinearMap.IsHomogeneous (G.1.stabilizeXHomologyEquiv s R).toLinearMap
+        ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+          (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g := by
+  let G' : OddComponentGridDiagram (n + 1) := ⟨G.val.stabilizeX s.castSucc
+    (G.val.X s).castSucc s, (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩
+  have he : LinearMap.IsHomogeneous (G.val.stabilizeXHomologyEquiv s R).toLinearMap
       (G'.bigradedUnblockedHomologyGrading R).piece
       (G.bigradedUnblockedHomologyGrading R).piece 0 := by
     rw [LinearMap.isHomogeneous_def]
@@ -98,14 +98,14 @@ theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece_iff (g : ℤ ×
 piece of the same bidegree in the original grid. -/
 noncomputable def stabilizeXHomologyPieceEquiv (g : ℤ × ℤ) :
     bigradedUnblockedHomologyPiece
-      ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-        (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g ≃ₗ[R]
+      ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+        (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g ≃ₗ[R]
       G.bigradedUnblockedHomologyPiece R g :=
-  (G.1.stabilizeXHomologyEquiv s R).ofSubmodules _ _ (by
+  (G.val.stabilizeXHomologyEquiv s R).ofSubmodules _ _ (by
     ext y
     rw [Submodule.mem_map_equiv]
     have h := G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece_iff s R g
-      ((G.1.stabilizeXHomologyEquiv s R).symm y)
+      ((G.val.stabilizeXHomologyEquiv s R).symm y)
     rw [← GridDiagram.stabilizeXHomologyEquiv_apply, LinearEquiv.apply_symm_apply] at h
     exact h.symm)
 
@@ -113,10 +113,10 @@ noncomputable def stabilizeXHomologyPieceEquiv (g : ℤ × ℤ) :
 @[simp]
 theorem coe_stabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : bigradedUnblockedHomologyPiece
-      ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
-        (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g) :
-    (G.stabilizeXHomologyPieceEquiv s R g y : G.1.unblockedHomology R) =
-      G.1.stabilizeXHomologyMap s R y := by
+      ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+        (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g) :
+    (G.stabilizeXHomologyPieceEquiv s R g y : G.val.unblockedHomology R) =
+      G.val.stabilizeXHomologyMap s R y := by
   rw [stabilizeXHomologyPieceEquiv, LinearEquiv.ofSubmodules_apply,
     GridDiagram.stabilizeXHomologyEquiv_apply]
 
@@ -125,8 +125,8 @@ theorem coe_stabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
 theorem coe_stabilizeXHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
     (y : G.bigradedUnblockedHomologyPiece R g) :
     ((G.stabilizeXHomologyPieceEquiv s R g).symm y :
-        (G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedHomology R) =
-      (G.1.stabilizeXHomologyEquiv s R).symm y := by
+        (G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomology R) =
+      (G.val.stabilizeXHomologyEquiv s R).symm y := by
   rw [stabilizeXHomologyPieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 end OddComponentGridDiagram

@@ -232,9 +232,7 @@ theorem mem_closure_smul_of_inner_self_mem {x : E} (hx : inner A x x ∈ J) :
     x ∈ closure {y : E | ∃ a ∈ J, a • x = y} := by
   have hsqrt_mem : CFC.sqrt (inner A x x) ∈ J := by
     rw [CFC.sqrt_eq_real_sqrt _ inner_self_nonneg]
-    exact J.mem_toNonUnitalStarSubalgebra.mp
-      (cfcₙ_mem (s := J.toNonUnitalStarSubalgebra) Real.sqrt
-        (J.mem_toNonUnitalStarSubalgebra.mpr hx))
+    exact J.cfcₙ_mem_of_isClosed Real.sqrt hx
   let S := J.toNonUnitalStarSubalgebra
   let l : Filter S := CStarAlgebra.approximateUnit S
   have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
@@ -244,9 +242,9 @@ theorem mem_closure_smul_of_inner_self_mem {x : E} (hx : inner A x x ∈ J) :
     rw [tendsto_iff_norm_sub_tendsto_zero]
     simp_rw [norm_smul_sub_self]
     exact tendsto_iff_norm_sub_tendsto_zero.mp
-      ((continuous_subtype_val.tendsto s).comp (hl.tendsto_mul_right s))
+      ((continuous_subtypeVal.tendsto s).comp (hl.tendsto_mul_right s))
   exact mem_closure_of_tendsto hlim
-    (Eventually.of_forall fun e => ⟨(e : A), J.mem_toNonUnitalStarSubalgebra.mp e.2, rfl⟩)
+    (Eventually.of_forall fun e => ⟨(e : A), J.mem_toNonUnitalStarSubalgebra.mp e.property, rfl⟩)
 
 /-- For a closed two-sided ideal `J` of `A`, `x ∈ idealSubmodule J E` if and only if
 `⟪x, x⟫_A ∈ J`. -/
@@ -420,7 +418,7 @@ private theorem norm_mk_idealSubmodule_sq_le (x : E) :
   refine ge_of_tendsto hz_lim ?_
   filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
   simpa only [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_sub, MulMemClass.coe_mul] using
-    norm_mk_idealSubmodule_sq_le_of_mem (J.mem_toNonUnitalStarSubalgebra.mp e.2)
+    norm_mk_idealSubmodule_sq_le_of_mem (J.mem_toNonUnitalStarSubalgebra.mp e.property)
       (Subtype.coe_le_coe.mpr he₀) (by simpa only [AddSubgroupClass.coe_norm] using he₁) x z
 
 /-- Lower bound in the quotient norm formula: `‖mk J ⟪x, x⟫_A‖ ≤ ‖mk x‖ ^ 2`, obtained by lifting

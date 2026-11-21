@@ -188,7 +188,7 @@ theorem hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun
           rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCofaceFun_succ_castSucc]
           simp only [hochschildBimoduleCofaceFun_last,
             hochschildBimoduleCofaceFun_castSucc_succ]
-          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
+          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.isLt, Fin.init_contractNth_castSucc,
             Fin.succ_last]
         | cast j =>
           -- two inner contractions: the simplicial identity of `hochschildFace`

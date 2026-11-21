@@ -279,18 +279,18 @@ noncomputable def infinitesimalSubstitutionsEquiv :
   toFun a := ⟨infinitesimalSubstAlgEquiv ε eps_pow_two
       (map (algebraMap R (DualNumber R)) a.toAdd),
     (mem_infinitesimalSubstitutions_iff R).2
-      ⟨_, X_dvd_iff.1 (Ideal.mem_span_singleton.1 a.toAdd.2), rfl⟩⟩
-  invFun σ := .ofAdd ⟨mk fun n ↦ (coeff n (σ.1 X)).snd, by
+      ⟨_, X_dvd_iff.1 (Ideal.mem_span_singleton.1 a.toAdd.property), rfl⟩⟩
+  invFun σ := .ofAdd ⟨mk fun n ↦ (coeff n (σ.val X)).snd, by
     simpa only [Ideal.mem_span_singleton, X_dvd_iff, ← coeff_zero_eq_constantCoeff_apply,
       coeff_mk, TrivSqZeroExt.snd_zero] using
-      congr(TrivSqZeroExt.snd $(constantCoeff_apply_X_eq_zero R σ.2.2))⟩
+      congr(TrivSqZeroExt.snd $(constantCoeff_apply_X_eq_zero R σ.property.2))⟩
   left_inv a := by
     ext n
     simp only [toAdd_ofAdd, coeff_mk, infinitesimalSubstAlgEquiv_X, snd_coeff_X_add_eps_smul]
   right_inv σ := by
     ext1
-    exact (eq_infinitesimalSubstAlgEquiv R σ.2.1
-      (constantCoeff_apply_X_eq_zero R σ.2.2)).symm
+    exact (eq_infinitesimalSubstAlgEquiv R σ.property.1
+      (constantCoeff_apply_X_eq_zero R σ.property.2)).symm
   map_mul' a b := by
     ext1
     simp [infinitesimalSubstAlgEquiv_add]

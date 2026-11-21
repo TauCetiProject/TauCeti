@@ -40,7 +40,7 @@ namespace CStarModule
 
 section NonUnital
 
-variable (A E : Type*) [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+variable (A E : Type*) [NonUnitalRing A] [StarRing A] [Module ℂ A]
   [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
   [CStarModule A E]
 
@@ -121,7 +121,7 @@ end NonUnital
 
 /-- Over a unital coefficient ring, the given action is an ordinary module structure.
 This reducible non-instance retains the caller's scalar multiplication. -/
-abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A]
     [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
     [CStarModule A E] : Module A E where
   toSMul := inferInstance

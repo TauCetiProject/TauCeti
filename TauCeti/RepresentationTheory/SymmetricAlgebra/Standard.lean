@@ -94,7 +94,8 @@ private noncomputable def restrictInvariants :
   ((SymmetricAlgebra.map K
       (augmentationSubrepresentation K (Equiv.Perm σ) σ).toSubmodule.dualRestrict).comp
     (Subalgebra.val _)).codRestrict _ fun p ↦
-      map_mem_symmetricAlgebraInvariants (isIntertwiningMap_dualRestrict_augmentation K σ) p.2
+      map_mem_symmetricAlgebraInvariants (isIntertwiningMap_dualRestrict_augmentation K σ)
+          p.property
 
 variable {σ} in
 private theorem coe_restrictInvariants
@@ -216,9 +217,9 @@ private theorem injective_esymmStandardAlgHom (hn : Fintype.card σ = n + 1) :
   have hainv : a ∈ (ofMulAction K (Equiv.Perm σ) σ).dual.symmetricAlgebraInvariants := by
     refine ((ofMulAction K (Equiv.Perm σ) σ).dual.mem_symmetricAlgebraInvariants a).2 fun g ↦ ?_
     have hg := ((ofMulAction K (Equiv.Perm σ) σ).dual.mem_symmetricAlgebraInvariants _).1
-      (ψ (rename Fin.succ P)).2 g
+      (ψ (rename Fin.succ P)).property g
     have he₁g := ((ofMulAction K (Equiv.Perm σ) σ).dual.mem_symmetricAlgebraInvariants _).1
-      (ψ (X 0)).2 g
+      (ψ (X 0)).property g
     rw [he₁, symmetricAlgebra_apply] at he₁g
     rw [← ha, symmetricAlgebra_apply, map_mul, he₁g, mul_comm, mul_comm a] at hg
     rw [symmetricAlgebra_apply]
