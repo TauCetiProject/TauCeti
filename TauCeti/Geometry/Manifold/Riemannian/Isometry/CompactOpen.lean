@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Topology
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 
 /-!
@@ -135,7 +135,7 @@ private theorem contDiffAt_chart_edist_sq_param {x : M} {y : N}
   have h1 : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) I ∞
       (fun q : E × (Fin d → E) ↦ (extChartAt I x).symm q.1) (b₀, ξ₀) :=
     ((contMDiffOn_extChartAt_symm x).contMDiffAt
-      ((isOpen_extChartAt_target x).mem_nhds z₀.2)).comp (b₀, ξ₀) contDiffAt_fst.contMDiffAt
+      ((isOpen_extChartAt_target x).mem_nhds z₀.property)).comp (b₀, ξ₀) contDiffAt_fst.contMDiffAt
   have htuple : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) 𝓘(ℝ, Fin d → ℝ) ∞ coordTuple (b₀, ξ₀) := by
     refine (contDiffAt_pi.2 fun i ↦ ?_).contMDiffAt
     have hproj : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) 𝓘(ℝ, E) ∞

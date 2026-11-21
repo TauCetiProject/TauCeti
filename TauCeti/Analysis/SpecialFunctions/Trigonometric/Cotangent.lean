@@ -227,7 +227,7 @@ theorem hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I (M : ℕ) [NeZero M] (c : ℕ+
   have hpow (k : ℕ) : cexp (2 * π * I * ((c * z + b) / M)) ^ k =
       ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) * cexp (2 * π * I * z / M) ^ ((c : ℕ) * k) := by
     rw [← Int.cast_natCast (R := ZMod M) k, ← Int.cast_mul, ZMod.stdAddChar_coe,
-      ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add]
+      ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -277,7 +277,7 @@ theorem hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign {w : ℂ} (hw : 0 < w.im) 
       simpa using le_mul_of_one_le_left hw.le (Nat.one_le_cast.mpr hn)
     have h := norm_pi_mul_cot_pi_mul_add_pi_mul_I_le hw hnw
     have hexp : Real.exp (-2 * π * ((n : ℂ) * w).im) = ρ ^ n := by
-      rw [← Real.exp_nat_mul]
+      rw [← Real.exp_natCast_mul]
       congr 1
       simp
       ring

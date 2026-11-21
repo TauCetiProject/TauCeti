@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Data.Nat.ModEq
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Algebra.Ring.Nat
 import TauCeti.Data.Nat.Carry
+import TauCeti.Data.Nat.Periodic.Basic
 
 /-!
 # Powers in monoids and groups
 
 ## Main results
 
+* `TauCeti.pow_eq_pow_of_modEq_of_pow_add_eq`: if `a ^ (i + q) = a ^ i`, then `a ^ m = a ^ n`
+  whenever `m, n ≥ i` and `m ≡ n [MOD q]`.
 * `TauCeti.pow_eq_pow_of_pow_succ_eq_pow`: if `a ^ (n + 1) = a ^ n` then `a ^ k = a ^ n` for all
   `k ≥ n`.
 * `TauCeti.pow_pow_eq_self_of_pow_sq_eq_self`: if `a ^ (q ^ 2) = a` then `(a ^ q) ^ q = a`.
@@ -34,12 +38,24 @@ namespace TauCeti
 
 variable {M : Type*} [Monoid M] {a : M} {q : ℕ}
 
+/-- If `a ^ (i + q) = a ^ i`, then the powers of `a` with exponent at least `i` repeat with
+period `q`: two of them with exponents congruent modulo `q` are equal. The case `i = 0` is
+Mathlib's `pow_eq_pow_of_modEq`, the case `q = 1` is `pow_eq_pow_of_pow_succ_eq_pow`. -/
+theorem pow_eq_pow_of_modEq_of_pow_add_eq {i m n : ℕ} (h : a ^ (i + q) = a ^ i) (hm : i ≤ m)
+    (hn : i ≤ n) (hmn : m ≡ n [MOD q]) : a ^ m = a ^ n := by
+  have hper (k : ℕ) (hk : i ≤ k) : a ^ (k + q) = a ^ k := by
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
+    rw [add_assoc, pow_add, h, ← pow_add]
+  have hmod : (m - i) % q = (n - i) % q :=
+    Nat.ModEq.add_right_cancel' i (by rwa [Nat.sub_add_cancel hm, Nat.sub_add_cancel hn])
+  calc a ^ m = a ^ (i + (m - i) % q) := Nat.apply_eq_apply_add_sub_mod (a := (a ^ ·)) hper hm
+    _ = a ^ (i + (n - i) % q) := by rw [hmod]
+    _ = a ^ n := (Nat.apply_eq_apply_add_sub_mod (a := (a ^ ·)) hper hn).symm
+
 /-- Once the powers of `a` repeat once, they are constant from that point on. -/
 theorem pow_eq_pow_of_pow_succ_eq_pow {n : ℕ} (h : a ^ (n + 1) = a ^ n) {k : ℕ} (hk : n ≤ k) :
-    a ^ k = a ^ n := by
-  induction hk with
-  | refl => rfl
-  | step _ ih => rw [pow_succ, ih, ← pow_succ, h]
+    a ^ k = a ^ n :=
+  pow_eq_pow_of_modEq_of_pow_add_eq h hk le_rfl Nat.modEq_one
 
 /-- If `a ^ (q ^ 2) = a` then `(a ^ q) ^ q = a`. For example, an element of a field with `q ^ 2`
 elements is fixed by applying the `q`-power map twice. -/

@@ -152,8 +152,8 @@ to `P ×_G F`. -/
 noncomputable def assocHomeomorph :
     TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F) ≃ₜ
       TotalSpace F (AssociatedBundle G P F) where
-  toFun z := ⟨z.proj, assocEquiv z.proj z.2⟩
-  invFun z := ⟨z.proj, (assocEquiv z.proj).symm z.2⟩
+  toFun z := ⟨z.proj, assocEquiv z.proj z.snd⟩
+  invFun z := ⟨z.proj, (assocEquiv z.proj).symm z.snd⟩
   left_inv z := by simp
   right_inv z := by simp
   continuous_toFun := continuous_iff_continuousAt.2 fun _ ↦
@@ -163,10 +163,11 @@ noncomputable def assocHomeomorph :
       simp only [Equiv.apply_symm_apply, TotalSpace.eta]; exact continuousAt_id
 
 theorem assocHomeomorph_apply (z : TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)) :
-    assocHomeomorph (G := G) (P := P) (H := H) (F := F) z = ⟨z.proj, assocEquiv z.proj z.2⟩ := (rfl)
+    assocHomeomorph (G := G) (P := P) (H := H) (F := F) z = ⟨z.proj, assocEquiv z.proj z.snd⟩ :=
+        (rfl)
 theorem assocHomeomorph_symm_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     (assocHomeomorph (G := G) (P := P) (H := H) (F := F)).symm z =
-      ⟨z.proj, (assocEquiv z.proj).symm z.2⟩ := (rfl)
+      ⟨z.proj, (assocEquiv z.proj).symm z.snd⟩ := (rfl)
 @[simp] theorem assocHomeomorph_proj
     (z : TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)) :
     (assocHomeomorph (G := G) (P := P) (H := H) (F := F) z).proj = z.proj := (rfl)
@@ -223,7 +224,7 @@ end
 section
 variable [ContinuousInv H] (ρ : G →* H) (φ : ∀ b, P b → Q b)
   (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
-  (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.2))
+  (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.snd))
   (hF : ∀ (g : G) (v : F), g • v = ρ g • v)
 
 /-- **Associated bundles along a principal lift or reduction.** If `φ : ∀ b, P b → Q b` is a
@@ -231,14 +232,14 @@ continuous `ρ`-equivariant map of principal bundles and `H` has continuous inve
 `[p, v] ↦ [φ b p, v]` is a homeomorphism `P ×_G F ≃ₜ Q ×_H F` when `G` acts on `F` through `ρ`. -/
 noncomputable def homeomorphOfEquivariant :
     TotalSpace F (AssociatedBundle G P F) ≃ₜ TotalSpace F (AssociatedBundle H Q F) where
-  toFun z := ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.2⟩
-  invFun z := ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.2⟩
+  toFun z := ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.snd⟩
+  invFun z := ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.snd⟩
   left_inv z := by simp
   right_inv z := by simp
   continuous_toFun := by
     rw [(isOpenQuotientMap_totalSpaceMk_mk G P F).isQuotientMap.continuous_iff]
     refine (Continuous.totalSpaceMk_associatedBundleMk (G := H) (P := Q)
-      (f := fun x : TotalSpace G P × F ↦ x.1.proj) (p := fun x ↦ φ x.1.proj x.1.2)
+      (f := fun x : TotalSpace G P × F ↦ x.1.proj) (p := fun x ↦ φ x.1.proj x.1.snd)
       (hφc.comp continuous_fst) continuous_snd).congr fun ⟨⟨b, p⟩, v⟩ ↦
         congrArg (TotalSpace.mk b) (equivOfEquivariant_mk ρ φ hφ hF p v).symm
   continuous_invFun := by
@@ -269,10 +270,10 @@ noncomputable def homeomorphOfEquivariant :
 
 theorem homeomorphOfEquivariant_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     homeomorphOfEquivariant ρ φ hφ hφc hF z =
-      ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.2⟩ := (rfl)
+      ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.snd⟩ := (rfl)
 theorem homeomorphOfEquivariant_symm_apply (z : TotalSpace F (AssociatedBundle H Q F)) :
     (homeomorphOfEquivariant ρ φ hφ hφc hF).symm z =
-      ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.2⟩ := (rfl)
+      ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.snd⟩ := (rfl)
 @[simp] theorem homeomorphOfEquivariant_proj (z : TotalSpace F (AssociatedBundle G P F)) :
     (homeomorphOfEquivariant ρ φ hφ hφc hF z).proj = z.proj := (rfl)
 @[simp] theorem homeomorphOfEquivariant_symm_proj (z : TotalSpace F (AssociatedBundle H Q F)) :

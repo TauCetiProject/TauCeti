@@ -448,13 +448,14 @@ value and its covariant derivative, and every pair of a value and a homomorphism
 `∇` when `x ∈ U`. -/
 def connectionEquiv (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
     FirstJetBundle I F V x ≃L[𝕜] V x × (TangentSpace I x →L[𝕜] V x) :=
-  ContinuousLinearEquiv.equivOfInverse ((value I F x).prod (covariantDerivative hcov x))
+  ContinuousLinearEquiv.ofContinuousLinearMap ((value I F x).prod (covariantDerivative hcov x))
     ((horizontalLift hcov x).coprod (ofDeriv I F x))
-    (horizontalLift_value_add_ofDeriv_covariantDerivative hcov)
-    fun p ↦ by
-      rw [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coprod_apply, map_add, map_add,
+    (ContinuousLinearMap.ext fun p ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        ContinuousLinearMap.prod_apply, ContinuousLinearMap.coprod_apply, map_add, map_add,
         value_horizontalLift, value_ofDeriv, add_zero, covariantDerivative_horizontalLift,
-        covariantDerivative_ofDeriv, zero_add]
+        covariantDerivative_ofDeriv, zero_add])
+    (ContinuousLinearMap.ext (horizontalLift_value_add_ofDeriv_covariantDerivative hcov))
 
 /-- The splitting isomorphism sends a jet to its value and its covariant derivative. -/
 @[simp]

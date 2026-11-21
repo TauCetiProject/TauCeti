@@ -419,7 +419,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
   let κ : T₀ →+* K := constantCoeff.comp ((IsRestricted.subring _).subtype.comp T₀.subtype)
   refine ⟨Q.map κ, hQm.map κ, fun j ↦ ?_, ?_⟩
   · rw [Polynomial.coeff_map]
-    exact (norm_constantCoeff_le _).trans (Subring.mem_unitClosedBall.mp (Q.coeff j).2)
+    exact (norm_constantCoeff_le _).trans (Subring.mem_unitClosedBall.mp (Q.coeff j).property)
   -- `q(f) = ∑ (κ Qⱼ - ψ Qⱼ) fʲ` since `P(f) = 0`, and each term is at most `ε`.
   have hP0 : ∑ j ∈ Finset.range (Q.natDegree + 1), ψ (Q.coeff j) * f ^ j = 0 := by
     rw [← hP, ← hQ, eval₂_map, eval₂_eq_sum_range]
@@ -434,7 +434,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
     (fun a b ha hb ↦ (hB.supSeminorm_add_le a b).trans (max_le ha hb))
     (supSeminorm_zero.trans_le hε0.le) fun j _ ↦ ?_
   have hj := hB.supSeminorm_map_sub_algebraMap_constantCoeff_le ψ hε0 hε1.le hXε
-    (Subring.mem_unitClosedBall.mp (Q.coeff j).2)
+    (Subring.mem_unitClosedBall.mp (Q.coeff j).property)
   have hfj : supSeminorm K (f ^ j) ≤ 1 := supSeminorm_le zero_le_one fun y ↦ by
     rw [y.pointNorm_pow]
     exact pow_le_one₀ (pointNorm_nonneg f) ((hB.pointNorm_le_supSeminorm y f).trans hf)
