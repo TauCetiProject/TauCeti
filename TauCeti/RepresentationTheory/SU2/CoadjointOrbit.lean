@@ -202,6 +202,14 @@ theorem range_coadjointRepresentation_suTwoDualEquiv (m : Fin 3 → ℝ) :
     range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv, Set.image_image]
   simp_rw [soThreeDualEquiv_comp_suTwoLieEquivSoThree]
 
+/-- **The coadjoint orbit test of `SU(2)`**: in dot-product coordinates, `ν_p` lies on the coadjoint
+orbit through `ν_m` exactly when `p` and `m` have the same length. -/
+theorem suTwoDualEquiv_mem_range_coadjointRepresentation_iff {m p : Fin 3 → ℝ} :
+    suTwoDualEquiv p ∈ Set.range (fun g ↦ coadjointRepresentation g (suTwoDualEquiv m)) ↔
+      p ⬝ᵥ p = m ⬝ᵥ m := by
+  rw [range_coadjointRepresentation_suTwoDualEquiv, suTwoDualEquiv.injective.mem_set_image,
+    Set.mem_ofPred_eq]
+
 /-! ### The kernel of the coadjoint representation -/
 
 /-- **The kernel of the coadjoint representation of `SU(2)` is its center `{±1}`**: an element of
