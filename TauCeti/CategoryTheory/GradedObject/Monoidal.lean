@@ -166,6 +166,15 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
   dsimp [tensorHom, mapBifunctorMapMap]
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
 
+/-- Tensoring a morphism of graded objects with the identity of `Y` is, in each degree, the map of
+coproducts induced by the morphisms `f i ▷ Y j`. -/
+lemma tensorHom_id_eq_mapMap [AddMonoid I] [MonoidalCategory C] {X X' : GradedObject I C}
+    (f : X ⟶ X') (Y : GradedObject I C) [HasTensor X Y] [HasTensor X' Y] (n : I) :
+    tensorHom f (𝟙 Y) n =
+      mapMap (((mapBifunctor (curriedTensor C) I I).map f).app Y) (fun x ↦ x.1 + x.2) n := by
+  dsimp [tensorHom, mapBifunctorMapMap]
+  simp only [CategoryTheory.Functor.map_id, Category.comp_id]
+
 /-- The inclusion of the summand `X₁ i₁ ⊗ X₂ i₂` into the tensor product of graded objects in
 degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms, being a coprojection
 into a coproduct. -/
