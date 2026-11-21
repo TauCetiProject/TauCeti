@@ -17,7 +17,6 @@ import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
