@@ -30,6 +30,8 @@ conjugate-linear involution.
 * `TauCeti.isMaximalTotallyReal_span_one`: the real line `ℝ ⊆ ℂ` is maximal totally real.
 * `TauCeti.IsTotallyReal.linearIndependent_complex`: real-linearly independent vectors of a
   totally real subspace are complex-linearly independent.
+* `TauCeti.IsTotallyReal.rank_span_complex`, `TauCeti.IsTotallyReal.finrank_span_complex`: the
+  complex span of a totally real subspace has complex dimension its real dimension.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
   as a complex basis of the ambient space.
 * `TauCeti.IsMaximalTotallyReal.det_eq_det_restrict`: a complex-linear map preserving a maximal
@@ -134,6 +136,28 @@ theorem IsTotallyReal.linearIndependent_complex
     rw [ha0, zero_eq_neg, smul_eq_zero] at hab
     exact hab.resolve_left Complex.I_ne_zero
   exact Complex.ext (hv s _ ha0 i hi) (hv s _ hb0 i hi)
+
+/-- The complex span of a totally real subspace `L` of a complex module has complex rank the real
+rank of `L`: a real basis of `L` is a complex basis of its span. -/
+theorem IsTotallyReal.rank_span_complex
+    (hL : IsTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L) :
+    Module.rank ℂ (Submodule.span ℂ (L : Set E)) = Module.rank ℝ L := by
+  let b := Basis.ofVectorSpace ℝ L
+  have hind : LinearIndependent ℂ ((↑) ∘ b : _ → E) :=
+    hL.linearIndependent_complex (b.linearIndependent.map' L.subtype L.ker_subtype)
+      fun i ↦ (b i).property
+  have hspan : Submodule.span ℂ (L : Set E) = Submodule.span ℂ (Set.range ((↑) ∘ b : _ → E)) := by
+    rw [← Submodule.span_span_of_tower ℝ ℂ (Set.range _), Set.range_comp, ← L.coe_subtype,
+      Submodule.span_image, b.span_eq, Submodule.map_top, Submodule.range_subtype]
+  rw [hspan, rank_span hind, ← b.mk_eq_rank'',
+    Cardinal.mk_range_eq _ (Subtype.val_injective.comp b.injective)]
+
+/-- The complex span of a totally real subspace `L` of a complex module has complex dimension the
+real dimension of `L`. -/
+theorem IsTotallyReal.finrank_span_complex
+    (hL : IsTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L) :
+    finrank ℂ (Submodule.span ℂ (L : Set E)) = finrank ℝ L := by
+  simp only [finrank, hL.rank_span_complex]
 
 /-- An injective real-linear map onto a maximal totally real subspace exhibits the ambient
 complex module as its complexification. Both real scalar structures are the given compatible
@@ -291,7 +315,7 @@ of `E`: `L` is a real form of `E`. -/
 noncomputable def complexBasis {ι : Type*} (b : Basis ι ℝ L) : Basis ι ℂ E :=
   Basis.mk (v := L.subtype ∘ b)
     (hL.isTotallyReal.linearIndependent_complex
-      (b.linearIndependent.map' L.subtype L.ker_subtype) fun i => (b i).2)
+      (b.linearIndependent.map' L.subtype L.ker_subtype) fun i => (b i).property)
     (hL.span_complex_eq_top (by
       rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top])).ge
 

@@ -173,7 +173,7 @@ theorem exists_injective_starAlgHom_lp (A : Type*)
     ∃ π : A →⋆ₐ[ℂ] (lp (fun _ : ℕ => ℂ) 2 →L[ℂ] lp (fun _ : ℕ => ℂ) 2),
       Function.Injective π := by
   obtain ⟨π, hinj, hnondeg⟩ := exists_injective_nondegenerate_representation_lp A
-  have h1 : π 1 = 1 := hnondeg.ext fun a => by simp [← map_mul]
+  have h1 : π 1 = 1 := hnondeg.map_one
   refine ⟨{
     toFun := π
     map_one' := h1

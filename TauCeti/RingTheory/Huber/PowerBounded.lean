@@ -525,7 +525,7 @@ theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubri
       ∀ i, IsPowerBounded (p.coeff i) :=
     ⟨q.map (algebraMap (powerBoundedSubring A) A), hq.map _,
       by rw [Polynomial.eval_map]; exact hqx,
-      fun i ↦ by rw [Polynomial.coeff_map]; exact (q.coeff i).2⟩
+      fun i ↦ by rw [Polynomial.coeff_map]; exact (q.coeff i).property⟩
   refine isPowerBounded_of_isBounded_of_monic
     (isBounded_subringClosure p.coeffs.finite_toSet ?_) hmonic (fun i ↦ ?_) hroot
   · intro c hc
@@ -601,7 +601,7 @@ theorem isPowerBounded_iff_mem_of_isReduced_quotient (hBo : IsOpen (B : Set A))
         Ideal.Quotient.eq_zero_iff_mem.mp (hred.eq_zero _ ⟨2, hz2⟩)
       have hb : (ϖ : A) * b = (ϖ : A) * ((ϖ : A) ^ m * x ^ k) := by
         rw [mul_comm, ← Subring.coe_mul, hb, ← mul_assoc, ← pow_succ']
-      exact hϖr hb ▸ b.2
+      exact hϖr hb ▸ b.property
   simpa using key n hn 1
 
 /-- Under the hypotheses of `isPowerBounded_iff_mem_of_isReduced_quotient`, `A° = B`. -/
@@ -626,7 +626,7 @@ def topologicallyNilpotentIdeal : Ideal (powerBoundedSubring A) where
   carrier := {a | IsTopologicallyNilpotent (a : A)}
   add_mem' := isTopologicallyNilpotent_add
   zero_mem' := IsTopologicallyNilpotent.zero
-  smul_mem' a _ hb := a.2.isTopologicallyNilpotent_mul hb
+  smul_mem' a _ hb := a.property.isTopologicallyNilpotent_mul hb
 
 /-- Membership in `A°°` is topological nilpotence. -/
 @[simp]

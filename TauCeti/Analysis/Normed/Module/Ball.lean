@@ -53,6 +53,9 @@ necessity uses a point of the smaller ball on the far side of its centre. A conc
 `ball x R \ closedBall x r` in a seminormed real space with nontrivial topology is nonempty
 exactly when `r < R` and `0 < R` (`TauCeti.ball_sdiff_closedBall_nonempty_iff`).
 
+In a seminormed real space, no point of an open ball disjoint from `ball c r`, `r ≠ 0`, lies on
+the sphere of radius `r` about `c` (`TauCeti.norm_sub_ne_of_disjoint_ball`).
+
 For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
 `t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
 
@@ -339,6 +342,23 @@ theorem ball_sdiff_closedBall_nonempty_iff :
     · linarith [Metric.mem_closedBall.1 h, Metric.mem_sphere.1 hy, max_lt hR hrR, le_max_right 0 r]
 
 end Annulus
+
+section DisjointBall
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- In a seminormed real vector space, a point of an open ball disjoint from `Metric.ball c r`,
+`r ≠ 0`, does not lie on the sphere of radius `r` about `c`: that sphere lies in the closure of
+`Metric.ball c r`, which the open ball still misses. -/
+theorem norm_sub_ne_of_disjoint_ball {x c c' : E} {r r' : ℝ} (hr : r ≠ 0)
+    (hd : Disjoint (Metric.ball c r) (Metric.ball c' r')) (hx : x ∈ Metric.ball c' r') :
+    ‖x - c‖ ≠ r := by
+  intro hxc
+  have hd' := hd.closure_left Metric.isOpen_ball
+  rw [closure_ball c hr] at hd'
+  exact Set.disjoint_left.1 hd' (mem_closedBall_iff_norm.2 hxc.le) hx
+
+end DisjointBall
 
 end TauCeti
 

@@ -183,10 +183,10 @@ private lemma isIso_app_of_isAffine_target {X Y : Scheme.{u}} (f : X ⟶ Y) [IsA
   -- Check after restriction to the affine opens `V` of `X`, where `V.ι ≫ f` is a morphism of
   -- affine schemes.
   refine (isIso_iff_of_isOpenCover (iSup_affineOpens_eq_top X) _).mpr fun V ↦ ?_
-  have : IsAffine V.1 := V.2
-  have := isIso_app_of_isAffine W c hcomp hopen hspec (V.1.ι ≫ f) M
-  have := hopen V.1.ι ((pullback f).obj M)
-  exact isIso_pullback_map_app W c hcomp V.1.ι f M
+  have : IsAffine V.val := V.property
+  have := isIso_app_of_isAffine W c hcomp hopen hspec (V.val.ι ≫ f) M
+  have := hopen V.val.ι ((pullback f).obj M)
+  exact isIso_pullback_map_app W c hcomp V.val.ι f M
 
 /-- **Pullback comparisons are invertible if they are invertible on affine charts.** Comparison
 maps `W Y ⋙ f^* ⟶ f^* ⋙ W X` that are compatible with the composition isomorphisms of pullback,
@@ -199,12 +199,12 @@ theorem isIso_pullbackComparison_app_of_isQuasicoherent {X Y : Scheme.{u}} (f : 
   refine (isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr
       fun V ↦ ?_
-  have : IsAffine V.1 := V.2
-  have := hopen V.1.ι M
-  have := isIso_app_of_isAffine_target W c hcomp hopen hspec (f ∣_ V.1) ((pullback V.1.ι).obj M)
-  have h := isIso_app_comp W c hcomp (f ∣_ V.1) V.1.ι M
+  have : IsAffine V.val := V.property
+  have := hopen V.val.ι M
+  have := isIso_app_of_isAffine_target W c hcomp hopen hspec (f ∣_ V.val) ((pullback V.val.ι).obj M)
+  have h := isIso_app_comp W c hcomp (f ∣_ V.val) V.val.ι M
   rw [morphismRestrict_ι] at h
-  have := hopen (f ⁻¹ᵁ V.1).ι ((pullback f).obj M)
-  exact isIso_pullback_map_app W c hcomp (f ⁻¹ᵁ V.1).ι f M
+  have := hopen (f ⁻¹ᵁ V.val).ι ((pullback f).obj M)
+  exact isIso_pullback_map_app W c hcomp (f ⁻¹ᵁ V.val).ι f M
 
 end TauCeti.AlgebraicGeometry

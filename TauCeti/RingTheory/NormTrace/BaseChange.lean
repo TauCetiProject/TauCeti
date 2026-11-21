@@ -21,8 +21,12 @@ noncommutative algebras.
 
 ## Main results
 
-* `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`: the norm and
-  trace of `1 ⊗ x ∈ A ⊗[K] B` over `A` are the images of those of `x`.
+* `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`, and
+  `TauCeti.Algebra.trace_tmul`: the norm and trace of pure tensors in `A ⊗[K] B` over `A` are
+  computed from those in `B` over `K`.
+* `TauCeti.Algebra.trace_tmul_mul_smul` and `TauCeti.Algebra.sum_trace_mul_smul_tmul_eq`:
+  trace-pairing scalar multiplication and trace-dual expansions pass from `B / K` to the scalar
+  extension `A ⊗[K] B / A`.
 * `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: the matrix of
   multiplication on `P ⊗[K] B` (for a finite `K`-basis of `B`) and the norm of `P ⊗[K] B` over `P`
   (for a free `K`-algebra `B`, finite or not) are compatible with every `K`-algebra map
@@ -186,6 +190,34 @@ theorem Algebra.trace_baseChange_tmul (x : B) :
     rw [Algebra.trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (.of_basis b),
       Algebra.trace_eq_zero_of_not_exists_basis A fun ⟨_, ⟨b⟩⟩ ↦ hfin' (.of_basis b)]
     simp
+
+/-- Trace on a scalar extension evaluates on any pure tensor `a ⊗ₜ x` as
+`a * algebraMap K A (Algebra.trace K B x)`. When `B` is not finite over `K` both sides are `0`. -/
+theorem Algebra.trace_tmul (a : A) (x : B) :
+    Algebra.trace A (A ⊗[K] B) (a ⊗ₜ[K] x) = a * algebraMap K A (Algebra.trace K B x) := by
+  conv_lhs => rw [← mul_one a, ← smul_eq_mul, ← TensorProduct.smul_tmul']
+  rw [map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
+
+/-- Scalar multiplication and the trace pairing commute with scalar extension on pure tensors. -/
+theorem Algebra.trace_tmul_mul_smul (a : A) (x b y : B) :
+    Algebra.trace A (A ⊗[K] B) ((a ⊗ₜ[K] x) * (1 ⊗ₜ[K] b)) • ((1 : A) ⊗ₜ[K] y) =
+      a ⊗ₜ[K] (Algebra.trace K B (x * b) • y) := by
+  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.trace_tmul,
+    TensorProduct.smul_tmul', smul_eq_mul, mul_one, mul_comm a, ← Algebra.smul_def,
+    TensorProduct.smul_tmul]
+
+/-- **Trace-dual expansions pass to scalar extensions.** If `x = ∑ᵢ Tr_{B/K}(x bᵢ) yᵢ` for every
+`x : B`, then the same expansion holds for every `ξ : A ⊗[K] B` over `A`. -/
+theorem Algebra.sum_trace_mul_smul_tmul_eq {ι : Type*} [Fintype ι] (b y : ι → B)
+    (h : ∀ x : B, ∑ i, Algebra.trace K B (x * b i) • y i = x) (ξ : A ⊗[K] B) :
+    ∑ i, Algebra.trace A (A ⊗[K] B) (ξ * (1 ⊗ₜ[K] b i)) • ((1 : A) ⊗ₜ[K] y i) = ξ := by
+  induction ξ using TensorProduct.inductionOn with
+  | add ξ η hξ hη =>
+    conv_rhs => rw [← hξ, ← hη]
+    simp only [add_mul, map_add, add_smul, Finset.sum_add_distrib]
+  | tmul a x =>
+    conv_rhs => rw [← h x, TensorProduct.tmul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ Algebra.trace_tmul_mul_smul a x (b i) (y i)
 
 end Trace
 

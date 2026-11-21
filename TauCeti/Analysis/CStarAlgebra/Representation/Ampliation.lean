@@ -57,26 +57,21 @@ variable {𝕜 A H : Type*} [RCLike 𝕜]
 /-- The diagonal amplification `a ↦ ⊕_{i : ι} π a` of a Hilbert-space `⋆`-homomorphism `π` to the
 Hilbert direct sum `lp (fun _ : ι => H) 2`. -/
 def ampliation (π : A →⋆ₙₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) :
-    A →⋆ₙₐ[𝕜] (lp (fun _ : ι => H) 2 →L[𝕜] lp (fun _ : ι => H) 2) where
-  toFun a := lp.ampliation ι 2 (π a)
-  map_zero' := by simp
-  map_add' a b := by simp
-  map_smul' c a := by simp
-  map_mul' a b := by simp
-  map_star' a := by simp [map_star]
+    A →⋆ₙₐ[𝕜] (lp (fun _ : ι => H) 2 →L[𝕜] lp (fun _ : ι => H) 2) :=
+  (lp.ampliationStarAlgHom ι 𝕜 H).toNonUnitalStarAlgHom.comp π
 
 /-- Evaluating the amplified representation gives the operator ampliation `lp.ampliation ι 2`. -/
 @[simp]
 theorem ampliation_apply (π : A →⋆ₙₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) (a : A) :
     π.ampliation ι a = lp.ampliation ι 2 (π a) :=
-  (rfl)
+  lp.ampliationStarAlgHom_apply (π a)
 
 /-- Over a nonempty index type, the amplified representation is injective if and only if the
 original representation is injective. -/
 theorem ampliation_injective_iff (π : A →⋆ₙₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) [Nonempty ι] :
     Function.Injective (π.ampliation ι) ↔ Function.Injective π :=
   ⟨fun h a b hab => h (by simp [hab]),
-    fun h a b hab => h (lp.ampliation_injective (ι := ι) (p := 2) hab)⟩
+    fun h a b hab => h (lp.ampliation_injective (ι := ι) (p := 2) (by simpa using hab))⟩
 
 end General
 
@@ -120,20 +115,14 @@ variable {𝕜 B H : Type*} [RCLike 𝕜] [Semiring B] [Algebra 𝕜 B] [Star B]
 /-- The diagonal amplification `b ↦ ⊕_{i : ι} π b` of a unital Hilbert-space `⋆`-homomorphism `π`
 to the Hilbert direct sum `lp (fun _ : ι => H) 2`. -/
 def ampliation (π : B →⋆ₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) :
-    B →⋆ₐ[𝕜] (lp (fun _ : ι => H) 2 →L[𝕜] lp (fun _ : ι => H) 2) where
-  toFun b := lp.ampliation ι 2 (π b)
-  map_one' := by simp
-  map_mul' a b := by simp
-  map_zero' := by simp
-  map_add' a b := by simp
-  commutes' c := by simp [Algebra.algebraMap_eq_smul_one]
-  map_star' a := by simp [map_star]
+    B →⋆ₐ[𝕜] (lp (fun _ : ι => H) 2 →L[𝕜] lp (fun _ : ι => H) 2) :=
+  (lp.ampliationStarAlgHom ι 𝕜 H).comp π
 
 /-- Evaluating the amplified unital representation gives `lp.ampliation ι 2`. -/
 @[simp]
 theorem ampliation_apply (π : B →⋆ₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) (b : B) :
     π.ampliation ι b = lp.ampliation ι 2 (π b) :=
-  (rfl)
+  lp.ampliationStarAlgHom_apply (π b)
 
 /-- Forgetting the unit of `StarAlgHom.ampliation` recovers `NonUnitalStarAlgHom.ampliation`. -/
 @[simp]

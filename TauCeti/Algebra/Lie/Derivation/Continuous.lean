@@ -113,7 +113,7 @@ namespace continuousDerivationLieAlgebra
 /-- The underlying map of a continuous derivation is continuous. -/
 theorem continuous (D : continuousDerivationLieAlgebra R A) :
     Continuous ((D : derivationLieAlgebra R A) : Module.End R A) :=
-  D.2
+  D.property
 
 /-- A continuous derivation is determined by its values. -/
 @[ext]
