@@ -22,12 +22,14 @@ One inclusion is read off the linear flow. The other is the energy barrier: an o
 the cube off the coordinate subspace reaches a level below `f x` before leaving the chart, and `f`
 decreases along orbits, so the orbit cannot converge to `x`.
 
+The linear flow `TauCeti.MorseBottChart.linearFlow` and the lemma that its orbits, read on the
+manifold, are integral curves of a field that is linear in the chart
+(`TauCeti.MorseBottChart.isMIntegralCurveOn_toChart_symm_linearFlow`) live in
+`TauCeti.Geometry.Manifold.Morse.Bott.PseudoGradient`; this file adds the estimates specific to
+Morse charts.
+
 ## Main declarations
 
-* `TauCeti.MorseBottChart.linearFlow`: the linear flow in the coordinates of a Morse chart, which
-  is a Morse–Bott chart, with its flow law `TauCeti.MorseBottChart.linearFlow_add`.
-* `TauCeti.MorseBottChart.isMIntegralCurveOn_toChart_symm_linearFlow`: when `X` is linear in the
-  chart, the linear orbit read on the manifold is an integral curve of `X`.
 * `TauCeti.MorseChart.sum_weight_mul_linearFlow_sq_le`: the quadratic normal form along the linear
   flow, once a coordinate of negative weight has grown.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm`: the flow of an adapted pseudo-gradient is
@@ -71,23 +73,6 @@ theorem neg_linearFlow (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f 
     (z : Fin (Module.finrank ℝ E) → ℝ) : (φ.neg h).linearFlow t z = φ.linearFlow (-t) z := by
   rw [toMorseBottChart_neg]
   exact φ.toMorseBottChart.neg_linearFlow t z
-
-/-- The linear flow of a Morse chart is jointly continuous in the coordinates and the time. -/
-theorem continuous_linearFlow_uncurry :
-    Continuous fun p : (Fin (Module.finrank ℝ E) → ℝ) × ℝ ↦ φ.linearFlow p.2 p.1 := by
-  refine continuous_pi fun i ↦ ?_
-  simp only [MorseBottChart.linearFlow_apply]
-  fun_prop
-
-/-- The linear flow multiplies the coordinate vector of a coordinate of weight `1` by `e^{-t}`. -/
-theorem linearFlow_single_of_weight_eq_one {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = 1)
-    (t : ℝ) : φ.linearFlow t (Pi.single j 1) = Real.exp (-t) • Pi.single j 1 := by
-  funext i
-  rw [MorseBottChart.linearFlow_apply, Pi.smul_apply, smul_eq_mul]
-  by_cases hi : i = j
-  · subst hi
-    rw [hj, one_mul]
-  · simp [hi]
 
 /-- For times `t > -log 2`, a coordinate of positive weight grows at most by a factor `2`. -/
 theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ}

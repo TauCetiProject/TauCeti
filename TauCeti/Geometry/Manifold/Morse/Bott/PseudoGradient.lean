@@ -154,6 +154,16 @@ theorem linearFlow_of_weight_eq_one {i : Fin (Module.finrank ℝ E)} (hi : φ.we
     (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp (-t) * z i := by
   rw [linearFlow_apply, hi, one_mul]
 
+/-- The linear flow multiplies the coordinate vector of a coordinate of weight `1` by `e^{-t}`. -/
+theorem linearFlow_single_of_weight_eq_one {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = 1)
+    (t : ℝ) : φ.linearFlow t (Pi.single j 1) = Real.exp (-t) • Pi.single j 1 := by
+  funext i
+  rw [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
+  by_cases hi : i = j
+  · subst hi
+    rw [hj, one_mul]
+  · simp [hi]
+
 /-- A coordinate of weight `-1` grows like `e^{t}`. -/
 theorem linearFlow_of_weight_eq_neg_one {i : Fin (Module.finrank ℝ E)} (hi : φ.weight i = -1)
     (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp t * z i := by
@@ -174,6 +184,13 @@ theorem neg_linearFlow (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
   ext i
   simp only [linearFlow_apply, neg_weight, Pi.neg_apply]
   ring_nf
+
+/-- The linear flow is jointly continuous in the coordinates and the time. -/
+theorem continuous_linearFlow_uncurry :
+    Continuous fun p : (Fin (Module.finrank ℝ E) → ℝ) × ℝ ↦ φ.linearFlow p.2 p.1 := by
+  refine continuous_pi fun i ↦ ?_
+  simp only [linearFlow_apply]
+  fun_prop
 
 /-- The linear flow solves the ODE `z' = (-wᵢ zᵢ)ᵢ`. -/
 theorem hasDerivAt_linearFlow (z : Fin (Module.finrank ℝ E) → ℝ) (t : ℝ) :
@@ -200,8 +217,7 @@ theorem isMIntegralCurveOn_toChart_symm_linearFlow
     simpa [ℓ, Function.comp_def] using
       φ.coordL.symm.hasFDerivAt.comp_hasDerivAt t (φ.hasDerivAt_linearFlow z t)
   have hmd : φ.toChart.MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E) :=
-    ⟨fun y hy ↦ (mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one
-      hy).mdifferentiableWithinAt, fun w hw ↦
+    ⟨fun y hy ↦ (φ.mdifferentiableAt_toChart hy).mdifferentiableWithinAt, fun w hw ↦
       (mdifferentiableAt_symm_of_mem_maximalAtlas φ.mem_maximalAtlas_one
         hw).mdifferentiableWithinAt⟩
   intro t ht

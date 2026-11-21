@@ -62,7 +62,7 @@ that are linear in such charts are in `TauCeti.Geometry.Manifold.Morse.Bott.Pseu
 
 public section
 
-open Function Set
+open Function Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -173,6 +173,25 @@ theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
 theorem mem_maximalAtlas_one : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
   IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
 
+/-- A point of the chart is the point with its own coordinates. -/
+theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
+    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
+  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
+
+/-- The centre is the only point of the source sent to `0`. -/
+theorem toChart_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) : φ.toChart y = 0 ↔ y = x := by
+  refine ⟨fun h ↦ φ.toChart.injOn hy φ.mem_source ?_, fun h ↦ h ▸ φ.apply_self⟩
+  rw [h, φ.apply_self]
+
+/-- The centre is the point with coordinates `0`. -/
+theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
+  rw [map_zero, φ.toChart_symm_zero]
+
+/-- The chart of a Morse–Bott chart is differentiable on its source. -/
+theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
+  mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
+
 include φ in
 /-- A space with a Morse–Bott chart is finite-dimensional. -/
 theorem finiteDimensional : FiniteDimensional ℝ E :=
@@ -198,6 +217,32 @@ theorem coordL_apply (z : E) : φ.coordL z = φ.coord z := by
 theorem coordL_symm_apply (z : Fin (Module.finrank ℝ E) → ℝ) :
     φ.coordL.symm z = φ.coord.symm z := by
   simp [coordL]
+
+/-- Coordinates of small sup norm are coordinates of points of the chart. -/
+theorem exists_pos_forall_norm_lt_mem_target :
+    ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
+  have := φ.finiteDimensional
+  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
+    rw [mem_preimage, map_zero, ← φ.apply_self]
+    exact φ.toChart.map_source φ.mem_source
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
+    (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
+  exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
+
+/-- The coordinate change of a Morse–Bott chart is continuous. -/
+theorem continuous_coord : Continuous φ.coord := by
+  have := φ.finiteDimensional
+  exact φ.coordL.continuous.congr φ.coordL_apply
+
+open Filter in
+/-- The point with coordinates `w` tends to the centre as `w` tends to `0`. -/
+theorem tendsto_toChart_symm_coord_symm_nhds_zero :
+    Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
+  have := φ.finiteDimensional
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
+    (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
+  rwa [ContinuousAt, comp_apply, φ.toChart_symm_coord_symm_zero] at h
 
 /-- The quadratic normal form of a Morse–Bott chart, as a function on the model space. -/
 noncomputable def quadratic (z : E) : ℝ :=
@@ -244,6 +289,11 @@ theorem hasFDerivAt_quadratic (z : E) :
   · ext v
     simp [quadratic_apply, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
   · simp
+
+/-- The quadratic normal form is differentiable. -/
+theorem differentiableAt_quadratic (z : E) : DifferentiableAt ℝ φ.quadratic z := by
+  have := φ.finiteDimensional
+  exact (φ.hasFDerivAt_quadratic z).differentiableAt
 
 /-- The derivative of the quadratic normal form is `v ↦ Σᵢ wᵢ (L z)ᵢ (L v)ᵢ`. -/
 theorem fderiv_quadratic_apply (z v : E) :

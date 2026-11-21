@@ -132,37 +132,6 @@ section NormalForm
 
 variable (φ : MorseChart E f x)
 
-/-- Coordinates of small sup norm are coordinates of points of the chart. -/
-theorem exists_pos_forall_norm_lt_mem_target :
-    ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
-  have := φ.finiteDimensional
-  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
-    rw [mem_preimage, map_zero, ← φ.apply_self]
-    exact φ.toChart.map_source φ.mem_source
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
-    (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
-  exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
-
-/-- The coordinate change of a Morse chart is continuous. -/
-theorem continuous_coord : Continuous φ.coord := by
-  have := φ.finiteDimensional
-  exact φ.coordL.continuous.congr φ.coordL_apply
-
-open Filter in
-/-- The point with coordinates `w` tends to the critical point as `w` tends to `0`. -/
-theorem tendsto_toChart_symm_coord_symm_nhds_zero :
-    Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
-  have := φ.finiteDimensional
-  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
-    (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
-  rwa [ContinuousAt, comp_apply, φ.toChart_symm_coord_symm_zero] at h
-
-/-- The quadratic normal form is differentiable. -/
-theorem differentiableAt_quadratic (z : E) : DifferentiableAt ℝ φ.quadratic z := by
-  have := φ.finiteDimensional
-  exact (φ.hasFDerivAt_quadratic z).differentiableAt
-
 /-- The quadratic normal form has a single critical point, the origin. -/
 theorem fderiv_quadratic_eq_zero_iff {z : E} : fderiv ℝ φ.quadratic z = 0 ↔ z = 0 := by
   rw [φ.toMorseBottChart.fderiv_quadratic_eq_zero_iff, ← φ.coord.map_eq_zero_iff, funext_iff]

@@ -127,25 +127,6 @@ theorem restr_weight : (φ.restr hs hx).weight = φ.weight := by
 theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s := by
   rw [toMorseBottChart_restr, MorseBottChart.restr_source]
 
-/-- A point of the chart is the point with its own coordinates. -/
-theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
-    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
-  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
-
-/-- The centre is the only point of the source sent to `0`. -/
-theorem toChart_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) : φ.toChart y = 0 ↔ y = x := by
-  refine ⟨fun h ↦ φ.toChart.injOn hy φ.mem_source ?_, fun h ↦ h ▸ φ.apply_self⟩
-  rw [h, φ.apply_self]
-
-/-- The critical point is the point with coordinates `0`. -/
-theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
-  rw [map_zero, φ.toChart_symm_zero]
-
-/-- The chart of a Morse chart is differentiable on its source. -/
-theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
-    MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
-  mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
-
 /-- Every weight of a Morse chart is nonzero. -/
 theorem weight_ne_zero (i : Fin (Module.finrank ℝ E)) : φ.weight i ≠ 0 := by
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
