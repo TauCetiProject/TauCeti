@@ -17,9 +17,11 @@ The definition, characteristic lemmas, multiplication and addition laws apply to
 rings, using nonzero valuation values to exclude the support where necessary. Finite products
 require commutativity. Equivalence comparisons and the characterization of uniformizers also apply
 to rings. Inverse and quotient laws are stated on division rings; valuation-subring results are
-stated on fields. Facts about surjective valuations that do not involve the order, such as
-nontriviality, discreteness of the valuation ring and equality of equivalent normalized
-valuations, hold for any value group and are in `TauCeti.RingTheory.Valuation.Surjective`.
+stated on fields. Facts about surjective valuations that do not involve the order are in
+`TauCeti.RingTheory.Valuation.Surjective`, under the conditions on the value group each needs:
+the value group is full with no condition, the valuation is nontrivial when the units of its
+target are, equivalent surjective valuations are equal when those units form a cyclic group, and
+the valuation ring is discrete when they are both.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
@@ -155,10 +157,12 @@ theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
     ord v (f + g) = min (ord v f) (ord v g) := by
   -- The summand of smaller order has the larger valuation, which the sum then takes.
   rcases h.lt_or_gt with h | h
-  · rw [min_eq_left h.le, ord_def,
-      v.map_add_eq_of_lt_left ((ord_lt_ord_iff_valuation_gt v hf hg).mp h), ← ord_def]
-  · rw [min_eq_right h.le, ord_def,
-      v.map_add_eq_of_lt_right ((ord_lt_ord_iff_valuation_gt v hg hf).mp h), ← ord_def]
+  · rw [min_eq_left h.le]
+    simpa only [ord_def] using congrArg (fun γ ↦ -WithZero.log γ)
+      (v.map_add_eq_of_lt_left ((ord_lt_ord_iff_valuation_gt v hf hg).mp h))
+  · rw [min_eq_right h.le]
+    simpa only [ord_def] using congrArg (fun γ ↦ -WithZero.log γ)
+      (v.map_add_eq_of_lt_right ((ord_lt_ord_iff_valuation_gt v hg hf).mp h))
 
 /-- The valuation of a finite sum with a strict minimum of orders: the summand of least order
 dominates.  It is stated on the valuation because both

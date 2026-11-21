@@ -401,10 +401,10 @@ section Discrete
 
 /-- Normalization says exactly that the value group of a place is all of `ℤᵐ⁰`. -/
 theorem valueGroup_eq_top : P.valuation.valueGroup = ⊤ :=
-  Valuation.valueGroup_eq_top_of_surjective P.valuation P.valuation_surjective
+  P.valuation.valueGroup_eq_top_of_surjective P.valuation_surjective
 
 instance : Nontrivial P.valuation.valueGroup :=
-  Valuation.nontrivial_valueGroup_of_surjective P.valuation P.valuation_surjective
+  P.valuation.nontrivial_valueGroup_of_surjective P.valuation_surjective
 
 /-- **The valuation ring of a place is a discrete valuation ring** (Stichtenoth,
 Theorem 1.1.6). -/

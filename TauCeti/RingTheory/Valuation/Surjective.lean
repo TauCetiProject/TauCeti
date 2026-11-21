@@ -12,14 +12,18 @@ public import Mathlib.RingTheory.Valuation.Discrete.Basic
 # Surjective valuations and valuations with a common value group
 
 Normalized valuations, such as the valuation of a place of a function field, are surjective onto
-their value group with zero. This file records the consequences of surjectivity that hold for a
-valuation with values in any linearly ordered commutative group with zero `Γ₀`, and the rigidity of
-equivalent valuations with the same cyclic value group.
+their value group with zero. This file records the consequences of surjectivity that do not involve
+an additive order. A surjective monoid-with-zero homomorphism has full value group, with no
+condition on the codomain. A surjective valuation is nontrivial when its target has a unit other
+than `1`; on a field its valuation ring is then a proper subring, and a discrete valuation ring if
+moreover the units of the target form a cyclic group. Finally, equivalent valuations with the same
+cyclic value group are equal.
 
 ## Main results
 
+* `MonoidWithZeroHom.valueGroup_eq_top_of_surjective`: a surjective monoid-with-zero homomorphism
+  has full value group.
 * `Valuation.isNontrivial_of_surjective`: a surjective valuation is nontrivial when `Γ₀ˣ` is.
-* `Valuation.valueGroup_eq_top_of_surjective`: a surjective valuation has full value group.
 * `Valuation.valuationSubring_isDiscreteValuationRing_of_surjective`: when `Γ₀ˣ` is nontrivial
   and cyclic, the valuation ring of a surjective valuation on a field is a discrete valuation ring.
 * `Valuation.eq_of_isEquiv_of_valueGroup_eq`: two equivalent valuations with the same cyclic value
@@ -32,13 +36,28 @@ public section
 
 open MonoidWithZeroHom LinearOrderedCommGroup
 
+namespace MonoidWithZeroHom
+
+variable {A B : Type*} [MonoidWithZero A] [MonoidWithZero B]
+
+/-- Surjectivity of `f` makes its value group the whole of `Bˣ`. -/
+theorem valueGroup_eq_top_of_surjective (f : A →*₀ B) (hf : Function.Surjective f) :
+    f.valueGroup = ⊤ :=
+  (Subgroup.eq_top_iff' _).mpr fun γ ↦ mem_valueGroup _ (hf γ)
+
+/-- A surjective monoid-with-zero homomorphism has nontrivial value group once `Bˣ` is
+nontrivial. -/
+theorem nontrivial_valueGroup_of_surjective [Nontrivial Bˣ] (f : A →*₀ B)
+    (hf : Function.Surjective f) : Nontrivial f.valueGroup :=
+  (Subgroup.nontrivial_iff_ne_bot _).mpr <| valueGroup_eq_top_of_surjective f hf ▸ top_ne_bot
+
+end MonoidWithZeroHom
+
 namespace Valuation
 
-variable {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+section Monoid
 
-section Ring
-
-variable {R : Type*} [Ring R]
+variable {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀] {R : Type*} [Ring R]
 
 /-- **A surjective valuation is nontrivial** once `Γ₀` has a unit other than `1`. Surjectivity is
 the form the hypothesis usually arrives in — a place carries it by definition — while results
@@ -48,19 +67,18 @@ theorem isNontrivial_of_surjective [Nontrivial Γ₀ˣ] {v : Valuation R Γ₀}
     (hv : Function.Surjective v) : v.IsNontrivial where
   exists_val_nontrivial := by
     obtain ⟨γ, hγ⟩ := exists_ne (1 : Γ₀ˣ)
+    have hγ1 : (γ : Γ₀) ≠ 1 := Units.val_eq_one.not.mpr hγ
+    have : Nontrivial Γ₀ := ⟨_, _, hγ1⟩
     obtain ⟨x, hx⟩ := hv γ
-    exact ⟨x, hx ▸ γ.ne_zero, hx ▸ Units.val_eq_one.not.mpr hγ⟩
+    exact ⟨x, hx ▸ γ.ne_zero, hx ▸ hγ1⟩
 
-/-- Surjectivity of `v` makes its value group the whole of `Γ₀ˣ`. -/
-theorem valueGroup_eq_top_of_surjective (v : Valuation R Γ₀) (hv : Function.Surjective v) :
-    v.valueGroup = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr fun γ ↦ mem_valueGroup _ (hv γ)
+end Monoid
 
-/-- A surjective valuation has nontrivial value group once `Γ₀ˣ` is nontrivial. -/
-theorem nontrivial_valueGroup_of_surjective [Nontrivial Γ₀ˣ] (v : Valuation R Γ₀)
-    (hv : Function.Surjective v) : Nontrivial v.valueGroup :=
-  have := isNontrivial_of_surjective hv
-  inferInstance
+variable {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+
+section Ring
+
+variable {R : Type*} [Ring R]
 
 /-- In a nontrivial cyclic subgroup `H`, the generator below one of `H` regarded as a group is the
 generator below one of `H` as a subgroup. -/
@@ -68,54 +86,46 @@ private theorem coe_genLTOne_top {G : Type*} [CommGroup G] [LinearOrder G] [IsOr
     (H : Subgroup G) [Nontrivial H] [IsCyclic H] :
     (((⊤ : Subgroup H).genLTOne : H) : G) = H.genLTOne :=
   H.genLTOne_unique (Subtype.coe_lt_coe.mpr (⊤ : Subgroup H).genLTOne_lt_one) <| by
-    rw [← H.coe_subtype, ← MonoidHom.map_zpowers, Subgroup.genLTOne_zpowers_eq_top,
-      ← MonoidHom.range_eq_map, Subgroup.range_subtype]
+    simpa [Subgroup.genLTOne_zpowers_eq_top, ← MonoidHom.range_eq_map] using
+      (MonoidHom.map_zpowers H.subtype (⊤ : Subgroup H).genLTOne).symm
 
 /-- **Equivalent valuations with the same cyclic value group are equal.** Equivalence induces an
-order-preserving isomorphism between the value groups. On a common cyclic value group it sends the
-generator below one to itself, so it is the identity, and the two valuations agree.
+order-preserving isomorphism between the value groups, and on a common cyclic value group it is
+the identity, so the two valuations agree.
 
 Cyclicity cannot be dropped: a valuation and its square are equivalent and, for a surjective
 valuation onto `ℝ≥0`, share the value group, without being equal. -/
 theorem eq_of_isEquiv_of_valueGroup_eq {v w : Valuation R Γ₀} [IsCyclic v.valueGroup]
     (h : v.IsEquiv w) (hvw : v.valueGroup = w.valueGroup) : v = w := by
+  -- The isomorphism of value groups induced by `h`, followed by the inclusion of `w.valueGroup`,
+  -- is the inclusion of `v.valueGroup`.
+  have key : w.valueGroup.subtype.comp (h.orderMonoidIso : v.valueGroup →* w.valueGroup) =
+      v.valueGroup.subtype := by
+    rcases subsingleton_or_nontrivial v.valueGroup with _ | hnt
+    · exact MonoidHom.ext fun x ↦ by rw [Subsingleton.elim x 1, map_one, map_one]
+    have : Nontrivial w.valueGroup := hvw ▸ hnt
+    have : IsCyclic w.valueGroup := hvw ▸ ‹IsCyclic v.valueGroup›
+    -- Both homomorphisms send the generator below one of `v.valueGroup` to itself: the
+    -- isomorphism sends it to the generator below one of `w.valueGroup`, which is the same.
+    have hgen : v.valueGroup.genLTOne = w.valueGroup.genLTOne :=
+      Subgroup.genLTOne_unique_of_zpowers_eq (Subgroup.genLTOne_lt_one _)
+        (Subgroup.genLTOne_lt_one _) (by simp [hvw])
+    refine (MonoidHom.eq_iff_eq_on_generator (fun x ↦
+      (⊤ : Subgroup v.valueGroup).genLTOne_zpowers_eq_top ▸ Subgroup.mem_top x) _ _).mpr ?_
+    simp [OrderMonoidIso.map_genLTOne, coe_genLTOne_top, hgen]
   refine Valuation.ext fun x ↦ ?_
   rcases eq_or_ne (v x) 0 with hx | hx
   · rw [hx, h.eq_zero.mp hx]
-  have hwx : w x ≠ 0 := h.eq_zero.ne.mp hx
   have h1 : v 1 ≠ 0 := by simp
-  have hw1 : w 1 ≠ 0 := by simp
-  rcases v.valueGroup.bot_or_nontrivial with hbot | hnt
-  · -- A trivial common value group forces both values to be `1`.
-    have hv1 : Units.mk0 (v x) hx ∈ v.valueGroup := mem_valueGroup _ ⟨x, rfl⟩
-    have hw1' : Units.mk0 (w x) hwx ∈ w.valueGroup := mem_valueGroup _ ⟨x, rfl⟩
-    rw [hbot, Subgroup.mem_bot] at hv1
-    rw [← hvw, hbot, Subgroup.mem_bot] at hw1'
-    simpa using congrArg Units.val (hv1.trans hw1'.symm)
-  have : Nontrivial w.valueGroup := hvw ▸ hnt
-  have : IsCyclic w.valueGroup := hvw ▸ ‹IsCyclic v.valueGroup›
-  -- The two value groups have the same generator below one, and the isomorphism of value
-  -- groups induced by `h` fixes it.
-  have hgen : v.valueGroup.genLTOne = w.valueGroup.genLTOne :=
-    Subgroup.genLTOne_unique_of_zpowers_eq (Subgroup.genLTOne_lt_one _)
-      (Subgroup.genLTOne_lt_one _) (by simp [hvw])
-  have hmap := OrderMonoidIso.map_genLTOne h.orderMonoidIso
-  -- Write the class of `v x` as a power of the generator and transport it along `h`.
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
-    (Subgroup.genLTOne_zpowers_eq_top (⊤ : Subgroup v.valueGroup) ▸
-      Subgroup.mem_top (valueGroup.mk (v : R →*₀ Γ₀) 1 x h1 hx))
-  have key : (valueGroup.mk (w : R →*₀ Γ₀) 1 x hw1 hwx : Γ₀ˣ) =
-      valueGroup.mk (v : R →*₀ Γ₀) 1 x h1 hx := by
-    rw [← h.orderMonoidIso_spec h1 hx, ← hk, map_zpow, hmap, SubgroupClass.coe_zpow,
-      SubgroupClass.coe_zpow, coe_genLTOne_top, coe_genLTOne_top, hgen]
-  simpa using (congrArg Units.val key).symm
+  simpa [h.orderMonoidIso_spec h1 hx] using
+    (congrArg Units.val (DFunLike.congr_fun key (valueGroup.mk (v : R →*₀ Γ₀) 1 x h1 hx))).symm
 
 /-- **Equivalent surjective valuations are equal** when `Γ₀ˣ` is cyclic, for instance for
 normalized `ℤᵐ⁰`-valuations. -/
 theorem eq_of_isEquiv_of_surjective [IsCyclic Γ₀ˣ] {v w : Valuation R Γ₀}
     (hv : Function.Surjective v) (hw : Function.Surjective w) (h : v.IsEquiv w) : v = w :=
   eq_of_isEquiv_of_valueGroup_eq h <| by
-    rw [valueGroup_eq_top_of_surjective v hv, valueGroup_eq_top_of_surjective w hw]
+    rw [v.valueGroup_eq_top_of_surjective hv, w.valueGroup_eq_top_of_surjective hw]
 
 end Ring
 
@@ -133,7 +143,7 @@ nontrivial and cyclic. -/
 theorem valuationSubring_isDiscreteValuationRing_of_surjective [IsCyclic Γ₀ˣ] [Nontrivial Γ₀ˣ]
     (v : Valuation K Γ₀) (hv : Function.Surjective v) :
     IsDiscreteValuationRing v.valuationSubring :=
-  have := nontrivial_valueGroup_of_surjective v hv
+  have := v.nontrivial_valueGroup_of_surjective hv
   valuationSubring_isDiscreteValuationRing v
 
 end Field
