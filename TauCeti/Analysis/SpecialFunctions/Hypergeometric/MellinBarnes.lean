@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.RealIdentity
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
@@ -38,7 +39,8 @@ vertical lines `Re s = σ` separating left and right sequences of Gamma poles:
 
 This file proves convergence and holomorphy of both Mellin–Barnes integrals on their respective cut
 planes, evaluates 15.6.6 against Euler's normalized integral `Complex.eulerIntegral` (`Re b < Re c`,
-`-Re b < σ < 0`, `-z ∈ slitPlane`), and evaluates 15.6.7 against Mathlib's power series
+`-Re b < σ < 0`, `-z ∈ slitPlane`), evaluates 15.6.7 against `Complex.eulerIntegral` on the full
+cut plane `{z | 1 - z ∈ slitPlane}`, and evaluates 15.6.7 against Mathlib's power series
 `Complex.regularizedGaussHGFun` and `Complex.ordinaryHypergeometric` (`‖z‖ < 1`).
 
 On any pole-free line `Re s = σ`, Stirling's vertical-strip bounds give
@@ -53,11 +55,15 @@ Mellin–Barnes integral `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub` int
 `Complex.eulerIntegral` at negative real arguments `z = -x` (`x > 0`) and swapping integrations by
 Fubini's theorem evaluates Euler's integral to 15.6.6; the slit-plane identity principle
 `AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq` extends equality to all `-z ∈ slitPlane`.
+Similarly, inserting the slit-plane binomial Mellin–Barnes integral
+`Complex.integral_Gamma_add_mul_Gamma_neg_mul_cpow` into `Complex.eulerIntegral` at
+`1 - z * t = (1 - t) (1 + (t / (1 - t)) (1 - z))` and swapping integrations evaluates
+`Complex.eulerIntegral` to 15.6.7 on the entire cut plane `1 - z ∈ slitPlane`.
 
-For 15.6.7, expanding `(1 - z)^s` in its binomial series on `‖z‖ < 1 / 2` (where the summed series
-majorant grows at exponential rate `log 2 < 2π`, so its product with `exp (-2π |y|)` decays at rate
-`2π - log 2 > 0`) and integrating term by term via Barnes's first lemma
-(`Complex.integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub`) recovers
+For 15.6.7 on `‖z‖ < 1`, expanding `(1 - z)^s` in its binomial series on `‖z‖ < 1 / 2` (where the
+summed series majorant grows at exponential rate `log 2 < 2π`, so its product with
+`exp (-2π |y|)` decays at rate `2π - log 2 > 0`) and integrating term by term via Barnes's first
+lemma (`Complex.integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub`) recovers
 `Complex.regularizedGaussHGFun`; analyticity on the open unit disk extends the identity to all
 `‖z‖ < 1`.
 
@@ -74,6 +80,8 @@ majorant grows at exponential rate `log 2 < 2π`, so its product with `exp (-2π
   `Complex.analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_mul_one_sub_cpow`:
   convergence (for all `z : ℂ`) and `z`-holomorphy (on `{z | 1 - z ∈ slitPlane}`) of the
   Mellin–Barnes integral 15.6.7.
+* `Complex.eulerIntegral_eq_mellinBarnes_one_sub`: equality of `Complex.eulerIntegral` and the
+  Mellin–Barnes integral 15.6.7 on the entire cut plane `{z | 1 - z ∈ slitPlane}`.
 * `Complex.regularizedGaussHGFun_eq_mellinBarnes_one_sub`,
   `Complex.ordinaryHypergeometric_eq_mellinBarnes_one_sub`: equality of the regularized and
   ordinary Gauss series with the Mellin–Barnes integral 15.6.7 on the open unit disk `‖z‖ < 1`.
@@ -355,6 +363,74 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_c
     (integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow p₀.1 hp₀ ha hb hσ)
     hF'_meas h_bound h_dom_int h_diff).differentiableAt.differentiableWithinAt
 
+/-- Product integrability on `(0, 1) × ℝ` of a Beta-weighted kernel
+`(t, y) ↦ t^{u y - 1} (1 - t)^{v y - 1} g y`, where `u, v : ℝ → ℂ` are continuous with
+constant positive real parts `u₀, v₀` and `g : ℝ → ℂ` is continuous and integrable on `ℝ`. -/
+private theorem integrable_beta_mul_profile {u₀ v₀ : ℝ} {u v : ℝ → ℂ} {g : ℝ → ℂ}
+    (hu_cont : Continuous u) (hv_cont : Continuous v)
+    (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
+    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hg_cont : Continuous g) (hg_int : Integrable g) :
+    Integrable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
+  have hmeas_oo : (volume.restrict (Ioo (0 : ℝ) 1)).prod (volume : Measure ℝ) =
+      volume.restrict (Ioo (0 : ℝ) 1 ×ˢ (univ : Set ℝ)) := by
+    simpa [Measure.volume_eq_prod] using
+      Measure.prod_restrict (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
+        (Ioo 0 1) univ
+  have hφ : Integrable
+      (fun t : ℝ ↦ ‖(t : ℂ) ^ ((u₀ : ℂ) - 1) * (1 - (t : ℂ)) ^ ((v₀ : ℂ) - 1)‖)
+      (volume.restrict (Ioo (0 : ℝ) 1)) := by
+    have hb_conv := betaIntegral_convergent (u := u₀) (v := v₀) (by simpa using hu₀)
+      (by simpa using hv₀)
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hb_conv
+    exact (hb_conv.mono_set Ioo_subset_Ioc_self).norm
+  have hF_meas : AEStronglyMeasurable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
+    rw [hmeas_oo]
+    refine ContinuousOn.aestronglyMeasurable (fun ⟨t, y⟩ ⟨⟨ht0, ht1⟩, _⟩ ↦ ?_)
+      (measurableSet_Ioo.prod MeasurableSet.univ)
+    have h1t_slit : 1 - (t : ℂ) ∈ slitPlane := by
+      rw [← ofReal_one, ← ofReal_sub]
+      exact ofReal_mem_slitPlane.2 (sub_pos.2 ht1)
+    exact (((ContinuousAt.cpow (by fun_prop) ((hu_cont.sub continuous_const).continuousAt.comp
+        continuousAt_snd) (ofReal_mem_slitPlane.2 ht0)).mul
+      (ContinuousAt.cpow (by fun_prop) ((hv_cont.sub continuous_const).continuousAt.comp
+        continuousAt_snd) h1t_slit)).mul
+      (hg_cont.continuousAt.comp continuousAt_snd)).continuousWithinAt
+  refine (hφ.mul_prod hg_int.norm).mono' hF_meas ?_
+  rw [hmeas_oo]
+  filter_upwards [ae_restrict_mem (measurableSet_Ioo.prod MeasurableSet.univ)] with
+    ⟨t, y⟩ ⟨⟨ht0, ht1⟩, _⟩
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  rw [← ofReal_one, ← ofReal_sub]
+  simp only [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, norm_cpow_eq_rpow_re_of_pos h1t,
+    sub_re, ofReal_re, hu_re, hv_re]
+  exact le_rfl
+
+/-- Product integrability on `(0, 1) × ℝ` for Beta-times-Mellin–Barnes integrands whose
+exponents `u y` and `v y` have constant positive real parts `u₀` and `v₀`. -/
+private theorem integrable_beta_mul_mellinBarnes {a w : ℂ} {σ u₀ v₀ : ℝ}
+    {u v : ℝ → ℂ} (hu_cont : Continuous u) (hv_cont : Continuous v)
+    (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
+    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hσ_ne : ∀ n : ℕ, -σ ≠ -n)
+    (haσ_ne : ∀ n : ℕ, a.re + σ ≠ -n) (hw : w ∈ slitPlane) :
+    Integrable (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) *
+        (Gamma (a + (σ + p.2 * I)) * Gamma (-(σ + p.2 * I)) * w ^ ((σ : ℂ) + p.2 * I)))
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
+  have hG1 : Continuous fun y : ℝ ↦ Gamma (a + ((σ : ℂ) + y * I)) := by
+    have harg (y : ℝ) : a + ((σ : ℂ) + y * I) = (a + σ) + y * I := by ring
+    simpa only [harg] using
+      continuous_Gamma_add_mul_I (w := a + σ) (by simpa [add_re] using haσ_ne)
+  have hG2 : Continuous fun y : ℝ ↦ Gamma (-((σ : ℂ) + y * I)) := by
+    have harg (y : ℝ) : -((σ : ℂ) + y * I) = ((-σ : ℝ) : ℂ) - y * I := by push_cast; ring
+    simpa only [harg] using
+      continuous_Gamma_sub_mul_I (w := (-σ : ℝ)) (by simpa using hσ_ne)
+  exact integrable_beta_mul_profile hu_cont hv_cont hu_re hv_re hu₀ hv₀
+    ((hG1.mul hG2).mul (continuous_const.cpow (by fun_prop) (fun _ ↦ hw)))
+    (integrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ_ne haσ_ne hw)
+
 /-- Product integrability on `(0, 1) × ℝ` of the Fubini kernel connecting `eulerIntegral` at `-x`
 (`x > 0`) with the Mellin–Barnes integral 15.6.6. -/
 private theorem integrable_eulerMellinKernel (a : ℂ) {b c : ℂ} (hbc : b.re < c.re) {x : ℝ}
@@ -363,64 +439,15 @@ private theorem integrable_eulerMellinKernel (a : ℂ) {b c : ℂ} (hbc : b.re <
       (fun p : ℝ × ℝ ↦ ((p.1 : ℂ) ^ (b + (σ + p.2 * I) - 1) * (1 - (p.1 : ℂ)) ^ (c - b - 1)) *
         ((x : ℂ) ^ ((σ : ℂ) + p.2 * I) * Gamma (-(σ + p.2 * I)) * Gamma (a + (σ + p.2 * I))))
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
-  let μ : Measure ℝ := volume.restrict (Ioo (0 : ℝ) 1)
-  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
-  have hbσ' : 0 < (b + σ).re := by simp; linarith
-  -- Separated product majorant on `(0, 1) × ℝ`.
-  have hf₁ : Integrable
-      (fun t : ℝ ↦ ‖(t : ℂ) ^ (b + σ - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖) μ := by
-    have hb_conv := betaIntegral_convergent hbσ' hcb
-    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hb_conv
-    exact (hb_conv.mono_set Ioo_subset_Ioc_self).norm
-  have hf₂ : Integrable
-      (fun y : ℝ ↦ ‖(x : ℂ) ^ (σ : ℂ) * Gamma (-(σ + y * I)) * Gamma (a + (σ + y * I))‖) := by
-    have hg := (integrable_Gamma_add_mul_Gamma_sub (b := a + σ) (d := -σ)
-      (fun n hn ↦ by simp at hn; linarith [n.cast_nonneg' (α := ℝ)])
-      (fun n hn ↦ by simp at hn; linarith [n.cast_nonneg' (α := ℝ)])).const_mul ((x : ℂ) ^ (σ : ℂ))
-    refine hg.norm.congr (Eventually.of_forall fun y ↦ ?_)
-    have ha_eq : a + ((σ : ℂ) + y * I) = a + σ + y * I := (add_assoc a σ (y * I)).symm
-    have hσ_eq : -((σ : ℂ) + y * I) = -(σ : ℂ) - y * I := neg_add' _ _
-    dsimp only
-    congr 1
-    rw [ha_eq, hσ_eq]
-    ring
-  -- Joint measurability via continuity on `(0, 1) × ℝ`, and a.e. norm identity.
-  refine (hf₁.mul_prod hf₂).mono' ?_ ?_
-  · have hmeas_eq : μ.prod (volume : Measure ℝ) =
-        volume.restrict (Ioo (0 : ℝ) 1 ×ˢ (univ : Set ℝ)) := by
-      simpa [μ, Measure.volume_eq_prod] using
-        Measure.prod_restrict (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
-          (Ioo 0 1) univ
-    rw [hmeas_eq]
-    refine ContinuousOn.aestronglyMeasurable (continuousOn_of_forall_continuousAt fun p hp ↦ ?_)
-      (measurableSet_Ioo.prod MeasurableSet.univ)
-    obtain ⟨ht0, ht1⟩ := hp.1
-    have hc1 : ContinuousAt (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (b + (σ + p.2 * I) - 1)) p :=
-      ContinuousAt.cpow (continuous_ofReal.continuousAt.comp continuousAt_fst) (by fun_prop)
-        (ofReal_mem_slitPlane.mpr ht0)
-    have hc2 : ContinuousAt (fun p : ℝ × ℝ ↦ (1 - (p.1 : ℂ)) ^ (c - b - 1)) p := by
-      refine ContinuousAt.cpow (by fun_prop) continuousAt_const ?_
-      rw [← ofReal_one, ← ofReal_sub]
-      exact ofReal_mem_slitPlane.mpr (by linarith)
-    have hc3 : ContinuousAt (fun p : ℝ × ℝ ↦ (x : ℂ) ^ ((σ : ℂ) + p.2 * I)) p :=
-      ContinuousAt.cpow continuousAt_const (by fun_prop) (ofReal_mem_slitPlane.mpr hx)
-    have hc4 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (-(σ + p.2 * I))) p := by
-      have hcont : Continuous fun y : ℝ ↦ Gamma (-(σ + y * I)) := by
-        convert continuous_Gamma_sub_mul_I (w := -σ)
-          (fun n hn ↦ by simp at hn; linarith [n.cast_nonneg' (α := ℝ)]) using 3 with y
-        ring
-      exact hcont.continuousAt.comp continuousAt_snd
-    have hc5 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (a + (σ + p.2 * I))) p := by
-      have hcont : Continuous fun y : ℝ ↦ Gamma (a + (σ + y * I)) := by
-        simpa only [← add_assoc] using continuous_Gamma_add_mul_I (w := a + σ)
-          (fun n hn ↦ by simp at hn; linarith [n.cast_nonneg' (α := ℝ)])
-      exact hcont.continuousAt.comp continuousAt_snd
-    exact (hc1.mul hc2).mul ((hc3.mul hc4).mul hc5)
-  · filter_upwards [TauCeti.ae_of_ae_fst (ae_restrict_mem measurableSet_Ioo)] with p hp
-    simp only [norm_mul, norm_cpow_eq_rpow_re_of_pos hp.1, norm_cpow_eq_rpow_re_of_pos hx]
-    have hre1 : (b + (↑σ + ↑p.2 * I) - 1).re = (b + ↑σ - 1).re := by simp
-    have hre2 : ((σ : ℂ) + ↑p.2 * I).re = ((σ : ℂ)).re := by simp
-    rw [hre1, hre2]
+  refine (integrable_beta_mul_mellinBarnes (a := a) (w := (x : ℂ)) (σ := σ)
+    (u₀ := b.re + σ) (v₀ := (c - b).re) (u := fun y ↦ b + (σ + y * I)) (v := fun _ ↦ c - b)
+    (by fun_prop) continuous_const (fun _ ↦ by simp [add_re]) (fun _ ↦ rfl)
+    (by linarith) (by simpa using sub_pos.mpr hbc)
+    (fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)])
+    (fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)])
+    (ofReal_mem_slitPlane.mpr hx)).congr (Eventually.of_forall fun p ↦ ?_)
+  dsimp only
+  ring
 
 /-- At any negative real argument `-x` (`x > 0`), `eulerIntegral a b c (-x)` equals the
 Mellin–Barnes integral 15.6.6 along `Re s = σ`. -/
@@ -940,5 +967,130 @@ theorem ordinaryHypergeometric_eq_mellinBarnes_one_sub (a b c : ℂ) {z : ℂ} (
   rw [(div_eq_iff hΓc).mp hdiv,
     regularizedGaussHGFun_eq_mellinBarnes_one_sub a b c hz hσ hσc haσ hbσ]
   ring
+
+/-- Pointwise Mellin–Barnes expansion of the Euler integrand in powers of `1 - z` for `t ∈ (0, 1)`
+and `1 - z ∈ Complex.slitPlane`, used in the Fubini proof of DLMF 15.6.7. -/
+private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : ℂ} {σ t : ℝ}
+    (hz : 1 - z ∈ slitPlane) (hσ : σ < 0) (haσ : -a.re < σ) (ht0 : 0 < t) (ht1 : t < 1) :
+    Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a)) =
+      (2 * π : ℂ)⁻¹ * ∫ y : ℝ, (t : ℂ) ^ (b + (σ + y * I) - 1) *
+        (1 - (t : ℂ)) ^ (c - a - b - (σ + y * I) - 1) *
+          (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) := by
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht0.ne'
+  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := by
+    rw [← ofReal_one, ← ofReal_sub]
+    exact ofReal_ne_zero.2 h1t.ne'
+  set q : ℝ := t / (1 - t)
+  have hq : 0 < q := div_pos ht0 h1t
+  have hfact : 1 - z * (t : ℂ) = ((1 - t : ℝ) : ℂ) * (1 + (q : ℂ) * (1 - z)) := by
+    have h1t_ne' : ((1 - t : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 h1t.ne'
+    dsimp [q]
+    push_cast
+    field_simp [h1t_ne']
+    ring
+  have hcpow_fact : (1 - z * (t : ℂ)) ^ (-a) =
+      (1 - (t : ℂ)) ^ (-a) * (1 + (q : ℂ) * (1 - z)) ^ (-a) := by
+    rw [hfact, ofReal_mul_cpow h1t.le]
+    push_cast
+    rfl
+  have hreord : Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
+        ((1 - (t : ℂ)) ^ (-a) * (1 + (q : ℂ) * (1 - z)) ^ (-a))) =
+      ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+        (Gamma a * (1 + (q : ℂ) * (1 - z)) ^ (-a)) := by ring
+  rw [hcpow_fact, hreord,
+    ← integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ haσ (TauCeti.ofReal_mul_mem_slitPlane hq hz),
+    ← mul_left_comm ((2 * π : ℂ)⁻¹), ← integral_const_mul]
+  congr 1
+  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+  have hq_pow : (q : ℂ) ^ ((σ : ℂ) + y * I) =
+      (t : ℂ) ^ ((σ : ℂ) + y * I) * (1 - (t : ℂ)) ^ (-((σ : ℂ) + y * I)) := by
+    dsimp [q]
+    rw [ofReal_div, div_cpow_ofReal_nonneg ht0.le h1t.le, div_eq_mul_inv, ← cpow_neg,
+      ofReal_sub, ofReal_one]
+  have hpow_t : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ ((σ : ℂ) + y * I) =
+      (t : ℂ) ^ (b + ((σ : ℂ) + y * I) - 1) := by
+    rw [← cpow_add _ _ ht_ne]
+    congr 1
+    ring
+  have hpow_1t : (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) *
+      (1 - (t : ℂ)) ^ (-((σ : ℂ) + y * I)) =
+      (1 - (t : ℂ)) ^ (c - a - b - ((σ : ℂ) + y * I) - 1) := by
+    rw [← cpow_add _ _ h1t_ne, ← cpow_add _ _ h1t_ne]
+    congr 1
+    ring
+  dsimp only
+  rw [ofReal_mul_cpow hq.le, hq_pow, ← hpow_t, ← hpow_1t]
+  ring
+
+/-- **Mellin–Barnes integral for Euler's hypergeometric integral in `1 - z` (DLMF 15.6.7).**
+On the entire cut plane `1 - z ∈ Complex.slitPlane`, for any vertical line `Re s = σ` separating
+the left-opening poles of `Γ(a + s) Γ(b + s)` from the right-opening poles of
+`Γ(c - a - b - s) Γ(-s)` (`-min(Re a, Re b) < σ < min(0, Re(c - a - b))`),
+`Complex.eulerIntegral a b c z = (2π Γ(a) Γ(b) Γ(c - a) Γ(c - b))⁻¹ ∫_ℝ Γ(a + s) Γ(b + s)
+  Γ(c - a - b - s) Γ(-s) (1 - z)^s`. -/
+theorem eulerIntegral_eq_mellinBarnes_one_sub {a b c z : ℂ} {σ : ℝ}
+    (hz : 1 - z ∈ slitPlane) (hσ : σ < 0) (hcab : σ < (c - a - b).re)
+    (haσ : -a.re < σ) (hbσ : -b.re < σ) :
+    eulerIntegral a b c z =
+      (2 * π * Gamma a * Gamma b * Gamma (c - a) * Gamma (c - b))⁻¹ *
+        ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
+          Gamma (c - a - b - (σ + y * I)) * Gamma (-(σ + y * I)) *
+          (1 - z) ^ (σ + y * I) := by
+  have hcb : 0 < (c - b).re := by simp only [sub_re] at hcab ⊢; linarith
+  have hca : 0 < (c - a).re := by simp only [sub_re] at hcab ⊢; linarith
+  have hbσ_pos : 0 < b.re + σ := by linarith
+  have hcab_pos : 0 < (c - a - b).re - σ := by linarith
+  have hσ_ne : ∀ n : ℕ, -σ ≠ -n := fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)]
+  have haσ_ne : ∀ n : ℕ, a.re + σ ≠ -n := fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)]
+  let s : ℝ → ℂ := fun y ↦ (σ : ℂ) + y * I
+  let F : ℝ → ℝ → ℂ := fun t y ↦
+    (t : ℂ) ^ (b + s y - 1) * (1 - (t : ℂ)) ^ (c - a - b - s y - 1) *
+      (Gamma (a + s y) * Gamma (-s y) * (1 - z) ^ s y)
+  -- Substitute the Mellin–Barnes representation pointwise on `(0, 1)` and exchange integrals.
+  have hpoint : ∫ t : ℝ in 0..1,
+        Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a)) =
+      (2 * π : ℂ)⁻¹ * ∫ t : ℝ in 0..1, ∫ y : ℝ, F t y := by
+    rw [← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr_ae ?_
+    filter_upwards [Ioo_ae_eq_Ioc] with t ht ht_mem
+    rw [uIoc_of_le zero_le_one] at ht_mem
+    obtain ⟨ht0, ht1⟩ := ht.2 ht_mem
+    exact mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub hz hσ haσ ht0 ht1
+  have hF_int : Integrable (Function.uncurry F) ((volume.restrict (uIoc 0 1)).prod volume) := by
+    rw [uIoc_of_le zero_le_one, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+    exact integrable_beta_mul_mellinBarnes (u := fun y ↦ b + s y)
+      (v := fun y ↦ c - a - b - s y) (by fun_prop) (by fun_prop)
+      (fun _ ↦ by simp [s, add_re]) (fun _ ↦ by simp [s, sub_re])
+      hbσ_pos hcab_pos hσ_ne haσ_ne hz
+  -- Evaluate the inner `t`-integral as Euler's Beta function `B(b + s, c - a - b - s)`.
+  have hinner (y : ℝ) : ∫ t : ℝ in 0..1, F t y =
+      (Gamma (a + s y) * Gamma (b + s y) * Gamma (c - a - b - s y) *
+        Gamma (-s y) * (1 - z) ^ s y) / Gamma (c - a) := by
+    dsimp [F]
+    have hsum : b + s y + (c - a - b - s y) = c - a := by ring
+    rw [intervalIntegral.integral_mul_const, ← betaIntegral,
+      betaIntegral_eq_Gamma_mul_div (b + s y) (c - a - b - s y)
+        (by simpa [s, add_re] using hbσ_pos) (by simpa [s, sub_re] using hcab_pos),
+      hsum]
+    ring
+  rw [intervalIntegral.integral_const_mul, intervalIntegral_integral_swap hF_int] at hpoint
+  simp_rw [hinner, integral_div] at hpoint
+  have hΓa : Gamma a ≠ 0 := Gamma_ne_zero_of_re_pos (by linarith)
+  have hΓb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos (by linarith)
+  have hΓca : Gamma (c - a) ≠ 0 := Gamma_ne_zero_of_re_pos hca
+  have hΓcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
+  have hpi : (2 * π : ℂ) ≠ 0 := by exact_mod_cast mul_ne_zero two_ne_zero Real.pi_ne_zero
+  have hI : (∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
+        (1 - z * t) ^ (-a)) =
+      (Gamma a)⁻¹ * ((2 * π : ℂ)⁻¹ *
+        ((∫ y : ℝ, Gamma (a + s y) * Gamma (b + s y) *
+          Gamma (c - a - b - s y) * Gamma (-s y) * (1 - z) ^ s y) / Gamma (c - a))) := by
+    rw [← hpoint, inv_mul_cancel_left₀ hΓa]
+  rw [eulerIntegral_def, hI]
+  dsimp only [s]
+  generalize (∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
+    Gamma (c - a - b - (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) = J
+  field_simp [hΓa, hΓb, hΓca, hΓcb, hpi]
 
 end Complex

@@ -8,11 +8,16 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.Analysis.Complex.RealIdentity
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.MellinInversion
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
-# The Mellin–Barnes integral of `(1 + u)^{-a}` and Barnes's first lemma
+# The Mellin–Barnes integral of `(1 + z)^{-a}` and Barnes's first lemma
 
 For `0 < Re s < Re a` the Mellin transform of `t ↦ (1 + t)^{-a}` is Euler's Beta integral of the
 second kind (DLMF 5.12.3),
@@ -27,6 +32,15 @@ bounded. For `0 < σ < Re a`, Mellin inversion then gives the Mellin–Barnes in
 binomial,
 
 `Γ(a) (1 + u)^{-a} = (1 / 2π) ∫ Γ(σ + i y) Γ(a - σ - i y) u^{-σ - i y} dy`   for `u > 0`.
+
+Stirling's vertical estimates (`TauCeti.exists_norm_Gamma_vertical_line_le` and
+`TauCeti.exists_norm_Gamma_sub_I_le`) sharpen the vertical decay to
+`‖Γ(σ + i y) Γ(a - σ - i y)‖ = O((1 + |y|)^{Re a - 1} e^{-π |y|})`, so the slit-plane holomorphy of
+the Mellin–Barnes kernel (`TauCeti.analyticOnNhd_integral_cpow_neg_smul`) and the
+positive-axis identity principle `AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq` continue the
+representation to the whole cut plane `z ∈ Complex.slitPlane`:
+
+`(2π)⁻¹ ∫_ℝ Γ(σ + i y) Γ(a - σ - i y) z^{-(σ + i y)} dy = Γ(a) (1 + z)^{-a}`.
 
 Inserting Euler's Beta integral of the second kind into the vertical integral of a four-Gamma
 product and swapping the two integrations by Fubini's theorem proves **Barnes's first lemma**
@@ -44,12 +58,16 @@ sequences (`max (-Re a, -Re b) < σ < min (Re c, Re d)`).
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
 * `Complex.integrableOn_cpow_mul_one_add_cpow_neg`, `Complex.integral_cpow_mul_one_add_cpow_neg`:
   the same Beta integral as an integrable function and a set integral on `(0, ∞)`.
-* `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
-  vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
-* `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
-  `Re s = σ` with `0 < σ < Re a` is `Γ(a) (1 + u)^{-a}`.
-* `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: the same formula as the unnormalised
-  vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}`.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`,
+  `Complex.integrable_Gamma_mul_Gamma_sub_mul_cpow_neg`,
+  `Complex.integrable_Gamma_add_mul_Gamma_neg_mul_cpow`: vertical integrability of
+  `Γ(s) Γ(a - s)` and its slit-plane Mellin–Barnes integrands.
+* `Complex.mellinInv_Gamma_mul_Gamma_sub`, `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`:
+  Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line `Re s = σ` with `0 < σ < Re a` is
+  `Γ(a) (1 + u)^{-a}` for `u > 0`.
+* `Complex.integral_Gamma_mul_Gamma_sub_mul_cpow_neg`,
+  `Complex.integral_Gamma_add_mul_Gamma_neg_mul_cpow`: the Mellin–Barnes integral representation of
+  `Γ(a) (1 + z)^{-a}` on `Complex.slitPlane`, in both sign conventions.
 * `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: integrability of
   `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` away from the poles of the four factors.
 * `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: **Barnes's first lemma** (DLMF 5.13.3)
@@ -201,6 +219,111 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-- Continuity and `O((1 + |y|)^{Re a - 1} e^{-π |y|})` decay of `y ↦ Γ(σ + i y) Γ(a - σ - i y)`
+along any vertical line `Re s = σ` avoiding the poles of both Gamma factors. -/
+private theorem continuous_and_norm_Gamma_mul_Gamma_sub_le {a : ℂ} {σ : ℝ}
+    (hσ : ∀ n : ℕ, σ ≠ -n) (haσ : ∀ n : ℕ, a.re - σ ≠ -n) :
+    Continuous (fun y : ℝ ↦ Gamma (σ + y * I) * Gamma (a - (σ + y * I))) ∧
+      ∃ C > 0, ∀ y : ℝ, ‖Gamma (σ + y * I) * Gamma (a - (σ + y * I))‖ ≤
+        C * (1 + |y|) ^ (a.re - 1) * Real.exp (-π * |y|) := by
+  have hsub (y : ℝ) : a - ((σ : ℂ) + y * I) = (a - σ) - y * I := by ring
+  have hcont : Continuous fun y : ℝ ↦ Gamma (σ + y * I) * Gamma (a - (σ + y * I)) := by
+    simp only [hsub]
+    exact (continuous_Gamma_add_mul_I (w := σ) (by simpa using hσ)).mul
+      (continuous_Gamma_sub_mul_I (w := a - σ) (by simpa [sub_re] using haσ))
+  obtain ⟨C₁, hC₁, h₁⟩ := TauCeti.exists_norm_Gamma_vertical_line_le hσ
+  obtain ⟨C₂, hC₂, h₂⟩ := TauCeti.exists_norm_Gamma_sub_I_le (w := a - σ)
+    (by simpa [sub_re] using haσ)
+  refine ⟨hcont, C₁ * C₂, mul_pos hC₁ hC₂, fun y ↦ ?_⟩
+  have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
+  have h2y := h₂ y
+  simp only [sub_re, ofReal_re] at h2y
+  rw [hsub, norm_mul]
+  calc ‖Gamma (σ + y * I)‖ * ‖Gamma (a - σ - y * I)‖
+      ≤ (C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π * |y| / 2))) *
+          (C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-(π * |y| / 2))) :=
+        mul_le_mul (h₁ y) h2y (norm_nonneg _) (by positivity)
+    _ = C₁ * C₂ * ((1 + |y|) ^ (σ - 1 / 2) * (1 + |y|) ^ (a.re - σ - 1 / 2)) *
+          (Real.exp (-(π * |y| / 2)) * Real.exp (-(π * |y| / 2))) := by ring
+    _ = C₁ * C₂ * (1 + |y|) ^ (a.re - 1) * Real.exp (-π * |y|) := by
+        rw [← Real.rpow_add h1y, ← Real.exp_add]
+        ring_nf
+
+/-- For `z ∈ Complex.slitPlane` and `σ : ℝ` avoiding the poles of `Γ(s)` and `Γ(a - s)`, the
+Mellin–Barnes integrand `y ↦ Γ(σ + i y) Γ(a - (σ + i y)) z^{-(σ + i y)}` is integrable on `ℝ`. -/
+theorem integrable_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ}
+    (hσ : ∀ n : ℕ, σ ≠ -n) (haσ : ∀ n : ℕ, a.re - σ ≠ -n) (hz : z ∈ slitPlane) :
+    Integrable fun y : ℝ ↦ Gamma (σ + y * I) * Gamma (a - (σ + y * I)) * z ^ (-(σ + y * I)) := by
+  obtain ⟨hcont, C, _, hbound⟩ := continuous_and_norm_Gamma_mul_Gamma_sub_le hσ haσ
+  exact (TauCeti.integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs
+    hcont.aestronglyMeasurable ⟨C, a.re - 1, Eventually.of_forall hbound⟩ σ
+    (abs_arg_lt_pi_of_mem_slitPlane hz)).congr
+      (Eventually.of_forall fun y ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
+
+/-- **Mellin–Barnes integral representation of `(1 + z)^{-a}`** on the slit plane: for
+`0 < σ < Re a` and `z ∈ Complex.slitPlane`,
+`(2π)⁻¹ ∫_ℝ Γ(σ + i y) Γ(a - (σ + i y)) z^{-(σ + i y)} dy = Γ(a) (1 + z)^{-a}`. -/
+theorem integral_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ} (hσ : 0 < σ) (hσa : σ < a.re)
+    (hz : z ∈ slitPlane) :
+    (2 * π : ℂ)⁻¹ *
+        ∫ y : ℝ, Gamma (σ + y * I) * Gamma (a - (σ + y * I)) * z ^ (-(σ + y * I)) =
+      Gamma a * (1 + z) ^ (-a) := by
+  obtain ⟨hcont, C, _, hbound⟩ := continuous_and_norm_Gamma_mul_Gamma_sub_le (a := a) (σ := σ)
+    (fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)])
+    (fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)])
+  have hanL : AnalyticOnNhd ℂ (fun w : ℂ ↦ (2 * π : ℂ)⁻¹ *
+      ∫ y : ℝ, Gamma (σ + y * I) * Gamma (a - (σ + y * I)) * w ^ (-(σ + y * I))) slitPlane :=
+    analyticOnNhd_const.mul <|
+      ((TauCeti.analyticOnNhd_integral_cpow_neg_smul hcont.aestronglyMeasurable
+        ⟨C, a.re - 1, Eventually.of_forall hbound⟩ σ).mono
+          fun _ hw ↦ ⟨hw, abs_arg_lt_pi_of_mem_slitPlane hw⟩).congr isOpen_slitPlane fun _ _ ↦
+        integral_congr_ae (Eventually.of_forall fun _ ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
+  have hanR : AnalyticOnNhd ℂ (fun w : ℂ ↦ Gamma a * (1 + w) ^ (-a)) slitPlane :=
+    DifferentiableOn.analyticOnNhd (fun w hw ↦
+      (((differentiableAt_id.const_add 1).cpow (differentiableAt_const _)
+        (by simpa using TauCeti.ofReal_add_mem_slitPlane hw zero_le_one)).const_mul
+        _).differentiableWithinAt) isOpen_slitPlane
+  refine hanL.eqOn_slitPlane_of_ofReal_pos_eq hanR (fun r hr ↦ ?_) hz
+  have hm := mellinInv_Gamma_mul_Gamma_sub hσ hσa hr
+  rw [mellinInv, real_smul, one_div] at hm
+  rw [← hm]
+  push_cast
+  congr 1
+  exact integral_congr_ae (Eventually.of_forall fun _ ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
+
+private lemma gamma_mellinBarnes_neg_contour (a z : ℂ) (σ y : ℝ) :
+    Gamma (((-σ : ℝ) : ℂ) + (-y : ℝ) * I) * Gamma (a - (((-σ : ℝ) : ℂ) + (-y : ℝ) * I)) *
+        z ^ (-(((-σ : ℝ) : ℂ) + (-y : ℝ) * I)) =
+      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) := by
+  have hneg : ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by push_cast; ring
+  rw [hneg, sub_neg_eq_add, neg_neg, mul_comm (Gamma _)]
+
+/-- Positive-exponent companion to `Complex.integrable_Gamma_mul_Gamma_sub_mul_cpow_neg`:
+`y ↦ Γ(a + (σ + i y)) Γ(-(σ + i y)) z^{σ + i y}` is integrable on `ℝ` whenever `-σ` and
+`Re a + σ` avoid the nonpositive integers and `z ∈ Complex.slitPlane`. -/
+theorem integrable_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ}
+    (hσ : ∀ n : ℕ, -σ ≠ -n) (haσ : ∀ n : ℕ, a.re + σ ≠ -n) (hz : z ∈ slitPlane) :
+    Integrable fun y : ℝ ↦
+      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) :=
+  (integrable_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
+    hσ (by simpa [sub_neg_eq_add] using haσ) hz).comp_neg.congr
+    (Eventually.of_forall fun y ↦ gamma_mellinBarnes_neg_contour a z σ y)
+
+/-- Positive-exponent form of the Mellin–Barnes integral of `(1 + z)^{-a}`: for `-Re a < σ < 0` and
+`z ∈ Complex.slitPlane`,
+`(2π)⁻¹ ∫_ℝ Γ(a + (σ + i y)) Γ(-(σ + i y)) z^{σ + i y} dy = Γ(a) (1 + z)^{-a}`. -/
+theorem integral_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ} (hσ : σ < 0)
+    (haσ : -a.re < σ) (hz : z ∈ slitPlane) :
+    (2 * π : ℂ)⁻¹ *
+        ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ (σ + y * I) =
+      Gamma a * (1 + z) ^ (-a) := by
+  rw [← integral_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
+    (neg_pos.2 hσ) (by linarith) hz]
+  congr 1
+  conv_rhs => rw [← integral_neg_eq_self]
+  exact integral_congr_ae
+    (Eventually.of_forall fun y ↦ (gamma_mellinBarnes_neg_contour a z σ y).symm)
 
 /-- The product `y ↦ Γ(b + i y) Γ(d - i y)` is integrable on `ℝ` whenever neither `Re b` nor
 `Re d` is a nonpositive integer. -/

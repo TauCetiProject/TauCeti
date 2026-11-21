@@ -100,6 +100,10 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `Complex.norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im` -- for any `w, s : ℂ`,
+  `‖w ^ s‖ ≤ ‖w‖ ^ s.re * exp (|arg w| * |Im s|)`.
+* `Complex.norm_cpow_le_max_rpow_mul_exp` -- uniform upper bound on `‖w ^ s‖` when
+  `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
@@ -717,6 +721,32 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- For any complex base `w` and complex exponent `s`,
+`‖w ^ s‖ ≤ ‖w‖ ^ s.re * exp (|arg w| * |Im s|)`. The bound also holds at `w = 0`. -/
+theorem norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im (w s : ℂ) :
+    ‖w ^ s‖ ≤ ‖w‖ ^ s.re * Real.exp (|w.arg| * |s.im|) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · rcases eq_or_ne s 0 with rfl | hs
+    · simp
+    · simp only [zero_cpow hs, norm_zero]
+      positivity
+  · rw [norm_cpow_of_ne_zero hw, div_eq_mul_inv, ← Real.exp_neg]
+    gcongr
+    calc -(w.arg * s.im) ≤ |w.arg * s.im| := neg_le_abs _
+      _ = |w.arg| * |s.im| := abs_mul _ _
+
+/-- If `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`, then
+`‖w ^ s‖ ≤ max (r₀ ^ s.re) (r₁ ^ s.re) * exp (α * |Im s|)` for every `s : ℂ`. -/
+theorem norm_cpow_le_max_rpow_mul_exp {w : ℂ} {r₀ r₁ α : ℝ} (hr₀ : 0 < r₀)
+    (hw_lo : r₀ ≤ ‖w‖) (hw_hi : ‖w‖ ≤ r₁) (hw_arg : |w.arg| ≤ α) (s : ℂ) :
+    ‖w ^ s‖ ≤ max (r₀ ^ s.re) (r₁ ^ s.re) * Real.exp (α * |s.im|) := by
+  refine (norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im w s).trans ?_
+  have hnorm : ‖w‖ ^ s.re ≤ max (r₀ ^ s.re) (r₁ ^ s.re) := by
+    rcases le_or_gt 0 s.re with hσ | hσ
+    · exact (Real.rpow_le_rpow (norm_nonneg w) hw_hi hσ).trans (le_max_right _ _)
+    · exact (Real.rpow_le_rpow_of_nonpos hr₀ hw_lo hσ.le).trans (le_max_left _ _)
+  gcongr
 
 /-- On the closed unit disk `‖z‖ ≤ 1` and for `0 ≤ t < 1`, the principal power `(1 - z * t) ^ s`
 has norm at most `exp (π * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re)` for any complex exponent `s`. -/
