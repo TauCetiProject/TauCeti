@@ -17,7 +17,13 @@ used to form a total complex.
 Mathlib supplies tensor signs for `ComplexShape.down ℕ` and `ComplexShape.up ℤ`; the instance
 `ComplexShape.instTensorSignsDownInt` supplies the sign `ε p = (-1)^p` on `ComplexShape.down ℤ`, so
 that chain complexes indexed by `ℤ`, such as Floer complexes graded by an index, have tensor
-products with the Koszul differential `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y`.
+products with the Koszul differential `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y`. The instance
+`ComplexShape.instTotalComplexShapeSymmetryDownInt` adds the Koszul sign `(-1)^(p q)` relating the
+total complexes of a bicomplex indexed by `ℤ` and of its flip (`ComplexShape.σ_down_ℤ`), the
+chain-complex counterpart of Mathlib's instance for `ComplexShape.up ℤ`; it gives the signed
+interchange of the factors of tensor products of such chain complexes. The signs on
+`ComplexShape.down ℤ` and on `ComplexShape.up ℤ` are symmetric in the two factors
+(`TotalComplexShapeSymmetrySymmetry`).
 
 The instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` identifies the total
 complexes of a first-quadrant bicomplex and of its flip by the Koszul sign `(-1)^(p*q)` in
@@ -54,6 +60,34 @@ instance instTensorSignsDownInt : TensorSigns (ComplexShape.down ℤ) where
 
 @[simp]
 theorem ε_down_ℤ (n : ℤ) : (ComplexShape.down ℤ).ε n = n.negOnePow := rfl
+
+/-- The total complexes of a bicomplex of chain complexes indexed by `ℤ` and of its flip are
+identified by the Koszul sign `(-1)^(p q)` in bidegree `(p, q)` (`ComplexShape.σ_down_ℤ`), as for
+cochain complexes indexed by `ℤ` in Mathlib. -/
+instance instTotalComplexShapeSymmetryDownInt :
+    TotalComplexShapeSymmetry (down ℤ) (down ℤ) (down ℤ) where
+  symm p q := add_comm q p
+  σ p q := (p * q).negOnePow
+  σ_ε₁ := by
+    rintro _ p rfl q
+    simp only [ε₁_def, ε₂_def, ε_down_ℤ, mul_one, add_mul, one_mul, add_comm (p * q) q,
+      Int.negOnePow_add]
+  σ_ε₂ := by
+    rintro p _ q rfl
+    simp only [ε₁_def, ε₂_def, ε_down_ℤ, one_mul, mul_add, mul_one, Int.negOnePow_add, mul_assoc,
+      Int.units_mul_self]
+
+/-- The Koszul symmetry sign on `ComplexShape.down ℤ` in bidegree `(p, q)` is `(-1)^(p q)`. -/
+@[simp]
+theorem σ_down_ℤ (p q : ℤ) : σ (down ℤ) (down ℤ) (down ℤ) p q = (p * q).negOnePow := rfl
+
+/-- The Koszul symmetry signs on `ComplexShape.down ℤ` are symmetric in the two factors. -/
+instance : TotalComplexShapeSymmetrySymmetry (down ℤ) (down ℤ) (down ℤ) where
+  σ_symm p q := by rw [σ_down_ℤ, σ_down_ℤ, mul_comm]
+
+/-- The Koszul symmetry signs on `ComplexShape.up ℤ` are symmetric in the two factors. -/
+instance : TotalComplexShapeSymmetrySymmetry (up ℤ) (up ℤ) (up ℤ) where
+  σ_symm p q := by simp [mul_comm]
 
 end ComplexShape
 

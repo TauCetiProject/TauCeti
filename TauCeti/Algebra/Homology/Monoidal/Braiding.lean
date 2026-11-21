@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Summand
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -178,6 +179,16 @@ lemma ι_koszulBraidingHom (X Y : CochainComplex C ℤ) (p q j : ℤ)
       koszulBraidingSummand C X Y p q j h := by
   rw [koszulBraidingHom_f]
   apply HomologicalComplex.ι_mapBifunctorDesc
+
+/-- The Koszul braiding of cochain complexes is the signed interchange
+`HomologicalComplex.tensorBraiding` of their tensor product, for the Koszul signs of Mathlib's
+`TotalComplexShapeSymmetry (up ℤ) (up ℤ) (up ℤ)`. -/
+lemma koszulBraidingHom_eq_tensorBraiding_hom (X Y : CochainComplex C ℤ) :
+    koszulBraidingHom C X Y = (HomologicalComplex.tensorBraiding X Y).hom := by
+  ext j : 1
+  refine HomologicalComplex.mapBifunctor.hom_ext fun p q (h : p + q = j) ↦ ?_
+  rw [ι_koszulBraidingHom, koszulBraidingSummand_def]
+  exact (HomologicalComplex.ιTensorObj_tensorBraiding_hom_f X Y p q j h).symm
 
 /-- The Koszul braiding is natural in the left-hand factor. -/
 lemma koszulBraidingHom_naturality_left {X Y : CochainComplex C ℤ} (f : X ⟶ Y)
