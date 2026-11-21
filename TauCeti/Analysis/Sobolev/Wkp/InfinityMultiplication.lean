@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
-import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Sobolev.Wkp.BilinOfAeMul
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -31,7 +31,7 @@ then gives the weak Leibniz rule `∂ᵥ(u w) = (∂ᵥu) w + u (∂ᵥw)`
 `W^{k+1,∞}` by first derivatives (`TauCeti.Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn`):
 both terms of the Leibniz rule are products of two elements of `W^{k,∞}`. Every factor is
 bounded, so no interpolation inequality is needed. Boundedness of the bilinear map comes from the
-closed graph theorem, applied in each variable in turn.
+closed graph theorem, through the shared construction `TauCeti.Wkp.bilinOfAeMul`.
 
 ## Main declarations
 
@@ -52,8 +52,7 @@ closed graph theorem, applied in each variable in turn.
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised ed.,
   §4.2.3 (Lipschitz functions and `W^{1,∞}`).
 
-The induction on the order and the closed-graph construction of the bilinear map are adapted from
-Tau Ceti contribution
+The induction on the order is adapted from Tau Ceti contribution
 [#1135](https://git.taucetiproject.org/TauCetiProject/TauCeti/pulls/1135),
 *multiplication in `W^{k,p}(ℝⁿ)` for `p > n` at every order*.
 -/
@@ -129,151 +128,35 @@ theorem exists_value_ae_eq_mul_top : ∀ (k : ℕ) (u w : Wkp mu Omega ∞ k),
 
 /-! ### Multiplication as a bounded bilinear map -/
 
-/-- A chosen product `u w` in `W^{k,∞}(Ω)`; see `TauCeti.Wkp.mulTopL`. -/
-private def mulAux (k : ℕ) (u w : Wkp mu Omega ∞ k) : Wkp mu Omega ∞ k :=
-  (exists_value_ae_eq_mul_top k u w).choose
-
-private theorem value_mulAux (k : ℕ) (u w : Wkp mu Omega ∞ k) :
-    (value k (mulAux k u w) : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x => value k u x * value k w x :=
-  (exists_value_ae_eq_mul_top k u w).choose_spec
-
-private theorem eq_mulAux_iff {k : ℕ} {u w z : Wkp mu Omega ∞ k} :
-    z = mulAux k u w ↔
-      (value k z : E → ℝ) =ᵐ[mu.restrict Omega] fun x => value k u x * value k w x :=
-  ⟨fun h => h ▸ value_mulAux k u w,
-    fun h => ext k (Lp.ext (h.trans (value_mulAux k u w).symm))⟩
-
-private theorem mulAux_comm (k : ℕ) (u w : Wkp mu Omega ∞ k) : mulAux k u w = mulAux k w u := by
-  refine eq_mulAux_iff.2 ?_
-  filter_upwards [value_mulAux k u w] with x hx
-  rw [hx, mul_comm]
-
-private theorem mulAux_add_right (k : ℕ) (u w z : Wkp mu Omega ∞ k) :
-    mulAux k u (w + z) = mulAux k u w + mulAux k u z := by
-  refine (eq_mulAux_iff.2 ?_).symm
-  filter_upwards [value_add_ae k (mulAux k u w) (mulAux k u z), value_mulAux k u w,
-    value_mulAux k u z, value_add_ae k w z] with x h₁ h₂ h₃ h₄
-  rw [h₁, Pi.add_apply, h₂, h₃, h₄, Pi.add_apply, mul_add]
-
-private theorem mulAux_smul_right (k : ℕ) (c : ℝ) (u w : Wkp mu Omega ∞ k) :
-    mulAux k u (c • w) = c • mulAux k u w := by
-  refine (eq_mulAux_iff.2 ?_).symm
-  filter_upwards [value_smul_ae k c (mulAux k u w), value_mulAux k u w, value_smul_ae k c w]
-    with x h₁ h₂ h₃
-  rw [h₁, Pi.smul_apply, h₂, h₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_left_comm]
-
-private theorem mulAux_sub_right (k : ℕ) (u w z : Wkp mu Omega ∞ k) :
-    mulAux k u (w - z) = mulAux k u w - mulAux k u z :=
-  eq_sub_of_add_eq (by rw [← mulAux_add_right, sub_add_cancel])
-
-private theorem mulAux_add_left (k : ℕ) (u w z : Wkp mu Omega ∞ k) :
-    mulAux k (u + w) z = mulAux k u z + mulAux k w z := by
-  rw [mulAux_comm, mulAux_add_right, mulAux_comm k z, mulAux_comm k z]
-
-private theorem mulAux_smul_left (k : ℕ) (c : ℝ) (u w : Wkp mu Omega ∞ k) :
-    mulAux k (c • u) w = c • mulAux k u w := by
-  rw [mulAux_comm, mulAux_smul_right, mulAux_comm k w]
-
-/-- The value of the product `u w` is bounded in `L^∞` by `‖u‖ ‖w‖`. -/
-private theorem norm_value_mulAux_le (k : ℕ) (u w : Wkp mu Omega ∞ k) :
-    ‖value k (mulAux k u w)‖ ≤ ‖u‖ * ‖w‖ :=
-  (Lp.norm_le_mul_norm_of_ae_eq_smul (Lp.ae_norm_le_norm_top (value k u))
-    (value_mulAux k u w)).trans
-    (mul_le_mul (norm_value_le k u) (norm_value_le k w) (norm_nonneg _) (norm_nonneg _))
-
-/-- If `w n → z` in `W^{k,∞}(Ω)`, then the values of the products `u (w n)` converge in `L^∞` to
-the value of `u z`. -/
-private theorem tendsto_value_mulAux (k : ℕ) (u : Wkp mu Omega ∞ k) {w : ℕ → Wkp mu Omega ∞ k}
-    {z : Wkp mu Omega ∞ k} (hw : Tendsto w atTop (𝓝 z)) :
-    Tendsto (fun n => value k (mulAux k u (w n))) atTop (𝓝 (value k (mulAux k u z))) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hlim : Tendsto (fun n => ‖u‖ * ‖w n - z‖) atTop (𝓝 (‖u‖ * 0)) :=
-    (tendsto_iff_norm_sub_tendsto_zero.1 hw).const_mul _
-  rw [mul_zero] at hlim
-  refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
-  rw [← value_sub, ← mulAux_sub_right]
-  exact norm_value_mulAux_le k u _
-
-/-- Multiplication by `u`, as a linear map on `W^{k,∞}(Ω)`. -/
-private def mulLeftₗ (k : ℕ) (u : Wkp mu Omega ∞ k) : Wkp mu Omega ∞ k →ₗ[ℝ] Wkp mu Omega ∞ k where
-  toFun := mulAux k u
-  map_add' := mulAux_add_right k u
-  map_smul' c w := mulAux_smul_right k c u w
-
-/-- Multiplication by `u`, as a continuous linear map on `W^{k,∞}(Ω)`, by the closed graph
-theorem: the value of the product depends continuously on the value of the second factor. -/
-private def mulLeftL (k : ℕ) (u : Wkp mu Omega ∞ k) : Wkp mu Omega ∞ k →L[ℝ] Wkp mu Omega ∞ k :=
-  ContinuousLinearMap.ofSeqClosedGraph (g := mulLeftₗ k u) fun _ _ _ hw hz =>
-    ext k (tendsto_nhds_unique (tendsto_value hz) (tendsto_value_mulAux k u hw))
-
-private theorem mulLeftL_apply (k : ℕ) (u w : Wkp mu Omega ∞ k) :
-    mulLeftL k u w = mulAux k u w := by
-  rw [mulLeftL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, mulLeftₗ, LinearMap.coe_mk,
-    AddHom.coe_mk]
-
-/-- Multiplication on `W^{k,∞}(Ω)`, as a linear map into continuous linear maps. -/
-private def mulₗ (k : ℕ) : Wkp mu Omega ∞ k →ₗ[ℝ] Wkp mu Omega ∞ k →L[ℝ] Wkp mu Omega ∞ k where
-  toFun := mulLeftL k
-  map_add' u u' := ContinuousLinearMap.ext fun w => by
-    rw [add_apply, mulLeftL_apply, mulLeftL_apply, mulLeftL_apply,
-      mulAux_add_left]
-  map_smul' c u := ContinuousLinearMap.ext fun w => by
-    rw [RingHom.id_apply, smul_apply, mulLeftL_apply, mulLeftL_apply,
-      mulAux_smul_left]
-
-private theorem mulₗ_apply_apply (k : ℕ) (u w : Wkp mu Omega ∞ k) :
-    mulₗ k u w = mulAux k u w := by
-  rw [mulₗ, LinearMap.coe_mk, AddHom.coe_mk, mulLeftL_apply]
-
 /-- **Multiplication in `W^{k,∞}(Ω)`**, as a bounded bilinear map: there is a constant `C`, the
 norm of `mulTopL k`, with `‖u w‖ ≤ C ‖u‖ ‖w‖` (`ContinuousLinearMap.le_opNorm₂`). The value of
 `mulTopL k u w` is the pointwise product of the values of `u` and `w`
 (`TauCeti.Wkp.value_mulTopL_ae`), and this determines it (`TauCeti.Wkp.eq_mulTopL_iff`). -/
 def mulTopL (k : ℕ) : Wkp mu Omega ∞ k →L[ℝ] Wkp mu Omega ∞ k →L[ℝ] Wkp mu Omega ∞ k :=
-  ContinuousLinearMap.ofSeqClosedGraph (g := mulₗ k) fun u z T hu hT => by
-    refine ContinuousLinearMap.ext fun w => ext k (tendsto_nhds_unique
-      (f := fun n => value k (mulAux k (u n) w)) (l := atTop) ?_ ?_)
-    · -- Evaluation at `w` is continuous, so `u n * w → T w`.
-      refine tendsto_value ((((ContinuousLinearMap.apply ℝ _ w).continuous.tendsto T).comp
-        hT).congr fun n => ?_)
-      rw [Function.comp_apply, Function.comp_apply, ContinuousLinearMap.apply_apply,
-        mulₗ_apply_apply]
-    · -- Multiplication by `w` is continuous, so `u n * w → z * w`.
-      rw [mulₗ_apply_apply]
-      simpa only [mulAux_comm k w] using tendsto_value_mulAux k w hu
-
-private theorem mulTopL_apply_apply (k : ℕ) (u w : Wkp mu Omega ∞ k) :
-    mulTopL k u w = mulAux k u w := by
-  rw [mulTopL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, mulₗ_apply_apply]
+  bilinOfAeMul k (exists_value_ae_eq_mul_top k) fun u =>
+    ⟨‖value k u‖, Lp.ae_norm_le_norm_top (value k u)⟩
 
 /-- The value of the product `mulTopL k u w` is the pointwise product of the values. -/
 theorem value_mulTopL_ae (k : ℕ) (u w : Wkp mu Omega ∞ k) :
     (value k (mulTopL k u w) : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x => value k u x * value k w x := by
-  rw [mulTopL_apply_apply]
-  exact value_mulAux k u w
+      fun x => value k u x * value k w x :=
+  value_bilinOfAeMul_ae u w
 
 /-- The product `mulTopL k u w` is the unique element of `W^{k,∞}(Ω)` whose value is the pointwise
 product of the values of `u` and `w`. -/
 theorem eq_mulTopL_iff {k : ℕ} {u w z : Wkp mu Omega ∞ k} :
     z = mulTopL k u w ↔
-      (value k z : E → ℝ) =ᵐ[mu.restrict Omega] fun x => value k u x * value k w x := by
-  rw [mulTopL_apply_apply]
-  exact eq_mulAux_iff
+      (value k z : E → ℝ) =ᵐ[mu.restrict Omega] fun x => value k u x * value k w x :=
+  eq_bilinOfAeMul_iff
 
 /-- Multiplication in `W^{k,∞}(Ω)` is commutative. -/
-theorem mulTopL_comm (k : ℕ) (u w : Wkp mu Omega ∞ k) : mulTopL k u w = mulTopL k w u := by
-  rw [mulTopL_apply_apply, mulTopL_apply_apply]
-  exact mulAux_comm k u w
+theorem mulTopL_comm (k : ℕ) (u w : Wkp mu Omega ∞ k) : mulTopL k u w = mulTopL k w u :=
+  bilinOfAeMul_comm u w
 
 /-- Multiplication in `W^{k,∞}(Ω)` is associative. -/
 theorem mulTopL_assoc (k : ℕ) (u w z : Wkp mu Omega ∞ k) :
-    mulTopL k (mulTopL k u w) z = mulTopL k u (mulTopL k w z) := by
-  refine eq_mulTopL_iff.2 ?_
-  filter_upwards [value_mulTopL_ae k (mulTopL k u w) z, value_mulTopL_ae k u w,
-    value_mulTopL_ae k w z] with x h₁ h₂ h₃
-  rw [h₁, h₂, h₃, mul_assoc]
+    mulTopL k (mulTopL k u w) z = mulTopL k u (mulTopL k w z) :=
+  bilinOfAeMul_assoc u w z
 
 /-- Forgetting the highest derivative commutes with multiplication. -/
 theorem lowerOrder_mulTopL (k : ℕ) (u w : Wkp mu Omega ∞ (k + 1)) :
