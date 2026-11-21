@@ -38,7 +38,8 @@ computation is not part of this file.
 
 ## Main declarations
 
-* `TauCeti.ComplexProjectiveSpace.lineMap`: `(f, [a : b]) ↦ [a f₀ + b f₁]`, jointly continuous.
+* `TauCeti.ComplexProjectiveSpace.lineMap`: `(f, [a : b]) ↦ [a f₀ + b f₁]`, jointly continuous,
+  with `lineMap_mk` and `lineMap_mk_single_zero`.
 * `TauCeti.ComplexProjectiveSpace.lineSphereFamily`: the projective line of a frame as a map
   `S² → CPⁿ`, with `lineSphereFamily_apply_hopfSphere2`, `lineSphereFamily_apply_north`,
   `lineSphereFamily_apply_south`, `lineSphereFamily_injective`,
@@ -130,6 +131,12 @@ theorem lineMap_mk (f : finiteOrthonormalFrame ℂ 2 (n + 1))
     lineMap n (f, mk 1 v) = mk n x := by
   obtain rfl : x = lineVector f v := Subtype.ext (hx.trans (coe_lineVector f v).symm)
   exact ComplexProjectiveSpace.lift_mk 1 _ _ v
+
+/-- **The projective line of `f` passes through `[f₀]`**: it sends `[1 : 0]` to `[f₀]`. -/
+@[simp]
+theorem lineMap_mk_single_zero (f : finiteOrthonormalFrame ℂ 2 (n + 1)) :
+    lineMap n (f, mk 1 ⟨EuclideanSpace.single 0 1, by simp⟩) = mk n (f.toSphere 0) :=
+  lineMap_mk f _ _ (by simp)
 
 variable (n) in
 /-- **The projective line of an orthonormal two-frame as a two-sphere**: the map
