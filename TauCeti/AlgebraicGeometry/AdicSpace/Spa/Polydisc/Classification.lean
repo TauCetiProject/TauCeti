@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.NestedDiscPoint
 
 import TauCeti.Algebra.Polynomial.Splits

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Basic
 public import TauCeti.RingTheory.Huber.Normed
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
