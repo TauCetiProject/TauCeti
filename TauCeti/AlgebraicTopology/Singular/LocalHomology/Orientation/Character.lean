@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
 import Mathlib.GroupTheory.SpecificGroups.Alternating
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
 /-!
 # The orientation character of a manifold
@@ -151,7 +152,6 @@ theorem localOrientationTransport_eq_of_orientationCharacter_eq_one (hd : finran
 /-- **Independence of the base point.** Along a path `p` from `x` to `y`, the orientation
 character at `y` of the loop `p⁻¹ γ p` is the orientation character at `x` of `γ`: the two
 transport permutations are conjugate by transport along `p`. -/
-@[simp]
 theorem orientationCharacter_fundamentalGroupMulEquivOfPath (hd : finrank ℝ E = d) {x y : M}
     (p : Path x y) (γ : FundamentalGroup M x) :
     orientationCharacter hd y (FundamentalGroup.fundamentalGroupMulEquivOfPath p γ) =
@@ -165,7 +165,9 @@ theorem orientationCharacter_fundamentalGroupMulEquivOfPath (hd : finrank ℝ E 
   -- The loop at `y` is `q⁻¹ ≫ γ ≫ q`; transport along it is transport back along `q`, then
   -- along `γ`, then along `q`.
   have hγ : (FundamentalGroup.fundamentalGroupMulEquivOfPath p γ).asHom = inv q ≫ γ.asHom ≫ q := by
-    simp [FundamentalGroup.fundamentalGroupMulEquivOfPath, q, Groupoid.inv_eq_inv]
+    have hq : inv q = q.symm := IsIso.inv_eq_of_inv_hom_id (Path.Homotopic.Quotient.symm_trans q)
+    rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, hq, FundamentalGroupoid.comp_eq,
+      FundamentalGroupoid.comp_eq]
   rw [orientationCharacter_apply, orientationCharacter_apply,
     ← Equiv.Perm.sign_permCongr (localOrientationTransport M E d q)]
   congr 1
