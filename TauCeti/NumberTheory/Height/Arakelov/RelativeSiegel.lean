@@ -84,6 +84,20 @@ open scoped Matrix
 
 namespace Matrix
 
+/-- `Pi.algebraMap` applies `algebraMap` coordinatewise. -/
+private theorem pi_algebraMap_apply {ι R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (v : ι → R) : Pi.algebraMap ι R A v = algebraMap R A ∘ v :=
+  rfl
+
+/-- The `K`-rational solutions of `A x = 0` are the kernel of
+`A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F`. -/
+private theorem mem_ker_restrictScalars_comp_iff {K F : Type*} [Field K] [Field F] [Algebra K F]
+    {m ι : Type*} [Fintype ι] (A : Matrix m ι F) (x : ι → K) :
+    x ∈ LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F) ↔
+      A *ᵥ (fun i ↦ algebraMap K F (x i)) = 0 := by
+  rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.restrictScalars_apply, mulVecLin_apply,
+    pi_algebraMap_apply, Function.comp_def]
+
 section TraceRows
 
 variable {F : Type*} [Field F] {m ι κ : Type*}
@@ -118,14 +132,10 @@ private theorem ker_traceRows [Fintype ι] (b : Basis κ K F) (A : Matrix m ι F
       LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F) := by
   classical
   ext x
-  simp only [LinearMap.mem_ker, mulVecLin_apply, traceRows_mulVec, LinearMap.coe_comp,
-    Function.comp_apply, LinearMap.coe_restrictScalars]
+  rw [mem_ker_restrictScalars_comp_iff, LinearMap.mem_ker, mulVecLin_apply, traceRows_mulVec]
   set b' := (Algebra.traceForm K F).dualBasis (traceForm_nondegenerate K F) b
-  have hb' (y : F) : y = 0 ↔ ∀ l, b'.repr y l = 0 := by
-    rw [← b'.repr.map_eq_zero_iff, Finsupp.ext_iff]
-    simp only [Finsupp.coe_zero, Pi.zero_apply]
-  simp only [funext_iff, Prod.forall, Pi.zero_apply, hb', Pi.algebraMap, LinearMap.coe_mk,
-    AddHom.coe_mk]
+  simp only [funext_iff, Prod.forall, Pi.zero_apply, ← b'.forall_coord_eq_zero_iff,
+    Basis.coord_apply, Function.comp_def]
 
 /-- Over a field `L` in which the trace of `F / K` is the sum of the `K`-embeddings of `F`, the
 trace rows and the conjugate rows `σ ∘ A i` span the same subspace of `ι → L`. -/
@@ -140,13 +150,13 @@ private theorem span_image_traceRows_eq (b : Basis κ K F) (A : Matrix m ι F) {
   have h₁ (i : m) (l : κ) : Pi.algebraMap ι K L ((traceRows K b A).row (i, l)) =
       ∑ σ : F →ₐ[K] L, σ (b l) • (σ ∘ A i) := by
     ext j
-    simp [traceRows, Pi.algebraMap, htr, Finset.sum_apply, mul_comm]
+    simp [traceRows, pi_algebraMap_apply, htr, Finset.sum_apply, mul_comm]
   have h₂ (σ : F →ₐ[K] L) (i : m) : σ ∘ A i =
       ∑ l, σ (b' l) • Pi.algebraMap ι K L ((traceRows K b A).row (i, l)) := by
     ext j
     conv_lhs => rw [Function.comp_apply, ← LinearMap.BilinForm.sum_apply_smul_dualBasis
       (traceForm_nondegenerate K F) b (A i j)]
-    simp [traceRows, Pi.algebraMap, Finset.sum_apply, b', Algebra.smul_def, mul_comm]
+    simp [traceRows, pi_algebraMap_apply, Finset.sum_apply, b', Algebra.smul_def, mul_comm]
   refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
   · have : span K (Set.range (traceRows K b A).row) ≤
         ((span L (Set.range fun p : (F →ₐ[K] L) × m ↦ p.1 ∘ A p.2)).restrictScalars K).comap
@@ -194,9 +204,13 @@ private theorem relativeSubspaceArakelovHeight_ker_le_prod_of_ne_zero (A : Matri
     ← subspaceHeight_span_image_algebraMap (L := L), span_image_traceRows_eq b A htr]
   have hprod : ∏ i, arakelovMulHeight (A i) =
       (∏ p : (F →ₐ[K] L) × m, height2 (p.1 ∘ A p.2)) ^ finrank ℚ K := by
-    simp_rw [hσ, Fintype.prod_prod_type, Finset.prod_const, Finset.card_univ, hcard,
-      ← Finset.prod_pow, ← pow_mul, arakelovMulHeight_of_ne_zero (hA _),
-      mul_comm (finrank K F), Module.finrank_mul_finrank]
+    -- Each row contributes its `[F : K]` conjugates, all of the same height.
+    have hconj (i : m) : ∏ σ : F →ₐ[K] L, height2 (σ ∘ A i) = height2 (A i) ^ finrank K F := by
+      simp [hσ, hcard]
+    rw [Fintype.prod_prod_type_right, ← Finset.prod_pow]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    rw [hconj, arakelovMulHeight_of_ne_zero (hA i), ← pow_mul,
+      ← Module.finrank_mul_finrank ℚ K F, mul_comm]
   rw [hprod]
   refine pow_le_pow_left₀ (subspaceHeight_pos _).le ?_ _
   exact subspaceHeight_span_range_le_prod fun p ↦ by
@@ -213,7 +227,7 @@ theorem relativeSubspaceArakelovHeight_ker_restrictScalars_comp_le_prod (A : Mat
       ∏ i, arakelovMulHeight (A i) := by
   classical
   -- Zero rows impose no condition and have height one, so they can be discarded.
-  let A' : Matrix {i // A i ≠ 0} ι F := fun i ↦ A i
+  let A' : Matrix {i // A i ≠ 0} ι F := A.submatrix Subtype.val id
   have hker : LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F) =
       LinearMap.ker (A'.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F) := by
     ext x
@@ -222,12 +236,12 @@ theorem relativeSubspaceArakelovHeight_ker_restrictScalars_comp_le_prod (A : Mat
     refine forall_congr' fun i ↦ ?_
     by_cases h : A i = 0
     · simp [h, mulVec, dotProduct]
-    · simp [h, mulVec, A']
+    · simp [h, mulVec, dotProduct, A']
   have hprod : ∏ i, arakelovMulHeight (A i) = ∏ i, arakelovMulHeight (A' i) := by
     rw [← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ A i ≠ 0),
-      Finset.prod_eq_one (s := Finset.univ)
-        (f := fun i : {i // ¬A i ≠ 0} ↦ arakelovMulHeight (A i))
-        fun i _ ↦ by simp [not_not.1 i.property], mul_one]
+      Fintype.prod_eq_one (α := {i // ¬A i ≠ 0}) _ fun i ↦ by simp [not_not.1 i.property],
+      mul_one]
+    rfl
   rw [hker, hprod]
   exact relativeSubspaceArakelovHeight_ker_le_prod_of_ne_zero A' fun i ↦ i.property
 
@@ -241,6 +255,7 @@ theorem subspaceHeight_ker_restrictScalars_comp_le (A : Matrix m ι F) :
   exact Real.rpow_le_rpow (relativeSubspaceArakelovHeight_pos _).le
     (relativeSubspaceArakelovHeight_ker_restrictScalars_comp_le_prod A) (by positivity)
 
+omit [LinearOrder ι] in
 open scoped Classical in
 /-- **Siegel's lemma relative to a field extension, basis form** (Bombieri–Gubler, Theorem
 2.9.19). Let `F / K` be an extension of number fields, `D = [K : ℚ]` and `r₂` the number of
@@ -263,13 +278,15 @@ theorem exists_linearIndependent_mulVec_algebraMap_eq_zero_prod_absHeight_le
           |(discr K : ℝ)| ^ ((finrank K (LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ
             Pi.algebraMap ι K F)) : ℝ) / (2 * finrank ℚ K)) *
           (∏ i, arakelovMulHeight (A i)) ^ (finrank ℚ K : ℝ)⁻¹ := by
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   obtain ⟨x, hli, hspan, hmem, hle⟩ := (LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ
     Pi.algebraMap ι K F)).exists_linearIndependent_integerPoints_prod_absHeight_le
   refine ⟨x, hli, hspan, fun j ↦ ?_, hle.trans ?_⟩
-  · simpa [mem_integerPoints, Pi.algebraMap, Function.comp_def] using hmem j
+  · exact (mem_ker_restrictScalars_comp_iff A _).1 (mem_integerPoints.1 (hmem j))
   · exact mul_le_mul_of_nonneg_left (subspaceHeight_ker_restrictScalars_comp_le A)
       (by positivity)
 
+omit [LinearOrder ι] in
 open scoped Classical in
 /-- **Siegel's lemma relative to a field extension** (Bombieri–Gubler, Theorem 2.9.19). Let
 `F / K` be an extension of number fields, `D = [K : ℚ]` and `r₂` the number of complex places of
@@ -286,6 +303,7 @@ theorem exists_ne_zero_mulVec_algebraMap_eq_zero_absHeight_le (A : Matrix m ι F
           |(discr K : ℝ)| ^ (2 * finrank ℚ K : ℝ)⁻¹ *
           (∏ i, arakelovMulHeight (A i)) ^
             ((finrank ℚ K * (Fintype.card ι - finrank K F * Fintype.card m : ℕ) : ℝ)⁻¹) := by
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   -- The `K`-rational solutions are the kernel of `[F : K] · #m` equations over `K`.
   have hk : Fintype.card ι - finrank K F * Fintype.card m ≤
       finrank K (LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F)) := by
@@ -302,7 +320,7 @@ theorem exists_ne_zero_mulVec_algebraMap_eq_zero_absHeight_le (A : Matrix m ι F
     rw [h, finrank_bot] at hk
     omega
   obtain ⟨z, hzW, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_absHeight_le hW
-  refine ⟨z, hz0, by simpa [W, mem_integerPoints, Pi.algebraMap, Function.comp_def] using hzW,
+  refine ⟨z, hz0, (mem_ker_restrictScalars_comp_iff A _).1 (mem_integerPoints.1 hzW),
     hle.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))⟩
   have hP : 0 ≤ ∏ i, arakelovMulHeight (A i) :=
     Finset.prod_nonneg fun i _ ↦ arakelovMulHeight_nonneg (A i)
