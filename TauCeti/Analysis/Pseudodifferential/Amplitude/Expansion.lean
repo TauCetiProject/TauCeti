@@ -226,6 +226,26 @@ theorem coefficient_frequencyDeriv_leftTerm (l : Fin n) (a : Amplitude n V W m) 
     refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
     rw [ih, ← spatialDerivSnd_frequencyDeriv_comm, frequencyDeriv_comm]
 
+/-- **Linearity of the terms of the expansion.** If the coefficient of `a` is the sum of the
+coefficients of amplitudes `b i` and `c`, of possibly different orders, then each term of the
+expansion of `a` is the sum of the corresponding terms of the `b i` and of `c`. -/
+theorem coefficient_leftTerm_eq_sum_add {ι : Type*} (s : Finset ι) {μ : ι → ℝ} {m' : ℝ}
+    (a : Amplitude n V W m) (b : ∀ i, Amplitude n V W (μ i)) (c : Amplitude n V W m')
+    (h : ∀ p, a.coefficient p = ∑ i ∈ s, (b i).coefficient p + c.coefficient p) (k : ℕ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.leftTerm k).coefficient p =
+      ∑ i ∈ s, ((b i).leftTerm k).coefficient p + (c.leftTerm k).coefficient p := by
+  obtain ⟨x, ξ⟩ := p
+  have ha : a.coefficient = ∑ i ∈ s, (b i).coefficient + c.coefficient :=
+    funext fun p ↦ by simp [h]
+  have hb : ContDiff ℝ ∞ (∑ i ∈ s, (b i).coefficient) := by
+    simpa only [Finset.sum_fn] using ContDiff.sum fun i _ ↦ (b i).contDiff_coefficient
+  simp only [coefficient_leftTerm, ha,
+    iteratedFDerivAlong_add hb c.contDiff_coefficient _ (by simp),
+    iteratedFDerivAlong_sum _ (fun i _ ↦ (b i).contDiff_coefficient) _ (by simp), Pi.add_apply,
+    Finset.sum_apply, Finset.sum_add_distrib, smul_add, Finset.smul_sum]
+  rw [Finset.sum_comm]
+
 end Term
 
 /-! ### The interpolating family `c_t` -/
