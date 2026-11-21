@@ -126,6 +126,9 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_top`:
   existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = ℓ`, `c ≥ 0`, on a domain of finite measure
   for every `ℓ ∈ H⁻¹(Ω)`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top`:
+  a weak solution in `H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼv) = ∂ᵢHⁱ`, `H ∈ L²(Ω; ℝⁿ)`, on a domain of finite
+  measure.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
   existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f`, `c ≥ 0`, on a domain of finite measure
   with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
@@ -812,6 +815,27 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_to
   have hcoer : IsCoercive (energyFormH1L0 hcoeff) :=
     isCoercive_energyFormH1L0 hcoeff (by have := h.pos; positivity) hlower
   simpa only [energyFormH1L0_apply] using hcoer.existsUnique_forall_eq ℓ
+
+/-- **The Dirichlet problem with a divergence datum on a domain of finite measure.** Let `a` be
+measurable and uniformly elliptic on a domain `Ω` of finite measure. For every
+`H ∈ L²(Ω; ℝⁿ)` the problem `-∂ᵢ(aⁱʲ ∂ⱼv) = ∂ᵢHⁱ` in `Ω`, `v = 0` on `∂Ω`, has a weak solution
+`v ∈ H¹₀(Ω)`: `a(v, w) = -∫_Ω ⟪H, ∇w⟫` for every `w ∈ H¹₀(Ω)`. This is the case
+`ℓ = TauCeti.PDE.divergenceForcing H` of
+`TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_top`. -/
+theorem UniformlyEllipticOn.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top
+    [DecidableEq ι] [Nonempty ι] {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hOmega : mu Omega ≠ ∞)
+    {H : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hH : MemLp H 2 (mu.restrict Omega)) :
+    ∃ v : W1p0 mu Omega 2, ∀ w : W1p0 mu Omega 2,
+      energyFormH1 a 0 0 (v : W1p mu Omega 2) (w : W1p mu Omega 2) =
+        -∫ x in Omega, ⟪H x, W1p.gradient (w : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  obtain ⟨v, hv, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
+    (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hOmega
+    (divergenceForcing (hH.toLp H))
+  refine ⟨v, fun w => ?_⟩
+  rw [hv w, divergenceForcing_apply_eq_neg_setIntegral]
+  exact congrArg Neg.neg (integral_congr_ae (hH.coeFn_toLp.mono fun x hx => by simp only [hx]))
 
 /-- **Weak solvability of the Dirichlet problem with `Lʳ` data.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. On a domain `Ω` of finite
