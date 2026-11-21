@@ -90,7 +90,7 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
   `w ∈ S_R`, then `u ∘ ψ` solves the Floer equation of the inserted pair of pants at `w`.
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap`,
   `TauCeti.SmoothTwoForm.floerEnergyDensity_comp_realChart_plumbingMap`: for a manifold target
-  and `L > 4`, outside the circle `s_∞ = -L/2` of the inserted pair of pants, `u ∘ ψ` solves the
+  and `L > 4`, off the collar `s_∞ < 2 - L` of the inserted pair of pants, `u ∘ ψ` solves the
   Floer equation of the inserted pair of pants where `u` solves that of the glued datum, and its
   energy density is the Jacobian of `ψ` times that of `u`.
 
@@ -224,11 +224,11 @@ theorem perturbationPullback_plumbedPerturbation_of_mem_truncation (hq : q ≠ i
     plumbedPerturbation_plumbingMap hq hab (mem_truncation.1 hw).1 (by linarith)]
 
 omit [TopologicalSpace M] [ChartedSpace G M] in
-/-- Outside the circle `s_∞ = -L/2` of the inserted pair of pants, the pullback of the plumbed
+/-- Off the collar `s_∞ < 2 - L` of the inserted pair of pants, the pullback of the plumbed
 perturbation along the plumbing chart is the perturbation of the inserted pair of pants. -/
 theorem perturbationPullback_realChart_plumbedPerturbation (hq : q ≠ inf)
-    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ} (hw₀ : Complex.equivRealProdCLM.symm w ≠ 0)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) (x : M)
+    (hab : Hb q = Ha inf) {w : ℝ × ℝ} (hw₀ : Complex.equivRealProdCLM.symm w ≠ 0)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L - 2) (x : M)
     (v : ℝ × ℝ) :
     perturbationPullback (realChart (q.plumbingMap L))
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
@@ -242,12 +242,12 @@ theorem perturbationPullback_realChart_plumbedPerturbation (hq : q ≠ inf)
   linarith
 
 omit [TopologicalSpace M] [ChartedSpace G M] in
-/-- Outside the circle `s_∞ = -L/2` of the inserted pair of pants, the components along `∂_s` and
+/-- Off the collar `s_∞ < 2 - L` of the inserted pair of pants, the components along `∂_s` and
 `∂_t` of the pullback of the plumbed perturbation along the plumbing chart are those of the
 perturbation of the inserted pair of pants. -/
 private theorem perturbationPullback_realChart_plumbedPerturbation_stdComplexLine (hq : q ≠ inf)
-    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ} (hw₀ : Complex.equivRealProdCLM.symm w ≠ 0)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) :
+    (hab : Hb q = Ha inf) {w : ℝ × ℝ} (hw₀ : Complex.equivRealProdCLM.symm w ≠ 0)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L - 2) :
     perturbationPullback (realChart (q.plumbingMap L))
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -259,9 +259,23 @@ private theorem perturbationPullback_realChart_plumbedPerturbation_stdComplexLin
         stdComplexLineImag w =
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I) w := by
   have h (v : ℝ × ℝ) := funext fun x ↦ perturbationPullback_realChart_plumbedPerturbation hq hab
-    hL hw₀ hwL x v
+    hw₀ hwL x v
   exact ⟨(h stdComplexLineReal).trans (by rw [equivRealProdCLM_symm_stdComplexLineReal]),
     (h stdComplexLineImag).trans (by rw [equivRealProdCLM_symm_stdComplexLineImag])⟩
+
+omit [TopologicalSpace M] [ChartedSpace G M] in
+/-- For `L > 4`, the plumbing chart carries the points of the inserted pair of pants off the
+collar `s_∞ < 2 - L` into the plumbed four-punctured sphere. -/
+private theorem realChart_plumbingMap_mem_plumbedSphere_of_le_sub_two (hq : q ≠ inf)
+    (hL : 4 < L) {w : ℝ × ℝ}
+    (hw : Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L - 2) :
+    (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 0 ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 1) ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ q.plumbingMap L 1 := by
+  rw [endSign_inf, neg_one_mul] at hwL
+  rw [equivRealProdCLM_symm_realChart]
+  exact mapsTo_plumbingMap hq (by linarith) ⟨hw, by linarith⟩
 
 end TauCeti.Floer
 
@@ -678,18 +692,20 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   [IsManifold I (⊤ : ℕ∞) M] {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
-/-- **The inserted pair of pants solves the Floer equation in the plumbing chart.** Outside the
-circle `s_∞ = -L/2` of the inserted pair of pants, if `u` solves the Floer equation
-`(du - X_K)^{0,1} = 0` for the plumbed perturbation `K` at the image `ψ(w)` of `w` under the
-plumbing chart, then `u ∘ ψ` solves the Floer equation for the perturbation of the inserted pair
-of pants at `w`. -/
+/-- **The inserted pair of pants solves the Floer equation in the plumbing chart.** Off the collar
+`s_∞ < 2 - L` of the inserted pair of pants, such as on a truncation `S_R` with `R + 2 ≤ L`, if
+`u` solves the Floer equation `(du - X_K)^{0,1} = 0` for the plumbed perturbation `K` at the image
+`ψ(w)` of `w` under the plumbing chart, then `u ∘ ψ` solves the Floer equation for the
+perturbation of the inserted pair of pants at `w`, because the plumbing map is holomorphic. For a
+symplectic vector space target this is
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap`. -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
     (hL : 4 < L) {u : ℝ × ℝ → M} {w : ℝ × ℝ}
     (hw : Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L - 2)
     (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w))
     {J : AlmostComplexStructure (TangentSpace I (u (realChart (q.plumbingMap L) w)))}
     (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
@@ -702,8 +718,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap (ω : Smo
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.plumbingMap L)) w).toLinearMap := by
-  have hP := realChart_plumbingMap_mem_plumbedSphere hq (by linarith) hw hwL
-  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab hL
+  have hP := realChart_plumbingMap_mem_plumbedSphere_of_le_sub_two hq hL hw hwL
+  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab
     hw.1 hwL
   rw [← ω.perturbedMFDeriv_congr_perturbation _ hs ht]
   exact ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
@@ -712,8 +728,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap (ω : Smo
     (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ Complex.I)
     (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) hfloer
 
-/-- **The energy density of the inserted pair of pants in the plumbing chart.** Outside the circle
-`s_∞ = -L/2` of the inserted pair of pants, the Floer energy density of `u ∘ ψ` for the
+/-- **The energy density of the inserted pair of pants in the plumbing chart.** Off the collar
+`s_∞ < 2 - L` of the inserted pair of pants, the Floer energy density of `u ∘ ψ` for the
 perturbation of the inserted pair of pants at `w` is the Jacobian of the plumbing chart `ψ` times
 the energy density of `u` for the plumbed perturbation at `ψ(w)`. -/
 theorem floerEnergyDensity_comp_realChart_plumbingMap (ω : SmoothTwoForm I M) (hq : q ≠ inf)
@@ -722,7 +738,7 @@ theorem floerEnergyDensity_comp_realChart_plumbingMap (ω : SmoothTwoForm I M) (
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
     (hL : 4 < L) {u : ℝ × ℝ → M} {w : ℝ × ℝ}
     (hw : Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L - 2)
     (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w)) :
     ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
@@ -732,8 +748,8 @@ theorem floerEnergyDensity_comp_realChart_plumbingMap (ω : SmoothTwoForm I M) (
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
         u (realChart (q.plumbingMap L) w) := by
-  have hP := realChart_plumbingMap_mem_plumbedSphere hq (by linarith) hw hwL
-  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab hL
+  have hP := realChart_plumbingMap_mem_plumbedSphere_of_le_sub_two hq hL hw hwL
+  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab
     hw.1 hwL
   rw [← ω.floerEnergyDensity_congr_perturbation _ hs ht]
   exact ω.floerEnergyDensity_perturbationPullback

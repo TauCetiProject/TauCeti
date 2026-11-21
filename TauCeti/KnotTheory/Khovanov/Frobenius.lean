@@ -181,7 +181,7 @@ variable (R) (S : Type*) [CommSemiring S] [Algebra R S]
 `S ⊗[R] R[ε]` carries the base change of the Khovanov coalgebra over `R`. Its underlying map is
 the algebra isomorphism `TauCeti.dualNumberAlgebraTensorAlgEquiv`. -/
 noncomputable def baseChangeCoalgEquiv : S ⊗[R] R[ε] ≃ₗc[S] S[ε] :=
-  { (dualNumberAlgebraTensorAlgEquiv R S).toLinearEquiv with
+  { (dualNumberAlgebraTensorAlgEquiv R S S).toLinearEquiv with
     counit_comp := by
       refine ((dualNumberBasis R).baseChange S).ext fun i => ?_
       fin_cases i <;> simp
@@ -193,12 +193,12 @@ noncomputable def baseChangeCoalgEquiv : S ⊗[R] R[ε] ≃ₗc[S] S[ε] :=
 `TauCeti.dualNumberAlgebraTensorAlgEquiv`. -/
 @[simp]
 theorem coe_baseChangeCoalgEquiv :
-    ⇑(baseChangeCoalgEquiv R S) = dualNumberAlgebraTensorAlgEquiv R S := (rfl)
+    ⇑(baseChangeCoalgEquiv R S) = dualNumberAlgebraTensorAlgEquiv R S S := (rfl)
 
 /-- `baseChangeCoalgEquiv` coincides with the general Frobenius transport
 `AlgEquiv.toFrobeniusCoalgEquiv` applied to `dualNumberAlgebraTensorAlgEquiv`. -/
 theorem toFrobeniusCoalgEquiv_dualNumberAlgebraTensorAlgEquiv :
-    (dualNumberAlgebraTensorAlgEquiv R S).toFrobeniusCoalgEquiv
+    (dualNumberAlgebraTensorAlgEquiv R S S).toFrobeniusCoalgEquiv
         (fun x => by simpa using CoalgHomClass.counit_comp_apply (baseChangeCoalgEquiv R S) x) =
       baseChangeCoalgEquiv R S :=
   CoalgEquiv.ext fun _ => by simp
