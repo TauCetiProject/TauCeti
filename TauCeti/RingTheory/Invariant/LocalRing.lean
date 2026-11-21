@@ -15,35 +15,32 @@ import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 
 Let a monoid `G` act on a semiring `B` by semiring endomorphisms (`MulSemiringAction G B`).
 If a fixed element `x` is a unit of `B`, its two-sided inverse is also fixed by `G`, by uniqueness
-of inverses. Consequently the inclusion of the fixed subsemiring, fixed subring, or fixed
-subalgebra into `B` is a local homomorphism (`IsLocalHom`), and whenever `B` is a local ring, so
-are its fixed subsemiring, fixed subring, and fixed subalgebra.
+of inverses. Consequently the inclusion of the fixed subsemiring or fixed subring into `B` is a
+local homomorphism (`IsLocalHom`), and whenever `B` is a local ring, so are its fixed subsemiring
+and fixed subring (the fixed subalgebra counterpart is in
+`TauCeti/RingTheory/Invariant/Basic.lean`).
 
 When `B` is a discrete valuation ring, every ideal of the fixed subring `B^G` is principal: for a
 nonzero ideal `I`, choosing an element `a ∈ I` minimizing `IsDiscreteValuationRing.addVal B`, any
 `x ∈ I` satisfies `(a : B) ∣ (x : B)`, and cancellation in the domain `B` forces the quotient to be
 `G`-invariant. If moreover `G` is a finite group, the product `∏ g : G, g • ϖ` of the translates of
 a uniformizer `ϖ` of `B` is a nonzero nonunit fixed by `G`, so `B^G` is not a field and is
-therefore a discrete valuation ring. The same holds for the fixed subalgebra
-`FixedPoints.subalgebra A B G` over any commutative base ring `A` commuting with `G`.
+therefore a discrete valuation ring (the fixed subalgebra counterpart is in
+`TauCeti/RingTheory/DiscreteValuationRing/Invariant.lean`).
 
 ## Main results
 
 * `TauCeti.FixedPoints.instIsLocalHomSubsemiringSubtype`,
-  `TauCeti.FixedPoints.instIsLocalHomSubringSubtype`,
-  `TauCeti.FixedPoints.instIsLocalHomSubalgebraVal`,
-  `TauCeti.FixedPoints.instIsLocalHomAlgebraMapSubalgebra`,
-  `TauCeti.FixedPoints.instIsLocalHomAlgebraMapLeft`: inclusions of fixed-point subobjects are
-  local homomorphisms, and a local algebra map into `B` remains local into `FixedPoints.subalgebra`.
+  `TauCeti.FixedPoints.instIsLocalHomSubringSubtype`: inclusions of fixed-point subsemirings and
+  subrings are local homomorphisms.
 * `TauCeti.FixedPoints.instIsLocalRingSubsemiring`,
-  `TauCeti.FixedPoints.instIsLocalRingSubring`,
-  `TauCeti.FixedPoints.instIsLocalRingSubalgebra`: fixed points in a local ring form a local ring.
+  `TauCeti.FixedPoints.instIsLocalRingSubring`: fixed subsemirings and subrings in a local ring
+  form a local ring.
 * `TauCeti.FixedPoints.instIsPrincipalIdealRingSubring`,
   `TauCeti.FixedPoints.instIsPrincipalIdealRingSubalgebra`: fixed points of any monoid action on a
   discrete valuation ring form a principal ideal ring.
-* `TauCeti.FixedPoints.instIsDiscreteValuationRingSubring`,
-  `TauCeti.FixedPoints.instIsDiscreteValuationRingSubalgebra`: fixed points of a finite group
-  action on a discrete valuation ring form a discrete valuation ring.
+* `TauCeti.FixedPoints.instIsDiscreteValuationRingSubring`: fixed subrings of a finite group action
+  on a discrete valuation ring form a discrete valuation ring.
 -/
 
 public section
@@ -76,33 +73,6 @@ instance instIsLocalHomSubringSubtype {B G : Type*} [Ring B] [Monoid G]
     [MulSemiringAction G B] : IsLocalHom (FixedPoints.subring B G).subtype :=
   inferInstanceAs (IsLocalHom (FixedPoints.subsemiring B G).subtype)
 
-/-- The inclusion of the fixed subalgebra of a monoid action is a local homomorphism. -/
-instance instIsLocalHomSubalgebraVal {A B G : Type*} [CommSemiring A] [Semiring B]
-    [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
-    IsLocalHom (FixedPoints.subalgebra A B G).val.toRingHom :=
-  inferInstanceAs (IsLocalHom (FixedPoints.subsemiring B G).subtype)
-
-/-- For a commutative semiring `B`, the algebra map `FixedPoints.subalgebra A B G → B` is a local
-homomorphism. -/
-instance instIsLocalHomAlgebraMapSubalgebra {A B G : Type*} [CommSemiring A] [CommSemiring B]
-    [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
-    IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
-  inferInstanceAs (IsLocalHom (FixedPoints.subsemiring B G).subtype)
-
-/-- If `A → B` is a local homomorphism, so is `A → FixedPoints.subalgebra A B G`. -/
-instance instIsLocalHomAlgebraMapLeft {A B G : Type*} [CommSemiring A] [Semiring B]
-    [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
-    [IsLocalHom (algebraMap A B)] :
-    IsLocalHom (algebraMap A (FixedPoints.subalgebra A B G)) := by
-  have hcomp : (FixedPoints.subalgebra A B G).val.toRingHom.comp
-      (algebraMap A (FixedPoints.subalgebra A B G)) = algebraMap A B := by
-    ext a
-    rfl
-  have : IsLocalHom ((FixedPoints.subalgebra A B G).val.toRingHom.comp
-      (algebraMap A (FixedPoints.subalgebra A B G))) := hcomp ▸ ‹_›
-  exact isLocalHom_of_comp (algebraMap A (FixedPoints.subalgebra A B G))
-    (FixedPoints.subalgebra A B G).val.toRingHom
-
 /-- The fixed subsemiring of a monoid action on a local semiring is local. -/
 instance instIsLocalRingSubsemiring {B G : Type*} [Semiring B] [IsLocalRing B] [Monoid G]
     [MulSemiringAction G B] : IsLocalRing (FixedPoints.subsemiring B G) :=
@@ -112,12 +82,6 @@ instance instIsLocalRingSubsemiring {B G : Type*} [Semiring B] [IsLocalRing B] [
 instance instIsLocalRingSubring {B G : Type*} [Ring B] [IsLocalRing B] [Monoid G]
     [MulSemiringAction G B] : IsLocalRing (FixedPoints.subring B G) :=
   (FixedPoints.subring B G).subtype.domain_isLocalRing
-
-/-- The fixed subalgebra of a monoid action on a local semiring is local. -/
-instance instIsLocalRingSubalgebra {A B G : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
-    [IsLocalRing B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
-    IsLocalRing (FixedPoints.subalgebra A B G) :=
-  (FixedPoints.subalgebra A B G).val.toRingHom.domain_isLocalRing
 
 end LocalRing
 
@@ -197,14 +161,6 @@ instance instIsDiscreteValuationRingSubring {B G : Type*} [CommRing B] [IsDomain
       (IsLocalRing.mem_maximalIdeal _).2 hx_not_unit
     rw [hbot, Ideal.mem_bot] at hmem
     exact hx_ne hmem
-
-/-- The fixed subalgebra of a finite group action on a discrete valuation ring is a discrete
-valuation ring. -/
-instance instIsDiscreteValuationRingSubalgebra {A B G : Type*} [CommRing A] [CommRing B]
-    [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B] [Group G] [Finite G]
-    [MulSemiringAction G B] [SMulCommClass G A B] :
-    IsDiscreteValuationRing (FixedPoints.subalgebra A B G) :=
-  inferInstanceAs (IsDiscreteValuationRing (FixedPoints.subring B G))
 
 end DiscreteValuationRing
 

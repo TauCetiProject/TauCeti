@@ -7,17 +7,15 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-public import Mathlib.RingTheory.Invariant.Basic
 public import Mathlib.RingTheory.RamificationInertia.Basic
-public import TauCeti.RingTheory.Invariant.LocalRing
+public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
 import Mathlib.FieldTheory.Galois.IsGaloisGroup
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
-import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
-import TauCeti.RingTheory.Invariant.Basic
-import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
-import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
+import TauCeti.RingTheory.LocalRing.RingHom
 
 /-!
 # Herbrand's theorem, transitivity, and quotient compatibility of the upper numbering
@@ -26,7 +24,7 @@ Let a finite group `G` act faithfully by `A`-algebra automorphisms on a discrete
 with invariant ring a discrete valuation ring `A` and separable residue extension
 `ResidueField A → ResidueField B`. For any normal subgroup `H` of `G`, the fixed subalgebra
 `C = FixedPoints.subalgebra A B H` is automatically a discrete valuation ring
-(`TauCeti.FixedPoints.instIsDiscreteValuationRingSubalgebra`) on which `G ⧸ H` acts faithfully with
+(`TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra`) on which `G ⧸ H` acts faithfully with
 invariant ring `A`.
 
 Under these hypotheses — without assuming completeness of `A` or finiteness of the residue field —
@@ -94,7 +92,7 @@ discrete valuation rings with separable residue extensions.
 public section
 noncomputable section
 
-open IsLocalRing Polynomial
+open IsLocalRing
 
 namespace TauCeti.IsLocalRing
 
@@ -105,53 +103,6 @@ section Monogenic
 variable {A B : Type*} [CommRing A] [CommRing B] [IsDomain B] [IsDiscreteValuationRing B]
   [Algebra A B] {G : Type*} [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
   (H : Subgroup G) [H.Normal]
-
-omit [IsDomain B] [IsDiscreteValuationRing B] in
-/-- The displacement `σ • y - y` of an algebra generator `y` of `B^H` over `A` divides
-`(σ • charpoly H x).eval x`: every coefficient of `charpoly H x` lies in `B^H`, and
-`(charpoly H x).eval x = 0`. -/
-private theorem smul_sub_dvd_eval_smul_charpoly [Fintype H]
-    {y : FixedPoints.subalgebra A B H} (hy : Algebra.adjoin A {y} = ⊤) (σ : G) (x : B) :
-    σ • (y : B) - (y : B) ∣ (σ • MulSemiringAction.charpoly H x).eval x := by
-  set P := MulSemiringAction.charpoly H x
-  rw [← sub_zero ((σ • P).eval x), ← MulSemiringAction.eval_charpoly H x, ← eval_sub,
-    eval_eq_sum_range]
-  refine Finset.dvd_sum fun n _ ↦ Dvd.dvd.mul_right ?_ _
-  let w : FixedPoints.subalgebra A B H := ⟨P.coeff n, MulSemiringAction.smul_coeff_charpoly x n⟩
-  have hmem : ((QuotientGroup.mk σ : G ⧸ H) • y - y : FixedPoints.subalgebra A B H) ∣
-      ((QuotientGroup.mk σ : G ⧸ H) • w - w) :=
-    TauCeti.smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hy (QuotientGroup.mk σ : G ⧸ H) w
-  have hsmul : ∀ z : FixedPoints.subalgebra A B H,
-      (((QuotientGroup.mk σ : G ⧸ H) • z : FixedPoints.subalgebra A B H) : B) = σ • (z : B) :=
-    fun _ ↦ rfl
-  have hdvd : σ • (y : B) - (y : B) ∣ σ • P.coeff n - P.coeff n := by
-    simpa [w, hsmul] using map_dvd (FixedPoints.subalgebra A B H).val hmem
-  simpa [P, coeff_sub, AddMonoidAlgebra.coeff_smul_apply] using hdvd
-
-omit [IsDiscreteValuationRing B] [H.Normal] in
-/-- Conversely, `(σ • charpoly H x).eval x` divides `y - σ • y` for every `y ∈ B^H` when `x`
-generates `B` over `A` and `G` acts faithfully on `B`. -/
-private theorem eval_smul_charpoly_dvd_sub_smul [Fintype H] [FaithfulSMul G B]
-    {x : B} (hx : Algebra.adjoin A {x} = ⊤) (y : FixedPoints.subalgebra A B H) (σ : G) :
-    (σ • MulSemiringAction.charpoly H x).eval x ∣ (y : B) - σ • (y : B) := by
-  obtain ⟨q, hq⟩ : ∃ q : A[X], aeval x q = (y : B) := by
-    rw [← AlgHom.mem_range, ← Algebra.adjoin_singleton_eq_range_aeval, hx]
-    exact Algebra.mem_top
-  set g := q.map (algebraMap A B) - C (y : B)
-  have hg : ∀ τ : H, g.eval (τ • x) = 0 := fun τ ↦ by
-    rw [eval_sub, eval_C, eval_map_algebraMap, Subgroup.smul_def, Polynomial.aeval_smul, hq,
-      ← Subgroup.smul_def, y.property τ, sub_self]
-  have hinj : Function.Injective fun τ : H ↦ τ • x := by
-    simpa [Function.comp_def, Subgroup.smul_def] using
-      (TauCeti.smul_left_injective_of_adjoin_singleton_eq_top (G := G) hx).comp
-        Subtype.val_injective
-  obtain ⟨h, hh⟩ := TauCeti.MulSemiringAction.charpoly_dvd hinj hg
-  have hσg : σ • g = q.map (algebraMap A B) - C (σ • (y : B)) := by
-    have hmap : (MulSemiringAction.toRingHom G B σ).comp (algebraMap A B) = algebraMap A B :=
-      RingHom.ext fun r ↦ smul_algebraMap σ r
-    rw [smul_sub, smul_C, smul_eq_map, Polynomial.map_map, hmap]
-  refine ⟨(σ • h).eval x, ?_⟩
-  rw [← eval_mul, ← smul_mul', ← hh, hσg, eval_sub, eval_C, eval_map_algebraMap, hq]
 
 /-- **Serre's quotient formula for the lower index in the monogenic setting.** Let a group `G`
 act faithfully on a discrete valuation ring `B` commuting with a base ring `A`, and let `H` be a
@@ -164,93 +115,11 @@ theorem ramificationIdx_mul_lowerIndex_mk_eq_sum_of_adjoin_eq_top [Fintype H] [F
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ τ : H, lowerIndex B (σ * (τ : G)) := by
-  have key : _root_.IsDiscreteValuationRing.addVal B (σ • (y : B) - (y : B)) =
-      _root_.IsDiscreteValuationRing.addVal B ((σ • MulSemiringAction.charpoly H x).eval x) :=
-    (_root_.IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <|
-      associated_of_dvd_dvd (smul_sub_dvd_eval_smul_charpoly H hy σ x)
-        (dvd_sub_comm.1 (eval_smul_charpoly_dvd_sub_smul H hx y σ))
-  simp_rw [lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hy,
-    lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, ← nsmul_eq_mul,
-    ← TauCeti.IsDiscreteValuationRing.addVal_algebraMap, AddValuation.map_sub_swap _ _ x,
-    ← AddValuation.map_prod, mul_smul, ← Subgroup.smul_def,
-    ← TauCeti.MulSemiringAction.eval_smul_charpoly]
-  exact key
+  rw [← finsum_eq_sum_of_fintype]
+  exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
+    (fun c ↦ (H.coe_mk_smul σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
 
 end Monogenic
-
-/-! ### Coset maxima of the lower index -/
-
-section CosetMax
-
-variable {G B : Type*} [Group G] [CommRing B] [IsDomain B] [IsDiscreteValuationRing B]
-  [MulSemiringAction G B]
-
-/-- If `σ` maximizes `lowerIndex B` in its coset `σ H`, then
-`i_G(σ τ) = min (i_H(τ), i_G(σ))` for every `τ ∈ H`. -/
-theorem lowerIndex_mul_of_forall_le {H : Subgroup G} (σ : G)
-    (hσ : ∀ τ : H, lowerIndex B (σ * (τ : G)) ≤ lowerIndex B σ) (τ : H) :
-    lowerIndex B (σ * (τ : G)) = min (lowerIndex B τ) (lowerIndex B σ) := by
-  have hτ : lowerIndex B τ = lowerIndex B (τ : G) := by
-    simp only [lowerIndex_def, Subgroup.smul_def]
-  rw [hτ]
-  have h₁ := min_le_lowerIndex_mul (S := B) σ (τ : G)
-  have h₂ := min_le_lowerIndex_mul (S := B) σ⁻¹ (σ * (τ : G))
-  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right (hσ τ)] at h₂
-  exact le_antisymm (le_min h₂ (hσ τ)) (by rw [min_comm]; exact h₁)
-
-/-- For a finite subgroup `H ≤ G`, every coset `σ H` contains an element maximizing
-`lowerIndex B`. -/
-theorem exists_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G) :
-    ∃ τ₀ : H, ∀ τ : H,
-      lowerIndex B (σ * (τ₀ : G) * (τ : G)) ≤ lowerIndex B (σ * (τ₀ : G)) := by
-  cases nonempty_fintype H
-  obtain ⟨τ₀, -, hτ₀⟩ := Finset.exists_max_image (Finset.univ : Finset H)
-    (fun τ ↦ lowerIndex B (σ * (τ : G))) Finset.univ_nonempty
-  refine ⟨τ₀, fun τ ↦ ?_⟩
-  have h := hτ₀ (τ₀ * τ) (Finset.mem_univ _)
-  simpa only [Subgroup.coe_mul, mul_assoc] using h
-
-end CosetMax
-
-/-! ### Auxiliary structural facts for DVR invariant extensions -/
-
-section Helpers
-
-/-- An integral ring homomorphism between discrete valuation rings is injective. -/
-private theorem faithfulSMul_of_isDiscreteValuationRing_of_isIntegral
-    (A B : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-    [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
-    [Algebra.IsIntegral A B] : FaithfulSMul A B := by
-  rw [faithfulSMul_iff_algebraMap_injective, RingHom.injective_iff_ker_eq_bot]
-  by_contra hne
-  have hprime : (RingHom.ker (algebraMap A B)).IsPrime := RingHom.ker_isPrime _
-  have hmax : (RingHom.ker (algebraMap A B)).IsMaximal := hprime.isMaximal hne
-  let : Field (A ⧸ RingHom.ker (algebraMap A B)) := Ideal.Quotient.field _
-  let : Algebra (A ⧸ RingHom.ker (algebraMap A B)) B := (RingHom.kerLift (algebraMap A B)).toAlgebra
-  have hint : Algebra.IsIntegral (A ⧸ RingHom.ker (algebraMap A B)) B :=
-    Algebra.isIntegral_def.2 ((algebraMap_isIntegral_iff.2 inferInstance).kerLift)
-  have hfield : IsField B :=
-    (Algebra.IsIntegral.isField_iff_isField (R := A ⧸ RingHom.ker (algebraMap A B)) (S := B)
-      (RingHom.kerLift_injective _)).1 (Field.toIsField _)
-  exact _root_.IsDiscreteValuationRing.not_isField B hfield
-
-attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra in
-/-- A discrete valuation ring with a faithful finite group action whose invariant ring is a
-discrete valuation ring `A` is module-finite over `A`. -/
-private theorem module_finite_of_isInvariant_dvr
-    (A B : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-    [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
-    (G : Type*) [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
-    [Algebra.IsInvariant A B G] [FaithfulSMul G B] : Module.Finite A B := by
-  have : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
-  have : FaithfulSMul A B := faithfulSMul_of_isDiscreteValuationRing_of_isIntegral A B
-  let : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  let := IsFractionRing.mulSemiringAction G B (FractionRing B)
-  have := IsGaloisGroup.isGalois G (FractionRing A) (FractionRing B)
-  have := IsGaloisGroup.finiteDimensional G (FractionRing A) (FractionRing B)
-  exact IsIntegralClosure.finite A (FractionRing A) (FractionRing B) B
-
-end Helpers
 
 /-! ### Herbrand's theorem, transitivity, and upper numbering on quotients -/
 
@@ -268,11 +137,11 @@ extension, the zeroth ramification group has order equal to the ramification ind
 theorem natCard_ramificationGroup_zero_eq_ramificationIdx :
     Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
   have : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
-  have : FaithfulSMul A B := faithfulSMul_of_isDiscreteValuationRing_of_isIntegral A B
-  have : Module.Finite A B := module_finite_of_isInvariant_dvr A B G
+  have : FaithfulSMul A B := IsDiscreteValuationRing.faithfulSMul_of_isIntegral
+  let : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
+  have : Module.Finite A B := TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   have : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
     ‹Algebra.IsSeparable (ResidueField A) (ResidueField B)›
-  let : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
   rw [ramificationGroup_zero_eq_inertia,
     Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
       (maximalIdeal A) (maximalIdeal B),
@@ -287,22 +156,10 @@ theorem natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum [Fintype H] (σ 
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ τ : H, lowerIndex B (σ * (τ : G)) := by
   set C := FixedPoints.subalgebra A B H
-  have : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
-  have : FaithfulSMul A B := faithfulSMul_of_isDiscreteValuationRing_of_isIntegral A B
-  have : FaithfulSMul A C :=
-    faithfulSMul_of_isDiscreteValuationRing_of_isIntegral A C
-  have : Module.Finite A B := module_finite_of_isInvariant_dvr A B G
-  have : Module.Finite A C := by
-    have : IsNoetherian A B := isNoetherian_of_isNoetherianRing_of_finite A B
-    exact Module.Finite.iff_fg.2 (IsNoetherian.noetherian C.toSubmodule)
-  have : Algebra.IsSeparable (ResidueField A) (ResidueField C) :=
-    Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField A) (ResidueField C) (ResidueField B)
   have : Algebra.IsSeparable (ResidueField C) (ResidueField B) :=
     Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField C) (ResidueField B)
-  obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
-  obtain ⟨y, hy⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := C)
-  rw [natCard_ramificationGroup_zero_eq_ramificationIdx C B H]
-  exact ramificationIdx_mul_lowerIndex_mk_eq_sum_of_adjoin_eq_top H hx hy σ
+  rw [natCard_ramificationGroup_zero_eq_ramificationIdx C B H, ← finsum_eq_sum_of_fintype]
+  exact ramificationIdx_mul_lowerIndex_mk_eq_finsum A B H σ
 
 /-- **Serre's lemma** in counting form: if `σ` maximizes `lowerIndex B` in its coset `σ H` and
 `i_G(σ) = j` is finite, then `#H_0 · i_{G/H}(σ H) = ∑_{k < j} #H_k`. -/
@@ -312,17 +169,19 @@ theorem natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card (σ : G) {j
     (Nat.card (ramificationGroup H B 0) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ k ∈ Finset.range j, (Nat.card (ramificationGroup H B k) : ℕ∞) := by
-  cases nonempty_fintype H
-  rw [natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum A B G H σ]
-  simp_rw [lowerIndex_mul_of_forall_le σ hσ, hj]
-  exact sum_min_lowerIndex_natCast (G := H) (S := B) j
+  set C := FixedPoints.subalgebra A B H
+  have : Algebra.IsSeparable (ResidueField C) (ResidueField B) :=
+    Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField C) (ResidueField B)
+  rw [natCard_ramificationGroup_zero_eq_ramificationIdx C B H]
+  exact ramificationIdx_mul_lowerIndex_mk_eq_sum_card A H hj fun τ hτ ↦ hσ ⟨τ, hτ⟩
 
 private theorem lowerIndex_mk_ne_top (σ : G) (hj : lowerIndex B σ ≠ ⊤)
-    (hσ : ∀ τ : H, lowerIndex B (σ * (τ : G)) ≤ lowerIndex B σ) :
+    (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
     lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) ≠ ⊤ := by
   obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 hj
   intro htop
-  have hsum := natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card A B G H σ hj.symm hσ
+  have hsum := natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card A B G H σ hj.symm
+    fun τ ↦ hσ τ τ.property
   have h0 : (Nat.card (ramificationGroup H B 0) : ℕ∞) ≠ 0 := by
     exact_mod_cast (Nat.card_pos (α := ramificationGroup H B 0)).ne'
   rw [htop, ENat.mul_top h0, ← Nat.cast_sum] at hsum
@@ -337,7 +196,7 @@ theorem herbrandFun_lowerIndex_sub_one (σ : G) {j : ℕ}
       ((lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H)).toNat : ℝ) - 1 := by
   have hsum := natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card A B G H σ hj hσ
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1
-    (lowerIndex_mk_ne_top A B G H σ (hj ▸ ENat.natCast_ne_top j) hσ)
+    (lowerIndex_mk_ne_top A B G H σ (hj ▸ ENat.natCast_ne_top j) fun τ hτ ↦ hσ ⟨τ, hτ⟩)
   rw [← hn, ← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj] at hsum
   rw [← hn, ENat.toNat_natCast]
   have h0 : (Nat.card (ramificationGroup H B 0) : ℝ) ≠ 0 := by
@@ -358,7 +217,7 @@ theorem herbrandFun_lowerIndex_sub_one (σ : G) {j : ℕ}
     linear_combination -hsumR
 
 private theorem mk_mem_ramificationGroupReal_herbrandFun_iff (σ : G)
-    (hσ : ∀ τ : H, lowerIndex B (σ * (τ : G)) ≤ lowerIndex B σ) (u : ℝ) :
+    (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) (u : ℝ) :
     (σ : G ⧸ H) ∈ ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H)
         (herbrandFun H B u) ↔
       σ ∈ ramificationGroupReal G B u := by
@@ -369,7 +228,7 @@ private theorem mk_mem_ramificationGroupReal_herbrandFun_iff (σ : G)
   obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
   rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq
       (ENat.natCast_toNat (lowerIndex_mk_ne_top A B G H σ htop hσ)).symm,
-    ← herbrandFun_lowerIndex_sub_one A B G H σ hj.symm hσ,
+    ← herbrandFun_lowerIndex_sub_one A B G H σ hj.symm fun τ ↦ hσ τ τ.property,
     mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm]
   exact (herbrandFun_strictMono H B).le_iff_le
 
@@ -383,23 +242,22 @@ theorem map_quotientMk'_ramificationGroupReal (u : ℝ) :
   rw [Subgroup.mem_map]
   constructor
   · rintro ⟨σ, hσ, rfl⟩
-    obtain ⟨τ₀, hτ₀⟩ := exists_forall_lowerIndex_mul_le (B := B) H σ
-    have hmk : QuotientGroup.mk' H σ = ((σ * (τ₀ : G) : G) : G ⧸ H) := by
+    obtain ⟨τ₀, hτ₀_mem, hτ₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) H σ
+    have hmk : QuotientGroup.mk' H σ = ((σ * τ₀ : G) : G ⧸ H) := by
       rw [QuotientGroup.mk'_apply, QuotientGroup.eq]
-      simp [τ₀.property]
+      simp [hτ₀_mem]
     rw [hmk, mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ hτ₀]
-    have hle : lowerIndex B σ ≤ lowerIndex B (σ * (τ₀ : G)) := by
-      have := hτ₀ τ₀⁻¹
-      simpa [mul_assoc] using this
+    have hle : lowerIndex B σ ≤ lowerIndex B (σ * τ₀) := by
+      simpa [mul_assoc] using hτ₀ τ₀⁻¹ (inv_mem hτ₀_mem)
     rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hσ ⊢
     exact hσ.trans hle
   · intro h
     induction q using QuotientGroup.induction_on with | _ σ =>
-    obtain ⟨τ₀, hτ₀⟩ := exists_forall_lowerIndex_mul_le (B := B) H σ
-    have hmk : ((σ * (τ₀ : G) : G) : G ⧸ H) = (σ : G ⧸ H) := by
+    obtain ⟨τ₀, hτ₀_mem, hτ₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) H σ
+    have hmk : ((σ * τ₀ : G) : G ⧸ H) = (σ : G ⧸ H) := by
       rw [QuotientGroup.eq]
-      simp [inv_mem τ₀.property]
-    refine ⟨σ * (τ₀ : G), ?_, by rw [QuotientGroup.mk'_apply, hmk]⟩
+      simp [inv_mem hτ₀_mem]
+    refine ⟨σ * τ₀, ?_, by rw [QuotientGroup.mk'_apply, hmk]⟩
     rw [← mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ hτ₀, hmk]
     exact h
 
@@ -705,47 +563,6 @@ theorem fixedPointsIntegralClosureEquiv_smul (H : Subgroup (L ≃ₐ[K] L)) [H.N
 
 variable [IsDomain A] [IsDiscreteValuationRing A] [IsFractionRing A K]
 
-private theorem algebra_isInvariant_integralClosure :
-    Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) where
-  isInvariant x hx := by
-    have hfixed : (x : L) ∈ IntermediateField.fixedField (⊤ : Subgroup (L ≃ₐ[K] L)) := by
-      intro σ
-      exact congrArg Subtype.val (hx σ.val)
-    rw [IsGalois.fixedField_top] at hfixed
-    obtain ⟨k, hk⟩ := IntermediateField.mem_bot.1 hfixed
-    have hint : IsIntegral A k := by
-      rw [← isIntegral_algHom_iff (IsScalarTower.toAlgHom A K L) (algebraMap K L).injective]
-      change IsIntegral A (algebraMap K L k)
-      rw [hk]
-      exact (mem_integralClosure_iff A L).1 x.property
-    obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.1 hint
-    refine ⟨a, Subtype.ext ?_⟩
-    change algebraMap A L a = (x : L)
-    rw [IsScalarTower.algebraMap_apply A K L, ha, hk]
-
-omit [IsGalois K L] [IsDiscreteValuationRing A] in
-private theorem faithfulSMul_integralClosure :
-    FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) where
-  eq_of_smul_eq_smul {σ₁ σ₂} h := by
-    have : IsFractionRing (integralClosure A L) L :=
-      IsIntegralClosure.isFractionRing_of_finite_extension A K L (integralClosure A L)
-    ext x
-    obtain ⟨⟨y, z⟩, hyz⟩ := IsLocalization.surj (nonZeroDivisors (integralClosure A L)) x
-    rcases z with ⟨z, hz⟩
-    dsimp only at hyz
-    have hy : σ₁ (y : L) = σ₂ (y : L) := congrArg Subtype.val (h y)
-    have hz' : σ₁ (z : L) = σ₂ (z : L) := congrArg Subtype.val (h z)
-    have hmul : σ₁ (x * (z : L)) = σ₂ (x * (z : L)) := by
-      change σ₁ (x * algebraMap (integralClosure A L) L z) =
-        σ₂ (x * algebraMap (integralClosure A L) L z)
-      rw [hyz]
-      exact hy
-    rw [map_mul, map_mul, hz'] at hmul
-    have hz0 : (z : L) ≠ 0 := by
-      intro h0
-      exact nonZeroDivisors.ne_zero hz (Subtype.ext h0)
-    exact mul_right_cancel₀ ((map_ne_zero_iff σ₂ σ₂.injective).2 hz0) hmul
-
 variable (H : Subgroup (L ≃ₐ[K] L)) [H.Normal]
   [IsDiscreteValuationRing (integralClosure A L)]
   [IsLocalHom (algebraMap A (integralClosure A L))]
@@ -760,10 +577,10 @@ theorem herbrandFun_fixedField_tower (u : ℝ) :
         ((IntermediateField.fixedField H) ≃ₐ[K] (IntermediateField.fixedField H))
         (integralClosure A (IntermediateField.fixedField H))
         (herbrandFun H (integralClosure A L) u) := by
-  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) :=
-    algebra_isInvariant_integralClosure A K L
-  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) :=
-    faithfulSMul_integralClosure A K L
+  have hGal : IsGaloisGroup (L ≃ₐ[K] L) A (integralClosure A L) :=
+    IsGaloisGroup.of_isIntegralClosure (L ≃ₐ[K] L) A (integralClosure A L) K L
+  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) := hGal.isInvariant
+  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) := hGal.faithful
   rw [herbrandFun_tower A (integralClosure A L) (L ≃ₐ[K] L) H u]
   exact herbrandFun_eq_of_equiv (IsGalois.normalAutEquivQuotient H)
     (fixedPointsIntegralClosureEquiv A K L H).toRingEquiv
@@ -778,10 +595,10 @@ theorem inverseHerbrandFun_fixedField_tower (v : ℝ) :
         (inverseHerbrandFun
           ((IntermediateField.fixedField H) ≃ₐ[K] (IntermediateField.fixedField H))
           (integralClosure A (IntermediateField.fixedField H)) v) := by
-  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) :=
-    algebra_isInvariant_integralClosure A K L
-  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) :=
-    faithfulSMul_integralClosure A K L
+  have hGal : IsGaloisGroup (L ≃ₐ[K] L) A (integralClosure A L) :=
+    IsGaloisGroup.of_isIntegralClosure (L ≃ₐ[K] L) A (integralClosure A L) K L
+  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) := hGal.isInvariant
+  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) := hGal.faithful
   rw [inverseHerbrandFun_tower A (integralClosure A L) (L ≃ₐ[K] L) H v,
     inverseHerbrandFun_eq_of_equiv (IsGalois.normalAutEquivQuotient H)
       (fixedPointsIntegralClosureEquiv A K L H).toRingEquiv
@@ -796,10 +613,10 @@ theorem subgroupOf_upperRamificationGroup_fixedField (v : ℝ) :
         (inverseHerbrandFun
           ((IntermediateField.fixedField H) ≃ₐ[K] (IntermediateField.fixedField H))
           (integralClosure A (IntermediateField.fixedField H)) v) := by
-  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) :=
-    algebra_isInvariant_integralClosure A K L
-  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) :=
-    faithfulSMul_integralClosure A K L
+  have hGal : IsGaloisGroup (L ≃ₐ[K] L) A (integralClosure A L) :=
+    IsGaloisGroup.of_isIntegralClosure (L ≃ₐ[K] L) A (integralClosure A L) K L
+  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) := hGal.isInvariant
+  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) := hGal.faithful
   rw [subgroupOf_upperRamificationGroup_of_normal A (integralClosure A L) (L ≃ₐ[K] L) H v,
     inverseHerbrandFun_eq_of_equiv (IsGalois.normalAutEquivQuotient H)
       (fixedPointsIntegralClosureEquiv A K L H).toRingEquiv
@@ -817,10 +634,10 @@ theorem upperRamificationGroup_fixedField_eq_map (v : ℝ) :
       ((upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).map
           (QuotientGroup.mk' H)).map
         (IsGalois.normalAutEquivQuotient H).toMonoidHom := by
-  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) :=
-    algebra_isInvariant_integralClosure A K L
-  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) :=
-    faithfulSMul_integralClosure A K L
+  have hGal : IsGaloisGroup (L ≃ₐ[K] L) A (integralClosure A L) :=
+    IsGaloisGroup.of_isIntegralClosure (L ≃ₐ[K] L) A (integralClosure A L) K L
+  have : Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) := hGal.isInvariant
+  have : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) := hGal.faithful
   rw [← upperRamificationGroup_quotient_eq_map A (integralClosure A L) (L ≃ₐ[K] L) H v]
   exact (map_upperRamificationGroup_of_equiv (IsGalois.normalAutEquivQuotient H)
     (fixedPointsIntegralClosureEquiv A K L H).toRingEquiv
