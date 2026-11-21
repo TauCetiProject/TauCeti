@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.Topology.Homotopy.LoopSpaceFibration
+public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 
 /-!
@@ -180,11 +181,8 @@ at `f x` are, through their reparametrization to the unit interval, the loops at
 def fiberConstOfLengthHomeomorph (hL : 0 < L) :
     (map f rfl ⁻¹' {constOfLength (f x) L} : Set (MooreLoopSpace X x)) ≃ₜ
       Path (⟨x, rfl⟩ : f ⁻¹' {f x}) ⟨x, rfl⟩ where
-  toFun γ :=
-    { toFun s := ⟨γ.val.toPath s, apply_toPath_mem_preimage_singleton f γ s⟩
-      continuous_toFun := by fun_prop
-      source' := Subtype.ext (γ.val.toPath.source)
-      target' := Subtype.ext (γ.val.toPath.target) }
+  toFun γ := γ.val.toPath.codRestrict (x := ⟨x, rfl⟩) (y := ⟨x, rfl⟩)
+    (apply_toPath_mem_preimage_singleton f γ)
   invFun c := ⟨((posLengthHomeomorph x).symm (⟨L, hL⟩, c.map continuous_subtypeVal)).val,
     map_posLengthHomeomorph_symm_eq_constOfLength f hL c⟩
   left_inv γ := by
@@ -192,13 +190,14 @@ def fiberConstOfLengthHomeomorph (hL : 0 < L) :
     have hlen : γ.val.length = L := by simpa using congrArg length hγ
     refine Subtype.ext ((congrArg (fun c ↦ ((posLengthHomeomorph x).symm (⟨L, hL⟩, c)).val)
       ?_).trans (coe_posLengthHomeomorph_symm_mk_toPath γ.val hL hlen))
-    -- the loop of the fibre, read back in `X`, is `toPath γ` pointwise by definition
-    exact Path.ext rfl
+    exact Path.map_codRestrict _ _
   right_inv c := Path.ext <| funext fun s ↦ Subtype.ext <| by
     simp
-  continuous_toFun := Path.continuous_uncurry_iff.1 <|
+  continuous_toFun := Path.continuous_uncurry_iff.1 <| continuous_induced_rng.2 <|
     ((Path.continuous_uncurry_iff.2 continuous_toPath).comp
-      (continuous_subtypeVal.prodMap continuous_id)).subtype_mk _
+      (continuous_subtypeVal.prodMap continuous_id)).congr fun γs ↦
+        (Path.codRestrict_coe (x := ⟨x, rfl⟩) (y := ⟨x, rfl⟩) _
+          (apply_toPath_mem_preimage_singleton f γs.1) γs.2).symm
   continuous_invFun := ((posLengthHomeomorph x).symm.continuous.comp
     (continuous_const.prodMk (continuous_loopMap continuous_subtypeVal _))).subtypeVal.subtype_mk
       _
@@ -209,7 +208,7 @@ reparametrization `toPath γ` of `γ` to the unit interval. -/
 theorem coe_fiberConstOfLengthHomeomorph_apply (hL : 0 < L)
     (γ : (map f rfl ⁻¹' {constOfLength (f x) L} : Set (MooreLoopSpace X x))) (s : I) :
     (fiberConstOfLengthHomeomorph x f hL γ s : X) = γ.val.toPath s :=
-  (rfl)
+  Path.codRestrict_coe (x := ⟨x, rfl⟩) (y := ⟨x, rfl⟩) _ (apply_toPath_mem_preimage_singleton f γ) s
 
 /-- The inverse of `fiberConstOfLengthHomeomorph` runs a loop of the fibre in time `L`, by the
 inverse of `posLengthHomeomorph`. -/
