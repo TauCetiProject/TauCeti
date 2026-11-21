@@ -75,13 +75,14 @@ theorem isInvertible_mfderiv_iff_injective [CompleteSpace 𝕜] [FiniteDimension
   -- Read the derivative on the model spaces, where the operator criterion applies.
   set e := tangentSpaceCastModel I x
   set e' := tangentSpaceCastModel I' (f x)
-  set A : E →L[𝕜] E' := (e' : TangentSpace I' (f x) →L[𝕜] E') ∘L mfderiv I I' f x ∘L
-    (e.symm : E →L[𝕜] TangentSpace I x)
+  set A : E →L[𝕜] E' := e.arrowCongrEquiv e' (mfderiv I I' f x)
   have hA : Function.Injective A := by
-    simp only [A, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe]
+    simp only [A, ContinuousLinearEquiv.arrowCongrEquiv_apply, ContinuousLinearMap.coe_comp,
+      ContinuousLinearEquiv.coe_coe]
     exact e'.injective.comp (hinj.comp e.symm.injective)
   have : FiniteDimensional 𝕜 E := .of_injective (A : E →ₗ[𝕜] E') hA
   have hAinv := A.isInvertible_of_injective_of_finrank_eq hdim hA
+  simp only [A, ContinuousLinearEquiv.arrowCongrEquiv_apply] at hAinv
   rwa [ContinuousLinearMap.isInvertible_equiv_comp,
     ContinuousLinearMap.isInvertible_comp_equiv] at hAinv
 
