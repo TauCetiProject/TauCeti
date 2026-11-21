@@ -225,7 +225,7 @@ private theorem continuous_coeffVortex (hm : 0 < m) :
   exact tendstoUniformly_amplitudeField_backgroundAmplitude_add hdeg hcoeff
     (fun a ↦ (contDiff_reducedSolution _).differentiable (by simp))
     ((contDiff_reducedSolution _).differentiable (by simp))
-    (fun z ↦ (le_abs_self _).trans (hM _ ⟨z, rfl⟩))
+    (fun z ↦ (Real.le_norm_self _).trans (hM _ ⟨z, rfl⟩))
     (tendstoUniformly_reducedSolution hpos hdeg hcoeff)
     (tendstoUniformly_fderiv_reducedSolution hpos hdeg hcoeff)
 
@@ -291,6 +291,14 @@ theorem framedVortexOrbitEquiv_symm_mk (x : framedVortices c m) :
       Quotient.mk'' ((framedVortexEquiv c m).symm x) :=
   MulAction.orbitRelQuotientCongr_symm_mk _ _ _ x
 
+/-- The divisor bijection `TauCeti.Vortex.framedVortexModuliEquiv`, read through
+`TauCeti.Vortex.framedVortexOrbitEquiv`, sends the orbit of a framed vortex to its divisor. -/
+private theorem framedVortexModuliEquiv_framedVortexOrbitEquiv_symm_mk (hc : 0 < c)
+    (x : framedVortices c m) :
+    framedVortexModuliEquiv hc m ((framedVortexOrbitEquiv c m).symm (Quotient.mk'' x)) =
+      framedVortexDivisor ((framedVortexEquiv c m).symm x) := by
+  rw [framedVortexOrbitEquiv_symm_mk, framedVortexModuliEquiv_mk]
+
 /-- **The moduli space of framed plane vortices is homeomorphic to `Sym ℂ m`** (Taubes). For
 `c > 0`, the zero divisor identifies the orbit space of the smooth framed gauge group on the smooth
 framed degree-`m` vortices of coupling `c`, with the topology of locally uniform convergence, with
@@ -299,25 +307,23 @@ def framedVortexModuliHomeomorph (hc : 0 < c) (m : ℕ) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortices c m) ≃ₜ Sym ℂ m where
   toEquiv := (framedVortexOrbitEquiv c m).symm.trans (framedVortexModuliEquiv hc m)
   continuous_toFun := isQuotientMap_quotient_mk'.continuous_iff.2 <|
-    continuous_framedVortexDivisor.congr fun _ ↦
-      ((congrArg (framedVortexModuliEquiv hc m) (framedVortexOrbitEquiv_symm_mk _)).trans
-        (framedVortexModuliEquiv_mk hc _)).symm
+    continuous_framedVortexDivisor.congr fun x ↦
+      (framedVortexModuliEquiv_framedVortexOrbitEquiv_symm_mk hc x).symm
   continuous_invFun := by
     rcases Nat.eq_zero_or_pos m with rfl | hm
     · exact continuous_of_const fun _ _ ↦ congrArg _ (Subsingleton.elim _ _)
     obtain ⟨s, hs, hsD⟩ := exists_continuous_framedVortexDivisor_eq hc hm
-    refine (continuous_quot_mk.comp hs).congr fun D ↦ ?_
-    exact (((framedVortexOrbitEquiv c m).symm.trans (framedVortexModuliEquiv hc m)).symm_apply_eq.2
-      ((hsD D).symm.trans ((congrArg (framedVortexModuliEquiv hc m)
-        (framedVortexOrbitEquiv_symm_mk _)).trans (framedVortexModuliEquiv_mk hc _)).symm)).symm
+    -- The section `s` is a right inverse of the divisor, hence it picks the inverse's orbits.
+    refine (continuous_quot_mk.comp hs).congr fun D ↦ (((framedVortexOrbitEquiv c m).symm.trans
+      (framedVortexModuliEquiv hc m)).symm_apply_eq.2 ?_).symm
+    exact ((framedVortexModuliEquiv_framedVortexOrbitEquiv_symm_mk hc (s D)).trans (hsD D)).symm
 
 /-- The orbit of a framed vortex goes to its divisor. -/
 @[simp]
 theorem framedVortexModuliHomeomorph_mk (hc : 0 < c) (x : framedVortices c m) :
     framedVortexModuliHomeomorph hc m (Quotient.mk'' x) =
       framedVortexDivisor ((framedVortexEquiv c m).symm x) :=
-  (congrArg (framedVortexModuliEquiv hc m) (framedVortexOrbitEquiv_symm_mk x)).trans
-    (framedVortexModuliEquiv_mk hc _)
+  framedVortexModuliEquiv_framedVortexOrbitEquiv_symm_mk hc x
 
 /-- The homeomorphism `TauCeti.Vortex.framedVortexModuliHomeomorph` extends the bijection
 `TauCeti.Vortex.framedVortexModuliEquiv` on the orbit space of `framedVortexSubMulAction c m`. -/
