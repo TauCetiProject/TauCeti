@@ -8,12 +8,17 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Euclidean
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Rat
 public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Pi
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 
 /-!
 # The Euclidean span and lattice of integral points of a number-field subspace
@@ -24,6 +29,16 @@ Let `K` be a number field of degree `D = [K : ℚ]` and `ι` a finite coordinate
 of `K` contributes a single `(Re, Im)` plane with its standard real inner product. Unlike the
 sup-normed product `ι → mixedSpace K`, this ambient space is a real inner product space, so the
 real span `W.euclideanSpan` of `W` inherits an inner product and canonical Euclidean Haar measure.
+
+Coordinatewise multiplication by any element `c : mixedSpace K`
+(`TauCeti.NumberField.mixedEmbedding.mulMixedAmbient c`) preserves `W.euclideanSpan`
+(`Submodule.mulMixedAmbient_mem_euclideanSpan`). Its restriction `W.mulMixedSubmodule c` has real
+determinant `(Algebra.norm ℝ c) ^ finrank K W` (`Submodule.det_mulMixedSubmodule`) and scales the
+squared norm at each infinite place `w` by `normAtPlace w c ^ 2`
+(`Submodule.norm_sq_mulMixedSubmodule`). Taking `c = TauCeti.NumberField.mixedEmbedding.multSqrt K`
+(`1` at real places, `√2` at complex places) has determinant `2 ^ (nrComplexPlaces K * finrank K W)`
+and turns the squared Euclidean norm of an integral point into the multiplicity-weighted sum
+`∑ w, w.mult * ∑ i, ‖w.embedding (z i)‖ ^ 2` (`Submodule.norm_sq_mulMixedSubmodule_multSqrt`).
 
 Within `W.euclideanSpan`, the points whose coordinates lie in
 `NumberField.mixedEmbedding.euclidean.integerLattice K` form a `ℤ`-submodule `W.integerLattice`,
@@ -45,6 +60,7 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
 * `Submodule.euclideanSpan W`: the real span of `W` inside
   `PiLp 2 fun _ : ι ↦ NumberField.mixedEmbedding.euclidean.mixedSpace K`, with defining equation
   `Submodule.euclideanSpan_def` and universal property `Submodule.euclideanSpan_le_iff`.
+* `Submodule.mulMixedSubmodule W c`: restriction of `mulMixedAmbient c` to `W.euclideanSpan`.
 * `Submodule.integerLattice W`: the `ℤ`-submodule of points of `W.euclideanSpan` with coordinates
   in `NumberField.mixedEmbedding.euclidean.integerLattice K`.
 * `Submodule.integerPointsEquivIntegerLattice W`: the `ℤ`-linear equivalence
@@ -57,6 +73,13 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
 
 ## Main results
 
+* `Submodule.mulMixedAmbient_mem_euclideanSpan`: `W.euclideanSpan` is stable under coordinatewise
+  multiplication by `mixedSpace K`.
+* `Submodule.det_mulMixedSubmodule`: `LinearMap.det (W.mulMixedSubmodule c) =
+  (Algebra.norm ℝ c) ^ finrank K W`.
+* `Submodule.norm_sq_mulMixedSubmodule`, `Submodule.norm_sq_mulMixedSubmodule_integerPoints`,
+  `Submodule.norm_sq_mulMixedSubmodule_multSqrt`: squared Euclidean norm formulas under
+  coordinatewise `mixedSpace K`-scaling.
 * `Submodule.toLp_mem_euclideanSpan_iff`: the `K`-points of `W.euclideanSpan` are precisely the
   points of `W`.
 * `Submodule.finrank_euclideanSpan`, `Submodule.finrank_integerLattice`: `W.euclideanSpan` and
@@ -132,6 +155,76 @@ theorem euclideanSpan_bot : (⊥ : Submodule K (ι → K)).euclideanSpan = ⊥ :
 theorem euclideanSpan_mono {W₁ W₂ : Submodule K (ι → K)} (h : W₁ ≤ W₂) :
     W₁.euclideanSpan ≤ W₂.euclideanSpan :=
   euclideanSpan_le_iff.2 fun _ hv ↦ toLp_mem_euclideanSpan (h hv)
+
+section MulMixedSubmodule
+
+open TauCeti.NumberField.mixedEmbedding
+
+/-- `W.euclideanSpan` is closed under coordinatewise multiplication by any element of
+`mixedSpace K`. -/
+theorem mulMixedAmbient_mem_euclideanSpan (W : Submodule K (ι → K)) (c : mixedSpace K)
+    {x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K} (hx : x ∈ W.euclideanSpan) :
+    mulMixedAmbient c x ∈ W.euclideanSpan := by
+  classical
+  have hle : W.euclideanSpan ≤ W.euclideanSpan.comap (mulMixedAmbient c) := by
+    rw [euclideanSpan_le_iff]
+    intro v hv
+    rw [Submodule.mem_comap]
+    have hc :
+        c = ∑ j, (mixedEmbedding.latticeBasis K).repr c j •
+          mixedEmbedding K (RingOfIntegers.basis K j) := by
+      simpa only [mixedEmbedding.latticeBasis_apply, integralBasis_apply] using
+        ((mixedEmbedding.latticeBasis K).sum_repr c).symm
+    have hsum :
+        mulMixedAmbient c
+            (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) =
+          ∑ j, (mixedEmbedding.latticeBasis K).repr c j •
+            WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm
+              (mixedEmbedding K ((RingOfIntegers.basis K j : K) * v i)) := by
+      ext1 i
+      apply (euclidean.toMixed K).injective
+      rw [mulMixedAmbient_apply, ContinuousLinearEquiv.apply_symm_apply, WithLp.ofLp_toLp,
+        ContinuousLinearEquiv.apply_symm_apply, WithLp.ofLp_sum, Finset.sum_apply, map_sum]
+      conv_lhs => rw [hc, Finset.sum_mul]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      rw [WithLp.ofLp_smul, Pi.smul_apply, map_smul, WithLp.ofLp_toLp,
+        ContinuousLinearEquiv.apply_symm_apply, Algebra.smul_mul_assoc, map_mul]
+    rw [hsum]
+    exact Submodule.sum_mem _ fun j _ ↦
+      Submodule.smul_mem _ _
+        (W.toLp_mem_euclideanSpan (W.smul_mem (RingOfIntegers.basis K j : K) hv))
+  exact hle hx
+
+/-- Restriction of coordinatewise multiplication by `c : mixedSpace K` to `W.euclideanSpan`. -/
+def mulMixedSubmodule (W : Submodule K (ι → K)) (c : mixedSpace K) :
+    W.euclideanSpan →ₗ[ℝ] W.euclideanSpan :=
+  (mulMixedAmbient c).restrict fun _ hx ↦ W.mulMixedAmbient_mem_euclideanSpan c hx
+
+/-- Coercing `W.mulMixedSubmodule c x` to the ambient Euclidean Minkowski space gives
+`mulMixedAmbient c x`. -/
+@[simp]
+theorem coe_mulMixedSubmodule (W : Submodule K (ι → K)) (c : mixedSpace K)
+    (x : W.euclideanSpan) :
+    (W.mulMixedSubmodule c x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
+      mulMixedAmbient c (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) := by
+  rfl
+
+/-- Multiplying by `1 : mixedSpace K` acts as the identity on `W.euclideanSpan`. -/
+@[simp]
+theorem mulMixedSubmodule_one (W : Submodule K (ι → K)) :
+    W.mulMixedSubmodule 1 = LinearMap.id := by
+  ext1 x
+  apply Subtype.ext
+  simp
+
+/-- `W.mulMixedSubmodule` is multiplicative in the scaling element of `mixedSpace K`. -/
+theorem mulMixedSubmodule_mul (W : Submodule K (ι → K)) (c₁ c₂ : mixedSpace K)
+    (x : W.euclideanSpan) :
+    W.mulMixedSubmodule (c₁ * c₂) x = W.mulMixedSubmodule c₁ (W.mulMixedSubmodule c₂ x) := by
+  apply Subtype.ext
+  simp only [coe_mulMixedSubmodule, mulMixedAmbient_mul]
+
+end MulMixedSubmodule
 
 open Classical in
 /-- `mixedSpace K`-linear extension of a `K`-linear form `f : (ι → K) →ₗ[K] K` to the Euclidean
@@ -500,6 +593,163 @@ theorem finrank_integerLattice [Finite ι] (W : Submodule K (ι → K)) :
   rw [ZLattice.rank ℝ W.integerLattice, finrank_euclideanSpan]
 
 end PseudoBasis
+
+section MulMixedProperties
+
+open TauCeti.NumberField.mixedEmbedding
+open scoped RealInnerProductSpace
+
+/-- The embedded `K`-basis vectors of `W` inside `W.euclideanSpan`. -/
+private def basisVecEuclideanSpan [Fintype ι] (W : Submodule K (ι → K))
+    (k : Fin (finrank K W)) : W.euclideanSpan :=
+  ⟨WithLp.toLp 2 fun i ↦
+      (euclidean.toMixed K).symm (mixedEmbedding K ((Module.finBasis K W k : ι → K) i)),
+    W.toLp_mem_euclideanSpan (Module.finBasis K W k).property⟩
+
+open Classical in
+/-- The `ℝ`-linear map `(Fin (finrank K W) → mixedSpace K) →ₗ[ℝ] W.euclideanSpan` sending `z`
+to the `mixedSpace K`-linear combination of the embedded `K`-basis vectors of `W`. -/
+private def mixedSpaceToEuclideanSpan [Fintype ι] (W : Submodule K (ι → K)) :
+    (Fin (finrank K W) → mixedSpace K) →ₗ[ℝ] W.euclideanSpan where
+  toFun z := ∑ k : Fin (finrank K W), W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k)
+  map_add' z₁ z₂ := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun k _ ↦ Subtype.ext ?_
+    ext1 i
+    apply (euclidean.toMixed K).injective
+    simp [add_mul]
+  map_smul' r z := by
+    rw [RingHom.id_apply, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ Subtype.ext ?_
+    ext1 i
+    apply (euclidean.toMixed K).injective
+    simp [Algebra.smul_mul_assoc]
+
+private theorem mixedSpaceToEuclideanSpan_apply [Fintype ι] (W : Submodule K (ι → K))
+    (z : Fin (finrank K W) → mixedSpace K) :
+    mixedSpaceToEuclideanSpan W z =
+      ∑ k : Fin (finrank K W), W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :=
+  rfl
+
+/-- `mixedSpaceToEuclideanSpan W` is injective: extending a biorthogonal dual family for
+`Module.finBasis K W` via `mixedExtend` recovers each coordinate `z k₀`. -/
+private theorem mixedSpaceToEuclideanSpan_injective [Fintype ι] (W : Submodule K (ι → K)) :
+    Function.Injective (mixedSpaceToEuclideanSpan W) := by
+  classical
+  let b : Basis (Fin (finrank K W)) K W := Module.finBasis K W
+  obtain ⟨f, hf⟩ := b.linearIndependent_coe_basis.exists_dual_forall_apply_eq_ite
+  rw [injective_iff_map_eq_zero]
+  intro z hz
+  ext1 k₀
+  have h0 : mixedExtend (f k₀)
+      (mixedSpaceToEuclideanSpan W z : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) = 0 := by
+    rw [hz, ZeroMemClass.coe_zero, map_zero]
+  have hcoe : (mixedSpaceToEuclideanSpan W z : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
+      ∑ k : Fin (finrank K W),
+        (W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :
+          PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) := by
+    rw [mixedSpaceToEuclideanSpan_apply, ← W.euclideanSpan.coe_subtype]
+    exact map_sum W.euclideanSpan.subtype _ _
+  have hterm (k : Fin (finrank K W)) :
+      mixedExtend (f k₀) (W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :
+          PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
+        if k₀ = k then z k else 0 := by
+    have hval : (W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :
+          PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
+        WithLp.toLp 2 fun i ↦
+          (euclidean.toMixed K).symm (z k * mixedEmbedding K ((b k : ι → K) i)) := by
+      ext1 i
+      simp [basisVecEuclideanSpan, b]
+    rw [hval, mixedExtend_toLp_mul, hf k₀ k]
+    split_ifs <;> simp
+  rw [hcoe, map_sum] at h0
+  simp_rw [hterm] at h0
+  simpa [eq_comm] using h0
+
+/-- The `ℝ`-linear determinant of coordinatewise multiplication by `c` on `W.euclideanSpan` is
+`(Algebra.norm ℝ c) ^ finrank K W`. -/
+theorem det_mulMixedSubmodule [Finite ι] (W : Submodule K (ι → K)) (c : mixedSpace K) :
+    LinearMap.det (W.mulMixedSubmodule c) = (Algebra.norm ℝ c) ^ finrank K W := by
+  classical
+  cases nonempty_fintype ι
+  set m := finrank K W
+  have hfin : finrank ℝ (Fin m → mixedSpace K) = finrank ℝ W.euclideanSpan := by
+    rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      smul_eq_mul, mixedEmbedding.finrank, W.finrank_euclideanSpan, mul_comm]
+  have hΦ_inj := mixedSpaceToEuclideanSpan_injective W
+  have hΦ_bij : Function.Bijective (mixedSpaceToEuclideanSpan W) :=
+    ⟨hΦ_inj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mp hΦ_inj⟩
+  let eΦ : (Fin m → mixedSpace K) ≃ₗ[ℝ] W.euclideanSpan :=
+    LinearEquiv.ofBijective (mixedSpaceToEuclideanSpan W) hΦ_bij
+  have hconj :
+      W.mulMixedSubmodule c =
+        (eΦ : (Fin m → mixedSpace K) →ₗ[ℝ] W.euclideanSpan) ∘ₗ
+          (LinearMap.piMap fun _ : Fin m ↦ Algebra.lmul ℝ (mixedSpace K) c) ∘ₗ
+          (eΦ.symm : W.euclideanSpan →ₗ[ℝ] (Fin m → mixedSpace K)) := by
+    refine LinearMap.ext fun y ↦ ?_
+    obtain ⟨z, rfl⟩ := eΦ.surjective y
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+    simp only [eΦ, LinearEquiv.ofBijective_apply, LinearMap.coe_piMap]
+    rw [mixedSpaceToEuclideanSpan_apply, mixedSpaceToEuclideanSpan_apply, map_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [Pi.map_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', mulMixedSubmodule_mul]
+  rw [hconj, LinearMap.det_conj, LinearMap.det_piMap]
+  simp [Algebra.norm_apply]
+
+open Classical in
+/-- Scaling `x : W.euclideanSpan` coordinatewise by `c : mixedSpace K` multiplies each infinite
+place `w`'s squared Euclidean contribution by `normAtPlace w c ^ 2`. -/
+theorem norm_sq_mulMixedSubmodule [Fintype ι] (W : Submodule K (ι → K)) (c : mixedSpace K)
+    (x : W.euclideanSpan) :
+    ‖W.mulMixedSubmodule c x‖ ^ 2 =
+      ∑ w : InfinitePlace K,
+        normAtPlace w c ^ 2 *
+          ∑ i : ι,
+            normAtPlace w
+              (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, Submodule.coe_inner, PiLp.inner_apply]
+  have hterm (i : ι) :
+      ⟪(W.mulMixedSubmodule c x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i,
+        (W.mulMixedSubmodule c x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i⟫ =
+        ∑ w : InfinitePlace K,
+          normAtPlace w c ^ 2 *
+            normAtPlace w
+              (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2 := by
+    rw [coe_mulMixedSubmodule, mulMixedAmbient_apply, ← mixedInner_toMixed,
+      ContinuousLinearEquiv.apply_symm_apply, mixedInner_self_eq_sum]
+    refine Finset.sum_congr rfl fun w _ ↦ ?_
+    rw [map_mul, mul_pow]
+  simp_rw [hterm]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  rw [Finset.mul_sum]
+
+open Classical in
+/-- For an integral point `z ∈ W.integerPoints`, the squared Euclidean norm of its `c`-scaling is
+`∑ w, normAtPlace w c ^ 2 * ∑ i, ‖w.embedding (z i)‖ ^ 2`. -/
+theorem norm_sq_mulMixedSubmodule_integerPoints [Fintype ι] (W : Submodule K (ι → K))
+    (c : mixedSpace K) (z : W.integerPoints) :
+    ‖W.mulMixedSubmodule c (W.integerPointsEquivIntegerLattice z : W.euclideanSpan)‖ ^ 2 =
+      ∑ w : InfinitePlace K,
+        normAtPlace w c ^ 2 * ∑ i : ι, ‖w.embedding ((z : ι → 𝓞 K) i : K)‖ ^ 2 := by
+  rw [W.norm_sq_mulMixedSubmodule c]
+  refine Finset.sum_congr rfl fun w _ ↦ congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [Submodule.coe_integerPointsEquivIntegerLattice_apply, WithLp.ofLp_toLp,
+    ContinuousLinearEquiv.apply_symm_apply, normAtPlace_apply, InfinitePlace.norm_embedding_eq]
+
+open Classical in
+/-- For an integral point `z ∈ W.integerPoints`, the squared Euclidean norm of its `multSqrt K`
+scaling equals the multiplicity-weighted sum `∑ w, w.mult * ∑ i, ‖w.embedding (z i)‖ ^ 2`. -/
+theorem norm_sq_mulMixedSubmodule_multSqrt [Fintype ι] (W : Submodule K (ι → K))
+    (z : W.integerPoints) :
+    ‖W.mulMixedSubmodule (multSqrt K)
+        (W.integerPointsEquivIntegerLattice z : W.euclideanSpan)‖ ^ 2 =
+      ∑ w : InfinitePlace K, (w.mult : ℝ) * ∑ i : ι, ‖w.embedding ((z : ι → 𝓞 K) i : K)‖ ^ 2 := by
+  rw [W.norm_sq_mulMixedSubmodule_integerPoints (multSqrt K) z]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  rw [normAtPlace_multSqrt, Real.sq_sqrt (Nat.cast_nonneg _)]
+
+end MulMixedProperties
 
 end EuclideanSpan
 
