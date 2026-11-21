@@ -39,13 +39,14 @@ are the two boundary circles `c = 0` and `c = 1`. There `Y_k = c` too, so
 * On the face the velocity of the momentum is
   `dy_k/dt = (B'(Y_(k-1) - c) + (y_(k+1) - c)) / X_y`
   (`TauCeti.neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face`).
-  When the neighbouring momenta `Y_(k-1)` and `y_(k+1)` lie on the same side of `c` as the block,
-  as they do at the lower face `c = 0` and at the upper face `c = 1` for momenta in `[0, 1]`, the
-  numerator has a definite sign
+  When the boundary graph is weakly increasing at `x`, `B' ≥ 0`, and the neighbouring momenta
+  `Y_(k-1)` and `y_(k+1)` lie on the same side of `c` as the block, as they do at the lower face
+  `c = 0` and at the upper face `c = 1` for momenta in `[0, 1]`, the numerator has a definite sign
   (`TauCeti.mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonneg`,
   `TauCeti.mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonpos`). So for a positive
   twist, `X_y > 0`, the momentum moves weakly into the block on both faces, and for a negative
-  twist weakly out of it. It is stationary exactly when both neighbouring momenta equal `c`
+  twist weakly out of it. If moreover `B' > 0`, it is stationary exactly when both neighbouring
+  momenta equal `c`
   (`TauCeti.neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_eq_zero_iff`).
 
 The worked example at the end checks these signs on the negative twist
@@ -72,6 +73,12 @@ private theorem hasDerivAt_fst_slice_left {x c : ℝ} (hd : DifferentiableAt ℝ
     HasDerivAt (fun s ↦ (F (s, c)).1) (fderiv ℝ F (x, c) (1, 0)).1 x :=
   (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt x (hasDerivAt_slice_left hd)
 
+/-- Where `F = (X, Y)` is differentiable at `(x, c)`, the horizontal slice `s ↦ Y(s, c)` has
+derivative `Y_x(x, c)` at `x`. -/
+private theorem hasDerivAt_snd_slice_left {x c : ℝ} (hd : DifferentiableAt ℝ F (x, c)) :
+    HasDerivAt (fun s ↦ (F (s, c)).2) (fderiv ℝ F (x, c) (1, 0)).2 x :=
+  (ContinuousLinearMap.snd ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt x (hasDerivAt_slice_left hd)
+
 /-- **The momenta on a face of the band.** On a strip `ℝ × J` over an open interval `J`
 containing `0`, let `F = (X, Y)` be `C²`, twist, preserve area and map the line `y = 0` into
 itself, and let it map the line `y = c`, `c ∈ J`, into itself as well. At the point
@@ -87,7 +94,7 @@ theorem deriv_mul_fderiv_fderiv_stripBandGeneratingFunction_apply_zero_one (hJ :
         fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c)) v (0, 1) =
       -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c)) v
         (1, 0) := by
-  have hq : (x, c) ∈ Prod.snd ⁻¹' J := hc
+  have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   have hd := (hF _ hq).differentiableAt two_ne_zero
   have hB := (hasDerivAt_fst_slice_left hd).deriv
   -- On the face `Y_x = 0`, so the area condition reads `X_x Y_y = 1`.
@@ -97,8 +104,7 @@ theorem deriv_mul_fderiv_fderiv_stripBandGeneratingFunction_apply_zero_one (hJ :
       have h := hdet _ hq
       rwa [ContinuousLinearMap.det, LinearMap.det_finTwoProd] at h
     -- `Y_x(x, c) = 0`, since `s ↦ Y(s, c)` is constant.
-    have hYx : HasDerivAt (fun s ↦ (F (s, c)).2) (fderiv ℝ F (x, c) (1, 0)).2 x :=
-      (ContinuousLinearMap.snd ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt x (hasDerivAt_slice_left hd)
+    have hYx := hasDerivAt_snd_slice_left hd
     rw [funext hface] at hYx
     rwa [← (hasDerivAt_const x c).unique hYx, zero_mul, sub_zero] at h
   have htw := htwist _ hq
@@ -123,7 +129,7 @@ theorem neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face (hJ : IsOpen J)
     -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
         (c - a, b - c) (1, 0) =
       (deriv (fun s ↦ (F (s, c)).1) x * (a - c) + (b - c)) / (fderiv ℝ F (x, c) (0, 1)).1 := by
-  have hq : (x, c) ∈ Prod.snd ⁻¹' J := hc
+  have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   have hd := (hF _ hq).differentiableAt two_ne_zero
   have hB := (hasDerivAt_fst_slice_left hd).deriv
   rw [hB, fderiv_fderiv_stripBandGeneratingFunction_apply hJ hJc h0 hF hY hdet htwist hq]
@@ -131,40 +137,42 @@ theorem neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face (hJ : IsOpen J)
 
 /-- **The momentum does not leave a lower face against the twist.** In the setting of
 `TauCeti.neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face`, if the boundary graph is
-increasing, `B'(x) > 0`, and both neighbouring momenta `a` and `b` are at least `c`, then the
-velocity `dy/dt` of the momentum on the face satisfies `0 ≤ X_y dy/dt`. At the lower face `c = 0`
-of the block `0 ≤ y ≤ 1`, the momentum moves weakly into the block for a positive twist
-`X_y > 0` and weakly out of it for a negative twist. -/
+weakly increasing at `x`, `0 ≤ B'(x)`, and both neighbouring momenta `a` and `b` are at least
+`c`, then the velocity `dy/dt` of the momentum on the face satisfies `0 ≤ X_y dy/dt`. At the
+lower face `c = 0` of the block `0 ≤ y ≤ 1`, the momentum moves weakly into the block for a positive
+twist `X_y > 0` and weakly out of it for a negative twist. -/
 theorem mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonneg (hJ : IsOpen J)
     (hJc : J.OrdConnected) (h0 : 0 ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q)
     (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J) {x a b : ℝ}
-    (hB : 0 < deriv (fun s ↦ (F (s, c)).1) x) (ha : c ≤ a) (hb : c ≤ b) :
+    (hB : 0 ≤ deriv (fun s ↦ (F (s, c)).1) x) (ha : c ≤ a) (hb : c ≤ b) :
     0 ≤ (fderiv ℝ F (x, c) (0, 1)).1 *
       -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
         (c - a, b - c) (1, 0) := by
+  have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   rw [neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face hJ hJc h0 hF hY hdet htwist hc,
-    mul_div_cancel₀ _ (htwist _ (show (x, c) ∈ Prod.snd ⁻¹' J from hc))]
-  have := mul_nonneg hB.le (sub_nonneg.2 ha)
+    mul_div_cancel₀ _ (htwist _ hq)]
+  have := mul_nonneg hB (sub_nonneg.2 ha)
   linarith
 
 /-- **The momentum does not leave an upper face against the twist.** In the setting of
 `TauCeti.neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face`, if the boundary graph is
-increasing, `B'(x) > 0`, and both neighbouring momenta `a` and `b` are at most `c`, then the
-velocity `dy/dt` of the momentum on the face satisfies `X_y dy/dt ≤ 0`. At the upper face `c = 1`
-of the block `0 ≤ y ≤ 1`, the momentum moves weakly into the block for a positive twist
-`X_y > 0` and weakly out of it for a negative twist. -/
+weakly increasing at `x`, `0 ≤ B'(x)`, and both neighbouring momenta `a` and `b` are at most
+`c`, then the velocity `dy/dt` of the momentum on the face satisfies `X_y dy/dt ≤ 0`. At the
+upper face `c = 1` of the block `0 ≤ y ≤ 1`, the momentum moves weakly into the block for a positive
+twist `X_y > 0` and weakly out of it for a negative twist. -/
 theorem mul_neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_nonpos (hJ : IsOpen J)
     (hJc : J.OrdConnected) (h0 : 0 ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q)
     (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {c : ℝ} (hc : c ∈ J) {x a b : ℝ}
-    (hB : 0 < deriv (fun s ↦ (F (s, c)).1) x) (ha : a ≤ c) (hb : b ≤ c) :
+    (hB : 0 ≤ deriv (fun s ↦ (F (s, c)).1) x) (ha : a ≤ c) (hb : b ≤ c) :
     (fderiv ℝ F (x, c) (0, 1)).1 *
       -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
         (c - a, b - c) (1, 0) ≤ 0 := by
+  have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   rw [neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face hJ hJc h0 hF hY hdet htwist hc,
-    mul_div_cancel₀ _ (htwist _ (show (x, c) ∈ Prod.snd ⁻¹' J from hc))]
-  have := mul_nonpos_of_nonneg_of_nonpos hB.le (sub_nonpos.2 ha)
+    mul_div_cancel₀ _ (htwist _ hq)]
+  have := mul_nonpos_of_nonneg_of_nonpos hB (sub_nonpos.2 ha)
   linarith
 
 /-- **Stationary momenta on a face.** In the setting of
@@ -178,8 +186,9 @@ theorem neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face_eq_zero_iff (hJ
     (hB : 0 < deriv (fun s ↦ (F (s, c)).1) x) (hab : c ≤ a ∧ c ≤ b ∨ a ≤ c ∧ b ≤ c) :
     -fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F (x, c))
         (c - a, b - c) (1, 0) = 0 ↔ a = c ∧ b = c := by
+  have hq : (x, c) ∈ Prod.snd ⁻¹' J := mem_preimage.2 hc
   rw [neg_fderiv_fderiv_stripBandGeneratingFunction_apply_face hJ hJc h0 hF hY hdet htwist hc,
-    div_eq_zero_iff, or_iff_left (htwist _ (show (x, c) ∈ Prod.snd ⁻¹' J from hc))]
+    div_eq_zero_iff, or_iff_left (htwist _ hq)]
   constructor
   · intro h
     rcases hab with ⟨ha, hb⟩ | ⟨ha, hb⟩
