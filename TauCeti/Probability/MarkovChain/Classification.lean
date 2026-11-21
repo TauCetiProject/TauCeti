@@ -394,7 +394,9 @@ theorem IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass
     κ.IsPositiveRecurrent y := by
   have hs : MeasurableSet (κ.communicatingClass x) := hfin.measurableSet
   have : Finite (κ.communicatingClass x) := hfin.to_subtype
-  have ⟨_, _⟩ := hclosed.isMarkovKernel_and_isIrreducible_subtype_communicatingClass hs
+  have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
+  have : IsIrreducible Measure.count (κ.subtype hs) :=
+    hclosed.isIrreducible_subtype_communicatingClass hs
   exact (isPositiveRecurrent_subtype_iff hs ⟨y, hy⟩).mp
     ((κ.subtype hs).isPositiveRecurrent_of_finite ⟨y, hy⟩)
 
@@ -406,7 +408,9 @@ theorem IsClosedSet.existsUnique_invariant_probability_communicatingClass_of_isP
     (hs : MeasurableSet (κ.communicatingClass x)) (hx : κ.IsPositiveRecurrent x) :
     ∃! π : Measure S,
       IsProbabilityMeasure π ∧ κ.Invariant π ∧ π (κ.communicatingClass x)ᶜ = 0 := by
-  have ⟨_, _⟩ := hclosed.isMarkovKernel_and_isIrreducible_subtype_communicatingClass hs
+  have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
+  have : IsIrreducible Measure.count (κ.subtype hs) :=
+    hclosed.isIrreducible_subtype_communicatingClass hs
   let x_s : κ.communicatingClass x := ⟨x, mem_communicatingClass_self x⟩
   have hx_s : (κ.subtype hs).IsPositiveRecurrent x_s :=
     (isPositiveRecurrent_subtype_iff hs x_s).mpr hx

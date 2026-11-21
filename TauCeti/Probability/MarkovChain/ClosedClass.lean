@@ -191,28 +191,30 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s)
   rw [← MeasureTheory.lintegral_map hmean hhit',
     map_hittingAfter_markovChainLaw_subtype κ hs ν ht, MeasureTheory.lintegral_map hmean hhit]
 
-private theorem measurableEmbedding_subtype_path (hs : MeasurableSet s) :
-    MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) :=
-  (MeasurableEmbedding.subtypeVal hs).comp_left
-
 /-- Restricting a Markov kernel to a closed set preserves the extended mean positive return time
 of each of its states. -/
 @[simp]
 theorem meanReturnTime_subtype (x : s) :
     (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
   rw [meanReturnTime_def, meanReturnTime_def, ← Measure.map_dirac' measurable_subtypeVal x,
-    ← markovChainLaw_map_subtype κ hs (Measure.dirac x),
-    (measurableEmbedding_subtype_path hs).lintegral_map]
-  simp only [hittingAfter_eval_subtype_coe_singleton]
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x)]
+  have hlint := ((MeasurableEmbedding.subtypeVal hs).comp_left (ι := ℕ)).lintegral_map
+    (μ := markovChainLaw (Measure.dirac x) (κ.subtype hs))
+    (fun ω : ℕ → S => ENat.toENNReal (hittingAfter (fun n ω => ω n) {x.val} 1 ω))
+  simp only [Function.comp_def, hittingAfter_eval_subtype_coe_singleton] at hlint
+  rw [hlint]
 
 /-- Restricting to a closed set preserves and reflects recurrence of each of its states. -/
 @[simp]
 theorem isRecurrent_subtype_iff (x : s) :
     (κ.subtype hs).IsRecurrent x ↔ κ.IsRecurrent x.val := by
   rw [isRecurrent_iff, isRecurrent_iff, ← Measure.map_dirac' measurable_subtypeVal x,
-    ← markovChainLaw_map_subtype κ hs (Measure.dirac x),
-    (measurableEmbedding_subtype_path hs).map_apply]
-  simp only [preimage_ofPred_eq, hittingAfter_eval_subtype_coe_singleton]
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x)]
+  have hmap := ((MeasurableEmbedding.subtypeVal hs).comp_left).map_apply
+    (markovChainLaw (Measure.dirac x) (κ.subtype hs))
+    {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x.val} 1 ω ≠ ⊤}
+  simp only [Function.comp_def, preimage_ofPred_eq, hittingAfter_eval_subtype_coe_singleton] at hmap
+  rw [hmap]
 
 /-- Restricting to a closed set preserves and reflects transience of each of its states. -/
 @[simp]

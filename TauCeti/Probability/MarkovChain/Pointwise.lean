@@ -254,7 +254,9 @@ private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
   set s := η.communicatingClass y
   have hs : MeasurableSet s := η.measurableSet_communicatingClass y
   have hclosed : η.IsClosedSet s := hη.isRecurrent.isClosedSet_communicatingClass
-  have ⟨_, _⟩ := hclosed.isMarkovKernel_and_isIrreducible_subtype_communicatingClass hs
+  have : IsMarkovKernel (η.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
+  have : IsIrreducible Measure.count (η.subtype hs) :=
+    hclosed.isIrreducible_subtype_communicatingClass hs
   let y_s : s := ⟨y, mem_communicatingClass_self y⟩
   have haper : (η.subtype hs).IsAperiodic := by
     rw [isAperiodic_iff_period_eq_one y_s, period_subtype hs hclosed]

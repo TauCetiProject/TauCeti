@@ -262,12 +262,6 @@ theorem hasLaw_hittingAfter_one_cycleKernel (x y : Fin n) :
     ¬ (cycleKernel n).IsTransient x := by
   simp [Kernel.isTransient_iff]
 
--- `Kernel.not_isNullRecurrent_of_finite` already supplies the `simp` lemma on `Fin n`.
-/-- No state of the finite cycle is null recurrent. -/
-theorem cycleKernel_not_isNullRecurrent (x : Fin n) :
-    ¬ (cycleKernel n).IsNullRecurrent x :=
-  Kernel.not_isNullRecurrent_of_finite
-
 /-- From any initial measure, almost every trajectory of `cycleKernel n` enters `y` in finite
 time. -/
 theorem ae_hittingAfter_zero_ne_top_cycleKernel (ν : Measure (Fin n)) (y : Fin n) :
