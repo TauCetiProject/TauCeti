@@ -462,8 +462,6 @@ theorem RightFueterAt.sum_fderiv_mul_leftFueterAt (hg : RightFueterAt g q)
   simp only [fueterLeft_apply, fueterRight_apply, add_mul, mul_add, mul_assoc,
     zero_mul, mul_zero] at hzero hfzero
   norm_num [QuaternionAlgebra.basisOneIJK, Module.Basis.coe_ofEquivFun]
-  have h1 : (⟨1, 0, 0, 0⟩ : ℍ) = 1 := rfl
-  rw [h1]
   linear_combination (norm := noncomm_ring) hzero + hfzero
 
 /-! ### Regularity on a set -/

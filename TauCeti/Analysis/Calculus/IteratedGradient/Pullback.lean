@@ -236,18 +236,14 @@ namespace ContinuousLinearEquiv
 whose inverse is the pullback along `e.symm`. -/
 def iteratedGradientPullbackEquiv (e : E ≃L[ℝ] E') (j : ℕ) :
     TauCeti.IteratedGradient E' j ≃L[ℝ] TauCeti.IteratedGradient E j :=
-  equivOfInverse ((e : E →L[ℝ] E').iteratedGradientPullback j)
+  ofContinuousLinearMap ((e : E →L[ℝ] E').iteratedGradientPullback j)
     ((e.symm : E' →L[ℝ] E).iteratedGradientPullback j)
-    (fun G ↦ by
-      have h := congrArg (fun T ↦ T G)
-        (ContinuousLinearMap.iteratedGradientPullback_comp
-          (e : E →L[ℝ] E') (e.symm : E' →L[ℝ] E) j)
-      simpa [coe_comp_coe_symm] using h.symm)
-    (fun G ↦ by
-      have h := congrArg (fun T ↦ T G)
-        (ContinuousLinearMap.iteratedGradientPullback_comp
-          (e.symm : E' →L[ℝ] E) (e : E →L[ℝ] E') j)
-      simpa [coe_symm_comp_coe] using h.symm)
+    (by
+      rw [← ContinuousLinearMap.iteratedGradientPullback_comp, coe_symm_comp_coe,
+        ContinuousLinearMap.iteratedGradientPullback_id])
+    (by
+      rw [← ContinuousLinearMap.iteratedGradientPullback_comp, coe_comp_coe_symm,
+        ContinuousLinearMap.iteratedGradientPullback_id])
 
 @[simp]
 theorem iteratedGradientPullbackEquiv_apply (e : E ≃L[ℝ] E') (j : ℕ)

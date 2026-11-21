@@ -399,8 +399,8 @@ noncomputable def circlePieceDuality (p : ℤ) :
     (circleQuantumGrading R ι).piece p ≃ₗ[R]
       Module.Dual R ((circleQuantumGrading R ι).piece (-p)) :=
   (circlePieceBasis R ι p).equiv (circlePieceBasis R ι (-p)).dualBasis
-    { toFun l := ⟨fun i ↦ !l.1 i, by rw [labelingQuantumDegree_not, l.2]⟩
-      invFun k := ⟨fun i ↦ !k.1 i, by rw [labelingQuantumDegree_not, k.2, neg_neg]⟩
+    { toFun l := ⟨fun i ↦ !l.val i, by rw [labelingQuantumDegree_not, l.property]⟩
+      invFun k := ⟨fun i ↦ !k.val i, by rw [labelingQuantumDegree_not, k.property, neg_neg]⟩
       left_inv l := by simp
       right_inv k := by simp }
 
@@ -421,7 +421,7 @@ theorem circlePieceDuality_apply {p : ℤ} (x : (circleQuantumGrading R ι).piec
     circleDuality_apply_circleBasis, Module.Basis.repr_self, Finsupp.single_apply]
   refine if_congr ?_ rfl rfl
   simp only [Equiv.coe_fn_mk, Subtype.ext_iff, funext_iff]
-  exact forall_congr' fun i ↦ by cases k.1 i <;> cases l.1 i <;> simp
+  exact forall_congr' fun i ↦ by cases k.val i <;> cases l.val i <;> simp
 
 end Grading
 

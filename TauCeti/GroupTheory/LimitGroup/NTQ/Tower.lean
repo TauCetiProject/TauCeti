@@ -36,7 +36,8 @@ general.
   carrier `TowerLevel.Carrier`, `TowerLevel.inclusion` and `TowerLevel.retraction`.
 * `TauCeti.LimitGroup.NTQ.Tower G T ι`: a normalized tower over `G` with top carrier `T` and
   coefficient homomorphism `ι : G →* T`, with `Tower.height` and `Tower.retraction`;
-  `Tower.single L` is the tower with the single level `L`.
+  `Tower.single L` is the tower with the single level `L`, and `Tower.append` concatenates a
+  tower over `G` with a tower over its top carrier.
 
 ## Main results
 
@@ -436,6 +437,44 @@ theorem fg [Group.FG G] (t : Tower G T ι) : Group.FG T := by
 example (X : Type u) [Finite X] : Tower G (GX G X) inl :=
   single (.free X)
 
+section Append
+
+variable {H : Type u} [Group H] {ι : G →* H}
+
+/-- The concatenation of a tower `t` over `G` with top carrier `H` and a tower `s` over `H`: the
+tower over `G` with the levels of `t` followed by those of `s`. -/
+def append (t : Tower G H ι) : {T : Type u} → [Group T] → {j : H →* T} → Tower H T j →
+    Tower G T (j.comp ι)
+  | _, _, _, base => t
+  | _, _, _, cons s L => cons (append t s) L
+
+@[simp] theorem append_base (t : Tower G H ι) : t.append (base : Tower H H (.id H)) = t := (rfl)
+
+@[simp] theorem append_cons (t : Tower G H ι) {K : Type u} [Group K] {j : H →* K}
+    (s : Tower H K j) (L : TowerLevel K) : t.append (cons s L) = cons (t.append s) L := (rfl)
+
+@[simp] theorem height_append (t : Tower G H ι) {K : Type u} [Group K] {j : H →* K}
+    (s : Tower H K j) : (t.append s).height = t.height + s.height := by
+  induction s with
+  | base => rfl
+  | cons s L ih => simp [ih, Nat.add_assoc]
+
+theorem retraction_append (t : Tower G H ι) {K : Type u} [Group K] {j : H →* K}
+    (s : Tower H K j) : (t.append s).retraction = t.retraction.comp s.retraction := by
+  induction s with
+  | base => rfl
+  | cons s L ih => ext; simp [ih]
+
+/-- Concatenating the one-level tower `G[X]` over `G` with the one-level tower `G[X] ∗ ℤⁿ` over
+`G[X]` gives the two-level tower over `G` with a free level followed by an abelian level. -/
+example (X : Type u) [Finite X] (n : ℕ) :
+    (single (.free X) : Tower G (GX G X) inl).append (single (.abelian n)) =
+      (single (.free X)).cons (.abelian n) ∧
+    ((single (.free X) : Tower G (GX G X) inl).append (single (.abelian n))).height = 2 :=
+  ⟨rfl, by simp⟩
+
+end Append
+
 end Tower
 
 /-! ### Admissible centralizer data over a free group -/
@@ -475,7 +514,7 @@ theorem map_gHom_t_eq_one_of_map_inr_of_eq_one [IsFreeGroup G] {M : Type*} [Grou
   have hz : ρ (CentralizerExt.t 0) ∈ centralizer {(inr (FreeGroup.of .unit) : GX G PUnit)} :=
     mem_centralizer_singleton_iff.2 <| by
       simpa using
-        ((CentralizerExt.commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map ρ).symm.eq
+        ((CentralizerExt.commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map ρ).symm
   obtain ⟨k, hk⟩ := (IsFreeGroup.centralizer_singleton_eq_zpowers_self
     (isPrimitive_inr (by simp)).not_isProperPower).le hz
   rw [← hk, map_zpow, hψ, one_zpow]

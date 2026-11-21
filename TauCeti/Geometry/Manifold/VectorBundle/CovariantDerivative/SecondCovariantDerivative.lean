@@ -170,14 +170,14 @@ private theorem secondDerivAux_congr (hσ : CMDiff ∞ (T% σ)) (x : M)
 
 /-- The value of `∇²σ` at `(u, v)`, computed with a chosen smooth extension of `v`. -/
 private def secondDerivValue (σ : Π y : M, V y) (x : M) (u v : TangentSpace I x) : V x :=
-  secondDerivAux cov covT σ x (Classical.choose (exists_contMDiff_section_eq I E ∞ v)) u
+  secondDerivAux cov covT σ x (contMDiffExtend I E v) u
 
 private theorem secondDerivValue_eq (hσ : CMDiff ∞ (T% σ)) (x : M)
     {Y : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y)) (u : TangentSpace I x) :
     secondDerivValue cov covT σ x u (Y x) = secondDerivAux cov covT σ x Y u :=
   secondDerivAux_congr cov covT hσ x
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2 u
+    (contMDiff_contMDiffExtend I E (Y x)) hY
+    (contMDiffExtend_apply_self I E (Y x)) u
 
 /-- The second covariant derivative of a smooth section, as a bilinear map. -/
 private def secondCovariantDerivativeOfContMDiff (hσ : CMDiff ∞ (T% σ)) (x : M) :
@@ -236,6 +236,21 @@ theorem eq_secondCovariantDerivative_iff (hσ : CMDiff ∞ (T% σ)) (x : M)
     ext u v
     obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
     rw [h Y hY u, secondCovariantDerivative_apply cov covT hσ x hY u]
+
+/-- The second covariant derivative only depends on the values of the connection on smooth
+sections: two smooth connections that agree there have the same second covariant derivative. -/
+theorem secondCovariantDerivative_congr (cov' : _root_.CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ τ : Π y : M, V y, CMDiff ∞ (T% τ) → cov τ = cov' τ) :
+    cov.secondCovariantDerivative covT σ = cov'.secondCovariantDerivative covT σ := by
+  funext x
+  by_cases hσ : CMDiff ∞ (T% σ)
+  · have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
+    refine ((eq_secondCovariantDerivative_iff cov covT hσ x _).2 fun Y hY u ↦ ?_).symm
+    rw [secondCovariantDerivative_apply cov' covT hσ x hY u, h σ hσ,
+      h _ (cov'.contMDiff_apply hY hσ')]
+  · rw [secondCovariantDerivative_of_not_contMDiff cov covT hσ,
+      secondCovariantDerivative_of_not_contMDiff cov' covT hσ]
 
 /-- The second covariant derivative is additive in the section. -/
 theorem secondCovariantDerivative_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ))

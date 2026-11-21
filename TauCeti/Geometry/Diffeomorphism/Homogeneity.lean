@@ -119,7 +119,7 @@ theorem mem_orbit_diffeomorph_iff (hm : 1 ≤ m) {x₀ y : M} :
     let y' : (ConnectedComponents.mk y).opens := ⟨y, ConnectedComponents.mem_opens.2 rfl⟩
     have hgy : g y = φ y' := Diffeomorph.clopenSwap_apply_coe_left φ _ _ hUV y'
     obtain ⟨h, hh : h • x₀ = φ y'⟩ :=
-      hsub (ConnectedComponents.coe_eq_coe'.1 (ConnectedComponents.mem_opens.1 (φ y').2))
+      hsub (ConnectedComponents.coe_eq_coe'.1 (ConnectedComponents.mem_opens.1 (φ y').property))
     refine ⟨g⁻¹ * h, ?_⟩
     dsimp only
     rw [mul_smul, hh, ← hgy]
