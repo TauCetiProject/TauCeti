@@ -119,7 +119,7 @@ theorem IsMarkovTrace.map_mul_hyperbolic_wenzlProjection (hτ : IsMarkovTrace z 
     (hx : x ∈ stage ℂ (hyperbolicHeckeParam θ) (n + 1)) :
     τ (x * (1 + exp (-2 * θ))⁻¹ • (algebraMap ℂ _ (exp (-2 * θ)) - exp (-θ) • T _ n)) =
       ηW * τ x := by
-  have hq2 : exp (-θ) ^ 2 = exp (-2 * θ) := by rw [← exp_nat_mul]; ring_nf
+  have hq2 : exp (-θ) ^ 2 = exp (-2 * θ) := by rw [← exp_natCast_mul]; ring_nf
   have hu0 : 1 + exp (-2 * θ) ≠ 0 := by
     rw [show -2 * θ = 2 * (-θ) by ring, one_add_exp_two_mul, cosh_neg]
     exact mul_ne_zero (mul_ne_zero two_ne_zero hθ) (exp_ne_zero _)
@@ -625,7 +625,7 @@ theorem wenzlParam_neg_two_hyperbolicHeckeParam_rootOfUnity_sq (l : ℕ) :
     wenzlParam (-2) ((hyperbolicHeckeParam (π * I / l) : ℂ) ^ 2) =
       (((4 * Real.cos (π / l) ^ 2)⁻¹ : ℝ) : ℂ) := by
   have hq : (hyperbolicHeckeParam (π * I / l) : ℂ) ^ 2 = exp (2 * (-(π / l : ℂ)) * I) := by
-    rw [val_hyperbolicHeckeParam, ← exp_nat_mul]
+    rw [val_hyperbolicHeckeParam, ← exp_natCast_mul]
     ring_nf
   rw [hq, wenzlParam_neg_two_exp_mul_I, cos_neg,
     show (π : ℂ) / l = ↑(π / (l : ℝ)) by push_cast; rfl, ← ofReal_cos]

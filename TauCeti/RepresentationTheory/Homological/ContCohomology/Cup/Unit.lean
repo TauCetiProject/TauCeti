@@ -90,7 +90,7 @@ theorem cupCochain_degreeZeroCocycle_right (hinv : ∀ g : G, Y.ρ g u = u) (m :
   apply Subtype.ext
   rw [coe_cupCochain, ContinuousCohomology.coe_iCycles_degreeZeroCocycle,
     resolutionCupPairing_apply]
-  exact P.resolutionCup_d_zero_of_right_unit u hu m _ a.1
+  exact P.resolutionCup_d_zero_of_right_unit u hu m _ a.val
 
 /-- **The right unit law for the cup product on continuous cohomology**: if `u` is an invariant
 vector with `P.bil x u = x` for every `x`, then `a ⌣ [u] = a` for every class `a`. For a discrete
@@ -136,7 +136,7 @@ theorem cupCochain_degreeZeroCocycle_left (hinv : ∀ g : G, Y.ρ g u = u) (n : 
   refine ContinuousMap.ext fun g ↦ ?_
   rw [resolutionCupPairing_apply_zero, ContinuousCohomology.resolution_XIsoOfEq_hom_apply_apply,
     ContinuousCohomology.coe_iCycles_degreeZeroCocycle]
-  exact congrArg _ (P.pointwise_of_left_unit u hu n (a.1 g))
+  exact congrArg _ (P.pointwise_of_left_unit u hu n (a.val g))
 
 /-- **The left unit law for the cup product on continuous cohomology**: if `u` is an invariant
 vector with `P.bil u x = x` for every `x`, then `[u] ⌣ a = a` for every class `a`, where the

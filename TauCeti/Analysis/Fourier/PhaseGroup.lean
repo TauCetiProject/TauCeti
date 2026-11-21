@@ -29,7 +29,8 @@ unitary group:
 * `exp(i0ω(D)) = 1` and `exp(i(s + t)ω(D)) = exp(isω(D)) exp(itω(D))`;
 * each operator preserves the `L²` norm and the inner product, and its adjoint is the operator at
   time `-t`;
-* `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`;
+* `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`, and `(t, f) ↦ exp(itω(D)) f` is jointly
+  continuous;
 * each operator commutes with every `L²` Fourier multiplier.
 
 Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
@@ -44,7 +45,13 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
 * `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
   `TauCeti.adjoint_phasePropagator`: unitarity.
-* `TauCeti.continuous_phasePropagator_apply`: strong continuity.
+* `TauCeti.inner_phasePropagator_sub_apply`: the Duhamel pairing `⟪exp(i(t - s)ω(D)) f, g⟫` as a
+  pairing of data pulled back to time zero.
+* `TauCeti.continuous_phasePropagator_apply`, `TauCeti.continuous_phasePropagator_uncurry`: strong
+  continuity and joint continuity.
+* `TauCeti.aestronglyMeasurable_phasePropagator_apply`, `TauCeti.integrable_phasePropagator_apply`,
+  `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
+  integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 
 ## References
@@ -148,11 +155,8 @@ theorem fourier_phasePropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
 /-- On the Fourier side, `exp(itω(D))` is pointwise multiplication by `exp(i t ω(ξ))`, almost
 everywhere. -/
 theorem coeFn_fourier_phasePropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
-    𝓕 (phasePropagator F ω t f) =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ • 𝓕 f ξ := by
-  rw [fourier_phasePropagator]
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) ((memLp_phaseSymbol ω t).toLp _) (𝓕 f),
-    (memLp_phaseSymbol ω t).coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, Pi.smul_apply', h₂]
+    𝓕 (phasePropagator F ω t f) =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ • 𝓕 f ξ :=
+  Lp.coeFn_fourier_fourierMultiplierCLM_toLp f (memLp_phaseSymbol ω t)
 
 /-- `exp(i0ω(D))` is the identity. -/
 @[simp]
@@ -233,6 +237,16 @@ theorem inner_phasePropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)
   rw [← ContinuousLinearMap.adjoint_inner_right, adjoint_phasePropagator,
     phasePropagator_neg_apply_phasePropagator_apply]
 
+/-- The pairing `⟪exp(i(t - s)ω(D)) f, g⟫` of a Duhamel integrand is the pairing
+`⟪exp(isω(D))* f, exp(itω(D))* g⟫` of the data pulled back to time zero. -/
+theorem inner_phasePropagator_sub_apply (s t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
+    ⟪phasePropagator F ω (t - s) f, g⟫ =
+      ⟪ContinuousLinearMap.adjoint (phasePropagator F ω s) f,
+        ContinuousLinearMap.adjoint (phasePropagator F ω t) g⟫ := by
+  rw [adjoint_phasePropagator, adjoint_phasePropagator,
+    ← inner_phasePropagator_apply ω (-t) (phasePropagator F ω (t - s) f) g,
+    ← phasePropagator_add_apply, neg_add_eq_sub, sub_sub_cancel_left]
+
 /-- `exp(itω(D))` commutes with every `L²` Fourier multiplier. -/
 theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
     phasePropagator F ω t ∘L Lp.fourierMultiplierCLM F m =
@@ -244,6 +258,19 @@ theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (vol
   filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol ω t).toLp _) m,
     Lp.coeFn_lpSMul (r := ∞) m ((memLp_phaseSymbol ω t).toLp _)] with ξ h₁ h₂
   rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
+
+/-- `exp(itω(D)) T_m` is the multiplier with any symbol `σ` equal almost everywhere to
+`exp(i t ω(ξ)) m(ξ)`. -/
+theorem phasePropagator_fourierMultiplierCLM_apply_of_ae_eq (t : ℝ)
+    {m σ : Lp ℂ ∞ (volume : Measure E)} (h : σ =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ * m ξ)
+    (f : Lp F 2 (volume : Measure E)) :
+    phasePropagator F ω t (Lp.fourierMultiplierCLM F m f) = Lp.fourierMultiplierCLM F σ f := by
+  rw [phasePropagator_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
+  congr 2
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol ω t).toLp _) m,
+    (memLp_phaseSymbol ω t).coeFn_toLp, h] with ξ h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply', h₂, h₃, smul_eq_mul]
 
 /-- **Strong continuity**: `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`. -/
 theorem continuous_phasePropagator_apply (f : Lp F 2 (volume : Measure E)) :
@@ -280,5 +307,50 @@ theorem phaseGroup_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
 theorem isUnitary_phaseGroup : (phaseGroup E F ω).IsUnitary :=
   Semigroups.StronglyContinuousGroup.IsUnitary.intro fun t f g ↦
     inner_phasePropagator_apply ω t f g
+
+/-- **Joint strong continuity**: `(t, f) ↦ exp(itω(D)) f` is continuous on `ℝ × L²`. -/
+theorem continuous_phasePropagator_uncurry :
+    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ phasePropagator F ω p.1 p.2 := by
+  simpa only [phaseGroup_apply] using (phaseGroup E F ω).continuous_uncurry
+
+section Measurability
+
+variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} {τ : α → ℝ}
+  {G : α → Lp F 2 (volume : Measure E)}
+
+/-- If the times `τ` and the `L²`-valued function `G` are almost everywhere strongly measurable,
+so is `a ↦ exp(iτ(a)ω(D)) G(a)`. -/
+theorem aestronglyMeasurable_phasePropagator_apply (hτ : AEStronglyMeasurable τ μ)
+    (hG : AEStronglyMeasurable G μ) :
+    AEStronglyMeasurable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ :=
+  (continuous_phasePropagator_uncurry ω).comp_aestronglyMeasurable (hτ.prodMk hG)
+
+/-- If the times `τ` are almost everywhere strongly measurable and the `L²`-valued function `G` is
+integrable, then `a ↦ exp(iτ(a)ω(D)) G(a)` is integrable, since each operator preserves the norm. -/
+theorem integrable_phasePropagator_apply (hτ : AEStronglyMeasurable τ μ) (hG : Integrable G μ) :
+    Integrable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ :=
+  hG.norm.mono' (aestronglyMeasurable_phasePropagator_apply ω hτ hG.aestronglyMeasurable)
+    (ae_of_all _ fun _ ↦ (norm_phasePropagator_apply _ _ _).le)
+
+end Measurability
+
+/-- The retarded integral `t ↦ ∫_{s < t} exp(i(t - s)ω(D)) G(s) ds` of an almost everywhere
+strongly measurable `G : ℝ → L²` is almost everywhere strongly measurable. -/
+theorem aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : AEStronglyMeasurable G) :
+    AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) := by
+  -- The integrand on the half-plane `s < t`, as a function of `(t, s)`.
+  set K : ℝ × ℝ → Lp F 2 (volume : Measure E) := {q : ℝ × ℝ | q.2 < q.1}.indicator
+    fun q ↦ phasePropagator F ω (q.1 - q.2) (G q.2)
+  have hK : AEStronglyMeasurable K (volume.prod volume) :=
+    (aestronglyMeasurable_phasePropagator_apply ω
+      (continuous_fst.sub continuous_snd).aestronglyMeasurable hG.comp_snd).indicator
+      (measurableSet_lt measurable_snd measurable_fst)
+  refine hK.integral_prod_right'.congr (ae_of_all _ fun t ↦ ?_)
+  dsimp only
+  rw [← integral_indicator measurableSet_Iio]
+  refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
+  -- `(t, s)` lies in the half-plane `s < t` exactly when `s ∈ Iio t`.
+  by_cases hs : s < t <;> simp [K, hs]
 
 end TauCeti

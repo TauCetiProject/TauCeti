@@ -63,6 +63,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Complex.cosh_ofReal_ne_zero` and `Complex.sinh_ofReal_ne_zero` — complex exponential-hyperbolic
   factorization, `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`,
   quarter-period shifts by `π * I / 2`, and nonvanishing on the real axis.
+* `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
+* `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
+  `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -350,7 +353,7 @@ theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
   -- bounds it by `exp (l ^ 2 / 24)`.
   have h1 : 1 - exp (-l) = exp (-(l / 2)) * (2 * sinh (l / 2)) := by
     have ha : exp (-(l / 2)) * exp (l / 2) = 1 := by rw [← exp_add]; simp
-    have hb : exp (-l) = exp (-(l / 2)) ^ 2 := by rw [← exp_nat_mul]; ring_nf
+    have hb : exp (-l) = exp (-(l / 2)) ^ 2 := by rw [← exp_natCast_mul]; ring_nf
     rw [sinh_eq]
     linear_combination -ha - hb
   have hsq : (l / 2) ^ 2 / 6 = l ^ 2 / 24 := by ring
@@ -468,5 +471,22 @@ theorem cosh_ofReal_ne_zero (x : ℝ) : cosh (x : ℂ) ≠ 0 := by
 nonzero. -/
 theorem sinh_ofReal_ne_zero {x : ℝ} : sinh (x : ℂ) ≠ 0 ↔ x ≠ 0 := by
   rw [← ofReal_sinh, ne_eq, ofReal_eq_zero, ← ne_eq, Real.sinh_ne_zero]
+
+/-- The complex hyperbolic cosine is bounded by the mean of the norms of the two exponentials:
+`‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2`. -/
+theorem norm_cosh_le (z : ℂ) : ‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 := by
+  rw [cosh, norm_div, Complex.norm_two]
+  gcongr
+  exact norm_add_le _ _
+
+/-- The bound `Complex.norm_cosh_le` with a common factor `w`:
+`‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2`. It dominates `cosh z * w` by the two
+exponential terms `exp (± z) * w`. -/
+theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2 := by
+  calc ‖cosh z * w‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 * ‖w‖ := by
+        rw [norm_mul]
+        gcongr
+        exact norm_cosh_le z
+    _ = _ := by rw [norm_mul, norm_mul]; ring
 
 end Complex

@@ -25,8 +25,15 @@ to enable Namespace; a false switch always wins over a positive cap.
 PR builds and nightly reference builds share the same scheduler groups, named
 `tauceti-namespace-build-0` through `tauceti-namespace-build-(cap-1)`. Waiting in
 these groups consumes no runner. Fixed slots can leave capacity unused when jobs
-collide. The cap covers this repository's Namespace build jobs; staging retains
+collide. The cap covers this repository's picker-routed Namespace build jobs; staging retains
 its dedicated tauchonki2 runner.
+
+Maintenance builds (the review bot's Mathlib bump and lint-repair PRs, and the
+rebuilds dispatched for them) take a priority Namespace runner outside these
+scheduler groups, so the cap does not count them. They use Namespace only when
+`NAMESPACE_ENABLED` is unset, empty or `true` and `NAMESPACE_BUILD_CAP` is not
+`0`; otherwise they wait in the GitHub-hosted bulk slots. The `tauceti.toml`
+defaults do not apply to them.
 
 Settings govern new work, with graceful drain on a reduction: jobs already
 admitted under an earlier policy, including jobs waiting in scheduler groups,

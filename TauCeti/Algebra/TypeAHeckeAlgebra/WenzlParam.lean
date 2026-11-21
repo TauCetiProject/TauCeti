@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -400,7 +400,7 @@ theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin
   have one_add_exp (x : ℂ) : 1 + exp (2 * x * I) = 2 * cos x * exp (x * I) := by
     simpa only [mul_assoc, cosh_mul_I] using one_add_exp_two_mul (x * I)
   have hpow (n : ℤ) : 1 - exp (2 * θ * I) ^ n = -I * (2 * sin (n * θ)) * exp (n * θ * I) := by
-    rw [← exp_int_mul, ← one_sub_exp]
+    rw [← exp_intCast_mul, ← one_sub_exp]
     ring_nf
   have hk' : 1 - exp (2 * θ * I) ^ k ≠ 0 := by
     rw [hpow]
@@ -574,7 +574,7 @@ theorem wenzlParam_sub_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hkl : k 
       exp_ofReal_mul_I_im, one_im] at him
     exact (sin_mul_pi_div_pos two_pos (by exact_mod_cast (by omega : 2 < l))).ne' him
   have hQl : exp (2 * π * I / l) ^ l = 1 := by
-    rw [← exp_nat_mul, show (l : ℂ) * (2 * π * I / l) = 2 * π * I by
+    rw [← exp_natCast_mul, show (l : ℂ) * (2 * π * I / l) = 2 * π * I by
       field_simp [show (l : ℂ) ≠ 0 by exact_mod_cast (by omega : l ≠ 0)], exp_two_pi_mul_I]
   rw [Nat.cast_sub hkl, show (l : ℤ) - k = -(k : ℤ) + l by omega]
   exact wenzlParam_add_of_pow_eq_one hQ₁ hQl (-(k : ℤ))

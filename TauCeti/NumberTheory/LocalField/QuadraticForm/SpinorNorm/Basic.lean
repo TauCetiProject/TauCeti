@@ -66,20 +66,10 @@ theorem index_range_spinorNorm_of_finrank_eq_two_of_anisotropic (Q : QuadraticFo
     hw.trans (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq e (by
       funext i
       fin_cases i <;> rfl)).symm
-  -- An anisotropic binary form has nonsquare discriminant `-a b`: if `-a b = t²`, then
-  -- `(t, a)` is an isotropic vector of `⟨a, b⟩`.
+  -- An anisotropic binary form `⟨a, b⟩` has nonsquare discriminant `-a b`.
   have hsq : ¬IsSquare (-(w (e 0) * w (e 1))) := by
-    rintro ⟨t, ht⟩
-    have ht' : -((w (e 0) : K) * w (e 1)) = t * t := by
-      simpa using congrArg Units.val ht
-    have hzero : weightedSumSquares K ![(w (e 0) : K), (w (e 1) : K)]
-        ![(t : K), (w (e 0) : K)] = 0 := by
-      simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-        Matrix.cons_val_one, smul_eq_mul]
-      linear_combination (-(w (e 0) : K)) * ht'
-    have h1 := congrFun (h.anisotropic_iff.mp hani _ hzero) 1
-    simp only [Matrix.cons_val_one, Pi.zero_apply] at h1
-    exact (w (e 0)).ne_zero h1
+    rw [← Units.isSquare_coe_iff]
+    simpa using (anisotropic_binary_iff (w (e 0) : K) (w (e 1))).mp (h.anisotropic_iff.mp hani)
   -- The norm group contains the kernel of the square-class map, so its image has the same index.
   have hker : (squareClassHom (K := K)).ker ≤
       quadraticNormSubgroup (-((w (e 0) : K) * w (e 1))) := fun x hx ↦

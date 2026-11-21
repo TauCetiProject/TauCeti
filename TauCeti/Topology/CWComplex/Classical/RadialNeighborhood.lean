@@ -142,8 +142,8 @@ private lemma continuousOn_map_inv_norm_smul (n : ℕ) (j : cell C n) :
   refine (continuousOn n j).comp ?_ fun y hy ↦
     mem_closedBall_zero_iff.2 (norm_inv_norm_smul_of_half_le hy.le).le
   refine ContinuousOn.smul (f := fun y : closedBall (0 : Fin n → ℝ) 1 ↦ ‖(y : Fin n → ℝ)‖⁻¹)
-    (g := fun y ↦ (y : Fin n → ℝ)) ?_ continuous_subtype_val.continuousOn
-  exact ((continuous_norm.comp continuous_subtype_val).continuousOn).inv₀
+    (g := fun y ↦ (y : Fin n → ℝ)) ?_ continuous_subtypeVal.continuousOn
+  exact ((continuous_norm.comp continuous_subtypeVal).continuousOn).inv₀
     fun y hy ↦ (lt_trans (by norm_num) hy).ne'
 
 section
@@ -236,7 +236,7 @@ lemma subset_radialNeighborhood : (A : Set X) ⊆ A.radialNeighborhood := by
   rw [← A.union]
   refine union_subset (base_subset_radialNeighborhood A) (iUnion₂_subset fun n j ↦ ?_)
   rintro _ ⟨y, hy, rfl⟩
-  exact (map_mem_radialNeighborhood_iff_of_norm_lt A j (mem_ball_zero_iff.1 hy)).2 (.inl j.2)
+  exact (map_mem_radialNeighborhood_iff_of_norm_lt A j (mem_ball_zero_iff.1 hy)).2 (.inl j.property)
 
 /-- **Membership of a point of a closed cell in the radial neighborhood.** The point `map n j y`,
 `‖y‖ ≤ 1`, lies in the radial neighborhood of `A` exactly when the cell lies in `A`, or the point
@@ -382,18 +382,19 @@ private lemma continuous_mem_radialNeighborhood_map (n : ℕ) (j : cell C n) :
     rw [continuous_complex_iff]
     refine ⟨fun m ⟨i, hi⟩ ↦ ih m (by
       simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hi) i, ?_⟩
-    exact continuous_const.congr fun d ↦ (eq_true (base_subset_radialNeighborhood A d.2)).symm
+    exact continuous_const.congr fun d ↦ (eq_true (base_subset_radialNeighborhood A
+        d.property)).symm
   by_cases hj : j ∈ A.I n
   · -- A closed cell of `A` lies in `A`.
     exact continuous_const.congr fun y ↦ (eq_true (subset_radialNeighborhood A
-      (A.closedCell_subset_of_mem hj ⟨_, y.2, rfl⟩))).symm
+      (A.closedCell_subset_of_mem hj ⟨_, y.property, rfl⟩))).symm
   have hskel' : IsOpen {x : (skeletonLT C (n : ℕ∞) : Set X) | (x : X) ∈ A.radialNeighborhood} :=
     isOpen_iff_continuous_mem.2 hskel
   obtain ⟨V, hV, hVN⟩ := isOpen_induced_iff.1 hskel'
   -- On the outer half of the closed ball, membership is that of the radial projection.
   let f : closedBall (0 : Fin n → ℝ) 1 → X := fun y ↦ map n j (‖(y : Fin n → ℝ)‖⁻¹ • y)
   have hU : IsOpen {y : closedBall (0 : Fin n → ℝ) 1 | 2⁻¹ < ‖(y : Fin n → ℝ)‖} :=
-    isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)
+    isOpen_lt continuous_const (continuous_norm.comp continuous_subtypeVal)
   have hf : ContinuousOn f {y | 2⁻¹ < ‖(y : Fin n → ℝ)‖} := continuousOn_map_inv_norm_smul n j
   refine (isOpen_iff_continuous_mem
     (s := {y : closedBall (0 : Fin n → ℝ) 1 | map n j y ∈ A.radialNeighborhood})).1 ?_
@@ -403,20 +404,20 @@ private lemma continuous_mem_radialNeighborhood_map (n : ℕ) (j : cell C n) :
     have hfs : f y ∈ (skeletonLT C (n : ℕ∞) : Set X) := map_inv_norm_smul_mem_skeletonLT j h2.le
     exact (Set.ext_iff.1 hVN ⟨f y, hfs⟩)
   simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
-  rw [map_mem_radialNeighborhood_iff_of_norm_le A hj (mem_closedBall_zero_iff.1 y.2)]
+  rw [map_mem_radialNeighborhood_iff_of_norm_le A hj (mem_closedBall_zero_iff.1 y.property)]
   exact and_congr_right fun h2 ↦ (hfy h2).symm
 
 /-- **The radial neighborhood of a subcomplex is open in the complex.** -/
 theorem isOpen_preimage_val_radialNeighborhood : IsOpen ((↑) ⁻¹' A.radialNeighborhood : Set C) := by
   rw [isOpen_iff_continuous_mem, continuous_complex_iff]
   exact ⟨continuous_mem_radialNeighborhood_map A, continuous_const.congr fun d ↦
-    (eq_true (base_subset_radialNeighborhood A d.2)).symm⟩
+    (eq_true (base_subset_radialNeighborhood A d.property)).symm⟩
 
 /-- **The radial neighborhood of a subcomplex of an open complex is open.** This applies to a CW
 complex structure on the whole space. -/
 theorem isOpen_radialNeighborhood (hC : IsOpen C) : IsOpen A.radialNeighborhood := by
   rw [← inter_eq_right.2 (radialNeighborhood_subset_complex A), ← Subtype.image_preimage_coe]
-  exact hC.isOpenMap_subtype_val _ (isOpen_preimage_val_radialNeighborhood A)
+  exact hC.isOpenMap_subtypeVal _ (isOpen_preimage_val_radialNeighborhood A)
 
 end
 
@@ -505,7 +506,7 @@ private lemma stageTime_def (m : ℕ) (t : I) :
   rfl
 
 private lemma continuous_stageTime (m : ℕ) : Continuous (stageTime m) :=
-  continuous_projIcc.comp ((continuous_const.mul continuous_subtype_val).sub continuous_const)
+  continuous_projIcc.comp ((continuous_const.mul continuous_subtypeVal).sub continuous_const)
 
 private lemma stageTime_of_le {m : ℕ} {t : I} (ht : (t : ℝ) ≤ ((2 : ℝ) ^ (m + 1))⁻¹) :
     stageTime m t = 0 := by
@@ -688,12 +689,12 @@ private lemma continuousOn_radialDeformation_skeletonLT {n : ℕ}
     inter_subset_right ?_ (fun m ⟨i, hi⟩ ↦ (ih m (by
       simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hi) i).mono
         fun p hp ↦ hp.1) ?_
-  · convert (isOpen_preimage_val_radialNeighborhood A).preimage (continuous_subtype_val.subtype_mk
-      fun x : (skeletonLT C (n : ℕ∞) : Set X) ↦ (skeletonLT C n).subset_complex x.2) using 1
+  · convert (isOpen_preimage_val_radialNeighborhood A).preimage (continuous_subtypeVal.subtype_mk
+      fun x : (skeletonLT C (n : ℕ∞) : Set X) ↦ (skeletonLT C n).subset_complex x.property) using 1
     ext x
-    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, x.2⟩⟩
-  · refine (continuous_subtype_val.comp continuous_snd).continuousOn.congr fun p _ ↦ ?_
-    exact radialDeformation_of_mem A _ (A.base_subset p.2.2)
+    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, x.property⟩⟩
+  · refine (continuous_subtypeVal.comp continuous_snd).continuousOn.congr fun p _ ↦ ?_
+    exact radialDeformation_of_mem A _ (A.base_subset p.2.property)
 
 /-- **Continuity of the radial deformation along the closed cells**, at the points of the radial
 neighborhood. -/
@@ -708,14 +709,15 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
   | _ n ih =>
   by_cases hj : j ∈ A.I n
   · -- A closed cell of `A` is fixed.
-    refine ((continuousOn n j).comp_continuous (continuous_subtype_val.comp continuous_snd)
-      fun p ↦ p.2.2).continuousOn.congr fun p _ ↦ ?_
-    exact radialDeformation_of_mem A _ (A.closedCell_subset_of_mem hj ⟨_, p.2.2, rfl⟩)
+    refine ((continuousOn n j).comp_continuous (continuous_subtypeVal.comp continuous_snd)
+      fun p ↦ p.2.property).continuousOn.congr fun p _ ↦ ?_
+    exact radialDeformation_of_mem A _ (A.closedCell_subset_of_mem hj ⟨_, p.2.property, rfl⟩)
   -- The points of the radial neighborhood lie in the outer half of the cell, and their radial
   -- projections in the radial neighborhood.
   have hS : ∀ p ∈ {p : I × closedBall (0 : Fin n → ℝ) 1 | map n j p.2 ∈ A.radialNeighborhood},
       2⁻¹ < ‖(p.2 : Fin n → ℝ)‖ ∧ map n j (‖(p.2 : Fin n → ℝ)‖⁻¹ • p.2) ∈ A.radialNeighborhood :=
-    fun p ↦ (map_mem_radialNeighborhood_iff_of_norm_le A hj (mem_closedBall_zero_iff.1 p.2.2)).1
+    fun p ↦ (map_mem_radialNeighborhood_iff_of_norm_le A hj
+        (mem_closedBall_zero_iff.1 p.2.property)).1
   cases n with
   | zero =>
     -- There is no outer half in dimension `0`.
@@ -731,7 +733,7 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
       map (m + 1) j p.2 ∈ A.radialNeighborhood},
       radialDeformation A p.1 (map (m + 1) j p.2) = G p := by
     intro p hp
-    have hp1 := mem_closedBall_zero_iff.1 p.2.2
+    have hp1 := mem_closedBall_zero_iff.1 p.2.property
     by_cases ht : (p.1 : ℝ) ≤ c
     · rw [radialDeformation_map_of_le A hj ht hp1]
       exact (ite_eq_left ht).symm
@@ -739,7 +741,7 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
       exact (ite_eq_right ht).symm
   refine ContinuousOn.congr ?_ hG
   have hc1 : Continuous fun p : I × closedBall (0 : Fin (m + 1) → ℝ) 1 ↦ (p.1 : ℝ) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   refine ContinuousOn.if ?_ ?_ ?_
   · -- At time `c` the push has reached the frontier, which is still stationary.
     intro p ⟨hp, hpf⟩
@@ -749,10 +751,10 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
       radialDeformation_of_le A hpc.le (map_inv_norm_smul_mem_skeletonLT j h2.le)]
   · refine ((continuousOn (m + 1) j).comp_continuous ?_ fun p ↦
       mem_closedBall_zero_iff.2 (norm_radialPush_le_one _
-        (mem_closedBall_zero_iff.1 p.2.2))).continuousOn
+        (mem_closedBall_zero_iff.1 p.2.property))).continuousOn
     exact continuous_radialPush (E := Fin (m + 1) → ℝ) (by norm_num) |>.comp
       ((continuous_stageTime (m + 1)).comp continuous_fst |>.prodMk
-        (continuous_subtype_val.comp continuous_snd))
+        (continuous_subtypeVal.comp continuous_snd))
   · refine (continuousOn_radialDeformation_skeletonLT A ih).comp
       (continuous_fst.continuousOn.prodMk ?_) fun p hp ↦
       ⟨mem_univ _, (hS p hp.1).2, map_inv_norm_smul_mem_skeletonLT j (hS p hp.1).1.le⟩
@@ -764,19 +766,19 @@ lemma continuousOn_radialDeformation :
     ContinuousOn (fun p : I × X ↦ A.radialDeformation p.1 p.2) (univ ×ˢ A.radialNeighborhood) :=
   continuousOn_prod_of_continuousOn_map (radialNeighborhood_subset_complex A)
     (isOpen_preimage_val_radialNeighborhood A) (continuousOn_radialDeformation_map A)
-    ((continuous_subtype_val.comp continuous_snd).continuousOn.congr fun p _ ↦
-      radialDeformation_of_mem A _ (A.base_subset p.2.2))
+    ((continuous_subtypeVal.comp continuous_snd).continuousOn.congr fun p _ ↦
+      radialDeformation_of_mem A _ (A.base_subset p.2.property))
 
 private lemma continuous_radialDeformation_radialNeighborhood :
     Continuous fun p : I × A.radialNeighborhood ↦ A.radialDeformation p.1 p.2 :=
   (continuousOn_radialDeformation A).comp_continuous
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-    fun p ↦ ⟨mem_univ _, p.2.2⟩
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun p ↦ ⟨mem_univ _, p.2.property⟩
 
 /-- The **radial retraction** of the radial neighborhood of `A` onto `A`: the radial deformation
 `Topology.RelCWComplex.Subcomplex.radialDeformation` at time `1`. -/
 def radialNeighborhoodRetraction : C(A.radialNeighborhood, A) where
-  toFun x := ⟨A.radialDeformation 1 x, radialDeformation_one_mem A x.2⟩
+  toFun x := ⟨A.radialDeformation 1 x, radialDeformation_one_mem A x.property⟩
   continuous_toFun := ((continuous_radialDeformation_radialNeighborhood A).comp
     (continuous_const.prodMk continuous_id)).subtype_mk _
 
@@ -789,7 +791,7 @@ lemma coe_radialNeighborhoodRetraction_apply (x : A.radialNeighborhood) :
 @[simp]
 lemma radialNeighborhoodRetraction_inclusion (a : A) :
     A.radialNeighborhoodRetraction (Set.inclusion (subset_radialNeighborhood A) a) = a :=
-  Subtype.ext (radialDeformation_of_mem A 1 a.2)
+  Subtype.ext (radialDeformation_of_mem A 1 a.property)
 
 /-- The radial deformation `Topology.RelCWComplex.Subcomplex.radialDeformation`, as a homotopy
 rel `A` from the identity of the radial neighborhood to the radial retraction
@@ -798,7 +800,7 @@ def radialNeighborhoodDeformation :
     (ContinuousMap.id A.radialNeighborhood).HomotopyRel
       ((ContinuousMap.inclusion (subset_radialNeighborhood A)).comp
         A.radialNeighborhoodRetraction) {x | (x : X) ∈ A} where
-  toFun p := ⟨A.radialDeformation p.1 p.2, radialDeformation_mem A p.1 p.2.2⟩
+  toFun p := ⟨A.radialDeformation p.1 p.2, radialDeformation_mem A p.1 p.2.property⟩
   continuous_toFun := (continuous_radialDeformation_radialNeighborhood A).subtype_mk _
   map_zero_left x := Subtype.ext (radialDeformation_zero A x)
   map_one_left _ := rfl
