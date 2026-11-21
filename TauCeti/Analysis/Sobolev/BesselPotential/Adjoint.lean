@@ -134,11 +134,9 @@ theorem inner_toLp_eq_of_integral_inner_eq {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)}
     ⟪(T' g).toLp, f.toLp⟫_ℂ = ⟪g.toLp, (T f).toLp⟫_ℂ := by
   -- Both sides are continuous in `f` and `g`, so it suffices to take Schwartz functions.
   refine (denseRange_toBesselPotentialSpaceCLM (p := 2) s ENNReal.ofNat_ne_top).induction_on f
-    (isClosed_eq (continuous_const.inner continuous_toLp)
-      (continuous_const.inner (continuous_toLp.comp T.continuous))) fun u ↦ ?_
+    (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
   refine (denseRange_toBesselPotentialSpaceCLM (p := 2) (-r) ENNReal.ofNat_ne_top).induction_on g
-    (isClosed_eq ((continuous_toLp.comp T'.continuous).inner continuous_const)
-      (continuous_toLp.inner continuous_const)) fun v ↦ ?_
+    (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
   have hTu := congr($hT u)
   have hTv := congr($hT' v)
   simp only [ContinuousLinearMap.comp_apply] at hTu hTv

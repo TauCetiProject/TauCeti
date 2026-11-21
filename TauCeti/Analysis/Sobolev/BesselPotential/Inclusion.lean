@@ -98,6 +98,7 @@ namespace BesselPotentialSpace
 variable {r s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- The `Lᵖ` function `J^s u` of an element `u` of `H^{s,p}(E, G)` depends continuously on it. -/
+@[fun_prop]
 theorem continuous_toLp : Continuous fun u : H^{s, p}(E, G) ↦ u.toLp :=
   (toLpₗᵢ E G s p).continuous.congr toLpₗᵢ_apply
 
