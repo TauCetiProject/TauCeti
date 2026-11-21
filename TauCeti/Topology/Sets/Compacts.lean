@@ -23,10 +23,10 @@ directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). 
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`); in a weakly locally compact space every
 compact set has one. Open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). A compact set
-covered by two open sets is the union of two compact sets, one inside each of them
-(`TopologicalSpace.Compacts.exists_sup_eq_of_subset_union`). Finally, in a
-Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In an R₁
+space, for instance a Hausdorff space, a compact set covered by two open sets is the union of two
+compact sets, one inside each of them (`TopologicalSpace.Compacts.exists_sup_eq_of_subset_union`).
+Finally, in a Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
 (`TopologicalSpace.Compacts.toClosedsFunctor`).
 -/
 

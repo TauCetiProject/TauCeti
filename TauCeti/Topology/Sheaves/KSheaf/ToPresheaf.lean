@@ -269,32 +269,6 @@ theorem kRestrict_toPresheafMk (U : Opens X)
 
 variable [T2Space X]
 
-/-- The value on `∅` of a K-sheaf of types has at most one element. -/
-theorem IsKSheaf.subsingleton_obj_bot_types (hF : F.IsKSheaf) : Subsingleton (F.obj (op ⊥)) :=
-  have := Types.isTerminalEquivUnique _ hF.nonempty_isTerminal.some
-  inferInstance
-
-/-- The value on `∅` of a K-sheaf of types is nonempty. -/
-theorem IsKSheaf.nonempty_obj_bot_types (hF : F.IsKSheaf) : Nonempty (F.obj (op ⊥)) :=
-  have := Types.isTerminalEquivUnique _ hF.nonempty_isTerminal.some
-  inferInstance
-
-/-- Gluing for the pullback axiom of a K-sheaf of types: elements of `F(K₂)` and `F(K₃)` agreeing on
-`K₂ ∩ K₃` are the restrictions of an element of `F(K₂ ∪ K₃)`. -/
-theorem IsKSheaf.exists_map_eq_types (hF : F.IsKSheaf) {K₁ K₂ K₃ K₄ : Compacts X}
-    (sq : Lattice.BicartSq K₁ K₂ K₃ K₄) {x₂ : F.obj (op K₂)} {x₃ : F.obj (op K₃)}
-    (h : F.map (opHomOfLE sq.le₁₂) x₂ = F.map (opHomOfLE sq.le₁₃) x₃) :
-    ∃ x, F.map (opHomOfLE sq.le₂₄) x = x₂ ∧ F.map (opHomOfLE sq.le₃₄) x = x₃ :=
-  Types.exists_of_isPullback (hF.isPullback sq) x₂ x₃ h
-
-/-- Locality for the pullback axiom of a K-sheaf of types: elements of `F(K₂ ∪ K₃)` agreeing on `K₂`
-and on `K₃` are equal. -/
-theorem IsKSheaf.ext_types (hF : F.IsKSheaf) {K₁ K₂ K₃ K₄ : Compacts X}
-    (sq : Lattice.BicartSq K₁ K₂ K₃ K₄) {x y : F.obj (op K₄)}
-    (h₂ : F.map (opHomOfLE sq.le₂₄) x = F.map (opHomOfLE sq.le₂₄) y)
-    (h₃ : F.map (opHomOfLE sq.le₃₄) x = F.map (opHomOfLE sq.le₃₄) y) : x = y :=
-  Types.ext_of_isPullback (hF.isPullback sq) h₂ h₃
-
 variable {ι : Type*} (U : ι → Opens X)
 
 /-- Uniqueness in the gluing statement for compact sets: two elements of the value of a K-sheaf of
@@ -309,14 +283,14 @@ private theorem IsKSheaf.eq_of_forall_map_eq_of_finset (hF : F.IsKSheaf) (t : Fi
   | empty =>
     intro K hK x y _
     obtain rfl : K = ⊥ := Compacts.ext (by simpa using hK)
-    have := hF.subsingleton_obj_bot_types
+    have := Types.isTerminalEquivUnique _ hF.nonempty_isTerminal.some
     exact Subsingleton.elim x y
   | insert a t _ ih =>
     intro K hK x y h
     rw [Finset.set_biUnion_insert] at hK
     obtain ⟨K₁, K₂, hK₁, hK₂, rfl⟩ := Compacts.exists_sup_eq_of_subset_union (U a).isOpen
       (isOpen_biUnion fun i _ ↦ (U i).isOpen) hK
-    refine hF.ext_types ⟨rfl, rfl⟩ (h K₁ le_sup_left ⟨a, hK₁⟩)
+    refine Types.ext_of_isPullback (hF.isPullback ⟨rfl, rfl⟩) (h K₁ le_sup_left ⟨a, hK₁⟩)
       (ih K₂ hK₂ _ _ fun L hL hLU ↦ ?_)
     rw [map_opHomOfLE_comp_map_opHomOfLE_apply, map_opHomOfLE_comp_map_opHomOfLE_apply]
     exact h L _ hLU
@@ -336,8 +310,8 @@ private theorem IsKSheaf.exists_forall_map_eq_of_finset (hF : F.IsKSheaf)
   | empty =>
     intro K hK
     obtain rfl : K = ⊥ := Compacts.ext (by simpa using hK)
-    have := hF.subsingleton_obj_bot_types
-    refine ⟨Classical.choice hF.nonempty_obj_bot_types, fun L h hL ↦ ?_⟩
+    have := Types.isTerminalEquivUnique _ hF.nonempty_isTerminal.some
+    refine ⟨default, fun L h hL ↦ ?_⟩
     obtain rfl : L = ⊥ := le_bot_iff.1 h
     exact Subsingleton.elim _ _
   | insert a t _ ih =>
@@ -348,8 +322,8 @@ private theorem IsKSheaf.exists_forall_map_eq_of_finset (hF : F.IsKSheaf)
     obtain ⟨y₂, hy₂⟩ := ih K₂ hK₂
     have hK₁₂ : ∃ i, ((K₁ ⊓ K₂ : Compacts X) : Set X) ⊆ U i :=
       ⟨a, (show ((K₁ ⊓ K₂ : Compacts X) : Set X) ⊆ K₁ from inf_le_left).trans hK₁⟩
-    obtain ⟨y, hy₁, hy₂'⟩ := hF.exists_map_eq_types (K₁ := K₁ ⊓ K₂) ⟨rfl, rfl⟩
-      (x₂ := x K₁ ⟨a, hK₁⟩) (x₃ := y₂) ((hx _ _ _ hK₁₂ _).trans (hy₂ _ _ hK₁₂).symm)
+    obtain ⟨y, hy₁, hy₂'⟩ := Types.exists_of_isPullback (hF.isPullback (K₁ := K₁ ⊓ K₂) ⟨rfl, rfl⟩)
+      (x K₁ ⟨a, hK₁⟩) y₂ ((hx _ _ _ hK₁₂ _).trans (hy₂ _ _ hK₁₂).symm)
     refine ⟨y, fun L h hL ↦ ?_⟩
     -- `L` is the union of `L ⊓ K₁` and `L ⊓ K₂`, on which `y` restricts to the values of `x`.
     have hLK : L = L ⊓ K₁ ⊔ L ⊓ K₂ := by rw [← inf_sup_left, inf_eq_left.2 h]
@@ -358,7 +332,8 @@ private theorem IsKSheaf.exists_forall_map_eq_of_finset (hF : F.IsKSheaf)
       ⟨i, (show ((L ⊓ K₁ : Compacts X) : Set X) ⊆ L from inf_le_left).trans hi⟩
     have h₂ : ∃ i, ((L ⊓ K₂ : Compacts X) : Set X) ⊆ U i :=
       ⟨i, (show ((L ⊓ K₂ : Compacts X) : Set X) ⊆ L from inf_le_left).trans hi⟩
-    refine hF.ext_types (K₂ := L ⊓ K₁) (K₃ := L ⊓ K₂) ⟨hLK.symm, rfl⟩ ?_ ?_
+    refine Types.ext_of_isPullback
+      (hF.isPullback (K₂ := L ⊓ K₁) (K₃ := L ⊓ K₂) ⟨hLK.symm, rfl⟩) ?_ ?_
     · rw [map_opHomOfLE_comp_map_opHomOfLE_apply, hx _ _ _ h₁,
         ← map_opHomOfLE_comp_map_opHomOfLE_apply F (le_sup_left : K₁ ≤ K₁ ⊔ K₂) inf_le_right, hy₁,
         hx _ _ _ h₁]
