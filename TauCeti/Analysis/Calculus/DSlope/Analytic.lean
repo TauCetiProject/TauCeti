@@ -18,7 +18,8 @@ the divided difference extends analytically and takes the coordinate-slice deriv
 
 ## Main results
 
-* `TauCeti.analyticAt_dslope_update_iff_of_ne`: analyticity away from the base hyperplane.
+* `TauCeti.analyticWithinAt_dslope_update_iff_of_ne` and
+  `TauCeti.analyticAt_dslope_update_iff_of_ne`: analyticity away from the base hyperplane.
 * `AnalyticAt.dslope_update_same`: analytic extension across the base hyperplane.
 * `TauCeti.analyticAt_dslope_update`: the combined coordinate divided-difference theorem.
 -/
@@ -31,17 +32,35 @@ variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [Decida
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {f : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι} {ζ : 𝕜}
 
+/-- Away from its base hyperplane, a coordinate divided difference is analytic within a set
+exactly when its numerator is analytic there. No separate analyticity of the numerator's two
+terms is needed. -/
+theorem TauCeti.analyticWithinAt_dslope_update_iff_of_ne {s : Set (ι → 𝕜)}
+    (hne : x i ≠ ζ) :
+    AnalyticWithinAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s x ↔
+      AnalyticWithinAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s x := by
+  have hcoord : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ z i) x :=
+    (ContinuousLinearMap.proj (R := 𝕜) i).analyticAt x
+  constructor
+  · intro h
+    simpa only [Pi.sub_apply, sub_smul_dslope, Function.update_eq_self] using
+      (hcoord.sub (analyticAt_const (v := ζ))).analyticWithinAt.smul h
+  · intro h
+    have hquot := ((hcoord.sub (analyticAt_const (v := ζ))).analyticWithinAt.inv
+      (sub_ne_zero.mpr hne)).smul h
+    have heq : (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[𝓝 x]
+        (fun z ↦ (z i - ζ)⁻¹ • (f z - f (Function.update z i ζ))) := by
+      filter_upwards [hcoord.continuousAt.eventually_ne hne] with z hz
+      simp only [dslope_of_ne _ hz, slope_def_module, Function.update_eq_self]
+    exact hquot.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
+
 /-- Away from its base hyperplane, a coordinate divided difference is analytic exactly when
 its numerator is analytic. No separate analyticity of the numerator's two terms is needed. -/
 theorem TauCeti.analyticAt_dslope_update_iff_of_ne (hne : x i ≠ ζ) :
     AnalyticAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) x ↔
       AnalyticAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) x := by
-  have hcoord : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ z i) x :=
-    (ContinuousLinearMap.proj (R := 𝕜) i).analyticAt x
-  simpa only [Pi.sub_apply, sub_smul_dslope, Function.update_eq_self] using
-    (analyticAt_iff_analytic_fun_smul
-      (g := fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i))
-      (hcoord.sub analyticAt_const) (sub_ne_zero.mpr hne))
+  simpa only [analyticWithinAt_univ] using
+    (analyticWithinAt_dslope_update_iff_of_ne (f := f) (s := Set.univ) hne)
 
 /-- If `f` is analytic at `x` with complete target, its coordinate divided difference extends
 analytically across the hyperplane through `x`. On the hyperplane its value is the derivative of
@@ -56,15 +75,15 @@ theorem AnalyticAt.dslope_update_same [CompleteSpace F] (hf : AnalyticAt 𝕜 f 
   exact hgz.continuousAt.comp_of_eq (continuousAt_const.update i continuousAt_id) huz
 
 /-- With complete target, a coordinate divided difference is analytic if `f` is analytic at the
-point and, off the base hyperplane only, at the corresponding updated point. At a hyperplane
-point its value is the coordinate-slice derivative. -/
+point and at the corresponding updated point. At a hyperplane point its value is the
+coordinate-slice derivative. -/
 theorem TauCeti.analyticAt_dslope_update [CompleteSpace F] (i : ι) (ζ : 𝕜)
     (hf : AnalyticAt 𝕜 f x)
-    (hζ : x i ≠ ζ → AnalyticAt 𝕜 f (Function.update x i ζ)) :
+    (hres : AnalyticAt 𝕜 f (Function.update x i ζ)) :
     AnalyticAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) x := by
   by_cases hxi : x i = ζ
   · simpa only [hxi] using hf.dslope_update_same i
   · apply (analyticAt_dslope_update_iff_of_ne hxi).2
     have hu : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ Function.update z i ζ) x :=
       analyticAt_id.update analyticAt_const
-    exact hf.sub ((hζ hxi).comp_of_eq hu rfl)
+    exact hf.sub (hres.comp_of_eq hu rfl)

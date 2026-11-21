@@ -127,30 +127,18 @@ theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
         (fun w ↦ (w - x i) • g (Function.update z i w)) := by
       filter_upwards [heq] with w hw
       simpa only [Function.update_self, Function.update_idem, huz] using hw
-    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) (x i) := by
+    have hd : HasDerivAt (fun w ↦ (w - x i) • g (Function.update z i w))
+        (g z) (x i) := by
       rw [hasDerivAt_iff_tendsto_slope]
       have hgt : Filter.Tendsto (fun w ↦ g (Function.update z i w)) (nhdsWithin (x i) {x i}ᶜ)
           (nhds (g z)) := by
         simpa only [huz] using (hgz hzi).tendsto.mono_left nhdsWithin_le_nhds
       apply Filter.Tendsto.congr' ?_ hgt
-      filter_upwards [heq'.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with w hw hne
-      have hne' : w ≠ x i := Set.mem_compl_singleton_iff.mp hne
-      symm
-      calc
-        slope (fun t ↦ f (Function.update z i t)) (x i) w =
-            slope (fun t ↦ f (Function.update z i t) - f z) (x i) w := by
-          simpa only [vadd_eq_add, sub_eq_add_neg] using
-            (congrFun (congrFun
-              (slope_vadd_const (fun t ↦ f (Function.update z i t)) (-f z)) (x i)) w).symm
-        _ = slope (fun t ↦ (t - x i) • g (Function.update z i t)) (x i) w := by
-          have hmul : (w - x i) •
-              slope (fun t ↦ f (Function.update z i t) - f z) (x i) w =
-                (w - x i) •
-                  slope (fun t ↦ (t - x i) • g (Function.update z i t)) (x i) w := by
-            rw [sub_smul_slope, sub_smul_slope]
-            simp only [vsub_eq_sub, huz, sub_self, zero_smul, sub_zero, hw]
-          exact smul_right_injective _ (sub_ne_zero.mpr hne') hmul
-        _ = g (Function.update z i w) := slope_sub_smul _ hne'.symm
+      filter_upwards [self_mem_nhdsWithin] with w hw
+      exact (slope_sub_smul (fun w ↦ g (Function.update z i w))
+        (Set.mem_compl_singleton_iff.mp hw).symm).symm
+    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) (x i) :=
+      (hasDerivAt_sub_const_iff (f z)).mp (hd.congr_of_eventuallyEq heq')
     simpa only [hzi, dslope_same] using hd'.deriv
   · have hmul : (z i - x i) •
         dslope (fun w ↦ f (Function.update z i w)) (x i) (z i) =

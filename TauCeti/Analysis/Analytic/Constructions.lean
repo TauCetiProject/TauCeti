@@ -100,10 +100,11 @@ components are analytic within `s`. -/
 theorem TauCeti.analyticWithinAt_update_iff {s : Set E} :
     AnalyticWithinAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) s x ↔
       AnalyticWithinAt 𝕜 g s x ∧ ∀ j ≠ i, AnalyticWithinAt 𝕜 (fun z ↦ f z j) s x := by
-  rw [analyticWithinAt_pi_iff, ← and_forall_ne i]
-  simp only [Function.update_self]
-  refine and_congr_right fun _ ↦ ?_
-  exact forall_congr' fun j ↦ forall_congr' fun hj ↦ by simp only [Function.update_of_ne hj]
+  have h j : (fun z ↦ Function.update (f z) i (g z) j) =
+      Function.update (fun j z ↦ f z j) i g j :=
+    funext fun z ↦ (Function.apply_update (fun j (h : E → G j) ↦ h z) (fun j z ↦ f z j) i g j).symm
+  simp_rw [analyticWithinAt_pi_iff, h]
+  exact Function.forall_update_iff (fun j z ↦ f z j) fun _ h ↦ AnalyticWithinAt 𝕜 h s x
 
 /-- Updating one component of a finite analytic family by an analytic function is analytic. -/
 @[fun_prop]

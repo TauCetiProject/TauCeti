@@ -317,9 +317,7 @@ theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fint
   · have hi : α i < m := by
       by_contra! hmi
       rw [hrange] at hα
-      apply hα
-      intro j
-      by_cases hj : j = i <;> simp [s, hj, Pi.single_eq_of_ne, hmi]
+      exact hα (update_le_iff.2 ⟨hmi, fun j _ ↦ Nat.zero_le (α j)⟩)
     simp [hzero α hi]
   · refine (h.const_smul (y i ^ m)).congr_fun fun α ↦ ?_
     have hs : ∏ j, y j ^ s j = y i ^ m := Fintype.prod_pow_pi_single y i m

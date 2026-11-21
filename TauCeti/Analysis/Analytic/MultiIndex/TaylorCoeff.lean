@@ -46,8 +46,8 @@ not.
 * `AnalyticAt.exists_hasSum_mvTaylorCoeff` and `TauCeti.mvTaylorCoeff_eq_of_hasSum`: local
   normally convergent multi-index expansion on a polydisc and characterization of Taylor
   coefficients by such an expansion.
-* `AnalyticAt.mvTaylorCoeff_comp_update_same`: fixing a coordinate at the centre retains
-  exactly the coefficients with exponent zero in that coordinate.
+* `AnalyticAt.mvTaylorCoeff_comp_update_same`: for a function analytic at `x`, fixing a
+  coordinate at `x` retains exactly the coefficients with exponent zero in that coordinate.
 * `TauCeti.mvTaylorCoeff_prod_pow_smul`, `TauCeti.mvTaylorCoeff_prod_pow`,
   `TauCeti.mvTaylorCoeff_prod_sub_pow_smul`, `TauCeti.mvTaylorCoeff_prod_sub_pow`, and
   `TauCeti.mvTaylorCoeff_apply`: Taylor coefficients of monomials and coordinate projections.
@@ -379,8 +379,8 @@ theorem mvTaylorCoeff_eq_of_hasSum {f : (ι → 𝕜) → F} {x : ι → 𝕜}
   obtain ⟨p, hp, hpc⟩ := exists_hasFPowerSeriesOnBall_of_hasSum hρ hsum h
   rw [hp.mvTaylorCoeff_eq, hpc]
 
-/-- Fixing a coordinate at its value at the centre keeps precisely the Taylor coefficients
-whose exponent in that coordinate is zero. -/
+/-- For a function analytic at `x`, fixing a coordinate at its value at `x` keeps precisely the
+Taylor coefficients whose exponent in that coordinate is zero. -/
 @[simp]
 theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update_same [DecidableEq ι]
     {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) (i : ι)
@@ -394,25 +394,22 @@ theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update_same [DecidableEq ι]
   · intro y hy
     have hnorm : ‖Function.update y i 0‖ ≤ ‖y‖ := by
       apply (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2
-      intro j
-      by_cases hj : j = i
-      · simp [hj]
-      · simpa [hj] using norm_le_pi_norm y j
+      simp_rw [Function.apply_update (fun _ (v : 𝕜) ↦ ‖v‖), norm_zero]
+      exact (Function.forall_update_iff (fun j ↦ ‖y j‖) (fun _ n ↦ n ≤ ‖y‖)).2
+        ⟨norm_nonneg y, fun j _ ↦ norm_le_pi_norm y j⟩
     have hupdate : x + Function.update y i 0 = Function.update (x + y) i (x i) := by
       simpa only [add_zero, Function.update_eq_self] using
         (Function.update_add x y i (x i) 0).symm
     rw [← hupdate]
     refine (hsum _ (hnorm.trans_lt hy)).congr_fun fun β ↦ ?_
-    symm
-    simp_rw [← Pi.map_apply (fun j (v : 𝕜) ↦ v ^ β j)]
-    rw [Pi.map_update]
     by_cases hβ : β i = 0
-    · have hpow : (0 : 𝕜) ^ β i = Pi.map (fun j (v : 𝕜) ↦ v ^ β j) y i := by
-        simp [hβ]
-      rw [hpow, Function.update_eq_self]
-      simp [hβ, Pi.map_apply]
-    · rw [prod_update_of_mem (mem_univ i)]
-      simp [hβ]
+    · simp only [hβ, ite_eq_left]
+      congr 1
+      exact Finset.prod_congr rfl fun j _ ↦ by
+        by_cases hj : j = i <;> simp [hj, hβ]
+    · have hprod : ∏ j, Function.update y i 0 j ^ β j = 0 :=
+        Finset.prod_eq_zero (mem_univ i) (by simp [hβ])
+      simp [hβ, hprod]
 
 /-- **Monomial with a vector coefficient**: at the origin, `z ↦ (∏ i, z i ^ τ i) • v` has Taylor
 coefficient `v` at `τ` and `0` at every other multi-index. -/
