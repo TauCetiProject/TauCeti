@@ -140,6 +140,7 @@ variable {R K : Type*} [CommSemiring R] [Field K] [Algebra R K]
 
 /-- Pushing an ideal of `𝓞 K` forward along `RingOfIntegers.mapRingEquiv τ.toRingEquiv`
 coincides with the pointwise Galois action `τ • I`. -/
+@[simp]
 theorem map_ringOfIntegers_mapRingEquiv (I : Ideal (𝓞 K)) (τ : K ≃ₐ[R] K) :
     I.map (RingOfIntegers.mapRingEquiv τ.toRingEquiv) = τ • I := by
   rw [Ideal.pointwise_smul_def]

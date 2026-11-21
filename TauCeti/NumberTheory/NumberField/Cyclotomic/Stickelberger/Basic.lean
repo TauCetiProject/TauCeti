@@ -49,8 +49,8 @@ and `s_{m, b d} = b s_{m, d} + [d] s_{m, b}` for `b, d` coprime to `m`, and whic
 * `TauCeti.stickelbergerDenominatorIdeal`: the denominator ideal `J_m` of multipliers `x ∈ ℤ[G_m]`
   whose product with `θ_m` has integral coefficients.
 * `TauCeti.stickelbergerIdeal`: the integral Stickelberger ideal `I_m = ℤ[G_m] θ_m ∩ ℤ[G_m]`.
-* `TauCeti.stickelbergerMul`: the `ℤ[G_m]`-linear map `J_m →ₗ ℤ[G_m]` sending `x` to the unique
-  integral element representing `x θ_m`, with range `I_m`.
+* `TauCeti.stickelbergerMul`: the `ℤ[G_m]`-linear map `J_m →ₗ I_m` sending `x` to the unique
+  integral element representing `x θ_m`.
 * `TauCeti.stickelbergerSmoothing`: the positive smoothed element `s_{m, b} ∈ ℤ[G_m]` with floor
   coefficients `⌊b a₀ / m⌋`.
 
@@ -504,34 +504,52 @@ theorem stickelbergerScaled_mem_stickelbergerIdeal (m : ℕ) [NeZero m] :
     stickelbergerScaled m ∈ stickelbergerIdeal m :=
   ⟨m, by rw [integralGroupRingCast_stickelbergerScaled, map_natCast]⟩
 
-/-- The integral Stickelberger multiplication map `J_m →ₗ[ℤ[G_m]] ℤ[G_m]`, sending a denominator
-multiplier `x ∈ J_m` to the unique integral element `y` satisfying `ι(y) = ι(x) θ_m`. -/
+/-- The integral Stickelberger multiplication map `J_m →ₗ[ℤ[G_m]] I_m`, sending a denominator
+multiplier `x ∈ J_m` to the unique integral element `y ∈ I_m` satisfying `ι(y) = ι(x) θ_m`. -/
 noncomputable def stickelbergerMul (m : ℕ) [NeZero m] :
-    stickelbergerDenominatorIdeal m →ₗ[MonoidAlgebra ℤ (ZMod m)ˣ] MonoidAlgebra ℤ (ZMod m)ˣ where
-  toFun x := Classical.choose (mem_stickelbergerDenominatorIdeal.mp x.property)
-  map_add' x₁ x₂ := integralGroupRingCast_injective m <| by
-    rw [map_add, Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (x₁ + x₂).property),
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₁.property),
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₂.property)]
-    simp [add_mul]
-  map_smul' r x := integralGroupRingCast_injective m <| by
-    simp only [smul_eq_mul, RingHom.id_apply, map_mul,
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (r • x).property),
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.property)]
-    rw [Submodule.coe_smul_of_tower, smul_eq_mul, map_mul, mul_assoc]
+    stickelbergerDenominatorIdeal m →ₗ[MonoidAlgebra ℤ (ZMod m)ˣ] stickelbergerIdeal m where
+  toFun x :=
+    ⟨Classical.choose (mem_stickelbergerDenominatorIdeal.mp x.property),
+      ⟨x, Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.property)⟩⟩
+  map_add' x₁ x₂ := Subtype.ext <| integralGroupRingCast_injective m <| by
+    have h12 := Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (x₁ + x₂).property)
+    have h1 := Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₁.property)
+    have h2 := Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₂.property)
+    change integralGroupRingCast m (Classical.choose _) =
+      integralGroupRingCast m (Classical.choose _ + Classical.choose _)
+    rw [h12, map_add, h1, h2, Submodule.coe_add, map_add, add_mul]
+  map_smul' r x := Subtype.ext <| integralGroupRingCast_injective m <| by
+    have hrx := Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (r • x).property)
+    have hx := Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.property)
+    change integralGroupRingCast m (Classical.choose _) =
+      integralGroupRingCast m (r * Classical.choose _)
+    rw [hrx, map_mul, hx, SetLike.val_smul, smul_eq_mul, map_mul, mul_assoc]
 
 /-- `stickelbergerMul` represents multiplication by `θ_m` after extending scalars to `ℚ`. -/
 @[simp]
 theorem integralGroupRingCast_stickelbergerMul {m : ℕ} [NeZero m]
     (x : stickelbergerDenominatorIdeal m) :
-    integralGroupRingCast m (stickelbergerMul m x) =
+    integralGroupRingCast m (stickelbergerMul m x : MonoidAlgebra ℤ (ZMod m)ˣ) =
       integralGroupRingCast m x * stickelberger m :=
   Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.property)
 
 /-- Uniqueness characterization of `TauCeti.stickelbergerMul`. -/
 theorem stickelbergerMul_eq_iff {m : ℕ} [NeZero m]
-    {x : stickelbergerDenominatorIdeal m} {y : MonoidAlgebra ℤ (ZMod m)ˣ} :
+    {x : stickelbergerDenominatorIdeal m} {y : stickelbergerIdeal m} :
     stickelbergerMul m x = y ↔
+      integralGroupRingCast m (y : MonoidAlgebra ℤ (ZMod m)ˣ) =
+        integralGroupRingCast m x * stickelberger m := by
+  constructor
+  · rintro rfl
+    exact integralGroupRingCast_stickelbergerMul x
+  · intro hy
+    exact Subtype.ext <| integralGroupRingCast_injective m
+      ((integralGroupRingCast_stickelbergerMul x).trans hy.symm)
+
+/-- Uniqueness characterization of the coerced group-ring value of `TauCeti.stickelbergerMul`. -/
+theorem coe_stickelbergerMul_eq_iff {m : ℕ} [NeZero m]
+    {x : stickelbergerDenominatorIdeal m} {y : MonoidAlgebra ℤ (ZMod m)ˣ} :
+    (stickelbergerMul m x : MonoidAlgebra ℤ (ZMod m)ˣ) = y ↔
       integralGroupRingCast m y = integralGroupRingCast m x * stickelberger m := by
   constructor
   · rintro rfl
@@ -540,23 +558,40 @@ theorem stickelbergerMul_eq_iff {m : ℕ} [NeZero m]
     exact integralGroupRingCast_injective m
       ((integralGroupRingCast_stickelbergerMul x).trans hy.symm)
 
-/-- Every value of `stickelbergerMul` lies in `stickelbergerIdeal m`. -/
-theorem stickelbergerMul_mem_stickelbergerIdeal {m : ℕ} [NeZero m]
-    (x : stickelbergerDenominatorIdeal m) :
-    stickelbergerMul m x ∈ stickelbergerIdeal m :=
-  ⟨x, integralGroupRingCast_stickelbergerMul x⟩
+/-- `stickelbergerMul m` is surjective onto `stickelbergerIdeal m`. -/
+theorem stickelbergerMul_surjective (m : ℕ) [NeZero m] :
+    Function.Surjective (stickelbergerMul m) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, hx⟩ := mem_stickelbergerIdeal.mp hy
+  exact ⟨⟨x, ⟨y, hx⟩⟩, stickelbergerMul_eq_iff.mpr hx⟩
 
-/-- The range of `stickelbergerMul m` is precisely `stickelbergerIdeal m`. -/
+/-- The range of `stickelbergerMul m : J_m →ₗ I_m` is all of `stickelbergerIdeal m`. -/
 @[simp]
 theorem range_stickelbergerMul (m : ℕ) [NeZero m] :
-    LinearMap.range (stickelbergerMul m) = stickelbergerIdeal m := by
-  ext y
-  simp only [LinearMap.mem_range, mem_stickelbergerIdeal]
+    LinearMap.range (stickelbergerMul m) = ⊤ :=
+  LinearMap.range_eq_top.mpr (stickelbergerMul_surjective m)
+
+/-- At conductor `1`, `stickelbergerMul` vanishes identically. -/
+@[simp]
+theorem stickelbergerMul_one (x : stickelbergerDenominatorIdeal 1) :
+    stickelbergerMul 1 x = 0 :=
+  Subtype.ext <| integralGroupRingCast_injective 1 <| by simp
+
+/-- Under the coefficient-extension map `ι : ℤ[(ZMod m)ˣ] →+* ℚ[(ZMod m)ˣ]`, the image of
+`stickelbergerIdeal m` is the intersection of integral coefficients (`Set.range ι`) with
+integral multiples of `θ_m` (`(· * θ_m) '' Set.range ι`). -/
+theorem image_integralGroupRingCast_stickelbergerIdeal (m : ℕ) [NeZero m] :
+    integralGroupRingCast m '' (stickelbergerIdeal m : Set (MonoidAlgebra ℤ (ZMod m)ˣ)) =
+      Set.range (integralGroupRingCast m) ∩
+        ((· * stickelberger m) '' Set.range (integralGroupRingCast m)) := by
+  ext z
+  simp only [Set.mem_image, SetLike.mem_coe, mem_stickelbergerIdeal, Set.mem_inter_iff,
+    Set.mem_range]
   constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨x, integralGroupRingCast_stickelbergerMul x⟩
-  · rintro ⟨x, hx⟩
-    exact ⟨⟨x, ⟨y, hx⟩⟩, stickelbergerMul_eq_iff.mpr hx⟩
+  · rintro ⟨y, ⟨x, hxy⟩, rfl⟩
+    exact ⟨⟨y, rfl⟩, ⟨_, ⟨x, rfl⟩, hxy.symm⟩⟩
+  · rintro ⟨⟨y, rfl⟩, ⟨_, ⟨x, rfl⟩, hx⟩⟩
+    exact ⟨y, ⟨x, hx.symm⟩, rfl⟩
 
 /-- Integral coefficient formula linking a denominator multiplier `x` and `y = x θ_m`:
 `m * y.coeff c = ∑ a, x.coeff a * (a c⁻¹)₀`. -/
@@ -639,9 +674,19 @@ theorem stickelbergerMul_natCast_sub_single {m : ℕ} [NeZero m] {b : ℕ} (hb :
     stickelbergerMul m
         ⟨(b : MonoidAlgebra ℤ (ZMod m)ˣ) - MonoidAlgebra.single (ZMod.unitOfCoprime b hb) (1 : ℤ),
           natCast_sub_single_mem_stickelbergerDenominatorIdeal hb⟩ =
-      stickelbergerSmoothing m b := by
+      ⟨stickelbergerSmoothing m b, stickelbergerSmoothing_mem_stickelbergerIdeal hb⟩ := by
   rw [stickelbergerMul_eq_iff, integralGroupRingCast_stickelbergerSmoothing hb, map_sub,
     map_natCast, integralGroupRingCast_single, Int.cast_one]
+
+/-- Coerced form of `TauCeti.stickelbergerMul_natCast_sub_single`: the underlying group-ring
+element of `stickelbergerMul m (b - [b])` is `stickelbergerSmoothing m b`. -/
+theorem coe_stickelbergerMul_natCast_sub_single {m : ℕ} [NeZero m] {b : ℕ} (hb : b.Coprime m) :
+    (stickelbergerMul m
+        ⟨(b : MonoidAlgebra ℤ (ZMod m)ˣ) - MonoidAlgebra.single (ZMod.unitOfCoprime b hb) (1 : ℤ),
+          natCast_sub_single_mem_stickelbergerDenominatorIdeal hb⟩ :
+        MonoidAlgebra ℤ (ZMod m)ˣ) =
+      stickelbergerSmoothing m b :=
+  congrArg Subtype.val (stickelbergerMul_natCast_sub_single hb)
 
 /-- At `b = 0`, the positive smoothing vanishes. -/
 @[simp]
@@ -656,6 +701,14 @@ theorem stickelbergerSmoothing_one (m : ℕ) [NeZero m] :
     stickelbergerSmoothing m 1 = 0 := by
   refine MonoidAlgebra.ext (Finsupp.ext fun a ↦ ?_)
   simp [Nat.div_eq_of_lt (ZMod.val_lt _)]
+
+/-- At conductor `1`, the positive smoothing vanishes for every `b`. -/
+@[simp]
+theorem stickelbergerSmoothing_one_left (b : ℕ) :
+    stickelbergerSmoothing 1 b = 0 := by
+  refine MonoidAlgebra.ext (Finsupp.ext fun a ↦ ?_)
+  have ha : (a⁻¹ : (ZMod 1)ˣ).val = 0 := Subsingleton.elim _ _
+  simp [ha]
 
 /-- Shifting `b` by `m` adds the scaled Stickelberger element `m θ_m`. -/
 theorem stickelbergerSmoothing_add_self (m : ℕ) [NeZero m] (b : ℕ) :
