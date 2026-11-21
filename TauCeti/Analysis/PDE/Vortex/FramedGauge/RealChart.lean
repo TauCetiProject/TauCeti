@@ -138,20 +138,13 @@ private theorem natCast_one_add_one_lt (hk : 2 ≤ k) : ((1 : ℕ) : ℝ) + 1 < 
   push_cast
   linarith
 
-/-- For an integer `k ≥ 2`, the Sobolev exponent `k + 1` exceeds `1`. -/
-theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
+private theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   linarith
 
 private theorem finrank_real_complex_lt_two_mul_natCast (hk : 2 ≤ k) :
     (finrank ℝ ℂ : ℝ) < 2 * k :=
   finrank_real_complex_lt_two_mul ((Nat.one_lt_cast (α := ℝ)).2 hk)
-
-/-- For an integer `k ≥ 2`, real elements of `H^k(ℂ)` are determined by their continuous
-representatives. -/
-theorem continuousRep_injective_of_two_le (hk : 2 ≤ k) :
-    Function.Injective (continuousRep : realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k) → ℂ → ℝ) :=
-  continuousRep_injective (finrank_real_complex_lt_two_mul_natCast hk)
 
 /-- For `s > 1`, the field of real coordinates `u ∈ (H^s_ℝ)⁴` lies in `H^s`. -/
 theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}

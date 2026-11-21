@@ -130,7 +130,8 @@ theorem realSobolevGaugeFixedOperator_apply_eq_iff (hk : 2 ≤ k)
     realSobolevGaugeFixedOperator f m hk (x.realSubRef _) v = g ↔
       gaugeFixedOperator x (continuousRepField v) =
         continuousRepField (Fin.cons g.1 g.2 : Fin 4 → realSubmodule ℂ k.cast_nonneg) := by
-  have hinj := continuousRep_injective_of_two_le hk
+  have hinj := continuousRep_injective (h := k.cast_nonneg)
+    (finrank_real_complex_lt_two_mul ((Nat.one_lt_cast (α := ℝ)).2 hk))
   constructor
   · rintro rfl
     funext z
@@ -205,8 +206,8 @@ private theorem continuousRepField_mem_gaugeFixedKernel (hk : 2 ≤ k)
     (hv : realSobolevGaugeFixedOperator f m hk (x.realSubRef _) v = 0) :
     continuousRepField v ∈ gaugeFixedKernel x := by
   have hy₁ := contDiff_continuousRepField (n := 1) (by norm_cast; omega) v
-  have hyL := memLp_of_mem_sobolevFields
-    (continuousRepField_mem_sobolevFields (one_lt_natCast_add_one hk) v)
+  have hyL := memLp_of_mem_sobolevFields <| continuousRepField_mem_sobolevFields
+    (((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _)) v
   have heq : ∀ z, gaugeFixedOperator x (continuousRepField v) z = 0 := by
     intro z
     rw [(realSobolevGaugeFixedOperator_apply_eq_iff hk x v 0).1 hv]
@@ -263,7 +264,7 @@ def kerRealSobolevGaugeFixedOperatorEquiv (hk : 2 ≤ k) (x : SobolevFieldSpace 
       (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)).ker.subtype).codRestrict _
         fun v ↦ continuousRepField_mem_gaugeFixedKernel hk hmem v.property)
     ⟨fun v w hvw ↦ Subtype.ext <| continuousRepField_injective
-      (one_lt_natCast_add_one hk) (congrArg Subtype.val hvw),
+      (((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _)) (congrArg Subtype.val hvw),
     fun y ↦ by
       obtain ⟨v, hv, hvy⟩ := exists_continuousRepField_eq hk hmem y.property
       exact ⟨⟨v, hv⟩, Subtype.ext hvy⟩⟩
@@ -283,7 +284,7 @@ theorem finiteDimensional_ker_realSobolevGaugeFixedOperator (hk : 2 ≤ k)
     FiniteDimensional ℝ (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)).ker := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace x.continuous hmem
   have := finiteDimensional_gaugeFixedKernel (hxs.of_le (by simp)) (fun w ↦ by simp [hsol w])
-    (tendsto_sectionValue_mul_inv_pow (one_lt_natCast_add_one hk)
+    (tendsto_sectionValue_mul_inv_pow (((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _))
       x.mem_framedFieldSpace x.continuous)
   exact (kerRealSobolevGaugeFixedOperatorEquiv f m hk x hmem).symm.finiteDimensional
 
@@ -295,7 +296,7 @@ theorem finrank_ker_realSobolevGaugeFixedOperator (hk : 2 ≤ k)
     finrank ℝ (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)).ker = 2 * m := by
   rw [(kerRealSobolevGaugeFixedOperatorEquiv f m hk x hmem).finrank_eq]
   exact finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace
-    (one_lt_natCast_add_one hk) x.mem_framedFieldSpace
+    (((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _)) x.mem_framedFieldSpace
     (contDiff_of_forall_mem_framedFieldSpace x.continuous hmem) fun w ↦ by simp [hsol w]
 
 /-! ### The vortex equation in the Coulomb slice -/
@@ -327,8 +328,9 @@ theorem realSobolevSliceEquation_realSubRef_eq_zero_iff (hk : 2 ≤ k)
     (x y : SobolevFieldSpace f m ((k : ℝ) + 1)) :
     realSobolevSliceEquation f m hk x (y.realSubRef _) = 0 ↔
       gaugeAdjoint x (⇑y - ⇑x) = 0 ∧ equation y = 0 := by
-  have hs := one_lt_natCast_add_one hk
-  have hinj := continuousRep_injective_of_two_le hk
+  have hs := ((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _)
+  have hinj := continuousRep_injective (h := k.cast_nonneg)
+    (finrank_real_complex_lt_two_mul ((Nat.one_lt_cast (α := ℝ)).2 hk))
   have hfield : continuousRepField (y.realSubRef _ - x.realSubRef _ :
       Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) = ⇑y - ⇑x := by
     rw [map_sub, SobolevFieldSpace.continuousRepField_realSubRef hs,
@@ -362,8 +364,14 @@ operator `L` at the real coordinates of `x`. -/
 theorem hasStrictFDerivAt_realSobolevSliceEquation (hk : 2 ≤ k)
     (x : SobolevFieldSpace f m ((k : ℝ) + 1)) :
     HasStrictFDerivAt (realSobolevSliceEquation f m hk x)
-      (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)) (x.realSubRef _) :=
-  (contDiff_realSobolevSliceEquation hk x).contDiffAt.hasStrictFDerivAt
+      (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)) (x.realSubRef _) := by
+  have hL : realSobolevGaugeFixedOperator f m hk (x.realSubRef _) =
+      (realSobolevGaugeAdjoint f m hk (x.realSubRef _)).prod
+        (realSobolevLinearizedEquation f m hk (x.realSubRef _)) := by
+    ext1 v
+    rw [realSobolevGaugeFixedOperator_apply, ContinuousLinearMap.prod_apply]
+  rw [hL]
+  exact (contDiff_realSobolevSliceEquation hk x).contDiffAt.hasStrictFDerivAt
     (hasFDerivAt_realSobolevSliceEquation hk x _) (by simp)
 
 /-! ### The slice chart -/
