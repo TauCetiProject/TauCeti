@@ -52,8 +52,10 @@ hypothesis of the compression lemma for CW complexes.
   homotopy extension property in its unit disc**, for instance a sphere bundle in its disc bundle.
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
-* `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
-  null-homotopic exactly when it extends over the closed unit ball.
+* `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`,
+  `ContinuousMap.homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall`,
+  `ContinuousMap.homotopicRel_const_singleton_sphere_iff_nullhomotopic`: free and pointed
+  null-homotopy of a map out of the unit sphere agree with extension over the closed unit ball.
 * `ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset`: a map of pairs homotopic through
   maps of pairs to a map into `B` is homotopic relative to the sphere to a map into `B`.
 
@@ -328,6 +330,38 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
       exact (hG y).symm
     rw [hg]
     exact ((id_nullhomotopic _).comp_right G).comp_left ι
+
+/-- **A map out of the unit sphere is homotopic relative to a base point to a constant map
+exactly when it extends over the closed unit ball.** -/
+theorem homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall
+    (g : C(sphere (0 : E) 1, Y)) (s₀ : sphere (0 : E) 1) :
+    g.HomotopicRel (ContinuousMap.const _ (g s₀)) {s₀} ↔
+      ∃ G : C(closedBall (0 : E) 1, Y),
+        ∀ y : sphere (0 : E) 1, G ⟨y, sphere_subset_closedBall y.2⟩ = g y := by
+  constructor
+  · intro h
+    exact g.nullhomotopic_iff_exists_extension_closedBall.mp ⟨g s₀, h.homotopic⟩
+  · rintro ⟨G, hG⟩
+    -- Straight-line segments inside the convex closed ball deform every point to `s₀`.
+    have hseg (p : I × sphere (0 : E) 1) :
+        (1 - (p.1 : ℝ)) • (p.2 : E) + (p.1 : ℝ) • (s₀ : E) ∈ closedBall (0 : E) 1 :=
+      convex_closedBall (0 : E) 1 (sphere_subset_closedBall p.2.2) (sphere_subset_closedBall s₀.2)
+        (sub_nonneg.2 p.1.2.2) p.1.2.1 (by ring)
+    refine ⟨{
+      toFun p := G ⟨_, hseg p⟩
+      continuous_toFun := by fun_prop
+      map_zero_left y := by simpa using hG y
+      map_one_left y := by simpa using hG s₀
+      prop' t y hy := by
+        rw [mem_singleton_iff.mp hy]
+        simpa [← add_smul] using hG s₀ }⟩
+
+/-- **Pointed and free null-homotopy agree on the unit sphere** of a real seminormed space. -/
+theorem homotopicRel_const_singleton_sphere_iff_nullhomotopic
+    (g : C(sphere (0 : E) 1, Y)) (s₀ : sphere (0 : E) 1) :
+    g.HomotopicRel (ContinuousMap.const _ (g s₀)) {s₀} ↔ g.Nullhomotopic :=
+  (g.homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall s₀).trans
+    g.nullhomotopic_iff_exists_extension_closedBall.symm
 
 namespace HomotopicWith
 
