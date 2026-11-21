@@ -7,21 +7,25 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 
 /-!
 # Unramified Kummer classes at good reduction
 
 For a Weierstrass curve over a nonarchimedean local field `K`, the unramified subgroup of
-`H¹(K, E[m])` is the kernel of restriction to inertia. The coefficient module uses the separable
-closure, so inertia is transported from the algebraic closure through
-`TauCeti.absoluteGaloisGroupRestrictEquiv`.
+`H¹(K, E[m])` is the kernel of restriction to inertia (`TauCeti.unramifiedH1`). The
+coefficient module uses the separable closure, so inertia is transported from the algebraic closure
+through `TauCeti.absoluteGaloisGroupRestrictEquiv`. When `W` is elliptic and `m ≠ 0`, this
+unramified subgroup is finite of order `#E(K)[m]`.
 
 At good reduction, if `m` is prime to the residue characteristic, every Kummer class is
 unramified. Indeed inertia fixes every `m`-division point of a rational point, so the cocycle
-`σ ↦ σ Q - Q` vanishes on inertia. This gives the containment of the local Kummer condition in
-the unramified local condition used to control ramification of Selmer classes.
+`σ ↦ σ Q - Q` vanishes on inertia. Over the completion of a Dedekind domain at a prime `u` with
+finite residue field not dividing `m`, comparing orders with `[E(K) : m E(K)] = #E(K)[m]` upgrades
+this inclusion to equality: `(W.kummerMap m hm).range = W.unramifiedTorsionCohomology m`.
+
 Consequently a Selmer class restricts to an unramified class at each nonarchimedean local
 field in its defining family where the equation has good reduction and `m` is a residue unit.
 Unramifiedness is also stable under restriction to any extension of nonarchimedean local fields,
@@ -32,6 +36,7 @@ local conditions at the places of a number field to the places of a finite exten
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.4.1, VIII.1.5 and X.4.
+* J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed., I, Proposition 3.8.
 -/
 
 public section
@@ -63,6 +68,20 @@ theorem mem_unramifiedTorsionCohomology_iff
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
         (separableClosureInertiaSubgroup K) c = 0 := by
   rw [unramifiedTorsionCohomology_eq_unramifiedH1, mem_unramifiedH1_iff]
+
+/-- For an elliptic curve and `m ≠ 0`, `unramifiedTorsionCohomology` is finite. -/
+instance finite_unramifiedTorsionCohomology [W.IsElliptic] [NeZero m] :
+    Finite (W.unramifiedTorsionCohomology m) := by
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1]
+  infer_instance
+
+/-- **Order of unramified `m`-torsion cohomology**: `#H¹_ur(G_K, E[m]) = #E(K)[m]` for `m ≠ 0`. -/
+theorem natCard_unramifiedTorsionCohomology [DecidableEq K] [W.IsElliptic] [NeZero m] :
+    Nat.card (W.unramifiedTorsionCohomology m) =
+      Nat.card (AddSubgroup.torsionBy W.toAffine.Point m) := by
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1,
+    natCard_unramifiedH1_eq_natCard_H0]
+  exact Nat.card_congr (W.baseTorsionEquivInvariants m).symm.toEquiv
 
 /-- **Unramified classes restrict to unramified classes.** For an extension `L/K` of
 nonarchimedean local fields and a `K`-embedding `τ : Kˢ → Lˢ` of separable closures, restriction
@@ -156,6 +175,41 @@ theorem range_kummerMap_le_unramifiedTorsionCohomology
   classical
   rintro c ⟨P, rfl⟩
   exact W.kummerMap_mem_unramifiedTorsionCohomology m hmres P
+
+section AdicCompletion
+
+open IsDedekindDomain
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A]
+  {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
+  (u : HeightOneSpectrum A) [Finite (A ⧸ u.asIdeal)] [DecidableEq (u.adicCompletion F)]
+  (V : WeierstrassCurve (u.adicCompletion F))
+  [IsIntegral 𝒪[u.adicCompletion F] V] [(integralModel 𝒪[u.adicCompletion F] V).IsElliptic]
+
+/-- **At good reduction away from `m`, the local Kummer image equals unramified cohomology**
+(Milne, *ADT* I, Proposition 3.8): over the `u`-adic completion of the fraction field of a
+Dedekind domain with finite residue field `A ⧸ u`, if `V` has good reduction and `m ∉ u`, then
+`im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, E[m])`. -/
+theorem range_kummerMap_eq_unramifiedTorsionCohomology
+    (hmU : IsUnit (m : u.adicCompletion F)) (hm : (m : A) ∉ u.asIdeal) :
+    (V.kummerMap m hmU).range = V.unramifiedTorsionCohomology m := by
+  cases Subsingleton.elim ‹DecidableEq (u.adicCompletion F)›
+    (fun a b ↦ Classical.propDecidable (a = b))
+  classical
+  have : V.IsElliptic := by
+    rw [← baseChange_integralModel_eq 𝒪[u.adicCompletion F] V]
+    infer_instance
+  have : NeZero m := NeZero.of_neZero_natCast (u.adicCompletion F) (h := ⟨hmU.ne_zero⟩)
+  have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
+    rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
+    exact hm
+  apply AddSubgroup.eq_of_le_of_card_ge (V.range_kummerMap_le_unramifiedTorsionCohomology m hmres)
+  rw [V.natCard_unramifiedTorsionCohomology m, ← AddSubgroup.index_ker, V.ker_kummerMap m hmU,
+    V.index_range_nsmul_eq_natCard_torsionBy u hm]
+  exact (Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
+    rw [Submodule.mem_torsionBy_iff, natCast_zsmul, AddSubgroup.torsionBy.nsmul_iff])).le
+
+end AdicCompletion
 
 end WeierstrassCurve
 

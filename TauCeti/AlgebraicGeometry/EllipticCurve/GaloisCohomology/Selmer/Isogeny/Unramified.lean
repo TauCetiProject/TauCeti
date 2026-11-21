@@ -204,6 +204,39 @@ theorem eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
   obtain ⟨_, _⟩ := hT₁ v hv
   exact φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hTdeg v hv)
 
+/-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain.** If
+`W₁` and `W₂` have good reduction outside `S` and no prime outside `S` divides `deg φ`, then a
+class in `H¹(G_K, E₁[φ])` belongs to `Sel_φ` (relative to all height-one completions) if and only
+if it is unramified outside `S` and satisfies the local condition at the primes in `S`. When `S`
+is finite, this reduces `Sel_φ` to finitely many local conditions outside the unramified
+locus. -/
+theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_mem
+    {S : Set (HeightOneSpectrum R)}
+    (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
+    (hgood₂ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K))).IsElliptic)
+    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal)
+    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    c ∈ φ.selmerGroup τ ↔
+      c ∈ φ.unramifiedOutsideKerCohomology τ S ∧
+        ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
+  have hmem : c ∈ φ.selmerGroup τ ↔
+      ∀ v, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
+    simp only [mem_selmerGroup_iff, mem_shafarevichTateGroup_iff, pointRes_kerCoeffIncl,
+      selmerStructure_localCondition, AddMonoidHom.mem_ker]
+  refine ⟨fun hc ↦ ⟨φ.selmerGroup_le_unramifiedOutsideKerCohomology τ hgood₁ hS hc,
+    fun v _ ↦ hmem.mp hc v⟩, ?_⟩
+  rintro ⟨hur, hloc⟩
+  rw [hmem]
+  intro v
+  by_cases hv : v ∈ S
+  · exact hloc v hv
+  · obtain ⟨_, _⟩ := hgood₁ v hv
+    obtain ⟨_, _⟩ := hgood₂ v hv
+    rw [φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hS v hv)]
+    exact mem_unramifiedOutsideKerCohomology_iff.mp hur v hv
+
 end DedekindGlobal
 
 end TauCeti.Isogeny

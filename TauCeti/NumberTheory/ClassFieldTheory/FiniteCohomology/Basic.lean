@@ -47,6 +47,9 @@ file does not treat degree two.
   prime-order coefficients in degrees at least two over local fields containing roots of unity.
 * `TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`: `Hⁱ(G_F, A)` is finite for
   `i ≤ 1` and every finite smooth discrete `A : GalRep n F`, `n` invertible in `F`.
+* `TauCeti.ClassFieldTheory.finite_H1_of_nsmul_eq_zero` and `TauCeti.ClassFieldTheory.finite_H1`:
+  explicit `H¹(G_F, M)` is finite for every finite discrete `G_F`-module `M` whose exponent
+  (respectively cardinality) is nonzero in `F`.
 
 ## References
 
@@ -168,5 +171,26 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
     Finite (continuousCohomology i A) := by
   exact finite_continuousCohomology_of_prime_ge_two hn A hA i
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ hj₀ hj ↦ by omega
+
+/-- **Finiteness of explicit `H¹` (by exponent).** Let `F` be a nonarchimedean local field and `n`
+a natural number nonzero in `F`. For every finite discrete `G_F`-module `M` killed by `n`,
+`H¹(G_F, M)` is finite. -/
+theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0)
+    (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
+    [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Finite (H1 (AbsoluteGaloisGroup F) M) := by
+  have : Finite (continuousCohomology 1 (galRepOfDiscreteModule n F M hM)) :=
+    finite_continuousCohomology_of_le_one hn (galRepOfDiscreteModule n F M hM) Fact.out le_rfl
+  exact Finite.of_equiv _ (galRepOfDiscreteModuleH1Equiv n F M hM).symm.toEquiv
+
+/-- **Finiteness of explicit `H¹` (by order).** Let `F` be a nonarchimedean local field and `M` a
+finite discrete `G_F`-module whose order is nonzero in `F`. Then `H¹(G_F, M)` is finite. -/
+theorem finite_H1 (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
+    [Finite M] (hM : (Nat.card M : F) ≠ 0) :
+    Finite (H1 (AbsoluteGaloisGroup F) M) :=
+  finite_H1_of_nsmul_eq_zero hM M fun x ↦
+    addOrderOf_dvd_iff_nsmul_eq_zero.mp (addOrderOf_dvd_natCard x)
 
 end TauCeti.ClassFieldTheory
