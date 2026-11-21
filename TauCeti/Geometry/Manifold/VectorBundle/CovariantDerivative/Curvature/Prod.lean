@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
