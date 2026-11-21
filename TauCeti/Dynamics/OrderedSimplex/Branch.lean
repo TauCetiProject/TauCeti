@@ -50,13 +50,14 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.branchMap_mem_orderedSimplex`, `TauCeti.mapsTo_branchMap`: each branch maps the ordered
   simplex into itself.
 * `TauCeti.add_three_div_two_le_branchDenom`, `TauCeti.branchDenom_le_add_two`,
-  `TauCeti.log_three_halves_le_log_branchDenom`: on the simplex `(A + 3) / 2 ≤ q_a ≤ A + 2`, so
+  `TauCeti.log_three_halves_le_branchDelay`: on the simplex `(A + 3) / 2 ≤ q_a ≤ A + 2`, so
   every delay is at least `log (3 / 2)`.
-* `TauCeti.branchWeight_eq_cpow`, `TauCeti.norm_branchWeight`: on the simplex `exp (-s * τ_a)`
-  agrees with `q_a^{-s}` and has norm `exp (-Re s * τ_a) = q_a^{-Re s}`.
-* `TauCeti.hasFDerivAt_branchDelay`, `TauCeti.norm_fderiv_branchDelay_lt_two`: the delay
-  depends only on `w_j`, with `|∂ τ_a / ∂ w_j| = (A + 1) / q_a < 2` on the simplex, uniformly in
-  the letter.
+* `TauCeti.branchWeight_eq_cpow`, `TauCeti.norm_branchWeight`, `TauCeti.hasFDerivAt_branchWeight`,
+  `TauCeti.hasDerivAt_branchWeight`: on the simplex `exp (-s * τ_a)` agrees with `q_a^{-s}`, has
+  norm `exp (-Re s * τ_a) = q_a^{-Re s}`, and differentiates in both variables.
+* `TauCeti.hasFDerivAt_branchDelay`, `TauCeti.norm_fderiv_branchDelay`,
+  `TauCeti.norm_fderiv_branchDelay_lt_two`: the delay depends only on `w_j`, with
+  `‖D τ_a‖ = (A + 1) / q_a < 2` on the simplex, uniformly in the letter.
 * `TauCeti.contDiffAt_branchMap`: each branch is smooth wherever its denominator is nonzero, in
   particular on a neighbourhood of the simplex.
 
@@ -163,9 +164,10 @@ theorem branchDenom_le_add_two (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : 0 �
   rw [branchDenom_def]
   nlinarith [(a.1.cast_nonneg : (0 : ℝ) ≤ a.1)]
 
-/-- Every delay `τ_a = log q_a` is at least `log (3 / 2)` on the simplex. -/
-theorem log_three_halves_le_log_branchDenom (a : ℕ × Fin d) {x : Fin d → ℝ}
-    (hx : x a.2 ≤ 1 / 2) : Real.log (3 / 2) ≤ Real.log (branchDenom a x) := by
+/-- Every delay `τ_a = log q_a` is at least `log (3 / 2)` whenever `w_j ≤ 1 / 2`, in particular
+on the simplex. -/
+theorem log_three_halves_le_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x a.2 ≤ 1 / 2) : Real.log (3 / 2) ≤ branchDelay a x := by
   have h := add_three_div_two_le_branchDenom a hx
   refine Real.log_le_log (by norm_num) (le_trans ?_ h)
   linarith [(a.1.cast_nonneg : (0 : ℝ) ≤ a.1)]
@@ -180,7 +182,7 @@ theorem log_le_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x ∈ or
 theorem branchDelay_pos (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
     0 < branchDelay a x :=
   (Real.log_pos (by norm_num)).trans_le
-    (log_three_halves_le_log_branchDenom a (le_one_half_of_mem_orderedSimplex hx a.2))
+    (log_three_halves_le_branchDelay a (le_one_half_of_mem_orderedSimplex hx a.2))
 
 /-- Upper bound `τ_a (w) ≤ log (A + 2)` on `orderedSimplex d`. -/
 theorem branchDelay_le (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
@@ -321,6 +323,25 @@ theorem hasFDerivAt_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ}
   congr 1
   field_simp
 
+/-- The operator norm of the derivative of `branchDelay a` is `(A + 1) / q_a` wherever
+`q_a > 0`. -/
+theorem norm_fderiv_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ} (hq : 0 < branchDenom a x) :
+    ‖fderiv ℝ (branchDelay a) x‖ = ((a.1 : ℝ) + 1) / branchDenom a x := by
+  have hc : 0 ≤ ((a.1 : ℝ) + 1) / branchDenom a x := div_nonneg (by positivity) hq.le
+  rw [(hasFDerivAt_branchDelay a hq.ne').fderiv]
+  refine le_antisymm ?_ ?_
+  · refine ContinuousLinearMap.opNorm_le_bound _ hc fun v => ?_
+    simp only [smul_apply, ContinuousLinearMap.proj_apply, norm_smul, norm_neg,
+      Real.norm_of_nonneg hc]
+    exact mul_le_mul_of_nonneg_left (norm_le_pi_norm v a.2) hc
+  · have h1 : ‖(Pi.single a.2 (1 : ℝ) : Fin d → ℝ)‖ = 1 := by
+      rw [Pi.norm_single, norm_one]
+    have hle := ContinuousLinearMap.le_opNorm
+      (-(((a.1 : ℝ) + 1) / branchDenom a x) •
+        (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ))
+      (Pi.single a.2 (1 : ℝ))
+    simpa [h1, Real.norm_of_nonneg hc] using hle
+
 /-- The logarithmic derivative of a delay is bounded on the simplex:
 `‖D τ_a‖ = (A + 1) / q_a ≤ 2 (A + 1) / (A + 3)`. -/
 theorem norm_fderiv_branchDelay_le (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x a.2 ≤ 1 / 2) :
@@ -329,15 +350,8 @@ theorem norm_fderiv_branchDelay_le (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : 
   have hA : (0 : ℝ) ≤ a.1 := a.1.cast_nonneg
   have hle := add_three_div_two_le_branchDenom a hx
   have hq : 0 < branchDenom a x := by linarith [hA]
-  rw [(hasFDerivAt_branchDelay a hq.ne').fderiv]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => ?_
-  have hv : ‖v a.2‖ ≤ ‖v‖ := norm_le_pi_norm v a.2
-  have hc : ((a.1 : ℝ) + 1) / branchDenom a x ≤ 2 * ((a.1 : ℝ) + 1) / ((a.1 : ℝ) + 3) := by
-    rw [div_le_div_iff₀ hq (by positivity)]
-    nlinarith [hA]
-  simp only [smul_apply, ContinuousLinearMap.proj_apply, norm_smul,
-    norm_neg, Real.norm_of_nonneg (div_nonneg (by positivity : (0 : ℝ) ≤ a.1 + 1) hq.le)]
-  exact mul_le_mul hc hv (norm_nonneg _) (by positivity)
+  rw [norm_fderiv_branchDelay a hq, div_le_div_iff₀ hq (by positivity)]
+  nlinarith [hA]
 
 /-- The logarithmic derivative of a delay has norm less than `2` on the simplex, uniformly in the
 letter. -/
@@ -346,6 +360,31 @@ theorem norm_fderiv_branchDelay_lt_two (a : ℕ × Fin d) {x : Fin d → ℝ}
   refine (norm_fderiv_branchDelay_le a hx).trans_lt ?_
   rw [div_lt_iff₀ (by positivity)]
   linarith
+
+/-- The chart-variable derivative of `branchWeight a s` at a point with nonzero denominator,
+expressed using `branchWeight` and the derivative of `branchDelay`. -/
+theorem hasFDerivAt_branchWeight (a : ℕ × Fin d) (s : ℂ) {x : Fin d → ℝ}
+    (hx : branchDenom a x ≠ 0) :
+    HasFDerivAt (branchWeight a s)
+      ((-s * branchWeight a s x) •
+        (Complex.ofRealCLM.comp (fderiv ℝ (branchDelay a) x))) x := by
+  have hdelay : HasFDerivAt (branchDelay a) (fderiv ℝ (branchDelay a) x) x :=
+    (hasFDerivAt_branchDelay a hx).differentiableAt.hasFDerivAt
+  have harg : HasFDerivAt (fun y => -s * (branchDelay a y : ℂ))
+      (-s • Complex.ofRealCLM.comp (fderiv ℝ (branchDelay a) x)) x :=
+    (Complex.ofRealCLM.hasFDerivAt.comp x hdelay).const_smul (-s)
+  refine harg.cexp.congr_fderiv ?_
+  rw [smul_smul, mul_comm]
+  rfl
+
+/-- The complex-parameter derivative of `s ↦ branchWeight a s x`, expressed using `branchWeight`
+and `branchDelay`. -/
+theorem hasDerivAt_branchWeight (a : ℕ × Fin d) (s : ℂ) (x : Fin d → ℝ) :
+    HasDerivAt (fun z => branchWeight a z x) (-(branchDelay a x : ℂ) * branchWeight a s x) s := by
+  have harg : HasDerivAt (fun z : ℂ => -z * (branchDelay a x : ℂ))
+      (-(branchDelay a x : ℂ)) s := by
+    simpa using (hasDerivAt_id s).neg.mul_const (branchDelay a x : ℂ)
+  simpa [branchWeight_def, mul_comm] using harg.cexp
 
 /-! ### The linear moves and the homogeneous identity -/
 
@@ -410,22 +449,15 @@ theorem linearMove_last_of_mem_coneSpan (j : Fin (d + 1)) {y : Fin (d + 2) → �
 theorem linearMove_mapsTo_orderedCone (j : Fin (d + 1)) :
     MapsTo (linearMove j) (orderedCone d) (orderedCone d) := fun y hy => by
   have hpos := pos_last_of_mem_orderedCone hy
-  rw [mem_orderedCone_iff] at hy ⊢
-  refine ⟨fun h0 => by
-      have := congrFun h0 (Fin.last d).castSucc
-      rw [linearMove_penultimate, Pi.zero_apply] at this; linarith,
-    ?_, ?_, mem_coneSpan_iff.1 (linearMove_mem_coneSpan j y)⟩
-  all_goals rw [linearMove_eq_snoc_sum]
-  · exact Fin.lastCases
-      (by simpa using Finset.sum_nonneg fun _ _ => hy.2.1 _)
-      (fun _ => by simpa using hy.2.1 _)
-  · exact fun k₁ k₂ => Fin.lastCases
-      (Fin.lastCases (fun _ => le_rfl) (fun i₁ _ => by
-        simpa using Finset.single_le_sum (fun _ _ => hy.2.1 _) (Finset.mem_univ i₁)) k₁)
-      (fun i₂ => Fin.lastCases (fun h => absurd h (not_le.2 (Fin.castSucc_lt_last i₂)))
-        (fun i₁ h => by
-          simpa using hy.2.2.1 ((Fin.strictMono_succAbove _).monotone
-            (Fin.castSucc_le_castSucc_iff.1 h))) k₁) k₂
+  rw [mem_orderedCone_iff] at hy
+  rw [linearMove_eq_snoc_sum]
+  refine snoc_sum_mem_orderedCone (fun h0 => by
+      have := congrFun h0 (Fin.last d)
+      rw [Fin.succAbove_of_le_castSucc j.castSucc (Fin.last d)
+        (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last j)), Fin.succ_last, Pi.zero_apply] at this
+      linarith)
+    (fun _ => hy.2.1 _)
+    (fun _ _ h => hy.2.2.1 ((Fin.strictMono_succAbove _).monotone h))
 
 /-- `γ_{n-1}` replaces the last two coordinates `(p, q)` by `(q, ∑ u + q)`, where `u` collects
 the first `d` coordinates. -/

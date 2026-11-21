@@ -17,6 +17,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.Order.Fin.InsertNth
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -122,23 +123,37 @@ theorem inv_succ_le_one_sub_sum {x : Fin d → ℝ} (hx : ∀ i, x i ≤ 1 - ∑
   rw [inv_le_iff_one_le_mul₀ (by positivity)]
   linarith
 
+/-- Appending a coordinate that bounds all previous coordinates preserves monotonicity. -/
+theorem monotone_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
+    (hf : Monotone f) (ha : ∀ i, f i ≤ a) :
+    Monotone (Fin.snoc (α := fun _ => α) f a) := by
+  cases n with
+  | zero => rw [Fin.monotone_iff_le_succ]; exact fun i => Fin.elim0 i
+  | succ m =>
+    rw [← Fin.insertNth_last']
+    exact Fin.insertNth_last_monotone hf a (ha (Fin.last m))
+
+/-- Appending a coordinate strictly above all previous coordinates preserves strict
+monotonicity. -/
+theorem strictMono_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
+    (hf : StrictMono f) (ha : ∀ i, f i < a) :
+    StrictMono (Fin.snoc (α := fun _ => α) f a) := by
+  cases n with
+  | zero => rw [Fin.strictMono_iff_lt_succ]; exact fun i => Fin.elim0 i
+  | succ m =>
+    rw [← Fin.insertNth_last']
+    exact Fin.strictMono_insertNth_last hf a (ha (Fin.last m))
+
 /-- A chart point lies in the ordered simplex exactly when its full point `w` has nonnegative
 nondecreasing coordinates. -/
 theorem mem_orderedSimplex_iff_simplexPoint {x : Fin d → ℝ} :
     x ∈ orderedSimplex d ↔ (∀ i, 0 ≤ simplexPoint x i) ∧ Monotone (simplexPoint x) := by
-  refine ⟨fun ⟨h0, hmono, hlast⟩ => ⟨fun i => ?_, fun i j hij => ?_⟩,
+  refine ⟨fun ⟨h0, hmono, hlast⟩ => ⟨fun i => ?_, monotone_snoc hmono hlast⟩,
     fun ⟨h0, hmono⟩ => ⟨fun i => by simpa using h0 i.castSucc, fun i j hij => ?_, fun i => ?_⟩⟩
   · have hpos : (0 : ℝ) < ((d : ℝ) + 1)⁻¹ := by positivity
     refine Fin.lastCases ?_ (fun i => ?_) i
     · simpa using hpos.le.trans (inv_succ_le_one_sub_sum hlast)
     · simpa using h0 i
-  · induction j using Fin.lastCases with
-    | last => induction i using Fin.lastCases with
-      | last => rfl
-      | cast i => simpa using hlast i
-    | cast j => induction i using Fin.lastCases with
-      | last => exact absurd hij (not_le.mpr (Fin.castSucc_lt_last j))
-      | cast i => simpa using hmono (Fin.castSucc_le_castSucc_iff.mp hij)
   · simpa using hmono (Fin.castSucc_le_castSucc_iff.mpr hij)
   · simpa using hmono (Fin.le_last i.castSucc)
 
@@ -256,6 +271,17 @@ theorem smul_mem_orderedCone {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d
   refine ⟨smul_ne_zero hc.ne' hy.1, fun i => mul_nonneg hc.le (hy.2.1 i),
     fun i j hij => mul_le_mul_of_nonneg_left (hy.2.2.1 hij) hc.le, ?_⟩
   simp [← Finset.mul_sum, hy.2.2.2]
+
+/-- Appending the coordinate sum of a nonzero, nonnegative, monotone vector in `ℝ^{d+1}` yields a
+point of `orderedCone d`. -/
+theorem snoc_sum_mem_orderedCone {f : Fin (d + 1) → ℝ} (hne : f ≠ 0) (h0 : ∀ i, 0 ≤ f i)
+    (hmono : Monotone f) :
+    Fin.snoc (α := fun _ => ℝ) f (∑ i, f i) ∈ orderedCone d := by
+  refine ⟨fun h => hne (funext fun i => by simpa using congrFun h i.castSucc),
+    Fin.lastCases (by simpa using Finset.sum_nonneg fun i _ => h0 i)
+      (fun i => by simpa using h0 i),
+    monotone_snoc hmono fun i => Finset.single_le_sum (fun m _ => h0 m) (Finset.mem_univ i),
+    by simp⟩
 
 /-- The normalisation `y ↦ (y₁ / y_n, …, y_d / y_n)` of the ordered cone, in chart
 coordinates. -/
@@ -431,25 +457,16 @@ private def stepConeVec (d : ℕ) (k : Fin (d + 1)) : Fin (d + 2) → ℝ :=
     (∑ i : Fin (d + 1), if k ≤ i then (1 : ℝ) else 0)
 
 private theorem stepConeVec_mem_orderedCone (d : ℕ) (k : Fin (d + 1)) :
-    stepConeVec d k ∈ orderedCone d := by
-  have h0 : ∀ m : Fin (d + 1), 0 ≤ (if k ≤ m then (1 : ℝ) else 0) :=
-    fun m => by split_ifs <;> norm_num
-  have hmono : Monotone (fun i : Fin (d + 1) => if k ≤ i then (1 : ℝ) else 0) := by
-    intro i j hij; dsimp only; split_ifs with h1 h2
-    · exact le_rfl
-    · exact absurd (h1.trans hij) h2
-    · norm_num
-    · exact le_rfl
-  refine ⟨fun h => by simpa [stepConeVec, Fin.le_last] using congrFun h (Fin.last d).castSucc,
-    Fin.lastCases (by simp [stepConeVec]) (fun j => by simpa [stepConeVec] using h0 j),
-    fun i j => Fin.lastCases
-      (Fin.lastCases (fun _ => le_rfl)
-        (fun i' _ => by
-          simpa [stepConeVec] using Finset.single_le_sum (fun m _ => h0 m) (Finset.mem_univ i'))
-        i)
-      (fun j' => Fin.lastCases (fun h => absurd h (not_le.2 (Fin.castSucc_lt_last j')))
-        (fun i' h => by simpa [stepConeVec] using hmono (Fin.castSucc_le_castSucc_iff.1 h)) i) j,
-    by simp [stepConeVec]⟩
+    stepConeVec d k ∈ orderedCone d :=
+  snoc_sum_mem_orderedCone
+    (fun h => by simpa [Fin.le_last] using congrFun h (Fin.last d))
+    (fun m => by split_ifs <;> norm_num)
+    fun i j hij => by
+      split_ifs with h1 h2
+      · exact le_rfl
+      · exact absurd (h1.trans hij) h2
+      · norm_num
+      · exact le_rfl
 
 private theorem stepConeVec_last_eq (d : ℕ) :
     (coneSpanBasis d (Fin.last d) : Fin (d + 2) → ℝ) = stepConeVec d (Fin.last d) := by
