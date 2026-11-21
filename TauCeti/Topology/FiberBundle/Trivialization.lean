@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
 # Preferred trivializations and disjoint unions of trivializations
@@ -18,11 +19,14 @@ trivialization over their union, with the same forward and inverse maps on each 
 The coordinate change between two trivializations is jointly continuous in the base point and the
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
 fibre bundle continuous.
-A map is continuous as soon as every point of the base lies in the base set of a trivialization,
-and the trivializations at the points of the base of a fibre bundle make its projection such a
-locally trivial map.
-Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
-of its base set a trivialization is an equivalence between the fibre and the model fibre.
+A map is continuous as soon as every point of the base lies in the base set of a trivialization
+(`TauCeti.continuous_of_forall_exists_trivialization`), so it packages as a morphism in `TopCat`
+(`TauCeti.locallyTrivialHom`), and the trivializations at the points of the base of a fibre bundle
+make its projection such a locally trivial map.
+Finally, the inverse of a trivialization undoes a coordinate change into it; over a point of its
+base set a trivialization is an equivalence between the fibre and the model fibre, and for a
+morphism in `TopCat` it gives an isomorphism in `TopCat` between the fibre and the model fibre
+(`Bundle.Trivialization.fiberIso`).
 When the model fibre is a point, so is every fibre, and a projection with a chosen point in each
 fibre is a bijection onto the base.
 
@@ -33,6 +37,9 @@ fibre is a bijection onto the base.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
+* `TauCeti.locallyTrivialHom`: a locally trivial map packaged as a morphism in `TopCat`.
+* `Bundle.Trivialization.fiberIso`: over a point of its base set, a trivialization of a morphism in
+  `TopCat` gives an isomorphism in `TopCat` between its fibre and the model fibre.
 * `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
   trivial.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
@@ -78,6 +85,19 @@ theorem eventually_proj_mem_baseSet_trivializationAt (v₀ : TotalSpace F E) :
 end Bundle.TotalSpace
 
 namespace Bundle.Trivialization
+
+section TopCat
+
+open CategoryTheory
+
+/-- Over a point in the base set of a trivialization `e` of a morphism in `TopCat`, the fibre
+is isomorphic in `TopCat` to the model fibre `F`. -/
+noncomputable def fiberIso {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSpace F] {p : E ⟶ B}
+    (e : Trivialization F p) {b : B} (hb : b ∈ e.baseSet) :
+    p.fiber b ≅ _root_.TopCat.of F :=
+  _root_.TopCat.isoOfHomeo (e.preimageSingletonHomeomorph hb)
+
+end TopCat
 
 variable {B F Z : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalSpace Z]
   {proj : Z → B}
@@ -162,6 +182,12 @@ theorem continuous_of_forall_exists_trivialization {B F Z : Type*} [TopologicalS
   continuous_iff_continuousAt.2 fun z ↦ by
     obtain ⟨e, he⟩ := h (p z)
     exact e.continuousAt_proj (e.mem_source.2 he)
+
+/-- A locally trivial map `p : Z → B` packaged as a morphism in `TopCat`. -/
+abbrev locallyTrivialHom {B Z : Type u} {F : Type*} [TopologicalSpace B] [TopologicalSpace F]
+    [TopologicalSpace Z] {p : Z → B} (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) :
+    _root_.TopCat.of Z ⟶ _root_.TopCat.of B :=
+  _root_.TopCat.ofHom ⟨p, continuous_of_forall_exists_trivialization h⟩
 
 end TauCeti
 

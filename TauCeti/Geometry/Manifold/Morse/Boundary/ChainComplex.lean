@@ -307,9 +307,10 @@ characteristic: it is the signed count `∑ᵢ (-1)ⁱ cᵢ` of critical points.
 theorem homologyEulerChar_morseComplex :
     (h.morseComplex hf).homologyEulerChar =
       ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount 𝓘(ℝ, E) f i).toNat := by
-  rw [← ChainComplex.eulerChar_eq_homologyEulerChar _
-      (Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
-        h.isZero_morseComplex_X_of_finrank_lt hf hn⟩),
+  rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
+      (HomologicalComplex.finite_not_isZero_X_of_eventually_isZero _
+        (Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
+          h.isZero_morseComplex_X_of_finrank_lt hf hn⟩)),
     h.eulerChar_morseComplex hf]
 
 /-- For a compact boundaryless manifold `M` of finite CW type, the Euler characteristic of the

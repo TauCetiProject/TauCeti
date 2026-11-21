@@ -163,6 +163,7 @@ theorem homologyEulerChar_cubeComplex [IsNoetherianRing R] [HasRankNullity.{v} R
     F.cubeComplex.homologyEulerChar =
       ∑ S : Finset ι, ((#S : ℤ).negOnePow : ℤ) * finrank R (F.obj S) := by
   rw [← F.eulerChar_cubeComplex,
-    CochainComplex.eulerChar_eq_homologyEulerChar _ inferInstance 0 (Fintype.card ι)]
+    HomologicalComplex.eulerChar_eq_homologyEulerChar _
+      (F.cubeComplex.finite_not_isZero_X 0 (Fintype.card ι))]
 
 end CategoryTheory.Functor

@@ -31,11 +31,13 @@ invariance of the Euler characteristic across the pages of a finitely supported 
   from `ComplexShape.EulerCharSigns.ofUp'Odd`,
   `ComplexShape.EulerCharSigns.ofSpectralSequenceNatOdd`, and
   `ComplexShape.EulerCharSigns.ofSpectralSequenceFinOdd`.
-* `CategoryTheory.SpectralSequence.eulerChar_page_add_one` and
+* `CategoryTheory.SpectralSequence.eulerChar_page_add_one`,
+  `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le_of_finite`, and
   `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le`: Euler characteristic invariance across
-  one step (needing only finitely generated terms on page `s`) and across arbitrarily many pages
-  (assuming Noetherian terms on page `r` over a ring satisfying the strong rank condition and
-  rank--nullity).
+  one step (needing only finitely generated terms on page `s`), across a finite interval
+  `r ≤ s < r'` with finitely generated terms and adjacent sign agreement, and across arbitrarily
+  many pages (assuming Noetherian terms on page `r` over a ring satisfying the strong rank
+  condition and rank--nullity).
 
 ## References
 
@@ -205,24 +207,41 @@ theorem eulerChar_page_add_one [StrongRankCondition R] [HasRankNullity.{v} R]
   exact finsum_congr fun pq ↦ by
     rw [hχ pq, (E.iso s (s + 1) pq rfl hs).toLinearEquiv.finrank_eq]
 
-/-- **Invariance of the Euler characteristic across pages of a spectral sequence.** Over a ring
-satisfying the strong rank condition and rank--nullity, if page `r` has Noetherian terms (for
-instance if `R` is a Noetherian ring and page `r` has finitely generated terms) and finitely many
-nonzero objects, and all pages carry the same alternating signs, then every later page `r' ≥ r` has
-the same Euler characteristic as page `r`. -/
-theorem eulerChar_page_eq_of_le [StrongRankCondition R] [HasRankNullity.{v} R]
+/-- **Invariance of the Euler characteristic across finitely many pages of a spectral sequence.**
+Over a ring satisfying the strong rank condition and rank--nullity, if page `r` has finitely many
+nonzero objects and every page `s` in `[r, r')` has finitely generated terms and the same
+alternating signs as page `s + 1`, then `(E.page r').eulerChar = (E.page r).eulerChar`. -/
+theorem eulerChar_page_eq_of_le_of_finite [StrongRankCondition R] [HasRankNullity.{v} R]
     [∀ s, (c s).EulerCharSigns] {r : ℤ} (hr : r₀ ≤ r)
-    [∀ pq, IsNoetherian R ((E.page r).X pq)]
     (hfin : {pq : κ | ¬ IsZero ((E.page r).X pq)}.Finite)
     (r' : ℤ) (hrr' : r ≤ r')
-    (hχ : ∀ s s' pq, (c s).χ pq = (c s').χ pq := by simp) :
+    (hmem : ∀ s (hs : r ≤ s), s < r' → ∀ pq,
+      Module.Finite R ((E.page s (hr.trans hs)).X pq))
+    (hχ : ∀ s, r ≤ s → s < r' → ∀ pq, (c s).χ pq = (c (s + 1)).χ pq := by simp) :
     (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar := by
   induction r', hrr' using Int.leInduction with
   | base => rfl
   | succ s hrs ih =>
     have : ∀ pq, Module.Finite R ((E.page s (hr.trans hrs)).X pq) :=
-      fun _ ↦ E.finite_page_X_of_le hr s hrs
+      hmem s hrs (Int.lt_succ s)
     rw [E.eulerChar_page_add_one (hr.trans hrs)
-      (E.finite_not_isZero_page_X_of_le hr hfin s hrs) (fun pq ↦ hχ s (s + 1) pq), ih]
+        (E.finite_not_isZero_page_X_of_le hr hfin s hrs) (hχ s hrs (Int.lt_succ s)),
+      ih (fun t ht hts ↦ hmem t ht (lt_trans hts (Int.lt_succ s)))
+        (fun t ht hts ↦ hχ t ht (lt_trans hts (Int.lt_succ s)))]
+
+/-- **Invariance of the Euler characteristic across pages of a spectral sequence.** Over a ring
+satisfying the strong rank condition and rank--nullity, if page `r` has Noetherian terms (for
+instance if `R` is a Noetherian ring and page `r` has finitely generated terms) and finitely many
+nonzero objects, and adjacent pages `s` and `s + 1` in `[r, r')` carry the same alternating signs,
+then `(E.page r').eulerChar = (E.page r).eulerChar`. -/
+theorem eulerChar_page_eq_of_le [StrongRankCondition R] [HasRankNullity.{v} R]
+    [∀ s, (c s).EulerCharSigns] {r : ℤ} (hr : r₀ ≤ r)
+    [∀ pq, IsNoetherian R ((E.page r).X pq)]
+    (hfin : {pq : κ | ¬ IsZero ((E.page r).X pq)}.Finite)
+    (r' : ℤ) (hrr' : r ≤ r')
+    (hχ : ∀ s, r ≤ s → s < r' → ∀ pq, (c s).χ pq = (c (s + 1)).χ pq := by simp) :
+    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar :=
+  E.eulerChar_page_eq_of_le_of_finite hr hfin r' hrr'
+    (fun s hs _ _ ↦ E.finite_page_X_of_le hr s hs) hχ
 
 end CategoryTheory.SpectralSequence

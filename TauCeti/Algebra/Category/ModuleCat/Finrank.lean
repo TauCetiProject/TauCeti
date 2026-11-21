@@ -10,10 +10,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.Finite
-import Mathlib.RingTheory.Finiteness.Prod
-import TauCeti.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
-
 import TauCeti.LinearAlgebra.Dimension.Prod
 
 /-!
@@ -26,14 +22,14 @@ has finrank one (`ModuleCat.finrank_of_self`), a zero object has finrank zero, a
 additive on biproducts of finite free modules
 (`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`).
 
-Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
-commutative domain, finrank is moreover additive on every short exact sequence whose middle term is
-finitely generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`), hence on
-binary biproducts (`ModuleCat.finrank_biprod_of_hasRankNullity`), finite biproducts
-(`ModuleCat.finrank_biproduct`), and finite coproducts (`ModuleCat.finrank_sigma`) of finitely
-generated modules. Unlike Mathlib's `ModuleCat.free_shortExact_finrank_add` and
-`Module.finrank_directSum`, no freeness is assumed, so this covers biproducts, coproducts, and
-sequences of finitely generated abelian groups with torsion.
+Over a ring satisfying the strong rank condition (`StrongRankCondition`) and the rank--nullity
+theorem (`HasRankNullity`), such as a division ring or a commutative domain, finrank is moreover
+additive on every short exact sequence whose middle term is finitely generated
+(`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`), hence on binary biproducts
+(`ModuleCat.finrank_biprod_of_hasRankNullity`), finite biproducts (`ModuleCat.finrank_biproduct`),
+and finite coproducts (`ModuleCat.finrank_sigma`) of finitely generated modules. Unlike Mathlib's
+`ModuleCat.free_shortExact_finrank_add` and `Module.finrank_directSum`, no freeness is assumed, so
+this covers biproducts, coproducts, and sequences of finitely generated abelian groups with torsion.
 
 The first translation is what bounds the `Module.finrank` support of a bounded complex of vector
 spaces by its bounding interval, which is in turn what makes Mathlib's `finsum`-based Euler
@@ -92,8 +88,8 @@ namespace CategoryTheory.ShortComplex.ShortExact
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 
-/-- Over a ring with the rank-nullity property, finrank is additive on a short exact sequence of
-modules whose middle term is finitely generated. -/
+/-- Over a ring with the strong rank condition and the rank--nullity property, finrank is additive
+on a short exact sequence of modules whose middle term is finitely generated. -/
 theorem moduleCat_finrank_eq_add {S : ShortComplex (ModuleCat.{v} R)} (hS : S.ShortExact)
     [Module.Finite R S.X₂] :
     Module.finrank R S.X₂ = Module.finrank R S.X₁ + Module.finrank R S.X₃ := by
@@ -115,9 +111,8 @@ variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 biproduct of finitely generated modules is the sum of their finranks, without assuming freeness. -/
 theorem finrank_biprod_of_hasRankNullity (M N : ModuleCat.{v} R)
     [Module.Finite R M] [Module.Finite R N] :
-    Module.finrank R ↑(M ⊞ N) = Module.finrank R M + Module.finrank R N := by
-  have : Module.Finite R ↑(M ⊞ N) := Module.Finite.equiv (biprodIsoProd M N).symm.toLinearEquiv
-  exact (ShortComplex.Splitting.ofHasBinaryBiproduct M N).shortExact.moduleCat_finrank_eq_add
+    Module.finrank R ↑(M ⊞ N) = Module.finrank R M + Module.finrank R N :=
+  (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans Module.finrank_prod_of_hasRankNullity
 
 /-- Over a ring satisfying the strong rank condition and the rank-nullity property
 (`HasRankNullity`), such as a division ring or a commutative domain, the finrank of a finite
@@ -127,23 +122,12 @@ groups with torsion. -/
 theorem finrank_biproduct {ι : Type*} [Fintype ι] (V : ι → ModuleCat.{v} R)
     [∀ i, Module.Finite R (V i)] :
     Module.finrank R (⨁ V : ModuleCat.{v} R) = ∑ i, Module.finrank R (V i) := by
-  refine Fintype.induction_empty_option
-    (P := fun α [Fintype α] ↦ ∀ (W : α → ModuleCat.{v} R) [∀ i, Module.Finite R (W i)],
-      Module.finrank R (⨁ W : ModuleCat.{v} R) = ∑ i, Module.finrank R (W i))
-    ?_ ?_ ?_ ι V
-  · intro α β _ e ih W _
-    let _ : Fintype α := Fintype.ofEquiv β e.symm
-    have hsum := Equiv.sum_comp e (fun i ↦ Module.finrank R (W i))
-    rw [((biproduct.whiskerEquiv e fun _ ↦ Iso.refl _).symm).toLinearEquiv.finrank_eq,
-      ih (fun a ↦ W (e a)), hsum]
-  · intro W _
-    have := subsingleton_of_isZero (TauCeti.isZero_biproduct_of_isEmpty W)
-    simp [Module.finrank_zero_of_subsingleton]
-  · intro α _ ih W _
-    have : Module.Finite R (⨁ fun j ↦ W (some j) : ModuleCat.{v} R) :=
-      finite_biproduct (fun j ↦ W (some j))
-    rw [(TauCeti.biproductOptionIso W).toLinearEquiv.finrank_eq,
-      finrank_biprod_of_hasRankNullity, ih (fun j ↦ W (some j)), Fintype.sum_option]
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  have : ∀ j, Module.Finite R (V (e j)) := fun j ↦ inferInstance
+  rw [((biproduct.whiskerEquiv e fun _ ↦ Iso.refl _).symm ≪≫
+        biproductIsoPi (fun j : Fin (Fintype.card ι) ↦ V (e j))).toLinearEquiv.finrank_eq,
+    Module.finrank_pi_fintype_of_hasRankNullity]
+  exact Fintype.sum_equiv e _ _ fun _ ↦ rfl
 
 /-- Over a ring with the strong rank condition and rank-nullity, the finrank of a finite coproduct
 of finitely generated modules is the sum of their finranks (without assuming freeness). -/

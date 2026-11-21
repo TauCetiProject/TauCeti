@@ -182,12 +182,12 @@ of enhanced states of quantum degree `j`. -/
 theorem homologyEulerChar_khovanovComplex (j : ℤ) :
     (D.khovanovComplex hD R j).homologyEulerChar = D.enhancedStateSum.coeff j := by
   rw [coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket D hD R,
-    ← CochainComplex.eulerChar_eq_homologyEulerChar (D.toPDCode.khovanovBracket hD R _)
-      (fun _ ↦ inferInstance) 0 n,
+    ← HomologicalComplex.eulerChar_eq_homologyEulerChar (D.toPDCode.khovanovBracket hD R _)
+      ((D.toPDCode.khovanovBracket hD R _).finite_not_isZero_X 0 n),
     ← eulerChar_khovanovComplex,
-    CochainComplex.eulerChar_eq_homologyEulerChar _
-      (fun _ ↦ inferInstance)
-      (-D.negativeCrossingCount) D.positiveCrossingCount]
+    HomologicalComplex.eulerChar_eq_homologyEulerChar _
+      ((D.khovanovComplex hD R j).finite_not_isZero_X
+        (-D.negativeCrossingCount) D.positiveCrossingCount)]
 
 /-- **The graded Euler characteristic of Khovanov homology is the enhanced state sum**, over a
 Noetherian ring with the rank-nullity property, such as `ℤ` or a field. -/

@@ -246,12 +246,9 @@ theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
   have (i : ℕ) : Module.Finite k ((cellularChainComplex C M).X i) :=
     have := FiniteType.finite_cell (C := C) (D := D) i
     finite_cellularChainComplex_X C M i
-  have hsupp : {i : ℕ | ¬ IsZero ((cellularChainComplex C M).X i)}.Finite := by
-    obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (eventually_isZero_cellularChainGroup C M)
-    exact (Finset.range N).finite_toSet.subset fun i hi ↦ by
-      by_contra h
-      exact hi (by rw [cellularChainComplex_X]; exact hN i (by simpa using h))
-  rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar (cellularChainComplex C M) hsupp,
+  rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar (cellularChainComplex C M)
+      (HomologicalComplex.finite_not_isZero_X_of_eventually_isZero _
+        (by simpa [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M)),
     eulerChar_cellularChainComplex_of_finiteType]
 
 end RankNullity

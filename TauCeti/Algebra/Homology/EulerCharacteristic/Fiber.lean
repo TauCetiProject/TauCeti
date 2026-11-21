@@ -59,10 +59,11 @@ theorem homologyEulerChar_fiber_eq_sum_finrank (p : PrimeSpectrum R) :
           finrank p.asIdeal.ResidueField (p.asIdeal.Fiber (K.X i)) := by
   let F := ModuleCat.extendScalars (algebraMap R p.asIdeal.ResidueField)
   let L := (F.mapHomologicalComplex (ComplexShape.up ℤ)).obj K
-  have hfin (i : ℤ) : Module.Finite p.asIdeal.ResidueField (L.X i) := by
+  have (i : ℤ) : Module.Finite p.asIdeal.ResidueField (L.X i) := by
     have := hK i
     exact Module.Finite.equiv (ModuleCat.extendScalarsAlgebraMapIso (K.X i)).toLinearEquiv.symm
-  rw [← CochainComplex.eulerChar_eq_homologyEulerChar L hfin a b,
+  rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar L
+      (CochainComplex.finite_not_isZero_X L a b),
     HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset L (Finset.Icc a b)
       (HomologicalComplex.finrankSupport_X_subset_Icc L a b)]
   apply Finset.sum_congr rfl

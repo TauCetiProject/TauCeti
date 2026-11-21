@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Finrank
 public import TauCeti.Algebra.Category.FGModuleCat.Homology
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Basic
+public import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
 
@@ -19,8 +20,12 @@ Mathlib defines the Euler characteristic of a homological complex using `finsum`
 is intentionally total: it returns zero when the summand has infinite support, and `finrank`
 itself is the natural-number conversion of `Module.rank`, so it returns zero for modules of
 infinite rank.  This file identifies those totalized definitions with honest finite sums for
-bounded cochain complexes of finitely generated modules, and proves that the term and homology
-Euler characteristics agree.
+bounded cochain complexes of finitely generated modules in `FGModuleCat R`, and proves that the
+term and homology Euler characteristics agree
+(`HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`).
+For complexes in `ModuleCat R` with finitely generated terms, the same identity is given directly
+by `HomologicalComplex.eulerChar_eq_homologyEulerChar` together with
+`CochainComplex.finite_not_isZero_X`.
 
 The coefficient ring `R` is Noetherian and satisfies the rank-nullity theorem (`HasRankNullity`).
 This covers division rings, where finrank is dimension, and Noetherian commutative domains such as
@@ -28,12 +33,11 @@ This covers division rings, where finrank is dimension, and Noetherian commutati
 torsion in the terms or in the homology contributes nothing.  Noetherianity keeps the homology
 finitely generated, and rank-nullity makes finrank additive on short exact sequences.
 
-Finite generation is encoded either by taking the original complex in `FGModuleCat R`, with the
+Finite generation is encoded by taking the original complex in `FGModuleCat R`, with the
 characteristics evaluated after applying the forgetful functor to `ModuleCat R` as required by
-Mathlib's definitions, or by an explicit hypothesis on the terms of a complex in `ModuleCat R`.
-Finite generation ensures that every term and every homology object has finite rank, without
-requiring freeness, and boundedness is retained as explicit lower and upper bounds.  Thus neither
-possible junk value is used in the Euler--Poincaré identity.
+Mathlib's definitions. Finite generation ensures that every term and every homology object has
+finite rank, without requiring freeness, and boundedness is retained as explicit lower and upper
+bounds.  Thus neither possible junk value is used in the Euler--Poincaré identity.
 
 ## Main results
 
@@ -43,8 +47,6 @@ possible junk value is used in the Euler--Poincaré identity.
   characteristic is the corresponding finite sum of the homology finranks in `FGModuleCat R`.
 * `HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`: the Euler--Poincaré identity for a
   bounded complex in `FGModuleCat R`, in Mathlib's Euler-characteristic API.
-* `CochainComplex.eulerChar_eq_homologyEulerChar`: the same identity for a bounded complex in
-  `ModuleCat R` whose terms are finitely generated.
 
 ## References
 
@@ -171,29 +173,3 @@ theorem eulerChar_forgetFG_eq_homologyEulerChar [HasRankNullity.{v} R] (a b : �
   simpa only [TauCeti.AbelianK0.AdditiveInvariant.finrank_obj, smul_eq_mul] using h
 
 end HomologicalComplex
-
-namespace CochainComplex
-
-variable {R : Type u} [Ring R] [IsNoetherianRing R] [HasRankNullity.{v} R]
-
-/-- **Euler--Poincaré for a bounded cochain complex of finitely generated modules.**  Over a
-Noetherian ring with the rank-nullity property, such as `ℤ`, a strictly bounded cochain complex in
-`ModuleCat R` whose terms are finitely generated has the same Euler characteristic as its
-homology. -/
-theorem eulerChar_eq_homologyEulerChar (K : CochainComplex (ModuleCat.{v} R) ℤ)
-    (hK : ∀ n, Module.Finite R (K.X n)) (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
-    K.eulerChar = K.homologyEulerChar := by
-  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
-  -- Lift `K` to `FGModuleCat R`; forgetting the lift gives back `K` up to isomorphism.
-  let L : CochainComplex (FGModuleCat.{v} R) ℤ :=
-    K.liftObjectProperty (ModuleCat.isFG R) fun n ↦ (ModuleCat.isFG_iff _).2 (hK n)
-  let e : (F.mapHomologicalComplex _).obj L ≅ K := K.liftFGModuleCatIso hK
-  have : L.IsStrictlyGE a :=
-    (isStrictlyGE_mapHomologicalComplex_obj_iff L F a).1 (isStrictlyGE_of_iso e.symm a)
-  have : L.IsStrictlyLE b :=
-    (isStrictlyLE_mapHomologicalComplex_obj_iff L F b).1 (isStrictlyLE_of_iso e.symm b)
-  rw [← HomologicalComplex.eulerChar_eq_of_iso e,
-    ← HomologicalComplex.homologyEulerChar_eq_of_iso e]
-  exact L.eulerChar_forgetFG_eq_homologyEulerChar a b
-
-end CochainComplex

@@ -11,10 +11,10 @@ public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 /-!
 # Multiplicativity of the Euler characteristic in fibre bundles
 
-Every locally trivial map `p : E → B` with model fibre `F` is continuous
-(`TauCeti.continuous_of_forall_exists_trivialization`), is a Serre fibration
-(`TauCeti.TopCat.mem_serreFibrations_of_exists_trivialization`), and has every fibre `p ⁻¹' {b}`
-homeomorphic to `F` (`Bundle.Trivialization.preimageSingletonHomeomorph`). Applying the Serre
+Every locally trivial map `p : E → B` with model fibre `F` packages as a morphism in `TopCat`
+(`TauCeti.locallyTrivialHom`), is a Serre fibration
+(`TauCeti.TopCat.mem_serreFibrations_of_exists_trivialization`), and over each `b` has fibre
+isomorphic in `TopCat` to `F` (`Bundle.Trivialization.fiberIso`). Applying the Serre
 spectral sequence finiteness and Euler characteristic theorems of
 `TauCeti.AlgebraicTopology.Singular.Fibration.EulerCharacteristic` therefore gives, over any
 (possibly disconnected and non-paracompact) base `B` of finite CW type:
@@ -71,28 +71,6 @@ variable {E B F : Type u} [TopologicalSpace E] [TopologicalSpace B] [Topological
 
 include h
 
-/-- A locally trivial map `p : E → B` packaged as a morphism in `TopCat`. -/
-private abbrev locallyTrivialHom : TopCat.of E ⟶ TopCat.of B :=
-  TopCat.ofHom ⟨p, continuous_of_forall_exists_trivialization h⟩
-
-private lemma mem_serreFibrations_locallyTrivialHom :
-    TopCat.serreFibrations (locallyTrivialHom h) :=
-  TopCat.mem_serreFibrations_of_exists_trivialization h
-
-/-- Every fibre of a locally trivial map with model fibre `F` is isomorphic in `TopCat` to `F`. -/
-private def locallyTrivialFiberIso (b : B) :
-    (locallyTrivialHom h).fiber b ≅ TopCat.of F :=
-  TopCat.isoOfHomeo ((h b).choose.preimageSingletonHomeomorph (h b).choose_spec)
-
-/-- Every fibre of a locally trivial map with model fibre `F` is singular-homologically isomorphic
-to `F` in every degree. -/
-private def locallyTrivialFiberSingularHomologyIso (R : Type u) [Ring R] (b : B) (q : ℕ) :
-    (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
-        ((locallyTrivialHom h).fiber b)) ≅
-      (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (TopCat.of F)) :=
-  ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-    (locallyTrivialFiberIso h b)
-
 variable [FiniteCWType B]
 
 /-- If `p : E → B` is locally trivial with model fibre `F` over a space `B` of finite CW type and
@@ -106,8 +84,10 @@ theorem eventually_isZero_singularHomology_of_exists_trivialization_of_eventuall
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj
         (TopCat.of E)) :=
   TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall
-    (mem_serreFibrations_locallyTrivialHom h) R fun b ↦
-      hF.mono fun q hq ↦ hq.of_iso (locallyTrivialFiberSingularHomologyIso h R b q)
+    (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R fun b ↦
+      hF.mono fun q hq ↦ hq.of_iso <|
+        ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
+          ((h b).choose.fiberIso (p := locallyTrivialHom h) (h b).choose_spec)
 
 /-- Over a Noetherian ring `R`, if `p : E → B` is locally trivial with model fibre `F` over a space
 `B` of finite CW type and `H_q(F; R)` is finitely generated in all degrees `q ≤ n`, then
@@ -119,9 +99,13 @@ theorem finite_singularHomology_of_exists_trivialization_of_finite
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj (TopCat.of E)) :=
   TopCat.finite_singularHomology_of_mem_serreFibrations_of_forall
-    (mem_serreFibrations_locallyTrivialHom h) R n fun b q hq ↦
+    (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R n
+    fun b q hq ↦
       have := hF q hq
-      Module.Finite.equiv (locallyTrivialFiberSingularHomologyIso h R b q).symm.toLinearEquiv
+      Module.Finite.equiv
+        (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
+          ((h b).choose.fiberIso
+            (p := locallyTrivialHom h) (h b).choose_spec)).symm.toLinearEquiv
 
 /-- Over a Noetherian ring `R` satisfying rank--nullity (such as a division ring or a Noetherian
 commutative domain), if `p : E → B` is locally trivial with model fibre `F` over a space `B` of
@@ -141,14 +125,21 @@ theorem finsum_finrank_singularHomology_of_exists_trivialization_of_finite
         (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
           (TopCat.of F)) : ℤ) :=
   TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall
-    (mem_serreFibrations_locallyTrivialHom h) R
+    (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R
     (fun b q ↦
       have := hfin q
-      Module.Finite.equiv (locallyTrivialFiberSingularHomologyIso h R b q).symm.toLinearEquiv)
+      Module.Finite.equiv
+        (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
+          ((h b).choose.fiberIso
+            (p := locallyTrivialHom h) (h b).choose_spec)).symm.toLinearEquiv)
     (fun b ↦ hvanish.mono fun q hq ↦
-      hq.of_iso (locallyTrivialFiberSingularHomologyIso h R b q))
+      hq.of_iso <|
+        ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
+          ((h b).choose.fiberIso (p := locallyTrivialHom h) (h b).choose_spec))
     (fun b ↦ finsum_congr fun q ↦ by
-      rw [(locallyTrivialFiberSingularHomologyIso h R b q).toLinearEquiv.finrank_eq])
+      rw [(((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
+        ((h b).choose.fiberIso
+          (p := locallyTrivialHom h) (h b).choose_spec)).toLinearEquiv.finrank_eq])
 
 /-- If `p : E → B` is locally trivial with model fibre `F` and both `B` and `F` have finite CW type,
 then `H_n(E; R)` vanishes in all large degrees over any ring `R`. -/

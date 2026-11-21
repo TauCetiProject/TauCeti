@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -30,14 +30,12 @@ dimensions of the terms and of the homology agree up to degree `n`
 (`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology`).  The terms in degrees above
 `n + 1` play no role.
 
-For a complex of finite-dimensional vector spaces that vanishes in all large degrees this is the
-equality of Mathlib's term and homology Euler characteristics
-(`ChainComplex.eulerChar_eq_homologyEulerChar`).  Both sides are `finsum`s, and the vanishing
-hypothesis is what makes them honest finite sums.  The same equality for bounded cochain
-complexes indexed by `ℤ` with terms in `FGModuleCat k` is
-`HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`; here the complex stays in
-`ModuleCat k` with the homological indexing by `ℕ`, and finite-dimensionality of its terms is a
-hypothesis.
+For a complex whose terms vanish in all large degrees, combining
+`HomologicalComplex.finite_not_isZero_X_of_eventually_isZero` with
+`HomologicalComplex.eulerChar_eq_homologyEulerChar` gives the equality of Mathlib's term and
+homology Euler characteristics directly over any ring satisfying the strong rank condition and
+rank--nullity. The same equality for bounded cochain complexes indexed by `ℤ` with terms in
+`FGModuleCat k` is `HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`.
 
 The telescoping rests on the description of the homology of one short complex `X₁ ⟶ X₂ ⟶ X₃` of
 modules as the kernel of the second map modulo the range of the first: over a division ring its
@@ -141,25 +139,5 @@ theorem sum_range_finrank_X_eq_sum_range_finrank_homology {n : ℕ}
   rw [K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite, hn, ModuleCat.hom_zero,
     LinearMap.range_zero, finrank_bot]
   simp
-
-/-- **Euler--Poincaré for a bounded chain complex of vector spaces.**  For a chain complex of
-finite-dimensional vector spaces indexed by `ℕ` whose terms vanish in all large degrees, Mathlib's
-Euler characteristic of the terms equals that of the homology. -/
-theorem eulerChar_eq_homologyEulerChar [∀ n, Module.Finite k (K.X n)]
-    (hK : ∀ᶠ n in Filter.atTop, IsZero (K.X n)) :
-    K.eulerChar = K.homologyEulerChar := by
-  obtain ⟨n, hn⟩ := Filter.eventually_atTop.1 hK
-  have hX : ∀ i ∉ Finset.range (n + 1), IsZero (K.X i) := fun i hi ↦
-    hn i (by simp at hi; omega)
-  rw [HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset K (Finset.range (n + 1))
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        ModuleCat.finrank_eq_zero_of_isZero (hX i hi)),
-    HomologicalComplex.homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset K
-      (Finset.range (n + 1))
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        ModuleCat.finrank_eq_zero_of_isZero
-          (((K.exactAt_iff i).2 (ShortComplex.exact_of_isZero_X₂ _ (hX i hi))).isZero_homology))]
-  simpa using K.sum_range_finrank_X_eq_sum_range_finrank_homology
-    (fun _ _ ↦ inferInstance) ((hX (n + 1) (by simp)).eq_of_src _ 0)
 
 end ChainComplex

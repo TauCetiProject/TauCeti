@@ -22,9 +22,10 @@ alternating sums of the dimensions of relative singular homology add up in the s
 ```
 
 For an absolute finite CW complex `C` this reads `χ(C) = χ(E) + χ(C, E)`, where `χ(C, E)` is the
-alternating sum of the dimensions of `Hᵢ(C, E; k)` over a division ring `k`. Along a finite
-filtration `E₀ ≤ E₁ ≤ ⋯ ≤ Eₘ` of `C` by subcomplexes, the Euler characteristic of `Eₘ` is that of
-`E₀` plus the sum of the relative Euler characteristics of the strata `(Eⱼ₊₁, Eⱼ)`.
+alternating sum of the finranks of `Hᵢ(C, E; k)` over a ring `k` satisfying the strong rank
+condition and rank--nullity. Along a finite filtration `E₀ ≤ E₁ ≤ ⋯ ≤ Eₘ` of `C` by
+subcomplexes, the Euler characteristic of `Eₘ` is that of `E₀` plus the sum of the relative Euler
+characteristics of the strata `(Eⱼ₊₁, Eⱼ)`.
 
 ## Main results
 
@@ -33,7 +34,7 @@ filtration `E₀ ≤ E₁ ≤ ⋯ ≤ Eₘ` of `C` by subcomplexes, the Euler ch
 * `TauCeti.finsum_finrank_singularHomology_subcomplexPair`: **relative Euler--Poincaré** for the
   pair `(C, E)`.
 * `TauCeti.finsum_finrank_singularHomology_eq_add_subcomplexPair`: `χ(C, D) = χ(E, D) + χ(C, E)`
-  for relative singular homology with finite-dimensional coefficients.
+  for relative singular homology with finitely generated coefficients.
 * `TauCeti.eulerChar_eq_add_finsum_finrank_singularHomology`: `χ(C) = χ(E) + χ(C, E)` for a finite
   CW complex `C`.
 * `TauCeti.eulerChar_eq_add_sum_finsum_finrank_singularHomology`: additivity along a finite
@@ -51,7 +52,7 @@ noncomputable section
 
 open CategoryTheory Module Topology Topology.RelCWComplex AlgebraicTopology
 
-universe w
+universe u w
 
 namespace TauCeti
 
@@ -83,10 +84,11 @@ theorem cwEulerChar_eq_add_finsum_card_compl [RelCWComplex.Finite C] (E : Subcom
   rw [← mul_add, Subcomplex.cell_def, Nat.card_coe_set_eq, Nat.card_coe_set_eq,
     ← Nat.cast_add, Set.ncard_add_ncard_compl]
 
-variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
+variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{w} k]
+  (M : ModuleCat.{w} k) [Module.Finite k M]
 
 /-- **Relative Euler--Poincaré for a subcomplex.** For a subcomplex `E` of a finite relative CW
-complex `C`, the alternating sum of the dimensions of `Hᵢ(C, E; M)` is `dim M` times the
+complex `C`, the alternating sum of the finranks of `Hᵢ(C, E; M)` is `finrank k M` times the
 alternating count of the cells of `C` not in `E`. -/
 theorem finsum_finrank_singularHomology_subcomplexPair [RelCWComplex.Finite C]
     (E : Subcomplex C) :
@@ -101,8 +103,8 @@ theorem finsum_finrank_singularHomology_subcomplexPair [RelCWComplex.Finite C]
   simpa only [Nat.card_congr (E.relCWComplexCellEquiv _)] using this
 
 /-- **Additivity of the Euler characteristic along a subcomplex.** For a subcomplex `E` of a
-finite relative CW complex `(C, D)` and finite-dimensional coefficients `M`, the alternating sum
-of the dimensions of relative singular homology satisfies `χ(C, D) = χ(E, D) + χ(C, E)`. -/
+finite relative CW complex `(C, D)` and finitely generated coefficients `M`, the alternating sum
+of the finranks of relative singular homology satisfies `χ(C, D) = χ(E, D) + χ(C, E)`. -/
 theorem finsum_finrank_singularHomology_eq_add_subcomplexPair [RelCWComplex.Finite C]
     (E : Subcomplex C) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
@@ -125,11 +127,12 @@ end Relative
 section Absolute
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
-  [RelCWComplex.Finite C] (k : Type w) [DivisionRing k]
+  [RelCWComplex.Finite C] (k : Type w) [Ring k] [StrongRankCondition k] [HasRankNullity.{w} k]
 
 /-- **Additivity of the Euler characteristic along a subcomplex.** For a subcomplex `E` of a
 finite CW complex `C`, `χ(C) = χ(E) + χ(C, E)`, where the relative Euler characteristic `χ(C, E)`
-is the alternating sum of the dimensions of `Hᵢ(C, E; k)` over any division ring `k`. -/
+is the alternating sum of the finranks of `Hᵢ(C, E; k)` over any ring `k` satisfying the strong
+rank condition and rank--nullity. -/
 theorem eulerChar_eq_add_finsum_finrank_singularHomology (E : Subcomplex C) :
     eulerChar C = eulerChar (E : Set X) + ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
       ((TopPair.ofInclusion (X := TopCat.of X) E.subset_complex).singularHomology
@@ -142,7 +145,8 @@ theorem eulerChar_eq_add_finsum_finrank_singularHomology (E : Subcomplex C) :
 /-- **Additivity of the Euler characteristic along a filtration by subcomplexes.** For a finite
 filtration `E₀ ≤ E₁ ≤ ⋯ ≤ Eₘ` by subcomplexes of a finite CW complex, the Euler characteristic
 of `Eₘ` is that of `E₀` plus the relative Euler characteristics `χ(Eⱼ₊₁, Eⱼ)` of the strata,
-computed by singular homology over any division ring `k`. -/
+computed by singular homology over any ring `k` satisfying the strong rank condition and
+rank--nullity. -/
 theorem eulerChar_eq_add_sum_finsum_finrank_singularHomology {E : ℕ → Subcomplex C} {m : ℕ}
     (hE : ∀ j < m, E j ≤ E (j + 1)) :
     eulerChar (E m : Set X) = eulerChar (E 0 : Set X) +

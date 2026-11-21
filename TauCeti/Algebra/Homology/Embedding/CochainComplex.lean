@@ -26,6 +26,7 @@ bound of `K`.
 ## Main results
 
 * `CochainComplex.isZero_X_of_notMem_Icc`: the terms vanish outside the bounding interval.
+* `CochainComplex.finite_not_isZero_X`: a strictly bounded cochain complex has finite support.
 * `CochainComplex.isZero_homology_of_notMem_Icc`: the cohomology vanishes outside the
   bounding interval.
 * `CochainComplex.isStrictlyLE_truncGE`: the truncation `K.truncGE a` is strictly bounded above
@@ -47,6 +48,13 @@ theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStric
     [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.X n) := by
   obtain h | h : n < a ∨ b < n := by simp only [Finset.mem_Icc] at hn; omega
   exacts [K.isZero_of_isStrictlyGE a n h, K.isZero_of_isStrictlyLE b n h]
+
+/-- A strictly bounded cochain complex is nonzero at only finitely many indices. -/
+theorem finite_not_isZero_X (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
+    [K.IsStrictlyLE b] : {n : ℤ | ¬ IsZero (K.X n)}.Finite :=
+  (Finset.Icc a b).finite_toSet.subset fun _ hn ↦ by
+    by_contra h
+    exact hn (K.isZero_X_of_notMem_Icc a b (by simpa using h))
 
 /-- The homology of a cochain complex is zero outside any interval supplied by its cohomological
 bounds. -/
