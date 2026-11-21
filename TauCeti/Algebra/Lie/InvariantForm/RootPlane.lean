@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.NormalForm
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.QuarterTurn
@@ -134,14 +135,8 @@ private theorem exists_isInternal_rootPlaneFamily (hB : B.IsSymm)
   · rw [Function.comp_apply, Function.comp_apply, ← hρ, (hact k H).1, map_smul]
   · rw [Function.comp_apply, Function.comp_apply, ← hρ, (hact k H).2, map_smul, neg_smul]
   · -- The direct sum decomposition is transported from the normal form.
-    have hG := isInternal_planeDecomposition hon
-    rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at hG ⊢
-    have hFG : rootPlaneFamily t (e ∘ q) (e ∘ p) =
-        fun o ↦ Submodule.orderIsoMapComap e (planeDecomposition q p o) :=
-      funext fun o ↦ by rw [Submodule.orderIsoMapComap_apply, hGE]
-    rw [hFG]
-    exact ⟨(iSupIndep_map_orderIso_iff _).2 hG.1, by
-      rw [← OrderIso.map_iSup, hG.2, OrderIso.map_top]⟩
+    rw [← funext hGE]
+    exact (isInternal_planeDecomposition hon).map_linearEquiv e
   · -- Vectors in distinct summands are `B`-orthogonal.
     rw [← hGE, Submodule.mem_map_equiv] at hv hw
     rw [← e.apply_symm_apply v, ← e.apply_symm_apply w, he]
