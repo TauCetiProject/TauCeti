@@ -20,8 +20,6 @@ commuting pairs correspond across `Multiplicative.ofAdd`, `Multiplicative.toAdd`
   is additive commutation in `α`.
 * `TauCeti.addCommute_ofMul_iff`, `TauCeti.commute_toMul_iff`: additive commutation in `Additive α`
   is commutation in `α`.
-* `AddCommute.ofAdd`, `Commute.toAdd`, `Commute.ofMul`, `AddCommute.toMul`: dot-notation
-  transport of commutation witnesses across the type tags.
 -/
 
 public section
@@ -53,31 +51,3 @@ theorem commute_toMul_iff {α : Type*} [Mul α] {a b : Additive α} :
   rw [← addCommute_ofMul_iff, ofMul_toMul, ofMul_toMul]
 
 end TauCeti
-
-namespace AddCommute
-
-/-- `Multiplicative.ofAdd` sends additively commuting elements to commuting elements. -/
-theorem ofAdd {α : Type*} [Add α] {a b : α} (h : AddCommute a b) :
-    Commute (Multiplicative.ofAdd a) (Multiplicative.ofAdd b) :=
-  TauCeti.commute_ofAdd_iff.2 h
-
-/-- `Additive.toMul` sends additively commuting elements to commuting elements. -/
-theorem toMul {α : Type*} [Mul α] {a b : Additive α} (h : AddCommute a b) :
-    Commute a.toMul b.toMul :=
-  TauCeti.commute_toMul_iff.2 h
-
-end AddCommute
-
-namespace Commute
-
-/-- `Additive.ofMul` sends commuting elements to additively commuting elements. -/
-theorem ofMul {α : Type*} [Mul α] {a b : α} (h : Commute a b) :
-    AddCommute (Additive.ofMul a) (Additive.ofMul b) :=
-  TauCeti.addCommute_ofMul_iff.2 h
-
-/-- `Multiplicative.toAdd` sends commuting elements to additively commuting elements. -/
-theorem toAdd {α : Type*} [Add α] {a b : Multiplicative α} (h : Commute a b) :
-    AddCommute a.toAdd b.toAdd :=
-  TauCeti.addCommute_toAdd_iff.2 h
-
-end Commute

@@ -118,15 +118,6 @@ theorem zpowersPiHom_apply_eq_prod {G : Type*} [CommGroup G] (τ : ι → G)
   -- family `ι → Multiplicative ℤ`, so apply it directly.
   (MonoidHom.noncommPiCoprod_mulSingle _ i _).trans (by simp)
 
-/-- Uniqueness in the universal property of `zpowersPiHom`: a homomorphism out of
-`ι → Multiplicative ℤ` equals `zpowersPiHom τ hτ` if and only if it sends the `i`-th standard
-generator to `τ i` for every `i`. -/
-theorem eq_zpowersPiHom_iff [DecidableEq ι] {τ : ι → K} {hτ : ∀ i j, Commute (τ i) (τ j)}
-    {f : (ι → Multiplicative ℤ) →* K} :
-    f = zpowersPiHom τ hτ ↔ ∀ i, f (Pi.mulSingle i (ofAdd 1)) = τ i :=
-  ⟨fun hf i => hf ▸ zpowersPiHom_mulSingle τ hτ i,
-    fun hf => MonoidHom.pi_ext_mint fun i => (hf i).trans (zpowersPiHom_mulSingle τ hτ i).symm⟩
-
 /-- Postcomposing `zpowersPiHom` with a group homomorphism `f` yields `zpowersPiHom` for
 `f ∘ τ`. -/
 theorem _root_.MonoidHom.comp_zpowersPiHom {L : Type*} [Group L] (f : K →* L) (τ : ι → K)
@@ -243,16 +234,6 @@ theorem zmultiplesPiHom_apply_eq_sum {B : Type*} [AddCommGroup B] (τ : ι → B
   -- `simp` does not unify the `ι`-indexed family of `noncommPiCoprod_single` with the constant
   -- family `ι → ℤ`, so apply it directly.
   (AddMonoidHom.noncommPiCoprod_single _ i _).trans (by simp)
-
-/-- Uniqueness in the universal property of `zmultiplesPiHom`: an additive homomorphism out of
-`ι → ℤ` equals `zmultiplesPiHom τ hτ` if and only if it sends `Pi.single i 1` to `τ i` for every
-`i`. -/
-theorem eq_zmultiplesPiHom_iff [DecidableEq ι] {τ : ι → A}
-    {hτ : ∀ i j, AddCommute (τ i) (τ j)} {f : (ι → ℤ) →+ A} :
-    f = zmultiplesPiHom τ hτ ↔ ∀ i, f (Pi.single i 1) = τ i :=
-  ⟨fun hf i => hf ▸ zmultiplesPiHom_single τ hτ i,
-    fun hf => AddMonoidHom.pi_ext_int fun i =>
-      (hf i).trans (zmultiplesPiHom_single τ hτ i).symm⟩
 
 /-- Postcomposing `zmultiplesPiHom` with an additive group homomorphism `f` yields
 `zmultiplesPiHom` for `f ∘ τ`. -/

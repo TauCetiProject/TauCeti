@@ -41,7 +41,9 @@ namespace TauCeti
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- On a discrete group the UCB subalgebra is the entire bounded-function algebra. -/
-@[simp]
+@[to_additive (attr := simp) addUcb_eq_top
+  /-- On a discrete additive group the `addUcb` subalgebra is the entire bounded-function
+  algebra. -/]
 theorem ucb_eq_top : ucb G = ⊤ := by
   ext f
   simp [mem_ucb_iff, nhds_discrete]
@@ -50,14 +52,17 @@ namespace UCB
 
 variable (G) in
 /-- The canonical algebra equivalence from UCB to all bounded functions on a discrete group. -/
+@[to_additive
+  /-- The canonical algebra equivalence from `AddUCB A` to all bounded functions on a discrete
+  additive group. -/]
 def discreteAlgEquiv : UCB G ≃ₐ[ℝ] (G →ᵇ ℝ) :=
   (Subalgebra.equivOfEq _ _ ucb_eq_top).trans Subalgebra.topEquiv
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem discreteAlgEquiv_apply (f : UCB G) : discreteAlgEquiv G f = (f : G →ᵇ ℝ) :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
     ((discreteAlgEquiv G).symm f : G →ᵇ ℝ) = f :=
   (discreteAlgEquiv G).apply_symm_apply f
@@ -79,23 +84,26 @@ theorem discreteAlgEquiv_symm_compContinuous_mulRight (g : G) (f : G →ᵇ ℝ)
   simp [coe_rightTranslation]
 
 /-- The inverse discrete identification preserves and reflects the pointwise order. -/
-@[simp]
+@[to_additive (attr := simp)
+  /-- The inverse discrete identification preserves and reflects the pointwise order. -/]
 theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : G →ᵇ ℝ} :
     (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h :=
   Iff.rfl
 
 variable (G) in
 /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/
+@[to_additive
+  /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/]
 def discreteLinearIsometryEquiv : UCB G ≃ₗᵢ[ℝ] (G →ᵇ ℝ) where
   toLinearEquiv := (discreteAlgEquiv G).toLinearEquiv
   norm_map' _ := rfl
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem discreteLinearIsometryEquiv_apply (f : UCB G) :
     discreteLinearIsometryEquiv G f = (f : G →ᵇ ℝ) :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem discreteLinearIsometryEquiv_symm_apply (f : G →ᵇ ℝ) :
     (discreteLinearIsometryEquiv G).symm f = (discreteAlgEquiv G).symm f :=
   (rfl)
@@ -155,32 +163,12 @@ end CompRight
 
 end UCB
 
-section Additive
+namespace AddUCB
 
 variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
 
-/-- On a discrete additive group the `addUcb` subalgebra is the entire bounded-function algebra. -/
-@[simp]
-theorem addUcb_eq_top : addUcb A = ⊤ := by
-  ext f
-  simp [mem_addUcb_iff, nhds_discrete]
-
-namespace AddUCB
-
-variable (A) in
-/-- The canonical algebra equivalence from `AddUCB A` to all bounded functions on a discrete
-additive group. -/
-def discreteAlgEquiv : AddUCB A ≃ₐ[ℝ] (A →ᵇ ℝ) :=
-  (Subalgebra.equivOfEq _ _ addUcb_eq_top).trans Subalgebra.topEquiv
-
-@[simp]
-theorem discreteAlgEquiv_apply (f : AddUCB A) : discreteAlgEquiv A f = (f : A →ᵇ ℝ) :=
-  (rfl)
-
-@[simp]
-theorem coe_discreteAlgEquiv_symm (f : A →ᵇ ℝ) :
-    ((discreteAlgEquiv A).symm f : A →ᵇ ℝ) = f :=
-  (discreteAlgEquiv A).apply_symm_apply f
+-- `UCB.leftTranslation` and `UCB.rightTranslation` are `MonoidHom`s, so `@[to_additive]` cannot
+-- generate these translation intertwining lemmas directly.
 
 /-- The inverse discrete identification intertwines left translation. -/
 @[simp]
@@ -198,30 +186,6 @@ theorem discreteAlgEquiv_symm_compContinuous_addRight (a : A) (f : A →ᵇ ℝ)
   apply (discreteAlgEquiv A).injective
   simp [coe_rightTranslation]
 
-/-- The inverse discrete identification preserves and reflects the pointwise order. -/
-@[simp]
-theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : A →ᵇ ℝ} :
-    (discreteAlgEquiv A).symm f ≤ (discreteAlgEquiv A).symm h ↔ f ≤ h :=
-  Iff.rfl
-
-variable (A) in
-/-- The discrete identification as a linear isometry equivalence for the supremum norm. -/
-def discreteLinearIsometryEquiv : AddUCB A ≃ₗᵢ[ℝ] (A →ᵇ ℝ) where
-  toLinearEquiv := (discreteAlgEquiv A).toLinearEquiv
-  norm_map' _ := rfl
-
-@[simp]
-theorem discreteLinearIsometryEquiv_apply (f : AddUCB A) :
-    discreteLinearIsometryEquiv A f = (f : A →ᵇ ℝ) :=
-  (rfl)
-
-@[simp]
-theorem discreteLinearIsometryEquiv_symm_apply (f : A →ᵇ ℝ) :
-    (discreteLinearIsometryEquiv A).symm f = (discreteAlgEquiv A).symm f :=
-  (rfl)
-
 end AddUCB
-
-end Additive
 
 end TauCeti

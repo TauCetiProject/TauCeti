@@ -9,7 +9,6 @@ public import Mathlib.Data.Fintype.Option
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.Topology.Algebra.Group.UCB.Prod
 import TauCeti.Algebra.Group.Equiv.Pi
-import TauCeti.GroupTheory.Amenable.DirectedUnion
 
 /-!
 # Products of amenable groups
@@ -28,9 +27,7 @@ see, and then translates the function `x ↦ n (f (x, ·))` by `g`, which `m` do
 Hence the product of two amenable topological groups is amenable, and conversely each factor of an
 amenable product is amenable, as an image under a projection. By induction on the index type, the
 product of a finite family of amenable topological groups is amenable, the empty product being the
-trivial group. For an arbitrary index type `ι`, the finitely supported elements form a dense
-subgroup in the product topology whose finite subsets lie in finite subproducts, so arbitrary
-products of amenable topological groups are amenable.
+trivial group.
 
 No discreteness is needed: the factors are arbitrary topological groups, and the product carries the
 product topology. A finite product of discrete groups is again discrete, so this covers finite
@@ -48,10 +45,9 @@ products of discrete groups.
 * `TauCeti.Amenable.prod`: the product of two amenable topological groups is amenable.
 * `TauCeti.amenable_prod_iff`: a product of two topological groups is amenable exactly when both
   factors are.
-* `TauCeti.Amenable.pi`: the product of an arbitrary family of amenable topological groups is
-  amenable.
-* `TauCeti.amenable_pi_iff`: a product of topological groups is amenable exactly when every factor
-  is.
+* `TauCeti.Amenable.pi`: the product of a finite family of amenable topological groups is amenable.
+* `TauCeti.amenable_pi_iff`: a finite product of topological groups is amenable exactly when every
+  factor is.
 
 ## References
 
@@ -124,9 +120,10 @@ theorem amenable_prod_iff : Amenable (G × H) ↔ Amenable G ∧ Amenable H :=
       .of_denseRange (ContinuousMonoidHom.snd G H) Prod.snd_surjective.denseRange⟩,
     fun ⟨_, _⟩ => inferInstance⟩
 
-private theorem amenable_pi_finite {ι : Type u} [Finite ι] {G : ι → Type v}
-    [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)]
-    [∀ i, Amenable (G i)] : Amenable (∀ i, G i) := by
+/-- The product of a finite family of amenable topological groups is amenable. -/
+instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] [∀ i, Amenable (G i)] :
+    Amenable (∀ i, G i) := by
   refine Finite.induction_empty_option (P := fun ι => ∀ (G : ι → Type v) [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] [∀ i, Amenable (G i)],
       Amenable (∀ i, G i)) ?_ ?_ ?_ ι G
@@ -156,74 +153,9 @@ private theorem amenable_pi_finite {ι : Type u} [Finite ι] {G : ι → Type v}
               Continuous fun p : G none × ∀ a, G (some a) => p.2 _)] }
     exact .of_denseRange φ Equiv.piOptionEquivProd.symm.surjective.denseRange
 
-private def finiteSupportSubgroup {ι : Type u} (G : ι → Type v) [∀ i, Group (G i)] :
-    Subgroup (∀ i, G i) where
-  carrier := {x : ∀ i, G i | {i | x i ≠ 1}.Finite}
-  one_mem' := by simp
-  mul_mem' {x y} hx hy := (hx.union hy).subset fun i hi => by
-    simp only [Set.mem_union, Set.mem_ofPred_eq, Pi.mul_apply] at hi ⊢
-    contrapose! hi
-    simp [hi]
-  inv_mem' {x} hx := by simpa using hx
-
-private def extendFinsetHom {ι : Type u} {G : ι → Type v} [DecidableEq ι] [∀ i, Group (G i)]
-    [∀ i, TopologicalSpace (G i)] (s : Finset ι) :
-    (∀ i : s, G i) →ₜ* finiteSupportSubgroup G where
-  toFun x := ⟨fun i => if hi : i ∈ s then x ⟨i, hi⟩ else 1,
-    s.finite_toSet.subset fun i hi => Finset.mem_coe.2 (by
-      by_contra hni
-      exact hi (by simp [hni]))⟩
-  map_one' := Subtype.ext <| funext fun i => by by_cases hi : i ∈ s <;> simp [hi]
-  map_mul' x y := Subtype.ext <| funext fun i => by by_cases hi : i ∈ s <;> simp [hi]
-  continuous_toFun := (continuous_pi fun i => by
-    by_cases hi : i ∈ s
-    · simpa [hi] using continuous_apply (⟨i, hi⟩ : s)
-    · simpa [hi] using continuous_const).subtype_mk _
-
-private theorem amenable_finiteSupportSubgroup {ι : Type u} {G : ι → Type v}
-    [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)]
-    [∀ i, Amenable (G i)] : Amenable (finiteSupportSubgroup G) := by
-  classical
-  have (s : Finset ι) : Amenable (∀ i : s, G i) := amenable_pi_finite
-  refine .of_forall_finset_subset_range (extendFinsetHom (G := G)) fun F => ?_
-  -- Every finite subset of `finiteSupportSubgroup G` is supported on a single finite `s`.
-  refine ⟨F.biUnion fun x => x.property.toFinset, fun x hx => ⟨fun i => x.val i.val, ?_⟩⟩
-  refine Subtype.ext <| funext fun i => ?_
-  dsimp [extendFinsetHom]
-  split_ifs with hi
-  · rfl
-  · symm
-    by_contra hne
-    exact hi (Finset.mem_biUnion.2 ⟨x, hx, x.property.mem_toFinset.2 hne⟩)
-
-private theorem denseRange_finiteSupportSubgroup {ι : Type u} {G : ι → Type v}
-    [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)] :
-    DenseRange (finiteSupportSubgroup G).subtype := by
-  classical
-  intro y
-  have ht : Filter.Tendsto (fun s : Finset ι => (fun i => if i ∈ s then y i else 1 : ∀ i, G i))
-      Filter.atTop (nhds y) := tendsto_pi_nhds.2 fun i => tendsto_const_nhds.congr' <| by
-    filter_upwards [Filter.eventually_ge_atTop {i}] with s hs
-    simp [hs (Finset.mem_singleton_self i)]
-  have hmem : ∀ᶠ s : Finset ι in Filter.atTop,
-      (fun i => if i ∈ s then y i else 1 : ∀ i, G i) ∈
-        Set.range (finiteSupportSubgroup G).subtype :=
-    .of_forall fun s => ⟨⟨fun i => if i ∈ s then y i else 1,
-      s.finite_toSet.subset fun i hi => Finset.mem_coe.2 (by
-        by_contra hni
-        exact hi (by simp [hni]))⟩, rfl⟩
-  exact mem_closure_of_tendsto ht hmem
-
-/-- The product of a family of amenable topological groups is amenable. -/
-instance Amenable.pi {ι : Type u} {G : ι → Type v} [∀ i, Group (G i)]
-    [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] [∀ i, Amenable (G i)] :
-    Amenable (∀ i, G i) := by
-  have := amenable_finiteSupportSubgroup (G := G)
-  exact .of_denseRange ⟨(finiteSupportSubgroup G).subtype, continuous_subtypeVal⟩
-    (denseRange_finiteSupportSubgroup (G := G))
-
-/-- A product of topological groups is amenable exactly when every factor is. -/
-theorem amenable_pi_iff {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+/-- A product of a finite family of topological groups is amenable exactly when every factor
+is. -/
+theorem amenable_pi_iff {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] :
     Amenable (∀ i, G i) ↔ ∀ i, Amenable (G i) :=
   ⟨fun _ i => .of_denseRange ⟨Pi.evalMonoidHom G i, continuous_apply i⟩

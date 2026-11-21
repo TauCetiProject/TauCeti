@@ -369,6 +369,10 @@ theorem continuous_leftTranslation_apply (f : AddUCB A) :
   ext
   simp
 
+-- As with `leftTranslation`, `AddUCB A ≃ₗᵢ[ℝ] AddUCB A` is a multiplicative group under
+-- composition rather than an additive group, so `rightTranslation` is defined directly on `A`
+-- rather than via `@[to_additive]`.
+
 /-- Right translation `R_a`, where `(R_a f)(x) = f (x + a)`, as a linear isometry equivalence of
 `AddUCB A`. -/
 def rightTranslation (a : A) : AddUCB A ≃ₗᵢ[ℝ] AddUCB A :=
@@ -413,9 +417,6 @@ theorem rightTranslation_add (a b : A) :
     rightTranslation (a + b) = rightTranslation a * rightTranslation b := by
   ext
   simp [add_assoc]
-
-theorem rightTranslation_neg (a : A) : rightTranslation (-a) = (rightTranslation a).symm :=
-  (rightTranslation_symm a).symm
 
 /-- Right translation preserves and reflects the pointwise order. -/
 @[simp]
