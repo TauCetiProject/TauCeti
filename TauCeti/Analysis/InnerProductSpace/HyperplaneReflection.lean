@@ -47,6 +47,9 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
 * `TauCeti.mapsTo_hyperplaneReflection_ball`: it maps every ball centred on the hyperplane into
   itself.
+* `TauCeti.hyperplaneReflection_mem_ball_iff` and
+  `TauCeti.hyperplaneReflection_mem_closedBall_iff`: open and closed balls centred on the
+  hyperplane are invariant.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
@@ -76,6 +79,16 @@ namespace TauCeti
 open InnerProductSpace MeasureTheory
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-! ### The height above a hyperplane through the origin -/
+
+/-- The height `⟪x, v⟫` above the hyperplane `⟪·, v⟫ = 0` is `1`-Lipschitz. -/
+theorem abs_inner_sub_inner_le {v : F} (hv : ‖v‖ = 1) (x y : F) :
+    |⟪x, v⟫_ℝ - ⟪y, v⟫_ℝ| ≤ dist x y := by
+  rw [← inner_sub_left, dist_eq_norm]
+  simpa [hv] using abs_real_inner_le_norm (x - y) v
+
+/-! ### The reflection -/
 
 /-- The **reflection in the affine hyperplane** `{x | ⟪x, ν⟫ = c}`: the affine isometry
 `x ↦ x - (2 (⟪x, ν⟫ - c) / ‖ν‖²) ν`, whose linear part is the reflection `(ℝ ∙ ν)ᗮ.reflection` in
@@ -159,6 +172,20 @@ theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set 
     exact closure_lt_subset_le continuous_const (continuous_id.inner continuous_const) hxc
   exact hyperplaneReflection_eq_self_of_inner_eq
     (le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) hle)
+
+/-- A ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is invariant under the reflection. -/
+theorem hyperplaneReflection_mem_ball_iff {ν : F} {c : ℝ} {x : F} (hx : ⟪x, ν⟫_ℝ = c) {y : F}
+    {r : ℝ} : hyperplaneReflection ν c y ∈ Metric.ball x r ↔ y ∈ Metric.ball x r := by
+  rw [Metric.mem_ball, Metric.mem_ball, ← hyperplaneReflection_eq_self_of_inner_eq hx,
+    (hyperplaneReflection ν c).dist_map, hyperplaneReflection_eq_self_of_inner_eq hx]
+
+/-- A closed ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is invariant under the
+reflection. -/
+theorem hyperplaneReflection_mem_closedBall_iff {ν : F} {c : ℝ} {x : F} (hx : ⟪x, ν⟫_ℝ = c)
+    {y : F} {r : ℝ} :
+    hyperplaneReflection ν c y ∈ Metric.closedBall x r ↔ y ∈ Metric.closedBall x r := by
+  rw [Metric.mem_closedBall, Metric.mem_closedBall, ← hyperplaneReflection_eq_self_of_inner_eq hx,
+    (hyperplaneReflection ν c).dist_map, hyperplaneReflection_eq_self_of_inner_eq hx]
 
 /-- The hyperplane reflection maps the open half-space `{x | c < ⟪x, ν⟫}` onto the opposite
 open half-space `{x | ⟪x, ν⟫ < c}`, and conversely. -/
