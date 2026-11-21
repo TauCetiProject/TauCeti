@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
 # The low-frequency cut-offs of a Besov space element
@@ -19,8 +20,8 @@ Fourier multiplier by `φ (2^{1-m} ·)`, so its spectrum lies in a ball of radiu
 finitely many of its own blocks are nonzero. As a tempered distribution it is the dyadic partial
 sum `TauCeti.BesovSpace.partialSumCLM`, through which it lies in every Besov space built on `Lᵖ`.
 If the blocks of `u` are `Lᵖ` limits of Schwartz functions, so is `S_m u`. The size of `S_m u`
-itself is bounded uniformly in `m` when `u` is an `Lᵖ` function, and geometrically in `m` when
-`s < 0`.
+itself is bounded uniformly in `m` when `u` is an `Lᵖ` function (in particular for `s > 0`, where
+`S_m u → toLpCLM u`), and geometrically in `m` when `s < 0` (with an `ℓ^q`-weighted bound).
 
 ## Main declarations
 
@@ -33,8 +34,11 @@ itself is bounded uniformly in `m` when `u` is an `Lᵖ` function, and geometric
   from index `m + L` on, for an `L` depending only on the bump function.
 * `TauCeti.BesovSpace.lowPass_mem_closure_range_toLp`: if the blocks of `u` are `Lᵖ` limits of
   Schwartz functions, so is `S_m u`.
-* `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq` and
-  `TauCeti.BesovSpace.norm_lowPass_le_of_neg`: the size of the low-frequency cut-offs.
+* `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq`, `TauCeti.BesovSpace.norm_lowPass_le_of_pos`,
+  `TauCeti.BesovSpace.tendsto_lowPass`, `TauCeti.BesovSpace.norm_lowPass_le_of_neg`, and
+  `TauCeti.BesovSpace.exists_lp_lowPass_le_of_neg`: the size and convergence of the low-frequency
+  cut-offs.
+* `TauCeti.BesovSpace.lowPass_one_succ`, `TauCeti.BesovSpace.lowPass_one`: the cut-offs of `1`.
 
 ## References
 
@@ -46,8 +50,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Distribution FourierTransform TemperedDistribution
-open scoped ENNReal SchwartzMap
+open MeasureTheory Metric Filter Distribution FourierTransform TemperedDistribution
+open scoped ENNReal SchwartzMap Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
@@ -169,5 +173,57 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
 theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
     ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ :=
   (norm_sum_le _ _).trans (sum_norm_block_le_of_neg hs u m)
+
+/-- For every `m ≥ 1`, the low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` equals `1 ∈ L^∞`. -/
+@[simp] theorem lowPass_one_succ (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass (m + 1) = 1 := by
+  induction m with
+  | zero => rw [lowPass_succ, lowPass_zero_right, block_one_zero, zero_add]
+  | succ m ih => rw [lowPass_succ, ih, block_one_succ, add_zero]
+
+/-- The low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` is `0` at `m = 0` and `1` for `m ≥ 1`. -/
+theorem lowPass_one (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass m = if m = 0 then 0 else 1 := by
+  rcases m with _ | m <;> simp
+
+/-- For `s > 0`, the low-frequency cut-offs `S_m u` converge in `Lᵖ` to `toLpCLM F φ p q hs u`. -/
+theorem tendsto_lowPass [Fact (1 ≤ q)] (hs : 0 < s) (u : BesovSpace F φ s p q) :
+    Tendsto u.lowPass atTop (𝓝 (toLpCLM F φ p q hs u)) :=
+  (hasSum_block hs u).tendsto_sum_nat.congr fun m ↦ (u.lowPass_eq_sum m).symm
+
+/-- For `s > 0`, the low-frequency cut-offs `S_m u` are bounded in `Lᵖ` uniformly in `m`. -/
+theorem norm_lowPass_le_of_pos [Fact (1 ≤ q)] (hs : 0 < s) (u : BesovSpace F φ s p q) (m : ℕ) :
+    ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
+  calc ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖toLpCLM F φ p q hs u‖ :=
+        u.norm_lowPass_le_of_toDistr_eq (coe_toLpCLM hs u).symm m
+    _ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ((1 - 2 ^ (-s))⁻¹ * ‖u‖) :=
+        mul_le_mul_of_nonneg_left (norm_toLpCLM_apply_le hs u)
+          (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _)
+    _ = _ := by ring
+
+/-- **Weighted `ℓ^q` bound for the low-frequency cut-offs at negative regularity.** For `s < 0` and
+`u ∈ B^s_{p,q}`, the sequence `2^{s m} ‖S_m u‖_p` is bounded pointwise by a nonnegative sequence
+`a ∈ ℓ^q` of norm at most `(2^{-s} - 1)⁻¹ ‖u‖`. -/
+theorem exists_lp_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) :
+    ∃ a : lp (fun _ : ℕ ↦ ℝ) q, (∀ m, 0 ≤ a m) ∧
+      (∀ m : ℕ, 2 ^ (s * m) * ‖u.lowPass m‖ ≤ a m) ∧ ‖a‖ ≤ (2 ^ (-s) - 1)⁻¹ * ‖u‖ := by
+  have hr1 : (2 : ℝ) ^ s < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two hs
+  obtain ⟨a, ha, han⟩ := lp.exists_forall_eq_sum_pow_smul_and_norm_le
+    (lp.toNorm u.weightedBlocks) (by positivity) hr1
+  have hratio : (2 : ℝ) ^ s * (1 - 2 ^ s)⁻¹ = (2 ^ (-s) - 1)⁻¹ := by
+    have hmul : (2 : ℝ) ^ s * 2 ^ (-s) = 1 := by rw [← Real.rpow_add two_pos]; simp
+    refine eq_inv_of_mul_eq_one_left ?_
+    calc (2 : ℝ) ^ s * (1 - 2 ^ s)⁻¹ * (2 ^ (-s) - 1)
+        = (2 ^ s * 2 ^ (-s) - 2 ^ s) * (1 - 2 ^ s)⁻¹ := by ring
+      _ = 1 := by rw [hmul, mul_inv_cancel₀ (sub_pos.2 hr1).ne']
+  refine ⟨a, fun m ↦ by
+      rw [ha]
+      exact Finset.sum_nonneg fun k _ ↦ by simp only [lp.toNorm_coe, smul_eq_mul]; positivity,
+    fun m ↦ ?_, by simpa only [lp.norm_toNorm, u.norm_weightedBlocks, hratio] using han⟩
+  rw [ha m, lowPass_eq_sum]
+  refine ((mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans_eq
+    (Finset.mul_sum ..)).trans (Finset.sum_le_sum fun k hk ↦ ?_)
+  have hexp : (2 : ℝ) ^ (s * m) = (2 ^ s) ^ (m - k) * 2 ^ (s * k) := by
+    rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← mul_add]
+    congr 2; exact_mod_cast (Nat.sub_add_cancel (Finset.mem_range.1 hk).le).symm
+  rw [smul_eq_mul, lp.toNorm_coe, hexp, mul_assoc, u.norm_weightedBlocks_apply]
 
 end TauCeti.BesovSpace

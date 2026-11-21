@@ -42,10 +42,12 @@ More generally, a matrix `w j k` dominated by a summable kernel `a : ℤ → ℝ
 this is how an operator that moves the Littlewood–Paley blocks of a function to blocks of nearby
 index, with geometric decay in the distance, is bounded on dyadic sequence spaces.
 
-Similarly, for `0 ≤ r < 1` the **geometric tail sums** `j ↦ ∑_{d ≥ 0} r ^ d f (j + d)` of a
-sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1 - r)⁻¹ ‖f‖`
-(`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`): they are an absolutely convergent series of
-shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
+Similarly, for `0 ≤ r < 1` the **geometric tail sums** `j ↦ ∑_{d ≥ 0} r ^ d f (j + d)` and
+**geometric prefix sums** `m ↦ ∑_{k < m} r ^ (m - k) f k` of a sequence in `ℓᵖ`, `1 ≤ p`, form
+sequences in `ℓᵖ` of norm at most `(1 - r)⁻¹ ‖f‖` and `r (1 - r)⁻¹ ‖f‖`
+(`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`,
+`lp.exists_forall_eq_sum_pow_smul_and_norm_le`): both are absolutely convergent series of shifts,
+arising when each dyadic piece interacts with all pieces of higher or lower index with
 geometrically decaying weights.
 
 When `g : ι' → ι` is injective, composing with `g` preserves `ℓᵖ` membership without increasing the
@@ -287,6 +289,47 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
     simpa [lp.coeFnAddMonoidHom_apply, lp.coeFn_smul, hT] using h
   · calc ‖∑' d, r ^ d • T d‖ ≤ ∑' d, ‖f‖ * r ^ d := tsum_of_norm_bounded hgeom.hasSum hbound
       _ = (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, mul_comm]
+
+/-- **Geometric prefix sums in `ℓᵖ`.** For `1 ≤ p` and `0 ≤ r < 1`, the prefix sums
+`m ↦ ∑_{k < m} r ^ (m - k) • f k` of a sequence `f ∈ ℓᵖ` form a sequence in `ℓᵖ` of norm at most
+`r (1 - r)⁻¹ ‖f‖`. -/
+theorem lp.exists_forall_eq_sum_pow_smul_and_norm_le [Fact (1 ≤ p)] [NormedSpace ℝ G]
+    (f : lp (fun _ : ℕ ↦ G) p) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    ∃ g : lp (fun _ : ℕ ↦ G) p, (∀ m, g m = ∑ k ∈ Finset.range m, r ^ (m - k) • f k) ∧
+      ‖g‖ ≤ r * (1 - r)⁻¹ * ‖f‖ := by
+  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  set a : ℤ → ℝ := fun d ↦ if d < 0 then r ^ d.natAbs else 0
+  have ha0 (d : ℤ) : 0 ≤ a d := by simp only [a]; split_ifs <;> positivity
+  have hneg : Function.Injective (fun n : ℕ ↦ -((n + 1 : ℕ) : ℤ)) := fun _ _ h ↦ by
+    dsimp at h; omega
+  have ha_hasSum : HasSum a (r * (1 - r)⁻¹) :=
+    (hneg.hasSum_iff fun d hd ↦ by
+      have : ¬ d < 0 := fun hlt ↦ hd ⟨(-d - 1).toNat, by dsimp; omega⟩
+      simp [a, this]).1 <|
+    ((hasSum_geometric_of_lt_one hr0 hr1).mul_left r |>.congr_fun fun n ↦ by
+      have hlt : -((n + 1 : ℕ) : ℤ) < 0 := by omega
+      simp only [Function.comp_def, a, hlt, ↓reduceIte, Int.natAbs_neg, Int.natAbs_natCast,
+        pow_succ'])
+  set w : ℕ → ℕ → ℝ := fun m k ↦ if k < m then r ^ (m - k) * ‖f k‖ else 0
+  obtain ⟨y, hy, hyn⟩ := lp.exists_hasSum_and_norm_le_of_summable (lp.toNorm f) ha0
+    ha_hasSum.summable zero_le_one w fun m k ↦ by
+      simp only [one_mul, lp.toNorm_coe, norm_norm]
+      by_cases hkm : k < m
+      · have hlt : (k : ℤ) - m < 0 := by omega
+        have hnat : ((k : ℤ) - m).natAbs = m - k := by omega
+        simp only [w, a, hkm, hlt, hnat, ↓reduceIte]; rw [Real.norm_of_nonneg (by positivity)]
+      · simpa [w, hkm] using mul_nonneg (ha0 ((k : ℤ) - m)) (norm_nonneg (f k))
+  have hle (m : ℕ) : ‖∑ k ∈ Finset.range m, r ^ (m - k) • f k‖ ≤ ‖y m‖ := by
+    have hym : y m = ∑ k ∈ Finset.range m, r ^ (m - k) * ‖f k‖ := by
+      rw [(hy m).unique (hasSum_sum_of_ne_finset_zero (s := Finset.range m) fun k hk ↦ by
+        simp [w, Finset.mem_range.not.1 hk])]
+      exact Finset.sum_congr rfl fun k hk ↦ by simp [w, Finset.mem_range.1 hk]
+    rw [hym, Real.norm_of_nonneg (Finset.sum_nonneg fun k _ ↦ by positivity)]
+    exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity)])
+  exact ⟨⟨fun m ↦ ∑ k ∈ Finset.range m, r ^ (m - k) • f k, (lp.memℓp y).mono' hle⟩,
+    fun _ ↦ rfl, (lp.norm_mono hp hle).trans <| by
+      simpa [ha_hasSum.tsum_eq, lp.norm_toNorm] using hyn⟩
 
 section Equiv
 

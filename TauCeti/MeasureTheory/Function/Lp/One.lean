@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
@@ -18,7 +19,8 @@ with a distinguished element `1` and on an arbitrary measure space. Unlike
 `MeasureTheory.Lp.const`, the construction needs no finite-measure hypothesis because the
 essential supremum of a constant is always finite. Its norm is that of `1` unless `μ = 0`. In a
 real Banach space its integral is `μ.real univ • 1`, the total mass times `1`, which is zero when
-the mass is infinite.
+the mass is infinite. It also acts trivially under Mathlib's heterogeneous `Lp` scalar
+multiplication (`MeasureTheory.Lp.one_smul`, `MeasureTheory.Lp.smul_one`).
 
 Every real `L∞` class `f` satisfies `f ≤ ‖f‖ • 1` (`MeasureTheory.Lp.le_norm_smul_one`), so the
 constant one is an order unit, and a positive linear functional on `L∞` is controlled by its value
@@ -49,6 +51,25 @@ theorem one_def : (1 : Lp E ∞ μ) = (memLp_top_const (1 : E)).toLp fun _ => 1 
 /-- The representative of `1 : L∞(μ)` is almost everywhere the constant function one. -/
 theorem coeFn_one : ((1 : Lp E ∞ μ) : α → E) =ᵐ[μ] 1 :=
   MemLp.coeFn_toLp (memLp_top_const (1 : E))
+
+/-- The unit of `L∞` acts as the identity under heterogeneous `Lp` scalar multiplication. -/
+@[simp]
+protected theorem one_smul {R F : Type*} [NormedRing R] [NormedAddCommGroup F]
+    [MulActionWithZero R F] [IsBoundedSMul R F] {p : ℝ≥0∞} (f : Lp F p μ) :
+    (1 : Lp R ∞ μ) • f = f := by
+  ext
+  filter_upwards [coeFn_lpSMul (r := p) (1 : Lp R ∞ μ) f, coeFn_one (E := R) (μ := μ)] with
+    x h₁ h₂
+  simp [h₁, h₂]
+
+/-- Multiplying an `Lᵖ` function on the right by the unit of `L∞` is the identity. -/
+@[simp]
+protected theorem smul_one {R : Type*} [NormedRing R] {p : ℝ≥0∞} (f : Lp R p μ) :
+    f • (1 : Lp R ∞ μ) = f := by
+  ext
+  filter_upwards [coeFn_lpSMul (r := p) f (1 : Lp R ∞ μ), coeFn_one (E := R) (μ := μ)] with
+    x h₁ h₂
+  simp [h₁, h₂]
 
 /-- On a nonzero measure, the norm of `1 : L∞(μ)` is that of `1`. -/
 theorem norm_one_of_ne_zero (hμ : μ ≠ 0) : ‖(1 : Lp E ∞ μ)‖ = ‖(1 : E)‖ := by

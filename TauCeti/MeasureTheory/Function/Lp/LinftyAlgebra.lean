@@ -86,14 +86,8 @@ instance inftyRing : Ring (Lp R ∞ μ) where
     filter_upwards [coeFn_mul (f * g) h, coeFn_mul f g, coeFn_mul f (g * h), coeFn_mul g h]
       with x h₁ h₂ h₃ h₄
     simp [h₁, h₂, h₃, h₄, mul_assoc]
-  one_mul f := by
-    ext
-    filter_upwards [coeFn_mul 1 f, coeFn_one (E := R) (μ := μ)] with x h₁ h₂
-    simp [h₁, h₂]
-  mul_one f := by
-    ext
-    filter_upwards [coeFn_mul f 1, coeFn_one (E := R) (μ := μ)] with x h₁ h₂
-    simp [h₁, h₂]
+  one_mul := Lp.one_smul
+  mul_one := Lp.smul_one
   left_distrib := Lp.add_smul
   right_distrib := Lp.smul_add
   zero_mul := Lp.zero_smul R ∞
