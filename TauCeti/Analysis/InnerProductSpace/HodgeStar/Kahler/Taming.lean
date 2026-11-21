@@ -30,7 +30,7 @@ the dilated curvature current with a taming form `Ω = K π^*ω_C + dλ` is a to
 σ-compact preconnected surface with trivial normal line is
 `TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ`. Applying the theorems
 below to a current also requires identifying `ξ` with its two-vector density, so that
-`∫ ⟪Ω, ξ⟫` equals the wedge pairing `∫ T ∧ Ω`; that identification is not done here either.
+`∫ ⟪Ω, ξ⟫` equals the wedge pairing `∫ T ∧ Ω`; that identification is not done here.
 The cone defect is
 bounded by a small error plus a small multiple of the mass itself. The second theorem absorbs that
 multiple: if `∫ dist(ξ, positiveCone) ≤ ε + δ ∫ ‖ξ‖` with `(B + c₀) δ < c₀`, then

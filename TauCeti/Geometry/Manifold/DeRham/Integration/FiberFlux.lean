@@ -20,9 +20,9 @@ import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
-# The pairing of a closed current with a taming form over a compact connected surface
+# The pairing of a closed current with a taming form over a σ-compact preconnected surface
 
-Let `M` be a compact connected oriented surface, thought of as an embedded pseudoholomorphic
+Let `M` be a σ-compact preconnected oriented surface, for example an embedded pseudoholomorphic
 curve `C`, and let `M × ℂ` be a tubular neighbourhood of it with trivial normal line, oriented as
 the product of the orientation of `M` and the standard orientation of `ℂ`. A compactly supported
 two-form `T` on `M × ℂ` has a **fibre flux** through each normal fibre `{x} × ℂ`,
@@ -52,7 +52,7 @@ The proof replaces a partition of unity on the curve by de Rham theory on `M`.
   (`TauCeti.wedge_compContinuousLinearMap_fst_apply`), so Fubini's theorem gives
   `∫ T ∧ π^*θ = m ∫ θ` when the flux is `m` over the support of `θ`
   (`TauCeti.integralTopForm_wedge_mpullback_fst_of_tsupport_subset_chart`). No closedness is needed.
-* **The whole base.** Fix such a `θ` with `∫_M θ = 1`. On a connected surface, for a compactly
+* **The whole base.** Fix such a `θ` with `∫_M θ = 1`. On a preconnected surface, for a compactly
   supported `β` the form `β - (∫_M β) θ` has integral zero, so it is exact
   (`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`), and so is its pullback.
   Since `T` is closed and compactly supported, its wedge with an exact form is a compactly
