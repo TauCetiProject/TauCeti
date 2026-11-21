@@ -394,7 +394,7 @@ theorem bddAbove_range_rademacherMoment_subtype_iff {p q : ℝ} (hp : 0 < p) (hq
     refine ⟨kahaneConst u v * B, ?_⟩
     rintro _ ⟨s, rfl⟩
     exact (rademacherMoment_le_kahaneConst_mul hu hv _).trans
-      (mul_le_mul_of_nonneg_left (hB ⟨s, rfl⟩) (kahaneConst u v).2)
+      (mul_le_mul_of_nonneg_left (hB ⟨s, rfl⟩) (kahaneConst u v).property)
   exact ⟨hdir hp hq, hdir hq hp⟩
 
 /-- Kahane's inequality for the supremum of finite truncations of an arbitrary family `x : α → E`
@@ -405,7 +405,7 @@ theorem ciSup_rademacherMoment_subtype_le {p q : ℝ} (hp : 0 < p) (hq : 0 < q) 
   by_cases hbdd : BddAbove (Set.range fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i))
   · refine ciSup_le fun s ↦ ?_
     exact (rademacherMoment_le_kahaneConst_mul hp hq _).trans
-      (mul_le_mul_of_nonneg_left (le_ciSup hbdd s) (kahaneConst p q).2)
+      (mul_le_mul_of_nonneg_left (le_ciSup hbdd s) (kahaneConst p q).property)
   · have hbdd_q : ¬ BddAbove (Set.range fun s : Finset α ↦ rademacherMoment q (fun i : s ↦ x i)) :=
       mt (bddAbove_range_rademacherMoment_subtype_iff hp hq x).2 hbdd
     rw [Real.iSup_of_not_bddAbove hbdd, Real.iSup_of_not_bddAbove hbdd_q, mul_zero]

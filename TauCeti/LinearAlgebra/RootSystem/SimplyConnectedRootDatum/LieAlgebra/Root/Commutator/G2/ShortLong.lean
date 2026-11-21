@@ -391,10 +391,8 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
     him hio hjk hlm hko hlo hmo (hroot α) (hroot β) (hroot γ) (hroot δ) (hroot ε) (hroot ζ)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
-  -- Both root-subgroup interfaces act by the same divided-power exponentials.
-  apply Units.ext
-  simpa only [Units.val_mul, chevalleyRootSubgroup_val, kostantRootSubgroupPoints_val,
-    MulEquiv.apply_symm_apply, toAdd_ofAdd] using congrArg Units.val hcollection
+  simpa only [chevalleyRootSubgroup_eq_kostantRootSubgroupPoints,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd] using hcollection
 
 variable {ht}
 

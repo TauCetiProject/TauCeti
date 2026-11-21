@@ -45,6 +45,10 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
 
 * `TauCeti.contMDiffOn_maximalIntegralCurve_neg_mgradient`: a negative gradient trajectory is
   `C¹` on its interval of definition.
+* `TauCeti.curveVelocity_maximalIntegralCurve_neg_mgradient`: the velocity of a negative
+  gradient trajectory is `-grad f`.
+* `TauCeti.maximalIntegralCurve_neg_mgradient_neg`: a global negative gradient trajectory of `f`
+  run backwards is the negative gradient trajectory of `-f`.
 * `TauCeti.hasDerivAt_comp_maximalIntegralCurve_neg_mgradient` and
   `TauCeti.antitoneOn_comp_maximalIntegralCurve_neg_mgradient`: energy dissipation and
   monotonicity along a negative gradient trajectory.
@@ -96,6 +100,22 @@ theorem contMDiffOn_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(�
   (contMDiffOn_two_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
     (isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf))
     fun _ _ ↦ (contMDiff_neg_mgradient_one hf).contMDiffAt).of_le one_le_two
+
+/-- **Reversing time in a global negative gradient trajectory.** If the maximal integral curve of
+`-grad f` through `x` is defined for all time, then run backwards it is the maximal integral curve
+of `-grad (-f)` through `x`. -/
+theorem maximalIntegralCurve_neg_mgradient_neg (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hγ : IsMIntegralCurve (maximalIntegralCurve (-mgradient I f) x) (-mgradient I f)) :
+    maximalIntegralCurve (-mgradient I (-f)) x =
+      maximalIntegralCurve (-mgradient I f) x ∘ (· * -1) := by
+  have hrev : IsMIntegralCurve (maximalIntegralCurve (-mgradient I f) x ∘ (· * -1))
+      (-mgradient I (-f)) := by
+    convert hγ.comp_mul (-1) using 1
+    funext y
+    simp [mgradient_neg]
+  funext t
+  simpa only [Function.comp_apply, zero_mul, maximalIntegralCurve_zero] using
+    hrev.maximalIntegralCurve_eq (contMDiff_neg_mgradient_one (f := -f) hf.neg) t
 
 /-! ### Energy dissipation -/
 
@@ -152,7 +172,7 @@ private theorem hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient
   exact h
 
 /-- The velocity of the maximal integral curve of `-grad f` is `-grad f`. -/
-private theorem curveVelocity_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
+theorem curveVelocity_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (ht : t ∈ maximalIntegralCurveInterval (-mgradient I f) x) :
     curveVelocity I (maximalIntegralCurve (-mgradient I f) x) t =
       -mgradient I f (maximalIntegralCurve (-mgradient I f) x t) := by

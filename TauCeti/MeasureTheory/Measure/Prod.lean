@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.Arithmetic
+public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
@@ -33,15 +34,24 @@ of the first coordinate commutes with taking the first marginal (`fst_withDensit
 Projecting a measurable restriction of a product weights the first factor by the masses of
 its vertical sections (`map_fst_restrict_prod_eq_withDensity`). Rectangle bounds also give
 finite interval-selection masses and a local-finiteness criterion for projected restrictions
-away from an initial endpoint.
+away from an initial endpoint. Partitioning an arbitrary measure on `X × ι` into countable
+singleton slices `univ ×ˢ {i}` and projecting onto `X` sums back to `μ.map Prod.fst`
+(`sum_map_fst_restrict_univ_prod_singleton`).
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
-(`MeasureTheory.Measure.isProbabilityMeasure_of_map_prod_eq`).
+(`MeasureTheory.Measure.isProbabilityMeasure_of_map_prod_eq`). If such a coding `g` has a joint law
+with its base point invariant under a measurable involution `sw` of the base and the swap of the
+pair, then coding at the swapped base point and swapping the output has the same joint law
+(`MeasureTheory.Measure.map_prod_swap_apply_eq`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
 Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
+For a countable first factor with measurable singletons, the converse is characterized by
+`MeasureTheory.Measure.aemeasurable_uncurry_prod_iff`. Mapping an indexed family over a product
+then gives a measure bind (`MeasureTheory.Measure.map_uncurry_prod_eq_bind_map`), with evaluation
+specializations for function-valued and product laws.
 
 Finally, for a measurable map `f` into an additive group, the law of `f z.1 - f z.2` under
 `μ.prod μ` is symmetric (`MeasureTheory.Measure.map_neg_map_sub_prod_self`): swapping the two
@@ -63,6 +73,22 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Partitioning a measure on `X × ι` (for a countable discrete space `ι`) into vertical singleton
+slices `univ ×ˢ {i}` and projecting onto `X` recovers `μ.map Prod.fst` for every measure `μ`. -/
+theorem sum_map_fst_restrict_univ_prod_singleton {X ι : Type*} [MeasurableSpace X] [Countable ι]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] (μ : Measure (X × ι)) :
+    (Measure.sum fun i : ι ↦ (μ.restrict (Set.univ ×ˢ {i})).map Prod.fst) = μ.map Prod.fst := by
+  have hunion : (⋃ i : ι, (Set.univ ×ˢ ({i} : Set ι) : Set (X × ι))) = Set.univ := by
+    ext ⟨_, i⟩
+    simp
+  have hd : Pairwise (Function.onFun Disjoint
+      fun i : ι ↦ (Set.univ ×ˢ ({i} : Set ι) : Set (X × ι))) :=
+    fun _ _ hij ↦ Set.disjoint_left.mpr fun _ h₁ h₂ ↦
+      hij ((Set.mem_singleton_iff.mp h₁.2).symm.trans (Set.mem_singleton_iff.mp h₂.2))
+  rw [← Measure.map_sum measurable_fst.aemeasurable,
+    ← Measure.restrict_iUnion hd (fun i ↦ MeasurableSet.univ.prod (measurableSet_singleton i)),
+    hunion, Measure.restrict_univ]
 
 /-- Projecting a joint measure restricted to `u ×ˢ A` assigns mass `μ ((s ∩ u) ×ˢ A)`
 to each measurable set `s` in the first coordinate. -/
@@ -410,6 +436,37 @@ theorem isProbabilityMeasure_of_map_prod_eq {Ω β δ ξ : Type*} [MeasurableSpa
   · rw [Measure.prod_eq_zero_of_not_sfinite hs, FunLike.coe_zero, Pi.zero_apply] at h
     exact absurd h.symm hμu
 
+/-- **Swapping the output and the context of a swap-invariant coding.** Let `sw` be a measurable
+involution preserving a measure `L`, and let `g` code a pair from a point of the base and a point
+of a second space carrying a measure `ν`. If the joint law of the base point and the coded pair
+under `L.prod ν` is invariant under `sw` on the base point and the swap of the pair, then coding at
+the swapped base point and swapping the output gives the same joint law as the coding itself. -/
+theorem map_prod_swap_apply_eq {Z Y β : Type*} [MeasurableSpace Z] [MeasurableSpace Y]
+    [MeasurableSpace β] {sw : Z → Z} (hsw : Measurable sw) (hsw₂ : ∀ z, sw (sw z) = z)
+    {L : Measure Z} (hL : L.map sw = L) {ν : Measure Y} {g : Z → Y → β × β}
+    (hg : Measurable (Function.uncurry g))
+    (hJ : ((L.prod ν).map (fun p => (p.1, g p.1 p.2))).map (Prod.map sw Prod.swap) =
+      (L.prod ν).map (fun p => (p.1, g p.1 p.2))) :
+    (L.prod ν).map (fun p => (p.1, (g (sw p.1) p.2).swap)) =
+      (L.prod ν).map (fun p => (p.1, g p.1 p.2)) := by
+  -- A product with a measure that is not s-finite is zero.
+  by_cases hν : SFinite ν
+  swap
+  · simp [prod_eq_zero_of_not_sfinite hν]
+  have hg' : Measurable (Function.uncurry fun z s => (g (sw z) s).swap) :=
+    measurable_swap.comp (hg.comp (hsw.prodMap measurable_id))
+  have hfun : (fun p : Z × Y => (p.1, (g (sw p.1) p.2).swap)) ∘ Prod.map sw id =
+      Prod.map sw Prod.swap ∘ fun p => (p.1, g p.1 p.2) := by
+    funext p
+    simp [hsw₂]
+  have hF : Measurable fun p : Z × Y => (p.1, g p.1 p.2) := measurable_fst.prodMk hg
+  have hF' : Measurable fun p : Z × Y => (p.1, (g (sw p.1) p.2).swap) :=
+    measurable_fst.prodMk hg'
+  conv_lhs => rw [← hL, ← Measure.map_id (μ := ν),
+    Measure.map_prod_map _ _ hsw measurable_id,
+    Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
+    ← Measure.map_map (hsw.prodMap measurable_swap) hF, hJ]
+
 end MeasureTheory.Measure
 
 namespace MeasureTheory
@@ -436,3 +493,59 @@ theorem AEMeasurable.prodMk_left {α β γ : Type*} [MeasurableSpace α] [Measur
     ∀ᵐ x ∂μ, AEMeasurable (fun y ↦ f (x, y)) ν := by
   filter_upwards [MeasureTheory.Measure.ae_ae_of_ae_prod hf.ae_eq_mk] with x hx
   exact ⟨_, hf.measurable_mk.comp measurable_prodMk_left, hx⟩
+
+namespace MeasureTheory.Measure
+
+variable {I A B : Type*} [MeasurableSpace I] [MeasurableSpace A] [MeasurableSpace B]
+
+/-- An indexed family over a countable measurable space is a.e. measurable for a product measure
+exactly when every component carried by the first measure is a.e. measurable. -/
+theorem aemeasurable_uncurry_prod_iff [Countable I] [MeasurableSingletonClass I]
+    (μ : Measure I) (ρ : Measure A) [SFinite ρ] {f : I → A → B} :
+    AEMeasurable (Function.uncurry f) (μ.prod ρ) ↔
+      ∀ i, μ {i} ≠ 0 → AEMeasurable (f i) ρ := by
+  constructor
+  · intro hf
+    exact ae_iff_of_countable.1 hf.prodMk_left
+  · intro hf
+    rw [← Measure.sum_smul_dirac μ, Measure.prod_sum_left]
+    apply AEMeasurable.sum_measure
+    intro i
+    rw [Measure.prod_smul_left]
+    by_cases hi : μ {i} = 0
+    · simp [hi]
+    · apply AEMeasurable.smul_measure
+      rw [Measure.dirac_prod, (measurableEmbedding_prodMk_left i).aemeasurable_map_iff]
+      simpa only [Function.comp_def, Function.uncurry_apply_pair] using hf i hi
+
+/-- Mapping a product measure by an almost-everywhere measurable indexed family gives the bind of
+the component pushforwards. -/
+theorem map_uncurry_prod_eq_bind_map (μ : Measure I) (ρ : Measure A) [SFinite ρ]
+    {f : I → A → B} (hf : AEMeasurable (Function.uncurry f) (μ.prod ρ)) :
+    (μ.prod ρ).map (Function.uncurry f) = μ.bind (fun i ↦ ρ.map (f i)) := by
+  rw [Measure.prod_eq_of_sfinite] at hf ⊢
+  rw [Measure.map_bind Measurable.map_prodMk_left.aemeasurable hf]
+  apply Measure.bind_congr_right
+  filter_upwards [Measurable.map_prodMk_left.aemeasurable.ae_of_bind hf] with i hi
+  rw [hi.map_map_of_aemeasurable measurable_prodMk_left.aemeasurable]
+  simp only [Function.comp_def, Function.uncurry_apply_pair]
+
+/-- Mapping a product by evaluation gives the bind of the coordinate pushforwards. -/
+theorem map_eval_prod_eq_bind_map [Countable I] [MeasurableSingletonClass I]
+    (μ : Measure I) (ρ : Measure (I → B)) [SFinite ρ] :
+    (μ.prod ρ).map (fun z ↦ z.2 z.1) = μ.bind (fun i ↦ ρ.map (Function.eval i)) := by
+  simpa only [Function.uncurry_def, Function.eval] using
+    map_uncurry_prod_eq_bind_map μ ρ
+      ((aemeasurable_uncurry_prod_iff μ ρ).2 fun i _ ↦
+        (measurable_pi_apply i).aemeasurable)
+
+/-- Mapping a mixing law times a finite product probability law by evaluation gives the bind of
+the component laws. -/
+theorem map_eval_prod_pi_eq_bind [Fintype I] [MeasurableSingletonClass I]
+    (μ : Measure I) (K : I → Measure B) [∀ i, IsProbabilityMeasure (K i)] :
+    (μ.prod (Measure.pi K)).map (fun z ↦ z.2 z.1) = μ.bind K := by
+  rw [map_eval_prod_eq_bind_map]
+  apply Measure.bind_congr_right
+  exact ae_of_all _ fun i ↦ (measurePreserving_eval K i).map_eq
+
+end MeasureTheory.Measure

@@ -11,7 +11,7 @@ import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
-# Functions continuous on a compact set are essentially bounded
+# Continuous functions and the `L^∞` seminorm
 
 A function continuous on a compact set `K` is bounded there, so it lies in `L^∞(μ.restrict s)` for
 every measurable `s ⊆ K` (`ContinuousOn.memLp_top_restrict_of_subset_isCompact`). Allowing `s ⊊ K`
@@ -27,6 +27,10 @@ continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
 On a compact space with a measure that is finite on compact sets, every continuous function lies in
 every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the integral
 `(∫ ‖f‖ ^ p dμ) ^ (1 / p)` (`Continuous.eLpNorm_eq_integral_rpow_norm`).
+
+In the other direction, for a measure that charges every nonempty open set
+(`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`).
 -/
 
 public section
@@ -46,6 +50,25 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnNorm.comp_continuousOn hf)).bddAbove
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+
+omit [OpensMeasurableSpace X] in
+/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
+at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
+theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
+    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
+  by_cases hm : AEStronglyMeasurable f μ
+  swap
+  · rw [eLpNorm_of_not_aestronglyMeasurable hm]
+    exact le_top
+  by_contra h
+  push Not at h
+  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on a neighbourhood, of positive measure.
+  have hV := hf.eNorm.eventually_const_lt h
+  have hae : ∀ᵐ y ∂μ, ‖f y‖ₑ ≤ eLpNorm f ∞ μ := by
+    rw [eLpNorm_exponent_top hm]
+    exact eNorm_ae_le_eLpNormEssSup f μ
+  have h0 : μ {y | eLpNorm f ∞ μ < ‖f y‖ₑ} = 0 := by simpa only [ae_iff, not_le] using hae
+  exact (μ.measure_pos_of_mem_nhds hV).ne' h0
 
 section CLMComp
 

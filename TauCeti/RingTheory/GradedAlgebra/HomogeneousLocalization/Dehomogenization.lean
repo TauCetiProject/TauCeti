@@ -76,7 +76,7 @@ theorem mk_X_mem_quotientGrading (j : Fin (n + 1)) :
 theorem surjective_algebraMap_quotientGrading_zero :
     Function.Surjective (algebraMap R (I.quotientGrading 0)) := by
   intro x
-  obtain ⟨p, hp, hpx⟩ := (TauCeti.GradedAlgebra.mem_quotientPiece_iff _ _).mp x.2
+  obtain ⟨p, hp, hpx⟩ := (TauCeti.GradedAlgebra.mem_quotientPiece_iff _ _).mp x.property
   rw [mem_homogeneousSubmodule, ← totalDegree_zero_iff_isHomogeneous,
     totalDegree_eq_zero_iff_eq_C] at hp
   refine ⟨p.coeff 0, Subtype.ext ?_⟩

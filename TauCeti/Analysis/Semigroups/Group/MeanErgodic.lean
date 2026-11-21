@@ -10,8 +10,8 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
+import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import TauCeti.Analysis.Bochner.CharFun.Bochner
-import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Wiener
 
 /-!
@@ -393,7 +393,7 @@ theorem isPositiveDefiniteSub_inner (hU : U.IsUnitary) (v : H) :
       _ = ⟪U (-a) v, U (-b) v⟫_ℂ := by
           rw [← U.map_add_apply, ← add_sub_assoc, neg_add_cancel, zero_sub]
   rw [hgram]
-  exact TauCeti.posSemidef_gram ℂ (fun t : ℝ ↦ U (-t) v)
+  exact Matrix.posSemidef_gram ℂ (fun t : ℝ ↦ U (-t) v)
 
 /-- **Spectral measure of a unitary C₀-group.** For every vector `v` in a complex inner product
 space and every unitary C₀-group `U`, there is a unique finite Borel measure `σ` on `ℝ` whose

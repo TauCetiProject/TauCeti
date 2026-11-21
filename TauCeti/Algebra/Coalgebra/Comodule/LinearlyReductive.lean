@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.Order.Bounds.OrderIso
+public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
@@ -72,7 +74,7 @@ arbitrary field.
 * `TauCeti.Coalgebra.IsLinearlyReductive`: every finite-dimensional comodule is completely
   reducible, with constructor
   `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
-* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_sameUniverse`: use linear
+* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_same_universe`: use linear
   reductivity for a comodule in the carrier universe named by the hypothesis.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: **every comodule over a
   linearly reductive coalgebra is completely reducible**, in every carrier universe and with no
@@ -90,8 +92,9 @@ arbitrary field.
   reducible.
 * `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: for a projective coefficient
   coalgebra, a comodule is completely reducible as soon as its finite subcomodules are.
-* `TauCeti.Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top`: over a field, a comodule is
-  completely reducible exactly when it is the sum of its simple subcomodules.
+* `TauCeti.Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top`: over a commutative ring and a
+  projective coalgebra, a comodule is completely reducible exactly when it is the sum of its
+  simple subcomodules.
 * `TauCeti.Coalgebra.isLinearlyReductive_monoidAlgebra`: monoid-algebra coalgebras are linearly
   reductive over a field.
 
@@ -474,7 +477,7 @@ theorem isCompletelyReducible_of_isAtom {S : Subcomodule R C V}
     rw [h, mem_bot] at hz'
     simpa using hz'
   · refine Or.inr (eq_top_iff.mpr fun s _ ↦ ?_)
-    obtain ⟨z, hz, hzs⟩ := mem_map.mp (h.symm ▸ s.2 : (s : V) ∈ Z.map (subtype S))
+    obtain ⟨z, hz, hzs⟩ := mem_map.mp (h.symm ▸ s.property : (s : V) ∈ Z.map (subtype S))
     rwa [← Subtype.ext (by simpa using hzs : (z : V) = s)]
 
 end Semiring
@@ -483,31 +486,50 @@ end Subcomodule
 
 namespace Comodule
 
-section Field
+section Projective
 
-variable {k : Type u} [Field k]
-variable {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
-variable {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V]
+attribute [local instance] convolutionModule
 
-/-- **Complete reducibility as a sum of simple subcomodules.** Over a field, a comodule is
-completely reducible exactly when it is the supremum of its simple subcomodules. -/
+variable {R : Type u} [CommRing R]
+variable {C : Type v} [AddCommGroup C] [Module R C] [Coalgebra R C] [Module.Projective R C]
+variable {V : Type w} [AddCommGroup V] [Module R V] [Comodule R C V]
+
+/-- Over a commutative ring and a projective coalgebra, a comodule is completely reducible exactly
+when it is a semisimple module over the convolution algebra `WithConv (C →ₗ[R] R)`. -/
+theorem isCompletelyReducible_iff_isSemisimpleModule :
+    IsCompletelyReducible R C V ↔ IsSemisimpleModule (WithConv (C →ₗ[R] R)) V := by
+  rw [isSemisimpleModule_iff, complementedLattice_iff]
+  let Φ := Subcomodule.convolutionSubmoduleOrderIso (R := R) (C := C) (M := V)
+  constructor
+  · intro h S
+    obtain ⟨Q, hQ⟩ := h.exists_isCompl (Φ.symm S)
+    refine ⟨Φ Q, ?_⟩
+    rw [← Submodule.isCompl_restrictScalars_iff (S := R)]
+    simpa [Φ, Subcomodule.toConvolutionSubmodule_restrictScalars] using hQ
+  · intro h
+    refine IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_
+    obtain ⟨T, hT⟩ := h (Φ W)
+    refine ⟨Φ.symm T, ?_⟩
+    rw [← Submodule.isCompl_restrictScalars_iff (S := R)] at hT
+    simpa [Φ, Subcomodule.toConvolutionSubmodule_restrictScalars] using hT
+
+/-- **Complete reducibility as a sum of simple subcomodules.** Over a commutative ring and a
+projective coalgebra, a comodule is completely reducible exactly when it is the supremum of its
+simple subcomodules. -/
 theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
-    IsCompletelyReducible k C V ↔ sSup {S : Subcomodule k C V | IsAtom S} = ⊤ := by
-  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  refine ⟨fun hV ↦ ?_, fun h ↦ isCompletelyReducible_of_sSup_eq_top h
-    fun _ hS ↦ Subcomodule.isCompletelyReducible_of_isAtom hS⟩
-  -- A complement of the sum of the simple subcomodules contains no simple subcomodule.
-  obtain ⟨Q, hQ⟩ := hV.exists_isCompl (sSup {S : Subcomodule k C V | IsAtom S})
-  rcases eq_bot_or_exists_atom_le Q with rfl | ⟨A, hA, hAQ⟩
-  · have h := hQ.sup_eq_top
-    rwa [Subcomodule.bot_toSubmodule, sup_bot_eq, Subcomodule.toSubmodule_eq_top] at h
-  · refine absurd ?_ hA.1
-    rw [← Subcomodule.toSubmodule_eq_bot, ← le_bot_iff, ← hQ.inf_eq_bot]
-    exact le_inf (Subcomodule.toSubmodule_le_toSubmodule.mpr (le_sSup hA))
-      (Subcomodule.toSubmodule_le_toSubmodule.mpr hAQ)
+    IsCompletelyReducible R C V ↔ sSup {S : Subcomodule R C V | IsAtom S} = ⊤ := by
+  rw [isCompletelyReducible_iff_isSemisimpleModule, ← sSup_simples_eq_top_iff_isSemisimpleModule]
+  simp_rw [isSimpleModule_iff_isAtom]
+  let Φ := Subcomodule.convolutionSubmoduleOrderIso (R := R) (C := C) (M := V)
+  have key : sSup {S : Subcomodule R C V | IsAtom S} =
+      Φ.symm (sSup {m : Submodule (WithConv (C →ₗ[R] R)) V | IsAtom m}) := by
+    refine (isLUB_sSup _).unique ?_
+    simpa only [Set.preimage_ofPred_eq, Φ.isAtom_iff] using
+      (OrderIso.isLUB_preimage' Φ).2
+        (isLUB_sSup {m : Submodule (WithConv (C →ₗ[R] R)) V | IsAtom m})
+  rw [key, ← Φ.symm.map_top, Φ.symm.injective.eq_iff]
 
-end Field
+end Projective
 
 end Comodule
 
@@ -519,7 +541,7 @@ variable {k : Type u} [Field k]
 
 Every comodule whose carrier lies in the universe quantified by the hypothesis is completely
 reducible: its finite subcomodules lie in that universe too. -/
-theorem isCompletelyReducible_sameUniverse (k : Type u) [Field k]
+theorem isCompletelyReducible_same_universe (k : Type u) [Field k]
     {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
     (h : IsLinearlyReductive.{u, v, w} k C)
     (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] :
@@ -547,8 +569,10 @@ theorem sSup_atoms_eq_top
     {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
     (hC : IsLinearlyReductive.{u, v, u} k C)
     {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V] :
-    sSup {S : Subcomodule k C V | IsAtom S} = ⊤ :=
-  Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top.mp hC.isCompletelyReducible
+    sSup {S : Subcomodule k C V | IsAtom S} = ⊤ := by
+  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  exact Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top.mp hC.isCompletelyReducible
 
 end Coalgebra.IsLinearlyReductive
 
