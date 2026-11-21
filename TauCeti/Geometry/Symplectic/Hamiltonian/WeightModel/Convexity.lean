@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Analysis.Convex.Cone.Caratheodory
+import TauCeti.Analysis.Convex.Halfspace
 
 /-!
 # Local convexity of the weight model
@@ -126,11 +127,6 @@ theorem preimage_halfSqRadii_setOf_sum_lt [Fintype ι] (r : ℝ) :
   rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_div,
     Finset.sum_add_distrib]
   constructor <;> intro h <;> linarith
-
-/-- The half-space `Σ_i s_i < c` of `ℝ^ι` is convex. -/
-private theorem convex_setOf_sum_lt [Fintype ι] (c : ℝ) : Convex ℝ {s : ι → ℝ | ∑ i, s i < c} :=
-  convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
-    fun c a ↦ by simp [Finset.mul_sum]⟩ _
 
 /-- **The half squared radii are open onto the orthant.** The map
 `(q, p) ↦ ((q_i² + p_i²) / 2)_i` sends every neighbourhood of a point of `ℂ^ι` onto a

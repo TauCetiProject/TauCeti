@@ -285,6 +285,25 @@ end Infinitesimal
 
 /-! ### Convexity charts at a fixed point -/
 
+/-- The moment map identity `μ(x) = μ(p) + μ_model(chart x)` of a weight chart, read in the
+continuous dual. -/
+private theorem toContinuousLinearMap_eq_add_weightMomentMap
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*} [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {ι : Type*} [Fintype ι] {α : ι → StrongDual ℝ E}
+    {chart : PartialDiffeomorph I' 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+      M (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞}
+    {μ : M → Module.Dual ℝ E} {p : M}
+    (hμ : ∀ x ∈ chart.source, ∀ ξ, μ x ξ = μ p ξ + weightMomentMap α (chart x) ξ) :
+    ∀ x ∈ chart.toOpenPartialHomeomorph.source,
+      (LinearMap.toContinuousLinearMap (μ x) : StrongDual ℝ E) =
+        LinearMap.toContinuousLinearMap (μ p) +
+          weightMomentMap α (chart.toOpenPartialHomeomorph x) := fun x hx ↦ by
+  ext ξ
+  simp [LinearMap.coe_toContinuousLinearMap', PartialDiffeomorph.toFun'_toOpenPartialHomeomorph,
+    hμ x hx]
+
 namespace SmoothTwoForm.IsMomentMap
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
@@ -311,11 +330,8 @@ theorem exists_isConvexChart_subset
       IsConvexChart (fun x ↦ (LinearMap.toContinuousLinearMap (μ x) : StrongDual ℝ E)) U := by
   obtain ⟨n, χ, α, chart, r, -, -, hpchart, hchartp, -, htarget, hequiv, -, -, hμchart⟩ :=
     hμ.exists_weightModelChart hσ hG hp
+  have hf := toContinuousLinearMap_eq_add_weightMomentMap (E := E) hμchart
   set e := chart.toOpenPartialHomeomorph
-  have hf (x : M) (hx : x ∈ e.source) :
-      (LinearMap.toContinuousLinearMap (μ x) : StrongDual ℝ E) =
-        (LinearMap.toContinuousLinearMap (μ p) : StrongDual ℝ E) + weightMomentMap α (e x) :=
-    ContinuousLinearMap.ext fun ξ ↦ hμchart x hx ξ
   -- Shrink the chart to a ball whose preimage lies in `N`.
   have he0 : e p = 0 := by simp [e, hchartp]
   obtain ⟨r', hr', hr'N⟩ := exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset
@@ -356,7 +372,7 @@ theorem exists_map_nhds_eq_nhdsWithin_vadd_hull
     (e := chart.toOpenPartialHomeomorph)
     (f := fun x ↦ (LinearMap.toContinuousLinearMap (μ x) : StrongDual ℝ E))
     (ν := (LinearMap.toContinuousLinearMap (μ p) : StrongDual ℝ E))
-    (fun x hx ↦ ContinuousLinearMap.ext fun ξ ↦ hμchart x hx ξ) hpchart
+    (toContinuousLinearMap_eq_add_weightMomentMap (E := E) hμchart) hpchart
   rwa [range_weightMomentMap] at h
 
 end SmoothTwoForm.IsMomentMap
