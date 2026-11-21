@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Prod
 public import Mathlib.Algebra.Group.Equiv.Basic
+public import Mathlib.Data.Finset.Pi
 public import TauCeti.Logic.Equiv.Pi
 
 /-!
@@ -24,7 +25,11 @@ the coordinate and alphabet equivalences.
 Transporting a product `∀ i, M i` of monoids along an equivalence `e : ι' ≃ ι` of the index types,
 `MulEquiv.piCongrLeft M e : (∀ i', M (e i')) ≃* ∀ i, M i`, is `Equiv.piCongrLeft` as a
 multiplicative equivalence; it relabels the factors of a product of groups. Relabelling along two
-equivalences in turn is relabelling along their composite (`MulEquiv.piCongrLeft_trans`).
+equivalences in turn is relabelling along their composite (`MulEquiv.piCongrLeft_trans`). For an
+embedding `f : ι' ↪ ι` and a finite set `s` of indices, relabelling along the bijection `s ≃ f s`
+gives `MulEquiv.piFinsetMap M f s : (∀ i' : s, M (f i')) ≃* ∀ i : s.map f, M i`, which puts the
+factor of `i'` at `f i'` and commutes with restriction to smaller finite sets
+(`MulEquiv.restrict₂_piFinsetMap`).
 
 ## Main declarations
 
@@ -35,6 +40,8 @@ equivalences in turn is relabelling along their composite (`MulEquiv.piCongrLeft
   in function transport.
 * `MulEquiv.piCongrLeft`, `AddEquiv.piCongrLeft`: transport of dependent functions along an
   equivalence of the index types.
+* `MulEquiv.piFinsetMap`, `AddEquiv.piFinsetMap`: relabelling a product over a finite set along an
+  embedding of the index types.
 -/
 
 public section
@@ -80,6 +87,41 @@ theorem piCongrLeft_trans (e₁ : ι'' ≃ ι') (e₂ : ι' ≃ ι) :
     (piCongrLeft (fun i' ↦ M (e₂ i')) e₁).trans (piCongrLeft M e₂) =
       piCongrLeft M (e₁.trans e₂) :=
   toEquiv_injective (Equiv.piCongrLeft_trans M e₁ e₂)
+
+/-- Relabel a product over a finite set `s` along an embedding `f : ι' ↪ ι`: the factor of `i'` is
+put at `f i'`. This is `MulEquiv.piCongrLeft` along the bijection
+`Finset.equivMap f s : s ≃ s.map f`, with the factors of the source written as `M (f i')`. -/
+@[to_additive /-- Relabel a sum over a finite set `s` along an embedding `f : ι' ↪ ι`: the summand
+of `i'` is put at `f i'`. This is `AddEquiv.piCongrLeft` along the bijection
+`Finset.equivMap f s : s ≃ s.map f`, with the summands of the source written as `M (f i')`. -/]
+noncomputable def piFinsetMap (f : ι' ↪ ι) (s : Finset ι') :
+    ((i' : s) → M (f i')) ≃* ((i : s.map f) → M i) :=
+  piCongrLeft (fun i : s.map f ↦ M i) (s.equivMap f)
+
+/-- `MulEquiv.piFinsetMap` puts the factor of `i'` at `f i'`. -/
+@[to_additive (attr := simp) /-- `AddEquiv.piFinsetMap` puts the summand of `i'` at `f i'`. -/]
+theorem piFinsetMap_apply_mk (f : ι' ↪ ι) {s : Finset ι'} (g : (i' : s) → M (f i')) (i' : ι')
+    (hi' : i' ∈ s) : piFinsetMap M f s g ⟨f i', Finset.mem_map_of_mem f hi'⟩ = g ⟨i', hi'⟩ :=
+  Equiv.piCongrLeft_apply_apply (fun i : s.map f ↦ M i) (s.equivMap f) g ⟨i', hi'⟩
+
+/-- The inverse of `MulEquiv.piFinsetMap` reads the factor of `i'` at `f i'`. -/
+@[to_additive (attr := simp) /-- The inverse of `AddEquiv.piFinsetMap` reads the summand of `i'`
+at `f i'`. -/]
+theorem piFinsetMap_symm_apply (f : ι' ↪ ι) {s : Finset ι'} (g : (i : s.map f) → M i) (i' : s) :
+    (piFinsetMap M f s).symm g i' = g ⟨f i', Finset.mem_map_of_mem f i'.property⟩ :=
+  (rfl)
+
+/-- Relabelling along an embedding commutes with restriction to a smaller finite set. -/
+@[to_additive /-- Relabelling along an embedding commutes with restriction to a smaller finite
+set. -/]
+theorem restrict₂_piFinsetMap (f : ι' ↪ ι) {s t : Finset ι'} (h : s ⊆ t)
+    (g : (i' : t) → M (f i')) :
+    Finset.restrict₂ (π := M) (Finset.map_subset_map.2 h) (piFinsetMap M f t g) =
+      piFinsetMap M f s (Finset.restrict₂ (π := fun i' ↦ M (f i')) h g) := by
+  funext ⟨i, hi⟩
+  obtain ⟨i', hi', rfl⟩ := Finset.mem_map.1 hi
+  simp only [Finset.restrict₂, piFinsetMap_apply_mk M f _ i' (h hi'),
+    piFinsetMap_apply_mk M f _ i' hi']
 
 end MulEquiv
 

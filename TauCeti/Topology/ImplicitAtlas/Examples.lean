@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.Basic
+public import TauCeti.Topology.ImplicitAtlas.Subatlas
 public import Mathlib.Geometry.Manifold.ChartedSpace
 import Mathlib.Topology.Homeomorph.Lemmas
 
@@ -26,6 +26,12 @@ for the virtual fundamental class.
   (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the footprint
   `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not cut out
   transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+
+The two examples behave differently under restriction to the empty set of indices
+(`TauCeti.ImplicitAtlas.restrict`): the manifold atlas restricts, because its footprint at `∅` is
+already all of `X` (`TauCeti.ImplicitAtlas.footprintsCover_empty_ofChartedSpace`), whereas
+`powAtlas` does not, because the regular locus of `X_∅` is empty
+(`TauCeti.ImplicitAtlas.not_footprintsCover_empty_powAtlas`).
 
 The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` of `ℝ`
 (`TauCeti.ImplicitAtlas.PowThickening`): the point `{0}` for `I = ∅` and `ℝ` for `I = {α}`.
@@ -104,6 +110,11 @@ theorem regLocus_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).re
 theorem footprint_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).footprint I = univ :=
   eq_univ_of_forall fun y ↦ (ofChartedSpace Γ E ρ n X).mem_footprint.2
     ⟨⟨y, by simp⟩, mem_univ _, rfl⟩
+
+/-- The manifold atlas restricts to the empty set of indices: its footprint at `∅` is already the
+whole space. -/
+theorem footprintsCover_empty_ofChartedSpace : (ofChartedSpace Γ E ρ n X).FootprintsCover ∅ :=
+  footprintsCover_iff _ |>.2 fun y ↦ ⟨∅, by simp, by simp⟩
 
 end ChartedSpace
 
@@ -252,6 +263,22 @@ theorem footprint_powAtlas_singleton (hm : m ≠ 0) : (powAtlas hm).footprint {(
   eq_univ_of_forall fun y ↦ (powAtlas hm).mem_footprint.2
     ⟨powSection hm (Finset.empty_subset _) y, by simp [regLocus_powAtlas],
       Subtype.ext (coe_footprintMap_powAtlas hm (Finset.empty_subset _) _)⟩
+
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.powAtlas` is empty, since the regular locus of
+`X_∅` is. -/
+@[simp]
+theorem footprint_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).footprint ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hy ↦
+    let ⟨_, hx, _⟩ := (powAtlas hm).mem_footprint.1 hy
+    by simp at hx
+
+/-- `TauCeti.ImplicitAtlas.powAtlas` does not restrict to the empty set of indices: the only
+footprint left, `V_∅`, is empty and does not cover the point. -/
+theorem not_footprintsCover_empty_powAtlas (hm : m ≠ 0) :
+    ¬ (powAtlas hm).FootprintsCover ∅ := fun h ↦ by
+  obtain ⟨I, hI, hy⟩ := (footprintsCover_iff _).1 h ⟨0, fun _ ↦ rfl⟩
+  rw [Finset.coe_eq_empty.1 (Set.subset_empty_iff.1 hI), footprint_powAtlas_empty] at hy
+  exact hy
 
 end Pow
 
