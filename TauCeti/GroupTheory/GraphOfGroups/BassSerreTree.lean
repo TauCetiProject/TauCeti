@@ -32,7 +32,9 @@ alternating `𝔸`-path `g₀, e₁, g₁, …, e_k, g_k` from `b`: the darts of
 vertex group element, which by the normal form theorem forces `k = 0`.
 
 The stabilizer of the vertex `p A_b` is the conjugate `p A_b p⁻¹` of the vertex group, and the
-stabilizer of the dart `p α_e(A_e)` is the conjugate `p α_e(A_e) p⁻¹` of the edge group.
+stabilizer of the dart `p α_e(A_e)` is the conjugate `p α_e(A_e) p⁻¹` of the edge group. Over a
+graph without edges, every `𝔸`-path from `a` is homotopic to an element of `A_a`, so `X(𝔸, a)` is a
+single vertex.
 
 Sending `p A_b` to `b` and `p α_e(A_e)` to `e` projects `X(𝔸, a)` onto `Γ`, and `π₁(𝔸, a)` acts
 transitively on each fibre: `q p⁻¹` carries `p A_b` to `q A_b`. Hence the quotient graph
@@ -61,6 +63,11 @@ connected, the quotient graph is `Γ`.
 * `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex`,
   `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`: the vertex and dart stabilizers are the
   conjugates of the vertex groups and of the edge group images.
+* `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreDart_eq_self_iff`,
+  `TauCeti.GraphOfGroups.vertexHom_cons_smul_bassSerreDart_eq_self_iff`: which elements of the
+  stabilizers of the endpoints of a dart fix the dart.
+* `TauCeti.GraphOfGroups.instUniqueVBassSerreTreeOfIsEmptyE`: over a graph without edges, the
+  Bass–Serre tree has exactly one vertex.
 * `TauCeti.GraphOfGroups.exists_smul_bassSerreVertex_eq`,
   `TauCeti.GraphOfGroups.exists_smul_bassSerreDart_eq`: the action is transitive on the fibres of
   the projection to `Γ`.
@@ -592,6 +599,26 @@ theorem stabilizer_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e
   exact sigma_mk_injective.eq_iff.trans <| sigma_mk_injective.eq_iff.trans
     sigma_mk_injective.eq_iff
 
+/-- The element `p g p⁻¹` with `g ∈ A_b` fixes the dart `p α_e(A_e)` exactly when
+`g ∈ α_e(A_e)`. -/
+@[simp]
+theorem vertexHom_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup b) :
+    π₁.vertexHom p g • bassSerreDart p e = bassSerreDart p e ↔ g ∈ (𝔸.αArrow e).range := by
+  rw [← mem_stabilizer_iff, stabilizer_bassSerreDart,
+    Subgroup.mem_map_iff_mem (π₁.vertexHom_injective p)]
+
+/-- The element `(p e) h (p e)⁻¹` with `h ∈ A_c` fixes the dart `p α_e(A_e)` exactly when
+`h ∈ ω_e(A_e)`: it fixes the reverse dart `(p e) α_{rev e}(A_e)`, and
+`α_{rev e}(A_e) = ω_e(A_e)`. -/
+@[simp]
+theorem vertexHom_cons_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
+    (e : b ⟶ c) (h : 𝔸.vertexGroup c) :
+    π₁.vertexHom (p.cons (.dart e)) h • bassSerreDart p e = bassSerreDart p e ↔
+      h ∈ (𝔸.ωArrow e).range := by
+  rw [← mem_stabilizer_iff, ← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart,
+    range_αArrow_reverse, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
+
 /-- `π₁(𝔸, a)` acts transitively on the vertices `p A_b` over a vertex `b` of `Γ`: the class of
 `q p⁻¹` carries `p A_b` to `q A_b`. -/
 theorem exists_smul_bassSerreVertex_eq {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
@@ -606,6 +633,19 @@ theorem exists_smul_bassSerreDart_eq {b c : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b�
   ⟨π₁.mk (q.comp p.reverse), by
     rw [smul_bassSerreDart]
     exact bassSerreDart_congr (Path.Homotopic.comp_reverse_comp q p) e⟩
+
+/-! ### Graphs without edges -/
+
+/-- Over a graph without edges, for instance for the trivial splitting of a group as a single
+vertex group, the Bass–Serre tree is a point: every `𝔸`-path from `a` stays at `a` and is homotopic
+to a single element of `A_a`. -/
+noncomputable instance [IsEmpty Γ.E] : Unique (bassSerreTree 𝔸 a).V where
+  default := bassSerreVertex (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩)
+  uniq y := by
+    obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective y
+    obtain rfl : a = b := Γ.eq_of_path_of_forall_src_eq_tgt isEmptyElim (Path.edgePath p)
+    obtain ⟨g, hg⟩ := π₁.exists_homotopic_ofVertex_of_isEmpty p
+    rw [bassSerreVertex_congr hg, Path.ofVertex_eq_nil_cons, bassSerreVertex_cons_vertex]
 
 /-! ### The quotient graph -/
 

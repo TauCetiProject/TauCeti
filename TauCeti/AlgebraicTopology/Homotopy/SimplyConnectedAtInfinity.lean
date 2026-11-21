@@ -119,7 +119,8 @@ theorem of_isProperMap (hX : SimplyConnectedAtInfinity X) {f : C(X, Y)} {g : C(Y
     hγ z.2 (Or.inl (Or.inr ⟨(σ z.1, γ z.2), by simpa [F] using hz, rfl⟩))
   let G' := ((Homotopy.refl f).comp G).cast rfl (ContinuousMap.comp_const f p)
   have hG' (z) : G' z ∉ K := by simpa [G'] using hG z
-  exact ⟨f p, hp, F.trans G', Homotopy.trans_apply_mem (S := Kᶜ) hF hG'⟩
+  exact ⟨f p, hp, F.trans G', fun z ↦ Homotopy.trans_apply_mem (S := fun _ ↦ Kᶜ)
+    (fun t x ↦ hF (t, x)) (fun t x ↦ hG' (t, x)) z.1 z.2⟩
 
 end SimplyConnectedAtInfinity
 

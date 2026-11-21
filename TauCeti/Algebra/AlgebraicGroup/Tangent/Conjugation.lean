@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Adjoint
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
