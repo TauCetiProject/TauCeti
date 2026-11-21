@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Determinants of continuous linear maps: relative determinants and the cofactor contraction
@@ -37,6 +38,9 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 
 * `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_comp`, `ContinuousLinearMap.det_smul`:
   the determinant of the identity, of a composition and of a scalar multiple.
+* `ContinuousLinearMap.det_one_sub_comp_comm`: Sylvester's identity
+  `det (1 - X ∘L Y) = det (1 - Y ∘L X)` for continuous linear maps between free modules of finite
+  rank, read from `LinearMap.det_one_sub_comp_comm`.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
   bound `1 - δ re (trace H) - P δ² ≤ ‖det (1 - δ H)‖` for `0 ≤ δ ≤ 1`.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
@@ -66,6 +70,17 @@ theorem det_comp (f g : M →L[R] M) : (f ∘L g).det = f.det * g.det :=
 theorem det_smul [ContinuousConstSMul R M] [Module.Free R M] (c : R) (f : M →L[R] M) :
     (c • f).det = c ^ Module.finrank R M * f.det :=
   LinearMap.det_smul c (f : M →ₗ[R] M)
+
+/-- **Sylvester's determinant identity** for continuous linear maps: for `X : N →L[R] M` and
+`Y : M →L[R] N` between free modules of finite rank, `det (1 - X ∘L Y) = det (1 - Y ∘L X)`. This is
+`LinearMap.det_one_sub_comp_comm` for the underlying linear maps. -/
+theorem det_one_sub_comp_comm [IsTopologicalAddGroup M] [Module.Free R M] [Module.Finite R M]
+    {N : Type*} [TopologicalSpace N] [AddCommGroup N] [IsTopologicalAddGroup N] [Module R N]
+    [Module.Free R N] [Module.Finite R N] (X : N →L[R] M) (Y : M →L[R] N) :
+    (1 - X ∘L Y).det = (1 - Y ∘L X).det := by
+  rw [det, det, toLinearMap_sub, toLinearMap_sub, toLinearMap_comp, toLinearMap_comp,
+    toLinearMap_one, toLinearMap_one]
+  exact LinearMap.det_one_sub_comp_comm (X : N →ₗ[R] M) Y
 
 section RCLike
 
