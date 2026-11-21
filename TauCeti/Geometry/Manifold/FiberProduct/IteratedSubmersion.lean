@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 
 /-!
 # Iterated fibre products of submersions
@@ -1018,6 +1019,24 @@ theorem apply_iteratedFiberProductDiffeomorphOfRangeEq_symm {EP HP P : Type*}
   letI := iteratedFiberProductChartedSpace hn hπ m
   hι.apply_diffeomorphOfRangeEq_symm (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
     (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm) y
+
+/-- A `C^n` diffeomorphism `e : P ≃ₘ^n IteratedFiberProduct π (m + 1)` equals
+`iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange` if and only if composing with
+`Subtype.val` recovers `ι`. -/
+theorem eq_iteratedFiberProductDiffeomorphOfRangeEq_iff {EP HP P : Type*}
+    [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+    {m : ℕ} {ι : P → Fin (m + 1) → Y}
+    (hι : Manifold.IsSmoothEmbedding IP (ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY) n ι)
+    (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)}) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    ∀ e : P ≃ₘ^n⟮IP, 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)⟯
+        IteratedFiberProduct π (m + 1),
+      e = iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange ↔
+        (Subtype.val : IteratedFiberProduct π (m + 1) → Fin (m + 1) → Y) ∘ e = ι :=
+  letI := iteratedFiberProductChartedSpace hn hπ m
+  fun e ↦ hι.eq_diffeomorphOfRangeEq_iff (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm) e
 
 end ChosenAtlas
 

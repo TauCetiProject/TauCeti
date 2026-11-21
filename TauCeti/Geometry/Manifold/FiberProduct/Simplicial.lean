@@ -420,6 +420,33 @@ theorem contMDiff_reindex {m₁ m₂ : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n)
   exact contMDiff_eval hn hπ hm' (α i)
 
 /-- Composing the differential of a factor projection `eval i` with the differential of
+`reindex α` gives the differential of the `(α i)`-th factor projection as continuous linear maps. -/
+@[simp]
+theorem mfderiv_eval_comp_mfderiv_reindex {m₁ m₂ : ℕ} (α : Fin (m₁ + 1) → Fin (m₂ + 1))
+    (y : IteratedFiberProduct π (m₂ + 1)) (i : Fin (m₁ + 1)) :
+    letI := iteratedFiberProductChartedSpace hn hπ m₂
+    letI := iteratedFiberProductChartedSpace hn hπ m₁
+    (mfderiv 𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ) IY
+        (IteratedFiberProduct.eval i) (IteratedFiberProduct.reindex α y)).comp
+      (mfderiv
+        𝓘(ℝ, Fin ((m₂ + 1) * finrank ℝ EY - m₂ * finrank ℝ EM) → ℝ)
+        𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ)
+        (IteratedFiberProduct.reindex α) y) =
+      mfderiv 𝓘(ℝ, Fin ((m₂ + 1) * finrank ℝ EY - m₂ * finrank ℝ EM) → ℝ) IY
+        (IteratedFiberProduct.eval (α i)) y := by
+  let := iteratedFiberProductChartedSpace hn hπ m₂
+  let := iteratedFiberProductChartedSpace hn hπ m₁
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  have h1 := ((contMDiff_eval hn hπ le_rfl i)
+    (IteratedFiberProduct.reindex α y)).mdifferentiableAt hn0
+  have h2 := ((contMDiff_reindex hn hπ le_rfl α) y).mdifferentiableAt hn0
+  have hcomp :
+      IteratedFiberProduct.eval (π := π) i ∘ IteratedFiberProduct.reindex α =
+        IteratedFiberProduct.eval (α i) :=
+    funext fun z ↦ IteratedFiberProduct.eval_reindex α z i
+  exact (mfderiv_comp y h1 h2).symm.trans (by rw [hcomp])
+
+/-- Composing the differential of a factor projection `eval i` with the differential of
 `reindex α` gives the differential of the `(α i)`-th factor projection. -/
 @[simp]
 theorem mfderiv_eval_reindex {m₁ m₂ : ℕ} (α : Fin (m₁ + 1) → Fin (m₂ + 1)) :
@@ -435,19 +462,8 @@ theorem mfderiv_eval_reindex {m₁ m₂ : ℕ} (α : Fin (m₁ + 1) → Fin (m�
             𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ)
             (IteratedFiberProduct.reindex α) y ξ) =
         mfderiv 𝓘(ℝ, Fin ((m₂ + 1) * finrank ℝ EY - m₂ * finrank ℝ EM) → ℝ) IY
-          (IteratedFiberProduct.eval (α i)) y ξ := by
-  let := iteratedFiberProductChartedSpace hn hπ m₂
-  let := iteratedFiberProductChartedSpace hn hπ m₁
-  intro y ξ i
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  have h1 := ((contMDiff_eval hn hπ le_rfl i)
-    (IteratedFiberProduct.reindex α y)).mdifferentiableAt hn0
-  have h2 := ((contMDiff_reindex hn hπ le_rfl α) y).mdifferentiableAt hn0
-  have hcomp :
-      IteratedFiberProduct.eval (π := π) i ∘ IteratedFiberProduct.reindex α =
-        IteratedFiberProduct.eval (α i) :=
-    funext fun z ↦ IteratedFiberProduct.eval_reindex α z i
-  exact (mfderiv_comp_apply y h1 h2 ξ).symm.trans (by rw [hcomp])
+          (IteratedFiberProduct.eval (α i)) y ξ :=
+  fun y ξ i ↦ DFunLike.congr_fun (mfderiv_eval_comp_mfderiv_reindex hn hπ α y i) ξ
 
 /-- Reindexing along an equivalence `α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)` induces a `C^n`
 diffeomorphism `Y^[m₂ + 1] ≃ₘ^n Y^[m₁ + 1]`. In particular, permuting the factors of `Y^[k]` is a
