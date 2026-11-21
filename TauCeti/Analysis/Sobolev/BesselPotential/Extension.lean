@@ -37,6 +37,8 @@ symbol `⟨ξ⟩ ^ t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)`, extends to an operator `H^
   `SchwartzMap.HasSobolevExtension.sub`: extensions compose and form a vector space.
 * `SchwartzMap.HasSobolevExtension.mono`: an extension into `H^r` is one into every `H^{r'}` with
   `r' ≤ r`.
+* `SchwartzMap.toDistr_apply_congr_of_comp_eq`: extensions of the same operator to different
+  orders agree as maps of tempered distributions.
 * `SchwartzMap.hasSobolevExtension_besselMultiplier`: `J^t` extends to `H^s → H^{s - t}`.
 -/
 
@@ -145,6 +147,43 @@ theorem mono (hA : HasSobolevExtension A s r) {r' : ℝ} (h : r' ≤ r) :
   exact ContinuousLinearMap.ext (BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM h)
 
 end HasSobolevExtension
+
+/-- **Extensions agree as tempered distributions.** Bounded operators `T : H^s → H^r` and
+`T' : H^{s'} → H^{r'}` that agree with the same operator `A` on Schwartz functions take the same
+tempered distribution on elements `u ∈ H^s` and `u' ∈ H^{s'}` with the same tempered distribution,
+whatever the orders. -/
+theorem toDistr_apply_congr_of_comp_eq {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r s' r' : ℝ}
+    {T : H^{s}(E, F) →L[ℂ] H^{r}(E, G)} {T' : H^{s'}(E, F) →L[ℂ] H^{r'}(E, G)}
+    (hT : T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A)
+    (hT' : T' ∘L toBesselPotentialSpaceCLM s' 2 = toBesselPotentialSpaceCLM r' 2 ∘L A)
+    {u : H^{s}(E, F)} {u' : H^{s'}(E, F)} (h : u.toDistr = u'.toDistr) :
+    (T u).toDistr = (T' u').toDistr := by
+  -- It suffices to compare `T` with `T'` after the inclusion `H^s ⊆ H^{s'}` for `s' ≤ s`.
+  suffices key : ∀ {s r s' r' : ℝ} {T : H^{s}(E, F) →L[ℂ] H^{r}(E, G)}
+      {T' : H^{s'}(E, F) →L[ℂ] H^{r'}(E, G)},
+      T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A →
+      T' ∘L toBesselPotentialSpaceCLM s' 2 = toBesselPotentialSpaceCLM r' 2 ∘L A →
+      ∀ (hs : s' ≤ s) (u : H^{s}(E, F)),
+        (T u).toDistr = (T' (BesselPotentialSpace.inclusion hs u)).toDistr by
+    rcases le_total s' s with hs | hs
+    · rw [key hT hT' hs u]
+      exact congrArg _ (congrArg _ (BesselPotentialSpace.ext (by
+        rw [BesselPotentialSpace.toDistr_inclusion, h])))
+    · rw [key hT' hT hs u']
+      exact congrArg _ (congrArg _ (BesselPotentialSpace.ext (by
+        rw [BesselPotentialSpace.toDistr_inclusion, h]))).symm
+  intro s r s' r' T T' hT hT' hs u
+  have hTT' : BesselPotentialSpace.inclusion (min_le_left r r') ∘L T =
+      BesselPotentialSpace.inclusion (min_le_right r r') ∘L T' ∘L
+        BesselPotentialSpace.inclusion hs := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun w ↦
+      BesselPotentialSpace.ext ?_
+    have h₁ := congrArg (fun T ↦ (T w).toDistr) hT
+    have h₂ := congrArg (fun T ↦ (T w).toDistr) hT'
+    simp only [ContinuousLinearMap.comp_apply, toDistr_toBesselPotentialSpaceCLM] at h₁ h₂
+    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM, h₁, h₂]
+  simpa using congrArg (fun T ↦ (T u).toDistr) hTT'
 
 /-- The Bessel multiplier `J^t`, the Fourier multiplier with symbol `⟨ξ⟩ ^ t`, extends to a
 bounded operator `H^s → H^r` when `r + t = s`. -/
