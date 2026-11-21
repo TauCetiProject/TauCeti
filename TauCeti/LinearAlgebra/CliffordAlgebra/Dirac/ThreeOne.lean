@@ -190,9 +190,9 @@ theorem diracClifford_ι_mul_ι (m n : Fin 4 → ℝ) :
   set X := (realCliffordThreeOneVectorEquivHermitian m : Matrix (Fin 2) (Fin 2) ℂ)
   set Y := (realCliffordThreeOneVectorEquivHermitian n : Matrix (Fin 2) (Fin 2) ℂ)
   have hX : Xᴴ = X :=
-    (isHermitian_iff_isSelfAdjoint.mpr (realCliffordThreeOneVectorEquivHermitian m).2).eq
+    (isHermitian_iff_isSelfAdjoint.mpr (realCliffordThreeOneVectorEquivHermitian m).property).eq
   have hY : Yᴴ = Y :=
-    (isHermitian_iff_isSelfAdjoint.mpr (realCliffordThreeOneVectorEquivHermitian n).2).eq
+    (isHermitian_iff_isSelfAdjoint.mpr (realCliffordThreeOneVectorEquivHermitian n).property).eq
   have hneg : adjugate (-(X * adjugate Y)) = -(Y * adjugate X) := by
     rw [← adjugateFinTwoLinearMap_apply, map_neg, adjugateFinTwoLinearMap_apply,
       adjugate_mul_distrib, adjugate_adjugate _ (by norm_num)]

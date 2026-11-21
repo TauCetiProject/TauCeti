@@ -77,12 +77,12 @@ theorem exists_pow_smul_sup_linearMap_of_mem_primaryComponent {R P M : Type*} [C
     have hmem : (x : P) ∈ 𝔞 ^ n • N := by
       have h := hk (n + k) (Nat.le_add_left k n)
       rw [Nat.add_sub_cancel] at h
-      exact Submodule.smul_mono le_rfl inf_le_right (h.le ⟨hx, x.2⟩)
+      exact Submodule.smul_mono le_rfl inf_le_right (h.le ⟨hx, x.property⟩)
     exact hker ((Submodule.mem_smul_top_iff (𝔞 ^ n) N x).mpr hmem)
   let φ : P →ₗ.[R] M := ⟨N, g⟩
   let ψ : P →ₗ.[R] M := ⟨𝔞 ^ (n + k) • ⊤, 0⟩
   have hagree : ∀ (x : φ.domain) (y : ψ.domain), (x : P) = y → φ x = ψ y := fun x y hxy ↦
-    (hvanish x (hxy ▸ y.2)).trans (LinearMap.zero_apply _).symm
+    (hvanish x (hxy ▸ y.property)).trans (LinearMap.zero_apply _).symm
   refine ⟨n + k, (φ.sup ψ hagree).toFun, fun x hx ↦ ?_, fun y hy ↦ ?_⟩
   · exact (LinearPMap.sup_apply hagree ⟨x, hx⟩ 0 _ (add_zero x)).trans (by simp [φ, ψ])
   · exact (LinearPMap.sup_apply hagree 0 ⟨y, hy⟩ _ (zero_add y)).trans (by simp [φ, ψ])
@@ -97,7 +97,7 @@ instance injective_primaryComponent (𝔞 : Ideal R) :
   refine Module.Baer.injective fun 𝔟 g ↦ ?_
   obtain ⟨m, g', hg'𝔟, hg'𝔞⟩ :=
     𝔞.exists_pow_smul_sup_linearMap_of_mem_primaryComponent (𝔟 : Submodule R R)
-      ((𝔞.primaryComponent M).subtype ∘ₗ g) fun x ↦ (g x).2
+      ((𝔞.primaryComponent M).subtype ∘ₗ g) fun x ↦ (g x).property
   obtain ⟨h, hh⟩ := Module.Baer.of_injective (R := R) (Q := M) inferInstance
     (𝔟 ⊔ 𝔞 ^ m • (⊤ : Submodule R R)) g'
   have hh₀ : ∀ r ∈ 𝔞 ^ m, h r = 0 := fun r hr ↦ by

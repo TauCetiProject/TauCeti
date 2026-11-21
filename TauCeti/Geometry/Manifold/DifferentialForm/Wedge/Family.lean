@@ -168,20 +168,20 @@ variable [IsManifold I 1 M] [FiniteDimensional ℝ E]
 /-- The **wedge product** `α 0 ∧ ⋯ ∧ α (k - 1)` of a family of smooth one-forms, as a smooth
 `k`-form. -/
 def wedgeFamily (α : Fin k → SmoothForm I M ℝ 1) : SmoothForm I M ℝ k :=
-  ⟨RoughForm.wedgeFamily fun i ↦ (α i).1,
+  ⟨RoughForm.wedgeFamily fun i ↦ (α i).val,
     (IsSmoothForm.wedgeFamily fun i ↦ (α i).isSmoothForm).mem_smoothBundleForms⟩
 
 /-- The underlying rough form of the wedge product of a family of smooth one-forms. -/
 @[simp]
 theorem coe_wedgeFamily (α : Fin k → SmoothForm I M ℝ 1) :
-    (wedgeFamily α).1 = RoughForm.wedgeFamily fun i ↦ (α i).1 :=
+    (wedgeFamily α).val = RoughForm.wedgeFamily fun i ↦ (α i).val :=
   (rfl)
 
 /-- The wedge product of a family of smooth one-forms is the determinant of the matrix of the
 one-forms evaluated on the tangent vectors. -/
 theorem wedgeFamily_apply (α : Fin k → SmoothForm I M ℝ 1) (x : M)
     (v : Fin k → TangentSpace I x) :
-    (wedgeFamily α).1 x v = (Matrix.of fun i j ↦ (α i).1 x ![v j]).det :=
+    (wedgeFamily α).val x v = (Matrix.of fun i j ↦ (α i).val x ![v j]).det :=
   RoughForm.wedgeFamily_apply _ x v
 
 /-- The wedge product of two smooth one-forms as a family is their binary wedge product. -/
@@ -199,13 +199,13 @@ theorem mpullback_wedgeFamily [IsManifold I' 1 M'] [FiniteDimensional ℝ E'] (f
 the sign of `σ`. -/
 theorem wedgeFamily_comp_perm (α : Fin k → SmoothForm I M ℝ 1) (σ : Equiv.Perm (Fin k)) :
     wedgeFamily (α ∘ σ) = (Equiv.Perm.sign σ : ℝ) • wedgeFamily α :=
-  Subtype.ext (RoughForm.wedgeFamily_comp_perm (fun i ↦ (α i).1) σ)
+  Subtype.ext (RoughForm.wedgeFamily_comp_perm (fun i ↦ (α i).val) σ)
 
 /-- Rescaling each smooth one-form `α i` by `c i` multiplies their wedge product by
 `∏ i, c i`. -/
 theorem wedgeFamily_smul (c : Fin k → ℝ) (α : Fin k → SmoothForm I M ℝ 1) :
     wedgeFamily (fun i ↦ c i • α i) = (∏ i, c i) • wedgeFamily α :=
-  Subtype.ext (RoughForm.wedgeFamily_smul c fun i ↦ (α i).1)
+  Subtype.ext (RoughForm.wedgeFamily_smul c fun i ↦ (α i).val)
 
 end SmoothForm
 

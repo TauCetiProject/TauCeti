@@ -55,20 +55,13 @@ namespace TemperedDistribution
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- For every `1 ≤ p ≤ ∞`, the block `Δⱼ δ₀` is the `Lᵖ` function `𝓕⁻ ψⱼ`. -/
-private theorem littlewoodPaleyBlock_delta_zero_eq_toLp (j : ℕ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
-    littlewoodPaleyBlock ℂ φ j (delta 0) =
-      ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) :
-        𝓢'(E, ℂ)) := by
-  rw [Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_delta_zero]
-
 /-- The `Lᵖ` class of the Schwartz function `𝓕⁻ ψⱼ` is almost everywhere the inverse Fourier
 transform of the function `ψⱼ`. -/
 private theorem toLp_fourierInv_ae_eq (j : ℕ) (p : ℝ≥0∞) :
     (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) =ᵐ[volume]
       𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
   filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).coeFn_toLp p] with x hx
-  rw [hx, SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  rw [hx, φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz]
 
 variable {φ}
 
@@ -103,18 +96,12 @@ Besov space `B^s_{p,q}` exactly when `s < -n/p'`, or `s = -n/p'` and `q = ∞`. 
 theorem memBesov_delta_zero_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] (hq : q ≠ 0) :
     (delta (0 : E)).MemBesov φ s p q ↔
       s < -(finrank ℝ E * (1 - p.toReal⁻¹)) ∨ s = -(finrank ℝ E * (1 - p.toReal⁻¹)) ∧ q = ∞ := by
-  set f : ℕ → Lp ℂ p (volume : Measure E) :=
-    fun j ↦ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p
-  have hfae (j : ℕ) : f j =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
-    toLp_fourierInv_ae_eq φ j p
-  have hc : 0 < ‖f 1‖ := by
-    refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
-    rw [eLpNorm_congr_ae (hfae 1)]
-    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
+  have hc : 0 < ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp p (volume : Measure E)‖ :=
+    φ.norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_pos 1
       (zero_lt_one.trans_le Fact.out).ne'
-  rw [memBesov_iff_memℓp (f := f) (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
+  rw [memBesov_iff_memℓp (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
     ← TauCeti.memℓp_nat_add_iff 1]
-  simp_rw [rpow_mul_norm_succ_eq hfae]
+  simp_rw [φ.rpow_mul_norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ]
   set m : ℝ := finrank ℝ E * (1 - p.toReal⁻¹)
   -- The ratio `2^{s + m}` of the geometric sequence is `< 1` or `= 1` according to the sign of
   -- `s + m`.
@@ -132,8 +119,8 @@ theorem memBesov_delta_zero (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     (delta (0 : E)).MemBesov φ (-(finrank ℝ E * (1 - p.toReal⁻¹))) p ∞ := by
   rw [memBesov_iff_memℓp (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
     ← TauCeti.memℓp_nat_add_iff 1]
-  simp_rw [rpow_mul_norm_succ_eq (toLp_fourierInv_ae_eq φ · p), neg_add_cancel, Real.rpow_zero,
-    one_pow, mul_one]
+  simp_rw [φ.rpow_mul_norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ,
+    neg_add_cancel, Real.rpow_zero, one_pow, mul_one]
   exact memℓp_infty (by rw [Set.range_const]; exact bddAbove_singleton)
 
 end TemperedDistribution

@@ -84,7 +84,7 @@ theorem _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent
       refine toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular p bp bq (hp g) ?_ ?_
       · have hone : (rho g).restrict (fun _ hx ↦ Submodule.mem_comap.mp (hp g hx)) = 1 := by
           ext x
-          simp [hfixed g x x.2]
+          simp [hfixed g x x.property]
         rw [hone, map_one]
         exact Matrix.isUpperUnitriangular_one
       · simpa only [Representation.quotient_apply] using hbq g

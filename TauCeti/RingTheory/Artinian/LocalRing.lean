@@ -91,7 +91,7 @@ theorem primaryComponent_eq_top_of_isArtinian (I : Ideal R) [IsArtinian R M]
     Submodule.eq_bot_of_le_smul_of_le_jacobson I _ hfg hstab.le hJ
   refine (I.primaryComponent_mem M x).mpr ⟨n, (Submodule.mem_torsionBySet_iff _ _).mpr fun r ↦ ?_⟩
   have hmem : (r : R) • x ∈ I ^ n • Submodule.span R {x} :=
-    Submodule.smul_mem_smul r.2 (Submodule.mem_span_singleton_self x)
+    Submodule.smul_mem_smul r.property (Submodule.mem_span_singleton_self x)
   rwa [hbot, Submodule.mem_bot] at hmem
 
 end Ideal
