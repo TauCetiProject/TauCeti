@@ -27,7 +27,8 @@ this file derives the consequences for pushforwards of measures `μ` restricted 
   restricted to `S` to a measure `T₊ (μ|S) ≪ σ` with a Lebesgue decomposition with respect to `σ`
   (as when `μ` is s-finite and `σ` σ-finite), then the Jacobian equation holds as an identity
   of measures: `μ|S = ρ.withDensity (S.indicator fun x => J x * d(T₊ (μ|S))/dσ (T x))`. When `ρ`
-  is σ-finite and this density is almost everywhere measurable, it follows that
+  is σ-finite, `μ` has a Lebesgue decomposition with respect to `ρ` and this density is almost
+  everywhere measurable, it follows that
   `dμ/dρ (x) = J x * d(T₊ (μ|S))/dσ (T x)` for `ρ`-almost every `x ∈ S`; the identity says
   nothing about `J` on `ρ`-null sets.
 * If moreover `T` is measurable, `ρ` and `σ` are σ-finite, `μ` has a Lebesgue decomposition with
@@ -102,8 +103,7 @@ theorem map_restrict_absolutelyContinuous_of_withDensity_image_eq {T : X → Y} 
 with `T` injective on `S` and sending measurable subsets of `S` to measurable sets, if `T` pushes
 `μ` restricted to `S` to a measure `T₊ (μ|S) ≪ σ` with a Lebesgue decomposition with respect to `σ`,
 then `μ` restricted to `S` is `ρ` with density
-`J x * d(T₊ (μ|S))/dσ (T x)` on `S` (and `0` off `S`). This is an identity of measures: it
-determines the density, hence `dμ/dρ`, only `ρ`-almost everywhere. -/
+`J x * d(T₊ (μ|S))/dσ (T x)` on `S` (and `0` off `S`), as an identity of measures. -/
 theorem restrict_eq_withDensity_indicator_rnDeriv_map_restrict {T : X → Y} {S : Set X}
     {μ : Measure X} [HaveLebesgueDecomposition ((μ.restrict S).map T) σ]
     (hT : AEMeasurable T (μ.restrict S)) (hSm : MeasurableSet S)
