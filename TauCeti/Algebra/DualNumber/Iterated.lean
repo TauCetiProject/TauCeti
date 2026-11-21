@@ -31,7 +31,7 @@ Over a commutative semiring `R`, `R`-algebra homomorphisms `R[ε][ε] →ₐ[R] 
 `A` correspond bijectively via `TauCeti.iteratedDualNumberLift` to pairs `(e₁, e₂)` of commuting
 square-zero elements of `A`, and swapping the two generators gives an `R`-algebra involution
 `TauCeti.iteratedDualNumberSwap`. Evaluating `MvPolynomial (Fin 2) R` at `![inl ε, ε]` has kernel
-`(X 0 ^ 2, X 1 ^ 2)` (`DualNumber.ker_aeval_inl_eps_eps`), yielding over a commutative ring `R`
+`(X 0 ^ 2, X 1 ^ 2)` (`TauCeti.ker_aeval_inl_eps_eps`), yielding over a commutative ring `R`
 the presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
 (`TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`).
 
@@ -48,13 +48,13 @@ the presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
 
 ## Main results
 
-* `DualNumber.inl_eps_pow_two`, `DualNumber.inl_eps_mul_eps`: `(inl ε) ^ 2 = 0` and
+* `TauCeti.inl_eps_pow_two`, `TauCeti.inl_eps_mul_eps`: `(inl ε) ^ 2 = 0` and
   `inl ε * ε = ε • ε` in `R[ε][ε]`.
 * `TauCeti.finrank_iteratedDualNumber`: `Module.finrank R R[ε][ε] = 4` under
   `StrongRankCondition R`.
 * `TauCeti.iteratedDualNumber_algHom_ext`: `R`-algebra maps out of `R[ε][ε]` are determined by
   their values on `inl ε` and `ε`.
-* `DualNumber.ker_aeval_inl_eps_eps`: the kernel of `MvPolynomial.aeval ![inl ε, ε]` is
+* `TauCeti.ker_aeval_inl_eps_eps`: the kernel of `MvPolynomial.aeval ![inl ε, ε]` is
   `Ideal.span {X 0 ^ 2, X 1 ^ 2}`.
 -/
 
@@ -62,7 +62,7 @@ public section
 
 open DualNumber TrivSqZeroExt
 
-namespace DualNumber
+namespace TauCeti
 
 section Semiring
 
@@ -109,10 +109,6 @@ theorem inl_eps_mul_eps_ne_zero [Nontrivial R] :
   one_ne_zero (α := R) (by simpa using congrArg (fun z : R[ε][ε] ↦ z.snd.snd) h)
 
 end Semiring
-
-end DualNumber
-
-namespace TauCeti
 
 section Basis
 
@@ -361,7 +357,7 @@ theorem aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
       Finsupp.coe_add, Pi.zero_apply, Pi.add_apply, Finsupp.single_apply, Fin.isValue,
       zero_ne_one, one_ne_zero, ↓reduceIte, add_zero, zero_add]
     rcases d 0 with _ | _ | k₀ <;> rcases d 1 with _ | _ | k₁ <;>
-      ext <;> simp [pow_add, mul_assoc, inl_eps_mul_inl_eps, algebraMap_eq_inl']
+      ext <;> simp [pow_add, mul_assoc, TauCeti.inl_eps_mul_inl_eps, algebraMap_eq_inl']
 
 @[simp]
 theorem fst_fst_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
@@ -390,7 +386,7 @@ end DualNumber
 
 end MvPolynomial
 
-namespace DualNumber
+namespace TauCeti
 
 section MvPolynomial
 
@@ -437,10 +433,6 @@ theorem ker_aeval_inl_eps_eps :
 
 end MvPolynomial
 
-end DualNumber
-
-namespace TauCeti
-
 section MvPolynomialQuotient
 
 variable (R : Type*) [CommRing R]
@@ -462,7 +454,7 @@ noncomputable def iteratedDualNumberMvPolynomialQuotientAlgEquiv :
   let I : Ideal (MvPolynomial (Fin 2) R) :=
     Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}
   have hI : ∀ p ∈ I, MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p = 0 := fun _ hp ↦
-    RingHom.mem_ker.mp ((DualNumber.ker_aeval_inl_eps_eps (R := R)).symm ▸ hp)
+    RingHom.mem_ker.mp ((ker_aeval_inl_eps_eps (R := R)).symm ▸ hp)
   -- `Ideal.Quotient.liftₐ` uses `Ring` quotient instances rather than the `CommRing` shortcut,
   -- so we rewrite via `liftₐ_comp` before `simp` unfolds `liftₐ_apply`.
   have hlift (p : MvPolynomial (Fin 2) R) :
