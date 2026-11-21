@@ -141,20 +141,14 @@ theorem modularFunctionField_closure_eq_top :
           (frickeModularFunction '' {a : Fin 2 → ZMod N | a ≠ 0})) = ⊤ := by
   apply Subfield.map_injective (f := (modularFunctionField N).subtype)
   rw [RingHom.map_field_closure, Subfield.map_top, Subfield.fieldRange_subtype]
-  conv_rhs => rw [modularFunctionField_eq_closure]
-  have hconst (c : Subfield.closure {z : ℂ | z ^ N = 1}) :
-      algebraMap (Subfield.closure {z : ℂ | z ^ N = 1})
-          (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) c =
-        algebraMap ℂ _ (c : ℂ) := by
-    rw [IsScalarTower.algebraMap_apply (Subfield.closure {z : ℂ | z ^ N = 1}) ℂ
+  conv_rhs => rw [modularFunctionField_eq_closure,
+    IsScalarTower.algebraMap_eq (Subfield.closure {z : ℂ | z ^ N = 1}) ℂ
       (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient),
-      Subfield.algebraMap_ofSubfield, Subfield.subtype_apply]
-  rw [show (algebraMap (Subfield.closure {z : ℂ | z ^ N = 1})
-    (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
-      Subfield.closure {z : ℂ | z ^ N = 1} → _) = _ from funext hconst]
+    Subfield.algebraMap_ofSubfield]
   congr 1
   simp only [Set.image_union, ← Set.range_comp, Set.image_insert_eq, Set.image_image,
-    Function.comp_def, Subfield.subtype_apply, coe_modularFunctionFieldConst_apply,
+    RingHom.coe_comp, Function.comp_def, Subfield.subtype_apply,
+    coe_modularFunctionFieldConst_apply,
     coe_modularFunctionFieldMapOfLevelOne_apply, coe_frickeModularFunction]
 
 end TauCeti

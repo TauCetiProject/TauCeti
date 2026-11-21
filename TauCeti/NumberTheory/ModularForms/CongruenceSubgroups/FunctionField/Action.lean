@@ -118,17 +118,6 @@ theorem unop_modularFunctionFieldActionZMod_modularFunctionFieldMapOfLevelOne
     coe_modularFunctionFieldMapOfLevelOne_apply,
     unop_modularFunctionActionZMod_compactifiedQuotientComap]
 
-/-- The arithmetic modular action fixes the modular invariant `j`. -/
-theorem unop_modularFunctionFieldActionZMod_jMeromorphicFunction (g : SL(2, ZMod N)) :
-    unop (modularFunctionFieldActionZMod N g)
-        (modularFunctionFieldMapOfLevelOne N
-          ⟨ModularGroup.jMeromorphicFunction,
-            ModularGroup.jMeromorphicFunction_mem_coeffSubfield ⊥⟩) =
-      modularFunctionFieldMapOfLevelOne N
-        ⟨ModularGroup.jMeromorphicFunction,
-            ModularGroup.jMeromorphicFunction_mem_coeffSubfield ⊥⟩ :=
-  unop_modularFunctionFieldActionZMod_modularFunctionFieldMapOfLevelOne g _
-
 /-- On arithmetic Fricke functions, substitution by `g` sends `f_a` to `f_{a g}`. -/
 @[simp]
 theorem unop_modularFunctionFieldActionZMod_frickeModularFunction (g : SL(2, ZMod N))
