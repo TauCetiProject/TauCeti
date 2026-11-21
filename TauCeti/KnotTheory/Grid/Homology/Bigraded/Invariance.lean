@@ -173,22 +173,20 @@ theorem BigradedUnblockedHomologyIsomorphic.unblockedHomologyIsomorphic
     (h : hG.BigradedUnblockedHomologyIsomorphic hG' R) : hG.UnblockedHomologyIsomorphic hG' R := by
   let _ := hG.unblockedHomologyModule R
   let _ := hG'.unblockedHomologyModule R
+  have := hG.isScalarTower_unblockedHomology (R := R)
+  have := hG'.isScalarTower_unblockedHomology (R := R)
   obtain ⟨e, he⟩ := h
-  refine unblockedHomologyIsomorphic_def.mpr ⟨e, LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_⟩
-  rw [add_zero, mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.coarsen_bigradedUnblockedHomologyGrading_snd,
-    InternalGrading.coarsen_piece]
+  have he' : LinearMap.IsHomogeneous (e.toLinearMap.restrictScalars R)
+      (hG.toOddComponentGridDiagram.bigradedUnblockedHomologyGrading R).piece
+      (hG'.toOddComponentGridDiagram.bigradedUnblockedHomologyGrading R).piece 0 :=
+    LinearMap.isHomogeneous_def.mpr fun _ _ hy ↦ he.map_mem hy
+  have hc := he'.coarsen_zero Prod.snd
+  rw [OddComponentGridDiagram.coarsen_bigradedUnblockedHomologyGrading_snd,
+    OddComponentGridDiagram.coarsen_bigradedUnblockedHomologyGrading_snd] at hc
+  refine unblockedHomologyIsomorphic_def.mpr ⟨e, LinearMap.isHomogeneous_def.mpr fun _ _ hy ↦ ?_⟩
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.coarsen_bigradedUnblockedHomologyGrading_snd,
-    InternalGrading.coarsen_piece] at hy
-  -- Each bigraded summand of `y` of Alexander degree `a` keeps its bidegree under `e`.
-  refine coarsenGrading_induction hy (fun g hg z hz ↦ ?_)
-    (by simpa only [map_zero] using zero_mem _) fun z w hz hw ↦ by
-      simpa only [map_add] using add_mem hz hw
-  simpa only [← hg, add_zero] using
-    mem_coarsenGrading_of_mem Prod.snd (by simpa only [add_zero] using he.map_mem hz)
+    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
+  exact hc.map_mem hy
 
 end Relation
 
