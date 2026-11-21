@@ -30,9 +30,11 @@ multiplicity `w`:
 * `setLIntegral_unitCone_eq` and `setIntegral_unitCone_eq`: integrals over `unitCone D` of
   functions invariant under `unitScale` on the positive orthant do not depend on the choice of unit
   fundamental domain `D`.
-* `hasMellin_mellinKernel_sub`: the radial Mellin substitution identifying the Mellin transform at
-  `s / 2` of `mellinKernel D L` minus its constant term with `(2^r₂ / w) (V_L²)^(s/2)` times the
-  norm-weighted integral of `latticeTheta L - 1` over `unitCone D`.
+* `hasMellin_mellinKernel_sub`: for a measurable bounded set `D`, provided
+  `y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta L y - 1)` is absolutely integrable on
+  `unitCone D`, the radial Mellin substitution identifying the Mellin transform at `s / 2` of
+  `mellinKernel D L` minus its constant term `(2^r₂ / w) * (surfaceHaar K).real (Subtype.val ⁻¹' D)`
+  with `(2^r₂ / w) (V_L²)^(s/2)` times the integral of that weighted integrand over `unitCone D`.
 * `mellinKernelFEPair_Λ_eq_integral_unitCone`: for a unit fundamental domain `D`, equates
   `(mellinKernelFEPair hD L).Λ s` on `Re s > 1/2` with `(2^r₂ / w) (V_L²)^s` times the
   norm-weighted cone integral of `latticeTheta L - 1`, provided that cone integral is absolutely
@@ -249,10 +251,12 @@ end FreeUnitAction
 /-! ### Radial Mellin transform over a cone -/
 
 open scoped Classical in
-/-- **The radial Mellin substitution in Hecke's integral.** If the norm-weighted theta series
-minus its constant term is absolutely integrable over the cone, then the Mellin transform of
-its kernel is that cone integral times `(2^r₂ / w) V_L^s`. The power of the covolume comes from
-the substitution `u = V_L² t`, not from a Jacobian factor in `dt / t`. -/
+/-- **The radial Mellin substitution in Hecke's integral.** For a measurable bounded set `D`, if
+the norm-weighted theta integrand `y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta L y - 1)` is
+absolutely integrable over `unitCone D`, then the Mellin transform at `s / 2` of `mellinKernel D L`
+minus its constant term `(2^r₂ / w) * (surfaceHaar K).real (Subtype.val ⁻¹' D)` is
+`(2^r₂ / w) (V_L²)^(s/2)` times that cone integral. The power of the covolume comes from the
+substitution `u = V_L² t`, not from a Jacobian factor in `dt / t`. -/
 theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet D)
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] (s : ℂ)
