@@ -32,6 +32,9 @@ need not be unitriangular, and blocks may have arbitrary multiplicities. The res
 down-closed set of block indices, including the empty set, before specializing to all initial
 segments. In particular, it applies to weight-space blocks of arbitrary dimensions.
 
+A matrix on a finite index type is indecomposable exactly when its transpose is, because reversing
+a chain of nonzero entries of one gives a chain of nonzero entries of the other.
+
 ## Main results
 
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
@@ -51,6 +54,7 @@ segments. In particular, it applies to weight-space blocks of arbitrary dimensio
   is unchanged by invertible triangular outer factors.
 * `Matrix.forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff`: preservation of the test on
   every leading block.
+* `Matrix.isIndecomposable_transpose`: a matrix is indecomposable exactly when its transpose is.
 
 ## References
 
@@ -123,6 +127,20 @@ public theorem _root_.IsUnit.det_map_toSquareBlockProp {m R S : Type*} [Fintype 
     IsUnit ((M.map f).toSquareBlockProp p).det := by
   rw [map_toSquareBlockProp, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
   exact h.map f
+
+/-! ### Indecomposability -/
+
+/-- A matrix on a finite index type is indecomposable exactly when its transpose is. -/
+@[simp]
+public theorem isIndecomposable_transpose {m R : Type*} [Finite m] [Zero R] {M : Matrix m m R} :
+    Mᵀ.IsIndecomposable ↔ M.IsIndecomposable := by
+  simp_rw [isIndecomposable_iff_reflTransGen, transpose_apply]
+  exact ⟨fun h i j ↦ (h j i).swap, fun h i j ↦ (h j i).swap⟩
+
+/-- The transpose of an indecomposable matrix on a finite index type is indecomposable. -/
+public protected theorem IsIndecomposable.transpose {m R : Type*} [Finite m] [Zero R]
+    {M : Matrix m m R} (hM : M.IsIndecomposable) : Mᵀ.IsIndecomposable :=
+  isIndecomposable_transpose.2 hM
 
 /-! ### Leading blocks -/
 

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Basic.Complex.Basic
+public import TauCeti.Algebra.Algebra.Rat
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 public import TauCeti.RepresentationTheory.Symmetric.Relabel
@@ -165,34 +165,20 @@ theorem weylModule_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
     tensorPowerRange_conj (stdRep k n) μ.card (youngSymmetrizerOver k t) σ,
     permTensorAction_apply]
 
-/-- Permuting the tensor factors by `σ` as a linear equivalence from the Weyl module of `t` to
-the Weyl module of the relabeled tableau `σt`. -/
-noncomputable def weylRelabelEquiv (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
-    (weylModule k n t).toSubmodule ≃ₗ[k] (weylModule k n (relabel σ t)).toSubmodule :=
-  (PiTensorProduct.reindex k (fun _ : Fin μ.card => Fin n → k) σ).ofSubmodules _ _
-    (by rw [weylModule_relabel σ t, permTensorAction_apply])
-
-/-- The relabeling equivalence is induced by permuting the tensor factors. -/
-@[simp]
-theorem weylRelabelEquiv_apply_coe (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
-    (x : (weylModule k n t).toSubmodule) :
-    ((weylRelabelEquiv σ t x : (weylModule k n (relabel σ t)).toSubmodule) :
-        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ x := by
-  rw [permTensorAction_apply]
-  rfl
-
 /-- Permuting the tensor factors is `GL n k`-equivariant, so it is an isomorphism of
 representations from the Weyl module of `t` to the Weyl module of `σt`. -/
 noncomputable def weylRelabelRepEquiv (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
     (weylRep k n t).Equiv (weylRep k n (relabel σ t)) :=
-  Representation.Equiv.mk (weylRelabelEquiv σ t) fun g => by
-    ext x
-    have h := congrArg (fun f : Module.End k (⨂[k]^μ.card (Fin n → k)) =>
-        f (x : ⨂[k]^μ.card (Fin n → k)))
-      (commute_permTensorAction_tensorPowerRep k n μ.card σ g)
-    simp only [mul_apply_eq_comp] at h
-    simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      weylRelabelEquiv_apply_coe, weylRep_apply_coe] using h
+  tensorPowerReindexEquiv σ (by rw [weylModule_relabel σ t, permTensorAction_apply])
+
+/-- The relabeling isomorphism of representations is induced by permuting the tensor factors. -/
+@[simp]
+theorem weylRelabelRepEquiv_apply_coe (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
+    (x : (weylModule k n t).toSubmodule) :
+    ((weylRelabelRepEquiv σ t x : (weylModule k n (relabel σ t)).toSubmodule) :
+        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ x := by
+  rw [weylRelabelRepEquiv, tensorPowerReindexEquiv_apply_coe, permTensorAction_apply,
+    LinearEquiv.coe_coe]
 
 /-- The Weyl modules of two tableaux of the same shape are isomorphic representations of
 `GL n k`: up to isomorphism the Weyl module depends only on the shape. -/
@@ -341,10 +327,7 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero
     (hcol : colIndex t a = colIndex t b) (hab : a ≠ b) (hpab : p a = p b) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
         (tensorPowerBasis k n μ.card p) = 0 := by
-  have : Invertible (2 : ℚ) := invertibleOfNonzero (by norm_num)
-  have : Invertible (2 : k) := by
-    have h := Invertible.map (algebraMap ℚ k) (2 : ℚ)
-    rwa [map_ofNat] at h
+  have : Invertible (2 : k) := invertibleTwoOfAlgebraRat k
   have hneg :=
     permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t hcol hab hpab
   have htwo : (2 : k) • permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)

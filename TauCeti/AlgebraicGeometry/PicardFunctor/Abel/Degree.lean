@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Representable
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Jacobi
 public import TauCeti.AlgebraicGeometry.PicardFunctor.MultiplicativeAbel
 
@@ -39,6 +40,8 @@ This file proves the compatibilities of these maps with the operations on diviso
   (`abelJacobiMapOfDegree_app_mul_pow_basePoint`), so the maps are compatible with the
   stabilization maps `Div^d_{X/S} ⟶ Div^{d+e}_{X/S}`;
 * in degree zero the map is trivial (`abelJacobiMapOfDegree_zero_app`);
+* changing the base point divides the normalized class by the `d`-th power of the class of
+  the new base point (`abelJacobiMapOfDegree_app_change_basePoint`);
 * in degree one, under the isomorphism `Hom_S(-, X) ≅ Div¹_{X/S}` given by graphs, it is the
   Abel–Jacobi map `x ↦ 𝒪(Γₓ - x₀_T)` on points
   (`whiskerRight_graphDivisorDegreeOne_comp_abelJacobiMapOfDegree_one`);
@@ -230,6 +233,24 @@ theorem abelJacobiMapOfDegree_app_prod_graphDivisor {ι : Type*} (s : Finset ι)
   simp only [abelMapMonoidHom_apply] at h
   rw [abelJacobiMapOfDegree_app_apply, Finset.prod_congr rfl fun i _ ↦
     abelJacobiMap_app_apply f hx₀ (x i), Finset.prod_div_distrib, Finset.prod_const, h]
+
+end
+
+noncomputable section
+
+variable {S X : Scheme.{u}} (f : X ⟶ S) [IsProper f] [SmoothOfRelativeDimension 1 f]
+  {x₀ x₁ : S ⟶ X} (hx₀ : x₀ ≫ f = 𝟙 S) (hx₁ : x₁ ≫ f = 𝟙 S)
+
+/-- Changing the base point for an effective divisor of degree `d` divides its normalized
+class by the `d`-th power of the Abel–Jacobi class of `x₁ - x₀`. -/
+theorem abelJacobiMapOfDegree_app_change_basePoint (d : ℕ) {T : (Over S)ᵒᵖ}
+    (D : (relativeEffectiveCartierDegreeSubfunctor f d).toFunctor.obj T) :
+    (abelJacobiMapOfDegree f hx₁ d).app T (ULift.up D) =
+      (abelJacobiMapOfDegree f hx₀ d).app T (ULift.up D) /
+        (abelJacobiMap f hx₀).app T (ULift.up (basePoint hx₁ T.unop)) ^ d := by
+  rw [abelJacobiMapOfDegree_app_apply, abelJacobiMapOfDegree_app_apply,
+    abelJacobiMap_app_apply, div_pow]
+  exact (div_div_div_cancel_right _ _ _).symm
 
 end
 
