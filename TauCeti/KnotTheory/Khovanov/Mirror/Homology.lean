@@ -147,6 +147,15 @@ def extToKhovanovHomologyMirror (i p j : ℤ) :
   (homologyMap (D.khovanovComplexMirrorIso hD R j hD').inv i).hom ∘ₗ
     (D.khovanovComplex hD R (-j)).extToHomology R (ModuleCat.of R R) i p
 
+/-- `TauCeti.OrientedPDCode.extToKhovanovHomologyMirror` is `CochainComplex.extToHomology` of the
+complex of `D`, transported along `TauCeti.OrientedPDCode.khovanovComplexMirrorIso`. -/
+lemma homologyMap_khovanovComplexMirrorIso_hom_extToKhovanovHomologyMirror (i p j : ℤ)
+    (e : Abelian.Ext.{u} (D.khovanovHomology hD R p (-j)) (ModuleCat.of R R) 1) :
+    homologyMap (D.khovanovComplexMirrorIso hD R j hD').hom i
+        (D.extToKhovanovHomologyMirror hD hD' R i p j e) =
+      (D.khovanovComplex hD R (-j)).extToHomology R (ModuleCat.of R R) i p e := by
+  simp [extToKhovanovHomologyMirror, ← ConcreteCategory.comp_apply, ← homologyMap_comp]
+
 /-- **Injectivity in the mirror universal coefficient sequence**: over a principal ideal ring
 without zero divisors, for `i + p = 1`, the map `Ext¹(Khᵖ⁻ʲ(D; R), R) →ₗ[R] Khⁱʲ(D.mirror; R)` is
 injective. -/
