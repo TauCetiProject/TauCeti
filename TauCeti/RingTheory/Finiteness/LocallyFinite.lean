@@ -65,7 +65,7 @@ variable {k A M}
 theorem isLocallyFiniteModule_iff :
     IsLocallyFiniteModule k A M ↔ ∀ v : M, ((span A {v}).restrictScalars k).FG := by
   simp only [← finite_iff_fg_restrictScalars]
-  exact ⟨fun h => h.1, fun h => ⟨h⟩⟩
+  exact ⟨fun h => h.finite_span_singleton, fun h => ⟨h⟩⟩
 
 namespace IsLocallyFiniteModule
 

@@ -249,14 +249,14 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
       isCompact_iff_compactSpace.1 (isCompact_unitFiltration n)
     let T : FiniteGaloisIntermediateField K Kab → Set ↥(unitFiltration K n) := fun M ↦
       (fun u : ↥(unitFiltration K n) ↦
-        AlgEquiv.restrictNormalHom M.toIntermediateField (φ u.1)) ⁻¹'
+        AlgEquiv.restrictNormalHom M.toIntermediateField (φ u.val)) ⁻¹'
           {AlgEquiv.restrictNormalHom M.toIntermediateField τ}
     have hcl (M : FiniteGaloisIntermediateField K Kab) : IsClosed (T M) := by
       have : DiscreteTopology (M.toIntermediateField ≃ₐ[K] M.toIntermediateField) :=
         Finite.instDiscreteTopology
       exact (isClosed_discrete _).preimage
         ((InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField).comp
-          (hφ_cont.comp continuous_subtype_val))
+          (hφ_cont.comp continuous_subtypeVal))
     have hne (M : FiniteGaloisIntermediateField K Kab) : (T M).Nonempty := by
       obtain ⟨u, hu, hu_eq⟩ := exists_mem_unitFiltration_restrictNormalHom_eq K n M
         (Subgroup.mem_iInf.1 hτ M)
@@ -275,7 +275,7 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
       ⟨M₁ ⊔ M₂, hres_le le_sup_left, hres_le le_sup_right⟩
     obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed T hdir hne
       (fun M ↦ (hcl M).isCompact) hcl
-    refine ⟨u.1, u.2, AlgEquiv.ext fun y ↦ ?_⟩
+    refine ⟨u.val, u.property, AlgEquiv.ext fun y ↦ ?_⟩
     let M : FiniteGaloisIntermediateField K Kab := FiniteGaloisIntermediateField.adjoin K {y}
     have hy : y ∈ M.toIntermediateField :=
       FiniteGaloisIntermediateField.subset_adjoin K {y} (Set.mem_singleton y)

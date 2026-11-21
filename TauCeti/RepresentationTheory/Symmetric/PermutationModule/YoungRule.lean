@@ -82,8 +82,8 @@ theorem sum_char_permutationModule_mul_char_permutationModule (ν ξ : n.Partiti
     exact ξ.card_parts_le
   have key := congrArg (fun p : MvPolynomial (Fin n) ℚ => p.coeff (partWeight (Fin n) ξ))
     (sum_card_fixedPoints_smul_psumPart_partition (σ := Fin n) ℚ ν)
-  simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, coeff_smul, smul_eq_mul,
-    coeff_partWeight_psumPart_partition ℚ _ ξ hξ,
+  simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, AddMonoidAlgebra.coeff_smul_apply,
+    smul_eq_mul, coeff_partWeight_psumPart_partition ℚ _ ξ hξ,
     coeff_hsymmPart_partWeight ν ξ (by rwa [YoungDiagram.colLen_zero_ofPartition])] at key
   rw [← key]
   exact Finset.sum_congr rfl fun π _ => by rw [char_permutationModule, char_permutationModule]

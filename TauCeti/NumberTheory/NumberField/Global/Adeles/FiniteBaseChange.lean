@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 import Mathlib.LinearAlgebra.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
@@ -102,14 +101,15 @@ scalar extension of evaluation at `v`. -/
 theorem finiteAdeleBaseChangeHom_apply (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
     (v : HeightOneSpectrum (𝓞 K))
     (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    finiteAdeleBaseChangeHom K L s w.1 =
-      semilocalHom L v
+    finiteAdeleBaseChangeHom K L s w.val =
+      v.adicCompletionSemilocalHom K (𝓞 L) L
         (TensorProduct.map
           (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
           (LinearMap.id : L →ₗ[K] L) s) w := by
   induction s using TensorProduct.inductionOn with
   | tmul a x =>
-    simp only [TensorProduct.map_tmul, LinearMap.id_apply, semilocalHom_tmul,
+    simp only [TensorProduct.map_tmul, LinearMap.id_apply,
+      HeightOneSpectrum.adicCompletionSemilocalHom_tmul,
       finiteAdeleBaseChangeHom_tmul, FiniteAdeleRing.mul_apply,
       finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply, AlgHom.toLinearMap_apply,
       ContinuousAlgHom.coe_coe, FiniteAdeleRing.proj_apply]
@@ -139,7 +139,7 @@ theorem finiteAdeleBaseChangeHom_injective :
   let T := TensorProduct.map f (LinearMap.id : L →ₗ[K] L)
   -- A zero adelic image gives a zero tensor at `v` by semilocal injectivity.
   have hT : T t = 0 := by
-    apply semilocalHom_injective L v
+    apply v.adicCompletionSemilocalHom_injective (K := K) (B := 𝓞 L) (L := L)
     funext w
     rw [← finiteAdeleBaseChangeHom_apply K L t v w, ht, map_zero]
     rfl
@@ -162,15 +162,16 @@ theorem finiteAdeleBaseChangeHom_injective :
 component is integral, the coefficients can be chosen in `𝒪_v`. -/
 private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
     (z : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-      w.1.adicCompletion L) :
+      w.val.adicCompletion L) :
     ∃ c : Module.Free.ChooseBasisIndex ℤ (𝓞 L) → v.adicCompletion K,
-      semilocalHom L v (∑ i, c i ⊗ₜ[K] (RingOfIntegers.basis L i : L)) = z ∧
-      ((∀ w, z w ∈ w.1.adicCompletionIntegers L) → ∀ i, c i ∈ v.adicCompletionIntegers K) := by
+      v.adicCompletionSemilocalHom K (𝓞 L) L (∑ i, c i ⊗ₜ[K] (RingOfIntegers.basis L i : L)) = z ∧
+      ((∀ w, z w ∈ w.val.adicCompletionIntegers L) → ∀ i, c i ∈ v.adicCompletionIntegers K) := by
   classical
   let b := RingOfIntegers.basis L
-  by_cases hz : ∀ w, z w ∈ w.1.adicCompletionIntegers L
+  by_cases hz : ∀ w, z w ∈ w.val.adicCompletionIntegers L
   · -- Integral components come from the integral tensor product, which `1 ⊗ b i` spans.
-    obtain ⟨ζ, hζ⟩ := (integralSemilocalEquiv L v).surjective fun w ↦ ⟨z w, hz w⟩
+    obtain ⟨ζ, hζ⟩ :=
+      (v.adicCompletionIntegersSemilocalEquiv K (𝓞 L) L).surjective fun w ↦ ⟨z w, hz w⟩
     have hspan : Submodule.span (v.adicCompletionIntegers K)
         (Set.range fun i ↦ (1 : v.adicCompletionIntegers K) ⊗ₜ[𝓞 K] b i) = ⊤ := by
       have h := Submodule.baseChange_span (R := 𝓞 K) (v.adicCompletionIntegers K) (Set.range b)
@@ -179,11 +180,13 @@ private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
       exact h.symm
     obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
       (hspan ▸ Submodule.mem_top : ζ ∈ Submodule.span _ _)
-    refine ⟨fun i ↦ c i, ?_, fun _ i ↦ (c i).2⟩
-    have h := integralSemilocalEquiv_fieldCompatibility ζ
+    refine ⟨fun i ↦ c i, ?_, fun _ i ↦ (c i).property⟩
+    have h :=
+      v.adicCompletionIntegersSemilocalEquiv_fieldCompatibility (K := K) (B := 𝓞 L) (L := L) ζ
     rw [hζ, ← hc, map_sum] at h
     simp_rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one,
-      integralSemilocalToField_tmul, coe_semilocalEquiv] at h
+      HeightOneSpectrum.adicCompletionIntegersSemilocalToField_tmul,
+      v.coe_adicCompletionSemilocalEquiv] at h
     exact h
   · -- Otherwise any coefficients do, since `1 ⊗ b i` spans `K_v ⊗ L` over `K_v`.
     have hspan : Submodule.span (v.adicCompletion K)
@@ -197,11 +200,12 @@ private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
       rw [hb, Submodule.baseChange_top, ← Set.range_comp] at h
       exact h.symm
     obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
-      (hspan ▸ Submodule.mem_top : (semilocalEquiv L v).symm z ∈ Submodule.span _ _)
+      (hspan ▸ Submodule.mem_top :
+        (v.adicCompletionSemilocalEquiv K (𝓞 L) L).symm z ∈ Submodule.span _ _)
     refine ⟨c, ?_, fun h ↦ absurd h hz⟩
     simp_rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one] at hc
-    rw [hc, ← coe_semilocalEquiv]
-    exact (semilocalEquiv L v).apply_symm_apply z
+    rw [hc, ← v.coe_adicCompletionSemilocalEquiv]
+    exact (v.adicCompletionSemilocalEquiv K (𝓞 L) L).apply_symm_apply z
 
 /-- **The canonical scalar-extension map of finite adeles is surjective**: every finite adele of
 `L` is a sum of finite adeles of `K` times elements of `L`. -/
@@ -210,13 +214,13 @@ theorem finiteAdeleBaseChangeHom_surjective :
   classical
   intro y
   choose c hc hci using fun v : HeightOneSpectrum (𝓞 K) ↦
-    exists_semilocalHom_sum_tmul_eq K L v fun w ↦ y w.1
+    exists_semilocalHom_sum_tmul_eq K L v fun w ↦ y w.val
   -- The components of `y` above `v` are integral for all but finitely many `v`.
   have hy : ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        y w.1 ∈ w.1.adicCompletionIntegers L := by
+        y w.val ∈ w.val.adicCompletionIntegers L := by
     have hfin : {w : HeightOneSpectrum (𝓞 L) | y w ∉ w.adicCompletionIntegers L}.Finite :=
-      Filter.eventually_cofinite.1 y.2
+      Filter.eventually_cofinite.1 y.property
     refine Filter.eventually_cofinite.2 ((hfin.image (HeightOneSpectrum.under (𝓞 K))).subset ?_)
     intro v hv
     simp only [Set.mem_ofPred_eq, not_forall] at hv

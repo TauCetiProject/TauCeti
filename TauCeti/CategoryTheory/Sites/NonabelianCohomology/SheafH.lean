@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Ext.Basic
-public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Basic
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
@@ -78,7 +78,7 @@ def zeroMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
 of `1` under the morphism from the constant presheaf `ℤ` to `F` adjoint to `x`. -/
 lemma zeroMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w})
     (x : Multiplicative (H F 0)) (U : Cᵒᵖ) :
-    (zeroMulEquivSections F x).1 U = abelianSheafToGrpSheafObjEquiv F U (.ofAdd
+    (zeroMulEquivSections F x).val U = abelianSheafToGrpSheafObjEquiv F U (.ofAdd
       (((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ F (Ext.addEquiv₀ x.toAdd)).app U
         ⟨1⟩)) :=
   constIntHomMulEquivSections_apply_coe F _ U
@@ -96,8 +96,8 @@ lemma zeroMulEquivSections_symm_apply_toAdd (F : Sheaf J AddCommGrpCat.{w})
 @[simp]
 lemma zeroMulEquivSections_map {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) (x : H F 0)
     (U : Cᵒᵖ) :
-    (zeroMulEquivSections G (.ofAdd (H.map f 0 x))).1 U =
-      ((abelianSheafToGrpSheaf J).map f).hom.app U ((zeroMulEquivSections F (.ofAdd x)).1 U) := by
+    (zeroMulEquivSections G (.ofAdd (H.map f 0 x))).val U =
+      ((abelianSheafToGrpSheaf J).map f).hom.app U ((zeroMulEquivSections F (.ofAdd x)).val U) := by
   rw [zeroMulEquivSections_apply_coe, zeroMulEquivSections_apply_coe,
     abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv]
   -- `H.addEquiv₀_map` cannot be used by `rw` or `simp` here: `H G 0` is `Ext` out of the

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
 # An integral formula for the filled exponential quotient
@@ -17,10 +18,11 @@ exponential along the line segment from `0` to `-a`. The formula remains valid w
 invertible. This representation describes the analytic factor in the differential of a
 Lie-group exponential map.
 
-## Main result
+## Main results
 
 * `oneSubExpNegDivSelf_eq_integral_exp`:
   `oneSubExpNegDivSelf ℝ a = ∫ t in 0..1, exp (t • -a)`.
+* `continuous_oneSubExpNegDivSelf`: consequently the filled quotient is continuous.
 -/
 
 public section
@@ -68,3 +70,9 @@ theorem oneSubExpNegDivSelf_eq_integral_exp (a : A) :
       apply intervalIntegral.integral_congr
       intro t _ht
       simp only [exp_eq_tsum ℝ, hf]
+
+/-- The regularized exponential quotient depends continuously on its argument. -/
+theorem continuous_oneSubExpNegDivSelf : Continuous (oneSubExpNegDivSelf ℝ : A → A) := by
+  let : NormedAlgebra ℚ A := TauCeti.normedAlgebraRatOfReal
+  simp only [funext oneSubExpNegDivSelf_eq_integral_exp]
+  exact intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) 0 1
