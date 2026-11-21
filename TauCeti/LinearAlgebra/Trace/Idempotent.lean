@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.Defs
 
@@ -45,6 +46,9 @@ maximal ideal.
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
+* `Matrix.IsIdempotentElem.trace_eq_rank`: over a local ring, the trace of an idempotent matrix
+  is its rank, and `Matrix.IsIdempotentElem.rank_one_sub_add_rank`: over a field, the ranks of
+  `e` and `1 - e` add up to the size of the matrix.
 * `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
   idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
@@ -195,6 +199,26 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
 end LinearMap
 
 namespace Matrix
+
+/-- Over a commutative local ring, the trace of an idempotent matrix is its rank. This is the
+matrix form of `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`. -/
+theorem IsIdempotentElem.trace_eq_rank {ι A : Type*} [Fintype ι] [CommRing A] [IsLocalRing A]
+    {e : Matrix ι ι A} (he : IsIdempotentElem e) : e.trace = (e.rank : A) := by
+  classical
+  rw [← trace_toLin'_eq, ← finrank_range_mulVecLin, ← toLin'_apply']
+  exact LinearMap.trace_eq_finrank_range_of_isIdempotentElem (he.map toLinAlgEquiv')
+
+/-- The ranks of an idempotent matrix `e` and of the complementary idempotent `1 - e` add up to
+the size of the matrix: the range of `1 - e` is the kernel of `e`. -/
+theorem IsIdempotentElem.rank_one_sub_add_rank {ι K : Type*} [Fintype ι] [DecidableEq ι]
+    [Field K] {e : Matrix ι ι K} (he : IsIdempotentElem e) :
+    (1 - e).rank + e.rank = Fintype.card ι := by
+  -- `toLinAlgEquiv'` is `toLin'` bundled as an algebra equivalence
+  have he' : IsIdempotentElem (toLin' e) := he.map toLinAlgEquiv'
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, ← toLin'_apply', ← toLin'_apply',
+    map_sub, toLin'_one, ← Module.End.one_eq_id,
+    ← LinearMap.IsIdempotentElem.ker_eq_range_one_sub he', add_comm,
+    LinearMap.finrank_range_add_finrank_ker, Module.finrank_fintype_fun_eq_card]
 
 /-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
 an idempotent is the dimension of its range. This is the matrix form of
