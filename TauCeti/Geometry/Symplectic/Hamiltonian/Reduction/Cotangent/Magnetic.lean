@@ -285,7 +285,7 @@ theorem mpullback_magneticReductionMap_comp_add_symplecticForm [IsManifold IX �
     SmoothForm.mpullback_mpullback_of_comp_eq (contMDiff_magneticReductionMap_comp hρ hf hz le_rfl)
       (contMDiff_proj _) ((contMDiff_proj _).comp hf) hρ.contMDiff
       (funext fun x ↦ proj_magneticReductionMap (f x)), hβ]
-  -- `π ∘ f` is the family of base points `x ↦ (f x).proj`.
+  -- The twisted term `(π ∘ f)^* dα` cancels the magnetic correction.
   exact sub_add_cancel _ _
 
 end Smooth
@@ -310,6 +310,16 @@ private theorem momentMap_vectorBundleTranslateDiffeomorph_of_eq_neg
     momentMap IG G (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff z) = momentMap IG G z - ν := by
   rw [momentMap_vectorBundleTranslateDiffeomorph (c := -ν) fun x ξ ↦ hα x ξ, sub_eq_add_neg]
+
+omit [CompleteSpace EG] [LieGroup IG ∞ G] [CompleteSpace E] [ContMDiffSMul IG I ∞ G Q] in
+/-- If `α` pairs every fundamental vector field with `-ν`, the fibre translation by `α` sends the
+level `μ⁻¹(ν)` to the zero level. -/
+private theorem momentMap_vectorBundleTranslateDiffeomorph_eq_zero_of_eq
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) {z : CotangentBundle I Q}
+    (hz : momentMap IG G z = ν) :
+    momentMap IG G (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
+        (SmoothForm.degreeOneEquiv α).contMDiff z) = 0 := by
+  rw [momentMap_vectorBundleTranslateDiffeomorph_of_eq_neg hα, hz, sub_self]
 
 /-- **The level `μ⁻¹(ν)`.** Let the vertical tangent vectors of `ρ` at `q` be the orbit directions
 `𝔤 · q`, and let `α` pair every fundamental vector field with `-ν`. A covector `p` at `q` lies in
@@ -362,7 +372,7 @@ theorem magneticReductionMap_smul
     ← reductionMap_vectorBundleTranslateDiffeomorph α z,
     vectorBundleTranslateDiffeomorph_smul hαinv]
   exact reductionMap_smul hker hinv hρd hρ
-    (by rw [momentMap_vectorBundleTranslateDiffeomorph_of_eq_neg hα, hz, sub_self]) g
+    (momentMap_vectorBundleTranslateDiffeomorph_eq_zero_of_eq hα hz) g
 
 /-- **The fibres of the magnetic reduction map on the level are the orbits.** Let the differentials
 of `ρ` have continuous right inverses, its vertical tangent vectors be the orbit directions and its
@@ -378,13 +388,11 @@ theorem magneticReductionMap_eq_magneticReductionMap_iff
     (hz : momentMap IG G z = ν) (hz' : momentMap IG G z' = ν) :
     magneticReductionMap I IB ρ α z = magneticReductionMap I IB ρ α z' ↔
       ∃ g : G, g • z = z' := by
-  have h0 {y : CotangentBundle I Q} (hy : momentMap IG G y = ν) :
-      momentMap IG G (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
-        (SmoothForm.degreeOneEquiv α).contMDiff y) = 0 := by
-    rw [momentMap_vectorBundleTranslateDiffeomorph_of_eq_neg hα, hy, sub_self]
   rw [← reductionMap_vectorBundleTranslateDiffeomorph α z,
     ← reductionMap_vectorBundleTranslateDiffeomorph α z',
-    reductionMap_eq_reductionMap_iff hker hfib hρd hρ (h0 hz) (h0 hz')]
+    reductionMap_eq_reductionMap_iff hker hfib hρd hρ
+      (momentMap_vectorBundleTranslateDiffeomorph_eq_zero_of_eq hα hz)
+      (momentMap_vectorBundleTranslateDiffeomorph_eq_zero_of_eq hα hz')]
   -- The translation commutes with the action and is injective.
   simp only [← vectorBundleTranslateDiffeomorph_smul hαinv]
   exact exists_congr fun g ↦ (vectorBundleTranslateDiffeomorph _ _).injective.eq_iff
