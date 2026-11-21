@@ -49,7 +49,7 @@ theorem existsUnique_mul_add_eq_of_isMulDistinguished_one
     (hf : IsMulDistinguished 1 s (f : PowerSeries R)) (g : washnitzerAlgebra Unit R) :
     ∃! p : washnitzerAlgebra Unit R × washnitzerAlgebra Unit R,
       (∀ m, s ≤ m → PowerSeries.coeff m (p.2 : PowerSeries R) = 0) ∧ p.1 * f + p.2 = g := by
-  obtain ⟨ρ₀, hρ₀, hgρ₀⟩ := mem_washnitzerAlgebra.mp g.2
+  obtain ⟨ρ₀, hρ₀, hgρ₀⟩ := mem_washnitzerAlgebra.mp g.property
   obtain ⟨ρ, hρ, hρρ₀, hfr, hfd⟩ :=
     exists_isDistinguished_of_isDistinguished_one hf.toIsDistinguished hρ₀
   have hgr : PowerSeries.IsRestricted ρ (g : PowerSeries R) :=
@@ -64,8 +64,8 @@ theorem existsUnique_mul_add_eq_of_isMulDistinguished_one
   refine ⟨(Q, rW), ⟨hr, Subtype.ext hqr⟩, fun p ⟨hp, heq⟩ ↦ ?_⟩
   obtain ⟨heqQ, heqR⟩ := hf.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add one_pos
     hf.norm_mul_coeff
-    (isRestricted_of_mem_washnitzerAlgebra p.1.2 zero_le_one le_rfl)
-    (isRestricted_of_mem_washnitzerAlgebra Q.2 zero_le_one le_rfl) hp hr
+    (isRestricted_of_mem_washnitzerAlgebra p.1.property zero_le_one le_rfl)
+    (isRestricted_of_mem_washnitzerAlgebra Q.property zero_le_one le_rfl) hp hr
     ((congrArg (fun a : washnitzerAlgebra Unit R ↦ (a : PowerSeries R)) heq).trans hqr.symm)
   exact Prod.ext (Subtype.ext heqQ) (Subtype.ext heqR)
 
@@ -85,7 +85,7 @@ theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isMulDistinguished_one
   obtain ⟨e, ω, he, hω, _, heω⟩ := hfm.exists_isNormMulUnit_isMonicOfDegree_mul_eq hfr
   let ι : PowerSeries.IsRestricted.subring (R := R) ρ →+* washnitzerAlgebra Unit R :=
     (PowerSeries.IsRestricted.subring (R := R) ρ).subtype.codRestrict _
-      fun a ↦ mem_washnitzerAlgebra.mpr ⟨ρ, hρ, a.2⟩
+      fun a ↦ mem_washnitzerAlgebra.mpr ⟨ρ, hρ, a.property⟩
   have heω' : ((ι e : washnitzerAlgebra Unit R) : PowerSeries R) * ω = f := by
     simpa [ι, RingHom.codRestrict_apply] using heω
   refine ⟨(ι e, ω), ⟨he.isUnit.map ι, hω, Subtype.ext (by simpa using heω')⟩,

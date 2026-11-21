@@ -15,8 +15,9 @@ of the unit sphere together with an orthonormal `k`-frame `(u₁, …, u_k)` of 
 complement `p^⊥`, the tangent space of the sphere at `p`. So the Stiefel manifold `V_{k+1}(E)`
 (`TauCeti.stiefel E (k + 1)`) is the space of orthonormal tangent `k`-frames of the unit sphere,
 and its fibre over `p` under the projection to the first vector is the Stiefel manifold `V_k(p^⊥)`
-of orthonormal `k`-frames of `p^⊥`. This file provides the inclusion of that fibre. For `k = 2`
-it identifies the orthonormal triples `(p, u, v)` over `p` with the two-frames of `p^⊥`.
+of orthonormal `k`-frames of `p^⊥`. This file provides the inclusion of that fibre and the
+resulting homeomorphism onto it. For `k = 2` it identifies the orthonormal triples `(p, u, v)` over
+`p` with the two-frames of `p^⊥`.
 
 ## Main declarations
 
@@ -24,6 +25,7 @@ it identifies the orthonormal triples `(p, u, v)` over `p` with the two-frames o
 * `TauCeti.range_stiefelFrameIncl`: its range is the fibre over `p` of the projection to the
   first vector.
 * `TauCeti.isClosedEmbedding_stiefelFrameIncl`: it is a closed embedding.
+* `TauCeti.stiefelFrameHomeomorph`: `V_k(p^⊥) ≃ₜ stiefelProj E (k + 1) 0 ⁻¹' {p}`.
 * `TauCeti.contMDiff_stiefelFrameIncl`: it is smooth.
 -/
 
@@ -43,10 +45,10 @@ def stiefelFrameIncl : C(stiefel (ℝ ∙ (p : E))ᗮ k, stiefel E (k + 1)) wher
   toFun x := ⟨Matrix.vecCons (p : E) fun i => ((x : Fin k → (ℝ ∙ (p : E))ᗮ) i : E),
     mem_stiefel_iff.2 <| orthonormal_vecCons_iff.2
       ⟨norm_eq_of_mem_sphere p,
-        fun i => Submodule.mem_orthogonal_singleton_iff_inner_right.1 (x.1 i).2,
-        (mem_stiefel_iff.1 x.2).comp_linearIsometry (ℝ ∙ (p : E))ᗮ.subtypeₗᵢ⟩⟩
+        fun i => Submodule.mem_orthogonal_singleton_iff_inner_right.1 (x.val i).property,
+        (mem_stiefel_iff.1 x.property).comp_linearIsometry (ℝ ∙ (p : E))ᗮ.subtypeₗᵢ⟩⟩
   continuous_toFun := Continuous.subtype_mk (continuous_const.matrixVecCons (continuous_pi fun i =>
-    continuous_subtype_val.comp ((continuous_apply i).comp continuous_subtype_val))) _
+    continuous_subtypeVal.comp ((continuous_apply i).comp continuous_subtypeVal))) _
 
 variable {p k}
 
@@ -70,7 +72,7 @@ theorem range_stiefelFrameIncl :
   refine Set.Subset.antisymm (Set.range_subset_iff.2 fun x => by simp) fun y hy => ?_
   have hy0 : (y : Fin (k + 1) → E) 0 = p :=
     (coe_stiefelProj 0 y).symm.trans (congrArg Subtype.val hy)
-  have hon := mem_stiefel_iff.1 y.2
+  have hon := mem_stiefel_iff.1 y.property
   rw [← Matrix.cons_head_tail (y : Fin (k + 1) → E)] at hon
   have hmem (i : Fin k) : Matrix.vecTail (y : Fin (k + 1) → E) i ∈ (ℝ ∙ (p : E))ᗮ :=
     Submodule.mem_orthogonal_singleton_iff_inner_right.2
@@ -98,6 +100,32 @@ theorem isClosedEmbedding_stiefelFrameIncl : IsClosedEmbedding (stiefelFrameIncl
 theorem stiefelFrameIncl_injective : Function.Injective (stiefelFrameIncl p k) :=
   (isClosedEmbedding_stiefelFrameIncl p k).injective
 
+/-- **Homeomorphism onto the fibre of `V_{k+1}(E) → S(E)`.** The orthonormal `k`-frames of the
+tangent space `p^⊥` map homeomorphically onto the fibre over `p` of the projection to the first
+vector, in arbitrary (possibly infinite) dimension. -/
+noncomputable def stiefelFrameHomeomorph :
+    stiefel (ℝ ∙ (p : E))ᗮ k ≃ₜ stiefelProj E (k + 1) 0 ⁻¹' {p} :=
+  (isClosedEmbedding_stiefelFrameIncl p k).isEmbedding.toHomeomorph.trans
+    (Homeomorph.setCongr (range_stiefelFrameIncl p k))
+
+@[simp]
+theorem coe_stiefelFrameHomeomorph_apply (x : stiefel (ℝ ∙ (p : E))ᗮ k) :
+    (stiefelFrameHomeomorph p k x : stiefel E (k + 1)) = stiefelFrameIncl p k x :=
+  (rfl)
+
+@[simp]
+theorem stiefelFrameIncl_stiefelFrameHomeomorph_symm (v : stiefelProj E (k + 1) 0 ⁻¹' {p}) :
+    stiefelFrameIncl p k ((stiefelFrameHomeomorph p k).symm v) = v :=
+  congrArg Subtype.val ((stiefelFrameHomeomorph p k).apply_symm_apply v)
+
+@[simp]
+theorem coe_stiefelFrameHomeomorph_symm_apply (v : stiefelProj E (k + 1) 0 ⁻¹' {p}) (i : Fin k) :
+    (((stiefelFrameHomeomorph p k).symm v : Fin k → (ℝ ∙ (p : E))ᗮ) i : E) =
+      (v.val : Fin (k + 1) → E) i.succ := by
+  have h := congr_fun (congrArg Subtype.val (stiefelFrameIncl_stiefelFrameHomeomorph_symm p k v))
+    i.succ
+  rwa [coe_stiefelFrameIncl, Matrix.cons_val_succ] at h
+
 /-- The inclusion `V_k(p^⊥) → V_{k+1}(E)` is smooth. -/
 theorem contMDiff_stiefelFrameIncl [FiniteDimensional ℝ E] {r : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, Fin (k * Module.finrank ℝ (ℝ ∙ (p : E))ᗮ - (k + 1).choose 2) → ℝ)
@@ -110,6 +138,6 @@ theorem contMDiff_stiefelFrameIncl [FiniteDimensional ℝ E] {r : ℕ∞ω} :
     · simp only [Matrix.cons_val_succ]
       exact (ℝ ∙ (p : E))ᗮ.subtypeL.contDiff.comp (contDiff_apply ℝ _ i)
   exact ContMDiff.codRestrict_stiefel (hcons.contMDiff.comp (contMDiff_coe_stiefel _ _))
-    fun x => (stiefelFrameIncl p k x).2
+    fun x => (stiefelFrameIncl p k x).property
 
 end TauCeti

@@ -112,7 +112,7 @@ def lensSpace (r : ZMod p) : HeegaardRegionSystem 1 (ZMod p) (ZMod p) Unit where
   betaLeft j := j - 1
   betaRight j := j
   regionNonempty := inferInstance
-  crossingCompatible j := Or.inl ⟨by simp [sub_eq_add_neg],
+  crossingCompatible j := isCrossingCompatible_iff.mpr <| Or.inl ⟨by simp [sub_eq_add_neg],
     by simp [sub_eq_add_neg, add_right_comm], rfl, by simp [sub_eq_add_neg]⟩
   regionCovered s := Or.inl ⟨s, Or.inl rfl⟩
   basepoint _ := r
@@ -295,7 +295,7 @@ noncomputable def lensSpaceCurveHomologyEquiv : (lensSpace p q r).CurveHomology 
     ⟨(injective_iff_map_eq_zero _).mpr fun x hx => by
       obtain ⟨c, rfl⟩ := CurveHomology.mk_surjective _ x
       exact (CurveHomology.mk_eq_zero_iff _).mpr
-        (mem_arcRelations_of_betaWinding_eq_zero c.2
+        (mem_arcRelations_of_betaWinding_eq_zero c.property
           (by rwa [windingHom_mk, ← betaWinding_apply] at hx)),
     fun a => ⟨_, (windingHom_epsilon 0 a).trans (sub_zero a)⟩⟩
 

@@ -64,20 +64,20 @@ variable {R A B C : Type*} [Semiring R] [AddCommGroup A] [AddCommGroup B] [AddCo
 `C`. -/
 private def exactLiftEquiv (c : Basis σ R C) (s : σ → B) (hs : ∀ j, g (s j) = c j) :
     B ≃ₗ[R] A × C :=
-  (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).1
+  (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).val
 
 variable {hf hfg}
 
 private theorem exactLiftEquiv_apply (c : Basis σ R C) (s : σ → B) (hs : ∀ j, g (s j) = c j)
     (x : A) : exactLiftEquiv hf hfg c s hs (f x) = (x, 0) := by
   have := congrArg (fun φ : A →ₗ[R] B ↦ exactLiftEquiv hf hfg c s hs (φ x))
-    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).2.1
+    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).property.1
   simpa [exactLiftEquiv] using this
 
 private theorem exactLiftEquiv_apply_snd (c : Basis σ R C) (s : σ → B)
     (hs : ∀ j, g (s j) = c j) (y : B) : (exactLiftEquiv hf hfg c s hs y).2 = g y := by
   have := congrArg (fun φ : B →ₗ[R] C ↦ φ y)
-    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).2.2
+    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).property.2
   simpa [exactLiftEquiv] using this.symm
 
 private theorem exactLiftEquiv_symm_inr (c : Basis σ R C) (s : σ → B)
@@ -86,7 +86,7 @@ private theorem exactLiftEquiv_symm_inr (c : Basis σ R C) (s : σ → B)
   -- The inverse of `splitSurjectiveEquiv` sends a splitting `e` to the section `e.symm ∘ₗ inr`,
   -- so the first step holds by definition.
   calc (exactLiftEquiv hf hfg c s hs).symm (0, c j)
-      = ((hfg.splitSurjectiveEquiv hf).symm (hfg.splitSurjectiveEquiv hf l)).1 (c j) := rfl
+      = ((hfg.splitSurjectiveEquiv hf).symm (hfg.splitSurjectiveEquiv hf l)).val (c j) := rfl
     _ = s j := by rw [Equiv.symm_apply_apply, constr_basis]
 
 variable (hf hfg)

@@ -168,6 +168,26 @@ theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (
   rw [hhom.koszulTwist_apply 1 x, hM.leibniz_of_map_eq_zero _ ha]
   simp
 
+/-- **The right action of a boundary is null-homotopic.** Acting by `d a` is `dM K + K dM` for
+the homotopy `K x = (-1) ^ |x| x · a`, the right action of `a` after the Koszul twist. -/
+theorem op_map_smul_eq_add (hM : IsDGRightModule h ℳ dM) (a : A) (x : M) :
+    op (d a) • x =
+      dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) +
+        op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) := by
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | add x y hx hy =>
+    simp only [smul_add, map_add, hx, hy]
+    abel
+  | @homogeneous q x =>
+    obtain ⟨x, hx⟩ := x
+    rw [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ hx,
+      InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ (hM.isHomogeneous.map_mem hx),
+      one_mul, one_mul, smul_comm (op a) _ x, smul_comm (op a) _ (dM x), map_smul,
+      hM.op_map_smul_eq_negOnePow_smul_sub hx a]
+    simp only [Int.negOnePow_succ, Units.val_neg, Int.cast_neg, neg_smul, Units.smul_def,
+      Int.cast_smul_eq_zsmul, sub_eq_add_neg, smul_add, smul_neg]
+
 end IsDGRightModule
 
 /-- A differential graded algebra is a differential graded right module over itself, the **free
