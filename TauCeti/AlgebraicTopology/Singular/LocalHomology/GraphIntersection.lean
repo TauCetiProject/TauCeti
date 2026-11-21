@@ -15,6 +15,7 @@ import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.IsolatedZero
+import TauCeti.LinearAlgebra.LinearIndependent.Prod
 import TauCeti.LinearAlgebra.LinearMap.Coprod
 
 /-!

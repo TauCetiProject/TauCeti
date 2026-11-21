@@ -21,6 +21,7 @@ import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.LinearAlgebra.LinearIndependent.Prod
 import TauCeti.LinearAlgebra.LinearMap.Coprod
 import TauCeti.Topology.Maps.Proper.Metric
 
