@@ -86,14 +86,6 @@ theorem serreIdeal_le_ker_lift {R₀ L : Type*} [CommRing R₀] [LieRing L] [Lie
   rintro _ ⟨i, j, rfl⟩
   simpa [LieHom.map_ad_pow] using hE i j
 
-private theorem range_lift_eq_lieSpan {R₀ L : Type*} [CommRing R₀] [LieRing L] [LieAlgebra R₀ L]
-    {I : Type*} (E : I → L) :
-    (FreeLieAlgebra.lift R₀ E).range = LieSubalgebra.lieSpan R₀ L (Set.range E) := by
-  rw [LieHom.range_eq_map, ← FreeLieAlgebra.lieSpan_range_of_eq_top, LieSubalgebra.map_lieSpan,
-    ← Set.range_comp,
-    show (FreeLieAlgebra.lift R₀ E : _ → _) ∘ FreeLieAlgebra.of R₀ = E from
-      funext (FreeLieAlgebra.lift_of_apply E)]
-
 /-- The canonical homomorphism from `FreeLieAlgebra K I ⧸ serreIdeal K A` to
 `PresentedLieAlgebra R` sending the `i`-th generator to `eᵢ`. -/
 noncomputable def positiveQuotientHom :
@@ -581,13 +573,9 @@ end AuxRep
 
 section AuxSerre
 
-private theorem ad_pow_succ_apply' {R₀ L : Type*} [CommRing R₀] [LieRing L] [LieAlgebra R₀ L]
-    (x y : L) (n : ℕ) : (ad R₀ L x ^ (n + 1)) y = ⁅x, (ad R₀ L x ^ n) y⁆ := by
-  rw [pow_succ', mul_apply_eq_comp, ad_apply]
-
 private theorem lie_auxCartan_mem_range_auxPosHom (x : H) {y : AuxLieAlgebra R}
     (hy : y ∈ (auxPosHom R).range) : ⁅auxCartan R x, y⁆ ∈ (auxPosHom R).range := by
-  rw [auxPosHom, range_lift_eq_lieSpan] at hy ⊢
+  rw [auxPosHom, FreeLieAlgebra.range_lift_eq_lieSpan] at hy ⊢
   refine LieSubalgebra.lie_mem_of_mem_lieSpan ?_ hy
   rintro _ ⟨j, rfl⟩
   rw [lie_auxCartan_auxPos]
@@ -597,7 +585,7 @@ private theorem lie_auxNeg_mem_range_auxPosHom_sup_range_auxCartan (k : I) {y : 
     (hy : y ∈ (auxPosHom R).range) :
     ⁅auxNeg R k, y⁆ ∈ (auxPosHom R).range.toSubmodule ⊔ LinearMap.range (auxCartan R) := by
   have hrange : (auxPosHom R).range = LieSubalgebra.lieSpan K _ (Set.range (auxPos R)) :=
-    range_lift_eq_lieSpan (auxPos R)
+    FreeLieAlgebra.range_lift_eq_lieSpan (auxPos R)
   rw [hrange] at hy ⊢
   refine LieSubalgebra.lie_mem_sup_of_mem_lieSpan ?_ ?_ hy
   · rintro _ ⟨x, rfl⟩ z hz
@@ -700,7 +688,7 @@ private theorem lie_range_auxPosHom_auxSerrePosSubmodule {u y : AuxLieAlgebra R}
 private theorem lie_auxCartan_auxSerrePosSubmodule (x : H) {y : AuxLieAlgebra R}
     (hy : y ∈ auxSerrePosSubmodule R) : ⁅auxCartan R x, y⁆ ∈ auxSerrePosSubmodule R := by
   rcases hy with ⟨b, hb, rfl⟩
-  change b ∈ serreIdeal K A at hb
+  rw [SetLike.mem_coe, LieSubmodule.mem_toSubmodule] at hb
   simp only [LieHom.coe_toLinearMap]
   induction hb using LieSubmodule.lieSpan_induction with
   | mem _ hb =>
@@ -724,7 +712,7 @@ private theorem lie_auxNeg_auxSerrePosSubmodule (hA : A.IsGeneralizedCartan) (k 
     {y : AuxLieAlgebra R} (hy : y ∈ auxSerrePosSubmodule R) :
     ⁅auxNeg R k, y⁆ ∈ auxSerrePosSubmodule R := by
   rcases hy with ⟨b, hb, rfl⟩
-  change b ∈ serreIdeal K A at hb
+  rw [SetLike.mem_coe, LieSubmodule.mem_toSubmodule] at hb
   simp only [LieHom.coe_toLinearMap]
   induction hb using LieSubmodule.lieSpan_induction with
   | mem _ hb =>
@@ -773,11 +761,8 @@ private theorem freeNeg_mem_serreIdeal {b : FreeLieAlgebra K I} (hb : b ∈ serr
     rcases hb with ⟨i, j, rfl⟩
     have hof : ∀ k, freeNeg K I (FreeLieAlgebra.of K k) = -FreeLieAlgebra.of K k :=
       FreeLieAlgebra.lift_of_apply _
-    change (freeNeg K I).toLieHom _ ∈ serreIdeal K A
-    rw [LieHom.map_ad_pow, LieHom.map_lie]
-    change (ad K _ (freeNeg K I (FreeLieAlgebra.of K i)) ^ (-A i j).toNat)
-        ⁅freeNeg K I (FreeLieAlgebra.of K i), freeNeg K I (FreeLieAlgebra.of K j)⁆ ∈ serreIdeal K A
-    rw [hof, hof, neg_lie, lie_neg, neg_neg]
+    rw [← LieEquiv.coe_toLieHom, LieHom.map_ad_pow, LieHom.map_lie, LieEquiv.coe_toLieHom,
+      hof, hof, neg_lie, lie_neg, neg_neg]
     have hsign : ∀ n : ℕ, ∀ y : FreeLieAlgebra K I,
         (ad K _ (-FreeLieAlgebra.of K i) ^ n) y =
           ((-1 : ℤ) ^ n) • (ad K _ (FreeLieAlgebra.of K i) ^ n) y := by
@@ -890,8 +875,7 @@ theorem quotientTriangular_eq_zero (hA : A.IsGeneralizedCartan)
         (auxToPresented R).comp (auxPosHom R)) b₀
   have hcart : cartanElement R x = auxToPresented R (auxCartan R x) := (auxLift_auxCartan _ x).symm
   rw [hneg, hcart, hpos, ← map_add, ← map_add, ← LieHom.mem_ker, ker_auxToPresented_eq R hA] at h
-  change _ ∈ (auxSerreNegIdeal R hA).toSubmodule ⊔ (auxSerrePosIdeal R hA).toSubmodule at h
-  obtain ⟨_, ⟨a', ha', rfl⟩, _, ⟨b', hb', rfl⟩, heq⟩ := Submodule.mem_sup.mp h
+  obtain ⟨_, ⟨a', ha', rfl⟩, _, ⟨b', hb', rfl⟩, heq⟩ := (LieSubmodule.mem_sup _ _ _).mp h
   simp only [LieHom.coe_toLinearMap] at heq
   have hsub : auxNegHom R (a₀ - a') + auxCartan R x + auxPosHom R (b₀ - b') = 0 := by
     calc auxNegHom R (a₀ - a') + auxCartan R x + auxPosHom R (b₀ - b')

@@ -207,43 +207,27 @@ theorem map_negativeSubalgebra_chevalleyInvolution :
     refine neg_neg (positiveGenerator R i) ▸ neg_mem (LieSubalgebra.subset_lieSpan ?_)
     exact ⟨negativeGenerator R i, ⟨i, rfl⟩, chevalleyInvolution_negativeGenerator R i⟩
 
-private theorem range_lift_eq_lieSpan {R₀ L : Type*} [CommRing R₀] [LieRing L] [LieAlgebra R₀ L]
-    {I : Type*} (E : I → L) :
-    (FreeLieAlgebra.lift R₀ E).range = LieSubalgebra.lieSpan R₀ L (Set.range E) := by
-  rw [LieHom.range_eq_map, ← FreeLieAlgebra.lieSpan_range_of_eq_top, LieSubalgebra.map_lieSpan,
-    ← Set.range_comp,
-    show (FreeLieAlgebra.lift R₀ E : _ → _) ∘ FreeLieAlgebra.of R₀ = E from
-      funext (FreeLieAlgebra.lift_of_apply E)]
-
-private theorem range_liftQ_eq {R₀ L₁ L₂ : Type*} [CommRing R₀] [LieRing L₁] [LieAlgebra R₀ L₁]
-    [LieRing L₂] [LieAlgebra R₀ L₂] (J : LieIdeal R₀ L₁) (f : L₁ →ₗ⁅R₀⁆ L₂) (hf : J ≤ f.ker) :
-    (J.liftQ f hf).range = f.range :=
-  SetLike.ext fun _ =>
-    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := J.surjective_mkQ q
-        exact ⟨x, (DFunLike.congr_fun (J.liftQ_mkQ f hf) x).symm⟩,
-     by rintro ⟨x, rfl⟩; exact ⟨J.mkQ x, DFunLike.congr_fun (J.liftQ_mkQ f hf) x⟩⟩
-
 theorem range_positiveQuotientHom : (positiveQuotientHom R).range = positiveSubalgebra R := by
   have hcomp : (positiveQuotientHom R).comp (serreIdeal K A).mkQ =
       FreeLieAlgebra.lift K (positiveGenerator R) :=
     FreeLieAlgebra.hom_ext fun i => by
-      change positiveQuotientHom R ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i)) = _
-      rw [positiveQuotientHom_mk_of, FreeLieAlgebra.lift_of_apply]
-  rw [positiveSubalgebra_def, ← range_lift_eq_lieSpan, ← hcomp]
+      rw [LieHom.comp_apply, positiveQuotientHom_mk_of, FreeLieAlgebra.lift_of_apply]
+  rw [positiveSubalgebra_def, ← FreeLieAlgebra.range_lift_eq_lieSpan, ← hcomp]
   exact SetLike.ext fun _ =>
-    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := (serreIdeal K A).surjective_mkQ q; exact ⟨x, rfl⟩,
-     by rintro ⟨x, rfl⟩; exact ⟨(serreIdeal K A).mkQ x, rfl⟩⟩
+    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := (serreIdeal K A).surjective_mkQ q
+        exact ⟨x, (LieHom.comp_apply _ _ x).symm⟩,
+     by rintro ⟨x, rfl⟩; exact ⟨(serreIdeal K A).mkQ x, LieHom.comp_apply _ _ x⟩⟩
 
 theorem range_negativeQuotientHom : (negativeQuotientHom R).range = negativeSubalgebra R := by
   have hcomp : (negativeQuotientHom R).comp (serreIdeal K A).mkQ =
       FreeLieAlgebra.lift K (negativeGenerator R) :=
     FreeLieAlgebra.hom_ext fun i => by
-      change negativeQuotientHom R ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i)) = _
-      rw [negativeQuotientHom_mk_of, FreeLieAlgebra.lift_of_apply]
-  rw [negativeSubalgebra_def, ← range_lift_eq_lieSpan, ← hcomp]
+      rw [LieHom.comp_apply, negativeQuotientHom_mk_of, FreeLieAlgebra.lift_of_apply]
+  rw [negativeSubalgebra_def, ← FreeLieAlgebra.range_lift_eq_lieSpan, ← hcomp]
   exact SetLike.ext fun _ =>
-    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := (serreIdeal K A).surjective_mkQ q; exact ⟨x, rfl⟩,
-     by rintro ⟨x, rfl⟩; exact ⟨(serreIdeal K A).mkQ x, rfl⟩⟩
+    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := (serreIdeal K A).surjective_mkQ q
+        exact ⟨x, (LieHom.comp_apply _ _ x).symm⟩,
+     by rintro ⟨x, rfl⟩; exact ⟨(serreIdeal K A).mkQ x, LieHom.comp_apply _ _ x⟩⟩
 
 /-- **Spanning triangular decomposition.** For any integral matrix `A`, the presented Lie algebra is
 the sum `n⁻ + H + n⁺` of its lowering subalgebra, the image of `H`, and its raising subalgebra. -/
@@ -254,16 +238,16 @@ theorem negativeSubalgebra_sup_range_cartanElement_sup_positiveSubalgebra :
   have hserre := congrArg (Submodule.map (serreHom R).toLinearMap)
     (lieSpan_serreF_sup_span_serreH_sup_lieSpan_serreE_eq_top K A)
   rw [Submodule.map_sup, Submodule.map_sup, Submodule.map_top] at hserre
+  have hF_comp : ⇑(serreHom R) ∘ serreF K A = negativeGenerator R := funext (serreHom_serreF R)
+  have hE_comp : ⇑(serreHom R) ∘ serreE K A = positiveGenerator R := funext (serreHom_serreE R)
   have hF : ((LieSubalgebra.lieSpan K _ (Set.range (serreF K A))).toSubmodule).map
       (serreHom R).toLinearMap = (negativeSubalgebra R).toSubmodule := by
     rw [← LieSubalgebra.map_toSubmodule, LieSubalgebra.map_lieSpan, ← Set.range_comp,
-      show (serreHom R : _ → _) ∘ serreF K A = negativeGenerator R from funext (serreHom_serreF R)]
-    rfl
+      hF_comp, negativeSubalgebra_def]
   have hE : ((LieSubalgebra.lieSpan K _ (Set.range (serreE K A))).toSubmodule).map
       (serreHom R).toLinearMap = (positiveSubalgebra R).toSubmodule := by
     rw [← LieSubalgebra.map_toSubmodule, LieSubalgebra.map_lieSpan, ← Set.range_comp,
-      show (serreHom R : _ → _) ∘ serreE K A = positiveGenerator R from funext (serreHom_serreE R)]
-    rfl
+      hE_comp, positiveSubalgebra_def]
   have hH : (Submodule.span K (Set.range (serreH K A))).map (serreHom R).toLinearMap ≤
       LinearMap.range (cartanElement R) := by
     rw [Submodule.map_span, Submodule.span_le]
@@ -271,8 +255,7 @@ theorem negativeSubalgebra_sup_range_cartanElement_sup_positiveSubalgebra :
     exact ⟨R.coroot i, (serreHom_serreH R i).symm⟩
   rw [eq_top_iff, ← range_serreHom_sup_range_cartanElement R, sup_le_iff]
   refine ⟨?_, le_sup_of_le_left le_sup_right⟩
-  have hrange : (serreHom R).range.toSubmodule = LinearMap.range (serreHom R).toLinearMap := rfl
-  rw [hrange, ← hserre, hF, hE]
+  rw [LieHom.range_toSubmodule, ← hserre, hF, hE]
   exact sup_le (sup_le (le_sup_of_le_left le_sup_left) (hH.trans (le_sup_of_le_left le_sup_right)))
     le_sup_right
 
@@ -301,25 +284,11 @@ theorem engel_positiveGenerator_eq_top (i : I) :
 /-- **The lowering generators act locally nilpotently** on `PresentedLieAlgebra R`. -/
 theorem engel_negativeGenerator_eq_top (i : I) :
     LieSubalgebra.engel K (negativeGenerator R i) = ⊤ := by
-  have had : ∀ (z : PresentedLieAlgebra R) (n : ℕ),
-      (ad K _ (negativeGenerator R i) ^ n) (chevalleyInvolution R z) =
-        (-1 : ℤ) ^ n • chevalleyInvolution R ((ad K _ (positiveGenerator R i) ^ n) z) := by
-    intro z n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      have hstep {x w : PresentedLieAlgebra R} :
-          (ad K _ x ^ (n + 1)) w = ⁅x, (ad K _ x ^ n) w⁆ := by
-        rw [pow_succ', mul_apply_eq_comp, ad_apply]
-      rw [hstep, hstep, ih, lie_zsmul, LieEquiv.map_lie, chevalleyInvolution_positiveGenerator,
-        neg_lie, pow_succ', neg_one_mul, neg_zsmul, zsmul_neg, neg_neg]
-  refine eq_top_iff.mpr fun y _ => ?_
-  have hy : chevalleyInvolution R y ∈ LieSubalgebra.engel K (positiveGenerator R i) := by
-    rw [engel_positiveGenerator_eq_top]; trivial
-  obtain ⟨n, hn⟩ := (LieSubalgebra.mem_engel_iff K _ _).mp hy
-  refine (LieSubalgebra.mem_engel_iff K _ _).mpr ⟨n, ?_⟩
-  have h := had (chevalleyInvolution R y) n
-  rwa [chevalleyInvolution_apply_apply, hn, map_zero, smul_zero] at h
+  have h := (chevalleyInvolution R).map_engel (positiveGenerator R i)
+  rw [engel_positiveGenerator_eq_top, ← LieHom.range_eq_map,
+    (LieHom.range_eq_top _).mpr (chevalleyInvolution R).surjective,
+    chevalleyInvolution_positiveGenerator, LieSubalgebra.engel_neg] at h
+  exact h.symm
 
 end Subalgebras
 
@@ -447,18 +416,19 @@ theorem disjoint_negativeSubalgebra_range_cartanElement_sup_positiveSubalgebra
   rw [Submodule.disjoint_def]
   intro z hz₁ hz₂
   obtain ⟨_, ⟨x, rfl⟩, w, hw, hsum⟩ := Submodule.mem_sup.mp hz₂
-  have hinj := (triangularEquiv R hA).injective
-    (show triangularEquiv R hA (⟨z, hz₁⟩, 0, 0) = triangularEquiv R hA (0, x, ⟨w, hw⟩) by
-      simpa using hsum.symm)
+  have heq : triangularEquiv R hA (⟨z, hz₁⟩, 0, 0) = triangularEquiv R hA (0, x, ⟨w, hw⟩) := by
+    simpa using hsum.symm
+  have hinj := (triangularEquiv R hA).injective heq
   simpa using congrArg (fun p => (p.1 : PresentedLieAlgebra R)) hinj
 
 theorem disjoint_range_cartanElement_positiveSubalgebra (hA : A.IsGeneralizedCartan) :
     Disjoint (LinearMap.range (cartanElement R)) (positiveSubalgebra R).toSubmodule := by
   rw [Submodule.disjoint_def]
   rintro _ ⟨x, rfl⟩ hw
-  have hinj := (triangularEquiv R hA).injective
-    (show triangularEquiv R hA (0, x, 0) = triangularEquiv R hA (0, 0, ⟨cartanElement R x, hw⟩) by
-      simp)
+  have heq :
+      triangularEquiv R hA (0, x, 0) = triangularEquiv R hA (0, 0, ⟨cartanElement R x, hw⟩) := by
+    simp
+  have hinj := (triangularEquiv R hA).injective heq
   have hx : x = 0 := congrArg (fun p => p.2.1) hinj
   simp [hx]
 
@@ -501,9 +471,9 @@ theorem linearIndependent_positiveGenerator (hA : A.IsGeneralizedCartan) :
         rw [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, coe_positiveEquiv_mk_of]
     have hab : abHom ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i)) = nilStep i :=
       (LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)
-    change abHom ((positiveEquiv R hA).symm _) (Finsupp.single none 1) = _
-    rw [hsymm, hab]
-    simp [nilStep]
+    simp only [proj, LinearMap.comp_apply, LinearMap.applyₗ_apply_apply, LieHom.coe_toLinearMap,
+      LieEquiv.coe_toLieHom, hsymm, hab, nilStep]
+    simp
   have hind : LinearIndependent K fun i : I => Finsupp.single (some i) (1 : K) :=
     (Finsupp.basisSingleOne (ι := Option I) (R := K)).linearIndependent.comp _
       (Option.some_injective I)
@@ -524,8 +494,9 @@ theorem linearIndependent_negativeGenerator (hA : A.IsGeneralizedCartan) :
     LinearIndependent K (negativeGenerator R) := by
   have h := (linearIndependent_positiveGenerator R hA).map'
     (chevalleyInvolution R).toLinearEquiv.toLinearMap (LinearEquiv.ker _)
-  rw [show (chevalleyInvolution R).toLinearEquiv.toLinearMap ∘ positiveGenerator R =
-      -negativeGenerator R from funext (chevalleyInvolution_positiveGenerator R)] at h
+  have hcomp : (chevalleyInvolution R).toLinearEquiv.toLinearMap ∘ positiveGenerator R =
+      -negativeGenerator R := funext (chevalleyInvolution_positiveGenerator R)
+  rw [hcomp] at h
   exact linearIndependent_neg_iff.mp h
 
 theorem positiveGenerator_ne_zero (hA : A.IsGeneralizedCartan) (i : I) :
@@ -565,26 +536,26 @@ private noncomputable def toSerreF :
     (serreIdeal_le_ker_lift (ad_pow_lie_serreF_serreF K A))
 
 private theorem serreHom_comp_toSerreE :
-    (serreHom R).comp (toSerreE (K := K) (A := A)) = positiveQuotientHom R :=
-  (serreIdeal K A).lieHom_qext fun x => DFunLike.congr_fun
-    (FreeLieAlgebra.hom_ext fun i => by
-      change serreHom R (toSerreE ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i))) =
-        positiveQuotientHom R ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i))
-      rw [positiveQuotientHom_mk_of]
-      simp [toSerreE] :
-      ((serreHom R).comp (toSerreE (K := K) (A := A))).comp (serreIdeal K A).mkQ =
-        (positiveQuotientHom R).comp (serreIdeal K A).mkQ) x
+    (serreHom R).comp (toSerreE (K := K) (A := A)) = positiveQuotientHom R := by
+  refine (serreIdeal K A).lieHom_qext fun x => ?_
+  have hcomp : ((serreHom R).comp (toSerreE (K := K) (A := A))).comp (serreIdeal K A).mkQ =
+      (positiveQuotientHom R).comp (serreIdeal K A).mkQ := by
+    refine FreeLieAlgebra.hom_ext fun i => ?_
+    rw [LieHom.comp_apply, LieHom.comp_apply, LieHom.comp_apply, positiveQuotientHom_mk_of]
+    simp only [toSerreE, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, FreeLieAlgebra.lift_of_apply,
+      serreHom_serreE]
+  exact DFunLike.congr_fun hcomp x
 
 private theorem serreHom_comp_toSerreF :
-    (serreHom R).comp (toSerreF (K := K) (A := A)) = negativeQuotientHom R :=
-  (serreIdeal K A).lieHom_qext fun x => DFunLike.congr_fun
-    (FreeLieAlgebra.hom_ext fun i => by
-      change serreHom R (toSerreF ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i))) =
-        negativeQuotientHom R ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i))
-      rw [negativeQuotientHom_mk_of]
-      simp [toSerreF] :
-      ((serreHom R).comp (toSerreF (K := K) (A := A))).comp (serreIdeal K A).mkQ =
-        (negativeQuotientHom R).comp (serreIdeal K A).mkQ) x
+    (serreHom R).comp (toSerreF (K := K) (A := A)) = negativeQuotientHom R := by
+  refine (serreIdeal K A).lieHom_qext fun x => ?_
+  have hcomp : ((serreHom R).comp (toSerreF (K := K) (A := A))).comp (serreIdeal K A).mkQ =
+      (negativeQuotientHom R).comp (serreIdeal K A).mkQ := by
+    refine FreeLieAlgebra.hom_ext fun i => ?_
+    rw [LieHom.comp_apply, LieHom.comp_apply, LieHom.comp_apply, negativeQuotientHom_mk_of]
+    simp only [toSerreF, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, FreeLieAlgebra.lift_of_apply,
+      serreHom_serreF]
+  exact DFunLike.congr_fun hcomp x
 
 private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
     ∃ (a b : FreeLieAlgebra K I ⧸ serreIdeal K A) (c : I →₀ K),
@@ -599,14 +570,12 @@ private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
   obtain ⟨u, hu, h, hh, rfl⟩ := Submodule.mem_sup.mp huh
   have hrF : (toSerreF (K := K) (A := A)).range =
       LieSubalgebra.lieSpan K _ (Set.range (serreF K A)) :=
-    (range_liftQ_eq _ _ _).trans (range_lift_eq_lieSpan (serreF K A))
+    (LieIdeal.range_liftQ _ _ _).trans (FreeLieAlgebra.range_lift_eq_lieSpan (serreF K A))
   have hrE : (toSerreE (K := K) (A := A)).range =
       LieSubalgebra.lieSpan K _ (Set.range (serreE K A)) :=
-    (range_liftQ_eq _ _ _).trans (range_lift_eq_lieSpan (serreE K A))
-  change u ∈ LieSubalgebra.lieSpan K _ (Set.range (serreF K A)) at hu
-  change v ∈ LieSubalgebra.lieSpan K _ (Set.range (serreE K A)) at hv
-  rw [← hrF] at hu
-  rw [← hrE] at hv
+    (LieIdeal.range_liftQ _ _ _).trans (FreeLieAlgebra.range_lift_eq_lieSpan (serreE K A))
+  rw [LieSubalgebra.mem_toSubmodule, ← hrF] at hu
+  rw [LieSubalgebra.mem_toSubmodule, ← hrE] at hv
   rcases hu with ⟨a, rfl⟩
   rcases hv with ⟨b, rfl⟩
   obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp hh
@@ -646,13 +615,13 @@ theorem range_serreHom_inf_range_cartanElement (hA : A.IsGeneralizedCartan) :
       R.corootSpan.map (cartanElement R) := by
   refine le_antisymm ?_ ?_
   · rintro _ ⟨⟨z, rfl⟩, ⟨x, hzx⟩⟩
+    simp only [LieHom.coe_toLinearMap] at hzx ⊢
     obtain ⟨a, b, c, -, htri⟩ := exists_serreHom_eq_triangular R z
     have hzero : negativeQuotientHom R a +
         cartanElement R (Finsupp.linearCombination K R.coroot c - x) +
         positiveQuotientHom R b = 0 := by
-      rw [map_sub, hzx]
-      change _ + (_ - serreHom R z) + _ = 0
-      rw [htri]; abel
+      rw [map_sub, hzx, htri]
+      abel
     obtain ⟨-, hcx, -⟩ := quotientTriangular_eq_zero R hA hzero
     rw [← hzx, ← sub_eq_zero.mp hcx]
     refine ⟨Finsupp.linearCombination K R.coroot c, ?_, rfl⟩

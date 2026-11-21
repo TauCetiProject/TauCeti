@@ -44,9 +44,9 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
 * `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
-* `LieIdeal.liftQ_injective_iff` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is
-  injective exactly when the ideal exhausts the kernel, and surjective when the original
-  homomorphism is.
+* `LieIdeal.liftQ_injective_iff`, `LieIdeal.liftQ_surjective`, and `LieIdeal.range_liftQ`: the
+  lifted homomorphism is injective exactly when the ideal exhausts the kernel, surjective when the
+  original homomorphism is, and has the same range as the original homomorphism.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
@@ -142,6 +142,15 @@ homomorphism. -/
 theorem liftQ_mkQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) : (I.liftQ f h).comp I.mkQ = f := by
   ext x
   simp
+
+/-- The range of the homomorphism induced on the quotient equals the range of the original
+homomorphism. -/
+theorem range_liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
+    (I.liftQ f h).range = f.range :=
+  SetLike.ext fun _ =>
+    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := I.surjective_mkQ q
+        exact ⟨x, (DFunLike.congr_fun (I.liftQ_mkQ f h) x).symm⟩,
+     by rintro ⟨x, rfl⟩; exact ⟨I.mkQ x, DFunLike.congr_fun (I.liftQ_mkQ f h) x⟩⟩
 
 /-- Two homomorphisms out of `L ⧸ I` that agree after composition with the quotient map are
 equal. -/
