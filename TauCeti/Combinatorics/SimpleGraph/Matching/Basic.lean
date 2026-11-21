@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.Matching
-public import Mathlib.Combinatorics.SimpleGraph.VertexCover
+public import TauCeti.Combinatorics.SimpleGraph.VertexCover
+
+import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Maximal matchings, maximum matchings, the matching number, and vertex-cover duality
@@ -35,6 +37,11 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   matching whose edge set has `encard` at least that of every matching of `G`. Unconditionally, a
   matching is maximum if and only if its edge-set `encard` equals `G.matchingNum`; every perfect
   matching is automatically maximum, even on an infinite vertex type.
+* **Optimality certificates**: whenever equality holds for a matching `M` and a vertex cover `c`,
+  `M` is a maximum matching
+  (`SimpleGraph.Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq`) and `c` is a minimum
+  vertex cover (`SimpleGraph.IsVertexCover.isMinimumVertexCover_of_encard_eq`), with `Set.ncard`
+  forms for finite covers.
 
 ## Main definitions
 
@@ -59,7 +66,10 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   if its edge-set `encard` equals `G.matchingNum`.
 * `SimpleGraph.Subgraph.IsPerfectMatching.isMaximumMatching`: every perfect matching is maximum.
 * `SimpleGraph.Subgraph.isMaximumMatching_iff_ncard_edgeSet_le`: when `G.matchingNum ≠ ⊤`,
-  maximality is equivalently characterized by `Set.ncard`.
+  being maximum is equivalently characterized by `Set.ncard`.
+* `SimpleGraph.Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq`,
+  `SimpleGraph.IsVertexCover.isMinimumVertexCover_of_encard_eq`: matching-cover optimality
+  certificates in `ℕ∞` (and `Set.ncard` forms for finite covers).
 -/
 
 public section
@@ -89,12 +99,6 @@ theorem isMatching_of_bot_iff {M : (⊥ : SimpleGraph V).Subgraph} : M.IsMatchin
     exact M.adj_sub hvw
   exact Subgraph.ext hverts (funext₂ fun v w ↦ propext ⟨fun h ↦ False.elim (M.adj_sub h),
     False.elim⟩)
-
-/-- Mapping a subgraph along an injective graph homomorphism preserves the cardinality of its edge
-set. -/
-theorem encard_edgeSet_map (f : G →g H) (hf : Function.Injective f) (M : G.Subgraph) :
-    (M.map f).edgeSet.encard = M.edgeSet.encard := by
-  rw [Subgraph.edgeSet_map, (Sym2.map.injective hf).encard_image]
 
 /-- A subgraph `M` is a maximal matching if and only if it is a matching and its vertex set is a
 vertex cover of `G`. -/
@@ -651,5 +655,70 @@ theorem exists_isMaximumMatching_of_matchingNum_ne_top (h : G.matchingNum ≠ �
 theorem exists_isMaximumMatching [Finite V] (G : SimpleGraph V) :
     ∃ M : G.Subgraph, M.IsMaximumMatching :=
   exists_isMaximumMatching_of_matchingNum_ne_top matchingNum_ne_top_of_finite
+
+/-! ### Weak duality and optimality certificates -/
+
+section Certificates
+
+variable {M : G.Subgraph} {c : Set V}
+
+/-- Every matching of a simple graph has at most `G.vertexCoverNum` edges. -/
+theorem Subgraph.IsMatching.encard_edgeSet_le_vertexCoverNum (hM : M.IsMatching) :
+    M.edgeSet.encard ≤ G.vertexCoverNum :=
+  hM.encard_edgeSet_le_matchingNum.trans G.matchingNum_le_vertexCoverNum
+
+/-- The matching number of a simple graph is at most the cardinality of any vertex cover. -/
+theorem IsVertexCover.matchingNum_le_encard (hc : G.IsVertexCover c) : G.matchingNum ≤ c.encard :=
+  G.matchingNum_le_vertexCoverNum.trans hc.vertexCoverNum_le
+
+/-- A simple graph with finite vertex cover number has finite matching number. -/
+theorem matchingNum_ne_top_of_vertexCoverNum_ne_top (h : G.vertexCoverNum ≠ ⊤) :
+    G.matchingNum ≠ ⊤ :=
+  ne_top_of_le_ne_top h G.matchingNum_le_vertexCoverNum
+
+/-- A matching whose edge-set cardinality equals that of some vertex cover is a maximum matching. -/
+theorem Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq (hM : M.IsMatching)
+    (hc : G.IsVertexCover c) (h : M.edgeSet.encard = c.encard) : M.IsMaximumMatching :=
+  Subgraph.isMaximumMatching_def.mpr
+    ⟨hM, fun _ hM' ↦ (hM'.encard_edgeSet_le_encard_of_isVertexCover hc).trans_eq h.symm⟩
+
+/-- A vertex cover whose cardinality equals the edge-set cardinality of some matching is a minimum
+vertex cover. -/
+theorem IsVertexCover.isMinimumVertexCover_of_encard_eq (hc : G.IsVertexCover c) (hM : M.IsMatching)
+    (h : M.edgeSet.encard = c.encard) : G.IsMinimumVertexCover c :=
+  isMinimumVertexCover_def.mpr
+    ⟨hc, fun _ hc' ↦ h.symm.trans_le (hM.encard_edgeSet_le_encard_of_isVertexCover hc')⟩
+
+/-- If some matching and some vertex cover have equal cardinalities, then the matching number equals
+the vertex cover number. -/
+theorem matchingNum_eq_vertexCoverNum_of_encard_eq (hM : M.IsMatching) (hc : G.IsVertexCover c)
+    (h : M.edgeSet.encard = c.encard) : G.matchingNum = G.vertexCoverNum :=
+  le_antisymm G.matchingNum_le_vertexCoverNum
+    (hc.vertexCoverNum_le.trans (h.symm.trans_le hM.encard_edgeSet_le_matchingNum))
+
+/-- For a finite vertex cover `c`, equality of `ncard` with a matching `M` upgrades to equality of
+`encard`, since weak duality forces `M.edgeSet` to be finite. -/
+theorem Subgraph.IsMatching.encard_edgeSet_eq_of_ncard_eq (hM : M.IsMatching)
+    (hc : G.IsVertexCover c) (hfin : c.Finite) (h : M.edgeSet.ncard = c.ncard) :
+    M.edgeSet.encard = c.encard := by
+  have hMf : M.edgeSet.Finite := Set.encard_ne_top_iff.mp <|
+    ne_top_of_le_ne_top (Set.encard_ne_top_iff.mpr hfin)
+      (hM.encard_edgeSet_le_encard_of_isVertexCover hc)
+  rw [← hMf.cast_ncard_eq, ← hfin.cast_ncard_eq, h]
+
+/-- A matching whose edge-set `ncard` equals the `ncard` of a finite vertex cover is a maximum
+matching. -/
+theorem Subgraph.IsMatching.isMaximumMatching_of_ncard_edgeSet_eq (hM : M.IsMatching)
+    (hc : G.IsVertexCover c) (hfin : c.Finite) (h : M.edgeSet.ncard = c.ncard) :
+    M.IsMaximumMatching :=
+  hM.isMaximumMatching_of_encard_edgeSet_eq hc (hM.encard_edgeSet_eq_of_ncard_eq hc hfin h)
+
+/-- A finite vertex cover whose `ncard` equals the edge-set `ncard` of a matching is a minimum
+vertex cover. -/
+theorem IsVertexCover.isMinimumVertexCover_of_ncard_eq (hc : G.IsVertexCover c) (hM : M.IsMatching)
+    (hfin : c.Finite) (h : M.edgeSet.ncard = c.ncard) : G.IsMinimumVertexCover c :=
+  hc.isMinimumVertexCover_of_encard_eq hM (hM.encard_edgeSet_eq_of_ncard_eq hc hfin h)
+
+end Certificates
 
 end SimpleGraph

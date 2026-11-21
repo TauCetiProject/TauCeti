@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Maps
+public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 
 /-!
 # Pulling simple graphs back and pushing them forward
@@ -36,7 +37,9 @@ its Boolean adjacency array.
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
 * `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
 * `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
-  corresponding range subtype vertex.
+  corresponding range subtype vertex;
+* `SimpleGraph.Subgraph.encard_edgeSet_map` — mapping a subgraph along an injective graph
+  homomorphism preserves edge-set cardinality.
 -/
 
 public section
@@ -127,5 +130,16 @@ theorem isoInduceRange_apply {G : SimpleGraph V} {H : SimpleGraph W} (f : G ↪g
   Equiv.ofInjective_apply f f.injective v
 
 end Embedding
+
+namespace Subgraph
+
+/-- Mapping a subgraph along an injective graph homomorphism preserves the cardinality of its edge
+set. -/
+theorem encard_edgeSet_map {G : SimpleGraph V} {H : SimpleGraph W} (f : G →g H)
+    (hf : Function.Injective f) (M : G.Subgraph) :
+    (M.map f).edgeSet.encard = M.edgeSet.encard := by
+  rw [Subgraph.edgeSet_map, (Sym2.map.injective hf).encard_image]
+
+end Subgraph
 
 end SimpleGraph

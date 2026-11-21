@@ -18,14 +18,8 @@ import TauCeti.Combinatorics.SimpleGraph.Bipartite
 # Kőnig's theorem, the Kőnig–Ore deficiency formula, and Hall's theorem
 
 This file proves Kőnig's min-max theorem and the Kőnig–Ore deficiency theorem for finite bipartite
-simple graphs, together with matching-cover optimality certificates and the resulting Hall marriage
-equivalences:
+simple graphs, together with the resulting Hall marriage equivalences:
 
-* **Optimality certificates**: whenever equality holds for a matching `M` and a vertex cover `c`,
-  `M` is a maximum matching
-  (`SimpleGraph.Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq`) and `c` is a minimum
-  vertex cover (`SimpleGraph.IsVertexCover.isMinimumVertexCover_of_encard_eq`), with `Set.ncard`
-  forms for finite covers.
 * **Kőnig's theorem** (`SimpleGraph.IsBipartite.matchingNum_eq_vertexCoverNum`): in every finite
   bipartite simple graph `G`, `G.matchingNum = G.vertexCoverNum`, and there exist a (maximum)
   matching `M` and a (minimum) vertex cover `C` with `M.edgeSet.encard = C.encard`
@@ -36,7 +30,7 @@ equivalences:
   `SimpleGraph.IsBipartite.exists_isMaximumMatching_isMinimumVertexCover_ncard_eq`).
   Every maximum matching has the same number of edges as every minimum vertex cover has vertices
   (`SimpleGraph.IsBipartite.encard_edgeSet_eq_of_isMaximumMatching_of_isMinimumVertexCover`), and
-  maximality/minimality are characterized by the existence of a dual witness of the same size
+  being maximum/minimum is characterized by the existence of a dual witness of the same size
   (`SimpleGraph.IsBipartite.isMaximumMatching_iff_exists_isVertexCover_encard_eq`,
   `SimpleGraph.IsBipartite.isMinimumVertexCover_iff_exists_isMatching_encard_eq`).
 * **The Kőnig–Ore deficiency formula**: for any `G.IsBipartiteWith L R`, every matching `M` and
@@ -82,71 +76,6 @@ open Set
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
-
-/-! ### Weak duality and optimality certificates -/
-
-section Certificates
-
-variable {M : G.Subgraph} {c : Set V}
-
-/-- Every matching of a simple graph has at most `G.vertexCoverNum` edges. -/
-theorem Subgraph.IsMatching.encard_edgeSet_le_vertexCoverNum (hM : M.IsMatching) :
-    M.edgeSet.encard ≤ G.vertexCoverNum :=
-  hM.encard_edgeSet_le_matchingNum.trans G.matchingNum_le_vertexCoverNum
-
-/-- The matching number of a simple graph is at most the cardinality of any vertex cover. -/
-theorem IsVertexCover.matchingNum_le_encard (hc : G.IsVertexCover c) : G.matchingNum ≤ c.encard :=
-  G.matchingNum_le_vertexCoverNum.trans hc.vertexCoverNum_le
-
-/-- A simple graph with finite vertex cover number has finite matching number. -/
-theorem matchingNum_ne_top_of_vertexCoverNum_ne_top (h : G.vertexCoverNum ≠ ⊤) :
-    G.matchingNum ≠ ⊤ :=
-  ne_top_of_le_ne_top h G.matchingNum_le_vertexCoverNum
-
-/-- A matching whose edge-set cardinality equals that of some vertex cover is a maximum matching. -/
-theorem Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq (hM : M.IsMatching)
-    (hc : G.IsVertexCover c) (h : M.edgeSet.encard = c.encard) : M.IsMaximumMatching :=
-  Subgraph.isMaximumMatching_def.mpr
-    ⟨hM, fun _ hM' ↦ (hM'.encard_edgeSet_le_encard_of_isVertexCover hc).trans_eq h.symm⟩
-
-/-- A vertex cover whose cardinality equals the edge-set cardinality of some matching is a minimum
-vertex cover. -/
-theorem IsVertexCover.isMinimumVertexCover_of_encard_eq (hc : G.IsVertexCover c) (hM : M.IsMatching)
-    (h : M.edgeSet.encard = c.encard) : G.IsMinimumVertexCover c :=
-  isMinimumVertexCover_def.mpr
-    ⟨hc, fun _ hc' ↦ h.symm.trans_le (hM.encard_edgeSet_le_encard_of_isVertexCover hc')⟩
-
-/-- If some matching and some vertex cover have equal cardinalities, then the matching number equals
-the vertex cover number. -/
-theorem matchingNum_eq_vertexCoverNum_of_encard_eq (hM : M.IsMatching) (hc : G.IsVertexCover c)
-    (h : M.edgeSet.encard = c.encard) : G.matchingNum = G.vertexCoverNum :=
-  le_antisymm G.matchingNum_le_vertexCoverNum
-    (hc.vertexCoverNum_le.trans (h.symm.trans_le hM.encard_edgeSet_le_matchingNum))
-
-/-- For a finite vertex cover `c`, equality of `ncard` with a matching `M` upgrades to equality of
-`encard`, since weak duality forces `M.edgeSet` to be finite. -/
-theorem Subgraph.IsMatching.encard_edgeSet_eq_of_ncard_eq (hM : M.IsMatching)
-    (hc : G.IsVertexCover c) (hfin : c.Finite) (h : M.edgeSet.ncard = c.ncard) :
-    M.edgeSet.encard = c.encard := by
-  have hMf : M.edgeSet.Finite := Set.encard_ne_top_iff.mp <|
-    ne_top_of_le_ne_top (Set.encard_ne_top_iff.mpr hfin)
-      (hM.encard_edgeSet_le_encard_of_isVertexCover hc)
-  rw [← hMf.cast_ncard_eq, ← hfin.cast_ncard_eq, h]
-
-/-- A matching whose edge-set `ncard` equals the `ncard` of a finite vertex cover is a maximum
-matching. -/
-theorem Subgraph.IsMatching.isMaximumMatching_of_ncard_edgeSet_eq (hM : M.IsMatching)
-    (hc : G.IsVertexCover c) (hfin : c.Finite) (h : M.edgeSet.ncard = c.ncard) :
-    M.IsMaximumMatching :=
-  hM.isMaximumMatching_of_encard_edgeSet_eq hc (hM.encard_edgeSet_eq_of_ncard_eq hc hfin h)
-
-/-- A finite vertex cover whose `ncard` equals the edge-set `ncard` of a matching is a minimum
-vertex cover. -/
-theorem IsVertexCover.isMinimumVertexCover_of_ncard_eq (hc : G.IsVertexCover c) (hM : M.IsMatching)
-    (hfin : c.Finite) (h : M.edgeSet.ncard = c.ncard) : G.IsMinimumVertexCover c :=
-  hc.isMinimumVertexCover_of_encard_eq hM (hM.encard_edgeSet_eq_of_ncard_eq hc hfin h)
-
-end Certificates
 
 /-! ### Kőnig's theorem -/
 
