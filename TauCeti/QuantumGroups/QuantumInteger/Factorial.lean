@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 
 import Mathlib.Tactic
 import TauCeti.Algebra.Algebra.Basic
+import TauCeti.Algebra.Group.Action.Pow
 
 /-!
 # Quantum factorials and divided powers
@@ -324,6 +325,24 @@ theorem quantumDividedPower_mul_of_mul_eq_sq_smul_mul' (q : K) {r : K} {u x : A}
     by simpa only [← MulOpposite.op_mul, MulOpposite.op_smul] using congrArg MulOpposite.op h
   simpa only [MulOpposite.op_mul, MulOpposite.op_smul, ← MulOpposite.op_pow,
     op_quantumDividedPower] using quantumDividedPower_mul_of_mul_eq_sq_smul_mul q hop n
+
+/-- Left-factor form for general `c`: if `y * x = c • (x * y)`, then
+`(x * y)^(n) = c^(n(n - 1)/2) • (x^n * y^(n))`. -/
+theorem quantumDividedPower_mul_left_of_mul_eq_smul_mul (q : K) {c : K} {x y : A}
+    (h : y * x = c • (x * y)) (n : ℕ) :
+    quantumDividedPower q (x * y) n =
+      c ^ (n * (n - 1) / 2) • (x ^ n * quantumDividedPower q y n) := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_eq_pow_smul_mul_pow h, smul_comm,
+    mul_smul_comm]
+
+/-- Right-factor form for general `c`: if `y * x = c • (x * y)`, then
+`(x * y)^(n) = c^(n(n - 1)/2) • (x^(n) * y^n)`. -/
+theorem quantumDividedPower_mul_right_of_mul_eq_smul_mul (q : K) {c : K} {x y : A}
+    (h : y * x = c • (x * y)) (n : ℕ) :
+    quantumDividedPower q (x * y) n =
+      c ^ (n * (n - 1) / 2) • (quantumDividedPower q x n * y ^ n) := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_eq_pow_smul_mul_pow h, smul_comm,
+    smul_mul_assoc]
 
 /-- Product of two quantum divided powers of the same element:
 `x^(a) x^(b) = [a + b choose a]_q • x^(a + b)` when `[a + b]_q! ≠ 0`. -/

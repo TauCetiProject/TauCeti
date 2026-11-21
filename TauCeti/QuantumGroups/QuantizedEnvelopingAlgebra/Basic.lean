@@ -480,14 +480,54 @@ theorem f_mul_simpleKInv (i j : ι) : f D q j * simpleKInv D q i =
     (q ^ D.symmetrizer i) ^ (-D.cartan i j) • (simpleKInv D q i * f D q j) := by
   rw [simpleKInv_def, f_mul_k, map_neg, zpow_neg_pairing_simpleTorus]
 
+theorem k_mul_e_pow (y : Y) (i : ι) (n : ℕ) :
+    k D q y * e D q i ^ n = (q ^ D.pairing (D.root i) y) ^ n • (e D q i ^ n * k D q y) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', ← mul_assoc, k_mul_e, smul_mul_assoc, mul_assoc, ih, mul_smul_comm, smul_smul,
+      mul_comm (q ^ _), ← pow_succ, ← mul_assoc, ← pow_succ']
+
+theorem e_pow_mul_k (y : Y) (i : ι) (n : ℕ) :
+    e D q i ^ n * k D q y = (q ^ (-D.pairing (D.root i) y)) ^ n • (k D q y * e D q i ^ n) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', mul_assoc, ih, mul_smul_comm, ← mul_assoc, e_mul_k, smul_mul_assoc,
+      smul_smul, ← pow_succ, mul_assoc, ← pow_succ']
+
+theorem k_mul_f_pow (y : Y) (i : ι) (n : ℕ) :
+    k D q y * f D q i ^ n = (q ^ (-D.pairing (D.root i) y)) ^ n • (f D q i ^ n * k D q y) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', ← mul_assoc, k_mul_f, smul_mul_assoc, mul_assoc, ih, mul_smul_comm, smul_smul,
+      mul_comm (q ^ _), ← pow_succ, ← mul_assoc, ← pow_succ']
+
+theorem f_pow_mul_k (y : Y) (i : ι) (n : ℕ) :
+    f D q i ^ n * k D q y = (q ^ D.pairing (D.root i) y) ^ n • (k D q y * f D q i ^ n) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', mul_assoc, ih, mul_smul_comm, ← mul_assoc, f_mul_k, smul_mul_assoc,
+      smul_smul, ← pow_succ, mul_assoc, ← pow_succ']
+
 theorem k_mul_quantumDividedPower_e (q' : K) (y : Y) (i : ι) (n : ℕ) :
     k D q y * quantumDividedPower q' (e D q i) n =
       (q ^ D.pairing (D.root i) y) ^ n • (quantumDividedPower q' (e D q i) n * k D q y) :=
   mul_quantumDividedPower_of_mul_eq_smul_mul q' (k_mul_e D q y i) n
+theorem quantumDividedPower_e_mul_k (q' : K) (y : Y) (i : ι) (n : ℕ) :
+    quantumDividedPower q' (e D q i) n * k D q y =
+      (q ^ (-D.pairing (D.root i) y)) ^ n • (k D q y * quantumDividedPower q' (e D q i) n) :=
+  quantumDividedPower_mul_of_mul_eq_smul_mul q' (e_mul_k D q y i) n
 theorem k_mul_quantumDividedPower_f (q' : K) (y : Y) (i : ι) (n : ℕ) :
     k D q y * quantumDividedPower q' (f D q i) n =
       (q ^ (-D.pairing (D.root i) y)) ^ n • (quantumDividedPower q' (f D q i) n * k D q y) :=
   mul_quantumDividedPower_of_mul_eq_smul_mul q' (k_mul_f D q y i) n
+theorem quantumDividedPower_f_mul_k (q' : K) (y : Y) (i : ι) (n : ℕ) :
+    quantumDividedPower q' (f D q i) n * k D q y =
+      (q ^ D.pairing (D.root i) y) ^ n • (k D q y * quantumDividedPower q' (f D q i) n) :=
+  quantumDividedPower_mul_of_mul_eq_smul_mul q' (f_mul_k D q y i) n
 
 theorem commute_simpleK_simpleK (i j : ι) : Commute (simpleK D q i) (simpleK D q j) :=
   commute_k_k D q (D.simpleTorus i) (D.simpleTorus j)
@@ -513,6 +553,9 @@ theorem e_mul_f_sub_f_mul_e_of_ne {i j : ι} (hij : i ≠ j) :
 
 theorem commute_e_f {i j : ι} (hij : i ≠ j) : Commute (e D q i) (f D q j) :=
   sub_eq_zero.mp (e_mul_f_sub_f_mul_e_of_ne D q hij)
+
+theorem e_mul_f_of_ne {i j : ι} (hij : i ≠ j) : e D q i * f D q j = f D q j * e D q i :=
+  (commute_e_f D q hij).eq
 
 /-- Combined `Eᵢ`--`Fⱼ` commutator formula under `DecidableEq ι`. -/
 theorem e_mul_f_sub_f_mul_e [DecidableEq ι] (i j : ι) :
@@ -742,20 +785,30 @@ private noncomputable def rescaleTuple (c : ι → Kˣ) :
   serre_e hij := by rw [serreSum_smul, serreE_eq_zero D q hij, smul_zero]
   serre_f hij := by rw [serreSum_smul, serreF_eq_zero D q hij, smul_zero]
 
-/-- Diagonal rescaling automorphism of `QuantizedEnvelopingAlgebra D q`: for units `c : ι → Kˣ`,
-sends `Eᵢ ↦ cᵢ • Eᵢ`, `Fᵢ ↦ cᵢ⁻¹ • Fᵢ`, and `K_y ↦ K_y`. -/
-noncomputable def rescale (c : ι → Kˣ) :
-    QuantizedEnvelopingAlgebra D q ≃ₐ[K] QuantizedEnvelopingAlgebra D q :=
-  AlgEquiv.ofAlgHom (lift (rescaleTuple D q c)) (lift (rescaleTuple D q fun i => (c i)⁻¹))
-    (by ext i <;> simp [rescaleTuple, smul_smul, Units.ne_zero])
-    (by ext i <;> simp [rescaleTuple, smul_smul, Units.ne_zero])
+/-- Diagonal rescaling automorphisms of `QuantizedEnvelopingAlgebra D q`: for units `c : ι → Kˣ`,
+sends `Eᵢ ↦ cᵢ • Eᵢ`, `Fᵢ ↦ cᵢ⁻¹ • Fᵢ`, and `K_y ↦ K_y`, as a group homomorphism. -/
+noncomputable def rescale :
+    (ι → Kˣ) →* (QuantizedEnvelopingAlgebra D q ≃ₐ[K] QuantizedEnvelopingAlgebra D q) where
+  toFun c :=
+    AlgEquiv.ofAlgHom (lift (rescaleTuple D q c)) (lift (rescaleTuple D q c⁻¹))
+      (by ext i <;> simp [rescaleTuple, smul_smul, Units.ne_zero])
+      (by ext i <;> simp [rescaleTuple, smul_smul, Units.ne_zero])
+  map_one' := AlgEquiv.coe_toAlgHom_injective (by ext <;> simp [rescaleTuple])
+  map_mul' c₁ c₂ := AlgEquiv.coe_toAlgHom_injective (by
+    ext <;> simp [rescaleTuple, smul_smul, mul_comm])
 
 @[simp] theorem rescale_e (c : ι → Kˣ) (i : ι) :
-    rescale D q c (e D q i) = (c i : K) • e D q i := lift_e (rescaleTuple D q c) i
+    rescale D q c (e D q i) = (c i : K) • e D q i := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.ofAlgHom_apply]
+  exact lift_e (rescaleTuple D q c) i
 @[simp] theorem rescale_f (c : ι → Kˣ) (i : ι) :
-    rescale D q c (f D q i) = (c i : K)⁻¹ • f D q i := lift_f (rescaleTuple D q c) i
+    rescale D q c (f D q i) = (c i : K)⁻¹ • f D q i := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.ofAlgHom_apply]
+  exact lift_f (rescaleTuple D q c) i
 @[simp] theorem rescale_k (c : ι → Kˣ) (y : Y) :
-    rescale D q c (k D q y) = k D q y := lift_k (rescaleTuple D q c) y
+    rescale D q c (k D q y) = k D q y := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.ofAlgHom_apply]
+  exact lift_k (rescaleTuple D q c) y
 @[simp] theorem rescale_symm (c : ι → Kˣ) :
     (rescale D q c).symm = rescale D q (fun i => (c i)⁻¹) := by ext; rfl
 
@@ -789,6 +842,20 @@ noncomputable def chevalleyInvolution :
     chevalleyInvolution D q (f D q i) = e D q i := lift_f (chevalleyTuple D q) i
 @[simp] theorem chevalleyInvolution_k (y : Y) :
     chevalleyInvolution D q (k D q y) = k D q (-y) := lift_k (chevalleyTuple D q) y
+@[simp] theorem chevalleyInvolution_simpleK (i : ι) :
+    chevalleyInvolution D q (simpleK D q i) = simpleKInv D q i :=
+  chevalleyInvolution_k D q (D.simpleTorus i)
+@[simp] theorem chevalleyInvolution_simpleKInv (i : ι) :
+    chevalleyInvolution D q (simpleKInv D q i) = simpleK D q i := by
+  rw [simpleKInv_def, chevalleyInvolution_k, neg_neg, simpleK_def]
+theorem chevalleyInvolution_quantumDividedPower_e (q' : K) (i : ι) (n : ℕ) :
+    chevalleyInvolution D q (quantumDividedPower q' (e D q i) n) =
+      quantumDividedPower q' (f D q i) n := by
+  simp
+theorem chevalleyInvolution_quantumDividedPower_f (q' : K) (i : ι) (n : ℕ) :
+    chevalleyInvolution D q (quantumDividedPower q' (f D q i) n) =
+      quantumDividedPower q' (e D q i) n := by
+  simp
 @[simp] theorem chevalleyInvolution_symm :
     (chevalleyInvolution D q).symm = chevalleyInvolution D q := by ext; rfl
 @[simp] theorem chevalleyInvolution_chevalleyInvolution (u : QuantizedEnvelopingAlgebra D q) :

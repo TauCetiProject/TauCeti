@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+import Mathlib.Algebra.Group.Action.Basic
+import Mathlib.Algebra.Group.Semiconj.Basic
+import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Nat.Find
 
 /-!
-# Powers of an element acting on strings and on translated families
+# Powers of an element acting on strings, translated families, and skew-commuting products
 
 For a monoid `M` acting on a type `V` with a zero, an element `x : M` and a vector `w : V`, the
 `x`-string of `w` is the sequence `w, x • w, x² • w, …`. This file shows that if the string
@@ -25,6 +28,9 @@ the sense that `g • c n = c (n + t)` for all `n`, translates it by `k • t` u
 for a group acting and an additive group of indices this holds for integer powers as well. An
 automorphism of a tree acting on its axis, parametrized by the integers, is an example.
 
+Finally, for two elements `x, y` of a monoid with a compatible scalar action satisfying
+`y * x = c • (x * y)`, straightening `(x * y) ^ n` gives `c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`.
+
 If the action of `g` commutes with an action of scalars and `g • v = μ • v`, then the powers of
 `g` act on `v` by the powers of `μ`.
 
@@ -36,6 +42,8 @@ If the action of `g` commutes with an action of scalars and `g • v = μ • v`
   `xⁿ • w = 0`.
 * `TauCeti.pow_smul_eq_add_nsmul`, `TauCeti.zpow_smul_eq_add_zsmul`: if `g • c n = c (n + t)` for
   all `n`, then `gᵏ • c n = c (n + k • t)`.
+* `TauCeti.mul_pow_eq_pow_smul_mul_pow`: if `y * x = c • (x * y)`, then
+  `(x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`.
 * `TauCeti.pow_smul_eq_of_smul_eq`: if `g • v = μ • v`, then `gˡ • v = μˡ • v`.
 -/
 
@@ -88,6 +96,22 @@ theorem zpow_smul_eq_add_zsmul {G : Type*} [Group G] [MulAction G α] [AddGroup 
       natCast_zsmul, neg_add_cancel_right]
 
 end Translate
+
+/-- Straightening a power of a skew-commuting product: if `y * x = c • (x * y)` in a monoid with a
+compatible scalar action, then `(x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`. -/
+theorem mul_pow_eq_pow_smul_mul_pow {R A : Type*} [Monoid R] [Monoid A] [MulAction R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] {c : R} {x y : A}
+    (h : y * x = c • (x * y)) (n : ℕ) :
+    (x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n) := by
+  have hpow (m : ℕ) : y ^ m * x = c ^ m • (x * y ^ m) := by
+    have hxy : SemiconjBy x (c • y) y := by rw [SemiconjBy, mul_smul_comm, h]
+    rw [← (hxy.pow_right m).eq, smul_pow, mul_smul_comm]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, ih, Nat.triangle_succ, pow_add, smul_mul_assoc, mul_assoc (x ^ n),
+      ← mul_assoc (y ^ n), hpow, smul_mul_assoc, mul_smul_comm, smul_smul]
+    simp only [pow_succ, mul_assoc]
 
 /-- If the action of `g` commutes with the scalars and `g • v = μ • v`, then the powers of `g` act
 on `v` by the powers of `μ`. -/

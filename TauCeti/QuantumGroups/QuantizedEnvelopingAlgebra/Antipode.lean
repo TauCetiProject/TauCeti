@@ -8,6 +8,7 @@ module
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Algebra.Basic
+import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Rescale
 
 /-!
 # The antipode of the Drinfeld–Jimbo quantized enveloping algebra
@@ -326,6 +327,12 @@ theorem antipodeLinearEquiv_apply (x : QuantizedEnvelopingAlgebra D q) :
 @[simp] theorem antipodeLinearEquiv_simpleKInv (i : ι) :
     antipodeLinearEquiv D q (simpleKInv D q i) = simpleK D q i := by
   simp [simpleK_def, simpleKInv_def]
+theorem antipodeLinearEquiv_e_eq_neg_normalizedE (i : ι) :
+    antipodeLinearEquiv D q (e D q i) = -normalizedE D q i := by
+  rw [antipodeLinearEquiv_e, normalizedE_def]
+theorem antipodeLinearEquiv_f_eq_neg_normalizedF (i : ι) :
+    antipodeLinearEquiv D q (f D q i) = -normalizedF D q i := by
+  rw [antipodeLinearEquiv_f, normalizedF_def]
 
 /-- Applying `antipodeLinearEquiv` twice agrees with `antipodeSqEquiv`. -/
 theorem antipodeLinearEquiv_antipodeLinearEquiv (x : QuantizedEnvelopingAlgebra D q) :
@@ -343,6 +350,42 @@ theorem antipodeLinearEquiv_antipodeLinearEquiv_f (i : ι) :
 theorem antipodeLinearEquiv_antipodeLinearEquiv_k (y : Y) :
     antipodeLinearEquiv D q (antipodeLinearEquiv D q (k D q y)) = k D q y := by
   rw [antipodeLinearEquiv_antipodeLinearEquiv, antipodeSqEquiv_k]
+
+/-- When `⟨αᵢ, y⟩ = 2 dᵢ` for all `i`, `S²` is conjugation by `K_(-y)`. -/
+theorem antipodeLinearEquiv_antipodeLinearEquiv_of_pairing_root {y : Y}
+    (hρ : ∀ i : ι, D.pairing (D.root i) y = 2 * D.symmetrizer i)
+    (x : QuantizedEnvelopingAlgebra D q) :
+    antipodeLinearEquiv D q (antipodeLinearEquiv D q x) = k D q (-y) * x * k D q y := by
+  rw [antipodeLinearEquiv_antipodeLinearEquiv]
+  rcases eq_or_ne q 0 with rfl | hq
+  · have hid : antipodeSqEquiv D (0 : K) = AlgEquiv.refl := by
+      apply AlgEquiv.coe_toAlgHom_injective; apply hom_ext <;> intro a <;> simp
+    rw [hid]
+    have hcomm : Commute x (k D (0 : K) (-y)) :=
+      commute_of_commute_generators D 0 (by simp) (by simp) (fun z => commute_k_k D 0 z (-y)) x
+    simpa only [AlgEquiv.coe_refl, id_eq] using
+      (by rw [← hcomm.eq, mul_assoc, k_neg_mul_k, mul_one] :
+        x = k D (0 : K) (-y) * x * k D (0 : K) y)
+  · have hc : antipodeSqUnit D q = fun i => Units.mk0 q hq ^ D.pairing (D.root i) (-y) := by
+      ext i
+      simp only [antipodeSqUnit, hq, ↓reduceDIte, map_neg, hρ i, Units.val_pow_eq_pow_val,
+        Units.val_inv_eq_inv_val, Units.val_zpow_eq_zpow_val, Units.val_mk0]
+      rw [zpow_neg, mul_comm (2 : ℤ), zpow_mul, zpow_natCast, zpow_two, ← sq, inv_pow]
+    rw [antipodeSqEquiv, hc, ← toAlgEquiv_conjAct_kUnitsHom hq (-y)]
+    simp [ConjAct.units_smul_def, mul_assoc]
+
+/-- `S(ω(S x)) = ω x`, equivalently `ω ∘ S = S⁻¹ ∘ ω`. -/
+theorem antipodeLinearEquiv_chevalleyInvolution_antipodeLinearEquiv
+    (x : QuantizedEnvelopingAlgebra D q) :
+    antipodeLinearEquiv D q (chevalleyInvolution D q (antipodeLinearEquiv D q x)) =
+      chevalleyInvolution D q x := by
+  have h : (AlgHom.opComm (antipodeOp D q)).comp
+      ((AlgEquiv.op (chevalleyInvolution D q)).toAlgHom.comp (antipodeOp D q)) =
+      (chevalleyInvolution D q).toAlgHom := by
+    apply hom_ext <;> intro a <;> simp [mul_assoc]
+  simpa only [AlgHom.comp_apply, AlgHom.opComm_apply_apply, AlgEquiv.coe_toAlgHom,
+    AlgEquiv.op_apply_apply, MulOpposite.unop_op, antipodeLinearEquiv_apply] using
+    AlgHom.congr_fun h x
 
 @[simp] theorem antipodeLinearEquiv_symm_e (i : ι) :
     (antipodeLinearEquiv D q).symm (e D q i) = -(e D q i * simpleKInv D q i) := by
