@@ -40,8 +40,8 @@ and, for each `u`, the sum of `max (X - 4 (1 - u²) a²) 0` over `a ≥ 1` is th
 
 * `TauCeti.BinaryQuadraticForm.abs_sum_card_reducedForms_sub_le`: the reduced forms of
   discriminant `-D`, over `0 < D < X`, number `(π / 18) X^{3/2}` up to `48 X log X`, for `X ≥ 2`.
-* `TauCeti.BinaryQuadraticForm.abs_finsum_card_orbitRel_quotient_posDef_sub_le`: the same for the
-  `SL(2, ℤ)`-classes of positive definite forms of discriminant `-D`.
+* `TauCeti.BinaryQuadraticForm.abs_finsum_nat_card_orbitRel_quotient_posDef_sub_le`: the same for
+  the `SL(2, ℤ)`-classes of positive definite forms of discriminant `-D`.
 
 ## References
 
@@ -443,7 +443,7 @@ theorem abs_sum_card_reducedForms_sub_le {X : ℝ} (hX : 2 ≤ X) :
 positive definite integral binary quadratic forms of discriminant `-D`, summed over the `0 < D < X`,
 is `(π / 18) X^{3/2} + O(X log X)`; explicitly, the error is at most `48 X log X` for `X ≥ 2`.
 Every class is counted once, primitive or not, and with no stabiliser weight. -/
-theorem abs_finsum_card_orbitRel_quotient_posDef_sub_le {X : ℝ} (hX : 2 ≤ X) :
+theorem abs_finsum_nat_card_orbitRel_quotient_posDef_sub_le {X : ℝ} (hX : 2 ≤ X) :
     |(∑ᶠ D : ℕ+, if (D : ℝ) < X then
         (Nat.card (orbitRel.Quotient SL(2, ℤ) (posDef (D : ℕ))) : ℝ) else 0) -
       π / 18 * X ^ (3 / 2 : ℝ)| ≤ 48 * X * log X := by
