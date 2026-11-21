@@ -43,7 +43,7 @@ spaces of maps. It proves the basic properties of `B`.
   `B(f x, v) = f (r (f x + v))` lies on the submanifold.
 * `TauCeti.contDiffAt_adaptedLocalAddition`: `B` is jointly `C^n` when `f` is `C^(n + 1)` and `r`
   is `C^n`, by the smoothness of the normal projections along the retraction,
-  `TauCeti.contDiffAt_starProjection_normalSubspace_comp`.
+  `TauCeti.contDiffAt_normalSubspace_starProjection_comp`.
 * `TauCeti.hasFDerivAt_adaptedLocalAddition`: at a point `f x` of the submanifold, the derivative
   of `v ↦ B(f x, v)` at `0` is the identity, since the differential of `f ∘ r` there is the
   tangential projection `P_T(x)` (`TauCeti.hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace`).
@@ -146,7 +146,7 @@ theorem contDiffAt_adaptedLocalAddition [IsManifold I (n + 1) M] {q v : V}
   have hg {q : V} (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f (r q))
       (h : ContMDiffAt 𝓘(ℝ, V) I n r q) : ContDiffAt ℝ n (f ∘ r) q :=
     contMDiffAt_iff_contDiffAt.mp ((hf.of_le le_self_add).comp q h)
-  have hNq := contDiffAt_starProjection_normalSubspace_comp hfq himmq hrq
+  have hNq := contDiffAt_normalSubspace_starProjection_comp hfq himmq hrq
   have hT : ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q))ᗮ.starProjection) q := by
     refine ((contDiffAt_const (c := (1 : V →L[ℝ] V))).sub hNq).congr_of_eventuallyEq
       (Eventually.of_forall fun q ↦ ?_)
@@ -156,7 +156,7 @@ theorem contDiffAt_adaptedLocalAddition [IsManifold I (n + 1) M] {q v : V}
     ((hg hfq hrq).comp (q, v) contDiffAt_fst).add ((hT.comp (q, v) contDiffAt_fst).clm_apply
       contDiffAt_snd)
   exact ((hg hfw hrw).comp (q, v) hW).add
-    (((contDiffAt_starProjection_normalSubspace_comp hfw himmw hrw).comp (q, v) hW).clm_apply
+    (((contDiffAt_normalSubspace_starProjection_comp hfw himmw hrw).comp (q, v) hW).clm_apply
       ((contDiffAt_fst.sub ((hg hfq hrq).comp (q, v) contDiffAt_fst)).add
         ((hNq.comp (q, v) contDiffAt_fst).clm_apply contDiffAt_snd)))
 
@@ -183,7 +183,7 @@ theorem hasFDerivAt_adaptedLocalAddition [IsManifold I (n + 1) M]
   have hN :
       DifferentiableAt ℝ (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x + T 0) := by
     rw [hw0]
-    exact (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr
+    exact (contDiffAt_normalSubspace_starProjection_comp_of_retract hf himm hr
       hrx).differentiableAt hn0
   refine ((hg.comp 0 hw).add ((hN.hasFDerivAt.comp 0 hw).clm_apply P.hasFDerivAt)).congr_fderiv
     (ContinuousLinearMap.ext fun h ↦ ?_)
@@ -213,7 +213,7 @@ theorem eventually_adaptedLocalAddition_mem_image_iff [IsManifold I (n + 1) M]
   have hwc : ContinuousAt (fun v : V ↦ f x + T v) 0 := (T.continuous.const_add (f x)).continuousAt
   have hw0 : f x + T 0 = f x := by simp
   have hNc : ContinuousAt (fun v ↦ N (f x + T v)) 0 :=
-    (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr
+    (contDiffAt_normalSubspace_starProjection_comp_of_retract hf himm hr
       hrx).continuousAt.comp_of_eq hwc hw0
   have hrc : ContinuousAt (fun v ↦ r (f x + T v)) 0 := hr.continuousAt.comp_of_eq hwc hw0
   have hnc : ContinuousAt (fun v ↦ N (f x + T v) (P v)) 0 :=

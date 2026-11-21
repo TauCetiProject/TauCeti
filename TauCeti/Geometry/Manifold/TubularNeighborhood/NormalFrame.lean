@@ -88,7 +88,7 @@ variable {r : V → M}
 
 /-- The orthogonal projection onto the normal space of an immersion `f` at `r q` is `C^n` in `q`
 at a point where `r` is `C^n`, when `f` is `C^(n + 1)` at `r q`. -/
-theorem contDiffAt_starProjection_normalSubspace_comp {q : V}
+theorem contDiffAt_normalSubspace_starProjection_comp {q : V}
     (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f (r q))
     (himm : Injective (mfderiv I 𝓘(ℝ, V) f (r q))) (hr : ContMDiffAt 𝓘(ℝ, V) I n r q) :
     ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q :=
@@ -97,11 +97,11 @@ theorem contDiffAt_starProjection_normalSubspace_comp {q : V}
 /-- At a point `f x` whose base point `x` is fixed by the retraction `r`, the orthogonal projection
 onto the normal space of an immersion `f` at `r q` is `C^n` in `q` at `f x`, when `f` is `C^(n + 1)`
 at `x` and `r` is `C^n` at `f x`. -/
-theorem contDiffAt_starProjection_normalSubspace_comp_of_retract
+theorem contDiffAt_normalSubspace_starProjection_comp_of_retract
     {x : M} (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f x) (himm : Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hr : ContMDiffAt 𝓘(ℝ, V) I n r (f x)) (hrx : r (f x) = x) :
     ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x) :=
-  contDiffAt_starProjection_normalSubspace_comp (by rwa [hrx]) (by rwa [hrx]) hr
+  contDiffAt_normalSubspace_starProjection_comp (by rwa [hrx]) (by rwa [hrx]) hr
 
 /-- Let `r` be a `C^n` retraction, `n ≥ 1`, onto a map `f` near `f x`, with normal displacement,
 where `f` is `C^(n + 1)` and immersive at `x`. Then the differential of `f ∘ r` at `f x` is the
@@ -120,7 +120,7 @@ theorem hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace
   have hg : DifferentiableAt ℝ (f ∘ r) (f x) :=
     mdifferentiableAt_iff_differentiableAt.mp (hfx.comp _ hrd)
   have hN :=
-    (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr hrx).differentiableAt hn0
+    (contDiffAt_normalSubspace_starProjection_comp_of_retract hf himm hr hrx).differentiableAt hn0
   set D := fderiv ℝ (f ∘ r) (f x)
   -- `D` takes values in the tangent space, since it factors through the differential of `f`.
   have hrange (h : V) : D h ∈ (normalSubspace I f x)ᗮ := by
