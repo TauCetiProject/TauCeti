@@ -331,7 +331,7 @@ theorem windingNumber_eq_of_continuousOn_uncurry {P : Type*} [TopologicalSpace P
   have := isPreconnected_iff_preconnectedSpace.1 hS
   have hconst : IsLocallyConstant fun x : S ↦ windingNumber (H x) a b w :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
-      (eventually_nhds_subtype_iff S x _).2 (hloc x x.2)
+      (eventually_nhds_subtype_iff S x _).2 (hloc x x.property)
   exact hconst.apply_eq_of_preconnectedSpace ⟨p, hp⟩ ⟨q, hq⟩
 
 /-- **Concentric circles through an annulus avoiding `w` wind equally often.** If `f` is `C¹` on

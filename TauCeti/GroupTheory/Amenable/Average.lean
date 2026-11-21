@@ -179,10 +179,10 @@ theorem Amenable.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Ty
     Amenable G := by
   let s := {i | (F i).Nonempty}
   have : (comap ((↑) : s → ι) l).NeBot := comap_coe_neBot_of_le_principal (le_principal_iff.2 hne)
-  exact .of_tendsto (l := comap ((↑) : s → ι) l) (ms := fun i : s => Mean.average (F i) i.2)
+  exact .of_tendsto (l := comap ((↑) : s → ι) l) (ms := fun i : s => Mean.average (F i) i.property)
     fun g f => squeeze_zero_norm (fun i => by
       simpa only [Real.norm_eq_abs, mul_div_assoc] using
-        Mean.abs_average_leftTranslation_sub_le i.2 g f)
+        Mean.abs_average_leftTranslation_sub_le i.property g f)
       (by simpa [Function.comp_def] using ((h g⁻¹).comp tendsto_comap).const_mul ‖f‖)
 
 /-- A topological group is amenable when it has a Følner family for counting measure, along a
@@ -197,10 +197,10 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] {ι : Type*}
   have : (comap ((↑) : s → ι) l).NeBot := comap_coe_neBot_of_le_principal <| le_principal_iff.2 <|
     hF.eventually_measurableSet.and (hF.eventually_meas_ne_zero.and hF.eventually_meas_ne_top)
   obtain ⟨F', hF'⟩ : ∃ F' : s → Finset G, ∀ i, (F' i : Set G) = F i := ⟨fun i =>
-    ((MeasureTheory.Measure.count_apply_lt_top' i.2.1).1
-      (lt_top_iff_ne_top.2 i.2.2.2)).toFinset, by simp⟩
+    ((MeasureTheory.Measure.count_apply_lt_top' i.property.1).1
+      (lt_top_iff_ne_top.2 i.property.2.2)).toFinset, by simp⟩
   have hne (i : s) : (F' i).Nonempty := by
-    simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.2.1
+    simpa [← coe_nonempty, hF', ← Set.ne_empty_iff_nonempty] using i.property.2.1
   refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) (Eventually.of_forall hne)
     fun g => ?_
   have hF's : IsFoelner G MeasureTheory.Measure.count (comap ((↑) : s → ι) l)

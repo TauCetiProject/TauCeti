@@ -151,15 +151,15 @@ theorem exists_eqOn_comp_of_ker_mfderiv_le {U : Set M} (hU : IsOpen U)
     have : PreconnectedSpace S := isPreconnected_iff_preconnectedSpace.1 (hconn (F y))
     have hlc : IsLocallyConstant (S.domRestrict g) := by
       refine (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦ ?_
-      obtain ⟨h, -, hgh⟩ := hloc z z.2.1
-      filter_upwards [(continuous_subtype_val.tendsto z).eventually hgh] with z' hz'
-      have hz : F z = F y := z.2.2
-      have hz'' : F z' = F y := z'.2.2
+      obtain ⟨h, -, hgh⟩ := hloc z z.property.1
+      filter_upwards [(continuous_subtypeVal.tendsto z).eventually hgh] with z' hz'
+      have hz : F z = F y := z.property.2
+      have hz'' : F z' = F y := z'.property.2
       rw [domRestrict_apply, domRestrict_apply, hz', hgh.self_of_nhds, comp_apply, comp_apply, hz,
         hz'']
     exact hlc.apply_eq_of_preconnectedSpace ⟨y, hy, rfl⟩ ⟨y', hy', hyy'.symm⟩
   have hfac : (U.domRestrict g).FactorsThrough (U.domRestrict F) :=
-    fun a b hab ↦ hfib a a.2 b b.2 hab
+    fun a b hab ↦ hfib a a.property b b.property hab
   refine ⟨extend (U.domRestrict F) (U.domRestrict g) 0,
     fun y hy ↦ (hfac.extend_apply 0 ⟨y, hy⟩).symm, fun y hy ↦ ?_⟩
   -- Near `F y`, every value is taken near `y`, where `g` agrees with a local `C^n` factor.

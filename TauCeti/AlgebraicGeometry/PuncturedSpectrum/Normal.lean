@@ -85,24 +85,25 @@ private theorem isIntegrallyClosedIn_of_toOpenₗ_bijective (hT : T ≤ B⁰)
   refine isIntegrallyClosedIn_iff.mpr ⟨IsLocalization.injective E hT, fun {e} he ↦ ?_⟩
   obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalization.mk'_surjective T e
   -- At each point `q` of `U`, `x / t` is a fraction `b q / u q` of `B_q`.
-  have key (q : U) : ∃ b u w : B, u ∉ q.1.asIdeal ∧ w ∉ q.1.asIdeal ∧
+  have key (q : U) : ∃ b u w : B, u ∉ q.val.asIdeal ∧ w ∉ q.val.asIdeal ∧
       w * (b * t) = w * (u * x) := by
-    obtain ⟨_, _⟩ := hU q.1 q.2
-    exact IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' hT x t he q.1.asIdeal
+    obtain ⟨_, _⟩ := hU q.val q.property
+    exact IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' hT x t he q.val.asIdeal
   choose b u w hu hw hbu using key
   -- These fractions glue to a section of `Spec B` over `U`.
-  let s : (structureSheafInType B B).1.obj (op U) :=
+  let s : (structureSheafInType B B).obj.obj (op U) :=
     ⟨fun q ↦ LocalizedModule.mk (b q) ⟨u q, hu q⟩, fun q₀ ↦ by
       let V := U ⊓ PrimeSpectrum.basicOpen (u q₀ * w q₀)
       let i : V ⟶ U := homOfLE inf_le_left
-      refine ⟨V, ⟨q₀.2, q₀.1.isPrime.mul_notMem (hu q₀) (hw q₀)⟩, i, b q₀, u q₀, fun q ↦ ?_⟩
-      have hq : u q₀ * w q₀ ∉ (i q).1.asIdeal := q.2.2
-      have h₀ : u q₀ ∉ (i q).1.asIdeal := fun h ↦ hq (Ideal.mul_mem_right _ _ h)
-      have h₀' : w q₀ ∉ (i q).1.asIdeal := fun h ↦ hq (Ideal.mul_mem_left _ _ h)
+      refine ⟨V, ⟨q₀.property, q₀.val.isPrime.mul_notMem (hu q₀) (hw q₀)⟩, i, b q₀, u q₀,
+          fun q ↦ ?_⟩
+      have hq : u q₀ * w q₀ ∉ (i q).val.asIdeal := q.property.2
+      have h₀ : u q₀ ∉ (i q).val.asIdeal := fun h ↦ hq (Ideal.mul_mem_right _ _ h)
+      have h₀' : w q₀ ∉ (i q).val.asIdeal := fun h ↦ hq (Ideal.mul_mem_left _ _ h)
       refine ⟨h₀, LocalizedModule.mk_eq.mpr
-        ⟨⟨w (i q) * w q₀, (i q).1.isPrime.mul_notMem (hw (i q)) h₀'⟩, ?_⟩⟩
+        ⟨⟨w (i q) * w q₀, (i q).val.isPrime.mul_notMem (hw (i q)) h₀'⟩, ?_⟩⟩
       simp only [Submonoid.smul_def, smul_eq_mul]
-      linear_combination mul_mul_eq_of_mul_eq_mul (hT t.2) (hbu (i q)) (hbu q₀)⟩
+      linear_combination mul_mul_eq_of_mul_eq_mul (hT t.property) (hbu (i q)) (hbu q₀)⟩
   obtain ⟨c, hc⟩ := hbij.2 s
   refine ⟨c, (IsLocalization.eq_mk'_iff_mul_eq).mpr ?_⟩
   rw [← map_mul]
@@ -110,7 +111,7 @@ private theorem isIntegrallyClosedIn_of_toOpenₗ_bijective (hT : T ≤ B⁰)
   suffices c * t = x by rw [this]
   rw [← sub_eq_zero]
   refine hbij.1 (((toOpenₗ B B U).map_zero).symm ▸ Subtype.ext (funext fun q ↦ ?_))
-  have hcq := congrArg (fun r ↦ r.1 q) hc
+  have hcq := congrArg (fun r ↦ r.val q) hc
   -- Evaluated at `q`, the two sections are the fractions `c / 1` and `b q / u q`.
   rw [toOpenₗ_eq_const] at hcq
   dsimp only [s] at hcq
@@ -120,7 +121,7 @@ private theorem isIntegrallyClosedIn_of_toOpenₗ_bijective (hT : T ≤ B⁰)
   rw [toOpenₗ_eq_const]
   refine (const_apply _ _ _ _ _).trans ?_
   refine (LocalizedModule.mk_eq.mpr ⟨⟨v * w q * u q, ?_⟩, ?_⟩).trans (LocalizedModule.zero_mk 1)
-  · exact q.1.isPrime.mul_notMem (q.1.isPrime.mul_notMem v.2 (hw q)) (hu q)
+  · exact q.val.isPrime.mul_notMem (q.val.isPrime.mul_notMem v.property (hw q)) (hu q)
   simp only [Submonoid.smul_def, OneMemClass.coe_one, smul_eq_mul, one_mul, mul_zero]
   linear_combination (w q * t) * hv + v * hbu q
 
@@ -146,11 +147,11 @@ theorem isReduced_of_presheaf_map_leTop_injective (W : (Spec (.of B)).Opens)
     hinj.comp (toOpenₗ_top_bijective (R := B) (M := B)).1
   refine ⟨fun b hb ↦ hinj' (((toOpenₗ B B W).map_zero).symm ▸
     Subtype.ext (funext fun q ↦ ?_))⟩
-  have := hW q.1 q.2
-  obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.1.asIdeal.primeCompl _ _).mp
-    (hb.map (algebraMap B (Localization.AtPrime q.1.asIdeal))).eq_zero
+  have := hW q.val q.property
+  obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.val.asIdeal.primeCompl _ _).mp
+    (hb.map (algebraMap B (Localization.AtPrime q.val.asIdeal))).eq_zero
   -- `toOpenₗ` sends `b` to the family of fractions `b / 1`.
-  refine (congrArg (·.1 q) (toOpenₗ_eq_const _ b)).trans ((const_apply _ _ _ _ _).trans ?_)
+  refine (congrArg (·.val q) (toOpenₗ_eq_const _ b)).trans ((const_apply _ _ _ _ _).trans ?_)
   exact (LocalizedModule.mk_eq.mpr ⟨c, by simp [Submonoid.smul_def, hc]⟩).trans
     (LocalizedModule.zero_mk 1)
 
