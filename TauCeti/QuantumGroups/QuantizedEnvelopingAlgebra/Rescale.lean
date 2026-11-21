@@ -15,6 +15,11 @@ When `q ≠ 0`, conjugation by the toral unit `kUnitsHom D q (.ofAdd y)` equals 
 rescaling automorphism `TauCeti.QuantizedEnvelopingAlgebra.rescale D q` at
 `i ↦ Units.mk0 q hq ^ D.pairing (D.root i) y`.
 
+In particular, if `⟨αᵢ, y⟩ = 2 dᵢ` for all `i`, this identity identifies the antipode-square
+rescaling (`Eᵢ ↦ qᵢ⁻² • Eᵢ`, `Fᵢ ↦ qᵢ² • Fᵢ`) with conjugation by `K_(-y)`, showing when `S²` is
+inner (`antipodeLinearEquiv_antipodeLinearEquiv_of_pairing_root` and
+`antipode_antipode_of_pairing_root`).
+
 ## Main results
 
 * `TauCeti.QuantizedEnvelopingAlgebra.toAlgEquiv_conjAct_kUnitsHom`: conjugation by `K_y` equals

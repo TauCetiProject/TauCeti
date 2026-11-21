@@ -26,10 +26,21 @@ With `qᵢ = q ^ D.symmetrizer i`, `Kᵢ = simpleK D q i`, and `Kᵢ⁻¹ = simp
 
 ## Main definitions and results
 
-* `TauCeti.QuantizedEnvelopingAlgebra.counitAlgHom`, `comulAlgHom`: counit and coproduct, with
+* `TauCeti.QuantizedEnvelopingAlgebra.counitAlgHom`, `comulAlgHom`: the unconditional counit
+  (valid for every `q : K`, contrasting with `comulAlgHom` just as the unconditional `antipodeOp`
+  in `Antipode.lean` requires no Serre hypothesis) and the explicit coproduct taking `hserre`, with
   `comulAlgHom_quantumDividedPower_e` and `comulAlgHom_quantumDividedPower_f`.
-* `TauCeti.QuantizedEnvelopingAlgebra.bialgebra`, `hopfAlgebra`: Mathlib `Bialgebra` and
-  `HopfAlgebra` structures, `comulAlgHom_antipodeLinearEquiv`, and `exists_antipode`.
+* `TauCeti.QuantizedEnvelopingAlgebra.bialgebra`, `hopfAlgebra`: explicit `Bialgebra` and
+  `HopfAlgebra` constructors taking Serre-factorial nonvanishing proofs `hserre`, with
+  `comulAlgHom_antipodeLinearEquiv` and `exists_antipode`.
+* `TauCeti.QuantizedEnvelopingAlgebra.instBialgebra`, `instHopfAlgebra`: canonical `Bialgebra` and
+  `HopfAlgebra` instances selected automatically by `[Fact (IsGenericQuantumParameter q)]` (using
+  `quantumFactorial_serreLength_ne_zero`) without supplying Serre-factorial proofs, with the generic
+  `Coalgebra.comul`, `Coalgebra.counit`, `HopfAlgebra.antipode`, and
+  `TauCeti.HopfAlgebra.inverseAntipode` API (`comul_quantumDividedPower_e`,
+  `comul_quantumDividedPower_f`, `antipode_quantumDividedPower_e`,
+  `antipode_quantumDividedPower_f`, `antipode_bijective_generic`, `antipode_antipode_eq_rescale`,
+  `antipode_antipode_of_pairing_root`, `map_antipode`).
 * `TauCeti.QuantizedEnvelopingAlgebra.mapBialgHom`: functoriality under `CartanDatum.Hom`.
 
 ## References
@@ -560,6 +571,10 @@ theorem comul_normalizedF (i : ι) :
       normalizedF D q i ⊗ₜ[K] 1 + simpleK D q i ⊗ₜ[K] normalizedF D q i := by
   rw [comul_eq, comulAlgHom_normalizedF]
 
+/-- **Coproduct of raising divided powers** under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`):
+`Δ(Eᵢ^(n)) = ∑_{a=0}^n qᵢ^(a(n - a)) • ((Eᵢ^(a) Kᵢ^(n - a)) ⊗ Eᵢ^(n - a))`,
+specializing `comulAlgHom_quantumDividedPower_e`. -/
 theorem comul_quantumDividedPower_e (i : ι) (n : ℕ) :
     Coalgebra.comul (R := K) (quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) =
       ∑ a ∈ range (n + 1), (q ^ D.symmetrizer i) ^ (a * (n - a)) •
@@ -570,6 +585,10 @@ theorem comul_quantumDividedPower_e (i : ι) (n : ℕ) :
     (quantumFactorial_ne_zero
       ((Fact.out : IsGenericQuantumParameter q).pow (D.symmetrizer_pos i)) n)
 
+/-- **Coproduct of lowering divided powers** under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`):
+`Δ(Fᵢ^(n)) = ∑_{a=0}^n qᵢ^(a(n - a)) • (Fᵢ^(a) ⊗ (Fᵢ^(n - a) Kᵢ^(-a)))`,
+specializing `comulAlgHom_quantumDividedPower_f`. -/
 theorem comul_quantumDividedPower_f (i : ι) (n : ℕ) :
     Coalgebra.comul (R := K) (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n) =
       ∑ a ∈ range (n + 1), (q ^ D.symmetrizer i) ^ (a * (n - a)) •
@@ -634,11 +653,20 @@ theorem antipode_f_eq_neg_normalizedF (i : ι) :
     HopfAlgebra.antipode K (f D q i) = -normalizedF D q i := by
   rw [antipode_f, normalizedF_def]
 
+/-- **Antipode of raising divided powers** under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`):
+`S(Eᵢ^(n)) = ((-1)^n qᵢ^(n(n - 1))) • (Kᵢ^(-n) Eᵢ^(n))`,
+expressing `antipodeLinearEquiv_quantumDividedPower_e` in terms of `HopfAlgebra.antipode`. -/
 theorem antipode_quantumDividedPower_e (i : ι) (n : ℕ) :
     HopfAlgebra.antipode K (quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) =
       ((-1 : K) ^ n * (q ^ D.symmetrizer i) ^ (n * (n - 1))) •
         (simpleKInv D q i ^ n * quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) := by
   rw [antipode_eq, antipodeLinearEquiv_quantumDividedPower_e]
+
+/-- **Antipode of lowering divided powers** under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`):
+`S(Fᵢ^(n)) = ((-1)^n qᵢ^(-n(n - 1))) • (Fᵢ^(n) Kᵢ^n)`,
+expressing `antipodeLinearEquiv_quantumDividedPower_f` in terms of `HopfAlgebra.antipode`. -/
 theorem antipode_quantumDividedPower_f (i : ι) (n : ℕ) :
     HopfAlgebra.antipode K (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n) =
       ((-1 : K) ^ n * ((q ^ D.symmetrizer i)⁻¹) ^ (n * (n - 1))) •
