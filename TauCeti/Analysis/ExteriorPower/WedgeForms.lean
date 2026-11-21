@@ -21,11 +21,23 @@ meets the first `k` indices, but every form index comes from the last block, eac
 product gains the factor `μ (k - 1) / μ k`. This is the small factor that produces a large last
 minimum in the exterior-power argument for the Subspace Theorem.
 
-`AbsoluteValue.apply_wedgeForms_plucker_le` proves this refined bound, uniformly in the exterior
-power: its constant is `N! * max 1 C ^ N`, where `N` is the number of forms. At a
-nonarchimedean absolute value, `AbsoluteValue.apply_wedgeForms_plucker_le_prod` passes row bounds
-to wedge forms without any factorial loss. Together these are the local estimates needed to
+The product of the minima attached to a set `T` of forms, with this gain when `T` lies in the
+top block, is `TauCeti.wedgeGain k μ σ T`. `AbsoluteValue.apply_wedgeForms_plucker_le` proves the
+refined bound in terms of it, uniformly in the exterior power: its constant is
+`N! * max 1 C ^ N`, where `N` is the number of forms. At a nonarchimedean absolute value,
+`AbsoluteValue.apply_wedgeForms_plucker_le_prod` passes row bounds to wedge forms without any
+factorial loss. Together these are the local estimates needed to
 put Plücker vectors into an approximation domain for the wedge forms.
+
+## Main definitions
+
+* `TauCeti.wedgeGain`: the minima attached to a set of forms, with the gain on the top block.
+
+## Main results
+
+* `AbsoluteValue.apply_wedgeForms_plucker_le`: the refined local wedge bound.
+* `AbsoluteValue.apply_wedgeForms_plucker_le_prod`: the wedge bound at a nonarchimedean absolute
+  value.
 
 ## References
 
@@ -40,6 +52,38 @@ put Plücker vectors into an approximation domain for the wedge forms.
 public section
 
 open Finset Module Set Set.powersetCard TauCeti
+
+namespace TauCeti
+
+variable {κ : Type*} {n : ℕ}
+
+/-- **The minima attached to a set of forms, with the gain on the top block.** Given a jump index
+`k`, minima `μ` and a bijection `σ` from the indices of the minima to the forms, this is the
+product of the `μ (σ.symm t)` over `t ∈ T`, multiplied by the gain `μ (k - 1) / μ k` when every
+`σ.symm t` is at least `k`, that is, when `T` lies in the top block of `σ`. -/
+@[expose] noncomputable def wedgeGain (k : ℕ) (μ : ℕ → ℝ) (σ : Fin n ≃ κ) (T : Finset κ) : ℝ :=
+  (if ∀ t ∈ T, k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) * ∏ t ∈ T, μ (σ.symm t)
+
+/-- The minima attached to a set of forms, with the gain, are nonnegative for nonnegative
+minima. -/
+theorem wedgeGain_nonneg {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l, 0 ≤ μ l) (σ : Fin n ≃ κ)
+    (T : Finset κ) : 0 ≤ wedgeGain k μ σ T := by
+  refine mul_nonneg ?_ (prod_nonneg fun _ _ ↦ hμ _)
+  split_ifs
+  exacts [div_nonneg (hμ _) (hμ _), zero_le_one]
+
+/-- The minima attached to a nonempty set of forms, with the gain, are positive when the first
+`n` minima are. -/
+theorem wedgeGain_pos {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l < n, 0 < μ l) (σ : Fin n ≃ κ)
+    {T : Finset κ} (hT : T.Nonempty) : 0 < wedgeGain k μ σ T := by
+  refine mul_pos ?_ (prod_pos fun t _ ↦ hμ _ (σ.symm t).isLt)
+  split_ifs with h
+  · obtain ⟨t, ht⟩ := hT
+    have hk : k < n := (h t ht).trans_lt (σ.symm t).isLt
+    exact div_pos (hμ _ (by omega)) (hμ _ hk)
+  · exact one_pos
+
+end TauCeti
 
 namespace AbsoluteValue
 
@@ -57,13 +101,9 @@ private theorem prod_apply_le_ite_div_mul_prod [Fintype κ] (v : AbsoluteValue R
     (hy : ∀ i j, v (l (σ i) (y j)) ≤ C * ν (σ i) * min (μ i) (μ j))
     {k p : ℕ} (J : powersetCard (Fin (Fintype.card κ)) p)
     (hJ : ∃ j ∈ J, (j : ℕ) < k) (T : powersetCard κ p) (τ : Equiv.Perm (Fin p)) :
-    0 ≤ (∏ t ∈ (T : Finset κ), ν t) *
-      ((if ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-        ∏ t ∈ (T : Finset κ), μ (σ.symm t)) ∧
+    0 ≤ (∏ t ∈ (T : Finset κ), ν t) * wedgeGain k μ σ T ∧
     ∏ b, v (l (ofFinEmbEquiv.symm T (τ b)) (y (ofFinEmbEquiv.symm J b))) ≤
-      C ^ p * ((∏ t ∈ (T : Finset κ), ν t) *
-        ((if ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-          ∏ t ∈ (T : Finset κ), μ (σ.symm t))) := by
+      C ^ p * ((∏ t ∈ (T : Finset κ), ν t) * wedgeGain k μ σ T) := by
   classical
   let eT := ofFinEmbEquiv.symm T
   let eJ := ofFinEmbEquiv.symm J
@@ -73,9 +113,8 @@ private theorem prod_apply_le_ite_div_mul_prod [Fintype κ] (v : AbsoluteValue R
   obtain ⟨b₀, hb₀⟩ := (mem_range_ofFinEmbEquiv_symm_iff_mem J j₀).2 hj₀J
   have hm0 (b) : 0 ≤ min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
     le_min (hμp _ (Fin.is_lt _)).le (hμp _ (Fin.is_lt _)).le
-  have hmin : ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) ≤
-      (if ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-        ∏ b, μ (σ.symm (eT (τ b))) := by
+  have hmin : ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) ≤ wedgeGain k μ σ T := by
+    rw [wedgeGain, ← hperm (fun t ↦ μ (σ.symm t))]
     split_ifs with hT
     · exact prod_min_le_div_mul_prod hμm hμp
         (fun _ ↦ Fin.is_lt _) (fun _ ↦ Fin.is_lt _)
@@ -85,8 +124,7 @@ private theorem prod_apply_le_ite_div_mul_prod [Fintype κ] (v : AbsoluteValue R
       exact prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _
   have hmin0 : 0 ≤ ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
     prod_nonneg fun b _ ↦ hm0 b
-  refine ⟨mul_nonneg (prod_nonneg fun t _ ↦ hν t) ?_, ?_⟩
-  · simpa only [hperm (fun t ↦ μ (σ.symm t))] using hmin0.trans hmin
+  refine ⟨mul_nonneg (prod_nonneg fun t _ ↦ hν t) (hmin0.trans hmin), ?_⟩
   calc
     _ ≤ ∏ b, C * ν (eT (τ b)) * min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) := by
       refine prod_le_prod₀ (fun _ _ ↦ v.nonneg _) fun b _ ↦ ?_
@@ -94,11 +132,9 @@ private theorem prod_apply_le_ite_div_mul_prod [Fintype κ] (v : AbsoluteValue R
     _ = C ^ p * (∏ t ∈ (T : Finset κ), ν t) *
         ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) := by
       rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, Fintype.card_fin, hperm]
-    _ ≤ C ^ p * (∏ t ∈ (T : Finset κ), ν t) *
-        ((if ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-          ∏ b, μ (σ.symm (eT (τ b)))) :=
+    _ ≤ C ^ p * (∏ t ∈ (T : Finset κ), ν t) * wedgeGain k μ σ T :=
       mul_le_mul_of_nonneg_left hmin (mul_nonneg (pow_nonneg hC _) (prod_nonneg fun t _ ↦ hν t))
-    _ = _ := by rw [hperm (fun t ↦ μ (σ.symm t))]; ring
+    _ = _ := mul_assoc _ _ _
 
 /-- **The refined local wedge bound** (Bombieri–Gubler (7.44)–(7.45)). Suppose Evertse's bounds
 hold with nonnegative row weights `ν` and positive increasing minima `μ`. For a vector subset
@@ -115,9 +151,7 @@ theorem apply_wedgeForms_plucker_le [Fintype κ] (v : AbsoluteValue R ℝ)
     (hJ : ∃ j ∈ J, (j : ℕ) < k) (T : powersetCard κ p) :
     v (wedgeForms l p T (plucker (y ∘ ofFinEmbEquiv.symm J))) ≤
       (Fintype.card κ).factorial * max 1 C ^ Fintype.card κ *
-        ((∏ t ∈ (T : Finset κ), ν t) *
-          ((if ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-            ∏ t ∈ (T : Finset κ), μ (σ.symm t))) := by
+        ((∏ t ∈ (T : Finset κ), ν t) * wedgeGain k μ σ T) := by
   classical
   rw [wedgeForms_plucker]
   have hterm := prod_apply_le_ite_div_mul_prod v l σ hμm hμp hν hC hy J hJ T

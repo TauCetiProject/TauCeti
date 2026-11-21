@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
+public import TauCeti.Analysis.ExteriorPower.WedgeForms
 public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima
 
 import TauCeti.Data.Set.PowersetCard
-import TauCeti.Analysis.ExteriorPower.WedgeForms
 import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Balance
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Evertse
@@ -34,11 +34,12 @@ the minima and the forms, such that `|L v (σ v i) (y j)|_v ≤ C₀ · Q ^ c v 
 at the infinite places and `|L v i (y j)|_v ≤ Q ^ c v i` at the places of `S₀`. Passing to
 determinants (`AbsoluteValue.apply_wedgeForms_plucker_le`), the Plücker vector of `y J`, for a
 `p`-subset `J` meeting the first `k` indices, satisfies at an infinite place `v` the bound
-`C · Q ^ (∑ t ∈ T, c v t) · g v T` for each wedge form `T`, where `g v T` is the product of the
-`μ (σ v⁻¹ t)` over `t ∈ T`, times the gain `μ (k - 1) / μ k` when `T` lies in the top block of
-`σ v`. The constant and the gain are absorbed into the exponent: `wedgeExponent c p k σ μ C Q`
-is `∑ t ∈ T, c v t + logb Q (C · g v T)` at the archimedean absolute values and `∑ t ∈ T, c v t`
-at the nonarchimedean ones, where no constant and no gain occur. Then these Plücker vectors lie
+`C · Q ^ (∑ t ∈ T, c v t) · g v T` for each wedge form `T`, where `g v T = wedgeGain k μ (σ v) T`
+is the product of the `μ (σ v⁻¹ t)` over `t ∈ T`, times the gain `μ (k - 1) / μ k` when `T` lies
+in the top block of `σ v`. The constant and the gain are absorbed into the exponent:
+`wedgeExponent c p k σ μ C Q` is `∑ t ∈ T, c v t + logb Q (C · g v T)` at the archimedean
+absolute values and `∑ t ∈ T, c v t` at the nonarchimedean ones, where no constant and no gain
+occur. Then these Plücker vectors lie
 in `approxDomain S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ μ C Q) Q`
 (`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`), with `C` depending only on
 `K` and `ι`.
@@ -64,7 +65,9 @@ corrected family lie in the approximation domain of the wedge forms with the exp
 still spans `V(Q)` by its first `finrank K V(Q)` members. Moving the minima does not change the
 weight, since `mult w₀ · (d / mult w₀) = d` is the total multiplicity of the infinite places
 (`TauCeti.NumberField.approxWeight_wedgeExponentAt`), so the same jump bound holds
-(`TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`).
+(`TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`). On the top block the gain cancels
+the minimum `μ k`, so the minima attached to it are a product with `μ k` replaced by `μ (k - 1)`
+(`TauCeti.wedgeGain_eq_prod_update`).
 
 ## Main definitions
 
@@ -83,9 +86,13 @@ weight, since `mult w₀ · (d / mult w₀) = d` is the total multiplicity of th
 * `TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeExponentAt`: with the minima at one
   infinite place, the Plücker vectors of a corrected minimal family lie in the wedge domain at
   that place.
-* `TauCeti.NumberField.approxWeight_wedgeExponentAt` and
-  `TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`: its weight is that of the wedge
-  domain `wedgeExponent` with one bijection.
+* `TauCeti.NumberField.approxWeight_wedgeExponentAt`: its weight is that of the wedge domain
+  `wedgeExponent` with one bijection.
+* `TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`: for the successive minima, `0 < p`
+  and `k + p = card ι`, `Q` raised to its weight is at most a constant times
+  `(μ (k - 1) / μ k) ^ [K : ℚ]`.
+* `TauCeti.wedgeGain_eq_prod_update`: on the top block, the minima attached to it with the gain
+  are the minima with `μ k` replaced by `μ (k - 1)`.
 
 ## References
 
@@ -103,6 +110,47 @@ noncomputable section
 
 open Finset Module NumberField NumberField.mixedEmbedding Set.powersetCard
 
+namespace TauCeti
+
+/-- Replacing nonnegative minima `f` by `b · f ^ a`, for `b ≠ 0`, turns the minima attached to
+`T`, with the gain on the top block, into `b ^ #T` times their `a`-th power. -/
+theorem wedgeGain_const_mul_rpow {κ : Type*} {n k : ℕ} {b : ℝ} (hb : b ≠ 0) {f : ℕ → ℝ}
+    (hf : ∀ l, 0 ≤ f l) {a : ℝ} (σ : Fin n ≃ κ) (T : Finset κ) :
+    wedgeGain k (fun l ↦ b * f l ^ a) σ T = b ^ T.card * wedgeGain k f σ T ^ a := by
+  have hg : 0 ≤ if ∀ t ∈ T, k ≤ (σ.symm t : ℕ) then f (k - 1) / f k else 1 := by
+    split_ifs
+    exacts [div_nonneg (hf _) (hf _), zero_le_one]
+  rw [wedgeGain, wedgeGain, prod_mul_distrib, prod_const, mul_div_mul_left _ _ hb,
+    Real.mul_rpow hg (prod_nonneg fun _ _ ↦ hf _), Real.finsetProd_rpow _ _ fun _ _ ↦ hf _]
+  split_ifs <;> simp [Real.div_rpow (hf _) (hf _)]
+  ring
+
+/-- **The minima attached to the top block, without the quotient.** For `0 < p`, `k + p = n`,
+`μ k ≠ 0` and the `p`-subset `T` all of whose indices `σ.symm t` are at least `k`, the gain
+`μ (k - 1) / μ k` cancels the minimum `μ k`: the minima attached to `T` with the gain are the
+product of the minima attached to `T` with `μ k` replaced by `μ (k - 1)`. -/
+theorem wedgeGain_eq_prod_update {κ : Type*} {n k p : ℕ} {μ : ℕ → ℝ} (hμ : μ k ≠ 0)
+    (σ : Fin n ≃ κ) (hp : 0 < p) (hkp : k + p = n) {T : Set.powersetCard κ p}
+    (hT : ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ)) :
+    wedgeGain k μ σ T = ∏ t ∈ (T : Finset κ), Function.update μ k (μ (k - 1)) (σ.symm t) := by
+  classical
+  -- The top block contains the index `k`.
+  set t₀ := σ ⟨k, by omega⟩
+  have ht₀ : t₀ ∈ (T : Finset κ) := by
+    rw [(forall_le_symm_iff_eq_map_topBlock σ hkp T).1 hT, Set.powersetCard.val_map]
+    exact Finset.mem_map.2 ⟨⟨k, by omega⟩, (mem_topBlock hkp).2 le_rfl, rfl⟩
+  have hne : ∀ t ∈ (T : Finset κ).erase t₀, (σ.symm t : ℕ) ≠ k := fun t ht h ↦
+    (Finset.mem_erase.1 ht).1 (σ.symm.injective (Fin.ext (by simp [t₀, h])))
+  have hupd : ∏ t ∈ (T : Finset κ).erase t₀, Function.update μ k (μ (k - 1)) (σ.symm t) =
+      ∏ t ∈ (T : Finset κ).erase t₀, μ (σ.symm t) :=
+    prod_congr rfl fun t ht ↦ Function.update_of_ne (hne t ht) _ _
+  rw [wedgeGain, ← mul_prod_erase _ _ ht₀, ← mul_prod_erase _ _ ht₀, hupd]
+  split_ifs
+  simp only [t₀, Equiv.symm_apply_apply, Function.update_self]
+  rw [← mul_assoc, div_mul_cancel₀ _ hμ]
+
+end TauCeti
+
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
@@ -112,15 +160,15 @@ open scoped Classical in
 an exterior degree `p`, a jump index `k`, bijections `σ v` from the indices of the minima to the
 forms, minima `μ` and a constant `C`, the exponent of the wedge form `T` at `v` is
 `∑ t ∈ T, c v t` at a nonarchimedean `v` and, at an archimedean `v`,
-`∑ t ∈ T, c v t + logb Q (C · g)`, where `g` is the product of the `μ ((σ v).symm t)` over
-`t ∈ T`, multiplied by `μ (k - 1) / μ k` when every `(σ v).symm t` is at least `k`. -/
+`∑ t ∈ T, c v t + logb Q (C · g)`, where `g = wedgeGain k μ (σ v) T` is the product of the
+`μ ((σ v).symm t)` over `t ∈ T`, multiplied by `μ (k - 1) / μ k` when every `(σ v).symm t` is at
+least `k`. -/
 def wedgeExponent (c : AbsoluteValue K ℝ → ι → ℝ) (p k : ℕ)
     (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι) (μ : ℕ → ℝ) (C Q : ℝ) :
     AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ :=
   fun v T ↦ ∑ t ∈ (T : Finset ι), c v t +
     if IsNonarchimedean v then 0 else
-      Real.logb Q (C * ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v).symm t : ℕ) then μ (k - 1) / μ k
-        else 1) * ∏ t ∈ (T : Finset ι), μ ((σ v).symm t)))
+      Real.logb Q (C * wedgeGain k μ (σ v) T)
 
 variable {c : AbsoluteValue K ℝ → ι → ℝ} {p k : ℕ}
   {σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι} {μ : ℕ → ℝ} {C Q : ℝ}
@@ -139,21 +187,8 @@ gain `μ (k - 1) / μ k` when `T` lies in the top block. -/
 theorem wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v)
     (T : Set.powersetCard ι p) :
     wedgeExponent c p k σ μ C Q v T = ∑ t ∈ (T : Finset ι), c v t +
-      Real.logb Q (C * ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v).symm t : ℕ) then μ (k - 1) / μ k
-        else 1) * ∏ t ∈ (T : Finset ι), μ ((σ v).symm t))) := by
+      Real.logb Q (C * wedgeGain k μ (σ v) T) := by
   simp [wedgeExponent, hv]
-
-/-- The product of the minima attached to a nonempty set of forms, with the gain on the top
-block, is positive when the first `card ι` minima are. -/
-private theorem wedgeGain_pos (hμ : ∀ l < Fintype.card ι, 0 < μ l) (τ : ι ≃ Fin (Fintype.card ι))
-    {T : Finset ι} (hT : T.Nonempty) :
-    0 < (if ∀ t ∈ T, k ≤ (τ t : ℕ) then μ (k - 1) / μ k else 1) * ∏ t ∈ T, μ (τ t) := by
-  refine mul_pos ?_ (prod_pos fun t _ ↦ hμ _ (τ t).isLt)
-  split_ifs with h
-  · obtain ⟨t, ht⟩ := hT
-    have hk : k < Fintype.card ι := (h t ht).trans_lt (τ t).isLt
-    exact div_pos (hμ _ (by omega)) (hμ _ hk)
-  · exact one_pos
 
 /-- At a nonarchimedean absolute value, `Q` raised to the wedge exponent of `T` is the product of
 the bounds `Q ^ c v t` over `t ∈ T`. -/
@@ -169,11 +204,10 @@ theorem rpow_wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v) (
     (hQ₁ : Q ≠ 1) (hC : 0 < C) (hμ : ∀ l < Fintype.card ι, 0 < μ l) (hp : 0 < p)
     (T : Set.powersetCard ι p) :
     Q ^ wedgeExponent c p k σ μ C Q v T =
-      C * ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v).symm t : ℕ) then μ (k - 1) / μ k else 1) *
-        ∏ t ∈ (T : Finset ι), μ ((σ v).symm t)) * ∏ t ∈ (T : Finset ι), Q ^ c v t := by
+      C * wedgeGain k μ (σ v) T * ∏ t ∈ (T : Finset ι), Q ^ c v t := by
   have hT : (T : Finset ι).Nonempty := card_pos.1 (by rw [card_eq]; exact hp)
   rw [wedgeExponent_of_not_isNonarchimedean hv, Real.rpow_add hQ, Real.rpow_sum_of_pos hQ,
-    Real.rpow_logb hQ hQ₁ (mul_pos hC (wedgeGain_pos hμ (σ v).symm hT)), mul_comm]
+    Real.rpow_logb hQ hQ₁ (mul_pos hC (wedgeGain_pos hμ (σ v) hT)), mul_comm]
 
 /-! ### The Plücker vectors of the corrected minimal vectors -/
 
@@ -268,10 +302,8 @@ private theorem plucker_mem_approxDomain_wedgeForms [LinearOrder ι] {S₀ : Fin
     {E : AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ}
     (hEinf : ∀ (v : InfinitePlace K) (T : Set.powersetCard ι p),
       (Fintype.card ι).factorial * max 1 C₁ ^ Fintype.card ι *
-        ((∏ t ∈ (T : Finset ι), Q ^ c v.val t) *
-          ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v.val).symm t : ℕ) then
-            μ v.val (k - 1) / μ v.val k else 1) *
-              ∏ t ∈ (T : Finset ι), μ v.val ((σ v.val).symm t))) ≤ Q ^ E v.val T)
+        ((∏ t ∈ (T : Finset ι), Q ^ c v.val t) * wedgeGain k (μ v.val) (σ v.val) T) ≤
+          Q ^ E v.val T)
     (hEfin : ∀ v ∈ S₀, ∀ T : Set.powersetCard ι p, E v.val T = ∑ t ∈ (T : Finset ι), c v.val t)
     {J : Set.powersetCard (Fin (Fintype.card ι)) p} (hJ : ∃ j ∈ J, (j : ℕ) < k) :
     plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ (fun v ↦ wedgeForms (L v) p) E Q := by
@@ -323,8 +355,7 @@ theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
     (fun v _ T ↦ wedgeExponent_of_isNonarchimedean v.add_le T) hJ⟩
   rw [rpow_wedgeExponent_of_not_isNonarchimedean w.not_isNonarchimedean hQ₀ hQ₁ (by positivity) hμp
     (hJ.elim fun j hj ↦ Set.powersetCard.coe_nonempty_iff.1 ⟨j, hj.1⟩)]
-  -- The two gains decide the same top-block condition, through possibly different instances.
-  split_ifs <;> ring
+  ring
 
 /-! ### The weight of the wedge domain -/
 
@@ -334,11 +365,11 @@ omit [NumberField K] in
 subset is the top block. -/
 private theorem prod_wedgeGain (σ : Fin (Fintype.card ι) ≃ ι) (hp : 0 < p)
     (hkp : k + p = Fintype.card ι) (μ : ℕ → ℝ) (C : ℝ) :
-    ∏ T : Set.powersetCard ι p, C * ((if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then
-        μ (k - 1) / μ k else 1) * ∏ t ∈ (T : Finset ι), μ (σ.symm t)) =
+    ∏ T : Set.powersetCard ι p, C * wedgeGain k μ σ T =
       C ^ (Fintype.card ι).choose p *
         (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
           (μ (k - 1) / μ k) := by
+  simp only [wedgeGain]
   rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, Set.powersetCard.fintypeCard,
     Set.powersetCard.prod_prod hp fun t ↦ μ (σ.symm t), Equiv.prod_comp σ.symm fun l ↦ μ l]
   have hite : ∏ T : Set.powersetCard ι p, (if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then
@@ -366,6 +397,7 @@ private theorem sum_wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimede
   rw [sum_add_distrib, Set.powersetCard.sum_sum hp, nsmul_eq_mul, ← prod_wedgeGain (σ v) hp hkp,
     Real.logb_prod]
   intro T _
+  rw [wedgeGain]
   refine mul_ne_zero hC (mul_ne_zero ?_ (prod_ne_zero_iff.2 fun t _ ↦ hμ _ ((σ v).symm t).isLt))
   split_ifs
   · exact div_ne_zero (hμ _ (by omega)) (hμ _ hk)
@@ -459,15 +491,8 @@ theorem rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
           ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
             (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ₀.ne'
-  have hB : 0 ∈ interior (approxBody L c Q) :=
-    mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ₀)
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, interior_subset hB⟩⟩
   have hμ (l : ℕ) (hl : l < Fintype.card ι) : 0 < μ l :=
-    Submodule.successiveMinimum_pos (B := B) hB hl
+    successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
   set A := (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) *
     (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L
   set e := (Fintype.card ι - 1).choose (p - 1)
@@ -502,25 +527,26 @@ open scoped Classical in
 exponents `c`, an exterior degree `p`, a jump index `k`, one bijection `σ` from the indices of the
 minima to the forms, minima `μ` and a constant `C`, the exponent of the wedge form `T` at `v` is
 `∑ t ∈ T, c v t` at a nonarchimedean `v`, `∑ t ∈ T, c v t + logb Q C` at an archimedean `v ≠ w₀`,
-and `∑ t ∈ T, c v t + logb Q (C · g ^ (d / mult w₀))` at `w₀`, where `d = [K : ℚ]` and `g` is the
-product of the `μ (σ.symm t)` over `t ∈ T`, multiplied by `μ (k - 1) / μ k` when every
-`σ.symm t` is at least `k`. These are the wedge exponents `wedgeExponent` of the minima moved to
-`w₀` by `exists_balance`: the minima enter at `w₀` alone, so one bijection suffices. -/
+and `∑ t ∈ T, c v t + logb Q (C · g ^ (d / mult w₀))` at `w₀`, where `d = [K : ℚ]` and
+`g = wedgeGain k μ σ T` is the product of the `μ (σ.symm t)` over `t ∈ T`, multiplied by
+`μ (k - 1) / μ k` when every `σ.symm t` is at least `k`. These exponents bound the wedge forms of
+the minima as moved to `w₀` by `exists_balance`, which are `C₂ · μ l ^ (d / mult w₀)` at `w₀` and
+`C₂` at the other infinite places: the minima enter at `w₀` alone, so one bijection suffices. The
+balancing factor `C₂` contributes `C₂ ^ p` to the bound of a `p`-fold wedge, and this is absorbed
+into the constant `C`, which is uniform in `p ≤ card ι`. -/
 def wedgeExponentAt (c : AbsoluteValue K ℝ → ι → ℝ) (p k : ℕ) (w₀ : InfinitePlace K)
     (σ : Fin (Fintype.card ι) ≃ ι) (μ : ℕ → ℝ) (C Q : ℝ) :
     AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ :=
   fun v T ↦ ∑ t ∈ (T : Finset ι), c v t +
     if IsNonarchimedean v then 0 else
-      Real.logb Q (C * if v = w₀.val then
-        ((if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-          ∏ t ∈ (T : Finset ι), μ (σ.symm t)) ^ ((finrank ℚ K : ℝ) / w₀.mult)
-      else 1)
+      Real.logb Q (C * if v = w₀.val then wedgeGain k μ σ T ^ ((finrank ℚ K : ℝ) / w₀.mult)
+        else 1)
 
 section WedgeExponentAt
 
 variable {w₀ : InfinitePlace K} {τ : Fin (Fintype.card ι) ≃ ι}
 
-/-- At a nonarchimedean absolute value the exponent of `T` at `w₀` is `∑ t ∈ T, c v t`. -/
+/-- At a nonarchimedean absolute value `v`, the exponent of `T` at `v` is `∑ t ∈ T, c v t`. -/
 @[simp]
 theorem wedgeExponentAt_of_isNonarchimedean (hv : IsNonarchimedean v)
     (T : Set.powersetCard ι p) :
@@ -533,19 +559,18 @@ gain `μ (k - 1) / μ k` when `T` lies in the top block. -/
 @[simp]
 theorem wedgeExponentAt_self (T : Set.powersetCard ι p) :
     wedgeExponentAt c p k w₀ τ μ C Q w₀.val T = ∑ t ∈ (T : Finset ι), c w₀.val t +
-      Real.logb Q (C * ((if ∀ t ∈ (T : Finset ι), k ≤ (τ.symm t : ℕ) then μ (k - 1) / μ k
-        else 1) * ∏ t ∈ (T : Finset ι), μ (τ.symm t)) ^ ((finrank ℚ K : ℝ) / w₀.mult)) := by
+      Real.logb Q (C * wedgeGain k μ τ T ^ ((finrank ℚ K : ℝ) / w₀.mult)) := by
   simp [wedgeExponentAt, w₀.not_isNonarchimedean]
 
 /-- At an archimedean absolute value other than `w₀` the exponent of `T` is
 `∑ t ∈ T, c v t + logb Q C`: the minima do not enter. -/
 @[simp]
-theorem wedgeExponentAt_of_ne (hv : ¬IsNonarchimedean v) (hw : v ≠ w₀.val)
+theorem wedgeExponentAt_of_not_isNonarchimedean_of_ne (hv : ¬IsNonarchimedean v) (hw : v ≠ w₀.val)
     (T : Set.powersetCard ι p) :
     wedgeExponentAt c p k w₀ τ μ C Q v T = ∑ t ∈ (T : Finset ι), c v t + Real.logb Q C := by
   simp [wedgeExponentAt, hv, hw]
 
-/-- At a nonarchimedean absolute value, `Q` raised to the exponent of `T` at `w₀` is the product
+/-- At a nonarchimedean absolute value `v`, `Q` raised to the exponent of `T` at `v` is the product
 of the bounds `Q ^ c v t` over `t ∈ T`. -/
 theorem rpow_wedgeExponentAt_of_isNonarchimedean (hv : IsNonarchimedean v) (hQ : 0 < Q)
     (T : Set.powersetCard ι p) :
@@ -558,53 +583,19 @@ of the bounds `Q ^ c w₀ t` over `t ∈ T`. -/
 theorem rpow_wedgeExponentAt_self (hQ : 0 < Q) (hQ₁ : Q ≠ 1) (hC : 0 < C)
     (hμ : ∀ l < Fintype.card ι, 0 < μ l) (hp : 0 < p) (T : Set.powersetCard ι p) :
     Q ^ wedgeExponentAt c p k w₀ τ μ C Q w₀.val T =
-      C * ((if ∀ t ∈ (T : Finset ι), k ≤ (τ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-        ∏ t ∈ (T : Finset ι), μ (τ.symm t)) ^ ((finrank ℚ K : ℝ) / w₀.mult) *
-          ∏ t ∈ (T : Finset ι), Q ^ c w₀.val t := by
+      C * wedgeGain k μ τ T ^ ((finrank ℚ K : ℝ) / w₀.mult) *
+        ∏ t ∈ (T : Finset ι), Q ^ c w₀.val t := by
   have hT : (T : Finset ι).Nonempty := card_pos.1 (by rw [card_eq]; exact hp)
   rw [wedgeExponentAt_self, Real.rpow_add hQ, Real.rpow_sum_of_pos hQ, Real.rpow_logb hQ hQ₁
-    (mul_pos hC (Real.rpow_pos_of_pos (wedgeGain_pos hμ τ.symm hT) _)), mul_comm]
+    (mul_pos hC (Real.rpow_pos_of_pos (wedgeGain_pos hμ τ hT) _)), mul_comm]
 
 /-- At an archimedean absolute value `v ≠ w₀`, `Q` raised to the exponent of `T` is the constant
 times the product of the bounds `Q ^ c v t` over `t ∈ T`. -/
-theorem rpow_wedgeExponentAt_of_ne (hv : ¬IsNonarchimedean v) (hw : v ≠ w₀.val) (hQ : 0 < Q)
-    (hQ₁ : Q ≠ 1) (hC : 0 < C) (T : Set.powersetCard ι p) :
+theorem rpow_wedgeExponentAt_of_not_isNonarchimedean_of_ne (hv : ¬IsNonarchimedean v)
+    (hw : v ≠ w₀.val) (hQ : 0 < Q) (hQ₁ : Q ≠ 1) (hC : 0 < C) (T : Set.powersetCard ι p) :
     Q ^ wedgeExponentAt c p k w₀ τ μ C Q v T = C * ∏ t ∈ (T : Finset ι), Q ^ c v t := by
-  rw [wedgeExponentAt_of_ne hv hw, Real.rpow_add hQ, Real.rpow_sum_of_pos hQ,
-    Real.rpow_logb hQ hQ₁ hC, mul_comm]
-
-/-- Replacing nonnegative minima `f` by `b · f ^ a`, for `b ≠ 0`, turns the gain-weighted
-product over `T` into `b ^ #T` times its `a`-th power. -/
-private theorem ite_div_mul_prod_const_mul_rpow {κ : Type*} (P : Prop) [Decidable P] {b : ℝ}
-    (hb : b ≠ 0) {f : ℕ → ℝ} (hf : ∀ l, 0 ≤ f l) (a : ℝ) (T : Finset κ) (τ : κ → ℕ) :
-    (if P then b * f (k - 1) ^ a / (b * f k ^ a) else 1) * ∏ t ∈ T, b * f (τ t) ^ a =
-      b ^ T.card * ((if P then f (k - 1) / f k else 1) * ∏ t ∈ T, f (τ t)) ^ a := by
-  have hg : 0 ≤ if P then f (k - 1) / f k else 1 := by
-    split_ifs
-    exacts [div_nonneg (hf _) (hf _), zero_le_one]
-  rw [prod_mul_distrib, prod_const, mul_div_mul_left _ _ hb,
-    Real.mul_rpow hg (prod_nonneg fun _ _ ↦ hf _), Real.finsetProd_rpow _ _ fun _ _ ↦ hf _]
-  split_ifs <;> simp [Real.div_rpow (hf _) (hf _)]
-  ring
-
-/-- The successive minima over `K` of an approximation domain of positive level are positive
-below `card ι` and nondecreasing there. -/
-private theorem successiveMinimum_approx_pos_and_monotoneOn {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (c : AbsoluteValue K ℝ → ι → ℝ)
-    (hQ : 0 < Q) :
-    (∀ l < Fintype.card ι, 0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l) ∧
-      MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
-        (Set.Iio (Fintype.card ι)) := by
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  refine ⟨fun l hl ↦ ?_, ?_⟩
-  · have h := (approxModule S₀ L c Q).successiveMinimum_pos hB hl
-    rwa [hcoe] at h
-  · have h := (approxModule S₀ L c Q).monotoneOn_successiveMinimum hB
-    rwa [hcoe] at h
+  rw [wedgeExponentAt_of_not_isNonarchimedean_of_ne hv hw, Real.rpow_add hQ,
+    Real.rpow_sum_of_pos hQ, Real.rpow_logb hQ hQ₁ hC, mul_comm]
 
 /-- The wedge bound at an infinite place for minima `μ'` that are `C₂ · μ l ^ (d / mult w₀)` at
 `w₀` and the constant `C₂ ≥ 1` at the other infinite places is dominated by `Q` raised to the
@@ -615,10 +606,7 @@ private theorem le_rpow_wedgeExponentAt {w₀ : InfinitePlace K} {μ' : Absolute
     (hne : ∀ v : InfinitePlace K, v ≠ w₀ → ∀ l, μ' v.val l = C₂) (hQ : 0 < Q) (hQ₁ : Q ≠ 1)
     (hp : 0 < p) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι) (v : InfinitePlace K)
     (T : Set.powersetCard ι p) :
-    C₀ * ((∏ t ∈ (T : Finset ι), Q ^ c v.val t) *
-      ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v.val).symm t : ℕ) then
-        μ' v.val (k - 1) / μ' v.val k else 1) *
-          ∏ t ∈ (T : Finset ι), μ' v.val ((σ v.val).symm t))) ≤
+    C₀ * ((∏ t ∈ (T : Finset ι), Q ^ c v.val t) * wedgeGain k (μ' v.val) (σ v.val) T) ≤
       Q ^ wedgeExponentAt c p k w₀ (σ w₀.val) μ (C₀ * C₂ ^ Fintype.card ι) Q v.val T := by
   have hC₂₀ : 0 < C₂ := zero_lt_one.trans_le hC₂
   have hpow : C₂ ^ p ≤ C₂ ^ Fintype.card ι := by
@@ -630,19 +618,15 @@ private theorem le_rpow_wedgeExponentAt {w₀ : InfinitePlace K} {μ' : Absolute
   by_cases hv : v = w₀
   · subst hv
     rw [rpow_wedgeExponentAt_self hQ hQ₁ (by positivity) hμp hp]
-    simp only [hw₀]
-    rw [ite_div_mul_prod_const_mul_rpow _ hC₂₀.ne' hμ₀, card_eq]
-    have hG : 0 ≤ ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v.val).symm t : ℕ) then μ (k - 1) / μ k
-        else 1) * ∏ t ∈ (T : Finset ι), μ ((σ v.val).symm t)) ^ ((finrank ℚ K : ℝ) / v.mult) := by
-      refine Real.rpow_nonneg (mul_nonneg ?_ (prod_nonneg fun _ _ ↦ hμ₀ _)) _
-      split_ifs
-      exacts [div_nonneg (hμ₀ _) (hμ₀ _), zero_le_one]
+    rw [show μ' v.val = _ from funext hw₀, wedgeGain_const_mul_rpow hC₂₀.ne' hμ₀, card_eq]
+    have hG : 0 ≤ wedgeGain k μ (σ v.val) T ^ ((finrank ℚ K : ℝ) / v.mult) :=
+      Real.rpow_nonneg (wedgeGain_nonneg hμ₀ _ _) _
     convert mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left hpow hC₀.le) hG) hP using 1
     ring
-  · rw [rpow_wedgeExponentAt_of_ne v.not_isNonarchimedean (fun h ↦ hv (Subtype.ext h)) hQ hQ₁
-      (by positivity)]
-    simp only [hne v hv, div_self hC₂₀.ne', ite_self, one_mul, prod_const, card_eq]
+  · rw [rpow_wedgeExponentAt_of_not_isNonarchimedean_of_ne v.not_isNonarchimedean
+      (fun h ↦ hv (Subtype.ext h)) hQ hQ₁ (by positivity)]
+    simp only [wedgeGain, hne v hv, div_self hC₂₀.ne', ite_self, one_mul, prod_const, card_eq]
     calc _ = (C₀ * C₂ ^ p) * ∏ t ∈ (T : Finset ι), Q ^ c v.val t := by ring
       _ ≤ _ := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hpow hC₀.le) hP
 
@@ -680,7 +664,8 @@ theorem exists_plucker_mem_approxDomain_wedgeExponentAt [LinearOrder ι] :
   -- The minimal vectors with their minima moved to `w₀`.
   obtain ⟨x, hx, hxspan, hxΛ⟩ := exists_balance hLinf hLfin c hQ₀ w₀
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-  obtain ⟨hμp, hμm⟩ := successiveMinimum_approx_pos_and_monotoneOn hLinf hLfin c hQ₀
+  have hμp (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
+  have hμm := monotoneOn_successiveMinimum_approx hLinf hLfin c hQ₀
   have hμ₀ (l : ℕ) : 0 ≤ μ l := Submodule.successiveMinimum_nonneg _ _ l
   -- Evertse's lemma with the balanced minima `C₂ · μ l ^ a` at `w₀` and `C₂` elsewhere.
   set a : ℝ := (finrank ℚ K : ℝ) / w₀.mult
@@ -704,7 +689,7 @@ theorem exists_plucker_mem_approxDomain_wedgeExponentAt [LinearOrder ι] :
   -- The correction is unitriangular, so it keeps the spans of the initial segments.
   have hyx (R : ℕ) : Submodule.span K (y '' {l | (l : ℕ) < R}) =
       Submodule.span K (x '' {l | (l : ℕ) < R}) :=
-    Submodule.span_image_eq_span_image_of_isLowerSet hspan fun _ _ hba hb ↦
+    TauCeti.Submodule.span_image_eq_span_image_of_isLowerSet (fun j _ ↦ hspan j) fun _ _ hba hb ↦
       (Fin.le_iff_val_le_val.1 hba).trans_lt hb
   refine ⟨y, σ w₀.val, linearIndependent_of_top_le_span_of_card_eq_finrank ?_ (by simp),
     (hyx _).symm ▸ hxspan, fun k p J hJ ↦ ?_⟩
@@ -715,8 +700,7 @@ theorem exists_plucker_mem_approxDomain_wedgeExponentAt [LinearOrder ι] :
   have hp : 0 < p := hJ.elim fun j hj ↦ Set.powersetCard.coe_nonempty_iff.1 ⟨j, hj.1⟩
   refine plucker_mem_approxDomain_wedgeForms hQ₀ hC₁ hμ'm hμ'p hint hinf hfin (fun v T ↦ ?_)
     (fun v _ T ↦ wedgeExponentAt_of_isNonarchimedean v.add_le T) hJ
-  -- `convert` identifies the two instances deciding the top-block condition.
-  convert le_rpow_wedgeExponentAt (c := c) (k := k) (w₀ := w₀) (μ' := μ') hμ₀ hμp
+  exact le_rpow_wedgeExponentAt (c := c) (k := k) (w₀ := w₀) (μ' := μ') hμ₀ hμp
     (by positivity : 0 < (N.factorial : ℝ) * max 1 C₁ ^ N) hC₂ (fun l ↦ by simp [μ', a])
     (fun v hv l ↦ by simp [μ', hne hv]) hQ₀ hQ₁ hp σ v T
 
@@ -733,11 +717,9 @@ theorem approxWeight_wedgeExponentAt (S₀ : Finset (FinitePlace K)) (c : Absolu
   rcases eq_or_ne C 0 with rfl | hC
   · simp [approxWeight_def, wedgeExponentAt, wedgeExponent]
   set a : ℝ := (finrank ℚ K : ℝ) / w₀.mult
-  set G : Set.powersetCard ι p → ℝ := fun T ↦
-    (if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-      ∏ t ∈ (T : Finset ι), μ (σ.symm t)
+  set G : Set.powersetCard ι p → ℝ := fun T ↦ wedgeGain k μ σ T
   have hG (T : Set.powersetCard ι p) : 0 < G T :=
-    wedgeGain_pos (k := k) hμ σ.symm (card_pos.1 (by rw [card_eq T]; exact hp))
+    wedgeGain_pos hμ σ (card_pos.1 (by rw [card_eq T]; exact hp))
   -- Both exponents split off `logb Q (G T)`, weighted `a` at `w₀` alone and `1` everywhere.
   have hAt (v : InfinitePlace K) (T : Set.powersetCard ι p) :
       wedgeExponentAt c p k w₀ σ μ C Q v.val T =
@@ -749,7 +731,8 @@ theorem approxWeight_wedgeExponentAt (S₀ : Finset (FinitePlace K)) (c : Absolu
         Real.logb_rpow_eq_mul_logb_of_pos (hG T)]
       simp only [↓reduceIte]
       ring
-    · rw [wedgeExponentAt_of_ne v.not_isNonarchimedean fun h ↦ hv (Subtype.ext h)]
+    · rw [wedgeExponentAt_of_not_isNonarchimedean_of_ne v.not_isNonarchimedean
+        fun h ↦ hv (Subtype.ext h)]
       simp only [hv, ↓reduceIte, zero_mul, add_zero]
   have hW (v : InfinitePlace K) (T : Set.powersetCard ι p) :
       wedgeExponent c p k (fun _ ↦ σ) μ C Q v.val T =
@@ -766,9 +749,12 @@ theorem approxWeight_wedgeExponentAt (S₀ : Finset (FinitePlace K)) (c : Absolu
   congr 1
   exact mul_div_cancel₀ _ (Nat.cast_ne_zero.2 InfinitePlace.mult_ne_zero)
 
-/-- For the successive minima, the wedge domain at `w₀` has weight at most a constant times
-`(μ (k - 1) / μ k) ^ [K : ℚ]`, as the wedge domain `wedgeExponent` does
-(`rpow_approxWeight_wedgeExponent_le`). -/
+/-- **The wedge domain at `w₀` of the successive minima is small after a large jump.** Let `μ` be
+the successive minima over `K` of an approximation domain of level `0 < Q ≠ 1` with forms
+independent at the infinite places and at `S₀`. For `0 < p`, `k + p = card ι` and `0 < C`,
+`Q ^ approxWeight` of the exponents `wedgeExponentAt c p k w₀ σ μ C Q` is at most
+`A ^ e · C ^ (M · [K : ℚ]) · (μ (k - 1) / μ k) ^ [K : ℚ]`, with the constants of
+`rpow_approxWeight_wedgeExponent_le`. -/
 theorem rpow_approxWeight_wedgeExponentAt_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
@@ -784,7 +770,7 @@ theorem rpow_approxWeight_wedgeExponentAt_le {S₀ : Finset (FinitePlace K)}
           ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
             (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
   rw [approxWeight_wedgeExponentAt S₀ c hp w₀ σ
-    (successiveMinimum_approx_pos_and_monotoneOn hLinf hLfin c hQ₀).1]
+    fun _ ↦ successiveMinimum_approx_pos hLinf hLfin c hQ₀]
   exact rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp hkp (fun _ ↦ σ) hC hQ₀ hQ₁
 
 end WedgeExponentAt
