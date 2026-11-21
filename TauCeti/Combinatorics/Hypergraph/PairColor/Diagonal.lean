@@ -43,11 +43,11 @@ variable {κ V : Type*} [Fintype V] [DecidableEq V]
 The new palette has one more color than the old palette. -/
 def fillDiagonal (S : PairColorSystem κ V) (P : Finpartition (univ : Finset V)) :
     PairColorSystem (Option κ) V where
-  color p := if P.part p.1.1 = P.part p.1.2 then none else some (S.color p)
+  color p := if P.part p.val.1 = P.part p.val.2 then none else some (S.color p)
   rev := Option.map S.rev
   rev_involutive c := by cases c <;> simp only [Option.map_none, Option.map_some, rev_rev]
   color_rev p := by
-    by_cases h : P.part p.1.1 = P.part p.1.2
+    by_cases h : P.part p.val.1 = P.part p.val.2
     · simp only [Prod.fst_swap, Prod.snd_swap, ite_eq_left h, ite_eq_left h.symm, Option.map_none]
     · simp only [Prod.fst_swap, Prod.snd_swap, ite_eq_right h, ite_eq_right (Ne.symm h),
         Option.map_some]
@@ -58,7 +58,7 @@ def fillDiagonal (S : PairColorSystem κ V) (P : Finpartition (univ : Finset V))
 theorem fillDiagonal_color (S : PairColorSystem κ V) (P : Finpartition (univ : Finset V))
     (p : {p : V × V // p.1 ≠ p.2}) :
     (S.fillDiagonal P).color p =
-      if P.part p.1.1 = P.part p.1.2 then none else some (S.color p) := (rfl)
+      if P.part p.val.1 = P.part p.val.2 then none else some (S.color p) := (rfl)
 
 /-- Reversal fixes the fresh color and acts on old colors as before. -/
 @[simp]

@@ -59,8 +59,8 @@ variable {m : ℕ} [NeZero m]
 `G.edgeDensityIcc` integrates to the stepped prediction `G.steppedCount P S T` divided by `m²`. -/
 theorem rectIntegral_stepGraphonOfFinpartition_edgeDensityIcc_preimage (G : SimpleGraph (Fin m))
     [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin m))) (S T : Finset (Fin m)) :
-    (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-        (fun A B => G.edgeDensityIcc_comm A.1 B.1)).toSymmKernel.rectIntegral volume
+    (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+        (fun A B => G.edgeDensityIcc_comm A.val B.val)).toSymmKernel.rectIntegral volume
         (cellFin m ⁻¹' (S : Set (Fin m))) (cellFin m ⁻¹' (T : Set (Fin m))) =
       G.steppedCount P S T / (m : ℝ) ^ 2 := by
   rw [rectIntegral_stepGraphonOfFinpartition_preimage, G.steppedCount_eq_sum_subtype]
@@ -83,8 +83,8 @@ norm of `finiteGraphGraphon G` minus `stepGraphonOfFinpartition P` at `G.edgeDen
 theorem cutNorm_finiteGraphGraphon_sub_stepGraphonOfFinpartition_edgeDensityIcc
     (G : SimpleGraph (Fin m)) [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin m))) :
     cutNorm volume ((finiteGraphGraphon G).toSymmKernel -
-      (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-        (fun A B => G.edgeDensityIcc_comm A.1 B.1)).toSymmKernel) =
+      (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+        (fun A B => G.edgeDensityIcc_comm A.val B.val)).toSymmKernel) =
       G.cutDiscrepancy P / (m : ℝ) ^ 2 := by
   let B : Graphon (Fin m) (uniformOn Set.univ) := Graphon.ofMatrix (uniformOn Set.univ)
     (fun i j => G.edgeDensityIcc (P.part i) (P.part j))
@@ -92,8 +92,8 @@ theorem cutNorm_finiteGraphGraphon_sub_stepGraphonOfFinpartition_edgeDensityIcc
   let K : SymmKernel (Fin m) (uniformOn Set.univ) :=
     (finiteGraphGraphonOnFin G).toSymmKernel - B.toSymmKernel
   have hK : (finiteGraphGraphon G).toSymmKernel -
-      (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-        (fun A B => G.edgeDensityIcc_comm A.1 B.1)).toSymmKernel =
+      (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+        (fun A B => G.edgeDensityIcc_comm A.val B.val)).toSymmKernel =
       K.comap (cellFin m) measurable_cellFin volume := by
     rw [finiteGraphGraphon_eq_comap, stepGraphonOfFinpartition_eq_comap_ofMatrix]
     ext x y

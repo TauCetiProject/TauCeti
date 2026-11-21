@@ -47,12 +47,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 For a closed bounded convex set and an intrinsic interior center it is positive and attained. -/
 def compactConvexRadialReach
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) : ℝ :=
-  sSup {t : ℝ | 0 ≤ t ∧ c + t • (u.1 : E) ∈ C}
+  sSup {t : ℝ | 0 ≤ t ∧ c + t • (u.val : E) ∈ C}
 
 /-- The radial reach is the supremum of the admissible nonnegative ray parameters. -/
 lemma compactConvexRadialReach_def
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
-    compactConvexRadialReach C c u = sSup {t : ℝ | 0 ≤ t ∧ c + t • (u.1 : E) ∈ C} := (rfl)
+    compactConvexRadialReach C c u = sSup {t : ℝ | 0 ≤ t ∧ c + t • (u.val : E) ∈ C} := (rfl)
 
 variable {C c} (hconv : Convex ℝ C) (hcl : IsClosed C) (hb : IsBounded C)
   (hc : c ∈ intrinsicInterior ℝ C)
@@ -62,19 +62,19 @@ include hconv hcl hb hc
 omit hconv hcl in
 private lemma gauge_pos_of_mem_sphere
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
-    0 < gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1 :=
-  (gauge_setOf_add_mem_pos_iff hb hc u.1).2
+    0 < gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.val :=
+  (gauge_setOf_add_mem_pos_iff hb hc u.val).2
     (ne_of_mem_sphere u.property one_ne_zero)
 
 private lemma ray_parameters_eq_Icc_inv_gauge
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
-    {t : ℝ | 0 ≤ t ∧ c + t • (u.1 : E) ∈ C} =
-      Icc 0 (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1)⁻¹ := by
+    {t : ℝ | 0 ≤ t ∧ c + t • (u.val : E) ∈ C} =
+      Icc 0 (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.val)⁻¹ := by
   have hpos := gauge_pos_of_mem_sphere hb hc u
   ext t
   by_cases ht : 0 ≤ t
   · have hmem := gauge_le_one_iff_mem_closure (convex_setOf_add_mem hconv)
-      (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc) (x := t • u.1)
+      (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc) (x := t • u.val)
     rw [(isClosed_setOf_add_mem hcl).closure_eq, gauge_smul_of_nonneg ht,
       smul_eq_mul] at hmem
     simpa only [mem_ofPred_eq, mem_Icc, ht, true_and, one_div, Submodule.coe_smul] using
@@ -86,7 +86,7 @@ native direction space of its affine span. -/
 theorem compactConvexRadialReach_eq_inv_gauge
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
     compactConvexRadialReach C c u =
-      (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1)⁻¹ := by
+      (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.val)⁻¹ := by
   rw [compactConvexRadialReach_def, ray_parameters_eq_Icc_inv_gauge hconv hcl hb hc]
   exact csSup_Icc (inv_nonneg.mpr (gauge_nonneg _))
 
@@ -101,14 +101,14 @@ theorem compactConvexRadialReach_pos
 interval from zero to its radial reach. This also gives a finite bound on all such parameters. -/
 theorem setOf_ray_mem_eq_Icc_compactConvexRadialReach
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
-    {t : ℝ | 0 ≤ t ∧ c + t • (u.1 : E) ∈ C} = Icc 0 (compactConvexRadialReach C c u) := by
+    {t : ℝ | 0 ≤ t ∧ c + t • (u.val : E) ∈ C} = Icc 0 (compactConvexRadialReach C c u) := by
   rw [compactConvexRadialReach_eq_inv_gauge hconv hcl hb hc]
   exact ray_parameters_eq_Icc_inv_gauge hconv hcl hb hc u
 
 /-- A nonnegative ray parameter stays in the set exactly when it is at most the radial reach. -/
 theorem add_smul_mem_iff_le_compactConvexRadialReach
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) {t : ℝ} (ht : 0 ≤ t) :
-    c + t • (u.1 : E) ∈ C ↔ t ≤ compactConvexRadialReach C c u := by
+    c + t • (u.val : E) ∈ C ↔ t ≤ compactConvexRadialReach C c u := by
   have h := congrArg (fun s : Set ℝ ↦ t ∈ s)
     (setOf_ray_mem_eq_Icc_compactConvexRadialReach hconv hcl hb hc u)
   simpa only [mem_ofPred_eq, mem_Icc, ht, true_and] using h.to_iff
@@ -116,7 +116,7 @@ theorem add_smul_mem_iff_le_compactConvexRadialReach
 /-- The last point on a ray belongs to the set. -/
 theorem add_compactConvexRadialReach_smul_mem
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
-    c + compactConvexRadialReach C c u • (u.1 : E) ∈ C := by
+    c + compactConvexRadialReach C c u • (u.val : E) ∈ C := by
   exact (add_smul_mem_iff_le_compactConvexRadialReach hconv hcl hb hc u
     (compactConvexRadialReach_pos hconv hcl hb hc u).le).2 le_rfl
 
@@ -125,11 +125,11 @@ theorem add_compactConvexRadialReach_smul_mem
 theorem continuous_compactConvexRadialReach :
     Continuous (compactConvexRadialReach C c) := by
   have heq : compactConvexRadialReach C c = fun u ↦
-      (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.1)⁻¹ :=
+      (gauge {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} u.val)⁻¹ :=
     funext (compactConvexRadialReach_eq_inv_gauge hconv hcl hb hc)
   rw [heq]
   exact ((continuous_gauge (convex_setOf_add_mem hconv)
-    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)).comp continuous_subtype_val).inv₀
+    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)).comp continuous_subtypeVal).inv₀
       (fun u ↦ (gauge_pos_of_mem_sphere hb hc u).ne')
 
 /-- The convex-ball homeomorphism has the positive radial-reach formula on every segment
@@ -137,9 +137,9 @@ from the center to a unit direction. -/
 theorem coe_convexClosedBallHomeomorph_smul
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     (convexClosedBallHomeomorph hconv hcl hb hc
-      ⟨t • u.1, by simpa [mem_closedBall_zero_iff, norm_smul, abs_of_nonneg ht.1,
+      ⟨t • u.val, by simpa [mem_closedBall_zero_iff, norm_smul, abs_of_nonneg ht.1,
         mem_sphere_zero_iff_norm.mp u.property] using ht.2⟩ : E) =
-      c + (t * compactConvexRadialReach C c u) • (u.1 : E) := by
+      c + (t * compactConvexRadialReach C c u) • (u.val : E) := by
   rw [coe_convexClosedBallHomeomorph_apply]
   simp only [Submodule.coe_smul, norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1,
     Submodule.norm_coe, mem_sphere_zero_iff_norm.mp u.property, mul_one,
@@ -152,9 +152,9 @@ theorem coe_convexClosedBallHomeomorph_smul
 /-- The endpoint realizing the radial reach lies in the intrinsic frontier. -/
 theorem add_compactConvexRadialReach_smul_mem_intrinsicFrontier
     (u : sphere (0 : (affineSpan ℝ C).direction) 1) :
-    c + compactConvexRadialReach C c u • (u.1 : E) ∈ intrinsicFrontier ℝ C := by
+    c + compactConvexRadialReach C c u • (u.val : E) ∈ intrinsicFrontier ℝ C := by
   have h := coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff hconv hcl hb hc
-    ⟨u.1, by simp⟩
+    ⟨u.val, by simp⟩
   have hf := coe_convexClosedBallHomeomorph_smul hconv hcl hb hc u
     (t := 1) ⟨zero_le_one, le_rfl⟩
   simp only [one_smul, one_mul] at hf

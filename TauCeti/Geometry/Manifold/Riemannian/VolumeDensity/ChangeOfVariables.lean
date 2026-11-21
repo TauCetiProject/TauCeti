@@ -445,7 +445,7 @@ private theorem measurable_restrict_riemannianJacobian_of_subset_chart [OpensMea
     simp only [T, LinearMap.toMatrix_apply, ContinuousLinearMap.coe_coe]
     exact ((Module.finBasis ℝ E).coord k).continuous_of_finiteDimensional.measurable.comp
       ((measurable_fderiv_apply_const ℝ (extChartAt I α ∘ f) (b i)).comp
-        measurable_subtype_coe)
+        measurable_subtypeVal)
   have hG (k l) : Measurable (fun x : s ↦ chartGramMatrix (I := I) α (f x) k l) := by
     apply Continuous.measurable
     apply ((contMDiffOn_chartGramMatrix_entry (I := I) (n := 0) α k l).continuousOn.comp
@@ -462,7 +462,7 @@ private theorem measurable_restrict_riemannianJacobian_of_subset_chart [OpensMea
       fun x : s ↦ Real.sqrt ((T x).transpose * chartGramMatrix (I := I) α (f x) * T x).det := by
     funext x
     rw [Set.domRestrict_apply, riemannianJacobian_eq_sqrt_det_gram,
-      gram_mfderiv_eq_chart_matrix b (hf x x.2) (hmap x.2)]
+      gram_mfderiv_eq_chart_matrix b (hf x x.property) (hmap x.property)]
   rw [heq]
   exact (continuous_id.matrix_det.measurable.comp hmat).sqrt
 
@@ -486,7 +486,7 @@ theorem _root_.Module.Basis.measurable_restrict_riemannianJacobian [OpensMeasura
   have hpre : (s.domRestrict (riemannianJacobian (I := I) b f)) ⁻¹' A =
       ⋃ α : t, a α ∩ (s.domRestrict (riemannianJacobian (I := I) b f)) ⁻¹' A := by
     ext x
-    obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.mp (hcover (mem_image_of_mem f x.2))
+    obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.mp (hcover (mem_image_of_mem f x.property))
     simp only [mem_iUnion, mem_inter_iff]
     exact ⟨fun hx ↦ ⟨⟨α, hα⟩, hxα, hx⟩, fun ⟨_, _, hx⟩ ↦ hx⟩
   rw [hpre]
@@ -496,14 +496,14 @@ theorem _root_.Module.Basis.measurable_restrict_riemannianJacobian [OpensMeasura
     (s := f ⁻¹' (chartAt H α.val).source ∩ s)
     (fun x hx ↦ hf x hx.2) (fun _ hx ↦ hx.1)
   let j : a α → ↥(f ⁻¹' (chartAt H α.val).source ∩ s) :=
-    fun x ↦ ⟨x.val.val, x.2, x.val.2⟩
+    fun x ↦ ⟨x.val.val, x.property, x.val.property⟩
   have hj : Measurable j :=
-    (measurable_subtype_coe.comp measurable_subtype_coe).subtype_mk
+    (measurable_subtypeVal.comp measurable_subtypeVal).subtype_mk
   -- Specify the subtype map so elaboration does not unfold the Jacobian to infer it.
   have hm' : Measurable (fun x : a α ↦ riemannianJacobian (I := I) b f x.val.val) :=
     hm.comp (f := j) hj
   rw [← Subtype.image_preimage_coe]
-  exact (MeasurableEmbedding.subtype_coe (ha α)).measurableSet_image.mpr (hm' hA)
+  exact (MeasurableEmbedding.subtypeVal (ha α)).measurableSet_image.mpr (hm' hA)
 
 omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [BorelSpace F] in
 /-- The Jacobian is almost everywhere measurable on a measurable carrier of pointwise
@@ -598,12 +598,12 @@ theorem _root_.Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn
       (riemannianVolume I M).restrict (f '' s) := by
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   rw [← b.map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
-    ← restrict_withDensity hs, ← map_comap_subtype_coe hs,
+    ← restrict_withDensity hs, ← map_comap_subtypeVal hs,
     AEMeasurable.map_map_of_aemeasurable]
   · rw [Set.domRestrict_eq]
-  · rw [map_comap_subtype_coe hs, restrict_withDensity hs]
+  · rw [map_comap_subtypeVal hs, restrict_withDensity hs]
     exact (hc.aemeasurable hs).mono_ac (withDensity_absolutelyContinuous _ _)
-  · exact measurable_subtype_coe.aemeasurable
+  · exact measurable_subtypeVal.aemeasurable
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -718,7 +718,7 @@ theorem _root_.PartialDiffeomorph.map_withDensity_riemannianJacobian
       (riemannianVolume I M).restrict Φ.target := by
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     IsLocalDiffeomorphOn.map_withDensity_riemannianJacobian
-      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.property) hn Φ.open_source.measurableSet
       Φ.toPartialEquiv.injOn b
 
 /-- Change of variables over the target of a `C^n` partial diffeomorphism, with `n ≠ 0`, for
@@ -731,7 +731,7 @@ theorem _root_.PartialDiffeomorph.setLIntegral_riemannianVolume_eq
         ∂b.addHaar := by
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     IsLocalDiffeomorphOn.setLIntegral_riemannianVolume_image
-      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.property) hn Φ.open_source.measurableSet
       Φ.toPartialEquiv.injOn b φ
 
 /-- Bochner change of variables over the target of a `C^n` partial diffeomorphism, for `n ≠ 0`.
@@ -743,7 +743,7 @@ theorem _root_.PartialDiffeomorph.setIntegral_riemannianVolume_eq
       ∫ x in Φ.source, riemannianJacobian (I := I) b Φ x • φ (Φ x) ∂b.addHaar := by
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image
-      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.property) hn Φ.open_source.measurableSet
       Φ.toPartialEquiv.injOn b φ
 
 /-- Integrability on the target of a `C^n` partial diffeomorphism, for `n ≠ 0`, is equivalent
@@ -755,7 +755,7 @@ theorem _root_.PartialDiffeomorph.integrableOn_riemannianVolume_iff
       IntegrableOn (fun x ↦ riemannianJacobian (I := I) b Φ x • φ (Φ x)) Φ.source b.addHaar := by
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     IsLocalDiffeomorphOn.integrableOn_riemannianVolume_image_iff
-      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.property) hn Φ.open_source.measurableSet
       Φ.toPartialEquiv.injOn b φ
 
 end Chart

@@ -187,15 +187,16 @@ private theorem exists_summands (i : ι) (X : C) :
       simp only [T, Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
     _ = 𝟙 X := by rw [biproduct.total, Category.id_comp, e.hom_inv_id]
   have hsum : ∑ k : {k // f k = i},
-      (e.hom ≫ biproduct.π (fun k ↦ S (f k)) k.1 ≫ eqToHom (congrArg S k.2)) ≫
-        (eqToHom (congrArg S k.2.symm) ≫ biproduct.ι (fun k ↦ S (f k)) k.1 ≫ e.inv) =
+      (e.hom ≫ biproduct.π (fun k ↦ S (f k)) k.val ≫ eqToHom (congrArg S k.property)) ≫
+        (eqToHom (congrArg S k.property.symm) ≫ biproduct.ι (fun k ↦ S (f k)) k.val ≫ e.inv) =
       ∑ k ∈ Finset.univ.filter (f · = i), T k := by
     rw [Finset.sum_subtype (p := (f · = i)) _ (by simp) T]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     simp [T]
   refine ⟨{k // f k = i}, inferInstance, inferInstance,
-    fun k ↦ eqToHom (congrArg S k.2.symm) ≫ biproduct.ι (fun k ↦ S (f k)) k.1 ≫ e.inv,
-    fun k ↦ e.hom ≫ biproduct.π (fun k ↦ S (f k)) k.1 ≫ eqToHom (congrArg S k.2), ?_, ?_, ?_⟩
+    fun k ↦ eqToHom (congrArg S k.property.symm) ≫ biproduct.ι (fun k ↦ S (f k)) k.val ≫ e.inv,
+    fun k ↦ e.hom ≫ biproduct.π (fun k ↦ S (f k)) k.val ≫ eqToHom (congrArg S k.property), ?_, ?_,
+        ?_⟩
   · rintro ⟨k, hk⟩ ⟨l, hl⟩
     simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_assoc]
     by_cases h : k = l

@@ -126,12 +126,12 @@ theorem ker_evalAtHom_eq_span_weightedX_sub_weightedC (a : Fin 1 → K)
 `Spa (K, K°)` over a complete nonarchimedean field. -/
 theorem supp_classicalPoint_eq_span_weightedX_sub_weightedC (x : spa (powerBoundedSubring K))
     (a : Fin 1 → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    (classicalPoint x a ha).1.supp = Ideal.span {(weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
+    (classicalPoint x a ha).val.supp = Ideal.span {(weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
       isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight (a 0))} := by
   -- `x` has trivial support, since it compares elements of `K` by their norms
   rw [← ker_evalAtHom_eq_span_weightedX_sub_weightedC a ha]
   ext f
-  rw [mem_supp_iff, classicalPoint_vle, map_zero, vle_iff_norm_le_of_mem_spa x.2, norm_zero,
+  rw [mem_supp_iff, classicalPoint_vle, map_zero, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
     norm_le_zero_iff, RingHom.mem_ker]
 
 /-- A point of the closed unit disc whose support contains `T - a` has the same value on `f` as
@@ -139,24 +139,26 @@ on the constant `f(a)`. -/
 private theorem valuation_eq_valuation_weightedC_evalAtHom (v : closedPolydisc 1 K)
     (a : Fin 1 → K) (ha : ∀ i, IsPowerBounded (a i))
     (hv : weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight (a 0) ∈
-      v.1.supp)
+      v.val.supp)
     (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    v.1.valuation f = v.1.valuation (weightedC _ isWeightFamily_one_weight (evalAtHom a ha f)) := by
+    v.val.valuation f = v.val.valuation (weightedC _ isWeightFamily_one_weight (evalAtHom a ha f))
+        := by
   obtain ⟨g, hg⟩ := weightedX_sub_weightedC_dvd_sub_weightedC_evalAtHom a ha f
   conv_lhs => rw [← sub_add_cancel f (weightedC _ _ (evalAtHom a ha f)), hg, add_comm]
   exact Valuation.map_add_supp _ _
-    (supp_eq_valuation_supp v.1 ▸ Ideal.mul_mem_right _ _ hv)
+    (supp_eq_valuation_supp v.val ▸ Ideal.mul_mem_right _ _ hv)
 
 /-- **A point of the closed unit disc whose support contains `T - a` is the classical point at
 `a`**, built from any point `x` of `Spa (K, K°)`, over a complete nonarchimedean field. -/
 theorem eq_classicalPoint_of_weightedX_sub_weightedC_mem_supp (v : closedPolydisc 1 K)
     (a : Fin 1 → K) (ha : ∀ i, IsPowerBounded (a i))
     (hv : weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight (a 0) ∈
-      v.1.supp)
+      v.val.supp)
     (x : spa (powerBoundedSubring K)) : v = classicalPoint x a ha := by
   -- both points compare `f` and `g` as the norm compares `f(a)` and `g(a)`
   refine Subtype.ext (ext' fun f g ↦ ?_)
-  rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.2, ← closedPolydisc_vle_weightedC_iff v,
+  rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.property, ← closedPolydisc_vle_weightedC_iff
+      v,
     ← valuation_le_iff, ← valuation_le_iff, valuation_eq_valuation_weightedC_evalAtHom v a ha hv f,
     valuation_eq_valuation_weightedC_evalAtHom v a ha hv g]
 
@@ -185,13 +187,13 @@ theorem isClosed_singleton_classicalPoint (x : spa (powerBoundedSubring K)) (a :
 /-- **A point of the closed unit disc with nonzero support kills some `T - a` with `‖a‖ ≤ 1`**,
 over an algebraically closed complete nonarchimedean field. -/
 theorem exists_weightedX_sub_weightedC_mem_supp [IsAlgClosed K] (v : closedPolydisc 1 K)
-    (hv : v.1.supp ≠ ⊥) :
+    (hv : v.val.supp ≠ ⊥) :
     ∃ a : K, ‖a‖ ≤ 1 ∧
       weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a ∈
-        v.1.supp := by
+        v.val.supp := by
   classical
   -- the support, as a nonzero prime ideal of Mathlib's restricted power series ring
-  set p := v.1.supp.comap (weightedRestrictedSubringOneEquiv (R := K)).symm.toRingHom with hp
+  set p := v.val.supp.comap (weightedRestrictedSubringOneEquiv (R := K)).symm.toRingHom with hp
   have hp0 : p ≠ ⊥ := by
     rw [hp, RingEquiv.toRingHom_eq_coe, Ideal.comap_coe, Ideal.comap_symm]
     exact (Ideal.map_eq_bot_iff_of_injective weightedRestrictedSubringOneEquiv.injective).not.mpr hv
@@ -208,7 +210,7 @@ theorem exists_weightedX_sub_weightedC_mem_supp [IsAlgClosed K] (v : closedPolyd
   obtain ⟨_, hmem, hlin⟩ := (Ideal.IsPrime.comap _).multiset_prod_mem_iff_exists_mem _ |>.mp hg
   obtain ⟨a, -, rfl⟩ := Multiset.mem_map.mp hmem
   have hsupp : weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a ∈
-      v.1.supp := by
+      v.val.supp := by
     have heq : weightedRestrictedSubringOneEquiv (weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
         isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a) =
           TauCeti.PowerSeries.polynomialToRestricted 1 (Polynomial.X - Polynomial.C a) :=
@@ -216,14 +218,14 @@ theorem exists_weightedX_sub_weightedC_mem_supp [IsAlgClosed K] (v : closedPolyd
     simpa [hp, ← heq] using hlin
   refine ⟨a, ?_, hsupp⟩
   -- `v` is at most one on `T` and gives `T` and `a` the same value
-  have hT : v.1.toValuativeRel.vle (weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
+  have hT : v.val.toValuativeRel.vle (weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
       isWeightFamily_one_weight 0) 1 :=
-    ((mem_closedPolydisc_iff 1 K v.1).mp v.2).2 _
+    ((mem_closedPolydisc_iff 1 K v.val).mp v.property).2 _
       (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0))
-  have hTa : v.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
-      isWeightFamily_one_weight 0) = v.1.valuation (weightedC _ isWeightFamily_one_weight a) := by
+  have hTa : v.val.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K))
+      isWeightFamily_one_weight 0) = v.val.valuation (weightedC _ isWeightFamily_one_weight a) := by
     rw [← sub_add_cancel (weightedX _ _ 0) (weightedC _ _ a), add_comm]
-    exact Valuation.map_add_supp _ _ (supp_eq_valuation_supp v.1 ▸ hsupp)
+    exact Valuation.map_add_supp _ _ (supp_eq_valuation_supp v.val ▸ hsupp)
   rw [← norm_one (α := K), ← closedPolydisc_vle_weightedC_iff v, map_one, ← valuation_le_iff,
     ← hTa, valuation_le_iff]
   exact hT
@@ -232,7 +234,7 @@ theorem exists_weightedX_sub_weightedC_mem_supp [IsAlgClosed K] (v : closedPolyd
 over an algebraically closed complete nonarchimedean field: the points of type (1) in Wedhorn's
 description of the closed unit disc (Example 7.57). -/
 theorem supp_ne_bot_iff_exists_eq_classicalPoint [IsAlgClosed K] (v : closedPolydisc 1 K) :
-    v.1.supp ≠ ⊥ ↔ ∃ (x : spa (powerBoundedSubring K)) (a : Fin 1 → K)
+    v.val.supp ≠ ⊥ ↔ ∃ (x : spa (powerBoundedSubring K)) (a : Fin 1 → K)
       (ha : ∀ i, IsPowerBounded (a i)), v = classicalPoint x a ha := by
   refine ⟨fun hv ↦ ?_, ?_⟩
   · obtain ⟨a, ha, hmem⟩ := exists_weightedX_sub_weightedC_mem_supp v hv

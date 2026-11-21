@@ -40,24 +40,24 @@ open scoped Matrix.Norms.L2Operator
 /-- The decreasing eigenvalue list is `1`-Lipschitz for the Euclidean operator norm on
 Hermitian matrices and the sup norm on the eigenvalue list. -/
 theorem lipschitzWith_eigenvalues₀ :
-    LipschitzWith 1 (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.2.eigenvalues₀) := by
+    LipschitzWith 1 (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.property.eigenvalues₀) := by
   refine LipschitzWith.of_dist_le_mul fun A B => ?_
   simp only [NNReal.coe_one, one_mul, Subtype.dist_eq, dist_eq_norm]
   refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_
   simpa only [Pi.sub_apply, Real.norm_eq_abs] using
-    A.2.abs_eigenvalues₀_sub_le_norm B.2 i
+    A.property.abs_eigenvalues₀_sub_le_norm B.property i
 
 /-- Ordered Hermitian eigenvalues depend continuously on the matrix, even at repeated
 eigenvalues. -/
 @[fun_prop]
 theorem continuous_eigenvalues₀ :
-    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.2.eigenvalues₀) :=
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.property.eigenvalues₀) :=
   lipschitzWith_eigenvalues₀.continuous
 
 /-- Mathlib's matrix-indexed eigenvalue list is continuous on Hermitian matrices. -/
 @[fun_prop]
 theorem continuous_eigenvalues :
-    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.2.eigenvalues) := by
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.property.eigenvalues) := by
   apply continuous_pi
   intro i
   -- The matrix-indexed list is the sorted list reindexed by a fixed finite equivalence.
@@ -70,13 +70,13 @@ variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 Borel structure. -/
 @[fun_prop]
 theorem measurable_eigenvalues₀ :
-    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.2.eigenvalues₀) :=
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.property.eigenvalues₀) :=
   continuous_eigenvalues₀.measurable
 
 /-- Mathlib's matrix-indexed eigenvalue list is measurable on Hermitian matrices. -/
 @[fun_prop]
 theorem measurable_eigenvalues :
-    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.2.eigenvalues) :=
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.property.eigenvalues) :=
   continuous_eigenvalues.measurable
 
 end Matrix

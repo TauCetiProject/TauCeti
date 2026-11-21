@@ -71,8 +71,8 @@ killed by every outgoing differential of `S.X₁`. -/
 theorem d_apply_eq_zero_of_mem_comap_range_d {i j : ι}
     (z : (LinearMap.range (S.X₂.d i j).hom).comap (S.f.f j).hom) (k : ι) :
     S.X₁.d j k ((Submodule.subtype _) z) = 0 := by
-  obtain ⟨x₂, hx₂⟩ := z.2
-  exact hS.d_eq_zero_of_f_eq_d_apply i j x₂ z.1 hx₂.symm k
+  obtain ⟨x₂, hx₂⟩ := z.property
+  exact hS.d_eq_zero_of_f_eq_d_apply i j x₂ z.val hx₂.symm k
 
 include hS in
 /-- The homology class in `S.X₁.homology j` of an element of `S.X₁.X j` whose image in `S.X₂.X j`
@@ -82,7 +82,7 @@ theorem moduleCatHomologyClass_mem_range_δ {i j : ι} (hij : c.Rel i j)
     S.X₁.moduleCatHomologyClass rfl (Submodule.subtype _)
         (fun w ↦ hS.d_apply_eq_zero_of_mem_comap_range_d w (c.next j)) z ∈
       LinearMap.range (hS.δ i j hij).hom := by
-  obtain ⟨x₂, hx₂⟩ := z.2
+  obtain ⟨x₂, hx₂⟩ := z.property
   have hd₃ : (S.X₃.d i j).hom ((S.g.f i).hom x₂) = 0 := by
     have hcomm : (S.X₃.d i j).hom ((S.g.f i).hom x₂) = (S.g.f j).hom ((S.X₂.d i j).hom x₂) :=
       HomologicalComplex.Hom.comm_apply S.g i j x₂
@@ -109,7 +109,7 @@ cycle of `S.X₁`. -/
 theorem coe_comapRangeHomologyClass {i j : ι} (hij : c.Rel i j)
     (z : (LinearMap.range (S.X₂.d i j).hom).comap (S.f.f j).hom) :
     (hS.comapRangeHomologyClass hij z : S.X₁.homology j) =
-      (S.X₁.homologyπ j).hom (S.X₁.moduleCatCyclesMk z.1 (c.next j) rfl
+      (S.X₁.homologyπ j).hom (S.X₁.moduleCatCyclesMk z.val (c.next j) rfl
         (hS.d_apply_eq_zero_of_mem_comap_range_d z (c.next j))) :=
   S.X₁.moduleCatHomologyClass_apply rfl _ _ z
 

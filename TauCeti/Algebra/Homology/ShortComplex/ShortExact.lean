@@ -242,7 +242,7 @@ lemma cokernelSequenceToCokernelCompSequence_τ₃ :
   rw [cokernelSequenceToCokernelCompSequence]
 
 variable {a b} {X' Y' Z' : C} {a' : X' ⟶ Y'} {b' : Y' ⟶ Z'} (u₁ : X ⟶ X') (u₂ : Y ⟶ Y')
-  (u₃ : Z ⟶ Z') (w₁ : a ≫ u₂ = u₁ ≫ a') (w₂ : b ≫ u₃ = u₂ ≫ b')
+  (u₃ : Z ⟶ Z') (w₁ : u₁ ≫ a' = a ≫ u₂) (w₂ : u₂ ≫ b' = b ≫ u₃)
 
 /-- A commutative ladder `u₁, u₂, u₃` from the composable pair `(a, b)` to the composable pair
 `(a', b')` induces a morphism of short complexes from
@@ -251,7 +251,7 @@ whose components are the maps of cokernels induced by the ladder. -/
 noncomputable def cokernelCompSequenceMap :
     cokernelCompSequence a b ⟶ cokernelCompSequence a' b' where
   τ₁ := cokernel.map a a' u₁ u₂ w₁
-  τ₂ := cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, w₂, reassoc_of% w₁])
+  τ₂ := cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, ← w₂, reassoc_of% w₁])
   τ₃ := cokernel.map b b' u₂ u₃ w₂
   comm₁₂ := by
     ext
@@ -268,7 +268,7 @@ lemma cokernelCompSequenceMap_τ₁ :
 @[simp]
 lemma cokernelCompSequenceMap_τ₂ :
     (cokernelCompSequenceMap u₁ u₂ u₃ w₁ w₂).τ₂ =
-      cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, w₂, reassoc_of% w₁]) := by
+      cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, ← w₂, reassoc_of% w₁]) := by
   rw [cokernelCompSequenceMap]
 
 @[simp]

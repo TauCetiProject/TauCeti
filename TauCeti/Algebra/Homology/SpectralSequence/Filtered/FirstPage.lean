@@ -39,6 +39,8 @@ connecting maps of the short exact sequences of graded pieces
 * `CochainComplex.spectralSequence_first_page_d_eq`: the first differential of the spectral
   sequence of a filtered complex, with `CochainComplex.spectralSequence_first_page_d_eq_of_eq` its
   form with the indices given by equations.
+* `CochainComplex.spectralSequence_first_page_d_eq_cokernelMap`: the same, with the filtration
+  indices given by equations and the target identified through an index equal to the middle one.
 * `CochainComplex.δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom`: for a filtration,
   the connecting maps of the graded pieces of its functor are those of the quotients of the
   subobjects in the filtration.
@@ -152,6 +154,37 @@ theorem spectralSequence_first_page_d_eq_of_eq (pq pq' : ℤ × ℤ)
   intro _ _
   exact spectralSequence_first_page_d_eq F pq.1 pq.2
 
+/-- **The first differential of the spectral sequence of a filtered complex**, with the
+filtration indices given by equations. When `F_{q₀} ⟶ F_{q₁}` and `F_{q₁} ⟶ F_{q₂}` are
+monomorphisms, with `q₀ + 1 = q₁` and `q₁ + 1 = q₂`, the differential of the first page from
+`(p, q₁)` to `(p + 2, q₀)` is the connecting map of `F_{q₁}/F_{q₀} ⟶ F_{q₂}/F_{q₀} ⟶ F_{q₂}/F_{q₁}`,
+followed by the identification of `F_{q₁}/F_{q₀}` with `F_{q₁'}/F_{q₀}` for an index `q₁'` equal
+to `q₁`. This is `CochainComplex.spectralSequence_first_page_d_eq`, in a form that applies when
+the indices are not syntactically of the form `q - 1`, `q`, `q + 1`. -/
+theorem spectralSequence_first_page_d_eq_cokernelMap (p p' q₀ q₁ q₁' q₂ n₀ n₁ : ℤ)
+    (hp : p + 2 = p') (h₀ : q₀ + 1 = q₁) (h₁ : q₁ + 1 = q₂) (h' : q₁ = q₁')
+    (hn₀ : n₀ = p + q₁) (hn₁ : n₀ + 1 = n₁)
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₁ = q₁) h₁.symm)))]
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₀ = q₀) (h₀ ▸ h').symm)))] :
+    (spectralSequenceFirstPageXIsoCokernel F (p, q₁) q₁ q₂ rfl h₁.symm n₀ hn₀).inv ≫
+      ((spectralSequence F).page 2).d (p, q₁) (p', q₀) ≫
+      (spectralSequenceFirstPageXIsoCokernel F (p', q₀) q₀ q₁' rfl (h₀ ▸ h').symm n₁
+        (by dsimp; lia)).hom =
+    (TauCeti.cokernelCompSequence_shortExact
+        (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₀ = q₀) h₀.symm)))
+        (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₁ = q₁) h₁.symm)))).δ
+        n₀ n₁ (by simp [← hn₁]) ≫
+      HomologicalComplex.homologyMap (cokernel.map _ _ (𝟙 _)
+        (F.map (homOfLE (by simp [h'] : (q₁ : EInt) ≤ q₁')))
+        (by rw [Category.id_comp, ← F.map_comp]; exact congrArg F.map (Subsingleton.elim _ _)))
+        n₁ := by
+  subst hp h' h₁ hn₀ hn₁
+  obtain rfl : q₀ = q₁ - 1 := by lia
+  rw [spectralSequence_first_page_d_eq]
+  simp only [homOfLE_leOfHom, Category.assoc, Iso.inv_hom_id_assoc, homOfLE_refl,
+    CategoryTheory.Functor.map_id, cokernel.map_id, HomologicalComplex.homologyMap_id,
+    Iso.inv_hom_id, Category.comp_id]
+
 end SpectralSequence
 
 section Filtration
@@ -184,8 +217,9 @@ lemma δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom {i j k : ℤ
     fun a _ hS ↦ (filtrationFunctorObjIso F hF a).hom ≫
       Subobject.ofLE _ _ ((filtrationEInt_coe F a).trans hS).le
   have w : ∀ {a b : ℤ} (hab : a ≤ b) {S T : Subobject K} (hS : F a = S) (hT : F b = T)
-      (hST : S ≤ T), (filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hab) ≫ u b hT =
-        u a hS ≫ Subobject.ofLE S T hST := fun hab _ _ hS hT hST ↦ by
+      (hST : S ≤ T), u a hS ≫ Subobject.ofLE S T hST =
+        (filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hab) ≫ u b hT :=
+    fun hab _ _ hS hT hST ↦ by
     simp [u, reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_comp_ofLE]
   -- Under these comparisons, the induced maps of cokernels are the identifications of the
   -- graded pieces.
