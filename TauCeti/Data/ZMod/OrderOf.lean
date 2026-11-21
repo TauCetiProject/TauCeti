@@ -33,9 +33,10 @@ modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primit
 `p ²` is one modulo every power of `p`.
 
 The order of `q` modulo `n` decides which of the numbers `q ^ k - 1` are divisible by `n`: those
-with `k` a multiple of the order. Modulo a prime `p`, an element of even order `2 * m` has `m`-th
-power `-1`, so if `a / b` has order `2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd
-multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible by `p`.
+with `k` a multiple of the order. In particular `p > 1` has order `f` modulo `p ^ f - 1`. Modulo
+a prime `p`, an element of even order `2 * m` has `m`-th power `-1`, so if `a / b` has order
+`2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd multiples `k` of `m`; for `b = 1` this
+decides which `q ^ k + 1` are divisible by `p`.
 
 ## Main results
 
@@ -58,6 +59,7 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
   primitive root modulo every `p ^ e`.
 * `ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd`: for `q > 0`, `n ∣ q ^ k - 1` iff the order of
   `q` modulo `n` divides `k`.
+* `ZMod.orderOf_natCast_pow_sub_one`: for `p > 1`, the order of `p` modulo `p ^ f - 1` is `f`.
 * `Nat.Prime.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul`: if `a / b` has order `2 * m ≠ 0` modulo
   a prime `p`, then `p ∣ a ^ k + b ^ k` iff `m ∣ k` and `¬ 2 * m ∣ k`.
 * `Nat.Prime.dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul`: if `q` has order `2 * m ≠ 0`
@@ -259,6 +261,33 @@ theorem dvd_pow_sub_one_iff_orderOf_natCast_dvd {n q : ℕ} (hq : 0 < q) (k : �
     n ∣ q ^ k - 1 ↔ orderOf (q : ZMod n) ∣ k := by
   rw [orderOf_dvd_iff_pow_eq_one, ← natCast_eq_zero_iff]
   simp [Nat.cast_sub (Nat.one_le_pow _ _ hq), sub_eq_zero]
+
+/-- For `1 < p`, the order of `p` modulo `p ^ f - 1` is `f`: the modulus divides `p ^ f - 1`, and
+for `0 < j < f` the number `p ^ j - 1` is positive and smaller than the modulus. At `f = 0` the
+modulus is `0`, and `p` has order `0` in `ZMod 0 = ℤ`. -/
+theorem orderOf_natCast_pow_sub_one {p : ℕ} (hp : 1 < p) (f : ℕ) :
+    orderOf (p : ZMod (p ^ f - 1)) = f := by
+  have hdvd := (dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (by omega) f).1 dvd_rfl
+  set o := orderOf (p : ZMod (p ^ f - 1))
+  have ho := (dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (q := p) (by omega) o).2
+    dvd_rfl
+  rcases Nat.eq_zero_or_pos o with h0 | h0
+  · rw [h0, zero_dvd_iff] at hdvd
+    exact h0.trans hdvd.symm
+  have h1 : 1 < p ^ o := Nat.one_lt_pow h0.ne' hp
+  -- `p ^ f - 1` divides the positive number `p ^ o - 1`, so `p ^ f ≤ p ^ o`.
+  have hle : p ^ f ≤ p ^ o := by
+    have := Nat.le_of_dvd (by omega) ho
+    generalize p ^ f = x at this
+    generalize p ^ o = y at this h1
+    omega
+  have hf : 0 < f := by
+    rcases Nat.eq_zero_or_pos f with rfl | hf
+    · rw [pow_zero, Nat.sub_self, zero_dvd_iff] at ho
+      generalize p ^ o = y at ho h1
+      omega
+    · exact hf
+  exact le_antisymm (Nat.le_of_dvd hf hdvd) ((Nat.pow_le_pow_iff_right hp).1 hle)
 
 end ZMod
 
