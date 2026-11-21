@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Calculus.DSlope.Integral
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.IteratedDeriv
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Dividing an entire function by a coordinate
@@ -39,8 +40,9 @@ degree:
   `‖g‖ ≤ 2 M / (R - r)` there: on the circle `|zᵢ| = R` the difference quotient is bounded by
   `2 M / (R - r)`, and the maximum modulus principle in the variable `zᵢ` extends the bound inside;
 * the partial derivatives `∂ⱼ` with `j ≠ i` commute with `f ↦ f₀` and `f ↦ g`, while `∂ᵢ f₀ = 0`;
-  so if `f` is a polynomial of degree at most `e` in `zⱼ`, in the sense that `∂ⱼ^(e+1) f = 0`, so
-  are `f₀` and `g` for `j ≠ i`, and `g` has degree at most `e - 1` in `zᵢ`.
+  so for `j ≠ i`, if `f` is a polynomial of degree at most `e` in `zⱼ`, in the sense that
+  `∂ⱼ^(e+1) f = 0`, so are `f₀` and `g`. Separately, if `∂ᵢ^(e+1) f = 0` then `∂ᵢ^e g = 0`: `g` has
+  degree less than `e` in `zᵢ`.
 
 ## Main definitions and results
 
@@ -48,7 +50,8 @@ degree:
 * `TauCeti.add_sub_smul_partialDslope`: `f₀ z + (zᵢ - ζ) • g z = f z`.
 * `TauCeti.partialDslope_of_ne`, `TauCeti.partialDslope_of_eq`: the values of `g` off and on the
   hyperplane `zᵢ = ζ`.
-* `TauCeti.eq_partialDslope`: `g` is the only continuous function with this property.
+* `TauCeti.eq_partialDslope`: for entire `f`, `g` is the only continuous function with this
+  property.
 * `TauCeti.partialDslope_eq_integral`: the integral representation of `g`.
 * `TauCeti.differentiable_partialDslope`: `g` is entire when `f` is.
 * `TauCeti.norm_apply_update_le`, `TauCeti.norm_partialDslope_le`: the bounds `‖f₀‖ ≤ M` and
@@ -112,7 +115,7 @@ theorem partialDslope_of_eq [Finite ι] (hf : DifferentiableAt ℂ f z) (h : z i
     partialDslope i f ζ z = partialDeriv i f z := by
   rw [partialDslope_apply, h, dslope_same, ← h, partialDeriv_eq_deriv_update hf]
 
-/-- **Uniqueness of the divided difference.** A continuous function `g` with
+/-- **Uniqueness of the divided difference.** For entire `f`, a continuous function `g` with
 `f z = f (update z i ζ) + (z i - ζ) • g z` for every `z` is the divided difference of `f`. -/
 theorem eq_partialDslope [Finite ι] [CompleteSpace E] {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)
     (hg : Continuous g) (hfg : ∀ z, f (update z i ζ) + (z i - ζ) • g z = f z) :
@@ -187,20 +190,12 @@ section Bounds
 
 variable [Fintype ι] {r R M : ℝ}
 
-/-- Replacing a coordinate of a point of the closed polydisc of radius `R` by a number of absolute
-value at most `R` stays in the polydisc. -/
-private theorem norm_update_le (hz : ‖z‖ ≤ R) {s : ℂ} (hs : ‖s‖ ≤ R) : ‖update z i s‖ ≤ R :=
-  (pi_norm_le_iff_of_nonneg ((norm_nonneg s).trans hs)).2 fun j ↦ by
-    rcases eq_or_ne j i with rfl | hj
-    · simpa using hs
-    · simpa [update_of_ne hj] using (norm_le_pi_norm z j).trans hz
-
 omit [NormedSpace ℂ E] in
 /-- If `‖ζ‖ ≤ R` and `‖f‖ ≤ M` on the closed polydisc of radius `R`, then `f` with its `i`-th
 variable replaced by `ζ` is bounded by `M` there. -/
 theorem norm_apply_update_le (hζ : ‖ζ‖ ≤ R) (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M)
     (hz : ‖z‖ ≤ R) : ‖f (update z i ζ)‖ ≤ M :=
-  hM _ (norm_update_le hz hζ)
+  hM _ (Pi.norm_update_le hz hζ)
 
 /-- **Size of the divided difference.** If `f` is entire, `‖ζ‖ ≤ r < R` and `‖f‖ ≤ M` on the
 closed polydisc of radius `R`, then `‖partialDslope i f ζ‖ ≤ 2 M / (R - r)` on that polydisc. -/
@@ -210,8 +205,7 @@ theorem norm_partialDslope_le [CompleteSpace E] (hf : Differentiable ℂ f) (hζ
   have hR : 0 < R := (norm_nonneg ζ).trans_lt (hζ.trans_lt hrR)
   -- By the maximum modulus principle in the `i`-th variable, it suffices to bound the difference
   -- quotient on the circle `|s| = R`, where `|s - ζ| ≥ R - r`.
-  have hg : Differentiable ℂ fun s ↦ partialDslope i f ζ (update z i s) :=
-    (differentiable_partialDslope hf i ζ).comp fun s ↦ (hasDerivAt_update z i s).differentiableAt
+  have hg := differentiable_comp_update (differentiable_partialDslope hf i ζ) z i
   have hzi : z i ∈ closure (ball (0 : ℂ) R) := by
     rw [closure_ball 0 hR.ne', mem_closedBall_zero_iff]
     exact (norm_le_pi_norm z i).trans hz
@@ -227,7 +221,7 @@ theorem norm_partialDslope_le [CompleteSpace E] (hf : Differentiable ℂ f) (hζ
     linarith
   rw [partialDslope_update, dslope_of_ne _ hne, slope_def_module, norm_smul, norm_inv,
     inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 hne)), mul_div_assoc']
-  have hf₁ := hM _ (norm_update_le (i := i) hz hs.le)
+  have hf₁ := hM _ (Pi.norm_update_le (i := i) hz hs.le)
   have hf₂ := norm_apply_update_le (i := i) (hζ.trans hrR.le) hM hz
   have hM0 : 0 ≤ M := (norm_nonneg _).trans hf₂
   rw [le_div_iff₀ (by linarith)]

@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 /-!
 # Smoothness from derivative towers
 
-A sequence of functions linked by ordinary derivatives gives a smooth initial function.
+A sequence of functions linked by ordinary derivatives gives a smooth initial function
+(`TauCeti.contDiff_of_derivative_tower`). Iterated derivatives compose additively
+(`TauCeti.iteratedDeriv_iteratedDeriv`).
 -/
 
 public section
@@ -21,6 +23,11 @@ namespace TauCeti
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The `n`-th derivative of the `k`-th derivative is the `(n + k)`-th derivative. -/
+theorem iteratedDeriv_iteratedDeriv (n k : ℕ) (f : 𝕜 → E) :
+    iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
+  simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
 
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/

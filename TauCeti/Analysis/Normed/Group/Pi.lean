@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Group.Constructions
 
 /-!
-# Powers of the norm on a finite product
+# Norms on a finite product
 
 The norm on a finite product of seminormed groups is the maximum of the coordinate norms, so for
 every positive exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the
-coordinate norms (`Pi.norm_pow_le_sum_norm_pow`).
+coordinate norms (`Pi.norm_pow_le_sum_norm_pow`), and replacing a coordinate of a point of the
+closed ball of radius `R` about `0` by an element of norm at most `R` stays in that ball
+(`Pi.norm_update_le`).
 -/
 
 public section
@@ -30,3 +32,13 @@ theorem Pi.norm_pow_le_sum_norm_pow {ι : Type*} [Fintype ι] {E : ι → Type*}
   rw [hf]
   exact Finset.single_le_sum (f := fun i ↦ ‖f i‖ ^ n) (fun _ _ ↦ by positivity)
     (Finset.mem_univ i)
+
+/-- Replacing a coordinate of a point of norm at most `R` in a finite product by an element of norm
+at most `R` gives a point of norm at most `R`. -/
+theorem Pi.norm_update_le {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι → Type*}
+    [∀ i, SeminormedAddGroup (E i)] {x : ∀ i, E i} {i : ι} {y : E i} {R : ℝ} (hx : ‖x‖ ≤ R)
+    (hy : ‖y‖ ≤ R) : ‖Function.update x i y‖ ≤ R :=
+  (pi_norm_le_iff_of_nonneg ((norm_nonneg y).trans hy)).2 fun j ↦ by
+    rcases eq_or_ne j i with rfl | hj
+    · simpa using hy
+    · simpa [Function.update_of_ne hj] using (norm_le_pi_norm x j).trans hx

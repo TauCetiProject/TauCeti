@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
@@ -52,9 +53,6 @@ theorem Differentiable.iteratedDeriv_dslope_eq_zero {h : ℂ → E} (hh : Differ
     {e : ℕ} (he : _root_.iteratedDeriv (e + 1) h = 0) (ζ : ℂ) :
     _root_.iteratedDeriv e (dslope h ζ) = 0 := by
   have hD : Differentiable ℂ (dslope h ζ) := fun z ↦ ((hh.analyticAt z).dslope ζ).differentiableAt
-  have hiter (k n : ℕ) (g : ℂ → E) :
-      _root_.iteratedDeriv k (_root_.iteratedDeriv n g) = _root_.iteratedDeriv (k + n) g := by
-    simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
   -- The Taylor coefficients of `dslope h ζ` at `ζ` of order at least `e` are those of `h` of order
   -- at least `e + 1`, which vanish.
   have hcoeff (k : ℕ) : _root_.iteratedDeriv (k + e) (dslope h ζ) ζ = 0 := by
@@ -64,11 +62,11 @@ theorem Differentiable.iteratedDeriv_dslope_eq_zero {h : ℂ → E} (hh : Differ
       ext z
       rw [pow_one, sub_smul_dslope, neg_add_eq_sub]
     rw [hfun, iteratedDeriv_const_add (by omega), show 1 + (k + e) = k + (e + 1) by omega,
-      ← hiter, he] at hshift
+      ← TauCeti.iteratedDeriv_iteratedDeriv, he] at hshift
     simpa [Nat.factorial_ne_zero] using hshift.symm
   ext z
   rw [← Complex.taylorSeries_eq_of_entire (hD.iteratedDeriv e) ζ z]
-  simp [hiter, hcoeff]
+  simp [TauCeti.iteratedDeriv_iteratedDeriv, hcoeff]
 
 /-- On an open set `U`, the `k`-th iterated derivative over a field `𝕜` below `ℂ` of a map
 holomorphic on `U` is the restriction of scalars of its complex `k`-th iterated derivative, which

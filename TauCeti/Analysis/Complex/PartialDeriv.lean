@@ -27,7 +27,8 @@ calculus on entire functions.
 * `TauCeti.partialDeriv_eq_deriv_update`, `TauCeti.hasDerivAt_comp_update`: `∂ᵢ f (z)` is the
   derivative of `f` along the line through `z` parallel to the `i`-th coordinate axis, and
   `TauCeti.iteratedDeriv_comp_update` gives the same for `∂ᵢ^m` and entire `f`, whose restrictions
-  to such lines are entire (`TauCeti.differentiable_comp_update`).
+  to such lines are entire (`TauCeti.differentiable_comp_update`). Freezing a variable of an
+  entire function gives an entire function (`TauCeti.differentiable_comp_update_const`).
 * `TauCeti.partialDeriv_comp_update_self`, `TauCeti.partialDeriv_comp_update_of_ne`: freezing the
   `i`-th variable kills `∂ᵢ` and commutes with `∂ⱼ` for `j ≠ i`.
 * `TauCeti.differentiable_partialDeriv`: a partial derivative of an entire function is entire.
@@ -69,6 +70,12 @@ theorem hasDerivAt_comp_update [Finite ι] {f : (ι → ℂ) → E} {z : ι → 
 theorem differentiable_comp_update [Finite ι] {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
     (z : ι → ℂ) (i : ι) : Differentiable ℂ fun s ↦ f (update z i s) :=
   fun _ ↦ (hasDerivAt_comp_update (hf _)).differentiableAt
+
+/-- Replacing the `i`-th variable of an entire function by a constant gives an entire function. -/
+theorem differentiable_comp_update_const [Finite ι] {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (i : ι) (ζ : ℂ) : Differentiable ℂ fun z ↦ f (update z i ζ) := by
+  have := Fintype.ofFinite ι
+  exact fun z ↦ (hf _).comp z ((hasFDerivAt_const ζ z).update_self i).differentiableAt
 
 /-- The partial derivative `∂ᵢ f (z)` is the derivative of `f` restricted to the line through `z`
 parallel to the `i`-th coordinate axis. -/
@@ -129,11 +136,8 @@ theorem iterate_partialDeriv_const_mul [Finite ι] {f : (ι → ℂ) → ℂ} (c
 /-- Replacing the `i`-th variable by a constant kills the partial derivative `∂ᵢ`. -/
 theorem partialDeriv_comp_update_self [Finite ι] (hf : Differentiable ℂ f) (i : ι) (ζ : ℂ) :
     partialDeriv i (fun z ↦ f (update z i ζ)) = 0 := by
-  have := Fintype.ofFinite ι
   ext z
-  have hd : DifferentiableAt ℂ (fun z ↦ f (update z i ζ)) z :=
-    (hf _).comp z ((hasFDerivAt_const ζ z).update_self i).differentiableAt
-  rw [partialDeriv_eq_deriv_update hd]
+  rw [partialDeriv_eq_deriv_update (differentiable_comp_update_const hf i ζ z)]
   simp
 
 /-- Replacing the `i`-th variable by a constant commutes with the partial derivative `∂ⱼ` in
@@ -141,11 +145,9 @@ another variable `j ≠ i`. -/
 theorem partialDeriv_comp_update_of_ne [Finite ι] (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i)
     (ζ : ℂ) :
     partialDeriv j (fun z ↦ f (update z i ζ)) = fun z ↦ partialDeriv j f (update z i ζ) := by
-  have := Fintype.ofFinite ι
   ext z
-  have hd : DifferentiableAt ℂ (fun z ↦ f (update z i ζ)) z :=
-    (hf _).comp z ((hasFDerivAt_const ζ z).update_self i).differentiableAt
-  rw [partialDeriv_eq_deriv_update hd, partialDeriv_eq_deriv_update (hf _), update_of_ne hji]
+  rw [partialDeriv_eq_deriv_update (differentiable_comp_update_const hf i ζ z),
+    partialDeriv_eq_deriv_update (hf _), update_of_ne hji]
   congr 1
   ext s
   rw [update_comm hji]
