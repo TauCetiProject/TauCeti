@@ -44,6 +44,11 @@ natural number coefficients.
 * `TauCeti.bettiNumber`: the `j`-th Betti number of a space with coefficients in `k`.
 * `ContinuousMap.HomotopyEquiv.bettiNumber_eq`: Betti numbers are homotopy invariant.
 * `TauCeti.bettiNumber_zero`: the zeroth Betti number is the number of path components.
+* `TauCeti.rank_singularHomology_zero`: the cardinal rank of the zeroth homology is the cardinal
+  number of path components, which stays meaningful when there are infinitely many.
+* `TauCeti.rank_singularHomology_zero_of_discreteTopology`: for a discrete space, that rank is
+  the cardinal number of points.
+* `TauCeti.bettiNumber_zero_eq_one`: a path-connected space has zeroth Betti number one.
 * `TauCeti.bettiNumber_eq_zero_of_contractibleSpace`: the positive-degree Betti numbers of a
   contractible space vanish.
 * `TauCeti.bettiNumber_eq_zero_of_not_finite`, `TauCeti.bettiNumber_eq_rank`: over a division ring,
@@ -85,16 +90,42 @@ theorem bettiNumber_def (j : ℕ) :
         (TopCat.of X)) :=
   (rfl)
 
+/-- **The zeroth homology has rank the number of path components.** Over a ring with the strong
+rank condition, `H₀(X; k)` is free on the path components of `X`, so its rank is their cardinal
+number, also when there are infinitely many. -/
+theorem rank_singularHomology_zero [StrongRankCondition k] :
+    Module.rank k (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj (ModuleCat.of k k)).obj
+      (TopCat.of X)) = Cardinal.mk (ZerothHomotopy X) := by
+  classical
+  let e := (TopCat.singularHomology₀Iso (TopCat.of X) (ModuleCat.of k k) ≪≫
+    ModuleCat.coprodIsoDirectSum _).toLinearEquiv
+  rw [e.rank_eq, ← (finsuppLEquivDirectSum k k _).rank_eq, rank_finsupp_self']
+
 /-- **The zeroth Betti number counts path components.** Over a ring with the strong rank
 condition, such as a division ring or a nontrivial commutative ring, `b₀(X)` is the number of path
 components of `X`, or `0` when there are infinitely many. -/
 theorem bettiNumber_zero [StrongRankCondition k] :
     bettiNumber k X 0 = Nat.card (ZerothHomotopy X) := by
-  classical
-  let e := (TopCat.singularHomology₀Iso (TopCat.of X) (ModuleCat.of k k) ≪≫
-    ModuleCat.coprodIsoDirectSum _).toLinearEquiv
-  rw [bettiNumber_def, e.finrank_eq, ← (finsuppLEquivDirectSum k k _).finrank_eq]
-  exact finrank_eq_nat_card_basis Finsupp.basisSingleOne
+  rw [bettiNumber_def, finrank, rank_singularHomology_zero, Nat.card]
+
+/-- **The zeroth homology of a discrete space.** In a discrete space every path is constant, so the
+path components are the points and `H₀(X; k)` has rank the cardinal number of `X`. -/
+theorem rank_singularHomology_zero_of_discreteTopology [StrongRankCondition k]
+    [DiscreteTopology X] :
+    Module.rank k (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj (ModuleCat.of k k)).obj
+      (TopCat.of X)) = Cardinal.mk X := by
+  have hinj : Function.Injective (ZerothHomotopy.mk : X → ZerothHomotopy X) := fun x y h ↦ by
+    obtain ⟨γ⟩ := Quotient.exact h
+    simpa using γ.continuous.isConst_of_preconnectedSpace 0 1
+  rw [rank_singularHomology_zero,
+    Cardinal.mk_congr (Equiv.ofBijective _ ⟨hinj, Quotient.mk_surjective⟩).symm]
+
+variable {X} in
+/-- **The zeroth Betti number of a path-connected space is one.** -/
+theorem bettiNumber_zero_eq_one [StrongRankCondition k] [PathConnectedSpace X] :
+    bettiNumber k X 0 = 1 := by
+  rw [bettiNumber_zero, Nat.card_eq_one_iff_unique]
+  exact ⟨inferInstance, inferInstance⟩
 
 variable {X} in
 /-- **The positive-degree Betti numbers of a contractible space vanish.** -/
