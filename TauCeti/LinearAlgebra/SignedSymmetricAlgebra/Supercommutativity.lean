@@ -26,7 +26,8 @@ zero when `2` is invertible in the coefficient ring. These identities allow the 
 algebra to serve as a receiving supercommutative algebra in universal properties and tensor
 comparisons, for both integer and parity (`ZMod 2`) gradings.
 
-The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
+The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top` from
+`TauCeti.RingTheory.GradedAlgebra.Supercommutativity`.
 The construction follows the supercommutative algebra of J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1).
 -/
@@ -45,37 +46,20 @@ section General
 variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
 variable (G : InternalGrading R V ι)
 
-private theorem generator_mul_eq_uzpow_smul_mul {p q : ι} {x : V} (hx : x ∈ G.piece p)
-    {b : SignedSym G} (hb : b ∈ signedSymPiece G q) :
-    generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x) := by
-  refine homogeneous_induction G (P := fun q b =>
-    generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x))
-    (by simp)
-    (fun _ _ hy => generator_mul_generator G hx hy)
-    (fun _ _ _ _ hb hc => by
-      rw [← mul_assoc, hb, smul_mul_assoc, mul_assoc, hc, mul_smul_comm, smul_smul,
-        ← mul_assoc, ← uzpow_add, ← mul_add])
-    (by simp [Units.smul_def])
-    (fun _ _ _ hb hc => by simp only [mul_add, add_mul, hb, hc, Units.smul_def, zsmul_add])
-    (fun _ r _ hb => by rw [mul_smul_comm, hb, smul_mul_assoc, smul_comm r])
-    hb
-
 /-- Homogeneous elements supercommute with the sign determined by their total input degrees.
 No assumption on the characteristic of the coefficient ring is needed. -/
 theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
-    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) := by
-  refine homogeneous_induction G (P := fun p a =>
-    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
-    (by simp)
-    (fun _ _ hx => generator_mul_eq_uzpow_smul_mul G hx hb)
-    (fun p r _ _ ha hc => by
-      rw [mul_assoc, hc, mul_smul_comm, ← mul_assoc, ha, smul_mul_assoc, smul_smul,
-        mul_comm ((-1 : ℤˣ) ^ (r * q)), ← uzpow_add, ← add_mul, mul_assoc])
-    (by simp [Units.smul_def])
-    (fun _ _ _ ha hc => by simp only [add_mul, mul_add, ha, hc, Units.smul_def, zsmul_add])
-    (fun _ r _ ha => by rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r])
-    ha
+    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) :=
+  mul_eq_smul_mul_of_adjoin_range_eq_top (𝒜 := signedSymPiece G)
+    (s := fun p q => (-1 : ℤˣ) ^ (p * q))
+    (fun _ => by simp)
+    (fun _ _ _ => by rw [mul_add, uzpow_add])
+    (fun _ => by simp)
+    (fun i₁ _ j => by rw [add_mul, add_comm (i₁ * j), uzpow_add])
+    (adjoin_range_generator G) G.isInternal.submodule_iSup_eq_top
+    (isHomogeneous_signedSymGenerator G)
+    (fun hx hy => generator_mul_generator G hx hy) ha hb
 
 /-- Every homogeneous element whose degree has Koszul sign `1` commutes with all of
 `SignedSym G`. -/

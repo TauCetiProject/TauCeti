@@ -44,9 +44,11 @@ its degree alone.
 
 ## Main results
 
-* `TauCeti.map_mul_of_leibniz_of_map_eq_zero`, `TauCeti.map_one_eq_zero_of_leibniz`, and
-  `TauCeti.map_algebraMap_of_leibniz`: consequences of the graded Leibniz rule alone, shared with
-  the curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs`.
+* `TauCeti.map_mul_of_leibniz_along_of_map_eq_zero`, `TauCeti.map_mul_of_leibniz_of_map_eq_zero`,
+  `TauCeti.map_one_eq_zero_of_leibniz_along`, `TauCeti.map_one_eq_zero_of_leibniz`, and
+  `TauCeti.map_algebraMap_of_leibniz`: consequences of an `s`-signed graded Leibniz rule alone,
+  shared with `TauCeti.Algebra.Homology.Curved.Algebra.Defs` and
+  `TauCeti.Algebra.Homology.DG.Algebra.SignedDerivation`.
 * `TauCeti.IsNonUnitalDGAlgebra.map_decompose` computes the differential on homogeneous
   components.
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_map_eq_zero` and
@@ -86,27 +88,38 @@ section Leibniz
 /-!
 ### A consequence of the Leibniz law alone
 
-The next lemma uses only the graded Leibniz rule, and not that `d` raises degree by one or squares
-to zero.  It is stated with that rule as a hypothesis so that differential graded algebras and the
-curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs` share one
-proof.  The corresponding consequence of the degree law alone, that `d` commutes with homogeneous
-projections up to the degree shift, is `TauCeti.LinearMap.IsHomogeneous.map_decompose`.
+The next lemmas use only an `s`-signed graded Leibniz rule (for an arbitrary grading index type `ι`
+and sign function `s : ι → ℤˣ`), and not that `d` raises degree by one or squares to zero.  They
+are shared across differential graded algebras, the curved differential graded algebras of
+`TauCeti.Algebra.Homology.Curved.Algebra.Defs`, and the general signed-derivation API in
+`TauCeti.Algebra.Homology.DG.Algebra.SignedDerivation`.  The corresponding consequence of the degree
+law alone, that `d` commutes with homogeneous projections up to the degree shift, is
+`TauCeti.LinearMap.IsHomogeneous.map_decompose`.
 -/
 
-variable {ι A σ F : Type*} [DecidableEq ι] [NonUnitalNonAssocRing A]
-  [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
-  [FunLike F A A] [AddMonoidHomClass F A A] {d : F} {s : ι → ℤˣ}
-
-/-- The graded Leibniz rule against a cycle in the right factor, for any index type and sign
-family. The vanishing signed term permits an arbitrary left factor, without a homogeneity
-hypothesis. -/
-theorem map_mul_of_leibniz_of_map_eq_zero
-    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
-    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
+/-- An `s`-signed Leibniz rule along `f` against a right factor in the kernel of `d` holds for an
+arbitrary left factor, without a homogeneity assumption. -/
+theorem map_mul_of_leibniz_along_of_map_eq_zero {A B ι σ F : Type*}
+    [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocRing B] [DecidableEq ι]
+    [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
+    [FunLike F A B] [AddMonoidHomClass F A B] {s : ι → ℤˣ} {d : F} (f : A → B)
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * f b + s i • (f a * d b))
+    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * f b := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | homogeneous a => simp [hl a.property b, hb]
   | add a a' ha ha' => simp [add_mul, ha, ha']
+
+/-- The graded Leibniz rule against a cycle in the right factor, for any index type and sign
+family. The vanishing signed term permits an arbitrary left factor, without a homogeneity
+hypothesis. -/
+theorem map_mul_of_leibniz_of_map_eq_zero {A ι σ F : Type*}
+    [NonUnitalNonAssocRing A] [DecidableEq ι]
+    [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
+    [FunLike F A A] [AddMonoidHomClass F A A] {s : ι → ℤˣ} {d : F}
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
+    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b :=
+  map_mul_of_leibniz_along_of_map_eq_zero (𝒜 := 𝒜) id hl a hb
 
 end Leibniz
 
@@ -173,6 +186,17 @@ end NonUnital
 
 section UnitalLeibniz
 
+/-- A function satisfying an `s`-signed Leibniz rule along a unit-preserving map `f` annihilates
+the unit. -/
+theorem map_one_eq_zero_of_leibniz_along {A B ι σ F : Type*} [MulOneClass A] [NonAssocRing B]
+    [SetLike σ A] [Zero ι] {𝒜 : ι → σ} [SetLike.GradedOne 𝒜] [FunLike F A B] [OneHomClass F A B]
+    {s : ι → ℤˣ} (f : F) {d : A → B}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * f b + s i • (f a * d b)) :
+    d 1 = 0 := by
+  have key := hl (SetLike.one_mem_graded 𝒜) 1
+  simp only [map_one, mul_one, one_mul, left_eq_add] at key
+  exact (smul_eq_zero_iff_eq (s 0)).mp key
+
 variable {A ι σ : Type*} [NonAssocRing A] [Zero ι] [SetLike σ A] (𝒜 : ι → σ)
   [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A → A}
 
@@ -181,10 +205,8 @@ the unit: the rule for `1 * 1` reads `d 1 = d 1 + s 0 • d 1`, hence `s 0 • d
 Neither additivity nor a direct-sum decomposition is needed. -/
 theorem map_one_eq_zero_of_leibniz
     (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b)) :
-    d 1 = 0 := by
-  have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul] at key
-  exact (smul_eq_zero_iff_eq (s 0)).1 (left_eq_add.mp key)
+    d 1 = 0 :=
+  map_one_eq_zero_of_leibniz_along (𝒜 := 𝒜) (OneHom.id A) hl
 
 end UnitalLeibniz
 
