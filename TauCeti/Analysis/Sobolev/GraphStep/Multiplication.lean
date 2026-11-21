@@ -89,8 +89,8 @@ private theorem smulRightLp_ae (hψ : ContDiffOn ℝ ∞ ψ Omega)
       Omega.isOpen.measurableSet _ h₁.choose_spec).toLp (fderiv ℝ ψ)) g,
     ((hψ.continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).memLp_top_restrict_of_bound
       (μ := mu) Omega.isOpen.measurableSet _ h₁.choose_spec).coeFn_toLp] with x hx hψx
-  rw [smulRightLp, ContinuousLinearMap.holderL_apply_apply, hx, hψx]
-  rfl
+  rw [smulRightLp, ContinuousLinearMap.holderL_apply_apply, hx, hψx,
+    ContinuousLinearMap.smulRightL_apply_apply]
 
 variable [CompleteSpace F] [IsFiniteMeasureOnCompacts mu]
 
