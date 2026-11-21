@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Analysis.SpecialFunctions.Exponential
-import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.UnitsDifferential
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.StandardBivector
 import TauCeti.LinearAlgebra.QuadraticForm.Standard
@@ -48,196 +47,6 @@ namespace TauCeti.CliffordAlgebra
 open _root_.CliffordAlgebra
 
 attribute [local instance] Matrix.linftyOpTopologicalSpace
-
-local notation "SpinUnitsRange(" n ")" =>
-  MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))
-
-local notation "SpecialOrthogonalUnitsRange(" n ")" =>
-  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-    (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))
-
-local notation "SpinLieModel(" n ")" =>
-  LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
-    (I := modelWithCornersSelf ℝ (CliffordAlgebra (realCliffordForm n 0)))
-    (SpinUnitsRange(n)))
-
-local notation "SpecialOrthogonalLieModel(" n ")" =>
-  LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
-    (I := modelWithCornersSelf ℝ (Matrix (Fin n) (Fin n) ℝ))
-    (SpecialOrthogonalUnitsRange(n)))
-
-/-- The special-orthogonal projection of the Lie exponential curve of `x` in the Spin group is the
-matrix exponential of the coordinate differential of `x`, given that the projection is computed by
-the differential `Y` of the smooth projection. -/
-private theorem coe_smoothRange_lieExp_smul_eq_exp (n : ℕ)
-    (x : quadraticLieSubalgebra (realCliffordForm n 0)) (t : ℝ) :
-    let X := (realCliffordSpinLieEquivQuadratic n).symm x
-    let Y := lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X
-    let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
-      LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
-    Y = realCliffordSpinToSpecialOrthogonalRangeLieMap n X →
-    realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X)) = lieExp (t • Y) →
-    (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).val :
-        (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ) =
-      NormedSpace.exp (t • A) := by
-  intro X Y A hY hmap
-  calc
-    _ = (((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).subtypeVal
-        (lieExp (t • Y)) : (Matrix (Fin n) (Fin n) ℝ)ˣ) :
-          Matrix (Fin n) (Fin n) ℝ) := by
-      simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using congrArg
-        (fun z : SpecialOrthogonalUnitsRange(n) ↦
-          ((z.val : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
-    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
-        ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y)) :=
-      (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).coe_lieExp_smul Y t
-    _ = NormedSpace.exp (t • A) := by
-      congr 2
-      calc
-        unitsLieAlgebraEquiv
-            ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y) =
-            TauCeti.Lie.unitsLieAlgebraLieEquiv
-              ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y) :=
-          (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
-        _ =
-            ((realCliffordSpecialOrthogonalLieEquivSo n Y :
-              LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) :=
-          (coe_realCliffordSpecialOrthogonalLieEquivSo_apply n Y).symm
-        _ = ((realCliffordSpecialOrthogonalLieEquivSo n
-              (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) :
-            LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) := by
-          exact congrArg
-            (fun z ↦ ((realCliffordSpecialOrthogonalLieEquivSo n z :
-                LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)) hY
-        _ = A := by
-          simpa only [A, X] using congrArg
-            (fun z : LieAlgebra.Orthogonal.so (Fin n) ℝ ↦
-              (z : Matrix (Fin n) (Fin n) ℝ))
-            (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm
-
-/-- The Lie exponential curve of `x` in the Spin group is the Clifford exponential `exp (t x)`. -/
-private theorem coe_symm_lieExp_smul_eq_exp (n : ℕ)
-    (x : quadraticLieSubalgebra (realCliffordForm n 0)) (t : ℝ) :
-    let Q := realCliffordForm n 0
-    let X := (realCliffordSpinLieEquivQuadratic n).symm x
-    let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (lieExp (t • X))
-    (s : CliffordAlgebra Q) = NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
-  intro Q X s
-  calc
-    (s : CliffordAlgebra Q) =
-        ((((lieExp (t • X) : SpinUnitsRange(n)).val :
-          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
-      coe_spinGroupContinuousMulEquivUnitsRange_symm_apply Q (lieExp (t • X))
-    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
-        ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X)) :=
-      by simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using
-        (realCliffordSpinEmbeddedLieSubgroupData n).coe_lieExp_smul X t
-    _ = NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
-      congr 2
-      calc
-        unitsLieAlgebraEquiv
-            ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) =
-            TauCeti.Lie.unitsLieAlgebraLieEquiv
-              ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) :=
-          (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
-        _ =
-            ((realCliffordSpinLieEquivQuadratic n X :
-              quadraticLieSubalgebra Q) : CliffordAlgebra Q) :=
-          (coe_realCliffordSpinLieEquivQuadratic_apply n X).symm
-        _ = (x : CliffordAlgebra Q) := by
-          simp only [X, LieEquiv.apply_symm_apply]
-
-private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
-    (x : quadraticLieSubalgebra (realCliffordForm n 0)) (v : Fin n → ℝ) (t : ℝ) :
-    let Q := realCliffordForm n 0
-    let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
-      LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
-    ι Q (NormedSpace.exp (t • A) *ᵥ v) =
-      NormedSpace.exp (t • (x : CliffordAlgebra Q)) * ι Q v *
-        NormedSpace.exp (t • (-(x : CliffordAlgebra Q))) := by
-  let Q := realCliffordForm n 0
-  let X := (realCliffordSpinLieEquivQuadratic n).symm x
-  let Y := lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X
-  let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
-    LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
-  let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (lieExp (t • X))
-  have hY : Y = realCliffordSpinToSpecialOrthogonalRangeLieMap n X := by
-    exact DFunLike.congr_fun
-      (realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap n).symm X
-  have hmap : realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X)) =
-      lieExp (t • Y) := by
-    calc
-      realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X)) =
-          lieExp (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) (t • X)) :=
-        map_lieExp (realCliffordSpinToSpecialOrthogonalSmoothRange n) (t • X)
-      _ = lieExp (t • Y) := by
-        congr 1
-        exact (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)).map_smul t X
-  have htarget := coe_smoothRange_lieExp_smul_eq_exp n x t hY hmap
-  have hsource := coe_symm_lieExp_smul_eq_exp n x t
-  have hmatrix : NormedSpace.exp (t • A) *ᵥ v = spinVectorAction Q s v := by
-    rw [← htarget]
-    rw [realCliffordSpinToSpecialOrthogonalSmoothRange_apply,
-      spinToSpecialOrthogonalUnitsRange_apply,
-      QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply]
-    -- Expose the underlying general-linear matrix so the canonical coordinate-action theorem
-    -- can rewrite it to the special-orthogonal linear action.
-    change (((QuadraticMap.specialOrthogonalToGeneralLinear Q
-      (spinToSpecialOrthogonal Q s) : Matrix.GeneralLinearGroup (Fin n) ℝ) :
-        Matrix (Fin n) (Fin n) ℝ) *ᵥ v) = _
-    rw [QuadraticMap.specialOrthogonalToGeneralLinear_mulVec,
-      coe_spinToSpecialOrthogonal_apply]
-  have hstar : star (x : CliffordAlgebra Q) = -(x : CliffordAlgebra Q) := by
-    have hreverse := reverse_eq_neg_of_mem_quadraticLieSubalgebra Q x.property
-    rw [reverse_eq_star_of_mem_even
-      ⟨(x : CliffordAlgebra Q), quadraticLieSubalgebra_le_even Q x.property⟩] at hreverse
-    exact hreverse
-  dsimp only
-  rw [hmatrix, ι_spinVectorAction_apply, hsource, NormedSpace.star_exp,
-    CliffordAlgebra.star_smul, hstar]
-
-private theorem hasDerivAt_ι_exp_mulVec (n : ℕ)
-    (A : Matrix (Fin n) (Fin n) ℝ) (v : Fin n → ℝ) :
-    HasDerivAt
-      (fun t : ℝ ↦ ι (realCliffordForm n 0) (NormedSpace.exp (t • A) *ᵥ v))
-      (ι (realCliffordForm n 0) (A *ᵥ v)) 0 := by
-  let mulVecCLM : Matrix (Fin n) (Fin n) ℝ →L[ℝ] (Fin n → ℝ) :=
-    ContinuousLinearMap.mk ((Matrix.mulVecBilin ℝ ℝ).flip v)
-      ((Matrix.mulVecBilin ℝ ℝ).flip v).continuous_of_finiteDimensional
-  let ιCLM : (Fin n → ℝ) →L[ℝ] CliffordAlgebra (realCliffordForm n 0) :=
-    ContinuousLinearMap.mk (ι (realCliffordForm n 0))
-      (ι (realCliffordForm n 0)).continuous_of_finiteDimensional
-  have hmatrix := mulVecCLM.hasFDerivAt.comp_hasDerivAt 0
-    (hasDerivAt_exp_smul_const A (0 : ℝ))
-  have hι := ιCLM.hasFDerivAt.comp_hasDerivAt 0 hmatrix
-  -- Expose the continuous-linear-map composition used by the derivative chain rule.
-  change HasDerivAt (ιCLM ∘ mulVecCLM ∘ fun t : ℝ ↦ NormedSpace.exp (t • A))
-    (ιCLM (mulVecCLM A)) 0
-  simpa only [zero_smul, NormedSpace.exp_zero, one_mul] using hι
-
-/-- The differential of the real Spin projection acts on an embedded vector by the Clifford
-commutator with its quadratic source coordinate. In particular, the convention has positive sign
-and no additional scalar factor. -/
-private theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_commutator (n : ℕ)
-    (x : quadraticLieSubalgebra (realCliffordForm n 0)) (v : Fin n → ℝ) :
-    let Q := realCliffordForm n 0
-    ι Q ((((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
-      LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) *ᵥ v)) =
-      (x : CliffordAlgebra Q) * ι Q v - ι Q v * (x : CliffordAlgebra Q) := by
-  let Q := realCliffordForm n 0
-  let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
-    LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
-  have hleft := hasDerivAt_ι_exp_mulVec n A v
-  have hright := TauCeti.hasDerivAt_exp_mul_const_mul_exp_neg
-    (x : CliffordAlgebra Q) (ι Q v)
-  have hright' : HasDerivAt
-      (fun t : ℝ ↦ ι Q (NormedSpace.exp (t • A) *ᵥ v))
-      ((x : CliffordAlgebra Q) * ι Q v - ι Q v * (x : CliffordAlgebra Q)) 0 :=
-    hright.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦
-      coordinate_exp_mulVec_eq_conjugation n x v t)
-  have hderiv := hleft.unique hright'
-  simpa only [Q, A] using hderiv
-
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The differential action is the Lie bracket with its quadratic Clifford coordinate. -/
@@ -247,9 +56,30 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_lie_ι (n : ℕ)
     ι Q ((((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
       LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) *ᵥ v)) =
       ⁅(x : CliffordAlgebra Q), ι Q v⁆ := by
-  dsimp only
-  rw [Ring.lie_def]
-  exact realCliffordSpinToSpecialOrthogonalCoordinateLieHom_commutator n x v
+  let Q := realCliffordForm n 0
+  let X := (realCliffordSpinLieEquivQuadratic n).symm x
+  let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
+    LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
+  refine ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve (Q := realCliffordFormZero n)
+    (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (x : CliffordAlgebra Q) A
+    (fun t : ℝ ↦ lieExp (t • X)) ?_ ?_ v
+  · intro t
+    rw [← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply
+        (d := realCliffordSpinEmbeddedLieSubgroupData n),
+      (realCliffordSpinEmbeddedLieSubgroupData n).coe_lieExp_smul X t,
+      ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+      unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpinLieEquivQuadratic]
+    simp only [X, LieEquiv.apply_symm_apply, AlgEquiv.coe_refl, id_eq]
+  · intro t
+    rw [← realCliffordSpinToSpecialOrthogonalSmoothRange_apply,
+      ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply
+        (d := realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n),
+      (realCliffordSpinEmbeddedLieSubgroupData n).coe_map_lieExp_smul
+        (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n)
+        (realCliffordSpinToSpecialOrthogonalSmoothRange n) X t,
+      ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+      unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpecialOrthogonalLieEquivSo,
+      ← realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply]
 
 /-- After the exterior-bivector identification, the differential of the real Spin projection is
 the standard bivector-to-skew-matrix Lie equivalence. Thus its convention has positive sign and

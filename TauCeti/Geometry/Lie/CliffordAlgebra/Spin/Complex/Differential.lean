@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Analysis.SpecialFunctions.Exponential
-import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.UnitsDifferential
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
-import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Projection
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Representation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
@@ -48,8 +46,8 @@ differential on Clifford vector operators.
 * `complexSpinToSpecialOrthogonalPolarComplexLieEquiv_eq_soEquivQuadratic_symm` and
   `complexSpinToSpecialOrthogonalComplexLieEquiv_eq_skewAdjointMatricesEquivQuadratic_symm` (in
   `TauCeti.CliffordAlgebra`): exact agreement with the algebraic quadratic realizations.
-* `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalRangeLieMap_bijective`: the abstract real
-  Lie map of the complex `Spin(Q) → SO(Q)` carrier projection is bijective.
+* `TauCeti.CliffordAlgebra.lieMap_complexSpinToSpecialOrthogonalSmoothRange_bijective`: the
+  abstract real Lie map of the complex `Spin(Q) → SO(Q)` carrier projection is bijective.
 * `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq` and
   `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq_mulVec`: the
   intertwining identities between the `ℂ`-linear differential of the Fock representation and the
@@ -75,115 +73,8 @@ open _root_.CliffordAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] NormedAlgebra.toNormedSpace
 attribute [local instance] Matrix.linftyOpTopologicalSpace
-attribute [local instance] CliffordAlgebra.starModule_of_trivialStar
-attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 variable {n : ℕ} {Q : QuadraticForm ℂ (Fin n → ℂ)} [Fact Q.Nondegenerate]
-
-local notation "SpinUnitsRange" => MonoidHom.range (spinGroup.toUnits (Q := Q))
-
-local notation "SpecialOrthogonalUnitsRange" =>
-  MonoidHom.range Q.specialOrthogonalToGeneralLinear
-
-local notation "SpinLieModel" =>
-  LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
-    (I := 𝓘(ℝ, CliffordAlgebra Q)) SpinUnitsRange)
-
-local notation "SpecialOrthogonalLieModel" =>
-  LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
-    (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange)
-
-private theorem coe_smoothRange_lieExp_smul_eq_exp
-    (x : RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q)) (t : ℝ) :
-    let X := (complexSpinLieEquivQuadratic (Q := Q)).symm x
-    let A := ((RestrictScalars.addEquiv ℝ ℂ
-      (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
-      (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q) x)) : Matrix (Fin n) (Fin n) ℂ)
-    (((complexSpinToSpecialOrthogonalSmoothRange (Q := Q) (lieExp (t • X))).val :
-        (Matrix (Fin n) (Fin n) ℂ)ˣ) : Matrix (Fin n) (Fin n) ℂ) =
-      NormedSpace.exp (t • A) := by
-  intro X A
-  let Y := lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q)) X
-  have hY : Y = complexSpinToSpecialOrthogonalRangeLieMap (Q := Q) X :=
-    DFunLike.congr_fun (complexSpinToSpecialOrthogonalRangeLieMap_eq_lieMap (Q := Q)).symm X
-  have hmap : complexSpinToSpecialOrthogonalSmoothRange (Q := Q) (lieExp (t • X)) =
-      lieExp (t • Y) := by
-    rw [map_lieExp, map_smul]
-  calc
-    _ = (((complexSpecialOrthogonalEmbeddedLieSubgroupData Q).subtypeVal
-        (lieExp (t • Y)) : (Matrix (Fin n) (Fin n) ℂ)ˣ) : Matrix (Fin n) (Fin n) ℂ) := by
-      simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using congrArg
-        (fun z : SpecialOrthogonalUnitsRange ↦
-          ((z.val : (Matrix (Fin n) (Fin n) ℂ)ˣ) : Matrix (Fin n) (Fin n) ℂ)) hmap
-    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
-        ((complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieMapSubtypeVal Y)) :=
-      (complexSpecialOrthogonalEmbeddedLieSubgroupData Q).coe_lieExp_smul Y t
-    _ = NormedSpace.exp (t • A) := by
-      congr 2
-      rw [← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-        ← coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices_apply,
-        hY, ← complexSpinToSpecialOrthogonalCoordinateLieHom_apply]
-
-private theorem coe_symm_lieExp_smul_eq_exp
-    (x : RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q)) (t : ℝ) :
-    let X := (complexSpinLieEquivQuadratic (Q := Q)).symm x
-    let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (lieExp (t • X))
-    let x₀ := RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x
-    (s : CliffordAlgebra Q) = NormedSpace.exp (t • (x₀ : CliffordAlgebra Q)) := by
-  intro X s x₀
-  let D := complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate)
-  calc
-    (s : CliffordAlgebra Q) =
-        (((lieExp (t • X) : SpinUnitsRange).val : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-      coe_spinGroupContinuousMulEquivUnitsRange_symm_apply Q (lieExp (t • X))
-    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv (D.lieMapSubtypeVal X)) := by
-      simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using D.coe_lieExp_smul X t
-    _ = NormedSpace.exp (t • (x₀ : CliffordAlgebra Q)) := by
-      congr 2
-      rw [← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-        unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadratic,
-        LieEquiv.apply_symm_apply]
-
-private theorem coordinate_exp_mulVec_eq_conjugation
-    (x : RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q)) (v : Fin n → ℂ) (t : ℝ) :
-    let A := ((RestrictScalars.addEquiv ℝ ℂ
-      (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
-      (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q) x)) : Matrix (Fin n) (Fin n) ℂ)
-    let x₀ := RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x
-    ι Q (NormedSpace.exp (t • A) *ᵥ v) =
-      NormedSpace.exp (t • (x₀ : CliffordAlgebra Q)) * ι Q v *
-        NormedSpace.exp (t • (-(x₀ : CliffordAlgebra Q))) := by
-  intro A x₀
-  let X := (complexSpinLieEquivQuadratic (Q := Q)).symm x
-  let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (lieExp (t • X))
-  have htarget := coe_smoothRange_lieExp_smul_eq_exp (Q := Q) x t
-  have hsource := coe_symm_lieExp_smul_eq_exp (Q := Q) x t
-  have hmatrix : NormedSpace.exp (t • A) *ᵥ v = spinVectorAction Q s v := by
-    rw [← htarget, complexSpinToSpecialOrthogonalSmoothRange_apply,
-      spinToSpecialOrthogonalUnitsRange_apply, Q.specialOrthogonalContinuousMulEquivRange_apply]
-    dsimp only
-    rw [Q.specialOrthogonalToGeneralLinear_mulVec, coe_spinToSpecialOrthogonal_apply]
-  have hstar : star (x₀ : CliffordAlgebra Q) = -(x₀ : CliffordAlgebra Q) := by
-    have hrev := reverse_eq_neg_of_mem_quadraticLieSubalgebra Q x₀.property
-    rwa [reverse_eq_star_of_mem_even
-      ⟨(x₀ : CliffordAlgebra Q), quadraticLieSubalgebra_le_even Q x₀.property⟩] at hrev
-  rw [hmatrix, ι_spinVectorAction_apply, hsource, NormedSpace.star_exp, StarModule.star_smul,
-    star_trivial, hstar]
-
-omit [Fact Q.Nondegenerate] in
-private theorem hasDerivAt_ι_exp_mulVec (A : Matrix (Fin n) (Fin n) ℂ) (v : Fin n → ℂ) :
-    HasDerivAt
-      (fun t : ℝ ↦ ι Q (NormedSpace.exp (t • A) *ᵥ v))
-      (ι Q (A *ᵥ v)) 0 := by
-  let fLin : Matrix (Fin n) (Fin n) ℂ →ₗ[ℝ] CliffordAlgebra Q :=
-    ((ι Q).restrictScalars ℝ).comp (((Matrix.mulVecBilin ℂ ℂ).flip v).restrictScalars ℝ)
-  let fCLM : Matrix (Fin n) (Fin n) ℂ →L[ℝ] CliffordAlgebra Q :=
-    ContinuousLinearMap.mk fLin fLin.continuous_of_finiteDimensional
-  have hfCLM (M : Matrix (Fin n) (Fin n) ℂ) : fCLM M = ι Q (M *ᵥ v) := by
-    simp only [fCLM, fLin, ContinuousLinearMap.coe_mk', LinearMap.comp_apply,
-      LinearMap.restrictScalars_apply, LinearMap.flip_apply, Matrix.mulVecBilin_apply]
-  have h := fCLM.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_exp_smul_const A (0 : ℝ))
-  simpa only [Function.comp_def, hfCLM, zero_smul, NormedSpace.exp_zero, one_mul] using h
 
 /-- The real matrix coordinate differential of the complex `Spin(Q) → SO(Q)` projection acts on an
 embedded vector `v` by the Clifford Lie bracket with its quadratic source coordinate. -/
@@ -195,16 +86,31 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_lie_ι
           Matrix (Fin n) (Fin n) ℂ) *ᵥ v) =
       ⁅((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x) : CliffordAlgebra Q),
         ι Q v⁆ := by
+  let D := complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate)
+  let X := (complexSpinLieEquivQuadratic (Q := Q)).symm x
   let A := ((RestrictScalars.addEquiv ℝ ℂ
     (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
     (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q) x)) : Matrix (Fin n) (Fin n) ℂ)
   let x₀ := RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x
-  have hleft := hasDerivAt_ι_exp_mulVec (Q := Q) A v
-  have hright := (TauCeti.hasDerivAt_exp_mul_const_mul_exp_neg
-    (x₀ : CliffordAlgebra Q) (ι Q v)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun t ↦ coordinate_exp_mulVec_eq_conjugation (Q := Q) x v t)
-  rw [Ring.lie_def]
-  exact hleft.unique hright
+  refine ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve (Q := Q)
+    (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (x₀ : CliffordAlgebra Q) A
+    (fun t : ℝ ↦ lieExp (t • X)) ?_ ?_ v
+  · intro t
+    rw [← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply (d := D),
+      D.coe_lieExp_smul X t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+      unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadratic]
+    simp only [X, LieEquiv.apply_symm_apply, x₀, AlgEquiv.coe_refl, id_eq]
+  · intro t
+    rw [← complexSpinToSpecialOrthogonalSmoothRange_apply,
+      ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply
+        (d := complexSpecialOrthogonalEmbeddedLieSubgroupData Q),
+      D.coe_map_lieExp_smul (complexSpecialOrthogonalEmbeddedLieSubgroupData Q)
+        (complexSpinToSpecialOrthogonalSmoothRange (Q := Q)) X t,
+      ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply]
+    rw [
+unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices
+    ]
+    rw [← complexSpinToSpecialOrthogonalCoordinateLieHom_apply]
 
 /-- The basis-free polar endomorphism differential of the complex `Spin(Q) → SO(Q)` projection acts
 on an embedded vector `v` by the Clifford Lie bracket with its quadratic source coordinate. -/
@@ -247,18 +153,18 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEqu
         (RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x) := by
   let hQ := (Fact.out : Q.Nondegenerate)
   let hJ := DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin
-  let e := skewAdjointMatricesEquivQuadratic Q hQ (Pi.basisFun ℂ (Fin n)) hJ
-  let x₀ := RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x
-  apply Subtype.ext
-  apply Matrix.mulVec_injective
-  funext v
-  apply ι_injective Q
-  rw [complexSpinToSpecialOrthogonalCoordinateLieHom_lie_ι]
-  have hrhs := skewAdjointMatricesEquivQuadratic_lie_ι Q hQ (Pi.basisFun ℂ (Fin n)) hJ
-    (e.symm x₀) v
-  rw [e.apply_symm_apply] at hrhs
-  rw [hrhs]
-  congr 1
+  let eB := TauCeti.skewAdjointLieEquivOfBasis (Pi.basisFun ℂ (Fin n)) Q.polarBilin hJ
+  apply eB.injective
+  dsimp only [LieEquiv.coe_toLieHom]
+  rw [← coe_complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q) x,
+    complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm]
+  apply (soEquivQuadratic Q hQ).injective
+  dsimp only [LieEquiv.coe_toLieHom]
+  rw [LieEquiv.apply_symm_apply]
+  refine quadraticLieSubalgebra_ext Q hQ fun v ↦ ?_
+  rw [soEquivQuadratic_lie_ι, TauCeti.coe_skewAdjointLieEquivOfBasis_apply,
+    ← skewAdjointMatricesEquivQuadratic_lie_ι Q hQ (Pi.basisFun ℂ (Fin n)) hJ,
+    LieEquiv.apply_symm_apply]
 
 /-- The complex `Spin(Q) → SO(Q)` differential in polar skew-adjoint endomorphism coordinates,
 packaged as a `ℂ`-linear Lie algebra equivalence. Its forward map is the manifold differential
@@ -282,10 +188,8 @@ def complexSpinToSpecialOrthogonalPolarComplexLieEquiv :
     rw [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
       complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
       AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, RingHom.id_apply, map_smul]
-  map_lie' {x y} :=
-    (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)).map_lie
-      ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x)
-      ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm y)
+  map_lie' {x y} := by
+    rw [RestrictScalars.addEquiv_symm_lie, LieHom.map_lie, RestrictScalars.addEquiv_lie]
 
 /-- Evaluating `complexSpinToSpecialOrthogonalPolarComplexLieEquiv` applies the real polar
 coordinate differential `complexSpinToSpecialOrthogonalPolarCoordinateLieHom`. -/
@@ -323,30 +227,10 @@ as a `ℂ`-linear Lie algebra equivalence. Its forward map is the manifold diffe
 `complexSpinToSpecialOrthogonalCoordinateLieHom`. -/
 def complexSpinToSpecialOrthogonalComplexLieEquiv :
     quadraticLieSubalgebra Q ≃ₗ⁅ℂ⁆
-      skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin) where
-  toFun x := RestrictScalars.addEquiv ℝ ℂ
-    (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
-    (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q)
-      ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))
-  invFun := skewAdjointMatricesEquivQuadratic Q (Fact.out : Q.Nondegenerate) (Pi.basisFun ℂ (Fin n))
-    (DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin)
-  left_inv x := by
-    dsimp only
-    rw [complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEquivQuadratic_symm,
-      AddEquiv.apply_symm_apply, LieEquiv.apply_symm_apply]
-  right_inv A := by
-    dsimp only
-    rw [complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEquivQuadratic_symm,
-      AddEquiv.apply_symm_apply, LieEquiv.symm_apply_apply]
-  map_add' x y := by simp
-  map_smul' c x := by
-    rw [complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEquivQuadratic_symm,
-      complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEquivQuadratic_symm,
-      AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, RingHom.id_apply, map_smul]
-  map_lie' {x y} :=
-    (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q)).map_lie
-      ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x)
-      ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm y)
+      skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin) :=
+  (complexSpinToSpecialOrthogonalPolarComplexLieEquiv (Q := Q)).trans
+    (TauCeti.skewAdjointLieEquivOfBasis (Pi.basisFun ℂ (Fin n)) Q.polarBilin
+      (DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin)).symm
 
 /-- Evaluating `complexSpinToSpecialOrthogonalComplexLieEquiv` applies the real matrix coordinate
 differential `complexSpinToSpecialOrthogonalCoordinateLieHom`. -/
@@ -358,7 +242,13 @@ theorem complexSpinToSpecialOrthogonalComplexLieEquiv_apply
         (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
         (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q)
           ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x)) := by
-  rfl
+  let eB := TauCeti.skewAdjointLieEquivOfBasis (Pi.basisFun ℂ (Fin n)) Q.polarBilin
+    (DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin)
+  apply eB.injective
+  dsimp only [LieEquiv.coe_toLieHom]
+  rw [complexSpinToSpecialOrthogonalComplexLieEquiv, LieEquiv.trans_apply,
+    LieEquiv.apply_symm_apply, complexSpinToSpecialOrthogonalPolarComplexLieEquiv_apply,
+    coe_complexSpinToSpecialOrthogonalPolarCoordinateLieHom]
 
 /-- `complexSpinToSpecialOrthogonalComplexLieEquiv` acts on embedded vectors through `*ᵥ` by the
 Clifford commutator. -/
@@ -385,8 +275,8 @@ theorem complexSpinToSpecialOrthogonalComplexLieEquiv_eq_skewAdjointMatricesEqui
 
 /-- The abstract real Lie map of the complex `Spin(Q) → SO(Q)` range-carrier projection is
 bijective. -/
-theorem complexSpinToSpecialOrthogonalRangeLieMap_bijective :
-    Function.Bijective (complexSpinToSpecialOrthogonalRangeLieMap (Q := Q)) := by
+theorem lieMap_complexSpinToSpecialOrthogonalSmoothRange_bijective :
+    Function.Bijective (lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))) := by
   have hbij :
       Function.Bijective (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) := by
     have heq : ⇑(complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) =
@@ -401,7 +291,7 @@ theorem complexSpinToSpecialOrthogonalRangeLieMap_bijective :
     exact (RestrictScalars.addEquiv ℝ ℂ _).symm.bijective.comp
       ((soEquivQuadratic Q (Fact.out : Q.Nondegenerate)).symm.bijective.comp
         (RestrictScalars.addEquiv ℝ ℂ _).bijective)
-  have hcomp : ⇑(complexSpinToSpecialOrthogonalRangeLieMap (Q := Q)) =
+  have hcomp : ⇑(lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))) =
       ⇑(complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).symm ∘
         ⇑(complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) ∘
           ⇑(complexSpinLieEquivQuadratic (Q := Q)) := by
@@ -438,7 +328,7 @@ theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
   let φ : CliffordAlgebra Q →ₐ[ℂ] Matrix κ κ ℂ :=
     (LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)
   have hφ (z : CliffordAlgebra Q) : LinearMap.toMatrix b b (spinAction Q P z) = φ z := by
-    simp [φ, LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+    simp [φ, LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
   have hlie : ⁅φ x, φ (ι Q v)⁆ = φ ⁅(x : CliffordAlgebra Q), ι Q v⁆ :=
     (φ.toLieHom.map_lie (x : CliffordAlgebra Q) (ι Q v)).symm
   rw [complexSpinSmoothMatrixComplexLieHom_apply, hφ, hφ, hφ, hlie,

@@ -39,9 +39,8 @@ established in `TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Differential`.
 * `TauCeti.CliffordAlgebra.complexSpecialOrthogonalLieEquivSkewAdjointMatrices` and
   `TauCeti.CliffordAlgebra.complexSpecialOrthogonalLieEquivSkewAdjoint`: its real Lie algebra in
   polar skew-adjoint matrix and endomorphism coordinates when `Q` is nondegenerate.
-* `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalSmoothRange` and
-  `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalRangeLieMap`: the smooth complex
-  `Spin(Q) → SO(Q)` range-carrier projection and its abstract real Lie map.
+* `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalSmoothRange`: the smooth complex
+  `Spin(Q) → SO(Q)` range-carrier projection.
 * `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalCoordinateLieHom` and
   `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalPolarCoordinateLieHom`: the differential in
   quadratic-Clifford and polar skew-adjoint coordinates.
@@ -237,8 +236,9 @@ Lie groups by automatic smoothness. -/
 def complexSpinToSpecialOrthogonalSmoothRange [Fact Q.Nondegenerate] :
     ContMDiffMonoidMorphism 𝓘(ℝ, SpinLieModel) 𝓘(ℝ, SpecialOrthogonalLieModel) ∞
       SpinUnitsRange SpecialOrthogonalUnitsRange :=
-  (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
-    spinToSpecialOrthogonalUnitsRange Q).toContMDiffMonoidMorphism _ _
+  ContinuousMonoidHom.toContMDiffMonoidMorphism
+    𝓘(ℝ, SpinLieModel) 𝓘(ℝ, SpecialOrthogonalLieModel)
+    (spinToSpecialOrthogonalUnitsRange Q)
 
 /-- Evaluating the smooth complex Spin-to-SO range projection agrees with the continuous
 range-carrier projection. -/
@@ -246,13 +246,9 @@ range-carrier projection. -/
 theorem complexSpinToSpecialOrthogonalSmoothRange_apply [Fact Q.Nondegenerate]
     (x : SpinUnitsRange) :
     complexSpinToSpecialOrthogonalSmoothRange (Q := Q) x =
-      spinToSpecialOrthogonalUnitsRange Q x := by
-  rw [complexSpinToSpecialOrthogonalSmoothRange]
-  exact congrFun
-    (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
-      (I := 𝓘(ℝ, SpinLieModel)) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel))
-      (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
-        spinToSpecialOrthogonalUnitsRange Q)) x
+      spinToSpecialOrthogonalUnitsRange Q x :=
+  congrFun (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
+    (I := 𝓘(ℝ, SpinLieModel)) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel)) _) x
 
 /-- On the canonical unit representative of `g : spinGroup Q`, the smooth complex range projection
 computes `spinToSpecialOrthogonal Q g` in `GL(n, ℂ)`. -/
@@ -263,34 +259,6 @@ theorem complexSpinToSpecialOrthogonalSmoothRange_toUnits [Fact Q.Nondegenerate]
   rw [complexSpinToSpecialOrthogonalSmoothRange_apply,
     spinToSpecialOrthogonalUnitsRange_apply_toUnits]
 
-/-- The abstract real Lie map of the smooth complex `Spin(Q) → SO(Q)` range-carrier projection. -/
-def complexSpinToSpecialOrthogonalRangeLieMap [Fact Q.Nondegenerate] :
-    LeftInvariantDerivation 𝓘(ℝ, SpinLieModel) SpinUnitsRange →ₗ⁅ℝ⁆
-      LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel) SpecialOrthogonalUnitsRange :=
-  lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))
-
-/-- `complexSpinToSpecialOrthogonalRangeLieMap` is `lieMap` of the smooth range projection. -/
-theorem complexSpinToSpecialOrthogonalRangeLieMap_eq_lieMap [Fact Q.Nondegenerate] :
-    complexSpinToSpecialOrthogonalRangeLieMap (Q := Q) =
-      lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q)) := by
-  simp only [complexSpinToSpecialOrthogonalRangeLieMap]
-
-/-- `complexSpinToSpecialOrthogonalRangeLieMap` agrees with `ContinuousMonoidHom.lieMap` of the
-continuous range-carrier projection. -/
-theorem complexSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap
-    [Fact Q.Nondegenerate] :
-    complexSpinToSpecialOrthogonalRangeLieMap (Q := Q) =
-      ContinuousMonoidHom.lieMap
-        (I := 𝓘(ℝ, SpinLieModel)) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel))
-        (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
-          spinToSpecialOrthogonalUnitsRange Q) := by
-  rw [complexSpinToSpecialOrthogonalRangeLieMap_eq_lieMap, ContinuousMonoidHom.lieMap_def]
-  apply congrArg _root_.lieMap
-  apply DFunLike.coe_injective
-  rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-  funext x
-  exact complexSpinToSpecialOrthogonalSmoothRange_apply (Q := Q) x
-
 /-- The real differential of the complex `Spin(Q) → SO(Q)` projection in quadratic-Clifford source
 coordinates and polar skew-adjoint matrix target coordinates. -/
 def complexSpinToSpecialOrthogonalCoordinateLieHom [Fact Q.Nondegenerate] :
@@ -298,7 +266,7 @@ def complexSpinToSpecialOrthogonalCoordinateLieHom [Fact Q.Nondegenerate] :
       RestrictScalars ℝ ℂ
         (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin)) :=
   (complexSpecialOrthogonalLieEquivSkewAdjointMatrices (Q := Q)).toLieHom.comp
-    ((complexSpinToSpecialOrthogonalRangeLieMap (Q := Q)).comp
+    ((lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))).comp
       (complexSpinLieEquivQuadratic (Q := Q)).symm.toLieHom)
 
 /-- Evaluating `complexSpinToSpecialOrthogonalCoordinateLieHom` conjugates the abstract Lie map by
@@ -308,7 +276,7 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_apply [Fact Q.Nondegenera
     (x : RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q)) :
     complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q) x =
       complexSpecialOrthogonalLieEquivSkewAdjointMatrices (Q := Q)
-        (complexSpinToSpecialOrthogonalRangeLieMap (Q := Q)
+        (lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))
           ((complexSpinLieEquivQuadratic (Q := Q)).symm x)) := by
   simp only [complexSpinToSpecialOrthogonalCoordinateLieHom, LieHom.comp_apply,
     LieEquiv.coe_toLieHom]
@@ -319,7 +287,7 @@ def complexSpinToSpecialOrthogonalPolarCoordinateLieHom [Fact Q.Nondegenerate] :
     RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q) →ₗ⁅ℝ⁆
       RestrictScalars ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin) :=
   (complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).toLieHom.comp
-    ((complexSpinToSpecialOrthogonalRangeLieMap (Q := Q)).comp
+    ((lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))).comp
       (complexSpinLieEquivQuadratic (Q := Q)).symm.toLieHom)
 
 /-- Evaluating `complexSpinToSpecialOrthogonalPolarCoordinateLieHom` conjugates the abstract Lie map
@@ -329,7 +297,7 @@ theorem complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply [Fact Q.Nondeg
     (x : RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q)) :
     complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q) x =
       complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)
-        (complexSpinToSpecialOrthogonalRangeLieMap (Q := Q)
+        (lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))
           ((complexSpinLieEquivQuadratic (Q := Q)).symm x)) := by
   simp only [complexSpinToSpecialOrthogonalPolarCoordinateLieHom, LieHom.comp_apply,
     LieEquiv.coe_toLieHom]
@@ -349,5 +317,21 @@ theorem coe_complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply_apply
   simp only [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply,
     complexSpinToSpecialOrthogonalCoordinateLieHom_apply,
     coe_complexSpecialOrthogonalLieEquivSkewAdjoint_apply_apply]
+
+/-- The polar endomorphism differential is the matrix coordinate differential transported by the
+standard-basis skew-adjoint equivalence. -/
+theorem coe_complexSpinToSpecialOrthogonalPolarCoordinateLieHom [Fact Q.Nondegenerate]
+    (x : RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q)) :
+    RestrictScalars.addEquiv ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin)
+        (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q) x) =
+      TauCeti.skewAdjointLieEquivOfBasis (Pi.basisFun ℂ (Fin n)) Q.polarBilin
+        (DFunLike.congr_fun LinearMap.BilinForm.toMatrix_basisFun Q.polarBilin)
+        (RestrictScalars.addEquiv ℝ ℂ
+          (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
+          (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q) x)) := by
+  simp only [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply,
+    complexSpinToSpecialOrthogonalCoordinateLieHom_apply,
+    complexSpecialOrthogonalLieEquivSkewAdjoint, LieEquiv.trans_apply,
+    LieEquiv.restrictScalars_apply, AddEquiv.apply_symm_apply]
 
 end TauCeti.CliffordAlgebra

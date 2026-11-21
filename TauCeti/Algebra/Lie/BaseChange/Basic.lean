@@ -17,7 +17,8 @@ preserves brackets (`RestrictScalars.addEquiv_lie`). Any `A`-linear Lie equivale
 
 ## Main definitions and results
 
-* `RestrictScalars.addEquiv_lie`: `RestrictScalars.addEquiv` preserves Lie brackets.
+* `RestrictScalars.addEquiv_lie` and `RestrictScalars.addEquiv_symm_lie`: `RestrictScalars.addEquiv`
+  and its inverse preserve Lie brackets.
 * `LieEquiv.restrictScalars`: scalar restriction of a Lie algebra equivalence across
   `RestrictScalars`, together with `LieEquiv.restrictScalars_apply` and
   `LieEquiv.restrictScalars_symm_apply`.
@@ -36,6 +37,12 @@ theorem RestrictScalars.addEquiv_lie {R A L : Type*} [LieRing L]
     (x y : RestrictScalars R A L) :
     RestrictScalars.addEquiv R A L ⁅x, y⁆ =
       ⁅RestrictScalars.addEquiv R A L x, RestrictScalars.addEquiv R A L y⁆ := rfl
+
+/-- The inverse additive identification for scalar restriction preserves the Lie bracket. -/
+@[simp]
+theorem RestrictScalars.addEquiv_symm_lie {R A L : Type*} [LieRing L] (x y : L) :
+    (RestrictScalars.addEquiv R A L).symm ⁅x, y⁆ =
+      ⁅(RestrictScalars.addEquiv R A L).symm x, (RestrictScalars.addEquiv R A L).symm y⁆ := rfl
 
 namespace LieEquiv
 

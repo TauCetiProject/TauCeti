@@ -52,8 +52,7 @@ local notation "SpinUnitsRange(" n ")" =>
   MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))
 
 local notation "SpecialOrthogonalUnitsRange(" n ")" =>
-  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-    (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))
+  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n))
 
 local notation "SpinLieModel(" n ")" =>
   LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
@@ -77,8 +76,7 @@ theorem exists_realCliffordSpinSmoothCoveringTrivialization (n : ℕ)
         ContMDiffOn 𝓘(ℝ, SpecialOrthogonalLieModel(n)) 𝓘(ℝ, SpinLieModel(n)) ∞
           (fun z ↦ t.toOpenPartialHomeomorph.symm (z, a)) t.baseSet := by
   have hmap : ⇑(realCliffordSpinToSpecialOrthogonalSmoothRange n) =
-      ⇑(spinToSpecialOrthogonalUnitsRange
-        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
+      ⇑(spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
     funext x
     exact realCliffordSpinToSpecialOrthogonalSmoothRange_apply n x
   have hcover : IsCoveringMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) := by

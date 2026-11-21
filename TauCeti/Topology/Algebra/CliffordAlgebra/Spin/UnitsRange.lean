@@ -61,9 +61,19 @@ embedding for the canonical Clifford module topology, without compactness or sep
 hypotheses. -/
 theorem isEmbedding_spinGroup_toUnits (Q : QuadraticForm R V) :
     Topology.IsEmbedding (spinGroup.toUnits (Q := Q)) := by
+  have hval : (Units.val ∘ ⇑(spinGroup.toUnits (Q := Q))) = Subtype.val :=
+    funext fun x ↦ spinGroup.val_toUnits_apply x
+  have hinv : ∀ x : spinGroup Q,
+      (((spinGroup.toUnits x)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+        star (x : CliffordAlgebra Q) := fun x ↦ by
+    rw [← map_inv, spinGroup.val_toUnits_apply, ← spinGroup.star_eq_inv]
+    rfl
   have hcont : Continuous (spinGroup.toUnits (Q := Q)) :=
-    Units.continuous_iff.mpr ⟨continuous_subtypeVal, continuous_subtypeVal.star⟩
-  exact Topology.IsEmbedding.of_comp hcont Units.continuous_val Topology.IsEmbedding.subtypeVal
+    Units.continuous_iff.mpr ⟨by rw [hval]; exact continuous_subtypeVal,
+      continuous_subtypeVal.star.congr fun x ↦ (hinv x).symm⟩
+  refine Topology.IsEmbedding.of_comp hcont Units.continuous_val ?_
+  rw [hval]
+  exact Topology.IsEmbedding.subtypeVal
 
 private def spinGroupToUnitsContinuousMonoidHom (Q : QuadraticForm R V) :
     spinGroup Q →ₜ* (CliffordAlgebra Q)ˣ :=

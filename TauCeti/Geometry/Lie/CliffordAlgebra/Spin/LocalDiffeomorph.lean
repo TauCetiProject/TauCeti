@@ -45,8 +45,7 @@ local notation "SpinUnitsRange(" n ")" =>
   MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))
 
 local notation "SpecialOrthogonalUnitsRange(" n ")" =>
-  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-    (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))
+  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n))
 
 local notation "SpinLieModel(" n ")" =>
   LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
@@ -74,12 +73,12 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_bijective (n : ℕ) 
 
 /-- The differential of the smooth Spin projection on the native units-range carriers is
 bijective. -/
-theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_bijective (n : ℕ) :
-    Function.Bijective (realCliffordSpinToSpecialOrthogonalRangeLieMap n) := by
+theorem lieMap_realCliffordSpinToSpecialOrthogonalSmoothRange_bijective (n : ℕ) :
+    Function.Bijective (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)) := by
   have h := realCliffordSpinToSpecialOrthogonalCoordinateLieHom_bijective n
   have heq : (realCliffordSpinToSpecialOrthogonalCoordinateLieHom n : _ → _) =
       realCliffordSpecialOrthogonalLieEquivSo n ∘
-        realCliffordSpinToSpecialOrthogonalRangeLieMap n ∘
+        lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) ∘
           (realCliffordSpinLieEquivQuadratic n).symm := by
     funext x
     exact realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x
@@ -94,21 +93,21 @@ def realCliffordSpinToSpecialOrthogonalRangeLieEquiv (n : ℕ) :
     LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n)) ≃ₗ⁅ℝ⁆
       LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
         (SpecialOrthogonalUnitsRange(n)) :=
-  LieEquiv.ofBijective (realCliffordSpinToSpecialOrthogonalRangeLieMap n)
-    (realCliffordSpinToSpecialOrthogonalRangeLieMap_bijective n)
+  LieEquiv.ofBijective (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n))
+    (lieMap_realCliffordSpinToSpecialOrthogonalSmoothRange_bijective n)
 
-/-- The Lie equivalence acts by the supplied Lie differential. -/
+/-- The Lie equivalence acts by `lieMap` of the smooth projection. -/
 @[simp]
 theorem realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply (n : ℕ)
     (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n))) :
     realCliffordSpinToSpecialOrthogonalRangeLieEquiv n X =
-      realCliffordSpinToSpecialOrthogonalRangeLieMap n X := (rfl)
+      lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X := (rfl)
 
 /-- The Lie equivalence is the actual differential of the smooth projection. -/
 @[simp]
 theorem realCliffordSpinToSpecialOrthogonalRangeLieEquiv_toLieHom (n : ℕ) :
     (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom =
-      realCliffordSpinToSpecialOrthogonalRangeLieMap n := (rfl)
+      lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) := (rfl)
 
 /-- The smooth compact real Spin projection is a local diffeomorphism on the native
 units-range Lie-group carriers. This includes the native trivial group in dimension zero. -/
@@ -116,7 +115,6 @@ theorem isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange (n : �
     IsLocalDiffeomorph 𝓘(ℝ, SpinLieModel(n)) 𝓘(ℝ, SpecialOrthogonalLieModel(n)) ∞
       (realCliffordSpinToSpecialOrthogonalSmoothRange n) := by
   apply (realCliffordSpinToSpecialOrthogonalSmoothRange n).isLocalDiffeomorph_of_lieMap_bijective
-  simpa only [realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap] using
-    realCliffordSpinToSpecialOrthogonalRangeLieMap_bijective n
+  exact lieMap_realCliffordSpinToSpecialOrthogonalSmoothRange_bijective n
 
 end TauCeti.CliffordAlgebra

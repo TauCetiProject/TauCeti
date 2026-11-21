@@ -59,8 +59,7 @@ noncomputable section
 /-- The continuous homomorphism between the closed real Spin and special-orthogonal carriers is
 surjective. -/
 theorem realCliffordSpinToSpecialOrthogonalRange_surjective (n : ℕ) :
-    Function.Surjective (spinToSpecialOrthogonalUnitsRange
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
+    Function.Surjective (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
   rintro ⟨g, y, rfl⟩
   obtain ⟨x, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
     (realCliffordForm n 0) (posDef_realCliffordForm_zero n) y
@@ -71,8 +70,7 @@ theorem realCliffordSpinToSpecialOrthogonalRange_surjective (n : ℕ) :
 /-- The projection between the closed real Spin and special-orthogonal carriers is a covering
 map. -/
 theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
-    IsCoveringMap (spinToSpecialOrthogonalUnitsRange
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
+    IsCoveringMap (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
   obtain rfl | hn := n.eq_zero_or_pos
   · -- In dimension zero both carriers are points.
     -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
@@ -80,22 +78,19 @@ theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
     have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
       (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
     have : Subsingleton (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin 0 → ℝ) from realCliffordForm 0 0))) :=
+        (realCliffordFormZero 0))) :=
       (realCliffordSpinToSpecialOrthogonalRange_surjective 0).subsingleton
     exact .of_discreteTopology _
   have : NeZero n := ⟨hn.ne'⟩
-  have h : ⇑(spinToSpecialOrthogonalUnitsRange
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) =
-      (show QuadraticForm ℝ (Fin n → ℝ) from
-          realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange ∘
+  have h : ⇑(spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) =
+      (realCliffordFormZero n).specialOrthogonalContinuousMulEquivRange ∘
         realCliffordSpinProjectionZero n ∘
         (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm := by
     funext x
     simp [realCliffordSpinProjectionZero_apply]
   rw [h]
   exact ((isCoveringMap_realCliffordSpinProjectionZero n).homeomorph_comp
-    (show QuadraticForm ℝ (Fin n → ℝ) from
-        realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange.toHomeomorph).comp_homeomorph
+    (realCliffordFormZero n).specialOrthogonalContinuousMulEquivRange.toHomeomorph).comp_homeomorph
       (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm.toHomeomorph
 
 end

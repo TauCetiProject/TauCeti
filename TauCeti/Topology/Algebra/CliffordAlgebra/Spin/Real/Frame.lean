@@ -62,13 +62,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : Quadr
 identification of the Spin group of `Q` with `Spin(n)`, followed by the projection between the
 closed Spin and special-orthogonal unit-group carriers. -/
 def realCliffordSpinFrameProjection :
-    -- `realCliffordForm n 0` lives on `Fin (n + 0) → ℝ`, which is `Fin n → ℝ` by definition. The
-    -- `show` states it on `Fin n → ℝ`, so that the codomain is a subgroup of `GL(n, ℝ)` indexed by
-    -- `Fin n`.
-    spinGroup Q →ₜ* MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :=
-  (spinToSpecialOrthogonalUnitsRange
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)).comp
+    spinGroup Q →ₜ*
+      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n)) :=
+  (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)).comp
     ((b.isometryEquivRealCliffordFormZero hQ).spinGroupContinuousMulEquiv.trans
       (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)) :
         spinGroup Q →ₜ* MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)))
@@ -77,8 +73,7 @@ def realCliffordSpinFrameProjection :
 element of `Spin(n)` that corresponds to `x` in the frame `b`. -/
 theorem realCliffordSpinFrameProjection_apply (x : spinGroup Q) :
     b.realCliffordSpinFrameProjection hQ x =
-      spinToSpecialOrthogonalUnitsRange
-        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+      spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)
         (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)
           ((b.isometryEquivRealCliffordFormZero hQ).spinGroupEquiv x)) := by
   simp [realCliffordSpinFrameProjection]
@@ -124,12 +119,10 @@ theorem realCliffordSpinFrameProjection_eq_conj (s : realCliffordSpinGroupZero n
       (b.isometryEquivRealCliffordFormZero hQ v) = b'.isometryEquivRealCliffordFormZero hQ v)
     (x : spinGroup Q) :
     b'.realCliffordSpinFrameProjection hQ x =
-      spinToSpecialOrthogonalUnitsRange
-          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+      spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)
           (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0) s) *
         b.realCliffordSpinFrameProjection hQ x *
-          (spinToSpecialOrthogonalUnitsRange
-            (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+          (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)
             (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0) s))⁻¹ := by
   simp only [realCliffordSpinFrameProjection_apply,
     b.spinGroupEquiv_isometryEquivRealCliffordFormZero_eq_conj b' hQ s hs, map_mul, map_inv]
@@ -138,8 +131,7 @@ theorem realCliffordSpinFrameProjection_eq_conj (s : realCliffordSpinGroupZero n
 `b` and `b'` differ by an inner automorphism of the special-orthogonal carrier. -/
 theorem exists_realCliffordSpinFrameProjection_eq_conj
     (h : b.toBasis.orientation = b'.toBasis.orientation) :
-    ∃ g : MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)),
+    ∃ g : MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n)),
       ∀ x : spinGroup Q,
         b'.realCliffordSpinFrameProjection hQ x =
           g * b.realCliffordSpinFrameProjection hQ x * g⁻¹ := by

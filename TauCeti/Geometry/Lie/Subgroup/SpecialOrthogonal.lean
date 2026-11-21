@@ -90,12 +90,11 @@ end General
 
 private theorem skewAdjointMatricesLieSubalgebra_toMatrix'_polarBilin_realCliffordForm (n : ℕ) :
     skewAdjointMatricesLieSubalgebra
-        (LinearMap.BilinForm.toMatrix'
-          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0).polarBilin) =
+        (LinearMap.BilinForm.toMatrix' (realCliffordFormZero n).polarBilin) =
       LieAlgebra.Orthogonal.so (Fin n) ℝ := by
-  have hgram : LinearMap.BilinForm.toMatrix'
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0).polarBilin =
+  have hgram : LinearMap.BilinForm.toMatrix' (realCliffordFormZero n).polarBilin =
         unitOfInvertible (2 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ) := by
+    dsimp only [realCliffordFormZero]
     rw [realCliffordForm_zero_eq_weightedSumSquares_one,
       TauCeti.QuadraticForm.polarBilin_weightedSumSquares_one, map_nsmul,
       ← Nat.cast_smul_eq_nsmul ℝ, Units.smul_def, val_unitOfInvertible, Nat.cast_ofNat]
@@ -114,12 +113,11 @@ theorem forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordFor
     (∀ t : ℝ, lieExp ((unitsLieAlgebraLieEquiv
         (R := Matrix (Fin n) (Fin n) ℝ)).symm (t • A)) ∈
       MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (realCliffordForm n 0))) ↔
+        (realCliffordFormZero n))) ↔
       A ∈ LieAlgebra.Orthogonal.so (Fin n) ℝ := by
   rw [← skewAdjointMatricesLieSubalgebra_toMatrix'_polarBilin_realCliffordForm n]
   exact forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_iff
-    (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
-    (nondegenerate_realCliffordForm n 0) A
+    (realCliffordFormZero n) (nondegenerate_realCliffordForm n 0) A
 
 /-- A matrix belongs to the real orthogonal Lie algebra exactly when its inverse image under the
 canonical units Lie equivalence belongs to the Lie subalgebra of the positive-definite
@@ -128,17 +126,14 @@ canonical units Lie equivalence belongs to the Lie subalgebra of the positive-de
 @[simp↓]
 theorem unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_so
     (n : ℕ) (A : Matrix (Fin n) (Fin n) ℝ) :
-    -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` aligns the
-    -- carrier with the canonical matrix and operator-topology instances used in this statement.
     (unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℝ)).symm A ∈
         lieSubalgebraOfSubgroup
           (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-            (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :
+            (realCliffordFormZero n)) :
               Subgroup (Matrix (Fin n) (Fin n) ℝ)ˣ) ↔
       A ∈ LieAlgebra.Orthogonal.so (Fin n) ℝ := by
   rw [← skewAdjointMatricesLieSubalgebra_toMatrix'_polarBilin_realCliffordForm n]
   exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_range_specialOrthogonal_iff
-    (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
-    (nondegenerate_realCliffordForm n 0) A
+    (realCliffordFormZero n) (nondegenerate_realCliffordForm n 0) A
 
 end TauCeti.Lie

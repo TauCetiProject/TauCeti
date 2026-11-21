@@ -307,18 +307,13 @@ theorem realCliffordSpinUnitsRangeFirstInclusion_apply_equiv (n : ℕ)
 /-- **First-coordinate special-orthogonal stabilization on the closed `GL(n, ℝ)` range
 carriers.** -/
 def realCliffordSpecialOrthogonalRangeFirstInclusion (n : ℕ) :
-    -- `realCliffordForm n 0` lives on `Fin (n + 0) → ℝ`, which is `Fin n → ℝ` by definition;
-    -- stating the carrier over `Fin n → ℝ` matches `spinToSpecialOrthogonalUnitsRange`.
-    MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) →ₜ*
-      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin (n + 1) → ℝ) from realCliffordForm (n + 1) 0)) :=
-  ((show QuadraticForm ℝ (Fin (n + 1) → ℝ) from
-        realCliffordForm (n + 1) 0).specialOrthogonalContinuousMulEquivRange :
+    MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n)) →ₜ*
+      MonoidHom.range
+        (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero (n + 1))) :=
+  ((realCliffordFormZero (n + 1)).specialOrthogonalContinuousMulEquivRange :
       QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) →ₜ* _).comp
     ((realCliffordSpecialOrthogonalFirstInclusionContinuousMonoidHom n).comp
-      ((show QuadraticForm ℝ (Fin n → ℝ) from
-          realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange.symm :
+      ((realCliffordFormZero n).specialOrthogonalContinuousMulEquivRange.symm :
         _ →ₜ* QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)))
 
 /-- Evaluating `realCliffordSpecialOrthogonalRangeFirstInclusion` transports
@@ -326,14 +321,12 @@ def realCliffordSpecialOrthogonalRangeFirstInclusion (n : ℕ) :
 `QuadraticMap.specialOrthogonalContinuousMulEquivRange`. -/
 @[simp]
 theorem realCliffordSpecialOrthogonalRangeFirstInclusion_apply (n : ℕ)
-    (u : MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0))) :
+    (u : MonoidHom.range
+      (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n))) :
     realCliffordSpecialOrthogonalRangeFirstInclusion n u =
-      (show QuadraticForm ℝ (Fin (n + 1) → ℝ) from
-          realCliffordForm (n + 1) 0).specialOrthogonalContinuousMulEquivRange
+      (realCliffordFormZero (n + 1)).specialOrthogonalContinuousMulEquivRange
         (realCliffordSpecialOrthogonalFirstInclusion n
-          ((show QuadraticForm ℝ (Fin n → ℝ) from
-            realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange.symm u)) :=
+          ((realCliffordFormZero n).specialOrthogonalContinuousMulEquivRange.symm u)) :=
   (rfl)
 
 -- Not `@[simp]`: `QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply` simplifies the
@@ -344,22 +337,18 @@ representative applies `realCliffordSpecialOrthogonalFirstInclusion`. -/
 theorem realCliffordSpecialOrthogonalRangeFirstInclusion_apply_equiv (n : ℕ)
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
     realCliffordSpecialOrthogonalRangeFirstInclusion n
-        ((show QuadraticForm ℝ (Fin n → ℝ) from
-          realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange g) =
-      (show QuadraticForm ℝ (Fin (n + 1) → ℝ) from
-          realCliffordForm (n + 1) 0).specialOrthogonalContinuousMulEquivRange
+        ((realCliffordFormZero n).specialOrthogonalContinuousMulEquivRange g) =
+      (realCliffordFormZero (n + 1)).specialOrthogonalContinuousMulEquivRange
         (realCliffordSpecialOrthogonalFirstInclusion n g) := by
   simp
 
 /-- **First-coordinate stabilization commutes with `spinToSpecialOrthogonalUnitsRange`.** -/
 @[simp]
 theorem realCliffordSpinToSpecialOrthogonalRange_comp_firstInclusion (n : ℕ) :
-    (spinToSpecialOrthogonalUnitsRange
-        (show QuadraticForm ℝ (Fin (n + 1) → ℝ) from realCliffordForm (n + 1) 0)).comp
+    (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero (n + 1))).comp
         (realCliffordSpinUnitsRangeFirstInclusion n) =
       (realCliffordSpecialOrthogonalRangeFirstInclusion n).comp
-        (spinToSpecialOrthogonalUnitsRange
-          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :=
+        (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) :=
   ContinuousMonoidHom.ext fun _ ↦ by simp
 
 /-- **Compact Spin block sum on the closed Clifford-unit range carriers.** -/
@@ -403,23 +392,16 @@ theorem realCliffordSpinUnitsRangeBlockSum_apply_equiv (p q : ℕ)
 
 /-- **Compact special-orthogonal block sum on the closed `GL` range carriers.** -/
 def realCliffordSpecialOrthogonalRangeBlockSum (p q : ℕ) :
-    -- `realCliffordForm m 0` lives on `Fin (m + 0) → ℝ`, which is `Fin m → ℝ` by definition;
-    -- stating the carriers over `Fin m → ℝ` matches `spinToSpecialOrthogonalUnitsRange`.
-    MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin p → ℝ) from realCliffordForm p 0)) ×
-      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin q → ℝ) from realCliffordForm q 0)) →ₜ*
-      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin (p + q) → ℝ) from realCliffordForm (p + q) 0)) :=
-  ((show QuadraticForm ℝ (Fin (p + q) → ℝ) from
-        realCliffordForm (p + q) 0).specialOrthogonalContinuousMulEquivRange :
+    MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero p)) ×
+      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero q)) →ₜ*
+      MonoidHom.range
+        (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero (p + q))) :=
+  ((realCliffordFormZero (p + q)).specialOrthogonalContinuousMulEquivRange :
       QuadraticMap.specialOrthogonalGroup (realCliffordForm (p + q) 0) →ₜ* _).comp
     ((realCliffordSpecialOrthogonalBlockSumContinuousMonoidHom p q).comp
-      (((show QuadraticForm ℝ (Fin p → ℝ) from
-            realCliffordForm p 0).specialOrthogonalContinuousMulEquivRange.symm :
+      (((realCliffordFormZero p).specialOrthogonalContinuousMulEquivRange.symm :
            _ →ₜ* QuadraticMap.specialOrthogonalGroup (realCliffordForm p 0)).prodMap
-        ((show QuadraticForm ℝ (Fin q → ℝ) from
-            realCliffordForm q 0).specialOrthogonalContinuousMulEquivRange.symm :
+        ((realCliffordFormZero q).specialOrthogonalContinuousMulEquivRange.symm :
            _ →ₜ* QuadraticMap.specialOrthogonalGroup (realCliffordForm q 0))))
 
 /-- Evaluating `realCliffordSpecialOrthogonalRangeBlockSum` transports
@@ -427,18 +409,13 @@ def realCliffordSpecialOrthogonalRangeBlockSum (p q : ℕ) :
 `QuadraticMap.specialOrthogonalContinuousMulEquivRange`. -/
 @[simp]
 theorem realCliffordSpecialOrthogonalRangeBlockSum_apply (p q : ℕ)
-    (u : MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin p → ℝ) from realCliffordForm p 0)) ×
-      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin q → ℝ) from realCliffordForm q 0))) :
+    (u : MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero p)) ×
+      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero q))) :
     realCliffordSpecialOrthogonalRangeBlockSum p q u =
-      (show QuadraticForm ℝ (Fin (p + q) → ℝ) from
-          realCliffordForm (p + q) 0).specialOrthogonalContinuousMulEquivRange
+      (realCliffordFormZero (p + q)).specialOrthogonalContinuousMulEquivRange
         (realCliffordSpecialOrthogonalBlockSum p q
-          ((show QuadraticForm ℝ (Fin p → ℝ) from
-              realCliffordForm p 0).specialOrthogonalContinuousMulEquivRange.symm u.1,
-            (show QuadraticForm ℝ (Fin q → ℝ) from
-              realCliffordForm q 0).specialOrthogonalContinuousMulEquivRange.symm u.2)) :=
+          ((realCliffordFormZero p).specialOrthogonalContinuousMulEquivRange.symm u.1,
+            (realCliffordFormZero q).specialOrthogonalContinuousMulEquivRange.symm u.2)) :=
   (rfl)
 
 -- Not `@[simp]`: `QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply` simplifies the
@@ -449,26 +426,20 @@ theorem realCliffordSpecialOrthogonalRangeBlockSum_apply_equiv (p q : ℕ)
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm p 0))
     (h : QuadraticMap.specialOrthogonalGroup (realCliffordForm q 0)) :
     realCliffordSpecialOrthogonalRangeBlockSum p q
-        ((show QuadraticForm ℝ (Fin p → ℝ) from
-            realCliffordForm p 0).specialOrthogonalContinuousMulEquivRange g,
-          (show QuadraticForm ℝ (Fin q → ℝ) from
-            realCliffordForm q 0).specialOrthogonalContinuousMulEquivRange h) =
-      (show QuadraticForm ℝ (Fin (p + q) → ℝ) from
-          realCliffordForm (p + q) 0).specialOrthogonalContinuousMulEquivRange
+        ((realCliffordFormZero p).specialOrthogonalContinuousMulEquivRange g,
+          (realCliffordFormZero q).specialOrthogonalContinuousMulEquivRange h) =
+      (realCliffordFormZero (p + q)).specialOrthogonalContinuousMulEquivRange
         (realCliffordSpecialOrthogonalBlockSum p q (g, h)) := by
   simp
 
 /-- **Block sum commutes with `spinToSpecialOrthogonalUnitsRange`.** -/
 @[simp]
 theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
-    (spinToSpecialOrthogonalUnitsRange
-        (show QuadraticForm ℝ (Fin (p + q) → ℝ) from realCliffordForm (p + q) 0)).comp
+    (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero (p + q))).comp
         (realCliffordSpinUnitsRangeBlockSum p q) =
       (realCliffordSpecialOrthogonalRangeBlockSum p q).comp
-        ((spinToSpecialOrthogonalUnitsRange
-            (show QuadraticForm ℝ (Fin p → ℝ) from realCliffordForm p 0)).prodMap
-          (spinToSpecialOrthogonalUnitsRange
-            (show QuadraticForm ℝ (Fin q → ℝ) from realCliffordForm q 0))) :=
+        ((spinToSpecialOrthogonalUnitsRange (realCliffordFormZero p)).prodMap
+          (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero q))) :=
   ContinuousMonoidHom.ext fun _ ↦ by simp
 
 end

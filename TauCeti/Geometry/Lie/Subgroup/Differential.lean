@@ -165,6 +165,33 @@ theorem coe_lieExp_smul
       congr 2
       rw [map_smul, map_smul]
 
+omit [FiniteDimensional ℝ R] in
+/-- Transporting an exponential line across a smooth homomorphism between embedded unit subgroups
+computes the ambient Banach-algebra exponential of the composite differential. -/
+theorem coe_map_lieExp_smul
+    (d₁ : EmbeddedLieSubgroupData (modelWithCornersSelf ℝ R) K E')
+    {R₂ : Type*} [NormedRing R₂] [NormedAlgebra ℝ R₂] [CompleteSpace R₂]
+    [FiniteDimensional ℝ R₂] {K₂ : Subgroup R₂ˣ} {E₂ : Type*} [NormedAddCommGroup E₂]
+    [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
+    (d₂ : EmbeddedLieSubgroupData (modelWithCornersSelf ℝ R₂) K₂ E₂) :
+    let _ : ChartedSpace E' K := d₁.chartedSpace
+    let _ : LieGroup (modelWithCornersSelf ℝ E') ∞ K := d₁.lieGroup
+    let _ : ChartedSpace E₂ K₂ := d₂.chartedSpace
+    let _ : LieGroup (modelWithCornersSelf ℝ E₂) ∞ K₂ := d₂.lieGroup
+    ∀ (φ : ContMDiffMonoidMorphism (modelWithCornersSelf ℝ E') (modelWithCornersSelf ℝ E₂) ∞ K K₂)
+      (X : LeftInvariantDerivation (modelWithCornersSelf ℝ E') K) (t : ℝ),
+      (((d₂.subtypeVal (φ (lieExp (t • X))) : R₂ˣ) : R₂)) =
+        NormedSpace.exp (t • unitsLieAlgebraEquiv (d₂.lieMapSubtypeVal (lieMap φ X))) := by
+  let _ : ChartedSpace E' K := d₁.chartedSpace
+  let _ : LieGroup (modelWithCornersSelf ℝ E') ∞ K := d₁.lieGroup
+  let _ : ChartedSpace E₂ K₂ := d₂.chartedSpace
+  let _ : LieGroup (modelWithCornersSelf ℝ E₂) ∞ K₂ := d₂.lieGroup
+  dsimp only
+  intro φ X t
+  have hmap : φ (lieExp (t • X)) = lieExp (t • lieMap φ X) := by
+    rw [map_lieExp, map_smul]
+  simpa only [hmap] using d₂.coe_lieExp_smul (lieMap φ X) t
+
 end Units
 
 omit [T2Space G] in
