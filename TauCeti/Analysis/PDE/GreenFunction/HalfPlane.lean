@@ -141,7 +141,7 @@ theorem planarGreenKernelHalfPlane_pos {v : U} {a z : ℂ} (ha : 0 < ⟪(v : ℂ
 theorem planarGreenKernelHalfPlane_nonneg {v : U} {a z : ℂ} (ha : 0 ≤ ⟪(v : ℂ), a⟫_ℝ)
     (hz : 0 ≤ ⟪(v : ℂ), z⟫_ℝ) (hza : z ≠ a) : 0 ≤ planarGreenKernelHalfPlane v a z := by
   rw [planarGreenKernelHalfPlane_eq_mul_log_sub]
-  have hsq := norm_sub_reflection_orthogonal_singleton_sq v.2 a z
+  have hsq := norm_sub_reflection_orthogonal_singleton_sq v.property a z
   have hle : ‖z - a‖ ≤ ‖z - (ℝ ∙ (v : ℂ))ᗮ.reflection a‖ :=
     (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 (by
       rw [hsq]; nlinarith [mul_nonneg ha hz])
@@ -252,7 +252,7 @@ theorem fderiv_planarGreenKernelHalfPlane_normal {v : U} {a z : ℂ}
     (hz : ⟪(v : ℂ), z⟫_ℝ = 0) (hza : z ≠ a) :
     fderiv ℝ (planarGreenKernelHalfPlane v a) z (-(v : ℂ)) =
       -halfSpacePoissonKernel 2
-        ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.2⟩
+        ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.property⟩
         (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z) := by
   rw [fderiv_planarGreenKernelHalfPlane_normal_eq_neg_div hz hza,
     halfSpacePoissonKernel_eq_div,

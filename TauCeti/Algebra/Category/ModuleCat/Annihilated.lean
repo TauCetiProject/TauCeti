@@ -81,9 +81,9 @@ theorem isIdempotentElem_of_isClosedUnderExtensions_isTorsionBySet (I : Ideal R)
     obtain ⟨r, hr⟩ := Quotient.mk_surjective (x : R ⧸ (I * I))
     have hrI : r ∈ I := Quotient.eq_zero_iff_mem.mp (by
       rw [← hf, hr]
-      exact x.2)
+      exact x.property)
     simpa [← hr, Algebra.smul_def] using
-      (Quotient.eq_zero_iff_mem.mpr (mul_mem_mul a.2 hrI))
+      (Quotient.eq_zero_iff_mem.mpr (mul_mem_mul a.property hrI))
   have hquot : Module.IsTorsionBySet R (R ⧸ I) (I : Set R) :=
     (Module.isTorsionBySet_quotient_iff I (I : Set R)).mpr fun r a ha ↦ I.mul_mem_right r ha
   have hmid : Module.IsTorsionBySet R (R ⧸ (I * I)) (I : Set R) :=

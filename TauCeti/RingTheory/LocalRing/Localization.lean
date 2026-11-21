@@ -132,7 +132,7 @@ theorem algebraMap_notMem_maximalIdeal_pow {f : A →+* R} {n : ℕ} {a : A}
       maximalIdeal (Localization.AtPrime ((maximalIdeal R).comap f)) ^ n := by
   let φ : Localization.AtPrime ((maximalIdeal R).comap f) →+* R :=
     IsLocalization.lift (M := ((maximalIdeal R).comap f).primeCompl) (g := f) fun s ↦
-      notMem_maximalIdeal.mp s.2
+      notMem_maximalIdeal.mp s.property
   have hφ : φ.comp (algebraMap _ _) = f := IsLocalization.lift_comp _
   have hmap : (maximalIdeal (Localization.AtPrime ((maximalIdeal R).comap f))).map φ ≤
       maximalIdeal R := by

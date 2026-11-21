@@ -60,11 +60,11 @@ private theorem carrierEquivSpecialLinear_comp_steinberg_ofTwistedA (r : ℕ) (q
     ((ofTwistedA r q hv).carrierEquivSpecialLinear :
         (ofTwistedA r q hv).AmbientGroup →* (ofTwistedA r q hv).StandardGroup).comp
         (ofTwistedA r q hv).steinberg =
-      ((Matrix.SpecialLinearGroup.typeAGraphAutomorphism (ofTwistedA r q hv).1.rank
-          (ofTwistedA r q hv).1.Closure : _ →* _).comp
-        (Matrix.SpecialLinearGroup.map (n := Fin ((ofTwistedA r q hv).1.rank + 1))
-          (iterateFrobenius (ofTwistedA r q hv).1.Closure
-            (ofTwistedA r q hv).1.characteristic (ofTwistedA r q hv).1.fieldExponent))).comp
+      ((Matrix.SpecialLinearGroup.typeAGraphAutomorphism (ofTwistedA r q hv).val.rank
+          (ofTwistedA r q hv).val.Closure : _ →* _).comp
+        (Matrix.SpecialLinearGroup.map (n := Fin ((ofTwistedA r q hv).val.rank + 1))
+          (iterateFrobenius (ofTwistedA r q hv).val.Closure
+            (ofTwistedA r q hv).val.characteristic (ofTwistedA r q hv).val.fieldExponent))).comp
         ((ofTwistedA r q hv).carrierEquivSpecialLinear :
           (ofTwistedA r q hv).AmbientGroup →* (ofTwistedA r q hv).StandardGroup) := by
   rw [← specialLinearSteinberg_ofTwistedA]
@@ -77,9 +77,11 @@ matrix. The isomorphism is the coefficient extension to the closure followed by 
 the carrier equivalence. -/
 def specialUnitaryEquivFixedPoints (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
-    fixedSubgroup ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank) ≃*
+    fixedSubgroup ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank)
+        ≃*
       (ofTwistedA r q hv).FixedPoints :=
-  ((ofTwistedA r q hv).1.specialUnitaryEquivFrobeniusFixedPoints (ofTwistedA r q hv).1.rank).trans
+  ((ofTwistedA r q hv).val.specialUnitaryEquivFrobeniusFixedPoints
+      (ofTwistedA r q hv).val.rank).trans
     (fixedSubgroupCongr (ofTwistedA r q hv).carrierEquivSpecialLinear
       (carrierEquivSpecialLinear_comp_steinberg_ofTwistedA r q hv)).symm
 
@@ -89,13 +91,13 @@ whose image under the carrier equivalence is that matrix read over the closure. 
 theorem coe_specialUnitaryEquivFixedPoints (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid)
     (g : fixedSubgroup
-      ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank)) :
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank)) :
     ((ofTwistedA r q hv).carrierEquivSpecialLinear
         (specialUnitaryEquivFixedPoints r q hv g : (ofTwistedA r q hv).AmbientGroup) :
-        Matrix (Fin ((ofTwistedA r q hv).1.rank + 1)) (Fin ((ofTwistedA r q hv).1.rank + 1))
-          (ofTwistedA r q hv).1.Closure) =
-      (g : Matrix (Fin ((ofTwistedA r q hv).1.rank + 1)) (Fin ((ofTwistedA r q hv).1.rank + 1))
-          _).map ((ofTwistedA r q hv).1.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
+        Matrix (Fin ((ofTwistedA r q hv).val.rank + 1)) (Fin ((ofTwistedA r q hv).val.rank + 1))
+          (ofTwistedA r q hv).val.Closure) =
+      (g : Matrix (Fin ((ofTwistedA r q hv).val.rank + 1)) (Fin ((ofTwistedA r q hv).val.rank + 1))
+          _).map ((ofTwistedA r q hv).val.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
   rw [specialUnitaryEquivFixedPoints, MulEquiv.trans_apply, coe_fixedSubgroupCongr_symm_apply,
     MulEquiv.apply_symm_apply, ValidLieTypeIndex.coe_specialUnitaryEquivFrobeniusFixedPoints]
 
@@ -115,7 +117,7 @@ def specialIsometryEquivFixedPoints :
     (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K).specialIsometryGroup σ ≃*
       (d).FixedPoints :=
   (MulEquiv.subgroupCongr
-    ((d).1.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup r).symm).trans
+    ((d).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup r).symm).trans
       (specialUnitaryEquivFixedPoints r q hv)
 
 /-- The finite special isometry is sent to its coefficient extension on the designated carrier. -/
@@ -124,10 +126,10 @@ theorem coe_specialIsometryEquivFixedPoints
     (g : (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K).specialIsometryGroup σ) :
     ((d).carrierEquivSpecialLinear
         (specialIsometryEquivFixedPoints r q hv g : (d).AmbientGroup) :
-          Matrix (Fin ((d).1.rank + 1)) (Fin ((d).1.rank + 1)) (d).1.Closure) =
+          Matrix (Fin ((d).val.rank + 1)) (Fin ((d).val.rank + 1)) (d).val.Closure) =
       ((g : Matrix.SpecialLinearGroup (Fin (r + 1)) K) :
         Matrix (Fin (r + 1)) (Fin (r + 1)) K).map
-          ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
+          ((d).val.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
   -- Extended rewriting reduces (ofTwistedA r q hv).1.rank to r in the comparison's domain.
   erw [specialIsometryEquivFixedPoints, MulEquiv.trans_apply,
     coe_specialUnitaryEquivFixedPoints, MulEquiv.subgroupCongr_apply]

@@ -194,7 +194,7 @@ the balanced tensor product. -/
 def liftEquiv :
     {f : M →ₗ[k] N →ₗ[k] P // ∀ (a : A) m n, f (op a • m) n = f m (a • n)} ≃
       (BalancedTensorProduct k A M N →ₗ[k] P) where
-  toFun f := lift f.1 f.2
+  toFun f := lift f.val f.property
   invFun g := ⟨(mk k A).compr₂ g, fun a m n ↦ congrArg g (balance k A a m n)⟩
   left_inv f := by ext m n; rfl
   right_inv g := hom_ext fun _ _ ↦ rfl
@@ -202,11 +202,11 @@ def liftEquiv :
 @[simp]
 theorem liftEquiv_apply (f :
     {f : M →ₗ[k] N →ₗ[k] P // ∀ (a : A) m n, f (op a • m) n = f m (a • n)}) :
-    liftEquiv f = lift f.1 f.2 := (rfl)
+    liftEquiv f = lift f.val f.property := (rfl)
 
 @[simp]
 theorem liftEquiv_symm_apply (g : BalancedTensorProduct k A M N →ₗ[k] P) (m : M) (n : N) :
-    (liftEquiv.symm g).1 m n = g (tmul k A m n) := (rfl)
+    (liftEquiv.symm g).val m n = g (tmul k A m n) := (rfl)
 
 section Map
 

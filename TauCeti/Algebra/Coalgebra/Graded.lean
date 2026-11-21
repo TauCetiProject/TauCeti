@@ -102,7 +102,7 @@ theorem Coalgebra.isHomogeneous_counit_of_isHomogeneous_comul {R A : Type*} [Com
     simpa [ε₀, ε₀sub] using G.dualPieceEquiv_symm_apply_coe (-d)
       (ε ∘ₗ (G.piece (- -d)).subtype) ⟨y, by simpa using hy⟩
   have hε₀_zero {r : ℤ} {y : A} (hy : y ∈ G.piece r) (hr : r ≠ d) : ε₀ y = 0 :=
-    (G.mem_dualPiece_iff (-d) ε₀).mp ε₀sub.2 r y hy (by omega)
+    (G.mem_dualPiece_iff (-d) ε₀).mp ε₀sub.property r y hy (by omega)
   set g₁ : A ⊗[R] A →ₗ[R] A := (_root_.TensorProduct.rid R A).toLinearMap ∘ₗ ε₀.lTensor A
     with hg₁_def
   have hconv : ε ∘ₗ g₁ = ε₀ ∘ₗ (_root_.TensorProduct.lid R A).toLinearMap ∘ₗ ε.rTensor A :=
@@ -113,7 +113,7 @@ theorem Coalgebra.isHomogeneous_counit_of_isHomogeneous_comul {R A : Type*} [Com
       rid_lTensor_counitPiece_comul G (hΔ.map_mem ha) ε₀ hε₀_eq hε₀_zero ha
     rw [LinearMap.comp_apply, hg₁a] at hc
     simpa [hε_def, Coalgebra.rTensor_counit_comul] using hc
-  rw [← G.mem_dualPiece_iff_isHomogeneous_trivialGrading, hε_eq]; exact ε₀sub.2
+  rw [← G.mem_dualPiece_iff_isHomogeneous_trivialGrading, hε_eq]; exact ε₀sub.property
 
 section Equiv
 
