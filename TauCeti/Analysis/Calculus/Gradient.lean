@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Topology.MetricSpace.Holder
@@ -82,6 +83,8 @@ chain rule for the gradient of a real profile composed with a real function.
   the sum, over an orthonormal basis `(bᵢ)`, of `‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`.
 * `OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le`: if the gradients of the
   directional derivatives along an orthonormal basis are `α`-Hölder, so is `D²f`.
+* `OrthonormalBasis.norm_gradient_fderiv_sub_le_of_laplacian`: the gradient of `∂_{b₀} f` moves
+  by at most `|Δf x - Δf y| + 2n D` when those of the `n` other `∂_{bᵢ} f` move by at most `D`.
 -/
 
 public section
@@ -365,6 +368,58 @@ theorem _root_.OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient
         Finset.sum_le_sum fun i _ => by simpa only [dist_eq_norm] using hdir i x hx y hy
     _ = _ := by
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        ring
+
+open scoped Laplacian in
+/-- **The normal second derivatives from the Laplacian.** For an orthonormal basis `(bᵢ)` and a
+function `u` that is `C²` near `x` and `y`, the gradient of the derivative of `u` along `b₀` moves
+from `x` to `y` by at most `|Δu x - Δu y| + 2n D`, if the gradients of the derivatives along the
+remaining `n` basis vectors move by at most `D`. The derivative along `b₀` of `∂_{bᵢ}u` is that of
+`∂_{b₀}u` along `bᵢ`, and `∂²_{b₀}u = Δu - ∑_{i ≠ 0} ∂²_{bᵢ}u`. -/
+theorem _root_.OrthonormalBasis.norm_gradient_fderiv_sub_le_of_laplacian {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
+    (b : OrthonormalBasis (Fin (n + 1)) ℝ E) {u : E → ℝ} {x y : E} (hx : ContDiffAt ℝ 2 u x)
+    (hy : ContDiffAt ℝ 2 u y) {D : ℝ}
+    (htan : ∀ i : Fin n, ‖∇ (fun z => fderiv ℝ u z (b i.succ)) x -
+      ∇ (fun z => fderiv ℝ u z (b i.succ)) y‖ ≤ D) :
+    ‖∇ (fun z => fderiv ℝ u z (b 0)) x - ∇ (fun z => fderiv ℝ u z (b 0)) y‖ ≤
+      |Δ u x - Δ u y| + 2 * n * D := by
+  -- Coordinates of the gradient of `∂ᵥu` are second derivatives, which are symmetric.
+  have hin : ∀ {z}, ContDiffAt ℝ 2 u z → ∀ v w : E,
+      ⟪w, ∇ (fun y => fderiv ℝ u y v) z⟫_ℝ = fderiv ℝ (fderiv ℝ u) z w v := fun hz v w => by
+    rw [real_inner_comm, inner_gradient_left, fderiv_clm_apply_const_apply
+      ((hz.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)]
+  have hsymm : ∀ {z}, ContDiffAt ℝ 2 u z → ∀ v w : E,
+      fderiv ℝ (fderiv ℝ u) z v w = fderiv ℝ (fderiv ℝ u) z w v :=
+    fun hz v w => hz.isSymmSndFDerivAt (by simp) v w
+  have hΔ : ∀ z, Δ u z = fderiv ℝ (fderiv ℝ u) z (b 0) (b 0) +
+      ∑ i : Fin n, fderiv ℝ (fderiv ℝ u) z (b i.succ) (b i.succ) := fun z => by
+    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis u b]
+    simp [Fin.sum_univ_succ, iteratedFDeriv_two_apply]
+  set v := ∇ (fun z => fderiv ℝ u z (b 0)) x - ∇ (fun z => fderiv ℝ u z (b 0)) y
+  -- The tangential coordinates of `v` are controlled by `D`.
+  have hcoord : ∀ i : Fin n, |⟪b i.succ, v⟫_ℝ| ≤ D := fun i => by
+    rw [inner_sub_right, hin hx, hin hy, hsymm hx, hsymm hy, ← hin hx, ← hin hy, ← inner_sub_right]
+    exact (abs_real_inner_le_norm _ _).trans (by rw [b.orthonormal.1, one_mul]; exact htan i)
+  -- The normal coordinate comes from the equation.
+  have hnormal : |⟪b 0, v⟫_ℝ| ≤ |Δ u x - Δ u y| + n * D := by
+    have h : ⟪b 0, v⟫_ℝ = (Δ u x - Δ u y) - ∑ i : Fin n, ⟪b i.succ,
+        ∇ (fun z => fderiv ℝ u z (b i.succ)) x - ∇ (fun z => fderiv ℝ u z (b i.succ)) y⟫_ℝ := by
+      simp only [v, inner_sub_right, hin hx, hin hy, hΔ x, hΔ y, Finset.sum_sub_distrib]
+      ring
+    rw [h]
+    refine (abs_sub _ _).trans (add_le_add le_rfl ((Finset.abs_sum_le_sum_abs _ _).trans ?_))
+    refine (Finset.sum_le_sum fun i _ => (abs_real_inner_le_norm _ _).trans ?_).trans_eq
+      (b := ∑ _i : Fin n, D) (by simp)
+    rw [b.orthonormal.1, one_mul]
+    exact htan i
+  calc ‖v‖ = ‖∑ j, ⟪b j, v⟫_ℝ • b j‖ := by rw [b.sum_repr' v]
+    _ ≤ ∑ j, |⟪b j, v⟫_ℝ| := (norm_sum_le _ _).trans_eq (by simp [norm_smul, b.orthonormal.1])
+    _ ≤ (|Δ u x - Δ u y| + n * D) + ∑ _i : Fin n, D := by
+        rw [Fin.sum_univ_succ]
+        exact add_le_add hnormal (Finset.sum_le_sum fun i _ => hcoord i)
+    _ = |Δ u x - Δ u y| + 2 * n * D := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
 
 /-- The gradient of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • (x - x₀)`. -/

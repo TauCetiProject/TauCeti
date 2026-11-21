@@ -47,12 +47,17 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
 * `TauCeti.mapsTo_hyperplaneReflection_ball`: it maps every ball centred on the hyperplane into
   itself.
+* `TauCeti.closure_setOf_lt_inner_subset`: the closure of the open half-space `{x | c < ⟪x, ν⟫}`
+  lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
   `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image, and so
   (`TauCeti.mem_thickening_of_hyperplaneReflection_mem_thickening`) a point of that half-space
   whose mirror image lies in a thickening of a set in the half-space lies in it too.
+* `TauCeti.exists_opens_mapsTo_hyperplaneReflection`: a bounded reflection-invariant open set
+  around a thickening of a bounded set of the closed half-space, whose points in the open
+  half-space lie in that thickening.
 * `TauCeti.fderiv_hyperplaneReflection` and `TauCeti.abs_det_fderiv_hyperplaneReflection`: its
   derivative is the linear reflection, of determinant `±1`.
 * `TauCeti.measurePreserving_hyperplaneReflection`: it preserves every additive Haar measure, and
@@ -150,6 +155,12 @@ theorem mapsTo_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν⟫_
   rw [Metric.mem_ball] at hy ⊢
   rwa [← hyperplaneReflection_eq_self_of_inner_eq hz, AffineIsometryEquiv.dist_map]
 
+/-- The closure of the open half-space `{x | c < ⟪x, ν⟫}` lies in the closed half-space
+`{x | c ≤ ⟪x, ν⟫}`. -/
+theorem closure_setOf_lt_inner_subset (ν : F) (c : ℝ) :
+    closure {x : F | c < ⟪x, ν⟫_ℝ} ⊆ {x | c ≤ ⟪x, ν⟫_ℝ} :=
+  closure_lt_subset_le continuous_const (continuous_id.inner continuous_const)
+
 /-- Points of the closure of an open half-space `H = {x | c < ⟪x, ν⟫}` outside `H` lie on the
 hyperplane, where the reflection is the identity. -/
 theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set F}
@@ -158,7 +169,7 @@ theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set 
   have hset : H = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hH
   have hle : c ≤ ⟪x, ν⟫_ℝ := by
     rw [hset] at hxc
-    exact closure_lt_subset_le continuous_const (continuous_id.inner continuous_const) hxc
+    exact closure_setOf_lt_inner_subset ν c hxc
   exact hyperplaneReflection_eq_self_of_inner_eq
     (le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) hle)
 
@@ -203,6 +214,27 @@ theorem mem_thickening_of_hyperplaneReflection_mem_thickening {ν x : F} {c r : 
     _ ≤ dist s (hyperplaneReflection ν c x) := dist_le_dist_hyperplaneReflection (hS s hs) hx
     _ = dist (hyperplaneReflection ν c x) s := dist_comm _ _
     _ < r := hxs
+
+/-- **A reflection-invariant open set around a thickening.** Let `S` be a bounded set of the
+closed half-space `{x | c ≤ ⟪x, ν⟫}`, let `ρ` be the reflection in its boundary hyperplane and `T`
+the open `r`-thickening of `S`. The open set `T ∪ ρ⁻¹ T` is mapped into itself by `ρ`, contains
+`T`, is bounded, and its points in the open half-space `{x | c < ⟪x, ν⟫}` lie in `T`. -/
+theorem exists_opens_mapsTo_hyperplaneReflection {ν : F} {c r : ℝ} {S : Set F}
+    (hS : Bornology.IsBounded S) (hSc : ∀ x ∈ S, c ≤ ⟪x, ν⟫_ℝ) :
+    ∃ U : TopologicalSpace.Opens F, Set.MapsTo (hyperplaneReflection ν c) U U ∧
+      Metric.thickening r S ⊆ U ∧ (U : Set F) ∩ {x | c < ⟪x, ν⟫_ℝ} ⊆ Metric.thickening r S ∧
+      Bornology.IsBounded (U : Set F) := by
+  set ρ := hyperplaneReflection ν c
+  refine ⟨⟨Metric.thickening r S ∪ ρ ⁻¹' Metric.thickening r S,
+    Metric.isOpen_thickening.union (Metric.isOpen_thickening.preimage ρ.continuous)⟩, ?_,
+    fun x hx => Or.inl hx, ?_,
+    hS.thickening.union (ρ.isometry.antilipschitzWith.isBounded_preimage hS.thickening)⟩
+  · rintro x (hx | hx)
+    · exact Or.inr (by simpa [ρ, hyperplaneReflection_hyperplaneReflection] using hx)
+    · exact Or.inl hx
+  · rintro x ⟨hx | hx, hxH⟩
+    · exact hx
+    · exact mem_thickening_of_hyperplaneReflection_mem_thickening hSc (le_of_lt hxH) hx
 
 /-- The derivative of the hyperplane reflection at every point is its linear part
 `(ℝ ∙ ν)ᗮ.reflection`. -/

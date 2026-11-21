@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 public import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
+import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -72,6 +75,8 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `t ν` of the normal is at most `√2` times that of `∇u` on `U ∩ H`, and
   `TauCeti.W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le`: in particular the `L²(U)` norm
   of the gradient of the odd reflection is at most `√2` times that of the gradient of `u|_{U ∩ H}`.
+* `TauCeti.W1p.exists_value_eq_zero_and_value_ae_eq`: a `C¹` function vanishing on the hyperplane,
+  cut off near a compact set, extends by zero across the hyperplane to a Sobolev function.
 -/
 
 public section
@@ -645,5 +650,61 @@ theorem W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le (hν : ν ≠ 0)
   refine integral_congr_ae ?_
   filter_upwards [W1p.gradient_restrictL_ae (inf_le_left : U ⊓ H ≤ U) u] with x hx
   rw [hx]
+
+/-- **Extension by zero across the hyperplane.** Let `H = {x | c < ⟪x, ν⟫}`, let `d` be `C¹` on an
+open set `U₀` and vanish on the part of the hyperplane `∂H` in `U₀`. Let `V` be bounded and open
+with `closure V ∩ closure H ⊆ U₀`, and let `K ⊆ V` be compact. On every open `U₁` with
+`U₁ ∩ H ⊆ K` there is `w ∈ W^{1,p}(U₁)` vanishing on `U₁ ∖ H` and equal to `d` on `U₁ ∩ H`. -/
+theorem W1p.exists_value_eq_zero_and_value_ae_eq (hp : p ≠ ⊤) (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ)
+    {U₀ : Set E} {d : E → ℝ} (hU₀ : IsOpen U₀) (hd : ContDiffOn ℝ 1 d U₀)
+    (hd0 : ∀ x ∈ U₀, ⟪x, ν⟫_ℝ = c → d x = 0) {V : Set E} (hV : IsOpen V)
+    (hVb : Bornology.IsBounded V) (hVU : closure V ∩ {x | c ≤ ⟪x, ν⟫_ℝ} ⊆ U₀) {K : Set E}
+    (hK : IsCompact K) (hKV : K ⊆ V) (U₁ : Opens E) (hU₁ : (U₁ : Set E) ∩ H ⊆ K) :
+    ∃ w : W1p mu U₁ p, (∀ᵐ x ∂mu.restrict U₁, x ∉ H → W1p.value w x = 0) ∧
+      W1p.value w =ᵐ[mu.restrict (U₁ ⊓ H : Opens E)] d := by
+  obtain ⟨χ, hχ, -, hχ1, -, hχV⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hV hKV
+  set Ω : Opens E := ⟨V, hV⟩ ⊓ H
+  set g : E → ℝ := fun x => χ x * d x
+  have hhalf : closure (H : Set E) ⊆ {x | c ≤ ⟪x, ν⟫_ℝ} := by
+    rw [show (H : Set E) = {x | c < ⟪x, ν⟫_ℝ} from Set.ext hH]
+    exact closure_setOf_lt_inner_subset ν c
+  have hΩb : Bornology.IsBounded (Ω : Set E) := hVb.subset inter_subset_left
+  have hΩU : closure (Ω : Set E) ⊆ U₀ :=
+    (closure_inter_subset_inter_closure _ _).trans ((inter_subset_inter_right _ hhalf).trans hVU)
+  have hg : ContDiffOn ℝ 1 g U₀ := (hχ.of_le (by simp)).contDiffOn.mul hd
+  obtain ⟨v, hv, -⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu)
+    (Omega := Ω) (p := p) hU₀ hg hΩb.isCompact_closure subset_closure hΩU
+  -- `g = χ d` vanishes on the frontier of `Ω = V ∩ H`: by the cutoff outside `V`, and since `d`
+  -- vanishes on the hyperplane inside `V`.
+  have hv0 : v ∈ w1p0Submodule mu Ω p := by
+    refine W1p.mem_w1p0Submodule_of_continuousOn_closure hp hΩb
+      (hg.continuousOn.mono hΩU) (fun x hx => ?_) hv
+    by_cases hxV : x ∈ V
+    · have hxH : x ∉ H := fun h => (Ω.isOpen.frontier_eq ▸ hx).2 ⟨hxV, h⟩
+      have hxc : x ∈ closure (H : Set E) :=
+        closure_mono inter_subset_right (frontier_subset_closure hx)
+      have heq : ⟪x, ν⟫_ℝ = c := le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) (hhalf hxc)
+      simp [g, hd0 x (hΩU (frontier_subset_closure hx)) heq]
+    · simp [g, image_eq_zero_of_notMem_tsupport fun h => hxV (hχV h)]
+  set z : W1p0 mu ⊤ p := W1p0.extendByZeroL (le_top : Ω ≤ ⊤) ⟨v, hv0⟩
+  have hz : W1p.value (W1p.restrictL (le_top : U₁ ≤ ⊤) (z : W1p mu ⊤ p)) =ᵐ[mu.restrict U₁]
+      (Ω : Set E).indicator (W1p.value v) := by
+    have h2 : W1p.value (z : W1p mu ⊤ p) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
+        (Ω : Set E).indicator (W1p.value v) := by
+      rw [W1p0.value_extendByZeroL]
+      exact coeFn_extendByZeroLpₗᵢ ℝ _ _ _
+    filter_upwards [W1p.value_restrictL_ae (mu := mu) (p := p) (le_top : U₁ ≤ ⊤)
+        (z : W1p mu ⊤ p),
+      ae_restrict_of_ae_restrict_of_subset (subset_univ _) h2] with x hx1 hx2
+    rw [hx1, hx2]
+  refine ⟨W1p.restrictL (le_top : U₁ ≤ ⊤) (z : W1p mu ⊤ p), ?_, ?_⟩
+  · filter_upwards [hz] with x hx hxH
+    rw [hx, indicator_of_notMem (s := (Ω : Set E)) fun h => hxH h.2]
+  · have hUH : ((U₁ ⊓ H : Opens E) : Set E) ⊆ Ω := fun x hx => ⟨hKV (hU₁ hx), hx.2⟩
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) hz,
+      ae_restrict_of_ae_restrict_of_subset hUH hv,
+      ae_restrict_mem (U₁ ⊓ H).isOpen.measurableSet] with x hx1 hx2 hx
+    rw [hx1, indicator_of_mem (hUH hx), hx2]
+    simp [g, (hχ1 x (hU₁ hx)).self_of_nhds]
 
 end TauCeti
