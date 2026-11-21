@@ -26,9 +26,9 @@ or `ℓ` is needed.
 
 When `ψ` is surjective and `ℓ` is a linear equivalence, a section of `ψ` makes the inverse
 linear equivalence equivariant as well, and the two maps are inverse order isomorphisms
-(`TauCeti.Comodule.VectorOrbit.orderIsoOfSurjective`). This applies to isogenies, which are
-surjective on rational points over algebraically closed fields, acting on their Lie algebras
-through the differential.
+(`TauCeti.Comodule.VectorOrbit.orderIsoOfSurjective`). This applies to isogenies in
+characteristic zero acting on their Lie algebras: they are surjective on rational points over
+algebraically closed fields, and their differential is a linear equivalence.
 
 ## Main declarations
 
