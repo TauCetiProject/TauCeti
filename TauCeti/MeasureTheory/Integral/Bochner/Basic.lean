@@ -94,6 +94,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `TauCeti.integral_norm_sq_le_of_ae_bound`: on a finite measure space, an a.e. norm bound
+  `C` bounds the second moment by `C²` times the total mass, without a measurability assumption.
 * `TauCeti.setIntegral_Icc_update_add_setIntegral_Icc_update` splits a Bochner set integral over
   `Set.Icc a b` in `ι → ℝ` along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
@@ -275,6 +277,17 @@ theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multis
 end Multiset
 
 namespace TauCeti
+
+/-- On a finite measure space, an a.e. norm bound bounds the second moment by the squared
+bound times the total mass. No measurability assumption is needed for this upper bound. -/
+theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddGroup E] {f : Ω → E} {C : ℝ}
+    (hb : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C) : ∫ ω, ‖f ω‖ ^ 2 ∂μ ≤ C ^ 2 * μ.real Set.univ := by
+  calc
+    _ ≤ ∫ _ : Ω, C ^ 2 ∂μ := integral_mono_of_nonneg
+      (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _) (integrable_const _)
+      (hb.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
+    _ = _ := by simp [mul_comm]
 
 /-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
 `L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.

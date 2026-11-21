@@ -47,7 +47,17 @@ martingale has conditional square equal to its current square plus the condition
 of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
-In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ
+In particular, positions need not be bounded. A predictable height times a later martingale
+increment has mean zero when the product is integrable
+(`MeasureTheory.Martingale.integral_mul_sub_eq_zero`), with a Banach-valued scalar-action form
+`MeasureTheory.Martingale.integral_smul_sub_eq_zero`. Martingale values inherit deterministic
+norm bounds and, for `p ≥ 1`, Lᵖ integrability from later values
+(`MeasureTheory.Martingale.ae_norm_le_of_le`, `MeasureTheory.Martingale.memLp_of_le`).
+Shorter increments with the same starting date inherit deterministic norm bounds
+(`MeasureTheory.Martingale.ae_norm_sub_le_of_le`), whereas increments over any contained interval
+inherit Lᵖ integrability for `p ≥ 1` from the containing increment
+(`MeasureTheory.Martingale.memLp_sub_of_le`).
+Nonnegative submartingale values inherit Lᵖ
 integrability from later values for `p ≥ 1` (`MeasureTheory.Submartingale.memLp_of_le`).
 
 If `V / N` is a martingale under `Q` for a real process `N`, then `V` is recovered from its value
@@ -187,6 +197,45 @@ theorem Martingale.norm (hX : Martingale X ℱ μ) :
   filter_upwards [hX.condExp_ae_eq hst, norm_condExp_le (m := ℱ s) (X t)] with ω he hle
   simpa only [he] using hle
 
+/-- A martingale value inherits Lᵖ integrability from a later value for `p ≥ 1`. -/
+theorem Martingale.memLp_of_le (hX : Martingale X ℱ μ) {i j : ι} (hij : i ≤ j)
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hj : MemLp (X j) p μ) : MemLp (X i) p μ :=
+  (hj.condExp (m := ℱ i) hp).ae_eq (hX.condExp_ae_eq hij)
+
+/-- Conditioning a martingale increment on an intermediate date keeps its past part. -/
+theorem Martingale.condExp_sub_ae_eq (hX : Martingale X ℱ μ) {s t u : ι}
+    (hst : s ≤ t) (htu : t ≤ u) : μ[X u - X s | ℱ t] =ᵐ[μ] X t - X s := by
+  have hs : μ[X s | ℱ t] =ᵐ[μ] X s := by
+    by_cases ht : SigmaFinite (μ.trim (ℱ.le t))
+    · exact EventuallyEq.of_eq (condExp_of_stronglyMeasurable (ℱ.le t)
+        ((hX.stronglyMeasurable s).mono (ℱ.mono hst)) (hX.integrable s))
+    · have hs : ¬SigmaFinite (μ.trim (ℱ.le s)) := fun hs ↦
+        ht (sigmaFiniteTrim_mono (ℱ.le t) (ℱ.mono hst))
+      simpa only [condExp_of_not_sigmaFinite (ℱ.le s) hs,
+        condExp_of_not_sigmaFinite (ℱ.le t) ht] using
+        hX.condExp_ae_eq (i := s) le_rfl
+  exact (condExp_sub (hX.integrable u) (hX.integrable s) _).trans
+    ((hX.condExp_ae_eq htu).sub hs)
+
+/-- A martingale increment inherits Lᵖ integrability from an increment over a containing
+interval, for `p ≥ 1`. The initial value need only be integrable. -/
+theorem Martingale.memLp_sub_of_le (hX : Martingale X ℱ μ) {s t u v : ι}
+    (hst : s ≤ t) (htu : t ≤ u) (huv : u ≤ v) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hv : MemLp (X v - X s) p μ) : MemLp (X u - X t) p μ := by
+  have hu := (hv.condExp (m := ℱ u) hp).ae_eq (hX.condExp_sub_ae_eq (hst.trans htu) huv)
+  have ht := (hv.condExp (m := ℱ t) hp).ae_eq (hX.condExp_sub_ae_eq hst (htu.trans huv))
+  simpa only [Pi.sub_def, sub_sub_sub_cancel_right] using hu.sub ht
+
+/-- On a nondecreasing finite grid, Lᵖ integrability of the total martingale increment
+implies Lᵖ integrability of each grid increment, for `p ≥ 1`. No Lᵖ assumption on the
+initial value is needed. -/
+theorem Martingale.memLp_sub_of_monotoneOn (hX : Martingale X ℱ μ) {τ : ℕ → ι} {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hn : MemLp (X (τ n) - X (τ 0)) p μ) {i : ℕ} (hi : i < n) :
+    MemLp (X (τ (i + 1)) - X (τ i)) p μ :=
+  hX.memLp_sub_of_le (hτ (by simp) hi.le (Nat.zero_le i))
+    (hτ hi.le hi (Nat.le_succ i)) (hτ hi (by simp) hi) hp hn
+
 /-- Raising an almost everywhere nonnegative real submartingale to a power `p ≥ 1` gives a
 submartingale whenever the powered values are integrable. No sigma-finiteness assumption on the
 filtration trims is required. -/
@@ -224,7 +273,7 @@ theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
       fun ω ↦ Y i ω ^ 2 + μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] ω := by
   have hc := hY.condExp_ae_eq hij
   by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
-  · have hi := (hj.condExp (m := ℱ i) one_le_two).ae_eq hc
+  · have hi := hY.memLp_of_le hij one_le_two hj
     have hmul : Integrable (Y i * Y j) μ := memLp_one_iff_integrable.mp (hi.mul hj)
     have hexpand : (fun ω ↦ (Y j ω - Y i ω) ^ 2) =
         (Y j) ^ 2 - (2 : ℝ) • (Y i * Y j) + (Y i) ^ 2 := by
@@ -265,6 +314,49 @@ theorem Submartingale.integral_mul_le [SigmaFiniteFiltration μ ℱ]
       exact mul_le_mul_of_nonneg_left hle hp
     _ = ∫ ω, μ[a * Y j | ℱ i] ω ∂μ := integral_congr_ae he.symm
     _ = _ := integral_condExp (ℱ.le i)
+
+/-- A predictable height times a later martingale increment has mean zero whenever the
+product is integrable. No separate moment assumption on the height is needed. -/
+theorem Martingale.integral_smul_sub_eq_zero
+    (hX : Martingale X ℱ μ) {s t : ι} [SigmaFinite (μ.trim (ℱ.le s))] (hst : s ≤ t)
+    {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ)
+    (hint : Integrable (ξ • (X t - X s)) μ) :
+    ∫ ω, ξ ω • (X t ω - X s ω) ∂μ = 0 := by
+  have hzero : μ[X t - X s | ℱ s] =ᵐ[μ] 0 := by
+    simpa only [sub_self] using hX.condExp_sub_ae_eq le_rfl hst
+  have hpull := condExp_smul_of_aestronglyMeasurable_left hξ hint
+    ((hX.integrable t).sub (hX.integrable s))
+  have heq : μ[ξ • (X t - X s) | ℱ s] =ᵐ[μ] 0 := by
+    filter_upwards [hpull, hzero] with ω hp hz
+    simpa [hz] using hp
+  simpa only [Pi.smul_apply', Pi.sub_apply, Pi.zero_apply, integral_zero] using
+    (integral_condExp (ℱ.le s) (f := ξ • (X t - X s))).symm.trans (integral_congr_ae heq)
+
+/-- A predictable real height times a later real martingale increment has mean zero
+whenever the product is integrable. -/
+theorem Martingale.integral_mul_sub_eq_zero
+    (hM : Martingale Y ℱ μ) {s t : ι} [SigmaFinite (μ.trim (ℱ.le s))] (hst : s ≤ t)
+    {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ)
+    (hint : Integrable (ξ * (Y t - Y s)) μ) :
+    ∫ ω, ξ ω * (Y t ω - Y s ω) ∂μ = 0 :=
+  hM.integral_smul_sub_eq_zero hst hξ hint
+
+/-- A deterministic almost-sure norm bound on a martingale at a later date also bounds
+its value at every earlier date. -/
+theorem Martingale.ae_norm_le_of_le (hX : Martingale X ℱ μ) {i j : ι} (hij : i ≤ j)
+    {C : ℝ} (hb : ∀ᵐ ω ∂μ, ‖X j ω‖ ≤ C) : ∀ᵐ ω ∂μ, ‖X i ω‖ ≤ C := by
+  filter_upwards [ae_bdd_norm_condExp_of_ae_bdd_norm (m := ℱ i) hb,
+    hX.condExp_ae_eq hij] with ω hb he
+  simpa only [he] using hb
+
+/-- A deterministic almost-sure norm bound on a martingale increment also bounds shorter
+increments with the same starting date. -/
+theorem Martingale.ae_norm_sub_le_of_le (hX : Martingale X ℱ μ) {s t u : ι}
+    (hst : s ≤ t) (htu : t ≤ u) {C : ℝ} (hb : ∀ᵐ ω ∂μ, ‖X u ω - X s ω‖ ≤ C) :
+    ∀ᵐ ω ∂μ, ‖X t ω - X s ω‖ ≤ C := by
+  filter_upwards [ae_bdd_norm_condExp_of_ae_bdd_norm (m := ℱ t) hb,
+    hX.condExp_sub_ae_eq hst htu] with ω hb he
+  exact (congrArg (fun x : E ↦ ‖x‖) he).symm.le.trans hb
 
 /-- A nonnegative submartingale value inherits Lᵖ integrability from a later value,
 for every `p ≥ 1`. Only the earlier value needs to be nonnegative. -/
