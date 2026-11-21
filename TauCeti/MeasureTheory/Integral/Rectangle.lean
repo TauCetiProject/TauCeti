@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Measure.Haar.Prod
@@ -46,6 +47,11 @@ a doubly (twisted) periodic map are used.
   `[c + L, d + L] × I` is the integral of the translate `z ↦ f (z + (L, 0))` over `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
+* `TauCeti.integrableOn_setIntegral_slice`,
+  `TauCeti.setIntegral_setIntegral_slice_eq_setIntegral_rect`: Fubini's theorem over the vertical
+  slices `{r} × t` of a product set `s × t`, in particular of a rectangle.
+* `TauCeti.exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect`: some vertical segment
+  carries at most the average integral.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
   over the vertical segments `{s} × [a₂, b₂]` integrates to the same inequality over the rectangle.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le_symm`: the same for the horizontal
@@ -205,6 +211,40 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
     (measurableEmbedding_addRight _), preimage_add_fst_Icc_prod] at hfi
   exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
 
+/-- **Fubini on a product set: the slices are integrable.** If `f` is integrable over the product
+`s × t` of two subsets of `ℝ`, then its integrals over the vertical slices `{r} × t` are integrable
+in `r` over `s`. -/
+theorem integrableOn_setIntegral_slice {f : ℝ × ℝ → E} {s t : Set ℝ}
+    (hf : IntegrableOn f (s ×ˢ t)) :
+    IntegrableOn (fun r ↦ ∫ τ in t, f (r, τ)) s := by
+  have h : Integrable f ((volume.restrict s).prod (volume.restrict t)) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+    exact hf
+  exact h.integral_prod_left
+
+/-- **Fubini on a product set.** If `f` is integrable over the product `s × t` of two subsets of
+`ℝ`, then the integral over `s` of its integrals over the vertical slices `{r} × t` is its integral
+over `s × t`. -/
+theorem setIntegral_setIntegral_slice_eq_setIntegral_rect {f : ℝ × ℝ → E} {s t : Set ℝ}
+    (hf : IntegrableOn f (s ×ˢ t)) :
+    ∫ r in s, ∫ τ in t, f (r, τ) = ∫ z in s ×ˢ t, f z := by
+  rw [Measure.volume_eq_prod] at hf ⊢
+  exact (setIntegral_prod f hf).symm
+
+/-- **A slice of at most average integral.** If `f` is integrable over the rectangle
+`[a₁, b₁] × [a₂, b₂]` with `a₁ < b₁`, then some vertical segment `{s} × [a₂, b₂]` with
+`s ∈ [a₁, b₁]` carries at most the average:
+`(b₁ - a₁) ∫_{[a₂, b₂]} f(s, t) dt ≤ ∫_{[a₁, b₁] × [a₂, b₂]} f`. -/
+theorem exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect {f : ℝ × ℝ → ℝ} (h₁ : a₁ < b₁)
+    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
+    ∃ s ∈ Icc a₁ b₁, (b₁ - a₁) * ∫ t in Icc a₂ b₂, f (s, t) ≤
+      ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z := by
+  obtain ⟨s, hs, hle⟩ :=
+    exists_le_setAverage (by simpa using h₁) (by simp) (integrableOn_setIntegral_slice hf)
+  rw [setAverage_eq, Real.volume_real_Icc_of_le h₁.le, smul_eq_mul,
+    setIntegral_setIntegral_slice_eq_setIntegral_rect hf] at hle
+  exact ⟨s, hs, (le_inv_mul_iff₀ (sub_pos.2 h₁)).1 hle⟩
+
 /-- **Integrating a slicewise inequality.** If `f` and `g` are integrable over the rectangle
 `[a₁, b₁] × [a₂, b₂]` and, for every `s ∈ [a₁, b₁]`, the integral of `f (s, ·)` over `[a₂, b₂]` is
 at most `c` times that of `g (s, ·)`, then the integral of `f` over the rectangle is at most `c`
@@ -213,15 +253,10 @@ theorem setIntegral_rect_le_mul_of_forall_setIntegral_le {f g : ℝ × ℝ → �
     (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) (hg : IntegrableOn g (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
     (h : ∀ s ∈ Icc a₁ b₁, ∫ t in Icc a₂ b₂, f (s, t) ≤ c * ∫ t in Icc a₂ b₂, g (s, t)) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z ≤ c * ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, g z := by
-  -- The integrals over the vertical segments are integrable functions of `s`, by Fubini.
-  have hslice {k : ℝ × ℝ → ℝ} (hk : IntegrableOn k (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
-      IntegrableOn (fun s ↦ ∫ t in Icc a₂ b₂, k (s, t)) (Icc a₁ b₁) := by
-    have h : Integrable k ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
-      rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-      exact hk
-    exact h.integral_prod_left
-  rw [Measure.volume_eq_prod, setIntegral_prod _ hf, setIntegral_prod _ hg, ← integral_const_mul]
-  exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul c) measurableSet_Icc h
+  rw [← setIntegral_setIntegral_slice_eq_setIntegral_rect hf,
+    ← setIntegral_setIntegral_slice_eq_setIntegral_rect hg, ← integral_const_mul]
+  exact setIntegral_mono_on (integrableOn_setIntegral_slice hf)
+    ((integrableOn_setIntegral_slice hg).const_mul c) measurableSet_Icc h
 
 /-- **Integrating a slicewise inequality, horizontal slices.** If `f` and `g` are integrable over
 the rectangle `[a₁, b₁] × [a₂, b₂]` and, for every `t ∈ [a₂, b₂]`, the integral of `f (·, t)` over
