@@ -19,17 +19,21 @@ given the finer information `m₂` and the variance of the finer conditional mea
 
 `Var[X | m₁] = E[Var[X | m₂] | m₁] + Var[E[X | m₂] | m₁]` almost everywhere.
 
-No finiteness of the measure is assumed; off σ-finiteness or integrability the conditional
-expectations take Mathlib's junk value `0` and the identity still holds. On a probability space,
+Square integrability of `X` is assumed throughout, but no finiteness of the measure. Two junk
+cases of Mathlib's conditional expectation then occur, and the identity holds in both. If the
+trim of the measure to the coarser σ-algebra is not σ-finite, every conditional expectation
+given it is `0`, so all three terms vanish. If `X` is square integrable but not integrable (on an
+infinite measure), the conditional mean `E[X | m]` is `0`, while the conditional second moment
+`E[X² | m]` of the integrable `X²` need not vanish. On a probability space,
 the specialization `m₁ = ⊥` corresponds to Mathlib's scalar law of total variance
 `integral_condVar_add_variance_condExp`.
 
 ## Main statements
 
 * `ProbabilityTheory.condVar_ae_eq_condExp_sq_sub_sq_condExp'`: `Var[X | m] = E[X² | m] - E[X | m]²`
-  almost everywhere, for an arbitrary measure.
+  almost everywhere, for a square-integrable `X` and an arbitrary measure.
 * `ProbabilityTheory.condVar_ae_eq_condExp_condVar_add_condVar_condExp`: the conditional law of
-  total variance for nested σ-algebras.
+  total variance for nested σ-algebras and a square-integrable `X`.
 -/
 
 public section
