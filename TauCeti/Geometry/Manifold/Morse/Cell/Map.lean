@@ -298,9 +298,9 @@ def morseCharacteristicMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fi
     TopCat.disk.{u} k ⟶ TopCat.of {x | f x ≤ c + ε} :=
   TopCat.ofHom
     { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_le hball hf hk
-        (mem_closedBall_zero_iff.1 w.down.2)).trans (le_add_of_nonneg_right hε)⟩
+        (mem_closedBall_zero_iff.1 w.down.property)).trans (le_add_of_nonneg_right hε)⟩
       continuous_toFun := ((continuousOn_morseCellMap hball hk).comp_continuous
-        (continuous_subtype_val.comp continuous_uliftDown) fun w ↦ w.down.2).subtype_mk _ }
+        (continuous_subtypeVal.comp continuous_uliftDown) fun w ↦ w.down.property).subtype_mk _ }
 
 /-- The attaching map `∂D^k → M_{c-ε}` of the cell of a chart `ψ` in which
 `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` and whose target contains the closed ball of radius `√ε`:
@@ -312,10 +312,10 @@ def morseAttachingMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))
     TopCat.diskBoundary.{u} k ⟶ TopCat.of {x | f x ≤ c - ε} :=
   TopCat.ofHom
     { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_of_norm_eq_one hball hf hk hε
-        (mem_sphere_zero_iff_norm.1 w.down.2)).le⟩
+        (mem_sphere_zero_iff_norm.1 w.down.property)).le⟩
       continuous_toFun := ((continuousOn_morseCellMap hball hk).comp_continuous
-        (continuous_subtype_val.comp continuous_uliftDown)
-        fun w ↦ sphere_subset_closedBall w.down.2).subtype_mk _ }
+        (continuous_subtypeVal.comp continuous_uliftDown)
+        fun w ↦ sphere_subset_closedBall w.down.property).subtype_mk _ }
 
 @[simp]
 theorem coe_morseCharacteristicMap_apply (hk : k ≤ n) (hε : 0 ≤ ε) (w : TopCat.disk.{u} k) :
@@ -353,7 +353,8 @@ theorem morseAttachingMap_comp_sublevelInclusion (hk : k ≤ n) (hε : 0 ≤ ε)
 /-- The characteristic map of the cell is injective. -/
 theorem morseCharacteristicMap_injective (hk : k ≤ n) (hε : 0 < ε) :
     Injective (morseCharacteristicMap ψ hk hε.le hball hf) := fun v w hvw ↦
-  ULift.ext <| Subtype.ext <| injOn_morseCellMap hball hk hε v.down.2 w.down.2 congr(($hvw : M))
+  ULift.ext <| Subtype.ext <| injOn_morseCellMap hball hk hε v.down.property w.down.property
+      congr(($hvw : M))
 
 /-- The characteristic map of the cell is a closed embedding of the unit disc into the sublevel
 `M_{c+ε}`, when `M` is Hausdorff. -/
@@ -371,7 +372,7 @@ theorem preimage_morseCharacteristicMap_sublevel (hk : k ≤ n) (hε : 0 < ε) :
   refine Set.ext fun w ↦ ?_
   rw [mem_range_diskBoundaryInclusion_iff, ← mem_sphere_zero_iff_norm,
     ← closedBall_inter_preimage_morseCellMap_sublevel hball hf hk hε]
-  exact ⟨fun h ↦ ⟨w.down.2, h⟩, fun h ↦ h.2⟩
+  exact ⟨fun h ↦ ⟨w.down.property, h⟩, fun h ↦ h.2⟩
 
 /-- A point of the disc carried by the characteristic map into the lower sublevel `M_{c-ε}`,
 viewed inside `M_{c+ε}`, lies on the boundary sphere. -/
@@ -382,7 +383,7 @@ theorem mem_range_diskBoundaryInclusion_of_morseCharacteristicMap (hk : k ≤ n)
     v ∈ range (TopCat.diskBoundaryInclusion.{u} k) := by
   obtain ⟨x, hx⟩ := hv
   rw [← preimage_morseCharacteristicMap_sublevel hball hf hk hε, mem_preimage, mem_ofPred_eq, ← hx]
-  exact (congrArg f (coe_sublevelInclusion_apply f _ x)).trans_le x.2
+  exact (congrArg f (coe_sublevelInclusion_apply f _ x)).trans_le x.property
 
 /-- The cells of two charts with disjoint sources are disjoint. -/
 theorem disjoint_range_morseCharacteristicMap {k' : ℕ}
@@ -393,8 +394,8 @@ theorem disjoint_range_morseCharacteristicMap {k' : ℕ}
     Disjoint (range (morseCharacteristicMap ψ hk hε hball hf))
       (range (morseCharacteristicMap ψ' hk' hε hball' hf')) :=
   disjoint_left.2 fun _ ⟨v, hv⟩ ⟨w, hw⟩ ↦ hψ.ne_of_mem
-    (morseCellMap_mem_source hball hk (mem_closedBall_zero_iff.1 v.down.2))
-    (morseCellMap_mem_source hball' hk' (mem_closedBall_zero_iff.1 w.down.2))
+    (morseCellMap_mem_source hball hk (mem_closedBall_zero_iff.1 v.down.property))
+    (morseCellMap_mem_source hball' hk' (mem_closedBall_zero_iff.1 w.down.property))
     congr(($(hv.trans hw.symm) : M))
 
 /-- The image of the characteristic map is the cell `{‖ψ x‖² ≤ ε, (ψ x)ⱼ = 0 for j ≥ k}` of the
@@ -406,7 +407,7 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
   rw [← morseCellMap_image_closedBall hball hk hε]
   refine Set.ext fun x ↦ ⟨?_, fun hx ↦ ?_⟩
   · rintro ⟨w, rfl⟩
-    exact ⟨w.down, w.down.2, rfl⟩
+    exact ⟨w.down, w.down.property, rfl⟩
   · obtain ⟨w, hw, hwx⟩ := hx
     exact ⟨ULift.up ⟨w, hw⟩, Subtype.ext hwx⟩
 
@@ -497,8 +498,8 @@ def morseFamilyCharacteristicMap (i : ι) : C(P × TopCat.disk.{u} (k i), {x | f
   toFun q := (ψ q.1 i).morseCharacteristicMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2
   continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
     ((continuousOn_morseCellMap_family (ψ := fun p ↦ ψ p i) (hk i) (hs i)).comp_continuous
-      (continuous_fst.prodMk (continuous_subtype_val.comp (continuous_uliftDown.comp
-        continuous_snd))) fun q ↦ ⟨mem_univ _, q.2.down.2⟩).congr fun q ↦
+      (continuous_fst.prodMk (continuous_subtypeVal.comp (continuous_uliftDown.comp
+        continuous_snd))) fun q ↦ ⟨mem_univ _, q.2.down.property⟩).congr fun q ↦
       (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball q.1 i) (hf q.1 i) (hk i) hε
         q.2).symm
 
@@ -519,7 +520,7 @@ def morseFamilyAttachingMap (i : ι) :
       (q.1, TopCat.diskBoundaryInclusion (k i) q.2),
     (congrArg f (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
       (hball q.1 i) (hf q.1 i) (hk i) hε q.2)).trans_le
-        ((ψ q.1 i).morseAttachingMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2).2⟩
+        ((ψ q.1 i).morseAttachingMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2).property⟩
   continuous_toFun := ((morseFamilyCharacteristicMap ψ k hk hε hball hf hs i).continuous.comp
     (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.comp
       continuous_snd))).subtype_mk _
@@ -609,7 +610,7 @@ theorem exists_homotopy_morseCharacteristicMap_of_det_eq_one (hg : LinearMap.det
   obtain ⟨H, hH⟩ := TauCeti.TopCat.exists_homotopy_diskMap_comp_of_det_eq_one hg
     (ψ₀.morseCharacteristicMap hk hε hball₀ hf₀) (S := {x | f x ≤ c - ε}) fun s ↦ by
       rw [mem_ofPred_eq, OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion]
-      exact (ψ₀.morseAttachingMap hk hε hball₀ hf₀ s).2
+      exact (ψ₀.morseAttachingMap hk hε hball₀ hf₀ s).property
   refine ⟨K.trans H, fun t s ↦ ?_⟩
   rw [ContinuousMap.Homotopy.trans_apply]
   split_ifs
@@ -628,7 +629,7 @@ theorem homotopic_morseAttachingMap_diskBoundaryMap_comp
     (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
       (g.diskBoundaryMap ≫ ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom :=
   ⟨{ toFun p := ⟨K (p.1, TopCat.diskBoundaryInclusion k p.2), hK p.1 p.2⟩
-     continuous_toFun := (continuous_subtype_val.comp (K.continuous.comp
+     continuous_toFun := (continuous_subtypeVal.comp (K.continuous.comp
        (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
          continuous_snd)))).subtype_mk _
      map_zero_left s := Subtype.ext ((congrArg Subtype.val (K.apply_zero _)).trans

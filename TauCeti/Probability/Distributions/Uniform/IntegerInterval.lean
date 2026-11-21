@@ -227,12 +227,12 @@ theorem mgf_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) {t : ℝ} (ht : t �
   have hexp : exp t ≠ 1 := fun h ↦ ht (Real.exp_eq_one_iff t |>.mp h)
   rw [mgf, integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : exp (t * ((a + j : ℤ) : ℝ)) = exp (t * a) * exp t ^ j := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     push_cast
     ring_nf
   simp only [hterm, ← Finset.mul_sum, smul_eq_mul]
   have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
-  rw [geom_sum_eq hexp, ← Real.exp_nat_mul, hN,
+  rw [geom_sum_eq hexp, ← Real.exp_natCast_mul, hN,
     mul_comm (b - a + 1 : ℝ) t]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
@@ -285,13 +285,13 @@ theorem charFun_map_intCast_uniformOn_Icc_of_exp_ne_one {a b : ℤ} (h : a ≤ b
     integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : Complex.exp ((t : ℂ) * (((a + j : ℤ) : ℝ) : ℂ) * Complex.I) =
       Complex.exp ((t : ℂ) * a * Complex.I) * Complex.exp ((t : ℂ) * Complex.I) ^ j := by
-    rw [← Complex.exp_nat_mul, ← Complex.exp_add]
+    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
     push_cast
     ring_nf
   have hN : ((((b + 1 - a).toNat : ℕ) : ℝ) : ℂ) = (b : ℂ) - a + 1 := by norm_cast; omega
   have hpow : Complex.exp ((t : ℂ) * Complex.I) ^ (b + 1 - a).toNat =
       Complex.exp ((t : ℂ) * (b - a + 1) * Complex.I) := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     rw [← Complex.ofReal_natCast, hN]
     ring

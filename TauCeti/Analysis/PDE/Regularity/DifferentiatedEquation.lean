@@ -12,9 +12,9 @@ import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
-# Differentiating a divergence-form equation with smooth coefficients
+# Differentiating a divergence-form equation with differentiable coefficients
 
-Let `a` be a matrix-valued coefficient field whose entries are smooth on an open `Ω ⊆ ℝⁿ`, and let
+Let `a` be a matrix-valued coefficient field whose entries are `C²` on an open `Ω ⊆ ℝⁿ`, and let
 `u ∈ H¹(Ω)` be a weak solution of
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`,
@@ -27,16 +27,15 @@ coefficients the derivative also falls on `a`, and `∂ₑu` solves
 
 The commutator `∂ᵢ((∂ₑaⁱʲ) ∂ⱼu)` is a distribution in general. Once `u` has second weak
 derivatives it is the function `∑ᵢⱼ (∂ᵢ∂ₑaⁱʲ ∂ⱼu + ∂ₑaⁱʲ ∂ᵢ∂ⱼu)`, which lies in `L²_loc(Ω)` when
-`u ∈ H²_loc(Ω)`. This is the induction step of interior `Hᵏ` regularity for smooth coefficients:
-interior `H²` regularity for `∂ₑu`, a solution of an equation with `L²` data, puts `u` in `H³`,
-and so on.
+`u ∈ H²_loc(Ω)`. This is the induction step of interior `Hᵏ` regularity for differentiable
+coefficients: interior `H²` regularity for `∂ₑu`, a solution of an equation with `L²` data, puts
+`u` in `H³`, and so on.
 
 All three statements are identities against test functions and need neither ellipticity, nor
-boundedness of the coefficients, nor a boundary condition on `u`. Smoothness of the coefficients
-on `Ω` is more than the identities use (`C¹`, respectively `C²`, would do), but it is what makes
-the product of a coefficient with a test function a test function, so that the Leibniz rule
-`TauCeti.HasWeakLineDerivOn.contDiffOn_smul` applies, and it is the hypothesis of the bootstrap
-to `C^∞`.
+boundedness of the coefficients, nor a boundary condition on `u`. Moving a derivative across the
+energy form needs the coefficients to be `C¹` on `Ω`, and the differentiated equation, whose
+right-hand side contains `∂ᵢ∂ₑaⁱʲ`, needs them to be `C²`; the Leibniz rule for a `C¹` factor
+`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero` supplies the products.
 
 ## Main declarations
 
@@ -44,7 +43,7 @@ to `C^∞`.
   `∂ₑ` moves from the solution onto the test function across the energy form, at the cost of the
   energy form of the coefficient field `∂ₑa`.
 * `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn`: for `u`
-  with second weak derivatives, the energy form of a smooth coefficient field against a test
+  with second weak derivatives, the energy form of a `C¹` coefficient field against a test
   function is integration against the function `-∂ᵢ(Bⁱʲ ∂ⱼu)`.
 * `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn`: the weak
   derivative `∂ₑu` of a weak solution with second weak derivatives solves the differentiated
@@ -109,8 +108,8 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_sum_sum {a : EuclideanSpace �
     _ = _ := Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
         setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul φ (b i)
 
-/-- **A derivative moves across a smooth-coefficient energy form.** Let the entries of `a` be
-smooth on `Ω` and `a(u, v) = ∫_Ω ⟨∇v, a ∇u⟩`. If `u, d ∈ H¹(Ω)` and `d` is the weak derivative of
+/-- **A derivative moves across a `C¹`-coefficient energy form.** Let the entries of `a` be `C¹`
+on `Ω` and `a(u, v) = ∫_Ω ⟨∇v, a ∇u⟩`. If `u, d ∈ H¹(Ω)` and `d` is the weak derivative of
 `u` in a direction `e`, then for every test function `φ` on `Ω`
 
 `a(d, φ) = -a(u, ∂ₑφ) - ∫_Ω ⟨∇φ, (∂ₑa) ∇u⟩`,
@@ -119,7 +118,7 @@ the last term being the energy form of the coefficient field `∂ₑa`.
 
 No ellipticity or boundedness of `a` is needed. -/
 theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (ha : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega)
     {u d : W1p mu Omega 2} {e : EuclideanSpace ℝ ι}
     (hd : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value d) e) (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ mu Omega 2 φ) =
@@ -128,7 +127,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
           (W1p.ofTestFunctionₗ mu Omega 2 φ) := by
   have hΩ : IsLocallyClosed (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.isLocallyClosed
   have hda : ∀ i j, ContinuousOn (fun x => fderiv ℝ (fun y => a y i j) x e) Omega := fun i j =>
-    ((ha i j).continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).clm_apply continuousOn_const
+    ((ha i j).continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply continuousOn_const
   rw [energyFormH1_ofTestFunctionₗ_eq_sum_sum (fun i j => (ha i j).continuousOn),
     energyFormH1_ofTestFunctionₗ_eq_sum_sum (fun i j => (ha i j).continuousOn),
     energyFormH1_ofTestFunctionₗ_eq_sum_sum (fun i j => by simpa using hda i j)]
@@ -141,8 +140,8 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
       ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (b j))
   -- Each term `∫ (∂ᵢφ) (aⁱʲ ∂ⱼd)` moves `∂ₑ` onto the test function by the Leibniz rule.
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  have h := ((hcomm j).contDiffOn_smul (ha i j)).integral_lineDeriv_smul_eq_neg_integral_smul
-    (∂_{b i} φ)
+  have h := ((hcomm j).contDiffOn_smul_of_ne_zero (ha i j) one_ne_zero)
+    |>.integral_lineDeriv_smul_eq_neg_integral_smul (∂_{b i} φ)
   have hint₁ := TestFunction.integrable_smul (∂_{b i} φ)
     ((hcomm j).locallyIntegrableOn_deriv.continuousOn_smul hΩ (ha i j).continuousOn)
   have hint₂ := TestFunction.integrable_smul (∂_{b i} φ)
@@ -153,11 +152,11 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
     TestFunction.lineDeriv_lineDerivOp_comm φ (b i) e] at h ⊢
   linear_combination h
 
-/-- The Leibniz rule for the products `Bⁱʲ ∂ⱼu` of the entries of a coefficient field smooth on
+/-- The Leibniz rule for the products `Bⁱʲ ∂ⱼu` of the entries of a coefficient field `C¹` on
 `Ω` with the components of the weak gradient of `u`, differentiated in the direction `bᵢ`, when
 `u` has the second weak derivatives `∂ᵢ∂ⱼu = ⟪∇(∂ⱼu), bᵢ⟫`. -/
 private theorem hasWeakLineDerivOn_smul_inner_gradient {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hB : ∀ i j, ContDiffOn ℝ ∞ (fun x => B x i j) Omega) {u : W1p mu Omega 2}
+    (hB : ∀ i j, ContDiffOn ℝ 1 (fun x => B x i j) Omega) {u : W1p mu Omega 2}
     {D : ι → W1p mu Omega 2}
     (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (D j))
       (EuclideanSpace.basisFun ι ℝ j)) (i j : ι) :
@@ -172,12 +171,13 @@ private theorem hasWeakLineDerivOn_smul_inner_gradient {B : EuclideanSpace ℝ �
   have hae : W1p.value (D j) =ᵐ[mu.restrict Omega]
       fun x => innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j) :=
     (hD j).ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn _)
-  exact (((W1p.hasWeakFDerivOn (D j)).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul (hB i j)
+  exact (((W1p.hasWeakFDerivOn (D j)).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul_of_ne_zero
+    (hB i j) one_ne_zero
 
 /-- The function `∂ᵢ(Bⁱʲ ∂ⱼu) = ∑ᵢⱼ (∂ᵢBⁱʲ ∂ⱼu + Bⁱʲ ∂ᵢ∂ⱼu)`, times a test function, is
 integrable. -/
 private theorem integrable_smul_sum_sum {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hB : ∀ i j, ContDiffOn ℝ ∞ (fun x => B x i j) Omega) {u : W1p mu Omega 2}
+    (hB : ∀ i j, ContDiffOn ℝ 1 (fun x => B x i j) Omega) {u : W1p mu Omega 2}
     {D : ι → W1p mu Omega 2}
     (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (D j))
       (EuclideanSpace.basisFun ι ℝ j)) (φ : 𝓓(Omega, ℝ)) :
@@ -192,8 +192,8 @@ private theorem integrable_smul_sum_sum {B : EuclideanSpace ℝ ι → Matrix ι
   simp only [smul_eq_mul, innerSL_apply_apply, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
-/-- **The energy form of a smooth coefficient field on an `H²` function.** Let the entries of `B`
-be smooth on `Ω`, and let `u ∈ H¹(Ω)` have its first weak derivatives `∂ⱼu` in `H¹(Ω)`, given as
+/-- **The energy form of a `C¹` coefficient field on an `H²` function.** Let the entries of `B`
+be `C¹` on `Ω`, and let `u ∈ H¹(Ω)` have its first weak derivatives `∂ⱼu` in `H¹(Ω)`, given as
 `D j ∈ H¹(Ω)`. Then for every test function `φ` on `Ω`
 
 `∫_Ω ⟨∇φ, B ∇u⟩ = -∫_Ω (∑ᵢⱼ (∂ᵢBⁱʲ ∂ⱼu + Bⁱʲ ∂ᵢ∂ⱼu)) φ`,
@@ -201,7 +201,7 @@ be smooth on `Ω`, and let `u ∈ H¹(Ω)` have its first weak derivatives `∂�
 where `∂ᵢ∂ⱼu = ⟪∇(D j), bᵢ⟫` and `(bᵢ)` is the standard basis: the energy form of `B` is
 integration against `-∂ᵢ(Bⁱʲ ∂ⱼu)`. -/
 theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn
-    {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (hB : ∀ i j, ContDiffOn ℝ ∞ (fun x => B x i j) Omega)
+    {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (hB : ∀ i j, ContDiffOn ℝ 1 (fun x => B x i j) Omega)
     {u : W1p mu Omega 2} {D : ι → W1p mu Omega 2}
     (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (D j))
       (EuclideanSpace.basisFun ι ℝ j)) (φ : 𝓓(Omega, ℝ)) :
@@ -229,7 +229,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn
   simp only [smul_eq_mul, innerSL_apply_apply, Finset.sum_mul]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
-/-- **The differentiated equation for smooth coefficients.** Let the entries of `a` be smooth on
+/-- **The differentiated equation for `C²` coefficients.** Let the entries of `a` be `C²` on
 `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, in the sense that
 `∫_Ω ⟨∇φ, a ∇u⟩ = ∫_Ω f φ` for every test function `φ`. Suppose that the first weak derivatives
 `∂ⱼu` lie in `H¹(Ω)`, given as `D j`, that `d ∈ H¹(Ω)` is the weak derivative of `u` in a
@@ -241,7 +241,7 @@ against every test function, where `∂ᵢ∂ⱼu = ⟪∇(D j), bᵢ⟫` and `(
 
 No ellipticity or boundedness of `a` is needed, and no boundary condition is imposed on `u`. -/
 theorem energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (ha : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (ha : ∀ i j, ContDiffOn ℝ 2 (fun x => a x i j) Omega)
     {f g : EuclideanSpace ℝ ι → ℝ} {u d : W1p mu Omega 2} {D : ι → W1p mu Omega 2}
     {e : EuclideanSpace ℝ ι}
     (hu : ∀ φ : 𝓓(Omega, ℝ),
@@ -256,9 +256,9 @@ theorem energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn
             ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
           fderiv ℝ (fun y => a y i j) x e *
             ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ)) * φ x ∂mu := by
-  have hda : ∀ i j, ContDiffOn ℝ ∞
+  have hda : ∀ i j, ContDiffOn ℝ 1
       (fun x => (Matrix.of fun i j => fderiv ℝ (fun y => a y i j) x e) i j) Omega := fun i j => by
-    simpa using ((ha i j).fderiv_of_isOpen Omega.isOpen (by simp)).clm_apply contDiffOn_const
+    simpa using ((ha i j).fderiv_of_isOpen Omega.isOpen (by norm_num)).clm_apply contDiffOn_const
   -- `∫_Ω f ∂ₑφ = -∫_Ω g φ` is the definition of the weak derivative of `f`.
   have hfφ : ∫ x in Omega, f x * lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x e ∂mu =
       -∫ x in Omega, g x * φ x ∂mu := by
@@ -270,7 +270,8 @@ theorem energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn
     (φ.integrable_smul hf.locallyIntegrableOn_deriv).restrict.congr
       (Filter.Eventually.of_forall fun x => mul_comm _ _)
   have hcomm := (integrable_smul_sum_sum hda hD φ).restrict (s := Omega)
-  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn ha hd,
+  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
+      (fun i j => (ha i j).of_le (by norm_num)) hd,
     energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn hda hD, hu]
   simp only [TestFunction.lineDerivOp_apply, Matrix.of_apply] at hcomm ⊢
   rw [hfφ, neg_neg, sub_neg_eq_add, ← integral_add hgφ (hcomm.congr

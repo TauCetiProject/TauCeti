@@ -914,9 +914,13 @@ private theorem image_five {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
     have : ∀ x : Fin 275, rigidRank x < 35 → x.val < 6 → x.val < 5 := by decide +kernel
     exact this x hx h6
   have hf := fixed_of_rank hg 35 hseed
+  have hbound' : ∀ y : Fin 275, related 0 y = related 0 5 → related 4 y = related 4 5 →
+      related 88 y = related 88 5 → related 93 y = related 93 5 → y = 5 ∨ y = 215 := by
+    decide +kernel
   have hbound : ∀ y : Fin 275,
       (∀ z ∈ ([0, 4, 88, 93] : List (Fin 275)), related z y = related z 5) →
-        y = 5 ∨ y = 215 := by decide +kernel
+        y = 5 ∨ y = 215 := fun y h ↦
+    hbound' y (h 0 (by simp)) (h 4 (by simp)) (h 88 (by simp)) (h 93 (by simp))
   apply hbound
   intro z hz
   have hr : ∀ z ∈ ([0, 4, 88, 93] : List (Fin 275)), rigidRank z < 35 := by decide +kernel

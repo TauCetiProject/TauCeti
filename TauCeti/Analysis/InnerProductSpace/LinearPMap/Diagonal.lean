@@ -114,7 +114,7 @@ def diagonalPMap : E →ₗ.[𝕜] E where
       smul_mem' a x hx := by
         simpa only [Set.mem_ofPred_eq, inner_smul_right, mul_left_comm] using hx.const_mul a }
   toFun :=
-    { toFun x := b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.2⟩
+    { toFun x := b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.property⟩
       map_add' x y := by
         rw [← _root_.map_add]
         congr 1
@@ -127,7 +127,7 @@ def diagonalPMap : E →ₗ.[𝕜] E where
         simp [inner_smul_right, mul_left_comm] }
 
 private theorem diagonalPMap_apply_eq_repr_symm (x : (b.diagonalPMap c).domain) :
-    b.diagonalPMap c x = b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.2⟩ :=
+    b.diagonalPMap c x = b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.property⟩ :=
   rfl
 
 /-- A vector lies in the domain of `b.diagonalPMap c` if and only if its rescaled coordinate family
