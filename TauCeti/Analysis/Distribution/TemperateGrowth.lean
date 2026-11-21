@@ -76,6 +76,8 @@ need not be bounded. A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
 * `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
   basis.
+* `Function.HasTemperateGrowth.basis_coord`: the coordinates of a function of temperate growth in a
+  basis of a finite-dimensional space have temperate growth.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
@@ -226,6 +228,13 @@ theorem basis_repr_fderiv_apply {𝕜 ι : Type*} [RCLike 𝕜] [Finite ι]
     simp
   rw [h]
   exact (ContinuousLinearMap.hasTemperateGrowth _).comp (hf.fderiv_apply v)
+
+/-- The coordinates in a basis `b` of a function `f` of temperate growth with values in a
+finite-dimensional space have temperate growth. -/
+theorem basis_coord {𝕜 ι : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    [FiniteDimensional 𝕜 F] (hf : f.HasTemperateGrowth) (b : Module.Basis ι 𝕜 F) (i : ι) :
+    (fun x ↦ b.coord i (f x)).HasTemperateGrowth :=
+  ((b.coord i).toContinuousLinearMap.restrictScalars ℝ).hasTemperateGrowth.comp hf
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
