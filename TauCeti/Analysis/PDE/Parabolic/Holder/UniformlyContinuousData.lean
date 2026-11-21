@@ -391,42 +391,6 @@ theorem euclideanCauchySolutionBUC_apply_slabMk_zero
       ((continuous_eval_const x).comp (continuous_subtypeVal.comp continuous_snd))
   · simp
 
-/-- **Uniform attainment of the initial datum.** As `t → 0⁺`, the extended solution converges to
-the initial datum uniformly on `ℝⁿ`: `sup_x |u(x, t) - g(x)| → 0`. -/
-theorem tendstoUniformly_euclideanCauchySolutionBUC
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
-    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦
-      euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) (slabMk x t))
-      (fun x ↦ (w : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) := by
-  rw [Metric.tendstoUniformly_iff]
-  intro ε hε
-  obtain ⟨A, hA, hAdef⟩ : ∃ A, 0 ≤ A ∧ A = Real.exp (‖c‖ * T) * (1 + T) := ⟨_, by positivity, rfl⟩
-  -- Approximate `w` within `δ` by a `C^{2,α}` datum `g`; the classical solution `u` with datum `g`
-  -- is Lipschitz in time, uniformly in space, with the `C^{α,α/2}` norm of `∂ₜu` as constant.
-  obtain ⟨δ, hδ, hAδ⟩ : ∃ δ, 0 < δ ∧ (A + 1) * δ = ε / 2 :=
-    ⟨ε / (2 * (A + 1)), by positivity, by field_simp⟩
-  obtain ⟨g, hg, hu⟩ := exists_ckHolderSpace_approx hα₀ hα₁ hT ha f w hδ
-  rw [← hAdef] at hu
-  set u := (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)
-  obtain ⟨τ, hτ, hDτ⟩ : ∃ τ, 0 < τ ∧ ‖timeDerivL u‖ * τ ≤ ε / 2 :=
-    ⟨ε / (2 * (‖timeDerivL u‖ + 1)), by positivity, by
-      rw [mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
-      nlinarith [norm_nonneg (timeDerivL u)]⟩
-  have hev : ∀ᶠ t : Icc (0 : ℝ) T in 𝓝 ⟨0, left_mem_Icc.2 hT.le⟩, (t : ℝ) < τ :=
-    (continuous_subtypeVal.tendsto _).eventually (gt_mem_nhds hτ)
-  filter_upwards [hev] with t ht x
-  have h1 := abs_le.1 (hu (slabMk x t))
-  have h2 := abs_lt.1 (hg x)
-  have h3 := u.norm_apply_slabMk_sub_le x t ⟨0, left_mem_Icc.2 hT.le⟩
-  rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, Real.norm_eq_abs, sub_zero,
-    abs_of_nonneg t.property.1] at h3
-  have hDt : ‖timeDerivL u‖ * t ≤ ε / 2 :=
-    (mul_le_mul_of_nonneg_left ht.le (norm_nonneg _)).trans hDτ
-  have h3' := abs_le.1 (h3.trans hDt)
-  rw [dist_eq_norm, Real.norm_eq_abs, abs_lt]
-  constructor <;> linarith [h1.1, h1.2, h2.1, h2.2, h3'.1, h3'.2]
-
 /-! ### Bounded classical solutions -/
 
 /-- Let `u ∈ C_b^{2+α,1+α/2}` solve `P u = f`, read as a function of time and space extended
@@ -749,47 +713,37 @@ theorem tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous (h�
       (fun q ↦ (w q.1 : EuclideanSpace ℝ ι →ᵇ ℝ) q.2) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) := by
   obtain ⟨C, hC0, hC⟩ := exists_abs_euclideanCauchySolutionBUC_sub_le (ι := ι) hT
     (∑ i, ∑ j, ‖a i j‖) (∑ i, ‖b i‖) ‖c‖
-  -- The Hölder norms of the coefficients and of the forcing bound them pointwise.
-  have hΛ : ∀ p i j, |a i j p| ≤ ∑ i, ∑ j, ‖a i j‖ := fun p i j ↦
-    ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans
-      ((Finset.single_le_sum (fun j _ ↦ norm_nonneg (a i j)) (Finset.mem_univ j)).trans
-        (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖) (fun i _ ↦ by positivity)
-          (Finset.mem_univ i)))
-  have hβ : ∀ p i, |b i p| ≤ ∑ i, ‖b i‖ := fun p i ↦
-    ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (b i) p)).trans
-      (Finset.single_le_sum (fun i _ ↦ norm_nonneg (b i)) (Finset.mem_univ i))
-  have hnorm (h : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) (p) : |h p| ≤ ‖h‖ :=
-    (Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le h p)
   rw [Metric.tendstoUniformly_iff]
   intro ε hε
-  -- Take `η` with `C η < ε / 2`, the scale `δ₁` of the oscillation `η`, and times `t < τ`.
-  set R := C * |M + ‖f‖|
-  obtain ⟨η, hη, hηε⟩ : ∃ η > 0, C * η < ε / 2 :=
-    ⟨ε / (2 * (C + 1)), by positivity, by
-      rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]
-      nlinarith⟩
-  obtain ⟨δ₁, hδ₁, hδ₁η⟩ := Metric.uniformEquicontinuous_iff.1 hw η hη
-  obtain ⟨τ, hτ, hτδ, hτR⟩ : ∃ τ > 0, τ ≤ δ₁ ^ 2 ∧ R * τ < ε / 2 :=
-    ⟨min (δ₁ ^ 2) (ε / (2 * (R + 1))), by positivity, min_le_left _ _,
-      (mul_le_mul_of_nonneg_left (min_le_right _ _) (by positivity)).trans_lt (by
-        rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]
-        nlinarith [abs_nonneg (M + ‖f‖)])⟩
-  have hev : ∀ᶠ t : Icc (0 : ℝ) T in 𝓝 ⟨0, left_mem_Icc.2 hT.le⟩, (t : ℝ) < τ :=
-    (continuous_subtypeVal.tendsto _).eventually (gt_mem_nhds hτ)
+  obtain ⟨δ, hδ, hδε⟩ := exists_forall_mul_add_mul_lt_of_uniformEquicontinuous hC0 (M + ‖f‖) hw hε
+  have hev : ∀ᶠ t : Icc (0 : ℝ) T in 𝓝 ⟨0, left_mem_Icc.2 hT.le⟩, (t : ℝ) < δ :=
+    (continuous_subtypeVal.tendsto _).eventually (gt_mem_nhds hδ)
   filter_upwards [hev] with t ht q
-  have ht₀ : (0 : ℝ) ≤ t := t.property.1
-  have hsδ : √(t : ℝ) < δ₁ := by
-    rw [← Real.sqrt_sq hδ₁.le]
-    exact Real.sqrt_lt_sqrt ht₀ (ht.trans_le hτδ)
-  have key := hC hα₀ hα₁ ha f (w q.1) hΛ hβ (hnorm c) (hnorm f) (hM q.1) q.2 t
-    fun y z hyz ↦ by simpa [Real.dist_eq] using (hδ₁η y z (hyz.trans_lt hsδ) q.1).le
-  have hR : C * (t * (M + ‖f‖)) ≤ R * τ :=
-    calc _ ≤ C * (t * |M + ‖f‖|) := by gcongr; exact le_abs_self _
-      _ = R * t := by ring
-      _ ≤ R * τ := by gcongr
+  obtain ⟨η, hη, hηε⟩ := hδε t t.property.1 ht
   rw [Real.dist_eq, abs_sub_comm]
-  calc _ ≤ C * (η + t * (M + ‖f‖)) := key
-    _ < ε := by linarith
+  exact (hC hα₀ hα₁ ha f (w q.1) (HolderSpace.abs_apply_le_sum_sum_norm a)
+    (HolderSpace.abs_apply_le_sum_norm b) (HolderSpace.abs_apply_le_norm c)
+    (HolderSpace.abs_apply_le_norm f) (hM q.1) q.2 t (hη q.1)).trans_lt hηε
+
+/-- **Uniform attainment of the initial datum.** As `t → 0⁺`, the extended solution converges to
+the initial datum uniformly on `ℝⁿ`: `sup_x |u(x, t) - g(x)| → 0`. This is the one-member case of
+`tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous`. -/
+theorem tendstoUniformly_euclideanCauchySolutionBUC (hα₀ : 0 < α) (hα₁ : α < 1)
+    (hT : (0 : ℝ) < T) {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
+    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) (slabMk x t))
+      (fun x ↦ (w : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) :=
+  (tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous hT hα₀ hα₁ a b c ha f
+    (fun _ : Unit ↦ w)
+    (uniformEquicontinuous_unique.2 ((mem_uniformContinuousSubmodule _).1 w.property))
+    fun _ x ↦ by simpa using (w : EuclideanSpace ℝ ι →ᵇ ℝ).norm_coe_le_norm x).comp
+    fun x ↦ ((), x)
 
 end Modulus
 
