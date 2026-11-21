@@ -232,10 +232,10 @@ private lemma truncLE'TensorHom_naturality {K' L' : CochainComplex (ModuleCat.{v
   refine HomologicalComplex.hom_ext _ _ (fun n => ?_)
   rw [← cancel_mono ((K' ⊗ L').truncLE'ToX n)]
   refine mapBifunctor.hom_ext (fun p q h => ?_)
-  simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX, tensorHom_eq_mapBifunctorMap]
-  rw [ι_tensorHom_assoc, ι_truncLE'TensorHom_f_truncLE'ToX, ι_truncLE'TensorHom_f_truncLE'ToX_assoc,
-    ι_tensorHom, tensorHom_comp_tensorHom_assoc, truncLE'Map_f_truncLE'ToX,
-    truncLE'Map_f_truncLE'ToX, tensorHom_comp_tensorHom_assoc]
+  simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX]
+  rw [ι_tensorHom_f_assoc, ι_truncLE'TensorHom_f_truncLE'ToX,
+    ι_truncLE'TensorHom_f_truncLE'ToX_assoc, ι_tensorHom_f, tensorHom_comp_tensorHom_assoc,
+    truncLE'Map_f_truncLE'ToX, truncLE'Map_f_truncLE'ToX, tensorHom_comp_tensorHom_assoc]
 
 private lemma truncLE'TensorHom_assoc (M : CochainComplex (ModuleCat.{v} R) ℤ) :
     (truncLE'TensorHom K L ▷ M.truncLE' embeddingDownNat) ≫ truncLE'TensorHom (K ⊗ L) M ≫

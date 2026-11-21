@@ -21,12 +21,20 @@ constructions the monoidal structure is built from — `HomologicalComplex.mapBi
 `HomologicalComplex.leftUnitor'`, `HomologicalComplex.rightUnitor'` and
 `HomologicalComplex.mapBifunctorAssociatorX` — but not for `⊗ₘ`, the whiskerings, `λ_`, `ρ_` and
 `α_` themselves.  This file supplies that last step, so that a calculation on homogeneous summands
-never has to unfold the monoidal structure.  The formulas hold verbatim for homological complexes
-of any shape in any preadditive monoidal category whose tensor product is additive in each
-variable, and are stated in that generality; only their evaluation on pure tensors,
-`HomologicalComplex.ι_tensorHom_apply`, is specific to modules.  The identification of `⊗ₘ`, `◁`
-and `▷` with totalizations of morphisms, on which these formulas rest, is in
-`TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
+never has to unfold the monoidal structure.  The formulas are stated for homological complexes of
+any shape `c` with `c.TensorSigns`, in any preadditive monoidal category whose tensor product is
+additive in each variable.  `HomologicalComplex.ι_tensorHom`,
+`HomologicalComplex.ι_tensorHom_apply` and
+`HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj` assume only that the tensor
+products of complexes they involve exist.  The formulas for the monoidal structure itself assume in
+addition what Mathlib's `HomologicalComplex.monoidalCategoryStruct` needs: tensor products of
+graded objects with good associativity (`GradedObject.HasTensor`,
+`GradedObject.HasGoodTensor₁₂Tensor` and `GradedObject.HasGoodTensorTensor₂₃`), and a zero
+object, from which, with the additivity of the tensor product, follows the preservation of the
+empty colimit that Mathlib also assumes.  Only the evaluation on pure tensors,
+`HomologicalComplex.ι_tensorHom_apply`, is specific to modules.  The
+identification of `⊗ₘ`, `◁` and `▷` with totalizations of morphisms, on which these formulas
+rest, is in `TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
 
 ## Main results
 
@@ -65,7 +73,9 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C]
 
 /-- The tensor product of two morphisms of homological complexes, restricted to a homogeneous
 summand, is the tensor product of their components.  Mathlib states this only for
-`HomologicalComplex.mapBifunctorMap`, by which `⊗ₘ` is defined. -/
+`HomologicalComplex.mapBifunctorMap`, by which `⊗ₘ` is defined.  It is not `@[simp]`: its
+left-hand side is already rewritten by Mathlib's simp lemma `HomologicalComplex.ι_mapBifunctorMap`,
+into the composite of the two whiskerings. -/
 @[reassoc]
 lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
     [HasTensor K₁ K₂] [HasTensor L₁ L₂]
@@ -99,7 +109,7 @@ variable [HasZeroObject C] [∀ (X₁ X₂ : GradedObject I C), GradedObject.Has
 restricted to a homogeneous summand, is the tensor product of their components.
 `HomologicalComplex.ι_tensorHom` states this for `HomologicalComplex.tensorHom`, which needs only
 the two tensor products involved to exist. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ι_tensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
     (i₁ i₂ j : I) (h : i₁ + i₂ = j) :
     ιTensorObj K₁ K₂ i₁ i₂ j h ≫ (f₁ ⊗ₘ f₂).f j =

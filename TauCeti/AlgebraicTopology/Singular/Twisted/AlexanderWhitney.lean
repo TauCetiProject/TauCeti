@@ -97,7 +97,7 @@ lemma ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f (n : ℕ)
   intro p _
   rw [Category.assoc, tensorHom_comp_tensorHom_assoc, ιTwistedChains_map,
     ιTwistedChains_map]
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom]
+  rw [ι_tensorHom_f]
   simp only [tensorHom_comp_tensorHom_assoc, Category.assoc,
     ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f]
 

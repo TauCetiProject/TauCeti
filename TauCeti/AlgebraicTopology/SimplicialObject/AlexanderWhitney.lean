@@ -230,7 +230,7 @@ lemma alexanderWhitney_naturality {A' B' : SimplicialObject C} (f : A ⟶ A') (g
     Monoidal.tensorObj_obj, Monoidal.tensorHom_app]
   simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom]
+  rw [ι_tensorHom_f]
   dsimp only [alternatingFaceMapComplex_obj_X, alternatingFaceMapComplex_map_f]
   simp only [tensorHom_comp_tensorHom_assoc, NatTrans.naturality]
 
