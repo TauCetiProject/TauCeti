@@ -80,7 +80,7 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: composing a symbol on the left
   with a smooth function `f` of the position, operator-valued between Banach spaces or real,
   composes its quantization with `f`.
-* `TauCeti.Symbol.quantizeSchwartzValue_compL_comp`: quantizing `L ∘ a(x, ξ) ∘ K` for constant
+* `TauCeti.Symbol.quantizeSchwartzValue_comp_comp`: quantizing `L ∘ a(x, ξ) ∘ K` for constant
   maps `L` and `K` of the fibres gives `L ∘ Op(a) (K ∘ u)`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
@@ -947,7 +947,7 @@ theorem quantizeSchwartzValue_ofSpatial_comp [CompleteSpace W] {U : Type*}
 /-- **Composition with constant maps of the fibres.** For continuous linear maps `L : W →L[ℂ] W'`
 and `K : V' →L[ℂ] V`, quantizing the coefficient `L ∘ a(x, ξ) ∘ K` on `u` gives `L` applied to the
 quantization of `a` on `K ∘ u`. -/
-theorem quantizeSchwartzValue_compL_comp [CompleteSpace V] [CompleteSpace W] {V' W' : Type*}
+theorem quantizeSchwartzValue_comp_comp [CompleteSpace V] [CompleteSpace W] {V' W' : Type*}
     [NormedAddCommGroup V'] [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W']
     [NormedSpace ℂ W'] [CompleteSpace W'] (L : W →L[ℂ] W') (K : V' →L[ℂ] V) (a : Symbol n V W m)
     (u : 𝓢(CoordinateSpace n, V')) (x : CoordinateSpace n) :

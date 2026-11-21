@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Tempered
 public import TauCeti.Analysis.Distribution.WaveFrontSet.VectorValued
 public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev

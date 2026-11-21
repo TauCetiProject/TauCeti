@@ -1206,7 +1206,7 @@ theorem quantizeSobolev_map {V' W' : Type*} [NormedAddCommGroup V'] [InnerProduc
     BesselPotentialSpace.toDistr_postcomp_apply,
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi, hq]
-  simp only [quantizeSchwartzValue_compL_comp, map_smul]
+  simp only [quantizeSchwartzValue_comp_comp, map_smul]
 
 end Sobolev
 
