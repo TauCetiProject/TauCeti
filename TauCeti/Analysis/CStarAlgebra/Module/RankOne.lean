@@ -119,7 +119,7 @@ lemma norm_rankOne_le (x : F) (y : E) : ‖rankOne A x y‖ ≤ ‖x‖ * ‖y�
   LinearMap.mkContinuous_norm_le _ (by positivity) _
 
 /-- Interchanging the two vectors gives the module adjoint. -/
-lemma inner_rankOne_left (x : F) (y z : E) (w : F) :
+lemma inner_left_rankOne_apply (x : F) (y z : E) (w : F) :
     inner A (rankOne A x y z) w = inner A z (rankOne A y x w) := by
   simp
 
@@ -127,7 +127,7 @@ lemma inner_rankOne_left (x : F) (y z : E) (w : F) :
 lemma isAdjointPair_rankOne (x : F) (y : E) :
     LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip (rankOne A x y) (rankOne A y x) :=
-  isAdjointPair_inner_iff.mpr (inner_rankOne_left x y)
+  isAdjointPair_inner_iff.mpr (inner_left_rankOne_apply x y)
 
 /-- Composing module rank-one maps again gives a module rank-one map. -/
 lemma rankOne_comp_rankOne (x : G) (y u : F) (v : E) :
@@ -149,8 +149,9 @@ lemma comp_rankOne_cstarModule (T : F →L[ℂ] G) (hT : ∀ (a : A) z, T (a •
   ext z
   simp [hT]
 
-/-- Precomposition by an adjointable map acts by its adjoint on the second vector. -/
-lemma rankOne_comp_cstarModule (T : E →L[ℂ] F) (S : F →L[ℂ] E)
+/-- Precomposition by an adjointable map acts by its adjoint on the second vector.
+The adjoint can be supplied as a function. -/
+lemma rankOne_comp_cstarModule (T : E →L[ℂ] F) (S : F → E)
     (h : LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x : G) (y : F) :
     (rankOne A x y).comp T = rankOne A x (S y) := by
