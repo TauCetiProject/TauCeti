@@ -28,6 +28,10 @@ elementary transport and rank-zero helpers for Coxeter systems.
   yet known to satisfy it, so it cannot be routed through
   `CoxeterSystem.prod_alternatingWord_eq_mul_pow`, which evaluates only the simple reflections
   themselves. The evaluations at lengths `2` and `3` are special cases.
+* `TauCeti.prod_map_alternatingWord_eq_mul_pow`: for a family taking involutions at `i` and `i'`,
+  the two alternating words of length `m` differ by the `m`-th power of `f i * f i'`.
+* `TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq`: two involutions satisfying a braid relation
+  of length `m` have product of order dividing `m`.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
   its length is even, and leaves it unchanged when its length is odd.
 * `CoxeterMatrix.isLiftable_of_mul_self_of_braidWord` and
@@ -76,6 +80,34 @@ theorem prod_map_alternatingWord_three (f : B → N) (i i' : B) :
     ((CoxeterSystem.alternatingWord i i' 3).map f).prod = f i' * f i * f i' := by
   simp [prod_map_alternatingWord, Nat.even_iff, mul_assoc]
 
+/-- **The two alternating words of length `m` differ by the `m`-th power of the rotation**, for
+any family `f` taking involutions at `i` and `i'`: the word alternating between `i` and `i'` and
+ending with `i'` evaluates to the word ending with `i` followed by `(f i * f i') ^ m`. -/
+theorem prod_map_alternatingWord_eq_mul_pow {G : Type*} [Group G] (f : B → G) {i i' : B}
+    (hi : f i * f i = 1) (hi' : f i' * f i' = 1) (m : ℕ) :
+    ((CoxeterSystem.alternatingWord i i' m).map f).prod =
+      ((CoxeterSystem.alternatingWord i' i m).map f).prod * (f i * f i') ^ m := by
+  induction m generalizing i i' with
+  | zero => simp [CoxeterSystem.alternatingWord]
+  | succ m ih =>
+    -- Conjugating by `f i'` carries the rotation `f i * f i'` to its inverse `f i' * f i`.
+    have hsemi : SemiconjBy (f i') ((f i * f i') ^ m) ((f i' * f i) ^ m) :=
+      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
+    have hcancel (y : G) : f i * (f i * y) = y := by rw [← mul_assoc, hi, one_mul]
+    simp only [CoxeterSystem.alternatingWord_succ, List.concat_eq_append, List.map_append,
+      List.prod_append, List.map_singleton, List.prod_singleton, ih hi' hi, pow_succ', mul_assoc,
+      hcancel, hsemi.eq]
+
+/-- If `f i` and `f j` are involutions satisfying the braid relation of length `m`, then
+`(f i * f j) ^ m = 1`. Thus a family of involutions satisfying the braid relations of a Coxeter
+matrix satisfies its Coxeter relations. -/
+theorem pow_eq_one_of_prod_map_alternatingWord_eq {G : Type*} [Group G] (f : B → G)
+    {i j : B} (hi : f i * f i = 1) (hj : f j * f j = 1) (m : ℕ)
+    (h : ((CoxeterSystem.alternatingWord i j m).map f).prod =
+      ((CoxeterSystem.alternatingWord j i m).map f).prod) :
+    (f i * f j) ^ m = 1 := by
+  rwa [prod_map_alternatingWord_eq_mul_pow f hi hj, mul_eq_left] at h
+
 /-! ### Reversing alternating words -/
 
 /-- Reversing an alternating word swaps its two letters when its length is even, and fixes it when
@@ -107,32 +139,18 @@ theorem isLiftable_of_mul_self_of_braidWord [Monoid G] (M : CoxeterMatrix B) {f 
     M.IsLiftable f := by
   let u (i : B) : Gˣ := ⟨f i, f i, hsq i, hsq i⟩
   have hu_sq (i : B) : u i * u i = 1 := Units.ext (hsq i)
-  have hu_inv (i : B) : (u i)⁻¹ = u i := rfl
   have hcoe (ω : List B) : (((ω.map u).prod : Gˣ) : G) = (ω.map f).prod := by
     induction ω with
     | nil => rfl
     | cons k ω ih => simp [u, ih]
   intro i i'
-  have hb : ((CoxeterSystem.braidWord M i i').map u).prod =
-      ((CoxeterSystem.braidWord M i' i).map u).prod :=
-    Units.ext ((hcoe _).trans ((hbraid i i').trans (hcoe _).symm))
-  have hrev : u i' * u i = (u i * u i')⁻¹ := by rw [mul_inv_rev, hu_inv, hu_inv]
-  rw [CoxeterSystem.braidWord, CoxeterSystem.braidWord, M.symmetric i' i,
-    TauCeti.prod_map_alternatingWord, TauCeti.prod_map_alternatingWord, hrev, inv_pow] at hb
-  have hmul : (if Even (M i i') then 1 else u i') * (u i * u i') ^ (2 * (M i i' / 2)) =
-      if Even (M i i') then 1 else u i := by
-    have h := congrArg (· * (u i * u i') ^ (M i i' / 2)) hb
-    rwa [mul_assoc, ← pow_add, ← two_mul, mul_assoc, inv_mul_cancel, mul_one] at h
-  have hu_pow : (u i * u i') ^ M i i' = 1 := by
-    by_cases hm : Even (M i i')
-    · simpa only [hm, ↓reduceIte, one_mul, Nat.two_mul_div_two_of_even hm] using hmul
-    · have hodd : 2 * (M i i' / 2) + 1 = M i i' := by
-        have := Nat.not_even_iff.mp hm
-        omega
-      have h' := congrArg (u i * ·) hmul
-      simp only [hm, ↓reduceIte, hu_sq] at h'
-      rwa [← mul_assoc, ← pow_succ', hodd] at h'
-  simpa [u] using congrArg Units.val hu_pow
+  have hb : ((CoxeterSystem.alternatingWord i i' (M i i')).map u).prod =
+      ((CoxeterSystem.alternatingWord i' i (M i i')).map u).prod := by
+    have hbraid' := hbraid i i'
+    rw [CoxeterSystem.braidWord, CoxeterSystem.braidWord, M.symmetric i' i] at hbraid'
+    exact Units.ext ((hcoe _).trans (hbraid'.trans (hcoe _).symm))
+  simpa [u] using congrArg Units.val
+    (TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq u (hu_sq i) (hu_sq i') (M i i') hb)
 
 /-- A family `f : B → G` into a monoid is liftable along `M` if and only if each `f i` squares to
 `1` and `f` satisfies the braid-word equations of `M`. -/

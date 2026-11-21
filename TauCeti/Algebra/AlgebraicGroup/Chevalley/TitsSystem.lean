@@ -18,7 +18,7 @@ import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
-# The Tits system and Weyl quotient of a Chevalley datum
+# The Tits system of a Chevalley datum
 
 Over any field `K`, a Chevalley datum `D` of valid Dynkin type `t` carries a canonical Tits system
 on its extended elementary subgroup `D.extendedElementarySubgroup K` with Borel subgroup
@@ -34,9 +34,9 @@ to `w ∈ W`,
 
 Comparing the positive double-coset equality with the length-decreasing union formula in the Tits
 Weyl group proves without Coxeter braid presentations that `D.weylProjection K` descends to an
-isomorphism `D.titsWeylGroupMulEquiv K : (D.titsSystem K).WeylGroup ≃* W`. Consequently the kernel
-of `D.weylProjection K` is precisely the actual torus `T_D(K)`, yielding the canonical Weyl
-quotient isomorphism `D.weylSubgroupQuotientMulEquiv K : N(K) / T_D(K) ≃* W` over every field.
+isomorphism `D.titsWeylGroupMulEquiv K : (D.titsSystem K).WeylGroup ≃* W`. (See
+`Chevalley.Weyl.Quotient` for the direct Coxeter-presentation isomorphism
+`ChevalleyDatum.weylQuotientEquiv` and kernel `ChevalleyDatum.ker_weylProjection`.)
 
 ## Main definitions and results
 
@@ -47,8 +47,6 @@ quotient isomorphism `D.weylSubgroupQuotientMulEquiv K : N(K) / T_D(K) ≃* W` o
   on `D.extendedElementarySubgroup K`, whose `B ∩ N` intersection consists of the points of the
   actual torus `T_D(K)`.
 * `ChevalleyDatum.titsWeylGroupMulEquiv`: the isomorphism `(D.titsSystem K).WeylGroup ≃* W`.
-* `ChevalleyDatum.ker_weylProjection` and `ChevalleyDatum.weylSubgroupQuotientMulEquiv`: the kernel
-  of `D.weylProjection K` is the actual torus, giving `N(K) / T_D(K) ≃* W`.
 * `ChevalleyDatum.elementaryTitsSystem`,
   `ChevalleyDatum.mem_elementaryTitsSystem_intersection_iff`, and
   `ChevalleyDatum.elementaryTitsWeylGroupMulEquiv`: the induced Tits system on
@@ -622,31 +620,6 @@ theorem titsSystem_simple_eq_preimage :
   · rintro ⟨i, hi⟩
     refine ⟨i, (D.titsWeylGroupMulEquiv K).injective ?_⟩
     rw [D.titsWeylGroupMulEquiv_titsSimpleReflection K i, hi]
-
-/-- Over every field, the kernel of `D.weylProjection K` is precisely the actual torus inside
-`D.weylSubgroup K`. -/
-@[simp]
-theorem ker_weylProjection :
-    (D.weylProjection K).ker = ((D.torusPoints K).range).subgroupOf (D.weylSubgroup K) := by
-  ext m
-  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, ← (D.titsWeylGroupMulEquiv K).symm.map_eq_one_iff,
-    D.titsWeylGroupMulEquiv_symm_weylProjection K m, QuotientGroup.eq_one_iff,
-    D.mem_titsSystem_intersection_iff K, coe_titsSubgroupNMulEquiv_symm]
-
-/-- Over any field, the quotient of `D.weylSubgroup K` by the actual torus `T_D(K)` is canonically
-isomorphic to the Weyl group of the root datum. -/
-noncomputable def weylSubgroupQuotientMulEquiv :
-    D.weylSubgroup K ⧸ ((D.torusPoints K).range).subgroupOf (D.weylSubgroup K) ≃*
-      (t.simplyConnectedRootDatum ht).weylGroup :=
-  (QuotientGroup.quotientMulEquivOfEq (D.ker_weylProjection K).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective (D.weylProjection K)
-      (D.weylProjection_surjective K))
-
-/-- `weylSubgroupQuotientMulEquiv` evaluates on the class of `n` as `D.weylProjection K n`. -/
-@[simp]
-theorem weylSubgroupQuotientMulEquiv_mk (n : D.weylSubgroup K) :
-    D.weylSubgroupQuotientMulEquiv K (QuotientGroup.mk n) = D.weylProjection K n :=
-  (rfl)
 
 /-! ### The induced Tits system on the elementary Chevalley subgroup -/
 

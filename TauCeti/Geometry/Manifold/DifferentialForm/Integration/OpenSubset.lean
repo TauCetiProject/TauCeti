@@ -27,6 +27,8 @@ integration on compactly supported cohomology interacts with the extension-by-ze
 
 * `TauCeti.integralTopForm_mpullback_subtypeVal`: `∫_U φ|_U = ∫_M φ` for a top form `φ` on `M`
   supported in `U`.
+* `TauCeti.integralTopForm_restrict_reindex_finCongr`: reindexing the orientation and
+  transporting the top form along an equality of dimensions do not change the integral.
 * `TauCeti.integralTopForm_extendByZero`: `∫_W ext ω = ∫_U ω` for a compactly supported top form
   `ω` on `U ≤ W`, on a Hausdorff manifold.
 * `TopologicalSpace.Opens.integrableTopForm_mpullback_subtypeVal_iff`,
@@ -74,6 +76,16 @@ theorem integralTopForm_mpullback_subtypeVal (o : Manifold.Orientation I M (Fin 
       integralTopForm o φ :=
   U.isOpenEmbedding'.integralTopForm_mpullback_of_isOrientationPreservingAt
     (o.isOrientationPreservingAt_restrict U) (by rwa [Subtype.range_coe])
+
+/-- Reindexing an orientation along an equality `k = m` of dimensions and transporting a top form
+along the same equality do not change the integral over an open subset. -/
+theorem integralTopForm_restrict_reindex_finCongr {m : ℕ} (o : Manifold.Orientation I M (Fin k))
+    (h : k = m) (U : Opens M) (φ : SmoothForm I U ℝ k) :
+    integralTopForm ((o.reindex (finCongr h)).restrict U)
+        (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I U ℝ q) h φ).val =
+      integralTopForm (o.restrict U) φ.val := by
+  subst h
+  simp
 
 section T2
 

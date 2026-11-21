@@ -7,25 +7,24 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Action
 import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.GroupTheory.Coxeter.Matrix
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 
 /-!
-# The Bourbaki-numbered Coxeter system of the pinned simply connected root datum
+# The Coxeter matrix and Bourbaki-numbered Coxeter system of the pinned simply connected root datum
+
+In the pinned datum `TauCeti.DynkinType.simplyConnectedRootDatum`, simple roots are numbered by
+`Fin t.rank` in the Bourbaki order. This file records that, read through that numbering, the Coxeter
+matrix of the pinned base is the standard Coxeter matrix `t.coxeterMatrix` of the type
+(`TauCeti.DynkinType.coxeterMatrixOfBase_simplyConnectedBase`).
 
 Tits' theorem (`TauCeti.weylCoxeterSystem`) makes the Weyl group of a finite reduced
-crystallographic root pairing into a Coxeter system indexed by the support of a base. For a
-valid Dynkin type `t`, the pinned root datum `t.simplyConnectedRootDatum ht` carries a
-numbered base `t.simplyConnectedBase ht` whose support is matched with `Fin t.rank` by
-`t.simpleSupportEquivSimplyConnectedBase ht`, matching the base's Cartan matrix with
-`t.cartanMatrix` and hence its Coxeter matrix with `t.coxeterMatrix`.
-
-This file transports `TauCeti.weylCoxeterSystem` along that Bourbaki node numbering, giving a
-canonical `CoxeterSystem t.coxeterMatrix (t.simplyConnectedRootDatum ht).weylGroup` whose
-`i`-th simple reflection is `ofIdx (t.simpleIndex ht i)` and whose word product is
-`t.geckWeylWordProd ht`.
+crystallographic root pairing into a Coxeter system indexed by the support of a base. Transporting
+`TauCeti.weylCoxeterSystem` along `t.simpleSupportEquivSimplyConnectedBase ht` gives a canonical
+`CoxeterSystem t.coxeterMatrix (t.simplyConnectedRootDatum ht).weylGroup` whose `i`-th simple
+reflection is `ofIdx (t.simpleIndex ht i)` and whose word product is `t.geckWeylWordProd ht`.
 
 ## Main definitions
 
@@ -34,6 +33,10 @@ canonical `CoxeterSystem t.coxeterMatrix (t.simplyConnectedRootDatum ht).weylGro
 
 ## Main results
 
+* `TauCeti.DynkinType.coxeterMatrixOfBase_simplyConnectedBase` and
+  `TauCeti.DynkinType.coxeterMatrixOfBase_simplyConnectedBase_apply`: the Coxeter matrix of the
+  pinned base is `t.coxeterMatrix`, reindexed by `t.simpleSupportEquivSimplyConnectedBase ht`.
+* `TauCeti.DynkinType.reindex_coxeterMatrixOfBase_simplyConnectedBase`: inverse reindexing form.
 * `TauCeti.DynkinType.simplyConnectedWeylCoxeterSystem_simple`: the `i`-th simple reflection
   is `RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)`.
 * `TauCeti.DynkinType.simplyConnectedWeylCoxeterSystem_wordProd`: the Coxeter word product
@@ -54,16 +57,34 @@ namespace TauCeti.DynkinType
 
 variable (t : DynkinType) (ht : t.Valid)
 
+/-- The Coxeter matrix of the numbered base is the Bourbaki-numbered Coxeter matrix of the type. -/
+theorem coxeterMatrixOfBase_simplyConnectedBase :
+    coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) =
+      t.coxeterMatrix.reindex (t.simpleSupportEquivSimplyConnectedBase ht) := by
+  rw [coxeterMatrixOfBase_eq_coxeterMatrix_reindex
+    (t.simpleSupportEquivSimplyConnectedBase ht).symm, Equiv.symm_symm]
+  intro i j
+  simpa using t.cartanMatrix_simplyConnectedBase_apply ht
+    ((t.simpleSupportEquivSimplyConnectedBase ht).symm i)
+    ((t.simpleSupportEquivSimplyConnectedBase ht).symm j)
+
+/-- The entries of the Coxeter matrix of the numbered base are those of the Bourbaki-numbered
+Coxeter matrix of the type. -/
+theorem coxeterMatrixOfBase_simplyConnectedBase_apply (i j : Fin t.rank) :
+    coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (t.simpleSupportEquivSimplyConnectedBase ht i)
+        (t.simpleSupportEquivSimplyConnectedBase ht j) =
+      t.coxeterMatrix i j := by
+  rw [coxeterMatrixOfBase_simplyConnectedBase, CoxeterMatrix.reindex_apply, Equiv.symm_apply_apply,
+    Equiv.symm_apply_apply]
+
 /-- The Coxeter matrix of the pinned simply connected base, reindexed by the Bourbaki nodes,
 is `t.coxeterMatrix`. -/
 theorem reindex_coxeterMatrixOfBase_simplyConnectedBase :
     (coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).reindex
         (t.simpleSupportEquivSimplyConnectedBase ht).symm =
       t.coxeterMatrix := by
-  let e := t.simpleSupportEquivSimplyConnectedBase ht
-  rw [coxeterMatrixOfBase_eq_coxeterMatrix_reindex e.symm (fun i j => by
-        simpa [e] using t.cartanMatrix_simplyConnectedBase_apply ht (e.symm i) (e.symm j)),
-    CoxeterMatrix.reindex_reindex, Equiv.symm_symm, Equiv.self_trans_symm,
+  rw [coxeterMatrixOfBase_simplyConnectedBase, CoxeterMatrix.reindex_reindex, Equiv.self_trans_symm,
     CoxeterMatrix.reindex_refl]
 
 /-- **The Bourbaki-numbered Coxeter system of the pinned Weyl group.** By Tits' theorem, the
