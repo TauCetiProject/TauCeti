@@ -14,20 +14,31 @@ public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 # Self-adjoint contractions and symmetries in the continuous functional calculus
 
 For a self-adjoint contraction `a` of a unital C⋆-algebra, `1 - a²` is positive
-(`IsSelfAdjoint.one_sub_mul_self_nonneg`), so it has a positive square root `√(1 - a²)`, which
-commutes with every element commuting with `a²` (`IsSelfAdjoint.commute_sqrt_one_sub_mul_self`).
-These are the entries of the self-adjoint unitary `[[a, √(1 - a²)], [√(1 - a²), -a]]` dilating `a`.
+(`IsSelfAdjoint.one_sub_mul_self_nonneg`), so it has a positive square root `√(1 - a²)`. The
+square root `CFC.sqrt x` of any element commutes with every element commuting with `x`
+(`Commute.cfcSqrt`), so `√(1 - a²)` commutes with `a`. These are the entries of the self-adjoint
+unitary `[[a, √(1 - a²)], [√(1 - a²), -a]]` dilating `a`.
 
 A self-adjoint unitary `γ` that anticommutes with a self-adjoint `a` conjugates `a` to `-a`, so it
-anticommutes with `f(a)` for every odd real function `f` (`TauCeti.mul_cfc_eq_neg_cfc_mul`). This
-is how a grading passes through the functional calculus of an odd operator.
+anticommutes with `f(a)` for every odd real function `f` (`IsSelfAdjoint.mul_cfc_eq_neg_cfc_mul`).
+This is how a grading passes through the functional calculus of an odd operator.
 -/
 
 public section
 
+/-- The square root `CFC.sqrt x` commutes with every element that commutes with `x`. -/
+protected theorem Commute.cfcSqrt {B : Type*} [PartialOrder B] [NonUnitalRing B]
+    [TopologicalSpace B] [StarRing B] [Module ℝ B] [SMulCommClass ℝ B B] [IsScalarTower ℝ B B]
+    [StarOrderedRing B] [NonUnitalContinuousFunctionalCalculus ℝ B IsSelfAdjoint]
+    [NonnegSpectrumClass ℝ B] [IsTopologicalRing B] [T2Space B] {x b : B} (h : Commute x b) :
+    Commute (CFC.sqrt x) b :=
+  h.cfcₙ_nnreal NNReal.sqrt
+
 variable {A : Type*} [CStarAlgebra A]
 
 namespace IsSelfAdjoint
+
+section Order
 
 variable [PartialOrder A] [StarOrderedRing A]
 
@@ -38,16 +49,7 @@ theorem one_sub_mul_self_nonneg {a : A} (ha : IsSelfAdjoint a) (ha₁ : ‖a‖ 
     ha.norm_mul_self]
   nlinarith [norm_nonneg a]
 
-/-- For a self-adjoint contraction `a`, the square root `√(1 - a²)` commutes with every element
-that commutes with `a²`. -/
-theorem commute_sqrt_one_sub_mul_self {a b : A} (ha : IsSelfAdjoint a) (ha₁ : ‖a‖ ≤ 1)
-    (hb : Commute (a * a) b) : Commute (CFC.sqrt (1 - a * a)) b := by
-  rw [CFC.sqrt_eq_real_sqrt _ (ha.one_sub_mul_self_nonneg ha₁), cfcₙ_eq_cfc]
-  exact ((Commute.one_left b).sub_left hb).cfc_real _
-
-end IsSelfAdjoint
-
-namespace TauCeti
+end Order
 
 /-- **A symmetry anticommutes with odd functions.** If `γ` is a self-adjoint unitary that
 anticommutes with a self-adjoint `a`, then `γ` anticommutes with `f(a)` for every odd real
@@ -77,4 +79,4 @@ theorem mul_cfc_eq_neg_cfc_mul {γ a : A} (hγ : IsSelfAdjoint γ) (hγγ : γ *
   calc γ * cfc f a = γ * cfc f a * γ * γ := by rw [mul_assoc _ γ, hγγ, mul_one]
     _ = -(cfc f a * γ) := by rw [h, neg_mul]
 
-end TauCeti
+end IsSelfAdjoint

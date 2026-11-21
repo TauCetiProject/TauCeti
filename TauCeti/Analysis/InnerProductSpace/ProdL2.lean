@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
-# Isometric embeddings into the `L²` direct sum `WithLp 2 (E × F)`
+# Coordinate embeddings and block operators on the `L²` direct sum `WithLp 2 (E × F)`
 
 For inner product spaces `E` and `F` over `𝕜` (`[RCLike 𝕜]`), `WithLp.inlL2 𝕜 E F` and
 `WithLp.inrL2 𝕜 E F` are the coordinate embeddings `x ↦ (x, 0)` and `y ↦ (0, y)` into
@@ -22,7 +22,8 @@ of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inr
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`).
 
 An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
-`WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`. Block operators
+`WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`, and every operator is
+the block operator of its four blocks (`WithLp.blockL2_eta`). Block operators
 multiply as matrices (`WithLp.blockL2_mul_blockL2`), their adjoint is the conjugate transpose
 (`WithLp.adjoint_blockL2`), and a block operator with compact entries is compact
 (`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the block sums
@@ -112,21 +113,26 @@ theorem blockL2_apply (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜
     blockL2 a b c d z = WithLp.toLp 2 (a z.fst + b z.snd, c z.fst + d z.snd) := by
   simp [blockL2, ← WithLp.toLp_add]
 
-/-- Two operators on `WithLp 2 (E × F)` agree when their four blocks do. -/
-theorem blockL2_injective (a a' : E →L[𝕜] E) (b b' : F →L[𝕜] E) (c c' : E →L[𝕜] F)
-    (d d' : F →L[𝕜] F) (h : blockL2 a b c d = blockL2 a' b' c' d') :
-    a = a' ∧ b = b' ∧ c = c' ∧ d = d' := by
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> ext x
+/-- Two block operators agree exactly when their four blocks do. -/
+@[simp]
+theorem blockL2_inj {a a' : E →L[𝕜] E} {b b' : F →L[𝕜] E} {c c' : E →L[𝕜] F}
+    {d d' : F →L[𝕜] F} :
+    blockL2 a b c d = blockL2 a' b' c' d' ↔ a = a' ∧ b = b' ∧ c = c' ∧ d = d' := by
+  refine ⟨fun h => ⟨?_, ?_, ?_, ?_⟩, by rintro ⟨rfl, rfl, rfl, rfl⟩; rfl⟩ <;> ext x
   · simpa using congr(($h (WithLp.toLp 2 (x, 0))).fst)
   · simpa using congr(($h (WithLp.toLp 2 (0, x))).fst)
   · simpa using congr(($h (WithLp.toLp 2 (x, 0))).snd)
   · simpa using congr(($h (WithLp.toLp 2 (0, x))).snd)
 
-@[simp]
-theorem blockL2_inj {a a' : E →L[𝕜] E} {b b' : F →L[𝕜] E} {c c' : E →L[𝕜] F}
-    {d d' : F →L[𝕜] F} :
-    blockL2 a b c d = blockL2 a' b' c' d' ↔ a = a' ∧ b = b' ∧ c = c' ∧ d = d' :=
-  ⟨blockL2_injective a a' b b' c c' d d', by rintro ⟨rfl, rfl, rfl, rfl⟩; rfl⟩
+/-- Every operator on `WithLp 2 (E × F)` is the block operator of its four blocks. -/
+theorem blockL2_eta (T : WithLp 2 (E × F) →L[𝕜] WithLp 2 (E × F)) :
+    blockL2 (WithLp.fstL 2 𝕜 E F ∘L T ∘L inlL2 𝕜 E F) (WithLp.fstL 2 𝕜 E F ∘L T ∘L inrL2 𝕜 E F)
+      (WithLp.sndL 2 𝕜 E F ∘L T ∘L inlL2 𝕜 E F) (WithLp.sndL 2 𝕜 E F ∘L T ∘L inrL2 𝕜 E F) = T := by
+  refine ContinuousLinearMap.ext fun z => ?_
+  have hz : z = inlL2 𝕜 E F z.fst + inrL2 𝕜 E F z.snd :=
+    WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simp))
+  conv_rhs => rw [hz, map_add]
+  exact WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simp))
 
 /-- A block operator with zero off-diagonal blocks is the block sum of its diagonal blocks. -/
 @[simp]

@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
-public import Mathlib.Analysis.InnerProductSpace.StarOrder
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
-public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
-public import TauCeti.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.InnerProductSpace.ContractionDilation
 public import TauCeti.Analysis.InnerProductSpace.Spectral.BlockSum
 public import TauCeti.Analysis.Normed.Operator.Compact.EssentialCommutant
 public import TauCeti.NoncommutativeGeometry.FredholmModule.Basic
@@ -43,11 +39,13 @@ in two steps.
 Composing the two gives `FredholmModule.normalize` and `EvenFredholmModule.normalize`, Fredholm
 modules over the same algebra on `H ⊕ H` whose operator squares to `1`.
 
+The operator `F'` is `ContinuousLinearMap.doublingOperator F`, a self-adjoint involution when `F`
+is a self-adjoint contraction (`ContinuousLinearMap.doublingOperator_mul_self`).
+
 ## Main definitions
 
-* `TauCeti.doublingOperator F`: the operator `[[F, √(1 - F²)], [√(1 - F²), -F]]` on `H ⊕ H`, a
-  self-adjoint involution when `F` is a self-adjoint contraction.
 * `TauCeti.FredholmModule.sineReplacement`: the module with operator `sin (π F / 2)`.
+* `TauCeti.FredholmModule.doubleRep`: the representation `π ⊕ 0` on `H ⊕ H`.
 * `TauCeti.FredholmModule.double`: the doubled module on `H ⊕ H` of a module whose operator is a
   contraction.
 * `TauCeti.FredholmModule.normalize`: the doubled sine replacement, with `F² = 1`.
@@ -59,7 +57,6 @@ modules over the same algebra on `H ⊕ H` whose operator squares to `1`.
 * `TauCeti.FredholmModule.isCompactOperator_cfc_commutator`: `[f(F), π(a)]` is compact for every
   real function `f`.
 * `TauCeti.FredholmModule.isCompactOperator_sqrt_mul_rep`: `√(1 - F²) π(a)` is compact.
-* `TauCeti.doublingOperator_mul_self`: `F'² = 1`.
 * `TauCeti.FredholmModule.normalize_operator_mul_self`: the normalized module has `F² = 1`.
 
 ## References
@@ -79,41 +76,6 @@ namespace TauCeti
 
 variable {A : Type*} [NonUnitalNonAssocSemiring A] [Module ℂ A] [Star A]
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-! ### The doubling operator -/
-
-/-- The **doubling operator** of `F`: the operator `[[F, √(1 - F²)], [√(1 - F²), -F]]` on the
-Hilbert direct sum `H ⊕ H`. For a self-adjoint contraction `F` it is a self-adjoint involution
-(`TauCeti.isSelfAdjoint_doublingOperator`, `TauCeti.doublingOperator_mul_self`) whose upper left
-corner is `F`. -/
-def doublingOperator (F : H →L[ℂ] H) : WithLp 2 (H × H) →L[ℂ] WithLp 2 (H × H) :=
-  WithLp.blockL2 F (CFC.sqrt (1 - F * F)) (CFC.sqrt (1 - F * F)) (-F)
-
-/-- The block form of the doubling operator. -/
-theorem doublingOperator_def (F : H →L[ℂ] H) :
-    doublingOperator F =
-      WithLp.blockL2 F (CFC.sqrt (1 - F * F)) (CFC.sqrt (1 - F * F)) (-F) :=
-  (rfl)
-
-/-- The doubling operator of a self-adjoint operator is self-adjoint. -/
-theorem isSelfAdjoint_doublingOperator {F : H →L[ℂ] H} (hF : IsSelfAdjoint F) :
-    IsSelfAdjoint (doublingOperator F) := by
-  have hS : IsSelfAdjoint (CFC.sqrt (1 - F * F)) := (CFC.sqrt_nonneg _).isSelfAdjoint
-  rw [IsSelfAdjoint, doublingOperator, WithLp.star_blockL2, ← star_eq_adjoint, hS.star_eq,
-    star_neg, hF.star_eq]
-
-/-- **The doubling operator is an involution.** For a self-adjoint contraction `F`,
-`[[F, √(1 - F²)], [√(1 - F²), -F]]² = 1`. -/
-theorem doublingOperator_mul_self {F : H →L[ℂ] H} (hF : IsSelfAdjoint F) (hF₁ : ‖F‖ ≤ 1) :
-    doublingOperator F * doublingOperator F = 1 := by
-  rw [doublingOperator, WithLp.blockL2_mul_blockL2, ← withLpProdMap_one (p := 2),
-    ← WithLp.blockL2_zero_zero]
-  set S := CFC.sqrt (1 - F * F)
-  have hSS : S * S = 1 - F * F := CFC.sqrt_mul_sqrt_self _ (hF.one_sub_mul_self_nonneg hF₁)
-  have hFS : F * S = S * F :=
-    (hF.commute_sqrt_one_sub_mul_self hF₁ ((Commute.refl F).mul_left (Commute.refl F))).eq.symm
-  simp only [← mul_def, mul_neg, neg_mul, neg_neg, hSS, hFS, WithLp.blockL2_inj]
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> abel
 
 /-! ### Odd Fredholm modules -/
 
@@ -136,23 +98,6 @@ theorem isCompactOperator_cfc_commutator (f : ℝ → ℝ) (a : A) :
   mem_essentialCommutant.1 (cfc_mem_essentialCommutant
     (by rintro _ ⟨b, rfl⟩; exact ⟨star b, map_star M.rep b⟩) f M.operator_mem_essentialCommutant)
     _ ⟨a, rfl⟩
-
-/-- `sin (π x / 2) ^ 2 - 1 = g x * (x ^ 2 - 1)` for the continuous function
-`g x = (π / 2) ^ 2 * sinc (π (1 - x) / 2) * sinc (π (1 + x) / 2)`, because `cos (π x / 2)` is
-both `sin (π (1 - x) / 2)` and `sin (π (1 + x) / 2)`. -/
-private theorem sin_mul_sin_sub_one (x : ℝ) :
-    sin (π * x / 2) * sin (π * x / 2) - 1 =
-      (π / 2) ^ 2 * sinc (π * (1 - x) / 2) * sinc (π * (1 + x) / 2) * (x * x - 1) := by
-  have h₁ : π * (1 - x) / 2 * sinc (π * (1 - x) / 2) = cos (π * x / 2) := by
-    rw [mul_sinc, ← sin_pi_div_two_sub]; ring_nf
-  have h₂ : π * (1 + x) / 2 * sinc (π * (1 + x) / 2) = cos (π * x / 2) := by
-    rw [mul_sinc, ← sin_add_pi_div_two]; ring_nf
-  have h : sin (π * x / 2) * sin (π * x / 2) - 1 = -(cos (π * x / 2) * cos (π * x / 2)) := by
-    nlinarith [sin_sq_add_cos_sq (π * x / 2)]
-  rw [h]
-  nth_rw 1 [← h₁]
-  rw [← h₂]
-  ring
 
 /-- The defect of the sine replacement: `sin (π F / 2)² - 1 = g(F) (F² - 1)` for a continuous
 function `g`. -/
@@ -178,7 +123,7 @@ private theorem cfc_sin_mul_cfc_sin_sub_one :
       cfc_mul (fun x : ℝ => x) (fun x : ℝ => x) M.operator, cfc_id' ℝ M.operator,
       cfc_const_one ℝ M.operator]
   rw [← e₁, ← e₂]
-  exact cfc_congr fun x _ => sin_mul_sin_sub_one x
+  exact cfc_congr fun x _ => mul_self_sin_pi_mul_div_two_sub_one x
 
 /-- **The sine replacement** of a Fredholm module: the operator `F` is replaced by the
 self-adjoint contraction `sin (π F / 2)` (`norm_sineReplacement_operator_le_one`), with the same
@@ -206,11 +151,11 @@ theorem sineReplacement_operator :
 theorem norm_sineReplacement_operator_le_one : ‖M.sineReplacement.operator‖ ≤ 1 :=
   norm_cfc_le zero_le_one fun x _ => by simpa using abs_sin_le_one (π * x / 2)
 
-/-- **The off-diagonal blocks of the doubling are compact.** `√(1 - F²) π(a)` is compact. When
-`1 - F²` is not positive, `CFC.sqrt` gives `0` and the statement is trivial; for a contraction
-`F` it holds because `(√(1 - F²) π(a))* √(1 - F²) π(a) = π(a*) (1 - F²) π(a)` is compact. -/
+/-- **The off-diagonal blocks of the doubling are compact.** `√(1 - F²) π(a)` is compact (with
+`CFC.sqrt` returning `0` when `1 - F²` is not positive). -/
 theorem isCompactOperator_sqrt_mul_rep (a : A) :
     IsCompactOperator ⇑(CFC.sqrt (1 - M.operator * M.operator) * M.rep a) := by
+  -- When `1 - F²` is positive, `(√(1 - F²) π(a))* √(1 - F²) π(a) = π(a*) (1 - F²) π(a)` is compact.
   by_cases hnn : 0 ≤ 1 - M.operator * M.operator
   swap
   · rw [CFC.sqrt_of_not_nonneg hnn, zero_mul]
@@ -245,13 +190,23 @@ private theorem isCompactOperator_doublingOperator_commutator (a : A) :
         WithLp.blockL2 (M.operator * M.rep a - M.rep a * M.operator)
           (-(M.rep a * CFC.sqrt (1 - M.operator * M.operator)))
           (CFC.sqrt (1 - M.operator * M.operator) * M.rep a) 0 := by
-    rw [doublingOperator, ← WithLp.blockL2_zero_zero, WithLp.blockL2_mul_blockL2,
+    rw [doublingOperator_def, ← WithLp.blockL2_zero_zero, WithLp.blockL2_mul_blockL2,
       WithLp.blockL2_mul_blockL2, WithLp.blockL2_sub_blockL2]
     simp [← mul_def]
   rw [h]
   exact WithLp.isCompactOperator_blockL2 (M.isCompactOperator_commutator a)
     (M.isCompactOperator_rep_mul_sqrt a).neg (M.isCompactOperator_sqrt_mul_rep a)
     isCompactOperator_zero
+
+/-- The representation `π ⊕ 0` of `A` on `H ⊕ H`, the representation of the doubled module
+`FredholmModule.double`. -/
+def doubleRep : A →⋆ₙₐ[ℂ] WithLp 2 (H × H) →L[ℂ] WithLp 2 (H × H) :=
+  (withLpProdMapStarAlgHom.toNonUnitalStarAlgHom.comp
+    ((NonUnitalStarAlgHom.id ℂ (H →L[ℂ] H)).prod 0)).comp M.rep
+
+@[simp]
+theorem doubleRep_apply (a : A) : M.doubleRep a = (M.rep a).withLpProdMap 2 0 := by
+  simp [doubleRep]
 
 section Double
 
@@ -260,23 +215,23 @@ variable {M}
 /-- **The doubling** of a Fredholm module whose operator `F` is a contraction: the Fredholm module
 on `H ⊕ H` with representation `π ⊕ 0` and operator
 `[[F, √(1 - F²)], [√(1 - F²), -F]]`, which squares to `1`
-(`TauCeti.doublingOperator_mul_self`). -/
+(`ContinuousLinearMap.doublingOperator_mul_self`). -/
 def double (M : FredholmModule A H) (hF₁ : ‖M.operator‖ ≤ 1) :
     FredholmModule A (WithLp 2 (H × H)) where
-  rep := (withLpProdMapStarAlgHom.toNonUnitalStarAlgHom.comp
-    ((NonUnitalStarAlgHom.id ℂ (H →L[ℂ] H)).prod 0)).comp M.rep
+  rep := M.doubleRep
   operator := doublingOperator M.operator
   isSelfAdjoint_operator := isSelfAdjoint_doublingOperator M.isSelfAdjoint_operator
   isCompactOperator_commutator a := by
-    simpa using M.isCompactOperator_doublingOperator_commutator a
+    rw [doubleRep_apply]
+    exact M.isCompactOperator_doublingOperator_commutator a
   isCompactOperator_mul_self_sub_one_mul a := by
     rw [doublingOperator_mul_self M.isSelfAdjoint_operator hF₁, sub_self, zero_mul]
     exact isCompactOperator_zero
 
 @[simp]
 theorem double_rep_apply (hF₁ : ‖M.operator‖ ≤ 1) (a : A) :
-    (M.double hF₁).rep a = (M.rep a).withLpProdMap 2 0 := by
-  simp [double]
+    (M.double hF₁).rep a = (M.rep a).withLpProdMap 2 0 :=
+  M.doubleRep_apply a
 
 @[simp]
 theorem double_operator (hF₁ : ‖M.operator‖ ≤ 1) :
@@ -325,7 +280,7 @@ def sineReplacement : EvenFredholmModule A H where
   isSelfAdjoint_grading := M.isSelfAdjoint_grading
   grading_mul_grading := M.grading_mul_grading
   commute_grading_rep := M.commute_grading_rep
-  grading_mul_operator := mul_cfc_eq_neg_cfc_mul M.isSelfAdjoint_grading M.grading_mul_grading
+  grading_mul_operator := M.isSelfAdjoint_grading.mul_cfc_eq_neg_cfc_mul M.grading_mul_grading
     M.isSelfAdjoint_operator M.grading_mul_operator fun x => by rw [mul_neg, neg_div, sin_neg]
 
 @[simp]
@@ -351,14 +306,17 @@ def double (hF₁ : ‖M.operator‖ ≤ 1) : EvenFredholmModule A (WithLp 2 (H 
     rw [Commute, SemiconjBy, FredholmModule.double_rep_apply, ← withLpProdMap_mul,
       ← withLpProdMap_mul, (M.commute_grading_rep a).eq, mul_zero, zero_mul]
   grading_mul_operator := by
-    have hFγ : M.operator * M.grading = -(M.grading * M.operator) := by
-      rw [M.grading_mul_operator, neg_neg]
+    -- `γ` anticommutes with `F`, so it commutes with `F²` and hence with `√(1 - F²)`.
+    have hγF : SemiconjBy M.grading M.operator (-M.operator) := by
+      rw [SemiconjBy, neg_mul]
+      exact M.grading_mul_operator
+    have hγF₂ : Commute M.grading (M.operator * M.operator) := by
+      have h := hγF.mul_right hγF
+      rwa [neg_mul_neg] at h
     have hγS : M.grading * CFC.sqrt (1 - M.operator * M.operator) =
         CFC.sqrt (1 - M.operator * M.operator) * M.grading :=
-      (M.isSelfAdjoint_operator.commute_sqrt_one_sub_mul_self hF₁
-        (by rw [Commute, SemiconjBy, mul_assoc, hFγ, mul_neg, ← mul_assoc, hFγ, neg_mul,
-          neg_neg, mul_assoc])).eq.symm
-    rw [FredholmModule.double_operator, doublingOperator, ← WithLp.blockL2_zero_zero,
+      ((Commute.one_left _).sub_left hγF₂.symm).cfcSqrt.eq.symm
+    rw [FredholmModule.double_operator, doublingOperator_def, ← WithLp.blockL2_zero_zero,
       WithLp.blockL2_mul_blockL2, WithLp.blockL2_mul_blockL2, WithLp.neg_blockL2]
     simp [← mul_def, M.grading_mul_operator, hγS]
 
