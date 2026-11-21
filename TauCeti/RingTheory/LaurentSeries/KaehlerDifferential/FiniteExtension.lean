@@ -5,450 +5,269 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Etale
-public import TauCeti.RingTheory.LaurentSeries.Level.Adjoin
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Trace
 public import TauCeti.RingTheory.LaurentSeries.Level.ModuleTopology
+public import TauCeti.RingTheory.LaurentSeries.Level.Residue
 
 /-!
-# Differential traces and residues in finite Laurent extensions
+# Level and level-chart comparisons for continuous one-forms on Laurent extensions
 
-Write `F = K⸨X⸩` and `Ω = ContinuousKaehlerDifferential K`. The trace on the scalar extension
-`L ⊗[F] Ω` sends `x ⊗ ω` to `Tr_{L/F}(x) ω`. For a formally étale `F`-algebra `L` (in particular
-any finite separable extension of `F`, or any ramified level `Level K d` with `d` nonzero in `K`),
-`LaurentSeries.KaehlerDifferential.Etale` identifies `L ⊗[F] Ω` with the intrinsic quotient
-`Extension.ContinuousKaehlerDifferential K L` of `Ω[L⁄K]`. Transporting along this equivalence
-yields:
+Write `F = K⸨X⸩` and `Ω = TauCeti.ContinuousKaehlerDifferential K`.
 
-* the intrinsic differential trace `Tr_{L/F} : Ω¹_cont(L/K) → Ω¹_cont(F/K)`, together with the
-  relative trace `Tr_{E/L} : Ω¹_cont(E/K) → Ω¹_cont(L/K)` in towers `F → L → E` and its
-  transitivity `Tr_{L/F} ∘ Tr_{E/L} = Tr_{E/F}` in finite towers with `E` finite free over `L`
-  (automatic when `L` is a field);
-* the `K`-linear residue `Res_L : Ω¹_cont(L/K) → K`, `Res_L(ω) = Res_F(Tr_{L/F} ω)`, invariant
-  under `F`-algebra equivalences and under relative differential traces in finite towers with `E`
-  finite free over `L` (automatic when `L` is a field), and continuous for the `F`-module topology
-  on `L` and any topology on `K`;
-* on a separable ramified level `Level K d` (`[NeZero ((d : ℕ) : K)]`), the continuous
-  `Level K d`-linear equivalence `Level.ContinuousKaehlerDifferential.extensionEquiv` between
-  `Extension.ContinuousKaehlerDifferential K (Level K d)` and
-  `Level.ContinuousKaehlerDifferential K d`, sending the étale differential `d x` to the level
-  differential `d_u x` and intertwining the two differential traces;
-* for any level chart `e : L ≃ₐ[F] Level K d` with `d` nonzero in `K`, the `F`-linear equivalence
-  `e.laurentDifferentialEquiv` (and its automatic topological upgrade
-  `e.laurentDifferentialContinuousEquiv` when `L` carries the `F`-module topology), proving that
-  `Res_L(ω)` equals the `u⁻¹`-coefficient residue in every separable level chart and is therefore
-  independent of the chosen chart.
+For the finite separable ramified level `Level K d` (`t = u ^ d`, `[NeZero ((d : ℕ) : K)]`), the
+canonical formally étale derivation `Extension.derivation K (Level K d)` acts in the level variable
+`u` as `(d x / d u) / (d(u ^ d) / d u)` (`ringEquivLaurentSeries_derivation_level`), and the general
+formally étale module `Extension.ContinuousKaehlerDifferential K (Level K d)` is identified with the
+explicit level module `Level.ContinuousKaehlerDifferential K d` by a continuous `Level K d`-linear
+equivalence `Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential K d`.
+Under this equivalence, `D K (Level K d) x` corresponds to
+`Level.ContinuousKaehlerDifferential.D K d x` in the level uniformizer `u`, the intrinsic and
+explicit differential traces agree (`trace_equivLevelContinuousKaehlerDifferential`), and
+`Res_F(Tr_{L/F} ω) = Res_L(ω)` holds on `Ω¹_cont(L/K)`
+(`residue_eq_coeff_equivLevelContinuousKaehlerDifferential`).
 
-When `K` is algebraically closed of characteristic zero, every finite extension of `F` admits such
-a chart by `Level.algEquivOfFinrankEq` from `LaurentSeries.Puiseux.FiniteExtension`.
+More generally, any level chart `e : L ≃ₐ[F] Level K d` identifies scalar-extended forms `L ⊗[F] Ω`
+(`AlgEquiv.laurentDifferentialTensorEquiv`) and, when `L` is formally étale over `F`, intrinsic
+continuous forms `Ω¹_cont(L/K)` (`AlgEquiv.laurentDifferentialEquiv`, upgraded to
+`AlgEquiv.laurentDifferentialContinuousEquiv` under `[IsModuleTopology F L]`) with
+`Level.ContinuousKaehlerDifferential K d`, sending `d x` to `d_u (e x)`, intertwining differential
+traces, and computing `Extension.ContinuousKaehlerDifferential.residue K L ω` as the
+`u⁻¹`-coefficient in the chart parameter `u` independently of the choice of chart.
 
 ## Main definitions
 
-* `TauCeti.ContinuousKaehlerDifferential.traceBaseChange`, `residueBaseChange`: trace and residue
-  on scalar-extended forms `L ⊗[F] Ω`.
-* `Extension.ContinuousKaehlerDifferential.trace`, `traceTower`, `residue`: intrinsic differential
-  trace, relative tower trace, and `K`-linear residue on `Ω¹_cont(L/K)`.
-* `Level.ContinuousKaehlerDifferential.extensionEquiv`: continuous linear equivalence identifying
-  the étale and explicit level one-forms of `Level K d` when `d` is nonzero in `K`.
-* `AlgEquiv.laurentDifferentialTensorEquiv`, `laurentDifferentialEquiv`,
-  `laurentDifferentialContinuousEquiv`: algebraic and continuous level-chart equivalences on
-  scalar-extended and intrinsic continuous one-forms.
+* `Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential K d`: the
+  continuous `Level K d`-linear equivalence
+  `Extension.ContinuousKaehlerDifferential K (Level K d) ≃L[Level K d]
+  Level.ContinuousKaehlerDifferential K d`.
+* `AlgEquiv.laurentDifferentialTensorEquiv`: the `F`-linear equivalence
+  `L ⊗[F] Ω ≃ₗ[F] Level.ContinuousKaehlerDifferential K d` induced by `e : L ≃ₐ[F] Level K d`.
+* `AlgEquiv.laurentDifferentialEquiv` and `AlgEquiv.laurentDifferentialContinuousEquiv`: the
+  `F`-linear and continuous `F`-linear equivalences
+  `Extension.ContinuousKaehlerDifferential K L ≃ Level.ContinuousKaehlerDifferential K d` induced by
+  a level chart `e : L ≃ₐ[F] Level K d`.
 
 ## Main results
 
-* `Extension.ContinuousKaehlerDifferential.trace_traceTower`, `residue_traceTower`: transitivity of
-  differential trace and trace-invariance of residues in finite towers with `E` finite free over
-  `L` (automatic when `L` is a field).
-* `Level.ContinuousKaehlerDifferential.extensionEquiv_D`, `trace_extensionEquiv`,
-  `residue_eq_coeff_extensionEquiv`: compatibility of `extensionEquiv` with `d`, trace, and
-  residues.
-* `AlgEquiv.laurentDifferentialEquiv_D`, `trace_laurentDifferentialEquiv`,
-  `residue_eq_coeff_laurentDifferentialEquiv`, `coeff_laurentDifferentialEquiv_eq`: chart transport
-  of `d` and trace, trace-residue compatibility, and chart-independence of the level residue.
+* `TauCeti.LaurentSeries.Extension.ringEquivLaurentSeries_derivation_level`: `d/dt` on `Level K d`
+  in the level parameter `u`.
+* `Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential_D`:
+  `equivLevelContinuousKaehlerDifferential K d` sends `D K (Level K d) x` to
+  `Level.ContinuousKaehlerDifferential.D K d x`.
+* `Extension.ContinuousKaehlerDifferential.trace_equivLevelContinuousKaehlerDifferential` and
+  `residue_eq_coeff_equivLevelContinuousKaehlerDifferential`: compatibility of
+  `equivLevelContinuousKaehlerDifferential K d` with traces and `u⁻¹`-residues.
+* `Extension.ContinuousKaehlerDifferential.residue_eq_levelResidue` and
+  `Extension.ContinuousKaehlerDifferential.residue_eq_residueOfFinrankEq`: agreement of the
+  intrinsic differential residue on `Ω¹_cont(L/K)` with `Level.residue` and
+  `Level.residueOfFinrankEq`.
+* `AlgEquiv.trace_laurentDifferentialTensorEquiv`, `AlgEquiv.residueBaseChange_eq_coeff`, and
+  `AlgEquiv.coeff_laurentDifferentialTensorEquiv_eq`: chart compatibility and chart independence on
+  `L ⊗[F] Ω`.
+* `AlgEquiv.laurentDifferentialEquiv_D`, `AlgEquiv.trace_laurentDifferentialEquiv`,
+  `AlgEquiv.residue_eq_coeff_laurentDifferentialEquiv`, and
+  `AlgEquiv.coeff_laurentDifferentialEquiv_eq`: chart transport of `d`, trace-residue compatibility,
+  and chart independence on `Ω¹_cont(L/K)`.
 
 ## References
 
-* J. Tate, *Residues of differentials on curves*, Ann. Sci. ÉNS 1 (1968), for the compatibility of
-  residues with the trace of differentials.
+* J. Tate, *Residues of differentials on curves*, Ann. Sci. ÉNS 1 (1968), Theorem 1, for the
+  compatibility of trace-defined residues with local uniformizer coordinates.
 -/
 
 public section
 
-open HahnSeries LaurentSeries TensorProduct
-open scoped LaurentSeries
+open HahnSeries TensorProduct
+open scoped PowerSeries LaurentSeries
 
-namespace TauCeti.ContinuousKaehlerDifferential
+namespace TauCeti.LaurentSeries.Extension
 
-variable {K : Type*} [Field K] (L : Type*) [CommRing L] [Algebra K⸨X⸩ L]
+/-! ### Derivative on a finite separable ramified level -/
 
-/-- The differential trace on scalar-extended continuous forms: apply the algebra trace
-on the first tensor factor, so that `x ⊗ ω` maps to `Tr(x) ω`. As with `Algebra.trace`,
-this is zero for infinite-dimensional extensions. -/
-noncomputable def traceBaseChange :
-    L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] ContinuousKaehlerDifferential K :=
-  (TensorProduct.lid K⸨X⸩ _).toLinearMap ∘ₗ (Algebra.trace K⸨X⸩ L).rTensor _
+section LevelDerivation
 
-@[simp]
-theorem traceBaseChange_tmul (x : L) (ω : ContinuousKaehlerDifferential K) :
-    traceBaseChange L (x ⊗ₜ ω) = Algebra.trace K⸨X⸩ L x • ω := by
-  simp [traceBaseChange]
+/-- On a finite separable ramified level `Level K d` (`t = u ^ d`), the canonical derivation
+`d/dt` acts in the level variable `u` as `(d x / d u) / (d(u ^ d) / d u)`. -/
+theorem ringEquivLaurentSeries_derivation_level {K : Type*} [Field K] {d : ℕ+}
+    [NeZero ((d : ℕ) : K)] (x : Level K d) :
+    Level.ringEquivLaurentSeries K d (derivation K (Level K d) x) =
+      _root_.LaurentSeries.derivative K (Level.ringEquivLaurentSeries K d x) /
+        _root_.LaurentSeries.derivative K (single (d : ℤ) 1) := by
+  set c : Level K d :=
+    (Level.ringEquivLaurentSeries K d).symm (_root_.LaurentSeries.derivative K (single (d : ℤ) 1))
+  have hδ : c⁻¹ • Level.derivation K d = derivation K (Level K d) := by
+    refine eq_derivation fun f ↦ (Level.ringEquivLaurentSeries K d).injective ?_
+    have hpow : ((PowerSeries.X ^ (d : ℕ) : K⟦X⟧) : K⸨X⸩) = single (d : ℤ) 1 := by
+      simp [PowerSeries.coe_pow, single_pow]
+    rw [_root_.smul_apply, smul_eq_mul, map_mul, map_inv₀, RingEquiv.apply_symm_apply,
+      Level.ringEquivLaurentSeries_derivation, Level.algebraMap_apply, Level.algebraMap_apply,
+      ← TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand,
+      TauCeti.LaurentSeries.derivative_substAlgHom, hpow, laurentSeriesDerivation_apply,
+      inv_mul_eq_div,
+      mul_div_cancel_right₀ _ _root_.LaurentSeries.derivative_single_natCast_one_ne_zero]
+  rw [← hδ, _root_.smul_apply, smul_eq_mul, map_mul, map_inv₀, RingEquiv.apply_symm_apply,
+    Level.ringEquivLaurentSeries_derivation, inv_mul_eq_div]
 
-/-- Tracing a pulled-back form multiplies it by the degree of the extension. -/
-theorem traceBaseChange_one_tmul (ω : ContinuousKaehlerDifferential K) :
-    traceBaseChange L (1 ⊗ₜ ω) = Module.finrank K⸨X⸩ L • ω := by
-  rw [traceBaseChange_tmul, ← map_one (algebraMap K⸨X⸩ L), Algebra.trace_algebraMap,
-    smul_assoc, one_smul]
+end LevelDerivation
 
-/-- The residue on scalar-extended continuous forms, computed as the residue of
-their differential trace. For every separable level chart this is exactly the
-coefficient residue in its level parameter. -/
-noncomputable def residueBaseChange :
-    L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K →+ K where
-  toFun η := (equivLaurentSeries K (traceBaseChange L η)).coeff (-1)
-  map_zero' := by simp
-  map_add' η θ := by simp
+namespace ContinuousKaehlerDifferential
 
-/-- The residue is the coefficient of `t⁻¹` in the differential trace. -/
-theorem residueBaseChange_apply (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    residueBaseChange L η = (equivLaurentSeries K (traceBaseChange L η)).coeff (-1) :=
-  (rfl)
+/-! ### Identification for a finite separable ramified level -/
 
-/-- On a pure tensor `x ⊗ f dt`, the residue is the coefficient of `t⁻¹` in
-`Tr(x) f`, equivalently in `Tr(x f)`. -/
-@[simp]
-theorem residueBaseChange_tmul (x : L) (ω : ContinuousKaehlerDifferential K) :
-    residueBaseChange L (x ⊗ₜ ω) =
-      (Algebra.trace K⸨X⸩ L x * equivLaurentSeries K ω).coeff (-1) := by
-  simp [residueBaseChange_apply]
-
-/-- The residue of a form pulled back from the base is multiplied by the degree. -/
-theorem residueBaseChange_one_tmul (ω : ContinuousKaehlerDifferential K) :
-    residueBaseChange L (1 ⊗ₜ ω) =
-      Module.finrank K⸨X⸩ L • (equivLaurentSeries K ω).coeff (-1) := by
-  rw [residueBaseChange_apply, traceBaseChange_one_tmul]
-  simp only [map_nsmul, HahnSeries.coeff_nsmul, Pi.smul_apply]
-
-end TauCeti.ContinuousKaehlerDifferential
-
-namespace TauCeti.LaurentSeries.Extension.ContinuousKaehlerDifferential
-
-variable (K : Type*) [Field K] (L : Type*) [CommRing L] [Algebra K⸨X⸩ L] [Algebra K L]
-  [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L]
-
-/-! ### Intrinsic differential trace and residue on étale extensions -/
-
-/-- **The trace of continuous one-forms.** For a formally étale `K⸨X⸩`-algebra `L`, the trace
-`Tr_{L/F} : Ω¹_cont(L/K) → Ω¹_cont(F/K)`, `x dt ↦ Tr_{L/F}(x) dt`, transported from
-`TauCeti.ContinuousKaehlerDifferential.traceBaseChange` along `tensorEquiv`. -/
-noncomputable def trace :
-    ContinuousKaehlerDifferential K L →ₗ[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K :=
-  TauCeti.ContinuousKaehlerDifferential.traceBaseChange L ∘ₗ
-    ((tensorEquiv K L).symm.restrictScalars K⸨X⸩).toLinearMap
-
-/-- **The `K`-linear residue of continuous one-forms.** For a formally étale `K⸨X⸩`-algebra `L`,
-`Res_L : Ω¹_cont(L/K) → K` is the residue at `t` of the differential trace `Tr_{L/F}(ω)`. -/
-noncomputable def residue : ContinuousKaehlerDifferential K L →ₗ[K] K :=
-  HahnSeries.coeff.linearMap (-1) ∘ₗ
-    (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).toLinearMap.restrictScalars K ∘ₗ
-      (trace K L).restrictScalars K
-
-variable {K L}
-
-@[simp]
-theorem trace_tensorEquiv (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
-    trace K L (tensorEquiv K L η) =
-      TauCeti.ContinuousKaehlerDifferential.traceBaseChange L η := by
-  simp [trace]
-
-/-- For a base one-form `ω`, the trace of `x • map ω` is `Tr_{L/F}(x) • ω`. -/
-@[simp]
-theorem trace_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    trace K L (x • map K L ω) = Algebra.trace K⸨X⸩ L x • ω := by
-  rw [← tensorEquiv_tmul, trace_tensorEquiv,
-    TauCeti.ContinuousKaehlerDifferential.traceBaseChange_tmul]
-
-/-- The trace of a pulled-back base one-form multiplies it by the degree of `L` over `K⸨X⸩`. -/
-@[simp]
-theorem trace_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    trace K L (map K L ω) = Module.finrank K⸨X⸩ L • ω := by
-  rw [← one_smul L (map K L ω), ← tensorEquiv_tmul, trace_tensorEquiv,
-    TauCeti.ContinuousKaehlerDifferential.traceBaseChange_one_tmul]
-
-/-- In coordinates relative to `dt`, the differential trace applies `Algebra.trace K⸨X⸩ L` to the
-coordinate `equivSelf K L ω`. -/
-@[simp]
-theorem equivLaurentSeries_trace (ω : ContinuousKaehlerDifferential K L) :
-    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω) =
-      Algebra.trace K⸨X⸩ L (equivSelf K L ω) := by
-  conv_lhs => rw [← equivSelf_smul_D_algebraMap_single_one ω, ← map_D, trace_smul_map]
-  simp
-
-/-- The differential trace is invariant under `K⸨X⸩`-algebra equivalences. -/
-@[simp]
-theorem trace_mapSemilinearEquiv {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
-    [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E] (e : L ≃ₐ[K⸨X⸩] E)
-    (ω : ContinuousKaehlerDifferential K L) :
-    trace K E (mapSemilinearEquiv e ω) = trace K L ω := by
-  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
-  rw [equivLaurentSeries_trace, equivLaurentSeries_trace, equivSelf_mapSemilinearEquiv,
-    Algebra.trace_eq_of_algEquiv]
-
-/-- On a formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module topology, the differential trace
-is continuous (it vanishes when `L` is not finite over `K⸨X⸩`). -/
-@[fun_prop]
-theorem continuous_trace [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
-    Continuous (trace K L) := by
-  by_cases hfin : Module.Finite K⸨X⸩ L
-  · exact IsModuleTopology.continuous_of_linearMap (trace K L)
-  · have hzero : trace K L = 0 := by
-      ext ω
-      apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
-      rw [equivLaurentSeries_trace, LinearMap.zero_apply, map_zero,
-        Algebra.trace_eq_zero_of_not_exists_basis K⸨X⸩ fun ⟨s, ⟨b⟩⟩ ↦ hfin (.of_basis b),
-        LinearMap.zero_apply]
-    exact continuous_const.congr fun ω ↦ by rw [hzero, LinearMap.zero_apply]
-
-section Tower
-
-variable {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
-  [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E]
-  [Algebra L E] [IsScalarTower K⸨X⸩ L E]
-
-variable (K L E) in
-/-- **Relative differential trace in a tower.** In a tower `K⸨X⸩ → L → E` of formally étale
-`K⸨X⸩`-algebras, the relative differential trace `Tr_{E/L} : Ω¹_cont(E/K) → Ω¹_cont(L/K)`,
-`y dt ↦ Tr_{E/L}(y) dt`. -/
-noncomputable def traceTower :
-    ContinuousKaehlerDifferential K E →ₗ[K⸨X⸩] ContinuousKaehlerDifferential K L :=
-  (equivSelf K L).symm.toLinearMap.restrictScalars K⸨X⸩ ∘ₗ
-    (Algebra.trace L E).restrictScalars K⸨X⸩ ∘ₗ
-      (equivSelf K E).toLinearMap.restrictScalars K⸨X⸩
-
-/-- In the frame `dt`, the relative differential trace applies `Algebra.trace L E`. -/
-@[simp]
-theorem equivSelf_traceTower (ω : ContinuousKaehlerDifferential K E) :
-    equivSelf K L (traceTower K L E ω) = Algebra.trace L E (equivSelf K E ω) := by
-  simp [traceTower, -equivSelf_symm_apply]
-
-@[simp]
-theorem traceTower_smul_mapTower (y : E) (ω : ContinuousKaehlerDifferential K L) :
-    traceTower K L E (y • mapTower K L E ω) = Algebra.trace L E y • ω := by
-  apply (equivSelf K L).injective
-  simp only [equivSelf_traceTower, map_smul, equivSelf_mapTower, smul_eq_mul]
-  rw [mul_comm y, ← Algebra.smul_def]
-  simp [mul_comm]
-
-/-- `traceTower` is `L`-linear (with `L` acting on `Ω¹_cont(E/K)` via `algebraMap L E`):
-`Tr_{E/L}((algebraMap L E x) • ω) = x • Tr_{E/L}(ω)`. -/
-@[simp]
-theorem traceTower_algebraMap_smul (x : L) (ω : ContinuousKaehlerDifferential K E) :
-    traceTower K L E (algebraMap L E x • ω) = x • traceTower K L E ω := by
-  apply (equivSelf K L).injective
-  simp [← Algebra.smul_def]
-
-/-- **Transitivity of the differential trace in finite towers with `E` finite free over `L`**
-(automatic when `L` is a field). -/
-@[simp]
-theorem trace_traceTower [Module.Finite K⸨X⸩ L] [Module.Free L E] [Module.Finite L E]
-    (ω : ContinuousKaehlerDifferential K E) :
-    trace K L (traceTower K L E ω) = trace K E ω := by
-  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
-  simp [Algebra.trace_trace]
-
-/-- On a tower `K⸨X⸩ → L → E` where `E` is finite over `K⸨X⸩` with the `K⸨X⸩`-module topology and
-scalar multiplication by `K⸨X⸩` on `L` is continuous, the relative differential trace is
-continuous. -/
-@[fun_prop]
-theorem continuous_traceTower [TopologicalSpace L] [ContinuousSMul K⸨X⸩ L]
-    [TopologicalSpace E] [IsModuleTopology K⸨X⸩ E] [Module.Finite K⸨X⸩ E] :
-    Continuous (traceTower K L E) := by
-  have : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
-    IsScalarTower.continuousSMul L
-  exact IsModuleTopology.continuous_of_linearMap (traceTower K L E)
-
-end Tower
-
-theorem residue_apply (ω : ContinuousKaehlerDifferential K L) :
-    residue K L ω =
-      (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω)).coeff (-1) :=
-  (rfl)
-
-/-- In coordinates relative to `dt`, the residue of `ω` is the `t⁻¹`-coefficient of
-`Tr_{L/K⸨X⸩}(equivSelf K L ω)`. -/
-theorem residue_eq_coeff_neg_one_trace (ω : ContinuousKaehlerDifferential K L) :
-    residue K L ω = (Algebra.trace K⸨X⸩ L (equivSelf K L ω)).coeff (-1) := by
-  rw [residue_apply, equivLaurentSeries_trace]
-
-@[simp]
-theorem residue_tensorEquiv (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
-    residue K L (tensorEquiv K L η) =
-      TauCeti.ContinuousKaehlerDifferential.residueBaseChange L η := by
-  simp [residue_apply, TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply]
-
-@[simp]
-theorem residue_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    residue K L (x • map K L ω) =
-      (Algebra.trace K⸨X⸩ L x *
-        TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω).coeff (-1) := by
-  rw [← tensorEquiv_tmul, residue_tensorEquiv,
-    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_tmul]
-
-@[simp]
-theorem residue_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    residue K L (map K L ω) =
-      Module.finrank K⸨X⸩ L •
-        (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω).coeff (-1) := by
-  rw [← one_smul L (map K L ω), ← tensorEquiv_tmul, residue_tensorEquiv,
-    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_one_tmul]
-
-/-- The `K`-linear residue is invariant under `K⸨X⸩`-algebra equivalences. -/
-@[simp]
-theorem residue_mapSemilinearEquiv {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
-    [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E] (e : L ≃ₐ[K⸨X⸩] E)
-    (ω : ContinuousKaehlerDifferential K L) :
-    residue K E (mapSemilinearEquiv e ω) = residue K L ω := by
-  rw [residue_apply, trace_mapSemilinearEquiv, ← residue_apply]
-
-/-- **Differential trace preserves residues in finite towers with `E` finite free over `L`**
-(automatic when `L` is a field). -/
-@[simp]
-theorem residue_traceTower {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
-    [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E] [Algebra L E]
-    [IsScalarTower K⸨X⸩ L E] [Module.Finite K⸨X⸩ L] [Module.Free L E] [Module.Finite L E]
-    (ω : ContinuousKaehlerDifferential K E) :
-    residue K L (traceTower K L E ω) = residue K E ω := by
-  rw [residue_apply, trace_traceTower, ← residue_apply]
-
-/-- The `K`-linear residue on a formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module topology
-is continuous for every topology on `K`. -/
-@[fun_prop]
-theorem continuous_residue [TopologicalSpace K] [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
-    Continuous (residue K L) :=
-  (_root_.LaurentSeries.continuous_coeff (-1)).comp
-    ((TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).continuous.comp continuous_trace)
-
-end TauCeti.LaurentSeries.Extension.ContinuousKaehlerDifferential
-
-namespace TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential
-
-/-! ### Identification with étale continuous one-forms on a separable level -/
+section Level
 
 variable (K : Type*) [Field K] (d : ℕ+) [NeZero ((d : ℕ) : K)]
 
-/-- **Étale and explicit one-forms of a separable level coincide.** When `d` is nonzero in `K`,
-`Level K d` is étale over `K⸨X⸩`, and its abstract continuous one-forms
-`Extension.ContinuousKaehlerDifferential K (Level K d)` are continuously `Level K d`-linearly
-equivalent to `Level.ContinuousKaehlerDifferential K d`, compatibly with `d`, pullbacks, and
-differential traces. -/
-noncomputable def extensionEquiv :
-    Extension.ContinuousKaehlerDifferential K (Level K d) ≃L[Level K d]
+/-- **Equivalence with explicit ramified-level one-forms.** For `d` nonzero in `K`, `Level K d` is
+formally étale over `K⸨X⸩`, and the continuous `Level K d`-linear equivalence
+`equivLevelContinuousKaehlerDifferential K d` identifies
+`Extension.ContinuousKaehlerDifferential K (Level K d)` with
+`Level.ContinuousKaehlerDifferential K d` by matching their base-change decompositions over
+`Ω¹_cont(K⸨X⸩/K)`. -/
+noncomputable def equivLevelContinuousKaehlerDifferential :
+    ContinuousKaehlerDifferential K (Level K d) ≃L[Level K d]
       Level.ContinuousKaehlerDifferential K d :=
-  ((Extension.ContinuousKaehlerDifferential.tensorEquiv K (Level K d)).symm.trans
-    (tensorEquiv K d)).toContinuousLinearEquivOfIsModuleTopology
+  ((tensorEquiv K (Level K d)).symm.trans
+    (Level.ContinuousKaehlerDifferential.tensorEquiv K d)).toContinuousLinearEquivOfIsModuleTopology
 
 variable {K d}
 
 @[simp]
-theorem extensionEquiv_tensorEquiv
+theorem equivLevelContinuousKaehlerDifferential_tensorEquiv
     (η : Level K d ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
-    extensionEquiv K d
-        (Extension.ContinuousKaehlerDifferential.tensorEquiv K (Level K d) η) =
-      tensorEquiv K d η := by
-  simp [extensionEquiv]
+    equivLevelContinuousKaehlerDifferential K d (tensorEquiv K (Level K d) η) =
+      Level.ContinuousKaehlerDifferential.tensorEquiv K d η := by
+  simp [equivLevelContinuousKaehlerDifferential]
 
 @[simp]
-theorem extensionEquiv_symm_tensorEquiv
+theorem equivLevelContinuousKaehlerDifferential_symm_tensorEquiv
     (η : Level K d ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
-    (extensionEquiv K d).symm (tensorEquiv K d η) =
-      Extension.ContinuousKaehlerDifferential.tensorEquiv K (Level K d) η := by
-  apply (extensionEquiv K d).symm_apply_eq.mpr
-  simp
+    (equivLevelContinuousKaehlerDifferential K d).symm
+        (Level.ContinuousKaehlerDifferential.tensorEquiv K d η) =
+      tensorEquiv K (Level K d) η := by
+  simp [equivLevelContinuousKaehlerDifferential]
 
 @[simp]
-theorem extensionEquiv_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    extensionEquiv K d (Extension.ContinuousKaehlerDifferential.map K (Level K d) ω) =
-      map K d ω := by
-  rw [← one_smul (Level K d) (Extension.ContinuousKaehlerDifferential.map K (Level K d) ω),
-    ← Extension.ContinuousKaehlerDifferential.tensorEquiv_tmul, extensionEquiv_tensorEquiv,
-    tensorEquiv_tmul, one_smul]
+theorem equivLevelContinuousKaehlerDifferential_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    equivLevelContinuousKaehlerDifferential K d (map K (Level K d) ω) =
+      Level.ContinuousKaehlerDifferential.map K d ω := by
+  simpa using equivLevelContinuousKaehlerDifferential_tensorEquiv (K := K) (d := d) (1 ⊗ₜ[K⸨X⸩] ω)
 
 @[simp]
-theorem extensionEquiv_symm_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    (extensionEquiv K d).symm (map K d ω) =
-      Extension.ContinuousKaehlerDifferential.map K (Level K d) ω := by
-  apply (extensionEquiv K d).symm_apply_eq.mpr
-  simp
+theorem equivLevelContinuousKaehlerDifferential_symm_map
+    (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    (equivLevelContinuousKaehlerDifferential K d).symm
+        (Level.ContinuousKaehlerDifferential.map K d ω) =
+      map K (Level K d) ω := by
+  simpa using
+    equivLevelContinuousKaehlerDifferential_symm_tensorEquiv (K := K) (d := d) (1 ⊗ₜ[K⸨X⸩] ω)
 
-/-- `extensionEquiv` intertwines the étale universal derivation `d` with the level differential
-`d_u` in the level parameter. -/
+/-- In coordinates, `equivLevelContinuousKaehlerDifferential K d` converts `x dt` into
+`(x * d u ^ (d - 1)) du`. -/
+theorem equivLevel_equivLevelContinuousKaehlerDifferential
+    (ω : ContinuousKaehlerDifferential K (Level K d)) :
+    Level.ContinuousKaehlerDifferential.equivLevel K d
+        (equivLevelContinuousKaehlerDifferential K d ω) =
+      equivSelf K (Level K d) ω *
+        (Level.ringEquivLaurentSeries K d).symm
+          (_root_.LaurentSeries.derivative K (single (d : ℤ) 1)) := by
+  conv_lhs => rw [← equivSelf_smul_D_algebraMap_single_one ω, ← map_D]
+  rw [ContinuousLinearEquiv.map_smul, equivLevelContinuousKaehlerDifferential_map,
+    LinearEquiv.map_smul, Level.ContinuousKaehlerDifferential.equivLevel_map,
+    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D_single_one]
+  simp [smul_eq_mul]
+
+/-- Under `equivLevelContinuousKaehlerDifferential K d`, the formally étale differential
+`D K (Level K d) x` is the level differential `Level.ContinuousKaehlerDifferential.D K d x`. -/
 @[simp]
-theorem extensionEquiv_D (x : Level K d) :
-    extensionEquiv K d (Extension.ContinuousKaehlerDifferential.D K (Level K d) x) =
-      D K d x := by
-  have h : (extensionEquiv K d).toLinearMap.compDer
-      (Extension.ContinuousKaehlerDifferential.D K (Level K d)) = D K d :=
-    Derivation.eq_of_formallyUnramified (S := K⸨X⸩) fun f ↦ by
-      simp [← Extension.ContinuousKaehlerDifferential.map_D]
-  exact congr($h x)
+theorem equivLevelContinuousKaehlerDifferential_D (x : Level K d) :
+    equivLevelContinuousKaehlerDifferential K d (D K (Level K d) x) =
+      Level.ContinuousKaehlerDifferential.D K d x := by
+  apply (Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential K d).injective
+  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
+  rw [Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential_D,
+    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D,
+    ← Level.ContinuousKaehlerDifferential.ringEquivLaurentSeries_equivLevel,
+    equivLevel_equivLevelContinuousKaehlerDifferential, equivSelf_D, map_mul,
+    RingEquiv.apply_symm_apply, ringEquivLaurentSeries_derivation_level,
+    div_mul_cancel₀ _ _root_.LaurentSeries.derivative_single_natCast_one_ne_zero]
 
 @[simp]
-theorem extensionEquiv_symm_D (x : Level K d) :
-    (extensionEquiv K d).symm (D K d x) =
-      Extension.ContinuousKaehlerDifferential.D K (Level K d) x := by
-  apply (extensionEquiv K d).symm_apply_eq.mpr
-  simp
+theorem equivLevelContinuousKaehlerDifferential_symm_D (x : Level K d) :
+    (equivLevelContinuousKaehlerDifferential K d).symm
+        (Level.ContinuousKaehlerDifferential.D K d x) =
+      D K (Level K d) x :=
+  (equivLevelContinuousKaehlerDifferential K d).symm_apply_eq.mpr
+    (equivLevelContinuousKaehlerDifferential_D x).symm
 
-/-- In the level variable `u`, the étale derivation `d/dt` of `Level K d` is
-`(dx / du) / (d u ^ (d - 1))`. -/
-theorem _root_.TauCeti.LaurentSeries.Level.ringEquivLaurentSeries_extensionDerivation
+/-- Under `equivLevelContinuousKaehlerDifferential K d`, the formally étale differential
+`D K (Level K d) x` is the explicit Laurent differential `d(x(u))` in the level variable `u`. -/
+theorem addEquivContinuousKaehlerDifferential_equivLevelContinuousKaehlerDifferential_D
     (x : Level K d) :
-    ringEquivLaurentSeries K d (Extension.derivation K (Level K d) x) =
-      _root_.LaurentSeries.derivative K (ringEquivLaurentSeries K d x) /
-        _root_.LaurentSeries.derivative K (HahnSeries.single (d : ℤ) 1) := by
-  have hne : _root_.LaurentSeries.derivative K (HahnSeries.single (d : ℤ) (1 : K)) ≠ 0 := by
-    simp [NeZero.ne]
-  have h := congrArg (fun ω ↦ ringEquivLaurentSeries K d (equivLevel K d (extensionEquiv K d ω)))
-    (Extension.ContinuousKaehlerDifferential.derivation_smul_D_algebraMap_single_one x)
-  rw [← Extension.ContinuousKaehlerDifferential.map_D] at h
-  exact eq_div_of_mul_eq hne (by simpa using h)
+    Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential K d
+        (equivLevelContinuousKaehlerDifferential K d (D K (Level K d) x)) =
+      TauCeti.ContinuousKaehlerDifferential.D K (Level.ringEquivLaurentSeries K d x) := by
+  simp
 
-/-- `extensionEquiv` intertwines the intrinsic and explicit differential traces on `Level K d`. -/
+/-- `equivLevelContinuousKaehlerDifferential K d` intertwines the intrinsic formally étale
+differential trace with the explicit level differential trace. -/
 @[simp]
-theorem trace_extensionEquiv
-    (ω : Extension.ContinuousKaehlerDifferential K (Level K d)) :
-    trace K d (extensionEquiv K d ω) =
-      Extension.ContinuousKaehlerDifferential.trace K (Level K d) ω := by
-  obtain ⟨η, rfl⟩ :=
-    (Extension.ContinuousKaehlerDifferential.tensorEquiv K (Level K d)).surjective ω
-  rw [extensionEquiv_tensorEquiv, Extension.ContinuousKaehlerDifferential.trace_tensorEquiv]
+theorem trace_equivLevelContinuousKaehlerDifferential
+    (ω : ContinuousKaehlerDifferential K (Level K d)) :
+    Level.ContinuousKaehlerDifferential.trace K d
+        (equivLevelContinuousKaehlerDifferential K d ω) =
+      trace K (Level K d) ω := by
+  obtain ⟨η, rfl⟩ := (tensorEquiv K (Level K d)).surjective ω
+  rw [equivLevelContinuousKaehlerDifferential_tensorEquiv, trace_tensorEquiv]
   induction η using TensorProduct.inductionOn with
-  | tmul g η => simp
-  | add η₁ η₂ h₁ h₂ => simp [h₁, h₂]
+  | tmul g ω => simp
+  | add x y hx hy => simp [hx, hy]
 
-@[simp]
-theorem trace_extensionEquiv_symm
-    (ω : Level.ContinuousKaehlerDifferential K d) :
-    Extension.ContinuousKaehlerDifferential.trace K (Level K d) ((extensionEquiv K d).symm ω) =
-      trace K d ω := by
-  rw [← trace_extensionEquiv, ContinuousLinearEquiv.apply_symm_apply]
+/-- **`Res_F(Tr_{L/F} ω) = Res_L(ω)` on a finite separable ramified level.** For `L = Level K d`
+with `d` nonzero in `K`, the trace-defined residue `residue K (Level K d) ω` equals the coefficient
+of `u⁻¹` of `ω` read in the level uniformizer `u`. -/
+theorem residue_eq_coeff_equivLevelContinuousKaehlerDifferential
+    (ω : ContinuousKaehlerDifferential K (Level K d)) :
+    residue K (Level K d) ω =
+      (Level.ringEquivLaurentSeries K d
+        (Level.ContinuousKaehlerDifferential.equivLevel K d
+          (equivLevelContinuousKaehlerDifferential K d ω))).coeff (-1) := by
+  rw [residue_apply, ← trace_equivLevelContinuousKaehlerDifferential,
+    Level.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_trace]
 
-/-- On a separable ramified level, the intrinsic `K`-linear residue equals the `u⁻¹`-coefficient
-residue in the level parameter. -/
-theorem residue_eq_coeff_extensionEquiv
-    (ω : Extension.ContinuousKaehlerDifferential K (Level K d)) :
-    Extension.ContinuousKaehlerDifferential.residue K (Level K d) ω =
-      (ringEquivLaurentSeries K d (equivLevel K d (extensionEquiv K d ω))).coeff (-1) := by
-  rw [Extension.ContinuousKaehlerDifferential.residue_apply, ← trace_extensionEquiv,
-    coeff_neg_one_equivLaurentSeries_trace]
+/-- On a finite separable ramified level `Level K d` (`[NeZero ((d : ℕ) : K)]`), the intrinsic
+differential residue `residue K (Level K d)` agrees with `Level.residue K d` on the `dt`-coordinate
+`equivSelf K (Level K d) ω`. -/
+theorem residue_eq_levelResidue (ω : ContinuousKaehlerDifferential K (Level K d)) :
+    residue K (Level K d) ω = Level.residue K d (equivSelf K (Level K d) ω) := by
+  rw [residue_eq_coeff_neg_one_trace, Level.coeff_neg_one_trace, ← Level.residue_apply]
 
-end TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential
+end Level
+
+section FiniteExtension
+
+/-- Over an algebraically closed coefficient field `K` of characteristic zero, the intrinsic
+residue `residue K L` on `Ω¹_cont(L/K)` agrees with `Level.residueOfFinrankEq` applied to the
+`dt`-coordinate `equivSelf K L ω`. -/
+theorem residue_eq_residueOfFinrankEq {K L : Type*} [Field K] [IsAlgClosed K] [CharZero K]
+    [Field L] [Algebra K⸨X⸩ L] [Algebra K L] [IsScalarTower K K⸨X⸩ L]
+    [Algebra.FormallyEtale K⸨X⸩ L] {d : ℕ+} (h : Module.finrank K⸨X⸩ L = d)
+    (ω : ContinuousKaehlerDifferential K L) :
+    residue K L ω = Level.residueOfFinrankEq h (equivSelf K L ω) := by
+  rw [residue_eq_coeff_neg_one_trace, Level.residueOfFinrankEq_eq_coeff_neg_one_trace]
+
+end FiniteExtension
+
+end ContinuousKaehlerDifferential
+
+end TauCeti.LaurentSeries.Extension
 
 namespace AlgEquiv
 
 open TauCeti TauCeti.ContinuousKaehlerDifferential
-open TauCeti.LaurentSeries
 open TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential
 
-section Tensor
+section BaseChange
 
 variable {K : Type*} [Field K] {L : Type*} [CommRing L] [Algebra K⸨X⸩ L]
   {d : ℕ+} [NeZero ((d : ℕ) : K)]
@@ -456,27 +275,28 @@ variable {K : Type*} [Field K] {L : Type*} [CommRing L] [Algebra K⸨X⸩ L]
 /-- A level chart identifies scalar-extended forms with the continuous forms of that
 level. This is an equivalence over the base Laurent field; scalar multiplication by
 `x : L` corresponds to multiplication by `e x` on the target. -/
-noncomputable def laurentDifferentialTensorEquiv (e : L ≃ₐ[K⸨X⸩] Level K d) :
+noncomputable def laurentDifferentialTensorEquiv (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d) :
     L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K ≃ₗ[K⸨X⸩]
-      Level.ContinuousKaehlerDifferential K d :=
+      TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential K d :=
   (TensorProduct.congr e.toLinearEquiv (.refl K⸨X⸩ _)).trans
-    ((Level.ContinuousKaehlerDifferential.tensorEquiv K d).restrictScalars K⸨X⸩)
+    ((TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.tensorEquiv K d).restrictScalars
+      K⸨X⸩)
 
 @[simp]
-theorem laurentDifferentialTensorEquiv_tmul (e : L ≃ₐ[K⸨X⸩] Level K d)
+theorem laurentDifferentialTensorEquiv_tmul (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
     (x : L) (ω : ContinuousKaehlerDifferential K) :
     e.laurentDifferentialTensorEquiv (x ⊗ₜ ω) =
-      e x • Level.ContinuousKaehlerDifferential.map K d ω := by
+      e x • TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.map K d ω := by
   simp [laurentDifferentialTensorEquiv]
 
 /-- The inverse chart comparison sends a scalar multiple of a pulled-back form to
 its corresponding pure tensor. -/
 @[simp]
 theorem laurentDifferentialTensorEquiv_symm_smul_map
-    (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (x : Level K d) (ω : ContinuousKaehlerDifferential K) :
+    (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
+    (x : TauCeti.LaurentSeries.Level K d) (ω : ContinuousKaehlerDifferential K) :
     e.laurentDifferentialTensorEquiv.symm
-        (x • Level.ContinuousKaehlerDifferential.map K d ω) =
+        (x • TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.map K d ω) =
       e.symm x ⊗ₜ ω := by
   apply e.laurentDifferentialTensorEquiv.symm_apply_eq.mpr
   simp
@@ -484,7 +304,7 @@ theorem laurentDifferentialTensorEquiv_symm_smul_map
 /-- The chart comparison respects the extension's scalar action through the chart. -/
 @[simp]
 theorem laurentDifferentialTensorEquiv_smul
-    (e : L ≃ₐ[K⸨X⸩] Level K d)
+    (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
     (x : L) (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
     e.laurentDifferentialTensorEquiv (x • η) = e x • e.laurentDifferentialTensorEquiv η := by
   induction η using TensorProduct.inductionOn with
@@ -495,25 +315,25 @@ theorem laurentDifferentialTensorEquiv_smul
 transported from the explicit level is the trace on the first tensor factor. -/
 @[simp]
 theorem trace_laurentDifferentialTensorEquiv
-    (e : L ≃ₐ[K⸨X⸩] Level K d)
+    (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
     (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    Level.ContinuousKaehlerDifferential.trace K d
+    TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.trace K d
         (e.laurentDifferentialTensorEquiv η) = traceBaseChange L η := by
   induction η using TensorProduct.inductionOn with
   | tmul x ω =>
     simp only [laurentDifferentialTensorEquiv_tmul,
-      Level.ContinuousKaehlerDifferential.trace_smul_map,
+      TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.trace_smul_map,
       traceBaseChange_tmul]
     rw [Algebra.trace_eq_of_algEquiv e]
   | add η θ hη hθ => simp [hη, hθ]
 
 /-- **Trace-residue compatibility in any level chart.** The residue of the trace
 of a scalar-extended form is the coefficient residue in the level parameter. -/
-theorem residueBaseChange_eq_coeff (e : L ≃ₐ[K⸨X⸩] Level K d)
+theorem residueBaseChange_eq_coeff (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
     (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
     residueBaseChange L η =
-      (Level.ringEquivLaurentSeries K d
-        (Level.ContinuousKaehlerDifferential.equivLevel K d
+      (TauCeti.LaurentSeries.Level.ringEquivLaurentSeries K d
+        (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K d
           (e.laurentDifferentialTensorEquiv η))).coeff (-1) := by
   rw [residueBaseChange_apply, ← trace_laurentDifferentialTensorEquiv e]
   exact coeff_neg_one_equivLaurentSeries_trace _
@@ -522,55 +342,97 @@ theorem residueBaseChange_eq_coeff (e : L ≃ₐ[K⸨X⸩] Level K d)
 the same coefficient residue on scalar-extended forms. The levels need not be
 identified in advance. -/
 theorem coeff_laurentDifferentialTensorEquiv_eq {n : ℕ+} [NeZero ((n : ℕ) : K)]
-    (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (e' : L ≃ₐ[K⸨X⸩] Level K n)
+    (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
+    (e' : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K n)
     (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    (Level.ringEquivLaurentSeries K d
-      (Level.ContinuousKaehlerDifferential.equivLevel K d
+    (TauCeti.LaurentSeries.Level.ringEquivLaurentSeries K d
+      (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K d
         (e.laurentDifferentialTensorEquiv η))).coeff (-1) =
-    (Level.ringEquivLaurentSeries K n
-      (Level.ContinuousKaehlerDifferential.equivLevel K n
+    (TauCeti.LaurentSeries.Level.ringEquivLaurentSeries K n
+      (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K n
         (e'.laurentDifferentialTensorEquiv η))).coeff (-1) := by
   rw [← residueBaseChange_eq_coeff e, ← residueBaseChange_eq_coeff e']
 
-end Tensor
+end BaseChange
 
-section Intrinsic
+section EtaleChart
+
+open TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K] {L : Type*} [CommRing L] [Algebra K⸨X⸩ L] [Algebra K L]
-  [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L]
-  {d : ℕ+} [NeZero ((d : ℕ) : K)]
+  [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L] {d : ℕ+} [NeZero ((d : ℕ) : K)]
 
-/-- **Intrinsic level-chart equivalence on continuous one-forms.** A separable level chart
-`e : L ≃ₐ[K⸨X⸩] Level K d` identifies the intrinsic continuous one-forms
-`Extension.ContinuousKaehlerDifferential K L` with `Level.ContinuousKaehlerDifferential K d`,
-sending `d x` to `d_u (e x)`. -/
+/-- A level chart `e : L ≃ₐ[K⸨X⸩] Level K d` on a formally étale `K⸨X⸩`-algebra `L` identifies
+`Extension.ContinuousKaehlerDifferential K L` with `Level.ContinuousKaehlerDifferential K d` over
+`K⸨X⸩`, semilinearly with respect to `e`. -/
 noncomputable def laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level K d) :
     Extension.ContinuousKaehlerDifferential K L ≃ₗ[K⸨X⸩]
       Level.ContinuousKaehlerDifferential K d :=
-  (Extension.ContinuousKaehlerDifferential.mapLinearEquiv e).trans
-    ((extensionEquiv K d).toLinearEquiv.restrictScalars K⸨X⸩)
+  (Extension.ContinuousKaehlerDifferential.congrLinearEquiv (K := K) e).trans
+    ((Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential
+      K d).toLinearEquiv.restrictScalars K⸨X⸩)
 
+/-- `e.laurentDifferentialEquiv` transports along `e` via `mapSemilinear` and then identifies with
+explicit level one-forms via `equivLevelContinuousKaehlerDifferential K d`. -/
 theorem laurentDifferentialEquiv_apply (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     e.laurentDifferentialEquiv ω =
-      extensionEquiv K d (Extension.ContinuousKaehlerDifferential.mapLinearEquiv e ω) :=
-  (rfl)
+      Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential K d
+        (Extension.ContinuousKaehlerDifferential.mapSemilinear
+          (e : L →ₐ[K⸨X⸩] Level K d) ω) := by
+  rw [laurentDifferentialEquiv, LinearEquiv.trans_apply,
+    Extension.ContinuousKaehlerDifferential.congrLinearEquiv_apply,
+    LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
+
+/-- The inverse of `e.laurentDifferentialEquiv` applies
+`(equivLevelContinuousKaehlerDifferential K d).symm` followed by
+`mapSemilinear (e.symm : Level K d →ₐ[K⸨X⸩] L)`. -/
+theorem laurentDifferentialEquiv_symm_apply (e : L ≃ₐ[K⸨X⸩] Level K d)
+    (ω : Level.ContinuousKaehlerDifferential K d) :
+    e.laurentDifferentialEquiv.symm ω =
+      Extension.ContinuousKaehlerDifferential.mapSemilinear
+        (e.symm : Level K d →ₐ[K⸨X⸩] L)
+        ((Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential
+          K d).symm ω) := by
+  rw [laurentDifferentialEquiv, LinearEquiv.symm_trans_apply,
+    LinearEquiv.restrictScalars_symm_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    Extension.ContinuousKaehlerDifferential.congrLinearEquiv_symm,
+    Extension.ContinuousKaehlerDifferential.congrLinearEquiv_apply]
+
+@[simp]
+theorem laurentDifferentialEquiv_map (e : L ≃ₐ[K⸨X⸩] Level K d)
+    (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    e.laurentDifferentialEquiv (Extension.ContinuousKaehlerDifferential.map K L ω) =
+      Level.ContinuousKaehlerDifferential.map K d ω := by
+  rw [laurentDifferentialEquiv_apply, Extension.ContinuousKaehlerDifferential.mapSemilinear_map,
+    Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential_map]
+
+@[simp]
+theorem laurentDifferentialEquiv_symm_map (e : L ≃ₐ[K⸨X⸩] Level K d)
+    (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    e.laurentDifferentialEquiv.symm (Level.ContinuousKaehlerDifferential.map K d ω) =
+      Extension.ContinuousKaehlerDifferential.map K L ω := by
+  apply e.laurentDifferentialEquiv.symm_apply_eq.mpr
+  simp
 
 @[simp]
 theorem laurentDifferentialEquiv_tensorEquiv (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    e.laurentDifferentialEquiv
-        (Extension.ContinuousKaehlerDifferential.tensorEquiv K L η) =
+    (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
+    e.laurentDifferentialEquiv (Extension.ContinuousKaehlerDifferential.tensorEquiv K L η) =
       e.laurentDifferentialTensorEquiv η := by
   induction η using TensorProduct.inductionOn with
   | tmul x ω =>
-    simp [laurentDifferentialEquiv_apply]
-  | add η₁ η₂ h₁ h₂ => simp [h₁, h₂]
+    rw [Extension.ContinuousKaehlerDifferential.tensorEquiv_tmul, laurentDifferentialEquiv_apply,
+      Extension.ContinuousKaehlerDifferential.mapSemilinear_smul,
+      Extension.ContinuousKaehlerDifferential.mapSemilinear_map, AlgEquiv.coe_toAlgHom,
+      ContinuousLinearEquiv.map_smul,
+      Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential_map,
+      laurentDifferentialTensorEquiv_tmul]
+  | add x y hx hy => simp [hx, hy]
 
 @[simp]
-theorem laurentDifferentialEquiv_symm_laurentDifferentialTensorEquiv (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
+theorem laurentDifferentialEquiv_symm_laurentDifferentialTensorEquiv
+    (e : L ≃ₐ[K⸨X⸩] Level K d) (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
     e.laurentDifferentialEquiv.symm (e.laurentDifferentialTensorEquiv η) =
       Extension.ContinuousKaehlerDifferential.tensorEquiv K L η := by
   apply e.laurentDifferentialEquiv.symm_apply_eq.mpr
@@ -580,27 +442,14 @@ theorem laurentDifferentialEquiv_symm_laurentDifferentialTensorEquiv (e : L ≃�
 theorem laurentDifferentialEquiv_smul (e : L ≃ₐ[K⸨X⸩] Level K d) (x : L)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     e.laurentDifferentialEquiv (x • ω) = e x • e.laurentDifferentialEquiv ω := by
-  simp [laurentDifferentialEquiv_apply]
+  rw [laurentDifferentialEquiv_apply, laurentDifferentialEquiv_apply,
+    Extension.ContinuousKaehlerDifferential.mapSemilinear_smul, AlgEquiv.coe_toAlgHom,
+    ContinuousLinearEquiv.map_smul]
 
 @[simp]
 theorem laurentDifferentialEquiv_symm_smul (e : L ≃ₐ[K⸨X⸩] Level K d) (x : Level K d)
     (ω : Level.ContinuousKaehlerDifferential K d) :
     e.laurentDifferentialEquiv.symm (x • ω) = e.symm x • e.laurentDifferentialEquiv.symm ω := by
-  apply e.laurentDifferentialEquiv.symm_apply_eq.mpr
-  simp
-
-@[simp]
-theorem laurentDifferentialEquiv_map (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (ω : ContinuousKaehlerDifferential K) :
-    e.laurentDifferentialEquiv (Extension.ContinuousKaehlerDifferential.map K L ω) =
-      Level.ContinuousKaehlerDifferential.map K d ω := by
-  simp [laurentDifferentialEquiv_apply]
-
-@[simp]
-theorem laurentDifferentialEquiv_symm_map (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (ω : ContinuousKaehlerDifferential K) :
-    e.laurentDifferentialEquiv.symm (Level.ContinuousKaehlerDifferential.map K d ω) =
-      Extension.ContinuousKaehlerDifferential.map K L ω := by
   apply e.laurentDifferentialEquiv.symm_apply_eq.mpr
   simp
 
@@ -610,7 +459,9 @@ in the level parameter `u`. -/
 theorem laurentDifferentialEquiv_D (e : L ≃ₐ[K⸨X⸩] Level K d) (x : L) :
     e.laurentDifferentialEquiv (Extension.ContinuousKaehlerDifferential.D K L x) =
       Level.ContinuousKaehlerDifferential.D K d (e x) := by
-  simp [laurentDifferentialEquiv_apply]
+  rw [laurentDifferentialEquiv_apply, Extension.ContinuousKaehlerDifferential.mapSemilinear_D,
+    AlgEquiv.coe_toAlgHom,
+    Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential_D]
 
 @[simp]
 theorem laurentDifferentialEquiv_symm_D (e : L ≃ₐ[K⸨X⸩] Level K d) (x : Level K d) :
@@ -619,14 +470,24 @@ theorem laurentDifferentialEquiv_symm_D (e : L ≃ₐ[K⸨X⸩] Level K d) (x : 
   apply e.laurentDifferentialEquiv.symm_apply_eq.mpr
   simp
 
-/-- Every separable level chart intertwines the explicit level trace and the intrinsic differential
-trace on `Ω¹_cont(L/K)`. -/
+/-- Under a level chart `e`, `D K L x` becomes `d((e x)(u))` in the level variable `u`. -/
+theorem addEquivContinuousKaehlerDifferential_laurentDifferentialEquiv_D
+    (e : L ≃ₐ[K⸨X⸩] Level K d) (x : L) :
+    addEquivContinuousKaehlerDifferential K d
+        (e.laurentDifferentialEquiv (Extension.ContinuousKaehlerDifferential.D K L x)) =
+      TauCeti.ContinuousKaehlerDifferential.D K (Level.ringEquivLaurentSeries K d (e x)) := by
+  simp
+
+/-- A level chart intertwines the intrinsic differential trace on `Ω¹_cont(L/K)` with the explicit
+level differential trace. -/
 @[simp]
 theorem trace_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     Level.ContinuousKaehlerDifferential.trace K d (e.laurentDifferentialEquiv ω) =
       Extension.ContinuousKaehlerDifferential.trace K L ω := by
-  simp [laurentDifferentialEquiv_apply]
+  rw [laurentDifferentialEquiv_apply,
+    Extension.ContinuousKaehlerDifferential.trace_equivLevelContinuousKaehlerDifferential,
+    Extension.ContinuousKaehlerDifferential.trace_mapSemilinear_algEquiv]
 
 @[simp]
 theorem trace_laurentDifferentialEquiv_symm (e : L ≃ₐ[K⸨X⸩] Level K d)
@@ -635,17 +496,17 @@ theorem trace_laurentDifferentialEquiv_symm (e : L ≃ₐ[K⸨X⸩] Level K d)
       Level.ContinuousKaehlerDifferential.trace K d ω := by
   rw [← trace_laurentDifferentialEquiv e, LinearEquiv.apply_symm_apply]
 
-/-- **Trace-residue compatibility on intrinsic continuous one-forms.** For any separable level
-chart `e : L ≃ₐ[K⸨X⸩] Level K d`, the intrinsic `K`-linear residue `Res_L(ω)` equals the
-`u⁻¹`-coefficient residue of `e.laurentDifferentialEquiv ω` in the level parameter. -/
+/-- **Trace-residue compatibility on `Ω¹_cont(L/K)` in any level chart.** For `e : L ≃ₐ[K⸨X⸩]
+Level K d` with `d` nonzero in `K`, the intrinsic trace-defined residue `residue K L ω` equals the
+`u⁻¹`-coefficient of `e.laurentDifferentialEquiv ω` in the level parameter `u`. -/
 theorem residue_eq_coeff_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     Extension.ContinuousKaehlerDifferential.residue K L ω =
       (Level.ringEquivLaurentSeries K d
-        (equivLevel K d (e.laurentDifferentialEquiv ω))).coeff (-1) := by
-  rw [laurentDifferentialEquiv_apply, ← residue_eq_coeff_extensionEquiv,
-    Extension.ContinuousKaehlerDifferential.mapLinearEquiv_apply,
-    Extension.ContinuousKaehlerDifferential.residue_mapSemilinearEquiv]
+        (Level.ContinuousKaehlerDifferential.equivLevel K d
+          (e.laurentDifferentialEquiv ω))).coeff (-1) := by
+  rw [Extension.ContinuousKaehlerDifferential.residue_apply, ← trace_laurentDifferentialEquiv e,
+    coeff_neg_one_equivLaurentSeries_trace]
 
 /-- **Chart-independence of residues on intrinsic continuous one-forms.** Any two separable level
 charts yield the same coefficient residue on `Ω¹_cont(L/K)`. -/
@@ -653,45 +514,42 @@ theorem coeff_laurentDifferentialEquiv_eq {n : ℕ+} [NeZero ((n : ℕ) : K)]
     (e : L ≃ₐ[K⸨X⸩] Level K d) (e' : L ≃ₐ[K⸨X⸩] Level K n)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     (Level.ringEquivLaurentSeries K d
-      (equivLevel K d (e.laurentDifferentialEquiv ω))).coeff (-1) =
+      (Level.ContinuousKaehlerDifferential.equivLevel K d
+        (e.laurentDifferentialEquiv ω))).coeff (-1) =
     (Level.ringEquivLaurentSeries K n
-      (equivLevel K n (e'.laurentDifferentialEquiv ω))).coeff (-1) := by
+      (Level.ContinuousKaehlerDifferential.equivLevel K n
+        (e'.laurentDifferentialEquiv ω))).coeff (-1) := by
   rw [← residue_eq_coeff_laurentDifferentialEquiv e,
     ← residue_eq_coeff_laurentDifferentialEquiv e']
 
-section Topology
-
-variable [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L]
-
-/-- **Topological level-chart equivalence on continuous one-forms.** When `L` carries the
-`K⸨X⸩`-module topology, any algebraic separable level chart `e : L ≃ₐ[K⸨X⸩] Level K d` upgrades
-automatically to a continuous `K⸨X⸩`-linear equivalence on continuous one-forms, without assuming
-continuity of `e` or `Module.Finite K⸨X⸩ L` separately. -/
-noncomputable def laurentDifferentialContinuousEquiv (e : L ≃ₐ[K⸨X⸩] Level K d) :
+/-- When `L` carries the `K⸨X⸩`-module topology, `e.laurentDifferentialEquiv` upgrades to a
+continuous `K⸨X⸩`-linear equivalence with the valuation-topologized level one-forms. -/
+noncomputable def laurentDifferentialContinuousEquiv [TopologicalSpace L]
+    [IsModuleTopology K⸨X⸩ L] (e : L ≃ₐ[K⸨X⸩] Level K d) :
     Extension.ContinuousKaehlerDifferential K L ≃L[K⸨X⸩]
       Level.ContinuousKaehlerDifferential K d :=
   have : Module.Finite K⸨X⸩ L := Module.Finite.equiv e.symm.toLinearEquiv
   e.laurentDifferentialEquiv.toContinuousLinearEquivOfIsModuleTopology
 
 @[simp]
-theorem laurentDifferentialContinuousEquiv_apply (e : L ≃ₐ[K⸨X⸩] Level K d)
-    (ω : Extension.ContinuousKaehlerDifferential K L) :
+theorem laurentDifferentialContinuousEquiv_apply [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L]
+    (e : L ≃ₐ[K⸨X⸩] Level K d) (ω : Extension.ContinuousKaehlerDifferential K L) :
     e.laurentDifferentialContinuousEquiv ω = e.laurentDifferentialEquiv ω := by
   simp [laurentDifferentialContinuousEquiv]
 
 @[simp]
-theorem laurentDifferentialContinuousEquiv_symm_apply (e : L ≃ₐ[K⸨X⸩] Level K d)
+theorem laurentDifferentialContinuousEquiv_symm_apply [TopologicalSpace L]
+    [IsModuleTopology K⸨X⸩ L] (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Level.ContinuousKaehlerDifferential K d) :
     e.laurentDifferentialContinuousEquiv.symm ω = e.laurentDifferentialEquiv.symm ω := by
   simp [laurentDifferentialContinuousEquiv]
 
 @[simp]
-theorem toLinearEquiv_laurentDifferentialContinuousEquiv (e : L ≃ₐ[K⸨X⸩] Level K d) :
+theorem toLinearEquiv_laurentDifferentialContinuousEquiv [TopologicalSpace L]
+    [IsModuleTopology K⸨X⸩ L] (e : L ≃ₐ[K⸨X⸩] Level K d) :
     e.laurentDifferentialContinuousEquiv.toLinearEquiv = e.laurentDifferentialEquiv := by
   simp [laurentDifferentialContinuousEquiv]
 
-end Topology
-
-end Intrinsic
+end EtaleChart
 
 end AlgEquiv

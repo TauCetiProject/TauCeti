@@ -176,7 +176,8 @@ noncomputable def rootLatticeRootEquiv : Fin t.numRoots ≃ (t.rootLattice ht).v
   Equiv.ofBijective
     (fun k ↦ ⟨t.rootLatticeRoot ht hv k, mem_vectorsOfNorm.mpr (t.norm_rootLatticeRoot ht hv k)⟩)
     ⟨fun _ _ h ↦ t.rootLatticeRoot_injective ht hv (congrArg Subtype.val h), fun x ↦ by
-      obtain ⟨k, hk⟩ := (t.norm_rootLattice_eq_two_iff ht hv x.1).mp (mem_vectorsOfNorm.mp x.2)
+      obtain ⟨k, hk⟩ := (t.norm_rootLattice_eq_two_iff ht hv x.val).mp
+          (mem_vectorsOfNorm.mp x.property)
       exact ⟨k, Subtype.ext hk⟩⟩
 
 /-- The shell equivalence sends each index to its lattice root. -/

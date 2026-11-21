@@ -108,7 +108,7 @@ tangent lines of the unit-period circle. -/
 @[simp]
 theorem angleForm_apply (i : ι) (z : TorusFamily p)
     (v : Fin 1 → TangentSpace (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) z) :
-    (angleForm p IB i).1 z v =
+    (angleForm p IB i).val z v =
       mfderiv (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) 𝓘(ℝ)
         (fun z ↦ (normalization p IB ∞ z).2 i) z (v 0) := by
   have hg := ((contMDiff_snd.comp (CircleFamily.Pullback.normalization (p i) IB ∞).contMDiff)
@@ -154,7 +154,7 @@ theorem mpullback_coord_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)
 @[simp]
 theorem timeForm_apply (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) (z : TorusFamily p)
     (v : Fin 1 → TangentSpace (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) z) :
-    (timeForm p IB i hp).1 z v = p i z.base * (angleForm p IB i).1 z v := by
+    (timeForm p IB i hp).val z v = p i z.base * (angleForm p IB i).val z v := by
   rw [timeForm, angleForm, SmoothForm.mpullback_apply, SmoothForm.mpullback_apply,
     CircleFamily.Pullback.timeForm_apply, base_coord]
 
@@ -168,15 +168,15 @@ theorem mpullback_mk_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) (
 
 /-- The exterior derivative of the time form `η_i` is `d(p_i ∘ base) ∧ β_i`. -/
 theorem mextDeriv_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
-    mextDeriv (timeForm p IB i hp).1 =
+    mextDeriv (timeForm p IB i hp).val =
       RoughForm.wedge
         (mextDeriv (RoughForm.ofFunction (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
           fun z : TorusFamily p ↦ (p i z.base : ℝ)))
-        (angleForm p IB i).1 := by
+        (angleForm p IB i).val := by
   have hc := contMDiff_coord p IB ∞ i
   have hg : ContMDiff (IB.prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) ∞
       fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ) :=
-    (contMDiff_subtype_val.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
+    (contMDiff_subtypeVal.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
   have hcomp : (fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ)) ∘ coord p i =
       fun z ↦ (p i z.base : ℝ) :=
     funext fun z ↦ by simp
@@ -245,8 +245,8 @@ theorem mpullback_rescale_angleForm (i : ι) :
 theorem mpullback_rescale_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i))
     (hq : ContMDiff IB 𝓘(ℝ) ∞ (q i)) :
     (SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff
-        (timeForm q IB i hq)).1 =
-      fun z ↦ ((q i z.base : ℝ) / p i z.base) • (timeForm p IB i hp).1 z := by
+        (timeForm q IB i hq)).val =
+      fun z ↦ ((q i z.base : ℝ) / p i z.base) • (timeForm p IB i hp).val z := by
   refine funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
   have h := DFunLike.congr_fun
     (congrFun (congrArg Subtype.val (mpullback_rescale_angleForm p IB q i)) z) v

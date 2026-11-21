@@ -157,7 +157,7 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
       c₃.hom (0 + q) (μ 0 (q + 1) (c₁.ι.hom x) w) = μ 0 q (c₁.ι.hom x) (c₂.hom q w))
     {p q : ℕ} (a : (J₁.X p).ρ.invariants) (ha : (J₁.d p (p + 1)).hom (a : (J₁.X p).V) = 0)
     (b : (J₂.X q).ρ.invariants) (hb : (J₂.d q (q + 1)).hom (b : (J₂.X q).V) = 0) :
-    c₃.cohomologyClass ⟨μ p q a b, fun g ↦ by rw [← hρ, a.2 g, b.2 g]⟩
+    c₃.cohomologyClass ⟨μ p q a b, fun g ↦ by rw [← hρ, a.property g, b.property g]⟩
         (by rw [show p + q + 1 = p + 1 + q by omega, hd p q a b hb, ha, LinearMap.map_zero₂]) =
       P.cup p q (c₁.cohomologyClass a ha) (c₂.cohomologyClass b hb) := by
   set β := (c₂.comparison.f q).hom.mapInvariants b
@@ -166,20 +166,21 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
     { (μ r q).flip b with
       cont := hcont r q b
       isIntertwining' g := ContinuousLinearMap.ext fun v ↦
-        (congrArg (μ r q ((J₁.X r).ρ g v)) (b.2 g)).symm.trans (hρ r q g v b) }
+        (congrArg (μ r q ((J₁.X r).ρ g v)) (b.property g)).symm.trans (hρ r q g v b) }
   let R (r : ℕ) : (resolution' X).X r ⟶ (resolution' Z).X (r + q) := ofHom
-    { (P.resolutionCupPairing r q).flip β.1 with
+    { (P.resolutionCupPairing r q).flip β.val with
       cont := (P.continuous_resolutionCupPairing r q).comp (continuous_id.prodMk continuous_const)
       isIntertwining' g := ContinuousLinearMap.ext fun v ↦
-        (congrArg (P.resolutionCupPairing r q (((resolution' X).X r).ρ g v)) (β.2 g)).symm.trans
-          (P.resolutionCupPairing_ρ r q g v β.1) }
+        (congrArg (P.resolutionCupPairing r q (((resolution' X).X r).ρ g v))
+            (β.property g)).symm.trans
+          (P.resolutionCupPairing_ρ r q g v β.val) }
   have hα : ((homogeneousCochains X).d p (p + 1)).hom ((c₁.comparison.f p).hom.mapInvariants a) =
       0 := c₁.d_mapInvariants_comparison_f a ha
   have hβ : ((homogeneousCochains Y).d q (q + 1)).hom β = 0 := c₂.d_mapInvariants_comparison_f b hb
-  have hβ' : (d Y (q + 1)).hom β.1 = 0 :=
+  have hβ' : (d Y (q + 1)).hom β.val = 0 :=
     (homogeneousCochains.d_apply Y q β).symm.trans (congrArg Subtype.val hβ)
   have hRv (r : ℕ) (v : ((resolution' X).X r).V) :
-      (R r).hom v = P.resolutionCupPairing r q v β.1 := (rfl)
+      (R r).hom v = P.resolutionCupPairing r q v β.val := (rfl)
   -- `μ (-, b)` and the right product with `β` commute with the differentials
   have hL (r : ℕ) : L r ≫ J₃.d (r + q) (r + 1 + q) = J₁.d r (r + 1) ≫ L (r + 1) :=
     ConcreteCategory.hom_ext _ _ fun v ↦ hd r q v b hb
@@ -187,7 +188,7 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
       R r ≫ (resolution' Z).d (r + q) (r + 1 + q) = (resolution' X).d r (r + 1) ≫ R (r + 1) :=
     ConcreteCategory.hom_ext _ _ fun v ↦ by
       rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hRv, hRv]
-      exact resolution'_d_resolutionCupPairing P β.1 hβ' r v
+      exact resolution'_d_resolutionCupPairing P β.val hβ' r v
   -- on the augmentation both composites are the product of the constant cochain with `β`
   have h0 : c₁.ι ≫ L 0 ≫ c₃.comparison.f (0 + q) = c₁.ι ≫ c₁.comparison.f 0 ≫ R 0 :=
     ConcreteCategory.hom_ext _ _ fun x ↦ by
@@ -243,11 +244,11 @@ theorem gradedCohomologyClass_pairing [LocallyCompactSpace G]
     (hcont : ∀ b, Continuous fun a ↦ μ a b)
     (hd : ∀ a b, d₂.hom b = 0 → d₃.hom (μ a b) = μ (d₁.hom a) b)
     (hproj : ∀ (x : X.V) (w : M₂.V) (hw : w ∈ ℳ₂ (0 : ℕ))
-      (hxw : μ (c₁.ι.hom x).1 w ∈ ℳ₃ (0 : ℕ)),
-      c₃.proj ⟨μ (c₁.ι.hom x).1 w, hxw⟩ = P.bil x (c₂.proj ⟨w, hw⟩))
+      (hxw : μ (c₁.ι.hom x).val w ∈ ℳ₃ (0 : ℕ)),
+      c₃.proj ⟨μ (c₁.ι.hom x).val w, hxw⟩ = P.bil x (c₂.proj ⟨w, hw⟩))
     (hhom : ∀ (q : ℕ) (x : X.V) (w : M₂.V) (hw : w ∈ ℳ₂ (q + 1 : ℕ))
-      (hxw : μ (c₁.ι.hom x).1 w ∈ ℳ₃ (q + 1 : ℕ)),
-      (c₃.hom q ⟨μ (c₁.ι.hom x).1 w, hxw⟩).1 = μ (c₁.ι.hom x).1 (c₂.hom q ⟨w, hw⟩).1)
+      (hxw : μ (c₁.ι.hom x).val w ∈ ℳ₃ (q + 1 : ℕ)),
+      (c₃.hom q ⟨μ (c₁.ι.hom x).val w, hxw⟩).val = μ (c₁.ι.hom x).val (c₂.hom q ⟨w, hw⟩).val)
     {p q : ℕ} {a : M₁.V} (ha : a ∈ ℳ₁ p) (hainv : ∀ g, M₁.ρ g a = a) (hda : d₁.hom a = 0)
     {b : M₂.V} (hb : b ∈ ℳ₂ q) (hbinv : ∀ g, M₂.ρ g b = b) (hdb : d₂.hom b = 0) :
     c₃.gradedCohomologyClass (μ a b) (by exact_mod_cast hμ ha hb)
@@ -261,40 +262,40 @@ theorem gradedCohomologyClass_pairing [LocallyCompactSpace G]
   let μ' (p q : ℕ) : ((M₁.gradedCochainComplex ℳ₁ hρ₁ d₁ hd₁ hdd₁).X p).V →ₗ[k]
       ((M₂.gradedCochainComplex ℳ₂ hρ₂ d₂ hd₂ hdd₂).X q).V →ₗ[k]
         ((M₃.gradedCochainComplex ℳ₃ hρ₃ d₃ hd₃ hdd₃).X (p + q)).V :=
-    LinearMap.mk₂ k (fun a b ↦ ⟨μ a.1 b.1, hμ' a.2 b.2⟩)
-      (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ μ a.1 a'.1 b.1))
-      (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ μ r a.1 b.1))
-      (fun a b b' ↦ Subtype.ext (map_add (μ a.1) b.1 b'.1))
-      (fun r a b ↦ Subtype.ext (map_smul (μ a.1) r b.1))
-  have hμ'v (p q : ℕ) a b : (μ' p q a b).1 = μ a.1 b.1 := (rfl)
+    LinearMap.mk₂ k (fun a b ↦ ⟨μ a.val b.val, hμ' a.property b.property⟩)
+      (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ μ a.val a'.val b.val))
+      (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ μ r a.val b.val))
+      (fun a b b' ↦ Subtype.ext (map_add (μ a.val) b.val b'.val))
+      (fun r a b ↦ Subtype.ext (map_smul (μ a.val) r b.val))
+  have hμ'v (p q : ℕ) a b : (μ' p q a b).val = μ a.val b.val := (rfl)
   -- the differential of `gradedCochainComplex` into any degree `j = i + 1` is `d`
   have hdv {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
       {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
       {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
       (i j : ℕ) (hij : i + 1 = j) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X i).V) :
-      (((M.gradedCochainComplex ℳ hρ d hd hdd).d i j).hom v).1 = d.hom v.1 := by
+      (((M.gradedCochainComplex ℳ hρ d hd hdd).d i j).hom v).val = d.hom v.val := by
     subst hij
     exact gradedCochainComplex_d_apply M ℳ hρ d hd hdd i v
   -- the contracting homotopy of `c₃` read in degree `i = q`
   have hhom' (q : ℕ) (x : X.V) (w : ((M₂.gradedCochainComplex ℳ₂ hρ₂ d₂ hd₂ hdd₂).X (q + 1)).V)
       (i : ℕ) (hi : i = q) (v : ((M₃.gradedCochainComplex ℳ₃ hρ₃ d₃ hd₃ hdd₃).X (i + 1)).V)
-      (hv : v.1 = μ (c₁.ι.hom x).1 w.1) :
-      (c₃.hom i v).1 = μ (c₁.ι.hom x).1 (c₂.hom q w).1 := by
+      (hv : v.val = μ (c₁.ι.hom x).val w.val) :
+      (c₃.hom i v).val = μ (c₁.ι.hom x).val (c₂.hom q w).val := by
     subst hi
     obtain ⟨v, hv'⟩ := v
-    obtain rfl : v = μ (c₁.ι.hom x).1 w.1 := hv
-    exact hhom i x w.1 w.2 hv'
+    obtain rfl : v = μ (c₁.ι.hom x).val w.val := hv
+    exact hhom i x w.val w.property hv'
   rw [gradedCohomologyClass_def, gradedCohomologyClass_def, gradedCohomologyClass_def]
   convert cohomologyClass_pairing c₁ c₂ c₃ P μ'
     (fun p q g a b ↦ Subtype.ext (by
       rw [hμ'v, gradedCochainComplex_ρ_apply, gradedCochainComplex_ρ_apply,
         gradedCochainComplex_ρ_apply, hρ, hμ'v]))
     (fun p q b ↦ (continuous_gradedCochainComplex_X_iff _ _ _ _ _ _ _ _).2
-      ((hcont b.1).comp continuous_subtype_val))
+      ((hcont b.val).comp continuous_subtypeVal))
     (fun p q a b hb ↦ Subtype.ext (by
-      rw [hdv _ _ (by omega), hμ'v, hd a.1 b.1 ((hdv q (q + 1) rfl b).symm.trans
+      rw [hdv _ _ (by omega), hμ'v, hd a.val b.val ((hdv q (q + 1) rfl b).symm.trans
         (congrArg Subtype.val hb)), hμ'v, hdv p (p + 1) rfl a]))
-    (fun x w ↦ hproj x w.1 w.2 _)
+    (fun x w ↦ hproj x w.val w.property _)
     (fun q x w ↦ Subtype.ext (hhom' q x w (0 + q) (Nat.zero_add q) _ (hμ'v _ _ _ _)))
     (gradedCochainComplexInvariant M₁ ℳ₁ hρ₁ d₁ hd₁ hdd₁ p a ha hainv)
     (gradedCochainComplex_d_invariant M₁ ℳ₁ hρ₁ d₁ hd₁ hdd₁ ha hainv hda)
