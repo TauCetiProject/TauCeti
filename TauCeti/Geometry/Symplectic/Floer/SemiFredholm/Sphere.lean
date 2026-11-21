@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Normed.Group.Prod
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Sobolev.Poincare.Infinity
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
@@ -183,7 +184,9 @@ private theorem integral_le_of_eq_add {ξ ξ₁ χ : ℝ × ℝ → V} {R : ℝ}
           ‖fderiv ℝ χ z stdComplexLineImag‖ ^ 2) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   have hsq (a b : V) : ‖a + b‖ ^ 2 ≤ 2 * ‖a‖ ^ 2 + 2 * ‖b‖ ^ 2 := by
-    nlinarith [norm_add_le a b, norm_nonneg (a + b), sq_nonneg (‖a‖ - ‖b‖)]
+    have h := norm_smul_add_smul_sq_le (1 : ℝ) 1 a b
+    rw [one_smul, one_smul] at h
+    linarith
   set f₁ : ℝ × ℝ → ℝ := fun z ↦ ‖ξ₁ z‖ ^ 2
   set f₂ : ℝ × ℝ → ℝ := fun z ↦ ((z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ * ‖χ z‖ ^ 2
   set f₃ : ℝ × ℝ → ℝ := fun z ↦ ‖fderiv ℝ ξ₁ z stdComplexLineReal‖ ^ 2 +
