@@ -40,11 +40,13 @@ intersection norm `max (C_p(a)) (R_p(a))`, which is `(columnSchatten p ⊔ rowSc
   block column of `(aₖ†)ₖ`.
 * `TauCeti.columnSchatten`, `TauCeti.rowSchatten`: the column and row Schatten `p`-norms
   `C_p` and `R_p`, as seminorms on families.
-* `TauCeti.columnSchatten_eq_schatten_sqrt`, `TauCeti.rowSchatten_eq_schatten_sqrt`: the square
-  function formulas `C_p(a) = ‖(∑ₖ aₖ† aₖ)^(1/2)‖_p` and `R_p(a) = ‖(∑ₖ aₖ aₖ†)^(1/2)‖_p`.
+* `TauCeti.columnSchatten_apply_eq_schatten_sqrt`, `TauCeti.rowSchatten_apply_eq_schatten_sqrt`:
+  the square function formulas `C_p(a) = ‖(∑ₖ aₖ† aₖ)^(1/2)‖_p` and
+  `R_p(a) = ‖(∑ₖ aₖ aₖ†)^(1/2)‖_p`.
 * `TauCeti.rowSchatten_apply_eq_columnSchatten_apply_adjoint`: `R_p(a) = C_p((aₖ†)ₖ)`.
-* `TauCeti.columnSchatten_eq_zero_iff`, `TauCeti.rowSchatten_eq_zero_iff`,
-  `TauCeti.columnSchatten_inf_rowSchatten_eq_zero_iff`: the column, row and sum norms are norms.
+* `TauCeti.columnSchatten_apply_eq_zero_iff`, `TauCeti.rowSchatten_apply_eq_zero_iff`,
+  `TauCeti.columnSchatten_inf_rowSchatten_apply_eq_zero_iff`: the column, row and sum norms are
+  norms.
 * `TauCeti.schatten_apply_le_columnSchatten`, `TauCeti.schatten_apply_le_rowSchatten`,
   `TauCeti.schatten_apply_le_columnSchatten_inf_rowSchatten`: every entry is bounded in `S_p` by
   `C_p(a)`, by `R_p(a)` and by the sum norm.
@@ -144,13 +146,13 @@ theorem blockRow_comp_adjoint_blockRow (a : ι → E →ₗ[𝕜] F) :
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 /-- The **column Schatten `p`-norm** `C_p(a) = ‖(∑ₖ aₖ† aₖ)^(1/2)‖_p` of a finite family of maps
-(`TauCeti.columnSchatten_eq_schatten_sqrt`), defined as the Schatten `p`-norm of the block column
-`x ↦ (aₖ x)ₖ`. -/
+(`TauCeti.columnSchatten_apply_eq_schatten_sqrt`), defined as the Schatten `p`-norm of the block
+column `x ↦ (aₖ x)ₖ`. -/
 noncomputable def columnSchatten : Seminorm 𝕜 (ι → E →ₗ[𝕜] F) :=
   (schatten 𝕜 E (PiLp 2 fun _ : ι ↦ F) p).toSeminorm.comp blockColumn
 
 /-- The **row Schatten `p`-norm** `R_p(a) = ‖(∑ₖ aₖ aₖ†)^(1/2)‖_p` of a finite family of maps
-(`TauCeti.rowSchatten_eq_schatten_sqrt`), defined as the Schatten `p`-norm of the block row
+(`TauCeti.rowSchatten_apply_eq_schatten_sqrt`), defined as the Schatten `p`-norm of the block row
 `y ↦ ∑ₖ aₖ yₖ`. -/
 noncomputable def rowSchatten : Seminorm 𝕜 (ι → E →ₗ[𝕜] F) :=
   (schatten 𝕜 (PiLp 2 fun _ : ι ↦ E) F p).toSeminorm.comp blockRow
@@ -172,7 +174,7 @@ theorem rowSchatten_apply_eq_columnSchatten_apply_adjoint (a : ι → E →ₗ[�
 
 /-- **The column square function formula.** For the positive square root `(∑ₖ aₖ† aₖ)^(1/2)`,
 `C_p(a) = ‖(∑ₖ aₖ† aₖ)^(1/2)‖_p`. -/
-theorem columnSchatten_eq_schatten_sqrt (a : ι → E →ₗ[𝕜] F)
+theorem columnSchatten_apply_eq_schatten_sqrt (a : ι → E →ₗ[𝕜] F)
     (hT : (∑ k, (a k).adjoint ∘ₗ a k).IsPositive) :
     columnSchatten p a = schatten 𝕜 E E p hT.sqrt := by
   rw [hT.sqrt_isPositive.eq_operatorAbs (A := blockColumn a)
@@ -181,24 +183,24 @@ theorem columnSchatten_eq_schatten_sqrt (a : ι → E →ₗ[𝕜] F)
 
 /-- **The row square function formula.** For the positive square root `(∑ₖ aₖ aₖ†)^(1/2)`,
 `R_p(a) = ‖(∑ₖ aₖ aₖ†)^(1/2)‖_p`. -/
-theorem rowSchatten_eq_schatten_sqrt (a : ι → E →ₗ[𝕜] F)
+theorem rowSchatten_apply_eq_schatten_sqrt (a : ι → E →ₗ[𝕜] F)
     (hT : (∑ k, a k ∘ₗ (a k).adjoint).IsPositive) :
     rowSchatten p a = schatten 𝕜 F F p hT.sqrt := by
   rw [rowSchatten_apply_eq_columnSchatten_apply_adjoint,
-    columnSchatten_eq_schatten_sqrt p _ (by simpa using hT)]
+    columnSchatten_apply_eq_schatten_sqrt p _ (by simpa using hT)]
   simp
 
 /-- The column Schatten norm is a norm: `C_p(a) = 0` only for `a = 0`. -/
 @[simp]
-theorem columnSchatten_eq_zero_iff {a : ι → E →ₗ[𝕜] F} : columnSchatten p a = 0 ↔ a = 0 := by
+theorem columnSchatten_apply_eq_zero_iff {a : ι → E →ₗ[𝕜] F} : columnSchatten p a = 0 ↔ a = 0 := by
   rw [columnSchatten_apply, schatten_apply_eq_zero_iff]
   refine ⟨fun h ↦ funext fun k ↦ ?_, fun h ↦ h ▸ map_zero _⟩
   rw [← projₗ_comp_blockColumn a k, h, comp_zero, Pi.zero_apply]
 
 /-- The row Schatten norm is a norm: `R_p(a) = 0` only for `a = 0`. -/
 @[simp]
-theorem rowSchatten_eq_zero_iff {a : ι → E →ₗ[𝕜] F} : rowSchatten p a = 0 ↔ a = 0 := by
-  rw [rowSchatten_apply_eq_columnSchatten_apply_adjoint, columnSchatten_eq_zero_iff]
+theorem rowSchatten_apply_eq_zero_iff {a : ι → E →ₗ[𝕜] F} : rowSchatten p a = 0 ↔ a = 0 := by
+  rw [rowSchatten_apply_eq_columnSchatten_apply_adjoint, columnSchatten_apply_eq_zero_iff]
   simp [funext_iff]
 
 /-! ### Entries, scalar multipliers and the sum norm -/
@@ -229,7 +231,7 @@ theorem schatten_apply_le_columnSchatten_inf_rowSchatten (a : ι → E →ₗ[�
   exact hle a
 
 /-- The sum norm `inf_{a = b + c} (C_p(b) + R_p(c))` is a norm: it vanishes only at `a = 0`. -/
-theorem columnSchatten_inf_rowSchatten_eq_zero_iff {a : ι → E →ₗ[𝕜] F} :
+theorem columnSchatten_inf_rowSchatten_apply_eq_zero_iff {a : ι → E →ₗ[𝕜] F} :
     (columnSchatten p ⊓ rowSchatten p : Seminorm 𝕜 (ι → E →ₗ[𝕜] F)) a = 0 ↔ a = 0 := by
   refine ⟨fun h ↦ funext fun k ↦ (schatten_apply_eq_zero_iff p).1 <| le_antisymm ?_
     (apply_nonneg _ _), fun h ↦ h ▸ map_zero _⟩

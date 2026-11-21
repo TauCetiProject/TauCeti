@@ -68,7 +68,7 @@ theorem opNorm_apply_adjoint_comp_self [FiniteDimensional 𝕜 F] (A : E →ₗ[
   have := FiniteDimensional.completeSpace 𝕜 F
   have h : LinearMap.toContinuousLinearMap (LinearMap.adjoint A ∘ₗ A) =
       (LinearMap.toContinuousLinearMap A).adjoint ∘L LinearMap.toContinuousLinearMap A :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
+    ContinuousLinearMap.ext fun x ↦ by simp [LinearMap.adjoint_eq_toCLM_adjoint]
   rw [opNorm_apply, opNorm_apply, h, ContinuousLinearMap.norm_adjoint_comp_self, sq]
 
 end TauCeti.UnitarilyInvariantSeminorm
