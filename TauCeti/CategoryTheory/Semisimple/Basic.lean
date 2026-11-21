@@ -28,6 +28,10 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 ## Main results
 
 * `TauCeti.IsFiniteSemisimpleCategory`: every object is a finite biproduct of simple objects.
+* `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleIndex`,
+  `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleFamily`, and
+  `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleIso`: the chosen finite biproduct decomposition
+  of an object into simple objects.
 * `TauCeti.IsFiniteSemisimpleCategory.of_equivalence`: transport finite semisimplicity across an
   equivalence.
 * `TauCeti.IsFiniteSemisimpleCategory.exists_biproduct_simples_of_isZero`,
@@ -221,6 +225,28 @@ theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
 namespace IsFiniteSemisimpleCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C]
+
+/-- Index type of the chosen simple biproduct decomposition of `Y`. -/
+@[expose] def chosenSimpleIndex (Y : C) : Type :=
+  (exists_biproduct_simples Y).choose
+
+instance (Y : C) : Fintype (chosenSimpleIndex Y) :=
+  (exists_biproduct_simples Y).choose_spec.choose
+
+/-- Family of simple objects in the chosen biproduct decomposition of `Y`. -/
+@[expose] def chosenSimpleFamily (Y : C) : chosenSimpleIndex Y → C :=
+  (exists_biproduct_simples Y).choose_spec.choose_spec.choose
+
+instance (Y : C) (i : chosenSimpleIndex Y) : Simple (chosenSimpleFamily Y i) :=
+  (exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose i
+
+instance (Y : C) : HasBiproduct (chosenSimpleFamily Y) :=
+  (exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose_spec.choose
+
+/-- Isomorphism `Y ≅ ⨁ chosenSimpleFamily Y` of the chosen simple biproduct decomposition of
+`Y`. -/
+def chosenSimpleIso (Y : C) : Y ≅ ⨁ chosenSimpleFamily Y :=
+  (exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
 
 /-- Every object of a finite semisimple category is injective. -/
 instance injective (X : C) : Injective X := by

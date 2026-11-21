@@ -95,9 +95,8 @@ private def endπAux {Y : C} {ι : Type*} [Fintype ι] (a : ι → C) [∀ i, Si
     [HasBiproduct a] (e : Y ≅ ⨁ a) (X : C) : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ :=
   ∑ i : ι,
     biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
-      ((SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv) ▷
-        (X ⊗ (SimpleClasses.classOf (a i)).reprᘁ) ≫
-      Y ◁ X ◁ (e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv)ᘁ
+      SimpleClasses.decompIncl a e i ▷ (X ⊗ (SimpleClasses.classOf (a i)).reprᘁ) ≫
+      Y ◁ X ◁ (SimpleClasses.decompProj a e i)ᘁ
 
 include k in
 /-- `endπAux` is dinatural with respect to any morphism `g : Y ⟶ Y'`, regardless of which
@@ -107,16 +106,16 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
     (b : ι' → C) [∀ j, Simple (b j)] [HasBiproduct b] (e' : Y' ≅ ⨁ b)
     (X : C) (g : Y ⟶ Y') :
     endπAux a e X ≫ g ▷ (X ⊗ Yᘁ) = endπAux b e' X ≫ Y' ◁ X ◁ gᘁ := by
-  let p (i : ι) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : ι) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  let p' (j : ι') : Y' ⟶ (SimpleClasses.classOf (b j)).repr :=
-    e'.hom ≫ biproduct.π b j ≫ (SimpleClasses.classOfReprIso (b j)).inv
-  let q' (j : ι') : (SimpleClasses.classOf (b j)).repr ⟶ Y' :=
-    (SimpleClasses.classOfReprIso (b j)).hom ≫ biproduct.ι b j ≫ e'.inv
-  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_comp_classOfReprIso_eq_id a e
-  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
+  let p := SimpleClasses.decompProj a e
+  let q := SimpleClasses.decompIncl a e
+  let p' := SimpleClasses.decompProj b e'
+  let q' := SimpleClasses.decompIncl b e'
+  have hY : ∑ i, p i ≫ q i = 𝟙 Y := by
+    dsimp only [p, q, SimpleClasses.decompProj, SimpleClasses.decompIncl]
+    exact SimpleClasses.sum_comp_classOfReprIso_eq_id a e
+  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := by
+    dsimp only [p', q', SimpleClasses.decompProj, SimpleClasses.decompIncl]
+    exact SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
   have hgL (i : ι) : q i ≫ g = ∑ j, (q i ≫ g ≫ p' j) ≫ q' j := by
     simp only [Category.assoc, ← Preadditive.comp_sum, hY', Category.comp_id]
   have hgR (j : ι') : g ≫ p' j = ∑ i, p i ≫ (q i ≫ g ≫ p' j) := by
@@ -165,33 +164,16 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [Monoida
 
 /-- The canonical dinatural end projection `inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ`. -/
 def inductionEndπ (X Y : C) : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ :=
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let _ := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let _ := h.choose_spec.choose_spec.choose_spec.choose
-  let _ := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  endπAux a e X
+  endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
+    (IsFiniteSemisimpleCategory.chosenSimpleIso Y) X
 
 include k in
 /-- Dinaturality of `inductionEndπ`: right-whiskering by `g : Y ⟶ Y'` on the first factor
 agrees with left-whiskering by `gᘁ : Y'ᘁ ⟶ Yᘁ` on the third factor. -/
 @[reassoc]
 theorem inductionEndπ_dinatural (X : C) {Y Y' : C} (g : Y ⟶ Y') :
-    inductionEndπ X Y ≫ g ▷ (X ⊗ Yᘁ) = inductionEndπ X Y' ≫ Y' ◁ X ◁ gᘁ := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let h' := IsFiniteSemisimpleCategory.exists_biproduct_simples Y'
-  let : Fintype h'.choose := h'.choose_spec.choose
-  let b := h'.choose_spec.choose_spec.choose
-  let : ∀ j, Simple (b j) := h'.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct b := h'.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e' := h'.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  exact endπAux_dinatural k a e b e' X g
+    inductionEndπ X Y ≫ g ▷ (X ⊗ Yᘁ) = inductionEndπ X Y' ≫ Y' ◁ X ◁ gᘁ :=
+  endπAux_dinatural k _ _ _ _ X g
 
 include k in
 /-- On the chosen representative `S.repr` of a simple class `S`, `inductionEndπ` is the
@@ -199,21 +181,16 @@ biproduct projection onto the `S`-summand. -/
 @[reassoc] -- Not `@[simp]` because `k` cannot be inferred from the LHS.
 theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
     inductionEndπ X S.repr = biproduct.π (inductionSummand X) S := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples S.repr
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let p (i : h.choose) : S.repr ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : h.choose) : (SimpleClasses.classOf (a i)).repr ⟶ S.repr :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
+  let a := IsFiniteSemisimpleCategory.chosenSimpleFamily S.repr
+  let e := IsFiniteSemisimpleCategory.chosenSimpleIso S.repr
+  let p := SimpleClasses.decompProj a e
+  let q := SimpleClasses.decompIncl a e
   -- Unfold `inductionEndπ X S.repr` to `endπAux` for the chosen decomposition of `S.repr`.
   change endπAux a e X = biproduct.π (inductionSummand X) S
   symm
   calc biproduct.π (inductionSummand X) S
       = biproduct.π (inductionSummand X) S ≫ (∑ i, p i ≫ q i) ▷ (X ⊗ S.reprᘁ) := by
+          dsimp only [p, q, SimpleClasses.decompProj, SimpleClasses.decompIncl]
           rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, Category.comp_id]
     _ = ∑ i, (biproduct.π (inductionSummand X) S ≫ p i ▷ (X ⊗ S.reprᘁ)) ≫
           q i ▷ (X ⊗ S.reprᘁ) := by
@@ -344,16 +321,10 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
       w Y ≫ F.map (g ▷ (X ⊗ Yᘁ)) = w Y' ≫ F.map (Y' ◁ X ◁ gᘁ))
     (Y : C) :
     inductionMapLift w ≫ F.map (inductionEndπ X Y) = w Y := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let p (i : h.choose) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : h.choose) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
+  let a := IsFiniteSemisimpleCategory.chosenSimpleFamily Y
+  let e := IsFiniteSemisimpleCategory.chosenSimpleIso Y
+  let p := SimpleClasses.decompProj a e
+  let q := SimpleClasses.decompIncl a e
   -- Unfold `inductionEndπ X Y` to `endπAux` for the chosen decomposition of `Y`.
   change inductionMapLift w ≫ F.map (endπAux a e X) = w Y
   dsimp only [endπAux]
@@ -371,8 +342,9 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
           rw [inductionMapLift_comp_map_π, ← Category.assoc, ← hw (p i), Category.assoc,
             ← F.map_comp, ← comp_whiskerRight]
     _ = w Y := by
-          rw [← Preadditive.comp_sum, ← F.map_sum, ← sum_whiskerRight,
-            SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
+          rw [← Preadditive.comp_sum, ← F.map_sum, ← sum_whiskerRight]
+          dsimp only [p, q, SimpleClasses.decompProj, SimpleClasses.decompIncl]
+          rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
             Category.comp_id]
 
 /-- Composing `inductionLift w` with `inductionEndπ X Y` recovers `w Y` whenever `w` is
