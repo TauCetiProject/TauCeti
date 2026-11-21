@@ -11,7 +11,7 @@ public import Mathlib.SetTheory.Descriptive.Tree
 public import Mathlib.SetTheory.Ordinal.Rank
 import Mathlib.Data.Fin.Tuple.Take
 import Mathlib.Topology.MetricSpace.PiNat
-import Mathlib.Topology.MetricSpace.Polish
+import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 
 /-!
 # Well-founded descriptive trees, ordinal ranks, and analytic boundedness
@@ -597,21 +597,17 @@ theorem AnalyticSet.exists_treeRank_lt_omega_one {X : Type*} [TopologicalSpace X
     (hwf : ∀ x ∈ s, IsWellFounded (F x))
     (hcl : ∀ u : List A, IsClosed {x : s | u ∈ F x.val}) :
     ∃ β : Ordinal.{u}, β < ω₁ ∧ ∀ x ∈ s, rank (F x) < β := by
-  obtain ⟨Y, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.mp hs
-  rcases isEmpty_or_nonempty Y with hY | hY
-  · refine ⟨0, Ordinal.omega_pos 1, ?_⟩
-    rintro _ ⟨y, rfl⟩
-    exact isEmptyElim y
-  · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Y
-    let toS : (ℕ → ℕ) → range f := fun z => ⟨f (g z), mem_range_self (g z)⟩
-    have htoS : Continuous toS := (hf.comp hg).subtype_mk fun z => mem_range_self (g z)
-    obtain ⟨β, hβ, hb⟩ := exists_rank_lt_omega_one_of_nat_nat (fun z => F (toS z).val)
-      (fun z => hwf (toS z).val (toS z).property)
-      (fun u => (hcl u).preimage htoS)
-    refine ⟨β, hβ, ?_⟩
-    rintro _ ⟨y, rfl⟩
-    obtain ⟨z, rfl⟩ := hsurj y
-    exact hb z
+  rcases s.eq_empty_or_nonempty with rfl | hsne
+  · exact ⟨0, Ordinal.omega_pos 1, fun _ h => False.elim h⟩
+  obtain ⟨g, hg, rfl⟩ := hs.exists_continuous_range_eq hsne
+  let toS : (ℕ → ℕ) → range g := fun z => ⟨g z, mem_range_self z⟩
+  have htoS : Continuous toS := hg.subtype_mk fun z => mem_range_self z
+  obtain ⟨β, hβ, hb⟩ := exists_rank_lt_omega_one_of_nat_nat (fun z => F (toS z).val)
+    (fun z => hwf (toS z).val (toS z).property)
+    (fun u => (hcl u).preimage htoS)
+  refine ⟨β, hβ, ?_⟩
+  rintro _ ⟨z, rfl⟩
+  exact hb z
 
 /-- **Lusin–Sierpiński / Kunen–Martin boundedness theorem** (ambient-closed form). If `s ⊆ X` is
 analytic, `F x` is well-founded for every `x ∈ s`, and `{x : X | u ∈ F x}` is closed in `X` for

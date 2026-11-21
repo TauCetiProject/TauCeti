@@ -10,11 +10,10 @@ public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
 public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 import TauCeti.Data.Set.Countable
-import TauCeti.Data.Setoid.Countable
+import TauCeti.Logic.Countable
 import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
 import TauCeti.ModelTheory.Counting.Scattered.Thin
 import TauCeti.ModelTheory.RelationalConfiguration.Observables
-import TauCeti.ModelTheory.RelationalConfiguration.Smooth
 import TauCeti.ModelTheory.Scott.Isomorphism
 import TauCeti.SetTheory.Descriptive.Silver
 
@@ -104,10 +103,7 @@ theorem not_hasCantorAntichainOn_of_forall_countable_image_sentenceTheory
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_apply_eq hf_cont.measurable hf_ne
   have huniv : (univ : Set (ℕ → Bool)).Countable :=
     (h θ).mono (by rintro x -; exact ⟨f x, hfC x, hθ x⟩)
-  have hcount : Countable (ℕ → Bool) := countable_univ_iff.1 huniv
-  have hcard : #(ℕ → Bool) = 𝔠 := by
-    rw [mk_arrow, mk_bool, mk_nat, lift_id, lift_id, two_power_aleph0]
-  exact (hcard.symm ▸ aleph0_lt_continuum).not_ge (mk_le_aleph0_iff.2 hcount)
+  exact Set.not_countable_univ huniv
 
 /-- If every countable sequence of `L_{ω₁ω}` sentences realizes only countably many truth sequences
 on `C`, then `C` is thin for isomorphism. No measurability or invariance of `C` is required. -/
@@ -126,18 +122,15 @@ theorem countable_image_sentenceTheory_of_isThinOn [Countable ι] [Countable κ]
     (sentenceTheory θ '' C).Countable := by
   let g : C → ι → Bool := fun c => sentenceTheory θ c.val
   have hg : Measurable g := (measurable_sentenceTheory θ).comp measurable_subtypeVal
-  let F : Setoid C := (⊥ : Setoid (ι → Bool)).comap g
+  let F : Setoid C := Setoid.ker g
   have hF_meas : MeasurableSet {p : C × C | F p.1 p.2} :=
     measurableSet_eq_fun (hg.comp measurable_fst) (hg.comp measurable_snd)
   have hcount : Countable (Quotient F) :=
-    (Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hC (isoSetoid L V) F
-      (fun x y hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF_meas).resolve_right
-      (Setoid.isThinOn_iff_not_hasCantorAntichainOn.1 hthin)
-  let qMap : Quotient F → ι → Bool := Quotient.lift g fun _ _ h => h
-  have hsub : sentenceTheory θ '' C ⊆ range qMap := by
-    rintro _ ⟨c, hc, rfl⟩
-    exact ⟨Quotient.mk F ⟨c, hc⟩, rfl⟩
-  exact (countable_range qMap).mono hsub
+    hthin.countable_quotient_of_measurableSet hC F
+      (fun _ _ hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF_meas
+  have hrange : Countable (range g) := Countable.of_equiv _ (Setoid.quotientKerEquivRange g)
+  rw [Set.image_eq_range]
+  exact Set.countable_coe_iff.1 hrange
 
 /-- **Sentence-spectrum characterization of thinness.** On a countable carrier in a countable
 relational vocabulary, a Borel set `C` of configurations is thin for isomorphism if and only if
@@ -410,46 +403,10 @@ end Splits
 
 /-! ### Countable quotients from thinness and smoothness -/
 
-section SmoothGeneral
-
-variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι} {κ : Type uκ}
-
-/-- Any countable sequence of countable-branching sentences that is a complete isomorphism invariant
-on `modelsOf (V := V) φ` makes `isoSetoidOn V φ` smooth. -/
-theorem RelationalConfiguration.isSmooth_isoSetoidOn_of_sentenceTheory [Countable ι] [Countable V]
-    {φ : L.SentenceInf κ} {θ : ℕ → L.SentenceInf ι}
-    (hsep : ∀ ⦃c⦄, c ∈ modelsOf (V := V) φ → ∀ ⦃d⦄, d ∈ modelsOf (V := V) φ →
-      (isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d)) :
-    (isoSetoidOn V φ).IsSmooth :=
-  isSmooth_comap_isoSetoid_of_exists_sentenceTheory ⟨θ, fun _ hc _ hd => hsep hc hd⟩
-
-/-- Any measurable complete isomorphism invariant on `modelsOf (V := V) φ` into a countably
-separated measurable space makes `isoSetoidOn V φ` smooth. -/
-theorem RelationalConfiguration.isSmooth_isoSetoidOn_of_countablySeparated
-    {φ : L.SentenceInf κ} {Y : Type*} [MeasurableSpace Y] [MeasurableSpace.CountablySeparated Y]
-    {g : modelsOf (V := V) φ → Y} (hg : Measurable g)
-    (hsep : ∀ c d : modelsOf (V := V) φ, isoSetoid L V c.val d.val ↔ g c = g d) :
-    (isoSetoidOn V φ).IsSmooth :=
-  isSmooth_comap_isoSetoid_of_countablySeparated hg hsep
-
-end SmoothGeneral
-
 section Smooth
 
 variable {L : Language.{u, v}} [L.IsRelational] [∀ n, Countable (L.Relations n)]
 variable {V : Type w} [Countable V] {κ : Type uκ}
-
-/-- **Smoothness of `isoSetoidOn V φ` via `L_{ω₁ω}` sentence spectra.** On a countable carrier `V`
-in a countable relational vocabulary, isomorphism on the models of a countable-branching sentence
-`φ` is smooth if and only if some sequence `θ : ℕ → L.Sentenceω` is a complete isomorphism invariant
-on `modelsOf (V := V) φ`. -/
-theorem RelationalConfiguration.isSmooth_isoSetoidOn_iff_exists_sentenceTheory
-    [Countable κ] (φ : L.SentenceInf κ) :
-    (isoSetoidOn V φ).IsSmooth ↔
-      ∃ θ : ℕ → L.Sentenceω,
-        ∀ ⦃c⦄, c ∈ modelsOf (V := V) φ → ∀ ⦃d⦄, d ∈ modelsOf (V := V) φ →
-          (isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d) :=
-  isSmooth_comap_isoSetoid_iff_exists_sentenceTheory (measurableSet_modelsOf φ)
 
 /-- **Thin smooth Borel classes have countably many isomorphism classes.** If `C` is Borel, thin
 for isomorphism, and carries a Borel complete invariant (`IsSmooth`), then `C` meets only countably
@@ -460,16 +417,6 @@ theorem countable_quotient_comap_isoSetoid_of_isThinOn_of_isSmooth
     (hsmooth : ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth) :
     Countable (Quotient ((isoSetoid L V).comap (Subtype.val : C → _))) :=
   hthin.countable_quotient_comap_of_isSmooth hC hsmooth
-
-/-- A thin Borel set of configurations admitting a measurable complete isomorphism invariant into a
-countably separated measurable space meets only countably many isomorphism classes. -/
-theorem countable_quotient_comap_isoSetoid_of_isThinOn_of_countablySeparated
-    {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C)
-    (hthin : (isoSetoid L V).IsThinOn C) {Y : Type*} [MeasurableSpace Y]
-    [MeasurableSpace.CountablySeparated Y] {g : C → Y} (hg : Measurable g)
-    (hsep : ∀ c d : C, isoSetoid L V c.val d.val ↔ g c = g d) :
-    Countable (Quotient ((isoSetoid L V).comap (Subtype.val : C → _))) :=
-  hthin.countable_quotient_comap_of_countablySeparated hC hg hsep
 
 /-- **Characterization of Borel classes with countably many isomorphism classes.** On a countable
 carrier in a countable relational vocabulary, a Borel set `C` meets countably many isomorphism
@@ -511,17 +458,6 @@ theorem IsThinOnNatModels.countable_quotient_isoSetoidOn_of_isSmooth [Countable 
     {φ : L.SentenceInf κ} (h : IsThinOnNatModels φ) (hsmooth : (isoSetoidOn ℕ φ).IsSmooth) :
     Countable (Quotient (isoSetoidOn ℕ φ)) :=
   countable_quotient_isoSetoidOn_nat_iff_isThinOnNatModels_and_isSmooth.2 ⟨h, hsmooth⟩
-
-/-- A thin countable-branching sentence admitting a measurable complete isomorphism invariant on
-`modelsOf (V := ℕ) φ` into a countably separated measurable space has countably many models on `ℕ`
-up to isomorphism. -/
-theorem IsThinOnNatModels.countable_quotient_isoSetoidOn_of_countablySeparated [Countable κ]
-    {φ : L.SentenceInf κ} (h : IsThinOnNatModels φ) {Y : Type*} [MeasurableSpace Y]
-    [MeasurableSpace.CountablySeparated Y] {g : modelsOf (V := ℕ) φ → Y} (hg : Measurable g)
-    (hsep : ∀ c d : modelsOf (V := ℕ) φ, isoSetoid L ℕ c.val d.val ↔ g c = g d) :
-    Countable (Quotient (isoSetoidOn ℕ φ)) :=
-  h.countable_quotient_isoSetoidOn_of_isSmooth
-    (RelationalConfiguration.isSmooth_isoSetoidOn_of_countablySeparated hg hsep)
 
 end Smooth
 

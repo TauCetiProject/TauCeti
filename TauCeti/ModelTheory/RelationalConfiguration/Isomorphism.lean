@@ -9,6 +9,7 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 public import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 public import Mathlib.GroupTheory.GroupAction.Blocks
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Isomorphism of relational configurations
@@ -145,21 +146,6 @@ theorem isoSetoid_iff_exists_perm_smul_eq {c d : RelationalConfiguration L V} :
     isoSetoid L V c d ↔ ∃ σ : Equiv.Perm V, σ • c = d :=
   ⟨fun ⟨f⟩ => ⟨_, toEquiv_smul f⟩, fun ⟨σ, hσ⟩ => hσ ▸ isoSetoid_perm_smul σ c⟩
 
-/-- On a subsingleton carrier, two relational configurations are isomorphic if and only if they are
-equal. -/
-@[simp]
-theorem isoSetoid_iff_eq_of_subsingleton [Subsingleton V] {c d : RelationalConfiguration L V} :
-    isoSetoid L V c d ↔ c = d := by
-  rw [isoSetoid_iff_exists_perm_smul_eq]
-  refine ⟨fun ⟨σ, hσ⟩ => ?_, fun h => ⟨1, by simp [h]⟩⟩
-  have hσ1 : σ = 1 := Equiv.ext fun _ => Subsingleton.elim _ _
-  simpa [hσ1] using hσ
-
-/-- On a subsingleton carrier, the isomorphism setoid on relational configurations is equality. -/
-theorem isoSetoid_eq_bot_of_subsingleton [Subsingleton V] : isoSetoid L V = ⊥ := by
-  ext c d
-  exact isoSetoid_iff_eq_of_subsingleton
-
 /-- **The logic action.** Isomorphism of configurations is the orbit relation of the relabelling
 action of the permutations of the carrier. -/
 theorem isoSetoid_eq_orbitRel :
@@ -167,6 +153,18 @@ theorem isoSetoid_eq_orbitRel :
   ext c d
   rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, ← (isoSetoid L V).comm',
     isoSetoid_iff_exists_perm_smul_eq]
+
+/-- On a subsingleton carrier, the isomorphism setoid on relational configurations is equality. -/
+theorem isoSetoid_eq_bot_of_subsingleton [Subsingleton V] : isoSetoid L V = ⊥ := by
+  rw [isoSetoid_eq_orbitRel]
+  exact MulAction.orbitRel_of_subsingleton
+
+/-- On a subsingleton carrier, two relational configurations are isomorphic if and only if they are
+equal. -/
+@[simp]
+theorem isoSetoid_iff_eq_of_subsingleton [Subsingleton V] {c d : RelationalConfiguration L V} :
+    isoSetoid L V c d ↔ c = d :=
+  Setoid.ext_iff.mp isoSetoid_eq_bot_of_subsingleton c d
 
 /-- Structures transported to a common carrier have isomorphic encodings exactly when they are
 isomorphic, whatever their universes. -/

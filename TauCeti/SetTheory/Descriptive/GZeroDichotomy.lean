@@ -391,15 +391,10 @@ theorem exists_continuous_orientedGS_hom {G : SetRel X X} (hG : AnalyticSet G)
   let := TopologicalSpace.upgradeIsCompletelyMetrizable X
   -- The empty relation is colored by a constant, so `G` is the range of a continuous map on
   -- Baire space.
-  have hparam : G = ∅ ∨ ∃ g : (ℕ → ℕ) → _, Continuous g ∧ Set.range g = G := by
-    obtain ⟨Z, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.mp hG
-    rcases isEmpty_or_nonempty Z with _ | _
-    · exact Or.inl (Set.range_eq_empty f)
-    · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Z
-      exact Or.inr ⟨f ∘ g, hf.comp hg, hsurj.range_comp f⟩
-  obtain hG₀ | ⟨g, hg, rfl⟩ := hparam
+  rcases (G : Set (X × X)).eq_empty_or_nonempty with hG₀ | hGne
   · exact absurd
       (SetRel.hasCountableBorelColoring_iff.2 ⟨fun _ ↦ 0, measurable_const, by simp [hG₀]⟩) hcol
+  obtain ⟨g, hg, rfl⟩ := hG.exists_continuous_range_eq hGne
   -- The first stage: all assignments of level `0`, shrunk.
   have : Nonempty (List.Vector Bool 0) := ⟨List.Vector.nil⟩
   obtain ⟨Φ, -, hΦa, hΦ, hΦd⟩ := SetRel.exists_subset_not_isSmallFamily_dist_lt

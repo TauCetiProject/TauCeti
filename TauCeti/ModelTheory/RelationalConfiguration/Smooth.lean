@@ -32,6 +32,9 @@ single countable sequence `θ : ℕ → L.Sentenceω` decides isomorphism within
   subset `C` of configurations over a countable carrier in a countable relational vocabulary,
   restricted isomorphism is smooth if and only if a countable `L_{ω₁ω}` sentence sequence decides
   isomorphism on `C`.
+* `TauCeti.RelationalConfiguration.isSmooth_isoSetoidOn_of_sentenceTheory` and
+  `TauCeti.RelationalConfiguration.isSmooth_isoSetoidOn_iff_exists_sentenceTheory`: the same
+  criteria specialized to the model class `modelsOf (V := V) φ` (`isoSetoidOn V φ`).
 
 ## References
 
@@ -82,14 +85,25 @@ theorem isSmooth_comap_isoSetoid_iff_exists_sentenceTheory [∀ n, Countable (L.
     ⟨fun h => by rw [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩, h],
       fun h => by rwa [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩] at h⟩⟩
 
-omit [Countable V] in
-/-- A measurable complete isomorphism invariant on `C` taking values in a countably separated
-measurable space makes isomorphism restricted to `C` smooth. -/
-theorem isSmooth_comap_isoSetoid_of_countablySeparated
-    {C : Set (RelationalConfiguration L V)} {Y : Type*} [MeasurableSpace Y]
-    [MeasurableSpace.CountablySeparated Y] {g : C → Y} (hg : Measurable g)
-    (hsep : ∀ c d : C, isoSetoid L V c.val d.val ↔ g c = g d) :
-    ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth :=
-  Setoid.isSmooth_of_countablySeparated hg hsep
+/-- Any countable sequence of countable-branching sentences that is a complete isomorphism invariant
+on `modelsOf (V := V) φ` makes `isoSetoidOn V φ` smooth. -/
+theorem isSmooth_isoSetoidOn_of_sentenceTheory {ι : Type*} [Countable ι]
+    {φ : L.SentenceInf κ} {θ : ℕ → L.SentenceInf ι}
+    (hsep : ∀ ⦃c⦄, c ∈ modelsOf (V := V) φ → ∀ ⦃d⦄, d ∈ modelsOf (V := V) φ →
+      (isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d)) :
+    (isoSetoidOn V φ).IsSmooth :=
+  isSmooth_comap_isoSetoid_of_exists_sentenceTheory ⟨θ, fun _ hc _ hd => hsep hc hd⟩
+
+/-- **Smoothness of `isoSetoidOn V φ` via `L_{ω₁ω}` sentence spectra.** On a countable carrier `V`
+in a countable relational vocabulary, isomorphism on the models of a countable-branching sentence
+`φ` is smooth if and only if some sequence `θ : ℕ → L.Sentenceω` is a complete isomorphism invariant
+on `modelsOf (V := V) φ`. -/
+theorem isSmooth_isoSetoidOn_iff_exists_sentenceTheory [∀ n, Countable (L.Relations n)]
+    [Countable κ] (φ : L.SentenceInf κ) :
+    (isoSetoidOn V φ).IsSmooth ↔
+      ∃ θ : ℕ → L.Sentenceω,
+        ∀ ⦃c⦄, c ∈ modelsOf (V := V) φ → ∀ ⦃d⦄, d ∈ modelsOf (V := V) φ →
+          (isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d) :=
+  isSmooth_comap_isoSetoid_iff_exists_sentenceTheory (measurableSet_modelsOf φ)
 
 end TauCeti.RelationalConfiguration

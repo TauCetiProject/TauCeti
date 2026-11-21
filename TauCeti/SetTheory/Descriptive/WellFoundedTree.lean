@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.SetTheory.Descriptive.Tree
+import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 
 /-!
 # Bodies of descriptive trees, strict extension and the tree representation of analytic sets
@@ -206,14 +207,9 @@ the projection of the body of a tree on `Bool × ℕ`: `x ∈ A` iff some `y : �
 sequence `n ↦ (x n, y n)` a branch. -/
 theorem exists_tree_of_analyticSet_cantor {A : Set (ℕ → Bool)} (hA : AnalyticSet A) :
     ∃ T : tree (Bool × ℕ), A = {x | ∃ y : ℕ → ℕ, (fun n => (x n, y n)) ∈ body T} := by
-  obtain ⟨β, _, _, f₀, hf₀, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hA
-  rcases isEmpty_or_nonempty β with hβ | hβ
-  · exact ⟨⊥, by simpa using hβ⟩
-  obtain ⟨g, hg, hgs⟩ := PolishSpace.exists_nat_nat_continuous_surjective β
-  have hrange : range f₀ = range (f₀ ∘ g) := (hgs.range_comp f₀).symm
-  rw [hrange]
-  have hf : Continuous (f₀ ∘ g) := hf₀.comp hg
-  set f := f₀ ∘ g
+  rcases A.eq_empty_or_nonempty with rfl | hAne
+  · exact ⟨⊥, by simp⟩
+  obtain ⟨f, hf, rfl⟩ := hA.exists_continuous_range_eq hAne
   let G : Set (ℕ → Bool × ℕ) := {z | f (fun n => (z n).2) = fun n => (z n).1}
   have hG : IsClosed G := isClosed_eq
     (hf.comp (continuous_pi fun n => continuous_snd.comp (continuous_apply n)))

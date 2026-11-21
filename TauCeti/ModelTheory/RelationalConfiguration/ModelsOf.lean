@@ -35,6 +35,7 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 * `TauCeti.RelationalConfiguration.modelsOf`: the configurations on `V` decoding to models of a
   sentence.
+* `TauCeti.RelationalConfiguration.isoSetoidOn`: isomorphism restricted to `modelsOf φ`.
 
 ## Main results
 
@@ -50,6 +51,7 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 * `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
   `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes are invariant
   under isomorphism of the decoded structures.
+* `TauCeti.RelationalConfiguration.isoSetoidOn_apply`: unfolding lemma for `isoSetoidOn`.
 -/
 
 public section
@@ -219,5 +221,19 @@ theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
   isomorphismInvariant_iff.2 fun _ _ h hc => by
     obtain ⟨e⟩ := isoSetoid_apply.1 h
     exact (e.mem_modelsOf_iff φ).1 hc
+
+variable (V) in
+/-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
+models of `φ`. Its classes are the isomorphism classes of the models of `φ` with carrier `V`.
+It is an abbreviation, so results stated for the restriction of `isoSetoid L V` to an arbitrary
+set of configurations apply to it. -/
+abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
+  (isoSetoid L V).comap Subtype.val
+
+/-- Two models of `φ` are related exactly when their decoded structures are isomorphic. -/
+@[simp]
+theorem isoSetoidOn_apply {φ : L.SentenceInf ι} {c d : modelsOf (V := V) φ} :
+    isoSetoidOn V φ c d ↔ isoSetoid L V c d :=
+  Iff.rfl
 
 end TauCeti.RelationalConfiguration

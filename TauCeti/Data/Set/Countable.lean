@@ -22,8 +22,6 @@ values of countably many sentences.
 
 ## Main results
 
-* `Pi.instUncountable`: a dependent product of nontrivial types over an infinite index type is
-  uncountable.
 * `Set.Countable.range_min`: the pointwise minimum of two countable-range functions has
   countable range.
 * `Finset.countable_range_sup`: the pointwise finite supremum of countable-range functions
@@ -51,23 +49,6 @@ values of countably many sentences.
 public section
 
 universe u v w
-
-/-- A dependent product of nontrivial types over an infinite index type is uncountable. -/
-instance Pi.instUncountable {α : Type*} {π : α → Type*} [Infinite α] [∀ a, Nontrivial (π a)] :
-    Uncountable (∀ a, π a) := by
-  classical
-  rw [uncountable_iff_forall_not_surjective]
-  intro f hf
-  let e : ℕ ↪ α := Infinite.natEmbedding α
-  let d : ∀ a, π a := fun a =>
-    if h : ∃ n, e n = a then (exists_ne (f h.choose a)).choose else Classical.arbitrary (π a)
-  obtain ⟨n, hn⟩ := hf d
-  have hmem : ∃ m, e m = e n := ⟨n, rfl⟩
-  have hch : hmem.choose = n := e.injective hmem.choose_spec
-  have hne : d (e n) ≠ f n (e n) := by
-    simp only [d, dite_eq_left hmem, hch]
-    exact (exists_ne (f n (e n))).choose_spec
-  exact hne (congrFun hn (e n)).symm
 
 /-- The pointwise minimum of two functions with countable ranges has countable range. -/
 theorem Set.Countable.range_min {α β : Type*} [Min β] {f g : α → β}

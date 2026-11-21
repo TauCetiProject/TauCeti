@@ -437,40 +437,31 @@ private theorem exists_sentence_separating_of_countable {L : Language.{u, v}} [L
     obtain ⟨θ, rfl⟩ := exists_modelsOf_eq_of_isEmpty hD
     exact ⟨θ, hAD, hBD⟩
   | inr _ =>
-    obtain ⟨X, _, _, f₀, hf₀, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hA
-    obtain ⟨Y, _, _, g₀, hg₀, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hB
-    cases isEmpty_or_nonempty X with
-    | inl _ => exact ⟨⊥, by simp [range_eq_empty], by simp⟩
-    | inr _ =>
-      cases isEmpty_or_nonempty Y with
-      | inl _ => exact ⟨⊤, by simp, by simp [range_eq_empty]⟩
-      | inr _ =>
-        obtain ⟨pX, hpX, hsurjX⟩ := PolishSpace.exists_nat_nat_continuous_surjective X
-        obtain ⟨pY, hpY, hsurjY⟩ := PolishSpace.exists_nat_nat_continuous_surjective Y
-        let f := f₀ ∘ pX
-        let g := g₀ ∘ pY
-        have hf : Continuous f := hf₀.comp hpX
-        have hg : Continuous g := hg₀.comp hpY
-        rw [← hsurjX.range_comp, ← hsurjY.range_comp] at hAB ⊢
-        obtain ⟨θ, h₁, h₂⟩ :=
-          pcSeparation.{u, v, w, 0, w, 0, w, w} (baireImageSentence f) (baireImageSentence g)
-            (fun M _ _ _ hMf hMg => by
-              obtain ⟨x, ⟨ef⟩⟩ := (pcMem_baireImageSentence_iff hf M).1 hMf
-              obtain ⟨y, ⟨eg⟩⟩ := (pcMem_baireImageSentence_iff hg M).1 hMg
-              exact hAB (f x) (mem_range_self x) (g y) (mem_range_self y)
-                (isoSetoid_apply.2 ⟨@Language.Equiv.comp L V M (f x).toStructure _
-                  V (g y).toStructure eg (@Language.Equiv.symm L M V _ (f x).toStructure ef)⟩))
-        refine ⟨θ, ?_, disjoint_left.2 ?_⟩
-        · rintro _ ⟨x, rfl⟩
-          rw [mem_modelsOf]
-          exact @h₁ V (f x).toStructure _
-            ((@pcMem_baireImageSentence_iff L _ V _ _ f hf V (f x).toStructure).2
-              ⟨x, ⟨@Language.Equiv.refl L V (f x).toStructure⟩⟩)
-        · rintro _ ⟨y, rfl⟩ hθ
-          rw [mem_modelsOf] at hθ
-          exact @h₂ V (g y).toStructure _
-            ((@pcMem_baireImageSentence_iff L _ V _ _ g hg V (g y).toStructure).2
-              ⟨y, ⟨@Language.Equiv.refl L V (g y).toStructure⟩⟩) hθ
+    rcases A.eq_empty_or_nonempty with rfl | hAne
+    · exact ⟨⊥, by simp, by simp⟩
+    rcases B.eq_empty_or_nonempty with rfl | hBne
+    · exact ⟨⊤, by simp, by simp⟩
+    obtain ⟨f, hf, rfl⟩ := hA.exists_continuous_range_eq hAne
+    obtain ⟨g, hg, rfl⟩ := hB.exists_continuous_range_eq hBne
+    obtain ⟨θ, h₁, h₂⟩ :=
+      pcSeparation.{u, v, w, 0, w, 0, w, w} (baireImageSentence f) (baireImageSentence g)
+        (fun M _ _ _ hMf hMg => by
+          obtain ⟨x, ⟨ef⟩⟩ := (pcMem_baireImageSentence_iff hf M).1 hMf
+          obtain ⟨y, ⟨eg⟩⟩ := (pcMem_baireImageSentence_iff hg M).1 hMg
+          exact hAB (f x) (mem_range_self x) (g y) (mem_range_self y)
+            (isoSetoid_apply.2 ⟨@Language.Equiv.comp L V M (f x).toStructure _
+              V (g y).toStructure eg (@Language.Equiv.symm L M V _ (f x).toStructure ef)⟩))
+    refine ⟨θ, ?_, disjoint_left.2 ?_⟩
+    · rintro _ ⟨x, rfl⟩
+      rw [mem_modelsOf]
+      exact @h₁ V (f x).toStructure _
+        ((@pcMem_baireImageSentence_iff L _ V _ _ f hf V (f x).toStructure).2
+          ⟨x, ⟨@Language.Equiv.refl L V (f x).toStructure⟩⟩)
+    · rintro _ ⟨y, rfl⟩ hθ
+      rw [mem_modelsOf] at hθ
+      exact @h₂ V (g y).toStructure _
+        ((@pcMem_baireImageSentence_iff L _ V _ _ g hg V (g y).toStructure).2
+          ⟨y, ⟨@Language.Equiv.refl L V (g y).toStructure⟩⟩) hθ
 
 end BairePC
 
@@ -666,19 +657,6 @@ theorem exists_sentence_separating_preimage {X : Type*} [MeasurableSpace X] [Sta
       rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
       exact hUW x hx y hy hxy)
   exact ⟨θ, image_subset_iff.1 hsub, disjoint_image_left.1 hdisj⟩
-
-/-- **Relative López–Escobar in preimage form.** Let `X` be a standard Borel space and
-`f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
-in a countable relational vocabulary. Every measurable set `U ⊆ X` closed under `f`-isomorphism is
-the preimage `f ⁻¹' modelsOf θ` of a single `L_{ω₁ω}` sentence `θ`. -/
-theorem exists_modelsOf_preimage_eq {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
-    [∀ n, Countable (L.Relations n)] [Countable V]
-    {f : X → RelationalConfiguration L V} (hf : Measurable f) {U : Set X}
-    (hU : MeasurableSet U) (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → x ∈ U → y ∈ U) :
-    ∃ θ : L.Sentenceω, f ⁻¹' modelsOf θ = U := by
-  obtain ⟨θ, hθ⟩ := exists_sentence_mem_modelsOf_iff hf hU
-    fun x y hxy => ⟨hinv hxy, hinv ((isoSetoid L V).symm hxy)⟩
-  exact ⟨θ, Set.ext hθ⟩
 
 end Main
 
