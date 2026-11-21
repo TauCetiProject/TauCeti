@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.Integral
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
+import TauCeti.Topology.PartitionOfUnity.Basic
 
 /-!
 # The divergence theorem on a manifold without boundary
@@ -230,17 +231,9 @@ theorem integral_divergence_eq_zero (hX : ContMDiff I I.tangent 1 (T% X))
   classical
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate_chartAt_source I M
   -- Only finitely many members of the partition meet the support of `X`.
-  have hfin := ρ.toPartitionOfUnity.locallyFinite_tsupport.finite_nonempty_inter_compact hc
-  set s := hfin.toFinset
-  have hmem (i x : M) (hρx : ρ i x ≠ 0) (hXx : X x ≠ 0) : i ∈ s :=
-    hfin.mem_toFinset.mpr ⟨x, subset_tsupport (ρ i) hρx, subset_tsupport (α := E) X hXx⟩
-  have hsum (x : M) : X x = ∑ i ∈ s, ρ i x • X x := by
-    by_cases hx : X x = 0
-    · simp [hx]
-    · have hs : ρ.finsupport x ⊆ s := fun i hi ↦
-        hmem i x (by simpa only [SmoothPartitionOfUnity.mem_finsupport, Function.mem_support]
-          using hi) hx
-      rw [← Finset.sum_smul, ρ.sum_finsupport' x (mem_univ x) hs, one_smul]
+  -- Tangent fibres are definitionally `E`, bridging `X` to the fixed-codomain localization lemma.
+  obtain ⟨s, hsum, -⟩ :=
+    ρ.toPartitionOfUnity.exists_finset_eq_sum_smul (show M → E from X) hc (subset_univ _)
   have hY (i : M) : ContMDiff I I.tangent 1 (T% (fun x ↦ ρ i x • X x)) :=
     ((ρ i).contMDiff.of_le (by simp)).smul_section hX
   have hK (i : M) : IsCompact (tsupport (α := E) (fun x ↦ ρ i x • X x)) :=
@@ -248,7 +241,7 @@ theorem integral_divergence_eq_zero (hX : ContMDiff I I.tangent 1 (T% X))
   have hdiv (x : M) :
       divergence I X x = ∑ i ∈ s, divergence I (fun x ↦ ρ i x • X x) x := by
     rw [← divergence_finsetSum I s _ x fun i _ ↦ (hY i x).mdifferentiableAt one_ne_zero]
-    exact congrArg (divergence I · x) (funext hsum)
+    exact congrArg (divergence I · x) hsum
   rw [integral_congr_ae (Filter.Eventually.of_forall hdiv),
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i)]
   exact Finset.sum_eq_zero fun i _ ↦ integral_divergence_eq_zero_of_tsupport_subset (hY i)

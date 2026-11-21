@@ -14,9 +14,8 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basis
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Linear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Order.Disjointed
 
 /-!
 # Integration of compactly supported top forms
@@ -51,58 +50,9 @@ public def IntegrableTopForm (φ : RoughForm I M ℝ k) : Prop := by
     ∀ (b : Module.Basis (Fin k) ℝ E) (α : M),
       Integrable (φ.signedInChartAt b α (fun _ ↦ 1)) b.addHaar
 
-private structure ChartCover (s : Set M) where
-  n : ℕ
-  center : Fin n → M
-  domain : Fin n → Set M
-  isOpen_domain : ∀ i, IsOpen (domain i)
-  domain_subset : ∀ i, domain i ⊆ (extChartAt I (center i)).source
-  covers : s ⊆ ⋃ i, domain i
-
-private def chooseChartCover [ProperSpace E] (s : Set M) (hc : IsCompact s) :
-    ChartCover (I := I) s := by
-  let : LocallyCompactSpace H := I.locallyCompactSpace
-  let h := exists_finite_precompact_chart_cover (I := I) hc
-  let n := h.choose
-  let α := h.choose_spec.choose
-  let u := h.choose_spec.choose_spec.choose
-  have hp := h.choose_spec.choose_spec.choose_spec.choose_spec
-  exact ⟨n, α, u, fun i ↦ (hp.1 i).1, fun i ↦ (hp.1 i).2.1, hp.2⟩
-
-private def ChartCover.piece {s : Set M} (c : ChartCover (I := I) s) (i : Fin c.n) : Set M :=
-  disjointed c.domain i
-
-private theorem ChartCover.piece_subset {s : Set M} (c : ChartCover (I := I) s)
-    (i : Fin c.n) : c.piece i ⊆ (extChartAt I (c.center i)).source :=
-  (disjointed_subset c.domain i).trans (c.domain_subset i)
-
-private theorem ChartCover.piece_covers {s : Set M} (c : ChartCover (I := I) s) :
-    s ⊆ ⋃ i, c.piece i := by
-  simpa only [ChartCover.piece, iUnion_disjointed] using c.covers
-
-private theorem ChartCover.pairwise_disjoint {s : Set M} (c : ChartCover (I := I) s) :
-    Pairwise (fun i j ↦ Disjoint (c.piece i) (c.piece j)) := disjoint_disjointed c.domain
-
 section WithMeasure
 
 variable [MeasurableSpace E] [BorelSpace E]
-
-private theorem ChartCover.measurableSet_image_piece {s : Set M} (c : ChartCover (I := I) s)
-    (i : Fin c.n) : MeasurableSet ((extChartAt I (c.center i)) '' c.piece i) := by
-  rw [ChartCover.piece, disjointed_apply]
-  have ho : IsOpen ((Finset.Iio i).sup c.domain) := by
-    rw [Finset.sup_set_eq_biUnion]
-    exact isOpen_biUnion fun j _ ↦ c.isOpen_domain j
-  exact ((c.isOpen_domain i).isChartMeasurable.diff ho.isChartMeasurable).image_extChartAt
-    (c.center i) (Set.sdiff_subset.trans (c.domain_subset i))
-
-private theorem ChartCover.isChartMeasurable_piece {s : Set M} (c : ChartCover (I := I) s)
-    (i : Fin c.n) : IsChartMeasurable I (c.piece i) := by
-  rw [ChartCover.piece, disjointed_apply]
-  have ho : IsOpen ((Finset.Iio i).sup c.domain) := by
-    rw [Finset.sup_set_eq_biUnion]
-    exact isOpen_biUnion fun j _ ↦ c.isOpen_domain j
-  exact (c.isOpen_domain i).isChartMeasurable.diff ho.isChartMeasurable
 
 /-- The coordinate characterization of integrability, with any Borel measurable structure on
 the model. Neither a chart cover nor an orientation occurs in this condition. -/
@@ -129,45 +79,25 @@ public theorem RoughForm.integrableTopForm_of_open_cover {J : Type*}
     (hcover : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, u i)
     (hlocal : ∀ i, IntegrableOn (φ.signedInChartAt b (β i) (fun _ ↦ 1))
       ((extChartAt I (β i)) '' u i) b.addHaar) : IntegrableTopForm φ := by
-  classical
   -- The basis of `Fin k` makes the model space finite-dimensional.
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  obtain ⟨t, ht⟩ := hc.elim_finite_subcover u hu hcover
-  have hcover' : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ ⋃ i : t, u i := by
-    intro x hx
-    obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (ht hx)
-    exact mem_iUnion.mpr ⟨⟨i, hi⟩, hxi⟩
-  have hcoef (α : M) : Integrable (φ.signedInChartAt b α (fun _ ↦ 1)) b.addHaar := by
-    let s : t → Set M := fun i ↦ (extChartAt I α).source ∩ u i
-    let A : t → Set E := fun i ↦ (extChartAt I α) '' s i
-    have hA : ∀ i, MeasurableSet (A i) := fun i ↦
-      (hu i).measurableSet_image_extChartAt_source_inter α
-    have hpiece : ∀ i, IntegrableOn (φ.signedInChartAt b α (fun _ ↦ 1)) (A i) b.addHaar := by
-      intro i
-      have hsub : s i ⊆ (extChartAt I α).source ∩ (extChartAt I (β i)).source := by
-        intro x hx
-        refine ⟨hx.1, ?_⟩
-        simpa only [extChartAt_source] using hsource i hx.2
-      apply (φ.integrableOn_signedInChartAt_one_changeChart b α (β i) hsub (hA i) b.addHaar).mpr
-      exact (hlocal i).mono_set (image_mono inter_subset_right)
-    have htotal : IntegrableOn (φ.signedInChartAt b α (fun _ ↦ 1)) (⋃ i, A i) b.addHaar :=
-      integrableOn_finite_iUnion.mpr hpiece
-    apply (integrableOn_iff_integrable_of_support_subset ?_).mp htotal
-    intro y hy
-    have hn := Function.mem_support.mp hy
-    by_cases ht : y ∈ (extChartAt I α).target
-    · have hne : φ ((extChartAt I α).symm y) ≠ 0 := by
-        intro hz
-        apply hn
-        rw [RoughForm.signedInChartAt_apply, dite_eq_left ht,
-          RoughForm.inChartAt_apply, hz]
-        simp only [Units.val_one, Int.cast_one, one_mul]
-        rfl
-      obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover'
-        (_root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hne))
-      exact mem_iUnion.mpr ⟨i, ⟨(extChartAt I α).symm y,
-        ⟨(extChartAt I α).map_target ht, hi⟩, (extChartAt I α).right_inv ht⟩⟩
-    · exact False.elim (hn (by rw [RoughForm.signedInChartAt_apply, dite_eq_right ht]))
+  have hcoef (α : M) : Integrable (φ.signedInChartAt b α (fun _ ↦ 1)) b.addHaar :=
+    integrable_of_open_cover_extChartAt (I := I) hc
+      (fun γ ↦ φ.signedInChartAt b γ (fun _ ↦ 1)) b.addHaar β u hu hcover hlocal α
+      (fun y hy ↦ by
+        have hn := Function.mem_support.mp hy
+        by_cases ht : y ∈ (extChartAt I α).target
+        · have hne : φ ((extChartAt I α).symm y) ≠ 0 := fun hz ↦ hn <| by
+            rw [RoughForm.signedInChartAt_apply, dite_eq_left ht, RoughForm.inChartAt_apply, hz]
+            simp only [Units.val_one, Int.cast_one, one_mul, ContinuousAlternatingMap.coe_zero,
+              Pi.zero_apply]
+          exact ⟨(extChartAt I α).symm y, ⟨(extChartAt I α).map_target ht,
+            _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hne⟩, (extChartAt I α).right_inv ht⟩
+        · exact False.elim (hn (by rw [RoughForm.signedInChartAt_apply, dite_eq_right ht])))
+      fun i hi ↦ (φ.integrableOn_signedInChartAt_one_changeChart b α (β i)
+        (s := (extChartAt I α).source ∩ u i)
+        (fun _ hx ↦ ⟨hx.1, by simpa only [extChartAt_source] using hsource i hx.2⟩)
+        ((hu i).measurableSet_image_extChartAt_source_inter α) b.addHaar).mpr hi
   rw [integrableTopForm_iff]
   exact ⟨hc, ⟨b⟩, fun b' α ↦
     (φ.integrable_signedInChartAt_basis_iff b b' α (fun _ ↦ 1)).mpr (hcoef α)⟩
@@ -191,19 +121,17 @@ end RoughIntegrability
 
 private def coverIntegral [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) (c : ChartCover (I := I) s) : ℝ :=
-  (Orientation.signBasis l.modelOrientation b : ℝ) * ∑ i,
-    ∫ y in (extChartAt I (c.center i)) '' c.piece i,
-      φ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x.val) y ∂b.addHaar
+    (φ : RoughForm I M ℝ k) (c : ChartCover I s) : ℝ :=
+  (Orientation.signBasis l.modelOrientation b : ℝ) *
+    c.integral (fun α ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x.val)) b.addHaar
 
 private theorem coverIntegral_eq_sum_chartIntegral [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) (c : ChartCover (I := I) s) :
+    (φ : RoughForm I M ℝ k) (c : ChartCover I s) :
     coverIntegral l b φ c = ∑ i, l.chartIntegral
       (fun x ↦ (c.piece i).indicator (fun _ ↦ (1 : ℝ)) x • φ x) (c.center i) := by
   classical
-  unfold coverIntegral
-  rw [Finset.mul_sum]
+  rw [coverIntegral, ChartCover.integral_eq_sum, Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro i _
   rw [l.chartIntegral_eq_integral _ b (c.center i)]
@@ -220,48 +148,41 @@ private theorem coverIntegral_eq_sum_chartIntegral [FiniteDimensional ℝ E] {s 
 
 private theorem coverIntegral_basis_eq [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b b' : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) (c : ChartCover (I := I) s) :
+    (φ : RoughForm I M ℝ k) (c : ChartCover I s) :
     coverIntegral l b φ c = coverIntegral l b' φ c := by
   rw [coverIntegral_eq_sum_chartIntegral, coverIntegral_eq_sum_chartIntegral]
 
 private theorem coverIntegral_flip [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) (c : ChartCover (I := I) s) :
+    (φ : RoughForm I M ℝ k) (c : ChartCover I s) :
     coverIntegral l.flip b φ c = coverIntegral l b φ c := by
   rw [coverIntegral_eq_sum_chartIntegral, coverIntegral_eq_sum_chartIntegral]
   simp_rw [Manifold.OrientationLift.chartIntegral_flip]
 
 private theorem coverIntegral_neg [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) (c : ChartCover (I := I) s) :
+    (φ : RoughForm I M ℝ k) (c : ChartCover I s) :
     coverIntegral (-l) b φ c = -coverIntegral l b φ c := by
   rw [coverIntegral_eq_sum_chartIntegral, coverIntegral_eq_sum_chartIntegral]
   simp_rw [Manifold.OrientationLift.chartIntegral_neg, Finset.sum_neg_distrib]
 
 private theorem coverIntegral_zero [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (c : ChartCover (I := I) s) : coverIntegral l b (0 : RoughForm I M ℝ k) c = 0 := by
+    (c : ChartCover I s) : coverIntegral l b (0 : RoughForm I M ℝ k) c = 0 := by
   unfold coverIntegral
-  simp only [RoughForm.signedInChartAt_zero, integral_zero, Finset.sum_const_zero, mul_zero]
+  have h0 : (fun α ↦ (0 : RoughForm I M ℝ k).signedInChartAt b α (fun x ↦ l.signAt α x.val)) = 0 :=
+    funext fun α ↦ funext (RoughForm.signedInChartAt_zero b α _)
+  rw [h0, c.integral_zero, mul_zero]
 
 private theorem coverIntegral_smul [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (c : ℝ) (φ : RoughForm I M ℝ k) (p : ChartCover (I := I) s) :
-    coverIntegral l b (c • φ) p = c * coverIntegral l b φ p := by
+    (r : ℝ) (φ : RoughForm I M ℝ k) (p : ChartCover I s) :
+    coverIntegral l b (r • φ) p = r * coverIntegral l b φ p := by
   unfold coverIntegral
-  simp_rw [RoughForm.signedInChartAt_smul]
-  simp_rw [integral_const_mul]
-  rw [← Finset.mul_sum]
-  ring
-
-private theorem coverIntegral_choose_eq [FiniteDimensional ℝ E]
-    (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) {s t : Set M} (hs : IsCompact s) (ht : IsCompact t)
-    (hst : s = t) :
-    coverIntegral l b φ (chooseChartCover (I := I) s hs) =
-      coverIntegral l b φ (chooseChartCover (I := I) t ht) := by
-  subst t
-  rfl
+  have hs : (fun α y ↦ (r • φ).signedInChartAt b α (fun x ↦ l.signAt α x.val) y) =
+      fun α y ↦ r • φ.signedInChartAt b α (fun x ↦ l.signAt α x.val) y :=
+    funext fun α ↦ funext fun y ↦ RoughForm.signedInChartAt_smul r φ b α _ y
+  rw [hs, p.integral_smul, smul_eq_mul]; ring
 
 /-- The signed coefficient of an integrable top form in a preferred chart is integrable for the
 Haar measure of any basis, when the chart sign is continuous. -/
@@ -277,21 +198,16 @@ public theorem signed_coefficient_integrable [FiniteDimensional ℝ E]
 private theorem coverIntegral_add [FiniteDimensional ℝ E] {s : Set M}
     (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
     (φ ψ : RoughForm I M ℝ k) (hφ : IntegrableTopForm φ) (hψ : IntegrableTopForm ψ)
-    (c : ChartCover (I := I) s) :
+    (c : ChartCover I s) :
     coverIntegral l b (φ + ψ) c = coverIntegral l b φ c + coverIntegral l b ψ c := by
-  have heq (i : Fin c.n) :
-      (∫ y in (extChartAt I (c.center i)) '' c.piece i,
-        (φ + ψ).signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y ∂b.addHaar) =
-      (∫ y in (extChartAt I (c.center i)) '' c.piece i,
-        φ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y ∂b.addHaar) +
-      ∫ y in (extChartAt I (c.center i)) '' c.piece i,
-        ψ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y ∂b.addHaar := by
-    simp_rw [RoughForm.signedInChartAt_add]
-    exact integral_add (signed_coefficient_integrable l hφ b (c.center i)).integrableOn
-      (signed_coefficient_integrable l hψ b (c.center i)).integrableOn
   unfold coverIntegral
-  simp_rw [heq]
-  rw [Finset.sum_add_distrib, mul_add]
+  have ha : (fun α y ↦ (φ + ψ).signedInChartAt b α (fun x ↦ l.signAt α x.val) y) =
+      fun α y ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x.val) y +
+        ψ.signedInChartAt b α (fun x ↦ l.signAt α x.val) y :=
+    funext fun α ↦ funext fun y ↦ RoughForm.signedInChartAt_add φ ψ b α _ y
+  rw [ha, c.integral_add b.addHaar
+    (fun i ↦ (signed_coefficient_integrable l hφ b (c.center i)).integrableOn)
+    (fun i ↦ (signed_coefficient_integrable l hψ b (c.center i)).integrableOn), mul_add]
 
 private theorem signed_changeChart [FiniteDimensional ℝ E] [IsManifold I 1 M]
     (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
@@ -309,125 +225,34 @@ private theorem signed_changeChart [FiniteDimensional ℝ E] [IsManifold I 1 M]
   simpa only [Manifold.OrientationLift.signAt_of_mem _ hα,
     Manifold.OrientationLift.signAt_of_mem _ hβ] using l.sign_mul_det α β x hα hβ
 
-private theorem integral_chart_piece_refine [FiniteDimensional ℝ E]
-    (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
-    (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) (α : M)
-    {s : Set M} (c : ChartCover (I := I) s) (hc : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ s)
-    {u : Set M} (hu : IsChartMeasurable I u) (hus : u ⊆ (extChartAt I α).source) :
-    (∫ y in (extChartAt I α) '' u, φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar) =
-      ∑ i, ∫ y in (extChartAt I α) '' (u ∩ c.piece i),
-        φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar := by
-  let e := extChartAt I α
-  let f := φ.signedInChartAt b α (fun x ↦ l.signAt α x)
-  let v : Fin c.n → Set E := fun i ↦ e '' (u ∩ c.piece i)
-  have hv (i : Fin c.n) : MeasurableSet (v i) :=
-    (hu.inter (c.isChartMeasurable_piece i)).image_extChartAt α (inter_subset_left.trans hus)
-  have hvs : (⋃ i, v i) ⊆ e '' u := iUnion_subset fun _ ↦ image_mono inter_subset_left
-  have hdisj : Pairwise (fun i j ↦ Disjoint (v i) (v j)) := by
-    intro i j hij
-    exact ((c.pairwise_disjoint hij).mono inter_subset_right inter_subset_right).image e.injOn
-      (inter_subset_left.trans hus) (inter_subset_left.trans hus)
-  have hf : Integrable f b.addHaar := signed_coefficient_integrable l hi b α
-  have hz : ∀ y ∈ e '' u \ ⋃ i, v i, f y = 0 := by
-    rintro y ⟨⟨x, hx, rfl⟩, hn⟩
-    have hx0 : x ∉ (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := by
-      intro ht
-      obtain ⟨i, hi⟩ := mem_iUnion.mp (c.piece_covers (hc ht))
-      exact hn (mem_iUnion.mpr ⟨i, mem_image_of_mem e ⟨hx, hi⟩⟩)
-    have hφ : φ x = 0 :=
-      _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hx0
-    dsimp only [f, e]
-    rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (hus hx),
-      RoughForm.inChartAt_apply, e.left_inv (hus hx), hφ]
-    simp
-  exact (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (hu.image_extChartAt α hus) hvs hz).trans
-    (integral_iUnion_fintype hv hdisj (fun _ ↦ hf.integrableOn))
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem signedInChartAt_eq_zero_of_notMem_tsupport (φ : RoughForm I M ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) (α : M) (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
+    {x : M} (hx : x ∈ (extChartAt I α).source)
+    (hn : x ∉ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) :
+    φ.signedInChartAt b α σ (extChartAt I α x) = 0 := by
+  have hφ : φ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hn
+  rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx,
+    RoughForm.inChartAt_apply, (extChartAt I α).left_inv hx, hφ]; simp
 
 private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
     (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
     (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) {s t : Set M}
-    (c : ChartCover (I := I) s) (d : ChartCover (I := I) t)
+    (c : ChartCover I s) (d : ChartCover I t)
     (hc : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ s)
     (hd : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ t) :
-    coverIntegral l b φ c = coverIntegral l b φ d := by
-  unfold coverIntegral
-  apply congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r)
-  simp_rw [integral_chart_piece_refine l φ hi b _ d hd
-    (c.isChartMeasurable_piece _) (c.piece_subset _),
-    integral_chart_piece_refine l φ hi b _ c hc
-    (d.isChartMeasurable_piece _) (d.piece_subset _)]
-  rw [Finset.sum_comm]
-  apply Finset.sum_congr rfl
-  intro j _
-  apply Finset.sum_congr rfl
-  intro i _
-  have h := signed_changeChart l φ b (c.center i) (d.center j)
-    (s := c.piece i ∩ d.piece j)
-    (fun x hx ↦ ⟨c.piece_subset i hx.1, d.piece_subset j hx.2⟩)
-    ((c.isChartMeasurable_piece i).inter (d.isChartMeasurable_piece j))
-  simpa only [inter_comm] using h
-
-private theorem coverIntegral_eq_chartIntegral_of_ae_support
-    [FiniteDimensional ℝ E] [IsManifold I 1 M]
-    (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
-    (b : Module.Basis (Fin k) ℝ E)
-    (c : ChartCover (I := I) (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ))
-    (hi : IntegrableTopForm φ) (α : M)
-    (hα : ∀ β : M, ∀ᵐ y ∂b.addHaar,
-      y ∉ (extChartAt I β) '' ((extChartAt I β).source ∩ (extChartAt I α).source) →
-        φ.signedInChartAt b β (fun _ ↦ 1) y = 0) :
-    coverIntegral l b φ c = l.chartIntegral φ α := by
-  let e := extChartAt I α
-  let f := φ.signedInChartAt b α (fun x ↦ l.signAt α x)
-  let s : Fin c.n → Set M := fun i ↦ c.piece i ∩ e.source
-  have hs (i : Fin c.n) : IsChartMeasurable I (s i) :=
-    (c.isChartMeasurable_piece i).inter
-      (by dsimp only [e]; simpa only [extChartAt_source] using
-        (chartAt H α).open_source.isChartMeasurable (I := I))
-  rw [l.chartIntegral_eq_integral φ b α, coverIntegral]
-  apply congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r)
-  calc
-    (∑ i, ∫ y in (extChartAt I (c.center i)) '' c.piece i,
-      φ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y ∂b.addHaar) =
-        ∑ i, ∫ y in e '' s i, f y ∂b.addHaar := by
-      apply Finset.sum_congr rfl
-      intro i _
-      have hzero : ∀ᵐ y ∂b.addHaar,
-          y ∈ (extChartAt I (c.center i)) '' c.piece i \
-            (extChartAt I (c.center i)) '' s i →
-            φ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y = 0 := by
-        filter_upwards [hα (c.center i)] with y hy hys
-        obtain ⟨x, hx, rfl⟩ := hys.1
-        have hn : extChartAt I (c.center i) x ∉ (extChartAt I (c.center i)) ''
-            ((extChartAt I (c.center i)).source ∩ e.source) := by
-          rintro ⟨z, hz, he⟩
-          have hxz : x = z := (extChartAt I (c.center i)).injOn (c.piece_subset i hx) hz.1 he.symm
-          exact hys.2 (mem_image_of_mem _ ⟨hx, hxz ▸ hz.2⟩)
-        have hz := hy hn
-        rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (c.piece_subset i hx)] at hz ⊢
-        simp only [Units.val_one, Int.cast_one, one_mul] at hz
-        rw [hz, mul_zero]
-      have hspiece : s i ⊆ c.piece i := inter_subset_left
-      have heq := setIntegral_eq_of_subset_of_ae_sdiff_eq_zero (μ := b.addHaar)
-        (c.measurableSet_image_piece i).nullMeasurableSet
-        (image_mono hspiece) hzero
-      exact heq.trans (signed_changeChart l φ b (c.center i) α
-        (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩) (hs i))
-    _ = ∫ y, f y ∂b.addHaar := by
-      have he := integral_chart_piece_refine l φ hi b α c Subset.rfl
-        (by simpa only [extChartAt_source] using
-          (chartAt H α).open_source.isChartMeasurable (I := I)) Subset.rfl
-      -- Unfold the local chart e and coefficient f in the refinement identity; the
-      -- original statement names extChartAt and signedInChartAt explicitly.
-      change (∫ y in e '' e.source, f y ∂b.addHaar) =
-        ∑ i, ∫ y in e '' (e.source ∩ c.piece i), f y ∂b.addHaar at he
-      have he' : (∑ i, ∫ y in e '' s i, f y ∂b.addHaar) =
-          ∫ y in e '' e.source, f y ∂b.addHaar := by
-        simpa only [s, inter_comm] using he.symm
-      rw [he', e.image_source_eq_target]
-      exact setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦
-        Function.notMem_support.mp (fun hn ↦
-          hy (φ.support_signedInChartAt_subset_target b α (fun x ↦ l.signAt α x) hn))
+    coverIntegral l b φ c = coverIntegral l b φ d :=
+  congrArg ((Orientation.signBasis l.modelOrientation b : ℝ) * ·) <|
+    c.integral_eq d (fun α ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x.val)) b.addHaar
+      (fun i ↦ (signed_coefficient_integrable l hi b (c.center i)).integrableOn)
+      (fun j ↦ (signed_coefficient_integrable l hi b (d.center j)).integrableOn)
+      (fun i _ hx hxt ↦ signedInChartAt_eq_zero_of_notMem_tsupport φ b (c.center i) _
+        (c.piece_subset i hx) fun h ↦ hxt (hd h))
+      (fun j _ hx hxs ↦ signedInChartAt_eq_zero_of_notMem_tsupport φ b (d.center j) _
+        (d.piece_subset j hx) fun h ↦ hxs (hc h))
+      fun i j ↦ signed_changeChart l φ b (c.center i) (d.center j)
+        (fun _ hx ↦ ⟨c.piece_subset i hx.1, d.piece_subset j hx.2⟩)
+        ((c.isChartMeasurable_piece i).inter (d.isChartMeasurable_piece j))
 
 end WithMeasure
 
@@ -524,10 +349,11 @@ public def integralTopForm (o : Manifold.Orientation I M (Fin k))
   classical
   letI : MeasurableSpace E := borel E
   letI : BorelSpace E := ⟨rfl⟩
+  letI : LocallyCompactSpace H := I.locallyCompactSpace
   exact if hi : IntegrableTopForm φ then
     let l := Classical.choose o.exists_lift
     let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-    coverIntegral l b φ (chooseChartCover (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) hi.1)
+    coverIntegral l b φ (ChartCover.choose I hi.1)
   else 0
 
 /-- A nonintegrable top form has zero total integral. -/
@@ -545,9 +371,9 @@ public theorem integralTopForm_eq_zero_of_not_isCompact
 private theorem integralTopForm_mk [MeasurableSpace E] [BorelSpace E]
     (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
     (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) :
+    letI : LocallyCompactSpace H := I.locallyCompactSpace
     integralTopForm (Manifold.Orientation.mk l) φ =
-      coverIntegral l b φ (chooseChartCover
-        (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) hi.isCompact) := by
+      coverIntegral l b φ (ChartCover.choose I hi.isCompact) := by
   classical
   have hm : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
   cases hm
@@ -568,7 +394,7 @@ private theorem integralTopForm_mk [MeasurableSpace E] [BorelSpace E]
 private theorem integralTopForm_eq_coverIntegral [MeasurableSpace E] [BorelSpace E]
     [IsManifold I 1 M] (l : Manifold.OrientationLift I M (Fin k))
     (φ : RoughForm I M ℝ k) (hi : IntegrableTopForm φ)
-    (b : Module.Basis (Fin k) ℝ E) {s : Set M} (c : ChartCover (I := I) s)
+    (b : Module.Basis (Fin k) ℝ E) {s : Set M} (c : ChartCover I s)
     (hc : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ s) :
     integralTopForm (Manifold.Orientation.mk l) φ = coverIntegral l b φ c := by
   rw [integralTopForm_mk l φ hi b]
@@ -586,8 +412,10 @@ public theorem integralTopForm_eq_sum_disjointed_chart_integrals [IsManifold I 1
       (Orientation.signBasis l.modelOrientation b : ℝ) * ∑ i,
         ∫ y in (extChartAt I (α i)) '' disjointed u i,
           φ.signedInChartAt b (α i) (fun x ↦ l.signAt (α i) x) y ∂b.addHaar := by
-  let c : ChartCover (I := I) (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := ⟨m, α, u, hu, hs, hc⟩
-  exact integralTopForm_eq_coverIntegral l φ hi b c Subset.rfl
+  let c : ChartCover I (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := ⟨m, α, u, hu, hs, hc⟩
+  rw [integralTopForm_eq_coverIntegral l φ hi b c Subset.rfl, coverIntegral,
+    ChartCover.integral_eq_sum]
+  simp only [ChartCover.piece_eq_disjointed, c]
 
 /-- A compact manifold admits a finite disjoint chartwise Borel partition computing every
 integrable top-form integral. No measurable structure on the manifold is installed. -/
@@ -603,11 +431,13 @@ public theorem exists_chart_partition_integralTopForm [IsManifold I 1 M] [Compac
           (Orientation.signBasis l.modelOrientation b : ℝ) * ∑ i,
             ∫ y in (extChartAt I (α i)) '' s i,
               φ.signedInChartAt b (α i) (fun x ↦ l.signAt (α i) x) y ∂b.addHaar := by
-  let c := chooseChartCover (I := I) (univ : Set M) isCompact_univ
+  let : LocallyCompactSpace H := I.locallyCompactSpace
+  let c := ChartCover.choose I (isCompact_univ (X := M))
   refine ⟨c.n, c.center, c.piece, c.isChartMeasurable_piece, c.piece_subset,
     c.pairwise_disjoint, Subset.antisymm (subset_univ _) c.piece_covers, ?_⟩
   intro φ hi
-  exact integralTopForm_eq_coverIntegral l φ hi b c (subset_univ _)
+  rw [integralTopForm_eq_coverIntegral l φ hi b c (subset_univ _), coverIntegral,
+    ChartCover.integral_eq_sum]
 
 /-- The top-form integral is additive on integrable rough forms. -/
 public theorem integralTopForm_add_of_integrable [IsManifold I 1 M]
@@ -616,10 +446,10 @@ public theorem integralTopForm_add_of_integrable [IsManifold I 1 M]
     integralTopForm o (φ + ψ) = integralTopForm o φ + integralTopForm o ψ := by
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
+  let : LocallyCompactSpace H := I.locallyCompactSpace
   obtain ⟨l, rfl⟩ := o.exists_lift
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-  let c := chooseChartCover (I := I) ((_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ∪
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) ψ)) (hφ.isCompact.union hψ.isCompact)
+  let c := ChartCover.choose I (hφ.isCompact.union hψ.isCompact)
   -- tsupport_add is a fixed-codomain function lemma; identify the tangent fibres
   -- with the model space to select that function argument.
   rw [integralTopForm_eq_coverIntegral l _ (hφ.add hψ) b c (_root_.tsupport_add
@@ -684,11 +514,15 @@ public theorem integralTopForm_smul (o : Manifold.Orientation I M (Fin k))
   obtain ⟨l, rfl⟩ := o.exists_lift
   by_cases hi : IntegrableTopForm φ
   · have hi' := (integrableTopForm_smul_iff c φ hc).mpr hi
+    let : LocallyCompactSpace H := I.locallyCompactSpace
     let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
     rw [integralTopForm_mk l _ hi' b, integralTopForm_mk l _ hi b]
     rw [coverIntegral_smul]
     apply congrArg (fun r : ℝ ↦ c * r)
-    exact coverIntegral_choose_eq l b φ hi'.isCompact hi.isCompact (RoughForm.tsupport_smul c φ hc)
+    unfold coverIntegral
+    exact congrArg ((Orientation.signBasis l.modelOrientation b : ℝ) * ·)
+      (ChartCover.integral_choose_congr hi'.isCompact hi.isCompact (RoughForm.tsupport_smul c φ hc)
+        _ b.addHaar)
   · have hi' : ¬IntegrableTopForm (c • φ) := fun h ↦ hi ((integrableTopForm_smul_iff c φ hc).mp h)
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi',
       integralTopForm_eq_zero_of_not_integrable _ _ hi, mul_zero]
@@ -709,24 +543,25 @@ public theorem integralTopForm_eq_chartIntegral_of_ae_support [IsManifold I 1 M]
     (φ : RoughForm I M ℝ k) (hi : IntegrableTopForm φ) (α : M)
     (hs : IsNullSet I ({x | φ x ≠ 0} \ (extChartAt I α).source)) :
     integralTopForm (Manifold.Orientation.mk l) φ = l.chartIntegral φ α := by
-  classical
+  let : LocallyCompactSpace H := I.locallyCompactSpace
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-  rw [integralTopForm_mk l φ hi b]
-  apply coverIntegral_eq_chartIntegral_of_ae_support l φ b _ hi α
-  intro β
-  filter_upwards [measure_eq_zero_iff_ae_notMem.mp (hs.chartwise β b.addHaar)] with y hy ho
-  by_cases ht : y ∈ (extChartAt I β).target
-  · have hz : φ ((extChartAt I β).symm y) = 0 := by
-      by_contra hn
-      apply hy
-      refine ⟨(extChartAt I β).symm y, ⟨⟨hn, ?_⟩,
-        (extChartAt I β).map_target ht⟩, (extChartAt I β).right_inv ht⟩
-      intro ha
-      exact ho ⟨(extChartAt I β).symm y,
-        ⟨(extChartAt I β).map_target ht, ha⟩, (extChartAt I β).right_inv ht⟩
+  let c := ChartCover.choose I hi.isCompact
+  rw [integralTopForm_mk l φ hi b, l.chartIntegral_eq_integral φ b α, coverIntegral]
+  refine congrArg ((Orientation.signBasis l.modelOrientation b : ℝ) * ·) ?_
+  refine c.integral_eq_integral_of_ae_support
+    (fun γ ↦ φ.signedInChartAt b γ (fun x ↦ l.signAt γ x.val)) b.addHaar α
+    (signed_coefficient_integrable l hi b α).integrableOn
+    (fun _ hx hxs ↦ signedInChartAt_eq_zero_of_notMem_tsupport φ b α _ hx hxs)
+    (fun _ hy ↦ Function.notMem_support.mp fun hn ↦
+      hy (φ.support_signedInChartAt_subset_target b α (fun x ↦ l.signAt α x) hn))
+    (fun i ↦ ?_) fun i ↦ signed_changeChart l φ b (c.center i) α
+      (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩)
+      ((c.isChartMeasurable_piece i).inter (isOpen_extChartAt_source α).isChartMeasurable)
+  filter_upwards [hs.ae_extChartAt_symm_notMem_of_sdiff_source (c.center i) b.addHaar] with y hy ho
+  by_cases ht : y ∈ (extChartAt I (c.center i)).target
+  · have hz : φ ((extChartAt I (c.center i)).symm y) = 0 := not_not.mp (hy ho ht)
     rw [RoughForm.signedInChartAt_apply, dite_eq_left ht, RoughForm.inChartAt_apply, hz]
-    simp only [Units.val_one, Int.cast_one, one_mul]
-    rfl
+    simp only [ContinuousAlternatingMap.coe_zero, Pi.zero_apply, mul_zero]
   · rw [RoughForm.signedInChartAt_apply, dite_eq_right ht]
 
 /-- An integrable form supported in a preferred chart has that chart's integral. This applies

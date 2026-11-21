@@ -64,6 +64,21 @@ theorem IsNullSet.chartwise {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [
     μ (extChartAt I x '' (s ∩ (extChartAt I x).source)) = 0 :=
   (isNullSet_iff I s).1 hs x μ
 
+/-- If `A \ (extChartAt I α).source` is a null set, then in every preferred chart `β` and for every
+Haar measure `μ`, almost every point `y` outside the coordinate image of the chart overlap either
+lies outside `(extChartAt I β).target` or maps under `(extChartAt I β).symm` outside `A`. -/
+theorem IsNullSet.ae_extChartAt_symm_notMem_of_sdiff_source {I : ModelWithCorners ℝ E H}
+    [MeasurableSpace E] [BorelSpace E] {A : Set M} {α : M}
+    (hs : IsNullSet I (A \ (extChartAt I α).source)) (β : M)
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    ∀ᵐ y ∂μ, y ∉ (extChartAt I β) '' ((extChartAt I β).source ∩ (extChartAt I α).source) →
+      y ∈ (extChartAt I β).target → (extChartAt I β).symm y ∉ A := by
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp (hs.chartwise β μ)] with y hy ho ht hA
+  exact hy ⟨(extChartAt I β).symm y,
+    ⟨⟨hA, fun ha ↦ ho ⟨(extChartAt I β).symm y,
+      ⟨(extChartAt I β).map_target ht, ha⟩, (extChartAt I β).right_inv ht⟩⟩,
+      (extChartAt I β).map_target ht⟩, (extChartAt I β).right_inv ht⟩
+
 /-- A subset of a null set is null. -/
 theorem IsNullSet.mono {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE : BorelSpace E]
     {s t : Set M} (ht : IsNullSet I t) (hst : s ⊆ t) : IsNullSet I s := by

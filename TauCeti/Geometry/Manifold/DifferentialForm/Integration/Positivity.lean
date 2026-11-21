@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-import TauCeti.Geometry.Manifold.ExtChartAt
-import Mathlib.Order.Disjointed
+import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 
 /-!
 # Positivity of the integral of top forms
@@ -219,27 +218,20 @@ theorem integralTopForm_pos [NeZero k] (o : Manifold.Orientation I M (Fin k))
   have hi := hφ.integrableTopForm hc b
   -- Compute the integral on a chart cover whose first chart is the chart at `x₀`, so that the
   -- first disjointed piece is that chart's whole source.
-  obtain ⟨m, α, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
-  let α' : Fin (m + 1) → M := Fin.cons x₀ α
-  let u' : Fin (m + 1) → Set M := Fin.cons (extChartAt I x₀).source u
-  have hu' : ∀ i, IsOpen (u' i) ∧ u' i ⊆ (extChartAt I (α' i)).source := by
-    refine Fin.cases ?_ fun i ↦ ?_
-    · simpa [α', u'] using isOpen_extChartAt_source (I := I) x₀
-    · simpa [α', u'] using And.intro (hu i).1 (hu i).2.1
-  have hcover' : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, u' i :=
-    hcover.trans (iUnion_subset fun i ↦ by simpa [u'] using subset_iUnion u' i.succ)
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α' u' (fun i ↦ (hu' i).1)
-    (fun i ↦ (hu' i).2) hcover', Finset.mul_sum, Fin.sum_univ_succ]
+  let c := ChartCover.choose I hc
+  let c' := c.cons x₀
+  have hsum : (∑ i, ∫ y in (extChartAt I (c'.center i)) '' disjointed c'.domain i,
+      φ.signedInChartAt b (c'.center i) (fun x ↦ l.signAt (c'.center i) x) y ∂b.addHaar) =
+      c'.integral (fun α ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x)) b.addHaar := by
+    rw [ChartCover.integral_eq_sum]
+    simp only [ChartCover.piece_eq_disjointed]
+  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b c'.center c'.domain
+    c'.isOpen_domain c'.domain_subset c'.covers, hsum, c.integral_cons x₀, mul_add, Finset.mul_sum]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦ ?_)
-  swap
   · rw [← integral_const_mul]
-    exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hnn b (α' i.succ) y
-  have hpiece : (extChartAt I (α' 0)) '' disjointed u' 0 = (extChartAt I (α' 0)).target := by
-    rw [← bot_eq_zero, disjointed_bot, bot_eq_zero]
-    simp only [α', u', Fin.cons_zero]
-    exact (extChartAt I x₀).image_source_eq_target
-  rw [hpiece, ← integral_const_mul]
-  exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b
-    (by simp [α']) c₀ hc₀ hφ₀
+    exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b (mem_extChartAt_source x₀)
+      c₀ hc₀ hφ₀
+  · rw [← integral_const_mul]
+    exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hnn b (c.center i) y
 
 end TauCeti

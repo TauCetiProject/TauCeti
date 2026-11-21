@@ -129,6 +129,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target, at a
   point with unique derivatives, the derivative of the inverse chart is its derivative within the
   model range.
+* `TauCeti.mfderivWithin_extChartAt_symm_apply_eq_trivializationAt_symm` and
+  `TauCeti.mfderivWithin_extChartAt_symm_eq_comp_fderivWithin`: on a chart target, the within-range
+  derivative of `(extChartAt I α).symm` evaluates as the inverse preferred tangent-bundle
+  trivialization, and on chart overlaps factors through the within-range coordinate-change
+  derivative.
 * `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt` and
   `TauCeti.eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt`:
   transport differentiability near a point between a product of manifolds and model spaces
@@ -139,9 +144,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_extChartAt_self` and `TauCeti.mfderiv_extChartAt_eq_id`: the extended
   chart at `x` has the identity as its manifold derivative at `x`, with no smoothness hypothesis on
   the atlas.
-* `TauCeti.hasMFDerivAt_extChartAt_symm_self`: on a boundaryless manifold, the inverse extended
-  chart at `x` has the identity as its manifold derivative at `extChartAt I x x`, with no
-  smoothness hypothesis on the atlas.
+* `TauCeti.hasMFDerivWithinAt_extChartAt_symm_self` and `TauCeti.hasMFDerivAt_extChartAt_symm_self`:
+  the inverse extended chart at `x` has the identity as its manifold derivative within `range I`
+  (and globally on a boundaryless manifold) at `extChartAt I x x`, with no smoothness hypothesis on
+  the atlas.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -799,6 +805,49 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- On the target of a preferred extended chart, the within-range derivative of
+`(extChartAt I α).symm` evaluates as the inverse preferred tangent-bundle trivialization at `α`. -/
+theorem mfderivWithin_extChartAt_symm_apply_eq_trivializationAt_symm (α : M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (v : E) :
+    mfderivWithin 𝓘(𝕜, E) I (extChartAt I α).symm (range I) y v =
+      (trivializationAt E (TangentSpace I) α).symm ((extChartAt I α).symm y) v := by
+  have hx : (extChartAt I α).symm y ∈ (chartAt H α).source := by
+    simpa only [extChartAt_source] using (extChartAt I α).map_target hy
+  -- `TangentSpace 𝓘(𝕜, E) y` is definitionally `E`.
+  rw [← (trivializationAt E (TangentSpace I) α).symmL_apply (R := 𝕜)
+    (by rwa [TangentBundle.trivializationAt_baseSet]),
+    TangentBundle.symmL_trivializationAt hx, (extChartAt I α).right_inv hy]; rfl
+
+/-- On an overlap of preferred extended charts, the within-range derivative of
+`(extChartAt I x₀).symm` factors through `(extChartAt I x).symm` and the within-range derivative of
+`extChartAt I x ∘ (extChartAt I x₀).symm`. -/
+theorem mfderivWithin_extChartAt_symm_eq_comp_fderivWithin {x₀ x : M} {z : E}
+    (hz : z ∈ (extChartAt I x₀).target)
+    (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source) :
+    mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z =
+      (mfderivWithin 𝓘(𝕜, E) I (extChartAt I x).symm (range I)
+        (extChartAt I x ((extChartAt I x₀).symm z))).comp
+        (fderivWithin 𝕜 (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z) := by
+  have hpre : (extChartAt I x₀).symm ⁻¹' (extChartAt I x).source ∈ 𝓝[range I] z :=
+    (continuousAt_extChartAt_symm'' hz).continuousWithinAt.preimage_mem_nhdsWithin
+      (extChartAt_source_mem_nhds' hx)
+  have hcoord : ((extChartAt I x).symm ∘ (extChartAt I x ∘ (extChartAt I x₀).symm))
+      =ᶠ[𝓝[range I] z] (extChartAt I x₀).symm :=
+    Filter.Eventually.mono hpre fun _ ha ↦ (extChartAt I x).left_inv ha
+  have hcomp := mfderivWithin_comp_of_preimage_mem_nhdsWithin_of_eq
+    (I' := 𝓘(𝕜, E)) (I'' := I) (u := range I) z
+    (mdifferentiableWithinAt_extChartAt_symm ((extChartAt I x).map_source hx))
+    ((contDiffWithinAt_ext_coord_change (𝕜 := 𝕜) (n := 1) x x₀ (by
+      rw [PartialEquiv.trans_source]
+      exact ⟨by simpa only [PartialEquiv.symm_source] using hz, hx⟩)).differentiableWithinAt
+        (by simp)).mdifferentiableWithinAt
+    (Filter.Eventually.mono hpre fun _ ha ↦
+      extChartAt_target_subset_range x ((extChartAt I x).map_source ha))
+    (I.uniqueDiffOn.uniqueDiffWithinAt
+      (extChartAt_target_subset_range x₀ hz)).uniqueMDiffWithinAt rfl
+  rwa [hcoord.mfderivWithin_eq ((extChartAt I x).left_inv hx),
+    mfderivWithin_eq_fderivWithin] at hcomp
+
 /-- The derivative of a model-valued map in an arbitrary preferred chart is its actual
 manifold derivative composed with the inverse tangent chart. Both sides vanish when the map is not
 differentiable at the point. -/
@@ -1197,19 +1246,29 @@ theorem mfderiv_extChartAt_eq_id (x : M) :
   (hasMFDerivAt_extChartAt_self x).mfderiv
 
 omit [IsManifold I 1 M] in
+/-- The inverse of the preferred extended chart at `x` has the identity as its manifold derivative
+within `range I` at the chart image `extChartAt I x x` of its centre. There is no smoothness
+hypothesis on the atlas. -/
+theorem hasMFDerivWithinAt_extChartAt_symm_self (x : M) :
+    HasMFDerivWithinAt 𝓘(𝕜, E) I (extChartAt I x).symm (range I) (extChartAt I x x)
+      (ContinuousLinearMap.id 𝕜 E) := by
+  refine ⟨(continuousAt_extChartAt_symm x).continuousWithinAt, ?_⟩
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, preimage_id_eq, id_eq, modelWithCornersSelf_coe, range_id, inter_univ,
+    (extChartAt I x).left_inv (mem_extChartAt_source x)]
+  exact (hasFDerivWithinAt_id (𝕜 := 𝕜) (extChartAt I x x) (range I)).congr_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x) fun _ hy ↦
+      (extChartAt I x).right_inv hy)
+    ((extChartAt I x).right_inv (mem_extChartAt_target x))
+
+omit [IsManifold I 1 M] in
 /-- On a boundaryless manifold, the inverse of the preferred extended chart at `x` has the identity
 as its manifold derivative at the chart image `extChartAt I x x` of its centre. There is no
 smoothness hypothesis on the atlas. -/
 theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
     HasMFDerivAt 𝓘(𝕜, E) I (extChartAt I x).symm (extChartAt I x x)
-      (ContinuousLinearMap.id 𝕜 E) := by
-  -- Read in the chart at `x`, the inverse chart is the identity on the chart target.
-  refine ⟨(continuousOn_extChartAt_symm x).continuousAt (extChartAt_target_mem_nhds x), ?_⟩
-  rw [writtenInExtChartAt, extChartAt_to_inv, extChartAt_model_space_eq_id]
-  exact (hasFDerivWithinAt_id (extChartAt I x x) _).congr_of_eventuallyEq
-    (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (extChartAt_target_mem_nhds x))
-      fun _ h ↦ (extChartAt I x).right_inv h)
-    ((extChartAt I x).right_inv (mem_extChartAt_target x))
+      (ContinuousLinearMap.id 𝕜 E) :=
+  hasMFDerivWithinAt_univ.mp (I.range_eq_univ ▸ hasMFDerivWithinAt_extChartAt_symm_self x)
 
 end ExtChartAtSelf
 

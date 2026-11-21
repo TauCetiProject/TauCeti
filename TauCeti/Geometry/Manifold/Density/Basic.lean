@@ -63,6 +63,14 @@ theorem toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M
   have := o.fact_finrank_tangentSpace x
   AlternatingMap.toDensity_apply (φ x).toAlternatingMap (o.orientationAt x) b
 
+/-- Evaluating `φ.toDensity o x` on any tangent basis gives `φ x` on that basis weighted by its
+sign relative to `o.orientationAt x`, including in dimension zero. -/
+theorem toDensity_apply_basis (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
+    (x : M) (b : Basis (Fin m) ℝ (TangentSpace I x)) :
+    φ.toDensity o x b = (Orientation.signBasis (o.orientationAt x) b : ℝ) * φ x b :=
+  have := o.fact_finrank_tangentSpace x
+  AlternatingMap.toDensity_apply_basis (φ x).toAlternatingMap (o.orientationAt x) b
+
 /-- On a positively oriented basis of a tangent space, the density of a top form is the form
 itself. -/
 @[simp]
@@ -141,6 +149,20 @@ theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
   rw [← Orientation.densityEquiv_apply, ← Orientation.densityEquiv_apply] at hx
   exact ContinuousAlternatingMap.toAlternatingMap_injective
     ((Orientation.densityEquiv (o.orientationAt x)).injective hx)
+
+/-- Passing from a top form to its density preserves the topological support. -/
+@[simp] theorem tsupport_toDensity (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) :
+    _root_.tsupport (α := Density E m) (φ.toDensity o) =
+      _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ := by
+  simp only [_root_.tsupport]; congr 1; ext x
+  -- `TangentSpace I x` is definitionally `E`, bridging the dependent fibres to the fixed codomains.
+  change φ.toDensity o x ≠ 0 ↔ φ x ≠ 0
+  have := o.fact_finrank_tangentSpace x
+  have h0 : (0 : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ).toAlternatingMap = 0 := by ext; simp
+  refine not_congr ?_
+  rw [toDensity, ← Orientation.densityEquiv_apply,
+    (Orientation.densityEquiv (o.orientationAt x)).map_eq_zero_iff, ← h0,
+    ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]
 
 end RoughForm
 
