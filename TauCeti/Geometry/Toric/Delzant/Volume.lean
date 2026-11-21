@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Toric.Delzant.Simplex
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.MeasureTheory.Measure.Lebesgue.RegionBetween
 import TauCeti.MeasureTheory.Measure.Lebesgue.Weighted.Orthant
 
@@ -51,14 +52,17 @@ interval `[0, a]`, the moment polytope of the two-sphere, has length `a`
 Chopping a smooth vertex `v` off a polyhedron at a small depth `ε > 0`
 (`TauCeti.Toric.cornerChopNormal`, `TauCeti.Toric.cornerChopSupport`), the polytope operation of
 the toric symplectic blowup at the fixed point over `v`, removes `εⁿ / n!` from the volume
-(`TauCeti.Toric.IsIntegralLattice.eventually_dualMeasure_facetPolyhedron_cornerChop_add`). For
-small `ε` the removed part is the simplex `{y j ≥ 0, ∑ j, y j < ε}` in the coordinates
-`y j = ⟨x, u j⟩ - c j` relative to `v`, as the constraints inactive at `v` stay inactive on it
-(`TauCeti.Toric.IsSmoothVertex.eventually_forall_mem_facetPolyhedron`). Since the normals `u j` at
-`v` form a basis of the lattice, these coordinates carry the lattice-normalized measure to
-Lebesgue measure, and the simplex has volume `εⁿ / n!`. For the corner `0` of the standard
-simplex of size `a` this holds for every depth `0 < ε ≤ a`: the blowup of `ℂPⁿ` at a point has
-polytope volume `(aⁿ - εⁿ) / n!` (`TauCeti.Toric.dualMeasure_facetPolyhedron_simplex_cornerChop`).
+(`TauCeti.Toric.IsIntegralLattice.eventually_dualMeasure_facetPolyhedron_cornerChop_add`). The
+removed part is the simplex `{y j ≥ 0, ∑ j, y j < ε}` in the coordinates `y j = ⟨x, u j⟩ - c j`
+relative to `v`, whenever this simplex lies in the polyhedron
+(`TauCeti.Toric.IsIntegralLattice.dualMeasure_facetPolyhedron_cornerChop_add`). Since the normals
+`u j` at `v` form a basis of the lattice, these coordinates carry the lattice-normalized measure to
+Lebesgue measure, and the simplex has volume `εⁿ / n!`. For small `ε` the simplex does lie in the
+polyhedron, as the constraints inactive at `v` stay inactive on it
+(`TauCeti.Toric.IsSmoothVertex.eventually_forall_mem_facetPolyhedron`). For the corner `0` of the
+standard simplex of size `a` it does so for every depth `ε ≤ a`, and the chopped simplex has volume
+`(aⁿ - εⁿ) / n!` at every depth `ε > 0`; for `0 < ε < a` it is the polytope of `ℂPⁿ` blown up at a
+point (`TauCeti.Toric.dualMeasure_facetPolyhedron_simplex_cornerChop`).
 
 ## Main results
 
@@ -74,10 +78,12 @@ polytope volume `(aⁿ - εⁿ) / n!` (`TauCeti.Toric.dualMeasure_facetPolyhedro
   `ENNReal.ofReal (a b - k b² / 2)`.
 * `TauCeti.Toric.dualMeasure_facetPolyhedron_simplex`: the standard simplex of size `a` in `ℝⁿ`
   has volume `aⁿ / n!`.
+* `TauCeti.Toric.IsIntegralLattice.dualMeasure_facetPolyhedron_cornerChop_add`: a corner chop
+  whose removed simplex lies in the polyhedron removes volume `εⁿ / n!`.
 * `TauCeti.Toric.IsIntegralLattice.eventually_dualMeasure_facetPolyhedron_cornerChop_add`: a small
   corner chop at a smooth vertex removes volume `εⁿ / n!`.
 * `TauCeti.Toric.dualMeasure_facetPolyhedron_simplex_cornerChop`: the simplex of size `a` with the
-  corner `0` chopped at depth `ε`, for `0 < ε ≤ a` the polytope of `ℂPⁿ` blown up at a point, has
+  corner `0` chopped at depth `ε`, for `0 < ε < a` the polytope of `ℂPⁿ` blown up at a point, has
   volume `(aⁿ - εⁿ) / n!`.
 
 ## References
@@ -178,40 +184,30 @@ theorem IsIntegralLattice.dualMeasure_facetPolyhedron_prod (h : IsIntegralLattic
     exact coprod_mem_facetPolyhedron_prod_iff y y'
   rw [hpre, Measure.prod_prod]
 
-/-- **The volume removed by a corner chop.** Let `v` be a smooth vertex of the polyhedron
-`Δ = {x | c j ≤ ⟨x, u j⟩}` in an integral lattice, at which the facets indexed by `s` meet, and
-let `n = dim V`. For every sufficiently small `ε > 0`, chopping the corner `v` off `Δ` at depth `ε`
-removes the simplex `{y j ≥ 0, ∑ j, y j < ε}` in the coordinates `y j = ⟨x, u j⟩ - c j` relative to
-`v`, which has volume `εⁿ / n!` since the normals `u j` at `v` form a basis of the lattice:
+/-- **The volume removed by a corner chop.** Let `Δ = {x | c j ≤ ⟨x, u j⟩}` be a polyhedron in an
+integral lattice, let `s` index facets whose normals form a basis of the lattice, and let
+`n = dim V`. If the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` of size `ε > 0` in the coordinates
+`y j = ⟨x, u j⟩ - c j`, `j ∈ s`, lies in `Δ`, then chopping it off removes the volume `εⁿ / n!`,
+since these coordinates carry the lattice-normalized measure to Lebesgue measure:
 
-`vol(Δ chopped at depth ε) + εⁿ / n! = vol(Δ)`.
-
-On the symplectic side, `(2π)ⁿ εⁿ / n!` is the volume of the ball of capacity `2π ε` removed by
-the toric symplectic blowup at the fixed point over `v`. -/
-theorem IsIntegralLattice.eventually_dualMeasure_facetPolyhedron_cornerChop_add [Finite ι]
-    (h : IsIntegralLattice i) {s : Finset ι} {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v)
-    (hvP : v ∈ facetPolyhedron i u c) (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
-    ∀ᶠ ε in 𝓝[>] 0,
-      h.dualMeasure (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) +
-          ENNReal.ofReal (ε ^ finrank ℝ V / (finrank ℝ V).factorial) =
-        h.dualMeasure (facetPolyhedron i u c) := by
-  -- The normals at `v` form a basis of `N` indexed by `s`, whose dual coordinates are the
-  -- pairings with the normals `u j`, `j ∈ s`.
-  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hv
-  let b' : Basis s ℤ N :=
-    b.reindex (Equiv.subtypeEquivRight fun j ↦ by rw [← Finset.mem_coe, hs])
-  have he (x : StrongDual ℝ V) (j : s) : (h.dualBasis b').equivFun x j = x (i (u j)) := by
-    simp [b', hb]
+`vol(Δ chopped at depth ε) + εⁿ / n! = vol(Δ)`. -/
+theorem IsIntegralLattice.dualMeasure_facetPolyhedron_cornerChop_add (h : IsIntegralLattice i)
+    {s : Finset ι} (b : Basis s ℤ N) (hb : ∀ j, b j = u j) {ε : ℝ} (hε0 : 0 < ε)
+    (hε : ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) →
+      ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε → x ∈ facetPolyhedron i u c) :
+    h.dualMeasure (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) +
+        ENNReal.ofReal (ε ^ finrank ℝ V / (finrank ℝ V).factorial) =
+      h.dualMeasure (facetPolyhedron i u c) := by
+  -- The dual coordinates of the basis `b` are the pairings with the normals `u j`, `j ∈ s`.
+  have he (x : StrongDual ℝ V) (j : s) : (h.dualBasis b).equivFun x j = x (i (u j)) := by
+    simp [hb]
   have hcard : finrank ℝ V = Fintype.card s := by
-    rw [← h.finrank_eq, ← hv.ncard_activeSet, ← hs, ncard_coe_finset, Fintype.card_coe]
-  filter_upwards [self_mem_nhdsWithin,
-    (hv.eventually_forall_mem_facetPolyhedron h hvP hs).filter_mono nhdsWithin_le_nhds]
-    with ε (hε0 : 0 < ε) hε
-  -- The chopped-off part is the small simplex at `v`, which lies in `Δ` for small `ε`.
+    rw [← h.finrank_eq, finrank_eq_card_basis b]
+  -- The chopped-off part is the simplex at the corner, which lies in `Δ`.
   let T : Set (s → ℝ) := {y | (∀ j : s, c j ≤ y j) ∧ ∑ j : s, (y j - c j) < ε}
   have hdiff : facetPolyhedron i u c \
       facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε) =
-        (h.dualBasis b').equivFun ⁻¹' T := by
+        (h.dualBasis b).equivFun ⁻¹' T := by
     ext x
     simp only [Set.mem_sdiff, mem_facetPolyhedron_cornerChop_iff, not_and, not_le, mem_preimage,
       mem_ofPred_eq, T, he, Finset.sum_coe_sort s fun j ↦ x (i (u j)) - c j]
@@ -233,15 +229,35 @@ theorem IsIntegralLattice.eventually_dualMeasure_facetPolyhedron_cornerChop_add 
     hcard]
   simp
 
+/-- **The volume removed by a small corner chop.** Let `v` be a smooth vertex of the polyhedron
+`Δ = {x | c j ≤ ⟨x, u j⟩}` in an integral lattice, at which the facets indexed by `s` meet, and
+let `n = dim V`. For every sufficiently small `ε > 0`, chopping the corner `v` off `Δ` at depth `ε`
+removes the simplex `{y j ≥ 0, ∑ j, y j < ε}` in the coordinates `y j = ⟨x, u j⟩ - c j` relative to
+`v`, which has volume `εⁿ / n!` since the normals `u j` at `v` form a basis of the lattice:
+
+`vol(Δ chopped at depth ε) + εⁿ / n! = vol(Δ)`.
+
+On the symplectic side, `(2π)ⁿ εⁿ / n!` is the volume of the ball of capacity `2π ε` removed by
+the toric symplectic blowup at the fixed point over `v`. -/
+theorem IsIntegralLattice.eventually_dualMeasure_facetPolyhedron_cornerChop_add [Finite ι]
+    (h : IsIntegralLattice i) {s : Finset ι} {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v)
+    (hvP : v ∈ facetPolyhedron i u c) (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝[>] 0,
+      h.dualMeasure (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) +
+          ENNReal.ofReal (ε ^ finrank ℝ V / (finrank ℝ V).factorial) =
+        h.dualMeasure (facetPolyhedron i u c) := by
+  -- The normals at `v` form a basis of `N` indexed by `s`.
+  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hv
+  let b' : Basis s ℤ N :=
+    b.reindex (Equiv.subtypeEquivRight fun j ↦ by rw [← Finset.mem_coe, hs])
+  filter_upwards [self_mem_nhdsWithin,
+    (hv.eventually_forall_mem_facetPolyhedron h hvP hs).filter_mono nhdsWithin_le_nhds]
+    with ε (hε0 : 0 < ε) hε
+  exact h.dualMeasure_facetPolyhedron_cornerChop_add b' (fun j ↦ by simp [b', hb]) hε0 hε
+
 end General
 
 /-! ### Examples -/
-
-/-- The standard lattice `ℤⁿ ⊂ ℝⁿ` sends the coordinate vector `eⱼ` of `ℤⁿ` to that of `ℝⁿ`. -/
-private theorem intCast_compLeft_single (n : ℕ) (j : Fin n) :
-    (Int.castAddHom ℝ).compLeft (Fin n) (Pi.single j 1) = Pi.single j 1 := by
-  ext l
-  simp [Pi.single_apply, apply_ite]
 
 /-- **The interval `[0, a]` has length `a`** for the lattice-normalized measure of `ℤ ⊂ ℝ`. -/
 theorem dualMeasure_facetPolyhedron_interval (a : ℝ) :
@@ -279,8 +295,8 @@ theorem dualMeasure_facetPolyhedron_hirzebruch {k : ℤ} {a b : ℝ} (ha : 0 ≤
     ext x
     simp only [mem_facetPolyhedron_hirzebruch_iff, mem_preimage, Function.comp_apply,
       MeasurableEquiv.finTwoArrow_apply, e, IsIntegralLattice.dualBasis_equivFun,
-      Pi.basisFun_apply, intCast_compLeft_single, Prod.fst_swap, Prod.snd_swap,
-      mem_closedRegionBetween, Pi.zero_apply, mem_Icc]
+      Pi.basisFun_apply, AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one,
+      Prod.fst_swap, Prod.snd_swap, mem_closedRegionBetween, Pi.zero_apply, mem_Icc]
     constructor
     · rintro ⟨h₀, h₁, h₂, h₃⟩
       exact ⟨⟨h₁, h₂⟩, h₀, by linarith⟩
@@ -302,14 +318,14 @@ theorem dualMeasure_facetPolyhedron_simplex (n : ℕ) {a : ℝ} (ha : 0 ≤ a) :
         ((isIntegralLattice_intCast n).dualBasis (Pi.basisFun ℤ (Fin n))).equivFun ⁻¹'
           {y | (∀ j, 0 ≤ y j) ∧ ∑ j, 1 * y j ≤ a} := by
     ext x
-    simp [intCast_compLeft_single]
+    simp
   rw [hpre, IsIntegralLattice.dualMeasure_preimage_dualBasis_equivFun,
     volume_setOf_forall_nonneg_and_sum_mul_le (fun _ ↦ one_pos) ha]
   simp
 
 /-- **The volume of a blown-up projective space.** Chopping the corner `0` off the standard simplex
 of size `a ≥ 0` in `ℝⁿ` at a depth `ε > 0` gives the polytope
-`{0 ≤ x(eₖ) for every k, ε ≤ ∑ k, x(eₖ) ≤ a}`, for `ε ≤ a` the moment polytope of the blowup of
+`{0 ≤ x(eₖ) for every k, ε ≤ ∑ k, x(eₖ) ≤ a}`, for `ε < a` the moment polytope of the blowup of
 `ℂPⁿ` at a fixed point. Its volume is `(aⁿ - εⁿ) / n!` for the lattice-normalized measure of
 `ℤⁿ ⊂ ℝⁿ`, which is `0` when `a < ε` and the polytope is empty. For `n = 2` and `ε ≤ a` this is the
 area `(a² - ε²) / 2` of the Hirzebruch trapezoid with `k = 1` and `b = a - ε`. -/
@@ -320,44 +336,38 @@ theorem dualMeasure_facetPolyhedron_simplex_cornerChop (n : ℕ) {a ε : ℝ} (h
           (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
           (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε)) =
       ENNReal.ofReal ((a ^ n - ε ^ n) / n.factorial) := by
-  -- The chopped simplex is `{0 ≤ x(eₖ), ε ≤ ∑ k, x(eₖ) ≤ a}`.
-  have hmem {x : StrongDual ℝ (Fin n → ℝ)} :
-      x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n))
-          (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
-          (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε) ↔
-        ((∀ k, 0 ≤ x (Pi.single k 1)) ∧ ∑ k, x (Pi.single k 1) ≤ a) ∧
-          ε ≤ ∑ k, x (Pi.single k 1) := by
-    simp [intCast_compLeft_single]
   rcases lt_or_ge a ε with haε | hεa
   · -- Beyond the depth `a` nothing is left, and `aⁿ - εⁿ ≤ 0`.
     rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg
       (sub_nonpos.2 (pow_le_pow_left₀ ha haε.le n)) (Nat.cast_nonneg _))]
-    exact measure_mono_null (t := ∅) (fun x hx ↦
-      absurd ((hmem.1 hx).2.trans (hmem.1 hx).1.2) (not_le.2 haε)) measure_empty
-  -- The chopped-off part is the simplex of size `ε` cut off by the strict inequality.
-  have hdiff : facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-        (simplexSupport a) \
-      facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n))
-        (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
-        (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε) =
-      ((isIntegralLattice_intCast n).dualBasis (Pi.basisFun ℤ (Fin n))).equivFun ⁻¹'
-        {y | (∀ j, 0 ≤ y j) ∧ ∑ j, 1 * y j < ε} := by
-    ext x
-    simp only [Set.mem_sdiff, hmem, mem_facetPolyhedron_simplex_iff, mem_preimage, mem_ofPred_eq,
-      IsIntegralLattice.dualBasis_equivFun, Pi.basisFun_apply, intCast_compLeft_single, one_mul,
-      not_and, not_le]
-    exact ⟨fun ⟨hx, hlt⟩ ↦ ⟨hx.1, hlt hx⟩, fun ⟨h0, hlt⟩ ↦ ⟨⟨h0, hlt.le.trans hεa⟩, fun _ ↦ hlt⟩⟩
-  have h := measure_inter_add_sdiff (μ := (isIntegralLattice_intCast n).dualMeasure)
-    (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-      (simplexSupport a))
-    (measurableSet_facetPolyhedron (i := (Int.castAddHom ℝ).compLeft (Fin n))
-      (u := cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
-      (c := cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε))
-  rw [inter_eq_right.2 facetPolyhedron_cornerChop_subset, hdiff,
-    IsIntegralLattice.dualMeasure_preimage_dualBasis_equivFun,
-    volume_setOf_forall_nonneg_and_sum_mul_lt (fun _ ↦ one_pos) hε,
-    dualMeasure_facetPolyhedron_simplex n ha] at h
-  simp only [Fintype.card_fin, Finset.prod_const_one, mul_one] at h
+    refine measure_mono_null (t := ∅) (fun x hx ↦ ?_) measure_empty
+    -- The chopped simplex is `{0 ≤ x(eₖ), ε ≤ ∑ k, x(eₖ) ≤ a}`.
+    simp only [mem_facetPolyhedron_cornerChop_iff, mem_facetPolyhedron_simplex_iff, Finset.sum_map,
+      Function.Embedding.some_apply, simplexNormal_some, simplexSupport_some, sub_zero,
+      AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one] at hx
+    exact absurd (hx.2.trans hx.1.2) (not_le.2 haε)
+  -- The normals of the facets at the corner `0` are the coordinate vectors.
+  let e : Fin n ≃ (Finset.univ.map .some : Finset (Option (Fin n))) :=
+    .ofBijective (fun k ↦ ⟨some k, by simp⟩) ⟨fun _ _ h ↦ Option.some_injective _
+      (congrArg Subtype.val h), fun ⟨o, ho⟩ ↦ by
+        obtain ⟨k, -, rfl⟩ := Finset.mem_map.1 ho
+        exact ⟨k, rfl⟩⟩
+  have hb (j) : (Pi.basisFun ℤ (Fin n)).reindex e j = simplexNormal (Fin n) j := by
+    obtain ⟨k, rfl⟩ := e.surjective j
+    rw [Basis.reindex_apply, Equiv.symm_apply_apply, Pi.basisFun_apply]
+    -- `e k` is `some k` by the definition of `e`.
+    exact (simplexNormal_some k).symm
+  -- The simplex of size `ε` at the corner lies in the simplex of size `a`.
+  have h := (isIntegralLattice_intCast n).dualMeasure_facetPolyhedron_cornerChop_add
+    (c := simplexSupport a) _ hb hε fun x hxs hxε ↦ by
+      simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
+        forall_exists_index, forall_apply_eq_imp_iff, simplexNormal_some, simplexSupport_some,
+        AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one] at hxs
+      simp only [Finset.sum_map, Function.Embedding.some_apply, simplexNormal_some,
+        simplexSupport_some, sub_zero, AddMonoidHom.compLeft_single, Int.coe_castAddHom,
+        Int.cast_one] at hxε
+      exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
+  rw [dualMeasure_facetPolyhedron_simplex n ha, finrank_fin_fun] at h
   rw [ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top h, sub_div,
     ENNReal.ofReal_sub _ (by positivity)]
 

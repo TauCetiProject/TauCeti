@@ -163,11 +163,9 @@ Lebesgue measure of `S`, for every set `S`. -/
 theorem dualMeasure_preimage_dualBasis_equivFun (b : Basis κ ℤ N) (S : Set (κ → ℝ)) :
     h.dualMeasure ((h.dualBasis b).equivFun ⁻¹' S) = volume S := by
   have := (h.dualBasis b).finiteDimensional_of_finite
-  have hcoe : ⇑(h.dualBasis b).equivFunL = (h.dualBasis b).equivFun :=
-    funext fun x ↦ funext fun j ↦ by rw [Basis.equivFunL_apply, Basis.equivFun_apply]
-  rw [← hcoe]
-  exact ((h.measurePreserving_dualBasis_equivFun b).measure_preimage_emb
-    (hcoe ▸ (h.dualBasis b).equivFunL.toHomeomorph.measurableEmbedding) S)
+  have hemb : MeasurableEmbedding (h.dualBasis b).equivFun := by
+    simpa using (h.dualBasis b).equivFun.toContinuousLinearEquiv.toHomeomorph.measurableEmbedding
+  exact (h.measurePreserving_dualBasis_equivFun b).measure_preimage_emb hemb S
 
 /-! ### Naturality and products -/
 

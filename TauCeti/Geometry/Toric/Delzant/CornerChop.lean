@@ -224,6 +224,21 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   rw [sum_mul_apply_eq hw _ hk, hvs k hk]
   ring
 
+/-- **Small depths.** At a point `v` of the polyhedron with active facets `s`, every sufficiently
+small `ε` is small compared with the slack of every constraint inactive at `v`, which is
+positive. -/
+private theorem eventually_mul_sum_abs_lt [Finite ι] (hvP : v ∈ facetPolyhedron i u c)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝 (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
+  refine eventually_all.2 fun k ↦ ?_
+  by_cases hk : k ∈ s
+  · exact Eventually.of_forall fun _ h ↦ absurd hk h
+  have hslack : 0 < v (i (u k)) - c k := by
+    refine sub_pos.2 ((mem_facetPolyhedron.1 hvP k).lt_of_ne fun h ↦ hk ?_)
+    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply, h]
+  exact ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
+    hslack |>.mono fun ε hε _ ↦ hε
+
 variable (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
 include hx
 
@@ -281,17 +296,7 @@ theorem IsSmoothVertex.eventually_forall_mem_facetPolyhedron [Finite ι] (hi : I
       ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε → x ∈ facetPolyhedron i u c := by
   classical
   obtain ⟨w, -, hx⟩ := hv.exists_coord hi hs
-  -- The constraints inactive at the corner have positive slack there.
-  have hslack (k) (hk : k ∉ s) : 0 < v (i (u k)) - c k := by
-    refine sub_pos.2 ((mem_facetPolyhedron.1 hvP k).lt_of_ne fun h ↦ hk ?_)
-    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply, h]
-  have hε : ∀ᶠ ε in 𝓝 (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
-    refine eventually_all.2 fun k ↦ ?_
-    by_cases hk : k ∈ s
-    · exact Eventually.of_forall fun _ h ↦ absurd hk h
-    exact ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
-      (hslack k hk) |>.mono fun ε hε _ ↦ hε
-  filter_upwards [hε] with ε hε x hxs hxε
+  filter_upwards [eventually_mul_sum_abs_lt (w := w) hvP hs] with ε hε x hxs hxε
   refine mem_facetPolyhedron.2 fun k ↦ ?_
   by_cases hk : k ∈ s
   · exact hxs k hk
@@ -480,7 +485,6 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
   have hsA (j) : j ∈ s ↔ v (i (u j)) = c j := by
     rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply]
   have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := (hsA j).1 hj
-  have hvP := mem_facetPolyhedron.1 (extremePoints_subset hv)
   have hcard : s.card = Module.finrank ℤ N := by
     rw [← hsv.ncard_activeSet, ← hs, ncard_coe_finset]
   have hcard2 : 2 ≤ s.card := hcard ▸ hi.finrank_eq ▸ hV
@@ -494,17 +498,10 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     have : s = {j} := Finset.coe_injective (by rw [hs, ← hyv, hyj j, Finset.coe_singleton])
     rw [this, Finset.card_singleton] at hcard2
     omega
-  -- The constraints inactive at the corner have positive slack there.
-  have hslack (k) (hk : k ∉ s) : 0 < v (i (u k)) - c k :=
-    sub_pos.2 ((hvP k).lt_of_ne fun h ↦ hk ((hsA k).2 h.symm))
   have h₁ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ j, ε < ∑ k ∈ s, (y j (i (u k)) - c k) :=
     eventually_all.2 fun j ↦ (eventually_lt_nhds (hdepth j)).filter_mono nhdsWithin_le_nhds
-  have h₂ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
-    refine eventually_all.2 fun k ↦ ?_
-    by_cases hk : k ∈ s
-    · exact Eventually.of_forall fun _ h ↦ absurd hk h
-    refine (((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
-      (hslack k hk)).filter_mono nhdsWithin_le_nhds |>.mono fun ε hε _ ↦ hε
+  have h₂ := (eventually_mul_sum_abs_lt (w := w) (extremePoints_subset hv) hs).filter_mono
+    (nhdsWithin_le_nhds (s := Ioi 0))
   filter_upwards [self_mem_nhdsWithin, h₁, h₂] with ε (hε0 : 0 < ε) hεy hε
   refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
   · by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε
