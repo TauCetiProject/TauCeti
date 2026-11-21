@@ -76,13 +76,8 @@ theorem exists_isContactForm_pos_smul (hD : IsContactDistribution I ∞ D)
   have hk := hD.finrank_sub_one_add_one
   obtain ⟨α, hα⟩ :=
     hD.isContMDiffDistribution.exists_smoothForm_pos_smul hk hσ hσ₀ hσD
-  -- The positive multiples of `σ` vanish nowhere and have kernel `D`.
-  have hker (x : M) : α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
-    obtain ⟨c, hc, hαc⟩ := hα x
-    exact hD.isContMDiffDistribution.ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul hk hc.ne'
-      (hσ₀ x) (hσD x) hαc
-  obtain ⟨hαc, hαD⟩ := hD.isContactForm_and_kerDistribution_eq_iff.2 hker
-  exact ⟨α, hαc, hαD, hα⟩
+  obtain ⟨hαc, hαD⟩ := hD.isContactForm_and_kerDistribution_eq_iff.2 fun x ↦ (hα x).1
+  exact ⟨α, hαc, hαD, fun x ↦ (hα x).2⟩
 
 /-- **A contact structure is the kernel of a global contact form exactly when it is
 coorientable.** On a Hausdorff σ-compact manifold, a contact structure `D` is the kernel of a

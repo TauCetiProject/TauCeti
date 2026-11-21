@@ -34,6 +34,8 @@ Hahn–Banach separation, `exists_dual_vector`.
   and nowhere zero on a closed set `D`, some `C^n` section `t` has `0 < ⟪s x, t x⟫` on `D`.
 * `TauCeti.exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn`: some global `C^n`
   section is nowhere zero on `D`, without any metric assumption.
+* `TauCeti.exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos`: a `C^n` section `ℓ` of the
+  dual bundle positive on some section over `D` is positive on a global `C^n` section over `D`.
 * `TauCeti.exists_contMDiffSection_forall_inner_pos_of_continuous`,
   `TauCeti.exists_contMDiffSection_forall_ne_zero_of_continuous`: the case `D = univ`.
 * `TauCeti.exists_contMDiffSection_forall_mem_exists_pos_smul_of_continuousOn`,
@@ -135,7 +137,9 @@ private theorem exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
       (contMDiff_zeroSection ℝ (fun x ↦ StrongDual ℝ (V x))).contMDiffOn,
       fun _ hy hyD ↦ (hy hyD).elim⟩
 
-private theorem exists_contMDiffSection_forall_mem_apply_pos {D : Set M} (hD : IsClosed D)
+/-- A `C^n` section `ℓ` of the dual bundle which is positive on some section `s` over a closed set
+`D` is positive on a global `C^n` section over `D`. No continuity of `s` is required. -/
+theorem exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos {D : Set M} (hD : IsClosed D)
     {s : Π x, V x} {ℓ : Cₛ^n⟮I; StrongDual ℝ F, fun x ↦ StrongDual ℝ (V x)⟯}
     (hℓ : ∀ x ∈ D, 0 < ℓ x (s x)) :
     ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, 0 < ℓ x (t x) := by
@@ -165,7 +169,7 @@ theorem exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn {D : Set M} (
     ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, t x ≠ 0 := by
   obtain ⟨ℓ, hℓ⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
     (I := I) (n := n) hD hs hne
-  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos hD hℓ
+  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos hD hℓ
   exact ⟨t, fun x hx h ↦ by simpa [h] using ht x hx⟩
 
 /-- A continuous nowhere-zero section `s` of `V` gives a global nowhere-zero `C^n` section. -/
@@ -186,7 +190,7 @@ theorem exists_contMDiffSection_forall_mem_exists_pos_smul_of_continuousOn
     ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, ∃ c : ℝ, 0 < c ∧ t x = c • s x := by
   obtain ⟨ℓ, hℓ⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
     (I := I) (n := n) hD hs hne
-  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos hD hℓ
+  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos hD hℓ
   refine ⟨t, fun x hx ↦ ?_⟩
   -- The fibre `V x` is a line, so `t x` is a multiple `c • s x`, and `ℓ x` is positive on both.
   have hV : Module.finrank ℝ (V x) = 1 :=

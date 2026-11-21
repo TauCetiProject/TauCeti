@@ -43,7 +43,8 @@ coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 ## Main results
 
 * `TauCeti.IsContMDiffDistribution.exists_smoothForm_pos_smul`: a continuous nowhere-zero section of
-  the annihilator line is a positive multiple of a global smooth one-form.
+  the annihilator line is a positive multiple of a global smooth one-form, which therefore vanishes
+  nowhere and has kernel `D`.
 * `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_continuous`: a hyperplane
   field is the kernel of a global nowhere-zero smooth one-form exactly when its annihilator line
   has a continuous nowhere-zero section.
@@ -86,28 +87,29 @@ theorem ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul (hD : IsContMDiffDistributi
     (hαc : SmoothForm.degreeOneEquiv α x = c • σ x) :
     α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
   have hne : RoughForm.eval α.val x ≠ 0 := by
-    rw [SmoothForm.eval_val, hαc, Ne, ← ContinuousLinearMap.toLinearMap_zero,
-      ContinuousLinearMap.coe_inj]
-    exact smul_ne_zero hc hσ₀
-  refine ⟨by rwa [Ne, ← SmoothForm.degreeOneEquiv_coe_eq_zero_iff, ← SmoothForm.eval_val], ?_⟩
+    rw [SmoothForm.eval_val, hαc]
+    exact ContinuousLinearMap.coe_injective.ne (smul_ne_zero hc hσ₀)
+  refine ⟨fun h ↦ hne ?_, ?_⟩
+  · rw [SmoothForm.eval_val, SmoothForm.degreeOneEquiv_coe_eq_zero_iff.2 h]
   rw [RoughForm.ker_eq_ker_eval]
   refine Module.Dual.ker_eq_of_le_of_finrank_add_one _ hne (fun v hv ↦ ?_)
     (by rw [hD.finrank_eq x]; exact hk)
-  rw [LinearMap.mem_ker, SmoothForm.eval_val, hαc, ContinuousLinearMap.coe_coe, smul_apply,
-    (CotangentBundle.mem_annihilatorSpace_iff.1 hσD) v hv, smul_zero]
+  rw [LinearMap.mem_ker, SmoothForm.eval_val, hαc]
+  simp [(CotangentBundle.mem_annihilatorSpace_iff.1 hσD) v hv]
 
 variable [T2Space M] [SigmaCompactSpace M]
 
 /-- **A coorientation of a hyperplane field is induced by a global smooth one-form.** Let `σ` be a
 continuous section of the annihilator line `D⁰` of a smooth hyperplane field `D` on a Hausdorff
 σ-compact manifold, vanishing nowhere. Then some smooth one-form `α` is, at every point, a positive
-multiple of `σ`. -/
+multiple of `σ`; in particular `α` vanishes nowhere and has kernel `D`. -/
 theorem exists_smoothForm_pos_smul (hD : IsContMDiffDistribution I ∞ k D)
     (hk : k + 1 = finrank ℝ E)
     (hσ : Continuous fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x (σ x))
     (hσ₀ : ∀ x, σ x ≠ 0) (hσD : ∀ x, σ x ∈ CotangentBundle.annihilatorSpace I D x) :
-    ∃ α : SmoothForm I M ℝ 1, ∀ x, ∃ c : ℝ, 0 < c ∧ SmoothForm.degreeOneEquiv α x = c • σ x := by
+    ∃ α : SmoothForm I M ℝ 1, ∀ x, (α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) ∧
+      ∃ c : ℝ, 0 < c ∧ SmoothForm.degreeOneEquiv α x = c • σ x := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.annihilatorFiberBundle hk
@@ -125,7 +127,9 @@ theorem exists_smoothForm_pos_smul (hD : IsContMDiffDistribution I ∞ k D)
         (hD.contMDiff_annihilatorInclusion hk).comp t.contMDiff⟩
   refine ⟨SmoothForm.degreeOneEquiv.symm s, fun x ↦ ?_⟩
   obtain ⟨c, hc, htc⟩ := ht x
-  exact ⟨c, hc, by rw [LinearEquiv.apply_symm_apply]; exact congrArg Subtype.val htc⟩
+  have hαc : SmoothForm.degreeOneEquiv (SmoothForm.degreeOneEquiv.symm s) x = c • σ x := by
+    rw [LinearEquiv.apply_symm_apply]; exact congrArg Subtype.val htc
+  exact ⟨hD.ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul hk hc.ne' (hσ₀ x) (hσD x) hαc, c, hc, hαc⟩
 
 /-- **A hyperplane field is the kernel of a global one-form exactly when it is coorientable.** A
 smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a smooth one-form
@@ -142,17 +146,12 @@ theorem exists_smoothForm_ker_eq_iff_exists_continuous (hD : IsContMDiffDistribu
   · rintro ⟨α, hα⟩
     refine ⟨fun x ↦ SmoothForm.degreeOneEquiv α x,
       (SmoothForm.degreeOneEquiv α).contMDiff.continuous, fun x ↦ ⟨fun h ↦ (hα x).1 ?_, ?_⟩⟩
-    · have h' : SmoothForm.degreeOneEquiv α x = 0 := h
-      rw [← SmoothForm.degreeOneEquiv_coe_eq_zero_iff, h', ContinuousLinearMap.toLinearMap_zero]
-    · rw [CotangentBundle.mem_annihilatorSpace_iff]
-      intro v hv
-      rw [← (hα x).2, RoughForm.mem_ker] at hv
-      rw [SmoothForm.degreeOneEquiv_apply_apply_vec, hv]
+    · exact SmoothForm.degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h)
+    · refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
+      simpa [← (hα x).2] using hv
   · rintro ⟨σ, hσ, hσD⟩
     obtain ⟨α, hα⟩ := hD.exists_smoothForm_pos_smul hk hσ (fun x ↦ (hσD x).1) fun x ↦ (hσD x).2
-    refine ⟨α, fun x ↦ ?_⟩
-    obtain ⟨c, hc, hαc⟩ := hα x
-    exact hD.ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul hk hc.ne' (hσD x).1 (hσD x).2 hαc
+    exact ⟨α, fun x ↦ (hα x).1⟩
 
 /-- **A hyperplane field is the kernel of a global one-form exactly when its annihilator line is
 trivial.** A smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a smooth
