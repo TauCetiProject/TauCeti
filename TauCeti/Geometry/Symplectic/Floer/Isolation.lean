@@ -142,7 +142,7 @@ theorem exists_pos_forall_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H)) (hHper :
     exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun {u J} hu hper hJc hJM hfloer hE hclose ↦ ?_⟩
   have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
-    .of_mul_norm_sq_le hc (hJc z hz)
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   -- The loops stay in a compact neighbourhood of `x`, so the actions have limits at both ends.
   have huK (s t : ℝ) : u (s, t) ∈ cthickening δ₁ (range x) :=
     mem_cthickening_of_dist_le _ (x t) _ _ (mem_range_self t) (by

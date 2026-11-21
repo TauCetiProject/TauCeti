@@ -403,7 +403,7 @@ theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
     hfloer
   have hg0 : 0 ≤ ∫ t in Icc (0 : ℝ) 1, e (s, t) :=
     setIntegral_nonneg measurableSet_Icc fun t ht ↦
-      ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc t ht)) (hfloer t ht)
+      ω.floerEnergyDensity_nonneg (tames_of_mul_norm_sq_le hc (hJc t ht)) (hfloer t ht)
   calc _ ≤ C₁ * ((1 + M ^ 2) / c * ∫ t in Icc (0 : ℝ) 1, e (s, t)) :=
         hact.trans (mul_le_mul_of_nonneg_left hint hC₁)
     _ ≤ (C₁ * ((1 + M ^ 2) / c) + 1) * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
@@ -543,7 +543,7 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
   have hopen : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
-    .of_mul_norm_sq_le hc (hJc z hz)
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   obtain ⟨δ, hδ, K, hKpos, hslice⟩ :=
     exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hx
       (by simpa using hxper 0) hnd c M hc
@@ -669,7 +669,7 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
       ((prod_mono le_rfl (subset_univ _)).trans hR)).integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)
   have hJ (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) : ω.Tames (J z) :=
-    .of_mul_norm_sq_le hc (hJc z hz)
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   -- The energy over `[s, s + h] × [0, 1]` is at most the energy beyond `s`.
   have hRle : ∫ z in Icc s (s + h) ×ˢ Icc (0 : ℝ) 1, e z ≤ C₁ * Real.exp (-(κ₀ * s)) := by
     rw [integral_eq_lintegral_of_nonneg_ae ((ae_restrict_iff' (measurableSet_Icc.prod

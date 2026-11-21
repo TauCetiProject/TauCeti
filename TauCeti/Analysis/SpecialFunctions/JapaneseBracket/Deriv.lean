@@ -60,6 +60,10 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `TauCeti.exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow`: symbol estimates of orders
   `a` and `b` give estimates of order `a + b` for products and `N a` for `N`-th powers, uniformly
   in a parameter.
+* `TauCeti.hasFDerivAt_norm_smul_sq_rpow`: the derivative of `(‖c ξ‖ ^ 2) ^ μ` away from `0`.
+* `TauCeti.hasFDerivAt_one_add_norm_smul_sq_rpow`: the derivative of `(1 + ‖c ξ‖ ^ 2) ^ r`.
+* `TauCeti.contDiff_norm_smul_sq_rpow_smul`: `(‖c ξ‖ ^ 2) ^ μ` times a smooth function vanishing
+  near `0` is smooth.
 
 ## References
 
@@ -283,6 +287,49 @@ theorem hasStrictFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
   ext v
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
+
+/-- The derivative of the power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, away from `c ξ = 0`, is
+`μ (‖c ξ‖ ^ 2) ^ (μ - 1)` times `2 c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_norm_smul_sq_rpow {c : ℝ} {ξ : E} (hcξ : c • ξ ≠ 0) (μ : ℝ) :
+    HasFDerivAt (fun ξ : E ↦ (‖c • ξ‖ ^ 2) ^ μ)
+      ((μ * (‖c • ξ‖ ^ 2) ^ (μ - 1)) • ((2 * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := ((hasStrictFDerivAt_norm_sq (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)).rpow_const (p := μ)
+      (Or.inl (pow_ne_zero 2 (norm_ne_zero_iff.2 hcξ)))
+  refine h.congr_fderiv ?_
+  ext v
+  simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, innerSL_apply_apply, inner_smul_left, inner_smul_right,
+    smul_eq_mul, nsmul_eq_mul, RCLike.conj_to_real]
+  ring
+
+/-- The derivative of the bracket power `(1 + ‖c ξ‖ ^ 2) ^ r` of a rescaled argument is
+`(1 + ‖c ξ‖ ^ 2) ^ (r - 1)` times `2 r c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_one_add_norm_smul_sq_rpow {c : ℝ} (r : ℝ) (ξ : E) :
+    HasFDerivAt (fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r)
+      ((1 + ‖c • ξ‖ ^ 2) ^ (r - 1) • ((2 * r * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := (hasStrictFDerivAt_one_add_norm_sq_rpow r (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)
+  refine h.congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+open Topology in
+/-- A power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, homogeneous of degree `2μ`, times a smooth
+function vanishing near `0` is smooth, for `c ≠ 0` and every real `μ`. -/
+theorem contDiff_norm_smul_sq_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {c : ℝ} (hc : c ≠ 0) {n : WithTop ℕ∞} {g : E → F} (hg : ContDiff ℝ n g)
+    (hg0 : g =ᶠ[𝓝 0] 0) (μ : ℝ) :
+    ContDiff ℝ n fun ξ ↦ (‖c • ξ‖ ^ 2) ^ μ • g ξ := by
+  refine contDiff_iff_contDiffAt.2 fun ξ ↦ ?_
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+    filter_upwards [hg0] with η hη
+    simp [hη]
+  · have hne : ‖c • ξ‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (smul_ne_zero hc hξ))
+    exact ((((contDiff_norm_sq ℝ).comp (contDiff_const_smul c)).contDiffAt.rpow_const_of_ne
+      hne).smul hg.contDiffAt)
 
 /-- **Derivative bounds for powers of the Japanese bracket.** For every real `r` and every `k`,
 `‖D^k (1 + ‖x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`: each derivative of

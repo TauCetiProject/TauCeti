@@ -585,7 +585,7 @@ theorem exists_lintegral_floerEnergyDensity_eq_sum_hamiltonianAction
   refine ⟨y, hy, ?_⟩
   exact ω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm hK hKH hH
     (fun q ↦ (hHs q).continuous) hu
-    (fun z hz ↦ ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc z hz))
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (tames_of_mul_norm_sq_le hc (hJc z hz))
       (hfloer z hz)) hR fun q ↦ (hy q).2.2.2
 
 /-- **The energy identity of the pair-of-pants perturbation with asymptotic orbits.** Let `K` be
@@ -637,7 +637,7 @@ theorem exists_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
       hJc hJM hfloer hE q
   refine ⟨y, hy, ?_⟩
   exact lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq ω hH hHs hu
-    (fun z hz ↦ .of_mul_norm_sq_le hc (hJc z hz)) hfloer
+    (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc z hz)) hfloer
     (by simpa only [endChart_mk] using fun q ↦ (hy q).2.2.2)
 
 end SymplecticForm

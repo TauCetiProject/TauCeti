@@ -122,7 +122,7 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_mul_exp_add_exp
       fun r hr ↦ hper r ⟨hs.trans hr.1, hr.2.trans hs'⟩]
     ring
   have he0 (z : ℝ × ℝ) (hz : z ∈ Icc a b ×ˢ Icc 0 1) : 0 ≤ e z :=
-    ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
+    ω.floerEnergyDensity_nonneg (tames_of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
   have hmono : MonotoneOn g (Icc a b) := fun s hs s' hs' hss' ↦ by
     have h := henergy hs.1 hss' hs'.2
     have : 0 ≤ ∫ z in Icc s s' ×ˢ Icc 0 1, e z :=
@@ -244,7 +244,7 @@ theorem exists_pos_forall_norm_sub_le_mul_exp_min
   set h := Real.exp (-(κ * d)) with hhdef
   have hh : 0 < h := Real.exp_pos _
   have hE0 : 0 ≤ E := setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
+    fun z hz ↦ ω.floerEnergyDensity_nonneg (tames_of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
   rcases lt_or_ge (b - s) 1 with hshort | hlong
   · -- Near the right end the closeness to `x` already gives the bound.
     exact (hclose (s, t) ⟨hs, ht⟩).trans (le_mul_exp_neg_of_lt_one (lt_min hδ₁ hδ₂).le hκ
