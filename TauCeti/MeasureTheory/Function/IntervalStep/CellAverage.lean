@@ -186,6 +186,7 @@ theorem intervalCellAverage_def (g : ℝ → E) (a h : ℝ) (k : ℕ) :
     intervalCellAverage g a h k = h⁻¹ • ∫ s in (a + k * h)..(a + (k + 1) * h), g s := (rfl)
 
 /-- The average of a constant over a cell of nonzero length is that constant. -/
+@[simp]
 theorem intervalCellAverage_const [CompleteSpace E] {a h : ℝ} (hh : h ≠ 0) (k : ℕ) (c : E) :
     intervalCellAverage (fun _ ↦ c) a h k = c := by
   rw [intervalCellAverage_def, intervalIntegral.integral_const,
@@ -209,6 +210,7 @@ theorem intervalCellAverage_sub {f g : ℝ → E} {a h : ℝ} {k : ℕ}
   simp only [intervalCellAverage_def, intervalIntegral.integral_sub hf hg, smul_sub]
 
 /-- The cell average commutes with scalar multiplication. -/
+@[simp]
 theorem intervalCellAverage_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
     [SMulCommClass ℝ 𝕜 E] (c : 𝕜) (g : ℝ → E) (a h : ℝ) (k : ℕ) :
     intervalCellAverage (fun s ↦ c • g s) a h k = c • intervalCellAverage g a h k := by
