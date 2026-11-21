@@ -227,6 +227,9 @@ regular loci and footprint maps of `𝒜` at the image index sets form an implic
 noncomputable def relabel (hf : 𝒜.FootprintsCover (range f)) :
     ImplicitAtlas (fun β ↦ Γ (f β)) (fun β ↦ E (f β)) (fun β ↦ ρ (f β)) (fun I ↦ T (I.map f))
       (relabelAct act f) X d where
+  -- `(∅ : Finset B).map f` is definitionally `∅` (Mathlib's `Finset.map_empty` is `rfl`), so
+  -- `T ((∅ : Finset B).map f)` is `T ∅`. The `baseHomeomorph` and `exists_footprintMap_eq` fields
+  -- below and `footprint_relabel` rely on this to reuse the data of `𝒜` over `∅` unchanged.
   baseHomeomorph := 𝒜.baseHomeomorph
   kuranishi := 𝒜.relabelKuranishi f
   continuous_kuranishi J β := 𝒜.continuous_kuranishi _ _
