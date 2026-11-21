@@ -516,12 +516,6 @@ end Difference
 
 section IntegralOperator
 
-private theorem hasCompactSupport_of_isCompact_isClosed {Z α : Type*} [TopologicalSpace Z]
-    [Zero α] {s : Set Z} (hs : IsCompact s) (hsc : IsClosed s) {f : Z → α}
-    (hf : ∀ z ∉ s, f z = 0) : HasCompactSupport f :=
-  hs.of_isClosed_subset (isClosed_tsupport f)
-    (closure_minimal (fun z hz ↦ by_contra fun hzs ↦ mem_support.1 hz (hf z hzs)) hsc)
-
 /-- **Proper input support preserves compact support.** For any binary operator kernel
 `K : X → Y → V →L[𝕜] W` with proper input support, the integral operator
 `u ↦ (x ↦ ∫ y, K x y (u y) ∂μ)` maps compactly supported functions to compactly supported
@@ -533,7 +527,7 @@ theorem HasProperInputSupport.hasCompactSupport_integral {X Y 𝕜 V W : Type*}
     (hu : HasCompactSupport u) (μ : Measure Y := by volume_tac) :
     HasCompactSupport fun x ↦ ∫ y, K x y (u y) ∂μ := by
   obtain ⟨C, hC, hCc, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hu
-  refine hasCompactSupport_of_isCompact_isClosed hC hCc fun x hx ↦ ?_
+  refine HasCompactSupport.intro' hC hCc fun x hx ↦ ?_
   have hzero : (fun y ↦ K x y (u y)) = 0 := funext fun y ↦ by
     by_cases hy : y ∈ tsupport u
     · simp [hCK x hx y hy]
@@ -549,7 +543,7 @@ private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*} [Topologica
   obtain ⟨L₁, hL₁, hL₁c, hKL₁⟩ :=
     hK.exists_isCompact_isClosed_forall_eq_zero (isCompact_singleton (x := x₁))
   have hc₁ : HasCompactSupport fun y ↦ K x₁ y :=
-    hasCompactSupport_of_isCompact_isClosed hL₁ hL₁c fun y hy ↦ hKL₁ x₁ rfl y hy
+    HasCompactSupport.intro' hL₁ hL₁c fun y hy ↦ hKL₁ x₁ rfl y hy
   have hcont₁ : Continuous fun y ↦ K x₁ y := hKc.comp (continuous_const.prodMk continuous_id)
   have : LocallyCompactSpace Y :=
     (hc₁.eq_zero_or_locallyCompactSpace_of_addGroup hcont₁).resolve_left
@@ -643,7 +637,7 @@ private theorem integral_apply_integral_eq_restrict {X Y 𝕜 W M : Type*}
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (hy_in x hx)]
   exact (((v x).restrictScalars ℝ).integral_comp_comm <|
     (hF_cont x hx).integrable_of_hasCompactSupport
-      (hasCompactSupport_of_isCompact_isClosed hL hLc (hy_in x hx))).symm
+      (HasCompactSupport.intro' hL hLc (hy_in x hx))).symm
 
 private theorem integral_apply_integral_eq_of_isCompact_isClosed {X Y 𝕜 V W M : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
@@ -671,7 +665,7 @@ private theorem integral_apply_integral_eq_of_isCompact_isClosed {X Y 𝕜 V W M
     ((ContinuousLinearMap.compL 𝕜 V W M).continuous.comp (hv.comp continuous_fst)).clm_apply hKc
   have hint_prod : Integrable (fun p : X × Y ↦ v p.1 (K p.1 p.2 (u p.2))) (μ'.prod ν') :=
     (hcont_comp.clm_apply (hu.comp continuous_snd)).integrable_of_hasCompactSupport
-      (hasCompactSupport_of_isCompact_isClosed (hC.prod hL) (hCc.prod hLc) fun ⟨x, y⟩ hxy ↦ by
+      (HasCompactSupport.intro' (hC.prod hL) (hCc.prod hLc) fun ⟨x, y⟩ hxy ↦ by
         by_cases hx : x ∈ C
         · simp [hy_in x hx y fun hy ↦ hxy ⟨hx, hy⟩]
         · exact (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hK0 ↦ by simp [hK0])
