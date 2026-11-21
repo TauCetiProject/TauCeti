@@ -10,6 +10,7 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
@@ -95,7 +96,7 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
-  `Β(a, 1) = Β(1, a) = 1 / a`;
+  `Β(a, 1) = Β(1, a) = 1 / a` for `0 ≤ a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`,
   and `ProbabilityTheory.beta_add_one_right`, the same step in the second parameter;
 * `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
@@ -103,7 +104,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
-  for `s > 1`.
+  for `s > 1`;
+* `ProbabilityTheory.natCast_mul_beta_natCast_inv_eq_choose` — the binomial coefficient
+  `(m * Β(m, n))⁻¹ = (n + m - 1).choose m` at natural parameters with `m > 0`.
 
 ## Implementation notes
 
@@ -1108,15 +1111,18 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
     rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
     linear_combination Real.Gamma a * hdup'
 
-/-- Euler's beta function at second parameter `1`. -/
+/-- Euler's beta function at second parameter `1`, for `0 ≤ a`. At `a = 0` both sides are `0`,
+through `Γ(0) = 0` and `1 / 0 = 0`. -/
 @[simp]
-theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
+theorem beta_one_right (ha : 0 ≤ a) : beta a 1 = 1 / a := by
+  rcases ha.eq_or_lt with rfl | ha
+  · simp [ProbabilityTheory.beta]
   rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
   field_simp
 
-/-- Euler's beta function at first parameter `1`. -/
+/-- Euler's beta function at first parameter `1`, for `0 ≤ a`. -/
 @[simp]
-theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
+theorem beta_one_left (ha : 0 ≤ a) : beta 1 a = 1 / a := by
   rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
@@ -1191,6 +1197,24 @@ theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
   filter_upwards [eventually_ne_atTop 0] with n hn
   rw [beta, Real.Gamma_add_one (Nat.cast_ne_zero.mpr hn)]
   ring
+
+/-- At natural parameters `m > 0` and `n`, the reciprocal of `m * Β(m, n)` is a binomial
+coefficient: `(m * Β(m, n))⁻¹ = (n + m - 1).choose m`. At `n = 0` both sides are `0`. -/
+theorem natCast_mul_beta_natCast_inv_eq_choose {m : ℕ} (hm : 0 < m) (n : ℕ) :
+    ((m : ℝ) * beta m n)⁻¹ = ((n + m - 1).choose m : ℝ) := by
+  obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
+  rcases n with _ | k
+  · simp [ProbabilityTheory.beta]
+  -- The Gamma arguments are successors of naturals, so `Γ` evaluates to factorials.
+  have hsum : ((j + 1 : ℕ) : ℝ) + ((k + 1 : ℕ) : ℝ) = ((j + 1 + k : ℕ) : ℝ) + 1 := by
+    push_cast; ring
+  -- The binomial index `n + m - 1` of the statement, in the form of `Nat.cast_add_choose`.
+  have hidx : k + 1 + (j + 1) - 1 = j + 1 + k := by omega
+  rw [ProbabilityTheory.beta, hsum, Real.Gamma_nat_eq_factorial, Nat.cast_succ,
+    Real.Gamma_nat_eq_factorial, Nat.cast_succ, Real.Gamma_nat_eq_factorial, hidx,
+    Nat.cast_add_choose, Nat.factorial_succ j]
+  push_cast
+  field_simp
 
 /-- The reciprocal of the beta function is continuous in the two positive shape parameters. -/
 theorem continuous_one_div_beta :
